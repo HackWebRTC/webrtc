@@ -76,7 +76,8 @@ class VieRemb : public RtpRemoteBitrateObserver, public Module {
 
  private:
   typedef std::list<RtpRtcp*> RtpModules;
-  typedef std::map<unsigned int, unsigned int> SsrcBitrate;
+  typedef std::map<unsigned int, std::pair<int64_t, unsigned int> >
+      SsrcTimeBitrate;
 
   ProcessThread* process_thread_;
   scoped_ptr<CriticalSectionWrapper> list_crit_;
@@ -95,7 +96,7 @@ class VieRemb : public RtpRemoteBitrateObserver, public Module {
   RtpModules rtcp_sender_;
 
   // The last bitrate update for each SSRC.
-  SsrcBitrate bitrates_;
+  SsrcTimeBitrate update_time_bitrates_;
 };
 
 }  // namespace webrtc

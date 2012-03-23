@@ -22,6 +22,7 @@
 namespace webrtc {
 
 const int kRembSendIntervallMs = 1000;
+const int kRembTimeOutThresholdMs = 2000;
 
 // % threshold for if we should send a new REMB asap.
 const int kSendThresholdPercent = 97;
@@ -68,7 +69,7 @@ void VieRemb::RemoveReceiveChannel(RtpRtcp* rtp_rtcp) {
       break;
     }
   }
-  bitrates_.erase(ssrc);
+  update_time_bitrates_.erase(ssrc);
 }
 
 void VieRemb::AddRembSender(RtpRtcp* rtp_rtcp) {
@@ -144,17 +145,20 @@ void VieRemb::OnReceiveBitrateChanged(unsigned int ssrc, unsigned int bitrate) {
   CriticalSectionScoped cs(list_crit_.get());
 
   // Check if this is a new ssrc and add it to the map if it is.
-  if (bitrates_.find(ssrc) == bitrates_.end()) {
-    bitrates_[ssrc] = bitrate;
+  if (update_time_bitrates_.find(ssrc) == update_time_bitrates_.end()) {
+    update_time_bitrates_[ssrc] = std::make_pair(
+        TickTime::MillisecondTimestamp(), bitrate);
   }
 
-  int new_remb_bitrate = last_send_bitrate_ - bitrates_[ssrc] + bitrate;
+  int new_remb_bitrate = last_send_bitrate_ -
+      update_time_bitrates_[ssrc].second + bitrate;
   if (new_remb_bitrate < kSendThresholdPercent * last_send_bitrate_ / 100) {
     // The new bitrate estimate is less than kSendThresholdPercent % of the last
     // report. Send a REMB asap.
     last_remb_time_ = TickTime::MillisecondTimestamp() - kRembSendIntervallMs;
   }
-  bitrates_[ssrc] = bitrate;
+  update_time_bitrates_[ssrc] = std::make_pair(
+      TickTime::MillisecondTimestamp(), bitrate);
 }
 
 void VieRemb::OnReceivedRemb(unsigned int bitrate) {
@@ -191,7 +195,7 @@ WebRtc_Word32 VieRemb::Process() {
   // Calculate total receive bitrate estimate.
   list_crit_->Enter();
   int total_bitrate = 0;
-  int num_bitrates = bitrates_.size();
+  int num_bitrates = update_time_bitrates_.size();
 
   if (num_bitrates == 0) {
     list_crit_->Leave();
@@ -201,10 +205,21 @@ WebRtc_Word32 VieRemb::Process() {
   // TODO(mflodman) Use std::vector and change RTP module API.
   unsigned int* ssrcs = new unsigned int[num_bitrates];
 
+  // Remove any timed out estimates.
+  SsrcTimeBitrate::iterator it = update_time_bitrates_.begin();
+  while (it != update_time_bitrates_.end()) {
+    if (TickTime::MillisecondTimestamp() - it->second.first >
+      kRembTimeOutThresholdMs) {
+      update_time_bitrates_.erase(it++);
+    } else {
+      ++it;
+    }
+  }
+
   int idx = 0;
-  for (SsrcBitrate::iterator it = bitrates_.begin(); it != bitrates_.end();
-       ++it, ++idx) {
-    total_bitrate += it->second;
+  for (it = update_time_bitrates_.begin(); it != update_time_bitrates_.end();
+      ++it, ++idx) {
+    total_bitrate += it->second.second;
     ssrcs[idx] = it->first;
   }
 
