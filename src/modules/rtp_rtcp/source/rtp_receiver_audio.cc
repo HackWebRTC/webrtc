@@ -449,7 +449,7 @@ RTPReceiverAudio::ParseAudioCodecSpecific(WebRtcRTPHeader* rtpHeader,
                             WebRtc_UWord16 s = payloadData[offsetBytes] << 8;
 
                             // check that we don't read outside the memory
-                            if(offsetBytes < (WebRtc_UWord32)payloadLength -2)
+                            if(offsetBytes < (WebRtc_UWord32)payloadLength - 1)
                             {
                                 s += payloadData[offsetBytes+1];
                             }
@@ -463,8 +463,8 @@ RTPReceiverAudio::ParseAudioCodecSpecific(WebRtcRTPHeader* rtpHeader,
                             offsetSamples += audioSpecific.bitsPerSample;
                             if(readShift <= audioSpecific.bitsPerSample)
                             {
-                                // next does not fitt
-                                // or fitt exactly
+                                // next does not fit
+                                // or fit exactly
                                 offsetSamples -= 8;
                                 offsetBytes++;
                             }
@@ -485,8 +485,8 @@ RTPReceiverAudio::ParseAudioCodecSpecific(WebRtcRTPHeader* rtpHeader,
                         offsetSamplesInsert += audioSpecific.bitsPerSample;
                         if(insertShift <= audioSpecific.bitsPerSample)
                         {
-                            // next does not fitt
-                            // or fitt exactly
+                            // next does not fit
+                            // or fit exactly
                             offsetSamplesInsert -= 8;
                             offsetBytesInsert++;
                         }
