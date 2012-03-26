@@ -3889,8 +3889,8 @@ int Channel::StartRecordingPlayout(const char* fileName,
     const WebRtc_UWord32 notificationTime(0); // Not supported in VoE
     CodecInst dummyCodec={100,"L16",16000,320,1,320000};
 
-    if (codecInst != NULL &&
-      (codecInst->channels < 1) || (codecInst->channels > 2))
+    if ((codecInst != NULL) &&
+      ((codecInst->channels < 1) || (codecInst->channels > 2)))
     {
         _engineStatisticsPtr->SetLastError(
             VE_BAD_ARGUMENT, kTraceError,
