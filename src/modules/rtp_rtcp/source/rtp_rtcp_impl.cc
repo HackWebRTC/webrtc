@@ -425,13 +425,6 @@ WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
     _rtcpSender.SendRTCP(kRtcpReport);
   }
 
-  if (_rtpSender.RTPKeepalive()) {
-    // check time to send RTP keep alive
-    if (_rtpSender.TimeToSendRTPKeepalive()) {
-      _rtpSender.SendRTPKeepalivePacket();
-    }
-  }
-
   if (UpdateRTCPReceiveInformationTimers()) {
     // a receiver has timed out
     UpdateTMMBR();
@@ -862,67 +855,6 @@ WebRtc_Word32 ModuleRtpRtcpImpl::InitSender() {
   return retVal;
 }
 
-bool ModuleRtpRtcpImpl::RTPKeepalive() const {
-  WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, _id, "RTPKeepalive()");
-
-  return _rtpSender.RTPKeepalive();
-}
-
-WebRtc_Word32 ModuleRtpRtcpImpl::RTPKeepaliveStatus(
-    bool* enable,
-    int* unknownPayloadType,
-    WebRtc_UWord16* deltaTransmitTimeMS) const {
-  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id, "RTPKeepaliveStatus()");
-
-  return _rtpSender.RTPKeepaliveStatus(enable,
-                                       unknownPayloadType,
-                                       deltaTransmitTimeMS);
-}
-
-WebRtc_Word32 ModuleRtpRtcpImpl::SetRTPKeepaliveStatus(
-  bool enable,
-  const int unknownPayloadType,
-  WebRtc_UWord16 deltaTransmitTimeMS) {
-  if (enable) {
-    WEBRTC_TRACE(
-      kTraceModuleCall,
-      kTraceRtpRtcp,
-      _id,
-      "SetRTPKeepaliveStatus(true, plType:%d deltaTransmitTimeMS:%u)",
-      unknownPayloadType,
-      deltaTransmitTimeMS);
-
-    // check the transmit keepalive delta time [1,60]
-    if (deltaTransmitTimeMS < 1000 || deltaTransmitTimeMS > 60000) {
-      WEBRTC_TRACE(kTraceError,
-                   kTraceRtpRtcp,
-                   _id,
-                   "\tinvalid deltaTransmitTimeSeconds (%d)",
-                   deltaTransmitTimeMS);
-      return -1;
-    }
-
-    // check the payload time [0,127]
-    if (unknownPayloadType < 0) {
-      WEBRTC_TRACE(kTraceError,
-                   kTraceRtpRtcp,
-                   _id,
-                   "\tinvalid unknownPayloadType (%d)",
-                   unknownPayloadType);
-      return -1;
-    }
-    // enable RTP keepalive mechanism
-    return _rtpSender.EnableRTPKeepalive(unknownPayloadType,
-                                         deltaTransmitTimeMS);
-  } else {
-    WEBRTC_TRACE(kTraceModuleCall,
-                 kTraceRtpRtcp,
-                 _id,
-                 "SetRTPKeepaliveStatus(disable)");
-    return _rtpSender.DisableRTPKeepalive();
-  }
-}
-
 WebRtc_Word32 ModuleRtpRtcpImpl::RegisterSendPayload(
   const CodecInst& voiceCodec) {
   WEBRTC_TRACE(kTraceModuleCall,
@@ -1098,14 +1030,6 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetSendingStatus(const bool sending) {
     WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id,
                  "SetSendingStatus(sending)");
   } else {
-    if (_rtpSender.RTPKeepalive()) {
-      WEBRTC_TRACE(
-          kTraceWarning,
-          kTraceRtpRtcp,
-          _id,
-          "Can't SetSendingStatus(stopped) when RTP Keepalive is active");
-      return -1;
-    }
     WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id,
                  "SetSendingStatus(stopped)");
   }

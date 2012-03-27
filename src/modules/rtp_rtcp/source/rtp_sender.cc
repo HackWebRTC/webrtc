@@ -45,11 +45,6 @@ RTPSender::RTPSender(const WebRtc_Word32 id,
     _rtpHeaderExtensionMap(),
     _transmissionTimeOffset(0),
 
-    _keepAliveIsActive(false),
-    _keepAlivePayloadType(-1),
-    _keepAliveLastSent(0),
-    _keepAliveDeltaTimeSend(0),
-
     // NACK
     _nackByteCountTimes(),
     _nackByteCount(),
@@ -148,8 +143,6 @@ RTPSender::Init(const WebRtc_UWord32 remoteSSRC)
     _packetsSent = 0;
     _payloadBytesSent = 0;
     _packetOverHead = 28;
-
-    _keepAlivePayloadType = -1;
 
     _rtpHeaderExtensionMap.Erase();
 
@@ -280,11 +273,6 @@ WebRtc_Word32 RTPSender::RegisterPayload(
   assert(payloadName);
   CriticalSectionScoped cs(_sendCritsect);
 
-  if (payloadNumber == _keepAlivePayloadType) {
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id, "invalid state",
-                 __FUNCTION__);
-    return -1;
-  }
   std::map<WebRtc_Word8, ModuleRTPUtility::Payload*>::iterator it =
       _payloadTypeMap.find(payloadNumber);
 
@@ -350,162 +338,6 @@ int RTPSender::SendPayloadFrequency() const
     return _audio->AudioFrequency();
 }
 
-
-//  See http://www.ietf.org/internet-drafts/draft-ietf-avt-app-rtp-keepalive-04.txt
-//  for details about this method. Only Section 4.6 is implemented so far.
-bool
-RTPSender::RTPKeepalive() const
-{
-    return _keepAliveIsActive;
-}
-
-WebRtc_Word32
-RTPSender::RTPKeepaliveStatus(bool* enable,
-                              int* unknownPayloadType,
-                              WebRtc_UWord16* deltaTransmitTimeMS) const
-{
-    CriticalSectionScoped cs(_sendCritsect);
-
-    if(enable)
-    {
-        *enable = _keepAliveIsActive;
-    }
-    if(unknownPayloadType)
-    {
-        *unknownPayloadType = _keepAlivePayloadType;
-    }
-    if(deltaTransmitTimeMS)
-    {
-        *deltaTransmitTimeMS =_keepAliveDeltaTimeSend;
-    }
-    return 0;
-}
-
-WebRtc_Word32 RTPSender::EnableRTPKeepalive(
-    const int unknownPayloadType,
-    const WebRtc_UWord16 deltaTransmitTimeMS) {
-  CriticalSectionScoped cs(_sendCritsect);
-
-  std::map<WebRtc_Word8, ModuleRTPUtility::Payload*>::iterator it =
-      _payloadTypeMap.find(unknownPayloadType);
-
-  if (it != _payloadTypeMap.end()) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument",
-                 __FUNCTION__);
-    return -1;
-  }
-  _keepAliveIsActive = true;
-  _keepAlivePayloadType = unknownPayloadType;
-  _keepAliveLastSent = _clock.GetTimeInMS();
-  _keepAliveDeltaTimeSend = deltaTransmitTimeMS;
-  return 0;
-}
-
-WebRtc_Word32
-RTPSender::DisableRTPKeepalive()
-{
-    _keepAliveIsActive = false;
-    return 0;
-}
-
-bool
-RTPSender::TimeToSendRTPKeepalive() const
-{
-    CriticalSectionScoped cs(_sendCritsect);
-
-    bool timeToSend(false);
-
-    WebRtc_UWord32 dT = _clock.GetTimeInMS() - _keepAliveLastSent;
-    if (dT > _keepAliveDeltaTimeSend)
-    {
-        timeToSend = true;
-    }
-    return timeToSend;
-}
-
-// ----------------------------------------------------------------------------
-//  From the RFC draft:
-//
-//  4.6.  RTP Packet with Unknown Payload Type
-//
-//     The application sends an RTP packet of 0 length with a dynamic
-//     payload type that has not been negotiated by the peers (e.g. not
-//     negotiated within the SDP offer/answer, and thus not mapped to any
-//     media format).
-//
-//     The sequence number is incremented by one for each packet, as it is
-//     sent within the same RTP session as the actual media.  The timestamp
-//     contains the same value a media packet would have at this time.  The
-//     marker bit is not significant for the keepalive packets and is thus
-//     set to zero.
-//
-//     Normally the peer will ignore this packet, as RTP [RFC3550] states
-//     that "a receiver MUST ignore packets with payload types that it does
-//     not understand".
-//
-//     Cons:
-//     o  [RFC4566] and [RFC3264] mandate not to send media with inactive
-//        and recvonly attributes, however this is mitigated as no real
-//        media is sent with this mechanism.
-//
-//     Recommendation:
-//     o  This method should be used for RTP keepalive.
-//
-//  7.  Timing and Transport Considerations
-//
-//     An application supporting this specification must transmit keepalive
-//     packets every Tr seconds during the whole duration of the media
-//     session.  Tr SHOULD be configurable, and otherwise MUST default to 15
-//     seconds.
-//
-//     Keepalives packets within a particular RTP session MUST use the tuple
-//     (source IP address, source TCP/UDP ports, target IP address, target
-//     TCP/UDP Port) of the regular RTP packets.
-//
-//     The agent SHOULD only send RTP keepalive when it does not send
-//     regular RTP packets.
-//
-//  http://www.ietf.org/internet-drafts/draft-ietf-avt-app-rtp-keepalive-04.txt
-// ----------------------------------------------------------------------------
-
-WebRtc_Word32
-RTPSender::SendRTPKeepalivePacket()
-{
-    // RFC summary:
-    //
-    // - Send an RTP packet of 0 length;
-    // - dynamic payload type has not been negotiated (not mapped to any media);
-    // - sequence number is incremented by one for each packet;
-    // - timestamp contains the same value a media packet would have at this time;
-    // - marker bit is set to zero.
-
-    WebRtc_UWord8 dataBuffer[IP_PACKET_SIZE];
-    WebRtc_UWord16 rtpHeaderLength = 12;
-    {
-        CriticalSectionScoped cs(_sendCritsect);
-
-        WebRtc_UWord32 now = _clock.GetTimeInMS();
-        WebRtc_UWord32 dT = now -_keepAliveLastSent; // delta time in MS
-
-        WebRtc_UWord32 freqKHz = 90; // video
-        if(_audioConfigured)
-        {
-            freqKHz = _audio->AudioFrequency()/1000;
-        }
-        WebRtc_UWord32 dSamples = dT*freqKHz;
-
-        // set timestamp
-        _timeStamp += dSamples;
-        _keepAliveLastSent = now;
-
-        rtpHeaderLength = RTPHeaderLength();
-
-        // correct seq num, time stamp and payloadtype
-        BuildRTPheader(dataBuffer, _keepAlivePayloadType, false, 0, false);
-    }
-
-    return SendToNetwork(dataBuffer, 0, rtpHeaderLength, kAllowRetransmission);
-}
 
 WebRtc_Word32
 RTPSender::SetMaxPayloadLength(const WebRtc_UWord16 maxPayloadLength, const WebRtc_UWord16 packetOverHead)
@@ -673,8 +505,6 @@ RTPSender::SendOutgoingData(const FrameType frameType,
         WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument failed to find payloadType:%d", __FUNCTION__, payloadType);
         return -1;
     }
-    // update keepalive so that we don't trigger keepalive messages while sending data
-    _keepAliveLastSent = _clock.GetTimeInMS();
 
     if(_audioConfigured)
     {

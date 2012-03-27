@@ -94,16 +94,6 @@ class MockRtpRtcp : public RtpRtcp {
       WebRtc_UWord16());
   MOCK_CONST_METHOD0(MaxDataPayloadLength,
       WebRtc_UWord16());
-  MOCK_METHOD3(SetRTPKeepaliveStatus,
-      WebRtc_Word32(const bool enable,
-                    const int unknownPayloadType,
-                    const WebRtc_UWord16 deltaTransmitTimeMS));
-  MOCK_CONST_METHOD3(RTPKeepaliveStatus,
-      WebRtc_Word32(bool* enable,
-                    int* unknownPayloadType,
-                    WebRtc_UWord16* deltaTransmitTimeMS));
-  MOCK_CONST_METHOD0(RTPKeepalive,
-      bool());
   MOCK_METHOD1(RegisterSendPayload,
       WebRtc_Word32(const CodecInst& voiceCodec));
   MOCK_METHOD1(RegisterSendPayload,

@@ -367,39 +367,6 @@ public:
     virtual WebRtc_UWord16 MaxDataPayloadLength() const = 0;
 
     /*
-    *   set RTPKeepaliveStatus
-    *
-    *   enable              - on/off
-    *   unknownPayloadType  - payload type to use for RTP keepalive
-    *   deltaTransmitTimeMS - delta time between RTP keepalive packets
-    *
-    *   return -1 on failure else 0
-    */
-    virtual WebRtc_Word32 SetRTPKeepaliveStatus(
-        const bool enable,
-        const int unknownPayloadType,
-        const WebRtc_UWord16 deltaTransmitTimeMS) = 0;
-
-    /*
-    *   Get RTPKeepaliveStatus
-    *
-    *   enable              - on/off
-    *   unknownPayloadType  - payload type in use for RTP keepalive
-    *   deltaTransmitTimeMS - delta time between RTP keepalive packets
-    *
-    *   return -1 on failure else 0
-    */
-    virtual WebRtc_Word32 RTPKeepaliveStatus(
-        bool* enable,
-        int* unknownPayloadType,
-        WebRtc_UWord16* deltaTransmitTimeMS) const = 0;
-
-    /*
-    *   check if RTPKeepaliveStatus is enabled
-    */
-    virtual bool RTPKeepalive() const = 0;
-
-    /*
     *   set codec name and payload type
     *
     *   return -1 on failure else 0

@@ -148,18 +148,6 @@ public:
     */
     virtual WebRtc_Word32 InitSender();
 
-    virtual WebRtc_Word32 SetRTPKeepaliveStatus(
-        const bool enable,
-        const int unknownPayloadType,
-        const WebRtc_UWord16 deltaTransmitTimeMS);
-
-    virtual WebRtc_Word32 RTPKeepaliveStatus(
-        bool* enable,
-        int* unknownPayloadType,
-        WebRtc_UWord16* deltaTransmitTimeMS) const;
-
-    virtual bool RTPKeepalive() const;
-
     virtual WebRtc_Word32 RegisterSendPayload(const CodecInst& voiceCodec);
 
     virtual WebRtc_Word32 RegisterSendPayload(const VideoCodec& videoCodec);

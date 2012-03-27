@@ -197,24 +197,6 @@ public:
     bool ProcessNACKBitRate(const WebRtc_UWord32 now);
 
     /*
-    *    Keep alive
-    */
-    WebRtc_Word32 EnableRTPKeepalive( const int unknownPayloadType,
-                                      const WebRtc_UWord16 deltaTransmitTimeMS);
-
-    WebRtc_Word32 RTPKeepaliveStatus(bool* enable,
-                                     int* unknownPayloadType,
-                                     WebRtc_UWord16* deltaTransmitTimeMS) const;
-
-    WebRtc_Word32 DisableRTPKeepalive();
-
-    bool RTPKeepalive() const;
-
-    bool TimeToSendRTPKeepalive() const;
-
-    WebRtc_Word32 SendRTPKeepalivePacket();
-
-    /*
     *  RTX
     */
     void SetRTXStatus(const bool enable,
@@ -332,11 +314,6 @@ private:
 
     RtpHeaderExtensionMap     _rtpHeaderExtensionMap;
     WebRtc_Word32             _transmissionTimeOffset;
-
-    bool                      _keepAliveIsActive;
-    WebRtc_Word8              _keepAlivePayloadType;
-    WebRtc_UWord32            _keepAliveLastSent;
-    WebRtc_UWord16            _keepAliveDeltaTimeSend;
 
     // NACK
     WebRtc_UWord32            _nackByteCountTimes[NACK_BYTECOUNT_SIZE];
