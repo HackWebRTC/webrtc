@@ -97,6 +97,7 @@ int ViEChannelManager::CreateChannel(int& channel_id) {
     vie_encoder = NULL;
     ReturnChannelId(new_channel_id);
     delete group;
+    return -1;
   }
 
   channel_id = new_channel_id;
