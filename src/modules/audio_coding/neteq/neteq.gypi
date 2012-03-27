@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -105,8 +105,8 @@
           'target_name': 'NetEqRTPplay',
           'type': 'executable',
           'dependencies': [
-            'NetEq',         # NetEQ library defined above
-            'NetEqTestTools',# Test helpers
+            'NetEq',          # NetEQ library defined above
+            'NetEqTestTools', # Test helpers
             'G711',
             'G722',
             'PCM16B',
@@ -230,9 +230,24 @@
           ],
         },
         {
+          'target_name': 'rtp_to_text',
+          'type': 'executable',
+          'dependencies': [
+            'NetEqTestTools',
+            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+          ],
+          'sources': [
+            'test/rtp_to_text.cc',
+          ],
+        },
+        {
          'target_name': 'NetEqTestTools',
           # Collection of useful functions used in other tests
           'type': '<(library)',
+          'variables': {
+            # Expects RTP packets without payloads when enabled.
+            'neteq_dummy_rtp%': 0,
+          },
           'dependencies': [
             'G711',
             'G722',
@@ -269,21 +284,17 @@
             'test',
           ],
           'sources': [
-            'test/NETEQTEST_NetEQClass.cc',
-            'test/NETEQTEST_RTPpacket.cc',
             'test/NETEQTEST_CodecClass.cc',
-            'test/NETEQTEST_NetEQClass.h',
-            'test/NETEQTEST_RTPpacket.h',
             'test/NETEQTEST_CodecClass.h',
+            'test/NETEQTEST_DummyRTPpacket.cc',
+            'test/NETEQTEST_DummyRTPpacket.h',
+            'test/NETEQTEST_NetEQClass.cc',
+            'test/NETEQTEST_NetEQClass.h',
+            'test/NETEQTEST_RTPpacket.cc',
+            'test/NETEQTEST_RTPpacket.h',
           ],
         },
       ], # targets
     }], # build_with_chromium
   ], # conditions
 }
-
-# Local Variables:
-# tab-width:2
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=2 shiftwidth=2:

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -27,15 +27,13 @@ class NETEQTEST_RTPpacket
 {
 public:
     NETEQTEST_RTPpacket();
-    NETEQTEST_RTPpacket(const NETEQTEST_RTPpacket& copyFromMe);
-    NETEQTEST_RTPpacket & operator = (const NETEQTEST_RTPpacket & other);
     bool operator !() const { return (dataLen() < 0); };
-    ~NETEQTEST_RTPpacket();
+    virtual ~NETEQTEST_RTPpacket();
     void reset();
     static int skipFileHeader(FILE *fp);
-    int readFromFile(FILE *fp);
+    virtual int readFromFile(FILE *fp);
     int readFixedFromFile(FILE *fp, size_t len);
-    int writeToFile(FILE *fp);
+    virtual int writeToFile(FILE *fp);
     void blockPT(WebRtc_UWord8 pt);
     //WebRtc_Word16 payloadType();
     void parseHeader();
@@ -43,7 +41,7 @@ public:
     WebRtcNetEQ_RTPInfo const * RTPinfo() const;
     WebRtc_UWord8 * datagram() const;
     WebRtc_UWord8 * payload() const;
-    WebRtc_Word16 payloadLen() const;
+    WebRtc_Word16 payloadLen();
     WebRtc_Word16 dataLen() const;
     bool isParsed() const;
     bool isLost() const;
@@ -64,7 +62,7 @@ public:
 
     int setRTPheader(const WebRtcNetEQ_RTPInfo *RTPinfo);
 
-    int splitStereo(NETEQTEST_RTPpacket& slaveRtp, enum stereoModes mode);
+    int splitStereo(NETEQTEST_RTPpacket* slaveRtp, enum stereoModes mode);
 
     int extractRED(int index, WebRtcNetEQ_RTPInfo& red);
 
@@ -81,11 +79,25 @@ public:
     bool                _lost;
     std::map<WebRtc_UWord8, bool> _blockList;
 
+protected:
+    static const int _kRDHeaderLen;
+    static const int _kBasicHeaderLen;
+
+    void parseBasicHeader(WebRtcNetEQ_RTPInfo *RTPinfo, int *i_P, int *i_X,
+                          int *i_CC) const;
+    int calcHeaderLength(int i_X, int i_CC) const;
+
 private:
-    void makeRTPheader(unsigned char* rtp_data, WebRtc_UWord8 payloadType, WebRtc_UWord16 seqNo, WebRtc_UWord32 timestamp, WebRtc_UWord32 ssrc, WebRtc_UWord8 markerBit) const;
-    WebRtc_UWord16 parseRTPheader(const WebRtc_UWord8 *datagram, int datagramLen, WebRtcNetEQ_RTPInfo *RTPinfo, WebRtc_UWord8 **payloadPtr = NULL) const;
-    void splitStereoSample(NETEQTEST_RTPpacket& slaveRtp, int stride);
-    void splitStereoFrame(NETEQTEST_RTPpacket& slaveRtp);
+    void makeRTPheader(unsigned char* rtp_data, WebRtc_UWord8 payloadType,
+                       WebRtc_UWord16 seqNo, WebRtc_UWord32 timestamp,
+                       WebRtc_UWord32 ssrc, WebRtc_UWord8 markerBit) const;
+    WebRtc_UWord16 parseRTPheader(WebRtcNetEQ_RTPInfo *RTPinfo,
+                                  WebRtc_UWord8 **payloadPtr = NULL) const;
+    WebRtc_UWord16 parseRTPheader(WebRtc_UWord8 **payloadPtr = NULL)
+        { return parseRTPheader(&_rtpInfo, payloadPtr);};
+    int calcPadLength(int i_P) const;
+    void splitStereoSample(NETEQTEST_RTPpacket* slaveRtp, int stride);
+    void splitStereoFrame(NETEQTEST_RTPpacket* slaveRtp);
 };
 
 #endif //NETEQTEST_RTPPACKET_H

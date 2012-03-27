@@ -19,6 +19,7 @@
 #include "neteq_error_codes.h" // for the API test
 
 #include "NETEQTEST_RTPpacket.h"
+#include "NETEQTEST_DummyRTPpacket.h"
 #include "NETEQTEST_NetEQClass.h"
 #include "NETEQTEST_CodecClass.h"
 
@@ -67,7 +68,7 @@
 
 #define TIME_STEP 1
 #define FIRSTLINELEN 40
-#define MAX_NETEQ_BUFFERSIZE	170000 //100000
+#define MAX_NETEQ_BUFFERSIZE    170000 //100000
 #define CHECK_ZERO(a) {int errCode = a; char tempErrName[WEBRTC_NETEQ_MAX_ERROR_NAME]; if((errCode)!=0){errCode = WebRtcNetEQ_GetErrorCode(inst); WebRtcNetEQ_GetErrorName(errCode, tempErrName, WEBRTC_NETEQ_MAX_ERROR_NAME); printf("\n %s \n line: %d \n error at %s\n Error Code = %d\n",__FILE__,__LINE__,#a, errCode); exit(0);}}
 #define CHECK_NOT_NULL(a) if((a)==NULL){printf("\n %s \n line: %d \nerror at %s\n",__FILE__,__LINE__,#a );return(-1);}
 //#define PLAY_CLEAN // ignore arrival times and let the packets arrive according to RTP timestamps
@@ -113,8 +114,8 @@ typedef struct {
 void stereoInterleave(WebRtc_Word16 *data, WebRtc_Word16 totalLen);
 int getNextRecoutTime(FILE *fp, WebRtc_UWord32 *nextTime);
 void getNextExtraDelay(FILE *fp, WebRtc_UWord32 *t, int *d);
-bool splitStereo(NETEQTEST_RTPpacket& rtp, NETEQTEST_RTPpacket& rtpSlave,
-                 const WebRtc_Word16 *stereoPtype, const enum stereoModes *stereoMode, int noOfStereoCodecs, 
+bool splitStereo(NETEQTEST_RTPpacket* rtp, NETEQTEST_RTPpacket* rtpSlave,
+                 const WebRtc_Word16 *stereoPtype, const enum stereoModes *stereoMode, int noOfStereoCodecs,
                  const WebRtc_Word16 *cngPtype, int noOfCngCodecs,
                  bool *isStereo);
 void parsePtypeFile(FILE *ptypeFile, std::map<WebRtc_UWord8, decoderStruct>* decoders);
@@ -134,10 +135,10 @@ WebRtc_Word16 NetEqPacketBuffer[MAX_NETEQ_BUFFERSIZE>>1];
 WebRtc_Word16 NetEqPacketBufferSlave[MAX_NETEQ_BUFFERSIZE>>1];
 
 #ifdef NETEQ_DELAY_LOGGING
-extern "C" { 
-	FILE *delay_fid2;	/* file pointer */
-	WebRtc_UWord32 tot_received_packets=0;
-} 
+extern "C" {
+    FILE *delay_fid2;   /* file pointer */
+    WebRtc_UWord32 tot_received_packets=0;
+}
 #endif
 
 #ifdef DEF_BUILD_DATE
@@ -150,29 +151,25 @@ WebRtc_UWord32 simClock=0;
 int main(int argc, char* argv[])
 {
     std::vector<NETEQTEST_NetEQClass *> NetEQvector;
-    NETEQTEST_RTPpacket rtp;
-	char   version[20];
+    char   version[20];
 
-    NETEQTEST_RTPpacket slaveRtp;
-    //bool switchMS = false;
-    //bool duplicatePayload = false;
-	enum WebRtcNetEQDecoder usedCodec[kDecoderReservedEnd-1];
-	int noOfCodecs;
-	int ok;
-	WebRtc_Word16 out_data[640*2];
-	WebRtc_Word16 outLen, writeLen;
+    enum WebRtcNetEQDecoder usedCodec[kDecoderReservedEnd-1];
+    int noOfCodecs;
+    int ok;
+    WebRtc_Word16 out_data[640*2];
+    WebRtc_Word16 outLen, writeLen;
     int fs = 8000;
-	WebRtcNetEQ_RTCPStat RTCPstat;
+    WebRtcNetEQ_RTCPStat RTCPstat;
 #ifdef WIN32
-	char outdrive[MY_MAX_DRIVE];
-	char outpath[MY_MAX_PATH];
-	char outfile[MY_MAX_FNAME];
-	char outext[MY_MAX_EXT];
+    char outdrive[MY_MAX_DRIVE];
+    char outpath[MY_MAX_PATH];
+    char outfile[MY_MAX_FNAME];
+    char outext[MY_MAX_EXT];
 #endif
-	char outfilename[MY_MAX_PATH];
+    char outfilename[MY_MAX_PATH];
 #ifdef NETEQ_DELAY_LOGGING
-	float clock_float;
-	int temp_var;
+    float clock_float;
+    int temp_var;
 #endif
 #ifdef JUNK_DATA
     FILE *seedfile;
@@ -185,38 +182,40 @@ int main(int argc, char* argv[])
     int packetLen = 0;
     int packetCount = 0;
     std::map<WebRtc_UWord8, decoderStruct> decoders;
+    bool dummyRtp = false;
+    bool noDecode = false;
 
-	/* get the version string */
-	WebRtcNetEQ_GetVersion(version);
-	printf("\n\nNetEq version: %s\n", version);
+    /* get the version string */
+    WebRtcNetEQ_GetVersion(version);
+    printf("\n\nNetEq version: %s\n", version);
 #ifdef DEF_BUILD_DATE
-	printf("Build time: %s\n", __BUILD_DATE);
+    printf("Build time: %s\n", __BUILD_DATE);
 #endif
 
-	/* check number of parameters */
-	if ((argc < 3)
+    /* check number of parameters */
+    if ((argc < 3)
 #ifdef WIN32 // implicit output file name possible for windows
         && (argc < 2)
 #endif
         ) {
-		/* print help text and exit */
-		printf("Test program for NetEQ.\n");
-		printf("The program reads an RTP stream from file and inserts it into NetEQ.\n");
-		printf("The format of the RTP stream file should be the same as for rtpplay,\n");
-		printf("and can be obtained e.g., from Ethereal by using\n");
-		printf("Statistics -> RTP -> Show All Streams -> [select a stream] -> Save As\n\n");
-		printf("Usage:\n\n");
+        /* print help text and exit */
+        printf("Test program for NetEQ.\n");
+        printf("The program reads an RTP stream from file and inserts it into NetEQ.\n");
+        printf("The format of the RTP stream file should be the same as for rtpplay,\n");
+        printf("and can be obtained e.g., from Ethereal by using\n");
+        printf("Statistics -> RTP -> Show All Streams -> [select a stream] -> Save As\n\n");
+        printf("Usage:\n\n");
 #ifdef WIN32
-		printf("%s RTPfile [outfile] [-options]\n", argv[0]);
+        printf("%s RTPfile [outfile] [-options]\n", argv[0]);
 #else
         printf("%s RTPfile outfile [-options]\n", argv[0]);
 #endif
-		printf("where:\n");
+        printf("where:\n");
 
-		printf("RTPfile      : RTP stream input file\n\n");
+        printf("RTPfile      : RTP stream input file\n\n");
 
-		printf("outfile      : PCM speech output file\n");
-		printf("               Output file name is derived from RTP file name if omitted\n\n");
+        printf("outfile      : PCM speech output file\n");
+        printf("               Output file name is derived from RTP file name if omitted\n\n");
 
         printf("-options are optional switches:\n");
         printf("\t-recout datfile        : supply recout times\n");
@@ -225,51 +224,52 @@ int main(int argc, char* argv[])
         printf("\t-fax                   : engage fax mode\n");
         printf("\t-preparsertp           : use RecIn with pre-parsed RTP\n");
         printf("\t-rtponly packLenBytes  : input file consists of constant size RTP packets without RTPplay headers\n");
+        printf("\t-dummyrtp              : input file contains only RTP headers\n");
+        printf("\t-nodecode              : no decoding will be done\n");
         //printf("\t-switchms              : switch from mono to stereo (copy channel) after 10 seconds\n");
         //printf("\t-duplicate             : use two instances with identical input (2-channel mono)\n");
 
-		return(0);
-	}
+        return(0);
+    }
 
-	if (strcmp(argv[1], "-apitest")==0) {
-		// do API test and then return
-		ok=doAPItest();
+    if (strcmp(argv[1], "-apitest")==0) {
+        // do API test and then return
+        ok=doAPItest();
 
-		if (ok==0)
-			printf("API test successful!\n");
-		else
-			printf("API test failed!\n");
+        if (ok==0)
+            printf("API test successful!\n");
+        else
+            printf("API test failed!\n");
 
-		return(ok);
-	}
+        return(ok);
+    }
 
-	FILE* in_file=fopen(argv[1],"rb");
-	CHECK_NOT_NULL(in_file);
-	printf("Input file: %s\n",argv[1]);
+    FILE* in_file=fopen(argv[1],"rb");
+    CHECK_NOT_NULL(in_file);
+    printf("Input file: %s\n",argv[1]);
 
     int argIx = 2; // index of next argument from command line
 
-	if ( argc >= 3 && argv[2][0] != '-' ) { // output name given on command line
-		strcpy(outfilename, argv[2]);
+    if ( argc >= 3 && argv[2][0] != '-' ) { // output name given on command line
+        strcpy(outfilename, argv[2]);
         argIx++;
-	} else { // derive output name from input name
+    } else { // derive output name from input name
 #ifdef WIN32
-		_splitpath(argv[1],outdrive,outpath,outfile,outext);
-		_makepath(outfilename,outdrive,outpath,outfile,"pcm");
+        _splitpath(argv[1],outdrive,outpath,outfile,outext);
+        _makepath(outfilename,outdrive,outpath,outfile,"pcm");
 #else
         fprintf(stderr,"Output file name must be specified.\n");
-		return(-1);
+        return(-1);
 #endif
-	}
-	FILE* out_file=fopen(outfilename,"wb");
-	if (out_file==NULL) {
-		fprintf(stderr,"Could not open file %s for writing\n", outfilename);
-		return(-1);
-	}
-	printf("Output file: %s\n",outfilename);
+    }
+    FILE* out_file=fopen(outfilename,"wb");
+    if (out_file==NULL) {
+        fprintf(stderr,"Could not open file %s for writing\n", outfilename);
+        return(-1);
+    }
+    printf("Output file: %s\n",outfilename);
 
     // Parse for more arguments, all beginning with '-'
-    
     while( argIx < argc ) {
         if (argv[argIx][0] != '-') {
             fprintf(stderr,"Unknown input argument %s\n", argv[argIx]);
@@ -311,6 +311,18 @@ int main(int argc, char* argv[])
                 exit(1);
             }
         }
+        else if (strcmp(argv[argIx], "-dummyrtp") == 0
+            || strcmp(argv[argIx], "-dummy") == 0)
+        {
+            argIx++;
+            dummyRtp = true;
+            noDecode = true; // force noDecode since there are no payloads
+        }
+        else if (strcmp(argv[argIx], "-nodecode") == 0)
+        {
+            argIx++;
+            noDecode = true;
+        }
         //else if( strcmp(argv[argIx], "-switchms") == 0 ) {
         //    argIx++;
         //    switchMS = true;
@@ -328,23 +340,23 @@ int main(int argc, char* argv[])
 
 
 #ifdef NETEQ_DELAY_LOGGING
-	char delayfile[MY_MAX_PATH];
+    char delayfile[MY_MAX_PATH];
 #ifdef WIN32
-	_splitpath(outfilename,outdrive,outpath,outfile,outext);
-	_makepath(delayfile,outdrive,outpath,outfile,"d");
+    _splitpath(outfilename,outdrive,outpath,outfile,outext);
+    _makepath(delayfile,outdrive,outpath,outfile,"d");
 #else
     sprintf(delayfile, "%s.d", outfilename);
 #endif
-	delay_fid2 = fopen(delayfile,"wb");
-	fprintf(delay_fid2, "#!NetEQ_Delay_Logging%s\n", NETEQ_DELAY_LOGGING_VERSION_STRING);
+    delay_fid2 = fopen(delayfile,"wb");
+    fprintf(delay_fid2, "#!NetEQ_Delay_Logging%s\n", NETEQ_DELAY_LOGGING_VERSION_STRING);
 #endif
 
-	char ptypesfile[MY_MAX_PATH];
+    char ptypesfile[MY_MAX_PATH];
 #ifdef WIN32
     _splitpath(argv[0],outdrive,outpath,outfile,outext);
-	_makepath(ptypesfile,outdrive,outpath,"ptypes","txt");
+    _makepath(ptypesfile,outdrive,outpath,"ptypes","txt");
 #else
-	// TODO(hlundin): Include path to ptypes, as for WIN32 above.
+    // TODO(hlundin): Include path to ptypes, as for WIN32 above.
   strcpy(ptypesfile, "ptypes.txt");
 #endif
     FILE *ptypeFile = fopen(ptypesfile,"rt");
@@ -368,7 +380,7 @@ int main(int argc, char* argv[])
     noOfCodecs = populateUsedCodec(&decoders, usedCodec);
 
 
-	/* read RTP file header */
+    /* read RTP file header */
     if (!rtpOnly)
     {
         if (NETEQTEST_RTPpacket::skipFileHeader(in_file) != 0)
@@ -382,32 +394,45 @@ int main(int argc, char* argv[])
     long tempFilePos = ftell(in_file);
     enum stereoModes stereoMode = stereoModeMono;
 
+    NETEQTEST_RTPpacket *rtp;
+    NETEQTEST_RTPpacket *slaveRtp;
+    if (!dummyRtp)
+    {
+        rtp = new NETEQTEST_RTPpacket();
+        slaveRtp = new NETEQTEST_RTPpacket();
+    }
+    else
+    {
+        rtp = new NETEQTEST_DummyRTPpacket();
+        slaveRtp = new NETEQTEST_DummyRTPpacket();
+    }
+
     if (!rtpOnly)
     {
-        while (rtp.readFromFile(in_file) >= 0)
+        while (rtp->readFromFile(in_file) >= 0)
         {
-            if (decoders.count(rtp.payloadType()) > 0
-                && decoders[rtp.payloadType()].codec != kDecoderRED
-                && decoders[rtp.payloadType()].codec != kDecoderAVT
-                && decoders[rtp.payloadType()].codec != kDecoderCNG )
+            if (decoders.count(rtp->payloadType()) > 0
+                && decoders[rtp->payloadType()].codec != kDecoderRED
+                && decoders[rtp->payloadType()].codec != kDecoderAVT
+                && decoders[rtp->payloadType()].codec != kDecoderCNG )
             {
-                stereoMode = decoders[rtp.payloadType()].stereo;
-                fs = decoders[rtp.payloadType()].fs;
+                stereoMode = decoders[rtp->payloadType()].stereo;
+                fs = decoders[rtp->payloadType()].fs;
                 break;
             }
         }
     }
     else
     {
-        while (rtp.readFixedFromFile(in_file, packetLen) >= 0)
+        while (rtp->readFixedFromFile(in_file, packetLen) >= 0)
         {
-            if (decoders.count(rtp.payloadType()) > 0
-                && decoders[rtp.payloadType()].codec != kDecoderRED
-                && decoders[rtp.payloadType()].codec != kDecoderAVT
-                && decoders[rtp.payloadType()].codec != kDecoderCNG )
+            if (decoders.count(rtp->payloadType()) > 0
+                && decoders[rtp->payloadType()].codec != kDecoderRED
+                && decoders[rtp->payloadType()].codec != kDecoderAVT
+                && decoders[rtp->payloadType()].codec != kDecoderCNG )
             {
-                stereoMode = decoders[rtp.payloadType()].stereo;
-                fs = decoders[rtp.payloadType()].fs;
+                stereoMode = decoders[rtp->payloadType()].stereo;
+                fs = decoders[rtp->payloadType()].fs;
                 break;
             }
         }
@@ -417,18 +442,18 @@ int main(int argc, char* argv[])
 
 
     /* block some payload types */
-    //rtp.blockPT(72);
-    //rtp.blockPT(23);
+    //rtp->blockPT(72);
+    //rtp->blockPT(23);
 
-	/* read first packet */
+    /* read first packet */
     if (!rtpOnly)
     {
-        rtp.readFromFile(in_file);
+        rtp->readFromFile(in_file);
     }
     else
     {
-        rtp.readFixedFromFile(in_file, packetLen);
-        rtp.setTime((1000 * rtp.timeStamp()) / fs);
+        rtp->readFixedFromFile(in_file, packetLen);
+        rtp->setTime((1000 * rtp->timeStamp()) / fs);
     }
     if (!rtp)
     {
@@ -436,7 +461,7 @@ int main(int argc, char* argv[])
     }
 
 
-  	/* Initialize NetEQ instances */
+    /* Initialize NetEQ instances */
     int numInst = 1;
     if (stereoMode > stereoModeMono)
     {
@@ -456,26 +481,28 @@ int main(int argc, char* argv[])
 
         NetEQvector[i]->usePreparseRTP(preParseRTP);
 
+        NetEQvector[i]->setNoDecode(noDecode);
+
         if (numInst > 1)
         {
             // we are using master/slave mode
             if (i == 0)
             {
                 // first instance is master
-                NetEQvector[i]->isMaster();
+                NetEQvector[i]->setMaster();
             }
             else
             {
                 // all other are slaves
-                NetEQvector[i]->isSlave();
+                NetEQvector[i]->setSlave();
             }
         }
     }
 
 
 #ifdef ZERO_TS_START
-    WebRtc_UWord32 firstTS = rtp.timeStamp();
-    rtp.setTimeStamp(0);
+    WebRtc_UWord32 firstTS = rtp->timeStamp();
+    rtp->setTimeStamp(0);
 #else
     WebRtc_UWord32 firstTS = 0;
 #endif
@@ -483,15 +510,15 @@ int main(int argc, char* argv[])
     // check stereo mode
     if (stereoMode > stereoModeMono)
     {
-        if(rtp.splitStereo(slaveRtp, stereoMode))
+        if(rtp->splitStereo(slaveRtp, stereoMode))
         {
             printf("Error in splitStereo\n");
         }
     }
 
 #ifdef PLAY_CLEAN
-	WebRtc_UWord32 prevTS = rtp.timeStamp(); 
-	WebRtc_UWord32 currTS, prev_time;
+    WebRtc_UWord32 prevTS = rtp->timeStamp();
+    WebRtc_UWord32 currTS, prev_time;
 #endif
 
 #ifdef JUNK_DATA
@@ -511,9 +538,9 @@ int main(int argc, char* argv[])
     int lastRecout = getNextRecoutTime(recoutTimes, &nextRecoutTime); // does nothing if recoutTimes == NULL
 
     if (recoutTimes)
-        simClock = (rtp.time() < nextRecoutTime ? rtp.time(): nextRecoutTime);
+        simClock = (rtp->time() < nextRecoutTime ? rtp->time(): nextRecoutTime);
     else
-        simClock = rtp.time(); // start immediately with first packet
+        simClock = rtp->time(); // start immediately with first packet
 
     WebRtc_UWord32 start_clock = simClock;
 
@@ -526,14 +553,14 @@ int main(int argc, char* argv[])
     if(msInfo == NULL)
         return(-1);
 
-    while(rtp.dataLen() >= 0 || (recoutTimes && !lastRecout)) {
+    while(rtp->dataLen() >= 0 || (recoutTimes && !lastRecout)) {
 //        printf("simClock = %Lu\n", simClock);
-		
+
 #ifdef NETEQ_DELAY_LOGGING
-		temp_var = NETEQ_DELAY_LOGGING_SIGNAL_CLOCK;
-		clock_float = (float) simClock;
-		fwrite(&temp_var,sizeof(int),1,delay_fid2);
-		fwrite(&clock_float, sizeof(float),1,delay_fid2);
+        temp_var = NETEQ_DELAY_LOGGING_SIGNAL_CLOCK;
+        clock_float = (float) simClock;
+        fwrite(&temp_var,sizeof(int),1,delay_fid2);
+        fwrite(&clock_float, sizeof(float),1,delay_fid2);
 #endif
         /* time to set extra delay */
         if (extraDelay > -1 && simClock >= nextExtraDelayTime) {
@@ -545,67 +572,67 @@ int main(int argc, char* argv[])
             getNextExtraDelay(extraDelays, &nextExtraDelayTime, &extraDelay);
         }
 
-		/* check if time to receive */
-        while (simClock >= rtp.time() && rtp.dataLen() >= 0)
+        /* check if time to receive */
+        while (simClock >= rtp->time() && rtp->dataLen() >= 0)
         {
-            if (rtp.dataLen() > 0)
+            if (rtp->dataLen() > 0)
             {
 
                 // insert main packet
-                NetEQvector[0]->recIn(rtp);
+                NetEQvector[0]->recIn(*rtp);
 
                 if (stereoMode > stereoModeMono
-                    && slaveRtp.dataLen() > 0)
+                    && slaveRtp->dataLen() > 0)
                 {
                     // insert slave packet
-                    NetEQvector[1]->recIn(slaveRtp);
+                    NetEQvector[1]->recIn(*slaveRtp);
                 }
 
-			}
+            }
 
-			/* get next packet */
+            /* get next packet */
 #ifdef PLAY_CLEAN
-			prev_time = rtp.time();
+            prev_time = rtp->time();
 #endif
             if (!rtpOnly)
             {
-                rtp.readFromFile(in_file);
+                rtp->readFromFile(in_file);
             }
             else
             {
-                rtp.readFixedFromFile(in_file, packetLen);
-                rtp.setTime((1000 * rtp.timeStamp()) / fs);
+                rtp->readFixedFromFile(in_file, packetLen);
+                rtp->setTime((1000 * rtp->timeStamp()) / fs);
             }
 
-            if (rtp.dataLen() >= 0)
+            if (rtp->dataLen() >= 0)
             {
-                rtp.setTimeStamp(rtp.timeStamp() - firstTS);
+                rtp->setTimeStamp(rtp->timeStamp() - firstTS);
             }
 
             packetCount++;
 
-            if (changeStereoMode(rtp, decoders, &stereoMode))
+            if (changeStereoMode(*rtp, decoders, &stereoMode))
             {
                 printf("Warning: stereo mode changed\n");
             }
 
             if (stereoMode > stereoModeMono)
             {
-                if(rtp.splitStereo(slaveRtp, stereoMode))
+                if(rtp->splitStereo(slaveRtp, stereoMode))
                 {
                     printf("Error in splitStereo\n");
                 }
             }
 
 #ifdef PLAY_CLEAN
-			currTS = rtp.timeStamp(); 
-			rtp.setTime(prev_time + (currTS-prevTS)/(fs/1000));
-			prevTS = currTS;
+            currTS = rtp->timeStamp();
+            rtp->setTime(prev_time + (currTS-prevTS)/(fs/1000));
+            prevTS = currTS;
 #endif
-		}
-		
-		/* check if time to RecOut */
-		if ( (!recoutTimes && (simClock%10)==0) // recout times not given from file
+        }
+
+        /* check if time to RecOut */
+        if ( (!recoutTimes && (simClock%10)==0) // recout times not given from file
         || ( recoutTimes && (simClock >= nextRecoutTime) ) ) // recout times given from file
         {
             if (stereoMode > stereoModeMono)
@@ -640,27 +667,27 @@ int main(int argc, char* argv[])
 
         }
 
-		/* increase time */
-		simClock+=TIME_STEP;
-	}
+        /* increase time */
+        simClock+=TIME_STEP;
+    }
 
-	fclose(in_file);
-	fclose(out_file);
+    fclose(in_file);
+    fclose(out_file);
 
 #ifdef NETEQ_DELAY_LOGGING
-	temp_var = NETEQ_DELAY_LOGGING_SIGNAL_EOF;
-	fwrite(&temp_var,sizeof(int),1,delay_fid2);
-	fwrite(&tot_received_packets,sizeof(WebRtc_UWord32),1,delay_fid2);
-	fprintf(delay_fid2,"End of file\n");
-	fclose(delay_fid2);
+    temp_var = NETEQ_DELAY_LOGGING_SIGNAL_EOF;
+    fwrite(&temp_var,sizeof(int),1,delay_fid2);
+    fwrite(&tot_received_packets,sizeof(WebRtc_UWord32),1,delay_fid2);
+    fprintf(delay_fid2,"End of file\n");
+    fclose(delay_fid2);
 #endif
 
-	WebRtcNetEQ_GetRTCPStats(NetEQvector[0]->instance(), &RTCPstat);
-	printf("RTCP statistics:\n");
-	printf("	cum_lost        : %d\n", (int) RTCPstat.cum_lost);
-	printf("	ext_max         : %d\n", (int) RTCPstat.ext_max);
-	printf("	fraction_lost   : %d (%f%%)\n", RTCPstat.fraction_lost, (float)(100.0*RTCPstat.fraction_lost/256.0));
-	printf("	jitter          : %d\n", (int) RTCPstat.jitter);
+    WebRtcNetEQ_GetRTCPStats(NetEQvector[0]->instance(), &RTCPstat);
+    printf("RTCP statistics:\n");
+    printf("    cum_lost        : %d\n", (int) RTCPstat.cum_lost);
+    printf("    ext_max         : %d\n", (int) RTCPstat.ext_max);
+    printf("    fraction_lost   : %d (%f%%)\n", RTCPstat.fraction_lost, (float)(100.0*RTCPstat.fraction_lost/256.0));
+    printf("    jitter          : %d\n", (int) RTCPstat.jitter);
 
     printf("\n    Call duration ms    : %u\n", simClock-start_clock);
 
@@ -668,8 +695,11 @@ int main(int argc, char* argv[])
     printf("    RecIn complexity    : %.2f MCPS\n", NetEQvector[0]->getRecInTime() / ((float) 1000*(simClock-start_clock)));
     printf("    RecOut complexity   : %.2f MCPS\n", NetEQvector[0]->getRecOutTime() / ((float) 1000*(simClock-start_clock)));
 
+    delete rtp;
+    delete slaveRtp;
+
     free_coders(decoders);
-	//free_coders(0 /* first channel */);
+    //free_coders(0 /* first channel */);
  //   if (stereoMode > stereoModeMono) {
  //       free_coders(1 /* second channel */);
  //   }
@@ -678,7 +708,7 @@ int main(int argc, char* argv[])
     for (std::vector<NETEQTEST_NetEQClass *>::iterator it = NetEQvector.begin(); 
         it < NetEQvector.end(); delete *it++);
 
-	printf("\nSimulation done!\n");
+    printf("\nSimulation done!\n");
 
 #ifdef JUNK_DATA
     if ( (seedfile = fopen(SEED_FILE, "a+t") ) == NULL ) {
@@ -697,7 +727,7 @@ int main(int argc, char* argv[])
     fprintf(statfile,"%.4f, %.4f\n", (float) totTime_RecIn.QuadPart / ((float) 1000*(simClock-start_clock)), (float) totTime_RecOut.QuadPart / ((float) 1000*(simClock-start_clock)));
     fclose(statfile);*/
 
-	return(0);
+    return(0);
 
 }
 
@@ -709,8 +739,8 @@ int main(int argc, char* argv[])
 /* Subfunctions */
 /****************/
 
-bool splitStereo(NETEQTEST_RTPpacket& rtp, NETEQTEST_RTPpacket& rtpSlave,
-                 const WebRtc_Word16 *stereoPtype, const enum stereoModes *stereoMode, int noOfStereoCodecs, 
+bool splitStereo(NETEQTEST_RTPpacket* rtp, NETEQTEST_RTPpacket* rtpSlave,
+                 const WebRtc_Word16 *stereoPtype, const enum stereoModes *stereoMode, int noOfStereoCodecs,
                  const WebRtc_Word16 *cngPtype, int noOfCngCodecs,
                  bool *isStereo)
 {
@@ -721,13 +751,13 @@ bool splitStereo(NETEQTEST_RTPpacket& rtp, NETEQTEST_RTPpacket& rtpSlave,
     bool isCng = false;
 
     // check payload length
-    if (rtp.dataLen() <= 0) {
+    if (rtp->dataLen() <= 0) {
         //*isStereo = false; // don't change
         return(*isStereo);
     }
 
     // check payload type
-    WebRtc_Word16 ptype = rtp.payloadType();
+    WebRtc_Word16 ptype = rtp->payloadType();
 
     // is this a cng payload?
     for (int k = 0; k < noOfCngCodecs; k++) {
@@ -756,7 +786,7 @@ bool splitStereo(NETEQTEST_RTPpacket& rtp, NETEQTEST_RTPpacket& rtpSlave,
     {
         // split the payload if stereo
 
-        if(rtp.splitStereo(rtpSlave, tempStereoMode))
+        if(rtp->splitStereo(rtpSlave, tempStereoMode))
         {
             printf("Error in splitStereo\n");
         }
@@ -792,7 +822,7 @@ int getNextRecoutTime(FILE *fp, WebRtc_UWord32 *nextTime) {
         *nextTime = (WebRtc_UWord32) tempTime;
         return 0;
     }
-    
+
     *nextTime = 0;
     fclose(fp);
 
@@ -814,13 +844,13 @@ void getNextExtraDelay(FILE *fp, WebRtc_UWord32 *t, int *d) {
         *d = (int) temp[1];
         return;
     }
-    
+
     *d = -1;
     fclose(fp);
 
     return;
 }
-    
+
 
 void parsePtypeFile(FILE *ptypeFile, std::map<WebRtc_UWord8, decoderStruct>* decoders)
 {
@@ -1461,7 +1491,7 @@ void createAndInsertDecoders (NETEQTEST_NetEQClass *neteq, std::map<WebRtc_UWord
 #if (_MSC_VER >= 1400) && !defined(_WIN64) // only for Visual 2005 or later, and not for x64
                 *dec = new decoder_SILK8( pt );
 #endif
-				break;
+                break;
 #endif
 #ifdef CODEC_SILK_WB
             case NETEQ_CODEC_SILK_12:
@@ -1527,213 +1557,213 @@ void free_coders(std::map<WebRtc_UWord8, decoderStruct> & decoders)
 
 int doAPItest() {
 
-	char   version[20];
-	void *inst;
-	enum WebRtcNetEQDecoder usedCodec;
-	int NetEqBufferMaxPackets, BufferSizeInBytes;
-	WebRtcNetEQ_CodecDef codecInst;
-	WebRtcNetEQ_RTCPStat RTCPstat;
-	WebRtc_UWord32 timestamp;
-	int memorySize;
-	int ok;
-		
-	printf("API-test:\n");
+    char   version[20];
+    void *inst;
+    enum WebRtcNetEQDecoder usedCodec;
+    int NetEqBufferMaxPackets, BufferSizeInBytes;
+    WebRtcNetEQ_CodecDef codecInst;
+    WebRtcNetEQ_RTCPStat RTCPstat;
+    WebRtc_UWord32 timestamp;
+    int memorySize;
+    int ok;
 
-	/* get the version string */
-	WebRtcNetEQ_GetVersion(version);
-	printf("NetEq version: %s\n\n", version);
+    printf("API-test:\n");
 
-	/* test that API functions return -1 if instance is NULL */
+    /* get the version string */
+    WebRtcNetEQ_GetVersion(version);
+    printf("NetEq version: %s\n\n", version);
+
+    /* test that API functions return -1 if instance is NULL */
 #define CHECK_MINUS_ONE(x) {int errCode = x; if((errCode)!=-1){printf("\n API test failed at line %d: %s. Function did not return -1 as expected\n",__LINE__,#x); return(-1);}} 
 //#define RESET_ERROR(x) ((MainInst_t*) x)->ErrorCode = 0;
-	inst = NULL;
+    inst = NULL;
 
-	CHECK_MINUS_ONE(WebRtcNetEQ_GetErrorCode(inst))
-	CHECK_MINUS_ONE(WebRtcNetEQ_Assign(&inst, NULL))
-//	printf("WARNING: Test of WebRtcNetEQ_Assign() is disabled due to a bug.\n");
-	usedCodec=kDecoderPCMu;
-	CHECK_MINUS_ONE(WebRtcNetEQ_GetRecommendedBufferSize(inst, &usedCodec, 1, kTCPLargeJitter,  &NetEqBufferMaxPackets, &BufferSizeInBytes))
-	CHECK_MINUS_ONE(WebRtcNetEQ_AssignBuffer(inst, NetEqBufferMaxPackets, NetEqPacketBuffer, BufferSizeInBytes))
+    CHECK_MINUS_ONE(WebRtcNetEQ_GetErrorCode(inst))
+    CHECK_MINUS_ONE(WebRtcNetEQ_Assign(&inst, NULL))
+//  printf("WARNING: Test of WebRtcNetEQ_Assign() is disabled due to a bug.\n");
+    usedCodec=kDecoderPCMu;
+    CHECK_MINUS_ONE(WebRtcNetEQ_GetRecommendedBufferSize(inst, &usedCodec, 1, kTCPLargeJitter,  &NetEqBufferMaxPackets, &BufferSizeInBytes))
+    CHECK_MINUS_ONE(WebRtcNetEQ_AssignBuffer(inst, NetEqBufferMaxPackets, NetEqPacketBuffer, BufferSizeInBytes))
 
-	CHECK_MINUS_ONE(WebRtcNetEQ_Init(inst, 8000))
-	CHECK_MINUS_ONE(WebRtcNetEQ_SetAVTPlayout(inst, 0))
-	CHECK_MINUS_ONE(WebRtcNetEQ_SetExtraDelay(inst, 17))
-	CHECK_MINUS_ONE(WebRtcNetEQ_SetPlayoutMode(inst, kPlayoutOn))
-	
-	CHECK_MINUS_ONE(WebRtcNetEQ_CodecDbReset(inst))
-	CHECK_MINUS_ONE(WebRtcNetEQ_CodecDbAdd(inst, &codecInst))
-	CHECK_MINUS_ONE(WebRtcNetEQ_CodecDbRemove(inst, usedCodec))
-	WebRtc_Word16 temp1, temp2;
-	CHECK_MINUS_ONE(WebRtcNetEQ_CodecDbGetSizeInfo(inst, &temp1, &temp2))
-	CHECK_MINUS_ONE(WebRtcNetEQ_CodecDbGetCodecInfo(inst, 0, &usedCodec))
+    CHECK_MINUS_ONE(WebRtcNetEQ_Init(inst, 8000))
+    CHECK_MINUS_ONE(WebRtcNetEQ_SetAVTPlayout(inst, 0))
+    CHECK_MINUS_ONE(WebRtcNetEQ_SetExtraDelay(inst, 17))
+    CHECK_MINUS_ONE(WebRtcNetEQ_SetPlayoutMode(inst, kPlayoutOn))
 
-	CHECK_MINUS_ONE(WebRtcNetEQ_RecIn(inst, &temp1, 17, 4711))
-	CHECK_MINUS_ONE(WebRtcNetEQ_RecOut(inst, &temp1, &temp2))
-	CHECK_MINUS_ONE(WebRtcNetEQ_GetRTCPStats(inst, &RTCPstat)); // error here!!!
-	CHECK_MINUS_ONE(WebRtcNetEQ_GetSpeechTimeStamp(inst, &timestamp))
-	WebRtcNetEQOutputType temptype;
-	CHECK_MINUS_ONE(WebRtcNetEQ_GetSpeechOutputType(inst, &temptype))
+    CHECK_MINUS_ONE(WebRtcNetEQ_CodecDbReset(inst))
+    CHECK_MINUS_ONE(WebRtcNetEQ_CodecDbAdd(inst, &codecInst))
+    CHECK_MINUS_ONE(WebRtcNetEQ_CodecDbRemove(inst, usedCodec))
+    WebRtc_Word16 temp1, temp2;
+    CHECK_MINUS_ONE(WebRtcNetEQ_CodecDbGetSizeInfo(inst, &temp1, &temp2))
+    CHECK_MINUS_ONE(WebRtcNetEQ_CodecDbGetCodecInfo(inst, 0, &usedCodec))
 
-	WebRtc_UWord8 tempFlags;
-	WebRtc_UWord16 utemp1, utemp2;
-	CHECK_MINUS_ONE(WebRtcNetEQ_VQmonRecOutStatistics(inst, &utemp1, &utemp2, &tempFlags))
-	CHECK_MINUS_ONE(WebRtcNetEQ_VQmonGetRxStatistics(inst, &utemp1, &utemp2))
+    CHECK_MINUS_ONE(WebRtcNetEQ_RecIn(inst, &temp1, 17, 4711))
+    CHECK_MINUS_ONE(WebRtcNetEQ_RecOut(inst, &temp1, &temp2))
+    CHECK_MINUS_ONE(WebRtcNetEQ_GetRTCPStats(inst, &RTCPstat)); // error here!!!
+    CHECK_MINUS_ONE(WebRtcNetEQ_GetSpeechTimeStamp(inst, &timestamp))
+    WebRtcNetEQOutputType temptype;
+    CHECK_MINUS_ONE(WebRtcNetEQ_GetSpeechOutputType(inst, &temptype))
 
-	WebRtcNetEQ_AssignSize(&memorySize);
-	CHECK_ZERO(WebRtcNetEQ_Assign(&inst, malloc(memorySize)))
+    WebRtc_UWord8 tempFlags;
+    WebRtc_UWord16 utemp1, utemp2;
+    CHECK_MINUS_ONE(WebRtcNetEQ_VQmonRecOutStatistics(inst, &utemp1, &utemp2, &tempFlags))
+    CHECK_MINUS_ONE(WebRtcNetEQ_VQmonGetRxStatistics(inst, &utemp1, &utemp2))
 
-	/* init with wrong sample frequency */
-	CHECK_MINUS_ONE(WebRtcNetEQ_Init(inst, 17))
-	
-	/* init with correct fs */
-	CHECK_ZERO(WebRtcNetEQ_Init(inst, 8000))
+    WebRtcNetEQ_AssignSize(&memorySize);
+    CHECK_ZERO(WebRtcNetEQ_Assign(&inst, malloc(memorySize)))
 
-	/* GetRecommendedBufferSize with wrong codec */
-	usedCodec=kDecoderReservedStart;
-	ok = WebRtcNetEQ_GetRecommendedBufferSize(inst, &usedCodec, 1, kTCPLargeJitter , &NetEqBufferMaxPackets, &BufferSizeInBytes);
-	if((ok!=-1) || ((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_UNKNOWN_CODEC))){
-		printf("WebRtcNetEQ_GetRecommendedBufferSize() did not return proper error code for wrong codec.\n");
-		printf("return value = %d; error code = %d\n", ok, WebRtcNetEQ_GetErrorCode(inst));
-	}
-	//RESET_ERROR(inst)
+    /* init with wrong sample frequency */
+    CHECK_MINUS_ONE(WebRtcNetEQ_Init(inst, 17))
 
-	/* GetRecommendedBufferSize with wrong network type */
-	usedCodec = kDecoderPCMu;
-	ok=WebRtcNetEQ_GetRecommendedBufferSize(inst, &usedCodec, 1, (enum WebRtcNetEQNetworkType) 4711 , &NetEqBufferMaxPackets, &BufferSizeInBytes);
-	if ((ok!=-1) || ((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-FAULTY_NETWORK_TYPE))) {
-		printf("WebRtcNetEQ_GetRecommendedBufferSize() did not return proper error code for wrong network type.\n");
-		printf("return value = %d; error code = %d\n", ok, WebRtcNetEQ_GetErrorCode(inst));
-		//RESET_ERROR(inst)
-	}
-	CHECK_ZERO(WebRtcNetEQ_GetRecommendedBufferSize(inst, &usedCodec, 1, kTCPLargeJitter , &NetEqBufferMaxPackets, &BufferSizeInBytes))
+    /* init with correct fs */
+    CHECK_ZERO(WebRtcNetEQ_Init(inst, 8000))
 
-	/* try to do RecIn before assigning the packet buffer */
-/*	makeRTPheader(rtp_data, NETEQ_CODEC_AVT_PT, 17,4711, 1235412312);
-	makeDTMFpayload(&rtp_data[12], 1, 1, 10, 100);
-	ok = WebRtcNetEQ_RecIn(inst, (short *) rtp_data, 12+4, 4711);
-	printf("return value = %d; error code = %d\n", ok, WebRtcNetEQ_GetErrorCode(inst));*/
-	
-	/* check all limits of WebRtcNetEQ_AssignBuffer */
-	ok=WebRtcNetEQ_AssignBuffer(inst, NetEqBufferMaxPackets, NetEqPacketBuffer, 149<<1);
-	if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-PBUFFER_INIT_ERROR))) {
-		printf("WebRtcNetEQ_AssignBuffer() did not return proper error code for wrong sizeinbytes\n");
-	}
-	ok=WebRtcNetEQ_AssignBuffer(inst, NetEqBufferMaxPackets, NULL, BufferSizeInBytes);
-	if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-PBUFFER_INIT_ERROR))) {
-		printf("WebRtcNetEQ_AssignBuffer() did not return proper error code for NULL memory pointer\n");
-	}
-	ok=WebRtcNetEQ_AssignBuffer(inst, 1, NetEqPacketBuffer, BufferSizeInBytes);
-	if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-PBUFFER_INIT_ERROR))) {
-		printf("WebRtcNetEQ_AssignBuffer() did not return proper error code for wrong MaxNoOfPackets\n");
-	}
-	ok=WebRtcNetEQ_AssignBuffer(inst, 601, NetEqPacketBuffer, BufferSizeInBytes);
-	if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-PBUFFER_INIT_ERROR))) {
-		printf("WebRtcNetEQ_AssignBuffer() did not return proper error code for wrong MaxNoOfPackets\n");
-	}
+    /* GetRecommendedBufferSize with wrong codec */
+    usedCodec=kDecoderReservedStart;
+    ok = WebRtcNetEQ_GetRecommendedBufferSize(inst, &usedCodec, 1, kTCPLargeJitter , &NetEqBufferMaxPackets, &BufferSizeInBytes);
+    if((ok!=-1) || ((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_UNKNOWN_CODEC))){
+        printf("WebRtcNetEQ_GetRecommendedBufferSize() did not return proper error code for wrong codec.\n");
+        printf("return value = %d; error code = %d\n", ok, WebRtcNetEQ_GetErrorCode(inst));
+    }
+    //RESET_ERROR(inst)
 
-	/* do correct assignbuffer */
-	CHECK_ZERO(WebRtcNetEQ_AssignBuffer(inst, NetEqBufferMaxPackets, NetEqPacketBuffer, BufferSizeInBytes))
+    /* GetRecommendedBufferSize with wrong network type */
+    usedCodec = kDecoderPCMu;
+    ok=WebRtcNetEQ_GetRecommendedBufferSize(inst, &usedCodec, 1, (enum WebRtcNetEQNetworkType) 4711 , &NetEqBufferMaxPackets, &BufferSizeInBytes);
+    if ((ok!=-1) || ((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-FAULTY_NETWORK_TYPE))) {
+        printf("WebRtcNetEQ_GetRecommendedBufferSize() did not return proper error code for wrong network type.\n");
+        printf("return value = %d; error code = %d\n", ok, WebRtcNetEQ_GetErrorCode(inst));
+        //RESET_ERROR(inst)
+    }
+    CHECK_ZERO(WebRtcNetEQ_GetRecommendedBufferSize(inst, &usedCodec, 1, kTCPLargeJitter , &NetEqBufferMaxPackets, &BufferSizeInBytes))
 
-	ok=WebRtcNetEQ_SetExtraDelay(inst, -1);
-	if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-FAULTY_DELAYVALUE))) {
-		printf("WebRtcNetEQ_SetExtraDelay() did not return proper error code for too small delay\n");
-	}
-	ok=WebRtcNetEQ_SetExtraDelay(inst, 1001);
-	if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-FAULTY_DELAYVALUE))) {
-		printf("WebRtcNetEQ_SetExtraDelay() did not return proper error code for too large delay\n");
-	}
+    /* try to do RecIn before assigning the packet buffer */
+/*  makeRTPheader(rtp_data, NETEQ_CODEC_AVT_PT, 17,4711, 1235412312);
+    makeDTMFpayload(&rtp_data[12], 1, 1, 10, 100);
+    ok = WebRtcNetEQ_RecIn(inst, (short *) rtp_data, 12+4, 4711);
+    printf("return value = %d; error code = %d\n", ok, WebRtcNetEQ_GetErrorCode(inst));*/
 
-	ok=WebRtcNetEQ_SetPlayoutMode(inst,(enum WebRtcNetEQPlayoutMode) 4711);
-	if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-FAULTY_PLAYOUTMODE))) {
-		printf("WebRtcNetEQ_SetPlayoutMode() did not return proper error code for wrong mode\n");
-	}
+    /* check all limits of WebRtcNetEQ_AssignBuffer */
+    ok=WebRtcNetEQ_AssignBuffer(inst, NetEqBufferMaxPackets, NetEqPacketBuffer, 149<<1);
+    if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-PBUFFER_INIT_ERROR))) {
+        printf("WebRtcNetEQ_AssignBuffer() did not return proper error code for wrong sizeinbytes\n");
+    }
+    ok=WebRtcNetEQ_AssignBuffer(inst, NetEqBufferMaxPackets, NULL, BufferSizeInBytes);
+    if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-PBUFFER_INIT_ERROR))) {
+        printf("WebRtcNetEQ_AssignBuffer() did not return proper error code for NULL memory pointer\n");
+    }
+    ok=WebRtcNetEQ_AssignBuffer(inst, 1, NetEqPacketBuffer, BufferSizeInBytes);
+    if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-PBUFFER_INIT_ERROR))) {
+        printf("WebRtcNetEQ_AssignBuffer() did not return proper error code for wrong MaxNoOfPackets\n");
+    }
+    ok=WebRtcNetEQ_AssignBuffer(inst, 601, NetEqPacketBuffer, BufferSizeInBytes);
+    if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-PBUFFER_INIT_ERROR))) {
+        printf("WebRtcNetEQ_AssignBuffer() did not return proper error code for wrong MaxNoOfPackets\n");
+    }
 
-	/* number of codecs should return zero before adding any codecs */
-	WebRtcNetEQ_CodecDbGetSizeInfo(inst, &temp1, &temp2);
-	if(temp1!=0)
-		printf("WebRtcNetEQ_CodecDbGetSizeInfo() return non-zero number of codecs in DB before adding any codecs\n");
+    /* do correct assignbuffer */
+    CHECK_ZERO(WebRtcNetEQ_AssignBuffer(inst, NetEqBufferMaxPackets, NetEqPacketBuffer, BufferSizeInBytes))
 
-	/* get info from empty database */
-	ok=WebRtcNetEQ_CodecDbGetCodecInfo(inst, 17, &usedCodec);
-	if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_NOT_EXIST1))) {
-		printf("WebRtcNetEQ_CodecDbGetCodecInfo() did not return proper error code for out-of-range entry number\n");
-	}
+    ok=WebRtcNetEQ_SetExtraDelay(inst, -1);
+    if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-FAULTY_DELAYVALUE))) {
+        printf("WebRtcNetEQ_SetExtraDelay() did not return proper error code for too small delay\n");
+    }
+    ok=WebRtcNetEQ_SetExtraDelay(inst, 1001);
+    if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-FAULTY_DELAYVALUE))) {
+        printf("WebRtcNetEQ_SetExtraDelay() did not return proper error code for too large delay\n");
+    }
 
-	/* remove codec from empty database */
-	ok=WebRtcNetEQ_CodecDbRemove(inst,kDecoderPCMa);
-	if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_NOT_EXIST4))) {
-		printf("WebRtcNetEQ_CodecDbRemove() did not return proper error code when removing codec that has not been added\n");
-	}
+    ok=WebRtcNetEQ_SetPlayoutMode(inst,(enum WebRtcNetEQPlayoutMode) 4711);
+    if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-FAULTY_PLAYOUTMODE))) {
+        printf("WebRtcNetEQ_SetPlayoutMode() did not return proper error code for wrong mode\n");
+    }
 
-	/* add codec with unsupported fs */
+    /* number of codecs should return zero before adding any codecs */
+    WebRtcNetEQ_CodecDbGetSizeInfo(inst, &temp1, &temp2);
+    if(temp1!=0)
+        printf("WebRtcNetEQ_CodecDbGetSizeInfo() return non-zero number of codecs in DB before adding any codecs\n");
+
+    /* get info from empty database */
+    ok=WebRtcNetEQ_CodecDbGetCodecInfo(inst, 17, &usedCodec);
+    if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_NOT_EXIST1))) {
+        printf("WebRtcNetEQ_CodecDbGetCodecInfo() did not return proper error code for out-of-range entry number\n");
+    }
+
+    /* remove codec from empty database */
+    ok=WebRtcNetEQ_CodecDbRemove(inst,kDecoderPCMa);
+    if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_NOT_EXIST4))) {
+        printf("WebRtcNetEQ_CodecDbRemove() did not return proper error code when removing codec that has not been added\n");
+    }
+
+    /* add codec with unsupported fs */
 #ifdef CODEC_PCM16B
 #ifndef NETEQ_48KHZ_WIDEBAND
-	SET_CODEC_PAR(codecInst,kDecoderPCM16Bswb48kHz,77,NULL,48000);
-	SET_PCM16B_SWB48_FUNCTIONS(codecInst);
-	ok=WebRtcNetEQ_CodecDbAdd(inst, &codecInst);
-	if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_UNSUPPORTED_FS))) {
-		printf("WebRtcNetEQ_CodecDbAdd() did not return proper error code when adding codec with unsupported sample freq\n");
-	}
+    SET_CODEC_PAR(codecInst,kDecoderPCM16Bswb48kHz,77,NULL,48000);
+    SET_PCM16B_SWB48_FUNCTIONS(codecInst);
+    ok=WebRtcNetEQ_CodecDbAdd(inst, &codecInst);
+    if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_UNSUPPORTED_FS))) {
+        printf("WebRtcNetEQ_CodecDbAdd() did not return proper error code when adding codec with unsupported sample freq\n");
+    }
 #else
-	printf("Could not test adding codec with unsupported sample frequency since NetEQ is compiled with 48kHz support.\n");
+    printf("Could not test adding codec with unsupported sample frequency since NetEQ is compiled with 48kHz support.\n");
 #endif
 #else
     printf("Could not test adding codec with unsupported sample frequency since NetEQ is compiled without PCM16B support.\n");
 #endif
 
-	/* add two codecs with identical payload types */
-	SET_CODEC_PAR(codecInst,kDecoderPCMa,17,NULL,8000);
-	SET_PCMA_FUNCTIONS(codecInst);
-	CHECK_ZERO(WebRtcNetEQ_CodecDbAdd(inst, &codecInst))
+    /* add two codecs with identical payload types */
+    SET_CODEC_PAR(codecInst,kDecoderPCMa,17,NULL,8000);
+    SET_PCMA_FUNCTIONS(codecInst);
+    CHECK_ZERO(WebRtcNetEQ_CodecDbAdd(inst, &codecInst))
 
-	SET_CODEC_PAR(codecInst,kDecoderPCMu,17,NULL,8000);
-	SET_PCMU_FUNCTIONS(codecInst);
-	ok=WebRtcNetEQ_CodecDbAdd(inst, &codecInst);
-	if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_PAYLOAD_TAKEN))) {
-		printf("WebRtcNetEQ_CodecDbAdd() did not return proper error code when adding two codecs with identical payload types\n");
-	}
+    SET_CODEC_PAR(codecInst,kDecoderPCMu,17,NULL,8000);
+    SET_PCMU_FUNCTIONS(codecInst);
+    ok=WebRtcNetEQ_CodecDbAdd(inst, &codecInst);
+    if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_PAYLOAD_TAKEN))) {
+        printf("WebRtcNetEQ_CodecDbAdd() did not return proper error code when adding two codecs with identical payload types\n");
+    }
 
-	/* try adding several payload types for CNG codecs */
-	SET_CODEC_PAR(codecInst,kDecoderCNG,105,NULL,16000);
-	SET_CNG_FUNCTIONS(codecInst);
-	CHECK_ZERO(WebRtcNetEQ_CodecDbAdd(inst, &codecInst))
-	SET_CODEC_PAR(codecInst,kDecoderCNG,13,NULL,8000);
-	SET_CNG_FUNCTIONS(codecInst);
-	CHECK_ZERO(WebRtcNetEQ_CodecDbAdd(inst, &codecInst))
+    /* try adding several payload types for CNG codecs */
+    SET_CODEC_PAR(codecInst,kDecoderCNG,105,NULL,16000);
+    SET_CNG_FUNCTIONS(codecInst);
+    CHECK_ZERO(WebRtcNetEQ_CodecDbAdd(inst, &codecInst))
+    SET_CODEC_PAR(codecInst,kDecoderCNG,13,NULL,8000);
+    SET_CNG_FUNCTIONS(codecInst);
+    CHECK_ZERO(WebRtcNetEQ_CodecDbAdd(inst, &codecInst))
 
     /* try adding a speech codec over a CNG codec */
     SET_CODEC_PAR(codecInst,kDecoderISAC,105,NULL,16000); /* same as WB CNG above */
-	SET_ISAC_FUNCTIONS(codecInst);
-	ok=WebRtcNetEQ_CodecDbAdd(inst, &codecInst);
-	if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_PAYLOAD_TAKEN))) {
-		printf("WebRtcNetEQ_CodecDbAdd() did not return proper error code when adding a speech codec over a CNG codec\n");
-	}
+    SET_ISAC_FUNCTIONS(codecInst);
+    ok=WebRtcNetEQ_CodecDbAdd(inst, &codecInst);
+    if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_PAYLOAD_TAKEN))) {
+        printf("WebRtcNetEQ_CodecDbAdd() did not return proper error code when adding a speech codec over a CNG codec\n");
+    }
 
     /* try adding a CNG codec over a speech codec */
     SET_CODEC_PAR(codecInst,kDecoderCNG,17,NULL,32000); /* same as PCMU above */
-	SET_CNG_FUNCTIONS(codecInst);
-	ok=WebRtcNetEQ_CodecDbAdd(inst, &codecInst);
-	if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_PAYLOAD_TAKEN))) {
-		printf("WebRtcNetEQ_CodecDbAdd() did not return proper error code when adding a speech codec over a CNG codec\n");
-	}
+    SET_CNG_FUNCTIONS(codecInst);
+    ok=WebRtcNetEQ_CodecDbAdd(inst, &codecInst);
+    if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_PAYLOAD_TAKEN))) {
+        printf("WebRtcNetEQ_CodecDbAdd() did not return proper error code when adding a speech codec over a CNG codec\n");
+    }
 
 
-	/* remove codec out of range */
-	ok=WebRtcNetEQ_CodecDbRemove(inst,kDecoderReservedStart);
-	if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_UNSUPPORTED_CODEC))) {
-		printf("WebRtcNetEQ_CodecDbRemove() did not return proper error code when removing codec that is out of range\n");
-	}
-	ok=WebRtcNetEQ_CodecDbRemove(inst,kDecoderReservedEnd);
-	if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_UNSUPPORTED_CODEC))) {
-		printf("WebRtcNetEQ_CodecDbRemove() did not return proper error code when removing codec that is out of range\n");
-	}
+    /* remove codec out of range */
+    ok=WebRtcNetEQ_CodecDbRemove(inst,kDecoderReservedStart);
+    if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_UNSUPPORTED_CODEC))) {
+        printf("WebRtcNetEQ_CodecDbRemove() did not return proper error code when removing codec that is out of range\n");
+    }
+    ok=WebRtcNetEQ_CodecDbRemove(inst,kDecoderReservedEnd);
+    if((ok!=-1)||((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_UNSUPPORTED_CODEC))) {
+        printf("WebRtcNetEQ_CodecDbRemove() did not return proper error code when removing codec that is out of range\n");
+    }
 
-	/*SET_CODEC_PAR(codecInst,kDecoderEG711a,NETEQ_CODEC_EG711A_PT,NetEqiPCMAState,8000);
-	SET_IPCMA_FUNCTIONS(codecInst);
-	CHECK_ZERO(WebRtcNetEQ_CodecDbAdd(inst, &codecInst))
+    /*SET_CODEC_PAR(codecInst,kDecoderEG711a,NETEQ_CODEC_EG711A_PT,NetEqiPCMAState,8000);
+    SET_IPCMA_FUNCTIONS(codecInst);
+    CHECK_ZERO(WebRtcNetEQ_CodecDbAdd(inst, &codecInst))
 */
-	free(inst);
+    free(inst);
 
-	return(0);
+    return(0);
 
 }

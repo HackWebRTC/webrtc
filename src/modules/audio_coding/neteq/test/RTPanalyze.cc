@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -13,6 +13,9 @@
 #include <vector>
 
 #include "modules/audio_coding/neteq/test/NETEQTEST_RTPpacket.h"
+#include "modules/audio_coding/neteq/test/NETEQTEST_DummyRTPpacket.h"
+
+//#define WEBRTC_DUMMY_RTP
 
 enum {
   kRedPayloadType = 127
@@ -38,7 +41,11 @@ int main(int argc, char* argv[]) {
 
   // Read file header.
   NETEQTEST_RTPpacket::skipFileHeader(in_file);
+#ifdef WEBRTC_DUMMY_RTP
+  NETEQTEST_DummyRTPpacket packet;
+#else
   NETEQTEST_RTPpacket packet;
+#endif
 
   while (packet.readFromFile(in_file) >= 0) {
     // Write packet data to file.

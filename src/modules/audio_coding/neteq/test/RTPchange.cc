@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -13,10 +13,11 @@
 #include <algorithm>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "modules/audio_coding/neteq/test/NETEQTEST_RTPpacket.h"
+#include "modules/audio_coding/neteq/test/NETEQTEST_DummyRTPPacket.h"
 
 #define FIRSTLINELEN 40
+//#define WEBRTC_DUMMY_RTP
 
 static bool pktCmp(NETEQTEST_RTPpacket *a, NETEQTEST_RTPpacket *b) {
   return (a->time() < b->time());
@@ -91,7 +92,11 @@ int main(int argc, char* argv[]) {
 
   while (1) {
     // Insert in vector.
+#ifdef WEBRTC_DUMMY_RTP
+    NETEQTEST_RTPpacket *new_packet = new NETEQTEST_DummyRTPpacket();
+#else
     NETEQTEST_RTPpacket *new_packet = new NETEQTEST_RTPpacket();
+#endif
     if (new_packet->readFromFile(in_file) < 0) {
       // End of file.
       break;

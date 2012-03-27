@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -47,8 +47,10 @@ public:
     bool usingPreparseRTP() { return (_preparseRTP); };
     void setMaster( bool isMaster = true ) { _isMaster = isMaster; };
     void setSlave() { _isMaster = false; };
+    void setNoDecode(bool noDecode = true) { _noDecode = noDecode; };
     bool isMaster() { return (_isMaster); };
     bool isSlave() { return (!_isMaster); };
+    bool isNoDecode() { return _noDecode; };
 
 #ifdef WINDOWS_TIMING
     double getRecInTime() { return (static_cast<double>( _totTimeRecIn.QuadPart )); };
@@ -69,24 +71,11 @@ private:
     bool            _preparseRTP;
     int             _fsmult;
     bool            _isMaster;
+    bool            _noDecode;
 #ifdef WINDOWS_TIMING
     LARGE_INTEGER   _totTimeRecIn;
     LARGE_INTEGER   _totTimeRecOut;
 #endif
 };
-
-
-
-//class NETEQTEST_NetEQVector
-//{
-//public:
-//    NETEQTEST_NetEQVector(int numChannels);
-//    NETEQTEST_NetEQVector(int numChannels, enum WebRtcNetEQDecoder *usedCodec, int noOfCodecs, 
-//        WebRtc_UWord16 fs = 8000, WebRtcNetEQNetworkType nwType = kTCPLargeJitter);
-//    ~NETEQTEST_NetEQVector();
-//
-//private:
-//    std::vector<NETEQTEST_NetEQClass *> channels;
-//};
 
 #endif //NETEQTEST_NETEQCLASS_H
