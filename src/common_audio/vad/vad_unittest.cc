@@ -12,6 +12,7 @@
 
 #include <stdlib.h>
 
+#include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "gtest/gtest.h"
 #include "typedefs.h"
 #include "webrtc_vad.h"
@@ -61,7 +62,7 @@ TEST_F(VadTest, ApiTest) {
     speech[i] = (i * i);
   }
 
-  // Null instance tests
+  // NULL instance tests
   EXPECT_EQ(-1, WebRtcVad_Create(NULL));
   EXPECT_EQ(-1, WebRtcVad_Init(NULL));
   EXPECT_EQ(-1, WebRtcVad_Assign(NULL, NULL));
@@ -91,9 +92,14 @@ TEST_F(VadTest, ApiTest) {
   // WebRtcVad_Init() test
   ASSERT_EQ(0, WebRtcVad_Init(handle));
 
-  // WebRtcVad_set_mode() invalid modes tests
-  EXPECT_EQ(-1, WebRtcVad_set_mode(handle, kModes[0] - 1));
-  EXPECT_EQ(-1, WebRtcVad_set_mode(handle, kModes[kModesSize - 1] + 1));
+  // WebRtcVad_set_mode() invalid modes tests. Tries smallest supported value
+  // minus one and largest supported value plus one.
+  EXPECT_EQ(-1, WebRtcVad_set_mode(handle,
+                                   WebRtcSpl_MinValueW32(kModes,
+                                                         kModesSize) - 1));
+  EXPECT_EQ(-1, WebRtcVad_set_mode(handle,
+                                   WebRtcSpl_MaxValueW32(kModes,
+                                                         kModesSize) + 1));
 
   // WebRtcVad_Process() tests
   // NULL speech pointer

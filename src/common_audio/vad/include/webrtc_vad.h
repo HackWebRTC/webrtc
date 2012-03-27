@@ -62,25 +62,21 @@ int WebRtcVad_Free(VadInst* handle);
 // - handle [i/o] : Instance that should be initialized.
 //
 // returns        : 0 - (OK),
-//                 -1 - (NULL pointer or Default mode could not be set)
+//                 -1 - (NULL pointer or Default mode could not be set).
 int WebRtcVad_Init(VadInst* handle);
 
-/****************************************************************************
- * WebRtcVad_set_mode(...)
- *
- * This function initializes a VAD instance
- *
- * Input:
- *      - vad_inst      : VAD instance
- *      - mode          : Aggressiveness setting (0, 1, 2, or 3) 
- *
- * Output:
- *      - vad_inst      : Initialized instance
- *
- * Return value         :  0 - Ok
- *                        -1 - Error
- */
-int WebRtcVad_set_mode(VadInst *vad_inst, int mode);
+// Sets the VAD operating mode. A more aggressive (higher mode) VAD is more
+// restrictive in reporting speech. Put in other words the probability of being
+// speech when the VAD returns 1 is increased with increasing mode. As a
+// consequence also the missed detection rate goes up.
+//
+// - handle [i/o] : VAD instance.
+// - mode   [i]   : Aggressiveness mode (0, 1, 2, or 3).
+//
+// returns        : 0 - (OK),
+//                 -1 - (NULL pointer, mode could not be set or the VAD instance
+//                       has not been initialized).
+int WebRtcVad_set_mode(VadInst* handle, int mode);
 
 /****************************************************************************
  * WebRtcVad_Process(...)
