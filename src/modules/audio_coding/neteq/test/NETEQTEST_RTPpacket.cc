@@ -11,6 +11,7 @@
 #include "NETEQTEST_RTPpacket.h"
 
 #include <assert.h>
+#include <stdlib.h>  // rand
 #include <string.h>
 
 #ifdef WIN32
@@ -842,6 +843,6 @@ void NETEQTEST_RTPpacket::scramblePayload(void)
 
     for (int i = 0; i < _payloadLen; ++i)
     {
-        _payloadPtr[i] = static_cast<WebRtc_UWord8>(std::rand());
+        _payloadPtr[i] = static_cast<WebRtc_UWord8>(rand());
     }
 }
