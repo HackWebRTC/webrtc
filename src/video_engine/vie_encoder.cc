@@ -851,31 +851,7 @@ WebRtc_Word32 QMVideoSettingsCallback::SetVideoQMSettings(
     const WebRtc_UWord32 frame_rate,
     const WebRtc_UWord32 width,
     const WebRtc_UWord32 height) {
-  WebRtc_Word32 ret_val = 0;
-  ret_val = vpm_->SetTargetResolution(width, height, frame_rate);
-
-  if (!ret_val) {
-    // Get current settings.
-    VideoCodec current_codec;
-    vcm_->SendCodec(&current_codec);
-    WebRtc_UWord32 current_bit_rate;
-    if (vcm_->Bitrate(&current_bit_rate) != 0) {
-      WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo,
-                   ViEId(engine_id_, channel_id_),
-                   "Failed to get the current encoder target bitrate.");
-    }
-
-    // Set the new values.
-    current_codec.height = static_cast<WebRtc_UWord16>(height);
-    current_codec.width = static_cast<WebRtc_UWord16>(width);
-    current_codec.maxFramerate = static_cast<WebRtc_UWord8>(frame_rate);
-    current_codec.startBitrate = current_bit_rate;
-
-    // Re-register encoder with the updated settings.
-    ret_val = vcm_->RegisterSendCodec(&current_codec, num_cores_,
-                                      max_payload_length_);
-  }
-  return ret_val;
+  return vpm_->SetTargetResolution(width, height, frame_rate);
 }
 
 void QMVideoSettingsCallback::SetMaxPayloadLength(
