@@ -18,6 +18,9 @@ from buildbot.process import properties
 from buildbot.process.properties import WithProperties
 from buildbot.steps.shell import ShellCommand
 
+from master import chromium_step
+from master.factory import gclient_factory
+
 # Defines the order of the booleans of the supported platforms in the test
 # dictionaries in master.cfg.
 SUPPORTED_PLATFORMS = ('Linux', 'Mac', 'Windows')
@@ -71,16 +74,19 @@ class WebRTCFactory(factory.BuildFactory):
      can be overridden to create customized build sequences.
   """
 
-  def __init__(self, build_status_oracle):
+  def __init__(self, build_status_oracle, is_try_slave=False):
     """Creates the abstract factory.
 
        Args:
          build_status_oracle: An instance of BuildStatusOracle which is used to
              keep track of our build state.
+         is_try_slave: If this bot is a try slave. Needed since we're handling
+             some things differently between normal slaves and try slaves.
     """
     factory.BuildFactory.__init__(self)
 
     self.build_status_oracle = build_status_oracle
+    self.is_try_slave = is_try_slave
     self.properties = properties.Properties()
     self.gyp_params = []
     self.release = False
@@ -106,8 +112,7 @@ class WebRTCFactory(factory.BuildFactory):
       self.EnableTest(test)
 
   def AddCommonStep(self, cmd, descriptor='', workdir=WEBRTC_TRUNK_DIR,
-                    number_of_retries=0, halt_build_on_failure=True,
-                    warn_on_failure=False):
+                    halt_build_on_failure=True, warn_on_failure=False):
     """Adds a step which will run as a shell command on the slave.
 
        NOTE: you are recommended to use this method to add new shell commands
@@ -127,7 +132,6 @@ class WebRTCFactory(factory.BuildFactory):
              responsible for making sure that the slashes are flipped the right
              way depending on platform, which means you can't use the default
              value if the step will run on a Windows machine.
-         number_of_retries: Number of times to retry the command, if it fails.
          halt_build_on_failure: Stops the build dead in its tracks if this step
              fails. Use for critical steps. This option does not make sense with
              warn_on_failure.
@@ -142,9 +146,8 @@ class WebRTCFactory(factory.BuildFactory):
     # Add spaces to wrap long test names to make waterfall output more compact.
     wrapped_text = self._WrapLongLines(descriptor)
 
-    self.addStep(MonitoredRetryingShellCommand(
+    self.addStep(MonitoredShellCommand(
         build_status_oracle=self.build_status_oracle,
-        number_of_retries=number_of_retries,
         command=cmd,
         workdir=workdir,
         description=wrapped_text + ['running...'],
@@ -160,7 +163,7 @@ class WebRTCFactory(factory.BuildFactory):
        Smart clean only cleans the whole repository if the build status oracle
        thinks the last build failed. Otherwise it cleans just the build output.
     """
-    self.addStep(SmartClean(self.build_status_oracle,
+    self.addStep(SmartClean(self.build_status_oracle, self.is_try_slave,
                             workdir=WEBRTC_BUILD_DIR))
 
   def AddCommonTestRunStep(self, test, descriptor='', cmd=None):
@@ -206,22 +209,27 @@ class WebRTCFactory(factory.BuildFactory):
                        workdir=WEBRTC_BUILD_DIR,
                        descriptor='gclient_config')
 
-  def AddGclientSyncStep(self, force_sync):
-    """Helper method for invoking gclient sync.
+  def AddGclientSyncStep(self):
+    """Helper method for invoking gclient sync."""
+    gclient_spec = self._ConfigureWhatToBuild()
+    env = self._GetEnvironmentWithDisabledDepotToolsUpdate()
 
-       Will retry if the operation fails. Runs in the bot's build directory
-       (e.g. one step above trunk).
-
-       Args:
-           force_sync: If the sync should be forced, i.e. update even for
-           unchanged modules (known to be required for Windows sometimes).
-    """
-    cmd = ['gclient', 'sync']
-    if force_sync:
-      cmd.append('--force')
-    self.AddCommonStep(cmd, descriptor='Sync',
-                       workdir=WEBRTC_BUILD_DIR,
-                       number_of_retries=GCLIENT_RETRIES)
+    # Define how the GClient command shall be executed.
+    # Try 4+1=5 times, 10 seconds apart.
+    retry = (10, 4)
+    # Subversion timeout is by default 2 minutes; we allow 5 minutes.
+    timeout = 60*5
+    # Removal can take a long time. Allow 15 minutes.
+    rm_timeout = 60*15
+    self.addStep(chromium_step.GClient,
+                 gclient_spec=gclient_spec,
+                 svnurl=WEBRTC_SVN_LOCATION,
+                 workdir='build',
+                 mode='update',
+                 env=env,
+                 retry=retry,
+                 timeout=timeout,
+                 rm_timeout=rm_timeout)
 
   def AddCommonGYPStep(self, gyp_file, gyp_params=[], descriptor='gyp'):
     """Helper method for invoking GYP on WebRTC.
@@ -241,6 +249,18 @@ class WebRTCFactory(factory.BuildFactory):
     cmd = ['./build/gyp_chromium', '--depth=.', gyp_file]
     cmd += gyp_params + self.gyp_params
     self.AddCommonStep(cmd=cmd, descriptor=descriptor)
+
+  def _ConfigureWhatToBuild(self):
+    """Returns a string with the contents of a .gclient file."""
+    solution = gclient_factory.GClientSolution(name='trunk',
+                                               svn_url=WEBRTC_SVN_LOCATION)
+    return 'solutions = [ %s ]' % solution.GetSpec()
+
+  def _GetEnvironmentWithDisabledDepotToolsUpdate(self):
+    """Returns a dictionary of environment variables to be used by GClient."""
+    env = {}
+    env['DEPOT_TOOLS_UPDATE'] = '0'
+    return env
 
   def _WrapLongLines(self, string_list, max_line_length=25, wrap_character='_'):
     """ Creates a list with wrapped strings for lines that are too long.
@@ -307,52 +327,45 @@ class BuildStatusOracle:
     return os.path.join(self.master_work_dir, self.builder_name + ".failed")
 
 
-class MonitoredRetryingShellCommand(ShellCommand):
-  """Wraps a shell command and notifies the oracle if the command fails.
-
-  If the command fails, there's an option to retry it a number of times.
-  Default behavior is to not retry."""
-
-  def __init__(self, build_status_oracle, number_of_retries=0, **kwargs):
+class MonitoredShellCommand(ShellCommand):
+  """Wraps a shell command and notifies the oracle if the command fails."""
+  def __init__(self, build_status_oracle, **kwargs):
     ShellCommand.__init__(self, **kwargs)
 
-    self.addFactoryArguments(build_status_oracle=build_status_oracle,
-                             number_of_retries=number_of_retries)
+    self.addFactoryArguments(build_status_oracle=build_status_oracle)
     self.build_status_oracle = build_status_oracle
-    self.number_of_retries = number_of_retries
 
   def finished(self, results):
     if (results == buildbot.status.builder.FAILURE or
         results == buildbot.status.builder.EXCEPTION):
-      if self.number_of_retries > 0:
-        self.number_of_retries -= 1
-        self.start()
-        return
-      else:
-        self.build_status_oracle.SetLastBuildAsFailed()
+      self.build_status_oracle.SetLastBuildAsFailed()
     ShellCommand.finished(self, results)
 
 
 class SmartClean(ShellCommand):
   """Cleans the repository fully or partially depending on the build state."""
-  def __init__(self, build_status_oracle, **kwargs):
+  def __init__(self, build_status_oracle, is_try_slave, **kwargs):
     ShellCommand.__init__(self, **kwargs)
 
-    self.addFactoryArguments(build_status_oracle=build_status_oracle)
+    self.addFactoryArguments(build_status_oracle=build_status_oracle,
+                             is_try_slave=is_try_slave)
     self.haltOnFailure = True
     self.build_status_oracle = build_status_oracle
+    self.is_try_slave = is_try_slave
 
   def start(self):
-    if self.build_status_oracle.LastBuildFailed():
-      self.build_status_oracle.ForgetLastBuild()
-      self.description = ['Nuke Repository', '(Previous Failed)']
-      self.setCommand(['rm', '-rf', 'trunk'])
-    else:
+    # Always do normal clean for try slaves, since nuking confuses the Chromium
+    # scripts' GClient sync step.
+    if self.is_try_slave or self.build_status_oracle.LastBuildFailed():
       self.description = ['Clean']
       self.setCommand('rm -rf trunk/out && '
                       'rm -rf trunk/xcodebuild &&'
                       'rm -rf trunk/build/Debug &&'
                       'rm -rf trunk/build/Release')
+    else:
+      self.build_status_oracle.ForgetLastBuild()
+      self.description = ['Nuke Repository', '(Previous Failed)']
+      self.setCommand(['rm', '-rf', 'trunk'])
     ShellCommand.start(self)
 
 
@@ -454,7 +467,7 @@ class WebRTCChromeFactory(WebRTCFactory):
   def EnableBuild(self):
     self.AddCommonStep(['rm', '-rf', 'src'], workdir=WEBRTC_BUILD_DIR,
                        descriptor='Cleanup')
-    self.AddGclientSyncStep(force_sync=True)
+    self.AddGclientSyncStep()
     self.AddCommonMakeStep('chrome')
 
   def AddCommonMakeStep(self, target, make_extra=None):
@@ -472,8 +485,9 @@ class WebRTCLinuxFactory(WebRTCFactory):
      This factory is quite configurable and can run a variety of builds.
   """
 
-  def __init__(self, build_status_oracle, valgrind_enabled=False):
-    WebRTCFactory.__init__(self, build_status_oracle)
+  def __init__(self, build_status_oracle, is_try_slave=False,
+               valgrind_enabled=False):
+    WebRTCFactory.__init__(self, build_status_oracle, is_try_slave)
 
     self.build_enabled = False
     self.coverage_enabled = False
@@ -514,7 +528,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
         self.gyp_params.append('-D' + gyp_define)
     else:
       self.AddGclientConfigStep()
-    self.AddGclientSyncStep(force_sync=False)
+    self.AddGclientSyncStep()
 
     if chrome_os:
       self.gyp_params.append('-Dchromeos=1')
@@ -666,8 +680,8 @@ class WebRTCLinuxFactory(WebRTCFactory):
 class WebRTCMacFactory(WebRTCFactory):
   """Sets up the Mac build, both for make and xcode."""
 
-  def __init__(self, build_status_oracle):
-    WebRTCFactory.__init__(self, build_status_oracle)
+  def __init__(self, build_status_oracle, is_try_slave=False):
+    WebRTCFactory.__init__(self, build_status_oracle, is_try_slave)
     self.build_type = 'both'
     self.allowed_build_types = ['both', 'xcode', 'make']
 
@@ -681,7 +695,7 @@ class WebRTCMacFactory(WebRTCFactory):
       self.build_type = build_type
     self.AddSmartCleanStep()
     self.AddGclientConfigStep()
-    self.AddGclientSyncStep(force_sync=True)
+    self.AddGclientSyncStep()
 
     if self.build_type == 'make' or self.build_type == 'both':
       self.AddCommonGYPStep('webrtc.gyp', gyp_params=['-f', 'make'],
@@ -725,20 +739,22 @@ class WebRTCWinFactory(WebRTCFactory):
      Allows building with Debug, Release or both in sequence.
   """
 
-  def __init__(self, build_status_oracle):
-    WebRTCFactory.__init__(self, build_status_oracle)
+  # Must provide full path to the command since we cannot add custom paths to
+  # the PATH environment variable when using Chromium buildbot startup scripts.
+  BUILD_CMD = r'C:\Windows\Microsoft.NET\Framework\v3.5\msbuild.exe'
+
+  def __init__(self, build_status_oracle, is_try_slave=False):
+    WebRTCFactory.__init__(self, build_status_oracle, is_try_slave)
     self.configuration = 'Debug'
     self.platform = 'x64'
     self.allowed_platforms = ['x64', 'Win32']
     self.allowed_configurations = ['Debug', 'Release', 'both']
 
   def AddCommonStep(self, cmd, descriptor='', workdir=WEBRTC_TRUNK_DIR,
-                    number_of_retries=0, halt_build_on_failure=True,
-                    warn_on_failure=False):
+                    halt_build_on_failure=True, warn_on_failure=False):
     workdir = workdir.replace('/', '\\')
     WebRTCFactory.AddCommonStep(self, cmd, descriptor, workdir,
-                                number_of_retries, halt_build_on_failure,
-                                warn_on_failure)
+                                halt_build_on_failure, warn_on_failure)
 
   def EnableBuild(self, platform='Win32', configuration='Debug'):
     if platform not in self.allowed_platforms:
@@ -761,23 +777,40 @@ class WebRTCWinFactory(WebRTCFactory):
     cmd = '%WINDIR%\\system32\\taskkill /f /im svn.exe || set ERRORLEVEL=0'
     self.AddCommonStep(cmd, 'svnkill')
 
+    # TODO(kjellander): Enable for normal slaves too when all are moved over to
+    # the new slave architecture.
+    if self.is_try_slave:
+      # Run the Chromium kill process script. It requires the handle.exe to be
+      # copied into third_party/psutils in order to not fail.
+      # Download from:
+      # http://technet.microsoft.com/en-us/sysinternals/bb896655.aspx
+      # To avoid having to modify kill_processes.py, we set the working dir to
+      # the build dir (three levels up from the build dir that contains
+      # third_party/psutils).
+      cmd = 'python ..\\..\\..\\scripts\\slave\\kill_processes.py'
+      self.AddCommonStep(cmd, 'taskkill', workdir=WEBRTC_BUILD_DIR)
+
     # Now do the clean + build.
     self.AddSmartCleanStep()
     self.AddGclientConfigStep()
-    self.AddGclientSyncStep(force_sync=True)
+    self.AddGclientSyncStep()
 
     if self.configuration == 'Debug' or self.configuration == 'both':
-      cmd = ['msbuild', 'webrtc.sln', '/t:Clean', '/verbosity:diagnostic',
+      cmd = [WebRTCWinFactory.BUILD_CMD, 'webrtc.sln', '/t:Clean',
+             '/verbosity:diagnostic',
              '/p:Configuration=Debug;Platform=%s' % (self.platform)]
       self.AddCommonStep(cmd, descriptor='Build(Clean)')
-      cmd = ['msbuild', 'webrtc.sln', '/verbosity:diagnostic',
+      cmd = [WebRTCWinFactory.BUILD_CMD, 'webrtc.sln',
+             '/verbosity:diagnostic',
              '/p:Configuration=Debug;Platform=%s' % (self.platform)]
       self.AddCommonStep(cmd, descriptor='Build(Debug)')
     if self.configuration == 'Release' or self.configuration == 'both':
-      cmd = ['msbuild', 'webrtc.sln', '/t:Clean', '/verbosity:diagnostic',
+      cmd = [WebRTCWinFactory.BUILD_CMD, 'webrtc.sln', '/t:Clean',
+             '/verbosity:diagnostic',
              '/p:Configuration=Release;Platform=%s' % (self.platform)]
       self.AddCommonStep(cmd, descriptor='Build(Clean)')
-      cmd = ['msbuild', 'webrtc.sln', '/verbosity:diagnostic',
+      cmd = [WebRTCWinFactory.BUILD_CMD, 'webrtc.sln',
+             '/verbosity:diagnostic',
              '/p:Configuration=Release;Platform=%s' % (self.platform)]
       self.AddCommonStep(cmd, descriptor='Build(Release)')
 
