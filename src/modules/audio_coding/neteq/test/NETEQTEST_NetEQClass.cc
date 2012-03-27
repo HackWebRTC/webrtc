@@ -37,7 +37,8 @@ NETEQTEST_NetEQClass::NETEQTEST_NetEQClass(enum WebRtcNetEQDecoder *usedCodec, i
     _bufferMem(NULL),
     _preparseRTP(false),
     _fsmult(1),
-    _isMaster(true)
+    _isMaster(true),
+    _noDecode(false)
 {
 #ifdef WINDOWS_TIMING
     _totTimeRecIn.QuadPart = 0;

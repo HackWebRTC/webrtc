@@ -89,9 +89,18 @@ int main(int argc, char* argv[])
 
     // read file header
     char firstline[FIRSTLINELEN];
-    fgets(firstline, FIRSTLINELEN, inFile);
+    if (fgets(firstline, FIRSTLINELEN, inFile) == NULL)
+    {
+        std::cout << "Error reading file " << input_filename << std::endl;
+        return -1;
+    }
+
     // start_sec + start_usec + source + port + padding
-    fread(firstline, 4+4+4+2+2, 1, inFile);
+    if (fread(firstline, 4+4+4+2+2, 1, inFile) != 1)
+    {
+        std::cout << "Error reading file " << input_filename << std::endl;
+        return -1;
+    }
 
     while (packet->readFromFile(inFile) >= 0)
     {
