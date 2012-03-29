@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -187,7 +187,7 @@ MyMedia mpobj;
 // ----------------------------------------------------------------------------
 
 VoEUnitTest::VoEUnitTest(VoETestManager& mgr) :
-  _mgr(mgr), _extOnOff(false), _extBitsPerSample(-1) {
+  _mgr(mgr), _extOnOff(false), _extBitsPerSample(-1), _extChannel(0) {
   for (int i = 0; i < 32; i++) {
     _listening[i] = false;
     _playing[i] = false;
