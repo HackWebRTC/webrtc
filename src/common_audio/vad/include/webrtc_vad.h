@@ -96,10 +96,8 @@ int WebRtcVad_set_mode(VadInst* handle, int mode);
  *                          0 - Non-active Voice
  *                         -1 - Error
  */
-WebRtc_Word16 WebRtcVad_Process(VadInst *vad_inst,
-                                WebRtc_Word16 fs,
-                                WebRtc_Word16 *speech_frame,
-                                WebRtc_Word16 frame_length);
+int16_t WebRtcVad_Process(VadInst* vad_inst, int16_t fs, int16_t* speech_frame,
+                          int16_t frame_length);
 
 #ifdef __cplusplus
 }

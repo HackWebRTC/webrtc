@@ -17,40 +17,40 @@
 #include "vad_sp.h"
 
 // Spectrum Weighting
-static const WebRtc_Word16 kSpectrumWeight[6] = { 6, 8, 10, 12, 14, 16 };
-static const WebRtc_Word16 kNoiseUpdateConst = 655; // Q15
-static const WebRtc_Word16 kSpeechUpdateConst = 6554; // Q15
-static const WebRtc_Word16 kBackEta = 154; // Q8
+static const int16_t kSpectrumWeight[6] = { 6, 8, 10, 12, 14, 16 };
+static const int16_t kNoiseUpdateConst = 655; // Q15
+static const int16_t kSpeechUpdateConst = 6554; // Q15
+static const int16_t kBackEta = 154; // Q8
 // Minimum difference between the two models, Q5
-static const WebRtc_Word16 kMinimumDifference[6] = {
+static const int16_t kMinimumDifference[6] = {
     544, 544, 576, 576, 576, 576 };
 // Upper limit of mean value for speech model, Q7
-static const WebRtc_Word16 kMaximumSpeech[6] = {
+static const int16_t kMaximumSpeech[6] = {
     11392, 11392, 11520, 11520, 11520, 11520 };
 // Minimum value for mean value
-static const WebRtc_Word16 kMinimumMean[2] = { 640, 768 };
+static const int16_t kMinimumMean[2] = { 640, 768 };
 // Upper limit of mean value for noise model, Q7
-static const WebRtc_Word16 kMaximumNoise[6] = {
+static const int16_t kMaximumNoise[6] = {
     9216, 9088, 8960, 8832, 8704, 8576 };
 // Start values for the Gaussian models, Q7
 // Weights for the two Gaussians for the six channels (noise)
-static const WebRtc_Word16 kNoiseDataWeights[12] = {
+static const int16_t kNoiseDataWeights[12] = {
     34, 62, 72, 66, 53, 25, 94, 66, 56, 62, 75, 103 };
 // Weights for the two Gaussians for the six channels (speech)
-static const WebRtc_Word16 kSpeechDataWeights[12] = {
+static const int16_t kSpeechDataWeights[12] = {
     48, 82, 45, 87, 50, 47, 80, 46, 83, 41, 78, 81 };
 // Means for the two Gaussians for the six channels (noise)
-static const WebRtc_Word16 kNoiseDataMeans[12] = {
+static const int16_t kNoiseDataMeans[12] = {
     6738, 4892, 7065, 6715, 6771, 3369, 7646, 3863, 7820, 7266, 5020, 4362 };
 // Means for the two Gaussians for the six channels (speech)
-static const WebRtc_Word16 kSpeechDataMeans[12] = {
+static const int16_t kSpeechDataMeans[12] = {
     8306, 10085, 10078, 11823, 11843, 6309, 9473, 9571, 10879, 7581, 8180, 7483
 };
 // Stds for the two Gaussians for the six channels (noise)
-static const WebRtc_Word16 kNoiseDataStds[12] = {
+static const int16_t kNoiseDataStds[12] = {
     378, 1064, 493, 582, 688, 593, 474, 697, 475, 688, 421, 455 };
 // Stds for the two Gaussians for the six channels (speech)
-static const WebRtc_Word16 kSpeechDataStds[12] = {
+static const int16_t kSpeechDataStds[12] = {
     555, 505, 567, 524, 585, 1231, 509, 828, 492, 1540, 1079, 850 };
 
 // Constants used in GmmProbability().
@@ -100,30 +100,30 @@ static const int16_t kGlobalThresholdVAG[3] = { 1100, 1050, 1100 };
 // - frame_length   [i]   : Number of input samples
 //
 // - returns              : the VAD decision (0 - noise, 1 - speech).
-static int16_t GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_vector,
-                              WebRtc_Word16 total_power, int frame_length)
+static int16_t GmmProbability(VadInstT *inst, int16_t *feature_vector,
+                              int16_t total_power, int frame_length)
 {
     int n, k;
-    WebRtc_Word16 backval;
-    WebRtc_Word16 h0, h1;
-    WebRtc_Word16 ratvec, xval;
-    WebRtc_Word16 vadflag;
-    WebRtc_Word16 shifts0, shifts1;
-    WebRtc_Word16 tmp16, tmp16_1, tmp16_2;
-    WebRtc_Word16 diff, nr, pos;
-    WebRtc_Word16 nmk, nmk2, nmk3, smk, smk2, nsk, ssk;
-    WebRtc_Word16 delt, ndelt;
-    WebRtc_Word16 maxspe, maxmu;
-    WebRtc_Word16 deltaN[kTableSize], deltaS[kTableSize];
-    WebRtc_Word16 ngprvec[kTableSize], sgprvec[kTableSize];
-    WebRtc_Word32 h0test, h1test;
-    WebRtc_Word32 tmp32_1, tmp32_2;
-    WebRtc_Word32 dotVal;
-    WebRtc_Word32 nmid, smid;
-    WebRtc_Word32 probn[kNumGaussians], probs[kNumGaussians];
-    WebRtc_Word16 *nmean1ptr, *nmean2ptr, *smean1ptr, *smean2ptr, *nstd1ptr, *nstd2ptr,
+    int16_t backval;
+    int16_t h0, h1;
+    int16_t ratvec, xval;
+    int16_t vadflag;
+    int16_t shifts0, shifts1;
+    int16_t tmp16, tmp16_1, tmp16_2;
+    int16_t diff, nr, pos;
+    int16_t nmk, nmk2, nmk3, smk, smk2, nsk, ssk;
+    int16_t delt, ndelt;
+    int16_t maxspe, maxmu;
+    int16_t deltaN[kTableSize], deltaS[kTableSize];
+    int16_t ngprvec[kTableSize], sgprvec[kTableSize];
+    int32_t h0test, h1test;
+    int32_t tmp32_1, tmp32_2;
+    int32_t dotVal;
+    int32_t nmid, smid;
+    int32_t probn[kNumGaussians], probs[kNumGaussians];
+    int16_t *nmean1ptr, *nmean2ptr, *smean1ptr, *smean2ptr, *nstd1ptr, *nstd2ptr,
             *sstd1ptr, *sstd2ptr;
-    WebRtc_Word16 overhead1, overhead2, individualTest, totalTest;
+    int16_t overhead1, overhead2, individualTest, totalTest;
 
     // Set the thresholds to different values based on frame length
     if (frame_length == 80)
@@ -173,22 +173,22 @@ static int16_t GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_vector,
             // Probability for Noise, Q7 * Q20 = Q27
             tmp32_1 = WebRtcVad_GaussianProbability(xval, *nmean1ptr++, *nstd1ptr++,
                                                     &deltaN[pos]);
-            probn[0] = (WebRtc_Word32)(kNoiseDataWeights[n] * tmp32_1);
+            probn[0] = (int32_t)(kNoiseDataWeights[n] * tmp32_1);
             tmp32_1 = WebRtcVad_GaussianProbability(xval, *nmean2ptr++, *nstd2ptr++,
                                                     &deltaN[pos + 1]);
-            probn[1] = (WebRtc_Word32)(kNoiseDataWeights[n + kNumChannels] * tmp32_1);
+            probn[1] = (int32_t)(kNoiseDataWeights[n + kNumChannels] * tmp32_1);
             h0test = probn[0] + probn[1]; // Q27
-            h0 = (WebRtc_Word16)WEBRTC_SPL_RSHIFT_W32(h0test, 12); // Q15
+            h0 = (int16_t)WEBRTC_SPL_RSHIFT_W32(h0test, 12); // Q15
 
             // Probability for Speech
             tmp32_1 = WebRtcVad_GaussianProbability(xval, *smean1ptr++, *sstd1ptr++,
                                                     &deltaS[pos]);
-            probs[0] = (WebRtc_Word32)(kSpeechDataWeights[n] * tmp32_1);
+            probs[0] = (int32_t)(kSpeechDataWeights[n] * tmp32_1);
             tmp32_1 = WebRtcVad_GaussianProbability(xval, *smean2ptr++, *sstd2ptr++,
                                                     &deltaS[pos + 1]);
-            probs[1] = (WebRtc_Word32)(kSpeechDataWeights[n + kNumChannels] * tmp32_1);
+            probs[1] = (int32_t)(kSpeechDataWeights[n + kNumChannels] * tmp32_1);
             h1test = probs[0] + probs[1]; // Q27
-            h1 = (WebRtc_Word16)WEBRTC_SPL_RSHIFT_W32(h1test, 12); // Q15
+            h1 = (int16_t)WEBRTC_SPL_RSHIFT_W32(h1test, 12); // Q15
 
             // Get likelihood ratio. Approximate log2(H1/H0) with shifts0 - shifts1
             shifts0 = WebRtcSpl_NormW32(h0test);
@@ -222,7 +222,7 @@ static int16_t GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_vector,
             {
                 tmp32_1 = probn[0] & 0xFFFFF000; // Q27
                 tmp32_2 = WEBRTC_SPL_LSHIFT_W32(tmp32_1, 2); // Q29
-                ngprvec[pos] = (WebRtc_Word16)WebRtcSpl_DivW32W16(tmp32_2, h0);
+                ngprvec[pos] = (int16_t)WebRtcSpl_DivW32W16(tmp32_2, h0);
                 ngprvec[pos + 1] = 16384 - ngprvec[pos];
             } else
             {
@@ -235,7 +235,7 @@ static int16_t GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_vector,
             {
                 tmp32_1 = probs[0] & 0xFFFFF000;
                 tmp32_2 = WEBRTC_SPL_LSHIFT_W32(tmp32_1, 2);
-                sgprvec[pos] = (WebRtc_Word16)WebRtcSpl_DivW32W16(tmp32_2, h1);
+                sgprvec[pos] = (int16_t)WebRtcSpl_DivW32W16(tmp32_2, h1);
                 sgprvec[pos + 1] = 16384 - sgprvec[pos];
             } else
             {
@@ -271,7 +271,7 @@ static int16_t GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_vector,
             nmid = WEBRTC_SPL_MUL_16_16(kNoiseDataWeights[n], *nmean1ptr); // Q7 * Q7
             nmid += WEBRTC_SPL_MUL_16_16(kNoiseDataWeights[n+kNumChannels],
                     *(nmean1ptr+kNumChannels));
-            tmp16_1 = (WebRtc_Word16)WEBRTC_SPL_RSHIFT_W32(nmid, 6); // Q8
+            tmp16_1 = (int16_t)WEBRTC_SPL_RSHIFT_W32(nmid, 6); // Q8
 
             for (k = 0; k < kNumGaussians; k++)
             {
@@ -294,9 +294,9 @@ static int16_t GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_vector,
                     // deltaN = (x-mu)/sigma^2
                     // ngprvec[k] = probn[k]/(probn[0] + probn[1])
 
-                    delt = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(ngprvec[nr],
+                    delt = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(ngprvec[nr],
                             deltaN[nr], 11); // Q14*Q11
-                    nmk2 = nmk + (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(delt,
+                    nmk2 = nmk + (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(delt,
                             kNoiseUpdateConst,
                             22); // Q7+(Q14*Q15>>22)
                 }
@@ -304,7 +304,7 @@ static int16_t GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_vector,
                 // Long term correction of the noise mean
                 ndelt = WEBRTC_SPL_LSHIFT_W16(backval, 4);
                 ndelt -= tmp16_1; // Q8 - Q8
-                nmk3 = nmk2 + (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(ndelt,
+                nmk3 = nmk2 + (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(ndelt,
                         kBackEta,
                         9); // Q7+(Q8*Q8)>>9
 
@@ -323,10 +323,10 @@ static int16_t GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_vector,
                     // deltaS = (x-mu)/sigma^2
                     // sgprvec[k] = probn[k]/(probn[0] + probn[1])
 
-                    delt = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(sgprvec[nr],
+                    delt = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(sgprvec[nr],
                             deltaS[nr],
                             11); // (Q14*Q11)>>11=Q14
-                    tmp16 = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(delt,
+                    tmp16 = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(delt,
                             kSpeechUpdateConst,
                             21) + 1;
                     smk2 = smk + (tmp16 >> 1); // Q7 + (Q14 * Q15 >> 22)
@@ -345,18 +345,18 @@ static int16_t GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_vector,
 
                     tmp16 = feature_vector[n] - tmp16; // Q4
                     tmp32_1 = WEBRTC_SPL_MUL_16_16_RSFT(deltaS[nr], tmp16, 3);
-                    tmp32_2 = tmp32_1 - (WebRtc_Word32)4096; // Q12
+                    tmp32_2 = tmp32_1 - (int32_t)4096; // Q12
                     tmp16 = WEBRTC_SPL_RSHIFT_W16((sgprvec[nr]), 2);
-                    tmp32_1 = (WebRtc_Word32)(tmp16 * tmp32_2);// (Q15>>3)*(Q14>>2)=Q12*Q12=Q24
+                    tmp32_1 = (int32_t)(tmp16 * tmp32_2);// (Q15>>3)*(Q14>>2)=Q12*Q12=Q24
 
                     tmp32_2 = WEBRTC_SPL_RSHIFT_W32(tmp32_1, 4); // Q20
 
                     // 0.1 * Q20 / Q7 = Q13
                     if (tmp32_2 > 0)
-                        tmp16 = (WebRtc_Word16)WebRtcSpl_DivW32W16(tmp32_2, ssk * 10);
+                        tmp16 = (int16_t)WebRtcSpl_DivW32W16(tmp32_2, ssk * 10);
                     else
                     {
-                        tmp16 = (WebRtc_Word16)WebRtcSpl_DivW32W16(-tmp32_2, ssk * 10);
+                        tmp16 = (int16_t)WebRtcSpl_DivW32W16(-tmp32_2, ssk * 10);
                         tmp16 = -tmp16;
                     }
                     // divide by 4 giving an update factor of 0.025
@@ -375,17 +375,17 @@ static int16_t GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_vector,
                     // (Q15>>3) * (Q14>>2) = Q12 * Q12 = Q24
                     tmp32_1 = WEBRTC_SPL_MUL_16_16_RSFT(deltaN[nr], tmp16, 3) - 4096;
                     tmp16 = WEBRTC_SPL_RSHIFT_W16((ngprvec[nr]+2), 2);
-                    tmp32_2 = (WebRtc_Word32)(tmp16 * tmp32_1);
+                    tmp32_2 = (int32_t)(tmp16 * tmp32_1);
                     tmp32_1 = WEBRTC_SPL_RSHIFT_W32(tmp32_2, 14);
                     // Q20  * approx 0.001 (2^-10=0.0009766)
 
                     // Q20 / Q7 = Q13
-                    tmp16 = (WebRtc_Word16)WebRtcSpl_DivW32W16(tmp32_1, nsk);
+                    tmp16 = (int16_t)WebRtcSpl_DivW32W16(tmp32_1, nsk);
                     if (tmp32_1 > 0)
-                        tmp16 = (WebRtc_Word16)WebRtcSpl_DivW32W16(tmp32_1, nsk);
+                        tmp16 = (int16_t)WebRtcSpl_DivW32W16(tmp32_1, nsk);
                     else
                     {
-                        tmp16 = (WebRtc_Word16)WebRtcSpl_DivW32W16(-tmp32_1, nsk);
+                        tmp16 = (int16_t)WebRtcSpl_DivW32W16(-tmp32_1, nsk);
                         tmp16 = -tmp16;
                     }
                     tmp16 += 32; // Rounding
@@ -407,8 +407,8 @@ static int16_t GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_vector,
             smid += WEBRTC_SPL_MUL_16_16(kSpeechDataWeights[n+kNumChannels], *smean2ptr);
 
             // diff = "global" speech mean - "global" noise mean
-            diff = (WebRtc_Word16)WEBRTC_SPL_RSHIFT_W32(smid, 9);
-            tmp16 = (WebRtc_Word16)WEBRTC_SPL_RSHIFT_W32(nmid, 9);
+            diff = (int16_t)WEBRTC_SPL_RSHIFT_W32(smid, 9);
+            tmp16 = (int16_t)WEBRTC_SPL_RSHIFT_W32(nmid, 9);
             diff -= tmp16;
 
             if (diff < kMinimumDifference[n])
@@ -418,8 +418,8 @@ static int16_t GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_vector,
 
                 // tmp16_1 = ~0.8 * (kMinimumDifference - diff) in Q7
                 // tmp16_2 = ~0.2 * (kMinimumDifference - diff) in Q7
-                tmp16_1 = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(13, tmp16, 2);
-                tmp16_2 = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(3, tmp16, 2);
+                tmp16_1 = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(13, tmp16, 2);
+                tmp16_2 = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(3, tmp16, 2);
 
                 // First Gauss, speech model
                 tmp16 = tmp16_1 + *smean1ptr;
@@ -445,7 +445,7 @@ static int16_t GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_vector,
 
             // Control that the speech & noise means do not drift to much
             maxspe = kMaximumSpeech[n];
-            tmp16_2 = (WebRtc_Word16)WEBRTC_SPL_RSHIFT_W32(smid, 7);
+            tmp16_2 = (int16_t)WEBRTC_SPL_RSHIFT_W32(smid, 7);
             if (tmp16_2 > maxspe)
             { // Upper limit of speech model
                 tmp16_2 -= maxspe;
@@ -454,7 +454,7 @@ static int16_t GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_vector,
                 *smean2ptr -= tmp16_2;
             }
 
-            tmp16_2 = (WebRtc_Word16)WEBRTC_SPL_RSHIFT_W32(nmid, 7);
+            tmp16_2 = (int16_t)WEBRTC_SPL_RSHIFT_W32(nmid, 7);
             if (tmp16_2 > kMaximumNoise[n])
             {
                 tmp16_2 -= kMaximumNoise[n];
@@ -610,12 +610,12 @@ int WebRtcVad_set_mode_core(VadInstT* self, int mode) {
 // Calculate VAD decision by first extracting feature values and then calculate
 // probability for both speech and background noise.
 
-WebRtc_Word16 WebRtcVad_CalcVad32khz(VadInstT *inst, WebRtc_Word16 *speech_frame,
-                                     int frame_length)
+int16_t WebRtcVad_CalcVad32khz(VadInstT* inst, int16_t* speech_frame,
+                               int frame_length)
 {
-    WebRtc_Word16 len, vad;
-    WebRtc_Word16 speechWB[480]; // Downsampled speech frame: 960 samples (30ms in SWB)
-    WebRtc_Word16 speechNB[240]; // Downsampled speech frame: 480 samples (30ms in WB)
+    int16_t len, vad;
+    int16_t speechWB[480]; // Downsampled speech frame: 960 samples (30ms in SWB)
+    int16_t speechNB[240]; // Downsampled speech frame: 480 samples (30ms in WB)
 
 
     // Downsample signal 32->16->8 before doing VAD
@@ -632,11 +632,11 @@ WebRtc_Word16 WebRtcVad_CalcVad32khz(VadInstT *inst, WebRtc_Word16 *speech_frame
     return vad;
 }
 
-WebRtc_Word16 WebRtcVad_CalcVad16khz(VadInstT *inst, WebRtc_Word16 *speech_frame,
-                                     int frame_length)
+int16_t WebRtcVad_CalcVad16khz(VadInstT* inst, int16_t* speech_frame,
+                               int frame_length)
 {
-    WebRtc_Word16 len, vad;
-    WebRtc_Word16 speechNB[240]; // Downsampled speech frame: 480 samples (30ms in WB)
+    int16_t len, vad;
+    int16_t speechNB[240]; // Downsampled speech frame: 480 samples (30ms in WB)
 
     // Wideband: Downsample signal before doing VAD
     WebRtcVad_Downsampling(speech_frame, speechNB, inst->downsampling_filter_states,
@@ -648,10 +648,10 @@ WebRtc_Word16 WebRtcVad_CalcVad16khz(VadInstT *inst, WebRtc_Word16 *speech_frame
     return vad;
 }
 
-WebRtc_Word16 WebRtcVad_CalcVad8khz(VadInstT *inst, WebRtc_Word16 *speech_frame,
-                                    int frame_length)
+int16_t WebRtcVad_CalcVad8khz(VadInstT* inst, int16_t* speech_frame,
+                              int frame_length)
 {
-    WebRtc_Word16 feature_vector[kNumChannels], total_power;
+    int16_t feature_vector[kNumChannels], total_power;
 
     // Get power in the bands
     total_power = WebRtcVad_CalculateFeatures(inst, speech_frame, frame_length,

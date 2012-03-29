@@ -26,28 +26,28 @@ enum { kMinEnergy = 10 };  // Minimum energy required to trigger audio signal.
 typedef struct VadInstT_
 {
 
-    WebRtc_Word16 vad;
-    WebRtc_Word32 downsampling_filter_states[4];
-    WebRtc_Word16 noise_means[kTableSize];
-    WebRtc_Word16 speech_means[kTableSize];
-    WebRtc_Word16 noise_stds[kTableSize];
-    WebRtc_Word16 speech_stds[kTableSize];
+    int16_t vad;
+    int32_t downsampling_filter_states[4];
+    int16_t noise_means[kTableSize];
+    int16_t speech_means[kTableSize];
+    int16_t noise_stds[kTableSize];
+    int16_t speech_stds[kTableSize];
     // TODO(bjornv): Change to |frame_count|.
-    WebRtc_Word32 frame_counter;
-    WebRtc_Word16 over_hang; // Over Hang
-    WebRtc_Word16 num_of_speech;
+    int32_t frame_counter;
+    int16_t over_hang; // Over Hang
+    int16_t num_of_speech;
     // TODO(bjornv): Change to |age_vector|.
-    WebRtc_Word16 index_vector[16 * kNumChannels];
-    WebRtc_Word16 low_value_vector[16 * kNumChannels];
+    int16_t index_vector[16 * kNumChannels];
+    int16_t low_value_vector[16 * kNumChannels];
     // TODO(bjornv): Change to |median|.
-    WebRtc_Word16 mean_value[kNumChannels];
-    WebRtc_Word16 upper_state[5];
-    WebRtc_Word16 lower_state[5];
-    WebRtc_Word16 hp_filter_state[4];
-    WebRtc_Word16 over_hang_max_1[3];
-    WebRtc_Word16 over_hang_max_2[3];
-    WebRtc_Word16 individual[3];
-    WebRtc_Word16 total[3];
+    int16_t mean_value[kNumChannels];
+    int16_t upper_state[5];
+    int16_t lower_state[5];
+    int16_t hp_filter_state[4];
+    int16_t over_hang_max_1[3];
+    int16_t over_hang_max_2[3];
+    int16_t individual[3];
+    int16_t total[3];
 
     int init_flag;
 
@@ -100,11 +100,11 @@ int WebRtcVad_set_mode_core(VadInstT* self, int mode);
  *                        0 - No active speech
  *                        1-6 - Active speech
  */
-WebRtc_Word16 WebRtcVad_CalcVad32khz(VadInstT* inst, WebRtc_Word16* speech_frame,
-                                     int frame_length);
-WebRtc_Word16 WebRtcVad_CalcVad16khz(VadInstT* inst, WebRtc_Word16* speech_frame,
-                                     int frame_length);
-WebRtc_Word16 WebRtcVad_CalcVad8khz(VadInstT* inst, WebRtc_Word16* speech_frame,
-                                    int frame_length);
+int16_t WebRtcVad_CalcVad32khz(VadInstT* inst, int16_t* speech_frame,
+                               int frame_length);
+int16_t WebRtcVad_CalcVad16khz(VadInstT* inst, int16_t* speech_frame,
+                               int frame_length);
+int16_t WebRtcVad_CalcVad8khz(VadInstT* inst, int16_t* speech_frame,
+                              int frame_length);
 
 #endif  // WEBRTC_COMMON_AUDIO_VAD_VAD_CORE_H_
