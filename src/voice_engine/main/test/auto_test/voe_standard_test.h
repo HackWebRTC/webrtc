@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -148,17 +148,6 @@ class DtmfCallback : public VoETelephoneEventObserver {
       counter++; // cound start of event only
     fflush(NULL);
   }
-};
-
-class my_encryption : public Encryption {
-  void encrypt(int channel_no, unsigned char * in_data,
-               unsigned char * out_data, int bytes_in, int * bytes_out);
-  void decrypt(int channel_no, unsigned char * in_data,
-               unsigned char * out_data, int bytes_in, int * bytes_out);
-  void encrypt_rtcp(int channel_no, unsigned char * in_data,
-                    unsigned char * out_data, int bytes_in, int * bytes_out);
-  void decrypt_rtcp(int channel_no, unsigned char * in_data,
-                    unsigned char * out_data, int bytes_in, int * bytes_out);
 };
 
 class RxCallback : public VoERxVadCallback {

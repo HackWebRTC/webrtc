@@ -332,47 +332,6 @@ void RtcpAppHandler::Reset() {
   name_ = 0;
 }
 
-void my_encryption::encrypt(int, unsigned char * in_data,
-                            unsigned char * out_data,
-                            int bytes_in,
-                            int * bytes_out) {
-  int i;
-  for (i = 0; i < bytes_in; i++)
-    out_data[i] = ~in_data[i];
-  *bytes_out = bytes_in + 2; // length is increased by 2
-}
-
-void my_encryption::decrypt(int, unsigned char * in_data,
-                            unsigned char * out_data,
-                            int bytes_in,
-                            int * bytes_out) {
-  int i;
-  for (i = 0; i < bytes_in; i++)
-    out_data[i] = ~in_data[i];
-  *bytes_out = bytes_in - 2; // length is decreased by 2
-}
-
-void my_encryption::encrypt_rtcp(int,
-                                 unsigned char * in_data,
-                                 unsigned char * out_data,
-                                 int bytes_in,
-                                 int * bytes_out) {
-  int i;
-  for (i = 0; i < bytes_in; i++)
-    out_data[i] = ~in_data[i];
-  *bytes_out = bytes_in + 2;
-}
-
-void my_encryption::decrypt_rtcp(int, unsigned char * in_data,
-                                 unsigned char * out_data,
-                                 int bytes_in,
-                                 int * bytes_out) {
-  int i;
-  for (i = 0; i < bytes_in; i++)
-    out_data[i] = ~in_data[i];
-  *bytes_out = bytes_in + 2;
-}
-
 void SubAPIManager::DisplayStatus() const {
   TEST_LOG("Supported sub APIs:\n\n");
   if (_base)
@@ -1051,89 +1010,7 @@ int VoETestManager::DoStandardTest() {
 #else
   TEST_LOG("\n\n+++ Video sync tests NOT ENABLED +++\n");
 #endif  // #ifdef _TEST_VIDEO_SYNC_
-  //////////////
-  // Encryption
 
-#ifdef _TEST_ENCRYPT_
-  TEST_LOG("\n\n+++ Encryption tests +++\n\n");
-
-#ifdef WEBRTC_SRTP
-  TEST_LOG("SRTP tests:\n");
-
-  unsigned char encrKey[30] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 0,
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0};
-
-  TEST_LOG("Enable SRTP encryption and decryption, you should still hear"
-      " the voice\n");
-  TEST_MUSTPASS(voe_encrypt_->EnableSRTPSend(0,
-          kCipherAes128CounterMode,
-          30,
-          kAuthHmacSha1,
-          20, 4, kEncryptionAndAuthentication, encrKey));
-  TEST_MUSTPASS(voe_encrypt_->EnableSRTPReceive(0,
-          kCipherAes128CounterMode,
-          30,
-          kAuthHmacSha1,
-          20, 4, kEncryptionAndAuthentication, encrKey));
-  SLEEP(2000);
-
-  TEST_LOG("Disabling decryption, you should hear nothing or garbage\n");
-  TEST_MUSTPASS(voe_encrypt_->DisableSRTPReceive(0));
-  SLEEP(2000);
-
-  TEST_LOG("Enable decryption again, you should hear the voice again\n");
-  TEST_MUSTPASS(voe_encrypt_->EnableSRTPReceive(0,
-          kCipherAes128CounterMode,
-          30,
-          kAuthHmacSha1,
-          20, 4, kEncryptionAndAuthentication, encrKey));
-  SLEEP(2000);
-
-  TEST_LOG("Disabling encryption and enabling decryption, you should"
-      " hear nothing\n");
-  TEST_MUSTPASS(voe_encrypt_->DisableSRTPSend(0));
-  SLEEP(2000);
-
-  TEST_LOG("Back to normal\n");
-  // both SRTP sides are now inactive
-  TEST_MUSTPASS(voe_encrypt_->DisableSRTPReceive(0));
-  SLEEP(2000);
-
-  TEST_LOG("Enable SRTP and SRTCP encryption and decryption,"
-      " you should still hear the voice\n");
-  TEST_MUSTPASS(voe_encrypt_->EnableSRTPSend(0,
-          kCipherAes128CounterMode,
-          30,
-          kAuthHmacSha1,
-          20, 4, kEncryptionAndAuthentication, encrKey, true));
-  TEST_MUSTPASS(voe_encrypt_->EnableSRTPReceive(0,
-          kCipherAes128CounterMode,
-          30,
-          kAuthHmacSha1,
-          20, 4, kEncryptionAndAuthentication, encrKey, true));
-  SLEEP(2000);
-
-  TEST_LOG("Back to normal\n");
-  TEST_MUSTPASS(voe_encrypt_->DisableSRTPSend(0));
-  // both SRTP sides are now inactive
-  TEST_MUSTPASS(voe_encrypt_->DisableSRTPReceive(0));
-  SLEEP(2000);
-
-#else
-  TEST_LOG("Skipping SRTP tests - WEBRTC_SRTP not defined \n");
-#endif // #ifdef WEBRTC_SRTP
-  TEST_LOG("\nExternal encryption tests:\n");
-  my_encryption * encObj = new my_encryption;
-  TEST_MUSTPASS(voe_encrypt_->RegisterExternalEncryption(0, *encObj));
-  TEST_LOG("Encryption enabled but you should still hear the voice\n");
-  SLEEP(2000);
-  TEST_LOG("Removing encryption object and deleting it\n");
-  TEST_MUSTPASS(voe_encrypt_->DeRegisterExternalEncryption(0));
-  delete encObj;
-  SLEEP(2000);
-#else
-  TEST_LOG("\n\n+++ Encryption tests NOT ENABLED +++\n");
-#endif // #ifdef _TEST_ENCRYPT_
   //////////////////
   // External media
 
