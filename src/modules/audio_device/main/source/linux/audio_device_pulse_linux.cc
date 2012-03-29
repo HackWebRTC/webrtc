@@ -1976,11 +1976,8 @@ void AudioDeviceLinuxPulse::PaServerInfoCallbackHandler(const pa_server_info *i)
     _samplingFreq = paSampleRate / 1000;
 
     // Copy the PA server version
-    if (_paServerVersion)
-    {
-        strncpy(_paServerVersion, i->server_version, 31);
-        _paServerVersion[31] = '\0';
-    }
+    strncpy(_paServerVersion, i->server_version, 31);
+    _paServerVersion[31] = '\0';
 
     if (_recDisplayDeviceName)
     {
