@@ -6151,7 +6151,7 @@ Channel::GetRtpRtcp(RtpRtcp* &rtpRtcpModule) const
 WebRtc_Word32
 Channel::MixOrReplaceAudioWithFile(const int mixingFrequency)
 {
-    WebRtc_Word16 fileBuffer[320];
+    scoped_array<WebRtc_Word16> fileBuffer(new WebRtc_Word16[640]);
     WebRtc_UWord32 fileSamples(0);
 
     {
@@ -6166,7 +6166,7 @@ Channel::MixOrReplaceAudioWithFile(const int mixingFrequency)
             return -1;
         }
 
-        if (_inputFilePlayerPtr->Get10msAudioFromFile(fileBuffer,
+        if (_inputFilePlayerPtr->Get10msAudioFromFile(fileBuffer.get(),
                                                       fileSamples,
                                                       mixingFrequency) == -1)
         {
@@ -6189,17 +6189,23 @@ Channel::MixOrReplaceAudioWithFile(const int mixingFrequency)
 
     if (_mixFileWithMicrophone)
     {
+        // Currently file stream is always mono.
+        // TODO(xians): Change the code when FilePlayer supports real stereo.
         Utility::MixWithSat(_audioFrame._payloadData,
-                            fileBuffer,
-                            (WebRtc_UWord16)fileSamples);
+                            static_cast<int>(_audioFrame._audioChannel),
+                            fileBuffer.get(),
+                            1,
+                            static_cast<int>(fileSamples));
     }
     else
     {
-        // replace ACM audio with file
+        // Replace ACM audio with file.
+        // Currently file stream is always mono.
+        // TODO(xians): Change the code when FilePlayer supports real stereo.
         _audioFrame.UpdateFrame(_channelId,
                                 -1,
-                                fileBuffer,
-                                (WebRtc_UWord16)fileSamples,
+                                fileBuffer.get(),
+                                static_cast<WebRtc_UWord16>(fileSamples),
                                 mixingFrequency,
                                 AudioFrame::kNormalSpeech,
                                 AudioFrame::kVadUnknown,
@@ -6215,7 +6221,7 @@ Channel::MixAudioWithFile(AudioFrame& audioFrame,
 {
     assert(mixingFrequency <= 32000);
 
-    WebRtc_Word16 fileBuffer[640];
+    scoped_array<WebRtc_Word16> fileBuffer(new WebRtc_Word16[640]);
     WebRtc_UWord32 fileSamples(0);
 
     {
@@ -6230,7 +6236,7 @@ Channel::MixAudioWithFile(AudioFrame& audioFrame,
         }
 
         // We should get the frequency we ask for.
-        if (_outputFilePlayerPtr->Get10msAudioFromFile(fileBuffer,
+        if (_outputFilePlayerPtr->Get10msAudioFromFile(fileBuffer.get(),
                                                        fileSamples,
                                                        mixingFrequency) == -1)
         {
@@ -6243,28 +6249,13 @@ Channel::MixAudioWithFile(AudioFrame& audioFrame,
 
     if (audioFrame._payloadDataLengthInSamples == fileSamples)
     {
-        // In case the incoming stream is stereo and file stream is mono,
-        // turn the file stream into stereo.
-        // TODO(xians): remove the code when FilePlayer supports real stereo.
-        if (audioFrame._audioChannel == 2)
-        {
-            // The mono file stream is copied to be stereo.
-            WebRtc_Word16* FileBufferCopy = new WebRtc_Word16[fileSamples];
-            memcpy(FileBufferCopy, fileBuffer,
-                   sizeof(WebRtc_Word16) * fileSamples);
-            for (unsigned int i = 0; i < fileSamples; i++)
-            {
-                fileBuffer[2*i]   = FileBufferCopy[i];
-                fileBuffer[2*i+1] = FileBufferCopy[i];
-            }
-            fileSamples = 2*fileSamples;
-            delete [] FileBufferCopy;
-        }
-
-        // Mix the incoming stream and file stream.
+        // Currently file stream is always mono.
+        // TODO(xians): Change the code when FilePlayer supports real stereo.
         Utility::MixWithSat(audioFrame._payloadData,
-                            fileBuffer,
-                            (WebRtc_UWord16)fileSamples);
+                            static_cast<int>(audioFrame._audioChannel),
+                            fileBuffer.get(),
+                            1,
+                            static_cast<int>(fileSamples));
     }
     else
     {

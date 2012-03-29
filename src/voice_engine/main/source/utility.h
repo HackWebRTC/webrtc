@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -30,8 +30,10 @@ class Utility
 {
 public:
     static void MixWithSat(WebRtc_Word16 target[],
+                           int target_channel,
                            const WebRtc_Word16 source[],
-                           WebRtc_UWord16 len);
+                           int source_channel,
+                           int source_len);
 
     static void MixSubtractWithSat(WebRtc_Word16 target[],
                                    const WebRtc_Word16 source[],
