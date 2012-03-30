@@ -47,19 +47,19 @@ class VideoSyncTest : public AfterStreamingFixture {
   }
 
   void CheckEstimatesConvergeReasonablyWell(int min_estimate) {
-    int standard_deviation = CollectEstimatesDuring15Seconds(min_estimate);
-    EXPECT_LT(standard_deviation, 20);
+    float standard_deviation = CollectEstimatesDuring15Seconds(min_estimate);
+    EXPECT_LT(standard_deviation, 20.0f);
   }
 
   // Computes the standard deviation by first estimating the sample variance
   // with an unbiased estimator.
-  int ComputeStandardDeviation(std::vector<int>::const_iterator start,
+  float ComputeStandardDeviation(std::vector<int>::const_iterator start,
                                std::vector<int>::const_iterator end) const {
     int num_elements = end - start;
     int mean = std::accumulate(start, end, 0) / num_elements;
     assert(num_elements > 1);
 
-    int variance = 0;
+    float variance = 0;
     for (; start != end; ++start) {
       variance += (*start - mean) * (*start - mean) / (num_elements - 1);
     }
