@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -148,6 +148,11 @@ public: // FileCallback
 
     void RecordFileEnded(const WebRtc_Word32 id);
 
+#ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
+public:  // Typing detection
+    int TimeSinceLastTyping(int &seconds);
+#endif
+
 private:
     TransmitMixer(const WebRtc_UWord32 instanceId);
 
@@ -197,6 +202,7 @@ private:  // owns
 
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     WebRtc_Word32 _timeActive;
+    WebRtc_Word32 _timeSinceLastTyping;
     WebRtc_Word32 _penaltyCounter;
     WebRtc_UWord32 _typingNoiseWarning;
 #endif

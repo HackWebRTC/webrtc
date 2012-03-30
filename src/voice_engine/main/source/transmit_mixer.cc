@@ -183,6 +183,7 @@ TransmitMixer::TransmitMixer(const WebRtc_UWord32 instanceId) :
     _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     _timeActive(0),
+    _timeSinceLastTyping(0),
     _penaltyCounter(0),
     _typingNoiseWarning(0),
 #endif
@@ -1384,6 +1385,16 @@ int TransmitMixer::TypingDetection()
     else
         _timeActive = 0;
 
+    // Keep track if time since last typing event
+    if (keyPressed)
+    {
+      _timeSinceLastTyping = 0;
+    }
+    else
+    {
+      ++_timeSinceLastTyping;
+    }
+
     if (keyPressed && (_audioFrame._vadActivity == AudioFrame::kVadActive)
         && (_timeActive < 10))
     {
@@ -1418,6 +1429,18 @@ int TransmitMixer::GetMixingFrequency()
     assert(_mixingFrequency!=0);
     return (_mixingFrequency);
 }
+
+#ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
+int TransmitMixer::TimeSinceLastTyping(int &seconds)
+{
+  // We check in VoEAudioProcessingImpl that this is only called when
+  // typing detection is active.
+
+  // Round to whole seconds
+  seconds = (_timeSinceLastTyping + 50) / 100;
+  return(0);
+}
+#endif
 
 }  //  namespace voe
 

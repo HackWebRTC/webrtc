@@ -14,6 +14,7 @@
 #include "channel.h"
 #include "critical_section_wrapper.h"
 #include "trace.h"
+#include "transmit_mixer.h"
 #include "voe_errors.h"
 #include "voice_engine_impl.h"
 
@@ -1030,6 +1031,40 @@ int VoEAudioProcessingImpl::GetTypingDetectionStatus(bool& enabled) {
   return -1;
 #endif
 }
+
+
+int VoEAudioProcessingImpl::TimeSinceLastTyping(int &seconds) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+               "TimeSinceLastTyping()");
+  ANDROID_NOT_SUPPORTED(_engineStatistics);
+  IPHONE_NOT_SUPPORTED();
+
+#ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
+  if (!_engineStatistics.Initialized()) {
+    _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+    return -1;
+  }
+  // Check if typing detection is enabled
+  bool enabled = _audioProcessingModulePtr->voice_detection()->is_enabled();
+  if (enabled)
+  {
+    _transmitMixerPtr->TimeSinceLastTyping(seconds);
+    return 0;
+  }
+  else
+  {
+    _engineStatistics.SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
+      "SetTypingDetectionStatus is not enabled");
+  return -1;
+  }
+#else
+  _engineStatistics.SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
+      "SetTypingDetectionStatus is not supported");
+  return -1;
+#endif
+
+}
+
 
 #endif  // #ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
 

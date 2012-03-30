@@ -89,6 +89,8 @@ class VoEAudioProcessingImpl
 
   virtual int GetTypingDetectionStatus(bool& enabled);
 
+  virtual int TimeSinceLastTyping(int &seconds);
+
  protected:
   VoEAudioProcessingImpl();
   virtual ~VoEAudioProcessingImpl();
