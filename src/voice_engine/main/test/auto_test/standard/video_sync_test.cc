@@ -48,7 +48,7 @@ class VideoSyncTest : public AfterStreamingFixture {
 
   void CheckEstimatesConvergeReasonablyWell(int min_estimate) {
     float standard_deviation = CollectEstimatesDuring15Seconds(min_estimate);
-    EXPECT_LT(standard_deviation, 20.0f);
+    EXPECT_LT(standard_deviation, 30.0f);
   }
 
   // Computes the standard deviation by first estimating the sample variance
