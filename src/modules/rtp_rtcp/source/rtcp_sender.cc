@@ -68,7 +68,7 @@ RTCPSender::RTCPSender(const WebRtc_Word32 id,
     _rembBitrate(0),
     _bitrate_observer(NULL),
 
-    _tmmbrHelp(),
+    _tmmbrHelp(audio),
     _tmmbr_Send(0),
     _packetOH_Send(0),
     _remoteRateControl(),
@@ -2160,6 +2160,20 @@ RTCPSender::SetTMMBN(const TMMBRSet* boundingSet,
     if (0 == _tmmbrHelp.SetTMMBRBoundingSetToSend(boundingSet, maxBitrateKbit))
     {
         _sendTMMBN = true;
+        return 0;
+    }
+    return -1;
+}
+
+WebRtc_Word32
+RTCPSender::RequestTMMBR(WebRtc_UWord32 estimatedBW, WebRtc_UWord32 packetOH)
+{
+    CriticalSectionScoped lock(_criticalSectionRTCPSender);
+    if(_TMMBR)
+    {
+        _tmmbr_Send = estimatedBW;
+        _packetOH_Send = packetOH;
+
         return 0;
     }
     return -1;

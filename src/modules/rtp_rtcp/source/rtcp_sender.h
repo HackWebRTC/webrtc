@@ -103,6 +103,9 @@ public:
     WebRtc_Word32 SetTMMBN(const TMMBRSet* boundingSet,
                            const WebRtc_UWord32 maxBitrateKbit);
 
+    WebRtc_Word32 RequestTMMBR(const WebRtc_UWord32 estimatedBW,
+                               const WebRtc_UWord32 packetOH);
+
     /*
     *   Extended jitter report
     */

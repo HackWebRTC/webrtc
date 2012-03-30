@@ -19,12 +19,11 @@
 #include "rtcp_utility.h"
 #include "rtp_rtcp_defines.h"
 #include "rtcp_receiver_help.h"
-#include "tmmbr_help.h"
 
 namespace webrtc {
 class ModuleRtpRtcpImpl;
 
-class RTCPReceiver : public TMMBRHelp
+class RTCPReceiver
 {
 public:
     RTCPReceiver(const WebRtc_Word32 id, RtpRtcpClock* clock,
@@ -98,9 +97,10 @@ public:
 
     bool UpdateRTCPReceiveInformationTimers();
 
-    WebRtc_Word32 BoundingSet(bool &tmmbrOwner, TMMBRSet*& boundingSetRec);
+    void UpdateBandwidthEstimate(const WebRtc_UWord16 bwEstimateKbit);
 
-    WebRtc_Word32 UpdateTMMBR();
+    WebRtc_Word32 BoundingSet(bool &tmmbrOwner,
+                              TMMBRSet*& boundingSetRec);
 
     WebRtc_Word32 SetPacketTimeout(const WebRtc_UWord32 timeoutMS);
     void PacketTimeout();

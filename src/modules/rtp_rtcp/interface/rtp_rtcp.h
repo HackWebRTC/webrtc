@@ -808,6 +808,14 @@ public:
     virtual WebRtc_Word32 SetTMMBRStatus(const bool enable) = 0;
 
     /*
+    *    local bw estimation changed
+    *
+    *    for video called by internal estimator
+    *    for audio (iSAC) called by engine, geting the data from the decoder
+    */
+    virtual void OnBandwidthEstimateUpdate(WebRtc_UWord16 bandWidthKbit) = 0;
+
+    /*
     *   (NACK)
     */
     virtual NACKMethod NACK() const  = 0;

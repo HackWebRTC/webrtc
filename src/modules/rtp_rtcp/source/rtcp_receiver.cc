@@ -27,28 +27,28 @@ namespace webrtc {
 using namespace RTCPUtility;
 using namespace RTCPHelp;
 
-RTCPReceiver::RTCPReceiver(const WebRtc_Word32 id, RtpRtcpClock* clock,
-                           ModuleRtpRtcpImpl* owner)
-    : TMMBRHelp(),
-      _id(id),
-      _clock(*clock),
-      _method(kRtcpOff),
-      _lastReceived(0),
-      _rtpRtcp(*owner),
-      _criticalSectionFeedbacks(
-          CriticalSectionWrapper::CreateCriticalSection()),
-      _cbRtcpFeedback(NULL),
-      _cbVideoFeedback(NULL),
-      _criticalSectionRTCPReceiver(
-          CriticalSectionWrapper::CreateCriticalSection()),
-      _SSRC(0),
-      _remoteSSRC(0),
-      _remoteSenderInfo(),
-      _lastReceivedSRNTPsecs(0),
-      _lastReceivedSRNTPfrac(0),
-      _receivedInfoMap(),
-      _packetTimeOutMS(0),
-      _rtt(0) {
+RTCPReceiver::RTCPReceiver(const WebRtc_Word32 id,
+                           RtpRtcpClock* clock,
+                           ModuleRtpRtcpImpl* owner) :
+    _id(id),
+    _clock(*clock),
+    _method(kRtcpOff),
+    _lastReceived(0),
+    _rtpRtcp(*owner),
+    _criticalSectionFeedbacks(CriticalSectionWrapper::CreateCriticalSection()),
+    _cbRtcpFeedback(NULL),
+    _cbVideoFeedback(NULL),
+    _criticalSectionRTCPReceiver(
+        CriticalSectionWrapper::CreateCriticalSection()),
+    _SSRC(0),
+    _remoteSSRC(0),
+    _remoteSenderInfo(),
+    _lastReceivedSRNTPsecs(0),
+    _lastReceivedSRNTPfrac(0),
+    _receivedInfoMap(),
+    _packetTimeOutMS(0),
+    _rtt(0)
+{
     memset(&_remoteSenderInfo, 0, sizeof(_remoteSenderInfo));
     WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, id, "%s created", __FUNCTION__);
 }
@@ -1224,63 +1224,15 @@ RTCPReceiver::OnReceivedSliceLossIndication(const WebRtc_UWord8 pitureID) const
     }
 }
 
-void RTCPReceiver::OnReceivedReferencePictureSelectionIndication(
-    const WebRtc_UWord64 pitureID) const {
-  CriticalSectionScoped lock(_criticalSectionFeedbacks);
+void
+RTCPReceiver::OnReceivedReferencePictureSelectionIndication(const WebRtc_UWord64 pitureID) const
+{
+    CriticalSectionScoped lock(_criticalSectionFeedbacks);
 
-  if (_cbRtcpFeedback) {
-    _cbRtcpFeedback->OnRPSIReceived(_id, pitureID);
-  }
-}
-
-WebRtc_Word32 RTCPReceiver::UpdateTMMBR() {
-  WebRtc_Word32 numBoundingSet = 0;
-  WebRtc_Word32 newBitrates = 0;
-  WebRtc_UWord32 minBitrateKbit = 0;
-  WebRtc_UWord32 maxBitrateKbit = 0;
-  WebRtc_UWord32 accNumCandidates = 0;
-
-  WebRtc_Word32 size = TMMBRReceived(0, 0, NULL);
-  if (size > 0) {
-    TMMBRSet* candidateSet = VerifyAndAllocateCandidateSet(size);
-    // get candidate set from receiver
-    accNumCandidates = TMMBRReceived(size, accNumCandidates, candidateSet);
-  } else {
-    // candidate set empty
-    VerifyAndAllocateCandidateSet(0);  // resets candidate set
-  }
-  // Find bounding set
-  TMMBRSet* boundingSet = NULL;
-  numBoundingSet = FindTMMBRBoundingSet(boundingSet);
-  if (numBoundingSet == -1) {
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
-                 "Failed to find TMMBR bounding set.");
-    return -1;
-  }
-  // Set bounding set
-  // Inform remote clients about the new bandwidth
-  // inform the remote client
-  _rtpRtcp.SetTMMBN(boundingSet);
-
-  // might trigger a TMMBN
-  if (numBoundingSet == 0) {
-    // owner of max bitrate request has timed out
-    // empty bounding set has been sent
-    return 0;
-  }
-  // Get net bitrate from bounding set depending on sent packet rate
-  newBitrates = CalcMinBitRate(static_cast<WebRtc_UWord32>(numBoundingSet),
-                               &minBitrateKbit);
-
-  // no critsect when calling out to "unknown" code
-  if (newBitrates == 0) {
-    // we have a new bandwidth estimate on this channel
-    _rtpRtcp.OnReceivedBandwidthEstimateUpdate((WebRtc_UWord16)minBitrateKbit);
-    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, _id,
-                 "Set TMMBR request min:%d kbps max:%d kbps, channel: %d",
-                 minBitrateKbit, maxBitrateKbit, _id);
-  }
-  return 0;
+    if(_cbRtcpFeedback)
+    {
+        _cbRtcpFeedback->OnRPSIReceived(_id, pitureID);
+    }
 }
 
 // Holding no Critical section
@@ -1295,7 +1247,7 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
                      "SIG [RTCP] Incoming TMMBR to id:%d", _id);
 
         // Might trigger a OnReceivedBandwidthEstimateUpdate.
-        UpdateTMMBR();
+        _rtpRtcp.OnReceivedTMMBR();
     }
     if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRemb)
     {
@@ -1433,6 +1385,18 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
             }
         }
     }
+}
+
+void
+RTCPReceiver::UpdateBandwidthEstimate(const WebRtc_UWord16 bwEstimateKbit)
+{
+    CriticalSectionScoped lock(_criticalSectionFeedbacks);
+
+    if(_cbRtcpFeedback)
+    {
+        _cbRtcpFeedback->OnTMMBRReceived(_id, bwEstimateKbit);
+    }
+
 }
 
 WebRtc_Word32 RTCPReceiver::CNAME(const WebRtc_UWord32 remoteSSRC,
