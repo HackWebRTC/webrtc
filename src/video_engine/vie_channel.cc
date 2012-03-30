@@ -313,7 +313,7 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
                      "%s: could not register payload type", __FUNCTION__);
         return -1;
       }
-      if (mtu_ != -1) {
+      if (mtu_ != 0) {
         rtp_rtcp->SetMaxTransferUnit(mtu_);
       }
       if (restart_rtp) {
