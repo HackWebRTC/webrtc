@@ -223,11 +223,18 @@ WebRtc_Word32 ReceiverFEC::AddReceivedFECPacket(
 
 WebRtc_Word32 ReceiverFEC::ProcessReceivedFEC() {
   if (!_receivedPacketList.empty()) {
+    // Send received media packet to VCM.
+    if (!_receivedPacketList.front()->isFec) {
+      if (ParseAndReceivePacket(_receivedPacketList.front()->pkt) != 0) {
+        return -1;
+      }
+    }
     if (_fec->DecodeFEC(&_receivedPacketList, &_recoveredPacketList) != 0) {
       return -1;
     }
     assert(_receivedPacketList.empty());
   }
+  // Send any recovered media packets to VCM.
   ForwardErrorCorrection::RecoveredPacketList::iterator it =
       _recoveredPacketList.begin();
   for (; it != _recoveredPacketList.end(); ++it) {

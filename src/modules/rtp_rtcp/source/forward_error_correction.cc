@@ -375,7 +375,8 @@ void ForwardErrorCorrection::InsertMediaPacket(
   }
   RecoveredPacket* recoverdPacketToInsert = new RecoveredPacket;
   recoverdPacketToInsert->wasRecovered = false;
-  recoverdPacketToInsert->returned = false;
+  // Inserted Media packet is already sent to VCM.
+  recoverdPacketToInsert->returned = true;
   recoverdPacketToInsert->seqNum = rxPacket->seqNum;
   recoverdPacketToInsert->pkt = rxPacket->pkt;
   recoverdPacketToInsert->pkt->length = rxPacket->pkt->length;
