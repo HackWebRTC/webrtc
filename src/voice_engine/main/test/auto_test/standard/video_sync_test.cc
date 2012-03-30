@@ -20,7 +20,7 @@
   const int kMinimumReasonableDelayEstimateMs = 45;
 #endif  // !MAC_IPHONE
 
-class VideoSyncTest : public AfterStreamingFixture {
+class DISABLED_VideoSyncTest : public AfterStreamingFixture {
  protected:
   // This test will verify that delay estimates converge (e.g. the standard
   // deviation for the last five seconds' estimates is less than 20) without
@@ -67,30 +67,30 @@ class VideoSyncTest : public AfterStreamingFixture {
   }
 };
 
-TEST_F(VideoSyncTest, CanGetPlayoutTimestampWhilePlayingWithoutSettingItFirst) {
+TEST_F(DISABLED_VideoSyncTest, CanGetPlayoutTimestampWhilePlayingWithoutSettingItFirst) {
   unsigned int ignored;
   EXPECT_EQ(0, voe_vsync_->GetPlayoutTimestamp(channel_, ignored));
 }
 
-TEST_F(VideoSyncTest, CannotSetInitTimestampWhilePlaying) {
+TEST_F(DISABLED_VideoSyncTest, CannotSetInitTimestampWhilePlaying) {
   EXPECT_EQ(-1, voe_vsync_->SetInitTimestamp(channel_, 12345));
 }
 
-TEST_F(VideoSyncTest, CannotSetInitSequenceNumberWhilePlaying) {
+TEST_F(DISABLED_VideoSyncTest, CannotSetInitSequenceNumberWhilePlaying) {
   EXPECT_EQ(-1, voe_vsync_->SetInitSequenceNumber(channel_, 123));
 }
 
-TEST_F(VideoSyncTest, CanSetInitTimestampWhileStopped) {
+TEST_F(DISABLED_VideoSyncTest, CanSetInitTimestampWhileStopped) {
   EXPECT_EQ(0, voe_base_->StopSend(channel_));
   EXPECT_EQ(0, voe_vsync_->SetInitTimestamp(channel_, 12345));
 }
 
-TEST_F(VideoSyncTest, CanSetInitSequenceNumberWhileStopped) {
+TEST_F(DISABLED_VideoSyncTest, CanSetInitSequenceNumberWhileStopped) {
   EXPECT_EQ(0, voe_base_->StopSend(channel_));
   EXPECT_EQ(0, voe_vsync_->SetInitSequenceNumber(channel_, 123));
 }
 
-TEST_F(VideoSyncTest, DelayEstimatesStabilizeDuring15sAndAreNotTooLow) {
+TEST_F(DISABLED_VideoSyncTest, DelayEstimatesStabilizeDuring15sAndAreNotTooLow) {
   EXPECT_EQ(0, voe_base_->StopSend(channel_));
   EXPECT_EQ(0, voe_vsync_->SetInitTimestamp(channel_, 12345));
   EXPECT_EQ(0, voe_vsync_->SetInitSequenceNumber(channel_, 123));
@@ -99,7 +99,7 @@ TEST_F(VideoSyncTest, DelayEstimatesStabilizeDuring15sAndAreNotTooLow) {
   CheckEstimatesConvergeReasonablyWell(kMinimumReasonableDelayEstimateMs);
 }
 
-TEST_F(VideoSyncTest, DelayEstimatesStabilizeAfterNetEqMinDelayChanges45s) {
+TEST_F(DISABLED_VideoSyncTest, DelayEstimatesStabilizeAfterNetEqMinDelayChanges45s) {
   EXPECT_EQ(0, voe_base_->StopSend(channel_));
   EXPECT_EQ(0, voe_vsync_->SetInitTimestamp(channel_, 12345));
   EXPECT_EQ(0, voe_vsync_->SetInitSequenceNumber(channel_, 123));
@@ -113,7 +113,7 @@ TEST_F(VideoSyncTest, DelayEstimatesStabilizeAfterNetEqMinDelayChanges45s) {
 }
 
 #if !defined(WEBRTC_ANDROID)
-TEST_F(VideoSyncTest, CanGetPlayoutBufferSize) {
+TEST_F(DISABLED_VideoSyncTest, CanGetPlayoutBufferSize) {
   int ignored;
   EXPECT_EQ(0, voe_vsync_->GetPlayoutBufferSize(ignored));
 }
