@@ -73,7 +73,8 @@ ViEChannel::ViEChannel(WebRtc_Word32 channel_id,
       effect_filter_(NULL),
       color_enhancement_(true),
       vcm_rttreported_(TickTime::Now()),
-      file_recorder_(channel_id) {
+      file_recorder_(channel_id),
+      mtu_(0) {
   WEBRTC_TRACE(kTraceMemory, kTraceVideo, ViEId(engine_id, channel_id),
                "ViEChannel::ViEChannel(channel_id: %d, engine_id: %d)",
                channel_id, engine_id);
@@ -311,6 +312,9 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
         WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                      "%s: could not register payload type", __FUNCTION__);
         return -1;
+      }
+      if (mtu_ != -1) {
+        rtp_rtcp->SetMaxTransferUnit(mtu_);
       }
       if (restart_rtp) {
         rtp_rtcp->SetSendingStatus(true);
@@ -1852,6 +1856,7 @@ WebRtc_Word32 ViEChannel::SetMTU(WebRtc_UWord16 mtu) {
     RtpRtcp* rtp_rtcp = *it;
     rtp_rtcp->SetMaxTransferUnit(mtu);
   }
+  mtu_ = mtu;
   return 0;
 }
 

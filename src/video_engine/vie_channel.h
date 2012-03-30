@@ -392,6 +392,9 @@ class ViEChannel
   TickTime vcm_rttreported_;
 
   ViEFileRecorder file_recorder_;
+
+  // User set MTU, -1 if not set.
+  uint16_t mtu_;
 };
 
 }  // namespace webrtc
