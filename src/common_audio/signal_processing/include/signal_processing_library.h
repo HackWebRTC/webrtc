@@ -34,6 +34,8 @@
 #define WEBRTC_SPL_MAX_SEED_USED    0x80000000L
 #define WEBRTC_SPL_MIN(A, B)        (A < B ? A : B) // Get min value
 #define WEBRTC_SPL_MAX(A, B)        (A > B ? A : B) // Get max value
+// TODO(kma/bjorn): For the next two macros, investigate how to correct the code
+// for inputs of a = WEBRTC_SPL_WORD16_MIN or WEBRTC_SPL_WORD32_MIN.
 #define WEBRTC_SPL_ABS_W16(a) \
     (((WebRtc_Word16)a >= 0) ? ((WebRtc_Word16)a) : -((WebRtc_Word16)a))
 #define WEBRTC_SPL_ABS_W32(a) \
@@ -202,40 +204,129 @@ WebRtc_Word16 WebRtcSpl_OnesArrayW32(WebRtc_Word32* vector,
                                      WebRtc_Word16 vector_length);
 // End: Copy and set operations.
 
+
 // Minimum and maximum operations. Implementation in min_max_operations.c.
 
 // Returns the largest absolute value in a signed 16-bit vector.
 //
 // Input:
-//      - vector :   Input vector.
-//      - length :   Number of samples in vector.
+//      - vector : 16-bit input vector.
+//      - length : Number of samples in vector.
 //
-// Return value  :   Maximum absolute value in vector.
-
+// Return value  : Maximum absolute value in vector;
+//                 or -1, if (vector == NULL || length <= 0).
 int16_t WebRtcSpl_MaxAbsValueW16(const int16_t* vector, int length);
 
-WebRtc_Word32 WebRtcSpl_MaxAbsValueW32(G_CONST WebRtc_Word32* vector,
-                                       WebRtc_Word16 length);
-WebRtc_Word16 WebRtcSpl_MinValueW16(G_CONST WebRtc_Word16* vector,
-                                    WebRtc_Word16 length);
-WebRtc_Word32 WebRtcSpl_MinValueW32(G_CONST WebRtc_Word32* vector,
-                                    WebRtc_Word16 length);
-WebRtc_Word16 WebRtcSpl_MaxValueW16(G_CONST WebRtc_Word16* vector,
-                                    WebRtc_Word16 length);
+// Returns the largest absolute value in a signed 32-bit vector.
+//
+// Input:
+//      - vector : 32-bit input vector.
+//      - length : Number of samples in vector.
+//
+// Return value  : Maximum absolute value in vector;
+//                 or -1, if (vector == NULL || length <= 0).
+int32_t WebRtcSpl_MaxAbsValueW32(const int32_t* vector, int length);
 
-WebRtc_Word16 WebRtcSpl_MaxAbsIndexW16(G_CONST WebRtc_Word16* vector,
-                                       WebRtc_Word16 length);
-WebRtc_Word32 WebRtcSpl_MaxValueW32(G_CONST WebRtc_Word32* vector,
-                                    WebRtc_Word16 length);
-WebRtc_Word16 WebRtcSpl_MinIndexW16(G_CONST WebRtc_Word16* vector,
-                                    WebRtc_Word16 length);
-WebRtc_Word16 WebRtcSpl_MinIndexW32(G_CONST WebRtc_Word32* vector,
-                                    WebRtc_Word16 length);
-WebRtc_Word16 WebRtcSpl_MaxIndexW16(G_CONST WebRtc_Word16* vector,
-                                    WebRtc_Word16 length);
-WebRtc_Word16 WebRtcSpl_MaxIndexW32(G_CONST WebRtc_Word32* vector,
-                                    WebRtc_Word16 length);
+// Returns the maximum value of a 16-bit vector.
+//
+// Input:
+//      - vector : 16-bit input vector.
+//      - length : Number of samples in vector.
+//
+// Return value  : Maximum sample value in |vector|.
+//                 If (vector == NULL || length <= 0) WEBRTC_SPL_WORD16_MIN
+//                 is returned. Note that WEBRTC_SPL_WORD16_MIN is a feasible
+//                 value and we can't catch errors purely based on it.
+int16_t WebRtcSpl_MaxValueW16(const int16_t* vector, int length);
+
+// Returns the maximum value of a 32-bit vector.
+//
+// Input:
+//      - vector : 32-bit input vector.
+//      - length : Number of samples in vector.
+//
+// Return value  : Maximum sample value in |vector|.
+//                 If (vector == NULL || length <= 0) WEBRTC_SPL_WORD32_MIN
+//                 is returned. Note that WEBRTC_SPL_WORD32_MIN is a feasible
+//                 value and we can't catch errors purely based on it.
+int32_t WebRtcSpl_MaxValueW32(const int32_t* vector, int length);
+
+// Returns the minimum value of a 16-bit vector.
+//
+// Input:
+//      - vector : 16-bit input vector.
+//      - length : Number of samples in vector.
+//
+// Return value  : Minimum sample value in |vector|.
+//                 If (vector == NULL || length <= 0) WEBRTC_SPL_WORD16_MAX
+//                 is returned. Note that WEBRTC_SPL_WORD16_MAX is a feasible
+//                 value and we can't catch errors purely based on it.
+int16_t WebRtcSpl_MinValueW16(const int16_t* vector, int length);
+
+// Returns the minimum value of a 32-bit vector.
+//
+// Input:
+//      - vector : 32-bit input vector.
+//      - length : Number of samples in vector.
+//
+// Return value  : Minimum sample value in |vector|.
+//                 If (vector == NULL || length <= 0) WEBRTC_SPL_WORD32_MAX
+//                 is returned. Note that WEBRTC_SPL_WORD32_MAX is a feasible
+//                 value and we can't catch errors purely based on it.
+int32_t WebRtcSpl_MinValueW32(const int32_t* vector, int length);
+
+// Returns the vector index to the largest absolute value of a 16-bit vector.
+//
+// Input:
+//      - vector : 16-bit input vector.
+//      - length : Number of samples in vector.
+//
+// Return value  : Index to the maximum absolute value in vector;
+//                 or -1, if (vector == NULL || length <= 0).
+int WebRtcSpl_MaxAbsIndexW16(const int16_t* vector, int length);
+
+// Returns the vector index to the maximum sample value of a 16-bit vector.
+//
+// Input:
+//      - vector : 16-bit input vector.
+//      - length : Number of samples in vector.
+//
+// Return value  : Index to the maximum value in vector;
+//                 or -1, if (vector == NULL || length <= 0).
+int WebRtcSpl_MaxIndexW16(const int16_t* vector, int length);
+
+// Returns the vector index to the maximum sample value of a 32-bit vector.
+//
+// Input:
+//      - vector : 32-bit input vector.
+//      - length : Number of samples in vector.
+//
+// Return value  : Index to the maximum value in vector;
+//                 or -1, if (vector == NULL || length <= 0).
+int WebRtcSpl_MaxIndexW32(const int32_t* vector, int length);
+
+// Returns the vector index to the minimum sample value of a 16-bit vector.
+//
+// Input:
+//      - vector : 16-bit input vector.
+//      - length : Number of samples in vector.
+//
+// Return value  : Index to the mimimum value in vector;
+//                 or -1, if (vector == NULL || length <= 0).
+int WebRtcSpl_MinIndexW16(const int16_t* vector, int length);
+
+// Returns the vector index to the minimum sample value of a 32-bit vector.
+//
+// Input:
+//      - vector : 32-bit input vector.
+//      - length : Number of samples in vector.
+//
+// Return value  : Index to the mimimum value in vector;
+//                 or -1, if (vector == NULL || length <= 0).
+int WebRtcSpl_MinIndexW32(const int32_t* vector, int length);
+
 // End: Minimum and maximum operations.
+
 
 // Vector scaling operations. Implementation in vector_scaling_operations.c.
 // Description at bottom of file.
@@ -847,81 +938,6 @@ void WebRtcSpl_SynthesisQMF(const WebRtc_Word16* low_band,
 //      - vector        : Vector containing all ones
 //
 // Return value         : Number of samples in vector
-//
-
-//
-// WebRtcSpl_MinValueW16(...)
-// WebRtcSpl_MinValueW32(...)
-//
-// Returns the minimum value of a vector
-//
-// Input:
-//      - vector        : Input vector
-//      - vector_length : Number of samples in vector
-//
-// Return value         : Minimum sample value in vector
-//
-
-//
-// WebRtcSpl_MaxValueW16(...)
-// WebRtcSpl_MaxValueW32(...)
-//
-// Returns the maximum value of a vector
-//
-// Input:
-//      - vector        : Input vector
-//      - vector_length : Number of samples in vector
-//
-// Return value         : Maximum sample value in vector
-//
-
-// WebRtcSpl_MaxAbsValueW32(...)
-//
-// Returns the largest absolute value of a vector
-//
-// Input:
-//      - vector        : Input vector
-//      - vector_length : Number of samples in vector
-//
-// Return value         : Maximum absolute value in vector
-//
-
-//
-// WebRtcSpl_MaxAbsIndexW16(...)
-//
-// Returns the vector index to the largest absolute value of a vector
-//
-// Input:
-//      - vector        : Input vector
-//      - vector_length : Number of samples in vector
-//
-// Return value         : Index to maximum absolute value in vector
-//
-
-//
-// WebRtcSpl_MinIndexW16(...)
-// WebRtcSpl_MinIndexW32(...)
-//
-// Returns the vector index to the minimum sample value of a vector
-//
-// Input:
-//      - vector        : Input vector
-//      - vector_length : Number of samples in vector
-//
-// Return value         : Index to minimum sample value in vector
-//
-
-//
-// WebRtcSpl_MaxIndexW16(...)
-// WebRtcSpl_MaxIndexW32(...)
-//
-// Returns the vector index to the maximum sample value of a vector
-//
-// Input:
-//      - vector        : Input vector
-//      - vector_length : Number of samples in vector
-//
-// Return value         : Index to maximum sample value in vector
 //
 
 //
@@ -1627,7 +1643,7 @@ void WebRtcSpl_SynthesisQMF(const WebRtc_Word16* low_band,
 // WebRtc_Word16 WebRtcSpl_SatW32ToW16(...)
 //
 // This function saturates a 32-bit word into a 16-bit word.
-// 
+//
 // Input:
 //      - value32   : The value of a 32-bit word.
 //
@@ -1639,7 +1655,7 @@ void WebRtcSpl_SynthesisQMF(const WebRtc_Word16* low_band,
 //
 // This function multiply a 16-bit word by a 16-bit word, and accumulate this
 // value to a 32-bit integer.
-// 
+//
 // Input:
 //      - a    : The value of the first 16-bit word.
 //      - b    : The value of the second 16-bit word.
