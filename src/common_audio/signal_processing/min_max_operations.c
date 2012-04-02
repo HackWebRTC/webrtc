@@ -11,16 +11,18 @@
 /*
  * This file contains the implementation of functions
  * WebRtcSpl_MaxAbsValueW16()
+ * WebRtcSpl_MaxAbsIndexW16()
  * WebRtcSpl_MaxAbsValueW32()
  * WebRtcSpl_MaxValueW16()
- * WebRtcSpl_MaxValueW32()
- * WebRtcSpl_MinValueW16()
- * WebRtcSpl_MinValueW32()
- * WebRtcSpl_MaxAbsIndexW16()
  * WebRtcSpl_MaxIndexW16()
+ * WebRtcSpl_MaxValueW32()
  * WebRtcSpl_MaxIndexW32()
+ * WebRtcSpl_MinValueW16()
  * WebRtcSpl_MinIndexW16()
+ * WebRtcSpl_MinValueW32()
  * WebRtcSpl_MinIndexW32()
+ *
+ * The description header can be found in signal_processing_library.h.
  *
  */
 
@@ -28,18 +30,13 @@
 
 #include <stdlib.h>
 
-// TODO(bjorn/kma): Consolidate function pairs (e.g. combine
-// WebRtcSpl_MaxAbsValueW16 and WebRtcSpl_MaxAbsIndexW16 into a single one.)
-
 #if !(defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM_NEON))
 
 // Maximum absolute value of word16 vector.
 int16_t WebRtcSpl_MaxAbsValueW16(const int16_t* vector, int length) {
-  int i = 0, absolute = 0, maximum = 0;
-
-  if (vector == NULL || length <= 0) {
-    return -1;
-  }
+  int i = 0;
+  int absolute = 0;
+  int maximum = -1;  // Return -1 if length <= 0.
 
   for (i = 0; i < length; i++) {
     absolute = abs((int)vector[i]);
@@ -57,201 +54,214 @@ int16_t WebRtcSpl_MaxAbsValueW16(const int16_t* vector, int length) {
   return (int16_t)maximum;
 }
 
-// Maximum absolute value of word32 vector.
-int32_t WebRtcSpl_MaxAbsValueW32(const int32_t* vector, int length) {
-  // Use uint for the local variables, to accommodate the value
-  // of abs(0x80000000).
+#endif
 
-  uint absolute = 0, maximum = 0;
-  int i = 0;
+// Index of maximum absolute value in a  word16 vector.
+WebRtc_Word16 WebRtcSpl_MaxAbsIndexW16(G_CONST WebRtc_Word16* vector, WebRtc_Word16 length)
+{
+    WebRtc_Word16 tempMax;
+    WebRtc_Word16 absTemp;
+    WebRtc_Word16 tempMaxIndex = 0;
+    WebRtc_Word16 i = 0;
+    G_CONST WebRtc_Word16 *tmpvector = vector;
 
-  if (vector == NULL || length <= 0) {
-    return -1;
-  }
-
-  for (i = 0; i < length; i++) {
-    absolute = abs((int)vector[i]);
-    if (absolute > maximum) {
-      maximum = absolute;
+    tempMax = WEBRTC_SPL_ABS_W16(*tmpvector);
+    tmpvector++;
+    for (i = 1; i < length; i++)
+    {
+        absTemp = WEBRTC_SPL_ABS_W16(*tmpvector);
+        tmpvector++;
+        if (absTemp > tempMax)
+        {
+            tempMax = absTemp;
+            tempMaxIndex = i;
+        }
     }
-  }
+    return tempMaxIndex;
+}
 
-  maximum = WEBRTC_SPL_MIN(maximum, WEBRTC_SPL_WORD32_MAX);
+// Maximum absolute value of word32 vector.
+WebRtc_Word32 WebRtcSpl_MaxAbsValueW32(G_CONST WebRtc_Word32 *vector, WebRtc_Word16 length)
+{
+    WebRtc_UWord32 tempMax = 0;
+    WebRtc_UWord32 absVal;
+    WebRtc_Word32 retval;
+    int i;
+    G_CONST WebRtc_Word32 *tmpvector = vector;
 
-  return (int32_t)maximum;
+    for (i = 0; i < length; i++)
+    {
+        absVal = WEBRTC_SPL_ABS_W32((*tmpvector));
+        if (absVal > tempMax)
+        {
+            tempMax = absVal;
+        }
+        tmpvector++;
+    }
+    retval = (WebRtc_Word32)(WEBRTC_SPL_MIN(tempMax, WEBRTC_SPL_WORD32_MAX));
+    return retval;
 }
 
 // Maximum value of word16 vector.
 #ifndef XSCALE_OPT
-int16_t WebRtcSpl_MaxValueW16(const int16_t* vector, int length) {
-  int16_t maximum = WEBRTC_SPL_WORD16_MIN;
-  int i = 0;
+WebRtc_Word16 WebRtcSpl_MaxValueW16(G_CONST WebRtc_Word16* vector, WebRtc_Word16 length)
+{
+    WebRtc_Word16 tempMax;
+    WebRtc_Word16 i;
+    G_CONST WebRtc_Word16 *tmpvector = vector;
 
-  if (vector == NULL || length <= 0) {
-    return maximum;
-  }
-
-  for (i = 0; i < length; i++) {
-    if (vector[i] > maximum)
-      maximum = vector[i];
-  }
-  return maximum;
-}
-
-// Maximum value of word32 vector.
-int32_t WebRtcSpl_MaxValueW32(const int32_t* vector, int length) {
-  int32_t maximum = WEBRTC_SPL_WORD32_MIN;
-  int i = 0;
-
-  if (vector == NULL || length <= 0) {
-    return maximum;
-  }
-
-  for (i = 0; i < length; i++) {
-    if (vector[i] > maximum)
-      maximum = vector[i];
-  }
-  return maximum;
+    tempMax = *tmpvector++;
+    for (i = 1; i < length; i++)
+    {
+        if (*tmpvector++ > tempMax)
+            tempMax = vector[i];
+    }
+    return tempMax;
 }
 #else
 #pragma message(">> WebRtcSpl_MaxValueW16 is excluded from this build")
+#endif
+
+// Index of maximum value in a word16 vector.
+WebRtc_Word16 WebRtcSpl_MaxIndexW16(G_CONST WebRtc_Word16 *vector, WebRtc_Word16 length)
+{
+    WebRtc_Word16 tempMax;
+    WebRtc_Word16 tempMaxIndex = 0;
+    WebRtc_Word16 i = 0;
+    G_CONST WebRtc_Word16 *tmpvector = vector;
+
+    tempMax = *tmpvector++;
+    for (i = 1; i < length; i++)
+    {
+        if (*tmpvector++ > tempMax)
+        {
+            tempMax = vector[i];
+            tempMaxIndex = i;
+        }
+    }
+    return tempMaxIndex;
+}
+
+// Maximum value of word32 vector.
+#ifndef XSCALE_OPT
+WebRtc_Word32 WebRtcSpl_MaxValueW32(G_CONST WebRtc_Word32* vector, WebRtc_Word16 length)
+{
+    WebRtc_Word32 tempMax;
+    WebRtc_Word16 i;
+    G_CONST WebRtc_Word32 *tmpvector = vector;
+
+    tempMax = *tmpvector++;
+    for (i = 1; i < length; i++)
+    {
+        if (*tmpvector++ > tempMax)
+            tempMax = vector[i];
+    }
+    return tempMax;
+}
+#else
 #pragma message(">> WebRtcSpl_MaxValueW32 is excluded from this build")
 #endif
 
-// Minimum value of word16 vector.
-int16_t WebRtcSpl_MinValueW16(const int16_t* vector, int length) {
-  int16_t minimum = WEBRTC_SPL_WORD16_MAX;
-  int i = 0;
-
-  if (vector == NULL || length <= 0) {
-    return minimum;
-  }
-
-  for (i = 0; i < length; i++) {
-    if (vector[i] < minimum)
-      minimum = vector[i];
-  }
-  return minimum;
-}
-
-// Minimum value of word32 vector.
-int32_t WebRtcSpl_MinValueW32(const int32_t* vector, int length) {
-  int32_t minimum = WEBRTC_SPL_WORD32_MAX;
-  int i = 0;
-
-  if (vector == NULL || length <= 0) {
-    return minimum;
-  }
-
-  for (i = 0; i < length; i++) {
-    if (vector[i] < minimum)
-      minimum = vector[i];
-  }
-  return minimum;
-}
-#endif
-
-
-// Index of maximum absolute value in a word16 vector.
-int WebRtcSpl_MaxAbsIndexW16(const int16_t* vector, int length) {
-  // Use type int for local variables, to accomodate the value of abs(-32768).
-
-  int i = 0, absolute = 0, maximum = 0, index = 0;
-
-  if (vector == NULL || length <= 0) {
-    return -1;
-  }
-
-  for (i = 0; i < length; i++) {
-    absolute = abs((int)vector[i]);
-
-    if (absolute > maximum) {
-      maximum = absolute;
-      index = i;
-    }
-  }
-
-  return index;
-}
-
-// Index of maximum value in a word16 vector.
-int WebRtcSpl_MaxIndexW16(const int16_t* vector, int length) {
-  int i = 0, index = 0;
-  int16_t maximum = WEBRTC_SPL_WORD16_MIN;
-
-  if (vector == NULL || length <= 0) {
-    return -1;
-  }
-
-  for (i = 0; i < length; i++) {
-    if (vector[i] > maximum) {
-      maximum = vector[i];
-      index = i;
-    }
-  }
-
-  return index;
-}
-
 // Index of maximum value in a word32 vector.
-int WebRtcSpl_MaxIndexW32(const int32_t* vector, int length) {
-  int i = 0, index = 0;
-  int32_t maximum = WEBRTC_SPL_WORD32_MIN;
+WebRtc_Word16 WebRtcSpl_MaxIndexW32(G_CONST WebRtc_Word32* vector, WebRtc_Word16 length)
+{
+    WebRtc_Word32 tempMax;
+    WebRtc_Word16 tempMaxIndex = 0;
+    WebRtc_Word16 i = 0;
+    G_CONST WebRtc_Word32 *tmpvector = vector;
 
-  if (vector == NULL || length <= 0) {
-    return -1;
-  }
-
-  for (i = 0; i < length; i++) {
-    if (vector[i] > maximum) {
-      maximum = vector[i];
-      index = i;
+    tempMax = *tmpvector++;
+    for (i = 1; i < length; i++)
+    {
+        if (*tmpvector++ > tempMax)
+        {
+            tempMax = vector[i];
+            tempMaxIndex = i;
+        }
     }
-  }
+    return tempMaxIndex;
+}
 
-  return index;
+// Minimum value of word16 vector.
+WebRtc_Word16 WebRtcSpl_MinValueW16(G_CONST WebRtc_Word16 *vector, WebRtc_Word16 length)
+{
+    WebRtc_Word16 tempMin;
+    WebRtc_Word16 i;
+    G_CONST WebRtc_Word16 *tmpvector = vector;
+
+    // Find the minimum value
+    tempMin = *tmpvector++;
+    for (i = 1; i < length; i++)
+    {
+        if (*tmpvector++ < tempMin)
+            tempMin = (vector[i]);
+    }
+    return tempMin;
 }
 
 // Index of minimum value in a word16 vector.
 #ifndef XSCALE_OPT
-int WebRtcSpl_MinIndexW16(const int16_t* vector, int length) {
-  int i = 0, index = 0;
-  int16_t minimum = WEBRTC_SPL_WORD16_MAX;
+WebRtc_Word16 WebRtcSpl_MinIndexW16(G_CONST WebRtc_Word16* vector, WebRtc_Word16 length)
+{
+    WebRtc_Word16 tempMin;
+    WebRtc_Word16 tempMinIndex = 0;
+    WebRtc_Word16 i = 0;
+    G_CONST WebRtc_Word16* tmpvector = vector;
 
-  if (vector == NULL || length <= 0) {
-    return -1;
-  }
-
-  for (i = 0; i < length; i++) {
-    if (vector[i] < minimum) {
-      minimum = vector[i];
-      index = i;
+    // Find index of smallest value
+    tempMin = *tmpvector++;
+    for (i = 1; i < length; i++)
+    {
+        if (*tmpvector++ < tempMin)
+        {
+            tempMin = vector[i];
+            tempMinIndex = i;
+        }
     }
-  }
+    return tempMinIndex;
+}
+#else
+#pragma message(">> WebRtcSpl_MinIndexW16 is excluded from this build")
+#endif
 
-  return index;
+// Minimum value of word32 vector.
+WebRtc_Word32 WebRtcSpl_MinValueW32(G_CONST WebRtc_Word32 *vector, WebRtc_Word16 length)
+{
+    WebRtc_Word32 tempMin;
+    WebRtc_Word16 i;
+    G_CONST WebRtc_Word32 *tmpvector = vector;
+
+    // Find the minimum value
+    tempMin = *tmpvector++;
+    for (i = 1; i < length; i++)
+    {
+        if (*tmpvector++ < tempMin)
+            tempMin = (vector[i]);
+    }
+    return tempMin;
 }
 
 // Index of minimum value in a word32 vector.
-int WebRtcSpl_MinIndexW32(const int32_t* vector, int length) {
-  int i = 0, index = 0;
-  int32_t minimum = WEBRTC_SPL_WORD32_MAX;
+#ifndef XSCALE_OPT
+WebRtc_Word16 WebRtcSpl_MinIndexW32(G_CONST WebRtc_Word32* vector, WebRtc_Word16 length)
+{
+    WebRtc_Word32 tempMin;
+    WebRtc_Word16 tempMinIndex = 0;
+    WebRtc_Word16 i = 0;
+    G_CONST WebRtc_Word32 *tmpvector = vector;
 
-  if (vector == NULL || length <= 0) {
-    return -1;
-  }
-
-  for (i = 0; i < length; i++) {
-    if (vector[i] < minimum) {
-      minimum = vector[i];
-      index = i;
+    // Find index of smallest value
+    tempMin = *tmpvector++;
+    for (i = 1; i < length; i++)
+    {
+        if (*tmpvector++ < tempMin)
+        {
+            tempMin = vector[i];
+            tempMinIndex = i;
+        }
     }
-  }
-
-  return index;
+    return tempMinIndex;
 }
-
 #else
-#pragma message(">> WebRtcSpl_MinIndexW16 is excluded from this build")
 #pragma message(">> WebRtcSpl_MinIndexW32 is excluded from this build")
 #endif
