@@ -47,6 +47,7 @@
         'auto_test/standard/hardware_before_streaming_test.cc',
         'auto_test/standard/hardware_test.cc',
         'auto_test/standard/manual_hold_test.cc',
+        'auto_test/standard/neteq_stats_test.cc',
         'auto_test/standard/neteq_test.cc',
         'auto_test/standard/network_before_streaming_test.cc',
         'auto_test/standard/network_test.cc',

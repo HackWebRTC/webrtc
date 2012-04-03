@@ -1035,49 +1035,7 @@ int VoETestManager::DoStandardTest() {
 #else
   TEST_LOG("\n\n+++ External media tests NOT ENABLED +++\n");
 #endif // #ifdef _TEST_XMEDIA_
-  /////////////////////
-  // NetEQ statistics
 
-#ifdef _TEST_NETEQ_STATS_
-  TEST_LOG("\n\n+++ NetEQ statistics tests +++\n\n");
-
-#ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
-  NetworkStatistics nStats;
-  TEST_MUSTPASS(voe_neteq_stats_->GetNetworkStatistics(0, nStats));
-  TEST_LOG("\nNetwork statistics: \n");
-  TEST_LOG("    currentAccelerateRate     = %hu \n",
-           nStats.currentAccelerateRate);
-  TEST_LOG("    currentBufferSize         = %hu \n",
-           nStats.currentBufferSize);
-  TEST_LOG("    currentDiscardRate        = %hu \n",
-           nStats.currentDiscardRate);
-  TEST_LOG("    currentExpandRate         = %hu \n",
-           nStats.currentExpandRate);
-  TEST_LOG("    currentPacketLossRate     = %hu \n",
-           nStats.currentPacketLossRate);
-  TEST_LOG("    currentPreemptiveRate     = %hu \n",
-           nStats.currentPreemptiveRate);
-  TEST_LOG("    preferredBufferSize       = %hu \n",
-           nStats.preferredBufferSize);
-  TEST_LOG("    jitterPeaksFound          = %i \n",
-           nStats.jitterPeaksFound);
-  TEST_LOG("    clockDriftPPM             = %i \n",
-           nStats.clockDriftPPM);
-  TEST_LOG("    meanWaitingTimeMs         = %i \n",
-           nStats.meanWaitingTimeMs);
-  TEST_LOG("    medianWaitingTimeMs       = %i \n",
-           nStats.medianWaitingTimeMs);
-  TEST_LOG("    minWaitingTimeMs          = %i \n",
-           nStats.minWaitingTimeMs);
-  TEST_LOG("    maxWaitingTimeMs          = %i \n",
-           nStats.maxWaitingTimeMs);
-#else
-  TEST_LOG("Skipping NetEQ statistics tests - "
-      "WEBRTC_VOICE_ENGINE_NETEQ_STATS_API not defined \n");
-#endif // #ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
-#else
-  TEST_LOG("\n\n+++ NetEQ statistics tests NOT ENABLED +++\n");
-#endif // #ifdef _TEST_NETEQ_STATS_
   //////////////////
   // Stop streaming
   TEST_LOG("\n\n+++ Stop streaming +++\n\n");
