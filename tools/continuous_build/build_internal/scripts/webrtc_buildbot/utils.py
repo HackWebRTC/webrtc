@@ -451,7 +451,7 @@ class WebRTCAndroidNDKFactory(WebRTCFactory):
   def EnableBuild(self):
     self.AddSmartCleanStep()
     self.AddGclientConfigStep()
-    self.AddGclientSyncStep(force_sync=True)
+    self.AddGclientSyncStep()
     cmd = 'source ./build/android/envsetup.sh && gclient runhooks'
     self.AddCommonStep(cmd, descriptor='gen_android_makefiles')
     cmd = 'source ./build/android/envsetup.sh && make -j8'
