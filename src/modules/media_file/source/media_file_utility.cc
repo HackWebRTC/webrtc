@@ -446,7 +446,7 @@ WebRtc_Word32 ModuleFileUtility::ReadWavHeader(InStream& wav)
     WAVE_CHUNK_header CHUNKheaderObj;
     // TODO (hellner): tmpStr and tmpStr2 seems unnecessary here.
     char tmpStr[6] = "FOUR";
-    char tmpStr2[4];
+    unsigned char tmpStr2[4];
     WebRtc_Word32 i, len;
     bool dataFound = false;
     bool fmtFound = false;
