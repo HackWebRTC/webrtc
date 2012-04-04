@@ -141,7 +141,7 @@ int ViEFrameProviderBase::RegisterFrameCallback(
       WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, id_),
                    "%s 0x%p already registered", __FUNCTION__,
                    callback_object);
-      assert("!frameObserver already registered");
+      assert(false && "frameObserver already registered");
       return -1;
     }
     frame_callbacks_.push_back(callback_object);

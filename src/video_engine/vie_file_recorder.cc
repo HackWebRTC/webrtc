@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -98,7 +98,7 @@ int ViEFileRecorder::StartRecording(const char* file_nameUTF8,
             audio_channel, this, &engine_audio_codec_inst);
         break;
       default:
-        assert(!"Unknown audio_source");
+        assert(false && "Unknown audio_source");
     }
     if (error != 0) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
@@ -130,7 +130,7 @@ int ViEFileRecorder::StopRecording() {
       case NO_AUDIO:
         break;
       default:
-        assert(!"Unknown audio_source");
+        assert(false && "Unknown audio_source");
     }
     if (error != 0) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,

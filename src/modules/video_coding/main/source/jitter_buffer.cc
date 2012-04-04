@@ -1621,7 +1621,7 @@ VCMJitterBuffer::InsertPacket(VCMEncodedFrame* buffer, const VCMPacket& packet)
         }
     default:
         {
-            assert(!"JitterBuffer::InsertPacket: Undefined value");
+            assert(false && "JitterBuffer::InsertPacket: Undefined value");
         }
     }
    return ret;

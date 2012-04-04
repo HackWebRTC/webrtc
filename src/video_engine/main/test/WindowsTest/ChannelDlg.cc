@@ -1101,7 +1101,7 @@ void CDXChannelDlg::IncomingRate(const int videoChannel,
 
 void CDXChannelDlg::RequestNewKeyFrame(int channel)
 {
-    assert(!"(RequestNewKeyFrame why is it called");
+    assert(false && "(RequestNewKeyFrame why is it called");
 }
 void CDXChannelDlg::PerformanceAlarm(unsigned int cpuLoad)
 {

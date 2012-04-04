@@ -2199,7 +2199,7 @@ WebRtc_Word32 ViEChannel::StopDecodeThread() {
     // Couldn't stop the thread, leak instead of crash.
     WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: could not stop decode thread", __FUNCTION__);
-    assert(!"could not stop decode thread");
+    assert(false && "could not stop decode thread");
   }
   decode_thread_ = NULL;
   return 0;

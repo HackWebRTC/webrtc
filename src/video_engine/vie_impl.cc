@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -52,7 +52,7 @@ VideoEngine* VideoEngine::Create() {
       VideoEngine* self = pfn();
       return self;
     } else {
-      assert(!"Failed to open test dll VideoEngineTestingDLL.dll");
+      assert(false && "Failed to open test dll VideoEngineTestingDLL.dll");
       return NULL;
     }
   }

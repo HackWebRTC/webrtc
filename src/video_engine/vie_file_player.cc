@@ -241,7 +241,7 @@ int ViEFilePlayer::StopPlay() {
     if (decode_thread_->Stop()) {
       delete decode_thread_;
     } else {
-      assert(!"ViEFilePlayer::StopPlay() Failed to stop decode thread");
+      assert(false && "ViEFilePlayer::StopPlay() Failed to stop decode thread");
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
                    "ViEFilePlayer::StartPlay() Failed to stop file decode "
                    "thread.");
