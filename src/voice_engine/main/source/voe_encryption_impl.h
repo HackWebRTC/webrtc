@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -18,8 +18,7 @@
 
 namespace webrtc {
 
-class VoEEncryptionImpl : public virtual voe::SharedData,
-                          public VoEEncryption,
+class VoEEncryptionImpl : public VoEEncryption,
                           public voe::RefCount
 {
 public:
@@ -61,8 +60,11 @@ public:
     virtual int DeRegisterExternalEncryption(int channel);
 
 protected:
-    VoEEncryptionImpl();
+    VoEEncryptionImpl(voe::SharedData* shared);
     virtual ~VoEEncryptionImpl();
+
+private:
+    voe::SharedData* _shared;
 };
 
 }   // namespace webrtc

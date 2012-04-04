@@ -70,7 +70,6 @@ public:
                     const TraceModule module,
                     const WebRtc_Word32 id,
                     const char* msg, ...);
-
 };
 } // namespace webrtc
 #endif // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_TRACE_H_

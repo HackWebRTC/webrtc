@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -39,55 +39,54 @@ VoENetEqStats* VoENetEqStats::GetInterface(VoiceEngine* voiceEngine)
 
 #ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
 
-VoENetEqStatsImpl::VoENetEqStatsImpl()
+VoENetEqStatsImpl::VoENetEqStatsImpl(voe::SharedData* shared) : _shared(shared)
 {
-    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId,-1),
+    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoENetEqStatsImpl::VoENetEqStatsImpl() - ctor");
 }
 
 VoENetEqStatsImpl::~VoENetEqStatsImpl()
 {
-    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId,-1),
+    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoENetEqStatsImpl::~VoENetEqStatsImpl() - dtor");
 }
 
 int VoENetEqStatsImpl::Release()
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoENetEqStats::Release()");
     (*this)--;
     int refCount = GetCount();
     if (refCount < 0)
     {
         Reset();  // reset reference counter to zero => OK to delete VE
-        _engineStatistics.SetLastError(
-            VE_INTERFACE_NOT_FOUND, kTraceWarning);
+        _shared->SetLastError(VE_INTERFACE_NOT_FOUND, kTraceWarning);
         return (-1);
     }
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId,-1),
-                 "VoENetEqStats reference counter = %d", refCount);
+    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
+        VoEId(_shared->instance_id(), -1),
+        "VoENetEqStats reference counter = %d", refCount);
     return (refCount);
 }
 
 int VoENetEqStatsImpl::GetNetworkStatistics(int channel,
                                             NetworkStatistics& stats)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetNetworkStatistics(channel=%d, stats=?)", channel);
-    ANDROID_NOT_SUPPORTED(_engineStatistics);
+    ANDROID_NOT_SUPPORTED(_shared->statistics());
     IPHONE_NOT_SUPPORTED();
 
-   if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-	voe::ScopedChannel sc(_channelManager, channel);
-	voe::Channel* channelPtr = sc.ChannelPtr();
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
             "GetNetworkStatistics() failed to locate channel");
         return -1;
     }

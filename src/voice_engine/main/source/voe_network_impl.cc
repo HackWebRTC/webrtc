@@ -38,53 +38,52 @@ VoENetwork* VoENetwork::GetInterface(VoiceEngine* voiceEngine)
 
 #ifdef WEBRTC_VOICE_ENGINE_NETWORK_API
 
-VoENetworkImpl::VoENetworkImpl()
+VoENetworkImpl::VoENetworkImpl(voe::SharedData* shared) : _shared(shared)
 {
-    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoENetworkImpl() - ctor");
 }
 
 VoENetworkImpl::~VoENetworkImpl()
 {
-    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "~VoENetworkImpl() - dtor");
 }
 
 int VoENetworkImpl::Release()
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoENetworkImpl::Release()");
     (*this)--;
     int refCount = GetCount();
     if (refCount < 0)
     {
         Reset();
-        _engineStatistics.SetLastError(VE_INTERFACE_NOT_FOUND,
-                                       kTraceWarning);
+        _shared->SetLastError(VE_INTERFACE_NOT_FOUND, kTraceWarning);
         return (-1);
     }
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId, -1),
-                 "VoENetworkImpl reference counter = %d", refCount);
+    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
+        VoEId(_shared->instance_id(), -1),
+        "VoENetworkImpl reference counter = %d", refCount);
     return (refCount);
 }
 
 int VoENetworkImpl::RegisterExternalTransport(int channel,
                                               Transport& transport)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "SetExternalTransport(channel=%d, transport=0x%x)",
                  channel, &transport);
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
             "SetExternalTransport() failed to locate channel");
         return -1;
     }
@@ -93,19 +92,18 @@ int VoENetworkImpl::RegisterExternalTransport(int channel,
 
 int VoENetworkImpl::DeRegisterExternalTransport(int channel)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "DeRegisterExternalTransport(channel=%d)", channel);
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
             "DeRegisterExternalTransport() failed to locate channel");
         return -1;
     }
@@ -116,41 +114,37 @@ int VoENetworkImpl::ReceivedRTPPacket(int channel,
                                       const void* data,
                                       unsigned int length)
 {
-    WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "ReceivedRTPPacket(channel=%d, length=%u)", channel, length);
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
     if ((length < 12) || (length > 807))
     {
-        _engineStatistics.SetLastError(
-            VE_INVALID_PACKET, kTraceError,
+        _shared->SetLastError(VE_INVALID_PACKET, kTraceError,
             "ReceivedRTPPacket() invalid packet length");
         return -1;
     }
     if (NULL == data)
     {
-        _engineStatistics.SetLastError(
-            VE_INVALID_ARGUMENT, kTraceError,
+        _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
             "ReceivedRTPPacket() invalid data vector");
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
             "ReceivedRTPPacket() failed to locate channel");
         return -1;
     }
 
     if (!channelPtr->ExternalTransport())
     {
-        _engineStatistics.SetLastError(
-            VE_INVALID_OPERATION, kTraceError,
+        _shared->SetLastError(VE_INVALID_OPERATION, kTraceError,
             "ReceivedRTPPacket() external transport is not enabled");
         return -1;
     }
@@ -160,40 +154,36 @@ int VoENetworkImpl::ReceivedRTPPacket(int channel,
 int VoENetworkImpl::ReceivedRTCPPacket(int channel, const void* data,
                                        unsigned int length)
 {
-    WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "ReceivedRTCPPacket(channel=%d, length=%u)", channel, length);
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
     if (length < 4)
     {
-        _engineStatistics.SetLastError(
-            VE_INVALID_PACKET, kTraceError,
+        _shared->SetLastError(VE_INVALID_PACKET, kTraceError,
             "ReceivedRTCPPacket() invalid packet length");
         return -1;
     }
     if (NULL == data)
     {
-        _engineStatistics.SetLastError(
-            VE_INVALID_ARGUMENT, kTraceError,
+        _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
             "ReceivedRTCPPacket() invalid data vector");
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
             "ReceivedRTCPPacket() failed to locate channel");
         return -1;
     }
     if (!channelPtr->ExternalTransport())
     {
-        _engineStatistics.SetLastError(
-            VE_INVALID_OPERATION, kTraceError,
+        _shared->SetLastError(VE_INVALID_OPERATION, kTraceError,
             "ReceivedRTCPPacket() external transport is not enabled");
         return -1;
     }
@@ -205,42 +195,38 @@ int VoENetworkImpl::GetSourceInfo(int channel,
                                   int& rtcpPort,
                                   char ipAddr[64])
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetSourceInfo(channel=%d, rtpPort=?, rtcpPort=?, ipAddr[]=?)",
                  channel);
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
     if (NULL == ipAddr)
     {
-        _engineStatistics.SetLastError(
-            VE_INVALID_ARGUMENT, kTraceError,
+        _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
             "GetSourceInfo() invalid IP-address buffer");
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
             "GetSourceInfo() failed to locate channel");
         return -1;
     }
     if (channelPtr->ExternalTransport())
     {
-        _engineStatistics.SetLastError(
-            VE_EXTERNAL_TRANSPORT_ENABLED, kTraceError,
+        _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceError,
             "GetSourceInfo() external transport is enabled");
         return -1;
     }
     return channelPtr->GetSourceInfo(rtpPort, rtcpPort, ipAddr);
 #else
-    _engineStatistics.SetLastError(
-        VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
+    _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
         "GetSourceInfo() VoE is built for external transport");
     return -1;
 #endif
@@ -248,19 +234,18 @@ int VoENetworkImpl::GetSourceInfo(int channel,
 
 int VoENetworkImpl::GetLocalIP(char ipAddr[64], bool ipv6)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetLocalIP(ipAddr[]=?, ipv6=%d)", ipv6);
     IPHONE_NOT_SUPPORTED();
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
     if (NULL == ipAddr)
     {
-        _engineStatistics.SetLastError(
-            VE_INVALID_ARGUMENT, kTraceError,
+        _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
             "GetLocalIP() invalid IP-address buffer");
         return -1;
     }
@@ -274,8 +259,7 @@ int VoENetworkImpl::GetLocalIP(char ipAddr[64], bool ipv6)
             numSockThreads);
     if (NULL == socketPtr)
     {
-        _engineStatistics.SetLastError(
-            VE_SOCKET_TRANSPORT_MODULE_ERROR, kTraceError,
+        _shared->SetLastError(VE_SOCKET_TRANSPORT_MODULE_ERROR, kTraceError,
             "GetLocalIP() failed to create socket module");
         return -1;
     }
@@ -287,8 +271,7 @@ int VoENetworkImpl::GetLocalIP(char ipAddr[64], bool ipv6)
         char localIP[16];
         if (socketPtr->LocalHostAddressIPV6(localIP) != 0)
         {
-            _engineStatistics.SetLastError(
-                VE_INVALID_IP_ADDRESS, kTraceError,
+            _shared->SetLastError(VE_INVALID_IP_ADDRESS, kTraceError,
                 "GetLocalIP() failed to retrieve local IP - 1");
             UdpTransport::Destroy(socketPtr);
             return -1;
@@ -308,8 +291,7 @@ int VoENetworkImpl::GetLocalIP(char ipAddr[64], bool ipv6)
         // Read local IP (as 32-bit address) from the socket module
         if (socketPtr->LocalHostAddress(localIP) != 0)
         {
-            _engineStatistics.SetLastError(
-                VE_INVALID_IP_ADDRESS, kTraceError,
+            _shared->SetLastError(VE_INVALID_IP_ADDRESS, kTraceError,
                 "GetLocalIP() failed to retrieve local IP - 2");
             UdpTransport::Destroy(socketPtr);
             return -1;
@@ -325,12 +307,12 @@ int VoENetworkImpl::GetLocalIP(char ipAddr[64], bool ipv6)
 
     UdpTransport::Destroy(socketPtr);
 
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId, -1),
-                 "GetLocalIP() => ipAddr=%s", ipAddr);
+    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
+        VoEId(_shared->instance_id(), -1),
+        "GetLocalIP() => ipAddr=%s", ipAddr);
     return 0;
 #else
-    _engineStatistics.SetLastError(
-        VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
+    _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
         "GetLocalIP() VoE is built for external transport");
     return -1;
 #endif
@@ -338,36 +320,33 @@ int VoENetworkImpl::GetLocalIP(char ipAddr[64], bool ipv6)
 
 int VoENetworkImpl::EnableIPv6(int channel)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "EnableIPv6(channel=%d)", channel);
-    ANDROID_NOT_SUPPORTED(_engineStatistics);
+    ANDROID_NOT_SUPPORTED(_shared->statistics());
     IPHONE_NOT_SUPPORTED();
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
             "EnableIPv6() failed to locate channel");
         return -1;
     }
     if (channelPtr->ExternalTransport())
     {
-        _engineStatistics.SetLastError(
-            VE_EXTERNAL_TRANSPORT_ENABLED, kTraceError,
+        _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceError,
             "EnableIPv6() external transport is enabled");
         return -1;
     }
     return channelPtr->EnableIPv6();
 #else
-    _engineStatistics.SetLastError(
-        VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
+    _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
         "EnableIPv6() VoE is built for external transport");
     return -1;
 #endif
@@ -375,34 +354,31 @@ int VoENetworkImpl::EnableIPv6(int channel)
 
 bool VoENetworkImpl::IPv6IsEnabled(int channel)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "IPv6IsEnabled(channel=%d)", channel);
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return false;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
             "IPv6IsEnabled() failed to locate channel");
         return false;
     }
     if (channelPtr->ExternalTransport())
     {
-        _engineStatistics.SetLastError(
-            VE_EXTERNAL_TRANSPORT_ENABLED, kTraceError,
+        _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceError,
             "IPv6IsEnabled() external transport is enabled");
         return false;
     }
     return channelPtr->IPv6IsEnabled();
 #else
-    _engineStatistics.SetLastError(
-        VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
+    _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
         "IPv6IsEnabled() VoE is built for external transport");
     return false;
 #endif
@@ -414,55 +390,50 @@ int VoENetworkImpl::SetSourceFilter(int channel,
                                     const char ipAddr[64])
 {
     (ipAddr == NULL) ? WEBRTC_TRACE(kTraceApiCall, kTraceVoice,
-                                    VoEId(_instanceId, -1),
+                                    VoEId(_shared->instance_id(), -1),
                                     "SetSourceFilter(channel=%d, rtpPort=%d,"
                                     " rtcpPort=%d)",
                                     channel, rtpPort, rtcpPort)
                      : WEBRTC_TRACE(kTraceApiCall, kTraceVoice,
-                                    VoEId(_instanceId, -1),
+                                    VoEId(_shared->instance_id(), -1),
                                     "SetSourceFilter(channel=%d, rtpPort=%d,"
                                     " rtcpPort=%d, ipAddr=%s)",
                                     channel, rtpPort, rtcpPort, ipAddr);
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
     if ((rtpPort < 0) || (rtpPort > 65535))
     {
-        _engineStatistics.SetLastError(
-            VE_INVALID_PORT_NMBR, kTraceError,
+        _shared->SetLastError(VE_INVALID_PORT_NMBR, kTraceError,
             "SetSourceFilter() invalid RTP port");
         return -1;
     }
     if ((rtcpPort < 0) || (rtcpPort > 65535))
     {
-        _engineStatistics.SetLastError(
-            VE_INVALID_PORT_NMBR, kTraceError,
+        _shared->SetLastError(VE_INVALID_PORT_NMBR, kTraceError,
             "SetSourceFilter() invalid RTCP port");
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
             "SetSourceFilter() failed to locate channel");
         return -1;
     }
     if (channelPtr->ExternalTransport())
     {
-        _engineStatistics.SetLastError(
-            VE_EXTERNAL_TRANSPORT_ENABLED, kTraceError,
+        _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceError,
             "SetSourceFilter() external transport is enabled");
         return -1;
     }
     return channelPtr->SetSourceFilter(rtpPort, rtcpPort, ipAddr);
 #else
-    _engineStatistics.SetLastError(
-        VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
+    _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
         "SetSourceFilter() VoE is built for external transport");
     return -1;
 #endif
@@ -473,43 +444,39 @@ int VoENetworkImpl::GetSourceFilter(int channel,
                                     int& rtcpPort,
                                     char ipAddr[64])
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetSourceFilter(channel=%d, rtpPort=?, rtcpPort=?, "
                  "ipAddr[]=?)",
                  channel);
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
     if (NULL == ipAddr)
     {
-        _engineStatistics.SetLastError(
-            VE_INVALID_ARGUMENT, kTraceError,
+        _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
             "GetSourceFilter() invalid IP-address buffer");
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
             "GetSourceFilter() failed to locate channel");
         return -1;
     }
     if (channelPtr->ExternalTransport())
     {
-        _engineStatistics.SetLastError(
-            VE_EXTERNAL_TRANSPORT_ENABLED, kTraceError,
+        _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceError,
             "GetSourceFilter() external transport is enabled");
         return -1;
     }
     return channelPtr->GetSourceFilter(rtpPort, rtcpPort, ipAddr);
 #else
-    _engineStatistics.SetLastError(
-        VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
+    _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
         "GetSourceFilter() VoE is built for external transport");
     return -1;
 #endif
@@ -520,41 +487,40 @@ int VoENetworkImpl::SetSendTOS(int channel,
                                int priority,
                                bool useSetSockopt)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "SetSendTOS(channel=%d, DSCP=%d, useSetSockopt=%d)",
                  channel, DSCP, useSetSockopt);
 
 #if !defined(_WIN32) && !defined(WEBRTC_LINUX) && !defined(WEBRTC_MAC)
-    _engineStatistics.SetLastError(
-        VE_FUNC_NOT_SUPPORTED, kTraceWarning,
+    _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceWarning,
         "SetSendTOS() is not supported on this platform");
     return -1;
 #endif
 
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
     if ((DSCP < 0) || (DSCP > 63))
     {
-        _engineStatistics.SetLastError(VE_INVALID_ARGUMENT, kTraceError,
-                                       "SetSendTOS() Invalid DSCP value");
+        _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
+            "SetSendTOS() Invalid DSCP value");
         return -1;
     }
 #if defined(_WIN32) || defined(WEBRTC_LINUX)
     if ((priority < -1) || (priority > 7))
     {
-        _engineStatistics.SetLastError(VE_INVALID_ARGUMENT, kTraceError,
-                                       "SetSendTOS() Invalid priority value");
+        _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
+            "SetSendTOS() Invalid priority value");
         return -1;
     }
 #else
     if (-1 != priority)
     {
-        _engineStatistics.SetLastError(VE_INVALID_ARGUMENT, kTraceError,
-                                       "SetSendTOS() priority not supported");
+        _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
+            "SetSendTOS() priority not supported");
         return -1;
     }
 #endif
@@ -562,38 +528,35 @@ int VoENetworkImpl::SetSendTOS(int channel,
     if ((priority >= 0) && useSetSockopt)
     {
         // On Windows, priority and useSetSockopt cannot be combined
-        _engineStatistics.SetLastError(
-            VE_INVALID_ARGUMENT, kTraceError,
+        _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
             "SetSendTOS() priority and useSetSockopt conflict");
         return -1;
     }
 #endif
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                                       "SetSendTOS() failed to locate channel");
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+            "SetSendTOS() failed to locate channel");
         return -1;
     }
     if (channelPtr->ExternalTransport())
     {
-        _engineStatistics.SetLastError(
-            VE_EXTERNAL_TRANSPORT_ENABLED, kTraceError,
+        _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceError,
             "SetSendTOS() external transport is enabled");
         return -1;
     }
 #if defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
     useSetSockopt = true;
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,-1),
+    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "   force useSetSockopt=true since there is no alternative"
                  " implementation");
 #endif
 
     return channelPtr->SetSendTOS(DSCP, priority, useSetSockopt);
 #else
-    _engineStatistics.SetLastError(
-        VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
+    _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
         "SetSendTOS() VoE is built for external transport");
     return -1;
 #endif
@@ -604,40 +567,37 @@ int VoENetworkImpl::GetSendTOS(int channel,
                                int& priority,
                                bool& useSetSockopt)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetSendTOS(channel=%d)", channel);
 
 #if !defined(_WIN32) && !defined(WEBRTC_LINUX) && !defined(WEBRTC_MAC)
-    _engineStatistics.SetLastError(
-        VE_FUNC_NOT_SUPPORTED, kTraceWarning,
+    _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceWarning,
         "GetSendTOS() is not supported on this platform");
     return -1;
 #endif
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                                       "GetSendTOS() failed to locate channel");
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+            "GetSendTOS() failed to locate channel");
         return -1;
     }
     if (channelPtr->ExternalTransport())
     {
-        _engineStatistics.SetLastError(
-            VE_EXTERNAL_TRANSPORT_ENABLED, kTraceError,
+        _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceError,
             "GetSendTOS() external transport is enabled");
         return -1;
     }
     return channelPtr->GetSendTOS(DSCP, priority, useSetSockopt);
 #else
-    _engineStatistics.SetLastError(
-        VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
+    _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
         "GetSendTOS() VoE is built for external transport");
     return -1;
 #endif
@@ -648,42 +608,39 @@ int VoENetworkImpl::SetSendGQoS(int channel,
                                 int serviceType,
                                 int overrideDSCP)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "SetSendGQOS(channel=%d, enable=%d, serviceType=%d,"
                  " overrideDSCP=%d)",
                  channel, (int) enable, serviceType, overrideDSCP);
-    ANDROID_NOT_SUPPORTED(_engineStatistics);
+    ANDROID_NOT_SUPPORTED(_shared->statistics());
     IPHONE_NOT_SUPPORTED();
 #if !defined(_WIN32)
-    _engineStatistics.SetLastError(
-        VE_FUNC_NOT_SUPPORTED, kTraceWarning,
+    _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceWarning,
         "SetSendGQOS() is not supported on this platform");
     return -1;
 #elif !defined(WEBRTC_EXTERNAL_TRANSPORT)
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                                      "SetSendGQOS() failed to locate channel");
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+            "SetSendGQOS() failed to locate channel");
         return -1;
     }
     if (channelPtr->ExternalTransport())
     {
-        _engineStatistics.SetLastError(
-            VE_EXTERNAL_TRANSPORT_ENABLED, kTraceError,
+        _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceError,
             "SetSendGQOS() external transport is enabled");
         return -1;
     }
     return channelPtr->SetSendGQoS(enable, serviceType, overrideDSCP);
 #else
-    _engineStatistics.SetLastError(
-        VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
+    _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
         "SetSendGQOS() VoE is built for external transport");
     return -1;
 #endif
@@ -694,40 +651,37 @@ int VoENetworkImpl::GetSendGQoS(int channel,
                                 int& serviceType,
                                 int& overrideDSCP)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetSendGQOS(channel=%d)", channel);
-    ANDROID_NOT_SUPPORTED(_engineStatistics);
+    ANDROID_NOT_SUPPORTED(_shared->statistics());
     IPHONE_NOT_SUPPORTED();
 #if !defined(_WIN32)
-    _engineStatistics.SetLastError(
-        VE_FUNC_NOT_SUPPORTED, kTraceWarning,
+    _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceWarning,
         "GetSendGQOS() is not supported on this platform");
     return -1;
 #elif !defined(WEBRTC_EXTERNAL_TRANSPORT)
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                                      "GetSendGQOS() failed to locate channel");
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+            "GetSendGQOS() failed to locate channel");
         return -1;
     }
     if (channelPtr->ExternalTransport())
     {
-        _engineStatistics.SetLastError(
-            VE_EXTERNAL_TRANSPORT_ENABLED, kTraceError,
+        _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceError,
             "GetSendGQOS() external transport is enabled");
         return -1;
     }
     return channelPtr->GetSendGQoS(enabled, serviceType, overrideDSCP);
 #else
-    _engineStatistics.SetLastError(
-        VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
+    _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
         "GetSendGQOS() VoE is built for external transport");
     return -1;
 #endif
@@ -737,30 +691,28 @@ int VoENetworkImpl::SetPacketTimeoutNotification(int channel,
                                                  bool enable,
                                                  int timeoutSeconds)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "SetPacketTimeoutNotification(channel=%d, enable=%d, "
                  "timeoutSeconds=%d)",
                  channel, (int) enable, timeoutSeconds);
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
     if (enable &&
         ((timeoutSeconds < kVoiceEngineMinPacketTimeoutSec) ||
         (timeoutSeconds > kVoiceEngineMaxPacketTimeoutSec)))
     {
-        _engineStatistics.SetLastError(
-            VE_INVALID_ARGUMENT, kTraceError,
+        _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
             "SetPacketTimeoutNotification() invalid timeout size");
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
             "SetPacketTimeoutNotification() failed to locate channel");
         return -1;
     }
@@ -771,20 +723,19 @@ int VoENetworkImpl::GetPacketTimeoutNotification(int channel,
                                                  bool& enabled,
                                                  int& timeoutSeconds)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetPacketTimeoutNotification(channel=%d, enabled=?,"
                  " timeoutSeconds=?)", channel);
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
             "GetPacketTimeoutNotification() failed to locate channel");
         return -1;
     }
@@ -795,20 +746,19 @@ int VoENetworkImpl::RegisterDeadOrAliveObserver(int channel,
                                                 VoEConnectionObserver&
                                                 observer)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "RegisterDeadOrAliveObserver(channel=%d, observer=0x%x)",
                  channel, &observer);
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
             "RegisterDeadOrAliveObserver() failed to locate channel");
         return -1;
     }
@@ -817,19 +767,18 @@ int VoENetworkImpl::RegisterDeadOrAliveObserver(int channel,
 
 int VoENetworkImpl::DeRegisterDeadOrAliveObserver(int channel)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "DeRegisterDeadOrAliveObserver(channel=%d)", channel);
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
             "DeRegisterDeadOrAliveObserver() failed to locate channel");
         return -1;
     }
@@ -839,30 +788,28 @@ int VoENetworkImpl::DeRegisterDeadOrAliveObserver(int channel)
 int VoENetworkImpl::SetPeriodicDeadOrAliveStatus(int channel, bool enable,
                                                  int sampleTimeSeconds)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "SetPeriodicDeadOrAliveStatus(channel=%d, enable=%d,"
                  " sampleTimeSeconds=%d)",
                  channel, enable, sampleTimeSeconds);
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
     if (enable &&
         ((sampleTimeSeconds < kVoiceEngineMinSampleTimeSec) ||
         (sampleTimeSeconds > kVoiceEngineMaxSampleTimeSec)))
     {
-        _engineStatistics.SetLastError(
-            VE_INVALID_ARGUMENT, kTraceError,
+        _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
             "SetPeriodicDeadOrAliveStatus() invalid sample time");
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
             "SetPeriodicDeadOrAliveStatus() failed to locate channel");
         return -1;
     }
@@ -873,20 +820,19 @@ int VoENetworkImpl::GetPeriodicDeadOrAliveStatus(int channel,
                                                  bool& enabled,
                                                  int& sampleTimeSeconds)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetPeriodicDeadOrAliveStatus(channel=%d, enabled=?,"
                  " sampleTimeSeconds=?)", channel);
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
             "GetPeriodicDeadOrAliveStatus() failed to locate channel");
         return -1;
     }
@@ -900,33 +846,32 @@ int VoENetworkImpl::SendUDPPacket(int channel,
                                   int& transmittedBytes,
                                   bool useRtcpSocket)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "SendUDPPacket(channel=%d, data=0x%x, length=%u, useRTCP=%d)",
                  channel, data, length, useRtcpSocket);
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
-    if (!_engineStatistics.Initialized())
+    if (!_shared->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
     if (NULL == data)
     {
-        _engineStatistics.SetLastError(VE_INVALID_ARGUMENT, kTraceError,
-                                       "SendUDPPacket() invalid data buffer");
+        _shared->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
+            "SendUDPPacket() invalid data buffer");
         return -1;
     }
     if (0 == length)
     {
-        _engineStatistics.SetLastError(VE_INVALID_PACKET, kTraceError,
-                                       "SendUDPPacket() invalid packet size");
+        _shared->SetLastError(VE_INVALID_PACKET, kTraceError,
+            "SendUDPPacket() invalid packet size");
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
             "SendUDPPacket() failed to locate channel");
         return -1;
     }
@@ -935,8 +880,7 @@ int VoENetworkImpl::SendUDPPacket(int channel,
                                      transmittedBytes,
                                      useRtcpSocket);
 #else
-    _engineStatistics.SetLastError(
-        VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
+    _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
         "SendUDPPacket() VoE is built for external transport");
     return -1;
 #endif

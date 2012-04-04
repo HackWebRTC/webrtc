@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -62,8 +62,23 @@ SharedData::~SharedData()
     Trace::ReturnTrace();
 }
 
-WebRtc_UWord16
-SharedData::NumOfSendingChannels()
+void SharedData::set_audio_device(AudioDeviceModule* audio_device)
+{
+    // AddRef first in case the pointers are equal.
+    if (audio_device)
+      audio_device->AddRef();
+    if (_audioDevicePtr)
+      _audioDevicePtr->Release();
+    _audioDevicePtr = audio_device;
+}
+
+void SharedData::set_audio_processing(AudioProcessing* audio_processing) {
+    if (_audioProcessingModulePtr)
+      AudioProcessing::Destroy(_audioProcessingModulePtr);
+    _audioProcessingModulePtr = audio_processing;
+}
+
+WebRtc_UWord16 SharedData::NumOfSendingChannels()
 {
     WebRtc_Word32 numOfChannels = _channelManager.NumOfChannels();
     if (numOfChannels <= 0)
@@ -89,6 +104,20 @@ SharedData::NumOfSendingChannels()
     }
     delete [] channelsArray;
     return nChannelsSending;
+}
+
+void SharedData::SetLastError(const WebRtc_Word32 error) const {
+  _engineStatistics.SetLastError(error);
+}
+
+void SharedData::SetLastError(const WebRtc_Word32 error,
+                              const TraceLevel level) const {
+  _engineStatistics.SetLastError(error, level);
+}
+
+void SharedData::SetLastError(const WebRtc_Word32 error, const TraceLevel level,
+                              const char* msg) const {
+  _engineStatistics.SetLastError(error, level, msg);
 }
 
 }  //  namespace voe

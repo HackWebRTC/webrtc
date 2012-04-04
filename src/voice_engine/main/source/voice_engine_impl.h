@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -57,55 +57,90 @@
 namespace webrtc
 {
 
-class VoiceEngineImpl :
+class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
 #ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
-                            public VoEAudioProcessingImpl,
+                        public VoEAudioProcessingImpl,
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_CALL_REPORT_API
-                            public VoECallReportImpl,
+                        public VoECallReportImpl,
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_CODEC_API
-                            public VoECodecImpl,
+                        public VoECodecImpl,
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_DTMF_API
-                            public VoEDtmfImpl,
+                        public VoEDtmfImpl,
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_ENCRYPTION_API
-                            public VoEEncryptionImpl,
+                        public VoEEncryptionImpl,
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
-                            public VoEExternalMediaImpl,
+                        public VoEExternalMediaImpl,
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_FILE_API
-                            public VoEFileImpl,
+                        public VoEFileImpl,
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_HARDWARE_API
-                            public VoEHardwareImpl,
+                        public VoEHardwareImpl,
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
-                            public VoENetEqStatsImpl,
+                        public VoENetEqStatsImpl,
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_NETWORK_API
-                            public VoENetworkImpl,
+                        public VoENetworkImpl,
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_RTP_RTCP_API
-                            public VoERTP_RTCPImpl,
+                        public VoERTP_RTCPImpl,
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
-                            public VoEVideoSyncImpl,
+                        public VoEVideoSyncImpl,
 #endif
 #ifdef WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
-                            public VoEVolumeControlImpl,
+                        public VoEVolumeControlImpl,
 #endif
-                            public VoEBaseImpl
+                        public VoEBaseImpl
 {
 public:
     VoiceEngineImpl() : 
-#ifdef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
-      VoEVideoSyncImpl(this),
+#ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
+        VoEAudioProcessingImpl(this),
 #endif
-      VoEBaseImpl()  // Included in initializer list to satisfy condition when
-                     // none of the WEBRTC_VOICE_XXX defines are set.
+#ifdef WEBRTC_VOICE_ENGINE_CALL_REPORT_API
+        VoECallReportImpl(this),
+#endif
+#ifdef WEBRTC_VOICE_ENGINE_CODEC_API
+        VoECodecImpl(this),
+#endif
+#ifdef WEBRTC_VOICE_ENGINE_DTMF_API
+        VoEDtmfImpl(this),
+#endif
+#ifdef WEBRTC_VOICE_ENGINE_ENCRYPTION_API
+        VoEEncryptionImpl(this),
+#endif
+#ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
+        VoEExternalMediaImpl(this),
+#endif
+#ifdef WEBRTC_VOICE_ENGINE_FILE_API
+        VoEFileImpl(this),
+#endif
+#ifdef WEBRTC_VOICE_ENGINE_HARDWARE_API
+        VoEHardwareImpl(this),
+#endif
+#ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
+        VoENetEqStatsImpl(this),
+#endif
+#ifdef WEBRTC_VOICE_ENGINE_NETWORK_API
+        VoENetworkImpl(this),
+#endif
+#ifdef WEBRTC_VOICE_ENGINE_RTP_RTCP_API
+        VoERTP_RTCPImpl(this),
+#endif
+#ifdef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
+        VoEVideoSyncImpl(this),
+#endif
+#ifdef WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
+        VoEVolumeControlImpl(this),
+#endif
+        VoEBaseImpl(this)
     {
     }
     virtual ~VoiceEngineImpl()
