@@ -1065,6 +1065,35 @@ int VoEAudioProcessingImpl::TimeSinceLastTyping(int &seconds) {
 
 }
 
+int VoEAudioProcessingImpl::SetTypingDetectionParameters(int timeWindow,
+                                                         int costPerTyping,
+                                                         int reportingThreshold,
+                                                         int penaltyDecay) {
+
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+               "SetTypingDetectionParameters()");
+  ANDROID_NOT_SUPPORTED(_engineStatistics);
+  IPHONE_NOT_SUPPORTED();
+
+#ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
+  if (!_engineStatistics.Initialized()) {
+    _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+    return -1;
+  }
+  return (_transmitMixerPtr->SetTypingDetectionParameters(timeWindow,
+                                                         costPerTyping,
+                                                         reportingThreshold,
+                                                         penaltyDecay));
+
+#else
+  _engineStatistics.SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
+      "SetTypingDetectionParameters is not supported");
+  return -1;
+#endif
+
+}
+
+
 
 #endif  // #ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
 

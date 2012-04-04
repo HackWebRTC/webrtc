@@ -193,6 +193,14 @@ public:
     // Returns error if typing detection is disabled.
     virtual int TimeSinceLastTyping(int &seconds) = 0;
 
+    // Optional setting of typing detection parameters
+    // Parameter with value == 0 will be ignored
+    // and left with default config.
+    virtual int SetTypingDetectionParameters(int timeWindow,
+                                             int costPerTyping,
+                                             int reportingThreshold,
+                                             int penaltyDecay) = 0;
+
 protected:
     VoEAudioProcessing() {}
     virtual ~VoEAudioProcessing() {}

@@ -151,6 +151,10 @@ public: // FileCallback
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
 public:  // Typing detection
     int TimeSinceLastTyping(int &seconds);
+    int SetTypingDetectionParameters(int timeWindow,
+                                     int costPerTyping,
+                                     int reportingThreshold,
+                                     int penaltyDecay);
 #endif
 
 private:
@@ -205,6 +209,13 @@ private:  // owns
     WebRtc_Word32 _timeSinceLastTyping;
     WebRtc_Word32 _penaltyCounter;
     WebRtc_UWord32 _typingNoiseWarning;
+
+    // Tunable treshold values
+    int _timeWindow; // nr of10ms slots accepted to count as a hit.
+    int _costPerTyping; // Penalty added for a typing + activity coincide.
+    int _reportingThreshold; // Threshold for _penaltyCounter.
+    int _penaltyDecay; // How much we reduce _penaltyCounter every 10 ms.
+
 #endif
     WebRtc_UWord32 _saturationWarning;
     WebRtc_UWord32 _noiseWarning;

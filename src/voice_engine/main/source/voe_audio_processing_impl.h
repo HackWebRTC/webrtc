@@ -91,6 +91,11 @@ class VoEAudioProcessingImpl
 
   virtual int TimeSinceLastTyping(int &seconds);
 
+  virtual int SetTypingDetectionParameters(int timeWindow,
+                                           int costPerTyping,
+                                           int reportingThreshold,
+                                           int penaltyDecay);
+
  protected:
   VoEAudioProcessingImpl();
   virtual ~VoEAudioProcessingImpl();

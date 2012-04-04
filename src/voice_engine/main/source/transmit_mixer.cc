@@ -186,6 +186,10 @@ TransmitMixer::TransmitMixer(const WebRtc_UWord32 instanceId) :
     _timeSinceLastTyping(0),
     _penaltyCounter(0),
     _typingNoiseWarning(0),
+    _timeWindow(10), // 10ms slots accepted to count as a hit
+    _costPerTyping(100), // Penalty added for a typing + activity coincide
+    _reportingThreshold(300), // Threshold for _penaltyCounter
+    _penaltyDecay(1), // how much we reduce _penaltyCounter every 10 ms.
 #endif
     _saturationWarning(0),
     _noiseWarning(0),
@@ -1396,10 +1400,10 @@ int TransmitMixer::TypingDetection()
     }
 
     if (keyPressed && (_audioFrame._vadActivity == AudioFrame::kVadActive)
-        && (_timeActive < 10))
+        && (_timeActive < _timeWindow))
     {
-        _penaltyCounter += 100;
-        if (_penaltyCounter > 300)
+        _penaltyCounter += _costPerTyping;
+        if (_penaltyCounter > _reportingThreshold)
         {
             if (_typingNoiseWarning == 1)
             {
@@ -1418,7 +1422,7 @@ int TransmitMixer::TypingDetection()
     }
 
     if (_penaltyCounter > 0)
-        _penaltyCounter--;
+        _penaltyCounter-=_penaltyDecay;
 
     return (0);
 }
@@ -1438,6 +1442,25 @@ int TransmitMixer::TimeSinceLastTyping(int &seconds)
 
   // Round to whole seconds
   seconds = (_timeSinceLastTyping + 50) / 100;
+  return(0);
+}
+#endif
+
+#ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
+int TransmitMixer::SetTypingDetectionParameters(int timeWindow,
+                                                int costPerTyping,
+                                                int reportingThreshold,
+                                                int penaltyDecay)
+{
+  if(timeWindow != 0)
+    _timeWindow = timeWindow;
+  if(costPerTyping != 0)
+    _costPerTyping = costPerTyping;
+  if(reportingThreshold != 0)
+    _reportingThreshold = reportingThreshold;
+  if(penaltyDecay != 0)
+    _penaltyDecay = penaltyDecay;
+
   return(0);
 }
 #endif
