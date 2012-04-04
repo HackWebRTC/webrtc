@@ -16,7 +16,6 @@
     #include <android/bitmap.h>
 #endif
 
-
 #ifdef ANDROID_LOG
 #include <stdio.h>
 #include <android/log.h>
@@ -29,15 +28,14 @@
 
 namespace webrtc {
 
-AndroidSurfaceViewRenderer::AndroidSurfaceViewRenderer(const WebRtc_Word32 id,
-                                const VideoRenderType videoRenderType,
-                                void* window,
-                                const bool fullscreen)
-:
+AndroidSurfaceViewRenderer::AndroidSurfaceViewRenderer(
+    const WebRtc_Word32 id,
+    const VideoRenderType videoRenderType,
+    void* window,
+    const bool fullscreen) :
     VideoRenderAndroid(id,videoRenderType,window,fullscreen),
     _javaRenderObj(NULL),
-    _javaRenderClass(NULL)
-{
+    _javaRenderClass(NULL) {
 }
 
 AndroidSurfaceViewRenderer::~AndroidSurfaceViewRenderer() {
@@ -460,25 +458,25 @@ void AndroidSurfaceViewChannel::DeliverFrame(JNIEnv* jniEnv) {
 
 #ifdef ANDROID_NDK_8_OR_ABOVE
   if (_bitmapWidth != _bufferToRender.Width() ||
-    _bitmapHeight != _bufferToRender.Height()) {
+      _bitmapHeight != _bufferToRender.Height()) {
     // Create the bitmap to write to
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s: Creating bitmap %u "
                  "%u", __FUNCTION__, _bufferToRender.Width(),
                  _bufferToRender.Height());
     if (_javaBitmapObj) {
       jniEnv->DeleteGlobalRef(_javaBitmapObj);
-     _javaBitmapObj = NULL;
+      _javaBitmapObj = NULL;
     }
     jobject javaBitmap = jniEnv->CallObjectMethod(_javaRenderObj,
                                                   _createBitmapCid,
                                                   videoFrame.Width(),
                                                   videoFrame.Height());
     _javaBitmapObj = jniEnv->NewGlobalRef(javaBitmap);
-     if (!_javaBitmapObj) {
-       WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s: could not "
-                    "create Java Bitmap object reference", __FUNCTION__);
-       _renderCritSect.Leave();
-       return;
+    if (!_javaBitmapObj) {
+      WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s: could not "
+                   "create Java Bitmap object reference", __FUNCTION__);
+      _renderCritSect.Leave();
+      return;
     } else {
       _bitmapWidth = _bufferToRender.Width();
       _bitmapHeight = _bufferToRender.Height();
@@ -518,14 +516,14 @@ void AndroidSurfaceViewChannel::DeliverFrame(JNIEnv* jniEnv) {
                  "%d",__FUNCTION__,
                  _bufferToRender.Width(), _bufferToRender.Height());
     if (_javaByteBufferObj) {
-        jniEnv->DeleteGlobalRef(_javaByteBufferObj);
-        _javaByteBufferObj = NULL;
-        _directBuffer = NULL;
+      jniEnv->DeleteGlobalRef(_javaByteBufferObj);
+      _javaByteBufferObj = NULL;
+      _directBuffer = NULL;
     }
     jobject javaByteBufferObj =
-      jniEnv->CallObjectMethod(_javaRenderObj, _createByteBufferCid,
-                               _bufferToRender.Width(),
-                               _bufferToRender.Height());
+        jniEnv->CallObjectMethod(_javaRenderObj, _createByteBufferCid,
+                                 _bufferToRender.Width(),
+                                 _bufferToRender.Height());
     _javaByteBufferObj = jniEnv->NewGlobalRef(javaByteBufferObj);
     if (!_javaByteBufferObj) {
       WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,  "%s: could not "
@@ -544,8 +542,8 @@ void AndroidSurfaceViewChannel::DeliverFrame(JNIEnv* jniEnv) {
     // Android requires a vertically flipped image compared to std convert.
     // This is done by giving a negative height input.
     const int conversionResult =
-      ConvertI420ToRGB565((unsigned char* )_bufferToRender.Buffer(),
-                          _directBuffer, _bitmapWidth, -_bitmapHeight);
+        ConvertI420ToRGB565((unsigned char* )_bufferToRender.Buffer(),
+                            _directBuffer, _bitmapWidth, -_bitmapHeight);
     if (conversionResult < 0)  {
       WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s: Color conversion"
                    " failed.", __FUNCTION__);

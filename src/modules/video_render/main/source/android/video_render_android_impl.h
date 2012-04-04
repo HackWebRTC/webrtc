@@ -20,32 +20,24 @@ namespace webrtc {
 
 //#define ANDROID_LOG
 
-
 class CriticalSectionWrapper;
 class EventWrapper;
 class ThreadWrapper;
 
-
 // The object a module user uses to send new frames to the java renderer
 // Base class for android render streams.
 
-class AndroidStream: public VideoRenderCallback
-{
-public:
-    /*
-     * DeliverFrame is called from a thread connected to the Java VM.
-     *  Used for Delivering frame for rendering.
-     */
-    virtual void DeliverFrame(JNIEnv* jniEnv)=0;
+class AndroidStream : public VideoRenderCallback {
+ public:
+  // DeliverFrame is called from a thread connected to the Java VM.
+  // Used for Delivering frame for rendering.
+  virtual void DeliverFrame(JNIEnv* jniEnv)=0;
 
-    virtual ~AndroidStream()
-    {
-    };
+  virtual ~AndroidStream() {};
 };
 
-class VideoRenderAndroid: IVideoRender
-{
-public:
+class VideoRenderAndroid: IVideoRender {
+ public:
   static WebRtc_Word32 SetAndroidEnvVariables(void* javaVM);
 
   VideoRenderAndroid(const WebRtc_Word32 id,
@@ -82,11 +74,7 @@ public:
 
   virtual void ReDraw();
 
-  /**************************************************************************
-   *
-   *   Properties
-   *
-   ***************************************************************************/
+  // Properties
 
   virtual VideoRenderType RenderType();
 
@@ -165,4 +153,4 @@ public:
 
 } //namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_ANDROID_VIDEO_RENDER_ANDROID_IMPL_H_
+#endif  // WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_ANDROID_VIDEO_RENDER_ANDROID_IMPL_H_

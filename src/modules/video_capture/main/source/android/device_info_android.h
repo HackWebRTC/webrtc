@@ -29,35 +29,37 @@ namespace videocapturemodule
 // #define WEBRTC_TRACE(a,b,c,...)
 // __android_log_print(ANDROID_LOG_DEBUG, "*WEBRTCN*", __VA_ARGS__)
 
-class DeviceInfoAndroid: public DeviceInfoImpl
-{
-public:
+class DeviceInfoAndroid : public DeviceInfoImpl {
 
-    DeviceInfoAndroid(const WebRtc_Word32 id);
-    WebRtc_Word32 Init();
-    virtual ~DeviceInfoAndroid();
-    virtual WebRtc_UWord32 NumberOfDevices();
-    virtual WebRtc_Word32 GetDeviceName(WebRtc_UWord32 deviceNumber,
-                                  char* deviceNameUTF8,
-                                  WebRtc_UWord32 deviceNameLength,
-                                  char* deviceUniqueIdUTF8,
-                                  WebRtc_UWord32 deviceUniqueIdUTF8Length,
-                                  char* productUniqueIdUTF8 = 0,
-                                  WebRtc_UWord32 productUniqueIdUTF8Length = 0);
-    virtual WebRtc_Word32 CreateCapabilityMap(const char* deviceUniqueIdUTF8);
+ public:
+  DeviceInfoAndroid(const WebRtc_Word32 id);
+  WebRtc_Word32 Init();
+  virtual ~DeviceInfoAndroid();
+  virtual WebRtc_UWord32 NumberOfDevices();
+  virtual WebRtc_Word32 GetDeviceName(
+      WebRtc_UWord32 deviceNumber,
+      char* deviceNameUTF8,
+      WebRtc_UWord32 deviceNameLength,
+      char* deviceUniqueIdUTF8,
+      WebRtc_UWord32 deviceUniqueIdUTF8Length,
+      char* productUniqueIdUTF8 = 0,
+      WebRtc_UWord32 productUniqueIdUTF8Length = 0);
+  virtual WebRtc_Word32 CreateCapabilityMap(const char* deviceUniqueIdUTF8);
 
-    virtual WebRtc_Word32 DisplayCaptureSettingsDialogBox(
-                                      const char* /*deviceUniqueIdUTF8*/,
-                                      const char* /*dialogTitleUTF8*/,
-                                      void* /*parentWindow*/,
-                                      WebRtc_UWord32 /*positionX*/,
-                                      WebRtc_UWord32 /*positionY*/){return -1;}
-    virtual WebRtc_Word32 GetOrientation(const char* deviceUniqueIdUTF8,
-                                         VideoCaptureRotation& orientation);
-private:
-    bool IsDeviceNameMatches(const char* name, const char* deviceUniqueIdUTF8);
-    enum {_expectedCaptureDelay = 190};
+  virtual WebRtc_Word32 DisplayCaptureSettingsDialogBox(
+      const char* /*deviceUniqueIdUTF8*/,
+      const char* /*dialogTitleUTF8*/,
+      void* /*parentWindow*/,
+      WebRtc_UWord32 /*positionX*/,
+      WebRtc_UWord32 /*positionY*/) { return -1; }
+  virtual WebRtc_Word32 GetOrientation(const char* deviceUniqueIdUTF8,
+                                       VideoCaptureRotation& orientation);
+ private:
+  bool IsDeviceNameMatches(const char* name, const char* deviceUniqueIdUTF8);
+  enum {_expectedCaptureDelay = 190};
 };
-} // namespace videocapturemodule
-} // namespace webrtc
+
+}  // namespace videocapturemodule
+}  // namespace webrtc
+
 #endif // WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_ANDROID_DEVICE_INFO_ANDROID_H_

@@ -19,44 +19,43 @@
 namespace webrtc
 {
 
-class VideoRenderOpenGles20
-{
-public:
-    VideoRenderOpenGles20(WebRtc_Word32 id);
-    ~VideoRenderOpenGles20();
+class VideoRenderOpenGles20 {
+ public:
+  VideoRenderOpenGles20(WebRtc_Word32 id);
+  ~VideoRenderOpenGles20();
 
-    WebRtc_Word32 Setup(WebRtc_Word32 widht, WebRtc_Word32 height);
-    WebRtc_Word32 Render(const VideoFrame& frameToRender);
-    WebRtc_Word32 SetCoordinates(WebRtc_Word32 zOrder,
-                                 const float left,
-                                 const float top,
-                                 const float right,
-                                 const float bottom);
+  WebRtc_Word32 Setup(WebRtc_Word32 widht, WebRtc_Word32 height);
+  WebRtc_Word32 Render(const VideoFrame& frameToRender);
+  WebRtc_Word32 SetCoordinates(WebRtc_Word32 zOrder,
+                               const float left,
+                               const float top,
+                               const float right,
+                               const float bottom);
 
-private:
-    void printGLString(const char *name, GLenum s);
-    void checkGlError(const char* op);
-    GLuint loadShader(GLenum shaderType, const char* pSource);
-    GLuint createProgram(const char* pVertexSource,
-                         const char* pFragmentSource);
-    void SetupTextures(const VideoFrame& frameToRender);
-    void UpdateTextures(const VideoFrame& frameToRender);
+ private:
+  void printGLString(const char *name, GLenum s);
+  void checkGlError(const char* op);
+  GLuint loadShader(GLenum shaderType, const char* pSource);
+  GLuint createProgram(const char* pVertexSource,
+                       const char* pFragmentSource);
+  void SetupTextures(const VideoFrame& frameToRender);
+  void UpdateTextures(const VideoFrame& frameToRender);
 
-    WebRtc_Word32 _id;
-    GLuint _textureIds[3]; // Texture id of Y,U and V texture.
-    GLuint _program;
-    GLuint _vPositionHandle;
-    GLsizei _textureWidth;
-    GLsizei _textureHeight;
+  WebRtc_Word32 _id;
+  GLuint _textureIds[3]; // Texture id of Y,U and V texture.
+  GLuint _program;
+  GLuint _vPositionHandle;
+  GLsizei _textureWidth;
+  GLsizei _textureHeight;
 
-    GLfloat _vertices[20];
-    static const char g_indices[];
+  GLfloat _vertices[20];
+  static const char g_indices[];
 
-    static const char g_vertextShader[];
-    static const char g_fragmentShader[];
+  static const char g_vertextShader[];
+  static const char g_fragmentShader[];
 
 };
 
-} //namespace webrtc
+}  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_ANDROID_VIDEO_RENDER_OPENGLES20_H_
+#endif  // WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_ANDROID_VIDEO_RENDER_OPENGLES20_H_
