@@ -1227,8 +1227,8 @@ static void ComfortNoise(aec_t *aec, float efw[2][PART_LEN1],
         tmp = pi2 * rand[i - 1];
 
         noise = sqrtf(noisePow[i]);
-        u[i][0] = noise * (float)cos(tmp);
-        u[i][1] = -noise * (float)sin(tmp);
+        u[i][0] = noise * cosf(tmp);
+        u[i][1] = -noise * sinf(tmp);
     }
     u[PART_LEN][1] = 0;
 
