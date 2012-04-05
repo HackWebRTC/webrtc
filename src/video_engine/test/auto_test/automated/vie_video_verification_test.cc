@@ -194,7 +194,7 @@ TEST_F(ViEVideoVerificationTest, RunsFullStackWithoutErrors)  {
   // Set a low bit rate so the encoder budget will be tight, causing it to drop
   // frames every now and then.
   const int kBitRateKbps = 50;
-  const int kPacketLossPercent = 10;
+  const int kPacketLossPercent = 5;
   const int kNetworkDelayMs = 100;
   ViETest::Log("Bit rate     : %5d kbps", kBitRateKbps);
   ViETest::Log("Packet loss  : %5d %%", kPacketLossPercent);

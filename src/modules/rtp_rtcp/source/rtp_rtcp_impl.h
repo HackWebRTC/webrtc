@@ -26,7 +26,7 @@ class MatlabPlot;
 
 namespace webrtc {
 
-class ModuleRtpRtcpImpl : public RtpRtcp, private TMMBRHelp
+class ModuleRtpRtcpImpl : public RtpRtcp
 {
 public:
     ModuleRtpRtcpImpl(const WebRtc_Word32 id,
@@ -341,15 +341,7 @@ public:
 
     virtual WebRtc_Word32 SetTMMBRStatus(const bool enable);
 
-    virtual WebRtc_Word32 TMMBRReceived(const WebRtc_UWord32 size,
-                                      const WebRtc_UWord32 accNumCandidates,
-                                      TMMBRSet* candidateSet) const;
-
-    virtual WebRtc_Word32 SetTMMBN(const TMMBRSet* boundingSet,
-                                 const WebRtc_UWord32 maxBitrateKbit);
-
-    virtual WebRtc_Word32 RequestTMMBR(const WebRtc_UWord32 estimatedBW,
-                                     const WebRtc_UWord32 packetOH);
+    WebRtc_Word32 SetTMMBN(const TMMBRSet* boundingSet);
 
     virtual WebRtc_UWord16 MaxPayloadLength() const;
 
@@ -496,8 +488,6 @@ public:
     // good state of RTP receiver inform sender
     virtual WebRtc_Word32 SendRTCPReferencePictureSelection(const WebRtc_UWord64 pictureID);
 
-    virtual void OnBandwidthEstimateUpdate(WebRtc_UWord16 bandWidthKbit);
-
     void OnReceivedNTP() ;
 
     // bw estimation
@@ -546,8 +536,6 @@ protected:
 
     // Get remote SequenceNumber
     WebRtc_UWord16 RemoteSequenceNumber() const;
-
-    WebRtc_Word32 UpdateTMMBR();
 
     // only for internal testing
     WebRtc_UWord32 LastSendReport(WebRtc_UWord32& lastRTCPTime);

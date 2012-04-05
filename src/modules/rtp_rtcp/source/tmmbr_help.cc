@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -10,6 +10,7 @@
 
 #include "tmmbr_help.h"
 
+#include <limits>
 #include "rtp_rtcp_config.h"
 
 namespace webrtc {
@@ -61,24 +62,21 @@ TMMBRSet::VerifyAndAllocateSet(WebRtc_UWord32 minimumSize)
     lengthOfSet = 0;
 }
 
-TMMBRHelp::TMMBRHelp(const bool audio) :
-    _criticalSection(CriticalSectionWrapper::CreateCriticalSection()),
-    _audio(audio),
-    _candidateSet(),
-    _boundingSet(),
-    _boundingSetToSend(),
-    _ptrIntersectionBoundingSet(NULL),
-    _ptrMaxPRBoundingSet(NULL)
-{
+TMMBRHelp::TMMBRHelp()
+    : _criticalSection(CriticalSectionWrapper::CreateCriticalSection()),
+      _candidateSet(),
+      _boundingSet(),
+      _boundingSetToSend(),
+      _ptrIntersectionBoundingSet(NULL),
+      _ptrMaxPRBoundingSet(NULL) {
 }
 
-TMMBRHelp::~TMMBRHelp()
-{
-    delete [] _ptrIntersectionBoundingSet;
-    delete [] _ptrMaxPRBoundingSet;
-    _ptrIntersectionBoundingSet = 0;
-    _ptrMaxPRBoundingSet = 0;
-    delete _criticalSection;
+TMMBRHelp::~TMMBRHelp() {
+  delete [] _ptrIntersectionBoundingSet;
+  delete [] _ptrMaxPRBoundingSet;
+  _ptrIntersectionBoundingSet = 0;
+  _ptrMaxPRBoundingSet = 0;
+  delete _criticalSection;
 }
 
 TMMBRSet*
@@ -101,10 +99,8 @@ TMMBRHelp::VerifyAndAllocateBoundingSet(WebRtc_UWord32 minimumSize)
     return &_boundingSet;
 }
 
-TMMBRSet*
-TMMBRHelp::BoundingSet()
-{
-    return &_boundingSet;
+TMMBRSet* TMMBRHelp::BoundingSet() {
+  return &_boundingSet;
 }
 
 WebRtc_Word32
@@ -413,95 +409,39 @@ TMMBRHelp::FindTMMBRBoundingSet(WebRtc_Word32 numCandidates, TMMBRSet& candidate
     return numBoundingSet;
 }
 
-bool
-TMMBRHelp::IsOwner(const WebRtc_UWord32 ssrc,
-                   const WebRtc_UWord32 length) const
-{
-    CriticalSectionScoped lock(_criticalSection);
+bool TMMBRHelp::IsOwner(const WebRtc_UWord32 ssrc,
+                        const WebRtc_UWord32 length) const {
+  CriticalSectionScoped lock(_criticalSection);
 
-    if (length == 0)
-    {
-        // empty bounding set
-        return false;
-    }
-
-    for(WebRtc_UWord32 i = 0; (i < length) && (i < _boundingSet.sizeOfSet); ++i)
-    {
-        if(_boundingSet.ptrSsrcSet[i] == ssrc)
-        {
-            return true;
-        }
-    }
+  if (length == 0) {
+    // Empty bounding set.
     return false;
+  }
+  for(WebRtc_UWord32 i = 0; (i < length) && (i < _boundingSet.sizeOfSet); ++i) {
+    if(_boundingSet.ptrSsrcSet[i] == ssrc) {
+      return true;
+    }
+  }
+  return false;
 }
 
-WebRtc_Word32
-TMMBRHelp::CalcMinMaxBitRate(const WebRtc_UWord32 totalPacketRate,
-                             const WebRtc_UWord32 lengthOfBoundingSet,
-                             WebRtc_UWord32& minBitrateKbit,
-                             WebRtc_UWord32& maxBitrateKbit) const
-{
-    CriticalSectionScoped lock(_criticalSection);
+bool TMMBRHelp::CalcMinBitRate( WebRtc_UWord32* minBitrateKbit) const {
+  CriticalSectionScoped lock(_criticalSection);
 
-    if (lengthOfBoundingSet <= 0 || _candidateSet.sizeOfSet == 0)
-    {
-        // empty bounding set
-        return -1;
+  if (_candidateSet.sizeOfSet == 0) {
+    // Empty bounding set.
+    return false;
+  }
+  *minBitrateKbit = std::numeric_limits<uint32_t>::max();
+
+  for (WebRtc_UWord32 i = 0; i < _candidateSet.sizeOfSet; ++i) {
+    WebRtc_UWord32 curNetBitRateKbit = _candidateSet.ptrTmmbrSet[i];
+    if (curNetBitRateKbit < MIN_VIDEO_BW_MANAGEMENT_BITRATE) {
+      curNetBitRateKbit = MIN_VIDEO_BW_MANAGEMENT_BITRATE;
     }
-
-    minBitrateKbit = 0xFFFFFFFF;
-    maxBitrateKbit = 0;
-
-    for (WebRtc_UWord32 i = 0; i < _candidateSet.sizeOfSet; ++i)
-    {
-        if (_candidateSet.ptrTmmbrSet[i])
-        {
-            WebRtc_Word32 curNetBitRate = static_cast<WebRtc_Word32>((_candidateSet.ptrTmmbrSet[i]*1000.0
-                            - (totalPacketRate * (_candidateSet.ptrPacketOHSet[i] << 3)))/1000 + 0.5);
-
-        if (curNetBitRate < 0)
-        {
-            // could be negative for a large packet rate
-            if(_audio)
-            {
-                curNetBitRate = MIN_AUDIO_BW_MANAGEMENT_BITRATE;
-            }else
-            {
-                curNetBitRate = MIN_VIDEO_BW_MANAGEMENT_BITRATE;
-            }
-        }
-            minBitrateKbit = (WebRtc_UWord32(curNetBitRate) < minBitrateKbit) ? curNetBitRate : minBitrateKbit;
-        }
-    }
-    maxBitrateKbit = minBitrateKbit;
-
-    if (maxBitrateKbit == 0 || maxBitrateKbit < minBitrateKbit)
-    {
-        return -1;
-    }
-
-    if(_audio)
-    {
-        if (minBitrateKbit < MIN_AUDIO_BW_MANAGEMENT_BITRATE)
-        {
-            minBitrateKbit = MIN_AUDIO_BW_MANAGEMENT_BITRATE;
-        }
-        if (maxBitrateKbit < MIN_AUDIO_BW_MANAGEMENT_BITRATE)
-        {
-            maxBitrateKbit = MIN_AUDIO_BW_MANAGEMENT_BITRATE;
-        }
-    }else
-    {
-        if (minBitrateKbit < MIN_VIDEO_BW_MANAGEMENT_BITRATE)
-        {
-            minBitrateKbit = MIN_VIDEO_BW_MANAGEMENT_BITRATE;
-        }
-        if (maxBitrateKbit < MIN_VIDEO_BW_MANAGEMENT_BITRATE)
-        {
-            maxBitrateKbit = MIN_VIDEO_BW_MANAGEMENT_BITRATE;
-        }
-    }
-
-    return 0;
+    *minBitrateKbit = curNetBitRateKbit < *minBitrateKbit ?
+        curNetBitRateKbit : *minBitrateKbit;
+  }
+  return true;
 }
 } // namespace webrtc

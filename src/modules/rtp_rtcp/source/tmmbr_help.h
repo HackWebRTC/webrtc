@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -38,7 +38,7 @@ public:
 class TMMBRHelp
 {
 public:
-    TMMBRHelp(const bool audio);
+    TMMBRHelp();
     virtual ~TMMBRHelp();
 
     TMMBRSet* BoundingSet(); // used for debuging
@@ -47,16 +47,13 @@ public:
 
     TMMBRSet* VerifyAndAllocateCandidateSet(const WebRtc_UWord32 minimumSize);
     WebRtc_Word32 FindTMMBRBoundingSet(TMMBRSet*& boundingSet);
-    WebRtc_Word32 SetTMMBRBoundingSetToSend(const TMMBRSet* boundingSetToSend,
-                                          const WebRtc_UWord32 maxBitrateKbit);
+    WebRtc_Word32 SetTMMBRBoundingSetToSend(
+        const TMMBRSet* boundingSetToSend,
+        const WebRtc_UWord32 maxBitrateKbit);
 
-    bool        IsOwner(const WebRtc_UWord32 ssrc,
-                        const WebRtc_UWord32 length) const;
+    bool IsOwner(const WebRtc_UWord32 ssrc, const WebRtc_UWord32 length) const;
 
-    WebRtc_Word32 CalcMinMaxBitRate(const WebRtc_UWord32 totalPacketRate,
-                                  const WebRtc_UWord32 lengthOfBoundingSet,
-                                  WebRtc_UWord32& minBitrateKbit,
-                                  WebRtc_UWord32& maxBitrateKbit) const;
+    bool CalcMinBitRate(WebRtc_UWord32* minBitrateKbit) const;
 
 protected:
     TMMBRSet*   VerifyAndAllocateBoundingSet(WebRtc_UWord32 minimumSize);
@@ -66,7 +63,6 @@ protected:
 
 private:
     CriticalSectionWrapper* _criticalSection;
-    const bool              _audio;
     TMMBRSet                _candidateSet;
     TMMBRSet                _boundingSet;
     TMMBRSet                _boundingSetToSend;
