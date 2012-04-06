@@ -87,6 +87,7 @@ ViEEncoder::ViEEncoder(WebRtc_Word32 engine_id, WebRtc_Word32 channel_id,
   for (int i = 0; i < kMaxSimulcastStreams; i++) {
     time_last_intra_request_ms_[i] = 0;
   }
+  // TODO(wu): Split out those may fail into an Init function.
   vcm_.InitializeSender();
   vpm_.EnableTemporalDecimation(true);
 
@@ -115,8 +116,12 @@ ViEEncoder::ViEEncoder(WebRtc_Word32 engine_id, WebRtc_Word32 channel_id,
 #ifdef VIDEOCODEC_VP8
   VideoCodec video_codec;
   if (vcm_.Codec(webrtc::kVideoCodecVP8, &video_codec) == VCM_OK) {
-    vcm_.RegisterSendCodec(&video_codec, number_of_cores_,
-                           default_rtp_rtcp_.MaxDataPayloadLength());
+    if (vcm_.RegisterSendCodec(&video_codec, number_of_cores_,
+                               default_rtp_rtcp_.MaxDataPayloadLength()) != 0) {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                   ViEId(engine_id_, channel_id_),
+                   "ViEEncoder: VCM::RegisterSendCodec failure");
+    }
     default_rtp_rtcp_.RegisterSendPayload(video_codec);
   } else {
     assert(false);

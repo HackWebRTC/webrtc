@@ -317,9 +317,13 @@ bool ViEChannelManager::CreateChannelObject(int channel_id,
   }
 
   VideoCodec encoder;
-  vie_encoder->GetEncoder(encoder);
-  if (vie_channel->SetSendCodec(encoder) != 0) {
-    vie_encoder = NULL;
+  if (vie_encoder->GetEncoder(encoder) != 0 ||
+      vie_channel->SetSendCodec(encoder) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id),
+                 "%s: Could not GetEncoder or SetSendCodec.", __FUNCTION__);
+    vie_channel->DeregisterSendRtpRtcpModule();
+    delete vie_channel;
+    return false;
   }
 
   // Store the channel, add it to the channel group and save the vie_encoder.
