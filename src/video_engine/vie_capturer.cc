@@ -448,9 +448,8 @@ WebRtc_Word32 ViECapturer::EnableDenoising(bool enable) {
   CriticalSectionScoped cs(deliver_cs_.get());
   if (enable) {
     if (denoising_enabled_) {
-      WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, capture_id_),
-                   "%s: denoising already enabled", __FUNCTION__);
-      return -1;
+      // Already enabled, nothing need to be done.
+      return 0;
     }
     denoising_enabled_ = true;
     if (IncImageProcRefCount() != 0) {
@@ -458,9 +457,8 @@ WebRtc_Word32 ViECapturer::EnableDenoising(bool enable) {
     }
   } else {
     if (denoising_enabled_ == false) {
-      WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, capture_id_),
-                   "%s: denoising not enabled", __FUNCTION__);
-      return -1;
+      // Already disabled, nothing need to be done.
+      return 0;
     }
     denoising_enabled_ = false;
     DecImageProcRefCount();
