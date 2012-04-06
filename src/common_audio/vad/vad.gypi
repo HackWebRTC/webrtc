@@ -27,7 +27,6 @@
         'webrtc_vad.c',
         'vad_core.c',
         'vad_core.h',
-        'vad_defines.h',
         'vad_filterbank.c',
         'vad_filterbank.h',
         'vad_gmm.c',
