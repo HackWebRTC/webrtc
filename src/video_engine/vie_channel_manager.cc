@@ -92,7 +92,8 @@ int ViEChannelManager::CreateChannel(int& channel_id) {
   ViEEncoder* vie_encoder = new ViEEncoder(engine_id_, new_channel_id,
                                            number_of_cores_,
                                            *module_process_thread_);
-  if (!CreateChannelObject(new_channel_id, vie_encoder)) {
+  if (!(vie_encoder->Init() &&
+        CreateChannelObject(new_channel_id, vie_encoder))) {
     delete vie_encoder;
     vie_encoder = NULL;
     ReturnChannelId(new_channel_id);
@@ -126,7 +127,8 @@ int ViEChannelManager::CreateChannel(int& channel_id,
     // We need to create a new ViEEncoder.
     vie_encoder = new ViEEncoder(engine_id_, new_channel_id, number_of_cores_,
                                  *module_process_thread_);
-    if (!CreateChannelObject(new_channel_id, vie_encoder)) {
+    if (!(vie_encoder->Init() &&
+          CreateChannelObject(new_channel_id, vie_encoder))) {
       delete vie_encoder;
       vie_encoder = NULL;
     }

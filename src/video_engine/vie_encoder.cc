@@ -87,44 +87,79 @@ ViEEncoder::ViEEncoder(WebRtc_Word32 engine_id, WebRtc_Word32 channel_id,
   for (int i = 0; i < kMaxSimulcastStreams; i++) {
     time_last_intra_request_ms_[i] = 0;
   }
-  // TODO(wu): Split out those may fail into an Init function.
-  vcm_.InitializeSender();
+}
+
+bool ViEEncoder::Init() {
+  if (vcm_.InitializeSender() != 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                 ViEId(engine_id_, channel_id_),
+                 "%s InitializeSender failure", __FUNCTION__);
+    return false;
+  }
   vpm_.EnableTemporalDecimation(true);
 
   // Enable/disable content analysis: off by default for now.
   vpm_.EnableContentAnalysis(false);
 
-  module_process_thread_.RegisterModule(&vcm_);
+  if (module_process_thread_.RegisterModule(&vcm_) != 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                 ViEId(engine_id_, channel_id_),
+                 "%s RegisterModule failure", __FUNCTION__);
+    return false;
+  }
   if (default_rtp_rtcp_.InitSender() != 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
                  ViEId(engine_id_, channel_id_),
-                 "ViEEncoder: RTP::InitSender failure");
-    assert(false);
+                 "%s InitSender failure", __FUNCTION__);
+    return false;
   }
-  default_rtp_rtcp_.RegisterIncomingVideoCallback(this);
-  default_rtp_rtcp_.RegisterIncomingRTCPCallback(this);
-  module_process_thread_.RegisterModule(&default_rtp_rtcp_);
+  if (default_rtp_rtcp_.RegisterIncomingVideoCallback(this) != 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                 ViEId(engine_id_, channel_id_),
+                 "%s RegisterIncomingVideoCallback failure", __FUNCTION__);
+    return false;
+  }
+  if (default_rtp_rtcp_.RegisterIncomingRTCPCallback(this) != 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                 ViEId(engine_id_, channel_id_),
+                 "%s RegisterIncomingRTCPCallback failure", __FUNCTION__);
+    return false;
+  }
+  if (module_process_thread_.RegisterModule(&default_rtp_rtcp_) != 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                 ViEId(engine_id_, channel_id_),
+                 "%s RegisterModule failure", __FUNCTION__);
+    return false;
+  }
 
   qm_callback_ = new QMVideoSettingsCallback(
       engine_id_,
       channel_id_,
       &vpm_,
       &vcm_,
-      number_of_cores,
+      number_of_cores_,
       default_rtp_rtcp_.MaxDataPayloadLength());
 
 #ifdef VIDEOCODEC_VP8
   VideoCodec video_codec;
-  if (vcm_.Codec(webrtc::kVideoCodecVP8, &video_codec) == VCM_OK) {
-    if (vcm_.RegisterSendCodec(&video_codec, number_of_cores_,
-                               default_rtp_rtcp_.MaxDataPayloadLength()) != 0) {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(engine_id_, channel_id_),
-                   "ViEEncoder: VCM::RegisterSendCodec failure");
-    }
-    default_rtp_rtcp_.RegisterSendPayload(video_codec);
-  } else {
-    assert(false);
+  if (vcm_.Codec(webrtc::kVideoCodecVP8, &video_codec) != VCM_OK) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                 ViEId(engine_id_, channel_id_),
+                 "%s Codec failure", __FUNCTION__);
+    return false;
+  }
+  if (vcm_.RegisterSendCodec(&video_codec, number_of_cores_,
+                             default_rtp_rtcp_.MaxDataPayloadLength()) != 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                 ViEId(engine_id_, channel_id_),
+                 "%s RegisterSendCodec failure", __FUNCTION__);
+    return false;
+  }
+  if (default_rtp_rtcp_.RegisterSendPayload(video_codec) != 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                 ViEId(engine_id_, channel_id_),
+                 "%s RegisterSendPayload failure", __FUNCTION__);
+    return false;
   }
 #else
   VideoCodec video_codec;
@@ -133,7 +168,7 @@ ViEEncoder::ViEEncoder(WebRtc_Word32 engine_id, WebRtc_Word32 channel_id,
                            default_rtp_rtcp_.MaxDataPayloadLength());
     default_rtp_rtcp_.RegisterSendPayload(video_codec);
   } else {
-    assert(false);
+    return false;
   }
 #endif
 
@@ -141,18 +176,21 @@ ViEEncoder::ViEEncoder(WebRtc_Word32 engine_id, WebRtc_Word32 channel_id,
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
                  ViEId(engine_id_, channel_id_),
                  "ViEEncoder: VCM::RegisterTransportCallback failure");
+    return false;
   }
   if (vcm_.RegisterSendStatisticsCallback(this) != 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
                  ViEId(engine_id_, channel_id_),
                  "ViEEncoder: VCM::RegisterSendStatisticsCallback failure");
+    return false;
   }
-
   if (vcm_.RegisterVideoQMCallback(qm_callback_) != 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
                  ViEId(engine_id_, channel_id_),
                  "VCM::RegisterQMCallback failure");
+    return false;
   }
+  return true;
 }
 
 ViEEncoder::~ViEEncoder() {

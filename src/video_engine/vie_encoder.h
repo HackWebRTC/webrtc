@@ -45,6 +45,8 @@ class ViEEncoder
              ProcessThread& module_process_thread);
   ~ViEEncoder();
 
+  bool Init();
+
   // Returns the id of the owning channel.
   int Owner() const;
 
