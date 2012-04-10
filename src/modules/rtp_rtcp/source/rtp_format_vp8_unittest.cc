@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -15,19 +15,13 @@
 
 #include <gtest/gtest.h>
 
+#include "compile_assert.h"
+
 #include "modules/rtp_rtcp/source/rtp_format_vp8.h"
 #include "modules/rtp_rtcp/source/rtp_format_vp8_test_helper.h"
 #include "typedefs.h"
 
 namespace webrtc {
-
-template <bool>
-struct CompileAssert {
-};
-
-#undef COMPILE_ASSERT
-#define COMPILE_ASSERT(expr, msg) \
-  typedef CompileAssert<(bool(expr))> msg[bool(expr) ? 1 : -1]
 
 class RtpFormatVp8Test : public ::testing::Test {
  protected:

@@ -24,6 +24,7 @@
       'sources': [
         '../interface/aligned_malloc.h',
         '../interface/atomic32_wrapper.h',
+        '../interface/compile_assert.h',
         '../interface/condition_variable_wrapper.h',
         '../interface/cpu_info.h',
         '../interface/cpu_wrapper.h',
