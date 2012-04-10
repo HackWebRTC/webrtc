@@ -1230,7 +1230,6 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::InitRecording() {
     audioSink.pFormat = (void *) &pcm;
     audioSink.pLocator = (void *) &simpleBufferQueue;
 
-    // Create audio recorder 
     const SLInterfaceID id[1] = { SL_IID_ANDROIDSIMPLEBUFFERQUEUE };
     const SLboolean req[1] = { SL_BOOLEAN_TRUE };
     res = (*_slEngine)->CreateAudioRecorder(_slEngine, &_slRecorder,
@@ -1250,8 +1249,6 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::InitRecording() {
         return -1;
     }
 
-    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                 "  get Recorder interface");
     // Get the RECORD interface - it is an implicit interface
     res = (*_slRecorder)->GetInterface(_slRecorder, SL_IID_RECORD,
                                        (void*) &_slRecorderRecord);
@@ -1261,8 +1258,6 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::InitRecording() {
         return -1;
     }
 
-    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                 "  get Recorder Simple Buffer Queue 2");
     // Get the simpleBufferQueue interface
     res = (*_slRecorder)->GetInterface(_slRecorder,
                                        SL_IID_ANDROIDSIMPLEBUFFERQUEUE,
@@ -1273,8 +1268,6 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::InitRecording() {
         return -1;
     }
 
-    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                 "  register Recorder Callback 2");
     // Setup to receive buffer queue event callbacks
     res = (*_slRecorderSimpleBufferQueue)->RegisterCallback(
         _slRecorderSimpleBufferQueue,
