@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -74,10 +74,10 @@ BOOL CDXWindowsTestApp::InitInstance()
     }
     
     {
-        WindowsTestMainDlg dlg(_videoEngine,_voiceEngine);
+      WindowsTestMainDlg dlg(_videoEngine,_voiceEngine);
 
-	    m_pMainWnd = &dlg;
-	    int nResponse = dlg.DoModal();
+      m_pMainWnd = &dlg;
+      dlg.DoModal();
     }
     
     vieBase->Release();

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -40,7 +40,6 @@ IPin* GetInputPin(IBaseFilter* filter)
     // get first unconnected pin
     hr = pPinEnum->Reset(); // set to first pin
 
-    int count = 0;
     while (S_OK == pPinEnum->Next(1, &pin, NULL))
     {
         PIN_DIRECTION pPinDir;
@@ -72,7 +71,6 @@ IPin* GetOutputPin(IBaseFilter* filter, REFGUID Category)
     }
     // get first unconnected pin
     hr = pPinEnum->Reset(); // set to first pin
-    int count = 0;
     while (S_OK == pPinEnum->Next(1, &pin, NULL))
     {
         PIN_DIRECTION pPinDir;

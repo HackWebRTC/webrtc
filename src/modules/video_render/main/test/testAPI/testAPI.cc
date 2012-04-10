@@ -163,10 +163,7 @@ int WebRtcCreateWindow(HWND &hwndMain,int winNum, int width, int height)
             NULL); // no window creation data
 
     if (!hwndMain)
-    {
-        int error = GetLastError();
         return -1;
-    }
 
     // Show the window using the flag specified by the program
     // that started the application, and send the application

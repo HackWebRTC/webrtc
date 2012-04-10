@@ -131,7 +131,6 @@ bool UdpSocket2ManagerWindows::Start()
     _pCrit->Enter();
     // Start worker threads.
     _stopped = false;
-    WebRtc_Word32 i = 0;
     WebRtc_Word32 error = 0;
     ListItem* pItem = _workerThreadsList.First();
     UdpSocket2WorkerWindows* pWorker;

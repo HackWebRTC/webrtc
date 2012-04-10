@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -128,10 +128,8 @@ static T* GetStaticInstance(CountOperation count_operation) {
     // local copy.
     T* new_instance = T::CreateInstance();
     if (1 == InterlockedIncrement(&instance_count)) {
-      T* old_value = static_cast<T*> (InterlockedExchangePointer(
-          reinterpret_cast<void* volatile*>(&instance), new_instance));
-      assert(old_value == NULL);
-      assert(instance);
+      InterlockedExchangePointer(reinterpret_cast<void* volatile*>(&instance),
+                                 new_instance);
     } else {
       InterlockedDecrement(&instance_count);
       if (new_instance) {

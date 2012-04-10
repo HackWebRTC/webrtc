@@ -46,13 +46,6 @@
     'build_libyuv%': 1,
 
     'conditions': [
-      ['OS=="win"', {
-        # TODO(andrew, perkj): does this need to be here?
-        # Path needed to build Direct Show base classes on Windows.
-        # The code is included in the Windows SDK.
-        'direct_show_base_classes':
-          'C:/Program Files/Microsoft SDKs/Windows/v7.1/Samples/multimedia/directshow/baseclasses/',
-      }],
       ['build_with_chromium==1', {
         # Exclude pulse audio on Chromium since its prerequisites don't require
         # pulse audio.
@@ -146,12 +139,15 @@
         'defines': [
           'WEBRTC_WIN',
         ],
-        # TODO(andrew): remove this block when possible.
+        # TODO(andrew): enable all warnings when possible.
         # 4389: Signed/unsigned mismatch.
         # 4373: MSVC legacy warning for ignoring const / volatile in
         # signatures. TODO(phoglund): get rid of 4373 supression when
         # http://code.google.com/p/webrtc/issues/detail?id=261 is solved.
         'msvs_disabled_warnings': [4389, 4373],
+
+	# Re-enable some warnings that Chromium disables.
+	'msvs_disabled_warnings!': [4189,],
       }],
       ['OS=="android"', {
         'defines': [

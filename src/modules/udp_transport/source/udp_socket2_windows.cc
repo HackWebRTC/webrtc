@@ -1302,7 +1302,7 @@ bool UdpSocket2Windows::NewOutstandingCall()
 {
     assert(_outstandingCallsDisabled.Value() == 0);
 
-    const WebRtc_Word32 outstandingCalls = ++_outstandingCalls;
+    ++_outstandingCalls;
     return true;
 }
 

@@ -311,11 +311,10 @@ IBaseFilter * DeviceInfoWindows::GetDeviceFilter(
                 {
                     char tempDevicePathUTF8[256];
                     tempDevicePathUTF8[0] = 0;
-                    const int compresult =
-                        WideCharToMultiByte(CP_UTF8, 0, varName.bstrVal, -1,
-                                            tempDevicePathUTF8,
-                                            sizeof(tempDevicePathUTF8), NULL,
-                                            NULL);
+                    WideCharToMultiByte(CP_UTF8, 0, varName.bstrVal, -1,
+                                        tempDevicePathUTF8,
+                                        sizeof(tempDevicePathUTF8), NULL,
+                                        NULL);
                     if (strncmp(tempDevicePathUTF8,
                                 (const char*) deviceUniqueIdUTF8,
                                 deviceUniqueIdUTF8Length) == 0)
@@ -525,7 +524,6 @@ WebRtc_Word32 DeviceInfoWindows::CreateCapabilityMap(
             VideoCaptureCapabilityWindows* capability =
                                         new VideoCaptureCapabilityWindows();
             WebRtc_Word64 avgTimePerFrame = 0;
-            bool interlaced = false;
 
             if (pmt->formattype == FORMAT_VideoInfo)
             {

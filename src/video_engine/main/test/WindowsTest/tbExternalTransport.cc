@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -78,10 +78,6 @@ int TbExternalTransport::SendPacket(int channel, const void *data, int len)
     sequenceNumber +=  (((unsigned char*) data)[3]);
 
             
-    int marker=((unsigned char*)data)[1] & 0x80;
-    unsigned int timestamp=((((unsigned char*)data)[4]) << 24) + ((((unsigned char*)data)[5])<<16) +((((unsigned char*)data)[6])<<8)+(((unsigned char*)data)[7]);
-
-    
         // Packet loss
     int dropThis = rand() % 100;
     bool nacked=false;

@@ -62,8 +62,6 @@ VideoCaptureDS::~VideoCaptureDS()
 WebRtc_Word32 VideoCaptureDS::Init(const WebRtc_Word32 id,
                                           const char* deviceUniqueIdUTF8)
 {
-    WebRtc_Word32 result = 0;
-
     const WebRtc_Word32 nameLength =
         (WebRtc_Word32) strlen((char*) deviceUniqueIdUTF8);
     if (nameLength > kVideoCaptureUniqueNameLength)

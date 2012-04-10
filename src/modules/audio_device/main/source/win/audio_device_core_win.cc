@@ -1888,7 +1888,6 @@ WebRtc_Word32 AudioDeviceWindowsCore::PlayoutDeviceName(
 
     CriticalSectionScoped lock(_critSect);
 
-    HRESULT hr(S_OK);
     WebRtc_Word32 ret(-1);
     WCHAR szDeviceName[MAX_PATH];
     const int bufferLen = sizeof(szDeviceName)/sizeof(szDeviceName)[0];
@@ -1969,7 +1968,6 @@ WebRtc_Word32 AudioDeviceWindowsCore::RecordingDeviceName(
 
     CriticalSectionScoped lock(_critSect);
 
-    HRESULT hr(S_OK);
     WebRtc_Word32 ret(-1);
     WCHAR szDeviceName[MAX_PATH];
     const int bufferLen = sizeof(szDeviceName)/sizeof(szDeviceName)[0];
@@ -2786,7 +2784,6 @@ WebRtc_Word32 AudioDeviceWindowsCore::StartRecording()
         return 0;
     }
 
-    HRESULT hr = S_OK;
     {
         CriticalSectionScoped critScoped(_critSect);
 
@@ -3037,7 +3034,6 @@ WebRtc_Word32 AudioDeviceWindowsCore::StartPlayout()
         return 0;
     }
 
-    HRESULT hr = S_OK;
     {
         CriticalSectionScoped critScoped(_critSect);
 
@@ -3505,13 +3501,7 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "[REND] device period        : %u (%3.2f ms)",
         (DWORD)devPeriod, (double)(devPeriod/10000.0));
 
-    //  The Event Driven renderer will be woken up every defaultDevicePeriod hundred-nano-seconds.
-    //  Convert that time into a number of frames.
-    //
-    double devicePeriodInSeconds = devPeriod / (10000.0*1000.0);
-    UINT32 devicePeriodInFrames = static_cast<UINT32>(_playSampleRate * devicePeriodInSeconds + 0.5);
-
-    // Derive inital rendering delay.
+    // Derive initial rendering delay.
     // Example: 10*(960/480) + 15 = 20 + 15 = 35ms
     //
     int playout_delay = 10 * (bufferLength / _playBlockSize) +
@@ -3716,7 +3706,6 @@ Exit:
 
 DWORD AudioDeviceWindowsCore::InitCaptureThreadPriority()
 {
-    HRESULT hr = S_OK;
     _hMmTask = NULL;
 
     _SetThreadName(-1, "webrtc_core_audio_capture_thread");
@@ -3916,7 +3905,6 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread()
     bool keepRecording = true;
     HANDLE waitArray[2] = {_hShutdownCaptureEvent, _hCaptureSamplesReadyEvent};
     HRESULT hr = S_OK;
-    HANDLE hMmTask = NULL;
 
     LARGE_INTEGER t1;
     LARGE_INTEGER t2;
@@ -3924,9 +3912,6 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread()
 
     BYTE* syncBuffer = NULL;
     UINT32 syncBufIndex = 0;
-
-    WebRtc_UWord32 newMicLevel(0);
-    WebRtc_UWord32 currentMicLevel(0);
 
     _readSamples = 0;
 

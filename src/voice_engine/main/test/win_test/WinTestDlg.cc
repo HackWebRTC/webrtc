@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -1215,8 +1215,7 @@ CWinTestDlg::~CWinTestDlg()
     if (_veRtpRtcpPtr) _veRtpRtcpPtr->Release();
     if (_vePtr)
     {
-        bool ret = VoiceEngine::Delete(_vePtr);
-        ASSERT(ret == true);
+        VoiceEngine::Delete(_vePtr);
     }
     VoiceEngine::SetTraceFilter(kTraceNone);
 }
@@ -1416,7 +1415,6 @@ BOOL CWinTestDlg::OnInitDialog()
         float lVol(0.0);
         float rVol(0.0);
         int leftVol, rightVol;
-        unsigned int volumePan(0);
         CSliderCtrl* slider(NULL);
 
         _veVolumeControlPtr->GetOutputVolumePan(-1, lVol, rVol);
@@ -1777,9 +1775,6 @@ void CWinTestDlg::OnBnClickedButtonCreate1()
         GetDlgItem(IDC_CHECK_NS_1)->EnableWindow(TRUE);
         GetDlgItem(IDC_CHECK_FEC)->EnableWindow(TRUE);
 
-        bool enabled(false);
-        bool includeCSRCs(false);
-
         // Always set send codec to default codec <=> index 0.
         CodecInst codec;
         _veCodecPtr->GetCodec(0, codec);
@@ -1818,10 +1813,6 @@ void CWinTestDlg::OnBnClickedButtonCreate2()
         GetDlgItem(IDC_BUTTON_DTMF_2)->EnableWindow(TRUE);
         GetDlgItem(IDC_CHECK_CONFERENCE_2)->EnableWindow(TRUE);
         GetDlgItem(IDC_CHECK_ON_HOLD_2)->EnableWindow(TRUE);
-
-        bool enabled(false);
-        bool includeCSRCs(false);
-
 
         // Always set send codec to default codec <=> index 0.
         CodecInst codec;
@@ -2478,7 +2469,6 @@ void CWinTestDlg::OnBnClickedCheckPlayFileOut2()
 
 void CWinTestDlg::OnBnClickedCheckExtMediaIn1()
 {
-    int ret(0);
     int channel = GetDlgItemInt(IDC_EDIT_1);
     CButton* buttonExtTrans = (CButton*)GetDlgItem(IDC_CHECK_EXT_MEDIA_IN_1);
     int check = buttonExtTrans->GetCheck();
@@ -2497,7 +2487,6 @@ void CWinTestDlg::OnBnClickedCheckExtMediaIn1()
 
 void CWinTestDlg::OnBnClickedCheckExtMediaIn2()
 {
-    int ret(0);
     int channel = GetDlgItemInt(IDC_EDIT_2);
     CButton* buttonExtTrans = (CButton*)GetDlgItem(IDC_CHECK_EXT_MEDIA_IN_2);
     int check = buttonExtTrans->GetCheck();
@@ -2516,7 +2505,6 @@ void CWinTestDlg::OnBnClickedCheckExtMediaIn2()
 
 void CWinTestDlg::OnBnClickedCheckExtMediaOut1()
 {
-    int ret(0);
     int channel = GetDlgItemInt(IDC_EDIT_1);
     CButton* buttonExtTrans = (CButton*)GetDlgItem(IDC_CHECK_EXT_MEDIA_OUT_1);
     int check = buttonExtTrans->GetCheck();
@@ -2535,7 +2523,6 @@ void CWinTestDlg::OnBnClickedCheckExtMediaOut1()
 
 void CWinTestDlg::OnBnClickedCheckExtMediaOut2()
 {
-    int ret(0);
     int channel = GetDlgItemInt(IDC_EDIT_2);
     CButton* buttonExtTrans = (CButton*)GetDlgItem(IDC_CHECK_EXT_MEDIA_OUT_2);
     int check = buttonExtTrans->GetCheck();
@@ -2951,7 +2938,6 @@ void CWinTestDlg::OnBnClickedCheckOnHold2()
 
 void CWinTestDlg::OnBnClickedCheckDelayEstimate1()
 {
-    int channel = GetDlgItemInt(IDC_EDIT_1);
     CButton* button = (CButton*)GetDlgItem(IDC_CHECK_DELAY_ESTIMATE_1);
     int check = button->GetCheck();
     const bool enable = (check == BST_CHECKED);
@@ -3112,7 +3098,6 @@ void CWinTestDlg::OnBnClickedCheckPlayFileIn()
     const char micFile[] = "../../test/data/voice_engine/audio_short16.pcm";
     // const char micFile[] = "../../test/data/voice_engine/audio_long16noise.pcm";
 
-    int ret(0);
     int channel(-1);
     CButton* buttonExtTrans = (CButton*)GetDlgItem(IDC_CHECK_PLAY_FILE_IN);
     int check = buttonExtTrans->GetCheck();

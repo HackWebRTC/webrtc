@@ -1161,7 +1161,6 @@ WebRtc_Word32 AudioMixerManager::SpeakerVolumeStepSize(WebRtc_UWord16& stepSize)
     }
 
     const UINT mixerID(_outputMixerID);
-    const DWORD dwControlID(_speakerState[_outputMixerID].dwVolumeControlID);
     MIXERCONTROL mixerControl;
 
     // Retrieve one control line for a specified volume-control identifier

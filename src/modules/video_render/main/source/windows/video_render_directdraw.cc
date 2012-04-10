@@ -3024,7 +3024,6 @@ bool VideoRenderDirectDraw::RemoteRenderingProcess()
     {
         if (it->second)
         {
-            int channel = it->first;
             _frameChanged = it->second->IsOffScreenSurfaceUpdated(this);
         }
         it++;

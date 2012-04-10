@@ -412,7 +412,6 @@ CaptureSinkFilter::GetPin(IN int Index)
 
 STDMETHODIMP CaptureSinkFilter::Pause()
 {
-    HRESULT hr = S_OK;
     LockFilter();
     if (m_State == State_Stopped)
     {

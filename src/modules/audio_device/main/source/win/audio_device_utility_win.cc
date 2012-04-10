@@ -77,7 +77,6 @@ WebRtc_Word32 AudioDeviceUtilityWindows::Init()
         char os[STRING_MAX_SIZE];
         if (WideCharToMultiByte(CP_UTF8, 0, szOS, -1, os, STRING_MAX_SIZE, NULL, NULL) == 0)
         {
-            DWORD err = GetLastError();
             strncpy(os, "Could not get OS info", STRING_MAX_SIZE);
         }
         // DEBUG_PRINTP("OS info: %s\n", os);
