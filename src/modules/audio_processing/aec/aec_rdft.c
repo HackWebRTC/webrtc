@@ -42,8 +42,8 @@ ALIGN16_BEG float ALIGN16_END cftmdl_wk1r[4];
 
 static int ip[16];
 
-static void bitrv2_32or128(int n, int *ip, float *a) {
-  // n is 32 or 128
+static void bitrv2_32(int *ip, float *a) {
+  const int n = 32;
   int j, j1, k, k1, m, m2;
   float xr, xi, yr, yi;
 
@@ -116,6 +116,80 @@ static void bitrv2_32or128(int n, int *ip, float *a) {
   }
 }
 
+static void bitrv2_128(float *a) {
+  /*
+      Following things have been attempted but are no faster:
+      (a) Storing the swap indexes in a LUT (index calculations are done
+          for 'free' while waiting on memory/L1).
+      (b) Consolidate the load/store of two consecutive floats by a 64 bit
+          integer (execution is memory/L1 bound).
+      (c) Do a mix of floats and 64 bit integer to maximize register
+          utilization (execution is memory/L1 bound).
+      (d) Replacing ip[i] by ((k<<31)>>25) + ((k >> 1)<<5).
+      (e) Hard-coding of the offsets to completely eliminates index
+          calculations.
+  */
+
+  unsigned int j, j1, k, k1;
+  float xr, xi, yr, yi;
+
+  static const int ip[4] = {0, 64, 32, 96};
+  for (k = 0; k < 4; k++) {
+    for (j = 0; j < k; j++) {
+      j1 = 2 * j + ip[k];
+      k1 = 2 * k + ip[j];
+      xr = a[j1 + 0];
+      xi = a[j1 + 1];
+      yr = a[k1 + 0];
+      yi = a[k1 + 1];
+      a[j1 + 0] = yr;
+      a[j1 + 1] = yi;
+      a[k1 + 0] = xr;
+      a[k1 + 1] = xi;
+      j1 +=  8;
+      k1 += 16;
+      xr = a[j1 + 0];
+      xi = a[j1 + 1];
+      yr = a[k1 + 0];
+      yi = a[k1 + 1];
+      a[j1 + 0] = yr;
+      a[j1 + 1] = yi;
+      a[k1 + 0] = xr;
+      a[k1 + 1] = xi;
+      j1 += 8;
+      k1 -= 8;
+      xr = a[j1 + 0];
+      xi = a[j1 + 1];
+      yr = a[k1 + 0];
+      yi = a[k1 + 1];
+      a[j1 + 0] = yr;
+      a[j1 + 1] = yi;
+      a[k1 + 0] = xr;
+      a[k1 + 1] = xi;
+      j1 +=  8;
+      k1 += 16;
+      xr = a[j1 + 0];
+      xi = a[j1 + 1];
+      yr = a[k1 + 0];
+      yi = a[k1 + 1];
+      a[j1 + 0] = yr;
+      a[j1 + 1] = yi;
+      a[k1 + 0] = xr;
+      a[k1 + 1] = xi;
+    }
+    j1 = 2 * k + 8 + ip[k];
+    k1 = j1 + 8;
+    xr = a[j1 + 0];
+    xi = a[j1 + 1];
+    yr = a[k1 + 0];
+    yi = a[k1 + 1];
+    a[j1 + 0] = yr;
+    a[j1 + 1] = yi;
+    a[k1 + 0] = xr;
+    a[k1 + 1] = xi;
+  }
+}
+
 static void makewt_32(void) {
   const int nw = 32;
   int j, nwh;
@@ -137,7 +211,7 @@ static void makewt_32(void) {
     rdft_w[nw - j] = y;
     rdft_w[nw - j + 1] = x;
   }
-  bitrv2_32or128(nw, ip + 2, rdft_w);
+  bitrv2_32(ip + 2, rdft_w);
 
   // pre-calculate constants used by cft1st_128 and cftmdl_128...
   cftmdl_wk1r[0] = rdft_w[2];
@@ -544,10 +618,8 @@ static void rftbsub_128_C(float *a) {
 }
 
 void aec_rdft_forward_128(float *a) {
-  const int n = 128;
   float xi;
-
-  bitrv2_32or128(n, ip + 2, a);
+  bitrv2_128(a);
   cftfsub_128(a);
   rftfsub_128(a);
   xi = a[0] - a[1];
@@ -556,12 +628,10 @@ void aec_rdft_forward_128(float *a) {
 }
 
 void aec_rdft_inverse_128(float *a) {
-  const int n = 128;
-
   a[1] = 0.5f * (a[0] - a[1]);
   a[0] -= a[1];
   rftbsub_128(a);
-  bitrv2_32or128(n, ip + 2, a);
+  bitrv2_128(a);
   cftbsub_128(a);
 }
 
