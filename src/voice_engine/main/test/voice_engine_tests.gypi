@@ -42,6 +42,7 @@
         'auto_test/standard/codec_test.cc',
         'auto_test/standard/dtmf_test.cc',
         'auto_test/standard/encryption_test.cc',
+        'auto_test/standard/external_media_test.cc',
         'auto_test/standard/file_test.cc',
         'auto_test/standard/hardware_before_initializing_test.cc',
         'auto_test/standard/hardware_before_streaming_test.cc',

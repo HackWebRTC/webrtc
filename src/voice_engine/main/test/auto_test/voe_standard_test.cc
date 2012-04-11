@@ -188,31 +188,6 @@ void MyDeadOrAlive::OnPeriodicDeadOrAlive(const int /*channel*/,
   fflush(NULL);
 }
 
-#ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
-void MyMedia::Process(const int channel,
-                      const ProcessingTypes type,
-                      WebRtc_Word16 audio_10ms[],
-                      const int length,
-                      const int samplingFreqHz,
-                      const bool stereo) {
-  for (int i = 0; i < length; i++) {
-    if (!stereo) {
-      audio_10ms[i] = (WebRtc_Word16) (audio_10ms[i] *
-          sin(2.0 * 3.14 * f * 400.0 / samplingFreqHz));
-    } else {
-      // interleaved stereo
-      audio_10ms[2 * i] = (WebRtc_Word16) (audio_10ms[2 * i] *
-          sin(2.0 * 3.14 * f * 400.0 / samplingFreqHz));
-      audio_10ms[2 * i + 1] = (WebRtc_Word16) (audio_10ms[2 * i + 1] *
-          sin(2.0 * 3.14 * f * 400.0 / samplingFreqHz));
-    }
-    f++;
-  }
-}
-#endif
-
-MyMedia mobj;
-
 FakeExternalTransport::FakeExternalTransport(VoENetwork* ptr)
     : my_network_(ptr),
       thread_(NULL),
@@ -941,100 +916,6 @@ int VoETestManager::DoStandardTest() {
   FakeExternalTransport channel0_transport(voe_network_);
   if (TestStartStreaming(channel0_transport) != 0) return -1;
   if (TestStartPlaying() != 0) return -1;
-
-  //////////////////
-  // External media
-
-#ifdef _TEST_XMEDIA_
-  TEST_LOG("\n\n+++ External media tests +++\n\n");
-
-#ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
-  TEST_LOG("Stop playing file as microphone \n");
-  TEST_LOG("==> Talk into the microphone \n");
-  TEST_MUSTPASS(voe_file_->StopPlayingFileAsMicrophone(0));
-
-  TEST_LOG("Enabling external playout\n");
-  TEST_MUSTPASS(voe_base_->StopSend(0));
-  TEST_MUSTPASS(voe_base_->StopPlayout(0));
-  TEST_MUSTPASS(voe_xmedia_->SetExternalPlayoutStatus(true));
-  TEST_MUSTPASS(voe_base_->StartPlayout(0));
-  TEST_MUSTPASS(voe_base_->StartSend(0));
-
-  TEST_LOG("Writing 2 secs of play data to vector\n");
-  int getLen;
-  WebRtc_Word16 speechData[32000];
-  for (int i = 0; i < 200; i++) {
-    TEST_MUSTPASS(voe_xmedia_->ExternalPlayoutGetData(speechData+i*160,
-            16000,
-            100,
-            getLen));
-    TEST_MUSTPASS(160 != getLen);
-    SLEEP(10);
-  }
-
-  TEST_LOG("Disabling external playout\n");
-  TEST_MUSTPASS(voe_base_->StopSend(0));
-  TEST_MUSTPASS(voe_base_->StopPlayout(0));
-  TEST_MUSTPASS(voe_xmedia_->SetExternalPlayoutStatus(false));
-  TEST_MUSTPASS(voe_base_->StartPlayout(0));
-
-  TEST_LOG("Enabling external recording\n");
-  TEST_MUSTPASS(voe_xmedia_->SetExternalRecordingStatus(true));
-  TEST_MUSTPASS(voe_base_->StartSend(0));
-
-  TEST_LOG("Inserting record data from vector\n");
-  for (int i = 0; i < 200; i++) {
-    TEST_MUSTPASS(voe_xmedia_->ExternalRecordingInsertData(speechData+i*160,
-            160,
-            16000,
-            20));
-    SLEEP(10);
-  }
-
-  TEST_LOG("Disabling external recording\n");
-  TEST_MUSTPASS(voe_base_->StopSend(0));
-  TEST_MUSTPASS(voe_xmedia_->SetExternalRecordingStatus(false));
-  TEST_MUSTPASS(voe_base_->StartSend(0));
-
-  TEST_LOG("==> Start playing a file as microphone again \n");
-  TEST_MUSTPASS(voe_file_->StartPlayingFileAsMicrophone(0, AudioFilename(),
-          true, true));
-#else
-  TEST_LOG("Skipping external rec and playout tests - \
-             WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT not defined \n");
-#endif // WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
-  TEST_LOG("Enabling playout external media processing => "
-    "played audio should now be affected \n");
-  TEST_MUSTPASS(voe_xmedia_->RegisterExternalMediaProcessing(
-          -1, kPlaybackAllChannelsMixed, mobj));
-  SLEEP(2000);
-  TEST_LOG("Back to normal again \n");
-  TEST_MUSTPASS(voe_xmedia_->DeRegisterExternalMediaProcessing(
-          -1, kPlaybackAllChannelsMixed));
-  SLEEP(2000);
-  // Note that we must do per channel here because PlayFileAsMicrophone
-  // is only done on ch 0.
-  TEST_LOG("Enabling recording external media processing => "
-    "played audio should now be affected \n");
-  TEST_MUSTPASS(voe_xmedia_->RegisterExternalMediaProcessing(
-          0, kRecordingPerChannel, mobj));
-  SLEEP(2000);
-  TEST_LOG("Back to normal again \n");
-  TEST_MUSTPASS(voe_xmedia_->DeRegisterExternalMediaProcessing(
-          0, kRecordingPerChannel));
-  SLEEP(2000);
-  TEST_LOG("Enabling recording external media processing => "
-    "speak and make sure that voice is affected \n");
-  TEST_MUSTPASS(voe_xmedia_->RegisterExternalMediaProcessing(
-          -1, kRecordingAllChannelsMixed, mobj));
-  SLEEP(2000);
-  TEST_LOG("Back to normal again \n");
-  TEST_MUSTPASS(voe_xmedia_->DeRegisterExternalMediaProcessing(
-          -1, kRecordingAllChannelsMixed));
-  SLEEP(2000);
-#else
-  TEST_LOG("\n\n+++ External media tests NOT ENABLED +++\n");
-#endif // #ifdef _TEST_XMEDIA_
 
   //////////////////
   // Stop streaming

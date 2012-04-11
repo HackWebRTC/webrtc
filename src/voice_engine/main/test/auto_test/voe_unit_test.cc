@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "voe_unit_test.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -16,10 +18,9 @@
 #include <conio.h>
 #endif
 
-#include "voe_unit_test.h"
-
-#include "../../source/voice_engine_defines.h"
-#include "thread_wrapper.h"
+#include "system_wrappers/interface/thread_wrapper.h"
+#include "voice_engine/main/source/voice_engine_defines.h"
+#include "voice_engine/main/test/auto_test/fakes/fake_media_process.h"
 
 using namespace webrtc;
 
@@ -180,7 +181,7 @@ void VoEUnitTest::SetStereoExternalEncryption(int channel, bool onOff,
 }
 
 // VoEVEMediaProcess
-MyMedia mpobj;
+FakeMediaProcess mpobj;
 
 // ----------------------------------------------------------------------------
 //                               VoEUnitTest
