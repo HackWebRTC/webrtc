@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -56,13 +56,8 @@ WebRtc_Word32 CaptureDevicePool::GetCaptureDevice(int& captureId, const char* un
     WebRtc_Word32 result=_vieCapture->AllocateCaptureDevice(device->uniqeDeviceName,strlen(device->uniqeDeviceName),device->captureId);
     if(result==0)
     {
-        //CaptureCapability cap;
-        /*cap.height=1080;
-        cap.width=1920;
-        cap.maxFPS=25;    
-        cap.interlaced=true;*/
-     //   result=_vieCapture->StartCapture(device->captureId,cap);
-        result=_vieFile->SetCaptureDeviceImage(device->captureId,"captureDeviceImage.jpg");
+        result=_vieFile->SetCaptureDeviceImage(device->captureId,
+                            "./main/test/WindowsTest/captureDeviceImage.jpg");
     }
     captureId=device->captureId;
     _deviceMap.Insert(captureId,device);

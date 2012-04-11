@@ -661,9 +661,11 @@ void CDXChannelDlg::ConfigureRender()
 {
     TEST_MUSTPASS(_vieRender->AddRenderer(_channelId,m_ctrlLiveRemoteVideo.m_hWnd, 0, 0.0f, 0.0f,1.0f,1.0f),-5);
 
-    TEST_MUSTPASS(_vieFile->SetRenderStartImage(_channelId,"renderStartImage.jpg"),-5);
+    TEST_MUSTPASS(_vieFile->SetRenderStartImage(_channelId,
+                           "./main/test/WindowsTest/renderStartImage.jpg"),-5);
     TEST_MUSTPASS(_vieRender->StartRender(_channelId),-5);
-    TEST_MUSTPASS(_vieFile->SetRenderTimeoutImage(_channelId,"renderTimeoutImage.jpg"),-5);
+    TEST_MUSTPASS(_vieFile->SetRenderTimeoutImage(_channelId,
+                         "./main/test/WindowsTest/renderTimeoutImage.jpg"),-5);
 
 
 }
