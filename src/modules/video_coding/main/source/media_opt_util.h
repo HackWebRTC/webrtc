@@ -144,6 +144,8 @@ public:
     // Return value                 : Required Unequal protection on/off state.
     virtual bool RequiredUepProtectionD() { return _useUepProtectionD; }
 
+    virtual int MaxFramesFec() const { return 1; }
+
     // Updates content metrics
     void UpdateContentMetrics(const VideoContentMetrics* contentMetrics);
 
@@ -198,6 +200,9 @@ public:
     void UpdateProtectionFactorK(WebRtc_UWord8 protectionFactorK);
     // Compute the bits per frame. Account for temporal layers when applicable.
     int BitsPerFrame(const VCMProtectionParameters* parameters);
+
+protected:
+    enum { kUpperLimitFramesFec = 6 };
 };
 
 
@@ -212,10 +217,15 @@ public:
     bool EffectivePacketLoss(const VCMProtectionParameters* parameters);
     // Get the protection factors
     bool ProtectionFactor(const VCMProtectionParameters* parameters);
+    // Get the max number of frames the FEC is allowed to be based on.
+    int MaxFramesFec() const;
 
 private:
+    int ComputeMaxFramesFec(const VCMProtectionParameters* parameters);
+
     int _lowRttNackMs;
     int _highRttNackMs;
+    int _maxFramesFec;
 };
 
 class VCMLossProtectionLogic

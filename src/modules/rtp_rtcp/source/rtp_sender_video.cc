@@ -131,7 +131,8 @@ WebRtc_Word32
 RTPSenderVideo::SendVideoPacket(const WebRtc_UWord8* data_buffer,
                                 const WebRtc_UWord16 payload_length,
                                 const WebRtc_UWord16 rtp_header_length,
-                                StorageType storage) {
+                                StorageType storage,
+                                bool protect) {
   if(_fecEnabled) {
     int ret = 0;
     int fec_overhead_sent = 0;
@@ -156,11 +157,13 @@ RTPSenderVideo::SendVideoPacket(const WebRtc_UWord8* data_buffer,
     delete red_packet;
     red_packet = NULL;
 
-    ret = producer_fec_.AddRtpPacketAndGenerateFec(data_buffer,
-                                                   payload_length,
-                                                   rtp_header_length);
-    if (ret != 0)
-      return ret;
+    if (protect) {
+      ret = producer_fec_.AddRtpPacketAndGenerateFec(data_buffer,
+                                                     payload_length,
+                                                     rtp_header_length);
+      if (ret != 0)
+        return ret;
+    }
 
     while (producer_fec_.FecAvailable()) {
       red_packet = producer_fec_.GetFecPacket(
@@ -283,13 +286,6 @@ RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
     if (frameType == kVideoFrameKey) {
       producer_fec_.SetFecParameters(&key_fec_params_,
                                      _numberFirstPartition);
-    } else if (videoType == kRtpVp8Video && rtpTypeHdr->VP8.temporalIdx > 0) {
-        // In current version, we only apply FEC on the base layer.
-      FecProtectionParams params;
-      params.fec_rate = 0;
-      params.max_fec_frames = 0;
-      params.use_uep_protection = false;
-      producer_fec_.SetFecParameters(&params, _numberFirstPartition);
     } else {
       producer_fec_.SetFecParameters(&delta_fec_params_,
                                      _numberFirstPartition);
@@ -373,7 +369,8 @@ RTPSenderVideo::SendGeneric(const WebRtc_Word8 payloadType,
         if(-1 == SendVideoPacket(dataBuffer,
                                  payloadBytesInPacket,
                                  rtpHeaderLength,
-                                 kAllowRetransmission))
+                                 kAllowRetransmission,
+                                 true))
         {
             return -1;
         }
@@ -433,6 +430,9 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
 
     bool last = false;
     _numberFirstPartition = 0;
+    // |rtpTypeHdr->VP8.temporalIdx| is zero for base layers, or -1 if the field
+    // isn't used. We currently only protect base layers.
+    bool protect = (rtpTypeHdr->VP8.temporalIdx < 1);
     while (!last)
     {
         // Write VP8 Payload Descriptor and VP8 payload.
@@ -455,7 +455,7 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
         _rtpSender.BuildRTPheader(dataBuffer, payloadType, last,
             captureTimeStamp);
         if (-1 == SendVideoPacket(dataBuffer, payloadBytesInPacket,
-            rtpHeaderLength, storage))
+            rtpHeaderLength, storage, protect))
         {
           WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
                        "RTPSenderVideo::SendVP8 failed to send packet number"

@@ -95,7 +95,8 @@ protected:
     virtual WebRtc_Word32 SendVideoPacket(const WebRtc_UWord8* dataBuffer,
                                           const WebRtc_UWord16 payloadLength,
                                           const WebRtc_UWord16 rtpHeaderLength,
-                                          StorageType storage);
+                                          StorageType storage,
+                                          bool protect);
 
 private:
     WebRtc_Word32 SendGeneric(const WebRtc_Word8 payloadType,

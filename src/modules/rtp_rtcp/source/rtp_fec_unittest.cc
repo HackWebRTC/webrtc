@@ -26,6 +26,10 @@ const uint8_t kTransportOverhead = 28;
 // Maximum number of media packets used in the FEC (RFC 5109).
 const uint8_t kMaxNumberMediaPackets = ForwardErrorCorrection::kMaxMediaPackets;
 
+typedef std::list<ForwardErrorCorrection::Packet*> PacketList;
+typedef std::list<ForwardErrorCorrection::ReceivedPacket*> ReceivedPacketList;
+typedef std::list<ForwardErrorCorrection::RecoveredPacket*> RecoveredPacketList;
+
 template<typename T> void ClearList(std::list<T*>* my_list) {
   T* packet = NULL;
   while (!my_list->empty()) {
@@ -47,10 +51,10 @@ class RtpFecTest : public ::testing::Test {
   int ssrc_;
   uint16_t fec_seq_num_;
 
-  std::list<ForwardErrorCorrection::Packet*> media_packet_list_;
-  std::list<ForwardErrorCorrection::Packet*> fec_packet_list_;
-  std::list<ForwardErrorCorrection::ReceivedPacket*> received_packet_list_;
-  std::list<ForwardErrorCorrection::RecoveredPacket*> recovered_packet_list_;
+  PacketList media_packet_list_;
+  PacketList fec_packet_list_;
+  ReceivedPacketList received_packet_list_;
+  RecoveredPacketList recovered_packet_list_;
 
   // Media packet "i" is lost if media_loss_mask_[i] = 1,
   // received if media_loss_mask_[i] = 0.
@@ -63,6 +67,8 @@ class RtpFecTest : public ::testing::Test {
   // Construct the media packet list, up to |num_media_packets| packets.
   // Returns the next sequence number after the last media packet.
   // (this will be the sequence of the first FEC packet)
+  int ConstructMediaPacketsSeqNum(int num_media_packets,
+                                  int start_seq_num);
   int ConstructMediaPackets(int num_media_packets);
 
   // Construct the received packet list: a subset of the media and FEC packets.
@@ -73,7 +79,7 @@ class RtpFecTest : public ::testing::Test {
   // The |packet_list| may be a media packet list (is_fec = false), or a
   // FEC packet list (is_fec = true).
   void ReceivedPackets(
-      const std::list<ForwardErrorCorrection::Packet*>& packet_list,
+      const PacketList& packet_list,
       int* loss_mask,
       bool is_fec);
 
@@ -395,6 +401,221 @@ TEST_F(RtpFecTest, FecRecoveryWithLoss50percUep) {
   EXPECT_FALSE(IsRecoveryComplete());
 }
 
+TEST_F(RtpFecTest, FecRecoveryNonConsecutivePackets) {
+  const int num_important_packets = 0;
+  const bool use_unequal_protection = false;
+  const int num_media_packets = 5;
+  uint8_t protection_factor = 60;
+
+  fec_seq_num_ = ConstructMediaPackets(num_media_packets);
+
+  // Create a new temporary packet list for generating FEC packets.
+  // This list should have every other packet removed.
+  PacketList protected_media_packets;
+  int i = 0;
+  for (PacketList::iterator it = media_packet_list_.begin();
+      it != media_packet_list_.end(); ++it, ++i) {
+    if (i % 2 == 0)
+      protected_media_packets.push_back(*it);
+  }
+
+  EXPECT_EQ(0, fec_->GenerateFEC(protected_media_packets,
+                                 protection_factor,
+                                 num_important_packets,
+                                 use_unequal_protection,
+                                 &fec_packet_list_));
+
+  // Expect 1 FEC packet.
+  EXPECT_EQ(1, static_cast<int>(fec_packet_list_.size()));
+
+  // 1 protected media packet lost
+  memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
+  memset(fec_loss_mask_, 0, sizeof(fec_loss_mask_));
+  media_loss_mask_[2] = 1;
+  NetworkReceivedPackets();
+
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
+
+  // One packet lost, one FEC packet, expect complete recovery.
+  EXPECT_TRUE(IsRecoveryComplete());
+  FreeRecoveredPacketList();
+
+  // Unprotected packet lost.
+  memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
+  memset(fec_loss_mask_, 0, sizeof(fec_loss_mask_));
+  media_loss_mask_[1] = 1;
+  NetworkReceivedPackets();
+
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
+
+  // Unprotected packet lost. Recovery not possible.
+  EXPECT_FALSE(IsRecoveryComplete());
+  FreeRecoveredPacketList();
+
+  // 2 media packets lost.
+  memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
+  memset(fec_loss_mask_, 0, sizeof(fec_loss_mask_));
+  media_loss_mask_[0] = 1;
+  media_loss_mask_[2] = 1;
+  NetworkReceivedPackets();
+
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
+
+  // 2 protected packets lost, one FEC packet, cannot get complete recovery.
+  EXPECT_FALSE(IsRecoveryComplete());
+}
+
+TEST_F(RtpFecTest, FecRecoveryNonConsecutivePacketsExtension) {
+  const int num_important_packets = 0;
+  const bool use_unequal_protection = false;
+  const int num_media_packets = 21;
+  uint8_t protection_factor = 127;
+
+  fec_seq_num_ = ConstructMediaPackets(num_media_packets);
+
+  // Create a new temporary packet list for generating FEC packets.
+  // This list should have every other packet removed.
+  PacketList protected_media_packets;
+  int i = 0;
+  for (PacketList::iterator it = media_packet_list_.begin();
+      it != media_packet_list_.end(); ++it, ++i) {
+    if (i % 2 == 0)
+      protected_media_packets.push_back(*it);
+  }
+
+  // Zero column insertion will have to extend the size of the packet
+  // mask since the number of actual packets are 21, while the number
+  // of protected packets are 11.
+  EXPECT_EQ(0, fec_->GenerateFEC(protected_media_packets,
+                                 protection_factor,
+                                 num_important_packets,
+                                 use_unequal_protection,
+                                 &fec_packet_list_));
+
+  // Expect 5 FEC packet.
+  EXPECT_EQ(5, static_cast<int>(fec_packet_list_.size()));
+
+  // Last protected media packet lost
+  memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
+  memset(fec_loss_mask_, 0, sizeof(fec_loss_mask_));
+  media_loss_mask_[num_media_packets - 1] = 1;
+  NetworkReceivedPackets();
+
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
+
+  // One packet lost, one FEC packet, expect complete recovery.
+  EXPECT_TRUE(IsRecoveryComplete());
+  FreeRecoveredPacketList();
+
+  // Last unprotected packet lost.
+  memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
+  memset(fec_loss_mask_, 0, sizeof(fec_loss_mask_));
+  media_loss_mask_[num_media_packets - 2] = 1;
+  NetworkReceivedPackets();
+
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
+
+  // Unprotected packet lost. Recovery not possible.
+  EXPECT_FALSE(IsRecoveryComplete());
+  FreeRecoveredPacketList();
+
+  // 6 media packets lost.
+  memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
+  memset(fec_loss_mask_, 0, sizeof(fec_loss_mask_));
+  media_loss_mask_[num_media_packets - 11] = 1;
+  media_loss_mask_[num_media_packets - 9] = 1;
+  media_loss_mask_[num_media_packets - 7] = 1;
+  media_loss_mask_[num_media_packets - 5] = 1;
+  media_loss_mask_[num_media_packets - 3] = 1;
+  media_loss_mask_[num_media_packets - 1] = 1;
+  NetworkReceivedPackets();
+
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
+
+  // 5 protected packets lost, one FEC packet, cannot get complete recovery.
+  EXPECT_FALSE(IsRecoveryComplete());
+}
+
+TEST_F(RtpFecTest, FecRecoveryNonConsecutivePacketsWrap) {
+  const int num_important_packets = 0;
+  const bool use_unequal_protection = false;
+  const int num_media_packets = 21;
+  uint8_t protection_factor = 127;
+
+  fec_seq_num_ = ConstructMediaPacketsSeqNum(num_media_packets, 0xFFFF - 5);
+
+  // Create a new temporary packet list for generating FEC packets.
+  // This list should have every other packet removed.
+  PacketList protected_media_packets;
+  int i = 0;
+  for (PacketList::iterator it = media_packet_list_.begin();
+      it != media_packet_list_.end(); ++it, ++i) {
+    if (i % 2 == 0)
+      protected_media_packets.push_back(*it);
+  }
+
+  // Zero column insertion will have to extend the size of the packet
+  // mask since the number of actual packets are 21, while the number
+  // of protected packets are 11.
+  EXPECT_EQ(0, fec_->GenerateFEC(protected_media_packets,
+                                 protection_factor,
+                                 num_important_packets,
+                                 use_unequal_protection,
+                                 &fec_packet_list_));
+
+  // Expect 5 FEC packet.
+  EXPECT_EQ(5, static_cast<int>(fec_packet_list_.size()));
+
+  // Last protected media packet lost
+  memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
+  memset(fec_loss_mask_, 0, sizeof(fec_loss_mask_));
+  media_loss_mask_[num_media_packets - 1] = 1;
+  NetworkReceivedPackets();
+
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
+
+  // One packet lost, one FEC packet, expect complete recovery.
+  EXPECT_TRUE(IsRecoveryComplete());
+  FreeRecoveredPacketList();
+
+  // Last unprotected packet lost.
+  memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
+  memset(fec_loss_mask_, 0, sizeof(fec_loss_mask_));
+  media_loss_mask_[num_media_packets - 2] = 1;
+  NetworkReceivedPackets();
+
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
+
+  // Unprotected packet lost. Recovery not possible.
+  EXPECT_FALSE(IsRecoveryComplete());
+  FreeRecoveredPacketList();
+
+  // 6 media packets lost.
+  memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
+  memset(fec_loss_mask_, 0, sizeof(fec_loss_mask_));
+  media_loss_mask_[num_media_packets - 11] = 1;
+  media_loss_mask_[num_media_packets - 9] = 1;
+  media_loss_mask_[num_media_packets - 7] = 1;
+  media_loss_mask_[num_media_packets - 5] = 1;
+  media_loss_mask_[num_media_packets - 3] = 1;
+  media_loss_mask_[num_media_packets - 1] = 1;
+  NetworkReceivedPackets();
+
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
+
+  // 5 protected packets lost, one FEC packet, cannot get complete recovery.
+  EXPECT_FALSE(IsRecoveryComplete());
+}
+
 // TODO(marpan): Add more test cases.
 
 void RtpFecTest::TearDown() {
@@ -420,9 +641,9 @@ bool RtpFecTest::IsRecoveryComplete() {
 
   bool recovery = true;
 
-  std::list<ForwardErrorCorrection::Packet*>::iterator
+  PacketList::iterator
     media_packet_list_item = media_packet_list_.begin();
-  std::list<ForwardErrorCorrection::RecoveredPacket*>::iterator
+  RecoveredPacketList::iterator
     recovered_packet_list_item = recovered_packet_list_.begin();
   while (media_packet_list_item != media_packet_list_.end()) {
     if (recovered_packet_list_item == recovered_packet_list_.end()) {
@@ -450,7 +671,7 @@ void RtpFecTest::NetworkReceivedPackets() {
 }
 
 void RtpFecTest:: ReceivedPackets(
-    const std::list<ForwardErrorCorrection::Packet*>& packet_list,
+    const PacketList& packet_list,
     int* loss_mask,
     bool is_fec) {
   ForwardErrorCorrection::Packet* packet;
@@ -458,7 +679,7 @@ void RtpFecTest:: ReceivedPackets(
   int seq_num = fec_seq_num_;
   int packet_idx = 0;
 
-  std::list<ForwardErrorCorrection::Packet*>::const_iterator
+  PacketList::const_iterator
   packet_list_item = packet_list.begin();
 
   while (packet_list_item != packet_list.end()) {
@@ -496,10 +717,11 @@ void RtpFecTest:: ReceivedPackets(
   }
 }
 
-int RtpFecTest::ConstructMediaPackets(int num_media_packets) {
+int RtpFecTest::ConstructMediaPacketsSeqNum(int num_media_packets,
+                                            int start_seq_num) {
   assert(num_media_packets > 0);
   ForwardErrorCorrection::Packet* media_packet = NULL;
-  int sequence_number = rand();
+  int sequence_number = start_seq_num;
   int time_stamp = rand();
 
   for (int i = 0; i < num_media_packets; i++) {
@@ -547,4 +769,8 @@ int RtpFecTest::ConstructMediaPackets(int num_media_packets) {
   assert(media_packet != NULL);
   media_packet->data[1] |= 0x80;
   return sequence_number;
+}
+
+int RtpFecTest::ConstructMediaPackets(int num_media_packets) {
+  return ConstructMediaPacketsSeqNum(num_media_packets, rand());
 }

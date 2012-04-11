@@ -55,7 +55,7 @@ class ProducerFecTest : public ::testing::Test {
 };
 
 TEST_F(ProducerFecTest, OneFrameFec) {
-  const int kNumPackets = 3;
+  const int kNumPackets = 4;
   FecProtectionParams params = {5, false, 3};
   std::list<RtpPacket*> rtp_packets;
   generator_->NewFrame(kNumPackets);
@@ -75,7 +75,7 @@ TEST_F(ProducerFecTest, OneFrameFec) {
                                               kFecPayloadType,
                                               seq_num);
   EXPECT_FALSE(producer_->FecAvailable());
-  EXPECT_TRUE(packet != NULL);
+  ASSERT_TRUE(packet != NULL);
   VerifyHeader(seq_num, last_timestamp,
                kRedPayloadType, kFecPayloadType, packet, false);
   while (!rtp_packets.empty()) {

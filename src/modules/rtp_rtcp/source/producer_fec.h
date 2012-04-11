@@ -69,6 +69,7 @@ class ProducerFec {
   bool incomplete_frame_;
   int num_first_partition_;
   FecProtectionParams params_;
+  FecProtectionParams new_params_;
 };
 
 }  // namespace webrtc

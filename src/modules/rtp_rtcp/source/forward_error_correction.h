@@ -214,11 +214,50 @@ class ForwardErrorCorrection {
 
   void GenerateFecUlpHeaders(const PacketList& mediaPacketList,
                              uint8_t* packetMask,
+                             bool lBit,
                              uint32_t numFecPackets);
+
+  // Analyzes |media_packets| for holes in the sequence and inserts zero columns
+  // into the |packet_mask| where those holes are found. Zero columns means that
+  // those packets will have no protection.
+  // Returns the number of bits used for one row of the new packet mask.
+  // Requires that |packet_mask| has at least 6 * |num_fec_packets| bytes
+  // allocated.
+  int InsertZerosInBitMasks(const PacketList& media_packets,
+                            uint8_t* packet_mask,
+                            uint16_t num_mask_bytes,
+                            uint32_t num_fec_packets);
+
+  // Inserts |num_zeros| zero columns into |new_mask| at position
+  // |new_bit_index|. If the current byte of |new_mask| can't fit all zeros, the
+  // byte will be filled with zeros from |new_bit_index|, but the next byte will
+  // be untouched.
+  static void InsertZeroColumns(int num_zeros,
+                                uint8_t* new_mask,
+                                int new_mask_bytes,
+                                int num_fec_packets,
+                                int new_bit_index);
+
+  // Copies the left most bit column from the byte pointed to by
+  // |old_bit_index| in |old_mask| to the right most column of the byte pointed
+  // to by |new_bit_index| in |new_mask|. |old_mask_bytes| and |new_mask_bytes|
+  // represent the number of bytes used per row for each mask. |num_fec_packets|
+  // represent the number of rows of the masks.
+  // The copied bit is shifted out from |old_mask| and is shifted one step to
+  // the left in |new_mask|. |new_mask| will contain "xxxx xxn0" after this
+  // operation, where x are previously inserted bits and n is the new bit.
+  static void CopyColumn(uint8_t* new_mask,
+                         int new_mask_bytes,
+                         uint8_t* old_mask,
+                         int old_mask_bytes,
+                         int num_fec_packets,
+                         int new_bit_index,
+                         int old_bit_index);
 
   void GenerateFecBitStrings(const PacketList& mediaPacketList,
                              uint8_t* packetMask,
-                             uint32_t numFecPackets);
+                             uint32_t numFecPackets,
+                             bool lBit);
 
   // Insert received packets into FEC or recovered list.
   void InsertPackets(ReceivedPacketList* receivedPacketList,
@@ -279,6 +318,7 @@ class ForwardErrorCorrection {
 
   static void DiscardFECPacket(FecPacket* fec_packet);
   static void DiscardOldPackets(RecoveredPacketList* recoveredPacketList);
+  static uint16_t ParseSequenceNumber(uint8_t* packet);
 
   int32_t _id;
   std::vector<Packet> _generatedFecPackets;
