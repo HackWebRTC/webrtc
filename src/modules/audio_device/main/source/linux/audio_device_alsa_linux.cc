@@ -143,7 +143,7 @@ AudioDeviceLinuxALSA::~AudioDeviceLinuxALSA()
 void AudioDeviceLinuxALSA::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer)
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     _ptrAudioBuffer = audioBuffer;
 
@@ -166,7 +166,7 @@ WebRtc_Word32 AudioDeviceLinuxALSA::ActiveAudioLayer(
 WebRtc_Word32 AudioDeviceLinuxALSA::Init()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     // Load libasound
     if (!AlsaSymbolTable.Load())
@@ -201,7 +201,7 @@ WebRtc_Word32 AudioDeviceLinuxALSA::Terminate()
         return 0;
     }
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     _mixerManager.Close();
 
@@ -292,7 +292,7 @@ WebRtc_Word32 AudioDeviceLinuxALSA::SpeakerIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceLinuxALSA::InitSpeaker()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_playing)
     {
@@ -335,7 +335,7 @@ WebRtc_Word32 AudioDeviceLinuxALSA::MicrophoneIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceLinuxALSA::InitMicrophone()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_recording)
     {
@@ -637,7 +637,7 @@ WebRtc_Word32 AudioDeviceLinuxALSA::MicrophoneBoost(bool& enabled) const
 WebRtc_Word32 AudioDeviceLinuxALSA::StereoRecordingIsAvailable(bool& available)
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     // If we already have initialized in stereo it's obviously available
     if (_recIsInitialized && (2 == _recChannels))
@@ -708,7 +708,7 @@ WebRtc_Word32 AudioDeviceLinuxALSA::StereoRecording(bool& enabled) const
 WebRtc_Word32 AudioDeviceLinuxALSA::StereoPlayoutIsAvailable(bool& available)
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     // If we already have initialized in stereo it's obviously available
     if (_playIsInitialized && (2 == _playChannels))
@@ -1086,7 +1086,7 @@ WebRtc_Word32 AudioDeviceLinuxALSA::InitPlayout()
 
     int errVal = 0;
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
     if (_playing)
     {
         return -1;
@@ -1239,7 +1239,7 @@ WebRtc_Word32 AudioDeviceLinuxALSA::InitRecording()
 
     int errVal = 0;
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_recording)
     {
@@ -1497,7 +1497,7 @@ WebRtc_Word32 AudioDeviceLinuxALSA::StopRecording()
 {
 
     {
-      CriticalSectionScoped lock(_critSect);
+      CriticalSectionScoped lock(&_critSect);
 
       if (!_recIsInitialized)
       {
@@ -1525,7 +1525,7 @@ WebRtc_Word32 AudioDeviceLinuxALSA::StopRecording()
         _ptrThreadRec = NULL;
     }
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
     _recordingFramesLeft = 0;
     if (_recordingBuffer)
     {
@@ -1655,7 +1655,7 @@ WebRtc_Word32 AudioDeviceLinuxALSA::StopPlayout()
 {
 
     {
-        CriticalSectionScoped lock(_critSect);
+        CriticalSectionScoped lock(&_critSect);
 
         if (!_playIsInitialized)
         {
@@ -1682,7 +1682,7 @@ WebRtc_Word32 AudioDeviceLinuxALSA::StopPlayout()
         _ptrThreadPlay = NULL;
     }
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     _playoutFramesLeft = 0;
     delete [] _playoutBuffer;

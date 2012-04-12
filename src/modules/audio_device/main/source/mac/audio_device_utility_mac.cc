@@ -34,7 +34,7 @@ AudioDeviceUtilityMac::~AudioDeviceUtilityMac()
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id,
                  "%s destroyed", __FUNCTION__);
     {
-        CriticalSectionScoped lock(_critSect);
+        CriticalSectionScoped lock(&_critSect);
 
         // free stuff here...
     }

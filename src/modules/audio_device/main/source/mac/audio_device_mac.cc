@@ -243,7 +243,7 @@ AudioDeviceMac::~AudioDeviceMac()
 void AudioDeviceMac::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer)
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     _ptrAudioBuffer = audioBuffer;
 
@@ -264,7 +264,7 @@ WebRtc_Word32 AudioDeviceMac::ActiveAudioLayer(
 WebRtc_Word32 AudioDeviceMac::Init()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_initialized)
     {
@@ -513,7 +513,7 @@ WebRtc_Word32 AudioDeviceMac::SpeakerIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceMac::InitSpeaker()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_playing)
     {
@@ -573,7 +573,7 @@ WebRtc_Word32 AudioDeviceMac::MicrophoneIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceMac::InitMicrophone()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_recording)
     {
@@ -1287,7 +1287,7 @@ WebRtc_Word32 AudioDeviceMac::RecordingIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceMac::InitPlayout()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_playing)
     {
@@ -1550,7 +1550,7 @@ WebRtc_Word32 AudioDeviceMac::InitPlayout()
 WebRtc_Word32 AudioDeviceMac::InitRecording()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_recording)
     {
@@ -1766,7 +1766,7 @@ WebRtc_Word32 AudioDeviceMac::InitRecording()
 WebRtc_Word32 AudioDeviceMac::StartRecording()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_recIsInitialized)
     {
@@ -1810,7 +1810,7 @@ WebRtc_Word32 AudioDeviceMac::StartRecording()
 WebRtc_Word32 AudioDeviceMac::StopRecording()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_recIsInitialized)
     {
@@ -1830,7 +1830,7 @@ WebRtc_Word32 AudioDeviceMac::StopRecording()
             _critSect.Leave(); // Cannot be under lock, risk of deadlock
             if (kEventTimeout == _stopEventRec.Wait(2000))
             {
-                CriticalSectionScoped critScoped(_critSect);
+                CriticalSectionScoped critScoped(&_critSect);
                 WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                              " Timed out stopping the capture IOProc. "
                              "We may have failed to detect a device removal.");
@@ -1863,7 +1863,7 @@ WebRtc_Word32 AudioDeviceMac::StopRecording()
             _critSect.Leave(); // Cannot be under lock, risk of deadlock
             if (kEventTimeout == _stopEvent.Wait(2000))
             {
-                CriticalSectionScoped critScoped(_critSect);
+                CriticalSectionScoped critScoped(&_critSect);
                 WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                              " Timed out stopping the shared IOProc. "
                              "We may have failed to detect a device removal.");
@@ -1933,7 +1933,7 @@ bool AudioDeviceMac::PlayoutIsInitialized() const
 WebRtc_Word32 AudioDeviceMac::StartPlayout()
 {
     
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_playIsInitialized)
     {
@@ -1966,7 +1966,7 @@ WebRtc_Word32 AudioDeviceMac::StartPlayout()
 WebRtc_Word32 AudioDeviceMac::StopPlayout()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_playIsInitialized)
     {
@@ -1990,7 +1990,7 @@ WebRtc_Word32 AudioDeviceMac::StopPlayout()
         _critSect.Leave(); // Cannot be under lock, risk of deadlock
         if (kEventTimeout == _stopEvent.Wait(2000))
         {
-            CriticalSectionScoped critScoped(_critSect);
+            CriticalSectionScoped critScoped(&_critSect);
             WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                          " Timed out stopping the render IOProc. "
                          "We may have failed to detect a device removal.");

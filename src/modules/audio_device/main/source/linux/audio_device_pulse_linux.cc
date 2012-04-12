@@ -175,7 +175,7 @@ AudioDeviceLinuxPulse::~AudioDeviceLinuxPulse()
 void AudioDeviceLinuxPulse::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer)
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     _ptrAudioBuffer = audioBuffer;
 
@@ -202,7 +202,7 @@ WebRtc_Word32 AudioDeviceLinuxPulse::ActiveAudioLayer(
 WebRtc_Word32 AudioDeviceLinuxPulse::Init()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_initialized)
     {
@@ -385,7 +385,7 @@ WebRtc_Word32 AudioDeviceLinuxPulse::SpeakerIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceLinuxPulse::InitSpeaker()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_playing)
     {
@@ -458,7 +458,7 @@ WebRtc_Word32 AudioDeviceLinuxPulse::MicrophoneIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceLinuxPulse::InitMicrophone()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_recording)
     {
@@ -1248,7 +1248,7 @@ WebRtc_Word32 AudioDeviceLinuxPulse::RecordingIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceLinuxPulse::InitPlayout()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_playing)
     {
@@ -1374,7 +1374,7 @@ WebRtc_Word32 AudioDeviceLinuxPulse::InitPlayout()
 WebRtc_Word32 AudioDeviceLinuxPulse::InitRecording()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_recording)
     {
@@ -1531,7 +1531,7 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StartRecording()
 WebRtc_Word32 AudioDeviceLinuxPulse::StopRecording()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_recIsInitialized)
     {
@@ -1649,7 +1649,7 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StartPlayout()
 WebRtc_Word32 AudioDeviceLinuxPulse::StopPlayout()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_playIsInitialized)
     {
@@ -1767,49 +1767,49 @@ WebRtc_Word32 AudioDeviceLinuxPulse::CPULoad(WebRtc_UWord16& /*load*/) const
 
 bool AudioDeviceLinuxPulse::PlayoutWarning() const
 {
-  CriticalSectionScoped lock(_critSect);
+  CriticalSectionScoped lock(&_critSect);
   return (_playWarning > 0);
 }
 
 bool AudioDeviceLinuxPulse::PlayoutError() const
 {
-  CriticalSectionScoped lock(_critSect);
+  CriticalSectionScoped lock(&_critSect);
   return (_playError > 0);
 }
 
 bool AudioDeviceLinuxPulse::RecordingWarning() const
 {
-  CriticalSectionScoped lock(_critSect);
+  CriticalSectionScoped lock(&_critSect);
   return (_recWarning > 0);
 }
 
 bool AudioDeviceLinuxPulse::RecordingError() const
 {
-  CriticalSectionScoped lock(_critSect);
+  CriticalSectionScoped lock(&_critSect);
   return (_recError > 0);
 }
 
 void AudioDeviceLinuxPulse::ClearPlayoutWarning()
 {
-  CriticalSectionScoped lock(_critSect);
+  CriticalSectionScoped lock(&_critSect);
   _playWarning = 0;
 }
 
 void AudioDeviceLinuxPulse::ClearPlayoutError()
 {
-  CriticalSectionScoped lock(_critSect);
+  CriticalSectionScoped lock(&_critSect);
   _playError = 0;
 }
 
 void AudioDeviceLinuxPulse::ClearRecordingWarning()
 {
-  CriticalSectionScoped lock(_critSect);
+  CriticalSectionScoped lock(&_critSect);
   _recWarning = 0;
 }
 
 void AudioDeviceLinuxPulse::ClearRecordingError()
 {
-  CriticalSectionScoped lock(_critSect);
+  CriticalSectionScoped lock(&_critSect);
   _recError = 0;
 }
 

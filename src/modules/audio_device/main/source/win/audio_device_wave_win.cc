@@ -174,7 +174,7 @@ AudioDeviceWindowsWave::~AudioDeviceWindowsWave()
 void AudioDeviceWindowsWave::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer)
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     _ptrAudioBuffer = audioBuffer;
 
@@ -202,7 +202,7 @@ WebRtc_Word32 AudioDeviceWindowsWave::ActiveAudioLayer(AudioDeviceModule::AudioL
 WebRtc_Word32 AudioDeviceWindowsWave::Init()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_initialized)
     {
@@ -523,7 +523,7 @@ WebRtc_Word32 AudioDeviceWindowsWave::SpeakerIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceWindowsWave::InitSpeaker()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_playing)
     {
@@ -588,7 +588,7 @@ WebRtc_Word32 AudioDeviceWindowsWave::MicrophoneIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceWindowsWave::InitMicrophone()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_recording)
     {
@@ -735,7 +735,7 @@ WebRtc_Word32 AudioDeviceWindowsWave::SetWaveOutVolume(WebRtc_UWord16 volumeLeft
     MMRESULT res(0);
     WAVEOUTCAPS caps;
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_hWaveOut == NULL)
     {
@@ -799,7 +799,7 @@ WebRtc_Word32 AudioDeviceWindowsWave::WaveOutVolume(WebRtc_UWord16& volumeLeft, 
     MMRESULT res(0);
     WAVEOUTCAPS caps;
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_hWaveOut == NULL)
     {
@@ -1696,7 +1696,7 @@ WebRtc_Word32 AudioDeviceWindowsWave::RecordingIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceWindowsWave::InitPlayout()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_playing)
     {
@@ -1892,7 +1892,7 @@ WebRtc_Word32 AudioDeviceWindowsWave::InitPlayout()
 WebRtc_Word32 AudioDeviceWindowsWave::InitRecording()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_recording)
     {
@@ -2085,7 +2085,7 @@ WebRtc_Word32 AudioDeviceWindowsWave::StartRecording()
 WebRtc_Word32 AudioDeviceWindowsWave::StopRecording()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_recIsInitialized)
     {
@@ -2236,7 +2236,7 @@ WebRtc_Word32 AudioDeviceWindowsWave::StartPlayout()
 WebRtc_Word32 AudioDeviceWindowsWave::StopPlayout()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_playIsInitialized)
     {
@@ -2308,7 +2308,7 @@ WebRtc_Word32 AudioDeviceWindowsWave::StopPlayout()
 
 WebRtc_Word32 AudioDeviceWindowsWave::PlayoutDelay(WebRtc_UWord16& delayMS) const
 {
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
     delayMS = (WebRtc_UWord16)_sndCardPlayDelay;
     return 0;
 }
@@ -2319,7 +2319,7 @@ WebRtc_Word32 AudioDeviceWindowsWave::PlayoutDelay(WebRtc_UWord16& delayMS) cons
 
 WebRtc_Word32 AudioDeviceWindowsWave::RecordingDelay(WebRtc_UWord16& delayMS) const
 {
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
     delayMS = (WebRtc_UWord16)_sndCardRecDelay;
     return 0;
 }
@@ -2338,7 +2338,7 @@ bool AudioDeviceWindowsWave::Playing() const
 
 WebRtc_Word32 AudioDeviceWindowsWave::SetPlayoutBuffer(const AudioDeviceModule::BufferType type, WebRtc_UWord16 sizeMS)
 {
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
     _playBufType = type;
     if (type == AudioDeviceModule::kFixedBufferSize)
     {
@@ -2353,7 +2353,7 @@ WebRtc_Word32 AudioDeviceWindowsWave::SetPlayoutBuffer(const AudioDeviceModule::
 
 WebRtc_Word32 AudioDeviceWindowsWave::PlayoutBuffer(AudioDeviceModule::BufferType& type, WebRtc_UWord16& sizeMS) const
 {
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
     type = _playBufType;
     if (type == AudioDeviceModule::kFixedBufferSize)
     {
@@ -2667,7 +2667,7 @@ void AudioDeviceWindowsWave::TraceWaveOutError(MMRESULT error) const
 WebRtc_Word32 AudioDeviceWindowsWave::PrepareStartPlayout()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_hWaveOut == NULL)
     {
@@ -2704,7 +2704,7 @@ WebRtc_Word32 AudioDeviceWindowsWave::PrepareStartPlayout()
 WebRtc_Word32 AudioDeviceWindowsWave::PrepareStartRecording()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_hWaveIn == NULL)
     {

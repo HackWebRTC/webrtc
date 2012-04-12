@@ -491,7 +491,7 @@ WebRtc_Word32 AudioDeviceModuleImpl::Process()
     // kPlayoutWarning
     if (_ptrAudioDevice->PlayoutWarning())
     {
-        CriticalSectionScoped lock(_critSectEventCb);
+        CriticalSectionScoped lock(&_critSectEventCb);
         if (_ptrCbAudioDeviceObserver)
         {
             WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id, "=> OnWarningIsReported(kPlayoutWarning)");
@@ -503,7 +503,7 @@ WebRtc_Word32 AudioDeviceModuleImpl::Process()
     // kPlayoutError
     if (_ptrAudioDevice->PlayoutError())
     {
-        CriticalSectionScoped lock(_critSectEventCb);
+        CriticalSectionScoped lock(&_critSectEventCb);
         if (_ptrCbAudioDeviceObserver)
         {
             WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "=> OnErrorIsReported(kPlayoutError)");
@@ -515,7 +515,7 @@ WebRtc_Word32 AudioDeviceModuleImpl::Process()
     // kRecordingWarning
     if (_ptrAudioDevice->RecordingWarning())
     {
-        CriticalSectionScoped lock(_critSectEventCb);
+        CriticalSectionScoped lock(&_critSectEventCb);
         if (_ptrCbAudioDeviceObserver)
         {
             WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id, "=> OnWarningIsReported(kRecordingWarning)");
@@ -527,7 +527,7 @@ WebRtc_Word32 AudioDeviceModuleImpl::Process()
     // kRecordingError
     if (_ptrAudioDevice->RecordingError())
     {
-        CriticalSectionScoped lock(_critSectEventCb);
+        CriticalSectionScoped lock(&_critSectEventCb);
         if (_ptrCbAudioDeviceObserver)
         {
             WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "=> OnErrorIsReported(kRecordingError)");
@@ -1682,7 +1682,7 @@ bool AudioDeviceModuleImpl::Recording() const
 WebRtc_Word32 AudioDeviceModuleImpl::RegisterEventObserver(AudioDeviceObserver* eventCallback)
 {
 
-    CriticalSectionScoped lock(_critSectEventCb);
+    CriticalSectionScoped lock(&_critSectEventCb);
     _ptrCbAudioDeviceObserver = eventCallback;
 
     return 0;
@@ -1695,7 +1695,7 @@ WebRtc_Word32 AudioDeviceModuleImpl::RegisterEventObserver(AudioDeviceObserver* 
 WebRtc_Word32 AudioDeviceModuleImpl::RegisterAudioCallback(AudioTransport* audioCallback)
 {
 
-    CriticalSectionScoped lock(_critSectAudioCb);
+    CriticalSectionScoped lock(&_critSectAudioCb);
     _audioDeviceBuffer.RegisterAudioCallback(audioCallback);
 
     return 0;

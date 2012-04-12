@@ -149,7 +149,7 @@ WebRtc_Word32 AudioDeviceDummy::ActiveAudioLayer(
 WebRtc_Word32 AudioDeviceDummy::Init()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_initialized)
     {
@@ -249,7 +249,7 @@ WebRtc_Word32 AudioDeviceDummy::Init()
 WebRtc_Word32 AudioDeviceDummy::Terminate()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_initialized)
     {
@@ -327,7 +327,7 @@ bool AudioDeviceDummy::Initialized() const
 WebRtc_Word32 AudioDeviceDummy::SpeakerIsAvailable(bool& available)
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     available = true;
 
@@ -341,7 +341,7 @@ WebRtc_Word32 AudioDeviceDummy::SpeakerIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceDummy::InitSpeaker()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_playing)
     {
@@ -360,7 +360,7 @@ WebRtc_Word32 AudioDeviceDummy::InitSpeaker()
 WebRtc_Word32 AudioDeviceDummy::MicrophoneIsAvailable(bool& available)
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     available = true;
 
@@ -374,7 +374,7 @@ WebRtc_Word32 AudioDeviceDummy::MicrophoneIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceDummy::InitMicrophone()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_recording)
     {
@@ -413,7 +413,7 @@ bool AudioDeviceDummy::MicrophoneIsInitialized() const
 WebRtc_Word32 AudioDeviceDummy::SpeakerVolumeIsAvailable(bool& available)
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     available = false;
 
@@ -497,7 +497,7 @@ WebRtc_Word32 AudioDeviceDummy::SpeakerVolumeStepSize(WebRtc_UWord16& stepSize) 
 WebRtc_Word32 AudioDeviceDummy::SpeakerMuteIsAvailable(bool& available)
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     available = false;
 
@@ -531,7 +531,7 @@ WebRtc_Word32 AudioDeviceDummy::SpeakerMute(bool& enabled) const
 WebRtc_Word32 AudioDeviceDummy::MicrophoneMuteIsAvailable(bool& available)
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     available = false;
 
@@ -607,7 +607,7 @@ WebRtc_Word32 AudioDeviceDummy::StereoRecordingIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceDummy::SetStereoRecording(bool enable)
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (enable)
     {
@@ -647,7 +647,7 @@ WebRtc_Word32 AudioDeviceDummy::StereoPlayoutIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceDummy::SetStereoPlayout(bool enable)
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (enable)
     {
@@ -696,7 +696,7 @@ bool AudioDeviceDummy::AGC() const
 WebRtc_Word32 AudioDeviceDummy::MicrophoneVolumeIsAvailable(bool& available)
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     available = false;
 
@@ -712,7 +712,7 @@ WebRtc_Word32 AudioDeviceDummy::SetMicrophoneVolume(WebRtc_UWord32 volume)
     WEBRTC_TRACE(kTraceStream, kTraceAudioDevice, _id,
                  "AudioDeviceDummy::SetMicrophoneVolume(volume=%u)", volume);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     return -1;
 }
@@ -725,7 +725,7 @@ WebRtc_Word32 AudioDeviceDummy::MicrophoneVolume(WebRtc_UWord32& volume) const
 {
     // WEBRTC_TRACE(kTraceStream, kTraceAudioDevice, _id, "%s", __FUNCTION__);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     return -1;
 }
@@ -771,7 +771,7 @@ WebRtc_Word32 AudioDeviceDummy::MicrophoneVolumeStepSize(
 WebRtc_Word16 AudioDeviceDummy::PlayoutDevices()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     return 1;
 }
@@ -863,7 +863,7 @@ WebRtc_Word32 AudioDeviceDummy::RecordingDeviceName(
 WebRtc_Word16 AudioDeviceDummy::RecordingDevices()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     return 1;
 }
@@ -929,7 +929,7 @@ WebRtc_Word32 AudioDeviceDummy::RecordingIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceDummy::InitPlayout()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_playing)
     {
@@ -960,7 +960,7 @@ WebRtc_Word32 AudioDeviceDummy::InitPlayout()
 WebRtc_Word32 AudioDeviceDummy::InitRecording()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_recording)
     {
@@ -992,7 +992,7 @@ WebRtc_Word32 AudioDeviceDummy::InitRecording()
 WebRtc_Word32 AudioDeviceDummy::StartRecording()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_recIsInitialized)
     {
@@ -1016,7 +1016,7 @@ WebRtc_Word32 AudioDeviceDummy::StartRecording()
 WebRtc_Word32 AudioDeviceDummy::StopRecording()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_recIsInitialized)
     {
@@ -1064,7 +1064,7 @@ bool AudioDeviceDummy::PlayoutIsInitialized() const
 WebRtc_Word32 AudioDeviceDummy::StartPlayout()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_playIsInitialized)
     {
@@ -1105,7 +1105,7 @@ WebRtc_Word32 AudioDeviceDummy::StopPlayout()
 
 WebRtc_Word32 AudioDeviceDummy::PlayoutDelay(WebRtc_UWord16& delayMS) const
 {
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
     delayMS = 0;
     return 0;
 }
@@ -1116,7 +1116,7 @@ WebRtc_Word32 AudioDeviceDummy::PlayoutDelay(WebRtc_UWord16& delayMS) const
 
 WebRtc_Word32 AudioDeviceDummy::RecordingDelay(WebRtc_UWord16& delayMS) const
 {
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
     delayMS = 0;
     return 0;
 }
@@ -1137,7 +1137,7 @@ WebRtc_Word32 AudioDeviceDummy::SetPlayoutBuffer(
     const AudioDeviceModule::BufferType type, WebRtc_UWord16 sizeMS)
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     // Just ignore
 
@@ -1151,7 +1151,7 @@ WebRtc_Word32 AudioDeviceDummy::SetPlayoutBuffer(
 WebRtc_Word32 AudioDeviceDummy::PlayoutBuffer(
     AudioDeviceModule::BufferType& type, WebRtc_UWord16& sizeMS) const
 {
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     type = AudioDeviceModule::kAdaptiveBufferSize;
     sizeMS = 0;

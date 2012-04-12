@@ -191,7 +191,7 @@ AudioDeviceAndroidJni::~AudioDeviceAndroidJni()
 void AudioDeviceAndroidJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer)
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     _ptrAudioBuffer = audioBuffer;
 
@@ -222,7 +222,7 @@ WebRtc_Word32 AudioDeviceAndroidJni::ActiveAudioLayer(
 WebRtc_Word32 AudioDeviceAndroidJni::Init()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_initialized)
     {
@@ -309,7 +309,7 @@ WebRtc_Word32 AudioDeviceAndroidJni::Init()
 WebRtc_Word32 AudioDeviceAndroidJni::Terminate()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_initialized)
     {
@@ -493,7 +493,7 @@ WebRtc_Word32 AudioDeviceAndroidJni::SpeakerIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceAndroidJni::InitSpeaker()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_playing)
     {
@@ -536,7 +536,7 @@ WebRtc_Word32 AudioDeviceAndroidJni::MicrophoneIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceAndroidJni::InitMicrophone()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_recording)
     {
@@ -1328,7 +1328,7 @@ WebRtc_Word32 AudioDeviceAndroidJni::RecordingIsAvailable(bool& available)
 WebRtc_Word32 AudioDeviceAndroidJni::InitPlayout()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_initialized)
     {
@@ -1436,7 +1436,7 @@ WebRtc_Word32 AudioDeviceAndroidJni::InitPlayout()
 WebRtc_Word32 AudioDeviceAndroidJni::InitRecording()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_initialized)
     {
@@ -1544,7 +1544,7 @@ WebRtc_Word32 AudioDeviceAndroidJni::InitRecording()
 WebRtc_Word32 AudioDeviceAndroidJni::StartRecording()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_recIsInitialized)
     {
@@ -1629,7 +1629,7 @@ WebRtc_Word32 AudioDeviceAndroidJni::StopRecording()
 
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_recIsInitialized)
     {
@@ -1728,7 +1728,7 @@ bool AudioDeviceAndroidJni::PlayoutIsInitialized() const
 WebRtc_Word32 AudioDeviceAndroidJni::StartPlayout()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_playIsInitialized)
     {
@@ -1812,7 +1812,7 @@ WebRtc_Word32 AudioDeviceAndroidJni::StartPlayout()
 WebRtc_Word32 AudioDeviceAndroidJni::StopPlayout()
 {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_playIsInitialized)
     {

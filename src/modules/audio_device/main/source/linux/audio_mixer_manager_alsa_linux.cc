@@ -58,7 +58,7 @@ WebRtc_Word32 AudioMixerManagerLinuxALSA::Close()
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s",
                  __FUNCTION__);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     CloseSpeaker();
     CloseMicrophone();
@@ -72,7 +72,7 @@ WebRtc_Word32 AudioMixerManagerLinuxALSA::CloseSpeaker()
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s",
                  __FUNCTION__);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     int errVal = 0;
 
@@ -113,7 +113,7 @@ WebRtc_Word32 AudioMixerManagerLinuxALSA::CloseMicrophone()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s", __FUNCTION__);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     int errVal = 0;
 
@@ -165,7 +165,7 @@ WebRtc_Word32 AudioMixerManagerLinuxALSA::OpenSpeaker(char* deviceName)
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                  "AudioMixerManagerLinuxALSA::OpenSpeaker(name=%s)", deviceName);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     int errVal = 0;
 
@@ -259,7 +259,7 @@ WebRtc_Word32 AudioMixerManagerLinuxALSA::OpenMicrophone(char *deviceName)
                  "AudioMixerManagerLinuxALSA::OpenMicrophone(name=%s)",
                  deviceName);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     int errVal = 0;
 
@@ -378,7 +378,7 @@ WebRtc_Word32 AudioMixerManagerLinuxALSA::SetSpeakerVolume(
                  "AudioMixerManagerLinuxALSA::SetSpeakerVolume(volume=%u)",
                  volume);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_outputMixerElement == NULL)
     {
@@ -642,7 +642,7 @@ WebRtc_Word32 AudioMixerManagerLinuxALSA::SetSpeakerMute(bool enable)
                  "AudioMixerManagerLinuxALSA::SetSpeakerMute(enable=%u)",
                  enable);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_outputMixerElement == NULL)
     {
@@ -739,7 +739,7 @@ WebRtc_Word32 AudioMixerManagerLinuxALSA::SetMicrophoneMute(bool enable)
                  "AudioMixerManagerLinuxALSA::SetMicrophoneMute(enable=%u)",
                  enable);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_inputMixerElement == NULL)
     {
@@ -838,7 +838,7 @@ WebRtc_Word32 AudioMixerManagerLinuxALSA::SetMicrophoneBoost(bool enable)
                  "AudioMixerManagerLinuxALSA::SetMicrophoneBoost(enable=%u)",
                  enable);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_inputMixerHandle == NULL)
     {
@@ -900,7 +900,7 @@ WebRtc_Word32 AudioMixerManagerLinuxALSA::SetMicrophoneVolume(
                  "AudioMixerManagerLinuxALSA::SetMicrophoneVolume(volume=%u)",
                  volume);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_inputMixerElement == NULL)
     {

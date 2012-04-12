@@ -69,7 +69,7 @@ WebRtc_Word32 AudioMixerManagerLinuxPulse::SetPulseAudioObjects(
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s",
                  __FUNCTION__);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!mainloop || !context)
     {
@@ -93,7 +93,7 @@ WebRtc_Word32 AudioMixerManagerLinuxPulse::Close()
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s",
                  __FUNCTION__);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     CloseSpeaker();
     CloseMicrophone();
@@ -111,7 +111,7 @@ WebRtc_Word32 AudioMixerManagerLinuxPulse::CloseSpeaker()
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s",
                  __FUNCTION__);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     // Reset the index to -1
     _paOutputDeviceIndex = -1;
@@ -125,7 +125,7 @@ WebRtc_Word32 AudioMixerManagerLinuxPulse::CloseMicrophone()
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s",
                  __FUNCTION__);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     // Reset the index to -1
     _paInputDeviceIndex = -1;
@@ -139,7 +139,7 @@ WebRtc_Word32 AudioMixerManagerLinuxPulse::SetPlayStream(pa_stream* playStream)
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                  "AudioMixerManagerLinuxPulse::SetPlayStream(playStream)");
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
     _paPlayStream = playStream;
     return 0;
 }
@@ -149,7 +149,7 @@ WebRtc_Word32 AudioMixerManagerLinuxPulse::SetRecStream(pa_stream* recStream)
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                  "AudioMixerManagerLinuxPulse::SetRecStream(recStream)");
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
     _paRecStream = recStream;
     return 0;
 }
@@ -161,7 +161,7 @@ WebRtc_Word32 AudioMixerManagerLinuxPulse::OpenSpeaker(
                  "AudioMixerManagerLinuxPulse::OpenSpeaker(deviceIndex=%d)",
                  deviceIndex);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     // No point in opening the speaker
     // if PA objects have not been set
@@ -192,7 +192,7 @@ WebRtc_Word32 AudioMixerManagerLinuxPulse::OpenMicrophone(
                  "AudioMixerManagerLinuxPulse::OpenMicrophone(deviceIndex=%d)",
                  deviceIndex);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     // No point in opening the microphone
     // if PA objects have not been set
@@ -236,7 +236,7 @@ WebRtc_Word32 AudioMixerManagerLinuxPulse::SetSpeakerVolume(
                  "AudioMixerManagerLinuxPulse::SetSpeakerVolume(volume=%u)",
                  volume);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_paOutputDeviceIndex == -1)
     {
@@ -431,7 +431,7 @@ WebRtc_Word32 AudioMixerManagerLinuxPulse::SetSpeakerMute(bool enable)
                  "AudioMixerManagerLinuxPulse::SetSpeakerMute(enable=%u)",
                  enable);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_paOutputDeviceIndex == -1)
     {
@@ -627,7 +627,7 @@ WebRtc_Word32 AudioMixerManagerLinuxPulse::SetMicrophoneMute(bool enable)
                  "AudioMixerManagerLinuxPulse::SetMicrophoneMute(enable=%u)",
                  enable);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_paInputDeviceIndex == -1)
     {
@@ -747,7 +747,7 @@ WebRtc_Word32 AudioMixerManagerLinuxPulse::SetMicrophoneBoost(bool enable)
                  "AudioMixerManagerLinuxPulse::SetMicrophoneBoost(enable=%u)",
                  enable);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_paInputDeviceIndex == -1)
     {
@@ -810,7 +810,7 @@ AudioMixerManagerLinuxPulse::SetMicrophoneVolume(WebRtc_UWord32 volume)
                  "AudioMixerManagerLinuxPulse::SetMicrophoneVolume(volume=%u)",
                  volume);
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_paInputDeviceIndex == -1)
     {

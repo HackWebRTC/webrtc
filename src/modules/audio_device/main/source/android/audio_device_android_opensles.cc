@@ -106,7 +106,7 @@ AudioDeviceAndroidOpenSLES::~AudioDeviceAndroidOpenSLES() {
 void AudioDeviceAndroidOpenSLES::AttachAudioBuffer(
     AudioDeviceBuffer* audioBuffer) {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     _ptrAudioBuffer = audioBuffer;
 
@@ -127,7 +127,7 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::ActiveAudioLayer(
 
 WebRtc_Word32 AudioDeviceAndroidOpenSLES::Init() {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_initialized) {
         return 0;
@@ -193,7 +193,7 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::Init() {
 
 WebRtc_Word32 AudioDeviceAndroidOpenSLES::Terminate() {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_initialized) {
         return 0;
@@ -234,7 +234,7 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::SpeakerIsAvailable(bool& available) {
 
 WebRtc_Word32 AudioDeviceAndroidOpenSLES::InitSpeaker() {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_playing) {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
@@ -265,7 +265,7 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::MicrophoneIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceAndroidOpenSLES::InitMicrophone() {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (_recording) {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
@@ -928,7 +928,7 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::RecordingIsAvailable(bool& available) 
 
 WebRtc_Word32 AudioDeviceAndroidOpenSLES::InitPlayout() {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_initialized) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "  Not initialized");
@@ -1085,7 +1085,7 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::InitPlayout() {
 
 WebRtc_Word32 AudioDeviceAndroidOpenSLES::InitRecording() {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_initialized) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "  Not initialized");
@@ -1285,7 +1285,7 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::InitRecording() {
 
 WebRtc_Word32 AudioDeviceAndroidOpenSLES::StartRecording() {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_recIsInitialized) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
@@ -1375,7 +1375,7 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::StartRecording() {
 
 WebRtc_Word32 AudioDeviceAndroidOpenSLES::StopRecording() {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_recIsInitialized) {
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
@@ -1450,7 +1450,7 @@ bool AudioDeviceAndroidOpenSLES::PlayoutIsInitialized() const {
 
 WebRtc_Word32 AudioDeviceAndroidOpenSLES::StartPlayout() {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_playIsInitialized) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
@@ -1532,7 +1532,7 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::StartPlayout() {
 
 WebRtc_Word32 AudioDeviceAndroidOpenSLES::StopPlayout() {
 
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_playIsInitialized) {
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
