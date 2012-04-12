@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -69,7 +69,7 @@ WebRtc_Word32 AudioCoder::Decode(AudioFrame& decodedAudio,
     {
         const WebRtc_UWord8 payloadType = _receiveCodec.pltype;
         _decodeTimestamp += _receiveCodec.pacsize;
-        if(_acm->IncomingPayload(incomingPayload,
+        if(_acm->IncomingPayload((const WebRtc_UWord8*) incomingPayload,
                                  payloadLength,
                                  payloadType,
                                  _decodeTimestamp) == -1)

@@ -546,7 +546,7 @@ class AudioCodingModule: public Module {
   //   -1 if failed to push in the payload
   //    0 if payload is successfully pushed in.
   //
-  virtual WebRtc_Word32 IncomingPacket(const WebRtc_Word8* incomingPayload,
+  virtual WebRtc_Word32 IncomingPacket(const WebRtc_UWord8* incomingPayload,
                                        const WebRtc_Word32 payloadLengthByte,
                                        const WebRtcRTPHeader& rtpInfo) = 0;
 
@@ -574,7 +574,7 @@ class AudioCodingModule: public Module {
   //   -1 if failed to push in the payload
   //    0 if payload is successfully pushed in.
   //
-  virtual WebRtc_Word32 IncomingPayload(const WebRtc_Word8* incomingPayload,
+  virtual WebRtc_Word32 IncomingPayload(const WebRtc_UWord8* incomingPayload,
                                         const WebRtc_Word32 payloadLengthByte,
                                         const WebRtc_UWord8 payloadType,
                                         const WebRtc_UWord32 timestamp = 0) = 0;

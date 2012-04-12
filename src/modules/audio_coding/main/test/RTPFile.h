@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -32,7 +32,7 @@ public:
     // Returns the packet's payload size. Zero should be treated as an
     // end-of-stream (in the case that EndOfFile() is true) or an error.
     virtual WebRtc_UWord16 Read(WebRtcRTPHeader* rtpInfo,
-                    WebRtc_Word8* payloadData,
+                    WebRtc_UWord8* payloadData,
                     WebRtc_UWord16 payloadSize,
                     WebRtc_UWord32* offset) = 0;
     virtual bool EndOfFile() const = 0;
@@ -68,7 +68,7 @@ public:
                                      const WebRtc_Word16 seqNo, const WebRtc_UWord8* payloadData,
                                      const WebRtc_UWord16 payloadSize, WebRtc_UWord32 frequency);
     WebRtc_UWord16 Read(WebRtcRTPHeader* rtpInfo,
-                    WebRtc_Word8* payloadData,
+                    WebRtc_UWord8* payloadData,
                     WebRtc_UWord16 payloadSize,
                     WebRtc_UWord32* offset);
     virtual bool EndOfFile() const;
@@ -90,7 +90,7 @@ public:
                                      const WebRtc_Word16 seqNo, const WebRtc_UWord8* payloadData,
                                      const WebRtc_UWord16 payloadSize, WebRtc_UWord32 frequency);
     WebRtc_UWord16 Read(WebRtcRTPHeader* rtpInfo,
-                    WebRtc_Word8* payloadData, 
+                    WebRtc_UWord8* payloadData,
                     WebRtc_UWord16 payloadSize,
                     WebRtc_UWord32* offset);
     bool EndOfFile() const { return _rtpEOF; }

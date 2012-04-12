@@ -805,7 +805,7 @@ Channel::OnReceivedPayloadData(const WebRtc_UWord8* payloadData,
     }
 
     // Push the incoming payload (parsed and ready for decoding) into the ACM
-    if (_audioCodingModule.IncomingPacket((const WebRtc_Word8*) payloadData,
+    if (_audioCodingModule.IncomingPacket(payloadData,
                                           payloadSize,
                                           *rtpHeader) != 0)
     {

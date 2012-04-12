@@ -85,7 +85,7 @@ public:
     //                            <0 if NetEQ returned an error.
     //
     WebRtc_Word32 RecIn(
-        const WebRtc_Word8*    incomingPayload,
+        const WebRtc_UWord8*    incomingPayload,
         const WebRtc_Word32    payloadLength,
         const WebRtcRTPHeader&   rtpInfo);
 

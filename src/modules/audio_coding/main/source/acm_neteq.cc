@@ -513,10 +513,12 @@ ACMNetEQ::NetworkStatistics(
 
 WebRtc_Word32
 ACMNetEQ::RecIn(
-    const WebRtc_Word8*    incomingPayload,
+    const WebRtc_UWord8*   incomingPayload,
     const WebRtc_Word32    payloadLength,
     const WebRtcRTPHeader& rtpInfo)
 {
+    WebRtc_Word16 payload_length = static_cast<WebRtc_Word16>(payloadLength);
+
     // translate to NetEq struct
     WebRtcNetEQ_RTPInfo netEqRTPInfo;
     netEqRTPInfo.payloadType = rtpInfo.header.payloadType;
@@ -536,28 +538,32 @@ ACMNetEQ::RecIn(
         (_currentSampFreqKHz * nowInMs);
 
     int status;
-
-    if(rtpInfo.type.Audio.channel == 1)
-    {
-        if(!_isInitialized[0])
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-                "RecIn: NetEq is not initialized.");
-            return -1;
-        }
-        // PUSH into Master
-        status = WebRtcNetEQ_RecInRTPStruct(_inst[0], &netEqRTPInfo,
-            (WebRtc_UWord8 *)incomingPayload, (WebRtc_Word16)payloadLength,
-            recvTimestamp);
-        if(status < 0)
-        {
-            LogError("RecInRTPStruct", 0);
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-                "RecIn: NetEq, error in pushing in Master");
-            return -1;
-        }
+    // In case of stereo payload, first half of the data should be pushed into
+    // master, and the second half into slave.
+    if (rtpInfo.type.Audio.channel == 2) {
+      payload_length = payload_length / 2;
     }
-    else if(rtpInfo.type.Audio.channel == 2)
+
+    // Check that master is initialized.
+    if(!_isInitialized[0])
+    {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
+            "RecIn: NetEq is not initialized.");
+        return -1;
+    }
+    // PUSH into Master
+    status = WebRtcNetEQ_RecInRTPStruct(_inst[0], &netEqRTPInfo,
+             incomingPayload, payload_length, recvTimestamp);
+    if(status < 0)
+    {
+        LogError("RecInRTPStruct", 0);
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
+                     "RecIn: NetEq, error in pushing in Master");
+        return -1;
+    }
+
+    // If the received stream is stereo, insert second half of paket into slave.
+    if(rtpInfo.type.Audio.channel == 2)
     {
         if(!_isInitialized[1])
         {
@@ -567,8 +573,9 @@ ACMNetEQ::RecIn(
         }
         // PUSH into Slave
         status = WebRtcNetEQ_RecInRTPStruct(_inst[1], &netEqRTPInfo,
-            (WebRtc_UWord8 *)incomingPayload, (WebRtc_Word16)payloadLength,
-            recvTimestamp);
+                                            &incomingPayload[payload_length],
+                                            payload_length,
+                                            recvTimestamp);
         if(status < 0)
         {
             LogError("RecInRTPStruct", 1);
@@ -576,14 +583,6 @@ ACMNetEQ::RecIn(
                 "RecIn: NetEq, error in pushing in Slave");
             return -1;
         }
-    }
-    else
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-                "RecIn: NetEq, error invalid numbe of channels %d \
-(1, for Master stream, and 2, for slave stream, are valid values)",
-                rtpInfo.type.Audio.channel);
-        return -1;
     }
 
     return 0;
@@ -677,6 +676,7 @@ ACMNetEQ::RecOut(
                 }
             }
         }
+
         if(payloadLenSample != payloadLenSampleSlave)
         {
             WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, _id,

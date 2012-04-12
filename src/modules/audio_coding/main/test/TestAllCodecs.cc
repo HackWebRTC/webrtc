@@ -77,7 +77,8 @@ TestPack::SendData(
     rtpInfo.type.Audio.channel = 1;
     memcpy(_payloadData, payloadData, payloadDataSize);
     
-    status = _receiverACM->IncomingPacket((WebRtc_Word8*)_payloadData, payloadDataSize, rtpInfo);
+    status = _receiverACM->IncomingPacket(_payloadData, payloadDataSize,
+                                          rtpInfo);
 
     _payloadSize = payloadDataSize;
     _timeStampDiff = timeStamp - _lastInTimestamp;

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -86,7 +86,7 @@ class Receiver {
   PCMFile _pcmFile;
   WebRtc_Word16* _playoutBuffer;
   WebRtc_UWord16 _playoutLengthSmpls;
-  WebRtc_Word8 _incomingPayload[MAX_INCOMING_PAYLOAD];
+  WebRtc_UWord8 _incomingPayload[MAX_INCOMING_PAYLOAD];
   WebRtc_UWord16 _payloadSizeBytes;
   WebRtc_UWord16 _realPayloadSizeBytes;
   WebRtc_Word32 _frequency;

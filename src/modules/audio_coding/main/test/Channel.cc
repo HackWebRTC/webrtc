@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -129,13 +129,8 @@ Channel::SendData(
         }
     }
 
-    
-    //status = _receiverACM->IncomingPayload((WebRtc_Word8*)_payloadData, payloadSize, payloadType, timeStamp);
-    status = _receiverACM->IncomingPacket((WebRtc_Word8*)_payloadData, payloadDataSize, rtpInfo);
-
-    //delete [] payloadData;
-
-    
+    status = _receiverACM->IncomingPacket(_payloadData, payloadDataSize,
+                                          rtpInfo);
 
     return status;
 }

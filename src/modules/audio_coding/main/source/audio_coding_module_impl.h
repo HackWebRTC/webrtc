@@ -187,14 +187,14 @@ public:
 
     // incoming packet from network parsed and ready for decode
     WebRtc_Word32 IncomingPacket(
-        const WebRtc_Word8*    incomingPayload,
+        const WebRtc_UWord8*   incomingPayload,
         const WebRtc_Word32    payloadLength,
         const WebRtcRTPHeader& rtpInfo);
 
     // Incoming payloads, without rtp-info, the rtp-info will be created in ACM.
     // One usage for this API is when pre-encoded files are pushed in ACM.
     WebRtc_Word32 IncomingPayload(
-        const WebRtc_Word8*  incomingPayload,
+        const WebRtc_UWord8* incomingPayload,
         const WebRtc_Word32  payloadLength,
         const WebRtc_UWord8  payloadType,
         const WebRtc_UWord32 timestamp = 0);
@@ -328,6 +328,7 @@ private:
     int                            _prev_received_channel;
     int                            _expected_channels;
     WebRtc_Word32                  _currentSendCodecIdx;
+    int                            _current_receive_codec_idx;
     bool                           _sendCodecRegistered;
     ACMResampler                   _inputResampler;
     ACMResampler                   _outputResampler;

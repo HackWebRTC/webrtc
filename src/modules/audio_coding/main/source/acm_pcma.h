@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -60,6 +60,8 @@ protected:
 
     void InternalDestructEncoderInst(
         void* ptrInst);
+
+    void SplitStereoPacket(uint8_t* payload, int32_t* payload_length);
 };
 
 } // namespace webrtc

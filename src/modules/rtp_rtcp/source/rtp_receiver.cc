@@ -783,7 +783,6 @@ WebRtc_Word32 RTPReceiver::IncomingRTPPacket(
   video_specific.videoCodecType = kRtpNoVideo;
 
   AudioPayload audio_specific;
-  audio_specific.bitsPerSample = 0;
   audio_specific.channels = 0;
   audio_specific.frequency = 0;
 

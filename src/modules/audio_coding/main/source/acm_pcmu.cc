@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -162,6 +162,26 @@ the stored payload type",
     }
 
     return netEq->RemoveCodec(kDecoderPCMu);
+}
+
+// Split the stereo packet and place left and right channel after each other
+// in the payload vector.
+void ACMPCMU::SplitStereoPacket(uint8_t* payload, int32_t* payload_length) {
+  uint8_t right_byte;
+
+  // Check for valid inputs.
+  assert(payload != NULL);
+  assert(*payload_length > 0);
+
+  // Move one bytes representing right channel each loop, and place it at the
+  // end of the bytestream vector. After looping the data is reordered to:
+  // l1 l2 l3 l4 ... l(N-1) lN r1 r2 r3 r4 ... r(N-1) r(N),
+  // where N is the total number of samples.
+  for (int i = 0; i < *payload_length / 2; i ++) {
+    right_byte = payload[i + 1];
+    memmove(&payload[i + 1], &payload[i + 2], *payload_length - i - 2);
+    payload[*payload_length - 1] = right_byte;
+  }
 }
 
 } // namespace webrtc

@@ -44,6 +44,11 @@ enum {
     kACMToneEnd = 999
 };
 
+// Maximum number of bytes in one packet (PCM16B, 20 ms packets, stereo)
+enum {
+    kMaxPacketSize = 2560
+};
+
 AudioCodingModuleImpl::AudioCodingModuleImpl(
     const WebRtc_Word32 id):
     _packetizationCallback(NULL),
@@ -62,7 +67,8 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
     _stereoSend(false),
     _prev_received_channel(0),
     _expected_channels(1),
-    _currentSendCodecIdx(-1),    // invalid value
+    _currentSendCodecIdx(-1),  // invalid value
+    _current_receive_codec_idx(-1),  // invalid value
     _sendCodecRegistered(false),
     _acmCritSect(CriticalSectionWrapper::CreateCriticalSection()),
     _vadCallback(NULL),
@@ -1777,10 +1783,14 @@ AudioCodingModuleImpl::ReceiveCodec(
 // Incoming packet from network parsed and ready for decode
 WebRtc_Word32
 AudioCodingModuleImpl::IncomingPacket(
-    const WebRtc_Word8*    incomingPayload,
+    const WebRtc_UWord8*   incomingPayload,
     const WebRtc_Word32    payloadLength,
     const WebRtcRTPHeader& rtpInfo)
 {
+    WebRtcRTPHeader rtp_header;
+
+    memcpy(&rtp_header, &rtpInfo, sizeof(WebRtcRTPHeader));
+
     if (payloadLength < 0)
     {
         // Log error
@@ -1807,7 +1817,7 @@ AudioCodingModuleImpl::IncomingPacket(
         if(rtpInfo.header.payloadType == _receiveREDPayloadType)
         {
             // get the primary payload-type.
-            myPayloadType = (WebRtc_UWord8)(incomingPayload[0] & 0x7F);
+            myPayloadType = incomingPayload[0] & 0x7F;
         }
         else
         {
@@ -1841,12 +1851,14 @@ AudioCodingModuleImpl::IncomingPacket(
                         }
                         _codecs[i]->UpdateDecoderSampFreq(i);
                         _netEq.SetReceivedStereo(_stereoReceive[i]);
+                        _current_receive_codec_idx = i;
 
                         // If we have a change in expected number of channels,
                         // flush packet buffers in NetEQ.
                         if ((_stereoReceive[i] && (_expected_channels == 1)) ||
                             (!_stereoReceive[i] && (_expected_channels == 2))) {
                           _netEq.FlushBuffers();
+                          _codecs[i]->ResetDecoder(myPayloadType);
                         }
 
                         // Store number of channels we expect to receive for the
@@ -1868,28 +1880,21 @@ AudioCodingModuleImpl::IncomingPacket(
         }
     }
 
-    // Check that number of received channels match the setup for the
-    // received codec.
+    // Split the payload for stereo packets, so that first half of payload
+    // vector holds left channel, and second half holds right channel.
     if (_expected_channels == 2) {
-      if ((_prev_received_channel == 1) && (rtpInfo.type.Audio.channel == 1)) {
-        // We expect every second call to this function to be for channel 2,
-        // since we are in stereo-receive mode.
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-                    "IncomingPacket() Error, payload is"
-                    "mono, but codec registered as stereo.");
-        return -1;
-      }
-      _prev_received_channel = rtpInfo.type.Audio.channel;
-    } else if (rtpInfo.type.Audio.channel == 2) {
-      // Codec is registered as mono, but we receive a stereo packet.
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-                   "IncomingPacket() Error, payload is"
-                   "stereo, but codec registered as mono.");
-      return -1;
+      // Create a new vector for the payload, maximum payload size.
+      WebRtc_Word32 length = payloadLength;
+      WebRtc_UWord8 payload[kMaxPacketSize];
+      assert(payloadLength <= kMaxPacketSize);
+      memcpy(payload, incomingPayload, payloadLength);
+      _codecs[_current_receive_codec_idx]->SplitStereoPacket(payload, &length);
+      rtp_header.type.Audio.channel = 2;
+      // Insert packet into NetEQ.
+      return _netEq.RecIn(payload, length, rtp_header);
+    } else {
+      return _netEq.RecIn(incomingPayload, payloadLength, rtp_header);
     }
-
-    // Insert packet into NetEQ.
-    return _netEq.RecIn(incomingPayload, payloadLength, rtpInfo);
 }
 
 // Minimum playout delay (Used for lip-sync)
@@ -2263,9 +2268,10 @@ AudioCodingModuleImpl::RegisterVADCallback(
     return 0;
 }
 
+// TODO(tlegrand): Modify this function to work for stereo, and add tests.
 WebRtc_Word32
 AudioCodingModuleImpl::IncomingPayload(
-    const WebRtc_Word8*  incomingPayload,
+    const WebRtc_UWord8* incomingPayload,
     const WebRtc_Word32  payloadLength,
     const WebRtc_UWord8  payloadType,
     const WebRtc_UWord32 timestamp)

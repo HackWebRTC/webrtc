@@ -272,6 +272,13 @@ public:
     virtual ~decoder_CELT();
     int loadToNetEQ(NETEQTEST_NetEQClass & neteq);
 };
+class decoder_CELTslave : public NETEQTEST_Decoder
+{
+public:
+    decoder_CELTslave(WebRtc_UWord8 pt = 0, WebRtc_UWord16 fs = 32000);
+    virtual ~decoder_CELTslave();
+    int loadToNetEQ(NETEQTEST_NetEQClass & neteq);
+};
 
 class decoder_RED : public NETEQTEST_Decoder
 {

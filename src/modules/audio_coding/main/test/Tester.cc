@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -61,7 +61,7 @@ void PopulateTests(std::vector<ACMTest*>* tests)
     tests->push_back(new webrtc::TwoWayCommunication(0));
     tests->push_back(new webrtc::TestAllCodecs(0));
     tests->push_back(new webrtc::TestStereo(0));
-    tests->push_back(new webrtc::SpatialAudio(0));
+//    tests->push_back(new webrtc::SpatialAudio(0));
     tests->push_back(new webrtc::TestVADDTX(0));
     tests->push_back(new webrtc::TestFEC(0));
     tests->push_back(new webrtc::ISACTest(0));
@@ -81,7 +81,7 @@ void PopulateTests(std::vector<ACMTest*>* tests)
 #ifdef ACM_TEST_STEREO
     printf("  ACM stereo test\n");
     tests->push_back(new webrtc::TestStereo(1));
-    tests->push_back(new webrtc::SpatialAudio(2));
+    //tests->push_back(new webrtc::SpatialAudio(2));
 #endif
 #ifdef ACM_TEST_VAD_DTX
     printf("  ACM VAD-DTX test\n");

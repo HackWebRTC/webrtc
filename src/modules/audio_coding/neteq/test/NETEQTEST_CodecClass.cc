@@ -586,7 +586,7 @@ decoder_CELT::decoder_CELT(WebRtc_UWord8 pt, WebRtc_UWord16 fs)
 :
 NETEQTEST_Decoder(kDecoderCELT_32, fs, "CELT", pt)
 {
-   if (WebRtcCelt_CreateDec((CELT_decinst_t **) &_decoder, 1))
+   if (WebRtcCelt_CreateDec((CELT_decinst_t **) &_decoder, 2))
         exit(EXIT_FAILURE);
 }
 
@@ -601,6 +601,27 @@ int decoder_CELT::loadToNetEQ(NETEQTEST_NetEQClass & neteq)
 
     SET_CELT_FUNCTIONS(codecInst);
 
+    return(NETEQTEST_Decoder::loadToNetEQ(neteq, codecInst));
+}
+
+decoder_CELTslave::decoder_CELTslave(WebRtc_UWord8 pt, WebRtc_UWord16 fs)
+:
+NETEQTEST_Decoder(kDecoderCELT_32, fs, "CELT", pt)
+{
+   if (WebRtcCelt_CreateDec((CELT_decinst_t **) &_decoder, 2))
+        exit(EXIT_FAILURE);
+}
+
+decoder_CELTslave::~decoder_CELTslave()
+{
+    WebRtcCelt_FreeDec((CELT_decinst_t *) _decoder);
+}
+
+int decoder_CELTslave::loadToNetEQ(NETEQTEST_NetEQClass & neteq)
+{
+    WebRtcNetEQ_CodecDef codecInst;
+
+    SET_CELTSLAVE_FUNCTIONS(codecInst);
     return(NETEQTEST_Decoder::loadToNetEQ(neteq, codecInst));
 }
 #endif

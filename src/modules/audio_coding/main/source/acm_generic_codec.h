@@ -141,6 +141,23 @@ public:
         WebRtc_Word16* audioSamples,
         WebRtc_Word8*  speechType);
 
+    ///////////////////////////////////////////////////////////////////////////
+    // void SplitStereoPacket()
+    // This function is used to split stereo payloads in left and right channel.
+    // Codecs which has stereo support has there own implementation of the
+    // function.
+    //
+    // Input/Output:
+    //   -payload             : a vector with the received payload data.
+    //                          The function will reorder the data so that
+    //                          first half holds the left channel data, and the
+    //                          second half the right channel data.
+    //   -payload_length      : length of payload in bytes. Will be changed to
+    //                          twice the input in case of true stereo, where
+    //                          we simply copy the data and return it both for
+    //                          left channel and right channel decoding.
+    virtual void SplitStereoPacket(WebRtc_UWord8* /* payload */,
+                                   WebRtc_Word32* /* payload_length */) {}
 
     ///////////////////////////////////////////////////////////////////////////
     // bool EncoderInitialized();

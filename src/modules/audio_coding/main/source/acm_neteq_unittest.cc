@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -67,7 +67,7 @@ void AcmNetEqTest::InsertZeroPacket(uint16_t sequence_number,
   rtp_header.header.payloadType = payload_type;
   rtp_header.header.markerBit = marker_bit;
   rtp_header.type.Audio.channel = 1;
-  ASSERT_EQ(0, neteq_.RecIn(reinterpret_cast<WebRtc_Word8*>(payload),
+  ASSERT_EQ(0, neteq_.RecIn(reinterpret_cast<WebRtc_UWord8*>(payload),
                             len_payload_bytes, rtp_header));
 }
 

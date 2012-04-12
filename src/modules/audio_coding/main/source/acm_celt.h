@@ -61,6 +61,8 @@ class ACMCELT : public ACMGenericCodec {
 
   int16_t SetBitRateSafe(const int32_t rate);
 
+  void SplitStereoPacket(uint8_t* payload, int32_t* payload_length);
+
   CELT_encinst_t_* enc_inst_ptr_;
   CELT_decinst_t_* dec_inst_ptr_;
   uint16_t sampling_freq_;

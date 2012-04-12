@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -98,6 +98,9 @@ WebRtc_Word16 ACMG722::UnregisterFromNetEqSafe(
     WebRtc_Word16 /* payloadType */) {
   return -1;
 }
+
+void ACMG722::SplitStereoPacket(uint8_t* /*payload*/,
+                                int32_t* /*payload_length*/) {}
 
 #else     //===================== Actual Implementation =======================
 
@@ -330,6 +333,35 @@ WebRtc_Word16 ACMG722::UnregisterFromNetEqSafe(ACMNetEQ* netEq,
     return -1;
   }
   return netEq->RemoveCodec(kDecoderG722);
+}
+
+// Split the stereo packet and place left and right channel after each other
+// in the payload vector.
+void ACMG722::SplitStereoPacket(uint8_t* payload, int32_t* payload_length) {
+  uint8_t right_byte;
+
+  // Check for valid inputs.
+  assert(payload != NULL);
+  assert(*payload_length > 0);
+
+  // Regroup the 4 bits/sample so to |l1 l2| |r1 r2| |l3 l4| |r3 r4| ...,
+  // where "lx" is 4 bits representing left sample number x, and "rx" right
+  // sample. Two samples fits in one byte, represented with |...|.
+  for (int i = 0; i < *payload_length; i += 2) {
+    right_byte = ((payload[i] & 0x0F) << 4) + (payload[i + 1] & 0x0F);
+    payload[i] = (payload[i] & 0xF0) + (payload[i + 1] >> 4);
+    payload[i + 1] = right_byte;
+  }
+
+  // Move one byte representing right channel each loop, and place it at the
+  // end of the bytestream vector. After looping the data is reordered to:
+  // |l1 l2| |l3 l4| ... |l(N-1) lN| |r1 r2| |r3 r4| ... |r(N-1) r(N)|,
+  // where N is the total number of samples.
+  for (int i = 0; i < *payload_length / 2; i++) {
+    right_byte = payload[i + 1];
+    memmove(&payload[i + 1], &payload[i + 2], *payload_length - i - 2);
+    payload[*payload_length - 1] = right_byte;
+  }
 }
 
 #endif
