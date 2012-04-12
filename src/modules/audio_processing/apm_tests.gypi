@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -29,7 +29,10 @@
         '<(webrtc_root)/../test/test.gyp:test_support',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
       ],
-      'sources': [ 'test/unit_test.cc', ],
+      'sources': [
+        'aec/system_delay_test.cc',
+        'test/unit_test.cc',
+      ],
     },
     {
       'target_name': 'audioproc_unittest_proto',

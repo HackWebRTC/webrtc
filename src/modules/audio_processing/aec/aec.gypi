@@ -30,6 +30,7 @@
       'sources': [
         'include/echo_cancellation.h',
         'echo_cancellation.c',
+        'echo_cancellation_internal.h',
         'aec_core.h',
         'aec_core.c',
         'aec_rdft.h',
