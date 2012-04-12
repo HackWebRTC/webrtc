@@ -10,7 +10,9 @@
 __author__ = 'ivinnichenko@webrtc.org (Illya Vinnichenko)'
 
 import buildbot
+import ntpath
 import os
+import posixpath
 import sys
 import urlparse
 from buildbot.process import factory
@@ -90,6 +92,7 @@ class WebRTCFactory(factory.BuildFactory):
     self.properties = properties.Properties()
     self.gyp_params = []
     self.release = False
+    self.path_joiner = PosixPathJoin
 
   def EnableBuild(self):
     """Adds steps for building WebRTC [must be overridden].
@@ -164,7 +167,7 @@ class WebRTCFactory(factory.BuildFactory):
        thinks the last build failed. Otherwise it cleans just the build output.
     """
     self.addStep(SmartClean(self.build_status_oracle, self.is_try_slave,
-                            workdir=WEBRTC_BUILD_DIR))
+                            self.path_joiner, workdir=WEBRTC_BUILD_DIR))
 
   def AddCommonTestRunStep(self, test, descriptor='', cmd=None):
     """Adds a step for running a single test [must be overridden].
@@ -312,12 +315,12 @@ class BuildStatusOracle:
     self.builder_name = builder_name
     self.master_work_dir = DEFAULT_MASTER_WORK_DIR
 
-  def LastBuildFailed(self):
+  def LastBuildSucceeded(self):
     failure_file_path = self._GetFailureBuildPath()
-    return os.path.exists(failure_file_path)
+    return not os.path.exists(failure_file_path)
 
   def ForgetLastBuild(self):
-    if self.LastBuildFailed():
+    if not self.LastBuildSucceeded():
       os.remove(self._GetFailureBuildPath())
 
   def SetLastBuildAsFailed(self):
@@ -344,28 +347,37 @@ class MonitoredShellCommand(ShellCommand):
 
 class SmartClean(ShellCommand):
   """Cleans the repository fully or partially depending on the build state."""
-  def __init__(self, build_status_oracle, is_try_slave, **kwargs):
+
+  def __init__(self, build_status_oracle, is_try_slave, path_joiner, **kwargs):
+    """Args:
+          build_status_oracle: class that knows if the previous build failed.
+          is_try_slave: if the current factory is a try slave.
+          path_joiner: function to create paths for the current platform, given
+                       a number of path elements in string form.
+     """
     ShellCommand.__init__(self, **kwargs)
 
     self.addFactoryArguments(build_status_oracle=build_status_oracle,
-                             is_try_slave=is_try_slave)
+                             is_try_slave=is_try_slave, path_joiner=path_joiner)
+    self.name = "Clean"
     self.haltOnFailure = True
     self.build_status_oracle = build_status_oracle
     self.is_try_slave = is_try_slave
+    self.clean_script = path_joiner(WEBRTC_BUILD_DIR, '..', '..', '..', '..',
+                                    '..', 'build_internal', 'symsrc',
+                                    'cleanup_build.py')
 
   def start(self):
     # Always do normal clean for try slaves, since nuking confuses the Chromium
     # scripts' GClient sync step.
-    if self.is_try_slave or self.build_status_oracle.LastBuildFailed():
+    if self.is_try_slave or self.build_status_oracle.LastBuildSucceeded():
       self.description = ['Clean']
-      self.setCommand('rm -rf trunk/out && '
-                      'rm -rf trunk/xcodebuild &&'
-                      'rm -rf trunk/build/Debug &&'
-                      'rm -rf trunk/build/Release')
+      cmd = 'python %s ' % self.clean_script
     else:
       self.build_status_oracle.ForgetLastBuild()
       self.description = ['Nuke Repository', '(Previous Failed)']
-      self.setCommand(['rm', '-rf', 'trunk'])
+      cmd = 'python %s --nuke' % self.clean_script
+    self.setCommand(cmd)
     ShellCommand.start(self)
 
 
@@ -749,6 +761,7 @@ class WebRTCWinFactory(WebRTCFactory):
     self.platform = 'x64'
     self.allowed_platforms = ['x64', 'Win32']
     self.allowed_configurations = ['Debug', 'Release', 'both']
+    self.path_joiner = WindowsPathJoin
 
   def AddCommonStep(self, cmd, descriptor='', workdir=WEBRTC_TRUNK_DIR,
                     halt_build_on_failure=True, warn_on_failure=False):
@@ -787,7 +800,9 @@ class WebRTCWinFactory(WebRTCFactory):
       # To avoid having to modify kill_processes.py, we set the working dir to
       # the build dir (three levels up from the build dir that contains
       # third_party/psutils).
-      cmd = 'python ..\\..\\..\\scripts\\slave\\kill_processes.py'
+      kill_script = self.PathJoin(WEBRTC_BUILD_DIR, '..', '..', '..', 'scripts',
+                                  'slave', 'kill_processes.py')
+      cmd = 'python %s' % kill_script
       self.AddCommonStep(cmd, 'taskkill', workdir=WEBRTC_BUILD_DIR)
 
     # Now do the clean + build.
@@ -827,7 +842,14 @@ class WebRTCWinFactory(WebRTCFactory):
       self.AddCommonStep(cmd, descriptor=descriptor,
                          halt_build_on_failure=False)
 
+
 # Utility functions
+
+def PosixPathJoin(*args):
+  return posixpath.normpath(posixpath.join(*args))
+
+def WindowsPathJoin(*args):
+  return ntpath.normpath(ntpath.join(*args))
 
 
 class UnsupportedConfigurationError(Exception):

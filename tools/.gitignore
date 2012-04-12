@@ -39,6 +39,7 @@ robots.txt
 
 # Buildbot slave log directories:
 /continuous_build/build_internal/masters/master.webrtc/android
+/continuous_build/build_internal/masters/master.webrtc/android-ndk
 /continuous_build/build_internal/masters/master.webrtc/chromeos
 /continuous_build/build_internal/masters/master.webrtc/linux-chrome
 /continuous_build/build_internal/masters/master.webrtc/linux-clang

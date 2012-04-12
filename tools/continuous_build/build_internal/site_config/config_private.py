@@ -24,6 +24,7 @@ class Master(object):
 
   # Directly fetches from anonymous webkit svn server.
   webkit_root_url = 'http://svn.webkit.org/repository/webkit'
+  nacl_trunk_url = 'http://src.chromium.org/native_client/trunk'
 
   llvm_url = 'http://llvm.org/svn/llvm-project'
 
