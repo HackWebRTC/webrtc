@@ -87,7 +87,7 @@ I420Encoder::InitEncode(const VideoCodec* codecSettings,
 WebRtc_Word32
 I420Encoder::Encode(const RawImage& inputImage,
                     const CodecSpecificInfo* /*codecSpecificInfo*/,
-                    const VideoFrameType* /*frameTypes*/)
+                    const VideoFrameType /*frameType*/)
 {
     if (!_inited)
     {

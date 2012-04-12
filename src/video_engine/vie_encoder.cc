@@ -84,9 +84,9 @@ ViEEncoder::ViEEncoder(WebRtc_Word32 engine_id, WebRtc_Word32 channel_id,
                ViEId(engine_id, channel_id),
                "%s(engine_id: %d) 0x%p - Constructor", __FUNCTION__, engine_id,
                this);
-  for (int i = 0; i < kMaxSimulcastStreams; i++) {
-    time_last_intra_request_ms_[i] = 0;
-  }
+
+  time_last_intra_request_ms_ = 0;
+
 }
 
 bool ViEEncoder::Init() {
@@ -597,10 +597,10 @@ int ViEEncoder::GetPreferedFrameSettings(int& width,
   return 0;
 }
 
-WebRtc_Word32 ViEEncoder::SendKeyFrame() {
+int ViEEncoder::SendKeyFrame() {
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
                ViEId(engine_id_, channel_id_), "%s", __FUNCTION__);
-  return vcm_.FrameTypeRequest(kVideoFrameKey, 0);  // Simulcast idx = 0.
+  return vcm_.IntraFrameRequest();
 }
 
 WebRtc_Word32 ViEEncoder::SendCodecStatistics(
@@ -807,25 +807,23 @@ void ViEEncoder::OnRPSIReceived(const WebRtc_Word32 id,
   has_received_rpsi_ = true;
 }
 
-void ViEEncoder::OnReceivedIntraFrameRequest(const WebRtc_Word32 id,
-                                             const FrameType type,
-                                             const WebRtc_UWord8 stream_idx) {
-  assert(stream_idx < kMaxSimulcastStreams);
-
+void ViEEncoder::OnReceivedIntraFrameRequest(const WebRtc_Word32 /*id*/,
+                                             const FrameType /*type*/,
+                                             const WebRtc_UWord8 /*idx*/) {
   // Key frame request from remote side, signal to VCM.
   WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceVideo,
                ViEId(engine_id_, channel_id_), "%s", __FUNCTION__);
 
   WebRtc_Word64 now = TickTime::MillisecondTimestamp();
-  if (time_last_intra_request_ms_[stream_idx] + kViEMinKeyRequestIntervalMs >
+  if (time_last_intra_request_ms_ + kViEMinKeyRequestIntervalMs >
       now) {
     WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideo,
                  ViEId(engine_id_, channel_id_),
                  "%s: Not not encoding new intra due to timing", __FUNCTION__);
     return;
   }
-  vcm_.FrameTypeRequest(type, stream_idx);
-  time_last_intra_request_ms_[stream_idx] = now;
+  vcm_.IntraFrameRequest();
+  time_last_intra_request_ms_ = now;
 }
 
 void ViEEncoder::OnNetworkChanged(const WebRtc_Word32 id,

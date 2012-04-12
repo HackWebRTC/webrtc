@@ -316,7 +316,7 @@ uint32_t VP8Encoder::MaxIntraTarget(uint32_t optimalBuffersize) {
 
 int VP8Encoder::Encode(const RawImage& input_image,
                        const CodecSpecificInfo* codec_specific_info,
-                       const VideoFrameType* frame_types) {
+                       const VideoFrameType frame_type) {
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
@@ -347,7 +347,7 @@ int VP8Encoder::Encode(const RawImage& input_image,
     flags |= temporal_layers_->EncodeFlags();
   }
 #endif
-  bool send_keyframe = frame_types && (*frame_types == kKeyFrame);
+  bool send_keyframe = (frame_type == kKeyFrame);
   if (send_keyframe) {
     // Key frame request from caller.
     // Will update both golden and alt-ref.

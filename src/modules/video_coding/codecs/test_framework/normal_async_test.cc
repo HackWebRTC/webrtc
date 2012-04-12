@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -458,7 +458,7 @@ NormalAsyncTest::Encode()
     }
 
     webrtc::CodecSpecificInfo* codecSpecificInfo = CreateEncoderSpecificInfo();
-    int ret = _encoder->Encode(rawImage, codecSpecificInfo, &frameType);
+    int ret = _encoder->Encode(rawImage, codecSpecificInfo, frameType);
     EXPECT_EQ(ret, WEBRTC_VIDEO_CODEC_OK);
     if (codecSpecificInfo != NULL)
     {

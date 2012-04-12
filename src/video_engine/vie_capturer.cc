@@ -745,15 +745,15 @@ WebRtc_Word32 ViECapturer::InitEncode(const VideoCodec* codec_settings,
 
 WebRtc_Word32 ViECapturer::Encode(const RawImage& input_image,
                                   const CodecSpecificInfo* codec_specific_info,
-                                  const VideoFrameType* frame_types) {
+                                  const VideoFrameType frame_type) {
   CriticalSectionScoped cs(encoding_cs_.get());
   if (!capture_encoder_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  if (*frame_types == kKeyFrame) {
+  if (frame_type == kKeyFrame) {
     return capture_encoder_->EncodeFrameType(kVideoFrameKey);
   }
-  if (*frame_types == kSkipFrame) {
+  if (frame_type == kSkipFrame) {
     return capture_encoder_->EncodeFrameType(kFrameEmpty);
   }
   return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;

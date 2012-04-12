@@ -72,6 +72,7 @@ _scheduleKeyRequest(false),
 _sendCritSect(CriticalSectionWrapper::CreateCriticalSection()),
 _encoder(),
 _encodedFrameCallback(),
+_nextFrameType(kVideoFrameDelta),
 _mediaOpt(id, clock_),
 _sendCodecType(kVideoCodecUnknown),
 _sendStatsCallback(NULL),
@@ -84,10 +85,6 @@ _retransmissionTimer(10, clock_),
 _keyRequestTimer(500, clock_)
 {
     assert(clock_);
-    for (int i = 0; i < kMaxSimulcastStreams; i++)
-    {
-        _nextFrameType[i] = kVideoFrameDelta;
-    }
 #ifdef DEBUG_DECODER_BIT_STREAM
     _bitStreamBeforeDecoder = fopen("decoderBitStream.bit", "wb");
 #endif
@@ -666,7 +663,7 @@ VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
     {
         return VCM_UNINITIALIZED;
     }
-    if (_nextFrameType[0] == kFrameEmpty)
+    if (_nextFrameType == kFrameEmpty)
     {
         return VCM_OK;
     }
@@ -700,35 +697,22 @@ VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
                          "Encode error: %d", ret);
             return ret;
         }
-        for (int i = 0; i < kMaxSimulcastStreams; i++)
-        {
-            _nextFrameType[i] = kVideoFrameDelta; // default frame type
-        }
+        _nextFrameType = kVideoFrameDelta; // default frame type
     }
     return VCM_OK;
 }
 
-// Next frame encoded should be of the type frameType
-// Good for only one frame
-WebRtc_Word32
-VideoCodingModuleImpl::FrameTypeRequest(FrameType frameType, 
-                                        WebRtc_UWord8 simulcastIdx)
-{
-    assert(simulcastIdx < kMaxSimulcastStreams);
-
-
-    CriticalSectionScoped cs(_sendCritSect);
-    _nextFrameType[simulcastIdx] = frameType;
-    if (_encoder != NULL && _encoder->InternalSource())
-    {
-        // Try to request the frame if we have an external encoder with
-        // internal source since AddVideoFrame never will be called.
-        if (_encoder->RequestFrame(_nextFrameType) == WEBRTC_VIDEO_CODEC_OK)
-        {
-            _nextFrameType[simulcastIdx] = kVideoFrameDelta;
-        }
+WebRtc_Word32 VideoCodingModuleImpl::IntraFrameRequest() {
+  CriticalSectionScoped cs(_sendCritSect);
+  _nextFrameType = kVideoFrameKey;
+  if (_encoder != NULL && _encoder->InternalSource()) {
+    // Try to request the frame if we have an external encoder with
+    // internal source since AddVideoFrame never will be called.
+    if (_encoder->RequestFrame(_nextFrameType) == WEBRTC_VIDEO_CODEC_OK) {
+      _nextFrameType = kVideoFrameDelta;
     }
-    return VCM_OK;
+  }
+  return VCM_OK;
 }
 
 WebRtc_Word32

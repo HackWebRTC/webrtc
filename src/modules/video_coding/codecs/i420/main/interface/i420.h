@@ -50,7 +50,7 @@ public:
     virtual WebRtc_Word32
         Encode(const RawImage& inputImage,
                const CodecSpecificInfo* /*codecSpecificInfo*/,
-               const VideoFrameType* /*frameTypes*/);
+               const VideoFrameType /*frameTypes*/);
 
 // Register an encode complete callback object.
 //

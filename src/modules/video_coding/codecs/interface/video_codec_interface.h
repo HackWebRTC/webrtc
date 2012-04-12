@@ -97,10 +97,9 @@ public:
     //          - frameType         : The frame type to encode
     //
     // Return value                 : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
-    virtual WebRtc_Word32
-    Encode(const RawImage& inputImage,
-           const CodecSpecificInfo* codecSpecificInfo,
-           const VideoFrameType* frameTypes) = 0;
+    virtual WebRtc_Word32 Encode(const RawImage& inputImage,
+                                 const CodecSpecificInfo* codecSpecificInfo,
+                                 const VideoFrameType frameType) = 0;
 
     // Register an encode complete callback object.
     //

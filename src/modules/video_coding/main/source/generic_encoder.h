@@ -99,7 +99,7 @@ public:
     */
     WebRtc_Word32 Encode(const VideoFrame& inputFrame,
                          const CodecSpecificInfo* codecSpecificInfo,
-                         FrameType* frameType);
+                         const FrameType frameType);
     /**
     *	Set new target bit rate and frame rate
     * Return Value: new bit rate if OK, otherwise <0s
@@ -125,7 +125,7 @@ public:
 
     WebRtc_Word32 SetPeriodicKeyFrames(bool enable);
 
-    WebRtc_Word32 RequestFrame(FrameType* frameTypes);
+    WebRtc_Word32 RequestFrame(const FrameType frameType);
 
     bool InternalSource() const;
 

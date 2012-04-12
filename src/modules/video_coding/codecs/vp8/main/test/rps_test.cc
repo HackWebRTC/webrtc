@@ -162,7 +162,7 @@ bool VP8RpsTest::EncodeRps(RpsDecodeCompleteCallback* decodeCallback) {
     sli_ = false;
   }
   printf("Encoding: %u\n", _framecnt);
-  int ret = _encoder->Encode(rawImage, codecSpecificInfo, &frameType);
+  int ret = _encoder->Encode(rawImage, codecSpecificInfo, frameType);
   if (ret < 0)
     printf("Failed to encode: %u\n", _framecnt);
 
