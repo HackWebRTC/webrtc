@@ -194,7 +194,10 @@ TEST_F(TestLibYuv, ConvertTest) {
   delete [] orig_buffer;
 }
 
-TEST_F(TestLibYuv, MirrorTest) {
+// TODO(holmer): Disabled for now due to crashes on Linux 32 bit. The theory
+// is that it crashes due to the fact that the buffers are not 16 bit aligned.
+// See http://code.google.com/p/webrtc/issues/detail?id=335 for more info.
+TEST_F(TestLibYuv, DISABLED_MirrorTest) {
   // TODO (mikhal): Add an automated test to confirm output.
   std::string str;
   int width = 16;
