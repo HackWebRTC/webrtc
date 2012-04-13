@@ -79,7 +79,8 @@ ViEEncoder::ViEEncoder(WebRtc_Word32 engine_id, WebRtc_Word32 channel_id,
     picture_id_sli_(0),
     has_received_rpsi_(false),
     picture_id_rpsi_(0),
-    file_recorder_(channel_id) {
+    file_recorder_(channel_id),
+    qm_callback_(NULL) {
   WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo,
                ViEId(engine_id, channel_id),
                "%s(engine_id: %d) 0x%p - Constructor", __FUNCTION__, engine_id,
@@ -132,6 +133,9 @@ bool ViEEncoder::Init() {
     return false;
   }
 
+  if (qm_callback_) {
+    delete qm_callback_;
+  }
   qm_callback_ = new QMVideoSettingsCallback(
       engine_id_,
       channel_id_,
