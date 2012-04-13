@@ -834,20 +834,16 @@ class WebRTCWinFactory(WebRTCFactory):
 
     if self.configuration == 'Debug' or self.configuration == 'both':
       cmd = [WebRTCWinFactory.BUILD_CMD, 'webrtc.sln', '/t:Clean',
-             '/verbosity:diagnostic',
              '/p:Configuration=Debug;Platform=%s' % (self.platform)]
       self.AddCommonStep(cmd, descriptor='Build(Clean)')
       cmd = [WebRTCWinFactory.BUILD_CMD, 'webrtc.sln',
-             '/verbosity:diagnostic',
              '/p:Configuration=Debug;Platform=%s' % (self.platform)]
       self.AddCommonStep(cmd, descriptor='Build(Debug)')
     if self.configuration == 'Release' or self.configuration == 'both':
       cmd = [WebRTCWinFactory.BUILD_CMD, 'webrtc.sln', '/t:Clean',
-             '/verbosity:diagnostic',
              '/p:Configuration=Release;Platform=%s' % (self.platform)]
       self.AddCommonStep(cmd, descriptor='Build(Clean)')
       cmd = [WebRTCWinFactory.BUILD_CMD, 'webrtc.sln',
-             '/verbosity:diagnostic',
              '/p:Configuration=Release;Platform=%s' % (self.platform)]
       self.AddCommonStep(cmd, descriptor='Build(Release)')
 
