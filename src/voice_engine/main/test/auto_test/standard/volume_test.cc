@@ -105,7 +105,9 @@ TEST_F(VolumeTest, InputMutingIsNotEnabledByDefault) {
   EXPECT_FALSE(is_muted);
 }
 
-TEST_F(VolumeTest, ManualInputMutingMutesMicrophone) {
+// TODO(phoglund): pending investigation in
+// http://code.google.com/p/webrtc/issues/detail?id=367
+TEST_F(VolumeTest, DISABLED_ManualInputMutingMutesMicrophone) {
   SwitchToManualMicrophone();
 
   // Enable muting.

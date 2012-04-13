@@ -90,7 +90,10 @@ TEST_F(VideoSyncTest, CanSetInitSequenceNumberWhileStopped) {
   EXPECT_EQ(0, voe_vsync_->SetInitSequenceNumber(channel_, 123));
 }
 
-TEST_F(VideoSyncTest, DelayEstimatesStabilizeDuring15sAndAreNotTooLow) {
+// TODO(phoglund): pending investigation in
+// http://code.google.com/p/webrtc/issues/detail?id=438
+TEST_F(VideoSyncTest,
+       DISABLED_DelayEstimatesStabilizeDuring15sAndAreNotTooLow) {
   EXPECT_EQ(0, voe_base_->StopSend(channel_));
   EXPECT_EQ(0, voe_vsync_->SetInitTimestamp(channel_, 12345));
   EXPECT_EQ(0, voe_vsync_->SetInitSequenceNumber(channel_, 123));
@@ -99,7 +102,10 @@ TEST_F(VideoSyncTest, DelayEstimatesStabilizeDuring15sAndAreNotTooLow) {
   CheckEstimatesConvergeReasonablyWell(kMinimumReasonableDelayEstimateMs);
 }
 
-TEST_F(VideoSyncTest, DelayEstimatesStabilizeAfterNetEqMinDelayChanges45s) {
+// TODO(phoglund): pending investigation in
+// http://code.google.com/p/webrtc/issues/detail?id=438
+TEST_F(VideoSyncTest,
+       DISABLED_DelayEstimatesStabilizeAfterNetEqMinDelayChanges45s) {
   EXPECT_EQ(0, voe_base_->StopSend(channel_));
   EXPECT_EQ(0, voe_vsync_->SetInitTimestamp(channel_, 12345));
   EXPECT_EQ(0, voe_vsync_->SetInitSequenceNumber(channel_, 123));
