@@ -27,6 +27,7 @@ from master.factory import gclient_factory
 # dictionaries in master.cfg.
 SUPPORTED_PLATFORMS = ('Linux', 'Mac', 'Windows')
 
+WEBRTC_SOLUTION_NAME = 'trunk'
 WEBRTC_SVN_LOCATION = 'http://webrtc.googlecode.com/svn/trunk'
 WEBRTC_TRUNK_DIR = 'build/trunk/'
 WEBRTC_BUILD_DIR = 'build/'
@@ -76,7 +77,10 @@ class WebRTCFactory(factory.BuildFactory):
      can be overridden to create customized build sequences.
   """
 
-  def __init__(self, build_status_oracle, is_try_slave=False):
+  def __init__(self, build_status_oracle, is_try_slave=False,
+               gclient_solution_name=WEBRTC_SOLUTION_NAME,
+               svn_url=WEBRTC_SVN_LOCATION,
+               custom_deps_list=None, safesync_url=None):
     """Creates the abstract factory.
 
        Args:
@@ -84,6 +88,12 @@ class WebRTCFactory(factory.BuildFactory):
              keep track of our build state.
          is_try_slave: If this bot is a try slave. Needed since we're handling
              some things differently between normal slaves and try slaves.
+         gclient_solution_name: The name of the solution used for gclient.
+         svn_url: The Subversion URL for gclient to sync agains.
+         custom_deps_list: Content to be put in the custom_deps entry of the
+             .gclient file. The parameter must be a list of tuples with two
+             strings in each: path and remote URL.
+         safesync_url: If a LKGR URL shall be used for the gclient sync command.
     """
     factory.BuildFactory.__init__(self)
 
@@ -93,6 +103,11 @@ class WebRTCFactory(factory.BuildFactory):
     self.gyp_params = []
     self.release = False
     self.path_joiner = PosixPathJoin
+    # For GClient solution definition:
+    self.gclient_solution_name = gclient_solution_name
+    self.svn_url = svn_url
+    self.custom_deps_list = custom_deps_list
+    self.safesync_url = safesync_url
 
   def EnableBuild(self):
     """Adds steps for building WebRTC [must be overridden].
@@ -206,12 +221,6 @@ class WebRTCFactory(factory.BuildFactory):
     """
     self.AddCommonTestRunStep(test)
 
-  def AddGclientConfigStep(self):
-    """Helper method for adding a gclient config step."""
-    self.AddCommonStep(['gclient', 'config', WEBRTC_SVN_LOCATION],
-                       workdir=WEBRTC_BUILD_DIR,
-                       descriptor='gclient_config')
-
   def AddGclientSyncStep(self):
     """Helper method for invoking gclient sync."""
     gclient_spec = self._ConfigureWhatToBuild()
@@ -255,8 +264,9 @@ class WebRTCFactory(factory.BuildFactory):
 
   def _ConfigureWhatToBuild(self):
     """Returns a string with the contents of a .gclient file."""
-    solution = gclient_factory.GClientSolution(name='trunk',
-                                               svn_url=WEBRTC_SVN_LOCATION)
+    solution = gclient_factory.GClientSolution(name=self.gclient_solution_name,
+        svn_url=self.svn_url, custom_deps_list=self.custom_deps_list,
+        safesync_url=self.safesync_url)
     return 'solutions = [ %s ]' % solution.GetSpec()
 
   def _GetEnvironmentWithDisabledDepotToolsUpdate(self):
@@ -414,8 +424,11 @@ class GenerateCodeCoverage(ShellCommand):
     self.flunkOnFailure = False
     output_dir = os.path.join(coverage_dir,
                               '%(buildername)s_%(buildnumber)s')
-    self.setCommand(['./tools/continuous_build/generate_coverage_html.sh',
-                     coverage_file, WithProperties(output_dir)])
+    generate_script = PosixPathJoin('tools', 'continuous_build',
+                                    'build_internal', 'scripts',
+                                    'generate_coverage_html.sh')
+    self.setCommand([generate_script, coverage_file,
+                     WithProperties(output_dir)])
 
   def createSummary(self, log):
     coverage_url = urlparse.urljoin(self.coverage_url,
@@ -447,11 +460,9 @@ class WebRTCAndroidFactory(WebRTCFactory):
     cmd = 'svn checkout %s external/webrtc' % WEBRTC_SVN_LOCATION
     self.AddCommonStep(cmd, descriptor='svn (checkout)')
 
-    cmd = ('source build/envsetup.sh && lunch full_%s-eng ' % product)
-    self.AddCommonStep(cmd, descriptor='make_android')
-
-    cmd = 'source build/envsetup.sh && mmm external/webrtc showcommands'
-    self.AddCommonStep(cmd, descriptor='make_webrtc')
+    cmd = ('source build/envsetup.sh && lunch full_%s-eng '
+           '&& mmm external/webrtc showcommands' % product)
+    self.AddCommonStep(cmd, descriptor='build')
 
 
 class WebRTCAndroidNDKFactory(WebRTCFactory):
@@ -462,19 +473,31 @@ class WebRTCAndroidNDKFactory(WebRTCFactory):
 
   def EnableBuild(self):
     self.AddSmartCleanStep()
-    self.AddGclientConfigStep()
     self.AddGclientSyncStep()
-    cmd = 'source ./build/android/envsetup.sh && gclient runhooks'
-    self.AddCommonStep(cmd, descriptor='gen_android_makefiles')
-    cmd = 'source ./build/android/envsetup.sh && make -j8'
-    self.AddCommonStep(cmd, descriptor='make')
+    self._AddAndroidStep(cmd='gclient runhooks',
+                         descriptor='gen_android_makefiles')
+    self._AddAndroidStep(cmd='make -j100', descriptor='make')
 
+  def _AddAndroidStep(self, cmd, descriptor):
+    full_cmd = ('source build/android/buildbot_functions.sh &&'
+                'bb_setup_environment && '
+                'source build/android/envsetup.sh &&'
+                '%s' % cmd)
+    self.AddCommonStep(cmd=full_cmd, descriptor=descriptor)
 
 class WebRTCChromeFactory(WebRTCFactory):
   """Sets up the Chrome OS build."""
 
-  def __init__(self, build_status_oracle):
-    WebRTCFactory.__init__(self, build_status_oracle)
+  def __init__(self, build_status_oracle,
+               gclient_solution_name,
+               svn_url,
+               custom_deps_list=None,
+               safesync_url=None):
+    WebRTCFactory.__init__(self, build_status_oracle=build_status_oracle,
+                           gclient_solution_name=gclient_solution_name,
+                           svn_url=svn_url,
+                           custom_deps_list=custom_deps_list,
+                           safesync_url=safesync_url)
 
   def EnableBuild(self):
     self.AddCommonStep(['rm', '-rf', 'src'], workdir=WEBRTC_BUILD_DIR,
@@ -498,9 +521,10 @@ class WebRTCLinuxFactory(WebRTCFactory):
   """
 
   def __init__(self, build_status_oracle, is_try_slave=False,
-               valgrind_enabled=False):
-    WebRTCFactory.__init__(self, build_status_oracle, is_try_slave)
-
+               valgrind_enabled=False, custom_deps_list=None):
+    WebRTCFactory.__init__(self, build_status_oracle=build_status_oracle,
+                           is_try_slave=is_try_slave,
+                           custom_deps_list=custom_deps_list)
     self.build_enabled = False
     self.coverage_enabled = False
     self.valgrind_enabled = valgrind_enabled
@@ -538,8 +562,6 @@ class WebRTCLinuxFactory(WebRTCFactory):
     if self.valgrind_enabled:
       for gyp_define in MEMORY_TOOLS_GYP_DEFINES:
         self.gyp_params.append('-D' + gyp_define)
-    else:
-      self.AddGclientConfigStep()
     self.AddGclientSyncStep()
 
     if chrome_os:
@@ -611,7 +633,9 @@ class WebRTCLinuxFactory(WebRTCFactory):
 
     # Delete all third-party .gcda files to save time and work around a bug
     # in lcov which tends to hang when capturing on libjpgturbo.
-    self.AddCommonStep(['./tools/continuous_build/clean_third_party_gcda.sh'],
+    clean_script = PosixPathJoin('tools', 'continuous_build', 'build_internal',
+                                 'scripts', 'clean_third_party_gcda.sh')
+    self.AddCommonStep([clean_script],
                        warn_on_failure=True,
                        halt_build_on_failure=False,
                        descriptor='LCOV (Delete 3rd party)')
@@ -706,7 +730,6 @@ class WebRTCMacFactory(WebRTCFactory):
     else:
       self.build_type = build_type
     self.AddSmartCleanStep()
-    self.AddGclientConfigStep()
     self.AddGclientSyncStep()
 
     if self.build_type == 'make' or self.build_type == 'both':
@@ -800,14 +823,13 @@ class WebRTCWinFactory(WebRTCFactory):
       # To avoid having to modify kill_processes.py, we set the working dir to
       # the build dir (three levels up from the build dir that contains
       # third_party/psutils).
-      kill_script = self.PathJoin(WEBRTC_BUILD_DIR, '..', '..', '..', 'scripts',
-                                  'slave', 'kill_processes.py')
+      kill_script = WindowsPathJoin(WEBRTC_BUILD_DIR, '..', '..', '..', '..',
+                                    'scripts', 'slave', 'kill_processes.py')
       cmd = 'python %s' % kill_script
       self.AddCommonStep(cmd, 'taskkill', workdir=WEBRTC_BUILD_DIR)
 
     # Now do the clean + build.
     self.AddSmartCleanStep()
-    self.AddGclientConfigStep()
     self.AddGclientSyncStep()
 
     if self.configuration == 'Debug' or self.configuration == 'both':
