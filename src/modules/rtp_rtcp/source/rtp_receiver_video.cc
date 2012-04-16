@@ -18,6 +18,7 @@
 #include "receiver_fec.h"
 #include "rtp_rtcp_impl.h"
 #include "rtp_utility.h"
+#include "trace.h"
 
 namespace webrtc {
 WebRtc_UWord32 BitRateBPS(WebRtc_UWord16 x )
@@ -401,6 +402,9 @@ WebRtc_Word32 RTPReceiverVideo::ParseVideoCodecSpecificSwitch(
   if (retVal != 0) {
     return retVal;
   }
+  WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, _id, "%s(timestamp:%u)",
+               __FUNCTION__, rtpHeader->header.timestamp);
+
   // All receive functions release _criticalSectionReceiverVideo before
   // returning.
   switch (videoType) {

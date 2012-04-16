@@ -314,6 +314,8 @@ RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
     {
         return retVal;
     }
+    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, _id, "%s(timestamp:%u)",
+                 __FUNCTION__, captureTimeStamp);
     return 0;
 }
 
