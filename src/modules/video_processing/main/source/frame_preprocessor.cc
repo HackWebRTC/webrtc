@@ -18,7 +18,8 @@ _id(0),
 _contentMetrics(NULL),
 _maxFrameRate(0),
 _resampledFrame(),
-_enableCA(false)
+_enableCA(false),
+_frameCnt(0)
 {
     _spatialResampler = new VPMSimpleSpatialResampler();
     _ca = new VPMContentAnalysis(true);
@@ -49,6 +50,7 @@ VPMFramePreprocessor::Reset()
     _contentMetrics = NULL;
     _spatialResampler->Reset();
     _enableCA = false;
+    _frameCnt = 0;
 }
 	
     
@@ -160,14 +162,19 @@ VPMFramePreprocessor::PreprocessFrame(const VideoFrame* frame, VideoFrame** proc
       *processedFrame = &_resampledFrame;
     }
 
-    // Perform content analysis on the frame to be encoded
+    // Perform content analysis on the frame to be encoded.
     if (_enableCA)
     {
-        if (*processedFrame == NULL)  {
-          _contentMetrics = _ca->ComputeContentMetrics(frame);
-        } else {
-          _contentMetrics = _ca->ComputeContentMetrics(&_resampledFrame);
+        // Compute new metrics every |kSkipFramesCA| frames, starting with
+        // the first frame.
+        if (_frameCnt % kSkipFrameCA == 0) {
+          if (*processedFrame == NULL)  {
+            _contentMetrics = _ca->ComputeContentMetrics(frame);
+          } else {
+            _contentMetrics = _ca->ComputeContentMetrics(&_resampledFrame);
+          }
         }
+        ++_frameCnt;
     }
     return VPM_OK;
 }
