@@ -82,7 +82,7 @@
         }],
         ['OS=="mac"', {
           'xcode_settings': {
-            'OTHER_CPLUSPLUSFLAGS': '-fno-strict-aliasing',
+            'OTHER_CPLUSPLUSFLAGS': [ '-fno-strict-aliasing' ],
           },
         }],
         ['OS=="win"', {
