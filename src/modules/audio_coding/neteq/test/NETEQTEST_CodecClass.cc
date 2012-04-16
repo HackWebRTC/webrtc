@@ -556,7 +556,7 @@ int decoder_GSMFR::loadToNetEQ(NETEQTEST_NetEQClass & neteq)
 decoder_SPEEX::decoder_SPEEX(WebRtc_UWord8 pt, WebRtc_UWord16 fs)
 :
 NETEQTEST_Decoder(fs == 8000 ? kDecoderSPEEX_8 : kDecoderSPEEX_16, 
-                  fs, "SPEEX " + fs/1000, pt)
+                  fs, "SPEEX", pt)
 {
     if (fs != 8000 && fs != 16000)
         throw std::exception("Wrong sample rate for SPEEX");
@@ -653,7 +653,7 @@ int decoder_AVT::loadToNetEQ(NETEQTEST_NetEQClass & neteq)
 #include "webrtc_cng.h"
 decoder_CNG::decoder_CNG(WebRtc_UWord8 pt, WebRtc_UWord16 fs)
 :
-NETEQTEST_Decoder(kDecoderCNG, fs, "CNG " + fs/1000, pt)
+NETEQTEST_Decoder(kDecoderCNG, fs, "CNG", pt)
 {
     if (fs != 8000 && fs != 16000 && fs != 32000 && fs != 48000)
         exit(EXIT_FAILURE);
