@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -59,33 +59,28 @@ static void BitCountComparison(uint32_t binary_vector,
   }
 }
 
-int WebRtc_FreeBinaryDelayEstimator(BinaryDelayEstimator* handle) {
-  assert(handle != NULL);
+void WebRtc_FreeBinaryDelayEstimator(BinaryDelayEstimator* handle) {
 
-  if (handle->mean_bit_counts != NULL) {
-    free(handle->mean_bit_counts);
-    handle->mean_bit_counts = NULL;
+  if (handle == NULL) {
+    return;
   }
-  if (handle->bit_counts != NULL) {
-    free(handle->bit_counts);
-    handle->bit_counts = NULL;
-  }
-  if (handle->binary_far_history != NULL) {
-    free(handle->binary_far_history);
-    handle->binary_far_history = NULL;
-  }
-  if (handle->binary_near_history != NULL) {
-    free(handle->binary_near_history);
-    handle->binary_near_history = NULL;
-  }
-  if (handle->far_bit_counts != NULL) {
-    free(handle->far_bit_counts);
-    handle->far_bit_counts = NULL;
-  }
+
+  free(handle->mean_bit_counts);
+  handle->mean_bit_counts = NULL;
+
+  free(handle->bit_counts);
+  handle->bit_counts = NULL;
+
+  free(handle->binary_far_history);
+  handle->binary_far_history = NULL;
+
+  free(handle->binary_near_history);
+  handle->binary_near_history = NULL;
+
+  free(handle->far_bit_counts);
+  handle->far_bit_counts = NULL;
 
   free(handle);
-
-  return 0;
 }
 
 int WebRtc_CreateBinaryDelayEstimator(BinaryDelayEstimator** handle,
@@ -93,10 +88,13 @@ int WebRtc_CreateBinaryDelayEstimator(BinaryDelayEstimator** handle,
                                       int lookahead) {
   BinaryDelayEstimator* self = NULL;
   int history_size = max_delay + lookahead;
+  int return_value = 0;
 
   if (handle == NULL) {
     return -1;
   }
+  *handle = NULL;
+
   if (max_delay < 0) {
     return -1;
   }
@@ -118,6 +116,7 @@ int WebRtc_CreateBinaryDelayEstimator(BinaryDelayEstimator** handle,
   self->bit_counts = NULL;
   self->binary_far_history = NULL;
   self->far_bit_counts = NULL;
+  self->binary_near_history = NULL;
 
   self->history_size = history_size;
   self->near_history_size = lookahead + 1;
@@ -125,38 +124,32 @@ int WebRtc_CreateBinaryDelayEstimator(BinaryDelayEstimator** handle,
   // Allocate memory for spectrum buffers.
   self->mean_bit_counts = malloc(history_size * sizeof(int32_t));
   if (self->mean_bit_counts == NULL) {
-    WebRtc_FreeBinaryDelayEstimator(self);
-    self = NULL;
-    return -1;
+    return_value = -1;
   }
   self->bit_counts = malloc(history_size * sizeof(int32_t));
   if (self->bit_counts == NULL) {
-    WebRtc_FreeBinaryDelayEstimator(self);
-    self = NULL;
-    return -1;
+    return_value = -1;
   }
   // Allocate memory for history buffers.
   self->binary_far_history = malloc(history_size * sizeof(uint32_t));
   if (self->binary_far_history == NULL) {
-    WebRtc_FreeBinaryDelayEstimator(self);
-    self = NULL;
-    return -1;
+    return_value = -1;
   }
   self->binary_near_history = malloc(self->near_history_size *
       sizeof(uint32_t));
   if (self->binary_near_history == NULL) {
-    WebRtc_FreeBinaryDelayEstimator(self);
-    self = NULL;
-    return -1;
+    return_value = -1;
   }
   self->far_bit_counts = malloc(history_size * sizeof(int));
   if (self->far_bit_counts == NULL) {
-    WebRtc_FreeBinaryDelayEstimator(self);
-    self = NULL;
-    return -1;
+    return_value = -1;
   }
 
-  return 0;
+  if (return_value == -1) {
+    WebRtc_FreeBinaryDelayEstimator(self);
+    *handle = NULL;
+  }
+  return return_value;
 }
 
 int WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator* handle) {

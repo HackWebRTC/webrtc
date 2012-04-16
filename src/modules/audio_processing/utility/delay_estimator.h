@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -47,7 +47,7 @@ typedef struct {
 // Input:
 //    - handle            : Pointer to the delay estimation instance.
 //
-int WebRtc_FreeBinaryDelayEstimator(BinaryDelayEstimator* handle);
+void WebRtc_FreeBinaryDelayEstimator(BinaryDelayEstimator* handle);
 
 // Refer to WebRtc_CreateDelayEstimator() in delay_estimator_wrapper.h.
 int WebRtc_CreateBinaryDelayEstimator(BinaryDelayEstimator** handle,

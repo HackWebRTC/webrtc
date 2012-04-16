@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -20,7 +20,7 @@
 // Input:
 //      - handle        : Pointer to the delay estimation instance.
 //
-int WebRtc_FreeDelayEstimator(void* handle);
+void WebRtc_FreeDelayEstimator(void* handle);
 
 // Allocates the memory needed by the delay estimation. The memory needs to be
 // initialized separately through WebRtc_InitDelayEstimator(...).
