@@ -1562,9 +1562,6 @@ WebRtc_Word32 AudioDeviceLinuxALSA::StopRecording()
 
     // set the pcm input handle to NULL
     _handleRecord = NULL;
-    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                 "  handle_capture is now set to NULL");
-
     return 0;
 }
 
@@ -1589,7 +1586,7 @@ WebRtc_Word32 AudioDeviceLinuxALSA::StartPlayout()
     {
         return -1;
     }
-    
+
     if (_playing)
     {
         return 0;
