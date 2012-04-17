@@ -2976,10 +2976,10 @@ WebRtc_Word32 AudioDeviceWindowsCore::StopRecording()
         }
     }
 
-    _UnLock();
-
     // Reset the recording delay value.
     _sndCardRecDelay = 0;
+
+    _UnLock();
 
     return err;
 }
@@ -3148,10 +3148,10 @@ WebRtc_Word32 AudioDeviceWindowsCore::StopPlayout()
                 "Recording should be stopped before playout when using the "
                 "built-in AEC");
         }
-    }  // critScoped
 
-    // Reset the playout delay value.
-    _sndCardPlayDelay = 0;
+        // Reset the playout delay value.
+        _sndCardPlayDelay = 0;
+    }  // critScoped
 
     return 0;
 }
@@ -3162,7 +3162,8 @@ WebRtc_Word32 AudioDeviceWindowsCore::StopPlayout()
 
 WebRtc_Word32 AudioDeviceWindowsCore::PlayoutDelay(WebRtc_UWord16& delayMS) const
 {
-    delayMS = static_cast<WebRtc_UWord16>(_sndCardPlayDelay.Value());
+    CriticalSectionScoped critScoped(&_critSect);
+    delayMS = static_cast<WebRtc_UWord16>(_sndCardPlayDelay);
     return 0;
 }
 
@@ -3172,7 +3173,8 @@ WebRtc_Word32 AudioDeviceWindowsCore::PlayoutDelay(WebRtc_UWord16& delayMS) cons
 
 WebRtc_Word32 AudioDeviceWindowsCore::RecordingDelay(WebRtc_UWord16& delayMS) const
 {
-    delayMS = static_cast<WebRtc_UWord16>(_sndCardRecDelay.Value());
+    CriticalSectionScoped critScoped(&_critSect);
+    delayMS = static_cast<WebRtc_UWord16>(_sndCardRecDelay);
     return 0;
 }
 
@@ -3209,21 +3211,18 @@ WebRtc_Word32 AudioDeviceWindowsCore::SetPlayoutBuffer(const AudioDeviceModule::
 
 WebRtc_Word32 AudioDeviceWindowsCore::PlayoutBuffer(AudioDeviceModule::BufferType& type, WebRtc_UWord16& sizeMS) const
 {
-  {
     CriticalSectionScoped lock(&_critSect);
     type = _playBufType;
-  }
 
-  if (type == AudioDeviceModule::kFixedBufferSize)
-  {
-    CriticalSectionScoped lock(&_critSect);
-    sizeMS = _playBufDelayFixed;
-  }
-  else
-  {
-    // Use same value as for PlayoutDelay
-    sizeMS = static_cast<WebRtc_UWord16>(_sndCardPlayDelay.Value());
-  }
+    if (type == AudioDeviceModule::kFixedBufferSize)
+    {
+        sizeMS = _playBufDelayFixed;
+    }
+    else
+    {
+        // Use same value as for PlayoutDelay
+        sizeMS = static_cast<WebRtc_UWord16>(_sndCardPlayDelay);
+    }
 
     return 0;
 }
@@ -4068,7 +4067,7 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread()
                     (((((UINT64)t1.QuadPart * _perfCounterFactor) - recTime)
                         / 10000) + (10*syncBufIndex) / _recBlockSize - 10);
                 WebRtc_UWord32 sndCardPlayDelay =
-                    static_cast<WebRtc_UWord32>(_sndCardPlayDelay.Value());
+                    static_cast<WebRtc_UWord32>(_sndCardPlayDelay);
 
                 _sndCardRecDelay = sndCardRecDelay;
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -139,7 +139,7 @@ private:
     bool _safeTodelete;
 
     RWLockWrapper* _ptrDestRWLock;
-    Atomic32Wrapper _outstandingCallsDisabled; // 0 = false, 1 = true
+    bool _outstandingCallsDisabled;
     bool NewOutstandingCall();
     void OutstandingCallCompleted();
     void DisableNewOutstandingCalls();

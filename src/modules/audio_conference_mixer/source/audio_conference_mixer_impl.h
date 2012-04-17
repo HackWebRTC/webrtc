@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -11,7 +11,6 @@
 #ifndef WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_AUDIO_CONFERENCE_MIXER_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_AUDIO_CONFERENCE_MIXER_IMPL_H_
 
-#include "atomic32_wrapper.h"
 #include "audio_conference_mixer.h"
 #include "engine_configurations.h"
 #include "level_indicator.h"
@@ -44,7 +43,7 @@ public:
 
     void ResetMixedStatus();
 private:
-    Atomic32Wrapper _isMixed;  // 0 = false, 1 = true
+    bool _isMixed;
 };
 
 class AudioConferenceMixerImpl : public AudioConferenceMixer
