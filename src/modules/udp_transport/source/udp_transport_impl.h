@@ -22,8 +22,17 @@ class UdpSocketManager;
 class UdpTransportImpl : public UdpTransport
 {
 public:
-    // Factory method. Constructor disabled.
-    UdpTransportImpl(const WebRtc_Word32 id, WebRtc_UWord8& numSocketThreads);
+    // A function that returns a wrapped UDP socket or equivalent.
+    typedef UdpSocketWrapper* (SocketMaker)(const WebRtc_Word32 id,
+                                            UdpSocketManager* mgr,
+                                            CallbackObj obj,
+                                            IncomingSocketCallback cb,
+                                            bool ipV6Enable,
+                                            bool disableGQOS);
+
+    // Constructor, only called by UdpTransport::Create and tests.
+    UdpTransportImpl(const WebRtc_Word32 id, WebRtc_UWord8& numSocketThreads,
+                     SocketMaker* maker);
     virtual ~UdpTransportImpl();
 
     // Module functions
@@ -174,6 +183,7 @@ private:
                           WebRtc_UWord16& sourcePort);
 
     WebRtc_Word32 _id;
+    SocketMaker* _socket_creator;
     // Protects the sockets from being re-configured while receiving packets.
     CriticalSectionWrapper* _crit;
     CriticalSectionWrapper* _critFilter;
