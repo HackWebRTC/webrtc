@@ -14,7 +14,6 @@
 
 __author__ = 'phoglund@webrtc.org (Patrik Höglund)'
 
-
 import httplib
 
 import constants
@@ -42,12 +41,31 @@ def _download_and_parse_build_status():
   return tgrid_parser.parse_tgrid_page(full_response)
 
 
+def _is_chrome_only_build(revision_to_bot_name):
+  """Figures out if a revision-to-bot-name mapping represents a Chrome build.
+
+     We assume here that Chrome revisions are always > 100000, whereas WebRTC
+     revisions will not reach that number in the foreseeable future."""
+  revision = int(revision_to_bot_name.split('--')[0])
+  bot_name = revision_to_bot_name.split('--')[1]
+  return bot_name == 'Chrome' and revision > 100000
+
+
+def _filter_chrome_only_builds(bot_to_status_mapping):
+  """Filters chrome-only builds from the system so LKGR doesn't get confused."""
+  return dict((revision_to_bot_name, status)
+              for revision_to_bot_name, status
+              in bot_to_status_mapping.iteritems()
+              if not _is_chrome_only_build(revision_to_bot_name))
+
+
 def _main():
   dashboard = dashboard_connection.DashboardConnection(constants.CONSUMER_KEY)
   dashboard.read_required_files(constants.CONSUMER_SECRET_FILE,
                                 constants.ACCESS_TOKEN_FILE)
 
   bot_to_status_mapping = _download_and_parse_build_status()
+  bot_to_status_mapping = _filter_chrome_only_builds(bot_to_status_mapping)
 
   dashboard.send_post_request(constants.ADD_BUILD_STATUS_DATA_URL,
                               bot_to_status_mapping)
