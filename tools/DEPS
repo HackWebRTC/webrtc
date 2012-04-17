@@ -22,6 +22,10 @@ deps = {
   # Chromium buildbot scripts needs their own depot_tools.
   "tools/continuous_build/depot_tools":
     Var("chromium_trunk") + "/tools/depot_tools",
+
+  # Used by tools/quality_tracking/dashboard and tools/python_charts.
+  "tools/third_party/google-visualization-python":
+     "http://google-visualization-python.googlecode.com/svn/trunk/@15",
 }
 
 hooks = [

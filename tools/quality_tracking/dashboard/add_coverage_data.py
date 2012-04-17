@@ -77,7 +77,7 @@ class AddCoverageData(oauth_post_request_handler.OAuthPostRequestHandler):
 
   def _parse_percentage(self, key):
     """Parses out a percentage value from the request."""
-    value = float(self.request.get(key))
+    percentage = float(self.request.get(key))
     if percentage < 0.0 or percentage > 100.0:
       raise ValueError('%s is not a valid percentage.' % string_value)
     return percentage

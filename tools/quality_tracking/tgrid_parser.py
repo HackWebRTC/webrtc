@@ -8,11 +8,19 @@
 #  in the file PATENTS.  All contributing project authors may
 #  be found in the AUTHORS file in the root of the source tree.
 
-"""Contains functions for parsing the build master's transposed grid page."""
+"""Contains functions for parsing the build master's transposed grid page.
+
+   Compatible with build bot 0.8.4 P1.
+"""
 
 __author__ = 'phoglund@webrtc.org (Patrik Höglund)'
 
 import re
+
+
+# This is here to work around a buggy build bot status message which makes no
+# sense, but which means the build failed when the slave was lost.
+BB_084_P1_BUGGY_STATUS = 'build<br/>successful<br/>exception<br/>slave<br/>lost'
 
 
 class FailedToParseBuildStatus(Exception):
@@ -20,7 +28,7 @@ class FailedToParseBuildStatus(Exception):
 
 
 def _map_status(status):
-  if status == 'exception':
+  if status == 'exception' or status == BB_084_P1_BUGGY_STATUS:
     return 'failed'
   return status
 
@@ -38,8 +46,9 @@ def _parse_builds(revision, html):
   result = {}
 
   for match in re.finditer('<td.*?>.*?<a href="builders/(.+?)/builds/(\d+)">'
-                           '(OK|failed|building|warnings|exception)'
-                           '</a>.*?</td>',
+                           '(OK|failed|building|warnings|exception|' +
+                           BB_084_P1_BUGGY_STATUS + ')'
+                           '.*?</a>.*?</td>',
                            html, re.DOTALL):
     revision_and_bot_name = revision + "--" + match.group(1)
     build_number_and_status = match.group(2) + "--" + _map_status(
@@ -72,7 +81,7 @@ def parse_tgrid_page(html):
   """
   result = {}
 
-  for match in re.finditer('<td.*?class="sourcestamp">(\d+)</td>(.*?)</tr>',
+  for match in re.finditer('<td.*?class="sourcestamp">(\d+)  </td>(.*?)</tr>',
                            html, re.DOTALL):
     revision = match.group(1)
     builds_for_revision_html = match.group(2)

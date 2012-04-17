@@ -13,6 +13,7 @@
 /continuous_build/depot_tools
 /third_party/gaeunit
 /third_party/oauth2
+/third_party/google-visualization-python
 
 # Buildbot creates these files:
 .manhole

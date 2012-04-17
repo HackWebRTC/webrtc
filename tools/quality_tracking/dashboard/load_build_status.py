@@ -38,10 +38,18 @@ class BuildStatusLoader:
 
        The statuses OK, failed and warnings are considered to be conclusive.
 
-       The two most recent revisions are considered. The set of bots returned
-       will therefore be the bots that were reported the two most recent
-       revisions. This script will therefore adapt automatically to any changes
-       in the set of available bots.
+       The algorithm looks at the 100 most recent status entries, which should
+       give data on roughly the last five revisions if the number of bots stay
+       around 20 (The number 100 should be increased if the number of bots
+       increases significantly). This should give us enough data to get a
+       conclusive build status for all active bots.
+
+       With this limit, the algorithm will adapt automatically if a bot is
+       decommissioned - it will eventually disappear. The limit should not be
+       too high either since we will perhaps remember offline bots too long,
+       which could be confusing. The algorithm also adapts automatically to new
+       bots - these show up immediately if they get a build status for a recent
+       revision.
 
        Returns:
            A list of BuildStatusData entities with one entity per bot.
@@ -49,7 +57,8 @@ class BuildStatusLoader:
 
     build_status_entries = db.GqlQuery('SELECT * '
                                        'FROM BuildStatusData '
-                                       'ORDER BY revision DESC ')
+                                       'ORDER BY revision DESC '
+                                       'LIMIT 100')
 
     bots_to_latest_conclusive_entry = dict()
     for entry in build_status_entries:
@@ -85,7 +94,8 @@ class BuildStatusLoader:
 
         Implementation note: The data store fetches stuff as we go, so we won't
         read in the whole status table unless the LKGR is right at the end or
-        we don't have a LKGR.
+        we don't have a LKGR. Bots that are offline do not affect the LKGR
+        computation (e.g. they are not considered to be failed).
     """
     build_status_entries = db.GqlQuery('SELECT * '
                                        'FROM BuildStatusData '

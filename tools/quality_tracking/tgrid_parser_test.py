@@ -8,7 +8,10 @@
 #  in the file PATENTS.  All contributing project authors may
 #  be found in the AUTHORS file in the root of the source tree.
 
-"""Contains functions for parsing the build master's transposed grid page."""
+"""Test the tgrid parser.
+
+   Compatible with build bot 0.8.4 P1.
+"""
 
 __author__ = 'phoglund@webrtc.org (Patrik Höglund)'
 
@@ -18,89 +21,427 @@ import tgrid_parser
 
 
 SAMPLE_FILE = """
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
- "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
-<html
- xmlns="http://www.w3.org/1999/xhtml"
- lang="en"
- xml:lang="en">
-<head>
- <title>Buildbot</title>
- <link href="buildbot.css" rel="stylesheet" type="text/css" />
-</head>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+            <title>Buildbot</title>
+    <link rel="stylesheet" href="default.css" type="text/css" />
+    <link rel="alternate" type="application/rss+xml" title="RSS" href="rss">
+      </head>
+  <body class="interface">
+    <div class="header">
+        <a href=".">Home</a>
+        - <a href="waterfall">Waterfall</a>
+        <a href="grid">Grid</a>
+        <a href="tgrid">T-Grid</a>
+        <a href="console">Console</a>
+        <a href="builders">Builders</a>
+        <a href="one_line_per_build">Recent Builds</a>
+        <a href="buildslaves">Buildslaves</a>
+        <a href="changes">Changesources</a>
+        - <a href="json/help">JSON API</a>
+        - <a href="about">About</a>
+    </div>
+    <hr/>
 
-<body vlink="#800080">
+    <div class="content">
+<h1>Transposed Grid View</h1>
+
 <table class="Grid" border="0" cellspacing="0">
+
 <tr>
-<td valign="bottom" class="sourcestamp">1570</td>
-<td class="build warnings"><a href="builders/Chrome/builds/109">warnings</a>
-<br />
-make chrome</td>
-<td class="build success">
-  <a href="builders/Android/builds/121">OK</a></td>
-<td class="build success">
-  <a href="builders/ChromeOS/builds/578">OK</a></td>
-<td class="build success">
-  <a href="builders/Linux32bitDBG/builds/564">OK</a></td>
-<td class="build success">
-  <a href="builders/Linux32bitRelease/builds/684">OK</a></td>
-<td class="build success">
-  <a href="builders/Linux64bitDBG/builds/680">OK</a></td>
-<td class="build success">
-  <a href="builders/Linux64bitDBG-GCC4.6/builds/5">OK</a></td>
-<td class="build success">
-  <a href="builders/Linux64bitRelease/builds/570">OK</a></td>
-<td class="build success">
-  <a href="builders/LinuxCLANG/builds/259">OK</a></td>
-<td class="build success">
-  <a href="builders/LinuxVideoTest/builds/345">OK</a></td>
-<td class="build success">
-  <a href="builders/MacOS/builds/670">OK</a></td>
-<td class="build success">
-  <a href="builders/Win32Debug/builds/432">OK</a></td>
-<td class="build success">
-  <a href="builders/Win32Release/builds/440">OK</a></td>
-</tr>
-<tr>
-<td valign="bottom" class="sourcestamp">1571</td>
-<td class="build warnings"><a href="builders/Chrome/builds/109">warnings</a>
-<br />
-make chrome</td>
-<td class="build success">
-  <a href="builders/Android/builds/122">OK</a></td>
-<td class="build success">
-  <a href="builders/ChromeOS/builds/579">OK</a></td>
-<td class="build success">
-  <a href="builders/Linux32bitDBG/builds/565">OK</a></td>
-<td class="build success">
-  <a href="builders/Linux32bitRelease/builds/685">OK</a></td>
-<td class="build success">
-  <a href="builders/Linux64bitDBG/builds/681">OK</a></td>
-<td class="build success">
-  <a href="builders/Linux64bitDBG-GCC4.6/builds/6">OK</a></td>
-<td class="build success">
-  <a href="builders/Linux64bitRelease/builds/571">OK</a></td>
-<td class="build success">
-  <a href="builders/LinuxCLANG/builds/260">OK</a></td>
-<td class="build failure">
-  <a href="builders/LinuxVideoTest/builds/346">failed</a><br />
-voe_auto_test</td>
-<td class="build success">
-  <a href="builders/MacOS/builds/671">OK</a></td>
-<td class="build running">
-  <a href="builders/Win32Debug/builds/441">building</a></td>
-<td class="build success">
-  <a href="builders/Win32Release/builds/441">OK</a></td>
-</tr>
+ <td class="title"><a href="http://www.chromium.org">WebRTC</a>
+
+
+ </td>
+   <td valign="middle" style="text-align: center" class="builder idle">
+    <a href="builders/Android">Android</a></td>
+   <td valign="middle" style="text-align: center" class="builder idle">
+    <a href="builders/AndroidNDK">AndroidNDK</a></td>
+   <td valign="middle" style="text-align: center" class="builder idle">
+    <a href="builders/Chrome">Chrome</a></td>
+   <td valign="middle" style="text-align: center" class="builder idle">
+    <a href="builders/ChromeOS">ChromeOS</a></td>
+   <td valign="middle" style="text-align: center" class="builder idle">
+    <a href="builders/Linux32DBG">Linux32DBG</a></td>
+   <td valign="middle" style="text-align: center" class="builder idle">
+    <a href="builders/Linux32Release">Linux32Release</a></td>
+   <td valign="middle" style="text-align: center" class="builder idle">
+    <a href="builders/Linux64DBG">Linux64DBG</a></td>
+   <td valign="middle" style="text-align: center" class="builder idle">
+    <a href="builders/Linux64DBG-GCC4.6">Linux64DBG-GCC4.6</a></td>
+   <td valign="middle" style="text-align: center" class="builder idle">
+    <a href="builders/Linux64Release">Linux64Release</a></td>
+   <td valign="middle" style="text-align: center" class="builder idle">
+    <a href="builders/LinuxClang">LinuxClang</a></td>
+   <td valign="middle" style="text-align: center" class="builder idle">
+    <a href="builders/LinuxValgrind">LinuxValgrind</a></td>
+   <td valign="middle" style="text-align: center" class="builder idle">
+    <a href="builders/LinuxVideoTest">LinuxVideoTest</a></td>
+   <td valign="middle" style="text-align: center" class="builder idle">
+    <a href="builders/MacOS32DBG">MacOS32DBG</a></td>
+   <td valign="middle" style="text-align: center" class="builder building">
+    <a href="builders/MacOS32Release">MacOS32Release</a><br/>(building)</td>
+   <td valign="middle" style="text-align: center" class="builder idle">
+    <a href="builders/Win32Debug">Win32Debug</a></td>
+   <td valign="middle" style="text-align: center" class="builder building">
+    <a href="builders/Win32Release">Win32Release</a><br/>(building)</td>
+ </tr>
+
+ <tr>
+ <td valign="bottom" class="sourcestamp">2006  </td>
+      <td class="build success">
+    <a href="builders/Android/builds/482">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/AndroidNDK/builds/70">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Chrome/builds/243">warnings</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/ChromeOS/builds/933">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux32DBG/builds/936">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux32Release/builds/1050">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux64DBG/builds/1038">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux64DBG-GCC4.6/builds/371">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux64Release/builds/936">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/LinuxClang/builds/610">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/LinuxValgrind/builds/317">OK</a>
+  </td>
+
+      <td class="build">&nbsp;</td>
+
+      <td class="build success">
+    <a href="builders/MacOS32DBG/builds/1052">OK</a>
+  </td>
+
+      <td class="build">&nbsp;</td>
+
+      <td class="build success">
+    <a href="builders/Win32Debug/builds/822">OK</a>
+  </td>
+
+      <td class="build">&nbsp;</td>
+
+  </tr>
+ <tr>
+ <td valign="bottom" class="sourcestamp">2007  </td>
+      <td class="build success">
+    <a href="builders/Android/builds/483">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/AndroidNDK/builds/71">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Chrome/builds/244">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/ChromeOS/builds/934">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux32DBG/builds/937">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux32Release/builds/1051">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux64DBG/builds/1039">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux64DBG-GCC4.6/builds/372">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux64Release/builds/937">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/LinuxClang/builds/611">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/LinuxValgrind/builds/318">OK</a>
+  </td>
+
+      <td class="build failure">
+    <a href="builders/LinuxVideoTest/builds/731">failed<br/>voe_auto_test</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/MacOS32DBG/builds/1053">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/MacOS32Release/builds/309">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Win32Debug/builds/823">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Win32Release/builds/809">OK</a>
+  </td>
+
+  </tr>
+ <tr>
+ <td valign="bottom" class="sourcestamp">2008  </td>
+      <td class="build success">
+    <a href="builders/Android/builds/484">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/AndroidNDK/builds/72">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Chrome/builds/245">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/ChromeOS/builds/935">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux32DBG/builds/938">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux32Release/builds/1052">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux64DBG/builds/1040">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux64DBG-GCC4.6/builds/373">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux64Release/builds/938">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/LinuxClang/builds/612">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/LinuxValgrind/builds/319">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/LinuxVideoTest/builds/732">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/MacOS32DBG/builds/1054">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/MacOS32Release/builds/310">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Win32Debug/builds/824">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Win32Release/builds/810">OK</a>
+  </td>
+
+  </tr>
+ <tr>
+ <td valign="bottom" class="sourcestamp">2010  </td>
+      <td class="build success">
+    <a href="builders/Android/builds/485">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/AndroidNDK/builds/73">OK</a>
+  </td>
+
+      <td class="build">&nbsp;</td>
+
+      <td class="build success">
+    <a href="builders/ChromeOS/builds/936">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux32DBG/builds/939">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux32Release/builds/1053">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux64DBG/builds/1041">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux64DBG-GCC4.6/builds/374">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux64Release/builds/939">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/LinuxClang/builds/613">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/LinuxValgrind/builds/320">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/LinuxVideoTest/builds/733">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/MacOS32DBG/builds/1055">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/MacOS32Release/builds/311">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Win32Debug/builds/825">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Win32Release/builds/811">OK</a>
+  </td>
+
+  </tr>
+ <tr>
+ <td valign="bottom" class="sourcestamp">2011  </td>
+      <td class="build success">
+    <a href="builders/Android/builds/486">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/AndroidNDK/builds/74">OK</a>
+  </td>
+
+      <td class="build">&nbsp;</td>
+
+      <td class="build success">
+    <a href="builders/ChromeOS/builds/937">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux32DBG/builds/940">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux32Release/builds/1054">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux64DBG/builds/1042">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux64DBG-GCC4.6/builds/375">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Linux64Release/builds/940">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/LinuxClang/builds/614">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/LinuxValgrind/builds/321">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/LinuxVideoTest/builds/734">OK</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/MacOS32DBG/builds/1056">OK</a>
+  </td>
+
+      <td class="build running">
+    <a href="builders/MacOS32Release/builds/313">building</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Win32Debug/builds/826">OK</a>
+  </td>
+
+      <td class="build running">
+    <a href="builders/Win32Release/builds/813">building</a>
+  </td>
+
+  </tr>
+  <tr>
+    <td valign="bottom" class="sourcestamp">latest  </td>
+      <td class="build running">
+    <a href="builders/MacOS32Release/builds/313">building</a>
+  </td>
+
+      <td class="build success">
+    <a href="builders/Win32Debug/builds/826">OK</a>
+  </td>
+  </tr>
 </table>
-</body>
+
+</div><div class="footer" style="clear:both">
+      <hr/>
+      <a href="http://buildbot.net/">BuildBot</a> (0.8.4p1)
+      working for the&nbsp;<a href="http://www.chromium.org">WebRTC
+        </a>&nbsp;project.<br/>
+      Page built: <b>Thu 12 Apr 2012 03:49:32</b> (CDT)
+    </div>
+    </body>
 </html>
 """
 
 MINIMAL_OK = """
 <tr>
-<td valign="bottom" class="sourcestamp">1570</td>
+<td valign="bottom" class="sourcestamp">1570  </td>
 <td class="build success">
 <a href="builders/Android/builds/121">OK</a></td>
 </tr>
@@ -108,16 +449,16 @@ MINIMAL_OK = """
 
 MINIMAL_FAIL = """
 <tr>
-<td valign="bottom" class="sourcestamp">1573</td>
+<td valign="bottom" class="sourcestamp">1573  </td>
 <td class="build failure">
-<a href="builders/LinuxVideoTest/builds/347">failed</a><br />
-voe_auto_test</td>
+  <a href="builders/LinuxVideoTest/builds/731">failed<br/>voe_auto_test</a>
+</td>
 </tr>
 """
 
 MINIMAL_BUILDING = """
 <tr>
-<td valign="bottom" class="sourcestamp">1576</td>
+<td valign="bottom" class="sourcestamp">1576  </td>
 <td class="build running">
 <a href="builders/Win32Debug/builds/434">building</a></td>
 voe_auto_test</td>
@@ -126,7 +467,7 @@ voe_auto_test</td>
 
 MINIMAL_WARNED = """
 <tr>
-<td valign="bottom" class="sourcestamp">1576</td>
+<td valign="bottom" class="sourcestamp">1576  </td>
 <td class="build warnings">
 <a href="builders/Chrome/builds/109">warnings</a><br />
 make chrome</td>
@@ -135,10 +476,19 @@ make chrome</td>
 
 MINIMAL_EXCEPTION = """
 <tr>
-<td valign="bottom" class="sourcestamp">1576</td>
+<td valign="bottom" class="sourcestamp">1576  </td>
 <td class="build exception">
 <a href="builders/Chrome/builds/109">exception</a><br />
 Sync</td>
+</tr>
+"""
+
+MINIMAL_EXCEPTION_SLAVE_LOST = """
+<tr>
+<td valign="bottom" class="sourcestamp">1576  </td>
+<td class="build retry">
+  <a href="builders/LinuxValgrind/builds/324">build<br/>successful<br/>exception<br/>slave<br/>lost</a>
+</td>
 </tr>
 """
 
@@ -163,7 +513,7 @@ class TGridParserTest(unittest.TestCase):
     first_mapping = result.items()[0]
 
     self.assertEqual('1573--LinuxVideoTest', first_mapping[0])
-    self.assertEqual('347--failed', first_mapping[1])
+    self.assertEqual('731--failed', first_mapping[1])
 
   def test_parser_finds_building_bot(self):
     result = tgrid_parser.parse_tgrid_page(MINIMAL_BUILDING)
@@ -192,34 +542,51 @@ class TGridParserTest(unittest.TestCase):
     self.assertEqual('1576--Chrome', first_mapping[0])
     self.assertEqual('109--failed', first_mapping[1])
 
+  def test_parser_finds_exception_slave_lost_and_maps_to_failed(self):
+    # This is to work around a bug in build bot 0.8.4p1 where it may say that
+    # the build was successful AND the slave was lost. In this case the build
+    # is not actually successful, so treat it as such.
+    result = tgrid_parser.parse_tgrid_page(MINIMAL_EXCEPTION_SLAVE_LOST)
 
-  def test_parser_finds_all_bots_and_revisions(self):
+    self.assertEqual(1, len(result), 'There is only one bot in the sample.')
+    first_mapping = result.items()[0]
+
+    self.assertEqual('1576--LinuxValgrind', first_mapping[0])
+    self.assertEqual('324--failed', first_mapping[1])
+
+  def test_parser_finds_all_bots_and_revisions_except_forced_builds(self):
     result = tgrid_parser.parse_tgrid_page(SAMPLE_FILE)
 
-    # 2 * 13 = 26 bots in sample
-    self.assertEqual(26, len(result))
+    # 5*16 = 80 bots in sample. There's also five empty results because some
+    # bots did not run for some revisions, so 80 - 5 = 75 results. There are
+    # two additional statuses under an explicit 'latest' revision, which should
+    # be ignored since that means the build was forced.
+    self.assertEqual(75, len(result))
 
     # Make some samples
-    self.assertTrue(result.has_key('1570--ChromeOS'))
-    self.assertEquals('578--OK', result['1570--ChromeOS'])
+    self.assertTrue(result.has_key('2006--ChromeOS'))
+    self.assertEquals('933--OK', result['2006--ChromeOS'])
 
-    self.assertTrue(result.has_key('1570--Chrome'))
-    self.assertEquals('109--warnings', result['1570--Chrome'])
+    self.assertTrue(result.has_key('2006--Chrome'))
+    self.assertEquals('243--warnings', result['2006--Chrome'])
 
-    self.assertTrue(result.has_key('1570--LinuxCLANG'))
-    self.assertEquals('259--OK', result['1570--LinuxCLANG'])
+    self.assertTrue(result.has_key('2006--LinuxClang'))
+    self.assertEquals('610--OK', result['2006--LinuxClang'])
 
-    self.assertTrue(result.has_key('1570--Win32Release'))
-    self.assertEquals('440--OK', result['1570--Win32Release'])
+    # This one happened to not get reported in revision 2006, but it should be
+    # there in the next revision:
+    self.assertFalse(result.has_key('2006--Win32Release'))
+    self.assertTrue(result.has_key('2007--Win32Release'))
+    self.assertEquals('809--OK', result['2007--Win32Release'])
 
-    self.assertTrue(result.has_key('1571--ChromeOS'))
-    self.assertEquals('579--OK', result['1571--ChromeOS'])
+    self.assertTrue(result.has_key('2007--ChromeOS'))
+    self.assertEquals('934--OK', result['2007--ChromeOS'])
 
-    self.assertTrue(result.has_key('1571--LinuxVideoTest'))
-    self.assertEquals('346--failed', result['1571--LinuxVideoTest'])
+    self.assertTrue(result.has_key('2007--LinuxVideoTest'))
+    self.assertEquals('731--failed', result['2007--LinuxVideoTest'])
 
-    self.assertTrue(result.has_key('1571--Win32Debug'))
-    self.assertEquals('441--building', result['1571--Win32Debug'])
+    self.assertTrue(result.has_key('2011--Win32Release'))
+    self.assertEquals('813--building', result['2011--Win32Release'])
 
 
 if __name__ == '__main__':
