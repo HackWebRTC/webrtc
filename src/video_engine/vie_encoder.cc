@@ -28,12 +28,7 @@ namespace webrtc {
 
 class QMVideoSettingsCallback : public VCMQMSettingsCallback {
  public:
-  QMVideoSettingsCallback(WebRtc_Word32 engine_id,
-                          WebRtc_Word32 channel_id,
-                          VideoProcessingModule* vpm,
-                          VideoCodingModule* vcm,
-                          WebRtc_Word32 num_of_cores,
-                          WebRtc_Word32 max_payload_length);
+  explicit QMVideoSettingsCallback(VideoProcessingModule* vpm);
   ~QMVideoSettingsCallback();
 
   // Update VPM with QM (quality modes: frame size & frame rate) settings.
@@ -41,15 +36,8 @@ class QMVideoSettingsCallback : public VCMQMSettingsCallback {
                                    const WebRtc_UWord32 width,
                                    const WebRtc_UWord32 height);
 
-  void SetMaxPayloadLength(WebRtc_Word32 max_payload_length);
-
  private:
-  WebRtc_Word32 engine_id_;
-  WebRtc_Word32 channel_id_;
   VideoProcessingModule* vpm_;
-  VideoCodingModule* vcm_;
-  WebRtc_Word32 num_cores_;
-  WebRtc_Word32 max_payload_length_;
 };
 
 
@@ -136,13 +124,7 @@ bool ViEEncoder::Init() {
   if (qm_callback_) {
     delete qm_callback_;
   }
-  qm_callback_ = new QMVideoSettingsCallback(
-      engine_id_,
-      channel_id_,
-      &vpm_,
-      &vcm_,
-      number_of_cores_,
-      default_rtp_rtcp_.MaxDataPayloadLength());
+  qm_callback_ = new QMVideoSettingsCallback(&vpm_);
 
 #ifdef VIDEOCODEC_VP8
   VideoCodec video_codec;
@@ -359,8 +341,6 @@ WebRtc_Word32 ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
 
   WebRtc_UWord16 max_data_payload_length =
       default_rtp_rtcp_.MaxDataPayloadLength();
-
-  qm_callback_->SetMaxPayloadLength(max_data_payload_length);
 
   if (vcm_.RegisterSendCodec(&video_codec, number_of_cores_,
                              max_data_payload_length) != VCM_OK) {
@@ -874,19 +854,8 @@ ViEFileRecorder& ViEEncoder::GetOutgoingFileRecorder() {
   return file_recorder_;
 }
 
-QMVideoSettingsCallback::QMVideoSettingsCallback(
-    WebRtc_Word32 engine_id,
-    WebRtc_Word32 channel_id,
-    VideoProcessingModule* vpm,
-    VideoCodingModule* vcm,
-    WebRtc_Word32 num_cores,
-    WebRtc_Word32 max_payload_length)
-    : engine_id_(engine_id),
-      channel_id_(channel_id),
-      vpm_(vpm),
-      vcm_(vcm),
-      num_cores_(num_cores),
-      max_payload_length_(max_payload_length) {
+QMVideoSettingsCallback::QMVideoSettingsCallback(VideoProcessingModule* vpm)
+    : vpm_(vpm) {
 }
 
 QMVideoSettingsCallback::~QMVideoSettingsCallback() {
@@ -897,11 +866,6 @@ WebRtc_Word32 QMVideoSettingsCallback::SetVideoQMSettings(
     const WebRtc_UWord32 width,
     const WebRtc_UWord32 height) {
   return vpm_->SetTargetResolution(width, height, frame_rate);
-}
-
-void QMVideoSettingsCallback::SetMaxPayloadLength(
-    WebRtc_Word32 max_payload_length) {
-  max_payload_length_ = max_payload_length;
 }
 
 }  // namespace webrtc
