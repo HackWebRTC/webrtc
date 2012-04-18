@@ -63,7 +63,7 @@ BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(int max_delay,
 // Output:
 //    - handle            : Initialized instance.
 //
-int WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator* handle);
+void WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator* handle);
 
 // Estimates and returns the delay between the binary far-end and binary near-
 // end spectra. The value will be offset by the lookahead (i.e. the lookahead

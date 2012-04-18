@@ -131,7 +131,7 @@ BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(int max_delay,
   return self;
 }
 
-int WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator* handle) {
+void WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator* handle) {
   int i = 0;
   assert(handle != NULL);
 
@@ -149,8 +149,6 @@ int WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator* handle) {
 
   // Default return value if we're unable to estimate. -1 is used for errors.
   handle->last_delay = -2;
-
-  return 0;
 }
 
 int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* handle,

@@ -15,25 +15,7 @@
 #include <string.h>
 
 #include "delay_estimator.h"
-
-typedef union {
-  float float_;
-  int32_t int32_;
-} SpectrumType;
-
-typedef struct {
-  // Pointers to mean values of spectrum.
-  SpectrumType* mean_far_spectrum;
-  SpectrumType* mean_near_spectrum;
-  // |mean_*_spectrum| initialization indicator.
-  int far_spectrum_initialized;
-  int near_spectrum_initialized;
-
-  int spectrum_size;
-
-  // Binary spectrum based delay estimator
-  BinaryDelayEstimator* binary_handle;
-} DelayEstimator;
+#include "modules/audio_processing/utility/delay_estimator_internal.h"
 
 // Only bit |kBandFirst| through bit |kBandLast| are processed and
 // |kBandFirst| - |kBandLast| must be < 32.
@@ -205,7 +187,7 @@ int WebRtc_CreateDelayEstimator(void** handle,
 
   self->spectrum_size = spectrum_size;
 
-  if (return_value == -1) {
+  if (return_value < 0) {
     WebRtc_FreeDelayEstimator(self);
     *handle = NULL;
   }
@@ -220,9 +202,8 @@ int WebRtc_InitDelayEstimator(void* handle) {
   }
 
   // Initialize binary delay estimator.
-  if (WebRtc_InitBinaryDelayEstimator(self->binary_handle) != 0) {
-    return -1;
-  }
+  WebRtc_InitBinaryDelayEstimator(self->binary_handle);
+
   // Set averaged far and near end spectra to zero.
   memset(self->mean_far_spectrum, 0,
          sizeof(SpectrumType) * self->spectrum_size);
