@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -290,8 +290,7 @@ int WebRtcNetEQ_SignalMcu(MCUInst_t *inst)
     }
 
     /* New codec or big change in packet number? */
-    if (((inst->new_codec) || (uw16_instr == BUFSTAT_REINIT)) && (uw16_instr
-        != BUFSTATS_DO_EXPAND))
+    if ((inst->new_codec) || (uw16_instr == BUFSTAT_REINIT))
     {
         CodecFuncInst_t cinst;
 
