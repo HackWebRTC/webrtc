@@ -51,7 +51,8 @@ def delete_directory(directory):
       # This is normal, ignore it
       pass
     else:
-      print 'Could not remove directory %s: reason %s.' % (directory, exception)
+      print >> sys.stderr, ('Could not remove directory %s: reason %s.' %
+                            (directory, exception))
   return False
 
 
@@ -59,8 +60,8 @@ def delete_file(file):
   try:
     os.remove(file)
   except OSError as exception:
-    print 'Unexpectedly failed to remove file %s: reason %s.' % (file,
-                                                                 exception)
+    print >> sys.stderr, ('Unexpectedly failed to remove file %s: reason %s.' %
+                          (file, exception))
 
 
 def log_removal(file_or_directory, time_stamp, verbose):
@@ -119,13 +120,11 @@ def main():
                     action='store_false', dest='skip_dirs', default=True,
                     help='number of days')
 
-  options, args = parser.parse_args()
+  options, unused_args = parser.parse_args()
   if not options.cleanup_path:
-    print 'You must specify base directory'
-    sys.exit(2)
+    sys.exit('You must specify base directory')
   if not options.num_days:
-    print 'You must specify number of days old'
-    sys.exit(2)
+    sys.exit('You must specify number of days old')
 
   if options.verbose:
     print 'Cleaning up everything in %s older than %s days' % (
