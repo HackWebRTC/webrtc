@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -898,8 +898,8 @@ ACMISAC::SetBitRateSafe(
 WebRtc_Word32
 ACMISAC::GetEstimatedBandwidthSafe()
 {
-    WebRtc_Word16 bandwidthIndex;
-    WebRtc_Word16 delayIndex;
+    WebRtc_Word16 bandwidthIndex = 0;
+    WebRtc_Word16 delayIndex = 0;
     IsacSamplingRate sampRate;
 
     // Get bandwidth information
