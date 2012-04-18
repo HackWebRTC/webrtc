@@ -188,12 +188,11 @@ int WebRtc_CreateDelayEstimator(void** handle,
   self->mean_far_spectrum = NULL;
   self->mean_near_spectrum = NULL;
 
-  // Create binary delay estimator.
-  if (WebRtc_CreateBinaryDelayEstimator(&self->binary_handle,
-                                        max_delay,
-                                        lookahead) != 0) {
+  self->binary_handle = WebRtc_CreateBinaryDelayEstimator(max_delay, lookahead);
+  if (self->binary_handle == NULL) {
     return_value = -1;
   }
+
   // Allocate memory for spectrum buffers.
   self->mean_far_spectrum = malloc(spectrum_size * sizeof(SpectrumType));
   if (self->mean_far_spectrum == NULL) {

@@ -45,14 +45,15 @@ typedef struct {
 
 // Releases the memory allocated by WebRtc_CreateBinaryDelayEstimator(...).
 // Input:
-//    - handle            : Pointer to the delay estimation instance.
+//    - handle            : Pointer to the binary delay estimation instance
+//                          which is the return value of
+//                          WebRtc_CreateBinaryDelayEstimator().
 //
 void WebRtc_FreeBinaryDelayEstimator(BinaryDelayEstimator* handle);
 
 // Refer to WebRtc_CreateDelayEstimator() in delay_estimator_wrapper.h.
-int WebRtc_CreateBinaryDelayEstimator(BinaryDelayEstimator** handle,
-                                      int max_delay,
-                                      int lookahead);
+BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(int max_delay,
+                                                        int lookahead);
 
 // Initializes the delay estimation instance created with
 // WebRtc_CreateBinaryDelayEstimator(...).
@@ -96,18 +97,6 @@ int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* handle,
 //                              -2    - Insufficient data for estimation.
 //
 int WebRtc_binary_last_delay(BinaryDelayEstimator* handle);
-
-// Returns the history size used in the far-end buffers to calculate the delay
-// over.
-//
-// Input:
-//    - handle                : Pointer to the delay estimation instance.
-//
-// Return value:
-//    - history_size          :  > 0  - Far-end history size.
-//                              -1    - Error.
-//
-int WebRtc_history_size(BinaryDelayEstimator* handle);
 
 // Updates the |mean_value| recursively with a step size of 2^-|factor|. This
 // function is used internally in the Binary Delay Estimator as well as the
