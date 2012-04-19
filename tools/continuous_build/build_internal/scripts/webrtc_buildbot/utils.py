@@ -100,7 +100,7 @@ class WebRTCFactory(factory.BuildFactory):
     self.build_status_oracle = build_status_oracle
     self.is_try_slave = is_try_slave
     self.properties = properties.Properties()
-    self.gyp_params = []
+    self.gyp_params = ['-Dfastbuild=1']  # No debug symbols = build speedup
     self.release = False
     self.path_joiner = PosixPathJoin
     # For GClient solution definition:
