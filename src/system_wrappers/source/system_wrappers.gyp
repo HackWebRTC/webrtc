@@ -48,8 +48,8 @@
         '../interface/tick_util.h',
         '../interface/trace.h',
         'aligned_malloc.cc',
-        'atomic32_linux.cc',
         'atomic32_mac.cc',
+        'atomic32_posix.cc',
         'atomic32_win.cc',
         'condition_variable.cc',
         'condition_variable_posix.cc',
@@ -109,11 +109,6 @@
         },{
           'sources!': [ 'data_log.cc', ],
         },],
-        ['OS=="android"', {
-          'sources': [
-            'atomic32_linux.cc',
-          ]
-        }], # OS==android
         ['OS=="linux"', {
           'link_settings': {
             'libraries': [ '-lrt', ],
@@ -123,6 +118,9 @@
           'link_settings': {
             'libraries': [ '$(SDKROOT)/System/Library/Frameworks/ApplicationServices.framework', ],
           },
+          'sources!': [
+            'atomic32_posix.cc',
+          ],
         }],
         ['OS=="win"', {
           'link_settings': {
