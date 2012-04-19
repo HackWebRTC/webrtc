@@ -1082,10 +1082,14 @@ RTCPReceiver::HandlePsfbApp(RTCPUtility::RTCPParserV2& rtcpParser,
                             RTCPPacketInformation& rtcpPacketInformation)
 {
     RTCPUtility::RTCPPacketTypes pktType = rtcpParser.Iterate();
-    if (pktType == RTCPUtility::kRtcpPsfbRembItemCode)
+    if (pktType == RTCPUtility::kRtcpPsfbRembCode)
     {
-        HandleREMBItem(rtcpParser, rtcpPacketInformation);
-        rtcpParser.Iterate();
+        pktType = rtcpParser.Iterate();
+        if (pktType == RTCPUtility::kRtcpPsfbRembItemCode)
+        {
+            HandleREMBItem(rtcpParser, rtcpPacketInformation);
+            rtcpParser.Iterate();
+        }
     }
 }
 
@@ -1117,12 +1121,11 @@ void
 RTCPReceiver::HandleREMBItem(RTCPUtility::RTCPParserV2& rtcpParser,
                              RTCPPacketInformation& rtcpPacketInformation)
 {
-    rtcpParser.Iterate();
     const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
 
     rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpRemb;
-    rtcpPacketInformation.receiverEstimatedMaxBitrate = rtcpPacket.REMB.BitRate;
-    // TODO(pwestin) send up SSRCs and do a sanity check
+    rtcpPacketInformation.receiverEstimatedMaxBitrate =
+        rtcpPacket.REMBItem.BitRate;
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver

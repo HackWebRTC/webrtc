@@ -480,7 +480,7 @@ public:
         WebRtc_UWord32* available_bandwidth) const;
 
     virtual void SetRemoteSSRC(const WebRtc_UWord32 SSRC);
-    
+
     virtual WebRtc_UWord32 SendTimeOfSendReport(const WebRtc_UWord32 sendReport);
 
     virtual RateControlRegion OnOverUseStateUpdate(const RateControlInput& rateControlInput);
@@ -546,6 +546,8 @@ protected:
     RTCPSender                _rtcpSender;
     RTCPReceiver              _rtcpReceiver;
 
+    BandwidthManagement       _bandwidthManagement;
+
     bool                      _owns_clock;
     RtpRtcpClock&             _clock;
 private:
@@ -573,8 +575,6 @@ private:
     WebRtc_UWord32        _deadOrAliveLastTimer;
 
     // receive side
-    BandwidthManagement   _bandwidthManagement;
-
     WebRtc_UWord32        _receivedNTPsecsAudio;
     WebRtc_UWord32        _receivedNTPfracAudio;
     WebRtc_UWord32        _RTCPArrivalTimeSecsAudio;
