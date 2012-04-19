@@ -99,7 +99,8 @@
     'audio_coding': ['tina.legrand@webrtc.org'],
     'neteq': ['henrik.lundin@webrtc.org'],
     'audio_processing': ['andrew@webrtc.org',
-                         'bjornv@webrtc.org'],
+                         'bjornv@webrtc.org',
+                         'leozwang@webrtc.org'],
     'video_codecs': ['henrik.lundin@webrtc.org',
                      'pwestin@webrtc.org'],
     'video_coding': ['stefan@webrtc.org'],
@@ -107,6 +108,7 @@
                  'pwestin@webrtc.org'],
     'system_wrappers': ['mflodman@webrtc.org',
                         'henrika@webrtc.org',
-                        'andrew@webrtc.org'],
+                        'andrew@webrtc.org',
+                        'leozwang@webrtc.org'],
   },
 }
