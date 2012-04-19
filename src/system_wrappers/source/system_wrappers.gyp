@@ -109,6 +109,11 @@
         },{
           'sources!': [ 'data_log.cc', ],
         },],
+        ['OS=="android"', {
+          'sources': [
+            'atomic32_linux.cc',
+          ]
+        }], # OS==android
         ['OS=="linux"', {
           'link_settings': {
             'libraries': [ '-lrt', ],
