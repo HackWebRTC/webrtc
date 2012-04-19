@@ -20,7 +20,7 @@ LOCAL_SRC_FILES := \
     map.cc \
     sort.cc \
     aligned_malloc.cc \
-    atomic32.cc \
+    atomic32_linux.cc \
     condition_variable.cc \
     cpu_no_op.cc \
     cpu_features.cc \
