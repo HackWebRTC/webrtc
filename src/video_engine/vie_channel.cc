@@ -265,26 +265,6 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
                      "%s: could not register default module", __FUNCTION__);
         return -1;
       }
-      simulcast_rtp_rtcp_.push_back(rtp_rtcp);
-    }
-    // Remove last in list if we have too many.
-    for (int j = simulcast_rtp_rtcp_.size();
-         j > (video_codec.numberOfSimulcastStreams - 1);
-         j--) {
-      RtpRtcp* rtp_rtcp = simulcast_rtp_rtcp_.back();
-      rtp_rtcp->RegisterIncomingRTCPCallback(NULL);
-      rtp_rtcp->RegisterSendTransport(NULL);
-      module_process_thread_.DeRegisterModule(rtp_rtcp);
-      RtpRtcp::DestroyRtpRtcp(rtp_rtcp);
-      simulcast_rtp_rtcp_.pop_back();
-    }
-    WebRtc_UWord8 idx = 0;
-    // Configure all simulcast modules.
-    for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
-         it != simulcast_rtp_rtcp_.end();
-         it++) {
-      idx++;
-      RtpRtcp* rtp_rtcp = *it;
       if (rtp_rtcp->InitSender() != 0) {
         WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                      "%s: RTP::InitSender failure", __FUNCTION__);
@@ -307,6 +287,26 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
         WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
                      "%s: RTP::SetRTCPStatus failure", __FUNCTION__);
       }
+      simulcast_rtp_rtcp_.push_back(rtp_rtcp);
+    }
+    // Remove last in list if we have too many.
+    for (int j = simulcast_rtp_rtcp_.size();
+         j > (video_codec.numberOfSimulcastStreams - 1);
+         j--) {
+      RtpRtcp* rtp_rtcp = simulcast_rtp_rtcp_.back();
+      rtp_rtcp->RegisterIncomingRTCPCallback(NULL);
+      rtp_rtcp->RegisterSendTransport(NULL);
+      module_process_thread_.DeRegisterModule(rtp_rtcp);
+      RtpRtcp::DestroyRtpRtcp(rtp_rtcp);
+      simulcast_rtp_rtcp_.pop_back();
+    }
+    WebRtc_UWord8 idx = 0;
+    // Configure all simulcast modules.
+    for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
+         it != simulcast_rtp_rtcp_.end();
+         it++) {
+      idx++;
+      RtpRtcp* rtp_rtcp = *it;
       rtp_rtcp->DeRegisterSendPayload(video_codec.plType);
       if (rtp_rtcp->RegisterSendPayload(video_codec) != 0) {
         WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
