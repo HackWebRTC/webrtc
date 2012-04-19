@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -23,7 +23,7 @@
       },
       'sources': [
         '../interface/aligned_malloc.h',
-        '../interface/atomic32_wrapper.h',
+        '../interface/atomic32.h',
         '../interface/compile_assert.h',
         '../interface/condition_variable_wrapper.h',
         '../interface/cpu_info.h',
@@ -48,10 +48,9 @@
         '../interface/tick_util.h',
         '../interface/trace.h',
         'aligned_malloc.cc',
-        'atomic32.cc',
-        'atomic32_linux.h',
-        'atomic32_mac.h',
-        'atomic32_win.h',
+        'atomic32_linux.cc',
+        'atomic32_mac.cc',
+        'atomic32_win.cc',
         'condition_variable.cc',
         'condition_variable_posix.cc',
         'condition_variable_posix.h',
