@@ -123,10 +123,12 @@ void ViEAutoTest::ViECaptureStandardTest()
 
     webrtc::VideoCaptureModule::DeviceInfo* devInfo =
         webrtc::VideoCaptureFactory::CreateDeviceInfo(0);
+    ASSERT_TRUE(devInfo != NULL);
 
     int numberOfCaptureDevices = devInfo->NumberOfDevices();
     ViETest::Log("Number of capture devices %d", numberOfCaptureDevices);
-    EXPECT_GT(numberOfCaptureDevices, 0);
+    ASSERT_GT(numberOfCaptureDevices, 0)
+        << "This test requires a capture device (i.e. a webcam)";
 
     int captureDeviceId[10];
     memset(captureDeviceId, 0, sizeof(captureDeviceId));
@@ -296,7 +298,9 @@ void ViEAutoTest::ViECaptureAPITest()
 
     webrtc::VideoCaptureModule::DeviceInfo* devInfo =
         webrtc::VideoCaptureFactory::CreateDeviceInfo(0);
-    EXPECT_TRUE(devInfo != NULL);
+    ASSERT_TRUE(devInfo != NULL);
+    ASSERT_GT(devInfo->NumberOfDevices(), 0u)
+        << "This test requires a capture device (i.e. a webcam)";
 
     // Get the first capture device
     EXPECT_EQ(0, devInfo->GetDeviceName(0, deviceName,
