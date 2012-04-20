@@ -546,6 +546,15 @@ WebRtc_Word32 RTPSender::SendPadData(WebRtc_Word8 payload_type,
   WebRtc_UWord8 data_buffer[IP_PACKET_SIZE];
 
   for (; bytes > 0; bytes -= max_length) {
+    int padding_bytes_in_packet = max_length;
+    if (bytes < max_length) {
+      padding_bytes_in_packet = (bytes + 16) & 0xffe0;  // Keep our modulus 32.
+    }
+    if (padding_bytes_in_packet < 32) {
+       // Sanity don't send empty packets.
+       break;
+    }
+
     WebRtc_Word32 header_length;
     {
       // Correct seq num, timestamp and payload type.
@@ -560,14 +569,6 @@ WebRtc_Word32 RTPSender::SendPadData(WebRtc_Word8 payload_type,
     WebRtc_Word32* data =
         reinterpret_cast<WebRtc_Word32*>(&(data_buffer[header_length]));
 
-    int padding_bytes_in_packet = max_length;
-    if (bytes < max_length) {
-      padding_bytes_in_packet = (bytes + 16) & 0xffe0;  // Keep our modulus 32.
-    }
-    if (padding_bytes_in_packet < 32) {
-       // Sanity don't send empty packets.
-       break;
-    }
     // Fill data buffer with random data.
     for(int j = 0; j < (padding_bytes_in_packet >> 2); j++) {
       data[j] = rand();
