@@ -813,253 +813,124 @@ int VoETestManager::ReleaseInterfaces() {
   return (releaseOK == true) ? 0 : -1;
 }
 
-int VoETestManager::SetUp(ErrorObserver* error_observer) {
-  char char_buffer[1024];
+int run_auto_test(TestType test_type, ExtendedSelection ext_selection) {
+  assert(test_type != Standard);
 
-  TEST_MUSTPASS(voe_base_->Init());
-
-#if defined(WEBRTC_ANDROID)
-  TEST_MUSTPASS(voe_hardware_->SetLoudspeakerStatus(false));
-#endif
-
-  TEST_MUSTPASS(voe_base_->RegisterVoiceEngineObserver(*error_observer));
-
-  TEST_LOG("Get version \n");
-  TEST_MUSTPASS(voe_base_->GetVersion(char_buffer));
-  TEST_LOG("--------------------\n%s\n--------------------\n", char_buffer);
-
-  TEST_LOG("Create channel \n");
-  int nChannels = voe_base_->MaxNumOfChannels();
-  TEST_MUSTPASS(!(nChannels > 0));
-  TEST_LOG("Max number of channels = %d \n", nChannels);
-  TEST_MUSTPASS(voe_base_->CreateChannel());
-
-  return 0;
-}
-
-int VoETestManager::TestStartStreaming(FakeExternalTransport& channel0_transport) {
-  TEST_LOG("\n\n+++ Starting streaming +++\n\n");
-
-#ifdef WEBRTC_EXTERNAL_TRANSPORT
-  TEST_LOG("Enabling external transport \n");
-  TEST_MUSTPASS(voe_network_->RegisterExternalTransport(0, channel0_transport));
-#else
-  TEST_LOG("Setting send and receive parameters \n");
-  TEST_MUSTPASS(voe_base_->SetSendDestination(0, 8000, "127.0.0.1"));
-  // No IP specified => "0.0.0.0" will be stored.
-  TEST_MUSTPASS(voe_base_->SetLocalReceiver(0,8000));
-
-  CodecInst Jing_inst;
-  Jing_inst.channels = 1;
-  Jing_inst.pacsize = 160;
-  Jing_inst.plfreq = 8000;
-  Jing_inst.pltype = 0;
-  Jing_inst.rate = 64000;
-  strcpy(Jing_inst.plname, "PCMU");
-  TEST_MUSTPASS(voe_codec_->SetSendCodec(0, Jing_inst));
-
-  int port = -1;
-  int src_port = -1;
-  int rtcp_port = -1;
-  char ip_address[64] = { 0 };
-  strcpy(ip_address, "10.10.10.10");
-  TEST_MUSTPASS(voe_base_->GetSendDestination(0, port, ip_address, src_port,
-                                         rtcp_port));
-  TEST_MUSTPASS(8000 != port);
-  TEST_MUSTPASS(8000 != src_port);
-  TEST_MUSTPASS(8001 != rtcp_port);
-  TEST_MUSTPASS(_stricmp(ip_address, "127.0.0.1"));
-
-  port = -1;
-  rtcp_port = -1;
-  TEST_MUSTPASS(voe_base_->GetLocalReceiver(0, port, rtcp_port, ip_address));
-  TEST_MUSTPASS(8000 != port);
-  TEST_MUSTPASS(8001 != rtcp_port);
-  TEST_MUSTPASS(_stricmp(ip_address, "0.0.0.0"));
-#endif
-  return 0;
-}
-
-int VoETestManager::TestStartPlaying() {
-  TEST_LOG("Start listening, playout and sending \n");
-  TEST_MUSTPASS(voe_base_->StartReceive(0));
-  TEST_MUSTPASS(voe_base_->StartPlayout(0));
-  TEST_MUSTPASS(voe_base_->StartSend(0));
-
-  // Run in full duplex.
-  TEST_LOG("You should now hear yourself, running default codec (PCMU)\n");
-  SLEEP(2000);
-
-  if (voe_file_) {
-    TEST_LOG("Start playing a file as microphone, so you don't need to"
-      " speak all the time\n");
-    TEST_MUSTPASS(voe_file_->StartPlayingFileAsMicrophone(0,
-            AudioFilename(),
-            true,
-            true));
-    SLEEP(1000);
-  }
-  return 0;
-}
-
-int VoETestManager::DoStandardTest() {
-  // Ensure we have all input files:
-  TEST_MUSTPASS(!strcmp("", AudioFilename()));
-
-  TEST_LOG("\n\n+++ Base tests +++\n\n");
-
-  ErrorObserver error_observer;
-  if (SetUp(&error_observer) != 0) return -1;
-
-  voe_network_->SetSourceFilter(0, 0);
-
-  FakeExternalTransport channel0_transport(voe_network_);
-  if (TestStartStreaming(channel0_transport) != 0) return -1;
-  if (TestStartPlaying() != 0) return -1;
-
-  //////////////////
-  // Stop streaming
-  TEST_LOG("\n\n+++ Stop streaming +++\n\n");
-
-  TEST_LOG("Stop playout, sending and listening \n");
-  TEST_MUSTPASS(voe_base_->StopPlayout(0));
-  TEST_MUSTPASS(voe_base_->StopSend(0));
-  TEST_MUSTPASS(voe_base_->StopReceive(0));
-
-  // Exit:
-  TEST_LOG("Delete channel and terminate VE \n");
-  TEST_MUSTPASS(voe_base_->DeleteChannel(0));
-  TEST_MUSTPASS(voe_base_->Terminate());
-
-  return 0;
-}
-
-int runAutoTest(TestType testType, ExtendedSelection extendedSel) {
-  SubAPIManager apiMgr;
-  apiMgr.DisplayStatus();
+  SubAPIManager api_manager;
+  api_manager.DisplayStatus();
 
   ////////////////////////////////////
   // Create VoiceEngine and sub API:s
 
-  voetest::VoETestManager tm;
-  if (!tm.Init()) {
+  voetest::VoETestManager test_manager;
+  if (!test_manager.Init()) {
     return -1;
   }
-  tm.GetInterfaces();
+  test_manager.GetInterfaces();
 
-  //////////////////////
-  // Run standard tests
+  int result(-1);
+  if (test_type == Extended) {
+    VoEExtendedTest xtend(test_manager);
 
-  int mainRet(-1);
-  if (testType == Standard) {
-    mainRet = tm.DoStandardTest();
-
-    ////////////////////////////////
-    // Create configuration summary
-    TEST_LOG("\n\n+++ Creating configuration summary file +++\n");
-    createSummary(tm.VoiceEnginePtr());
-  } else if (testType == Extended) {
-    VoEExtendedTest xtend(tm);
-
-    mainRet = 0;
-    while (extendedSel != XSEL_None) {
-      if (extendedSel == XSEL_Base || extendedSel == XSEL_All) {
-        if ((mainRet = xtend.TestBase()) == -1)
+    result = 0;
+    while (ext_selection != XSEL_None) {
+      if (ext_selection == XSEL_Base || ext_selection == XSEL_All) {
+        if ((result = xtend.TestBase()) == -1)
           break;
         xtend.TestPassed("Base");
       }
-      if (extendedSel == XSEL_CallReport || extendedSel == XSEL_All) {
-        if ((mainRet = xtend.TestCallReport()) == -1)
+      if (ext_selection == XSEL_CallReport || ext_selection == XSEL_All) {
+        if ((result = xtend.TestCallReport()) == -1)
           break;
         xtend.TestPassed("CallReport");
       }
-      if (extendedSel == XSEL_Codec || extendedSel == XSEL_All) {
-        if ((mainRet = xtend.TestCodec()) == -1)
+      if (ext_selection == XSEL_Codec || ext_selection == XSEL_All) {
+        if ((result = xtend.TestCodec()) == -1)
           break;
         xtend.TestPassed("Codec");
       }
-      if (extendedSel == XSEL_DTMF || extendedSel == XSEL_All) {
-        if ((mainRet = xtend.TestDtmf()) == -1)
+      if (ext_selection == XSEL_DTMF || ext_selection == XSEL_All) {
+        if ((result = xtend.TestDtmf()) == -1)
           break;
         xtend.TestPassed("Dtmf");
       }
-      if (extendedSel == XSEL_Encryption || extendedSel == XSEL_All) {
-        if ((mainRet = xtend.TestEncryption()) == -1)
+      if (ext_selection == XSEL_Encryption || ext_selection == XSEL_All) {
+        if ((result = xtend.TestEncryption()) == -1)
           break;
         xtend.TestPassed("Encryption");
       }
-      if (extendedSel == XSEL_ExternalMedia || extendedSel == XSEL_All) {
-        if ((mainRet = xtend.TestExternalMedia()) == -1)
+      if (ext_selection == XSEL_ExternalMedia || ext_selection == XSEL_All) {
+        if ((result = xtend.TestExternalMedia()) == -1)
           break;
         xtend.TestPassed("ExternalMedia");
       }
-      if (extendedSel == XSEL_File || extendedSel == XSEL_All) {
-        if ((mainRet = xtend.TestFile()) == -1)
+      if (ext_selection == XSEL_File || ext_selection == XSEL_All) {
+        if ((result = xtend.TestFile()) == -1)
           break;
         xtend.TestPassed("File");
       }
-      if (extendedSel == XSEL_Mixing || extendedSel == XSEL_All) {
-        if ((mainRet = xtend.TestMixing()) == -1)
+      if (ext_selection == XSEL_Mixing || ext_selection == XSEL_All) {
+        if ((result = xtend.TestMixing()) == -1)
           break;
         xtend.TestPassed("Mixing");
       }
-      if (extendedSel == XSEL_Hardware || extendedSel == XSEL_All) {
-        if ((mainRet = xtend.TestHardware()) == -1)
+      if (ext_selection == XSEL_Hardware || ext_selection == XSEL_All) {
+        if ((result = xtend.TestHardware()) == -1)
           break;
         xtend.TestPassed("Hardware");
       }
-      if (extendedSel == XSEL_NetEqStats || extendedSel == XSEL_All) {
-        if ((mainRet = xtend.TestNetEqStats()) == -1)
+      if (ext_selection == XSEL_NetEqStats || ext_selection == XSEL_All) {
+        if ((result = xtend.TestNetEqStats()) == -1)
           break;
         xtend.TestPassed("NetEqStats");
       }
-      if (extendedSel == XSEL_Network || extendedSel == XSEL_All) {
-        if ((mainRet = xtend.TestNetwork()) == -1)
+      if (ext_selection == XSEL_Network || ext_selection == XSEL_All) {
+        if ((result = xtend.TestNetwork()) == -1)
           break;
         xtend.TestPassed("Network");
       }
-      if (extendedSel == XSEL_RTP_RTCP || extendedSel == XSEL_All) {
-        if ((mainRet = xtend.TestRTP_RTCP()) == -1)
+      if (ext_selection == XSEL_RTP_RTCP || ext_selection == XSEL_All) {
+        if ((result = xtend.TestRTP_RTCP()) == -1)
           break;
         xtend.TestPassed("RTP_RTCP");
       }
-      if (extendedSel == XSEL_VideoSync || extendedSel == XSEL_All) {
-        if ((mainRet = xtend.TestVideoSync()) == -1)
+      if (ext_selection == XSEL_VideoSync || ext_selection == XSEL_All) {
+        if ((result = xtend.TestVideoSync()) == -1)
           break;
         xtend.TestPassed("VideoSync");
       }
-      if (extendedSel == XSEL_VolumeControl || extendedSel == XSEL_All) {
-        if ((mainRet = xtend.TestVolumeControl()) == -1)
+      if (ext_selection == XSEL_VolumeControl || ext_selection == XSEL_All) {
+        if ((result = xtend.TestVolumeControl()) == -1)
           break;
         xtend.TestPassed("VolumeControl");
       }
-      if (extendedSel == XSEL_AudioProcessing || extendedSel == XSEL_All) {
-        if ((mainRet = xtend.TestAPM()) == -1)
+      if (ext_selection == XSEL_AudioProcessing || ext_selection == XSEL_All) {
+        if ((result = xtend.TestAPM()) == -1)
           break;
         xtend.TestPassed("AudioProcessing");
       }
-      apiMgr.GetExtendedMenuSelection(extendedSel);
+      api_manager.GetExtendedMenuSelection(ext_selection);
     } // while (extendedSel != XSEL_None)
-  } else if (testType == Stress) {
-    VoEStressTest stressTest(tm);
-    mainRet = stressTest.DoTest();
-  } else if (testType == Unit) {
-    VoEUnitTest unitTest(tm);
-    mainRet = unitTest.DoTest();
-  } else if (testType == CPU) {
-    VoECpuTest cpuTest(tm);
-    mainRet = cpuTest.DoTest();
+  } else if (test_type == Stress) {
+    VoEStressTest stressTest(test_manager);
+    result = stressTest.DoTest();
+  } else if (test_type == Unit) {
+    VoEUnitTest unitTest(test_manager);
+    result = unitTest.DoTest();
+  } else if (test_type == CPU) {
+    VoECpuTest cpuTest(test_manager);
+    result = cpuTest.DoTest();
   } else {
     // Should never end up here
-    TEST_LOG("INVALID SELECTION \n");
+    assert(false);
   }
 
   //////////////////
   // Release/Delete
 
-  int releaseOK = tm.ReleaseInterfaces();
+  int release_ok = test_manager.ReleaseInterfaces();
 
-  if ((0 == mainRet) && (releaseOK != -1)) {
+  if ((0 == result) && (release_ok != -1)) {
     TEST_LOG("\n\n*** All tests passed *** \n\n");
   } else {
     TEST_LOG("\n\n*** Test failed! *** \n");
@@ -1067,362 +938,13 @@ int runAutoTest(TestType testType, ExtendedSelection extendedSel) {
 
   return 0;
 }
-
-void createSummary(VoiceEngine* ve) {
-  int len;
-  char str[256];
-
-#ifdef MAC_IPHONE
-  char summaryFilename[256];
-  GetDocumentsDir(summaryFilename, 256);
-  strcat(summaryFilename, "/summary.txt");
-#endif
-
-  VoEBase* voe_base_ = VoEBase::GetInterface(ve);
-  FILE* stream = fopen(summaryFilename, "wt");
-
-  sprintf(str, "WebRTc VoiceEngine ");
-#if defined(_WIN32)
-  strcat(str, "Win");
-#elif defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
-  strcat(str, "Linux");
-#elif defined(WEBRTC_MAC) && !defined(MAC_IPHONE)
-  strcat(str, "Mac");
-#elif defined(WEBRTC_ANDROID)
-  strcat(str, "Android");
-#elif defined(MAC_IPHONE)
-  strcat(str, "iPhone");
-#endif
-  // Add for other platforms as needed
-
-  fprintf(stream, "%s\n", str);
-  len = (int) strlen(str);
-  for (int i = 0; i < len; i++) {
-    fprintf(stream, "=");
-  }
-  fprintf(stream, "\n\n");
-
-  char version[1024];
-  char veVersion[24];
-  voe_base_->GetVersion(version);
-  // find first NL <=> end of VoiceEngine version string
-  int pos = (int) strcspn(version, "\n");
-  strncpy(veVersion, version, pos);
-  veVersion[pos] = '\0';
-  sprintf(str, "Version:                    %s\n", veVersion);
-  fprintf(stream, "%s\n", str);
-
-  sprintf(str, "Build date & time:          %s\n", BUILDDATE " " BUILDTIME);
-  fprintf(stream, "%s\n", str);
-
-  strcpy(str, "G.711 A-law");
-  fprintf(stream, "\nSupported codecs:           %s\n", str);
-  strcpy(str, "                            G.711 mu-law");
-  fprintf(stream, "%s\n", str);
-#ifdef WEBRTC_CODEC_EG711
-  strcpy(str, "                            Enhanced G.711 A-law");
-  fprintf(stream, "%s\n", str);
-  strcpy(str, "                            Enhanced G.711 mu-law");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_CODEC_IPCMWB
-  strcpy(str, "                            iPCM-wb");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_CODEC_ILBC
-  strcpy(str, "                            iLBC");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_CODEC_ISAC
-  strcpy(str, "                            iSAC");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_CODEC_ISACLC
-  strcpy(str, "                            iSAC-LC");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_CODEC_G722
-  strcpy(str, "                            G.722");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_CODEC_G722_1
-  strcpy(str, "                            G.722.1");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_CODEC_G722_1C
-  strcpy(str, "                            G.722.1C");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_CODEC_G723
-  strcpy(str, "                            G.723");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_CODEC_G726
-  strcpy(str, "                            G.726");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_CODEC_G729
-  strcpy(str, "                            G.729");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_CODEC_G729_1
-  strcpy(str, "                            G.729.1");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_CODEC_GSMFR
-  strcpy(str, "                            GSM-FR");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_CODEC_GSMAMR
-  strcpy(str, "                            AMR");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_CODEC_GSMAMRWB
-  strcpy(str, "                            AMR-WB");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_CODEC_GSMEFR
-  strcpy(str, "                            GSM-EFR");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_CODEC_SPEEX
-  strcpy(str, "                            Speex");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_CODEC_SILK
-  strcpy(str, "                            Silk");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_CODEC_PCM16
-  strcpy(str, "                            L16");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef NETEQFIX_VOXWARE_SC3
-  strcpy(str, "                            Voxware SC3");
-  fprintf(stream, "%s\n", str);
-#endif
-  // Always included
-  strcpy(str, "                            AVT (RFC2833)");
-  fprintf(stream, "%s\n", str);
-#ifdef WEBRTC_CODEC_RED
-  strcpy(str, "                            RED (forward error correction)");
-  fprintf(stream, "%s\n", str);
-#endif
-
-  fprintf(stream, "\nEcho Control:               ");
-#ifdef WEBRTC_VOICE_ENGINE_ECHO
-  fprintf(stream, "Yes\n");
-#else
-  fprintf(stream, "No\n");
-#endif
-
-  fprintf(stream, "\nAutomatic Gain Control:     ");
-#ifdef WEBRTC_VOICE_ENGINE_AGC
-  fprintf(stream, "Yes\n");
-#else
-  fprintf(stream, "No\n");
-#endif
-
-  fprintf(stream, "\nNoise Reduction:            ");
-#ifdef WEBRTC_VOICE_ENGINE_NR
-  fprintf(stream, "Yes\n");
-#else
-  fprintf(stream, "No\n");
-#endif
-
-  fprintf(stream, "\nSRTP:                       ");
-#ifdef WEBRTC_SRTP
-  fprintf(stream, "Yes\n");
-#else
-  fprintf(stream, "No\n");
-#endif
-
-  fprintf(stream, "\nExternal transport only:    ");
-#ifdef WEBRTC_EXTERNAL_TRANSPORT
-  fprintf(stream, "Yes\n");
-#else
-  fprintf(stream, "No\n");
-#endif
-
-  fprintf(stream, "\nTelephone event detection:  ");
-#ifdef WEBRTC_DTMF_DETECTION
-  fprintf(stream, "Yes\n");
-#else
-  fprintf(stream, "No\n");
-#endif
-
-  strcpy(str, "VoEBase");
-  fprintf(stream, "\nSupported sub-APIs:         %s\n", str);
-#ifdef WEBRTC_VOICE_ENGINE_CODEC_API
-  strcpy(str, "                            VoECodec");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_DTMF_API
-  strcpy(str, "                            VoEDtmf");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_FILE_API
-  strcpy(str, "                            VoEFile");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_HARDWARE_API
-  strcpy(str, "                            VoEHardware");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_NETWORK_API
-  strcpy(str, "                            VoENetwork");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_RTP_RTCP_API
-  strcpy(str, "                            VoERTP_RTCP");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
-  strcpy(str, "                            VoEVolumeControl");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
-  strcpy(str, "                            VoEAudioProcessing");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
-  strcpy(str, "                            VoeExternalMedia");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
-  strcpy(str, "                            VoENetEqStats");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_ENCRYPTION_API
-  strcpy(str, "                            VoEEncryption");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_CALL_REPORT_API
-  strcpy(str, "                            VoECallReport");
-  fprintf(stream, "%s\n", str);
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
-  strcpy(str, "                            VoEVideoSync");
-  fprintf(stream, "%s\n", str);
-#endif
-
-  fclose(stream);
-  voe_base_->Release();
-}
-
-/*********Knowledge Base******************/
-
-//An example for creating threads and calling VE API's from that thread.
-// Using thread.  A generic API/Class for all platforms.
-#ifdef THEADTEST // find first NL <=> end of VoiceEngine version string
-//Definition of Thread Class
-class ThreadTest
-{
-public:
-  ThreadTest(
-      VoEBase* voe_base_);
-  ~ThreadTest()
-  {
-    delete _myThread;
-  }
-  void Stop();
-private:
-  static bool StartSend(
-      void* obj);
-  bool StartSend();
-
-  ThreadWrapper* _myThread;
-  VoEBase* _base;
-
-  bool _stopped;
-};
-
-//Main function from where StartSend is invoked as a seperate thread.
-ThreadTest::ThreadTest(
-    VoEBase* voe_base_)
-:
-_stopped(false),
-_base(voe_base_)
-{
-  //Thread Creation
-  _myThread = ThreadWrapper::CreateThread(StartSend, this, kLowPriority);
-  unsigned int id = 0;
-  //Starting the thread
-  _myThread->Start(id);
-}
-
-//Calls the StartSend.  This is to avoid the static declaration issue.
-bool
-ThreadTest::StartSend(
-    void* obj)
-{
-  return ((ThreadTest*)obj)->StartSend();
-}
-
-bool
-ThreadTest::StartSend()
-{
-  _myThread->SetNotAlive(); //Ensures this function is called only once.
-  _base->StartSend(0);
-  return true;
-}
-
-void ThreadTest::Stop()
-{
-  _stopped = true;
-}
-
-//  Use the following to invoke ThreatTest from the main function.
-//  ThreadTest* threadtest = new ThreadTest(voe_base_);
-#endif
-
-// An example to create a thread and call VE API's call from that thread.
-// Specific to Windows Platform
-#ifdef THREAD_TEST_WINDOWS
-//Thread Declaration.  Need to be added in the class controlling/dictating
-// the main code.
-/**
- private:
- static unsigned int WINAPI StartSend(void* obj);
- unsigned int WINAPI StartSend();
- **/
-
-//Thread Definition
-unsigned int WINAPI mainTest::StartSend(void *obj)
-{
-  return ((mainTest*)obj)->StartSend();
-}
-unsigned int WINAPI mainTest::StartSend()
-{
-  //base
-  voe_base_->StartSend(0);
-
-  //  TEST_MUSTPASS(voe_base_->StartSend(0));
-  TEST_LOG("hi hi hi");
-  return 0;
-}
-
-//Thread invoking.  From the main code
-/*****
- unsigned int threadID=0;
- if ((HANDLE)_beginthreadex(NULL,
- 0,
- StartSend,
- (void*)this,
- 0,
- &threadID) == NULL)
- return false;
- ****/
-
-#endif
-
 } // namespace voetest
 
 int RunInManualMode(int argc, char** argv) {
   using namespace voetest;
 
-  SubAPIManager apiMgr;
-  apiMgr.DisplayStatus();
+  SubAPIManager api_manager;
+  api_manager.DisplayStatus();
 
   printf("----------------------------\n");
   printf("Select type of test\n\n");
@@ -1438,46 +960,43 @@ int RunInManualMode(int argc, char** argv) {
 
   dummy = scanf("%d", &selection);
 
-  ExtendedSelection extendedSel(XSEL_Invalid);
-
-  enum TestType testType(Invalid);
+  ExtendedSelection ext_selection = XSEL_Invalid;
+  TestType test_type = Invalid;
 
   switch (selection) {
     case 0:
       return 0;
     case 1:
-      testType = Standard;
+      test_type = Standard;
       break;
     case 2:
-      testType = Extended;
-      while (!apiMgr.GetExtendedMenuSelection(extendedSel))
+      test_type = Extended;
+      while (!api_manager.GetExtendedMenuSelection(ext_selection))
         continue;
       break;
     case 3:
-      testType = Stress;
+      test_type = Stress;
       break;
     case 4:
-      testType = Unit;
+      test_type = Unit;
       break;
     case 5:
-      testType = CPU;
+      test_type = CPU;
       break;
     default:
       TEST_LOG("Invalid selection!\n");
       return 0;
   }
 
-  if (testType == Standard) {
-    TEST_LOG("\n\n+++ Running gtest-rewritten standard tests first +++\n\n");
+  if (test_type == Standard) {
+    TEST_LOG("\n\n+++ Running standard tests +++\n\n");
 
-    // Run the automated tests too in standard mode since we are gradually
-    // rewriting the standard test to be automated. Running this will give
-    // the standard suite the same completeness.
-    RunInAutomatedMode(argc, argv);
+    // Currently, all googletest-rewritten tests are in the "automated" suite.
+    return RunInAutomatedMode(argc, argv);
   }
 
   // Function that can be called from other entry functions.
-  return runAutoTest(testType, extendedSel);
+  return run_auto_test(test_type, ext_selection);
 }
 
 // ----------------------------------------------------------------------------

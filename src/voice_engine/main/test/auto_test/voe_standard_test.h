@@ -245,7 +245,6 @@ class VoETestManager {
 
   void GetInterfaces();
   int ReleaseInterfaces();
-  int DoStandardTest();
 
   const char* AudioFilename() const {
     const std::string& result = resource_manager_.long_audio_file_path();
@@ -313,10 +312,6 @@ class VoETestManager {
 #endif
 
  private:
-  int SetUp(ErrorObserver* error_observer);
-  int TestStartStreaming(FakeExternalTransport& channel0_transport);
-  int TestStartPlaying();
-
   bool                   initialized_;
 
   VoiceEngine*           voice_engine_;
