@@ -25,6 +25,7 @@ public:
     // A factory that returns a wrapped UDP socket or equivalent.
     class SocketFactoryInterface {
     public:
+        virtual ~SocketFactoryInterface() {}
         virtual UdpSocketWrapper* CreateSocket(const WebRtc_Word32 id,
                                                UdpSocketManager* mgr,
                                                CallbackObj obj,
