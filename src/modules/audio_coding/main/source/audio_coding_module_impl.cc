@@ -59,7 +59,6 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
     _cng_wb_pltype(255),
     _cng_swb_pltype(255),
     _red_pltype(255),
-    _cng_reg_receiver(false),
     _vadEnabled(false),
     _dtxEnabled(false),
     _vadMode(VADNormal),
@@ -120,11 +119,11 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
     // CNG for the three frequencies 8, 16 and 32 kHz
     for (int i = (ACMCodecDB::kNumCodecs - 1); i>=0; i--)
     {
-        if((STR_CASE_CMP(ACMCodecDB::database_[i].plname, "red") == 0))
+        if (IsCodecRED(i))
         {
           _red_pltype = static_cast<uint8_t>(ACMCodecDB::database_[i].pltype);
         }
-        else if ((STR_CASE_CMP(ACMCodecDB::database_[i].plname, "CN") == 0))
+        else if (IsCodecCN(i))
         {
             if (ACMCodecDB::database_[i].plfreq == 8000)
             {
@@ -686,7 +685,7 @@ mono codecs are supported, i.e. channels=1.", sendCodec.channels);
 
     // RED can be registered with other payload type. If not registered a default
     // payload type is used.
-    if(!STR_CASE_CMP(sendCodec.plname, "red"))
+    if (IsCodecRED(sendCodec))
     {
         // TODO(tlegrand): Remove this check. Already taken care of in
         // ACMCodecDB::CodecNumber().
@@ -705,7 +704,7 @@ mono codecs are supported, i.e. channels=1.", sendCodec.channels);
 
     // CNG can be registered with other payload type. If not registered the
     // default payload types from codec database will be used.
-    if(!STR_CASE_CMP(sendCodec.plname, "CN"))
+    if (IsCodecCN(sendCodec))
     {
         // CNG is registered
         switch(sendCodec.plfreq)
@@ -1362,65 +1361,48 @@ AudioCodingModuleImpl::InitializeReceiver()
     return InitializeReceiverSafe();
 }
 
-// Initialize receiver, resets codec database etc
-WebRtc_Word32
-AudioCodingModuleImpl::InitializeReceiverSafe()
-{
-    // If the receiver is already initialized then we
-    // also like to destruct decoders if any exist. After a call
-    // to this function, we should have a clean start-up.
-    if(_receiverInitialized)
-    {
-        for(int codecCntr = 0; codecCntr < ACMCodecDB::kNumCodecs; codecCntr++)
-        {
-            if(UnregisterReceiveCodecSafe(codecCntr) < 0)
-            {
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-                    "InitializeReceiver() failed, Could not unregister codec");
-                return -1;
-            }
-        }
-    }
-    if (_netEq.Init() != 0)
-    {
+// Initialize receiver, resets codec database etc.
+WebRtc_Word32 AudioCodingModuleImpl::InitializeReceiverSafe() {
+  // If the receiver is already initialized then we want to destroy any
+  // existing decoders. After a call to this function, we should have a clean
+  // start-up.
+  if (_receiverInitialized) {
+    for (int i = 0; i < ACMCodecDB::kNumCodecs; i++) {
+      if (UnregisterReceiveCodecSafe(i) < 0) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-            "InitializeReceiver() failed, Could not initialize NetEQ");
+            "InitializeReceiver() failed, Could not unregister codec");
         return -1;
+      }
     }
-    _netEq.SetUniqueId(_id);
-    if (_netEq.AllocatePacketBuffer(ACMCodecDB::NetEQDecoders(),
-        ACMCodecDB::kNumCodecs) != 0)
-    {
+  }
+  if (_netEq.Init() != 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
+        "InitializeReceiver() failed, Could not initialize NetEQ");
+    return -1;
+  }
+  _netEq.SetUniqueId(_id);
+  if (_netEq.AllocatePacketBuffer(ACMCodecDB::NetEQDecoders(),
+                                  ACMCodecDB::kNumCodecs) != 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
+        "NetEQ cannot allocatePacket Buffer");
+    return -1;
+  }
+
+  // Register RED and CN
+  for (int i = 0; i < ACMCodecDB::kNumCodecs; i++) {
+    if (IsCodecRED(i) || IsCodecCN(i)) {
+      if (RegisterRecCodecMSSafe(ACMCodecDB::database_[i], i, i,
+                                 ACMNetEQ::masterJB) < 0) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-            "NetEQ cannot allocatePacket Buffer");
+            "Cannot register master codec.");
         return -1;
+      }
+      _registeredPlTypes[i] = ACMCodecDB::database_[i].pltype;
     }
+  }
 
-    // Register RED and CN
-    int regInNeteq = 0;
-    for (int i = (ACMCodecDB::kNumCodecs - 1); i>-1; i--) {
-        if((STR_CASE_CMP(ACMCodecDB::database_[i].plname, "red") == 0)) {
-            regInNeteq = 1;
-        } else if ((STR_CASE_CMP(ACMCodecDB::database_[i].plname, "CN") == 0)) {
-            regInNeteq = 1;
-        }
-
-        if (regInNeteq == 1) {
-           if(RegisterRecCodecMSSafe(ACMCodecDB::database_[i], i, i,
-                ACMNetEQ::masterJB) < 0)
-            {
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-                    "Cannot register master codec.");
-                return -1;
-            }
-            _registeredPlTypes[i] = ACMCodecDB::database_[i].pltype;
-            regInNeteq = 0;
-        }
-    }
-    _cng_reg_receiver = true;
-
-    _receiverInitialized = true;
-    return 0;
+  _receiverInitialized = true;
+  return 0;
 }
 
 // Reset the decoder state
@@ -1522,129 +1504,92 @@ AudioCodingModuleImpl::RegisterReceiveCodec(
     // If codec already registered, unregister. Except for CN where we only
     // unregister if payload type is changing.
     if ((_registeredPlTypes[codecId] == receiveCodec.pltype) &&
-        (STR_CASE_CMP(receiveCodec.plname, "CN") == 0)) {
+        IsCodecCN(receiveCodec)) {
       // Codec already registered as receiver with this payload type. Nothing
       // to be done.
       return 0;
     } else if (_registeredPlTypes[codecId] != -1) {
-        if(UnregisterReceiveCodecSafe(codecId) < 0) {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-                "Cannot register master codec.");
-            return -1;
-        }
-    }
-
-    if(RegisterRecCodecMSSafe(receiveCodec, codecId, mirrorId,
-        ACMNetEQ::masterJB) < 0)
-    {
+      if (UnregisterReceiveCodecSafe(codecId) < 0) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
             "Cannot register master codec.");
         return -1;
+      }
     }
 
-    // If CN is being registered in master, and we have at least one stereo
-    // codec registered in receiver, register CN in slave.
-    if (STR_CASE_CMP(receiveCodec.plname, "CN") == 0) {
-        _cng_reg_receiver = true;
-        if (_stereoReceiveRegistered) {
-            // At least one of the registered receivers is stereo, so go
-            // a head and add CN to the slave.
-            if(RegisterRecCodecMSSafe(receiveCodec, codecId, mirrorId,
-                                      ACMNetEQ::slaveJB) < 0) {
-               WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding,
-                            _id, "Cannot register slave codec.");
-               return -1;
-            }
-            _stereoReceive[codecId] = true;
-            _registeredPlTypes[codecId] = receiveCodec.pltype;
-            return 0;
-        }
+    if (RegisterRecCodecMSSafe(receiveCodec, codecId, mirrorId,
+                               ACMNetEQ::masterJB) < 0) {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
+          "Cannot register master codec.");
+      return -1;
     }
 
-    // If receive stereo, make sure we have two instances of NetEQ, one for each
-    // channel. Mark CN and RED as stereo.
-    if(receiveCodec.channels == 2)
-    {
-        if(_netEq.NumSlaves() < 1)
-        {
-            if(_netEq.AddSlave(ACMCodecDB::NetEQDecoders(),
-                   ACMCodecDB::kNumCodecs) < 0)
-            {
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding,
-                             _id, "Cannot Add Slave jitter buffer to NetEQ.");
-                return -1;
+    // TODO(andrew): Refactor how the slave is initialized. Can we instead
+    // always start up a slave and pre-register CN and RED? We should be able
+    // to get rid of _stereoReceiveRegistered.
+    // http://code.google.com/p/webrtc/issues/detail?id=453
+
+    // Register stereo codecs with the slave, or, if we've had already seen a
+    // stereo codec, register CN or RED as a special case.
+    if (receiveCodec.channels == 2 || (_stereoReceiveRegistered &&
+        (IsCodecCN(receiveCodec) || IsCodecRED(receiveCodec)))) {
+      // TODO(andrew): refactor this block to combine with InitStereoSlave().
+
+      if (!_stereoReceiveRegistered) {
+        // This is the first time a stereo codec has been registered. Make
+        // some stereo preparations.
+
+        // Add a stereo slave.
+        assert(_netEq.NumSlaves() == 0);
+        if (_netEq.AddSlave(ACMCodecDB::NetEQDecoders(),
+                            ACMCodecDB::kNumCodecs) < 0) {
+          WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
+                       "Cannot add slave jitter buffer to NetEQ.");
+          return -1;
+        }
+
+        // Register any existing CN or RED codecs with the slave and as stereo.
+        for (int i = 0; i < ACMCodecDB::kNumCodecs; i++) {
+          if (_registeredPlTypes[i] != -1 &&
+              (IsCodecRED(i) || IsCodecCN(i))) {
+            _stereoReceive[i] = true;
+
+            CodecInst codec;
+            memcpy(&codec, &ACMCodecDB::database_[i], sizeof(CodecInst));
+            codec.pltype = _registeredPlTypes[i];
+            if (RegisterRecCodecMSSafe(codec, i, i, ACMNetEQ::slaveJB) < 0) {
+              WEBRTC_TRACE(kTraceError, kTraceAudioCoding, _id,
+                           "Cannot register slave codec.");
+              return -1;
             }
+          }
         }
+      }
 
-        // If this is the first time a stereo codec is registered, RED and CN
-        // should be register in slave, if they are registered in master.
-        if (!_stereoReceiveRegistered) {
-            bool reg_in_neteq = false;
-            for (int i = (ACMCodecDB::kNumCodecs - 1); i > -1; i--) {
-                if (STR_CASE_CMP(ACMCodecDB::database_[i].plname, "RED") == 0) {
-                    if (_registeredPlTypes[i] != -1) {
-                        // Mark RED as stereo, since we have registered at least
-                        // one stereo receive codec.
-                        _stereoReceive[i] = true;
-                        reg_in_neteq = true;
-                    }
-                } else if (STR_CASE_CMP(ACMCodecDB::database_[i].plname, "CN")
-                    == 0) {
-                    if (_cng_reg_receiver) {
-                        // Mark CN as stereo, since we have registered at least
-                        // one stereo receive codec.
-                        _stereoReceive[i] = true;
-                        reg_in_neteq = true;
-                    }
-                }
+      if (RegisterRecCodecMSSafe(receiveCodec, codecId, mirrorId,
+                                 ACMNetEQ::slaveJB) < 0) {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
+            "Cannot register slave codec.");
+        return -1;
+      }
 
-                if (reg_in_neteq) {
-                    CodecInst tmp_codec;
-                    memcpy(&tmp_codec, &ACMCodecDB::database_[i],
-                           sizeof(CodecInst));
-                    tmp_codec.pltype = _registeredPlTypes[i];
-                    // Register RED of CN in slave, with the same payload type
-                    // as in master.
-                    if(RegisterRecCodecMSSafe(tmp_codec, i, i,
-                                              ACMNetEQ::slaveJB) < 0) {
-                        WEBRTC_TRACE(webrtc::kTraceError,
-                                     webrtc::kTraceAudioCoding, _id,
-                                     "Cannot register slave codec.");
-                        return -1;
-                    }
-                    reg_in_neteq = false;
-                }
-            }
-        }
+      if (!_stereoReceive[codecId] &&
+          (_lastRecvAudioCodecPlType == receiveCodec.pltype)) {
+        // The last received payload type is the same as the current one, but
+        // was marked as mono. Reset to avoid problems.
+        _lastRecvAudioCodecPlType = -1;
+      }
 
-        if(RegisterRecCodecMSSafe(receiveCodec, codecId, mirrorId,
-            ACMNetEQ::slaveJB) < 0)
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-                "Cannot register slave codec.");
-            return -1;
-        }
-
-        // Last received payload type equal the current one, but was marked
-        // as mono. Reset to avoid problems.
-        if((_stereoReceive[codecId] == false) &&
-            (_lastRecvAudioCodecPlType == receiveCodec.pltype))
-        {
-            _lastRecvAudioCodecPlType = -1;
-        }
-        _stereoReceive[codecId] = true;
-        _stereoReceiveRegistered = true;
+      _stereoReceive[codecId] = true;
+      _stereoReceiveRegistered = true;
     }
-    else
-    {
-        _stereoReceive[codecId] = false;
+    else {
+      _stereoReceive[codecId] = false;
     }
 
     _registeredPlTypes[codecId] = receiveCodec.pltype;
 
-    if(!STR_CASE_CMP(receiveCodec.plname, "RED"))
-    {
-        _receiveREDPayloadType = receiveCodec.pltype;
+    if (IsCodecRED(receiveCodec)) {
+      _receiveREDPayloadType = receiveCodec.pltype;
     }
     return 0;
 }
@@ -1738,7 +1683,7 @@ AudioCodingModuleImpl::RegisterRecCodecMSSafe(
 
             return -1;
         }
-        // Guaranty that the same payload-type that is
+        // Guarantee that the same payload-type that is
         // registered in NetEQ is stored in the codec.
         codecArray[codecId]->SaveDecoderParam(&codecParams);
     }
@@ -1840,38 +1785,8 @@ AudioCodingModuleImpl::IncomingPacket(
                 {
                     if(_registeredPlTypes[i] == myPayloadType)
                     {
-                        if(_codecs[i] == NULL)
-                        {
-                            // we found a payload type but the corresponding
-                            // codec is NULL this should not happen
-                            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-                                "IncomingPacket() Error, payload type found but corresponding "
-                                "codec is NULL");
-                            return -1;
-                        }
-                        _codecs[i]->UpdateDecoderSampFreq(i);
-                        _netEq.SetReceivedStereo(_stereoReceive[i]);
-                        _current_receive_codec_idx = i;
-
-                        // If we have a change in expected number of channels,
-                        // flush packet buffers in NetEQ.
-                        if ((_stereoReceive[i] && (_expected_channels == 1)) ||
-                            (!_stereoReceive[i] && (_expected_channels == 2))) {
-                          _netEq.FlushBuffers();
-                          _codecs[i]->ResetDecoder(myPayloadType);
-                        }
-
-                        // Store number of channels we expect to receive for the
-                        // current payload type.
-                        if (_stereoReceive[i]) {
-                          _expected_channels = 2;
-                        } else {
-                          _expected_channels = 1;
-                        }
-
-                        // Reset previous received channel
-                        _prev_received_channel = 0;
-
+                        if (UpdateUponReceivingCodec(i) != 0)
+                          return -1;
                         break;
                     }
                 }
@@ -1895,6 +1810,91 @@ AudioCodingModuleImpl::IncomingPacket(
     } else {
       return _netEq.RecIn(incomingPayload, payloadLength, rtp_header);
     }
+}
+
+int AudioCodingModuleImpl::UpdateUponReceivingCodec(int index) {
+  if (_codecs[index] == NULL) {
+    WEBRTC_TRACE(kTraceError, kTraceAudioCoding, _id,
+        "IncomingPacket() error: payload type found but corresponding codec "
+        "is NULL");
+    return -1;
+  }
+  _codecs[index]->UpdateDecoderSampFreq(index);
+  _netEq.SetReceivedStereo(_stereoReceive[index]);
+  _current_receive_codec_idx = index;
+
+  // If we have a change in the expected number of channels, flush packet
+  // buffers in NetEQ.
+  if ((_stereoReceive[index] && (_expected_channels == 1)) ||
+      (!_stereoReceive[index] && (_expected_channels == 2))) {
+    _netEq.FlushBuffers();
+    _codecs[index]->ResetDecoder(_registeredPlTypes[index]);
+  }
+
+  if (_stereoReceive[index] && (_expected_channels == 1)) {
+    // When switching from a mono to stereo codec reset the slave.
+    if (InitStereoSlave() != 0)
+      return -1;
+  }
+
+  // Store number of channels we expect to receive for the current payload type.
+  if (_stereoReceive[index]) {
+    _expected_channels = 2;
+  } else {
+    _expected_channels = 1;
+  }
+
+  // Reset previous received channel
+  _prev_received_channel = 0;
+  return 0;
+}
+
+bool AudioCodingModuleImpl::IsCodecForSlave(int index) {
+  return (_registeredPlTypes[index] != -1 && _stereoReceive[index]);
+}
+
+bool AudioCodingModuleImpl::IsCodecRED(int index) {
+  return (IsCodecRED(ACMCodecDB::database_[index]));
+}
+
+bool AudioCodingModuleImpl::IsCodecRED(CodecInst codec) {
+  return (STR_CASE_CMP(codec.plname, "RED") == 0);
+}
+
+bool AudioCodingModuleImpl::IsCodecCN(int index) {
+  return (IsCodecCN(ACMCodecDB::database_[index]));
+}
+
+bool AudioCodingModuleImpl::IsCodecCN(CodecInst codec) {
+  return (STR_CASE_CMP(codec.plname, "CN") == 0);
+}
+
+int AudioCodingModuleImpl::InitStereoSlave() {
+  _netEq.RemoveSlaves();
+
+  if (_netEq.AddSlave(ACMCodecDB::NetEQDecoders(),
+                      ACMCodecDB::kNumCodecs) < 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
+                 "Cannot add slave jitter buffer to NetEQ.");
+    return -1;
+  }
+
+  // Register all needed codecs with slave.
+  for (int i = 0; i < ACMCodecDB::kNumCodecs; i++) {
+    if (_codecs[i] != NULL && IsCodecForSlave(i)) {
+      WebRtcACMCodecParams decoder_params;
+      if (_codecs[i]->DecoderParams(&decoder_params, _registeredPlTypes[i])) {
+        if (RegisterRecCodecMSSafe(decoder_params.codecInstant,
+                                   i, ACMCodecDB::MirrorID(i),
+                                   ACMNetEQ::slaveJB) < 0) {
+            WEBRTC_TRACE(kTraceError, kTraceAudioCoding, _id,
+                         "Cannot register slave codec.");
+            return -1;
+        }
+      }
+    }
+  }
+  return 0;
 }
 
 // Minimum playout delay (Used for lip-sync)
@@ -2639,26 +2639,15 @@ AudioCodingModuleImpl::UnregisterReceiveCodecSafe(
             }
 
             // CN is a special case for NetEQ, all three sampling frequencies
-            // are unregistered if one is deleted
-            if(STR_CASE_CMP(ACMCodecDB::database_[codecID].plname, "CN") == 0)
-            {
-                // Search codecs nearby in the database to unregister all CN.
-                // TODO(tlegrand): do this search in a safe way. We can search
-                // outside the database.
-                for (int i=-2; i<3; i++)
-                {
-                    if (STR_CASE_CMP(ACMCodecDB::database_[codecID+i].plname, "CN") == 0)
-                    {
-                        if(_stereoReceive[codecID+i])
-                        {
-                            _stereoReceive[codecID+i] = false;
-                        }
-                        _registeredPlTypes[codecID+i] = -1;
-                    }
+            // are unregistered if one is deleted.
+            if (IsCodecCN(codecID)) {
+              for (int i = 0; i < ACMCodecDB::kNumCodecs; i++) {
+                if (IsCodecCN(i)) {
+                  _stereoReceive[i] = false;
+                  _registeredPlTypes[i] = -1;
                 }
-                _cng_reg_receiver = false;
-            } else
-            {
+              }
+            } else {
                 if(codecID == mirrorID)
                 {
                     _codecs[codecID]->DestructDecoder();
@@ -2679,12 +2668,13 @@ AudioCodingModuleImpl::UnregisterReceiveCodecSafe(
                     if (_stereoReceive[i]) {
                         // We still have stereo codecs registered.
                         no_stereo = false;
-                       break;
+                        break;
                     }
                 }
 
                 // If we don't have any stereo codecs left, change status.
                 if (no_stereo) {
+                  _netEq.RemoveSlaves();  // No longer need the slave.
                   _stereoReceiveRegistered = false;
                 }
             }

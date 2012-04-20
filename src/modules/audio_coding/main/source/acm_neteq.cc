@@ -59,48 +59,23 @@ _callbackCritSect(CriticalSectionWrapper::CreateCriticalSection())
     }
 }
 
-ACMNetEQ::~ACMNetEQ()
-{
-    {
-        CriticalSectionScoped lock(*_netEqCritSect);
-        for(WebRtc_Word16 idx = 0; idx < _numSlaves + 1; idx++)
-        {
-            if (_instMem[idx] != NULL)
-            {
-                free(_instMem[idx]);
-                _instMem[idx] = NULL;
-            }
-            if (_netEqPacketBuffer[idx] != NULL)
-            {
-                free(_netEqPacketBuffer[idx]);
-                _netEqPacketBuffer[idx] = NULL;
-            }
-            if(_ptrVADInst[idx] != NULL)
-            {
-                WebRtcVad_Free(_ptrVADInst[idx]);
-                _ptrVADInst[idx] = NULL;
-            }
-        }
-        if(_masterSlaveInfo != NULL)
-        {
-            free(_masterSlaveInfo);
-            _masterSlaveInfo = NULL;
-        }
-    }
-    if(_netEqCritSect != NULL)
-    {
-        delete _netEqCritSect;
-    }
+ACMNetEQ::~ACMNetEQ() {
+  {
+    CriticalSectionScoped lock(*_netEqCritSect);
+    RemoveNetEQSafe(0);  // Master.
+    RemoveSlavesSafe();
+  }
+  if (_netEqCritSect != NULL) {
+    delete _netEqCritSect;
+  }
 
-    if(_decodeLock != NULL)
-    {
-        delete _decodeLock;
-    }
+  if (_decodeLock != NULL) {
+    delete _decodeLock;
+  }
 
-    if(_callbackCritSect != NULL)
-    {
-        delete _callbackCritSect;
-    }
+  if (_callbackCritSect != NULL) {
+    delete _callbackCritSect;
+  }
 }
 
 WebRtc_Word32
@@ -1144,6 +1119,38 @@ ACMNetEQ::PlayoutTimestamp(
     {
         return 0;
     }
+}
+
+void ACMNetEQ::RemoveSlaves() {
+  CriticalSectionScoped lock(*_netEqCritSect);
+  RemoveSlavesSafe();
+}
+
+void ACMNetEQ::RemoveSlavesSafe() {
+  for (int i = 1; i < _numSlaves + 1; i++) {
+    RemoveNetEQSafe(i);
+  }
+
+  if (_masterSlaveInfo != NULL) {
+    free(_masterSlaveInfo);
+    _masterSlaveInfo = NULL;
+  }
+  _numSlaves = 0;
+}
+
+void ACMNetEQ::RemoveNetEQSafe(int index) {
+  if (_instMem[index] != NULL) {
+    free(_instMem[index]);
+    _instMem[index] = NULL;
+  }
+  if (_netEqPacketBuffer[index] != NULL) {
+    free(_netEqPacketBuffer[index]);
+    _netEqPacketBuffer[index] = NULL;
+  }
+  if (_ptrVADInst[index] != NULL) {
+    WebRtcVad_Free(_ptrVADInst[index]);
+    _ptrVADInst[index] = NULL;
+  }
 }
 
 WebRtc_Word16

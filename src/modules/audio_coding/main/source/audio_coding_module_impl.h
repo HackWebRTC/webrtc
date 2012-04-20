@@ -306,6 +306,28 @@ protected:
         ACMNetEQ::JB          jitterBuffer);
 
 private:
+    // Change required states after starting to receive the codec corresponding
+    // to |index|.
+    int UpdateUponReceivingCodec(int index);
+
+    // Remove all slaves and initialize a stereo slave with required codecs
+    // from the master.
+    int InitStereoSlave();
+
+    // Returns true if the codec's |index| is registered with the master and
+    // is a stereo codec, RED or CN.
+    bool IsCodecForSlave(int index);
+
+    // Returns true if the |codec| is RED.
+    bool IsCodecRED(CodecInst codec);
+    // ...or if its |index| is RED.
+    bool IsCodecRED(int index);
+
+    // Returns true if the |codec| is CN.
+    bool IsCodecCN(int index);
+    // ...or if its |index| is CN.
+    bool IsCodecCN(CodecInst codec);
+
     AudioPacketizationCallback*    _packetizationCallback;
     WebRtc_Word32                  _id;
     WebRtc_UWord32                 _lastTimestamp;
@@ -315,7 +337,6 @@ private:
     uint8_t                        _cng_wb_pltype;
     uint8_t                        _cng_swb_pltype;
     uint8_t                        _red_pltype;
-    bool                           _cng_reg_receiver;
     bool                           _vadEnabled;
     bool                           _dtxEnabled;
     ACMVADMode                     _vadMode;
