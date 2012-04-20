@@ -206,10 +206,10 @@ int WebRtcAec_CreateAec(aec_t **aecInst)
         return -1;
     }
 #endif
-    if (WebRtc_CreateDelayEstimator(&aec->delay_estimator,
-                                    PART_LEN1,
-                                    kMaxDelayBlocks,
-                                    kLookaheadBlocks) == -1) {
+    aec->delay_estimator = WebRtc_CreateDelayEstimator(PART_LEN1,
+                                                       kMaxDelayBlocks,
+                                                       kLookaheadBlocks);
+    if (aec->delay_estimator == NULL) {
       WebRtcAec_FreeAec(aec);
       aec = NULL;
       return -1;

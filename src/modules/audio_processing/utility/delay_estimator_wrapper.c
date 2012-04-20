@@ -141,57 +141,45 @@ void WebRtc_FreeDelayEstimator(void* handle) {
   free(self);
 }
 
-int WebRtc_CreateDelayEstimator(void** handle,
-                                int spectrum_size,
-                                int max_delay,
-                                int lookahead) {
+void* WebRtc_CreateDelayEstimator(int spectrum_size, int max_delay,
+                                  int lookahead) {
   DelayEstimator* self = NULL;
-  int return_value = 0;
 
   // TODO(bjornv): Make this a static assert.
   // Check if the sub band used in the delay estimation is small enough to fit
   // the binary spectra in a uint32_t.
   assert(kBandLast - kBandFirst < 32);
 
-  if (handle == NULL) {
-    return -1;
-  }
-  if (spectrum_size < kBandLast) {
-    *handle = NULL;
-    return -1;
+  if (spectrum_size >= kBandLast) {
+    self = malloc(sizeof(DelayEstimator));
   }
 
-  self = malloc(sizeof(DelayEstimator));
-  *handle = self;
-  if (self == NULL) {
-    return -1;
+  if (self != NULL) {
+    int memory_fail = 0;
+
+    self->mean_far_spectrum = NULL;
+    self->mean_near_spectrum = NULL;
+
+    self->binary_handle = WebRtc_CreateBinaryDelayEstimator(max_delay,
+                                                            lookahead);
+    memory_fail |= (self->binary_handle == NULL);
+
+    // Allocate memory for spectrum buffers.
+    self->mean_far_spectrum = malloc(spectrum_size * sizeof(SpectrumType));
+    memory_fail |= (self->mean_far_spectrum == NULL);
+
+    self->mean_near_spectrum = malloc(spectrum_size * sizeof(SpectrumType));
+    memory_fail |= (self->mean_near_spectrum == NULL);
+
+    self->spectrum_size = spectrum_size;
+
+    if (memory_fail) {
+      WebRtc_FreeDelayEstimator(self);
+      self = NULL;
+    }
   }
 
-  self->mean_far_spectrum = NULL;
-  self->mean_near_spectrum = NULL;
-
-  self->binary_handle = WebRtc_CreateBinaryDelayEstimator(max_delay, lookahead);
-  if (self->binary_handle == NULL) {
-    return_value = -1;
-  }
-
-  // Allocate memory for spectrum buffers.
-  self->mean_far_spectrum = malloc(spectrum_size * sizeof(SpectrumType));
-  if (self->mean_far_spectrum == NULL) {
-    return_value = -1;
-  }
-  self->mean_near_spectrum = malloc(spectrum_size * sizeof(SpectrumType));
-  if (self->mean_near_spectrum == NULL) {
-    return_value = -1;
-  }
-
-  self->spectrum_size = spectrum_size;
-
-  if (return_value < 0) {
-    WebRtc_FreeDelayEstimator(self);
-    *handle = NULL;
-  }
-  return return_value;
+  return self;
 }
 
 int WebRtc_InitDelayEstimator(void* handle) {

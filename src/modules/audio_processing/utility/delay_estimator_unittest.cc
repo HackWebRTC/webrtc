@@ -55,7 +55,7 @@ DelayEstimatorTest::DelayEstimatorTest()
 }
 
 void DelayEstimatorTest::SetUp() {
-  ASSERT_EQ(0, WebRtc_CreateDelayEstimator(&handle_, kSpectrumSize, 100, 10));
+  handle_ = WebRtc_CreateDelayEstimator(kSpectrumSize, 100, 10);
   ASSERT_TRUE(handle_ != NULL);
   self_ = reinterpret_cast<DelayEstimator*>(handle_);
   binary_handle_ = self_->binary_handle;
@@ -87,23 +87,21 @@ void DelayEstimatorTest::InitBinary() {
 TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfWrapper) {
   // In this test we verify correct error returns on invalid API calls.
 
-  // WebRtc_CreateDelayEstimator() should return -1 if we have a NULL pointer
-  // as |handle| or invalid input values. Upon failure, the handle should be
-  // NULL.
+  // WebRtc_CreateDelayEstimator() should return a NULL pointer on invalid input
+  // values.
   // Make sure we have a non-NULL value at start, so we can detect NULL after
   // create failure.
   void* handle = handle_;
-  EXPECT_EQ(-1, WebRtc_CreateDelayEstimator(NULL, kSpectrumSize, 100, 10));
-  EXPECT_EQ(-1, WebRtc_CreateDelayEstimator(&handle, 33, 100, 10));
+  handle = WebRtc_CreateDelayEstimator(33, 100, 10);
   EXPECT_TRUE(handle == NULL);
   handle = handle_;
-  EXPECT_EQ(-1, WebRtc_CreateDelayEstimator(&handle, kSpectrumSize, -1, 10));
+  handle = WebRtc_CreateDelayEstimator(kSpectrumSize, -1, 10);
   EXPECT_TRUE(handle == NULL);
   handle = handle_;
-  EXPECT_EQ(-1, WebRtc_CreateDelayEstimator(&handle, kSpectrumSize, 100, -1));
+  handle = WebRtc_CreateDelayEstimator(kSpectrumSize, 100, -1);
   EXPECT_TRUE(handle == NULL);
   handle = handle_;
-  EXPECT_EQ(-1, WebRtc_CreateDelayEstimator(&handle, kSpectrumSize, 0, 0));
+  handle = WebRtc_CreateDelayEstimator(kSpectrumSize, 0, 0);
   EXPECT_TRUE(handle == NULL);
 
   // WebRtc_InitDelayEstimator() should return -1 if we have a NULL pointer as
