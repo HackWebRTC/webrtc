@@ -102,6 +102,7 @@
           'dependencies': [
             'udp_transport',
             '<(webrtc_root)/../testing/gtest.gyp:gtest',
+            '<(webrtc_root)/../testing/gmock.gyp:gmock',
             '<(webrtc_root)/../test/test.gyp:test_support_main',
           ],
           'sources': [

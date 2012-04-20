@@ -66,11 +66,27 @@
 #endif // defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
 
 namespace webrtc {
+
+class SocketFactory : public UdpTransportImpl::SocketFactoryInterface {
+ public:
+  UdpSocketWrapper* CreateSocket(const WebRtc_Word32 id,
+                                 UdpSocketManager* mgr,
+                                 CallbackObj obj,
+                                 IncomingSocketCallback cb,
+                                 bool ipV6Enable,
+                                 bool disableGQOS) {
+    return UdpSocketWrapper::CreateSocket(id, mgr, obj, cb, ipV6Enable,
+                                          disableGQOS);
+  }
+};
+
+
 UdpTransport* UdpTransport::Create(const WebRtc_Word32 id,
                                    WebRtc_UWord8& numSocketThreads)
 {
-  return new UdpTransportImpl(id, numSocketThreads,
-                              &UdpSocketWrapper::CreateSocket);
+  return new UdpTransportImpl(id,
+                              new SocketFactory(),
+                              UdpSocketManager::Create(id, numSocketThreads));
 }
 
 void UdpTransport::Destroy(UdpTransport* module)
@@ -82,14 +98,14 @@ void UdpTransport::Destroy(UdpTransport* module)
 }
 
 UdpTransportImpl::UdpTransportImpl(const WebRtc_Word32 id,
-                                   WebRtc_UWord8& numSocketThreads,
-                                   SocketMaker* maker)
+                                   SocketFactoryInterface* maker,
+                                   UdpSocketManager* socket_manager)
     : _id(id),
       _socket_creator(maker),
       _crit(CriticalSectionWrapper::CreateCriticalSection()),
       _critFilter(CriticalSectionWrapper::CreateCriticalSection()),
       _critPacketCallback(CriticalSectionWrapper::CreateCriticalSection()),
-      _mgr(UdpSocketManager::Create(id, numSocketThreads)),
+      _mgr(socket_manager),
       _lastError(kNoSocketError),
       _destPort(0),
       _destPortRTCP(0),
@@ -141,10 +157,6 @@ UdpTransportImpl::UdpTransportImpl(const WebRtc_Word32 id,
     memset(_localMulticastIP, 0, sizeof(_localMulticastIP));
 
     memset(&_filterIPAddress, 0, sizeof(_filterIPAddress));
-    if(_mgr == NULL)
-    {
-        _mgr = UdpSocketManager::Create(id, numSocketThreads);
-    }
 
     WEBRTC_TRACE(kTraceMemory, kTraceTransport, id, "%s created", __FUNCTION__);
 }
@@ -352,11 +364,11 @@ WebRtc_Word32 UdpTransportImpl::InitializeReceiveSockets(
     _tos=0;
     _pcp=0;
 
-    _ptrRtpSocket = _socket_creator(_id, _mgr, this,
+    _ptrRtpSocket = _socket_creator->CreateSocket(_id, _mgr, this,
                                     IncomingRTPCallback,
                                     IpV6Enabled(), false);
 
-    _ptrRtcpSocket = _socket_creator(_id, _mgr, this,
+    _ptrRtcpSocket = _socket_creator->CreateSocket(_id, _mgr, this,
                                      IncomingRTCPCallback,
                                      IpV6Enabled(), false);
 
@@ -832,11 +844,11 @@ WebRtc_Word32 UdpTransportImpl::SetToS(WebRtc_Word32 DSCP, bool useSetSockOpt)
                 {
                     CloseSendSockets();
                     _ptrSendRtpSocket =
-                        _socket_creator(_id, _mgr, NULL,
+                        _socket_creator->CreateSocket(_id, _mgr, NULL,
                                         NULL, IpV6Enabled(),
                                         true);
                     _ptrSendRtcpSocket =
-                        _socket_creator(_id, _mgr, NULL,
+                        _socket_creator->CreateSocket(_id, _mgr, NULL,
                                         NULL, IpV6Enabled(),
                                         true);
                     rtpSock=_ptrSendRtpSocket;
@@ -867,12 +879,12 @@ WebRtc_Word32 UdpTransportImpl::SetToS(WebRtc_Word32 DSCP, bool useSetSockOpt)
                         }
                     }
                     CloseReceiveSockets();
-                    _ptrRtpSocket = _socket_creator(_id, _mgr, this,
-                                                    IncomingRTPCallback,
-                                                    IpV6Enabled(), true);
-                    _ptrRtcpSocket = _socket_creator(_id, _mgr, this,
-                                                     IncomingRTCPCallback,
-                                                     IpV6Enabled(),true);
+                    _ptrRtpSocket = _socket_creator->CreateSocket(
+                        _id, _mgr, this, IncomingRTPCallback, IpV6Enabled(),
+                        true);
+                    _ptrRtcpSocket = _socket_creator->CreateSocket(
+                        _id, _mgr, this, IncomingRTCPCallback, IpV6Enabled(),
+                        true);
                     rtpSock=_ptrRtpSocket;
                     rtcpSock=_ptrRtcpSocket;
                     ErrorCode retVal = BindLocalRTPSocket();
@@ -1530,9 +1542,9 @@ WebRtc_Word32 UdpTransportImpl::InitializeSourcePorts(WebRtc_UWord16 rtpPort,
     _tos=0;
     _pcp=0;
 
-    _ptrSendRtpSocket = _socket_creator(_id, _mgr, NULL, NULL,
+    _ptrSendRtpSocket = _socket_creator->CreateSocket(_id, _mgr, NULL, NULL,
                                         IpV6Enabled(), false);
-    _ptrSendRtcpSocket = _socket_creator(_id, _mgr, NULL, NULL,
+    _ptrSendRtcpSocket = _socket_creator->CreateSocket(_id, _mgr, NULL, NULL,
                                          IpV6Enabled(), false);
 
     ErrorCode retVal = BindRTPSendSocket();
@@ -1983,7 +1995,7 @@ int UdpTransportImpl::SendPacket(int /*channel*/, const void* data, int length)
             "Creating RTP socket since no receive or source socket is\
  configured");
 
-        _ptrRtpSocket = _socket_creator(_id, _mgr, this,
+        _ptrRtpSocket = _socket_creator->CreateSocket(_id, _mgr, this,
                                         IncomingRTPCallback,
                                         IpV6Enabled(), false);
 
@@ -2049,7 +2061,7 @@ int UdpTransportImpl::SendRTCPPacket(int /*channel*/, const void* data,
             "Creating RTCP socket since no receive or source socket is\
  configured");
 
-        _ptrRtcpSocket = _socket_creator(_id, _mgr, this,
+        _ptrRtcpSocket = _socket_creator->CreateSocket(_id, _mgr, this,
                                          IncomingRTCPCallback,
                                          IpV6Enabled(), false);
 
