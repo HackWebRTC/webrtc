@@ -169,8 +169,9 @@ UdpTransportImpl::~UdpTransportImpl()
     delete _critFilter;
     delete _critPacketCallback;
     delete _cachLock;
-
+    delete _socket_creator;
     UdpSocketManager::Return();
+
     WEBRTC_TRACE(kTraceMemory, kTraceTransport, _id, "%s deleted",
                  __FUNCTION__);
 }
