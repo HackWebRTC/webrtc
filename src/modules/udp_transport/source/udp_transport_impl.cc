@@ -80,7 +80,9 @@ class SocketFactory : public UdpTransportImpl::SocketFactoryInterface {
   }
 };
 
-
+// Creates an UdpTransport using the definition of SocketFactory above,
+// and passes (creating if needed) a pointer to the static singleton
+// UdpSocketManager.
 UdpTransport* UdpTransport::Create(const WebRtc_Word32 id,
                                    WebRtc_UWord8& numSocketThreads)
 {
@@ -89,11 +91,15 @@ UdpTransport* UdpTransport::Create(const WebRtc_Word32 id,
                               UdpSocketManager::Create(id, numSocketThreads));
 }
 
+// Deletes the UdpTransport and decrements the refcount of the
+// static singleton UdpSocketManager, possibly destroying it.
+// Should only be used on UdpTransports that are created using Create.
 void UdpTransport::Destroy(UdpTransport* module)
 {
     if(module)
     {
         delete module;
+        UdpSocketManager::Return();
     }
 }
 
@@ -170,7 +176,6 @@ UdpTransportImpl::~UdpTransportImpl()
     delete _critPacketCallback;
     delete _cachLock;
     delete _socket_creator;
-    UdpSocketManager::Return();
 
     WEBRTC_TRACE(kTraceMemory, kTraceTransport, _id, "%s deleted",
                  __FUNCTION__);

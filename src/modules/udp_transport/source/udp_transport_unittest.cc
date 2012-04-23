@@ -45,6 +45,10 @@ class MockUdpSocketWrapper : public webrtc::UdpSocketWrapper {
 
 class MockUdpSocketManager : public webrtc::UdpSocketManager {
  public:
+  // Access to protected destructor.
+  void Destroy() {
+    delete this;
+  }
   MOCK_METHOD2(Init, bool(WebRtc_Word32, WebRtc_UWord8&));
   MOCK_METHOD1(ChangeUniqueId, WebRtc_Word32(const WebRtc_Word32));
   MOCK_METHOD0(Start, bool());
@@ -118,18 +122,20 @@ TEST_F(UDPTransportTest, ConstructorDoesNotCreateSocket) {
   webrtc::UdpTransport* transport = new webrtc::UdpTransportImpl(id,
                                                                  null_maker,
                                                                  null_manager);
-  webrtc::UdpTransport::Destroy(transport);
+  delete transport;
 }
 
 TEST_F(UDPTransportTest, InitializeSourcePorts) {
   WebRtc_Word32 id = 0;
   webrtc::UdpTransportImpl::SocketFactoryInterface* mock_maker
       = new MockSocketFactory(sockets_created());
-  webrtc::UdpSocketManager* mock_manager = new MockUdpSocketManager();
+  MockUdpSocketManager* mock_manager = new MockUdpSocketManager();
   webrtc::UdpTransport* transport = new webrtc::UdpTransportImpl(id,
                                                                  mock_maker,
                                                                  mock_manager);
   EXPECT_EQ(0, transport->InitializeSourcePorts(4711, 4712));
   EXPECT_EQ(2, NumSocketsCreated());
-  webrtc::UdpTransport::Destroy(transport);
+
+  delete transport;
+  mock_manager->Destroy();
 }

@@ -35,8 +35,8 @@ public:
     };
 
     // Constructor, only called by UdpTransport::Create and tests.
-    // The constructor takes ownership of the "maker",
-    // and will call Return on the socket_manager at exit.
+    // The constructor takes ownership of the "maker".
+    // The constructor does not take ownership of socket_manager.
     UdpTransportImpl(const WebRtc_Word32 id,
                      SocketFactoryInterface* maker,
                      UdpSocketManager* socket_manager);
