@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -168,23 +168,40 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
         currentMasterTimestamp = msInfo->endTimestamp - msInfo->samplesLeftWithOverlap;
         currentSlaveTimestamp = inst->endTimestamp - (inst->endPosition - inst->curPosition);
 
+        /* Partition the uint32_t space in three: [0 0.25) [0.25 0.75] (0.75 1]
+         * We consider a wrap to have occurred if the timestamps are in
+         * different edge partitions.
+         */
+        if (currentSlaveTimestamp < 0x40000000 &&
+            currentMasterTimestamp > 0xc0000000) {
+          // Slave has wrapped.
+          currentSlaveTimestamp += (0xffffffff - currentMasterTimestamp) + 1;
+          currentMasterTimestamp = 0;
+        } else if (currentMasterTimestamp < 0x40000000 &&
+            currentSlaveTimestamp > 0xc0000000) {
+          // Master has wrapped.
+          currentMasterTimestamp += (0xffffffff - currentSlaveTimestamp) + 1;
+          currentSlaveTimestamp = 0;
+        }
+
         if (currentSlaveTimestamp < currentMasterTimestamp)
         {
             /* brute-force discard a number of samples to catch up */
             inst->curPosition += currentMasterTimestamp - currentSlaveTimestamp;
 
-            /* make sure we have at least "overlap" samples left */
-            inst->curPosition = WEBRTC_SPL_MIN(inst->curPosition,
-                inst->endPosition - inst->ExpandInst.w16_overlap);
         }
         else if (currentSlaveTimestamp > currentMasterTimestamp)
         {
             /* back off current position to slow down */
             inst->curPosition -= currentSlaveTimestamp - currentMasterTimestamp;
-
-            /* make sure we do not end up outside the speech history */
-            inst->curPosition = WEBRTC_SPL_MAX(inst->curPosition, 0);
         }
+
+        /* make sure we have at least "overlap" samples left */
+        inst->curPosition = WEBRTC_SPL_MIN(inst->curPosition,
+            inst->endPosition - inst->ExpandInst.w16_overlap);
+
+        /* make sure we do not end up outside the speech history */
+        inst->curPosition = WEBRTC_SPL_MAX(inst->curPosition, 0);
     }
 #endif
 
