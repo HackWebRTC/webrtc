@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -37,20 +37,6 @@
 static const WebRtc_UWord16 kLpcVecPerSegmentUb12 = 5;
 static const WebRtc_UWord16 kLpcVecPerSegmentUb16 = 4;
 
-/* coefficients for the stepwise rate estimation */
-static const WebRtc_Word32 kRPointsQ10[100] = {
-  14495,  14295,  14112,  13944,  13788,  13643,  13459,  13276,  13195,  13239,
-  13243,  13191,  13133,  13216,  13263,  13330,  13316,  13242,  13191,  13106,
-  12942,  12669,  12291,  11840,  11361,  10795,  10192,  9561,  8934,  8335,
-  7750,  7161,  6589,  6062,  5570,  5048,  4548,  4069,  3587,  3143,
-  2717,  2305,  1915,  1557,  1235,  963,  720,  541,  423,  366,
-  369,  435,  561,  750,  1001,  1304,  1626,  1989,  2381,  2793,
-  3219,  3656,  4134,  4612,  5106,  5629,  6122,  6644,  7216,  7801,
-  8386,  8987,  9630,  10255,  10897,  11490,  11950,  12397,  12752,  12999,
-  13175,  13258,  13323,  13290,  13296,  13335,  13113,  13255,  13347,  13355,
-  13298,  13247,  13313,  13155,  13267,  13313,  13374,  13446,  13525,  13609};
-
-
 /* cdf array for encoder bandwidth (12 vs 16 kHz) indicator */
 static const WebRtc_UWord16 kOneBitEqualProbCdf[3] = {
   0, 32768, 65535 };
@@ -70,39 +56,7 @@ static const WebRtc_Word32 acnQ10 =  426;
 static const WebRtc_Word32 bcnQ10 = -581224;
 static const WebRtc_Word32 ccnQ10 =  722631;
 static const WebRtc_Word32 lbcnQ10 = -402874;
-#define DPMIN_Q10     -10240 // -10.00 in Q10
-#define DPMAX_Q10      10240 // 10.00 in Q10
-#define MINBITS_Q10    10240  /* 10.0 in Q10 */
 #define IS_SWB_12KHZ       1
-
-__inline WebRtc_UWord32 stepwise(WebRtc_Word32 dinQ10) {
-
-  WebRtc_Word32 ind, diQ10, dtQ10;
-
-  diQ10 = dinQ10;
-  if (diQ10 < DPMIN_Q10)
-    diQ10 = DPMIN_Q10;
-  if (diQ10 >= DPMAX_Q10)
-    diQ10 = DPMAX_Q10 - 1;
-
-  dtQ10 = diQ10 - DPMIN_Q10; /* Q10 + Q10 = Q10 */
-  ind = (dtQ10 * 5) >> 10;   /* 2^10 / 5 = 0.2 in Q10  */
-  /* Q10 -> Q0 */
-
-  return kRPointsQ10[ind];
-}
-
-
-__inline short log2_Q10_B( int x )
-{
-  int zeros;
-  short frac;
-
-  zeros = WebRtcSpl_NormU32( x );
-  frac = ((unsigned int)(x << zeros) & 0x7FFFFFFF) >> 21;
-  return (short) (((31 - zeros) << 10) + frac);
-}
-
 
 
 /* compute correlation from power spectrum */
