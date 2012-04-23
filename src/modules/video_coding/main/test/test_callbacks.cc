@@ -456,16 +456,4 @@ FecProtectionParams VideoProtectionCallback::KeyFecParameters() const
 {
     return key_fec_params_;
 }
-
-void
-RTPFeedbackCallback::OnNetworkChanged(const WebRtc_Word32 id,
-                                      const WebRtc_UWord32 bitrateBps,
-                                      const WebRtc_UWord8 fractionLost,
-                                      const WebRtc_UWord16 roundTripTimeMs)
-{
-
-    _vcm->SetChannelParameters(bitrateBps / 1000, fractionLost,
-                               (WebRtc_UWord8)roundTripTimeMs);
-}
-
 }  // namespace webrtc

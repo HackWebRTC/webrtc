@@ -248,24 +248,5 @@ private:
     FecProtectionParams delta_fec_params_;
     FecProtectionParams key_fec_params_;
 };
-
-// Feed back from the RTP Module callback
-class RTPFeedbackCallback : public RtpVideoFeedback {
- public:
-  RTPFeedbackCallback(VideoCodingModule* vcm) {_vcm = vcm;};
-  void OnReceivedIntraFrameRequest(const WebRtc_Word32 id,
-                                   const FrameType type,
-                                   const WebRtc_UWord8 streamIdx) {};
-
-   void OnNetworkChanged(const WebRtc_Word32 id,
-                         const WebRtc_UWord32 bitrateBps,
-                         const WebRtc_UWord8 fractionLost,
-                         const WebRtc_UWord16 roundTripTimeMs);
-
- private:
-  VideoCodingModule* _vcm;
-};
-
 }  // namespace webrtc
-
 #endif
