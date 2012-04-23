@@ -9,7 +9,6 @@
 
 __author__ = 'ivinnichenko@webrtc.org (Illya Vinnichenko)'
 
-import buildbot
 import ntpath
 import os
 import posixpath
@@ -18,6 +17,7 @@ import urlparse
 from buildbot.process import factory
 from buildbot.process import properties
 from buildbot.process.properties import WithProperties
+from buildbot.status import builder
 from buildbot.steps.shell import ShellCommand
 
 from master import chromium_step
@@ -349,8 +349,7 @@ class MonitoredShellCommand(ShellCommand):
     self.build_status_oracle = build_status_oracle
 
   def finished(self, results):
-    if (results == buildbot.status.builder.FAILURE or
-        results == buildbot.status.builder.EXCEPTION):
+    if (results == builder.FAILURE or results == builder.EXCEPTION):
       self.build_status_oracle.SetLastBuildAsFailed()
     ShellCommand.finished(self, results)
 
@@ -402,10 +401,12 @@ class GenerateCodeCoverage(ShellCommand):
      reachable from url/Foo.
   """
 
-  def __init__(self, coverage_url, coverage_dir, coverage_file, **kwargs):
+  def __init__(self, build_status_oracle, coverage_url, coverage_dir,
+               coverage_file, **kwargs):
     """Prepares the coverage command.
 
        Args:
+         build_status_oracle: class that knows if the current build has failed.
          coverage_url: The base URL for the serving web server we will use
              when we generate the link to the coverage. This will generally
              be the slave's URL (something like http://slave-hostname/).
@@ -413,30 +414,38 @@ class GenerateCodeCoverage(ShellCommand):
          coverage_file: The LCOV file to generate the coverage from.
     """
     ShellCommand.__init__(self, **kwargs)
-    self.addFactoryArguments(coverage_url=coverage_url,
+    self.addFactoryArguments(build_status_oracle=build_status_oracle,
+                             coverage_url=coverage_url,
                              coverage_dir=coverage_dir,
                              coverage_file=coverage_file)
+    self.build_status_oracle = build_status_oracle
     self.coverage_url = coverage_url
     self.coverage_dir = coverage_dir
     self.coverage_file = coverage_file
     self.description = ['Coverage Report']
+    self.name = 'LCOV (Report)'
     self.warnOnFailure = True
     self.flunkOnFailure = False
-    output_dir = os.path.join(coverage_dir,
-                              '%(buildername)s_%(buildnumber)s')
-    generate_script = PosixPathJoin('tools', 'continuous_build',
-                                    'build_internal', 'scripts',
-                                    'generate_coverage_html.sh')
-    self.setCommand([generate_script, coverage_file,
-                     WithProperties(output_dir)])
 
   def createSummary(self, log):
-    coverage_url = urlparse.urljoin(self.coverage_url,
-                                    '%s_%s' % (self.getProperty('buildername'),
-                                               self.getProperty('buildnumber')))
-    self.addURL('click here', coverage_url)
+    if self.build_status_oracle.LastBuildSucceeded():
+      coverage_url = urlparse.urljoin(self.coverage_url, '%s_%s'
+                                      % (self.getProperty('buildername'),
+                                         self.getProperty('buildnumber')))
+      self.addURL('click here', coverage_url)
 
   def start(self):
+    if self.build_status_oracle.LastBuildSucceeded():
+      output_dir = os.path.join(self.coverage_dir,
+                                '%(buildername)s_%(buildnumber)s')
+      generate_script = PosixPathJoin('tools', 'continuous_build',
+                                      'build_internal', 'scripts',
+                                      'generate_coverage_html.sh')
+      self.setCommand([generate_script, self.coverage_file,
+                       WithProperties(output_dir)])
+    else:
+      self.description = ['Step skipped due to test failure.']
+      self.setCommand(['false'])  # Dummy command that fails.
     ShellCommand.start(self)
 
 
@@ -663,10 +672,12 @@ class WebRTCLinuxFactory(WebRTCFactory):
                        descriptor='LCOV (Merge)')
 
     # This step isn't monitored but it's fine since it's not critical.
-    self.addStep(GenerateCodeCoverage(coverage_url=self.coverage_url,
-                                      coverage_dir=self.coverage_dir,
-                                      coverage_file='final.info',
-                                      workdir=WEBRTC_TRUNK_DIR))
+    self.addStep(
+        GenerateCodeCoverage(build_status_oracle=self.build_status_oracle,
+                             coverage_url=self.coverage_url,
+                             coverage_dir=self.coverage_dir,
+                             coverage_file='final.info',
+                             workdir=WEBRTC_TRUNK_DIR))
 
   def EnableTests(self, tests):
     if self.coverage_enabled:
@@ -822,7 +833,8 @@ class WebRTCWinFactory(WebRTCFactory):
       # http://technet.microsoft.com/en-us/sysinternals/bb896655.aspx
       # To avoid having to modify kill_processes.py, we set the working dir to
       # the build dir (three levels up from the build dir that contains
-      # third_party/psutils).
+      # third_party/psutils). Must reference outside the checkout since it may
+      # have been wiped completely in the previous build.
       kill_script = WindowsPathJoin(WEBRTC_BUILD_DIR, '..', '..', '..', '..',
                                     'scripts', 'slave', 'kill_processes.py')
       cmd = 'python %s' % kill_script
