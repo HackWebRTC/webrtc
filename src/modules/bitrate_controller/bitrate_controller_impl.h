@@ -33,6 +33,8 @@ class BitrateControllerImpl : public BitrateController {
   explicit BitrateControllerImpl();
   virtual ~BitrateControllerImpl();
 
+  virtual bool AvailableBandwidth(uint32_t* bandwidth) const;
+
   virtual RtcpBandwidthObserver* CreateRtcpBandwidthObserver();
 
   virtual void SetBitrateObserver(BitrateObserver* observer,

@@ -43,7 +43,8 @@ class SendSideBandwidthEstimation {
   void SetMinMaxBitrate(const uint32_t min_bitrate, const uint32_t max_bitrate);
 
  private:
-  uint32_t ShapeSimple(uint8_t loss, uint32_t rtt, uint32_t now_ms);
+  bool ShapeSimple(const uint8_t loss, const uint32_t rtt,
+                   const uint32_t now_ms, uint32_t* bitrate);
 
   uint32_t CalcTFRCbps(uint16_t rtt, uint8_t loss);
 

@@ -207,5 +207,9 @@ void BitrateControllerImpl::OnNetworkChanged(const uint32_t bitrate,
     max_it = list_max_bitrates.begin();
   }
 }
+
+bool BitrateControllerImpl::AvailableBandwidth(uint32_t* bandwidth) const {
+  return bandwidth_estimation_.AvailableBandwidth(bandwidth);
+}
 }  // namespace webrtc
 

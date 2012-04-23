@@ -113,9 +113,8 @@ bool SendSideBandwidthEstimation::UpdatePacketLoss(
   }
   // Keep for next time.
   last_fraction_loss_ = *loss;
-
-  uint32_t bitrate = ShapeSimple(*loss, rtt, now_ms);
-  if (bitrate == 0) {
+  uint32_t bitrate = 0;
+  if (!ShapeSimple(*loss, rtt, now_ms, &bitrate)) {
     // No change.
     return false;
   }
@@ -158,22 +157,24 @@ uint32_t SendSideBandwidthEstimation::CalcTFRCbps(uint16_t rtt, uint8_t loss) {
   return (static_cast<uint32_t>(X * 8));  // bits/second
 }
 
-uint32_t SendSideBandwidthEstimation::ShapeSimple(uint8_t loss, uint32_t rtt,
-                                                  uint32_t now_ms) {
+bool SendSideBandwidthEstimation::ShapeSimple(const uint8_t loss,
+                                              const uint32_t rtt,
+                                              const uint32_t now_ms,
+                                              uint32_t* bitrate) {
   uint32_t new_bitrate = 0;
   bool reducing = false;
 
   // Limit the rate increases to once a kBWEIncreaseIntervalMs.
   if (loss <= 5) {
     if ((now_ms - time_last_increase_) < kBWEIncreaseIntervalMs) {
-      return bitrate_;
+      return false;
     }
     time_last_increase_ = now_ms;
   }
   // Limit the rate decreases to once a kBWEDecreaseIntervalMs + rtt.
   if (loss > 26) {
     if ((now_ms - time_last_decrease_) < kBWEDecreaseIntervalMs + rtt) {
-      return bitrate_;
+      return false;
     }
     time_last_decrease_ = now_ms;
   }
@@ -218,6 +219,7 @@ uint32_t SendSideBandwidthEstimation::ShapeSimple(uint8_t loss, uint32_t rtt,
                  min_bitrate_configured_ / 1000, new_bitrate / 1000);
     new_bitrate = min_bitrate_configured_;
   }
-  return new_bitrate;
+  *bitrate = new_bitrate;
+  return true;
 }
 }  // namespace webrtc

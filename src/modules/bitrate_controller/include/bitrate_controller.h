@@ -30,11 +30,8 @@ class BitrateObserver {
                                 const uint8_t fraction_loss,  // 0 - 255.
                                 const uint32_t rtt) = 0;
 
- protected:
   virtual ~BitrateObserver() {}
 };
-
-// TODO(pwestin) move code from vie_remb in here
 
 class BitrateController {
 /*
@@ -48,6 +45,8 @@ class BitrateController {
   virtual ~BitrateController() {}
 
   virtual RtcpBandwidthObserver* CreateRtcpBandwidthObserver() = 0;
+
+  virtual bool AvailableBandwidth(uint32_t* bandwidth) const = 0;
 
   /*
   *  Set the start and max send bitrate used by the bandwidth management.
