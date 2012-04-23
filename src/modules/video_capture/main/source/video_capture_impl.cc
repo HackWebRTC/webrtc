@@ -18,6 +18,8 @@
 #include "trace.h"
 #include "video_capture_config.h"
 
+#include <stdlib.h>
+
 #ifdef WEBRTC_ANDROID
 #include "video_capture_android.h" // Need inclusion here to set Java environment.
 #endif
@@ -271,7 +273,8 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(
                   RawVideoTypeToCommonVideoVideoType(frameInfo.rawType);
 
         if (frameInfo.rawType != kVideoMJPEG &&
-            CalcBufferSize(commonVideoType, width, height) != videoFrameLength)
+            CalcBufferSize(commonVideoType, width,
+                           abs(height)) != videoFrameLength)
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
                          "Wrong incoming frame length.");
@@ -279,7 +282,7 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(
         }
 
         // Allocate I420 buffer.
-        int requiredLength = CalcBufferSize(kI420, width, height);
+        int requiredLength = CalcBufferSize(kI420, width, abs(height));
         _captureFrame.VerifyAndAllocate(requiredLength);
         if (!_captureFrame.Buffer())
         {
@@ -317,7 +320,8 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(
         }
     }
 
-    DeliverCapturedFrame(_captureFrame, width, height, captureTime, frameInfo.codecType);
+    DeliverCapturedFrame(_captureFrame, width, abs(height), captureTime,
+                         frameInfo.codecType);
 
 
     const WebRtc_UWord32 processTime =

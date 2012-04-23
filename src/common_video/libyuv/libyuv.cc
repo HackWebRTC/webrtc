@@ -279,9 +279,10 @@ int ConvertToI420(VideoType src_video_type,
                   VideoRotationMode rotation,
                   uint8_t* dst_frame) {
   // All sanity tests are conducted within LibYuv.
+  int abs_dst_height = (dst_height < 0) ? -dst_height : dst_height;
   uint8_t* dst_yplane = dst_frame;
-  uint8_t* dst_uplane = dst_yplane + dst_width * dst_height;
-  uint8_t* dst_vplane = dst_uplane + (dst_width * dst_height / 4);
+  uint8_t* dst_uplane = dst_yplane + dst_width * abs_dst_height;
+  uint8_t* dst_vplane = dst_uplane + (dst_width * abs_dst_height / 4);
   return libyuv::ConvertToI420(src_frame, sample_size,
                                dst_yplane, dst_stride,
                                dst_uplane, (dst_stride + 1) / 2,
