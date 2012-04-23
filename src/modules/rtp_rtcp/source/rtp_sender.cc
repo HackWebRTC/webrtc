@@ -616,7 +616,7 @@ WebRtc_Word32 RTPSender::ReSendPacket(WebRtc_UWord16 packet_id,
       min_resend_time, data_buffer, &length, &stored_time_in_ms, &type);
   if (!found) {
     // Packet not found.
-    return -1;
+    return 0;
   }
 
   if (length == 0 || type == kDontRetransmit) {
