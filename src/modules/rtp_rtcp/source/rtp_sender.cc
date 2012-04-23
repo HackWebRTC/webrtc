@@ -516,12 +516,34 @@ RTPSender::SendOutgoingData(const FrameType frameType,
         return _audio->SendAudio(frameType, payloadType, captureTimeStamp, payloadData, payloadSize,fragmentation);
     } else
     {
-        // assert audio frameTypes
-        assert(frameType == kVideoFrameKey ||
-               frameType == kVideoFrameDelta ||
-               frameType == kVideoFrameGolden ||
-               frameType == kVideoFrameAltRef);
+        // Assert on audio frameTypes.
+        assert(frameType != kAudioFrameSpeech &&
+               frameType != kAudioFrameCN);
 
+        // If the encoder generate an empty frame send pading.
+        if (frameType == kFrameEmpty) {
+          // Current bitrate since last estimate(1 second) averaged with the
+          // estimate since then, to get the most up to date bitrate.
+          uint32_t current_bitrate = BitrateNow();
+          int bitrate_diff = _targetSendBitrate * 1000 - current_bitrate;
+          if (bitrate_diff > 0) {
+            int bytes = 0;
+            if (current_bitrate == 0) {
+              // Start up phase. Send one 33.3 ms batch to start with.
+              bytes = (bitrate_diff / 8) / 30;
+            } else {
+              bytes = (bitrate_diff / 8);
+              // Cap at 200 ms of target send data.
+              int bytes_cap = _targetSendBitrate * 25;  // 1000 / 8 / 5
+              if (bytes_cap > bytes) {
+                bytes = bytes_cap;
+              }
+            }
+            // Send pading data.
+            return SendPadData(payloadType, captureTimeStamp, bytes);
+          }
+          return 0;
+        }
         return _video->SendVideo(videoType,
                                  frameType,
                                  payloadType,
@@ -818,9 +840,8 @@ void RTPSender::UpdateNACKBitRate(const WebRtc_UWord32 bytes,
   }
 }
 
+// Function triggered by timer.
 void RTPSender::ProcessSendToNetwork() {
-
-  // triggered by timer
   WebRtc_UWord32 delta_time_ms;
   {
     CriticalSectionScoped cs(_sendCritsect);
@@ -828,12 +849,10 @@ void RTPSender::ProcessSendToNetwork() {
     if (!_transmissionSmoothing) {
       return;
     }
-
     WebRtc_UWord32 now = _clock.GetTimeInMS();
     delta_time_ms = now - _timeLastSendToNetworkUpdate;
     _timeLastSendToNetworkUpdate = now;
   }
-
   _sendBucket.UpdateBytesPerInterval(delta_time_ms, _targetSendBitrate);
 
   while (!_sendBucket.Empty()) {
