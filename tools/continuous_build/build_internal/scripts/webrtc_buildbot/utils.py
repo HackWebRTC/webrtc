@@ -419,7 +419,9 @@ class GenerateCodeCoverage(ShellCommand):
     """
     ShellCommand.__init__(self, **kwargs)
     self.addFactoryArguments(build_status_oracle=build_status_oracle,
-                             coverage_url=coverage_url)
+                             coverage_url=coverage_url,
+                             coverage_dir=coverage_dir,
+                             coverage_file=coverage_file)
     self.build_status_oracle = build_status_oracle
     self.coverage_url = coverage_url
     self.description = ['Coverage Report']
