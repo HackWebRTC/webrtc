@@ -419,35 +419,30 @@ class GenerateCodeCoverage(ShellCommand):
     """
     ShellCommand.__init__(self, **kwargs)
     self.addFactoryArguments(build_status_oracle=build_status_oracle,
-                             coverage_url=coverage_url,
-                             coverage_dir=coverage_dir,
-                             coverage_file=coverage_file)
+                             coverage_url=coverage_url)
     self.build_status_oracle = build_status_oracle
     self.coverage_url = coverage_url
-    self.coverage_dir = coverage_dir
-    self.coverage_file = coverage_file
     self.description = ['Coverage Report']
     self.name = 'LCOV (Report)'
     self.warnOnFailure = True
     self.flunkOnFailure = False
+    output_dir = os.path.join(coverage_dir,
+                              '%(buildername)s_%(buildnumber)s')
+    generate_script = PosixPathJoin('tools', 'continuous_build',
+                                    'build_internal', 'scripts',
+                                    'generate_coverage_html.sh')
+    self.setCommand([generate_script, coverage_file,
+                     WithProperties(output_dir)])
 
   def createSummary(self, log):
     if self.build_status_oracle.LastBuildSucceeded():
-      coverage_url = urlparse.urljoin(self.coverage_url, '%s_%s'
-                                      % (self.getProperty('buildername'),
-                                         self.getProperty('buildnumber')))
-      self.addURL('click here', coverage_url)
+      output_url = urlparse.urljoin(self.coverage_url, '%s_%s'
+                                    % (self.getProperty('buildername'),
+                                       self.getProperty('buildnumber')))
+      self.addURL('click here', output_url)
 
   def start(self):
-    if self.build_status_oracle.LastBuildSucceeded():
-      output_dir = os.path.join(self.coverage_dir,
-                                '%(buildername)s_%(buildnumber)s')
-      generate_script = PosixPathJoin('tools', 'continuous_build',
-                                      'build_internal', 'scripts',
-                                      'generate_coverage_html.sh')
-      self.setCommand([generate_script, self.coverage_file,
-                       WithProperties(output_dir)])
-    else:
+    if not self.build_status_oracle.LastBuildSucceeded():
       self.description = ['Step skipped due to test failure.']
       self.setCommand(['false'])  # Dummy command that fails.
     ShellCommand.start(self)

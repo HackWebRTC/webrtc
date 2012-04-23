@@ -37,6 +37,7 @@ twistd.pid
 /continuous_build/build_internal/masters/master.webrtc/android-ndk
 /continuous_build/build_internal/masters/master.webrtc/chromeos
 /continuous_build/build_internal/masters/master.webrtc/linux-chrome
+/continuous_build/build_internal/masters/master.webrtc/linux-chrome-bloat
 /continuous_build/build_internal/masters/master.webrtc/linux-clang
 /continuous_build/build_internal/masters/master.webrtc/linux-slave-1
 /continuous_build/build_internal/masters/master.webrtc/linux-slave-2
