@@ -227,6 +227,8 @@ WebRtc_Word32 VieRemb::Process() {
   RtpRtcp* sender = NULL;
   if (!rtcp_sender_.empty()) {
     sender = rtcp_sender_.front();
+  } else if (!receive_modules_.empty()){
+    sender = receive_modules_.front();
   }
   last_send_bitrate_ = total_bitrate;
   list_crit_->Leave();

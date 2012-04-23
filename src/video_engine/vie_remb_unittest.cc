@@ -326,6 +326,8 @@ TEST_F(ViERembTest, NoOnReceivedBitrateChangedCall)
   vie_remb_->RemoveRembSender(&rtp);
 }
 
+// Only register receiving modules and make sure we fallback to trigger a REMB
+// packet on this one.
 TEST_F(ViERembTest, NoSendingRtpModule)
 {
   MockRtpRtcp rtp;
@@ -338,11 +340,10 @@ TEST_F(ViERembTest, NoSendingRtpModule)
   EXPECT_CALL(rtp, RemoteSSRC())
       .WillRepeatedly(Return(ssrc[0]));
 
-  // Lower the estimate. This should normally trigger a callback, but not now
-  // since we have no sending module.
+  // Lower the estimate to trigger a new packet REMB packet.
   bitrate_estimate = bitrate_estimate - 100;
   EXPECT_CALL(rtp, SetREMBData(_, _, _))
-      .Times(0);
+      .Times(1);
   vie_remb_->OnReceiveBitrateChanged(ssrc[0], bitrate_estimate);
   vie_remb_->Process();
 }
