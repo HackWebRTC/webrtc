@@ -1,0 +1,44 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+    "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <!--
+  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+
+  Use of this source code is governed by a BSD-style license
+  that can be found in the LICENSE file in the root of the source
+  tree. An additional intellectual property rights grant can be found
+  in the file PATENTS.  All contributing project authors may
+  be found in the AUTHORS file in the root of the source tree.
+
+  This HTML file displays the WebRTC bloat calculation. Some code here
+  is based on the webtreemap demo file. Copy this file to wherever
+  calculate_bloat.py writes its output .json file (which should be named
+  bloat_latest.json) and it will automatically display the .json file.
+  -->
+  <head>
+    <title>WebRTC Binary Size Tracker</title>
+    <link rel="stylesheet" href="webtreemap.css">
+    <script src="webtreemap.js" type="text/javascript"></script>
+    <script src="bloat_latest.json" type="text/javascript"></script>
+    <style type="text/css">
+      #map {
+        width: 500px;
+        height: 300px;
+
+        position: relative;
+        cursor: pointer;
+       -webkit-user-select: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>WebRTC Binary Size Tracker</h1>
+    <p>Click on a box to zoom in. Click on the outermost box to zoom out.</p>
+    <div id="map"></div>
+    <script type="text/javascript">
+      // The kTree variable is defined by bloat_latest.json.
+      var map = document.getElementById("map");
+      appendTreemap(map, kTree);
+    </script>
+  </body>
+</html>

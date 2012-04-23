@@ -25,7 +25,13 @@ deps = {
 
   # Used by tools/quality_tracking/dashboard and tools/python_charts.
   "tools/third_party/google-visualization-python":
-     "http://google-visualization-python.googlecode.com/svn/trunk/@15",
+    "http://google-visualization-python.googlecode.com/svn/trunk/@15",
+
+  # Used by tools/continuous_build/build_internal/symsrc/calculate_bloat.py.
+  "tools/third_party/bloat":
+    "https://github.com/martine/bloat.git@31428aaa491",
+  "tools/third_party/webtreemap":
+    "https://github.com/martine/webtreemap.git@7839cf9154",
 }
 
 hooks = [

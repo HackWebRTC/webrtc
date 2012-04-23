@@ -35,6 +35,7 @@ WEBRTC_BUILD_DIR = 'build/'
 VALGRIND_CMD = ['tools/valgrind-webrtc/webrtc_tests.sh', '-t', 'cmdline']
 
 DEFAULT_COVERAGE_DIR = '/var/www/coverage/'
+DEFAULT_BLOAT_DIR = '/var/www/bloat/'
 DEFAULT_MASTER_WORK_DIR = '.'
 GCLIENT_RETRIES = 3
 
@@ -130,7 +131,8 @@ class WebRTCFactory(factory.BuildFactory):
       self.EnableTest(test)
 
   def AddCommonStep(self, cmd, descriptor='', workdir=WEBRTC_TRUNK_DIR,
-                    halt_build_on_failure=True, warn_on_failure=False):
+                    halt_build_on_failure=True, warn_on_failure=False,
+                    timeout=1200):
     """Adds a step which will run as a shell command on the slave.
 
        NOTE: you are recommended to use this method to add new shell commands
@@ -155,6 +157,7 @@ class WebRTCFactory(factory.BuildFactory):
              warn_on_failure.
          warn_on_failure: If true, this step isn't that important and will not
              cause a failed build on failure.
+         timeout: The timeout for the command, in seconds.
     """
     flunk_on_failure = not warn_on_failure
 
@@ -173,7 +176,8 @@ class WebRTCFactory(factory.BuildFactory):
         warnOnFailure=warn_on_failure,
         flunkOnFailure=flunk_on_failure,
         haltOnFailure=halt_build_on_failure,
-        name='_'.join(descriptor)))
+        name='_'.join(descriptor),
+        timeout=timeout))
 
   def AddSmartCleanStep(self):
     """Adds a smart clean step.
@@ -230,9 +234,9 @@ class WebRTCFactory(factory.BuildFactory):
     # Try 4+1=5 times, 10 seconds apart.
     retry = (10, 4)
     # Subversion timeout is by default 2 minutes; we allow 5 minutes.
-    timeout = 60*5
+    timeout = 60 * 5
     # Removal can take a long time. Allow 15 minutes.
-    rm_timeout = 60*15
+    rm_timeout = 60 * 15
     self.addStep(chromium_step.GClient,
                  gclient_spec=gclient_spec,
                  svnurl=WEBRTC_SVN_LOCATION,
@@ -495,7 +499,7 @@ class WebRTCAndroidNDKFactory(WebRTCFactory):
     self.AddCommonStep(cmd=full_cmd, descriptor=descriptor)
 
 class WebRTCChromeFactory(WebRTCFactory):
-  """Sets up the Chrome OS build."""
+  """Sets up the Chrome Browser+WebRTC build."""
 
   def __init__(self, build_status_oracle,
                gclient_solution_name,
@@ -507,12 +511,47 @@ class WebRTCChromeFactory(WebRTCFactory):
                            svn_url=svn_url,
                            custom_deps_list=custom_deps_list,
                            safesync_url=safesync_url)
+    self.build_enabled = False
 
-  def EnableBuild(self):
+  def EnableBuild(self, release=False, enable_profiling=False):
     self.AddCommonStep(['rm', '-rf', 'src'], workdir=WEBRTC_BUILD_DIR,
                        descriptor='Cleanup')
     self.AddGclientSyncStep()
-    self.AddCommonMakeStep('chrome')
+    if enable_profiling:
+      self.AddCommonStep(['./build/gyp_chromium', '-Dprofiling=1'],
+                         descriptor="gyp_chromium",
+                         warn_on_failure=True, workdir='build/src')
+
+    if release:
+      self.AddCommonMakeStep('chrome', 'BUILDTYPE=Release')
+    else:
+      self.AddCommonMakeStep('chrome')
+
+    self.build_enabled = True
+    self.release = release
+    self.profiling = enable_profiling
+
+  def EnableBloatCalculation(self):
+    """Runs a bloat calculation, which will yield a size breakdown for Chrome.
+
+    If running in Release mode, you should also run with profiling to get the
+    symbols right. Running this on Debug mode will work but it will probably
+    take hours.
+    """
+    assert self.build_enabled is True
+    assert (self.release and self.profiling) or not self.release
+
+    bloat_path = PosixPathJoin(WEBRTC_BUILD_DIR, '..', '..', '..', '..', '..',
+                               '..', 'build_internal', 'symsrc',
+                               'calculate_bloat.py')
+    output_filename = PosixPathJoin(DEFAULT_BLOAT_DIR, 'bloat_latest.json')
+    build_directory = 'Release' if self.release else 'Debug'
+    chrome_binary = PosixPathJoin('out', build_directory, 'chrome')
+    self.AddCommonStep([bloat_path, '--binary', chrome_binary,
+                        '--source-path', '.', '--output-file', output_filename],
+                       descriptor='calculate_bloat.py',
+                       warn_on_failure=True, workdir='build/src',
+                       timeout=7200)
 
   def AddCommonMakeStep(self, target, make_extra=None):
     descriptor = ['make ' + target]
