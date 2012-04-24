@@ -225,8 +225,14 @@ class WebRTCFactory(factory.BuildFactory):
     """
     self.AddCommonTestRunStep(test)
 
-  def AddGclientSyncStep(self):
-    """Helper method for invoking gclient sync."""
+  def AddGclientSyncStep(self, alwaysUseLatest=False):
+    """Helper method for invoking gclient sync.
+
+    Args:
+        alwaysUseLatest: Set to true to always use the latest build, otherwise
+                         the highest revision in the changeset will be used
+                         for sync.
+    """
     gclient_spec = self._ConfigureWhatToBuild()
     env = self._GetEnvironmentWithDisabledDepotToolsUpdate()
 
@@ -238,8 +244,8 @@ class WebRTCFactory(factory.BuildFactory):
     # Removal can take a long time. Allow 15 minutes.
     rm_timeout = 60 * 15
     self.addStep(chromium_step.GClient,
+                 alwaysUseLatest=alwaysUseLatest,
                  gclient_spec=gclient_spec,
-                 svnurl=WEBRTC_SVN_LOCATION,
                  workdir='build',
                  mode='update',
                  env=env,
@@ -467,7 +473,7 @@ class WebRTCAndroidFactory(WebRTCFactory):
     cmd = ' ; '.join(cleanup_list)
     self.AddCommonStep(cmd, descriptor='cleanup')
 
-    cmd = 'svn checkout %s external/webrtc' % WEBRTC_SVN_LOCATION
+    cmd = 'svn checkout %s external/webrtc' % self.svn_url
     self.AddCommonStep(cmd, descriptor='svn (checkout)')
 
     cmd = ('source build/envsetup.sh && lunch full_%s-eng '
@@ -513,7 +519,7 @@ class WebRTCChromeFactory(WebRTCFactory):
   def EnableBuild(self, release=False, enable_profiling=False):
     self.AddCommonStep(['rm', '-rf', 'src'], workdir=WEBRTC_BUILD_DIR,
                        descriptor='Cleanup')
-    self.AddGclientSyncStep()
+    self.AddGclientSyncStep(alwaysUseLatest=True)
     if enable_profiling:
       self.AddCommonStep(['./build/gyp_chromium', '-Dprofiling=1'],
                          descriptor="gyp_chromium",
