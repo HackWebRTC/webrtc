@@ -1288,7 +1288,7 @@ int VoEBaseImpl::GetVersion(char version[1024])
 
 WebRtc_Word32 VoEBaseImpl::AddBuildInfo(char* str) const
 {
-    return sprintf(str, "Build: %s\n", BUILDINFO);
+    return sprintf(str, "Build: svn:%s %s\n", WEBRTC_SVNREVISION, BUILDINFO);
 }
 
 WebRtc_Word32 VoEBaseImpl::AddVoEVersion(char* str) const

@@ -440,7 +440,7 @@ int ViEBaseImpl::LastError() {
 }
 
 WebRtc_Word32 ViEBaseImpl::AddBuildInfo(char* str) const {
-  return sprintf(str, "Build: %s\n", BUILDINFO);
+  return sprintf(str, "Build: svn:%s %s\n", WEBRTC_SVNREVISION, BUILDINFO);
 }
 
 WebRtc_Word32 ViEBaseImpl::AddViEVersion(char* str) const {

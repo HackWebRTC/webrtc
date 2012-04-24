@@ -95,6 +95,11 @@
     'include_dirs': [
       '..','../..', # common_types.h, typedefs.h
     ],
+    'defines': [
+      # TODO(leozwang): Most of team use git-svn, need to add
+      # git-svn support as well.
+      'WEBRTC_SVNREVISION="<!(svnversion -n)"',
+    ],
     'conditions': [
       ['build_with_chromium==1', {
         'defines': [
