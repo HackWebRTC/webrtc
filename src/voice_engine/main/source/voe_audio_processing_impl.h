@@ -65,6 +65,9 @@ class VoEAudioProcessingImpl
 
   virtual int GetAecmMode(AecmModes& mode, bool& enabledCNG);
 
+  virtual int EnableHighPassFilter(bool enable);
+  virtual bool IsHighPassFilterEnabled();
+
   virtual int RegisterRxVadObserver(int channel,
                                     VoERxVadCallback& observer);
 

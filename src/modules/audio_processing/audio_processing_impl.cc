@@ -292,8 +292,8 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     frame->_audioChannel = num_output_channels_;
   }
 
-  bool data_changed = stream_data_changed();
-  if (analysis_needed(data_changed)) {
+  bool data_processed = is_data_processed();
+  if (analysis_needed(data_processed)) {
     for (int i = 0; i < num_output_channels_; i++) {
       // Split into a low and high band.
       SplittingFilterAnalysis(capture_audio_->data(i),
@@ -344,7 +344,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     return err;
   }
 
-  if (synthesis_needed(data_changed)) {
+  if (synthesis_needed(data_processed)) {
     for (int i = 0; i < num_output_channels_; i++) {
       // Recombine low and high bands.
       SplittingFilterSynthesis(capture_audio_->low_pass_split_data(i),
@@ -361,7 +361,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     return err;
   }
 
-  capture_audio_->InterleaveTo(frame, data_changed);
+  capture_audio_->InterleaveTo(frame, interleave_needed(data_processed));
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_file_->Open()) {
@@ -567,7 +567,7 @@ WebRtc_Word32 AudioProcessingImpl::ChangeUniqueId(const WebRtc_Word32 id) {
   return kNoError;
 }
 
-bool AudioProcessingImpl::stream_data_changed() const {
+bool AudioProcessingImpl::is_data_processed() const {
   int enabled_count = 0;
   std::list<ProcessingComponent*>::const_iterator it;
   for (it = component_list_.begin(); it != component_list_.end(); it++) {
@@ -592,12 +592,17 @@ bool AudioProcessingImpl::stream_data_changed() const {
   return true;
 }
 
-bool AudioProcessingImpl::synthesis_needed(bool stream_data_changed) const {
-  return (stream_data_changed && sample_rate_hz_ == kSampleRate32kHz);
+bool AudioProcessingImpl::interleave_needed(bool is_data_processed) const {
+  // Check if we've upmixed or downmixed the audio.
+  return (num_output_channels_ != num_input_channels_ || is_data_processed);
 }
 
-bool AudioProcessingImpl::analysis_needed(bool stream_data_changed) const {
-  if (!stream_data_changed && !voice_detection_->is_enabled()) {
+bool AudioProcessingImpl::synthesis_needed(bool is_data_processed) const {
+  return (is_data_processed && sample_rate_hz_ == kSampleRate32kHz);
+}
+
+bool AudioProcessingImpl::analysis_needed(bool is_data_processed) const {
+  if (!is_data_processed && !voice_detection_->is_enabled()) {
     // Only level_estimator_ is enabled.
     return false;
   } else if (sample_rate_hz_ == kSampleRate32kHz) {

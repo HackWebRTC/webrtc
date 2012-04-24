@@ -112,6 +112,11 @@ public:
     // Gets settings for the AECM.
     virtual int GetAecmMode(AecmModes& mode, bool& enabledCNG) = 0;
 
+    // Enables a high pass filter on the capture signal. This removes DC bias
+    // and low-frequency noise. Recommended to be enabled.
+    virtual int EnableHighPassFilter(bool enable) = 0;
+    virtual bool IsHighPassFilterEnabled() = 0;
+
     // Sets status and mode of the receiving-side (Rx) NS.
     // The Rx NS reduces noise in the received signal for the specified
     // |channel|. Intended for advanced usage only.
