@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -25,6 +25,10 @@ public:
     static WebRtc_Word32 MonoToStereo(AudioFrame& audioFrame);
 
     static WebRtc_Word32 StereoToMono(AudioFrame& audioFrame);
+
+    // Swap the left and right channels of |frame|. Fails silently if |frame|
+    // is not stereo.
+    static void SwapStereoChannels(AudioFrame* frame);
 
     static WebRtc_Word32 Mute(AudioFrame& audioFrame);
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -15,7 +15,7 @@ namespace webrtc {
 
 namespace voe {
 
-WebRtc_Word32 
+WebRtc_Word32
 AudioFrameOperations::MonoToStereo(AudioFrame& audioFrame)
 {
     if (audioFrame._audioChannel != 1)
@@ -29,10 +29,9 @@ AudioFrameOperations::MonoToStereo(AudioFrame& audioFrame)
         return -1;
     }
 
-    WebRtc_Word16* payloadCopy =
-        new WebRtc_Word16[audioFrame._payloadDataLengthInSamples];
+    int16_t payloadCopy[AudioFrame::kMaxAudioFrameSizeSamples];
     memcpy(payloadCopy, audioFrame._payloadData,
-           sizeof(WebRtc_Word16)*audioFrame._payloadDataLengthInSamples);
+           sizeof(int16_t) * audioFrame._payloadDataLengthInSamples);
 
     for (int i = 0; i < audioFrame._payloadDataLengthInSamples; i++)
     {
@@ -42,11 +41,10 @@ AudioFrameOperations::MonoToStereo(AudioFrame& audioFrame)
 
     audioFrame._audioChannel = 2;
 
-    delete [] payloadCopy;
     return 0;
 }
 
-WebRtc_Word32 
+WebRtc_Word32
 AudioFrameOperations::StereoToMono(AudioFrame& audioFrame)
 {
     if (audioFrame._audioChannel != 2)
@@ -65,7 +63,15 @@ AudioFrameOperations::StereoToMono(AudioFrame& audioFrame)
     return 0;
 }
 
-WebRtc_Word32 
+void AudioFrameOperations::SwapStereoChannels(AudioFrame* frame) {
+  for (int i = 0; i < frame->_payloadDataLengthInSamples * 2; i += 2) {
+    int16_t temp_data = frame->_payloadData[i];
+    frame->_payloadData[i] = frame->_payloadData[i + 1];
+    frame->_payloadData[i + 1] = temp_data;
+  }
+}
+
+WebRtc_Word32
 AudioFrameOperations::Mute(AudioFrame& audioFrame)
 {
     const int sizeInBytes = sizeof(WebRtc_Word16) *
@@ -75,7 +81,7 @@ AudioFrameOperations::Mute(AudioFrame& audioFrame)
     return 0;
 }
 
-WebRtc_Word32 
+WebRtc_Word32
 AudioFrameOperations::Scale(const float left,
                             const float right,
                             AudioFrame& audioFrame)
@@ -96,7 +102,7 @@ AudioFrameOperations::Scale(const float left,
     return 0;
 }
 
-WebRtc_Word32 
+WebRtc_Word32
 AudioFrameOperations::ScaleWithSat(const float scale, AudioFrame& audioFrame)
 {
     WebRtc_Word32 tmp(0);

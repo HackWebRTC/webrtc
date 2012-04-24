@@ -201,12 +201,13 @@ TransmitMixer::TransmitMixer(const WebRtc_UWord32 instanceId) :
     _mute(false),
     _remainingMuteMicTimeMs(0),
     _mixingFrequency(0),
-    _includeAudioLevelIndication(false)
+    _includeAudioLevelIndication(false),
+    swap_stereo_channels_(false)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::TransmitMixer() - ctor");
 }
-	
+
 TransmitMixer::~TransmitMixer()
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, -1),
@@ -324,18 +325,17 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
     void* iterator(NULL);
     Channel* channelPtr = sc.GetFirstChannel(iterator);
     _mixingFrequency = 8000;
-    while (channelPtr != NULL)
-    {
-        if (channelPtr->Sending())
-        {
-            CodecInst tmpCdc;
-            channelPtr->GetSendCodec(tmpCdc);
-            if (tmpCdc.plfreq > _mixingFrequency)
-                _mixingFrequency = tmpCdc.plfreq;
-        }
-        channelPtr = sc.GetNextChannel(iterator);
+    bool stereo_codec = false;  // Used for stereo swapping.
+    while (channelPtr != NULL) {
+      if (channelPtr->Sending()) {
+        CodecInst temp_codec;
+        channelPtr->GetSendCodec(temp_codec);
+        stereo_codec = temp_codec.channels == 2;
+        if (temp_codec.plfreq > _mixingFrequency)
+          _mixingFrequency = temp_codec.plfreq;
+      }
+      channelPtr = sc.GetNextChannel(iterator);
     }
-
 
     // --- Resample input audio and create/store the initial audio frame
 
@@ -351,6 +351,10 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
     // --- Near-end Voice Quality Enhancement (APM) processing
 
     APMProcessStream(totalDelayMS, clockDrift, currentMicLevel);
+
+    if (swap_stereo_channels_ && stereo_codec)
+      // Only bother swapping if we're using a stereo codec.
+      AudioFrameOperations::SwapStereoChannels(&_audioFrame);
 
     // --- Annoying typing detection (utilizes the APM/VAD decision)
 
@@ -1464,6 +1468,14 @@ int TransmitMixer::SetTypingDetectionParameters(int timeWindow,
   return(0);
 }
 #endif
+
+void TransmitMixer::EnableStereoChannelSwapping(bool enable) {
+  swap_stereo_channels_ = enable;
+}
+
+bool TransmitMixer::IsStereoChannelSwappingEnabled() {
+  return swap_stereo_channels_;
+}
 
 }  //  namespace voe
 

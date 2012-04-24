@@ -206,6 +206,16 @@ public:
                                              int reportingThreshold,
                                              int penaltyDecay) = 0;
 
+    // Swaps the capture-side left and right audio channels when enabled. It
+    // only has an effect when using a stereo send codec. The setting is
+    // persistent; it will be applied whenever a stereo send codec is enabled.
+    //
+    // The swap is applied only to the captured audio, and not mixed files. The
+    // swap will appear in file recordings and when accessing audio through the
+    // external media interface.
+    virtual void EnableStereoChannelSwapping(bool enable) = 0;
+    virtual bool IsStereoChannelSwappingEnabled() = 0;
+
 protected:
     VoEAudioProcessing() {}
     virtual ~VoEAudioProcessing() {}

@@ -18,6 +18,13 @@
 #include "voe_errors.h"
 #include "voice_engine_impl.h"
 
+// TODO(andrew): move to a common place.
+#define WEBRTC_TRACE_VOICE_API()                                   \
+  do {                                                             \
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice,                       \
+                 VoEId(_shared->instance_id(), -1), __FUNCTION__); \
+  } while (0)
+
 namespace webrtc {
 
 #if defined(WEBRTC_ANDROID) || defined(MAC_IPHONE) || defined(MAC_IPHONE_SIM)
@@ -1106,6 +1113,17 @@ int VoEAudioProcessingImpl::SetTypingDetectionParameters(int timeWindow,
   return -1;
 #endif
 
+}
+
+void VoEAudioProcessingImpl::EnableStereoChannelSwapping(bool enable) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "EnableStereoChannelSwapping(enable=%d)", enable);
+  _shared->transmit_mixer()->EnableStereoChannelSwapping(enable);
+}
+
+bool VoEAudioProcessingImpl::IsStereoChannelSwappingEnabled() {
+  WEBRTC_TRACE_VOICE_API();
+  return _shared->transmit_mixer()->IsStereoChannelSwappingEnabled();
 }
 
 

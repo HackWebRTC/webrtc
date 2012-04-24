@@ -133,11 +133,11 @@ public:
 
     virtual ~TransmitMixer();
 
-public:	// MonitorObserver
+    // MonitorObserver
     void OnPeriodicProcess();
 
 
-public: // FileCallback
+    // FileCallback
     void PlayNotification(const WebRtc_Word32 id,
                           const WebRtc_UWord32 durationMs);
 
@@ -149,7 +149,7 @@ public: // FileCallback
     void RecordFileEnded(const WebRtc_Word32 id);
 
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-public:  // Typing detection
+    // Typing detection
     int TimeSinceLastTyping(int &seconds);
     int SetTypingDetectionParameters(int timeWindow,
                                      int costPerTyping,
@@ -157,10 +157,12 @@ public:  // Typing detection
                                      int penaltyDecay);
 #endif
 
+  void EnableStereoChannelSwapping(bool enable);
+  bool IsStereoChannelSwappingEnabled();
+
 private:
     TransmitMixer(const WebRtc_UWord32 instanceId);
 
-private:
     WebRtc_Word32 GenerateAudioFrame(const WebRtc_Word16 audioSamples[],
                                      const WebRtc_UWord32 nSamples,
                                      const WebRtc_UWord8 nChannels,
@@ -179,14 +181,14 @@ private:
     int TypingDetection();
 #endif
 
-private:  // uses
+    // uses
     Statistics* _engineStatisticsPtr;
     ChannelManager* _channelManagerPtr;
     AudioProcessing* _audioProcessingModulePtr;
     VoiceEngineObserver* _voiceEngineObserverPtr;
     ProcessThread* _processThreadPtr;
 
-private:  // owns
+    // owns
     MonitorModule _monitorModule;
     AudioFrame _audioFrame;
     Resampler _audioResampler;		// ADM sample rate -> mixing rate
@@ -220,7 +222,6 @@ private:  // owns
     WebRtc_UWord32 _saturationWarning;
     WebRtc_UWord32 _noiseWarning;
 
-private:
     int _instanceId;
     bool _mixFileWithMicrophone;
     WebRtc_UWord32 _captureLevel;
@@ -230,6 +231,7 @@ private:
     WebRtc_Word32 _remainingMuteMicTimeMs;
     int _mixingFrequency;
     bool _includeAudioLevelIndication;
+    bool swap_stereo_channels_;
 };
 
 #endif // WEBRTC_VOICE_ENGINE_TRANSMIT_MIXER_H
