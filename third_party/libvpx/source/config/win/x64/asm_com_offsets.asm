@@ -9,4 +9,5 @@ yv12_buffer_config_u_buffer              EQU    32
 yv12_buffer_config_v_buffer              EQU    40
 yv12_buffer_config_border                EQU    56
 VP8BORDERINPIXELS_VAL                    EQU    32
+MFQE_PRECISION_VAL                       EQU     4
     END
