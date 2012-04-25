@@ -491,7 +491,7 @@ public:
     void OnReceivedNTP() ;
 
     // bw estimation
-    void OnPacketLossStatisticsUpdate(
+    virtual void OnPacketLossStatisticsUpdate(
         const WebRtc_UWord8 fractionLost,
         const WebRtc_UWord16 roundTripTime,
         const WebRtc_UWord32 lastReceivedExtendedHighSeqNum);
