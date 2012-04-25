@@ -34,10 +34,6 @@ deps = {
   "trunk/third_party/google-gflags/src":
     (Var("googlecode_url") % "google-gflags") + "/trunk/src@45",
 
-  # Used by tools/quality_tracking/dashboard and tools/python_charts.
-  "trunk/third_party/google-visualization-python":
-    (Var("googlecode_url") % "google-visualization-python") + "/trunk@15",
-
   "trunk/third_party/libjpeg":
     Var("chromium_trunk") + "/src/third_party/libjpeg@" + Var("chromium_revision"),
 
