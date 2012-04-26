@@ -109,7 +109,7 @@ public:
 };
 
 void ViEAutoTest::ViECodecStandardTest() {
-  TbInterfaces interfaces = TbInterfaces("ViECodecStandardTest");
+  TbInterfaces interfaces("ViECodecStandardTest");
 
   TbCaptureDevice capture_device = TbCaptureDevice(interfaces);
   int capture_id = capture_device.captureId;
@@ -273,7 +273,7 @@ void ViEAutoTest::ViECodecExtendedTest() {
     ViECodecStandardTest();
     ViECodecExternalCodecTest();
 
-    TbInterfaces interfaces = TbInterfaces("ViECodecExtendedTest");
+    TbInterfaces interfaces("ViECodecExtendedTest");
     webrtc::ViEBase* base = interfaces.base;
     webrtc::ViECapture* capture = interfaces.capture;
     webrtc::ViERender* render = interfaces.render;

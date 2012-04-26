@@ -215,7 +215,9 @@ void ViEAutoTest::ViEBaseAPITest() {
   // Clean up voice engine
   EXPECT_EQ(0, ptrVieNetwork->Release());
   EXPECT_EQ(0, ptrViEBase->SetVoiceEngine(NULL));
-  EXPECT_EQ(0, ptrVoEBase->Release());
+  // VoiceEngine reference counting is per object, not per interface, so
+  // Release should return != 0.
+  EXPECT_NE(0, ptrVoEBase->Release());
   EXPECT_TRUE(webrtc::VoiceEngine::Delete(ptrVoE));
 
   webrtc::ViEBase* ptrViEBase2 = webrtc::ViEBase::GetInterface(ptrViE);
