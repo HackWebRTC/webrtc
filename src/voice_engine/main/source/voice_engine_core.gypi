@@ -122,25 +122,26 @@
           'type': 'executable',
           'dependencies': [
             'voice_engine_core',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
+            # The rest are to satisfy the channel_unittest include chain.
+            # This would be unnecessary if we had qualified includes.
             '<(webrtc_root)/common_audio/common_audio.gyp:resampler',
-            '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',
-            '<(webrtc_root)/modules/modules.gyp:audio_coding_module',
-            '<(webrtc_root)/modules/modules.gyp:audio_conference_mixer',
             '<(webrtc_root)/modules/modules.gyp:audio_device',
             '<(webrtc_root)/modules/modules.gyp:audio_processing',
+            '<(webrtc_root)/modules/modules.gyp:audio_coding_module',
+            '<(webrtc_root)/modules/modules.gyp:audio_conference_mixer',
             '<(webrtc_root)/modules/modules.gyp:media_file',
             '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
             '<(webrtc_root)/modules/modules.gyp:udp_transport',
             '<(webrtc_root)/modules/modules.gyp:webrtc_utility',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(webrtc_root)/../test/test.gyp:test_support_main',
-            '<(webrtc_root)/../testing/gtest.gyp:gtest',
           ],
-          'include_dirs': [            
-            '../../..',
+          'include_dirs': [
             '../interface',
           ],
           'sources': [
+            'audio_frame_operations_unittest.cc',
             'channel_unittest.cc',
           ],
         },

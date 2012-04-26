@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_AUDIO_FRAME_OPERATIONS_H
-#define WEBRTC_VOICE_ENGINE_AUDIO_FRAME_OPERATIONS_H
+#ifndef WEBRTC_VOICE_ENGINE_AUDIO_FRAME_OPERATIONS_H_
+#define WEBRTC_VOICE_ENGINE_AUDIO_FRAME_OPERATIONS_H_
 
 #include "typedefs.h"
 
@@ -19,29 +19,26 @@ class AudioFrame;
 
 namespace voe {
 
-class AudioFrameOperations
-{
-public:
-    static WebRtc_Word32 MonoToStereo(AudioFrame& audioFrame);
+// TODO(andrew): unify this with utility.h. Change reference parameters to
+// pointers.
+class AudioFrameOperations {
+ public:
+  static int MonoToStereo(AudioFrame& frame);
 
-    static WebRtc_Word32 StereoToMono(AudioFrame& audioFrame);
+  static int StereoToMono(AudioFrame& frame);
 
-    // Swap the left and right channels of |frame|. Fails silently if |frame|
-    // is not stereo.
-    static void SwapStereoChannels(AudioFrame* frame);
+  // Swap the left and right channels of |frame|. Fails silently if |frame| is
+  // not stereo.
+  static void SwapStereoChannels(AudioFrame* frame);
 
-    static WebRtc_Word32 Mute(AudioFrame& audioFrame);
+  static void Mute(AudioFrame& frame);
 
-    static WebRtc_Word32 Scale(const float left,
-                               const float right,
-                               AudioFrame& audioFrame);
+  static int Scale(float left, float right, AudioFrame& frame);
 
-    static WebRtc_Word32 ScaleWithSat(const float scale,
-                                      AudioFrame& audioFrame);
+  static int ScaleWithSat(float scale, AudioFrame& frame);
 };
 
 }  //  namespace voe
-
 }  //  namespace webrtc
 
-#endif  // #ifndef WEBRTC_VOICE_ENGINE_AUDIO_FRAME_OPERATIONS_H
+#endif  // #ifndef WEBRTC_VOICE_ENGINE_AUDIO_FRAME_OPERATIONS_H_

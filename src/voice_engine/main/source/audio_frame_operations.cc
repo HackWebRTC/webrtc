@@ -12,55 +12,45 @@
 #include "module_common_types.h"
 
 namespace webrtc {
-
 namespace voe {
 
-WebRtc_Word32
-AudioFrameOperations::MonoToStereo(AudioFrame& audioFrame)
-{
-    if (audioFrame._audioChannel != 1)
-    {
-        return -1;
-    }
-    if ((audioFrame._payloadDataLengthInSamples << 1) >=
-        AudioFrame::kMaxAudioFrameSizeSamples)
-    {
-        // not enough memory to expand from mono to stereo
-        return -1;
-    }
+int AudioFrameOperations::MonoToStereo(AudioFrame& frame) {
+  if (frame._audioChannel != 1) {
+    return -1;
+  }
+  if ((frame._payloadDataLengthInSamples << 1) >=
+      AudioFrame::kMaxAudioFrameSizeSamples) {
+    // not enough memory to expand from mono to stereo
+    return -1;
+  }
 
-    int16_t payloadCopy[AudioFrame::kMaxAudioFrameSizeSamples];
-    memcpy(payloadCopy, audioFrame._payloadData,
-           sizeof(int16_t) * audioFrame._payloadDataLengthInSamples);
+  int16_t payloadCopy[AudioFrame::kMaxAudioFrameSizeSamples];
+  memcpy(payloadCopy, frame._payloadData,
+         sizeof(int16_t) * frame._payloadDataLengthInSamples);
 
-    for (int i = 0; i < audioFrame._payloadDataLengthInSamples; i++)
-    {
-        audioFrame._payloadData[2*i]   = payloadCopy[i];
-        audioFrame._payloadData[2*i+1] = payloadCopy[i];
-    }
+  for (int i = 0; i < frame._payloadDataLengthInSamples; i++) {
+    frame._payloadData[2 * i]   = payloadCopy[i];
+    frame._payloadData[2 * i + 1] = payloadCopy[i];
+  }
 
-    audioFrame._audioChannel = 2;
+  frame._audioChannel = 2;
 
-    return 0;
+  return 0;
 }
 
-WebRtc_Word32
-AudioFrameOperations::StereoToMono(AudioFrame& audioFrame)
-{
-    if (audioFrame._audioChannel != 2)
-    {
-        return -1;
-    }
+int AudioFrameOperations::StereoToMono(AudioFrame& frame) {
+  if (frame._audioChannel != 2) {
+    return -1;
+  }
 
-    for (int i = 0; i < audioFrame._payloadDataLengthInSamples; i++)
-    {
-        audioFrame._payloadData[i] = (audioFrame._payloadData[2*i] >> 1) +
-            (audioFrame._payloadData[2*i+1] >> 1);
-    }
+  for (int i = 0; i < frame._payloadDataLengthInSamples; i++) {
+    frame._payloadData[i] = (frame._payloadData[2 * i] >> 1) +
+                            (frame._payloadData[2 * i + 1] >> 1);
+  }
 
-    audioFrame._audioChannel = 1;
+  frame._audioChannel = 1;
 
-    return 0;
+  return 0;
 }
 
 void AudioFrameOperations::SwapStereoChannels(AudioFrame* frame) {
@@ -73,65 +63,44 @@ void AudioFrameOperations::SwapStereoChannels(AudioFrame* frame) {
   }
 }
 
-WebRtc_Word32
-AudioFrameOperations::Mute(AudioFrame& audioFrame)
-{
-    const int sizeInBytes = sizeof(WebRtc_Word16) *
-        audioFrame._payloadDataLengthInSamples * audioFrame._audioChannel;
-    memset(audioFrame._payloadData, 0, sizeInBytes);
-    audioFrame._energy = 0;
-    return 0;
+void AudioFrameOperations::Mute(AudioFrame& frame) {
+  memset(frame._payloadData, 0, sizeof(int16_t) *
+      frame._payloadDataLengthInSamples * frame._audioChannel);
+  frame._energy = 0;
 }
 
-WebRtc_Word32
-AudioFrameOperations::Scale(const float left,
-                            const float right,
-                            AudioFrame& audioFrame)
-{
-    if (audioFrame._audioChannel == 1)
-    {
-        assert(false);
-        return -1;
-    }
+int AudioFrameOperations::Scale(float left, float right, AudioFrame& frame) {
+  if (frame._audioChannel != 2) {
+    return -1;
+  }
 
-    for (int i = 0; i < audioFrame._payloadDataLengthInSamples; i++)
-    {
-        audioFrame._payloadData[2*i] =
-            (WebRtc_Word16)(left*audioFrame._payloadData[2*i]);
-        audioFrame._payloadData[2*i+1] =
-            (WebRtc_Word16)(right*audioFrame._payloadData[2*i+1]);
-    }
-    return 0;
+  for (int i = 0; i < frame._payloadDataLengthInSamples; i++) {
+    frame._payloadData[2 * i] =
+        static_cast<int16_t>(left * frame._payloadData[2 * i]);
+    frame._payloadData[2 * i + 1] =
+        static_cast<int16_t>(right * frame._payloadData[2 * i + 1]);
+  }
+  return 0;
 }
 
-WebRtc_Word32
-AudioFrameOperations::ScaleWithSat(const float scale, AudioFrame& audioFrame)
-{
-    WebRtc_Word32 tmp(0);
+int AudioFrameOperations::ScaleWithSat(float scale, AudioFrame& frame) {
+  int32_t temp_data = 0;
 
-    // Ensure that the output result is saturated [-32768, +32768].
-    for (int i = 0;
-        i < audioFrame._payloadDataLengthInSamples * audioFrame._audioChannel;
-        i++)
-    {
-        tmp = static_cast<WebRtc_Word32> (scale * audioFrame._payloadData[i]);
-        if (tmp < -32768)
-        {
-            audioFrame._payloadData[i] = -32768;
-        }
-        else if (tmp > 32767)
-        {
-            audioFrame._payloadData[i] = 32767;
-        }
-        else
-        {
-            audioFrame._payloadData[i] = static_cast<WebRtc_Word16> (tmp);
-        }
+  // Ensure that the output result is saturated [-32768, +32767].
+  for (int i = 0; i < frame._payloadDataLengthInSamples * frame._audioChannel;
+       i++) {
+    temp_data = static_cast<int32_t>(scale * frame._payloadData[i]);
+    if (temp_data < -32768) {
+      frame._payloadData[i] = -32768;
+    } else if (temp_data > 32767) {
+      frame._payloadData[i] = 32767;
+    } else {
+      frame._payloadData[i] = static_cast<int16_t>(temp_data);
     }
-    return 0;
+  }
+  return 0;
 }
 
 }  //  namespace voe
-
 }  //  namespace webrtc
 
