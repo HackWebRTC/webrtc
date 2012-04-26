@@ -24,11 +24,11 @@
         ],
       },
       'sources': [
-        'send_side_bandwidth_estimation.h',
-        'send_side_bandwidth_estimation.cc',
-        'bitrate_controller.h',
-        'bitrate_controller_impl.h',
         'bitrate_controller_impl.cc',
+        'bitrate_controller_impl.h',
+        'include/bitrate_controller.h',
+        'send_side_bandwidth_estimation.cc',
+        'send_side_bandwidth_estimation.h',
       ], # source
     },
   ],
