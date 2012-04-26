@@ -50,7 +50,7 @@ TEST(UdpSocketManager, AddAndRemoveSocketDoesNotLeakMemory) {
 // Creates a socket and add it to the socket manager, but does not remove it
 // before destroying the socket manager.
 // This should also destroy the socket.
-TEST(UdpSocketManager, UnremovedSocketsGetCollectedAtManagerDeletion) {
+TEST(UdpSocketManager, DISABLED_UnremovedSocketsGetCollectedAtManagerDeletion) {
   WebRtc_Word32 id = 42;
   WebRtc_UWord8 threads = 1;
   webrtc::UdpSocketManager* mgr = webrtc::UdpSocketManager::Create(id, threads);
