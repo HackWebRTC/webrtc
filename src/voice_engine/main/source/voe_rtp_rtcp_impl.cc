@@ -29,10 +29,9 @@ VoERTP_RTCP* VoERTP_RTCP::GetInterface(VoiceEngine* voiceEngine)
     {
         return NULL;
     }
-    VoiceEngineImpl* s = reinterpret_cast<VoiceEngineImpl*> (voiceEngine);
-    VoERTP_RTCPImpl* d = s;
-    (*d)++;
-    return (d);
+    VoiceEngineImpl* s = reinterpret_cast<VoiceEngineImpl*>(voiceEngine);
+    s->AddRef();
+    return s;
 #endif
 }
 
@@ -48,24 +47,6 @@ VoERTP_RTCPImpl::~VoERTP_RTCPImpl()
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoERTP_RTCPImpl::~VoERTP_RTCPImpl() - dtor");
-}
-
-int VoERTP_RTCPImpl::Release()
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "VoERTP_RTCP::Release()");
-    (*this)--;
-    int refCount = GetCount();
-    if (refCount < 0)
-    {
-        Reset();  // reset reference counter to zero => OK to delete VE
-        _shared->SetLastError(VE_INTERFACE_NOT_FOUND, kTraceWarning);
-        return (-1);
-    }
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-        VoEId(_shared->instance_id(), -1),
-        "VoERTP_RTCP reference counter = %d", refCount);
-    return (refCount);
 }
 
 int VoERTP_RTCPImpl::RegisterRTPObserver(int channel, VoERTPObserver& observer)

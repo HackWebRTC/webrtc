@@ -13,18 +13,13 @@
 
 #include "voe_encryption.h"
 
-#include "ref_count.h"
 #include "shared_data.h"
 
 namespace webrtc {
 
-class VoEEncryptionImpl : public VoEEncryption,
-                          public voe::RefCount
+class VoEEncryptionImpl : public VoEEncryption
 {
 public:
-
-    virtual int Release();
-
     // SRTP
     virtual int EnableSRTPSend(
         int channel,

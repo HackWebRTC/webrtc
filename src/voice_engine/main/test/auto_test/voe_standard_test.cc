@@ -618,186 +618,70 @@ void VoETestManager::GetInterfaces() {
 }
 
 int VoETestManager::ReleaseInterfaces() {
-  int err(0), remInt(1), j(0);
   bool releaseOK(true);
 
   if (voe_base_) {
-    for (remInt = 1, j = 0; remInt > 0; j++)
-      TEST_MUSTPASS(-1 == (remInt = voe_base_->Release()));
-    if (j > 1) {
-      TEST_LOG("\n\n*** Error: released %d base interfaces"
-        "(should only be 1) \n", j);
-      releaseOK = false;
-    }
-    // try to release one addition time (should fail)
-    TEST_MUSTPASS(-1 != voe_base_->Release());
-    err = voe_base_->LastError();
-    // it is considered safe to delete even if Release has been called
-    // too many times
-    TEST_MUSTPASS(err != VE_INTERFACE_NOT_FOUND);
+    voe_base_->Release();
+    voe_base_ = NULL;
   }
   if (voe_codec_) {
-    for (remInt = 1, j = 0; remInt > 0; j++)
-      TEST_MUSTPASS(-1 == (remInt = voe_codec_->Release()));
-    if (j > 1) {
-      TEST_LOG("\n\n*** Error: released %d codec interfaces"
-        " (should only be 1) \n", j);
-      releaseOK = false;
-    }
-    TEST_MUSTPASS(-1 != voe_codec_->Release());
-    err = voe_base_->LastError();
-    TEST_MUSTPASS(err != VE_INTERFACE_NOT_FOUND);
+    voe_codec_->Release();
+    voe_codec_ = NULL;
   }
   if (voe_volume_control_) {
-    for (remInt = 1, j = 0; remInt > 0; j++)
-      TEST_MUSTPASS(-1 == (remInt = voe_volume_control_->Release()));
-    if (j > 1) {
-      TEST_LOG("\n\n*** Error: released %d volume interfaces"
-        "(should only be 1) \n", j);
-      releaseOK = false;
-    }
-    TEST_MUSTPASS(-1 != voe_volume_control_->Release());
-    err = voe_base_->LastError();
-    TEST_MUSTPASS(err != VE_INTERFACE_NOT_FOUND);
+    voe_volume_control_->Release();
+    voe_volume_control_ = NULL;
   }
   if (voe_dtmf_) {
-    for (remInt = 1, j = 0; remInt > 0; j++)
-      TEST_MUSTPASS(-1 == (remInt = voe_dtmf_->Release()));
-    if (j > 1) {
-      TEST_LOG("\n\n*** Error: released %d dtmf interfaces"
-        "(should only be 1) \n", j);
-      releaseOK = false;
-    }
-    TEST_MUSTPASS(-1 != voe_dtmf_->Release());
-    err = voe_base_->LastError();
-    TEST_MUSTPASS(err != VE_INTERFACE_NOT_FOUND);
+    voe_dtmf_->Release();
+    voe_dtmf_ = NULL;
   }
   if (voe_rtp_rtcp_) {
-    for (remInt = 1, j = 0; remInt > 0; j++)
-      TEST_MUSTPASS(-1 == (remInt = voe_rtp_rtcp_->Release()));
-    if (j > 1) {
-      TEST_LOG("\n\n*** Error: released %d rtp/rtcp interfaces"
-        "(should only be 1) \n", j);
-      releaseOK = false;
-    }
-    TEST_MUSTPASS(-1 != voe_rtp_rtcp_->Release());
-    err = voe_base_->LastError();
-    TEST_MUSTPASS(err != VE_INTERFACE_NOT_FOUND);
+    voe_rtp_rtcp_->Release();
+    voe_rtp_rtcp_ = NULL;
   }
   if (voe_apm_) {
-    for (remInt = 1, j = 0; remInt > 0; j++)
-      TEST_MUSTPASS(-1 == (remInt = voe_apm_->Release()));
-    if (j > 1) {
-      TEST_LOG("\n\n*** Error: released %d apm interfaces"
-        "(should only be 1) \n", j);
-      releaseOK = false;
-    }
-    TEST_MUSTPASS(-1 != voe_apm_->Release());
-    err = voe_base_->LastError();
-    TEST_MUSTPASS(err != VE_INTERFACE_NOT_FOUND);
+    voe_apm_->Release();
+    voe_apm_ = NULL;
   }
   if (voe_network_) {
-    for (remInt = 1, j = 0; remInt > 0; j++)
-      TEST_MUSTPASS(-1 == (remInt = voe_network_->Release()));
-    if (j > 1) {
-      TEST_LOG("\n\n*** Error: released %d network interfaces"
-        "(should only be 1) \n", j);
-      releaseOK = false;
-    }
-    TEST_MUSTPASS(-1 != voe_network_->Release());
-    err = voe_base_->LastError();
-    TEST_MUSTPASS(err != VE_INTERFACE_NOT_FOUND);
+    voe_network_->Release();
+    voe_network_ = NULL;
   }
   if (voe_file_) {
-    for (remInt = 1, j = 0; remInt > 0; j++)
-      TEST_MUSTPASS(-1 == (remInt = voe_file_->Release()));
-    if (j > 1) {
-      TEST_LOG("\n\n*** Error: released %d file interfaces"
-        "(should only be 1) \n", j);
-      releaseOK = false;
-    }
-    TEST_MUSTPASS(-1 != voe_file_->Release());
-    err = voe_base_->LastError();
-    TEST_MUSTPASS(err != VE_INTERFACE_NOT_FOUND);
+    voe_file_->Release();
+    voe_file_ = NULL;
   }
 #ifdef _TEST_VIDEO_SYNC_
   if (voe_vsync_) {
-    for (remInt = 1, j = 0; remInt > 0; j++)
-      TEST_MUSTPASS(-1 == (remInt = voe_vsync_->Release()));
-    if (j > 1) {
-      TEST_LOG("\n\n*** Error: released %d video sync interfaces"
-        "(should only be 1) \n", j);
-      releaseOK = false;
-    }
-    TEST_MUSTPASS(-1 != voe_vsync_->Release());
-    err = voe_base_->LastError();
-    TEST_MUSTPASS(err != VE_INTERFACE_NOT_FOUND);
+    voe_vsync_->Release();
+    voe_vsync_ = NULL;
   }
 #endif
   if (voe_encrypt_) {
-    for (remInt = 1, j = 0; remInt > 0; j++)
-      TEST_MUSTPASS(-1 == (remInt = voe_encrypt_->Release()));
-    if (j > 1) {
-      TEST_LOG("\n\n*** Error: released %d encryption interfaces"
-        "(should only be 1) \n", j);
-      releaseOK = false;
-    }
-    TEST_MUSTPASS(-1 != voe_encrypt_->Release());
-    err = voe_base_->LastError();
-    TEST_MUSTPASS(err != VE_INTERFACE_NOT_FOUND);
+    voe_encrypt_->Release();
+    voe_encrypt_ = NULL;
   }
   if (voe_hardware_) {
-    for (remInt = 1, j = 0; remInt > 0; j++)
-      TEST_MUSTPASS(-1 == (remInt = voe_hardware_->Release()));
-    if (j > 1) {
-      TEST_LOG("\n\n*** Error: released %d hardware interfaces"
-        "(should only be 1) \n", j);
-      releaseOK = false;
-    }
-    TEST_MUSTPASS(-1 != voe_hardware_->Release());
-    err = voe_base_->LastError();
-    TEST_MUSTPASS(err != VE_INTERFACE_NOT_FOUND);
+    voe_hardware_->Release();
+    voe_hardware_ = NULL;
   }
 #ifdef _TEST_XMEDIA_
   if (voe_xmedia_) {
-    for (remInt = 1, j = 0; remInt > 0; j++)
-      TEST_MUSTPASS(-1 == (remInt = voe_xmedia_->Release()));
-    if (j > 1) {
-      TEST_LOG("\n\n*** Error: released %d external media interfaces"
-        "(should only be 1) \n", j);
-      releaseOK = false;
-    }
-    TEST_MUSTPASS(-1 != voe_xmedia_->Release());
-    err = voe_base_->LastError();
-    TEST_MUSTPASS(err != VE_INTERFACE_NOT_FOUND);
+    voe_xmedia_->Release();
+    voe_xmedia_ = NULL;
   }
 #endif
 #ifdef _TEST_CALL_REPORT_
   if (voe_call_report_) {
-    for (remInt = 1, j = 0; remInt > 0; j++)
-      TEST_MUSTPASS(-1 == (remInt = voe_call_report_->Release()));
-    if (j > 1) {
-      TEST_LOG("\n\n*** Error: released %d call report interfaces"
-        "(should only be 1) \n", j);
-      releaseOK = false;
-    }
-    TEST_MUSTPASS(-1 != voe_call_report_->Release());
-    err = voe_base_->LastError();
-    TEST_MUSTPASS(err != VE_INTERFACE_NOT_FOUND);
+    voe_call_report_->Release();
+    voe_call_report_ = NULL;
   }
 #endif
 #ifdef _TEST_NETEQ_STATS_
   if (voe_neteq_stats_) {
-    for (remInt = 1, j = 0; remInt > 0; j++)
-      TEST_MUSTPASS(-1 == (remInt = voe_neteq_stats_->Release()));
-    if (j > 1) {
-      TEST_LOG("\n\n*** Error: released %d neteq stat interfaces "
-        "(should only be 1) \n", j);
-      releaseOK = false;
-    }
-    TEST_MUSTPASS(-1 != voe_neteq_stats_->Release());
-    err = voe_base_->LastError();
-    TEST_MUSTPASS(err != VE_INTERFACE_NOT_FOUND);
+    voe_neteq_stats_->Release();
+    voe_neteq_stats_ = NULL;
   }
 #endif
   if (false == VoiceEngine::Delete(voice_engine_)) {

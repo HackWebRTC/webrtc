@@ -27,11 +27,9 @@ VoEVideoSync* VoEVideoSync::GetInterface(VoiceEngine* voiceEngine)
     {
         return NULL;
     }
-    VoiceEngineImpl* s =
-        reinterpret_cast<VoiceEngineImpl*> (voiceEngine);
-    VoEVideoSyncImpl* d = s;
-    (*d)++;
-    return (d);
+    VoiceEngineImpl* s = reinterpret_cast<VoiceEngineImpl*>(voiceEngine);
+    s->AddRef();
+    return s;
 #endif
 }
 
@@ -47,24 +45,6 @@ VoEVideoSyncImpl::~VoEVideoSyncImpl()
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoEVideoSyncImpl::~VoEVideoSyncImpl() - dtor");
-}
-
-int VoEVideoSyncImpl::Release()
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "VoEVideoSync::Release()");
-    (*this)--;
-    int refCount = GetCount();
-    if (refCount < 0)
-    {
-        Reset();  // reset reference counter to zero => OK to delete VE
-        _shared->SetLastError(VE_INTERFACE_NOT_FOUND, kTraceWarning);
-        return (-1);
-    }
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-        VoEId(_shared->instance_id(), -1),
-        "VoEVideoSync reference counter = %d", refCount);
-    return (refCount);
 }
 
 int VoEVideoSyncImpl::GetPlayoutTimestamp(int channel, unsigned int& timestamp)

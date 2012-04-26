@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -33,20 +33,20 @@ BeforeInitializationFixture::BeforeInitializationFixture()
 }
 
 BeforeInitializationFixture::~BeforeInitializationFixture() {
-  EXPECT_EQ(0, voe_base_->Release());
-  EXPECT_EQ(0, voe_codec_->Release());
-  EXPECT_EQ(0, voe_volume_control_->Release());
-  EXPECT_EQ(0, voe_dtmf_->Release());
-  EXPECT_EQ(0, voe_rtp_rtcp_->Release());
-  EXPECT_EQ(0, voe_apm_->Release());
-  EXPECT_EQ(0, voe_network_->Release());
-  EXPECT_EQ(0, voe_file_->Release());
-  EXPECT_EQ(0, voe_vsync_->Release());
-  EXPECT_EQ(0, voe_encrypt_->Release());
-  EXPECT_EQ(0, voe_hardware_->Release());
-  EXPECT_EQ(0, voe_xmedia_->Release());
-  EXPECT_EQ(0, voe_call_report_->Release());
-  EXPECT_EQ(0, voe_neteq_stats_->Release());
+  voe_base_->Release();
+  voe_codec_->Release();
+  voe_volume_control_->Release();
+  voe_dtmf_->Release();
+  voe_rtp_rtcp_->Release();
+  voe_apm_->Release();
+  voe_network_->Release();
+  voe_file_->Release();
+  voe_vsync_->Release();
+  voe_encrypt_->Release();
+  voe_hardware_->Release();
+  voe_xmedia_->Release();
+  voe_call_report_->Release();
+  voe_neteq_stats_->Release();
 
   EXPECT_TRUE(webrtc::VoiceEngine::Delete(voice_engine_));
 }

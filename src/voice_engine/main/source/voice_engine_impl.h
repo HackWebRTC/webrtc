@@ -11,6 +11,7 @@
 #ifndef WEBRTC_VOICE_ENGINE_VOICE_ENGINE_IMPL_H
 #define WEBRTC_VOICE_ENGINE_VOICE_ENGINE_IMPL_H
 
+#include "atomic32.h"
 #include "engine_configurations.h"
 #include "voe_base_impl.h"
 
@@ -140,12 +141,22 @@ public:
 #ifdef WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
         VoEVolumeControlImpl(this),
 #endif
-        VoEBaseImpl(this)
+        VoEBaseImpl(this),
+        _ref_count(0)
     {
     }
     virtual ~VoiceEngineImpl()
     {
+        assert(_ref_count.Value() == 0);
     }
+
+    int AddRef();
+
+    // This implements the Release() method for all the inherited interfaces.
+    virtual int Release();
+
+private:
+    Atomic32 _ref_count;
 };
 
 } // namespace webrtc

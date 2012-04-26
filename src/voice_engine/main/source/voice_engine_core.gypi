@@ -72,8 +72,6 @@
         'monitor_module.h',
         'output_mixer.cc',
         'output_mixer.h',
-        'ref_count.cc',
-        'ref_count.h',
         'shared_data.cc',
         'shared_data.h',
         'statistics.cc',

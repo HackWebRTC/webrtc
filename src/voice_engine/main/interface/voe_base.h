@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -65,12 +65,10 @@ public:
     static VoiceEngine* Create();
 
     // Deletes a created VoiceEngine object and releases the utilized resources.
-    // If |ignoreRefCounters| is set to false, all reference counters must be
-    // zero to enable a valid release of the allocated resources. When set to
-    // true, a release of all resources allocated by the VoE is performed
-    // without checking the reference counter state.
-    static bool Delete(VoiceEngine*& voiceEngine,
-                       bool ignoreRefCounters = false);
+    // Note that if there are outstanding references held via other interfaces,
+    // the voice engine instance will not actually be deleted until those
+    // references have been released.
+    static bool Delete(VoiceEngine*& voiceEngine);
 
     // Specifies the amount and type of trace information which will be
     // created by the VoiceEngine.

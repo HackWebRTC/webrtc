@@ -13,18 +13,14 @@
 
 #include "voe_codec.h"
 
-#include "ref_count.h"
 #include "shared_data.h"
 
 namespace webrtc
 {
 
-class VoECodecImpl: public VoECodec,
-                    public voe::RefCount
+class VoECodecImpl: public VoECodec
 {
 public:
-    virtual int Release();
-
     virtual int NumOfCodecs();
 
     virtual int GetCodec(int index, CodecInst& codec);

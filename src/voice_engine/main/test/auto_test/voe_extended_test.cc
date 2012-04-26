@@ -1531,7 +1531,7 @@ int VoEExtendedTest::TestBase() {
   for (int instNum = 0; instNum < 7; instNum++) {
     TEST_MUSTPASS(baseVE[instNum]->DeleteChannel(0));
     TEST_MUSTPASS(baseVE[instNum]->Terminate());
-    TEST_MUSTPASS(baseVE[instNum]->Release());
+    baseVE[instNum]->Release();
     VoiceEngine::Delete(instVE[instNum]);
   }
 
@@ -5307,7 +5307,8 @@ int VoEExtendedTest::TestNetwork() {
   const char* localIP = "192.168.1.4";
 
 #else
-  char localIP[64];
+  // Must be big enough so that we can print an IPv6 address.
+  char localIP[256] = {0};
 
   // invalid parameter
   TEST_MUSTPASS(!netw->GetLocalIP(NULL));

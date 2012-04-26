@@ -40,10 +40,9 @@ VoEBase* VoEBase::GetInterface(VoiceEngine* voiceEngine)
     {
         return NULL;
     }
-    VoiceEngineImpl* s = reinterpret_cast<VoiceEngineImpl*> (voiceEngine);
-    VoEBaseImpl* d = s;
-    (*d)++;
-    return (d);
+    VoiceEngineImpl* s = reinterpret_cast<VoiceEngineImpl*>(voiceEngine);
+    s->AddRef();
+    return s;
 }
 
 VoEBaseImpl::VoEBaseImpl(voe::SharedData* shared) :
@@ -64,24 +63,6 @@ VoEBaseImpl::~VoEBaseImpl()
     TerminateInternal();
 
     delete &_callbackCritSect;
-}
-
-int VoEBaseImpl::Release()
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "VoEBaseImpl::Release()");
-    (*this)--;
-    int refCount = GetCount();
-    if (refCount < 0)
-    {
-        Reset();
-        _shared->SetLastError(VE_INTERFACE_NOT_FOUND, kTraceWarning);
-        return (-1);
-    }
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-        VoEId(_shared->instance_id(), -1),
-        "VoEBaseImpl reference counter = %d", refCount);
-    return (refCount);
 }
 
 void VoEBaseImpl::OnErrorIsReported(const ErrorCode error)

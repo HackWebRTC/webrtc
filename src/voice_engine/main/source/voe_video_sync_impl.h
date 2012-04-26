@@ -13,17 +13,13 @@
 
 #include "voe_video_sync.h"
 
-#include "ref_count.h"
 #include "shared_data.h"
 
 namespace webrtc {
 
-class VoEVideoSyncImpl : public VoEVideoSync,
-                         public voe::RefCount
+class VoEVideoSyncImpl : public VoEVideoSync
 {
 public:
-    virtual int Release();
-
     virtual int GetPlayoutBufferSize(int& bufferMs);
 
     virtual int SetMinimumPlayoutDelay(int channel, int delayMs);

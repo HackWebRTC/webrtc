@@ -13,7 +13,6 @@
 
 #include "voe_call_report.h"
 
-#include "ref_count.h"
 #include "shared_data.h"
 
 
@@ -21,12 +20,9 @@ namespace webrtc
 {
 class FileWrapper;
 
-class VoECallReportImpl: public VoECallReport,
-                         public voe::RefCount
+class VoECallReportImpl: public VoECallReport
 {
 public:
-    virtual int Release();
-
     virtual int ResetCallReportStatistics(int channel);
 
     virtual int GetEchoMetricSummary(EchoStatistics& stats);

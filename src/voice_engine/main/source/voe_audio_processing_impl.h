@@ -13,17 +13,12 @@
 
 #include "voe_audio_processing.h"
 
-#include "ref_count.h"
 #include "shared_data.h"
 
 namespace webrtc {
 
-class VoEAudioProcessingImpl
-    : public VoEAudioProcessing,
-      public voe::RefCount {
+class VoEAudioProcessingImpl : public VoEAudioProcessing {
  public:
-  virtual int Release();
-
   virtual int SetNsStatus(bool enable, NsModes mode = kNsUnchanged);
 
   virtual int GetNsStatus(bool& enabled, NsModes& mode);

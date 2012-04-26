@@ -13,19 +13,15 @@
 
 #include "voe_hardware.h"
 
-#include "ref_count.h"
 #include "shared_data.h"
 
 namespace webrtc
 {
 class CpuWrapper;
 
-class VoEHardwareImpl: public VoEHardware,
-                       public voe::RefCount
+class VoEHardwareImpl: public VoEHardware
 {
 public:
-    virtual int Release();
-
     virtual int GetNumOfRecordingDevices(int& devices);
 
     virtual int GetNumOfPlayoutDevices(int& devices);

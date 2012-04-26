@@ -29,11 +29,9 @@ VoEDtmf* VoEDtmf::GetInterface(VoiceEngine* voiceEngine)
     {
         return NULL;
     }
-    VoiceEngineImpl* s =
-        reinterpret_cast<VoiceEngineImpl*> (voiceEngine);
-    VoEDtmfImpl* d = s;
-    ( *d)++;
-    return (d);
+    VoiceEngineImpl* s = reinterpret_cast<VoiceEngineImpl*>(voiceEngine);
+    s->AddRef();
+    return s;
 #endif
 }
 
@@ -52,24 +50,6 @@ VoEDtmfImpl::~VoEDtmfImpl()
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoEDtmfImpl::~VoEDtmfImpl() - dtor");
-}
-
-int VoEDtmfImpl::Release()
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "VoEDtmf::Release()");
-    (*this)--;
-    int refCount = GetCount();
-    if (refCount < 0)
-    {
-        Reset(); // reset reference counter to zero => OK to delete VE
-        _shared->SetLastError(VE_INTERFACE_NOT_FOUND, kTraceWarning);
-        return (-1);
-    }
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-        VoEId(_shared->instance_id(), -1),
-        "VoEDtmf reference counter = %d", refCount);
-    return (refCount);
 }
 
 int VoEDtmfImpl::SendTelephoneEvent(int channel,

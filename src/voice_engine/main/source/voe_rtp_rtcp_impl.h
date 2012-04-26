@@ -13,17 +13,13 @@
 
 #include "voe_rtp_rtcp.h"
 
-#include "ref_count.h"
 #include "shared_data.h"
 
 namespace webrtc {
 
-class VoERTP_RTCPImpl : public VoERTP_RTCP,
-                        public voe::RefCount
+class VoERTP_RTCPImpl : public VoERTP_RTCP
 {
 public:
-
-    virtual int Release();
     // Registration of observers for RTP and RTCP callbacks
     virtual int RegisterRTPObserver(int channel, VoERTPObserver& observer);
 

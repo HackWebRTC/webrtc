@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -35,14 +35,34 @@ WEBRTC_DLLEXPORT VoiceEngine* GetVoiceEngine();
 VoiceEngine* GetVoiceEngine()
 {
     VoiceEngineImpl* self = new VoiceEngineImpl();
-    VoiceEngine* ve = reinterpret_cast<VoiceEngine*> (self);
+    VoiceEngine* ve = reinterpret_cast<VoiceEngine*>(self);
     if (ve != NULL)
     {
+        self->AddRef();  // First reference.  Released in VoiceEngine::Delete.
         gVoiceEngineInstanceCounter++;
     }
     return ve;
 }
 } // extern "C"
+
+int VoiceEngineImpl::AddRef() {
+  return ++_ref_count;
+}
+
+// This implements the Release() method for all the inherited interfaces.
+int VoiceEngineImpl::Release() {
+  int new_ref = --_ref_count;
+  assert(new_ref >= 0);
+  if (new_ref == 0) {
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, -1,
+                 "VoiceEngineImpl self deleting (voiceEngine=0x%p)",
+                 this);
+
+    delete this;
+  }
+
+  return new_ref;
+}
 
 VoiceEngine* VoiceEngine::Create()
 {
@@ -107,198 +127,21 @@ int VoiceEngine::SetTraceCallback(TraceCallback* callback)
     return (Trace::SetTraceCallback(callback));
 }
 
-bool VoiceEngine::Delete(VoiceEngine*& voiceEngine, bool ignoreRefCounters)
+bool VoiceEngine::Delete(VoiceEngine*& voiceEngine)
 {
     if (voiceEngine == NULL)
-    {
         return false;
-    }
 
-    VoiceEngineImpl* s = reinterpret_cast<VoiceEngineImpl*> (voiceEngine);
-    VoEBaseImpl* base = s;
-
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, -1,
-                 "VoiceEngine::Delete(voiceEngine=0x%p, ignoreRefCounters=%d)",
-                 voiceEngine, ignoreRefCounters);
-
-    if (!ignoreRefCounters)
-    {
-        if (base->GetCount() != 0)
-        {
-            WEBRTC_TRACE(kTraceCritical, kTraceVoice, -1,
-                         "VoEBase reference counter is %d => memory will not "
-                             "be released properly!", base->GetCount());
-            return false;
-        }
-#ifdef WEBRTC_VOICE_ENGINE_CODEC_API
-        VoECodecImpl* codec = s;
-        if (codec->GetCount() != 0)
-        {
-            WEBRTC_TRACE(kTraceCritical, kTraceVoice, -1,
-                         "VoECodec reference counter is %d => memory will not "
-                             "be released properly!", codec->GetCount());
-            return false;
-        }
-#endif
-
-#ifdef WEBRTC_VOICE_ENGINE_DTMF_API
-        VoEDtmfImpl* dtmf = s;
-        if (dtmf->GetCount() != 0)
-        {
-            WEBRTC_TRACE(kTraceCritical, kTraceVoice, -1,
-                         "VoEDtmf reference counter is %d =>"
-                             "memory will not be released properly!",
-                         dtmf->GetCount());
-            return false;
-        }
-#endif
-
-#ifdef WEBRTC_VOICE_ENGINE_ENCRYPTION_API
-        VoEEncryptionImpl* encrypt = s;
-        if (encrypt->GetCount() != 0)
-        {
-            WEBRTC_TRACE(kTraceCritical, kTraceVoice, -1,
-                         "VoEEncryption reference counter is %d => "
-                             "memory will not be released properly!",
-                         encrypt->GetCount());
-            return false;
-        }
-#endif
-
-#ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
-        VoEExternalMediaImpl* extmedia = s;
-        if (extmedia->GetCount() != 0)
-        {
-            WEBRTC_TRACE(kTraceCritical, kTraceVoice, -1,
-                         "VoEExternalMedia reference counter is %d => "
-                             "memory will not be released properly!",
-                         extmedia->GetCount());
-            return false;
-        }
-#endif
-
-#ifdef WEBRTC_VOICE_ENGINE_CALL_REPORT_API
-        VoECallReportImpl* report = s;
-        if (report->GetCount() != 0)
-        {
-            WEBRTC_TRACE(kTraceCritical, kTraceVoice, -1,
-                         "VoECallReport reference counter is %d => memory "
-                             "will not be released properly!",
-                         report->GetCount());
-            return false;
-        }
-#endif
-
-#ifdef WEBRTC_VOICE_ENGINE_FILE_API
-        VoEFileImpl* file = s;
-        if (file->GetCount() != 0)
-        {
-            WEBRTC_TRACE(
-                         kTraceCritical,
-                         kTraceVoice,
-                         -1,
-                         "VoEFile reference counter is %d => memory will not "
-                         "be released properly!",
-                         file->GetCount());
-            return false;
-        }
-#endif
-
-#ifdef WEBRTC_VOICE_ENGINE_HARDWARE_API
-        VoEHardwareImpl* hware = s;
-        if (hware->GetCount() != 0)
-        {
-            WEBRTC_TRACE(kTraceCritical, kTraceVoice, -1,
-                         "VoEHardware reference counter is %d => memory will "
-                         "not be released properly!", hware->GetCount());
-            return false;
-        }
-#endif
-
-#ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
-        VoENetEqStatsImpl* neteqst = s;
-        if (neteqst->GetCount() != 0)
-        {
-            WEBRTC_TRACE(kTraceCritical, kTraceVoice, -1,
-                         "VoENetEqStats reference counter is %d => "
-                             "memory will not be released properly!",
-                         neteqst->GetCount());
-            return false;
-        }
-#endif
-
-#ifdef WEBRTC_VOICE_ENGINE_NETWORK_API
-        VoENetworkImpl* netw = s;
-        if (netw->GetCount() != 0)
-        {
-            WEBRTC_TRACE(kTraceCritical, kTraceVoice, -1,
-                         "VoENetworkImpl reference counter is %d => memory "
-                         "will not be released properly!", netw->GetCount());
-            return false;
-        }
-#endif
-
-#ifdef WEBRTC_VOICE_ENGINE_RTP_RTCP_API
-        VoERTP_RTCPImpl* rtcp = s;
-        if (rtcp->GetCount() != 0)
-        {
-            WEBRTC_TRACE(kTraceCritical, kTraceVoice, -1,
-                         "VoERTP_RTCP reference counter is %d =>"
-                             "memory will not be released properly!",
-                         rtcp->GetCount());
-            return false;
-        }
-#endif
-
-#ifdef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
-        VoEVideoSyncImpl* vsync = s;
-        if (vsync->GetCount() != 0)
-        {
-            WEBRTC_TRACE(kTraceCritical, kTraceVoice, -1,
-                         "VoEVideoSync reference counter is %d => "
-                             "memory will not be released properly!",
-                         vsync->GetCount());
-            return false;
-        }
-#endif
-
-#ifdef WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
-        VoEVolumeControlImpl* volume = s;
-        if (volume->GetCount() != 0)
-        {
-            WEBRTC_TRACE(kTraceCritical, kTraceVoice, -1,
-                         "VoEVolumeControl reference counter is %d =>"
-                             "memory will not be released properly!",
-                         volume->GetCount());
-            return false;
-        }
-#endif
-
-#ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
-        VoEAudioProcessingImpl* apm = s;
-        if (apm->GetCount() != 0)
-        {
-            WEBRTC_TRACE(kTraceCritical, kTraceVoice, -1,
-                         "VoEAudioProcessing reference counter is %d => "
-                             "memory will not be released properly!",
-                         apm->GetCount());
-            return false;
-        }
-#endif
-        WEBRTC_TRACE(kTraceInfo, kTraceVoice, -1,
-                     "all reference counters are zero => deleting the "
-                     "VoiceEngine instance...");
-
-    } // if (!ignoreRefCounters)
-    else
-    {
-        WEBRTC_TRACE(kTraceInfo, kTraceVoice, -1,
-                     "reference counters are ignored => deleting the "
-                     "VoiceEngine instance...");
-    }
-
-    delete s;
+    VoiceEngineImpl* s = reinterpret_cast<VoiceEngineImpl*>(voiceEngine);
+    // Release the reference that was added in GetVoiceEngine.
+    int ref = s->Release();
     voiceEngine = NULL;
+
+    if (ref != 0) {
+        WEBRTC_TRACE(kTraceWarning, kTraceVoice, -1,
+            "VoiceEngine::Delete did not release the very last reference.  "
+            "%d references remain.", ref);
+    }
 
     return true;
 }

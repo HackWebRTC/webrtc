@@ -13,16 +13,12 @@
 
 #include "voe_file.h"
 #include "shared_data.h"
-#include "ref_count.h"
 
 namespace webrtc {
 
-class VoEFileImpl : public VoEFile,
-                    public voe::RefCount
+class VoEFileImpl : public VoEFile
 {
 public:
-    virtual int Release();
-
     // Playout file locally
 
     virtual int StartPlayingFileLocally(

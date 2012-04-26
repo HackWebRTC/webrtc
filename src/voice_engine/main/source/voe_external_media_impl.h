@@ -13,17 +13,13 @@
 
 #include "voe_external_media.h"
 
-#include "ref_count.h"
 #include "shared_data.h"
 
 namespace webrtc {
 
-class VoEExternalMediaImpl : public VoEExternalMedia,
-                             public voe::RefCount
+class VoEExternalMediaImpl : public VoEExternalMedia
 {
 public:
-    virtual int Release();
-
     virtual int RegisterExternalMediaProcessing(
         int channel,
         ProcessingTypes type,

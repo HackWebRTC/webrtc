@@ -28,11 +28,9 @@ VoEEncryption* VoEEncryption::GetInterface(VoiceEngine* voiceEngine)
     {
         return NULL;
     }
-    VoiceEngineImpl* s =
-        reinterpret_cast<VoiceEngineImpl*> (voiceEngine);
-    VoEEncryptionImpl* d = s;
-    (*d)++;
-    return (d);
+    VoiceEngineImpl* s = reinterpret_cast<VoiceEngineImpl*>(voiceEngine);
+    s->AddRef();
+    return s;
 #endif
 }
 
@@ -48,25 +46,6 @@ VoEEncryptionImpl::~VoEEncryptionImpl()
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoEEncryptionImpl::~VoEEncryptionImpl() - dtor");
-}
-
-int VoEEncryptionImpl::Release()
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "VoEEncryption::Release()");
-    (*this)--;
-    int refCount = GetCount();
-    if (refCount < 0)
-    {
-      // reset reference counter to zero => OK to delete VE
-        Reset();
-        _shared->SetLastError(VE_INTERFACE_NOT_FOUND, kTraceWarning);
-        return (-1);
-    }
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-        VoEId(_shared->instance_id(), -1),
-        "VoEEncryption reference counter = %d", refCount);
-    return (refCount);
 }
 
 int VoEEncryptionImpl::EnableSRTPSend(

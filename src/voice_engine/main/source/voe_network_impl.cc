@@ -28,11 +28,9 @@ VoENetwork* VoENetwork::GetInterface(VoiceEngine* voiceEngine)
     {
         return NULL;
     }
-    VoiceEngineImpl* s =
-            reinterpret_cast<VoiceEngineImpl*> (voiceEngine);
-    VoENetworkImpl* d = s;
-    (*d)++;
-    return (d);
+    VoiceEngineImpl* s = reinterpret_cast<VoiceEngineImpl*>(voiceEngine);
+    s->AddRef();
+    return s;
 #endif
 }
 
@@ -48,24 +46,6 @@ VoENetworkImpl::~VoENetworkImpl()
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "~VoENetworkImpl() - dtor");
-}
-
-int VoENetworkImpl::Release()
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "VoENetworkImpl::Release()");
-    (*this)--;
-    int refCount = GetCount();
-    if (refCount < 0)
-    {
-        Reset();
-        _shared->SetLastError(VE_INTERFACE_NOT_FOUND, kTraceWarning);
-        return (-1);
-    }
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-        VoEId(_shared->instance_id(), -1),
-        "VoENetworkImpl reference counter = %d", refCount);
-    return (refCount);
 }
 
 int VoENetworkImpl::RegisterExternalTransport(int channel,
@@ -264,7 +244,8 @@ int VoENetworkImpl::GetLocalIP(char ipAddr[64], bool ipv6)
         return -1;
     }
 
-    char localIPAddr[64];
+    // Use a buffer big enough for IPv6 addresses and initialize it with zeros.
+    char localIPAddr[256] = {0};
 
     if (ipv6)
     {

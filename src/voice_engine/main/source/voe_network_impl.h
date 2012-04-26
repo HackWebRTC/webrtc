@@ -13,19 +13,15 @@
 
 #include "voe_network.h"
 
-#include "ref_count.h"
 #include "shared_data.h"
 
 
 namespace webrtc
 {
 
-class VoENetworkImpl: public VoENetwork,
-                      public voe::RefCount
+class VoENetworkImpl: public VoENetwork
 {
 public:
-    virtual int Release();
-
     virtual int RegisterExternalTransport(int channel, Transport& transport);
 
     virtual int DeRegisterExternalTransport(int channel);

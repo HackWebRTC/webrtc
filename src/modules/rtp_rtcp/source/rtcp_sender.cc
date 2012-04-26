@@ -360,7 +360,9 @@ WebRtc_Word32 RTCPSender::CNAME(char cName[RTCP_CNAME_SIZE]) {
 }
 
 WebRtc_Word32 RTCPSender::SetCNAME(const char cName[RTCP_CNAME_SIZE]) {
-  assert(cName);
+  if (!cName)
+    return -1;
+
   CriticalSectionScoped lock(_criticalSectionRTCPSender);
   _CNAME[RTCP_CNAME_SIZE - 1] = 0;
   strncpy(_CNAME, cName, RTCP_CNAME_SIZE - 1);
