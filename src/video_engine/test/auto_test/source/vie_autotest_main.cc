@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -139,7 +139,7 @@ int ViEAutoTestMain::RunSpecialTestCase(int choice) {
   return errors;
 }
 
-bool ViEAutoTestMain::RunInteractiveMode() {
+int ViEAutoTestMain::RunInteractiveMode() {
   ViETest::Log(" ============================== ");
   ViETest::Log("    WebRTC ViE 3.x Autotest     ");
   ViETest::Log(" ============================== \n");
@@ -179,10 +179,11 @@ bool ViEAutoTestMain::RunInteractiveMode() {
   if (errors) {
     ViETest::Log("Test done with errors, see ViEAutotestLog.txt for test "
         "result.\n");
+    return 1;
   } else {
     ViETest::Log("Test done without errors, see ViEAutotestLog.txt for "
         "test result.\n");
+    return 0;
   }
-  return true;
 }
 
