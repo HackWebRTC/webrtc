@@ -64,6 +64,8 @@ AudioFrameOperations::StereoToMono(AudioFrame& audioFrame)
 }
 
 void AudioFrameOperations::SwapStereoChannels(AudioFrame* frame) {
+  if (frame->_audioChannel != 2) return;
+
   for (int i = 0; i < frame->_payloadDataLengthInSamples * 2; i += 2) {
     int16_t temp_data = frame->_payloadData[i];
     frame->_payloadData[i] = frame->_payloadData[i + 1];
