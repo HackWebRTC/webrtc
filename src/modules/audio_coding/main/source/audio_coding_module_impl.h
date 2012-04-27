@@ -259,17 +259,17 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
   // Returns true if the codec's |index| is registered with the master and
   // is a stereo codec, RED or CN.
-  bool IsCodecForSlave(int index);
+  bool IsCodecForSlave(int index) const;
 
   // Returns true if the |codec| is RED.
-  bool IsCodecRED(CodecInst codec);
+  bool IsCodecRED(const CodecInst* codec) const;
   // ...or if its |index| is RED.
-  bool IsCodecRED(int index);
+  bool IsCodecRED(int index) const;
 
   // Returns true if the |codec| is CN.
-  bool IsCodecCN(int index);
+  bool IsCodecCN(int index) const;
   // ...or if its |index| is CN.
-  bool IsCodecCN(CodecInst codec);
+  bool IsCodecCN(const CodecInst* codec) const;
 
   AudioPacketizationCallback* _packetizationCallback;
   WebRtc_Word32 _id;

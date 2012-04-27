@@ -573,7 +573,7 @@ WebRtc_Word32 AudioCodingModuleImpl::RegisterSendCodec(
 
   // RED can be registered with other payload type. If not registered a default
   // payload type is used.
-  if (IsCodecRED(send_codec)) {
+  if (IsCodecRED(&send_codec)) {
     // TODO(tlegrand): Remove this check. Already taken care of in
     // ACMCodecDB::CodecNumber().
     // Check if the payload-type is valid
@@ -590,7 +590,7 @@ WebRtc_Word32 AudioCodingModuleImpl::RegisterSendCodec(
 
   // CNG can be registered with other payload type. If not registered the
   // default payload types from codec database will be used.
-  if (IsCodecCN(send_codec)) {
+  if (IsCodecCN(&send_codec)) {
     // CNG is registered.
     switch (send_codec.plfreq) {
       case 8000: {
@@ -1283,7 +1283,7 @@ WebRtc_Word32 AudioCodingModuleImpl::RegisterReceiveCodec(
   // If codec already registered, unregister. Except for CN where we only
   // unregister if payload type is changing.
   if ((_registeredPlTypes[codec_id] == receive_codec.pltype)
-      && IsCodecCN(receive_codec)) {
+      && IsCodecCN(&receive_codec)) {
     // Codec already registered as receiver with this payload type. Nothing
     // to be done.
     return 0;
@@ -1310,8 +1310,8 @@ WebRtc_Word32 AudioCodingModuleImpl::RegisterReceiveCodec(
   // Register stereo codecs with the slave, or, if we've had already seen a
   // stereo codec, register CN or RED as a special case.
   if (receive_codec.channels == 2 ||
-      (_stereoReceiveRegistered && (IsCodecCN(receive_codec) ||
-          IsCodecRED(receive_codec)))) {
+      (_stereoReceiveRegistered && (IsCodecCN(&receive_codec) ||
+          IsCodecRED(&receive_codec)))) {
     // TODO(andrew): refactor this block to combine with InitStereoSlave().
 
     if (!_stereoReceiveRegistered) {
@@ -1366,7 +1366,7 @@ WebRtc_Word32 AudioCodingModuleImpl::RegisterReceiveCodec(
 
   _registeredPlTypes[codec_id] = receive_codec.pltype;
 
-  if (IsCodecRED(receive_codec)) {
+  if (IsCodecRED(&receive_codec)) {
     _receiveREDPayloadType = receive_codec.pltype;
   }
   return 0;
@@ -1583,24 +1583,24 @@ int AudioCodingModuleImpl::UpdateUponReceivingCodec(int index) {
   return 0;
 }
 
-bool AudioCodingModuleImpl::IsCodecForSlave(int index) {
+bool AudioCodingModuleImpl::IsCodecForSlave(int index) const {
   return (_registeredPlTypes[index] != -1 && _stereoReceive[index]);
 }
 
-bool AudioCodingModuleImpl::IsCodecRED(int index) {
-  return (IsCodecRED(ACMCodecDB::database_[index]));
+bool AudioCodingModuleImpl::IsCodecRED(int index) const {
+  return (IsCodecRED(&ACMCodecDB::database_[index]));
 }
 
-bool AudioCodingModuleImpl::IsCodecRED(CodecInst codec) {
-  return (STR_CASE_CMP(codec.plname, "RED") == 0);
+bool AudioCodingModuleImpl::IsCodecRED(const CodecInst* codec) const {
+  return (STR_CASE_CMP(codec->plname, "RED") == 0);
 }
 
-bool AudioCodingModuleImpl::IsCodecCN(int index) {
-  return (IsCodecCN(ACMCodecDB::database_[index]));
+bool AudioCodingModuleImpl::IsCodecCN(int index) const {
+  return (IsCodecCN(&ACMCodecDB::database_[index]));
 }
 
-bool AudioCodingModuleImpl::IsCodecCN(CodecInst codec) {
-  return (STR_CASE_CMP(codec.plname, "CN") == 0);
+bool AudioCodingModuleImpl::IsCodecCN(const CodecInst* codec) const {
+  return (STR_CASE_CMP(codec->plname, "CN") == 0);
 }
 
 int AudioCodingModuleImpl::InitStereoSlave() {
