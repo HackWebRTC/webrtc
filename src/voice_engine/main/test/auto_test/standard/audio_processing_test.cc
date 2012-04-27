@@ -333,6 +333,28 @@ TEST_F(AudioProcessingTest, CanSetDelayOffset) {
   EXPECT_EQ(-50, voe_apm_->DelayOffsetMs());
 }
 
+TEST_F(AudioProcessingTest, HighPassFilterIsOnByDefault) {
+  EXPECT_TRUE(voe_apm_->IsHighPassFilterEnabled());
+}
+
+TEST_F(AudioProcessingTest, CanSetHighPassFilter) {
+  EXPECT_EQ(0, voe_apm_->EnableHighPassFilter(true));
+  EXPECT_TRUE(voe_apm_->IsHighPassFilterEnabled());
+  EXPECT_EQ(0, voe_apm_->EnableHighPassFilter(false));
+  EXPECT_FALSE(voe_apm_->IsHighPassFilterEnabled());
+}
+
+TEST_F(AudioProcessingTest, StereoChannelSwappingIsOffByDefault) {
+  EXPECT_FALSE(voe_apm_->IsStereoChannelSwappingEnabled());
+}
+
+TEST_F(AudioProcessingTest, CanSetStereoChannelSwapping) {
+  voe_apm_->EnableStereoChannelSwapping(true);
+  EXPECT_TRUE(voe_apm_->IsStereoChannelSwappingEnabled());
+  voe_apm_->EnableStereoChannelSwapping(false);
+  EXPECT_FALSE(voe_apm_->IsStereoChannelSwappingEnabled());
+}
+
 #if defined(MAC_IPHONE) || defined(WEBRTC_ANDROID)
 
 TEST_F(AudioProcessingTest, AgcIsOffByDefaultAndDigital) {
