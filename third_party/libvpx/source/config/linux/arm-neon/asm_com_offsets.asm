@@ -12,4 +12,5 @@
 .equ yv12_buffer_config_v_buffer ,  32
 .equ yv12_buffer_config_border ,  40
 .equ VP8BORDERINPIXELS_VAL ,  32
+.equ MFQE_PRECISION_VAL ,  4
 	.section	.note.GNU-stack,"",%progbits
