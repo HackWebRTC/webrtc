@@ -54,7 +54,6 @@ public:
     virtual WebRtc_UWord16 MaxPayloadLength() const = 0;
     virtual WebRtc_UWord16 MaxDataPayloadLength() const = 0;
     virtual WebRtc_UWord16 PacketOverHead() const = 0;
-    virtual WebRtc_UWord16 TargetSendBitrateKbit() const = 0;
     virtual WebRtc_UWord16 ActualSendBitrateKbit() const = 0;
 
     virtual WebRtc_Word32 SendToNetwork(const WebRtc_UWord8* dataBuffer,
@@ -75,14 +74,13 @@ public:
     void ProcessBitrate();
     void ProcessSendToNetwork();
 
-    WebRtc_UWord16 TargetSendBitrateKbit() const;
     WebRtc_UWord16 ActualSendBitrateKbit() const;
 
     WebRtc_UWord32 VideoBitrateSent() const;
     WebRtc_UWord32 FecOverheadRate() const;
     WebRtc_UWord32 NackOverheadRate() const;
 
-    WebRtc_Word32 SetTargetSendBitrate(const WebRtc_UWord32 bits);
+    void SetTargetSendBitrate(const WebRtc_UWord32 bits);
 
     WebRtc_UWord16 MaxDataPayloadLength() const; // with RTP and FEC headers
 

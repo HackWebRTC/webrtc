@@ -1258,13 +1258,7 @@ Channel::~Channel()
                      "~Channel() failed to de-register incoming RTP"
                      " callback (RTP module)");
     }
-    if (_rtpRtcpModule.RegisterIncomingRTCPCallback(NULL) == -1)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-                     VoEId(_instanceId,_channelId),
-                     "~Channel() failed to de-register incoming RTCP "
-                     "callback (RTP module)");
-    }
+    _rtpRtcpModule.RegisterRtcpObservers(NULL, NULL, NULL);
     if (_rtpRtcpModule.RegisterAudioCallback(NULL) == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice,
@@ -1413,11 +1407,11 @@ Channel::Init()
     }
 
      // --- Register all permanent callbacks
+    _rtpRtcpModule.RegisterRtcpObservers(NULL, NULL, this);
 
     const bool fail =
         (_rtpRtcpModule.RegisterIncomingDataCallback(this) == -1) ||
         (_rtpRtcpModule.RegisterIncomingRTPCallback(this) == -1) ||
-        (_rtpRtcpModule.RegisterIncomingRTCPCallback(this) == -1) ||
         (_rtpRtcpModule.RegisterSendTransport(this) == -1) ||
         (_rtpRtcpModule.RegisterAudioCallback(this) == -1) ||
         (_audioCodingModule.RegisterTransportCallback(this) == -1) ||

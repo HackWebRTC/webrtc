@@ -91,8 +91,6 @@ public:
 
     void UpdateRemoteBitrateEstimate(unsigned int target_bitrate);
 
-    void ReceivedRemb(unsigned int estimated_bitrate);
-
     /*
     *   TMMBR
     */

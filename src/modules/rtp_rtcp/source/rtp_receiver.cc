@@ -123,7 +123,7 @@ RTPReceiver::~RTPReceiver() {
   WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, _id, "%s deleted", __FUNCTION__);
 }
 
-WebRtc_Word32 RTPReceiver::Init() {
+void RTPReceiver::Init() {
   CriticalSectionScoped lock(_criticalSectionRTPReceiver);
 
   _lastReceiveTime = 0;
@@ -181,7 +181,7 @@ WebRtc_Word32 RTPReceiver::Init() {
 
   Bitrate::Init();
   RTPReceiverAudio::Init();
-  return RTPReceiverVideo::Init();
+  RTPReceiverVideo::Init();
 }
 
 void

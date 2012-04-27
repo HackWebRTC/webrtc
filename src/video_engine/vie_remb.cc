@@ -101,38 +101,9 @@ void VieRemb::RemoveRembSender(RtpRtcp* rtp_rtcp) {
   }
 }
 
-void VieRemb::AddSendChannel(RtpRtcp* rtp_rtcp) {
-  assert(rtp_rtcp);
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, -1,
-               "VieRemb::AddSendChannel(%p)", rtp_rtcp);
-
-  CriticalSectionScoped cs(list_crit_.get());
-
-  // Verify this module hasn't been added earlier.
-  if (std::find(send_modules_.begin(), send_modules_.end(), rtp_rtcp) !=
-      send_modules_.end())
-    return;
-  send_modules_.push_back(rtp_rtcp);
-}
-
-void VieRemb::RemoveSendChannel(RtpRtcp* rtp_rtcp) {
-  assert(rtp_rtcp);
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, -1,
-               "VieRemb::RemoveSendChannel(%p)", rtp_rtcp);
-
-  CriticalSectionScoped cs(list_crit_.get());
-  for (RtpModules::iterator it = send_modules_.begin();
-      it != send_modules_.end(); ++it) {
-    if ((*it) == rtp_rtcp) {
-      send_modules_.erase(it);
-      return;
-    }
-  }
-}
-
 bool VieRemb::InUse() const {
   CriticalSectionScoped cs(list_crit_.get());
-  if(receive_modules_.empty() && send_modules_.empty() && rtcp_sender_.empty())
+  if(receive_modules_.empty() && rtcp_sender_.empty())
     return false;
   else
     return true;
@@ -159,21 +130,6 @@ void VieRemb::OnReceiveBitrateChanged(unsigned int ssrc, unsigned int bitrate) {
   }
   update_time_bitrates_[ssrc] = std::make_pair(
       TickTime::MillisecondTimestamp(), bitrate);
-}
-
-void VieRemb::OnReceivedRemb(unsigned int bitrate) {
-  WEBRTC_TRACE(kTraceStream, kTraceVideo, -1,
-               "VieRemb::OnReceivedRemb(bitrate: %u)", bitrate);
-  // TODO(mflodman) Should be extended to allow different split of bitrate.
-  // TODO(mflodman) Do we want to call |SetMaximumBitrateEstimate| from
-  // |Process| instead?
-
-  // Split the bitrate estimate between all sending channels.
-  CriticalSectionScoped cs(list_crit_.get());
-  for (RtpModules::iterator it = send_modules_.begin();
-       it != send_modules_.end(); ++it) {
-    (*it)->SetMaximumBitrateEstimate(bitrate / send_modules_.size());
-  }
 }
 
 WebRtc_Word32 VieRemb::ChangeUniqueId(const WebRtc_Word32 id) {

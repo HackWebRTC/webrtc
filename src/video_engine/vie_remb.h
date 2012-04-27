@@ -48,13 +48,6 @@ class VieRemb : public RtpRemoteBitrateObserver, public Module {
   // Removes a REMB RTCP sender.
   void RemoveRembSender(RtpRtcp* rtp_rtcp);
 
-  // Called to add a send channel encoding and sending data, affected by
-  // received  REMB packets.
-  void AddSendChannel(RtpRtcp* rtp_rtcp);
-
-  // Removes the specified channel from receiving REMB packet estimates.
-  void RemoveSendChannel(RtpRtcp* rtp_rtcp);
-
   // Returns true if the instance is in use, false otherwise.
   bool InUse() const;
 
@@ -64,10 +57,6 @@ class VieRemb : public RtpRemoteBitrateObserver, public Module {
   // a certain time interval.
   // Implements RtpReceiveBitrateUpdate.
   virtual void OnReceiveBitrateChanged(unsigned int ssrc, unsigned int bitrate);
-
-  // Called for every new receive REMB packet and distributes the estmate
-  // between all sending modules.
-  virtual void OnReceivedRemb(unsigned int bitrate);
 
   // Implements Module.
   virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
@@ -88,9 +77,6 @@ class VieRemb : public RtpRemoteBitrateObserver, public Module {
 
   // All RtpRtcp modules to include in the REMB packet.
   RtpModules receive_modules_;
-
-  // All modules encoding and sending data.
-  RtpModules send_modules_;
 
   // All modules that can send REMB RTCP.
   RtpModules rtcp_sender_;

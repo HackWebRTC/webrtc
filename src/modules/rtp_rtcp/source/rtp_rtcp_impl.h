@@ -13,7 +13,6 @@
 
 #include <list>
 
-#include "bandwidth_management.h"
 #include "rtcp_receiver.h"
 #include "rtcp_sender.h"
 #include "rtp_receiver.h"
@@ -132,14 +131,17 @@ public:
                                          const WebRtc_UWord32 audioRTCPArrivalTimeFrac);
 
     // Used by the module to deliver the incoming data to the codec module
-    virtual WebRtc_Word32 RegisterIncomingDataCallback(RtpData* incomingDataCallback);
+    virtual WebRtc_Word32 RegisterIncomingDataCallback(
+        RtpData* incomingDataCallback);
 
     // Used by the module to deliver messages to the codec module/appliation
-    virtual WebRtc_Word32 RegisterIncomingRTPCallback(RtpFeedback* incomingMessagesCallback);
+    virtual WebRtc_Word32 RegisterIncomingRTPCallback(
+        RtpFeedback* incomingMessagesCallback);
 
-    virtual WebRtc_Word32 RegisterIncomingRTCPCallback(RtcpFeedback* incomingMessagesCallback);
-
-    virtual WebRtc_Word32 RegisterIncomingVideoCallback(RtpVideoFeedback* incomingMessagesCallback);
+    virtual void RegisterRtcpObservers(
+        RtcpIntraFrameObserver* intraFrameCallback,
+        RtcpBandwidthObserver* bandwidthCallback,
+        RtcpFeedback* callback);
 
     virtual WebRtc_Word32 RegisterAudioCallback(RtpAudioFeedback* messagesCallback);
 
@@ -323,9 +325,6 @@ public:
                                       const WebRtc_UWord8 numberOfSSRC,
                                       const WebRtc_UWord32* SSRC);
 
-    virtual WebRtc_Word32 SetMaximumBitrateEstimate(
-        const WebRtc_UWord32 bitrate);
-
     virtual bool SetRemoteBitrateObserver(RtpRemoteBitrateObserver* observer);
     /*
     *   (IJ) Extended jitter report.
@@ -445,9 +444,7 @@ public:
 
     virtual WebRtc_Word32 SetCameraDelay(const WebRtc_Word32 delayMS);
 
-    virtual void SetSendBitrate(const WebRtc_UWord32 startBitrate,
-                                const WebRtc_UWord16 minBitrateKbit,
-                                const WebRtc_UWord16 maxBitrateKbit);
+    virtual void SetTargetSendBitrate(const WebRtc_UWord32 bitrate);
 
     virtual WebRtc_Word32 SetGenericFECStatus(const bool enable,
                                             const WebRtc_UWord8 payloadTypeRED,
@@ -473,9 +470,6 @@ public:
                              WebRtc_UWord32* fecRate,
                              WebRtc_UWord32* nackRate) const;
 
-    virtual int EstimatedSendBandwidth(
-        WebRtc_UWord32* available_bandwidth) const;
-
     virtual int EstimatedReceiveBandwidth(
         WebRtc_UWord32* available_bandwidth) const;
 
@@ -490,22 +484,10 @@ public:
 
     void OnReceivedNTP() ;
 
-    // bw estimation
-    virtual void OnPacketLossStatisticsUpdate(
-        const WebRtc_UWord8 fractionLost,
-        const WebRtc_UWord16 roundTripTime,
-        const WebRtc_UWord32 lastReceivedExtendedHighSeqNum);
-
     void OnReceivedTMMBR();
-
-    void OnReceivedEstimatedMaxBitrate(const WebRtc_UWord32 maxBitrate);
-
-    void OnReceivedBandwidthEstimateUpdate(const WebRtc_UWord16 bwEstimateKbit);
 
     // bad state of RTP receiver request a keyframe
     void OnRequestIntraFrame();
-
-    void OnReceivedIntraFrameRequest(const RtpRtcp* caller);
 
     // received a request for a new SLI
     void OnReceivedSliceLossIndication(const WebRtc_UWord8 pictureID);
@@ -546,14 +528,9 @@ protected:
     RTCPSender                _rtcpSender;
     RTCPReceiver              _rtcpReceiver;
 
-    BandwidthManagement       _bandwidthManagement;
-
     bool                      _owns_clock;
     RtpRtcpClock&             _clock;
 private:
-    void SendKeyFrame();
-    void ProcessDefaultModuleBandwidth();
-
     WebRtc_Word32             _id;
     const bool                _audio;
     bool                      _collisionDetected;
@@ -574,7 +551,6 @@ private:
     WebRtc_UWord32        _deadOrAliveTimeoutMS;
     WebRtc_UWord32        _deadOrAliveLastTimer;
 
-    // receive side
     WebRtc_UWord32        _receivedNTPsecsAudio;
     WebRtc_UWord32        _receivedNTPfracAudio;
     WebRtc_UWord32        _RTCPArrivalTimeSecsAudio;

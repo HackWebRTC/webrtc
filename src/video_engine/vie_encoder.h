@@ -12,13 +12,15 @@
 #define WEBRTC_VIDEO_ENGINE_VIE_ENCODER_H_
 
 #include "common_types.h"
-#include "rtp_rtcp_defines.h"
 #include "typedefs.h"
 #include "video_coding_defines.h"
 #include "video_processing.h"
 #include "vie_defines.h"
 #include "vie_file_recorder.h"
 #include "vie_frame_provider_base.h"
+
+#include "modules/bitrate_controller/include/bitrate_controller.h"
+#include "modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
@@ -28,21 +30,24 @@ class ProcessThread;
 class QMVideoSettingsCallback;
 class RtpRtcp;
 class VideoCodingModule;
+class ViEBitrateObserver;
 class ViEEffectFilter;
 class ViEEncoderObserver;
 
 class ViEEncoder
-    : public RtpVideoFeedback,
-      public RtcpFeedback,
+    : public RtcpIntraFrameObserver,
       public VCMPacketizationCallback,
       public VCMProtectionCallback,
       public VCMSendStatisticsCallback,
       public ViEFrameCallback {
  public:
+  friend class ViEBitrateObserver;
+
   ViEEncoder(WebRtc_Word32 engine_id,
              WebRtc_Word32 channel_id,
              WebRtc_UWord32 number_of_cores,
-             ProcessThread& module_process_thread);
+             ProcessThread& module_process_thread,
+             BitrateController* bitrate_controller);
   ~ViEEncoder();
 
   bool Init();
@@ -93,8 +98,10 @@ class ViEEncoder
   WebRtc_Word32 SendKeyFrame();
   WebRtc_Word32 SendCodecStatistics(WebRtc_UWord32& num_key_frames,
                                     WebRtc_UWord32& num_delta_frames);
+
   WebRtc_Word32 EstimatedSendBandwidth(
-      WebRtc_UWord32* available_bandwidth) const;
+        WebRtc_UWord32* available_bandwidth) const;
+
   int CodecTargetBitrate(WebRtc_UWord32* bitrate) const;
   // Loss protection.
   WebRtc_Word32 UpdateProtectionMethod();
@@ -122,27 +129,26 @@ class ViEEncoder
                                        const WebRtc_UWord32 frame_rate);
   WebRtc_Word32 RegisterCodecObserver(ViEEncoderObserver* observer);
 
-  // Implements RtcpFeedback.
-  virtual void OnSLIReceived(const WebRtc_Word32 id,
-                             const WebRtc_UWord8 picture_id);
-  virtual void OnRPSIReceived(const WebRtc_Word32 id,
-                              const WebRtc_UWord64 picture_id);
+  // Implements RtcpIntraFrameObserver.
+  virtual void OnReceivedIntraFrameRequest(const uint32_t ssrc);
 
-  // Implements RtpVideoFeedback.
-  virtual void OnReceivedIntraFrameRequest(const WebRtc_Word32 id,
-                                           const FrameType type,
-                                           const WebRtc_UWord8 stream_idx);
+  virtual void OnReceivedSLI(const uint32_t ssrc,
+                             const uint8_t picture_id);
 
-  virtual void OnNetworkChanged(const WebRtc_Word32 id,
-                                const WebRtc_UWord32 bitrate_bps,
-                                const WebRtc_UWord8 fraction_lost,
-                                const WebRtc_UWord16 round_trip_time_ms);
+  virtual void OnReceivedRPSI(const uint32_t ssrc,
+                              const uint64_t picture_id);
 
   // Effect filter.
   WebRtc_Word32 RegisterEffectFilter(ViEEffectFilter* effect_filter);
 
   // Recording.
   ViEFileRecorder& GetOutgoingFileRecorder();
+
+ protected:
+  // Called by BitrateObserver.
+  void OnNetworkChanged(const uint32_t bitrate_bps,
+                        const uint8_t fraction_lost,
+                        const uint32_t round_trip_time_ms);
 
  private:
   WebRtc_Word32 engine_id_;
@@ -154,7 +160,9 @@ class ViEEncoder
   RtpRtcp& default_rtp_rtcp_;
   scoped_ptr<CriticalSectionWrapper> callback_cs_;
   scoped_ptr<CriticalSectionWrapper> data_cs_;
-  VideoCodec send_codec_;
+  scoped_ptr<BitrateObserver> bitrate_observer_;
+
+  BitrateController* bitrate_controller_;
 
   bool paused_;
   WebRtc_Word64 time_last_intra_request_ms_;

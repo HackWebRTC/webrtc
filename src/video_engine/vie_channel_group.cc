@@ -10,6 +10,7 @@
 
 #include "video_engine/vie_channel_group.h"
 
+#include "modules/bitrate_controller/include/bitrate_controller.h"
 #include "modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "video_engine/vie_channel.h"
 #include "video_engine/vie_encoder.h"
@@ -18,7 +19,9 @@
 namespace webrtc {
 
 ChannelGroup::ChannelGroup(ProcessThread* process_thread)
-    : remb_(new VieRemb(process_thread)) {}
+    : remb_(new VieRemb(process_thread)),
+      bitrate_controller_(BitrateController::CreateBitrateController()) {
+}
 
 ChannelGroup::~ChannelGroup() {
   assert(channels_.empty());
@@ -53,15 +56,12 @@ bool ChannelGroup::SetChannelRembStatus(int channel_id,
   } else if (channel) {
     channel->EnableRemb(false);
   }
-
   // Update the remb instance with necesary RTp modules.
   RtpRtcp* rtp_module = channel->rtp_rtcp();
   if (sender) {
     remb_->AddRembSender(rtp_module);
-    remb_->AddSendChannel(encoder->SendRtpRtcpModule());
   } else {
     remb_->RemoveRembSender(rtp_module);
-    remb_->RemoveSendChannel(encoder->SendRtpRtcpModule());
   }
   if (receiver) {
     remb_->AddReceiveChannel(rtp_module);

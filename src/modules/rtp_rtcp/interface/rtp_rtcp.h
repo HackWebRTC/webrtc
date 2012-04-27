@@ -534,12 +534,6 @@ public:
                              WebRtc_UWord32* nackRate) const = 0;
 
     /*
-     *  Get the send-side estimate of the available bandwidth.
-     */
-    virtual int EstimatedSendBandwidth(
-        WebRtc_UWord32* available_bandwidth) const = 0;
-
-    /*
      *  Get the receive-side estimate of the available bandwidth.
      */
     virtual int EstimatedReceiveBandwidth(
@@ -573,13 +567,14 @@ public:
     ***************************************************************************/
 
     /*
-    *   RegisterIncomingRTCPCallback
-    *
-    *   incomingMessagesCallback    - callback object that will receive messages from RTCP
-    *
-    *   return -1 on failure else 0
+    *   Register a callback objects that will receive callbacks for video
+    *   related events such as an incoming key frame request and events that
+    *   could indicate bandwidth overuse.
     */
-    virtual WebRtc_Word32 RegisterIncomingRTCPCallback(RtcpFeedback* incomingMessagesCallback) = 0;
+    virtual void RegisterRtcpObservers(
+        RtcpIntraFrameObserver* intraFrameCallback,
+        RtcpBandwidthObserver* bandwidthCallback,
+        RtcpFeedback* callback) = 0;
 
     /*
     *    Get RTCP status
@@ -780,10 +775,6 @@ public:
                                       const WebRtc_UWord8 numberOfSSRC,
                                       const WebRtc_UWord32* SSRC) = 0;
 
-    // Used to set maximum bitrate estimate received in a REMB packet.
-    virtual WebRtc_Word32 SetMaximumBitrateEstimate(
-        const WebRtc_UWord32 bitrate) = 0;
-
     // Registers an observer to call when the estimate of the incoming channel
     // changes.
     virtual bool SetRemoteBitrateObserver(
@@ -960,14 +951,6 @@ public:
     ***************************************************************************/
 
     /*
-    *   Register a callback object that will receive callbacks for video related events
-    *   such as an incoming key frame request.
-    *
-    *   return -1 on failure else 0
-    */
-    virtual WebRtc_Word32 RegisterIncomingVideoCallback(RtpVideoFeedback* incomingMessagesCallback) = 0;
-
-    /*
     *   Set the estimated camera delay in MS
     *
     *   return -1 on failure else 0
@@ -975,19 +958,9 @@ public:
     virtual WebRtc_Word32 SetCameraDelay(const WebRtc_Word32 delayMS) = 0;
 
     /*
-    *   Set the start and max send bitrate
-    *   used by the bandwidth management
-    *
-    *   Not calling this or setting startBitrateKbit to 0 disables the bandwidth management
-    *
-    *   minBitrateKbit = 0 equals no min bitrate
-    *   maxBitrateKbit = 0 equals no max bitrate
-    *
-    *   return -1 on failure else 0
+    *   Set the target send bitrate
     */
-    virtual void SetSendBitrate(const WebRtc_UWord32 startBitrate,
-                                const WebRtc_UWord16 minBitrateKbit,
-                                const WebRtc_UWord16 maxBitrateKbit) = 0;
+    virtual void SetTargetSendBitrate(const WebRtc_UWord32 bitrate) = 0;
 
     /*
     *   Turn on/off generic FEC

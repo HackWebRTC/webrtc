@@ -60,7 +60,9 @@ class ViEChannel
   ViEChannel(WebRtc_Word32 channel_id,
              WebRtc_Word32 engine_id,
              WebRtc_UWord32 number_of_cores,
-             ProcessThread& module_process_thread);
+             ProcessThread& module_process_thread,
+             RtcpIntraFrameObserver* intra_frame_observer,
+             RtcpBandwidthObserver* bandwidth_observer);
   ~ViEChannel();
 
   WebRtc_Word32 Init();
@@ -176,7 +178,6 @@ class ViEChannel
                                          const WebRtc_UWord32 name,
                                          const WebRtc_UWord16 length,
                                          const WebRtc_UWord8* data);
-
   // Implements RtpFeedback.
   virtual WebRtc_Word32 OnInitializeDecoder(
       const WebRtc_Word32 id,
@@ -374,6 +375,8 @@ class ViEChannel
   ViERTPObserver* rtp_observer_;
   ViERTCPObserver* rtcp_observer_;
   ViENetworkObserver* networkObserver_;
+  RtcpIntraFrameObserver* intra_frame_observer_;
+  RtcpBandwidthObserver* bandwidth_observer_;
   bool rtp_packet_timeout_;
   bool using_packet_spread_;
 

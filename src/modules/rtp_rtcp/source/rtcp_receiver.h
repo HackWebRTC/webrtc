@@ -44,9 +44,9 @@ public:
 
     WebRtc_UWord32 RelaySSRC() const;
 
-    WebRtc_Word32 RegisterIncomingRTCPCallback(RtcpFeedback* incomingMessagesCallback);
-
-    WebRtc_Word32 RegisterIncomingVideoCallback(RtpVideoFeedback* incomingMessagesCallback);
+    void RegisterRtcpObservers(RtcpIntraFrameObserver* intra_frame_callback,
+                               RtcpBandwidthObserver* bandwidth_callback,
+                               RtcpFeedback* feedback_callback);
 
     WebRtc_Word32 IncomingRTCPPacket(RTCPHelp::RTCPPacketInformation& rtcpPacketInformation,
                                    RTCPUtility::RTCPParserV2 *rtcpParser);
@@ -79,13 +79,6 @@ public:
     void UpdateLipSync(const WebRtc_Word32 audioVideoOffset) const;
 
     WebRtc_Word32 SenderInfoReceived(RTCPSenderInfo* senderInfo) const;
-
-    void OnReceivedIntraFrameRequest(const FrameType frameType,
-                                     const WebRtc_UWord8 streamIdx) const;
-
-    void OnReceivedSliceLossIndication(const WebRtc_UWord8 pitureID) const;
-    void OnReceivedReferencePictureSelectionIndication(
-        const WebRtc_UWord64 pitureID) const;
 
     // get statistics
     WebRtc_Word32 StatisticsReceived(
@@ -202,7 +195,8 @@ protected:
 
   CriticalSectionWrapper* _criticalSectionFeedbacks;
   RtcpFeedback*           _cbRtcpFeedback;
-  RtpVideoFeedback*       _cbVideoFeedback;
+  RtcpBandwidthObserver*  _cbRtcpBandwidthObserver;
+  RtcpIntraFrameObserver* _cbRtcpIntraFrameObserver;
 
   CriticalSectionWrapper* _criticalSectionRTCPReceiver;
   WebRtc_UWord32          _SSRC;
