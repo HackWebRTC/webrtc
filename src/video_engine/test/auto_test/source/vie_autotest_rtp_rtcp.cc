@@ -352,9 +352,7 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(0, ViE.network->DeregisterSendTransport(tbChannel.videoChannel));
 
     // The linux virtual cam, vivi, gives a too simple image to encode,
-    // resulting in a low bitrate, and the REMB test below fails. Disabling the
-    // test if vivi is used while waiting for a better virtual device.
-    // BUG = 321.
+    // resulting in a low bitrate, and the REMB test below fails.
     if (tbCapture.device_name() != "vivi") {
       // Create three channels. 1 and 2 are grouped together and will get a
       // common REMB packet. 3 is in its own group and will get a separate REMB
