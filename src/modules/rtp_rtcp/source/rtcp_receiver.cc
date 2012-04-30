@@ -671,7 +671,7 @@ bool RTCPReceiver::UpdateRTCPReceiveInformationTimers() {
 }
 
 WebRtc_Word32 RTCPReceiver::BoundingSet(bool &tmmbrOwner,
-                                        TMMBRSet*& boundingSetRec) {
+                                        TMMBRSet* boundingSetRec) {
   CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
   std::map<WebRtc_UWord32, RTCPReceiveInformation*>::iterator receiveInfoIt =

@@ -196,10 +196,34 @@ TEST_F(RtcpSenderTest, SendsTmmbnIfSetAndEmpty) {
   bool owner = false;
   // The BoundingSet function returns the number of members of the
   // bounding set, and touches the incoming set only if there's > 1.
-  // TODO(hta): Change the type of the BoundingSet second argument from
-  // TMMBRSet*& to TMMBRSet* - it never writes to the pointer.
   EXPECT_EQ(0, test_transport_->rtcp_receiver_->BoundingSet(owner,
       incoming_set));
-  EXPECT_TRUE(incoming_set == NULL);
+}
+
+TEST_F(RtcpSenderTest, SendsTmmbnIfSetAndValid) {
+  EXPECT_EQ(0, rtcp_sender_->SetRTCPStatus(kRtcpCompound));
+  TMMBRSet bounding_set;
+  bounding_set.VerifyAndAllocateSet(1);
+  const WebRtc_UWord32 idx = bounding_set.lengthOfSet;
+  // TODO(hta): Make an accessor on TMMBRSet to do this insertion.
+  const WebRtc_UWord32 kSourceSsrc = 12345;
+  bounding_set.ptrPacketOHSet[idx] = 0;
+  bounding_set.ptrTmmbrSet[idx] = 32768;  // bits per second
+  bounding_set.ptrSsrcSet[idx] = kSourceSsrc;
+  bounding_set.lengthOfSet++;
+
+  EXPECT_EQ(0, rtcp_sender_->SetTMMBN(&bounding_set, 3));
+  ASSERT_EQ(0U, test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags);
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(kRtcpSr));
+  // We now expect the packet to show up in the rtcp_packet_info_ of
+  // test_transport_.
+  ASSERT_NE(0U, test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags);
+  EXPECT_TRUE(gotPacketType(kRtcpTmmbn));
+  TMMBRSet incoming_set;
+  bool owner = false;
+  // We expect 1 member of the incoming set.
+  EXPECT_EQ(1, test_transport_->rtcp_receiver_->BoundingSet(owner,
+      &incoming_set));
+  EXPECT_EQ(kSourceSsrc, incoming_set.ptrSsrcSet[0]);
 }
 }  // namespace webrtc

@@ -91,7 +91,7 @@ public:
 
     bool UpdateRTCPReceiveInformationTimers();
 
-    WebRtc_Word32 BoundingSet(bool &tmmbrOwner, TMMBRSet*& boundingSetRec);
+    WebRtc_Word32 BoundingSet(bool &tmmbrOwner, TMMBRSet* boundingSetRec);
 
     WebRtc_Word32 UpdateTMMBR();
 
