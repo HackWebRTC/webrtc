@@ -165,13 +165,13 @@ int ConvertI420ToRGB565(const uint8_t* src_frame,
                         int width, int height) {
   int abs_height = (height < 0) ? -height : height;
   const uint8_t* yplane = src_frame;
-  const uint8_t* uplane = src_frame + width * abs_height;
-  const uint8_t* vplane = uplane + (width * abs_height / 4);
+  const uint8_t* uplane = yplane + width * abs_height;
+  const uint8_t* vplane = uplane + (width + 1) / 2 * (abs_height + 1) / 2;
 
   return libyuv::I420ToRGB565(yplane, width,
-                              uplane, width / 2,
-                              vplane, width / 2,
-                              dst_frame, width,
+                              uplane, (width + 1) / 2,
+                              vplane, (width + 1) / 2,
+                              dst_frame, width * 2,
                               width, height);
 }
 
