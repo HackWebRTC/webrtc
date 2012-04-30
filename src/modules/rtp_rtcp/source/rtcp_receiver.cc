@@ -308,7 +308,7 @@ RTCPReceiver::IncomingRTCPPacket(RTCPPacketInformation& rtcpPacketInformation,
             HandleTMMBR(*rtcpParser, rtcpPacketInformation);
             break;
         case RTCPUtility::kRtcpRtpfbTmmbnCode:
-            HandleTMMBN(*rtcpParser);
+            HandleTMMBN(*rtcpParser, rtcpPacketInformation);
             break;
         case RTCPUtility::kRtcpRtpfbSrReqCode:
             HandleSR_REQ(*rtcpParser, rtcpPacketInformation);
@@ -944,7 +944,8 @@ RTCPReceiver::HandleTMMBRItem(RTCPReceiveInformation& receiveInfo,
 
 // no need for critsect we have _criticalSectionRTCPReceiver
 void
-RTCPReceiver::HandleTMMBN(RTCPUtility::RTCPParserV2& rtcpParser)
+RTCPReceiver::HandleTMMBN(RTCPUtility::RTCPParserV2& rtcpParser,
+                          RTCPPacketInformation& rtcpPacketInformation)
 {
     const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
     RTCPReceiveInformation* ptrReceiveInfo = GetReceiveInformation(rtcpPacket.TMMBN.SenderSSRC);
@@ -954,6 +955,7 @@ RTCPReceiver::HandleTMMBN(RTCPUtility::RTCPParserV2& rtcpParser)
         rtcpParser.Iterate();
         return;
     }
+    rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpTmmbn;
     // Use packet length to calc max number of TMMBN blocks
     // each TMMBN block is 8 bytes
     ptrdiff_t maxNumOfTMMBNBlocks = rtcpParser.LengthLeft() / 8;

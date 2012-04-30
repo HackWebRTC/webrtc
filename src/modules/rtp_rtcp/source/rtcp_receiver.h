@@ -165,7 +165,8 @@ protected:
                          RTCPHelp::RTCPPacketInformation& rtcpPacketInformation,
                          const WebRtc_UWord32 senderSSRC);
 
-    void HandleTMMBN(RTCPUtility::RTCPParserV2& rtcpParser);
+    void HandleTMMBN(RTCPUtility::RTCPParserV2& rtcpParser,
+                     RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
 
     void HandleSR_REQ(RTCPUtility::RTCPParserV2& rtcpParser,
                       RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);

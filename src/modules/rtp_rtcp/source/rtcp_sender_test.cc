@@ -110,6 +110,12 @@ class RtcpSenderTest : public ::testing::Test {
     delete system_clock_;
   }
 
+  // Helper function: Incoming RTCP has a specific packet type.
+  bool gotPacketType(RTCPPacketType packet_type) {
+    return ((test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags) &
+	    packet_type) != 0U;
+  }
+
   RtpRtcpClock* system_clock_;
   ModuleRtpRtcpImpl* rtp_rtcp_impl_;
   RTCPSender* rtcp_sender_;
@@ -170,9 +176,30 @@ TEST_F(RtcpSenderTest, TestCompound_NoRtpReceived) {
       kRtcpTransmissionTimeOffset);
 }
 
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-
-  return RUN_ALL_TESTS();
+// This test is written to verify actual behaviour. It does not seem
+// to make much sense to send an empty TMMBN, since there is no place
+// to put an actual limit here. It's just information that no limit
+// is set, which is kind of the starting assumption.
+// See http://code.google.com/p/webrtc/issues/detail?id=468 for one
+// situation where this caused confusion.
+TEST_F(RtcpSenderTest, SendsTmmbnIfSetAndEmpty) {
+  EXPECT_EQ(0, rtcp_sender_->SetRTCPStatus(kRtcpCompound));
+  TMMBRSet bounding_set;
+  EXPECT_EQ(0, rtcp_sender_->SetTMMBN(&bounding_set, 3));
+  ASSERT_EQ(0U, test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags);
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(kRtcpSr));
+  // We now expect the packet to show up in the rtcp_packet_info_ of
+  // test_transport_.
+  ASSERT_NE(0U, test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags);
+  EXPECT_TRUE(gotPacketType(kRtcpTmmbn));
+  TMMBRSet* incoming_set = NULL;
+  bool owner = false;
+  // The BoundingSet function returns the number of members of the
+  // bounding set, and touches the incoming set only if there's > 1.
+  // TODO(hta): Change the type of the BoundingSet second argument from
+  // TMMBRSet*& to TMMBRSet* - it never writes to the pointer.
+  EXPECT_EQ(0, test_transport_->rtcp_receiver_->BoundingSet(owner,
+      incoming_set));
+  EXPECT_TRUE(incoming_set == NULL);
 }
 }  // namespace webrtc
