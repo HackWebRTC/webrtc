@@ -113,7 +113,7 @@ class RtcpSenderTest : public ::testing::Test {
   // Helper function: Incoming RTCP has a specific packet type.
   bool gotPacketType(RTCPPacketType packet_type) {
     return ((test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags) &
-	    packet_type) != 0U;
+            packet_type) != 0U;
   }
 
   RtpRtcpClock* system_clock_;
