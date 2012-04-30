@@ -11,9 +11,11 @@
 .settings
 .status_password
 /continuous_build/depot_tools
+/third_party/bloat
 /third_party/gaeunit
-/third_party/oauth2
 /third_party/google-visualization-python
+/third_party/oauth2
+/third_party/webtreemap
 
 # Buildbot creates these files:
 .manhole
