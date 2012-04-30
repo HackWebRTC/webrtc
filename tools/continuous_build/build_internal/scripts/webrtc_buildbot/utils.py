@@ -29,13 +29,13 @@ SUPPORTED_PLATFORMS = ('Linux', 'Mac', 'Windows')
 
 WEBRTC_SOLUTION_NAME = 'trunk'
 WEBRTC_SVN_LOCATION = 'http://webrtc.googlecode.com/svn/trunk'
-WEBRTC_TRUNK_DIR = 'build/trunk/'
-WEBRTC_BUILD_DIR = 'build/'
+WEBRTC_TRUNK_DIR = 'build/trunk'
+WEBRTC_BUILD_DIR = 'build'
 
 VALGRIND_CMD = ['tools/valgrind-webrtc/webrtc_tests.sh', '-t', 'cmdline']
 
-DEFAULT_COVERAGE_DIR = '/var/www/coverage/'
-DEFAULT_BLOAT_DIR = '/var/www/bloat/'
+DEFAULT_COVERAGE_DIR = '/var/www/coverage'
+DEFAULT_BLOAT_DIR = '/var/www/bloat'
 DEFAULT_MASTER_WORK_DIR = '.'
 GCLIENT_RETRIES = 3
 
@@ -225,13 +225,17 @@ class WebRTCFactory(factory.BuildFactory):
     """
     self.AddCommonTestRunStep(test)
 
-  def AddGclientSyncStep(self, alwaysUseLatest=False):
+  def AddGclientSyncStep(self, workdir=WEBRTC_BUILD_DIR,
+                         alwaysUseLatest=False):
     """Helper method for invoking gclient sync.
 
     Args:
-        alwaysUseLatest: Set to true to always use the latest build, otherwise
-                         the highest revision in the changeset will be used
-                         for sync.
+         workdir: The name of the directory to checkout the source into.
+                  The default is 'build' which is the base working dir of
+                  most build slaves.
+         alwaysUseLatest: Set to true to always use the latest build, otherwise
+                          the highest revision in the changeset will be used
+                          for sync.
     """
     gclient_spec = self._ConfigureWhatToBuild()
     env = self._GetEnvironmentWithDisabledDepotToolsUpdate()
@@ -246,7 +250,7 @@ class WebRTCFactory(factory.BuildFactory):
     self.addStep(chromium_step.GClient,
                  alwaysUseLatest=alwaysUseLatest,
                  gclient_spec=gclient_spec,
-                 workdir='build',
+                 workdir=workdir,
                  mode='update',
                  env=env,
                  retry=retry,
@@ -459,8 +463,8 @@ class GenerateCodeCoverage(ShellCommand):
 class WebRTCAndroidFactory(WebRTCFactory):
   """Sets up the Android build."""
 
-  def __init__(self, build_status_oracle):
-    WebRTCFactory.__init__(self, build_status_oracle)
+  def __init__(self, build_status_oracle, is_try_slave=False):
+    WebRTCFactory.__init__(self, build_status_oracle, is_try_slave)
 
   def EnableBuild(self, product='toro'):
     prefix = 'rm -rf out/target/product/%s/obj/' % product
@@ -472,10 +476,11 @@ class WebRTCAndroidFactory(WebRTCFactory):
         ]
     cmd = ' ; '.join(cleanup_list)
     self.AddCommonStep(cmd, descriptor='cleanup')
-
-    cmd = 'svn checkout %s external/webrtc' % self.svn_url
-    self.AddCommonStep(cmd, descriptor='svn (checkout)')
-
+    self.AddGclientSyncStep(workdir='build/trunk/external/webrtc')
+    # Work around lack of support for checking out into another dir than the
+    # last dir of the Subversion URL.
+    self.AddCommonStep(cmd='mv external/webrtc/trunk/* external/webrtc',
+                       descriptor='Prepare WebRTC source')
     cmd = ('source build/envsetup.sh && lunch full_%s-eng '
            '&& mmm external/webrtc showcommands' % product)
     self.AddCommonStep(cmd, descriptor='build')
@@ -484,15 +489,15 @@ class WebRTCAndroidFactory(WebRTCFactory):
 class WebRTCAndroidNDKFactory(WebRTCFactory):
   """Sets up the Android NDK build."""
 
-  def __init__(self, build_status_oracle):
-    WebRTCFactory.__init__(self, build_status_oracle)
+  def __init__(self, build_status_oracle, is_try_slave=False):
+    WebRTCFactory.__init__(self, build_status_oracle, is_try_slave)
 
   def EnableBuild(self):
     self.AddSmartCleanStep()
     self.AddGclientSyncStep()
     self._AddAndroidStep(cmd='gclient runhooks',
                          descriptor='gen_android_makefiles')
-    self._AddAndroidStep(cmd='make -j100', descriptor='make')
+    self._AddAndroidStep(cmd='make -j100', descriptor='build')
 
   def _AddAndroidStep(self, cmd, descriptor):
     full_cmd = ('source build/android/buildbot_functions.sh &&'
@@ -500,6 +505,7 @@ class WebRTCAndroidNDKFactory(WebRTCFactory):
                 'source build/android/envsetup.sh &&'
                 '%s' % cmd)
     self.AddCommonStep(cmd=full_cmd, descriptor=descriptor)
+
 
 class WebRTCChromeFactory(WebRTCFactory):
   """Sets up the Chrome Browser+WebRTC build."""

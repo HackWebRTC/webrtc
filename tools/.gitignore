@@ -51,6 +51,8 @@ twistd.pid
 /continuous_build/build_internal/masters/master.webrtc/win-32-dbg
 /continuous_build/build_internal/masters/master.webrtc/win-32-release
 /continuous_build/build_internal/masters/master.webrtc/video
+/continuous_build/build_internal/masters/master.tryserver.webrtc/android-trybot
+/continuous_build/build_internal/masters/master.tryserver.webrtc/android-ndk-trybot
 /continuous_build/build_internal/masters/master.tryserver.webrtc/linux-trybot-1
 /continuous_build/build_internal/masters/master.tryserver.webrtc/linux-trybot-2
 /continuous_build/build_internal/masters/master.tryserver.webrtc/mac-trybot-1

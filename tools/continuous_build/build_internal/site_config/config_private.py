@@ -111,7 +111,7 @@ class Master(object):
   class WebRTC(_ChromiumBase):
     # Used by the waterfall display.
     project_name = 'WebRTC'
-    master_port = 9010
+    master_port = 8010
     slave_port = 9112
     master_port_alt = 9014
 
@@ -129,7 +129,7 @@ class Master(object):
 
   class TryServer(_ChromiumBase):
     project_name = 'WebRTC Try Server'
-    master_port = 9011
+    master_port = 9010
     slave_port = 9113
     master_port_alt = 9015
     try_job_port = 9018
