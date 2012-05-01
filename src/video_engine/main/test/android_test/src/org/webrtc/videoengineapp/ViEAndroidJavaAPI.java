@@ -43,7 +43,6 @@ public class ViEAndroidJavaAPI {
     public native int Init(boolean enableTrace);
     public native int Terminate();
 
-
     public native int StartSend(int channel);
     public native int StopRender(int channel);
     public native int StopSend(int channel);
@@ -83,11 +82,10 @@ public class ViEAndroidJavaAPI {
 
     // Voice Engine API
     // Create and Delete functions
-    public native boolean VoE_Create(Activity context);
+    public native boolean VoE_Create();
     public native boolean VoE_Delete();
 
     // Initialization and Termination functions
-    public native int VoE_Authenticate(String key);
     public native int VoE_Init(boolean enableTrace);
     public native int VoE_Terminate();
 
