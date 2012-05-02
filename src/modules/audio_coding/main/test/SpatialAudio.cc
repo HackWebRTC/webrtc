@@ -199,17 +199,17 @@ SpatialAudio::EncodeDecode(
     while(!_inFile.EndOfFile())
     {
         _inFile.Read10MsData(audioFrame);
-        for(int n = 0; n < audioFrame._payloadDataLengthInSamples; n++)
+        for(int n = 0; n < audioFrame.samples_per_channel_; n++)
         {
-            audioFrame._payloadData[n] = (WebRtc_Word16)floor(
-                audioFrame._payloadData[n] * leftPanning + 0.5);
+            audioFrame.data_[n] = (WebRtc_Word16)floor(
+                audioFrame.data_[n] * leftPanning + 0.5);
         }
         CHECK_ERROR(_acmLeft->Add10MsData(audioFrame));
 
-        for(int n = 0; n < audioFrame._payloadDataLengthInSamples; n++)
+        for(int n = 0; n < audioFrame.samples_per_channel_; n++)
         {
-            audioFrame._payloadData[n] = (WebRtc_Word16)floor(
-                audioFrame._payloadData[n] * rightToLeftRatio + 0.5);
+            audioFrame.data_[n] = (WebRtc_Word16)floor(
+                audioFrame.data_[n] * rightToLeftRatio + 0.5);
         }
         CHECK_ERROR(_acmRight->Add10MsData(audioFrame));
 

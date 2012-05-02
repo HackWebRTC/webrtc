@@ -258,15 +258,15 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     return kNullPointerError;
   }
 
-  if (frame->_frequencyInHz != sample_rate_hz_) {
+  if (frame->sample_rate_hz_ != sample_rate_hz_) {
     return kBadSampleRateError;
   }
 
-  if (frame->_audioChannel != num_input_channels_) {
+  if (frame->num_channels_ != num_input_channels_) {
     return kBadNumberChannelsError;
   }
 
-  if (frame->_payloadDataLengthInSamples != samples_per_channel_) {
+  if (frame->samples_per_channel_ != samples_per_channel_) {
     return kBadDataLengthError;
   }
 
@@ -275,9 +275,9 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     event_msg_->set_type(audioproc::Event::STREAM);
     audioproc::Stream* msg = event_msg_->mutable_stream();
     const size_t data_size = sizeof(int16_t) *
-                             frame->_payloadDataLengthInSamples *
-                             frame->_audioChannel;
-    msg->set_input_data(frame->_payloadData, data_size);
+                             frame->samples_per_channel_ *
+                             frame->num_channels_;
+    msg->set_input_data(frame->data_, data_size);
     msg->set_delay(stream_delay_ms_);
     msg->set_drift(echo_cancellation_->stream_drift_samples());
     msg->set_level(gain_control_->stream_analog_level());
@@ -289,7 +289,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   // TODO(ajm): experiment with mixing and AEC placement.
   if (num_output_channels_ < num_input_channels_) {
     capture_audio_->Mix(num_output_channels_);
-    frame->_audioChannel = num_output_channels_;
+    frame->num_channels_ = num_output_channels_;
   }
 
   bool data_processed = is_data_processed();
@@ -367,9 +367,9 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   if (debug_file_->Open()) {
     audioproc::Stream* msg = event_msg_->mutable_stream();
     const size_t data_size = sizeof(int16_t) *
-                             frame->_payloadDataLengthInSamples *
-                             frame->_audioChannel;
-    msg->set_output_data(frame->_payloadData, data_size);
+                             frame->samples_per_channel_ *
+                             frame->num_channels_;
+    msg->set_output_data(frame->data_, data_size);
     err = WriteMessageToDebugFile();
     if (err != kNoError) {
       return err;
@@ -389,15 +389,15 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
     return kNullPointerError;
   }
 
-  if (frame->_frequencyInHz != sample_rate_hz_) {
+  if (frame->sample_rate_hz_ != sample_rate_hz_) {
     return kBadSampleRateError;
   }
 
-  if (frame->_audioChannel != num_reverse_channels_) {
+  if (frame->num_channels_ != num_reverse_channels_) {
     return kBadNumberChannelsError;
   }
 
-  if (frame->_payloadDataLengthInSamples != samples_per_channel_) {
+  if (frame->samples_per_channel_ != samples_per_channel_) {
     return kBadDataLengthError;
   }
 
@@ -406,9 +406,9 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
     event_msg_->set_type(audioproc::Event::REVERSE_STREAM);
     audioproc::ReverseStream* msg = event_msg_->mutable_reverse_stream();
     const size_t data_size = sizeof(int16_t) *
-                             frame->_payloadDataLengthInSamples *
-                             frame->_audioChannel;
-    msg->set_data(frame->_payloadData, data_size);
+                             frame->samples_per_channel_ *
+                             frame->num_channels_;
+    msg->set_data(frame->data_, data_size);
     err = WriteMessageToDebugFile();
     if (err != kNoError) {
       return err;

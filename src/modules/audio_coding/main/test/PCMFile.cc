@@ -155,13 +155,13 @@ WebRtc_Word32 PCMFile::Read10MsData(AudioFrame& audio_frame) {
     channels = 2;
   }
 
-  WebRtc_Word32 payload_size = (WebRtc_Word32) fread(audio_frame._payloadData,
+  WebRtc_Word32 payload_size = (WebRtc_Word32) fread(audio_frame.data_,
                                                     sizeof(WebRtc_UWord16),
                                                     samples_10ms_ * channels,
                                                     pcm_file_);
   if (payload_size < samples_10ms_ * channels) {
     for (int k = payload_size; k < samples_10ms_ * channels; k++) {
-      audio_frame._payloadData[k] = 0;
+      audio_frame.data_[k] = 0;
     }
     if (auto_rewind_) {
       rewind(pcm_file_);
@@ -170,34 +170,34 @@ WebRtc_Word32 PCMFile::Read10MsData(AudioFrame& audio_frame) {
       end_of_file_ = true;
     }
   }
-  audio_frame._payloadDataLengthInSamples = samples_10ms_;
-  audio_frame._frequencyInHz = frequency_;
-  audio_frame._audioChannel = channels;
-  audio_frame._timeStamp = timestamp_;
+  audio_frame.samples_per_channel_ = samples_10ms_;
+  audio_frame.sample_rate_hz_ = frequency_;
+  audio_frame.num_channels_ = channels;
+  audio_frame.timestamp_ = timestamp_;
   timestamp_ += samples_10ms_;
   return samples_10ms_;
 }
 
 void PCMFile::Write10MsData(AudioFrame& audio_frame) {
-  if (audio_frame._audioChannel == 1) {
+  if (audio_frame.num_channels_ == 1) {
     if (!save_stereo_) {
-      fwrite(audio_frame._payloadData, sizeof(WebRtc_UWord16),
-             audio_frame._payloadDataLengthInSamples, pcm_file_);
+      fwrite(audio_frame.data_, sizeof(WebRtc_UWord16),
+             audio_frame.samples_per_channel_, pcm_file_);
     } else {
       WebRtc_Word16* stereo_audio =
-          new WebRtc_Word16[2 * audio_frame._payloadDataLengthInSamples];
+          new WebRtc_Word16[2 * audio_frame.samples_per_channel_];
       int k;
-      for (k = 0; k < audio_frame._payloadDataLengthInSamples; k++) {
-        stereo_audio[k << 1] = audio_frame._payloadData[k];
-        stereo_audio[(k << 1) + 1] = audio_frame._payloadData[k];
+      for (k = 0; k < audio_frame.samples_per_channel_; k++) {
+        stereo_audio[k << 1] = audio_frame.data_[k];
+        stereo_audio[(k << 1) + 1] = audio_frame.data_[k];
       }
       fwrite(stereo_audio, sizeof(WebRtc_Word16),
-             2 * audio_frame._payloadDataLengthInSamples, pcm_file_);
+             2 * audio_frame.samples_per_channel_, pcm_file_);
       delete[] stereo_audio;
     }
   } else {
-    fwrite(audio_frame._payloadData, sizeof(WebRtc_Word16),
-           audio_frame._audioChannel * audio_frame._payloadDataLengthInSamples,
+    fwrite(audio_frame.data_, sizeof(WebRtc_Word16),
+           audio_frame.num_channels_ * audio_frame.samples_per_channel_,
            pcm_file_);
   }
 }

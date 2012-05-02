@@ -404,15 +404,15 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
     if (_externalMedia)
     {
         CriticalSectionScoped cs(&_callbackCritSect);
-        const bool isStereo = (_audioFrame._audioChannel == 2);
+        const bool isStereo = (_audioFrame.num_channels_ == 2);
         if (_externalMediaCallbackPtr)
         {
             _externalMediaCallbackPtr->Process(
                 -1,
                 kRecordingAllChannelsMixed,
-                (WebRtc_Word16*) _audioFrame._payloadData,
-                _audioFrame._payloadDataLengthInSamples,
-                _audioFrame._frequencyInHz,
+                (WebRtc_Word16*) _audioFrame.data_,
+                _audioFrame.samples_per_channel_,
+                _audioFrame.sample_rate_hz_,
                 isStereo);
         }
     }
@@ -1181,22 +1181,22 @@ TransmitMixer::GenerateAudioFrame(const WebRtc_Word16 audioSamples[],
     if (_audioResampler.Push(
         (WebRtc_Word16*) audioSamples,
         nSamples * nChannels,
-        _audioFrame._payloadData,
-        AudioFrame::kMaxAudioFrameSizeSamples,
-        (int&) _audioFrame._payloadDataLengthInSamples) == -1)
+        _audioFrame.data_,
+        AudioFrame::kMaxDataSizeSamples,
+        (int&) _audioFrame.samples_per_channel_) == -1)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, -1),
                      "TransmitMixer::GenerateAudioFrame() resampling failed");
         return -1;
     }
 
-    _audioFrame._payloadDataLengthInSamples /= nChannels;
-    _audioFrame._id = _instanceId;
-    _audioFrame._timeStamp = -1;
-    _audioFrame._frequencyInHz = mixingFrequency;
-    _audioFrame._speechType = AudioFrame::kNormalSpeech;
-    _audioFrame._vadActivity = AudioFrame::kVadUnknown;
-    _audioFrame._audioChannel = nChannels;
+    _audioFrame.samples_per_channel_ /= nChannels;
+    _audioFrame.id_ = _instanceId;
+    _audioFrame.timestamp_ = -1;
+    _audioFrame.sample_rate_hz_ = mixingFrequency;
+    _audioFrame.speech_type_ = AudioFrame::kNormalSpeech;
+    _audioFrame.vad_activity_ = AudioFrame::kVadUnknown;
+    _audioFrame.num_channels_ = nChannels;
 
     return 0;
 }
@@ -1253,14 +1253,14 @@ WebRtc_Word32 TransmitMixer::MixOrReplaceAudioWithFile(
         }
     }
 
-    assert(_audioFrame._payloadDataLengthInSamples == fileSamples);
+    assert(_audioFrame.samples_per_channel_ == fileSamples);
 
     if (_mixFileWithMicrophone)
     {
         // Currently file stream is always mono.
         // TODO(xians): Change the code when FilePlayer supports real stereo.
-        Utility::MixWithSat(_audioFrame._payloadData,
-                            static_cast<int>(_audioFrame._audioChannel),
+        Utility::MixWithSat(_audioFrame.data_,
+                            static_cast<int>(_audioFrame.num_channels_),
                             fileBuffer.get(),
                             1,
                             static_cast<int>(fileSamples));
@@ -1291,16 +1291,16 @@ WebRtc_Word32 TransmitMixer::APMProcessStream(
 
     // Check if the number of input channels has changed. Retain the number
     // of output channels.
-    if (_audioFrame._audioChannel !=
+    if (_audioFrame.num_channels_ !=
         _audioProcessingModulePtr->num_input_channels())
     {
         if (_audioProcessingModulePtr->set_num_channels(
-                _audioFrame._audioChannel,
+                _audioFrame.num_channels_,
                 _audioProcessingModulePtr->num_output_channels()))
         {
             WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
                          "AudioProcessing::set_num_channels(%d, %d) => error",
-                         _audioFrame._frequencyInHz,
+                         _audioFrame.sample_rate_hz_,
                          _audioProcessingModulePtr->num_output_channels());
         }
     }
@@ -1308,14 +1308,14 @@ WebRtc_Word32 TransmitMixer::APMProcessStream(
     // If the frequency has changed we need to change APM settings
     // Sending side is "master"
     if (_audioProcessingModulePtr->sample_rate_hz() !=
-        _audioFrame._frequencyInHz)
+        _audioFrame.sample_rate_hz_)
     {
         if (_audioProcessingModulePtr->set_sample_rate_hz(
-                _audioFrame._frequencyInHz))
+                _audioFrame.sample_rate_hz_))
         {
             WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
                          "AudioProcessing::set_sample_rate_hz(%u) => error",
-                         _audioFrame._frequencyInHz);
+                         _audioFrame.sample_rate_hz_);
         }
     }
 
@@ -1376,7 +1376,7 @@ WebRtc_Word32 TransmitMixer::APMProcessStream(
 int TransmitMixer::TypingDetection()
 {
     // We let the VAD determine if we're using this feature or not.
-    if (_audioFrame._vadActivity == AudioFrame::kVadUnknown)
+    if (_audioFrame.vad_activity_ == AudioFrame::kVadUnknown)
     {
         return (0);
     }
@@ -1388,7 +1388,7 @@ int TransmitMixer::TypingDetection()
         return (-1);
     }
 
-    if (_audioFrame._vadActivity == AudioFrame::kVadActive)
+    if (_audioFrame.vad_activity_ == AudioFrame::kVadActive)
         _timeActive++;
     else
         _timeActive = 0;
@@ -1403,7 +1403,7 @@ int TransmitMixer::TypingDetection()
       ++_timeSinceLastTyping;
     }
 
-    if (keyPressed && (_audioFrame._vadActivity == AudioFrame::kVadActive)
+    if (keyPressed && (_audioFrame.vad_activity_ == AudioFrame::kVadActive)
         && (_timeActive < _timeWindow))
     {
         _penaltyCounter += _costPerTyping;

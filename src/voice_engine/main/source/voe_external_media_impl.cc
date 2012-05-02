@@ -329,9 +329,9 @@ int VoEExternalMediaImpl::ExternalPlayoutGetData(
 
     // Deliver audio (PCM) samples to the external sink
     memcpy(speechData10ms,
-           audioFrame._payloadData,
-           sizeof(WebRtc_Word16)*(audioFrame._payloadDataLengthInSamples));
-    lengthSamples = audioFrame._payloadDataLengthInSamples;
+           audioFrame.data_,
+           sizeof(WebRtc_Word16)*(audioFrame.samples_per_channel_));
+    lengthSamples = audioFrame.samples_per_channel_;
 
     // Store current playout delay (to be used by ExternalRecordingInsertData).
     playout_delay_ms_ = current_delay_ms;

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -430,7 +430,7 @@ APITest::PullAudioRunA()
         {
             _outFileA.Write10MsData(audioFrame);
         }
-        _receiveVADActivityA[(int)audioFrame._vadActivity]++;
+        _receiveVADActivityA[(int)audioFrame.vad_activity_]++;
     }
     return true;
 }
@@ -459,7 +459,7 @@ APITest::PullAudioRunB()
         {
             _outFileB.Write10MsData(audioFrame);
         }
-        _receiveVADActivityB[(int)audioFrame._vadActivity]++;
+        _receiveVADActivityB[(int)audioFrame.vad_activity_]++;
     }     
     return true;
 }

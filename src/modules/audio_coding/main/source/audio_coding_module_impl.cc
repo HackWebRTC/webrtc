@@ -942,17 +942,17 @@ WebRtc_Word32 AudioCodingModuleImpl::Add10MsData(
     return -1;
   }
 
-  if (audio_frame._payloadDataLengthInSamples == 0) {
+  if (audio_frame.samples_per_channel_ == 0) {
     assert(false);
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
                  "Cannot Add 10 ms audio, payload length is zero");
     return -1;
   }
   // Allow for 8, 16, 32 and 48kHz input audio.
-  if ((audio_frame._frequencyInHz != 8000)
-      && (audio_frame._frequencyInHz != 16000)
-      && (audio_frame._frequencyInHz != 32000)
-      && (audio_frame._frequencyInHz != 48000)) {
+  if ((audio_frame.sample_rate_hz_ != 8000)
+      && (audio_frame.sample_rate_hz_ != 16000)
+      && (audio_frame.sample_rate_hz_ != 32000)
+      && (audio_frame.sample_rate_hz_ != 48000)) {
     assert(false);
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
                  "Cannot Add 10 ms audio, input frequency not valid");
@@ -960,8 +960,8 @@ WebRtc_Word32 AudioCodingModuleImpl::Add10MsData(
   }
 
   // If the length and frequency matches. We currently just support raw PCM.
-  if ((audio_frame._frequencyInHz / 100)
-      != audio_frame._payloadDataLengthInSamples) {
+  if ((audio_frame.sample_rate_hz_ / 100)
+      != audio_frame.samples_per_channel_) {
     WEBRTC_TRACE(
         webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
         "Cannot Add 10 ms audio, input frequency and length doesn't match");
@@ -971,33 +971,33 @@ WebRtc_Word32 AudioCodingModuleImpl::Add10MsData(
   // Calculate the timestamp that should be pushed to codec.
   // This might be different from the timestamp of the frame
   // due to re-sampling.
-  bool resample = ((WebRtc_Word32) audio_frame._frequencyInHz
+  bool resample = ((WebRtc_Word32) audio_frame.sample_rate_hz_
       != _sendCodecInst.plfreq);
 
   // If number of channels in audio doesn't match codec mode, we need
   // either mono-to-stereo or stereo-to-mono conversion.
   WebRtc_Word16 audio[WEBRTC_10MS_PCM_AUDIO];
   int audio_channels = _sendCodecInst.channels;
-  if (audio_frame._audioChannel != _sendCodecInst.channels) {
+  if (audio_frame.num_channels_ != _sendCodecInst.channels) {
     if (_sendCodecInst.channels == 2) {
       // Do mono-to-stereo conversion by copying each sample.
-      for (int k = 0; k < audio_frame._payloadDataLengthInSamples; k++) {
-        audio[k * 2] = audio_frame._payloadData[k];
-        audio[(k * 2) + 1] = audio_frame._payloadData[k];
+      for (int k = 0; k < audio_frame.samples_per_channel_; k++) {
+        audio[k * 2] = audio_frame.data_[k];
+        audio[(k * 2) + 1] = audio_frame.data_[k];
       }
     } else if (_sendCodecInst.channels == 1) {
       // Do stereo-to-mono conversion by creating the average of the stereo
       // samples.
-      for (int k = 0; k < audio_frame._payloadDataLengthInSamples; k++) {
-        audio[k] = (audio_frame._payloadData[k * 2]
-            + audio_frame._payloadData[(k * 2) + 1]) >> 1;
+      for (int k = 0; k < audio_frame.samples_per_channel_; k++) {
+        audio[k] = (audio_frame.data_[k * 2]
+            + audio_frame.data_[(k * 2) + 1]) >> 1;
       }
     }
   } else {
     // Copy payload data for future use.
-    size_t length = static_cast<size_t>(audio_frame._payloadDataLengthInSamples
+    size_t length = static_cast<size_t>(audio_frame.samples_per_channel_
         * audio_channels);
-    memcpy(audio, audio_frame._payloadData, length * sizeof(WebRtc_UWord16));
+    memcpy(audio, audio_frame.data_, length * sizeof(WebRtc_UWord16));
   }
 
   WebRtc_UWord32 current_timestamp;
@@ -1010,18 +1010,18 @@ WebRtc_Word32 AudioCodingModuleImpl::Add10MsData(
     WebRtc_Word16 new_length;
 
     // Calculate the timestamp of this frame.
-    if (_lastInTimestamp > audio_frame._timeStamp) {
+    if (_lastInTimestamp > audio_frame.timestamp_) {
       // A wrap around has happened.
       timestamp_diff = ((WebRtc_UWord32) 0xFFFFFFFF - _lastInTimestamp)
-          + audio_frame._timeStamp;
+          + audio_frame.timestamp_;
     } else {
-      timestamp_diff = audio_frame._timeStamp - _lastInTimestamp;
+      timestamp_diff = audio_frame.timestamp_ - _lastInTimestamp;
     }
     current_timestamp = _lastTimestamp + (WebRtc_UWord32)(timestamp_diff *
-        ((double) _sendCodecInst.plfreq / (double) audio_frame._frequencyInHz));
+        ((double) _sendCodecInst.plfreq / (double) audio_frame.sample_rate_hz_));
 
     new_length = _inputResampler.Resample10Msec(audio,
-                                                audio_frame._frequencyInHz,
+                                                audio_frame.sample_rate_hz_,
                                                 resampled_audio, send_freq,
                                                 audio_channels);
 
@@ -1035,13 +1035,13 @@ WebRtc_Word32 AudioCodingModuleImpl::Add10MsData(
                                                         new_length,
                                                         audio_channels);
   } else {
-    current_timestamp = audio_frame._timeStamp;
+    current_timestamp = audio_frame.timestamp_;
 
     status = _codecs[_currentSendCodecIdx]->Add10MsData(
-        current_timestamp, audio, audio_frame._payloadDataLengthInSamples,
+        current_timestamp, audio, audio_frame.samples_per_channel_,
         audio_channels);
   }
-  _lastInTimestamp = audio_frame._timeStamp;
+  _lastInTimestamp = audio_frame.timestamp_;
   _lastTimestamp = current_timestamp;
   return status;
 }
@@ -1733,16 +1733,16 @@ WebRtc_Word32 AudioCodingModuleImpl::PlayoutData10Ms(
     return -1;
   }
 
-  audio_frame._audioChannel = _audioFrame._audioChannel;
-  audio_frame._vadActivity = _audioFrame._vadActivity;
-  audio_frame._speechType = _audioFrame._speechType;
+  audio_frame.num_channels_ = _audioFrame.num_channels_;
+  audio_frame.vad_activity_ = _audioFrame.vad_activity_;
+  audio_frame.speech_type_ = _audioFrame.speech_type_;
 
-  stereo_mode = (_audioFrame._audioChannel > 1);
+  stereo_mode = (_audioFrame.num_channels_ > 1);
   // For stereo playout:
   // Master and Slave samples are interleaved starting with Master.
 
   const WebRtc_UWord16 receive_freq =
-      static_cast<WebRtc_UWord16>(_audioFrame._frequencyInHz);
+      static_cast<WebRtc_UWord16>(_audioFrame.sample_rate_hz_);
   bool tone_detected = false;
   WebRtc_Word16 last_detected_tone;
   WebRtc_Word16 tone;
@@ -1754,8 +1754,8 @@ WebRtc_Word32 AudioCodingModuleImpl::PlayoutData10Ms(
     if ((receive_freq != desired_freq_hz) && (desired_freq_hz != -1)) {
       // Resample payloadData.
       WebRtc_Word16 temp_len = _outputResampler.Resample10Msec(
-          _audioFrame._payloadData, receive_freq, audio_frame._payloadData,
-          desired_freq_hz, _audioFrame._audioChannel);
+          _audioFrame.data_, receive_freq, audio_frame.data_,
+          desired_freq_hz, _audioFrame.num_channels_);
 
       if (temp_len < 0) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
@@ -1764,55 +1764,55 @@ WebRtc_Word32 AudioCodingModuleImpl::PlayoutData10Ms(
       }
 
       // Set the payload data length from the resampler.
-      audio_frame._payloadDataLengthInSamples = (WebRtc_UWord16) temp_len;
+      audio_frame.samples_per_channel_ = (WebRtc_UWord16) temp_len;
       // Set the sampling frequency.
-      audio_frame._frequencyInHz = desired_freq_hz;
+      audio_frame.sample_rate_hz_ = desired_freq_hz;
     } else {
-      memcpy(audio_frame._payloadData, _audioFrame._payloadData,
-             _audioFrame._payloadDataLengthInSamples * audio_frame._audioChannel
+      memcpy(audio_frame.data_, _audioFrame.data_,
+             _audioFrame.samples_per_channel_ * audio_frame.num_channels_
              * sizeof(WebRtc_Word16));
       // Set the payload length.
-      audio_frame._payloadDataLengthInSamples =
-          _audioFrame._payloadDataLengthInSamples;
+      audio_frame.samples_per_channel_ =
+          _audioFrame.samples_per_channel_;
       // Set the sampling frequency.
-      audio_frame._frequencyInHz = receive_freq;
+      audio_frame.sample_rate_hz_ = receive_freq;
     }
 
     // Tone detection done for master channel.
     if (_dtmfDetector != NULL) {
       // Dtmf Detection.
-      if (audio_frame._frequencyInHz == 8000) {
-        // Use audio_frame._payloadData then Dtmf detector doesn't
+      if (audio_frame.sample_rate_hz_ == 8000) {
+        // Use audio_frame.data_ then Dtmf detector doesn't
         // need resampling.
         if (!stereo_mode) {
-          _dtmfDetector->Detect(audio_frame._payloadData,
-                                audio_frame._payloadDataLengthInSamples,
-                                audio_frame._frequencyInHz, tone_detected,
+          _dtmfDetector->Detect(audio_frame.data_,
+                                audio_frame.samples_per_channel_,
+                                audio_frame.sample_rate_hz_, tone_detected,
                                 tone);
         } else {
           // We are in 8 kHz so the master channel needs only 80 samples.
           WebRtc_Word16 master_channel[80];
           for (int n = 0; n < 80; n++) {
-            master_channel[n] = audio_frame._payloadData[n << 1];
+            master_channel[n] = audio_frame.data_[n << 1];
           }
           _dtmfDetector->Detect(master_channel,
-                                audio_frame._payloadDataLengthInSamples,
-                                audio_frame._frequencyInHz, tone_detected,
+                                audio_frame.samples_per_channel_,
+                                audio_frame.sample_rate_hz_, tone_detected,
                                 tone);
         }
       } else {
         // Do the detection on the audio that we got from NetEQ (_audioFrame).
         if (!stereo_mode) {
-          _dtmfDetector->Detect(_audioFrame._payloadData,
-                                _audioFrame._payloadDataLengthInSamples,
+          _dtmfDetector->Detect(_audioFrame.data_,
+                                _audioFrame.samples_per_channel_,
                                 receive_freq, tone_detected, tone);
         } else {
           WebRtc_Word16 master_channel[WEBRTC_10MS_PCM_AUDIO];
-          for (int n = 0; n < _audioFrame._payloadDataLengthInSamples; n++) {
-            master_channel[n] = _audioFrame._payloadData[n << 1];
+          for (int n = 0; n < _audioFrame.samples_per_channel_; n++) {
+            master_channel[n] = _audioFrame.data_[n << 1];
           }
           _dtmfDetector->Detect(master_channel,
-                                _audioFrame._payloadDataLengthInSamples,
+                                _audioFrame.samples_per_channel_,
                                 receive_freq, tone_detected, tone);
         }
       }
@@ -1844,10 +1844,10 @@ WebRtc_Word32 AudioCodingModuleImpl::PlayoutData10Ms(
     }
   }
 
-  audio_frame._id = _id;
-  audio_frame._volume = -1;
-  audio_frame._energy = -1;
-  audio_frame._timeStamp = 0;
+  audio_frame.id_ = _id;
+  audio_frame.volume_ = -1;
+  audio_frame.energy_ = -1;
+  audio_frame.timestamp_ = 0;
 
   return 0;
 }

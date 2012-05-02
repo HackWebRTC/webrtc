@@ -256,18 +256,18 @@ WebRtc_Word32 VoEBaseImpl::NeedMorePlayData(
     _shared->output_mixer()->GetMixedAudio(samplesPerSec, nChannels,
         _audioFrame);
 
-    assert(nSamples == _audioFrame._payloadDataLengthInSamples);
+    assert(nSamples == _audioFrame.samples_per_channel_);
     assert(samplesPerSec ==
-        static_cast<WebRtc_UWord32>(_audioFrame._frequencyInHz));
+        static_cast<WebRtc_UWord32>(_audioFrame.sample_rate_hz_));
 
     // Deliver audio (PCM) samples to the ADM
     memcpy(
            (WebRtc_Word16*) audioSamples,
-           (const WebRtc_Word16*) _audioFrame._payloadData,
-           sizeof(WebRtc_Word16) * (_audioFrame._payloadDataLengthInSamples
-                   * _audioFrame._audioChannel));
+           (const WebRtc_Word16*) _audioFrame.data_,
+           sizeof(WebRtc_Word16) * (_audioFrame.samples_per_channel_
+                   * _audioFrame.num_channels_));
 
-    nSamplesOut = _audioFrame._payloadDataLengthInSamples;
+    nSamplesOut = _audioFrame.samples_per_channel_;
 
     return 0;
 }

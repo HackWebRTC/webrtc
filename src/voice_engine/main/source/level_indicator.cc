@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -52,8 +52,8 @@ AudioLevel::ComputeLevel(const AudioFrame& audioFrame)
 
     // Check speech level (works for 2 channels as well)
     absValue = WebRtcSpl_MaxAbsValueW16(
-        audioFrame._payloadData,
-        audioFrame._payloadDataLengthInSamples*audioFrame._audioChannel);
+        audioFrame.data_,
+        audioFrame.samples_per_channel_*audioFrame.num_channels_);
     if (absValue > _absMax)
     _absMax = absValue;
 

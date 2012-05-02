@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -575,7 +575,7 @@ void TestFEC::Run()
         CHECK_ERROR(_acmA->Add10MsData(audioFrame));
         CHECK_ERROR(_acmA->Process());
         CHECK_ERROR(_acmB->PlayoutData10Ms(outFreqHzB, audioFrame));
-        _outFileB.Write10MsData(audioFrame._payloadData, audioFrame._payloadDataLengthInSamples);
+        _outFileB.Write10MsData(audioFrame.data_, audioFrame.samples_per_channel_);
         msecPassed += 10;
         if(msecPassed >= 1000)
         {

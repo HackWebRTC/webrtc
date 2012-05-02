@@ -193,12 +193,12 @@ void ApmTest::Init(int sample_rate_hz, int num_reverse_channels,
 
   // We always use 10 ms frames.
   const int samples_per_channel = sample_rate_hz / 100;
-  frame_->_payloadDataLengthInSamples = samples_per_channel;
-  frame_->_audioChannel = num_input_channels;
-  frame_->_frequencyInHz = sample_rate_hz;
-  revframe_->_payloadDataLengthInSamples = samples_per_channel;
-  revframe_->_audioChannel = num_reverse_channels;
-  revframe_->_frequencyInHz = sample_rate_hz;
+  frame_->samples_per_channel_ = samples_per_channel;
+  frame_->num_channels_ = num_input_channels;
+  frame_->sample_rate_hz_ = sample_rate_hz;
+  revframe_->samples_per_channel_ = samples_per_channel;
+  revframe_->num_channels_ = num_reverse_channels;
+  revframe_->sample_rate_hz_ = sample_rate_hz;
 
   if (far_file_) {
     ASSERT_EQ(0, fclose(far_file_));
@@ -249,41 +249,41 @@ T AbsValue(T a) {
 }
 
 void SetFrameTo(AudioFrame* frame, int16_t value) {
-  for (int i = 0; i < frame->_payloadDataLengthInSamples * frame->_audioChannel;
+  for (int i = 0; i < frame->samples_per_channel_ * frame->num_channels_;
       ++i) {
-    frame->_payloadData[i] = value;
+    frame->data_[i] = value;
   }
 }
 
 void SetFrameTo(AudioFrame* frame, int16_t left, int16_t right) {
-  ASSERT_EQ(2, frame->_audioChannel);
-  for (int i = 0; i < frame->_payloadDataLengthInSamples * 2; i += 2) {
-    frame->_payloadData[i] = left;
-    frame->_payloadData[i + 1] = right;
+  ASSERT_EQ(2, frame->num_channels_);
+  for (int i = 0; i < frame->samples_per_channel_ * 2; i += 2) {
+    frame->data_[i] = left;
+    frame->data_[i + 1] = right;
   }
 }
 
 int16_t MaxAudioFrame(const AudioFrame& frame) {
-  const int length = frame._payloadDataLengthInSamples * frame._audioChannel;
-  int16_t max = AbsValue(frame._payloadData[0]);
+  const int length = frame.samples_per_channel_ * frame.num_channels_;
+  int16_t max = AbsValue(frame.data_[0]);
   for (int i = 1; i < length; i++) {
-    max = MaxValue(max, AbsValue(frame._payloadData[i]));
+    max = MaxValue(max, AbsValue(frame.data_[i]));
   }
 
   return max;
 }
 
 bool FrameDataAreEqual(const AudioFrame& frame1, const AudioFrame& frame2) {
-  if (frame1._payloadDataLengthInSamples !=
-      frame2._payloadDataLengthInSamples) {
+  if (frame1.samples_per_channel_ !=
+      frame2.samples_per_channel_) {
     return false;
   }
-  if (frame1._audioChannel !=
-      frame2._audioChannel) {
+  if (frame1.num_channels_ !=
+      frame2.num_channels_) {
     return false;
   }
-  if (memcmp(frame1._payloadData, frame2._payloadData,
-             frame1._payloadDataLengthInSamples * frame1._audioChannel *
+  if (memcmp(frame1.data_, frame2.data_,
+             frame1.samples_per_channel_ * frame1.num_channels_ *
                sizeof(int16_t))) {
     return false;
   }
@@ -360,12 +360,12 @@ bool DeadlockProc(void* thread_object) {
 
   AudioFrame primary_frame;
   AudioFrame reverse_frame;
-  primary_frame._payloadDataLengthInSamples = 320;
-  primary_frame._audioChannel = 2;
-  primary_frame._frequencyInHz = 32000;
-  reverse_frame._payloadDataLengthInSamples = 320;
-  reverse_frame._audioChannel = 2;
-  reverse_frame._frequencyInHz = 32000;
+  primary_frame.samples_per_channel_ = 320;
+  primary_frame.num_channels_ = 2;
+  primary_frame.sample_rate_hz_ = 32000;
+  reverse_frame.samples_per_channel_ = 320;
+  reverse_frame.num_channels_ = 2;
+  reverse_frame.sample_rate_hz_ = 32000;
 
   ap->echo_cancellation()->Enable(true);
   ap->gain_control()->Enable(true);
@@ -849,9 +849,9 @@ TEST_F(ApmTest, LevelEstimator) {
   // Run this test in wideband; in super-wb, the splitting filter distorts the
   // audio enough to cause deviation from the expectation for small values.
   EXPECT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(16000));
-  frame_->_payloadDataLengthInSamples = 160;
-  frame_->_audioChannel = 2;
-  frame_->_frequencyInHz = 16000;
+  frame_->samples_per_channel_ = 160;
+  frame_->num_channels_ = 2;
+  frame_->sample_rate_hz_ = 16000;
 
   // Min value if no frames have been processed.
   EXPECT_EQ(127, apm_->level_estimator()->RMS());
@@ -884,14 +884,14 @@ TEST_F(ApmTest, LevelEstimator) {
   EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
   EXPECT_EQ(70, apm_->level_estimator()->RMS());
 
-  // Min value if _energy == 0.
+  // Min value if energy_ == 0.
   SetFrameTo(frame_, 10000);
-  uint32_t energy = frame_->_energy; // Save default to restore below.
-  frame_->_energy = 0;
+  uint32_t energy = frame_->energy_; // Save default to restore below.
+  frame_->energy_ = 0;
   EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
   EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
   EXPECT_EQ(127, apm_->level_estimator()->RMS());
-  frame_->_energy = energy;
+  frame_->energy_ = energy;
 
   // Verify reset after enable/disable.
   SetFrameTo(frame_, 32767);
@@ -960,16 +960,16 @@ TEST_F(ApmTest, VoiceDetection) {
       AudioFrame::kVadUnknown
   };
   for (size_t i = 0; i < sizeof(activity)/sizeof(*activity); i++) {
-    frame_->_vadActivity = activity[i];
+    frame_->vad_activity_ = activity[i];
     EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
-    EXPECT_EQ(activity[i], frame_->_vadActivity);
+    EXPECT_EQ(activity[i], frame_->vad_activity_);
   }
 
   // Test that AudioFrame activity is set when VAD is enabled.
   EXPECT_EQ(apm_->kNoError, apm_->voice_detection()->Enable(true));
-  frame_->_vadActivity = AudioFrame::kVadUnknown;
+  frame_->vad_activity_ = AudioFrame::kVadUnknown;
   EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
-  EXPECT_NE(AudioFrame::kVadUnknown, frame_->_vadActivity);
+  EXPECT_NE(AudioFrame::kVadUnknown, frame_->vad_activity_);
 
   // TODO(bjornv): Add tests for streamed voice; stream_has_voice()
 }
@@ -979,9 +979,8 @@ TEST_F(ApmTest, VerifyDownMixing) {
     Init(kSampleRates[i], 2, 2, 1, false);
     SetFrameTo(frame_, 1000, 2000);
     AudioFrame mono_frame;
-    mono_frame._payloadDataLengthInSamples =
-        frame_->_payloadDataLengthInSamples;
-    mono_frame._audioChannel = 1;
+    mono_frame.samples_per_channel_ = frame_->samples_per_channel_;
+    mono_frame.num_channels_ = 1;
     SetFrameTo(&mono_frame, 1500);
     EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
     EXPECT_TRUE(FrameDataAreEqual(*frame_, mono_frame));
@@ -1050,9 +1049,9 @@ TEST_F(ApmTest, SplittingFilter) {
 
   // 5. Not using super-wb.
   EXPECT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(16000));
-  frame_->_payloadDataLengthInSamples = 160;
-  frame_->_audioChannel = 2;
-  frame_->_frequencyInHz = 16000;
+  frame_->samples_per_channel_ = 160;
+  frame_->num_channels_ = 2;
+  frame_->sample_rate_hz_ = 16000;
   // Enable AEC, which would require the filter in super-wb. We rely on the
   // first few frames of data being unaffected by the AEC.
   // TODO(andrew): This test, and the one below, rely rather tenuously on the
@@ -1073,9 +1072,9 @@ TEST_F(ApmTest, SplittingFilter) {
   // Check the test is valid. We should have distortion from the filter
   // when AEC is enabled (which won't affect the audio).
   EXPECT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(32000));
-  frame_->_payloadDataLengthInSamples = 320;
-  frame_->_audioChannel = 2;
-  frame_->_frequencyInHz = 32000;
+  frame_->samples_per_channel_ = 320;
+  frame_->num_channels_ = 2;
+  frame_->sample_rate_hz_ = 32000;
   SetFrameTo(frame_, 1000);
   frame_copy = *frame_;
   EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(0));
@@ -1208,7 +1207,7 @@ TEST_F(ApmTest, Process) {
     while (1) {
       // Read far-end frame, always stereo.
       size_t frame_size = samples_per_channel * 2;
-      size_t read_count = fread(revframe_->_payloadData,
+      size_t read_count = fread(revframe_->data_,
                                 sizeof(int16_t),
                                 frame_size,
                                 far_file_);
@@ -1218,8 +1217,8 @@ TEST_F(ApmTest, Process) {
         break; // This is expected.
       }
 
-      if (revframe_->_audioChannel == 1) {
-        MixStereoToMono(revframe_->_payloadData, revframe_->_payloadData,
+      if (revframe_->num_channels_ == 1) {
+        MixStereoToMono(revframe_->data_, revframe_->data_,
                         samples_per_channel);
       }
 
@@ -1232,7 +1231,7 @@ TEST_F(ApmTest, Process) {
           apm_->gain_control()->set_stream_analog_level(analog_level));
 
       // Read near-end frame, always stereo.
-      read_count = fread(frame_->_payloadData,
+      read_count = fread(frame_->data_,
                          sizeof(int16_t),
                          frame_size,
                          near_file_);
@@ -1242,15 +1241,15 @@ TEST_F(ApmTest, Process) {
         break; // This is expected.
       }
 
-      if (frame_->_audioChannel == 1) {
-        MixStereoToMono(frame_->_payloadData, frame_->_payloadData,
+      if (frame_->num_channels_ == 1) {
+        MixStereoToMono(frame_->data_, frame_->data_,
                         samples_per_channel);
       }
-      frame_->_vadActivity = AudioFrame::kVadUnknown;
+      frame_->vad_activity_ = AudioFrame::kVadUnknown;
 
       EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
       // Ensure the frame was downmixed properly.
-      EXPECT_EQ(test->num_output_channels(), frame_->_audioChannel);
+      EXPECT_EQ(test->num_output_channels(), frame_->num_channels_);
 
       max_output_average += MaxAudioFrame(*frame_);
 
@@ -1265,20 +1264,20 @@ TEST_F(ApmTest, Process) {
       }
       if (apm_->voice_detection()->stream_has_voice()) {
         has_voice_count++;
-        EXPECT_EQ(AudioFrame::kVadActive, frame_->_vadActivity);
+        EXPECT_EQ(AudioFrame::kVadActive, frame_->vad_activity_);
       } else {
-        EXPECT_EQ(AudioFrame::kVadPassive, frame_->_vadActivity);
+        EXPECT_EQ(AudioFrame::kVadPassive, frame_->vad_activity_);
       }
 
-      frame_size = samples_per_channel * frame_->_audioChannel;
-      size_t write_count = fwrite(frame_->_payloadData,
+      frame_size = samples_per_channel * frame_->num_channels_;
+      size_t write_count = fwrite(frame_->data_,
                                   sizeof(int16_t),
                                   frame_size,
                                   out_file_);
       ASSERT_EQ(frame_size, write_count);
 
       // Reset in case of downmixing.
-      frame_->_audioChannel = test->num_input_channels();
+      frame_->num_channels_ = test->num_input_channels();
       frame_count++;
     }
     max_output_average /= frame_count;

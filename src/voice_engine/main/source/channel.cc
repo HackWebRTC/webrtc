@@ -829,7 +829,7 @@ WebRtc_Word32 Channel::GetAudioFrame(const WebRtc_Word32 id,
                  "Channel::GetAudioFrame(id=%d)", id);
 
     // Get 10ms raw PCM data from the ACM (mixer limits output frequency)
-    if (_audioCodingModule.PlayoutData10Ms(audioFrame._frequencyInHz,
+    if (_audioCodingModule.PlayoutData10Ms(audioFrame.sample_rate_hz_,
                                            audioFrame) == -1)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
@@ -848,9 +848,9 @@ WebRtc_Word32 Channel::GetAudioFrame(const WebRtc_Word32 id,
     }
 
     // Convert module ID to internal VoE channel ID
-    audioFrame._id = VoEChannelId(audioFrame._id);
+    audioFrame.id_ = VoEChannelId(audioFrame.id_);
     // Store speech type for dead-or-alive detection
-    _outputSpeechType = audioFrame._speechType;
+    _outputSpeechType = audioFrame.speech_type_;
 
     // Perform far-end AudioProcessing module processing on the received signal
     if (_rxApmIsEnabled)
@@ -869,7 +869,7 @@ WebRtc_Word32 Channel::GetAudioFrame(const WebRtc_Word32 id,
 
     if (_panLeft != 1.0f || _panRight != 1.0f)
     {
-        if (audioFrame._audioChannel == 1)
+        if (audioFrame.num_channels_ == 1)
         {
             // Emulate stereo mode since panning is active.
             // The mono signal is copied to both left and right channels here.
@@ -886,7 +886,7 @@ WebRtc_Word32 Channel::GetAudioFrame(const WebRtc_Word32 id,
     // Mix decoded PCM output with file if file mixing is enabled
     if (_outputFilePlaying)
     {
-        MixAudioWithFile(audioFrame, audioFrame._frequencyInHz);
+        MixAudioWithFile(audioFrame, audioFrame.sample_rate_hz_);
     }
 
     // Place channel in on-hold state (~muted) if on-hold is activated
@@ -899,15 +899,15 @@ WebRtc_Word32 Channel::GetAudioFrame(const WebRtc_Word32 id,
     if (_outputExternalMedia)
     {
         CriticalSectionScoped cs(&_callbackCritSect);
-        const bool isStereo = (audioFrame._audioChannel == 2);
+        const bool isStereo = (audioFrame.num_channels_ == 2);
         if (_outputExternalMediaCallbackPtr)
         {
             _outputExternalMediaCallbackPtr->Process(
                 _channelId,
                 kPlaybackPerChannel,
-                (WebRtc_Word16*)audioFrame._payloadData,
-                audioFrame._payloadDataLengthInSamples,
-                audioFrame._frequencyInHz,
+                (WebRtc_Word16*)audioFrame.data_,
+                audioFrame.samples_per_channel_,
+                audioFrame.sample_rate_hz_,
                 isStereo);
         }
     }
@@ -1610,7 +1610,7 @@ WebRtc_Word32
 Channel::UpdateLocalTimeStamp()
 {
 
-    _timeStamp += _audioFrame._payloadDataLengthInSamples;
+    _timeStamp += _audioFrame.samples_per_channel_;
     return 0;
 }
 
@@ -4657,7 +4657,7 @@ Channel::UpdateRxVadDetection(AudioFrame& audioFrame)
 
     int vadDecision = 1;
 
-    vadDecision = (audioFrame._vadActivity == AudioFrame::kVadActive)? 1 : 0;
+    vadDecision = (audioFrame.vad_activity_ == AudioFrame::kVadActive)? 1 : 0;
 
     if ((vadDecision != _oldVadDecision) && _rxVadObserverPtr)
     {
@@ -5774,7 +5774,7 @@ Channel::Demultiplex(const AudioFrame& audioFrame)
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::Demultiplex()");
     _audioFrame = audioFrame;
-    _audioFrame._id = _channelId;
+    _audioFrame.id_ = _channelId;
     return 0;
 }
 
@@ -5784,7 +5784,7 @@ Channel::PrepareEncodeAndSend(int mixingFrequency)
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::PrepareEncodeAndSend()");
 
-    if (_audioFrame._payloadDataLengthInSamples == 0)
+    if (_audioFrame.samples_per_channel_ == 0)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,_channelId),
                      "Channel::PrepareEncodeAndSend() invalid audio frame");
@@ -5804,15 +5804,15 @@ Channel::PrepareEncodeAndSend(int mixingFrequency)
     if (_inputExternalMedia)
     {
         CriticalSectionScoped cs(&_callbackCritSect);
-        const bool isStereo = (_audioFrame._audioChannel == 2);
+        const bool isStereo = (_audioFrame.num_channels_ == 2);
         if (_inputExternalMediaCallbackPtr)
         {
             _inputExternalMediaCallbackPtr->Process(
                 _channelId,
                 kRecordingPerChannel,
-               (WebRtc_Word16*)_audioFrame._payloadData,
-                _audioFrame._payloadDataLengthInSamples,
-                _audioFrame._frequencyInHz,
+               (WebRtc_Word16*)_audioFrame.data_,
+                _audioFrame.samples_per_channel_,
+                _audioFrame.sample_rate_hz_,
                 isStereo);
         }
     }
@@ -5824,9 +5824,9 @@ Channel::PrepareEncodeAndSend(int mixingFrequency)
         assert(_rtpAudioProc.get() != NULL);
 
         // Check if settings need to be updated.
-        if (_rtpAudioProc->sample_rate_hz() != _audioFrame._frequencyInHz)
+        if (_rtpAudioProc->sample_rate_hz() != _audioFrame.sample_rate_hz_)
         {
-            if (_rtpAudioProc->set_sample_rate_hz(_audioFrame._frequencyInHz) !=
+            if (_rtpAudioProc->set_sample_rate_hz(_audioFrame.sample_rate_hz_) !=
                 AudioProcessing::kNoError)
             {
                 WEBRTC_TRACE(kTraceWarning, kTraceVoice,
@@ -5836,10 +5836,10 @@ Channel::PrepareEncodeAndSend(int mixingFrequency)
             }
         }
 
-        if (_rtpAudioProc->num_input_channels() != _audioFrame._audioChannel)
+        if (_rtpAudioProc->num_input_channels() != _audioFrame.num_channels_)
         {
-            if (_rtpAudioProc->set_num_channels(_audioFrame._audioChannel,
-                                                _audioFrame._audioChannel)
+            if (_rtpAudioProc->set_num_channels(_audioFrame.num_channels_,
+                                                _audioFrame.num_channels_)
                 != AudioProcessing::kNoError)
             {
                 WEBRTC_TRACE(kTraceWarning, kTraceVoice,
@@ -5862,20 +5862,20 @@ Channel::EncodeAndSend()
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::EncodeAndSend()");
 
-    assert(_audioFrame._audioChannel <= 2);
-    if (_audioFrame._payloadDataLengthInSamples == 0)
+    assert(_audioFrame.num_channels_ <= 2);
+    if (_audioFrame.samples_per_channel_ == 0)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,_channelId),
                      "Channel::EncodeAndSend() invalid audio frame");
         return -1;
     }
 
-    _audioFrame._id = _channelId;
+    _audioFrame.id_ = _channelId;
 
     // --- Add 10ms of raw (PCM) audio data to the encoder @ 32kHz.
 
     // The ACM resamples internally.
-    _audioFrame._timeStamp = _timeStamp;
+    _audioFrame.timestamp_ = _timeStamp;
     if (_audioCodingModule.Add10MsData((AudioFrame&)_audioFrame) != 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -5883,7 +5883,7 @@ Channel::EncodeAndSend()
         return -1;
     }
 
-    _timeStamp += _audioFrame._payloadDataLengthInSamples;
+    _timeStamp += _audioFrame.samples_per_channel_;
 
     // --- Encode if complete frame is ready
 
@@ -6179,14 +6179,14 @@ Channel::MixOrReplaceAudioWithFile(const int mixingFrequency)
         }
     }
 
-    assert(_audioFrame._payloadDataLengthInSamples == fileSamples);
+    assert(_audioFrame.samples_per_channel_ == fileSamples);
 
     if (_mixFileWithMicrophone)
     {
         // Currently file stream is always mono.
         // TODO(xians): Change the code when FilePlayer supports real stereo.
-        Utility::MixWithSat(_audioFrame._payloadData,
-                            static_cast<int>(_audioFrame._audioChannel),
+        Utility::MixWithSat(_audioFrame.data_,
+                            static_cast<int>(_audioFrame.num_channels_),
                             fileBuffer.get(),
                             1,
                             static_cast<int>(fileSamples));
@@ -6241,12 +6241,12 @@ Channel::MixAudioWithFile(AudioFrame& audioFrame,
         }
     }
 
-    if (audioFrame._payloadDataLengthInSamples == fileSamples)
+    if (audioFrame.samples_per_channel_ == fileSamples)
     {
         // Currently file stream is always mono.
         // TODO(xians): Change the code when FilePlayer supports real stereo.
-        Utility::MixWithSat(audioFrame._payloadData,
-                            static_cast<int>(audioFrame._audioChannel),
+        Utility::MixWithSat(audioFrame.data_,
+                            static_cast<int>(audioFrame.num_channels_),
                             fileBuffer.get(),
                             1,
                             static_cast<int>(fileSamples));
@@ -6254,9 +6254,9 @@ Channel::MixAudioWithFile(AudioFrame& audioFrame,
     else
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,_channelId),
-            "Channel::MixAudioWithFile() _payloadDataLengthInSamples(%d) != "
+            "Channel::MixAudioWithFile() samples_per_channel_(%d) != "
             "fileSamples(%d)",
-            audioFrame._payloadDataLengthInSamples, fileSamples);
+            audioFrame.samples_per_channel_, fileSamples);
         return -1;
     }
 
@@ -6292,12 +6292,12 @@ Channel::InsertInbandDtmfTone()
         WebRtc_UWord16 frequency(0);
         _inbandDtmfGenerator.GetSampleRate(frequency);
 
-        if (frequency != _audioFrame._frequencyInHz)
+        if (frequency != _audioFrame.sample_rate_hz_)
         {
             // Update sample rate of Dtmf tone since the mixing frequency
             // has changed.
             _inbandDtmfGenerator.SetSampleRate(
-                (WebRtc_UWord16) (_audioFrame._frequencyInHz));
+                (WebRtc_UWord16) (_audioFrame.sample_rate_hz_));
             // Reset the tone to be added taking the new sample rate into
             // account.
             _inbandDtmfGenerator.ResetTone();
@@ -6316,19 +6316,19 @@ Channel::InsertInbandDtmfTone()
 
         // Replace mixed audio with DTMF tone.
         for (int sample = 0; 
-            sample < _audioFrame._payloadDataLengthInSamples;
+            sample < _audioFrame.samples_per_channel_;
             sample++)
         {
             for (int channel = 0; 
-                channel < _audioFrame._audioChannel; 
+                channel < _audioFrame.num_channels_; 
                 channel++)
             {
-                _audioFrame._payloadData[sample * _audioFrame._audioChannel + channel] = 
+                _audioFrame.data_[sample * _audioFrame.num_channels_ + channel] = 
                         toneBuffer[sample];
             }
         }
         
-        assert(_audioFrame._payloadDataLengthInSamples == toneSamples);
+        assert(_audioFrame.samples_per_channel_ == toneSamples);
     } else
     {
         // Add 10ms to "delay-since-last-tone" counter
@@ -6572,15 +6572,15 @@ Channel::ApmProcessRx(AudioFrame& audioFrame)
 
     // Reset the APM frequency if the frequency has changed
     if (_rxAudioProcessingModulePtr->sample_rate_hz() !=
-        audioFrame._frequencyInHz)
+        audioFrame.sample_rate_hz_)
     {
         if (_rxAudioProcessingModulePtr->set_sample_rate_hz(
-            audioFrame._frequencyInHz) != 0)
+            audioFrame.sample_rate_hz_) != 0)
         {
             WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,-1),
                          "AudioProcessingModule::set_sample_rate_hz("
-                         "_frequencyInHz=%u) => error",
-                         _audioFrame._frequencyInHz);
+                         "sample_rate_hz_=%u) => error",
+                         _audioFrame.sample_rate_hz_);
         }
     }
 

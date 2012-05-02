@@ -242,8 +242,8 @@ bool Receiver::PlayoutData() {
   if (_playoutLengthSmpls == 0) {
     return false;
   }
-  _pcmFile.Write10MsData(audioFrame._payloadData,
-                         audioFrame._payloadDataLengthInSamples);
+  _pcmFile.Write10MsData(audioFrame.data_,
+                         audioFrame.samples_per_channel_);
   return true;
 }
 

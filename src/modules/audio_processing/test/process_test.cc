@@ -546,11 +546,11 @@ void void_main(int argc, char* argv[]) {
             apm->set_num_reverse_channels(msg.num_reverse_channels()));
 
         samples_per_channel = msg.sample_rate() / 100;
-        far_frame._frequencyInHz = msg.sample_rate();
-        far_frame._payloadDataLengthInSamples = samples_per_channel;
-        far_frame._audioChannel = msg.num_reverse_channels();
-        near_frame._frequencyInHz = msg.sample_rate();
-        near_frame._payloadDataLengthInSamples = samples_per_channel;
+        far_frame.sample_rate_hz_ = msg.sample_rate();
+        far_frame.samples_per_channel_ = samples_per_channel;
+        far_frame.num_channels_ = msg.num_reverse_channels();
+        near_frame.sample_rate_hz_ = msg.sample_rate();
+        near_frame.samples_per_channel_ = samples_per_channel;
 
         if (verbose) {
           printf("Init at frame: %d (primary), %d (reverse)\n",
@@ -569,8 +569,8 @@ void void_main(int argc, char* argv[]) {
 
         ASSERT_TRUE(msg.has_data());
         ASSERT_EQ(sizeof(int16_t) * samples_per_channel *
-            far_frame._audioChannel, msg.data().size());
-        memcpy(far_frame._payloadData, msg.data().data(), msg.data().size());
+            far_frame.num_channels_, msg.data().size());
+        memcpy(far_frame.data_, msg.data().data(), msg.data().size());
 
         if (perf_testing) {
           t0 = TickTime::Now();
@@ -597,12 +597,12 @@ void void_main(int argc, char* argv[]) {
         primary_count++;
 
         // ProcessStream could have changed this for the output frame.
-        near_frame._audioChannel = apm->num_input_channels();
+        near_frame.num_channels_ = apm->num_input_channels();
 
         ASSERT_TRUE(msg.has_input_data());
         ASSERT_EQ(sizeof(int16_t) * samples_per_channel *
-            near_frame._audioChannel, msg.input_data().size());
-        memcpy(near_frame._payloadData,
+            near_frame.num_channels_, msg.input_data().size());
+        memcpy(near_frame.data_,
                msg.input_data().data(),
                msg.input_data().size());
 
@@ -630,7 +630,7 @@ void void_main(int argc, char* argv[]) {
         }
         ASSERT_TRUE(err == apm->kNoError ||
                     err == apm->kBadStreamParameterWarning);
-        ASSERT_TRUE(near_frame._audioChannel == apm->num_output_channels());
+        ASSERT_TRUE(near_frame.num_channels_ == apm->num_output_channels());
 
         capture_level = apm->gain_control()->stream_analog_level();
 
@@ -659,8 +659,8 @@ void void_main(int argc, char* argv[]) {
           }
         }
 
-        size_t size = samples_per_channel * near_frame._audioChannel;
-        ASSERT_EQ(size, fwrite(near_frame._payloadData,
+        size_t size = samples_per_channel * near_frame.num_channels_;
+        ASSERT_EQ(size, fwrite(near_frame.data_,
                                sizeof(int16_t),
                                size,
                                out_file));
@@ -700,11 +700,11 @@ void void_main(int argc, char* argv[]) {
         }
       }
 
-      far_frame._frequencyInHz = sample_rate_hz;
-      far_frame._payloadDataLengthInSamples = samples_per_channel;
-      far_frame._audioChannel = num_render_channels;
-      near_frame._frequencyInHz = sample_rate_hz;
-      near_frame._payloadDataLengthInSamples = samples_per_channel;
+      far_frame.sample_rate_hz_ = sample_rate_hz;
+      far_frame.samples_per_channel_ = samples_per_channel;
+      far_frame.num_channels_ = num_render_channels;
+      near_frame.sample_rate_hz_ = sample_rate_hz;
+      near_frame.samples_per_channel_ = samples_per_channel;
 
       if (event == kInitializeEvent || event == kResetEventDeprecated) {
         ASSERT_EQ(1u,
@@ -724,11 +724,11 @@ void void_main(int argc, char* argv[]) {
                   apm->echo_cancellation()->set_device_sample_rate_hz(
                       device_sample_rate_hz));
 
-        far_frame._frequencyInHz = sample_rate_hz;
-        far_frame._payloadDataLengthInSamples = samples_per_channel;
-        far_frame._audioChannel = num_render_channels;
-        near_frame._frequencyInHz = sample_rate_hz;
-        near_frame._payloadDataLengthInSamples = samples_per_channel;
+        far_frame.sample_rate_hz_ = sample_rate_hz;
+        far_frame.samples_per_channel_ = samples_per_channel;
+        far_frame.num_channels_ = num_render_channels;
+        near_frame.sample_rate_hz_ = sample_rate_hz;
+        near_frame.samples_per_channel_ = samples_per_channel;
 
         if (verbose) {
           printf("Init at frame: %d (primary), %d (reverse)\n",
@@ -740,7 +740,7 @@ void void_main(int argc, char* argv[]) {
         reverse_count++;
 
         size_t size = samples_per_channel * num_render_channels;
-        read_count = fread(far_frame._payloadData,
+        read_count = fread(far_frame.data_,
                            sizeof(int16_t),
                            size,
                            far_file);
@@ -778,10 +778,10 @@ void void_main(int argc, char* argv[]) {
 
       } else if (event == kCaptureEvent) {
         primary_count++;
-        near_frame._audioChannel = num_capture_input_channels;
+        near_frame.num_channels_ = num_capture_input_channels;
 
         size_t size = samples_per_channel * num_capture_input_channels;
-        read_count = fread(near_frame._payloadData,
+        read_count = fread(near_frame.data_,
                            sizeof(int16_t),
                            size,
                            near_file);
@@ -829,7 +829,7 @@ void void_main(int argc, char* argv[]) {
         }
         ASSERT_TRUE(err == apm->kNoError ||
                     err == apm->kBadStreamParameterWarning);
-        ASSERT_TRUE(near_frame._audioChannel == apm->num_output_channels());
+        ASSERT_TRUE(near_frame.num_channels_ == apm->num_output_channels());
 
         capture_level = apm->gain_control()->stream_analog_level();
 
@@ -858,8 +858,8 @@ void void_main(int argc, char* argv[]) {
           }
         }
 
-        size = samples_per_channel * near_frame._audioChannel;
-        ASSERT_EQ(size, fwrite(near_frame._payloadData,
+        size = samples_per_channel * near_frame.num_channels_;
+        ASSERT_EQ(size, fwrite(near_frame.data_,
                                sizeof(int16_t),
                                size,
                                out_file));
