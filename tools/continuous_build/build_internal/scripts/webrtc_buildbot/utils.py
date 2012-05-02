@@ -132,7 +132,7 @@ class WebRTCFactory(factory.BuildFactory):
 
   def AddCommonStep(self, cmd, descriptor='', workdir=WEBRTC_TRUNK_DIR,
                     halt_build_on_failure=True, warn_on_failure=False,
-                    timeout=1200):
+                    timeout=1200, use_pty=True):
     """Adds a step which will run as a shell command on the slave.
 
        NOTE: you are recommended to use this method to add new shell commands
@@ -158,6 +158,12 @@ class WebRTCFactory(factory.BuildFactory):
          warn_on_failure: If true, this step isn't that important and will not
              cause a failed build on failure.
          timeout: The timeout for the command, in seconds.
+         use_pty: If Pseudo-terminal shall be enabled for the command. This is
+                  needed if stdout and stderr output shall be collected
+                  separately, which is useful to make it possible to color-code
+                  stderr output with red in the web interface. Some shell
+                  commands seem to fail when Pseudo-terminal is enabled on
+                  Linux.
     """
     flunk_on_failure = not warn_on_failure
 
@@ -177,7 +183,8 @@ class WebRTCFactory(factory.BuildFactory):
         flunkOnFailure=flunk_on_failure,
         haltOnFailure=halt_build_on_failure,
         name='_'.join(descriptor),
-        timeout=timeout))
+        timeout=timeout,
+        usePTY=use_pty))
 
   def AddSmartCleanStep(self):
     """Adds a smart clean step.
@@ -226,16 +233,16 @@ class WebRTCFactory(factory.BuildFactory):
     self.AddCommonTestRunStep(test)
 
   def AddGclientSyncStep(self, workdir=WEBRTC_BUILD_DIR,
-                         alwaysUseLatest=False):
+                         always_use_latest=False):
     """Helper method for invoking gclient sync.
 
     Args:
          workdir: The name of the directory to checkout the source into.
                   The default is 'build' which is the base working dir of
                   most build slaves.
-         alwaysUseLatest: Set to true to always use the latest build, otherwise
-                          the highest revision in the changeset will be used
-                          for sync.
+         always_use_latest: Set to true to always use the latest build,
+                            otherwise the highest revision in the changeset will
+                            be used for sync.
     """
     gclient_spec = self._ConfigureWhatToBuild()
     env = self._GetEnvironmentWithDisabledDepotToolsUpdate()
@@ -248,7 +255,7 @@ class WebRTCFactory(factory.BuildFactory):
     # Removal can take a long time. Allow 15 minutes.
     rm_timeout = 60 * 15
     self.addStep(chromium_step.GClient,
-                 alwaysUseLatest=alwaysUseLatest,
+                 alwaysUseLatest=always_use_latest,
                  gclient_spec=gclient_spec,
                  workdir=workdir,
                  mode='update',
@@ -480,7 +487,7 @@ class WebRTCAndroidFactory(WebRTCFactory):
     # Work around lack of support for checking out into another dir than the
     # last dir of the Subversion URL.
     self.AddCommonStep(cmd='mv external/webrtc/trunk/* external/webrtc',
-                       descriptor='Prepare WebRTC source')
+                       use_pty=False, descriptor='Prepare WebRTC source')
     cmd = ('source build/envsetup.sh && lunch full_%s-eng '
            '&& mmm external/webrtc showcommands' % product)
     self.AddCommonStep(cmd, descriptor='build')
@@ -525,7 +532,7 @@ class WebRTCChromeFactory(WebRTCFactory):
   def EnableBuild(self, release=False, enable_profiling=False):
     self.AddCommonStep(['rm', '-rf', 'src'], workdir=WEBRTC_BUILD_DIR,
                        descriptor='Cleanup')
-    self.AddGclientSyncStep(alwaysUseLatest=True)
+    self.AddGclientSyncStep(always_use_latest=True)
     if enable_profiling:
       self.AddCommonStep(['./build/gyp_chromium', '-Dprofiling=1'],
                          descriptor="gyp_chromium",
