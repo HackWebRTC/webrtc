@@ -29,6 +29,7 @@ class TrackBuildStatusTest(unittest.TestCase):
   def test_that_filter_chrome_only_builds_filter_properly(self):
     bot_to_status_mapping = copy.deepcopy(NORMAL_BOT_TO_STATUS_MAPPING)
     bot_to_status_mapping['133445--Chrome'] = '901--OK'
+    bot_to_status_mapping['133441--ChromeBloat'] = '344--OK'
 
     result = track_build_status._filter_chrome_only_builds(
         bot_to_status_mapping)

@@ -48,7 +48,7 @@ def _is_chrome_only_build(revision_to_bot_name):
      revisions will not reach that number in the foreseeable future."""
   revision = int(revision_to_bot_name.split('--')[0])
   bot_name = revision_to_bot_name.split('--')[1]
-  return bot_name == 'Chrome' and revision > 100000
+  return bot_name.startswith('Chrome') and revision > 100000
 
 
 def _filter_chrome_only_builds(bot_to_status_mapping):
