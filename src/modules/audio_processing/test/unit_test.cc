@@ -50,6 +50,11 @@ namespace {
 // be set to true with the command-line switch --write_ref_data.
 bool write_ref_data = false;
 
+const int kSampleRates[] = {8000, 16000, 32000};
+const size_t kSampleRatesSize = sizeof(kSampleRates) / sizeof(*kSampleRates);
+const int kChannels[] = {1, 2};
+const size_t kChannelsSize = sizeof(kChannels) / sizeof(*kChannels);
+
 class ApmTest : public ::testing::Test {
  protected:
   ApmTest();
@@ -247,6 +252,14 @@ void SetFrameTo(AudioFrame* frame, int16_t value) {
   for (int i = 0; i < frame->_payloadDataLengthInSamples * frame->_audioChannel;
       ++i) {
     frame->_payloadData[i] = value;
+  }
+}
+
+void SetFrameTo(AudioFrame* frame, int16_t left, int16_t right) {
+  ASSERT_EQ(2, frame->_audioChannel);
+  for (int i = 0; i < frame->_payloadDataLengthInSamples * 2; i += 2) {
+    frame->_payloadData[i] = left;
+    frame->_payloadData[i + 1] = right;
   }
 }
 
@@ -961,6 +974,42 @@ TEST_F(ApmTest, VoiceDetection) {
   // TODO(bjornv): Add tests for streamed voice; stream_has_voice()
 }
 
+TEST_F(ApmTest, VerifyDownMixing) {
+  for (size_t i = 0; i < kSampleRatesSize; i++) {
+    Init(kSampleRates[i], 2, 2, 1, false);
+    SetFrameTo(frame_, 1000, 2000);
+    AudioFrame mono_frame;
+    mono_frame._payloadDataLengthInSamples =
+        frame_->_payloadDataLengthInSamples;
+    mono_frame._audioChannel = 1;
+    SetFrameTo(&mono_frame, 1500);
+    EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
+    EXPECT_TRUE(FrameDataAreEqual(*frame_, mono_frame));
+  }
+}
+
+TEST_F(ApmTest, AllProcessingDisabledByDefault) {
+  EXPECT_FALSE(apm_->echo_cancellation()->is_enabled());
+  EXPECT_FALSE(apm_->echo_control_mobile()->is_enabled());
+  EXPECT_FALSE(apm_->gain_control()->is_enabled());
+  EXPECT_FALSE(apm_->high_pass_filter()->is_enabled());
+  EXPECT_FALSE(apm_->level_estimator()->is_enabled());
+  EXPECT_FALSE(apm_->noise_suppression()->is_enabled());
+  EXPECT_FALSE(apm_->voice_detection()->is_enabled());
+}
+
+TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabled) {
+  for (size_t i = 0; i < kSampleRatesSize; i++) {
+    Init(kSampleRates[i], 2, 2, 2, false);
+    SetFrameTo(frame_, 1000, 2000);
+    AudioFrame frame_copy = *frame_;
+    for (int j = 0; j < 1000; j++) {
+      EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
+      EXPECT_TRUE(FrameDataAreEqual(*frame_, frame_copy));
+    }
+  }
+}
+
 TEST_F(ApmTest, SplittingFilter) {
   // Verify the filter is not active through undistorted audio when:
   // 1. No components are enabled...
@@ -1081,25 +1130,24 @@ TEST_F(ApmTest, Process) {
     ReadMessageLiteFromFile(ref_filename_, &ref_data);
   } else {
     // Write the desired tests to the protobuf reference file.
-    const int channels[] = {1, 2};
-    const size_t channels_size = sizeof(channels) / sizeof(*channels);
 #if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
     // AECM doesn't support super-wb.
-    const int sample_rates[] = {8000, 16000};
+    const int kProcessSampleRates[] = {8000, 16000};
 #elif defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
-    const int sample_rates[] = {8000, 16000, 32000};
+    const int kProcessSampleRates[] = {8000, 16000, 32000};
 #endif
-    const size_t sample_rates_size = sizeof(sample_rates) / sizeof(*sample_rates);
-    for (size_t i = 0; i < channels_size; i++) {
-      for (size_t j = 0; j < channels_size; j++) {
+    const size_t kProcessSampleRatesSize = sizeof(kProcessSampleRates) /
+        sizeof(*kProcessSampleRates);
+    for (size_t i = 0; i < kChannelsSize; i++) {
+      for (size_t j = 0; j < kChannelsSize; j++) {
         // We can't have more output than input channels.
         for (size_t k = 0; k <= j; k++) {
-          for (size_t l = 0; l < sample_rates_size; l++) {
+          for (size_t l = 0; l < kProcessSampleRatesSize; l++) {
             webrtc::audioproc::Test* test = ref_data.add_test();
-            test->set_num_reverse_channels(channels[i]);
-            test->set_num_input_channels(channels[j]);
-            test->set_num_output_channels(channels[k]);
-            test->set_sample_rate(sample_rates[l]);
+            test->set_num_reverse_channels(kChannels[i]);
+            test->set_num_input_channels(kChannels[j]);
+            test->set_num_output_channels(kChannels[k]);
+            test->set_sample_rate(kProcessSampleRates[l]);
           }
         }
       }
