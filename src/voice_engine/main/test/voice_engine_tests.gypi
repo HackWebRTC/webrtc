@@ -30,6 +30,8 @@
       ],
       'sources': [
         'auto_test/automated_mode.cc',
+        'auto_test/fakes/fake_external_transport.cc',
+        'auto_test/fakes/fake_external_transport.h',
         'auto_test/fixtures/after_initialization_fixture.cc',
         'auto_test/fixtures/after_initialization_fixture.h',
         'auto_test/fixtures/after_streaming_fixture.cc',

@@ -10,15 +10,15 @@
 
 #include <stdio.h>
 #include <string.h>
-
 #include <vector>
 
-#include "critical_section_wrapper.h"
-#include "event_wrapper.h"
-#include "thread_wrapper.h"
-#include "voe_extended_test.h"
-#include "../../source/voice_engine_defines.h"  // defines build macros
+#include "system_wrappers/interface/critical_section_wrapper.h"
+#include "system_wrappers/interface/event_wrapper.h"
 #include "system_wrappers/interface/ref_count.h"
+#include "system_wrappers/interface/thread_wrapper.h"
+#include "testsupport/fileutils.h"
+#include "voice_engine/main/source/voice_engine_defines.h"
+#include "voice_engine/main/test/auto_test/voe_extended_test.h"
 
 #if defined(_WIN32)
 #include <conio.h>
@@ -52,12 +52,6 @@ const char* RemoteIP = "192.168.200.1"; // transmit to this IP address
 extern void* globalJavaVM;
 extern void* globalContext;
 #endif
-
-extern char* GetFilename(char* filename);
-extern const char* GetFilename(const char* filename);
-extern int GetResource(char* resource, char* dest, int destLen);
-extern char* GetResource(char* resource);
-extern const char* GetResource(const char* resource);
 
 // ----------------------------------------------------------------------------
 // External AudioDeviceModule implementation
@@ -106,7 +100,8 @@ int32_t AudioDeviceModuleImpl::Release() {
 // ----------------------------------------------------------------------------
 
 ExtendedTestTransport::ExtendedTestTransport(VoENetwork* ptr) :
-  myNetw(ptr), _thread(NULL), _lock(NULL), _event(NULL), _length(0), _channel(0) {
+  myNetw(ptr), _thread(NULL), _lock(NULL), _event(NULL), _length(0),
+  _channel(0) {
   const char* threadName = "voe_extended_test_external_thread";
   _lock = CriticalSectionWrapper::CreateCriticalSection();
   _event = EventWrapper::Create();
@@ -353,14 +348,14 @@ int VoEExtendedTest::TestBase() {
 
 #ifdef _USE_EXTENDED_TRACE_
   TEST(SetTraceFileName - SetDebugTraceFileName); ANL();
-
   TEST_MUSTPASS(VoiceEngine::SetTraceFile(NULL)); MARK();
   // don't use these files
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename(""
-              "VoEBase_trace_dont_use.txt"))); MARK();
+  std::string output_path = webrtc::test::OutputPath();
+  TEST_MUSTPASS(VoiceEngine::SetTraceFile(
+              (output_path + "VoEBase_trace_dont_use.txt").c_str())); MARK();
   // use these instead
   TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename(""
-              "VoEBase_trace.txt"))); MARK();
+              (output_path + "VoEBase_trace.txt").c_str())); MARK();
   TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStream |
           kTraceStateInfo |
           kTraceWarning |
@@ -1472,7 +1467,7 @@ int VoEExtendedTest::TestBase() {
   TEST(SetTraceFilter); ANL();
 
   TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename(""
-              "VoEBase_trace_filter.txt"))); MARK();
+              "VoEBase_trace_filter.txt").c_str())); MARK();
   SLEEP(100);
 
   // Test a few different filters, verify in trace file
@@ -1572,7 +1567,8 @@ int VoEExtendedTest::TestCallReport() {
   }
 
 #ifdef _USE_EXTENDED_TRACE_
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename("VoECallReport_trace.txt")));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFile(
+      GetFilename("VoECallReport_trace.txt").c_str()));
   TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
           kTraceStateInfo |
           kTraceWarning |
@@ -1712,7 +1708,8 @@ int VoEExtendedTest::TestCodec() {
   VoEFile* file = _mgr.FilePtr();
 
 #ifdef _USE_EXTENDED_TRACE_
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename("VoECodec_trace.txt")));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFile(
+      GetFilename("VoECodec_trace.txt").c_str()));
   TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
           kTraceStateInfo |
           kTraceWarning |
@@ -3011,8 +3008,9 @@ int VoEExtendedTest::TestCodec() {
   TEST_MUSTPASS(voe_base_->StartPlayout(0));
   TEST_MUSTPASS(voe_base_->StartSend(0));
   TEST_MUSTPASS(voe_base_->StartReceive(0));
+  std::string output_path = webrtc::test::OutputPath();
   TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-          0, GetFilename("audio_long16.pcm"), true , true));
+          0, (output_path + "audio_long16.pcm").c_str(), true , true));
   cinst.channels = 1;
   TEST_LOG("Testing codec: Switch between iSAC-wb and iSAC-swb \n");
   TEST_LOG("Testing codec: iSAC wideband \n");
@@ -3075,8 +3073,9 @@ int VoEExtendedTest::TestDtmf() {
   VoECodec* codec = _mgr.CodecPtr();
   VoEVolumeControl* volume = _mgr.VolumeControlPtr();
 
-  //#ifdef _USE_EXTENDED_TRACE_
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename("VoEDtmf_trace.txt")));
+  std::string output_path = webrtc::test::OutputPath();
+  TEST_MUSTPASS(VoiceEngine::SetTraceFile(
+      (output_path + "VoEDtmf_trace.txt").c_str()));
   TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
           kTraceStateInfo |
           kTraceWarning |
@@ -3467,7 +3466,7 @@ int VoEExtendedTest::TestEncryption() {
 
 #ifdef _USE_EXTENDED_TRACE_
   TEST_MUSTPASS(VoiceEngine::SetTraceFile(
-          GetFilename("VoEEncryption_trace.txt")));
+          GetFilename("VoEEncryption_trace.txt").c_str()));
   TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
           kTraceStateInfo |
           kTraceWarning |
@@ -3984,7 +3983,7 @@ int VoEExtendedTest::TestExternalMedia() {
 
 #ifdef _USE_EXTENDED_TRACE_
   TEST_MUSTPASS(VoiceEngine::SetTraceFile(
-          GetFilename("VoEExternalMedia_trace.txt")));
+          GetFilename("VoEExternalMedia_trace.txt").c_str()));
   TEST_MUSTPASS(VoiceEngine::SetTraceFilter(
           kTraceStateInfo | kTraceStateInfo | kTraceWarning |
           kTraceError | kTraceCritical | kTraceApiCall |
@@ -4101,7 +4100,7 @@ int VoEExtendedTest::TestFile() {
 
 #ifdef _USE_EXTENDED_TRACE_
   TEST_MUSTPASS(VoiceEngine::SetTraceFile(
-          GetFilename("VoEFile_trace.txt"))); MARK();
+          GetFilename("VoEFile_trace.txt").c_str())); MARK();
   TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
           kTraceStateInfo |
           kTraceWarning |
@@ -4131,43 +4130,47 @@ int VoEExtendedTest::TestFile() {
   ANL();
 
   voe_base_->StopPlayout(0);
+  std::string output_path = webrtc::test::OutputPath();
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, GetResource("audio_long16.pcm")));MARK();
+          0, (output_path + "audio_long16.pcm").c_str()));MARK();
   voe_base_->StartPlayout(0);
   MARK(); // file should be mixed in and played out
   SLEEP(dT);
   TEST_MUSTPASS(!file->StartPlayingFileLocally(
-          0, GetResource("audio_long16.pcm")));
+          0, (output_path + "audio_long16.pcm").c_str()));
   MARK(); // should fail (must stop first)
   TEST_MUSTPASS(voe_base_->LastError() != VE_ALREADY_PLAYING);
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   MARK();
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, GetResource("audio_long16.pcm")));
+          0, (output_path + "audio_long16.pcm").c_str()));
   MARK(); // should work again (restarts file)
   SLEEP(dT);
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   MARK();
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, GetResource("audio_long16.pcm"), false, kFileFormatPcm16kHzFile));
+          0, (output_path + "audio_long16.pcm").c_str(),
+          false, kFileFormatPcm16kHzFile));
   MARK();
   SLEEP(dT);
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   MARK();
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, GetResource("audio_long8.pcm"), false, kFileFormatPcm8kHzFile));
+          0, (output_path + "audio_long8.pcm").c_str(),
+          false, kFileFormatPcm8kHzFile));
   MARK();
   SLEEP(dT);
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   MARK();
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, GetResource("audio_long16.wav"), false, kFileFormatPcm8kHzFile));
+          0, (output_path + "audio_long16.wav").c_str(),
+          false, kFileFormatPcm8kHzFile));
   MARK();
   SLEEP(dT);
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   MARK();
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, GetResource("audio_long8mulaw.wav"), false,
+          0, (output_path + "audio_long8mulaw.wav").c_str(), false,
           kFileFormatPcm8kHzFile));
   MARK();
   SLEEP(dT);
@@ -4176,34 +4179,34 @@ int VoEExtendedTest::TestFile() {
 
   // TEST_MUSTPASS(file->StopPlayingFileLocally(0)); MARK();
   // TEST_MUSTPASS(file->StartPlayingFileLocally(
-  //   0, GetResource("audio_short16.pcm"), true,
+  //   0, (output_path + "audio_short16.pcm").c_str(), true,
   //   kFileFormatPcm16kHzFile)); MARK(); // loop
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   MARK();
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, GetResource("audio_short16.pcm"), false,
+          0, (output_path + "audio_short16.pcm").c_str(), false,
           kFileFormatPcm16kHzFile, 1.0, 0, 2000));
   MARK(); // play segment
   SLEEP(2500);
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   MARK();
   TEST_MUSTPASS(!file->StartPlayingFileLocally(
-          0, GetResource("audio_short16.pcm"), false,
+          0, (output_path + "audio_short16.pcm").c_str(), false,
           kFileFormatPcm16kHzFile, 1.0, 2000, 1000));
   MARK(); // invalid segment
   TEST_MUSTPASS(voe_base_->LastError() != VE_BAD_FILE);
   TEST_MUSTPASS(!file->StartPlayingFileLocally(
-          0, GetResource("audio_short16.pcm"), false,
+          0, (output_path + "audio_short16.pcm").c_str(), false,
           kFileFormatPcm16kHzFile, 1.0, 21000, 30000));
   MARK(); // start > file size
   TEST_MUSTPASS(voe_base_->LastError() != VE_BAD_FILE);
   TEST_MUSTPASS(!file->StartPlayingFileLocally(
-          0, GetResource("audio_short16.pcm"), false,
+          0, (output_path + "audio_short16.pcm").c_str(), false,
           kFileFormatPcm16kHzFile, 1.0, 100, 100));
   MARK(); // invalid segment
   TEST_MUSTPASS(voe_base_->LastError() != VE_BAD_FILE);
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, GetResource("audio_long16.pcm")));
+          0, (output_path + "audio_long16.pcm").c_str()));
   MARK(); // should work again (restarts file)
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   MARK();
@@ -4220,7 +4223,7 @@ int VoEExtendedTest::TestFile() {
   TEST_MUSTPASS(0 != file->IsPlayingFileLocally(0));
   MARK(); // inactive
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, GetResource("audio_long16.pcm")));
+          0, (output_path + "audio_long16.pcm").c_str()));
   MARK();
   TEST_MUSTPASS(1 != file->IsPlayingFileLocally(0));
   MARK(); // active
@@ -4315,27 +4318,27 @@ int VoEExtendedTest::TestFile() {
         " 3 in 8 kHz no mix, 4 in 8 kHz mix \n");
 
       TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-              ch, GetResource("audio_long16.pcm")));
+              ch, (output_path + "audio_long16.pcm").c_str()));
       MARK(); // don't mix
       SLEEP(2000);
       TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(ch));
       MARK();
       TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-              ch, GetResource("audio_long16.wav"), false, true,
+              ch, (output_path + "audio_long16.wav").c_str(), false, true,
               kFileFormatWavFile));
       MARK(); // mix
       SLEEP(2000);
       TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(ch));
       MARK();
       TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-              ch, GetResource("audio_long8.pcm"), false, false,
+              ch, (output_path + "audio_long8.pcm").c_str(), false, false,
               kFileFormatPcm8kHzFile));
       MARK(); // don't mix
       SLEEP(2000);
       TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(ch));
       MARK();
       TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-              ch, GetResource("audio_long8.pcm"), false, true,
+              ch, (output_path + "audio_long8.pcm").c_str(), false, true,
               kFileFormatPcm8kHzFile));
       MARK(); // mix
       SLEEP(2000);
@@ -4348,7 +4351,7 @@ int VoEExtendedTest::TestFile() {
       ANL();
 
       TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-              ch, GetResource("audio_long16.pcm")));
+              ch, (output_path + "audio_long16.pcm").c_str()));
       TEST_MUSTPASS(1 != file->IsPlayingFileAsMicrophone(ch));
       TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(ch));
       TEST_MUSTPASS(0 != file->IsPlayingFileAsMicrophone(ch));
@@ -4356,7 +4359,7 @@ int VoEExtendedTest::TestFile() {
       ANL();
 
       TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-              ch, GetResource("audio_long16.pcm")));
+              ch, (output_path + "audio_long16.pcm").c_str()));
       TEST_MUSTPASS(file->ScaleFileAsMicrophonePlayout(ch, 1.0));
       MARK();
       SLEEP(1000);
@@ -4386,7 +4389,7 @@ int VoEExtendedTest::TestFile() {
   ANL();
 
   TEST_MUSTPASS(file->StartRecordingPlayout(0,
-          GetFilename("rec_play16.pcm")));
+          (output_path + "rec_play16.pcm").c_str()));
   MARK();
   SLEEP(1000);
   TEST_MUSTPASS(file->StopRecordingPlayout(0));
@@ -4394,16 +4397,16 @@ int VoEExtendedTest::TestFile() {
 
   fcomp.plfreq = 8000;
   strcpy(fcomp.plname, "L16");
-  TEST_MUSTPASS(file->StartRecordingPlayout(0, GetFilename("rec_play8.wav"),
-          &fcomp));
+  TEST_MUSTPASS(file->StartRecordingPlayout(0,
+      (output_path + "rec_play8.wav").c_str(), &fcomp));
   SLEEP(1000);
   TEST_MUSTPASS(file->StopRecordingPlayout(0));
   MARK();
 
     fcomp.plfreq = 16000;
   strcpy(fcomp.plname, "L16");
-  TEST_MUSTPASS(file->StartRecordingPlayout(0, GetFilename("rec_play16.wav"),
-          &fcomp));
+  TEST_MUSTPASS(file->StartRecordingPlayout(0,
+      (output_path + "rec_play16.wav").c_str(), &fcomp));
   SLEEP(1000);
   TEST_MUSTPASS(file->StopRecordingPlayout(0));
   MARK();
@@ -4416,7 +4419,7 @@ int VoEExtendedTest::TestFile() {
   fcomp.channels = 1;
 
   TEST_MUSTPASS(file->StartRecordingPlayout(0,
-          GetFilename("rec_play_pcmu.wav"),
+          (output_path + "rec_play_pcmu.wav").c_str(),
           &fcomp));
   SLEEP(1000);
   TEST_MUSTPASS(file->StopRecordingPlayout(0));
@@ -4426,7 +4429,7 @@ int VoEExtendedTest::TestFile() {
   fcomp.plfreq = 8000;
   strcpy(fcomp.plname, "PCMA");
   TEST_MUSTPASS(file->StartRecordingPlayout(0,
-          GetFilename("rec_play_pcma.wav"),
+          (output_path + "rec_play_pcma.wav").c_str(),
           &fcomp));
   SLEEP(1000);
   TEST_MUSTPASS(file->StopRecordingPlayout(0));
@@ -4438,14 +4441,14 @@ int VoEExtendedTest::TestFile() {
   fcomp.plfreq = 8000;
   strcpy(fcomp.plname, "ILBC");
   TEST_MUSTPASS(file->StartRecordingPlayout(0,
-          GetFilename("rec_play.ilbc"),
+          (output_path + "rec_play.ilbc").c_str(),
           &fcomp));
   SLEEP(1000);
   TEST_MUSTPASS(file->StopRecordingPlayout(0));
   MARK();
 
   TEST_MUSTPASS(file->StartRecordingPlayout(
-          -1, GetFilename("rec_play16_mixed.pcm")));
+          -1, (output_path + "rec_play16_mixed.pcm").c_str()));
   MARK();
   SLEEP(1000);
   TEST_MUSTPASS(file->StopRecordingPlayout(-1));
@@ -4454,7 +4457,8 @@ int VoEExtendedTest::TestFile() {
   // TEST_MUSTPASS(file->StopPlayingFileLocally(0)); // Why should this work?
   TEST_LOG("\nplaying out...\n");
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, GetFilename("rec_play.ilbc"), false, kFileFormatCompressedFile));
+          0, (output_path + "rec_play.ilbc").c_str(), false,
+          kFileFormatCompressedFile));
   MARK();
   SLEEP(2000);
 
@@ -4467,14 +4471,16 @@ int VoEExtendedTest::TestFile() {
   TEST(StopRecordingMicrophone);
   ANL();
 
-  TEST_MUSTPASS(file->StartRecordingMicrophone(GetFilename("rec_mic16.pcm")));
+  TEST_MUSTPASS(file->StartRecordingMicrophone(
+      (output_path + "rec_mic16.pcm").c_str()));
   MARK();
   SLEEP(1000);
   TEST_MUSTPASS(file->StopRecordingMicrophone());
   MARK();
 
   voe_base_->StopSend(0);
-  TEST_MUSTPASS(file->StartRecordingMicrophone(GetFilename("rec_mic16.pcm")));
+  TEST_MUSTPASS(file->StartRecordingMicrophone(
+      (output_path + "rec_mic16.pcm").c_str()));
   MARK(); // record without sending as well
   SLEEP(1000);
   TEST_MUSTPASS(file->StopRecordingMicrophone());
@@ -4484,7 +4490,7 @@ int VoEExtendedTest::TestFile() {
   fcomp.plfreq = 8000;
   strcpy(fcomp.plname, "L16");
   TEST_MUSTPASS(file->StartRecordingMicrophone(
-          GetFilename("rec_play8.wav"), &fcomp));
+          (output_path + "rec_play8.wav").c_str(), &fcomp));
   SLEEP(1000);
   TEST_MUSTPASS(file->StopRecordingMicrophone());
   MARK();
@@ -4492,7 +4498,7 @@ int VoEExtendedTest::TestFile() {
   fcomp.plfreq = 16000;
   strcpy(fcomp.plname, "L16");
   TEST_MUSTPASS(file->StartRecordingMicrophone(
-          GetFilename("rec_play16.wav"), &fcomp));
+          (output_path + "rec_play16.wav").c_str(), &fcomp));
   SLEEP(1000);
   TEST_MUSTPASS(file->StopRecordingMicrophone());
   MARK();
@@ -4521,9 +4527,9 @@ int VoEExtendedTest::TestFile() {
   strcpy(fcomp.plname, "L16");
   TEST_LOG("Recording microphone to L16, please speak \n");
   TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-          0, GetResource("audio_long16.pcm"), true , true));
+          0, (output_path + "audio_long16.pcm").c_str(), true , true));
   TEST_MUSTPASS(file->StartRecordingMicrophone(
-          GetFilename("rec_play_ch.wav"), &fcomp));
+          (output_path + "rec_play_ch.wav").c_str(), &fcomp));
   MARK();
   SLEEP(3000);
   TEST_MUSTPASS(file->StopRecordingMicrophone());
@@ -4531,14 +4537,15 @@ int VoEExtendedTest::TestFile() {
   TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(0));
   TEST_LOG("Playing recording file, you should only hear what you said \n");
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, GetFilename("rec_play_ch.wav"), false, kFileFormatWavFile));
+          0, (output_path + "rec_play_ch.wav").c_str(),
+          false, kFileFormatWavFile));
   SLEEP(2500);
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   TEST_LOG("Recording microphone 0 to L16, please speak \n");
   TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-          -1, GetResource("audio_long16.pcm"), true , true));
+          -1, (output_path + "audio_long16.pcm").c_str(), true , true));
   TEST_MUSTPASS(file->StartRecordingMicrophone(
-          GetFilename("rec_play_ch_0.wav"), &fcomp));
+          (output_path + "rec_play_ch_0.wav").c_str(), &fcomp));
   MARK();
   SLEEP(3000);
   TEST_MUSTPASS(file->StopRecordingMicrophone());
@@ -4547,7 +4554,8 @@ int VoEExtendedTest::TestFile() {
   TEST_LOG("Playing recording file, you should hear what you said and"
     " audio_long16.pcm \n");
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, GetFilename("rec_play_ch_0.wav"), false, kFileFormatWavFile));
+          0, (output_path + "rec_play_ch_0.wav").c_str(),
+          false, kFileFormatWavFile));
   SLEEP(2500);
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   TEST_LOG("Recording microphone to ilbc, please speak \n");
@@ -4558,9 +4566,9 @@ int VoEExtendedTest::TestFile() {
   fcomp.channels = 1;
   fcomp.pltype = 97;
   TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
-          0, GetResource("audio_long16.pcm"), true , true));
+          0, (output_path + "audio_long16.pcm").c_str(), true , true));
   TEST_MUSTPASS(file->StartRecordingMicrophone(
-          GetFilename("rec_play_ch_0.ilbc"), &fcomp));
+          (output_path + "rec_play_ch_0.ilbc").c_str(), &fcomp));
   MARK();
   SLEEP(3000);
   TEST_MUSTPASS(file->StopRecordingMicrophone());
@@ -4568,7 +4576,7 @@ int VoEExtendedTest::TestFile() {
   TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(0));
   TEST_LOG("Playing recording file, you should only hear what you said \n");
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, GetFilename("rec_play_ch_0.ilbc"), false,
+          0, (output_path + "rec_play_ch_0.ilbc").c_str(), false,
           kFileFormatCompressedFile));
   SLEEP(2500);
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
@@ -4632,8 +4640,8 @@ int VoEExtendedTest::TestFile() {
   ANL();
 
   TEST_MUSTPASS(file->ConvertPCMToWAV(
-          GetResource("audio_long16.pcm"),
-          GetFilename("singleUserDemoConv.wav")));
+          (output_path + "audio_long16.pcm").c_str(),
+          (output_path + "singleUserDemoConv.wav").c_str()));
   MARK();
   TEST_MUSTPASS(!file->ConvertPCMToWAV((InStream*)NULL,
           (OutStream*)NULL));MARK(); // invalid stream handles
@@ -4644,8 +4652,8 @@ int VoEExtendedTest::TestFile() {
   ANL();
 
   TEST_MUSTPASS(file->ConvertWAVToPCM(
-          GetResource("audio_long16.wav"),
-          GetFilename("singleUserDemoConv.pcm")));
+          (output_path + "audio_long16.wav").c_str(),
+          (output_path + "singleUserDemoConv.pcm").c_str()));
   MARK();
   TEST_MUSTPASS(!file->ConvertWAVToPCM((InStream*)NULL, (OutStream*)NULL));
   MARK(); // invalid stream handles
@@ -4658,8 +4666,8 @@ int VoEExtendedTest::TestFile() {
   fcomp.plfreq = 16000;
   strcpy(fcomp.plname, "L16");
   TEST_MUSTPASS(!file->ConvertPCMToCompressed(
-          GetResource("audio_long16.pcm"),
-          GetFilename("singleUserDemoConv16_dummy.wav"), &fcomp));
+          (output_path + "audio_long16.pcm").c_str(),
+          (output_path + "singleUserDemoConv16_dummy.wav").c_str(), &fcomp));
   MARK(); // should not be supported
 
   fcomp.plfreq = 8000;
@@ -4669,19 +4677,19 @@ int VoEExtendedTest::TestFile() {
   fcomp.pltype = 97;
   fcomp.channels = 1;
   TEST_MUSTPASS(file->ConvertPCMToCompressed(
-          GetResource("audio_long16.pcm"),
-          GetFilename("singleUserDemoConv.ilbc"), &fcomp));MARK();
+          (output_path + "audio_long16.pcm").c_str(),
+          (output_path + "singleUserDemoConv.ilbc").c_str(), &fcomp));MARK();
   AOK();ANL();
 
   TEST(ConvertCompressedToPCM);
   ANL();
 
   TEST_MUSTPASS(file->ConvertCompressedToPCM(
-          GetFilename("singleUserDemoConv.ilbc"),
-          GetFilename("singleUserDemoConv_ilbc.pcm")));MARK();
+          (output_path + "singleUserDemoConv.ilbc").c_str(),
+          (output_path + "singleUserDemoConv_ilbc.pcm").c_str()));MARK();
   TEST_MUSTPASS(!file->ConvertCompressedToPCM(
-          GetResource("audio_long16.pcm"),
-          GetFilename("singleUserDemoConv_dummy.pcm")));MARK();
+          (output_path + "audio_long16.pcm").c_str(),
+          (output_path + "singleUserDemoConv_dummy.pcm").c_str()));MARK();
   AOK();ANL();
 
 #if defined(MAC_IPHONE) || defined(WEBRTC_ANDROID)
@@ -4696,15 +4704,18 @@ int VoEExtendedTest::TestFile() {
   int dur;
 
   TEST_MUSTPASS(file->GetFileDuration(
-          GetResource("audio_long16.pcm"), dur));
+          (output_path + "audio_long16.pcm").c_str(), dur));
   TEST_MUSTPASS(file->GetFileDuration(
-          GetResource("audio_long8.pcm"), dur, kFileFormatPcm8kHzFile));
+          (output_path + "audio_long8.pcm").c_str(),
+          dur, kFileFormatPcm8kHzFile));
   TEST_MUSTPASS(file->GetFileDuration(
-          GetResource("audio_long16.pcm"), dur, kFileFormatPcm16kHzFile));
+          (output_path + "audio_long16.pcm").c_str(),
+          dur, kFileFormatPcm16kHzFile));
   TEST_MUSTPASS(file->GetFileDuration(
-          GetResource("audio_long16.wav"), dur, kFileFormatPcm8kHzFile));
+          (output_path + "audio_long16.wav").c_str(),
+          dur, kFileFormatPcm8kHzFile));
   TEST_MUSTPASS(file->GetFileDuration(
-          GetFilename("singleUserDemoConv.ilbc"), dur,
+          (output_path + "singleUserDemoConv.ilbc").c_str(), dur,
           kFileFormatCompressedFile));
 
   AOK();
@@ -4716,7 +4727,7 @@ int VoEExtendedTest::TestFile() {
   int pos;
 
   TEST_MUSTPASS(file->StartPlayingFileLocally(
-          0, GetResource("audio_long16.pcm")));
+          0, (output_path + "audio_long16.pcm").c_str()));
   SLEEP(1000);
   TEST_MUSTPASS(file->GetPlaybackPosition(0, pos));
   MARK(); // position should be ~1000
@@ -4740,7 +4751,8 @@ int VoEExtendedTest::TestFile() {
   for (int i = 0; i < 7; i++) {
     TEST_LOG("Playing file %s, in %s KHz \n", localFiles[i], freq[i]);
     TEST_MUSTPASS(file->StartPlayingFileLocally(
-            0, GetResource(localFiles[i]),false, kFileFormatWavFile, 1));
+            0, (output_path + localFiles[i]).c_str(),
+            false, kFileFormatWavFile, 1));
     SLEEP(4500); // The file should not end
     TEST_MUSTPASS(file->StopPlayingFileLocally(0));
   }
@@ -4939,8 +4951,8 @@ int VoEExtendedTest::TestHardware() {
   VoEHardware* hardware = _mgr.HardwarePtr();
 
 #ifdef _USE_EXTENDED_TRACE_
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename(
-              "VoEHardware_trace.txt")));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFile((output_path +
+              "VoEHardware_trace.txt").c_str()));
   TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
           kTraceStateInfo |
           kTraceWarning |
@@ -5275,8 +5287,8 @@ int VoEExtendedTest::TestNetwork() {
   VoENetwork* netw = _mgr.NetworkPtr();
 
 #ifdef _USE_EXTENDED_TRACE_
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename(
-              "VoENetwork_trace.txt")));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFile((output_path +
+              "VoENetwork_trace.txt").c_str()));
   TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
           kTraceStateInfo |
           kTraceWarning |
@@ -6825,8 +6837,8 @@ int VoEExtendedTest::TestRTP_RTCP() {
 #endif
 
 #ifdef _USE_EXTENDED_TRACE_
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename(
-              "VoERTP_RTCP_trace.txt")));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFile((output_path +
+              "VoERTP_RTCP_trace.txt").c_str()));
   TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
           kTraceStateInfo |
           kTraceWarning |
@@ -7054,11 +7066,12 @@ int VoEExtendedTest::TestRTP_RTCP() {
   MARK();
   TEST_MUSTPASS(rtp_rtcp->StopRTPDump(0, kRtpOutgoing));
   MARK();
-  TEST_MUSTPASS(rtp_rtcp->StartRTPDump(0, GetFilename("dump_in_1sec.rtp"),
-          kRtpIncoming));
+  std::string output_path = webrtc::test::OutputPath();
+  TEST_MUSTPASS(rtp_rtcp->StartRTPDump(
+      0, (output_path + "dump_in_1sec.rtp").c_str(), kRtpIncoming));
   MARK();
-  TEST_MUSTPASS(rtp_rtcp->StartRTPDump(0, GetFilename("dump_out_2sec.rtp"),
-          kRtpOutgoing));
+  TEST_MUSTPASS(rtp_rtcp->StartRTPDump(
+      0, (output_path + "dump_out_2sec.rtp").c_str(), kRtpOutgoing));
   MARK();
   SLEEP(1000);
   TEST_MUSTPASS(rtp_rtcp->StopRTPDump(0, kRtpIncoming));
@@ -7073,7 +7086,7 @@ int VoEExtendedTest::TestRTP_RTCP() {
   //
   for (i = 0; i < 10; i++) {
     TEST_MUSTPASS(rtp_rtcp->StartRTPDump(0,
-            GetFilename("dump_in_200ms.rtp")));
+            (output_path + "dump_in_200ms.rtp").c_str()));
     MARK();
     SLEEP(200);
     TEST_MUSTPASS(rtp_rtcp->StopRTPDump(0));
@@ -7452,8 +7465,8 @@ int VoEExtendedTest::TestVideoSync()
   }
 
 #ifdef _USE_EXTENDED_TRACE_
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename(
-      "VoEVideoSync_trace.txt")));
+  TEST_MUSTPASS(VoiceEngine::SetTraceFile((output_path +
+      "VoEVideoSync_trace.txt").c_str()));
   TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
                                             kTraceStateInfo |
                                             kTraceWarning |
@@ -7554,7 +7567,7 @@ int VoEExtendedTest::TestVolumeControl()
 
 #ifdef _USE_EXTENDED_TRACE_
   TEST_MUSTPASS(VoiceEngine::SetTraceFile(
-      GetFilename("VoEVolumeControl_trace.txt")));
+      (output_path + "VoEVolumeControl_trace.txt").c_str()));
   TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
                                             kTraceStateInfo |
                                             kTraceWarning |
@@ -7682,7 +7695,9 @@ int VoEExtendedTest::TestAPM() {
   VoEAudioProcessing* apm = _mgr.APMPtr();
 
   //#ifdef _USE_EXTENDED_TRACE_
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename("apm_trace.txt")));
+  std::string output_path = webrtc::test::OutputPath();
+  TEST_MUSTPASS(VoiceEngine::SetTraceFile(
+      (output_path + "apm_trace.txt").c_str()));
   TEST_MUSTPASS(VoiceEngine::SetTraceFilter(kTraceStateInfo |
                                             kTraceStateInfo |
                                             kTraceWarning |
@@ -8364,7 +8379,8 @@ int VoEExtendedTest::TestAPM() {
   ////////////////////////////
   // StopDebugRecording
   TEST_LOG("StartDebugRecording");
-  TEST_MUSTPASS(apm->StartDebugRecording(GetFilename("apm_debug.txt")));
+  TEST_MUSTPASS(apm->StartDebugRecording(
+      (output_path + "apm_debug.txt").c_str()));
   SLEEP(1000);
   TEST_LOG("StopDebugRecording");
   TEST_MUSTPASS(apm->StopDebugRecording());

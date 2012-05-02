@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -11,6 +11,86 @@
 #include "after_streaming_fixture.h"
 #include "voe_standard_test.h"
 #include "testsupport/fileutils.h"
+
+class TestRtpObserver : public webrtc::VoERTPObserver {
+ public:
+  TestRtpObserver();
+  virtual ~TestRtpObserver();
+  virtual void OnIncomingCSRCChanged(const int channel,
+                                     const unsigned int CSRC,
+                                     const bool added);
+  virtual void OnIncomingSSRCChanged(const int channel,
+                                     const unsigned int SSRC);
+  void Reset();
+ public:
+  unsigned int ssrc_[2];
+  unsigned int csrc_[2][2];  // Stores 2 CSRCs for each channel.
+  bool added_[2][2];
+  int size_[2];
+};
+
+TestRtpObserver::TestRtpObserver() {
+  Reset();
+}
+
+TestRtpObserver::~TestRtpObserver() {
+}
+
+void TestRtpObserver::Reset() {
+  for (int i = 0; i < 2; i++) {
+    ssrc_[i] = 0;
+    csrc_[i][0] = 0;
+    csrc_[i][1] = 0;
+    added_[i][0] = false;
+    added_[i][1] = false;
+    size_[i] = 0;
+  }
+}
+
+void TestRtpObserver::OnIncomingCSRCChanged(const int channel,
+                                            const unsigned int CSRC,
+                                            const bool added) {
+  char msg[128];
+  sprintf(msg, "=> OnIncomingCSRCChanged(channel=%d, CSRC=%u, added=%d)\n",
+          channel, CSRC, added);
+  TEST_LOG("%s", msg);
+
+  if (channel > 1)
+    return;  // Not enough memory.
+
+  csrc_[channel][size_[channel]] = CSRC;
+  added_[channel][size_[channel]] = added;
+
+  size_[channel]++;
+  if (size_[channel] == 2)
+    size_[channel] = 0;
+}
+
+void TestRtpObserver::OnIncomingSSRCChanged(const int channel,
+                                            const unsigned int SSRC) {
+  char msg[128];
+  sprintf(msg, "\n=> OnIncomingSSRCChanged(channel=%d, SSRC=%u)\n", channel,
+          SSRC);
+  TEST_LOG("%s", msg);
+
+  ssrc_[channel] = SSRC;
+}
+
+class RtcpAppHandler : public webrtc::VoERTCPObserver {
+ public:
+  void OnApplicationDataReceived(const int channel,
+                                 const unsigned char sub_type,
+                                 const unsigned int name,
+                                 const unsigned char* data,
+                                 const unsigned short length_in_bytes);
+  void Reset();
+  ~RtcpAppHandler() {}
+  unsigned short length_in_bytes_;
+  unsigned char data_[256];
+  unsigned char sub_type_;
+  unsigned int name_;
+};
+
 
 static const char* const RTCP_CNAME = "Whatever";
 
@@ -41,6 +121,23 @@ class RtpRtcpTest : public AfterStreamingFixture {
   int second_channel_;
 };
 
+void RtcpAppHandler::OnApplicationDataReceived(
+    const int /*channel*/, const unsigned char sub_type,
+    const unsigned int name, const unsigned char* data,
+    const unsigned short length_in_bytes) {
+  length_in_bytes_ = length_in_bytes;
+  memcpy(data_, &data[0], length_in_bytes);
+  sub_type_ = sub_type;
+  name_ = name;
+}
+
+void RtcpAppHandler::Reset() {
+  length_in_bytes_ = 0;
+  memset(data_, 0, sizeof(data_));
+  sub_type_ = 0;
+  name_ = 0;
+}
+
 TEST_F(RtpRtcpTest, RemoteRtcpCnameHasPropagatedToRemoteSide) {
   // We need to sleep a bit here for the name to propagate. For instance,
   // 200 milliseconds is not enough, so we'll go with one second here.
@@ -68,7 +165,7 @@ TEST_F(RtpRtcpTest, SSRCPropagatesCorrectly) {
 }
 
 TEST_F(RtpRtcpTest, RtcpApplicationDefinedPacketsCanBeSentAndReceived) {
-  voetest::RtcpAppHandler rtcp_app_handler;
+  RtcpAppHandler rtcp_app_handler;
   EXPECT_EQ(0, voe_rtp_rtcp_->RegisterRTCPObserver(
       channel_, rtcp_app_handler));
 
@@ -94,7 +191,7 @@ TEST_F(RtpRtcpTest, RtcpApplicationDefinedPacketsCanBeSentAndReceived) {
 }
 
 TEST_F(RtpRtcpTest, DisabledRtcpObserverDoesNotReceiveData) {
-  voetest::RtcpAppHandler rtcp_app_handler;
+  RtcpAppHandler rtcp_app_handler;
   EXPECT_EQ(0, voe_rtp_rtcp_->RegisterRTCPObserver(
       channel_, rtcp_app_handler));
 
@@ -167,7 +264,7 @@ TEST_F(RtpRtcpTest, DISABLED_CanCreateRtpDumpFilesWithoutError) {
 }
 
 TEST_F(RtpRtcpTest, ObserverGetsNotifiedOnSsrcChange) {
-  voetest::TestRtpObserver rtcp_observer;
+  TestRtpObserver rtcp_observer;
   EXPECT_EQ(0, voe_rtp_rtcp_->RegisterRTPObserver(
       channel_, rtcp_observer));
   rtcp_observer.Reset();

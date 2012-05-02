@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -30,12 +30,6 @@ namespace voetest {
         PAUSE												    \
         return -1;                                              \
     }
-
-extern char* GetFilename(char* filename);
-extern const char* GetFilename(const char* filename);
-extern int GetResource(char* resource, char* dest, int destLen);
-extern char* GetResource(char* resource);
-extern const char* GetResource(const char* resource);
 
 VoECpuTest::VoECpuTest(VoETestManager& mgr)
     : _mgr(mgr) {

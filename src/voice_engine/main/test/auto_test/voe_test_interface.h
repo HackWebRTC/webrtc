@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -17,15 +17,8 @@
 
 #include "common_types.h"
 
-namespace webrtc {
-class CriticalSectionWrapper;
-class EventWrapper;
-class ThreadWrapper;
-class VoENetwork;
-}
-
 namespace voetest {
-// TODO(andrew): using directives are not permitted.
+// TODO(andrew): Using directives not permitted.
 using namespace webrtc;
 
 // TestType enumerator
@@ -53,33 +46,6 @@ enum ExtendedSelection {
   XSEL_VideoSync,
   XSEL_VolumeControl,
   XSEL_AudioProcessing,
-};
-
-// ----------------------------------------------------------------------------
-//  External transport (Transport)
-// ----------------------------------------------------------------------------
-
-class FakeExternalTransport : public Transport {
- public:
-  FakeExternalTransport(VoENetwork* ptr);
-  virtual ~FakeExternalTransport();
-  VoENetwork* my_network_;
-  int SendPacket(int channel, const void *data, int len);
-  int SendRTCPPacket(int channel, const void *data, int len);
-  void SetDelayStatus(bool enabled, unsigned int delayInMs = 100);
- private:
-  static bool Run(void* ptr);
-  bool Process();
- private:
-  ThreadWrapper*          thread_;
-  CriticalSectionWrapper* lock_;
-  EventWrapper*           event_;
- private:
-  unsigned char           packet_buffer_[1612];
-  int                     length_;
-  int                     channel_;
-  bool                    delay_is_enabled_;
-  int                     delay_time_in_ms_;
 };
 
 // Main test function

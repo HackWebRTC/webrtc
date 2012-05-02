@@ -11,6 +11,22 @@
 #include "after_streaming_fixture.h"
 #include "voe_standard_test.h"
 
+class RxCallback : public webrtc::VoERxVadCallback {
+ public:
+  RxCallback() :
+    vad_decision(-1) {
+  }
+
+  virtual void OnRxVad(int, int vadDecision) {
+    char msg[128];
+    sprintf(msg, "RX VAD detected decision %d \n", vadDecision);
+    TEST_LOG("%s", msg);
+    vad_decision = vadDecision;
+  }
+
+  int vad_decision;
+};
+
 class AudioProcessingTest : public AfterStreamingFixture {
  protected:
   // Note: Be careful with this one, it is used in the
@@ -188,7 +204,7 @@ TEST_F(AudioProcessingTest, ManualTestEcMetrics) {
 
 // TODO(phoglund): Reenable below test when it's no longer flaky.
 TEST_F(AudioProcessingTest, DISABLED_TestVoiceActivityDetectionWithObserver) {
-  voetest::RxCallback rx_callback;
+  RxCallback rx_callback;
   EXPECT_EQ(0, voe_apm_->RegisterRxVadObserver(channel_, rx_callback));
 
   // The extra sleeps are to allow decisions some time to propagate to the
@@ -196,12 +212,12 @@ TEST_F(AudioProcessingTest, DISABLED_TestVoiceActivityDetectionWithObserver) {
   TryDetectingSilence();
   Sleep(100);
 
-  EXPECT_EQ(0, rx_callback._vadDecision);
+  EXPECT_EQ(0, rx_callback.vad_decision);
 
   TryDetectingSpeechAfterSilence();
   Sleep(100);
 
-  EXPECT_EQ(1, rx_callback._vadDecision);
+  EXPECT_EQ(1, rx_callback.vad_decision);
 
   EXPECT_EQ(0, voe_apm_->DeRegisterRxVadObserver(channel_));
 }

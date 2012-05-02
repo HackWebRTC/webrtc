@@ -403,14 +403,14 @@ void TelephoneEventObserver::OnReceivedTelephoneEventOutOfBand(int channel,
 class RxCallback : public VoERxVadCallback
 {
 public:
-    RxCallback() : _vadDecision(-1) {};
+    RxCallback() : vad_decision(-1) {};
 
     virtual void OnRxVad(int , int vadDecision)
     {
-        _vadDecision = vadDecision;
+        vad_decision = vadDecision;
     }
 
-    int _vadDecision;
+    int vad_decision;
 };
 
 // ----------------------------------------------------------------------------
@@ -3495,7 +3495,7 @@ void CWinTestDlg::OnTimer(UINT_PTR nIDEvent)
 
     if (_rxVad && _veApmPtr && _rxVadObserverPtr)
     {
-        SetDlgItemInt(IDC_EDIT_RXVAD, _rxVadObserverPtr->_vadDecision);
+        SetDlgItemInt(IDC_EDIT_RXVAD, _rxVadObserverPtr->vad_decision);
     }
 
     if (_veHardwarePtr)

@@ -11,301 +11,40 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+
 #include "engine_configurations.h"
 #if defined(_WIN32)
-#include <conio.h>     // exists only on windows
+#include <conio.h>   // Exists only on windows.
 #include <tchar.h>
 #endif
 
-#include "voe_standard_test.h"
+#include "voice_engine/main/test/auto_test/voe_standard_test.h"
 
 #if defined (_ENABLE_VISUAL_LEAK_DETECTOR_) && defined(_DEBUG) && \
     defined(_WIN32) && !defined(_INSTRUMENTATION_TESTING_)
 #include "vld.h"
 #endif
 
-#ifdef MAC_IPHONE
-#include "../../source/voice_engine_defines.h"  // defines build macros
-#else
-#include "../../source/voice_engine_defines.h"  // defines build macros
-#endif
-
-#include "automated_mode.h"
-#include "critical_section_wrapper.h"
-#include "event_wrapper.h"
-#include "thread_wrapper.h"
+#include "system_wrappers/interface/critical_section_wrapper.h"
+#include "system_wrappers/interface/event_wrapper.h"
+#include "system_wrappers/interface/thread_wrapper.h"
+#include "voice_engine/main/source/voice_engine_defines.h"
+#include "voice_engine/main/test/auto_test/automated_mode.h"
 
 #ifdef _TEST_NETEQ_STATS_
-#include "../../interface/voe_neteq_stats.h" // Not available in delivery folder
+#include "voice_engine/main/interface/voe_neteq_stats.h"
 #endif
 
-#include "voe_extended_test.h"
-#include "voe_stress_test.h"
-#include "voe_unit_test.h"
-#include "voe_cpu_test.h"
+#include "voice_engine/main/test/auto_test/voe_cpu_test.h"
+#include "voice_engine/main/test/auto_test/voe_extended_test.h"
+#include "voice_engine/main/test/auto_test/voe_stress_test.h"
+#include "voice_engine/main/test/auto_test/voe_unit_test.h"
 
 using namespace webrtc;
 
 namespace voetest {
 
-#ifdef MAC_IPHONE
-// Defined in iPhone specific test file
-int GetDocumentsDir(char* buf, int bufLen);
-char* GetFilename(char* filename);
-const char* GetFilename(const char* filename);
-int GetResource(char* resource, char* dest, int destLen);
-char* GetResource(char* resource);
-const char* GetResource(const char* resource);
-// #ifdef MAC_IPHONE
-#elif defined(WEBRTC_ANDROID)
-char filenameStr[2][256];
-int currentStr = 0;
-
-char* GetFilename(char* filename) {
-  currentStr = !currentStr;
-  sprintf(filenameStr[currentStr], "/sdcard/%s", filename);
-  return filenameStr[currentStr];
-}
-
-const char* GetFilename(const char* filename) {
-  currentStr = !currentStr;
-  sprintf(filenameStr[currentStr], "/sdcard/%s", filename);
-  return filenameStr[currentStr];
-}
-
-int GetResource(char* resource, char* dest, int destLen) {
-  currentStr = !currentStr;
-  sprintf(filenameStr[currentStr], "/sdcard/%s", resource);
-  strncpy(dest, filenameStr[currentStr], destLen-1);
-  return 0;
-}
-
-char* GetResource(char* resource) {
-  currentStr = !currentStr;
-  sprintf(filenameStr[currentStr], "/sdcard/%s", resource);
-  return filenameStr[currentStr];
-}
-
-const char* GetResource(const char* resource) {
-  currentStr = !currentStr;
-  sprintf(filenameStr[currentStr], "/sdcard/%s", resource);
-  return filenameStr[currentStr];
-}
-
-#else
-char filenameStr[2][256];
-int currentStr = 0;
-
-char* GetFilename(char* filename) {
-  currentStr = !currentStr;
-  sprintf(filenameStr[currentStr], "/tmp/%s", filename);
-  return filenameStr[currentStr];
-}
-const char* GetFilename(const char* filename) {
-  currentStr = !currentStr;
-  sprintf(filenameStr[currentStr], "/tmp/%s", filename);
-  return filenameStr[currentStr];
-}
-int GetResource(char* resource, char* dest, int destLen) {
-  currentStr = !currentStr;
-  sprintf(filenameStr[currentStr], "/tmp/%s", resource);
-  strncpy(dest, filenameStr[currentStr], destLen - 1);
-  return 0;
-}
-char* GetResource(char* resource) {
-  currentStr = !currentStr;
-  sprintf(filenameStr[currentStr], "/tmp/%s", resource);
-  return filenameStr[currentStr];
-}
-const char* GetResource(const char* resource) {
-  currentStr = !currentStr;
-  sprintf(filenameStr[currentStr], "/tmp/%s", resource);
-  return filenameStr[currentStr];
-}
-#endif
-
-#if !defined(MAC_IPHONE)
-const char* summaryFilename = "/tmp/VoiceEngineSummary.txt";
-#endif
-// For iPhone the summary filename is created in createSummary
-
 int dummy = 0;  // Dummy used in different functions to avoid warnings
-
-TestRtpObserver::TestRtpObserver() {
-  Reset();
-}
-
-TestRtpObserver::~TestRtpObserver() {
-}
-
-void TestRtpObserver::Reset() {
-  for (int i = 0; i < 2; i++) {
-    ssrc_[i] = 0;
-    csrc_[i][0] = 0;
-    csrc_[i][1] = 0;
-    added_[i][0] = false;
-    added_[i][1] = false;
-    size_[i] = 0;
-  }
-}
-
-void TestRtpObserver::OnIncomingCSRCChanged(const int channel,
-                                            const unsigned int CSRC,
-                                            const bool added) {
-  char msg[128];
-  sprintf(msg, "=> OnIncomingCSRCChanged(channel=%d, CSRC=%u, added=%d)\n",
-          channel, CSRC, added);
-  TEST_LOG("%s", msg);
-
-  if (channel > 1)
-    return;  // Not enough memory.
-
-  csrc_[channel][size_[channel]] = CSRC;
-  added_[channel][size_[channel]] = added;
-
-  size_[channel]++;
-  if (size_[channel] == 2)
-    size_[channel] = 0;
-}
-
-void TestRtpObserver::OnIncomingSSRCChanged(const int channel,
-                                            const unsigned int SSRC) {
-  char msg[128];
-  sprintf(msg, "\n=> OnIncomingSSRCChanged(channel=%d, SSRC=%u)\n", channel,
-          SSRC);
-  TEST_LOG("%s", msg);
-
-  ssrc_[channel] = SSRC;
-}
-
-void MyDeadOrAlive::OnPeriodicDeadOrAlive(const int /*channel*/,
-                                          const bool alive) {
-  if (alive) {
-    TEST_LOG("ALIVE\n");
-  } else {
-    TEST_LOG("DEAD\n");
-  }
-  fflush(NULL);
-}
-
-FakeExternalTransport::FakeExternalTransport(VoENetwork* ptr)
-    : my_network_(ptr),
-      thread_(NULL),
-      lock_(NULL),
-      event_(NULL),
-      length_(0),
-      channel_(0),
-      delay_is_enabled_(0),
-      delay_time_in_ms_(0) {
-  const char* threadName = "external_thread";
-  lock_ = CriticalSectionWrapper::CreateCriticalSection();
-  event_ = EventWrapper::Create();
-  thread_ = ThreadWrapper::CreateThread(Run, this, kHighPriority, threadName);
-  if (thread_) {
-    unsigned int id;
-    thread_->Start(id);
-  }
-}
-
-FakeExternalTransport::~FakeExternalTransport() {
-  if (thread_) {
-    thread_->SetNotAlive();
-    event_->Set();
-    if (thread_->Stop()) {
-      delete thread_;
-      thread_ = NULL;
-      delete event_;
-      event_ = NULL;
-      delete lock_;
-      lock_ = NULL;
-    }
-  }
-}
-
-bool FakeExternalTransport::Run(void* ptr) {
-  return static_cast<FakeExternalTransport*> (ptr)->Process();
-}
-
-bool FakeExternalTransport::Process() {
-  switch (event_->Wait(500)) {
-    case kEventSignaled:
-      lock_->Enter();
-      my_network_->ReceivedRTPPacket(channel_, packet_buffer_, length_);
-      lock_->Leave();
-      return true;
-    case kEventTimeout:
-      return true;
-    case kEventError:
-      break;
-  }
-  return true;
-}
-
-int FakeExternalTransport::SendPacket(int channel, const void *data, int len) {
-  lock_->Enter();
-  if (len < 1612) {
-    memcpy(packet_buffer_, (const unsigned char*) data, len);
-    length_ = len;
-    channel_ = channel;
-  }
-  lock_->Leave();
-  event_->Set(); // triggers ReceivedRTPPacket() from worker thread
-  return len;
-}
-
-int FakeExternalTransport::SendRTCPPacket(int channel, const void *data, int len) {
-  if (delay_is_enabled_) {
-    Sleep(delay_time_in_ms_);
-  }
-  my_network_->ReceivedRTCPPacket(channel, data, len);
-  return len;
-}
-
-void FakeExternalTransport::SetDelayStatus(bool enable, unsigned int delayInMs) {
-  delay_is_enabled_ = enable;
-  delay_time_in_ms_ = delayInMs;
-}
-
-ErrorObserver::ErrorObserver() {
-  code = -1;
-}
-void ErrorObserver::CallbackOnError(const int channel, const int errCode) {
-  code = errCode;
-#ifndef _INSTRUMENTATION_TESTING_
-  TEST_LOG("\n************************\n");
-  TEST_LOG(" RUNTIME ERROR: %d \n", errCode);
-  TEST_LOG("************************\n");
-#endif
-}
-
-void MyTraceCallback::Print(const TraceLevel level,
-                            const char *traceString,
-                            const int length) {
-  if (traceString) {
-    char* tmp = new char[length];
-    memcpy(tmp, traceString, length);
-    TEST_LOG("%s", tmp);
-    TEST_LOG("\n");
-    delete[] tmp;
-  }
-}
-
-void RtcpAppHandler::OnApplicationDataReceived(
-    const int /*channel*/, const unsigned char sub_type,
-    const unsigned int name, const unsigned char* data,
-    const unsigned short length_in_bytes) {
-  length_in_bytes_ = length_in_bytes;
-  memcpy(data_, &data[0], length_in_bytes);
-  sub_type_ = sub_type;
-  name_ = name;
-}
-
-void RtcpAppHandler::Reset() {
-  length_in_bytes_ = 0;
-  memset(data_, 0, sizeof(data_));
-  sub_type_ = 0;
-  name_ = 0;
-}
 
 void SubAPIManager::DisplayStatus() const {
   TEST_LOG("Supported sub APIs:\n\n");

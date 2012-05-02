@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -11,7 +11,7 @@
 #ifndef WEBRTC_VOICE_ENGINE_VOE_UNIT_TEST_H
 #define WEBRTC_VOICE_ENGINE_VOE_UNIT_TEST_H
 
-#include "voe_standard_test.h"
+#include "voice_engine/main/test/auto_test/voe_standard_test.h"
 
 namespace voetest {
 
@@ -52,7 +52,6 @@ class VoEUnitTest : public Encryption {
 
  private:
   VoETestManager& _mgr;
-  static const char* _key;
 
  private:
   bool _listening[32];

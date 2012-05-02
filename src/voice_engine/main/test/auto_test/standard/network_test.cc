@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "after_streaming_fixture.h"
-#include "mock/mock_voe_observer.h"
-#include "mock/mock_voe_connection_observer.h"
-#include "voe_test_interface.h"
+#include "voice_engine/main/test/auto_test/fakes/fake_external_transport.h"
+#include "voice_engine/main/test/auto_test/fixtures/after_streaming_fixture.h"
+#include "voice_engine/main/test/auto_test/voe_test_interface.h"
+#include "voice_engine/main/interface/mock/mock_voe_connection_observer.h"
+#include "voice_engine/main/interface/mock/mock_voe_observer.h"
 
 static const int kDefaultRtpPort = 8000;
 static const int kDefaultRtcpPort = 8001;
@@ -181,7 +182,7 @@ TEST_F(NetworkTest, CanSwitchToExternalTransport) {
   EXPECT_EQ(0, voe_base_->DeleteChannel(channel_));
   channel_ = voe_base_->CreateChannel();
 
-  voetest::FakeExternalTransport external_transport(voe_network_);
+  FakeExternalTransport external_transport(voe_network_);
   EXPECT_EQ(0, voe_network_->RegisterExternalTransport(
       channel_, external_transport));
 
