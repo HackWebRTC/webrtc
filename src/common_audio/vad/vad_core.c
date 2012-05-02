@@ -17,40 +17,40 @@
 #include "vad_sp.h"
 
 // Spectrum Weighting
-static const int16_t kSpectrumWeight[6] = { 6, 8, 10, 12, 14, 16 };
+static const int16_t kSpectrumWeight[kNumChannels] = { 6, 8, 10, 12, 14, 16 };
 static const int16_t kNoiseUpdateConst = 655; // Q15
 static const int16_t kSpeechUpdateConst = 6554; // Q15
 static const int16_t kBackEta = 154; // Q8
 // Minimum difference between the two models, Q5
-static const int16_t kMinimumDifference[6] = {
+static const int16_t kMinimumDifference[kNumChannels] = {
     544, 544, 576, 576, 576, 576 };
 // Upper limit of mean value for speech model, Q7
-static const int16_t kMaximumSpeech[6] = {
+static const int16_t kMaximumSpeech[kNumChannels] = {
     11392, 11392, 11520, 11520, 11520, 11520 };
 // Minimum value for mean value
-static const int16_t kMinimumMean[2] = { 640, 768 };
+static const int16_t kMinimumMean[kNumGaussians] = { 640, 768 };
 // Upper limit of mean value for noise model, Q7
-static const int16_t kMaximumNoise[6] = {
+static const int16_t kMaximumNoise[kNumChannels] = {
     9216, 9088, 8960, 8832, 8704, 8576 };
 // Start values for the Gaussian models, Q7
 // Weights for the two Gaussians for the six channels (noise)
-static const int16_t kNoiseDataWeights[12] = {
+static const int16_t kNoiseDataWeights[kTableSize] = {
     34, 62, 72, 66, 53, 25, 94, 66, 56, 62, 75, 103 };
 // Weights for the two Gaussians for the six channels (speech)
-static const int16_t kSpeechDataWeights[12] = {
+static const int16_t kSpeechDataWeights[kTableSize] = {
     48, 82, 45, 87, 50, 47, 80, 46, 83, 41, 78, 81 };
 // Means for the two Gaussians for the six channels (noise)
-static const int16_t kNoiseDataMeans[12] = {
+static const int16_t kNoiseDataMeans[kTableSize] = {
     6738, 4892, 7065, 6715, 6771, 3369, 7646, 3863, 7820, 7266, 5020, 4362 };
 // Means for the two Gaussians for the six channels (speech)
-static const int16_t kSpeechDataMeans[12] = {
+static const int16_t kSpeechDataMeans[kTableSize] = {
     8306, 10085, 10078, 11823, 11843, 6309, 9473, 9571, 10879, 7581, 8180, 7483
 };
 // Stds for the two Gaussians for the six channels (noise)
-static const int16_t kNoiseDataStds[12] = {
+static const int16_t kNoiseDataStds[kTableSize] = {
     378, 1064, 493, 582, 688, 593, 474, 697, 475, 688, 421, 455 };
 // Stds for the two Gaussians for the six channels (speech)
-static const int16_t kSpeechDataStds[12] = {
+static const int16_t kSpeechDataStds[kTableSize] = {
     555, 505, 567, 524, 585, 1231, 509, 828, 492, 1540, 1079, 850 };
 
 // Constants used in GmmProbability().
@@ -105,7 +105,7 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
   int n, k;
   int16_t feature_minimum;
   int16_t h0, h1;
-  int16_t log_likelihood_ratio, feature;
+  int16_t log_likelihood_ratio;
   int16_t vadflag = 0;
   int16_t shifts0, shifts1;
   int16_t tmp_s16, tmp1_s16, tmp2_s16;
@@ -145,39 +145,32 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
 
   if (total_power > kMinEnergy) {
     // We have a signal present.
-    // Set pointers to the Gaussian parameters.
-    nmean1ptr = &self->noise_means[0];
-    nmean2ptr = &self->noise_means[kNumChannels];
-    smean1ptr = &self->speech_means[0];
-    smean2ptr = &self->speech_means[kNumChannels];
-    nstd1ptr = &self->noise_stds[0];
-    nstd2ptr = &self->noise_stds[kNumChannels];
-    sstd1ptr = &self->speech_stds[0];
-    sstd2ptr = &self->speech_stds[kNumChannels];
 
     for (n = 0; n < kNumChannels; n++) {
       // Perform for all channels.
       pos = (n << 1);
-      feature = feature_vector[n];
+      h0_test = 0;
+      h1_test = 0;
 
-      // Probability for Noise, Q7 * Q20 = Q27.
-      tmp1_s32 = WebRtcVad_GaussianProbability(feature, *nmean1ptr++,
-                                               *nstd1ptr++, &deltaN[pos]);
-      noise_probability[0] = kNoiseDataWeights[n] * tmp1_s32;
-      tmp1_s32 = WebRtcVad_GaussianProbability(feature, *nmean2ptr++,
-                                               *nstd2ptr++, &deltaN[pos + 1]);
-      noise_probability[1] = kNoiseDataWeights[n + kNumChannels] * tmp1_s32;
-      h0_test = noise_probability[0] + noise_probability[1];  // Q27
+      for (k = 0; k < kNumGaussians; k++) {
+        nr = n + k * kNumChannels;
+        // Probability for Noise, Q7 * Q20 = Q27.
+        tmp1_s32 = WebRtcVad_GaussianProbability(feature_vector[n],
+                                                 self->noise_means[nr],
+                                                 self->noise_stds[nr],
+                                                 &deltaN[pos + k]);
+        noise_probability[k] = kNoiseDataWeights[nr] * tmp1_s32;
+        h0_test += noise_probability[k];  // Q27
+
+        // Probability for Speech.
+        tmp1_s32 = WebRtcVad_GaussianProbability(feature_vector[n],
+                                                 self->speech_means[nr],
+                                                 self->speech_stds[nr],
+                                                 &deltaS[pos + k]);
+        speech_probability[k] = kSpeechDataWeights[nr] * tmp1_s32;
+        h1_test += speech_probability[k];  // Q27
+      }
       h0 = (int16_t) (h0_test >> 12);  // Q15
-
-      // Probability for Speech.
-      tmp1_s32 = WebRtcVad_GaussianProbability(feature, *smean1ptr++,
-                                               *sstd1ptr++, &deltaS[pos]);
-      speech_probability[0] = kSpeechDataWeights[n] * tmp1_s32;
-      tmp1_s32 = WebRtcVad_GaussianProbability(feature, *smean2ptr++,
-                                               *sstd2ptr++, &deltaS[pos + 1]);
-      speech_probability[1] = kSpeechDataWeights[n + kNumChannels] * tmp1_s32;
-      h1_test = speech_probability[0] + speech_probability[1];  // Q27
       h1 = (int16_t) (h1_test >> 12);  // Q15
 
       // Calculate the log likelihood ratio. Approximate log2(H1/H0) with
