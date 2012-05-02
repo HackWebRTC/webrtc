@@ -63,7 +63,6 @@ class RtcpReceiverTest : public ::testing::Test {
     EXPECT_EQ(0, rtp_rtcp_impl_->RegisterIncomingDataCallback(test_transport_));
   }
   ~RtcpReceiverTest() {
-    delete rtcp_sender_;
     delete rtcp_receiver_;
     delete rtp_rtcp_impl_;
     delete test_transport_;
@@ -87,7 +86,6 @@ class RtcpReceiverTest : public ::testing::Test {
 
   RtpRtcpClock* system_clock_;
   ModuleRtpRtcpImpl* rtp_rtcp_impl_;
-  RTCPSender* rtcp_sender_;
   RTCPReceiver* rtcp_receiver_;
   TestTransport* test_transport_;
   RTCPHelp::RTCPPacketInformation rtcp_packet_info_;
