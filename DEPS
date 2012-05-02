@@ -44,7 +44,7 @@ deps = {
     "http://git.chromium.org/webm/libvpx.git@dba05389",
 
   "trunk/third_party/libyuv":
-    (Var("googlecode_url") % "libyuv") + "/trunk@254",
+    (Var("googlecode_url") % "libyuv") + "/trunk@255",
 
   "trunk/third_party/protobuf":
     Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
