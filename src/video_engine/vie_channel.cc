@@ -75,7 +75,7 @@ ViEChannel::ViEChannel(WebRtc_Word32 channel_id,
       decode_thread_(NULL),
       external_encryption_(NULL),
       effect_filter_(NULL),
-      color_enhancement_(true),
+      color_enhancement_(false),
       vcm_rttreported_(TickTime::Now()),
       file_recorder_(channel_id),
       mtu_(0) {
@@ -117,7 +117,7 @@ WebRtc_Word32 ViEChannel::Init() {
     return -1;
   }
   rtp_rtcp_.RegisterRtcpObservers(intra_frame_observer_,
-                                  bandwidth_observer_,
+                                  bandwidth_observer_.get(),
                                   this);
 
   if (module_process_thread_.RegisterModule(&rtp_rtcp_) != 0) {
@@ -271,7 +271,7 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
         return -1;
       }
       rtp_rtcp->RegisterRtcpObservers(intra_frame_observer_,
-                                      bandwidth_observer_,
+                                      bandwidth_observer_.get(),
                                       this);
 
       if (rtp_rtcp->RegisterSendTransport(
@@ -1973,15 +1973,6 @@ WebRtc_Word32 ViEChannel::EnableColorEnhancement(bool enable) {
                "%s(enable: %d)", __FUNCTION__, enable);
 
   CriticalSectionScoped cs(callback_cs_.get());
-  if (enable && color_enhancement_) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
-                 "%s: Already enabled", __FUNCTION__);
-    return -1;
-  } else if (!enable && !color_enhancement_) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
-                 "%s: not enabled", __FUNCTION__);
-    return -1;
-  }
   color_enhancement_ = enable;
   return 0;
 }

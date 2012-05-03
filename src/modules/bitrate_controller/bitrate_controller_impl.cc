@@ -63,6 +63,13 @@ BitrateControllerImpl::BitrateControllerImpl()
 }
 
 BitrateControllerImpl::~BitrateControllerImpl() {
+  std::map<BitrateObserver*, BitrateConfiguration*>::iterator it =
+      bitrate_observers_.begin();
+  while (it != bitrate_observers_.end()) {
+    delete it->second;
+    bitrate_observers_.erase(it);
+    it = bitrate_observers_.begin();
+  }
   delete critsect_;
 }
 
