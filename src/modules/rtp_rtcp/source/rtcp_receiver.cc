@@ -649,7 +649,7 @@ bool RTCPReceiver::UpdateRTCPReceiveInformationTimers() {
       if ((timeNow - receiveInfo->lastTimeReceived) >
           5 * RTCP_INTERVAL_AUDIO_MS) {
         // no rtcp packet for the last five regular intervals, reset limitations
-        receiveInfo->TmmbrSet.lengthOfSet = 0;
+        receiveInfo->TmmbrSet.clearSet();
         // prevent that we call this over and over again
         receiveInfo->lastTimeReceived = 0;
         // send new TMMBN to all channels using the default codec
@@ -687,23 +687,22 @@ WebRtc_Word32 RTCPReceiver::BoundingSet(bool &tmmbrOwner,
                  __FUNCTION__);
     return -1;
   }
-  if (receiveInfo->TmmbnBoundingSet.lengthOfSet > 0) {
+  if (receiveInfo->TmmbnBoundingSet.lengthOfSet() > 0) {
     boundingSetRec->VerifyAndAllocateSet(
-        receiveInfo->TmmbnBoundingSet.lengthOfSet + 1);
-    for(WebRtc_UWord32 i=0; i< receiveInfo->TmmbnBoundingSet.lengthOfSet; i++) {
-      if(receiveInfo->TmmbnBoundingSet.ptrSsrcSet[i] == _SSRC) {
+        receiveInfo->TmmbnBoundingSet.lengthOfSet() + 1);
+    for(WebRtc_UWord32 i=0; i< receiveInfo->TmmbnBoundingSet.lengthOfSet();
+        i++) {
+      if(receiveInfo->TmmbnBoundingSet.Ssrc(i) == _SSRC) {
         // owner of bounding set
         tmmbrOwner = true;
       }
-      boundingSetRec->ptrTmmbrSet[i] =
-          receiveInfo->TmmbnBoundingSet.ptrTmmbrSet[i];
-      boundingSetRec->ptrPacketOHSet[i] =
-          receiveInfo->TmmbnBoundingSet.ptrPacketOHSet[i];
-      boundingSetRec->ptrSsrcSet[i] =
-          receiveInfo->TmmbnBoundingSet.ptrSsrcSet[i];
+      boundingSetRec->SetEntry(i,
+                               receiveInfo->TmmbnBoundingSet.Tmmbr(i),
+                               receiveInfo->TmmbnBoundingSet.PacketOH(i),
+                               receiveInfo->TmmbnBoundingSet.Ssrc(i));
     }
   }
-  return receiveInfo->TmmbnBoundingSet.lengthOfSet;
+  return receiveInfo->TmmbnBoundingSet.lengthOfSet();
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver
@@ -992,13 +991,10 @@ void
 RTCPReceiver::HandleTMMBNItem(RTCPReceiveInformation& receiveInfo,
                               const RTCPUtility::RTCPPacket& rtcpPacket)
 {
-    const unsigned int idx = receiveInfo.TmmbnBoundingSet.lengthOfSet;
-
-    receiveInfo.TmmbnBoundingSet.ptrTmmbrSet[idx]    = rtcpPacket.TMMBNItem.MaxTotalMediaBitRate;
-    receiveInfo.TmmbnBoundingSet.ptrPacketOHSet[idx] = rtcpPacket.TMMBNItem.MeasuredOverhead;
-    receiveInfo.TmmbnBoundingSet.ptrSsrcSet[idx]     = rtcpPacket.TMMBNItem.SSRC;
-
-    ++receiveInfo.TmmbnBoundingSet.lengthOfSet;
+    receiveInfo.TmmbnBoundingSet.AddEntry(
+        rtcpPacket.TMMBNItem.MaxTotalMediaBitRate,
+        rtcpPacket.TMMBNItem.MeasuredOverhead,
+        rtcpPacket.TMMBNItem.SSRC);
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver
@@ -1376,7 +1372,7 @@ WebRtc_Word32 RTCPReceiver::TMMBRReceived(const WebRtc_UWord32 size,
         return 0;
       }
       for (WebRtc_UWord32 i = 0;
-          (num < size) && (i < receiveInfo->TmmbrSet.lengthOfSet); i++) {
+           (num < size) && (i < receiveInfo->TmmbrSet.lengthOfSet()); i++) {
         if (receiveInfo->GetTMMBRSet(i, num, candidateSet,
                                      _clock.GetTimeInMS()) == 0) {
           num++;
@@ -1393,7 +1389,7 @@ WebRtc_Word32 RTCPReceiver::TMMBRReceived(const WebRtc_UWord32 size,
                      __FUNCTION__);
         return -1;
       }
-      num += receiveInfo->TmmbrSet.lengthOfSet;
+      num += receiveInfo->TmmbrSet.lengthOfSet();
       receiveInfoIt++;
     }
   }

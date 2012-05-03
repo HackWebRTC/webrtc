@@ -1134,18 +1134,21 @@ RTCPSender::BuildTMMBR(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
 
     // get current bounding set from RTCP receiver
     bool tmmbrOwner = false;
-    TMMBRSet* candidateSet = _tmmbrHelp.CandidateSet(); // store in candidateSet, allocates one extra slot
+    // store in candidateSet, allocates one extra slot
+    TMMBRSet* candidateSet = _tmmbrHelp.CandidateSet();
 
-    // holding _criticalSectionRTCPSender while calling RTCPreceiver which will accuire _criticalSectionRTCPReceiver
-    // is a potental deadlock but since RTCPreceiver is not doing the revese we should be fine
-    WebRtc_Word32 lengthOfBoundingSet = _rtpRtcp.BoundingSet(tmmbrOwner, candidateSet);
+    // holding _criticalSectionRTCPSender while calling RTCPreceiver which
+    // will accuire _criticalSectionRTCPReceiver is a potental deadlock but
+    // since RTCPreceiver is not doing the reverse we should be fine
+    WebRtc_Word32 lengthOfBoundingSet
+        = _rtpRtcp.BoundingSet(tmmbrOwner, candidateSet);
 
     if(lengthOfBoundingSet > 0)
     {
         for (WebRtc_Word32 i = 0; i < lengthOfBoundingSet; i++)
         {
-            if( candidateSet->ptrTmmbrSet[i] == _tmmbr_Send &&
-                candidateSet->ptrPacketOHSet[i] == _packetOH_Send)
+            if( candidateSet->Tmmbr(i) == _tmmbr_Send &&
+                candidateSet->PacketOH(i) == _packetOH_Send)
             {
                 // do not send the same tuple
                 return 0;
@@ -1155,9 +1158,10 @@ RTCPSender::BuildTMMBR(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
         {
             // use received bounding set as candidate set
             // add current tuple
-            candidateSet->ptrTmmbrSet[lengthOfBoundingSet]    = _tmmbr_Send;
-            candidateSet->ptrPacketOHSet[lengthOfBoundingSet] = _packetOH_Send;
-            candidateSet->ptrSsrcSet[lengthOfBoundingSet] = _SSRC;
+            candidateSet->SetEntry(lengthOfBoundingSet,
+                                   _tmmbr_Send,
+                                   _packetOH_Send,
+                                   _SSRC);
             int numCandidates = lengthOfBoundingSet+ 1;
 
             // find bounding set
@@ -1236,7 +1240,7 @@ RTCPSender::BuildTMMBN(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
         return -1;
     }
     // sanity
-    if(pos + 12 + boundingSet->lengthOfSet*8 >= IP_PACKET_SIZE)
+    if(pos + 12 + boundingSet->lengthOfSet()*8 >= IP_PACKET_SIZE)
     {
         WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument", __FUNCTION__);
         return -2;
@@ -1265,15 +1269,15 @@ RTCPSender::BuildTMMBN(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
 
     // Additional Feedback Control Information (FCI)
     int numBoundingSet = 0;
-    for(WebRtc_UWord32 n=0; n< boundingSet->lengthOfSet; n++)
+    for(WebRtc_UWord32 n=0; n< boundingSet->lengthOfSet(); n++)
     {
-        if (boundingSet->ptrTmmbrSet[n] > 0)
+        if (boundingSet->Tmmbr(n) > 0)
         {
-            WebRtc_UWord32 tmmbrSSRC = boundingSet->ptrSsrcSet[n];
+            WebRtc_UWord32 tmmbrSSRC = boundingSet->Ssrc(n);
             ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, tmmbrSSRC);
             pos += 4;
 
-            WebRtc_UWord32 bitRate = boundingSet->ptrTmmbrSet[n] * 1000;
+            WebRtc_UWord32 bitRate = boundingSet->Tmmbr(n) * 1000;
             WebRtc_UWord32 mmbrExp = 0;
             for(int i=0; i<64; i++)
             {
@@ -1284,7 +1288,7 @@ RTCPSender::BuildTMMBN(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
                 }
             }
             WebRtc_UWord32 mmbrMantissa = (bitRate >> mmbrExp);
-            WebRtc_UWord32 measuredOH = boundingSet->ptrPacketOHSet[n];
+            WebRtc_UWord32 measuredOH = boundingSet->PacketOH(n);
 
             rtcpbuffer[pos++]=(WebRtc_UWord8)((mmbrExp << 2) + ((mmbrMantissa >> 15) & 0x03));
             rtcpbuffer[pos++]=(WebRtc_UWord8)(mmbrMantissa >> 7);

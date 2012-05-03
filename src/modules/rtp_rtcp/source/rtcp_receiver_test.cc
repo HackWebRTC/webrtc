@@ -258,8 +258,8 @@ TEST_F(RtcpReceiverTest, TmmbrPacketAccepted) {
   TMMBRSet candidate_set;
   candidate_set.VerifyAndAllocateSet(1);
   EXPECT_EQ(1, rtcp_receiver_->TMMBRReceived(1, 0, &candidate_set));
-  EXPECT_LT(0U, candidate_set.ptrTmmbrSet[0]);
-  EXPECT_EQ(kMediaRecipientSsrc, candidate_set.ptrSsrcSet[0]);
+  EXPECT_LT(0U, candidate_set.Tmmbr(0));
+  EXPECT_EQ(kMediaRecipientSsrc, candidate_set.Ssrc(0));
 }
 
 TEST_F(RtcpReceiverTest, TmmbrPacketNotForUsIgnored) {
@@ -328,7 +328,7 @@ TEST_F(RtcpReceiverTest, TmmbrThreeConstraintsTimeOut) {
   TMMBRSet candidate_set;
   candidate_set.VerifyAndAllocateSet(3);
   EXPECT_EQ(3, rtcp_receiver_->TMMBRReceived(3, 0, &candidate_set));
-  EXPECT_LT(0U, candidate_set.ptrTmmbrSet[0]);
+  EXPECT_LT(0U, candidate_set.Tmmbr(0));
   // We expect the timeout to be 25 seconds. Advance the clock by 12
   // seconds, timing out the first packet.
   system_clock_->AdvanceClock(12000);
@@ -336,7 +336,7 @@ TEST_F(RtcpReceiverTest, TmmbrThreeConstraintsTimeOut) {
   EXPECT_EQ(3, rtcp_receiver_->TMMBRReceived(0, 0, NULL));
   // Odd behaviour: There's only one left after timeout, not 2.
   EXPECT_EQ(1, rtcp_receiver_->TMMBRReceived(3, 0, &candidate_set));
-  EXPECT_EQ(kMediaRecipientSsrc + 2, candidate_set.ptrSsrcSet[0]);
+  EXPECT_EQ(kMediaRecipientSsrc + 2, candidate_set.Ssrc(0));
 }
 
 
