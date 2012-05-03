@@ -376,7 +376,7 @@ class ViEChannel
   ViERTCPObserver* rtcp_observer_;
   ViENetworkObserver* networkObserver_;
   RtcpIntraFrameObserver* intra_frame_observer_;
-  RtcpBandwidthObserver* bandwidth_observer_;
+  scoped_ptr<RtcpBandwidthObserver> bandwidth_observer_;
   bool rtp_packet_timeout_;
   bool using_packet_spread_;
 
