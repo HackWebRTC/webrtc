@@ -143,6 +143,25 @@ int CalcBufferSize(VideoType src_video_type,
   return (length * dst_bits_per_pixel) / src_bits_per_pixel;
 }
 
+int ConvertI420ToARGB8888(const uint8_t* src_frame,
+                          uint8_t* dst_frame,
+                          int width, int height) {
+
+  const uint8_t* src_y = src_frame;
+  const uint8_t* src_u = src_y + width * height;
+  const uint8_t* src_v = src_u + (width * height / 4);
+  int src_stride_y = width;
+  int src_stride_u = width / 2;
+  int src_stride_v = width / 2;
+  int dst_stride_argb = width * 4;
+
+  return libyuv::I420ToARGB(src_y, src_stride_y,
+                            src_u, src_stride_u,
+                            src_v, src_stride_v,
+                            dst_frame, dst_stride_argb,
+                            width, height);
+}
+
 int ConvertI420ToARGB4444(const uint8_t* src_frame,
                           uint8_t* dst_frame,
                           int width, int height,
@@ -245,8 +264,9 @@ int ConvertVideoType(VideoType video_type) {
       return libyuv::FOURCC_24BG;
     case kABGR:
       return libyuv::FOURCC_ABGR;
-    case kARGB4444:
     case kRGB565:
+      return libyuv::FOURCC_RGBP;
+    case kARGB4444:
     case kARGB1555:
       // TODO(mikhal): Not supported;
       assert(false);

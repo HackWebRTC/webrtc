@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -149,6 +149,9 @@ int ConvertRGB24ToARGB(const uint8_t* src_frame,
 int ConvertNV12ToRGB565(const uint8_t* src_frame,
                         uint8_t* dst_frame,
                         int width, int height);
+int ConvertI420ToARGB8888(const uint8_t* src_frame,
+                          uint8_t* dst_frame,
+                          int width, int height);
 
 // Mirror functions
 // The following 2 functions perform mirroring on a given image
