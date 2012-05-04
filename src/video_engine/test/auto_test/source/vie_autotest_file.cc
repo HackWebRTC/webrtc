@@ -464,9 +464,8 @@ void ViEAutoTest::ViEFileStandardTest()
         EXPECT_EQ(0, ptrViEBase->DisconnectAudioChannel(videoChannel));
         EXPECT_EQ(0, ptrViEBase->SetVoiceEngine(NULL));
         EXPECT_EQ(0, ptrVEBase->DeleteChannel(audioChannel));
-        // VoE reference counting is per-object, so we use EXPECT_NE
-        EXPECT_NE(0, ptrVEBase->Release());
-        EXPECT_NE(0, ptrVECodec->Release());
+        EXPECT_EQ(0, ptrVEBase->Release());
+        EXPECT_EQ(0, ptrVECodec->Release());
         EXPECT_TRUE(webrtc::VoiceEngine::Delete(ptrVEEngine));
 
         EXPECT_EQ(0, ptrViEBase->StopReceive(videoChannel));
