@@ -216,7 +216,7 @@ TEST_F(TestLibYuv, ConvertTest) {
   fwrite(res_i420_buffer, frame_length_, 1, output_file);
   psnr = I420PSNR(orig_buffer, res_i420_buffer, width_, height_);
   // TODO(leozwang) Investigate the right psnr should be set for I420ToARGB8888,
-  EXPECT_GT(ceil(psnr), 45);
+  EXPECT_GT(ceil(psnr), 42);
 
   ASSERT_EQ(0, fclose(output_file));
 
