@@ -188,7 +188,37 @@ TEST_F(TestLibYuv, ConvertTest) {
   fwrite(res_i420_buffer, frame_length_, 1, output_file);
   psnr = I420PSNR(orig_buffer, res_i420_buffer, width_, height_);
   EXPECT_EQ(48.0, psnr);
+
+  // printf("\nConvert #%d I420 <-> RGB565\n", j);
+  uint8_t* out_rgb565_buffer = new uint8_t[width_ * height_ * 2];
+  EXPECT_EQ(0, ConvertFromI420(orig_buffer, width_,
+                               kRGB565, 0, width_, height_, out_rgb565_buffer));
+
+  EXPECT_EQ(0, ConvertToI420(kRGB565, out_rgb565_buffer, 0, 0, width_, height_,
+                             0, width_, height_, width_,
+                             kRotateNone, res_i420_buffer));
+
+  fwrite(res_i420_buffer, frame_length_, 1, output_file);
+  psnr = I420PSNR(orig_buffer, res_i420_buffer, width_, height_);
+  EXPECT_EQ(48.0, psnr);
+
+  // printf("\nConvert #%d I420 <-> ARGB8888\n", j);
+  uint8_t* out_argb8888_buffer = new uint8_t[width_ * height_ * 4];
+  EXPECT_EQ(0, ConvertFromI420(orig_buffer, width_,
+                               kARGB, 0, width_, height_, out_argb8888_buffer));
+
+  EXPECT_EQ(0, ConvertToI420(kARGB, out_argb8888_buffer, 0, 0, width_, height_,
+                             0, width_, height_, width_,
+                             kRotateNone, res_i420_buffer));
+
+  fwrite(res_i420_buffer, frame_length_, 1, output_file);
+  psnr = I420PSNR(orig_buffer, res_i420_buffer, width_, height_);
+  EXPECT_EQ(48.0, psnr);
+
   ASSERT_EQ(0, fclose(output_file));
+
+  delete [] out_argb8888_buffer;
+  delete [] out_rgb565_buffer;
   delete [] out_yuy2_buffer;
   delete [] res_i420_buffer;
   delete [] orig_buffer;
