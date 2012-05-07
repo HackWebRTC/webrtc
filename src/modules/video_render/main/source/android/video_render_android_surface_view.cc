@@ -12,6 +12,7 @@
 #include "critical_section_wrapper.h"
 #include "common_video/libyuv/include/libyuv.h"
 #include "tick_util.h"
+
 #ifdef ANDROID_NDK_8_OR_ABOVE
     #include <android/bitmap.h>
 #endif
@@ -235,6 +236,10 @@ AndroidSurfaceViewChannel::AndroidSurfaceViewChannel(
     _renderer(renderer),
     _jvm(jvm),
     _javaRenderObj(javaRenderObj),
+#ifndef ANDROID_NDK_8_OR_ABOVE
+    _javaByteBufferObj(NULL),
+    _directBuffer(NULL),
+#endif
     _bitmapWidth(0),
     _bitmapHeight(0) {
 }
@@ -469,8 +474,8 @@ void AndroidSurfaceViewChannel::DeliverFrame(JNIEnv* jniEnv) {
     }
     jobject javaBitmap = jniEnv->CallObjectMethod(_javaRenderObj,
                                                   _createBitmapCid,
-                                                  videoFrame.Width(),
-                                                  videoFrame.Height());
+                                                  _bufferToRender.Width(),
+                                                  _bufferToRender.Height());
     _javaBitmapObj = jniEnv->NewGlobalRef(javaBitmap);
     if (!_javaBitmapObj) {
       WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s: could not "
@@ -488,9 +493,10 @@ void AndroidSurfaceViewChannel::DeliverFrame(JNIEnv* jniEnv) {
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s: Locked bitmap",
                  __FUNCTION__);
     // Convert I420 straight into the Java bitmap.
-    int ret = ConvertI420ToRGB565((unsigned char*)_bufferToRender.Buffer(),
-                                  (unsigned char*) pixels,
-                                  _bitmapWidth, _bitmapHeight);
+    int ret = ConvertFromI420((unsigned char*)_bufferToRender.Buffer(),
+                              _bitmapWidth, KRGB565, 0,
+                              _bitmapWidth, _bitmapHeight,
+                              (unsigned char*) pixels);
     if (ret < 0) {
       WEBRTC_TRACE(kTraceError,
                    kTraceVideoRenderer,
@@ -520,6 +526,7 @@ void AndroidSurfaceViewChannel::DeliverFrame(JNIEnv* jniEnv) {
       _javaByteBufferObj = NULL;
       _directBuffer = NULL;
     }
+
     jobject javaByteBufferObj =
         jniEnv->CallObjectMethod(_javaRenderObj, _createByteBufferCid,
                                  _bufferToRender.Width(),
@@ -539,11 +546,10 @@ void AndroidSurfaceViewChannel::DeliverFrame(JNIEnv* jniEnv) {
   }
 
   if(_javaByteBufferObj && _bitmapWidth && _bitmapHeight) {
-    // Android requires a vertically flipped image compared to std convert.
-    // This is done by giving a negative height input.
     const int conversionResult =
-        ConvertI420ToRGB565((unsigned char* )_bufferToRender.Buffer(),
-                            _directBuffer, _bitmapWidth, -_bitmapHeight);
+        ConvertFromI420((unsigned char* )_bufferToRender.Buffer(), _bitmapWidth,
+                        kRGB565, 0, _bitmapWidth, _bitmapHeight, _directBuffer);
+
     if (conversionResult < 0)  {
       WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s: Color conversion"
                    " failed.", __FUNCTION__);
