@@ -91,9 +91,16 @@
       '..','../..', # common_types.h, typedefs.h
     ],
     'defines': [
-      # TODO(leozwang): Most of team use git-svn, need to add
-      # git-svn support as well.
-      'WEBRTC_SVNREVISION="<!(svnversion -n)"',
+      # TODO(leozwang): Temporally disable it because we cannot assume svn
+      # is installed by default, it will break Chromium build. The problem
+      # could happen on Gentoo which download and build tar ball directly,
+      # it also could happen when developer downloads Chromium tar ball and
+      # build inside source tree without svn installed. The solution is to
+      # have a script to deal with these cases and support git-svn.
+      # Two similar issues have been filed at
+      # WebRTC http://code.google.com/p/webrtc/issues/detail?id=496
+      # Chromium http://code.google.com/p/chromium/issues/detail?id=126452
+      'WEBRTC_SVNREVISION="n/a"',
     ],
     'conditions': [
       ['build_with_chromium==1', {
