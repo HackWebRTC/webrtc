@@ -1881,11 +1881,17 @@ int VoEExtendedTest::TestCodec() {
     for (int channels = 1; channels < 4; channels++) {
       cinst.channels = channels;
       if (-1 != codec->SetSendCodec(0, cinst)) {
-        // valid channels (only 1 should be OK)
+        // Valid channels currently.
+        // 1 should always be OK for all codecs.
+        // 2 is OK for stereo codecs and some of mono codecs.
         TEST_LOG("%d ", channels);
       } else {
+        // Invalide channels. Currently there should be two cases:
+        // 2 would fail to some mono codecs with VE_CANNOT_SET_SEND_CODEC;
+        // 3(and higher) should always fail with VE_INVALID_ARGUMENT.
         err = voe_base_->LastError();
-        TEST_MUSTPASS(err != VE_INVALID_ARGUMENT);
+        ASSERT_TRUE((err == VE_INVALID_ARGUMENT)||
+                    (err == VE_CANNOT_SET_SEND_CODEC));
       }
     }
     cinst.channels = defaultCodec.channels;
@@ -5051,10 +5057,11 @@ int VoEExtendedTest::TestHardware() {
 
   TEST_MUSTPASS(voe_base_->Terminate());
 #endif // defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
-  // Invalid arguments
+  // Invalid arguments should be ignored.
   wantedLayer = (AudioLayers) 17;
-  TEST_MUSTPASS(-1 != hardware->SetAudioDeviceLayer(wantedLayer));
-  TEST_MUSTPASS(VE_INVALID_ARGUMENT != voe_base_->LastError());
+  TEST_MUSTPASS(hardware->SetAudioDeviceLayer(wantedLayer));
+  TEST_MUSTPASS(hardware->GetAudioDeviceLayer(givenLayer));
+  ASSERT_TRUE(givenLayer == kAudioPlatformDefault);
   MARK();
 
   // Basic usage
