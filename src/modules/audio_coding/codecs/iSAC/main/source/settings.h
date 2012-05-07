@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -30,15 +30,16 @@
 
 
 
-/* do not modify the following; this will have to be modified if we have a 20ms framesize option */
-/*************************************************************************************************/
+/* do not modify the following; this will have to be modified if we
+ * have a 20ms framesize option */
+/**********************************************************************/
 /* miliseconds */
 #define FRAMESIZE                               30
 /* number of samples per frame processed in the encoder, 480 */
 #define FRAMESAMPLES                            480 /* ((FRAMESIZE*FS)/1000) */
 #define FRAMESAMPLES_HALF      240
 #define FRAMESAMPLES_QUARTER                    120
-/*************************************************************************************************/
+/**********************************************************************/
 
 
 
@@ -56,7 +57,8 @@
 #define UPDATE                                  80
 /* length of half a subframe (low/high band) */
 #define HALF_SUBFRAMELEN                        (UPDATE/2)
-/* samples of look ahead (in a half-band, so actually half the samples of look ahead @ FS) */
+/* samples of look ahead (in a half-band, so actually
+ * half the samples of look ahead @ FS) */
 #define QLOOKAHEAD                              24    /* 3 ms */
 /* order of AR model in spectral entropy coder */
 #define AR_ORDER                                6
@@ -95,9 +97,10 @@ enum ISACBand{isacLowerBand = 0, isacUpperBand = 1};
 
 
 /* array size for byte stream in number of bytes. */
-#define STREAM_SIZE_MAX     600 /* The old maximum size still needed for the decoding */
-#define STREAM_SIZE_MAX_30  200 /* 200 bytes = 53.4 kbit/s @ 30 ms.framelength */
-#define STREAM_SIZE_MAX_60  400 /* 400 bytes = 53.4 kbit/s @ 60 ms.framelength */
+/* The old maximum size still needed for the decoding */
+#define STREAM_SIZE_MAX     600
+#define STREAM_SIZE_MAX_30  200 /* 200 bytes=53.4 kbps @ 30 ms.framelength */
+#define STREAM_SIZE_MAX_60  400 /* 400 bytes=53.4 kbps @ 60 ms.framelength */
 
 /* storage size for bit counts */
 #define BIT_COUNTER_SIZE                        30
@@ -110,26 +113,27 @@ enum ISACBand{isacLowerBand = 0, isacUpperBand = 1};
 #define PITCH_MAX_LAG                           140     /* 57 Hz  */
 #define PITCH_MIN_LAG                           20              /* 400 Hz */
 #define PITCH_MAX_GAIN                          0.45
-#define PITCH_MAX_GAIN_06                       0.27                /* PITCH_MAX_GAIN*0.6 */
+#define PITCH_MAX_GAIN_06                       0.27  /* PITCH_MAX_GAIN*0.6 */
 #define PITCH_MAX_GAIN_Q12      1843
-#define PITCH_LAG_SPAN2                         (PITCH_MAX_LAG/2-PITCH_MIN_LAG/2+5)
+#define PITCH_LAG_SPAN2                     (PITCH_MAX_LAG/2-PITCH_MIN_LAG/2+5)
 #define PITCH_CORR_LEN2                         60     /* 15 ms  */
 #define PITCH_CORR_STEP2                        (PITCH_FRAME_LEN/4)
-#define PITCH_BW                 11     /* half the band width of correlation surface */
+#define PITCH_BW        11     /* half the band width of correlation surface */
 #define PITCH_SUBFRAMES                         4
 #define PITCH_GRAN_PER_SUBFRAME                 5
-#define PITCH_SUBFRAME_LEN                      (PITCH_FRAME_LEN/PITCH_SUBFRAMES)
-#define PITCH_UPDATE                            (PITCH_SUBFRAME_LEN/PITCH_GRAN_PER_SUBFRAME)
+#define PITCH_SUBFRAME_LEN        (PITCH_FRAME_LEN/PITCH_SUBFRAMES)
+#define PITCH_UPDATE              (PITCH_SUBFRAME_LEN/PITCH_GRAN_PER_SUBFRAME)
 /* maximum number of peaks to be examined in correlation surface */
 #define PITCH_MAX_NUM_PEAKS                  10
 #define PITCH_PEAK_DECAY               0.85
 /* For weighting filter */
 #define PITCH_WLPCORDER                   6
 #define PITCH_WLPCWINLEN               PITCH_FRAME_LEN
-#define PITCH_WLPCASYM                   0.3                 /* asymmetry parameter */
+#define PITCH_WLPCASYM                   0.3         /* asymmetry parameter */
 #define PITCH_WLPCBUFLEN               PITCH_WLPCWINLEN
 /* For pitch filter */
-#define PITCH_BUFFSIZE                   (PITCH_MAX_LAG + 50)  /* Extra 50 for fraction and LP filters */
+/* Extra 50 for fraction and LP filters */
+#define PITCH_BUFFSIZE                   (PITCH_MAX_LAG + 50)
 #define PITCH_INTBUFFSIZE               (PITCH_FRAME_LEN+PITCH_BUFFSIZE)
 /* Max rel. step for interpolation */
 #define PITCH_UPSTEP                1.5
@@ -148,7 +152,8 @@ enum ISACBand{isacLowerBand = 0, isacUpperBand = 1};
 #define HPORDER                                 2
 
 /* some mathematical constants */
-#define LOG2EXP                                 1.44269504088896       /* log2(exp) */
+/* log2(exp) */
+#define LOG2EXP                                 1.44269504088896
 #define PI                                      3.14159265358979
 
 /* Maximum number of iterations allowed to limit payload size */
@@ -193,6 +198,7 @@ enum ISACBand{isacLowerBand = 0, isacUpperBand = 1};
 #define ISAC_LENGTH_MISMATCH      6730
 #define ISAC_RANGE_ERROR_DECODE_BANDWITH            6740
 #define ISAC_DISALLOWED_BANDWIDTH_MODE_DECODER      6750
+#define ISAC_DISALLOWED_LPC_MODEL                   6760
 /* 6800 Call setup formats */
 #define ISAC_INCOMPATIBLE_FORMATS     6810
 

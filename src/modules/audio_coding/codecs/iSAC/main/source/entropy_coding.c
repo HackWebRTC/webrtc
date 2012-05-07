@@ -37,30 +37,25 @@
 static const WebRtc_UWord16 kLpcVecPerSegmentUb12 = 5;
 static const WebRtc_UWord16 kLpcVecPerSegmentUb16 = 4;
 
-/* cdf array for encoder bandwidth (12 vs 16 kHz) indicator */
+/* CDF array for encoder bandwidth (12 vs 16 kHz) indicator. */
 static const WebRtc_UWord16 kOneBitEqualProbCdf[3] = {
   0, 32768, 65535 };
 
-/* pointer to cdf array for encoder bandwidth (12 vs 16 kHz) indicator */
+/* Pointer to cdf array for encoder bandwidth (12 vs 16 kHz) indicator. */
 static const WebRtc_UWord16 *kOneBitEqualProbCdf_ptr[1] = {
     kOneBitEqualProbCdf };
 
-/* initial cdf index for decoder of encoded bandwidth (12 vs 16 kHz) indicator */
+/*
+ * Initial cdf index for decoder of encoded bandwidth
+ * (12 vs 16 kHz) indicator.
+ */
 static const WebRtc_UWord16 kOneBitEqualProbInitIndex[1] = {1};
 
-
-/* coefficients for the stepwise rate estimation */
-
-
-static const WebRtc_Word32 acnQ10 =  426;
-static const WebRtc_Word32 bcnQ10 = -581224;
-static const WebRtc_Word32 ccnQ10 =  722631;
-static const WebRtc_Word32 lbcnQ10 = -402874;
 #define IS_SWB_12KHZ       1
 
-
 /* compute correlation from power spectrum */
-static void WebRtcIsac_FindCorrelation(WebRtc_Word32 *PSpecQ12, WebRtc_Word32 *CorrQ7)
+static void WebRtcIsac_FindCorrelation(WebRtc_Word32 *PSpecQ12,
+                                       WebRtc_Word32 *CorrQ7)
 {
   WebRtc_Word32 summ[FRAMESAMPLES/8];
   WebRtc_Word32 diff[FRAMESAMPLES/8];
@@ -111,10 +106,12 @@ static void WebRtcIsac_FindInvArSpec(const WebRtc_Word16 *ARCoefQ12,
   sum = 0;
   for (n = 0; n < AR_ORDER+1; n++)
     sum += WEBRTC_SPL_MUL(ARCoefQ12[n], ARCoefQ12[n]);   /* Q24 */
-  sum = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_MUL(WEBRTC_SPL_RSHIFT_W32(sum, 6), 65) + 32768, 16); /* result in Q8 */
+  sum = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_MUL(WEBRTC_SPL_RSHIFT_W32(sum, 6),
+                                             65) + 32768, 16); /* Q8 */
   CorrQ11[0] = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_MUL(sum, gainQ10) + 256, 9);
 
-  /* To avoid overflow, we shift down gainQ10 if it is large. We will not lose any precision */
+  /* To avoid overflow, we shift down gainQ10 if it is large.
+   * We will not lose any precision */
   if(gainQ10>400000){
     tmpGain = WEBRTC_SPL_RSHIFT_W32(gainQ10, 3);
     round = 32;
@@ -130,14 +127,14 @@ static void WebRtcIsac_FindInvArSpec(const WebRtc_Word16 *ARCoefQ12,
     for (n = k; n < AR_ORDER+1; n++)
       sum += WEBRTC_SPL_MUL(ARCoefQ12[n-k], ARCoefQ12[n]); /* Q24 */
     sum = WEBRTC_SPL_RSHIFT_W32(sum, 15);
-    CorrQ11[k] = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_MUL(sum, tmpGain) + round, shftVal);
+    CorrQ11[k] = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_MUL(sum, tmpGain) + round,
+                                       shftVal);
   }
   sum = WEBRTC_SPL_LSHIFT_W32(CorrQ11[0], 7);
   for (n = 0; n < FRAMESAMPLES/8; n++)
     CurveQ16[n] = sum;
 
   for (k = 1; k < AR_ORDER; k += 2) {
-    //CS_ptrQ9 = WebRtcIsac_kCos[k];
     for (n = 0; n < FRAMESAMPLES/8; n++)
       CurveQ16[n] += WEBRTC_SPL_RSHIFT_W32(
           WEBRTC_SPL_MUL(WebRtcIsac_kCos[k][n], CorrQ11[k+1]) + 2, 2);
@@ -145,7 +142,8 @@ static void WebRtcIsac_FindInvArSpec(const WebRtc_Word16 *ARCoefQ12,
 
   CS_ptrQ9 = WebRtcIsac_kCos[0];
 
-  /* If CorrQ11[1] too large we avoid getting overflow in the calculation by shifting */
+  /* If CorrQ11[1] too large we avoid getting overflow in the
+   * calculation by shifting */
   sh=WebRtcSpl_NormW32(CorrQ11[1]);
   if (CorrQ11[1]==0) /* Use next correlation */
     sh=WebRtcSpl_NormW32(CorrQ11[2]);
@@ -156,20 +154,23 @@ static void WebRtcIsac_FindInvArSpec(const WebRtc_Word16 *ARCoefQ12,
     shftVal = 0;
 
   for (n = 0; n < FRAMESAMPLES/8; n++)
-    diffQ16[n] = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_MUL(CS_ptrQ9[n], WEBRTC_SPL_RSHIFT_W32(CorrQ11[1], shftVal)) + 2, 2);
+    diffQ16[n] = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_MUL(
+        CS_ptrQ9[n], WEBRTC_SPL_RSHIFT_W32(CorrQ11[1], shftVal)) + 2, 2);
   for (k = 2; k < AR_ORDER; k += 2) {
     CS_ptrQ9 = WebRtcIsac_kCos[k];
     for (n = 0; n < FRAMESAMPLES/8; n++)
-      diffQ16[n] += WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_MUL(CS_ptrQ9[n], WEBRTC_SPL_RSHIFT_W32(CorrQ11[k+1], shftVal)) + 2, 2);
+      diffQ16[n] += WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_MUL(
+          CS_ptrQ9[n], WEBRTC_SPL_RSHIFT_W32(CorrQ11[k+1], shftVal)) + 2, 2);
   }
 
   for (k=0; k<FRAMESAMPLES/8; k++) {
-    CurveQ16[FRAMESAMPLES_QUARTER-1 - k] = CurveQ16[k] - WEBRTC_SPL_LSHIFT_W32(diffQ16[k], shftVal);
+    CurveQ16[FRAMESAMPLES_QUARTER-1 - k] = CurveQ16[k] -
+        WEBRTC_SPL_LSHIFT_W32(diffQ16[k], shftVal);
     CurveQ16[k] += WEBRTC_SPL_LSHIFT_W32(diffQ16[k], shftVal);
   }
 }
 
-/* generate array of dither samples in Q7 */
+/* Generate array of dither samples in Q7. */
 static void GenerateDitherQ7Lb(WebRtc_Word16 *bufQ7,
                                WebRtc_UWord32 seed,
                                int length,
@@ -178,21 +179,23 @@ static void GenerateDitherQ7Lb(WebRtc_Word16 *bufQ7,
   int   k, shft;
   WebRtc_Word16 dither1_Q7, dither2_Q7, dither_gain_Q14;
 
-  if (AvgPitchGain_Q12 < 614)  /* this threshold should be equal to that in decode_spec() */
+  /* This threshold should be equal to that in decode_spec(). */
+  if (AvgPitchGain_Q12 < 614)
   {
     for (k = 0; k < length-2; k += 3)
     {
-      /* new random unsigned int */
+      /* New random unsigned int. */
       seed = (seed * 196314165) + 907633515;
 
-      /* fixed-point dither sample between -64 and 64 (Q7) */
-      dither1_Q7 = (WebRtc_Word16)(((int)seed + 16777216)>>25); // * 128/4294967295
+      /* Fixed-point dither sample between -64 and 64 (Q7). */
+      /* dither = seed * 128 / 4294967295 */
+      dither1_Q7 = (WebRtc_Word16)(((int)seed + 16777216) >> 25);
 
-      /* new random unsigned int */
+      /* New random unsigned int. */
       seed = (seed * 196314165) + 907633515;
 
-      /* fixed-point dither sample between -64 and 64 */
-      dither2_Q7 = (WebRtc_Word16)(((int)seed + 16777216)>>25);
+      /* Fixed-point dither sample between -64 and 64. */
+      dither2_Q7 = (WebRtc_Word16)(((int)seed + 16777216) >> 25);
 
       shft = (seed >> 25) & 15;
       if (shft < 5)
@@ -219,17 +222,17 @@ static void GenerateDitherQ7Lb(WebRtc_Word16 *bufQ7,
   {
     dither_gain_Q14 = (WebRtc_Word16)(22528 - 10 * AvgPitchGain_Q12);
 
-    /* dither on half of the coefficients */
+    /* Dither on half of the coefficients. */
     for (k = 0; k < length-1; k += 2)
     {
-      /* new random unsigned int */
+      /* New random unsigned int */
       seed = (seed * 196314165) + 907633515;
 
-      /* fixed-point dither sample between -64 and 64 */
+      /* Fixed-point dither sample between -64 and 64. */
       dither1_Q7 = (WebRtc_Word16)(((int)seed + 16777216)>>25);
 
-      /* dither sample is placed in either even or odd index */
-      shft = (seed >> 25) & 1;     /* either 0 or 1 */
+      /* Dither sample is placed in either even or odd index. */
+      shft = (seed >> 25) & 1;     /* Either 0 or 1 */
 
       bufQ7[k + shft] = (((dither_gain_Q14 * dither1_Q7) + 8192)>>14);
       bufQ7[k + 1 - shft] = 0;
@@ -265,11 +268,11 @@ static void GenerateDitherQ7LbUB(
     /* new random unsigned int */
     seed = (seed * 196314165) + 907633515;
 
-    /* fixed-point dither sample between -64 and 64 (Q7) */
-    // * 128/4294967295
+    /* Fixed-point dither sample between -64 and 64 (Q7). */
+    /* bufQ7 = seed * 128 / 4294967295 */
     bufQ7[k] = (WebRtc_Word16)(((int)seed + 16777216)>>25);
 
-    // scale by 0.35
+    /* Scale by 0.35. */
     bufQ7[k] = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(bufQ7[k],
                                                            2048, 13);
   }
@@ -278,8 +281,8 @@ static void GenerateDitherQ7LbUB(
 
 
 /*
- * function to decode the complex spectrum from the bit stream
- * returns the total number of bytes in the stream
+ * Function to decode the complex spectrum from the bit stream
+ * returns the total number of bytes in the stream.
  */
 int WebRtcIsac_DecodeSpecLb(Bitstr *streamdata,
                             double *fr,
@@ -298,10 +301,10 @@ int WebRtcIsac_DecodeSpecLb(Bitstr *streamdata,
   WebRtc_Word32  newRes;
   int            k, len, i;
 
-  /* create dither signal */
+  /* Create dither signal. */
   GenerateDitherQ7Lb(DitherQ7, streamdata->W_upper, FRAMESAMPLES, AvgPitchGain_Q12);
 
-  /* decode model parameters */
+  /* Decode model parameters. */
   if (WebRtcIsac_DecodeRc(streamdata, RCQ15) < 0)
     return -ISAC_RANGE_ERROR_DECODE_SPECTRUM;
 
@@ -310,10 +313,11 @@ int WebRtcIsac_DecodeSpecLb(Bitstr *streamdata,
   if (WebRtcIsac_DecodeGain2(streamdata, &gain2_Q10) < 0)
     return -ISAC_RANGE_ERROR_DECODE_SPECTRUM;
 
-  /* compute inverse AR power spectrum */
+  /* Compute inverse AR power spectrum. */
   WebRtcIsac_FindInvArSpec(ARCoefQ12, gain2_Q10, invARSpec2_Q16);
 
-  /* convert to magnitude spectrum, by doing square-roots (modified from SPLIB) */
+  /* Convert to magnitude spectrum,
+   * by doing square-roots (modified from SPLIB). */
   res = 1 << (WebRtcSpl_GetSizeInBits(invARSpec2_Q16[0]) >> 1);
   for (k = 0; k < FRAMESAMPLES_QUARTER; k++)
   {
@@ -334,18 +338,20 @@ int WebRtcIsac_DecodeSpecLb(Bitstr *streamdata,
     invARSpecQ8[k] = (WebRtc_Word16)newRes;
   }
 
-  /* arithmetic decoding of spectrum */
-  if ((len = WebRtcIsac_DecLogisticMulti2(data, streamdata, invARSpecQ8, DitherQ7,
-                                          FRAMESAMPLES, !IS_SWB_12KHZ)) <1)
+  /* Arithmetic decoding of spectrum. */
+  if ((len = WebRtcIsac_DecLogisticMulti2(
+      data, streamdata, invARSpecQ8, DitherQ7, FRAMESAMPLES,
+      !IS_SWB_12KHZ)) <1) {
     return -ISAC_RANGE_ERROR_DECODE_SPECTRUM;
-
+  }
   /* subtract dither and scale down spectral samples with low SNR */
   if (AvgPitchGain_Q12 <= 614)
   {
     for (k = 0; k < FRAMESAMPLES; k += 4)
     {
-      gainQ10 = WebRtcSpl_DivW32W16ResW16(30 << 10,
-                                              (WebRtc_Word16)((invARSpec2_Q16[k>>2] + (32768 + (33 << 16))) >> 16));
+      gainQ10 = WebRtcSpl_DivW32W16ResW16(
+          30 << 10,(WebRtc_Word16)((invARSpec2_Q16[k >> 2] +
+              (32768 + (33 << 16))) >> 16));
       *fr++ = (double)((data[ k ] * gainQ10 + 512) >> 10) / 128.0;
       *fi++ = (double)((data[k+1] * gainQ10 + 512) >> 10) / 128.0;
       *fr++ = (double)((data[k+2] * gainQ10 + 512) >> 10) / 128.0;
@@ -356,8 +362,9 @@ int WebRtcIsac_DecodeSpecLb(Bitstr *streamdata,
   {
     for (k = 0; k < FRAMESAMPLES; k += 4)
     {
-      gainQ10 = WebRtcSpl_DivW32W16ResW16(36 << 10,
-                                              (WebRtc_Word16)((invARSpec2_Q16[k>>2] + (32768 + (40 << 16))) >> 16));
+      gainQ10 = WebRtcSpl_DivW32W16ResW16(
+          36 << 10, (WebRtc_Word16)((invARSpec2_Q16[k >> 2] +
+              (32768 + (40 << 16))) >> 16));
       *fr++ = (double)((data[ k ] * gainQ10 + 512) >> 10) / 128.0;
       *fi++ = (double)((data[k+1] * gainQ10 + 512) >> 10) / 128.0;
       *fr++ = (double)((data[k+2] * gainQ10 + 512) >> 10) / 128.0;
@@ -405,10 +412,10 @@ int WebRtcIsac_DecodeSpecUB16(
   WebRtc_Word32  newRes;
   int            k, len, i, j;
 
-  /* create dither signal */
+  /* Create dither signal. */
   GenerateDitherQ7LbUB(DitherQ7, streamdata->W_upper, FRAMESAMPLES);
 
-  /* decode model parameters */
+  /* Decode model parameters. */
   if (WebRtcIsac_DecodeRc(streamdata, RCQ15) < 0)
     return -ISAC_RANGE_ERROR_DECODE_SPECTRUM;
 
@@ -417,10 +424,11 @@ int WebRtcIsac_DecodeSpecUB16(
   if (WebRtcIsac_DecodeGain2(streamdata, &gain2_Q10) < 0)
     return -ISAC_RANGE_ERROR_DECODE_SPECTRUM;
 
-  /* compute inverse AR power spectrum */
+  /* Compute inverse AR power spectrum. */
   WebRtcIsac_FindInvArSpec(ARCoefQ12, gain2_Q10, invARSpec2_Q16);
 
-  /* convert to magnitude spectrum, by doing square-roots (modified from SPLIB) */
+  /* Convert to magnitude spectrum, by doing square-roots
+   * (modified from SPLIB). */
   res = 1 << (WebRtcSpl_GetSizeInBits(invARSpec2_Q16[0]) >> 1);
   for (k = 0; k < FRAMESAMPLES_QUARTER; k++)
   {
@@ -442,9 +450,11 @@ int WebRtcIsac_DecodeSpecUB16(
   }
 
   /* arithmetic decoding of spectrum */
-  if ((len = WebRtcIsac_DecLogisticMulti2(data, streamdata, invARSpecQ8,
-                                          DitherQ7, FRAMESAMPLES, !IS_SWB_12KHZ)) <1)
+  if ((len = WebRtcIsac_DecLogisticMulti2(
+      data, streamdata, invARSpecQ8, DitherQ7,
+      FRAMESAMPLES, !IS_SWB_12KHZ)) <1) {
     return -ISAC_RANGE_ERROR_DECODE_SPECTRUM;
+  }
 
   /* re-arrange DFT coefficients and scale down */
   for (j = 0, k = 0; k < FRAMESAMPLES; k += 4, j++)
@@ -499,10 +509,10 @@ int WebRtcIsac_DecodeSpecUB12(
   WebRtc_Word32  newRes;
   int            k, len, i;
 
-  /* create dither signal */
+  /* Create dither signal */
   GenerateDitherQ7LbUB(DitherQ7, streamdata->W_upper, FRAMESAMPLES);
 
-  /* decode model parameters */
+  /* Decode model parameters */
   if (WebRtcIsac_DecodeRc(streamdata, RCQ15) < 0)
     return -ISAC_RANGE_ERROR_DECODE_SPECTRUM;
 
@@ -512,10 +522,11 @@ int WebRtcIsac_DecodeSpecUB12(
     return -ISAC_RANGE_ERROR_DECODE_SPECTRUM;
 
 
-  /* compute inverse AR power spectrum */
+  /* Compute inverse AR power spectrum */
   WebRtcIsac_FindInvArSpec(ARCoefQ12, gain2_Q10, invARSpec2_Q16);
 
-  /* convert to magnitude spectrum, by doing square-roots (modified from SPLIB) */
+  /* Convert to magnitude spectrum, by doing square-roots
+   * (modified from SPLIB). */
   res = 1 << (WebRtcSpl_GetSizeInBits(invARSpec2_Q16[0]) >> 1);
   for (k = 0; k < FRAMESAMPLES_QUARTER; k++)
   {
@@ -537,9 +548,9 @@ int WebRtcIsac_DecodeSpecUB12(
   }
 
   /* arithmetic decoding of spectrum */
-  if ((len = WebRtcIsac_DecLogisticMulti2(data, streamdata,
-                                          invARSpecQ8, DitherQ7, (FRAMESAMPLES_HALF), IS_SWB_12KHZ)) < 1)
-  {
+  if ((len = WebRtcIsac_DecLogisticMulti2(
+      data, streamdata, invARSpecQ8, DitherQ7, (FRAMESAMPLES_HALF),
+      IS_SWB_12KHZ)) < 1) {
     return -ISAC_RANGE_ERROR_DECODE_SPECTRUM;
   }
 
@@ -553,13 +564,14 @@ int WebRtcIsac_DecodeSpecUB12(
     i++;
   }
 
-  // The second half of real and imaginary coefficients is zero. This is
-  // due to using the old FFT module which requires two signals as input
-  // while in 0-12 kHz mode we only have 8-12 kHz band, and the second signal
-  // is set to zero
+  /*
+   *  The second half of real and imaginary coefficients is zero. This is
+   * due to using the old FFT module which requires two signals as input
+   * while in 0-12 kHz mode we only have 8-12 kHz band, and the second signal
+   * is set to zero
+   */
   memset(&fr[FRAMESAMPLES_QUARTER], 0, FRAMESAMPLES_QUARTER * sizeof(double));
   memset(&fi[FRAMESAMPLES_QUARTER], 0, FRAMESAMPLES_QUARTER * sizeof(double));
-
   return len;
 }
 
@@ -594,7 +606,8 @@ int WebRtcIsac_EncodeSpecLb(const WebRtc_Word16 *fr,
 
 
   /* create dither_float signal */
-  GenerateDitherQ7Lb(ditherQ7, streamdata->W_upper, FRAMESAMPLES, AvgPitchGain_Q12);
+  GenerateDitherQ7Lb(ditherQ7, streamdata->W_upper, FRAMESAMPLES,
+                     AvgPitchGain_Q12);
 
   /* add dither and quantize, and compute power spectrum */
   for (k = 0; k < FRAMESAMPLES; k += 4)
@@ -622,8 +635,9 @@ int WebRtcIsac_EncodeSpecLb(const WebRtc_Word16 *fr,
   WebRtcIsac_FindCorrelation(PSpec, CorrQ7);
 
 
-  /* find AR coefficients */
-  /* number of bit shifts to 14-bit normalize CorrQ7[0] (leaving room for sign) */
+  /* find AR coefficients. */
+  /* number of bit shifts to 14-bit normalize CorrQ7[0]
+   * (leaving room for sign) */
   shift_var = WebRtcSpl_NormW32(CorrQ7[0]) - 18;
 
   if (shift_var > 0) {
@@ -835,8 +849,8 @@ int WebRtcIsac_EncodeSpecUB16(
     nrg = 0x7FFFFFFF;
   else
     nrg = (WebRtc_Word32)nrg_u32;
-
-  gain2_Q10 = WebRtcSpl_DivResultInQ31(FRAMESAMPLES_QUARTER, nrg);  /* also shifts 31 bits to the left! */
+  /* also shifts 31 bits to the left! */
+  gain2_Q10 = WebRtcSpl_DivResultInQ31(FRAMESAMPLES_QUARTER, nrg);
 
   /* quantize & code gain2_Q10 */
   if (WebRtcIsac_EncodeGain2(&gain2_Q10, streamdata)) {
@@ -846,7 +860,8 @@ int WebRtcIsac_EncodeSpecUB16(
   /* compute inverse AR power spectrum */
   WebRtcIsac_FindInvArSpec(ARCoefQ12, gain2_Q10, invARSpec2_Q16);
 
-  /* convert to magnitude spectrum, by doing square-roots (modified from SPLIB) */
+  /* convert to magnitude spectrum, by doing square-roots
+   * (modified from SPLIB) */
   res = 1 << (WebRtcSpl_GetSizeInBits(invARSpec2_Q16[0]) >> 1);
   for (k = 0; k < FRAMESAMPLES_QUARTER; k++)
   {
@@ -944,7 +959,8 @@ int WebRtcIsac_EncodeSpecUB12(const WebRtc_Word16 *fr,
 
 
   /* find AR coefficients */
-  /* number of bit shifts to 14-bit normalize CorrQ7[0] (leaving room for sign) */
+  /* number of bit shifts to 14-bit normalize CorrQ7[0]
+   * (leaving room for sign) */
   shift_var = WebRtcSpl_NormW32(CorrQ7[0]) - 18;
 
   if (shift_var > 0) {
@@ -972,10 +988,12 @@ int WebRtcIsac_EncodeSpecUB12(const WebRtc_Word16 *fr,
   nrg = 0;
   for (j = 0; j <= AR_ORDER; j++) {
     for (n = 0; n <= j; n++) {
-      nrg += ( ARCoefQ12[j] * ((CorrQ7_norm[j-n] * ARCoefQ12[n] + 256) >> 9) + 4 ) >> 3;
+      nrg += ( ARCoefQ12[j] * ((CorrQ7_norm[j-n] * ARCoefQ12[n] + 256) >> 9) +
+          4 ) >> 3;
     }
     for (n = j+1; n <= AR_ORDER; n++) {
-      nrg += ( ARCoefQ12[j] * ((CorrQ7_norm[n-j] * ARCoefQ12[n] + 256) >> 9) + 4 ) >> 3;
+      nrg += ( ARCoefQ12[j] * ((CorrQ7_norm[n-j] * ARCoefQ12[n] + 256) >> 9) +
+          4 ) >> 3;
     }
   }
 
@@ -991,8 +1009,8 @@ int WebRtcIsac_EncodeSpecUB12(const WebRtc_Word16 *fr,
   } else {
     nrg = (WebRtc_Word32)nrg_u32;
   }
-
-  gain2_Q10 = WebRtcSpl_DivResultInQ31(FRAMESAMPLES_QUARTER, nrg);  /* also shifts 31 bits to the left! */
+  /* also shifts 31 bits to the left! */
+  gain2_Q10 = WebRtcSpl_DivResultInQ31(FRAMESAMPLES_QUARTER, nrg);
 
   /* quantize & code gain2_Q10 */
   if (WebRtcIsac_EncodeGain2(&gain2_Q10, streamdata)) {
@@ -1002,7 +1020,8 @@ int WebRtcIsac_EncodeSpecUB12(const WebRtc_Word16 *fr,
   /* compute inverse AR power spectrum */
   WebRtcIsac_FindInvArSpec(ARCoefQ12, gain2_Q10, invARSpec2_Q16);
 
-  /* convert to magnitude spectrum, by doing square-roots (modified from SPLIB) */
+  /* convert to magnitude spectrum, by doing square-roots
+   * (modified from SPLIB) */
   res = 1 << (WebRtcSpl_GetSizeInBits(invARSpec2_Q16[0]) >> 1);
   for (k = 0; k < FRAMESAMPLES_QUARTER; k++)
   {
@@ -1080,8 +1099,8 @@ void WebRtcIsac_Poly2Rc(double *a, int N, double *RC)
 
 #define MAX_ORDER 100
 
-
-void WebRtcIsac_Rc2Lar(const double *refc, double *lar, int order) {  /* Matlab's LAR definition */
+/* Matlab's LAR definition */
+void WebRtcIsac_Rc2Lar(const double *refc, double *lar, int order) {
 
   int k;
 
@@ -1103,7 +1122,8 @@ void WebRtcIsac_Lar2Rc(const double *lar, double *refc,  int order) {
   }
 }
 
-void WebRtcIsac_Poly2Lar(double *lowband, int orderLo, double *hiband, int orderHi, int Nsub, double *lars) {
+void WebRtcIsac_Poly2Lar(double *lowband, int orderLo, double *hiband,
+                         int orderHi, int Nsub, double *lars) {
 
   int k, n, orderTot;
   double poly[MAX_ORDER], lar[MAX_ORDER], rc[MAX_ORDER], *inpl, *inph, *outp;
@@ -1185,8 +1205,8 @@ WebRtcIsac_Poly2LarUB(
 
 
 
-void WebRtcIsac_Lar2Poly(double *lars, double *lowband, int orderLo, double *hiband, int orderHi, int Nsub) {
-
+void WebRtcIsac_Lar2Poly(double *lars, double *lowband, int orderLo,
+                         double *hiband, int orderHi, int Nsub) {
   int k, n, orderTot;
   double poly[MAX_ORDER], lar[MAX_ORDER], rc[MAX_ORDER], *outpl, *outph, *inp;
 
@@ -1221,14 +1241,16 @@ void WebRtcIsac_Lar2Poly(double *lars, double *lowband, int orderLo, double *hib
   }
 }
 
-// assumes 2 LAR vectors interpolates to 'numPolyVec' A-polynomials
+/*
+ *  assumes 2 LAR vectors interpolates to 'numPolyVec' A-polynomials
+ *  Note: 'numPolyVecs' includes the first and the last point of the interval
+ */
 void
 WebRtcIsac_Lar2PolyInterpolUB(
     double* larVecs,
     double* percepFilterParams,
-    int     numPolyVecs) // includes the first and the last point of the interval
+    int     numPolyVecs)
 {
-
   int polyCntr, coeffCntr;
   double larInterpol[UB_LPC_ORDER];
   double rc[UB_LPC_ORDER];
@@ -1250,25 +1272,27 @@ WebRtcIsac_Lar2PolyInterpolUB(
     }
     WebRtcIsac_Lar2Rc(larInterpol, rc, UB_LPC_ORDER);
 
-    // convert to A-polynomial, the following function returns A[0] = 1;
-    // which is written where gains had to be written. Then we write the
-    // gain (outside this function). This way we say a memcpy
+    /*
+     * convert to A-polynomial, the following function returns A[0] = 1;
+     * which is written where gains had to be written. Then we write the
+     * gain (outside this function). This way we say a memcpy
+     */
     WebRtcIsac_Rc2Poly(rc, UB_LPC_ORDER, percepFilterParams);
     percepFilterParams += (UB_LPC_ORDER + 1);
   }
 }
 
-int WebRtcIsac_DecodeLpc(Bitstr *streamdata, double *LPCCoef_lo, double *LPCCoef_hi, int *outmodel) {
-
+int WebRtcIsac_DecodeLpc(Bitstr *streamdata, double *LPCCoef_lo,
+                         double *LPCCoef_hi) {
   double lars[KLT_ORDER_GAIN + KLT_ORDER_SHAPE];
   int err;
 
-  err = WebRtcIsac_DecodeLpcCoef(streamdata, lars, outmodel);
-  if (err<0)  // error check
+  err = WebRtcIsac_DecodeLpcCoef(streamdata, lars);
+  if (err<0)
     return -ISAC_RANGE_ERROR_DECODE_LPC;
 
-  WebRtcIsac_Lar2Poly(lars, LPCCoef_lo, ORDERLO, LPCCoef_hi, ORDERHI, SUBFRAMES);
-
+  WebRtcIsac_Lar2Poly(lars, LPCCoef_lo, ORDERLO, LPCCoef_hi, ORDERHI,
+                      SUBFRAMES);
   return 0;
 }
 
@@ -1278,7 +1302,6 @@ WebRtcIsac_DecodeInterpolLpcUb(
     double*     percepFilterParams,
     WebRtc_Word16 bandwidth)
 {
-
   double lpcCoeff[UB_LPC_ORDER * UB16_LPC_VEC_PER_FRAME];
   int err;
   int interpolCntr;
@@ -1292,8 +1315,6 @@ WebRtcIsac_DecodeInterpolLpcUb(
 
   err = WebRtcIsac_DecodeLpcCoefUB(streamdata, lpcCoeff, percepFilterGains,
                                    bandwidth);
-
-  // error check
   if (err<0)
   {
     return -ISAC_RANGE_ERROR_DECODE_LPC;
@@ -1319,16 +1340,12 @@ WebRtcIsac_DecodeInterpolLpcUb(
       return -1;
   }
 
-
-
   for(interpolCntr = 0; interpolCntr < numSegments; interpolCntr++)
   {
     WebRtcIsac_Lar2PolyInterpolUB(
         &lpcCoeff[interpolCntr * UB_LPC_ORDER], ptrOutParam,
         numVecPerSegment + 1);
-
-    ptrOutParam += ((numVecPerSegment) *
-                    (UB_LPC_ORDER + 1));
+    ptrOutParam += (numVecPerSegment * (UB_LPC_ORDER + 1));
   }
 
   ptrOutParam = percepFilterParams;
@@ -1343,48 +1360,62 @@ WebRtcIsac_DecodeInterpolLpcUb(
     *ptrOutParam = percepFilterGains[subframeCntr];
     ptrOutParam += (1 + UB_LPC_ORDER);
   }
-
   return 0;
 }
 
 
 /* decode & dequantize LPC Coef */
-int WebRtcIsac_DecodeLpcCoef(Bitstr *streamdata, double *LPCCoef, int *outmodel)
+int WebRtcIsac_DecodeLpcCoef(Bitstr *streamdata, double *LPCCoef)
 {
-  int j, k, n, model, pos, pos2, posg, poss, offsg, offss, offs2;
+  int j, k, n, pos, pos2, posg, poss, offsg, offss, offs2;
   int index_g[KLT_ORDER_GAIN], index_s[KLT_ORDER_SHAPE];
   double tmpcoeffs_g[KLT_ORDER_GAIN],tmpcoeffs_s[KLT_ORDER_SHAPE];
   double tmpcoeffs2_g[KLT_ORDER_GAIN], tmpcoeffs2_s[KLT_ORDER_SHAPE];
   double sum;
   int err;
-
+  int model = 1;
 
   /* entropy decoding of model number */
-  err = WebRtcIsac_DecHistOneStepMulti(&model, streamdata, WebRtcIsac_kQKltModelCdfPtr, WebRtcIsac_kQKltModelInitIndex, 1);
-  if (err<0)  // error check
+  /* We are keeping this for backward compatibility of bit-streams. */
+  err = WebRtcIsac_DecHistOneStepMulti(&model, streamdata,
+                                       WebRtcIsac_kQKltModelCdfPtr,
+                                       WebRtcIsac_kQKltModelInitIndex, 1);
+  if (err<0)
     return err;
+  /* Only accepted value of model is 0. It is kept in bit-stream for backward
+   * compatibility. */
+  if (model != 0) {
+    return -ISAC_DISALLOWED_LPC_MODEL;
+  }
 
   /* entropy decoding of quantization indices */
-  err = WebRtcIsac_DecHistOneStepMulti(index_s, streamdata, WebRtcIsac_kQKltCdfPtrShape[model], WebRtcIsac_kQKltInitIndexShape[model], KLT_ORDER_SHAPE);
-  if (err<0)  // error check
+  err = WebRtcIsac_DecHistOneStepMulti(
+      index_s, streamdata, WebRtcIsac_kQKltCdfPtrShape,
+      WebRtcIsac_kQKltInitIndexShape, KLT_ORDER_SHAPE);
+  if (err<0)
     return err;
-  err = WebRtcIsac_DecHistOneStepMulti(index_g, streamdata, WebRtcIsac_kQKltCdfPtrGain[model], WebRtcIsac_kQKltInitIndexGain[model], KLT_ORDER_GAIN);
-  if (err<0)  // error check
+  err = WebRtcIsac_DecHistOneStepMulti(
+      index_g, streamdata, WebRtcIsac_kQKltCdfPtrGain,
+      WebRtcIsac_kQKltInitIndexGain, KLT_ORDER_GAIN);
+  if (err<0)
     return err;
 
 
   /* find quantization levels for coefficients */
   for (k=0; k<KLT_ORDER_SHAPE; k++) {
-    tmpcoeffs_s[WebRtcIsac_kQKltSelIndShape[k]] = WebRtcIsac_kQKltLevelsShape[WebRtcIsac_kQKltOfLevelsShape[model]+WebRtcIsac_kQKltOffsetShape[model][k] + index_s[k]];
+    tmpcoeffs_s[k] =
+        WebRtcIsac_kQKltLevelsShape[WebRtcIsac_kQKltOffsetShape[k] +
+                                    index_s[k]];
   }
   for (k=0; k<KLT_ORDER_GAIN; k++) {
-    tmpcoeffs_g[WebRtcIsac_kQKltSelIndGain[k]] = WebRtcIsac_kQKltLevelsGain[WebRtcIsac_kQKltOfLevelsGain[model]+ WebRtcIsac_kQKltOffsetGain[model][k] + index_g[k]];
+    tmpcoeffs_g[k] = WebRtcIsac_kQKltLevelsGain[WebRtcIsac_kQKltOffsetGain[k] +
+                                                index_g[k]];
   }
 
 
-  /* inverse KLT  */
+  /* Inverse KLT  */
 
-  /* left transform */  // Transpose matrix!
+  /* Left transform, transpose matrix!  */
   offsg = 0;
   offss = 0;
   posg = 0;
@@ -1396,7 +1427,7 @@ int WebRtcIsac_DecodeLpcCoef(Bitstr *streamdata, double *LPCCoef, int *outmodel)
       pos = offsg;
       pos2 = offs2;
       for (n=0; n<LPC_GAIN_ORDER; n++)
-        sum += tmpcoeffs_g[pos++] * WebRtcIsac_kKltT1Gain[model][pos2++];
+        sum += tmpcoeffs_g[pos++] * WebRtcIsac_kKltT1Gain[pos2++];
       tmpcoeffs2_g[posg++] = sum;
       offs2 += LPC_GAIN_ORDER;
     }
@@ -1406,7 +1437,7 @@ int WebRtcIsac_DecodeLpcCoef(Bitstr *streamdata, double *LPCCoef, int *outmodel)
       pos = offss;
       pos2 = offs2;
       for (n=0; n<LPC_SHAPE_ORDER; n++)
-        sum += tmpcoeffs_s[pos++] * WebRtcIsac_kKltT1Shape[model][pos2++];
+        sum += tmpcoeffs_s[pos++] * WebRtcIsac_kKltT1Shape[pos2++];
       tmpcoeffs2_s[poss++] = sum;
       offs2 += LPC_SHAPE_ORDER;
     }
@@ -1415,7 +1446,7 @@ int WebRtcIsac_DecodeLpcCoef(Bitstr *streamdata, double *LPCCoef, int *outmodel)
   }
 
 
-  /* right transform */ // Transpose matrix
+  /* Right transform, transpose matrix */
   offsg = 0;
   offss = 0;
   posg = 0;
@@ -1427,7 +1458,7 @@ int WebRtcIsac_DecodeLpcCoef(Bitstr *streamdata, double *LPCCoef, int *outmodel)
       pos = k;
       pos2 = j;
       for (n=0; n<SUBFRAMES; n++) {
-        sum += tmpcoeffs2_g[pos] * WebRtcIsac_kKltT2Gain[model][pos2];
+        sum += tmpcoeffs2_g[pos] * WebRtcIsac_kKltT2Gain[pos2];
         pos += LPC_GAIN_ORDER;
         pos2 += SUBFRAMES;
 
@@ -1440,7 +1471,7 @@ int WebRtcIsac_DecodeLpcCoef(Bitstr *streamdata, double *LPCCoef, int *outmodel)
       pos = k;
       pos2 = j;
       for (n=0; n<SUBFRAMES; n++) {
-        sum += tmpcoeffs2_s[pos] * WebRtcIsac_kKltT2Shape[model][pos2];
+        sum += tmpcoeffs2_s[pos] * WebRtcIsac_kKltT2Shape[pos2];
         pos += LPC_SHAPE_ORDER;
         pos2 += SUBFRAMES;
       }
@@ -1457,196 +1488,134 @@ int WebRtcIsac_DecodeLpcCoef(Bitstr *streamdata, double *LPCCoef, int *outmodel)
 
     /* log gains */
     LPCCoef[pos] = tmpcoeffs_g[posg] / LPC_GAIN_SCALE;
-    LPCCoef[pos] += WebRtcIsac_kLpcMeansGain[model][posg];
+    LPCCoef[pos] += WebRtcIsac_kLpcMeansGain[posg];
     LPCCoef[pos] = exp(LPCCoef[pos]);
     pos++;posg++;
     LPCCoef[pos] = tmpcoeffs_g[posg] / LPC_GAIN_SCALE;
-    LPCCoef[pos] += WebRtcIsac_kLpcMeansGain[model][posg];
+    LPCCoef[pos] += WebRtcIsac_kLpcMeansGain[posg];
     LPCCoef[pos] = exp(LPCCoef[pos]);
     pos++;posg++;
 
-    /* lo band LAR coeffs */
+    /* Low-band LAR coefficients. */
     for (n=0; n<LPC_LOBAND_ORDER; n++, pos++, poss++) {
       LPCCoef[pos] = tmpcoeffs_s[poss] / LPC_LOBAND_SCALE;
-      LPCCoef[pos] += WebRtcIsac_kLpcMeansShape[model][poss];
+      LPCCoef[pos] += WebRtcIsac_kLpcMeansShape[poss];
     }
 
-    /* hi band LAR coeffs */
+    /* High-band LAR coefficients. */
     for (n=0; n<LPC_HIBAND_ORDER; n++, pos++, poss++) {
       LPCCoef[pos] = tmpcoeffs_s[poss] / LPC_HIBAND_SCALE;
-      LPCCoef[pos] += WebRtcIsac_kLpcMeansShape[model][poss];
+      LPCCoef[pos] += WebRtcIsac_kLpcMeansShape[poss];
     }
   }
-
-
-  *outmodel=model;
 
   return 0;
 }
 
-/* estimate codel length of LPC Coef */
-void WebRtcIsac_EncodeLar(double *LPCCoef, int *model, double *size, Bitstr *streamdata, ISAC_SaveEncData_t* encData) {
-  int j, k, n, bmodel, pos, pos2, poss, posg, offsg, offss, offs2;
-  int index_g[KLT_ORDER_GAIN], index_s[KLT_ORDER_SHAPE];
-  int index_ovr_g[KLT_ORDER_GAIN], index_ovr_s[KLT_ORDER_SHAPE];
-  double Bits;
-  double tmpcoeffs_g[KLT_ORDER_GAIN], tmpcoeffs_s[KLT_ORDER_SHAPE];
-  double tmpcoeffs2_g[KLT_ORDER_GAIN], tmpcoeffs2_s[KLT_ORDER_SHAPE];
+/* Encode LPC in LAR domain. */
+void WebRtcIsac_EncodeLar(double *LPCCoef, Bitstr *streamdata,
+                          ISAC_SaveEncData_t* encData) {
+  int j, k, n,pos, pos2, poss, offss, offs2;
+  int index_s[KLT_ORDER_SHAPE];
+  int index_ovr_s[KLT_ORDER_SHAPE];
+  double tmpcoeffs_s[KLT_ORDER_SHAPE];
+  double tmpcoeffs2_s[KLT_ORDER_SHAPE];
   double sum;
+  const int kModel = 0;
 
-  /* Only one LPC model remains in iSAC. Tables for other models are saved for compatibility reasons. */
-  bmodel = 0;
-
-  /* log gains, mean removal and scaling */
-  posg = 0;poss = 0;pos=0;
-
+  /* Mean removal and scaling. */
+  poss = 0;
+  pos = 0;
   for (k=0; k<SUBFRAMES; k++) {
-    /* log gains */
-    tmpcoeffs_g[posg] = log(LPCCoef[pos]);
-    tmpcoeffs_g[posg] -= WebRtcIsac_kLpcMeansGain[bmodel][posg];
-    tmpcoeffs_g[posg] *= LPC_GAIN_SCALE;
-    posg++;pos++;
+    /* First two element are gains, move over them. */
+    pos += 2;
 
-    tmpcoeffs_g[posg] = log(LPCCoef[pos]);
-    tmpcoeffs_g[posg] -= WebRtcIsac_kLpcMeansGain[bmodel][posg];
-    tmpcoeffs_g[posg] *= LPC_GAIN_SCALE;
-    posg++;pos++;
-
-    /* lo band LAR coeffs */
+    /* Low-band LAR coefficients. */
     for (n=0; n<LPC_LOBAND_ORDER; n++, poss++, pos++) {
-      tmpcoeffs_s[poss] = LPCCoef[pos] - WebRtcIsac_kLpcMeansShape[bmodel][poss];
+      tmpcoeffs_s[poss] = LPCCoef[pos] - WebRtcIsac_kLpcMeansShape[poss];
       tmpcoeffs_s[poss] *= LPC_LOBAND_SCALE;
     }
 
-    /* hi band LAR coeffs */
+    /* High-band LAR coefficients. */
     for (n=0; n<LPC_HIBAND_ORDER; n++, poss++, pos++) {
-      tmpcoeffs_s[poss] = LPCCoef[pos] - WebRtcIsac_kLpcMeansShape[bmodel][poss];
+      tmpcoeffs_s[poss] = LPCCoef[pos] - WebRtcIsac_kLpcMeansShape[poss];
       tmpcoeffs_s[poss] *= LPC_HIBAND_SCALE;
     }
   }
 
   /* KLT  */
 
-  /* left transform */
-  offsg = 0;
+  /* Left transform. */
   offss = 0;
   for (j=0; j<SUBFRAMES; j++) {
-    posg = offsg;
-    for (k=0; k<LPC_GAIN_ORDER; k++) {
-      sum = 0;
-      pos = offsg;
-      pos2 = k;
-      for (n=0; n<LPC_GAIN_ORDER; n++) {
-        sum += tmpcoeffs_g[pos++] * WebRtcIsac_kKltT1Gain[bmodel][pos2];
-        pos2 += LPC_GAIN_ORDER;
-      }
-      tmpcoeffs2_g[posg++] = sum;
-    }
     poss = offss;
     for (k=0; k<LPC_SHAPE_ORDER; k++) {
       sum = 0;
       pos = offss;
       pos2 = k;
       for (n=0; n<LPC_SHAPE_ORDER; n++) {
-        sum += tmpcoeffs_s[pos++] * WebRtcIsac_kKltT1Shape[bmodel][pos2];
+        sum += tmpcoeffs_s[pos++] * WebRtcIsac_kKltT1Shape[pos2];
         pos2 += LPC_SHAPE_ORDER;
       }
       tmpcoeffs2_s[poss++] = sum;
     }
-    offsg += LPC_GAIN_ORDER;
     offss += LPC_SHAPE_ORDER;
   }
 
-  /* right transform */
-  offsg = 0;
+  /* Right transform. */
   offss = 0;
   offs2 = 0;
   for (j=0; j<SUBFRAMES; j++) {
-    posg = offsg;
-    for (k=0; k<LPC_GAIN_ORDER; k++) {
-      sum = 0;
-      pos = k;
-      pos2 = offs2;
-      for (n=0; n<SUBFRAMES; n++) {
-        sum += tmpcoeffs2_g[pos] * WebRtcIsac_kKltT2Gain[bmodel][pos2++];
-        pos += LPC_GAIN_ORDER;
-      }
-      tmpcoeffs_g[posg++] = sum;
-    }
     poss = offss;
     for (k=0; k<LPC_SHAPE_ORDER; k++) {
       sum = 0;
       pos = k;
       pos2 = offs2;
       for (n=0; n<SUBFRAMES; n++) {
-        sum += tmpcoeffs2_s[pos] * WebRtcIsac_kKltT2Shape[bmodel][pos2++];
+        sum += tmpcoeffs2_s[pos] * WebRtcIsac_kKltT2Shape[pos2++];
         pos += LPC_SHAPE_ORDER;
       }
       tmpcoeffs_s[poss++] = sum;
     }
     offs2 += SUBFRAMES;
-    offsg += LPC_GAIN_ORDER;
     offss += LPC_SHAPE_ORDER;
   }
 
-  /* quantize coefficients */
-
-  Bits = 0.0;
-  for (k=0; k<KLT_ORDER_GAIN; k++) //ATTN: ok?
+  /* Quantize coefficients. */
+  for (k=0; k<KLT_ORDER_SHAPE; k++)
   {
-    pos = WebRtcIsac_kQKltSelIndGain[k];
-    pos2= WebRtcIsac_lrint(tmpcoeffs_g[pos] / KLT_STEPSIZE);
-    index_g[k] = (pos2) + WebRtcIsac_kQKltQuantMinGain[k]; //ATTN: ok?
-    if (index_g[k] < 0) {
-      index_g[k] = 0;
-    }
-    else if (index_g[k] > WebRtcIsac_kQKltMaxIndGain[k])
-      index_g[k] = WebRtcIsac_kQKltMaxIndGain[k];
-    index_ovr_g[k] = WebRtcIsac_kQKltOffsetGain[bmodel][k]+index_g[k];
-    pos = WebRtcIsac_kQKltOfLevelsGain[bmodel] + index_ovr_g[k];
-
-    /* determine number of bits */
-    sum = WebRtcIsac_kQKltCodeLenGain[pos];
-    Bits += sum;
-  }
-
-  for (k=0; k<KLT_ORDER_SHAPE; k++) //ATTN: ok?
-  {
-    index_s[k] = (WebRtcIsac_lrint(tmpcoeffs_s[WebRtcIsac_kQKltSelIndShape[k]] / KLT_STEPSIZE)) + WebRtcIsac_kQKltQuantMinShape[k]; //ATTN: ok?
+    index_s[k] = (WebRtcIsac_lrint(tmpcoeffs_s[k] / KLT_STEPSIZE)) +
+        WebRtcIsac_kQKltQuantMinShape[k];
     if (index_s[k] < 0)
       index_s[k] = 0;
     else if (index_s[k] > WebRtcIsac_kQKltMaxIndShape[k])
       index_s[k] = WebRtcIsac_kQKltMaxIndShape[k];
-    index_ovr_s[k] = WebRtcIsac_kQKltOffsetShape[bmodel][k]+index_s[k];
-    pos = WebRtcIsac_kQKltOfLevelsShape[bmodel] + index_ovr_s[k];
-    sum = WebRtcIsac_kQKltCodeLenShape[pos];
-    Bits += sum;
+    index_ovr_s[k] = WebRtcIsac_kQKltOffsetShape[k]+index_s[k];
   }
 
 
-  /* Only one model remains in this version of the code, model = 0 */
-  *model=bmodel;
-  *size=Bits;
-
+  /* Only one model remains in this version of the code, kModel = 0. We
+   * are keeping for bit-streams to be backward compatible. */
   /* entropy coding of model number */
-  WebRtcIsac_EncHistMulti(streamdata, model, WebRtcIsac_kQKltModelCdfPtr, 1);
+  WebRtcIsac_EncHistMulti(streamdata, &kModel, WebRtcIsac_kQKltModelCdfPtr, 1);
 
-  /* entropy coding of quantization indices - shape only */
-  WebRtcIsac_EncHistMulti(streamdata, index_s, WebRtcIsac_kQKltCdfPtrShape[bmodel], KLT_ORDER_SHAPE);
 
-  /* Save data for creation of multiple bit streams */
-  encData->LPCmodel[encData->startIdx] = 0;
+  /* Entropy coding of quantization indices - shape only. */
+  WebRtcIsac_EncHistMulti(streamdata, index_s, WebRtcIsac_kQKltCdfPtrShape,
+                          KLT_ORDER_SHAPE);
+
+  /* Save data for creation of multiple bit streams. */
   for (k=0; k<KLT_ORDER_SHAPE; k++)
   {
     encData->LPCindex_s[KLT_ORDER_SHAPE*encData->startIdx + k] = index_s[k];
   }
 
-  /* find quantization levels for shape coefficients */
+  /* Find quantization levels for shape coefficients. */
   for (k=0; k<KLT_ORDER_SHAPE; k++) {
-    tmpcoeffs_s[WebRtcIsac_kQKltSelIndShape[k]] = WebRtcIsac_kQKltLevelsShape[WebRtcIsac_kQKltOfLevelsShape[bmodel]+index_ovr_s[k]];
+    tmpcoeffs_s[k] = WebRtcIsac_kQKltLevelsShape[index_ovr_s[k]];
   }
-  /* inverse KLT  */
-  /* left transform */  // Transpose matrix!
+  /* Inverse KLT.  */
+  /* Left transform,  Transpose matrix.! */
   offss = 0;
   poss = 0;
   for (j=0; j<SUBFRAMES; j++) {
@@ -1656,15 +1625,14 @@ void WebRtcIsac_EncodeLar(double *LPCCoef, int *model, double *size, Bitstr *str
       pos = offss;
       pos2 = offs2;
       for (n=0; n<LPC_SHAPE_ORDER; n++)
-        sum += tmpcoeffs_s[pos++] * WebRtcIsac_kKltT1Shape[bmodel][pos2++];
+        sum += tmpcoeffs_s[pos++] * WebRtcIsac_kKltT1Shape[pos2++];
       tmpcoeffs2_s[poss++] = sum;
       offs2 += LPC_SHAPE_ORDER;
     }
     offss += LPC_SHAPE_ORDER;
   }
 
-
-  /* right transform */ // Transpose matrix
+  /* Right transform, Transpose matrix */
   offss = 0;
   poss = 0;
   for (j=0; j<SUBFRAMES; j++) {
@@ -1674,7 +1642,7 @@ void WebRtcIsac_EncodeLar(double *LPCCoef, int *model, double *size, Bitstr *str
       pos = k;
       pos2 = j;
       for (n=0; n<SUBFRAMES; n++) {
-        sum += tmpcoeffs2_s[pos] * WebRtcIsac_kKltT2Shape[bmodel][pos2];
+        sum += tmpcoeffs2_s[pos] * WebRtcIsac_kKltT2Shape[pos2];
         pos += LPC_SHAPE_ORDER;
         pos2 += SUBFRAMES;
       }
@@ -1683,45 +1651,47 @@ void WebRtcIsac_EncodeLar(double *LPCCoef, int *model, double *size, Bitstr *str
     offss += LPC_SHAPE_ORDER;
   }
 
-  /* scaling, mean addition, and gain restoration */
-  poss = 0;pos=0;
+  /* Scaling, mean addition, and gain restoration. */
+  poss = 0;
+  pos = 0;
   for (k=0; k<SUBFRAMES; k++) {
+    /* Ignore gains. */
+    pos += 2;
 
-    /* log gains */
-    pos+=2;
-
-    /* lo band LAR coeffs */
+    /* Low band LAR coefficients. */
     for (n=0; n<LPC_LOBAND_ORDER; n++, pos++, poss++) {
       LPCCoef[pos] = tmpcoeffs_s[poss] / LPC_LOBAND_SCALE;
-      LPCCoef[pos] += WebRtcIsac_kLpcMeansShape[bmodel][poss];
+      LPCCoef[pos] += WebRtcIsac_kLpcMeansShape[poss];
     }
 
-    /* hi band LAR coeffs */
+    /* High band LAR coefficients. */
     for (n=0; n<LPC_HIBAND_ORDER; n++, pos++, poss++) {
       LPCCoef[pos] = tmpcoeffs_s[poss] / LPC_HIBAND_SCALE;
-      LPCCoef[pos] += WebRtcIsac_kLpcMeansShape[bmodel][poss];
+      LPCCoef[pos] += WebRtcIsac_kLpcMeansShape[poss];
     }
-
   }
-
 }
 
 
-void WebRtcIsac_EncodeLpcLb(double *LPCCoef_lo, double *LPCCoef_hi, int *model,
-                            double *size, Bitstr *streamdata, ISAC_SaveEncData_t* encData) {
+void WebRtcIsac_EncodeLpcLb(double *LPCCoef_lo, double *LPCCoef_hi,
+                            Bitstr *streamdata, ISAC_SaveEncData_t* encData) {
 
   double lars[KLT_ORDER_GAIN+KLT_ORDER_SHAPE];
   int k;
 
-  WebRtcIsac_Poly2Lar(LPCCoef_lo, ORDERLO, LPCCoef_hi, ORDERHI, SUBFRAMES, lars);
-  WebRtcIsac_EncodeLar(lars, model, size, streamdata, encData);
-  WebRtcIsac_Lar2Poly(lars, LPCCoef_lo, ORDERLO, LPCCoef_hi, ORDERHI, SUBFRAMES);
-  /* Save data for creation of multiple bit streams (and transcoding) */
+  WebRtcIsac_Poly2Lar(LPCCoef_lo, ORDERLO, LPCCoef_hi, ORDERHI, SUBFRAMES,
+                      lars);
+  WebRtcIsac_EncodeLar(lars, streamdata, encData);
+  WebRtcIsac_Lar2Poly(lars, LPCCoef_lo, ORDERLO, LPCCoef_hi, ORDERHI,
+                      SUBFRAMES);
+  /* Save data for creation of multiple bit streams (and transcoding). */
   for (k=0; k<(ORDERLO+1)*SUBFRAMES; k++) {
-    encData->LPCcoeffs_lo[(ORDERLO+1)*SUBFRAMES*encData->startIdx + k] = LPCCoef_lo[k];
+    encData->LPCcoeffs_lo[(ORDERLO+1)*SUBFRAMES*encData->startIdx + k] =
+        LPCCoef_lo[k];
   }
   for (k=0; k<(ORDERHI+1)*SUBFRAMES; k++) {
-    encData->LPCcoeffs_hi[(ORDERHI+1)*SUBFRAMES*encData->startIdx + k] = LPCCoef_hi[k];
+    encData->LPCcoeffs_hi[(ORDERHI+1)*SUBFRAMES*encData->startIdx + k] =
+        LPCCoef_hi[k];
   }
 }
 
@@ -1753,15 +1723,16 @@ WebRtcIsac_EncodeLpcUB(
   {
     case isac12kHz:
       {
-        // Stor the indices to be used for multiple encoding.
-        memcpy(encData->indexLPCShape, idx, UB_LPC_ORDER * UB_LPC_VEC_PER_FRAME *
-               sizeof(int));
+        /* Store the indices to be used for multiple encoding. */
+        memcpy(encData->indexLPCShape, idx, UB_LPC_ORDER *
+               UB_LPC_VEC_PER_FRAME * sizeof(int));
         WebRtcIsac_EncHistMulti(streamdata, idx, WebRtcIsac_kLpcShapeCdfMatUb12,
                                 UB_LPC_ORDER * UB_LPC_VEC_PER_FRAME);
-        for(interpolCntr = 0; interpolCntr < UB_INTERPOL_SEGMENTS; interpolCntr++)
+        for(interpolCntr = 0; interpolCntr < UB_INTERPOL_SEGMENTS;
+            interpolCntr++)
         {
-          WebRtcIsac_Lar2PolyInterpolUB(lpcVecs,
-                                        interpolLPCCoeff, kLpcVecPerSegmentUb12 + 1);
+          WebRtcIsac_Lar2PolyInterpolUB(lpcVecs, interpolLPCCoeff,
+                                        kLpcVecPerSegmentUb12 + 1);
           lpcVecs += UB_LPC_ORDER;
           interpolLPCCoeff += (kLpcVecPerSegmentUb12 * (UB_LPC_ORDER + 1));
         }
@@ -1769,15 +1740,16 @@ WebRtcIsac_EncodeLpcUB(
       }
     case isac16kHz:
       {
-        // Stor the indices to be used for multiple encoding.
-        memcpy(encData->indexLPCShape, idx, UB_LPC_ORDER * UB16_LPC_VEC_PER_FRAME *
-               sizeof(int));
+        /* Store the indices to be used for multiple encoding. */
+        memcpy(encData->indexLPCShape, idx, UB_LPC_ORDER *
+               UB16_LPC_VEC_PER_FRAME * sizeof(int));
         WebRtcIsac_EncHistMulti(streamdata, idx, WebRtcIsac_kLpcShapeCdfMatUb16,
                                 UB_LPC_ORDER * UB16_LPC_VEC_PER_FRAME);
-        for(interpolCntr = 0; interpolCntr < UB16_INTERPOL_SEGMENTS; interpolCntr++)
+        for(interpolCntr = 0; interpolCntr < UB16_INTERPOL_SEGMENTS;
+            interpolCntr++)
         {
-          WebRtcIsac_Lar2PolyInterpolUB(lpcVecs,
-                                        interpolLPCCoeff, kLpcVecPerSegmentUb16 + 1);
+          WebRtcIsac_Lar2PolyInterpolUB(lpcVecs, interpolLPCCoeff,
+                                        kLpcVecPerSegmentUb16 + 1);
           lpcVecs += UB_LPC_ORDER;
           interpolLPCCoeff += (kLpcVecPerSegmentUb16 * (UB_LPC_ORDER + 1));
         }
@@ -1789,31 +1761,31 @@ WebRtcIsac_EncodeLpcUB(
   return 0;
 }
 
-void WebRtcIsac_EncodeLpcGainLb(double *LPCCoef_lo, double *LPCCoef_hi, int model, Bitstr *streamdata, ISAC_SaveEncData_t* encData) {
-
+void WebRtcIsac_EncodeLpcGainLb(double *LPCCoef_lo, double *LPCCoef_hi,
+                                Bitstr *streamdata,
+                                ISAC_SaveEncData_t* encData) {
   int j, k, n, pos, pos2, posg, offsg, offs2;
   int index_g[KLT_ORDER_GAIN];
   int index_ovr_g[KLT_ORDER_GAIN];
   double tmpcoeffs_g[KLT_ORDER_GAIN];
   double tmpcoeffs2_g[KLT_ORDER_GAIN];
   double sum;
-
   /* log gains, mean removal and scaling */
   posg = 0;
   for (k=0; k<SUBFRAMES; k++) {
     tmpcoeffs_g[posg] = log(LPCCoef_lo[(LPC_LOBAND_ORDER+1)*k]);
-    tmpcoeffs_g[posg] -= WebRtcIsac_kLpcMeansGain[model][posg];
+    tmpcoeffs_g[posg] -= WebRtcIsac_kLpcMeansGain[posg];
     tmpcoeffs_g[posg] *= LPC_GAIN_SCALE;
     posg++;
     tmpcoeffs_g[posg] = log(LPCCoef_hi[(LPC_HIBAND_ORDER+1)*k]);
-    tmpcoeffs_g[posg] -= WebRtcIsac_kLpcMeansGain[model][posg];
+    tmpcoeffs_g[posg] -= WebRtcIsac_kLpcMeansGain[posg];
     tmpcoeffs_g[posg] *= LPC_GAIN_SCALE;
     posg++;
   }
 
   /* KLT  */
 
-  /* left transform */
+  /* Left transform. */
   offsg = 0;
   for (j=0; j<SUBFRAMES; j++) {
     posg = offsg;
@@ -1822,7 +1794,7 @@ void WebRtcIsac_EncodeLpcGainLb(double *LPCCoef_lo, double *LPCCoef_hi, int mode
       pos = offsg;
       pos2 = k;
       for (n=0; n<LPC_GAIN_ORDER; n++) {
-        sum += tmpcoeffs_g[pos++] * WebRtcIsac_kKltT1Gain[model][pos2];
+        sum += tmpcoeffs_g[pos++] * WebRtcIsac_kKltT1Gain[pos2];
         pos2 += LPC_GAIN_ORDER;
       }
       tmpcoeffs2_g[posg++] = sum;
@@ -1830,7 +1802,7 @@ void WebRtcIsac_EncodeLpcGainLb(double *LPCCoef_lo, double *LPCCoef_hi, int mode
     offsg += LPC_GAIN_ORDER;
   }
 
-  /* right transform */
+  /* Right transform. */
   offsg = 0;
   offs2 = 0;
   for (j=0; j<SUBFRAMES; j++) {
@@ -1840,7 +1812,7 @@ void WebRtcIsac_EncodeLpcGainLb(double *LPCCoef_lo, double *LPCCoef_hi, int mode
       pos = k;
       pos2 = offs2;
       for (n=0; n<SUBFRAMES; n++) {
-        sum += tmpcoeffs2_g[pos] * WebRtcIsac_kKltT2Gain[model][pos2++];
+        sum += tmpcoeffs2_g[pos] * WebRtcIsac_kKltT2Gain[pos2++];
         pos += LPC_GAIN_ORDER;
       }
       tmpcoeffs_g[posg++] = sum;
@@ -1849,13 +1821,10 @@ void WebRtcIsac_EncodeLpcGainLb(double *LPCCoef_lo, double *LPCCoef_hi, int mode
     offsg += LPC_GAIN_ORDER;
   }
 
-
-  /* quantize coefficients */
+  /* Quantize coefficients. */
   for (k=0; k<KLT_ORDER_GAIN; k++) {
-
-    /* get index */
-    pos = WebRtcIsac_kQKltSelIndGain[k];
-    pos2= WebRtcIsac_lrint(tmpcoeffs_g[pos] / KLT_STEPSIZE);
+    /* Get index. */
+    pos2= WebRtcIsac_lrint(tmpcoeffs_g[k] / KLT_STEPSIZE);
     index_g[k] = (pos2) + WebRtcIsac_kQKltQuantMinGain[k];
     if (index_g[k] < 0) {
       index_g[k] = 0;
@@ -1863,22 +1832,21 @@ void WebRtcIsac_EncodeLpcGainLb(double *LPCCoef_lo, double *LPCCoef_hi, int mode
     else if (index_g[k] > WebRtcIsac_kQKltMaxIndGain[k]) {
       index_g[k] = WebRtcIsac_kQKltMaxIndGain[k];
     }
-    index_ovr_g[k] = WebRtcIsac_kQKltOffsetGain[model][k]+index_g[k];
+    index_ovr_g[k] = WebRtcIsac_kQKltOffsetGain[k]+index_g[k];
 
-    /* find quantization levels for coefficients */
-    tmpcoeffs_g[WebRtcIsac_kQKltSelIndGain[k]] = WebRtcIsac_kQKltLevelsGain[WebRtcIsac_kQKltOfLevelsGain[model]+index_ovr_g[k]];
+    /* Find quantization levels for coefficients. */
+    tmpcoeffs_g[k] = WebRtcIsac_kQKltLevelsGain[index_ovr_g[k]];
 
-    /* Save data for creation of multiple bit streams */
+    /* Save data for creation of multiple bit streams. */
     encData->LPCindex_g[KLT_ORDER_GAIN*encData->startIdx + k] = index_g[k];
   }
 
+  /* Entropy coding of quantization indices - gain. */
+  WebRtcIsac_EncHistMulti(streamdata, index_g, WebRtcIsac_kQKltCdfPtrGain,
+                          KLT_ORDER_GAIN);
 
-  /* entropy coding of quantization indices - gain */
-  WebRtcIsac_EncHistMulti(streamdata, index_g, WebRtcIsac_kQKltCdfPtrGain[model], KLT_ORDER_GAIN);
-
-  /* find quantization levels for coefficients */
-
-  /* left transform */
+  /* Find quantization levels for coefficients. */
+  /* Left transform. */
   offsg = 0;
   posg = 0;
   for (j=0; j<SUBFRAMES; j++) {
@@ -1888,14 +1856,14 @@ void WebRtcIsac_EncodeLpcGainLb(double *LPCCoef_lo, double *LPCCoef_hi, int mode
       pos = offsg;
       pos2 = offs2;
       for (n=0; n<LPC_GAIN_ORDER; n++)
-        sum += tmpcoeffs_g[pos++] * WebRtcIsac_kKltT1Gain[model][pos2++];
+        sum += tmpcoeffs_g[pos++] * WebRtcIsac_kKltT1Gain[pos2++];
       tmpcoeffs2_g[posg++] = sum;
       offs2 += LPC_GAIN_ORDER;
     }
     offsg += LPC_GAIN_ORDER;
   }
 
-  /* right transform */ // Transpose matrix
+  /* Right transform, transpose matrix. */
   offsg = 0;
   posg = 0;
   for (j=0; j<SUBFRAMES; j++) {
@@ -1905,7 +1873,7 @@ void WebRtcIsac_EncodeLpcGainLb(double *LPCCoef_lo, double *LPCCoef_hi, int mode
       pos = k;
       pos2 = j;
       for (n=0; n<SUBFRAMES; n++) {
-        sum += tmpcoeffs2_g[pos] * WebRtcIsac_kKltT2Gain[model][pos2];
+        sum += tmpcoeffs2_g[pos] * WebRtcIsac_kKltT2Gain[pos2];
         pos += LPC_GAIN_ORDER;
         pos2 += SUBFRAMES;
       }
@@ -1915,15 +1883,15 @@ void WebRtcIsac_EncodeLpcGainLb(double *LPCCoef_lo, double *LPCCoef_hi, int mode
   }
 
 
-  /* scaling, mean addition, and gain restoration */
+  /* Scaling, mean addition, and gain restoration. */
   posg = 0;
   for (k=0; k<SUBFRAMES; k++) {
     sum = tmpcoeffs_g[posg] / LPC_GAIN_SCALE;
-    sum += WebRtcIsac_kLpcMeansGain[model][posg];
+    sum += WebRtcIsac_kLpcMeansGain[posg];
     LPCCoef_lo[k*(LPC_LOBAND_ORDER+1)] = exp(sum);
     pos++;posg++;
     sum = tmpcoeffs_g[posg] / LPC_GAIN_SCALE;
-    sum += WebRtcIsac_kLpcMeansGain[model][posg];
+    sum += WebRtcIsac_kLpcMeansGain[posg];
     LPCCoef_hi[k*(LPC_HIBAND_ORDER+1)] = exp(sum);
     pos++;posg++;
   }
@@ -1941,11 +1909,12 @@ WebRtcIsac_EncodeLpcGainUb(
   WebRtcIsac_ToLogDomainRemoveMean(lpGains);
   WebRtcIsac_DecorrelateLPGain(lpGains, U);
   WebRtcIsac_QuantizeLpcGain(U, idx);
-  // Store the index for re-encoding for FEC.
+  /* Store the index for re-encoding for FEC. */
   memcpy(lpcGainIndex, idx, UB_LPC_GAIN_DIM * sizeof(int));
   WebRtcIsac_CorrelateLpcGain(U, lpGains);
   WebRtcIsac_AddMeanToLinearDomain(lpGains);
-  WebRtcIsac_EncHistMulti(streamdata, idx, WebRtcIsac_kLpcGainCdfMat, UB_LPC_GAIN_DIM);
+  WebRtcIsac_EncHistMulti(streamdata, idx, WebRtcIsac_kLpcGainCdfMat,
+                          UB_LPC_GAIN_DIM);
 }
 
 
@@ -1959,7 +1928,8 @@ WebRtcIsac_StoreLpcGainUb(
   WebRtcIsac_ToLogDomainRemoveMean(lpGains);
   WebRtcIsac_DecorrelateLPGain(lpGains, U);
   WebRtcIsac_QuantizeLpcGain(U, idx);
-  WebRtcIsac_EncHistMulti(streamdata, idx, WebRtcIsac_kLpcGainCdfMat, UB_LPC_GAIN_DIM);
+  WebRtcIsac_EncHistMulti(streamdata, idx, WebRtcIsac_kLpcGainCdfMat,
+                          UB_LPC_GAIN_DIM);
 }
 
 
@@ -1973,7 +1943,8 @@ WebRtcIsac_DecodeLpcGainUb(
   int idx[UB_LPC_GAIN_DIM];
   int err;
   err = WebRtcIsac_DecHistOneStepMulti(idx, streamdata,
-                                       WebRtcIsac_kLpcGainCdfMat, WebRtcIsac_kLpcGainEntropySearch,
+                                       WebRtcIsac_kLpcGainCdfMat,
+                                       WebRtcIsac_kLpcGainEntropySearch,
                                        UB_LPC_GAIN_DIM);
   if(err < 0)
   {
@@ -1994,9 +1965,10 @@ int WebRtcIsac_DecodeRc(Bitstr *streamdata, WebRtc_Word16 *RCQ15)
   int index[AR_ORDER];
 
   /* entropy decoding of quantization indices */
-  err = WebRtcIsac_DecHistOneStepMulti(index, streamdata, WebRtcIsac_kQArRcCdfPtr,
+  err = WebRtcIsac_DecHistOneStepMulti(index, streamdata,
+                                       WebRtcIsac_kQArRcCdfPtr,
                                        WebRtcIsac_kQArRcInitIndex, AR_ORDER);
-  if (err<0)  // error check
+  if (err<0)
     return err;
 
   /* find quantization levels for reflection coefficients */
@@ -2004,7 +1976,6 @@ int WebRtcIsac_DecodeRc(Bitstr *streamdata, WebRtc_Word16 *RCQ15)
   {
     RCQ15[k] = *(WebRtcIsac_kQArRcLevelsPtr[k] + index[k]);
   }
-
   return 0;
 }
 
@@ -2030,10 +2001,8 @@ void WebRtcIsac_EncodeRc(WebRtc_Word16 *RCQ15, Bitstr *streamdata)
     {
       while (RCQ15[k] < WebRtcIsac_kQArBoundaryLevels[--index[k]]) ;
     }
-
     RCQ15[k] = *(WebRtcIsac_kQArRcLevelsPtr[k] + index[k]);
   }
-
 
   /* entropy coding of quantization indices */
   WebRtcIsac_EncHistMulti(streamdata, index, WebRtcIsac_kQArRcCdfPtr, AR_ORDER);
@@ -2046,14 +2015,14 @@ int WebRtcIsac_DecodeGain2(Bitstr *streamdata, WebRtc_Word32 *gainQ10)
   int index, err;
 
   /* entropy decoding of quantization index */
-  err = WebRtcIsac_DecHistOneStepMulti(&index, streamdata, WebRtcIsac_kQGainCdf_ptr,
+  err = WebRtcIsac_DecHistOneStepMulti(&index, streamdata,
+                                       WebRtcIsac_kQGainCdf_ptr,
                                        WebRtcIsac_kQGainInitIndex, 1);
-  if (err<0)  // error check
+  if (err<0)
     return err;
 
   /* find quantization level */
   *gainQ10 = WebRtcIsac_kQGain2Levels[index];
-
   return 0;
 }
 
@@ -2063,7 +2032,6 @@ int WebRtcIsac_DecodeGain2(Bitstr *streamdata, WebRtc_Word32 *gainQ10)
 int WebRtcIsac_EncodeGain2(WebRtc_Word32 *gainQ10, Bitstr *streamdata)
 {
   int index;
-
 
   /* find quantization index */
   index = WebRtcIsac_kQGainInitIndex[0];
@@ -2076,14 +2044,11 @@ int WebRtcIsac_EncodeGain2(WebRtc_Word32 *gainQ10, Bitstr *streamdata)
   {
     while (*gainQ10 < WebRtcIsac_kQGain2BoundaryLevels[--index]) ;
   }
-
-  /* dequantize */
+  /* De-quantize */
   *gainQ10 = WebRtcIsac_kQGain2Levels[index];
-
 
   /* entropy coding of quantization index */
   WebRtcIsac_EncHistMulti(streamdata, &index, WebRtcIsac_kQGainCdf_ptr, 1);
-
   return 0;
 }
 
@@ -2091,31 +2056,34 @@ int WebRtcIsac_EncodeGain2(WebRtc_Word32 *gainQ10, Bitstr *streamdata)
 /* code and decode Pitch Gains and Lags functions */
 
 /* decode & dequantize Pitch Gains */
-int WebRtcIsac_DecodePitchGain(Bitstr *streamdata, WebRtc_Word16 *PitchGains_Q12)
+int WebRtcIsac_DecodePitchGain(Bitstr *streamdata,
+                               WebRtc_Word16 *PitchGains_Q12)
 {
   int index_comb, err;
   const WebRtc_UWord16 *WebRtcIsac_kQPitchGainCdf_ptr[1];
 
-  /* entropy decoding of quantization indices */
+  /* Entropy decoding of quantization indices */
   *WebRtcIsac_kQPitchGainCdf_ptr = WebRtcIsac_kQPitchGainCdf;
-  err = WebRtcIsac_DecHistBisectMulti(&index_comb, streamdata, WebRtcIsac_kQPitchGainCdf_ptr, WebRtcIsac_kQCdfTableSizeGain, 1);
-  /* error check, Q_mean_Gain.. tables are of size 144 */
+  err = WebRtcIsac_DecHistBisectMulti(&index_comb, streamdata,
+                                      WebRtcIsac_kQPitchGainCdf_ptr,
+                                      WebRtcIsac_kQCdfTableSizeGain, 1);
+  /* Error check, Q_mean_Gain.. tables are of size 144 */
   if ((err<0) || (index_comb<0) || (index_comb>144))
     return -ISAC_RANGE_ERROR_DECODE_PITCH_GAIN;
 
-  /* unquantize back to pitch gains by table look-up */
+  /* De-quantize back to pitch gains by table look-up. */
   PitchGains_Q12[0] = WebRtcIsac_kQMeanGain1Q12[index_comb];
   PitchGains_Q12[1] = WebRtcIsac_kQMeanGain2Q12[index_comb];
   PitchGains_Q12[2] = WebRtcIsac_kQMeanGain3Q12[index_comb];
   PitchGains_Q12[3] = WebRtcIsac_kQMeanGain4Q12[index_comb];
-
   return 0;
 }
 
 
-/* quantize & code Pitch Gains */
-void WebRtcIsac_EncodePitchGain(WebRtc_Word16 *PitchGains_Q12, Bitstr *streamdata, ISAC_SaveEncData_t* encData)
-{
+/* Quantize & code Pitch Gains. */
+void WebRtcIsac_EncodePitchGain(WebRtc_Word16 *PitchGains_Q12,
+                                Bitstr *streamdata,
+                                ISAC_SaveEncData_t* encData) {
   int k,j;
   double C;
   double S[PITCH_SUBFRAMES];
@@ -2124,15 +2092,15 @@ void WebRtcIsac_EncodePitchGain(WebRtc_Word16 *PitchGains_Q12, Bitstr *streamdat
   const WebRtc_UWord16 *WebRtcIsac_kQPitchGainCdf_ptr[1];
   double PitchGains[PITCH_SUBFRAMES] = {0,0,0,0};
 
-  /* take the asin */
+  /* Take the asin. */
   for (k=0; k<PITCH_SUBFRAMES; k++)
   {
     PitchGains[k] = ((float)PitchGains_Q12[k])/4096;
     S[k] = asin(PitchGains[k]);
   }
 
-
-  /* find quantization index; only for the first three transform coefficients */
+  /* Find quantization index; only for the first three
+   * transform coefficients. */
   for (k=0; k<3; k++)
   {
     /*  transform */
@@ -2140,17 +2108,21 @@ void WebRtcIsac_EncodePitchGain(WebRtc_Word16 *PitchGains_Q12, Bitstr *streamdat
     for (j=0; j<PITCH_SUBFRAMES; j++)
       C += WebRtcIsac_kTransform[k][j] * S[j];
 
-    /* quantize */
+    /* Quantize */
     index[k] = WebRtcIsac_lrint(C / PITCH_GAIN_STEPSIZE);
 
-    /* check that the index is not outside the boundaries of the table */
-    if (index[k] < WebRtcIsac_kIndexLowerLimitGain[k]) index[k] = WebRtcIsac_kIndexLowerLimitGain[k];
-    else if (index[k] > WebRtcIsac_kIndexUpperLimitGain[k]) index[k] = WebRtcIsac_kIndexUpperLimitGain[k];
+    /* Check that the index is not outside the boundaries of the table. */
+    if (index[k] < WebRtcIsac_kIndexLowerLimitGain[k]) {
+      index[k] = WebRtcIsac_kIndexLowerLimitGain[k];
+    } else if (index[k] > WebRtcIsac_kIndexUpperLimitGain[k]) {
+      index[k] = WebRtcIsac_kIndexUpperLimitGain[k];
+    }
     index[k] -= WebRtcIsac_kIndexLowerLimitGain[k];
   }
 
-  /* calculate unique overall index */
-  index_comb = WebRtcIsac_kIndexMultsGain[0] * index[0] + WebRtcIsac_kIndexMultsGain[1] * index[1] + index[2];
+  /* Calculate unique overall index. */
+  index_comb = WebRtcIsac_kIndexMultsGain[0] * index[0] +
+      WebRtcIsac_kIndexMultsGain[1] * index[1] + index[2];
 
   /* unquantize back to pitch gains by table look-up */
   PitchGains_Q12[0] = WebRtcIsac_kQMeanGain1Q12[index_comb];
@@ -2160,19 +2132,17 @@ void WebRtcIsac_EncodePitchGain(WebRtc_Word16 *PitchGains_Q12, Bitstr *streamdat
 
   /* entropy coding of quantization pitch gains */
   *WebRtcIsac_kQPitchGainCdf_ptr = WebRtcIsac_kQPitchGainCdf;
-  WebRtcIsac_EncHistMulti(streamdata, &index_comb, WebRtcIsac_kQPitchGainCdf_ptr, 1);
+  WebRtcIsac_EncHistMulti(streamdata, &index_comb,
+                          WebRtcIsac_kQPitchGainCdf_ptr, 1);
   encData->pitchGain_index[encData->startIdx] = index_comb;
-
 }
 
 
 
 /* Pitch LAG */
-
-
-/* decode & dequantize Pitch Lags */
-int WebRtcIsac_DecodePitchLag(Bitstr *streamdata, WebRtc_Word16 *PitchGain_Q12, double *PitchLags)
-{
+/* Decode & de-quantize Pitch Lags. */
+int WebRtcIsac_DecodePitchLag(Bitstr *streamdata, WebRtc_Word16 *PitchGain_Q12,
+                              double *PitchLags) {
   int k, err;
   double StepSize;
   double C;
@@ -2183,23 +2153,18 @@ int WebRtcIsac_DecodePitchLag(Bitstr *streamdata, WebRtc_Word16 *PitchGain_Q12, 
   const WebRtc_UWord16 *init_index;
   const WebRtc_UWord16 *cdf_size;
   const WebRtc_UWord16 **cdf;
-
-  //(Y)
   double PitchGain[4]={0,0,0,0};
-  //
 
   /* compute mean pitch gain */
   mean_gain = 0.0;
   for (k = 0; k < 4; k++)
   {
-    //(Y)
     PitchGain[k] = ((float)PitchGain_Q12[k])/4096;
-    //(Y)
     mean_gain += PitchGain[k];
   }
   mean_gain /= 4.0;
 
-  /* voicing classificiation */
+  /* voicing classification. */
   if (mean_gain < 0.2) {
     StepSize = WebRtcIsac_kQPitchLagStepsizeLo;
     cdf = WebRtcIsac_kQPitchLagCdfPtrLo;
@@ -2229,17 +2194,19 @@ int WebRtcIsac_DecodePitchLag(Bitstr *streamdata, WebRtc_Word16 *PitchGain_Q12, 
     init_index = WebRtcIsac_kQInitIndexLagHi;
   }
 
-  /* entropy decoding of quantization indices */
+  /* Entropy decoding of quantization indices. */
   err = WebRtcIsac_DecHistBisectMulti(index, streamdata, cdf, cdf_size, 1);
-  if ((err<0) || (index[0]<0))  // error check
+  if ((err<0) || (index[0]<0))
     return -ISAC_RANGE_ERROR_DECODE_PITCH_LAG;
 
-  err = WebRtcIsac_DecHistOneStepMulti(index+1, streamdata, cdf+1, init_index, 3);
-  if (err<0)  // error check
+  err = WebRtcIsac_DecHistOneStepMulti(index+1, streamdata, cdf+1, init_index,
+                                       3);
+  if (err<0)
     return -ISAC_RANGE_ERROR_DECODE_PITCH_LAG;
 
 
-  /* unquantize back to transform coefficients and do the inverse transform: S = T'*C */
+  /* Unquantize back to transform coefficients and do the inverse transform:
+   * S = T'*C. */
   C = (index[0] + lower_limit[0]) * StepSize;
   for (k=0; k<PITCH_SUBFRAMES; k++)
     PitchLags[k] = WebRtcIsac_kTransformTranspose[k][0] * C;
@@ -2258,9 +2225,10 @@ int WebRtcIsac_DecodePitchLag(Bitstr *streamdata, WebRtc_Word16 *PitchGain_Q12, 
 
 
 
-/* quantize & code Pitch Lags */
-void WebRtcIsac_EncodePitchLag(double* PitchLags, WebRtc_Word16* PitchGain_Q12, Bitstr* streamdata, ISAC_SaveEncData_t* encData)
-{
+/* Quantize & code pitch lags. */
+void WebRtcIsac_EncodePitchLag(double* PitchLags, WebRtc_Word16* PitchGain_Q12,
+                               Bitstr* streamdata,
+                               ISAC_SaveEncData_t* encData) {
   int k, j;
   double StepSize;
   double C;
@@ -2269,18 +2237,13 @@ void WebRtcIsac_EncodePitchLag(double* PitchLags, WebRtc_Word16* PitchGain_Q12, 
   const double *mean_val2, *mean_val3, *mean_val4;
   const WebRtc_Word16 *lower_limit, *upper_limit;
   const WebRtc_UWord16 **cdf;
-
-  //(Y)
   double PitchGain[4]={0,0,0,0};
-  //
 
   /* compute mean pitch gain */
   mean_gain = 0.0;
   for (k = 0; k < 4; k++)
   {
-    //(Y)
     PitchGain[k] = ((float)PitchGain_Q12[k])/4096;
-    //(Y)
     mean_gain += PitchGain[k];
   }
   mean_gain /= 4.0;
@@ -2288,7 +2251,7 @@ void WebRtcIsac_EncodePitchLag(double* PitchLags, WebRtc_Word16* PitchGain_Q12, 
   /* Save data for creation of multiple bit streams */
   encData->meanGain[encData->startIdx] = mean_gain;
 
-  /* voicing classification */
+  /* Voicing classification. */
   if (mean_gain < 0.2) {
     StepSize = WebRtcIsac_kQPitchLagStepsizeLo;
     cdf = WebRtcIsac_kQPitchLagCdfPtrLo;
@@ -2336,7 +2299,8 @@ void WebRtcIsac_EncodePitchLag(double* PitchLags, WebRtc_Word16* PitchGain_Q12, 
     encData->pitchIndex[PITCH_SUBFRAMES*encData->startIdx + k] = index[k];
   }
 
-  /* unquantize back to transform coefficients and do the inverse transform: S = T'*C */
+  /* Un-quantize back to transform coefficients and do the inverse transform:
+   * S = T'*C */
   C = (index[0] + lower_limit[0]) * StepSize;
   for (k=0; k<PITCH_SUBFRAMES; k++)
     PitchLags[k] = WebRtcIsac_kTransformTranspose[k][0] * C;
@@ -2365,25 +2329,25 @@ void WebRtcIsac_EncodePitchLag(double* PitchLags, WebRtc_Word16* PitchGain_Q12, 
 
 /* cdf array for frame length indicator */
 const WebRtc_UWord16 WebRtcIsac_kFrameLengthCdf[4] = {
-  0, 21845, 43690, 65535};
+  0, 21845, 43690, 65535 };
 
 /* pointer to cdf array for frame length indicator */
-const WebRtc_UWord16 *WebRtcIsac_kFrameLengthCdf_ptr[1] = {WebRtcIsac_kFrameLengthCdf};
+const WebRtc_UWord16 *WebRtcIsac_kFrameLengthCdf_ptr[1] = {
+    WebRtcIsac_kFrameLengthCdf };
 
 /* initial cdf index for decoder of frame length indicator */
-const WebRtc_UWord16 WebRtcIsac_kFrameLengthInitIndex[1] = {1};
+const WebRtc_UWord16 WebRtcIsac_kFrameLengthInitIndex[1] = { 1 };
 
 
-int WebRtcIsac_DecodeFrameLen(Bitstr *streamdata,
-                              WebRtc_Word16 *framesamples)
-{
-
+int WebRtcIsac_DecodeFrameLen(Bitstr *streamdata, WebRtc_Word16 *framesamples) {
   int frame_mode, err;
 
   err = 0;
   /* entropy decoding of frame length [1:30ms,2:60ms] */
-  err = WebRtcIsac_DecHistOneStepMulti(&frame_mode, streamdata, WebRtcIsac_kFrameLengthCdf_ptr, WebRtcIsac_kFrameLengthInitIndex, 1);
-  if (err<0)  // error check
+  err = WebRtcIsac_DecHistOneStepMulti(&frame_mode, streamdata,
+                                       WebRtcIsac_kFrameLengthCdf_ptr,
+                                       WebRtcIsac_kFrameLengthInitIndex, 1);
+  if (err<0)
     return -ISAC_RANGE_ERROR_DECODE_FRAME_LENGTH;
 
   switch(frame_mode) {
@@ -2421,8 +2385,8 @@ int WebRtcIsac_EncodeFrameLen(WebRtc_Word16 framesamples, Bitstr *streamdata) {
   if (status < 0)
     return status;
 
-  WebRtcIsac_EncHistMulti(streamdata, &frame_mode, WebRtcIsac_kFrameLengthCdf_ptr, 1);
-
+  WebRtcIsac_EncHistMulti(streamdata, &frame_mode,
+                          WebRtcIsac_kFrameLengthCdf_ptr, 1);
   return status;
 }
 
@@ -2444,8 +2408,9 @@ int WebRtcIsac_DecodeSendBW(Bitstr *streamdata, WebRtc_Word16 *BWno) {
   int BWno32, err;
 
   /* entropy decoding of sender's BW estimation [0..23] */
-  err = WebRtcIsac_DecHistOneStepMulti(&BWno32, streamdata, kBwCdfPtr, kBwInitIndex, 1);
-  if (err<0)  // error check
+  err = WebRtcIsac_DecHistOneStepMulti(&BWno32, streamdata, kBwCdfPtr,
+                                       kBwInitIndex, 1);
+  if (err<0)
     return -ISAC_RANGE_ERROR_DECODE_BANDWIDTH;
   *BWno = (WebRtc_Word16)BWno32;
   return err;
@@ -2453,17 +2418,14 @@ int WebRtcIsac_DecodeSendBW(Bitstr *streamdata, WebRtc_Word16 *BWno) {
 }
 
 void WebRtcIsac_EncodeReceiveBw(int *BWno, Bitstr *streamdata) {
-
   /* entropy encoding of receiver's BW estimation [0..23] */
   WebRtcIsac_EncHistMulti(streamdata, BWno, kBwCdfPtr, 1);
-
 }
 
 
 /* estimate code length of LPC Coef */
-void WebRtcIsac_TranscodeLPCCoef(double *LPCCoef_lo, double *LPCCoef_hi, int model,
+void WebRtcIsac_TranscodeLPCCoef(double *LPCCoef_lo, double *LPCCoef_hi,
                                  int *index_g) {
-
   int j, k, n, pos, pos2, posg, offsg, offs2;
   int index_ovr_g[KLT_ORDER_GAIN];
   double tmpcoeffs_g[KLT_ORDER_GAIN];
@@ -2474,18 +2436,18 @@ void WebRtcIsac_TranscodeLPCCoef(double *LPCCoef_lo, double *LPCCoef_hi, int mod
   posg = 0;
   for (k=0; k<SUBFRAMES; k++) {
     tmpcoeffs_g[posg] = log(LPCCoef_lo[(LPC_LOBAND_ORDER+1)*k]);
-    tmpcoeffs_g[posg] -= WebRtcIsac_kLpcMeansGain[model][posg];
+    tmpcoeffs_g[posg] -= WebRtcIsac_kLpcMeansGain[posg];
     tmpcoeffs_g[posg] *= LPC_GAIN_SCALE;
     posg++;
     tmpcoeffs_g[posg] = log(LPCCoef_hi[(LPC_HIBAND_ORDER+1)*k]);
-    tmpcoeffs_g[posg] -= WebRtcIsac_kLpcMeansGain[model][posg];
+    tmpcoeffs_g[posg] -= WebRtcIsac_kLpcMeansGain[posg];
     tmpcoeffs_g[posg] *= LPC_GAIN_SCALE;
     posg++;
   }
 
   /* KLT  */
 
-  /* left transform */
+  /* Left transform. */
   offsg = 0;
   for (j=0; j<SUBFRAMES; j++) {
     posg = offsg;
@@ -2494,7 +2456,7 @@ void WebRtcIsac_TranscodeLPCCoef(double *LPCCoef_lo, double *LPCCoef_hi, int mod
       pos = offsg;
       pos2 = k;
       for (n=0; n<LPC_GAIN_ORDER; n++) {
-        sum += tmpcoeffs_g[pos++] * WebRtcIsac_kKltT1Gain[model][pos2];
+        sum += tmpcoeffs_g[pos++] * WebRtcIsac_kKltT1Gain[pos2];
         pos2 += LPC_GAIN_ORDER;
       }
       tmpcoeffs2_g[posg++] = sum;
@@ -2502,7 +2464,7 @@ void WebRtcIsac_TranscodeLPCCoef(double *LPCCoef_lo, double *LPCCoef_hi, int mod
     offsg += LPC_GAIN_ORDER;
   }
 
-  /* right transform */
+  /* Right transform. */
   offsg = 0;
   offs2 = 0;
   for (j=0; j<SUBFRAMES; j++) {
@@ -2512,7 +2474,7 @@ void WebRtcIsac_TranscodeLPCCoef(double *LPCCoef_lo, double *LPCCoef_hi, int mod
       pos = k;
       pos2 = offs2;
       for (n=0; n<SUBFRAMES; n++) {
-        sum += tmpcoeffs2_g[pos] * WebRtcIsac_kKltT2Gain[model][pos2++];
+        sum += tmpcoeffs2_g[pos] * WebRtcIsac_kKltT2Gain[pos2++];
         pos += LPC_GAIN_ORDER;
       }
       tmpcoeffs_g[posg++] = sum;
@@ -2525,9 +2487,8 @@ void WebRtcIsac_TranscodeLPCCoef(double *LPCCoef_lo, double *LPCCoef_hi, int mod
   /* quantize coefficients */
   for (k=0; k<KLT_ORDER_GAIN; k++) {
 
-    /* get index */
-    pos = WebRtcIsac_kQKltSelIndGain[k];
-    pos2= WebRtcIsac_lrint(tmpcoeffs_g[pos] / KLT_STEPSIZE);
+    /* Get index. */
+    pos2= WebRtcIsac_lrint(tmpcoeffs_g[k] / KLT_STEPSIZE);
     index_g[k] = (pos2) + WebRtcIsac_kQKltQuantMinGain[k];
     if (index_g[k] < 0) {
       index_g[k] = 0;
@@ -2535,15 +2496,15 @@ void WebRtcIsac_TranscodeLPCCoef(double *LPCCoef_lo, double *LPCCoef_hi, int mod
     else if (index_g[k] > WebRtcIsac_kQKltMaxIndGain[k]) {
       index_g[k] = WebRtcIsac_kQKltMaxIndGain[k];
     }
-    index_ovr_g[k] = WebRtcIsac_kQKltOffsetGain[model][k]+index_g[k];
+    index_ovr_g[k] = WebRtcIsac_kQKltOffsetGain[k]+index_g[k];
 
     /* find quantization levels for coefficients */
-    tmpcoeffs_g[WebRtcIsac_kQKltSelIndGain[k]] = WebRtcIsac_kQKltLevelsGain[WebRtcIsac_kQKltOfLevelsGain[model]+index_ovr_g[k]];
+    tmpcoeffs_g[k] = WebRtcIsac_kQKltLevelsGain[index_ovr_g[k]];
   }
 }
 
 
-/* decode & dequantize LPC Coef */
+/* Decode & de-quantize LPC Coefficients. */
 int
 WebRtcIsac_DecodeLpcCoefUB(
     Bitstr*     streamdata,
@@ -2556,28 +2517,30 @@ WebRtcIsac_DecodeLpcCoefUB(
   double U[UB_LPC_ORDER * UB16_LPC_VEC_PER_FRAME];
   int err;
 
-  /* entropy decoding of quantization indices */
+  /* Entropy decoding of quantization indices. */
   switch(bandwidth)
   {
     case isac12kHz:
       {
-        err = WebRtcIsac_DecHistOneStepMulti(index_s, streamdata,
-                                             WebRtcIsac_kLpcShapeCdfMatUb12, WebRtcIsac_kLpcShapeEntropySearchUb12,
-                                             UB_LPC_ORDER * UB_LPC_VEC_PER_FRAME);
+        err = WebRtcIsac_DecHistOneStepMulti(
+            index_s, streamdata, WebRtcIsac_kLpcShapeCdfMatUb12,
+            WebRtcIsac_kLpcShapeEntropySearchUb12, UB_LPC_ORDER *
+            UB_LPC_VEC_PER_FRAME);
         break;
       }
     case isac16kHz:
       {
-        err = WebRtcIsac_DecHistOneStepMulti(index_s, streamdata,
-                                             WebRtcIsac_kLpcShapeCdfMatUb16, WebRtcIsac_kLpcShapeEntropySearchUb16,
-                                             UB_LPC_ORDER * UB16_LPC_VEC_PER_FRAME);
+        err = WebRtcIsac_DecHistOneStepMulti(
+            index_s, streamdata, WebRtcIsac_kLpcShapeCdfMatUb16,
+            WebRtcIsac_kLpcShapeEntropySearchUb16, UB_LPC_ORDER *
+            UB16_LPC_VEC_PER_FRAME);
         break;
       }
     default:
       return -1;
   }
 
-  if (err<0)  // error check
+  if (err<0)
   {
     return err;
   }
@@ -2586,13 +2549,11 @@ WebRtcIsac_DecodeLpcCoefUB(
   WebRtcIsac_CorrelateInterVec(lpcVecs, U, bandwidth);
   WebRtcIsac_CorrelateIntraVec(U, lpcVecs, bandwidth);
   WebRtcIsac_AddLarMean(lpcVecs, bandwidth);
-
-
   WebRtcIsac_DecodeLpcGainUb(percepFilterGains, streamdata);
 
   if(bandwidth == isac16kHz)
   {
-    // decode another set of Gains
+    /* Decode another set of Gains. */
     WebRtcIsac_DecodeLpcGainUb(&percepFilterGains[SUBFRAMES], streamdata);
   }
 
@@ -2637,7 +2598,6 @@ WebRtcIsac_DecodeBandwidth(
                                     kOneBitEqualProbCdf_ptr,
                                     kOneBitEqualProbInitIndex, 1) < 0)
   {
-    // error check
     return -ISAC_RANGE_ERROR_DECODE_BANDWITH;
   }
 
@@ -2664,8 +2624,7 @@ WebRtcIsac_EncodeJitterInfo(
     WebRtc_Word32 jitterIndex,
     Bitstr*     streamData)
 {
-  // This is to avoid LINUX warning until we change 'int' to
-  // 'Word32'
+  /* This is to avoid LINUX warning until we change 'int' to 'Word32'. */
   int intVar;
 
   if((jitterIndex < 0) || (jitterIndex > 1))
@@ -2673,8 +2632,8 @@ WebRtcIsac_EncodeJitterInfo(
     return -1;
   }
   intVar = (int)(jitterIndex);
-  // Use the same CDF table as for bandwidth
-  // both take two values with equal probability
+  /* Use the same CDF table as for bandwidth
+   * both take two values with equal probability.*/
   WebRtcIsac_EncHistMulti(streamData, &intVar,
                           kOneBitEqualProbCdf_ptr, 1);
   return 0;
@@ -2688,13 +2647,12 @@ WebRtcIsac_DecodeJitterInfo(
 {
   int intVar;
 
-  // Use the same CDF table as for bandwidth
-  // both take two values with equal probability
+  /* Use the same CDF table as for bandwidth
+   * both take two values with equal probability. */
   if(WebRtcIsac_DecHistOneStepMulti(&intVar, streamData,
                                     kOneBitEqualProbCdf_ptr,
                                     kOneBitEqualProbInitIndex, 1) < 0)
   {
-    // error check
     return -ISAC_RANGE_ERROR_DECODE_BANDWITH;
   }
   *jitterInfo = (WebRtc_Word16)(intVar);

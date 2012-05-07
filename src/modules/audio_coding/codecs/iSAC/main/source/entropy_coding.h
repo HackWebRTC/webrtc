@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -143,18 +143,22 @@ int WebRtcIsac_EncodeSpecUB12(
 
 
 /* decode & dequantize LPC Coef */
-int WebRtcIsac_DecodeLpcCoef(Bitstr *streamdata, double *LPCCoef, int *outmodel);
+int WebRtcIsac_DecodeLpcCoef(Bitstr *streamdata, double *LPCCoef);
 int WebRtcIsac_DecodeLpcCoefUB(
     Bitstr*     streamdata,
     double*     lpcVecs,
     double*     percepFilterGains,
     WebRtc_Word16 bandwidth);
 
-int WebRtcIsac_DecodeLpc(Bitstr *streamdata, double *LPCCoef_lo, double *LPCCoef_hi, int *outmodel);
+int WebRtcIsac_DecodeLpc(Bitstr *streamdata, double *LPCCoef_lo,
+                         double *LPCCoef_hi);
 
 /* quantize & code LPC Coef */
-void WebRtcIsac_EncodeLpcLb(double *LPCCoef_lo, double *LPCCoef_hi, int *model, double *size, Bitstr *streamdata, ISAC_SaveEncData_t* encData);
-void WebRtcIsac_EncodeLpcGainLb(double *LPCCoef_lo, double *LPCCoef_hi, int model, Bitstr *streamdata, ISAC_SaveEncData_t* encData);
+void WebRtcIsac_EncodeLpcLb(double *LPCCoef_lo, double *LPCCoef_hi,
+                            Bitstr *streamdata, ISAC_SaveEncData_t* encData);
+void WebRtcIsac_EncodeLpcGainLb(double *LPCCoef_lo, double *LPCCoef_hi,
+                                Bitstr *streamdata,
+                                ISAC_SaveEncData_t* encData);
 
 /******************************************************************************
  * WebRtcIsac_EncodeLpcUB()
@@ -241,12 +245,17 @@ int WebRtcIsac_DecodeGain2(Bitstr *streamdata, WebRtc_Word32 *Gain2);
 /* quantize & code squared Gain (input is squared gain) */
 int WebRtcIsac_EncodeGain2(WebRtc_Word32 *gain2, Bitstr *streamdata);
 
-void WebRtcIsac_EncodePitchGain(WebRtc_Word16* PitchGains_Q12, Bitstr* streamdata,  ISAC_SaveEncData_t* encData);
+void WebRtcIsac_EncodePitchGain(WebRtc_Word16* PitchGains_Q12,
+                                Bitstr* streamdata,
+                                ISAC_SaveEncData_t* encData);
 
-void WebRtcIsac_EncodePitchLag(double* PitchLags, WebRtc_Word16* PitchGain_Q12, Bitstr* streamdata, ISAC_SaveEncData_t* encData);
+void WebRtcIsac_EncodePitchLag(double* PitchLags, WebRtc_Word16* PitchGain_Q12,
+                               Bitstr* streamdata, ISAC_SaveEncData_t* encData);
 
-int WebRtcIsac_DecodePitchGain(Bitstr *streamdata, WebRtc_Word16 *PitchGain_Q12);
-int WebRtcIsac_DecodePitchLag(Bitstr *streamdata, WebRtc_Word16 *PitchGain_Q12, double *PitchLag);
+int WebRtcIsac_DecodePitchGain(Bitstr *streamdata,
+                               WebRtc_Word16 *PitchGain_Q12);
+int WebRtcIsac_DecodePitchLag(Bitstr *streamdata, WebRtc_Word16 *PitchGain_Q12,
+                              double *PitchLag);
 
 int WebRtcIsac_DecodeFrameLen(Bitstr *streamdata, WebRtc_Word16 *framelength);
 int WebRtcIsac_EncodeFrameLen(WebRtc_Word16 framelength, Bitstr *streamdata);
@@ -259,7 +268,7 @@ void WebRtcIsac_Poly2Rc(double *a, int N, double *RC);
 /* step-up */
 void WebRtcIsac_Rc2Poly(double *RC, int N, double *a);
 
-void WebRtcIsac_TranscodeLPCCoef(double *LPCCoef_lo, double *LPCCoef_hi, int model,
+void WebRtcIsac_TranscodeLPCCoef(double *LPCCoef_lo, double *LPCCoef_hi,
                                  int *index_g);
 
 

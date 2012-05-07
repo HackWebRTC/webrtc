@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -278,7 +278,6 @@ typedef struct {
   int         pitchIndex[PITCH_SUBFRAMES*2];
 
   /* LPC */
-  int         LPCmodel[2];
   int         LPCindex_s[108*2]; /* KLT_ORDER_SHAPE = 108 */
   int         LPCindex_g[12*2];  /* KLT_ORDER_GAIN = 12 */
   double      LPCcoeffs_lo[(ORDERLO+1)*SUBFRAMES*2];

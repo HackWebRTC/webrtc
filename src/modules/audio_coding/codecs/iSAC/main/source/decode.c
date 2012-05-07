@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -42,7 +42,7 @@ WebRtcIsac_DecodeLb(
     WebRtc_Word16*    current_framesamples,
     WebRtc_Word16     isRCUPayload)
 {
-  int k, model;
+  int k;
   int len, err;
   WebRtc_Word16 bandwidthInd;
 
@@ -116,7 +116,7 @@ WebRtcIsac_DecodeLb(
 
     /* decode & dequantize FiltCoef */
     err = WebRtcIsac_DecodeLpc(&ISACdecLB_obj->bitstr_obj,
-                               lo_filt_coef,hi_filt_coef, &model);
+                               lo_filt_coef,hi_filt_coef);
     if (err < 0) { // error check
       return err;
     }
@@ -166,19 +166,19 @@ WebRtcIsac_DecodeLb(
     }
 
     /* perceptual post-filtering (using normalized lattice filter) */
-    WebRtcIsac_NormLatticeFilterAr(ORDERLO,
-                                    ISACdecLB_obj->maskfiltstr_obj.PostStateLoF,
-                                    (ISACdecLB_obj->maskfiltstr_obj).PostStateLoG,
-                                    LPw_pf, lo_filt_coef, LP_dec_float);
-    WebRtcIsac_NormLatticeFilterAr(ORDERHI,
-                                    ISACdecLB_obj->maskfiltstr_obj.PostStateHiF,
-                                    (ISACdecLB_obj->maskfiltstr_obj).PostStateHiG,
-                                    HPw, hi_filt_coef, HP_dec_float);
+    WebRtcIsac_NormLatticeFilterAr(
+        ORDERLO, ISACdecLB_obj->maskfiltstr_obj.PostStateLoF,
+        (ISACdecLB_obj->maskfiltstr_obj).PostStateLoG, LPw_pf, lo_filt_coef,
+        LP_dec_float);
+    WebRtcIsac_NormLatticeFilterAr(
+        ORDERHI, ISACdecLB_obj->maskfiltstr_obj.PostStateHiF,
+        (ISACdecLB_obj->maskfiltstr_obj).PostStateHiG, HPw, hi_filt_coef,
+        HP_dec_float);
 
     /* recombine the 2 bands */
-    WebRtcIsac_FilterAndCombineFloat( LP_dec_float, HP_dec_float,
-                                      signal_out + frame_nb * processed_samples,
-                                      &ISACdecLB_obj->postfiltbankstr_obj);
+    WebRtcIsac_FilterAndCombineFloat(LP_dec_float, HP_dec_float,
+                                     signal_out + frame_nb * processed_samples,
+                                     &ISACdecLB_obj->postfiltbankstr_obj);
   }
 
   return len;
@@ -240,16 +240,16 @@ WebRtcIsac_DecodeUb16(
                       &ISACdecUB_obj->fftstr_obj);
 
   /* perceptual post-filtering (using normalized lattice filter) */
-  WebRtcIsac_NormLatticeFilterAr(UB_LPC_ORDER,
-                                  ISACdecUB_obj->maskfiltstr_obj.PostStateLoF,
-                                  (ISACdecUB_obj->maskfiltstr_obj).PostStateLoG, halfFrameFirst,
-                                  &percepFilterParam[(UB_LPC_ORDER+1)], signal_out);
+  WebRtcIsac_NormLatticeFilterAr(
+      UB_LPC_ORDER, ISACdecUB_obj->maskfiltstr_obj.PostStateLoF,
+      (ISACdecUB_obj->maskfiltstr_obj).PostStateLoG, halfFrameFirst,
+      &percepFilterParam[(UB_LPC_ORDER+1)], signal_out);
 
-  WebRtcIsac_NormLatticeFilterAr(UB_LPC_ORDER,
-                                  ISACdecUB_obj->maskfiltstr_obj.PostStateLoF,
-                                  (ISACdecUB_obj->maskfiltstr_obj).PostStateLoG, halfFrameSecond,
-                                  &percepFilterParam[(UB_LPC_ORDER + 1) * SUBFRAMES + (UB_LPC_ORDER+1)],
-                                  &signal_out[FRAMESAMPLES_HALF]);
+  WebRtcIsac_NormLatticeFilterAr(
+      UB_LPC_ORDER, ISACdecUB_obj->maskfiltstr_obj.PostStateLoF,
+      (ISACdecUB_obj->maskfiltstr_obj).PostStateLoG, halfFrameSecond,
+      &percepFilterParam[(UB_LPC_ORDER + 1) * SUBFRAMES + (UB_LPC_ORDER+1)],
+      &signal_out[FRAMESAMPLES_HALF]);
 
   return len;
 }
@@ -313,9 +313,9 @@ WebRtcIsac_DecodeUb12(
 
   /* perceptual post-filtering (using normalized lattice filter) */
   WebRtcIsac_NormLatticeFilterAr(UB_LPC_ORDER,
-                                  ISACdecUB_obj->maskfiltstr_obj.PostStateLoF,
-                                  (ISACdecUB_obj->maskfiltstr_obj).PostStateLoG, LPw,
-                                  percepFilterParam, LP_dec_float);
+                                 ISACdecUB_obj->maskfiltstr_obj.PostStateLoF,
+                                 (ISACdecUB_obj->maskfiltstr_obj).PostStateLoG,
+                                 LPw, percepFilterParam, LP_dec_float);
 
   /* Zerro for upper-band */
   memset(HP_dec_float, 0, sizeof(float) * (FRAMESAMPLES_HALF));
