@@ -19,6 +19,34 @@ TEST_F(VolumeTest, DefaultSpeakerVolumeIsAtMost255) {
   EXPECT_LE(volume, 255u);
 }
 
+TEST_F(VolumeTest, SetVolumeBeforePlayoutWorks) {
+  // This is a rather specialized test, intended to exercise some PulseAudio
+  // code. However, these conditions should be satisfied on any platform.
+  unsigned int original_volume = 0;
+  EXPECT_EQ(0, voe_volume_control_->GetSpeakerVolume(original_volume));
+  Sleep(1000);
+
+  EXPECT_EQ(0, voe_volume_control_->SetSpeakerVolume(200));
+  unsigned int volume;
+  EXPECT_EQ(0, voe_volume_control_->GetSpeakerVolume(volume));
+  EXPECT_EQ(200u, volume);
+
+  PausePlaying();
+  ResumePlaying();
+  EXPECT_EQ(0, voe_volume_control_->GetSpeakerVolume(volume));
+  // Ensure the volume has not changed after resuming playout.
+  EXPECT_EQ(200u, volume);
+
+  PausePlaying();
+  EXPECT_EQ(0, voe_volume_control_->SetSpeakerVolume(100));
+  ResumePlaying();
+  // Ensure the volume set while paused is retained.
+  EXPECT_EQ(0, voe_volume_control_->GetSpeakerVolume(volume));
+  EXPECT_EQ(100u, volume);
+
+  EXPECT_EQ(0, voe_volume_control_->SetSpeakerVolume(original_volume));
+}
+
 TEST_F(VolumeTest, ManualSetVolumeWorks) {
   unsigned int original_volume = 0;
   EXPECT_EQ(0, voe_volume_control_->GetSpeakerVolume(original_volume));
@@ -26,15 +54,22 @@ TEST_F(VolumeTest, ManualSetVolumeWorks) {
 
   TEST_LOG("Setting speaker volume to 0 out of 255.\n");
   EXPECT_EQ(0, voe_volume_control_->SetSpeakerVolume(0));
+  unsigned int volume;
+  EXPECT_EQ(0, voe_volume_control_->GetSpeakerVolume(volume));
+  EXPECT_EQ(0u, volume);
   Sleep(1000);
 
   TEST_LOG("Setting speaker volume to 100 out of 255.\n");
   EXPECT_EQ(0, voe_volume_control_->SetSpeakerVolume(100));
+  EXPECT_EQ(0, voe_volume_control_->GetSpeakerVolume(volume));
+  EXPECT_EQ(100u, volume);
   Sleep(1000);
 
   // Set the volume to 255 very briefly so we don't blast the poor user
   // listening to this. This is just to test the call succeeds.
   EXPECT_EQ(0, voe_volume_control_->SetSpeakerVolume(255));
+  EXPECT_EQ(0, voe_volume_control_->GetSpeakerVolume(volume));
+  EXPECT_EQ(255u, volume);
 
   TEST_LOG("Setting speaker volume to the original %d out of 255.\n",
       original_volume);

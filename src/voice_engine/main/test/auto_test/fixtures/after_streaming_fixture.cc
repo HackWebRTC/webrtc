@@ -22,14 +22,13 @@ AfterStreamingFixture::AfterStreamingFixture()
   EXPECT_FALSE(fake_microphone_input_file_.empty());
 
   SetUpLocalPlayback();
-  StartPlaying();
+  ResumePlaying();
+  RestartFakeMicrophone();
 }
 
 AfterStreamingFixture::~AfterStreamingFixture() {
   voe_file_->StopPlayingFileAsMicrophone(channel_);
-  voe_base_->StopSend(channel_);
-  voe_base_->StopPlayout(channel_);
-  voe_base_->StopReceive(channel_);
+  PausePlaying();
 
   voe_base_->DeleteChannel(channel_);
 }
@@ -47,6 +46,18 @@ void AfterStreamingFixture::RestartFakeMicrophone() {
         channel_, fake_microphone_input_file_.c_str(), true, true));
 }
 
+void AfterStreamingFixture::PausePlaying() {
+  EXPECT_EQ(0, voe_base_->StopSend(channel_));
+  EXPECT_EQ(0, voe_base_->StopPlayout(channel_));
+  EXPECT_EQ(0, voe_base_->StopReceive(channel_));
+}
+
+void AfterStreamingFixture::ResumePlaying() {
+  EXPECT_EQ(0, voe_base_->StartReceive(channel_));
+  EXPECT_EQ(0, voe_base_->StartPlayout(channel_));
+  EXPECT_EQ(0, voe_base_->StartSend(channel_));
+}
+
 void AfterStreamingFixture::SetUpLocalPlayback() {
   EXPECT_EQ(0, voe_base_->SetSendDestination(channel_, 8000, kLoopbackIp));
   EXPECT_EQ(0, voe_base_->SetLocalReceiver(0, 8000));
@@ -60,11 +71,4 @@ void AfterStreamingFixture::SetUpLocalPlayback() {
   strcpy(codec.plname, "PCMU");
 
   voe_codec_->SetSendCodec(channel_, codec);
-}
-
-void AfterStreamingFixture::StartPlaying() {
-  EXPECT_EQ(0, voe_base_->StartReceive(channel_));
-  EXPECT_EQ(0, voe_base_->StartPlayout(channel_));
-  EXPECT_EQ(0, voe_base_->StartSend(channel_));
-  RestartFakeMicrophone();
 }
