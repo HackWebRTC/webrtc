@@ -53,7 +53,6 @@ public:
     virtual WebRtc_Word32 SetTOS(const WebRtc_Word32 serviceType);
 
 protected:
-    void CleanUp();
     void HasIncoming();
     // Socket is free to process pending packets.
     void SetWritable();

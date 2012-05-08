@@ -301,59 +301,6 @@ void UdpSocketWindows::HasIncoming()
     }
 }
 
-void UdpSocketWindows::CleanUp()
-{
-    WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                 "UdpSocketWindows::CleanUp()");
-    _wantsIncoming = false;
-
-    if(_clientHandle != INVALID_HANDLE_VALUE)
-    {
-        assert(_filterHandle != INVALID_HANDLE_VALUE);
-        assert(_flowHandle != INVALID_HANDLE_VALUE);
-
-        if (_gtc)
-        {
-            _gtc->TcDeleteFilter(_filterHandle);
-            _gtc->TcDeleteFlow(_flowHandle);
-            _gtc->TcDeregisterClient(_clientHandle);
-        }
-
-        _clientHandle = INVALID_HANDLE_VALUE;
-        _filterHandle = INVALID_HANDLE_VALUE;
-        _flowHandle = INVALID_HANDLE_VALUE;
-    }
-
-    while(!_notSentPackets.Empty())
-    {
-        UDPPacket* packet = (UDPPacket*)_notSentPackets.First()->GetItem();
-        if(!packet)
-        {
-            break;
-        }
-        delete packet;
-        _notSentPackets.PopFront();
-    }
-
-    if (_socket != INVALID_SOCKET)
-    {
-        if (closesocket(_socket) == SOCKET_ERROR)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
-                         "closesocket() => error = %d", WSAGetLastError());
-        }
-        WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                     "WinSock::closesocket() done");
-
-        if(_addedToMgr)
-        {
-            WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                         "calling UdpSocketManager::RemoveSocket()");
-            _mgr->RemoveSocket(this);
-        }
-    }
-}
-
 void UdpSocketWindows::SetWritable()
 {
     // Try to send packets that have been queued up.
