@@ -7,7 +7,7 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'includes': [ 'src/build/common.gypi', ],
+  'includes': [ 'third_party/webrtc/build/common.gypi', ],
   'variables': {
     'peerconnection_sample': 'third_party/libjingle/source/talk/examples/peerconnection',
   },  
@@ -55,7 +55,7 @@
             },
           },
           'dependencies': [
-            'third_party/libjingle/libjingle.gyp:libjingle_app',
+            'third_party/libjingle/libjingle.gyp:libjingle_peerconnection',
           ],
           'include_dirs': [
             'src',
@@ -82,7 +82,7 @@
             '<(peerconnection_sample)/client/peer_connection_client.h',
           ],
           'dependencies': [
-            'third_party/libjingle/libjingle.gyp:libjingle_app',
+            'third_party/libjingle/libjingle.gyp:libjingle_peerconnection',
             # TODO(tommi): Switch to this and remove specific gtk dependency
             # sections below for cflags and link_settings.
             # '<(DEPTH)/build/linux/system.gyp:gtk',
