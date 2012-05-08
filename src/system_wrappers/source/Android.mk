@@ -17,6 +17,8 @@ LOCAL_MODULE := libwebrtc_system_wrappers
 LOCAL_MODULE_TAGS := optional
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES := \
+    android/cpu-features.c \
+    cpu_features_android.c \
     map.cc \
     sort.cc \
     aligned_malloc.cc \
@@ -24,7 +26,6 @@ LOCAL_SRC_FILES := \
     condition_variable.cc \
     cpu_no_op.cc \
     cpu_features.cc \
-    cpu_features_arm.c \
     cpu_info.cc \
     critical_section.cc \
     event.cc \

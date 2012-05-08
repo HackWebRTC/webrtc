@@ -167,6 +167,12 @@ LOCAL_SRC_FILES := \
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
+LOCAL_MODULE := libcpu_features_android
+LOCAL_SRC_FILES := \
+    $(MY_LIBS_PATH)/src/system_wrappers/source/libcpu_features_android.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
 LOCAL_MODULE := libaudio_device
 LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/src/modules/libaudio_device.a
@@ -304,6 +310,7 @@ LOCAL_STATIC_LIBRARIES := \
     libsignal_processing \
     libapm_util \
     libsystem_wrappers \
+    libcpu_features_android \
     libaudio_device \
     librtp_rtcp \
     libmedia_file \

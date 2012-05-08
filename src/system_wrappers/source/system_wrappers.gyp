@@ -57,6 +57,7 @@
         'condition_variable_win.cc',
         'condition_variable_win.h',
         'cpu.cc',
+        'cpu_features_android.c',
         'cpu_no_op.cc',
         'cpu_info.cc',
         'cpu_linux.cc',
@@ -109,6 +110,9 @@
         },{
           'sources!': [ 'data_log.cc', ],
         },],
+        ['OS=="android"', {
+          'dependencies': [ 'cpu_features_android', ],
+        }],
         ['OS=="linux"', {
           'link_settings': {
             'libraries': [ '-lrt', ],
@@ -150,6 +154,22 @@
     },
   ], # targets
   'conditions': [
+    ['OS=="android"', {
+      'targets': [
+        {
+          'variables': {
+            # Treat this as third-party code.
+            'chromium_code': 0,
+          },
+          'target_name': 'cpu_features_android',
+          'type': '<(library)',
+          'sources': [
+            'android/cpu-features.c',
+            'android/cpu-features.h',
+          ],
+        },
+      ],
+    }],
     ['build_with_chromium==0', {
       'targets': [
         {

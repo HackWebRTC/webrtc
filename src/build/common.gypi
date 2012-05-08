@@ -34,7 +34,6 @@
     'enable_video%': 1,
 
     # Selects fixed-point code where possible.
-    # TODO(andrew): we'd like to set this based on the target OS/architecture.
     'prefer_fixed_point%': 0,
 
     # Enable data logging. Produces text files with data logged within engines
@@ -46,6 +45,10 @@
     'build_libyuv%': 1,
 
     'conditions': [
+      ['OS=="android"', {
+        # On Android, we always prefer fixed_point to reduce CPU usage.
+        'prefer_fixed_point%': 1,
+      }],
       ['build_with_chromium==1', {
         # Exclude pulse audio on Chromium since its prerequisites don't require
         # pulse audio.
@@ -157,6 +160,9 @@
 	'msvs_disabled_warnings!': [4189,],
       }],
       ['OS=="android"', {
+        # On android, we always perfer fixed_point to reduce cpu usage
+        'prefer_fixed_point%': 1,
+
         'defines': [
           'WEBRTC_LINUX',
           'WEBRTC_ANDROID',
@@ -168,7 +174,6 @@
           # with condition and event functions in system_wrappers.
           'WEBRTC_CLOCK_TYPE_REALTIME',
           'WEBRTC_THREAD_RR',
-          'WEBRTC_ARM_INLINE_CALLS',
           'WEBRTC_ANDROID_OPENSLES',
          ],
       }],

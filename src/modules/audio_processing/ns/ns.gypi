@@ -54,6 +54,33 @@
         'nsx_core.c',
         'nsx_core.h',
       ],
+      'conditions': [
+        ['OS=="android"', {
+          'dependencies': [ 'ns_neon', ],
+          'defines': [
+            'WEBRTC_DETECT_ARM_NEON'
+          ],
+        }],
+      ],
     },
   ],
+  'conditions': [
+    ['OS=="android"', {
+      'targets': [
+        {
+          'target_name': 'ns_neon',
+          'type': '<(library)',
+          'includes': [ '../../../build/arm_neon.gypi', ],
+          'dependencies': [
+            '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',
+          ],
+          'sources': [
+            'nsx_core_neon.c',
+          ],
+        },
+      ],
+    }],
+  ],
 }
+
+

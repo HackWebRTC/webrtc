@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -15,7 +15,6 @@
 
 // Update the noise estimation information.
 static void UpdateNoiseEstimateNeon(NsxInst_t* inst, int offset) {
-  int i = 0;
   const int16_t kExp2Const = 11819; // Q13
   int16_t* ptr_noiseEstLogQuantile = NULL;
   int16_t* ptr_noiseEstQuantile = NULL;
@@ -166,7 +165,8 @@ static void NoiseEstimationNeon(NsxInst_t* inst,
     int16x8_t tmp16x8_1;
     int16x8_t tmp16x8_2;
     int16x8_t tmp16x8_3;
-    int16x8_t tmp16x8_4;
+    // Initialize tmp16x8_4 to zero to avoid compilaton error.
+    int16x8_t tmp16x8_4 = vdupq_n_s16(0);
     int16x8_t tmp16x8_5;
     int32x4_t tmp32x4;
 
@@ -499,7 +499,7 @@ static void SynthesisUpdateNeon(NsxInst_t* inst,
                                 int16_t gain_factor) {
   int16_t* ptr_real = &inst->real[0];
   int16_t* ptr_syn = &inst->synthesisBuffer[0];
-  int16_t* ptr_window = &inst->window[0];
+  const int16_t* ptr_window = &inst->window[0];
 
   // synthesis
   __asm__ __volatile__("vdup.16 d24, %0" : : "r"(gain_factor) : "d24");
@@ -647,7 +647,7 @@ static void AnalysisUpdateNeon(NsxInst_t* inst,
   }
 
   // Window data before FFT
-  int16_t* ptr_window = &inst->window[0];
+  const int16_t* ptr_window = &inst->window[0];
   ptr_out = &out[0];
   ptr_ana = &inst->analysisBuffer[0];
   for (; ptr_out < &out[inst->anaLen];) {
