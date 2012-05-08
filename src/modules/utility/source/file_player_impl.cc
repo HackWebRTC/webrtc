@@ -117,9 +117,9 @@ WebRtc_Word32 FilePlayerImpl::AudioCodec(CodecInst& audioCodec) const
 }
 
 WebRtc_Word32 FilePlayerImpl::Get10msAudioFromFile(
-    WebRtc_Word16* outBuffer,
-    WebRtc_UWord32& lengthInSamples,
-    WebRtc_UWord32 frequencyInHz)
+    int16_t* outBuffer,
+    int& lengthInSamples,
+    int frequencyInHz)
 {
     if(_codec.plfreq == 0)
     {

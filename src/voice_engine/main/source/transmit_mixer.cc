@@ -1229,8 +1229,7 @@ WebRtc_Word32 TransmitMixer::MixOrReplaceAudioWithFile(
 {
     scoped_array<WebRtc_Word16> fileBuffer(new WebRtc_Word16[640]);
 
-    WebRtc_UWord32 fileSamples(0);
-
+    int fileSamples(0);
     {
         CriticalSectionScoped cs(&_critSect);
         if (_filePlayerPtr == NULL)
@@ -1260,10 +1259,10 @@ WebRtc_Word32 TransmitMixer::MixOrReplaceAudioWithFile(
         // Currently file stream is always mono.
         // TODO(xians): Change the code when FilePlayer supports real stereo.
         Utility::MixWithSat(_audioFrame.data_,
-                            static_cast<int>(_audioFrame.num_channels_),
+                            _audioFrame.num_channels_,
                             fileBuffer.get(),
                             1,
-                            static_cast<int>(fileSamples));
+                            fileSamples);
     } else
     {
         // Replace ACM audio with file.
@@ -1272,12 +1271,11 @@ WebRtc_Word32 TransmitMixer::MixOrReplaceAudioWithFile(
         _audioFrame.UpdateFrame(-1,
                                 -1,
                                 fileBuffer.get(),
-                                static_cast<WebRtc_UWord16>(fileSamples),
+                                fileSamples,
                                 mixingFrequency,
                                 AudioFrame::kNormalSpeech,
                                 AudioFrame::kVadUnknown,
                                 1);
-
     }
     return 0;
 }

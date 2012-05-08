@@ -22,7 +22,7 @@ void SetParticipantStatistics(ParticipantStatistics* stats,
                               const AudioFrame& frame)
 {
     stats->participant = frame.id_;
-    stats->level = frame.volume_;
+    stats->level = 0;  // TODO(andrew): to what should this be set?
 }
 }  // namespace
 
@@ -1005,9 +1005,9 @@ void AudioConferenceMixerImpl::UpdateVADPositiveParticipants(
             _scratchVadPositiveParticipants[
                 _scratchVadPositiveParticipantsAmount].participant =
                 audioFrame->id_;
+            // TODO(andrew): to what should this be set?
             _scratchVadPositiveParticipants[
-                _scratchVadPositiveParticipantsAmount].level =
-                audioFrame->volume_;
+                _scratchVadPositiveParticipantsAmount].level = 0;
             _scratchVadPositiveParticipantsAmount++;
         }
         item = mixList.Next(item);

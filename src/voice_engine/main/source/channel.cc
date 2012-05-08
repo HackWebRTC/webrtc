@@ -6142,11 +6142,13 @@ Channel::GetRtpRtcp(RtpRtcp* &rtpRtcpModule) const
     return 0;
 }
 
+// TODO(andrew): refactor Mix functions here and in transmit_mixer.cc to use
+// a shared helper.
 WebRtc_Word32
 Channel::MixOrReplaceAudioWithFile(const int mixingFrequency)
 {
     scoped_array<WebRtc_Word16> fileBuffer(new WebRtc_Word16[640]);
-    WebRtc_UWord32 fileSamples(0);
+    int fileSamples(0);
 
     {
         CriticalSectionScoped cs(&_fileCritSect);
@@ -6186,10 +6188,10 @@ Channel::MixOrReplaceAudioWithFile(const int mixingFrequency)
         // Currently file stream is always mono.
         // TODO(xians): Change the code when FilePlayer supports real stereo.
         Utility::MixWithSat(_audioFrame.data_,
-                            static_cast<int>(_audioFrame.num_channels_),
+                            _audioFrame.num_channels_,
                             fileBuffer.get(),
                             1,
-                            static_cast<int>(fileSamples));
+                            fileSamples);
     }
     else
     {
@@ -6199,7 +6201,7 @@ Channel::MixOrReplaceAudioWithFile(const int mixingFrequency)
         _audioFrame.UpdateFrame(_channelId,
                                 -1,
                                 fileBuffer.get(),
-                                static_cast<WebRtc_UWord16>(fileSamples),
+                                fileSamples,
                                 mixingFrequency,
                                 AudioFrame::kNormalSpeech,
                                 AudioFrame::kVadUnknown,
@@ -6216,7 +6218,7 @@ Channel::MixAudioWithFile(AudioFrame& audioFrame,
     assert(mixingFrequency <= 32000);
 
     scoped_array<WebRtc_Word16> fileBuffer(new WebRtc_Word16[640]);
-    WebRtc_UWord32 fileSamples(0);
+    int fileSamples(0);
 
     {
         CriticalSectionScoped cs(&_fileCritSect);
@@ -6246,10 +6248,10 @@ Channel::MixAudioWithFile(AudioFrame& audioFrame,
         // Currently file stream is always mono.
         // TODO(xians): Change the code when FilePlayer supports real stereo.
         Utility::MixWithSat(audioFrame.data_,
-                            static_cast<int>(audioFrame.num_channels_),
+                            audioFrame.num_channels_,
                             fileBuffer.get(),
                             1,
-                            static_cast<int>(fileSamples));
+                            fileSamples);
     }
     else
     {

@@ -256,7 +256,7 @@ WebRtc_Word32 VoEBaseImpl::NeedMorePlayData(
     _shared->output_mixer()->GetMixedAudio(samplesPerSec, nChannels,
         _audioFrame);
 
-    assert(nSamples == _audioFrame.samples_per_channel_);
+    assert(static_cast<int>(nSamples) == _audioFrame.samples_per_channel_);
     assert(samplesPerSec ==
         static_cast<WebRtc_UWord32>(_audioFrame.sample_rate_hz_));
 

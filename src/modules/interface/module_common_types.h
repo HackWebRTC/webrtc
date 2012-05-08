@@ -694,35 +694,23 @@ VideoFrame::Free()
 }
 
 
-/*************************************************
+/* This class holds up to 60 ms of super-wideband (32 kHz) stereo audio. It
+ * allows for adding and subtracting frames while keeping track of the resulting
+ * states.
  *
- * AudioFrame class
+ * Notes
+ * - The total number of samples in |data_| is
+ *   samples_per_channel_ * num_channels_
  *
- * The AudioFrame class holds up to 60 ms wideband
- * audio. It allows for adding and subtracting frames
- * while keeping track of the resulting states.
+ * - Stereo data is interleaved starting with the left channel.
  *
- * Note
- * - The +operator assume that you would never add
- *   exact opposite frames when deciding the resulting
- *   state. To do this use the -operator.
- *
- * - num_channels_ of 1 indicated mono, and 2
- *   indicates stereo.
- *
- * - samples_per_channel_ is the number of
- *   samples per channel. Therefore, the total
- *   number of samples in data_ is
- *   (samples_per_channel_ * num_channels_).
- *
- * - Stereo data is stored in interleaved fashion
- *   starting with the left channel.
- *
- *************************************************/
+ * - The +operator assume that you would never add exactly opposite frames when
+ *   deciding the resulting state. To do this use the -operator.
+ */
 class AudioFrame
 {
 public:
-    enum { kMaxDataSizeSamples = 3840 }; // stereo 32KHz 60ms 2*32*60
+    enum { kMaxDataSizeSamples = 3840 };  // stereo, 32 kHz, 60ms (2*32*60)
 
     enum VADActivity
     {
@@ -742,39 +730,35 @@ public:
     AudioFrame();
     virtual ~AudioFrame();
 
-    WebRtc_Word32 UpdateFrame(
-        const WebRtc_Word32  id,
-        const WebRtc_UWord32 timeStamp,
-        const WebRtc_Word16* payloadData,
-        const WebRtc_UWord16 payloadDataLengthInSamples,
-        const int frequencyInHz,
-        const SpeechType     speechType,
-        const VADActivity    vadActivity,
-        const WebRtc_UWord8  audioChannel = 1,
-        const WebRtc_Word32  volume = -1,
-        const WebRtc_Word32  energy = -1);
+    int UpdateFrame(
+        int id,
+        uint32_t timestamp,
+        const int16_t* data,
+        int samples_per_channel,
+        int sample_rate_hz,
+        SpeechType speech_type,
+        VADActivity vad_activity,
+        int num_channels = 1,
+        uint32_t energy = -1);
 
     AudioFrame& Append(const AudioFrame& rhs);
 
     void Mute();
 
     AudioFrame& operator=(const AudioFrame& rhs);
-    AudioFrame& operator>>=(const WebRtc_Word32 rhs);
+    AudioFrame& operator>>=(const int rhs);
     AudioFrame& operator+=(const AudioFrame& rhs);
     AudioFrame& operator-=(const AudioFrame& rhs);
 
-    // TODO(andrew): clean up types.
-    WebRtc_Word32 id_;
-    WebRtc_UWord32 timestamp_;
-
-    WebRtc_Word16 data_[kMaxDataSizeSamples];
-    WebRtc_UWord16 samples_per_channel_;
+    int id_;
+    uint32_t timestamp_;
+    int16_t data_[kMaxDataSizeSamples];
+    int samples_per_channel_;
     int sample_rate_hz_;
-    WebRtc_UWord8 num_channels_;
+    int num_channels_;
     SpeechType speech_type_;
     VADActivity vad_activity_;
-    WebRtc_UWord32 energy_;
-    WebRtc_Word32 volume_;  // TODO(andrew): investigate removing.
+    uint32_t energy_;
 };
 
 inline
@@ -788,8 +772,7 @@ AudioFrame::AudioFrame()
     num_channels_(1),
     speech_type_(kUndefined),
     vad_activity_(kVadUnknown),
-    energy_(0xffffffff),
-    volume_(0xffffffff)
+    energy_(0xffffffff)
 {
 }
 
@@ -799,44 +782,42 @@ AudioFrame::~AudioFrame()
 }
 
 inline
-WebRtc_Word32
+int
 AudioFrame::UpdateFrame(
-    const WebRtc_Word32  id,
-    const WebRtc_UWord32 timeStamp,
-    const WebRtc_Word16* payloadData,
-    const WebRtc_UWord16 payloadDataLengthInSamples,
-    const int frequencyInHz,
-    const SpeechType     speechType,
-    const VADActivity    vadActivity,
-    const WebRtc_UWord8  audioChannel,
-    const WebRtc_Word32  volume,
-    const WebRtc_Word32  energy)
+    int id,
+    uint32_t timestamp,
+    const int16_t* data,
+    int samples_per_channel,
+    int sample_rate_hz,
+    SpeechType speech_type,
+    VADActivity vad_activity,
+    int num_channels,
+    uint32_t energy)
 {
     id_            = id;
-    timestamp_     = timeStamp;
-    sample_rate_hz_ = frequencyInHz;
-    speech_type_    = speechType;
-    vad_activity_   = vadActivity;
-    volume_        = volume;
-    num_channels_  = audioChannel;
+    timestamp_     = timestamp;
+    sample_rate_hz_ = sample_rate_hz;
+    speech_type_    = speech_type;
+    vad_activity_   = vad_activity;
+    num_channels_  = num_channels;
     energy_        = energy;
 
-    if((payloadDataLengthInSamples > kMaxDataSizeSamples) ||
-        (audioChannel > 2) || (audioChannel < 1))
+    if((samples_per_channel > kMaxDataSizeSamples) ||
+        (num_channels > 2) || (num_channels < 1))
     {
         samples_per_channel_ = 0;
         return -1;
     }
-    samples_per_channel_ = payloadDataLengthInSamples;
-    if(payloadData != NULL)
+    samples_per_channel_ = samples_per_channel;
+    if(data != NULL)
     {
-        memcpy(data_, payloadData, sizeof(WebRtc_Word16) *
-            payloadDataLengthInSamples * num_channels_);
+        memcpy(data_, data, sizeof(int16_t) *
+            samples_per_channel * num_channels_);
     }
     else
     {
-        memset(data_,0,sizeof(WebRtc_Word16) *
-            payloadDataLengthInSamples * num_channels_);
+        memset(data_,0,sizeof(int16_t) *
+            samples_per_channel * num_channels_);
     }
     return 0;
 }
@@ -845,7 +826,7 @@ inline
 void
 AudioFrame::Mute()
 {
-  memset(data_, 0, samples_per_channel_ * sizeof(WebRtc_Word16));
+  memset(data_, 0, samples_per_channel_ * num_channels_ * sizeof(int16_t));
 }
 
 inline
@@ -868,20 +849,19 @@ AudioFrame::operator=(const AudioFrame& rhs)
     sample_rate_hz_    = rhs.sample_rate_hz_;
     speech_type_       = rhs.speech_type_;
     vad_activity_      = rhs.vad_activity_;
-    volume_           = rhs.volume_;
     num_channels_     = rhs.num_channels_;
     energy_           = rhs.energy_;
 
     samples_per_channel_ = rhs.samples_per_channel_;
     memcpy(data_, rhs.data_,
-        sizeof(WebRtc_Word16) * rhs.samples_per_channel_ * num_channels_);
+        sizeof(int16_t) * rhs.samples_per_channel_ * num_channels_);
 
     return *this;
 }
 
 inline
 AudioFrame&
-AudioFrame::operator>>=(const WebRtc_Word32 rhs)
+AudioFrame::operator>>=(const int rhs)
 {
     assert((num_channels_ > 0) && (num_channels_ < 3));
     if((num_channels_ > 2) ||
@@ -889,9 +869,9 @@ AudioFrame::operator>>=(const WebRtc_Word32 rhs)
     {
         return *this;
     }
-    for(WebRtc_UWord16 i = 0; i < samples_per_channel_ * num_channels_; i++)
+    for(int i = 0; i < samples_per_channel_ * num_channels_; i++)
     {
-        data_[i] = WebRtc_Word16(data_[i] >> rhs);
+        data_[i] = static_cast<int16_t>(data_[i] >> rhs);
     }
     return *this;
 }
@@ -926,8 +906,8 @@ AudioFrame::Append(const AudioFrame& rhs)
         speech_type_ = kUndefined;
     }
 
-    WebRtc_UWord16 offset = samples_per_channel_ * num_channels_;
-    for(WebRtc_UWord16 i = 0;
+    int offset = samples_per_channel_ * num_channels_;
+    for(int i = 0;
         i < rhs.samples_per_channel_ * rhs.num_channels_;
         i++)
     {
@@ -986,14 +966,14 @@ AudioFrame::operator+=(const AudioFrame& rhs)
     if(noPrevData)
     {
         memcpy(data_, rhs.data_,
-          sizeof(WebRtc_Word16) * rhs.samples_per_channel_ * num_channels_);
+          sizeof(int16_t) * rhs.samples_per_channel_ * num_channels_);
     } else
     {
       // IMPROVEMENT this can be done very fast in assembly
-      for(WebRtc_UWord16 i = 0; i < samples_per_channel_ * num_channels_; i++)
+      for(int i = 0; i < samples_per_channel_ * num_channels_; i++)
       {
-          WebRtc_Word32 wrapGuard = (WebRtc_Word32)data_[i] +
-                  (WebRtc_Word32)rhs.data_[i];
+          int32_t wrapGuard = static_cast<int32_t>(data_[i]) +
+              static_cast<int32_t>(rhs.data_[i]);
           if(wrapGuard < -32768)
           {
               data_[i] = -32768;
@@ -1002,12 +982,11 @@ AudioFrame::operator+=(const AudioFrame& rhs)
               data_[i] = 32767;
           }else
           {
-              data_[i] = (WebRtc_Word16)wrapGuard;
+              data_[i] = (int16_t)wrapGuard;
           }
       }
     }
     energy_ = 0xffffffff;
-    volume_ = 0xffffffff;
     return *this;
 }
 
@@ -1034,10 +1013,10 @@ AudioFrame::operator-=(const AudioFrame& rhs)
     }
     speech_type_ = kUndefined;
 
-    for(WebRtc_UWord16 i = 0; i < samples_per_channel_ * num_channels_; i++)
+    for(int i = 0; i < samples_per_channel_ * num_channels_; i++)
     {
-        WebRtc_Word32 wrapGuard = (WebRtc_Word32)data_[i] -
-                (WebRtc_Word32)rhs.data_[i];
+        int32_t wrapGuard = static_cast<int32_t>(data_[i]) -
+            static_cast<int32_t>(rhs.data_[i]);
         if(wrapGuard < -32768)
         {
             data_[i] = -32768;
@@ -1048,11 +1027,10 @@ AudioFrame::operator-=(const AudioFrame& rhs)
         }
         else
         {
-            data_[i] = (WebRtc_Word16)wrapGuard;
+            data_[i] = (int16_t)wrapGuard;
         }
     }
     energy_ = 0xffffffff;
-    volume_ = 0xffffffff;
     return *this;
 }
 

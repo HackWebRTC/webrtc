@@ -123,7 +123,7 @@ class ViEFilePlayer
   ThreadWrapper* decode_thread_;
   EventWrapper* decode_event_;
   WebRtc_Word16 decoded_audio_[kMaxDecodedAudioLength];
-  WebRtc_UWord32 decoded_audio_length_;
+  int decoded_audio_length_;
 
   // Trick - list containing VoE buffer reading this file. Used if multiple
   // audio channels are sending.

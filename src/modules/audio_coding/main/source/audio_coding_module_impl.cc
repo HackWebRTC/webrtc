@@ -1845,7 +1845,6 @@ WebRtc_Word32 AudioCodingModuleImpl::PlayoutData10Ms(
   }
 
   audio_frame.id_ = _id;
-  audio_frame.volume_ = -1;
   audio_frame.energy_ = -1;
   audio_frame.timestamp_ = 0;
 
