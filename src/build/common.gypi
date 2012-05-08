@@ -156,8 +156,8 @@
         # http://code.google.com/p/webrtc/issues/detail?id=261 is solved.
         'msvs_disabled_warnings': [4389, 4373],
 
-	# Re-enable some warnings that Chromium disables.
-	'msvs_disabled_warnings!': [4189,],
+        # Re-enable some warnings that Chromium disables.
+        'msvs_disabled_warnings!': [4189,],
       }],
       ['OS=="android"', {
         # On android, we always perfer fixed_point to reduce cpu usage

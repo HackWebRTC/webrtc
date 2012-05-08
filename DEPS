@@ -89,9 +89,8 @@ deps_os = {
 
 hooks = [
   {
-    # Create a supplement.gypi file under trunk/.  This file will be picked up
-    # by gyp and we use it to set Chromium related variables (inside_chromium_build)
-    # to 0 and enable the standalone build.
+    # Create a supplement.gypi file under trunk/src.  This file will be picked
+    # up by gyp and used to enable the standalone build.
     "pattern": ".",
     "action": ["python", "trunk/tools/create_supplement_gypi.py", "trunk/src/supplement.gypi"],
   },
