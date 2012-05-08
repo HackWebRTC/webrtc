@@ -128,9 +128,7 @@ AudioDeviceLinuxPulse::AudioDeviceLinuxPulse(const WebRtc_Word32 id) :
     _recStream(NULL),
     _playStream(NULL),
     _recStreamFlags(0),
-    _playStreamFlags(0),
-    _playBufferAttr(),
-    _recBufferAttr()
+    _playStreamFlags(0)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, id,
                  "%s created", __FUNCTION__);
