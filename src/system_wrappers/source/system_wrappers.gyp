@@ -57,7 +57,6 @@
         'condition_variable_win.cc',
         'condition_variable_win.h',
         'cpu.cc',
-        'cpu_features_android.c',
         'cpu_no_op.cc',
         'cpu_info.cc',
         'cpu_linux.cc',
@@ -166,6 +165,9 @@
           'sources': [
             'android/cpu-features.c',
             'android/cpu-features.h',
+            # TODO(leozwang): Ideally we want to audomatically exclude .c files
+            # as with .cc files, gyp currently only excludes .cc files.
+            'cpu_features_android.c',
           ],
         },
       ],
