@@ -50,7 +50,7 @@ import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.TabHost.TabSpec;
 import android.view.OrientationEventListener;
 
-public class ViEAndroidDemo extends TabActivity implements IViEAndroidCallback,
+public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                                                 View.OnClickListener,
                                                 OnItemSelectedListener {
     private ViEAndroidJavaAPI ViEAndroidAPI = null;
@@ -552,7 +552,7 @@ public class ViEAndroidDemo extends TabActivity implements IViEAndroidCallback,
     private void SetupVoE() {
         // Create VoiceEngine
         // Error logging is done in native API wrapper
-        ViEAndroidAPI.VoE_Create(this);
+        ViEAndroidAPI.VoE_Create();
 
         // Initialize
         if (0 != ViEAndroidAPI.VoE_Init(enableTrace)) {
