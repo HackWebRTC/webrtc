@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -103,7 +103,8 @@ public:
 
 
     // Sets the VAD/DTX (silence suppression) status and |mode| for a
-    // specified |channel|.
+    // specified |channel|. Disabling VAD (through |enable|) will also disable
+    // DTX; it is not necessary to explictly set |disableDTX| in this case.
     virtual int SetVADStatus(int channel, bool enable,
                              VadModes mode = kVadConventional,
                              bool disableDTX = false) = 0;
