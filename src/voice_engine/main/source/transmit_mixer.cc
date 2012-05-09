@@ -190,6 +190,7 @@ TransmitMixer::TransmitMixer(const WebRtc_UWord32 instanceId) :
     _costPerTyping(100), // Penalty added for a typing + activity coincide
     _reportingThreshold(300), // Threshold for _penaltyCounter
     _penaltyDecay(1), // how much we reduce _penaltyCounter every 10 ms.
+    _typeEventDelay(2), // how "old" event we check for
 #endif
     _saturationWarning(0),
     _noiseWarning(0),
@@ -1373,6 +1374,7 @@ WebRtc_Word32 TransmitMixer::APMProcessStream(
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
 int TransmitMixer::TypingDetection()
 {
+
     // We let the VAD determine if we're using this feature or not.
     if (_audioFrame.vad_activity_ == AudioFrame::kVadUnknown)
     {
@@ -1401,7 +1403,8 @@ int TransmitMixer::TypingDetection()
       ++_timeSinceLastTyping;
     }
 
-    if (keyPressed && (_audioFrame.vad_activity_ == AudioFrame::kVadActive)
+    if ((_timeSinceLastTyping < _typeEventDelay)
+        && (_audioFrame.vad_activity_ == AudioFrame::kVadActive)
         && (_timeActive < _timeWindow))
     {
         _penaltyCounter += _costPerTyping;
@@ -1452,7 +1455,8 @@ int TransmitMixer::TimeSinceLastTyping(int &seconds)
 int TransmitMixer::SetTypingDetectionParameters(int timeWindow,
                                                 int costPerTyping,
                                                 int reportingThreshold,
-                                                int penaltyDecay)
+                                                int penaltyDecay,
+                                                int typeEventDelay)
 {
   if(timeWindow != 0)
     _timeWindow = timeWindow;
@@ -1462,6 +1466,9 @@ int TransmitMixer::SetTypingDetectionParameters(int timeWindow,
     _reportingThreshold = reportingThreshold;
   if(penaltyDecay != 0)
     _penaltyDecay = penaltyDecay;
+  if(_typeEventDelay != 0)
+    _penaltyDecay = _typeEventDelay;
+
 
   return(0);
 }

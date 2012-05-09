@@ -91,7 +91,8 @@ class VoEAudioProcessingImpl : public VoEAudioProcessing {
   virtual int SetTypingDetectionParameters(int timeWindow,
                                            int costPerTyping,
                                            int reportingThreshold,
-                                           int penaltyDecay);
+                                           int penaltyDecay,
+                                           int typeEventDelay);
 
   virtual void EnableStereoChannelSwapping(bool enable);
   virtual bool IsStereoChannelSwappingEnabled();

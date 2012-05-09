@@ -1077,7 +1077,8 @@ int VoEAudioProcessingImpl::TimeSinceLastTyping(int &seconds) {
 int VoEAudioProcessingImpl::SetTypingDetectionParameters(int timeWindow,
                                                          int costPerTyping,
                                                          int reportingThreshold,
-                                                         int penaltyDecay) {
+                                                         int penaltyDecay,
+                                                         int typeEventDelay) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetTypingDetectionParameters()");
   ANDROID_NOT_SUPPORTED(_shared->statistics());
@@ -1089,7 +1090,7 @@ int VoEAudioProcessingImpl::SetTypingDetectionParameters(int timeWindow,
     return -1;
   }
   return (_shared->transmit_mixer()->SetTypingDetectionParameters(timeWindow,
-      costPerTyping, reportingThreshold, penaltyDecay));
+      costPerTyping, reportingThreshold, penaltyDecay, typeEventDelay));
 
 #else
   _shared->statistics().SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,

@@ -154,7 +154,8 @@ public:
     int SetTypingDetectionParameters(int timeWindow,
                                      int costPerTyping,
                                      int reportingThreshold,
-                                     int penaltyDecay);
+                                     int penaltyDecay,
+                                     int typeEventDelay);
 #endif
 
   void EnableStereoChannelSwapping(bool enable);
@@ -217,6 +218,7 @@ private:
     int _costPerTyping; // Penalty added for a typing + activity coincide.
     int _reportingThreshold; // Threshold for _penaltyCounter.
     int _penaltyDecay; // How much we reduce _penaltyCounter every 10 ms.
+    int _typeEventDelay; // How old typing events we allow
 
 #endif
     WebRtc_UWord32 _saturationWarning;
