@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -31,24 +31,20 @@ class RtpRtcpVideoTest : public ::testing::Test {
   ~RtpRtcpVideoTest() {}
 
   virtual void SetUp() {
-    transport = new LoopBackTransport();
-    receiver = new RtpReceiver();
-    RtpRtcp::Configuration configuration;
-    configuration.id = test_id;
-    configuration.audio = false;
-    configuration.clock = &fake_clock;
-    configuration.incoming_data = receiver;
-    configuration.outgoing_transport = transport;
-
-    video_module = RtpRtcp::CreateRtpRtcp(configuration);
-
+    video_module = RtpRtcp::CreateRtpRtcp(test_id, false, &fake_clock);
+    EXPECT_EQ(0, video_module->InitReceiver());
+    EXPECT_EQ(0, video_module->InitSender());
     EXPECT_EQ(0, video_module->SetRTCPStatus(kRtcpCompound));
     EXPECT_EQ(0, video_module->SetSSRC(test_ssrc));
     EXPECT_EQ(0, video_module->SetNACKStatus(kNackRtcp));
     EXPECT_EQ(0, video_module->SetStorePacketsStatus(true));
     EXPECT_EQ(0, video_module->SetSendingStatus(true));
 
-    transport->SetSendModule(video_module);
+    transport = new LoopBackTransport(video_module);
+    EXPECT_EQ(0, video_module->RegisterSendTransport(transport));
+
+    receiver = new RtpReceiver();
+    EXPECT_EQ(0, video_module->RegisterIncomingDataCallback(receiver));
 
     VideoCodec video_codec;
     memset(&video_codec, 0, sizeof(video_codec));
@@ -66,7 +62,7 @@ class RtpRtcpVideoTest : public ::testing::Test {
   }
 
   virtual void TearDown() {
-    delete video_module;
+    RtpRtcp::DestroyRtpRtcp(video_module);
     delete transport;
     delete receiver;
   }

@@ -24,6 +24,8 @@ using namespace webrtc;
 
 class VerifyingAudioReceiver : public RtpData {
  public:
+  VerifyingAudioReceiver(RtpRtcp* rtpRtcpModule) {}
+
   virtual WebRtc_Word32 OnReceivedPayloadData(
       const WebRtc_UWord8* payloadData,
       const WebRtc_UWord16 payloadSize,
@@ -130,41 +132,30 @@ class RtpRtcpAudioTest : public ::testing::Test {
   ~RtpRtcpAudioTest() {}
 
   virtual void SetUp() {
-    audioFeedback = new AudioFeedback();
-    data_receiver1 = new VerifyingAudioReceiver();
-    data_receiver2 = new VerifyingAudioReceiver();
+    module1 = RtpRtcp::CreateRtpRtcp(test_id, true, &fake_clock);
+    module2 = RtpRtcp::CreateRtpRtcp(test_id+1, true, &fake_clock);
+
+    EXPECT_EQ(0, module1->InitReceiver());
+    EXPECT_EQ(0, module1->InitSender());
+    EXPECT_EQ(0, module2->InitReceiver());
+    EXPECT_EQ(0, module2->InitSender());
+    data_receiver1 = new VerifyingAudioReceiver(module1);
+    EXPECT_EQ(0, module1->RegisterIncomingDataCallback(data_receiver1));
+    data_receiver2 = new VerifyingAudioReceiver(module2);
+    EXPECT_EQ(0, module2->RegisterIncomingDataCallback(data_receiver2));
+    transport1 = new LoopBackTransport(module2);
+    EXPECT_EQ(0, module1->RegisterSendTransport(transport1));
+    transport2 = new LoopBackTransport(module1);
+    EXPECT_EQ(0, module2->RegisterSendTransport(transport2));
     rtp_callback = new RTPCallback();
-    transport1 = new LoopBackTransport();
-    transport2 = new LoopBackTransport();
-
-    RtpRtcp::Configuration configuration;
-    configuration.id = test_id;
-    configuration.audio = true;
-    configuration.clock = &fake_clock;
-    configuration.incoming_data = data_receiver1;
-    configuration.outgoing_transport = transport1;
-    configuration.audio_messages = audioFeedback;
-
-    module1 = RtpRtcp::CreateRtpRtcp(configuration);
-
-    configuration.id = test_id + 1;
-    configuration.incoming_data = data_receiver2;
-    configuration.incoming_messages = rtp_callback;
-    configuration.outgoing_transport = transport2;
-    configuration.audio_messages = audioFeedback;
-
-    module2 = RtpRtcp::CreateRtpRtcp(configuration);
-
-    transport1->SetSendModule(module2);
-    transport2->SetSendModule(module1);
+    EXPECT_EQ(0, module2->RegisterIncomingRTPCallback(rtp_callback));
   }
 
   virtual void TearDown() {
-    delete module1;
-    delete module2;
+    RtpRtcp::DestroyRtpRtcp(module1);
+    RtpRtcp::DestroyRtpRtcp(module2);
     delete transport1;
     delete transport2;
-    delete audioFeedback;
     delete data_receiver1;
     delete data_receiver2;
     delete rtp_callback;
@@ -177,7 +168,6 @@ class RtpRtcpAudioTest : public ::testing::Test {
   VerifyingAudioReceiver* data_receiver2;
   LoopBackTransport* transport1;
   LoopBackTransport* transport2;
-  AudioFeedback* audioFeedback;
   RTPCallback* rtp_callback;
   WebRtc_UWord32 test_ssrc;
   WebRtc_UWord32 test_timestamp;
@@ -292,6 +282,9 @@ TEST_F(RtpRtcpAudioTest, DTMF) {
   EXPECT_EQ(0, module1->SetSSRC(test_ssrc));
   EXPECT_EQ(0, module1->SetStartTimestamp(test_timestamp));
   EXPECT_EQ(0, module1->SetSendingStatus(true));
+
+  AudioFeedback* audioFeedback = new AudioFeedback();
+  EXPECT_EQ(0, module2->RegisterAudioCallback(audioFeedback));
 
   // Prepare for DTMF.
   voiceCodec.pltype = 97;

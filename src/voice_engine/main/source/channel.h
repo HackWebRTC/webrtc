@@ -493,7 +493,7 @@ public:
     }
     RtpRtcp* RtpRtcpModulePtr() const
     {
-        return _rtpRtcpModule.get();
+        return &_rtpRtcpModule;
     }
     WebRtc_Word8 OutputEnergyLevel() const
     {
@@ -534,7 +534,7 @@ private:
     WebRtc_Word32 _channelId;
 
 private:
-    scoped_ptr<RtpRtcp> _rtpRtcpModule;
+    RtpRtcp& _rtpRtcpModule;
     AudioCodingModule& _audioCodingModule;
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
     WebRtc_UWord8 _numSocketThreads;

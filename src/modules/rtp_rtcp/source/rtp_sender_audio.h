@@ -28,6 +28,10 @@ public:
                    RTPSenderInterface* rtpSender);
     virtual ~RTPSenderAudio();
 
+    void ChangeUniqueId(const WebRtc_Word32 id);
+
+    WebRtc_Word32 Init();
+
     WebRtc_Word32 RegisterAudioPayload(
         const char payloadName[RTP_PAYLOAD_NAME_SIZE],
         const WebRtc_Word8 payloadType,

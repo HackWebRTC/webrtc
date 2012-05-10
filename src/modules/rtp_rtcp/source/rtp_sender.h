@@ -68,6 +68,9 @@ public:
     RTPSender(const WebRtc_Word32 id, const bool audio, RtpRtcpClock* clock);
     virtual ~RTPSender();
 
+    WebRtc_Word32 Init(const WebRtc_UWord32 remoteSSRC);
+    void ChangeUniqueId(const WebRtc_Word32 id);
+
     void ProcessBitrate();
     void ProcessSendToNetwork();
 

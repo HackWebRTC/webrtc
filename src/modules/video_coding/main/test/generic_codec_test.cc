@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -398,14 +398,10 @@ GenericCodecTest::Perform(CmdArgs& args)
     /********************************/
     /* Encoder Packet Size Test     */
     /********************************/
+    RtpRtcp& rtpModule = *RtpRtcp::CreateRtpRtcp(1, false);
+    TEST(rtpModule.InitSender() == 0);
     RTPSendCallback_SizeTest sendCallback;
-
-    RtpRtcp::Configuration configuration;
-    configuration.id = 1;
-    configuration.audio = false;
-    configuration.outgoing_transport = &sendCallback;
-
-    RtpRtcp& rtpModule = *RtpRtcp::CreateRtpRtcp(configuration);
+    rtpModule.RegisterSendTransport(&sendCallback);
 
     VCMRTPEncodeCompleteCallback encCompleteCallback(&rtpModule);
     _vcm->InitializeSender();
@@ -489,7 +485,7 @@ GenericCodecTest::Perform(CmdArgs& args)
         IncrementDebugClock(_frameRate);
     } // first frame encoded
 
-    delete &rtpModule;
+    RtpRtcp::DestroyRtpRtcp(&rtpModule);
     Print();
     delete tmpBuffer;
     delete _decodeCallback;

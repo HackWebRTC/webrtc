@@ -23,13 +23,12 @@ enum { kMaxVideoDiffMs = 80 };
 enum { kMaxAudioDiffMs = 80 };
 enum { kMaxDelay = 1500 };
 
-const float FracMS = 4.294967296E6f;
-
-ViESyncModule::ViESyncModule(const int32_t channel_id, VideoCodingModule* vcm)
+ViESyncModule::ViESyncModule(int id, VideoCodingModule& vcm,
+                             RtpRtcp& rtcp_module)
     : data_cs_(CriticalSectionWrapper::CreateCriticalSection()),
-      channel_id_(channel_id),
+      id_(id),
       vcm_(vcm),
-      video_rtcp_module_(NULL),
+      rtcp_module_(rtcp_module),
       voe_channel_id_(-1),
       voe_sync_interface_(NULL),
       last_sync_time_(TickTime::Now()) {
@@ -38,13 +37,12 @@ ViESyncModule::ViESyncModule(const int32_t channel_id, VideoCodingModule* vcm)
 ViESyncModule::~ViESyncModule() {
 }
 
-int ViESyncModule::ConfigureSync(int voe_channel_id,
-                                 VoEVideoSync* voe_sync_interface,
-                                 RtpRtcp* video_rtcp_module) {
+int ViESyncModule::SetVoiceChannel(int voe_channel_id,
+                                   VoEVideoSync* voe_sync_interface) {
   CriticalSectionScoped cs(data_cs_.get());
   voe_channel_id_ = voe_channel_id;
   voe_sync_interface_ = voe_sync_interface;
-  video_rtcp_module_ = video_rtcp_module;
+  rtcp_module_.DeRegisterSyncModule();
 
   if (!voe_sync_interface) {
     voe_channel_id_ = -1;
@@ -54,11 +52,42 @@ int ViESyncModule::ConfigureSync(int voe_channel_id,
     }
     return 0;
   }
-  return 0;
+  RtpRtcp* voe_rtp_rtcp = NULL;
+  voe_sync_interface->GetRtpRtcp(voe_channel_id_, voe_rtp_rtcp);
+  return rtcp_module_.RegisterSyncModule(voe_rtp_rtcp);
 }
 
 int ViESyncModule::VoiceChannel() {
   return voe_channel_id_;
+}
+
+void ViESyncModule::SetNetworkDelay(int network_delay) {
+  channel_delay_.network_delay = network_delay;
+}
+
+WebRtc_Word32 ViESyncModule::Version(char* version,
+                                     WebRtc_UWord32& remaining_buffer_in_bytes,
+                                     WebRtc_UWord32& position) const {
+  if (version == NULL) {
+    WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo, -1,
+                 "Invalid in argument to ViESyncModule Version()");
+    return -1;
+  }
+  char our_version[] = "ViESyncModule 1.1.0";
+  WebRtc_UWord32 our_length = (WebRtc_UWord32) strlen(our_version);
+  if (remaining_buffer_in_bytes < our_length + 1) {
+    return -1;
+  }
+  memcpy(version, our_version, our_length);
+  version[our_length] = '\0';
+  remaining_buffer_in_bytes -= (our_length + 1);
+  position += (our_length + 1);
+  return 0;
+}
+
+WebRtc_Word32 ViESyncModule::ChangeUniqueId(const WebRtc_Word32 id) {
+  id_ = id;
+  return 0;
 }
 
 WebRtc_Word32 ViESyncModule::TimeUntilNextProcess() {
@@ -70,21 +99,20 @@ WebRtc_Word32 ViESyncModule::Process() {
   CriticalSectionScoped cs(data_cs_.get());
   last_sync_time_ = TickTime::Now();
 
-  int total_video_delay_target_ms = vcm_->Delay();
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, channel_id_,
+  int total_video_delay_target_ms = vcm_.Delay();
+  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, id_,
                "Video delay (JB + decoder) is %d ms",
                total_video_delay_target_ms);
 
   if (voe_channel_id_ == -1) {
     return 0;
   }
-  assert(video_rtcp_module_ && voe_sync_interface_);
 
   int current_audio_delay_ms = 0;
   if (voe_sync_interface_->GetDelayEstimate(voe_channel_id_,
                                             current_audio_delay_ms) != 0) {
     // Could not get VoE delay value, probably not a valid channel Id.
-    WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideo, channel_id_,
+    WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideo, id_,
                  "%s: VE_GetDelayEstimate error for voice_channel %d",
                  __FUNCTION__, total_video_delay_target_ms, voe_channel_id_);
     return 0;
@@ -96,75 +124,22 @@ WebRtc_Word32 ViESyncModule::Process() {
   // VoiceEngine report delay estimates even when not started, ignore if the
   // reported value is lower than 40 ms.
   if (current_audio_delay_ms < 40) {
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, channel_id_,
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, id_,
                  "A/V Sync: Audio delay < 40, skipping.");
     return 0;
   }
 
-  RtpRtcp* voice_rtcp_module = NULL;
-  if (0 != voe_sync_interface_->GetRtpRtcp(voe_channel_id_,
-                                           voice_rtcp_module)) {
-    return 0;
-  }
-  assert(voice_rtcp_module);
-
-  uint32_t video_received_ntp_secs = 0;
-  uint32_t video_received_ntp_frac = 0;
-  uint32_t video_rtcp_arrivaltime_secs = 0;
-  uint32_t video_rtcp_arrivaltime_frac = 0;
-
-  if (0 != video_rtcp_module_->RemoteNTP(&video_received_ntp_secs,
-                                         &video_received_ntp_frac,
-                                         &video_rtcp_arrivaltime_secs,
-                                         &video_rtcp_arrivaltime_frac)) {
-    // Failed to get video NTP.
-    return 0;
-  }
-  uint32_t audio_received_ntp_secs = 0;
-  uint32_t audio_received_ntp_frac = 0;
-  uint32_t audio_rtcp_arrivaltime_secs = 0;
-  uint32_t audio_rtcp_arrivaltime_frac = 0;
-
-  if (0 != voice_rtcp_module->RemoteNTP(&audio_received_ntp_secs,
-                                        &audio_received_ntp_frac,
-                                        &audio_rtcp_arrivaltime_secs,
-                                        &audio_rtcp_arrivaltime_frac)) {
-    // Failed to get audio NTP.
-    return 0;
-  }
-  // ReceivedNTPxxx is NTP at sender side when sent.
-  // RTCPArrivalTimexxx is NTP at receiver side when received.
-  // can't use ConvertNTPTimeToMS since calculation can be
-  //  negative
-  int NTPdiff = (audio_received_ntp_secs - video_received_ntp_secs)
-                * 1000;  // ms
-  NTPdiff += static_cast<int>(audio_received_ntp_secs / FracMS -
-                              video_received_ntp_frac / FracMS);
-
-  int RTCPdiff = (audio_rtcp_arrivaltime_secs - video_rtcp_arrivaltime_secs)
-                 * 1000;  // ms
-  RTCPdiff += static_cast<int>(audio_rtcp_arrivaltime_frac / FracMS -
-                               video_rtcp_arrivaltime_frac / FracMS);
-
-  int diff = NTPdiff - RTCPdiff;
-  // if diff is + video is behind
-  if (diff < -1000 || diff > 1000) {
-    // unresonable ignore value.
-    return 0;
-  }
-  channel_delay_.network_delay = diff;
-
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, channel_id_,
+  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, id_,
                "Audio delay is: %d for voice channel: %d",
                current_audio_delay_ms, voe_channel_id_);
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, channel_id_,
+  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, id_,
                "Network delay diff is: %d for voice channel: %d",
                channel_delay_.network_delay, voe_channel_id_);
   // Calculate the difference between the lowest possible video delay and
   // the current audio delay.
   current_diff_ms = total_video_delay_target_ms - current_audio_delay_ms +
       channel_delay_.network_delay;
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, channel_id_,
+  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, id_,
                "Current diff is: %d for audio channel: %d",
                current_diff_ms, voe_channel_id_);
 
@@ -295,7 +270,7 @@ WebRtc_Word32 ViESyncModule::Process() {
     }
   }
 
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, channel_id_,
+  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, id_,
       "Sync video delay %d ms for video channel and audio delay %d for audio "
       "channel %d",
       video_delay_ms, channel_delay_.extra_audio_delay_ms, voe_channel_id_);
@@ -303,7 +278,7 @@ WebRtc_Word32 ViESyncModule::Process() {
   // Set the extra audio delay.synchronization
   if (voe_sync_interface_->SetMinimumPlayoutDelay(
       voe_channel_id_, channel_delay_.extra_audio_delay_ms) == -1) {
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideo, channel_id_,
+    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideo, id_,
                  "Error setting voice delay");
   }
 
@@ -313,8 +288,8 @@ WebRtc_Word32 ViESyncModule::Process() {
   total_video_delay_target_ms =
       (total_video_delay_target_ms  >  video_delay_ms) ?
       total_video_delay_target_ms : video_delay_ms;
-  vcm_->SetMinimumPlayoutDelay(total_video_delay_target_ms);
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, channel_id_,
+  vcm_.SetMinimumPlayoutDelay(total_video_delay_target_ms);
+  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, id_,
                "New Video delay target is: %d", total_video_delay_target_ms);
   return 0;
 }

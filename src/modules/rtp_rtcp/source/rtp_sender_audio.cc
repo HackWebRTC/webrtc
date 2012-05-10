@@ -51,6 +51,30 @@ RTPSenderAudio::~RTPSenderAudio()
 }
 
 WebRtc_Word32
+RTPSenderAudio::Init()
+{
+    CriticalSectionScoped cs(_sendAudioCritsect);
+
+    _dtmfPayloadType = -1;
+    _inbandVADactive = false;
+    _cngNBPayloadType = -1;
+    _cngWBPayloadType = -1;
+    _cngSWBPayloadType = -1;
+    _lastPayloadType = -1;
+    _REDPayloadType = -1;
+    _dtmfTimeLastSent = 0;
+    _dtmfTimestampLastSent = 0;
+    ResetDTMF();
+    return 0;
+}
+
+void
+RTPSenderAudio::ChangeUniqueId(const WebRtc_Word32 id)
+{
+    _id = id;
+}
+
+WebRtc_Word32
 RTPSenderAudio::RegisterAudioCallback(RtpAudioFeedback* messagesCallback)
 {
     CriticalSectionScoped cs(_audioFeedbackCritsect);

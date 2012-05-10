@@ -58,6 +58,16 @@ RTPReceiverVideo::~RTPReceiverVideo() {
     delete _receiveFEC;
 }
 
+void RTPReceiverVideo::Init() {
+  _currentFecFrameDecoded = false;
+  _packetOverHead = 28;
+  ResetOverUseDetector();
+}
+
+void RTPReceiverVideo::ChangeUniqueId(const WebRtc_Word32 id) {
+  _id = id;
+}
+
 ModuleRTPUtility::Payload* RTPReceiverVideo::RegisterReceiveVideoPayload(
     const char payloadName[RTP_PAYLOAD_NAME_SIZE],
     const WebRtc_Word8 payloadType,

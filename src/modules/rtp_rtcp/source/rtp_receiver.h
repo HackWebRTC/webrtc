@@ -39,6 +39,10 @@ public:
 
     virtual ~RTPReceiver();
 
+    virtual void ChangeUniqueId(const WebRtc_Word32 id);
+
+    void Init();
+
     RtpVideoCodecTypes VideoCodecType() const;
     WebRtc_UWord32 MaxConfiguredBitrate() const;
 

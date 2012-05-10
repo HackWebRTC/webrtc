@@ -50,15 +50,12 @@ class VerifyingNackReceiver : public RtpData
 
 class NackLoopBackTransport : public webrtc::Transport {
  public:
-  NackLoopBackTransport(uint32_t rtx_ssrc)
+  NackLoopBackTransport(RtpRtcp* rtp_rtcp_module, uint32_t rtx_ssrc)
     : count_(0),
       packet_loss_(0),
       rtx_ssrc_(rtx_ssrc),
       count_rtx_ssrc_(0),
-      module_(NULL) {
-  }
-  void SetSendModule(RtpRtcp* rtpRtcpModule) {
-    module_ = rtpRtcpModule;
+      module_(rtp_rtcp_module) {
   }
   void DropEveryNthPacket(int n) {
     packet_loss_ = n;
@@ -98,17 +95,9 @@ class RtpRtcpNackTest : public ::testing::Test {
   ~RtpRtcpNackTest() {}
 
   virtual void SetUp() {
-    transport_ = new NackLoopBackTransport(kTestSsrc + 1);
-    nack_receiver_ = new VerifyingNackReceiver();
-
-    RtpRtcp::Configuration configuration;
-    configuration.id = kTestId;
-    configuration.audio = false;
-    configuration.clock = &fake_clock;
-    configuration.incoming_data = nack_receiver_;
-    configuration.outgoing_transport = transport_;
-    video_module_ = RtpRtcp::CreateRtpRtcp(configuration);
-
+    video_module_ = RtpRtcp::CreateRtpRtcp(kTestId, false, &fake_clock);
+    EXPECT_EQ(0, video_module_->InitReceiver());
+    EXPECT_EQ(0, video_module_->InitSender());
     EXPECT_EQ(0, video_module_->SetRTCPStatus(kRtcpCompound));
     EXPECT_EQ(0, video_module_->SetSSRC(kTestSsrc));
     EXPECT_EQ(0, video_module_->SetNACKStatus(kNackRtcp));
@@ -117,7 +106,11 @@ class RtpRtcpNackTest : public ::testing::Test {
     EXPECT_EQ(0, video_module_->SetSequenceNumber(kTestSequenceNumber));
     EXPECT_EQ(0, video_module_->SetStartTimestamp(111111));
 
-    transport_->SetSendModule(video_module_);
+    transport_ = new NackLoopBackTransport(video_module_, kTestSsrc + 1);
+    EXPECT_EQ(0, video_module_->RegisterSendTransport(transport_));
+
+    nack_receiver_ = new VerifyingNackReceiver();
+    EXPECT_EQ(0, video_module_->RegisterIncomingDataCallback(nack_receiver_));
 
     VideoCodec video_codec;
     memset(&video_codec, 0, sizeof(video_codec));
@@ -135,7 +128,7 @@ class RtpRtcpNackTest : public ::testing::Test {
   }
 
   virtual void TearDown() {
-    delete video_module_;
+    RtpRtcp::DestroyRtpRtcp(video_module_);
     delete transport_;
     delete nack_receiver_;
   }

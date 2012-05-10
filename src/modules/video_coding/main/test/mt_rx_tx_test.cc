@@ -138,20 +138,17 @@ int MTRxTxTest(CmdArgs& args)
         printf("Cannot read file %s.\n", outname.c_str());
         return -1;
     }
-    TickTimeBase clock;
-    VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock);
-    RtpDataCallback dataCallback(vcm);
 
-    RTPSendCompleteCallback* outgoingTransport =
-        new RTPSendCompleteCallback(&clock, "dump.rtp");
-
-    RtpRtcp::Configuration configuration;
-    configuration.id = 1;
-    configuration.audio = false;
-    configuration.incoming_data = &dataCallback;
-    configuration.outgoing_transport = outgoingTransport;
-    RtpRtcp* rtp = RtpRtcp::CreateRtpRtcp(configuration);
-
+    //RTP
+    RtpRtcp* rtp = RtpRtcp::CreateRtpRtcp(1, false);
+    if (rtp->InitReceiver() < 0)
+    {
+        return -1;
+    }
+    if (rtp->InitSender() < 0)
+    {
+        return -1;
+    }
     // registering codecs for the RTP module
     VideoCodec videoCodec;
     strncpy(videoCodec.plName, "ULPFEC", 32);
@@ -173,6 +170,8 @@ int MTRxTxTest(CmdArgs& args)
     TEST(rtp->SetGenericFECStatus(fecEnabled, VCM_RED_PAYLOAD_TYPE, VCM_ULPFEC_PAYLOAD_TYPE) == 0);
 
     //VCM
+    TickTimeBase clock;
+    VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock);
     if (vcm->InitializeReceiver() < 0)
     {
         return -1;
@@ -217,8 +216,13 @@ int MTRxTxTest(CmdArgs& args)
     encodeCompleteCallback->SetCodecType(ConvertCodecType(args.codecName.c_str()));
     encodeCompleteCallback->SetFrameDimensions(width, height);
     // frame ready to be sent to network
-
+    RTPSendCompleteCallback* outgoingTransport =
+        new RTPSendCompleteCallback(rtp, &clock, "dump.rtp");
+    rtp->RegisterSendTransport(outgoingTransport);
+    // FrameReceiveCallback
     VCMDecodeCompleteCallback receiveCallback(decodedFile);
+    RtpDataCallback dataCallback(vcm);
+    rtp->RegisterIncomingDataCallback(&dataCallback);
     vcm->RegisterReceiveCallback(&receiveCallback);
 
     VideoProtectionCallback protectionCallback;
@@ -347,7 +351,7 @@ int MTRxTxTest(CmdArgs& args)
     delete encodeCompleteCallback;
     delete outgoingTransport;
     VideoCodingModule::Destroy(vcm);
-    delete rtp;
+    RtpRtcp::DestroyRtpRtcp(rtp);
     rtp = NULL;
     vcm = NULL;
     Trace::ReturnTrace();

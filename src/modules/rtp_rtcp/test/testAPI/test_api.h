@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -40,13 +40,10 @@ class FakeRtpRtcpClock : public RtpRtcpClock {
 // with optional packet loss.
 class LoopBackTransport : public webrtc::Transport {
  public:
-  LoopBackTransport()
+  LoopBackTransport(RtpRtcp* rtpRtcpModule)
     : _count(0),
       _packetLoss(0),
-      _rtpRtcpModule(NULL) {
-  }
-  void SetSendModule(RtpRtcp* rtpRtcpModule) {
-    _rtpRtcpModule = rtpRtcpModule;
+      _rtpRtcpModule(rtpRtcpModule) {
   }
   void DropEveryNthPacket(int n) {
     _packetLoss = n;

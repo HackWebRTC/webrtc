@@ -27,24 +27,29 @@ class VoEVideoSync;
 
 class ViESyncModule : public Module {
  public:
-  ViESyncModule(const int32_t channel_id, VideoCodingModule* vcm);
+  ViESyncModule(int id, VideoCodingModule& vcm, RtpRtcp& rtcp_module);
   ~ViESyncModule();
 
-  int ConfigureSync(int voe_channel_id,
-                    VoEVideoSync* voe_sync_interface,
-                    RtpRtcp* video_rtcp_module);
-
+  int SetVoiceChannel(int voe_channel_id, VoEVideoSync* voe_sync_interface);
   int VoiceChannel();
 
+  // Set how long time, in ms, voice is ahead of video when received on the
+  // network. Positive value means audio is ahead of video.
+  void SetNetworkDelay(int network_delay);
+
   // Implements Module.
+  virtual WebRtc_Word32 Version(char* version,
+                                WebRtc_UWord32& remaining_buffer_in_bytes,
+                                WebRtc_UWord32& position) const;
+  virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
   virtual WebRtc_Word32 TimeUntilNextProcess();
   virtual WebRtc_Word32 Process();
 
  private:
   scoped_ptr<CriticalSectionWrapper> data_cs_;
-  const int32_t channel_id_;
-  VideoCodingModule* vcm_;
-  RtpRtcp* video_rtcp_module_;
+  int id_;
+  VideoCodingModule& vcm_;
+  RtpRtcp& rtcp_module_;
   int voe_channel_id_;
   VoEVideoSync* voe_sync_interface_;
   TickTime last_sync_time_;

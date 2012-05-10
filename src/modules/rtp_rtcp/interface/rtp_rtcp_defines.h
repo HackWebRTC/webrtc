@@ -139,6 +139,10 @@ protected:
 class RtcpFeedback
 {
 public:
+    // if audioVideoOffset > 0 video is behind audio
+    virtual void OnLipSyncUpdate(const WebRtc_Word32 /*id*/,
+                                 const WebRtc_Word32 /*audioVideoOffset*/)  {};
+
     virtual void OnApplicationDataReceived(const WebRtc_Word32 /*id*/,
                                            const WebRtc_UWord8 /*subType*/,
                                            const WebRtc_UWord32 /*name*/,

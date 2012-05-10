@@ -37,6 +37,10 @@ public:
                    RTPSenderInterface* rtpSender);
     virtual ~RTPSenderVideo();
 
+    WebRtc_Word32 Init();
+
+    virtual void ChangeUniqueId(const WebRtc_Word32 id);
+
     virtual RtpVideoCodecTypes VideoCodecType() const;
 
     WebRtc_UWord16 FECPacketOverhead() const;

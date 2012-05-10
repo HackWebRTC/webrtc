@@ -157,7 +157,7 @@ class ViEEncoder
 
   VideoCodingModule& vcm_;
   VideoProcessingModule& vpm_;
-  scoped_ptr<RtpRtcp> default_rtp_rtcp_;
+  RtpRtcp& default_rtp_rtcp_;
   scoped_ptr<CriticalSectionWrapper> callback_cs_;
   scoped_ptr<CriticalSectionWrapper> data_cs_;
   scoped_ptr<BitrateObserver> bitrate_observer_;

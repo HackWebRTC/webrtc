@@ -27,6 +27,10 @@ public:
     RTPReceiverAudio(const WebRtc_Word32 id);
     virtual ~RTPReceiverAudio();
 
+    virtual void ChangeUniqueId(const WebRtc_Word32 id);
+
+    WebRtc_Word32 Init();
+
     WebRtc_Word32 RegisterIncomingAudioCallback(RtpAudioFeedback* incomingMessagesCallback);
 
     ModuleRTPUtility::Payload* RegisterReceiveAudioPayload(

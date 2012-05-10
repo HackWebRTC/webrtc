@@ -30,13 +30,12 @@ class VideoCodingModule;
 
 class ViEReceiver : public UdpTransportData, public RtpData {
  public:
-  ViEReceiver(const int32_t channel_id, VideoCodingModule* module_vcm);
+  ViEReceiver(int engine_id, int channel_id, RtpRtcp& rtp_rtcp,
+              VideoCodingModule& module_vcm);
   ~ViEReceiver();
 
   int RegisterExternalDecryption(Encryption* decryption);
   int DeregisterExternalDecryption();
-
-  void SetRtpRtcpModule(RtpRtcp* module);
 
   void RegisterSimulcastRtpRtcpModules(const std::list<RtpRtcp*>& rtp_modules);
 
@@ -71,10 +70,11 @@ class ViEReceiver : public UdpTransportData, public RtpData {
   int InsertRTCPPacket(const WebRtc_Word8* rtcp_packet, int rtcp_packet_length);
 
   scoped_ptr<CriticalSectionWrapper> receive_cs_;
-  const int32_t channel_id_;
-  RtpRtcp* rtp_rtcp_;
+  int engine_id_;
+  int channel_id_;
+  RtpRtcp& rtp_rtcp_;
   std::list<RtpRtcp*> rtp_rtcp_simulcast_;
-  VideoCodingModule* vcm_;
+  VideoCodingModule& vcm_;
 
   Encryption* external_decryption_;
   WebRtc_UWord8* decryption_buffer_;

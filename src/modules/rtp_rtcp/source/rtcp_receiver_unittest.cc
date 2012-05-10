@@ -151,12 +151,10 @@ class FakeSystemClock : public RtpRtcpClock {
 class TestTransport : public Transport,
                       public RtpData {
  public:
-  explicit TestTransport()
-      : rtcp_receiver_(NULL) {
+  explicit TestTransport(RTCPReceiver* rtcp_receiver) :
+    rtcp_receiver_(rtcp_receiver) {
   }
-  void SetRTCPReceiver(RTCPReceiver* rtcp_receiver) {
-    rtcp_receiver_ = rtcp_receiver;
-  }
+
   virtual int SendPacket(int /*ch*/, const void* /*data*/, int /*len*/) {
     ADD_FAILURE();  // FAIL() gives a compile error.
     return -1;
@@ -182,15 +180,10 @@ class RtcpReceiverTest : public ::testing::Test {
   RtcpReceiverTest() {
     // system_clock_ = ModuleRTPUtility::GetSystemClock();
     system_clock_ = new FakeSystemClock();
-    test_transport_ = new TestTransport();
-    RtpRtcp::Configuration configuration;
-    configuration.id = 0;
-    configuration.audio = false;
-    configuration.clock = system_clock_;
-    configuration.outgoing_transport = test_transport_;
-    rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(configuration);
+    rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(0, false, system_clock_);
     rtcp_receiver_ = new RTCPReceiver(0, system_clock_, rtp_rtcp_impl_);
-    test_transport_->SetRTCPReceiver(rtcp_receiver_);
+    test_transport_ = new TestTransport(rtcp_receiver_);
+    EXPECT_EQ(0, rtp_rtcp_impl_->RegisterIncomingDataCallback(test_transport_));
   }
   ~RtcpReceiverTest() {
     delete rtcp_receiver_;

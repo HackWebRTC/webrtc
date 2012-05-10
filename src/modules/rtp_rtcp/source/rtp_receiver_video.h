@@ -32,6 +32,10 @@ class RTPReceiverVideo {
 
   virtual ~RTPReceiverVideo();
 
+  virtual void ChangeUniqueId(const WebRtc_Word32 id);
+
+  void Init();
+
   ModuleRTPUtility::Payload* RegisterReceiveVideoPayload(
       const char payloadName[RTP_PAYLOAD_NAME_SIZE],
       const WebRtc_Word8 payloadType,

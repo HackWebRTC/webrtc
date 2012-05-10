@@ -24,7 +24,7 @@ const uint64_t kTestPictureId = 12345678;
 
 class RtcpCallback : public RtcpFeedback, public RtcpIntraFrameObserver {
  public:
-  void SetModule(RtpRtcp* module) {
+  RtcpCallback(RtpRtcp* module) {
     _rtpRtcpModule = module;
   };
   virtual void OnRTCPPacketTimeout(const WebRtc_Word32 id) {
@@ -85,32 +85,32 @@ class RtpRtcpRtcpTest : public ::testing::Test {
   ~RtpRtcpRtcpTest() {}
 
   virtual void SetUp() {
+    module1 = RtpRtcp::CreateRtpRtcp(test_id, true, &fake_clock);
+    module2 = RtpRtcp::CreateRtpRtcp(test_id+1, true, &fake_clock);
+
+    EXPECT_EQ(0, module1->InitReceiver());
+    EXPECT_EQ(0, module1->InitSender());
+    EXPECT_EQ(0, module2->InitReceiver());
+    EXPECT_EQ(0, module2->InitSender());
     receiver = new RtpReceiver();
-    transport1 = new LoopBackTransport();
-    transport2 = new LoopBackTransport();
-    myRTCPFeedback1 = new RtcpCallback();
-    myRTCPFeedback2 = new RtcpCallback();
+    EXPECT_EQ(0, module2->RegisterIncomingDataCallback(receiver));
+    transport1 = new LoopBackTransport(module2);
+    EXPECT_EQ(0, module1->RegisterSendTransport(transport1));
+    transport2 = new LoopBackTransport(module1);
+    EXPECT_EQ(0, module2->RegisterSendTransport(transport2));
+  }
 
-    RtpRtcp::Configuration configuration;
-    configuration.id = test_id;
-    configuration.audio = false;
-    configuration.clock = &fake_clock;
-    configuration.outgoing_transport = transport1;
-    configuration.rtcp_feedback = myRTCPFeedback1;
-    configuration.intra_frame_callback = myRTCPFeedback1;
+  virtual void TearDown() {
+    RtpRtcp::DestroyRtpRtcp(module1);
+    RtpRtcp::DestroyRtpRtcp(module2);
+    delete transport1;
+    delete transport2;
+    delete receiver;
+  }
 
-    module1 = RtpRtcp::CreateRtpRtcp(configuration);
-
-    configuration.id = test_id + 1;
-    configuration.outgoing_transport = transport2;
-    configuration.rtcp_feedback = myRTCPFeedback2;
-    configuration.intra_frame_callback = myRTCPFeedback2;
-    module2 = RtpRtcp::CreateRtpRtcp(configuration);
-
-    transport1->SetSendModule(module2);
-    transport2->SetSendModule(module1);
-    myRTCPFeedback1->SetModule(module1);
-    myRTCPFeedback2->SetModule(module2);
+  void SetUpCallFromModule1(RtcpCallback* feedback1, RtcpCallback* feedback2 ) {
+    module1->RegisterRtcpObservers(feedback1, NULL, feedback1);
+    module2->RegisterRtcpObservers(feedback2, NULL, feedback2);
 
     EXPECT_EQ(0, module1->SetRTCPStatus(kRtcpCompound));
     EXPECT_EQ(0, module2->SetRTCPStatus(kRtcpCompound));
@@ -143,23 +143,12 @@ class RtpRtcpRtcpTest : public ::testing::Test {
                                            0, test, 8));
   }
 
-  virtual void TearDown() {
-    delete module1;
-    delete module2;
-    delete transport1;
-    delete transport2;
-    delete receiver;
-  }
-
   int test_id;
   RtpRtcp* module1;
   RtpRtcp* module2;
   RtpReceiver* receiver;
   LoopBackTransport* transport1;
   LoopBackTransport* transport2;
-  RtcpCallback* myRTCPFeedback1;
-  RtcpCallback* myRTCPFeedback2;
-
   WebRtc_UWord32 test_ssrc;
   WebRtc_UWord32 test_timestamp;
   WebRtc_UWord16 test_sequence_number;
@@ -168,11 +157,20 @@ class RtpRtcpRtcpTest : public ::testing::Test {
 };
 
 TEST_F(RtpRtcpRtcpTest, RTCP_PLI_RPSI) {
+  RtcpCallback* myRTCPFeedback1 = new RtcpCallback(module1);
+  RtcpCallback* myRTCPFeedback2 = new RtcpCallback(module2);
+
+  SetUpCallFromModule1(myRTCPFeedback1, myRTCPFeedback2);
+
   EXPECT_EQ(0, module1->SendRTCPReferencePictureSelection(kTestPictureId));
   EXPECT_EQ(0, module1->SendRTCPSliceLossIndication(156));
 }
 
 TEST_F(RtpRtcpRtcpTest, RTCP_CNAME) {
+  RtcpCallback* myRTCPFeedback1 = new RtcpCallback(module1);
+  RtcpCallback* myRTCPFeedback2 = new RtcpCallback(module2);
+
+  SetUpCallFromModule1(myRTCPFeedback1, myRTCPFeedback2);
   WebRtc_UWord32 testOfCSRC[webrtc::kRtpCsrcSize];
   EXPECT_EQ(2, module2->RemoteCSRCs(testOfCSRC));
   EXPECT_EQ(test_CSRC[0], testOfCSRC[0]);
@@ -212,6 +210,10 @@ TEST_F(RtpRtcpRtcpTest, RTCP_CNAME) {
 }
 
 TEST_F(RtpRtcpRtcpTest, RTCP) {
+  RtcpCallback* myRTCPFeedback1 = new RtcpCallback(module1);
+  RtcpCallback* myRTCPFeedback2 = new RtcpCallback(module2);
+
+  SetUpCallFromModule1(myRTCPFeedback1, myRTCPFeedback2);
   RTCPReportBlock reportBlock;
   reportBlock.cumulativeLost = 1;
   reportBlock.delaySinceLastSR = 2;
@@ -314,6 +316,10 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
 TEST_F(RtpRtcpRtcpTest, RemoteRTCPStatRemote) {
   std::vector<RTCPReportBlock> report_blocks;
 
+  RtcpCallback feedback1(module1);
+  RtcpCallback feedback2(module2);
+
+  SetUpCallFromModule1(&feedback1, &feedback2);
   EXPECT_EQ(0, module1->RemoteRTCPStat(&report_blocks));
   EXPECT_EQ(0u, report_blocks.size());
 

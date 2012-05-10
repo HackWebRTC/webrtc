@@ -195,11 +195,12 @@ VCMDecodeCompleteCallback::DecodedBytes()
     return _decodedBytes;
 }
 
-RTPSendCompleteCallback::RTPSendCompleteCallback(TickTimeBase* clock,
+RTPSendCompleteCallback::RTPSendCompleteCallback(RtpRtcp* rtp,
+                                                 TickTimeBase* clock,
                                                  const char* filename):
     _clock(clock),
     _sendCount(0),
-    _rtp(NULL),
+    _rtp(rtp),
     _lossPct(0),
     _burstLength(0),
     _networkDelayMs(0),
@@ -281,7 +282,6 @@ RTPSendCompleteCallback::SendPacket(int channel, const void *data, int len)
         }
 
         _rtpPackets.pop_front();
-        assert(_rtp);  // We must have a configured RTP module for this test.
         // Send to receive side
         if (_rtp->IncomingPacket((const WebRtc_UWord8*)packet->data,
                                  packet->length) < 0)
