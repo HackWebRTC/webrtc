@@ -41,7 +41,7 @@ RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
     return new ModuleRtpRtcpImpl(configuration);
   } else {
     RtpRtcp::Configuration configuration_copy;
-    memcpy(&configuration_copy, &configuration_copy,
+    memcpy(&configuration_copy, &configuration,
            sizeof(RtpRtcp::Configuration));
     configuration_copy.clock = ModuleRTPUtility::GetSystemClock();
     ModuleRtpRtcpImpl* rtp_rtcp_instance =
@@ -484,7 +484,6 @@ WebRtc_Word32 ModuleRtpRtcpImpl::IncomingPacket(
                _id,
                "IncomingPacket(packetLength:%u)",
                incomingPacketLength);
-
   // minimum RTP is 12 bytes
   // minimum RTCP is 8 bytes (RTCP BYE)
   if (incomingPacketLength < 8 || incomingPacket == NULL) {
