@@ -20,6 +20,9 @@ extern "C" {
 namespace {
 
 enum { kSpectrumSize = 65 };
+// Delay history sizes.
+enum { kMaxDelay = 100 };
+enum { kLookahead = 10 };
 
 class DelayEstimatorTest : public ::testing::Test {
  protected:
@@ -55,7 +58,7 @@ DelayEstimatorTest::DelayEstimatorTest()
 }
 
 void DelayEstimatorTest::SetUp() {
-  handle_ = WebRtc_CreateDelayEstimator(kSpectrumSize, 100, 10);
+  handle_ = WebRtc_CreateDelayEstimator(kSpectrumSize, kMaxDelay, kLookahead);
   ASSERT_TRUE(handle_ != NULL);
   self_ = reinterpret_cast<DelayEstimator*>(handle_);
   binary_handle_ = self_->binary_handle;
@@ -92,13 +95,13 @@ TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfWrapper) {
   // Make sure we have a non-NULL value at start, so we can detect NULL after
   // create failure.
   void* handle = handle_;
-  handle = WebRtc_CreateDelayEstimator(33, 100, 10);
+  handle = WebRtc_CreateDelayEstimator(33, kMaxDelay, kLookahead);
   EXPECT_TRUE(handle == NULL);
   handle = handle_;
-  handle = WebRtc_CreateDelayEstimator(kSpectrumSize, -1, 10);
+  handle = WebRtc_CreateDelayEstimator(kSpectrumSize, -1, kLookahead);
   EXPECT_TRUE(handle == NULL);
   handle = handle_;
-  handle = WebRtc_CreateDelayEstimator(kSpectrumSize, 100, -1);
+  handle = WebRtc_CreateDelayEstimator(kSpectrumSize, kMaxDelay, -1);
   EXPECT_TRUE(handle == NULL);
   handle = handle_;
   handle = WebRtc_CreateDelayEstimator(kSpectrumSize, 0, 0);
@@ -189,6 +192,8 @@ TEST_F(DelayEstimatorTest, CorrectLastDelay) {
       break;
     }
   }
+  // Verify that we have left the initialized state.
+  EXPECT_NE(-2, WebRtc_last_delay(handle_));
 
   // Fixed point operations.
   Init();
@@ -200,6 +205,8 @@ TEST_F(DelayEstimatorTest, CorrectLastDelay) {
       break;
     }
   }
+  // Verify that we have left the initialized state.
+  EXPECT_NE(-2, WebRtc_last_delay(handle_));
 }
 
 TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfBinaryEstimator) {
@@ -212,10 +219,10 @@ TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfBinaryEstimator) {
   // |binary_handle| should be NULL.
   // Make sure we have a non-NULL value at start, so we can detect NULL after
   // create failure.
-  binary_handle = WebRtc_CreateBinaryDelayEstimator(-1, 10);
+  binary_handle = WebRtc_CreateBinaryDelayEstimator(-1, kLookahead);
   EXPECT_TRUE(binary_handle == NULL);
   binary_handle = binary_handle_;
-  binary_handle = WebRtc_CreateBinaryDelayEstimator(100, -1);
+  binary_handle = WebRtc_CreateBinaryDelayEstimator(kMaxDelay, -1);
   EXPECT_TRUE(binary_handle == NULL);
   binary_handle = binary_handle_;
   binary_handle = WebRtc_CreateBinaryDelayEstimator(0, 0);
@@ -253,6 +260,43 @@ TEST_F(DelayEstimatorTest, MeanEstimatorFix) {
   EXPECT_LT(new_mean_value, mean_value);
 }
 
-// TODO(bjornv): Add a test to verify correct delay
+TEST_F(DelayEstimatorTest, ExactDelayEstimate) {
+  // In this test we verify that we get the correct delay estimate if we shift
+  // the signal accordingly. We verify both causal and non-causal delays.
+
+  // Construct a sequence of binary spectra used to verify delay estimate. The
+  // |sequence_length| has to be long enough for the delay estimation to leave
+  // the initialized state.
+  const int sequence_length = 400;
+  uint32_t binary_spectrum[sequence_length + kMaxDelay + kLookahead];
+  binary_spectrum[0] = 1;
+  for (int i = 1; i < (sequence_length + kMaxDelay + kLookahead); i++) {
+    binary_spectrum[i] = 3 * binary_spectrum[i - 1];
+  }
+
+  // Verify the delay for both causal and non-causal systems. For causal systems
+  // the delay is equivalent with a positive |offset| of the far-end sequence.
+  // For non-causal systems the delay is equivalent with a negative |offset| of
+  // the far-end sequence.
+  for (int offset = -kLookahead; offset < kMaxDelay; offset++) {
+    InitBinary();
+    for (int i = kLookahead; i < (sequence_length + kLookahead); i++) {
+      int delay = WebRtc_ProcessBinarySpectrum(binary_handle_,
+                                               binary_spectrum[i + offset],
+                                               binary_spectrum[i]);
+
+      // Verify that we WebRtc_binary_last_delay() returns correct delay.
+      EXPECT_EQ(delay, WebRtc_binary_last_delay(binary_handle_));
+
+      if (delay != -2) {
+        // Verify correct delay estimate. In the non-causal case the true delay
+        // is equivalent with the |offset|.
+        EXPECT_EQ(offset, delay - kLookahead);
+      }
+    }
+    // Verify that we have left the initialized state.
+    EXPECT_NE(-2, WebRtc_binary_last_delay(binary_handle_));
+  }
+}
 
 }  // namespace
