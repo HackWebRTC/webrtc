@@ -33,13 +33,15 @@ class RtpRtcpAPITest : public ::testing::Test {
   ~RtpRtcpAPITest() {}
 
   virtual void SetUp() {
-    module = RtpRtcp::CreateRtpRtcp(test_id, true, &fake_clock);
-    EXPECT_EQ(0, module->InitReceiver());
-    EXPECT_EQ(0, module->InitSender());
+    RtpRtcp::Configuration configuration;
+    configuration.id = test_id;
+    configuration.audio = true;
+    configuration.clock = &fake_clock;
+    module = RtpRtcp::CreateRtpRtcp(configuration);
   }
 
   virtual void TearDown() {
-    RtpRtcp::DestroyRtpRtcp(module);
+    delete module;
   }
 
   int test_id;

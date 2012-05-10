@@ -26,6 +26,9 @@
 #include "video_engine/vie_defines.h"
 #include "video_engine/vie_file_recorder.h"
 #include "video_engine/vie_frame_provider_base.h"
+#include "video_engine/vie_receiver.h"
+#include "video_engine/vie_sender.h"
+#include "video_engine/vie_sync_module.h"
 
 namespace webrtc {
 
@@ -40,11 +43,8 @@ class VideoRenderCallback;
 class ViEDecoderObserver;
 class ViEEffectFilter;
 class ViENetworkObserver;
-class ViEReceiver;
 class ViERTCPObserver;
 class ViERTPObserver;
-class ViESender;
-class ViESyncModule;
 class VoEVideoSync;
 
 class ViEChannel
@@ -62,7 +62,9 @@ class ViEChannel
              WebRtc_UWord32 number_of_cores,
              ProcessThread& module_process_thread,
              RtcpIntraFrameObserver* intra_frame_observer,
-             RtcpBandwidthObserver* bandwidth_observer);
+             RtcpBandwidthObserver* bandwidth_observer,
+             RtpRemoteBitrateObserver* bitrate_observer,
+             RtpRtcp* default_rtp_rtcp);
   ~ViEChannel();
 
   WebRtc_Word32 Init();
@@ -171,8 +173,7 @@ class ViEChannel
   WebRtc_Word32 StopRTPDump(RTPDirections direction);
 
   // Implements RtcpFeedback.
-  virtual void OnLipSyncUpdate(const WebRtc_Word32 id,
-                               const WebRtc_Word32 audio_video_offset);
+  // TODO(pwestin) Depricate this functionality.
   virtual void OnApplicationDataReceived(const WebRtc_Word32 id,
                                          const WebRtc_UWord8 sub_type,
                                          const WebRtc_UWord32 name,
@@ -282,14 +283,6 @@ class ViEChannel
 
   WebRtc_Word32 EnableColorEnhancement(bool enable);
 
-  // Register send RTP RTCP module, which will deliver encoded frames to the
-  // to the channel RTP module.
-  WebRtc_Word32 RegisterSendRtpRtcpModule(RtpRtcp& send_rtp_rtcp_module);
-
-  // Deregisters the send RTP RTCP module, which will stop the encoder input to
-  // the channel.
-  WebRtc_Word32 DeregisterSendRtpRtcpModule();
-
   // Gets the modules used by the channel.
   RtpRtcp* rtp_rtcp();
 
@@ -356,17 +349,18 @@ class ViEChannel
   // Used for all registered callbacks except rendering.
   scoped_ptr<CriticalSectionWrapper> callback_cs_;
 
-  // Owned modules/classes.
-  RtpRtcp& rtp_rtcp_;
   RtpRtcp* default_rtp_rtcp_;
+
+  // Owned modules/classes.
+  scoped_ptr<RtpRtcp> rtp_rtcp_;
   std::list<RtpRtcp*> simulcast_rtp_rtcp_;
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
   UdpTransport& socket_transport_;
 #endif
   VideoCodingModule& vcm_;
-  ViEReceiver& vie_receiver_;
-  ViESender& vie_sender_;
-  ViESyncModule& vie_sync_;
+  ViEReceiver vie_receiver_;
+  ViESender vie_sender_;
+  ViESyncModule vie_sync_;
 
   // Not owned.
   ProcessThread& module_process_thread_;

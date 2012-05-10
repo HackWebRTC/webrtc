@@ -155,9 +155,11 @@ class RTPSendCompleteCallback: public Transport
 {
 public:
     // Constructor input: (receive side) rtp module to send encoded data to
-    RTPSendCompleteCallback(RtpRtcp* rtp, TickTimeBase* clock,
+    RTPSendCompleteCallback(TickTimeBase* clock,
                             const char* filename = NULL);
     virtual ~RTPSendCompleteCallback();
+
+    void SetRtpModule(RtpRtcp* rtp_module) { _rtp = rtp_module; }
     // Send Packet to receive side RTP module
     virtual int SendPacket(int channel, const void *data, int len);
     // Send RTCP Packet to receive side RTP module

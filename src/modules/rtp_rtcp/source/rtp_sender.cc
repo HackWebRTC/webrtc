@@ -117,7 +117,7 @@ RTPSender::~RTPSender() {
 
   WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, _id, "%s deleted", __FUNCTION__);
 }
-
+/*
 WebRtc_Word32
 RTPSender::Init(const WebRtc_UWord32 remoteSSRC)
 {
@@ -173,19 +173,7 @@ RTPSender::Init(const WebRtc_UWord32 remoteSSRC)
     }
     return(0);
 }
-
-void
-RTPSender::ChangeUniqueId(const WebRtc_Word32 id)
-{
-    _id = id;
-    if(_audioConfigured)
-    {
-        _audio->ChangeUniqueId(id);
-    } else
-    {
-        _video->ChangeUniqueId(id);
-    }
-}
+*/
 
 void RTPSender::SetTargetSendBitrate(const WebRtc_UWord32 bits) {
   _targetSendBitrate = static_cast<uint16_t>(bits / 1000);

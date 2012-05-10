@@ -70,7 +70,11 @@ class RtcpFormatRembTest : public ::testing::Test {
 
 void RtcpFormatRembTest::SetUp() {
   system_clock_ = ModuleRTPUtility::GetSystemClock();
-  dummy_rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(0, false, system_clock_);
+  RtpRtcp::Configuration configuration;
+  configuration.id = 0;
+  configuration.audio = false;
+  configuration.clock = system_clock_;
+  dummy_rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(configuration);
   rtcp_sender_ = new RTCPSender(0, false, system_clock_, dummy_rtp_rtcp_impl_);
   rtcp_receiver_ = new RTCPReceiver(0, system_clock_, dummy_rtp_rtcp_impl_);
   test_transport_ = new TestTransport(rtcp_receiver_);
