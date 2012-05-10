@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -7,14 +7,10 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-'''Runs various WebRTC tests through valgrind_test.py.
+''' Runs various WebRTC tests through valgrind_test.py.
 
-This script inherits the chrome_tests.py in Chrome, replacing its tests. We do
-this by taking chrome's faux cmdline test and making that the standard, so that
-we effectively can pass in any binary we feel like. It's also possible to pass
-arguments to the test, provided that the arguments do not contain dashes (these
-can be "escaped" by passing + instead, so -a becomes +a, and --my-option becomes
-++my_option).
+This script inherits the chrome_tests.py in Chrome, replacing its tests with
+our own in WebRTC instead.
 '''
 
 import optparse
@@ -24,11 +20,70 @@ import logging_utils
 
 import chrome_tests
 
+class WebRTCTests(chrome_tests.ChromeTests):
+  # WebRTC tests, similar functions for each tests as the Chrome tests in the
+  # parent class.
+  def TestSignalProcessing(self):
+    return self.SimpleTest("signal_processing", "signal_processing_unittests")
+
+  def TestResampler(self):
+    return self.SimpleTest("resampler", "resampler_unittests")
+
+  def TestVAD(self):
+    return self.SimpleTest("vad", "vad_unittests")
+
+  def TestCNG(self):
+    return self.SimpleTest("cng", "cng_unittests")
+
+  def TestG711(self):
+    return self.SimpleTest("g711", "g711_unittests")
+
+  def TestG722(self):
+    return self.SimpleTest("g722", "g722_unittests")
+
+  def TestPCM16B(self):
+    return self.SimpleTest("pcm16b", "pcm16b_unittests")
+
+  def TestNetEQ(self):
+    return self.SimpleTest("neteq", "neteq_unittests")
+
+  def TestAudioConferenceMixer(self):
+    return self.SimpleTest("audio_conference_mixer", "audio_conference_mixer_unittests")
+
+  def TestMediaFile(self):
+    return self.SimpleTest("media_file", "media_file_unittests")
+
+  def TestRTPRTCP(self):
+    return self.SimpleTest("rtp_rtcp", "rtp_rtcp_unittests")
+
+  def TestBWE(self):
+    return self.SimpleTest("test_bwe", "test_bwe")
+
+  def TestUDPTransport(self):
+    return self.SimpleTest("udp_transport", "udp_transport_unittests")
+
+  def TestWebRTCUtility(self):
+    return self.SimpleTest("webrtc_utility", "webrtc_utility_unittests")
+
+  def TestVP8(self):
+    return self.SimpleTest("vp8", "vp8_unittests")
+
+  def TestVideoCoding(self):
+    return self.SimpleTest("video_coding", "video_coding_unittests")
+
+  def TestVideoProcessing(self):
+    return self.SimpleTest("video_processing", "video_processing_unittests")
+
+  def TestSystemWrappers(self):
+    return self.SimpleTest("system_wrappers", "system_wrappers_unittests")
+
+  def TestTestSupport(self):
+    return self.SimpleTest("test_support", "test_support_unittests")
+
 def _main(_):
   parser = optparse.OptionParser("usage: %prog -b <dir> -t <test> "
-                                 "[-t <test> ...] <arguments to all tests>"
-                                 "NOTE: when passing arguments to all tests, "
-                                 "      replace any - with +.")
+                                 "[-t <test> ...]")
+  parser.disable_interspersed_args()
   parser.add_option("-b", "--build_dir",
                     help="the location of the compiler output")
   parser.add_option("-t", "--test", action="append", default=[],
@@ -64,25 +119,38 @@ def _main(_):
   if len(options.test) != 1 and options.gtest_filter:
     parser.error("--gtest_filter and multiple tests don't make sense together")
 
-  # Performs the deferred-argument black magic described in the usage.
-  translated_args = map(lambda arg: arg.replace('+', '-'), args)
-
   for t in options.test:
-    tests = chrome_tests.ChromeTests(options, translated_args, t)
+    tests = WebRTCTests(options, args, t)
     ret = tests.Run()
     if ret: return ret
   return 0
 
 if __name__ == "__main__":
-  # Overwrite the ChromeTests tests dictionary. The cmdline option allows the
-  # user to pass any executable as parameter to the test script, so we'll use
-  # that to get our binaries in (hackish but convenient).
+  # Overwrite the ChromeTests tests dictionary with our WebRTC tests. 
+  # The cmdline option allows the user to pass any executable as parameter to
+  # the test script, which is useful when developing new tests that are not yet
+  # present in this script.
   chrome_tests.ChromeTests._test_list = {
     "cmdline": chrome_tests.ChromeTests.RunCmdLine,
+    "signal_processing": WebRTCTests.TestSignalProcessing,
+    "resampler": WebRTCTests.TestResampler,
+    "vad": WebRTCTests.TestVAD,
+    "cng": WebRTCTests.TestCNG,
+    "g711": WebRTCTests.TestG711,
+    "g722": WebRTCTests.TestG722,
+    "pcm16b": WebRTCTests.TestPCM16B,
+    "neteq": WebRTCTests.TestNetEQ,
+    "audio_conference_mixer": WebRTCTests.TestAudioConferenceMixer,
+    "media_file": WebRTCTests.TestMediaFile,
+    "rtp_rtcp": WebRTCTests.TestRTPRTCP,
+    "test_bwe": WebRTCTests.TestBWE,
+    "udp_transport": WebRTCTests.TestUDPTransport,
+    "webrtc_utility": WebRTCTests.TestWebRTCUtility,
+    "vp8": WebRTCTests.TestVP8,
+    "video_coding": WebRTCTests.TestVideoCoding,
+    "video_processing": WebRTCTests.TestVideoProcessing,
+    "system_wrappers": WebRTCTests.TestSystemWrappers,
+    "test_support": WebRTCTests.TestTestSupport,
   }
-
-  # We do this so the user can write -t <binary> instead of -t cmdline <binary>.
-  sys.argv.insert(sys.argv.index('-t') + 1, 'cmdline')
-  print sys.argv
   ret = _main(sys.argv)
-  sys.exit(ret)
+  sys.exit(ret)  
