@@ -268,6 +268,11 @@ int VP8Encoder::InitEncode(const VideoCodec* inst,
       cpu_speed_ = -6;
       break;
   }
+#ifdef WEBRTC_ANDROID
+  // On mobile platform, always set to -12 to leverage between cpu usage
+  // and video quality
+  cpu_speed_ = -12;
+#endif
   rps_->Init();
   return InitAndSetControlSettings(inst);
 }
