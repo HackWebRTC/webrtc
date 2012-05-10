@@ -21,9 +21,8 @@
         'src/voice_engine/voice_engine.gyp:*',
         'test/metrics.gyp:*',
         'test/test.gyp:*',
+        'tools/e2e_quality/e2e_quality.gyp:*',
       ],
     },
   ],
-  'conditions': [
-  ],  # conditions
 }
