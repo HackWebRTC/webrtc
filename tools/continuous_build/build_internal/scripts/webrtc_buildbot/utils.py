@@ -36,6 +36,7 @@ VALGRIND_CMD = ['tools/valgrind-webrtc/webrtc_tests.sh', '-t', 'cmdline']
 
 DEFAULT_COVERAGE_DIR = '/var/www/coverage'
 DEFAULT_BLOAT_DIR = '/var/www/bloat'
+DEFAULT_BLOAT_URL = 'http://webrtc-chrome.lul/bloat/webrtc_bloat.html'
 DEFAULT_MASTER_WORK_DIR = '.'
 GCLIENT_RETRIES = 3
 
@@ -466,6 +467,17 @@ class GenerateCodeCoverage(ShellCommand):
     ShellCommand.start(self)
 
 
+class ShellCommandWithUrl(ShellCommand):
+  """A regular shell command which posts a link when it's done."""
+  def __init__(self, url, **kwargs):
+    ShellCommand.__init__(self, **kwargs)
+    self.addFactoryArguments(url=url)
+    self.url = url
+
+  def createSummary(self, log):
+    self.addURL('click here', self.url)
+
+
 class WebRTCAndroidFactory(WebRTCFactory):
   """Sets up the Android build."""
 
@@ -563,11 +575,14 @@ class WebRTCChromeFactory(WebRTCFactory):
     output_filename = PosixPathJoin(DEFAULT_BLOAT_DIR, 'bloat_latest.json')
     build_directory = 'Release' if self.release else 'Debug'
     chrome_binary = PosixPathJoin('out', build_directory, 'chrome')
-    self.AddCommonStep([bloat_path, '--binary', chrome_binary,
-                        '--source-path', '.', '--output-file', output_filename],
-                       descriptor='calculate_bloat.py',
-                       warn_on_failure=True, workdir='build/src',
-                       timeout=7200)
+    cmd = [bloat_path, '--binary', chrome_binary, '--source-path', '.',
+           '--output-file', output_filename]
+    self.addStep(ShellCommandWithUrl(command=cmd,
+                   url=DEFAULT_BLOAT_URL,
+                   description='calculate_bloat.py',
+                   warnOnFailure=True,
+                   workdir='build/src',
+                   timeout=7200))
 
   def AddCommonMakeStep(self, targets, make_extra=None):
     descriptor = ['make'] + targets
