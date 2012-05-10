@@ -43,7 +43,7 @@ RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
     RtpRtcp::Configuration configuration_copy;
     memcpy(&configuration_copy, &configuration_copy,
            sizeof(RtpRtcp::Configuration));
-    configuration_copy.clock = ModuleRTPUtility::GetSystemClock();
+    ModuleRTPUtility::GetSystemClock();
     ModuleRtpRtcpImpl* rtp_rtcp_instance =
         new ModuleRtpRtcpImpl(configuration_copy);
     rtp_rtcp_instance->OwnsClock();
