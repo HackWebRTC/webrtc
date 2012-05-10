@@ -223,6 +223,7 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
       group = NULL;  // Prevent group from being deleted.
     }
   }
+  delete vie_channel;
   // Leave the write critsect before deleting the objects.
   // Deleting a channel can cause other objects, such as renderers, to be
   // deleted, which might take time.
@@ -242,7 +243,6 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
                  channel_id);
     delete group;
   }
-  delete vie_channel;
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_),
                "%s Channel %d deleted", __FUNCTION__, channel_id);
   return 0;
