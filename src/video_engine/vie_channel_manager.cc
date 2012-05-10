@@ -206,8 +206,6 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
 
     // Check if other channels are using the same encoder.
     if (ChannelUsingViEEncoder(channel_id)) {
-      // Not supported.
-      assert(false);
       vie_encoder = NULL;
     } else {
       // Delete later when we've released the critsect.
