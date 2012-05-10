@@ -93,7 +93,6 @@ ViEChannel::ViEChannel(WebRtc_Word32 channel_id,
   configuration.bitrate_observer = bitrate_observer;
 
   rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(configuration));
-  vie_receiver_.SetRtpRtcpModule(rtp_rtcp_.get());
 }
 
 WebRtc_Word32 ViEChannel::Init() {
