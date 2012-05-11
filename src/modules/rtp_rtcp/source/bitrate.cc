@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -23,21 +23,6 @@ Bitrate::Bitrate(RtpRtcpClock* clock) :
     _bytesCount(0),
     _packetCount(0)
 {
-    memset(_packetRateArray, 0, sizeof(_packetRateArray));
-    memset(_bitrateDiffMS, 0, sizeof(_bitrateDiffMS));
-    memset(_bitrateArray, 0, sizeof(_bitrateArray));
-}
-
-void
-Bitrate::Init()
-{
-    _packetRate = 0;
-    _bitrate = 0;
-    _timeLastRateUpdate = 0;
-    _bytesCount = 0;
-    _packetCount = 0;
-    _bitrateNextIdx = 0;
-
     memset(_packetRateArray, 0, sizeof(_packetRateArray));
     memset(_bitrateDiffMS, 0, sizeof(_bitrateDiffMS));
     memset(_bitrateArray, 0, sizeof(_bitrateArray));

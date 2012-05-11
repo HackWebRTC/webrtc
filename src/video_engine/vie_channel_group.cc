@@ -43,6 +43,14 @@ bool ChannelGroup::Empty() {
   return channels_.empty();
 }
 
+RtpRemoteBitrateObserver* ChannelGroup::GetRtpRemoteBitrateObserver() {
+  return remb_.get();
+}
+
+BitrateController* ChannelGroup::GetBitrateController() {
+  return bitrate_controller_.get();
+}
+
 bool ChannelGroup::SetChannelRembStatus(int channel_id,
                                         bool sender,
                                         bool receiver,
@@ -67,11 +75,6 @@ bool ChannelGroup::SetChannelRembStatus(int channel_id,
     remb_->AddReceiveChannel(rtp_module);
   } else {
     remb_->RemoveReceiveChannel(rtp_module);
-  }
-  if (sender || receiver) {
-    rtp_module->SetRemoteBitrateObserver(remb_.get());
-  } else {
-    rtp_module->SetRemoteBitrateObserver(NULL);
   }
   return true;
 }

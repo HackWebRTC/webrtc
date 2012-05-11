@@ -98,8 +98,12 @@ int ViEChannelManager::CreateChannel(int& channel_id) {
   RtcpBandwidthObserver* bandwidth_observer =
       bitrate_controller->CreateRtcpBandwidthObserver();
 
+  RtpRemoteBitrateObserver* bitrate_observer =
+      group->GetRtpRemoteBitrateObserver();
+
   if (!(vie_encoder->Init() &&
-        CreateChannelObject(new_channel_id, vie_encoder, bandwidth_observer))) {
+        CreateChannelObject(new_channel_id, vie_encoder, bandwidth_observer,
+                            bitrate_observer))) {
     delete vie_encoder;
     vie_encoder = NULL;
     ReturnChannelId(new_channel_id);
@@ -129,8 +133,13 @@ int ViEChannelManager::CreateChannel(int& channel_id,
   }
 
   BitrateController* bitrate_controller = channel_group->GetBitrateController();
+
   RtcpBandwidthObserver* bandwidth_observer =
       bitrate_controller->CreateRtcpBandwidthObserver();
+
+  RtpRemoteBitrateObserver* bitrate_observer =
+      channel_group->GetRtpRemoteBitrateObserver();
+
   ViEEncoder* vie_encoder = NULL;
   if (sender) {
     // We need to create a new ViEEncoder.
@@ -139,14 +148,15 @@ int ViEChannelManager::CreateChannel(int& channel_id,
                                  bitrate_controller);
     if (!(vie_encoder->Init() &&
           CreateChannelObject(new_channel_id, vie_encoder,
-                              bandwidth_observer))) {
+                              bandwidth_observer, bitrate_observer))) {
       delete vie_encoder;
       vie_encoder = NULL;
     }
   } else {
     vie_encoder = ViEEncoderPtr(original_channel);
     assert(vie_encoder);
-    if (!CreateChannelObject(new_channel_id, vie_encoder, bandwidth_observer)) {
+    if (!CreateChannelObject(new_channel_id, vie_encoder, bandwidth_observer,
+                             bitrate_observer)) {
       vie_encoder = NULL;
     }
   }
@@ -182,8 +192,6 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
     vie_channel = c_it->second;
     channel_map_.erase(c_it);
 
-    // Deregister the channel from the ViEEncoder to stop the media flow.
-    vie_channel->DeregisterSendRtpRtcpModule();
     ReturnChannelId(channel_id);
 
     // Find the encoder object.
@@ -198,10 +206,6 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
 
     // Check if other channels are using the same encoder.
     if (ChannelUsingViEEncoder(channel_id)) {
-      // Don't delete the ViEEncoder, at least one other channel is using it.
-      WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_),
-        "%s ViEEncoder removed from map for channel %d, not deleted",
-        __FUNCTION__, channel_id);
       vie_encoder = NULL;
     } else {
       // Delete later when we've released the critsect.
@@ -217,6 +221,7 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
       group = NULL;  // Prevent group from being deleted.
     }
   }
+  delete vie_channel;
   // Leave the write critsect before deleting the objects.
   // Deleting a channel can cause other objects, such as renderers, to be
   // deleted, which might take time.
@@ -236,7 +241,6 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
                  channel_id);
     delete group;
   }
-  delete vie_channel;
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_),
                "%s Channel %d deleted", __FUNCTION__, channel_id);
   return 0;
@@ -321,39 +325,32 @@ bool ViEChannelManager::SetRembStatus(int channel_id, bool sender,
 bool ViEChannelManager::CreateChannelObject(
     int channel_id,
     ViEEncoder* vie_encoder,
-    RtcpBandwidthObserver* bandwidth_observer) {
+    RtcpBandwidthObserver* bandwidth_observer,
+    RtpRemoteBitrateObserver* bitrate_observer) {
+  // Register the channel at the encoder.
+  RtpRtcp* send_rtp_rtcp_module = vie_encoder->SendRtpRtcpModule();
+
   ViEChannel* vie_channel = new ViEChannel(channel_id, engine_id_,
                                            number_of_cores_,
                                            *module_process_thread_,
                                            vie_encoder,
-                                           bandwidth_observer);
+                                           bandwidth_observer,
+                                           bitrate_observer,
+                                           send_rtp_rtcp_module);
   if (vie_channel->Init() != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_),
                  "%s could not init channel", __FUNCTION__, channel_id);
     delete vie_channel;
     return false;
   }
-  // Register the channel at the encoder.
-  // Need to call RegisterSendRtpRtcpModule before SetSendCodec since
-  // the SetSendCodec call use the default rtp/rtcp module.
-  RtpRtcp* send_rtp_rtcp_module = vie_encoder->SendRtpRtcpModule();
-  if (vie_channel->RegisterSendRtpRtcpModule(*send_rtp_rtcp_module) != 0) {
-    delete vie_channel;
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id),
-                 "%s: Could not register RTP module", __FUNCTION__);
-    return false;
-  }
-
   VideoCodec encoder;
   if (vie_encoder->GetEncoder(encoder) != 0 ||
       vie_channel->SetSendCodec(encoder) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id),
                  "%s: Could not GetEncoder or SetSendCodec.", __FUNCTION__);
-    vie_channel->DeregisterSendRtpRtcpModule();
     delete vie_channel;
     return false;
   }
-
   // Store the channel, add it to the channel group and save the vie_encoder.
   channel_map_[channel_id] = vie_channel;
   vie_encoder_map_[channel_id] = vie_encoder;

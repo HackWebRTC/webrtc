@@ -59,10 +59,12 @@ void CreateRtpPacket(const bool marker_bit, const WebRtc_UWord8 payload,
 class TestTransport : public Transport,
                       public RtpData {
  public:
-  TestTransport(RTCPReceiver* rtcp_receiver) :
-    rtcp_receiver_(rtcp_receiver) {
+  TestTransport()
+      : rtcp_receiver_(NULL) {
   }
-
+  void SetRTCPReceiver(RTCPReceiver* rtcp_receiver) {
+    rtcp_receiver_ = rtcp_receiver;
+  }
   virtual int SendPacket(int /*ch*/, const void* /*data*/, int /*len*/) {
     return -1;
   }
@@ -83,8 +85,9 @@ class TestTransport : public Transport,
 
   virtual int OnReceivedPayloadData(const WebRtc_UWord8* payloadData,
                                     const WebRtc_UWord16 payloadSize,
-                                    const WebRtcRTPHeader* rtpHeader)
-                                    {return 0;}
+                                    const WebRtcRTPHeader* rtpHeader) {
+    return 0;
+  }
   RTCPReceiver* rtcp_receiver_;
   RTCPHelp::RTCPPacketInformation rtcp_packet_info_;
 };
@@ -93,14 +96,22 @@ class RtcpSenderTest : public ::testing::Test {
  protected:
   RtcpSenderTest() {
     system_clock_ = ModuleRTPUtility::GetSystemClock();
-    rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(0, false, system_clock_);
+    test_transport_ = new TestTransport();
+
+    RtpRtcp::Configuration configuration;
+    configuration.id = 0;
+    configuration.audio = false;
+    configuration.clock = system_clock_;
+    configuration.incoming_data = test_transport_;
+    configuration.outgoing_transport = test_transport_;
+
+    rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(configuration);
     rtcp_sender_ = new RTCPSender(0, false, system_clock_, rtp_rtcp_impl_);
     rtcp_receiver_ = new RTCPReceiver(0, system_clock_, rtp_rtcp_impl_);
-    test_transport_ = new TestTransport(rtcp_receiver_);
+    test_transport_->SetRTCPReceiver(rtcp_receiver_);
     // Initialize
     EXPECT_EQ(0, rtcp_sender_->Init());
     EXPECT_EQ(0, rtcp_sender_->RegisterSendTransport(test_transport_));
-    EXPECT_EQ(0, rtp_rtcp_impl_->RegisterIncomingDataCallback(test_transport_));
   }
   ~RtcpSenderTest() {
     delete rtcp_sender_;

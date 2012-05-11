@@ -67,29 +67,6 @@ RTPSenderVideo::~RTPSenderVideo()
     delete _sendVideoCritsect;
 }
 
-WebRtc_Word32
-RTPSenderVideo::Init()
-{
-    CriticalSectionScoped cs(_sendVideoCritsect);
-
-    _retransmissionSettings = kRetransmitBaseLayer;
-    _fecEnabled = false;
-    _payloadTypeRED = -1;
-    _payloadTypeFEC = -1;
-    _numberFirstPartition = 0;
-    memset(&delta_fec_params_, 0, sizeof(delta_fec_params_));
-    memset(&key_fec_params_, 0, sizeof(key_fec_params_));
-    delta_fec_params_.max_fec_frames = key_fec_params_.max_fec_frames = 1;
-    _fecOverheadRate.Init();
-    return 0;
-}
-
-void
-RTPSenderVideo::ChangeUniqueId(const WebRtc_Word32 id)
-{
-    _id = id;
-}
-
 void
 RTPSenderVideo::SetVideoCodecType(RtpVideoCodecTypes videoType)
 {

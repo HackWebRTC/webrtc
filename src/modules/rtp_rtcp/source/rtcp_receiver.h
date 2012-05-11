@@ -76,8 +76,6 @@ public:
 
     WebRtc_Word32 ResetRTT(const WebRtc_UWord32 remoteSSRC);
 
-    void UpdateLipSync(const WebRtc_Word32 audioVideoOffset) const;
-
     WebRtc_Word32 SenderInfoReceived(RTCPSenderInfo* senderInfo) const;
 
     // get statistics

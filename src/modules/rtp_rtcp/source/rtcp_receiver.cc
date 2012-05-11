@@ -165,9 +165,6 @@ WebRtc_Word32 RTCPReceiver::RTT(const WebRtc_UWord32 remoteSSRC,
       GetReportBlockInformation(remoteSSRC);
 
   if (reportBlock == NULL) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
-                 "\tfailed to GetReportBlockInformation(%u)",
-                 remoteSSRC);
     return -1;
   }
   if (RTT) {
@@ -201,16 +198,6 @@ int RTCPReceiver::SetRTT(WebRtc_UWord16 rtt) {
   _rtt = rtt;
   return 0;
 }
-
-void
-RTCPReceiver::UpdateLipSync(const WebRtc_Word32 audioVideoOffset) const
-{
-    CriticalSectionScoped lock(_criticalSectionFeedbacks);
-    if(_cbRtcpFeedback)
-    {
-        _cbRtcpFeedback->OnLipSyncUpdate(_id,audioVideoOffset);
-    }
-};
 
 WebRtc_Word32
 RTCPReceiver::NTP(WebRtc_UWord32 *ReceivedNTPsecs,
@@ -1246,9 +1233,6 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
 
     // Might trigger a OnReceivedBandwidthEstimateUpdate.
     UpdateTMMBR();
-  }
-  if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpSr) {
-    _rtpRtcp.OnReceivedNTP();
   }
   if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpSrReq) {
     _rtpRtcp.OnRequestSendReport();
