@@ -264,8 +264,6 @@ void ViEAutoTest::ViECodecExtendedTest() {
     ViETest::Log("========================================");
     ViETest::Log(" ViECodec Extended Test\n");
 
-    ViECodecAPITest();
-    ViECodecStandardTest();
     ViECodecExternalCodecTest();
 
     TbInterfaces interfaces("ViECodecExtendedTest");

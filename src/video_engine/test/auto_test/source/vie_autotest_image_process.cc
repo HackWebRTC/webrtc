@@ -134,7 +134,6 @@ void ViEAutoTest::ViEImageProcessStandardTest()
 
 void ViEAutoTest::ViEImageProcessExtendedTest()
 {
-    ViEImageProcessStandardTest();
 }
 
 void ViEAutoTest::ViEImageProcessAPITest()

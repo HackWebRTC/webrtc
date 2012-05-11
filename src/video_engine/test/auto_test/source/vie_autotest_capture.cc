@@ -254,8 +254,6 @@ void ViEAutoTest::ViECaptureStandardTest() {
 }
 
 void ViEAutoTest::ViECaptureExtendedTest() {
-  ViECaptureStandardTest();
-  ViECaptureAPITest();
   ViECaptureExternalCaptureTest();
 }
 

@@ -184,7 +184,9 @@ TEST_F(ViEVideoVerificationTest, RunsCodecTestWithoutErrors)  {
 // in the encoder. The local and remote file will not be of equal size because
 // of unknown reasons. Tests show that they start at the same frame, which is
 // the important thing when doing frame-to-frame comparison with PSNR/SSIM.
-TEST_F(ViEVideoVerificationTest, RunsFullStackWithoutErrors)  {
+// TODO(phoglund): This is flaky and a bit incomplete - enable again when it has
+// been made more deterministic.
+TEST_F(ViEVideoVerificationTest, DISABLED_RunsFullStackWithoutErrors)  {
   FrameDropDetector detector;
   local_file_renderer_ = new ViEToFileRenderer();
   remote_file_renderer_ = new FrameDropMonitoringRemoteFileRenderer(&detector);
