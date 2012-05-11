@@ -752,7 +752,7 @@ int WebRtcAec_GetDelayMetrics(void* handle, int* median, int* std) {
   const int kMsPerBlock = (PART_LEN * 1000) / self->splitSampFreq;
   float l1_norm = 0;
 
-  if (self == NULL) {
+  if (handle == NULL) {
     return -1;
   }
   if (median == NULL) {
