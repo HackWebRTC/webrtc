@@ -178,7 +178,7 @@ int VP8Encoder::InitEncode(const VideoCodec* inst,
   encoded_image_._buffer = new uint8_t[encoded_image_._size];
   encoded_image_._completeFrame = true;
 
-  vpx_img_alloc(raw_, IMG_FMT_I420, codec_.width, codec_.height, 1);
+  vpx_img_alloc(raw_, IMG_FMT_I420, codec_.width, codec_.height,32);
   // populate encoder configuration with default values
   if (vpx_codec_enc_config_default(vpx_codec_vp8_cx(), config_, 0)) {
     return WEBRTC_VIDEO_CODEC_ERROR;
@@ -972,7 +972,7 @@ VideoDecoder* VP8Decoder::Copy() {
 
     if (!vpx_img_alloc(&ref_frame_->img,
                        static_cast<vpx_img_fmt_t>(image_format_),
-                       decoded_image_._width, decoded_image_._height, 1)) {
+                       decoded_image_._width, decoded_image_._height, 32)) {
       assert(false);
       delete copy;
       return NULL;
