@@ -32,7 +32,7 @@ WEBRTC_SVN_LOCATION = 'http://webrtc.googlecode.com/svn/trunk'
 WEBRTC_TRUNK_DIR = 'build/trunk'
 WEBRTC_BUILD_DIR = 'build'
 
-VALGRIND_CMD = ['tools/valgrind-webrtc/webrtc_tests.sh', '-t', 'cmdline']
+MEMCHECK_CMD = ['tools/valgrind-webrtc/webrtc_tests.sh', '-t']
 
 DEFAULT_COVERAGE_DIR = '/var/www/coverage'
 DEFAULT_BLOAT_DIR = '/var/www/bloat'
@@ -615,13 +615,14 @@ class WebRTCLinuxFactory(WebRTCFactory):
   """
 
   def __init__(self, build_status_oracle, is_try_slave=False,
-               valgrind_enabled=False, custom_deps_list=None):
+               run_with_memcheck=False, custom_deps_list=None):
     WebRTCFactory.__init__(self, build_status_oracle=build_status_oracle,
                            is_try_slave=is_try_slave,
                            custom_deps_list=custom_deps_list)
     self.build_enabled = False
     self.coverage_enabled = False
-    self.valgrind_enabled = valgrind_enabled
+    self.run_with_memcheck = run_with_memcheck
+    self.compile_for_memory_tooling = False
 
   def EnableCoverage(self, coverage_url, coverage_dir=DEFAULT_COVERAGE_DIR):
     """Enables coverage measurements using LCOV/GCOV.
@@ -641,11 +642,12 @@ class WebRTCLinuxFactory(WebRTCFactory):
     self.coverage_dir = coverage_dir
 
   def EnableBuild(self, release=False, build32=False, chrome_os=False,
-                  clang=False):
+                  clang=False, compile_for_memory_tooling=False):
     if build32:
       self.gyp_params.append('-Dtarget_arch=ia32')
 
     self.build_enabled = True
+    self.compile_for_memory_tooling = compile_for_memory_tooling
     self.release = release
 
     self.AddSmartCleanStep()
@@ -653,7 +655,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
     # Valgrind bots need special GYP defines to enable memory profiling
     # friendly compilation. They already has a custom .gclient configuration
     # file created so they don't need one being generated like the other bots.
-    if self.valgrind_enabled:
+    if self.compile_for_memory_tooling:
       for gyp_define in MEMORY_TOOLS_GYP_DEFINES:
         self.gyp_params.append('-D' + gyp_define)
     self.AddGclientSyncStep()
@@ -683,8 +685,8 @@ class WebRTCLinuxFactory(WebRTCFactory):
     if cmd is None:
       test_folder = 'Release' if self.release else 'Debug'
       cmd = ['out/%s/%s' % (test_folder, test)]
-    if self.valgrind_enabled:
-      cmd = VALGRIND_CMD + cmd
+    if self.run_with_memcheck:
+      cmd = MEMCHECK_CMD + cmd
     self.AddCommonStep(cmd, descriptor=descriptor, halt_build_on_failure=False)
 
   def AddXvfbTestRunStep(self, test_name, test_binary, test_arguments=''):
@@ -791,12 +793,25 @@ class WebRTCLinuxFactory(WebRTCFactory):
       # TODO(phoglund): Enable the full stack test once it is completed and
       # nonflaky.
       binary = 'out/Debug/vie_auto_test'
+      filter = '-ViEVideoVerificationTest.RunsFullStack*:ViERtpFuzzTest*'
       args = (
-          '--automated --gtest_filter="'
-          '-ViEVideoVerificationTest.RunsFullStackWithoutErrors" '
-          '--capture_test_ensure_resolution_alignment_in_capture_device=false')
+        '--automated --gtest_filter="%s" '
+        '--capture_test_ensure_resolution_alignment_in_capture_device=false')
+      args = args % filter
       self.AddXvfbTestRunStep(test_name=test, test_binary=binary,
                               test_arguments=args)
+
+      # Set up the fuzz tests as a separate step under memcheck.
+      # If this test is run we require that we have compiled for memory tools.
+      # We need to use some special black magic here: -- is replaced with ++
+      # when calling the webrtc_tests.sh script since we want those parameters
+      # to not be caught by webrtc_tests.sh's options parser, but be passed on
+      # to vie_auto_test. This is a part of webrtc_tests.sh's contract.
+      assert self.compile_for_memory_tooling
+      fuzz_binary = (' '.join(MEMCHECK_CMD) + ' ' + binary +
+                     ' ++automated ++gtest_filter=ViERtpFuzzTest*')
+      self.AddXvfbTestRunStep(test_name=test + ' (fuzz tests)',
+                              test_binary=fuzz_binary)
     elif test == 'video_render_module_test':
       self.AddXvfbTestRunStep(test_name=test,
                               test_binary='out/Debug/video_render_module_test')
