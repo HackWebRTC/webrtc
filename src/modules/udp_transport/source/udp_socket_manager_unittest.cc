@@ -18,15 +18,18 @@
 #include "udp_socket_wrapper.h"
 #include "udp_socket_manager_wrapper.h"
 #include "gtest/gtest.h"
+#include "src/system_wrappers/interface/trace.h"
+
+namespace webrtc {
 
 TEST(UdpSocketManager, CreateCallsInitAndDoesNotLeakMemory) {
   WebRtc_Word32 id = 42;
   WebRtc_UWord8 threads = 1;
-  webrtc::UdpSocketManager* mgr = webrtc::UdpSocketManager::Create(id, threads);
+  UdpSocketManager* mgr = UdpSocketManager::Create(id, threads);
   // Create is supposed to have called init on the object.
   EXPECT_EQ(false, mgr->Init(id, threads))
       << "Init should return false since Create is supposed to call it.";
-  webrtc::UdpSocketManager::Return();
+  UdpSocketManager::Return();
 }
 
 // Creates a socket and adds it to the socket manager, and then removes it
@@ -34,28 +37,34 @@ TEST(UdpSocketManager, CreateCallsInitAndDoesNotLeakMemory) {
 TEST(UdpSocketManager, AddAndRemoveSocketDoesNotLeakMemory) {
   WebRtc_Word32 id = 42;
   WebRtc_UWord8 threads = 1;
-  webrtc::UdpSocketManager* mgr = webrtc::UdpSocketManager::Create(id, threads);
-  webrtc::UdpSocketWrapper* socket
-       = webrtc::UdpSocketWrapper::CreateSocket(id,
-                                                mgr,
-                                                NULL,  // CallbackObj
-                                                NULL,  // IncomingSocketCallback
-                                                false,  // ipV6Enable
-                                                false);  // disableGQOS
+  UdpSocketManager* mgr = UdpSocketManager::Create(id, threads);
+  UdpSocketWrapper* socket
+       = UdpSocketWrapper::CreateSocket(id,
+                                        mgr,
+                                        NULL,  // CallbackObj
+                                        NULL,  // IncomingSocketCallback
+                                        false,  // ipV6Enable
+                                        false);  // disableGQOS
   // The constructor will do AddSocket on the manager.
+  // RemoveSocket indirectly calls Delete.
   EXPECT_EQ(true, mgr->RemoveSocket(socket));
-  webrtc::UdpSocketManager::Return();
+  UdpSocketManager::Return();
 }
 
 // Creates a socket and add it to the socket manager, but does not remove it
 // before destroying the socket manager.
-// This should also destroy the socket.
-TEST(UdpSocketManager, DISABLED_UnremovedSocketsGetCollectedAtManagerDeletion) {
+// On Posix, this destroys the socket.
+// On Winsock2 Windows, it enters an infinite wait for all the sockets
+// to go away.
+TEST(UdpSocketManager, UnremovedSocketsGetCollectedAtManagerDeletion) {
+#if defined(_WIN32)
+  // It's hard to test an infinite wait, so we don't.
+#else
   WebRtc_Word32 id = 42;
   WebRtc_UWord8 threads = 1;
-  webrtc::UdpSocketManager* mgr = webrtc::UdpSocketManager::Create(id, threads);
-  webrtc::UdpSocketWrapper* unused_socket
-       = webrtc::UdpSocketWrapper::CreateSocket(id,
+  UdpSocketManager* mgr = UdpSocketManager::Create(id, threads);
+  UdpSocketWrapper* unused_socket
+       = UdpSocketWrapper::CreateSocket(id,
                                                 mgr,
                                                 NULL,  // CallbackObj
                                                 NULL,  // IncomingSocketCallback
@@ -63,5 +72,8 @@ TEST(UdpSocketManager, DISABLED_UnremovedSocketsGetCollectedAtManagerDeletion) {
                                                 false);  // disableGQOS
   // The constructor will do AddSocket on the manager.
   unused_socket = NULL;
-  webrtc::UdpSocketManager::Return();
+  UdpSocketManager::Return();
+#endif
 }
+
+}  // namespace webrtc

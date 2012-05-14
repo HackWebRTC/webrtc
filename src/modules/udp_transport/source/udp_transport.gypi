@@ -108,6 +108,7 @@
           'sources': [
             'udp_transport_unittest.cc',
             'udp_socket_manager_unittest.cc',
+            'udp_socket_wrapper_unittest.cc',
           ],
         }, # udp_transport_unittests
       ], # targets
