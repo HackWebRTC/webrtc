@@ -618,8 +618,6 @@ int VP8Decoder::InitDecode(const VideoCodec* inst, int number_of_cores) {
   vpx_codec_flags_t flags = 0;
 #if WEBRTC_LIBVPX_VERSION >= 971
   flags = VPX_CODEC_USE_ERROR_CONCEALMENT | VPX_CODEC_USE_POSTPROC;
-  // TODO(pwestin) enable deblock with the next VP8 drop.
-  // | VP8_DEMACROBLOCK | VP8_DEBLOCK;
 #ifdef INDEPENDENT_PARTITIONS
   flags |= VPX_CODEC_USE_INPUT_PARTITION;
 #endif
@@ -631,10 +629,9 @@ int VP8Decoder::InitDecode(const VideoCodec* inst, int number_of_cores) {
 
 #if WEBRTC_LIBVPX_VERSION >= 971
   vp8_postproc_cfg_t  ppcfg;
-  // Disable deblocking for now due to uninitialized memory being returned.
-  ppcfg.post_proc_flag = 0;
+  ppcfg.post_proc_flag = VP8_DEMACROBLOCK | VP8_DEBLOCK;
   // Strength of deblocking filter. Valid range:[0,16]
-  //ppcfg.deblocking_level = 3;
+  ppcfg.deblocking_level = 3;
   vpx_codec_control(decoder_, VP8_SET_POSTPROC, &ppcfg);
 #endif
 
@@ -679,7 +676,8 @@ int VP8Decoder::Decode(const EncodedImage& input_image,
     // header says.
     mfqe_enabled_ = true;
     vp8_postproc_cfg_t  ppcfg;
-    ppcfg.post_proc_flag = VP8_MFQE;
+    ppcfg.post_proc_flag = VP8_MFQE | VP8_DEMACROBLOCK | VP8_DEBLOCK;
+    ppcfg.deblocking_level = 3;
     vpx_codec_control(decoder_, VP8_SET_POSTPROC, &ppcfg);
   }
 #endif
