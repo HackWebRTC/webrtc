@@ -82,7 +82,7 @@ COVERITY_REMOTE = 'localhost'
 
 COVERITY_PORT = '8080'
 
-COVERITY_STREAM = 'trunk'
+COVERITY_STREAM = 'WebRTC-Windows-7-x64'
 
 COVERITY_TARGET = 'Windows'
 
@@ -144,7 +144,7 @@ def run_coverity(options, args):
   # the time to read the password is after we do the chdir().
   coverity_password = _ReadPassword(options.coverity_password_file)
 
-  cmd = 'gclient sync'
+  cmd = 'gclient sync --force'
   gclient_exit = _RunCommand(cmd, options.dry_run, shell=True)
   if gclient_exit != 0:
     print 'gclient aborted with status %s' % gclient_exit
@@ -192,7 +192,7 @@ def run_coverity(options, args):
       options.target)
   elif sys.platform == 'win32':
     cmd = ('%s\\cov-build.exe --dir %s devenv.com %s\\%s /build %s '
-           '/project webrtc.vcproj') % (
+           '/project All.vcproj') % (
       options.coverity_bin_dir, options.coverity_intermediate_dir,
       options.source_dir, options.solution_file, options.target)
   elif sys.platform == 'darwin':
