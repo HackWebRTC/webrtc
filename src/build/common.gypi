@@ -94,9 +94,7 @@
       '..','../..', # common_types.h, typedefs.h
     ],
     'defines': [
-      #'WEBRTC_SVNREVISION="n/a"',
-      #'WEBRTC_SVNREVISION="<(webrtc_version)"',
-      'WEBRTC_SVNREVISION="<!(python <(DEPTH)/src/build/version.py)"',
+      'WEBRTC_SVNREVISION="<!(python <(webrtc_root)/build/version.py)"',
     ],
     'conditions': [
       ['build_with_chromium==1', {
