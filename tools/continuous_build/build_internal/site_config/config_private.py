@@ -14,13 +14,16 @@ import socket
 
 class Master(object):
   # Repository URLs used by the SVNPoller and 'gclient config'.
-  server_url = 'http://webrtc.googlecode.com'
-  git_server_url =  'http://webrtc.googlecode.com/git'
+  webrtc_root_url = 'http://webrtc.googlecode.com/svn'
+
+  # Leave Chromium's server URL intact, since we also build Chrome.
+  server_url = 'http://src.chromium.org'
+  git_server_url =  'http://src.chromium.org/git'
   repo_root = '/svn'
 
   # External repos.
   googlecode_url = 'http://%s.googlecode.com/svn'
-  sourceforge_url = 'https://%(repo)s.svn.sourceforge.net/svnroot/%(repo)s'
+  sourceforge_url = 'http://%(repo)s.svn.sourceforge.net/svnroot/%(repo)s'
 
   # Directly fetches from anonymous webkit svn server.
   webkit_root_url = 'http://svn.webkit.org/repository/webkit'

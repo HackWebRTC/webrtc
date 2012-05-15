@@ -38,8 +38,6 @@ twistd.pid
 /continuous_build/build_internal/masters/master.webrtc/android
 /continuous_build/build_internal/masters/master.webrtc/android-ndk
 /continuous_build/build_internal/masters/master.webrtc/chromeos
-/continuous_build/build_internal/masters/master.webrtc/linux-chrome
-/continuous_build/build_internal/masters/master.webrtc/linux-chrome-bloat
 /continuous_build/build_internal/masters/master.webrtc/linux-clang
 /continuous_build/build_internal/masters/master.webrtc/linux-slave-1
 /continuous_build/build_internal/masters/master.webrtc/linux-slave-2
@@ -47,11 +45,15 @@ twistd.pid
 /continuous_build/build_internal/masters/master.webrtc/linux-slave-5
 /continuous_build/build_internal/masters/master.webrtc/linux-slave-gcc-4.6
 /continuous_build/build_internal/masters/master.webrtc/linux-valgrind
+/continuous_build/build_internal/masters/master.webrtc/LinuxChrome
+/continuous_build/build_internal/masters/master.webrtc/LinuxChromeBloat
 /continuous_build/build_internal/masters/master.webrtc/mac-slave-2
 /continuous_build/build_internal/masters/master.webrtc/mac-slave-3
+/continuous_build/build_internal/masters/master.webrtc/MacChrome
 /continuous_build/build_internal/masters/master.webrtc/public_html
 /continuous_build/build_internal/masters/master.webrtc/win-32-dbg
 /continuous_build/build_internal/masters/master.webrtc/win-32-release
+/continuous_build/build_internal/masters/master.webrtc/WinChrome
 /continuous_build/build_internal/masters/master.webrtc/video
 /continuous_build/build_internal/masters/master.tryserver.webrtc/android-trybot
 /continuous_build/build_internal/masters/master.tryserver.webrtc/android-ndk-trybot

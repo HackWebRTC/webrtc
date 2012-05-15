@@ -35,8 +35,6 @@ WEBRTC_BUILD_DIR = 'build'
 MEMCHECK_CMD = ['tools/valgrind-webrtc/webrtc_tests.sh', '-t']
 
 DEFAULT_COVERAGE_DIR = '/var/www/coverage'
-DEFAULT_BLOAT_DIR = '/var/www/bloat'
-DEFAULT_BLOAT_URL = 'http://webrtc-chrome.lul/bloat/webrtc_bloat.html'
 DEFAULT_MASTER_WORK_DIR = '.'
 GCLIENT_RETRIES = 3
 
@@ -467,17 +465,6 @@ class GenerateCodeCoverage(ShellCommand):
     ShellCommand.start(self)
 
 
-class ShellCommandWithUrl(ShellCommand):
-  """A regular shell command which posts a link when it's done."""
-  def __init__(self, url, **kwargs):
-    ShellCommand.__init__(self, **kwargs)
-    self.addFactoryArguments(url=url)
-    self.url = url
-
-  def createSummary(self, log):
-    self.addURL('click here', self.url)
-
-
 class WebRTCAndroidFactory(WebRTCFactory):
   """Sets up the Android build."""
 
@@ -524,89 +511,6 @@ class WebRTCAndroidNDKFactory(WebRTCFactory):
                 '%s' % cmd)
     self.AddCommonStep(cmd=full_cmd, descriptor=descriptor)
 
-
-class WebRTCChromeFactory(WebRTCFactory):
-  """Sets up the Chrome Browser+WebRTC build."""
-
-  def __init__(self, build_status_oracle,
-               gclient_solution_name,
-               svn_url,
-               custom_deps_list=None,
-               safesync_url=None):
-    WebRTCFactory.__init__(self, build_status_oracle=build_status_oracle,
-                           gclient_solution_name=gclient_solution_name,
-                           svn_url=svn_url,
-                           custom_deps_list=custom_deps_list,
-                           safesync_url=safesync_url)
-    self.build_enabled = False
-
-  def EnableBuild(self, release=False, enable_profiling=False):
-    self.AddCommonStep(['rm', '-rf', 'src'], workdir=WEBRTC_BUILD_DIR,
-                       descriptor='Cleanup')
-    self.AddGclientSyncStep(always_use_latest=True)
-    if enable_profiling:
-      self.AddCommonStep(['./build/gyp_chromium', '-Dprofiling=1'],
-                         descriptor="gyp_chromium",
-                         warn_on_failure=True, workdir='build/src')
-
-    chrome_targets = ['chrome', 'pyautolib']
-    if release:
-      self.AddCommonMakeStep(chrome_targets, 'BUILDTYPE=Release')
-    else:
-      self.AddCommonMakeStep(chrome_targets)
-
-    self.build_enabled = True
-    self.release = release
-    self.profiling = enable_profiling
-
-  def EnableBloatCalculation(self):
-    """Runs a bloat calculation, which will yield a size breakdown for Chrome.
-
-    If running in Release mode, you should also run with profiling to get the
-    symbols right. Running this on Debug mode will work but it will probably
-    take hours.
-    """
-    assert self.build_enabled is True
-    assert (self.release and self.profiling) or not self.release
-
-    bloat_path = PosixPathJoin(WEBRTC_BUILD_DIR, '..', '..', '..', '..', '..',
-                               '..', 'build_internal', 'symsrc',
-                               'calculate_bloat.py')
-    output_filename = PosixPathJoin(DEFAULT_BLOAT_DIR, 'bloat_latest.json')
-    build_directory = 'Release' if self.release else 'Debug'
-    chrome_binary = PosixPathJoin('out', build_directory, 'chrome')
-    cmd = [bloat_path, '--binary', chrome_binary, '--source-path', '.',
-           '--output-file', output_filename]
-    self.addStep(ShellCommandWithUrl(command=cmd,
-                   url=DEFAULT_BLOAT_URL,
-                   description='calculate_bloat.py',
-                   warnOnFailure=True,
-                   workdir='build/src',
-                   timeout=7200))
-
-  def AddCommonMakeStep(self, targets, make_extra=None):
-    descriptor = ['make'] + targets
-    cmd = ['make', '-j100'] + targets
-    if make_extra is not None:
-      cmd.append(make_extra)
-    self.AddCommonStep(cmd=cmd, descriptor=descriptor,
-                       warn_on_failure=True, workdir='build/src')
-
-  def AddCommonTestRunStep(self, test):
-    # We currently only support PyAuto tests on this bot.
-    self._AddPyAutoTestRunStep(test)
-
-  def _AddPyAutoTestRunStep(self, test):
-    assert self.build_enabled
-
-    # Set up the test under Xvfb since it will probably launch browser windows.
-    # Replace any slashes in the test's path with underscores for the name since
-    # the buildbot web pages will become confused otherwise.
-    descriptor = test.replace('/', '_')
-    pyauto_flags = (' --chrome-flags "--enable-media-stream'
-                    ' --enable-peer-connection"')
-    cmd = MakeCommandToRunTestInXvfb(test + pyauto_flags)
-    self.AddCommonStep(cmd=cmd, descriptor=descriptor, workdir='build/src')
 
 class WebRTCLinuxFactory(WebRTCFactory):
   """Sets up the Linux build.

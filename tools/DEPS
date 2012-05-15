@@ -34,6 +34,14 @@ deps = {
     "https://github.com/martine/webtreemap.git@7839cf9154",
 }
 
+deps_os = {
+  # Statically built Xvfb to be used for browser tests on headless machines.
+  "unix": {
+    "tools/continuous_build/build/third_party/xvfb":
+      Var("chromium_trunk") + "/tools/third_party/xvfb",
+  },
+}
+
 hooks = [
   {
     # Update slave buildbot.tac to include WebRTC slave_utils import.
