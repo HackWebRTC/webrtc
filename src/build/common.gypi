@@ -94,16 +94,9 @@
       '..','../..', # common_types.h, typedefs.h
     ],
     'defines': [
-      # TODO(leozwang): Temporally disable it because we cannot assume svn
-      # is installed by default, it will break Chromium build. The problem
-      # could happen on Gentoo which download and build tar ball directly,
-      # it also could happen when developer downloads Chromium tar ball and
-      # build inside source tree without svn installed. The solution is to
-      # have a script to deal with these cases and support git-svn.
-      # Two similar issues have been filed at
-      # WebRTC http://code.google.com/p/webrtc/issues/detail?id=496
-      # Chromium http://code.google.com/p/chromium/issues/detail?id=126452
-      'WEBRTC_SVNREVISION="n/a"',
+      #'WEBRTC_SVNREVISION="n/a"',
+      #'WEBRTC_SVNREVISION="<(webrtc_version)"',
+      'WEBRTC_SVNREVISION="<!(python <(DEPTH)/src/build/version.py)"',
     ],
     'conditions': [
       ['build_with_chromium==1', {
@@ -168,6 +161,7 @@
           'WEBRTC_ANDROID',
           # TODO(leozwang): move WEBRTC_ARCH_ARM to typedefs.h.
           'WEBRTC_ARCH_ARM',
+          'WEBRTC_DETECT_ARM_NEON',
           # TODO(leozwang): Investigate CLOCK_REALTIME and CLOCK_MONOTONIC
           # support on Android. Keep WEBRTC_CLOCK_TYPE_REALTIME for now,
           # remove it after I verify that CLOCK_MONOTONIC is fully functional

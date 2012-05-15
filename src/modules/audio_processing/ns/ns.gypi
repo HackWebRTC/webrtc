@@ -57,9 +57,6 @@
       'conditions': [
         ['OS=="android"', {
           'dependencies': [ 'ns_neon', ],
-          'defines': [
-            'WEBRTC_DETECT_ARM_NEON'
-          ],
         }],
       ],
     },

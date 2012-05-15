@@ -30,6 +30,28 @@
         'aecm_core.c',
         'aecm_core.h',
       ],
+      'conditions': [
+        ['OS=="android"', {
+          'dependencies': [ 'aecm_neon', ],
+        }],
+      ],
     },
+  ],
+  'conditions': [
+    ['OS=="android"', {
+      'targets': [
+        {
+          'target_name': 'aecm_neon',
+          'type': '<(library)',
+          'includes': [ '../../../build/arm_neon.gypi', ],
+          'dependencies': [
+            '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',
+          ],
+          'sources': [
+            'aecm_core_neon.c',
+          ],
+        },
+      ],
+    }],
   ],
 }
