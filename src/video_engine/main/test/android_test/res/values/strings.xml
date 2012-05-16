@@ -9,6 +9,7 @@
 <string name="codecSize">Codec Size</string>
 <string name="remoteIp">Remote IP address</string>
 <string name="loopback">Loopback</string>
+<string name="stats">Stats</string>
 <string name="startListen">Start Listen</string>
 <string name="startSend">Start Send</string>
 <string name="startBoth">Start Both</string>
@@ -32,5 +33,6 @@
 <string name="stopCall">StopCall</string>
 <string name="exit">Exit</string>
 <string name="speaker">Speaker</string>
-<string name="h263DecSw">H263 SW Decoder</string>
+<string name="surfaceview">SurfaceView</string>
+<string name="opengl">OpenGL</string>
 </resources>
