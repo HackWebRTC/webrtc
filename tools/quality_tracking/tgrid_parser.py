@@ -81,7 +81,7 @@ def parse_tgrid_page(html):
   """
   result = {}
 
-  for match in re.finditer('<td.*?class="sourcestamp">(\d+)  </td>(.*?)</tr>',
+  for match in re.finditer('<td.*?class="sourcestamp">(\d+).*?</td>(.*?)</tr>',
                            html, re.DOTALL):
     revision = match.group(1)
     builds_for_revision_html = match.group(2)

@@ -492,6 +492,15 @@ MINIMAL_EXCEPTION_SLAVE_LOST = """
 </tr>
 """
 
+MINIMAL_IN_TRUNK_SOURCESTAMP = """
+<tr>
+<td valign="bottom" class="sourcestamp">1576 in trunk </td>
+<td class="build retry">
+  <a href="builders/LinuxValgrind/builds/324">build<br/>successful<br/>exception<br/>slave<br/>lost</a>
+</td>
+</tr>
+"""
+
 class TGridParserTest(unittest.TestCase):
   def test_parser_throws_exception_on_empty_html(self):
     self.assertRaises(tgrid_parser.FailedToParseBuildStatus,
@@ -547,6 +556,17 @@ class TGridParserTest(unittest.TestCase):
     # the build was successful AND the slave was lost. In this case the build
     # is not actually successful, so treat it as such.
     result = tgrid_parser.parse_tgrid_page(MINIMAL_EXCEPTION_SLAVE_LOST)
+
+    self.assertEqual(1, len(result), 'There is only one bot in the sample.')
+    first_mapping = result.items()[0]
+
+    self.assertEqual('1576--LinuxValgrind', first_mapping[0])
+    self.assertEqual('324--failed', first_mapping[1])
+
+  def test_parser_finds_exception_slave_lost_and_maps_to_failed(self):
+    # Sometimes the transposed grid says "in trunk" in the source stamp, so
+    # make sure we deal with that.
+    result = tgrid_parser.parse_tgrid_page(MINIMAL_IN_TRUNK_SOURCESTAMP)
 
     self.assertEqual(1, len(result), 'There is only one bot in the sample.')
     first_mapping = result.items()[0]
