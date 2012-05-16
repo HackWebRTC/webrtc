@@ -40,12 +40,8 @@
         'udp_socket_manager_posix.cc',
         'udp_socket_manager_posix.h',
         # Windows
-        'udp_socket_manager_windows.cc',
-        'udp_socket_manager_windows.h',
         'udp_socket2_manager_windows.cc',
         'udp_socket2_manager_windows.h',
-        'udp_socket_windows.cc',
-        'udp_socket_windows.h',
         'udp_socket2_windows.cc',
         'udp_socket2_windows.h',
         'traffic_control_windows.cc',
@@ -63,12 +59,8 @@
         }],
         ['OS!="win"', {
           'sources!': [
-            'udp_socket_manager_windows.cc',
-            'udp_socket_manager_windows.h',
             'udp_socket2_manager_windows.cc',
             'udp_socket2_manager_windows.h',
-            'udp_socket_windows.cc',
-            'udp_socket_windows.h',
             'udp_socket2_windows.cc',
             'udp_socket2_windows.h',
             'traffic_control_windows.cc',
@@ -84,11 +76,6 @@
           'xcode_settings': {
             'OTHER_CPLUSPLUSFLAGS': [ '-fno-strict-aliasing' ],
           },
-        }],
-        ['OS=="win"', {
-          'defines': [
-            'USE_WINSOCK2',
-          ],
         }],
       ] # conditions
     },
