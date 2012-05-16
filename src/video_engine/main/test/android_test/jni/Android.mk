@@ -143,12 +143,6 @@ LOCAL_SRC_FILES := \
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := libaecm_neon
-LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libaecm_neon.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
 LOCAL_MODULE := libbitrate_controller
 LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/src/modules/libbitrate_controller.a
@@ -318,7 +312,6 @@ LOCAL_STATIC_LIBRARIES := \
     libagc \
     libaec \
     libaecm \
-    libaecm_neon \
     libbitrate_controller \
     libresampler \
     libsignal_processing \

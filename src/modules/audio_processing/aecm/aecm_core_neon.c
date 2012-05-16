@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -16,7 +16,7 @@
 
 // Square root of Hanning window in Q14.
 static const WebRtc_Word16 kSqrtHanningReversed[] __attribute__((aligned(8))) = {
-  16384, 16373, 16354, 16325,
+  16384, 16373, 16354, 16325, 
   16286, 16237, 16179, 16111,
   16034, 15947, 15851, 15746,
   15631, 15506, 15373, 15231,
@@ -92,6 +92,7 @@ static void InverseFFTAndWindowNeon(AecmCore_t* aecm,
                                     WebRtc_Word16* output,
                                     const WebRtc_Word16* nearendClean) {
   int i, j, outCFFT;
+  WebRtc_Word32 tmp32no1;
 
   // Synthesis
   for (i = 0, j = 0; i < PART_LEN; i += 4, j += 8) {
@@ -197,6 +198,7 @@ static void CalcLinearEnergiesNeon(AecmCore_t* aecm,
   register WebRtc_UWord32 far_energy_r;
   register WebRtc_UWord32 echo_energy_stored_r;
   register WebRtc_UWord32 echo_energy_adapt_r;
+  uint32x4_t tmp32x4_0;
 
   __asm__("vmov.i32 q14, #0" : : : "q14"); // far_energy
   __asm__("vmov.i32 q8,  #0" : : : "q8"); // echo_energy_stored
