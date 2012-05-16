@@ -14,7 +14,6 @@ __author__ = 'kjellander@webrtc.org (Henrik Kjellander)'
 from buildbot.schedulers import timed
 
 from master import master_config
-from webrtc_buildbot import webrtc_factory
 from webrtc_buildbot import webrtc_chromium_factory
 
 # Used to put builders into different categories by the Helper class.
