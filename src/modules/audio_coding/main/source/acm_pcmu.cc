@@ -143,27 +143,6 @@ void ACMPCMU::DestructDecoderSafe()
     return;
 }
 
-
-WebRtc_Word16
-ACMPCMU::UnregisterFromNetEqSafe(
-    ACMNetEQ*     netEq,
-    WebRtc_Word16 payloadType)
-{
-
-    if(payloadType != _decoderParams.codecInstant.pltype)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
-            "Cannot unregister codec %s given payload-type %d does not match \
-the stored payload type",
-            _decoderParams.codecInstant.plname,
-            payloadType,
-            _decoderParams.codecInstant.pltype);
-        return -1;
-    }
-
-    return netEq->RemoveCodec(kDecoderPCMu);
-}
-
 // Split the stereo packet and place left and right channel after each other
 // in the payload vector.
 void ACMPCMU::SplitStereoPacket(uint8_t* payload, int32_t* payload_length) {

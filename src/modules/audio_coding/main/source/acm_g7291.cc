@@ -146,15 +146,6 @@ ACMG729_1::InternalDestructEncoderInst(
     return;
 }
 
-
-WebRtc_Word16
-ACMG729_1::UnregisterFromNetEqSafe(
-    ACMNetEQ*     /* netEq       */,
-    WebRtc_Word16 /* payloadType */)
-{
-    return -1;
-}
-
 WebRtc_Word16
 ACMG729_1::SetBitRateSafe(
     const WebRtc_Word32 /*rate*/ )
@@ -383,25 +374,6 @@ ACMG729_1::InternalDestructEncoderInst(
         //WebRtcG7291_Free((G729_1_inst_t*)ptrInst);
     }
     return;
-}
-
-
-WebRtc_Word16
-ACMG729_1::UnregisterFromNetEqSafe(
-    ACMNetEQ*     netEq,
-    WebRtc_Word16 payloadType)
-{
-    if(payloadType != _decoderParams.codecInstant.pltype)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
-      "Cannot unregister codec: given payload-type does not match \
-the stored payload type",
-            _decoderParams.codecInstant.plname,
-            payloadType,
-            _decoderParams.codecInstant.pltype);
-        return -1;
-    }
-    return netEq->RemoveCodec(kDecoderG729_1);
 }
 
 WebRtc_Word16

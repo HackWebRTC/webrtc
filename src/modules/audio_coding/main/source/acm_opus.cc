@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -129,15 +129,6 @@ ACMOPUS::InternalDestructEncoderInst(
     void* /* ptrInst */)
 {
     return;
-}
-
-
-WebRtc_Word16
-ACMOPUS::UnregisterFromNetEqSafe(
-    ACMNetEQ*     /* netEq       */,
-    WebRtc_Word16 /* payloadType */)
-{
-    return -1;
 }
 
 WebRtc_Word16
@@ -363,25 +354,6 @@ ACMOPUS::InternalDestructEncoderInst(
         WebRtcOpus_FreeEnc((OPUS_inst_t*)ptrInst);
     }
     return;
-}
-
-
-WebRtc_Word16
-ACMOPUS::UnregisterFromNetEqSafe(
-    ACMNetEQ*     netEq,
-    WebRtc_Word16 payloadType)
-{
-    if(payloadType != _decoderParams.codecInstant.pltype)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
-            "Cannot unregister codec: given payload-type does not match \
-the stored payload type",
-            _decoderParams.codecInstant.plname,
-            payloadType,
-            _decoderParams.codecInstant.pltype);
-        return -1;
-    }
-    return netEq->RemoveCodec(kDecoderOpus);
 }
 
 WebRtc_Word16

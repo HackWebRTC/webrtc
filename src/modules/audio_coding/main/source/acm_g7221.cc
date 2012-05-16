@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -159,11 +159,6 @@ void ACMG722_1::DestructDecoderSafe() {
 
 void ACMG722_1::InternalDestructEncoderInst(void* /* ptrInst */) {
   return;
-}
-
-WebRtc_Word16 ACMG722_1::UnregisterFromNetEqSafe(
-    ACMNetEQ* /* netEq */,  WebRtc_Word16 /* payloadType */) {
-  return -1;
 }
 
 #else     //===================== Actual Implementation =======================
@@ -491,36 +486,6 @@ void ACMG722_1::InternalDestructEncoderInst(void* ptrInst) {
     delete ptrInst;
   }
   return;
-}
-
-WebRtc_Word16 ACMG722_1::UnregisterFromNetEqSafe(ACMNetEQ* netEq,
-                                                 WebRtc_Word16 payloadType) {
-  if (payloadType != _decoderParams.codecInstant.pltype) {
-    WEBRTC_TRACE(webrtc::kTraceError,
-                 webrtc::kTraceAudioCoding,
-                 _uniqueID,
-                 "Cannot unregister codec %s given payload-type %d does not "
-                 "match the stored payload type",
-                 _decoderParams.codecInstant.plname, payloadType,
-                 _decoderParams.codecInstant.pltype);
-    return -1;
-  }
-  switch (_operationalRate) {
-    case 16000: {
-      return netEq->RemoveCodec(kDecoderG722_1_16);
-    }
-    case 24000: {
-      return netEq->RemoveCodec(kDecoderG722_1_24);
-    }
-    case 32000: {
-      return netEq->RemoveCodec(kDecoderG722_1_32);
-    }
-    default: {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
-                   "UnregisterFromNetEqSafe: Wrong rate for G722_1.");
-      return -1;
-    }
-  }
 }
 
 #endif

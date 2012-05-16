@@ -166,14 +166,6 @@ ACMSPEEX::InternalDestructEncoderInst(
     return;
 }
 
-WebRtc_Word16
-ACMSPEEX::UnregisterFromNetEqSafe(
-    ACMNetEQ*     /* netEq       */,
-    WebRtc_Word16 /* payloadType */)
-{
-    return -1;
-}
-
 #ifdef UNUSEDSPEEX
 WebRtc_Word16
 ACMSPEEX::EnableVBR()
@@ -533,44 +525,6 @@ ACMSPEEX::InternalDestructEncoderInst(
     }
     return;
 }
-
-
-WebRtc_Word16
-ACMSPEEX::UnregisterFromNetEqSafe(
-    ACMNetEQ*     netEq,
-    WebRtc_Word16 payloadType)
-{
-    if(payloadType != _decoderParams.codecInstant.pltype)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
-            "Cannot unregister codec %s given payload-type %d does not match \
-the stored payload type",
-            _decoderParams.codecInstant.plname,
-            payloadType,
-            _decoderParams.codecInstant.pltype);
-        return -1;
-    }
-
-
-    switch(_samplingFrequency)
-    {
-    case 8000:
-        {
-            return netEq->RemoveCodec(kDecoderSPEEX_8);
-        }
-    case 16000:
-        {
-            return netEq->RemoveCodec(kDecoderSPEEX_16);
-        }
-    default:
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
-            "Could not unregister Speex from NetEQ. Sampling frequency doesn't match");
-            return -1;
-        }
-    }
-}
-
 
 #ifdef UNUSEDSPEEX
 

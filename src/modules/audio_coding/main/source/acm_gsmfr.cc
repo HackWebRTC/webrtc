@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -156,16 +156,6 @@ ACMGSMFR::InternalDestructEncoderInst(
 {
     return;
 }
-
-
-WebRtc_Word16
-ACMGSMFR::UnregisterFromNetEqSafe(
-    ACMNetEQ*     /* netEq       */,
-    WebRtc_Word16 /* payloadType */)
-{
-    return -1;
-}
-
 
 #else     //===================== Actual Implementation =======================
 
@@ -390,25 +380,6 @@ ACMGSMFR::InternalDestructEncoderInst(
         WebRtcGSMFR_FreeEnc((GSMFR_encinst_t_*)ptrInst);
     }
     return;
-}
-
-
-WebRtc_Word16
-ACMGSMFR::UnregisterFromNetEqSafe(
-    ACMNetEQ*     netEq,
-    WebRtc_Word16 payloadType)
-{
-    if(payloadType != _decoderParams.codecInstant.pltype)
-    {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
-      "Cannot unregister codec: payload-type does not match \
-the stored payload type",
-            _decoderParams.codecInstant.plname,
-            payloadType,
-            _decoderParams.codecInstant.pltype);
-        return -1;
-    }
-    return netEq->RemoveCodec(kDecoderGSMFR);
 }
 
 #endif

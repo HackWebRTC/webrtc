@@ -1414,30 +1414,6 @@ ACMGenericCodec::SamplesLeftToEncode()
         0:(_frameLenSmpl - _inAudioIxWrite);
 }
 
-WebRtc_Word32
-ACMGenericCodec::UnregisterFromNetEq(
-    ACMNetEQ*     netEq,
-    WebRtc_Word16 payloadType)
-{
-    WriteLockScoped wl(_codecWrapperLock);
-    if(!_registeredInNetEq)
-    {
-        return 0;
-    }
-    if(UnregisterFromNetEqSafe(netEq, payloadType) < 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
-            "UnregisterFromNetEq: error, cannot unregister from NetEq");
-        _registeredInNetEq = true;
-        return -1;
-    }
-    else
-    {
-        _registeredInNetEq = false;
-        return 0;
-    }
-}
-
 void
 ACMGenericCodec::SetUniqueID(
     const WebRtc_UWord32 id)

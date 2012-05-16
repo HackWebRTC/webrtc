@@ -93,12 +93,6 @@ void ACMG722::InternalDestructEncoderInst(void* /* ptrInst */) {
   return;
 }
 
-WebRtc_Word16 ACMG722::UnregisterFromNetEqSafe(
-    ACMNetEQ* /* netEq */,
-    WebRtc_Word16 /* payloadType */) {
-  return -1;
-}
-
 void ACMG722::SplitStereoPacket(uint8_t* /*payload*/,
                                 int32_t* /*payload_length*/) {}
 
@@ -318,21 +312,6 @@ void ACMG722::InternalDestructEncoderInst(void* ptrInst) {
     WebRtcG722_FreeEncoder(static_cast<G722EncInst*>(ptrInst));
   }
   return;
-}
-
-WebRtc_Word16 ACMG722::UnregisterFromNetEqSafe(ACMNetEQ* netEq,
-                                               WebRtc_Word16 payloadType) {
-  if (payloadType != _decoderParams.codecInstant.pltype) {
-    WEBRTC_TRACE(webrtc::kTraceError,
-                 webrtc::kTraceAudioCoding,
-                 _uniqueID,
-                 "Cannot unregister codec %s given payload-type %d does not "
-                 "match the stored payload type",
-                 _decoderParams.codecInstant.plname, payloadType,
-                 _decoderParams.codecInstant.pltype);
-    return -1;
-  }
-  return netEq->RemoveCodec(kDecoderG722);
 }
 
 // Split the stereo packet and place left and right channel after each other
