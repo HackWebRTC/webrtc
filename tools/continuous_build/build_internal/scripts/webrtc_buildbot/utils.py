@@ -7,7 +7,7 @@
 #  in the file PATENTS.  All contributing project authors may
 #  be found in the AUTHORS file in the root of the source tree.
 
-__author__ = 'ivinnichenko@webrtc.org (Illya Vinnichenko)'
+__author__ = 'kjellander@webrtc.org (Henrik Kjellander)'
 
 import ntpath
 import os
@@ -750,6 +750,41 @@ class WebRTCMacFactory(WebRTCFactory):
                             descriptor='EnableMake')
     self.AddCommonMakeStep('all')
 
+  def EnableTest(self, test):
+    """Adds a step for running a test on Mac.
+
+       In general, this method will interpret the name as the name of a binary
+       in the default build output directory, except for a few special cases
+       which require custom command lines.
+
+       Args:
+         test: the test name as a string.
+    """
+    if test == 'vie_auto_test':
+      # Start ManyCam before the test starts:
+      self.AddCommonStep(cmd=['open', '/Applications/ManyCam/ManyCam.app'],
+                         descriptor=['Starting ManyCam'])
+      # TODO(phoglund): Enable the full stack test once it is completed and
+      # nonflaky.
+      cmd = (
+          'out/Debug/vie_auto_test --automated --gtest_filter="'
+          'ViEStandardIntegrationTest.*:'
+          'ViEVideoVerificationTest.*:'
+          '-ViEVideoVerificationTest.RunsFullStackWithoutErrors:'
+          'ViEVideoVerificationTest.RunsFileTestWithoutErrors:' # bug 524
+          'ViEStandardIntegrationTest.RunsRtpRtcpTestWithoutErrors" ' # bug 477
+          '--capture_test_ensure_resolution_alignment_in_capture_device=false')
+      self.AddCommonTestRunStep(test=test, cmd=cmd)
+      self.AddCommonStep(cmd=['killall', 'ManyCam'],
+                         descriptor=['Stopping ManyCam'])
+    elif test == 'voe_auto_test':
+      cmd = ('out/Debug/voe_auto_test --automated '
+             # Disabled test until bug 527 is resolved.
+             '--gtest_filter=-VolumeTest.SetVolumeBeforePlayoutWorks')
+      self.AddCommonTestRunStep(test=test, cmd=cmd)
+    else:
+      self.AddCommonTestRunStep(test)
+
   def AddCommonTestRunStep(self, test, extra_text=None, cmd=None):
     descriptor = [test, extra_text] if extra_text else [test]
     if cmd is None:
@@ -790,6 +825,8 @@ class WebRTCWinFactory(WebRTCFactory):
   # Must provide full path to the command since we cannot add custom paths to
   # the PATH environment variable when using Chromium buildbot startup scripts.
   BUILD_CMD = r'C:\Windows\Microsoft.NET\Framework\v3.5\msbuild.exe'
+  VCAM_PROCESS_NAME = 'VCamManager'
+  VCAM_PATH = r'C:\Program Files (x86)\e2eSoft\VCam\VCamManager.exe'
 
   def __init__(self, build_status_oracle, is_try_slave=False):
     WebRTCFactory.__init__(self, build_status_oracle, is_try_slave)
@@ -860,6 +897,38 @@ class WebRTCWinFactory(WebRTCFactory):
       cmd = [WebRTCWinFactory.BUILD_CMD, 'webrtc.sln',
              '/p:Configuration=Release;Platform=%s' % (self.platform)]
       self.AddCommonStep(cmd, descriptor='Build(Release)')
+
+  def EnableTest(self, test):
+    """Adds a step for running a test on Windows.
+
+       In general, this method will interpret the name as the name of a binary
+       in the default build output directory, except for a few special cases
+       which require custom command lines.
+
+       Args:
+         test: the test name as a string.
+    """
+    if test == 'vie_auto_test':
+      # Start VCam before the test starts:
+      self.AddCommonStep(cmd=['cmd', '-c', WebRTCWinFactory.VCAM_PATH],
+                         descriptor=['Starting VCam'])
+      # TODO(phoglund): Enable the full stack test once it is completed and
+      # nonflaky.
+      cmd = (
+          'build\\Debug\\vie_auto_test.exe --automated --gtest_filter="'
+          'ViEStandardIntegrationTest.*:'
+          'ViEVideoVerificationTest.*:'
+          '-ViEVideoVerificationTest.RunsFullStackWithoutErrors:'
+          'ViEStandardIntegrationTest.RunsRtpRtcpTestWithoutErrors" ' # bug 477
+          '--capture_test_ensure_resolution_alignment_in_capture_device=false')
+      self.AddCommonTestRunStep(test=test, cmd=cmd)
+      self.AddCommonStep(cmd=['tskill', WebRTCWinFactory.VCAM_PROCESS_NAME],
+                         descriptor=['Stopping VCam'])
+    elif test == 'voe_auto_test':
+      cmd = 'build\\Debug\\voe_auto_test.exe --automated'
+      self.AddCommonTestRunStep(test=test, cmd=cmd)
+    else:
+      self.AddCommonTestRunStep(test)
 
   def AddCommonTestRunStep(self, test, cmd=None):
     descriptor = [test]
