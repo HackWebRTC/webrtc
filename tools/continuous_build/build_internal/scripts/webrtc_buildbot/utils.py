@@ -825,7 +825,6 @@ class WebRTCWinFactory(WebRTCFactory):
   # Must provide full path to the command since we cannot add custom paths to
   # the PATH environment variable when using Chromium buildbot startup scripts.
   BUILD_CMD = r'C:\Windows\Microsoft.NET\Framework\v3.5\msbuild.exe'
-  VCAM_PROCESS_NAME = 'VCamManager'
   VCAM_PATH = r'C:\Program Files (x86)\e2eSoft\VCam\VCamManager.exe'
 
   def __init__(self, build_status_oracle, is_try_slave=False):
@@ -860,8 +859,7 @@ class WebRTCWinFactory(WebRTCFactory):
     # Since Windows is very picky about locking files, make sure to kill
     # any interfering processes. Feel free to add more process kill steps if
     # necessary.
-    cmd = '%WINDIR%\\system32\\taskkill /f /im svn.exe || set ERRORLEVEL=0'
-    self.AddCommonStep(cmd, 'svnkill')
+    self.KillProcesses('svn.exe')
 
     # TODO(kjellander): Enable for normal slaves too when all are moved over to
     # the new slave architecture.
@@ -898,6 +896,20 @@ class WebRTCWinFactory(WebRTCFactory):
              '/p:Configuration=Release;Platform=%s' % (self.platform)]
       self.AddCommonStep(cmd, descriptor='Build(Release)')
 
+  def KillProcesses(self, process_name, descriptor=None):
+    """Kills all running processes with the specified name.
+
+    Make sure the name contains .exe at the end. If no processes are found, this
+    method will execute silently doing nothing.
+    """
+    # Setting ERRORLEVEL is to make sure the command always exits with exit code
+    # 0, since we want the step to succeed even when there's nothing to kill.
+    cmd = ('%WINDIR%\\system32\\taskkill.exe /f /im ' + process_name +
+           ' || set ERRORLEVEL=0')
+    if not descriptor:
+      descriptor = 'kill %s' % process_name
+    self.AddCommonStep(cmd, descriptor)
+
   def EnableTest(self, test):
     """Adds a step for running a test on Windows.
 
@@ -922,8 +934,7 @@ class WebRTCWinFactory(WebRTCFactory):
           'ViEStandardIntegrationTest.RunsRtpRtcpTestWithoutErrors" ' # bug 477
           '--capture_test_ensure_resolution_alignment_in_capture_device=false')
       self.AddCommonTestRunStep(test=test, cmd=cmd)
-      self.AddCommonStep(cmd=['tskill', WebRTCWinFactory.VCAM_PROCESS_NAME],
-                         descriptor=['Stopping VCam'])
+      self.KillProcesses('VCamManager.exe', 'Stop VCam')
     elif test == 'voe_auto_test':
       cmd = 'build\\Debug\\voe_auto_test.exe --automated'
       self.AddCommonTestRunStep(test=test, cmd=cmd)
