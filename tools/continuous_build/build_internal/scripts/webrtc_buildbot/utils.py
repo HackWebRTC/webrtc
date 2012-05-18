@@ -33,6 +33,8 @@ WEBRTC_TRUNK_DIR = 'build/trunk'
 WEBRTC_BUILD_DIR = 'build'
 
 MEMCHECK_CMD = ['tools/valgrind-webrtc/webrtc_tests.sh', '-t']
+TSAN_CMD = ['tools/valgrind-webrtc/webrtc_tests.sh', '--tool', 'tsan', '-t']
+ASAN_CMD = ['tools/valgrind-webrtc/webrtc_tests.sh', '--tool', 'asan',  '-t']
 
 DEFAULT_COVERAGE_DIR = '/var/www/coverage'
 DEFAULT_MASTER_WORK_DIR = '.'
@@ -42,8 +44,8 @@ GCLIENT_RETRIES = 3
 # but converted to a list since we set defines instead of using an environment
 # variable.
 #
-# On valgrind bots, override the optimizer settings so we don't inline too
-# much and make the stacks harder to figure out. Use the same settings
+# On memcheck and tsan bots, override the optimizer settings so we don't inline
+# too much and make the stacks harder to figure out. Use the same settings
 # on all buildbot masters to make it easier to move bots.
 MEMORY_TOOLS_GYP_DEFINES = [
     # GCC flags
@@ -131,7 +133,7 @@ class WebRTCFactory(factory.BuildFactory):
 
   def AddCommonStep(self, cmd, descriptor='', workdir=WEBRTC_TRUNK_DIR,
                     halt_build_on_failure=True, warn_on_failure=False,
-                    timeout=1200, use_pty=True):
+                    timeout=1200, use_pty=True, env={}):
     """Adds a step which will run as a shell command on the slave.
 
     NOTE: you are recommended to use this method to add new shell commands
@@ -163,6 +165,8 @@ class WebRTCFactory(factory.BuildFactory):
         stderr output with red in the web interface. Some shell
         commands seem to fail when Pseudo-terminal is enabled on
         Linux.
+      env: dict of string->string that describes the environment the command
+        shall be excuted with on the build slave.
     """
     flunk_on_failure = not warn_on_failure
 
@@ -183,7 +187,8 @@ class WebRTCFactory(factory.BuildFactory):
         haltOnFailure=halt_build_on_failure,
         name='_'.join(descriptor),
         timeout=timeout,
-        usePTY=use_pty))
+        usePTY=use_pty,
+        env=env))
 
   def AddSmartCleanStep(self):
     """Adds a smart clean step.
@@ -519,13 +524,16 @@ class WebRTCLinuxFactory(WebRTCFactory):
   """
 
   def __init__(self, build_status_oracle, is_try_slave=False,
-               run_with_memcheck=False, custom_deps_list=None):
+               run_with_memcheck=False, run_with_tsan=False,
+               run_with_asan=False, custom_deps_list=None):
     WebRTCFactory.__init__(self, build_status_oracle=build_status_oracle,
                            is_try_slave=is_try_slave,
                            custom_deps_list=custom_deps_list)
     self.build_enabled = False
     self.coverage_enabled = False
     self.run_with_memcheck = run_with_memcheck
+    self.run_with_tsan = run_with_tsan
+    self.run_with_asan = run_with_asan
     self.compile_for_memory_tooling = False
 
   def EnableCoverage(self, coverage_url, coverage_dir=DEFAULT_COVERAGE_DIR):
@@ -555,15 +563,23 @@ class WebRTCLinuxFactory(WebRTCFactory):
     self.release = release
 
     self.AddSmartCleanStep()
+    self.AddGclientSyncStep()
 
     # Valgrind bots need special GYP defines to enable memory profiling
-    # friendly compilation. They already has a custom .gclient configuration
-    # file created so they don't need one being generated like the other bots.
+    # friendly compilation.
     if self.compile_for_memory_tooling:
       for gyp_define in MEMORY_TOOLS_GYP_DEFINES:
         self.gyp_params.append('-D' + gyp_define)
-    self.AddGclientSyncStep()
 
+    if self.run_with_asan:
+      # ASAN requires Clang compilation and we enforce Release mode since
+      # that's what Chromium recommends.
+      assert clang
+      assert release
+      self.gyp_params.append('-Dasan=1')
+      self.gyp_params.append('-Dlinux_use_tcmalloc=0')
+      self.gyp_params.append('-Drelease_extra_cflags="-g -O1 '
+                             '-fno-inline-functions -fno-inline"')
     if chrome_os:
       self.gyp_params.append('-Dchromeos=1')
 
@@ -591,6 +607,10 @@ class WebRTCLinuxFactory(WebRTCFactory):
       cmd = ['out/%s/%s' % (test_folder, test)]
     if self.run_with_memcheck:
       cmd = MEMCHECK_CMD + cmd
+    if self.run_with_tsan:
+      cmd = TSAN_CMD + cmd
+    if self.run_with_asan:
+      cmd = ASAN_CMD + cmd
     self.AddCommonStep(cmd, descriptor=descriptor, halt_build_on_failure=False)
 
   def AddXvfbTestRunStep(self, test_name, test_binary, test_arguments=''):
@@ -604,7 +624,18 @@ class WebRTCLinuxFactory(WebRTCFactory):
     cmd = ['make', target, '-j100']
     if make_extra:
       cmd.append(make_extra)
-    self.AddCommonStep(cmd=cmd, descriptor=descriptor)
+
+    env = {}
+    if self.run_with_asan:
+      # Override the Clang compiler with the prebuilt ASAN executables.
+      # It seems like CC and CXX must contain full paths and since there's no
+      # way to evaluate subcommands on the slaves, this hardcoding is the only
+      # way for now.
+      asan_bin = ('/b/build/slave/linux-asan/build/trunk/third_party/asan/'
+                  'asan_clang_Linux/bin')
+      env = {'CC': '%s/clang' % asan_bin,
+             'CXX': '%s/clang++ ' % asan_bin}
+    self.AddCommonStep(cmd=cmd, descriptor=descriptor, env=env)
 
   def AddStepsToEstablishCoverageBaseline(self):
     self.AddCommonStep(['lcov', '--directory', '.', '--capture', '-b',

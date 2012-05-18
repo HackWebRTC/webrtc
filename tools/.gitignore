@@ -38,14 +38,16 @@ twistd.pid
 /continuous_build/build_internal/masters/master.webrtc/android
 /continuous_build/build_internal/masters/master.webrtc/android-ndk
 /continuous_build/build_internal/masters/master.webrtc/chromeos
+/continuous_build/build_internal/masters/master.webrtc/linux-asan
 /continuous_build/build_internal/masters/master.webrtc/linux-clang
 /continuous_build/build_internal/masters/master.webrtc/linux-large-tests
+/continuous_build/build_internal/masters/master.webrtc/linux-memcheck
 /continuous_build/build_internal/masters/master.webrtc/linux-slave-1
 /continuous_build/build_internal/masters/master.webrtc/linux-slave-2
 /continuous_build/build_internal/masters/master.webrtc/linux-slave-4
 /continuous_build/build_internal/masters/master.webrtc/linux-slave-5
 /continuous_build/build_internal/masters/master.webrtc/linux-slave-gcc-4.6
-/continuous_build/build_internal/masters/master.webrtc/linux-valgrind
+/continuous_build/build_internal/masters/master.webrtc/linux-tsan
 /continuous_build/build_internal/masters/master.webrtc/LinuxChrome
 /continuous_build/build_internal/masters/master.webrtc/LinuxChromeBloat
 /continuous_build/build_internal/masters/master.webrtc/mac-large-tests/
