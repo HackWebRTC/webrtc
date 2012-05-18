@@ -67,19 +67,19 @@
                   android:orientation="vertical"
                   android:id="@+id/radio_group1">
                   <RadioButton
-                          android:id="@+id/radio_surface"
-                          android:onClick="onClick"
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                          android:text="@string/surfaceview"
-                          android:checked="true"
-                          android:textColor="#f00"/>
-                 <RadioButton
                           android:id="@+id/radio_opengl"
                           android:onClick="onClick"
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
                           android:text="@string/opengl"
+                          android:checked="true"
+                          android:textColor="#0f0"/>
+                 <RadioButton
+                          android:id="@+id/radio_surface"
+                          android:onClick="onClick"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="@string/surfaceview"
                           android:textColor="#0f0" />
         </RadioGroup>
 	</LinearLayout>

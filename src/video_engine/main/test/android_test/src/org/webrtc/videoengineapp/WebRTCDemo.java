@@ -120,7 +120,7 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     private boolean loopbackMode = true;
     private CheckBox cbStats;
     private boolean isStatsOn = true;
-    private boolean isSurfaceView = true;
+    private boolean useOpenGLRender = true;
 
     // Video settings
     private Spinner spCodecType;
@@ -385,11 +385,11 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
 
         RadioGroup radioGroup = (RadioGroup)findViewById(R.id.radio_group1);
         radioGroup.clearCheck();
-        if (isSurfaceView == true) {
-            radioGroup.check(R.id.radio_surface);
+        if (useOpenGLRender == true) {
+            radioGroup.check(R.id.radio_opengl);
         }
         else {
-            radioGroup.check(R.id.radio_opengl);
+            radioGroup.check(R.id.radio_surface);
         }
 
         // voice codec
@@ -482,7 +482,7 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                     remoteIp.getBytes());
 
             if (enableVideoReceive) {
-                if(!isSurfaceView) {
+                if(useOpenGLRender) {
                     Log.v(TAG, "Create OpenGL Render");
                     remoteSurfaceView = ViERenderer.CreateRenderer(this, true);
                     ret = ViEAndroidAPI.AddRemoteRenderer(channel, remoteSurfaceView);
@@ -704,10 +704,10 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                 }
                 break;
             case R.id.radio_surface:
-                isSurfaceView = true;
+                useOpenGLRender = false;
                 break;
             case R.id.radio_opengl:
-                isSurfaceView = false;
+                useOpenGLRender = true;
                 break;
             case R.id.cbNack:
                 enableNack  = cbEnableNack.isChecked();
