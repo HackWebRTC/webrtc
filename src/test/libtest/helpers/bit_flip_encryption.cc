@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_engine/test/libvietest/include/bit_flip_encryption.h"
+#include "test/libtest/include/bit_flip_encryption.h"
 
 #include <cstdlib>
 

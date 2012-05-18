@@ -27,14 +27,10 @@
       ],
       'sources': [
         # Helper classes
-        'include/bit_flip_encryption.h',
-        'include/random_encryption.h',
         'include/vie_fake_camera.h',
         'include/vie_file_capture_device.h',
         'include/vie_to_file_renderer.h',
 
-        'helpers/bit_flip_encryption.cc',
-        'helpers/random_encryption.cc',
         'helpers/vie_fake_camera.cc',
         'helpers/vie_file_capture_device.cc',
         'helpers/vie_to_file_renderer.cc',

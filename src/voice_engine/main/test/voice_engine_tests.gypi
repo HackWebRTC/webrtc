@@ -18,6 +18,7 @@
         '<(webrtc_root)/../test/test.gyp:test_support',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
         '<(webrtc_root)/../testing/gmock.gyp:gmock',
+        '<(webrtc_root)/test/libtest/libtest.gyp:libtest',
       ],
       'include_dirs': [
         'auto_test',
@@ -38,6 +39,7 @@
         'auto_test/fixtures/after_streaming_fixture.h',
         'auto_test/fixtures/before_initialization_fixture.cc',
         'auto_test/fixtures/before_initialization_fixture.h',
+        'auto_test/fuzz/rtp_fuzz_test.cc',
         'auto_test/standard/audio_processing_test.cc',
         'auto_test/standard/call_report_test.cc',
         'auto_test/standard/codec_before_streaming_test.cc',

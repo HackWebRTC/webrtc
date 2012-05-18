@@ -20,6 +20,7 @@
         '<(webrtc_root)/../third_party/google-gflags/google-gflags.gyp:google-gflags',
         '<(webrtc_root)/../test/metrics.gyp:metrics',
         '<(webrtc_root)/../test/test.gyp:test_support',
+        '<(webrtc_root)/test/libtest/libtest.gyp:libtest',
         'video_engine_core',
         'libvietest',
       ],
