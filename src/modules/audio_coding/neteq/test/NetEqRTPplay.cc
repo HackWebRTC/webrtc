@@ -10,9 +10,11 @@
 
 //TODO(hlundin): Reformat file to meet style guide.
 
+#include <assert.h>
+#include <stdio.h>
+
 /* header includes */
 #include "typedefs.h"
-#include "stdio.h"
 #include "webrtc_neteq.h"
 #include "webrtc_neteq_internal.h"
 #include "webrtc_neteq_help_macros.h"
