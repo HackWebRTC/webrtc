@@ -79,7 +79,6 @@ int VP8Encoder::Release() {
   }
   if (raw_ != NULL) {
     vpx_img_free(raw_);
-    delete raw_;
     raw_ = NULL;
   }
 #if WEBRTC_LIBVPX_VERSION >= 971
@@ -153,9 +152,6 @@ int VP8Encoder::InitEncode(const VideoCodec* inst,
   if (config_ == NULL) {
     config_ = new vpx_codec_enc_cfg_t;
   }
-  if (raw_ == NULL) {
-    raw_ = new vpx_image_t;
-  }
   timestamp_ = 0;
 
   codec_ = *inst;
@@ -178,7 +174,7 @@ int VP8Encoder::InitEncode(const VideoCodec* inst,
   encoded_image_._buffer = new uint8_t[encoded_image_._size];
   encoded_image_._completeFrame = true;
 
-  vpx_img_alloc(raw_, IMG_FMT_I420, codec_.width, codec_.height, 32);
+  raw_ = vpx_img_alloc(NULL, IMG_FMT_I420, codec_.width, codec_.height, 32);
   // populate encoder configuration with default values
   if (vpx_codec_enc_config_default(vpx_codec_vp8_cx(), config_, 0)) {
     return WEBRTC_VIDEO_CODEC_ERROR;
@@ -709,7 +705,8 @@ int VP8Decoder::Decode(const EncodedImage& input_image,
         propagation_cnt_ = 0;
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
-    img = vpx_codec_get_frame(decoder_, &iter);
+    // We don't render this frame.
+    vpx_codec_get_frame(decoder_, &iter);
     iter = NULL;
   }
 
