@@ -721,14 +721,6 @@ RTCPReceiver::HandleNACK(RTCPUtility::RTCPParserV2& rtcpParser,
                          RTCPPacketInformation& rtcpPacketInformation)
 {
     const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
-
-    RTCPReceiveInformation* ptrReceiveInfo = GetReceiveInformation(rtcpPacket.NACK.SenderSSRC);
-    if (ptrReceiveInfo == NULL)
-    {
-        // This remote SSRC must be saved before.
-        rtcpParser.Iterate();
-        return;
-    }
     if (_SSRC != rtcpPacket.NACK.MediaSSRC)
     {
         // Not to us.
@@ -846,27 +838,14 @@ RTCPReceiver::HandleXRVOIPMetric(RTCPUtility::RTCPParserV2& rtcpParser,
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver
-void
-RTCPReceiver::HandlePLI(RTCPUtility::RTCPParserV2& rtcpParser,
-                        RTCPPacketInformation& rtcpPacketInformation)
-{
-    const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
-
-    RTCPReceiveInformation* ptrReceiveInfo = GetReceiveInformation(rtcpPacket.PLI.SenderSSRC);
-    if (ptrReceiveInfo == NULL)
-    {
-        // This remote SSRC must be saved before.
-        rtcpParser.Iterate();
-        return;
-    }
-    if (_SSRC != rtcpPacket.PLI.MediaSSRC)
-    {
-        // Not to us.
-        rtcpParser.Iterate();
-        return;
-    }
-    rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpPli; // received signal that we need to send a new key frame
-    rtcpParser.Iterate();
+void RTCPReceiver::HandlePLI(RTCPUtility::RTCPParserV2& rtcpParser,
+                             RTCPPacketInformation& rtcpPacketInformation) {
+  const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
+  if (_SSRC == rtcpPacket.PLI.MediaSSRC) {
+    // Received a signal that we need to send a new key frame.
+    rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpPli;
+  }
+  rtcpParser.Iterate();
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver
@@ -990,15 +969,6 @@ RTCPReceiver::HandleSLI(RTCPUtility::RTCPParserV2& rtcpParser,
                         RTCPPacketInformation& rtcpPacketInformation)
 {
     const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
-
-    RTCPReceiveInformation* ptrReceiveInfo = GetReceiveInformation(rtcpPacket.SLI.SenderSSRC);
-    if (ptrReceiveInfo == NULL)
-    {
-        // This remote SSRC must be saved before.
-        rtcpParser.Iterate();
-        return;
-    }
-
     RTCPUtility::RTCPPacketTypes pktType = rtcpParser.Iterate();
     while (pktType == RTCPUtility::kRtcpPsfbSliItemCode)
     {
@@ -1022,14 +992,6 @@ RTCPReceiver::HandleRPSI(RTCPUtility::RTCPParserV2& rtcpParser,
                          RTCPHelp::RTCPPacketInformation& rtcpPacketInformation)
 {
     const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
-
-    RTCPReceiveInformation* ptrReceiveInfo = GetReceiveInformation(rtcpPacket.RPSI.SenderSSRC);
-    if (ptrReceiveInfo == NULL)
-    {
-        // This remote SSRC must be saved before.
-        rtcpParser.Iterate();
-        return;
-    }
     RTCPUtility::RTCPPacketTypes pktType = rtcpParser.Iterate();
     if(pktType == RTCPUtility::kRtcpPsfbRpsiCode)
     {
@@ -1101,55 +1063,47 @@ void RTCPReceiver::HandleREMBItem(
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver
-void
-RTCPReceiver::HandleFIR(RTCPUtility::RTCPParserV2& rtcpParser,
-                        RTCPPacketInformation& rtcpPacketInformation)
-{
-    const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
+void RTCPReceiver::HandleFIR(RTCPUtility::RTCPParserV2& rtcpParser,
+                             RTCPPacketInformation& rtcpPacketInformation) {
+  const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
+  RTCPReceiveInformation* ptrReceiveInfo =
+      GetReceiveInformation(rtcpPacket.FIR.SenderSSRC);
 
-    RTCPReceiveInformation* ptrReceiveInfo = GetReceiveInformation(rtcpPacket.FIR.SenderSSRC);
-    if (ptrReceiveInfo == NULL)
-    {
-        // This remote SSRC must be saved before.
-        rtcpParser.Iterate();
-        return;
-    }
-
-    RTCPUtility::RTCPPacketTypes pktType = rtcpParser.Iterate();
-    while (pktType == RTCPUtility::kRtcpPsfbFirItemCode)
-    {
-        HandleFIRItem(*ptrReceiveInfo, rtcpPacket, rtcpPacketInformation);
-        pktType = rtcpParser.Iterate();
-    }
+  RTCPUtility::RTCPPacketTypes pktType = rtcpParser.Iterate();
+  while (pktType == RTCPUtility::kRtcpPsfbFirItemCode) {
+    HandleFIRItem(ptrReceiveInfo, rtcpPacket, rtcpPacketInformation);
+    pktType = rtcpParser.Iterate();
+  }
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver
-void
-RTCPReceiver::HandleFIRItem(RTCPReceiveInformation& receiveInfo,
-                            const RTCPUtility::RTCPPacket& rtcpPacket,
-                            RTCPPacketInformation& rtcpPacketInformation)
-{
-    if (_SSRC == rtcpPacket.FIRItem.SSRC) // is it our sender that is requested to generate a new keyframe
-    {
-        // rtcpPacket.FIR.MediaSSRC SHOULD be 0 but we ignore to check it
-        // we don't know who this originate from
-
-        // check if we have reported this FIRSequenceNumber before
-        if (rtcpPacket.FIRItem.CommandSequenceNumber != receiveInfo.lastFIRSequenceNumber)
-        {
-            //
-            WebRtc_UWord32 now = _clock.GetTimeInMS();
-
-            // extra sanity don't go crazy with the callbacks
-            if( (now - receiveInfo.lastFIRRequest) > RTCP_MIN_FRAME_LENGTH_MS)
-            {
-                receiveInfo.lastFIRRequest = now;
-                receiveInfo.lastFIRSequenceNumber = rtcpPacket.FIRItem.CommandSequenceNumber;
-
-                rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpFir; // received signal that we need to send a new key frame
-            }
-        }
+void RTCPReceiver::HandleFIRItem(RTCPReceiveInformation* receiveInfo,
+                                 const RTCPUtility::RTCPPacket& rtcpPacket,
+                                 RTCPPacketInformation& rtcpPacketInformation) {
+  // Is it our sender that is requested to generate a new keyframe
+  if (_SSRC != rtcpPacket.FIRItem.SSRC) {
+    return;
+  }
+  // rtcpPacket.FIR.MediaSSRC SHOULD be 0 but we ignore to check it
+  // we don't know who this originate from
+  if (receiveInfo) {
+    // check if we have reported this FIRSequenceNumber before
+    if (rtcpPacket.FIRItem.CommandSequenceNumber !=
+        receiveInfo->lastFIRSequenceNumber) {
+      WebRtc_UWord32 now = _clock.GetTimeInMS();
+      // sanity; don't go crazy with the callbacks
+      if ((now - receiveInfo->lastFIRRequest) > RTCP_MIN_FRAME_LENGTH_MS) {
+        receiveInfo->lastFIRRequest = now;
+        receiveInfo->lastFIRSequenceNumber =
+            rtcpPacket.FIRItem.CommandSequenceNumber;
+        // received signal that we need to send a new key frame
+        rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpFir;
+      }
     }
+  } else {
+    // received signal that we need to send a new key frame
+    rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpFir;
+  }
 }
 
 void

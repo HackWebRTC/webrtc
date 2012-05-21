@@ -175,7 +175,7 @@ protected:
     void HandleFIR(RTCPUtility::RTCPParserV2& rtcpParser,
                    RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
 
-    void HandleFIRItem(RTCPHelp::RTCPReceiveInformation& receiveInfo,
+    void HandleFIRItem(RTCPHelp::RTCPReceiveInformation* receiveInfo,
                        const RTCPUtility::RTCPPacket& rtcpPacket,
                        RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
 
