@@ -198,6 +198,12 @@ class ForwardErrorCorrection {
    */
   int32_t DecodeFEC(ReceivedPacketList* receivedPacketList,
                     RecoveredPacketList* recoveredPacketList);
+
+  // Get the number of FEC packets, given the number of media packets and the
+  // protection factor.
+  int GetNumberOfFecPackets(uint16_t numMediaPackets,
+                            uint8_t protectionFactor);
+
   /**
    * Gets the size in bytes of the FEC/ULP headers, which must be accounted for
    * as packet overhead.

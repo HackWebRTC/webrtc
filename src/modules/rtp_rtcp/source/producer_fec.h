@@ -54,6 +54,10 @@ class ProducerFec {
                                  int payload_length,
                                  int rtp_header_length);
 
+  bool ExcessOverheadBelowMax();
+
+  bool MinimumMediaPacketsReached();
+
   bool FecAvailable() const;
 
   RedPacket* GetFecPacket(int red_pl_type, int fec_pl_type,
@@ -68,6 +72,7 @@ class ProducerFec {
   int num_frames_;
   bool incomplete_frame_;
   int num_first_partition_;
+  int minimum_media_packets_fec_;
   FecProtectionParams params_;
   FecProtectionParams new_params_;
 };

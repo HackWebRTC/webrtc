@@ -157,19 +157,14 @@ int32_t ForwardErrorCorrection::GenerateFEC(
     }
     mediaListIt++;
   }
-  // Result in Q0 with an unsigned round.
-  uint32_t numFecPackets = (numMediaPackets * protectionFactor + (1 << 7)) >> 8;
-  // Generate at least one FEC packet if we need protection.
-  if (protectionFactor > 0 && numFecPackets == 0) {
-    numFecPackets = 1;
-  }
+
+  int numFecPackets = GetNumberOfFecPackets(numMediaPackets, protectionFactor);
   if (numFecPackets == 0) {
     return 0;
   }
-  assert(numFecPackets <= numMediaPackets);
 
   // Prepare FEC packets by setting them to 0.
-  for (uint32_t i = 0; i < numFecPackets; i++) {
+  for (int i = 0; i < numFecPackets; i++) {
     memset(_generatedFecPackets[i].data, 0, IP_PACKET_SIZE);
     _generatedFecPackets[i].length = 0;  // Use this as a marker for untouched
     // packets.
@@ -202,6 +197,18 @@ int32_t ForwardErrorCorrection::GenerateFEC(
 
   delete [] packetMask;
   return 0;
+}
+
+int ForwardErrorCorrection::GetNumberOfFecPackets(uint16_t numMediaPackets,
+                                                  uint8_t protectionFactor) {
+  // Result in Q0 with an unsigned round.
+  int numFecPackets = (numMediaPackets * protectionFactor + (1 << 7)) >> 8;
+  // Generate at least one FEC packet if we need protection.
+  if (protectionFactor > 0 && numFecPackets == 0) {
+    numFecPackets = 1;
+  }
+  assert(numFecPackets <= numMediaPackets);
+  return numFecPackets;
 }
 
 void ForwardErrorCorrection::GenerateFecBitStrings(
