@@ -8,6 +8,40 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+// The state of a thread is controlled by the two member variables
+// _alive and _dead.
+// _alive represents the state the thread has been ordered to achieve.
+// It is set to true by the thread at startup, and is set to false by
+// other threads, using SetNotAlive() and Stop().
+// _dead represents the state the thread has achieved.
+// It is written by the thread encapsulated by this class only
+// (except at init). It is read only by the Stop() method.
+// The Run() method fires _event when it's started; this ensures that the
+// Start() method does not continue until after _dead is false.
+// This protects against premature Stop() calls from the creator thread, but
+// not from other threads.
+
+// Their transitions and states:
+// _alive    _dead  Set by
+// false     true   Constructor
+// true      false  Run() method entry
+// false     any    Run() method runFunction failure
+// any       false  Run() method exit (happens only with _alive false)
+// false     any    SetNotAlive
+// false     any    Stop         Stop waits for _dead to become true.
+//
+// Summarized a different way:
+// Variable   Writer               Reader
+// _alive     Constructor(false)   Run.loop
+//            Run.start(true)
+//            Run.fail(false)
+//            SetNotAlive(false)
+//            Stop(false)
+//
+// _dead      Constructor(true)    Stop.loop
+//            Run.start(false)
+//            Run.exit(true)
+
 #include "thread_posix.h"
 
 #include <errno.h>

@@ -193,6 +193,7 @@
             'data_log_helpers_unittest.cc',
             'data_log_c_helpers_unittest.c',
             'data_log_c_helpers_unittest.h',
+            'thread_unittest.cc',
             'trace_unittest.cc',
           ],
           'conditions': [
