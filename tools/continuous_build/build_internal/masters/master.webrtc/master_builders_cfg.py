@@ -72,12 +72,12 @@ def ConfigureChromeWebRTCBuilders(c):
 
 
 def ConfigureNightlyChromeWebRTCBloatBuilder(c):
-  # Nightly Scheduler at 2 AM CST/CDT. This will mean roughly 9 AM in the CET
+  # Nightly Scheduler at 22 PM CST/CDT. This will mean 5 AM in the CET
   # time zone, which should avoid everyone's working hours.
   nightly_scheduler = timed.Nightly(name='webrtc_nightly',
                                     branch='trunk',
                                     builderNames=['LinuxChromeBloat'],
-                                    hour=2)
+                                    hour=22)
   c['schedulers'].append(nightly_scheduler)
 
   # The Bloat calculator bot is setup without the helper classes since they
