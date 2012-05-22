@@ -717,11 +717,6 @@ bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {
                  video_codec.minBitrate);
     return false;
   }
-  if (video_codec.numberOfSimulcastStreams == 1) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
-                 "Number of Simulcast streams can not be 1");
-    return false;
-  }
   return true;
 }
 
