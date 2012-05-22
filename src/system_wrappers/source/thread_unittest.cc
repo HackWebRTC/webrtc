@@ -69,6 +69,7 @@ TEST_F(ThreadTest, StartStop) {
   unsigned int id = 42;
   ASSERT_TRUE(thread->Start(id));
   EXPECT_TRUE(thread->Stop());
+  delete thread;
 }
 
 // Function that sets a boolean.
@@ -88,6 +89,7 @@ TEST_F(ThreadTest, RunFunctionIsCalled) {
   EXPECT_TRUE(thread->Stop());
   // We expect the thread to have run at least once.
   EXPECT_TRUE(flag);
+  delete thread;
 }
 
 }  // namespace webrtc
