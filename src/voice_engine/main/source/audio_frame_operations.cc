@@ -12,7 +12,6 @@
 #include "module_common_types.h"
 
 namespace webrtc {
-namespace voe {
 
 int AudioFrameOperations::MonoToStereo(AudioFrame& frame) {
   if (frame.num_channels_ != 1) {
@@ -101,6 +100,5 @@ int AudioFrameOperations::ScaleWithSat(float scale, AudioFrame& frame) {
   return 0;
 }
 
-}  //  namespace voe
 }  //  namespace webrtc
 

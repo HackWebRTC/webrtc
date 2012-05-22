@@ -14,16 +14,51 @@
 #include "audio_processing.h"
 #include "critical_section_wrapper.h"
 #include "map_wrapper.h"
+#include "voice_engine/main/source/audio_frame_operations.h"
 #include "trace.h"
 
 namespace webrtc {
 namespace {
+
+// Mix |frame| into |mixed_frame|, with saturation protection and upmixing.
+// These effects are applied to |frame| itself prior to mixing. Assumes that
+// |mixed_frame| always has at least as many channels as |frame|. Supports
+// stereo at most.
+//
+// TODO(andrew): consider not modifying |frame| here.
+void MixFrames(AudioFrame* mixed_frame, AudioFrame* frame) {
+  assert(mixed_frame->num_channels_ >= frame->num_channels_);
+  // Divide by two to avoid saturation in the mixing.
+  *frame >>= 1;
+  if (mixed_frame->num_channels_ > frame->num_channels_) {
+    // We only support mono-to-stereo.
+    assert(mixed_frame->num_channels_ == 2 &&
+           frame->num_channels_ == 1);
+    AudioFrameOperations::MonoToStereo(*frame);
+  }
+
+  *mixed_frame += *frame;
+}
+
+// Return the max number of channels from a |list| composed of AudioFrames.
+int MaxNumChannels(const ListWrapper& list) {
+  ListItem* item = list.First();
+  int max_num_channels = 1;
+  while (item) {
+    AudioFrame* frame = static_cast<AudioFrame*>(item->GetItem());
+    max_num_channels = std::max(max_num_channels, frame->num_channels_);
+    item = list.Next(item);
+  }
+  return max_num_channels;
+}
+
 void SetParticipantStatistics(ParticipantStatistics* stats,
                               const AudioFrame& frame)
 {
     stats->participant = frame.id_;
     stats->level = 0;  // TODO(andrew): to what should this be set?
 }
+
 }  // namespace
 
 MixerParticipant::MixerParticipant()
@@ -283,25 +318,22 @@ WebRtc_Word32 AudioConferenceMixerImpl::Process()
     int retval = 0;
     WebRtc_Word32 audioLevel = 0;
     {
-        const ListItem* firstItem = mixList.First();
-        // Assume mono.
-        WebRtc_UWord8 numberOfChannels = 1;
-        if(firstItem != NULL)
-        {
-            // Use the same number of channels as the first frame to be mixed.
-            numberOfChannels = static_cast<const AudioFrame*>(
-                firstItem->GetItem())->num_channels_;
-        }
+        CriticalSectionScoped cs(_crit.get());
+
         // TODO(henrike): it might be better to decide the number of channels
         //                with an API instead of dynamically.
 
-        CriticalSectionScoped cs(_crit.get());
-        if (!SetNumLimiterChannels(numberOfChannels))
+        // Find the max channels over all mixing lists.
+        const int num_mixed_channels = std::max(MaxNumChannels(mixList),
+            std::max(MaxNumChannels(additionalFramesList),
+                     MaxNumChannels(rampOutList)));
+
+        if (!SetNumLimiterChannels(num_mixed_channels))
             retval = -1;
 
         mixedAudio->UpdateFrame(-1, _timeStamp, NULL, 0, _outputFrequency,
                                 AudioFrame::kNormalSpeech,
-                                AudioFrame::kVadPassive, numberOfChannels);
+                                AudioFrame::kVadPassive, num_mixed_channels);
 
         _timeStamp += _sampleSize;
 
@@ -1108,10 +1140,7 @@ WebRtc_Word32 AudioConferenceMixerImpl::MixFromList(
             position = 0;
         }
         AudioFrame* audioFrame = static_cast<AudioFrame*>(item->GetItem());
-
-        // Divide by two to avoid saturation in the mixing.
-        *audioFrame >>= 1;
-        mixedAudio += *audioFrame;
+        MixFrames(&mixedAudio, audioFrame);
 
         SetParticipantStatistics(&_scratchMixedParticipants[position],
                                  *audioFrame);
@@ -1145,9 +1174,7 @@ WebRtc_Word32 AudioConferenceMixerImpl::MixAnonomouslyFromList(
     while(item != NULL)
     {
         AudioFrame* audioFrame = static_cast<AudioFrame*>(item->GetItem());
-        // Divide by two to avoid saturation in the mixing.
-        *audioFrame >>= 1;
-        mixedAudio += *audioFrame;
+        MixFrames(&mixedAudio, audioFrame);
         item = audioFrameList.Next(item);
     }
     return 0;
