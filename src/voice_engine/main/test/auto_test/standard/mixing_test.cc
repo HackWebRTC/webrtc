@@ -21,7 +21,8 @@ namespace {
 const int16_t kLimiterHeadroom = 29204;  // == -1 dbFS
 const int16_t kInt16Max = 0x7fff;
 const int kSampleRateHz = 16000;
-const int kTestDurationMs = 4000;
+const int kTestDurationMs = 3000;
+const int kSkipOutputMs = 500;
 
 }  // namespace
 
@@ -102,18 +103,21 @@ class MixingTest : public AfterInitializationFixture {
     FILE* output_file = fopen(output_filename_.c_str(), "rb");
     ASSERT_TRUE(output_file != NULL);
     int16_t output_value = 0;
-    // Skip the first 100 ms to avoid initialization and ramping-in effects.
-    EXPECT_EQ(0, fseek(output_file, sizeof(output_value) * kSampleRateHz / 10,
-                       SEEK_SET));
+    // Skip the first segment to avoid initialization and ramping-in effects.
+    EXPECT_EQ(0, fseek(output_file, sizeof(output_value) *
+                       kSampleRateHz / 1000 * kSkipOutputMs, SEEK_SET));
     int samples_read = 0;
     while (fread(&output_value, sizeof(output_value), 1, output_file) == 1) {
       samples_read++;
+      std::ostringstream trace_stream;
+      trace_stream << samples_read << " samples read";
+      SCOPED_TRACE(trace_stream.str());
       EXPECT_LE(output_value, max_output_value);
       EXPECT_GE(output_value, min_output_value);
     }
     // Ensure the recording length is close to the duration of the test.
     ASSERT_GE((samples_read * 1000.0f) / kSampleRateHz,
-              0.9f * kTestDurationMs);
+              kTestDurationMs - kSkipOutputMs);
     // Ensure we read the entire file.
     ASSERT_NE(0, feof(output_file));
     ASSERT_EQ(0, fclose(output_file));
