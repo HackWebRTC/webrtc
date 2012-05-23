@@ -90,6 +90,26 @@ static const int16_t kOverHangMax2VAG[3] = { 9, 5, 3 };
 static const int16_t kLocalThresholdVAG[3] = { 94, 94, 94 };
 static const int16_t kGlobalThresholdVAG[3] = { 1100, 1050, 1100 };
 
+// Calculates the weighted average w.r.t. number of Gaussians. The |data| are
+// updated with an |offset| before averaging.
+//
+// - data     [i/o] : Data to average.
+// - offset   [i]   : An offset added to |data|.
+// - weights  [i]   : Weights used for averaging.
+//
+// returns          : The weighted average.
+static int32_t WeightedAverage(int16_t* data, int16_t offset,
+                               const int16_t* weights) {
+  int k;
+  int32_t weighted_average = 0;
+
+  for (k = 0; k < kNumGaussians; k++) {
+    data[k * kNumChannels] += offset;
+    weighted_average += data[k * kNumChannels] * weights[k * kNumChannels];
+  }
+  return weighted_average;
+}
+
 // Calculates the probabilities for both speech and background noise using
 // Gaussian Mixture Models (GMM). A hypothesis-test is performed to decide which
 // type of signal is most probable.
@@ -241,11 +261,8 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
       feature_minimum = WebRtcVad_FindMinimum(self, feature_vector[n], n);
 
       // Compute the "global" mean, that is the sum of the two means weighted.
-      noise_global_mean = WEBRTC_SPL_MUL_16_16(kNoiseDataWeights[n],
-                                               *nmean1ptr);  // Q7 * Q7
-      noise_global_mean +=
-          WEBRTC_SPL_MUL_16_16(kNoiseDataWeights[n + kNumChannels],
-                               *(nmean1ptr + kNumChannels));
+      noise_global_mean = WeightedAverage(&self->noise_means[n], 0,
+                                          &kNoiseDataWeights[n]);
       tmp1_s16 = (int16_t) (noise_global_mean >> 6);  // Q8
 
       for (k = 0; k < kNumGaussians; k++) {
@@ -381,18 +398,12 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
 
       // Separate models if they are too close.
       // |noise_global_mean| in Q14 (= Q7 * Q7).
-      noise_global_mean = WEBRTC_SPL_MUL_16_16(kNoiseDataWeights[n],
-                                               *nmean1ptr);
-      noise_global_mean +=
-          WEBRTC_SPL_MUL_16_16(kNoiseDataWeights[n + kNumChannels],
-                               *nmean2ptr);
+      noise_global_mean = WeightedAverage(&self->noise_means[n], 0,
+                                          &kNoiseDataWeights[n]);
 
       // |speech_global_mean| in Q14 (= Q7 * Q7).
-      speech_global_mean = WEBRTC_SPL_MUL_16_16(kSpeechDataWeights[n],
-                                                *smean1ptr);
-      speech_global_mean +=
-          WEBRTC_SPL_MUL_16_16(kSpeechDataWeights[n + kNumChannels],
-                               *smean2ptr);
+      speech_global_mean = WeightedAverage(&self->speech_means[n], 0,
+                                           &kSpeechDataWeights[n]);
 
       // |diff| = "global" speech mean - "global" noise mean.
       // (Q14 >> 9) - (Q14 >> 9) = Q5.
@@ -406,28 +417,17 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
         tmp1_s16 = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(13, tmp_s16, 2);
         tmp2_s16 = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(3, tmp_s16, 2);
 
-        // First Gaussian, speech model.
-        tmp_s16 = tmp1_s16 + *smean1ptr;
-        *smean1ptr = tmp_s16;
-        speech_global_mean = WEBRTC_SPL_MUL_16_16(tmp_s16,
-                                                  kSpeechDataWeights[n]);
+        // Move Gaussian means for speech model by |tmp1_s16| and update
+        // |speech_global_mean|. Note that |self->speech_means[n]| is changed
+        // after the call.
+        speech_global_mean = WeightedAverage(&self->speech_means[n], tmp1_s16,
+                                             &kSpeechDataWeights[n]);
 
-        // Second Gaussian, speech model.
-        tmp_s16 = tmp1_s16 + *smean2ptr;
-        *smean2ptr = tmp_s16;
-        speech_global_mean +=
-            WEBRTC_SPL_MUL_16_16(tmp_s16, kSpeechDataWeights[n + kNumChannels]);
-
-        // First Gaussian, noise model.
-        tmp_s16 = *nmean1ptr - tmp2_s16;
-        *nmean1ptr = tmp_s16;
-        noise_global_mean = WEBRTC_SPL_MUL_16_16(tmp_s16, kNoiseDataWeights[n]);
-
-        // Second Gaussian, noise model.
-        tmp_s16 = *nmean2ptr - tmp2_s16;
-        *nmean2ptr = tmp_s16;
-        noise_global_mean +=
-            WEBRTC_SPL_MUL_16_16(tmp_s16, kNoiseDataWeights[n + kNumChannels]);
+        // Move Gaussian means for noise model by -|tmp2_s16| and update
+        // |noise_global_mean|. Note that |self->noise_means[n]| is changed
+        // after the call.
+        noise_global_mean = WeightedAverage(&self->noise_means[n], -tmp2_s16,
+                                            &kNoiseDataWeights[n]);
       }
 
       // Control that the speech & noise means do not drift to much.
