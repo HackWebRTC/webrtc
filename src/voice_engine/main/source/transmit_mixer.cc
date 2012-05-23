@@ -27,7 +27,7 @@ namespace webrtc {
 
 namespace voe {
 
-void 
+void
 TransmitMixer::OnPeriodicProcess()
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
@@ -1299,7 +1299,7 @@ WebRtc_Word32 TransmitMixer::APMProcessStream(
         {
             WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
                          "AudioProcessing::set_num_channels(%d, %d) => error",
-                         _audioFrame.sample_rate_hz_,
+                         _audioFrame.num_channels_,
                          _audioProcessingModulePtr->num_output_channels());
         }
     }
