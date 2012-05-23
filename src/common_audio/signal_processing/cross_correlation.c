@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -164,9 +164,6 @@ void WebRtcSpl_CrossCorrelation(WebRtc_Word32* cross_correlation, WebRtc_Word16*
         (*CrossCorrPtr) = 0;
 
 #ifndef _ARM_OPT_ 
-#ifdef _WIN32
-#pragma message("NOTE: default implementation is used")
-#endif
         // Perform the cross correlation
         for (j = 0; j < dim_seq; j++)
         {
@@ -175,9 +172,6 @@ void WebRtcSpl_CrossCorrelation(WebRtc_Word32* cross_correlation, WebRtc_Word16*
             seq2Ptr++;
         }
 #else
-#ifdef _WIN32
-#pragma message("NOTE: _ARM_OPT_ optimizations are used")
-#endif
         if (right_shifts == 0)
         {
             // Perform the optimized cross correlation
