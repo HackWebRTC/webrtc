@@ -14,35 +14,36 @@
 
 #include "benchmark.h"
 #include "dual_decoder_test.h"
+#include "gtest/gtest.h"
 #include "normal_async_test.h"
 #include "packet_loss_test.h"
-#include "unit_test.h"
+#include "vp8_unittest.h"
 #include "rps_test.h"
 #include "testsupport/fileutils.h"
 #include "vp8.h"
 
 using namespace webrtc;
 
-void PopulateTests(std::vector<Test*>* tests)
+void PopulateTests(std::vector<CodecTest*>* tests)
 {
 //    tests->push_back(new VP8RpsTest());
-//    tests->push_back(new VP8UnitTest());
+    tests->push_back(new VP8UnitTest());
 //    tests->push_back(new VP8DualDecoderTest());
 //    tests->push_back(new VP8Benchmark());
 //    tests->push_back(new VP8PacketLossTest(0.05, false, 5));
     tests->push_back(new VP8NormalAsyncTest());
 }
 
-int main()
+TEST(Vp8WrapperTest, RunAllTests)
 {
     VP8Encoder* enc;
     VP8Decoder* dec;
-    std::vector<Test*> tests;
+    std::vector<CodecTest*> tests;
     PopulateTests(&tests);
     std::fstream log;
     std::string log_file = webrtc::test::OutputPath() + "VP8_test_log.txt";
     log.open(log_file.c_str(), std::fstream::out | std::fstream::app);
-    std::vector<Test*>::iterator it;
+    std::vector<CodecTest*>::iterator it;
     for (it = tests.begin() ; it < tests.end(); it++)
     {
         enc = VP8Encoder::Create();
@@ -58,5 +59,4 @@ int main()
     }
    log.close();
    tests.pop_back();
-   return 0;
 }

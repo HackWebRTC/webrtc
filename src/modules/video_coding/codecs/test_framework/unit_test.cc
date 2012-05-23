@@ -24,7 +24,7 @@ using namespace webrtc;
 
 UnitTest::UnitTest()
 :
-Test("UnitTest", "Unit test"),
+CodecTest("UnitTest", "Unit test"),
 _tests(0),
 _errors(0),
 _source(NULL),
@@ -40,7 +40,7 @@ _decodeCompleteCallback(NULL)
 
 UnitTest::UnitTest(std::string name, std::string description)
 :
-Test(name, description),
+CodecTest(name, description),
 _tests(0),
 _errors(0),
 _source(NULL),
@@ -222,12 +222,15 @@ UnitTest::Setup()
     _inst.maxBitrate = 4000;
     _inst.width = _source->GetWidth();
     _inst.height = _source->GetHeight();
+    _inst.codecSpecific.VP8.denoisingOn = true;
 
     // Get input frame.
     _inputVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);
     ASSERT_TRUE(fread(_refFrame, 1, _lengthSourceFrame, _sourceFile)
                            == _lengthSourceFrame);
     _inputVideoBuffer.CopyBuffer(_lengthSourceFrame, _refFrame);
+    _inputVideoBuffer.SetWidth(_source->GetWidth());
+    _inputVideoBuffer.SetHeight(_source->GetHeight());
     rewind(_sourceFile);
 
     // Get a reference encoded frame.
@@ -248,11 +251,7 @@ UnitTest::Setup()
     // Get a reference decoded frame.
     _decodedVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);
     EXPECT_TRUE(_decoder->InitDecode(&_inst, 1) == WEBRTC_VIDEO_CODEC_OK);
-
-    if (SetCodecSpecificParameters() != WEBRTC_VIDEO_CODEC_OK)
-    {
-        exit(EXIT_FAILURE);
-    }
+    ASSERT_FALSE(SetCodecSpecificParameters() != WEBRTC_VIDEO_CODEC_OK);
 
     unsigned int frameLength = 0;
     int i=0;
@@ -312,15 +311,6 @@ UnitTest::Teardown()
 void
 UnitTest::Print()
 {
-    printf("Unit Test\n\n%i tests completed\n", _tests);
-    if (_errors > 0)
-    {
-        printf("%i FAILED\n\n", _errors);
-    }
-    else
-    {
-        printf("ALL PASSED\n\n");
-    }
 }
 
 int
@@ -416,9 +406,6 @@ UnitTest::Perform()
     // Bad width.
     _inst.width = 0;
     EXPECT_TRUE(_encoder->InitEncode(&_inst, 1, 1440) < 0);
-    // Should there be a width and height cap?
-    //_inst.width = 10000;
-    //EXPECT_TRUE(_encoder->InitEncode(&_inst, 1) == -1);
     _inst.width = _source->GetWidth();
 
     // Bad height.
@@ -441,6 +428,8 @@ UnitTest::Perform()
         WEBRTC_VIDEO_CODEC_ERR_PARAMETER);
     _inputVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);
     _inputVideoBuffer.CopyBuffer(_lengthSourceFrame, _refFrame);
+    _inputVideoBuffer.SetWidth(_source->GetWidth());
+    _inputVideoBuffer.SetHeight(_source->GetHeight());
 
     //----- Encoder stress tests -----
 
@@ -506,11 +495,7 @@ UnitTest::Perform()
     WaitForDecodedFrame();
     EXPECT_TRUE(_decoder->Reset() == WEBRTC_VIDEO_CODEC_UNINITIALIZED);
     EXPECT_TRUE(_decoder->InitDecode(&_inst, 1) == WEBRTC_VIDEO_CODEC_OK);
-
-    if (SetCodecSpecificParameters() != WEBRTC_VIDEO_CODEC_OK)
-    {
-        exit(EXIT_FAILURE);
-    }
+    ASSERT_FALSE(SetCodecSpecificParameters() != WEBRTC_VIDEO_CODEC_OK);
 
     //-- Decode() errors --
     // Unallocated encodedVideoBuffer.
@@ -527,21 +512,16 @@ UnitTest::Perform()
     // "Random" and zero data.
     // We either expect an error, or at the least, no output.
     // This relies on the codec's ability to detect an erroneous bitstream.
-    /*
     EXPECT_TRUE(_decoder->Reset() == WEBRTC_VIDEO_CODEC_OK);
     EXPECT_TRUE(_decoder->InitDecode(&_inst, 1) == WEBRTC_VIDEO_CODEC_OK);
-    if (SetCodecSpecificParameters() != WEBRTC_VIDEO_CODEC_OK)
-    {
-        exit(EXIT_FAILURE);
-    }
+    ASSERT_FALSE(SetCodecSpecificParameters() != WEBRTC_VIDEO_CODEC_OK);
     for (int i = 0; i < 100; i++)
     {
         ASSERT_TRUE(fread(tmpBuf, 1, _refEncFrameLength, _sourceFile)
             == _refEncFrameLength);
         _encodedVideoBuffer.CopyBuffer(_refEncFrameLength, tmpBuf);
         VideoEncodedBufferToEncodedImage(_encodedVideoBuffer, encodedImage);
-        FillDecoderSpecificInfo(encodedImage);
-        int ret = _decoder->Decode(encodedImage, false, _decoderSpecificInfo);
+        int ret = _decoder->Decode(encodedImage, false, NULL);
         EXPECT_TRUE(ret <= 0);
         if (ret == 0)
         {
@@ -551,15 +531,13 @@ UnitTest::Perform()
         memset(tmpBuf, 0, _refEncFrameLength);
         _encodedVideoBuffer.CopyBuffer(_refEncFrameLength, tmpBuf);
         VideoEncodedBufferToEncodedImage(_encodedVideoBuffer, encodedImage);
-        FillDecoderSpecificInfo(encodedImage);
-        ret = _decoder->Decode(encodedImage, false, _decoderSpecificInfo);
+        ret = _decoder->Decode(encodedImage, false, NULL);
         EXPECT_TRUE(ret <= 0);
         if (ret == 0)
         {
             EXPECT_TRUE(WaitForDecodedFrame() == 0);
         }
     }
-    */
     rewind(_sourceFile);
 
     _encodedVideoBuffer.UpdateLength(_refEncFrameLength);
@@ -567,10 +545,7 @@ UnitTest::Perform()
 
     // Init then decode.
     EXPECT_TRUE(_decoder->InitDecode(&_inst, 1) == WEBRTC_VIDEO_CODEC_OK);
-    if (SetCodecSpecificParameters() != WEBRTC_VIDEO_CODEC_OK)
-    {
-        exit(EXIT_FAILURE);
-    }
+    ASSERT_FALSE(SetCodecSpecificParameters() != WEBRTC_VIDEO_CODEC_OK);
     frameLength = 0;
     VideoEncodedBufferToEncodedImage(_encodedVideoBuffer, encodedImage);
     while (frameLength == 0)
@@ -611,6 +586,8 @@ UnitTest::Perform()
             WEBRTC_VIDEO_CODEC_OK);
         RawImage tempInput(inputImage._buffer, inputImage._length/4,
                            inputImage._size/4);
+        tempInput._width = tempInst.width;
+        tempInput._height = tempInst.height;
         VideoFrameType videoFrameType = kDeltaFrame;
         _encoder->Encode(tempInput, NULL, videoFrameType);
         frameLength = WaitForEncodedFrame();
@@ -653,10 +630,7 @@ UnitTest::Perform()
     // Release then decode.
     EXPECT_TRUE(_decoder->Release() == WEBRTC_VIDEO_CODEC_OK);
     EXPECT_TRUE(_decoder->InitDecode(&_inst, 1) == WEBRTC_VIDEO_CODEC_OK);
-    if (SetCodecSpecificParameters() != WEBRTC_VIDEO_CODEC_OK)
-    {
-        exit(EXIT_FAILURE);
-    }
+    ASSERT_FALSE(SetCodecSpecificParameters() != WEBRTC_VIDEO_CODEC_OK);
     frameLength = 0;
     VideoEncodedBufferToEncodedImage(_encodedVideoBuffer, encodedImage);
     while (frameLength == 0)
@@ -680,12 +654,8 @@ UnitTest::Perform()
     EXPECT_TRUE(_encoder->InitEncode(&_inst, 1, 1440) == WEBRTC_VIDEO_CODEC_OK);
     EXPECT_TRUE(_decoder->Reset() == WEBRTC_VIDEO_CODEC_OK);
     EXPECT_TRUE(_decoder->InitDecode(&_inst, 1) == WEBRTC_VIDEO_CODEC_OK);
-    if (SetCodecSpecificParameters() != WEBRTC_VIDEO_CODEC_OK)
-    {
-        exit(EXIT_FAILURE);
-    }
+    ASSERT_FALSE(SetCodecSpecificParameters() != WEBRTC_VIDEO_CODEC_OK);
 
-    printf("\nTimestamp propagation test...\n");
     frames = 0;
     int frameDelay = 0;
     int encTimeStamp;
@@ -732,7 +702,6 @@ UnitTest::Perform()
 void
 UnitTest::RateControlTests()
 {
-    std::string outFileName;
     int frames = 0;
     RawImage inputImage;
     WebRtc_UWord32 frameLength;
@@ -744,8 +713,7 @@ UnitTest::RateControlTests()
     EXPECT_TRUE(_decoder->Reset() == WEBRTC_VIDEO_CODEC_OK);
     EXPECT_TRUE(_decoder->InitDecode(&_inst, 1) == WEBRTC_VIDEO_CODEC_OK);
     // add: should also be 0, and 1
-    const int bitRate[] =
-    {100, 200, 300, 400, 500, 600, 800, 1000, 2000, 3000, 4000, 10000};
+    const int bitRate[] = {30, 100, 500, 1000, 2000};
     const int nBitrates = sizeof(bitRate)/sizeof(*bitRate);
 
     printf("\nRate control test\n");

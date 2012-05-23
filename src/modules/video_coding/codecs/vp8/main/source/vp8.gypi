@@ -71,6 +71,7 @@
             '<(webrtc_root)/common_video/common_video.gyp:webrtc_libyuv',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/../test/test.gyp:test_support',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
             '<(webrtc_root)/../testing/gtest.gyp:gtest',
           ],
          'sources': [
@@ -80,7 +81,7 @@
             '../test/normal_async_test.h',
             '../test/packet_loss_test.h',
             '../test/rps_test.h',
-            '../test/unit_test.h',
+            '../test/vp8_unittest.h',
 
            # source files
             '../test/benchmark.cc',
@@ -89,7 +90,7 @@
             '../test/packet_loss_test.cc',
             '../test/rps_test.cc',
             '../test/tester.cc',
-            '../test/unit_test.cc',
+            '../test/vp8_unittest.cc',
           ],
         },
         {

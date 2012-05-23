@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "unit_test.h"
+#include "vp8_unittest.h"
 
 #include <string.h>
 
@@ -32,47 +32,18 @@ UnitTest(name, description)
 }
 
 WebRtc_UWord32
-VP8UnitTest::CodecSpecific_SetBitrate(WebRtc_UWord32 bitRate, WebRtc_UWord32 /*frameRate*/)
+VP8UnitTest::CodecSpecific_SetBitrate(WebRtc_UWord32 bitRate,
+                                      WebRtc_UWord32 /*frameRate*/)
 {
     int rate = _encoder->SetRates(bitRate, _inst.maxFramerate);
     EXPECT_TRUE(rate >= 0);
     return rate;
 }
 
-bool
-VP8UnitTest::CheckIfBitExact(const void* ptrA, unsigned int aLengthBytes,
-                             const void* ptrB, unsigned int bLengthBytes)
-{
-    const unsigned char* cPtrA = (const unsigned char*)ptrA;
-    const unsigned char* cPtrB = (const unsigned char*)ptrB;
-    // Skip picture ID before comparing
-    int aSkip = PicIdLength(cPtrA);
-    int bSkip = PicIdLength(cPtrB);
-    return UnitTest::CheckIfBitExact(cPtrA + aSkip, aLengthBytes,
-                                     cPtrB + bSkip, bLengthBytes);
-}
-
-int
-VP8UnitTest::PicIdLength(const unsigned char* ptr)
-{
-    WebRtc_UWord8 numberOfBytes;
-    WebRtc_UWord64 pictureID = 0;
-    for (numberOfBytes = 0; (ptr[numberOfBytes] & 0x80) && numberOfBytes < 8; numberOfBytes++)
-    {
-        pictureID += ptr[numberOfBytes] & 0x7f;
-        pictureID <<= 7;
-    }
-    pictureID += ptr[numberOfBytes] & 0x7f;
-    numberOfBytes++;
-    return numberOfBytes;
-}
-
 void
 VP8UnitTest::Perform()
 {
     Setup();
-    FILE *outFile = NULL;
-    std::string outFileName;
     VP8Encoder* enc = (VP8Encoder*)_encoder;
     VP8Decoder* dec = (VP8Decoder*)_decoder;
 
@@ -84,11 +55,9 @@ VP8UnitTest::Perform()
 
     EXPECT_EQ(enc->SetRates(_bitRate, _inst.maxFramerate),
               WEBRTC_VIDEO_CODEC_UNINITIALIZED);
-   // EXPECT_TRUE(enc->GetCodecConfigParameters(configParameters, sizeof(configParameters)) ==
-   //     WEBRTC_VIDEO_CODEC_UNINITIALIZED);
-
 
     VideoCodec codecInst;
+    memset(&codecInst, 0, sizeof(codecInst));
     strncpy(codecInst.plName, "VP8", 31);
     codecInst.plType = 126;
     codecInst.maxBitrate = 0;
@@ -98,6 +67,7 @@ VP8UnitTest::Perform()
     codecInst.maxFramerate = 30;
     codecInst.startBitrate = 300;
     codecInst.codecSpecific.VP8.complexity = kComplexityNormal;
+    codecInst.codecSpecific.VP8.numberOfTemporalLayers = 1;
     EXPECT_EQ(enc->InitEncode(&codecInst, 1, 1440), WEBRTC_VIDEO_CODEC_OK);
 
 
@@ -123,8 +93,6 @@ VP8UnitTest::Perform()
     codecInst.maxFramerate = 15;
     codecInst.codecSpecific.VP8.complexity = kComplexityNormal;
     codecInst.startBitrate = 300;
-    //EXPECT_TRUE(enc->InitEncode(&codecInst, 1, 1440) == WEBRTC_VIDEO_CODEC_LEVEL_EXCEEDED);
-
     ASSERT_EQ(enc->InitEncode(&_inst, 1, 1440), WEBRTC_VIDEO_CODEC_OK);
 
 
@@ -132,11 +100,6 @@ VP8UnitTest::Perform()
     // Bad bitrate.
     EXPECT_EQ(enc->SetRates(_inst.maxBitrate + 1, _inst.maxFramerate),
               WEBRTC_VIDEO_CODEC_OK);
-
-   // Signaling not used.
-
-    // Bad packetloss.
-//    EXPECT_TRUE(enc->SetPacketLoss(300) < 0);
 
     //----- Decoder parameter tests -----
     //-- Calls before InitDecode() --
@@ -149,11 +112,6 @@ VP8UnitTest::Perform()
     EXPECT_TRUE(dec->SetCodecConfigParameters(tmpBuf, 1) == -1);
    // Garbage data.
     EXPECT_TRUE(dec->SetCodecConfigParameters(tmpBuf, sizeof(tmpBuf)) == -1);
-
-    //----- Function tests -----
-    outFileName = webrtc::test::OutputPath() + _source->GetName() + "-errResTest.yuv";
-    outFile = fopen(outFileName.c_str(), "wb");
-    ASSERT_TRUE(outFile != NULL);
 
     UnitTest::Perform();
     Teardown();

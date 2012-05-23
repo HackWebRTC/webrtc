@@ -129,7 +129,7 @@ _waitForKey(false)
 void
 NormalAsyncTest::Setup()
 {
-    Test::Setup();
+    CodecTest::Setup();
     std::stringstream ss;
     std::string strTestNo;
     ss << _testNo;
@@ -178,7 +178,7 @@ NormalAsyncTest::Setup()
 void
 NormalAsyncTest::Teardown()
 {
-    Test::Teardown();
+    CodecTest::Teardown();
     fclose(_sourceFile);
     fclose(_encodedFile);
     fclose(_decodedFile);

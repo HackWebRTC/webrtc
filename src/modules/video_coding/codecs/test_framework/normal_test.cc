@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -19,7 +19,7 @@
 
 NormalTest::NormalTest()
 :
-Test("Normal Test 1", "A test of normal execution of the codec"),
+CodecTest("Normal Test 1", "A test of normal execution of the codec"),
 _testNo(1),
 _lengthEncFrame(0),
 _appendNext(false)
@@ -29,7 +29,7 @@ _appendNext(false)
 NormalTest::NormalTest(std::string name, std::string description,
                        unsigned int testNo)
 :
-Test(name, description),
+CodecTest(name, description),
 _requestKeyFrame(false),
 _testNo(testNo),
 _lengthEncFrame(0),
@@ -40,7 +40,7 @@ _appendNext(false)
 NormalTest::NormalTest(std::string name, std::string description,
                        WebRtc_UWord32 bitRate, unsigned int testNo)
 :
-Test(name, description, bitRate),
+CodecTest(name, description, bitRate),
 _requestKeyFrame(false),
 _testNo(testNo),
 _lengthEncFrame(0),
@@ -51,7 +51,7 @@ _appendNext(false)
 void
 NormalTest::Setup()
 {
-    Test::Setup();
+    CodecTest::Setup();
     std::stringstream ss;
     std::string strTestNo;
     ss << _testNo;
@@ -100,7 +100,7 @@ NormalTest::Setup()
 void
 NormalTest::Teardown()
 {
-    Test::Teardown();
+    CodecTest::Teardown();
     fclose(_sourceFile);
     fclose(_decodedFile);
 }
