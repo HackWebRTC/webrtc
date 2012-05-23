@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -184,7 +184,7 @@ ISACTest::Setup()
     CHECK_ERROR(_acmB->RegisterTransportCallback(_channel_B2A));
     _channel_B2A->RegisterReceiverACM(_acmA);
 
-    strncpy(_fileNameSWB, "./test/data/audio_coding/testfile32kHz.pcm",
+    strncpy(_fileNameSWB, "./data/audio_coding/testfile32kHz.pcm",
             MAX_FILE_NAME_LENGTH_BYTE);
 
     _acmB->RegisterSendCodec(_paramISAC16kHz);

@@ -25,7 +25,7 @@ class JpegTest: public testing::Test {
  protected:
   JpegTest()
       : input_filename_(webrtc::test::ProjectRootPath() +
-                       "test/data/common_video/jpeg/webrtc_logo.jpg"),
+                       "data/common_video/jpeg/webrtc_logo.jpg"),
         decoded_filename_(webrtc::test::OutputPath() + "TestJpegDec.yuv"),
         encoded_filename_(webrtc::test::OutputPath() + "TestJpegEnc.jpg"),
         encoded_buffer_(NULL) {}

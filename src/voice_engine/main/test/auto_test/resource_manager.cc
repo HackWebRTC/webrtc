@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -22,7 +22,7 @@ ResourceManager::ResourceManager() {
     long_audio_file_path_ = "";
   } else {
     long_audio_file_path_ =
-        resource_path + "test/data/voice_engine/" + filename;
+        resource_path + "data/voice_engine/" + filename;
   }
 #endif
 }

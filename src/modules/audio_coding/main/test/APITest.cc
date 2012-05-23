@@ -264,7 +264,7 @@ APITest::SetUp()
     printf("Hit enter to accept the default values indicated in []\n\n");
 
     //--- Input A
-    strcpy(fileName, "./test/data/audio_coding/testfile32kHz.pcm");
+    strcpy(fileName, "./data/audio_coding/testfile32kHz.pcm");
     frequencyHz = 32000;
     printf("Enter input file at side A [%s]: ", fileName);
     PCMFile::ChooseFile(fileName, 499, &frequencyHz);
@@ -278,7 +278,7 @@ APITest::SetUp()
     _outFileA.Open(fileName, frequencyHz, "wb");
 
     //--- Input B
-    strcpy(fileName, "./test/data/audio_coding/testfile32kHz.pcm");
+    strcpy(fileName, "./data/audio_coding/testfile32kHz.pcm");
     printf("\n\nEnter input file at side B [%s]: ", fileName);
     PCMFile::ChooseFile(fileName, 499, &frequencyHz);
     _inFileB.Open(fileName, frequencyHz, "rb", true);

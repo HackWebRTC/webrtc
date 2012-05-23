@@ -155,8 +155,8 @@ void TestStereo::Perform() {
                  "---------- TestStereo ----------");
   }
 
-  strcpy(file_name_stereo, "./test/data/audio_coding/teststereo32kHz.pcm");
-  strcpy(file_name_mono, "./test/data/audio_coding/testfile32kHz.pcm");
+  strcpy(file_name_stereo, "./data/audio_coding/teststereo32kHz.pcm");
+  strcpy(file_name_mono, "./data/audio_coding/testfile32kHz.pcm");
   frequency_hz = 32000;
 
   in_file_stereo_ = new PCMFile();

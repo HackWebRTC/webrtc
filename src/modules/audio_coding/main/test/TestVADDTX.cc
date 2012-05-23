@@ -59,7 +59,7 @@ void TestVADDTX::Perform()
         WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceAudioCoding, -1,
                      "---------- TestVADDTX ----------");
     }
-    char fileName[] = "./test/data/audio_coding/testfile32kHz.pcm";
+    char fileName[] = "./data/audio_coding/testfile32kHz.pcm";
     _inFileA.Open(fileName, 32000, "rb");
 
     _acmA = AudioCodingModule::Create(0);

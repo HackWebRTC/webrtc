@@ -203,7 +203,7 @@ WebRtc_Word16 TwoWayCommunication::SetUp()
     WebRtc_UWord16 frequencyHz;
     
     //--- Input A
-    strcpy(fileName, "./test/data/audio_coding/testfile32kHz.pcm");
+    strcpy(fileName, "./data/audio_coding/testfile32kHz.pcm");
     frequencyHz = 32000;
     printf("Enter input file at side A [%s]: ", fileName);
     ChooseFile(fileName, 499, &frequencyHz);
@@ -223,7 +223,7 @@ WebRtc_Word16 TwoWayCommunication::SetUp()
     _outFileRefA.Open(refFileName, frequencyHz, "wb");
 
     //--- Input B
-    strcpy(fileName, "./test/data/audio_coding/testfile32kHz.pcm");
+    strcpy(fileName, "./data/audio_coding/testfile32kHz.pcm");
     frequencyHz = 32000;
     printf("\n\nEnter input file at side B [%s]: ", fileName);
     ChooseFile(fileName, 499, &frequencyHz);
@@ -314,7 +314,7 @@ WebRtc_Word16 TwoWayCommunication::SetUpAutotest()
 
 
     //--- Input A
-    strcpy(fileName, "./test/data/audio_coding/testfile32kHz.pcm");
+    strcpy(fileName, "./data/audio_coding/testfile32kHz.pcm");
     frequencyHz = 16000;
     _inFileA.Open(fileName, frequencyHz, "rb");
 
@@ -328,7 +328,7 @@ WebRtc_Word16 TwoWayCommunication::SetUpAutotest()
     _outFileRefA.Open(refFileName, frequencyHz, "wb");
 
     //--- Input B
-    strcpy(fileName, "./test/data/audio_coding/testfile32kHz.pcm");
+    strcpy(fileName, "./data/audio_coding/testfile32kHz.pcm");
     frequencyHz = 16000;
     _inFileB.Open(fileName, frequencyHz, "rb");
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -253,7 +253,7 @@ void RunTest(std::string out_path) {
     // Fall back to the current directory.
     resource_path = "./";
   } else {
-    resource_path += "test/data/voice_engine/";
+    resource_path += "data/voice_engine/";
   }
 #endif
   const std::string audio_filename = resource_path + "audio_long16.pcm";

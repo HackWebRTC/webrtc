@@ -109,7 +109,7 @@ class ApmTest : public ::testing::Test {
 ApmTest::ApmTest()
     : output_path_(webrtc::test::OutputPath()),
       ref_path_(webrtc::test::ProjectRootPath() +
-                "test/data/audio_processing/"),
+                "data/audio_processing/"),
 #if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
       ref_filename_(ref_path_ + "output_data_fixed.pb"),
 #elif defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)

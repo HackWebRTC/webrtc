@@ -56,7 +56,7 @@ SpatialAudio::Setup()
     char audioFileName[MAX_FILE_NAME_LENGTH_BYTE];
     WebRtc_UWord16 sampFreqHz = 32000;
 
-    strncpy(audioFileName, "./test/data/audio_coding/testfile32kHz.pcm",
+    strncpy(audioFileName, "./data/audio_coding/testfile32kHz.pcm",
             MAX_FILE_NAME_LENGTH_BYTE - 1);
     if(_testMode == 1)
     {

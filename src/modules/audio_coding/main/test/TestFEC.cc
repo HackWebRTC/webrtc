@@ -59,7 +59,7 @@ void TestFEC::Perform()
         WEBRTC_TRACE(kTraceStateInfo, kTraceAudioCoding, -1,
                      "---------- TestFEC ----------");
     }
-    char fileName[] = "./test/data/audio_coding/testfile32kHz.pcm";
+    char fileName[] = "./data/audio_coding/testfile32kHz.pcm";
     _inFileA.Open(fileName, 32000, "rb");
 
 

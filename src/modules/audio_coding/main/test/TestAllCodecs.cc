@@ -141,7 +141,7 @@ TestAllCodecs::~TestAllCodecs()
 void TestAllCodecs::Perform()
 {
 
-    char file[] = "./test/data/audio_coding/testfile32kHz.pcm";
+    char file[] = "./data/audio_coding/testfile32kHz.pcm";
     _inFileA.Open(file, 32000, "rb");
 
     if(_testMode == 0)

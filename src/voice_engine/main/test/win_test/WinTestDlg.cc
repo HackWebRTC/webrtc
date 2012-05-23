@@ -2304,7 +2304,7 @@ void CWinTestDlg::OnBnClickedCheckExtTrans2()
 void CWinTestDlg::OnBnClickedCheckPlayFileIn1()
 {
     // File path is relative to the location of 'voice_engine.gyp'.
-    const char micFile[] = "../test/data/voice_engine/audio_short16.pcm";
+    const char micFile[] = "../data/voice_engine/audio_short16.pcm";
 
     int ret(0);
     int channel = GetDlgItemInt(IDC_EDIT_1);
@@ -2339,7 +2339,7 @@ void CWinTestDlg::OnBnClickedCheckPlayFileIn1()
 void CWinTestDlg::OnBnClickedCheckPlayFileIn2()
 {
     // File path is relative to the location of 'voice_engine.gyp'.
-    const char micFile[] = "../test/data/voice_engine/audio_long16.pcm";
+    const char micFile[] = "../data/voice_engine/audio_long16.pcm";
 
     int ret(0);
     int channel = GetDlgItemInt(IDC_EDIT_2);
@@ -2382,14 +2382,14 @@ void CWinTestDlg::OnBnClickedCheckPlayFileOut1()
                                           {kFileFormatWavFile},
                                           {kFileFormatWavFile}};
     // File path is relative to the location of 'voice_engine.gyp'.
-    const char spkrFiles[8][64] = {{"../../test/data/voice_engine/audio_short16.pcm"},
-                                   {"../../test/data/voice_engine/audio_tiny8.wav"},
-                                   {"../../test/data/voice_engine/audio_tiny11.wav"},
-                                   {"../../test/data/voice_engine/audio_tiny16.wav"},
-                                   {"../../test/data/voice_engine/audio_tiny22.wav"},
-                                   {"../../test/data/voice_engine/audio_tiny32.wav"},
-                                   {"../../test/data/voice_engine/audio_tiny44.wav"},
-                                   {"../../test/data/voice_engine/audio_tiny48.wav"}};
+    const char spkrFiles[8][64] = {{"../../data/voice_engine/audio_short16.pcm"},
+                                   {"../../data/voice_engine/audio_tiny8.wav"},
+                                   {"../../data/voice_engine/audio_tiny11.wav"},
+                                   {"../../data/voice_engine/audio_tiny16.wav"},
+                                   {"../../data/voice_engine/audio_tiny22.wav"},
+                                   {"../../data/voice_engine/audio_tiny32.wav"},
+                                   {"../../data/voice_engine/audio_tiny44.wav"},
+                                   {"../../data/voice_engine/audio_tiny48.wav"}};
     int ret(0);
     int channel = GetDlgItemInt(IDC_EDIT_1);
     CButton* button = (CButton*)GetDlgItem(IDC_CHECK_PLAY_FILE_OUT_1);
@@ -2434,7 +2434,7 @@ void CWinTestDlg::OnBnClickedCheckPlayFileOut1()
 void CWinTestDlg::OnBnClickedCheckPlayFileOut2()
 {
     // File path is relative to the location of 'voice_engine.gyp'.
-    const char spkrFile[] = "../test/data/voice_engine/audio_long16.pcm";
+    const char spkrFile[] = "../data/voice_engine/audio_long16.pcm";
 
     int ret(0);
     int channel = GetDlgItemInt(IDC_EDIT_2);
@@ -3095,8 +3095,8 @@ void CWinTestDlg::OnBnClickedCheckNs1()
 void CWinTestDlg::OnBnClickedCheckPlayFileIn()
 {
     // File path is relative to the location of 'voice_engine.gyp'.
-    const char micFile[] = "../../test/data/voice_engine/audio_short16.pcm";
-    // const char micFile[] = "../../test/data/voice_engine/audio_long16noise.pcm";
+    const char micFile[] = "../../data/voice_engine/audio_short16.pcm";
+    // const char micFile[] = "../../data/voice_engine/audio_long16noise.pcm";
 
     int channel(-1);
     CButton* buttonExtTrans = (CButton*)GetDlgItem(IDC_CHECK_PLAY_FILE_IN);
