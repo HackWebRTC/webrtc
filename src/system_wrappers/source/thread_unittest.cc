@@ -7,6 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
 #include "system_wrappers/interface/thread_wrapper.h"
 
 #include "gtest/gtest.h"
@@ -14,7 +15,7 @@
 
 namespace webrtc {
 
-const int kLogTrace = 1;
+const int kLogTrace = 0;
 
 class TestTraceCallback : public TraceCallback {
  public:

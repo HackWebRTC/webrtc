@@ -60,8 +60,9 @@
 #include <mach/mach.h>
 #endif
 
-#include "event_wrapper.h"
-#include "trace.h"
+#include "system_wrappers/interface/critical_section_wrapper.h"
+#include "system_wrappers/interface/event_wrapper.h"
+#include "system_wrappers/interface/trace.h"
 
 namespace webrtc {
 extern "C"
@@ -94,6 +95,7 @@ ThreadPosix::ThreadPosix(ThreadRunFunction func, ThreadObj obj,
                          ThreadPriority prio, const char* threadName)
     : _runFunction(func),
       _obj(obj),
+      _crit_state(CriticalSectionWrapper::CreateCriticalSection()),
       _alive(false),
       _dead(true),
       _prio(prio),
@@ -152,6 +154,7 @@ ThreadPosix::~ThreadPosix()
 {
     pthread_attr_destroy(&_attr);
     delete _event;
+    delete _crit_state;
 }
 
 #define HAS_THREAD_ID !defined(MAC_IPHONE) && !defined(MAC_IPHONE_SIM)  &&  \
@@ -275,6 +278,7 @@ bool ThreadPosix::SetAffinity(const int* , const unsigned int)
 
 void ThreadPosix::SetNotAlive()
 {
+    CriticalSectionScoped cs(_crit_state);
     _alive = false;
 }
 
@@ -294,18 +298,27 @@ bool ThreadPosix::Shutdown()
 
 bool ThreadPosix::Stop()
 {
-    _alive = false;
+    bool dead = false;
+    {
+        CriticalSectionScoped cs(_crit_state);
+        _alive = false;
+        dead = _dead;
+    }
 
     // TODO (hellner) why not use an event here?
     // Wait up to 10 seconds for the thread to terminate
-    for (int i = 0; i < 1000 && !_dead; i++)
+    for (int i = 0; i < 1000 && !dead; i++)
     {
         timespec t;
         t.tv_sec = 0;
         t.tv_nsec = 10*1000*1000;
         nanosleep(&t, NULL);
+        {
+            CriticalSectionScoped cs(_crit_state);
+            dead = _dead;
+        }
     }
-    if (_dead)
+    if (dead)
     {
         return true;
     }
@@ -317,8 +330,11 @@ bool ThreadPosix::Stop()
 
 void ThreadPosix::Run()
 {
-    _alive = true;
-    _dead  = false;
+    {
+        CriticalSectionScoped cs(_crit_state);
+        _alive = true;
+        _dead  = false;
+    }
 #if (defined(WEBRTC_LINUX) || defined(WEBRTC_ANDROID))
     _pid = GetThreadId();
 #endif
@@ -337,21 +353,29 @@ void ThreadPosix::Run()
         WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
                      "Thread without name started");
     }
+    bool alive = true;
     do
     {
         if (_runFunction)
         {
             if (!_runFunction(_obj))
             {
-                _alive = false;
+                alive = false;
             }
         }
         else
         {
-            _alive = false;
+            alive = false;
+        }
+        {
+            CriticalSectionScoped cs(_crit_state);
+            if (!alive) {
+              _alive = false;
+            }
+            alive = _alive;
         }
     }
-    while (_alive);
+    while (alive);
 
     if (_setThreadName)
     {
@@ -369,6 +393,9 @@ void ThreadPosix::Run()
         WEBRTC_TRACE(kTraceStateInfo, kTraceUtility,-1,
                      "Thread without name stopped");
     }
-    _dead = true;
+    {
+        CriticalSectionScoped cs(_crit_state);
+        _dead = true;
+    }
 }
 } // namespace webrtc
