@@ -18,7 +18,9 @@
 #include "src/voice_engine/main/interface/voe_audio_processing.h"
 #include "src/voice_engine/main/interface/voe_base.h"
 #include "src/voice_engine/main/interface/voe_codec.h"
+#include "src/voice_engine/main/interface/voe_hardware.h"
 
+DEFINE_string(render, "render", "render device name");
 DEFINE_string(codec, "ISAC", "codec name");
 DEFINE_int32(rate, 16000, "codec sample rate in Hz");
 
@@ -34,6 +36,8 @@ void RunHarness() {
   ASSERT_TRUE(base != NULL);
   VoECodec* codec = VoECodec::GetInterface(voe);
   ASSERT_TRUE(codec != NULL);
+  VoEHardware* hardware = VoEHardware::GetInterface(voe);
+  ASSERT_TRUE(hardware != NULL);
 
   ASSERT_EQ(0, base->Init());
   int channel = base->CreateChannel();
@@ -53,6 +57,23 @@ void RunHarness() {
   }
   ASSERT_TRUE(codec_found);
   ASSERT_EQ(0, codec->SetSendCodec(channel, codec_params));
+
+  int num_devices = 0;
+  ASSERT_EQ(0, hardware->GetNumOfPlayoutDevices(num_devices));
+  char device_name[128] = {0};
+  char guid[128] = {0};
+  bool device_found = false;
+  int device_index;
+  for (device_index = 0; device_index < num_devices; device_index++) {
+    ASSERT_EQ(0, hardware->GetPlayoutDeviceName(device_index, device_name,
+                                                guid));
+    if (FLAGS_render.compare(device_name) == 0) {
+      device_found = true;
+      break;
+    }
+  }
+  ASSERT_TRUE(device_found);
+  ASSERT_EQ(0, hardware->SetPlayoutDevice(device_index));
 
   // Disable all audio processing.
   ASSERT_EQ(0, audio->SetAgcStatus(false));
