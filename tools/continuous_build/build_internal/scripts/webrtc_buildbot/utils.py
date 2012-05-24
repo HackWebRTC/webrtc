@@ -132,8 +132,8 @@ class WebRTCFactory(factory.BuildFactory):
       self.EnableTest(test)
 
   def AddCommonStep(self, cmd, descriptor='', workdir=WEBRTC_TRUNK_DIR,
-                    halt_build_on_failure=True, warn_on_failure=False,
-                    timeout=1200, use_pty=True, env={}):
+                    halt_build_on_failure=True, timeout=1200, use_pty=True,
+                    env={}):
     """Adds a step which will run as a shell command on the slave.
 
     NOTE: you are recommended to use this method to add new shell commands
@@ -154,10 +154,7 @@ class WebRTCFactory(factory.BuildFactory):
         way depending on platform, which means you can't use the default
         value if the step will run on a Windows machine.
       halt_build_on_failure: Stops the build dead in its tracks if this step
-        fails. Use for critical steps. This option does not make sense with
-        warn_on_failure.
-      warn_on_failure: If true, this step isn't that important and will not
-        cause a failed build on failure.
+        fails. Use for critical steps.
       timeout: The timeout for the command, in seconds.
       use_pty: If Pseudo-terminal shall be enabled for the command. This is
         needed if stdout and stderr output shall be collected
@@ -168,27 +165,41 @@ class WebRTCFactory(factory.BuildFactory):
       env: dict of string->string that describes the environment the command
         shall be excuted with on the build slave.
     """
-    flunk_on_failure = not warn_on_failure
-
-    if type(descriptor) is str:
-      descriptor = [descriptor]
-
-    # Add spaces to wrap long test names to make waterfall output more compact.
-    wrapped_text = self._WrapLongLines(descriptor)
+    description, description_done = self._FormatDescriptor(descriptor)
 
     self.addStep(MonitoredShellCommand(
         build_status_oracle=self.build_status_oracle,
         command=cmd,
         workdir=workdir,
-        description=wrapped_text + ['running...'],
-        descriptionDone=wrapped_text,
-        warnOnFailure=warn_on_failure,
-        flunkOnFailure=flunk_on_failure,
+        description=description,
+        descriptionDone=description_done,
+        flunkOnFailure=True,
         haltOnFailure=halt_build_on_failure,
-        name='_'.join(descriptor),
+        name='_'.join(description_done),
         timeout=timeout,
         usePTY=use_pty,
         env=env))
+
+  def AddCommonFyiStep(self, cmd, descriptor='', workdir=WEBRTC_TRUNK_DIR):
+    """Adds a command which is merely FYI.
+
+    This command will only produce a warning on failure and will not be
+    considered a failure by the build status oracle.
+
+    The parameters here have the same semantics as their counterparts in
+    AddCommonStep.
+    """
+    description, description_done = self._FormatDescriptor(descriptor)
+
+    self.addStep(ShellCommand(
+        command=cmd,
+        workdir=workdir,
+        description=description,
+        descriptionDone=description_done,
+        name='_'.join(description_done),
+        flunkOnFailure=False,
+        haltOnFailure=False,
+        warnOnFailure=True))
 
   def AddSmartCleanStep(self):
     """Adds a smart clean step.
@@ -329,6 +340,23 @@ class WebRTCFactory(factory.BuildFactory):
           line = line[:index] + ' ' + line[index:]
       result.append(line)
     return result
+
+  def _FormatDescriptor(self, descriptor):
+    """Formats the descriptor.
+
+    Args:
+      descriptor: A string or list describing the build step.
+
+    Returns:
+      A tuple containing the formatted descriptor as well as a suitable
+      descriptor to use when the step is done.
+    """
+    if type(descriptor) is str:
+      descriptor = [descriptor]
+
+    # Add spaces to wrap long test names to make waterfall output more compact.
+    wrapped_text = self._WrapLongLines(descriptor)
+    return (wrapped_text + ['running'], wrapped_text)
 
 
 class BuildStatusOracle:
@@ -613,11 +641,6 @@ class WebRTCLinuxFactory(WebRTCFactory):
       cmd = ASAN_CMD + cmd
     self.AddCommonStep(cmd, descriptor=descriptor, halt_build_on_failure=False)
 
-  def AddXvfbTestRunStep(self, test_name, test_binary, test_arguments=''):
-    """ Adds a test to be run inside a XVFB window manager."""
-    cmd = MakeCommandToRunTestInXvfb('%s %s' % (test_binary, test_arguments))
-    self.AddCommonTestRunStep(test=test_name, cmd=cmd)
-
   def AddCommonMakeStep(self, target, extra_text=None, make_extra=None):
     descriptor = ['make ' + target, extra_text] if extra_text else ['make ' +
                                                                     target]
@@ -638,24 +661,18 @@ class WebRTCLinuxFactory(WebRTCFactory):
     self.AddCommonStep(cmd=cmd, descriptor=descriptor, env=env)
 
   def AddStepsToEstablishCoverageBaseline(self):
-    self.AddCommonStep(['lcov', '--directory', '.', '--capture', '-b',
-                        '.', '--initial',
-                        '--output-file', 'webrtc_base.info'],
-                       warn_on_failure=True,
-                       halt_build_on_failure=False,
-                       descriptor='LCOV (Baseline Capture)')
-    self.AddCommonStep(['lcov', '--extract', 'webrtc_base.info', '*/src/*',
-                        '--output', 'filtered.info'],
-                       warn_on_failure=True,
-                       halt_build_on_failure=False,
-                       descriptor='LCOV (Baseline Extract)')
-    self.AddCommonStep(['lcov', '--remove', 'filtered.info', '*/usr/include/*',
-                        '/third*', '/testing/*', '*/test/*', '*_unittest.*',
-                        '*/mock/*', '--output',
-                        'webrtc_base_filtered_final.info'],
-                       warn_on_failure=True,
-                       halt_build_on_failure=False,
-                       descriptor='LCOV (Baseline Filter)')
+    self.AddCommonFyiStep(['lcov', '--directory', '.', '--capture', '-b',
+                           '.', '--initial',
+                           '--output-file', 'webrtc_base.info'],
+                           descriptor='LCOV (Baseline Capture)')
+    self.AddCommonFyiStep(['lcov', '--extract', 'webrtc_base.info', '*/src/*',
+                           '--output', 'filtered.info'],
+                           descriptor='LCOV (Baseline Extract)')
+    self.AddCommonFyiStep(['lcov', '--remove', 'filtered.info',
+                           '*/usr/include/*', '/third*', '/testing/*',
+                           '*/test/*', '*_unittest.*', '*/mock/*', '--output',
+                           'webrtc_base_filtered_final.info'],
+                           descriptor='LCOV (Baseline Filter)')
 
   def AddStepsToComputeCoverage(self):
     """Enable coverage data."""
@@ -664,34 +681,24 @@ class WebRTCLinuxFactory(WebRTCFactory):
     # in lcov which tends to hang when capturing on libjpgturbo.
     clean_script = PosixPathJoin('tools', 'continuous_build', 'build_internal',
                                  'scripts', 'clean_third_party_gcda.sh')
-    self.AddCommonStep([clean_script],
-                       warn_on_failure=True,
-                       halt_build_on_failure=False,
-                       descriptor='LCOV (Delete 3rd party)')
-    self.AddCommonStep(['lcov', '--directory', '.', '--capture', '-b',
-                        '.', '--output-file', 'webrtc.info'],
-                       warn_on_failure=True,
-                       halt_build_on_failure=False,
-                       descriptor='LCOV (Capture)')
-    self.AddCommonStep(['lcov', '--extract', 'webrtc.info', '*/src/*',
-                        '--output', 'test.info'],
-                       warn_on_failure=True,
-                       halt_build_on_failure=False,
-                       descriptor='LCOV (Extract)')
-    self.AddCommonStep(['lcov', '--remove', 'test.info', '*/usr/include/*',
-                        '/third*', '/testing/*', '*/test/*', '*_unittest.*',
-                        '*/mock/*', '--output',
-                        'final.info'],
-                       warn_on_failure=True,
-                       halt_build_on_failure=False,
-                       descriptor='LCOV (Filter)')
-    self.AddCommonStep(['lcov', '-a', 'webrtc_base_filtered_final.info', '-a',
-                        'final.info', '-o', 'final.info'],
-                       warn_on_failure=True,
-                       halt_build_on_failure=False,
-                       descriptor='LCOV (Merge)')
+    self.AddCommonFyiStep([clean_script],
+                          descriptor='LCOV (Delete 3rd party)')
+    self.AddCommonFyiStep(['lcov', '--directory', '.', '--capture', '-b',
+                           '.', '--output-file', 'webrtc.info'],
+                          descriptor='LCOV (Capture)')
+    self.AddCommonFyiStep(['lcov', '--extract', 'webrtc.info', '*/src/*',
+                           '--output', 'test.info'],
+                          descriptor='LCOV (Extract)')
+    self.AddCommonFyiStep(['lcov', '--remove', 'test.info', '*/usr/include/*',
+                           '/third*', '/testing/*', '*/test/*', '*_unittest.*',
+                           '*/mock/*', '--output',
+                           'final.info'],
+                          descriptor='LCOV (Filter)')
+    self.AddCommonFyiStep(['lcov', '-a',
+                           'webrtc_base_filtered_final.info', '-a',
+                           'final.info', '-o', 'final.info'],
+                          descriptor='LCOV (Merge)')
 
-    # This step isn't monitored but it's fine since it's not critical.
     self.addStep(
         GenerateCodeCoverage(build_status_oracle=self.build_status_oracle,
                              coverage_url=self.coverage_url,
@@ -725,16 +732,13 @@ class WebRTCLinuxFactory(WebRTCFactory):
       self.AddCommonMakeStep(test, extra_text='(fixed point)')
       self.AddCommonTestRunStep(test, extra_text='(fixed point)')
     elif test == 'vie_auto_test':
-      # TODO(phoglund): Enable the full stack test once it is completed and
-      # nonflaky.
       binary = 'out/Debug/vie_auto_test'
       filter = '-ViEVideoVerificationTest.RunsFullStack*:ViERtpFuzzTest*'
-      args = (
-        '--automated --gtest_filter="%s" '
-        '--capture_test_ensure_resolution_alignment_in_capture_device=false')
-      args = args % filter
-      self.AddXvfbTestRunStep(test_name=test, test_binary=binary,
-                              test_arguments=args)
+      cmd = [binary, '--automated', '--gtest_filter=%s' % filter,
+             ('--capture_test_ensure_resolution_alignment'
+              '_in_capture_device=false')]
+      cmd = MakeCommandToRunTestInXvfb(cmd)
+      self.AddCommonTestRunStep(test=test, cmd=cmd)
 
       # Set up the fuzz tests as a separate step under memcheck.
       # If this test is run we require that we have compiled for memory tools.
@@ -742,20 +746,27 @@ class WebRTCLinuxFactory(WebRTCFactory):
       # when calling the webrtc_tests.sh script since we want those parameters
       # to not be caught by webrtc_tests.sh's options parser, but be passed on
       # to vie_auto_test. This is a part of webrtc_tests.sh's contract.
+      # This test is considered to be a FYI test so we will only warn here.
       assert self.compile_for_memory_tooling
-      fuzz_binary = (' '.join(MEMCHECK_CMD) + ' ' + binary +
-                     ' ++automated ++gtest_filter=ViERtpFuzzTest*')
-      self.AddXvfbTestRunStep(test_name=test + ' (fuzz tests)',
-                              test_binary=fuzz_binary)
+      fuzz_cmd = MEMCHECK_CMD + [binary, '++automated',
+                                 '++gtest_filter=ViERtpFuzzTest*']
+      fuzz_cmd = MakeCommandToRunTestInXvfb(fuzz_cmd)
+      self.AddCommonFyiStep(cmd=fuzz_cmd, descriptor=test + ' (fuzz tests)')
     elif test == 'video_render_module_test':
-      self.AddXvfbTestRunStep(test_name=test,
-                              test_binary='out/Debug/video_render_module_test')
-    elif test == 'voe_auto_test':
-      cmd = 'out/Debug/voe_auto_test --automated'
+      cmd = MakeCommandToRunTestInXvfb(['out/Debug/video_render_module_test'])
       self.AddCommonTestRunStep(test=test, cmd=cmd)
+    elif test == 'voe_auto_test':
+      binary = 'out/Debug/voe_auto_test'
+      cmd = [binary, '--automated', '--gtest_filter=-RtpFuzzTest.*']
+      self.AddCommonTestRunStep(test=test, cmd=cmd)
+
+      # Similarly to vie_auto_test, set up voe_auto_test fuzz tests.
+      assert self.compile_for_memory_tooling
+      cmd = MEMCHECK_CMD + [binary, ' ++automated',
+                            '++gtest_filter=RtpFuzzTest*']
+      self.AddCommonFyiStep(cmd=cmd, descriptor='voe_auto_test (fuzz tests)')
     else:
       self.AddCommonTestRunStep(test)
-
 
 class WebRTCMacFactory(WebRTCFactory):
   """Sets up the Mac build, both for make and xcode."""
@@ -867,10 +878,10 @@ class WebRTCWinFactory(WebRTCFactory):
     self.path_joiner = WindowsPathJoin
 
   def AddCommonStep(self, cmd, descriptor='', workdir=WEBRTC_TRUNK_DIR,
-                    halt_build_on_failure=True, warn_on_failure=False):
+                    halt_build_on_failure=True):
     workdir = workdir.replace('/', '\\')
     WebRTCFactory.AddCommonStep(self, cmd, descriptor, workdir,
-                                halt_build_on_failure, warn_on_failure)
+                                halt_build_on_failure)
 
   def EnableBuild(self, platform='Win32', configuration='Debug'):
     if platform not in self.allowed_platforms:
@@ -995,8 +1006,9 @@ def WindowsPathJoin(*args):
   return ntpath.normpath(ntpath.join(*args))
 
 def MakeCommandToRunTestInXvfb(cmd):
+  assert type(cmd) is list
   return ('xvfb-run --server-args="-screen 0 800x600x24 -extension Composite" '
-          '%s' % cmd)
+          '%s' % ' '.join(cmd))
 
 
 class UnsupportedConfigurationError(Exception):

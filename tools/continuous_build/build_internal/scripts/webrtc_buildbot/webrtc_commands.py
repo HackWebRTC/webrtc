@@ -14,8 +14,8 @@ __author__ = 'kjellander@webrtc.org (Henrik Kjellander)'
 This is based on chromium_commands.py and adds WebRTC-specific commands."""
 
 from buildbot.steps.shell import ShellCommand
-
 from master.factory import chromium_commands
+from master.log_parser import cl_command
 from webrtc_buildbot import utils
 
 DEFAULT_BLOAT_DIR = '/var/www/bloat'
@@ -95,6 +95,45 @@ class WebRTCCommands(chromium_commands.ChromiumCommands):
                                               warnOnFailure=True,
                                               workdir='build/src',
                                               timeout=7200))
+
+  def AddTestStep(self, command_class, test_name, test_command,
+                  test_description='', timeout=10*60, max_time=8*60*60,
+                  workdir=None, env=None, locks=None, halt_on_failure=False,
+                  do_step_if=True):
+    """This override is a hack to get the step to warn instead of failing."""
+    assert timeout <= max_time
+    do_step_if = do_step_if or self.TestStepFilter
+    self._factory.addStep(
+        command_class,
+        name=test_name,
+        timeout=timeout,
+        maxTime=max_time,
+        doStepIf=do_step_if,
+        workdir=workdir,
+        env=env,
+        description='running %s%s' % (test_name, test_description),
+        descriptionDone='%s%s' % (test_name, test_description),
+        haltOnFailure=halt_on_failure,
+        warnOnFailure=True,
+        flunkOnFailure=False,
+        command=test_command)
+
+
+  def AddCompileStep(self, solution, clobber=False, description='compiling',
+                     descriptionDone='compile', timeout=600, mode=None,
+                     options=None):
+    """This override is a hack to get the step to warn instead of failing."""
+    self._factory.addStep(cl_command.CLCommand,
+                          enable_warnings=0,
+                          timeout=timeout,
+                          description=description,
+                          descriptionDone=descriptionDone,
+                          warnOnFailure=True,
+                          flunkOnFailure=False,
+                          command=self.GetBuildCommand(clobber,
+                                                       solution,
+                                                       mode,
+                                                       options))
 
 
 class ShellCommandWithUrl(ShellCommand):
