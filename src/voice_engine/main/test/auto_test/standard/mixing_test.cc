@@ -80,10 +80,6 @@ class MixingTest : public AfterInitializationFixture {
     StopRemoteStreams(remote_streams);
 
     VerifyMixedOutput(max_output_value, min_output_value);
-
-    // Cleanup the files in case another test uses different lengths.
-    ASSERT_EQ(0, remove(input_filename_.c_str()));
-    ASSERT_EQ(0, remove(output_filename_.c_str()));
   }
 
  private:
@@ -116,8 +112,8 @@ class MixingTest : public AfterInitializationFixture {
       EXPECT_GE(output_value, min_output_value);
     }
     // Ensure the recording length is close to the duration of the test.
-    ASSERT_GE((samples_read * 1000.0f) / kSampleRateHz,
-              kTestDurationMs - kSkipOutputMs);
+    ASSERT_GE((samples_read * 1000.0) / kSampleRateHz,
+              0.9 * (kTestDurationMs - kSkipOutputMs));
     // Ensure we read the entire file.
     ASSERT_NE(0, feof(output_file));
     ASSERT_EQ(0, fclose(output_file));
