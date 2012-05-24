@@ -88,11 +88,12 @@ class VoEAudioProcessingImpl : public VoEAudioProcessing {
 
   virtual int TimeSinceLastTyping(int &seconds);
 
+  // TODO(niklase) Remove default argument as soon as libJingle is updated!
   virtual int SetTypingDetectionParameters(int timeWindow,
                                            int costPerTyping,
                                            int reportingThreshold,
                                            int penaltyDecay,
-                                           int typeEventDelay);
+                                           int typeEventDelay = 0);
 
   virtual void EnableStereoChannelSwapping(bool enable);
   virtual bool IsStereoChannelSwappingEnabled();

@@ -200,13 +200,13 @@ public:
 
     // Optional setting of typing detection parameters
     // Parameter with value == 0 will be ignored
-
     // and left with default config.
+    // TODO(niklase) Remove default argument as soon as libJingle is updated!
     virtual int SetTypingDetectionParameters(int timeWindow,
                                              int costPerTyping,
                                              int reportingThreshold,
                                              int penaltyDecay,
-                                             int typeEventDelay) = 0;
+                                             int typeEventDelay = 0) = 0;
 
     // Swaps the capture-side left and right audio channels when enabled. It
     // only has an effect when using a stereo send codec. The setting is
