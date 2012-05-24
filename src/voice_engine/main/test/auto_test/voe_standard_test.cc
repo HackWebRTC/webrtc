@@ -149,42 +149,37 @@ bool SubAPIManager::GetExtendedMenuSelection(ExtendedSelection& sel) {
     printf("\n");
   else
     printf(" (NA)\n");
-  printf(" (8)  Mixing");
-  if (_file)
-    printf("\n");
-  else
-    printf(" (NA)\n");
-  printf(" (9)  Hardware");
+  printf(" (8)  Hardware");
   if (_hardware)
     printf("\n");
   else
     printf(" (NA)\n");
-  printf(" (10) NetEqStats");
+  printf(" (9) NetEqStats");
   if (_netEqStats)
     printf("\n");
   else
     printf(" (NA)\n");
-  printf(" (11) Network");
+  printf(" (10) Network");
   if (_network)
     printf("\n");
   else
     printf(" (NA)\n");
-  printf(" (12) RTP_RTCP");
+  printf(" (11) RTP_RTCP");
   if (_rtp_rtcp)
     printf("\n");
   else
     printf(" (NA)\n");
-  printf(" (13) VideoSync");
+  printf(" (12) VideoSync");
   if (_videoSync)
     printf("\n");
   else
     printf(" (NA)\n");
-  printf(" (14) VolumeControl");
+  printf(" (13) VolumeControl");
   if (_volumeControl)
     printf("\n");
   else
     printf(" (NA)\n");
-  printf(" (15) AudioProcessing");
+  printf(" (14) AudioProcessing");
   if (_apm)
     printf("\n");
   else
@@ -228,34 +223,30 @@ bool SubAPIManager::GetExtendedMenuSelection(ExtendedSelection& sel) {
         xsel = XSEL_File;
       break;
     case 8:
-      if (_file)
-        xsel = XSEL_Mixing;
-      break;
-    case 9:
       if (_hardware)
         xsel = XSEL_Hardware;
       break;
-    case 10:
+    case 9:
       if (_netEqStats)
         xsel = XSEL_NetEqStats;
       break;
-    case 11:
+    case 10:
       if (_network)
         xsel = XSEL_Network;
       break;
-    case 12:
+    case 11:
       if (_rtp_rtcp)
         xsel = XSEL_RTP_RTCP;
       break;
-    case 13:
+    case 12:
       if (_videoSync)
         xsel = XSEL_VideoSync;
       break;
-    case 14:
+    case 13:
       if (_volumeControl)
         xsel = XSEL_VolumeControl;
       break;
-    case 15:
+    case 14:
       if (_apm)
         xsel = XSEL_AudioProcessing;
       break;
@@ -491,11 +482,6 @@ int run_auto_test(TestType test_type, ExtendedSelection ext_selection) {
         if ((result = xtend.TestFile()) == -1)
           break;
         xtend.TestPassed("File");
-      }
-      if (ext_selection == XSEL_Mixing || ext_selection == XSEL_All) {
-        if ((result = xtend.TestMixing()) == -1)
-          break;
-        xtend.TestPassed("Mixing");
       }
       if (ext_selection == XSEL_Hardware || ext_selection == XSEL_All) {
         if ((result = xtend.TestHardware()) == -1)
