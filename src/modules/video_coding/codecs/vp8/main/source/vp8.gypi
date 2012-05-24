@@ -62,7 +62,7 @@
     ['include_tests==1', {
       'targets': [
         {
-          'target_name': 'vp8_test',
+          'target_name': 'vp8_integrationtests',
           'type': 'executable',
           'dependencies': [
             'test_framework',

@@ -31,7 +31,7 @@ void PopulateTests(std::vector<CodecTest*>* tests)
 //    tests->push_back(new VP8DualDecoderTest());
 //    tests->push_back(new VP8Benchmark());
 //    tests->push_back(new VP8PacketLossTest(0.05, false, 5));
-    tests->push_back(new VP8NormalAsyncTest());
+//    tests->push_back(new VP8NormalAsyncTest());
 }
 
 TEST(Vp8WrapperTest, RunAllTests)
