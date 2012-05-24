@@ -19,6 +19,10 @@ namespace webrtc {
 
 class Module {
  public:
+  // TODO(henrika): Remove this when chrome is updated.
+  // DEPRICATED Change the unique identifier of this object.
+  virtual int32_t ChangeUniqueId(const int32_t id) { return 0; }
+
   // Returns the number of milliseconds until the module want a worker
   // thread to call Process.
   virtual int32_t TimeUntilNextProcess() = 0;
