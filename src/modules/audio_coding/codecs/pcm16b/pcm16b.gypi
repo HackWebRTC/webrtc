@@ -26,7 +26,7 @@
     },
   ], # targets
   'conditions': [
-    ['build_with_chromium==0', {
+    ['include_tests==1', {
       'targets': [
         {
           'target_name': 'pcm16b_unittests',
@@ -41,7 +41,7 @@
           ],
         }, # PCM16B_unittests
       ], # targets
-    }], # build_with_chromium
+    }], # include_tests
   ], # conditions
 }
 

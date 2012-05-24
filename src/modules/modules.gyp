@@ -40,9 +40,8 @@
     'rtp_rtcp/source/rtp_rtcp.gypi',
   ],
 
-  # Test targets, excluded when building with Chromium.
   'conditions': [
-    ['build_with_chromium==0', {
+    ['include_tests==1', {
       'includes': [
         'audio_coding/codecs/iSAC/isac_test.gypi',
         'audio_coding/codecs/iSAC/isacfix_test.gypi',
@@ -57,6 +56,6 @@
         'video_coding/codecs/tools/video_codecs_tools.gypi',
         'video_processing/main/test/vpm_tests.gypi',
       ], # includes
-    }], # build_with_chromium
+    }], # include_tests
   ], # conditions
 }

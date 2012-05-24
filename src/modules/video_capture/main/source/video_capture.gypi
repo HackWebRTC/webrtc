@@ -131,11 +131,10 @@
       ], # conditions
     },
   ],
-   # Exclude the test targets when building with chromium.
   'conditions': [
-    ['build_with_chromium==0', {
-      'targets': [        
-        {        
+    ['include_tests==1', {
+      'targets': [
+        {
           'target_name': 'video_capture_module_test',
           'type': 'executable',
           'dependencies': [
@@ -151,7 +150,7 @@
           'sources': [
             '../test/video_capture_unittest.cc',
           ],
-          'conditions': [            
+          'conditions': [
            # DEFINE PLATFORM SPECIFIC INCLUDE AND CFLAGS
             ['OS=="mac" or OS=="linux"', {
               'cflags': [

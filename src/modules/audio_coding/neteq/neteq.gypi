@@ -84,9 +84,8 @@
       ],
     },
   ], # targets
-  # Exclude the test target when building with chromium.
   'conditions': [
-    ['build_with_chromium==0', {
+    ['include_tests==1', {
       'targets': [
         {
           'target_name': 'neteq_unittests',
@@ -295,6 +294,6 @@
           ],
         },
       ], # targets
-    }], # build_with_chromium
+    }], # include_tests
   ], # conditions
 }

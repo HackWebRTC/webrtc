@@ -172,7 +172,7 @@
         },
       ],
     }],
-    ['build_with_chromium==0', {
+    ['include_tests==1', {
       'targets': [
         {
           'target_name': 'system_wrappers_unittests',
@@ -205,7 +205,7 @@
           ],
         },
       ], # targets
-    }], # build_with_chromium
+    }], # include_tests
   ], # conditions
 }
 

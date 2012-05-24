@@ -93,9 +93,8 @@
       ],
     },
   ],
-  # Exclude the test targets when building with chromium.
   'conditions': [
-    ['build_with_chromium==0', {
+    ['include_tests==1', {
       'targets': [
         {
           'target_name': 'audio_coding_module_test',

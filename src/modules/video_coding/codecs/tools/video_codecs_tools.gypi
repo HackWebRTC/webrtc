@@ -7,9 +7,8 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  # Exclude the test target when building with chromium.
-  'conditions': [   
-    ['build_with_chromium==0', {
+  'conditions': [
+    ['include_tests==1', {
       'targets': [
         {
           'target_name': 'video_quality_measurement',
@@ -26,7 +25,7 @@
            ],
         },
       ], # targets
-    }], # build_with_chromium
+    }], # include_tests
   ], # conditions
 }
 

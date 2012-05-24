@@ -33,7 +33,7 @@
     },
   ], # targets
   'conditions': [
-    ['build_with_chromium==0', {
+    ['include_tests==1', {
       'targets': [
         {
           'target_name': 'libyuv_unittests',
@@ -46,10 +46,10 @@
           ],
           'sources': [
             'libyuv_unittest.cc',
-            'scaler_unittest.cc', 
-          ], 
+            'scaler_unittest.cc',
+          ],
         },
       ], # targets
-    }], # build_with_chromium
+    }], # include_tests
   ], # conditions
 }

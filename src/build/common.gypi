@@ -66,6 +66,9 @@
         # Disable the use of protocol buffers in production code.
         'enable_protobuf%': 0,
 
+        # Don't include tests for Chromium builds.
+        'include_tests%': 0,
+
         'webrtc_root%': '<(DEPTH)/third_party/webrtc',
       }, {
         # Settings for the standalone (not-in-Chromium) build.
@@ -79,6 +82,8 @@
         'include_internal_video_render%': 1,
 
         'enable_protobuf%': 1,
+
+        'include_tests%': 1,
 
         'webrtc_root%': '<(DEPTH)/src',
 

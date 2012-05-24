@@ -14,7 +14,7 @@
 
   # Test targets, excluded when building with Chromium.
   'conditions': [
-    ['build_with_chromium==0', {
+    ['include_tests==1', {
       'includes': [
         'main/test/voice_engine_tests.gypi',
       ],

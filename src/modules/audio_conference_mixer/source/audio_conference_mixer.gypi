@@ -43,7 +43,7 @@
     },
   ], # targets
   'conditions': [
-    ['build_with_chromium==0', {
+    ['include_tests==1', {
       'targets': [
         {
           'target_name': 'audio_conference_mixer_unittests',
@@ -59,7 +59,7 @@
           ],
         }, # audio_conference_mixer_unittests
       ], # targets
-    }], # build_with_chromium
+    }], # include_tests
   ], # conditions
 }
 
