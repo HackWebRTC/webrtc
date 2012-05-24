@@ -46,6 +46,7 @@ ViEChannel::ViEChannel(WebRtc_Word32 channel_id,
       number_of_cores_(number_of_cores),
       num_socket_threads_(kViESocketThreads),
       callback_cs_(CriticalSectionWrapper::CreateCriticalSection()),
+      rtp_rtcp_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       default_rtp_rtcp_(default_rtp_rtcp),
       rtp_rtcp_(NULL),
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
@@ -220,9 +221,12 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
     restart_rtp = true;
     rtp_rtcp_->SetSendingStatus(false);
   }
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
+
   if (video_codec.numberOfSimulcastStreams > 0) {
     // Set correct bitrate to base layer.
     // Create our simulcast RTP modules.
+
     for (int i = simulcast_rtp_rtcp_.size();
          i < video_codec.numberOfSimulcastStreams - 1;
          i++) {
@@ -475,6 +479,7 @@ WebRtc_Word32 ViEChannel::SetRTCPMode(const RTCPMethod rtcp_mode) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s: %d", __FUNCTION__, rtcp_mode);
 
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
   for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
        it != simulcast_rtp_rtcp_.end();
        it++) {
@@ -540,6 +545,8 @@ WebRtc_Word32 ViEChannel::ProcessNACKRequest(const bool enable) {
 
     vcm_.RegisterPacketRequestCallback(this);
 
+    CriticalSectionScoped cs(rtp_rtcp_cs_.get());
+
     for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
          it != simulcast_rtp_rtcp_.end();
          it++) {
@@ -547,6 +554,7 @@ WebRtc_Word32 ViEChannel::ProcessNACKRequest(const bool enable) {
       rtp_rtcp->SetStorePacketsStatus(true, kNackHistorySize);
     }
   } else {
+    CriticalSectionScoped cs(rtp_rtcp_cs_.get());
     for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
          it != simulcast_rtp_rtcp_.end();
          it++) {
@@ -590,6 +598,7 @@ WebRtc_Word32 ViEChannel::ProcessFECRequest(
                  enable);
     return -1;
   }
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
   for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
        it != simulcast_rtp_rtcp_.end();
        it++) {
@@ -665,6 +674,7 @@ WebRtc_Word32 ViEChannel::SetSSRC(const WebRtc_UWord32 SSRC,
   if (simulcast_idx == 0) {
     return rtp_rtcp_->SetSSRC(SSRC);
   }
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
   if (simulcast_idx > simulcast_rtp_rtcp_.size()) {
       return -1;
   }
@@ -862,6 +872,8 @@ WebRtc_Word32 ViEChannel::GetSendRtcpStatistics(WebRtc_UWord16& fraction_lost,
 
   // TODO(pwestin) how do we do this for simulcast ? average for all
   // except cumulative_lost that is the sum ?
+  // CriticalSectionScoped cs(rtp_rtcp_cs_.get());
+
   // for (std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
   //      it != simulcast_rtp_rtcp_.end();
   //      it++) {
@@ -955,6 +967,7 @@ WebRtc_Word32 ViEChannel::GetRtpStatistics(
                  "%s: Could not get counters", __FUNCTION__);
     return -1;
   }
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
   for (std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
        it != simulcast_rtp_rtcp_.end();
        it++) {
@@ -979,6 +992,7 @@ void ViEChannel::GetBandwidthUsage(WebRtc_UWord32& total_bitrate_sent,
                         &video_bitrate_sent,
                         &fec_bitrate_sent,
                         &nackBitrateSent);
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
   for (std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
        it != simulcast_rtp_rtcp_.end(); it++) {
     WebRtc_UWord32 stream_rate = 0;
@@ -1305,6 +1319,7 @@ WebRtc_Word32 ViEChannel::StartSend() {
                  "%s: Could not start sending RTP", __FUNCTION__);
     return -1;
   }
+  CriticalSectionScoped cs_rtp(rtp_rtcp_cs_.get());
   for (std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
        it != simulcast_rtp_rtcp_.end();
        it++) {
@@ -1319,6 +1334,7 @@ WebRtc_Word32 ViEChannel::StopSend() {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
   rtp_rtcp_->SetSendingMediaStatus(false);
   for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
        it != simulcast_rtp_rtcp_.end();
@@ -1791,6 +1807,7 @@ WebRtc_Word32 ViEChannel::SetMTU(WebRtc_UWord16 mtu) {
     // Logging done.
     return -1;
   }
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
   for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
        it != simulcast_rtp_rtcp_.end();
        it++) {

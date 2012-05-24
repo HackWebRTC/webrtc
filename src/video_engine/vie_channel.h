@@ -348,6 +348,7 @@ class ViEChannel
 
   // Used for all registered callbacks except rendering.
   scoped_ptr<CriticalSectionWrapper> callback_cs_;
+  scoped_ptr<CriticalSectionWrapper> rtp_rtcp_cs_;
 
   RtpRtcp* default_rtp_rtcp_;
 
