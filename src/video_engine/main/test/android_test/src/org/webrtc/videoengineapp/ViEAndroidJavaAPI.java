@@ -54,6 +54,7 @@ public class ViEAndroidJavaAPI {
     public native int SetLocalReceiver(int channel, int port);
     public native int SetSendDestination(int channel, int port, byte ipadr[]);
     // Codec
+    public native String[] GetCodecs();
     public native int SetReceiveCodec(int channel, int codecNum,
             int intbitRate, int width,
             int height, int frameRate);
@@ -126,6 +127,7 @@ public class ViEAndroidJavaAPI {
 
     // Codec-setting functions
     public native int VoE_NumOfCodecs();
+    public native String[] VoE_GetCodecs();
     public native int VoE_SetSendCodec(int channel, int index);
 
     //VE funtions

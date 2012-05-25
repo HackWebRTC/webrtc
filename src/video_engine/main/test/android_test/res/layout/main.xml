@@ -73,14 +73,14 @@
                           android:layout_height="wrap_content"
                           android:text="@string/opengl"
                           android:checked="true"
-                          android:textColor="#0f0"/>
+                          android:textColor="#fff"/>
                  <RadioButton
                           android:id="@+id/radio_surface"
                           android:onClick="onClick"
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
                           android:text="@string/surfaceview"
-                          android:textColor="#0f0" />
+                          android:textColor="#fff" />
         </RadioGroup>
 	</LinearLayout>
 

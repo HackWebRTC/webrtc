@@ -116,6 +116,15 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetSendD
 
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+ * Method:    GetCodecs(
+ * Signature: ()I
+ */
+JNIEXPORT jobjectArray JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_GetCodecs(
+    JNIEnv *env,
+    jobject);
+
+/*
+ * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
  * Method:    SetReceiveCodec
  * Signature: (IIIIII)I
  */
@@ -378,6 +387,14 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Sto
  * Signature: ()I
  */
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1NumOfCodecs
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+ * Method:    VoE_NumOfCodecs
+ * Signature: ()Z
+ */
+JNIEXPORT jobjectArray JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1GetCodecs
   (JNIEnv *, jobject);
 
 /*
