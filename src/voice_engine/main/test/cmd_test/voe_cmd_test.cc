@@ -358,7 +358,11 @@ void RunTest(std::string out_path) {
   res = codec->SetSendCodec(chan, cinst);
   VALIDATE;
 
+#ifndef WEBRTC_ANDROID
   const int kMaxNumChannels = 8;
+#else
+  const int kMaxNumChannels = 1;
+#endif
   int channel_index = 0;
   std::vector<int> channels(kMaxNumChannels);
   for (i = 0; i < kMaxNumChannels; ++i) {
@@ -376,7 +380,7 @@ void RunTest(std::string out_path) {
   bool newcall = true;
   while (newcall) {
 
-#ifdef WEBRTC_LINUX
+#if defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
     int rd(-1), pd(-1);
     res = hardware->GetNumOfRecordingDevices(rd);
     VALIDATE;
@@ -452,6 +456,7 @@ void RunTest(std::string out_path) {
       VALIDATE;
     }
 
+#ifndef WEBRTC_ANDROID
     printf("Getting mic volume \n");
     unsigned int vol = 999;
     res = volume->GetMicVolume(vol);
@@ -459,6 +464,7 @@ void RunTest(std::string out_path) {
     if ((vol > 255) || (vol < 1)) {
       printf("\n****ERROR in GetMicVolume");
     }
+#endif
 
     int forever = 1;
     while (forever) {
