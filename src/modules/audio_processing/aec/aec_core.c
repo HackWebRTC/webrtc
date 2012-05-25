@@ -686,8 +686,14 @@ static void ProcessBlock(aec_t* aec) {
         int16_t farend[PART_LEN];
         int16_t* farend_ptr = NULL;
         WebRtc_ReadBuffer(aec->far_time_buf, (void**) &farend_ptr, farend, 1);
-        fwrite(farend_ptr, sizeof(int16_t), PART_LEN, aec->farFile);
-        fwrite(nearend_ptr, sizeof(int16_t), PART_LEN, aec->nearFile);
+        if (fwrite(farend_ptr, sizeof(int16_t),
+                   PART_LEN, aec->farFile) != PART_LEN) {
+          return -1;
+        }
+        if (fwrite(nearend_ptr, sizeof(int16_t),
+                   PART_LEN, aec->nearFile) != PART_LEN) {
+          return -1;
+        }
     }
 #endif
 
@@ -844,8 +850,14 @@ static void ProcessBlock(aec_t* aec) {
                 WEBRTC_SPL_WORD16_MIN);
         }
 
-        fwrite(eInt16, sizeof(int16_t), PART_LEN, aec->outLinearFile);
-        fwrite(output, sizeof(int16_t), PART_LEN, aec->outFile);
+        if (fwrite(eInt16, sizeof(int16_t),
+                   PART_LEN, aec->outLinearFile) != PART_LEN) {
+          return -1;
+        }
+        if (fwrite(output, sizeof(int16_t),
+                   PART_LEN, aec->outFile) != PART_LEN) {
+          return -1;
+        }
     }
 #endif
 }

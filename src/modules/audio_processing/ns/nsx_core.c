@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -1887,7 +1887,10 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
   assert(inst->magnLen == inst->anaLen2 + 1);
 
 #ifdef NS_FILEDEBUG
-  fwrite(spframe, sizeof(short), inst->blockLen10ms, inst->infile);
+  if (fwrite(spframe, sizeof(short),
+             inst->blockLen10ms, inst->infile) != inst->blockLen10ms) {
+    return -1;
+  }
 #endif
 
   // Check that initialization has been done
@@ -2364,7 +2367,10 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
 
   WebRtcNsx_DataSynthesis(inst, outFrame);
 #ifdef NS_FILEDEBUG
-  fwrite(outframe, sizeof(short), inst->blockLen10ms, inst->outfile);
+  if (fwrite(outframe, sizeof(short),
+             inst->blockLen10ms, inst->outfile) != inst->blockLen10ms) {
+    return -1;
+  }
 #endif
 
   //for H band:
@@ -2440,5 +2446,3 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
 
   return 0;
 }
-
-
