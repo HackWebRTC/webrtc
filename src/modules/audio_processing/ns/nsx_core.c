@@ -435,6 +435,18 @@ AnalysisUpdate WebRtcNsx_AnalysisUpdate;
 Denormalize WebRtcNsx_Denormalize;
 CreateComplexBuffer WebRtcNsx_CreateComplexBuffer;
 
+#if (defined WEBRTC_DETECT_ARM_NEON || defined WEBRTC_ARCH_ARM_NEON)
+// Initialize function pointers for ARM Neon platform.
+static void WebRtcNsx_InitNeon(void) {
+  WebRtcNsx_NoiseEstimation = WebRtcNsx_NoiseEstimationNeon;
+  WebRtcNsx_PrepareSpectrum = WebRtcNsx_PrepareSpectrumNeon;
+  WebRtcNsx_SynthesisUpdate = WebRtcNsx_SynthesisUpdateNeon;
+  WebRtcNsx_AnalysisUpdate = WebRtcNsx_AnalysisUpdateNeon;
+  WebRtcNsx_Denormalize = WebRtcNsx_DenormalizeNeon;
+  WebRtcNsx_CreateComplexBuffer = WebRtcNsx_CreateComplexBufferNeon;
+}
+#endif
+
 // Update the noise estimation information.
 static void UpdateNoiseEstimate(NsxInst_t* inst, int offset) {
   WebRtc_Word32 tmp32no1 = 0;
@@ -1881,8 +1893,11 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
   int q_domain_to_use = 0;
 
   // Code for ARMv7-Neon platform assumes the following:
+  assert(inst->anaLen > 0);
+  assert(inst->anaLen2 > 0);
   assert(inst->anaLen % 16 == 0);
   assert(inst->anaLen2 % 8 == 0);
+  assert(inst->blockLen10ms > 0);
   assert(inst->blockLen10ms % 16 == 0);
   assert(inst->magnLen == inst->anaLen2 + 1);
 
