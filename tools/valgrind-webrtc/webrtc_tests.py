@@ -15,14 +15,71 @@ we effectively can pass in any binary we feel like. It's also possible to pass
 arguments to the test, provided that the arguments do not contain dashes (these
 can be "escaped" by passing + instead, so -a becomes +a, and --my-option becomes
 ++my_option).
+
+Suppression files:
+The Chrome valgrind directory we use as a DEPS dependency contains the following
+suppression files:
+  valgrind/memcheck/suppressions.txt
+  valgrind/memcheck/suppressions_mac.txt
+  valgrind/tsan/suppressions.txt
+  valgrind/tsan/suppressions_mac.txt
+  valgrind/tsan/suppressions_win32.txt
+Since they're referenced from the chrome_tests.py script, we have similar files
+below the directory of this script. When executing, this script will setup both
+Chrome's suppression files and our own, so we can easily maintain WebRTC
+specific suppressions in our own files.
 '''
 
 import optparse
+import os
 import sys
 
 import logging_utils
+import path_utils
 
 import chrome_tests
+
+class WebRTCTests(chrome_tests.ChromeTests):
+  """Class that handles setup of suppressions for WebRTC.
+
+  Everything else is inherited from chrome_tests.ChromeTests.
+  """
+
+  def _DefaultCommand(self, tool, exe=None, valgrind_test_args=None):
+    """Override command-building method so we can add more suppressions."""
+    cmd = chrome_tests.ChromeTests._DefaultCommand(self, tool, exe,
+                                                   valgrind_test_args)
+    # When ChromeTests._DefaultCommand has executed, it has setup suppression
+    # files based on what's found in the memcheck/ or tsan/ subdirectories of
+    # this script's location. If Mac or Windows is executing, additional
+    # platform specific files have also been added.
+    # Since only the ones located below this directory is added, we must also
+    # add the ones maintained by Chrome, located in ../valgrind.
+
+    # The idea is to look for --suppression arguments in the cmd list and add a
+    # modified copy of each suppression file, for the corresponding file in
+    # ../valgrind. If we would simply replace 'valgrind-webrtc' with 'valgrind'
+    # we may produce invalid paths if other parts of the path contain that
+    # string. That's why the code below only replaces the end of the path.
+    old_base, old_dir = _split_script_path()
+    new_dir = old_base + 'valgrind'
+    add_suppressions = []
+    for token in cmd:
+      if '--suppressions' in token:
+        add_suppressions.append(token.replace(old_base + old_dir, new_dir))
+    return add_suppressions + cmd
+
+
+def _split_script_path():
+  """Splits the script's path into a tuple separating the last directory.
+
+    Returns a tuple where the first item is the whole path except the last
+    directory and the second item is the name of the last directory.
+  """
+  script_dir = path_utils.ScriptDir()
+  last_sep_index = script_dir.rfind(os.sep)
+  return script_dir[0:last_sep_index+1], script_dir[last_sep_index+1:]
+
 
 def _main(_):
   parser = optparse.OptionParser("usage: %prog -b <dir> -t <test> "
@@ -68,7 +125,7 @@ def _main(_):
   translated_args = map(lambda arg: arg.replace('+', '-'), args)
 
   for t in options.test:
-    tests = chrome_tests.ChromeTests(options, translated_args, t)
+    tests = WebRTCTests(options, translated_args, t)
     ret = tests.Run()
     if ret: return ret
   return 0
