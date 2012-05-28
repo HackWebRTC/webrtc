@@ -141,8 +141,6 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
   int32_t sum_log_likelihood_ratios = 0;
   int32_t noise_global_mean, speech_global_mean;
   int32_t noise_probability[kNumGaussians], speech_probability[kNumGaussians];
-  int16_t *nmean1ptr, *nmean2ptr, *smean1ptr, *smean2ptr;
-  int16_t *nstd1ptr, *nstd2ptr, *sstd1ptr, *sstd2ptr;
   int16_t overhead1, overhead2, individualTest, totalTest;
 
   // Set various thresholds based on frame lengths (80, 160 or 240 samples).
@@ -245,12 +243,6 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
       vadflag |= 1;
     }
 
-    // Set pointers to the means and standard deviations.
-    nmean1ptr = &self->noise_means[0];
-    smean1ptr = &self->speech_means[0];
-    nstd1ptr = &self->noise_stds[0];
-    sstd1ptr = &self->speech_stds[0];
-
     maxspe = 12800;
 
     // Update the model parameters.
@@ -266,16 +258,13 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
       tmp1_s16 = (int16_t) (noise_global_mean >> 6);  // Q8
 
       for (k = 0; k < kNumGaussians; k++) {
+        int current_gaussian = n + k * kNumChannels;
         nr = pos + k;
 
-        nmean2ptr = nmean1ptr + k * kNumChannels;
-        smean2ptr = smean1ptr + k * kNumChannels;
-        nstd2ptr = nstd1ptr + k * kNumChannels;
-        sstd2ptr = sstd1ptr + k * kNumChannels;
-        nmk = *nmean2ptr;
-        smk = *smean2ptr;
-        nsk = *nstd2ptr;
-        ssk = *sstd2ptr;
+        nmk = self->noise_means[current_gaussian];
+        smk = self->speech_means[current_gaussian];
+        nsk = self->noise_stds[current_gaussian];
+        ssk = self->speech_stds[current_gaussian];
 
         // Update noise mean vector if the frame consists of noise only.
         nmk2 = nmk;
@@ -308,7 +297,7 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
         if (nmk3 > tmp_s16) {
           nmk3 = tmp_s16;
         }
-        *nmean2ptr = nmk3;
+        self->noise_means[current_gaussian] = nmk3;
 
         if (vadflag) {
           // Update speech mean vector:
@@ -334,7 +323,7 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
           if (smk2 > maxmu) {
             smk2 = maxmu;
           }
-          *smean2ptr = smk2;  // Q7.
+          self->speech_means[current_gaussian] = smk2;  // Q7.
 
           // (Q7 >> 3) = Q4. With rounding.
           tmp_s16 = ((smk + 4) >> 3);
@@ -364,7 +353,7 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
           if (ssk < kMinStd) {
             ssk = kMinStd;
           }
-          *sstd2ptr = ssk;
+          self->speech_stds[current_gaussian] = ssk;
         } else {
           // Update GMM variance vectors.
           // deltaN * (feature_vector[n] - nmk) - 1
@@ -392,7 +381,7 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
           if (nsk < kMinStd) {
             nsk = kMinStd;
           }
-          *nstd2ptr = nsk;
+          self->noise_stds[current_gaussian] = nsk;
         }
       }
 
@@ -437,22 +426,19 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
         // Upper limit of speech model.
         tmp2_s16 -= maxspe;
 
-        *smean1ptr -= tmp2_s16;
-        *smean2ptr -= tmp2_s16;
+        for (k = 0; k < kNumGaussians; k++) {
+          self->speech_means[n + k * kNumChannels] -= tmp2_s16;
+        }
       }
 
       tmp2_s16 = (int16_t) (noise_global_mean >> 7);
       if (tmp2_s16 > kMaximumNoise[n]) {
         tmp2_s16 -= kMaximumNoise[n];
 
-        *nmean1ptr -= tmp2_s16;
-        *nmean2ptr -= tmp2_s16;
+        for (k = 0; k < kNumGaussians; k++) {
+          self->noise_means[n + k * kNumChannels] -= tmp2_s16;
+        }
       }
-
-      nmean1ptr++;
-      smean1ptr++;
-      nstd1ptr++;
-      sstd1ptr++;
     }
     self->frame_counter++;
   }
