@@ -31,6 +31,8 @@
       ],
       'sources': [
         'auto_test/automated_mode.cc',
+        'auto_test/extended/agc_config_test.cc',
+        'auto_test/extended/ec_metrics_test.cc',
         'auto_test/fakes/fake_external_transport.cc',
         'auto_test/fakes/fake_external_transport.h',
         'auto_test/fixtures/after_initialization_fixture.cc',

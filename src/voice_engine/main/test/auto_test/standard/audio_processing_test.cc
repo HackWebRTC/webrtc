@@ -8,8 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "after_streaming_fixture.h"
-#include "voe_standard_test.h"
+#include "testsupport/fileutils.h"
+#include "voice_engine/main/test/auto_test/fixtures/after_streaming_fixture.h"
+#include "voice_engine/main/test/auto_test/voe_standard_test.h"
 
 class RxCallback : public webrtc::VoERxVadCallback {
  public:
@@ -171,35 +172,31 @@ TEST_F(AudioProcessingTest, EnablingEcConferenceShouldEnableEcAec) {
   TryEnablingEcWithMode(webrtc::kEcConference, webrtc::kEcAec);
 }
 
-TEST_F(AudioProcessingTest, EcMetricsAreOffByDefault) {
-  bool enabled = true;
-  EXPECT_EQ(0, voe_apm_->GetEcMetricsStatus(enabled));
-  EXPECT_FALSE(enabled);
+TEST_F(AudioProcessingTest, EcModeIsPreservedWhenEcIsTurnedOff) {
+  TryEnablingEcWithMode(webrtc::kEcConference, webrtc::kEcAec);
+
+  EXPECT_EQ(0, voe_apm_->SetEcStatus(false));
+
+  bool ec_enabled = true;
+  webrtc::EcModes ec_mode = webrtc::kEcDefault;
+  EXPECT_EQ(0, voe_apm_->GetEcStatus(ec_enabled, ec_mode));
+
+  EXPECT_FALSE(ec_enabled);
+  EXPECT_EQ(webrtc::kEcAec, ec_mode);
 }
 
-TEST_F(AudioProcessingTest, ManualTestEcMetrics) {
-  SwitchToManualMicrophone();
-
-  EXPECT_EQ(0, voe_apm_->SetEcMetricsStatus(true));
-
-  // Must enable AEC to get valid echo metrics.
-  EXPECT_EQ(0, voe_apm_->SetEcStatus(true, webrtc::kEcAec));
-
-  TEST_LOG("Speak into microphone and check metrics for 10 seconds...\n");
-  int erl, erle, rerl, a_nlp;
-  int delay_median = 0;
-  int delay_std = 0;
-
-  for (int i = 0; i < 5; i++) {
-    Sleep(2000);
-    EXPECT_EQ(0, voe_apm_->GetEchoMetrics(erl, erle, rerl, a_nlp));
-    EXPECT_EQ(0, voe_apm_->GetEcDelayMetrics(delay_median, delay_std));
-    TEST_LOG("    Echo  : ERL=%5d, ERLE=%5d, RERL=%5d, A_NLP=%5d [dB], "
-        " delay median=%3d, delay std=%3d [ms]\n", erl, erle, rerl, a_nlp,
-        delay_median, delay_std);
+TEST_F(AudioProcessingTest, CanEnableAndDisableEcModeSeveralTimesInARow) {
+  for (int i = 0; i < 10; i++) {
+    EXPECT_EQ(0, voe_apm_->SetEcStatus(true));
+    EXPECT_EQ(0, voe_apm_->SetEcStatus(false));
   }
 
-  EXPECT_EQ(0, voe_apm_->SetEcMetricsStatus(false));
+  bool ec_enabled = true;
+  webrtc::EcModes ec_mode = webrtc::kEcDefault;
+  EXPECT_EQ(0, voe_apm_->GetEcStatus(ec_enabled, ec_mode));
+
+  EXPECT_FALSE(ec_enabled);
+  EXPECT_EQ(webrtc::kEcAec, ec_mode);
 }
 
 // TODO(phoglund): Reenable below test when it's no longer flaky.
@@ -369,6 +366,15 @@ TEST_F(AudioProcessingTest, CanSetStereoChannelSwapping) {
   EXPECT_TRUE(voe_apm_->IsStereoChannelSwappingEnabled());
   voe_apm_->EnableStereoChannelSwapping(false);
   EXPECT_FALSE(voe_apm_->IsStereoChannelSwappingEnabled());
+}
+
+TEST_F(AudioProcessingTest, CanStartAndStopDebugRecording) {
+  std::string output_path = webrtc::test::OutputPath();
+  std::string output_file = output_path + "apm_debug.txt";
+
+  EXPECT_EQ(0, voe_apm_->StartDebugRecording(output_file.c_str()));
+  Sleep(1000);
+  EXPECT_EQ(0, voe_apm_->StopDebugRecording());
 }
 
 #if defined(MAC_IPHONE) || defined(WEBRTC_ANDROID)

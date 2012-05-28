@@ -44,7 +44,6 @@ enum ExtendedSelection {
   XSEL_RTP_RTCP,
   XSEL_VideoSync,
   XSEL_VolumeControl,
-  XSEL_AudioProcessing,
 };
 
 // Main test function

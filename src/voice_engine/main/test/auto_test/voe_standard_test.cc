@@ -179,11 +179,6 @@ bool SubAPIManager::GetExtendedMenuSelection(ExtendedSelection& sel) {
     printf("\n");
   else
     printf(" (NA)\n");
-  printf(" (14) AudioProcessing");
-  if (_apm)
-    printf("\n");
-  else
-    printf(" (NA)\n");
   printf("\n: ");
 
   ExtendedSelection xsel(XSEL_Invalid);
@@ -245,10 +240,6 @@ bool SubAPIManager::GetExtendedMenuSelection(ExtendedSelection& sel) {
     case 13:
       if (_volumeControl)
         xsel = XSEL_VolumeControl;
-      break;
-    case 14:
-      if (_apm)
-        xsel = XSEL_AudioProcessing;
       break;
     default:
       xsel = XSEL_Invalid;
@@ -512,11 +503,6 @@ int run_auto_test(TestType test_type, ExtendedSelection ext_selection) {
         if ((result = xtend.TestVolumeControl()) == -1)
           break;
         xtend.TestPassed("VolumeControl");
-      }
-      if (ext_selection == XSEL_AudioProcessing || ext_selection == XSEL_All) {
-        if ((result = xtend.TestAPM()) == -1)
-          break;
-        xtend.TestPassed("AudioProcessing");
       }
       api_manager.GetExtendedMenuSelection(ext_selection);
     } // while (extendedSel != XSEL_None)
