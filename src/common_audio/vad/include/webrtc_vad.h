@@ -26,23 +26,6 @@ typedef struct WebRtcVadInst VadInst;
 extern "C" {
 #endif
 
-// TODO(bjornv): Investigate if we need the Assign calls below at all.
-
-// Gets the size needed for storing the instance for the VAD.
-//
-// returns  : The size in bytes needed to allocate memory for the VAD instance.
-size_t WebRtcVad_AssignSize();
-
-// Assigns memory for the instances at a given address. It is assumed that the
-// memory for the VAD instance is allocated at |memory| in accordance with
-// WebRtcVad_AssignSize().
-//
-// - memory [i] : Address to where the memory is assigned.
-// - handle [o] : Pointer to the instance that should be created.
-//
-// returns      : 0 - (OK), -1 (NULL pointer in)
-int WebRtcVad_Assign(void* memory, VadInst** handle);
-
 // Creates an instance to the VAD structure.
 //
 // - handle [o] : Pointer to the VAD instance that should be created.

@@ -16,19 +16,6 @@
 
 static const int kInitCheck = 42;
 
-size_t WebRtcVad_AssignSize() {
-  return sizeof(VadInstT);
-}
-
-int WebRtcVad_Assign(void* memory, VadInst** handle) {
-  if (handle == NULL || memory == NULL) {
-    return -1;
-  }
-
-  *handle = (VadInst*) memory;
-  return 0;
-}
-
 int WebRtcVad_Create(VadInst** handle) {
   VadInstT* self = NULL;
 
