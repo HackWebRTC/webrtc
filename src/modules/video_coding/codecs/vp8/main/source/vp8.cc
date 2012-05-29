@@ -613,7 +613,7 @@ int VP8Decoder::InitDecode(const VideoCodec* inst, int number_of_cores) {
 
   vpx_codec_flags_t flags = 0;
 #if WEBRTC_LIBVPX_VERSION >= 971
-  flags = VPX_CODEC_USE_POSTPROC;
+  flags = VPX_CODEC_USE_ERROR_CONCEALMENT | VPX_CODEC_USE_POSTPROC;
 #ifdef INDEPENDENT_PARTITIONS
   flags |= VPX_CODEC_USE_INPUT_PARTITION;
 #endif
