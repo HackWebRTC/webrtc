@@ -501,8 +501,11 @@ class GenerateCodeCoverage(ShellCommand):
 class WebRTCAndroidFactory(WebRTCFactory):
   """Sets up the Android build."""
 
-  def __init__(self, build_status_oracle, is_try_slave=False):
-    WebRTCFactory.__init__(self, build_status_oracle, is_try_slave)
+  def __init__(self, build_status_oracle, is_try_slave=False,
+               custom_deps_list=None):
+    WebRTCFactory.__init__(self, build_status_oracle=build_status_oracle,
+                           is_try_slave=is_try_slave,
+                           custom_deps_list=custom_deps_list)
 
   def EnableBuild(self, product='toro'):
     prefix = 'rm -rf out/target/product/%s/obj/' % product
@@ -527,8 +530,11 @@ class WebRTCAndroidFactory(WebRTCFactory):
 class WebRTCAndroidNDKFactory(WebRTCFactory):
   """Sets up the Android NDK build."""
 
-  def __init__(self, build_status_oracle, is_try_slave=False):
-    WebRTCFactory.__init__(self, build_status_oracle, is_try_slave)
+  def __init__(self, build_status_oracle, is_try_slave=False,
+               custom_deps_list=None):
+    WebRTCFactory.__init__(self, build_status_oracle=build_status_oracle,
+                           is_try_slave=is_try_slave,
+                           custom_deps_list=custom_deps_list)
 
   def EnableBuild(self):
     self.AddSmartCleanStep()
@@ -771,8 +777,11 @@ class WebRTCLinuxFactory(WebRTCFactory):
 class WebRTCMacFactory(WebRTCFactory):
   """Sets up the Mac build, both for make and xcode."""
 
-  def __init__(self, build_status_oracle, is_try_slave=False):
-    WebRTCFactory.__init__(self, build_status_oracle, is_try_slave)
+  def __init__(self, build_status_oracle, is_try_slave=False,
+               custom_deps_list=None):
+    WebRTCFactory.__init__(self, build_status_oracle=build_status_oracle,
+                           is_try_slave=is_try_slave,
+                           custom_deps_list=custom_deps_list)
     self.build_type = 'both'
     self.allowed_build_types = ['both', 'xcode', 'make']
 
@@ -869,8 +878,11 @@ class WebRTCWinFactory(WebRTCFactory):
   BUILD_CMD = r'C:\Windows\Microsoft.NET\Framework\v3.5\msbuild.exe'
   VCAM_PATH = r'C:\Program Files (x86)\e2eSoft\VCam\VCamManager.exe'
 
-  def __init__(self, build_status_oracle, is_try_slave=False):
-    WebRTCFactory.__init__(self, build_status_oracle, is_try_slave)
+  def __init__(self, build_status_oracle, is_try_slave=False,
+               custom_deps_list=None):
+    WebRTCFactory.__init__(self, build_status_oracle=build_status_oracle,
+                           is_try_slave=is_try_slave,
+                           custom_deps_list=custom_deps_list)
     self.configuration = 'Debug'
     self.platform = 'x64'
     self.allowed_platforms = ['x64', 'Win32']

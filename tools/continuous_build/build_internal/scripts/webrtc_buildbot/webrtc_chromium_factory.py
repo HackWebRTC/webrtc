@@ -27,8 +27,10 @@ class ChromiumWebRTCFactory(chromium_factory.ChromiumFactory):
                                   tests=None, mode=None,
                                   slave_type='BuilderTester', options=None,
                                   compile_timeout=1200, build_url=None,
-                                  project=None, factory_properties=None):
-    self._solutions[0].custom_deps_list = [self.CUSTOM_DEPS_WEBRTC_LATEST]
+                                  project=None, factory_properties=None,
+                                  custom_deps_list=[]):
+    custom_deps_list.append(self.CUSTOM_DEPS_WEBRTC_LATEST)
+    self._solutions[0].custom_deps_list = custom_deps_list
     factory = self.ChromiumFactory(target, clobber, tests, mode, slave_type,
                                    options, compile_timeout, build_url, project,
                                    factory_properties)
@@ -43,8 +45,10 @@ class ChromiumWebRTCFactory(chromium_factory.ChromiumFactory):
                                  tests=None, mode=None,
                                  slave_type='BuilderTester', options=None,
                                  compile_timeout=1200, build_url=None,
-                                 project=None, factory_properties=None):
-    self._solutions[0].custom_deps_list = [self.CUSTOM_DEPS_WEBRTC_LATEST]
+                                 project=None, factory_properties=None,
+                                 custom_deps_list=[]):
+    custom_deps_list.append(self.CUSTOM_DEPS_WEBRTC_LATEST)
+    self._solutions[0].custom_deps_list = custom_deps_list
     factory = self.ChromiumFactory(target, clobber, tests, mode, slave_type,
                                    options, compile_timeout, build_url, project,
                                    factory_properties)
