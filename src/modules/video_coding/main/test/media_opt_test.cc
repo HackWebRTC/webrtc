@@ -330,8 +330,11 @@ MediaOptTest::Perform()
         }
         else
         {
-            // write frame to file
-            fwrite(sourceFrame.Buffer(), 1, sourceFrame.Length(), _actualSourceFile);
+          // write frame to file
+          if (fwrite(sourceFrame.Buffer(), 1, sourceFrame.Length(),
+                     _actualSourceFile) !=  sourceFrame.Length()) {
+            return -1;
+          }
         }
 
         _sumEncBytes += encBytes;

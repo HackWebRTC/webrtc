@@ -240,8 +240,12 @@ VideoSource::Convert(const VideoSource &target, bool force /* = false */) const
         if (!fd.DropFrame())
         {
             ASSERT_TRUE(target.GetWidth() == _width &&
-                   target.GetHeight() == _height); // Add video interpolator here!
-            fwrite(outFrame, 1, lengthOutFrame, outFile);
+                   target.GetHeight() == _height);
+            // Add video interpolator here!
+            if (fwrite(outFrame, 1, lengthOutFrame,
+                       outFile) !=  lengthOutFrame) {
+              return;
+            }
         }
     }
 

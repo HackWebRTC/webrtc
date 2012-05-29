@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -74,7 +74,10 @@ PacketLossTest::Decoded(const RawImage& decodedImage)
         // write previous decoded frame again (frame freeze)
         if (_decodedFile && _lastFrame)
         {
-            fwrite(_lastFrame, 1, _lastFrameLength, _decodedFile);
+          if (fwrite(_lastFrame, 1, _lastFrameLength,
+                     _decodedFile) != _lastFrameLength) {
+            return;
+          }
         }
 
         // remove frame from queue

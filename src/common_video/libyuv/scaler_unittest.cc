@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -221,7 +221,10 @@ void TestScaler::ScaleSequence(ScaleMethod method,
     EXPECT_EQ(0, test_scaler_.Scale(input_buffer, output_buffer,
                                    out_required_size));
     total_clock += TickTime::MillisecondTimestamp() - start_clock;
-    fwrite(output_buffer, out_required_size, 1, output_file);
+    if (fwrite(output_buffer, 1, out_required_size,
+               output_file) !=  static_cast<unsigned int>(out_required_size)) {
+      return;
+    }
     frame_count++;
   }
 

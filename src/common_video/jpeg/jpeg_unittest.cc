@@ -114,7 +114,10 @@ TEST_F(JpegTest, Encode) {
 
   // Save decoded image to file.
   FILE* save_file = fopen(decoded_filename_.c_str(), "wb");
-  fwrite(image_buffer._buffer, 1, image_buffer._length, save_file);
+  if (fwrite(image_buffer._buffer, 1,
+             image_buffer._length, save_file) != image_buffer._length) {
+    return;
+  }
   fclose(save_file);
 
   delete[] image_buffer._buffer;

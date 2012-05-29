@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -334,7 +334,10 @@ void TestSize(VideoFrame& sourceFrame, WebRtc_UWord32 targetWidth,
       targetHeight != sourceFrame.Height())  {
     ASSERT_EQ((targetWidth * targetHeight * 3 / 2), outFrame->Length());
     // Write to file for visual inspection
-    fwrite(outFrame->Buffer(), 1, outFrame->Length(), standAloneFile);
+    if (fwrite(outFrame->Buffer(), 1,
+               outFrame->Length(), standAloneFile) != outFrame->Length()) {
+      return;
+    }
     outFrame->Free();
   }
   fclose(standAloneFile);

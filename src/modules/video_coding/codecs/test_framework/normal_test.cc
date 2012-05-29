@@ -115,7 +115,7 @@ NormalTest::Perform()
     _inputVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);
     _decodedVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);
     _encodedVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);
-    
+
     _encoder->InitEncode(&_inst, 1, 1460);
     CodecSpecific_InitBitrate();
     _decoder->InitDecode(&_inst,1);
@@ -129,14 +129,21 @@ NormalTest::Perform()
     {
         DoPacketLoss();
         _encodedVideoBuffer.UpdateLength(_encodedVideoBuffer.GetLength());
-        fwrite(_encodedVideoBuffer.GetBuffer(), 1, _encodedVideoBuffer.GetLength(), _encodedFile);
+        if (fwrite(_encodedVideoBuffer.GetBuffer(), 1,
+                   _encodedVideoBuffer.GetLength(),
+                   _encodedFile) !=  _encodedVideoBuffer.GetLength()) {
+          return;
+        }
         decodeLength = Decode();
         if (decodeLength < 0)
         {
             fprintf(stderr,"\n\nError in decoder: %d\n\n", decodeLength);
             exit(EXIT_FAILURE);
         }
-        fwrite(_decodedVideoBuffer.GetBuffer(), 1, decodeLength, _decodedFile);
+        if (fwrite(_decodedVideoBuffer.GetBuffer(), 1, decodeLength,
+                   _decodedFile) != static_cast<unsigned int>(decodeLength)) {
+          return;
+        }
         CodecSpecific_InitBitrate();
         _framecnt++;
     }
@@ -150,7 +157,10 @@ NormalTest::Perform()
             fprintf(stderr,"\n\nError in decoder: %d\n\n", decodeLength);
             exit(EXIT_FAILURE);
         }
-        fwrite(_decodedVideoBuffer.GetBuffer(), 1, decodeLength, _decodedFile);
+        if (fwrite(_decodedVideoBuffer.GetBuffer(), 1, decodeLength,
+                   _decodedFile) != static_cast<unsigned int>(decodeLength)) {
+          return;
+        }
     }
 
     double actualBitRate = ActualBitRate(_framecnt) / 1000.0;
@@ -250,4 +260,3 @@ NormalTest::Decode(int lossValue)
     _encodedVideoBuffer.UpdateLength(0);
     return lengthDecFrame;
 }
-

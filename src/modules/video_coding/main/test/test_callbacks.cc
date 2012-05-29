@@ -59,7 +59,9 @@ VCMEncodeCompleteCallback::SendData(
     // will call the VCMReceiver input packet
     _frameType = frameType;
     // writing encodedData into file
-    fwrite(payloadData, 1, payloadSize, _encodedFile);
+    if (fwrite(payloadData, 1, payloadSize, _encodedFile) !=  payloadSize) {
+      return -1;
+    }
     WebRtcRTPHeader rtpInfo;
     rtpInfo.header.markerBit = true; // end of frame
     rtpInfo.type.Video.isFirstPacket = true;
@@ -184,9 +186,12 @@ VCMRTPEncodeCompleteCallback::EncodeComplete()
 WebRtc_Word32
 VCMDecodeCompleteCallback::FrameToRender(VideoFrame& videoFrame)
 {
-    fwrite(videoFrame.Buffer(), 1, videoFrame.Length(), _decodedFile);
-    _decodedBytes+= videoFrame.Length();
-    return VCM_OK;
+  if (fwrite(videoFrame.Buffer(), 1, videoFrame.Length(),
+             _decodedFile) !=  videoFrame.Length()) {
+    return -1;
+  }
+  _decodedBytes+= videoFrame.Length();
+  return VCM_OK;
  }
 
 WebRtc_Word32

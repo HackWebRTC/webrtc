@@ -685,8 +685,10 @@ VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
 #ifdef DEBUG_ENCODER_INPUT
         if (_encoderInputFile != NULL)
         {
-            fwrite(videoFrame.Buffer(), 1, videoFrame.Length(),
-                   _encoderInputFile);
+          if (fwrite(videoFrame.Buffer(), 1, videoFrame.Length(),
+                     _encoderInputFile) !=  videoFrame.Length()) {
+            return -1;
+          }
         }
 #endif
         if (ret < 0)
@@ -898,9 +900,11 @@ VideoCodingModuleImpl::Decode(WebRtc_UWord16 maxWaitTimeMs)
 #ifdef DEBUG_DECODER_BIT_STREAM
         if (_bitStreamBeforeDecoder != NULL)
         {
-            // Write bit stream to file for debugging purposes
-            fwrite(frame->Buffer(), 1, frame->Length(),
-                   _bitStreamBeforeDecoder);
+          // Write bit stream to file for debugging purposes
+          if (fwrite(frame->Buffer(), 1, frame->Length(),
+                     _bitStreamBeforeDecoder) !=  frame->Length()) {
+            return -1;
+          }
         }
 #endif
         if (_frameStorageCallback != NULL)

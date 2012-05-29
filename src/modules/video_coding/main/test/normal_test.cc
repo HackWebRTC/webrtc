@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -85,7 +85,9 @@ VCMNTEncodeCompleteCallback::SendData(
     // will call the VCMReceiver input packet
     _frameType = frameType;
     // writing encodedData into file
-    fwrite(payloadData, 1, payloadSize, _encodedFile);
+    if (fwrite(payloadData, 1, payloadSize, _encodedFile) !=  payloadSize) {
+      return -1;
+    }
     WebRtcRTPHeader rtpInfo;
     rtpInfo.header.markerBit = true;
     rtpInfo.type.Video.width = 0;
@@ -163,7 +165,10 @@ VCMNTDecodeCompleCallback::FrameToRender(webrtc::VideoFrame& videoFrame)
         }
         _decodedFile = fopen(_outname.c_str(), "wb");
     }
-    fwrite(videoFrame.Buffer(), 1, videoFrame.Length(), _decodedFile);
+    if (fwrite(videoFrame.Buffer(), 1, videoFrame.Length(),
+               _decodedFile) !=  videoFrame.Length()) {
+      return -1;
+    }
     _decodedBytes+= videoFrame.Length();
     return VCM_OK;
 }
@@ -396,7 +401,3 @@ NormalTest::Teardown()
     fclose(_encodedFile);
     return;
 }
-
-
-
-

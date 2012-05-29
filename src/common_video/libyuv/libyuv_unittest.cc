@@ -127,7 +127,10 @@ TEST_F(TestLibYuv, ConvertTest) {
                              0, width_, height_, width_, kRotateNone,
                              res_i420_buffer));
 
-  fwrite(res_i420_buffer, frame_length_, 1, output_file);
+  if (fwrite(res_i420_buffer, 1, frame_length_,
+             output_file) != static_cast<unsigned int>(frame_length_)) {
+    return;
+  }
   psnr = I420PSNR(orig_buffer, res_i420_buffer, width_, height_);
   // Optimization Speed- quality trade-off => 45 dB only (platform dependant).
   EXPECT_GT(ceil(psnr), 44);
@@ -142,7 +145,10 @@ TEST_F(TestLibYuv, ConvertTest) {
             0, width_, height_, width_,kRotateNone, res_i420_buffer));
   psnr = I420PSNR(orig_buffer, res_i420_buffer, width_, height_);
   EXPECT_EQ(48.0, psnr);
-  fwrite(res_i420_buffer, frame_length_, 1, output_file);
+  if (fwrite(res_i420_buffer, 1, frame_length_,
+             output_file) !=  static_cast<unsigned int>(frame_length_)) {
+    return;
+  }
 
   j++;
   delete [] out_uyvy_buffer;
@@ -154,7 +160,10 @@ TEST_F(TestLibYuv, ConvertTest) {
                              kRotateNone, out_i420_buffer));
   EXPECT_EQ(0, ConvertFromI420(out_i420_buffer, width_, kI420, 0,
                                width_, height_, res_i420_buffer));
-  fwrite(res_i420_buffer, frame_length_, 1, output_file);
+  if (fwrite(res_i420_buffer, 1, frame_length_,
+             output_file) != static_cast<unsigned int>(frame_length_)) {
+    return;
+  }
   psnr = I420PSNR(orig_buffer, res_i420_buffer, width_, height_);
   EXPECT_EQ(48.0, psnr);
   j++;
@@ -169,7 +178,10 @@ TEST_F(TestLibYuv, ConvertTest) {
                                kI420, 0,
                                width_, height_,
                                res_i420_buffer));
-  fwrite(res_i420_buffer, frame_length_, 1, output_file);
+  if (fwrite(res_i420_buffer, 1, frame_length_,
+             output_file) !=  static_cast<unsigned int>(frame_length_)) {
+    return;
+  }
 
   psnr = I420PSNR(orig_buffer, res_i420_buffer, width_, height_);
   EXPECT_EQ(48.0, psnr);
@@ -185,7 +197,10 @@ TEST_F(TestLibYuv, ConvertTest) {
                              0, width_, height_, width_,
                              kRotateNone, res_i420_buffer));
 
-  fwrite(res_i420_buffer, frame_length_, 1, output_file);
+  if (fwrite(res_i420_buffer, 1, frame_length_,
+             output_file) !=  static_cast<unsigned int>(frame_length_)) {
+    return;
+  }
   psnr = I420PSNR(orig_buffer, res_i420_buffer, width_, height_);
   EXPECT_EQ(48.0, psnr);
 
@@ -198,7 +213,10 @@ TEST_F(TestLibYuv, ConvertTest) {
                              0, width_, height_, width_,
                              kRotateNone, res_i420_buffer));
 
-  fwrite(res_i420_buffer, frame_length_, 1, output_file);
+  if (fwrite(res_i420_buffer, 1, frame_length_,
+             output_file) !=  static_cast<unsigned int>(frame_length_)) {
+    return;
+  }
   psnr = I420PSNR(orig_buffer, res_i420_buffer, width_, height_);
   // TODO(leozwang) Investigate the right psnr should be set for I420ToRGB565,
   // Another example is I420ToRGB24, the psnr is 44
@@ -213,7 +231,10 @@ TEST_F(TestLibYuv, ConvertTest) {
                              0, width_, height_, width_,
                              kRotateNone, res_i420_buffer));
 
-  fwrite(res_i420_buffer, frame_length_, 1, output_file);
+  if (fwrite(res_i420_buffer, 1, frame_length_,
+             output_file) !=  static_cast<unsigned int>(frame_length_)) {
+    return;
+  }
   psnr = I420PSNR(orig_buffer, res_i420_buffer, width_, height_);
   // TODO(leozwang) Investigate the right psnr should be set for I420ToARGB8888,
   EXPECT_GT(ceil(psnr), 42);
