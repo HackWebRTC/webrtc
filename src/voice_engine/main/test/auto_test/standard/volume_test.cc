@@ -13,7 +13,7 @@
 class VolumeTest : public AfterStreamingFixture {
 };
 
-TEST_F(VolumeTest, DefaultSpeakerVolumeIsAtMost255) {
+TEST_F(VolumeTest, DISABLED_DefaultSpeakerVolumeIsAtMost255) {
   unsigned int volume = 1000;
   EXPECT_EQ(0, voe_volume_control_->GetSpeakerVolume(volume));
   EXPECT_LE(volume, 255u);
