@@ -514,7 +514,7 @@ RTPSender::SendOutgoingData(const FrameType frameType,
               bytes = (bitrate_diff / 8);
               // Cap at 200 ms of target send data.
               int bytes_cap = _targetSendBitrate * 25;  // 1000 / 8 / 5
-              if (bytes_cap > bytes) {
+              if (bytes > bytes_cap) {
                 bytes = bytes_cap;
               }
             }

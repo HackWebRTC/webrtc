@@ -1628,13 +1628,15 @@ void ModuleRtpRtcpImpl::SetTargetSendBitrate(const uint32_t bitrate) {
       for (int i = 0; it != _childModules.end() &&
           i < _sendVideoCodec.numberOfSimulcastStreams; ++it, ++i) {
         RTPSender& rtpSender = (*it)->_rtpSender;
-        if (_sendVideoCodec.simulcastStream[i].maxBitrate > bitrate_remainder) {
-          rtpSender.SetTargetSendBitrate(
-              _sendVideoCodec.simulcastStream[i].maxBitrate);
-          bitrate_remainder -= _sendVideoCodec.simulcastStream[i].maxBitrate;
-        } else {
+        if (_sendVideoCodec.simulcastStream[i].maxBitrate * 1000 >
+            bitrate_remainder) {
           rtpSender.SetTargetSendBitrate(bitrate_remainder);
           bitrate_remainder = 0;
+        } else {
+          rtpSender.SetTargetSendBitrate(
+              _sendVideoCodec.simulcastStream[i].maxBitrate * 1000);
+          bitrate_remainder -=
+              _sendVideoCodec.simulcastStream[i].maxBitrate * 1000;
         }
       }
     } else {
