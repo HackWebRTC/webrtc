@@ -606,16 +606,26 @@ TEST_F(ApmTest, StreamParameters) {
   EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
 }
 
-TEST_F(ApmTest, DelayOffset) {
+TEST_F(ApmTest, DefaultDelayOffsetIsZero) {
+  EXPECT_EQ(0, apm_->delay_offset_ms());
+  EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(50));
+  EXPECT_EQ(50, apm_->stream_delay_ms());
+}
+
+TEST_F(ApmTest, DelayOffsetWithLimitsIsSetProperly) {
+  // High limit of 500 ms.
   apm_->set_delay_offset_ms(100);
   EXPECT_EQ(100, apm_->delay_offset_ms());
   EXPECT_EQ(apm_->kBadStreamParameterWarning, apm_->set_stream_delay_ms(450));
+  EXPECT_EQ(500, apm_->stream_delay_ms());
   EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
   EXPECT_EQ(200, apm_->stream_delay_ms());
 
+  // Low limit of 0 ms.
   apm_->set_delay_offset_ms(-50);
   EXPECT_EQ(-50, apm_->delay_offset_ms());
-  EXPECT_EQ(apm_->kBadParameterError, apm_->set_stream_delay_ms(20));
+  EXPECT_EQ(apm_->kBadStreamParameterWarning, apm_->set_stream_delay_ms(20));
+  EXPECT_EQ(0, apm_->stream_delay_ms());
   EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
   EXPECT_EQ(50, apm_->stream_delay_ms());
 }

@@ -450,21 +450,23 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
 }
 
 int AudioProcessingImpl::set_stream_delay_ms(int delay) {
+  Error retval = kNoError;
   was_stream_delay_set_ = true;
   delay += delay_offset_ms_;
 
   if (delay < 0) {
-    return kBadParameterError;
+    delay = 0;
+    retval = kBadStreamParameterWarning;
   }
 
   // TODO(ajm): the max is rather arbitrarily chosen; investigate.
   if (delay > 500) {
-    stream_delay_ms_ = 500;
-    return kBadStreamParameterWarning;
+    delay = 500;
+    retval = kBadStreamParameterWarning;
   }
 
   stream_delay_ms_ = delay;
-  return kNoError;
+  return retval;
 }
 
 int AudioProcessingImpl::stream_delay_ms() const {
