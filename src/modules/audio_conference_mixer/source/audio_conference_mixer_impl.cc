@@ -14,7 +14,7 @@
 #include "audio_processing.h"
 #include "critical_section_wrapper.h"
 #include "map_wrapper.h"
-#include "voice_engine/main/source/audio_frame_operations.h"
+#include "modules/utility/interface/audio_frame_operations.h"
 #include "trace.h"
 
 namespace webrtc {

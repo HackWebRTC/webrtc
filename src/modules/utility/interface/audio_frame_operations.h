@@ -18,8 +18,8 @@ namespace webrtc {
 class AudioFrame;
 
 // TODO(andrew): consolidate this with utility.h and audio_frame_manipulator.h.
-// Change reference parameters to pointers. Move out of VoE to a common place.
-// Consider using a namespace rather than class.
+// Change reference parameters to pointers. Consider using a namespace rather
+// than a class.
 class AudioFrameOperations {
  public:
   static int MonoToStereo(AudioFrame& frame);

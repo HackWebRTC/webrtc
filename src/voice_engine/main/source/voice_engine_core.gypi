@@ -54,8 +54,6 @@
         '../interface/voe_rtp_rtcp.h',
         '../interface/voe_video_sync.h',
         '../interface/voe_volume_control.h',
-        'audio_frame_operations.cc',
-        'audio_frame_operations.h',
         'channel.cc',
         'channel.h',
         'channel_manager.cc',
@@ -141,7 +139,6 @@
             '../interface',
           ],
           'sources': [
-            'audio_frame_operations_unittest.cc',
             'channel_unittest.cc',
           ],
         },
