@@ -27,7 +27,7 @@ TEST(UdpSocketManager, CreateCallsInitAndDoesNotLeakMemory) {
   WebRtc_UWord8 threads = 1;
   UdpSocketManager* mgr = UdpSocketManager::Create(id, threads);
   // Create is supposed to have called init on the object.
-  EXPECT_EQ(false, mgr->Init(id, threads))
+  EXPECT_FALSE(mgr->Init(id, threads))
       << "Init should return false since Create is supposed to call it.";
   UdpSocketManager::Return();
 }
@@ -71,6 +71,9 @@ TEST(UdpSocketManager, UnremovedSocketsGetCollectedAtManagerDeletion) {
                                                 false,  // ipV6Enable
                                                 false);  // disableGQOS
   // The constructor will do AddSocket on the manager.
+  // Call a member funtion to work around "set but not used" compliation
+  // error on ChromeOS ARM.
+  unused_socket->SetEventToNull();
   unused_socket = NULL;
   UdpSocketManager::Return();
 #endif
