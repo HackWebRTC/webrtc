@@ -29,7 +29,7 @@
         ],
       },
       'sources': [
-        '../interface/audio_frame_operations.h'
+        '../interface/audio_frame_operations.h',
         '../interface/file_player.h',
         '../interface/file_recorder.h',
         '../interface/process_thread.h',
