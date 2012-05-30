@@ -762,6 +762,11 @@ class WebRTCLinuxFactory(WebRTCFactory):
       cmd = MakeCommandToRunTestInXvfb(['out/Debug/video_render_module_test'])
       self.AddCommonTestRunStep(test=test, cmd=cmd)
     elif test == 'voe_auto_test':
+      # Restart pulseaudio first to reduce risk of pulseaudio flakiness.
+      self.AddCommonStep(['/etc/init.d/pulseaudio', 'restart'],
+                         'restart pulseaudio')
+
+      # Set up the regular test run.
       binary = 'out/Debug/voe_auto_test'
       cmd = [binary, '--automated', '--gtest_filter=-RtpFuzzTest.*']
       self.AddCommonTestRunStep(test=test, cmd=cmd)
