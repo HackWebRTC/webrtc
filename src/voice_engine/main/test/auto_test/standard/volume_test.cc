@@ -10,10 +10,20 @@
 
 #include "after_streaming_fixture.h"
 
+#ifdef WEBRTC_LINUX
+#define DISABLED_ON_LINUX(test) DISABLED_##test
+#else
+#define DISABLED_ON_LINUX(test) test
+#endif
+
 class VolumeTest : public AfterStreamingFixture {
 };
 
-TEST_F(VolumeTest, DISABLED_DefaultSpeakerVolumeIsAtMost255) {
+// TODO(phoglund): a number of tests are disabled here on Linux, all pending
+// investigation in
+// http://code.google.com/p/webrtc/issues/detail?id=367
+
+TEST_F(VolumeTest, DefaultSpeakerVolumeIsAtMost255) {
   unsigned int volume = 1000;
   EXPECT_EQ(0, voe_volume_control_->GetSpeakerVolume(volume));
   EXPECT_LE(volume, 255u);
@@ -79,18 +89,14 @@ TEST_F(VolumeTest, ManualSetVolumeWorks) {
 
 #if !defined(MAC_IPHONE)
 
-// TODO(phoglund): pending investigation in
-// http://code.google.com/p/webrtc/issues/detail?id=367
-TEST_F(VolumeTest, DISABLED_DefaultMicrophoneVolumeIsAtMost255) {
+TEST_F(VolumeTest, DISABLED_ON_LINUX(DefaultMicrophoneVolumeIsAtMost255)) {
   unsigned int volume = 1000;
   EXPECT_EQ(0, voe_volume_control_->GetMicVolume(volume));
   EXPECT_LE(volume, 255u);
 }
 
-// TODO(phoglund): pending investigation in
-// http://code.google.com/p/webrtc/issues/detail?id=367
-TEST_F(VolumeTest,
-       DISABLED_ManualRequiresMicrophoneCanSetMicrophoneVolumeWithAcgOff) {
+TEST_F(VolumeTest, DISABLED_ON_LINUX(
+          ManualRequiresMicrophoneCanSetMicrophoneVolumeWithAcgOff)) {
   SwitchToManualMicrophone();
   EXPECT_EQ(0, voe_apm_->SetAgcStatus(false));
 
@@ -140,9 +146,7 @@ TEST_F(VolumeTest, InputMutingIsNotEnabledByDefault) {
   EXPECT_FALSE(is_muted);
 }
 
-// TODO(phoglund): pending investigation in
-// http://code.google.com/p/webrtc/issues/detail?id=367
-TEST_F(VolumeTest, DISABLED_ManualInputMutingMutesMicrophone) {
+TEST_F(VolumeTest, DISABLED_ON_LINUX(ManualInputMutingMutesMicrophone)) {
   SwitchToManualMicrophone();
 
   // Enable muting.
@@ -163,17 +167,13 @@ TEST_F(VolumeTest, DISABLED_ManualInputMutingMutesMicrophone) {
   Sleep(2000);
 }
 
-// TODO(phoglund): pending investigation in
-// http://code.google.com/p/webrtc/issues/detail?id=367
-TEST_F(VolumeTest, DISABLED_SystemInputMutingIsNotEnabledByDefault) {
+TEST_F(VolumeTest, DISABLED_ON_LINUX(SystemInputMutingIsNotEnabledByDefault)) {
   bool is_muted = true;
   EXPECT_EQ(0, voe_volume_control_->GetSystemInputMute(is_muted));
   EXPECT_FALSE(is_muted);
 }
 
-// TODO(phoglund): pending investigation in
-// http://code.google.com/p/webrtc/issues/detail?id=367
-TEST_F(VolumeTest, DISABLED_ManualSystemInputMutingMutesMicrophone) {
+TEST_F(VolumeTest, DISABLED_ON_LINUX(ManualSystemInputMutingMutesMicrophone)) {
   SwitchToManualMicrophone();
 
   // Enable system input muting.
