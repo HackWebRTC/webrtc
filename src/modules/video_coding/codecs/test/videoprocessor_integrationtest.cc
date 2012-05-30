@@ -70,6 +70,7 @@ class VideoProcessorIntegrationTest: public testing::Test {
     config_.codec_settings->startBitrate = kBitRateKbps;
     config_.codec_settings->width = kCIFWidth;
     config_.codec_settings->height = kCIFHeight;
+    config_.codec_settings->codecSpecific.VP8.errorConcealmentOn = true;
 
     frame_reader_ =
         new webrtc::test::FrameReaderImpl(config_.input_filename,

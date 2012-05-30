@@ -514,6 +514,7 @@ struct VideoCodecVP8
     VP8ResilienceMode    resilience;
     unsigned char        numberOfTemporalLayers;
     bool                 denoisingOn;
+    bool                 errorConcealmentOn;
 };
 
 // Unknown specific
