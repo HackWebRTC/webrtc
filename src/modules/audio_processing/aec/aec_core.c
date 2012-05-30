@@ -777,7 +777,7 @@ static void ProcessBlock(aec_t* aec) {
     memcpy(aec->xfBuf[1] + aec->xfBufBlockPos * PART_LEN1, &xf_ptr[PART_LEN1],
            sizeof(float) * PART_LEN1);
 
-    memset(yf[0], 0, sizeof(float) * (PART_LEN1 * 2));
+    memset(yf, 0, sizeof(yf));
 
     // Filter far
     WebRtcAec_FilterFar(aec, yf);

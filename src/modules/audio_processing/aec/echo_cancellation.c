@@ -276,11 +276,8 @@ WebRtc_Word32 WebRtcAec_BufferFarend(void *aecInst, const WebRtc_Word16 *farend,
 
     if (aecpc->skewMode == kAecTrue && aecpc->resample == kAecTrue) {
         // Resample and get a new number of samples
-        newNrOfSamples = WebRtcAec_ResampleLinear(aecpc->resampler,
-                                                  farend,
-                                                  nrOfSamples,
-                                                  skew,
-                                                  newFarend);
+        WebRtcAec_ResampleLinear(aecpc->resampler, farend, nrOfSamples, skew,
+                                 newFarend, &newNrOfSamples);
         farend_ptr = (const int16_t*) newFarend;
     }
 
