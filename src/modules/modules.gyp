@@ -46,7 +46,6 @@
         'audio_coding/codecs/iSAC/isac_test.gypi',
         'audio_coding/codecs/iSAC/isacfix_test.gypi',
         'audio_processing/apm_tests.gypi',
-        'bitrate_controller/test/test_bitrate_controller.gypi',
         'rtp_rtcp/source/rtp_rtcp_tests.gypi',
         'rtp_rtcp/test/test_bwe/test_bwe.gypi',
         'rtp_rtcp/test/testFec/test_fec.gypi',

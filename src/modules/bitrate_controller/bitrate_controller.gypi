@@ -29,7 +29,19 @@
         'include/bitrate_controller.h',
         'send_side_bandwidth_estimation.cc',
         'send_side_bandwidth_estimation.h',
-      ], # source
+      ],
+    },
+    {
+      'target_name': 'bitrate_controller_unittests',
+      'type': 'executable',
+      'dependencies': [
+        'bitrate_controller',
+        '<(webrtc_root)/../test/test.gyp:test_support_main',
+        '<(webrtc_root)/../testing/gtest.gyp:gtest',
+      ],
+      'sources': [
+        'bitrate_controller_unittest.cc',
+      ],
     },
   ],
 }
