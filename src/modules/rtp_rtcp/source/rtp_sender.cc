@@ -461,78 +461,83 @@ WebRtc_Word32 RTPSender::CheckPayloadType(const WebRtc_Word8 payloadType,
 }
 
 WebRtc_Word32
-RTPSender::SendOutgoingData(const FrameType frameType,
-                            const WebRtc_Word8 payloadType,
-                            const WebRtc_UWord32 captureTimeStamp,
-                            const WebRtc_UWord8* payloadData,
-                            const WebRtc_UWord32 payloadSize,
+RTPSender::SendOutgoingData(const FrameType frame_type,
+                            const WebRtc_Word8 payload_type,
+                            const WebRtc_UWord32 capture_timestamp,
+                            const WebRtc_UWord8* payload_data,
+                            const WebRtc_UWord32 payload_size,
                             const RTPFragmentationHeader* fragmentation,
-                            VideoCodecInformation* codecInfo,
-                            const RTPVideoTypeHeader* rtpTypeHdr)
+                            VideoCodecInformation* codec_info,
+                            const RTPVideoTypeHeader* rtp_type_hdr)
 {
     {
-        // Drop this packet if we're not sending media packets
+        // Drop this packet if we're not sending media packets.
         CriticalSectionScoped cs(_sendCritsect);
         if (!_sendingMedia)
         {
             return 0;
         }
     }
-    RtpVideoCodecTypes videoType = kRtpNoVideo;
-    if(CheckPayloadType(payloadType, videoType) != 0)
+    RtpVideoCodecTypes video_type = kRtpNoVideo;
+    if (CheckPayloadType(payload_type, video_type) != 0)
     {
-        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument failed to find payloadType:%d", __FUNCTION__, payloadType);
+        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
+            "%s invalid argument failed to find payloadType:%d",
+            __FUNCTION__, payload_type);
         return -1;
     }
 
-    if(_audioConfigured)
+    if (_audioConfigured)
     {
-        // assert video frameTypes
-        assert(frameType == kAudioFrameSpeech ||
-               frameType == kAudioFrameCN ||
-               frameType == kFrameEmpty);
+        assert(frame_type == kAudioFrameSpeech ||
+               frame_type == kAudioFrameCN ||
+               frame_type == kFrameEmpty);
 
-        return _audio->SendAudio(frameType, payloadType, captureTimeStamp, payloadData, payloadSize,fragmentation);
-    } else
-    {
-        // Assert on audio frameTypes.
-        assert(frameType != kAudioFrameSpeech &&
-               frameType != kAudioFrameCN);
+        return _audio->SendAudio(frame_type, payload_type, capture_timestamp,
+            payload_data, payload_size,fragmentation);
+    } else {
+        assert(frame_type != kAudioFrameSpeech &&
+               frame_type != kAudioFrameCN);
 
-        // If the encoder generate an empty frame send pading.
-        if (frameType == kFrameEmpty) {
-          // Current bitrate since last estimate(1 second) averaged with the
-          // estimate since then, to get the most up to date bitrate.
-          uint32_t current_bitrate = BitrateNow();
-          int bitrate_diff = _targetSendBitrate * 1000 - current_bitrate;
-          if (bitrate_diff > 0) {
-            int bytes = 0;
-            if (current_bitrate == 0) {
-              // Start up phase. Send one 33.3 ms batch to start with.
-              bytes = (bitrate_diff / 8) / 30;
-            } else {
-              bytes = (bitrate_diff / 8);
-              // Cap at 200 ms of target send data.
-              int bytes_cap = _targetSendBitrate * 25;  // 1000 / 8 / 5
-              if (bytes > bytes_cap) {
-                bytes = bytes_cap;
-              }
-            }
-            // Send pading data.
-            return SendPadData(payloadType, captureTimeStamp, bytes);
-          }
-          return 0;
+        if (frame_type == kFrameEmpty) {
+          return SendPaddingAccordingToBitrate(payload_type, capture_timestamp);
         }
-        return _video->SendVideo(videoType,
-                                 frameType,
-                                 payloadType,
-                                 captureTimeStamp,
-                                 payloadData,
-                                 payloadSize,
+        return _video->SendVideo(video_type,
+                                 frame_type,
+                                 payload_type,
+                                 capture_timestamp,
+                                 payload_data,
+                                 payload_size,
                                  fragmentation,
-                                 codecInfo,
-                                 rtpTypeHdr);
+                                 codec_info,
+                                 rtp_type_hdr);
     }
+}
+
+WebRtc_Word32 RTPSender::SendPaddingAccordingToBitrate(
+    WebRtc_Word8 payload_type,
+    WebRtc_UWord32 capture_timestamp) {
+  // Current bitrate since last estimate(1 second) averaged with the
+  // estimate since then, to get the most up to date bitrate.
+  uint32_t current_bitrate = BitrateNow();
+  int bitrate_diff = _targetSendBitrate * 1000 - current_bitrate;
+  if (bitrate_diff > 0) {
+    int bytes = 0;
+    if (current_bitrate == 0) {
+      // Start up phase. Send one 33.3 ms batch to start with.
+      bytes = (bitrate_diff / 8) / 30;
+    } else {
+      bytes = (bitrate_diff / 8);
+      // Cap at 200 ms of target send data.
+      int bytes_cap = _targetSendBitrate * 25;  // 1000 / 8 / 5
+      if (bytes > bytes_cap) {
+        bytes = bytes_cap;
+      }
+    }
+    // Send padding data.
+    return SendPadData(payload_type, capture_timestamp, bytes);
+  }
+  return 0;
 }
 
 WebRtc_Word32 RTPSender::SendPadData(WebRtc_Word8 payload_type,
@@ -879,7 +884,7 @@ void RTPSender::ProcessSendToNetwork() {
         _payloadBytesSent += bytes_sent - rtp_header.header.headerLength;
       }
     }
-  } 
+  }
 }
 
 WebRtc_Word32
@@ -1186,7 +1191,7 @@ void RTPSender::UpdateTransmissionTimeOffset(
         "Failed to update transmission time offset, no id.");
     return;
   }
-  
+
   // Verify first byte in block.
   const WebRtc_UWord8 first_block_byte = (id << 4) + 2;
   if (rtp_packet[block_pos] != first_block_byte) {

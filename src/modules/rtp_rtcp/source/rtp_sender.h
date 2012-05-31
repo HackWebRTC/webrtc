@@ -288,11 +288,15 @@ private:
     void UpdateNACKBitRate(const WebRtc_UWord32 bytes,
                            const WebRtc_UWord32 now);
 
+    WebRtc_Word32 SendPaddingAccordingToBitrate(
+        WebRtc_Word8 payload_type,
+        WebRtc_UWord32 capture_timestamp);
+
     WebRtc_Word32              _id;
     const bool                 _audioConfigured;
     RTPSenderAudio*            _audio;
     RTPSenderVideo*            _video;
- 
+
     CriticalSectionWrapper*    _sendCritsect;
 
     CriticalSectionWrapper*    _transportCritsect;
