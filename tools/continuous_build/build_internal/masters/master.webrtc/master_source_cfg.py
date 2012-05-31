@@ -7,8 +7,6 @@
 #  in the file PATENTS.  All contributing project authors may
 #  be found in the AUTHORS file in the root of the source tree.
 
-__author__ = 'kjellander@webrtc.org (Henrik Kjellander)'
-
 """Source control poller for the WebRTC code."""
 
 from buildbot.changes import svnpoller

@@ -9,8 +9,6 @@
 
 """Unit tests for helper functions in utils.py."""
 
-__author__ = 'kjellander@webrtc.org (Henrik Kjellander)'
-
 import unittest
 
 from webrtc_buildbot import utils

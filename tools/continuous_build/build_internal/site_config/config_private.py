@@ -140,6 +140,13 @@ class Master(object):
     # separate repo to put all the diff files to be tried.
     svn_url = None
 
+  class Libvpx(_ChromiumBase):
+    # Used by the waterfall display.
+    project_name = 'libvpx'
+    master_port = 8011
+    slave_port = 9114
+    master_port_alt = 9016
+
 class Archive(object):
   archive_host = 'localhost'
   # Skip any filenames (exes, symbols, etc.) starting with these strings

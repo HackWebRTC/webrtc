@@ -7,8 +7,6 @@
 #  in the file PATENTS.  All contributing project authors may
 #  be found in the AUTHORS file in the root of the source tree.
 
-__author__ = 'kjellander@webrtc.org (Henrik Kjellander)'
-
 """Utility class to build Chromium with the latest WebRTC.
 
 Based on chromium_factory.py and adds WebRTC-specific custom_deps."""
