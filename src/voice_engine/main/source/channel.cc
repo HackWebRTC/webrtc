@@ -654,7 +654,7 @@ Channel::OnInitializeDecoder(
     receiveCodec.rate = rate;
     strncpy(receiveCodec.plname, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
     
-    _audioCodingModule.Codec(payloadName, dummyCodec, frequency);
+    _audioCodingModule.Codec(payloadName, dummyCodec, frequency, channels);
     receiveCodec.pacsize = dummyCodec.pacsize;
 
     // Register the new codec to the ACM
@@ -1423,7 +1423,7 @@ Channel::Init()
         }
 
         // Ensure that PCMU is used as default codec on the sending side
-        if (!STR_CASE_CMP(codec.plname, "PCMU"))
+        if (!STR_CASE_CMP(codec.plname, "PCMU") && (codec.channels == 1))
         {
             SetSendCodec(codec);
         }
@@ -2472,12 +2472,13 @@ Channel::SetSendCNPayloadType(int type, PayloadFrequencies frequency)
 
     CodecInst codec;
     WebRtc_Word32 samplingFreqHz(-1);
+    const int kMono = 1;
     if (frequency == kFreq32000Hz)
         samplingFreqHz = 32000;
     else if (frequency == kFreq16000Hz)
         samplingFreqHz = 16000;
 
-    if (_audioCodingModule.Codec("CN", codec, samplingFreqHz) == -1)
+    if (_audioCodingModule.Codec("CN", codec, samplingFreqHz, kMono) == -1)
     {
         _engineStatisticsPtr->SetLastError(
             VE_AUDIO_CODING_MODULE_ERROR, kTraceError,

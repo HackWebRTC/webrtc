@@ -553,7 +553,8 @@ WebRtc_Word16 TestFEC::RegisterSendCodec(char side, char* codecName, WebRtc_Word
     }
     CodecInst myCodecParam;
 
-    CHECK_ERROR(AudioCodingModule::Codec(codecName, myCodecParam, samplingFreqHz));
+    CHECK_ERROR(AudioCodingModule::Codec(codecName, myCodecParam,
+                                         samplingFreqHz, 1));
 
     CHECK_ERROR(myACM->RegisterSendCodec(myCodecParam));
 

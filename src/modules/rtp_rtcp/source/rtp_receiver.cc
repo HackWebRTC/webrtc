@@ -358,7 +358,8 @@ WebRtc_Word32 RTPReceiver::RegisterReceivePayload(
         if (payload->audio) {
           if (payload->typeSpecific.Audio.frequency == frequency &&
               (payload->typeSpecific.Audio.rate == rate ||
-                  payload->typeSpecific.Audio.rate == 0 || rate == 0)) {
+                  payload->typeSpecific.Audio.rate == 0 || rate == 0) &&
+                  payload->typeSpecific.Audio.channels == channels) {
             // remove old setting
             delete payload;
             _payloadTypeMap.erase(audio_it);

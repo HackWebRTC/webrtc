@@ -278,8 +278,8 @@ WebRtc_Word16 TwoWayCommunication::SetUpAutotest()
     CodecInst codecInst_B;
     CodecInst dummyCodec;
 
-    _acmA->Codec("ISAC", codecInst_A, 16000);
-    _acmB->Codec("L16", codecInst_B, 8000);
+    _acmA->Codec("ISAC", codecInst_A, 16000, 1);
+    _acmB->Codec("L16", codecInst_B, 8000, 1);
     _acmA->Codec(6, dummyCodec);
 
     //--- Set A codecs
@@ -445,7 +445,7 @@ TwoWayCommunication::Perform()
             if(_testMode == 0)
             {
                 WEBRTC_TRACE(kTraceStateInfo, kTraceAudioCoding, -1,
-                             "---------- Errors epected");
+                             "---------- Errors expected");
                 printf(".");
             }
             else
@@ -460,7 +460,7 @@ TwoWayCommunication::Perform()
             if(_testMode == 0)
             {
                 WEBRTC_TRACE(kTraceStateInfo, kTraceAudioCoding, -1,
-                             "----- END: Errors epected");
+                             "----- END: Errors expected");
                 printf(".");
             }
             else
@@ -478,7 +478,7 @@ TwoWayCommunication::Perform()
             if(_testMode == 0)
             {
                 WEBRTC_TRACE(kTraceStateInfo, kTraceAudioCoding, -1,
-                             "---------- Errors epected");
+                             "---------- Errors expected");
                 printf(".");
             }
             else
@@ -494,7 +494,7 @@ TwoWayCommunication::Perform()
             if(_testMode == 0)
             {
                 WEBRTC_TRACE(kTraceStateInfo, kTraceAudioCoding, -1,
-                             "----- END: Errors epected");
+                             "----- END: Errors expected");
                 printf(".");
             }
             else

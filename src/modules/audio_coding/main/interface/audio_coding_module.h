@@ -108,42 +108,44 @@ class AudioCodingModule: public Module {
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 Codec()
-  // Get supported codec with the given codec name and sampling frequency.
-  // If the sampling frequency is -1 then the search will be only based on
-  // codec name.
+  // Get supported codec with the given codec name, sampling frequency, and
+  // a given number of channels.
   //
   // Input:
-  //   -payloadName        : name of the codec.
-  //   -samplingFreqHz     : samling frequency of the codec.
+  //   -payload_name       : name of the codec.
+  //   -sampling_freq_hz   : sampling frequency of the codec. Note! for RED
+  //                         a sampling frequency of -1 is a valid input.
+  //   -channels           : number of channels ( 1 - mono, 2 - stereo).
   //
   // Output:
-  //   -codec              : a structure where the parameters of the codec,
-  //                         given by name is written to.
+  //   -codec              : a structure where the function returns the
+  //                         default parameters of the codec.
   //
   // Return value:
   //   -1 if the list number (listId) is invalid.
   //    0 if succeeded.
   //
-  static WebRtc_Word32 Codec(const char* payloadName, CodecInst& codec,
-                             const WebRtc_Word32 samplingFreqHz = -1);
+  static WebRtc_Word32 Codec(const char* payload_name, CodecInst& codec,
+                             int sampling_freq_hz, int channels);
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 Codec()
   //
-  // Returns the list number of the given codec name and sampling frequency.
-  // If the sampling frequency is -1 then the search will be only based on
-  // codec name.
+  // Returns the list number of the given codec name, sampling frequency, and
+  // a given number of channels.
   //
   // Input:
-  //   -payloadName        : name of the codec.
-  //   -samplingFreqHz     : samling frequency of the codec.
+  //   -payload_name        : name of the codec.
+  //   -sampling_freq_hz    : sampling frequency of the codec. Note! for RED
+  //                          a sampling frequency of -1 is a valid input.
+  //   -channels            : number of channels ( 1 - mono, 2 - stereo).
   //
   // Return value:
   //   if the codec is found, the index of the codec in the list,
   //   -1 if the codec is not found.
   //
-  static WebRtc_Word32 Codec(const char* payloadName,
-                             const WebRtc_Word32 samplingFreqHz = -1);
+  static WebRtc_Word32 Codec(const char* payload_name, int sampling_freq_hz,
+                             int channels);
 
   ///////////////////////////////////////////////////////////////////////////
   // bool IsCodecValid()

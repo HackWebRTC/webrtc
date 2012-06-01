@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -364,6 +364,7 @@ int WebRtcNetEQ_GetTimestampScaling(MCUInst_t *MCU_inst, int rtpPayloadType)
     switch (codec)
     {
         case kDecoderG722:
+        case kDecoderG722_2ch:
         {
             /* Use timestamp scaling with factor 2 (two output samples per RTP timestamp) */
             MCU_inst->scalingFactor = kTSscalingTwo;

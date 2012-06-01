@@ -1495,11 +1495,11 @@ APITest::ChangeCodec(char side)
             Wait(1000);   
 
             // After Initialization CN is lost, re-register them
-            if(AudioCodingModule::Codec("CN", myCodec, 8000) >= 0)
+            if(AudioCodingModule::Codec("CN", myCodec, 8000, 1) >= 0)
             {
                 CHECK_ERROR_MT(myACM->RegisterSendCodec(myCodec));
             }
-            if(AudioCodingModule::Codec("CN", myCodec, 16000) >= 0)
+            if(AudioCodingModule::Codec("CN", myCodec, 16000, 1) >= 0)
             {
                 CHECK_ERROR_MT(myACM->RegisterSendCodec(myCodec));
             }

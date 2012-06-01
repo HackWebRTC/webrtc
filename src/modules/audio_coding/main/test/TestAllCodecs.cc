@@ -784,7 +784,8 @@ WebRtc_Word16 TestAllCodecs::RegisterSendCodec(char side,
     CodecInst myCodecParam;
 
     // Get all codec paramters before registering
-    CHECK_ERROR(AudioCodingModule::Codec(codecName, myCodecParam, samplingFreqHz));
+    CHECK_ERROR(AudioCodingModule::Codec(codecName, myCodecParam,
+                                         samplingFreqHz, 1));
     myCodecParam.rate = rate;
     myCodecParam.pacsize = packSize;
     CHECK_ERROR(myACM->RegisterSendCodec(myCodecParam));

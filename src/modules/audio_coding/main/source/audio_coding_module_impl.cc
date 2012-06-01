@@ -978,14 +978,14 @@ WebRtc_Word32 AudioCodingModuleImpl::Add10MsData(
   // either mono-to-stereo or stereo-to-mono conversion.
   WebRtc_Word16 audio[WEBRTC_10MS_PCM_AUDIO];
   int audio_channels = _sendCodecInst.channels;
-  if (audio_frame.num_channels_ != _sendCodecInst.channels) {
-    if (_sendCodecInst.channels == 2) {
+  if (audio_frame.num_channels_ != audio_channels) {
+    if (audio_channels == 2) {
       // Do mono-to-stereo conversion by copying each sample.
       for (int k = 0; k < audio_frame.samples_per_channel_; k++) {
         audio[k * 2] = audio_frame.data_[k];
         audio[(k * 2) + 1] = audio_frame.data_[k];
       }
-    } else if (_sendCodecInst.channels == 1) {
+    } else if (audio_channels == 1) {
       // Do stereo-to-mono conversion by creating the average of the stereo
       // samples.
       for (int k = 0; k < audio_frame.samples_per_channel_; k++) {

@@ -338,12 +338,12 @@ void RunTest(std::string out_path) {
     res = codec->GetCodec(i, cinst);
     VALIDATE;
     if (strncmp(cinst.plname, "ISAC", 4) == 0 && cinst.plfreq == 32000) {
-      printf("%i. ISAC-swb pltype:%i plfreqi:%i\n", i, cinst.pltype,
-             cinst.plfreq);
+      printf("%i. ISAC-swb pltype:%i plfreq:%i channels:%i\n", i, cinst.pltype,
+             cinst.plfreq, cinst.channels);
     }
     else {
-      printf("%i. %s pltype:%i plfreq:%i\n", i, cinst.plname,
-             cinst.pltype, cinst.plfreq);
+      printf("%i. %s pltype:%i plfreq:%i channels:%i\n", i, cinst.plname,
+             cinst.pltype, cinst.plfreq, cinst.channels);
     }
   }
 #ifdef DEBUG

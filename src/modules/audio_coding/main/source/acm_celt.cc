@@ -223,14 +223,20 @@ int32_t ACMCELT::CodecDef(WebRtcNetEQ_CodecDef& codecDef,
   // "SET_CODEC_PAR" and "SET_CELT_FUNCTIONS" or "SET_CELTSLAVE_FUNCTIONS".
   // Then call NetEQ to add the codec to it's
   // database.
-  SET_CODEC_PAR((codecDef), kDecoderCELT_32, codecInst.pltype, dec_inst_ptr_,
-                32000);
+  if (codecInst.channels == 1) {
+    SET_CODEC_PAR(codecDef, kDecoderCELT_32, codecInst.pltype, dec_inst_ptr_,
+                  32000);
+  } else {
+    SET_CODEC_PAR(codecDef, kDecoderCELT_32_2ch, codecInst.pltype,
+                  dec_inst_ptr_, 32000);
+  }
+
   // If this is the master of NetEQ, regular decoder will be added, otherwise
   // the slave decoder will be used.
   if (_isMaster) {
-    SET_CELT_FUNCTIONS((codecDef));
+    SET_CELT_FUNCTIONS(codecDef);
   } else {
-    SET_CELTSLAVE_FUNCTIONS((codecDef));
+    SET_CELTSLAVE_FUNCTIONS(codecDef);
   }
   return 0;
 }
