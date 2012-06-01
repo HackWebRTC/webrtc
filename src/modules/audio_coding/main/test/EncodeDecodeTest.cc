@@ -155,7 +155,7 @@ void Receiver::Setup(AudioCodingModule *acm, RTPStream *rtpStream) {
     }
   }
 
-  char filename[128];
+  char filename[256];
   _rtpStream = rtpStream;
   int playSampFreq;
 
@@ -300,17 +300,16 @@ void EncodeDecodeTest::Perform() {
   codePars[1] = 0;
   codePars[2] = 0;
 
-  AudioCodingModule *acmTmp = AudioCodingModule::Create(0);
+  AudioCodingModule* acm = AudioCodingModule::Create(0);
   struct CodecInst sendCodecTmp;
-  numCodecs = acmTmp->NumberOfCodecs();
-  AudioCodingModule::Destroy(acmTmp);
+  numCodecs = acm->NumberOfCodecs();
 
   if (_testMode == 1) {
     printf("List of supported codec.\n");
   }
   if (_testMode != 2) {
     for (int n = 0; n < numCodecs; n++) {
-      acmTmp->Codec(n, sendCodecTmp);
+      acm->Codec(n, sendCodecTmp);
       if (STR_CASE_CMP(sendCodecTmp.plname, "telephone-event") == 0) {
         numPars[n] = 0;
       } else if (STR_CASE_CMP(sendCodecTmp.plname, "cn") == 0) {
@@ -347,7 +346,6 @@ void EncodeDecodeTest::Perform() {
 
       EncodeToFile(1, codeId, codePars, _testMode);
 
-      AudioCodingModule *acm = AudioCodingModule::Create(10);
       RTPFile rtpFile;
       std::string fileName = webrtc::test::OutputPath() + "outFile.rtp";
       rtpFile.Open(fileName.c_str(), "rb");
@@ -359,13 +357,13 @@ void EncodeDecodeTest::Perform() {
       _receiver.Run();
       _receiver.Teardown();
       rtpFile.Close();
-      AudioCodingModule::Destroy(acm);
 
       if (_testMode == 1) {
         printf("***COMPLETED RUN FOR: codecID: %d ***\n", codeId);
       }
     }
   }
+  AudioCodingModule::Destroy(acm);
   if (_testMode == 0) {
     printf("Done!\n");
   }
@@ -375,7 +373,7 @@ void EncodeDecodeTest::Perform() {
 
 void EncodeDecodeTest::EncodeToFile(int fileType, int codeId, int* codePars,
                                     int testMode) {
-  AudioCodingModule *acm = AudioCodingModule::Create(0);
+  AudioCodingModule* acm = AudioCodingModule::Create(1);
   RTPFile rtpFile;
   std::string fileName = webrtc::test::OutputPath() + "outFile.rtp";
   rtpFile.Open(fileName.c_str(), "wb+");
