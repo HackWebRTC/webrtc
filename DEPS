@@ -41,7 +41,7 @@ deps = {
     From("trunk/chromium_deps", "src/third_party/libjpeg_turbo"),
 
   "trunk/third_party/libvpx/source/libvpx":
-    "http://git.chromium.org/webm/libvpx.git@dba05389",
+    "http://git.chromium.org/webm/libvpx.git@cab6ac16",
 
   "trunk/third_party/libyuv":
     (Var("googlecode_url") % "libyuv") + "/trunk@255",

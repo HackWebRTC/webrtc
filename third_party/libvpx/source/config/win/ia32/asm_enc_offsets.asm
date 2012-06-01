@@ -34,7 +34,7 @@ vp8_extra_bit_struct_tree                EQU     0
 vp8_extra_bit_struct_prob                EQU     4
 vp8_extra_bit_struct_len                 EQU     8
 vp8_extra_bit_struct_base_val            EQU    12
-vp8_comp_tplist                          EQU 170592
+vp8_comp_tplist                          EQU 170616
 vp8_comp_common                          EQU 104032
 vp8_comp_bc                              EQU 116144
 vp8_writer_sz                            EQU    36
