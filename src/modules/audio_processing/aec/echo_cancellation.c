@@ -401,10 +401,7 @@ WebRtc_Word32 WebRtcAec_Process(void *aecInst, const WebRtc_Word16 *nearend,
             }
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
-            if (fwrite(&aecpc->skew, sizeof(aecpc->skew),
-                       1, aecpc->skewFile) != 1) {
-              return -1;
-            }
+            (void)fwrite(&aecpc->skew, sizeof(aecpc->skew), 1, aecpc->skewFile);
 #endif
         }
     }
@@ -535,15 +532,11 @@ WebRtc_Word32 WebRtcAec_Process(void *aecInst, const WebRtc_Word16 *nearend,
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
     {
-        int16_t far_buf_size_ms = (int16_t) (aecpc->aec->system_delay /
+        int16_t far_buf_size_ms = (int16_t)(aecpc->aec->system_delay /
             (sampMsNb * aecpc->aec->mult));
-        if (fwrite(&far_buf_size_ms, 2, 1, aecpc->bufFile) != 1) {
-          return -1;
-        }
-        if (fwrite(&(aecpc->knownDelay), sizeof(aecpc->knownDelay),
-                   1, aecpc->delayFile) != 1) {
-          return -1;
-        }
+        (void)fwrite(&far_buf_size_ms, 2, 1, aecpc->bufFile);
+        (void)fwrite(&aecpc->knownDelay, sizeof(aecpc->knownDelay), 1,
+                     aecpc->delayFile);
     }
 #endif
 
