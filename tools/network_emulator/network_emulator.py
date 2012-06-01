@@ -12,10 +12,11 @@
 import logging
 import os
 import subprocess
+import sys
 
 
-class NetworkSimulatorError(BaseException):
-  """Exception raised for errors in the network simulator.
+class NetworkEmulatorError(BaseException):
+  """Exception raised for errors in the network emulator.
 
   Attributes:
     msg: User defined error message.
@@ -35,15 +36,15 @@ class NetworkSimulatorError(BaseException):
     self.error = error
 
 
-class NetworkSimulator(object):
-  """A network simulator that can constrain the network using Dummynet."""
+class NetworkEmulator(object):
+  """A network emulator that can constrain the network using Dummynet."""
 
   def __init__(self, connection_config, port_range):
     """Constructor.
 
     Args:
         connection_config: A config.ConnectionConfig object containing the
-            characteristics for the connection to be simulated.
+            characteristics for the connection to be emulation.
         port_range: Tuple containing two integers defining the port range.
     """
     self._pipe_counter = 0
@@ -51,8 +52,8 @@ class NetworkSimulator(object):
     self._port_range = port_range
     self._connection_config = connection_config
 
-  def simulate(self, target_ip):
-    """Starts a network simulation by setting up Dummynet rules.
+  def emulate(self, target_ip):
+    """Starts a network emulation by setting up Dummynet rules.
 
     Args:
         target_ip: The IP address of the interface that shall be that have the
@@ -71,7 +72,7 @@ class NetworkSimulator(object):
         self._connection_config.queue_slots)
     logging.debug('Created send pipe: %s', send_pipe_id)
 
-    # Adding the rules will start the simulation.
+    # Adding the rules will start the emulation.
     incoming_rule_id = self._create_dummynet_rule(receive_pipe_id, 'any',
                                                   target_ip, self._port_range)
     logging.debug('Created incoming rule: %s', incoming_rule_id)
@@ -83,7 +84,7 @@ class NetworkSimulator(object):
     """Checks if permissions are available to run Dummynet commands.
 
     Raises:
-      NetworkSimulatorError: If permissions to run Dummynet commands are not
+      NetworkEmulatorError: If permissions to run Dummynet commands are not
       available.
     """
     if os.geteuid() != 0:
@@ -93,17 +94,17 @@ class NetworkSimulator(object):
                'root or have password-less sudo access to this command.'))
 
   def cleanup(self):
-    """Stops the network simulation by flushing all Dummynet rules.
+    """Stops the network emulation by flushing all Dummynet rules.
 
     Notice that this will flush any rules that may have been created previously
-    before starting the simulation.
+    before starting the emulation.
     """
     self._run_shell_command(['sudo', 'ipfw', '-f', 'flush'],
                             'Failed to flush Dummynet rules!')
 
   def _create_dummynet_rule(self, pipe_id, from_address, to_address,
                             port_range):
-    """Creates a network simulation rule and returns its ID.
+    """Creates a network emulation rule and returns its ID.
 
     Args:
         pipe_id: integer ID of the pipe.
@@ -144,7 +145,11 @@ class NetworkSimulator(object):
            'delay', '%sms' % delay_ms,
            'plr', (packet_loss_percent/100.0),
            'queue', queue_slots]
-    self._run_shell_command(cmd, 'Failed to create Dummynet pipe')
+    error_message = 'Failed to create Dummynet pipe. '
+    if sys.platform.startswith('linux'):
+      error_message += ('Make sure you have loaded the ipfw_mod.ko module to '
+                        'your kernel (sudo insmod /path/to/ipfw_mod.ko)')
+    self._run_shell_command(cmd, error_message)
     return self._pipe_counter
 
   def _run_shell_command(self, command, msg=None):
@@ -158,7 +163,7 @@ class NetworkSimulator(object):
       The standard output from running the command.
 
     Raises:
-      NetworkSimulatorError: If command fails. Message is set by the msg
+      NetworkEmulatorError: If command fails. Message is set by the msg
         parameter.
     """
     cmd_list = [str(x) for x in command]
@@ -169,5 +174,5 @@ class NetworkSimulator(object):
                                stderr=subprocess.PIPE)
     output, error = process.communicate()
     if process.returncode != 0:
-      raise NetworkSimulatorError(msg, cmd, process.returncode, output, error)
+      raise NetworkEmulatorError(msg, cmd, process.returncode, output, error)
     return output.strip()

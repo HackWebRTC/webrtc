@@ -16,12 +16,12 @@ import socket
 import sys
 
 import config
-import network_simulator
+import network_emulator
 
 _DEFAULT_LOG_LEVEL = logging.INFO
 
 # Default port range to apply network constraints on.
-_DEFAULT_PORT_RANGE = (30000, 65535)
+_DEFAULT_PORT_RANGE = (32768, 65535)
 
 _PRESETS = [
     config.ConnectionConfig(1, 'Generic, Bad', 95, 95, 250, 2, 100),
@@ -133,7 +133,7 @@ def _set_logger(verbose):
 
 
 def _main():
-  """Checks arguments, permissions and runs a network simulation."""
+  """Checks arguments, permissions and runs a network emulation."""
   if os.name != 'posix':
     print >> sys.stderr, 'This script is only supported on Linux and Mac.'
     return 1
@@ -154,11 +154,11 @@ def _main():
   if options.queue:
     connection_config.queue_slots = options.queue
 
-  simulator = network_simulator.NetworkSimulator(connection_config,
-                                                 options.port_range)
+  emulator = network_emulator.NetworkEmulator(connection_config,
+                                              options.port_range)
   try:
-    simulator.check_permissions()
-  except network_simulator.NetworkSimulatorError as e:
+    emulator.check_permissions()
+  except network_emulator.NetworkEmulatorError as e:
     logging.error('Error: %s\n\nCause: %s', e.msg, e.error)
     return -1
 
@@ -167,28 +167,32 @@ def _main():
   else:
     external_ip = options.target_ip
 
-  logging.info('Simulating traffic to/from IP: %s', external_ip)
-  simulator.simulate(external_ip)
-  logging.info('Started network simulation with the following configuration:\n'
-               '  Receive bandwidth: %s kbps (%s kB/s)\n'
-               '  Send bandwidth   : %s kbps (%s kB/s)\n'
-               '  Delay            : %s ms\n'
-               '  Packet loss      : %s %%\n'
-               '  Queue slots      : %s',
-               connection_config.receive_bw_kbps,
-               connection_config.receive_bw_kbps/8,
-               connection_config.send_bw_kbps,
-               connection_config.send_bw_kbps/8,
-               connection_config.delay_ms,
-               connection_config.packet_loss_percent,
-               connection_config.queue_slots)
-  logging.info('Affected traffic: IP traffic on ports %s-%s',
-               options.port_range[0], options.port_range[1])
-  raw_input('Press Enter to abort Network simulation...')
-  logging.info('Flushing all Dummynet rules...')
-  simulator.cleanup()
-  logging.info('Completed Network Simulation.')
-  return 0
+  logging.info('Constraining traffic to/from IP: %s', external_ip)
+  try:
+    emulator.emulate(external_ip)
+    logging.info('Started network emulation with the following configuration:\n'
+                 '  Receive bandwidth: %s kbps (%s kB/s)\n'
+                 '  Send bandwidth   : %s kbps (%s kB/s)\n'
+                 '  Delay            : %s ms\n'
+                 '  Packet loss      : %s %%\n'
+                 '  Queue slots      : %s',
+                 connection_config.receive_bw_kbps,
+                 connection_config.receive_bw_kbps/8,
+                 connection_config.send_bw_kbps,
+                 connection_config.send_bw_kbps/8,
+                 connection_config.delay_ms,
+                 connection_config.packet_loss_percent,
+                 connection_config.queue_slots)
+    logging.info('Affected traffic: IP traffic on ports %s-%s',
+                 options.port_range[0], options.port_range[1])
+    raw_input('Press Enter to abort Network Emulation...')
+    logging.info('Flushing all Dummynet rules...')
+    emulator.cleanup()
+    logging.info('Completed Network Emulation.')
+    return 0
+  except network_emulator.NetworkEmulatorError as e:
+    logging.error('Error: %s\n\nCause: %s', e.msg, e.error)
+    return -2
 
 if __name__ == '__main__':
   sys.exit(_main())
