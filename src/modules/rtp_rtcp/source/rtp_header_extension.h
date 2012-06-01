@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -20,7 +20,7 @@ namespace webrtc {
 
 enum {RTP_ONE_BYTE_HEADER_EXTENSION = 0xbede};
 
-enum ExtensionLength {
+enum {
    RTP_ONE_BYTE_HEADER_LENGTH_IN_BYTES = 4,
    TRANSMISSION_TIME_OFFSET_LENGTH_IN_BYTES = 4
 };
