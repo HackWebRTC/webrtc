@@ -378,7 +378,9 @@ WebRtc_Word16 WebRtcNetEQ_CalcOptimalBufLvl(AutomodeInst_t *inst, WebRtc_Word32 
 #ifdef NETEQ_DELAY_LOGGING
     /* special code for offline delay logging */
     temp_var = NETEQ_DELAY_LOGGING_SIGNAL_OPTBUF;
-    fwrite( &temp_var, sizeof(int), 1, delay_fid2 );
+    if (fwrite( &temp_var, sizeof(int), 1, delay_fid2 ) != 1) {
+      return -1;
+    }
     temp_var = (int) (Bopt * inst->packetSpeechLenSamp);
 #endif
 
@@ -518,7 +520,9 @@ WebRtc_Word16 WebRtcNetEQ_CalcOptimalBufLvl(AutomodeInst_t *inst, WebRtc_Word32 
 
 #ifdef NETEQ_DELAY_LOGGING
     /* special code for offline delay logging */
-    fwrite( &temp_var, sizeof(int), 1, delay_fid2 );
+    if (fwrite( &temp_var, sizeof(int), 1, delay_fid2 ) != 1) {
+      return -1;
+    }
 #endif
 
     /* Sanity check: Bopt must be strictly positive */

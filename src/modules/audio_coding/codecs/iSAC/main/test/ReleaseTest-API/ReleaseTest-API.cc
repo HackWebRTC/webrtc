@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -692,15 +692,24 @@ int main(int argc, char* argv[])
                             exit(0);
                         }
                         auxUW8 = (WebRtc_UWord8)(((streamLenTransCoding & 0xFF00) >> 8) &  0x00FF);
-                        fwrite(&auxUW8, sizeof(WebRtc_UWord8),
-                            1, transcodingBitstream);
+                        if (fwrite(&auxUW8, sizeof(WebRtc_UWord8), 1,
+                                   transcodingBitstream) != 1) {
+                          return -1;
+                        }
 
                         auxUW8 = (WebRtc_UWord8)(streamLenTransCoding & 0x00FF);
-                        fwrite(&auxUW8, sizeof(WebRtc_UWord8),
-                            1, transcodingBitstream);
+                        if (fwrite(&auxUW8, sizeof(WebRtc_UWord8),
+                                   1, transcodingBitstream) != 1) {
+                          return -1;
+                        }
 
-                        fwrite((WebRtc_UWord8*)streamDataTransCoding, sizeof(WebRtc_UWord8),
-                            streamLenTransCoding, transcodingBitstream);
+                        if (fwrite((WebRtc_UWord8*)streamDataTransCoding,
+                                   sizeof(WebRtc_UWord8),
+                                   streamLenTransCoding,
+                                   transcodingBitstream) !=
+                            static_cast<size_t>(streamLenTransCoding)) {
+                          return -1;
+                        }
 
                         WebRtcIsac_ReadBwIndex((WebRtc_Word16*)streamDataTransCoding, &indexStream);
                         if(indexStream != bnIdxTC)
@@ -939,12 +948,18 @@ int main(int argc, char* argv[])
         /* Write decoded speech frame to file */
         if((declen > 0) && (numFileLoop == 0))
         {
-            fwrite(decoded, sizeof(WebRtc_Word16), declen, outp);
+          if (fwrite(decoded, sizeof(WebRtc_Word16), declen,
+                     outp) != static_cast<size_t>(declen)) {
+            return -1;
+          }
         }
 
         if((declenTC > 0) && (numFileLoop == 0))
         {
-            fwrite(decodedTC, sizeof(WebRtc_Word16), declen, transCodingFile);
+          if (fwrite(decodedTC, sizeof(WebRtc_Word16), declen,
+                     transCodingFile) != static_cast<size_t>(declen)) {
+            return -1;
+          }
         }
 
 

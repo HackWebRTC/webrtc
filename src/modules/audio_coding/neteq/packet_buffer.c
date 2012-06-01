@@ -317,14 +317,23 @@ int WebRtcNetEQ_PacketBufferInsert(PacketBuf_t *bufferInst, const RTPPacket_t *R
     if (*flushed)
     {
         temp_var = NETEQ_DELAY_LOGGING_SIGNAL_FLUSH;
-        fwrite( &temp_var, sizeof(int), 1, delay_fid2 );
+        if (fwrite(&temp_var, sizeof(int), 1, delay_fid2) != 1) {
+          return -1;
+        }
     }
     temp_var = NETEQ_DELAY_LOGGING_SIGNAL_RECIN;
-    fwrite( &temp_var, sizeof(int), 1, delay_fid2 );
-    fwrite( &RTPpacket->timeStamp, sizeof(WebRtc_UWord32), 1, delay_fid2 );
-    fwrite( &RTPpacket->seqNumber, sizeof(WebRtc_UWord16), 1, delay_fid2 );
-    fwrite( &RTPpacket->payloadType, sizeof(int), 1, delay_fid2 );
-    fwrite( &RTPpacket->payloadLen, sizeof(WebRtc_Word16), 1, delay_fid2 );
+    if ((fwrite(&temp_var, sizeof(int),
+                1, delay_fid2) != 1) ||
+        (fwrite(&RTPpacket->timeStamp, sizeof(WebRtc_UWord32),
+                1, delay_fid2) != 1) ||
+        (fwrite(&RTPpacket->seqNumber, sizeof(WebRtc_UWord16),
+                1, delay_fid2) != 1) ||
+        (fwrite(&RTPpacket->payloadType, sizeof(int),
+                1, delay_fid2) != 1) ||
+        (fwrite(&RTPpacket->payloadLen, sizeof(WebRtc_Word16),
+                1, delay_fid2) != 1)) {
+      return -1;
+    }
     tot_received_packets++;
 #endif /* NETEQ_DELAY_LOGGING */
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -429,13 +429,20 @@ valid values are 8 and 16.\n", sampFreqKHz);
 
 		if(onlyEncode)
 		{
-			WebRtc_UWord8 auxUW8;
-			auxUW8 = (WebRtc_UWord8)(((stream_len & 0x7F00) >> 8) & 0xFF);
-			fwrite(&auxUW8, sizeof(WebRtc_UWord8), 1, outp);
+                  WebRtc_UWord8 auxUW8;
+                  auxUW8 = (WebRtc_UWord8)(((stream_len & 0x7F00) >> 8) & 0xFF);
+                  if (fwrite(&auxUW8, sizeof(WebRtc_UWord8), 1, outp) != 1) {
+                    return -1;
+                  }
 
-			auxUW8 = (WebRtc_UWord8)(stream_len & 0xFF);
-			fwrite(&auxUW8, sizeof(WebRtc_UWord8), 1, outp);
-			fwrite(payload, 1, stream_len, outp);
+                  auxUW8 = (WebRtc_UWord8)(stream_len & 0xFF);
+                  if (fwrite(&auxUW8, sizeof(WebRtc_UWord8), 1, outp) != 1) {
+                    return -1;
+                  }
+                  if (fwrite(payload, 1, stream_len,
+                             outp) != (size_t)stream_len) {
+                    return -1;
+                  }
 		}
 		else
 		{
@@ -462,7 +469,10 @@ valid values are 8 and 16.\n", sampFreqKHz);
 			}
 
 			// Write decoded speech frame to file
-			fwrite(decoded, sizeof(WebRtc_Word16), declen, outp);
+                        if (fwrite(decoded, sizeof(WebRtc_Word16),
+                                   declen, outp) != (size_t)declen) {
+                          return -1;
+                        }
 			cur_framesmpls = declen;
 		}
         // Update Statistics

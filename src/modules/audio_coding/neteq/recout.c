@@ -318,8 +318,12 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
             }
 #ifdef NETEQ_DELAY_LOGGING
             temp_var = NETEQ_DELAY_LOGGING_SIGNAL_CHANGE_FS;
-            fwrite(&temp_var, sizeof(int), 1, delay_fid2);
-            fwrite(&inst->fs, sizeof(WebRtc_UWord16), 1, delay_fid2);
+            if ((fwrite(&temp_var, sizeof(int),
+                        1, delay_fid2) != 1) ||
+                (fwrite(&inst->fs, sizeof(WebRtc_UWord16),
+                        1, delay_fid2) != 1)) {
+              return -1;
+            }
 #endif
         }
 
@@ -508,9 +512,17 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
                 pw16_decoded_buffer, &speechType);
 #ifdef NETEQ_DELAY_LOGGING
             temp_var = NETEQ_DELAY_LOGGING_SIGNAL_DECODE_ONE_DESC;
-            fwrite(&temp_var, sizeof(int), 1, delay_fid2);
-            fwrite(&inst->endTimestamp, sizeof(WebRtc_UWord32), 1, delay_fid2);
-            fwrite(&dspInfo->samplesLeft, sizeof(WebRtc_UWord16), 1, delay_fid2);
+            if (fwrite(&temp_var, sizeof(int), 1, delay_fid2) != 1) {
+              return -1;
+            }
+            if (fwrite(&inst->endTimestamp, sizeof(WebRtc_UWord32),
+                       1, delay_fid2) != 1) {
+              return -1;
+            }
+            if (fwrite(&dspInfo->samplesLeft, sizeof(WebRtc_UWord16),
+                       1, delay_fid2) != 1) {
+              return -1;
+            }
             tot_received_packets++;
 #endif
         }
@@ -692,7 +704,9 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
         case DSP_INSTR_MERGE:
 #ifdef NETEQ_DELAY_LOGGING
             temp_var = NETEQ_DELAY_LOGGING_SIGNAL_MERGE_INFO;
-            fwrite(&temp_var, sizeof(int), 1, delay_fid2);
+            if (fwrite(&temp_var, sizeof(int), 1, delay_fid2) != 1) {
+              return -1;
+            }
             temp_var = -len;
 #endif
             /* Call Merge with history*/
@@ -710,7 +724,9 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
 
 #ifdef NETEQ_DELAY_LOGGING
             temp_var += len;
-            fwrite(&temp_var, sizeof(int), 1, delay_fid2);
+            if (fwrite(&temp_var, sizeof(int), 1, delay_fid2) != 1) {
+              return -1;
+            }
 #endif
             /* If last packet was decoded as a inband CNG set mode to CNG instead */
             if (speechType == TYPE_CNG) inst->w16_mode = MODE_CODEC_INTERNAL_CNG;
@@ -756,9 +772,13 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
                 inst->w16_concealedTS += len;
 #ifdef NETEQ_DELAY_LOGGING
                 temp_var = NETEQ_DELAY_LOGGING_SIGNAL_EXPAND_INFO;
-                fwrite(&temp_var, sizeof(int), 1, delay_fid2);
+                if (fwrite(&temp_var, sizeof(int), 1, delay_fid2) != 1) {
+                  return -1;
+                }
                 temp_var = len;
-                fwrite(&temp_var, sizeof(int), 1, delay_fid2);
+                if (fwrite(&temp_var, sizeof(int), 1, delay_fid2) != 1) {
+                  return -1;
+                }
 #endif
                 len = 0; /* already written the data, so do not write it again further down. */
             }
@@ -812,9 +832,13 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
                     inst->curPosition += (borrowedSamples - len);
 #ifdef NETEQ_DELAY_LOGGING
                     temp_var = NETEQ_DELAY_LOGGING_SIGNAL_ACCELERATE_INFO;
-                    fwrite(&temp_var, sizeof(int), 1, delay_fid2);
+                    if (fwrite(&temp_var, sizeof(int), 1, delay_fid2) != 1) {
+                      return -1;
+                    }
                     temp_var = 3 * inst->timestampsPerCall - len;
-                    fwrite(&temp_var, sizeof(int), 1, delay_fid2);
+                    if (fwrite(&temp_var, sizeof(int), 1, delay_fid2) != 1) {
+                      return -1;
+                    }
 #endif
                     len = 0;
                 }
@@ -827,9 +851,13 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
                                            (len-borrowedSamples));
 #ifdef NETEQ_DELAY_LOGGING
                     temp_var = NETEQ_DELAY_LOGGING_SIGNAL_ACCELERATE_INFO;
-                    fwrite(&temp_var, sizeof(int), 1, delay_fid2);
+                    if (fwrite(&temp_var, sizeof(int), 1, delay_fid2) != 1) {
+                      return -1;
+                    }
                     temp_var = 3 * inst->timestampsPerCall - len;
-                    fwrite(&temp_var, sizeof(int), 1, delay_fid2);
+                    if (fwrite(&temp_var, sizeof(int), 1, delay_fid2) != 1) {
+                      return -1;
+                    }
 #endif
                     len = len - borrowedSamples;
                 }
@@ -839,7 +867,9 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
             {
 #ifdef NETEQ_DELAY_LOGGING
                 temp_var = NETEQ_DELAY_LOGGING_SIGNAL_ACCELERATE_INFO;
-                fwrite(&temp_var, sizeof(int), 1, delay_fid2);
+                if (fwrite(&temp_var, sizeof(int), 1, delay_fid2) != 1) {
+                  return -1;
+                }
                 temp_var = len;
 #endif
                 return_value = WebRtcNetEQ_Accelerate(inst,
@@ -856,7 +886,9 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
 
 #ifdef NETEQ_DELAY_LOGGING
                 temp_var -= len;
-                fwrite(&temp_var, sizeof(int), 1, delay_fid2);
+                if (fwrite(&temp_var, sizeof(int), 1, delay_fid2) != 1) {
+                  return -1;
+                }
 #endif
             }
             /* If last packet was decoded as a inband CNG set mode to CNG instead */
@@ -1147,9 +1179,13 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
 
 #ifdef NETEQ_DELAY_LOGGING
             temp_var = NETEQ_DELAY_LOGGING_SIGNAL_PREEMPTIVE_INFO;
-            fwrite(&temp_var, sizeof(int), 1, delay_fid2);
+            if (fwrite(&temp_var, sizeof(int), 1, delay_fid2) != 1) {
+              return -1;
+            }
             temp_var = len - w16_tmp1; /* number of samples added */
-            fwrite(&temp_var, sizeof(int), 1, delay_fid2);
+            if (fwrite(&temp_var, sizeof(int), 1, delay_fid2) != 1) {
+              return -1;
+            }
 #endif
             /* If last packet was decoded as inband CNG, set mode to CNG instead */
             if (speechType == TYPE_CNG) inst->w16_mode = MODE_CODEC_INTERNAL_CNG;
@@ -1256,9 +1292,13 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
             inst->w16_mode = MODE_FADE_TO_BGN;
 #ifdef NETEQ_DELAY_LOGGING
             temp_var = NETEQ_DELAY_LOGGING_SIGNAL_EXPAND_INFO;
-            fwrite(&temp_var, sizeof(int), 1, delay_fid2);
+            if (fwrite(&temp_var, sizeof(int), 1, delay_fid2) != 1) {
+              return -1;
+            }
             temp_var = len;
-            fwrite(&temp_var, sizeof(int), 1, delay_fid2);
+            if (fwrite(&temp_var, sizeof(int), 1, delay_fid2) != 1) {
+              return -1;
+            }
 #endif
 
             break;

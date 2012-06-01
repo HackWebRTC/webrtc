@@ -646,9 +646,14 @@ int WebRtcNetEQ_SignalMcu(MCUInst_t *inst)
 
 #ifdef NETEQ_DELAY_LOGGING
             temp_var = NETEQ_DELAY_LOGGING_SIGNAL_DECODE;
-            fwrite(&temp_var,sizeof(int),1,delay_fid2);
-            fwrite(&temp_pkt.timeStamp,sizeof(WebRtc_UWord32),1,delay_fid2);
-            fwrite(&dspInfo.samplesLeft, sizeof(WebRtc_UWord16), 1, delay_fid2);
+            if ((fwrite(&temp_var, sizeof(int),
+                        1, delay_fid2) != 1) ||
+                (fwrite(&temp_pkt.timeStamp, sizeof(WebRtc_UWord32),
+                        1, delay_fid2) != 1) ||
+                (fwrite(&dspInfo.samplesLeft, sizeof(WebRtc_UWord16),
+                        1, delay_fid2) != 1)) {
+              return -1;
+            }
 #endif
 
             *blockPtr = temp_pkt.payloadLen;
@@ -762,4 +767,3 @@ int WebRtcNetEQ_SignalMcu(MCUInst_t *inst)
     return 0;
 
 }
-

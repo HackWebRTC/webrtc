@@ -181,8 +181,11 @@ WebRtc_Word32 PCMFile::Read10MsData(AudioFrame& audio_frame) {
 void PCMFile::Write10MsData(AudioFrame& audio_frame) {
   if (audio_frame.num_channels_ == 1) {
     if (!save_stereo_) {
-      fwrite(audio_frame.data_, sizeof(WebRtc_UWord16),
-             audio_frame.samples_per_channel_, pcm_file_);
+      if (fwrite(audio_frame.data_, sizeof(WebRtc_UWord16),
+                 audio_frame.samples_per_channel_, pcm_file_) !=
+          static_cast<size_t>(audio_frame.samples_per_channel_)) {
+        return;
+      }
     } else {
       WebRtc_Word16* stereo_audio =
           new WebRtc_Word16[2 * audio_frame.samples_per_channel_];
@@ -191,20 +194,29 @@ void PCMFile::Write10MsData(AudioFrame& audio_frame) {
         stereo_audio[k << 1] = audio_frame.data_[k];
         stereo_audio[(k << 1) + 1] = audio_frame.data_[k];
       }
-      fwrite(stereo_audio, sizeof(WebRtc_Word16),
-             2 * audio_frame.samples_per_channel_, pcm_file_);
+      if (fwrite(stereo_audio, sizeof(WebRtc_Word16),
+                 2 * audio_frame.samples_per_channel_, pcm_file_) !=
+          static_cast<size_t>(2 * audio_frame.samples_per_channel_)) {
+        return;
+      }
       delete[] stereo_audio;
     }
   } else {
-    fwrite(audio_frame.data_, sizeof(WebRtc_Word16),
-           audio_frame.num_channels_ * audio_frame.samples_per_channel_,
-           pcm_file_);
+    if (fwrite(audio_frame.data_, sizeof(WebRtc_Word16),
+               audio_frame.num_channels_ * audio_frame.samples_per_channel_,
+               pcm_file_) != static_cast<size_t>(
+            audio_frame.num_channels_ * audio_frame.samples_per_channel_)) {
+      return;
+    }
   }
 }
 
 void PCMFile::Write10MsData(WebRtc_Word16* playout_buffer,
                             WebRtc_UWord16 length_smpls) {
-  fwrite(playout_buffer, sizeof(WebRtc_UWord16), length_smpls, pcm_file_);
+  if (fwrite(playout_buffer, sizeof(WebRtc_UWord16),
+             length_smpls, pcm_file_) != length_smpls) {
+    return;
+  }
 }
 
 void PCMFile::Close() {

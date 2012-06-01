@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -392,13 +392,19 @@ int main(int argc, char* argv[])
         // Write the arrival time.
         if(senderIdx == 0)
         {
-          fwrite(&(packetData[senderIdx]->arrival_time), sizeof(unsigned int), 1,
-                 arrivalTimeFile1);
+          if (fwrite(&(packetData[senderIdx]->arrival_time),
+                     sizeof(unsigned int),
+                     1, arrivalTimeFile1) != 1) {
+            return -1;
+          }
         }
         else
         {
-          fwrite(&(packetData[senderIdx]->arrival_time), sizeof(unsigned int), 1,
-                 arrivalTimeFile2);
+          if (fwrite(&(packetData[senderIdx]->arrival_time),
+                     sizeof(unsigned int),
+                     1, arrivalTimeFile2) != 1) {
+            return -1;
+          }
         }
 
         // BWE
@@ -426,13 +432,19 @@ int main(int argc, char* argv[])
         {
           WebRtcSpl_UpsampleBy2(audioBuff60ms, lenDecodedAudio, resampledAudio60ms,
                                 resamplerState[receiverIdx]);
-          fwrite(resampledAudio60ms, sizeof(short), lenDecodedAudio << 1,
-                 outFile[receiverIdx]);
+          if (fwrite(resampledAudio60ms, sizeof(short), lenDecodedAudio << 1,
+                     outFile[receiverIdx]) !=
+              static_cast<size_t>(lenDecodedAudio << 1)) {
+            return -1;
+          }
         }
         else
         {
-          fwrite(audioBuff60ms, sizeof(short), lenDecodedAudio,
-                 outFile[receiverIdx]);
+          if (fwrite(audioBuff60ms, sizeof(short), lenDecodedAudio,
+                     outFile[receiverIdx]) !=
+              static_cast<size_t>(lenDecodedAudio)) {
+            return -1;
+          }
         }
         num10ms[senderIdx] = 0;
       }

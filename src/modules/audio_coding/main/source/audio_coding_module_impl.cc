@@ -431,9 +431,16 @@ WebRtc_Word32 AudioCodingModuleImpl::Process() {
     CriticalSectionScoped lock(*_callbackCritSect);
 #ifdef ACM_QA_TEST
     if(_outgoingPL != NULL) {
-      fwrite(&rtp_timestamp, sizeof(WebRtc_UWord32), 1, _outgoingPL);
-      fwrite(&current_payload_type, sizeof(WebRtc_UWord8), 1, _outgoingPL);
-      fwrite(&length_bytes, sizeof(WebRtc_Word16), 1, _outgoingPL);
+      if (fwrite(&rtp_timestamp, sizeof(WebRtc_UWord32), 1, _outgoingPL) != 1) {
+        return -1;
+      }
+      if (fwrite(&current_payload_type, sizeof(WebRtc_UWord8),
+                 1, _outgoingPL) != 1) {
+        return -1;
+      }
+      if (fwrite(&length_bytes, sizeof(WebRtc_Word16), 1, _outgoingPL) != 1) {
+        return -1;
+      }
     }
 #endif
 
@@ -1489,11 +1496,18 @@ WebRtc_Word32 AudioCodingModuleImpl::IncomingPacket(
     CriticalSectionScoped lock(*_acmCritSect);
 #ifdef ACM_QA_TEST
     if(_incomingPL != NULL) {
-      fwrite(&rtp_info.header.timestamp, sizeof(WebRtc_UWord32), 1,
-             _incomingPL);
-      fwrite(&rtp_info.header.payloadType, sizeof(WebRtc_UWord8), 1,
-             _incomingPL);
-      fwrite(&payload_length, sizeof(WebRtc_Word16), 1, _incomingPL);
+      if (fwrite(&rtp_info.header.timestamp, sizeof(WebRtc_UWord32),
+                 1, _incomingPL) != 1) {
+        return -1;
+      }
+      if (fwrite(&rtp_info.header.payloadType, sizeof(WebRtc_UWord8),
+                 1, _incomingPL) != 1) {
+        return -1;
+      }
+      if (fwrite(&payload_length, sizeof(WebRtc_Word16),
+                 1, _incomingPL) != 1) {
+        return -1;
+      }
     }
 #endif
 

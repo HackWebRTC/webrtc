@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -628,7 +628,10 @@ int main(int argc, char* argv[])
         errtype=WebRtcIsacfix_GetErrorCode(ISAC_main_inst);
         printf("\nError in encoder: %d.\n", errtype);
       } else {
-        fwrite(streamdata, sizeof(char), stream_len, outbits);
+        if (fwrite(streamdata, sizeof(char),
+                   stream_len, outbits) != (size_t)stream_len) {
+          return -1;
+        }
       }
 
       cur_framesmpls += FRAMESAMPLES_10ms;
@@ -777,7 +780,10 @@ int main(int argc, char* argv[])
       }
 
       /* Write decoded speech frame to file */
-      fwrite(decoded, sizeof(WebRtc_Word16), declen, outp);
+      if (fwrite(decoded, sizeof(WebRtc_Word16),
+                 declen, outp) != (size_t)declen) {
+        return -1;
+      }
       //   fprintf( ratefile, "%f \n", stream_len / ( ((double)declen)/
       // ((double)FS) ) * 8 );
     } else {
