@@ -420,11 +420,15 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
         int packetStartPartition =
             packetizer.NextPacket(&dataBuffer[rtpHeaderLength],
                                   &payloadBytesInPacket, &last);
-        if (packetStartPartition == 0)
-        {
-            ++_numberFirstPartition;
-        }
-        else if (packetStartPartition < 0)
+        // TODO(holmer): Temporarily disable first partition packet counting
+        // to avoid a bug in ProducerFec which doesn't properly handle
+        // important packets.
+        // if (packetStartPartition == 0)
+        // {
+        //     ++_numberFirstPartition;
+        // }
+        // else
+        if (packetStartPartition < 0)
         {
             return -1;
         }
