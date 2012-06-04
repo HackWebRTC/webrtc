@@ -7,6 +7,21 @@
 # libvpx_include, libvpx_lib.
 # http://src.chromium.org/svn/trunk/deps/third_party/libvpx/libvpx.gyp
 {
+  # The target_defaults block is unique to the WebRTC libvpx.gyp.
+  'target_defaults': {
+    'conditions': [
+      ['OS=="mac"', {
+        'xcode_settings': {
+          'WARNING_CFLAGS': [
+            '-Wno-implicit-function-declaration',
+            # TODO(andrew): this one should be fixed upstream.
+            '-Wno-parentheses-equality',
+            '-Wno-conversion',
+          ],
+        },
+      }],
+    ],
+  },
   'variables': {
     'conditions': [
       ['os_posix==1', {
