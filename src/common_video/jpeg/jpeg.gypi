@@ -51,7 +51,17 @@
           ],
         }, {
           # Need to add a directory normally exported by libjpeg.gyp.
-          'include_dirs': [ '<(DEPTH)/third_party/libjpeg', ],
+          'conditions': [
+            ['use_libjpeg_turbo==1', {
+              'include_dirs': [
+                '<(DEPTH)/third_party/libjpeg_turbo',
+              ],
+            }, {
+              'include_dirs': [
+                '<(DEPTH)/third_party/libjpeg',
+              ],
+            }
+          ] # conditions
         }],
       ],
       'sources': [
