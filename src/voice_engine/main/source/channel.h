@@ -196,6 +196,7 @@ public:
                                 const CodecInst* codecInst);
     int StopPlayingFileLocally();
     int IsPlayingFileLocally() const;
+    int RegisterFilePlayingToMixer();
     int ScaleLocalFilePlayout(const float scale);
     int GetLocalPlayoutPosition(int& positionMs);
     int StartPlayingFileAsMicrophone(const char* fileName, const bool loop,

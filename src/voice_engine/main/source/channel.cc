@@ -1601,6 +1601,10 @@ Channel::StartPlayout()
     }
 
     _playing = true;
+
+    if (RegisterFilePlayingToMixer() != 0)
+        return -1;
+
     return 0;
 }
 
@@ -3409,22 +3413,9 @@ int Channel::StartPlayingFileLocally(const char* fileName,
         _outputFilePlayerPtr->RegisterModuleFileCallback(this);
         _outputFilePlaying = true;
     }
-    // _fileCritSect cannot be taken while calling
-    // SetAnonymousMixabilityStatus() since as soon as the participant is added
-    // frames can be pulled by the mixer. Since the frames are generated from
-    // the file, _fileCritSect will be taken. This would result in a deadlock.
-    if (_outputMixerPtr->SetAnonymousMixabilityStatus(*this, true) != 0)
-    {
-        CriticalSectionScoped cs(&_fileCritSect);
-        _outputFilePlaying = false;
-        _engineStatisticsPtr->SetLastError(
-            VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
-            "StartPlayingFile() failed to add participant as file to mixer");
-        _outputFilePlayerPtr->StopPlayingFile();
-        FilePlayer::DestroyFilePlayer(_outputFilePlayerPtr);
-        _outputFilePlayerPtr = NULL;
+
+    if (RegisterFilePlayingToMixer() != 0)
         return -1;
-    }
 
     return 0;
 }
@@ -3500,21 +3491,9 @@ int Channel::StartPlayingFileLocally(InStream* stream,
       _outputFilePlayerPtr->RegisterModuleFileCallback(this);
       _outputFilePlaying = true;
     }
-    // _fileCritSect cannot be taken while calling
-    // SetAnonymousMixibilityStatus. Refer to comments in
-    // StartPlayingFileLocally(const char* ...) for more details.
-    if (_outputMixerPtr->SetAnonymousMixabilityStatus(*this, true) != 0)
-    {
-        CriticalSectionScoped cs(&_fileCritSect);
-        _outputFilePlaying = false;
-        _engineStatisticsPtr->SetLastError(
-            VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
-            "StartPlayingFile() failed to add participant as file to mixer");
-        _outputFilePlayerPtr->StopPlayingFile();
-        FilePlayer::DestroyFilePlayer(_outputFilePlayerPtr);
-        _outputFilePlayerPtr = NULL;
+
+    if (RegisterFilePlayingToMixer() != 0)
         return -1;
-    }
 
     return 0;
 }
@@ -3568,6 +3547,36 @@ int Channel::IsPlayingFileLocally() const
                  "Channel::IsPlayingFileLocally()");
 
     return (WebRtc_Word32)_outputFilePlaying;
+}
+
+int Channel::RegisterFilePlayingToMixer()
+{
+    // Return success for not registering for file playing to mixer if:
+    // 1. playing file before playout is started on that channel.
+    // 2. starting playout without file playing on that channel.
+    if (!_playing || !_outputFilePlaying)
+    {
+        return 0;
+    }
+
+    // |_fileCritSect| cannot be taken while calling
+    // SetAnonymousMixabilityStatus() since as soon as the participant is added
+    // frames can be pulled by the mixer. Since the frames are generated from
+    // the file, _fileCritSect will be taken. This would result in a deadlock.
+    if (_outputMixerPtr->SetAnonymousMixabilityStatus(*this, true) != 0)
+    {
+        CriticalSectionScoped cs(&_fileCritSect);
+        _outputFilePlaying = false;
+        _engineStatisticsPtr->SetLastError(
+            VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
+            "StartPlayingFile() failed to add participant as file to mixer");
+        _outputFilePlayerPtr->StopPlayingFile();
+        FilePlayer::DestroyFilePlayer(_outputFilePlayerPtr);
+        _outputFilePlayerPtr = NULL;
+        return -1;
+    }
+
+    return 0;
 }
 
 int Channel::ScaleLocalFilePlayout(const float scale)
