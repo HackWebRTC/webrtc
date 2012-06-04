@@ -94,6 +94,7 @@ TEST_F(TestScaler, ScaleSendingBufferTooSmall) {
 
 //TODO (mikhal): Converge the test into one function that accepts the method.
 TEST_F(TestScaler, PointScaleTest) {
+  FILE* source_file2;
   ScaleMethod method = kScalePoint;
   std::string out_name = webrtc::test::OutputPath() +
                          "LibYuvTest_PointScale_176_144.yuv";
@@ -121,9 +122,38 @@ TEST_F(TestScaler, PointScaleTest) {
                 source_file_, out_name,
                 width_, height_,
                 400, 300);
+  // Dowsample to odd size frame and scale back up.
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_PointScale_282_231.yuv";
+  ScaleSequence(method,
+                source_file_, out_name,
+                width_, height_,
+                282, 231);
+  source_file2 = fopen(out_name.c_str(), "rb");
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_PointScale_352_288_"
+      "upfrom_282_231.yuv";
+  ScaleSequence(method,
+                source_file2, out_name,
+                282, 231,
+                352, 288);
+  ASSERT_EQ(0, fclose(source_file2));
+  // Upsample to odd size frame and scale back down.
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_PointScale_699_531.yuv";
+  ScaleSequence(method,
+                source_file_, out_name,
+                width_, height_,
+                699, 531);
+  source_file2 = fopen(out_name.c_str(), "rb");
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_PointScale_352_288_"
+      "downfrom_699_531.yuv";
+  ScaleSequence(method,
+                source_file2, out_name,
+                699, 531,
+                352, 288);
+  ASSERT_EQ(0, fclose(source_file2));
 }
 
 TEST_F(TestScaler, BiLinearScaleTest) {
+  FILE* source_file2;
   ScaleMethod method = kScaleBilinear;
   std::string out_name = webrtc::test::OutputPath() +
                          "LibYuvTest_BilinearScale_176_144.yuv";
@@ -155,9 +185,40 @@ TEST_F(TestScaler, BiLinearScaleTest) {
                 source_file_, out_name,
                 width_, height_,
                 400, 300);
+  // Downsample to odd size frame and scale back up.
+  out_name = webrtc::test::OutputPath() +
+      "LibYuvTest_BilinearScale_282_231.yuv";
+  ScaleSequence(method,
+                source_file_, out_name,
+                width_, height_,
+                282, 231);
+  source_file2 = fopen(out_name.c_str(), "rb");
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_BilinearScale_352_288_"
+      "upfrom_282_231.yuv";
+  ScaleSequence(method,
+                source_file2, out_name,
+                282, 231,
+                352, 288);
+  ASSERT_EQ(0, fclose(source_file2));
+  // Upsample to odd size frame and scale back down.
+  out_name = webrtc::test::OutputPath() +
+      "LibYuvTest_BilinearScale_699_531.yuv";
+  ScaleSequence(method,
+                source_file_, out_name,
+                width_, height_,
+                699, 531);
+  source_file2 = fopen(out_name.c_str(), "rb");
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_BilinearScale_352_288_"
+      "downfrom_699_531.yuv";
+  ScaleSequence(method,
+                source_file2, out_name,
+                699, 531,
+                352, 288);
+  ASSERT_EQ(0, fclose(source_file2));
 }
 
 TEST_F(TestScaler, BoxScaleTest) {
+  FILE* source_file2;
   ScaleMethod method = kScaleBox;
   std::string out_name = webrtc::test::OutputPath() +
                          "LibYuvTest_BoxScale_176_144.yuv";
@@ -185,6 +246,34 @@ TEST_F(TestScaler, BoxScaleTest) {
                 source_file_, out_name,
                 width_, height_,
                 400, 300);
+  // Downsample to odd size frame and scale back up.
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_BoxScale_282_231.yuv";
+  ScaleSequence(method,
+                source_file_, out_name,
+                width_, height_,
+                282, 231);
+  source_file2 = fopen(out_name.c_str(), "rb");
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_BoxScale_352_288_"
+       "upfrom_282_231.yuv";
+  ScaleSequence(method,
+                source_file2, out_name,
+                282, 231,
+                352, 288);
+  ASSERT_EQ(0, fclose(source_file2));
+  // Upsample to odd size frame and scale back down.
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_BoxScale_699_531.yuv";
+  ScaleSequence(method,
+                source_file_, out_name,
+                width_, height_,
+                699, 531);
+  source_file2 = fopen(out_name.c_str(), "rb");
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_BoxScale_352_288_"
+       "downfrom_699_531.yuv";
+  ScaleSequence(method,
+                source_file2, out_name,
+                699, 531,
+                352, 288);
+  ASSERT_EQ(0, fclose(source_file2));
 }
 
 // TODO (mikhal): Move part to a separate scale test.
@@ -202,8 +291,16 @@ void TestScaler::ScaleSequence(ScaleMethod method,
 
   rewind(source_file);
 
-  int out_required_size = dst_width * dst_height * 3 / 2;
-  int in_required_size = src_height * src_width * 3 / 2;
+  int src_half_width = (src_width + 1) >> 1;
+  int src_half_height = (src_height + 1) >> 1;
+  int dst_half_width = (dst_width + 1) >> 1;
+  int dst_half_height = (dst_height + 1) >> 1;
+
+  int out_required_size = dst_width * dst_height + 2 * (dst_half_width *
+      dst_half_height);
+  int in_required_size = src_height * src_width + 2 * (src_half_width *
+      src_half_height);
+
   uint8_t* input_buffer = new uint8_t[in_required_size];
   uint8_t* output_buffer = new uint8_t[out_required_size];
 

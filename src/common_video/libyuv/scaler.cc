@@ -65,22 +65,26 @@ int Scaler::Scale(const uint8_t* src_frame,
     dst_size = required_dst_size;
   }
 
+  int src_half_width = (src_width_ + 1) >> 1;
+  int src_half_height = (src_height_ + 1) >> 1;
   // Converting to planes:
   const uint8_t* src_yplane = src_frame;
   const uint8_t* src_uplane = src_frame + src_width_ * src_height_;
-  const uint8_t* src_vplane = src_uplane + src_width_ * src_height_ / 4;
+  const uint8_t* src_vplane = src_uplane + src_half_width * src_half_height;
 
+  int dst_half_width = (dst_width_ + 1) >> 1;
+  int dst_half_height = (dst_height_ + 1) >> 1;
   uint8_t* dst_yplane = dst_frame;
   uint8_t* dst_uplane = dst_frame + dst_width_ * dst_height_;
-  uint8_t* dst_vplane = dst_uplane + dst_width_ * dst_height_ / 4;
+  uint8_t* dst_vplane = dst_uplane + dst_half_width * dst_half_height;
 
   return libyuv::I420Scale(src_yplane, src_width_,
-                           src_uplane, src_width_ / 2,
-                           src_vplane, src_width_ / 2,
+                           src_uplane, src_half_width,
+                           src_vplane, src_half_width,
                            src_width_, src_height_,
                            dst_yplane, dst_width_,
-                           dst_uplane, dst_width_ / 2,
-                           dst_vplane, dst_width_ / 2,
+                           dst_uplane, dst_half_width,
+                           dst_vplane, dst_half_width,
                            dst_width_, dst_height_,
                            libyuv::FilterMode(method_));
 }
