@@ -60,8 +60,8 @@
               'include_dirs': [
                 '<(DEPTH)/third_party/libjpeg',
               ],
-            }
-          ] # conditions
+            }],
+          ],
         }],
       ],
       'sources': [
