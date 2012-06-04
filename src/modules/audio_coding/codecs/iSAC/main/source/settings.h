@@ -81,7 +81,7 @@
 #define UB16_INTERPOL_SEGMENTS                  3
 #define LB_TOTAL_DELAY_SAMPLES                 48
 enum ISACBandwidth {isac8kHz = 8, isac12kHz = 12, isac16kHz = 16};
-enum ISACBand{isacLowerBand = 0, isacUpperBand = 1};
+enum ISACBand {kIsacLowerBand = 0, kIsacUpperBand12 = 1, kIsacUpperBand16 = 2};
 #define UB_LPC_GAIN_DIM                 SUBFRAMES
 #define FB_STATE_SIZE_WORD32                    6
 
