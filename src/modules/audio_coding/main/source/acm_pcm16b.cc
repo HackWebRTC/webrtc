@@ -69,7 +69,7 @@ WebRtc_Word16 ACMPCM16B::InternalCreateEncoder() {
   return -1;
 }
 
-WebRtc_Word16 ACMPCM16B::InternalCreateDec WEBRTC_CODEC_PCM16oder() {
+WebRtc_Word16 ACMPCM16B::InternalCreateDecoder() {
   return -1;
 }
 
