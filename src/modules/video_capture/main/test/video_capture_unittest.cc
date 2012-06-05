@@ -402,8 +402,61 @@ TEST_F(VideoCaptureExternalTest , TestExternalCaptureI420) {
   frame_i420.u_pitch = kTestWidth / 2;
   frame_i420.v_pitch = kTestWidth / 2;
   EXPECT_EQ(0, capture_input_interface_->IncomingFrameI420(frame_i420, 0));
-
   EXPECT_TRUE(CompareFrames(frame_i420, capture_callback_.last_frame));
+
+  // Test with a frame with pitch not equal to width
+  memset(test_frame_.Buffer(), 0xAA, test_frame_.Length());
+  webrtc::VideoFrame aligned_test_frame;
+  int y_pitch = kTestWidth + 2;
+  int u_pitch = kTestWidth / 2 + 1;
+  int v_pitch = u_pitch;
+  aligned_test_frame.VerifyAndAllocate(kTestHeight * y_pitch +
+                                       (kTestHeight / 2) * u_pitch +
+                                       (kTestHeight / 2) * v_pitch);
+  aligned_test_frame.SetLength(aligned_test_frame.Size());
+  memset(aligned_test_frame.Buffer(), 0, aligned_test_frame.Length());
+  // Copy the test_frame_ to aligned_test_frame.
+  int y_width = kTestWidth;
+  int uv_width = kTestWidth / 2;
+  int y_rows = kTestHeight;
+  int uv_rows = kTestHeight / 2;
+  unsigned char* current_pointer = aligned_test_frame.Buffer();
+  unsigned char* y_plane = test_frame_.Buffer();
+  unsigned char* u_plane = y_plane + kTestWidth * kTestHeight;
+  unsigned char* v_plane = u_plane + ((kTestWidth * kTestHeight) >> 2);
+  // Copy Y
+  for (int i = 0; i < y_rows; ++i) {
+    memcpy(current_pointer, y_plane, y_width);
+    // Remove the alignment which ViE doesn't support.
+    current_pointer += y_pitch;
+    y_plane += y_width;
+  }
+  // Copy U
+  for (int i = 0; i < uv_rows; ++i) {
+    memcpy(current_pointer, u_plane, uv_width);
+    // Remove the alignment which ViE doesn't support.
+    current_pointer += u_pitch;
+    u_plane += uv_width;
+  }
+  // Copy V
+  for (int i = 0; i < uv_rows; ++i) {
+    memcpy(current_pointer, v_plane, uv_width);
+    // Remove the alignment which ViE doesn't support.
+    current_pointer += v_pitch;
+    v_plane += uv_width;
+  }
+  frame_i420.width = kTestWidth;
+  frame_i420.height = kTestHeight;
+  frame_i420.y_plane = aligned_test_frame.Buffer();
+  frame_i420.u_plane = frame_i420.y_plane + (y_pitch * y_rows);
+  frame_i420.v_plane = frame_i420.u_plane + (u_pitch * uv_rows);
+  frame_i420.y_pitch = y_pitch;
+  frame_i420.u_pitch = u_pitch;
+  frame_i420.v_pitch = v_pitch;
+
+  EXPECT_EQ(0, capture_input_interface_->IncomingFrameI420(frame_i420, 0));
+  EXPECT_TRUE(CompareFrames(test_frame_, capture_callback_.last_frame));
+
 }
 
 // Test frame rate and no picture alarm.
