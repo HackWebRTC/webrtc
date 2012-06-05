@@ -1068,8 +1068,8 @@ protected:
     // Outputs:
     //   -bitStream          : pointer to a buffer where the bit-stream is
     //                         written to.
-    //   -bitStreamLenByte   : the length of the bit-stream in byte, a negative
-    //                         value indicates error.
+    //   -bitStreamLenByte   : the length of the bit-stream in bytes,
+    //                         a negative value indicates error.
     //
     // Return value:
     //   -1 if failed,

@@ -52,7 +52,7 @@
 namespace webrtc {
 
 #ifndef WEBRTC_CODEC_SPEEX
-ACMSPEEX::ACMSPEEX(WebRtc_Word16 /* codecID*/)
+ACMSPEEX::ACMSPEEX(WebRtc_Word16 /* codecID */)
     : _encoderInstPtr(NULL),
       _decoderInstPtr(NULL),
       _complMode(0),
@@ -418,7 +418,7 @@ ACMSPEEX::CodecDef(
 
     // Fill up the structure by calling
     // "SET_CODEC_PAR" & "SET_SPEEX_FUNCTION."
-    // Then call NetEQ to add the codec to it's
+    // Then call NetEQ to add the codec to its
     // database.
 
     switch(_samplingFrequency)
