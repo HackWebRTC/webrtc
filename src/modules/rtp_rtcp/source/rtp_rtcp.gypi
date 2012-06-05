@@ -63,6 +63,7 @@
         # Video Files
         'bwe_defines.h',
         'fec_private_tables.h',
+        'fec_private_tables_bursty.h',
         'forward_error_correction.cc',
         'forward_error_correction.h',
         'forward_error_correction_internal.cc',

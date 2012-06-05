@@ -97,6 +97,7 @@ int32_t ForwardErrorCorrection::GenerateFEC(
     uint8_t protectionFactor,
     int numImportantPackets,
     bool useUnequalProtection,
+    FecMaskType fec_mask_type,
     PacketList* fecPacketList) {
   if (mediaPacketList.empty()) {
     WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
@@ -171,13 +172,15 @@ int32_t ForwardErrorCorrection::GenerateFEC(
     fecPacketList->push_back(&_generatedFecPackets[i]);
   }
 
+  const internal::PacketMaskTable mask_table(fec_mask_type, numMediaPackets);
+
   // -- Generate packet masks --
   // Always allocate space for a large mask.
   uint8_t* packetMask = new uint8_t[numFecPackets * kMaskSizeLBitSet];
   memset(packetMask, 0, numFecPackets * numMaskBytes);
   internal::GeneratePacketMasks(numMediaPackets, numFecPackets,
                                 numImportantPackets, useUnequalProtection,
-                                packetMask);
+                                mask_table, packetMask);
 
   int numMaskBits = InsertZerosInBitMasks(mediaPacketList, packetMask,
                                           numMaskBytes, numFecPackets);
@@ -199,8 +202,8 @@ int32_t ForwardErrorCorrection::GenerateFEC(
   return 0;
 }
 
-int ForwardErrorCorrection::GetNumberOfFecPackets(uint16_t numMediaPackets,
-                                                  uint8_t protectionFactor) {
+int ForwardErrorCorrection::GetNumberOfFecPackets(int numMediaPackets,
+                                                  int protectionFactor) {
   // Result in Q0 with an unsigned round.
   int numFecPackets = (numMediaPackets * protectionFactor + (1 << 7)) >> 8;
   // Generate at least one FEC packet if we need protection.

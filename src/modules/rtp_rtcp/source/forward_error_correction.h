@@ -21,6 +21,16 @@
 
 namespace webrtc {
 
+// Types for the FEC packet masks.
+// The type |kFecMaskRandom| selects the mask defined in fec_private_tables.h,
+// and is based on a random loss model. The type |kFecMaskBursty| selects the
+// mask defined in fec_private_tables_bursty.h, and is based on a bursty loss
+// model. Please refer to those files for a more detailed description.
+enum FecMaskType {
+  kFecMaskRandom,
+  kFecMaskBursty,
+};
+
 // Forward declaration.
 class FecPacket;
 
@@ -155,6 +165,12 @@ class ForwardErrorCorrection {
    *                                 UEP will allocate more protection to the
    *                                 numImportantPackets from the start of the
    *                                 mediaPacketList.
+   * \param[in]  fec_mask_type       The type of packet mask used in the FEC.
+   *                                 Random or bursty type may be selected. The
+   *                                 bursty type is only defined up to 12 media
+   *                                 packets. If the number of media packets is
+   *                                 above 12, the packets masks from the
+   *                                 random table will be selected.
    * \param[out] fecPacketList       List of FEC packets, of type #Packet. Must
    *                                 be empty on entry. The memory available
    *                                 through the list will be valid until the
@@ -166,6 +182,7 @@ class ForwardErrorCorrection {
                       uint8_t protectionFactor,
                       int numImportantPackets,
                       bool useUnequalProtection,
+                      FecMaskType fec_mask_type,
                       PacketList* fecPacketList);
 
   /**
@@ -201,8 +218,8 @@ class ForwardErrorCorrection {
 
   // Get the number of FEC packets, given the number of media packets and the
   // protection factor.
-  int GetNumberOfFecPackets(uint16_t numMediaPackets,
-                            uint8_t protectionFactor);
+  int GetNumberOfFecPackets(int numMediaPackets,
+                            int protectionFactor);
 
   /**
    * Gets the size in bytes of the FEC/ULP headers, which must be accounted for
