@@ -8,7 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "../testing/gmock/include/gmock/gmock.h"
+#ifndef WEBRTC_MODULES_RTP_RTCP_MOCKS_MOCK_RTP_RTCP_H_
+#define WEBRTC_MODULES_RTP_RTCP_MOCKS_MOCK_RTP_RTCP_H_
+
+#include <gmock/gmock.h>
 
 #include "modules/interface/module.h"
 #include "modules/rtp_rtcp/interface/rtp_rtcp.h"
@@ -211,7 +214,7 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD3(SetREMBData,
       WebRtc_Word32(const WebRtc_UWord32 bitrate, const WebRtc_UWord8 numberOfSSRC, const WebRtc_UWord32* SSRC));
   MOCK_METHOD1(SetRemoteBitrateObserver,
-      bool(RtpRemoteBitrateObserver*));
+      bool(RemoteBitrateObserver*));
   MOCK_CONST_METHOD0(IJ,
       bool());
   MOCK_METHOD1(SetIJStatus,
@@ -285,3 +288,5 @@ class MockRtpRtcp : public RtpRtcp {
 };
 
 }  // namespace webrtc
+
+#endif  // WEBRTC_MODULES_RTP_RTCP_MOCKS_MOCK_RTP_RTCP_H_

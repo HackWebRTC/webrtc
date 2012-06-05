@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_REMOTE_RATE_CONTROL_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_REMOTE_RATE_CONTROL_H_
 
-#include "bwe_defines.h"
+#include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "typedefs.h"
 
 #ifdef MATLAB
@@ -27,9 +27,9 @@ public:
     WebRtc_Word32 SetConfiguredBitRates(WebRtc_UWord32 minBitRate,
                                         WebRtc_UWord32 maxBitRate);
     WebRtc_UWord32 LatestEstimate() const;
-    WebRtc_UWord32 UpdateBandwidthEstimate(WebRtc_UWord32 RTT,
-                                           WebRtc_Word64 nowMS);
-    RateControlRegion Update(const RateControlInput& input, bool& firstOverUse,
+    WebRtc_UWord32 UpdateBandwidthEstimate(WebRtc_Word64 nowMS);
+    void SetRtt(unsigned int rtt);
+    RateControlRegion Update(const RateControlInput* input,
                              WebRtc_Word64 nowMS);
     void Reset();
 
@@ -40,7 +40,7 @@ public:
 private:
     WebRtc_UWord32 ChangeBitRate(WebRtc_UWord32 currentBitRate,
                                  WebRtc_UWord32 incomingBitRate,
-                                 double delayFactor, WebRtc_UWord32 RTT,
+                                 double delayFactor,
                                  WebRtc_Word64 nowMS);
     double RateIncreaseFactor(WebRtc_Word64 nowMs,
                               WebRtc_Word64 lastMs,
@@ -72,6 +72,7 @@ private:
     float               _avgChangePeriod;
     WebRtc_Word64         _lastChangeMs;
     float               _beta;
+    unsigned int _rtt;
 #ifdef MATLAB
     MatlabPlot          *_plot1;
     MatlabPlot          *_plot2;

@@ -18,6 +18,8 @@
 
 namespace webrtc {
 // forward declaration
+class RemoteBitrateEstimator;
+class RemoteBitrateObserver;
 class Transport;
 
 class RtpRtcp : public Module {
@@ -35,7 +37,7 @@ class RtpRtcp : public Module {
           intra_frame_callback(NULL),
           bandwidth_callback(NULL),
           audio_messages(NULL),
-          bitrate_observer(NULL) {
+          remote_bitrate_estimator(NULL) {
     }
    /*  id                   - Unique identifier of this RTP/RTCP module object
     *  audio                - True for a audio version of the RTP/RTCP module
@@ -54,8 +56,8 @@ class RtpRtcp : public Module {
     *  bandwidth_callback   - Called when we receive a changed estimate from
     *                         the receiver of out stream.
     *  audio_messages       - Telehone events.
-    *  bitrate_observer     - Called when the estimate of the incoming RTP
-    *                         stream changes.
+    *  remote_bitrate_estimator - Estimates the bandwidth available for a set of
+    *                             streams from the same client.
     */
     int32_t id;
     bool audio;
@@ -68,7 +70,7 @@ class RtpRtcp : public Module {
     RtcpIntraFrameObserver* intra_frame_callback;
     RtcpBandwidthObserver* bandwidth_callback;
     RtpAudioFeedback* audio_messages;
-    RtpRemoteBitrateObserver* bitrate_observer;
+    RemoteBitrateEstimator* remote_bitrate_estimator;
   };
   /*
    *   Create a RTP/RTCP module object using the system clock.

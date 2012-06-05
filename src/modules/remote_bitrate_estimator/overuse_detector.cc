@@ -14,8 +14,8 @@
 #include <windows.h>
 #endif
 
-#include "modules/rtp_rtcp/source/overuse_detector.h"
-#include "modules/rtp_rtcp/source/remote_rate_control.h"
+#include "modules/remote_bitrate_estimator/overuse_detector.h"
+#include "modules/remote_bitrate_estimator/remote_rate_control.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "system_wrappers/interface/trace.h"
 
@@ -109,8 +109,8 @@ void OverUseDetector::Reset() {
   tsDeltaHist_.clear();
 }
 
-bool OverUseDetector::Update(const WebRtcRTPHeader& rtpHeader,
-                             const WebRtc_UWord16 packetSize,
+void OverUseDetector::Update(WebRtc_UWord16 packetSize,
+                             WebRtc_UWord32 timestamp,
                              const WebRtc_Word64 nowMS) {
 #ifdef WEBRTC_BWE_MATLAB
   // Create plots
@@ -145,14 +145,14 @@ bool OverUseDetector::Update(const WebRtcRTPHeader& rtpHeader,
   bool wrapped = false;
   bool completeFrame = false;
   if (currentFrame_.timestamp_ == -1) {
-    currentFrame_.timestamp_ = rtpHeader.header.timestamp;
-  } else if (ModuleRTPUtility::OldTimestamp(
-      rtpHeader.header.timestamp,
+    currentFrame_.timestamp_ = timestamp;
+  } else if (OldTimestamp(
+      timestamp,
       static_cast<WebRtc_UWord32>(currentFrame_.timestamp_),
       &wrapped)) {
     // Don't update with old data
-    return completeFrame;
-  } else if (rtpHeader.header.timestamp != currentFrame_.timestamp_) {
+    return;
+  } else if (timestamp != currentFrame_.timestamp_) {
     // First packet of a later frame, the previous frame sample is ready
     WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
                  "Frame complete at %I64i", currentFrame_.completeTimeMs_);
@@ -160,7 +160,7 @@ bool OverUseDetector::Update(const WebRtcRTPHeader& rtpHeader,
       WebRtc_Word64 tDelta = 0;
       double tsDelta = 0;
       // Check for wrap
-      ModuleRTPUtility::OldTimestamp(
+      OldTimestamp(
           static_cast<WebRtc_UWord32>(prevFrame_.timestamp_),
           static_cast<WebRtc_UWord32>(currentFrame_.timestamp_),
           &wrapped);
@@ -172,7 +172,7 @@ bool OverUseDetector::Update(const WebRtcRTPHeader& rtpHeader,
     // The new timestamp is now the current frame,
     // and the old timestamp becomes the previous frame.
     prevFrame_ = currentFrame_;
-    currentFrame_.timestamp_ = rtpHeader.header.timestamp;
+    currentFrame_.timestamp_ = timestamp;
     currentFrame_.size_ = 0;
     currentFrame_.completeTimeMs_ = -1;
     completeFrame = true;
@@ -180,7 +180,6 @@ bool OverUseDetector::Update(const WebRtcRTPHeader& rtpHeader,
   // Accumulate the frame size
   currentFrame_.size_ += packetSize;
   currentFrame_.completeTimeMs_ = nowMS;
-  return completeFrame;
 }
 
 BandwidthUsage OverUseDetector::State() const {
@@ -418,6 +417,24 @@ BandwidthUsage OverUseDetector::Detect(double tsDelta) {
     hypothesis_ = kBwNormal;
   }
   return hypothesis_;
+}
+
+bool OverUseDetector::OldTimestamp(uint32_t newTimestamp,
+                                   uint32_t existingTimestamp,
+                                   bool* wrapped) {
+  bool tmpWrapped =
+      (newTimestamp < 0x0000ffff && existingTimestamp > 0xffff0000) ||
+      (newTimestamp > 0xffff0000 && existingTimestamp < 0x0000ffff);
+  *wrapped = tmpWrapped;
+  if (existingTimestamp > newTimestamp && !tmpWrapped) {
+    return true;
+  } else if (existingTimestamp <= newTimestamp && !tmpWrapped) {
+    return false;
+  } else if (existingTimestamp < newTimestamp && tmpWrapped) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 }  // namespace webrtc

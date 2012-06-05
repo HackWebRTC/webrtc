@@ -251,16 +251,5 @@ class RtpRtcpClock {
   virtual void CurrentNTP(WebRtc_UWord32& secs, WebRtc_UWord32& frac) = 0;
 };
 
-// RtpReceiveBitrateUpdate is used to signal changes in bitrate estimates for
-// the incoming stream.
-class RtpRemoteBitrateObserver {
- public:
-  // Called when a receive channel has a new bitrate estimate for the incoming
-  // stream.
-  virtual void OnReceiveBitrateChanged(uint32_t ssrc,
-                                       uint32_t bitrate) = 0;
-
-  virtual ~RtpRemoteBitrateObserver() {}
-};
 } // namespace webrtc
 #endif // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_DEFINES_H_

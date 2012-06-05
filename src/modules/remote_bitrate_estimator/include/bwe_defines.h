@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -43,9 +43,10 @@ class RateControlInput
 public:
     RateControlInput(BandwidthUsage bwState,
                      WebRtc_UWord32 incomingBitRate,
-                     double noiseVar) :
-        _bwState(bwState), _incomingBitRate(incomingBitRate), _noiseVar(noiseVar)
-    {};
+                     double noiseVar)
+        : _bwState(bwState),
+          _incomingBitRate(incomingBitRate),
+          _noiseVar(noiseVar) {}
 
     BandwidthUsage  _bwState;
     WebRtc_UWord32      _incomingBitRate;

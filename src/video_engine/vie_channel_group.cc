@@ -11,6 +11,7 @@
 #include "video_engine/vie_channel_group.h"
 
 #include "modules/bitrate_controller/include/bitrate_controller.h"
+#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "video_engine/vie_channel.h"
 #include "video_engine/vie_encoder.h"
@@ -20,7 +21,8 @@ namespace webrtc {
 
 ChannelGroup::ChannelGroup(ProcessThread* process_thread)
     : remb_(new VieRemb(process_thread)),
-      bitrate_controller_(BitrateController::CreateBitrateController()) {
+      bitrate_controller_(BitrateController::CreateBitrateController()),
+      remote_bitrate_estimator_(new RemoteBitrateEstimator(remb_.get())) {
 }
 
 ChannelGroup::~ChannelGroup() {
@@ -31,8 +33,9 @@ void ChannelGroup::AddChannel(int channel_id) {
   channels_.insert(channel_id);
 }
 
-void ChannelGroup::RemoveChannel(int channel_id) {
+void ChannelGroup::RemoveChannel(int channel_id, unsigned int ssrc) {
   channels_.erase(channel_id);
+  remote_bitrate_estimator_->RemoveStream(ssrc);
 }
 
 bool ChannelGroup::HasChannel(int channel_id) {
@@ -43,12 +46,12 @@ bool ChannelGroup::Empty() {
   return channels_.empty();
 }
 
-RtpRemoteBitrateObserver* ChannelGroup::GetRtpRemoteBitrateObserver() {
-  return remb_.get();
-}
-
 BitrateController* ChannelGroup::GetBitrateController() {
   return bitrate_controller_.get();
+}
+
+RemoteBitrateEstimator* ChannelGroup::GetRemoteBitrateEstimator() {
+  return remote_bitrate_estimator_.get();
 }
 
 bool ChannelGroup::SetChannelRembStatus(int channel_id,
@@ -64,7 +67,7 @@ bool ChannelGroup::SetChannelRembStatus(int channel_id,
   } else if (channel) {
     channel->EnableRemb(false);
   }
-  // Update the remb instance with necesary RTp modules.
+  // Update the REMB instance with necessary RTP modules.
   RtpRtcp* rtp_module = channel->rtp_rtcp();
   if (sender) {
     remb_->AddRembSender(rtp_module);

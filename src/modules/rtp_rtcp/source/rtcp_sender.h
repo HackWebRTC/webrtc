@@ -17,8 +17,10 @@
 #include "rtcp_utility.h"
 #include "rtp_utility.h"
 #include "rtp_rtcp_defines.h"
-#include "remote_rate_control.h"
+#include "scoped_ptr.h"
 #include "tmmbr_help.h"
+#include "modules/remote_bitrate_estimator/include/bwe_defines.h"
+#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 
 namespace webrtc {
 
@@ -87,10 +89,6 @@ public:
                               const WebRtc_UWord8 numberOfSSRC,
                               const WebRtc_UWord32* SSRC);
 
-    bool SetRemoteBitrateObserver(RtpRemoteBitrateObserver* observer);
-
-    void UpdateRemoteBitrateEstimate(unsigned int target_bitrate);
-
     /*
     *   TMMBR
     */
@@ -124,19 +122,7 @@ public:
 
     WebRtc_Word32 SetCSRCStatus(const bool include);
 
-    /*
-    *   New bandwidth estimation
-    */
-
-    RateControlRegion UpdateOverUseState(const RateControlInput& rateControlInput, bool& firstOverUse);
-
-    WebRtc_UWord32 CalculateNewTargetBitrate(WebRtc_UWord32 RTT);
-
-    WebRtc_UWord32 LatestBandwidthEstimate() const;
-
-    // Returns true if there is a valid estimate of the incoming bitrate, false
-    // otherwise.
-    bool ValidBitrateEstimate() const;
+    void SetTargetBitrate(unsigned int target_bitrate);
 
 private:
     WebRtc_Word32 SendToNetwork(const WebRtc_UWord8* dataBuffer,
@@ -240,12 +226,10 @@ private:
     WebRtc_UWord8       _sizeRembSSRC;
     WebRtc_UWord32*     _rembSSRC;
     WebRtc_UWord32      _rembBitrate;
-    RtpRemoteBitrateObserver* _bitrate_observer;
 
     TMMBRHelp           _tmmbrHelp;
     WebRtc_UWord32      _tmmbr_Send;
     WebRtc_UWord32      _packetOH_Send;
-    RemoteRateControl   _remoteRateControl;
 
     // APP
     bool                 _appSend;
