@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,14 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+
 /*
- * This file includes unit tests for the bitrate estimator.
+ * This file includes unit tests for the bandwidth estimation and management
  */
 
 #include <gtest/gtest.h>
 
 #include "typedefs.h"
-#include "bitrate_estimator.h"
+#include "Bitrate.h"
 
 namespace {
 
@@ -25,7 +26,7 @@ class BitRateStatsTest : public ::testing::Test
 {
 protected:
     BitRateStatsTest() {};
-    BitRateStats bitRate;
+    BitRateStats   bitRate;
 };
 
 TEST_F(BitRateStatsTest, TestStrictMode)
