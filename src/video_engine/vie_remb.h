@@ -22,7 +22,6 @@
 #include <map>
 
 #include "modules/interface/module.h"
-#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "system_wrappers/interface/scoped_ptr.h"
 
@@ -32,7 +31,7 @@ class CriticalSectionWrapper;
 class ProcessThread;
 class RtpRtcp;
 
-class VieRemb : public RemoteBitrateObserver, public Module {
+class VieRemb : public RtpRemoteBitrateObserver, public Module {
  public:
   VieRemb(ProcessThread* process_thread);
   ~VieRemb();

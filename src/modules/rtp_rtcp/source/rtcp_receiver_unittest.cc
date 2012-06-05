@@ -12,13 +12,10 @@
 /*
  * This file includes unit tests for the RTCPReceiver.
  */
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 // Note: This file has no directory. Lint warning must be ignored.
 #include "common_types.h"
-#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "modules/rtp_rtcp/source/rtcp_sender.h"
 #include "modules/rtp_rtcp/source/rtcp_receiver.h"
@@ -182,19 +179,15 @@ class TestTransport : public Transport,
 
 class RtcpReceiverTest : public ::testing::Test {
  protected:
-  RtcpReceiverTest()
-      : remote_bitrate_observer_(),
-        remote_bitrate_estimator_(&remote_bitrate_observer_) {
+  RtcpReceiverTest() {
     // system_clock_ = ModuleRTPUtility::GetSystemClock();
     system_clock_ = new FakeSystemClock();
     test_transport_ = new TestTransport();
-
     RtpRtcp::Configuration configuration;
     configuration.id = 0;
     configuration.audio = false;
     configuration.clock = system_clock_;
     configuration.outgoing_transport = test_transport_;
-    configuration.remote_bitrate_estimator = &remote_bitrate_estimator_;
     rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(configuration);
     rtcp_receiver_ = new RTCPReceiver(0, system_clock_, rtp_rtcp_impl_);
     test_transport_->SetRTCPReceiver(rtcp_receiver_);
@@ -226,8 +219,6 @@ class RtcpReceiverTest : public ::testing::Test {
   RTCPReceiver* rtcp_receiver_;
   TestTransport* test_transport_;
   RTCPHelp::RTCPPacketInformation rtcp_packet_info_;
-  MockRemoteBitrateObserver remote_bitrate_observer_;
-  RemoteBitrateEstimator remote_bitrate_estimator_;
 };
 
 

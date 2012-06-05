@@ -38,7 +38,7 @@ ViEChannel::ViEChannel(WebRtc_Word32 channel_id,
                        ProcessThread& module_process_thread,
                        RtcpIntraFrameObserver* intra_frame_observer,
                        RtcpBandwidthObserver* bandwidth_observer,
-                       RemoteBitrateEstimator* remote_bitrate_estimator,
+                       RtpRemoteBitrateObserver* bitrate_observer,
                        RtpRtcp* default_rtp_rtcp)
     : ViEFrameProviderBase(channel_id, engine_id),
       channel_id_(channel_id),
@@ -91,7 +91,7 @@ ViEChannel::ViEChannel(WebRtc_Word32 channel_id,
   configuration.rtcp_feedback = this;
   configuration.intra_frame_callback = intra_frame_observer;
   configuration.bandwidth_callback = bandwidth_observer;
-  configuration.remote_bitrate_estimator = remote_bitrate_estimator;
+  configuration.bitrate_observer = bitrate_observer;
 
   rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(configuration));
   vie_receiver_.SetRtpRtcpModule(rtp_rtcp_.get());

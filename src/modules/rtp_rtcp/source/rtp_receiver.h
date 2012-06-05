@@ -35,7 +35,6 @@ public:
     RTPReceiver(const WebRtc_Word32 id,
                 const bool audio,
                 RtpRtcpClock* clock,
-                RemoteBitrateEstimator* remote_bitrate,
                 ModuleRtpRtcpImpl* owner);
 
     virtual ~RTPReceiver();

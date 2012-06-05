@@ -26,8 +26,20 @@ WebRtc_UWord32 BitRateBPS(WebRtc_UWord16 x )
     return (x & 0x3fff) * WebRtc_UWord32(pow(10.0f,(2 + (x >> 14))));
 }
 
+RTPReceiverVideo::RTPReceiverVideo()
+    : _id(0),
+      _rtpRtcp(NULL),
+      _criticalSectionReceiverVideo(
+          CriticalSectionWrapper::CreateCriticalSection()),
+      _currentFecFrameDecoded(false),
+      _receiveFEC(NULL),
+      _overUseDetector(),
+      _videoBitRate(),
+      _lastBitRateChange(0),
+      _packetOverHead(28) {
+}
+
 RTPReceiverVideo::RTPReceiverVideo(const WebRtc_Word32 id,
-                                   RemoteBitrateEstimator* remote_bitrate,
                                    ModuleRtpRtcpImpl* owner)
     : _id(id),
       _rtpRtcp(owner),
@@ -35,7 +47,9 @@ RTPReceiverVideo::RTPReceiverVideo(const WebRtc_Word32 id,
           CriticalSectionWrapper::CreateCriticalSection()),
       _currentFecFrameDecoded(false),
       _receiveFEC(NULL),
-      remote_bitrate_(remote_bitrate),
+      _overUseDetector(),
+      _videoBitRate(),
+      _lastBitRateChange(0),
       _packetOverHead(28) {
 }
 
@@ -73,6 +87,12 @@ ModuleRTPUtility::Payload* RTPReceiverVideo::RegisterReceiveVideoPayload(
   return payload;
 }
 
+void RTPReceiverVideo::ResetOverUseDetector() {
+  _overUseDetector.Reset();
+  _videoBitRate.Init();
+  _lastBitRateChange = 0;
+}
+
 // we have no critext when calling this
 // we are not allowed to have any critsects when calling
 // CallbackOfReceivedPayloadData
@@ -89,15 +109,14 @@ WebRtc_Word32 RTPReceiverVideo::ParseVideoCodecSpecific(
 
   _criticalSectionReceiverVideo->Enter();
 
+  _videoBitRate.Update(payloadDataLength + rtpHeader->header.paddingLength,
+                       nowMS);
+
   // Add headers, ideally we would like to include for instance
   // Ethernet header here as well.
   const WebRtc_UWord16 packetSize = payloadDataLength + _packetOverHead +
       rtpHeader->header.headerLength + rtpHeader->header.paddingLength;
-  remote_bitrate_->IncomingPacket(rtpHeader->header.ssrc,
-                                  packetSize,
-                                  nowMS,
-                                  rtpHeader->header.timestamp,
-                                  -1);
+  _overUseDetector.Update(*rtpHeader, packetSize, nowMS);
 
   if (isRED) {
     if(_receiveFEC == NULL) {
@@ -135,6 +154,24 @@ WebRtc_Word32 RTPReceiverVideo::ParseVideoCodecSpecific(
                                            payloadDataLength,
                                            videoType);
   }
+
+  // Update the remote rate control object and update the overuse
+  // detector with the current rate control region.
+  _criticalSectionReceiverVideo->Enter();
+  const RateControlInput input(_overUseDetector.State(),
+                               _videoBitRate.BitRate(nowMS),
+                               _overUseDetector.NoiseVar());
+  _criticalSectionReceiverVideo->Leave();
+
+  // Call the callback outside critical section
+  if (_rtpRtcp) {
+    const RateControlRegion region = _rtpRtcp->OnOverUseStateUpdate(input);
+
+    _criticalSectionReceiverVideo->Enter();
+    _overUseDetector.SetRateControlRegion(region);
+    _criticalSectionReceiverVideo->Leave();
+  }
+
   return retVal;
 }
 

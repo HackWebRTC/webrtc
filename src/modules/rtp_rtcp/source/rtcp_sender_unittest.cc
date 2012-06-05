@@ -13,16 +13,13 @@
  * This file includes unit tests for the RTCPSender.
  */
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "common_types.h"
-#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h"
-#include "modules/rtp_rtcp/source/rtcp_receiver.h"
-#include "modules/rtp_rtcp/source/rtcp_sender.h"
-#include "modules/rtp_rtcp/source/rtp_utility.h"
-#include "modules/rtp_rtcp/source/rtp_rtcp_impl.h"
+#include "rtp_utility.h"
+#include "rtcp_sender.h"
+#include "rtcp_receiver.h"
+#include "rtp_rtcp_impl.h"
 
 namespace webrtc {
 
@@ -97,9 +94,7 @@ class TestTransport : public Transport,
 
 class RtcpSenderTest : public ::testing::Test {
  protected:
-  RtcpSenderTest()
-      : remote_bitrate_observer_(),
-        remote_bitrate_estimator_(&remote_bitrate_observer_) {
+  RtcpSenderTest() {
     system_clock_ = ModuleRTPUtility::GetSystemClock();
     test_transport_ = new TestTransport();
 
@@ -109,7 +104,6 @@ class RtcpSenderTest : public ::testing::Test {
     configuration.clock = system_clock_;
     configuration.incoming_data = test_transport_;
     configuration.outgoing_transport = test_transport_;
-    configuration.remote_bitrate_estimator = &remote_bitrate_estimator_;
 
     rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(configuration);
     rtcp_sender_ = new RTCPSender(0, false, system_clock_, rtp_rtcp_impl_);
@@ -138,8 +132,6 @@ class RtcpSenderTest : public ::testing::Test {
   RTCPSender* rtcp_sender_;
   RTCPReceiver* rtcp_receiver_;
   TestTransport* test_transport_;
-  MockRemoteBitrateObserver remote_bitrate_observer_;
-  RemoteBitrateEstimator remote_bitrate_estimator_;
 
   enum {kMaxPacketLength = 1500};
   uint8_t packet_[kMaxPacketLength];

@@ -54,7 +54,7 @@ RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
 ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
     : _rtpSender(configuration.id, configuration.audio, configuration.clock),
       _rtpReceiver(configuration.id, configuration.audio, configuration.clock,
-                   configuration.remote_bitrate_estimator, this),
+                   this),
       _rtcpSender(configuration.id, configuration.audio, configuration.clock,
                   this),
       _rtcpReceiver(configuration.id, configuration.clock, this),
@@ -80,8 +80,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       _nackLastTimeSent(0),
       _nackLastSeqNumberSent(0),
       _simulcast(false),
-      _keyFrameReqMethod(kKeyFrameReqFirRtp),
-      remote_bitrate_(configuration.remote_bitrate_estimator)
+      _keyFrameReqMethod(kKeyFrameReqFirRtp)
 #ifdef MATLAB
        , _plot1(NULL)
 #endif
@@ -102,6 +101,8 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
 
   _rtpSender.RegisterSendTransport(configuration.outgoing_transport);
   _rtcpSender.RegisterSendTransport(configuration.outgoing_transport);
+
+  _rtcpSender.SetRemoteBitrateObserver(configuration.bitrate_observer);
 
   // make sure that RTCP objects are aware of our SSRC
   WebRtc_UWord32 SSRC = _rtpSender.SSRC();
@@ -223,16 +224,15 @@ WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
       // default module or no RTCP received yet.
       max_rtt = kDefaultRtt;
     }
-    remote_bitrate_->SetRtt(max_rtt);
-    remote_bitrate_->UpdateEstimate(_rtpReceiver.SSRC(), now);
-    if (TMMBR()) {
-      unsigned int target_bitrate = 0;
-      if (remote_bitrate_->LatestEstimate(_rtpReceiver.SSRC(),
-                                          &target_bitrate)) {
-        _rtcpSender.SetTargetBitrate(target_bitrate);
+    if (_rtcpSender.ValidBitrateEstimate()) {
+      if (REMB()) {
+        uint32_t target_bitrate =
+            _rtcpSender.CalculateNewTargetBitrate(max_rtt);
+        _rtcpSender.UpdateRemoteBitrateEstimate(target_bitrate);
+      } else if (TMMBR()) {
+        _rtcpSender.CalculateNewTargetBitrate(max_rtt);
       }
     }
-
     _rtcpSender.SendRTCP(kRtcpReport);
   }
 
@@ -1882,10 +1882,33 @@ void ModuleRtpRtcpImpl::BitrateSent(WebRtc_UWord32* totalRate,
 
 int ModuleRtpRtcpImpl::EstimatedReceiveBandwidth(
     WebRtc_UWord32* available_bandwidth) const {
-  if (!remote_bitrate_->LatestEstimate(_rtpReceiver.SSRC(),
-                                       available_bandwidth))
+  if (!_rtcpSender.ValidBitrateEstimate())
     return -1;
+  *available_bandwidth = _rtcpSender.LatestBandwidthEstimate();
   return 0;
+}
+
+RateControlRegion ModuleRtpRtcpImpl::OnOverUseStateUpdate(
+  const RateControlInput& rateControlInput) {
+
+  bool firstOverUse = false;
+  RateControlRegion region = _rtcpSender.UpdateOverUseState(rateControlInput,
+                                                            firstOverUse);
+  if (firstOverUse) {
+    // Send TMMBR or REMB immediately.
+    WebRtc_UWord16 RTT = 0;
+    _rtcpReceiver.RTT(_rtpReceiver.SSRC(), &RTT, NULL, NULL, NULL);
+    // About to send TMMBR, first run remote rate control
+    // to get a target bit rate.
+    unsigned int target_bitrate =
+      _rtcpSender.CalculateNewTargetBitrate(RTT);
+    if (REMB()) {
+      _rtcpSender.UpdateRemoteBitrateEstimate(target_bitrate);
+    } else if (TMMBR()) {
+      _rtcpSender.SendRTCP(kRtcpTmmbr);
+    }
+  }
+  return region;
 }
 
 // bad state of RTP receiver request a keyframe

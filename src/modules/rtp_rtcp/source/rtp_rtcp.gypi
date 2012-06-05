@@ -13,7 +13,6 @@
       'type': '<(library)',
       'dependencies': [
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-        '<(webrtc_root)/modules/modules.gyp:remote_bitrate_estimator',
       ],
       'include_dirs': [
         '../interface',
@@ -68,8 +67,12 @@
         'forward_error_correction.h',
         'forward_error_correction_internal.cc',
         'forward_error_correction_internal.h',
+        'overuse_detector.cc',
+        'overuse_detector.h',
         'producer_fec.cc',
         'producer_fec.h',
+        'remote_rate_control.cc',
+        'remote_rate_control.h',
         'rtp_packet_history.cc',
         'rtp_packet_history.h',
         'rtp_receiver_video.cc',

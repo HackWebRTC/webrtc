@@ -10,15 +10,15 @@
 
 #include "rtcp_sender.h"
 
-#include <cassert>  // assert
-#include <cstdlib>  // rand
-#include <string.h>  // memcpy
+#include <string.h> // memcpy
+#include <cassert> // assert
+#include <cstdlib> // rand
 
+#include "trace.h"
 #include "common_types.h"
-#include "modules/remote_bitrate_estimator/remote_rate_control.h"
-#include "modules/rtp_rtcp/source/rtp_rtcp_impl.h"
-#include "system_wrappers/interface/critical_section_wrapper.h"
-#include "system_wrappers/interface/trace.h"
+#include "critical_section_wrapper.h"
+
+#include "rtp_rtcp_impl.h"
 
 namespace webrtc {
 
@@ -66,10 +66,12 @@ RTCPSender::RTCPSender(const WebRtc_Word32 id,
     _sizeRembSSRC(0),
     _rembSSRC(NULL),
     _rembBitrate(0),
+    _bitrate_observer(NULL),
 
     _tmmbrHelp(),
     _tmmbr_Send(0),
     _packetOH_Send(0),
+    _remoteRateControl(),
 
     _appSend(false),
     _appSubType(0),
@@ -128,7 +130,7 @@ RTCPSender::Init()
     _sequenceNumberFIR = 0;
     _tmmbr_Send = 0;
     _packetOH_Send = 0;
-    //_remoteRateControl.Reset();
+    _remoteRateControl.Reset();
     _nextTimeToSendRTCP = 0;
     _CSRCs = 0;
     _appSend = false;
@@ -259,6 +261,22 @@ RTCPSender::SetREMBData(const WebRtc_UWord32 bitrate,
     return 0;
 }
 
+bool RTCPSender::SetRemoteBitrateObserver(RtpRemoteBitrateObserver* observer) {
+  CriticalSectionScoped lock(_criticalSectionRTCPSender);
+  if (observer && _bitrate_observer) {
+    return false;
+  }
+  _bitrate_observer = observer;
+  return true;
+}
+
+void RTCPSender::UpdateRemoteBitrateEstimate(unsigned int target_bitrate) {
+  CriticalSectionScoped lock(_criticalSectionRTCPSender);
+  if (_bitrate_observer) {
+    _bitrate_observer->OnReceiveBitrateChanged(_remoteSSRC, target_bitrate);
+  }
+}
+
 bool
 RTCPSender::TMMBR() const
 {
@@ -309,7 +327,7 @@ RTCPSender::SetRemoteSSRC( const WebRtc_UWord32 ssrc)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
     _remoteSSRC = ssrc;
-    //_remoteRateControl.Reset();
+    _remoteRateControl.Reset();
     return 0;
 }
 
@@ -1086,11 +1104,25 @@ RTCPSender::BuildREMB(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
     return 0;
 }
 
-void
-RTCPSender::SetTargetBitrate(unsigned int target_bitrate)
+WebRtc_UWord32
+RTCPSender::CalculateNewTargetBitrate(WebRtc_UWord32 RTT)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
+    WebRtc_UWord32 target_bitrate =
+        _remoteRateControl.UpdateBandwidthEstimate(RTT, _clock.GetTimeInMS());
     _tmmbr_Send = target_bitrate / 1000;
+    return target_bitrate;
+}
+
+WebRtc_UWord32 RTCPSender::LatestBandwidthEstimate() const {
+  CriticalSectionScoped lock(_criticalSectionRTCPSender);
+  return _remoteRateControl.LatestEstimate();
+}
+
+bool
+RTCPSender::ValidBitrateEstimate() const {
+  CriticalSectionScoped lock(_criticalSectionRTCPSender);
+  return _remoteRateControl.ValidEstimate();
 }
 
 WebRtc_Word32
@@ -2130,5 +2162,13 @@ RTCPSender::SetTMMBN(const TMMBRSet* boundingSet,
         return 0;
     }
     return -1;
+}
+
+RateControlRegion
+RTCPSender::UpdateOverUseState(const RateControlInput& rateControlInput, bool& firstOverUse)
+{
+    CriticalSectionScoped lock(_criticalSectionRTCPSender);
+    return _remoteRateControl.Update(rateControlInput, firstOverUse,
+                                     _clock.GetTimeInMS());
 }
 } // namespace webrtc

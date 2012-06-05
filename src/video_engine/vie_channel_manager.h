@@ -78,7 +78,7 @@ class ViEChannelManager: private ViEManagerBase {
   // protected.
   bool CreateChannelObject(int channel_id, ViEEncoder* vie_encoder,
                            RtcpBandwidthObserver* bandwidth_observer,
-                           RemoteBitrateEstimator* remote_bitrate_estimator);
+                           RtpRemoteBitrateObserver* bitrate_observer);
 
   // Used by ViEChannelScoped, forcing a manager user to use scoped.
   // Returns a pointer to the channel with id 'channelId'.
