@@ -13,7 +13,7 @@
 #include <cassert>
 #include <cstring>
 
-#include "modules/rtp_rtcp/source/fec_private_tables.h"
+#include "modules/rtp_rtcp/source/fec_private_tables_random.h"
 #include "modules/rtp_rtcp/source/fec_private_tables_bursty.h"
 
 namespace {
@@ -169,12 +169,10 @@ PacketMaskTable::PacketMaskTable(FecMaskType fec_mask_type,
 FecMaskType PacketMaskTable::InitMaskType(FecMaskType fec_mask_type,
                                           int num_media_packets) {
   // The mask should not be bigger than |packetMaskTbl|.
-  assert(num_media_packets <= static_cast<int>(sizeof(packetMaskTbl) /
-                                               sizeof(*packetMaskTbl)));
+  assert(num_media_packets <= static_cast<int>(sizeof(kPacketMaskRandomTbl) /
+                                               sizeof(*kPacketMaskRandomTbl)));
   switch (fec_mask_type) {
     case kFecMaskRandom: {
-      // TODO(marpan): in separate CL rename the fec_private_tables.h file and
-      // its packet masks to indicate "random" loss case.
       return kFecMaskRandom;
     }
     case kFecMaskBursty: {
@@ -196,14 +194,14 @@ FecMaskType PacketMaskTable::InitMaskType(FecMaskType fec_mask_type,
 const uint8_t*** PacketMaskTable::InitMaskTable(FecMaskType fec_mask_type) {
   switch (fec_mask_type) {
     case kFecMaskRandom: {
-      return packetMaskTbl;
+      return kPacketMaskRandomTbl;
     }
     case kFecMaskBursty: {
       return kPacketMaskBurstyTbl;
     }
   }
   assert(false);
-  return packetMaskTbl;
+  return kPacketMaskRandomTbl;
 }
 
 // Remaining protection after important (first partition) packet protection
