@@ -113,6 +113,7 @@
           'dependencies': [
             'voice_engine_core',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '<(webrtc_root)/../test/test.gyp:test_support',
           ],
           'include_dirs': [
             'win_test',

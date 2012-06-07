@@ -12,6 +12,7 @@
 #include "stdafx.h"
 #include "WinTest.h"
 #include "WinTestDlg.h"
+#include "testsupport/fileutils.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -1189,6 +1190,14 @@ CWinTestDlg::CWinTestDlg(CWnd* pParent /*=NULL*/)
     }
 
     _veBasePtr->RegisterVoiceEngineObserver(*this);
+
+    std::string resource_path = webrtc::test::ProjectRootPath();
+    if (resource_path == webrtc::test::kCannotFindProjectRootDir) {
+        // Rollback to relative path to the location of 'voice_engine.gyp'.
+        _long_audio_file_path = "../../data/voice_engine/";
+    } else {
+        _long_audio_file_path = resource_path + "data\\voice_engine\\";
+    }
 }
 
 CWinTestDlg::~CWinTestDlg()
@@ -2303,8 +2312,7 @@ void CWinTestDlg::OnBnClickedCheckExtTrans2()
 
 void CWinTestDlg::OnBnClickedCheckPlayFileIn1()
 {
-    // File path is relative to the location of 'voice_engine.gyp'.
-    const char micFile[] = "../data/voice_engine/audio_short16.pcm";
+    std::string micFile = _long_audio_file_path + "audio_short16.pcm";
 
     int ret(0);
     int channel = GetDlgItemInt(IDC_EDIT_1);
@@ -2319,9 +2327,12 @@ void CWinTestDlg::OnBnClickedCheckPlayFileIn1()
         const float scale(1.0);
 
         (_checkPlayFileIn1 %2 == 0) ? mix = true : mix = false;
-        TEST((ret = _veFilePtr->StartPlayingFileAsMicrophone(channel, micFile, loop, mix, format, scale) == 0),
-            _T("StartPlayingFileAsMicrophone(channel=%d, file=%s, loop=%d, mix=%d, format=%d, scale=%2.1f)"),
-            channel, CharToTchar(micFile, -1), loop, mix, format, scale);
+        TEST((ret = _veFilePtr->StartPlayingFileAsMicrophone(channel,
+            micFile.c_str(), loop, mix, format, scale) == 0),
+            _T("StartPlayingFileAsMicrophone(channel=%d, file=%s, loop=%d, ")
+            _T("mix=%d, format=%d, scale=%2.1f)"),
+            channel, CharToTchar(micFile.c_str(), -1),
+            loop, mix, format, scale);
         _checkPlayFileIn1++;
     }
     else
@@ -2338,8 +2349,7 @@ void CWinTestDlg::OnBnClickedCheckPlayFileIn1()
 
 void CWinTestDlg::OnBnClickedCheckPlayFileIn2()
 {
-    // File path is relative to the location of 'voice_engine.gyp'.
-    const char micFile[] = "../data/voice_engine/audio_long16.pcm";
+    std::string micFile = _long_audio_file_path + "audio_long16.pcm";
 
     int ret(0);
     int channel = GetDlgItemInt(IDC_EDIT_2);
@@ -2354,9 +2364,12 @@ void CWinTestDlg::OnBnClickedCheckPlayFileIn2()
         const float scale(1.0);
 
         (_checkPlayFileIn2 %2 == 0) ? mix = true : mix = false;
-        TEST((ret = _veFilePtr->StartPlayingFileAsMicrophone(channel, micFile, loop, mix, format, scale) == 0),
-            _T("StartPlayingFileAsMicrophone(channel=%d, file=%s, loop=%d, mix=%d, format=%d, scale=%2.1f)"),
-            channel, CharToTchar(micFile, -1), loop, mix, format, scale);
+        TEST((ret = _veFilePtr->StartPlayingFileAsMicrophone(channel,
+            micFile.c_str(), loop, mix, format, scale) == 0),
+            _T("StartPlayingFileAsMicrophone(channel=%d, file=%s, loop=%d, ")
+            _T("mix=%d, format=%d, scale=%2.1f)"),
+            channel, CharToTchar(micFile.c_str(), -1),
+            loop, mix, format, scale);
         _checkPlayFileIn2++;
     }
     else
@@ -2382,14 +2395,14 @@ void CWinTestDlg::OnBnClickedCheckPlayFileOut1()
                                           {kFileFormatWavFile},
                                           {kFileFormatWavFile}};
     // File path is relative to the location of 'voice_engine.gyp'.
-    const char spkrFiles[8][64] = {{"../../data/voice_engine/audio_short16.pcm"},
-                                   {"../../data/voice_engine/audio_tiny8.wav"},
-                                   {"../../data/voice_engine/audio_tiny11.wav"},
-                                   {"../../data/voice_engine/audio_tiny16.wav"},
-                                   {"../../data/voice_engine/audio_tiny22.wav"},
-                                   {"../../data/voice_engine/audio_tiny32.wav"},
-                                   {"../../data/voice_engine/audio_tiny44.wav"},
-                                   {"../../data/voice_engine/audio_tiny48.wav"}};
+    const char spkrFiles[8][64] = {{"audio_short16.pcm"},
+                                   {"audio_tiny8.wav"},
+                                   {"audio_tiny11.wav"},
+                                   {"audio_tiny16.wav"},
+                                   {"audio_tiny22.wav"},
+                                   {"audio_tiny32.wav"},
+                                   {"audio_tiny44.wav"},
+                                   {"audio_tiny48.wav"}};
     int ret(0);
     int channel = GetDlgItemInt(IDC_EDIT_1);
     CButton* button = (CButton*)GetDlgItem(IDC_CHECK_PLAY_FILE_OUT_1);
@@ -2402,7 +2415,8 @@ void CWinTestDlg::OnBnClickedCheckPlayFileOut1()
         const int startPointMs(0);
         const int stopPointMs(0);
         const FileFormats format = formats[_checkPlayFileOut1 % 8];
-        const char* spkrFile = spkrFiles[_checkPlayFileOut1 % 8];
+        std::string spkrFile = _long_audio_file_path +
+                               spkrFiles[_checkPlayFileOut1 % 8];
 
         CString str;
         if (_checkPlayFileOut1 % 8 == 0)
@@ -2414,9 +2428,13 @@ void CWinTestDlg::OnBnClickedCheckPlayFileOut1()
             str = _T("kFileFormatWavFile");
         }
         // (_checkPlayFileOut1 %2 == 0) ? mix = true : mix = false;
-        TEST((ret = _veFilePtr->StartPlayingFileLocally(channel, spkrFile, loop, format, volumeScaling, startPointMs,stopPointMs) == 0),
-            _T("StartPlayingFileLocally(channel=%d, file=%s, loop=%d, format=%s, scale=%2.1f, start=%d, stop=%d)"),
-            channel, CharToTchar(spkrFile, -1), loop, str, volumeScaling, startPointMs, stopPointMs);
+        TEST((ret = _veFilePtr->StartPlayingFileLocally(channel,
+            spkrFile.c_str(), loop, format, volumeScaling,
+            startPointMs,stopPointMs) == 0),
+            _T("StartPlayingFileLocally(channel=%d, file=%s, loop=%d, ")
+            _T("format=%s, scale=%2.1f, start=%d, stop=%d)"),
+            channel, CharToTchar(spkrFile.c_str(), -1),
+            loop, str, volumeScaling, startPointMs, stopPointMs);
         _checkPlayFileOut1++;
     }
     else
@@ -2433,8 +2451,7 @@ void CWinTestDlg::OnBnClickedCheckPlayFileOut1()
 
 void CWinTestDlg::OnBnClickedCheckPlayFileOut2()
 {
-    // File path is relative to the location of 'voice_engine.gyp'.
-    const char spkrFile[] = "../data/voice_engine/audio_long16.pcm";
+    std::string spkrFile = _long_audio_file_path + "audio_long16.pcm";
 
     int ret(0);
     int channel = GetDlgItemInt(IDC_EDIT_2);
@@ -2450,9 +2467,13 @@ void CWinTestDlg::OnBnClickedCheckPlayFileOut2()
         const int stopPointMs(0);
 
         // (_checkPlayFileOut2 %2 == 0) ? mix = true : mix = false;
-        TEST((ret = _veFilePtr->StartPlayingFileLocally(channel, spkrFile, loop, format, volumeScaling, startPointMs,stopPointMs) == 0),
-            _T("StartPlayingFileLocally(channel=%d, file=%s, loop=%d, format=%d, scale=%2.1f, start=%d, stop=%d)"),
-            channel, CharToTchar(spkrFile, -1), loop, format, volumeScaling, startPointMs, stopPointMs);
+        TEST((ret = _veFilePtr->StartPlayingFileLocally(channel,
+            spkrFile.c_str(), loop, format, volumeScaling,
+            startPointMs,stopPointMs) == 0),
+            _T("StartPlayingFileLocally(channel=%d, file=%s, loop=%d, ")
+            _T("format=%d, scale=%2.1f, start=%d, stop=%d)"),
+            channel, CharToTchar(spkrFile.c_str(), -1),
+            loop, format, volumeScaling, startPointMs, stopPointMs);
         // _checkPlayFileIn2++;
     }
     else
@@ -3094,9 +3115,8 @@ void CWinTestDlg::OnBnClickedCheckNs1()
 
 void CWinTestDlg::OnBnClickedCheckPlayFileIn()
 {
-    // File path is relative to the location of 'voice_engine.gyp'.
-    const char micFile[] = "../../data/voice_engine/audio_short16.pcm";
-    // const char micFile[] = "../../data/voice_engine/audio_long16noise.pcm";
+    std::string micFile = _long_audio_file_path + "audio_short16.pcm";
+    // std::string micFile = _long_audio_file_path + "audio_long16noise.pcm";
 
     int channel(-1);
     CButton* buttonExtTrans = (CButton*)GetDlgItem(IDC_CHECK_PLAY_FILE_IN);
@@ -3110,9 +3130,12 @@ void CWinTestDlg::OnBnClickedCheckPlayFileIn()
         const float scale(1.0);
 
         (_checkPlayFileIn %2 == 0) ? mix = true : mix = false;
-        TEST(_veFilePtr->StartPlayingFileAsMicrophone(channel, micFile, loop, mix, format, scale) == 0,
-            _T("StartPlayingFileAsMicrophone(channel=%d, file=%s, loop=%d, mix=%d, format=%d, scale=%2.1f)"),
-            channel, CharToTchar(micFile, -1), loop, mix, format, scale);
+        TEST(_veFilePtr->StartPlayingFileAsMicrophone(channel,
+            micFile.c_str(), loop, mix, format, scale) == 0,
+            _T("StartPlayingFileAsMicrophone(channel=%d, file=%s, ")
+            _T("loop=%d, mix=%d, format=%d, scale=%2.1f)"),
+            channel, CharToTchar(micFile.c_str(), -1),
+            loop, mix, format, scale);
         _checkPlayFileIn++;
     }
     else
@@ -3124,18 +3147,22 @@ void CWinTestDlg::OnBnClickedCheckPlayFileIn()
 
 void CWinTestDlg::OnBnClickedCheckRecMic()
 {
-    const char micFile[] = "/tmp/rec_mic_mono_16kHz.pcm";
+    std::string micFile = webrtc::test::OutputPath() +
+                          "rec_mic_mono_16kHz.pcm";
 
     CButton* button = (CButton*)GetDlgItem(IDC_CHECK_REC_MIC);
     int check = button->GetCheck();
     const bool enable = (check == BST_CHECKED);
     if (enable)
     {
-        TEST(_veFilePtr->StartRecordingMicrophone(micFile, NULL) == 0, _T("StartRecordingMicrophone(file=%s)"), CharToTchar(micFile, -1));
+        TEST(_veFilePtr->StartRecordingMicrophone(micFile.c_str(), NULL) == 0,
+            _T("StartRecordingMicrophone(file=%s)"),
+            CharToTchar(micFile.c_str(), -1));
     }
     else
     {
-        TEST(_veFilePtr->StopRecordingMicrophone() == 0, _T("StopRecordingMicrophone()"));
+        TEST(_veFilePtr->StopRecordingMicrophone() == 0,
+            _T("StopRecordingMicrophone()"));
     }
 }
 
