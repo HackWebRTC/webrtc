@@ -30,10 +30,12 @@ class TestBitrateObserver : public RemoteBitrateObserver {
     updated_ = true;
   }
 
-  bool updated() {
-    bool updated = updated_;
+  void Reset() {
     updated_ = false;
-    return updated;
+  }
+
+  bool updated() const {
+    return updated_;
   }
 
   unsigned int latest_bitrate() const {
@@ -130,12 +132,16 @@ class RemoteBitrateEstimatorTest : public ::testing::Test {
   // Generates a frame of packets belonging to a stream at a given bitrate and
   // with a given ssrc. The stream is pushed through a very simple simulated
   // network, and is then given to the receive-side bandwidth estimator.
-  void GenerateAndProcessFrame(unsigned int ssrc, unsigned int bitrate_bps) {
+  // Returns true if an over-use was seen, false otherwise.
+  // The StreamGenerator::updated() should be used to check for any changes in
+  // target bitrate after the call to this function.
+  bool GenerateAndProcessFrame(unsigned int ssrc, unsigned int bitrate_bps) {
     stream_generator_->SetBitrate(bitrate_bps);
     StreamGenerator::PacketList packets;
     stream_generator_->GenerateFrame(&packets);
     int64_t last_arrival_time = -1;
     bool prev_was_decrease = false;
+    bool overuse = false;
     while (!packets.empty()) {
       StreamGenerator::Packet* packet = packets.front();
       bitrate_estimator_->IncomingPacket(ssrc,
@@ -146,18 +152,21 @@ class RemoteBitrateEstimatorTest : public ::testing::Test {
       if (bitrate_observer_->updated()) {
         // Verify that new estimates only are triggered by an overuse and a
         // rate decrease.
+        overuse = true;
         EXPECT_LE(bitrate_observer_->latest_bitrate(), bitrate_bps);
         EXPECT_FALSE(prev_was_decrease);
         prev_was_decrease = true;
       } else {
         prev_was_decrease = false;
       }
+      bitrate_observer_->Reset();
       last_arrival_time = packet->arrival_time;
       delete packet;
       packets.pop_front();
     }
     EXPECT_GT(last_arrival_time, -1);
     bitrate_estimator_->UpdateEstimate(ssrc, last_arrival_time);
+    return overuse;
   }
 
   // Run the bandwidth estimator with a stream of |number_of_frames| frames.
@@ -172,12 +181,15 @@ class RemoteBitrateEstimatorTest : public ::testing::Test {
     bool bitrate_update_seen = false;
     // Produce |number_of_frames| frames and give them to the estimator.
     for (int i = 0; i < number_of_frames; ++i) {
-      GenerateAndProcessFrame(ssrc, bitrate_bps);
-      if (bitrate_observer_->updated()) {
+      bool overuse = GenerateAndProcessFrame(ssrc, bitrate_bps);
+      if (overuse) {
         EXPECT_LT(bitrate_observer_->latest_bitrate(), max_bitrate);
         EXPECT_GT(bitrate_observer_->latest_bitrate(), min_bitrate);
         bitrate_bps = bitrate_observer_->latest_bitrate();
         bitrate_update_seen = true;
+      } else if (bitrate_observer_->updated()) {
+        bitrate_bps = bitrate_observer_->latest_bitrate();
+        bitrate_observer_->Reset();
       }
     }
     EXPECT_TRUE(bitrate_update_seen);
@@ -198,18 +210,21 @@ TEST_F(RemoteBitrateEstimatorTest, TestInitialBehavior) {
   bitrate_estimator_->UpdateEstimate(ssrc, time_now);
   EXPECT_FALSE(bitrate_estimator_->LatestEstimate(ssrc, &bitrate_bps));
   EXPECT_FALSE(bitrate_observer_->updated());
+  bitrate_observer_->Reset();
   // Inserting a packet. Still no valid estimate. We need to wait 1 second.
   bitrate_estimator_->IncomingPacket(ssrc, kMtu, time_now,
                                      timestamp, -1);
   bitrate_estimator_->UpdateEstimate(ssrc, time_now);
   EXPECT_FALSE(bitrate_estimator_->LatestEstimate(ssrc, &bitrate_bps));
   EXPECT_FALSE(bitrate_observer_->updated());
+  bitrate_observer_->Reset();
   // Waiting more than one second gives us a valid estimate.
   time_now += 1001;
   bitrate_estimator_->UpdateEstimate(ssrc, time_now);
   EXPECT_TRUE(bitrate_estimator_->LatestEstimate(ssrc, &bitrate_bps));
   EXPECT_EQ(bitrate_bps, 10734u);
   EXPECT_TRUE(bitrate_observer_->updated());
+  bitrate_observer_->Reset();
   EXPECT_EQ(bitrate_observer_->latest_bitrate(), bitrate_bps);
 }
 
@@ -222,10 +237,14 @@ TEST_F(RemoteBitrateEstimatorTest, TestRateIncreaseRtpTimestamps) {
   // Feed the estimator with a stream of packets and verify that it reaches
   // 500 kbps at the expected time.
   while (bitrate_bps < 5e5) {
-    GenerateAndProcessFrame(ssrc, bitrate_bps);
-    if (bitrate_observer_->updated()) {
+    bool overuse = GenerateAndProcessFrame(ssrc, bitrate_bps);
+    if (overuse) {
       EXPECT_GT(bitrate_observer_->latest_bitrate(), bitrate_bps);
       bitrate_bps = bitrate_observer_->latest_bitrate();
+      bitrate_observer_->Reset();
+    } else if (bitrate_observer_->updated()) {
+      bitrate_bps = bitrate_observer_->latest_bitrate();
+      bitrate_observer_->Reset();
     }
     ++iterations;
     ASSERT_LE(iterations, kExpectedIterations);
@@ -237,11 +256,12 @@ TEST_F(RemoteBitrateEstimatorTest, TestRateIncreaseRtpTimestamps) {
 // the capacity is tightened stays the same.
 TEST_F(RemoteBitrateEstimatorTest, TestCapacityDropRtpTimestamps) {
   const unsigned int kSsrc = 0;
-  const int kNumberOfFrames= 1000;
+  const int kNumberOfFrames= 300;
   const int kStartBitrate = 900e3;
   const int kMinExpectedBitrate = 800e3;
   const int kMaxExpectedBitrate = 1500e3;
   // Run in steady state to make the estimator converge.
+  stream_generator_->SetCapacity(1000e3);
   unsigned int bitrate_bps = SteadyStateRun(kSsrc, kNumberOfFrames,
                                             kStartBitrate, kMinExpectedBitrate,
                                             kMaxExpectedBitrate);
@@ -250,14 +270,16 @@ TEST_F(RemoteBitrateEstimatorTest, TestCapacityDropRtpTimestamps) {
   int64_t bitrate_drop_time = 0;
   for (int i = 0; i < 1000; ++i) {
     GenerateAndProcessFrame(kSsrc, bitrate_bps);
+    // Check for either increase or decrease.
     if (bitrate_observer_->updated()) {
       if (bitrate_observer_->latest_bitrate() <= 500e3) {
         bitrate_drop_time = stream_generator_->TimeNow();
       }
       bitrate_bps = bitrate_observer_->latest_bitrate();
+      bitrate_observer_->Reset();
     }
   }
-  EXPECT_EQ(66000, bitrate_drop_time);
+  EXPECT_EQ(42900, bitrate_drop_time);
 }
 
 // Verify that the time it takes for the estimator to reduce the bitrate when
@@ -269,7 +291,7 @@ TEST_F(RemoteBitrateEstimatorTest, TestCapacityDropRtpTimestampsWrap) {
   const int kStartBitrate = 900e3;
   const int kMinExpectedBitrate = 800e3;
   const int kMaxExpectedBitrate = 1500e3;
-  const int kSteadyStateTime = 5;  // Seconds.
+  const int kSteadyStateTime = 10;  // Seconds.
   // Trigger wrap right after the steady state run.
   stream_generator_->SetRtpTimestampOffset(
       std::numeric_limits<uint32_t>::max() - kSteadyStateTime * 90000);
@@ -284,14 +306,16 @@ TEST_F(RemoteBitrateEstimatorTest, TestCapacityDropRtpTimestampsWrap) {
   int64_t bitrate_drop_time = 0;
   for (int i = 0; i < 1000; ++i) {
     GenerateAndProcessFrame(kSsrc, bitrate_bps);
+    // Check for either increase or decrease.
     if (bitrate_observer_->updated()) {
       if (bitrate_observer_->latest_bitrate() <= 500e3) {
         bitrate_drop_time = stream_generator_->TimeNow();
       }
       bitrate_bps = bitrate_observer_->latest_bitrate();
+      bitrate_observer_->Reset();
     }
   }
-  EXPECT_EQ(37356, bitrate_drop_time);
+  EXPECT_EQ(42900, bitrate_drop_time);
 }
 
 }  // namespace webrtc

@@ -9,7 +9,7 @@
  */
 
 #include <math.h>
-#include <stdlib.h>  // abs
+#include <stdlib.h>  // fabsf
 #if _WIN32
 #include <windows.h>
 #endif
@@ -256,10 +256,10 @@ void OverUseDetector::UpdateKalman(WebRtc_Word64 tDelta,
   const double residual = tTsDelta - slope_*h[0] - offset_;
 
   const bool stableState =
-      (BWE_MIN(numOfDeltas_, 60) * abs(offset_) < threshold_);
+      (BWE_MIN(numOfDeltas_, 60) * fabsf(offset_) < threshold_);
   // We try to filter out very late frames. For instance periodic key
   // frames doesn't fit the Gaussian model well.
-  if (abs(residual) < 3 * sqrt(varNoise_)) {
+  if (fabsf(residual) < 3 * sqrt(varNoise_)) {
     UpdateNoiseEstimate(residual, minFramePeriod, stableState);
   } else {
     UpdateNoiseEstimate(3 * sqrt(varNoise_), minFramePeriod, stableState);
@@ -365,7 +365,7 @@ BandwidthUsage OverUseDetector::Detect(double tsDelta) {
     return kBwNormal;
   }
   const double T = BWE_MIN(numOfDeltas_, 60) * offset_;
-  if (abs(T) > threshold_) {
+  if (fabsf(T) > threshold_) {
     if (offset_ > 0) {
       if (timeOverUsing_ == -1) {
         // Initialize the timer. Assume that we've been
