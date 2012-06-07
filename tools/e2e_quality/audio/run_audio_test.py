@@ -55,8 +55,9 @@ def main(argv):
   #
   # We pass the render device for VoiceEngine to select because (for unknown
   # reasons) the virtual device is sometimes not used when the default.
-  retcode = subprocess.call(['pacmd', 'set-default-source',
-      options.play_sink + '.monitor'], stdout=subprocess.PIPE);
+  command = ['pacmd', 'set-default-source', options.play_sink + '.monitor']
+  print ' '.join(command)
+  retcode = subprocess.call(command, stdout=subprocess.PIPE)
   if retcode != 0:
     return retcode
 
@@ -65,7 +66,7 @@ def main(argv):
   print ' '.join(command)
   voe_proc = subprocess.Popen(command)
 
-  format_args = ['-n', '--format=s16le', '--rate=' + options.rate,
+  format_args = ['--format=s16le', '--rate=' + options.rate,
       '--channels=' + options.channels, '--raw']
   command = (['pacat', '-p', '-d', options.play_sink] + format_args +
       [options.input])
@@ -75,7 +76,7 @@ def main(argv):
   # If recording starts before there is data available, pacat sometimes
   # inexplicably adds a large delay to the start of the file. We wait here in
   # an attempt to prevent that.
-  time.sleep(0.2)
+  time.sleep(2)
   command = (['pacat', '-r', '-d', options.rec_sink + '.monitor'] +
       format_args + [options.output])
   print ' '.join(command)
