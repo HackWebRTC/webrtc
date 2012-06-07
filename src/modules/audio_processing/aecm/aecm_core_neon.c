@@ -34,10 +34,10 @@ static const WebRtc_Word16 kSqrtHanningReversed[] __attribute__((aligned(8))) = 
   1594,  1196,  798,   399
 };
 
-static void WindowAndFFTNeon(WebRtc_Word16* fft,
-                             const WebRtc_Word16* time_signal,
-                             complex16_t* freq_signal,
-                             int time_signal_scaling) {
+void WebRtcAecm_WindowAndFFTNeon(WebRtc_Word16* fft,
+                                 const WebRtc_Word16* time_signal,
+                                 complex16_t* freq_signal,
+                                 int time_signal_scaling) {
   int i, j;
 
   int16x4_t tmp16x4_scaling = vdup_n_s16(time_signal_scaling);
@@ -86,11 +86,11 @@ static void WindowAndFFTNeon(WebRtc_Word16* fft,
   }
 }
 
-static void InverseFFTAndWindowNeon(AecmCore_t* aecm,
-                                    WebRtc_Word16* fft,
-                                    complex16_t* efw,
-                                    WebRtc_Word16* output,
-                                    const WebRtc_Word16* nearendClean) {
+void WebRtcAecm_InverseFFTAndWindowNeon(AecmCore_t* aecm,
+                                        WebRtc_Word16* fft,
+                                        complex16_t* efw,
+                                        WebRtc_Word16* output,
+                                        const WebRtc_Word16* nearendClean) {
   int i, j, outCFFT;
 
   // Synthesis
@@ -186,12 +186,12 @@ static void InverseFFTAndWindowNeon(AecmCore_t* aecm,
   }
 }
 
-static void CalcLinearEnergiesNeon(AecmCore_t* aecm,
-                                   const WebRtc_UWord16* far_spectrum,
-                                   WebRtc_Word32* echo_est,
-                                   WebRtc_UWord32* far_energy,
-                                   WebRtc_UWord32* echo_energy_adapt,
-                                   WebRtc_UWord32* echo_energy_stored) {
+void WebRtcAecm_CalcLinearEnergiesNeon(AecmCore_t* aecm,
+                                       const WebRtc_UWord16* far_spectrum,
+                                       WebRtc_Word32* echo_est,
+                                       WebRtc_UWord32* far_energy,
+                                       WebRtc_UWord32* echo_energy_adapt,
+                                       WebRtc_UWord32* echo_energy_stored) {
   int i;
 
   register WebRtc_UWord32 far_energy_r;
@@ -249,9 +249,9 @@ static void CalcLinearEnergiesNeon(AecmCore_t* aecm,
       aecm->channelAdapt16[i], far_spectrum[i]);
 }
 
-static void StoreAdaptiveChannelNeon(AecmCore_t* aecm,
-                                     const WebRtc_UWord16* far_spectrum,
-                                     WebRtc_Word32* echo_est) {
+void WebRtcAecm_StoreAdaptiveChannelNeon(AecmCore_t* aecm,
+                                         const WebRtc_UWord16* far_spectrum,
+                                         WebRtc_Word32* echo_est) {
   int i;
 
   // During startup we store the channel every block.
@@ -271,7 +271,7 @@ static void StoreAdaptiveChannelNeon(AecmCore_t* aecm,
   echo_est[i] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i], far_spectrum[i]);
 }
 
-static void ResetAdaptiveChannelNeon(AecmCore_t* aecm) {
+void WebRtcAecm_ResetAdaptiveChannelNeon(AecmCore_t* aecm) {
   int i;
 
   for (i = 0; i < PART_LEN - 7; i += 8) {
@@ -292,10 +292,3 @@ static void ResetAdaptiveChannelNeon(AecmCore_t* aecm) {
       (WebRtc_Word32)aecm->channelStored[i], 16);
 }
 
-void WebRtcAecm_InitNeon(void) {
-  WebRtcAecm_WindowAndFFT = WindowAndFFTNeon;
-  WebRtcAecm_InverseFFTAndWindow = InverseFFTAndWindowNeon;
-  WebRtcAecm_CalcLinearEnergies = CalcLinearEnergiesNeon;
-  WebRtcAecm_StoreAdaptiveChannel = StoreAdaptiveChannelNeon;
-  WebRtcAecm_ResetAdaptiveChannel = ResetAdaptiveChannelNeon;
-}

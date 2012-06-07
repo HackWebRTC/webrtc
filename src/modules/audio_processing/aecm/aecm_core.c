@@ -11,6 +11,7 @@
 #include "aecm_core.h"
 
 #include <assert.h>
+#include <stddef.h>
 #include <stdlib.h>
 
 #include "cpu_features_wrapper.h"
@@ -196,6 +197,15 @@ static const WebRtc_Word16 kSinTable[] = {
 
 static const WebRtc_Word16 kNoiseEstQDomain = 15;
 static const WebRtc_Word16 kNoiseEstIncCount = 5;
+
+// TODO(andrew): put this into general WebRTC so other modules can use it.
+// Define a compiler-time assertion.
+#define WEBRTC_STATIC_ASSERT(name, boolean_cond) \
+  static char const static_assert_##name[(boolean_cond) ? 1 : -1] = {'!'}
+
+// Assert a preprocessor definition at compile-time. It's an assumption
+// used in assembly code, so check the assembly files before any change.
+WEBRTC_STATIC_ASSERT(PART_LEN, PART_LEN % 16 == 0);
 
 static void ComfortNoise(AecmCore_t* aecm,
                          const WebRtc_UWord16* dfa,
@@ -394,6 +404,18 @@ static void WindowAndFFTC(WebRtc_Word16* fft,
         freq_signal[i].imag = - fft[j+1];
     }
 }
+
+// Initialize function pointers for ARM Neon platform.
+#if (defined WEBRTC_DETECT_ARM_NEON || defined WEBRTC_ARCH_ARM_NEON)
+static void WebRtcAecm_InitNeon(void)
+{
+  WebRtcAecm_WindowAndFFT = WebRtcAecm_WindowAndFFTNeon;
+  WebRtcAecm_InverseFFTAndWindow = WebRtcAecm_InverseFFTAndWindowNeon;
+  WebRtcAecm_CalcLinearEnergies = WebRtcAecm_CalcLinearEnergiesNeon;
+  WebRtcAecm_StoreAdaptiveChannel = WebRtcAecm_StoreAdaptiveChannelNeon;
+  WebRtcAecm_ResetAdaptiveChannel = WebRtcAecm_ResetAdaptiveChannelNeon;
+}
+#endif
 
 static void InverseFFTAndWindowC(AecmCore_t* aecm,
                                  WebRtc_Word16* fft,
@@ -673,7 +695,7 @@ int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
     uint64_t features = WebRtc_GetCPUFeaturesARM();
     if ((features & kCPUFeatureNEON) != 0)
     {
-        WebRtcAecm_InitNeon();
+      WebRtcAecm_InitNeon();
     }
 #elif defined(WEBRTC_ARCH_ARM_NEON)
     WebRtcAecm_InitNeon();
@@ -1850,7 +1872,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
             {
                 hnl[i] = 0;
             }
-    
+
             // Remove outliers
             if (numPosCoef < 3)
             {
