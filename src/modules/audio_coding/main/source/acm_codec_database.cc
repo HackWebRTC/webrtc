@@ -157,9 +157,9 @@ const CodecInst ACMCodecDB::database_[] = {
 #endif
 #ifdef WEBRTC_CODEC_CELT
   // Mono
-  {kDynamicPayloadtypes[count_database++], "CELT", 32000, 320, 1, 64000},
+  {kDynamicPayloadtypes[count_database++], "CELT", 32000, 640, 1, 64000},
   // Stereo
-  {kDynamicPayloadtypes[count_database++], "CELT", 32000, 320, 2, 64000},
+  {kDynamicPayloadtypes[count_database++], "CELT", 32000, 640, 2, 64000},
 #endif
 #ifdef WEBRTC_CODEC_G722
   // Mono
@@ -243,9 +243,9 @@ const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
 #endif
 #ifdef WEBRTC_CODEC_CELT
   // Mono
-  {1, {320}, 0, 2},
+  {1, {640}, 0, 2},
   // Stereo
-  {1, {320}, 0, 2},
+  {1, {640}, 0, 2},
 #endif
 #ifdef WEBRTC_CODEC_G722
   // Mono
