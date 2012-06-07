@@ -13,7 +13,7 @@
 #include <list>
 
 #include "modules/interface/module_common_types.h"
-#include "modules/rtp_rtcp/source/bwe_defines.h"
+#include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 #ifdef WEBRTC_BWE_MATLAB
@@ -27,8 +27,8 @@ class OverUseDetector {
  public:
   OverUseDetector();
   ~OverUseDetector();
-  bool Update(const WebRtcRTPHeader& rtpHeader,
-              const WebRtc_UWord16 packetSize,
+  void Update(const WebRtc_UWord16 packetSize,
+              const WebRtc_UWord32 timestamp,
               const WebRtc_Word64 nowMS);
   BandwidthUsage State() const;
   void Reset();
@@ -43,6 +43,10 @@ class OverUseDetector {
     WebRtc_Word64  completeTimeMs_;
     WebRtc_Word64  timestamp_;
   };
+
+  static bool OldTimestamp(uint32_t newTimestamp,
+                           uint32_t existingTimestamp,
+                           bool* wrapped);
 
   void CompensatedTimeDelta(const FrameSample& currentFrame,
                             const FrameSample& prevFrame,

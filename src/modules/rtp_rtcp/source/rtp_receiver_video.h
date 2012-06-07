@@ -16,9 +16,11 @@
 
 #include "typedefs.h"
 
-#include "overuse_detector.h"
-#include "remote_rate_control.h"
+#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "modules/remote_bitrate_estimator/overuse_detector.h"
+#include "modules/remote_bitrate_estimator/remote_rate_control.h"
 #include "Bitrate.h"
+#include "scoped_ptr.h"
 
 namespace webrtc {
 class ReceiverFEC;
@@ -27,8 +29,9 @@ class CriticalSectionWrapper;
 
 class RTPReceiverVideo {
  public:
-  RTPReceiverVideo();
-  RTPReceiverVideo(const WebRtc_Word32 id, ModuleRtpRtcpImpl* owner);
+  RTPReceiverVideo(const WebRtc_Word32 id,
+                   RemoteBitrateEstimator* remote_bitrate,
+                   ModuleRtpRtcpImpl* owner);
 
   virtual ~RTPReceiverVideo();
 
@@ -55,8 +58,6 @@ class RTPReceiverVideo {
   void SetPacketOverHead(WebRtc_UWord16 packetOverHead);
 
  protected:
-  void ResetOverUseDetector();
-
   virtual WebRtc_Word32 CallbackOfReceivedPayloadData(
       const WebRtc_UWord8* payloadData,
       const WebRtc_UWord16 payloadSize,
@@ -106,9 +107,7 @@ class RTPReceiverVideo {
   ReceiverFEC*              _receiveFEC;
 
   // BWE
-  OverUseDetector           _overUseDetector;
-  BitRateStats              _videoBitRate;
-  WebRtc_Word64             _lastBitRateChange;
+  RemoteBitrateEstimator* remote_bitrate_;
   WebRtc_UWord16            _packetOverHead;
 };
 } // namespace webrtc

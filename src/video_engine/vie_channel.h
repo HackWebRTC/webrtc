@@ -15,6 +15,7 @@
 
 #include <list>
 
+#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "modules/udp_transport/interface/udp_transport.h"
 #include "modules/video_coding/main/interface/video_coding_defines.h"
@@ -63,7 +64,7 @@ class ViEChannel
              ProcessThread& module_process_thread,
              RtcpIntraFrameObserver* intra_frame_observer,
              RtcpBandwidthObserver* bandwidth_observer,
-             RtpRemoteBitrateObserver* bitrate_observer,
+             RemoteBitrateEstimator* remote_bitrate_estimator,
              RtpRtcp* default_rtp_rtcp);
   ~ViEChannel();
 

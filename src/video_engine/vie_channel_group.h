@@ -19,7 +19,8 @@ namespace webrtc {
 
 class BitrateController;
 class ProcessThread;
-class RtpRemoteBitrateObserver;
+class RemoteBitrateEstimator;
+class RemoteBitrateObserver;
 class ViEChannel;
 class ViEEncoder;
 class VieRemb;
@@ -32,7 +33,7 @@ class ChannelGroup {
   ~ChannelGroup();
 
   void AddChannel(int channel_id);
-  void RemoveChannel(int channel_id);
+  void RemoveChannel(int channel_id, unsigned int ssrc);
   bool HasChannel(int channel_id);
   bool Empty();
 
@@ -43,14 +44,14 @@ class ChannelGroup {
                             ViEEncoder* encoder);
 
   BitrateController* GetBitrateController();
-
-  RtpRemoteBitrateObserver* GetRtpRemoteBitrateObserver();
+  RemoteBitrateEstimator* GetRemoteBitrateEstimator();
 
  private:
   typedef std::set<int> ChannelSet;
 
   scoped_ptr<VieRemb> remb_;
   scoped_ptr<BitrateController> bitrate_controller_;
+  scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
   ChannelSet channels_;
 };
 

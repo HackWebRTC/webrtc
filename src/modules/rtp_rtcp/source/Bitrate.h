@@ -55,32 +55,6 @@ private:
     WebRtc_UWord32            _packetCount;
 };
 
-struct DataTimeSizeTuple
-{
-    DataTimeSizeTuple(WebRtc_UWord32 sizeBytes, WebRtc_Word64 timeCompleteMs) :
-                            _sizeBytes(sizeBytes),
-                            _timeCompleteMs(timeCompleteMs) {}
-
-    WebRtc_UWord32    _sizeBytes;
-    WebRtc_Word64     _timeCompleteMs;
-};
-
-class BitRateStats
-{
-public:
-    BitRateStats();
-    ~BitRateStats();
-
-    void Init();
-    void Update(WebRtc_UWord32 packetSizeBytes, WebRtc_Word64 nowMs);
-    WebRtc_UWord32 BitRate(WebRtc_Word64 nowMs);
-
-private:
-    void EraseOld(WebRtc_Word64 nowMs);
-
-    std::list<DataTimeSizeTuple*> _dataSamples;
-    WebRtc_UWord32                _accumulatedBytes;
-};
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_RTP_RTCP_SOURCE_BITRATE_H_

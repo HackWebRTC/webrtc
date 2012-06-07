@@ -428,8 +428,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
     virtual WebRtc_UWord32 SendTimeOfSendReport(const WebRtc_UWord32 sendReport);
 
-    virtual RateControlRegion OnOverUseStateUpdate(const RateControlInput& rateControlInput);
-
     // good state of RTP receiver inform sender
     virtual WebRtc_Word32 SendRTCPReferencePictureSelection(const WebRtc_UWord64 pictureID);
 
@@ -505,6 +503,8 @@ private:
     bool                  _simulcast;
     VideoCodec            _sendVideoCodec;
     KeyFrameRequestMethod _keyFrameReqMethod;
+
+    RemoteBitrateEstimator* remote_bitrate_;
 
 #ifdef MATLAB
     MatlabPlot*           _plot1;
