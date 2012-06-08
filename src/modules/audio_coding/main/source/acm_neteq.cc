@@ -61,7 +61,7 @@ _callbackCritSect(CriticalSectionWrapper::CreateCriticalSection())
 
 ACMNetEQ::~ACMNetEQ() {
   {
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     RemoveNetEQSafe(0);  // Master.
     RemoveSlavesSafe();
   }
@@ -81,7 +81,7 @@ ACMNetEQ::~ACMNetEQ() {
 WebRtc_Word32
 ACMNetEQ::Init()
 {
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
 
     for(WebRtc_Word16 idx = 0; idx < _numSlaves + 1; idx++)
     {
@@ -227,7 +227,7 @@ ACMNetEQ::AllocatePacketBuffer(
     // the following has to be int otherwise we will have compiler error
     // if not casted
 
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     for(WebRtc_Word16 idx = 0; idx < _numSlaves + 1; idx++)
     {
         if(AllocatePacketBufferByIdxSafe(usedCodecs, noOfCodecs, idx) < 0)
@@ -295,7 +295,7 @@ WebRtc_Word32
 ACMNetEQ::SetExtraDelay(
     const WebRtc_Word32 delayInMS)
 {
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
 
     for(WebRtc_Word16 idx = 0; idx < _numSlaves + 1; idx++)
     {
@@ -320,7 +320,7 @@ WebRtc_Word32
 ACMNetEQ::SetAVTPlayout(
     const bool enable)
 {
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     if (_avtPlayout != enable)
     {
         for(WebRtc_Word16 idx = 0; idx < _numSlaves + 1; idx++)
@@ -346,14 +346,14 @@ ACMNetEQ::SetAVTPlayout(
 bool
 ACMNetEQ::AVTPlayout() const
 {
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     return _avtPlayout;
 }
 
 WebRtc_Word32
 ACMNetEQ::CurrentSampFreqHz() const
 {
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     if(!_isInitialized[0])
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
@@ -368,7 +368,7 @@ WebRtc_Word32
 ACMNetEQ::SetPlayoutMode(
     const AudioPlayoutMode mode)
 {
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     if(_playoutMode != mode)
     {
         for(WebRtc_Word16 idx = 0; idx < _numSlaves + 1; idx++)
@@ -408,7 +408,7 @@ ACMNetEQ::SetPlayoutMode(
 AudioPlayoutMode
 ACMNetEQ::PlayoutMode() const
 {
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     return _playoutMode;
 }
 
@@ -418,7 +418,7 @@ ACMNetEQ::NetworkStatistics(
     ACMNetworkStatistics* statistics) const
 {
     WebRtcNetEQ_NetworkStatistics stats;
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     if(!_isInitialized[0])
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
@@ -502,7 +502,7 @@ ACMNetEQ::RecIn(
     netEqRTPInfo.SSRC = rtpInfo.header.ssrc;
     netEqRTPInfo.markerBit = rtpInfo.header.markerBit;
 
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     // Down-cast the time to (32-6)-bit since we only care about
     // the least significant bits. (32-6) bits cover 2^(32-6) = 67108864 ms.
     // we masked 6 most significant bits of 32-bit so we don't loose resolution
@@ -574,7 +574,7 @@ ACMNetEQ::RecOut(
 
     WebRtc_Word16 payloadLenSampleSlave;
 
-    CriticalSectionScoped lockNetEq(*_netEqCritSect);
+    CriticalSectionScoped lockNetEq(_netEqCritSect);
 
     if(!_receivedStereo)
     {
@@ -766,7 +766,7 @@ ACMNetEQ::AddCodec(
             "ACMNetEQ::AddCodec: error, codecDef is NULL");
         return -1;
     }
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
 
     WebRtc_Word16 idx;
     if(toMaster)
@@ -869,7 +869,7 @@ ACMNetEQ::RTPPack(
 WebRtc_Word16
 ACMNetEQ::EnableVAD()
 {
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     if (_vadStatus)
     {
         return 0;
@@ -899,7 +899,7 @@ ACMNetEQ::EnableVAD()
 ACMVADMode
 ACMNetEQ::VADMode() const
 {
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     return _vadMode;
 }
 
@@ -908,7 +908,7 @@ WebRtc_Word16
 ACMNetEQ::SetVADMode(
     const ACMVADMode mode)
 {
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     if((mode < VADNormal) || (mode > VADVeryAggr))
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
@@ -940,7 +940,7 @@ ACMNetEQ::SetVADMode(
 WebRtc_Word32
 ACMNetEQ::FlushBuffers()
 {
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     for(WebRtc_Word16 idx = 0; idx < _numSlaves + 1; idx++)
     {
         if(!_isInitialized[idx])
@@ -1003,7 +1003,7 @@ ACMNetEQ::RemoveCodec(
             "RemoveCodec: NetEq error: could not Remove Codec, codec index out of range");
         return -1;
     }
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     if(!_isInitialized[0])
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
@@ -1033,7 +1033,7 @@ WebRtc_Word16
 ACMNetEQ::SetBackgroundNoiseMode(
     const ACMBackgroundNoiseMode mode)
 {
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     for(WebRtc_Word16 idx = 0; idx < _numSlaves + 1; idx++)
     {
         if(!_isInitialized[idx])
@@ -1056,7 +1056,7 @@ ACMNetEQ::BackgroundNoiseMode(
     ACMBackgroundNoiseMode& mode)
 {
     WebRtcNetEQBGNMode myMode;
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     if(!_isInitialized[0])
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
@@ -1079,7 +1079,7 @@ void
 ACMNetEQ::SetUniqueId(
     WebRtc_Word32 id)
 {
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     _id = id;
 }
 
@@ -1109,7 +1109,7 @@ WebRtc_Word32
 ACMNetEQ::PlayoutTimestamp(
     WebRtc_UWord32& timestamp)
 {
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     if(WebRtcNetEQ_GetSpeechTimeStamp(_inst[0], &timestamp) < 0)
     {
         LogError("GetSpeechTimeStamp", 0);
@@ -1122,7 +1122,7 @@ ACMNetEQ::PlayoutTimestamp(
 }
 
 void ACMNetEQ::RemoveSlaves() {
-  CriticalSectionScoped lock(*_netEqCritSect);
+  CriticalSectionScoped lock(_netEqCritSect);
   RemoveSlavesSafe();
 }
 
@@ -1158,7 +1158,7 @@ ACMNetEQ::AddSlave(
     const WebRtcNetEQDecoder* usedCodecs,
     WebRtc_Word16       noOfCodecs)
 {
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     const WebRtc_Word16 slaveIdx = 1;
     if(_numSlaves < 1)
     {
@@ -1263,14 +1263,14 @@ void
 ACMNetEQ::SetReceivedStereo(
     bool receivedStereo)
 {
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     _receivedStereo = receivedStereo;
 }
 
 WebRtc_UWord8
 ACMNetEQ::NumSlaves()
 {
-    CriticalSectionScoped lock(*_netEqCritSect);
+    CriticalSectionScoped lock(_netEqCritSect);
     return _numSlaves;
 }
 

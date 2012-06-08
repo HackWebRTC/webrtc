@@ -137,7 +137,7 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(const WebRtc_Word32 id)
 
 AudioCodingModuleImpl::~AudioCodingModuleImpl() {
   {
-    CriticalSectionScoped lock(*_acmCritSect);
+    CriticalSectionScoped lock(_acmCritSect);
     _currentSendCodecIdx = -1;
 
     for (int i = 0; i < ACMCodecDB::kMaxNumCodecs; i++) {
@@ -211,7 +211,7 @@ AudioCodingModuleImpl::~AudioCodingModuleImpl() {
 
 WebRtc_Word32 AudioCodingModuleImpl::ChangeUniqueId(const WebRtc_Word32 id) {
   {
-    CriticalSectionScoped lock(*_acmCritSect);
+    CriticalSectionScoped lock(_acmCritSect);
     _id = id;
 
 #ifdef ACM_QA_TEST
@@ -246,7 +246,7 @@ WebRtc_Word32 AudioCodingModuleImpl::ChangeUniqueId(const WebRtc_Word32 id) {
 // Returns the number of milliseconds until the module want a
 // worker thread to call Process.
 WebRtc_Word32 AudioCodingModuleImpl::TimeUntilNextProcess() {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
 
   if (!HaveValidEncoder("TimeUntilNextProcess")) {
     return -1;
@@ -271,7 +271,7 @@ WebRtc_Word32 AudioCodingModuleImpl::Process() {
 
   // Keep the scope of the ACM critical section limited.
   {
-    CriticalSectionScoped lock(*_acmCritSect);
+    CriticalSectionScoped lock(_acmCritSect);
     if (!HaveValidEncoder("Process")) {
       return -1;
     }
@@ -428,7 +428,7 @@ WebRtc_Word32 AudioCodingModuleImpl::Process() {
   }
 
   if (has_data_to_send) {
-    CriticalSectionScoped lock(*_callbackCritSect);
+    CriticalSectionScoped lock(_callbackCritSect);
 #ifdef ACM_QA_TEST
     if(_outgoingPL != NULL) {
       if (fwrite(&rtp_timestamp, sizeof(WebRtc_UWord32), 1, _outgoingPL) != 1) {
@@ -476,7 +476,7 @@ WebRtc_Word32 AudioCodingModuleImpl::Process() {
 
 // Initialize send codec.
 WebRtc_Word32 AudioCodingModuleImpl::InitializeSender() {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
 
   // Start with invalid values.
   _sendCodecRegistered = false;
@@ -512,7 +512,7 @@ WebRtc_Word32 AudioCodingModuleImpl::InitializeSender() {
 }
 
 WebRtc_Word32 AudioCodingModuleImpl::ResetEncoder() {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
   if (!HaveValidEncoder("ResetEncoder")) {
     return -1;
   }
@@ -520,7 +520,7 @@ WebRtc_Word32 AudioCodingModuleImpl::ResetEncoder() {
 }
 
 void AudioCodingModuleImpl::UnregisterSendCodec() {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
   _sendCodecRegistered = false;
   _currentSendCodecIdx = -1;
   return;
@@ -557,7 +557,7 @@ WebRtc_Word32 AudioCodingModuleImpl::RegisterSendCodec(
   int mirror_id;
   int codec_id = ACMCodecDB::CodecNumber(&send_codec, &mirror_id, error_message,
                                         sizeof(error_message));
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
 
   // Check for reported errors from function CodecNumber().
   if (codec_id < 0) {
@@ -815,7 +815,7 @@ WebRtc_Word32 AudioCodingModuleImpl::SendCodec(
     CodecInst& current_codec) const {
   WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, _id,
                "SendCodec()");
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
 
   if (!_sendCodecRegistered) {
     WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, _id,
@@ -835,7 +835,7 @@ WebRtc_Word32 AudioCodingModuleImpl::SendCodec(
 WebRtc_Word32 AudioCodingModuleImpl::SendFrequency() const {
   WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, _id,
                "SendFrequency()");
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
 
   if (!_sendCodecRegistered) {
     WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, _id,
@@ -851,7 +851,7 @@ WebRtc_Word32 AudioCodingModuleImpl::SendFrequency() const {
 // Adaptive rate codecs return their current encode target rate, while other
 // codecs return there longterm avarage or their fixed rate.
 WebRtc_Word32 AudioCodingModuleImpl::SendBitrate() const {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
 
   if (!_sendCodecRegistered) {
     WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, _id,
@@ -877,7 +877,7 @@ WebRtc_Word32 AudioCodingModuleImpl::SetReceivedEstimatedBandwidth(
 // the encoded buffers.
 WebRtc_Word32 AudioCodingModuleImpl::RegisterTransportCallback(
     AudioPacketizationCallback* transport) {
-  CriticalSectionScoped lock(*_callbackCritSect);
+  CriticalSectionScoped lock(_callbackCritSect);
   _packetizationCallback = transport;
   return 0;
 }
@@ -896,12 +896,12 @@ WebRtc_Word32 AudioCodingModuleImpl::RegisterIncomingMessagesCallback(
 
   // Enter the critical section for callback.
   {
-    CriticalSectionScoped lock(*_callbackCritSect);
+    CriticalSectionScoped lock(_callbackCritSect);
     _dtmfCallback = incoming_message;
   }
   // Enter the ACM critical section to set up the DTMF class.
   {
-    CriticalSectionScoped lock(*_acmCritSect);
+    CriticalSectionScoped lock(_acmCritSect);
     // Check if the call is to disable or enable the callback.
     if (incoming_message == NULL) {
       // Callback is disabled, delete DTMF-detector class.
@@ -932,7 +932,7 @@ WebRtc_Word32 AudioCodingModuleImpl::RegisterIncomingMessagesCallback(
   // Check if we failed in setting up the DTMF-detector class.
   if ((status < 0)) {
     // We failed, we cannot have the callback.
-    CriticalSectionScoped lock(*_callbackCritSect);
+    CriticalSectionScoped lock(_callbackCritSect);
     _dtmfCallback = NULL;
   }
 
@@ -944,7 +944,7 @@ WebRtc_Word32 AudioCodingModuleImpl::RegisterIncomingMessagesCallback(
 WebRtc_Word32 AudioCodingModuleImpl::Add10MsData(
     const AudioFrame& audio_frame) {
   // Do we have a codec registered?
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
   if (!HaveValidEncoder("Add10MsData")) {
     return -1;
   }
@@ -1058,7 +1058,7 @@ WebRtc_Word32 AudioCodingModuleImpl::Add10MsData(
 //
 
 bool AudioCodingModuleImpl::FECStatus() const {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
   return _fecEnabled;
 }
 
@@ -1067,7 +1067,7 @@ WebRtc_Word32
 AudioCodingModuleImpl::SetFECStatus(
 #ifdef WEBRTC_CODEC_RED
     const bool enable_fec) {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
 
   if (_fecEnabled != enable_fec) {
     // Reset the RED buffer.
@@ -1104,7 +1104,7 @@ AudioCodingModuleImpl::SetFECStatus(
 WebRtc_Word32 AudioCodingModuleImpl::SetVAD(const bool enable_dtx,
                                             const bool enable_vad,
                                             const ACMVADMode mode) {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
 
   // Sanity check of the mode.
   if ((mode != VADNormal) && (mode != VADLowBitrate)
@@ -1149,7 +1149,7 @@ WebRtc_Word32 AudioCodingModuleImpl::SetVAD(const bool enable_dtx,
 // Get VAD/DTX settings.
 WebRtc_Word32 AudioCodingModuleImpl::VAD(bool& dtx_enabled, bool& vad_enabled,
                                          ACMVADMode& mode) const {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
 
   dtx_enabled = _dtxEnabled;
   vad_enabled = _vadEnabled;
@@ -1163,7 +1163,7 @@ WebRtc_Word32 AudioCodingModuleImpl::VAD(bool& dtx_enabled, bool& vad_enabled,
 //
 
 WebRtc_Word32 AudioCodingModuleImpl::InitializeReceiver() {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
   return InitializeReceiverSafe();
 }
 
@@ -1213,7 +1213,7 @@ WebRtc_Word32 AudioCodingModuleImpl::InitializeReceiverSafe() {
 
 // Reset the decoder state.
 WebRtc_Word32 AudioCodingModuleImpl::ResetDecoder() {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
 
   for (int id = 0; id < ACMCodecDB::kMaxNumCodecs; id++) {
     if ((_codecs[id] != NULL) && (_registeredPlTypes[id] != -1)) {
@@ -1233,7 +1233,7 @@ WebRtc_Word32 AudioCodingModuleImpl::ReceiveFrequency() const {
                "ReceiveFrequency()");
   WebRtcACMCodecParams codec_params;
 
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
   if (DecoderParamByPlType(_lastRecvAudioCodecPlType, codec_params) < 0) {
     return _netEq.CurrentSampFreqHz();
   } else {
@@ -1246,7 +1246,7 @@ WebRtc_Word32 AudioCodingModuleImpl::PlayoutFrequency() const {
   WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, _id,
                "PlayoutFrequency()");
 
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
 
   return _netEq.CurrentSampFreqHz();
 }
@@ -1255,7 +1255,7 @@ WebRtc_Word32 AudioCodingModuleImpl::PlayoutFrequency() const {
 // for codecs, CNG (NB, WB and SWB), DTMF, RED.
 WebRtc_Word32 AudioCodingModuleImpl::RegisterReceiveCodec(
     const CodecInst& receive_codec) {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
 
   if (receive_codec.channels > 2) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
@@ -1456,7 +1456,7 @@ WebRtc_Word32 AudioCodingModuleImpl::RegisterRecCodecMSSafe(
 WebRtc_Word32 AudioCodingModuleImpl::ReceiveCodec(
     CodecInst& current_codec) const {
   WebRtcACMCodecParams decoderParam;
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
 
   for (int id = 0; id < ACMCodecDB::kMaxNumCodecs; id++) {
     if (_codecs[id] != NULL) {
@@ -1493,7 +1493,7 @@ WebRtc_Word32 AudioCodingModuleImpl::IncomingPacket(
   {
     // Store the payload Type. This will be used to retrieve "received codec"
     // and "received frequency."
-    CriticalSectionScoped lock(*_acmCritSect);
+    CriticalSectionScoped lock(_acmCritSect);
 #ifdef ACM_QA_TEST
     if(_incomingPL != NULL) {
       if (fwrite(&rtp_info.header.timestamp, sizeof(WebRtc_UWord32),
@@ -1763,7 +1763,7 @@ WebRtc_Word32 AudioCodingModuleImpl::PlayoutData10Ms(
 
   // Limit the scope of ACM Critical section.
   {
-    CriticalSectionScoped lock(*_acmCritSect);
+    CriticalSectionScoped lock(_acmCritSect);
 
     if ((receive_freq != desired_freq_hz) && (desired_freq_hz != -1)) {
       // Resample payloadData.
@@ -1844,7 +1844,7 @@ WebRtc_Word32 AudioCodingModuleImpl::PlayoutData10Ms(
 
   if (tone_detected) {
     // We will deal with callback here, so enter callback critical section.
-    CriticalSectionScoped lock(*_callbackCritSect);
+    CriticalSectionScoped lock(_callbackCritSect);
 
     if (_dtmfCallback != NULL) {
       if (tone != kACMToneEnd) {
@@ -1936,7 +1936,7 @@ WebRtc_Word32 AudioCodingModuleImpl::RegisterVADCallback(
     ACMVADCallback* vad_callback) {
   WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceAudioCoding, _id,
                "RegisterVADCallback()");
-  CriticalSectionScoped lock(*_callbackCritSect);
+  CriticalSectionScoped lock(_callbackCritSect);
   _vadCallback = vad_callback;
   return 0;
 }
@@ -2017,7 +2017,7 @@ WebRtc_Word32 AudioCodingModuleImpl::IncomingPayload(
 WebRtc_Word16 AudioCodingModuleImpl::DecoderParamByPlType(
     const WebRtc_UWord8 payload_type,
     WebRtcACMCodecParams& codec_params) const {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
   for (WebRtc_Word16 id = 0; id < ACMCodecDB::kMaxNumCodecs;
       id++) {
     if (_codecs[id] != NULL) {
@@ -2041,7 +2041,7 @@ WebRtc_Word16 AudioCodingModuleImpl::DecoderParamByPlType(
 WebRtc_Word16 AudioCodingModuleImpl::DecoderListIDByPlName(
     const char* name, const WebRtc_UWord16 frequency) const {
   WebRtcACMCodecParams codec_params;
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
   for (WebRtc_Word16 id = 0; id < ACMCodecDB::kMaxNumCodecs; id++) {
     if ((_codecs[id] != NULL)) {
       if (_codecs[id]->DecoderInitialized()) {
@@ -2071,7 +2071,7 @@ WebRtc_Word16 AudioCodingModuleImpl::DecoderListIDByPlName(
 
 WebRtc_Word32 AudioCodingModuleImpl::LastEncodedTimestamp(
     WebRtc_UWord32& timestamp) const {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
   if (!HaveValidEncoder("LastEncodedTimestamp")) {
     return -1;
   }
@@ -2081,7 +2081,7 @@ WebRtc_Word32 AudioCodingModuleImpl::LastEncodedTimestamp(
 
 WebRtc_Word32 AudioCodingModuleImpl::ReplaceInternalDTXWithWebRtc(
     bool use_webrtc_dtx) {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
 
   if (!HaveValidEncoder("ReplaceInternalDTXWithWebRtc")) {
     WEBRTC_TRACE(
@@ -2107,7 +2107,7 @@ WebRtc_Word32 AudioCodingModuleImpl::ReplaceInternalDTXWithWebRtc(
 
 WebRtc_Word32 AudioCodingModuleImpl::IsInternalDTXReplacedWithWebRtc(
     bool& uses_webrtc_dtx) {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
 
   if (!HaveValidEncoder("IsInternalDTXReplacedWithWebRtc")) {
     return -1;
@@ -2121,7 +2121,7 @@ WebRtc_Word32 AudioCodingModuleImpl::IsInternalDTXReplacedWithWebRtc(
 
 WebRtc_Word32 AudioCodingModuleImpl::SetISACMaxRate(
     const WebRtc_UWord32 max_bit_per_sec) {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
 
   if (!HaveValidEncoder("SetISACMaxRate")) {
     return -1;
@@ -2132,7 +2132,7 @@ WebRtc_Word32 AudioCodingModuleImpl::SetISACMaxRate(
 
 WebRtc_Word32 AudioCodingModuleImpl::SetISACMaxPayloadSize(
     const WebRtc_UWord16 max_size_bytes) {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
 
   if (!HaveValidEncoder("SetISACMaxPayloadSize")) {
     return -1;
@@ -2146,7 +2146,7 @@ WebRtc_Word32 AudioCodingModuleImpl::ConfigISACBandwidthEstimator(
     const WebRtc_UWord8 frame_size_ms,
     const WebRtc_UWord16 rate_bit_per_sec,
     const bool enforce_frame_size) {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
 
   if (!HaveValidEncoder("ConfigISACBandwidthEstimator")) {
     return -1;
@@ -2201,7 +2201,7 @@ bool AudioCodingModuleImpl::HaveValidEncoder(const char* caller_name) const {
 
 WebRtc_Word32 AudioCodingModuleImpl::UnregisterReceiveCodec(
     const WebRtc_Word16 payload_type) {
-  CriticalSectionScoped lock(*_acmCritSect);
+  CriticalSectionScoped lock(_acmCritSect);
   int id;
 
   // Search through the list of registered payload types.
