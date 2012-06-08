@@ -66,7 +66,7 @@
 .equ CONFIG_POSTPROC_VISUALIZER ,  0
 .equ CONFIG_OS_SUPPORT ,  1
 .equ CONFIG_UNIT_TESTS ,  0
-.equ CONFIG_MULTI_RES_ENCODING ,  1
+.equ CONFIG_MULTI_RES_ENCODING ,  0
 .equ CONFIG_TEMPORAL_DENOISING ,  1
 	.section	.note.GNU-stack,"",%progbits
 @ This file was created from a .asm file
