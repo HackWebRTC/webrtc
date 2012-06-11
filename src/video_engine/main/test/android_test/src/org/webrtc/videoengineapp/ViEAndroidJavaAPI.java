@@ -114,15 +114,17 @@ public class ViEAndroidJavaAPI {
     public native int VoE_SetLoudspeakerStatus(boolean enable);
 
     // Playout file locally
-    public native int VoE_StartPlayingFileLocally(int channel,
-            String fileName,
-            boolean loop);
+    public native int VoE_StartPlayingFileLocally(
+        int channel,
+        String fileName,
+        boolean loop);
     public native int VoE_StopPlayingFileLocally(int channel);
 
     // Play file as microphone
-    public native int VoE_StartPlayingFileAsMicrophone(int channel,
-            String fileName,
-            boolean loop);
+    public native int VoE_StartPlayingFileAsMicrophone(
+        int channel,
+        String fileName,
+        boolean loop);
     public native int VoE_StopPlayingFileAsMicrophone(int channel);
 
     // Codec-setting functions
@@ -131,8 +133,7 @@ public class ViEAndroidJavaAPI {
     public native int VoE_SetSendCodec(int channel, int index);
 
     //VE funtions
-    public native int VoE_SetECStatus(boolean enable, int mode,
-            int AESmode, int AESattenuation);
-    public native int VoE_SetAGCStatus(boolean enable, int mode);
-    public native int VoE_SetNSStatus(boolean enable, int mode);
+    public native int VoE_SetECStatus(boolean enable);
+    public native int VoE_SetAGCStatus(boolean enable);
+    public native int VoE_SetNSStatus(boolean enable);
 }

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>   
-    <string name="app_name">WebRTC</string>
-    <string name="error">Error</string>
-    <string name="errorCamera">Camera Error</string>
+<resources>
+  <string name="app_name">WebRTC</string>
+  <string name="error">Error</string>
+  <string name="errorCamera">Camera Error</string>
 <string name="codectype_prompt">Choose a codec type</string>
 <string name="demoTitle">Video Engine Android Demo</string>
 <string name="codecType">Codec Type</string>
@@ -22,10 +22,10 @@
 <string name="vRxPort">Video Rx Port</string>
 <string name="aTxPort">Audio Tx Port</string>
 <string name="aRxPort">Audio Rx Port</string>
-<string name="AutoGainControl">Auto Gain Control</string>
-<string name="VoiceActivityDetection">Voice Activity Detection</string>
-<string name="AECM">Acoustic Echo Control</string>
-<string name="NoiseSuppression">Noise Suppression</string>
+<string name="AutoGainControl">AGC</string>
+<string name="VoiceActivityDetection">VAD</string>
+<string name="AECM">AECM</string>
+<string name="NoiseSuppression">NS</string>
 <string name="nack">NACK</string>
 <string name="frontCamera">SwitchToFront</string>
 <string name="backCamera">SwitchToBack</string>

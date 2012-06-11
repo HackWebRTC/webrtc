@@ -131,8 +131,8 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     private Spinner spCodecType;
     private int codecType = 0;
     private Spinner spCodecSize;
-    private int codecSizeWidth = 352;
-    private int codecSizeHeight = 288;
+    private int codecSizeWidth = 0;
+    private int codecSizeHeight = 0;
     private TextView etVRxPort;
     private int receivePortVideo = 11111;
     private TextView etVTxPort;
@@ -497,6 +497,9 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
 
         cbEnableAGC.setOnClickListener(this);
         cbEnableNS.setOnClickListener(this);
+
+        // Read settings to refresh each configuration
+        ReadSettings();
     }
 
     private void StartCall() {
@@ -664,13 +667,20 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
             Log.d(TAG, "VoE set send  destination failed");
         }
 
-        // 0 = iPCM-wb, 5 = PCMU
         if (0 != ViEAndroidAPI.VoE_SetSendCodec(voiceChannel, voiceCodecType)) {
             Log.d(TAG, "VoE set send codec failed");
         }
 
-        if (0 != ViEAndroidAPI.VoE_SetECStatus(enableAECM, 5, 0, 28)){
+        if (0 != ViEAndroidAPI.VoE_SetECStatus(enableAECM)) {
             Log.d(TAG, "VoE set EC Status failed");
+        }
+
+        if (0 != ViEAndroidAPI.VoE_SetAGCStatus(enableAGC)) {
+            Log.d(TAG, "VoE set AGC Status failed");
+        }
+
+        if (0 != ViEAndroidAPI.VoE_SetNSStatus(enableNS)) {
+            Log.d(TAG, "VoE set NS Status failed");
         }
 
         if (0 != ViEAndroidAPI.VoE_StartSend(voiceChannel)) {
@@ -765,23 +775,19 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
             case R.id.cbAutoGainControl:
                 enableAGC=cbEnableAGC.isChecked();
                 if(voERunning) {
-                    // Enable AGC default mode.
-                    ViEAndroidAPI.VoE_SetAGCStatus(enableAGC,1);
+                    ViEAndroidAPI.VoE_SetAGCStatus(enableAGC);
                 }
                 break;
             case R.id.cbNoiseSuppression:
                 enableNS=cbEnableNS.isChecked();
                 if(voERunning) {
-                    // Enable NS default mode.
-                    ViEAndroidAPI.VoE_SetNSStatus(enableNS, 1);
+                    ViEAndroidAPI.VoE_SetNSStatus(enableNS);
                 }
                 break;
             case R.id.cbAECM:
                 enableAECM = cbEnableAECM.isChecked();
                 if (voERunning) {
-                    // EC_AECM=5
-                    // AECM_DEFAULT=0
-                    ViEAndroidAPI.VoE_SetECStatus(enableAECM, 5, 0, 28);
+                    ViEAndroidAPI.VoE_SetECStatus(enableAECM);
                 }
                 break;
         }

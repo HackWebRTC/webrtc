@@ -1526,48 +1526,47 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Set
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
  * Method:    VoE_SetECStatus
- * Signature: (ZIII)I
+ * Signature: (Z)I
  */
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1SetECStatus(
     JNIEnv *,
     jobject,
-    jboolean enable,
-    jint mode,
-    jint AESmode,
-    jint AESattenuation)
-{
-  // TODO(leozwang) implement
-  return -1;
+    jboolean enable) {
+  VALIDATE_APM_POINTER;
+  if (voeData.apm->SetEcStatus(enable, kEcAecm) < 0)
+    return -1;
+  return 0;
 }
 
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
  * Method:    VoE_SetAGCStatus
- * Signature: (ZI)I
+ * Signature: (Z)I
  */
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1SetAGCStatus(
     JNIEnv *,
     jobject,
-    jboolean enable,
-    jint mode)
-{
-  // TODO(leozwang) implement
-  return -1;
+    jboolean enable) {
+  VALIDATE_APM_POINTER;
+  if (voeData.apm->SetAgcStatus(enable) < 0)
+    return -1;
+  return 0;
 }
 
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
  * Method:    VoE_SetNSStatus
- * Signature: (ZI)I
+ * Signature: (Z)I
  */
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1SetNSStatus(
     JNIEnv *,
     jobject,
-    jboolean enable,
-    jint mode)
-{
-  // TODO(leozwang) implement
-  return -1;
+    jboolean enable) {
+  VALIDATE_APM_POINTER;
+  if (voeData.apm->SetNsStatus(enable) < 0) {
+    return -1;
+  }
+  return 0;
 }
 
 //
