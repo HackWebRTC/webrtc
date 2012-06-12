@@ -594,7 +594,6 @@ class WebRTCLinuxFactory(WebRTCFactory):
     self.compile_for_memory_tooling = compile_for_memory_tooling
     self.release = release
 
-    self._AddStartPulseAudioStep()
     self.AddSmartCleanStep()
     self.AddGclientSyncStep()
 
@@ -761,6 +760,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
       cmd = MakeCommandToRunTestInXvfb(['out/Debug/video_render_module_test'])
       self.AddCommonTestRunStep(test=test, cmd=cmd)
     elif test == 'voe_auto_test':
+      self._AddStartPulseAudioStep()
       # Set up the regular test run.
       binary = 'out/Debug/voe_auto_test'
       cmd = [binary, '--automated', '--gtest_filter=-RtpFuzzTest.*']
@@ -772,6 +772,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
                             '++gtest_filter=RtpFuzzTest*']
       self.AddCommonFyiStep(cmd=cmd, descriptor='voe_auto_test (fuzz tests)')
     elif test == 'audio_e2e_test':
+      self._AddStartPulseAudioStep()
       output_file = '/tmp/e2e_audio_out.pcm'
       cmd = ('python tools/e2e_quality/audio/run_audio_test.py '
              '--input=/home/webrtc-cb/data/e2e_audio_in.pcm '
@@ -788,10 +789,11 @@ class WebRTCLinuxFactory(WebRTCFactory):
 
   def _AddStartPulseAudioStep(self):
     # Ensure a PulseAudio daemon is running. Options:
-    #   --start runs it as a daemon.
-    #   --high-priority succeeds due to changes in /etc/security/limits.conf.
-    #   -vvvv gives us fully verbose logs.
-    cmd = ('/usr/bin/pulseaudio --start --high-priority -vvvv')
+    #   --start          starts the daemon if it is not running
+    #   --daemonize      daemonize after startup
+    #   --high-priority  succeeds due to changes in /etc/security/limits.conf.
+    #   -vvvv            gives us fully verbose logs.
+    cmd = ('/usr/bin/pulseaudio --start --daemonize --high-priority -vvvv')
     self.AddCommonStep(cmd=cmd, descriptor='Start PulseAudio')
 
 class WebRTCMacFactory(WebRTCFactory):
