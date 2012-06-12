@@ -238,7 +238,7 @@ class ForwardErrorCorrection {
   void GenerateFecUlpHeaders(const PacketList& mediaPacketList,
                              uint8_t* packetMask,
                              bool lBit,
-                             uint32_t numFecPackets);
+                             int numFecPackets);
 
   // Analyzes |media_packets| for holes in the sequence and inserts zero columns
   // into the |packet_mask| where those holes are found. Zero columns means that
@@ -248,8 +248,8 @@ class ForwardErrorCorrection {
   // allocated.
   int InsertZerosInBitMasks(const PacketList& media_packets,
                             uint8_t* packet_mask,
-                            uint16_t num_mask_bytes,
-                            uint32_t num_fec_packets);
+                            int num_mask_bytes,
+                            int num_fec_packets);
 
   // Inserts |num_zeros| zero columns into |new_mask| at position
   // |new_bit_index|. If the current byte of |new_mask| can't fit all zeros, the
@@ -279,7 +279,7 @@ class ForwardErrorCorrection {
 
   void GenerateFecBitStrings(const PacketList& mediaPacketList,
                              uint8_t* packetMask,
-                             uint32_t numFecPackets,
+                             int numFecPackets,
                              bool lBit);
 
   // Insert received packets into FEC or recovered list.
