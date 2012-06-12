@@ -787,14 +787,11 @@ class WebRTCLinuxFactory(WebRTCFactory):
       self.AddCommonTestRunStep(test)
 
   def _AddStartPulseAudioStep(self):
-    # Ensure a PulseAudio daemon is running. The options here are taken from
-    # /etc/init.d/pulseaudio, with three exceptions:
-    #   1. --system has been removed; this requires root privileges.
-    #   2. --log-target=syslog has been removed in order to get logs on stdout
-    #      for diagnosing problems.
-    #   3. -vvvv has been added for fully verbose logs.
-    cmd = ('/usr/bin/pulseaudio --start --daemonize --high-priority '
-           '--disallow-module-loading=1 -vvvv')
+    # Ensure a PulseAudio daemon is running. Options:
+    #   --start runs it as a daemon.
+    #   --high-priority succeeds due to changes in /etc/security/limits.conf.
+    #   -vvvv gives us fully verbose logs.
+    cmd = ('/usr/bin/pulseaudio --start --high-priority -vvvv')
     self.AddCommonStep(cmd=cmd, descriptor='Start PulseAudio')
 
 class WebRTCMacFactory(WebRTCFactory):
