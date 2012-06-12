@@ -49,6 +49,16 @@ def main(argv):
                     help='regular expression to extract the comparison metric')
   (options, args) = parser.parse_args(argv[1:])
 
+  # Get the initial default capture device, to restore later.
+  command = ['pacmd', 'list-sources']
+  print ' '.join(command)
+  proc = subprocess.Popen(command, stdout=subprocess.PIPE)
+  output = proc.communicate()[0]
+  if proc.returncode != 0:
+    return proc.returncode
+  default_source = re.search(r'(^  \* index: )([0-9]+$)', output,
+                             re.MULTILINE).group(2)
+
   # Set the default capture device to be used by VoiceEngine. We unfortunately
   # need to do this rather than select the devices directly through the harness
   # because monitor sources don't appear in VoiceEngine except as defaults.
@@ -66,6 +76,12 @@ def main(argv):
   print ' '.join(command)
   voe_proc = subprocess.Popen(command)
 
+  # If recording starts before there is data available, pacat sometimes
+  # inexplicably adds a large delay to the start of the file. We wait here in
+  # an attempt to prevent that, because VoE often takes some time to startup a
+  # call.
+  time.sleep(5)
+
   format_args = ['--format=s16le', '--rate=' + options.rate,
       '--channels=' + options.channels, '--raw']
   command = (['pacat', '-p', '-d', options.play_sink] + format_args +
@@ -73,10 +89,6 @@ def main(argv):
   print ' '.join(command)
   play_proc = subprocess.Popen(command)
 
-  # If recording starts before there is data available, pacat sometimes
-  # inexplicably adds a large delay to the start of the file. We wait here in
-  # an attempt to prevent that.
-  time.sleep(2)
   command = (['pacat', '-r', '-d', options.rec_sink + '.monitor'] +
       format_args + [options.output])
   print ' '.join(command)
@@ -89,16 +101,23 @@ def main(argv):
   if retcode != 0:
     return retcode
 
+  # Restore the initial default capture device.
+  command = ['pacmd', 'set-default-source', default_source]
+  print ' '.join(command)
+  retcode = subprocess.call(command, stdout=subprocess.PIPE)
+  if retcode != 0:
+    return retcode
+
   if options.compare and options.regexp:
     command = shlex.split(options.compare) + [options.input, options.output]
     print ' '.join(command)
-    compare_proc = subprocess.Popen(command, stdout=subprocess.PIPE)
-    compare_output = compare_proc.communicate()[0]
-    if compare_proc.returncode != 0:
-      return compare_proc.returncode
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE)
+    output = proc.communicate()[0]
+    if proc.returncode != 0:
+      return proc.returncode
 
     # The list should only contain one item.
-    print ''.join(re.findall(options.regexp, compare_output))
+    print ''.join(re.findall(options.regexp, output))
 
   return 0
 
