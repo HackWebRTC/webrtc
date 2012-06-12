@@ -1548,7 +1548,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Set
     jobject,
     jboolean enable) {
   VALIDATE_APM_POINTER;
-  if (voeData.apm->SetAgcStatus(enable) < 0)
+  if (voeData.apm->SetAgcStatus(enable, kAgcFixedDigital) < 0)
     return -1;
   return 0;
 }
