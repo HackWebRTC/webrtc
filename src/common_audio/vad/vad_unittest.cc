@@ -12,10 +12,11 @@
 
 #include <stdlib.h>
 
-#include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "gtest/gtest.h"
+
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "common_audio/vad/include/webrtc_vad.h"
 #include "typedefs.h"
-#include "webrtc_vad.h"
 
 VadTest::VadTest() {}
 
@@ -117,6 +118,22 @@ TEST_F(VadTest, ApiTest) {
   }
 
   EXPECT_EQ(0, WebRtcVad_Free(handle));
+}
+
+TEST_F(VadTest, ValidRatesFrameLengths) {
+  // This test verifies valid and invalid rate/frame_length combinations. We
+  // loop through sampling rates and frame lengths from negative values to
+  // values larger than possible.
+  for (int16_t rate = -1; rate <= kRates[kRatesSize - 1] + 1; rate++) {
+    for (int16_t frame_length = -1; frame_length <= kMaxFrameLength + 1;
+        frame_length++) {
+      if (ValidRatesAndFrameLengths(rate, frame_length)) {
+        EXPECT_EQ(0, WebRtcVad_ValidRateAndFrameLength(rate, frame_length));
+      } else {
+        EXPECT_EQ(-1, WebRtcVad_ValidRateAndFrameLength(rate, frame_length));
+      }
+    }
+  }
 }
 
 // TODO(bjornv): Add a process test, run on file.
