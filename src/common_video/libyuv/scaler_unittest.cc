@@ -29,6 +29,14 @@ class TestScaler : public ::testing::Test {
                      int src_width, int src_height,
                      int dst_width, int dst_height);
 
+  // TODO(mikhal): add a sequence reader to libyuv.
+
+  // Computes the sequence average PSNR between an input sequence in
+  // |input_file| and an output sequence with filename |out_name|. |width| and
+  // |height| are the frame sizes of both sequences.
+  double ComputeAvgSequencePSNR(FILE* input_file, std::string out_name,
+                                int width, int height);
+
   Scaler test_scaler_;
   FILE* source_file_;
   uint8_t* test_buffer_;
@@ -94,6 +102,7 @@ TEST_F(TestScaler, ScaleSendingBufferTooSmall) {
 
 //TODO (mikhal): Converge the test into one function that accepts the method.
 TEST_F(TestScaler, PointScaleTest) {
+  double avg_psnr;
   FILE* source_file2;
   ScaleMethod method = kScalePoint;
   std::string out_name = webrtc::test::OutputPath() +
@@ -102,6 +111,21 @@ TEST_F(TestScaler, PointScaleTest) {
                 source_file_, out_name,
                 width_, height_,
                 width_ / 2, height_ / 2);
+  // Upsample back up and check PSNR.
+  source_file2 = fopen(out_name.c_str(), "rb");
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_PointScale_352_288_"
+      "upfrom_176_144.yuv";
+  ScaleSequence(method,
+                source_file2, out_name,
+                176, 144,
+                352, 288);
+  avg_psnr = ComputeAvgSequencePSNR(source_file_, out_name, width_, height_);
+  printf("PSNR for scaling from: %d %d, down/up to: %d %d, and back to "
+      "original size: %f \n", width_, height_, 176, 144, avg_psnr);
+  // Average PSNR for lower bound in assert is ~0.1dB lower than the actual
+  // average PSNR under same conditions.
+  ASSERT_GT(avg_psnr, 27.9);
+  ASSERT_EQ(0, fclose(source_file2));
   out_name = webrtc::test::OutputPath() + "LibYuvTest_PointScale_320_240.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
@@ -135,6 +159,12 @@ TEST_F(TestScaler, PointScaleTest) {
                 source_file2, out_name,
                 282, 231,
                 352, 288);
+  avg_psnr = ComputeAvgSequencePSNR(source_file_, out_name, width_, height_);
+  printf("PSNR for scaling from: %d %d, down/up to: %d %d, and back to "
+      "original size: %f \n", width_, height_, 282, 231, avg_psnr);
+  // Average PSNR for lower bound in assert is ~0.1dB lower than the actual
+  // average PSNR under same conditions.
+  ASSERT_GT(avg_psnr, 27.8);
   ASSERT_EQ(0, fclose(source_file2));
   // Upsample to odd size frame and scale back down.
   out_name = webrtc::test::OutputPath() + "LibYuvTest_PointScale_699_531.yuv";
@@ -149,10 +179,17 @@ TEST_F(TestScaler, PointScaleTest) {
                 source_file2, out_name,
                 699, 531,
                 352, 288);
+  avg_psnr = ComputeAvgSequencePSNR(source_file_, out_name, width_, height_);
+  printf("PSNR for scaling from: %d %d, down/up to: %d %d, and back to "
+      "original size: %f \n", width_, height_, 699, 531, avg_psnr);
+  // Average PSNR for lower bound in assert is ~0.1dB lower than the actual
+  // average PSNR under same conditions.
+  ASSERT_GT(avg_psnr, 37.8);
   ASSERT_EQ(0, fclose(source_file2));
 }
 
 TEST_F(TestScaler, BiLinearScaleTest) {
+  double avg_psnr;
   FILE* source_file2;
   ScaleMethod method = kScaleBilinear;
   std::string out_name = webrtc::test::OutputPath() +
@@ -161,6 +198,22 @@ TEST_F(TestScaler, BiLinearScaleTest) {
                 source_file_, out_name,
                 width_, height_,
                 width_ / 2, height_ / 2);
+  // Upsample back up and check PSNR.
+  source_file2 = fopen(out_name.c_str(), "rb");
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_BilinearScale_352_288_"
+      "upfrom_176_144.yuv";
+  ScaleSequence(method,
+                source_file2, out_name,
+                176, 144,
+                352, 288);
+  avg_psnr = ComputeAvgSequencePSNR(source_file_, out_name, width_, height_);
+  printf("PSNR for scaling from: %d %d, down/up to: %d %d, and back to "
+      "original size: %f \n", width_, height_, 176, 144, avg_psnr);
+  // Average PSNR for lower bound in assert is ~0.1dB lower than the actual
+  // average PSNR under same conditions.
+  ASSERT_GT(avg_psnr, 27.5);
+  ComputeAvgSequencePSNR(source_file_, out_name, width_, height_);
+  ASSERT_EQ(0, fclose(source_file2));
   out_name = webrtc::test::OutputPath() +
              "LibYuvTest_BilinearScale_320_240.yuv";
   ScaleSequence(method,
@@ -198,7 +251,13 @@ TEST_F(TestScaler, BiLinearScaleTest) {
   ScaleSequence(method,
                 source_file2, out_name,
                 282, 231,
-                352, 288);
+                width_, height_);
+  avg_psnr = ComputeAvgSequencePSNR(source_file_, out_name, width_, height_);
+  printf("PSNR for scaling from: %d %d, down/up to: %d %d, and back to "
+      "original size: %f \n", width_, height_, 282, 231, avg_psnr);
+  // Average PSNR for lower bound in assert is ~0.1dB lower than the actual
+  // average PSNR under same conditions.
+  ASSERT_GT(avg_psnr, 29.7);
   ASSERT_EQ(0, fclose(source_file2));
   // Upsample to odd size frame and scale back down.
   out_name = webrtc::test::OutputPath() +
@@ -213,11 +272,18 @@ TEST_F(TestScaler, BiLinearScaleTest) {
   ScaleSequence(method,
                 source_file2, out_name,
                 699, 531,
-                352, 288);
+                width_, height_);
+  avg_psnr = ComputeAvgSequencePSNR(source_file_, out_name, width_, height_);
+  printf("PSNR for scaling from: %d %d, down/up to: %d %d, and back to "
+      "original size: %f \n", width_, height_, 699, 531, avg_psnr);
+  // Average PSNR for lower bound in assert is ~0.1dB lower than the actual
+  // average PSNR under same conditions.
+  ASSERT_GT(avg_psnr, 31.4);
   ASSERT_EQ(0, fclose(source_file2));
 }
 
 TEST_F(TestScaler, BoxScaleTest) {
+  double avg_psnr;
   FILE* source_file2;
   ScaleMethod method = kScaleBox;
   std::string out_name = webrtc::test::OutputPath() +
@@ -226,6 +292,21 @@ TEST_F(TestScaler, BoxScaleTest) {
                 source_file_, out_name,
                 width_, height_,
                 width_ / 2, height_ / 2);
+  // Upsample back up and check PSNR.
+  source_file2 = fopen(out_name.c_str(), "rb");
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_BoxScale_352_288_"
+      "upfrom_176_144.yuv";
+  ScaleSequence(method,
+                source_file2, out_name,
+                176, 144,
+                352, 288);
+  avg_psnr = ComputeAvgSequencePSNR(source_file_, out_name, width_, height_);
+  printf("PSNR for scaling from: %d %d, down/up to: %d %d, and back to "
+      "original size: %f \n", width_, height_, 176, 144, avg_psnr);
+  // Average PSNR for lower bound in assert is ~0.1dB lower than the actual
+  // average PSNR under same conditions.
+  ASSERT_GT(avg_psnr, 27.5);
+  ASSERT_EQ(0, fclose(source_file2));
   out_name = webrtc::test::OutputPath() + "LibYuvTest_BoxScale_320_240.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
@@ -258,7 +339,13 @@ TEST_F(TestScaler, BoxScaleTest) {
   ScaleSequence(method,
                 source_file2, out_name,
                 282, 231,
-                352, 288);
+                width_, height_);
+  avg_psnr = ComputeAvgSequencePSNR(source_file_, out_name, width_, height_);
+  printf("PSNR for scaling from: %d %d, down/up to: %d %d, and back to "
+      "original size: %f \n", width_, height_, 282, 231, avg_psnr);
+  // Average PSNR for lower bound in assert is ~0.1dB lower than the actual
+  // average PSNR under same conditions.
+  ASSERT_GT(avg_psnr, 29.7);
   ASSERT_EQ(0, fclose(source_file2));
   // Upsample to odd size frame and scale back down.
   out_name = webrtc::test::OutputPath() + "LibYuvTest_BoxScale_699_531.yuv";
@@ -272,8 +359,51 @@ TEST_F(TestScaler, BoxScaleTest) {
   ScaleSequence(method,
                 source_file2, out_name,
                 699, 531,
-                352, 288);
+                width_, height_);
+  avg_psnr = ComputeAvgSequencePSNR(source_file_, out_name, width_, height_);
+  printf("PSNR for scaling from: %d %d, down/up to: %d %d, and back to "
+       "original size: %f \n", width_, height_, 699, 531, avg_psnr);
+  // Average PSNR for lower bound in assert is ~0.1dB lower than the actual
+  // average PSNR under same conditions.
+  ASSERT_GT(avg_psnr, 31.4);
   ASSERT_EQ(0, fclose(source_file2));
+}
+
+double TestScaler::ComputeAvgSequencePSNR(FILE* input_file,
+                                          std::string out_name,
+                                          int width, int height) {
+  FILE* output_file;
+  output_file = fopen(out_name.c_str(), "rb");
+  assert(output_file != NULL);
+  rewind(input_file);
+  rewind(output_file);
+
+  int half_width = (width + 1) >> 1;
+  int half_height = (height + 1) >> 1;
+  int required_size = height * width + 2 * (half_width * half_height);
+  uint8_t* input_buffer = new uint8_t[required_size];
+  uint8_t* output_buffer = new uint8_t[required_size];
+
+  int frame_count = 0;
+  double avg_psnr = 0;
+  while (feof(input_file) == 0) {
+    if ((size_t)required_size !=
+        fread(input_buffer, 1, required_size, input_file)) {
+      break;
+    }
+    if ((size_t)required_size !=
+        fread(output_buffer, 1, required_size, output_file)) {
+      break;
+    }
+    frame_count++;
+    double psnr = I420PSNR(input_buffer, output_buffer, width, height);
+    avg_psnr += psnr;
+  }
+  avg_psnr = avg_psnr / frame_count;
+  assert(0 == fclose(output_file));
+  delete [] input_buffer;
+  delete [] output_buffer;
+  return avg_psnr;
 }
 
 // TODO (mikhal): Move part to a separate scale test.
