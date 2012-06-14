@@ -27,6 +27,13 @@
 
 namespace webrtc {
 
+// Maximum number of rate updates (i.e., calls to encoder to change bitrate
+// and/or frame rate) for the current tests.
+const int kMaxNumRateUpdates = 3;
+
+const int kPercTargetvsActualMismatch = 20;
+
+// Codec and network settings.
 struct CodecConfigPars {
   float packet_loss;
   int num_temporal_layers;
@@ -35,14 +42,49 @@ struct CodecConfigPars {
   bool denoising_on;
 };
 
+// Quality metrics.
+struct QualityMetrics {
+  double minimum_avg_psnr;
+  double minimum_min_psnr;
+  double minimum_avg_ssim;
+  double minimum_min_ssim;
+};
+
+// The sequence of bitrate and frame rate changes for the encoder, the frame
+// number where the changes are made, and the total number of frames for the
+// test.
+struct RateProfile {
+  int target_bit_rate[kMaxNumRateUpdates];
+  int input_frame_rate[kMaxNumRateUpdates];
+  int frame_index_rate_update[kMaxNumRateUpdates + 1];
+  int num_frames;
+};
+
+// Metrics for the rate control. The rate mismatch metrics are defined as
+// percentages.|max_time_hit_target| is defined as number of frames, after a
+// rate update is made to the encoder, for the encoder to reach within
+// |kPercTargetvsActualMismatch| of new target rate. The metrics are defined for
+// each rate update sequence.
+struct RateControlMetrics {
+  int max_num_dropped_frames;
+  int max_key_frame_size_mismatch;
+  int max_delta_frame_size_mismatch;
+  int max_encoding_rate_mismatch;
+  int max_time_hit_target;
+  int num_spatial_resizes;
+};
+
+
 // Sequence used is foreman (CIF): may be better to use VGA for resize test.
 const int kCIFWidth = 352;
 const int kCIFHeight = 288;
-const int kFrameRate = 30;
-const int kStartBitRateKbps = 300;
 const int kNbrFramesShort = 100;  // Some tests are run for shorter sequence.
 const int kNbrFramesLong = 299;
-const int kPercTargetvsActualMismatch = 20;
+
+// Parameters from VP8 wrapper, which control target size of key frames.
+const float kInitialBufferSize = 0.5f;
+const float kOptimalBufferSize = 0.6f;
+const float kScaleKeyFrameSize = 0.5f;
 
 // Integration test for video processor. Encodes+decodes a clip and
 // writes it to the output directory. After completion, quality metrics
@@ -83,6 +125,11 @@ class VideoProcessorIntegrationTest: public testing::Test {
   int bit_rate_;
   int frame_rate_;
   int layer_;
+  float target_size_key_frame_initial_;
+  float target_size_key_frame_;
+  float sum_key_frame_size_mismatch_;
+  int num_key_frames_;
+  float start_bitrate_;
 
   // Codec and network settings.
   float packet_loss_;
@@ -116,7 +163,7 @@ class VideoProcessorIntegrationTest: public testing::Test {
     // Get a codec configuration struct and configure it.
     VideoCodingModule::Codec(kVideoCodecVP8, &codec_settings_);
     config_.codec_settings = &codec_settings_;
-    config_.codec_settings->startBitrate = kStartBitRateKbps;
+    config_.codec_settings->startBitrate = start_bitrate_;
     config_.codec_settings->width = kCIFWidth;
     config_.codec_settings->height = kCIFHeight;
     // These features may be set depending on the test.
@@ -158,28 +205,41 @@ class VideoProcessorIntegrationTest: public testing::Test {
       per_frame_bandwidth_[i] = static_cast<float>(bit_rate_layer_[i]) /
              static_cast<float>(frame_rate_layer_[i]);
     }
+    // Set maximum size of key frames, following setting in the VP8 wrapper.
+    float max_key_size = kScaleKeyFrameSize * kOptimalBufferSize * frame_rate_;
+    // We don't know exact target size of the key frames (except for first one),
+    // but the minimum in libvpx is ~|3 * per_frame_bandwidth| and maximum is
+    // set by |max_key_size_  * per_frame_bandwidth|. Take middle point/average
+    // as reference for mismatch. Note key frames always correspond to base
+    // layer frame in this test.
+    target_size_key_frame_ = 0.5 * (3 + max_key_size) * per_frame_bandwidth_[0];
     num_frames_total_ = 0;
     sum_encoded_frame_size_total_ = 0.0f;
     encoding_bitrate_total_ = 0.0f;
     perc_encoding_rate_mismatch_ = 0.0f;
     num_frames_to_hit_target_ = num_frames;
     encoding_rate_within_target_ = false;
+    sum_key_frame_size_mismatch_ = 0.0;
+    num_key_frames_ = 0;
   }
 
   // For every encoded frame, update the rate control metrics.
-  void UpdateRateControlMetrics(int frame_num,
-                                int max_encoding_rate_mismatch) {
+  void UpdateRateControlMetrics(int frame_num, VideoFrameType frame_type) {
     int encoded_frame_size = processor_->EncodedFrameSize();
     float encoded_size_kbits = encoded_frame_size * 8.0f / 1000.0f;
     // Update layer data.
-    // Ignore first frame (key frame), and any other key frames in the run,
-    // for rate mismatch relative to per-frame bandwidth.
-    // Note |frame_num| = 1 for the first frame in the run.
-    if (frame_num > 1 && ((frame_num - 1) % key_frame_interval_ != 0 ||
-        key_frame_interval_ < 0)) {
+    // Update rate mismatch relative to per-frame bandwidth for delta frames.
+    if (frame_type == kDeltaFrame) {
+      // TODO(marpan): Should we count dropped (zero size) frames in mismatch?
       sum_frame_size_mismatch_[layer_] += fabs(encoded_size_kbits -
                                                per_frame_bandwidth_[layer_]) /
                                                per_frame_bandwidth_[layer_];
+    } else {
+      float target_size = (frame_num == 1) ? target_size_key_frame_initial_ :
+          target_size_key_frame_;
+      sum_key_frame_size_mismatch_ += fabs(encoded_size_kbits - target_size) /
+          target_size;
+      num_key_frames_ += 1;
     }
     sum_encoded_frame_size_[layer_] += encoded_size_kbits;
     // Encoding bitrate per layer: from the start of the update/run to the
@@ -202,7 +262,8 @@ class VideoProcessorIntegrationTest: public testing::Test {
 
   // Verify expected behavior of rate control and print out data.
   void VerifyRateControl(int update_index,
-                         int max_frame_size_mismatch,
+                         int max_key_frame_size_mismatch,
+                         int max_delta_frame_size_mismatch,
                          int max_encoding_rate_mismatch,
                          int max_time_hit_target,
                          int max_num_dropped_frames,
@@ -219,6 +280,14 @@ class VideoProcessorIntegrationTest: public testing::Test {
            " Number of spatial resizes = %d, \n",
            num_frames_to_hit_target_, num_dropped_frames, num_resize_actions);
     EXPECT_LE(perc_encoding_rate_mismatch_, max_encoding_rate_mismatch);
+    if (num_key_frames_ > 0) {
+      int perc_key_frame_size_mismatch = 100 * sum_key_frame_size_mismatch_ /
+              num_key_frames_;
+      printf(" Number of Key frames: %d \n"
+             " Key frame rate mismatch: %d \n",
+             num_key_frames_, perc_key_frame_size_mismatch);
+      EXPECT_LE(perc_key_frame_size_mismatch, max_key_frame_size_mismatch);
+    }
     printf("\n");
     printf("Rates statistics for Layer data \n");
     for (int i = 0; i < num_temporal_layers_ ; i++) {
@@ -238,7 +307,7 @@ class VideoProcessorIntegrationTest: public testing::Test {
           bit_rate_layer_[i], frame_rate_layer_[i], per_frame_bandwidth_[i],
           encoding_bitrate_[i], perc_frame_size_mismatch,
           perc_encoding_rate_mismatch, num_frames_per_update_[i]);
-      EXPECT_LE(perc_frame_size_mismatch, max_frame_size_mismatch);
+      EXPECT_LE(perc_frame_size_mismatch, max_delta_frame_size_mismatch);
       EXPECT_LE(perc_encoding_rate_mismatch, max_encoding_rate_mismatch);
     }
     printf("\n");
@@ -300,6 +369,15 @@ class VideoProcessorIntegrationTest: public testing::Test {
     }
   }
 
+  VideoFrameType FrameType(int frame_number) {
+    if (frame_number == 0 || ((frame_number) % key_frame_interval_ == 0 &&
+        key_frame_interval_ > 0)) {
+      return kKeyFrame;
+    } else {
+      return kDeltaFrame;
+    }
+  }
+
   void TearDown() {
     delete processor_;
     delete packet_manipulator_;
@@ -310,21 +388,12 @@ class VideoProcessorIntegrationTest: public testing::Test {
   }
 
   // Processes all frames in the clip and verifies the result.
-  void ProcessFramesAndVerify(double minimum_avg_psnr,
-                              double minimum_min_psnr,
-                              double minimum_avg_ssim,
-                              double minimum_min_ssim,
-                              int* target_bit_rate,
-                              int* input_frame_rate,
-                              int* frame_index_rate_update,
-                              int num_frames,
+  void ProcessFramesAndVerify(QualityMetrics quality_metrics,
+                              RateProfile rate_profile,
                               CodecConfigPars process,
-                              int* max_frame_size_mismatch,
-                              int* max_encoding_rate_mismatch,
-                              int* max_time_hit_target,
-                              int* max_num_dropped_frames,
-                              int* num_spatial_resizes) {
+                              RateControlMetrics* rc_metrics) {
     // Codec/config settings.
+    start_bitrate_ = rate_profile.target_bit_rate[0];
     packet_loss_ = process.packet_loss;
     key_frame_interval_ = process.key_frame_interval;
     num_temporal_layers_ = process.num_temporal_layers;
@@ -332,49 +401,61 @@ class VideoProcessorIntegrationTest: public testing::Test {
     denoising_on_ = process.denoising_on;
     SetUpCodecConfig();
     // Update the layers and the codec with the initial rates.
-    bit_rate_ =  target_bit_rate[0];
-    frame_rate_ = input_frame_rate[0];
+    bit_rate_ =  rate_profile.target_bit_rate[0];
+    frame_rate_ = rate_profile.input_frame_rate[0];
     SetLayerRates();
+    // Set the initial target size for key frame.
+    target_size_key_frame_initial_ = 0.5 * kInitialBufferSize *
+        bit_rate_layer_[0];
     processor_->SetRates(bit_rate_, frame_rate_);
     // Process each frame, up to |num_frames|.
+    int num_frames = rate_profile.num_frames;
     int update_index = 0;
-    ResetRateControlMetrics(frame_index_rate_update[update_index + 1]);
+    ResetRateControlMetrics(
+        rate_profile.frame_index_rate_update[update_index + 1]);
     int frame_number = 0;
+    VideoFrameType frame_type = kDeltaFrame;
     while (processor_->ProcessFrame(frame_number) &&
         frame_number < num_frames) {
       // Get the layer index for the frame |frame_number|.
       LayerIndexForFrame(frame_number);
+      frame_type = FrameType(frame_number);
       // Counter for whole sequence run.
       ++frame_number;
       // Counters for each rate update.
       ++num_frames_per_update_[layer_];
       ++num_frames_total_;
-      UpdateRateControlMetrics(frame_number,
-                               max_encoding_rate_mismatch[update_index]);
+      UpdateRateControlMetrics(frame_number, frame_type);
       // If we hit another/next update, verify stats for current state and
       // update layers and codec with new rates.
-      if (frame_number == frame_index_rate_update[update_index + 1]) {
-        VerifyRateControl(update_index,
-                          max_frame_size_mismatch[update_index],
-                          max_encoding_rate_mismatch[update_index],
-                          max_time_hit_target[update_index],
-                          max_num_dropped_frames[update_index],
-                          num_spatial_resizes[update_index]);
+      if (frame_number ==
+          rate_profile.frame_index_rate_update[update_index + 1]) {
+        VerifyRateControl(
+            update_index,
+            rc_metrics[update_index].max_key_frame_size_mismatch,
+            rc_metrics[update_index].max_delta_frame_size_mismatch,
+            rc_metrics[update_index].max_encoding_rate_mismatch,
+            rc_metrics[update_index].max_time_hit_target,
+            rc_metrics[update_index].max_num_dropped_frames,
+            rc_metrics[update_index].num_spatial_resizes);
         // Update layer rates and the codec with new rates.
         ++update_index;
-        bit_rate_ =  target_bit_rate[update_index];
-        frame_rate_ = input_frame_rate[update_index];
+        bit_rate_ =  rate_profile.target_bit_rate[update_index];
+        frame_rate_ = rate_profile.input_frame_rate[update_index];
         SetLayerRates();
-        ResetRateControlMetrics(frame_index_rate_update[update_index + 1]);
+        ResetRateControlMetrics(rate_profile.
+                                frame_index_rate_update[update_index + 1]);
         processor_->SetRates(bit_rate_, frame_rate_);
       }
     }
-    VerifyRateControl(update_index,
-                      max_frame_size_mismatch[update_index],
-                      max_encoding_rate_mismatch[update_index],
-                      max_time_hit_target[update_index],
-                      max_num_dropped_frames[update_index],
-                      num_spatial_resizes[update_index]);
+    VerifyRateControl(
+        update_index,
+        rc_metrics[update_index].max_key_frame_size_mismatch,
+        rc_metrics[update_index].max_delta_frame_size_mismatch,
+        rc_metrics[update_index].max_encoding_rate_mismatch,
+        rc_metrics[update_index].max_time_hit_target,
+        rc_metrics[update_index].max_num_dropped_frames,
+        rc_metrics[update_index].num_spatial_resizes);
     EXPECT_EQ(num_frames, frame_number);
     EXPECT_EQ(num_frames + 1, static_cast<int>(stats_.stats_.size()));
 
@@ -398,126 +479,134 @@ class VideoProcessorIntegrationTest: public testing::Test {
            psnr_result.average, psnr_result.min,
            ssim_result.average, ssim_result.min);
     stats_.PrintSummary();
-    EXPECT_GT(psnr_result.average, minimum_avg_psnr);
-    EXPECT_GT(psnr_result.min, minimum_min_psnr);
-    EXPECT_GT(ssim_result.average, minimum_avg_ssim);
-    EXPECT_GT(ssim_result.min, minimum_min_ssim);
+    EXPECT_GT(psnr_result.average, quality_metrics.minimum_avg_psnr);
+    EXPECT_GT(psnr_result.min, quality_metrics.minimum_min_psnr);
+    EXPECT_GT(ssim_result.average, quality_metrics.minimum_avg_ssim);
+    EXPECT_GT(ssim_result.min, quality_metrics.minimum_min_ssim);
   }
 };
+
+void SetRateProfilePars(RateProfile* rate_profile,
+                        int update_index,
+                        int bit_rate,
+                        int frame_rate,
+                        int frame_index_rate_update) {
+  rate_profile->target_bit_rate[update_index] = bit_rate;
+  rate_profile->input_frame_rate[update_index] = frame_rate;
+  rate_profile->frame_index_rate_update[update_index] = frame_index_rate_update;
+}
+
+void SetCodecParameters(CodecConfigPars* process_settings,
+                        float packet_loss,
+                        int key_frame_interval,
+                        int num_temporal_layers,
+                        bool error_concealment_on,
+                        bool denoising_on) {
+  process_settings->packet_loss = packet_loss;
+  process_settings->key_frame_interval =  key_frame_interval;
+  process_settings->num_temporal_layers = num_temporal_layers,
+  process_settings->error_concealment_on = error_concealment_on;
+  process_settings->denoising_on = denoising_on;
+}
+
+void SetQualityMetrics(QualityMetrics* quality_metrics,
+                       double minimum_avg_psnr,
+                       double minimum_min_psnr,
+                       double minimum_avg_ssim,
+                       double minimum_min_ssim) {
+  quality_metrics->minimum_avg_psnr = minimum_avg_psnr;
+  quality_metrics->minimum_min_psnr = minimum_min_psnr;
+  quality_metrics->minimum_avg_ssim = minimum_avg_ssim;
+  quality_metrics->minimum_min_ssim = minimum_min_ssim;
+}
+
+void SetRateControlMetrics(RateControlMetrics* rc_metrics,
+                           int update_index,
+                           int max_num_dropped_frames,
+                           int max_key_frame_size_mismatch,
+                           int max_delta_frame_size_mismatch,
+                           int max_encoding_rate_mismatch,
+                           int max_time_hit_target,
+                           int num_spatial_resizes) {
+  rc_metrics[update_index].max_num_dropped_frames = max_num_dropped_frames;
+  rc_metrics[update_index].max_key_frame_size_mismatch =
+      max_key_frame_size_mismatch;
+  rc_metrics[update_index].max_delta_frame_size_mismatch =
+      max_delta_frame_size_mismatch;
+  rc_metrics[update_index].max_encoding_rate_mismatch =
+      max_encoding_rate_mismatch;
+  rc_metrics[update_index].max_time_hit_target = max_time_hit_target;
+  rc_metrics[update_index].num_spatial_resizes = num_spatial_resizes;
+}
 
 // Run with no packet loss and fixed bitrate. Quality should be very high.
 // One key frame (first frame only) in sequence. Setting |key_frame_interval|
 // to -1 below means no periodic key frames in test.
 TEST_F(VideoProcessorIntegrationTest, ProcessZeroPacketLoss) {
   // Bitrate and frame rate profile.
-  int target_bit_rate[] = {500};   // kbps
-  int input_frame_rate[] = {kFrameRate};
-  int frame_index_rate_update[] = {0, kNbrFramesShort + 1};
-  int num_frames = kNbrFramesShort;
+  RateProfile rate_profile;
+  SetRateProfilePars(&rate_profile, 0, 500, 30, 0);
+  rate_profile.frame_index_rate_update[1] = kNbrFramesShort + 1;
+  rate_profile.num_frames = kNbrFramesShort;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  process_settings.packet_loss = 0.0f;
-  process_settings.key_frame_interval = -1;
-  process_settings.num_temporal_layers = 1;
-  process_settings.error_concealment_on = true;
-  process_settings.denoising_on = true;
+  SetCodecParameters(&process_settings, 0.0f, -1, 1, true, true);
   // Metrics for expected quality.
-  double minimum_avg_psnr = 36;
-  double minimum_min_psnr = 32;
-  double minimum_avg_ssim = 0.9;
-  double minimum_min_ssim = 0.9;
-  // Metrics for rate control: rate mismatch metrics are defined as percentages.
-  // |max_time_hit_target| is defined as number of frames, after a rate update
-  // is made to the encoder, for the encoder to reach within
-  // |kPercTargetvsActualMismatch| of new target rate.
-  int max_num_dropped_frames[] = {0};
-  int max_frame_size_mismatch[] = {20};
-  int max_encoding_rate_mismatch[] = {15};
-  int max_time_hit_target[] = {15};
-  int num_spatial_resizes[] = {0};
-  ProcessFramesAndVerify(minimum_avg_psnr, minimum_min_psnr,
-                         minimum_avg_ssim, minimum_min_ssim,
-                         target_bit_rate, input_frame_rate,
-                         frame_index_rate_update, num_frames, process_settings,
-                         max_frame_size_mismatch, max_encoding_rate_mismatch,
-                         max_time_hit_target, max_num_dropped_frames,
-                         num_spatial_resizes);
+  QualityMetrics quality_metrics;
+  SetQualityMetrics(&quality_metrics, 36.0, 34.0, 0.90, 0.90);
+  // Metrics for rate control.
+  RateControlMetrics rc_metrics[1];
+  SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 15, 0);
+  ProcessFramesAndVerify(quality_metrics,
+                         rate_profile,
+                         process_settings,
+                         rc_metrics);
 }
 
 // Run with 5% packet loss and fixed bitrate. Quality should be a bit lower.
 // One key frame (first frame only) in sequence.
 TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLoss) {
-  // Bitrate and frame rate profile, and codec settings.
-  int target_bit_rate[] = {500};  // kbps
-  int input_frame_rate[] = {kFrameRate};
-  int frame_index_rate_update[] = {0, kNbrFramesShort + 1};
-  int num_frames = kNbrFramesShort;
+  // Bitrate and frame rate profile.
+  RateProfile rate_profile;
+  SetRateProfilePars(&rate_profile, 0, 500, 30, 0);
+  rate_profile.frame_index_rate_update[1] = kNbrFramesShort + 1;
+  rate_profile.num_frames = kNbrFramesShort;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  process_settings.packet_loss = 0.05f;
-  process_settings.key_frame_interval = -1;
-  process_settings.num_temporal_layers = 1;
-  process_settings.error_concealment_on = true;
-  process_settings.denoising_on = true;
+  SetCodecParameters(&process_settings, 0.05f, -1, 1, true, true);
   // Metrics for expected quality.
-  double minimum_avg_psnr = 21;
-  double minimum_min_psnr = 16;
-  double minimum_avg_ssim = 0.6;
-  double minimum_min_ssim = 0.4;
-  // Metrics for rate control: rate mismatch metrics are defined as percentages.
-  // |max_time_hit_target| is defined as number of frames, after a rate update
-  // is made to the encoder, for the encoder to reach within
-  // |kPercTargetvsActualMismatch| of new target rate.
-  int max_num_dropped_frames[] = {0};
-  int max_frame_size_mismatch[] = {25};
-  int max_encoding_rate_mismatch[] = {15};
-  int max_time_hit_target[] = {15};
-  int num_spatial_resizes[] = {0};
-  ProcessFramesAndVerify(minimum_avg_psnr, minimum_min_psnr,
-                         minimum_avg_ssim, minimum_min_ssim,
-                         target_bit_rate, input_frame_rate,
-                         frame_index_rate_update, num_frames, process_settings,
-                         max_frame_size_mismatch, max_encoding_rate_mismatch,
-                         max_time_hit_target, max_num_dropped_frames,
-                         num_spatial_resizes);
+  QualityMetrics quality_metrics;
+  SetQualityMetrics(&quality_metrics, 21.0, 16.0, 0.60, 0.40);
+  // Metrics for rate control.
+  RateControlMetrics rc_metrics[1];
+  SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 15, 0);
+  ProcessFramesAndVerify(quality_metrics,
+                         rate_profile,
+                         process_settings,
+                         rc_metrics);
 }
 
 // Run with 10% packet loss and fixed bitrate. Quality should be even lower.
 // One key frame (first frame only) in sequence.
 TEST_F(VideoProcessorIntegrationTest, Process10PercentPacketLoss) {
-  // Bitrate and frame rate profile, and codec settings.
-  int target_bit_rate[] = {500};  // kbps
-  int input_frame_rate[] = {kFrameRate};
-  int frame_index_rate_update[] = {0, kNbrFramesShort + 1};
-  int num_frames = kNbrFramesShort;
+  // Bitrate and frame rate profile.
+  RateProfile rate_profile;
+  SetRateProfilePars(&rate_profile, 0, 500, 30, 0);
+  rate_profile.frame_index_rate_update[1] = kNbrFramesShort + 1;
+  rate_profile.num_frames = kNbrFramesShort;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  process_settings.packet_loss = 0.1f;
-  process_settings.key_frame_interval = -1;
-  process_settings.num_temporal_layers = 1;
-  process_settings.error_concealment_on = true;
-  process_settings.denoising_on = true;
+  SetCodecParameters(&process_settings, 0.1f, -1, 1, true, true);
   // Metrics for expected quality.
-  double minimum_avg_psnr = 19;
-  double minimum_min_psnr = 16;
-  double minimum_avg_ssim = 0.5;
-  double minimum_min_ssim = 0.35;
-  // Metrics for rate control: rate mismatch metrics are defined as percentages.
-  // |max_time_hit_target| is defined as number of frames, after a rate update
-  // is made to the encoder, for the encoder to reach within
-  // |kPercTargetvsActualMismatch| of new target rate.
-  int max_num_dropped_frames[] = {0};
-  int max_frame_size_mismatch[] = {25};
-  int max_encoding_rate_mismatch[] = {15};
-  int max_time_hit_target[] = {15};
-  int num_spatial_resizes[] = {0};
-  ProcessFramesAndVerify(minimum_avg_psnr, minimum_min_psnr,
-                         minimum_avg_ssim, minimum_min_ssim,
-                         target_bit_rate, input_frame_rate,
-                         frame_index_rate_update, num_frames, process_settings,
-                         max_frame_size_mismatch, max_encoding_rate_mismatch,
-                         max_time_hit_target, max_num_dropped_frames,
-                         num_spatial_resizes);
+  QualityMetrics quality_metrics;
+  SetQualityMetrics(&quality_metrics, 19.0, 16.0, 0.50, 0.35);
+  // Metrics for rate control.
+  RateControlMetrics rc_metrics[1];
+  SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 15, 0);
+  ProcessFramesAndVerify(quality_metrics,
+                         rate_profile,
+                         process_settings,
+                         rc_metrics);
 }
 
 // Run with no packet loss, with varying bitrate (3 rate updates):
@@ -525,39 +614,28 @@ TEST_F(VideoProcessorIntegrationTest, Process10PercentPacketLoss) {
 // target rate/per-frame bandwidth (for each rate update) is within limits.
 // One key frame (first frame only) in sequence.
 TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRate) {
-  // Bitrate and frame rate profile, and codec settings.
-  int target_bit_rate[] = {200, 800, 500};  // kbps
-  int input_frame_rate[] = {30, 30, 30};
-  int frame_index_rate_update[] = {0, 100, 200, kNbrFramesLong + 1};
-  int num_frames = kNbrFramesLong;
+  // Bitrate and frame rate profile.
+  RateProfile rate_profile;
+  SetRateProfilePars(&rate_profile, 0, 200, 30, 0);
+  SetRateProfilePars(&rate_profile, 1, 800, 30, 100);
+  SetRateProfilePars(&rate_profile, 2, 500, 30, 200);
+  rate_profile.frame_index_rate_update[3] = kNbrFramesLong + 1;
+  rate_profile.num_frames = kNbrFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  process_settings.packet_loss = 0.0f;
-  process_settings.key_frame_interval = -1;
-  process_settings.num_temporal_layers = 1;
-  process_settings.error_concealment_on = true;
-  process_settings.denoising_on = true;
+  SetCodecParameters(&process_settings, 0.0f, -1, 1, true, true);
   // Metrics for expected quality.
-  double minimum_avg_psnr = 34;
-  double minimum_min_psnr = 32;
-  double minimum_avg_ssim = 0.85;
-  double minimum_min_ssim = 0.8;
-  // Metrics for rate control: rate mismatch metrics are defined as percentages.
-  // |max_time_hit_target| is defined as number of frames, after a rate update
-  // is made to the encoder, for the encoder to reach within
-  // |kPercTargetvsActualMismatch| of new target rate.
-  int max_num_dropped_frames[] = {0, 0, 0};
-  int max_frame_size_mismatch[] = {20, 25, 25};
-  int max_encoding_rate_mismatch[] = {10, 20, 15};
-  int max_time_hit_target[] = {15, 10, 10};
-  int num_spatial_resizes[] = {0, 0, 0};
-  ProcessFramesAndVerify(minimum_avg_psnr, minimum_min_psnr,
-                         minimum_avg_ssim, minimum_min_ssim,
-                         target_bit_rate, input_frame_rate,
-                         frame_index_rate_update, num_frames, process_settings,
-                         max_frame_size_mismatch, max_encoding_rate_mismatch,
-                         max_time_hit_target, max_num_dropped_frames,
-                         num_spatial_resizes);
+  QualityMetrics quality_metrics;
+  SetQualityMetrics(&quality_metrics, 34.0, 32.0, 0.85, 0.80);
+  // Metrics for rate control.
+  RateControlMetrics rc_metrics[3];
+  SetRateControlMetrics(rc_metrics, 0, 0, 45, 20, 10, 15, 0);
+  SetRateControlMetrics(rc_metrics, 1, 0, 0, 25, 20, 10, 0);
+  SetRateControlMetrics(rc_metrics, 2, 0, 0, 25, 15, 10, 0);
+  ProcessFramesAndVerify(quality_metrics,
+                         rate_profile,
+                         process_settings,
+                         rc_metrics);
 }
 
 // Run with no packet loss, with an update (decrease) in frame rate.
@@ -569,41 +647,32 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRate) {
 // metrics avergaed over whole sequence run.
 TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeFrameRateFrameDrop) {
   config_.networking_config.packet_loss_probability = 0;
-  // Bitrate and frame rate profile, and codec settings.
-  int target_bit_rate[] = {80, 80, 80};  // kbps
-  int input_frame_rate[] = {30, 15, 10};
-  int frame_index_rate_update[] = {0, 100, 200, kNbrFramesLong + 1};
-  int num_frames = kNbrFramesLong;
+  // Bitrate and frame rate profile.
+  RateProfile rate_profile;
+  SetRateProfilePars(&rate_profile, 0, 80, 30, 0);
+  SetRateProfilePars(&rate_profile, 1, 80, 15, 100);
+  SetRateProfilePars(&rate_profile, 2, 80, 10, 200);
+  rate_profile.frame_index_rate_update[3] = kNbrFramesLong + 1;
+  rate_profile.num_frames = kNbrFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  process_settings.packet_loss = 0.0f;
-  process_settings.key_frame_interval = -1;
-  process_settings.num_temporal_layers = 1;
-  process_settings.error_concealment_on = true;
-  process_settings.denoising_on = true;
+  SetCodecParameters(&process_settings, 0.0f, -1, 1, true, true);
   // Metrics for expected quality.
-  double minimum_avg_psnr = 31;
-  double minimum_min_psnr = 24;
-  double minimum_avg_ssim = 0.8;
-  double minimum_min_ssim = 0.7;
-  // Metrics for rate control: rate mismatch metrics are defined as percentages.
-  // |max_time_hit_target| is defined as number of frames, after a rate update
-  // is made to the encoder, for the encoder to reach within
-  // |kPercTargetvsActualMismatch| of new target rate.
-  int max_num_dropped_frames[] = {25, 10, 0};
-  int max_frame_size_mismatch[] = {60, 25, 20};
-  int max_encoding_rate_mismatch[] = {40, 10, 10};
-  // At the low per-frame bandwidth for this scene, encoder can't hit target
-  // rate before first update.
-  int max_time_hit_target[] = {100, 40, 10};
-  int num_spatial_resizes[] = {0, 0, 0};
-  ProcessFramesAndVerify(minimum_avg_psnr, minimum_min_psnr,
-                         minimum_avg_ssim, minimum_min_ssim,
-                         target_bit_rate, input_frame_rate,
-                         frame_index_rate_update, num_frames, process_settings,
-                         max_frame_size_mismatch, max_encoding_rate_mismatch,
-                         max_time_hit_target, max_num_dropped_frames,
-                         num_spatial_resizes);
+  QualityMetrics quality_metrics;
+  SetQualityMetrics(&quality_metrics, 31.0, 23.0, 0.80, 0.65);
+  quality_metrics.minimum_avg_psnr = 31;
+  quality_metrics.minimum_min_psnr = 23;
+  quality_metrics.minimum_avg_ssim = 0.8;
+  quality_metrics.minimum_min_ssim = 0.65;
+  // Metrics for rate control.
+  RateControlMetrics rc_metrics[3];
+  SetRateControlMetrics(rc_metrics, 0, 40, 20, 75, 15, 60, 0);
+  SetRateControlMetrics(rc_metrics, 1, 10, 0, 25, 10, 35, 0);
+  SetRateControlMetrics(rc_metrics, 2, 0, 0, 20, 10, 10, 0);
+  ProcessFramesAndVerify(quality_metrics,
+                         rate_profile,
+                         process_settings,
+                         rc_metrics);
 }
 
 // Run with no packet loss, at low bitrate, then increase rate somewhat.
@@ -615,41 +684,31 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeFrameRateFrameDrop) {
 // is a memory leak with resizing and error concealment.
 TEST_F(VideoProcessorIntegrationTest, ProcessNoLossSpatialResizeFrameDrop) {
   config_.networking_config.packet_loss_probability = 0;
-  // Bitrate and frame rate profile, and codec settings.
-  int target_bit_rate[] = {80, 200, 200};  // kbps
-  int input_frame_rate[] = {30, 30, 30};
-  int frame_index_rate_update[] = {0, 120, 240, kNbrFramesLong + 1};
-  int num_frames = kNbrFramesLong;
+  // Bitrate and frame rate profile.
+  RateProfile rate_profile;
+  SetRateProfilePars(&rate_profile, 0, 80, 30, 0);
+  SetRateProfilePars(&rate_profile, 1, 200, 30, 120);
+  SetRateProfilePars(&rate_profile, 2, 200, 30, 240);
+  rate_profile.frame_index_rate_update[3] = kNbrFramesLong + 1;
+  rate_profile.num_frames = kNbrFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  process_settings.packet_loss = 0.0f;
-  process_settings.key_frame_interval = 120;
-  process_settings.num_temporal_layers = 1;
-  process_settings.error_concealment_on = false;
-  process_settings.denoising_on = true;
+  SetCodecParameters(&process_settings, 0.0f, 120, 1, true, true);
   // Metrics for expected quality.: lower quality on average from up-sampling
   // the down-sampled portion of the run, in case resizer is on.
-  double minimum_avg_psnr = 29;
-  double minimum_min_psnr = 20;
-  double minimum_avg_ssim = 0.75;
-  double minimum_min_ssim = 0.6;
-  // Metrics for rate control: rate mismatch metrics are defined as percentages.
-  // |max_time_hit_target| is defined as number of frames, after a rate update
-  // is made to the encoder, for the encoder to reach within
-  // |kPercTargetvsActualMismatch| of new target rate.
-  int max_num_dropped_frames[] = {25, 15, 0};
-  int max_frame_size_mismatch[] = {60, 30, 30};
-  int max_encoding_rate_mismatch[] = {30, 20, 15};
-  // At this low rate for this scene, can't hit target rate before first update.
-  int max_time_hit_target[] = {120, 15, 25};
-  int num_spatial_resizes[] = {0, 1, 1};
-  ProcessFramesAndVerify(minimum_avg_psnr, minimum_min_psnr,
-                         minimum_avg_ssim, minimum_min_ssim,
-                         target_bit_rate, input_frame_rate,
-                         frame_index_rate_update, num_frames, process_settings,
-                         max_frame_size_mismatch, max_encoding_rate_mismatch,
-                         max_time_hit_target, max_num_dropped_frames,
-                         num_spatial_resizes);
+  QualityMetrics quality_metrics;
+  SetQualityMetrics(&quality_metrics, 29.0, 20.0, 0.75, 0.60);
+  // Metrics for rate control.
+  RateControlMetrics rc_metrics[3];
+  SetRateControlMetrics(rc_metrics, 0, 45, 20, 75, 20, 70, 0);
+  SetRateControlMetrics(rc_metrics, 1, 20, 35, 30, 20, 15, 1);
+  // TODO(marpan): Lower this mismatch value for key frame when we upgrade to
+  // new libvpx: currently there is bug in the QP selection.
+  SetRateControlMetrics(rc_metrics, 2, 0, 110, 30, 15, 25, 1);
+  ProcessFramesAndVerify(quality_metrics,
+                         rate_profile,
+                         process_settings,
+                         rc_metrics);
 }
 
 // Run with no packet loss, with 3 temporal layers, with a rate update in the
@@ -659,38 +718,25 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossSpatialResizeFrameDrop) {
 // One key frame (first frame only) in sequence, so no spatial resizing.
 TEST_F(VideoProcessorIntegrationTest, ProcessNoLossTemporalLayers) {
   config_.networking_config.packet_loss_probability = 0;
-  // Bitrate and frame rate profile, and codec settings.
-  int target_bit_rate[] = {200, 400};  // kbps
-  int input_frame_rate[] = {30, 30};
-  int frame_index_rate_update[] = {0, 150, kNbrFramesLong + 1};
-  int num_frames = kNbrFramesLong;
+  // Bitrate and frame rate profile.
+  RateProfile rate_profile;
+  SetRateProfilePars(&rate_profile, 0, 200, 30, 0);
+  SetRateProfilePars(&rate_profile, 1, 400, 30, 150);
+  rate_profile.frame_index_rate_update[2] = kNbrFramesLong + 1;
+  rate_profile.num_frames = kNbrFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  process_settings.packet_loss = 0.0f;
-  process_settings.key_frame_interval = -1;
-  process_settings.num_temporal_layers = 3;
-  process_settings.error_concealment_on = true;
-  process_settings.denoising_on = false;
+  SetCodecParameters(&process_settings, 0.0f, -1, 3, true, false);
   // Metrics for expected quality.
-  double minimum_avg_psnr = 33;
-  double minimum_min_psnr = 30;
-  double minimum_avg_ssim = 0.85;
-  double minimum_min_ssim = 0.80;
-  // Metrics for rate control: rate mismatch metrics are defined as percentages.
-  // |max_time_hit_target| is defined as number of frames, after a rate update
-  // is made to the encoder, for the encoder to reach within
-  // |kPercTargetvsActualMismatch| of new target rate.
-  int max_num_dropped_frames[] = {0, 0};
-  int max_frame_size_mismatch[] = {30, 30};
-  int max_encoding_rate_mismatch[] = {10, 12};
-  int max_time_hit_target[] = {15, 15};
-  int num_spatial_resizes[] = {0, 0};
-  ProcessFramesAndVerify(minimum_avg_psnr, minimum_min_psnr,
-                         minimum_avg_ssim, minimum_min_ssim,
-                         target_bit_rate, input_frame_rate,
-                         frame_index_rate_update, num_frames, process_settings,
-                         max_frame_size_mismatch, max_encoding_rate_mismatch,
-                         max_time_hit_target, max_num_dropped_frames,
-                         num_spatial_resizes);
+  QualityMetrics quality_metrics;
+  SetQualityMetrics(&quality_metrics, 32.5, 30.0, 0.85, 0.80);
+  // Metrics for rate control.
+  RateControlMetrics rc_metrics[2];
+  SetRateControlMetrics(rc_metrics, 0, 0, 20, 30, 10, 10, 0);
+  SetRateControlMetrics(rc_metrics, 1, 0, 0, 30, 15, 10, 1);
+  ProcessFramesAndVerify(quality_metrics,
+                         rate_profile,
+                         process_settings,
+                         rc_metrics);
 }
 }  // namespace webrtc
