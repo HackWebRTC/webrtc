@@ -138,7 +138,7 @@ WebRtc_Word32 ViESyncModule::Process() {
   //  negative
   int NTPdiff = (audio_received_ntp_secs - video_received_ntp_secs)
                 * 1000;  // ms
-  NTPdiff += static_cast<int>(audio_received_ntp_secs / FracMS -
+  NTPdiff += static_cast<int>(audio_received_ntp_frac / FracMS -
                               video_received_ntp_frac / FracMS);
 
   int RTCPdiff = (audio_rtcp_arrivaltime_secs - video_rtcp_arrivaltime_secs)
