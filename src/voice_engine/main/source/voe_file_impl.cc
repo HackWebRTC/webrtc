@@ -614,6 +614,11 @@ int VoEFileImpl::StopRecordingMicrophone()
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
+
+    int err = 0;
+
+    // TODO(xians): consider removing Start/StopRecording() in
+    // Start/StopRecordingMicrophone() if no channel is recording.
     if (_shared->NumOfSendingChannels() == 0 &&
         _shared->audio_device()->Recording())
     {
@@ -622,10 +627,19 @@ int VoEFileImpl::StopRecordingMicrophone()
         {
             _shared->SetLastError(VE_CANNOT_STOP_RECORDING, kTraceError,
                 "StopRecordingMicrophone() failed to stop recording");
-            return -1;
+            err = -1;
         }
     }
-    return _shared->transmit_mixer()->StopRecordingMicrophone();
+
+    if (_shared->transmit_mixer()->StopRecordingMicrophone() != 0)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceVoice,
+                VoEId(_shared->instance_id(), -1),
+                "StopRecordingMicrophone() failed to stop recording to mixer");
+        err = -1;
+    }
+
+    return err;
 }
 
 // TODO(andrew): a cursory inspection suggests there's a large amount of

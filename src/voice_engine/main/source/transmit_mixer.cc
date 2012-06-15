@@ -879,9 +879,9 @@ int TransmitMixer::StopRecordingMicrophone()
 
     if (!_fileRecording)
     {
-        WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, -1),
+        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
                    "StopRecordingMicrophone() isnot recording");
-        return -1;
+        return 0;
     }
 
     CriticalSectionScoped cs(&_critSect);
