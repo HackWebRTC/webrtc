@@ -62,7 +62,6 @@
         'rtp_sender_audio.cc',
         'rtp_sender_audio.h',
         # Video Files
-        'bwe_defines.h',
         'fec_private_tables_random.h',
         'fec_private_tables_bursty.h',
         'forward_error_correction.cc',
