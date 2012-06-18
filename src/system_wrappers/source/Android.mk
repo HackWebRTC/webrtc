@@ -38,6 +38,7 @@ LOCAL_SRC_FILES := \
     cpu_linux.cc \
     critical_section_posix.cc \
     event_posix.cc \
+    sleep.cc \
     thread_posix.cc \
     trace_posix.cc \
     rw_lock_posix.cc 
