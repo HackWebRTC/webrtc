@@ -2417,7 +2417,7 @@ Channel::GetRecPayloadType(CodecInst& codec)
     if (_rtpRtcpModule->ReceivePayloadType(codec, &payloadType) != 0)
     {
         _engineStatisticsPtr->SetLastError(
-            VE_RTP_RTCP_MODULE_ERROR, kTraceError,
+            VE_RTP_RTCP_MODULE_ERROR, kTraceWarning,
             "GetRecPayloadType() failed to retrieve RX payload type");
         return -1;
     }
