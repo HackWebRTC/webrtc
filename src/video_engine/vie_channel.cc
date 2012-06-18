@@ -249,13 +249,15 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       simulcast_rtp_rtcp_.push_back(rtp_rtcp);
     }
     // Remove last in list if we have too many.
+    std::list<RtpRtcp*> modules_to_delete;
     for (int j = simulcast_rtp_rtcp_.size();
          j > (video_codec.numberOfSimulcastStreams - 1);
          j--) {
       RtpRtcp* rtp_rtcp = simulcast_rtp_rtcp_.back();
       module_process_thread_.DeRegisterModule(rtp_rtcp);
-      delete rtp_rtcp;
       simulcast_rtp_rtcp_.pop_back();
+      // We need to deregister the module before deleting.
+      modules_to_delete.push_back(rtp_rtcp);
     }
     WebRtc_UWord8 idx = 0;
     // Configure all simulcast modules.
@@ -277,7 +279,14 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
         rtp_rtcp->SetSendingStatus(true);
       }
     }
+    // |RegisterSimulcastRtpRtcpModules| resets all old weak pointers and old
+    // modules can be deleted after this step.
     vie_receiver_.RegisterSimulcastRtpRtcpModules(simulcast_rtp_rtcp_);
+    for (std::list<RtpRtcp*>::iterator it = modules_to_delete.begin();
+         it != modules_to_delete.end(); ++it) {
+      delete *it;
+    }
+    modules_to_delete.clear();
   } else {
     if (!simulcast_rtp_rtcp_.empty()) {
       // Delete all simulcast rtp modules.
