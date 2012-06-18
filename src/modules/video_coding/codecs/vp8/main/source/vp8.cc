@@ -972,9 +972,13 @@ VideoDecoder* VP8Decoder::Copy() {
   if (!ref_frame_) {
     ref_frame_ = new vpx_ref_frame_t;
 
+    unsigned int align = 1;
+    if (decoded_image_._width % 32 == 0) {
+      align = 32;
+    }
     if (!vpx_img_alloc(&ref_frame_->img,
                        static_cast<vpx_img_fmt_t>(image_format_),
-                       decoded_image_._width, decoded_image_._height, 1)) {
+                       decoded_image_._width, decoded_image_._height, align)) {
       assert(false);
       delete copy;
       return NULL;
