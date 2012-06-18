@@ -115,27 +115,29 @@ static int32_t WeightedAverage(int16_t* data, int16_t offset,
 // type of signal is most probable.
 //
 // - self           [i/o] : Pointer to VAD instance
-// - feature_vector [i]   : Feature vector = log10(energy in frequency band)
+// - features       [i]   : Feature vector of length |kNumChannels|
+//                          = log10(energy in frequency band)
 // - total_power    [i]   : Total power in audio frame.
 // - frame_length   [i]   : Number of input samples
 //
 // - returns              : the VAD decision (0 - noise, 1 - speech).
-static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
+static int16_t GmmProbability(VadInstT* self, int16_t* features,
                               int16_t total_power, int frame_length) {
-  int n, k;
+  int channel, k;
   int16_t feature_minimum;
   int16_t h0, h1;
   int16_t log_likelihood_ratio;
   int16_t vadflag = 0;
-  int16_t shifts0, shifts1;
+  int16_t shifts_h0, shifts_h1;
   int16_t tmp_s16, tmp1_s16, tmp2_s16;
   int16_t diff;
-  int nr, pos;
+  int gaussian;
   int16_t nmk, nmk2, nmk3, smk, smk2, nsk, ssk;
   int16_t delt, ndelt;
   int16_t maxspe, maxmu;
   int16_t deltaN[kTableSize], deltaS[kTableSize];
-  int16_t ngprvec[kTableSize], sgprvec[kTableSize];
+  int16_t ngprvec[kTableSize] = { 0 };  // Conditional probability = 0.
+  int16_t sgprvec[kTableSize] = { 0 };  // Conditional probability = 0.
   int32_t h0_test, h1_test;
   int32_t tmp1_s32, tmp2_s32;
   int32_t sum_log_likelihood_ratios = 0;
@@ -162,109 +164,126 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
   }
 
   if (total_power > kMinEnergy) {
-    // We have a signal present.
+    // The signal power of current frame is large enough for processing. The
+    // processing consists of two parts:
+    // 1) Calculating the likelihood of speech and thereby a VAD decision.
+    // 2) Updating the underlying model, w.r.t., the decision made.
 
-    for (n = 0; n < kNumChannels; n++) {
-      // Perform for all channels.
-      pos = (n << 1);
+    // The detection scheme is an LRT with hypothesis
+    // H0: Noise
+    // H1: Speech
+    //
+    // We combine a global LRT with local tests, for each frequency sub-band,
+    // here defined as |channel|.
+    for (channel = 0; channel < kNumChannels; channel++) {
+      // For each channel we model the probability with a GMM consisting of
+      // |kNumGaussians|, with different means and standard deviations depending
+      // on H0 or H1.
       h0_test = 0;
       h1_test = 0;
-
       for (k = 0; k < kNumGaussians; k++) {
-        nr = n + k * kNumChannels;
-        // Probability for Noise, Q7 * Q20 = Q27.
-        tmp1_s32 = WebRtcVad_GaussianProbability(feature_vector[n],
-                                                 self->noise_means[nr],
-                                                 self->noise_stds[nr],
-                                                 &deltaN[pos + k]);
-        noise_probability[k] = kNoiseDataWeights[nr] * tmp1_s32;
+        gaussian = channel + k * kNumChannels;
+        // Probability under H0, that is, probability of frame being noise.
+        // Value given in Q27 = Q7 * Q20.
+        tmp1_s32 = WebRtcVad_GaussianProbability(features[channel],
+                                                 self->noise_means[gaussian],
+                                                 self->noise_stds[gaussian],
+                                                 &deltaN[gaussian]);
+        noise_probability[k] = kNoiseDataWeights[gaussian] * tmp1_s32;
         h0_test += noise_probability[k];  // Q27
 
-        // Probability for Speech.
-        tmp1_s32 = WebRtcVad_GaussianProbability(feature_vector[n],
-                                                 self->speech_means[nr],
-                                                 self->speech_stds[nr],
-                                                 &deltaS[pos + k]);
-        speech_probability[k] = kSpeechDataWeights[nr] * tmp1_s32;
+        // Probability under H1, that is, probability of frame being speech.
+        // Value given in Q27 = Q7 * Q20.
+        tmp1_s32 = WebRtcVad_GaussianProbability(features[channel],
+                                                 self->speech_means[gaussian],
+                                                 self->speech_stds[gaussian],
+                                                 &deltaS[gaussian]);
+        speech_probability[k] = kSpeechDataWeights[gaussian] * tmp1_s32;
         h1_test += speech_probability[k];  // Q27
       }
-      h0 = (int16_t) (h0_test >> 12);  // Q15
-      h1 = (int16_t) (h1_test >> 12);  // Q15
 
-      // Calculate the log likelihood ratio. Approximate log2(H1/H0) with
-      // |shifts0| - |shifts1|.
-      shifts0 = WebRtcSpl_NormW32(h0_test);
-      shifts1 = WebRtcSpl_NormW32(h1_test);
-
-      if ((h0_test > 0) && (h1_test > 0)) {
-        log_likelihood_ratio = shifts0 - shifts1;
-      } else if (h1_test > 0) {
-        log_likelihood_ratio = 31 - shifts1;
-      } else if (h0_test > 0) {
-        log_likelihood_ratio = shifts0 - 31;
-      } else {
-        log_likelihood_ratio = 0;
+      // Calculate the log likelihood ratio: log2(Pr{X|H1} / Pr{X|H1}).
+      // Approximation:
+      // log2(Pr{X|H1} / Pr{X|H1}) = log2(Pr{X|H1}*2^Q) - log2(Pr{X|H1}*2^Q)
+      //                           = log2(h1_test) - log2(h0_test)
+      //                           = log2(2^(31-shifts_h1)*(1+b1))
+      //                             - log2(2^(31-shifts_h0)*(1+b0))
+      //                           = shifts_h0 - shifts_h1
+      //                             + log2(1+b1) - log2(1+b0)
+      //                          ~= shifts_h0 - shifts_h1
+      //
+      // Note that b0 and b1 are values less than 1, hence, 0 <= log2(1+b0) < 1.
+      // Further, b0 and b1 are independent and on the average the two terms
+      // cancel.
+      shifts_h0 = WebRtcSpl_NormW32(h0_test);
+      shifts_h1 = WebRtcSpl_NormW32(h1_test);
+      if (h0_test == 0) {
+        shifts_h0 = 31;
       }
+      if (h1_test == 0) {
+        shifts_h1 = 31;
+      }
+      log_likelihood_ratio = shifts_h0 - shifts_h1;
 
-      // VAD decision with spectrum weighting.
-      sum_log_likelihood_ratios += WEBRTC_SPL_MUL_16_16(log_likelihood_ratio,
-                                                        kSpectrumWeight[n]);
+      // Update |sum_log_likelihood_ratios| with spectrum weighting. This is
+      // used for the global VAD decision.
+      sum_log_likelihood_ratios +=
+          (int32_t) (log_likelihood_ratio * kSpectrumWeight[channel]);
 
-      // Individual channel test.
+      // Local VAD decision.
       if ((log_likelihood_ratio << 2) > individualTest) {
         vadflag = 1;
       }
 
-      // Probabilities used when updating model.
+      // TODO(bjornv): The conditional probabilities below are applied on the
+      // hard coded number of Gaussians set to two. Find a way to generalize.
+      // Calculate local noise probabilities used later when updating the GMM.
+      h0 = (int16_t) (h0_test >> 12);  // Q15
       if (h0 > 0) {
-        tmp1_s32 = noise_probability[0] & 0xFFFFF000;  // Q27
-        tmp2_s32 = (tmp1_s32 << 2);  // Q29
-        ngprvec[pos] = (int16_t) WebRtcSpl_DivW32W16(tmp2_s32, h0);  // Q14
-        ngprvec[pos + 1] = 16384 - ngprvec[pos];
+        // High probability of noise. Assign conditional probabilities for each
+        // Gaussian in the GMM.
+        tmp1_s32 = (noise_probability[0] & 0xFFFFF000) << 2;  // Q29
+        ngprvec[channel] = (int16_t) WebRtcSpl_DivW32W16(tmp1_s32, h0);  // Q14
+        ngprvec[channel + kNumChannels] = 16384 - ngprvec[channel];
       } else {
-        ngprvec[pos] = 16384;
-        ngprvec[pos + 1] = 0;
+        // Low noise probability. Assign conditional probability 1 to the first
+        // Gaussian and 0 to the rest (which is already set at initialization).
+        ngprvec[channel] = 16384;
       }
 
-      // Probabilities used when updating model.
+      // Calculate local speech probabilities used later when updating the GMM.
+      h1 = (int16_t) (h1_test >> 12);  // Q15
       if (h1 > 0) {
-        tmp1_s32 = speech_probability[0] & 0xFFFFF000;
-        tmp2_s32 = (tmp1_s32 << 2);
-        sgprvec[pos] = (int16_t) WebRtcSpl_DivW32W16(tmp2_s32, h1);
-        sgprvec[pos + 1] = 16384 - sgprvec[pos];
-      } else {
-        sgprvec[pos] = 0;
-        sgprvec[pos + 1] = 0;
+        // High probability of speech. Assign conditional probabilities for each
+        // Gaussian in the GMM. Otherwise use the initialized values, i.e., 0.
+        tmp1_s32 = (speech_probability[0] & 0xFFFFF000) << 2;  // Q29
+        sgprvec[channel] = (int16_t) WebRtcSpl_DivW32W16(tmp1_s32, h1);  // Q14
+        sgprvec[channel + kNumChannels] = 16384 - sgprvec[channel];
       }
     }
 
-    // Overall test.
-    if (sum_log_likelihood_ratios >= totalTest) {
-      vadflag |= 1;
-    }
-
-    maxspe = 12800;
+    // Make a global VAD decision.
+    vadflag |= (sum_log_likelihood_ratios >= totalTest);
 
     // Update the model parameters.
-    for (n = 0; n < kNumChannels; n++) {
-      pos = (n << 1);
+    maxspe = 12800;
+    for (channel = 0; channel < kNumChannels; channel++) {
 
       // Get minimum value in past which is used for long term correction in Q4.
-      feature_minimum = WebRtcVad_FindMinimum(self, feature_vector[n], n);
+      feature_minimum = WebRtcVad_FindMinimum(self, features[channel], channel);
 
       // Compute the "global" mean, that is the sum of the two means weighted.
-      noise_global_mean = WeightedAverage(&self->noise_means[n], 0,
-                                          &kNoiseDataWeights[n]);
+      noise_global_mean = WeightedAverage(&self->noise_means[channel], 0,
+                                          &kNoiseDataWeights[channel]);
       tmp1_s16 = (int16_t) (noise_global_mean >> 6);  // Q8
 
       for (k = 0; k < kNumGaussians; k++) {
-        int current_gaussian = n + k * kNumChannels;
-        nr = pos + k;
+        gaussian = channel + k * kNumChannels;
 
-        nmk = self->noise_means[current_gaussian];
-        smk = self->speech_means[current_gaussian];
-        nsk = self->noise_stds[current_gaussian];
-        ssk = self->speech_stds[current_gaussian];
+        nmk = self->noise_means[gaussian];
+        smk = self->speech_means[gaussian];
+        nsk = self->noise_stds[gaussian];
+        ssk = self->speech_stds[gaussian];
 
         // Update noise mean vector if the frame consists of noise only.
         nmk2 = nmk;
@@ -274,7 +293,8 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
           //   (|noise_probability[0]| + |noise_probability[1]|)
 
           // (Q14 * Q11 >> 11) = Q14.
-          delt = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(ngprvec[nr], deltaN[nr],
+          delt = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(ngprvec[gaussian],
+                                                     deltaN[gaussian],
                                                      11);
           // Q7 + (Q14 * Q15 >> 22) = Q7.
           nmk2 = nmk + (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(delt,
@@ -293,11 +313,11 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
         if (nmk3 < tmp_s16) {
           nmk3 = tmp_s16;
         }
-        tmp_s16 = (int16_t) ((72 + k - n) << 7);
+        tmp_s16 = (int16_t) ((72 + k - channel) << 7);
         if (nmk3 > tmp_s16) {
           nmk3 = tmp_s16;
         }
-        self->noise_means[current_gaussian] = nmk3;
+        self->noise_means[gaussian] = nmk3;
 
         if (vadflag) {
           // Update speech mean vector:
@@ -306,7 +326,8 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
           //   (|speech_probability[0]| + |speech_probability[1]|)
 
           // (Q14 * Q11) >> 11 = Q14.
-          delt = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(sgprvec[nr], deltaS[nr],
+          delt = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(sgprvec[gaussian],
+                                                     deltaS[gaussian],
                                                      11);
           // Q14 * Q15 >> 21 = Q8.
           tmp_s16 = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(delt,
@@ -323,20 +344,20 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
           if (smk2 > maxmu) {
             smk2 = maxmu;
           }
-          self->speech_means[current_gaussian] = smk2;  // Q7.
+          self->speech_means[gaussian] = smk2;  // Q7.
 
           // (Q7 >> 3) = Q4. With rounding.
           tmp_s16 = ((smk + 4) >> 3);
 
-          tmp_s16 = feature_vector[n] - tmp_s16;  // Q4
+          tmp_s16 = features[channel] - tmp_s16;  // Q4
           // (Q11 * Q4 >> 3) = Q12.
-          tmp1_s32 = WEBRTC_SPL_MUL_16_16_RSFT(deltaS[nr], tmp_s16, 3);
+          tmp1_s32 = WEBRTC_SPL_MUL_16_16_RSFT(deltaS[gaussian], tmp_s16, 3);
           tmp2_s32 = tmp1_s32 - 4096;
-          tmp_s16 = (sgprvec[nr] >> 2);
+          tmp_s16 = sgprvec[gaussian] >> 2;
           // (Q14 >> 2) * Q12 = Q24.
           tmp1_s32 = tmp_s16 * tmp2_s32;
 
-          tmp2_s32 = (tmp1_s32 >> 4);  // Q20
+          tmp2_s32 = tmp1_s32 >> 4;  // Q20
 
           // 0.1 * Q20 / Q7 = Q13.
           if (tmp2_s32 > 0) {
@@ -353,21 +374,22 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
           if (ssk < kMinStd) {
             ssk = kMinStd;
           }
-          self->speech_stds[current_gaussian] = ssk;
+          self->speech_stds[gaussian] = ssk;
         } else {
           // Update GMM variance vectors.
-          // deltaN * (feature_vector[n] - nmk) - 1
+          // deltaN * (features[channel] - nmk) - 1
           // Q4 - (Q7 >> 3) = Q4.
-          tmp_s16 = feature_vector[n] - (nmk >> 3);
+          tmp_s16 = features[channel] - (nmk >> 3);
           // (Q11 * Q4 >> 3) = Q12.
-          tmp1_s32 = WEBRTC_SPL_MUL_16_16_RSFT(deltaN[nr], tmp_s16, 3) - 4096;
+          tmp1_s32 = WEBRTC_SPL_MUL_16_16_RSFT(deltaN[gaussian], tmp_s16, 3);
+          tmp1_s32 -= 4096;
 
           // (Q14 >> 2) * Q12 = Q24.
-          tmp_s16 = ((ngprvec[nr] + 2) >> 2);
+          tmp_s16 = (ngprvec[gaussian] + 2) >> 2;
           tmp2_s32 = tmp_s16 * tmp1_s32;
           // Q20  * approx 0.001 (2^-10=0.0009766), hence,
           // (Q24 >> 14) = (Q24 >> 4) / 2^10 = Q20.
-          tmp1_s32 = (tmp2_s32 >> 14);
+          tmp1_s32 = tmp2_s32 >> 14;
 
           // Q20 / Q7 = Q13.
           if (tmp1_s32 > 0) {
@@ -377,29 +399,29 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
             tmp_s16 = -tmp_s16;
           }
           tmp_s16 += 32;  // Rounding
-          nsk += (tmp_s16 >> 6);  // Q13 >> 6 = Q7.
+          nsk += tmp_s16 >> 6;  // Q13 >> 6 = Q7.
           if (nsk < kMinStd) {
             nsk = kMinStd;
           }
-          self->noise_stds[current_gaussian] = nsk;
+          self->noise_stds[gaussian] = nsk;
         }
       }
 
       // Separate models if they are too close.
       // |noise_global_mean| in Q14 (= Q7 * Q7).
-      noise_global_mean = WeightedAverage(&self->noise_means[n], 0,
-                                          &kNoiseDataWeights[n]);
+      noise_global_mean = WeightedAverage(&self->noise_means[channel], 0,
+                                          &kNoiseDataWeights[channel]);
 
       // |speech_global_mean| in Q14 (= Q7 * Q7).
-      speech_global_mean = WeightedAverage(&self->speech_means[n], 0,
-                                           &kSpeechDataWeights[n]);
+      speech_global_mean = WeightedAverage(&self->speech_means[channel], 0,
+                                           &kSpeechDataWeights[channel]);
 
       // |diff| = "global" speech mean - "global" noise mean.
       // (Q14 >> 9) - (Q14 >> 9) = Q5.
       diff = (int16_t) (speech_global_mean >> 9) -
           (int16_t) (noise_global_mean >> 9);
-      if (diff < kMinimumDifference[n]) {
-        tmp_s16 = kMinimumDifference[n] - diff;
+      if (diff < kMinimumDifference[channel]) {
+        tmp_s16 = kMinimumDifference[channel] - diff;
 
         // |tmp1_s16| = ~0.8 * (kMinimumDifference - diff) in Q7.
         // |tmp2_s16| = ~0.2 * (kMinimumDifference - diff) in Q7.
@@ -407,36 +429,38 @@ static int16_t GmmProbability(VadInstT* self, int16_t* feature_vector,
         tmp2_s16 = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(3, tmp_s16, 2);
 
         // Move Gaussian means for speech model by |tmp1_s16| and update
-        // |speech_global_mean|. Note that |self->speech_means[n]| is changed
-        // after the call.
-        speech_global_mean = WeightedAverage(&self->speech_means[n], tmp1_s16,
-                                             &kSpeechDataWeights[n]);
+        // |speech_global_mean|. Note that |self->speech_means[channel]| is
+        // changed after the call.
+        speech_global_mean = WeightedAverage(&self->speech_means[channel],
+                                             tmp1_s16,
+                                             &kSpeechDataWeights[channel]);
 
         // Move Gaussian means for noise model by -|tmp2_s16| and update
-        // |noise_global_mean|. Note that |self->noise_means[n]| is changed
-        // after the call.
-        noise_global_mean = WeightedAverage(&self->noise_means[n], -tmp2_s16,
-                                            &kNoiseDataWeights[n]);
+        // |noise_global_mean|. Note that |self->noise_means[channel]| is
+        // changed after the call.
+        noise_global_mean = WeightedAverage(&self->noise_means[channel],
+                                            -tmp2_s16,
+                                            &kNoiseDataWeights[channel]);
       }
 
       // Control that the speech & noise means do not drift to much.
-      maxspe = kMaximumSpeech[n];
+      maxspe = kMaximumSpeech[channel];
       tmp2_s16 = (int16_t) (speech_global_mean >> 7);
       if (tmp2_s16 > maxspe) {
         // Upper limit of speech model.
         tmp2_s16 -= maxspe;
 
         for (k = 0; k < kNumGaussians; k++) {
-          self->speech_means[n + k * kNumChannels] -= tmp2_s16;
+          self->speech_means[channel + k * kNumChannels] -= tmp2_s16;
         }
       }
 
       tmp2_s16 = (int16_t) (noise_global_mean >> 7);
-      if (tmp2_s16 > kMaximumNoise[n]) {
-        tmp2_s16 -= kMaximumNoise[n];
+      if (tmp2_s16 > kMaximumNoise[channel]) {
+        tmp2_s16 -= kMaximumNoise[channel];
 
         for (k = 0; k < kNumGaussians; k++) {
-          self->noise_means[n + k * kNumChannels] -= tmp2_s16;
+          self->noise_means[channel + k * kNumChannels] -= tmp2_s16;
         }
       }
     }
