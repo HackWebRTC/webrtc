@@ -71,8 +71,8 @@ int WebRtcVad_set_mode(VadInst* handle, int mode);
 // returns              : 1 - (Active Voice),
 //                        0 - (Non-active Voice),
 //                       -1 - (Error)
-int16_t WebRtcVad_Process(VadInst* handle, int16_t fs, int16_t* audio_frame,
-                          int16_t frame_length);
+int WebRtcVad_Process(VadInst* handle, int fs, int16_t* audio_frame,
+                      int frame_length);
 
 // Checks for valid combinations of |rate| and |frame_length|. We support 10,
 // 20 and 30 ms frames and the rates 8000, 16000 and 32000 Hz.

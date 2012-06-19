@@ -1350,7 +1350,7 @@ ACMGenericCodec::ProcessFrameVADDTX(
         }
 
         // Call VAD
-        status = WebRtcVad_Process(_ptrVADInst, (WebRtc_Word16)freqHz,
+        status = (WebRtc_Word16)WebRtcVad_Process(_ptrVADInst, (int)freqHz,
             audio, noSamplesToProcess[i]);
 
         _vadLabel[i] = status;

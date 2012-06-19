@@ -25,7 +25,7 @@ void VadTest::SetUp() {}
 void VadTest::TearDown() {}
 
 // Returns true if the rate and frame length combination is valid.
-bool VadTest::ValidRatesAndFrameLengths(int16_t rate, int16_t frame_length) {
+bool VadTest::ValidRatesAndFrameLengths(int rate, int frame_length) {
   if (rate == 8000) {
     if (frame_length == 80 || frame_length == 160 || frame_length == 240) {
       return true;

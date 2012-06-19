@@ -622,9 +622,9 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
 
                     /* call VAD with new decoded data */
                     inst->VADInst.VADDecision |= inst->VADInst.VADFunction(
-                        inst->VADInst.VADState, (WebRtc_Word16) inst->fs,
+                        inst->VADInst.VADState, (int) inst->fs,
                         (WebRtc_Word16 *) &pw16_decoded_buffer[VADSamplePtr],
-                        (WebRtc_Word16) (VADframeSize * fs_mult * 8));
+                        (VADframeSize * fs_mult * 8));
 
                     VADSamplePtr += VADframeSize * fs_mult * 8; /* increment sample counter */
                 }

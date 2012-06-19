@@ -600,10 +600,10 @@ int WebRtcVad_set_mode_core(VadInstT* self, int mode) {
 // Calculate VAD decision by first extracting feature values and then calculate
 // probability for both speech and background noise.
 
-int16_t WebRtcVad_CalcVad32khz(VadInstT* inst, int16_t* speech_frame,
-                               int frame_length)
+int WebRtcVad_CalcVad32khz(VadInstT* inst, int16_t* speech_frame,
+                           int frame_length)
 {
-    int16_t len, vad;
+    int len, vad;
     int16_t speechWB[480]; // Downsampled speech frame: 960 samples (30ms in SWB)
     int16_t speechNB[240]; // Downsampled speech frame: 480 samples (30ms in WB)
 
@@ -622,10 +622,10 @@ int16_t WebRtcVad_CalcVad32khz(VadInstT* inst, int16_t* speech_frame,
     return vad;
 }
 
-int16_t WebRtcVad_CalcVad16khz(VadInstT* inst, int16_t* speech_frame,
-                               int frame_length)
+int WebRtcVad_CalcVad16khz(VadInstT* inst, int16_t* speech_frame,
+                           int frame_length)
 {
-    int16_t len, vad;
+    int len, vad;
     int16_t speechNB[240]; // Downsampled speech frame: 480 samples (30ms in WB)
 
     // Wideband: Downsample signal before doing VAD
@@ -638,8 +638,8 @@ int16_t WebRtcVad_CalcVad16khz(VadInstT* inst, int16_t* speech_frame,
     return vad;
 }
 
-int16_t WebRtcVad_CalcVad8khz(VadInstT* inst, int16_t* speech_frame,
-                              int frame_length)
+int WebRtcVad_CalcVad8khz(VadInstT* inst, int16_t* speech_frame,
+                          int frame_length)
 {
     int16_t feature_vector[kNumChannels], total_power;
 
