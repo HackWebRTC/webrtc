@@ -109,7 +109,6 @@ class ViEChannelManager: private ViEManagerBase {
   CriticalSectionWrapper* channel_id_critsect_;
   int engine_id_;
   int number_of_cores_;
-  ViEPerformanceMonitor& vie_performance_monitor_;
 
   // TODO(mflodman) Make part of channel group.
   ChannelMap channel_map_;

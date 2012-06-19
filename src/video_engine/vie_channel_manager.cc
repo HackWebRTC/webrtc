@@ -31,7 +31,6 @@ ViEChannelManager::ViEChannelManager(
     : channel_id_critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       engine_id_(engine_id),
       number_of_cores_(number_of_cores),
-      vie_performance_monitor_(vie_performance_monitor),
       free_channel_ids_(new bool[kViEMaxNumberOfChannels]),
       free_channel_ids_size_(kViEMaxNumberOfChannels),
       voice_sync_interface_(NULL),

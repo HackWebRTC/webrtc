@@ -47,7 +47,6 @@ ViEFilePlayer::ViEFilePlayer(int Id,
                              ViEInputManager& input_manager)
     : ViEFrameProviderBase(Id, engine_id),
       play_back_started_(false),
-      input_manager_(input_manager),
       feedback_cs_(NULL),
       audio_cs_(NULL),
       file_player_(NULL),

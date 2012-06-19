@@ -95,7 +95,6 @@ class ViEFilePlayer
  private:
   static const int kMaxDecodedAudioLength = 320;
   bool play_back_started_;
-  ViEInputManager& input_manager_;
 
   CriticalSectionWrapper* feedback_cs_;
   CriticalSectionWrapper* audio_cs_;

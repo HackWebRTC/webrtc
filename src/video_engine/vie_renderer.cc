@@ -104,7 +104,6 @@ ViERenderer::ViERenderer(const WebRtc_Word32 render_id,
                          VideoRender& render_module,
                          ViERenderManager& render_manager)
     : render_id_(render_id),
-      engine_id_(engine_id),
       render_module_(render_module),
       render_manager_(render_manager),
       render_callback_(NULL),

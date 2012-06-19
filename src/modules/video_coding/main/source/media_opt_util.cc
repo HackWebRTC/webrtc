@@ -653,7 +653,6 @@ _shortMaxLossPr255(0),
 _packetsPerFrame(0.9999f),
 _packetsPerFrameKey(0.9999f),
 _residualPacketLossFec(0),
-_boostRateKey(2),
 _codecWidth(0),
 _codecHeight(0),
 _numLayers(1)

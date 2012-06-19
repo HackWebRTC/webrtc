@@ -45,8 +45,6 @@ class ViEPerformanceMonitor {
   CriticalSectionWrapper* pointer_cs_;
   ThreadWrapper* monitor_thread_;
   EventWrapper& monitor_event_;
-  int average_application_cpu_;
-  int average_system_cpu_;
   CpuWrapper* cpu_;
   ViEBaseObserver* vie_base_observer_;
 };

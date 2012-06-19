@@ -13,8 +13,7 @@
 
 namespace webrtc {
 
-ACMDTMFDetection::ACMDTMFDetection()
-    : _init(0) {}
+ACMDTMFDetection::ACMDTMFDetection() {}
 
 ACMDTMFDetection::~ACMDTMFDetection() {}
 

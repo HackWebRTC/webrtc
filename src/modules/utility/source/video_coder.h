@@ -59,7 +59,6 @@ private:
         const RTPFragmentationHeader& /* fragmentationHeader*/,
         const RTPVideoHeader* rtpTypeHdr);
 
-    WebRtc_UWord32 _instanceID;
     VideoCodingModule* _vcm;
     VideoFrame* _decodedVideo;
     EncodedVideoData* _videoEncodedData;

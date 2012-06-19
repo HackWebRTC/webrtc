@@ -105,7 +105,6 @@ class ViERenderer: public ViEFrameCallback {
   virtual void ProviderDestroyed(int id);
 
   WebRtc_UWord32 render_id_;
-  WebRtc_Word32 engine_id_;
   VideoRender& render_module_;
   ViERenderManager& render_manager_;
   VideoRenderCallback* render_callback_;

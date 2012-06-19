@@ -69,7 +69,6 @@ protected:
     WebRtc_UWord32 _decodedLengthInMS;
 
 private:
-    WebRtc_Word16 _decodedAudioBuffer[MAX_AUDIO_BUFFER_IN_SAMPLES];
     AudioCoder _audioDecoder;
 
     CodecInst _codec;
