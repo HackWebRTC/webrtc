@@ -1193,8 +1193,7 @@ CWinTestDlg::CWinTestDlg(CWnd* pParent /*=NULL*/)
 
     std::string resource_path = webrtc::test::ProjectRootPath();
     if (resource_path == webrtc::test::kCannotFindProjectRootDir) {
-        // Rollback to relative path to the location of 'voice_engine.gyp'.
-        _long_audio_file_path = "../../data/voice_engine/";
+        _long_audio_file_path = "./";
     } else {
         _long_audio_file_path = resource_path + "data\\voice_engine\\";
     }
