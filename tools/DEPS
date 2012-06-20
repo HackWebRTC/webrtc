@@ -2,10 +2,6 @@
 # Use http rather than https; the latter can cause problems for users behind
 # proxies.
 
-vars = {
-  "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-}
-
 deps = {
   # Used by quality_tracking.
   "tools/third_party/gaeunit":
@@ -15,38 +11,8 @@ deps = {
   "tools/third_party/oauth2":
     "http://github.com/simplegeo/python-oauth2.git@a83f4a29",
 
-  # Chromium buildbot scripts needs to be at the same level as our scripts.
-  "tools/continuous_build/build":
-    Var("chromium_trunk") + "/tools/build",
-
-  # Chromium buildbot scripts needs their own depot_tools.
-  "tools/continuous_build/depot_tools":
-    Var("chromium_trunk") + "/tools/depot_tools",
-
   # Used by tools/quality_tracking/dashboard and tools/python_charts.
   "tools/third_party/google-visualization-python":
     "http://google-visualization-python.googlecode.com/svn/trunk/@15",
-
-  # Used by tools/continuous_build/build_internal/symsrc/calculate_bloat.py.
-  "tools/third_party/bloat":
-    "https://github.com/martine/bloat.git@31428aaa491",
-  "tools/third_party/webtreemap":
-    "https://github.com/martine/webtreemap.git@7839cf9154",
 }
-
-deps_os = {
-  # Statically built Xvfb to be used for browser tests on headless machines.
-  "unix": {
-    "tools/continuous_build/build/third_party/xvfb":
-      Var("chromium_trunk") + "/tools/third_party/xvfb",
-  },
-}
-
-hooks = [
-  {
-    # Make changes needed for customization of WebRTC buildbots.
-    "pattern": ".",
-    "action": ["python", "tools/fix_webrtc_buildbots.py"],
-  },
-]
 

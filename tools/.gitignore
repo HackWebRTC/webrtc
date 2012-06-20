@@ -1,4 +1,3 @@
-*.failed
 *.pyc
 *~
 .*.sw?
@@ -10,36 +9,6 @@
 .pydevproject
 .settings
 .status_password
-/continuous_build/depot_tools
-/third_party/bloat
 /third_party/gaeunit
 /third_party/google-visualization-python
 /third_party/oauth2
-/third_party/webtreemap
-
-# Buildbot creates these files:
-*.new
-.manhole
-bg_gradient.jpg
-changes.pck
-changes.pck.old
-dropin.cache
-events_*
-http.log
-master.cfg.sample
-robots.txt
-state.sqlite
-state.sqlite-shm
-state.sqlite-wal
-twistd.log*
-twistd.pid
-
-# Chrome buildbot scripts
-/continuous_build/build
-
-# Buildbot slave log directories:
-/continuous_build/build_internal/masters/master.libvpx/*/
-/continuous_build/build_internal/masters/master.webrtc/*/
-/continuous_build/build_internal/masters/master.tryserver.webrtc/*/
-# Public HTML folder is also a subdirectory, make sure it's not ignored:
-!public_html
