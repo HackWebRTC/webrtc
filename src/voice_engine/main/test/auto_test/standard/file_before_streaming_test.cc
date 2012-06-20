@@ -94,7 +94,8 @@ void VerifyEmptyOutput() {
 // 1. the same DC signal if file is played out,
 // 2. total silence if file is not played out,
 // 3. no output if playout is not started.
-TEST_F(FileBeforeStreamingTest, TestStartPlayingFileLocallyWithStartPlayout) {
+TEST_F(FileBeforeStreamingTest,
+       DISABLED_TestStartPlayingFileLocallyWithStartPlayout) {
   GenerateInputFile();
 
   TEST_LOG("Playout is not started. File will not be played out.\n");
