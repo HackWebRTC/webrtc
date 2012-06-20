@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -14,6 +14,8 @@
  * LPC analysis and filtering functions
  *
  */
+
+#include <stdlib.h>
 
 #include "codec.h"
 #include "entropy_coding.h"
@@ -360,6 +362,8 @@ static __inline WebRtc_Word32 log2_Q8_LPC( WebRtc_UWord32 x ) {
 static const WebRtc_Word16 kMulPitchGain = -25; /* 200/256 in Q5 */
 static const WebRtc_Word16 kChngFactor = 3523; /* log10(2)*10/4*0.4/1.4=log10(2)/1.4= 0.2150 in Q14 */
 static const WebRtc_Word16 kExp2 = 11819; /* 1/log(2) */
+const int kShiftLowerBand = 11;  /* Shift value for lower band in Q domain. */
+const int kShiftHigherBand = 12;  /* Shift value for higher band in Q domain. */
 
 void WebRtcIsacfix_GetVars(const WebRtc_Word16 *input, const WebRtc_Word16 *pitchGains_Q12,
                            WebRtc_UWord32 *oldEnergy, WebRtc_Word16 *varscale)
@@ -463,6 +467,75 @@ static __inline WebRtc_Word16  exp2_Q10_T(WebRtc_Word16 x) { // Both in and out 
 // Declare a function pointer.
 AutocorrFix WebRtcIsacfix_AutocorrFix;
 
+/* This routine calculates the residual energy for LPC.
+ * Formula as shown in comments inside.
+ */
+static int32_t CalculateResidualEnergy(int lpc_order,
+                                       int32_t q_val_corr,
+                                       int q_val_polynomial,
+                                       int16_t* a_polynomial,
+                                       int32_t* corr_coeffs,
+                                       int* q_val_residual_energy) {
+  int j = 0, n = 0;
+  int index = 0, diff = 0, shift_corr = 0, shift_internal = 0;
+  int32_t tmp32 = 0, a_sqr = 0, round = 0, residual_energy = 0;
+  /* Basis for calculating Q value in the loop. */
+  int shift_base = q_val_corr - 32 + q_val_polynomial * 2;
+
+  for (j = 0; j <= lpc_order; j++) {
+    for (n = 0; n <= j; n++) {
+      index = j - n;
+
+      /* For the case of j != n: residual_energy +=
+       *    a_polynomial[j] * corr_coeffs[j - n] * a_polynomial[n] * 2;
+       * For the case of j == n: residual_energy +=
+       *    a_polynomial[j] * corr_coeffs[j - n] * a_polynomial[n];
+       */
+
+      /* tmp32 will be in Q(q_val_polynomial * 2). */
+      tmp32 = WEBRTC_SPL_MUL_16_16(a_polynomial[j], a_polynomial[n]);
+      if (n < j) {
+        tmp32 <<= 1;
+      }
+      shift_internal = WebRtcSpl_NormW32(tmp32);
+      a_sqr = tmp32 << shift_internal;  /* Q(24 + shift_internal) */
+      shift_corr = WebRtcSpl_NormW32(corr_coeffs[index]);
+      tmp32 = corr_coeffs[index] << shift_corr;
+      tmp32 = WEBRTC_SPL_MUL_32_32_RSFT32BI(a_sqr, tmp32);
+
+      /* Q(q_val_polynomial * 2 + shift_internal) * Q(q_val_corr + shift_corr)
+       * >> 32 = Q(shift_internal + q_val_corr + shift_corr - 32
+       *         + q_val_polynomial * 2)
+       */
+      shift_internal += shift_base + shift_corr;
+
+      diff = *q_val_residual_energy - shift_internal;
+      round = 1 << (abs(diff) - 1);
+
+      if (diff == 0) {
+        residual_energy = (residual_energy >> 1) + (tmp32 >> 1);
+        --(*q_val_residual_energy);
+      } else if (diff >= 31) {
+        residual_energy = tmp32;
+        *q_val_residual_energy = shift_internal;
+      } else if (diff > 0) {
+        residual_energy = ((residual_energy + round) >> (diff + 1))
+            + (tmp32 >> 1);
+        *q_val_residual_energy = shift_internal - 1;
+      } else if (diff > -31) {
+        residual_energy = (residual_energy >> 1)
+            + ((tmp32 + round) >> (1 - diff));
+        --(*q_val_residual_energy);
+      }
+
+      shift_internal = WebRtcSpl_NormW32(residual_energy);
+      residual_energy <<= shift_internal;
+      *q_val_residual_energy += shift_internal;
+    }
+  }
+  return residual_energy;
+}
+
 void WebRtcIsacfix_GetLpcCoef(WebRtc_Word16 *inLoQ0,
                               WebRtc_Word16 *inHiQ0,
                               MaskFiltstr_enc *maskdata,
@@ -472,9 +545,9 @@ void WebRtcIsacfix_GetLpcCoef(WebRtc_Word16 *inLoQ0,
                               WebRtc_Word16 *lo_coeffQ15,
                               WebRtc_Word16 *hi_coeffQ15)
 {
-  int k, n, j, ii;
-  WebRtc_Word16 pos1, pos2;
-  WebRtc_Word16 sh_lo, sh_hi, sh, ssh, shMem;
+  int k, n, ii;
+  int pos1, pos2;
+  int sh_lo, sh_hi, sh, ssh, shMem;
   WebRtc_Word16 varscaleQ14;
 
   WebRtc_Word16 tmpQQlo, tmpQQhi;
@@ -492,11 +565,8 @@ void WebRtcIsacfix_GetLpcCoef(WebRtc_Word16 *inLoQ0,
   WebRtc_Word16 scale;
   WebRtc_Word16 QdomLO, QdomHI, newQdomHI, newQdomLO;
 
-  WebRtc_Word32 round;
   WebRtc_Word32 res_nrgQQ;
   WebRtc_Word32 sqrt_nrg;
-
-  WebRtc_Word32 aSQR32;
 
   /* less-noise-at-low-frequencies factor */
   WebRtc_Word16 aaQ14;
@@ -504,7 +574,8 @@ void WebRtcIsacfix_GetLpcCoef(WebRtc_Word16 *inLoQ0,
   /* Multiplication with 1/sqrt(12) ~= 0.28901734104046 can be done by convertion to
      Q15, i.e. round(0.28901734104046*32768) = 9471, and use 9471/32768.0 ~= 0.289032
   */
-  WebRtc_Word16 snrq, shft;
+  WebRtc_Word16 snrq;
+  int shft;
 
   WebRtc_Word16 tmp16a;
   WebRtc_Word32 tmp32a, tmp32b, tmp32c;
@@ -782,85 +853,10 @@ void WebRtcIsacfix_GetLpcCoef(WebRtc_Word16 *inLoQ0,
     /* residual energy */
 
     sh_lo = 31;
-    res_nrgQQ = 0;
-    for (j = 0; j <= ORDERLO; j++)
-    {
-      for (n = 0; n < j; n++)
-      {
-        WebRtc_Word16 index, diff, sh_corr;
+    res_nrgQQ = CalculateResidualEnergy(ORDERLO, QdomLO, kShiftLowerBand,
+                                        a_LOQ11, corrlo2QQ, &sh_lo);
 
-        index = j - n; //WEBRTC_SPL_ABS_W16(j-n);
-
-        /* Calculation of res_nrg += a_LO[j] * corrlo2[j-n] * a_LO[n]; */
-        /* corrlo2QQ is in Q(QdomLO) */
-        tmp32 = ((WebRtc_Word32) WEBRTC_SPL_MUL_16_16(a_LOQ11[j], a_LOQ11[n])); // Q11*Q11 = Q22
-        // multiply by 2 as loop only on half of the matrix. a_LOQ11 gone through bandwidth
-        // expation so the following shift is safe.
-        tmp32 = WEBRTC_SPL_LSHIFT_W32(tmp32, 1);
-        sh = WebRtcSpl_NormW32(tmp32);
-        aSQR32 = WEBRTC_SPL_LSHIFT_W32(tmp32, sh); // Q(22+sh)
-        sh_corr = WebRtcSpl_NormW32(corrlo2QQ[index]);
-        tmp32 = WEBRTC_SPL_LSHIFT_W32(corrlo2QQ[index], sh_corr);
-        tmp32 = (WebRtc_Word32) WEBRTC_SPL_MUL_32_32_RSFT32BI(aSQR32, tmp32); // Q(22+sh)*Q(QdomLO+sh_corr)>>32 = Q(22+sh+QdomLO+sh_corr-32) = Q(sh+QdomLO+sh_corr-10)
-        sh = sh+QdomLO+sh_corr-10;
-
-        diff = sh_lo-sh;
-
-        round = WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)1, (WEBRTC_SPL_ABS_W32(diff)-1));
-        if (diff==0)
-          round = 0;
-        if (diff>=31) {
-          res_nrgQQ = tmp32;
-          sh_lo = sh;
-        } else if (diff>0) {
-          res_nrgQQ = WEBRTC_SPL_RSHIFT_W32((res_nrgQQ+round), (diff+1)) + WEBRTC_SPL_RSHIFT_W32(tmp32, 1);
-          sh_lo = sh-1;
-        } else  if (diff>-31){
-          res_nrgQQ = WEBRTC_SPL_RSHIFT_W32(res_nrgQQ, 1) + WEBRTC_SPL_SHIFT_W32((tmp32+round), -(-diff+1));
-          sh_lo = sh_lo-1;
-        }
-        sh = WebRtcSpl_NormW32(res_nrgQQ);
-        res_nrgQQ = WEBRTC_SPL_LSHIFT_W32(res_nrgQQ, sh);
-        sh_lo += sh;
-      }
-      n = j;
-      {
-        WebRtc_Word16 index, diff, sh_corr;
-
-        index = 0; //WEBRTC_SPL_ABS_W16(j-n);
-
-        /* Calculation of res_nrg += a_LO[j] * corrlo2[j-n] * a_LO[n]; */
-        /* corrlo2QQ is in Q(QdomLO) */
-        tmp32 = (WebRtc_Word32) WEBRTC_SPL_MUL_16_16(a_LOQ11[j], a_LOQ11[n]); // Q11*Q11 = Q22
-        sh = WebRtcSpl_NormW32(tmp32);
-        aSQR32 = WEBRTC_SPL_LSHIFT_W32(tmp32, sh); // Q(22+sh)
-        sh_corr = WebRtcSpl_NormW32(corrlo2QQ[index]);
-        tmp32 = WEBRTC_SPL_LSHIFT_W32(corrlo2QQ[index], sh_corr);
-        tmp32 = (WebRtc_Word32) WEBRTC_SPL_MUL_32_32_RSFT32BI(aSQR32, tmp32); // Q(22+sh)*Q(QdomLO+sh_corr)>>32 = Q(22+sh+QdomLO+sh_corr-32) = Q(sh+QdomLO+sh_corr-10)
-        sh = sh+QdomLO+sh_corr-10;
-        diff = sh_lo-sh;
-
-        round = WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)1, (WEBRTC_SPL_ABS_W32(diff)-1));
-        if (diff==0)
-          round = 0;
-        if (diff>=31) {
-          res_nrgQQ = tmp32;
-          sh_lo = sh;
-        } else if (diff>0) {
-          res_nrgQQ = WEBRTC_SPL_RSHIFT_W32((res_nrgQQ+round), (diff+1)) + WEBRTC_SPL_RSHIFT_W32(tmp32, 1);
-          sh_lo = sh-1;
-        } else  if (diff>-31){
-          res_nrgQQ = WEBRTC_SPL_RSHIFT_W32(res_nrgQQ, 1) + WEBRTC_SPL_SHIFT_W32((tmp32+round), -(-diff+1));
-          sh_lo = sh_lo-1;
-        }
-        sh = WebRtcSpl_NormW32(res_nrgQQ);
-        res_nrgQQ = WEBRTC_SPL_LSHIFT_W32(res_nrgQQ, sh);
-        sh_lo += sh;
-      }
-    }
     /* Convert to reflection coefficients */
-
-
     WebRtcSpl_AToK_JSK(a_LOQ11, ORDERLO, rcQ15_lo);
 
     if (sh_lo & 0x0001) {
@@ -905,85 +901,9 @@ void WebRtcIsacfix_GetLpcCoef(WebRtc_Word16 *inLoQ0,
       lo_coeffQ15++;
     }
     /* residual energy */
-    res_nrgQQ = 0;
     sh_hi = 31;
-
-
-    for (j = 0; j <= ORDERHI; j++)
-    {
-      for (n = 0; n < j; n++)
-      {
-        WebRtc_Word16 index, diff, sh_corr;
-
-        index = j-n; //WEBRTC_SPL_ABS_W16(j-n);
-
-        /* Calculation of res_nrg += a_HI[j] * corrhi[j-n] * a_HI[n] * 2; for j != n */
-        /* corrhiQQ is in Q(QdomHI) */
-        tmp32 = ((WebRtc_Word32) WEBRTC_SPL_MUL_16_16(a_HIQ12[j], a_HIQ12[n])); // Q12*Q12 = Q24
-        tmp32 = WEBRTC_SPL_LSHIFT_W32(tmp32, 1);
-        sh = WebRtcSpl_NormW32(tmp32);
-        aSQR32 = WEBRTC_SPL_LSHIFT_W32(tmp32, sh); // Q(24+sh)
-        sh_corr = WebRtcSpl_NormW32(corrhiQQ[index]);
-        tmp32 = WEBRTC_SPL_LSHIFT_W32(corrhiQQ[index],sh_corr);
-        tmp32 = (WebRtc_Word32) WEBRTC_SPL_MUL_32_32_RSFT32BI(aSQR32, tmp32); // Q(24+sh)*Q(QdomHI+sh_corr)>>32 = Q(24+sh+QdomHI+sh_corr-32) = Q(sh+QdomHI+sh_corr-8)
-        sh = sh+QdomHI+sh_corr-8;
-        diff = sh_hi-sh;
-
-        round = WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)1, (WEBRTC_SPL_ABS_W32(diff)-1));
-        if (diff==0)
-          round = 0;
-        if (diff>=31) {
-          res_nrgQQ = tmp32;
-          sh_hi = sh;
-        } else if (diff>0) {
-          res_nrgQQ = WEBRTC_SPL_RSHIFT_W32((res_nrgQQ+round), (diff+1)) + WEBRTC_SPL_RSHIFT_W32(tmp32, 1);
-          sh_hi = sh-1;
-        } else  if (diff>-31){
-          res_nrgQQ = WEBRTC_SPL_RSHIFT_W32(res_nrgQQ, 1) + WEBRTC_SPL_SHIFT_W32((tmp32+round), -(-diff+1));
-          sh_hi = sh_hi-1;
-        }
-
-        sh = WebRtcSpl_NormW32(res_nrgQQ);
-        res_nrgQQ = WEBRTC_SPL_LSHIFT_W32(res_nrgQQ, sh);
-        sh_hi += sh;
-      }
-
-      n = j;
-      {
-        WebRtc_Word16 index, diff, sh_corr;
-
-        index = 0; //n-j; //WEBRTC_SPL_ABS_W16(j-n);
-
-        /* Calculation of res_nrg += a_HI[j] * corrhi[j-n] * a_HI[n];*/
-        /* corrhiQQ is in Q(QdomHI) */
-        tmp32 = ((WebRtc_Word32) WEBRTC_SPL_MUL_16_16(a_HIQ12[j], a_HIQ12[n])); // Q12*Q12 = Q24
-        sh = WebRtcSpl_NormW32(tmp32);
-        aSQR32 = WEBRTC_SPL_LSHIFT_W32(tmp32, sh); // Q(24+sh)
-        sh_corr = WebRtcSpl_NormW32(corrhiQQ[index]);
-        tmp32 = WEBRTC_SPL_LSHIFT_W32(corrhiQQ[index],sh_corr);
-        tmp32 = (WebRtc_Word32) WEBRTC_SPL_MUL_32_32_RSFT32BI(aSQR32, tmp32); // Q(24+sh)*Q(QdomHI+sh_corr)>>32 = Q(24+sh+QdomHI+sh_corr-32) = Q(sh+QdomHI+sh_corr-8)
-        sh = sh+QdomHI+sh_corr-8;
-        diff = sh_hi-sh;
-
-        round = WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)1, (WEBRTC_SPL_ABS_W32(diff)-1));
-        if (diff==0)
-          round = 0;
-        if (diff>=31) {
-          res_nrgQQ = tmp32;
-          sh_hi = sh;
-        } else if (diff>0) {
-          res_nrgQQ = WEBRTC_SPL_RSHIFT_W32((res_nrgQQ+round), (diff+1)) + WEBRTC_SPL_RSHIFT_W32(tmp32, 1);
-          sh_hi = sh-1;
-        } else  if (diff>-31){
-          res_nrgQQ = WEBRTC_SPL_RSHIFT_W32(res_nrgQQ, 1) + WEBRTC_SPL_SHIFT_W32((tmp32+round), -(-diff+1));
-          sh_hi = sh_hi-1;
-        }
-
-        sh = WebRtcSpl_NormW32(res_nrgQQ);
-        res_nrgQQ = WEBRTC_SPL_LSHIFT_W32(res_nrgQQ, sh);
-        sh_hi += sh;
-      }
-    }
+    res_nrgQQ = CalculateResidualEnergy(ORDERHI, QdomHI, kShiftHigherBand,
+                                        a_HIQ12, corrhiQQ, &sh_hi);
 
     /* Convert to reflection coefficients */
     WebRtcSpl_LpcToReflCoef(polyHI, ORDERHI, rcQ15_hi);
