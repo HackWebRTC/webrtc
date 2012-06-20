@@ -189,6 +189,7 @@
             'cpu_wrapper_unittest.cc',
             'cpu_measurement_harness.h',
             'cpu_measurement_harness.cc',
+            'critical_section_unittest.cc',
             'list_unittest.cc',
             'map_unittest.cc',
             'data_log_unittest.cc',
