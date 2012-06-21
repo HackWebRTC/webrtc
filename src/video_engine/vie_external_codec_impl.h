@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_EXTERNAL_CODEC_IMPL_H_
-#define WEBRTC_VIDEO_ENGINE_VIE_EXTERNAL_CODEC_IMPL_H_
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_EXTERNAL_CODEC_IMPL_H_  // NOLINT
+#define WEBRTC_VIDEO_ENGINE_VIE_EXTERNAL_CODEC_IMPL_H_  // NOLINT
 
 #include "video_engine/include/vie_external_codec.h"
 #include "video_engine/vie_ref_count.h"
@@ -38,7 +38,7 @@ class ViEExternalCodecImpl
                                              const unsigned char pl_type);
 
  protected:
-  ViEExternalCodecImpl(ViESharedData* shared_data);
+  explicit ViEExternalCodecImpl(ViESharedData* shared_data);
   virtual ~ViEExternalCodecImpl();
 
  private:
@@ -47,4 +47,4 @@ class ViEExternalCodecImpl
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_EXTERNAL_CODEC_IMPL_H_
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_EXTERNAL_CODEC_IMPL_H_  // NOLINT

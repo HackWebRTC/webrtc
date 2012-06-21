@@ -10,7 +10,7 @@
 
 #include "video_engine/vie_rtp_rtcp_impl.h"
 
-#include "engine_configurations.h"
+#include "engine_configurations.h"  // NOLINT
 #include "system_wrappers/interface/file_wrapper.h"
 #include "system_wrappers/interface/trace.h"
 #include "video_engine/include/vie_errors.h"
@@ -233,7 +233,7 @@ int ViERTP_RTCPImpl::GetRemoteCSRCs(const int video_channel,
 }
 
 int ViERTP_RTCPImpl::SetStartSequenceNumber(const int video_channel,
-                                            unsigned short sequence_number) {
+                                            uint16_t sequence_number) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
                ViEId(shared_data_->instance_id(), video_channel),
                "%s(channel: %d, sequence_number: %u)", __FUNCTION__,
@@ -390,7 +390,7 @@ int ViERTP_RTCPImpl::SendApplicationDefinedRTCPPacket(
   const unsigned char sub_type,
   unsigned int name,
   const char* data,
-  unsigned short data_length_in_bytes) {
+  uint16_t data_length_in_bytes) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
                ViEId(shared_data_->instance_id(), video_channel),
                "%s(channel: %d, sub_type: %c, name: %d, data: x, length: %u)",
@@ -614,7 +614,7 @@ int ViERTP_RTCPImpl::SetRembStatus(int video_channel, bool sender,
 }
 
 int ViERTP_RTCPImpl::GetReceivedRTCPStatistics(const int video_channel,
-                                               unsigned short& fraction_lost,
+                                               uint16_t& fraction_lost,
                                                unsigned int& cumulative_lost,
                                                unsigned int& extended_max,
                                                unsigned int& jitter,
@@ -644,7 +644,7 @@ int ViERTP_RTCPImpl::GetReceivedRTCPStatistics(const int video_channel,
 }
 
 int ViERTP_RTCPImpl::GetSentRTCPStatistics(const int video_channel,
-                                           unsigned short& fraction_lost,
+                                           uint16_t& fraction_lost,
                                            unsigned int& cumulative_lost,
                                            unsigned int& extended_max,
                                            unsigned int& jitter,

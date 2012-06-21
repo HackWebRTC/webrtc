@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_FILE_IMPL_H_
-#define WEBRTC_VIDEO_ENGINE_VIE_FILE_IMPL_H_
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_FILE_IMPL_H_  // NOLINT
+#define WEBRTC_VIDEO_ENGINE_VIE_FILE_IMPL_H_  // NOLINT
 
 #include "system_wrappers/interface/scoped_ptr.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT
 #include "video_engine/include/vie_file.h"
 #include "video_engine/vie_defines.h"
 #include "video_engine/vie_frame_provider_base.h"
@@ -30,7 +30,7 @@ class ViECaptureSnapshot : public ViEFrameCallback {
   ViECaptureSnapshot();
   ~ViECaptureSnapshot();
 
-  bool GetSnapshot(VideoFrame& video_frame, unsigned int max_wait_time);
+  bool GetSnapshot(unsigned int max_wait_time, VideoFrame* video_frame);
 
   // Implements ViEFrameCallback.
   virtual void DeliverFrame(int id, VideoFrame& video_frame, int num_csrcs = 0,
@@ -54,12 +54,14 @@ class ViEFileImpl
  public:
   // Implements ViEFile.
   virtual int Release();
-  virtual int StartPlayFile(const char* file_nameUTF8, int& file_id,
+  virtual int StartPlayFile(const char* file_nameUTF8, int& file_id,  // NOLINT
                             const bool loop = false,
                             const FileFormats file_format = kFileFormatAviFile);
   virtual int StopPlayFile(const int file_id);
-  virtual int RegisterObserver(int file_id, ViEFileObserver& observer);
-  virtual int DeregisterObserver(int file_id, ViEFileObserver& observer);
+  virtual int RegisterObserver(int file_id,
+                               ViEFileObserver& observer);  // NOLINT
+  virtual int DeregisterObserver(int file_id,
+                                 ViEFileObserver& observer);  // NOLINT
   virtual int SendFileOnChannel(const int file_id, const int video_channel);
   virtual int StopSendFileOnChannel(const int video_channel);
   virtual int StartPlayFileAsMicrophone(const int file_id,
@@ -94,8 +96,9 @@ class ViEFileImpl
       const FileFormats file_format = kFileFormatAviFile);
   virtual int GetRenderSnapshot(const int video_channel,
                                 const char* file_nameUTF8);
-  virtual int GetRenderSnapshot(const int video_channel, ViEPicture& picture);
-  virtual int FreePicture(ViEPicture& picture);
+  virtual int GetRenderSnapshot(const int video_channel,
+                                ViEPicture& picture);  // NOLINT
+  virtual int FreePicture(ViEPicture& picture);  // NOLINT
   virtual int GetCaptureDeviceSnapshot(const int capture_id,
                                        const char* file_nameUTF8);
   virtual int GetCaptureDeviceSnapshot(const int capture_id,
@@ -116,16 +119,16 @@ class ViEFileImpl
                                     const unsigned int timeout_ms);
 
  protected:
-  ViEFileImpl(ViESharedData* shared_data);
+  explicit ViEFileImpl(ViESharedData* shared_data);
   virtual ~ViEFileImpl();
 
  private:
   WebRtc_Word32 GetNextCapturedFrame(WebRtc_Word32 capture_id,
-                                     VideoFrame& video_frame);
+                                     VideoFrame* video_frame);
 
   ViESharedData* shared_data_;
 };
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_FILE_IMPL_H_
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_FILE_IMPL_H_  // NOLINT

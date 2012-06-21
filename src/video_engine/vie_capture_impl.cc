@@ -149,8 +149,8 @@ int ViECaptureImpl::AllocateExternalCaptureDevice(
   return 0;
 }
 
-int ViECaptureImpl::AllocateCaptureDevice(VideoCaptureModule& capture_module,
-                                          int& capture_id) {
+int ViECaptureImpl::AllocateCaptureDevice(
+    VideoCaptureModule& capture_module, int& capture_id) {  // NOLINT
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(shared_data_->instance_id()),
                "%s", __FUNCTION__);
 

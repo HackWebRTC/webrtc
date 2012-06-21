@@ -10,7 +10,7 @@
 
 #include "video_engine/vie_codec_impl.h"
 
-#include "engine_configurations.h"
+#include "engine_configurations.h"  // NOLINT
 #include "modules/video_coding/main/interface/video_coding.h"
 #include "system_wrappers/interface/trace.h"
 #include "video_engine/include/vie_errors.h"
@@ -83,12 +83,12 @@ int ViECodecImpl::GetCodec(const unsigned char list_number,
                list_number, video_codec.codecType);
   if (list_number == VideoCodingModule::NumberOfCodecs()) {
     memset(&video_codec, 0, sizeof(VideoCodec));
-    strcpy(video_codec.plName, "red");
+    strncpy(video_codec.plName, "red", 3);
     video_codec.codecType = kVideoCodecRED;
     video_codec.plType = VCM_RED_PAYLOAD_TYPE;
   } else if (list_number == VideoCodingModule::NumberOfCodecs() + 1) {
     memset(&video_codec, 0, sizeof(VideoCodec));
-    strcpy(video_codec.plName, "ulpfec");
+    strncpy(video_codec.plName, "ulpfec", 6);
     video_codec.codecType = kVideoCodecULPFEC;
     video_codec.plType = VCM_ULPFEC_PAYLOAD_TYPE;
   } else if (VideoCodingModule::Codec(list_number, &video_codec) != VCM_OK) {
@@ -104,7 +104,7 @@ int ViECodecImpl::GetCodec(const unsigned char list_number,
 int ViECodecImpl::SetSendCodec(const int video_channel,
                                const VideoCodec& video_codec) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
-               ViEId(shared_data_->instance_id(),video_channel),
+               ViEId(shared_data_->instance_id(), video_channel),
                "%s(video_channel: %d, codec_type: %d)", __FUNCTION__,
                video_channel, video_codec.codecType);
   WEBRTC_TRACE(kTraceInfo, kTraceVideo,
