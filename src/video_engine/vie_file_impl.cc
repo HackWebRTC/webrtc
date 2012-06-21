@@ -143,7 +143,7 @@ int ViEFileImpl::RegisterObserver(int file_id,
     shared_data_->SetLastError(kViEFileObserverAlreadyRegistered);
     return -1;
   }
-  if (vie_file_player->RegisterObserver(observer) != 0) {
+  if (vie_file_player->RegisterObserver(&observer) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo,
                  ViEId(shared_data_->instance_id(), file_id),
                  "%s: Failed to register observer", __FUNCTION__, file_id);
@@ -727,7 +727,7 @@ int ViEFileImpl::SetCaptureDeviceImage(const int capture_id,
   VideoFrame capture_image;
   if (ViEFileImage::ConvertJPEGToVideoFrame(
           ViEId(shared_data_->instance_id(), capture_id), file_nameUTF8,
-          capture_image) != 0) {
+          &capture_image) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo,
                  ViEId(shared_data_->instance_id(), capture_id),
                  "%s(capture_id: %d) Failed to open file.", __FUNCTION__,
@@ -743,7 +743,7 @@ int ViEFileImpl::SetCaptureDeviceImage(const int capture_id,
 }
 
 int ViEFileImpl::SetCaptureDeviceImage(const int capture_id,
-const ViEPicture& picture) {
+                                       const ViEPicture& picture) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo, shared_data_->instance_id(),
                "%s(capture_id: %d)", __FUNCTION__, capture_id);
 
@@ -765,7 +765,7 @@ const ViEPicture& picture) {
   VideoFrame capture_image;
   if (ViEFileImage::ConvertPictureToVideoFrame(
       ViEId(shared_data_->instance_id(), capture_id), picture,
-      capture_image) != 0) {
+          &capture_image) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo,
                  ViEId(shared_data_->instance_id(), capture_id),
                  "%s(capture_id: %d) Failed to use picture.", __FUNCTION__,
@@ -781,7 +781,7 @@ const ViEPicture& picture) {
 }
 
 int ViEFileImpl::SetRenderStartImage(const int video_channel,
-const char* file_nameUTF8) {
+                                     const char* file_nameUTF8) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
                ViEId(shared_data_->instance_id(), video_channel),
                "%s(video_channel: %d)", __FUNCTION__, video_channel);
@@ -796,7 +796,7 @@ const char* file_nameUTF8) {
   VideoFrame start_image;
   if (ViEFileImage::ConvertJPEGToVideoFrame(
       ViEId(shared_data_->instance_id(), video_channel), file_nameUTF8,
-      start_image) != 0) {
+          &start_image) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo,
                  ViEId(shared_data_->instance_id(), video_channel),
                  "%s(video_channel: %d) Failed to open file.", __FUNCTION__,
@@ -835,7 +835,7 @@ int ViEFileImpl::SetRenderStartImage(const int video_channel,
   VideoFrame start_image;
   if (ViEFileImage::ConvertPictureToVideoFrame(
       ViEId(shared_data_->instance_id(), video_channel), picture,
-      start_image) != 0) {
+          &start_image) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo,
                  ViEId(shared_data_->instance_id(), video_channel),
                  "%s(video_channel: %d) Failed to use picture.",
@@ -865,7 +865,7 @@ int ViEFileImpl::SetRenderTimeoutImage(const int video_channel,
   VideoFrame timeout_image;
   if (ViEFileImage::ConvertJPEGToVideoFrame(
           ViEId(shared_data_->instance_id(), video_channel), file_nameUTF8,
-          timeout_image) != 0) {
+          &timeout_image) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo,
                  ViEId(shared_data_->instance_id(), video_channel),
                  "%s(video_channel: %d) Failed to open file.", __FUNCTION__,
@@ -920,7 +920,7 @@ const unsigned int timeout_ms) {
   VideoFrame timeout_image;
   if (ViEFileImage::ConvertPictureToVideoFrame(
           ViEId(shared_data_->instance_id(), video_channel), picture,
-          timeout_image) != 0) {
+          &timeout_image) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo,
                  ViEId(shared_data_->instance_id(), video_channel),
                  "%s(video_channel: %d) Failed to use picture.",
@@ -1003,14 +1003,15 @@ bool ViECaptureSnapshot::GetSnapshot(unsigned int max_wait_time,
   return false;
 }
 
-void ViECaptureSnapshot::DeliverFrame(int id, VideoFrame& video_frame,
+void ViECaptureSnapshot::DeliverFrame(int id,
+                                      VideoFrame* video_frame,
                                       int num_csrcs,
 const WebRtc_UWord32 CSRC[kRtpCsrcSize]) {
   CriticalSectionScoped cs(crit_.get());
   if (!video_frame_) {
     return;
   }
-  video_frame_->SwapFrame(video_frame);
+  video_frame_->SwapFrame(*video_frame);
   condition_varaible_->WakeAll();
   return;
 }

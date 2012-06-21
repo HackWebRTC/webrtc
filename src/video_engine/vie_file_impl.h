@@ -33,11 +33,14 @@ class ViECaptureSnapshot : public ViEFrameCallback {
   bool GetSnapshot(unsigned int max_wait_time, VideoFrame* video_frame);
 
   // Implements ViEFrameCallback.
-  virtual void DeliverFrame(int id, VideoFrame& video_frame, int num_csrcs = 0,
+  virtual void DeliverFrame(int id,
+                            VideoFrame* video_frame,
+                            int num_csrcs = 0,
                             const WebRtc_UWord32 CSRC[kRtpCsrcSize] = NULL);
   virtual void DelayChanged(int id, int frame_delay) {}
-  virtual int GetPreferedFrameSettings(int& width, int& height,
-                                       int& frame_rate) {
+  virtual int GetPreferedFrameSettings(int* width,
+                                       int* height,
+                                       int* frame_rate) {
     return -1;
   }
   virtual void ProviderDestroyed(int id) {}

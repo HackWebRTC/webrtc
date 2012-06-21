@@ -2004,7 +2004,7 @@ WebRtc_Word32 ViEChannel::FrameToRender(VideoFrame& video_frame) {
   }
   WEBRTC_TRACE(kTraceStream, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s(timestamp:%u)", __FUNCTION__, video_frame.TimeStamp());
-  DeliverFrame(video_frame, no_of_csrcs, arr_ofCSRC);
+  DeliverFrame(&video_frame, no_of_csrcs, arr_ofCSRC);
   return 0;
 }
 

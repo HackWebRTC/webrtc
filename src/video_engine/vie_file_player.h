@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_FILE_PLAYER_H_
-#define WEBRTC_VIDEO_ENGINE_VIE_FILE_PLAYER_H_
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_FILE_PLAYER_H_  // NOLINT
+#define WEBRTC_VIDEO_ENGINE_VIE_FILE_PLAYER_H_  // NOLINT
 
 #include <list>
 #include <set>
 
-#include "common_types.h"
+#include "common_types.h"  // NOLINT
 #include "modules/media_file/interface/media_file_defines.h"
 #include "system_wrappers/interface/file_wrapper.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT
 #include "video_engine/vie_frame_provider_base.h"
 
 namespace webrtc {
@@ -26,7 +26,6 @@ class EventWrapper;
 class FilePlayer;
 class ThreadWrapper;
 class ViEFileObserver;
-class ViEInputManager;
 class VoEFile;
 class VoEVideoSync;
 class VoiceEngine;
@@ -41,7 +40,6 @@ class ViEFilePlayer
                                             const char* file_nameUTF8,
                                             const bool loop,
                                             const FileFormats file_format,
-                                            ViEInputManager& input_manager,
                                             VoiceEngine* voe_ptr);
 
   static int GetFileInformation(const int engine_id,
@@ -52,7 +50,7 @@ class ViEFilePlayer
   ~ViEFilePlayer();
 
   bool IsObserverRegistered();
-  int RegisterObserver(ViEFileObserver& observer);
+  int RegisterObserver(ViEFileObserver* observer);
   int DeRegisterObserver();
   int SendAudioOnChannel(const int audio_channel,
                          bool mix_microphone,
@@ -65,7 +63,7 @@ class ViEFilePlayer
   virtual int FrameCallbackChanged();
 
  protected:
-  ViEFilePlayer(int Id, int engine_id, ViEInputManager& input_manager);
+  ViEFilePlayer(int Id, int engine_id);
   int Init(const char* file_nameUTF8,
            const bool loop,
            const FileFormats file_format,
@@ -137,4 +135,4 @@ class ViEFilePlayer
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_FILE_PLAYER_H_
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_FILE_PLAYER_H_  // NOLINT

@@ -17,7 +17,7 @@
 #include "system_wrappers/interface/tick_util.h"
 #include "system_wrappers/interface/trace.h"
 #include "video_engine/include/vie_file.h"
-#include "video_engine/vie_input_manager.h"
+#include "video_engine/vie_defines.h"
 #include "voice_engine/main/interface/voe_base.h"
 #include "voice_engine/main/interface/voe_file.h"
 #include "voice_engine/main/interface/voe_video_sync.h"
@@ -32,9 +32,8 @@ ViEFilePlayer* ViEFilePlayer::CreateViEFilePlayer(
     const char* file_nameUTF8,
     const bool loop,
     const FileFormats file_format,
-    ViEInputManager& input_manager,
     VoiceEngine* voe_ptr) {
-  ViEFilePlayer* self = new ViEFilePlayer(file_id, engine_id, input_manager);
+  ViEFilePlayer* self = new ViEFilePlayer(file_id, engine_id);
   if (!self || self->Init(file_nameUTF8, loop, file_format, voe_ptr) != 0) {
     delete self;
     self = NULL;
@@ -43,8 +42,7 @@ ViEFilePlayer* ViEFilePlayer::CreateViEFilePlayer(
 }
 
 ViEFilePlayer::ViEFilePlayer(int Id,
-                             int engine_id,
-                             ViEInputManager& input_manager)
+                             int engine_id)
     : ViEFrameProviderBase(Id, engine_id),
       play_back_started_(false),
       feedback_cs_(NULL),
@@ -226,7 +224,7 @@ bool ViEFilePlayer::FilePlayDecodeProcess() {
                                        audio_delay);
         }
       }
-      DeliverFrame(decoded_video_);
+      DeliverFrame(&decoded_video_);
       decoded_video_.SetLength(0);
     }
   }
@@ -349,12 +347,12 @@ bool ViEFilePlayer::IsObserverRegistered() {
   return observer_ != NULL;
 }
 
-int ViEFilePlayer::RegisterObserver(ViEFileObserver& observer) {
+int ViEFilePlayer::RegisterObserver(ViEFileObserver* observer) {
   CriticalSectionScoped lock(*feedback_cs_);
   if (observer_) {
     return -1;
   }
-  observer_ = &observer;
+  observer_ = observer;
   return 0;
 }
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -35,7 +35,7 @@ ViESharedData::ViESharedData()
       last_error_(0) {
   Trace::CreateTrace();
   channel_manager_.SetModuleProcessThread(*module_process_thread_);
-  input_manager_.SetModuleProcessThread(*module_process_thread_);
+  input_manager_.SetModuleProcessThread(module_process_thread_);
   module_process_thread_->Start();
 }
 

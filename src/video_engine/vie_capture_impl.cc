@@ -162,7 +162,7 @@ int ViECaptureImpl::AllocateCaptureDevice(
     return -1;
   }
   const WebRtc_Word32 result =
-      shared_data_->input_manager()->CreateCaptureDevice(capture_module,
+      shared_data_->input_manager()->CreateCaptureDevice(&capture_module,
                                                          capture_id);
   if (result != 0) {
     shared_data_->SetLastError(result);
@@ -563,7 +563,7 @@ int ViECaptureImpl::RegisterObserver(const int capture_id,
     shared_data_->SetLastError(kViECaptureObserverAlreadyRegistered);
     return -1;
   }
-  if (vie_capture->RegisterObserver(observer) != 0) {
+  if (vie_capture->RegisterObserver(&observer) != 0) {
     shared_data_->SetLastError(kViECaptureDeviceUnknownError);
     return -1;
   }

@@ -126,17 +126,17 @@ WebRtc_Word32 ViERenderer::Init(const WebRtc_UWord32 z_order,
 }
 
 void ViERenderer::DeliverFrame(int id,
-                               VideoFrame& video_frame,
+                               VideoFrame* video_frame,
                                int num_csrcs,
                                const WebRtc_UWord32 CSRC[kRtpCsrcSize]) {
-  render_callback_->RenderFrame(render_id_, video_frame);
+  render_callback_->RenderFrame(render_id_, *video_frame);
 }
 
 void ViERenderer::DelayChanged(int id, int frame_delay) {}
 
-int ViERenderer::GetPreferedFrameSettings(int& width,
-                                          int& height,
-                                          int& frame_rate) {
+int ViERenderer::GetPreferedFrameSettings(int* width,
+                                          int* height,
+                                          int* frame_rate) {
     return -1;
 }
 

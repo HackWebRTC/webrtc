@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_CAPTURER_H_
-#define WEBRTC_VIDEO_ENGINE_VIE_CAPTURER_H_
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_CAPTURER_H_  // NOLINT
+#define WEBRTC_VIDEO_ENGINE_VIE_CAPTURER_H_  // NOLINT
 
-#include "common_types.h"
-#include "engine_configurations.h"
+#include "common_types.h"  // NOLINT
+#include "engine_configurations.h"  // NOLINT
 #include "modules/video_capture/main/interface/video_capture.h"
 #include "modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "modules/video_coding/main/interface/video_coding.h"
 #include "modules/video_processing/main/interface/video_processing.h"
 #include "system_wrappers/interface/scoped_ptr.h"
-#include "typedefs.h"
+#include "typedefs.h" // NOLINT
 #include "video_engine/include/vie_capture.h"
 #include "video_engine/vie_defines.h"
 #include "video_engine/vie_frame_provider_base.h"
@@ -43,7 +43,7 @@ class ViECapturer
  public:
   static ViECapturer* CreateViECapture(int capture_id,
                                        int engine_id,
-                                       VideoCaptureModule& capture_module,
+                                       VideoCaptureModule* capture_module,
                                        ProcessThread& module_process_thread);
 
   static ViECapturer* CreateViECapture(
@@ -63,12 +63,13 @@ class ViECapturer
   // Implements ExternalCapture.
   virtual int IncomingFrame(unsigned char* video_frame,
                             unsigned int video_frame_length,
-                            unsigned short width, unsigned short height,
+                            uint16_t width,
+                            uint16_t height,
                             RawVideoType video_type,
-                            unsigned long long capture_time = 0);
+                            unsigned long long capture_time = 0);  // NOLINT
 
   virtual int IncomingFrameI420(const ViEVideoFrameI420& video_frame,
-                                unsigned long long capture_time = 0);
+                                unsigned long long capture_time = 0);  // NOLINT
 
   // Use this capture device as encoder.
   // Returns 0 if the codec is supported by this capture device.
@@ -95,7 +96,7 @@ class ViECapturer
   WebRtc_Word32 EnableBrightnessAlarm(bool enable);
 
   // Statistics observer.
-  WebRtc_Word32 RegisterObserver(ViECaptureObserver& observer);
+  WebRtc_Word32 RegisterObserver(ViECaptureObserver* observer);
   WebRtc_Word32 DeRegisterObserver();
   bool IsObserverRegistered();
 
@@ -110,7 +111,7 @@ class ViECapturer
               int engine_id,
               ProcessThread& module_process_thread);
 
-  WebRtc_Word32 Init(VideoCaptureModule& capture_module);
+  WebRtc_Word32 Init(VideoCaptureModule* capture_module);
   WebRtc_Word32 Init(const char* device_unique_idUTF8,
                      const WebRtc_UWord32 device_unique_idUTF8Length);
 
@@ -152,7 +153,8 @@ class ViECapturer
                                  WebRtc_UWord32 frame_rate);
 
   // Implements  VCMReceiveCallback.
-  virtual WebRtc_Word32 FrameToRender(VideoFrame& video_frame);
+  // TODO(mflodman) Change input argument to pointer.
+  virtual WebRtc_Word32 FrameToRender(VideoFrame& video_frame);  // NOLINT
 
   // Implements VideoCaptureFeedBack
   virtual void OnCaptureFrameRate(const WebRtc_Word32 id,
@@ -164,8 +166,8 @@ class ViECapturer
   static bool ViECaptureThreadFunction(void* obj);
   bool ViECaptureProcess();
 
-  void DeliverI420Frame(VideoFrame& video_frame);
-  void DeliverCodedFrame(VideoFrame& video_frame);
+  void DeliverI420Frame(VideoFrame* video_frame);
+  void DeliverCodedFrame(VideoFrame* video_frame);
 
  private:
   // Never take capture_cs_ before deliver_cs_!
@@ -219,4 +221,4 @@ class ViECapturer
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_CAPTURER_H_
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_CAPTURER_H_  // NOLINT
