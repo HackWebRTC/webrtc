@@ -13,14 +13,12 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#if defined(_WIN32)
-#include <windows.h>
-#endif
 
 #include "modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "modules/utility/interface/process_thread.h"
 #include "system_wrappers/interface/scoped_ptr.h"
+#include "system_wrappers/interface/sleep.h"
 #include "video_engine/vie_remb.h"
 
 using ::testing::_;
@@ -49,14 +47,6 @@ class ViERembTest : public ::testing::Test {
   }
   scoped_ptr<TestProcessThread> process_thread_;
   scoped_ptr<VieRemb> vie_remb_;
-
-  void TestSleep(unsigned int time_ms) {
-#if defined(_WIN32)
-    ::Sleep(time_ms);
-#else
-    usleep(time_ms * 1000);
-#endif
-  }
 };
 
 TEST_F(ViERembTest, OneModuleTestForSendingRemb)
@@ -73,7 +63,7 @@ TEST_F(ViERembTest, OneModuleTestForSendingRemb)
       .WillRepeatedly(Return(ssrc[0]));
 
   // TODO(mflodman) Add fake clock and remove the lowered bitrate below.
-  TestSleep(1010);
+  SleepMs(1010);
   EXPECT_CALL(rtp, SetREMBData(bitrate_estimate, 1, _))
       .Times(1);
   vie_remb_->Process();
@@ -166,7 +156,7 @@ TEST_F(ViERembTest, NoRembForIncreasedBitrate)
 
   // Trigger a first call to have a running state.
   // TODO(mflodman) Add fake clock.
-  TestSleep(1010);
+  SleepMs(1010);
   EXPECT_CALL(rtp_0,
               SetREMBData(bitrate_estimate[0] + bitrate_estimate[1], 2, _))
       .Times(1);
@@ -271,7 +261,7 @@ TEST_F(ViERembTest, NoOnReceivedBitrateChangedCall)
   vie_remb_->AddReceiveChannel(&rtp);
   vie_remb_->AddRembSender(&rtp);
   // TODO(mflodman) Add fake clock.
-  TestSleep(1010);
+  SleepMs(1010);
   // No bitrate estimate given, no callback expected.
   EXPECT_CALL(rtp, SetREMBData(_, _, _))
       .Times(0);
