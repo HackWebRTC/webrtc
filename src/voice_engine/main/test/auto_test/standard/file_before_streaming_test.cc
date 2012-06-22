@@ -15,6 +15,7 @@ namespace {
 
 const int kSampleRateHz = 16000;
 const int kTestDurationMs = 1000;
+const int kSkipOutputMs = 50;
 const int16_t kInputValue = 15000;
 const int16_t kSilenceValue = 0;
 
@@ -62,6 +63,9 @@ class FileBeforeStreamingTest : public AfterInitializationFixture {
     int16_t output_value = 0;
     int samples_read = 0;
 
+    // Skip the first segment to avoid initialization and ramping-in effects.
+    EXPECT_EQ(0, fseek(output_file, sizeof(output_value) *
+                       kSampleRateHz / 1000 * kSkipOutputMs, SEEK_SET));
     while (fread(&output_value, sizeof(output_value), 1, output_file) == 1) {
       samples_read++;
       EXPECT_EQ(output_value, target_value);
@@ -94,8 +98,7 @@ void VerifyEmptyOutput() {
 // 1. the same DC signal if file is played out,
 // 2. total silence if file is not played out,
 // 3. no output if playout is not started.
-TEST_F(FileBeforeStreamingTest,
-       DISABLED_TestStartPlayingFileLocallyWithStartPlayout) {
+TEST_F(FileBeforeStreamingTest, TestStartPlayingFileLocallyWithStartPlayout) {
   GenerateInputFile();
 
   TEST_LOG("Playout is not started. File will not be played out.\n");
