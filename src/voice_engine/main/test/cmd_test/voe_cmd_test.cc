@@ -476,12 +476,12 @@ void RunTest(std::string out_path) {
         VALIDATE;
         if (strncmp(cinst.plname, "ISAC", 4) == 0 && cinst.plfreq
             == 32000) {
-          printf("\t%i. ISAC-swb pltype:%i plfreq:%i\n", i,
-                 cinst.pltype, cinst.plfreq);
+          printf("\t%i. ISAC-swb pltype:%i plfreq:%i channels:%i\n", i,
+                 cinst.pltype, cinst.plfreq, cinst.channels);
         }
         else {
-          printf("\t%i. %s pltype:%i plfreq:%i\n", i, cinst.plname,
-                 cinst.pltype, cinst.plfreq);
+          printf("\t%i. %s pltype:%i plfreq:%i channels:%i\n", i, cinst.plname,
+                 cinst.pltype, cinst.plfreq, cinst.channels);
         }
       }
       printf("Other\n");
