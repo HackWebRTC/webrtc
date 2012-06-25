@@ -14,10 +14,12 @@
 #include "process_thread.h"
 #include "scoped_ptr.h"
 #include "scoped_refptr.h"
+#include "system_wrappers/interface/sleep.h"
 #include "tick_util.h"
 #include "video_capture.h"
 #include "video_capture_factory.h"
 
+using webrtc::SleepMs;
 using webrtc::TickTime;
 using webrtc::VideoCaptureAlarm;
 using webrtc::VideoCaptureCapability;
@@ -26,21 +28,12 @@ using webrtc::VideoCaptureFactory;
 using webrtc::VideoCaptureFeedBack;
 using webrtc::VideoCaptureModule;
 
-#if defined(_WIN32)
-#define SLEEP(x) Sleep(x)
-#elif defined(WEBRTC_ANDROID)
-#define SLEEP(x) usleep(x*1000)
-#else
-#include <unistd.h>
-#define SLEEP(x) usleep(x * 1000)
-#endif
-
 #define WAIT_(ex, timeout, res) \
   do { \
     res = (ex); \
     WebRtc_Word64 start = TickTime::MillisecondTimestamp(); \
     while (!res && TickTime::MillisecondTimestamp() < start + timeout) { \
-      SLEEP(5); \
+      SleepMs(5); \
       res = (ex); \
     } \
   } while (0);\
@@ -359,7 +352,7 @@ class VideoCaptureExternalTest : public testing::Test {
     test_frame_.SetLength(kTestWidth * kTestHeight * 3 / 2);
     test_frame_.SetHeight(kTestHeight);
     test_frame_.SetWidth(kTestWidth);
-    SLEEP(1); // Wait 1ms so that two tests can't have the same timestamp.
+    SleepMs(1); // Wait 1ms so that two tests can't have the same timestamp.
     memset(test_frame_.Buffer(), 127, test_frame_.Length());
 
     EXPECT_EQ(0, capture_module_->RegisterCaptureDataCallback(
@@ -468,11 +461,11 @@ TEST_F(VideoCaptureExternalTest , FrameRate) {
     EXPECT_EQ(0, capture_input_interface_->IncomingFrame(
         test_frame_.Buffer(), test_frame_.Length(),
         capture_callback_.capability, 0));
-    SLEEP(1000 / capture_callback_.capability.maxFPS);
+    SleepMs(1000 / capture_callback_.capability.maxFPS);
   }
   EXPECT_TRUE(capture_feedback_.frame_rate >= 8 &&
               capture_feedback_.frame_rate <= 10);
-  SLEEP(500);
+  SleepMs(500);
   EXPECT_EQ(webrtc::Raised, capture_feedback_.alarm);
 
   startTime = TickTime::Now();
@@ -481,7 +474,7 @@ TEST_F(VideoCaptureExternalTest , FrameRate) {
     EXPECT_EQ(0, capture_input_interface_->IncomingFrame(
         test_frame_.Buffer(), test_frame_.Length(),
         capture_callback_.capability, 0));
-    SLEEP(1000 / capture_callback_.capability.maxFPS);
+    SleepMs(1000 / capture_callback_.capability.maxFPS);
   }
   EXPECT_EQ(webrtc::Cleared, capture_feedback_.alarm);
   // Frame rate might be less than 33 since we have paused providing
@@ -499,7 +492,7 @@ TEST_F(VideoCaptureExternalTest , StartImage) {
   EXPECT_TRUE_WAIT(capture_callback_.incoming_frames == 5, kTimeOut);
   EXPECT_EQ(0, capture_module_->StopSendImage());
 
-  SLEEP(200);
+  SleepMs(200);
   // Test that no more start images have arrived.
   EXPECT_TRUE(capture_callback_.incoming_frames >= 4 &&
               capture_callback_.incoming_frames <= 5);
