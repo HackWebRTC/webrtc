@@ -12,8 +12,8 @@
       'type': '<(library)',
       'dependencies': [
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-        '<(webrtc_root)/../testing/gtest.gyp:gtest',
-        '<(webrtc_root)/../test/test.gyp:test_support',
+        '<(third_party_root)/testing/gtest.gyp:gtest',
+        '<(third_party_root)/test/test.gyp:test_support',
         'video_engine_core',
       ],
       'direct_dependent_settings': {

@@ -138,9 +138,9 @@
           'type': 'executable',
           'dependencies': [
             'video_engine_core',
-            '<(webrtc_root)/../testing/gtest.gyp:gtest',
-            '<(webrtc_root)/../testing/gmock.gyp:gmock',
-            '<(webrtc_root)/../test/test.gyp:test_support_main',
+            '<(third_party_root)/testing/gtest.gyp:gtest',
+            '<(third_party_root)/testing/gmock.gyp:gmock',
+            '<(third_party_root)/test/test.gyp:test_support_main',
           ],
           'include_dirs': [
             '..',

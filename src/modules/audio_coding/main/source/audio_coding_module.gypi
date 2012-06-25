@@ -101,8 +101,8 @@
           'type': 'executable',
           'dependencies': [
             'audio_coding_module',
-            '<(webrtc_root)/../test/test.gyp:test_support_main',
-            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+            '<(third_party_root)/test/test.gyp:test_support_main',
+            '<(third_party_root)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
           ],
           'sources': [
@@ -131,8 +131,8 @@
             'audio_coding_module',
             'NetEq',
             '<(webrtc_root)/common_audio/common_audio.gyp:vad',
-            '<(webrtc_root)/../testing/gtest.gyp:gtest',
-            '<(webrtc_root)/../test/test.gyp:test_support_main',
+            '<(third_party_root)/testing/gtest.gyp:gtest',
+            '<(third_party_root)/test/test.gyp:test_support_main',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
           ],
           'sources': [

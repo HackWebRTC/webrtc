@@ -15,16 +15,16 @@
           'type': '<(library)',
 
           'dependencies': [
-            '<(webrtc_root)/../test/metrics.gyp:metrics',
-            '<(webrtc_root)/../test/test.gyp:test_support',
-            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+            '<(third_party_root)/test/metrics.gyp:metrics',
+            '<(third_party_root)/test/test.gyp:test_support',
+            '<(third_party_root)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/common_video/common_video.gyp:webrtc_libyuv',
           ],
 
           'include_dirs': [
             '../interface',
-            '<(webrtc_root)/../testing/gtest/include',
+            '<(third_party_root)/testing/gtest/include',
             '../../../../common_video/interface',
           ],
 

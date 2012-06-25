@@ -75,8 +75,8 @@
           'type': 'executable',
           'dependencies': [
             'webrtc_utility',
-            '<(webrtc_root)/../testing/gtest.gyp:gtest',
-            '<(webrtc_root)/../test/test.gyp:test_support_main',
+            '<(third_party_root)/testing/gtest.gyp:gtest',
+            '<(third_party_root)/test/test.gyp:test_support_main',
           ],
           'sources': [
             'audio_frame_operations_unittest.cc',

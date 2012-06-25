@@ -41,8 +41,8 @@
           'type': 'executable',
           'dependencies': [
             'bitrate_controller',
-            '<(webrtc_root)/../test/test.gyp:test_support_main',
-            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+            '<(third_party_root)/test/test.gyp:test_support_main',
+            '<(third_party_root)/testing/gtest.gyp:gtest',
           ],
           'sources': [
             'bitrate_controller_unittest.cc',

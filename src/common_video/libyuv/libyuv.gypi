@@ -40,9 +40,9 @@
           'type': 'executable',
           'dependencies': [
             'webrtc_libyuv',
-            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+            '<(third_party_root)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(webrtc_root)/../test/test.gyp:test_support_main',
+            '<(third_party_root)/test/test.gyp:test_support_main',
           ],
           'sources': [
             'libyuv_unittest.cc',

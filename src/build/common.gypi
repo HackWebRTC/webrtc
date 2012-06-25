@@ -70,6 +70,7 @@
         'include_tests%': 0,
 
         'webrtc_root%': '<(DEPTH)/third_party/webrtc',
+        'third_party_root%': '<(DEPTH)/third_party',
       }, {
         # Settings for the standalone (not-in-Chromium) build.
 
@@ -86,6 +87,7 @@
         'include_tests%': 1,
 
         'webrtc_root%': '<(DEPTH)/src',
+        'third_party_root%': '<(DEPTH)',
 
         # TODO(andrew): For now, disable the Chrome plugins, which causes a
         # flood of chromium-style warnings. Investigate enabling them:

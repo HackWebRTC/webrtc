@@ -51,8 +51,8 @@
           'type': 'executable',
           'dependencies': [
             'audio_conference_mixer',
-            '<(webrtc_root)/../testing/gtest.gyp:gtest',
-            '<(webrtc_root)/../test/test.gyp:test_support_main',
+            '<(third_party_root)/testing/gtest.gyp:gtest',
+            '<(third_party_root)/test/test.gyp:test_support_main',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
           ],
           'sources': [

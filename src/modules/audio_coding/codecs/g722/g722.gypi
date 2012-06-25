@@ -35,8 +35,8 @@
           'type': 'executable',
           'dependencies': [
             'G722',
-            '<(webrtc_root)/../test/test.gyp:test_support_main',
-            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+            '<(third_party_root)/test/test.gyp:test_support_main',
+            '<(third_party_root)/testing/gtest.gyp:gtest',
           ],
           'sources': [
             'g722_unittest.cc',

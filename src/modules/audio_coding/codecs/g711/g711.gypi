@@ -35,8 +35,8 @@
           'type': 'executable',
           'dependencies': [
             'G711',
-            '<(webrtc_root)/../test/test.gyp:test_support_main',
-            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+            '<(third_party_root)/test/test.gyp:test_support_main',
+            '<(third_party_root)/testing/gtest.gyp:gtest',
           ],
           'sources': [
             'g711_unittest.cc',

@@ -48,8 +48,8 @@
           'type': 'executable',
           'dependencies': [
             'media_file',
-            '<(webrtc_root)/../testing/gtest.gyp:gtest',
-            '<(webrtc_root)/../test/test.gyp:test_support_main',
+            '<(third_party_root)/testing/gtest.gyp:gtest',
+            '<(third_party_root)/test/test.gyp:test_support_main',
           ],
           'sources': [
             'media_file_unittest.cc',
