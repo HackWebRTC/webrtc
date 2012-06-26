@@ -123,7 +123,7 @@ class RemoteBitrateEstimatorTest : public ::testing::Test {
   virtual void SetUp() {
     bitrate_observer_.reset(new TestBitrateObserver);
     bitrate_estimator_.reset(new RemoteBitrateEstimator(
-        bitrate_observer_.get()));
+        bitrate_observer_.get(), over_use_detector_options_));
     // Framerate: 30 fps; Start bitrate: 300 kbps; Link capacity: 1000 kbps,
     // Start time: 0.
     stream_generator_.reset(new StreamGenerator(30, 3e5, 1e6, 0));
@@ -196,6 +196,7 @@ class RemoteBitrateEstimatorTest : public ::testing::Test {
     return bitrate_bps;
   }
 
+  OverUseDetectorOptions over_use_detector_options_;
   scoped_ptr<RemoteBitrateEstimator> bitrate_estimator_;
   scoped_ptr<TestBitrateObserver> bitrate_observer_;
   scoped_ptr<StreamGenerator> stream_generator_;

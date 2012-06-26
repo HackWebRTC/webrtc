@@ -571,5 +571,32 @@ struct VideoCodec
     unsigned char       numberOfSimulcastStreams;
     SimulcastStream     simulcastStream[kMaxSimulcastStreams];
 };
+
+// Bandwidth over-use detector options.  These are used to drive
+// experimentation with bandwidth estimation parameters.
+// See modules/remote_bitrate_estimator/overuse_detector.h
+struct OverUseDetectorOptions {
+  OverUseDetectorOptions()
+      : initial_slope(8.0/512.0),
+        initial_offset(0),
+        initial_e(),
+        initial_process_noise(),
+        initial_avg_noise(0.0),
+        initial_var_noise(500),
+        initial_threshold(25.0) {
+    initial_e[0][0] = 100;
+    initial_e[1][1] = 1e-1;
+    initial_e[0][1] = initial_e[1][0] = 0;
+    initial_process_noise[0] = 1e-10;
+    initial_process_noise[1] = 1e-2;
+  }
+  double initial_slope;
+  double initial_offset;
+  double initial_e[2][2];
+  double initial_process_noise[2];
+  double initial_avg_noise;
+  double initial_var_noise;
+  double initial_threshold;
+};
 }  // namespace webrtc
 #endif  // WEBRTC_COMMON_TYPES_H

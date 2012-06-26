@@ -43,7 +43,8 @@ class ViEChannelManager: private ViEManagerBase {
  public:
   ViEChannelManager(int engine_id,
                     int number_of_cores,
-                    ViEPerformanceMonitor& vie_performance_monitor);
+                    ViEPerformanceMonitor& vie_performance_monitor,
+                    const OverUseDetectorOptions& options);
   ~ViEChannelManager();
 
   void SetModuleProcessThread(ProcessThread& module_process_thread);
@@ -125,6 +126,7 @@ class ViEChannelManager: private ViEManagerBase {
 
   VoiceEngine* voice_engine_;
   ProcessThread* module_process_thread_;
+  const OverUseDetectorOptions& over_use_detector_options_;
 };
 
 class ViEChannelManagerScoped: private ViEManagerScopedBase {

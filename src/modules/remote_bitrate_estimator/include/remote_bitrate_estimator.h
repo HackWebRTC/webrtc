@@ -39,7 +39,8 @@ class RemoteBitrateObserver {
 
 class RemoteBitrateEstimator {
  public:
-  explicit RemoteBitrateEstimator(RemoteBitrateObserver* observer);
+  RemoteBitrateEstimator(RemoteBitrateObserver* observer,
+                         const OverUseDetectorOptions& options);
 
   // Called for each incoming packet. If this is a new SSRC, a new
   // BitrateControl will be created.
@@ -65,6 +66,16 @@ class RemoteBitrateEstimator {
 
  private:
   struct BitrateControls {
+    explicit BitrateControls(const OverUseDetectorOptions& options)
+        : remote_rate(),
+          overuse_detector(options),
+          incoming_bitrate() {
+    }
+    BitrateControls(const BitrateControls& other)
+        : remote_rate(other.remote_rate),
+          overuse_detector(other.overuse_detector),
+          incoming_bitrate(other.incoming_bitrate) {
+    }
     RemoteRateControl remote_rate;
     OverUseDetector overuse_detector;
     BitRateStats incoming_bitrate;
@@ -72,6 +83,7 @@ class RemoteBitrateEstimator {
 
   typedef std::map<unsigned int, BitrateControls> SsrcBitrateControlsMap;
 
+  const OverUseDetectorOptions& options_;
   SsrcBitrateControlsMap bitrate_controls_;
   RemoteBitrateObserver* observer_;
   scoped_ptr<CriticalSectionWrapper> crit_sect_;

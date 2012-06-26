@@ -15,8 +15,10 @@
 namespace webrtc {
 
 RemoteBitrateEstimator::RemoteBitrateEstimator(
-    RemoteBitrateObserver* observer)
-    : observer_(observer),
+    RemoteBitrateObserver* observer,
+    const OverUseDetectorOptions& options)
+    : options_(options),
+      observer_(observer),
       crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {
   assert(observer_);
 }
@@ -35,12 +37,11 @@ void RemoteBitrateEstimator::IncomingPacket(unsigned int ssrc,
     // callback will no longer be called for the old SSRC. This will be
     // automatically cleaned up when we have one RemoteBitrateEstimator per REMB
     // group.
-    bitrate_controls_[ssrc] = BitrateControls();
+    bitrate_controls_.insert(std::make_pair(ssrc, BitrateControls(options_)));
     it = bitrate_controls_.find(ssrc);
   }
-  OverUseDetector* overuse_detector =
-      &bitrate_controls_[ssrc].overuse_detector;
-  bitrate_controls_[ssrc].incoming_bitrate.Update(packet_size, arrival_time);
+  OverUseDetector* overuse_detector = &it->second.overuse_detector;
+  it->second.incoming_bitrate.Update(packet_size, arrival_time);
   const BandwidthUsage prior_state = overuse_detector->State();
   overuse_detector->Update(packet_size, rtp_timestamp, arrival_time);
   if (prior_state != overuse_detector->State() &&

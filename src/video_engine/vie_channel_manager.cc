@@ -27,7 +27,8 @@ namespace webrtc {
 ViEChannelManager::ViEChannelManager(
     int engine_id,
     int number_of_cores,
-    ViEPerformanceMonitor& vie_performance_monitor)
+    ViEPerformanceMonitor& vie_performance_monitor,
+    const OverUseDetectorOptions& options)
     : channel_id_critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       engine_id_(engine_id),
       number_of_cores_(number_of_cores),
@@ -35,7 +36,8 @@ ViEChannelManager::ViEChannelManager(
       free_channel_ids_size_(kViEMaxNumberOfChannels),
       voice_sync_interface_(NULL),
       voice_engine_(NULL),
-      module_process_thread_(NULL) {
+      module_process_thread_(NULL),
+      over_use_detector_options_(options) {
   WEBRTC_TRACE(kTraceMemory, kTraceVideo, ViEId(engine_id),
                "ViEChannelManager::ViEChannelManager(engine_id: %d)",
                engine_id);
@@ -87,7 +89,8 @@ int ViEChannelManager::CreateChannel(int& channel_id) {
   }
 
   // Create a new channel group and add this channel.
-  ChannelGroup* group = new ChannelGroup(module_process_thread_);
+  ChannelGroup* group = new ChannelGroup(module_process_thread_,
+                                         over_use_detector_options_);
   BitrateController* bitrate_controller = group->GetBitrateController();
   ViEEncoder* vie_encoder = new ViEEncoder(engine_id_, new_channel_id,
                                            number_of_cores_,

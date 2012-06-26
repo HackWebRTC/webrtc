@@ -59,11 +59,14 @@ class TestTransport : public Transport {
 class RtcpFormatRembTest : public ::testing::Test {
  protected:
   RtcpFormatRembTest()
-      : remote_bitrate_observer_(),
-        remote_bitrate_estimator_(&remote_bitrate_observer_) {}
+      : over_use_detector_options_(),
+        remote_bitrate_observer_(),
+        remote_bitrate_estimator_(&remote_bitrate_observer_,
+                                  over_use_detector_options_) {}
   virtual void SetUp();
   virtual void TearDown();
 
+  OverUseDetectorOptions over_use_detector_options_;
   RtpRtcpClock* system_clock_;
   ModuleRtpRtcpImpl* dummy_rtp_rtcp_impl_;
   RTCPSender* rtcp_sender_;
