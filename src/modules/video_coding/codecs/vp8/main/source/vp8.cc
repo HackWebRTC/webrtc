@@ -616,7 +616,7 @@ int VP8Decoder::InitDecode(const VideoCodec* inst, int number_of_cores) {
   cfg.h = cfg.w = 0; // set after decode
 
   vpx_codec_flags_t flags = 0;
-#if WEBRTC_LIBVPX_VERSION >= 971
+#if (WEBRTC_LIBVPX_VERSION >= 971) && !defined(WEBRTC_ANDROID)
   flags = VPX_CODEC_USE_POSTPROC;
   if (inst->codecSpecific.VP8.errorConcealmentOn) {
     flags |= VPX_CODEC_USE_ERROR_CONCEALMENT;
@@ -630,7 +630,7 @@ int VP8Decoder::InitDecode(const VideoCodec* inst, int number_of_cores) {
     return WEBRTC_VIDEO_CODEC_MEMORY;
   }
 
-#if WEBRTC_LIBVPX_VERSION >= 971
+#if (WEBRTC_LIBVPX_VERSION >= 971) && !defined(WEBRTC_ANDROID)
   vp8_postproc_cfg_t  ppcfg;
   ppcfg.post_proc_flag = VP8_DEMACROBLOCK | VP8_DEBLOCK;
   // Strength of deblocking filter. Valid range:[0,16]
@@ -671,7 +671,7 @@ int VP8Decoder::Decode(const EncodedImage& input_image,
   }
 #endif
 
-#if WEBRTC_LIBVPX_VERSION >= 971
+#if (WEBRTC_LIBVPX_VERSION >= 971) && !defined(WEBRTC_ANDROID)
   if (!mfqe_enabled_ && codec_specific_info &&
       codec_specific_info->codecSpecific.VP8.temporalIdx > 0) {
     // Enable MFQE if we are receiving layers.
