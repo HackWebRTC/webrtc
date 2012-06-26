@@ -54,13 +54,17 @@ int Scaler::Scale(const uint8_t* src_frame,
     return -2;
 
   // Making sure that destination frame is of sufficient size
-  int required_dst_size = dst_width_ * dst_height_ * 3 / 2;
+  int dst_half_width = (dst_width_ + 1) >> 1;
+  int dst_half_height = (dst_height_ + 1) >> 1;
+  int required_dst_size = dst_width_ * dst_height_ + 2 * (dst_half_width *
+      dst_half_height);
   if (dst_frame && required_dst_size > dst_size) {
     // allocated buffer is too small
     delete [] dst_frame;
     dst_frame = NULL;
   }
   if (dst_frame == NULL) {
+    // TODO(mikhal): align this buffer to 16 bytes.
     dst_frame = new uint8_t[required_dst_size];
     dst_size = required_dst_size;
   }
@@ -72,8 +76,6 @@ int Scaler::Scale(const uint8_t* src_frame,
   const uint8_t* src_uplane = src_frame + src_width_ * src_height_;
   const uint8_t* src_vplane = src_uplane + src_half_width * src_half_height;
 
-  int dst_half_width = (dst_width_ + 1) >> 1;
-  int dst_half_height = (dst_height_ + 1) >> 1;
   uint8_t* dst_yplane = dst_frame;
   uint8_t* dst_uplane = dst_frame + dst_width_ * dst_height_;
   uint8_t* dst_vplane = dst_uplane + dst_half_width * dst_half_height;

@@ -74,16 +74,19 @@ VPMSimpleSpatialResampler::ResampleFrame(const VideoFrame& inFrame,
   }
 
   // Setting scaler
-  //TODO: Modify scaler types
+  // TODO(mikhal/marpan): Should we allow for setting the filter mode in
+  // _scale.Set() with |_resamplingMode|?
   int retVal = 0;
   retVal = _scaler.Set(inFrame.Width(), inFrame.Height(),
                        _targetWidth, _targetHeight, kI420, kI420, kScaleBox);
   if (retVal < 0)
     return retVal;
 
-
   // Disabling cut/pad for now - only scaling.
-  int requiredSize = (WebRtc_UWord32)(_targetWidth * _targetHeight * 3 >> 1);
+  int target_half_width = (_targetWidth + 1) >> 1;
+  int target_half_height = (_targetHeight + 1) >> 1;
+  int requiredSize = static_cast<int>(_targetWidth * _targetHeight + 2 *
+      (target_half_width * target_half_height));
   outFrame.VerifyAndAllocate(requiredSize);
   outFrame.SetTimeStamp(inFrame.TimeStamp());
   outFrame.SetWidth(_targetWidth);
