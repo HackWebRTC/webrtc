@@ -13,6 +13,8 @@
 #include <cassert>
 #include <iostream>
 
+#include "gtest/gtest.h"
+
 #include "audio_coding_module_typedefs.h"
 #include "common_types.h"
 #include "engine_configurations.h"
@@ -147,7 +149,9 @@ void TestStereo::Perform() {
   WebRtc_UWord16 frequency_hz;
   int audio_channels;
   int codec_channels;
-  int status;
+  bool dtx;
+  bool vad;
+  ACMVADMode vad_mode;
 
   if (test_mode_ == 0) {
     printf("Running Stereo Test");
@@ -170,57 +174,28 @@ void TestStereo::Perform() {
   // Create and initialize two ACMs, one for each side of a one-to-one call.
   acm_a_ = AudioCodingModule::Create(0);
   acm_b_ = AudioCodingModule::Create(1);
-  if ((acm_a_ == NULL) || (acm_b_ == NULL)) {
-    printf("Failed to create ACM.");
-  }
-  status = acm_a_->InitializeReceiver();
-  if (status < 0) {
-    printf("Error in InitializeReceiver()");
-  }
-  status = acm_b_->InitializeReceiver();
-  if (status < 0) {
-    printf("Error in InitializeReceiver()");
-  }
+  ASSERT_TRUE((acm_a_ != NULL) && (acm_b_ != NULL));
+  EXPECT_EQ(0, acm_a_->InitializeReceiver());
+  EXPECT_EQ(0, acm_b_->InitializeReceiver());
 
   // Register all available codes as receiving codecs.
   WebRtc_UWord8 num_encoders = acm_a_->NumberOfCodecs();
   CodecInst my_codec_param;
   for (WebRtc_UWord8 n = 0; n < num_encoders; n++) {
-    status = acm_b_->Codec(n, my_codec_param);
-    if (status < 0) {
-      printf("Error in Codec(), no matching codec found");
-    }
-    status = acm_b_->RegisterReceiveCodec(my_codec_param);
-    if (status < 0) {
-      printf("Error in RegisterReceiveCodec() for payload type %d",
-             my_codec_param.pltype);
-    }
+    EXPECT_EQ(0, acm_b_->Codec(n, my_codec_param));
+    EXPECT_EQ(0, acm_b_->RegisterReceiveCodec(my_codec_param));
   }
 
   // Test that unregister all receive codecs works.
   for (WebRtc_UWord8 n = 0; n < num_encoders; n++) {
-    status = acm_b_->Codec(n, my_codec_param);
-    if (status < 0) {
-      printf("Error in Codec(), no matching codec found");
-    }
-    status = acm_b_->UnregisterReceiveCodec(my_codec_param.pltype);
-    if (status < 0) {
-      printf("Error in UnregisterReceiveCodec() for payload type %d",
-             my_codec_param.pltype);
-    }
+    EXPECT_EQ(0, acm_b_->Codec(n, my_codec_param));
+    EXPECT_EQ(0, acm_b_->UnregisterReceiveCodec(my_codec_param.pltype));
   }
 
   // Register all available codes as receiving codecs once more.
   for (WebRtc_UWord8 n = 0; n < num_encoders; n++) {
-    status = acm_b_->Codec(n, my_codec_param);
-    if (status < 0) {
-      printf("Error in Codec(), no matching codec found");
-    }
-    status = acm_b_->RegisterReceiveCodec(my_codec_param);
-    if (status < 0) {
-      printf("Error in RegisterReceiveCodec() for payload type %d",
-             my_codec_param.pltype);
-    }
+    EXPECT_EQ(0, acm_b_->Codec(n, my_codec_param));
+    EXPECT_EQ(0, acm_b_->RegisterReceiveCodec(my_codec_param));
   }
 
   // TODO(tlegrand): Take care of return values of all function calls.
@@ -240,11 +215,24 @@ void TestStereo::Perform() {
 
   // Create and connect the channel.
   channel_a2b_ = new TestPackStereo;
-  status = acm_a_->RegisterTransportCallback(channel_a2b_);
-  if (status < 0) {
-    printf("Failed to register transport callback.");
-  }
+  EXPECT_EQ(0, acm_a_->RegisterTransportCallback(channel_a2b_));
   channel_a2b_->RegisterReceiverACM(acm_b_);
+
+  // Start with setting VAD/DTX, before we know we will send stereo.
+  // Continue with setting a stereo codec as send codec and verify that
+  // VAD/DTX gets turned off.
+  EXPECT_EQ(0, acm_a_->SetVAD(true, true, VADNormal));
+  EXPECT_EQ(0, acm_a_->VAD(dtx, vad, vad_mode));
+  EXPECT_TRUE(dtx);
+  EXPECT_TRUE(vad);
+  char codec_pcma_temp[] = "PCMA";
+  RegisterSendCodec('A', codec_pcma_temp, 8000, 64000, 80, 2, pcma_pltype_);
+  EXPECT_EQ(0, acm_a_->VAD(dtx, vad, vad_mode));
+  EXPECT_FALSE(dtx);
+  EXPECT_FALSE(vad);
+  if(test_mode_ != 0) {
+    printf("\n");
+  }
 
   //
   // Test Stereo-To-Stereo for all codecs.
@@ -259,8 +247,6 @@ void TestStereo::Perform() {
     printf("===========================================================\n");
     printf("Test number: %d\n",test_cntr_ + 1);
     printf("Test type: Stereo-to-stereo\n");
-  } else {
-    printf(".");
   }
   channel_a2b_->set_codec_mode(kStereo);
   test_cntr_++;
@@ -284,11 +270,6 @@ void TestStereo::Perform() {
   RegisterSendCodec('A', codec_g722, 16000, 64000, 960, codec_channels,
       g722_pltype_);
   Run(channel_a2b_, audio_channels, codec_channels);
-  acm_a_->SetVAD(true, true, VADNormal);
-  RegisterSendCodec('A', codec_g722, 16000, 64000, 320, codec_channels,
-      g722_pltype_);
-  Run(channel_a2b_, audio_channels, codec_channels);
-  acm_a_->SetVAD(false, false, VADNormal);
   out_file_.Close();
 #endif
 #ifdef WEBRTC_CODEC_PCM16
@@ -296,8 +277,6 @@ void TestStereo::Perform() {
     printf("===========================================================\n");
     printf("Test number: %d\n",test_cntr_ + 1);
     printf("Test type: Stereo-to-stereo\n");
-  } else {
-    printf(".");
   }
   channel_a2b_->set_codec_mode(kStereo);
   test_cntr_++;
@@ -315,19 +294,12 @@ void TestStereo::Perform() {
   RegisterSendCodec('A', codec_l16, 8000, 128000, 320, codec_channels,
       l16_8khz_pltype_);
   Run(channel_a2b_, audio_channels, codec_channels);
-  acm_a_->SetVAD(true, true, VADNormal);
-  RegisterSendCodec('A', codec_l16, 8000, 128000, 80, codec_channels,
-      l16_8khz_pltype_);
-  Run(channel_a2b_, audio_channels, codec_channels);
-  acm_a_->SetVAD(false, false, VADNormal);
   out_file_.Close();
 
   if(test_mode_ != 0) {
     printf("===========================================================\n");
     printf("Test number: %d\n",test_cntr_ + 1);
     printf("Test type: Stereo-to-stereo\n");
-  } else {
-    printf(".");
   }
   test_cntr_++;
   OpenOutFile(test_cntr_);
@@ -343,19 +315,12 @@ void TestStereo::Perform() {
   RegisterSendCodec('A', codec_l16, 16000, 256000, 640, codec_channels,
       l16_16khz_pltype_);
   Run(channel_a2b_, audio_channels, codec_channels);
-  acm_a_->SetVAD(true, true, VADNormal);
-  RegisterSendCodec('A', codec_l16, 16000, 256000, 160, codec_channels,
-      l16_16khz_pltype_);
-  Run(channel_a2b_, audio_channels, codec_channels);
-  acm_a_->SetVAD(false, false, VADNormal);
   out_file_.Close();
 
   if(test_mode_ != 0) {
     printf("===========================================================\n");
     printf("Test number: %d\n",test_cntr_ + 1);
     printf("Test type: Stereo-to-stereo\n");
-  } else {
-    printf(".");
   }
   test_cntr_++;
   OpenOutFile(test_cntr_);
@@ -365,11 +330,6 @@ void TestStereo::Perform() {
   RegisterSendCodec('A', codec_l16, 32000, 512000, 640, codec_channels,
       l16_32khz_pltype_);
   Run(channel_a2b_, audio_channels, codec_channels);
-  acm_a_->SetVAD(true, true, VADNormal);
-  RegisterSendCodec('A', codec_l16, 32000, 512000, 320, codec_channels,
-      l16_32khz_pltype_);
-  Run(channel_a2b_, audio_channels, codec_channels);
-  acm_a_->SetVAD(false, false, VADNormal);
   out_file_.Close();
 #endif
 #define PCMA_AND_PCMU
@@ -378,8 +338,6 @@ void TestStereo::Perform() {
     printf("===========================================================\n");
     printf("Test number: %d\n", test_cntr_ + 1);
     printf("Test type: Stereo-to-stereo\n");
-  } else {
-    printf(".");
   }
   channel_a2b_->set_codec_mode(kStereo);
   audio_channels = 2;
@@ -405,18 +363,30 @@ void TestStereo::Perform() {
   RegisterSendCodec('A', codec_pcma, 8000, 64000, 480, codec_channels,
                     pcma_pltype_);
   Run(channel_a2b_, audio_channels, codec_channels);
-  acm_a_->SetVAD(true, true, VADNormal);
-  RegisterSendCodec('A', codec_pcma, 8000, 64000, 80, codec_channels,
-                    pcma_pltype_);
-  Run(channel_a2b_, audio_channels, codec_channels);
-  acm_a_->SetVAD(false, false, VADNormal);
+
+  // Test that VAD/DTX cannot be turned on while sending stereo.
+  EXPECT_EQ(-1, acm_a_->SetVAD(true, true, VADNormal));
+  EXPECT_EQ(0, acm_a_->VAD(dtx, vad, vad_mode));
+  EXPECT_FALSE(dtx);
+  EXPECT_FALSE(vad);
+  EXPECT_EQ(-1, acm_a_->SetVAD(true, false, VADNormal));
+  EXPECT_EQ(0, acm_a_->VAD(dtx, vad, vad_mode));
+  EXPECT_FALSE(dtx);
+  EXPECT_FALSE(vad);
+  EXPECT_EQ(-1, acm_a_->SetVAD(false, true, VADNormal));
+  EXPECT_EQ(0, acm_a_->VAD(dtx, vad, vad_mode));
+  EXPECT_FALSE(dtx);
+  EXPECT_FALSE(vad);
+  EXPECT_EQ(0, acm_a_->SetVAD(false, false, VADNormal));
+  EXPECT_EQ(0, acm_a_->VAD(dtx, vad, vad_mode));
+  EXPECT_FALSE(dtx);
+  EXPECT_FALSE(vad);
+
   out_file_.Close();
   if (test_mode_ != 0) {
     printf("===========================================================\n");
     printf("Test number: %d\n", test_cntr_ + 1);
     printf("Test type: Stereo-to-stereo\n");
-  } else {
-    printf(".");
   }
   test_cntr_++;
   OpenOutFile(test_cntr_);
@@ -439,11 +409,6 @@ void TestStereo::Perform() {
   RegisterSendCodec('A', codec_pcmu, 8000, 64000, 480, codec_channels,
                     pcmu_pltype_);
   Run(channel_a2b_, audio_channels, codec_channels);
-  acm_a_->SetVAD(true, true, VADNormal);
-  RegisterSendCodec('A', codec_pcmu, 8000, 64000, 80, codec_channels,
-                    pcmu_pltype_);
-  Run(channel_a2b_, audio_channels, codec_channels);
-  acm_a_->SetVAD(false, false, VADNormal);
   out_file_.Close();
 #endif
 #ifdef WEBRTC_CODEC_CELT
@@ -451,8 +416,6 @@ void TestStereo::Perform() {
     printf("===========================================================\n");
     printf("Test number: %d\n",test_cntr_ + 1);
     printf("Test type: Stereo-to-stereo\n");
-  } else {
-    printf(".");
   }
   channel_a2b_->set_codec_mode(kStereo);
   audio_channels = 2;
@@ -469,11 +432,6 @@ void TestStereo::Perform() {
   RegisterSendCodec('A', codec_celt, 32000, 128000, 640, codec_channels,
       celt_pltype_);
   Run(channel_a2b_, audio_channels, codec_channels);
-  acm_a_->SetVAD(true, true, VADNormal);
-  RegisterSendCodec('A', codec_celt, 32000, 48000, 640, codec_channels,
-      celt_pltype_);
-  Run(channel_a2b_, audio_channels, codec_channels);
-  acm_a_->SetVAD(false, false, VADNormal);
   out_file_.Close();
 #endif
   //
@@ -582,6 +540,15 @@ void TestStereo::Perform() {
   OpenOutFile(test_cntr_);
   RegisterSendCodec('A', codec_g722, 16000, 64000, 160, codec_channels,
                     g722_pltype_);
+
+
+  // Make sure it is possible to set VAD/CNG, now that we are sending mono
+  // again.
+  EXPECT_EQ(0, acm_a_->SetVAD(true, true, VADNormal));
+  EXPECT_EQ(0, acm_a_->VAD(dtx, vad, vad_mode));
+  EXPECT_TRUE(dtx);
+  EXPECT_TRUE(vad);
+  EXPECT_EQ(0, acm_a_->SetVAD(false, false, VADNormal));
   Run(channel_a2b_, audio_channels, codec_channels);
   out_file_.Close();
 #endif
@@ -660,12 +627,12 @@ void TestStereo::Perform() {
     printf("   PCM16\n");
 #endif
     printf("   G.711\n");
-
+#ifdef WEBRTC_CODEC_CELT
+    printf("   CELT\n");
+#endif
     printf("\nTo complete the test, listen to the %d number of output "
            "files.\n",
            test_cntr_);
-  } else {
-    printf("Done!\n");
   }
 
   // Delete the file pointers.
@@ -682,10 +649,10 @@ void TestStereo::Perform() {
 //          pack_size        - packet size in samples
 //          channels         - number of channels; 1 for mono, 2 for stereo
 //          payload_type     - payload type for the codec
-WebRtc_Word16 TestStereo::RegisterSendCodec(char side, char* codec_name,
-                                            WebRtc_Word32 sampling_freq_hz,
-                                            int rate, int pack_size,
-                                            int channels, int payload_type) {
+void TestStereo::RegisterSendCodec(char side, char* codec_name,
+                                   WebRtc_Word32 sampling_freq_hz, int rate,
+                                   int pack_size, int channels,
+                                   int payload_type) {
   if (test_mode_ != 0) {
     // Print out codec and settings
     printf("Codec: %s Freq: %d Rate: %d PackSize: %d", codec_name,
@@ -708,7 +675,7 @@ WebRtc_Word16 TestStereo::RegisterSendCodec(char side, char* codec_name,
   }
 
   // Set pointer to the ACM where to register the codec
-  AudioCodingModule* my_acm;
+  AudioCodingModule* my_acm = NULL;
   switch (side) {
     case 'A': {
       my_acm = acm_a_;
@@ -719,13 +686,9 @@ WebRtc_Word16 TestStereo::RegisterSendCodec(char side, char* codec_name,
       break;
     }
     default:
-      return -1;
+      break;
   }
-
-  if (my_acm == NULL) {
-    assert(false);
-    return -1;
-  }
+  ASSERT_TRUE(my_acm != NULL);
 
   CodecInst my_codec_param;
   // Get all codec parameters before registering
@@ -733,12 +696,7 @@ WebRtc_Word16 TestStereo::RegisterSendCodec(char side, char* codec_name,
                                        sampling_freq_hz, channels));
   my_codec_param.rate = rate;
   my_codec_param.pacsize = pack_size;
- // my_codec_param.pltype = payload_type;
- // my_codec_param.channels = channels;
   CHECK_ERROR(my_acm->RegisterSendCodec(my_codec_param));
-
-  // Initialization was successful.
-  return 0;
 }
 
 void TestStereo::Run(TestPackStereo* channel, int in_channels, int out_channels,
@@ -751,9 +709,6 @@ void TestStereo::Run(TestPackStereo* channel, int in_channels, int out_channels,
   channel->reset_payload_size();
   int error_count = 0;
 
-  // Only run 1 second for each test case
-  // TODO(tlegrand): either remove |counter_| or start using it as the comment
-  // above says. Now |counter_| is always 0.
   while (1) {
     // Simulate packet loss by setting |packet_loss_| to "true" in
     // |percent_loss| percent of the loops.
@@ -808,16 +763,8 @@ void TestStereo::Run(TestPackStereo* channel, int in_channels, int out_channels,
         audio_frame.samples_per_channel_ * audio_frame.num_channels_);
   }
 
-  if (error_count) {
-    printf(" - test FAILED\n");
-  } else if (test_mode_ != 0) {
-    printf(" - test PASSED\n");
-  }
+  EXPECT_EQ(0, error_count);
 
-  // Reset counter_
-  if (counter_ == 1000) {
-    counter_ = 0;
-  }
   if (in_file_mono_->EndOfFile()) {
     in_file_mono_->Rewind();
   }

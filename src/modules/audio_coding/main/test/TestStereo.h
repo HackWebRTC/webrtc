@@ -68,10 +68,9 @@ class TestStereo : public ACMTest {
   // The default value of '-1' indicates that the registration is based only on
   // codec name and a sampling frequncy matching is not required. This is useful
   // for codecs which support several sampling frequency.
-  WebRtc_Word16 RegisterSendCodec(char side, char* codec_name,
-                                  WebRtc_Word32 samp_freq_hz, int rate,
-                                  int pack_size, int channels,
-                                  int payload_type);
+  void RegisterSendCodec(char side, char* codec_name,
+                         WebRtc_Word32 samp_freq_hz, int rate, int pack_size,
+                         int channels, int payload_type);
 
   void Run(TestPackStereo* channel, int in_channels, int out_channels,
            int percent_loss = 0);

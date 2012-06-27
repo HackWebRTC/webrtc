@@ -201,6 +201,9 @@ class AudioCodingModule: public Module {
   // This API can be called to set/change the send payload-type, frame-size
   // or encoding rate (if applicable for the codec).
   //
+  // Note: If a stereo codec is registered as send codec, VAD/DTX will
+  // automatically be turned off, since it is not supported for stereo sending.
+  //
   // Input:
   //   -sendCodec          : Parameters of the codec to be registered, c.f.
   //                         common_types.h for the definition of
@@ -350,6 +353,8 @@ class AudioCodingModule: public Module {
   // If DTX is disabled but VAD is enabled no DTX packets are send,
   // regardless of whether the codec has internal DTX/VAD or not. In this
   // case, WebRtc VAD is running to label frames as active/in-active.
+  //
+  // NOTE! VAD/DTX is not supported when sending stereo.
   //
   // Inputs:
   //   -enableDTX          : if true DTX is enabled,
