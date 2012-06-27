@@ -48,6 +48,10 @@
 #define WEBRTC_ARCH_32_BITS
 #define WEBRTC_ARCH_LITTLE_ENDIAN
 #define WEBRTC_LITTLE_ENDIAN
+#elif defined(__MIPSEL__)
+#define WEBRTC_ARCH_32_BITS
+#define WEBRTC_ARCH_LITTLE_ENDIAN
+#define WEBRTC_LITTLE_ENDIAN
 #else
 #error Please add support for your architecture in typedefs.h
 #endif
