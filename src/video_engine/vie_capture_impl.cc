@@ -237,7 +237,7 @@ int ViECaptureImpl::ConnectCaptureDevice(const int capture_id,
   }
   VideoCodec codec;
   bool use_hardware_encoder = false;
-  if (vie_encoder->GetEncoder(codec) == 0) {
+  if (vie_encoder->GetEncoder(&codec) == 0) {
     // Try to provide the encoder with pre-encoded frames if possible.
     if (vie_capture->PreEncodeToViEEncoder(codec, *vie_encoder,
                                            video_channel) == 0) {

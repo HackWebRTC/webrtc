@@ -8,21 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "vie_encoder.h"
+#include "video_engine/vie_encoder.h"
 
 #include <cassert>
 
-#include "critical_section_wrapper.h"
-#include "process_thread.h"
-#include "rtp_rtcp.h"
-#include "tick_util.h"
-#include "trace.h"
-#include "video_codec_interface.h"
-#include "video_coding.h"
-#include "video_coding_defines.h"
-#include "vie_codec.h"
-#include "vie_defines.h"
-#include "vie_image_process.h"
+#include "modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "modules/utility/interface/process_thread.h"
+#include "modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "modules/video_coding/main/interface/video_coding.h"
+#include "modules/video_coding/main/interface/video_coding_defines.h"
+#include "system_wrappers/interface/critical_section_wrapper.h"
+#include "system_wrappers/interface/tick_util.h"
+#include "system_wrappers/interface/trace.h"
+#include "video_engine/include/vie_codec.h"
+#include "video_engine/include/vie_image_process.h"
+#include "video_engine/vie_defines.h"
 
 namespace webrtc {
 
@@ -42,7 +42,7 @@ class QMVideoSettingsCallback : public VCMQMSettingsCallback {
 
 class ViEBitrateObserver : public BitrateObserver {
  public:
-  ViEBitrateObserver(ViEEncoder* owner)
+  explicit ViEBitrateObserver(ViEEncoder* owner)
       : owner_(owner) {
   }
   // Implements BitrateObserver.
@@ -240,8 +240,8 @@ WebRtc_UWord8 ViEEncoder::NumberOfCodecs() {
 }
 
 WebRtc_Word32 ViEEncoder::GetCodec(WebRtc_UWord8 list_index,
-                                   webrtc::VideoCodec& video_codec) {
-  if (vcm_.Codec(list_index, &video_codec) != 0) {
+                                   VideoCodec* video_codec) {
+  if (vcm_.Codec(list_index, video_codec) != 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
                  ViEId(engine_id_, channel_id_), "%s: Could not get codec",
                  __FUNCTION__);
@@ -358,11 +358,11 @@ WebRtc_Word32 ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
   return 0;
 }
 
-WebRtc_Word32 ViEEncoder::GetEncoder(webrtc::VideoCodec& video_codec) {
+WebRtc_Word32 ViEEncoder::GetEncoder(VideoCodec* video_codec) {
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
                ViEId(engine_id_, channel_id_), "%s", __FUNCTION__);
 
-  if (vcm_.SendCodec(&video_codec) != 0) {
+  if (vcm_.SendCodec(video_codec) != 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
                  ViEId(engine_id_, channel_id_),
                  "Could not get VCM send codec");
@@ -582,7 +582,7 @@ int ViEEncoder::SendKeyFrame() {
 }
 
 WebRtc_Word32 ViEEncoder::SendCodecStatistics(
-    WebRtc_UWord32& num_key_frames, WebRtc_UWord32& num_delta_frames) {
+    WebRtc_UWord32* num_key_frames, WebRtc_UWord32* num_delta_frames) {
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
                ViEId(engine_id_, channel_id_), "%s", __FUNCTION__);
 
@@ -593,8 +593,8 @@ WebRtc_Word32 ViEEncoder::SendCodecStatistics(
                  "%s: Could not get sent frame information", __FUNCTION__);
     return -1;
   }
-  num_key_frames = sent_frames.numKeyFrames;
-  num_delta_frames = sent_frames.numDeltaFrames;
+  *num_key_frames = sent_frames.numKeyFrames;
+  *num_delta_frames = sent_frames.numDeltaFrames;
   return 0;
 }
 

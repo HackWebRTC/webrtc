@@ -204,7 +204,7 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
     group->SetChannelRembStatus(channel_id, false, false, vie_channel,
                                 vie_encoder);
     unsigned int ssrc = 0;
-    vie_channel->GetRemoteSSRC(ssrc);
+    vie_channel->GetRemoteSSRC(&ssrc);
     group->RemoveChannel(channel_id, ssrc);
 
     // Check if other channels are using the same encoder.
@@ -347,7 +347,7 @@ bool ViEChannelManager::CreateChannelObject(
     return false;
   }
   VideoCodec encoder;
-  if (vie_encoder->GetEncoder(encoder) != 0 ||
+  if (vie_encoder->GetEncoder(&encoder) != 0 ||
       vie_channel->SetSendCodec(encoder) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id),
                  "%s: Could not GetEncoder or SetSendCodec.", __FUNCTION__);

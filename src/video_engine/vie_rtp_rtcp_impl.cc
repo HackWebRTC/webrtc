@@ -183,7 +183,7 @@ int ViERTP_RTCPImpl::GetLocalSSRC(const int video_channel,
     shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
     return -1;
   }
-  if (vie_channel->GetLocalSSRC((WebRtc_UWord32&) SSRC) != 0) {
+  if (vie_channel->GetLocalSSRC(&SSRC) != 0) {
     shared_data_->SetLastError(kViERtpRtcpUnknownError);
     return -1;
   }
@@ -204,7 +204,7 @@ int ViERTP_RTCPImpl::GetRemoteSSRC(const int video_channel,
     shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
     return -1;
   }
-  if (vie_channel->GetRemoteSSRC(SSRC) != 0) {
+  if (vie_channel->GetRemoteSSRC(&SSRC) != 0) {
     shared_data_->SetLastError(kViERtpRtcpUnknownError);
     return -1;
   }
@@ -301,7 +301,7 @@ int ViERTP_RTCPImpl::GetRTCPStatus(const int video_channel,
     return -1;
   }
   RTCPMethod module_mode = kRtcpOff;
-  if (vie_channel->GetRTCPMode(module_mode) != 0) {
+  if (vie_channel->GetRTCPMode(&module_mode) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo,
                  ViEId(shared_data_->instance_id(), video_channel),
                  "%s: could not get current RTCP mode", __FUNCTION__);
@@ -413,7 +413,7 @@ int ViERTP_RTCPImpl::SendApplicationDefinedRTCPPacket(
     return -1;
   }
   RTCPMethod method;
-  if (vie_channel->GetRTCPMode(method) != 0 || method == kRtcpOff) {
+  if (vie_channel->GetRTCPMode(&method) != 0 || method == kRtcpOff) {
     WEBRTC_TRACE(kTraceError, kTraceVideo,
                  ViEId(shared_data_->instance_id(), video_channel),
                  "%s: RTCP disabled on channel %d.", __FUNCTION__,
@@ -631,12 +631,11 @@ int ViERTP_RTCPImpl::GetReceivedRTCPStatistics(const int video_channel,
     shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
     return -1;
   }
-  if (vie_channel->GetReceivedRtcpStatistics(
-      static_cast<WebRtc_UWord16&>(fraction_lost),
-      static_cast<WebRtc_UWord32&>(cumulative_lost),
-      static_cast<WebRtc_UWord32&>(extended_max),
-      static_cast<WebRtc_UWord32&>(jitter),
-      static_cast<WebRtc_Word32&>(rtt_ms)) != 0) {
+  if (vie_channel->GetReceivedRtcpStatistics(&fraction_lost,
+                                             &cumulative_lost,
+                                             &extended_max,
+                                             &jitter,
+                                             &rtt_ms) != 0) {
     shared_data_->SetLastError(kViERtpRtcpUnknownError);
     return -1;
   }
@@ -662,12 +661,9 @@ int ViERTP_RTCPImpl::GetSentRTCPStatistics(const int video_channel,
     return -1;
   }
 
-  if (vie_channel->GetSendRtcpStatistics(
-      static_cast<WebRtc_UWord16&>(fraction_lost),
-      static_cast<WebRtc_UWord32&>(cumulative_lost),
-      static_cast<WebRtc_UWord32&>(extended_max),
-      static_cast<WebRtc_UWord32&>(jitter),
-      static_cast<WebRtc_Word32&>(rtt_ms)) != 0) {
+  if (vie_channel->GetSendRtcpStatistics(&fraction_lost, &cumulative_lost,
+                                         &extended_max, &jitter,
+                                         &rtt_ms) != 0) {
     shared_data_->SetLastError(kViERtpRtcpUnknownError);
     return -1;
   }
@@ -691,11 +687,10 @@ int ViERTP_RTCPImpl::GetRTPStatistics(const int video_channel,
     shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
     return -1;
   }
-  if (vie_channel->GetRtpStatistics(
-      static_cast<WebRtc_UWord32&>(bytes_sent),
-      static_cast<WebRtc_UWord32&>(packets_sent),
-      static_cast<WebRtc_UWord32&>(bytes_received),
-      static_cast<WebRtc_UWord32&>(packets_received)) != 0) {
+  if (vie_channel->GetRtpStatistics(&bytes_sent,
+                                    &packets_sent,
+                                    &bytes_received,
+                                    &packets_received) != 0) {
     shared_data_->SetLastError(kViERtpRtcpUnknownError);
     return -1;
   }
@@ -719,11 +714,10 @@ int ViERTP_RTCPImpl::GetBandwidthUsage(const int video_channel,
     shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
     return -1;
   }
-  vie_channel->GetBandwidthUsage(
-      static_cast<WebRtc_UWord32&>(total_bitrate_sent),
-      static_cast<WebRtc_UWord32&>(video_bitrate_sent),
-      static_cast<WebRtc_UWord32&>(fec_bitrate_sent),
-      static_cast<WebRtc_UWord32&>(nackBitrateSent));
+  vie_channel->GetBandwidthUsage(&total_bitrate_sent,
+                                 &video_bitrate_sent,
+                                 &fec_bitrate_sent,
+                                 &nackBitrateSent);
   return 0;
 }
 

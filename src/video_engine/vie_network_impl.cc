@@ -126,7 +126,7 @@ int ViENetworkImpl::GetLocalReceiver(const int video_channel,
     shared_data_->SetLastError(kViENetworkInvalidChannelId);
     return -1;
   }
-  if (vie_channel->GetLocalReceiver(rtp_port, rtcp_port, ip_address) != 0) {
+  if (vie_channel->GetLocalReceiver(&rtp_port, &rtcp_port, ip_address) != 0) {
     shared_data_->SetLastError(kViENetworkLocalReceiverNotSet);
     return -1;
   }
@@ -196,9 +196,9 @@ int ViENetworkImpl::GetSendDestination(const int video_channel,
     shared_data_->SetLastError(kViENetworkInvalidChannelId);
     return -1;
   }
-  if (vie_channel->GetSendDestination(ip_address, rtp_port, rtcp_port,
-                                          source_rtp_port,
-                                          source_rtcp_port) != 0) {
+  if (vie_channel->GetSendDestination(ip_address, &rtp_port, &rtcp_port,
+                                      &source_rtp_port,
+                                      &source_rtcp_port) != 0) {
     shared_data_->SetLastError(kViENetworkDestinationNotSet);
     return -1;
   }
@@ -233,7 +233,7 @@ int ViENetworkImpl::RegisterSendTransport(const int video_channel,
     shared_data_->SetLastError(kViENetworkAlreadySending);
     return -1;
   }
-  if (vie_channel->RegisterSendTransport(transport) != 0) {
+  if (vie_channel->RegisterSendTransport(&transport) != 0) {
     shared_data_->SetLastError(kViENetworkUnknownError);
     return -1;
   }
@@ -334,7 +334,7 @@ int ViENetworkImpl::GetSourceInfo(const int video_channel,
     shared_data_->SetLastError(kViENetworkInvalidChannelId);
     return -1;
   }
-  if (vie_channel->GetSourceInfo(rtp_port, rtcp_port, ip_address,
+  if (vie_channel->GetSourceInfo(&rtp_port, &rtcp_port, ip_address,
                                  ip_address_length) != 0) {
     shared_data_->SetLastError(kViENetworkUnknownError);
     return -1;
@@ -498,7 +498,7 @@ int ViENetworkImpl::GetSourceFilter(const int video_channel,
     shared_data_->SetLastError(kViENetworkInvalidChannelId);
     return -1;
   }
-  if (vie_channel->GetSourceFilter(rtp_port, rtcp_port, ip_address) != 0) {
+  if (vie_channel->GetSourceFilter(&rtp_port, &rtcp_port, ip_address) != 0) {
     shared_data_->SetLastError(kViENetworkUnknownError);
     return -1;
   }
@@ -551,7 +551,7 @@ int ViENetworkImpl::GetSendToS(const int video_channel,
     shared_data_->SetLastError(kViENetworkInvalidChannelId);
     return -1;
   }
-  if (vie_channel->GetToS((WebRtc_Word32&) DSCP, use_set_sockOpt) != 0) {
+  if (vie_channel->GetToS(&DSCP, &use_set_sockOpt) != 0) {
     shared_data_->SetLastError(kViENetworkUnknownError);
     return -1;
   }
@@ -645,7 +645,7 @@ int ViENetworkImpl::GetSendGQoS(const int video_channel,
     shared_data_->SetLastError(kViENetworkInvalidChannelId);
     return -1;
   }
-  if (vie_channel->GetSendGQoS(enabled, service_type, overrideDSCP) != 0) {
+  if (vie_channel->GetSendGQoS(&enabled, &service_type, &overrideDSCP) != 0) {
     shared_data_->SetLastError(kViENetworkUnknownError);
     return -1;
   }

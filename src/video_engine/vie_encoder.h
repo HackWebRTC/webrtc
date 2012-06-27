@@ -8,20 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_ENCODER_H_
-#define WEBRTC_VIDEO_ENGINE_VIE_ENCODER_H_
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_ENCODER_H_  // NOLINT
+#define WEBRTC_VIDEO_ENGINE_VIE_ENCODER_H_  // NOLINT
 
-#include "common_types.h"
-#include "typedefs.h"
-#include "video_coding_defines.h"
-#include "video_processing.h"
-#include "vie_defines.h"
-#include "vie_file_recorder.h"
-#include "vie_frame_provider_base.h"
-
+#include "common_types.h"  // NOLINT
+#include "typedefs.h"  //NOLINT
 #include "modules/bitrate_controller/include/bitrate_controller.h"
 #include "modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "modules/video_coding/main/interface/video_coding_defines.h"
+#include "modules/video_processing/main/interface/video_processing.h"
 #include "system_wrappers/interface/scoped_ptr.h"
+#include "video_engine/vie_defines.h"
+#include "video_engine/vie_file_recorder.h"
+#include "video_engine/vie_frame_provider_base.h"
 
 namespace webrtc {
 
@@ -63,12 +62,12 @@ class ViEEncoder
 
   // Codec settings.
   WebRtc_UWord8 NumberOfCodecs();
-  WebRtc_Word32 GetCodec(WebRtc_UWord8 list_index, VideoCodec& video_codec);
+  WebRtc_Word32 GetCodec(WebRtc_UWord8 list_index, VideoCodec* video_codec);
   WebRtc_Word32 RegisterExternalEncoder(VideoEncoder* encoder,
                                         WebRtc_UWord8 pl_type);
   WebRtc_Word32 DeRegisterExternalEncoder(WebRtc_UWord8 pl_type);
   WebRtc_Word32 SetEncoder(const VideoCodec& video_codec);
-  WebRtc_Word32 GetEncoder(VideoCodec& video_codec);
+  WebRtc_Word32 GetEncoder(VideoCodec* video_codec);
 
   WebRtc_Word32 GetCodecConfigParameters(
     unsigned char config_parameters[kConfigParameterSize],
@@ -94,10 +93,9 @@ class ViEEncoder
     return;
   }
 
-  WebRtc_Word32 EncodeFrame(VideoFrame& video_frame);
   WebRtc_Word32 SendKeyFrame();
-  WebRtc_Word32 SendCodecStatistics(WebRtc_UWord32& num_key_frames,
-                                    WebRtc_UWord32& num_delta_frames);
+  WebRtc_Word32 SendCodecStatistics(WebRtc_UWord32* num_key_frames,
+                                    WebRtc_UWord32* num_delta_frames);
 
   WebRtc_Word32 EstimatedSendBandwidth(
         WebRtc_UWord32* available_bandwidth) const;
@@ -189,4 +187,4 @@ class ViEEncoder
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_ENCODER_H_
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_ENCODER_H_  // NOLINT
