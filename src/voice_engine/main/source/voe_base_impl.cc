@@ -194,9 +194,8 @@ WebRtc_Word32 VoEBaseImpl::RecordedDataIsAvailable(
     // Perform channel-independent operations
     // (APM, mix with file, record to file, mute, etc.)
     _shared->transmit_mixer()->PrepareDemux(audioSamples, nSamples, nChannels,
-                                    samplesPerSec,
-                                    (WebRtc_UWord16) totalDelayMS, clockDrift,
-                                    currentVoEMicLevel);
+        samplesPerSec, static_cast<WebRtc_UWord16>(totalDelayMS), clockDrift,
+        currentVoEMicLevel);
 
     // Copy the audio frame to each sending channel and perform
     // channel-dependent operations (file mixing, mute, etc.) to prepare
@@ -246,6 +245,8 @@ WebRtc_Word32 VoEBaseImpl::NeedMorePlayData(
 
     assert(_shared->output_mixer() != NULL);
 
+    // TODO(andrew): if the device is running in mono, we should tell the mixer
+    // here so that it will only request mono from AudioCodingModule.
     // Perform mixing of all active participants (channel-based mixing)
     _shared->output_mixer()->MixActiveChannels();
 
@@ -254,7 +255,7 @@ WebRtc_Word32 VoEBaseImpl::NeedMorePlayData(
 
     // Retrieve the final output mix (resampled to match the ADM)
     _shared->output_mixer()->GetMixedAudio(samplesPerSec, nChannels,
-        _audioFrame);
+        &_audioFrame);
 
     assert(static_cast<int>(nSamples) == _audioFrame.samples_per_channel_);
     assert(samplesPerSec ==
@@ -521,11 +522,9 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
             return -1;
         }
 
-        // Assume mono output until a send codec is set, and stereo input until
-        // we receive the first captured frame. We set stereo input here to
-        // avoid triggering a possible error in SetSendCodec when a stereo
-        // codec is selected.
-        if (_shared->audio_processing()->set_num_channels(2, 1) != 0)
+        // Assume mono until the audio frames are received from the capture
+        // device, at which point this can be updated.
+        if (_shared->audio_processing()->set_num_channels(1, 1) != 0)
         {
             _shared->SetLastError(VE_SOUNDCARD_ERROR, kTraceError,
                 "Init() failed to set channels for the primary audio stream");

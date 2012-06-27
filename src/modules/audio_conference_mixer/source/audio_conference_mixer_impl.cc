@@ -34,7 +34,7 @@ void MixFrames(AudioFrame* mixed_frame, AudioFrame* frame) {
     // We only support mono-to-stereo.
     assert(mixed_frame->num_channels_ == 2 &&
            frame->num_channels_ == 1);
-    AudioFrameOperations::MonoToStereo(*frame);
+    AudioFrameOperations::MonoToStereo(frame);
   }
 
   *mixed_frame += *frame;

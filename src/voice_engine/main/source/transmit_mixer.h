@@ -164,11 +164,12 @@ public:
 private:
     TransmitMixer(const WebRtc_UWord32 instanceId);
 
-    WebRtc_Word32 GenerateAudioFrame(const WebRtc_Word16 audioSamples[],
-                                     const WebRtc_UWord32 nSamples,
-                                     const WebRtc_UWord8 nChannels,
-                                     const WebRtc_UWord32 samplesPerSec,
-                                     const int mixingFrequency);
+    void CheckForSendCodecChanges();
+
+    int GenerateAudioFrame(const int16_t audioSamples[],
+                           int nSamples,
+                           int nChannels,
+                           int samplesPerSec);
     WebRtc_Word32 RecordAudioToFile(const WebRtc_UWord32 mixingFrequency);
 
     WebRtc_Word32 MixOrReplaceAudioWithFile(
@@ -233,6 +234,7 @@ private:
     WebRtc_Word32 _remainingMuteMicTimeMs;
     int _mixingFrequency;
     bool _includeAudioLevelIndication;
+    bool stereo_codec_;
     bool swap_stereo_channels_;
 };
 

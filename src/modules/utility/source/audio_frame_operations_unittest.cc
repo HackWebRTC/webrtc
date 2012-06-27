@@ -14,7 +14,6 @@
 #include "module_common_types.h"
 
 namespace webrtc {
-namespace voe {
 namespace {
 
 class AudioFrameOperationsTest : public ::testing::Test {
@@ -53,44 +52,60 @@ void VerifyFramesAreEqual(const AudioFrame& frame1, const AudioFrame& frame2) {
 }
 
 TEST_F(AudioFrameOperationsTest, MonoToStereoFailsWithBadParameters) {
-  EXPECT_EQ(-1, AudioFrameOperations::MonoToStereo(frame_));
+  EXPECT_EQ(-1, AudioFrameOperations::MonoToStereo(&frame_));
 
   frame_.samples_per_channel_ = AudioFrame::kMaxDataSizeSamples;
   frame_.num_channels_ = 1;
-  EXPECT_EQ(-1, AudioFrameOperations::MonoToStereo(frame_));
+  EXPECT_EQ(-1, AudioFrameOperations::MonoToStereo(&frame_));
 }
 
 TEST_F(AudioFrameOperationsTest, MonoToStereoSucceeds) {
   frame_.num_channels_ = 1;
   SetFrameData(&frame_, 1);
-  EXPECT_EQ(0, AudioFrameOperations::MonoToStereo(frame_));
+  AudioFrame temp_frame = frame_;
+  EXPECT_EQ(0, AudioFrameOperations::MonoToStereo(&frame_));
 
   AudioFrame stereo_frame;
   stereo_frame.samples_per_channel_ = 320;
   stereo_frame.num_channels_ = 2;
   SetFrameData(&stereo_frame, 1, 1);
   VerifyFramesAreEqual(stereo_frame, frame_);
+
+  SetFrameData(&frame_, 0);
+  AudioFrameOperations::MonoToStereo(temp_frame.data_,
+                                     frame_.samples_per_channel_,
+                                     frame_.data_);
+  frame_.num_channels_ = 2;  // Need to set manually.
+  VerifyFramesAreEqual(stereo_frame, frame_);
 }
 
 TEST_F(AudioFrameOperationsTest, StereoToMonoFailsWithBadParameters) {
   frame_.num_channels_ = 1;
-  EXPECT_EQ(-1, AudioFrameOperations::StereoToMono(frame_));
+  EXPECT_EQ(-1, AudioFrameOperations::StereoToMono(&frame_));
 }
 
 TEST_F(AudioFrameOperationsTest, StereoToMonoSucceeds) {
   SetFrameData(&frame_, 4, 2);
-  EXPECT_EQ(0, AudioFrameOperations::StereoToMono(frame_));
+  AudioFrame temp_frame = frame_;
+  EXPECT_EQ(0, AudioFrameOperations::StereoToMono(&frame_));
 
   AudioFrame mono_frame;
   mono_frame.samples_per_channel_ = 320;
   mono_frame.num_channels_ = 1;
   SetFrameData(&mono_frame, 3);
   VerifyFramesAreEqual(mono_frame, frame_);
+
+  SetFrameData(&frame_, 0);
+  AudioFrameOperations::StereoToMono(temp_frame.data_,
+                                     frame_.samples_per_channel_,
+                                     frame_.data_);
+  frame_.num_channels_ = 1;  // Need to set manually.
+  VerifyFramesAreEqual(mono_frame, frame_);
 }
 
 TEST_F(AudioFrameOperationsTest, StereoToMonoDoesNotWrapAround) {
   SetFrameData(&frame_, -32768, -32768);
-  EXPECT_EQ(0, AudioFrameOperations::StereoToMono(frame_));
+  EXPECT_EQ(0, AudioFrameOperations::StereoToMono(&frame_));
 
   AudioFrame mono_frame;
   mono_frame.samples_per_channel_ = 320;
@@ -208,5 +223,4 @@ TEST_F(AudioFrameOperationsTest, ScaleWithSatSucceeds) {
 }
 
 }  // namespace
-}  // namespace voe
 }  // namespace webrtc

@@ -14,8 +14,9 @@
 #include "audio_frame_operations.h"
 #include "critical_section_wrapper.h"
 #include "file_wrapper.h"
-#include "trace.h"
+#include "output_mixer_internal.h"
 #include "statistics.h"
+#include "trace.h"
 #include "voe_external_media.h"
 
 namespace webrtc {
@@ -472,13 +473,13 @@ int OutputMixer::StartRecordingPlayout(OutStream* stream,
                                                         notificationTime) != 0)
     {
        _engineStatisticsPtr->SetLastError(VE_BAD_FILE, kTraceError,
-	    "StartRecordingAudioFile() failed to start file recording");
+           "StartRecordingAudioFile() failed to start file recording");
         _outputFileRecorderPtr->StopRecording();
         FileRecorder::DestroyFileRecorder(_outputFileRecorderPtr);
         _outputFileRecorderPtr = NULL;
         return -1;
     }
-    
+
     _outputFileRecorderPtr->RegisterModuleFileCallback(this);
     _outputFileRecording = true;
 
@@ -514,86 +515,28 @@ int OutputMixer::StopRecordingPlayout()
     return 0;
 }
 
-WebRtc_Word32 
-OutputMixer::GetMixedAudio(const WebRtc_Word32 desiredFreqHz,
-                           const WebRtc_UWord8 channels,
-                           AudioFrame& audioFrame)
-{
-    WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,-1),
-                 "OutputMixer::GetMixedAudio(desiredFreqHz=%d, channels=&d)",
-                 desiredFreqHz, channels);
+int OutputMixer::GetMixedAudio(int sample_rate_hz,
+                               int num_channels,
+                               AudioFrame* frame) {
+  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,-1),
+               "OutputMixer::GetMixedAudio(sample_rate_hz=%d, num_channels=%d)",
+               sample_rate_hz, num_channels);
 
-    audioFrame = _audioFrame;
+  // --- Record playout if enabled
+  {
+    CriticalSectionScoped cs(&_fileCritSect);
+    if (_outputFileRecording && _outputFileRecorderPtr)
+      _outputFileRecorderPtr->RecordAudioToFile(_audioFrame);
+  }
 
-    // --- Record playout if enabled
-    {
-        CriticalSectionScoped cs(&_fileCritSect);
-        if (_outputFileRecording)
-        {
-            if (_outputFileRecorderPtr)
-            {
-                _outputFileRecorderPtr->RecordAudioToFile(audioFrame);
-            }
-        }
-    }
-
-    int outLen(0);
-
-    if (audioFrame.num_channels_ == 1)
-    {
-        if (_resampler.ResetIfNeeded(audioFrame.sample_rate_hz_,
-                                     desiredFreqHz,
-                                     kResamplerSynchronous) != 0)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId,-1),
-                         "OutputMixer::GetMixedAudio() unable to resample - 1");
-            return -1;
-        }
-    }
-    else
-    {
-        if (_resampler.ResetIfNeeded(audioFrame.sample_rate_hz_,
-                                     desiredFreqHz,
-                                     kResamplerSynchronousStereo) != 0)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId,-1),
-                         "OutputMixer::GetMixedAudio() unable to resample - 2");
-            return -1;
-        }
-    }
-    if (_resampler.Push(
-        _audioFrame.data_,
-        _audioFrame.samples_per_channel_*_audioFrame.num_channels_,
-        audioFrame.data_,
-        AudioFrame::kMaxDataSizeSamples,
-        outLen) == 0)
-    {
-        // Ensure that output from resampler matches the audio-frame format.
-        // Example: 10ms stereo output at 48kHz => outLen = 960 =>
-        // convert samples_per_channel_ to 480
-        audioFrame.samples_per_channel_ =
-            (outLen / _audioFrame.num_channels_);
-        audioFrame.sample_rate_hz_ = desiredFreqHz;
-    }
-    else
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId,-1),
-                     "OutputMixer::GetMixedAudio() resampling failed");
-        return -1;
-    }
-
-    if ((channels == 2) && (audioFrame.num_channels_ == 1))
-    {
-        AudioFrameOperations::MonoToStereo(audioFrame);
-    }
-    else if ((channels == 1) && (audioFrame.num_channels_ == 2))
-    {
-        AudioFrameOperations::StereoToMono(audioFrame);
-    }
-    return 0;
+  frame->num_channels_ = num_channels;
+  frame->sample_rate_hz_ = sample_rate_hz;
+  // TODO(andrew): Ideally the downmixing would occur much earlier, in
+  // AudioCodingModule.
+  return RemixAndResample(_audioFrame, &_resampler, frame);
 }
 
-WebRtc_Word32 
+WebRtc_Word32
 OutputMixer::DoOperationsOnCombinedSignal()
 {
     if (_audioFrame.sample_rate_hz_ != _mixingFrequencyHz)
@@ -615,7 +558,7 @@ OutputMixer::DoOperationsOnCombinedSignal()
     {
         if (_audioFrame.num_channels_ == 1)
         {
-            AudioFrameOperations::MonoToStereo(_audioFrame);
+            AudioFrameOperations::MonoToStereo(&_audioFrame);
         }
         else
         {
@@ -640,7 +583,7 @@ OutputMixer::DoOperationsOnCombinedSignal()
         {
             _externalMediaCallbackPtr->Process(
                 -1,
-                kPlaybackAllChannelsMixed, 
+                kPlaybackAllChannelsMixed,
                 (WebRtc_Word16*)_audioFrame.data_,
                 _audioFrame.samples_per_channel_,
                 _audioFrame.sample_rate_hz_,
@@ -655,56 +598,22 @@ OutputMixer::DoOperationsOnCombinedSignal()
 }
 
 // ----------------------------------------------------------------------------
-//	                             Private methods
+//                             Private methods
 // ----------------------------------------------------------------------------
 
-int 
-OutputMixer::APMAnalyzeReverseStream()
-{
-    int outLen(0);
-    AudioFrame audioFrame = _audioFrame;
+void OutputMixer::APMAnalyzeReverseStream() {
+  // Convert from mixing to AudioProcessing sample rate, determined by the send
+  // side. Downmix to mono.
+  AudioFrame frame;
+  frame.num_channels_ = 1;
+  frame.sample_rate_hz_ = _audioProcessingModulePtr->sample_rate_hz();
+  if (RemixAndResample(_audioFrame, &_apmResampler, &frame) == -1)
+    return;
 
-    // Convert from mixing frequency to APM frequency.
-    // Sending side determines APM frequency.
-
-    if (audioFrame.num_channels_ == 1)
-    {
-        _apmResampler.ResetIfNeeded(_audioFrame.sample_rate_hz_,
-                                    _audioProcessingModulePtr->sample_rate_hz(),
-                                    kResamplerSynchronous);
-    }
-    else
-    {
-        _apmResampler.ResetIfNeeded(_audioFrame.sample_rate_hz_,
-                                    _audioProcessingModulePtr->sample_rate_hz(),
-                                    kResamplerSynchronousStereo);
-    }
-    if (_apmResampler.Push(
-        _audioFrame.data_,
-        _audioFrame.samples_per_channel_*_audioFrame.num_channels_,
-        audioFrame.data_,
-        AudioFrame::kMaxDataSizeSamples,
-        outLen) == 0)
-    {
-        audioFrame.samples_per_channel_ =
-            (outLen / _audioFrame.num_channels_);
-        audioFrame.sample_rate_hz_ = _audioProcessingModulePtr->sample_rate_hz();
-    }
-
-    if (audioFrame.num_channels_ == 2)
-    {
-        AudioFrameOperations::StereoToMono(audioFrame);
-    }
-
-    // Perform far-end APM analyze
-
-    if (_audioProcessingModulePtr->AnalyzeReverseStream(&audioFrame) == -1)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,-1),
-                     "AudioProcessingModule::AnalyzeReverseStream() => error");
-    }
-
-    return 0;
+  if (_audioProcessingModulePtr->AnalyzeReverseStream(&frame) == -1) {
+    WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,-1),
+                 "AudioProcessingModule::AnalyzeReverseStream() => error");
+  }
 }
 
 int

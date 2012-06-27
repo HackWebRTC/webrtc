@@ -13,41 +13,48 @@
 
 namespace webrtc {
 
-int AudioFrameOperations::MonoToStereo(AudioFrame& frame) {
-  if (frame.num_channels_ != 1) {
+void AudioFrameOperations::MonoToStereo(const int16_t* src_audio,
+                                        int samples_per_channel,
+                                        int16_t* dst_audio) {
+  for (int i = 0; i < samples_per_channel; i++) {
+    dst_audio[2 * i] = src_audio[i];
+    dst_audio[2 * i + 1] = src_audio[i];
+  }
+}
+
+int AudioFrameOperations::MonoToStereo(AudioFrame* frame) {
+  if (frame->num_channels_ != 1) {
     return -1;
   }
-  if ((frame.samples_per_channel_ << 1) >=
-      AudioFrame::kMaxDataSizeSamples) {
-    // not enough memory to expand from mono to stereo
+  if ((frame->samples_per_channel_ * 2) >= AudioFrame::kMaxDataSizeSamples) {
+    // Not enough memory to expand from mono to stereo.
     return -1;
   }
 
-  int16_t payloadCopy[AudioFrame::kMaxDataSizeSamples];
-  memcpy(payloadCopy, frame.data_,
-         sizeof(int16_t) * frame.samples_per_channel_);
-
-  for (int i = 0; i < frame.samples_per_channel_; i++) {
-    frame.data_[2 * i]   = payloadCopy[i];
-    frame.data_[2 * i + 1] = payloadCopy[i];
-  }
-
-  frame.num_channels_ = 2;
+  int16_t data_copy[AudioFrame::kMaxDataSizeSamples];
+  memcpy(data_copy, frame->data_,
+         sizeof(int16_t) * frame->samples_per_channel_);
+  MonoToStereo(data_copy, frame->samples_per_channel_, frame->data_);
+  frame->num_channels_ = 2;
 
   return 0;
 }
 
-int AudioFrameOperations::StereoToMono(AudioFrame& frame) {
-  if (frame.num_channels_ != 2) {
+void AudioFrameOperations::StereoToMono(const int16_t* src_audio,
+                                        int samples_per_channel,
+                                        int16_t* dst_audio) {
+  for (int i = 0; i < samples_per_channel; i++) {
+    dst_audio[i] = (src_audio[2 * i] + src_audio[2 * i + 1]) >> 1;
+  }
+}
+
+int AudioFrameOperations::StereoToMono(AudioFrame* frame) {
+  if (frame->num_channels_ != 2) {
     return -1;
   }
 
-  for (int i = 0; i < frame.samples_per_channel_; i++) {
-    frame.data_[i] = (frame.data_[2 * i] >> 1) +
-                            (frame.data_[2 * i + 1] >> 1);
-  }
-
-  frame.num_channels_ = 1;
+  StereoToMono(frame->data_, frame->samples_per_channel_, frame->data_);
+  frame->num_channels_ = 1;
 
   return 0;
 }

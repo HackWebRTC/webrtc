@@ -85,7 +85,7 @@ WebRtc_UWord16 SharedData::NumOfSendingChannels()
     {
         return 0;
     }
-	
+
     WebRtc_UWord16 nChannelsSending(0);
     WebRtc_Word32* channelsArray = new WebRtc_Word32[numOfChannels];
 

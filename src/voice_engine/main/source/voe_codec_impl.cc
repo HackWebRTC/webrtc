@@ -144,48 +144,6 @@ int VoECodecImpl::SetSendCodec(int channel, const CodecInst& codec)
         return -1;
     }
 
-    // Need to check if we should change APM settings for mono/stereo.
-    // We'll check all channels (sending or not), so we don't have to
-    // check this again when starting/stopping sending.
-
-    voe::ScopedChannel sc2(_shared->channel_manager());
-    void* iterator(NULL);
-    channelPtr = sc2.GetFirstChannel(iterator);
-    int maxNumChannels = 1;
-    while (channelPtr != NULL)
-    {
-        CodecInst tmpCdc;
-        channelPtr->GetSendCodec(tmpCdc);
-        if (tmpCdc.channels > maxNumChannels)
-            maxNumChannels = tmpCdc.channels;
-
-        channelPtr = sc2.GetNextChannel(iterator);
-    }
-
-    // Reuse the currently set number of capture channels. We need to wait
-    // until receiving a frame to determine the true number.
-    //
-    // TODO(andrew): AudioProcessing will return an error if there are more
-    // output than input channels (it doesn't want to produce fake channels).
-    // This will happen with a stereo codec and a device which doesn't support
-    // stereo. AudioCoding should probably do the faking; look into how to
-    // handle this case properly.
-    //
-    // Check if the number of channels has changed to avoid an unnecessary
-    // reset.
-    // TODO(andrew): look at handling this logic in AudioProcessing.
-    if (_shared->audio_processing()->num_output_channels() != maxNumChannels)
-    {
-        if (_shared->audio_processing()->set_num_channels(
-                _shared->audio_processing()->num_input_channels(),
-                maxNumChannels) != 0)
-        {
-            _shared->SetLastError(VE_APM_ERROR, kTraceError,
-                "Init() failed to set APM channels for the send audio stream");
-            return -1;
-        }
-    }
-
     return 0;
 }
 

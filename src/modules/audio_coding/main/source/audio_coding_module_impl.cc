@@ -985,6 +985,8 @@ WebRtc_Word32 AudioCodingModuleImpl::Add10MsData(
   // either mono-to-stereo or stereo-to-mono conversion.
   WebRtc_Word16 audio[WEBRTC_10MS_PCM_AUDIO];
   int audio_channels = _sendCodecInst.channels;
+  // TODO(andrew): reuse RemixAndResample here? The upmixing should be done
+  // after resampling. (Would require moving it somewhere common).
   if (audio_frame.num_channels_ != audio_channels) {
     if (audio_channels == 2) {
       // Do mono-to-stereo conversion by copying each sample.

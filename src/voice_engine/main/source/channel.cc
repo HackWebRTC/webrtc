@@ -873,7 +873,7 @@ WebRtc_Word32 Channel::GetAudioFrame(const WebRtc_Word32 id,
         {
             // Emulate stereo mode since panning is active.
             // The mono signal is copied to both left and right channels here.
-            AudioFrameOperations::MonoToStereo(audioFrame);
+            AudioFrameOperations::MonoToStereo(&audioFrame);
         }
         // For true stereo mode (when we are receiving a stereo signal), no
         // action is needed.

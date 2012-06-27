@@ -21,11 +21,14 @@
 #include "voe_base_impl.h"
 #include "voe_external_media.h"
 
-#define WEBRTC_ABS(a)	   (((a) < 0) ? -(a) : (a))
+#define WEBRTC_ABS(a) (((a) < 0) ? -(a) : (a))
 
 namespace webrtc {
 
 namespace voe {
+
+// Used for downmixing before resampling.
+static const int kMaxMonoDeviceDataSizeSamples = 480;  // 10 ms, 48 kHz, mono.
 
 void
 TransmitMixer::OnPeriodicProcess()
@@ -203,6 +206,7 @@ TransmitMixer::TransmitMixer(const WebRtc_UWord32 instanceId) :
     _remainingMuteMicTimeMs(0),
     _mixingFrequency(0),
     _includeAudioLevelIndication(false),
+    stereo_codec_(false),
     swap_stereo_channels_(false)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, -1),
@@ -274,8 +278,8 @@ TransmitMixer::SetEngineInformation(ProcessThread& processThread,
 
     return 0;
 }
-	
-WebRtc_Word32 
+
+WebRtc_Word32
 TransmitMixer::RegisterVoiceEngineObserver(VoiceEngineObserver& observer)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
@@ -293,7 +297,7 @@ TransmitMixer::RegisterVoiceEngineObserver(VoiceEngineObserver& observer)
     return 0;
 }
 
-WebRtc_Word32 
+WebRtc_Word32
 TransmitMixer::SetAudioProcessingModule(AudioProcessing* audioProcessingModule)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
@@ -304,7 +308,27 @@ TransmitMixer::SetAudioProcessingModule(AudioProcessing* audioProcessingModule)
     return 0;
 }
 
-WebRtc_Word32 
+void TransmitMixer::CheckForSendCodecChanges() {
+  ScopedChannel sc(*_channelManagerPtr);
+  void* iterator = NULL;
+  Channel* channel = sc.GetFirstChannel(iterator);
+  _mixingFrequency = 8000;
+  stereo_codec_ = false;
+  while (channel != NULL) {
+    if (channel->Sending()) {
+      CodecInst codec;
+      channel->GetSendCodec(codec);
+
+      if (codec.channels == 2)
+        stereo_codec_ = true;
+      if (codec.plfreq > _mixingFrequency)
+        _mixingFrequency = codec.plfreq;
+    }
+    channel = sc.GetNextChannel(iterator);
+  }
+}
+
+WebRtc_Word32
 TransmitMixer::PrepareDemux(const void* audioSamples,
                             const WebRtc_UWord32 nSamples,
                             const WebRtc_UWord8 nChannels,
@@ -319,32 +343,14 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
                  "currentMicLevel=%u)", nSamples, nChannels, samplesPerSec,
                  totalDelayMS, clockDrift, currentMicLevel);
 
-
-    const int mixingFrequency = _mixingFrequency;
-
-    ScopedChannel sc(*_channelManagerPtr);
-    void* iterator(NULL);
-    Channel* channelPtr = sc.GetFirstChannel(iterator);
-    _mixingFrequency = 8000;
-    bool stereo_codec = false;  // Used for stereo swapping.
-    while (channelPtr != NULL) {
-      if (channelPtr->Sending()) {
-        CodecInst temp_codec;
-        channelPtr->GetSendCodec(temp_codec);
-        stereo_codec = temp_codec.channels == 2;
-        if (temp_codec.plfreq > _mixingFrequency)
-          _mixingFrequency = temp_codec.plfreq;
-      }
-      channelPtr = sc.GetNextChannel(iterator);
-    }
+    CheckForSendCodecChanges();
 
     // --- Resample input audio and create/store the initial audio frame
 
-    if (GenerateAudioFrame((const WebRtc_Word16*) audioSamples,
+    if (GenerateAudioFrame(static_cast<const WebRtc_Word16*>(audioSamples),
                            nSamples,
                            nChannels,
-                           samplesPerSec,
-                           _mixingFrequency) == -1)
+                           samplesPerSec) == -1)
     {
         return -1;
     }
@@ -353,7 +359,7 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
 
     APMProcessStream(totalDelayMS, clockDrift, currentMicLevel);
 
-    if (swap_stereo_channels_ && stereo_codec)
+    if (swap_stereo_channels_ && stereo_codec_)
       // Only bother swapping if we're using a stereo codec.
       AudioFrameOperations::SwapStereoChannels(&_audioFrame);
 
@@ -418,20 +424,10 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
         }
     }
 
-    if (_mixingFrequency != mixingFrequency)
-    {
-        WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
-                     "TransmitMixer::TransmitMixer::PrepareDemux() => "
-                     "mixing frequency = %d",
-                     _mixingFrequency);
-    }
-
     return 0;
 }
 
-
-	
-WebRtc_Word32 
+WebRtc_Word32
 TransmitMixer::DemuxAndMix()
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
@@ -455,11 +451,10 @@ TransmitMixer::DemuxAndMix()
         }
         channelPtr = sc.GetNextChannel(iterator);
     }
-				
-	return 0;
+    return 0;
 }
-	
-WebRtc_Word32 
+
+WebRtc_Word32
 TransmitMixer::EncodeAndSend()
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
@@ -1155,49 +1150,52 @@ bool TransmitMixer::IsRecordingMic()
     return _fileRecording;
 }
 
-WebRtc_Word32 
-TransmitMixer::GenerateAudioFrame(const WebRtc_Word16 audioSamples[],
-                                  const WebRtc_UWord32 nSamples,
-                                  const WebRtc_UWord8 nChannels,
-                                  const WebRtc_UWord32 samplesPerSec,
-                                  const int mixingFrequency)
+
+int TransmitMixer::GenerateAudioFrame(const int16_t audio[],
+                                      int samples_per_channel,
+                                      int num_channels,
+                                      int sample_rate_hz)
 {
-    WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
-                 "TransmitMixer::GenerateAudioFrame(nSamples=%u,"
-                 "samplesPerSec=%u, mixingFrequency=%u)",
-                 nSamples, samplesPerSec, mixingFrequency);
+    const int16_t* audio_ptr = audio;
+    int16_t mono_audio[kMaxMonoDeviceDataSizeSamples];
+    // If no stereo codecs are in use, we downmix a stereo stream from the
+    // device early in the chain, before resampling.
+    if (num_channels == 2 && !stereo_codec_) {
+      AudioFrameOperations::StereoToMono(audio, samples_per_channel,
+                                         mono_audio);
+      audio_ptr = mono_audio;
+      num_channels = 1;
+    }
 
-    ResamplerType resampType = (nChannels == 1) ? 
+    ResamplerType resampler_type = (num_channels == 1) ?
             kResamplerSynchronous : kResamplerSynchronousStereo;
-    
 
-    if (_audioResampler.ResetIfNeeded(samplesPerSec,
-                                        mixingFrequency,
-                                        resampType) != 0)
+    if (_audioResampler.ResetIfNeeded(sample_rate_hz,
+                                      _mixingFrequency,
+                                      resampler_type) != 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, -1),
                      "TransmitMixer::GenerateAudioFrame() unable to resample");
         return -1;
     }
-    if (_audioResampler.Push(
-        (WebRtc_Word16*) audioSamples,
-        nSamples * nChannels,
-        _audioFrame.data_,
-        AudioFrame::kMaxDataSizeSamples,
-        (int&) _audioFrame.samples_per_channel_) == -1)
+    if (_audioResampler.Push(audio_ptr,
+                             samples_per_channel * num_channels,
+                             _audioFrame.data_,
+                             AudioFrame::kMaxDataSizeSamples,
+                             _audioFrame.samples_per_channel_) == -1)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, -1),
                      "TransmitMixer::GenerateAudioFrame() resampling failed");
         return -1;
     }
 
-    _audioFrame.samples_per_channel_ /= nChannels;
+    _audioFrame.samples_per_channel_ /= num_channels;
     _audioFrame.id_ = _instanceId;
     _audioFrame.timestamp_ = -1;
-    _audioFrame.sample_rate_hz_ = mixingFrequency;
+    _audioFrame.sample_rate_hz_ = _mixingFrequency;
     _audioFrame.speech_type_ = AudioFrame::kNormalSpeech;
     _audioFrame.vad_activity_ = AudioFrame::kVadUnknown;
-    _audioFrame.num_channels_ = nChannels;
+    _audioFrame.num_channels_ = num_channels;
 
     return 0;
 }
@@ -1288,14 +1286,14 @@ WebRtc_Word32 TransmitMixer::APMProcessStream(
 {
     WebRtc_UWord16 captureLevel(currentMicLevel);
 
-    // Check if the number of input channels has changed. Retain the number
-    // of output channels.
+    // Check if the number of incoming channels has changed. This has taken
+    // both the capture device and send codecs into account.
     if (_audioFrame.num_channels_ !=
         _audioProcessingModulePtr->num_input_channels())
     {
         if (_audioProcessingModulePtr->set_num_channels(
                 _audioFrame.num_channels_,
-                _audioProcessingModulePtr->num_output_channels()))
+                _audioFrame.num_channels_))
         {
             WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
                          "AudioProcessing::set_num_channels(%d, %d) => error",

@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -70,6 +70,8 @@
         'monitor_module.h',
         'output_mixer.cc',
         'output_mixer.h',
+        'output_mixer_internal.cc',
+        'output_mixer_internal.h',
         'shared_data.cc',
         'shared_data.h',
         'statistics.cc',
@@ -122,8 +124,8 @@
             'voice_engine_core',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/test/test.gyp:test_support_main',
-            # The rest are to satisfy the channel_unittest include chain.
-            # This would be unnecessary if we had qualified includes.
+            # The rest are to satisfy the unittests' include chain.
+            # This would be unnecessary if we used qualified includes.
             '<(webrtc_root)/common_audio/common_audio.gyp:resampler',
             '<(webrtc_root)/modules/modules.gyp:audio_device',
             '<(webrtc_root)/modules/modules.gyp:audio_processing',
@@ -140,6 +142,7 @@
           ],
           'sources': [
             'channel_unittest.cc',
+            'output_mixer_unittest.cc',
           ],
         },
       ], # targets
