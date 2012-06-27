@@ -15,9 +15,9 @@
       'dependencies': [
         'voice_engine_core',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-        '<(third_party_root)/test/test.gyp:test_support',
-        '<(third_party_root)/testing/gtest.gyp:gtest',
-        '<(third_party_root)/testing/gmock.gyp:gmock',
+        '<(webrtc_root)/test/test.gyp:test_support',
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/testing/gmock.gyp:gmock',
         '<(webrtc_root)/test/libtest/libtest.gyp:libtest',
       ],
       'include_dirs': [
@@ -93,8 +93,8 @@
       'target_name': 'voe_cmd_test',
       'type': 'executable',
       'dependencies': [
-        '<(third_party_root)/test/test.gyp:test_support',
-        '<(third_party_root)/testing/gtest.gyp:gtest',
+        '<(webrtc_root)/test/test.gyp:test_support',
+        '<(DEPTH)/testing/gtest.gyp:gtest',
         'voice_engine_core',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
@@ -113,7 +113,7 @@
           'dependencies': [
             'voice_engine_core',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(third_party_root)/test/test.gyp:test_support',
+            '<(webrtc_root)/test/test.gyp:test_support',
           ],
           'include_dirs': [
             'win_test',

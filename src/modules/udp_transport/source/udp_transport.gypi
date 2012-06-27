@@ -88,9 +88,9 @@
           'type': 'executable',
           'dependencies': [
             'udp_transport',
-            '<(third_party_root)/testing/gtest.gyp:gtest',
-            '<(third_party_root)/testing/gmock.gyp:gmock',
-            '<(third_party_root)/test/test.gyp:test_support_main',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(DEPTH)/testing/gmock.gyp:gmock',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'sources': [
             'udp_transport_unittest.cc',

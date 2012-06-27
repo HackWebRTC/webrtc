@@ -181,8 +181,8 @@
           'type': 'executable',
           'dependencies': [
             'system_wrappers',
-            '<(webrtc_root)/../testing/gtest.gyp:gtest',
-            '<(webrtc_root)/../test/test.gyp:test_support_main',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'sources': [
             'condition_variable_unittest.cc',

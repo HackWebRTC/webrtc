@@ -38,8 +38,8 @@
           'type': 'executable',
           'dependencies': [
             'CNG',
-            '<(third_party_root)/testing/gtest.gyp:gtest',
-            '<(third_party_root)/test/test.gyp:test_support_main',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'sources': [
             'cng_unittest.cc',

@@ -8,7 +8,7 @@
 
 {
   'includes': [
-    '../src/build/common.gypi',
+    '../build/common.gypi',
   ],
   'targets': [
     {
@@ -35,8 +35,8 @@
       'type': 'executable',
       'dependencies': [
         'metrics',
-        '<(webrtc_root)/../test/test.gyp:test_support_main',
-        '<(webrtc_root)/../testing/gtest.gyp:gtest',
+        '<(webrtc_root)/test/test.gyp:test_support_main',
+        '<(DEPTH)/testing/gtest.gyp:gtest',
       ],
       'sources': [
         'testsupport/metrics/video_metrics_unittest.cc',

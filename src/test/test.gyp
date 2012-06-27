@@ -9,7 +9,7 @@
 # TODO(andrew): consider moving test_support to src/base/test.
 {
   'includes': [
-    '../src/build/common.gypi',
+    '../build/common.gypi',
   ],
   'targets': [
     {
@@ -24,8 +24,8 @@
         ],
       },
       'dependencies': [
-        '<(webrtc_root)/../testing/gtest.gyp:gtest',
-        '<(webrtc_root)/../testing/gmock.gyp:gmock',
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/testing/gmock.gyp:gmock',
       ],
       'all_dependent_settings': {
         'include_dirs': [
@@ -65,7 +65,7 @@
       'type': 'executable',
       'dependencies': [
         'test_support_main',
-        '<(webrtc_root)/../testing/gtest.gyp:gtest',
+        '<(DEPTH)/testing/gtest.gyp:gtest',
       ],
       'sources': [
         'testsupport/unittest_utils.h',

@@ -175,8 +175,8 @@
          'dependencies': [
             'audio_device',
             'webrtc_utility',
-            '<(third_party_root)/test/test.gyp:test_support_main',
-            '<(third_party_root)/testing/gtest.gyp:gtest',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
           ],
           'sources': [
@@ -192,8 +192,8 @@
             'webrtc_utility',
             '<(webrtc_root)/common_audio/common_audio.gyp:resampler',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(third_party_root)/test/test.gyp:test_support',
-            '<(third_party_root)/testing/gtest.gyp:gtest',
+            '<(webrtc_root)/test/test.gyp:test_support',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [
             '../test/audio_device_test_func.cc',

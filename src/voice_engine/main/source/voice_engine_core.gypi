@@ -120,8 +120,8 @@
           'type': 'executable',
           'dependencies': [
             'voice_engine_core',
-            '<(third_party_root)/testing/gtest.gyp:gtest',
-            '<(third_party_root)/test/test.gyp:test_support_main',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
             # The rest are to satisfy the channel_unittest include chain.
             # This would be unnecessary if we had qualified includes.
             '<(webrtc_root)/common_audio/common_audio.gyp:resampler',

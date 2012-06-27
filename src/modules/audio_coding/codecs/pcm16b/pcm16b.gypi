@@ -33,8 +33,8 @@
           'type': 'executable',
           'dependencies': [
             'PCM16B',
-            '<(third_party_root)/test/test.gyp:test_support_main',
-            '<(third_party_root)/testing/gtest.gyp:gtest',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [
             'pcm16b_unittest.cc',

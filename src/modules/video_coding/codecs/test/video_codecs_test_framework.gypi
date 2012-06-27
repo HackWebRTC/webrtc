@@ -14,7 +14,7 @@
           'target_name': 'video_codecs_test_framework',
           'type': '<(library)',
           'dependencies': [
-            '<(third_party_root)/test/test.gyp:test_support',
+            '<(webrtc_root)/test/test.gyp:test_support',
           ],
           'sources': [
             'mock/mock_packet_manipulator.h',
@@ -35,8 +35,8 @@
             'video_codecs_test_framework',
             'webrtc_video_coding',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(third_party_root)/testing/gmock.gyp:gmock',
-            '<(third_party_root)/test/test.gyp:test_support_main',
+            '<(DEPTH)/testing/gmock.gyp:gmock',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'sources': [
             'packet_manipulator_unittest.cc',
@@ -51,9 +51,9 @@
             'video_codecs_test_framework',
             'webrtc_video_coding',
             'webrtc_vp8',
-            '<(third_party_root)/testing/gtest.gyp:gtest',
-            '<(third_party_root)/test/metrics.gyp:metrics',
-            '<(third_party_root)/test/test.gyp:test_support_main',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(webrtc_root)/test/metrics.gyp:metrics',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'sources': [
             'videoprocessor_integrationtest.cc',
