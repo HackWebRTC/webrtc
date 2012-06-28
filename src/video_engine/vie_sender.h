@@ -11,14 +11,14 @@
 // ViESender is responsible for encrypting, if enabled, packets and send to
 // network.
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_SENDER_H_
-#define WEBRTC_VIDEO_ENGINE_VIE_SENDER_H_
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_SENDER_H_  // NOLINT
+#define WEBRTC_VIDEO_ENGINE_VIE_SENDER_H_  // NOLINT
 
-#include "common_types.h"
-#include "engine_configurations.h"
+#include "common_types.h"  // NOLINT
+#include "engine_configurations.h"  // NOLINT
 #include "system_wrappers/interface/scoped_ptr.h"
-#include "typedefs.h"
-#include "vie_defines.h"
+#include "typedefs.h"  // NOLINT
+#include "video_engine/vie_defines.h"
 
 namespace webrtc {
 
@@ -61,4 +61,4 @@ class ViESender: public Transport {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_SENDER_H_
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_SENDER_H_  // NOLINT

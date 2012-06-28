@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_
-#define WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_  // NOLINT
+#define WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_  // NOLINT
 
 #include <list>
 
-#include "engine_configurations.h"
-#include "rtp_rtcp_defines.h"
+#include "engine_configurations.h"  // NOLINT
+#include "modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "modules/udp_transport/interface/udp_transport.h"
 #include "system_wrappers/interface/scoped_ptr.h"
-#include "typedefs.h"
-#include "udp_transport.h"
-#include "vie_defines.h"
+#include "typedefs.h"  // NOLINT
+#include "video_engine/vie_defines.h"
 
 namespace webrtc {
 
@@ -84,4 +84,4 @@ class ViEReceiver : public UdpTransportData, public RtpData {
 
 }  // namespace webrt
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_  // NOLINT

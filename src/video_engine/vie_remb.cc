@@ -103,7 +103,7 @@ void VieRemb::RemoveRembSender(RtpRtcp* rtp_rtcp) {
 
 bool VieRemb::InUse() const {
   CriticalSectionScoped cs(list_crit_.get());
-  if(receive_modules_.empty() && rtcp_sender_.empty())
+  if (receive_modules_.empty() && rtcp_sender_.empty())
     return false;
   else
     return true;
@@ -183,7 +183,7 @@ WebRtc_Word32 VieRemb::Process() {
   RtpRtcp* sender = NULL;
   if (!rtcp_sender_.empty()) {
     sender = rtcp_sender_.front();
-  } else if (!receive_modules_.empty()){
+  } else if (!receive_modules_.empty()) {
     sender = receive_modules_.front();
   }
   last_send_bitrate_ = total_bitrate;

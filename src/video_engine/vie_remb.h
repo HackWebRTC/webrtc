@@ -15,11 +15,12 @@
 //    for a specified SSRC.
 
 
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_REMB_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_REMB_H_
+#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_REMB_H_  // NOLINT
+#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_REMB_H_  // NOLINT
 
 #include <list>
 #include <map>
+#include <utility>
 
 #include "modules/interface/module.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
@@ -34,7 +35,7 @@ class RtpRtcp;
 
 class VieRemb : public RemoteBitrateObserver, public Module {
  public:
-  VieRemb(ProcessThread* process_thread);
+  explicit VieRemb(ProcessThread* process_thread);
   ~VieRemb();
 
   // Called to add a receive channel to include in the REMB packet.
@@ -88,4 +89,4 @@ class VieRemb : public RemoteBitrateObserver, public Module {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_REMB_H_
+#endif  // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_REMB_H_  // NOLINT
