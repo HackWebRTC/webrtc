@@ -74,7 +74,7 @@ deps = {
 
 deps_os = {
   "win": {
-	# Use our own, stripped down, version of Cygwin (required by GYP)
+    # Use our own, stripped down, version of Cygwin (required by GYP).
     "trunk/third_party/cygwin":
       (Var("googlecode_url") % "webrtc") + "/deps/third_party/cygwin",
 
