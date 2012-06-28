@@ -75,7 +75,7 @@ int ViERenderImpl::RegisterVideoRenderModule(
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(shared_data_->instance_id()),
                "%s (&render_module: %p)", __FUNCTION__, &render_module);
   if (shared_data_->render_manager()->RegisterVideoRenderModule(
-      render_module) != 0) {
+      &render_module) != 0) {
     shared_data_->SetLastError(kViERenderUnknownError);
     return -1;
   }
@@ -87,7 +87,7 @@ int ViERenderImpl::DeRegisterVideoRenderModule(
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(shared_data_->instance_id()),
                "%s (&render_module: %p)", __FUNCTION__, &render_module);
   if (shared_data_->render_manager()->DeRegisterVideoRenderModule(
-      render_module) != 0) {
+      &render_module) != 0) {
     // Error logging is done in ViERenderManager::DeRegisterVideoRenderModule.
     shared_data_->SetLastError(kViERenderUnknownError);
     return -1;

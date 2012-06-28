@@ -178,7 +178,7 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
   ChannelGroup* group = NULL;
   {
     // Write lock to make sure no one is using the channel.
-    ViEManagerWriteScoped wl(*this);
+    ViEManagerWriteScoped wl(this);
 
     // Protect the maps.
     CriticalSectionScoped cs(*channel_id_critsect_);
@@ -251,7 +251,7 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
 
 int ViEChannelManager::SetVoiceEngine(VoiceEngine* voice_engine) {
   // Write lock to make sure no one is using the channel.
-  ViEManagerWriteScoped wl(*this);
+  ViEManagerWriteScoped wl(this);
 
   CriticalSectionScoped cs(*channel_id_critsect_);
 

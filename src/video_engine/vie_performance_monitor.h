@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -11,17 +11,17 @@
 // ViEPerformanceMonitor is used to check the current CPU usage and triggers a
 // callback when getting over a specified threshold.
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_PERFORMANCE_MONITOR_H_
-#define WEBRTC_VIDEO_ENGINE_VIE_PERFORMANCE_MONITOR_H_
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_PERFORMANCE_MONITOR_H_  // NOLINT
+#define WEBRTC_VIDEO_ENGINE_VIE_PERFORMANCE_MONITOR_H_  // NOLINT
 
 #include "system_wrappers/interface/scoped_ptr.h"
-#include "typedefs.h"
-#include "vie_defines.h"
+#include "typedefs.h"  // NOLINT
+#include "video_engine/vie_defines.h"
 
 namespace webrtc {
 
-class CriticalSectionWrapper;
 class CpuWrapper;
+class CriticalSectionWrapper;
 class EventWrapper;
 class ThreadWrapper;
 class ViEBaseObserver;
@@ -51,4 +51,4 @@ class ViEPerformanceMonitor {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_PERFORMANCE_MONITOR_H_
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_PERFORMANCE_MONITOR_H_  // NOLINT

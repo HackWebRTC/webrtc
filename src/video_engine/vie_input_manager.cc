@@ -296,7 +296,7 @@ int ViEInputManager::DestroyCaptureDevice(const int capture_id) {
   {
     // We need exclusive access to the object to delete it.
     // Take this write lock first since the read lock is taken before map_cs_.
-    ViEManagerWriteScoped wl(*this);
+    ViEManagerWriteScoped wl(this);
     CriticalSectionScoped cs(map_cs_.get());
 
     vie_capture = ViECapturePtr(capture_id);
@@ -413,7 +413,7 @@ int ViEInputManager::DestroyFilePlayer(int file_id) {
   {
     // We need exclusive access to the object to delete it.
     // Take this write lock first since the read lock is taken before map_cs_.
-    ViEManagerWriteScoped wl(*this);
+    ViEManagerWriteScoped wl(this);
 
     CriticalSectionScoped cs(map_cs_.get());
     vie_file_player = ViEFilePlayerPtr(file_id);

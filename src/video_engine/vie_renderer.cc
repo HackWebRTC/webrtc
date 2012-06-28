@@ -150,7 +150,7 @@ ViEExternalRendererImpl::ViEExternalRendererImpl()
       external_renderer_format_(kVideoUnknown),
       external_renderer_width_(0),
       external_renderer_height_(0),
-      converted_frame_(new VideoFrame()){
+      converted_frame_(new VideoFrame()) {
 }
 
 int ViEExternalRendererImpl::SetViEExternalRenderer(
