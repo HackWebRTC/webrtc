@@ -12,6 +12,7 @@
       'target_name': 'webrtc_vp8',
       'type': '<(library)',
       'dependencies': [
+        '<(DEPTH)/third_party/libvpx/libvpx.gyp:libvpx',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/common_video/common_video.gyp:webrtc_libyuv',
       ],
@@ -23,16 +24,10 @@
       ],
       'conditions': [
         ['build_with_chromium==1', {
-          'dependencies': [
-            '<(DEPTH)/libvpx/libvpx.gyp:libvpx',
-          ],
           'defines': [
             'WEBRTC_LIBVPX_VERSION=960' # Bali
           ],
         },{
-          'dependencies': [
-            '<(DEPTH)/third_party/libvpx/libvpx.gyp:libvpx',
-          ],
           'defines': [
             'WEBRTC_LIBVPX_VERSION=971' # Cayuga
           ],
