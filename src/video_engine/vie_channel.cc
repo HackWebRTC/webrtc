@@ -221,6 +221,8 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
     restart_rtp = true;
     rtp_rtcp_->SetSendingStatus(false);
   }
+  NACKMethod nack_method = rtp_rtcp_->NACK();
+
   CriticalSectionScoped cs(rtp_rtcp_cs_.get());
 
   if (video_codec.numberOfSimulcastStreams > 0) {
@@ -245,6 +247,10 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       if (rtp_rtcp->SetRTCPStatus(rtp_rtcp_->RTCP()) != 0) {
         WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
                      "%s: RTP::SetRTCPStatus failure", __FUNCTION__);
+      }
+      if (nack_method != kNackOff) {
+        rtp_rtcp->SetStorePacketsStatus(true, kNackHistorySize);
+        rtp_rtcp->SetNACKStatus(nack_method);
       }
       simulcast_rtp_rtcp_.push_back(rtp_rtcp);
     }
@@ -561,6 +567,7 @@ WebRtc_Word32 ViEChannel::ProcessNACKRequest(const bool enable) {
          it++) {
       RtpRtcp* rtp_rtcp = *it;
       rtp_rtcp->SetStorePacketsStatus(true, kNackHistorySize);
+      rtp_rtcp->SetNACKStatus(nackMethod);
     }
   } else {
     CriticalSectionScoped cs(rtp_rtcp_cs_.get());
@@ -569,6 +576,7 @@ WebRtc_Word32 ViEChannel::ProcessNACKRequest(const bool enable) {
          it++) {
       RtpRtcp* rtp_rtcp = *it;
       rtp_rtcp->SetStorePacketsStatus(false);
+      rtp_rtcp->SetNACKStatus(kNackOff);
     }
     rtp_rtcp_->SetStorePacketsStatus(false);
     vcm_.RegisterPacketRequestCallback(NULL);
