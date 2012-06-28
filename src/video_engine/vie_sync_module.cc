@@ -15,15 +15,11 @@
 #include "trace.h"
 #include "video_coding.h"
 #include "voe_video_sync.h"
+#include "video_engine/stream_synchronization.h"
 
 namespace webrtc {
 
 enum { kSyncInterval = 1000};
-enum { kMaxVideoDiffMs = 80 };
-enum { kMaxAudioDiffMs = 80 };
-enum { kMaxDelay = 1500 };
-
-const float FracMS = 4.294967296E6f;
 
 ViESyncModule::ViESyncModule(const int32_t channel_id, VideoCodingModule* vcm)
     : data_cs_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -32,7 +28,8 @@ ViESyncModule::ViESyncModule(const int32_t channel_id, VideoCodingModule* vcm)
       video_rtcp_module_(NULL),
       voe_channel_id_(-1),
       voe_sync_interface_(NULL),
-      last_sync_time_(TickTime::Now()) {
+      last_sync_time_(TickTime::Now()),
+      sync_() {
 }
 
 ViESyncModule::~ViESyncModule() {
@@ -45,6 +42,7 @@ int ViESyncModule::ConfigureSync(int voe_channel_id,
   voe_channel_id_ = voe_channel_id;
   voe_sync_interface_ = voe_sync_interface;
   video_rtcp_module_ = video_rtcp_module;
+  sync_.reset(new StreamSynchronization(voe_channel_id, channel_id_));
 
   if (!voe_sync_interface) {
     voe_channel_id_ = -1;
@@ -62,7 +60,7 @@ int ViESyncModule::VoiceChannel() {
 }
 
 WebRtc_Word32 ViESyncModule::TimeUntilNextProcess() {
-  return (WebRtc_Word32)(kSyncInterval -
+  return static_cast<WebRtc_Word32>(kSyncInterval -
                          (TickTime::Now() - last_sync_time_).Milliseconds());
 }
 
@@ -79,6 +77,7 @@ WebRtc_Word32 ViESyncModule::Process() {
     return 0;
   }
   assert(video_rtcp_module_ && voe_sync_interface_);
+  assert(sync_.get());
 
   int current_audio_delay_ms = 0;
   if (voe_sync_interface_->GetDelayEstimate(voe_channel_id_,
@@ -90,9 +89,6 @@ WebRtc_Word32 ViESyncModule::Process() {
     return 0;
   }
 
-  int current_diff_ms = 0;
-  // Total video delay.
-  int video_delay_ms = 0;
   // VoiceEngine report delay estimates even when not started, ignore if the
   // reported value is lower than 40 ms.
   if (current_audio_delay_ms < 40) {
@@ -108,211 +104,34 @@ WebRtc_Word32 ViESyncModule::Process() {
   }
   assert(voice_rtcp_module);
 
-  uint32_t video_received_ntp_secs = 0;
-  uint32_t video_received_ntp_frac = 0;
-  uint32_t video_rtcp_arrivaltime_secs = 0;
-  uint32_t video_rtcp_arrivaltime_frac = 0;
-
-  if (0 != video_rtcp_module_->RemoteNTP(&video_received_ntp_secs,
-                                         &video_received_ntp_frac,
-                                         &video_rtcp_arrivaltime_secs,
-                                         &video_rtcp_arrivaltime_frac)) {
+  StreamSynchronization::Measurements video;
+  if (0 != video_rtcp_module_->RemoteNTP(&video.received_ntp_secs,
+                                         &video.received_ntp_frac,
+                                         &video.rtcp_arrivaltime_secs,
+                                         &video.rtcp_arrivaltime_frac)) {
     // Failed to get video NTP.
     return 0;
   }
-  uint32_t audio_received_ntp_secs = 0;
-  uint32_t audio_received_ntp_frac = 0;
-  uint32_t audio_rtcp_arrivaltime_secs = 0;
-  uint32_t audio_rtcp_arrivaltime_frac = 0;
 
-  if (0 != voice_rtcp_module->RemoteNTP(&audio_received_ntp_secs,
-                                        &audio_received_ntp_frac,
-                                        &audio_rtcp_arrivaltime_secs,
-                                        &audio_rtcp_arrivaltime_frac)) {
+  StreamSynchronization::Measurements audio;
+  if (0 != voice_rtcp_module->RemoteNTP(&audio.received_ntp_secs,
+                                        &audio.received_ntp_frac,
+                                        &audio.rtcp_arrivaltime_secs,
+                                        &audio.rtcp_arrivaltime_frac)) {
     // Failed to get audio NTP.
     return 0;
   }
-  // ReceivedNTPxxx is NTP at sender side when sent.
-  // RTCPArrivalTimexxx is NTP at receiver side when received.
-  // can't use ConvertNTPTimeToMS since calculation can be
-  //  negative
-  int NTPdiff = (audio_received_ntp_secs - video_received_ntp_secs)
-                * 1000;  // ms
-  NTPdiff += static_cast<int>(audio_received_ntp_frac / FracMS -
-                              video_received_ntp_frac / FracMS);
-
-  int RTCPdiff = (audio_rtcp_arrivaltime_secs - video_rtcp_arrivaltime_secs)
-                 * 1000;  // ms
-  RTCPdiff += static_cast<int>(audio_rtcp_arrivaltime_frac / FracMS -
-                               video_rtcp_arrivaltime_frac / FracMS);
-
-  int diff = NTPdiff - RTCPdiff;
-  // if diff is + video is behind
-  if (diff < -1000 || diff > 1000) {
-    // unresonable ignore value.
+  int extra_audio_delay_ms = 0;
+  if (sync_->ComputeDelays(audio, current_audio_delay_ms, &extra_audio_delay_ms,
+                          video, &total_video_delay_target_ms) != 0) {
     return 0;
   }
-  channel_delay_.network_delay = diff;
-
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, channel_id_,
-               "Audio delay is: %d for voice channel: %d",
-               current_audio_delay_ms, voe_channel_id_);
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, channel_id_,
-               "Network delay diff is: %d for voice channel: %d",
-               channel_delay_.network_delay, voe_channel_id_);
-  // Calculate the difference between the lowest possible video delay and
-  // the current audio delay.
-  current_diff_ms = total_video_delay_target_ms - current_audio_delay_ms +
-      channel_delay_.network_delay;
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, channel_id_,
-               "Current diff is: %d for audio channel: %d",
-               current_diff_ms, voe_channel_id_);
-
-  if (current_diff_ms > 0) {
-    // The minimum video delay is longer than the current audio delay.
-    // We need to decrease extra video delay, if we have added extra delay
-    // earlier, or add extra audio delay.
-    if (channel_delay_.extra_video_delay_ms > 0) {
-      // We have extra delay added to ViE. Reduce this delay before adding
-      // extra delay to VoE.
-
-      // This is the desired delay, we can't reduce more than this.
-      video_delay_ms = total_video_delay_target_ms;
-
-      // Check that we don't reduce the delay more than what is allowed.
-      if (video_delay_ms <
-          channel_delay_.last_video_delay_ms - kMaxVideoDiffMs) {
-        video_delay_ms =
-            channel_delay_.last_video_delay_ms - kMaxVideoDiffMs;
-        channel_delay_.extra_video_delay_ms =
-            video_delay_ms - total_video_delay_target_ms;
-      } else {
-        channel_delay_.extra_video_delay_ms = 0;
-      }
-      channel_delay_.last_video_delay_ms = video_delay_ms;
-      channel_delay_.last_sync_delay = -1;
-      channel_delay_.extra_audio_delay_ms = 0;
-    } else {  // channel_delay_.extra_video_delay_ms > 0
-      // We have no extra video delay to remove, increase the audio delay.
-      if (channel_delay_.last_sync_delay >= 0) {
-        // We have increased the audio delay earlier, increase it even more.
-        int audio_diff_ms = current_diff_ms / 2;
-        if (audio_diff_ms > kMaxAudioDiffMs) {
-          // We only allow a maximum change of KMaxAudioDiffMS for audio
-          // due to NetEQ maximum changes.
-          audio_diff_ms = kMaxAudioDiffMs;
-        }
-        // Increase the audio delay
-        channel_delay_.extra_audio_delay_ms += audio_diff_ms;
-
-        // Don't set a too high delay.
-        if (channel_delay_.extra_audio_delay_ms > kMaxDelay) {
-          channel_delay_.extra_audio_delay_ms = kMaxDelay;
-        }
-
-        // Don't add any extra video delay.
-        video_delay_ms = total_video_delay_target_ms;
-        channel_delay_.extra_video_delay_ms = 0;
-        channel_delay_.last_video_delay_ms = video_delay_ms;
-        channel_delay_.last_sync_delay = 1;
-      } else {  // channel_delay_.last_sync_delay >= 0
-        // First time after a delay change, don't add any extra delay.
-        // This is to not toggle back and forth too much.
-        channel_delay_.extra_audio_delay_ms = 0;
-        // Set minimum video delay
-        video_delay_ms = total_video_delay_target_ms;
-        channel_delay_.extra_video_delay_ms = 0;
-        channel_delay_.last_video_delay_ms = video_delay_ms;
-        channel_delay_.last_sync_delay = 0;
-      }
-    }
-  } else {  // if (current_diffMS > 0)
-    // The minimum video delay is lower than the current audio delay.
-    // We need to decrease possible extra audio delay, or
-    // add extra video delay.
-
-    if (channel_delay_.extra_audio_delay_ms > 0) {
-      // We have extra delay in VoiceEngine
-      // Start with decreasing the voice delay
-      int audio_diff_ms = current_diff_ms / 2;
-      if (audio_diff_ms < -1 * kMaxAudioDiffMs) {
-        // Don't change the delay too much at once.
-        audio_diff_ms = -1 * kMaxAudioDiffMs;
-      }
-      // Add the negative difference.
-      channel_delay_.extra_audio_delay_ms += audio_diff_ms;
-
-      if (channel_delay_.extra_audio_delay_ms < 0) {
-        // Negative values not allowed.
-        channel_delay_.extra_audio_delay_ms = 0;
-        channel_delay_.last_sync_delay = 0;
-      } else {
-        // There is more audio delay to use for the next round.
-        channel_delay_.last_sync_delay = 1;
-      }
-
-      // Keep the video delay at the minimum values.
-      video_delay_ms = total_video_delay_target_ms;
-      channel_delay_.extra_video_delay_ms = 0;
-      channel_delay_.last_video_delay_ms = video_delay_ms;
-    } else {  // channel_delay_.extra_audio_delay_ms > 0
-      // We have no extra delay in VoiceEngine, increase the video delay.
-      channel_delay_.extra_audio_delay_ms = 0;
-
-      // Make the difference positive.
-      int video_diff_ms = -1 * current_diff_ms;
-
-      // This is the desired delay.
-      video_delay_ms = total_video_delay_target_ms + video_diff_ms;
-      if (video_delay_ms > channel_delay_.last_video_delay_ms) {
-        if (video_delay_ms >
-            channel_delay_.last_video_delay_ms + kMaxVideoDiffMs) {
-          // Don't increase the delay too much at once
-          video_delay_ms =
-              channel_delay_.last_video_delay_ms + kMaxVideoDiffMs;
-        }
-        // Verify we don't go above the maximum allowed delay
-        if (video_delay_ms > kMaxDelay) {
-          video_delay_ms = kMaxDelay;
-        }
-      } else {
-        if (video_delay_ms <
-            channel_delay_.last_video_delay_ms - kMaxVideoDiffMs) {
-          // Don't decrease the delay too much at once
-          video_delay_ms =
-              channel_delay_.last_video_delay_ms - kMaxVideoDiffMs;
-        }
-        // Verify we don't go below the minimum delay
-        if (video_delay_ms < total_video_delay_target_ms) {
-          video_delay_ms = total_video_delay_target_ms;
-        }
-      }
-      // Store the values
-      channel_delay_.extra_video_delay_ms =
-          video_delay_ms - total_video_delay_target_ms;
-      channel_delay_.last_video_delay_ms = video_delay_ms;
-      channel_delay_.last_sync_delay = -1;
-    }
-  }
-
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, channel_id_,
-      "Sync video delay %d ms for video channel and audio delay %d for audio "
-      "channel %d",
-      video_delay_ms, channel_delay_.extra_audio_delay_ms, voe_channel_id_);
-
   // Set the extra audio delay.synchronization
   if (voe_sync_interface_->SetMinimumPlayoutDelay(
-      voe_channel_id_, channel_delay_.extra_audio_delay_ms) == -1) {
+      voe_channel_id_, extra_audio_delay_ms) == -1) {
     WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideo, channel_id_,
                  "Error setting voice delay");
   }
-
-  if (video_delay_ms < 0) {
-    video_delay_ms = 0;
-  }
-  total_video_delay_target_ms =
-      (total_video_delay_target_ms  >  video_delay_ms) ?
-      total_video_delay_target_ms : video_delay_ms;
   vcm_->SetMinimumPlayoutDelay(total_video_delay_target_ms);
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, channel_id_,
                "New Video delay target is: %d", total_video_delay_target_ms);

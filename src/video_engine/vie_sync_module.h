@@ -14,14 +14,15 @@
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_SYNC_MODULE_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_SYNC_MODULE_H_
 
-#include "module.h"
+#include "modules/interface/module.h"
 #include "system_wrappers/interface/scoped_ptr.h"
-#include "tick_util.h"
+#include "system_wrappers/interface/tick_util.h"
 
 namespace webrtc {
 
 class CriticalSectionWrapper;
 class RtpRtcp;
+class StreamSynchronization;
 class VideoCodingModule;
 class VoEVideoSync;
 
@@ -48,22 +49,7 @@ class ViESyncModule : public Module {
   int voe_channel_id_;
   VoEVideoSync* voe_sync_interface_;
   TickTime last_sync_time_;
-
-  struct ViESyncDelay {
-    ViESyncDelay() {
-      extra_video_delay_ms = 0;
-      last_video_delay_ms = 0;
-      extra_audio_delay_ms = 0;
-      last_sync_delay = 0;
-      network_delay = 120;
-    }
-    int extra_video_delay_ms;
-    int last_video_delay_ms;
-    int extra_audio_delay_ms;
-    int last_sync_delay;
-    int network_delay;
-  };
-  ViESyncDelay channel_delay_;
+  scoped_ptr<StreamSynchronization> sync_;
 };
 
 }  // namespace webrtc
