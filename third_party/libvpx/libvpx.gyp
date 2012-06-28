@@ -10,15 +10,19 @@
   # The target_defaults block is unique to the WebRTC libvpx.gyp.
   'target_defaults': {
     'conditions': [
-      ['OS=="mac"', {
+      ['clang == 1', {
         'xcode_settings': {
           'WARNING_CFLAGS': [
-            '-Wno-implicit-function-declaration',
-            # TODO(andrew): this one should be fixed upstream.
-            '-Wno-parentheses-equality',
+            # libvpx heavily relies on implicit enum casting.
             '-Wno-conversion',
+            # libvpx does `if ((a == b))` in some places.
+            '-Wno-parentheses-equality',
           ],
         },
+        'cflags': [
+          '-Wno-conversion',
+          '-Wno-parentheses-equality',
+        ],
       }],
     ],
   },
