@@ -658,6 +658,10 @@ void RTPHeaderParser::ParseOneByteExtensionHeader(
         transmissionTimeOffset += *ptr++ << 8;
         transmissionTimeOffset += *ptr++;
         parsedPacket.extension.transmissionTimeOffset = transmissionTimeOffset;
+        if (transmissionTimeOffset & 0x800000) {
+          // Negative offset, correct sign for Word24 to Word32.
+          parsedPacket.extension.transmissionTimeOffset |= 0xFF000000;
+        }
         break;
       }
       case kRtpExtensionAudioLevel: {
