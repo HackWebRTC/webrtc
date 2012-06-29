@@ -39,7 +39,11 @@ static const char* kPathDelimiter = "/";
 static const char* kProjectRootFileName = "DEPS";
 static const char* kOutputDirName = "out";
 static const char* kFallbackPath = "./";
+#ifdef WEBRTC_ANDROID
+static const char* kResourcesDirName = "/sdcard/";
+#else
 static const char* kResourcesDirName = "resources";
+#endif
 const char* kCannotFindProjectRootDir = "ERROR_CANNOT_FIND_PROJECT_ROOT_DIR";
 
 std::string ProjectRootPath() {
@@ -142,6 +146,9 @@ std::string ResourcePath(std::string name, std::string extension) {
   std::string architecture = "32";
 #endif  // WEBRTC_ARCH_64_BITS
 
+#ifdef WEBRTC_ANDROID
+  std::string resources_path = kResourcesDirName;
+#else
   std::string resources_path = ProjectRootPath() + kResourcesDirName +
       kPathDelimiter;
   std::string resource_file = resources_path + name + "_" + platform + "_" +
@@ -159,6 +166,7 @@ std::string ResourcePath(std::string name, std::string extension) {
   if (FileExists(resource_file)) {
     return resource_file;
   }
+#endif
   // Fall back on name without architecture or platform.
   return resources_path + name + "." + extension;
 }
