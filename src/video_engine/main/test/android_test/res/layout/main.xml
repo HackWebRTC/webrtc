@@ -35,6 +35,16 @@
 		  android:id="@+id/cbVoice"
 		  android:text="@string/enableVoice">
 	</CheckBox>
+	<CheckBox android:layout_width="wrap_content"
+		  android:layout_height="wrap_content"
+		  android:id="@+id/cbLoopback"
+		  android:text="@string/loopback">
+	</CheckBox>
+	<CheckBox android:layout_width="wrap_content"
+		  android:layout_height="wrap_content"
+		  android:id="@+id/cbStats"
+		  android:text="@string/stats">
+	</CheckBox>
         </LinearLayout>
 
 	<TextView android:id="@+id/TextView02"
@@ -51,16 +61,6 @@
                       android:id="@+id/LinearLayout03"
 		      android:layout_height="wrap_content"
 		      android:layout_width="fill_parent">
-	<CheckBox android:layout_width="wrap_content"
-		  android:layout_height="wrap_content"
-		  android:id="@+id/cbLoopback"
-		  android:text="@string/loopback">
-	</CheckBox>
-	<CheckBox android:layout_width="wrap_content"
-		  android:layout_height="wrap_content"
-		  android:id="@+id/cbStats"
-		  android:text="@string/stats">
-	</CheckBox>
         <RadioGroup
                   android:layout_width="fill_parent"
                   android:layout_height="wrap_content"
