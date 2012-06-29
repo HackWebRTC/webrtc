@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_FILE_PLAYER_H_  // NOLINT
-#define WEBRTC_VIDEO_ENGINE_VIE_FILE_PLAYER_H_  // NOLINT
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_FILE_PLAYER_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_FILE_PLAYER_H_
 
 #include <list>
 #include <set>
@@ -135,4 +135,4 @@ class ViEFilePlayer
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_FILE_PLAYER_H_  // NOLINT
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_FILE_PLAYER_H_

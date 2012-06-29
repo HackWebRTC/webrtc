@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_FILE_IMAGE_H_  // NOLINT
-#define WEBRTC_VIDEO_ENGINE_VIE_FILE_IMAGE_H_  // NOLINT
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_FILE_IMAGE_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_FILE_IMAGE_H_
 
 #include "modules/interface/module_common_types.h"
 #include "typedefs.h"  // NOLINT
@@ -29,4 +29,4 @@ class ViEFileImage {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_FILE_IMAGE_H_  // NOLINT
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_FILE_IMAGE_H_

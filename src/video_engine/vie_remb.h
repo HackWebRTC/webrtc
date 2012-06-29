@@ -15,8 +15,8 @@
 //    for a specified SSRC.
 
 
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_REMB_H_  // NOLINT
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_REMB_H_  // NOLINT
+#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_REMB_H_
+#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_REMB_H_
 
 #include <list>
 #include <map>
@@ -89,4 +89,4 @@ class VieRemb : public RemoteBitrateObserver, public Module {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_REMB_H_  // NOLINT
+#endif  // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_REMB_H_

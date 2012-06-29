@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_RENDER_MANAGER_H_  // NOLINT
-#define WEBRTC_VIDEO_ENGINE_VIE_RENDER_MANAGER_H_  // NOLINT
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_RENDER_MANAGER_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_RENDER_MANAGER_H_
 
 #include "system_wrappers/interface/list_wrapper.h"
 #include "system_wrappers/interface/map_wrapper.h"
@@ -70,4 +70,4 @@ class ViERenderManagerScoped: private ViEManagerScopedBase {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_RENDER_MANAGER_H_  // NOLINT
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_RENDER_MANAGER_H_

@@ -11,8 +11,8 @@
 // ViEPerformanceMonitor is used to check the current CPU usage and triggers a
 // callback when getting over a specified threshold.
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_PERFORMANCE_MONITOR_H_  // NOLINT
-#define WEBRTC_VIDEO_ENGINE_VIE_PERFORMANCE_MONITOR_H_  // NOLINT
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_PERFORMANCE_MONITOR_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_PERFORMANCE_MONITOR_H_
 
 #include "system_wrappers/interface/scoped_ptr.h"
 #include "typedefs.h"  // NOLINT
@@ -51,4 +51,4 @@ class ViEPerformanceMonitor {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_PERFORMANCE_MONITOR_H_  // NOLINT
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_PERFORMANCE_MONITOR_H_

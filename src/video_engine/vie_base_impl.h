@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_BASE_IMPL_H_  // NOLINT
-#define WEBRTC_VIDEO_ENGINE_VIE_BASE_IMPL_H_  // NOLINT
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_BASE_IMPL_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_BASE_IMPL_H_
 
 #include "video_engine/include/vie_base.h"
 #include "video_engine/vie_defines.h"
@@ -69,4 +69,4 @@ class ViEBaseImpl
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_BASE_IMPL_H_  // NOLINT
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_BASE_IMPL_H_

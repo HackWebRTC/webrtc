@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_DEFINES_H_  // NOLINT
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_DEFINES_H_  // NOLINT
+#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_DEFINES_H_
+#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_DEFINES_H_
 
 #include "engine_configurations.h"  // NOLINT
 
@@ -218,4 +218,4 @@ inline int ChannelId(const int moduleId) {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_DEFINES_H_  // NOLINT
+#endif  // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_DEFINES_H_

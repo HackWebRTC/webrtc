@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_RENDERER_H_  // NOLINT
-#define WEBRTC_VIDEO_ENGINE_VIE_RENDERER_H_  // NOLINT
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_RENDERER_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_RENDERER_H_
 
 #include "modules/video_render/main/interface/video_render_defines.h"
 #include "system_wrappers/interface/map_wrapper.h"
@@ -113,4 +113,4 @@ class ViERenderer: public ViEFrameCallback {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_RENDERER_H_  // NOLINT
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_RENDERER_H_

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_EXTERNAL_CODEC_IMPL_H_  // NOLINT
-#define WEBRTC_VIDEO_ENGINE_VIE_EXTERNAL_CODEC_IMPL_H_  // NOLINT
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_EXTERNAL_CODEC_IMPL_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_EXTERNAL_CODEC_IMPL_H_
 
 #include "video_engine/include/vie_external_codec.h"
 #include "video_engine/vie_ref_count.h"
@@ -47,4 +47,4 @@ class ViEExternalCodecImpl
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_EXTERNAL_CODEC_IMPL_H_  // NOLINT
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_EXTERNAL_CODEC_IMPL_H_

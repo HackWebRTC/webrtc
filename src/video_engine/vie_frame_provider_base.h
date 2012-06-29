@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_FRAME_PROVIDER_BASE_H_  // NOLINT
-#define WEBRTC_VIDEO_ENGINE_VIE_FRAME_PROVIDER_BASE_H_  // NOLINT
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_FRAME_PROVIDER_BASE_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_FRAME_PROVIDER_BASE_H_
 
 #include <vector>
 
@@ -99,4 +99,4 @@ class ViEFrameProviderBase {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_FRAME_PROVIDER_BASE_H_  // NOLINT
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_FRAME_PROVIDER_BASE_H_

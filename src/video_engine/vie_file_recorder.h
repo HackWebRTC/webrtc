@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_FILE_RECORDER_H_  // NOLINT
-#define WEBRTC_VIDEO_ENGINE_VIE_FILE_RECORDER_H_  // NOLINT
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_FILE_RECORDER_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_FILE_RECORDER_H_
 
 #include "modules/utility/interface/file_recorder.h"
 #include "typedefs.h"  // NOLINT
@@ -62,4 +62,4 @@ class ViEFileRecorder : protected OutStream {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_FILE_RECORDER_H_  // NOLINT
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_FILE_RECORDER_H_

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_  // NOLINT
-#define WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_  // NOLINT
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_
 
 #include <list>
 
@@ -84,4 +84,4 @@ class ViEReceiver : public UdpTransportData, public RtpData {
 
 }  // namespace webrt
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_  // NOLINT
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_RECEIVER_H_

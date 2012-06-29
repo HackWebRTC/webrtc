@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_INPUT_MANAGER_H_  // NOLINT
-#define WEBRTC_VIDEO_ENGINE_VIE_INPUT_MANAGER_H_  // NOLINT
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_INPUT_MANAGER_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_INPUT_MANAGER_H_
 
 #include "modules/video_capture/main/interface/video_capture.h"
 #include "system_wrappers/interface/map_wrapper.h"
@@ -137,4 +137,4 @@ class ViEInputManagerScoped: private ViEManagerScopedBase {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_INPUT_MANAGER_H_  // NOLINT
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_INPUT_MANAGER_H_

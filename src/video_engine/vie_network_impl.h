@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_NETWORK_IMPL_H_  // NOLINT
-#define WEBRTC_VIDEO_ENGINE_VIE_NETWORK_IMPL_H_  // NOLINT
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_NETWORK_IMPL_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_NETWORK_IMPL_H_
 
 #include "typedefs.h"  // NOLINT
 #include "video_engine/include/vie_network.h"
@@ -111,4 +111,4 @@ class ViENetworkImpl
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_NETWORK_IMPL_H_  // NOLINT
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_NETWORK_IMPL_H_

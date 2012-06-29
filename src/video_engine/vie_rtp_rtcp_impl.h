@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_RTP_RTCP_IMPL_H_  // NOLINT
-#define WEBRTC_VIDEO_ENGINE_VIE_RTP_RTCP_IMPL_H_  // NOLINT
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_RTP_RTCP_IMPL_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_RTP_RTCP_IMPL_H_
 
 #include "modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "typedefs.h"  // NOLINT
@@ -116,4 +116,4 @@ class ViERTP_RTCPImpl
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_RTP_RTCP_IMPL_H_  // NOLINT
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_RTP_RTCP_IMPL_H_

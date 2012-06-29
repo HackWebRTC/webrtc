@@ -10,8 +10,8 @@
 
 // TODO(mflodman) Remove this class and use ref count class in system_wrappers.
 
-#ifndef WEBRTC_VIDEO_ENGINE_VIE_REF_COUNT_H_  // NOLINT
-#define WEBRTC_VIDEO_ENGINE_VIE_REF_COUNT_H_  // NOLINT
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_REF_COUNT_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_REF_COUNT_H_
 
 #include "system_wrappers/interface/scoped_ptr.h"
 
@@ -37,4 +37,4 @@ class ViERefCount {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_VIE_REF_COUNT_H_  // NOLINT
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_REF_COUNT_H_
