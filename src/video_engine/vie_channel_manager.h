@@ -14,9 +14,9 @@
 #include <list>
 #include <map>
 
-#include "engine_configurations.h"
+#include "engine_configurations.h"  // NOLINT
 #include "system_wrappers/interface/scoped_ptr.h"
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT
 #include "video_engine/vie_channel_group.h"
 #include "video_engine/vie_defines.h"
 #include "video_engine/vie_manager_base.h"
@@ -43,19 +43,19 @@ class ViEChannelManager: private ViEManagerBase {
  public:
   ViEChannelManager(int engine_id,
                     int number_of_cores,
-                    ViEPerformanceMonitor& vie_performance_monitor,
+                    ViEPerformanceMonitor* vie_performance_monitor,
                     const OverUseDetectorOptions& options);
   ~ViEChannelManager();
 
-  void SetModuleProcessThread(ProcessThread& module_process_thread);
+  void SetModuleProcessThread(ProcessThread* module_process_thread);
 
-  // Creates a new channel. 'channelId' will be the id of the created channel.
-  int CreateChannel(int& channel_id);
+  // Creates a new channel. 'channel_id' will be the id of the created channel.
+  int CreateChannel(int* channel_id);
 
   // Creates a new channel grouped with |original_channel|. The new channel
   // will get its own |ViEEncoder| if |sender| is set to true. It will be a
   // receive only channel, without an own |ViEEncoder| if |sender| is false.
-  int CreateChannel(int& channel_id, int original_channel, bool sender);
+  int CreateChannel(int* channel_id, int original_channel, bool sender);
 
   // Deletes a channel.
   int DeleteChannel(int channel_id);
@@ -82,11 +82,8 @@ class ViEChannelManager: private ViEManagerBase {
                            RemoteBitrateEstimator* remote_bitrate_estimator);
 
   // Used by ViEChannelScoped, forcing a manager user to use scoped.
-  // Returns a pointer to the channel with id 'channelId'.
+  // Returns a pointer to the channel with id 'channel_id'.
   ViEChannel* ViEChannelPtr(int channel_id) const;
-
-  // Adds all channels to channel_map.
-  void GetViEChannels(MapWrapper& channel_map);
 
   // Methods used by ViECaptureScoped and ViEEncoderScoped.
   // Gets the ViEEncoder used as input for video_channel_id

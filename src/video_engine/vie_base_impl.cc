@@ -113,7 +113,7 @@ int ViEBaseImpl::CreateChannel(int& video_channel) {  // NOLINT
     return -1;
   }
 
-  if (shared_data_.channel_manager()->CreateChannel(video_channel) == -1) {
+  if (shared_data_.channel_manager()->CreateChannel(&video_channel) == -1) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(shared_data_.instance_id()),
                  "%s: Could not create channel", __FUNCTION__);
     video_channel = -1;
@@ -439,7 +439,7 @@ int ViEBaseImpl::CreateChannel(int& video_channel,  // NOLINT
     return -1;
   }
 
-  if (shared_data_.channel_manager()->CreateChannel(video_channel,
+  if (shared_data_.channel_manager()->CreateChannel(&video_channel,
                                                     original_channel,
                                                     sender) == -1) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(shared_data_.instance_id()),

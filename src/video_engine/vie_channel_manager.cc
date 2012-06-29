@@ -10,7 +10,7 @@
 
 #include "video_engine/vie_channel_manager.h"
 
-#include "engine_configurations.h"
+#include "engine_configurations.h"  // NOLINT
 #include "modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "modules/utility/interface/process_thread.h"
 #include "system_wrappers/interface/critical_section_wrapper.h"
@@ -27,7 +27,7 @@ namespace webrtc {
 ViEChannelManager::ViEChannelManager(
     int engine_id,
     int number_of_cores,
-    ViEPerformanceMonitor& vie_performance_monitor,
+    ViEPerformanceMonitor* vie_performance_monitor,
     const OverUseDetectorOptions& options)
     : channel_id_critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       engine_id_(engine_id),
@@ -74,12 +74,12 @@ ViEChannelManager::~ViEChannelManager() {
 }
 
 void ViEChannelManager::SetModuleProcessThread(
-    ProcessThread& module_process_thread) {
+    ProcessThread* module_process_thread) {
   assert(!module_process_thread_);
-  module_process_thread_ = &module_process_thread;
+  module_process_thread_ = module_process_thread;
 }
 
-int ViEChannelManager::CreateChannel(int& channel_id) {
+int ViEChannelManager::CreateChannel(int* channel_id) {
   CriticalSectionScoped cs(*channel_id_critsect_);
 
   // Get a new channel id.
@@ -112,13 +112,13 @@ int ViEChannelManager::CreateChannel(int& channel_id) {
     return -1;
   }
 
-  channel_id = new_channel_id;
-  group->AddChannel(channel_id);
+  *channel_id = new_channel_id;
+  group->AddChannel(*channel_id);
   channel_groups_.push_back(group);
   return 0;
 }
 
-int ViEChannelManager::CreateChannel(int& channel_id,
+int ViEChannelManager::CreateChannel(int* channel_id,
                                      int original_channel,
                                      bool sender) {
   CriticalSectionScoped cs(*channel_id_critsect_);
@@ -167,8 +167,8 @@ int ViEChannelManager::CreateChannel(int& channel_id,
     return -1;
   }
 
-  channel_id = new_channel_id;
-  channel_group->AddChannel(channel_id);
+  *channel_id = new_channel_id;
+  channel_group->AddChannel(*channel_id);
   return 0;
 }
 
@@ -369,19 +369,6 @@ ViEChannel* ViEChannelManager::ViEChannelPtr(int channel_id) const {
     return NULL;
   }
   return it->second;
-}
-
-void ViEChannelManager::GetViEChannels(MapWrapper& channel_map) {
-  CriticalSectionScoped cs(*channel_id_critsect_);
-  if (channel_map.Size() == 0) {
-    return;
-  }
-
-  // Add all items to 'channelMap'.
-  for (ChannelMap::iterator it = channel_map_.begin(); it != channel_map_.end();
-       ++it) {
-    channel_map.Insert(it->first, it->second);
-  }
 }
 
 ViEEncoder* ViEChannelManager::ViEEncoderPtr(int video_channel_id) const {

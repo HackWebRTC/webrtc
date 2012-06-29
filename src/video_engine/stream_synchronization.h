@@ -11,7 +11,7 @@
 #ifndef WEBRTC_VIDEO_ENGINE_STREAM_SYNCHRONIZATION_H_
 #define WEBRTC_VIDEO_ENGINE_STREAM_SYNCHRONIZATION_H_
 
-#include "typedefs.h"
+#include "typedefs.h"  // NOLINT
 
 namespace webrtc {
 

@@ -193,5 +193,4 @@ int ViEFrameProviderBase::NumberOfRegisteredFrameCallbacks() {
   CriticalSectionScoped cs(provider_cs_.get());
   return frame_callbacks_.size();
 }
-
 }  // namespac webrtc
