@@ -6,6 +6,12 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import os.path
+
+# All folders in LINT_FOLDERS will be scanned by cpplint by the presubmit
+# script. Note that subfolders are not included.
+LINT_FOLDERS = ['src/video_engine']
+
 def _LicenseHeader(input_api):
   """Returns the license header regexp."""
   license_header = (
@@ -61,8 +67,14 @@ def _CheckNoFRIEND_TEST(input_api, output_api):
       'gtest\'s FRIEND_TEST() macro. Include testsupport/gtest_prod_util.h and '
       'use FRIEND_TEST_ALL_PREFIXES() instead.\n' + '\n'.join(problems))]
 
-def _CheckNewFilesLintClean(input_api, output_api, source_file_filter=None):
-  """Checks that all NEW '.cc' and '.h' files pass cpplint.py.
+def _IsLintWhitelisted(file_name):
+  """ Checks if a file is whitelisted for lint check."""
+  # TODO(mflodman) Include subfolders in the check.
+  return (os.path.dirname(file_name) in LINT_FOLDERS)
+
+def _CheckApprovedFilesLintClean(input_api, output_api,
+                                 source_file_filter=None):
+  """Checks that all new or whitelisted .cc and .h files pass cpplint.py.
   This check is based on _CheckChangeLintsClean in
   depot_tools/presubmit_canned_checks.py but has less filters and only checks
   added files."""
@@ -84,13 +96,14 @@ def _CheckNewFilesLintClean(input_api, output_api, source_file_filter=None):
   # Use the strictest verbosity level for cpplint.py (level 1) which is the
   # default when running cpplint.py from command line.
   # To make it possible to work with not-yet-converted code, we're only applying
-  # it to new (or moved/renamed) files.
+  # it to new (or moved/renamed) files and files listed in LINT_FOLDERS.
   verbosity_level = 1
   files = []
   for f in input_api.AffectedSourceFiles(source_file_filter):
     # Note that moved/renamed files also count as added for svn.
-    if (f.Action() == 'A'):
+    if (f.Action() == 'A' or _IsLintWhitelisted(f.LocalPath())):
       files.append(f.AbsoluteLocalPath())
+
   for file_name in files:
     cpplint.ProcessFile(file_name, verbosity_level)
 
@@ -117,7 +130,7 @@ def _CommonChecks(input_api, output_api):
       input_api, output_api))
   results.extend(input_api.canned_checks.CheckChangeTodoHasOwner(
       input_api, output_api))
-  results.extend(_CheckNewFilesLintClean(input_api, output_api))
+  results.extend(_CheckApprovedFilesLintClean(input_api, output_api))
   results.extend(input_api.canned_checks.CheckLicense(
       input_api, output_api, _LicenseHeader(input_api)))
   results.extend(_CheckNoIOStreamInHeaders(input_api, output_api))
