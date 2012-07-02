@@ -108,7 +108,6 @@ void OverUseDetector::Update(uint16_t packet_size,
 #endif
 
   bool wrapped = false;
-  bool completeFrame = false;
   if (current_frame_.timestamp_ == -1) {
     current_frame_.timestamp_ = timestamp;
   } else if (OldTimestamp(
@@ -140,7 +139,6 @@ void OverUseDetector::Update(uint16_t packet_size,
     current_frame_.timestamp_ = timestamp;
     current_frame_.size_ = 0;
     current_frame_.completeTimeMs_ = -1;
-    completeFrame = true;
   }
   // Accumulate the frame size
   current_frame_.size_ += packet_size;
