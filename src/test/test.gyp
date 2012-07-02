@@ -75,5 +75,19 @@
         'testsupport/packet_reader_unittest.cc',
       ],
     },
+    {
+      'target_name': 'rgba_to_i420_converter',
+      'type': 'executable',
+      'dependencies': [
+        'test_support',
+        '<(webrtc_root)/../third_party/google-gflags/google-gflags.gyp:google-gflags',
+        '<(webrtc_root)/../third_party/libyuv/libyuv.gyp:libyuv',
+      ],
+      'sources': [
+        'testsupport/converter/converter.h',
+        'testsupport/converter/converter.cc',
+        'testsupport/converter/rgba_to_i420_converter.cc',
+      ],
+    },
   ],
 }
