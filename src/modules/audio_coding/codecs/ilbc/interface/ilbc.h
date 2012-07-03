@@ -136,9 +136,9 @@ extern "C" {
    */
 
   WebRtc_Word16 WebRtcIlbcfix_Encode(iLBC_encinst_t *iLBCenc_inst,
-				     WebRtc_Word16 *speechIn,
-				     WebRtc_Word16 len,
-				     WebRtc_Word16 *encoded);
+                                     const WebRtc_Word16 *speechIn,
+                                     WebRtc_Word16 len,
+                                     WebRtc_Word16 *encoded);
 
   /****************************************************************************
    * WebRtcIlbcfix_DecoderInit(...)

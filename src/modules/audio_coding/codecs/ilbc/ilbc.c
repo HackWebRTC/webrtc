@@ -84,7 +84,7 @@ WebRtc_Word16 WebRtcIlbcfix_EncoderInit(iLBC_encinst_t *iLBCenc_inst, WebRtc_Wor
   }
 }
 
-WebRtc_Word16 WebRtcIlbcfix_Encode(iLBC_encinst_t *iLBCenc_inst, WebRtc_Word16 *speechIn, WebRtc_Word16 len, WebRtc_Word16 *encoded) {
+WebRtc_Word16 WebRtcIlbcfix_Encode(iLBC_encinst_t *iLBCenc_inst, const WebRtc_Word16 *speechIn, WebRtc_Word16 len, WebRtc_Word16 *encoded) {
 
   WebRtc_Word16 pos = 0;
   WebRtc_Word16 encpos = 0;
