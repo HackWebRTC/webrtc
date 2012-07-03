@@ -90,7 +90,9 @@ class OverUseDetector {
   double time_over_using_;
   uint16_t over_use_counter_;
   BandwidthUsage hypothesis_;
+#ifdef WEBRTC_BWE_MATLAB
   DebugPlots plots_;
+#endif
 };
 }  // namespace webrtc
 

@@ -30,7 +30,6 @@ RTPReceiverVideo::RTPReceiverVideo(const WebRtc_Word32 id,
                                    RemoteBitrateEstimator* remote_bitrate,
                                    ModuleRtpRtcpImpl* owner)
     : _id(id),
-      _rtpRtcp(owner),
       _criticalSectionReceiverVideo(
           CriticalSectionWrapper::CreateCriticalSection()),
       _currentFecFrameDecoded(false),

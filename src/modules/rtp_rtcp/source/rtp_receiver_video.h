@@ -98,7 +98,6 @@ class RTPReceiverVideo {
 
  private:
   WebRtc_Word32             _id;
-  ModuleRtpRtcpImpl*        _rtpRtcp;
 
   CriticalSectionWrapper*   _criticalSectionReceiverVideo;
 

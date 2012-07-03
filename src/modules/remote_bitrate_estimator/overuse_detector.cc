@@ -44,8 +44,11 @@ OverUseDetector::OverUseDetector(const OverUseDetectorOptions& options)
       prev_offset_(0.0),
       time_over_using_(-1),
       over_use_counter_(0),
-      hypothesis_(kBwNormal),
-      plots_() {
+      hypothesis_(kBwNormal)
+#ifdef WEBRTC_BWE_MATLAB
+      , plots_()
+#endif
+      {
   memcpy(E_, options_.initial_e, sizeof(E_));
   memcpy(process_noise_, options_.initial_process_noise,
          sizeof(process_noise_));
