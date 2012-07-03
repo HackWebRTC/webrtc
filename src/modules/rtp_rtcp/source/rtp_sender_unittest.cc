@@ -207,7 +207,10 @@ TEST_F(RtpSenderTest, NoTrafficSmoothing) {
                                                          kTimestamp);
 
   // Packet should be sent immediately.
-  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_, 0, rtp_length,
+  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_,
+                                          0,
+                                          rtp_length,
+                                          kTimestamp / 90,
                                           kAllowRetransmission));
   EXPECT_EQ(1, transport_.packets_sent_);
   EXPECT_EQ(rtp_length, transport_.last_sent_packet_len_);
@@ -225,7 +228,10 @@ TEST_F(RtpSenderTest, TrafficSmoothing) {
                                                          kTimestamp);
 
   // Packet should be stored in a send bucket.
-  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_, 0, rtp_length,
+  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_,
+                                          0,
+                                          rtp_length,
+                                          fake_clock_.GetTimeInMS(),
                                           kAllowRetransmission));
   EXPECT_EQ(0, transport_.packets_sent_);
 

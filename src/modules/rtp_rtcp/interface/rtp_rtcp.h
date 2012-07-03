@@ -492,6 +492,7 @@ class RtpRtcp : public Module {
         const FrameType frameType,
         const WebRtc_Word8 payloadType,
         const WebRtc_UWord32 timeStamp,
+        int64_t capture_time_ms,
         const WebRtc_UWord8* payloadData,
         const WebRtc_UWord32 payloadSize,
         const RTPFragmentationHeader* fragmentation = NULL,

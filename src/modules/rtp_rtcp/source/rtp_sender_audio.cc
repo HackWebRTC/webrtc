@@ -457,6 +457,7 @@ WebRtc_Word32 RTPSenderAudio::SendAudio(
   return _rtpSender->SendToNetwork(dataBuffer,
                                    payloadSize,
                                    static_cast<WebRtc_UWord16>(rtpHeaderLength),
+                                   -1,
                                    kAllowRetransmission);
 }
 
@@ -591,7 +592,7 @@ RTPSenderAudio::SendTelephoneEventPacket(const bool ended,
         ModuleRTPUtility::AssignUWord16ToBuffer(dtmfbuffer+14, duration);
 
         _sendAudioCritsect->Leave();
-        retVal = _rtpSender->SendToNetwork(dtmfbuffer, 4, 12,
+        retVal = _rtpSender->SendToNetwork(dtmfbuffer, 4, 12, -1,
                                            kAllowRetransmission);
         sendCount--;
 

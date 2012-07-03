@@ -63,6 +63,10 @@ Channel::SendData(FrameType frameType,
     if (_rtpRtcpModule->SendOutgoingData((FrameType&)frameType,
                                         payloadType,
                                         timeStamp,
+                                        // Leaving the time when this frame was
+                                        // received from the capture device as
+                                        // undefined for voice for now.
+                                        -1,
                                         payloadData,
                                         payloadSize,
                                         fragmentation) == -1)
@@ -5728,6 +5732,10 @@ Channel::InsertExtraRTPPacket(unsigned char payloadType,
     if (_rtpRtcpModule->SendOutgoingData(kAudioFrameSpeech,
                                         _lastPayloadType,
                                         _lastLocalTimeStamp,
+                                        // Leaving the time when this frame was
+                                        // received from the capture device as
+                                        // undefined for voice for now.
+                                        -1,
                                         (const WebRtc_UWord8*) payloadData,
                                         payloadSize) != 0)
     {

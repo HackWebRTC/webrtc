@@ -67,6 +67,7 @@ VCMGenericEncoder::Encode(const VideoFrame& inputFrame,
     rawImage._width     = inputFrame.Width();
     rawImage._height    = inputFrame.Height();
     rawImage._timeStamp = inputFrame.TimeStamp();
+    rawImage.capture_time_ms_ = inputFrame.RenderTimeMs();
 
     VideoFrameType videoFrameType =
         VCMEncodedFrame::ConvertFrameType(frameType);
@@ -207,6 +208,7 @@ VCMEncodedFrameCallback::Encoded(
             frameType,
             _payloadType,
             encodedImage._timeStamp,
+            encodedImage.capture_time_ms_,
             encodedImage._buffer,
             encodedBytes,
             *fragmentationHeader,

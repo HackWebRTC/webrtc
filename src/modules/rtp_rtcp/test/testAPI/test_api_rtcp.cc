@@ -140,7 +140,7 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     // send RTP packet with the data "testtest"
     const WebRtc_UWord8 test[9] = "testtest";
     EXPECT_EQ(0, module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96,
-                                           0, test, 8));
+                                           0, -1, test, 8));
   }
 
   virtual void TearDown() {

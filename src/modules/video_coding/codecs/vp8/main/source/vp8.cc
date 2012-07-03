@@ -469,6 +469,7 @@ int VP8Encoder::GetEncodedFrame(const RawImage& input_image) {
 
     if (encoded_image_._length > 0) {
       encoded_image_._timeStamp = input_image._timeStamp;
+      encoded_image_.capture_time_ms_ = input_image.capture_time_ms_;
 
       // Figure out where partition boundaries are located.
       RTPFragmentationHeader fragInfo;
@@ -542,6 +543,7 @@ int VP8Encoder::GetEncodedPartitions(const RawImage& input_image) {
   }
   if (encoded_image_._length > 0) {
     encoded_image_._timeStamp = input_image._timeStamp;
+    encoded_image_.capture_time_ms_ = input_image.capture_time_ms_;
     encoded_image_._encodedHeight = raw_->h;
     encoded_image_._encodedWidth = raw_->w;
     encoded_complete_callback_->Encoded(encoded_image_, &codec_specific,

@@ -203,7 +203,7 @@ TEST_F(RtpRtcpAudioTest, Basic) {
   // Send an empty RTP packet.
   // Should fail since we have not registerd the payload type.
   EXPECT_EQ(-1, module1->SendOutgoingData(webrtc::kAudioFrameSpeech,
-                                          96, 0, NULL, 0));
+                                          96, 0, -1, NULL, 0));
 
   CodecInst voiceCodec;
   voiceCodec.pltype = 96;
@@ -219,7 +219,7 @@ TEST_F(RtpRtcpAudioTest, Basic) {
 
   const WebRtc_UWord8 test[5] = "test";
   EXPECT_EQ(0, module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96,
-                                         0, test, 4));
+                                         0, -1, test, 4));
 
   EXPECT_EQ(test_ssrc, module2->RemoteSSRC());
   EXPECT_EQ(test_timestamp, module2->RemoteTimestamp());
@@ -270,7 +270,7 @@ TEST_F(RtpRtcpAudioTest, RED) {
   const WebRtc_UWord8 test[5] = "test";
   // Send a RTP packet.
   EXPECT_EQ(0, module1->SendOutgoingData(webrtc::kAudioFrameSpeech,
-                                         96, 160, test, 4,
+                                         96, 160, -1, test, 4,
                                          &fragmentation));
 
   EXPECT_EQ(0, module1->SetSendREDPayloadType(-1));
@@ -316,7 +316,7 @@ TEST_F(RtpRtcpAudioTest, DTMF) {
   // pause between = 2560ms + 1600ms = 4160ms
   for (;timeStamp <= 250 * 160; timeStamp += 160) {
     EXPECT_EQ(0, module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96,
-                                           timeStamp, test, 4));
+                                           timeStamp, -1, test, 4));
     fake_clock.IncrementTime(20);
     module1->Process();
   }
@@ -324,7 +324,7 @@ TEST_F(RtpRtcpAudioTest, DTMF) {
 
   for (;timeStamp <= 740 * 160; timeStamp += 160) {
     EXPECT_EQ(0, module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96,
-                                           timeStamp, test, 4));
+                                           timeStamp, -1, test, 4));
     fake_clock.IncrementTime(20);
     module1->Process();
   }

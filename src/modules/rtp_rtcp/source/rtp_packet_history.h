@@ -37,6 +37,7 @@ class RTPPacketHistory {
   int32_t PutRTPPacket(const uint8_t* packet,
                        uint16_t packet_length,
                        uint16_t max_packet_length,
+                       int64_t capture_time_ms,
                        StorageType type);
 
   // Gets stored RTP packet corresponding to the input sequence number.
@@ -54,7 +55,7 @@ class RTPPacketHistory {
                     uint32_t min_elapsed_time_ms,
                     uint8_t* packet,
                     uint16_t* packet_length,
-                    uint32_t* stored_time_ms,
+                    int64_t* stored_time_ms,
                     StorageType* type) const;
 
   bool HasRTPPacket(uint16_t sequence_number) const;

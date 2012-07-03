@@ -464,6 +464,7 @@ WebRtc_Word32
 RTPSender::SendOutgoingData(const FrameType frame_type,
                             const WebRtc_Word8 payload_type,
                             const WebRtc_UWord32 capture_timestamp,
+                            int64_t capture_time_ms,
                             const WebRtc_UWord8* payload_data,
                             const WebRtc_UWord32 payload_size,
                             const RTPFragmentationHeader* fragmentation,
@@ -500,12 +501,14 @@ RTPSender::SendOutgoingData(const FrameType frame_type,
                frame_type != kAudioFrameCN);
 
         if (frame_type == kFrameEmpty) {
-          return SendPaddingAccordingToBitrate(payload_type, capture_timestamp);
+          return SendPaddingAccordingToBitrate(payload_type, capture_timestamp,
+                                               capture_time_ms);
         }
         return _video->SendVideo(video_type,
                                  frame_type,
                                  payload_type,
                                  capture_timestamp,
+                                 capture_time_ms,
                                  payload_data,
                                  payload_size,
                                  fragmentation,
@@ -516,7 +519,8 @@ RTPSender::SendOutgoingData(const FrameType frame_type,
 
 WebRtc_Word32 RTPSender::SendPaddingAccordingToBitrate(
     WebRtc_Word8 payload_type,
-    WebRtc_UWord32 capture_timestamp) {
+    WebRtc_UWord32 capture_timestamp,
+    int64_t capture_time_ms) {
   // Current bitrate since last estimate(1 second) averaged with the
   // estimate since then, to get the most up to date bitrate.
   uint32_t current_bitrate = BitrateNow();
@@ -535,13 +539,14 @@ WebRtc_Word32 RTPSender::SendPaddingAccordingToBitrate(
       }
     }
     // Send padding data.
-    return SendPadData(payload_type, capture_timestamp, bytes);
+    return SendPadData(payload_type, capture_timestamp, capture_time_ms, bytes);
   }
   return 0;
 }
 
 WebRtc_Word32 RTPSender::SendPadData(WebRtc_Word8 payload_type,
                                      WebRtc_UWord32 capture_timestamp,
+                                     int64_t capture_time_ms,
                                      WebRtc_Word32 bytes) {
   // Drop this packet if we're not sending media packets
   if (!_sendingMedia) {
@@ -586,6 +591,7 @@ WebRtc_Word32 RTPSender::SendPadData(WebRtc_Word8 payload_type,
     if (0 > SendToNetwork(data_buffer,
                           padding_bytes_in_packet,
                           header_length,
+                          capture_time_ms,
                           kDontRetransmit)) {
       // Error sending the packet.
       break;
@@ -616,7 +622,7 @@ WebRtc_Word32 RTPSender::ReSendPacket(WebRtc_UWord16 packet_id,
   WebRtc_UWord8 data_buffer[IP_PACKET_SIZE];
   WebRtc_UWord8* buffer_to_send_ptr = data_buffer;
 
-  WebRtc_UWord32 stored_time_in_ms;
+  int64_t stored_time_in_ms;
   StorageType type;
   bool found = _packetHistory->GetRTPPacket(packet_id,
       min_resend_time, data_buffer, &length, &stored_time_in_ms, &type);
@@ -848,7 +854,7 @@ void RTPSender::ProcessSendToNetwork() {
 
     WebRtc_UWord8 data_buffer[IP_PACKET_SIZE];
     WebRtc_UWord16 length = IP_PACKET_SIZE;
-    WebRtc_UWord32 stored_time_ms;
+    int64_t stored_time_ms;
     StorageType type;
     bool found = _packetHistory->GetRTPPacket(seq_num, 0, data_buffer, &length,
         &stored_time_ms, &type);
@@ -888,14 +894,16 @@ void RTPSender::ProcessSendToNetwork() {
 }
 
 WebRtc_Word32
-RTPSender::SendToNetwork(const WebRtc_UWord8* buffer,
+RTPSender::SendToNetwork(WebRtc_UWord8* buffer,
                          const WebRtc_UWord16 length,
                          const WebRtc_UWord16 rtpLength,
+                         int64_t capture_time_ms,
                          const StorageType storage)
 {
   // Used for NACK or to spead out the transmission of packets.
   if (_packetHistory->PutRTPPacket(
-      buffer, rtpLength + length, _maxPayloadLength, storage) != 0) {
+      buffer, rtpLength + length, _maxPayloadLength, capture_time_ms, storage)
+      != 0) {
     return -1;
   }
 
@@ -904,6 +912,15 @@ RTPSender::SendToNetwork(const WebRtc_UWord8* buffer,
     _sendBucket.Fill(sequenceNumber, rtpLength + length);
     // Packet will be sent at a later time.
     return 0;
+  }
+
+  if (capture_time_ms >= 0) {
+    ModuleRTPUtility::RTPHeaderParser rtpParser(buffer, length);
+    WebRtcRTPHeader rtp_header;
+    rtpParser.Parse(rtp_header);
+    int64_t time_now = _clock.GetTimeInMS();
+    UpdateTransmissionTimeOffset(buffer, length, rtp_header,
+                                 time_now - capture_time_ms);
   }
 
   // Send packet

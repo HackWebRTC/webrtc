@@ -109,6 +109,7 @@ class ViEEncoder
     const FrameType frame_type,
     const WebRtc_UWord8 payload_type,
     const WebRtc_UWord32 time_stamp,
+    int64_t capture_time_ms,
     const WebRtc_UWord8* payload_data,
     const WebRtc_UWord32 payload_size,
     const RTPFragmentationHeader& fragmentation_header,

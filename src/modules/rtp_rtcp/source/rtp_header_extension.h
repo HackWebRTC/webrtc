@@ -13,7 +13,7 @@
 
 #include <map>
 
-#include "rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "typedefs.h"
 
 namespace webrtc {

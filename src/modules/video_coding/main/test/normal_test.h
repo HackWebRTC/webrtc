@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -31,6 +31,7 @@ public:
     WebRtc_Word32 SendData(const webrtc::FrameType frameType,
                            const WebRtc_UWord8 payloadType,
                            const WebRtc_UWord32 timeStamp,
+                           int64_t capture_time_ms,
                            const WebRtc_UWord8* payloadData,
                            const WebRtc_UWord32 payloadSize,
                            const webrtc::RTPFragmentationHeader& fragmentationHeader,

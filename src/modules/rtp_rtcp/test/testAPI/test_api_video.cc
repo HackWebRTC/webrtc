@@ -87,6 +87,7 @@ TEST_F(RtpRtcpVideoTest, BasicVideo) {
   WebRtc_UWord32 timestamp = 3000;
   EXPECT_EQ(0, video_module->SendOutgoingData(webrtc::kVideoFrameDelta, 123,
                                              timestamp,
+                                             timestamp / 90,
                                              payload_data,
                                              payload_data_length));
 

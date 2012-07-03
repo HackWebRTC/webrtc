@@ -43,10 +43,13 @@ public:
     // Process encoded data received from the encoder, pass stream to the
     // VCMReceiver module
     WebRtc_Word32 SendData(const FrameType frameType,
-            const WebRtc_UWord8 payloadType, const WebRtc_UWord32 timeStamp,
-            const WebRtc_UWord8* payloadData, const WebRtc_UWord32 payloadSize,
-            const RTPFragmentationHeader& fragmentationHeader,
-            const RTPVideoHeader* videoHdr);
+                           const WebRtc_UWord8 payloadType,
+                           const WebRtc_UWord32 timeStamp,
+                           int64_t capture_time_ms,
+                           const WebRtc_UWord8* payloadData,
+                           const WebRtc_UWord32 payloadSize,
+                           const RTPFragmentationHeader& fragmentationHeader,
+                           const RTPVideoHeader* videoHdr);
     // Register exisitng VCM. Currently - encode and decode under same module.
     void RegisterReceiverVCM(VideoCodingModule *vcm) {_VCMReceiver = vcm;}
     // Return size of last encoded frame data (all frames in the sequence)
@@ -99,10 +102,13 @@ public:
     // Process encoded data received from the encoder, pass stream to the
     // RTP module
     WebRtc_Word32 SendData(const FrameType frameType,
-            const WebRtc_UWord8 payloadType, const WebRtc_UWord32 timeStamp,
-            const WebRtc_UWord8* payloadData, const WebRtc_UWord32 payloadSize,
-            const RTPFragmentationHeader& fragmentationHeader,
-            const RTPVideoHeader* videoHdr);
+                           const WebRtc_UWord8 payloadType,
+                           const WebRtc_UWord32 timeStamp,
+                           int64_t capture_time_ms,
+                           const WebRtc_UWord8* payloadData,
+                           const WebRtc_UWord32 payloadSize,
+                           const RTPFragmentationHeader& fragmentationHeader,
+                           const RTPVideoHeader* videoHdr);
     // Return size of last encoded frame. Value good for one call
     // (resets to zero after call to inform test of frame drop)
     float EncodedBytes();

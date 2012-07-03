@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -89,6 +89,7 @@ VPMSimpleSpatialResampler::ResampleFrame(const VideoFrame& inFrame,
       (target_half_width * target_half_height));
   outFrame.VerifyAndAllocate(requiredSize);
   outFrame.SetTimeStamp(inFrame.TimeStamp());
+  outFrame.SetRenderTime(inFrame.RenderTimeMs());
   outFrame.SetWidth(_targetWidth);
   outFrame.SetHeight(_targetHeight);
 

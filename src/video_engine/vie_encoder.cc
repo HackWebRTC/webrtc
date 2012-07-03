@@ -150,6 +150,13 @@ bool ViEEncoder::Init() {
                  "%s RegisterSendPayload failure", __FUNCTION__);
     return false;
   }
+  if (default_rtp_rtcp_->RegisterSendRtpHeaderExtension(
+      kRtpExtensionTransmissionTimeOffset, 1) != 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                 ViEId(engine_id_, channel_id_),
+                 "%s RegisterSendRtpHeaderExtension failure", __FUNCTION__);
+    return false;
+  }
 #else
   VideoCodec video_codec;
   if (vcm_.Codec(webrtc::kVideoCodecI420, &video_codec) == VCM_OK) {
@@ -682,6 +689,7 @@ WebRtc_Word32 ViEEncoder::SendData(
     const FrameType frame_type,
     const WebRtc_UWord8 payload_type,
     const WebRtc_UWord32 time_stamp,
+    int64_t capture_time_ms,
     const WebRtc_UWord8* payload_data,
     const WebRtc_UWord32 payload_size,
     const webrtc::RTPFragmentationHeader& fragmentation_header,
@@ -702,8 +710,11 @@ WebRtc_Word32 ViEEncoder::SendData(
   }
 
   // New encoded data, hand over to the rtp module.
-  return default_rtp_rtcp_->SendOutgoingData(frame_type, payload_type,
-                                             time_stamp, payload_data,
+  return default_rtp_rtcp_->SendOutgoingData(frame_type,
+                                             payload_type,
+                                             time_stamp,
+                                             capture_time_ms,
+                                             payload_data,
                                              payload_size,
                                              &fragmentation_header,
                                              rtp_video_hdr);

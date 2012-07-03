@@ -156,6 +156,7 @@ TEST_F(RtpRtcpNackTest, RTCP) {
   for (int frame = 0; frame < 10; ++frame) {
     EXPECT_EQ(0, video_module_->SendOutgoingData(webrtc::kVideoFrameDelta, 123,
                                                 timestamp,
+                                                timestamp / 90,
                                                 payload_data,
                                                 payload_data_length));
 
@@ -209,10 +210,12 @@ TEST_F(RtpRtcpNackTest, RTX) {
   WebRtc_UWord16 nack_list[kVideoNackListSize];
 
   for (int frame = 0; frame < 10; ++frame) {
-    EXPECT_EQ(0, video_module_->SendOutgoingData(webrtc::kVideoFrameDelta, 123,
-                                               timestamp,
-                                               payload_data,
-                                               payload_data_length));
+    EXPECT_EQ(0, video_module_->SendOutgoingData(webrtc::kVideoFrameDelta,
+                                                 123,
+                                                 timestamp,
+                                                 timestamp / 90,
+                                                 payload_data,
+                                                 payload_data_length));
 
     std::sort(nack_receiver_->sequence_numbers_.begin(),
               nack_receiver_->sequence_numbers_.end());

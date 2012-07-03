@@ -56,9 +56,10 @@ public:
     virtual WebRtc_UWord16 PacketOverHead() const = 0;
     virtual WebRtc_UWord16 ActualSendBitrateKbit() const = 0;
 
-    virtual WebRtc_Word32 SendToNetwork(const WebRtc_UWord8* dataBuffer,
+    virtual WebRtc_Word32 SendToNetwork(WebRtc_UWord8* dataBuffer,
                                         const WebRtc_UWord16 payloadLength,
                                         const WebRtc_UWord16 rtpHeaderLength,
+                                        int64_t capture_time_ms,
                                         const StorageType storage) = 0;
 };
 
@@ -133,6 +134,7 @@ public:
     WebRtc_Word32 SendOutgoingData(const FrameType frameType,
                                    const WebRtc_Word8 payloadType,
                                    const WebRtc_UWord32 timeStamp,
+                                   int64_t capture_time_ms,
                                    const WebRtc_UWord8* payloadData,
                                    const WebRtc_UWord32 payloadSize,
                                    const RTPFragmentationHeader* fragmentation,
@@ -141,6 +143,7 @@ public:
 
     WebRtc_Word32 SendPadData(WebRtc_Word8 payload_type,
                               WebRtc_UWord32 capture_timestamp,
+                              int64_t capture_time_ms,
                               WebRtc_Word32 bytes);
     /*
     * RTP header extension
@@ -219,9 +222,10 @@ public:
     virtual WebRtc_UWord32 Timestamp() const;
     virtual WebRtc_UWord32 SSRC() const;
 
-    virtual WebRtc_Word32 SendToNetwork(const WebRtc_UWord8* dataBuffer,
+    virtual WebRtc_Word32 SendToNetwork(WebRtc_UWord8* dataBuffer,
                                         const WebRtc_UWord16 payloadLength,
                                         const WebRtc_UWord16 rtpHeaderLength,
+                                        int64_t capture_time_ms,
                                         const StorageType storage);
 
     /*
@@ -290,7 +294,8 @@ private:
 
     WebRtc_Word32 SendPaddingAccordingToBitrate(
         WebRtc_Word8 payload_type,
-        WebRtc_UWord32 capture_timestamp);
+        WebRtc_UWord32 capture_timestamp,
+        int64_t capture_time_ms);
 
     WebRtc_Word32              _id;
     const bool                 _audioConfigured;
