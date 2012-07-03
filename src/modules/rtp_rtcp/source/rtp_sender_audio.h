@@ -100,20 +100,20 @@ private:
     WebRtc_UWord16            _packetSizeSamples;
 
     // DTMF
-    bool            _dtmfEventIsOn;
-    bool            _dtmfEventFirstPacketSent;
+    bool              _dtmfEventIsOn;
+    bool              _dtmfEventFirstPacketSent;
     WebRtc_Word8      _dtmfPayloadType;
     WebRtc_UWord32    _dtmfTimestamp;
     WebRtc_UWord8     _dtmfKey;
     WebRtc_UWord32    _dtmfLengthSamples;
     WebRtc_UWord8     _dtmfLevel;
-    WebRtc_UWord32    _dtmfTimeLastSent;
+    WebRtc_Word64     _dtmfTimeLastSent;
     WebRtc_UWord32    _dtmfTimestampLastSent;
 
     WebRtc_Word8      _REDPayloadType;
 
     // VAD detection, used for markerbit
-    bool            _inbandVADactive;
+    bool              _inbandVADactive;
     WebRtc_Word8      _cngNBPayloadType;
     WebRtc_Word8      _cngWBPayloadType;
     WebRtc_Word8      _cngSWBPayloadType;

@@ -39,75 +39,63 @@ Bitrate::PacketRate() const
     return _packetRate;
 }
 
-WebRtc_UWord32
-Bitrate::BitrateLast() const
-{
-    return _bitrate;
+WebRtc_UWord32 Bitrate::BitrateLast() const {
+  return _bitrate;
 }
 
-WebRtc_UWord32
-Bitrate::BitrateNow() const
-{
-    WebRtc_UWord32 now = _clock.GetTimeInMS();
-    WebRtc_UWord32 diffMS = now -_timeLastRateUpdate;
+WebRtc_UWord32 Bitrate::BitrateNow() const {
+  WebRtc_Word64 now = _clock.GetTimeInMS();
+  WebRtc_Word64 diffMS = now -_timeLastRateUpdate;
 
-    if(diffMS > 10000) // 10 sec
-    {
-        // too high diff ignore
-        return _bitrate; // bits/s
-    }
-    WebRtc_UWord64 bitsSinceLastRateUpdate = 8*_bytesCount*1000;
+  if(diffMS > 10000) {  // 10 sec
+    // too high diff ignore
+    return _bitrate; // bits/s
+  }
+  WebRtc_Word64 bitsSinceLastRateUpdate = 8 * _bytesCount * 1000;
 
-    // have to consider the time when the measurement was done
-    // ((bits/sec * sec) + (bits)) / sec
-    WebRtc_UWord64 bitrate = (((WebRtc_UWord64)_bitrate * 1000) + bitsSinceLastRateUpdate)/(1000+diffMS);
-    return (WebRtc_UWord32)bitrate;
+  // have to consider the time when the measurement was done
+  // ((bits/sec * sec) + (bits)) / sec
+  WebRtc_Word64 bitrate = (static_cast<WebRtc_UWord64>(_bitrate) * 1000 +
+      bitsSinceLastRateUpdate) / (1000 + diffMS);
+  return static_cast<WebRtc_UWord32>(bitrate);
 }
 
-void
-Bitrate::Process()
-{
-    // triggered by timer
-    WebRtc_UWord32 now = _clock.GetTimeInMS();
-    WebRtc_UWord32 diffMS = now -_timeLastRateUpdate;
+void Bitrate::Process() {
+  // Triggered by timer.
+  WebRtc_Word64 now = _clock.GetTimeInMS();
+  WebRtc_Word64 diffMS = now -_timeLastRateUpdate;
 
-    if(diffMS > 100)
-    {
-        if(diffMS > 10000) // 10 sec
-        {
-            // too high diff ignore
-            _timeLastRateUpdate = now;
-            _bytesCount = 0;
-            _packetCount = 0;
-            return;
-        }
-        _packetRateArray[_bitrateNextIdx] = (_packetCount*1000)/diffMS;
-        _bitrateArray[_bitrateNextIdx]    = 8*((_bytesCount*1000)/diffMS);
-        // will overflow at ~34 Mbit/s
-        _bitrateDiffMS[_bitrateNextIdx]   = diffMS;
-        _bitrateNextIdx++;
-        if(_bitrateNextIdx >= 10)
-        {
-            _bitrateNextIdx = 0;
-        }
-
-        WebRtc_UWord32 sumDiffMS = 0;
-        WebRtc_UWord64 sumBitrateMS = 0;
-        WebRtc_UWord32 sumPacketrateMS = 0;
-        for(int i= 0; i <10; i++)
-        {
-            // sum of time
-            sumDiffMS += _bitrateDiffMS[i];
-            sumBitrateMS += _bitrateArray[i] * _bitrateDiffMS[i];
-            sumPacketrateMS += _packetRateArray[i] * _bitrateDiffMS[i];
-        }
-        _timeLastRateUpdate = now;
-        _bytesCount = 0;
-        _packetCount = 0;
-
-        _packetRate = sumPacketrateMS/sumDiffMS;
-        _bitrate = WebRtc_UWord32(sumBitrateMS / sumDiffMS);
-    }
+  if (diffMS < 100) {
+    // Not enough data, wait...
+    return;
+  }
+  if (diffMS > 10000) {  // 10 sec
+    // too high diff ignore
+    _timeLastRateUpdate = now;
+    _bytesCount = 0;
+    _packetCount = 0;
+    return;
+  }
+  _packetRateArray[_bitrateNextIdx] = (_packetCount * 1000) / diffMS;
+  _bitrateArray[_bitrateNextIdx] = 8 * ((_bytesCount * 1000) / diffMS);
+  _bitrateDiffMS[_bitrateNextIdx] = diffMS;
+  _bitrateNextIdx++;
+  if (_bitrateNextIdx >= 10) {
+    _bitrateNextIdx = 0;
+  }
+  WebRtc_Word64 sumDiffMS = 0;
+  WebRtc_Word64 sumBitrateMS = 0;
+  WebRtc_Word64 sumPacketrateMS = 0;
+  for (int i = 0; i < 10; i++) {
+    sumDiffMS += _bitrateDiffMS[i];
+    sumBitrateMS += _bitrateArray[i] * _bitrateDiffMS[i];
+    sumPacketrateMS += _packetRateArray[i] * _bitrateDiffMS[i];
+  }
+  _timeLastRateUpdate = now;
+  _bytesCount = 0;
+  _packetCount = 0;
+  _packetRate = static_cast<WebRtc_UWord32>(sumPacketrateMS / sumDiffMS);
+  _bitrate = static_cast<WebRtc_UWord32>(sumBitrateMS / sumDiffMS);
 }
 
 } // namespace webrtc

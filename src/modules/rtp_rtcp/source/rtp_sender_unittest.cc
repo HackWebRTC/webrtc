@@ -39,7 +39,7 @@ class FakeClockTest : public RtpRtcpClock {
   }
   // Return a timestamp in milliseconds relative to some arbitrary
   // source; the source is fixed for this clock.
-  virtual WebRtc_UWord32 GetTimeInMS() {
+  virtual WebRtc_Word64 GetTimeInMS() {
     return time_in_ms_;
   }
   // Retrieve an NTP absolute timestamp.
@@ -51,7 +51,7 @@ class FakeClockTest : public RtpRtcpClock {
     time_in_ms_ += time_increment_ms;
   }
  private:
-  WebRtc_UWord32 time_in_ms_;
+  WebRtc_Word64 time_in_ms_;
 };
 
 class LoopbackTransportTest : public webrtc::Transport {

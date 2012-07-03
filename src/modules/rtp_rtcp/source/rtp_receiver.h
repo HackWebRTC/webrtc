@@ -46,7 +46,7 @@ public:
     WebRtc_Word32 SetPacketTimeout(const WebRtc_UWord32 timeoutMS);
     void PacketTimeout();
 
-    void ProcessDeadOrAlive(const bool RTCPalive, const WebRtc_UWord32 now);
+    void ProcessDeadOrAlive(const bool RTCPalive, const WebRtc_Word64 now);
 
     void ProcessBitrate();
 
@@ -191,21 +191,20 @@ private:
     const bool              _audio;
     ModuleRtpRtcpImpl&      _rtpRtcp;
 
-    CriticalSectionWrapper*    _criticalSectionCbs;
-    RtpFeedback*        _cbRtpFeedback;
-    RtpData*            _cbRtpData;
+    CriticalSectionWrapper* _criticalSectionCbs;
+    RtpFeedback*            _cbRtpFeedback;
+    RtpData*                _cbRtpData;
 
-    CriticalSectionWrapper*    _criticalSectionRTPReceiver;
-    mutable WebRtc_UWord32    _lastReceiveTime;
-    WebRtc_UWord16            _lastReceivedPayloadLength;
-    WebRtc_Word8              _lastReceivedPayloadType;
-    WebRtc_Word8              _lastReceivedMediaPayloadType;
+    CriticalSectionWrapper* _criticalSectionRTPReceiver;
+    mutable WebRtc_Word64   _lastReceiveTime;
+    WebRtc_UWord16          _lastReceivedPayloadLength;
+    WebRtc_Word8            _lastReceivedPayloadType;
+    WebRtc_Word8            _lastReceivedMediaPayloadType;
 
     ModuleRTPUtility::AudioPayload _lastReceivedAudioSpecific;
     ModuleRTPUtility::VideoPayload _lastReceivedVideoSpecific;
 
     WebRtc_UWord32            _packetTimeOutMS;
-
     WebRtc_Word8              _redPayloadType;
 
     std::map<WebRtc_Word8, ModuleRTPUtility::Payload*> _payloadTypeMap;

@@ -1,15 +1,13 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
  *  tree. An additional intellectual property rights grant can be found
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
- */
-
-/*
- * Class for storing RTP packets.
+ *
+ *  Class for storing RTP packets.
  */
 
 #ifndef WEBRTC_MODULES_RTP_RTCP_RTP_PACKET_HISTORY_H_
@@ -79,8 +77,8 @@ class RTPPacketHistory {
   std::vector<std::vector<uint8_t> > stored_packets_;
   std::vector<uint16_t> stored_seq_nums_;
   std::vector<uint16_t> stored_lengths_;
-  std::vector<uint32_t> stored_times_;
-  std::vector<uint32_t> stored_resend_times_;
+  std::vector<int64_t> stored_times_;
+  std::vector<int64_t> stored_resend_times_;
   std::vector<StorageType> stored_types_;
 };
 }  // namespace webrtc

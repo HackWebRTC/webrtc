@@ -41,18 +41,18 @@ public:
     WebRtc_UWord32 BitrateNow() const;
 
 protected:
-    RtpRtcpClock&             _clock;
+  RtpRtcpClock& _clock;
 
 private:
-    WebRtc_UWord32            _packetRate;
-    WebRtc_UWord32            _bitrate;
-    WebRtc_UWord8             _bitrateNextIdx;
-    WebRtc_UWord32            _packetRateArray[10];
-    WebRtc_UWord32            _bitrateArray[10];
-    WebRtc_UWord32            _bitrateDiffMS[10];
-    WebRtc_UWord32            _timeLastRateUpdate;
-    WebRtc_UWord32            _bytesCount;
-    WebRtc_UWord32            _packetCount;
+  WebRtc_UWord32 _packetRate;
+  WebRtc_UWord32 _bitrate;
+  WebRtc_UWord8 _bitrateNextIdx;
+  WebRtc_Word64 _packetRateArray[10];
+  WebRtc_Word64 _bitrateArray[10];
+  WebRtc_Word64 _bitrateDiffMS[10];
+  WebRtc_Word64 _timeLastRateUpdate;
+  WebRtc_UWord32 _bytesCount;
+  WebRtc_UWord32 _packetCount;
 };
 
 }  // namespace webrtc

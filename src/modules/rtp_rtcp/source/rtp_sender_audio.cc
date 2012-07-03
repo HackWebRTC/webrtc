@@ -203,7 +203,7 @@ RTPSenderAudio::SendTelephoneEventActive(WebRtc_Word8& telephoneEvent) const
         telephoneEvent = _dtmfKey;
         return true;
     }
-    WebRtc_UWord32 delaySinceLastDTMF = (_clock.GetTimeInMS() - _dtmfTimeLastSent);
+    WebRtc_Word64 delaySinceLastDTMF = _clock.GetTimeInMS() - _dtmfTimeLastSent;
     if(delaySinceLastDTMF < 100)
     {
         telephoneEvent = _dtmfKey;
@@ -231,8 +231,7 @@ WebRtc_Word32 RTPSenderAudio::SendAudio(
   if (!_dtmfEventIsOn && PendingDTMF()) {
     CriticalSectionScoped cs(_sendAudioCritsect);
 
-    WebRtc_UWord32 delaySinceLastDTMF = _clock.GetTimeInMS() -
-        _dtmfTimeLastSent;
+    WebRtc_Word64 delaySinceLastDTMF = _clock.GetTimeInMS() - _dtmfTimeLastSent;
 
     if (delaySinceLastDTMF > 100) {
       // New tone to play

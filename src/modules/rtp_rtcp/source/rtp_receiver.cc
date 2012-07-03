@@ -174,7 +174,7 @@ void RTPReceiver::PacketTimeout()
             return;
         }
 
-        WebRtc_UWord32 now = _clock.GetTimeInMS();
+        WebRtc_Word64 now = _clock.GetTimeInMS();
 
         if(now - _lastReceiveTime > _packetTimeOutMS)
         {
@@ -192,7 +192,7 @@ void RTPReceiver::PacketTimeout()
 }
 
 void
-RTPReceiver::ProcessDeadOrAlive(const bool RTCPalive, const WebRtc_UWord32 now)
+RTPReceiver::ProcessDeadOrAlive(const bool RTCPalive, const WebRtc_Word64 now)
 {
     if(_cbRtpFeedback == NULL)
     {
@@ -918,7 +918,7 @@ bool RTPReceiver::RetransmitOfOldPacket(
   if (_audio) {
     frequencyKHz = AudioFrequency() / 1000;
   }
-  WebRtc_UWord32 timeDiffMS = _clock.GetTimeInMS() - _lastReceiveTime;
+  WebRtc_Word64 timeDiffMS = _clock.GetTimeInMS() - _lastReceiveTime;
   // Diff in time stamp since last received in order.
   WebRtc_Word32 rtpTimeStampDiffMS = static_cast<WebRtc_Word32>(
       rtpTimeStamp - _lastReceivedTimestamp) / frequencyKHz;
@@ -941,8 +941,7 @@ bool RTPReceiver::RetransmitOfOldPacket(
   } else {
     maxDelayMs = (minRTT / 3) + 1;
   }
-  if (static_cast<WebRtc_Word32>(timeDiffMS) >
-      rtpTimeStampDiffMS + maxDelayMs) {
+  if (timeDiffMS > rtpTimeStampDiffMS + maxDelayMs) {
     return true;
   }
   return false;

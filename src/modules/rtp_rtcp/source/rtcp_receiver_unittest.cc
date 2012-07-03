@@ -130,7 +130,7 @@ class FakeSystemClock : public RtpRtcpClock {
   FakeSystemClock()
       : time_in_ms_(1335900000) {}  // A nonzero, but fake, value.
 
-  virtual WebRtc_UWord32 GetTimeInMS() {
+  virtual WebRtc_Word64 GetTimeInMS() {
     return time_in_ms_;
   }
 
@@ -146,7 +146,7 @@ class FakeSystemClock : public RtpRtcpClock {
     time_in_ms_ += ms_to_advance;
   }
  private:
-  WebRtc_UWord32 time_in_ms_;
+  WebRtc_Word64 time_in_ms_;
 };
 
 

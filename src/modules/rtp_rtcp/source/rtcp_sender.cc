@@ -431,7 +431,7 @@ From RFC 3550
       a value of the RTCP bandwidth below the intended average
 */
 
-    WebRtc_UWord32 now = _clock.GetTimeInMS();
+    WebRtc_Word64 now = _clock.GetTimeInMS();
 
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
 

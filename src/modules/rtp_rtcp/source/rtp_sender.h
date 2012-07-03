@@ -163,7 +163,7 @@ public:
     void UpdateTransmissionTimeOffset(WebRtc_UWord8* rtp_packet,
                                       const WebRtc_UWord16 rtp_packet_length,
                                       const WebRtcRTPHeader& rtp_header,
-                                      const WebRtc_UWord32 time_ms) const;
+                                      const WebRtc_Word64 time_ms) const;
 
     void SetTransmissionSmoothingStatus(const bool enable);
 
@@ -321,7 +321,7 @@ private:
 
     RTPPacketHistory*         _packetHistory;
     TransmissionBucket        _sendBucket;
-    WebRtc_UWord32            _timeLastSendToNetworkUpdate;
+    WebRtc_Word64             _timeLastSendToNetworkUpdate;
     bool                      _transmissionSmoothing;
 
     // statistics

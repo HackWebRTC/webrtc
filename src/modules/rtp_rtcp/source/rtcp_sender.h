@@ -198,7 +198,7 @@ private:
     bool                    _TMMBR;
     bool                    _IJ;
 
-    WebRtc_UWord32        _nextTimeToSendRTCP;
+    WebRtc_Word64        _nextTimeToSendRTCP;
 
     WebRtc_UWord32 _SSRC;
     WebRtc_UWord32 _remoteSSRC;  // SSRC that we receive on our RTP channel

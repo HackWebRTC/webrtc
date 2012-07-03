@@ -1,15 +1,11 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
  *  tree. An additional intellectual property rights grant can be found
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
- */
-
-/*
- * Class for storing RTP packets.
  */
 
 #include "rtp_packet_history.h"
@@ -206,7 +202,7 @@ bool RTPPacketHistory::GetRTPPacket(uint16_t sequence_number,
  }
 
   // Verify elapsed time since last retrieve. 
-  uint32_t now = clock_.GetTimeInMS();
+  int64_t now = clock_.GetTimeInMS();
   if (min_elapsed_time_ms > 0 &&
       ((now - stored_resend_times_.at(index)) < min_elapsed_time_ms)) {
     WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1, 

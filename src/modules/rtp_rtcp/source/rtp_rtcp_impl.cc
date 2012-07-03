@@ -173,14 +173,14 @@ void ModuleRtpRtcpImpl::DeRegisterChildModule(RtpRtcp* removeModule) {
 // returns the number of milliseconds until the module want a worker thread
 // to call Process
 WebRtc_Word32 ModuleRtpRtcpImpl::TimeUntilNextProcess() {
-  const WebRtc_UWord32 now = _clock.GetTimeInMS();
+  const WebRtc_Word64 now = _clock.GetTimeInMS();
   return kRtpRtcpMaxIdleTimeProcess - (now - _lastProcessTime);
 }
 
 // Process any pending tasks such as timeouts
 // non time critical events
 WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
-  const WebRtc_UWord32 now = _clock.GetTimeInMS();
+  const WebRtc_Word64 now = _clock.GetTimeInMS();
   _lastProcessTime = now;
 
   _rtpSender.ProcessSendToNetwork();
@@ -250,7 +250,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
 
 void ModuleRtpRtcpImpl::ProcessDeadOrAliveTimer() {
   if (_deadOrAliveActive) {
-    const WebRtc_UWord32 now = _clock.GetTimeInMS();
+    const WebRtc_Word64 now = _clock.GetTimeInMS();
     if (now > _deadOrAliveTimeoutMS + _deadOrAliveLastTimer) {
       // RTCP is alive if we have received a report the last 12 seconds
       _deadOrAliveLastTimer += _deadOrAliveTimeoutMS;
@@ -1429,12 +1429,12 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendNACK(const WebRtc_UWord16* nackList,
   WebRtc_UWord16 avgRTT = 0;
   _rtcpReceiver.RTT(_rtpReceiver.SSRC(), NULL, &avgRTT, NULL, NULL);
 
-  WebRtc_UWord32 waitTime = 5 + ((avgRTT * 3) >> 1); // 5 + RTT*1.5
+  WebRtc_Word64 waitTime = 5 + ((avgRTT * 3) >> 1);  // 5 + RTT*1.5
   if (waitTime == 5) {
-    waitTime = 100; //During startup we don't have an RTT
+    waitTime = 100;  // During startup we don't have an RTT
   }
-  const WebRtc_UWord32 now = _clock.GetTimeInMS();
-  const WebRtc_UWord32 timeLimit = now - waitTime;
+  const WebRtc_Word64 now = _clock.GetTimeInMS();
+  const WebRtc_Word64 timeLimit = now - waitTime;
 
   if (_nackLastTimeSent < timeLimit) {
     // send list

@@ -718,7 +718,7 @@ void
 RTPSender::OnReceivedNACK(const WebRtc_UWord16 nackSequenceNumbersLength,
                           const WebRtc_UWord16* nackSequenceNumbers,
                           const WebRtc_UWord16 avgRTT) {
-    const WebRtc_UWord32 now = _clock.GetTimeInMS();
+    const WebRtc_Word64 now = _clock.GetTimeInMS();
     WebRtc_UWord32 bytesReSent = 0;
 
   // Enough bandwidth to send NACK?
@@ -826,14 +826,14 @@ void RTPSender::UpdateNACKBitRate(const WebRtc_UWord32 bytes,
 
 // Function triggered by timer.
 void RTPSender::ProcessSendToNetwork() {
-  WebRtc_UWord32 delta_time_ms;
+  WebRtc_Word64 delta_time_ms;
   {
     CriticalSectionScoped cs(_sendCritsect);
 
     if (!_transmissionSmoothing) {
       return;
     }
-    WebRtc_UWord32 now = _clock.GetTimeInMS();
+    WebRtc_Word64 now = _clock.GetTimeInMS();
     delta_time_ms = now - _timeLastSendToNetworkUpdate;
     _timeLastSendToNetworkUpdate = now;
   }
@@ -858,7 +858,7 @@ void RTPSender::ProcessSendToNetwork() {
     }
     assert(length > 0);
 
-    WebRtc_UWord32 diff_ms = _clock.GetTimeInMS() - stored_time_ms;
+    WebRtc_Word64 diff_ms = _clock.GetTimeInMS() - stored_time_ms;
 
     ModuleRTPUtility::RTPHeaderParser rtpParser(data_buffer, length);
     WebRtcRTPHeader rtp_header;
@@ -1155,7 +1155,7 @@ void RTPSender::UpdateTransmissionTimeOffset(
     WebRtc_UWord8* rtp_packet,
     const WebRtc_UWord16 rtp_packet_length,
     const WebRtcRTPHeader& rtp_header,
-    const WebRtc_UWord32 time_ms) const {
+    const WebRtc_Word64 time_ms) const {
   CriticalSectionScoped cs(_sendCritsect);
 
   // Get length until start of transmission block.

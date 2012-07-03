@@ -101,7 +101,7 @@ RTCPReceiver::SetRTCPStatus(const RTCPMethod method)
     return 0;
 }
 
-WebRtc_UWord32
+WebRtc_Word64
 RTCPReceiver::LastReceived()
 {
     CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
@@ -617,7 +617,7 @@ bool RTCPReceiver::UpdateRTCPReceiveInformationTimers() {
   CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
   bool updateBoundingSet = false;
-  WebRtc_UWord32 timeNow = _clock.GetTimeInMS();
+  WebRtc_Word64 timeNow = _clock.GetTimeInMS();
 
   std::map<WebRtc_UWord32, RTCPReceiveInformation*>::iterator receiveInfoIt =
       _receivedInfoMap.begin();
@@ -1090,7 +1090,7 @@ void RTCPReceiver::HandleFIRItem(RTCPReceiveInformation* receiveInfo,
     // check if we have reported this FIRSequenceNumber before
     if (rtcpPacket.FIRItem.CommandSequenceNumber !=
         receiveInfo->lastFIRSequenceNumber) {
-      WebRtc_UWord32 now = _clock.GetTimeInMS();
+      WebRtc_Word64 now = _clock.GetTimeInMS();
       // sanity; don't go crazy with the callbacks
       if ((now - receiveInfo->lastFIRRequest) > RTCP_MIN_FRAME_LENGTH_MS) {
         receiveInfo->lastFIRRequest = now;
@@ -1245,7 +1245,7 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
       if ((rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpSr ||
           rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRr) &&
           rtcpPacketInformation.reportBlock) {
-        WebRtc_UWord32 now = _clock.GetTimeInMS();
+        WebRtc_Word64 now = _clock.GetTimeInMS();
         _cbRtcpBandwidthObserver->OnReceivedRtcpReceiverReport(
             rtcpPacketInformation.remoteSSRC,
             rtcpPacketInformation.fractionLost,
@@ -1359,8 +1359,7 @@ void RTCPReceiver::PacketTimeout()
             return;
         }
 
-        WebRtc_UWord32 now = _clock.GetTimeInMS();
-
+        WebRtc_Word64 now = _clock.GetTimeInMS();
         if(now - _lastReceived > _packetTimeOutMS)
         {
             packetTimeOut = true;

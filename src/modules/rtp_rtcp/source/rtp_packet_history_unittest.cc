@@ -1,14 +1,12 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
  *  tree. An additional intellectual property rights grant can be found
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
- */
-
-/*
+ *
  * This file includes unit tests for the RTPPacketHistory.
  */
 
@@ -27,7 +25,7 @@ class FakeClock : public RtpRtcpClock {
   }
   // Return a timestamp in milliseconds relative to some arbitrary
   // source; the source is fixed for this clock.
-  virtual WebRtc_UWord32 GetTimeInMS() {
+  virtual WebRtc_Word64 GetTimeInMS() {
     return time_in_ms_;
   }
   // Retrieve an NTP absolute timestamp.
@@ -39,7 +37,7 @@ class FakeClock : public RtpRtcpClock {
     time_in_ms_ += time_increment_ms;
   }
  private:
-  WebRtc_UWord32 time_in_ms_;
+  WebRtc_Word64 time_in_ms_;
 };
 
 class RtpPacketHistoryTest : public ::testing::Test {
@@ -189,7 +187,7 @@ TEST_F(RtpPacketHistoryTest, DontRetransmit) {
 
 TEST_F(RtpPacketHistoryTest, MinResendTime) {
   hist_->SetStorePacketsStatus(true, 10);
-  WebRtc_UWord32 store_time = fake_clock_.GetTimeInMS();
+  WebRtc_Word64 store_time = fake_clock_.GetTimeInMS();
   uint16_t len = 0;
   CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
   EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
