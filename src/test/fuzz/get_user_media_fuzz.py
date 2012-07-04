@@ -30,9 +30,9 @@ def RandomIdentifier():
                   for i in xrange(length)))
 
 
-def GenerateRandomJavascriptAttributes(with_num_attributes):
+def GenerateRandomJavascriptAttributes(num_attributes):
   return ['%s: %s' % (RandomIdentifier(), GenerateRandomJavascriptValue())
-          for i in xrange(with_num_attributes)]
+          for i in xrange(num_attributes)]
 
 
 def MakeJavascriptObject(attributes):
@@ -87,5 +87,13 @@ def Fuzz(template):
   fail_callback = (GenerateRandomJavascriptValue()
                    if random.random() < 0.5 else 'getUserMediaFailedCallback')
   template = FillInParameter('FUZZ_FAIL_CALLBACK', fail_callback, template)
+
+  before_call = 'location.reload();' if random.random() < 0.1 else ''
+  template = FillInParameter('BEFORE_GET_USER_MEDIA_CALL', before_call,
+                             template)
+
+  after_call = 'location.reload();' if random.random() < 0.3 else ''
+  template = FillInParameter('AFTER_GET_USER_MEDIA_CALL', after_call,
+                             template)
 
   return template
