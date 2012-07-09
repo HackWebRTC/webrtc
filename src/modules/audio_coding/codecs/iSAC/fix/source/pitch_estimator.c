@@ -162,7 +162,7 @@ static void PCorr2Q32(const WebRtc_Word16 *in, WebRtc_Word32 *logcorQ8)
 {
   WebRtc_Word16 scaling,n,k;
   WebRtc_Word32 ysum32,csum32, lys, lcs;
-  WebRtc_Word32 prod32, oneQ8;
+  WebRtc_Word32 oneQ8;
 
 
   const WebRtc_Word16 *x, *inptr;
