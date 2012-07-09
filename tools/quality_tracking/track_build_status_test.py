@@ -10,8 +10,6 @@
 
 """Unit test for the build status tracker script."""
 
-__author__ = 'phoglund@webrtc.org (Patrik Höglund)'
-
 
 import copy
 import unittest
@@ -19,13 +17,14 @@ import unittest
 import track_build_status
 
 
-NORMAL_BOT_TO_STATUS_MAPPING = { '1455--ChromeOS': '455--OK',
-                                 '1455--Chrome': '900--failed',
-                                 '1455--Linux32DBG': '344--OK',
-                                 '1456--ChromeOS': '456--OK' }
+NORMAL_BOT_TO_STATUS_MAPPING = {'1455--ChromeOS': '455--OK',
+                                '1455--Chrome': '900--failed',
+                                '1455--Linux32DBG': '344--OK',
+                                '1456--ChromeOS': '456--OK'}
 
 
 class TrackBuildStatusTest(unittest.TestCase):
+
   def test_that_filter_chrome_only_builds_filter_properly(self):
     bot_to_status_mapping = copy.deepcopy(NORMAL_BOT_TO_STATUS_MAPPING)
     bot_to_status_mapping['133445--Chrome'] = '901--OK'
@@ -42,6 +41,13 @@ class TrackBuildStatusTest(unittest.TestCase):
 
     self.assertEquals(NORMAL_BOT_TO_STATUS_MAPPING, result)
 
+  def test_get_desired_bots(self):
+    bot_to_status_mapping = copy.deepcopy(NORMAL_BOT_TO_STATUS_MAPPING)
+    desired_bot_names = ['Linux32DBG']
+    result = track_build_status._get_desired_bots(bot_to_status_mapping,
+                                                  desired_bot_names)
+    self.assertEquals(1, len(result))
+    self.assertTrue(desired_bot_names[0] in result.keys()[0])
 
 if __name__ == '__main__':
   unittest.main()

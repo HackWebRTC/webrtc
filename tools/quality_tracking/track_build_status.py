@@ -12,13 +12,33 @@
    it to the dashboard. It is adapted to build bot version 0.7.12.
 """
 
-__author__ = 'phoglund@webrtc.org (Patrik Höglund)'
-
 import httplib
 
 import constants
 import dashboard_connection
 import tgrid_parser
+
+
+BOTS = ['Win32Debug',
+        'Win32Release',
+        'Mac32Debug',
+        'Mac32Release',
+        'Linux32Debug',
+        'Linux32Release',
+        'Linux64Debug',
+        'Linux64Release',
+        'LinuxClang',
+        'Linux64Debug-GCC4.6',
+        'LinuxMemcheck',
+        'LinuxTsan',
+        'LinuxAsan',
+        'WinLargeTests',
+        'MacLargeTests',
+        'LinuxLargeTests',
+        'CrOS',
+        'Android',
+        'AndroidNDK',
+       ]
 
 
 class FailedToGetStatusFromMaster(Exception):
@@ -44,11 +64,29 @@ def _download_and_parse_build_status():
 def _is_chrome_only_build(revision_to_bot_name):
   """Figures out if a revision-to-bot-name mapping represents a Chrome build.
 
-     We assume here that Chrome revisions are always > 100000, whereas WebRTC
-     revisions will not reach that number in the foreseeable future."""
+  We assume here that Chrome revisions are always > 100000, whereas WebRTC
+  revisions will not reach that number in the foreseeable future.
+  """
   revision = int(revision_to_bot_name.split('--')[0])
   bot_name = revision_to_bot_name.split('--')[1]
   return 'Chrome' in bot_name and revision > 100000
+
+
+def _get_desired_bots(bot_to_status_mapping, desired_bot_names):
+  """Returns the desired bots for the builds status from the dictionary.
+
+  Args:
+    bot_to_status_mapping: Dictionary mapping bot name with revision to status.
+    desired_bot_names: List of bot names that will be the only bots returned in
+      the resulting dictionary.
+  Returns: A dictionary only containing the desired bots.
+  """
+  result = {}
+  for revision_to_bot_name, status in bot_to_status_mapping.iteritems():
+    bot_name = revision_to_bot_name.split('--')[1]
+    if bot_name in desired_bot_names:
+      result[revision_to_bot_name] = status
+  return result
 
 
 def _filter_chrome_only_builds(bot_to_status_mapping):
@@ -65,6 +103,7 @@ def _main():
                                 constants.ACCESS_TOKEN_FILE)
 
   bot_to_status_mapping = _download_and_parse_build_status()
+  bot_to_status_mapping = _get_desired_bots(bot_to_status_mapping, BOTS)
   bot_to_status_mapping = _filter_chrome_only_builds(bot_to_status_mapping)
 
   dashboard.send_post_request(constants.ADD_BUILD_STATUS_DATA_URL,
