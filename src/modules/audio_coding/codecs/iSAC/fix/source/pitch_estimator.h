@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -20,14 +20,16 @@
 
 #include "structs.h"
 
-
+// TODO(andrew): put this into general WebRTC so other modules can use it.
+// Define a compiler-time assertion.
+#define WEBRTC_STATIC_ASSERT(name, boolean_cond) \
+  static char const static_assert_##name[(boolean_cond) ? 1 : -1] = {'!'}
 
 void WebRtcIsacfix_PitchAnalysis(const WebRtc_Word16 *in,               /* PITCH_FRAME_LEN samples */
                                  WebRtc_Word16 *outQ0,                  /* PITCH_FRAME_LEN+QLOOKAHEAD samples */
                                  PitchAnalysisStruct *State,
                                  WebRtc_Word16 *lagsQ7,
                                  WebRtc_Word16 *PitchGains_Q12);
-
 
 void WebRtcIsacfix_InitialPitch(const WebRtc_Word16 *in,
                                 PitchAnalysisStruct *State,
@@ -44,8 +46,6 @@ void WebRtcIsacfix_PitchFilterGains(const WebRtc_Word16 *indatQ0,
                                     PitchFiltstr *pfp,
                                     WebRtc_Word16 *lagsQ7,
                                     WebRtc_Word16 *gainsQ12);
-
-
 
 void WebRtcIsacfix_DecimateAllpass32(const WebRtc_Word16 *in,
                                      WebRtc_Word32 *state_in,        /* array of size: 2*ALLPASSSECTIONS+1 */

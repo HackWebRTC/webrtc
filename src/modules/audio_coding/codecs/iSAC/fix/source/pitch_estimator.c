@@ -15,7 +15,9 @@
  *
  */
 
-#include <string.h>
+#ifdef WEBRTC_ARCH_ARM_NEON
+#include <arm_neon.h>
+#endif
 
 #include "signal_processing_library.h"
 #include "pitch_estimator.h"
@@ -201,15 +203,44 @@ static void PCorr2Q32(const WebRtc_Word16 *in, WebRtc_Word32 *logcorQ8)
     inptr = &in[k];
     ysum32 -= WEBRTC_SPL_MUL_16_16_RSFT( (WebRtc_Word16) in[k-1],(WebRtc_Word16) in[k-1], scaling);
     ysum32 += WEBRTC_SPL_MUL_16_16_RSFT( (WebRtc_Word16) in[PITCH_CORR_LEN2 + k - 1],(WebRtc_Word16) in[PITCH_CORR_LEN2 + k - 1], scaling);
-    csum32 = 0;
-    prod32 = WEBRTC_SPL_MUL_16_16_RSFT( (WebRtc_Word16) x[0],(WebRtc_Word16) inptr[0], scaling);
 
-    for (n = 1; n < PITCH_CORR_LEN2; n++) {
-      csum32 += prod32;
-      prod32 = WEBRTC_SPL_MUL_16_16_RSFT( (WebRtc_Word16) x[n],(WebRtc_Word16) inptr[n], scaling);
+#ifdef WEBRTC_ARCH_ARM_NEON
+    {
+      int32_t vbuff[4];
+      int32x4_t int_32x4_sum = vmovq_n_s32(0);
+      // Can't shift a Neon register to right with a non-constant shift value.
+      int32x4_t int_32x4_scale = vdupq_n_s32(-scaling);
+      // Assert a codition used in loop unrolling at compile-time.
+      WEBRTC_STATIC_ASSERT(PITCH_CORR_LEN2, PITCH_CORR_LEN2 %4 == 0);
+
+      for (n = 0; n < PITCH_CORR_LEN2; n += 4) {
+        int16x4_t int_16x4_x = vld1_s16(&x[n]);
+        int16x4_t int_16x4_in = vld1_s16(&inptr[n]);
+        int32x4_t int_32x4 = vmull_s16(int_16x4_x, int_16x4_in);
+        int_32x4 = vshlq_s32(int_32x4, int_32x4_scale);
+        int_32x4_sum = vaddq_s32(int_32x4_sum, int_32x4);
+      }
+
+      // Use vector store to avoid long stall from data trasferring
+      // from vector to general register.
+      vst1q_s32(vbuff, int_32x4_sum);
+      csum32 = vbuff[0] + vbuff[1];
+      csum32 += vbuff[2];
+      csum32 += vbuff[3];
     }
+#else
+    csum32 = 0;
+    if(scaling == 0) {
+      for (n = 0; n < PITCH_CORR_LEN2; n++) {
+        csum32 += x[n] * inptr[n];
+      }
+    } else {
+      for (n = 0; n < PITCH_CORR_LEN2; n++) {
+        csum32 += (x[n] * inptr[n]) >> scaling;
+      }
+    }
+#endif
 
-    csum32 += prod32;
     logcorQ8--;
 
     lys=Log2Q8((WebRtc_UWord32)ysum32); // Q8
