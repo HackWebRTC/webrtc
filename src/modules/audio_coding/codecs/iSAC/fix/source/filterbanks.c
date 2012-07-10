@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -56,31 +56,52 @@ static void HighpassFilterFixDec32(
     WebRtc_Word32 *state) /* Q4:filter state Input/Output */
 {
   int k;
-  WebRtc_Word32 a, b, c, in;
-
-
+  WebRtc_Word32 a1 = 0, b1 = 0, c = 0, in = 0;
+  WebRtc_Word32 a2 = 0, b2 = 0;
+  WebRtc_Word32 state0 = state[0];
+  WebRtc_Word32 state1 = state[1];
 
   for (k=0; k<len; k++) {
     in = (WebRtc_Word32)io[k];
-    /* Q35 * Q4 = Q39 ; shift 32 bit => Q7 */
-    a = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[2*2], coeff[2*2+1], state[0]);
-    b = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[2*3], coeff[2*3+1], state[1]);
 
-    c = ((WebRtc_Word32)in) + WEBRTC_SPL_RSHIFT_W32(a+b, 7); // Q0
-    //c = WEBRTC_SPL_RSHIFT_W32(c, 1); // Q-1
-    io[k] = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(c);  // Write output as Q0
+#ifdef WEBRTC_ARCH_ARM_V7A
+    __asm __volatile(
+      "smmul %[a2], %[coeff01], %[state0]\n\t"
+      "smmul %[b2], %[coeff23], %[state1]\n\t"
+      "smmul %[a1], %[coeff45], %[state0]\n\t"
+      "smmul %[b1], %[coeff67], %[state1]\n\t"
+      :[a2]"+r"(a2),
+       [b2]"+r"(b2),
+       [a1]"+r"(a1),
+       [b1]"+r"(b1)
+      :[coeff01]"r"(coeff_ptr[0]),
+       [coeff23]"r"(coeff_ptr[1]),
+       [coeff45]"r"(coeff_ptr[2]),
+       [coeff67]"r"(coeff_ptr[3]),
+       [state0]"r"(state0),
+       [state1]"r"(state1)
+    );
+#else
+    /* Q35 * Q4 = Q39 ; shift 32 bit => Q7 */
+    a1 = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[5], coeff[4], state[0]);
+    b1 = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[7], coeff[6], state[1]);
 
     /* Q30 * Q4 = Q34 ; shift 32 bit => Q2 */
-    a = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[2*0], coeff[2*0+1], state[0]);
-    b = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[2*1], coeff[2*1+1], state[1]);
+    a2 = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[1], coeff[0], state[0]);
+    b2 = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[3], coeff[2], state[1]);
+#endif
 
-    c = WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)in, 2) - a - b; // New state in Q2
-    c= (WebRtc_Word32)WEBRTC_SPL_SAT((WebRtc_Word32)536870911, c, (WebRtc_Word32)-536870912); // Check for wrap-around
+    c = ((WebRtc_Word32)in) + WEBRTC_SPL_RSHIFT_W32(a1+b1, 7);  // Q0
+    io[k] = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(c);  // Write output as Q0.
 
-    state[1] = state[0];
-    state[0] = WEBRTC_SPL_LSHIFT_W32(c, 2); // Write state as Q4
+    c = WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)in, 2) - a2 - b2;  // In Q2.
+    c = (WebRtc_Word32)WEBRTC_SPL_SAT(536870911, c, -536870912);
 
+    state1 = state0;
+    state0 = WEBRTC_SPL_LSHIFT_W32(c, 2); // Write state as Q4
   }
+  state[0] = state0;
+  state[1] = state1;
 }
 
 
