@@ -19,8 +19,8 @@
       'type': 'static_library',
       'variables': {
         # Path needed to build the Direct Show base classes on Windows. The
-	# code is included in the Windows SDK.
-        'direct_show_dir':
+        # code is included in the Windows SDK.
+        'direct_show_dir%':
           'C:/Program Files/Microsoft SDKs/Windows/v7.1/Samples/multimedia/directshow/baseclasses/',
       },
       'defines!': [
