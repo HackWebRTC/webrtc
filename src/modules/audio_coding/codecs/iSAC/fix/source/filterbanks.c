@@ -60,6 +60,9 @@ static void HighpassFilterFixDec32(
   WebRtc_Word32 a2 = 0, b2 = 0;
   WebRtc_Word32 state0 = state[0];
   WebRtc_Word32 state1 = state[1];
+#ifdef WEBRTC_ARCH_ARM_V7A
+  WebRtc_Word32* coeff_ptr = (WebRtc_Word32*) coeff;
+#endif
 
   for (k=0; k<len; k++) {
     in = (WebRtc_Word32)io[k];
