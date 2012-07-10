@@ -65,19 +65,6 @@ enum VideoRotationMode {
 //                video frame or -1 in case of an error .
 int CalcBufferSize(VideoType type, int width, int height);
 
-// Compute required buffer size when converting from one type to another.
-// Input:
-//   - src_video_type - Type of the existing video frame.
-//   - dst_video_type - Type of the designated video frame.
-//   - length - length in bytes of the data.
-// Return value: The required size in bytes to accommodate the specified
-//               converted video frame or -1 in case of an error.
-int CalcBufferSize(VideoType src_video_type,
-                   VideoType dst_video_type,
-                   int length);
-// TODO (mikhal): Merge the two functions above.
-
-
 // Convert To I420
 // Input:
 //   - src_video_type   : Type of input video.
@@ -168,21 +155,6 @@ int MirrorI420LeftRight(const uint8_t* src_frame,
 int MirrorI420UpDown(const uint8_t* src_frame,
                      uint8_t* dst_frame,
                      int width, int height);
-
-// Mirror functions + conversion
-// Input:
-//    - src_frame       : Pointer to source frame.
-//    - dst_frame       : Pointer to destination frame.
-//    - src_width       : Width of input buffer.
-//    - src_height      : Height of input buffer.
-//    - src_color_space : Color space to convert from, I420 if no
-//                        conversion should be done.
-// Return value: 0 if OK, < 0 otherwise.
-int ConvertToI420AndMirrorUpDown(const uint8_t* src_frame,
-                                 uint8_t* dst_frame,
-                                 int src_width,
-                                 int src_height,
-                                 VideoType src_video_type);
 
 // Compute PSNR for an I420 frame (all planes).
 double I420PSNR(const uint8_t* ref_frame,
