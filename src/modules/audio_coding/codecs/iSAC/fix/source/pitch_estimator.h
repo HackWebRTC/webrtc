@@ -42,6 +42,17 @@ void WebRtcIsacfix_PitchFilter(WebRtc_Word16 *indatFix,
                                WebRtc_Word16 *gainsQ12,
                                WebRtc_Word16 type);
 
+void WebRtcIsacfix_PitchFilterCore(int loopNumber,
+                                   WebRtc_Word16 gain,
+                                   int index,
+                                   WebRtc_Word16 sign,
+                                   WebRtc_Word16* inputState,
+                                   WebRtc_Word16* outputBuff2,
+                                   const WebRtc_Word16* coefficient,
+                                   WebRtc_Word16* inputBuf,
+                                   WebRtc_Word16* outputBuf,
+                                   int* index2);
+
 void WebRtcIsacfix_PitchFilterGains(const WebRtc_Word16 *indatQ0,
                                     PitchFiltstr *pfp,
                                     WebRtc_Word16 *lagsQ7,

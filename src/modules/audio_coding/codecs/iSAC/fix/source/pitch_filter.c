@@ -55,18 +55,19 @@ static __inline WebRtc_Word32 CalcLrIntQ(WebRtc_Word32 fixVal,
   return intgr;
 }
 
+#ifndef WEBRTC_ARCH_ARM_V7A
 // Pitch filtering.
 // TODO(Turaj): Add descriptions of input and output parameters.
-static void PitchFilter(int loopNumber,
-                        WebRtc_Word16 gain,
-                        int index,
-                        WebRtc_Word16 sign,
-                        WebRtc_Word16* inputState,
-                        WebRtc_Word16* outputBuf2,
-                        const WebRtc_Word16* coefficient,
-                        WebRtc_Word16* inputBuf,
-                        WebRtc_Word16* outputBuf,
-                        int* index2) {
+void WebRtcIsacfix_PitchFilterCore(int loopNumber,
+                                   WebRtc_Word16 gain,
+                                   int index,
+                                   WebRtc_Word16 sign,
+                                   WebRtc_Word16* inputState,
+                                   WebRtc_Word16* outputBuf2,
+                                   const WebRtc_Word16* coefficient,
+                                   WebRtc_Word16* inputBuf,
+                                   WebRtc_Word16* outputBuf,
+                                   int* index2) {
   int i = 0, j = 0;  // Loop counters.
   WebRtc_Word16* ubufQQpos2 = &outputBuf2[PITCH_BUFFSIZE - (index + 2)];
   WebRtc_Word16 tmpW16 = 0;
@@ -112,6 +113,11 @@ static void PitchFilter(int loopNumber,
     (*index2)++;
   }
 }
+#else
+// These two conditions are assumptions in ARM assembly file.
+WEBRTC_STATIC_ASSERT(PITCH_FRACORDER, PITCH_FRACORDER == 9);
+WEBRTC_STATIC_ASSERT(PITCH_DAMPORDER, PITCH_DAMPORDER == 5);
+#endif
 
 void WebRtcIsacfix_PitchFilter(WebRtc_Word16* indatQQ, // Q10 if type is 1 or 4,
                                                        // Q0 if type is 2.
@@ -192,8 +198,8 @@ void WebRtcIsacfix_PitchFilter(WebRtc_Word16* indatQQ, // Q10 if type is 1 or 4,
       fracoeffQQ = kIntrpCoef[frcQQ];
 
       // Pitch filtering.
-      PitchFilter(PITCH_SUBFRAME_LEN / kSegments, curGainQ12, indW32, sign,
-          inystateQQ, ubufQQ, fracoeffQQ, indatQQ, outdatQQ, &ind);
+      WebRtcIsacfix_PitchFilterCore(PITCH_SUBFRAME_LEN / kSegments, curGainQ12,
+        indW32, sign, inystateQQ, ubufQQ, fracoeffQQ, indatQQ, outdatQQ, &ind);
     }
   }
 
@@ -206,7 +212,7 @@ void WebRtcIsacfix_PitchFilter(WebRtc_Word16* indatQQ, // Q10 if type is 1 or 4,
 
   if (type == 2) {
     // Filter look-ahead segment.
-    PitchFilter(QLOOKAHEAD, curGainQ12, indW32, 1, inystateQQ,
+    WebRtcIsacfix_PitchFilterCore(QLOOKAHEAD, curGainQ12, indW32, 1, inystateQQ,
                 ubufQQ, fracoeffQQ, indatQQ, outdatQQ, &ind);
   }
 }
