@@ -8,8 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "i420.h"
+#include "modules/video_coding/codecs/i420/main/interface/i420.h"
+
 #include <string.h>
+
+#include "common_video/libyuv/include/libyuv.h"
+
 
 namespace webrtc
 {
@@ -55,8 +59,9 @@ int I420Encoder::InitEncode(const VideoCodec* codecSettings,
     _encodedImage._buffer = NULL;
     _encodedImage._size = 0;
   }
-  const uint32_t newSize = (3 * codecSettings->width *
-                            codecSettings->height) >> 1;
+  const uint32_t newSize = CalcBufferSize(kI420,
+                                          codecSettings->width,
+                                          codecSettings->height);
   uint8_t* newBuffer = new uint8_t[newSize];
   if (newBuffer == NULL) {
     return WEBRTC_VIDEO_CODEC_MEMORY;
@@ -93,8 +98,9 @@ int I420Encoder::Encode(const RawImage& inputImage,
       _encodedImage._buffer = NULL;
       _encodedImage._size = 0;
     }
-    const uint32_t newSize = (3 * _encodedImage._encodedWidth *
-      _encodedImage._encodedHeight) >> 1;
+    const uint32_t newSize = CalcBufferSize(kI420,
+                                            _encodedImage._encodedWidth,
+                                            _encodedImage._encodedHeight);
     uint8_t* newBuffer = new uint8_t[newSize];
     if (newBuffer == NULL) {
       return WEBRTC_VIDEO_CODEC_MEMORY;
@@ -174,7 +180,7 @@ I420Decoder::Decode(const EncodedImage& inputImage,
     _decodedImage._size = 0;
   }
   if (_decodedImage._buffer == NULL) {
-    const uint32_t newSize = (3*_width*_height) >> 1;
+    const uint32_t newSize = CalcBufferSize(kI420, _width, _height);
     uint8_t* newBuffer = new uint8_t[newSize];
     if (newBuffer == NULL) {
         return WEBRTC_VIDEO_CODEC_MEMORY;
