@@ -16,6 +16,7 @@
 #include <string.h>
 #include <time.h>
 
+#include "common_video/libyuv/include/libyuv.h"
 #include "module_common_types.h"
 #include "reference_picture_selection.h"
 #include "temporal_layers.h"
@@ -170,7 +171,7 @@ int VP8Encoder::InitEncode(const VideoCodec* inst,
   if (encoded_image_._buffer != NULL) {
     delete [] encoded_image_._buffer;
   }
-  encoded_image_._size = (3 * codec_.width * codec_.height) >> 1;
+  encoded_image_._size = CalcBufferSize(kI420, codec_.width, codec_.height);
   encoded_image_._buffer = new uint8_t[encoded_image_._size];
   encoded_image_._completeFrame = true;
 
@@ -857,8 +858,8 @@ int VP8Decoder::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
     return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
   }
 
-  // Allocate memory for decoded image
-  uint32_t required_size = (3 * img->d_h * img->d_w) >> 1;
+  // Allocate memory for decoded image.
+  uint32_t required_size = CalcBufferSize(kI420, img->d_w, img->d_h);
   if (required_size > decoded_image_._size) {
     delete [] decoded_image_._buffer;
     decoded_image_._buffer = NULL;
@@ -885,7 +886,7 @@ int VP8Decoder::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
   // Set image parameters
   decoded_image_._height = img->d_h;
   decoded_image_._width = img->d_w;
-  decoded_image_._length = (3 * img->d_h * img->d_w) >> 1;
+  decoded_image_._length =  CalcBufferSize(kI420, img->d_w, img->d_h);
   decoded_image_._timeStamp = timestamp;
   int ret = decode_complete_callback_->Decoded(decoded_image_);
   if (ret != 0)
