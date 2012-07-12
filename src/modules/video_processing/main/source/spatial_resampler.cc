@@ -83,10 +83,7 @@ VPMSimpleSpatialResampler::ResampleFrame(const VideoFrame& inFrame,
     return retVal;
 
   // Disabling cut/pad for now - only scaling.
-  int target_half_width = (_targetWidth + 1) >> 1;
-  int target_half_height = (_targetHeight + 1) >> 1;
-  int requiredSize = static_cast<int>(_targetWidth * _targetHeight + 2 *
-      (target_half_width * target_half_height));
+  int requiredSize = CalcBufferSize(kI420, _targetWidth, _targetHeight);
   outFrame.VerifyAndAllocate(requiredSize);
   outFrame.SetTimeStamp(inFrame.TimeStamp());
   outFrame.SetRenderTime(inFrame.RenderTimeMs());
