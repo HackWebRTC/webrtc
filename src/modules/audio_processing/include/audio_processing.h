@@ -545,6 +545,11 @@ class NoiseSuppression {
   virtual int set_level(Level level) = 0;
   virtual Level level() const = 0;
 
+  // Returns the internally computed prior speech probability of current frame
+  // averaged over output channels. This is not supported in fixed point, for
+  // which |kUnsupportedFunctionError| is returned.
+  virtual float speech_probability() const = 0;
+
  protected:
   virtual ~NoiseSuppression() {};
 };

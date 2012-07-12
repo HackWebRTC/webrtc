@@ -1278,6 +1278,7 @@ TEST_F(ApmTest, Process) {
     int analog_level = 127;
     int analog_level_average = 0;
     int max_output_average = 0;
+    float ns_speech_prob_average = 0.0f;
 
     while (1) {
       if (!ReadFrame(far_file_, revframe_)) break;
@@ -1314,6 +1315,8 @@ TEST_F(ApmTest, Process) {
         EXPECT_EQ(AudioFrame::kVadPassive, frame_->vad_activity_);
       }
 
+      ns_speech_prob_average += apm_->noise_suppression()->speech_probability();
+
       size_t frame_size = frame_->samples_per_channel_ * frame_->num_channels_;
       size_t write_count = fwrite(frame_->data_,
                                   sizeof(int16_t),
@@ -1327,6 +1330,7 @@ TEST_F(ApmTest, Process) {
     }
     max_output_average /= frame_count;
     analog_level_average /= frame_count;
+    ns_speech_prob_average /= frame_count;
 
 #if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
     EchoCancellation::Metrics echo_metrics;
@@ -1368,6 +1372,9 @@ TEST_F(ApmTest, Process) {
       EXPECT_EQ(reference_delay.std(), std);
 
       EXPECT_EQ(test->rms_level(), rms_level);
+
+      EXPECT_FLOAT_EQ(test->ns_speech_probability_average(),
+                      ns_speech_prob_average);
 #endif
     } else {
       test->set_has_echo_count(has_echo_count);
@@ -1395,6 +1402,10 @@ TEST_F(ApmTest, Process) {
       message_delay->set_std(std);
 
       test->set_rms_level(rms_level);
+
+      EXPECT_LE(0.0f, ns_speech_prob_average);
+      EXPECT_GE(1.0f, ns_speech_prob_average);
+      test->set_ns_speech_probability_average(ns_speech_prob_average);
 #endif
     }
 
