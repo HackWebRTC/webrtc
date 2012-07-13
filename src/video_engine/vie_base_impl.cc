@@ -409,6 +409,7 @@ int ViEBaseImpl::GetVersion(char version[1024]) {
   int version_length = version_stream.tellp();
   assert(version_length < 1024);
   memcpy(version, version_stream.str().c_str(), version_length);
+  version[version_length] = '\0';
 
   WEBRTC_TRACE(kTraceStateInfo, kTraceVideo,
                ViEId(shared_data_.instance_id()), "GetVersion() => %s",
