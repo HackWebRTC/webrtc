@@ -24,7 +24,9 @@
 #include "windows/video_render_windows_impl.h"
 #define STANDARD_RENDERING kRenderWindows
 
-#elif defined(MAC_IPHONE) // MAC_IPHONE should go before WEBRTC_MAC_INTEL because WEBRTC_MAC_INTEL gets defined if MAC_IPHONE is defined
+// MAC_IPHONE should go before WEBRTC_MAC_INTEL because WEBRTC_MAC_INTEL
+// gets defined if MAC_IPHONE is defined
+#elif defined(MAC_IPHONE)
 #if defined(IPHONE_GLES_RENDERING)
 #define STANDARD_RENDERING kRenderiPhone
 #include "iPhone/video_render_iphone_impl.h"
@@ -69,7 +71,6 @@ VideoRender::CreateVideoRender(const WebRtc_Word32 id,
                                const bool fullscreen,
                                const VideoRenderType videoRenderType/*=kRenderDefault*/)
 {
-
     VideoRenderType resultVideoRenderType = videoRenderType;
     if (videoRenderType == kRenderDefault)
     {
@@ -86,15 +87,6 @@ void VideoRender::DestroyVideoRender(
     {
         delete module;
     }
-}
-
-WebRtc_Word32 VideoRender::SetAndroidObjects(void *javaVM)
-{
-#ifdef WEBRTC_ANDROID
-    return VideoRenderAndroid::SetAndroidEnvVariables(javaVM);
-#else
-    return -1;
-#endif
 }
 
 ModuleVideoRenderImpl::ModuleVideoRenderImpl(

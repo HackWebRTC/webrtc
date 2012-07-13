@@ -20,10 +20,6 @@
 
 #include <stdlib.h>
 
-#ifdef WEBRTC_ANDROID
-#include "video_capture_android.h" // Need inclusion here to set Java environment.
-#endif
-
 namespace webrtc
 {
 namespace videocapturemodule
