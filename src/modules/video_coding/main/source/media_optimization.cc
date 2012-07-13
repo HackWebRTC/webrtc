@@ -228,6 +228,13 @@ int VCMMediaOptimization::UpdateProtectionCallback(
     delta_fec_params.max_fec_frames = selected_method->MaxFramesFec();
     key_fec_params.max_fec_frames = selected_method->MaxFramesFec();
 
+    // Set the FEC packet mask type. |kFecMaskBursty| is more effective for
+    // consecutive losses and little/no packet re-ordering. As we currently
+    // do not have feedback data on the degree of correlated losses and packet
+    // re-ordering, we keep default setting to |kFecMaskRandom| for now.
+    delta_fec_params.fec_mask_type = kFecMaskRandom;
+    key_fec_params.fec_mask_type = kFecMaskRandom;
+
     // TODO(Marco): Pass FEC protection values per layer.
     return _videoProtectionCallback->ProtectionRequest(&delta_fec_params,
                                                        &key_fec_params,

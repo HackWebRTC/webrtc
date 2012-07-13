@@ -729,13 +729,18 @@ WebRtc_Word32 ViEEncoder::ProtectionRequest(
   WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideo,
                ViEId(engine_id_, channel_id_),
                "%s, deltaFECRate: %u, key_fecrate: %u, "
-               "delta_use_uep_protection: %d, key_use_uep_protection: %d, ",
+               "delta_use_uep_protection: %d, key_use_uep_protection: %d, "
+               "delta_max_fec_frames: %d, key_max_fec_frames: %d, "
+               "delta_mask_type: %d, key_mask_type: %d, ",
                __FUNCTION__,
                delta_fec_params->fec_rate,
                key_fec_params->fec_rate,
                delta_fec_params->use_uep_protection,
-               key_fec_params->use_uep_protection);
-
+               key_fec_params->use_uep_protection,
+               delta_fec_params->max_fec_frames,
+               key_fec_params->max_fec_frames,
+               delta_fec_params->fec_mask_type,
+               key_fec_params->fec_mask_type);
   if (default_rtp_rtcp_->SetFecParameters(delta_fec_params,
                                          key_fec_params) != 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,

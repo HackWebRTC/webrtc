@@ -56,6 +56,8 @@ RTPSenderVideo::RTPSenderVideo(const WebRtc_Word32 id,
   memset(&delta_fec_params_, 0, sizeof(delta_fec_params_));
   memset(&key_fec_params_, 0, sizeof(key_fec_params_));
   delta_fec_params_.max_fec_frames = key_fec_params_.max_fec_frames = 1;
+  delta_fec_params_.fec_mask_type = key_fec_params_.fec_mask_type =
+        kFecMaskRandom;
 }
 
 RTPSenderVideo::~RTPSenderVideo()
@@ -213,6 +215,8 @@ RTPSenderVideo::SetGenericFECStatus(const bool enable,
     memset(&delta_fec_params_, 0, sizeof(delta_fec_params_));
     memset(&key_fec_params_, 0, sizeof(key_fec_params_));
     delta_fec_params_.max_fec_frames = key_fec_params_.max_fec_frames = 1;
+    delta_fec_params_.fec_mask_type = key_fec_params_.fec_mask_type =
+          kFecMaskRandom;
     return 0;
 }
 

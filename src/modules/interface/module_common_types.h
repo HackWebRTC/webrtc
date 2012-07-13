@@ -297,11 +297,21 @@ struct RTCPVoIPMetric
     WebRtc_UWord16    JBabsMax;
 };
 
+// Types for the FEC packet masks. The type |kFecMaskRandom| is based on a
+// random loss model. The type |kFecMaskBursty| is based on a bursty/consecutive
+// loss model. The packet masks are defined in
+// modules/rtp_rtcp/fec_private_tables_random(bursty).h
+enum FecMaskType {
+  kFecMaskRandom,
+  kFecMaskBursty,
+};
+
 // Struct containing forward error correction settings.
 struct FecProtectionParams {
   int fec_rate;
   bool use_uep_protection;
   int max_fec_frames;
+  FecMaskType fec_mask_type;
 };
 
 // class describing a complete, or parts of an encoded frame.

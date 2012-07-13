@@ -21,16 +21,6 @@
 
 namespace webrtc {
 
-// Types for the FEC packet masks. The type |kFecMaskRandom| selects the mask
-// defined in fec_private_tables_random.h, and is based on a random loss model.
-// The type |kFecMaskBursty| selects the mask defined in
-// fec_private_tables_bursty.h, and is based on a bursty loss model. Please
-// refer to those files for a more detailed description.
-enum FecMaskType {
-  kFecMaskRandom,
-  kFecMaskBursty,
-};
-
 // Forward declaration.
 class FecPacket;
 

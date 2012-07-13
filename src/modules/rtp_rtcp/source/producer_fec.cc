@@ -164,14 +164,11 @@ int ProducerFec::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
           (ExcessOverheadBelowMax() && MinimumMediaPacketsReached()))) {
     assert(num_first_partition_ <=
            static_cast<int>(ForwardErrorCorrection::kMaxMediaPackets));
-    // TODO(marpan): The setting of the mask type (|kFecMaskRandom| or
-    // |kFecMaskBursty|) should be part of FecProtectionParams and passed
-    // in from the VCM.
     int ret = fec_->GenerateFEC(media_packets_fec_,
                                 params_.fec_rate,
                                 num_first_partition_,
                                 params_.use_uep_protection,
-                                kFecMaskBursty,
+                                params_.fec_mask_type,
                                 &fec_packets_);
     if (fec_packets_.empty()) {
       num_frames_ = 0;
