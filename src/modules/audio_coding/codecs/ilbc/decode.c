@@ -38,7 +38,7 @@
 
 void WebRtcIlbcfix_DecodeImpl(
     WebRtc_Word16 *decblock,    /* (o) decoded signal block */
-    WebRtc_UWord16 *bytes,     /* (i) encoded signal bits */
+    const WebRtc_UWord16 *bytes, /* (i) encoded signal bits */
     iLBC_Dec_Inst_t *iLBCdec_inst, /* (i/o) the decoder state
                                            structure */
     WebRtc_Word16 mode      /* (i) 0: bad packet, PLC,
@@ -54,6 +54,9 @@ void WebRtcIlbcfix_DecodeImpl(
   WebRtc_Word16 PLCresidual[BLOCKL_MAX + LPC_FILTERORDER];
   WebRtc_Word16 syntdenum[NSUB_MAX*(LPC_FILTERORDER+1)];
   WebRtc_Word16 PLClpc[LPC_FILTERORDER + 1];
+#ifndef WEBRTC_BIG_ENDIAN
+  WebRtc_UWord16 swapped[NO_OF_WORDS_30MS];
+#endif
   iLBC_bits *iLBCbits_inst = (iLBC_bits*)PLCresidual;
 
   /* Reuse some buffers that are non overlapping in order to save stack memory */
@@ -63,17 +66,13 @@ void WebRtcIlbcfix_DecodeImpl(
 
     /* decode data */
 
-#ifndef WEBRTC_BIG_ENDIAN
-    WebRtcIlbcfix_SwapBytes((WebRtc_UWord16*)bytes, iLBCdec_inst->no_of_words);
-#endif
-
     /* Unpacketize bits into parameters */
 
-    last_bit = WebRtcIlbcfix_UnpackBits(bytes, iLBCbits_inst, iLBCdec_inst->mode);
-
 #ifndef WEBRTC_BIG_ENDIAN
-    /* Swap back so that the the input vector "bytes" is unchanged */
-    WebRtcIlbcfix_SwapBytes((WebRtc_UWord16*)bytes, iLBCdec_inst->no_of_words);
+    WebRtcIlbcfix_SwapBytes(bytes, iLBCdec_inst->no_of_words, swapped);
+    last_bit = WebRtcIlbcfix_UnpackBits(swapped, iLBCbits_inst, iLBCdec_inst->mode);
+#else
+    last_bit = WebRtcIlbcfix_UnpackBits(bytes, iLBCbits_inst, iLBCdec_inst->mode);
 #endif
 
     /* Check for bit errors */

@@ -495,10 +495,10 @@ void WebRtcIlbcfix_EncodeImpl(
 #ifdef SPLIT_10MS
   if (( (iLBCenc_inst->section == 1) && (iLBCenc_inst->mode == 20) ) ||
       ( (iLBCenc_inst->section == 2) && (iLBCenc_inst->mode == 30) )){
-    WebRtcIlbcfix_SwapBytes(bytes, iLBCenc_inst->no_of_words);
+    WebRtcIlbcfix_SwapBytes(bytes, iLBCenc_inst->no_of_words, bytes);
   }
 #else
-  WebRtcIlbcfix_SwapBytes(bytes, iLBCenc_inst->no_of_words);
+  WebRtcIlbcfix_SwapBytes(bytes, iLBCenc_inst->no_of_words, bytes);
 #endif
 #endif
 
