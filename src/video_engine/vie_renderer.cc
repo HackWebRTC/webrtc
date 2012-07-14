@@ -187,6 +187,9 @@ WebRtc_Word32 ViEExternalRendererImpl::RenderFrame(
     case kVideoUYVY:
     case kVideoARGB:
     case kVideoRGB24:
+    case kVideoRGB565:
+    case kVideoARGB4444:
+    case kVideoARGB1555 :
       {
         ConvertFromI420(video_frame.Buffer(), video_frame.Width(), type, 0,
                         video_frame.Width(), video_frame.Height(),
@@ -195,18 +198,6 @@ WebRtc_Word32 ViEExternalRendererImpl::RenderFrame(
       break;
     case kVideoIYUV:
       // no conversion available
-      break;
-    case kVideoRGB565:
-      ConvertI420ToRGB565(video_frame.Buffer(), converted_frame_->Buffer(),
-                          video_frame.Width(), video_frame.Height());
-      break;
-    case kVideoARGB4444:
-      ConvertI420ToARGB4444(video_frame.Buffer(), converted_frame_->Buffer(),
-                            video_frame.Width(), video_frame.Height(), 0);
-      break;
-    case kVideoARGB1555 :
-      ConvertI420ToARGB1555(video_frame.Buffer(), converted_frame_->Buffer(),
-                            video_frame.Width(), video_frame.Height(), 0);
       break;
     default:
       assert(false);

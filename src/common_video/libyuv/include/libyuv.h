@@ -113,22 +113,6 @@ int ConvertFromYV12(const uint8_t* src_frame, int src_stride,
 // are not covered by the previous general functions.
 // Input and output descriptions mostly match the above descriptions, and are
 // therefore omitted.
-// Possible additional input value - dst_stride - stride of the dst frame.
-
-int ConvertI420ToARGB4444(const uint8_t* src_frame,
-                          uint8_t* dst_frame,
-                          int width,
-                          int height,
-                          int dst_stride);
-int ConvertI420ToRGB565(const uint8_t* src_frame,
-                        uint8_t* dst_frame,
-                        int width,
-                        int height);
-int ConvertI420ToARGB1555(const uint8_t* src_frame,
-                          uint8_t* dst_frame,
-                          int width,
-                          int height,
-                          int dst_stride);
 int ConvertRGB24ToARGB(const uint8_t* src_frame,
                        uint8_t* dst_frame,
                        int width, int height,
@@ -136,9 +120,6 @@ int ConvertRGB24ToARGB(const uint8_t* src_frame,
 int ConvertNV12ToRGB565(const uint8_t* src_frame,
                         uint8_t* dst_frame,
                         int width, int height);
-int ConvertI420ToARGB8888(const uint8_t* src_frame,
-                          uint8_t* dst_frame,
-                          int width, int height);
 
 // Mirror functions
 // The following 2 functions perform mirroring on a given image

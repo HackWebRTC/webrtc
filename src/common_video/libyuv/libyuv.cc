@@ -87,83 +87,6 @@ int CalcBufferSize(VideoType type, int width, int height) {
   return buffer_size;
 }
 
-int ConvertI420ToARGB8888(const uint8_t* src_frame,
-                          uint8_t* dst_frame,
-                          int width, int height) {
-  int abs_height = (height < 0) ? -height : height;
-  int half_width = (width + 1) >> 1;
-  int half_height = (abs_height + 1) >> 1;
-  const uint8_t* src_y = src_frame;
-  const uint8_t* src_u = src_y + width * abs_height;
-  const uint8_t* src_v = src_u + half_width * half_height;
-  int src_stride_y = width;
-
-  return libyuv::I420ToARGB(src_y, src_stride_y,
-                            src_u, half_width,
-                            src_v, half_width,
-                            dst_frame, width * 4,
-                            width, height);
-}
-
-int ConvertI420ToARGB4444(const uint8_t* src_frame,
-                          uint8_t* dst_frame,
-                          int width, int height,
-                          int dst_stride) {
-  if (dst_stride == 0 || dst_stride == width)
-    dst_stride = 2 * width;
-  int abs_height = (height < 0) ? -height : height;
-  int half_width = (width + 1) >> 1;
-  int half_height = (abs_height + 1) >> 1;
-  const uint8_t* yplane = src_frame;
-  const uint8_t* uplane = src_frame + width * abs_height;
-  const uint8_t* vplane = uplane + half_width * half_height;
-
-  return libyuv::I420ToARGB4444(yplane, width,
-                                uplane, half_width,
-                                vplane, half_width,
-                                dst_frame, dst_stride,
-                                width, height);
-}
-
-int ConvertI420ToRGB565(const uint8_t* src_frame,
-                        uint8_t* dst_frame,
-                        int width, int height) {
-  int abs_height = (height < 0) ? -height : height;
-  int half_width = (width + 1) >> 1;
-  int half_height = (abs_height + 1) >> 1;
-  const uint8_t* yplane = src_frame;
-  const uint8_t* uplane = yplane + width * abs_height;
-  const uint8_t* vplane = uplane + half_width * half_height;
-
-  return libyuv::I420ToRGB565(yplane, width,
-                              uplane, half_width,
-                              vplane, half_width,
-                              dst_frame, width * 2,
-                              width, height);
-}
-
-int ConvertI420ToARGB1555(const uint8_t* src_frame,
-                          uint8_t* dst_frame,
-                          int width, int height,
-                          int dst_stride) {
-  if (dst_stride == 0 || dst_stride == width)
-    dst_stride = 2 * width;
-  else if (dst_stride < 2 * width)
-    return -1;
-  int abs_height = (height < 0) ? -height : height;
-  int half_width = (width + 1) >> 1;
-  int half_height = (abs_height + 1) >> 1;
-  const uint8_t* yplane = src_frame;
-  const uint8_t* uplane = src_frame + width * abs_height;
-  const uint8_t* vplane = uplane + half_width * half_height;
-
-  return libyuv::I420ToARGB1555(yplane, width,
-                                uplane, half_width,
-                                vplane, half_width,
-                                dst_frame, dst_stride,
-                                width, height);
-}
-
 int ConvertNV12ToRGB565(const uint8_t* src_frame,
                         uint8_t* dst_frame,
                         int width, int height) {
@@ -216,11 +139,6 @@ int ConvertVideoType(VideoType video_type) {
       return libyuv::FOURCC_ABGR;
     case kRGB565:
       return libyuv::FOURCC_RGBP;
-    case kARGB4444:
-    case kARGB1555:
-      // TODO(mikhal): Not supported;
-      assert(false);
-      return libyuv::FOURCC_ANY;
     case kYUY2:
       return libyuv::FOURCC_YUY2;
     case kUYVY:
@@ -235,6 +153,10 @@ int ConvertVideoType(VideoType video_type) {
       return libyuv::FOURCC_ARGB;
     case kBGRA:
       return libyuv::FOURCC_BGRA;
+    case kARGB4444:
+      return libyuv::FOURCC_R444;
+    case kARGB1555:
+      return libyuv::FOURCC_RGBO;
   }
   assert(false);
   return libyuv::FOURCC_ANY;
