@@ -90,13 +90,10 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
 
     // Constant
     private static final String TAG = "WEBRTC";
-    private static final int RECEIVE_CODEC_FRAMERATE = 30;
-    private static final int SEND_CODEC_FRAMERATE = 30;
-    private static final int INIT_BITRATE = 400;
-
-    private static final int EXPIRARY_YEAR = 2010;
-    private static final int EXPIRARY_MONTH = 10;
-    private static final int EXPIRARY_DAY = 22;
+    private static final int RECEIVE_CODEC_FRAMERATE = 15;
+    private static final int SEND_CODEC_FRAMERATE = 15;
+    private static final int INIT_BITRATE = 500;
+    private static final String LOOPBACK_IP = "127.0.0.1";
 
     private int volumeLevel = 204;
 
@@ -120,7 +117,7 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     private CheckBox cbVoice;
     private boolean enableVoice = true;
     private EditText etRemoteIp;
-    private String remoteIp = "10.1.100.68";
+    private String remoteIp = "";
     private CheckBox cbLoopback;
     private boolean loopbackMode = true;
     private CheckBox cbStats;
@@ -439,6 +436,13 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                         R.layout.row,
                         mVoiceCodecsStrings));
         spVoiceCodecType.setSelection(0);
+        // Find PCMU and use it
+        for (int i=0; i<mVoiceCodecsStrings.length; ++i) {
+            if (mVoiceCodecsStrings[i].contains("PCMU")) {
+                spVoiceCodecType.setSelection(i);
+                break;
+            }
+        }
 
         RadioGroup radioGroup = (RadioGroup)findViewById(R.id.radio_group1);
         radioGroup.clearCheck();
@@ -490,13 +494,23 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         cbEnableNS = (CheckBox) findViewById(R.id.cbNoiseSuppression);
         cbEnableNS.setChecked(enableNS);
 
+        etRemoteIp.setOnClickListener(this);
+        cbLoopback.setOnClickListener(this);
         cbStats.setOnClickListener(this);
         cbEnableNack.setOnClickListener(this);
         cbEnableSpeaker.setOnClickListener(this);
         cbEnableAECM.setOnClickListener(this);
-
         cbEnableAGC.setOnClickListener(this);
         cbEnableNS.setOnClickListener(this);
+
+        if (loopbackMode) {
+            remoteIp = LOOPBACK_IP;
+            etRemoteIp.setText(remoteIp);
+        }
+        else {
+            GetLocalIpAddress();
+            etRemoteIp.setText(remoteIp);
+        }
 
         // Read settings to refresh each configuration
         ReadSettings();
@@ -745,6 +759,20 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                 StopAll();
                 finish();
                 break;
+            case R.id.cbLoopback:
+                loopbackMode  = cbLoopback.isChecked();
+                if (loopbackMode) {
+                    remoteIp = LOOPBACK_IP;
+                    etRemoteIp.setText(LOOPBACK_IP);
+                }
+                else {
+                    GetLocalIpAddress();
+                    etRemoteIp.setText(remoteIp);
+                }
+                break;
+            case R.id.etRemoteIp:
+                remoteIp = etRemoteIp.getText().toString();
+                break;
             case R.id.cbStats:
                 isStatsOn = cbStats.isChecked();
                 if (isStatsOn) {
@@ -822,11 +850,6 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         enableAGC  = cbEnableAGC.isChecked();
         enableAECM  = cbEnableAECM.isChecked();
         enableNS  = cbEnableNS.isChecked();
-
-        if (loopbackMode)
-            remoteIp = "127.0.0.1";
-        else
-            remoteIp = etRemoteIp.getText().toString();
     }
 
     public void onItemSelected(AdapterView<?> adapterView, View view,
