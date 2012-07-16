@@ -644,7 +644,7 @@ int main(int argc, char* argv[])
             if (stereoMode > stereoModeMono)
             {
                 // stereo
-                WebRtc_Word16 tempLen; 
+                WebRtc_Word16 tempLen;
                 tempLen = NetEQvector[0]->recOut( out_data, msInfo ); // master
                 outLen = NetEQvector[1]->recOut( &out_data[tempLen], msInfo ); // slave
 
@@ -715,8 +715,9 @@ int main(int argc, char* argv[])
  //   }
     free(msInfo);
 
-    for (std::vector<NETEQTEST_NetEQClass *>::iterator it = NetEQvector.begin(); 
-        it < NetEQvector.end(); delete *it++);
+    for (std::vector<NETEQTEST_NetEQClass *>::iterator it = NetEQvector.begin();
+        it < NetEQvector.end(); delete *it++) {
+    }
 
     printf("\nSimulation done!\n");
 
@@ -885,7 +886,7 @@ void parsePtypeFile(FILE *ptypeFile, std::map<WebRtc_UWord8, decoderStruct>* dec
             bool isStereo = false;
 
             if (codec[L-1] == '*') {
-                // stereo codec 
+                // stereo codec
                 isStereo = true;
 
                 // remove '*'
@@ -1187,7 +1188,7 @@ void parsePtypeFile(FILE *ptypeFile, std::map<WebRtc_UWord8, decoderStruct>* dec
             else if(isStereo)
             {
                 switch(tempDecoder.codec) {
-                    // sample based codecs 
+                    // sample based codecs
                     case kDecoderPCMu:
                     case kDecoderPCMa:
                     case kDecoderG722:
@@ -1592,7 +1593,7 @@ int doAPItest() {
     printf("NetEq version: %s\n\n", version);
 
     /* test that API functions return -1 if instance is NULL */
-#define CHECK_MINUS_ONE(x) {int errCode = x; if((errCode)!=-1){printf("\n API test failed at line %d: %s. Function did not return -1 as expected\n",__LINE__,#x); return(-1);}} 
+#define CHECK_MINUS_ONE(x) {int errCode = x; if((errCode)!=-1){printf("\n API test failed at line %d: %s. Function did not return -1 as expected\n",__LINE__,#x); return(-1);}}
 //#define RESET_ERROR(x) ((MainInst_t*) x)->ErrorCode = 0;
     inst = NULL;
 

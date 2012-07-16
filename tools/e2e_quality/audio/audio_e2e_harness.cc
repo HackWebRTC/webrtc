@@ -86,7 +86,8 @@ void RunHarness() {
   ASSERT_EQ(0, base->StartSend(channel));
 
   // Run forever...
-  while (1);
+  while (1) {
+  }
 }
 
 }  // namespace

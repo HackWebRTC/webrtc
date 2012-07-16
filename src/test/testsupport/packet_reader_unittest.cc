@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -111,12 +111,13 @@ TEST_F(PacketReaderTest, NormalLargeData) {
 // Test with empty data.
 TEST_F(PacketReaderTest, EmptyData) {
   const int kDataLengthInBytes = 0;
-  WebRtc_UWord8* data = new WebRtc_UWord8[kDataLengthInBytes];
+  // But don't really try to allocate a zero-length array...
+  WebRtc_UWord8 data[kPacketSizeInBytes];
+  WebRtc_UWord8* data_pointer = data;
   reader_->InitializeReading(data, kDataLengthInBytes, kPacketSizeInBytes);
-  EXPECT_EQ(kDataLengthInBytes, reader_->NextPacket(&data));
+  EXPECT_EQ(kDataLengthInBytes, reader_->NextPacket(&data_pointer));
   // Do it again to make sure nothing changes
-  EXPECT_EQ(kDataLengthInBytes, reader_->NextPacket(&data));
-  delete[] data;
+  EXPECT_EQ(kDataLengthInBytes, reader_->NextPacket(&data_pointer));
 }
 
 }  // namespace test

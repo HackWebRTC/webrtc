@@ -164,7 +164,8 @@ int RtpPlay(CmdArgs& args)
                 return -1;
             }
         }
-        while (vcm->DecodeDualFrame(0) == 1);
+        while (vcm->DecodeDualFrame(0) == 1) {
+        }
         if (vcm->TimeUntilNextProcess() <= 0)
         {
             vcm->Process();
