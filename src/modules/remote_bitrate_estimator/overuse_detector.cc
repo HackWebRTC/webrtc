@@ -29,7 +29,6 @@ extern MatlabEngine eng;  // global variable defined elsewhere
 namespace webrtc {
 OverUseDetector::OverUseDetector(const OverUseDetectorOptions& options)
     : options_(options),
-      first_packet_(true),
       current_frame_(),
       prev_frame_(),
       num_of_deltas_(0),

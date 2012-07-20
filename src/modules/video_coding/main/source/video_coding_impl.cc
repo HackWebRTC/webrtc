@@ -64,7 +64,9 @@ _receiveStatsCallback(NULL),
 _packetRequestCallback(NULL),
 _decoder(NULL),
 _dualDecoder(NULL),
+#ifdef DEBUG_DECODER_BIT_STREAM
 _bitStreamBeforeDecoder(NULL),
+#endif
 _frameFromFile(),
 _keyRequestMode(kKeyOnError),
 _scheduleKeyRequest(false),
@@ -76,7 +78,9 @@ _nextFrameType(kVideoFrameDelta),
 _mediaOpt(id, clock_),
 _sendCodecType(kVideoCodecUnknown),
 _sendStatsCallback(NULL),
+#ifdef DEBUG_ENCODER_INPUT
 _encoderInputFile(NULL),
+#endif
 
 _codecDataBase(id),
 _receiveStatsTimer(1000, clock_),

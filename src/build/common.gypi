@@ -174,17 +174,6 @@
           'WEBRTC_ANDROID_OPENSLES',
          ],
       }],
-      ['clang==1', {
-        'xcode_settings': {
-          'WARNING_CFLAGS': [
-            # TODO(thakis): Remove once all violations are fixed.
-            '-Wno-unused-private-field',
-          ],
-        },
-        'cflags': [
-          '-Wno-unused-private-field',
-        ]
-      }],
     ], # conditions
   }, # target_defaults
 }

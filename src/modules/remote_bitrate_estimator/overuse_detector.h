@@ -74,7 +74,6 @@ class OverUseDetector {
   OverUseDetectorOptions options_;  // Must be first member
                                     // variable. Cannot be const
                                     // because we need to be copyable.
-  bool first_packet_;
   FrameSample current_frame_;
   FrameSample prev_frame_;
   uint16_t num_of_deltas_;

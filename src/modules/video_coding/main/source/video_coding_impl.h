@@ -285,7 +285,9 @@ private:
     VCMPacketRequestCallback*           _packetRequestCallback;
     VCMGenericDecoder*                  _decoder;
     VCMGenericDecoder*                  _dualDecoder;
+#ifdef DEBUG_DECODER_BIT_STREAM
     FILE*                               _bitStreamBeforeDecoder;
+#endif
     VCMFrameBuffer                      _frameFromFile;
     VCMKeyRequestMode                   _keyRequestMode;
     bool                                _scheduleKeyRequest;
@@ -297,7 +299,9 @@ private:
     VCMMediaOptimization                _mediaOpt;
     VideoCodecType                      _sendCodecType;
     VCMSendStatisticsCallback*          _sendStatsCallback;
+#ifdef DEBUG_ENCODER_INPUT
     FILE*                               _encoderInputFile;
+#endif
 
     VCMCodecDataBase                    _codecDataBase;
     VCMProcessTimer                     _receiveStatsTimer;

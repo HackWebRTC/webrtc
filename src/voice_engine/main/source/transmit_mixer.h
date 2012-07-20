@@ -233,7 +233,6 @@ private:
     bool _mute;
     WebRtc_Word32 _remainingMuteMicTimeMs;
     int _mixingFrequency;
-    bool _includeAudioLevelIndication;
     bool stereo_codec_;
     bool swap_stereo_channels_;
 };
