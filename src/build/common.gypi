@@ -13,12 +13,22 @@
     # These variables need to be nested in order to use them in a conditions
     # block to set other variables.
     'variables': {
-      # This will be set to zero in the supplement.gypi triggered by a gclient
-      # hook in the standalone build.
-      'build_with_chromium%': 1,
+      'variables': {
+        # This will be set to zero in the supplement.gypi triggered by a gclient
+        # hook in the standalone build.
+        'build_with_chromium%': 1,
+      },
+      'build_with_chromium%': '<(build_with_chromium)',
+      'conditions': [
+        ['build_with_chromium==1', {
+          'webrtc_root%': '<(DEPTH)/third_party/webrtc',
+        }, {
+          'webrtc_root%': '<(DEPTH)/src',
+        }],
+      ],
     },
-
     'build_with_chromium%': '<(build_with_chromium)',
+    'webrtc_root%': '<(webrtc_root)',
 
     # The Chromium common.gypi we use treats all gyp files without
     # chromium_code==1 as third party code. This disables many of the
@@ -44,6 +54,8 @@
     'build_libjpeg%': 1,
     'build_libyuv%': 1,
 
+    'webrtc_vp8_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp8',
+
     'conditions': [
       ['OS=="android"', {
         # On Android, we always prefer fixed_point to reduce CPU usage.
@@ -63,16 +75,14 @@
         # Exclude internal video render module in Chromium build.
         'include_internal_video_render%': 0,
 
+        'include_video_engine_file_api%': 0,
+
         # Disable the use of protocol buffers in production code.
         'enable_protobuf%': 0,
 
         # Don't include tests for Chromium builds.
         'include_tests%': 0,
-
-        'webrtc_root%': '<(DEPTH)/third_party/webrtc',
-      }, {
-        # Settings for the standalone (not-in-Chromium) build.
-
+      }, { # Settings for the standalone (not-in-Chromium) build.
         'include_pulse_audio%': 1,
 
         'include_internal_audio_device%': 1,
@@ -81,11 +91,11 @@
 
         'include_internal_video_render%': 1,
 
+        'include_video_engine_file_api%': 1,
+
         'enable_protobuf%': 1,
 
         'include_tests%': 1,
-
-        'webrtc_root%': '<(DEPTH)/src',
 
         # TODO(andrew): For now, disable the Chrome plugins, which causes a
         # flood of chromium-style warnings. Investigate enabling them:
@@ -96,7 +106,8 @@
   },
   'target_defaults': {
     'include_dirs': [
-      '..','../..', # common_types.h, typedefs.h
+      # TODO(andrew): we should be able to just use <(webrtc_root) here.
+      '..','../..',
     ],
     'defines': [
       'WEBRTC_SVNREVISION="<!(python <(webrtc_root)/build/version.py)"',
@@ -156,7 +167,7 @@
         'msvs_disabled_warnings!': [4189,],
       }],
       ['OS=="android"', {
-        # On android, we always perfer fixed_point to reduce cpu usage
+        # On Android, we always prefer fixed_point to reduce CPU usage.
         'prefer_fixed_point%': 1,
 
         'defines': [

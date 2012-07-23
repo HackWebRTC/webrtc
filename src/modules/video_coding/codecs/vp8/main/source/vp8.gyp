@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -7,6 +7,10 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
+  'includes': [
+    '../../../../../../build/common.gypi',
+    '../../../test_framework/test_framework.gypi'
+  ],
   'targets': [
     {
       'target_name': 'webrtc_vp8',
@@ -91,10 +95,10 @@
           'target_name': 'vp8_unittests',
           'type': 'executable',
           'dependencies': [
-            '<(webrtc_root)/test/test.gyp:test_support_main',
+            'webrtc_vp8',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(DEPTH)/third_party/libvpx/libvpx.gyp:libvpx',
-            'webrtc_vp8',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'include_dirs': [
             '<(DEPTH)/third_party/libvpx/source/libvpx',
@@ -108,9 +112,3 @@
     }], # include_tests
   ],
 }
-
-# Local Variables:
-# tab-width:2
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=2 shiftwidth=2:

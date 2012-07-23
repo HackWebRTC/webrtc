@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -16,9 +16,9 @@
           'dependencies': [
             'video_codecs_test_framework',
             'webrtc_video_coding',
-            'webrtc_vp8',
-            '<(webrtc_root)/test/metrics.gyp:metrics',
             '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+            '<(webrtc_root)/test/metrics.gyp:metrics',
+            '<(webrtc_vp8_dir)/main/source/vp8.gyp:webrtc_vp8',
            ],
            'sources': [
              'video_quality_measurement.cc',
@@ -28,9 +28,3 @@
     }], # include_tests
   ], # conditions
 }
-
-# Local Variables:
-# tab-width:2
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=2 shiftwidth=2:

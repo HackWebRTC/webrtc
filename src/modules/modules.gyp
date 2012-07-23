@@ -32,8 +32,6 @@
     'udp_transport/source/udp_transport.gypi',
     'utility/source/utility.gypi',
     'video_coding/codecs/i420/main/source/i420.gypi',
-    'video_coding/codecs/test_framework/test_framework.gypi',
-    'video_coding/codecs/vp8/main/source/vp8.gypi',
     'video_coding/main/source/video_coding.gypi',
     'video_capture/main/source/video_capture.gypi',
     'video_processing/main/source/video_processing.gypi',

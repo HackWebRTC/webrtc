@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -7,6 +7,13 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
+  'target_defaults': {
+    'conditions': [
+      ['include_video_engine_file_api==1', {
+        'defines': [ 'WEBRTC_VIDEO_ENGINE_FILE_API', ],
+      }],
+    ],
+  },
   'targets': [
     {
       'target_name': 'video_engine_core',
@@ -158,9 +165,3 @@
     }], # include_tests
   ], # conditions
 }
-
-# Local Variables:
-# tab-width:2
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=2 shiftwidth=2:
