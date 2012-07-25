@@ -75,7 +75,9 @@ CaptureInputPin::GetMediaType (IN int iPosition, OUT CMediaType * pmt)
     pvi->bmiHeader.biPlanes = 1;
     pvi->bmiHeader.biClrImportant = 0;
     pvi->bmiHeader.biClrUsed = 0;
-    pvi->AvgTimePerFrame = 10000000/_requestedCapability.maxFPS;
+    if (_requestedCapability.maxFPS != 0) {
+        pvi->AvgTimePerFrame = 10000000/_requestedCapability.maxFPS;
+    }
 
     SetRectEmpty(&(pvi->rcSource)); // we want the whole image area rendered.
     SetRectEmpty(&(pvi->rcTarget)); // no particular destination rectangle
