@@ -247,7 +247,7 @@ include $(PREBUILT_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE := libwebrtc_vp8
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libwebrtc_vp8.a
+    $(MY_LIBS_PATH)/src/modules/video_coding/codecs/vp8/main/source/libwebrtc_vp8.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
