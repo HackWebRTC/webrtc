@@ -70,8 +70,7 @@ int ViEFileImage::ConvertJPEGToVideoFrame(int engine_id,
   fclose(image_file);
 
   JpegDecoder decoder;
-  RawImage decoded_image;
-  int ret = decoder.Decode(image_buffer, decoded_image);
+  int ret = decoder.Decode(image_buffer, *video_frame);
 
   delete [] image_buffer._buffer;
   image_buffer._buffer = NULL;
@@ -86,25 +85,6 @@ int ViEFileImage::ConvertJPEGToVideoFrame(int engine_id,
                  "%s could not convert jpeg's data to i420 format",
                  __FUNCTION__, file_nameUTF8);
   }
-
-  // Image length in I420.
-  WebRtc_UWord32 image_length = (WebRtc_UWord32)(decoded_image._width *
-                                                 decoded_image._height * 1.5);
-  if (-1 == video_frame->Swap(decoded_image._buffer, image_length,
-                             image_length)) {
-    WEBRTC_TRACE(kTraceDebug, kTraceVideo, engine_id,
-                 "%s could not copy frame image_decoded_buffer to video_frame ",
-                 __FUNCTION__, file_nameUTF8);
-    return -1;
-  }
-
-  if (decoded_image._buffer) {
-    delete [] decoded_image._buffer;
-    decoded_image._buffer = NULL;
-  }
-
-  video_frame->SetWidth(decoded_image._width);
-  video_frame->SetHeight(decoded_image._height);
   return 0;
 }
 
