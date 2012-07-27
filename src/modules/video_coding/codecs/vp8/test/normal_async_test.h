@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_NORMAL_ASYNC_TEST_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_NORMAL_ASYNC_TEST_H_
 
-#include "../../../test_framework/normal_async_test.h"
+#include "modules/video_coding/codecs/test_framework/normal_async_test.h"
 
 class VP8NormalAsyncTest : public NormalAsyncTest
 {

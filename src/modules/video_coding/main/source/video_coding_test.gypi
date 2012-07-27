@@ -22,7 +22,7 @@
       ],
       'include_dirs': [
          '../../../interface',
-         '../../codecs/vp8/main/interface',
+         '../../codecs/vp8/include',
          '../../../../system_wrappers/interface',
           '../../../../common_video/interface',
          '../source',

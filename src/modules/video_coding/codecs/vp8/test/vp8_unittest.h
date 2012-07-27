@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_VP8_UNITTEST_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_VP8_UNITTEST_H_
 
-#include "../../../test_framework/unit_test.h"
+#include "modules/video_coding/codecs/test_framework/unit_test.h"
 
 class VP8UnitTest : public UnitTest
 {

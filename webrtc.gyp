@@ -22,7 +22,7 @@
         'src/test/metrics.gyp:*',
         'src/test/test.gyp:*',
         'tools/e2e_quality/e2e_quality.gyp:*',
-        '<(webrtc_vp8_dir)/main/source/vp8.gyp:*'
+        '<(webrtc_vp8_dir)/vp8.gyp:*'
       ],
     },
   ],

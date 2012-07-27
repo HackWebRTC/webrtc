@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_BENCHMARK_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_BENCHMARK_H_
 
-#include "../../../test_framework/benchmark.h"
+#include "modules/video_coding/codecs/test_framework/benchmark.h"
 
 class VP8Benchmark : public Benchmark
 {

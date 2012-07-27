@@ -15,7 +15,7 @@
 
 #include "modules/interface/module_common_types.h"
 #include "modules/video_coding/codecs/interface/video_codec_interface.h"
-#include "modules/video_coding/codecs/vp8/main/interface/vp8_common_types.h"
+#include "modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"

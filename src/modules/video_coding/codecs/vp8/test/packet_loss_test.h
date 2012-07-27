@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_PACKET_LOSS_TEST_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_PACKET_LOSS_TEST_H_
 
-#include "../../../test_framework/packet_loss_test.h"
+#include "modules/video_coding/codecs/test_framework/packet_loss_test.h"
 
 class VP8PacketLossTest : public PacketLossTest
 {

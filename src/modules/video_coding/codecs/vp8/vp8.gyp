@@ -8,8 +8,8 @@
 
 {
   'includes': [
-    '../../../../../../build/common.gypi',
-    '../../../test_framework/test_framework.gypi'
+    '../../../../build/common.gypi',
+    '../test_framework/test_framework.gypi'
   ],
   'targets': [
     {
@@ -21,12 +21,15 @@
         '<(webrtc_root)/common_video/common_video.gyp:webrtc_libyuv',
       ],
       'include_dirs': [
-        '../interface',
+        'include',
         '<(webrtc_root)/common_video/interface',
         '<(webrtc_root)/modules/video_coding/codecs/interface',
         '<(webrtc_root)/modules/interface',
       ],
       'conditions': [
+        # TODO(mikhal): Investigate this mechanism for handling differences
+        # between the Chromium and standalone builds.
+        # http://code.google.com/p/webrtc/issues/detail?id=201
         ['build_with_chromium==1', {
           'defines': [
             'WEBRTC_LIBVPX_VERSION=960' # Bali
@@ -43,7 +46,7 @@
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../interface',
+          'include',
           '<(webrtc_root)/common_video/interface',
           '<(webrtc_root)/modules/video_coding/codecs/interface',
         ],
@@ -51,8 +54,8 @@
       'sources': [
         'reference_picture_selection.h',
         'reference_picture_selection.cc',
-        '../interface/vp8.h',
-        '../interface/vp8_common_types.h',
+        'include/vp8.h',
+        'include/vp8_common_types.h',
         'vp8.cc',
       ],
     },
@@ -74,21 +77,21 @@
           ],
          'sources': [
             # header files
-            '../test/benchmark.h',
-            '../test/dual_decoder_test.h',
-            '../test/normal_async_test.h',
-            '../test/packet_loss_test.h',
-            '../test/rps_test.h',
-            '../test/vp8_unittest.h',
+            'test/benchmark.h',
+            'test/dual_decoder_test.h',
+            'test/normal_async_test.h',
+            'test/packet_loss_test.h',
+            'test/rps_test.h',
+            'test/vp8_unittest.h',
 
            # source files
-            '../test/benchmark.cc',
-            '../test/dual_decoder_test.cc',
-            '../test/normal_async_test.cc',
-            '../test/packet_loss_test.cc',
-            '../test/rps_test.cc',
-            '../test/tester.cc',
-            '../test/vp8_unittest.cc',
+            'test/benchmark.cc',
+            'test/dual_decoder_test.cc',
+            'test/normal_async_test.cc',
+            'test/packet_loss_test.cc',
+            'test/rps_test.cc',
+            'test/tester.cc',
+            'test/vp8_unittest.cc',
           ],
         },
         {

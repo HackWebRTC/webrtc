@@ -18,7 +18,7 @@
             'webrtc_video_coding',
             '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
             '<(webrtc_root)/test/metrics.gyp:metrics',
-            '<(webrtc_vp8_dir)/main/source/vp8.gyp:webrtc_vp8',
+            '<(webrtc_vp8_dir)/vp8.gyp:webrtc_vp8',
            ],
            'sources': [
              'video_quality_measurement.cc',

@@ -12,7 +12,7 @@
 
 #include <string.h>
 
-#include "../../../test_framework/video_source.h"
+#include "modules/video_coding/codecs/test_framework/video_source.h"
 #include "gtest/gtest.h"
 #include "testsupport/fileutils.h"
 #include "vp8.h"

@@ -15,7 +15,7 @@
         'webrtc_i420',
         '<(webrtc_root)/common_video/common_video.gyp:webrtc_libyuv',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-        '<(webrtc_vp8_dir)/main/source/vp8.gyp:webrtc_vp8',
+        '<(webrtc_vp8_dir)/vp8.gyp:webrtc_vp8',
       ],
       'include_dirs': [
         '../interface',

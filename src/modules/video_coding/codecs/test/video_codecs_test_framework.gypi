@@ -53,7 +53,7 @@
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/test/metrics.gyp:metrics',
             '<(webrtc_root)/test/test.gyp:test_support_main',
-            '<(webrtc_vp8_dir)/main/source/vp8.gyp:webrtc_vp8',
+            '<(webrtc_vp8_dir)/vp8.gyp:webrtc_vp8',
           ],
           'sources': [
             'videoprocessor_integrationtest.cc',
