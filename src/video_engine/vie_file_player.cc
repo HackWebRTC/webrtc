@@ -18,9 +18,9 @@
 #include "system_wrappers/interface/trace.h"
 #include "video_engine/include/vie_file.h"
 #include "video_engine/vie_defines.h"
-#include "voice_engine/main/interface/voe_base.h"
-#include "voice_engine/main/interface/voe_file.h"
-#include "voice_engine/main/interface/voe_video_sync.h"
+#include "voice_engine/include/voe_base.h"
+#include "voice_engine/include/voe_file.h"
+#include "voice_engine/include/voe_video_sync.h"
 
 namespace webrtc {
 

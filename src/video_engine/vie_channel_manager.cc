@@ -20,7 +20,7 @@
 #include "video_engine/vie_defines.h"
 #include "video_engine/vie_encoder.h"
 #include "video_engine/vie_remb.h"
-#include "voice_engine/main/interface/voe_video_sync.h"
+#include "voice_engine/include/voe_video_sync.h"
 
 namespace webrtc {
 

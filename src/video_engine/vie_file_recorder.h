@@ -14,7 +14,7 @@
 #include "modules/utility/interface/file_recorder.h"
 #include "typedefs.h"  // NOLINT
 #include "video_engine/include/vie_file.h"
-#include "voice_engine/main/interface/voe_file.h"
+#include "voice_engine/include/voe_file.h"
 
 namespace webrtc {
 

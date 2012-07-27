@@ -22,7 +22,7 @@
 #include "video_engine/include/vie_network.h"
 #include "video_engine/include/vie_render.h"
 #include "video_engine/include/vie_rtp_rtcp.h"
-#include "voice_engine/main/interface/voe_base.h"
+#include "voice_engine/include/voe_base.h"
 
 class TestCodecObserver
     : public webrtc::ViEEncoderObserver,

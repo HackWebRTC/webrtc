@@ -12,7 +12,7 @@
 #include <numeric>
 #include <vector>
 
-#include "voice_engine/main/test/auto_test/fixtures/after_streaming_fixture.h"
+#include "voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"
 
 #ifdef MAC_IPHONE
   const int kMinimumReasonableDelayEstimateMs = 30;

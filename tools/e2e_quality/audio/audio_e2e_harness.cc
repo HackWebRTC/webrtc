@@ -15,10 +15,10 @@
 #include "gflags/gflags.h"
 #include "gtest/gtest.h"
 
-#include "src/voice_engine/main/interface/voe_audio_processing.h"
-#include "src/voice_engine/main/interface/voe_base.h"
-#include "src/voice_engine/main/interface/voe_codec.h"
-#include "src/voice_engine/main/interface/voe_hardware.h"
+#include "src/voice_engine/include/voe_audio_processing.h"
+#include "src/voice_engine/include/voe_base.h"
+#include "src/voice_engine/include/voe_codec.h"
+#include "src/voice_engine/include/voe_hardware.h"
 
 DEFINE_string(render, "render", "render device name");
 DEFINE_string(codec, "ISAC", "codec name");

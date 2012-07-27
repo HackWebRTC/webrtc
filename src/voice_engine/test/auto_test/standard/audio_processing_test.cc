@@ -9,8 +9,8 @@
  */
 
 #include "testsupport/fileutils.h"
-#include "voice_engine/main/test/auto_test/fixtures/after_streaming_fixture.h"
-#include "voice_engine/main/test/auto_test/voe_standard_test.h"
+#include "voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"
+#include "voice_engine/test/auto_test/voe_standard_test.h"
 
 class RxCallback : public webrtc::VoERxVadCallback {
  public:

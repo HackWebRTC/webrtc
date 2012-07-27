@@ -25,7 +25,7 @@
 #include "voe_stress_test.h"
 #include "voe_standard_test.h"
 
-#include "../../source/voice_engine_defines.h"  // defines build macros
+#include "voice_engine/voice_engine_defines.h"  // defines build macros
 #include "thread_wrapper.h"
 
 using namespace webrtc;

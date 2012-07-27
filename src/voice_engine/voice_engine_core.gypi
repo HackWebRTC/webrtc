@@ -25,35 +25,33 @@
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
-        '../../..',
-        '../interface',
+        'include',
         '<(webrtc_root)/modules/audio_device/main/source',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../../..',
-          '../interface',
+          'include',
         ],
       },
       'sources': [
-        '../../../common_types.h',
-        '../../../engine_configurations.h',
-        '../../../typedefs.h',
-        '../interface/voe_audio_processing.h',
-        '../interface/voe_base.h',
-        '../interface/voe_call_report.h',
-        '../interface/voe_codec.h',
-        '../interface/voe_dtmf.h',
-        '../interface/voe_encryption.h',
-        '../interface/voe_errors.h',
-        '../interface/voe_external_media.h',
-        '../interface/voe_file.h',
-        '../interface/voe_hardware.h',
-        '../interface/voe_neteq_stats.h',
-        '../interface/voe_network.h',
-        '../interface/voe_rtp_rtcp.h',
-        '../interface/voe_video_sync.h',
-        '../interface/voe_volume_control.h',
+        '../common_types.h',
+        '../engine_configurations.h',
+        '../typedefs.h',
+        'include/voe_audio_processing.h',
+        'include/voe_base.h',
+        'include/voe_call_report.h',
+        'include/voe_codec.h',
+        'include/voe_dtmf.h',
+        'include/voe_encryption.h',
+        'include/voe_errors.h',
+        'include/voe_external_media.h',
+        'include/voe_file.h',
+        'include/voe_hardware.h',
+        'include/voe_neteq_stats.h',
+        'include/voe_network.h',
+        'include/voe_rtp_rtcp.h',
+        'include/voe_video_sync.h',
+        'include/voe_volume_control.h',
         'channel.cc',
         'channel.h',
         'channel_manager.cc',
@@ -138,7 +136,7 @@
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
           ],
           'include_dirs': [
-            '../interface',
+            'include',
           ],
           'sources': [
             'channel_unittest.cc',
@@ -149,9 +147,3 @@
     }], # include_tests
   ], # conditions
 }
-
-# Local Variables:
-# tab-width:2
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=2 shiftwidth=2:

@@ -11,7 +11,7 @@
 #include "gtest/gtest.h"
 #include "modules/media_file/interface/media_file.h"
 #include "testsupport/fileutils.h"
-#include "voice_engine/main/source/voice_engine_defines.h" // defines SLEEP
+#include "voice_engine/voice_engine_defines.h" // defines SLEEP
 
 class MediaFileTest : public testing::Test {
  protected:

@@ -18,7 +18,7 @@
 #include <tchar.h>
 #endif
 
-#include "voice_engine/main/test/auto_test/voe_standard_test.h"
+#include "voice_engine/test/auto_test/voe_standard_test.h"
 
 #if defined (_ENABLE_VISUAL_LEAK_DETECTOR_) && defined(_DEBUG) && \
     defined(_WIN32) && !defined(_INSTRUMENTATION_TESTING_)
@@ -28,17 +28,17 @@
 #include "system_wrappers/interface/critical_section_wrapper.h"
 #include "system_wrappers/interface/event_wrapper.h"
 #include "system_wrappers/interface/thread_wrapper.h"
-#include "voice_engine/main/source/voice_engine_defines.h"
-#include "voice_engine/main/test/auto_test/automated_mode.h"
+#include "voice_engine/voice_engine_defines.h"
+#include "voice_engine/test/auto_test/automated_mode.h"
 
 #ifdef _TEST_NETEQ_STATS_
-#include "voice_engine/main/interface/voe_neteq_stats.h"
+#include "voice_engine/include/voe_neteq_stats.h"
 #endif
 
-#include "voice_engine/main/test/auto_test/voe_cpu_test.h"
-#include "voice_engine/main/test/auto_test/voe_extended_test.h"
-#include "voice_engine/main/test/auto_test/voe_stress_test.h"
-#include "voice_engine/main/test/auto_test/voe_unit_test.h"
+#include "voice_engine/test/auto_test/voe_cpu_test.h"
+#include "voice_engine/test/auto_test/voe_extended_test.h"
+#include "voice_engine/test/auto_test/voe_stress_test.h"
+#include "voice_engine/test/auto_test/voe_unit_test.h"
 
 using namespace webrtc;
 

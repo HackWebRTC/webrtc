@@ -26,7 +26,7 @@
         '<(webrtc_root)/modules/interface',
         # TODO(phoglund): We only depend on voice_engine_defines.h here -
         # move that file to interface and then remove this dependency.
-        '<(webrtc_root)/voice_engine/main/source',
+        '<(webrtc_root)/voice_engine',
         '<(webrtc_root)/modules/audio_device/main/interface',
       ],
       'sources': [

@@ -293,7 +293,7 @@ LOCAL_C_INCLUDES := \
     external/gtest/include \
     $(LOCAL_PATH)/../../../../.. \
     $(LOCAL_PATH)/../../../../include \
-    $(LOCAL_PATH)/../../../../../voice_engine/main/interface
+    $(LOCAL_PATH)/../../../../../voice_engine/include
 
 LOCAL_LDLIBS := \
     -llog \

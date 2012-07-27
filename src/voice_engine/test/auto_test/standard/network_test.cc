@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "voice_engine/main/test/auto_test/fakes/fake_external_transport.h"
-#include "voice_engine/main/test/auto_test/fixtures/after_streaming_fixture.h"
-#include "voice_engine/main/test/auto_test/voe_test_interface.h"
-#include "voice_engine/main/interface/mock/mock_voe_connection_observer.h"
-#include "voice_engine/main/interface/mock/mock_voe_observer.h"
+#include "voice_engine/test/auto_test/fakes/fake_external_transport.h"
+#include "voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"
+#include "voice_engine/test/auto_test/voe_test_interface.h"
+#include "voice_engine/include/mock/mock_voe_connection_observer.h"
+#include "voice_engine/include/mock/mock_voe_observer.h"
 
 static const int kDefaultRtpPort = 8000;
 static const int kDefaultRtcpPort = 8001;

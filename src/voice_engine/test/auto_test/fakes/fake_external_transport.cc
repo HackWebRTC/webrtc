@@ -11,9 +11,9 @@
 #include "system_wrappers/interface/critical_section_wrapper.h"
 #include "system_wrappers/interface/event_wrapper.h"
 #include "system_wrappers/interface/thread_wrapper.h"
-#include "voice_engine/main/interface/voe_network.h"
-#include "voice_engine/main/source/voice_engine_defines.h"
-#include "voice_engine/main/test/auto_test/fakes/fake_external_transport.h"
+#include "voice_engine/include/voe_network.h"
+#include "voice_engine/voice_engine_defines.h"
+#include "voice_engine/test/auto_test/fakes/fake_external_transport.h"
 
 FakeExternalTransport::FakeExternalTransport(webrtc::VoENetwork* ptr)
     : my_network_(ptr),

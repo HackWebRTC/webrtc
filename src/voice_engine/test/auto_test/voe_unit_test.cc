@@ -20,8 +20,8 @@
 
 #include "system_wrappers/interface/thread_wrapper.h"
 #include "testsupport/fileutils.h"
-#include "voice_engine/main/source/voice_engine_defines.h"
-#include "voice_engine/main/test/auto_test/fakes/fake_media_process.h"
+#include "voice_engine/voice_engine_defines.h"
+#include "voice_engine/test/auto_test/fakes/fake_media_process.h"
 
 using namespace webrtc;
 

@@ -17,8 +17,8 @@
 #include "system_wrappers/interface/ref_count.h"
 #include "system_wrappers/interface/thread_wrapper.h"
 #include "testsupport/fileutils.h"
-#include "voice_engine/main/source/voice_engine_defines.h"
-#include "voice_engine/main/test/auto_test/voe_extended_test.h"
+#include "voice_engine/voice_engine_defines.h"
+#include "voice_engine/test/auto_test/voe_extended_test.h"
 
 #if defined(_WIN32)
 #include <conio.h>

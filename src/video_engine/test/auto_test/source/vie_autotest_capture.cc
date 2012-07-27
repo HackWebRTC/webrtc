@@ -23,7 +23,7 @@
 #include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
 #include "video_engine/test/libvietest/include/tb_interfaces.h"
 #include "video_engine/test/libvietest/include/tb_video_channel.h"
-#include "voice_engine/main/interface/voe_base.h"
+#include "voice_engine/include/voe_base.h"
 
 DEFINE_bool(capture_test_ensure_resolution_alignment_in_capture_device, true,
             "If true, we will give resolutions slightly below a reasonable "

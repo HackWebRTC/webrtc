@@ -15,7 +15,7 @@
 #include "system_wrappers/interface/critical_section_wrapper.h"
 #include "system_wrappers/interface/trace.h"
 #include "video_engine/stream_synchronization.h"
-#include "voice_engine/main/interface/voe_video_sync.h"
+#include "voice_engine/include/voe_video_sync.h"
 
 namespace webrtc {
 

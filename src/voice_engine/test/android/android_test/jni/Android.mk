@@ -37,7 +37,7 @@ include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/rtp_rtcp/source
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/udp_transport/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/utility/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/system_wrappers/source/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/voice_engine/main/source/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/voice_engine/Android.mk
 
 LOCAL_PATH := $(call my-dir)
 
@@ -116,7 +116,7 @@ include $(BUILD_SHARED_LIBRARY)
 
 ###
 
-include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/voice_engine/main/test/cmd_test/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/voice_engine/test/cmd_test/Android.mk
 
 else
 

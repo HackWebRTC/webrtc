@@ -11,7 +11,7 @@
 #include <ctime>
 
 #include "test/libtest/include/bit_flip_encryption.h"
-#include "voice_engine/main/test/auto_test/fixtures/after_streaming_fixture.h"
+#include "voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"
 
 class RtpFuzzTest : public AfterStreamingFixture {
  protected:

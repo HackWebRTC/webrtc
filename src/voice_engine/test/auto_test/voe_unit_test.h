@@ -11,7 +11,7 @@
 #ifndef WEBRTC_VOICE_ENGINE_VOE_UNIT_TEST_H
 #define WEBRTC_VOICE_ENGINE_VOE_UNIT_TEST_H
 
-#include "voice_engine/main/test/auto_test/voe_standard_test.h"
+#include "voice_engine/test/auto_test/voe_standard_test.h"
 
 namespace voetest {
 
