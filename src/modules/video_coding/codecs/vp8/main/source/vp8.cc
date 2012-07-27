@@ -16,7 +16,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "common_video/libyuv/include/libyuv.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "module_common_types.h"
 #include "reference_picture_selection.h"
 #include "temporal_layers.h"

@@ -9,11 +9,11 @@
  */
 
 /*
- * WebRTC's Wrapper to libyuv.
+ * WebRTC's wrapper to libyuv.
  */
 
-#ifndef WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_LIBYUV_H_
-#define WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_LIBYUV_H_
+#ifndef WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_
+#define WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_
 
 #include "common_types.h"  // RawVideoTypes.
 #include "typedefs.h"
@@ -147,4 +147,4 @@ double I420SSIM(const uint8_t* ref_frame,
                 int width, int height);
 }
 
-#endif  // WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_LIBYUV_H_
+#endif  // WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_

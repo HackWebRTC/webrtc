@@ -10,7 +10,7 @@
 
 #include "video_render_android_surface_view.h"
 #include "critical_section_wrapper.h"
-#include "common_video/libyuv/include/libyuv.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "tick_util.h"
 
 #ifdef ANDROID_LOG

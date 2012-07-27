@@ -11,7 +11,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "common_video/libyuv/include/libyuv.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "gtest/gtest.h"
 #include "system_wrappers/interface/tick_util.h"
 #include "testsupport/fileutils.h"

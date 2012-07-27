@@ -13,7 +13,7 @@
 
 #include <string>
 
-#include "common_video/libyuv/include/libyuv.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "common_video/libyuv/include/scaler.h"
 #include "modules/interface/module_common_types.h"
 #include "modules/video_coding/codecs/interface/video_codec_interface.h"

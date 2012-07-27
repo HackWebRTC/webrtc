@@ -21,7 +21,7 @@
 #include <sys/time.h>
 #endif
 
-#include "common_video/libyuv/include/libyuv.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_render/main/source/video_render_frames.h"
 #include "system_wrappers/interface/critical_section_wrapper.h"
 #include "system_wrappers/interface/event_wrapper.h"

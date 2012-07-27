@@ -12,7 +12,7 @@
 
 #include <string>
 
-#include "common_video/libyuv/include/libyuv.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "system_wrappers/interface/tick_util.h"
 #include "testsupport/fileutils.h"
 

@@ -55,6 +55,7 @@
     'build_libyuv%': 1,
 
     'webrtc_vp8_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp8',
+    'libyuv_dir%': '<(DEPTH)/third_party/libyuv',
 
     'conditions': [
       ['OS=="android"', {

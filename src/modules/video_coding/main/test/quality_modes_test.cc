@@ -19,7 +19,7 @@
 #include "test_callbacks.h"
 #include "test_macros.h"
 #include "testsupport/metrics/video_metrics.h"
-#include "common_video/libyuv/include/libyuv.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 
 using namespace webrtc;
 

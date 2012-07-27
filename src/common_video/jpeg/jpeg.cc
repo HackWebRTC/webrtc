@@ -17,7 +17,7 @@
 
 #include "common_video/jpeg/include/jpeg.h"
 #include "common_video/jpeg/data_manager.h"
-#include "common_video/libyuv/include/libyuv.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 
 extern "C" {
 #if defined(USE_SYSTEM_LIBJPEG)

@@ -18,17 +18,14 @@
           ],
         }, {
           # Need to add a directory normally exported by libyuv.gyp.
-          'include_dirs': [ '<(DEPTH)/third_party/libyuv/include', ],
+          'include_dirs': [ '<(libyuv_dir)/include', ],
         }],
       ],
       'sources': [
-        'include/libyuv.h',
+        'include/webrtc_libyuv.h',
         'include/scaler.h',
-        'libyuv.cc',
+        'webrtc_libyuv.cc',
         'scaler.cc',
-      ],
-      'include_dirs': [
-        '<(DEPTH)',
       ],
     },
   ], # targets

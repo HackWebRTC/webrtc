@@ -10,7 +10,7 @@
 
 #include "video_capture_impl.h"
 
-#include "common_video/libyuv/include/libyuv.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "critical_section_wrapper.h"
 #include "module_common_types.h"
 #include "ref_count.h"

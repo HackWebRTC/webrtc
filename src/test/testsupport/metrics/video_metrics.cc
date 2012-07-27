@@ -14,7 +14,7 @@
 #include <cassert>
 #include <cstdio>
 
-#include "common_video/libyuv/include/libyuv.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 
 namespace webrtc {
 namespace test {
