@@ -79,7 +79,8 @@ TEST_F(ProducerFecTest, OneFrameFec) {
   uint16_t seq_num = generator_->NextSeqNum();
   RedPacket* packet = producer_->GetFecPacket(kRedPayloadType,
                                               kFecPayloadType,
-                                              seq_num);
+                                              seq_num,
+                                              kRtpHeaderSize);
   EXPECT_FALSE(producer_->FecAvailable());
   ASSERT_TRUE(packet != NULL);
   VerifyHeader(seq_num, last_timestamp,
@@ -121,7 +122,8 @@ TEST_F(ProducerFecTest, TwoFrameFec) {
   uint16_t seq_num = generator_->NextSeqNum();
   RedPacket* packet = producer_->GetFecPacket(kRedPayloadType,
                                               kFecPayloadType,
-                                              seq_num);
+                                              seq_num,
+                                              kRtpHeaderSize);
   EXPECT_FALSE(producer_->FecAvailable());
   EXPECT_TRUE(packet != NULL);
   VerifyHeader(seq_num, last_timestamp,

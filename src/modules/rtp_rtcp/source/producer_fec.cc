@@ -15,8 +15,6 @@
 
 namespace webrtc {
 
-// Minimum RTP header size in bytes.
-enum { kRtpHeaderSize = 12 };
 enum { kREDForFECHeaderLength = 1 };
 // This controls the maximum amount of excess overhead (actual - target)
 // allowed in order to trigger GenerateFEC(), before |params_.max_fec_frames|
@@ -209,8 +207,10 @@ bool ProducerFec::FecAvailable() const {
   return (fec_packets_.size() > 0);
 }
 
-RedPacket* ProducerFec::GetFecPacket(int red_pl_type, int fec_pl_type,
-                                     uint16_t seq_num) {
+RedPacket* ProducerFec::GetFecPacket(int red_pl_type,
+                                     int fec_pl_type,
+                                     uint16_t seq_num,
+                                     int rtp_header_length) {
   if (fec_packets_.empty())
     return NULL;
   // Build FEC packet. The FEC packets in |fec_packets_| doesn't
@@ -220,9 +220,9 @@ RedPacket* ProducerFec::GetFecPacket(int red_pl_type, int fec_pl_type,
   ForwardErrorCorrection::Packet* last_media_packet = media_packets_fec_.back();
   RedPacket* return_packet = new RedPacket(packet_to_send->length +
                                            kREDForFECHeaderLength +
-                                           kRtpHeaderSize);
+                                           rtp_header_length);
   return_packet->CreateHeader(last_media_packet->data,
-                              kRtpHeaderSize,
+                              rtp_header_length,
                               red_pl_type,
                               fec_pl_type);
   return_packet->SetSeqNum(seq_num);
