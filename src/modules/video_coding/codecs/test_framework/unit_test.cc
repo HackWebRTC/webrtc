@@ -585,10 +585,7 @@ UnitTest::Perform()
             WEBRTC_VIDEO_CODEC_OK);
         VideoFrame tempInput;
         unsigned int tmpLength = inputImage.Length() / 4;
-        unsigned int tmpSize = inputImage.Length() / 4;
-        tempInput.Swap(inputImage.Buffer(),
-                       tmpLength,
-                       tmpSize);
+        tempInput.CopyFrame(tmpLength, inputImage.Buffer());
         tempInput.SetWidth(tempInst.width);
         tempInput.SetHeight(tempInst.height);
         VideoFrameType videoFrameType = kDeltaFrame;
@@ -698,6 +695,7 @@ UnitTest::Perform()
     rewind(_sourceFile);
 
     RateControlTests();
+    inputImage.Free();
 
     Teardown();
 }
@@ -771,6 +769,7 @@ UnitTest::RateControlTests()
         ASSERT_TRUE(feof(_sourceFile) != 0);
         rewind(_sourceFile);
     }
+    inputImage.Free();
 }
 
 bool
