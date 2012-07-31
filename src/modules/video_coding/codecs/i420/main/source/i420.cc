@@ -44,8 +44,8 @@ int I420Encoder::Release() {
 }
 
 int I420Encoder::InitEncode(const VideoCodec* codecSettings,
-                        int /*numberOfCores*/,
-                        uint32_t /*maxPayloadSize */) {
+                            int /*numberOfCores*/,
+                            uint32_t /*maxPayloadSize */) {
   if (codecSettings == NULL) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
@@ -76,7 +76,7 @@ int I420Encoder::InitEncode(const VideoCodec* codecSettings,
 
 
 
-int I420Encoder::Encode(const RawImage& inputImage,
+int I420Encoder::Encode(const VideoFrame& inputImage,
                     const CodecSpecificInfo* /*codecSpecificInfo*/,
                     const VideoFrameType /*frameType*/) {
   if (!_inited) {
@@ -87,10 +87,10 @@ int I420Encoder::Encode(const RawImage& inputImage,
   }
 
   _encodedImage._frameType = kKeyFrame; // No coding.
-  _encodedImage._timeStamp = inputImage._timeStamp;
-  _encodedImage._encodedHeight = inputImage._height;
-  _encodedImage._encodedWidth = inputImage._width;
-  if (inputImage._length > _encodedImage._size) {
+  _encodedImage._timeStamp = inputImage.TimeStamp();
+  _encodedImage._encodedHeight = inputImage.Height();
+  _encodedImage._encodedWidth = inputImage.Width();
+  if (inputImage.Length() > _encodedImage._size) {
 
     // Allocating encoded memory.
     if (_encodedImage._buffer != NULL) {
@@ -108,8 +108,8 @@ int I420Encoder::Encode(const RawImage& inputImage,
     _encodedImage._size = newSize;
     _encodedImage._buffer = newBuffer;
   }
-  memcpy(_encodedImage._buffer, inputImage._buffer, inputImage._length);
-  _encodedImage._length = inputImage._length;
+  memcpy(_encodedImage._buffer, inputImage.Buffer(), inputImage.Length());
+  _encodedImage._length = inputImage.Length();
   _encodedCompleteCallback->Encoded(_encodedImage);
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -173,28 +173,13 @@ I420Decoder::Decode(const EncodedImage& inputImage,
    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
 
-  // Allocate memory for decoded image.
-  if (_decodedImage._buffer != NULL) {
-    delete [] _decodedImage._buffer;
-    _decodedImage._buffer = NULL;
-    _decodedImage._size = 0;
-  }
-  if (_decodedImage._buffer == NULL) {
-    const uint32_t newSize = CalcBufferSize(kI420, _width, _height);
-    uint8_t* newBuffer = new uint8_t[newSize];
-    if (newBuffer == NULL) {
-        return WEBRTC_VIDEO_CODEC_MEMORY;
-    }
-    _decodedImage._size = newSize;
-    _decodedImage._buffer = newBuffer;
-  }
-
   // Set decoded image parameters.
-  _decodedImage._height = _height;
-  _decodedImage._width = _width;
-  _decodedImage._timeStamp = inputImage._timeStamp;
-  memcpy(_decodedImage._buffer, inputImage._buffer, inputImage._length);
-  _decodedImage._length = inputImage._length;
+  if (_decodedImage.CopyFrame(inputImage._length, inputImage._buffer) < 0) {
+    return WEBRTC_VIDEO_CODEC_MEMORY;
+  }
+  _decodedImage.SetHeight(_height);
+  _decodedImage.SetWidth(_width);
+  _decodedImage.SetTimeStamp(inputImage._timeStamp);
 
   _decodeCompleteCallback->Decoded(_decodedImage);
   return WEBRTC_VIDEO_CODEC_OK;
@@ -208,10 +193,7 @@ I420Decoder::RegisterDecodeCompleteCallback(DecodedImageCallback* callback) {
 
 int
 I420Decoder::Release() {
-  if (_decodedImage._buffer != NULL) {
-    delete [] _decodedImage._buffer;
-    _decodedImage._buffer = NULL;
-  }
+  _decodedImage.Free();
   _inited = false;
   return WEBRTC_VIDEO_CODEC_OK;
 }

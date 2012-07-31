@@ -173,9 +173,9 @@ class VideoProcessorImpl : public VideoProcessor {
 
  private:
   // Invoked by the callback when a frame has completed encoding.
-  void FrameEncoded(EncodedImage* encodedImage);
+  void FrameEncoded(webrtc::EncodedImage* encodedImage);
   // Invoked by the callback when a frame has completed decoding.
-  void FrameDecoded(const RawImage& image);
+  void FrameDecoded(const webrtc::VideoFrame& image);
   // Used for getting a 32-bit integer representing time
   // (checks the size is within signed 32-bit bounds before casting it)
   int GetElapsedTimeMicroseconds(const webrtc::TickTime& start,
@@ -204,7 +204,7 @@ class VideoProcessorImpl : public VideoProcessor {
   // Keep track of the last successful frame, since we need to write that
   // when decoding fails:
   WebRtc_UWord8* last_successful_frame_buffer_;
-  webrtc::RawImage source_frame_;
+  webrtc::VideoFrame source_frame_;
   // To keep track of if we have excluded the first key frame from packet loss:
   bool first_key_frame_has_been_excluded_;
   // To tell the decoder previous frame have been dropped due to packet loss:
@@ -247,7 +247,7 @@ class VideoProcessorImpl : public VideoProcessor {
       explicit VideoProcessorDecodeCompleteCallback(VideoProcessorImpl* vp)
       : video_processor_(vp) {
     }
-    WebRtc_Word32 Decoded(webrtc::RawImage& image);
+    WebRtc_Word32 Decoded(webrtc::VideoFrame& image);
 
    private:
     VideoProcessorImpl* video_processor_;

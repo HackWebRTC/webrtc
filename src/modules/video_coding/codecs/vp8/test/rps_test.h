@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -39,7 +39,7 @@ class VP8RpsTest : public VP8NormalAsyncTest {
 class RpsDecodeCompleteCallback : public webrtc::DecodedImageCallback {
  public:
   RpsDecodeCompleteCallback(TestVideoBuffer* buffer);
-  WebRtc_Word32 Decoded(webrtc::RawImage& decodedImage);
+  WebRtc_Word32 Decoded(webrtc::VideoFrame& decodedImage);
   bool DecodeComplete();
   WebRtc_Word32 ReceivedDecodedReferenceFrame(const WebRtc_UWord64 picture_id);
   WebRtc_Word32 ReceivedDecodedFrame(const WebRtc_UWord64 picture_id);

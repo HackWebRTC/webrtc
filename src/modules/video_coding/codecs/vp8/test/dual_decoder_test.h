@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -41,7 +41,7 @@ class DualDecoderCompleteCallback : public webrtc::DecodedImageCallback
 public:
     DualDecoderCompleteCallback(TestVideoBuffer* buffer)
     : _decodedVideoBuffer(buffer), _decodeComplete(false) {}
-    WebRtc_Word32 Decoded(webrtc::RawImage& decodedImage);
+    WebRtc_Word32 Decoded(webrtc::VideoFrame& decodedImage);
     bool DecodeComplete();
 private:
     TestVideoBuffer* _decodedVideoBuffer;

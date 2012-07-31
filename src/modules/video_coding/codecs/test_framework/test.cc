@@ -135,14 +135,14 @@ bool CodecTest::PacketLoss(double lossRate, int /*thrown*/)
 }
 
 void
-CodecTest::VideoBufferToRawImage(TestVideoBuffer& videoBuffer, RawImage &image)
+CodecTest::VideoBufferToRawImage(TestVideoBuffer& videoBuffer,
+                                 VideoFrame &image)
 {
-    image._buffer = videoBuffer.GetBuffer();
-    image._size = videoBuffer.GetSize();
-    image._length = videoBuffer.GetLength();
-    image._width = videoBuffer.GetWidth();
-    image._height = videoBuffer.GetHeight();
-    image._timeStamp = videoBuffer.GetTimeStamp();
+  // TODO(mikhal): Use videoBuffer in lieu of TestVideoBuffer.
+  image.CopyFrame(videoBuffer.GetLength(), videoBuffer.GetBuffer());
+  image.SetWidth(videoBuffer.GetWidth());
+  image.SetHeight(videoBuffer.GetHeight());
+  image.SetTimeStamp(videoBuffer.GetTimeStamp());
 }
 void
 CodecTest::VideoEncodedBufferToEncodedImage(TestVideoEncodedBuffer& videoBuffer,

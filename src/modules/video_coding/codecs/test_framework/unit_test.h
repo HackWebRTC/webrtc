@@ -100,7 +100,7 @@ class UnitTestDecodeCompleteCallback : public webrtc::DecodedImageCallback
 public:
     UnitTestDecodeCompleteCallback(TestVideoBuffer* buffer) :
         _decodedVideoBuffer(buffer), _decodeComplete(false) {}
-    WebRtc_Word32 Decoded(webrtc::RawImage& image);
+    WebRtc_Word32 Decoded(webrtc::VideoFrame& image);
     bool DecodeComplete();
 private:
     TestVideoBuffer* _decodedVideoBuffer;

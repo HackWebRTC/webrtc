@@ -746,7 +746,7 @@ WebRtc_Word32 ViECapturer::InitEncode(const VideoCodec* codec_settings,
   return capture_encoder_->ConfigureEncoder(*codec_settings, max_payload_size);
 }
 
-WebRtc_Word32 ViECapturer::Encode(const RawImage& input_image,
+WebRtc_Word32 ViECapturer::Encode(const VideoFrame& input_image,
                                   const CodecSpecificInfo* codec_specific_info,
                                   const VideoFrameType frame_type) {
   CriticalSectionScoped cs(encoding_cs_.get());

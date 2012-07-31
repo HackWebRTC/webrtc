@@ -142,13 +142,13 @@ bool VP8RpsTest::EncodeRps(RpsDecodeCompleteCallback* decodeCallback) {
       (_encFrameCnt * 9e4 / _inst.maxFramerate));
   _inputVideoBuffer.SetWidth(_inst.width);
   _inputVideoBuffer.SetHeight(_inst.height);
-  webrtc::RawImage rawImage;
+  webrtc::VideoFrame rawImage;
   VideoBufferToRawImage(_inputVideoBuffer, rawImage);
   if (feof(_sourceFile) != 0) {
       return true;
   }
   _encodeCompleteTime = 0;
-  _encodeTimes[rawImage._timeStamp] = tGetTime();
+  _encodeTimes[rawImage.TimeStamp()] = tGetTime();
   webrtc::VideoFrameType frameType = webrtc::kDeltaFrame;
 
   webrtc::CodecSpecificInfo* codecSpecificInfo = CreateEncoderSpecificInfo();
@@ -172,10 +172,10 @@ bool VP8RpsTest::EncodeRps(RpsDecodeCompleteCallback* decodeCallback) {
   }
   if (_encodeCompleteTime > 0) {
       _totalEncodeTime += _encodeCompleteTime -
-          _encodeTimes[rawImage._timeStamp];
+          _encodeTimes[rawImage.TimeStamp()];
   }
   else {
-      _totalEncodeTime += tGetTime() - _encodeTimes[rawImage._timeStamp];
+      _totalEncodeTime += tGetTime() - _encodeTimes[rawImage.TimeStamp()];
   }
   return false;
 }
@@ -266,12 +266,12 @@ RpsDecodeCompleteCallback::RpsDecodeCompleteCallback(TestVideoBuffer* buffer)
       updated_ref_picture_id_(false) {
 }
 
-WebRtc_Word32 RpsDecodeCompleteCallback::Decoded(webrtc::RawImage& image) {
-  decoded_frame_->VerifyAndAllocate(image._length);
-  decoded_frame_->CopyBuffer(image._length, image._buffer);
-  decoded_frame_->SetWidth(image._width);
-  decoded_frame_->SetHeight(image._height);
-  decoded_frame_->SetTimeStamp(image._timeStamp);
+WebRtc_Word32 RpsDecodeCompleteCallback::Decoded(webrtc::VideoFrame& image) {
+  decoded_frame_->VerifyAndAllocate(image.Length());
+  decoded_frame_->CopyBuffer(image.Length(), image.Buffer());
+  decoded_frame_->SetWidth(image.Width());
+  decoded_frame_->SetHeight(image.Height());
+  decoded_frame_->SetTimeStamp(image.TimeStamp());
   decode_complete_ = true;
   return 0;
 }

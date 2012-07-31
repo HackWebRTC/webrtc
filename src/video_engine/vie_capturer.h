@@ -140,7 +140,7 @@ class ViECapturer
   virtual WebRtc_Word32 InitEncode(const VideoCodec* codec_settings,
                                    WebRtc_Word32 number_of_cores,
                                    WebRtc_UWord32 max_payload_size);
-  virtual WebRtc_Word32 Encode(const RawImage& input_image,
+  virtual WebRtc_Word32 Encode(const VideoFrame& input_image,
                                const CodecSpecificInfo* codec_specific_info,
                                const VideoFrameType frame_type);
   virtual WebRtc_Word32 RegisterEncodeCompleteCallback(

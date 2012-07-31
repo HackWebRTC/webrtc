@@ -41,7 +41,7 @@ protected:
     virtual bool PacketLoss(double lossRate, int /*thrown*/);
     static double RandUniform() { return (std::rand() + 1.0)/(RAND_MAX + 1.0); }
     static void VideoBufferToRawImage(TestVideoBuffer& videoBuffer,
-                                      webrtc::RawImage &image);
+                                      webrtc::VideoFrame &image);
     static void VideoEncodedBufferToEncodedImage(
         TestVideoEncodedBuffer& videoBuffer,
         webrtc::EncodedImage &image);

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -198,13 +198,13 @@ VP8DualDecoderTest::CheckIfBitExact(const void* ptrA, unsigned int aLengthBytes,
     return memcmp(ptrA, ptrB, aLengthBytes) == 0;
 }
 
-WebRtc_Word32 DualDecoderCompleteCallback::Decoded(webrtc::RawImage& image)
+WebRtc_Word32 DualDecoderCompleteCallback::Decoded(webrtc::VideoFrame& image)
 {
-    _decodedVideoBuffer->VerifyAndAllocate(image._length);
-    _decodedVideoBuffer->CopyBuffer(image._length, image._buffer);
-    _decodedVideoBuffer->SetWidth(image._width);
-    _decodedVideoBuffer->SetHeight(image._height);
-    _decodedVideoBuffer->SetTimeStamp(image._timeStamp);
+    _decodedVideoBuffer->VerifyAndAllocate(image.Length());
+    _decodedVideoBuffer->CopyBuffer(image.Length(), image.Buffer());
+    _decodedVideoBuffer->SetWidth(image.Width());
+    _decodedVideoBuffer->SetHeight(image.Height());
+    _decodedVideoBuffer->SetTimeStamp(image.TimeStamp());
     _decodeComplete = true;
     return 0;
 }

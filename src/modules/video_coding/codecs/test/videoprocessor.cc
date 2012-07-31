@@ -65,10 +65,10 @@ bool VideoProcessorImpl::Init() {
   last_successful_frame_buffer_ = new WebRtc_UWord8[frame_length_in_bytes];
 
   // Set fixed properties common for all frames:
-  source_frame_._width = config_.codec_settings->width;
-  source_frame_._height = config_.codec_settings->height;
-  source_frame_._length = frame_length_in_bytes;
-  source_frame_._size = frame_length_in_bytes;
+  source_frame_.SetWidth(config_.codec_settings->width);
+  source_frame_.SetHeight(config_.codec_settings->height);
+  source_frame_.VerifyAndAllocate(frame_length_in_bytes);
+  source_frame_.SetLength(frame_length_in_bytes);
 
   // To keep track of spatial resize actions by encoder.
   last_encoder_frame_width_ = config_.codec_settings->width;
@@ -168,15 +168,16 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
     prev_time_stamp_ = -1;
   }
   if (frame_reader_->ReadFrame(source_buffer_)) {
-    // point the source frame buffer to the newly read frame data:
-    source_frame_._buffer = source_buffer_;
+    // Copy the source frame to the newly read frame data.
+    // Length is common for all frames.
+    source_frame_.CopyFrame(source_frame_.Length(), source_buffer_);
 
     // Ensure we have a new statistics data object we can fill:
     FrameStatistic& stat = stats_->NewFrame(frame_number);
 
     encode_start_ = TickTime::Now();
     // Use the frame number as "timestamp" to identify frames
-    source_frame_._timeStamp = frame_number;
+    source_frame_.SetTimeStamp(frame_number);
 
     // Decide if we're going to force a keyframe:
     VideoFrameType frame_type = kDeltaFrame;
@@ -272,9 +273,9 @@ void VideoProcessorImpl::FrameEncoded(EncodedImage* encoded_image) {
   last_frame_missing_ = encoded_image->_length == 0;
 }
 
-void VideoProcessorImpl::FrameDecoded(const RawImage& image) {
+void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
   TickTime decode_stop = TickTime::Now();
-  int frame_number = image._timeStamp;
+  int frame_number = image.TimeStamp();
   // Report stats
   FrameStatistic& stat = stats_->stats_[frame_number];
   stat.decode_time_in_us = GetElapsedTimeMicroseconds(decode_start_,
@@ -282,25 +283,26 @@ void VideoProcessorImpl::FrameDecoded(const RawImage& image) {
   stat.decoding_successful = true;
 
   // Check for resize action (either down or up):
-  if (static_cast<int>(image._width) != last_encoder_frame_width_ ||
-      static_cast<int>(image._height) != last_encoder_frame_height_ ) {
+  if (static_cast<int>(image.Width()) != last_encoder_frame_width_ ||
+      static_cast<int>(image.Height()) != last_encoder_frame_height_ ) {
     ++num_spatial_resizes_;
-    last_encoder_frame_width_ = image._width;
-    last_encoder_frame_height_ = image._height;
+    last_encoder_frame_width_ = image.Width();
+    last_encoder_frame_height_ = image.Height();
   }
   // Check if codec size is different from native/original size, and if so,
   // upsample back to original size: needed for PSNR and SSIM computations.
-  if (image._width !=  config_.codec_settings->width ||
-      image._height != config_.codec_settings->height) {
-    int required_size = static_cast<WebRtc_UWord32>
-    (config_.codec_settings->width * config_.codec_settings->height * 3 / 2);
-    RawImage up_image = image;
-    up_image._buffer = new uint8_t[required_size];
-    up_image._length = required_size;
-    up_image._width = config_.codec_settings->width;
-    up_image._height = config_.codec_settings->height;
+  if (image.Width() !=  config_.codec_settings->width ||
+      image.Height() != config_.codec_settings->height) {
+    int required_size = CalcBufferSize(kI420,
+                                       config_.codec_settings->width,
+                                       config_.codec_settings->height);
+    VideoFrame up_image;
+    up_image.VerifyAndAllocate(required_size);
+    up_image.SetLength(required_size);
+    up_image.SetWidth(config_.codec_settings->width);
+    up_image.SetHeight(config_.codec_settings->height);
 
-    int ret_val = scaler_.Set(image._width, image._height,
+    int ret_val = scaler_.Set(image.Width(), image.Height(),
                               config_.codec_settings->width,
                               config_.codec_settings->height,
                               kI420, kI420, kScaleBilinear);
@@ -309,7 +311,7 @@ void VideoProcessorImpl::FrameDecoded(const RawImage& image) {
       fprintf(stderr, "Failed to set scalar for frame: %d, return code: %d\n",
               frame_number, ret_val);
     }
-    ret_val = scaler_.Scale(image._buffer, up_image._buffer,
+    ret_val = scaler_.Scale(image.Buffer(), up_image.Buffer(),
                             required_size);
     assert(ret_val >= 0);
     if (ret_val < 0) {
@@ -317,19 +319,19 @@ void VideoProcessorImpl::FrameDecoded(const RawImage& image) {
               frame_number, ret_val);
     }
     // Update our copy of the last successful frame:
-    memcpy(last_successful_frame_buffer_, up_image._buffer, up_image._length);
+    memcpy(last_successful_frame_buffer_, up_image.Buffer(), up_image.Length());
 
-    bool write_success = frame_writer_->WriteFrame(up_image._buffer);
+    bool write_success = frame_writer_->WriteFrame(up_image.Buffer());
     assert(write_success);
     if (!write_success) {
       fprintf(stderr, "Failed to write frame %d to disk!", frame_number);
     }
-    delete [] up_image._buffer;
+    up_image.Free();
   } else {  // No resize.
     // Update our copy of the last successful frame:
-    memcpy(last_successful_frame_buffer_, image._buffer, image._length);
+    memcpy(last_successful_frame_buffer_, image.Buffer(), image.Length());
 
-    bool write_success = frame_writer_->WriteFrame(image._buffer);
+    bool write_success = frame_writer_->WriteFrame(image.Buffer());
     assert(write_success);
     if (!write_success) {
       fprintf(stderr, "Failed to write frame %d to disk!", frame_number);
@@ -386,7 +388,7 @@ VideoProcessorImpl::VideoProcessorEncodeCompleteCallback::Encoded(
 }
 WebRtc_Word32
 VideoProcessorImpl::VideoProcessorDecodeCompleteCallback::Decoded(
-    RawImage& image) {
+    VideoFrame& image) {
   video_processor_->FrameDecoded(image);  // forward to parent class
   return 0;
 }

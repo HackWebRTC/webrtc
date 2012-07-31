@@ -59,19 +59,9 @@ VCMGenericEncoder::InitEncode(const VideoCodec* settings,
 WebRtc_Word32
 VCMGenericEncoder::Encode(const VideoFrame& inputFrame,
                           const CodecSpecificInfo* codecSpecificInfo,
-                          const FrameType frameType)
-{
-    RawImage rawImage(inputFrame.Buffer(),
-                      inputFrame.Length(),
-                      inputFrame.Size());
-    rawImage._width     = inputFrame.Width();
-    rawImage._height    = inputFrame.Height();
-    rawImage._timeStamp = inputFrame.TimeStamp();
-    rawImage.capture_time_ms_ = inputFrame.RenderTimeMs();
-
-    VideoFrameType videoFrameType =
-        VCMEncodedFrame::ConvertFrameType(frameType);
-    return _encoder.Encode(rawImage, codecSpecificInfo, videoFrameType);
+                          const FrameType frameType) {
+  VideoFrameType videoFrameType = VCMEncodedFrame::ConvertFrameType(frameType);
+  return _encoder.Encode(inputFrame, codecSpecificInfo, videoFrameType);
 }
 
 WebRtc_Word32
@@ -121,7 +111,7 @@ VCMGenericEncoder::SetPeriodicKeyFrames(bool enable)
 }
 
 WebRtc_Word32 VCMGenericEncoder::RequestFrame(const FrameType frameType) {
-  RawImage image;
+  VideoFrame image;
   VideoFrameType videoFrameType = VCMEncodedFrame::ConvertFrameType(frameType);
   return _encoder.Encode(image, NULL,  videoFrameType);
 }
