@@ -61,6 +61,7 @@ WebRtc_Word32 VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage)
     if (_receiveCallback != NULL)
     {
         _frame.SwapFrame(decodedImage);
+        _frame.SetRenderTime(frameInfo->renderTimeMs);
         WebRtc_Word32 callbackReturn = _receiveCallback->FrameToRender(_frame);
         if (callbackReturn < 0)
         {
