@@ -122,7 +122,7 @@ VideoCaptureModuleV4L2::~VideoCaptureModuleV4L2()
 }
 
 WebRtc_Word32 VideoCaptureModuleV4L2::StartCapture(
-                                        const VideoCaptureCapability& capability)
+    const VideoCaptureCapability& capability)
 {
     if (_captureStarted)
     {
@@ -212,11 +212,43 @@ WebRtc_Word32 VideoCaptureModuleV4L2::StartCapture(
     _currentWidth = video_fmt.fmt.pix.width;
     _currentHeight = video_fmt.fmt.pix.height;
     _captureDelay = 120;
-    // No way of knowing frame rate, make a guess.
-    if(_currentWidth >= 800 && _captureVideoType != kVideoMJPEG)
-      _currentFrameRate = 15;
-    else
-      _currentFrameRate = 30;
+
+    // Trying to set frame rate, before check driver capability.
+    bool driver_framerate_support = true;
+    struct v4l2_streamparm streamparms;
+    memset(&streamparms, 0, sizeof(streamparms));
+    streamparms.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    if (ioctl(_deviceFd, VIDIOC_G_PARM, &streamparms) < 0) {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
+                   "error in VIDIOC_G_PARM errno = %d", errno);
+        driver_framerate_support = false;
+      // continue
+    } else {
+      // check the capability flag is set to V4L2_CAP_TIMEPERFRAME.
+      if (streamparms.parm.capture.capability == V4L2_CAP_TIMEPERFRAME) {
+        // driver supports the feature. Set required framerate.
+        memset(&streamparms, 0, sizeof(streamparms));
+        streamparms.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        streamparms.parm.capture.timeperframe.numerator = 1;
+        streamparms.parm.capture.timeperframe.denominator = capability.maxFPS;
+        if (ioctl(_deviceFd, VIDIOC_S_PARM, &streamparms) < 0) {
+          WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
+                   "Failed to set the framerate. errno=%d", errno);
+          driver_framerate_support = false;
+        } else {
+          _currentFrameRate = capability.maxFPS;
+        }
+      }
+    }
+    // If driver doesn't support framerate control, need to hardcode.
+    // Hardcoding the value based on the frame size.
+    if (!driver_framerate_support) {
+      if(_currentWidth >= 800 && _captureVideoType != kVideoMJPEG) {
+        _currentFrameRate = 15;
+      } else {
+        _currentFrameRate = 30;
+      }
+    }
 
     if (!AllocateVideoBuffers())
     {
