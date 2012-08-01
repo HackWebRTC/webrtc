@@ -99,22 +99,15 @@
         'source/vie_window_manager_factory_win.cc',
       ],
       'conditions': [
-        # TODO(andrew): this likely isn't an actual dependency. It should be
-        # included in webrtc.gyp or video_engine.gyp instead.
         ['OS=="android"', {
           'libraries': [
             '-lGLESv2',
             '-llog',
           ],
         }],
-        ['OS=="win"', {
-          'dependencies': [
-            'vie_win_test',
-          ],
-        }],
         ['OS=="linux"', {
-          # TODO(andrew): these should be provided directly by the projects
-          #   # which require them instead.
+          # TODO(andrew): These should be provided directly by the projects
+          #               which require them instead.
           'libraries': [
             '-lXext',
             '-lX11',

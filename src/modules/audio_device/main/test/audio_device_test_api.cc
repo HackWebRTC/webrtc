@@ -76,8 +76,7 @@ class AudioEventObserverAPI: public AudioDeviceObserver {
 class AudioTransportAPI: public AudioTransport {
  public:
   AudioTransportAPI(AudioDeviceModule* audioDevice)
-      : audio_device_(audioDevice),
-        rec_count_(0),
+      : rec_count_(0),
         play_count_(0) {
   }
 
@@ -129,7 +128,6 @@ class AudioTransportAPI: public AudioTransport {
   }
 
  private:
-  AudioDeviceModule* audio_device_;
   WebRtc_UWord32 rec_count_;
   WebRtc_UWord32 play_count_;
 };

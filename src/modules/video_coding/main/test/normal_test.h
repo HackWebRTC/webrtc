@@ -52,7 +52,6 @@ private:
     WebRtc_UWord32              _skipCnt;
     webrtc::VideoCodingModule*  _VCMReceiver;
     webrtc::FrameType           _frameType;
-    WebRtc_UWord8*              _payloadData; // max payload size??
     WebRtc_UWord16              _seqNo;
     NormalTest&                 _test;
 }; // end of VCMEncodeCompleteCallback

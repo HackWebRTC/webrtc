@@ -48,7 +48,6 @@ class TestPackStereo : public AudioPacketizationCallback {
  private:
   AudioCodingModule* receiver_acm_;
   WebRtc_Word16 seq_no_;
-  WebRtc_UWord8 payload_data_[60 * 32 * 2 * 2];
   WebRtc_UWord32 timestamp_diff_;
   WebRtc_UWord32 last_in_timestamp_;
   WebRtc_UWord64 total_bytes_;

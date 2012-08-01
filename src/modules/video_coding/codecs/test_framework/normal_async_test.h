@@ -38,8 +38,7 @@ class FrameQueue
 public:
     FrameQueue()
     :
-        _queueRWLock(*webrtc::RWLockWrapper::CreateRWLock()),
-        _prevTS(-1)
+        _queueRWLock(*webrtc::RWLockWrapper::CreateRWLock())
     {
     }
 
@@ -56,7 +55,6 @@ public:
 private:
     webrtc::RWLockWrapper&                       _queueRWLock;
     std::queue<FrameQueueTuple *>     _frameBufferQueue;
-    WebRtc_Word64                       _prevTS;
 };
 
 // feedback signal to encoder
