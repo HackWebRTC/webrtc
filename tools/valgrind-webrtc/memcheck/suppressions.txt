@@ -9,3 +9,16 @@
 # This file is used in addition to the one already maintained in Chrome.
 # It acts as a place holder for future additions for WebRTC.
 # It must exist for the Python wrapper script to work properly.
+
+{
+   bug_716
+   Memcheck:Leak
+   fun:_Znw*
+   fun:_ZN6webrtc11ThreadPosix6CreateEPFbPvES1_NS_14ThreadPriorityEPKc
+   fun:_ZN6webrtc13ThreadWrapper12CreateThreadEPFbPvES1_NS_14ThreadPriorityEPKc
+   fun:_ZN6webrtc18videocapturemodule22VideoCaptureModuleV4L212StartCaptureERKNS_22VideoCaptureCapabilityE
+   fun:_ZN6webrtc11ViECapturer5StartERKNS_17CaptureCapabilityE
+   fun:_ZN6webrtc14ViECaptureImpl12StartCaptureEiRKNS_17CaptureCapabilityE
+   fun:_ZN15TbCaptureDeviceC1ER12TbInterfaces
+   fun:_ZN12_GLOBAL__N_114ViERtpFuzzTest5SetUpEv
+}
