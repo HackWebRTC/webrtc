@@ -26,37 +26,6 @@ enum VideoFrameType
     kSkipFrame = 4
 };
 
-class RawImage
-{
-public:
-    RawImage()
-        : _width(0),
-          _height(0),
-          _timeStamp(0),
-          capture_time_ms_(0),
-          _buffer(NULL),
-          _length(0),
-          _size(0) {}
-
-    RawImage(WebRtc_UWord8* buffer, WebRtc_UWord32 length,
-             WebRtc_UWord32 size)
-        : _width(0),
-          _height(0),
-          _timeStamp(0),
-          capture_time_ms_(0),
-          _buffer(buffer),
-          _length(length),
-          _size(size) {}
-
-    WebRtc_UWord32    _width;
-    WebRtc_UWord32    _height;
-    WebRtc_UWord32    _timeStamp;
-    int64_t           capture_time_ms_;
-    WebRtc_UWord8*    _buffer;
-    WebRtc_UWord32    _length;
-    WebRtc_UWord32    _size;
-};
-
 class EncodedImage
 {
 public:
