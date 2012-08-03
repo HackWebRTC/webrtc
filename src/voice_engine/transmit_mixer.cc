@@ -28,7 +28,9 @@ namespace webrtc {
 namespace voe {
 
 // Used for downmixing before resampling.
-static const int kMaxMonoDeviceDataSizeSamples = 480;  // 10 ms, 48 kHz, mono.
+// TODO(andrew): audio_device should advertise the maximum sample rate it can
+//               provide.
+static const int kMaxMonoDeviceDataSizeSamples = 960;  // 10 ms, 96 kHz, mono.
 
 void
 TransmitMixer::OnPeriodicProcess()
@@ -61,7 +63,7 @@ TransmitMixer::OnPeriodicProcess()
                          "TransmitMixer::OnPeriodicProcess() =>"
                          " CallbackOnError(VE_SATURATION_WARNING)");
             _voiceEngineObserverPtr->CallbackOnError(-1, VE_SATURATION_WARNING);
-        }
+       }
         _saturationWarning = 0;
     }
 
@@ -89,7 +91,7 @@ void TransmitMixer::PlayNotification(const WebRtc_Word32 id,
 
     // Not implement yet
 }
-	
+
 void TransmitMixer::RecordNotification(const WebRtc_Word32 id,
                                        const WebRtc_UWord32 durationMs)
 {
@@ -115,7 +117,7 @@ void TransmitMixer::PlayFileEnded(const WebRtc_Word32 id)
                  "file player module is shutdown");
 }
 
-void 
+void
 TransmitMixer::RecordFileEnded(const WebRtc_Word32 id)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
@@ -487,7 +489,7 @@ TransmitMixer::UpdateMuteMicrophoneTime(const WebRtc_UWord32 lengthMs)
     _remainingMuteMicTimeMs = lengthMs;
 }
 
-WebRtc_Word32 
+WebRtc_Word32
 TransmitMixer::StopSend()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
@@ -578,7 +580,7 @@ int TransmitMixer::StartPlayingFileAsMicrophone(InStream* stream,
                  "TransmitMixer::StartPlayingFileAsMicrophone(format=%d,"
                  " volumeScaling=%5.3f, startPosition=%d, stopPosition=%d)",
                  format, volumeScaling, startPosition, stopPosition);
-    
+
     if (stream == NULL)
     {
         _engineStatisticsPtr->SetLastError(
@@ -1043,7 +1045,7 @@ int TransmitMixer::StartRecordingCall(OutStream* stream,
     _fileCallRecorderPtr = NULL;
     return -1;
     }
-     
+
     _fileCallRecorderPtr->RegisterModuleFileCallback(this);
     _fileCallRecording = true;
 
@@ -1080,7 +1082,7 @@ int TransmitMixer::StopRecordingCall()
     return 0;
 }
 
-void 
+void
 TransmitMixer::SetMixWithMicStatus(bool mix)
 {
     _mixFileWithMicrophone = mix;
@@ -1149,7 +1151,7 @@ bool TransmitMixer::IsRecordingMic()
     return _fileRecording;
 }
 
-
+// TODO(andrew): use RemixAndResample for this.
 int TransmitMixer::GenerateAudioFrame(const int16_t audio[],
                                       int samples_per_channel,
                                       int num_channels,
@@ -1157,6 +1159,7 @@ int TransmitMixer::GenerateAudioFrame(const int16_t audio[],
 {
     const int16_t* audio_ptr = audio;
     int16_t mono_audio[kMaxMonoDeviceDataSizeSamples];
+    assert(samples_per_channel <= kMaxMonoDeviceDataSizeSamples);
     // If no stereo codecs are in use, we downmix a stereo stream from the
     // device early in the chain, before resampling.
     if (num_channels == 2 && !stereo_codec_) {
