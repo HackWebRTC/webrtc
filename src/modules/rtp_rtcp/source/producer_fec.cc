@@ -191,8 +191,8 @@ bool ProducerFec::ExcessOverheadBelowMax() {
 // that, for the same amount of protection/overhead, longer codes
 // (e.g. (2k,2m) vs (k,m)) are generally more effective at recovering losses.
 bool ProducerFec::MinimumMediaPacketsReached() {
-  float avg_num_packets_frame = static_cast<float>(media_packets_fec_.size() /
-                                                   num_frames_);
+  float avg_num_packets_frame = static_cast<float>(media_packets_fec_.size()) /
+                                num_frames_;
   if (avg_num_packets_frame < 2.0f) {
   return (static_cast<int>(media_packets_fec_.size()) >=
       minimum_media_packets_fec_);
