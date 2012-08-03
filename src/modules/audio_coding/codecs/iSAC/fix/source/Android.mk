@@ -86,7 +86,8 @@ LOCAL_MODULE := libwebrtc_isacfix_neon
 LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := \
     filters_neon.c \
-    lattice_neon.S
+    lattice_neon.S \
+    lpc_masking_model_neon.S
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \

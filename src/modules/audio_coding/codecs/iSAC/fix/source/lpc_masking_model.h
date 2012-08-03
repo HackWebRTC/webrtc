@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -19,6 +19,13 @@
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_LPC_MASKING_MODEL_H_
 
 #include "structs.h"
+
+int32_t WebRtcIsacfix_CalculateResidualEnergy(int lpc_order,
+                                              int32_t q_val_corr,
+                                              int q_offset,
+                                              int16_t* a_polynomial,
+                                              int32_t* corr_coeffs,
+                                              int* q_val_residual_energy);
 
 void WebRtcIsacfix_GetVars(const WebRtc_Word16 *input,
                            const WebRtc_Word16 *pitchGains_Q12,

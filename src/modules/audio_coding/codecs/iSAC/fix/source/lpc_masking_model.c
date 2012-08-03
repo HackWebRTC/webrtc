@@ -15,12 +15,12 @@
  *
  */
 
-#include <stdlib.h>
+#include "lpc_masking_model.h"
 
+#include <limits.h>  /* For LLONG_MAX and LLONG_MIN. */
 #include "codec.h"
 #include "entropy_coding.h"
 #include "settings.h"
-
 
 /* The conversion is implemented by the step-down algorithm */
 void WebRtcSpl_AToK_JSK(
@@ -467,74 +467,77 @@ static __inline WebRtc_Word16  exp2_Q10_T(WebRtc_Word16 x) { // Both in and out 
 // Declare a function pointer.
 AutocorrFix WebRtcIsacfix_AutocorrFix;
 
+#ifndef WEBRTC_ARCH_ARM_NEON
 /* This routine calculates the residual energy for LPC.
  * Formula as shown in comments inside.
  */
-static int32_t CalculateResidualEnergy(int lpc_order,
-                                       int32_t q_val_corr,
-                                       int q_val_polynomial,
-                                       int16_t* a_polynomial,
-                                       int32_t* corr_coeffs,
-                                       int* q_val_residual_energy) {
-  int j = 0, n = 0;
-  int index = 0, diff = 0, shift_corr = 0, shift_internal = 0;
-  int32_t tmp32 = 0, a_sqr = 0, round = 0, residual_energy = 0;
-  /* Basis for calculating Q value in the loop. */
-  int shift_base = q_val_corr - 32 + q_val_polynomial * 2;
+int32_t WebRtcIsacfix_CalculateResidualEnergy(int lpc_order,
+                                              int32_t q_val_corr,
+                                              int q_val_polynomial,
+                                              int16_t* a_polynomial,
+                                              int32_t* corr_coeffs,
+                                              int* q_val_residual_energy) {
+  int i = 0, j = 0;
+  int shift_internal = 0, shift_norm = 0;
+  int32_t tmp32 = 0, word32_high = 0, word32_low = 0, residual_energy = 0;
+  int64_t sum64 = 0, sum64_tmp = 0;
 
-  for (j = 0; j <= lpc_order; j++) {
-    for (n = 0; n <= j; n++) {
-      index = j - n;
-
-      /* For the case of j != n: residual_energy +=
-       *    a_polynomial[j] * corr_coeffs[j - n] * a_polynomial[n] * 2;
-       * For the case of j == n: residual_energy +=
-       *    a_polynomial[j] * corr_coeffs[j - n] * a_polynomial[n];
+  for (i = 0; i <= lpc_order; i++) {
+    for (j = i; j <= lpc_order; j++) {
+      /* For the case of i == 0: residual_energy +=
+       *    a_polynomial[j] * corr_coeffs[i] * a_polynomial[j - i];
+       * For the case of i != 0: residual_energy +=
+       *    a_polynomial[j] * corr_coeffs[i] * a_polynomial[j - i] * 2;
        */
 
-      /* tmp32 will be in Q(q_val_polynomial * 2). */
-      tmp32 = WEBRTC_SPL_MUL_16_16(a_polynomial[j], a_polynomial[n]);
-      if (n < j) {
+      tmp32 = WEBRTC_SPL_MUL_16_16(a_polynomial[j], a_polynomial[j - i]);
+                                   /* tmp32 in Q(q_val_polynomial * 2). */
+      if (i != 0) {
         tmp32 <<= 1;
       }
-      shift_internal = WebRtcSpl_NormW32(tmp32);
-      a_sqr = tmp32 << shift_internal;  /* Q(24 + shift_internal) */
-      shift_corr = WebRtcSpl_NormW32(corr_coeffs[index]);
-      tmp32 = corr_coeffs[index] << shift_corr;
-      tmp32 = WEBRTC_SPL_MUL_32_32_RSFT32BI(a_sqr, tmp32);
+      sum64_tmp = (int64_t)tmp32 * (int64_t)corr_coeffs[i];
+      sum64_tmp >>= shift_internal;
 
-      /* Q(q_val_polynomial * 2 + shift_internal) * Q(q_val_corr + shift_corr)
-       * >> 32 = Q(shift_internal + q_val_corr + shift_corr - 32
-       *         + q_val_polynomial * 2)
-       */
-      shift_internal += shift_base + shift_corr;
-
-      diff = *q_val_residual_energy - shift_internal;
-      round = 1 << (abs(diff) - 1);
-
-      if (diff == 0) {
-        residual_energy = (residual_energy >> 1) + (tmp32 >> 1);
-        --(*q_val_residual_energy);
-      } else if (diff >= 31) {
-        residual_energy = tmp32;
-        *q_val_residual_energy = shift_internal;
-      } else if (diff > 0) {
-        residual_energy = ((residual_energy + round) >> (diff + 1))
-            + (tmp32 >> 1);
-        *q_val_residual_energy = shift_internal - 1;
-      } else if (diff > -31) {
-        residual_energy = (residual_energy >> 1)
-            + ((tmp32 + round) >> (1 - diff));
-        --(*q_val_residual_energy);
+      /* Test overflow and sum the result. */
+      if(((sum64_tmp > 0 && sum64 > 0) && (LLONG_MAX - sum64 < sum64_tmp)) ||
+         ((sum64_tmp < 0 && sum64 < 0) && (LLONG_MIN - sum64 > sum64_tmp))) {
+        /* Shift right for overflow. */
+        shift_internal += 1;
+        sum64 >>= 1;
+        sum64 += sum64_tmp >> 1;
+      } else {
+        sum64 += sum64_tmp;
       }
-
-      shift_internal = WebRtcSpl_NormW32(residual_energy);
-      residual_energy <<= shift_internal;
-      *q_val_residual_energy += shift_internal;
     }
   }
+
+  word32_high = (int32_t)(sum64 >> 32);
+  word32_low = (int32_t)sum64;
+
+  // Calculate the value of shifting (shift_norm) for the 64-bit sum.
+  if(word32_high != 0) {
+    shift_norm = 32 - WebRtcSpl_NormW32(word32_high);
+    residual_energy = (int32_t)(sum64 >> shift_norm);
+  } else {
+    if((word32_low & 0x80000000) == 1) {
+      shift_norm = 1;
+      residual_energy = word32_low >> 1;
+    } else {
+      shift_norm = WebRtcSpl_NormW32(word32_low);
+      residual_energy = word32_low << shift_norm;
+      shift_norm = -shift_norm;
+    }
+  }
+
+  /* Q(q_val_polynomial * 2) * Q(q_val_corr) >> shift_internal >> shift_norm
+   *   = Q(q_val_corr - shift_internal - shift_norm + q_val_polynomial * 2)
+   */
+  *q_val_residual_energy = q_val_corr - shift_internal - shift_norm
+                           + q_val_polynomial * 2;
+
   return residual_energy;
 }
+#endif
 
 void WebRtcIsacfix_GetLpcCoef(WebRtc_Word16 *inLoQ0,
                               WebRtc_Word16 *inHiQ0,
@@ -853,8 +856,8 @@ void WebRtcIsacfix_GetLpcCoef(WebRtc_Word16 *inLoQ0,
     /* residual energy */
 
     sh_lo = 31;
-    res_nrgQQ = CalculateResidualEnergy(ORDERLO, QdomLO, kShiftLowerBand,
-                                        a_LOQ11, corrlo2QQ, &sh_lo);
+    res_nrgQQ = WebRtcIsacfix_CalculateResidualEnergy(ORDERLO, QdomLO,
+        kShiftLowerBand, a_LOQ11, corrlo2QQ, &sh_lo);
 
     /* Convert to reflection coefficients */
     WebRtcSpl_AToK_JSK(a_LOQ11, ORDERLO, rcQ15_lo);
@@ -902,8 +905,8 @@ void WebRtcIsacfix_GetLpcCoef(WebRtc_Word16 *inLoQ0,
     }
     /* residual energy */
     sh_hi = 31;
-    res_nrgQQ = CalculateResidualEnergy(ORDERHI, QdomHI, kShiftHigherBand,
-                                        a_HIQ12, corrhiQQ, &sh_hi);
+    res_nrgQQ = WebRtcIsacfix_CalculateResidualEnergy(ORDERHI, QdomHI,
+        kShiftHigherBand, a_HIQ12, corrhiQQ, &sh_hi);
 
     /* Convert to reflection coefficients */
     WebRtcSpl_LpcToReflCoef(polyHI, ORDERHI, rcQ15_hi);

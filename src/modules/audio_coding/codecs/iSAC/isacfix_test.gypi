@@ -31,3 +31,5 @@
 # indent-tabs-mode:nil
 # End:
 # vim: set expandtab tabstop=2 shiftwidth=2:
+
+# TODO(kma): Add bit-exact test for iSAC-fix.
