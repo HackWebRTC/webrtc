@@ -11,6 +11,10 @@
 #include "signal_processing_library.h"
 #include "gtest/gtest.h"
 
+static const int kVector16Size = 9;
+static const int16_t vector16[kVector16Size] = {1, -15511, 4323, 1963,
+  WEBRTC_SPL_WORD16_MAX, 0, WEBRTC_SPL_WORD16_MIN + 5, -3333, 345};
+
 class SplTest : public testing::Test {
  protected:
   virtual ~SplTest() {
@@ -253,7 +257,6 @@ TEST_F(SplTest, VectorOperationsTest) {
     int B[] = {4, 12, 133, 1100};
     WebRtc_Word16 a16[kVectorSize];
     WebRtc_Word16 b16[kVectorSize];
-    WebRtc_Word32 b32[kVectorSize];
     WebRtc_Word16 bTmp16[kVectorSize];
 
     for (int kk = 0; kk < kVectorSize; ++kk) {
@@ -274,13 +277,6 @@ TEST_F(SplTest, VectorOperationsTest) {
     for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(((B[kk]*3+B[kk]*2+2)>>2)+((b16[kk]*3+7)>>2), bTmp16[kk]);
     }
-
-    WebRtcSpl_CrossCorrelation(b32, b16, bTmp16, kVectorSize, 2, 2, 0);
-    for (int kk = 0; kk < 2; ++kk) {
-        EXPECT_EQ(614236, b32[kk]);
-    }
-//    EXPECT_EQ(, WebRtcSpl_DotProduct(b16, bTmp16, 4));
-    EXPECT_EQ(306962, WebRtcSpl_DotProductWithScale(b16, b16, kVectorSize, 2));
 
     WebRtcSpl_ScaleVector(b16, bTmp16, 13, kVectorSize, 2);
     for (int kk = 0; kk < kVectorSize; ++kk) {
@@ -391,6 +387,47 @@ TEST_F(SplTest, RandTest) {
     }
 }
 
+TEST_F(SplTest, DotProductWithScaleTest) {
+  EXPECT_EQ(605362796, WebRtcSpl_DotProductWithScale(vector16,
+      vector16, kVector16Size, 2));
+}
+
+TEST_F(SplTest, CrossCorrelationTest) {
+  // Note the function arguments relation specificed by API.
+  const int kCrossCorrelationDimension = 3;
+  const int kShift = 2;
+  const int kStep = 1;
+  const int kSeqDimension = 6;
+
+  const int16_t vector16_b[kVector16Size] = {1, 4323, 1963,
+    WEBRTC_SPL_WORD16_MAX, WEBRTC_SPL_WORD16_MIN + 5, -3333, -876, 8483, 142};
+  const int32_t expected[3] = {-266947903, -15579555, -171282001};
+  int32_t vector32[kCrossCorrelationDimension] = {0};
+
+  WebRtcSpl_CrossCorrelation(vector32, vector16, vector16_b, kSeqDimension,
+                             kCrossCorrelationDimension, kShift, kStep);
+
+  for (int i = 0; i < kCrossCorrelationDimension; ++i) {
+    EXPECT_EQ(expected[i], vector32[i]);
+  }
+}
+
+TEST_F(SplTest, AutoCorrelationTest) {
+  int scale = 0;
+  int32_t vector32[kVector16Size];
+  const int32_t expected[kVector16Size] = {302681398, 14223410, -121705063,
+    -85221647, -17104971, 61806945, 6644603, -669329, 43};
+
+  EXPECT_EQ(-1, WebRtcSpl_AutoCorrelation(vector16,
+      kVector16Size, kVector16Size + 1, vector32, &scale));
+  EXPECT_EQ(kVector16Size, WebRtcSpl_AutoCorrelation(vector16,
+      kVector16Size, kVector16Size - 1, vector32, &scale));
+  EXPECT_EQ(3, scale);
+  for (int i = 0; i < kVector16Size; ++i) {
+    EXPECT_EQ(expected[i], vector32[i]);
+  }
+}
+
 TEST_F(SplTest, SignalProcessingTest) {
     const int kVectorSize = 4;
     int A[] = {1, 2, 33, 100};
@@ -398,7 +435,6 @@ TEST_F(SplTest, SignalProcessingTest) {
     WebRtc_Word16 b16[kVectorSize];
 
     WebRtc_Word16 bTmp16[kVectorSize];
-    WebRtc_Word32 bTmp32[kVectorSize];
 
     int bScale = 0;
 
@@ -406,7 +442,6 @@ TEST_F(SplTest, SignalProcessingTest) {
         b16[kk] = A[kk];
     }
 
-    EXPECT_EQ(2, WebRtcSpl_AutoCorrelation(b16, kVectorSize, 1, bTmp32, &bScale));
     // TODO(bjornv): Activate the Reflection Coefficient tests when refactoring.
 //    WebRtcSpl_ReflCoefToLpc(b16, kVectorSize, bTmp16);
 ////    for (int kk = 0; kk < kVectorSize; ++kk) {
