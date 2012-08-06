@@ -299,7 +299,7 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       if (restart_rtp) {
         rtp_rtcp->SetSendingStatus(true);
       }
-      if (rtp_rtcp_->RegisterReceiveRtpHeaderExtension(
+      if (rtp_rtcp->RegisterReceiveRtpHeaderExtension(
           kRtpExtensionTransmissionTimeOffset, 1) != 0) {
         WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
             "%s: could not register transmission time offset extension",
