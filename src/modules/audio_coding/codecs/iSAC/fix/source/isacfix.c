@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -15,12 +15,13 @@
  *
  */
 
-#include <stdlib.h>
-#include <string.h>
-
 #include "isacfix.h"
+
+#include <stdlib.h>
+
 #include "bandwidth_estimator.h"
 #include "codec.h"
+#include "system_wrappers/interface/cpu_features_wrapper.h"
 #include "entropy_coding.h"
 #include "structs.h"
 
@@ -169,6 +170,19 @@ WebRtc_Word16 WebRtcIsacfix_FreeInternal(ISACFIX_MainStruct *ISAC_main_inst)
 }
 
 /****************************************************************************
+ * WebRtcAecm_InitNeon(...)
+ *
+ * This function initializes function pointers for ARM Neon platform.
+ */
+
+#if (defined WEBRTC_DETECT_ARM_NEON || defined WEBRTC_ARCH_ARM_NEON)
+static void WebRtcIsacfix_InitNeon(void) {
+  WebRtcIsacfix_AutocorrFix = WebRtcIsacfix_AutocorrNeon;
+  WebRtcIsacfix_FilterMaLoopFix = WebRtcIsacfix_FilterMaLoopNeon;
+}
+#endif
+
+/****************************************************************************
  * WebRtcIsacfix_EncoderInit(...)
  *
  * This function initializes a ISAC instance prior to the encoder calls.
@@ -250,9 +264,12 @@ WebRtc_Word16 WebRtcIsacfix_EncoderInit(ISACFIX_MainStruct *ISAC_main_inst,
   WebRtcIsacfix_AutocorrFix = WebRtcIsacfix_AutocorrC;
   WebRtcIsacfix_FilterMaLoopFix = WebRtcIsacfix_FilterMaLoopC;
 
-#ifdef WEBRTC_ARCH_ARM_NEON
-  WebRtcIsacfix_AutocorrFix = WebRtcIsacfix_AutocorrNeon;
-  WebRtcIsacfix_FilterMaLoopFix = WebRtcIsacfix_FilterMaLoopNeon;
+#ifdef WEBRTC_DETECT_ARM_NEON
+  if ((WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) != 0) {
+    WebRtcIsacfix_InitNeon();
+  }
+#elif defined(WEBRTC_ARCH_ARM_NEON)
+  WebRtcIsacfix_InitNeon();
 #endif
 
   return statusInit;

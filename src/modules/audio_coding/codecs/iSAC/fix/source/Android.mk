@@ -64,6 +64,8 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../../../../.. \
     $(LOCAL_PATH)/../../../../../../common_audio/signal_processing/include
 
+LOCAL_STATIC_LIBRARIES += libwebrtc_system_wrappers
+
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
     libdl \
@@ -127,7 +129,8 @@ LOCAL_C_INCLUDES := \
 
 LOCAL_STATIC_LIBRARIES := \
     libwebrtc_isacfix \
-    libwebrtc_spl
+    libwebrtc_spl \
+    libwebrtc_system_wrappers
 
 ifeq ($(WEBRTC_BUILD_NEON_LIBS),true)
 LOCAL_STATIC_LIBRARIES += \

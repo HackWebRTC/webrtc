@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -144,7 +144,7 @@ void WebRtcIsacfix_FilterMaLoopC(int16_t input0,
                                  int32_t* ptr2);
 
 // Functions for ARM-Neon platforms, in place of the above two generic C ones.
-#if (defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM_NEON))
+#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
 int WebRtcIsacfix_AutocorrNeon(WebRtc_Word32* __restrict r,
                                const WebRtc_Word16* __restrict x,
                                WebRtc_Word16 N,
