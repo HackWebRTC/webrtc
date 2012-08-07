@@ -95,8 +95,8 @@ int WebRtcIsacfix_AutocorrNeon(
   for (i = 1; i < order + 1; i++) {
     int32_t prod_lower = 0;
     int32_t prod_upper = 0;
-    int16_t* ptr0 = &x[0];
-    int16_t* ptr1 = &x[i];
+    const int16_t* ptr0 = &x[0];
+    const int16_t* ptr1 = &x[i];
     int32_t tmp = 0;
 
     // Initialize the sum (q9) to zero.

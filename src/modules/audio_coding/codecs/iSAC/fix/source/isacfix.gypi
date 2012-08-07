@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -13,6 +13,7 @@
       'type': '<(library)',
       'dependencies': [
         '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
         '../interface',
@@ -63,15 +64,36 @@
         'settings.h',
         'spectrum_ar_model_tables.h',
         'structs.h',
-     ],
+      ],
       'conditions': [
         ['OS!="win"', {
           'defines': [
             'WEBRTC_LINUX',
           ],
         }],
+        ['OS=="android"', {
+          'dependencies': [ 'isac_neon', ],
+        }],
       ],
     },
+  ],
+  'conditions': [
+    ['OS=="android"', {
+      'targets': [
+        {
+          'target_name': 'isac_neon',
+          'type': '<(library)',
+          'includes': ['../../../../../../build/arm_neon.gypi',],
+          'dependencies': [
+            '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',
+          ],
+          'sources': [
+            'lattice_neon.S',
+            'filters_neon.c',
+          ],
+        },
+      ],
+    }],
   ],
 }
 
