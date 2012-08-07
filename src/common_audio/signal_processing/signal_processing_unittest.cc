@@ -225,31 +225,97 @@ TEST_F(SplTest, BasicArrayOperationsTest) {
     }
 }
 
+TEST_F(SplTest, ExeptionsHandlingMinMaxOperationsTest) {
+  // Test how the functions handle exceptional cases.
+  const int kVectorSize = 2;
+  int16_t vector16[kVectorSize] = {0};
+  int32_t vector32[kVectorSize] = {0};
+
+  EXPECT_EQ(-1, WebRtcSpl_MaxAbsValueW16(vector16, 0));
+  EXPECT_EQ(-1, WebRtcSpl_MaxAbsValueW16(NULL, kVectorSize));
+  EXPECT_EQ(WEBRTC_SPL_WORD16_MIN, WebRtcSpl_MaxValueW16(vector16, 0));
+  EXPECT_EQ(WEBRTC_SPL_WORD16_MIN, WebRtcSpl_MaxValueW16(NULL, kVectorSize));
+  EXPECT_EQ(WEBRTC_SPL_WORD16_MAX, WebRtcSpl_MinValueW16(vector16, 0));
+  EXPECT_EQ(WEBRTC_SPL_WORD16_MAX, WebRtcSpl_MinValueW16(NULL, kVectorSize));
+  EXPECT_EQ(-1, WebRtcSpl_MaxAbsValueW32(vector32, 0));
+  EXPECT_EQ(-1, WebRtcSpl_MaxAbsValueW32(NULL, kVectorSize));
+  EXPECT_EQ(WEBRTC_SPL_WORD32_MIN, WebRtcSpl_MaxValueW32(vector32, 0));
+  EXPECT_EQ(WEBRTC_SPL_WORD32_MIN, WebRtcSpl_MaxValueW32(NULL, kVectorSize));
+  EXPECT_EQ(WEBRTC_SPL_WORD32_MAX, WebRtcSpl_MinValueW32(vector32, 0));
+  EXPECT_EQ(WEBRTC_SPL_WORD32_MAX, WebRtcSpl_MinValueW32(NULL, kVectorSize));
+  EXPECT_EQ(-1, WebRtcSpl_MaxAbsIndexW16(vector16, 0));
+  EXPECT_EQ(-1, WebRtcSpl_MaxAbsIndexW16(NULL, kVectorSize));
+  EXPECT_EQ(-1, WebRtcSpl_MaxIndexW16(vector16, 0));
+  EXPECT_EQ(-1, WebRtcSpl_MaxIndexW16(NULL, kVectorSize));
+  EXPECT_EQ(-1, WebRtcSpl_MaxIndexW32(vector32, 0));
+  EXPECT_EQ(-1, WebRtcSpl_MaxIndexW32(NULL, kVectorSize));
+  EXPECT_EQ(-1, WebRtcSpl_MinIndexW16(vector16, 0));
+  EXPECT_EQ(-1, WebRtcSpl_MinIndexW16(NULL, kVectorSize));
+  EXPECT_EQ(-1, WebRtcSpl_MinIndexW32(vector32, 0));
+  EXPECT_EQ(-1, WebRtcSpl_MinIndexW32(NULL, kVectorSize));
+}
+
 TEST_F(SplTest, MinMaxOperationsTest) {
-    const int kVectorSize = 4;
-    int B[] = {4, 12, 133, -1100};
-    WebRtc_Word16 b16[kVectorSize];
-    WebRtc_Word32 b32[kVectorSize];
+  const int kVectorSize = 17;
 
-    for (int kk = 0; kk < kVectorSize; ++kk) {
-        b16[kk] = B[kk];
-        b32[kk] = B[kk];
-    }
+  // Vectors to test the cases where minimum values have to be caught
+  // outside of the unrolled loops in ARM-Neon.
+  int16_t vector16[kVectorSize] = {-1, 7485, 0, 3333,
+      -18283, 0, 12334, -29871, 988, -3333,
+      345, -456, 222, 999,  888, 8774, WEBRTC_SPL_WORD16_MIN};
+  int32_t vector32[kVectorSize] = {-1, 0, 283211, 3333,
+      8712345, 0, -3333, 89345, -374585456, 222, 999, 122345334,
+      -12389756, -987329871, 888, -2, WEBRTC_SPL_WORD32_MIN};
 
-    EXPECT_EQ(1100, WebRtcSpl_MaxAbsValueW16(b16, kVectorSize));
-    EXPECT_EQ(1100, WebRtcSpl_MaxAbsValueW32(b32, kVectorSize));
-    EXPECT_EQ(133, WebRtcSpl_MaxValueW16(b16, kVectorSize));
-    EXPECT_EQ(133, WebRtcSpl_MaxValueW32(b32, kVectorSize));
-    EXPECT_EQ(3, WebRtcSpl_MaxAbsIndexW16(b16, kVectorSize));
-    EXPECT_EQ(2, WebRtcSpl_MaxIndexW16(b16, kVectorSize));
-    EXPECT_EQ(2, WebRtcSpl_MaxIndexW32(b32, kVectorSize));
+  EXPECT_EQ(WEBRTC_SPL_WORD16_MIN,
+            WebRtcSpl_MinValueW16(vector16, kVectorSize));
+  EXPECT_EQ(WEBRTC_SPL_WORD32_MIN,
+            WebRtcSpl_MinValueW32(vector32, kVectorSize));
+  EXPECT_EQ(kVectorSize - 1, WebRtcSpl_MinIndexW16(vector16, kVectorSize));
+  EXPECT_EQ(kVectorSize - 1, WebRtcSpl_MinIndexW32(vector32, kVectorSize));
 
-    EXPECT_EQ(-1100, WebRtcSpl_MinValueW16(b16, kVectorSize));
-    EXPECT_EQ(-1100, WebRtcSpl_MinValueW32(b32, kVectorSize));
-    EXPECT_EQ(3, WebRtcSpl_MinIndexW16(b16, kVectorSize));
-    EXPECT_EQ(3, WebRtcSpl_MinIndexW32(b32, kVectorSize));
+  // Test the cases where maximum values have to be caught
+  // outside of the unrolled loops in ARM-Neon.
+  vector16[kVectorSize - 1] = WEBRTC_SPL_WORD16_MAX;
+  vector32[kVectorSize - 1] = WEBRTC_SPL_WORD32_MAX;
 
-    EXPECT_EQ(0, WebRtcSpl_GetScalingSquare(b16, kVectorSize, 1));
+  EXPECT_EQ(WEBRTC_SPL_WORD16_MAX,
+            WebRtcSpl_MaxAbsValueW16(vector16, kVectorSize));
+  EXPECT_EQ(WEBRTC_SPL_WORD16_MAX,
+            WebRtcSpl_MaxValueW16(vector16, kVectorSize));
+  EXPECT_EQ(WEBRTC_SPL_WORD32_MAX,
+            WebRtcSpl_MaxAbsValueW32(vector32, kVectorSize));
+  EXPECT_EQ(WEBRTC_SPL_WORD32_MAX,
+            WebRtcSpl_MaxValueW32(vector32, kVectorSize));
+  EXPECT_EQ(kVectorSize - 1, WebRtcSpl_MaxAbsIndexW16(vector16, kVectorSize));
+  EXPECT_EQ(kVectorSize - 1, WebRtcSpl_MaxIndexW16(vector16, kVectorSize));
+  EXPECT_EQ(kVectorSize - 1, WebRtcSpl_MaxIndexW32(vector32, kVectorSize));
+
+  // Test the cases where multiple maximum and minimum values are present.
+  vector16[1] = WEBRTC_SPL_WORD16_MAX;
+  vector16[6] = WEBRTC_SPL_WORD16_MIN;
+  vector16[11] = WEBRTC_SPL_WORD16_MIN;
+  vector32[1] = WEBRTC_SPL_WORD32_MAX;
+  vector32[6] = WEBRTC_SPL_WORD32_MIN;
+  vector32[11] = WEBRTC_SPL_WORD32_MIN;
+
+  EXPECT_EQ(WEBRTC_SPL_WORD16_MAX,
+            WebRtcSpl_MaxAbsValueW16(vector16, kVectorSize));
+  EXPECT_EQ(WEBRTC_SPL_WORD16_MAX,
+            WebRtcSpl_MaxValueW16(vector16, kVectorSize));
+  EXPECT_EQ(WEBRTC_SPL_WORD16_MIN,
+            WebRtcSpl_MinValueW16(vector16, kVectorSize));
+  EXPECT_EQ(WEBRTC_SPL_WORD32_MAX,
+            WebRtcSpl_MaxAbsValueW32(vector32, kVectorSize));
+  EXPECT_EQ(WEBRTC_SPL_WORD32_MAX,
+            WebRtcSpl_MaxValueW32(vector32, kVectorSize));
+  EXPECT_EQ(WEBRTC_SPL_WORD32_MIN,
+            WebRtcSpl_MinValueW32(vector32, kVectorSize));
+  EXPECT_EQ(6, WebRtcSpl_MaxAbsIndexW16(vector16, kVectorSize));
+  EXPECT_EQ(1, WebRtcSpl_MaxIndexW16(vector16, kVectorSize));
+  EXPECT_EQ(1, WebRtcSpl_MaxIndexW32(vector32, kVectorSize));
+  EXPECT_EQ(6, WebRtcSpl_MinIndexW16(vector16, kVectorSize));
+  EXPECT_EQ(6, WebRtcSpl_MinIndexW32(vector32, kVectorSize));
 }
 
 TEST_F(SplTest, VectorOperationsTest) {
@@ -309,6 +375,8 @@ TEST_F(SplTest, VectorOperationsTest) {
         EXPECT_EQ(32767, bTmp16[kk]);
     }
     EXPECT_EQ(32749, bTmp16[kVectorSize - 1]);
+
+    EXPECT_EQ(0, WebRtcSpl_GetScalingSquare(b16, kVectorSize, 1));
 }
 
 TEST_F(SplTest, EstimatorsTest) {

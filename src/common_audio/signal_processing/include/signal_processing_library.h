@@ -281,8 +281,11 @@ int32_t WebRtcSpl_MinValueW32(const int32_t* vector, int length);
 //      - vector : 16-bit input vector.
 //      - length : Number of samples in vector.
 //
-// Return value  : Index to the maximum absolute value in vector;
-//                 or -1, if (vector == NULL || length <= 0).
+// Return value  : Index to the maximum absolute value in vector, or -1,
+//                 if (vector == NULL || length <= 0).
+//                 If there are multiple equal maxima, return the index of the
+//                 first. -32768 will always have precedence over 32767 (despite
+//                 -32768 presenting an int16 absolute value of 32767);
 int WebRtcSpl_MaxAbsIndexW16(const int16_t* vector, int length);
 
 // Returns the vector index to the maximum sample value of a 16-bit vector.
@@ -291,7 +294,8 @@ int WebRtcSpl_MaxAbsIndexW16(const int16_t* vector, int length);
 //      - vector : 16-bit input vector.
 //      - length : Number of samples in vector.
 //
-// Return value  : Index to the maximum value in vector;
+// Return value  : Index to the maximum value in vector (if multiple
+//                 indexes have the maximum, return the first);
 //                 or -1, if (vector == NULL || length <= 0).
 int WebRtcSpl_MaxIndexW16(const int16_t* vector, int length);
 
@@ -301,7 +305,8 @@ int WebRtcSpl_MaxIndexW16(const int16_t* vector, int length);
 //      - vector : 32-bit input vector.
 //      - length : Number of samples in vector.
 //
-// Return value  : Index to the maximum value in vector;
+// Return value  : Index to the maximum value in vector (if multiple
+//                 indexes have the maximum, return the first);
 //                 or -1, if (vector == NULL || length <= 0).
 int WebRtcSpl_MaxIndexW32(const int32_t* vector, int length);
 
@@ -311,7 +316,8 @@ int WebRtcSpl_MaxIndexW32(const int32_t* vector, int length);
 //      - vector : 16-bit input vector.
 //      - length : Number of samples in vector.
 //
-// Return value  : Index to the mimimum value in vector;
+// Return value  : Index to the mimimum value in vector  (if multiple
+//                 indexes have the minimum, return the first);
 //                 or -1, if (vector == NULL || length <= 0).
 int WebRtcSpl_MinIndexW16(const int16_t* vector, int length);
 
@@ -321,7 +327,8 @@ int WebRtcSpl_MinIndexW16(const int16_t* vector, int length);
 //      - vector : 32-bit input vector.
 //      - length : Number of samples in vector.
 //
-// Return value  : Index to the mimimum value in vector;
+// Return value  : Index to the mimimum value in vector  (if multiple
+//                 indexes have the minimum, return the first);
 //                 or -1, if (vector == NULL || length <= 0).
 int WebRtcSpl_MinIndexW32(const int32_t* vector, int length);
 
