@@ -48,6 +48,7 @@ WebRtc_Word32 VideoCaptureImpl::ChangeUniqueId(const WebRtc_Word32 id)
 // returns the number of milliseconds until the module want a worker thread to call Process
 WebRtc_Word32 VideoCaptureImpl::TimeUntilNextProcess()
 {
+    CriticalSectionScoped cs(&_callBackCs);
     TickTime timeNow = TickTime::Now();
 
     WebRtc_Word32 timeToNormalProcess = kProcessInterval

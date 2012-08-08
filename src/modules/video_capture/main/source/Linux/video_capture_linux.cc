@@ -282,39 +282,31 @@ WebRtc_Word32 VideoCaptureModuleV4L2::StartCapture(
 
 WebRtc_Word32 VideoCaptureModuleV4L2::StopCapture()
 {
-    if (_captureThread)
-        _captureThread->SetNotAlive();// Make sure the capture thread stop stop using the critsect.
-
-
-    CriticalSectionScoped cs(_captureCritSect);
-
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, -1, "StopCapture(), was running: %d",
-               _captureStarted);
-
-    if (!_captureStarted)
-    {
-        // we were not capturing!
-        return 0;
-    }
-
-    _captureStarted = false;
-
-    // stop the capture thread
-    // Delete capture update thread and event
-    if (_captureThread)
-    {
-        ThreadWrapper* temp = _captureThread;
-        _captureThread = NULL;
-        temp->SetNotAlive();
-        if (temp->Stop())
+    if (_captureThread) {
+        // Make sure the capture thread stop stop using the critsect.
+        _captureThread->SetNotAlive();
+        if (_captureThread->Stop()) {
+            delete _captureThread;
+            _captureThread = NULL;
+        } else
         {
-            delete temp;
+            // Couldn't stop the thread, leak instead of crash.
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, -1,
+                         "%s: could not stop capture thread", __FUNCTION__);
+            assert(!"could not stop capture thread");
         }
     }
 
-    DeAllocateVideoBuffers();
-    close(_deviceFd);
-    _deviceFd = -1;
+    CriticalSectionScoped cs(_captureCritSect);
+    if (_captureStarted)
+    {
+        _captureStarted = false;
+        _captureThread = NULL;
+
+        DeAllocateVideoBuffers();
+        close(_deviceFd);
+        _deviceFd = -1;
+    }
 
     return 0;
 }
@@ -414,12 +406,6 @@ bool VideoCaptureModuleV4L2::CaptureProcess()
     struct timeval timeout;
 
     _captureCritSect->Enter();
-    if (!_captureThread)
-    {
-        // terminating
-        _captureCritSect->Leave();
-        return false;
-    }
 
     FD_ZERO(&rSet);
     FD_SET(_deviceFd, &rSet);
