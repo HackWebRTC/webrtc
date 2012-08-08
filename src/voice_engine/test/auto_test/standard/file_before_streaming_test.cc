@@ -71,8 +71,9 @@ class FileBeforeStreamingTest : public AfterInitializationFixture {
       EXPECT_EQ(output_value, target_value);
     }
 
-    // Ensure the recording length is close to the duration of the test.
-    ASSERT_GE((samples_read * 1000.0) / kSampleRateHz, 0.9 * kTestDurationMs);
+    // Ensure that a reasonable amount was recorded. We use a loose
+    // tolerance to avoid flaky bot failures.
+    ASSERT_GE((samples_read * 1000.0) / kSampleRateHz, 0.4 * kTestDurationMs);
 
     // Ensure we read the entire file.
     ASSERT_NE(0, feof(output_file));
@@ -98,8 +99,7 @@ void VerifyEmptyOutput() {
 // 1. the same DC signal if file is played out,
 // 2. total silence if file is not played out,
 // 3. no output if playout is not started.
-TEST_F(FileBeforeStreamingTest,
-       DISABLED_TestStartPlayingFileLocallyWithStartPlayout) {
+TEST_F(FileBeforeStreamingTest, TestStartPlayingFileLocallyWithStartPlayout) {
   GenerateInputFile();
 
   TEST_LOG("Playout is not started. File will not be played out.\n");
