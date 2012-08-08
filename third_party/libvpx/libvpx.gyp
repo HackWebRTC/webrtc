@@ -40,7 +40,7 @@
     # TODO(andrew): Hack to ensure we pass -msse2 to gcc on Linux for files
     # containing SSE intrinsics. This should be handled in the gyp generator
     # scripts somehow. Clang (default on Mac) doesn't require this.
-    ['target_arch=="ia32"', {
+    ['target_arch=="ia32" or target_arch=="x64"', {
       'targets' : [
         {
           'target_name': 'libvpx_sse2',
@@ -55,7 +55,16 @@
           'sources': [
             'source/libvpx/vp8/encoder/x86/denoising_sse2.c',
           ],
-          'cflags': [ '-msse2', ],
+          'conditions': [
+            ['os_posix==1 and OS!="mac"', {
+              'cflags': [ '-msse2', ],
+            }],
+            ['OS=="mac"', {
+              'xcode_settings': {
+                'OTHER_CFLAGS': [ '-msse2', ],
+              },
+            }],
+          ],
         },
       ],
     }],
@@ -99,6 +108,7 @@
               'includes': [
                 'libvpx_srcs_x86_64.gypi',
               ],
+              'dependencies': [ 'libvpx_sse2', ],
             }],
           ],
         },
