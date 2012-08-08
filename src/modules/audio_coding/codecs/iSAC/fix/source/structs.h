@@ -19,9 +19,9 @@
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_STRUCTS_H_
 
 
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "modules/audio_coding/codecs/iSAC/fix/source/settings.h"
 #include "typedefs.h"
-#include "signal_processing_library.h"
-#include "settings.h"
 
 /* Bitstream struct for decoder */
 typedef struct Bitstreamstruct_dec {

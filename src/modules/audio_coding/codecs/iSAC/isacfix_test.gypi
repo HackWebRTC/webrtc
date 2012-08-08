@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -23,13 +23,19 @@
         './fix/test/kenny.c',
       ],
     },
+    {
+      'target_name': 'isacfix_unittests',
+      'type': 'executable',
+      'dependencies': [
+        'iSACFix',
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(webrtc_root)/test/test.gyp:test_support_main',
+      ],
+      'sources': [
+        'fix/test/isacfix_unittest.cc',
+      ],
+    },
   ],
 }
-
-# Local Variables:
-# tab-width:2
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=2 shiftwidth=2:
 
 # TODO(kma): Add bit-exact test for iSAC-fix.
