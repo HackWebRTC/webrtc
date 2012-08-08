@@ -37,7 +37,6 @@
         'interface/vie_autotest.h',
         'interface/vie_autotest_defines.h',
         'interface/vie_autotest_linux.h',
-        'interface/vie_autotest_mac_carbon.h',
         'interface/vie_autotest_mac_cocoa.h',
         'interface/vie_autotest_main.h',
         'interface/vie_autotest_window_manager_interface.h',
@@ -92,7 +91,6 @@
         'source/vie_window_manager_factory_linux.cc',
         # Mac
         'source/vie_autotest_cocoa_mac.mm',
-        'source/vie_autotest_carbon_mac.cc',
         'source/vie_window_manager_factory_mac.mm',
         # Windows
         'source/vie_autotest_win.cc',
@@ -114,6 +112,10 @@
           ],
         }],
         ['OS=="mac"', {
+          'dependencies': [
+            # Use a special main for mac so we can access the webcam.
+            '<(webrtc_root)/test/test.gyp:test_support_main_threaded_mac',
+          ],
           'xcode_settings': {
             'OTHER_LDFLAGS': [
               '-framework Foundation -framework AppKit -framework Cocoa -framework OpenGL -framework CoreVideo -framework CoreAudio -framework AudioToolbox',

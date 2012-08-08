@@ -10,8 +10,9 @@
 
 #include "engine_configurations.h"
 
-#if defined(COCOA_RENDERING)
 #import "cocoa_render_view.h"
+#import "testsupport/mac/run_threaded_main_mac.h"
+#include "video_engine/test/auto_test/interface/vie_autotest_main.h"
 #include "vie_autotest_mac_cocoa.h"
 #include "vie_autotest_defines.h"
 #include "vie_autotest.h"
@@ -131,67 +132,10 @@ bool ViEAutoTestWindowManager::SetTopmostWindow() {
     return true;
 }
 
-int main(int argc, char * argv[]) {
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-
-    [NSApplication sharedApplication];
-
-    int result = 0;
-    AutoTestInWorkerThread* tests = [[AutoTestInWorkerThread alloc] init];
-
-    [tests setArgc:argc argv:argv];
-    [tests setDone:false];
-    [NSThread detachNewThreadSelector:@selector(autoTestWithArg:)
-                             toTarget:tests
-                           withObject:nil];
-
-    NSRunLoop* main_run_loop = [NSRunLoop mainRunLoop];
-    NSDate *loop_until = [NSDate dateWithTimeIntervalSinceNow:0.1];
-    bool runloop_ok = true;
-    while (![tests done] && runloop_ok) {
-      runloop_ok = [main_run_loop runMode:NSDefaultRunLoopMode
-                               beforeDate:loop_until];
-      loop_until = [NSDate dateWithTimeIntervalSinceNow:0.1];
-    }
-
-    result = [tests result];
-
-    [pool release];
-    return result;
+// This is acts as our "main" for mac. The actual (reusable) main is defined in
+// testsupport/mac/run_threaded_main_mac.mm.
+int ImplementThisToRunYourTest(int argc, char** argv) {
+  ViEAutoTestMain auto_test;
+  return auto_test.RunTests(argc, argv);
 }
-
-@implementation AutoTestInWorkerThread
-
-- (void)setDone:(bool)done {
-  done_ = done;
-}
-
-- (bool)done {
-  return done_;
-}
-
-- (void)setArgc:(int)argc argv:(char**)argv {
-  argc_ = argc;
-  argv_ = argv;
-}
-
-- (void)autoTestWithArg:(NSObject*)ignored {
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-
-    ViEAutoTestMain auto_test;
-
-    result_ = auto_test.RunTests(argc_, argv_);
-    done_ = true;
-
-    [pool release];
-    return;
-}
-
-- (int)result {
-  return result_;
-}
-
-@end
-
-#endif
 

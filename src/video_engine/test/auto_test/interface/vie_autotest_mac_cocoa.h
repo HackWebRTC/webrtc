@@ -66,20 +66,5 @@ class ViEAutoTestWindowManager: public ViEAutoTestWindowManagerInterface {
   TestCocoaUi* cocoa_ui_;
 };
 
-@interface AutoTestInWorkerThread : NSObject {
-  int    argc_;
-  char** argv_;
-  int    result_;
-  bool   done_;
-}
-
-- (void)setDone:(bool)done;
-- (bool)done;
-- (void)setArgc:(int)argc argv:(char**)argv;
-- (int) result;
-- (void)autoTestWithArg:(NSObject*)ignored;
-
-@end
-
 #endif  // WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_VIE_AUTOTEST_MAC_COCOA_H_
 #endif  // COCOA_RENDERING

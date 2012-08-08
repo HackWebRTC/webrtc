@@ -61,6 +61,23 @@
       ],
     },
     {
+      # Depend on this target when you want to have test_support and a special
+      # main for mac which will run your test on a worker thread and consume
+      # events on the main thread. Useful if you want to access a webcam.
+      # This main will provide all the scaffolding and objective-c black magic
+      # for you. All you need to do is to implement a function in the
+      # run_threaded_main_mac.h file (ImplementThisToRunYourTest).
+      'target_name': 'test_support_main_threaded_mac',
+      'type': 'static_library',
+      'dependencies': [
+        'test_support',
+      ],
+      'sources': [
+        'testsupport/mac/run_threaded_main_mac.h',
+        'testsupport/mac/run_threaded_main_mac.mm',
+      ],
+    },
+    {
       'target_name': 'test_support_unittests',
       'type': 'executable',
       'dependencies': [
