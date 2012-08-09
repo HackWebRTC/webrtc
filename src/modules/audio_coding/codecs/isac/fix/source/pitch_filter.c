@@ -16,9 +16,9 @@
  */
 
 #include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "modules/audio_coding/codecs/iSAC/fix/source/pitch_estimator.h"
-#include "modules/audio_coding/codecs/iSAC/fix/source/settings.h"
-#include "modules/audio_coding/codecs/iSAC/fix/source/structs.h"
+#include "modules/audio_coding/codecs/isac/fix/source/pitch_estimator.h"
+#include "modules/audio_coding/codecs/isac/fix/source/settings.h"
+#include "modules/audio_coding/codecs/isac/fix/source/structs.h"
 
 // Number of segments in a pitch subframe.
 static const int kSegments = 5;

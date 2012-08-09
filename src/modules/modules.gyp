@@ -13,8 +13,8 @@
     'audio_coding/codecs/g711/g711.gypi',
     'audio_coding/codecs/g722/g722.gypi',
     'audio_coding/codecs/ilbc/ilbc.gypi',
-    'audio_coding/codecs/iSAC/main/source/isac.gypi',
-    'audio_coding/codecs/iSAC/fix/source/isacfix.gypi',
+    'audio_coding/codecs/isac/main/source/isac.gypi',
+    'audio_coding/codecs/isac/fix/source/isacfix.gypi',
     'audio_coding/codecs/pcm16b/pcm16b.gypi',
     'audio_coding/main/source/audio_coding_module.gypi',
     'audio_coding/neteq/neteq.gypi',
@@ -42,8 +42,8 @@
   'conditions': [
     ['include_tests==1', {
       'includes': [
-        'audio_coding/codecs/iSAC/isac_test.gypi',
-        'audio_coding/codecs/iSAC/isacfix_test.gypi',
+        'audio_coding/codecs/isac/isac_test.gypi',
+        'audio_coding/codecs/isac/isacfix_test.gypi',
         'audio_processing/apm_tests.gypi',
         'rtp_rtcp/source/rtp_rtcp_tests.gypi',
         'rtp_rtcp/test/testFec/test_fec.gypi',

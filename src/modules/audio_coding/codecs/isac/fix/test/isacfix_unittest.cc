@@ -10,7 +10,7 @@
 #include <typedefs.h>
 
 #include "gtest/gtest.h"
-#include "modules/audio_coding/codecs/iSAC/fix/source/lpc_masking_model.h"
+#include "modules/audio_coding/codecs/isac/fix/source/lpc_masking_model.h"
 
 class IsacUnitTest : public testing::Test {
 };

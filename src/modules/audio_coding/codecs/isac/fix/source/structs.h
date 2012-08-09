@@ -20,7 +20,7 @@
 
 
 #include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "modules/audio_coding/codecs/iSAC/fix/source/settings.h"
+#include "modules/audio_coding/codecs/isac/fix/source/settings.h"
 #include "typedefs.h"
 
 /* Bitstream struct for decoder */
