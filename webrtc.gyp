@@ -19,10 +19,16 @@
         'src/system_wrappers/source/system_wrappers.gyp:*',
         'src/video_engine/video_engine.gyp:*',
         'src/voice_engine/voice_engine.gyp:*',
-        'src/test/metrics.gyp:*',
-        'src/test/test.gyp:*',
-        'tools/e2e_quality/e2e_quality.gyp:*',
         '<(webrtc_vp8_dir)/vp8.gyp:*'
+      ],
+      'conditions': [
+        ['include_tests==1', {
+          'dependencies': [
+            'src/test/metrics.gyp:*',
+            'src/test/test.gyp:*',
+            'tools/e2e_quality/e2e_quality.gyp:*',
+          ],
+        }],
       ],
     },
   ],

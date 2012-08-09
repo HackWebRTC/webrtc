@@ -4,6 +4,7 @@ vars = {
   # Override root_dir in your .gclient's custom_vars to specify a custom root
   # folder name.
   "root_dir": "trunk",
+  "extra_gyp_flag": "-Dextra_gyp_flag=0",
 
   # Use this googlecode_url variable only if there is an internal mirror for it.
   # If you do not know, use the full path while defining your new deps entry.
@@ -121,7 +122,8 @@ hooks = [
     # A change to a .gyp, .gypi, or to GYP itself should run the generator.
     "pattern": ".",
     "action": ["python", Var("root_dir") + "/build/gyp_chromium",
-               "--depth=" + Var("root_dir"), Var("root_dir") + "/webrtc.gyp"],
+               "--depth=" + Var("root_dir"), Var("root_dir") + "/webrtc.gyp",
+               Var("extra_gyp_flag")],
   },
 ]
 
