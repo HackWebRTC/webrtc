@@ -107,6 +107,12 @@ LOCAL_SRC_FILES := \
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
+LOCAL_MODULE := libisac_neon
+LOCAL_SRC_FILES := \
+    $(MY_LIBS_PATH)/src/modules/libisac_neon.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
 LOCAL_MODULE := libvad
 LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/src/common_audio/libvad.a
@@ -247,7 +253,7 @@ include $(PREBUILT_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE := libwebrtc_vp8
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/video_coding/codecs/vp8/main/source/libwebrtc_vp8.a
+    $(MY_LIBS_PATH)/src/modules/video_coding/codecs/vp8/libwebrtc_vp8.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
@@ -318,6 +324,7 @@ LOCAL_STATIC_LIBRARIES := \
     libG711 \
     libiLBC \
     libiSACFix \
+    libisac_neon \
     libvad \
     libns_fix \
     libns_neon \
