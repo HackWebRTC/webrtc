@@ -8,27 +8,32 @@
 
 {
   'includes': [ 'src/build/common.gypi', ],
+  'variables': {
+    'webrtc_all_dependencies': [
+      'src/common_audio/common_audio.gyp:*',
+      'src/common_video/common_video.gyp:*',
+      'src/modules/modules.gyp:*',
+      'src/system_wrappers/source/system_wrappers.gyp:*',
+      'src/video_engine/video_engine.gyp:*',
+      'src/voice_engine/voice_engine.gyp:*',
+      '<(webrtc_vp8_dir)/vp8.gyp:*',
+    ],
+    'conditions': [
+      ['include_tests==1', {
+        'webrtc_all_dependencies': [
+          'src/test/metrics.gyp:*',
+          'src/test/test.gyp:*',
+          'tools/e2e_quality/e2e_quality.gyp:*',
+        ],
+      }],
+    ],
+  },
   'targets': [
     {
       'target_name': 'All',
       'type': 'none',
       'dependencies': [
-        'src/common_audio/common_audio.gyp:*',
-        'src/common_video/common_video.gyp:*',
-        'src/modules/modules.gyp:*',
-        'src/system_wrappers/source/system_wrappers.gyp:*',
-        'src/video_engine/video_engine.gyp:*',
-        'src/voice_engine/voice_engine.gyp:*',
-        '<(webrtc_vp8_dir)/vp8.gyp:*'
-      ],
-      'conditions': [
-        ['include_tests==1', {
-          'dependencies': [
-            'src/test/metrics.gyp:*',
-            'src/test/test.gyp:*',
-            'tools/e2e_quality/e2e_quality.gyp:*',
-          ],
-        }],
+        '<@(webrtc_all_dependencies)',
       ],
     },
   ],
