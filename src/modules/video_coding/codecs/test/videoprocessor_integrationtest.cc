@@ -693,7 +693,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossSpatialResizeFrameDrop) {
   rate_profile.num_frames = kNbrFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  SetCodecParameters(&process_settings, 0.0f, 120, 1, true, true);
+  SetCodecParameters(&process_settings, 0.0f, 120, 1, false, true);
   // Metrics for expected quality.: lower quality on average from up-sampling
   // the down-sampled portion of the run, in case resizer is on.
   QualityMetrics quality_metrics;
