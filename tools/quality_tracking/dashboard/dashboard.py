@@ -12,6 +12,8 @@
 
 __author__ = 'phoglund@webrtc.org (Patrik Höglund)'
 
+import math
+
 from google.appengine.ext.webapp import template
 import webapp2
 
@@ -28,7 +30,13 @@ class ShowDashboard(webapp2.RequestHandler):
 
   def get(self):
     build_status_loader = load_build_status.BuildStatusLoader()
+
+    # Split the build status data in two rows to fit them on the page.
     build_status_data = build_status_loader.load_build_status_data()
+    split_point = int(math.ceil(len(build_status_data) / 2.0))
+    build_status_data_row_1 = build_status_data[:split_point]
+    build_status_data_row_2 = build_status_data[split_point:]
+
     last_updated_at = build_status_loader.load_last_modified_at()
     if last_updated_at is None:
       self._show_error_page("No data has yet been uploaded to the dashboard.")

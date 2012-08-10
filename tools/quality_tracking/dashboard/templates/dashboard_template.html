@@ -67,12 +67,25 @@
     <div>(as of {{ last_updated_at }} UTC)</div>
     <table>
       <tr>
-      {% for entry in build_status_data %}
+      {% for entry in build_status_data_row_1 %}
         <th class="status_cell">{{ entry.bot_name }}</th>
       {% endfor %}
       </tr>
       <tr>
-      {% for entry in build_status_data %}
+      {% for entry in build_status_data_row_1 %}
+        <td title="Last built revision {{ entry.revision }}"
+            class="status_cell status_{{entry.status}}">
+          {{entry.status}}
+        </td>
+      {% endfor %}
+      </tr>
+      <tr>
+      {% for entry in build_status_data_row_2 %}
+        <th class="status_cell">{{ entry.bot_name }}</th>
+      {% endfor %}
+      </tr>
+      <tr>
+      {% for entry in build_status_data_row_2 %}
         <td title="Last built revision {{ entry.revision }}"
             class="status_cell status_{{entry.status}}">
           {{entry.status}}
