@@ -106,12 +106,12 @@ class ViEEncoder
 
   // Implements VCMPacketizationCallback.
   virtual WebRtc_Word32 SendData(
-    const FrameType frame_type,
-    const WebRtc_UWord8 payload_type,
-    const WebRtc_UWord32 time_stamp,
+    FrameType frame_type,
+    WebRtc_UWord8 payload_type,
+    WebRtc_UWord32 time_stamp,
     int64_t capture_time_ms,
     const WebRtc_UWord8* payload_data,
-    const WebRtc_UWord32 payload_size,
+    WebRtc_UWord32 payload_size,
     const RTPFragmentationHeader& fragmentation_header,
     const RTPVideoHeader* rtp_video_hdr);
 
