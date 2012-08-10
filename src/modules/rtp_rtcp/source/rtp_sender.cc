@@ -917,7 +917,7 @@ RTPSender::SendToNetwork(WebRtc_UWord8* buffer,
   if (capture_time_ms >= 0) {
     ModuleRTPUtility::RTPHeaderParser rtpParser(buffer, length);
     WebRtcRTPHeader rtp_header;
-    rtpParser.Parse(rtp_header);
+    rtpParser.Parse(rtp_header, &_rtpHeaderExtensionMap);
     int64_t time_now = _clock.GetTimeInMS();
     UpdateTransmissionTimeOffset(buffer, length, rtp_header,
                                  time_now - capture_time_ms);
@@ -1172,7 +1172,7 @@ void RTPSender::UpdateTransmissionTimeOffset(
     WebRtc_UWord8* rtp_packet,
     const WebRtc_UWord16 rtp_packet_length,
     const WebRtcRTPHeader& rtp_header,
-    const WebRtc_Word64 time_ms) const {
+    const WebRtc_Word64 time_diff_ms) const {
   CriticalSectionScoped cs(_sendCritsect);
 
   // Get length until start of transmission block.
@@ -1186,7 +1186,8 @@ void RTPSender::UpdateTransmissionTimeOffset(
   }
 
   int block_pos = 12 + rtp_header.header.numCSRCs + transmission_block_pos;
-  if ((rtp_packet_length < block_pos + 4)) {
+  if (rtp_packet_length < block_pos + 4 ||
+      rtp_header.header.headerLength < block_pos + 4) {
     WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, _id,
         "Failed to update transmission time offset, invalid length.");
     return;
@@ -1219,7 +1220,7 @@ void RTPSender::UpdateTransmissionTimeOffset(
 
   // Update transmission offset field.
   ModuleRTPUtility::AssignUWord24ToBuffer(rtp_packet + block_pos + 1,
-                                          time_ms * 90);  // RTP timestamp
+                                          time_diff_ms * 90);  // RTP timestamp.
 }
 
 WebRtc_Word32

@@ -166,7 +166,7 @@ public:
     void UpdateTransmissionTimeOffset(WebRtc_UWord8* rtp_packet,
                                       const WebRtc_UWord16 rtp_packet_length,
                                       const WebRtcRTPHeader& rtp_header,
-                                      const WebRtc_Word64 time_ms) const;
+                                      const WebRtc_Word64 time_diff_ms) const;
 
     void SetTransmissionSmoothingStatus(const bool enable);
 
