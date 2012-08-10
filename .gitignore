@@ -1,3 +1,4 @@
+*.host.mk
 *.target.mk
 *.Makefile
 *.ncb
