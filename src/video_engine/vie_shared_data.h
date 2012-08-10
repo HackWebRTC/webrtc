@@ -34,7 +34,7 @@ class ViESharedData {
   int SetUnInitialized();
   void SetLastError(const int error) const;
   int LastErrorInternal() const;
-
+  void SetOverUseDetectorOptions(const OverUseDetectorOptions& options);
   int NumberOfCores() const;
 
   int instance_id() { return instance_id_;}

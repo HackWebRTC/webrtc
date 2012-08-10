@@ -75,6 +75,11 @@ int ViESharedData::LastErrorInternal() const {
   return error;
 }
 
+void ViESharedData::SetOverUseDetectorOptions(
+    const OverUseDetectorOptions& options) {
+  over_use_detector_options_ = options;
+}
+
 int ViESharedData::NumberOfCores() const {
   return number_cores_;
 }

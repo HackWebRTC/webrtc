@@ -95,6 +95,8 @@ class ViERTP_RTCPImpl
   virtual int GetEstimatedReceiveBandwidth(
       const int video_channel,
       unsigned int* estimated_bandwidth) const;
+  virtual int SetOverUseDetectorOptions(
+      const OverUseDetectorOptions& options) const;
   virtual int StartRTPDump(const int video_channel,
                            const char file_nameUTF8[1024],
                            RTPDirections direction);
