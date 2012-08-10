@@ -515,6 +515,7 @@ struct VideoCodecVP8
     unsigned char        numberOfTemporalLayers;
     bool                 denoisingOn;
     bool                 errorConcealmentOn;
+    bool                 automaticResizeOn;
 };
 
 // Unknown specific

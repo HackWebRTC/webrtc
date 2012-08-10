@@ -175,6 +175,7 @@ VCMCodecDataBase::Codec(WebRtc_UWord8 listId, VideoCodec *settings)
             settings->codecSpecific.VP8.numberOfTemporalLayers = 1;
             settings->codecSpecific.VP8.denoisingOn = true;
             settings->codecSpecific.VP8.errorConcealmentOn = false;
+            settings->codecSpecific.VP8.automaticResizeOn = true;
             break;
         }
 #endif
