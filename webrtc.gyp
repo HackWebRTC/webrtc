@@ -18,15 +18,6 @@
       'src/voice_engine/voice_engine.gyp:*',
       '<(webrtc_vp8_dir)/vp8.gyp:*',
     ],
-    'conditions': [
-      ['include_tests==1', {
-        'webrtc_all_dependencies': [
-          'src/test/metrics.gyp:*',
-          'src/test/test.gyp:*',
-          'tools/e2e_quality/e2e_quality.gyp:*',
-        ],
-      }],
-    ],
   },
   'targets': [
     {
@@ -34,6 +25,15 @@
       'type': 'none',
       'dependencies': [
         '<@(webrtc_all_dependencies)',
+      ],
+      'conditions': [
+        ['include_tests==1', {
+          'dependencies': [
+            'src/test/metrics.gyp:*',
+            'src/test/test.gyp:*',
+            'tools/e2e_quality/e2e_quality.gyp:*',
+          ],
+        }],
       ],
     },
   ],

@@ -31,18 +31,9 @@
       'build_with_chromium%': '<(build_with_chromium)',
       'webrtc_root%': '<(webrtc_root)',
 
-      'conditions': [
-        ['build_with_chromium==1', {
-          'include_tests%': 0,
-        }, {
-          'include_tests%': 1,
-        }],
-      ],
-
       'webrtc_vp8_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp8',
     },
     'build_with_chromium%': '<(build_with_chromium)',
-    'include_tests%': '<(include_tests)',
     'webrtc_root%': '<(webrtc_root)',
     'webrtc_vp8_dir%': '<(webrtc_vp8_dir)',
 
@@ -93,20 +84,18 @@
 
         'include_video_engine_file_api%': 0,
 
+        'include_tests%': 0,
+
         # Disable the use of protocol buffers in production code.
         'enable_protobuf%': 0,
       }, {  # Settings for the standalone (not-in-Chromium) build.
         'include_pulse_audio%': 1,
-
         'include_internal_audio_device%': 1,
-
         'include_internal_video_capture%': 1,
-
         'include_internal_video_render%': 1,
-
         'include_video_engine_file_api%': 1,
-
         'enable_protobuf%': 1,
+        'include_tests%': 1,
 
         # TODO(andrew): For now, disable the Chrome plugins, which causes a
         # flood of chromium-style warnings. Investigate enabling them:
