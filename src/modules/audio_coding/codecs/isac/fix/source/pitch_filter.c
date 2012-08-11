@@ -19,6 +19,7 @@
 #include "modules/audio_coding/codecs/isac/fix/source/pitch_estimator.h"
 #include "modules/audio_coding/codecs/isac/fix/source/settings.h"
 #include "modules/audio_coding/codecs/isac/fix/source/structs.h"
+#include "system_wrappers/interface/compile_assert.h"
 
 // Number of segments in a pitch subframe.
 static const int kSegments = 5;
@@ -113,10 +114,6 @@ void WebRtcIsacfix_PitchFilterCore(int loopNumber,
     (*index2)++;
   }
 }
-#else
-// These two conditions are assumptions in ARM assembly file.
-WEBRTC_STATIC_ASSERT(PITCH_FRACORDER, PITCH_FRACORDER == 9);
-WEBRTC_STATIC_ASSERT(PITCH_DAMPORDER, PITCH_DAMPORDER == 5);
 #endif
 
 void WebRtcIsacfix_PitchFilter(WebRtc_Word16* indatQQ, // Q10 if type is 1 or 4,
@@ -136,6 +133,10 @@ void WebRtcIsacfix_PitchFilter(WebRtc_Word16* indatQQ, // Q10 if type is 1 or 4,
   int indW32 = 0, frcQQ = 0;
   WebRtc_Word32 tmpW32;
   const WebRtc_Word16* fracoeffQQ = NULL;
+
+  // Assumptions in ARM assembly for WebRtcIsacfix_PitchFilterCoreARM().
+  COMPILE_ASSERT(PITCH_FRACORDER == 9);
+  COMPILE_ASSERT(PITCH_DAMPORDER == 5);
 
   // Set up buffer and states.
   memcpy(ubufQQ, pfp->ubufQQ, sizeof(pfp->ubufQQ));

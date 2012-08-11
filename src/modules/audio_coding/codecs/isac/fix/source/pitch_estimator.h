@@ -20,11 +20,6 @@
 
 #include "structs.h"
 
-// TODO(andrew): put this into general WebRTC so other modules can use it.
-// Define a compiler-time assertion.
-#define WEBRTC_STATIC_ASSERT(name, boolean_cond) \
-  static char const static_assert_##name[(boolean_cond) ? 1 : -1] = {'!'}
-
 void WebRtcIsacfix_PitchAnalysis(const WebRtc_Word16 *in,               /* PITCH_FRAME_LEN samples */
                                  WebRtc_Word16 *outQ0,                  /* PITCH_FRAME_LEN+QLOOKAHEAD samples */
                                  PitchAnalysisStruct *State,

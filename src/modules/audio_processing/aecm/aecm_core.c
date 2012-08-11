@@ -18,6 +18,7 @@
 #include "delay_estimator_wrapper.h"
 #include "echo_control_mobile.h"
 #include "ring_buffer.h"
+#include "system_wrappers/interface/compile_assert.h"
 #include "typedefs.h"
 
 #ifdef ARM_WINM_LOG
@@ -197,15 +198,6 @@ static const WebRtc_Word16 kSinTable[] = {
 
 static const WebRtc_Word16 kNoiseEstQDomain = 15;
 static const WebRtc_Word16 kNoiseEstIncCount = 5;
-
-// TODO(andrew): put this into general WebRTC so other modules can use it.
-// Define a compiler-time assertion.
-#define WEBRTC_STATIC_ASSERT(name, boolean_cond) \
-  static char const static_assert_##name[(boolean_cond) ? 1 : -1] = {'!'}
-
-// Assert a preprocessor definition at compile-time. It's an assumption
-// used in assembly code, so check the assembly files before any change.
-WEBRTC_STATIC_ASSERT(PART_LEN, PART_LEN % 16 == 0);
 
 static void ComfortNoise(AecmCore_t* aecm,
                          const WebRtc_UWord16* dfa,
@@ -682,7 +674,9 @@ int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
     aecm->supGainErrParamDiffAB = SUPGAIN_ERROR_PARAM_A - SUPGAIN_ERROR_PARAM_B;
     aecm->supGainErrParamDiffBD = SUPGAIN_ERROR_PARAM_B - SUPGAIN_ERROR_PARAM_D;
 
-    assert(PART_LEN % 16 == 0);
+    // Assert a preprocessor definition at compile-time. It's an assumption
+    // used in assembly code, so check the assembly files before any change.
+    COMPILE_ASSERT(PART_LEN % 16 == 0);
 
     // Initialize function pointers.
     WebRtcAecm_WindowAndFFT = WindowAndFFTC;

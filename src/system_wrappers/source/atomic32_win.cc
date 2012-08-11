@@ -22,7 +22,7 @@ Atomic32::Atomic32(WebRtc_Word32 initialValue) : _value(initialValue)
 {
     // Make sure that the counter variable we're using is of the same size
     // as what the API expects.
-    COMPILE_ASSERT(sizeof(_value) == sizeof(LONG), atomic_size_mismatch);
+    COMPILE_ASSERT(sizeof(_value) == sizeof(LONG));
     assert(Is32bitAligned());
 }
 

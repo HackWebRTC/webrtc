@@ -19,8 +19,9 @@
 #include <arm_neon.h>
 #endif
 
-#include "signal_processing_library.h"
 #include "pitch_estimator.h"
+#include "signal_processing_library.h"
+#include "system_wrappers/interface/compile_assert.h"
 
 /* log2[0.2, 0.5, 0.98] in Q8 */
 static const WebRtc_Word16 kLogLagWinQ8[3] = {
@@ -211,7 +212,7 @@ static void PCorr2Q32(const WebRtc_Word16 *in, WebRtc_Word32 *logcorQ8)
       // Can't shift a Neon register to right with a non-constant shift value.
       int32x4_t int_32x4_scale = vdupq_n_s32(-scaling);
       // Assert a codition used in loop unrolling at compile-time.
-      WEBRTC_STATIC_ASSERT(PITCH_CORR_LEN2, PITCH_CORR_LEN2 %4 == 0);
+      COMPILE_ASSERT(PITCH_CORR_LEN2 %4 == 0);
 
       for (n = 0; n < PITCH_CORR_LEN2; n += 4) {
         int16x4_t int_16x4_x = vld1_s16(&x[n]);
