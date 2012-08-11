@@ -598,25 +598,25 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetLocal
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
  * Method:    SetSendDestination
- * Signature: (II[B)I
+ * Signature: (IILjava/lang/String)I
  */
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetSendDestination(
     JNIEnv * env,
     jobject,
     jint channel,
     jint port,
-    jbyteArray ipadr)
+    jstring ipaddr)
 {
 
   if (NULL == vieData.vie)
     return -1;
 
-  char ip[64];
-  jsize len = env->GetArrayLength(ipadr);
-  if ((len >= 64) || (len == 0))
+  const char* ip = env->GetStringUTFChars(ipaddr, NULL);
+  if (!ip) {
+    __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "Could not get UTF string");
     return -1;
-  env->GetByteArrayRegion(ipadr, 0, len, (jbyte*) ip);
-  ip[len] = '\0';
+  }
 
   __android_log_print(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG,
                       "SetSendDestination: channel=%d, port=%d, ip=%s\n",

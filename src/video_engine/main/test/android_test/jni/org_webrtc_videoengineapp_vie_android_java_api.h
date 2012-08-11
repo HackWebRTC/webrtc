@@ -109,10 +109,10 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetLocal
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
  * Method:    SetSendDestination
- * Signature: (II[B)I
+ * Signature: (IILjava/lang/String)I
  */
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetSendDestination
-  (JNIEnv *, jobject, jint, jint, jbyteArray);
+  (JNIEnv *, jobject, jint, jint, jstring);
 
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI

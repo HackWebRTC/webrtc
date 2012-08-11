@@ -52,7 +52,7 @@ public class ViEAndroidJavaAPI {
     public native int CreateChannel(int voiceChannel);
     // Receiver & Destination functions
     public native int SetLocalReceiver(int channel, int port);
-    public native int SetSendDestination(int channel, int port, byte ipadr[]);
+    public native int SetSendDestination(int channel, int port, String ipaddr);
     // Codec
     public native String[] GetCodecs();
     public native int SetReceiveCodec(int channel, int codecNum,
@@ -97,7 +97,7 @@ public class ViEAndroidJavaAPI {
     // Receiver & Destination functions
     public native int VoE_SetLocalReceiver(int channel, int port);
     public native int VoE_SetSendDestination(int channel, int port,
-            String ipaddr);
+                                             String ipaddr);
 
     // Media functions
     public native int VoE_StartListen(int channel);
