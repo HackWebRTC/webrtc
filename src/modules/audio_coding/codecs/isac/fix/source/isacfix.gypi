@@ -46,6 +46,7 @@
         'lpc_tables.c',
         'pitch_estimator.c',
         'pitch_filter.c',
+        'pitch_filter_c.c',
         'pitch_gain_tables.c',
         'pitch_lag_tables.c',
         'spectrum_ar_model_tables.c',
@@ -73,6 +74,14 @@
         }],
         ['OS=="android"', {
           'dependencies': [ 'isac_neon', ],
+          'sources': [
+            'lattice_armv7.S',
+            'pitch_filter_armv6.S',
+          ],
+          'sources!': [
+            'lattice_c.c',
+            'pitch_filter_c.c',
+          ],
         }],
       ],
     },
@@ -96,9 +105,3 @@
     }],
   ],
 }
-
-# Local Variables:
-# tab-width:2
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=2 shiftwidth=2:
