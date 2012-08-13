@@ -3568,6 +3568,16 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
         {
             _Lock();
 
+            // Sanity check to ensure that essential states are not modified
+            // during the unlocked period.
+            if (_ptrRenderClient == NULL || _ptrClientOut == NULL)
+            {
+                _UnLock();
+                WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
+                    "output state has been modified during unlocked period");
+                goto Exit;
+            }
+
             // Get the number of frames of padding (queued up to play) in the endpoint buffer.
             UINT32 padding = 0;
             hr = _ptrClientOut->GetCurrentPadding(&padding);
@@ -4015,6 +4025,16 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread()
             UINT64 recPos = 0;
 
             _Lock();
+
+            // Sanity check to ensure that essential states are not modified
+            // during the unlocked period.
+            if (_ptrCaptureClient == NULL || _ptrClientIn == NULL)
+            {
+                _UnLock();
+                WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
+                    "input state has been modified during unlocked period");
+                goto Exit;
+            }
 
             //  Find out how much capture data is available
             //
