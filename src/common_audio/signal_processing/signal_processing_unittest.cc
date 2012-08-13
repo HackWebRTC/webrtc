@@ -130,12 +130,12 @@ TEST_F(SplTest, InlineTest) {
 }
 
 TEST_F(SplTest, MathOperationsTest) {
-    int A = 117;
+    int A = 1134567892;
     WebRtc_Word32 num = 117;
     WebRtc_Word32 den = -5;
     WebRtc_UWord16 denU = 5;
-    EXPECT_EQ(10, WebRtcSpl_Sqrt(A));
-    EXPECT_EQ(10, WebRtcSpl_SqrtFloor(A));
+    EXPECT_EQ(33700, WebRtcSpl_Sqrt(A));
+    EXPECT_EQ(33683, WebRtcSpl_SqrtFloor(A));
 
 
     EXPECT_EQ(-91772805, WebRtcSpl_DivResultInQ31(den, num));

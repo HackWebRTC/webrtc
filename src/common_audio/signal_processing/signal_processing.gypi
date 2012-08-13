@@ -56,6 +56,16 @@
         'sqrt_of_one_minus_x_squared.c',
         'vector_scaling_operations.c',
       ],
+      'conditions': [
+        ['OS=="android"', {
+          'sources': [
+            'spl_sqrt_floor_arm.s',
+          ],
+          'sources!': [
+            'spl_sqrt_floor.c',
+          ],
+        }],
+      ],
     }, # spl
   ], # targets
   'conditions': [
@@ -77,9 +87,3 @@
     }], # include_tests
   ], # conditions
 }
-
-# Local Variables:
-# tab-width:2
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=2 shiftwidth=2:
