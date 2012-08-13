@@ -565,7 +565,7 @@ int VCMFecMethod::BitsPerFrame(const VCMProtectionParameters* parameters) {
   // layer.
   const float bitRateRatio =
     kVp8LayerRateAlloction[parameters->numLayers - 1][0];
-  float frameRateRatio = powf(1 / 2, parameters->numLayers - 1);
+  float frameRateRatio = powf(1 / 2.0, parameters->numLayers - 1);
   float bitRate = parameters->bitRate * bitRateRatio;
   float frameRate = parameters->frameRate * frameRateRatio;
 
