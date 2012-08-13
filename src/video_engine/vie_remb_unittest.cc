@@ -88,6 +88,11 @@ TEST_F(ViERembTest, LowerEstimateToSendRemb) {
   vie_remb_->OnReceiveBitrateChanged(ssrc[0], bitrate_estimate);
   EXPECT_CALL(rtp, RemoteSSRC())
       .WillRepeatedly(Return(ssrc[0]));
+  // Call process to get a first estimate.
+  SleepMs(1010);
+  EXPECT_CALL(rtp, SetREMBData(bitrate_estimate, 1, _))
+        .Times(1);
+  vie_remb_->Process();
 
   // Lower the estimate with more than 3% to trigger a call to SetREMBData right
   // away.
@@ -112,6 +117,12 @@ TEST_F(ViERembTest, VerifyCombinedBitrateEstimate) {
   EXPECT_CALL(rtp_0, RemoteSSRC())
       .Times(AnyNumber())
       .WillRepeatedly(Return(ssrc[0]));
+
+  // Call process to get a first estimate.
+  EXPECT_CALL(rtp_0, SetREMBData(bitrate_estimate[0], 1, _))
+        .Times(1);
+  SleepMs(1010);
+  vie_remb_->Process();
 
   vie_remb_->OnReceiveBitrateChanged(ssrc[1], bitrate_estimate[1] + 100);
   EXPECT_CALL(rtp_1, RemoteSSRC())
@@ -195,6 +206,13 @@ TEST_F(ViERembTest, ChangeSendRtpModule) {
       .Times(AnyNumber())
       .WillRepeatedly(Return(ssrc[1]));
 
+  // Call process to get a first estimate.
+  SleepMs(1010);
+  EXPECT_CALL(rtp_0, SetREMBData(bitrate_estimate[0] + bitrate_estimate[1], 2,
+                                 _))
+      .Times(1);
+  vie_remb_->Process();
+
   // Decrease estimate to trigger a REMB.
   bitrate_estimate[0] = bitrate_estimate[0] - 100;
   EXPECT_CALL(rtp_0, SetREMBData(bitrate_estimate[0] + bitrate_estimate[1], 2,
@@ -230,6 +248,12 @@ TEST_F(ViERembTest, OnlyOneRembForDoubleProcess) {
   vie_remb_->OnReceiveBitrateChanged(ssrc[0], bitrate_estimate);
   EXPECT_CALL(rtp, RemoteSSRC())
       .WillRepeatedly(Return(ssrc[0]));
+
+  // Call process to get a first estimate.
+  SleepMs(1010);
+  EXPECT_CALL(rtp, SetREMBData(_, _, _))
+        .Times(1);
+  vie_remb_->Process();
 
   // Lower the estimate, should trigger a call to SetREMBData right away.
   bitrate_estimate = bitrate_estimate - 100;
@@ -276,6 +300,12 @@ TEST_F(ViERembTest, NoSendingRtpModule) {
   vie_remb_->OnReceiveBitrateChanged(ssrc[0], bitrate_estimate);
   EXPECT_CALL(rtp, RemoteSSRC())
       .WillRepeatedly(Return(ssrc[0]));
+
+  // Call process to get a first estimate.
+  SleepMs(1010);
+  EXPECT_CALL(rtp, SetREMBData(_, _, _))
+      .Times(1);
+  vie_remb_->Process();
 
   // Lower the estimate to trigger a new packet REMB packet.
   bitrate_estimate = bitrate_estimate - 100;

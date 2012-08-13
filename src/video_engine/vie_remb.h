@@ -75,7 +75,7 @@ class VieRemb : public RemoteBitrateObserver, public Module {
 
   // The last time a REMB was sent.
   int64_t last_remb_time_;
-  int last_send_bitrate_;
+  unsigned int last_send_bitrate_;
 
   // All RtpRtcp modules to include in the REMB packet.
   RtpModules receive_modules_;

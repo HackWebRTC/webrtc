@@ -23,9 +23,10 @@ namespace webrtc {
 
 const int kRembSendIntervallMs = 1000;
 const int kRembTimeOutThresholdMs = 2000;
+const unsigned int kRembMinimumBitrateKbps = 50;
 
 // % threshold for if we should send a new REMB asap.
-const int kSendThresholdPercent = 97;
+const unsigned int kSendThresholdPercent = 97;
 
 VieRemb::VieRemb(ProcessThread* process_thread)
     : process_thread_(process_thread),
@@ -121,12 +122,17 @@ void VieRemb::OnReceiveBitrateChanged(unsigned int ssrc, unsigned int bitrate) {
         TickTime::MillisecondTimestamp(), bitrate);
   }
 
-  int new_remb_bitrate = last_send_bitrate_ -
-      update_time_bitrates_[ssrc].second + bitrate;
-  if (new_remb_bitrate < kSendThresholdPercent * last_send_bitrate_ / 100) {
-    // The new bitrate estimate is less than kSendThresholdPercent % of the last
-    // report. Send a REMB asap.
-    last_remb_time_ = TickTime::MillisecondTimestamp() - kRembSendIntervallMs;
+  // If we already have an estimate, check if the new total estimate is below
+  // kSendThresholdPercent of the previous estimate.
+  if (last_send_bitrate_ > 0) {
+    unsigned int new_remb_bitrate = last_send_bitrate_ -
+        update_time_bitrates_[ssrc].second + bitrate;
+
+    if (new_remb_bitrate < kSendThresholdPercent * last_send_bitrate_ / 100) {
+      // The new bitrate estimate is less than kSendThresholdPercent % of the
+      // last report. Send a REMB asap.
+      last_remb_time_ = TickTime::MillisecondTimestamp() - kRembSendIntervallMs;
+    }
   }
   update_time_bitrates_[ssrc] = std::make_pair(
       TickTime::MillisecondTimestamp(), bitrate);
@@ -150,16 +156,6 @@ WebRtc_Word32 VieRemb::Process() {
 
   // Calculate total receive bitrate estimate.
   list_crit_->Enter();
-  int total_bitrate = 0;
-  int num_bitrates = update_time_bitrates_.size();
-
-  if (num_bitrates == 0) {
-    list_crit_->Leave();
-    return 0;
-  }
-
-  // TODO(mflodman) Use std::vector and change RTP module API.
-  unsigned int* ssrcs = new unsigned int[num_bitrates];
 
   // Remove any timed out estimates.
   SsrcTimeBitrate::iterator it = update_time_bitrates_.begin();
@@ -172,6 +168,17 @@ WebRtc_Word32 VieRemb::Process() {
     }
   }
 
+  int num_bitrates = update_time_bitrates_.size();
+
+  if (num_bitrates == 0) {
+    list_crit_->Leave();
+    return 0;
+  }
+
+  // TODO(mflodman) Use std::vector and change RTP module API.
+  unsigned int* ssrcs = new unsigned int[num_bitrates];
+
+  unsigned int total_bitrate = 0;
   int idx = 0;
   for (it = update_time_bitrates_.begin(); it != update_time_bitrates_.end();
       ++it, ++idx) {
@@ -187,6 +194,11 @@ WebRtc_Word32 VieRemb::Process() {
     sender = receive_modules_.front();
   }
   last_send_bitrate_ = total_bitrate;
+
+  // Never send a REMB lower than last_send_bitrate_.
+  if (last_send_bitrate_ < kRembMinimumBitrateKbps) {
+    last_send_bitrate_ = kRembMinimumBitrateKbps;
+  }
   list_crit_->Leave();
 
   if (sender) {
