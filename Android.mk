@@ -9,10 +9,8 @@
 MY_WEBRTC_ROOT_PATH := $(call my-dir)
 
 # voice
-include $(MY_WEBRTC_ROOT_PATH)/src/common_audio/resampler/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/common_audio/signal_processing/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/common_audio/vad/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/codecs/isac/fix/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/aec/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/aecm/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/agc/Android.mk
@@ -34,7 +32,6 @@ LOCAL_MODULE_TAGS := optional
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
     libwebrtc_spl \
-    libwebrtc_resampler \
     libwebrtc_apm \
     libwebrtc_apm_utility \
     libwebrtc_vad \
