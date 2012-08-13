@@ -31,6 +31,7 @@
 namespace webrtc {
 
 const int kMaxDecodeWaitTimeMs = 50;
+const int kInvalidRtpExtensionId = 0;
 
 ViEChannel::ViEChannel(WebRtc_Word32 channel_id,
                        WebRtc_Word32 engine_id,
@@ -66,6 +67,7 @@ ViEChannel::ViEChannel(WebRtc_Word32 channel_id,
       intra_frame_observer_(intra_frame_observer),
       bandwidth_observer_(bandwidth_observer),
       rtp_packet_timeout_(false),
+      send_timestamp_extension_id_(kInvalidRtpExtensionId),
       using_packet_spread_(false),
       external_transport_(NULL),
       decoder_reset_(true),
@@ -120,20 +122,6 @@ WebRtc_Word32 ViEChannel::Init() {
   if (rtp_rtcp_->SetRTCPStatus(kRtcpCompound) != 0) {
     WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: RTP::SetRTCPStatus failure", __FUNCTION__);
-  }
-  if (rtp_rtcp_->RegisterSendRtpHeaderExtension(
-      kRtpExtensionTransmissionTimeOffset, 1) != 0) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
-                 "%s: RTP::RegisterSendRtpHeaderExtension failure",
-                 __FUNCTION__);
-    return -1;
-  }
-  if (rtp_rtcp_->RegisterReceiveRtpHeaderExtension(
-      kRtpExtensionTransmissionTimeOffset, 1) != 0) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
-                 "%s: RTP::RegisterReceiveRtpHeaderExtension failure",
-                 __FUNCTION__);
-    return -1;
   }
 
   // VCM initialization
@@ -299,12 +287,20 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       if (restart_rtp) {
         rtp_rtcp->SetSendingStatus(true);
       }
-      if (rtp_rtcp->RegisterReceiveRtpHeaderExtension(
-          kRtpExtensionTransmissionTimeOffset, 1) != 0) {
-        WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
-            "%s: could not register transmission time offset extension",
-            __FUNCTION__);
-        return -1;
+      if (send_timestamp_extension_id_ != kInvalidRtpExtensionId) {
+        // Deregister in case the extension was previously enabled.
+        rtp_rtcp->DeregisterSendRtpHeaderExtension(
+            kRtpExtensionTransmissionTimeOffset);
+        if (rtp_rtcp->RegisterSendRtpHeaderExtension(
+            kRtpExtensionTransmissionTimeOffset,
+            send_timestamp_extension_id_) != 0) {
+          WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
+                       "%s: could not register transmission time extension",
+                       __FUNCTION__);
+        }
+      } else {
+        rtp_rtcp->DeregisterSendRtpHeaderExtension(
+            kRtpExtensionTransmissionTimeOffset);
       }
     }
     // |RegisterSimulcastRtpRtcpModules| resets all old weak pointers and old
@@ -680,6 +676,28 @@ bool ViEChannel::EnableRemb(bool enable) {
   if (rtp_rtcp_->SetREMBStatus(enable) != 0)
     return false;
   return true;
+}
+
+int ViEChannel::SetSendTimestampOffsetStatus(bool enable, int id) {
+  if (enable) {
+    send_timestamp_extension_id_ = id;
+    return rtp_rtcp_->RegisterSendRtpHeaderExtension(
+        kRtpExtensionTransmissionTimeOffset, id);
+  } else {
+    send_timestamp_extension_id_ = kInvalidRtpExtensionId;
+    return rtp_rtcp_->DeregisterSendRtpHeaderExtension(
+        kRtpExtensionTransmissionTimeOffset);
+  }
+}
+
+int ViEChannel::SetReceiveTimestampOffsetStatus(bool enable, int id) {
+  if (enable) {
+    return rtp_rtcp_->RegisterReceiveRtpHeaderExtension(
+        kRtpExtensionTransmissionTimeOffset, id);
+  } else {
+    return rtp_rtcp_->DeregisterReceiveRtpHeaderExtension(
+        kRtpExtensionTransmissionTimeOffset);
+  }
 }
 
 WebRtc_Word32 ViEChannel::EnableTMMBR(const bool enable) {

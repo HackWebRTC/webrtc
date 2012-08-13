@@ -608,7 +608,6 @@ void RTPHeaderParser::ParseOneByteExtensionHeader(
     const WebRtc_UWord8* ptrRTPDataExtensionEnd,
     const WebRtc_UWord8* ptr) const {
   if (!ptrExtensionMap) {
-    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1, "No extension map.");
     return;
   }
 

@@ -106,6 +106,8 @@ class ViEChannel
                                        const unsigned char payload_typeFEC);
   WebRtc_Word32 SetKeyFrameRequestMethod(const KeyFrameRequestMethod method);
   bool EnableRemb(bool enable);
+  int SetSendTimestampOffsetStatus(bool enable, int id);
+  int SetReceiveTimestampOffsetStatus(bool enable, int id);
   WebRtc_Word32 EnableTMMBR(const bool enable);
   WebRtc_Word32 EnableKeyFrameRequestCallback(const bool enable);
 
@@ -373,6 +375,7 @@ class ViEChannel
   RtcpIntraFrameObserver* intra_frame_observer_;
   scoped_ptr<RtcpBandwidthObserver> bandwidth_observer_;
   bool rtp_packet_timeout_;
+  int send_timestamp_extension_id_;
   bool using_packet_spread_;
 
   Transport* external_transport_;

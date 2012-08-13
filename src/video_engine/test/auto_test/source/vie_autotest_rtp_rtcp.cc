@@ -610,6 +610,44 @@ void ViEAutoTest::ViERtpRtcpAPITest()
       EXPECT_EQ(0, ViE.rtp_rtcp->SetNACKStatus(tbChannel.videoChannel, true));
     }
 
+    // Timsetamp offset extension.
+    // Valid range is 1 to 14 inclusive.
+    EXPECT_EQ(-1, ViE.rtp_rtcp->SetSendTimestampOffsetStatus(
+        tbChannel.videoChannel, true, 0));
+    EXPECT_EQ(-1, ViE.rtp_rtcp->SetSendTimestampOffsetStatus(
+        tbChannel.videoChannel, true, 15));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetSendTimestampOffsetStatus(
+        tbChannel.videoChannel, true, 3));
+    EXPECT_EQ(-1, ViE.rtp_rtcp->SetSendTimestampOffsetStatus(
+        tbChannel.videoChannel, true, 3));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetSendTimestampOffsetStatus(
+            tbChannel.videoChannel, false, 3));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetSendTimestampOffsetStatus(
+        tbChannel.videoChannel, true, 3));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetSendTimestampOffsetStatus(
+              tbChannel.videoChannel, false, 3));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetSendTimestampOffsetStatus(
+            tbChannel.videoChannel, false, 3));
+
+    EXPECT_EQ(-1, ViE.rtp_rtcp->SetReceiveTimestampOffsetStatus(
+        tbChannel.videoChannel, true, 0));
+    EXPECT_EQ(-1, ViE.rtp_rtcp->SetReceiveTimestampOffsetStatus(
+        tbChannel.videoChannel, true, 15));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetReceiveTimestampOffsetStatus(
+        tbChannel.videoChannel, true, 3));
+    EXPECT_EQ(-1, ViE.rtp_rtcp->SetReceiveTimestampOffsetStatus(
+        tbChannel.videoChannel, true, 3));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetReceiveTimestampOffsetStatus(
+            tbChannel.videoChannel, false, 3));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetReceiveTimestampOffsetStatus(
+        tbChannel.videoChannel, true, 3));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetReceiveTimestampOffsetStatus(
+              tbChannel.videoChannel, false, 3));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetReceiveTimestampOffsetStatus(
+            tbChannel.videoChannel, false, 3));
+
+
+
     //***************************************************************
     //  Testing finished. Tear down Video Engine
     //***************************************************************

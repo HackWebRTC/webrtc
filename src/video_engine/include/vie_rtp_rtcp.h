@@ -209,6 +209,16 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
                             bool sender,
                             bool receiver) = 0;
 
+  // Enables RTP timestamp extension offset described in RFC 5450. This call
+  // must be done before ViECodec::SetSendCodec is called.
+  virtual int SetSendTimestampOffsetStatus(int video_channel,
+                                           bool enable,
+                                           int id) = 0;
+
+  virtual int SetReceiveTimestampOffsetStatus(int video_channel,
+                                              bool enable,
+                                              int id) = 0;
+
   // This function returns our locally created statistics of the received RTP
   // stream.
   virtual int GetReceivedRTCPStatistics(

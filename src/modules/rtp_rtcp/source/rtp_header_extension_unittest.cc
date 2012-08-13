@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -42,11 +42,6 @@ TEST_F(RtpHeaderExtensionTest, RegisterIllegalArg) {
   // Valid range for id: [1-14].
   EXPECT_EQ(-1, map_.Register(kRtpExtensionTransmissionTimeOffset, 0));
   EXPECT_EQ(-1, map_.Register(kRtpExtensionTransmissionTimeOffset, 15));
-}
-
-TEST_F(RtpHeaderExtensionTest, DeregisterIllegalArg) {
-  // Not registered.
-  EXPECT_EQ(-1, map_.Deregister(kRtpExtensionTransmissionTimeOffset));
 }
 
 TEST_F(RtpHeaderExtensionTest, NonUniqueId) {

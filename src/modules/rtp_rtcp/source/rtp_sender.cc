@@ -917,7 +917,7 @@ RTPSender::SendToNetwork(WebRtc_UWord8* buffer,
   if (capture_time_ms >= 0) {
     ModuleRTPUtility::RTPHeaderParser rtpParser(buffer, length);
     WebRtcRTPHeader rtp_header;
-    rtpParser.Parse(rtp_header, &_rtpHeaderExtensionMap);
+    rtpParser.Parse(rtp_header);
     int64_t time_now = _clock.GetTimeInMS();
     UpdateTransmissionTimeOffset(buffer, length, rtp_header,
                                  time_now - capture_time_ms);
