@@ -180,8 +180,8 @@ TEST_F(BitrateControllerTest, OneBitrateObserverTwoRtcpObservers) {
 TEST_F(BitrateControllerTest, TwoBitrateObserversOneRtcpObserver) {
   TestBitrateObserver bitrate_observer_1;
   TestBitrateObserver bitrate_observer_2;
-  controller_->SetBitrateObserver(&bitrate_observer_1, 200000, 100000, 300000);
   controller_->SetBitrateObserver(&bitrate_observer_2, 200000, 200000, 300000);
+  controller_->SetBitrateObserver(&bitrate_observer_1, 200000, 100000, 300000);
 
   // Receive a high remb, test bitrate inc.
   bandwidth_observer_->OnReceivedEstimatedBitrate(400000);

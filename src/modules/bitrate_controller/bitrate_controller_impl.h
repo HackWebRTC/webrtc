@@ -17,6 +17,7 @@
 
 #include "modules/bitrate_controller/include/bitrate_controller.h"
 
+#include <list>
 #include <map>
 
 #include "system_wrappers/interface/critical_section_wrapper.h"
@@ -77,14 +78,19 @@ class BitrateControllerImpl : public BitrateController {
 
  private:
   typedef std::multimap<uint32_t, ObserverConfiguration*> ObserverSortingMap;
+  typedef std::pair<BitrateObserver*, BitrateConfiguration*>
+      BitrateObserverConfiguration;
+  typedef std::list<BitrateObserverConfiguration> BitrateObserverConfList;
 
+  BitrateObserverConfList::iterator
+      FindObserverConfigurationPair(const BitrateObserver* observer);
   void OnNetworkChanged(const uint32_t bitrate,
                         const uint8_t fraction_loss,  // 0 - 255.
                         const uint32_t rtt);
 
   CriticalSectionWrapper* critsect_;
   SendSideBandwidthEstimation bandwidth_estimation_;
-  std::map<BitrateObserver*, BitrateConfiguration*> bitrate_observers_;
+  BitrateObserverConfList bitrate_observers_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_BITRATE_CONTROLLER_BITRATE_CONTROLLER_IMPL_H_

@@ -45,7 +45,6 @@ class RtcpBandwidthObserverImpl : public RtcpBandwidthObserver {
     // Update last received for this SSRC.
     ssrc_to_last_received_extended_high_seq_num_[ssrc] =
         last_received_extended_high_seq_num;
-
     owner_->OnReceivedRtcpReceiverReport(fraction_loss, rtt, number_of_packets,
                                          now_ms);
   }
@@ -63,7 +62,7 @@ BitrateControllerImpl::BitrateControllerImpl()
 }
 
 BitrateControllerImpl::~BitrateControllerImpl() {
-  std::map<BitrateObserver*, BitrateConfiguration*>::iterator it =
+  BitrateObserverConfList::iterator it =
       bitrate_observers_.begin();
   while (it != bitrate_observers_.end()) {
     delete it->second;
@@ -77,6 +76,18 @@ RtcpBandwidthObserver* BitrateControllerImpl::CreateRtcpBandwidthObserver() {
   return new RtcpBandwidthObserverImpl(this);
 }
 
+BitrateControllerImpl::BitrateObserverConfList::iterator
+BitrateControllerImpl::FindObserverConfigurationPair(const BitrateObserver*
+                                                     observer) {
+  BitrateObserverConfList::iterator it = bitrate_observers_.begin();
+  for (; it != bitrate_observers_.end(); ++it) {
+    if (it->first == observer) {
+      return it;
+    }
+  }
+  return bitrate_observers_.end();
+}
+
 void BitrateControllerImpl::SetBitrateObserver(
     BitrateObserver* observer,
     const uint32_t start_bitrate,
@@ -84,8 +95,8 @@ void BitrateControllerImpl::SetBitrateObserver(
     const uint32_t max_bitrate) {
   CriticalSectionScoped cs(critsect_);
 
-  std::map<BitrateObserver*, BitrateConfiguration*>::iterator it =
-      bitrate_observers_.find(observer);
+  BitrateObserverConfList::iterator it = FindObserverConfigurationPair(
+      observer);
 
   if (it != bitrate_observers_.end()) {
     // Update current configuration.
@@ -94,9 +105,8 @@ void BitrateControllerImpl::SetBitrateObserver(
     it->second->max_bitrate_ = max_bitrate;
   } else {
     // Add new settings.
-    bitrate_observers_[observer] = new BitrateConfiguration(start_bitrate,
-                                                            min_bitrate,
-                                                            max_bitrate);
+    bitrate_observers_.push_back(BitrateObserverConfiguration(observer,
+        new BitrateConfiguration(start_bitrate, min_bitrate, max_bitrate)));
   }
   uint32_t sum_start_bitrate = 0;
   uint32_t sum_min_bitrate = 0;
@@ -120,8 +130,8 @@ void BitrateControllerImpl::SetBitrateObserver(
 
 void BitrateControllerImpl::RemoveBitrateObserver(BitrateObserver* observer) {
   CriticalSectionScoped cs(critsect_);
-  std::map<BitrateObserver*, BitrateConfiguration*>::iterator it =
-      bitrate_observers_.find(observer);
+  BitrateObserverConfList::iterator it = FindObserverConfigurationPair(
+      observer);
   if (it != bitrate_observers_.end()) {
     delete it->second;
     bitrate_observers_.erase(it);
@@ -165,7 +175,7 @@ void BitrateControllerImpl::OnNetworkChanged(const uint32_t bitrate,
     return;
   }
   uint32_t sum_min_bitrates = 0;
-  std::map<BitrateObserver*, BitrateConfiguration*>::iterator it;
+  BitrateObserverConfList::iterator it;
   for (it = bitrate_observers_.begin(); it != bitrate_observers_.end(); ++it) {
     sum_min_bitrates += it->second->min_bitrate_;
   }
@@ -182,7 +192,6 @@ void BitrateControllerImpl::OnNetworkChanged(const uint32_t bitrate,
   }
   uint32_t bitrate_per_observer = (bitrate - sum_min_bitrates) /
       number_of_observers;
-
   // Use map to sort list based on max bitrate.
   ObserverSortingMap list_max_bitrates;
   for (it = bitrate_observers_.begin(); it != bitrate_observers_.end(); ++it) {
