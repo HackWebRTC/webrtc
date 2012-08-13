@@ -431,7 +431,7 @@ WebRtc_Word32 RTPSenderAudio::SendAudio(
             fragmentation->fragmentationLength[1]);
       } else {
         // silence for too long send only new data
-        dataBuffer[rtpHeaderLength++] = static_cast<WebRtc_UWord8>(payloadType);
+        dataBuffer[rtpHeaderLength++] = fragmentation->fragmentationPlType[0];
         memcpy(dataBuffer+rtpHeaderLength,
                payloadData + fragmentation->fragmentationOffset[0],
                fragmentation->fragmentationLength[0]);
@@ -442,6 +442,7 @@ WebRtc_Word32 RTPSenderAudio::SendAudio(
     } else {
       if (fragmentation && fragmentation->fragmentationVectorSize > 0) {
         // use the fragment info if we have one
+        dataBuffer[rtpHeaderLength++] = fragmentation->fragmentationPlType[0];
         memcpy( dataBuffer+rtpHeaderLength,
                 payloadData + fragmentation->fragmentationOffset[0],
                 fragmentation->fragmentationLength[0]);
