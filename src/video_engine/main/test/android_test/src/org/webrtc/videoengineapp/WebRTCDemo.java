@@ -580,6 +580,9 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                 ret = ViEAndroidAPI.StartSend(channel);
             }
 
+            // TODO(leozwang): Add more options besides PLI, currently use pli
+            // as the default. Also check return value.
+            ret = ViEAndroidAPI.EnablePLI(channel, true);
             ret = ViEAndroidAPI.SetCallback(channel, this);
 
             if (enableVideoSend) {

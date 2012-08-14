@@ -75,7 +75,7 @@ public class ViEAndroidJavaAPI {
     // NACK
     public native int EnableNACK(int channel, boolean enable);
 
-    //PLI for H.264
+    // PLI
     public native int EnablePLI(int channel, boolean enable);
 
     // Enable stats callback
