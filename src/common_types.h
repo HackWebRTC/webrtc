@@ -13,16 +13,22 @@
 
 #include "typedefs.h"
 
+#if defined(_MSC_VER)
+// Disable "new behavior: elements of array will be default initialized"
+// warning. Affects OverUseDetectorOptions.
+#pragma warning(disable:4351)
+#endif
+
 #ifdef WEBRTC_EXPORT
-    #define WEBRTC_DLLEXPORT _declspec(dllexport)
+#define WEBRTC_DLLEXPORT _declspec(dllexport)
 #elif WEBRTC_DLL
-    #define WEBRTC_DLLEXPORT _declspec(dllimport)
+#define WEBRTC_DLLEXPORT _declspec(dllimport)
 #else
-    #define WEBRTC_DLLEXPORT
+#define WEBRTC_DLLEXPORT
 #endif
 
 #ifndef NULL
-    #define NULL 0
+#define NULL 0
 #endif
 
 #define RTP_PAYLOAD_NAME_SIZE 32
