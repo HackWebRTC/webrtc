@@ -13,8 +13,8 @@
 #include <iomanip>
 #include <sstream>
 
-#include "testsupport/converter/converter.h"
-#include "testsupport/frame_reader.h"
+#include "test/testsupport/converter/converter.h"
+#include "test/testsupport/frame_reader.h"
 
 #ifdef WIN32
 #define SEPARATOR '\\'
@@ -33,8 +33,9 @@ Converter::Converter(int width, int height)
 }
 
 bool Converter::ConvertRGBAToI420Video(std::string frames_dir,
-                                       std::string output_file_name) {
-  FILE* output_file = fopen(output_file_name.c_str(), "ab");
+                                       std::string output_file_name,
+                                       bool delete_frames) {
+  FILE* output_file = fopen(output_file_name.c_str(), "wb");
 
   // Open output file in append mode.
   if (output_file == NULL) {
@@ -69,6 +70,13 @@ bool Converter::ConvertRGBAToI420Video(std::string frames_dir,
 
     // Read the RGBA frame into rgba_buffer.
     ReadRGBAFrame(input_file_name.c_str(), input_frame_size, rgba_buffer);
+
+    // Delete the input frame.
+    if (delete_frames) {
+      if (remove(input_file_name.c_str()) != 0) {
+        fprintf(stderr, "Cannot delete file %s\n", input_file_name.c_str());
+      }
+    }
 
     // Convert to I420 frame.
     libyuv::ABGRToI420(rgba_buffer, SrcStrideFrame(),
