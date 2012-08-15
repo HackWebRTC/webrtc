@@ -18,7 +18,7 @@ import constants
 import dashboard_connection
 import tgrid_parser
 
-
+# Bots that must be green in order to increment the LKGR revision.
 BOTS = ['Win32Debug',
         'Win32Release',
         'Mac32Debug',
@@ -72,7 +72,7 @@ def _is_chrome_only_build(revision_to_bot_name):
   return 'Chrome' in bot_name and revision > 100000
 
 
-def _get_desired_bots(bot_to_status_mapping, desired_bot_names):
+def _filter_undesired_bots(bot_to_status_mapping, desired_bot_names):
   """Returns the desired bots for the builds status from the dictionary.
 
   Args:
@@ -103,7 +103,7 @@ def _main():
                                 constants.ACCESS_TOKEN_FILE)
 
   bot_to_status_mapping = _download_and_parse_build_status()
-  bot_to_status_mapping = _get_desired_bots(bot_to_status_mapping, BOTS)
+  bot_to_status_mapping = _filter_undesired_bots(bot_to_status_mapping, BOTS)
   bot_to_status_mapping = _filter_chrome_only_builds(bot_to_status_mapping)
 
   dashboard.send_post_request(constants.ADD_BUILD_STATUS_DATA_URL,
