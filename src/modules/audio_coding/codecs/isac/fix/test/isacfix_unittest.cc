@@ -26,8 +26,29 @@ TEST_F(IsacUnitTest, CalculateResidualEnergyTest) {
   int q_shift_residual = 0;
   int32_t residual_energy = 0;
 
+  // Test the code path where (residual_energy >= 0x10000).
   residual_energy = WebRtcIsacfix_CalculateResidualEnergy(kIntOrder,
       kInt32QDomain, kIntShift, a, corr, &q_shift_residual);
   EXPECT_EQ(1789023310, residual_energy);
   EXPECT_EQ(2, q_shift_residual);
+
+  // Test the code path where (residual_energy < 0x10000)
+  // and ((energy & 0x8000) != 0).
+  for(int i = 0; i < kIntOrder + 1; i++) {
+    a[i] = 24575 >> i;
+    corr[i] = i;
+  }
+  residual_energy = WebRtcIsacfix_CalculateResidualEnergy(kIntOrder,
+      kInt32QDomain, kIntShift, a, corr, &q_shift_residual);
+  EXPECT_EQ(1595279092, residual_energy);
+  EXPECT_EQ(26, q_shift_residual);
+
+  // Test the code path where (residual_energy <= 0x7fff).
+  for(int i = 0; i < kIntOrder + 1; i++) {
+    a[i] = 2457 >> i;
+  }
+  residual_energy = WebRtcIsacfix_CalculateResidualEnergy(kIntOrder,
+      kInt32QDomain, kIntShift, a, corr, &q_shift_residual);
+  EXPECT_EQ(2029266944, residual_energy);
+  EXPECT_EQ(33, q_shift_residual);
 }

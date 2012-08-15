@@ -519,9 +519,9 @@ int32_t WebRtcIsacfix_CalculateResidualEnergy(int lpc_order,
     shift_norm = 32 - WebRtcSpl_NormW32(word32_high);
     residual_energy = (int32_t)(sum64 >> shift_norm);
   } else {
-    if((word32_low & 0x80000000) == 1) {
+    if((word32_low & 0x80000000) != 0) {
       shift_norm = 1;
-      residual_energy = word32_low >> 1;
+      residual_energy = (uint32_t)word32_low >> 1;
     } else {
       shift_norm = WebRtcSpl_NormW32(word32_low);
       residual_energy = word32_low << shift_norm;
