@@ -327,7 +327,7 @@ def _main():
       options.base_frame_width, options.base_frame_height, options.base_yuv)
 
   script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-  zxing_dir = os.path.join(script_dir, '..', 'third_party', 'zxing')
+  zxing_dir = os.path.join(script_dir, 'third_party', 'zxing')
   # Generate barcodes - will generate them in PNG.
   generate_upca_barcodes(number_of_barcodes, options.barcode_width,
                          options.barcode_height,

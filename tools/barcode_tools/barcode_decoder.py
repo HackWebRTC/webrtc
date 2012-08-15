@@ -267,7 +267,7 @@ def _main():
     options.barcode_width = options.yuv_frame_width
 
   script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-  zxing_dir = os.path.join(script_dir, '..', 'third_party', 'zxing')
+  zxing_dir = os.path.join(script_dir, 'third_party', 'zxing')
 
   # Convert the overlaid YUV video into a set of PNG frames.
   convert_yuv_to_png_files(options.yuv_file, options.yuv_frame_width,
