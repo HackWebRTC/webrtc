@@ -8,23 +8,23 @@
 @ be found in the AUTHORS file in the root of the source tree.
 @
 
-@ Contains a function for WebRtcIsacfix_CalculateResidualEnergy() in
+@ Contains a function for WebRtcIsacfix_CalculateResidualEnergyNeon() in
 @ iSAC codec, optimized for ARM Neon platform. Reference code in
 @ lpc_masking_model.c.
 
 .arch armv7-a
 .fpu neon
-.global WebRtcIsacfix_CalculateResidualEnergy
+.global WebRtcIsacfix_CalculateResidualEnergyNeon
 .align  2
 
-@ int32_t WebRtcIsacfix_CalculateResidualEnergy(int lpc_order,
-@                                               int32_t q_val_corr,
-@                                               int q_val_polynomial,
-@                                               int16_t* a_polynomial,
-@                                               int32_t* corr_coeffs,
-@                                               int* q_val_residual_energy);
+@ int32_t WebRtcIsacfix_CalculateResidualEnergyNeon(int lpc_order,
+@                                                   int32_t q_val_corr,
+@                                                   int q_val_polynomial,
+@                                                   int16_t* a_polynomial,
+@                                                   int32_t* corr_coeffs,
+@                                                   int* q_val_residual_energy);
 
-WebRtcIsacfix_CalculateResidualEnergy:
+WebRtcIsacfix_CalculateResidualEnergyNeon:
 .fnstart
 .save {r4-r11}
   push {r4-r11}

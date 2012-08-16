@@ -46,7 +46,7 @@ int WebRtcIsacfix_EncodeStoredData(ISACFIX_EncInst_t  *ISACenc_obj,
                                    int     BWnumber,
                                    float              scale);
 
-/************************** initialization functions *************************/
+/* initialization functions */
 
 void WebRtcIsacfix_InitMaskingEnc(MaskFiltstr_enc *maskdata);
 void WebRtcIsacfix_InitMaskingDec(MaskFiltstr_dec *maskdata);
@@ -62,7 +62,7 @@ void WebRtcIsacfix_InitPitchAnalysis(PitchAnalysisStruct *State);
 void WebRtcIsacfix_InitPlc( PLCstr *State );
 
 
-/**************************** transform functions ****************************/
+/* transform functions */
 
 void WebRtcIsacfix_InitTransform();
 
@@ -82,9 +82,7 @@ void WebRtcIsacfix_Spec2Time(WebRtc_Word16 *inreQ7,
 
 
 
-/***************************** filterbank functions **************************/
-
-
+/* filterbank functions */
 
 void WebRtcIsacfix_SplitAndFilter1(WebRtc_Word16    *in,
                                    WebRtc_Word16    *LP16,
@@ -111,8 +109,7 @@ void WebRtcIsacfix_FilterAndCombine2(WebRtc_Word16     *tempin_ch1,
 
 #endif
 
-/************************* normalized lattice filters ************************/
-
+/* normalized lattice filters */
 
 void WebRtcIsacfix_NormLatticeFilterMa(WebRtc_Word16 orderCoef,
                                        WebRtc_Word32 *stateGQ15,
@@ -130,6 +127,10 @@ void WebRtcIsacfix_NormLatticeFilterAr(WebRtc_Word16 orderCoef,
                                        WebRtc_Word16 lo_hi,
                                        WebRtc_Word16 *lat_outQ0);
 
+/* TODO(kma): Remove the following functions into individual header files. */
+
+/* Internal functions in both C and ARM Neon versions */
+
 int WebRtcIsacfix_AutocorrC(WebRtc_Word32* __restrict r,
                             const WebRtc_Word16* __restrict x,
                             WebRtc_Word16 N,
@@ -143,7 +144,6 @@ void WebRtcIsacfix_FilterMaLoopC(int16_t input0,
                                  int32_t* ptr1,
                                  int32_t* ptr2);
 
-// Functions for ARM-Neon platforms, in place of the above two generic C ones.
 #if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
 int WebRtcIsacfix_AutocorrNeon(WebRtc_Word32* __restrict r,
                                const WebRtc_Word16* __restrict x,
@@ -159,10 +159,7 @@ void WebRtcIsacfix_FilterMaLoopNeon(int16_t input0,
                                     int32_t* ptr2);
 #endif
 
-/**** Function pointers associated with 
- **** WebRtcIsacfix_AutocorrC() / WebRtcIsacfix_AutocorrNeon()
- **** and WebRtcIsacfix_FilterMaLoopC() / WebRtcIsacfix_FilterMaLoopNeon().
- ****/
+/* Function pointers associated with the above functions. */
 
 typedef int (*AutocorrFix)(WebRtc_Word32* __restrict r,
                            const WebRtc_Word16* __restrict x,
@@ -178,6 +175,5 @@ typedef void (*FilterMaLoopFix)(int16_t input0,
                                 int32_t* ptr1,
                                 int32_t* ptr2);
 extern FilterMaLoopFix WebRtcIsacfix_FilterMaLoopFix;
-
 
 #endif /* WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_CODEC_H_ */

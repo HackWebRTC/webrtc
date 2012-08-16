@@ -464,19 +464,19 @@ static __inline WebRtc_Word16  exp2_Q10_T(WebRtc_Word16 x) { // Both in and out 
 }
 
 
-// Declare a function pointer.
+// Declare function pointers.
 AutocorrFix WebRtcIsacfix_AutocorrFix;
+CalculateResidualEnergy WebRtcIsacfix_CalculateResidualEnergy;
 
-#ifndef WEBRTC_ARCH_ARM_NEON
 /* This routine calculates the residual energy for LPC.
  * Formula as shown in comments inside.
  */
-int32_t WebRtcIsacfix_CalculateResidualEnergy(int lpc_order,
-                                              int32_t q_val_corr,
-                                              int q_val_polynomial,
-                                              int16_t* a_polynomial,
-                                              int32_t* corr_coeffs,
-                                              int* q_val_residual_energy) {
+int32_t WebRtcIsacfix_CalculateResidualEnergyC(int lpc_order,
+                                               int32_t q_val_corr,
+                                               int q_val_polynomial,
+                                               int16_t* a_polynomial,
+                                               int32_t* corr_coeffs,
+                                               int* q_val_residual_energy) {
   int i = 0, j = 0;
   int shift_internal = 0, shift_norm = 0;
   int32_t tmp32 = 0, word32_high = 0, word32_low = 0, residual_energy = 0;
@@ -537,7 +537,6 @@ int32_t WebRtcIsacfix_CalculateResidualEnergy(int lpc_order,
 
   return residual_energy;
 }
-#endif
 
 void WebRtcIsacfix_GetLpcCoef(WebRtc_Word16 *inLoQ0,
                               WebRtc_Word16 *inHiQ0,
