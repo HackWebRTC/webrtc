@@ -35,47 +35,9 @@ static __inline WebRtc_Word16 WebRtcSpl_AddSatW16(WebRtc_Word16 a,
   return WebRtcSpl_SatW32ToW16((WebRtc_Word32) a + (WebRtc_Word32) b);
 }
 
-static __inline WebRtc_Word32 WebRtcSpl_AddSatW32(WebRtc_Word32 l_var1,
-                                                  WebRtc_Word32 l_var2) {
-  WebRtc_Word32 l_sum;
-
-  // perform long addition
-  l_sum = l_var1 + l_var2;
-
-  // check for under or overflow
-  if (WEBRTC_SPL_IS_NEG(l_var1)) {
-    if (WEBRTC_SPL_IS_NEG(l_var2) && !WEBRTC_SPL_IS_NEG(l_sum)) {
-        l_sum = (WebRtc_Word32)0x80000000;
-    }
-  } else {
-    if (!WEBRTC_SPL_IS_NEG(l_var2) && WEBRTC_SPL_IS_NEG(l_sum)) {
-        l_sum = (WebRtc_Word32)0x7FFFFFFF;
-    }
-  }
-
-  return l_sum;
-}
-
 static __inline WebRtc_Word16 WebRtcSpl_SubSatW16(WebRtc_Word16 var1,
                                                   WebRtc_Word16 var2) {
   return WebRtcSpl_SatW32ToW16((WebRtc_Word32) var1 - (WebRtc_Word32) var2);
-}
-
-static __inline WebRtc_Word32 WebRtcSpl_SubSatW32(WebRtc_Word32 l_var1,
-                                                  WebRtc_Word32 l_var2) {
-  WebRtc_Word32 l_diff;
-
-  // perform subtraction
-  l_diff = l_var1 - l_var2;
-
-  // check for underflow
-  if ((l_var1 < 0) && (l_var2 > 0) && (l_diff > 0))
-    l_diff = (WebRtc_Word32)0x80000000;
-  // check for overflow
-  if ((l_var1 > 0) && (l_var2 < 0) && (l_diff < 0))
-    l_diff = (WebRtc_Word32)0x7FFFFFFF;
-
-  return l_diff;
 }
 
 static __inline WebRtc_Word16 WebRtcSpl_GetSizeInBits(WebRtc_UWord32 n) {
@@ -155,5 +117,47 @@ static __inline int32_t WebRtc_MulAccumW16(int16_t a,
 }
 
 #endif  // WEBRTC_ARCH_ARM_V7A
+
+// The following functions have no optimized versions.
+// TODO(kma): Consider saturating add/sub instructions in X86 platform.
+static __inline WebRtc_Word32 WebRtcSpl_AddSatW32(WebRtc_Word32 l_var1,
+                                                  WebRtc_Word32 l_var2) {
+  WebRtc_Word32 l_sum;
+
+  // Perform long addition
+  l_sum = l_var1 + l_var2;
+
+  if (l_var1 < 0) {  // Check for underflow.
+    if ((l_var2 < 0) && (l_sum >= 0)) {
+        l_sum = (WebRtc_Word32)0x80000000;
+    }
+  } else {  // Check for overflow.
+    if ((l_var2 > 0) && (l_sum < 0)) {
+        l_sum = (WebRtc_Word32)0x7FFFFFFF;
+    }
+  }
+
+  return l_sum;
+}
+
+static __inline WebRtc_Word32 WebRtcSpl_SubSatW32(WebRtc_Word32 l_var1,
+                                                  WebRtc_Word32 l_var2) {
+  WebRtc_Word32 l_diff;
+
+  // Perform subtraction.
+  l_diff = l_var1 - l_var2;
+
+  if (l_var1 < 0) {  // Check for underflow.
+    if ((l_var2 > 0) && (l_diff > 0)) {
+      l_diff = (WebRtc_Word32)0x80000000;
+    }
+  } else {  // Check for overflow.
+    if ((l_var2 < 0) && (l_diff < 0)) {
+      l_diff = (WebRtc_Word32)0x7FFFFFFF;
+    }
+  }
+
+  return l_diff;
+}
 
 #endif  // WEBRTC_SPL_SPL_INL_H_

@@ -1409,7 +1409,9 @@ static int TimeToFrequencyDomain(const WebRtc_Word16* time_signal,
     WebRtc_Word16 *fft = (WebRtc_Word16 *) (((uintptr_t) fft_buf + 31) & ~31);
 
     WebRtc_Word16 tmp16no1;
+#ifndef WEBRTC_ARCH_ARM_V7A
     WebRtc_Word16 tmp16no2;
+#endif
 #ifdef AECM_WITH_ABS_APPROX
     WebRtc_Word16 max_value = 0;
     WebRtc_Word16 min_value = 0;

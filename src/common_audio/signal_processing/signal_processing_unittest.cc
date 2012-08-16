@@ -109,22 +109,38 @@ TEST_F(SplTest, MacroTest) {
 }
 
 TEST_F(SplTest, InlineTest) {
-    WebRtc_Word16 a = 121;
-    WebRtc_Word16 b = -17;
-    WebRtc_Word32 A = 111121;
-    WebRtc_Word32 B = -1711;
+    WebRtc_Word16 a16 = 121;
+    WebRtc_Word16 b16 = -17;
+    WebRtc_Word32 a32 = 111121;
+    WebRtc_Word32 b32 = -1711;
     char bVersion[8];
 
-    EXPECT_EQ(104, WebRtcSpl_AddSatW16(a, b));
-    EXPECT_EQ(138, WebRtcSpl_SubSatW16(a, b));
+    EXPECT_EQ(17, WebRtcSpl_GetSizeInBits(a32));
+    EXPECT_EQ(14, WebRtcSpl_NormW32(a32));
+    EXPECT_EQ(4, WebRtcSpl_NormW16(b32));
+    EXPECT_EQ(15, WebRtcSpl_NormU32(a32));
 
-    EXPECT_EQ(109410, WebRtcSpl_AddSatW32(A, B));
-    EXPECT_EQ(112832, WebRtcSpl_SubSatW32(A, B));
+    EXPECT_EQ(104, WebRtcSpl_AddSatW16(a16, b16));
+    EXPECT_EQ(138, WebRtcSpl_SubSatW16(a16, b16));
 
-    EXPECT_EQ(17, WebRtcSpl_GetSizeInBits(A));
-    EXPECT_EQ(14, WebRtcSpl_NormW32(A));
-    EXPECT_EQ(4, WebRtcSpl_NormW16(B));
-    EXPECT_EQ(15, WebRtcSpl_NormU32(A));
+    EXPECT_EQ(109410, WebRtcSpl_AddSatW32(a32, b32));
+    EXPECT_EQ(112832, WebRtcSpl_SubSatW32(a32, b32));
+    a32 = 0x80000000;
+    b32 = 0x80000000;
+    // Cast to signed int to avoid compiler complaint on gtest.h.
+    EXPECT_EQ(static_cast<int>(0x80000000), WebRtcSpl_AddSatW32(a32, b32));
+    a32 = 0x7fffffff;
+    b32 = 0x7fffffff;
+    EXPECT_EQ(0x7fffffff, WebRtcSpl_AddSatW32(a32, b32));
+    a32 = 0;
+    b32 = 0x80000000;
+    EXPECT_EQ(0x7fffffff, WebRtcSpl_SubSatW32(a32, b32));
+    a32 = 0x7fffffff;
+    b32 = 0x80000000;
+    EXPECT_EQ(0x7fffffff, WebRtcSpl_SubSatW32(a32, b32));
+    a32 = 0x80000000;
+    b32 = 0x7fffffff;
+    EXPECT_EQ(static_cast<int>(0x80000000), WebRtcSpl_SubSatW32(a32, b32));
 
     EXPECT_EQ(0, WebRtcSpl_get_version(bVersion, 8));
 }
