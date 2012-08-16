@@ -97,13 +97,27 @@
       'type': 'executable',
       'dependencies': [
         'test_support',
-        '<(webrtc_root)/../third_party/google-gflags/google-gflags.gyp:google-gflags',
-        '<(webrtc_root)/../third_party/libyuv/libyuv.gyp:libyuv',
+        '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+        '<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',
       ],
       'sources': [
         'testsupport/converter/converter.h',
         'testsupport/converter/converter.cc',
         'testsupport/converter/rgba_to_i420_converter.cc',
+      ],
+    },
+    {
+      'target_name': 'frame_analyzer',
+      'type': 'executable',
+      'dependencies': [
+        '<(webrtc_root)/test/test.gyp:test_support',
+        '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+        '<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',
+      ],
+      'sources': [
+        'testsupport/frame_analyzer/frame_analyzer.cc',
+        'testsupport/frame_analyzer/video_quality_analysis.h',
+        'testsupport/frame_analyzer/video_quality_analysis.cc',
       ],
     },
   ],
