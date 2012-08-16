@@ -34,7 +34,6 @@
     // int16_t WebRtcG7291_DecodeBwe(G729_1_inst_t_* decInst, int16_t* input);
     // int16_t WebRtcG7291_DecodePlc(G729_1_inst_t_* decInst);
     // int16_t WebRtcG7291_DecoderInit(G729_1_inst_t_* decInst);
-    // void WebRtcG7291_Version(char *versionStr, short len);
     #include "g7291_interface.h"
 #endif
 

@@ -958,38 +958,6 @@ ACMNetEQ::FlushBuffers()
     return 0;
 }
 
-
-WebRtc_Word32
-ACMNetEQ::GetVersion(
-    char*   version,
-    WebRtc_UWord32& remainingBufferInBytes,
-    WebRtc_UWord32& position)
-{
-    WebRtc_UWord32 len = position;
-    strncpy(&version[position], "NetEq\t\t", remainingBufferInBytes);
-    position = (WebRtc_UWord32)strlen(version);
-    remainingBufferInBytes -= (position - len);
-    len = position;
-
-    char myVersion[100];
-    if(WebRtcNetEQ_GetVersion(myVersion) < 0)
-    {
-        return -1;
-    }
-
-    strncpy(&version[position], myVersion, remainingBufferInBytes);
-    position = (WebRtc_UWord32)strlen(version);
-    remainingBufferInBytes -= (position - len);
-    len = position;
-
-    strncpy(&version[position], "\n", remainingBufferInBytes);
-    position = (WebRtc_UWord32)strlen(version);
-    remainingBufferInBytes -= (position - len);
-    len = position;
-
-    return 0;
-}
-
 WebRtc_Word16
 ACMNetEQ::RemoveCodec(
     WebRtcNetEQDecoder codecIdx,

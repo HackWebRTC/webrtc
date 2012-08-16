@@ -266,18 +266,6 @@ class ACMCodecDB {
   // Returns the NetEQ decoder database.
   static const WebRtcNetEQDecoder* NetEQDecoders();
 
-  // All version numbers for the codecs in the database are listed in text.
-  // Input/Output:
-  //   [version] - pointer to a char vector with minimum size 1000 bytes.
-  //               Audio coding module's and all component's versions is
-  //               written here.
-  //   [remaining_buffer_bytes] - remaining space in buffer.
-  //   [position] - current position to write at in buffer.
-  // Return:
-  //   -1 if version information doesn't fit, 0 on success.
-  static int CodecsVersion(char* version, size_t* remaining_buffer_bytes,
-                           size_t* position);
-
   // Returns mirror id, which is a number that tells where to find the codec's
   // memory (instance). It is either the same as codec id (most common), or a
   // number pointing at a different entry in the database, if the codec have

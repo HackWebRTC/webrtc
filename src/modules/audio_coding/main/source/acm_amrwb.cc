@@ -40,7 +40,6 @@
 // int16_t WebRtcAmrWb_DecoderInit(AMRWB_decinst_t_* decInst);
 // int16_t WebRtcAmrWb_DecodeBitmode(AMRWB_decinst_t_* decInst,
 //                                   int format);
-// void WebRtcAmrWb_Version(char *versionStr, short len);
 #include "amrwb_interface.h"
 #endif
 

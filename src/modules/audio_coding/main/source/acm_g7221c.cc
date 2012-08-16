@@ -80,7 +80,6 @@
 // int16_t WebRtcG7221C_DecodePlc48(G722_1C_48_decinst_t_* decInst,
 //                                  int16_t* output,
 //                                  int16_t nrLostFrames);
-// void WebRtcG7221C_Version(char *versionStr, short len);
 #include "g7221c_interface.h"
 #endif
 

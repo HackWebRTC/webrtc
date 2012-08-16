@@ -34,7 +34,6 @@
     // int16_t WebRtcGSMFR_DecodeBwe(GSMFR_decinst_t_* decInst, int16_t* input);
     // int16_t WebRtcGSMFR_DecodePlc(GSMFR_decinst_t_* decInst);
     // int16_t WebRtcGSMFR_DecoderInit(GSMFR_decinst_t_* decInst);
-    // void WebRtcGSMFR_Version(char *versionStr, short len);
     #include "gsmfr_interface.h"
 #endif
 

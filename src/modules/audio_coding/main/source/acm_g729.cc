@@ -34,7 +34,6 @@
     // int16_t WebRtcG729_DecodeBwe(G729_decinst_t_* decInst, int16_t* input);
     // int16_t WebRtcG729_DecodePlc(G729_decinst_t_* decInst);
     // int16_t WebRtcG729_DecoderInit(G729_decinst_t_* decInst);
-    // void WebRtcG729_Version(char *versionStr, short len);
     #include "g729_interface.h"
 #endif
 

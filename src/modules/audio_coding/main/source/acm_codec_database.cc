@@ -22,7 +22,7 @@
 #include "acm_common_defs.h"
 #include "trace.h"
 
-// Includes needed to get version info and to create the codecs.
+// Includes needed to create the codecs.
 // G.711, PCM mu-law and A-law.
 #include "acm_pcma.h"
 #include "acm_pcmu.h"
@@ -595,130 +595,6 @@ int ACMCodecDB::BasicCodingBlock(int codec_id) {
 // Returns the NetEQ decoder database.
 const WebRtcNetEQDecoder* ACMCodecDB::NetEQDecoders() {
   return neteq_decoders_;
-}
-
-// All version numbers for the codecs in the database are listed in text.
-// TODO(tlegrand): change to use std::string.
-int ACMCodecDB::CodecsVersion(char* version, size_t* remaining_buffer_bytes,
-                              size_t* position) {
-  const size_t kTemporaryBufferSize = 500;
-  const size_t kVersionBufferSize = 1000;
-  char versions_buffer[kVersionBufferSize];
-  char version_num_buf[kTemporaryBufferSize];
-  size_t len = *position;
-  size_t remaining_size = kVersionBufferSize;
-
-  versions_buffer[0] = '\0';
-
-#if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  ACM_ISAC_VERSION(version_num_buf);
-  strncat(versions_buffer, "ISAC\t\t", remaining_size);
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, version_num_buf, remaining_size);
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, "\n", remaining_size);
-#endif
-#ifdef WEBRTC_CODEC_PCM16
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, "L16\t\t1.0.0\n", remaining_size);
-#endif
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  WebRtcG711_Version(version_num_buf, kTemporaryBufferSize);
-  strncat(versions_buffer, "G.711\t\t", remaining_size);
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, version_num_buf, remaining_size);
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, "\n", remaining_size);
-#ifdef WEBRTC_CODEC_ILBC
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  WebRtcIlbcfix_version(version_num_buf);
-  strncat(versions_buffer, "ILBC\t\t", remaining_size);
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, version_num_buf, remaining_size);
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, "\n", remaining_size);
-#endif
-#ifdef WEBRTC_CODEC_AMR
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  WebRtcAmr_Version(version_num_buf, kTemporaryBufferSize);
-  strncat(versions_buffer, "AMR\t\t", remaining_size);
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, version_num_buf, remaining_size);
-#endif
-#ifdef WEBRTC_CODEC_AMRWB
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  WebRtcAmrWb_Version(version_num_buf, kTemporaryBufferSize);
-  strncat(versions_buffer, "AMR-WB\t\t", remaining_size);
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, version_num_buf, remaining_size);
-#endif
-#ifdef WEBRTC_CODEC_G722
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  WebRtcG722_Version(version_num_buf, kTemporaryBufferSize);
-  strncat(versions_buffer, "G.722\t\t", remaining_size);
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, version_num_buf, remaining_size);
-#endif
-#ifdef WEBRTC_CODEC_G722_1
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  WebRtcG7221_Version(version_num_buf, kTemporaryBufferSize);
-  strncat(versions_buffer, "G.722.1\t\t", remaining_size);
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, version_num_buf, remaining_size);
-#endif
-#ifdef WEBRTC_CODEC_G722_1C
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  WebRtcG7221c_Version(version_num_buf, kTemporaryBufferSize);
-  strncat(versions_buffer, "G.722.1C\t", remaining_size);
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, version_num_buf, remaining_size);
-#endif
-#ifdef WEBRTC_CODEC_G729
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  WebRtcG729_Version(version_num_buf, kTemporaryBufferSize);
-  strncat(versions_buffer, "G.729\t\t", remaining_size);
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, version_num_buf, remaining_size);
-#endif
-#ifdef WEBRTC_CODEC_G729_1
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  WebRtcG7291_Version(version_num_buf, kTemporaryBufferSize);
-  strncat(versions_buffer, "G.729.1\t\t", remaining_size);
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, version_num_buf, remaining_size);
-#endif
-#ifdef WEBRTC_CODEC_GSMFR
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  WebRtcGSMFR_Version(version_num_buf, kTemporaryBufferSize);
-  strncat(versions_buffer, "GSM-FR\t\t", remaining_size);
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, version_num_buf, remaining_size);
-#endif
-#ifdef WEBRTC_CODEC_SPEEX
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  WebRtcSpeex_Version(version_num_buf, kTemporaryBufferSize);
-  strncat(versions_buffer, "Speex\t\t", remaining_size);
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, version_num_buf, remaining_size);
-#endif
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  WebRtcCng_Version(version_num_buf);
-  strncat(versions_buffer, "CNG\t\t", remaining_size);
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, version_num_buf, remaining_size);
-#ifdef WEBRTC_CODEC_AVT
-  remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, "Tone Generation\t1.0.0\n", remaining_size);
-#endif
-  strncpy(&version[len], versions_buffer, *remaining_buffer_bytes);
-  *position = strlen(version);
-  *remaining_buffer_bytes -= (*position - len);
-  if (*remaining_buffer_bytes < strlen(versions_buffer)) {
-    return -1;
-  }
-
-  return 0;
 }
 
 // Gets mirror id. The Id is used for codecs sharing struct for settings that

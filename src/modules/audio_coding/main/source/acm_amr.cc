@@ -43,7 +43,6 @@
 // int16_t WebRtcAmr_DecoderInit(AMR_decinst_t_* decInst);
 // int16_t WebRtcAmr_DecodeBitmode(AMR_decinst_t_* decInst,
 //                                 int format);
-// void WebRtcAmr_Version(char *versionStr, short len);
 #include "amr_interface.h"
 #endif
 
