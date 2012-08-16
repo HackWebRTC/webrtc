@@ -16,24 +16,22 @@
 #include <time.h>
 
 #if defined(_WIN32)
-    #include <winsock2.h>
-    #include <ws2tcpip.h>
-    // Disable warning for default initialized arrays on VS2005
-    #pragma warning(disable:4351)
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-    #include <arpa/inet.h>
-    #include <ctype.h>
-    #include <fcntl.h>
-    #include <netdb.h>
-    #include <net/if.h>
-    #include <netinet/in.h>
-    #include <stdlib.h>
-    #include <sys/ioctl.h>
-    #include <sys/socket.h>
-    #include <sys/time.h>
-    #include <unistd.h>
+#include <arpa/inet.h>
+#include <ctype.h>
+#include <fcntl.h>
+#include <netdb.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <stdlib.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <unistd.h>
 #ifndef MAC_IPHONE
-    #include <net/if_arp.h>
+#include <net/if_arp.h>
 #endif
 #endif // defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
 

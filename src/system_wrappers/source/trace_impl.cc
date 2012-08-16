@@ -26,9 +26,7 @@
 #define KEY_LEN_CHARS 31
 
 #ifdef _WIN32
-    #pragma warning(disable:4355)
-// VS 2005: Disable warnings for default initialized arrays.
-    #pragma warning(disable:4351)
+#pragma warning(disable:4355)
 #endif // _WIN32
 
 namespace webrtc {
