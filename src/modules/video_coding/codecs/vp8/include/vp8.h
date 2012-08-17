@@ -132,7 +132,7 @@ class VP8Encoder : public VideoEncoder {
   EncodedImageCallback* encoded_complete_callback_;
   VideoCodec codec_;
   bool inited_;
-  uint32_t timestamp_;
+  int64_t timestamp_;
   uint16_t picture_id_;
   bool feedback_mode_;
   int cpu_speed_;
