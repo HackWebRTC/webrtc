@@ -59,8 +59,10 @@ void TestVADDTX::Perform()
         WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceAudioCoding, -1,
                      "---------- TestVADDTX ----------");
     }
-    char fileName[] = "./data/audio_coding/testfile32kHz.pcm";
-    _inFileA.Open(fileName, 32000, "rb");
+
+    const std::string file_name =
+        webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
+    _inFileA.Open(file_name, 32000, "rb");
 
     _acmA = AudioCodingModule::Create(0);
     _acmB = AudioCodingModule::Create(1);
@@ -354,20 +356,18 @@ void TestVADDTX::Run()
     _monitor.ResetStatistics();
 }
 
-void TestVADDTX::OpenOutFile(WebRtc_Word16 testNumber)
-{
-    char fileName[500];
-    if(_testMode == 0)
-    {
-        sprintf(fileName, "%s/testVADDTX_autoFile_%02d.pcm",
-                webrtc::test::OutputPath().c_str(), testNumber);
-    }
-    else
-    {
-        sprintf(fileName, "%s/testVADDTX_outFile_%02d.pcm",
-                webrtc::test::OutputPath().c_str(), testNumber);
-    }
-    _outFileB.Open(fileName, 16000, "wb");
+void TestVADDTX::OpenOutFile(WebRtc_Word16 test_number) {
+  std::string file_name;
+  std::stringstream file_stream;
+  file_stream << webrtc::test::OutputPath();
+  if (_testMode == 0) {
+    file_stream << "testVADDTX_autoFile_";
+  } else {
+    file_stream << "testVADDTX_outFile_";
+  }
+  file_stream << test_number << ".pcm";
+  file_name = file_stream.str();
+  _outFileB.Open(file_name, 16000, "wb");
 }
 
 

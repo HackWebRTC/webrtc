@@ -256,7 +256,6 @@ APITest::SetUp()
     CHECK_ERROR_MT(_acmB->RegisterSendCodec(dummyCodec));
     _thereIsEncoderB = true;
 
-    char fileName[500];
     WebRtc_UWord16 frequencyHz;
 
     printf("\n\nAPI Test\n");
@@ -264,31 +263,30 @@ APITest::SetUp()
     printf("Hit enter to accept the default values indicated in []\n\n");
 
     //--- Input A
-    strcpy(fileName, "./data/audio_coding/testfile32kHz.pcm");
+    std::string file_name =
+        webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
     frequencyHz = 32000;
-    printf("Enter input file at side A [%s]: ", fileName);
-    PCMFile::ChooseFile(fileName, 499, &frequencyHz);
-    _inFileA.Open(fileName, frequencyHz, "rb", true);
+    printf("Enter input file at side A [%s]: ", file_name.c_str());
+    PCMFile::ChooseFile(&file_name, 499, &frequencyHz);
+    _inFileA.Open(file_name, frequencyHz, "rb", true);
 
     //--- Output A
-    std::string outputFileA = webrtc::test::OutputPath() + "outA.pcm";
-    strcpy(fileName, outputFileA.c_str());
-    printf("Enter output file at side A [%s]: ", fileName);
-    PCMFile::ChooseFile(fileName, 499, &frequencyHz);
-    _outFileA.Open(fileName, frequencyHz, "wb");
+    std::string out_file_a = webrtc::test::OutputPath() + "outA.pcm";
+    printf("Enter output file at side A [%s]: ", out_file_a.c_str());
+    PCMFile::ChooseFile(&out_file_a, 499, &frequencyHz);
+    _outFileA.Open(out_file_a, frequencyHz, "wb");
 
     //--- Input B
-    strcpy(fileName, "./data/audio_coding/testfile32kHz.pcm");
-    printf("\n\nEnter input file at side B [%s]: ", fileName);
-    PCMFile::ChooseFile(fileName, 499, &frequencyHz);
-    _inFileB.Open(fileName, frequencyHz, "rb", true);
+    file_name = webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
+    printf("\n\nEnter input file at side B [%s]: ", file_name.c_str());
+    PCMFile::ChooseFile(&file_name, 499, &frequencyHz);
+    _inFileB.Open(file_name, frequencyHz, "rb", true);
 
     //--- Output B
-    std::string outputFileB = webrtc::test::OutputPath() + "outB.pcm";
-    strcpy(fileName, outputFileB.c_str());
-    printf("Enter output file at side B [%s]: ", fileName);
-    PCMFile::ChooseFile(fileName, 499, &frequencyHz);
-    _outFileB.Open(fileName, frequencyHz, "wb");
+    std::string out_file_b = webrtc::test::OutputPath() + "outB.pcm";
+    printf("Enter output file at side B [%s]: ", out_file_b.c_str());
+    PCMFile::ChooseFile(&out_file_b, 499, &frequencyHz);
+    _outFileB.Open(out_file_b, frequencyHz, "wb");
 
     //--- Set A-to-B channel
     _channel_A2B = new Channel(2);

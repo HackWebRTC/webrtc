@@ -46,7 +46,8 @@ PCMFile::PCMFile(WebRtc_UWord32 timestamp)
   timestamp_ = timestamp;
 }
 
-WebRtc_Word16 PCMFile::ChooseFile(char* filename, WebRtc_Word16 max_len) {
+WebRtc_Word16 PCMFile::ChooseFile(std::string* file_name,
+                                  WebRtc_Word16 max_len) {
   char tmp_name[MAX_FILE_NAME_LENGTH_BYTE];
 
   EXPECT_TRUE(fgets(tmp_name, MAX_FILE_NAME_LENGTH_BYTE, stdin) != NULL);
@@ -78,12 +79,14 @@ WebRtc_Word16 PCMFile::ChooseFile(char* filename, WebRtc_Word16 max_len) {
     return -1;
   }
   if (len > 0) {
-    strncpy(filename, tmp_name, len + 1);
+    std::string tmp_string(tmp_name, len + 1);
+    *file_name = tmp_string;
   }
   return 0;
 }
 
-WebRtc_Word16 PCMFile::ChooseFile(char* filename, WebRtc_Word16 max_len,
+WebRtc_Word16 PCMFile::ChooseFile(std::string* file_name,
+                                  WebRtc_Word16 max_len,
                                   WebRtc_UWord16* frequency_hz) {
   char tmp_name[MAX_FILE_NAME_LENGTH_BYTE];
 
@@ -116,7 +119,8 @@ WebRtc_Word16 PCMFile::ChooseFile(char* filename, WebRtc_Word16 max_len,
     return -1;
   }
   if (len > 0) {
-    strncpy(filename, tmp_name, len + 1);
+    std::string tmp_string(tmp_name, len + 1);
+    *file_name = tmp_string;
   }
   printf("Enter the sampling frequency (in Hz) of the above file [%u]: ",
          *frequency_hz);
@@ -128,10 +132,10 @@ WebRtc_Word16 PCMFile::ChooseFile(char* filename, WebRtc_Word16 max_len,
   return 0;
 }
 
-void PCMFile::Open(const char* filename, WebRtc_UWord16 frequency,
+void PCMFile::Open(const std::string& file_name, WebRtc_UWord16 frequency,
                    const char* mode, bool auto_rewind) {
-  if ((pcm_file_ = fopen(filename, mode)) == NULL) {
-    printf("Cannot open file %s.\n", filename);
+  if ((pcm_file_ = fopen(file_name.c_str(), mode)) == NULL) {
+    printf("Cannot open file %s.\n", file_name.c_str());
     ADD_FAILURE() << "Unable to read file";
   }
   frequency_ = frequency;

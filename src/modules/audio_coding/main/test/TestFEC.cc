@@ -59,9 +59,9 @@ void TestFEC::Perform()
         WEBRTC_TRACE(kTraceStateInfo, kTraceAudioCoding, -1,
                      "---------- TestFEC ----------");
     }
-    char fileName[] = "./data/audio_coding/testfile32kHz.pcm";
-    _inFileA.Open(fileName, 32000, "rb");
-
+    const std::string file_name =
+        webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
+    _inFileA.Open(file_name, 32000, "rb");
 
     bool fecEnabled;
 
@@ -599,21 +599,18 @@ void TestFEC::Run()
     _inFileA.Rewind();
 }
 
-void TestFEC::OpenOutFile(WebRtc_Word16 testNumber)
-{
-    char fileName[500];
-
-    if(_testMode == 0)
-    {
-        sprintf(fileName, "%s/TestFEC_autoFile_%02d.pcm",
-                webrtc::test::OutputPath().c_str(), testNumber);
-    }
-    else
-    {
-        sprintf(fileName, "%s/TestFEC_outFile_%02d.pcm",
-                webrtc::test::OutputPath().c_str(), testNumber);
-    }
-    _outFileB.Open(fileName, 32000, "wb");
+void TestFEC::OpenOutFile(WebRtc_Word16 test_number) {
+  std::string file_name;
+  std::stringstream file_stream;
+  file_stream << webrtc::test::OutputPath();
+  if (_testMode == 0) {
+    file_stream << "TestFEC_autoFile_";
+  } else {
+    file_stream << "TestFEC_outFile_";
+  }
+  file_stream << test_number << ".pcm";
+  file_name = file_stream.str();
+  _outFileB.Open(file_name, 16000, "wb");
 }
 
 void TestFEC::DisplaySendReceiveCodec()
