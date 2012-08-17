@@ -15,6 +15,9 @@
 #define ARCH_X86_64 0
 #define ARCH_PPC32 0
 #define ARCH_PPC64 0
+#define HAVE_ARMV5TE 1
+#define HAVE_ARMV6 0
+#define HAVE_ARMV7 0
 #define HAVE_EDSP 1
 #define HAVE_MEDIA 0
 #define HAVE_NEON 0

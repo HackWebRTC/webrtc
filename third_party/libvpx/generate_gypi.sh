@@ -107,7 +107,7 @@ cd $TEMP_DIR
 
 gen_rtcd_header linux/ia32 x86
 gen_rtcd_header linux/x64 x86_64
-gen_rtcd_header linux/arm armv6
+gen_rtcd_header linux/arm armv5te
 gen_rtcd_header linux/arm-neon armv7
 gen_rtcd_header win/ia32 x86
 gen_rtcd_header mac/ia32 x86
