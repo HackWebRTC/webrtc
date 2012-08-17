@@ -400,12 +400,6 @@ int VoECodecImpl::SetSendCNPayloadType(int channel, int type,
             "SetSendCNPayloadType() failed to locate channel");
         return -1;
     }
-    if (channelPtr->Sending())
-    {
-        _shared->SetLastError(VE_SENDING, kTraceError,
-            "SetSendCNPayloadType unable so set payload type while sending");
-        return -1;
-    }
     return channelPtr->SetSendCNPayloadType(type, frequency);
 }
 
