@@ -11,33 +11,29 @@
 # $ ./generate_gypi.sh
 #
 # And this will update all the .gypi files needed.
-# However changes to asm_*_offsets.asm, vpx_config.asm and
-# vpx_config.h are not updated and needs to modified manually
-# for all platforms.
+#
+# Configuration for building on each platform is taken from the
+# corresponding vpx_config.h
+#
 
-# This file is based upon the generate_gypi.sh file in Chromium,
-# but with the following additional features enabled:
-# CONFIG_ERROR_CONCEALMENT, CONFIG_POSTPROC
-# http://src.chromium.org/svn/trunk/deps/third_party/libvpx/generate_gypi.sh
-
+BASE_DIR=`pwd`
 LIBVPX_SRC_DIR="source/libvpx"
-COMMON_CONFIG="CONFIG_REALTIME_ONLY=yes CONFIG_GCC=yes CONFIG_ERROR_CONCEALMENT=yes CONFIG_POSTPROC=yes"
-X86_CONFIG="ARCH_X86=yes HAVE_MMX=yes HAVE_SSE2=yes HAVE_SSE3=yes HAVE_SSSE3=yes HAVE_SSE4_1=yes CONFIG_RUNTIME_CPU_DETECT=yes"
-X86_64_CONFIG="ARCH_X86_64=yes HAVE_MMX=yes HAVE_SSE2=yes HAVE_SSE3=yes HAVE_SSSE3=yes HAVE_SSE4_1=yes CONFIG_PIC=yes CONFIG_RUNTIME_CPU_DETECT=yes"
-ARM_CONFIG="ARCH_ARM=yes HAVE_EDSP=yes HAVE_MEDIA=yes"
-ARM_NEON_CONFIG="ARCH_ARM=yes HAVE_EDSP=yes HAVE_MEDIA=yes HAVE_NEON=yes"
+LIBVPX_CONFIG_DIR="source/config"
 
+# Convert a list of source files into gypi file.
+# $1 - Input file.
+# $2 - Output gypi file.
 function convert_srcs_to_gypi {
   # Do the following here:
   # 1. Filter .c, .h, .s, .S and .asm files.
   # 2. Exclude *_offsets.c.
   # 3. Exclude vpx_config.c.
   # 4. Repelace .asm.s to .asm because gyp will do the conversion.
-  source_list=`grep -E '(\.c|\.h|\.S|\.s|\.asm)$' $1 | grep -v '_offsets\.c' | grep -v 'vpx_config\.c' | sed s/\.asm\.s$/.asm/`
+  local source_list=`grep -E '(\.c|\.h|\.S|\.s|\.asm)$' $1 | grep -v '_offsets\.c' | grep -v 'vpx_config\.c' | sed s/\.asm\.s$/.asm/`
 
   # Build the gypi file.
   echo "# This file is generated. Do not edit." > $2
-  echo "# Copyright (c) 2011 The Chromium Authors. All rights reserved." >> $2
+  echo "# Copyright (c) 2012 The Chromium Authors. All rights reserved." >> $2
   echo "# Use of this source code is governed by a BSD-style license that can be" >> $2
   echo "# found in the LICENSE file." >> $2
   echo "" >> $2
@@ -51,39 +47,98 @@ function convert_srcs_to_gypi {
   echo "}" >> $2
 }
 
+# Clean files from previous make.
+function make_clean {
+  make clean > /dev/null
+  rm -f libvpx_srcs.txt
+}
+
+# Lint a pair of vpx_config.h and vpx_config.asm to make sure they match.
+# $1 - Header file directory.
+function lint_config {
+  $BASE_DIR/lint_config.sh \
+    -h $BASE_DIR/$LIBVPX_CONFIG_DIR/$1/vpx_config.h \
+    -a $BASE_DIR/$LIBVPX_CONFIG_DIR/$1/vpx_config.asm
+}
+
+# Print the configuration.
+# $1 - Header file directory.
+function print_config {
+  $BASE_DIR/lint_config.sh -p \
+    -h $BASE_DIR/$LIBVPX_CONFIG_DIR/$1/vpx_config.h \
+    -a $BASE_DIR/$LIBVPX_CONFIG_DIR/$1/vpx_config.asm
+}
+
+# Generate vpx_rtcd.h.
+# $1 - Header file directory.
+# $2 - Architecture.
+function gen_rtcd_header {
+  echo "Generate $LIBVPX_CONFIG_DIR/$1/vpx_rtcd.h."
+
+  rm -rf $BASE_DIR/$TEMP_DIR/libvpx.config
+  $BASE_DIR/lint_config.sh -p \
+    -h $BASE_DIR/$LIBVPX_CONFIG_DIR/$1/vpx_config.h \
+    -a $BASE_DIR/$LIBVPX_CONFIG_DIR/$1/vpx_config.asm \
+    -o $BASE_DIR/$TEMP_DIR/libvpx.config
+
+  $BASE_DIR/$LIBVPX_SRC_DIR/build/make/rtcd.sh \
+    --arch=$2 \
+    --sym=vpx_rtcd \
+    --config=$BASE_DIR/$TEMP_DIR/libvpx.config \
+    $BASE_DIR/$LIBVPX_SRC_DIR/vp8/common/rtcd_defs.sh \
+    > $BASE_DIR/$LIBVPX_CONFIG_DIR/$1/vpx_rtcd.h
+
+  rm -rf $BASE_DIR/$TEMP_DIR/libvpx.config
+}
+
+echo "Lint libvpx configuration."
+lint_config linux/ia32
+lint_config linux/x64
+lint_config linux/arm
+lint_config linux/arm-neon
+lint_config win/ia32
+lint_config mac/ia32
+
 echo "Create temporary directory."
-BASE_DIR=`pwd`
 TEMP_DIR="$LIBVPX_SRC_DIR.temp"
+rm -rf $TEMP_DIR
 cp -R $LIBVPX_SRC_DIR $TEMP_DIR
 cd $TEMP_DIR
 
+gen_rtcd_header linux/ia32 x86
+gen_rtcd_header linux/x64 x86_64
+gen_rtcd_header linux/arm armv6
+gen_rtcd_header linux/arm-neon armv7
+gen_rtcd_header win/ia32 x86
+gen_rtcd_header mac/ia32 x86
+
 echo "Prepare Makefile."
 ./configure --target=generic-gnu > /dev/null
-make clean > /dev/null
+make_clean
 
 echo "Generate X86 source list."
-make clean > /dev/null
-rm -f libvpx_srcs.txt
-make libvpx_srcs.txt target=libs $COMMON_CONFIG $X86_CONFIG > /dev/null
-convert_srcs_to_gypi libvpx_srcs.txt ../../libvpx_srcs_x86.gypi
+config=$(print_config linux/ia32)
+make_clean
+make libvpx_srcs.txt target=libs $config > /dev/null
+convert_srcs_to_gypi libvpx_srcs.txt $BASE_DIR/libvpx_srcs_x86.gypi
 
 echo "Generate X86_64 source list."
-make clean > /dev/null
-rm -f libvpx_srcs.txt
-make libvpx_srcs.txt target=libs $COMMON_CONFIG $X86_64_CONFIG > /dev/null
-convert_srcs_to_gypi libvpx_srcs.txt ../../libvpx_srcs_x86_64.gypi
+config=$(print_config linux/x64)
+make_clean
+make libvpx_srcs.txt target=libs $config > /dev/null
+convert_srcs_to_gypi libvpx_srcs.txt $BASE_DIR/libvpx_srcs_x86_64.gypi
 
 echo "Generate ARM source list."
-make clean > /dev/null
-rm -f libvpx_srcs.txt
-make libvpx_srcs.txt target=libs $COMMON_CONFIG $ARM_CONFIG > /dev/null
-convert_srcs_to_gypi libvpx_srcs.txt ../../libvpx_srcs_arm.gypi
+config=$(print_config linux/arm)
+make_clean
+make libvpx_srcs.txt target=libs $config > /dev/null
+convert_srcs_to_gypi libvpx_srcs.txt $BASE_DIR/libvpx_srcs_arm.gypi
 
 echo "Generate ARM NEON source list."
-make clean > /dev/null
-rm -f libvpx_srcs.txt
-make libvpx_srcs.txt target=libs $COMMON_CONFIG $ARM_NEON_CONFIG > /dev/null
-convert_srcs_to_gypi libvpx_srcs.txt ../../libvpx_srcs_arm_neon.gypi
+config=$(print_config linux/arm-neon)
+make_clean
+make libvpx_srcs.txt target=libs $config > /dev/null
+convert_srcs_to_gypi libvpx_srcs.txt $BASE_DIR/libvpx_srcs_arm_neon.gypi
 
 echo "Remove temporary directory."
 cd $BASE_DIR

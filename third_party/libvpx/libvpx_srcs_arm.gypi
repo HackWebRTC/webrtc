@@ -1,5 +1,5 @@
 # This file is generated. Do not edit.
-# Copyright (c) 2011 The Chromium Authors. All rights reserved.
+# Copyright (c) 2012 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -7,29 +7,6 @@
   'sources': [
     'source/libvpx/vp8/common/alloccommon.c',
     'source/libvpx/vp8/common/alloccommon.h',
-    'source/libvpx/vp8/common/arm/armv6/bilinearfilter_v6.asm',
-    'source/libvpx/vp8/common/arm/armv6/copymem16x16_v6.asm',
-    'source/libvpx/vp8/common/arm/armv6/copymem8x4_v6.asm',
-    'source/libvpx/vp8/common/arm/armv6/copymem8x8_v6.asm',
-    'source/libvpx/vp8/common/arm/armv6/dc_only_idct_add_v6.asm',
-    'source/libvpx/vp8/common/arm/armv6/dequant_idct_v6.asm',
-    'source/libvpx/vp8/common/arm/armv6/dequantize_v6.asm',
-    'source/libvpx/vp8/common/arm/armv6/filter_v6.asm',
-    'source/libvpx/vp8/common/arm/armv6/idct_blk_v6.c',
-    'source/libvpx/vp8/common/arm/armv6/idct_v6.asm',
-    'source/libvpx/vp8/common/arm/armv6/intra4x4_predict_v6.asm',
-    'source/libvpx/vp8/common/arm/armv6/iwalsh_v6.asm',
-    'source/libvpx/vp8/common/arm/armv6/loopfilter_v6.asm',
-    'source/libvpx/vp8/common/arm/armv6/simpleloopfilter_v6.asm',
-    'source/libvpx/vp8/common/arm/armv6/sixtappredict8x4_v6.asm',
-    'source/libvpx/vp8/common/arm/armv6/vp8_sad16x16_armv6.asm',
-    'source/libvpx/vp8/common/arm/armv6/vp8_variance16x16_armv6.asm',
-    'source/libvpx/vp8/common/arm/armv6/vp8_variance8x8_armv6.asm',
-    'source/libvpx/vp8/common/arm/armv6/vp8_variance_halfpixvar16x16_h_armv6.asm',
-    'source/libvpx/vp8/common/arm/armv6/vp8_variance_halfpixvar16x16_hv_armv6.asm',
-    'source/libvpx/vp8/common/arm/armv6/vp8_variance_halfpixvar16x16_v_armv6.asm',
-    'source/libvpx/vp8/common/arm/bilinearfilter_arm.c',
-    'source/libvpx/vp8/common/arm/bilinearfilter_arm.h',
     'source/libvpx/vp8/common/arm/dequantize_arm.c',
     'source/libvpx/vp8/common/arm/filter_arm.c',
     'source/libvpx/vp8/common/arm/loopfilter_arm.c',
@@ -113,11 +90,6 @@
     'source/libvpx/vp8/encoder/arm/armv5te/vp8_packtokens_armv5.asm',
     'source/libvpx/vp8/encoder/arm/armv5te/vp8_packtokens_mbrow_armv5.asm',
     'source/libvpx/vp8/encoder/arm/armv5te/vp8_packtokens_partitions_armv5.asm',
-    'source/libvpx/vp8/encoder/arm/armv6/vp8_fast_quantize_b_armv6.asm',
-    'source/libvpx/vp8/encoder/arm/armv6/vp8_mse16x16_armv6.asm',
-    'source/libvpx/vp8/encoder/arm/armv6/vp8_short_fdct4x4_armv6.asm',
-    'source/libvpx/vp8/encoder/arm/armv6/vp8_subtract_armv6.asm',
-    'source/libvpx/vp8/encoder/arm/armv6/walsh_v6.asm',
     'source/libvpx/vp8/encoder/arm/boolhuff_arm.c',
     'source/libvpx/vp8/encoder/arm/dct_arm.c',
     'source/libvpx/vp8/encoder/arm/quantize_arm.c',

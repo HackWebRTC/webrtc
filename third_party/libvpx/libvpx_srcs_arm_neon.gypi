@@ -1,5 +1,5 @@
 # This file is generated. Do not edit.
-# Copyright (c) 2011 The Chromium Authors. All rights reserved.
+# Copyright (c) 2012 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -17,7 +17,6 @@
     'source/libvpx/vp8/common/arm/armv6/filter_v6.asm',
     'source/libvpx/vp8/common/arm/armv6/idct_blk_v6.c',
     'source/libvpx/vp8/common/arm/armv6/idct_v6.asm',
-    'source/libvpx/vp8/common/arm/armv6/intra4x4_predict_v6.asm',
     'source/libvpx/vp8/common/arm/armv6/iwalsh_v6.asm',
     'source/libvpx/vp8/common/arm/armv6/loopfilter_v6.asm',
     'source/libvpx/vp8/common/arm/armv6/simpleloopfilter_v6.asm',

@@ -48,7 +48,7 @@ deps = {
     From("chromium_deps", "src/third_party/libjpeg_turbo"),
 
   "third_party/libvpx/source/libvpx":
-    "http://git.chromium.org/webm/libvpx.git@cab6ac16",
+    "http://git.chromium.org/webm/libvpx.git@69babd3",
 
   "third_party/libyuv":
     (Var("googlecode_url") % "libyuv") + "/trunk@255",
@@ -109,6 +109,15 @@ hooks = [
     "pattern": ".",
     "action": ["python", Var("root_dir") + "/tools/clang/scripts/update.py",
                "--mac-only"],
+  },
+  {
+    # Update the cygwin mount on Windows.
+    # This is necessary to get the correct mapping between e.g. /bin and the
+    # cygwin path on Windows. Without it we can't run bash scripts in actions.
+    # Ideally this should be solved in "pylib/gyp/msvs_emulation.py".
+    "pattern": ".",
+    "action": ["python", Var("root_dir") + "/build/win/setup_cygwin_mount.py",
+               "--win-only"],
   },
   {
     # Download test resources, i.e. video and audio files. If the latest
