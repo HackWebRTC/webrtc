@@ -104,7 +104,7 @@ int ViEChannelManager::CreateChannel(int* channel_id) {
 
   if (!(vie_encoder->Init() &&
         CreateChannelObject(new_channel_id, vie_encoder, bandwidth_observer,
-                            remote_bitrate_estimator))) {
+                            remote_bitrate_estimator, true))) {
     delete vie_encoder;
     vie_encoder = NULL;
     ReturnChannelId(new_channel_id);
@@ -149,7 +149,8 @@ int ViEChannelManager::CreateChannel(int* channel_id,
     if (!(vie_encoder->Init() &&
           CreateChannelObject(new_channel_id, vie_encoder,
                               bandwidth_observer,
-                              remote_bitrate_estimator))) {
+                              remote_bitrate_estimator,
+                              sender))) {
       delete vie_encoder;
       vie_encoder = NULL;
     }
@@ -157,7 +158,7 @@ int ViEChannelManager::CreateChannel(int* channel_id,
     vie_encoder = ViEEncoderPtr(original_channel);
     assert(vie_encoder);
     if (!CreateChannelObject(new_channel_id, vie_encoder, bandwidth_observer,
-                             remote_bitrate_estimator)) {
+                             remote_bitrate_estimator, sender)) {
       vie_encoder = NULL;
     }
   }
@@ -329,7 +330,8 @@ bool ViEChannelManager::CreateChannelObject(
     int channel_id,
     ViEEncoder* vie_encoder,
     RtcpBandwidthObserver* bandwidth_observer,
-    RemoteBitrateEstimator* remote_bitrate_estimator) {
+    RemoteBitrateEstimator* remote_bitrate_estimator,
+    bool sender) {
   // Register the channel at the encoder.
   RtpRtcp* send_rtp_rtcp_module = vie_encoder->SendRtpRtcpModule();
 
@@ -339,7 +341,8 @@ bool ViEChannelManager::CreateChannelObject(
                                            vie_encoder,
                                            bandwidth_observer,
                                            remote_bitrate_estimator,
-                                           send_rtp_rtcp_module);
+                                           send_rtp_rtcp_module,
+                                           sender);
   if (vie_channel->Init() != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_),
                  "%s could not init channel", __FUNCTION__, channel_id);
@@ -347,10 +350,15 @@ bool ViEChannelManager::CreateChannelObject(
     return false;
   }
   VideoCodec encoder;
-  if (vie_encoder->GetEncoder(&encoder) != 0 ||
-      vie_channel->SetSendCodec(encoder) != 0) {
+  if (vie_encoder->GetEncoder(&encoder) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id),
-                 "%s: Could not GetEncoder or SetSendCodec.", __FUNCTION__);
+                 "%s: Could not GetEncoder.", __FUNCTION__);
+    delete vie_channel;
+    return false;
+  }
+  if (sender && vie_channel->SetSendCodec(encoder) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id),
+                 "%s: Could not SetSendCodec.", __FUNCTION__);
     delete vie_channel;
     return false;
   }

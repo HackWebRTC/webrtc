@@ -179,9 +179,7 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
   // Make sure to generate a new SSRC if the codec type and/or resolution has
   // changed. This won't have any effect if the user has set an SSRC.
   bool new_rtp_stream = false;
-  if (encoder.codecType != video_codec_internal.codecType ||
-      encoder.width != video_codec_internal.width ||
-      encoder.height != video_codec_internal.height) {
+  if (encoder.codecType != video_codec_internal.codecType) {
     new_rtp_stream = true;
   }
 

@@ -834,11 +834,22 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendOutgoingData(
     int idx = 0;
     CriticalSectionScoped lock(_criticalSectionModulePtrs.get());
     std::list<ModuleRtpRtcpImpl*>::iterator it = _childModules.begin();
-    for (; idx < rtpVideoHdr->simulcastIdx; idx++) {
-      it++;
+    for (; idx < rtpVideoHdr->simulcastIdx; ++it) {
       if (it == _childModules.end()) {
         return -1;
       }
+      if ((*it)->SendingMedia()) {
+        ++idx;
+      }
+    }
+    for (; it != _childModules.end(); ++it) {
+      if ((*it)->SendingMedia()) {
+        break;
+      }
+      ++idx;
+    }
+    if (it == _childModules.end()) {
+      return -1;
     }
     RTPSender& rtpSender = (*it)->_rtpSender;
     WEBRTC_TRACE(kTraceModuleCall,
@@ -1632,17 +1643,20 @@ void ModuleRtpRtcpImpl::SetTargetSendBitrate(const uint32_t bitrate) {
       uint32_t bitrate_remainder = bitrate;
       std::list<ModuleRtpRtcpImpl*>::iterator it = _childModules.begin();
       for (int i = 0; it != _childModules.end() &&
-          i < _sendVideoCodec.numberOfSimulcastStreams; ++it, ++i) {
-        RTPSender& rtpSender = (*it)->_rtpSender;
-        if (_sendVideoCodec.simulcastStream[i].maxBitrate * 1000 >
-            bitrate_remainder) {
-          rtpSender.SetTargetSendBitrate(bitrate_remainder);
-          bitrate_remainder = 0;
-        } else {
-          rtpSender.SetTargetSendBitrate(
-              _sendVideoCodec.simulcastStream[i].maxBitrate * 1000);
-          bitrate_remainder -=
-              _sendVideoCodec.simulcastStream[i].maxBitrate * 1000;
+          i < _sendVideoCodec.numberOfSimulcastStreams; ++it) {
+        if ((*it)->SendingMedia()) {
+          ++i;
+          RTPSender& rtpSender = (*it)->_rtpSender;
+          if (_sendVideoCodec.simulcastStream[i].maxBitrate * 1000 >
+              bitrate_remainder) {
+            rtpSender.SetTargetSendBitrate(bitrate_remainder);
+            bitrate_remainder = 0;
+          } else {
+            rtpSender.SetTargetSendBitrate(
+                _sendVideoCodec.simulcastStream[i].maxBitrate * 1000);
+            bitrate_remainder -=
+                _sendVideoCodec.simulcastStream[i].maxBitrate * 1000;
+          }
         }
       }
     } else {

@@ -63,7 +63,8 @@ class ViEChannel
              RtcpIntraFrameObserver* intra_frame_observer,
              RtcpBandwidthObserver* bandwidth_observer,
              RemoteBitrateEstimator* remote_bitrate_estimator,
-             RtpRtcp* default_rtp_rtcp);
+             RtpRtcp* default_rtp_rtcp,
+             bool sender);
   ~ViEChannel();
 
   WebRtc_Word32 Init();
@@ -396,6 +397,7 @@ class ViEChannel
 
   // User set MTU, -1 if not set.
   uint16_t mtu_;
+  const bool sender_;
 };
 
 }  // namespace webrtc
