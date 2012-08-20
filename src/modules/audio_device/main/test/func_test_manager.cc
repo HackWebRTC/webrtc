@@ -557,18 +557,19 @@ WebRtc_Word32 AudioTransportImpl::NeedMorePlayData(
 }
 
 FuncTestManager::FuncTestManager() :
-    _resourcePath(webrtc::test::ProjectRootPath() +
-        "data/audio_device/"),
     _processThread(NULL),
     _audioDevice(NULL),
     _audioEventObserver(NULL),
     _audioTransport(NULL)
 {
-  assert(!_resourcePath.empty());
-  _playoutFile48 = _resourcePath + "audio_short48.pcm";
-  _playoutFile44 = _resourcePath + "audio_short44.pcm";
-  _playoutFile16 = _resourcePath + "audio_short16.pcm";
-  _playoutFile8 = _resourcePath + "audio_short8.pcm";
+  _playoutFile48 = webrtc::test::ResourcePath("audio_device\\audio_short48",
+                                              "pcm");
+  _playoutFile44 = webrtc::test::ResourcePath("audio_device\\audio_short44",
+                                              "pcm");
+  _playoutFile16 = webrtc::test::ResourcePath("audio_device\\audio_short16",
+                                              "pcm");
+  _playoutFile8 = webrtc::test::ResourcePath("audio_device\\audio_short8",
+                                             "pcm");
 }
 
 FuncTestManager::~FuncTestManager()

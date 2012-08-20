@@ -208,7 +208,6 @@ private:
     WebRtc_Word32 TestAdvancedMBAPI();
 private:
     // Paths to where the resource files to be used for this test are located.
-    std::string _resourcePath;
     std::string _playoutFile48;
     std::string _playoutFile44;
     std::string _playoutFile16;
