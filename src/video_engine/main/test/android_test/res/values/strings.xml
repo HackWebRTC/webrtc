@@ -33,6 +33,8 @@
 <string name="stopCall">StopCall</string>
 <string name="exit">Exit</string>
 <string name="speaker">Speaker</string>
+<string name="debugrecording">APMRecord</string>
+<string name="rtpdump">rtpdump</string>
 <string name="surfaceview">SurfaceView</string>
 <string name="opengl">OpenGL</string>
 </resources>

@@ -10,6 +10,7 @@
 
 package org.webrtc.videoengineapp;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -34,6 +35,7 @@ import android.graphics.Rect;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 
@@ -136,6 +138,7 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     private int destinationPortVideo = 11111;
     private CheckBox cbEnableNack;
     private boolean enableNack = false;
+    private CheckBox cbEnableVideoRTPDump;
 
     // Audio settings
     private Spinner spVoiceCodecType;
@@ -152,6 +155,8 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     private boolean enableAECM = false;
     private CheckBox cbEnableNS;
     private boolean enableNS = false;
+    private CheckBox cbEnableDebugAPM;
+    private CheckBox cbEnableVoiceRTPDump;
 
     // Stats variables
     private int frameRateI;
@@ -160,9 +165,13 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     private int frameRateO;
     private int bitRateO;
 
+    // Variable for storing variables
+    private String webrtcName = "/webrtc";
+    private String webrtcDebugDir = null;
+
     private WakeLock wakeLock;
 
-    private boolean usingFrontCamera = false;
+    private boolean usingFrontCamera = true;
 
     private String[] mVideoCodecsStrings = null;
     private String[] mVideoCodecsSizeStrings = { "176x144", "320x240",
@@ -260,6 +269,18 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                     }
                 };
         orientationListener.enable ();
+
+        // Create a folder named webrtc in /scard for debugging
+        webrtcDebugDir = Environment.getExternalStorageDirectory().toString() +
+                webrtcName;
+        File webrtcDir = new File(webrtcDebugDir);
+        if (!webrtcDir.exists() && webrtcDir.mkdir() == false) {
+            Log.v(TAG, "Failed to create " + webrtcDebugDir);
+        }
+        else if (!webrtcDir.isDirectory()) {
+            Log.v(TAG, webrtcDebugDir + " exists but not a folder");
+            webrtcDebugDir = null;
+        }
 
         StartMain();
         return;
@@ -494,6 +515,15 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         cbEnableNS = (CheckBox) findViewById(R.id.cbNoiseSuppression);
         cbEnableNS.setChecked(enableNS);
 
+        cbEnableDebugAPM = (CheckBox) findViewById(R.id.cbDebugRecording);
+        cbEnableDebugAPM.setChecked(false);  // Disable APM debugging by default
+
+        cbEnableVideoRTPDump = (CheckBox) findViewById(R.id.cbVideoRTPDump);
+        cbEnableVideoRTPDump.setChecked(false);  // Disable Video RTP Dump
+
+        cbEnableVoiceRTPDump = (CheckBox) findViewById(R.id.cbVoiceRTPDump);
+        cbEnableVoiceRTPDump.setChecked(false);  // Disable Voice RTP Dump
+
         etRemoteIp.setOnClickListener(this);
         cbLoopback.setOnClickListener(this);
         cbStats.setOnClickListener(this);
@@ -502,6 +532,9 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         cbEnableAECM.setOnClickListener(this);
         cbEnableAGC.setOnClickListener(this);
         cbEnableNS.setOnClickListener(this);
+        cbEnableDebugAPM.setOnClickListener(this);
+        cbEnableVideoRTPDump.setOnClickListener(this);
+        cbEnableVoiceRTPDump.setOnClickListener(this);
 
         if (loopbackMode) {
             remoteIp = LOOPBACK_IP;
@@ -805,6 +838,42 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                 enableSpeaker = cbEnableSpeaker.isChecked();
                 if (voERunning){
                     RouteAudio(enableSpeaker);
+                }
+                break;
+            case R.id.cbDebugRecording:
+                if(voERunning && webrtcDebugDir != null) {
+                    if (cbEnableDebugAPM.isChecked() ) {
+                        ViEAndroidAPI.VoE_StartDebugRecording(
+                            webrtcDebugDir + String.format("/apm_%d.dat",
+                                    System.currentTimeMillis()));
+                    }
+                    else {
+                        ViEAndroidAPI.VoE_StopDebugRecording();
+                    }
+                }
+                break;
+            case R.id.cbVoiceRTPDump:
+                if(voERunning && webrtcDebugDir != null) {
+                    if (cbEnableVoiceRTPDump.isChecked() ) {
+                        ViEAndroidAPI.VoE_StartIncomingRTPDump(channel,
+                                webrtcDebugDir + String.format("/voe_%d.rtp",
+                                        System.currentTimeMillis()));
+                    }
+                    else {
+                        ViEAndroidAPI.VoE_StopIncomingRTPDump(channel);
+                    }
+                }
+                break;
+            case R.id.cbVideoRTPDump:
+                if(viERunning && webrtcDebugDir != null) {
+                    if (cbEnableVideoRTPDump.isChecked() ) {
+                        ViEAndroidAPI.StartIncomingRTPDump(channel,
+                                webrtcDebugDir + String.format("/vie_%d.rtp",
+                                        System.currentTimeMillis()));
+                    }
+                    else {
+                        ViEAndroidAPI.StopIncomingRTPDump(channel);
+                    }
                 }
                 break;
             case R.id.cbAutoGainControl:

@@ -21,6 +21,7 @@
 #include "voe_audio_processing.h"
 #include "voe_volume_control.h"
 #include "voe_hardware.h"
+#include "voe_rtp_rtcp.h"
 
 #include "vie_base.h"
 #include "vie_codec.h"
@@ -76,6 +77,14 @@
     return -1;                                                          \
   }
 
+#define VALIDATE_RTP_POINTER                                            \
+  if (!voeData.rtp)                                                     \
+  {                                                                     \
+    __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,              \
+                        "rtp pointer doesn't exist");                   \
+    return -1;                                                          \
+  }
+
 using namespace webrtc;
 
 //Forward declaration.
@@ -94,6 +103,7 @@ typedef struct
   VoEAudioProcessing* apm;
   VoEVolumeControl* volume;
   VoEHardware* hardware;
+  VoERTP_RTCP* rtp;
   JavaVM* jvm;
 } VoiceEngineData;
 
@@ -1031,6 +1041,57 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetCallb
   return 0;
 }
 
+/*
+ * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+ * Method:    StartIncomingRTPDump
+ * Signature: (ILjava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StartIncomingRTPDump(
+    JNIEnv* env,
+    jobject,
+    jint channel,
+    jstring filename) {
+  if (NULL == vieData.rtp) {
+    __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "video RTP_RTCP interface is null");
+    return -1;
+  }
+  const char* file = env->GetStringUTFChars(filename, NULL);
+  if (!file) {
+    __android_log_print(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "Video StartRTPDump file name error");
+    return -1;
+  }
+  if (vieData.rtp->StartRTPDump(channel, file, kRtpIncoming) != 0) {
+    __android_log_print(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "Video StartRTPDump error");
+    return -1;
+  }
+  return 0;
+}
+
+/*
+ * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+ * Method:    StopIncomingRTPDump
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopIncomingRTPDump(
+    JNIEnv *,
+    jobject,
+    jint channel) {
+  if (NULL == vieData.rtp) {
+    __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "video RTP_RTCP interface is null");
+    return -1;
+  }
+  if (vieData.rtp->StopRTPDump(channel, kRtpIncoming) != 0) {
+    __android_log_print(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "Video StopRTPDump error");
+    return -1;
+  }
+  return 0;
+}
+
 //
 // VoiceEngine API wrapper functions
 //
@@ -1569,6 +1630,91 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Set
   return 0;
 }
 
+/*
+ * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+ * Method:    VoE_StartDebugRecording
+ * Signature: (Ljava/lang/String)I
+ */
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StartDebugRecording(
+    JNIEnv* env,
+    jobject,
+    jstring filename) {
+  VALIDATE_APM_POINTER;
+
+  const char* file = env->GetStringUTFChars(filename, NULL);
+  if (!file) {
+    __android_log_print(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "Voice StartDebugRecording file error");
+    return -1;
+  }
+  if (voeData.apm->StartDebugRecording(file) != 0) {
+    __android_log_print(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "Voice StartDebugRecording error");
+    return -1;
+  }
+  return 0;
+}
+
+/*
+ * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+ * Method:    VoE_StopDebugRecording
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StopDebugRecording(
+    JNIEnv *,
+    jobject) {
+  VALIDATE_APM_POINTER;
+  if (voeData.apm->StopDebugRecording() < 0) {
+    __android_log_print(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "Voice StopDebugRecording error");
+    return -1;
+  }
+  return 0;
+}
+
+/*
+ * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+ * Method:    VoE_StartIncomingRTPDump
+ * Signature: (ILjava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StartIncomingRTPDump(
+    JNIEnv* env,
+    jobject,
+    jint channel,
+    jstring filename) {
+  VALIDATE_RTP_POINTER;
+  const char* file = env->GetStringUTFChars(filename, NULL);
+  if (!file) {
+    __android_log_print(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "Voice StartRTPDump file error");
+    return -1;
+  }
+  if (voeData.rtp->StartRTPDump(channel, file, kRtpIncoming) != 0) {
+    __android_log_print(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "Voice StartRTPDump error");
+    return -1;
+  }
+  return 0;
+}
+
+/*
+ * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+ * Method:    VoE_StopRTPDump
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StopRTPDump(
+    JNIEnv *,
+    jobject,
+    jint channel) {
+  VALIDATE_RTP_POINTER;
+  if (voeData.rtp->StopRTPDump(channel) < 0) {
+    __android_log_print(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "Voice StopRTPDump error");
+    return -1;
+  }
+  return 0;
+}
+
 //
 // local function
 //
@@ -1630,6 +1776,14 @@ bool VE_GetSubApis() {
   if (!voeData.hardware) {
     __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                         "Get hardware sub-API failed");
+    getOK = false;
+  }
+
+  // RTP
+  voeData.rtp = VoERTP_RTCP::GetInterface(voeData.ve);
+  if (!voeData.rtp) {
+    __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "Get rtp sub-API failed");
     getOK = false;
   }
 
@@ -1721,6 +1875,17 @@ bool VE_ReleaseSubApis() {
     }
     else {
       voeData.hardware = NULL;
+    }
+  }
+
+  if (voeData.rtp) {
+    if (0 != voeData.rtp->Release()) {
+      __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                          "Release rtp sub-API failed");
+      releaseOK = false;
+    }
+    else {
+      voeData.rtp = NULL;
     }
   }
 

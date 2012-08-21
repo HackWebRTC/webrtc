@@ -81,6 +81,9 @@ public class ViEAndroidJavaAPI {
     // Enable stats callback
     public native int SetCallback(int channel, IViEAndroidCallback callback);
 
+    public native int StartIncomingRTPDump(int channel, String file);
+    public native int StopIncomingRTPDump(int channel);
+
     // Voice Engine API
     // Create and Delete functions
     public native boolean VoE_Create();
@@ -132,8 +135,12 @@ public class ViEAndroidJavaAPI {
     public native String[] VoE_GetCodecs();
     public native int VoE_SetSendCodec(int channel, int index);
 
-    //VE funtions
+    //VoiceEngine funtions
     public native int VoE_SetECStatus(boolean enable);
     public native int VoE_SetAGCStatus(boolean enable);
     public native int VoE_SetNSStatus(boolean enable);
+    public native int VoE_StartDebugRecording(String file);
+    public native int VoE_StopDebugRecording();
+    public native int VoE_StartIncomingRTPDump(int channel, String file);
+    public native int VoE_StopIncomingRTPDump(int channel);
 }

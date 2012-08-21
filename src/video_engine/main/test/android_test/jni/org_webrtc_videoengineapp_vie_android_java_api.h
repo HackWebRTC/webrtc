@@ -221,6 +221,22 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetCallb
 
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+ * Method:    StartIncomingRTPDump
+ * Signature: (ILjava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StartIncomingRTPDump
+  (JNIEnv *, jobject, jint, jstring);
+
+/*
+ * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+ * Method:    StopIncomingRTPDump
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopIncomingRTPDump
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
  * Method:    VoE_Create
  * Signature: ()Z
  */
@@ -428,6 +444,38 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Set
  */
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1SetNSStatus
   (JNIEnv *, jobject, jboolean);
+
+/*
+ * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+ * Method:    VoE_StartDebugRecording
+ * Signature: (Ljava/lang/String)I
+ */
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StartDebugRecording
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+ * Method:    VoE_StopDebugRecording
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StopDebugRecording
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+ * Method:    VoE_StartIncomingRTPDump
+ * Signature: (ILjava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StartIncomingRTPDump
+   (JNIEnv *, jobject, jint, jstring);
+
+/*
+ * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+ * Method:    VoE_StopIncomingRTPDump
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StopIncomingRTPDump
+   (JNIEnv *, jobject, jint);
 
 #ifdef __cplusplus
 }

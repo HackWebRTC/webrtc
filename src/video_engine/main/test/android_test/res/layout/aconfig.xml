@@ -71,6 +71,17 @@
               android:id="@+id/cbSpeaker"
               android:text="@string/speaker">
     </CheckBox>
+    <CheckBox android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:id="@+id/cbDebugRecording"
+              android:text="@string/debugrecording">
+    </CheckBox>
+    <CheckBox android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:id="@+id/cbVoiceRTPDump"
+              android:text="@string/rtpdump">
+    </CheckBox>
+
   </LinearLayout>
 
 </LinearLayout>
