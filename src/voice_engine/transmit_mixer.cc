@@ -1466,7 +1466,7 @@ int TransmitMixer::SetTypingDetectionParameters(int timeWindow,
     _reportingThreshold = reportingThreshold;
   if(penaltyDecay != 0)
     _penaltyDecay = penaltyDecay;
-  if(_typeEventDelay != 0)
+  if(typeEventDelay != 0)
     _typeEventDelay = typeEventDelay;
 
 
