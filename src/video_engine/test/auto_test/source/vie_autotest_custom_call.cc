@@ -1411,6 +1411,9 @@ bool GetAudioCodec(webrtc::VoECodec* voe_codec,
         default_codec_idx = codec_idx;
       }
       std::cout << "   " << codec_idx + 1 << ". " << audio_codec.plname
+                << " type:" << audio_codec.pltype
+                << " freq:" << audio_codec.plfreq
+                << " chan:" << audio_codec.channels
                 << std::endl;
     }
     std::cout << std::endl;
