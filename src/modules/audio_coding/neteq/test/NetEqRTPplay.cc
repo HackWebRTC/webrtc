@@ -357,6 +357,8 @@ int main(int argc, char* argv[])
 #ifdef WIN32
     _splitpath(argv[0],outdrive,outpath,outfile,outext);
     _makepath(ptypesfile,outdrive,outpath,"ptypes","txt");
+#elif defined(WEBRTC_ANDROID)
+  strcpy(ptypesfile, "/sdcard/ptypes.txt");
 #else
     // TODO(hlundin): Include path to ptypes, as for WIN32 above.
   strcpy(ptypesfile, "ptypes.txt");
