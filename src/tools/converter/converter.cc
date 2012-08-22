@@ -10,11 +10,11 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
+#include <cstdio>
 #include <iomanip>
 #include <sstream>
 
-#include "test/testsupport/converter/converter.h"
-#include "test/testsupport/frame_reader.h"
+#include "tools/converter/converter.h"
 
 #ifdef WIN32
 #define SEPARATOR '\\'
@@ -130,14 +130,21 @@ bool Converter::AddYUVPlaneToFile(uint8* yuv_plane, int yuv_plane_size,
 
 bool Converter::ReadRGBAFrame(const char* input_file_name, int input_frame_size,
                               unsigned char* buffer) {
-  // Use FrameReader.
-  FrameReaderImpl frame_reader(input_file_name, input_frame_size);
-  if (!frame_reader.Init()) {
-    fprintf(stderr, "Couldn't initialize FrameReader for frame %s",
+  FILE* input_file = fopen(input_file_name, "rb");
+  if (input_file == NULL) {
+    fprintf(stderr, "Couldn't open input file for reading: %s\n",
             input_file_name);
     return false;
   }
-  frame_reader.ReadFrame(buffer);
+
+  size_t nbr_read = fread(buffer, 1, input_frame_size, input_file);
+  fclose(input_file);
+
+  if (nbr_read != static_cast<size_t>(input_frame_size)) {
+    fprintf(stderr, "Error reading from input file: %s\n", input_file_name);
+    return false;
+  }
+
   return true;
 }
 

@@ -31,6 +31,7 @@
           'dependencies': [
             'src/test/metrics.gyp:*',
             'src/test/test.gyp:*',
+            'src/tools/tools.gyp:*',
             'tools/e2e_quality/e2e_quality.gyp:*',
           ],
         }],

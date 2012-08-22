@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_TEST_TESTSUPPORT_FRAME_ANALYZER_VIDEO_QUALITY_ANALYSIS_H_
-#define WEBRTC_TEST_TESTSUPPORT_FRAME_ANALYZER_VIDEO_QUALITY_ANALYSIS_H_
+#ifndef WEBRTC_TOOLS_FRAME_ANALYZER_VIDEO_QUALITY_ANALYSIS_H_
+#define WEBRTC_TOOLS_FRAME_ANALYZER_VIDEO_QUALITY_ANALYSIS_H_
 
 #include <string>
 #include <vector>
 
-#include "third_party/libyuv/include/libyuv.h"
+#include "libyuv/convert.h"
+#include "libyuv/compare.h"
 
 namespace webrtc {
 namespace test {
@@ -68,9 +69,6 @@ bool GetNextStatsLine(FILE* stats_file, char* line);
 // Calculates the size of a I420 frame if given the width and height.
 unsigned int GetI420FrameSize(unsigned int width, unsigned int height);
 
-// Converts a string to an int.
-int StringToInt(std::string number);
-
 // Extract the sequence of the frame in the video. I.e. if line is
 // frame_0023 0284, we will get 23.
 int ExtractFrameSequenceNumber(std::string line);
@@ -94,4 +92,4 @@ bool ExtractFrameFromI420(const char* i420_file_name, int width, int height,
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_TEST_TESTSUPPORT_FRAME_ANALYZER_VIDEO_QUALITY_ANALYSIS_H_
+#endif  // WEBRTC_TOOLS_FRAME_ANALYZER_VIDEO_QUALITY_ANALYSIS_H_

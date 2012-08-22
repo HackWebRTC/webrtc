@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SRC_TEST_TESTSUPPORT_CONVERTER_CONVERTER_H_
-#define WEBRTC_SRC_TEST_TESTSUPPORT_CONVERTER_CONVERTER_H_
+#ifndef WEBRTC_TOOLS_CONVERTER_CONVERTER_H_
+#define WEBRTC_TOOLS_CONVERTER_CONVERTER_H_
 
 #include <string>
 
-#include "third_party/libyuv/include/libyuv.h"
+#include "libyuv/convert.h"
+#include "libyuv/compare.h"
 
 namespace webrtc {
 namespace test {
@@ -102,4 +103,4 @@ class Converter {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_SRC_TEST_TESTSUPPORT_CONVERTER_CONVERTER_H_
+#endif  // WEBRTC_TOOLS_CONVERTER_CONVERTER_H_

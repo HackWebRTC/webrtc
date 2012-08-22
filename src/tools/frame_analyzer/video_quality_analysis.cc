@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "test/testsupport/frame_analyzer/video_quality_analysis.h"
+#include "tools/frame_analyzer/video_quality_analysis.h"
 
 #include <cassert>
 #include <cstdio>
