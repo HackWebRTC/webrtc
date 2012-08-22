@@ -238,7 +238,7 @@ int VP8Encoder::InitEncode(const VideoCodec* inst,
   config_->g_pass = VPX_RC_ONE_PASS;
   config_->rc_resize_allowed = inst->codecSpecific.VP8.automaticResizeOn ?
       1 : 0;
-  config_->rc_min_quantizer = 8;
+  config_->rc_min_quantizer = 2;
   config_->rc_max_quantizer = 56;
   config_->rc_undershoot_pct = 100;
   config_->rc_overshoot_pct = 15;
@@ -291,7 +291,7 @@ int VP8Encoder::InitAndSetControlSettings(const VideoCodec* inst) {
   if (vpx_codec_enc_init(encoder_, vpx_codec_vp8_cx(), config_, flags)) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  vpx_codec_control(encoder_, VP8E_SET_STATIC_THRESHOLD, 800);
+  vpx_codec_control(encoder_, VP8E_SET_STATIC_THRESHOLD, 1);
   vpx_codec_control(encoder_, VP8E_SET_CPUUSED, cpu_speed_);
   vpx_codec_control(encoder_, VP8E_SET_TOKEN_PARTITIONS,
                     static_cast<vp8e_token_partitions>(token_partitions_));
