@@ -29,7 +29,7 @@ function convert_srcs_to_gypi {
   # 2. Exclude *_offsets.c.
   # 3. Exclude vpx_config.c.
   # 4. Repelace .asm.s to .asm because gyp will do the conversion.
-  local source_list=`grep -E '(\.c|\.h|\.S|\.s|\.asm)$' $1 | grep -v '_offsets\.c' | grep -v 'vpx_config\.c' | sed s/\.asm\.s$/.asm/`
+  local source_list=`grep -E '(\.c|\.h|\.S|\.s|\.asm)$' $1 | grep -v '_offsets\.c' | grep -v 'vpx_config\.c' | sed s/\.asm\.s$/.asm/ | sort`
 
   # Build the gypi file.
   echo "# This file is generated. Do not edit." > $2
