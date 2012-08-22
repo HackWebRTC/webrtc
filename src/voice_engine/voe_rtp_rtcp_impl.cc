@@ -476,6 +476,42 @@ int VoERTP_RTCPImpl::GetRTCPStatistics(int channel, CallStatistics& stats)
     return channelPtr->GetRTPStatistics(stats);
 }
 
+int VoERTP_RTCPImpl::GetRemoteRTCPSenderInfo(int channel,
+                                             SenderInfo* sender_info) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "GetRemoteRTCPSenderInfo(channel=%d)", channel);
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return -1;
+  }
+  voe::ScopedChannel sc(_shared->channel_manager(), channel);
+  voe::Channel* channel_ptr = sc.ChannelPtr();
+  if (channel_ptr == NULL) {
+    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+        "GetRemoteRTCPSenderInfo() failed to locate channel");
+    return -1;
+  }
+  return channel_ptr->GetRemoteRTCPSenderInfo(sender_info);
+}
+
+int VoERTP_RTCPImpl::GetRemoteRTCPReportBlocks(
+    int channel, std::vector<ReportBlock>* report_blocks) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "GetRemoteRTCPReportBlocks(channel=%d)", channel);
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return -1;
+  }
+  voe::ScopedChannel sc(_shared->channel_manager(), channel);
+  voe::Channel* channel_ptr = sc.ChannelPtr();
+  if (channel_ptr == NULL) {
+    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+        "GetRemoteRTCPReportBlocks() failed to locate channel");
+    return -1;
+  }
+  return channel_ptr->GetRemoteRTCPReportBlocks(report_blocks);
+}
+
 int VoERTP_RTCPImpl::SetFECStatus(int channel, bool enable, int redPayloadtype)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),

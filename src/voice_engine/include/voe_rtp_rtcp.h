@@ -40,6 +40,7 @@
 #ifndef WEBRTC_VOICE_ENGINE_VOE_RTP_RTCP_H
 #define WEBRTC_VOICE_ENGINE_VOE_RTP_RTCP_H
 
+#include <vector>
 #include "common_types.h"
 
 namespace webrtc {
@@ -85,6 +86,27 @@ struct CallStatistics
     int packetsSent;
     int bytesReceived;
     int packetsReceived;
+};
+
+// See section 6.4.1 in http://www.ietf.org/rfc/rfc3550.txt for details.
+struct SenderInfo {
+  uint32_t NTP_timestamp_high;
+  uint32_t NTP_timestamp_low;
+  uint32_t RTP_timestamp;
+  uint32_t sender_packet_count;
+  uint32_t sender_octet_count;
+};
+
+// See section 6.4.2 in http://www.ietf.org/rfc/rfc3550.txt for details.
+struct ReportBlock {
+  uint32_t sender_SSRC; // SSRC of sender
+  uint32_t source_SSRC;
+  uint8_t fraction_lost;
+  uint32_t cumulative_num_packets_lost;
+  uint32_t extended_highest_sequence_number;
+  uint32_t interarrival_jitter;
+  uint32_t last_SR_timestamp;
+  uint32_t delay_since_last_SR;
 };
 
 // VoERTP_RTCP
@@ -172,6 +194,18 @@ public:
 
     // Gets RTCP statistics for a specific |channel|.
     virtual int GetRTCPStatistics(int channel, CallStatistics& stats) = 0;
+
+    // Gets the sender info part of the last received RTCP Sender Report (SR)
+    // on a specified |channel|.
+    virtual int GetRemoteRTCPSenderInfo(
+        int channel, SenderInfo* sender_info) = 0;
+
+    // Gets the report block parts of the last received RTCP Sender Report (SR),
+    // or RTCP Receiver Report (RR) on a specified |channel|. Each vector
+    // element also contains the SSRC of the sender in addition to a report
+    // block.
+    virtual int GetRemoteRTCPReportBlocks(
+        int channel, std::vector<ReportBlock>* receive_blocks) = 0;
 
     // Sends an RTCP APP packet on a specific |channel|.
     virtual int SendApplicationDefinedRTCPPacket(

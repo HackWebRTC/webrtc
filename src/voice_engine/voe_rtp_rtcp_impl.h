@@ -82,6 +82,11 @@ public:
 
     virtual int GetRTCPStatistics(int channel, CallStatistics& stats);
 
+    virtual int GetRemoteRTCPSenderInfo(int channel, SenderInfo* sender_info);
+
+    virtual int GetRemoteRTCPReportBlocks(
+        int channel, std::vector<ReportBlock>* report_blocks);
+
     // FEC
     virtual int SetFECStatus(int channel,
                              bool enable,

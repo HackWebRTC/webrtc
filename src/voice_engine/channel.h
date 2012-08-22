@@ -51,6 +51,8 @@ class VoERTPObserver;
 class VoERTCPObserver;
 
 struct CallStatistics;
+struct ReportBlock;
+struct SenderInfo;
 
 namespace voe
 {
@@ -341,6 +343,8 @@ public:
     int GetRTPStatistics(unsigned int& averageJitterMs,
                          unsigned int& maxJitterMs,
                          unsigned int& discardedPackets);
+    int GetRemoteRTCPSenderInfo(SenderInfo* sender_info);
+    int GetRemoteRTCPReportBlocks(std::vector<ReportBlock>* report_blocks);
     int GetRTPStatistics(CallStatistics& stats);
     int SetFECStatus(bool enable, int redPayloadtype);
     int GetFECStatus(bool& enabled, int& redPayloadtype);

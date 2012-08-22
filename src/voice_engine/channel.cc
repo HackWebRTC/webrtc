@@ -5404,6 +5404,66 @@ Channel::GetRTPStatistics(
     return 0;
 }
 
+int Channel::GetRemoteRTCPSenderInfo(SenderInfo* sender_info) {
+  if (sender_info == NULL) {
+    _engineStatisticsPtr->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
+        "GetRemoteRTCPSenderInfo() invalid sender_info.");
+    return -1;
+  }
+
+  // Get the sender info from the latest received RTCP Sender Report.
+  RTCPSenderInfo rtcp_sender_info;
+  if (_rtpRtcpModule->RemoteRTCPStat(&rtcp_sender_info) != 0) {
+    _engineStatisticsPtr->SetLastError(VE_RTP_RTCP_MODULE_ERROR, kTraceError,
+        "GetRemoteRTCPSenderInfo() failed to read RTCP SR sender info.");
+    return -1;
+  }
+
+  sender_info->NTP_timestamp_high = rtcp_sender_info.NTPseconds;
+  sender_info->NTP_timestamp_low = rtcp_sender_info.NTPfraction;
+  sender_info->RTP_timestamp = rtcp_sender_info.RTPtimeStamp;
+  sender_info->sender_packet_count = rtcp_sender_info.sendPacketCount;
+  sender_info->sender_octet_count = rtcp_sender_info.sendOctetCount;
+  return 0;
+}
+
+int Channel::GetRemoteRTCPReportBlocks(
+    std::vector<ReportBlock>* report_blocks) {
+  if (report_blocks == NULL) {
+    _engineStatisticsPtr->SetLastError(VE_INVALID_ARGUMENT, kTraceError,
+      "GetRemoteRTCPReportBlock()s invalid report_blocks.");
+    return -1;
+  }
+
+  // Get the report blocks from the latest received RTCP Sender or Receiver
+  // Report. Each element in the vector contains the sender's SSRC and a
+  // report block according to RFC 3550.
+  std::vector<RTCPReportBlock> rtcp_report_blocks;
+  if (_rtpRtcpModule->RemoteRTCPStat(&rtcp_report_blocks) != 0) {
+    _engineStatisticsPtr->SetLastError(VE_RTP_RTCP_MODULE_ERROR, kTraceError,
+        "GetRemoteRTCPReportBlocks() failed to read RTCP SR/RR report block.");
+    return -1;
+  }
+
+  if (rtcp_report_blocks.empty())
+    return 0;
+
+  std::vector<RTCPReportBlock>::const_iterator it = rtcp_report_blocks.begin();
+  for (; it != rtcp_report_blocks.end(); ++it) {
+    ReportBlock report_block;
+    report_block.sender_SSRC = it->remoteSSRC;
+    report_block.source_SSRC = it->sourceSSRC;
+    report_block.fraction_lost = it->fractionLost;
+    report_block.cumulative_num_packets_lost = it->cumulativeLost;
+    report_block.extended_highest_sequence_number = it->extendedHighSeqNum;
+    report_block.interarrival_jitter = it->jitter;
+    report_block.last_SR_timestamp = it->lastSR;
+    report_block.delay_since_last_SR = it->delaySinceLastSR;
+    report_blocks->push_back(report_block);
+  }
+  return 0;
+}
+
 int
 Channel::GetRTPStatistics(CallStatistics& stats)
 {
