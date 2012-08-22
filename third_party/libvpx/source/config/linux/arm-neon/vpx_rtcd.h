@@ -120,7 +120,8 @@ void vp8_build_intra_predictors_mbuv_s_c(struct macroblockd *x, unsigned char * 
 #define vp8_build_intra_predictors_mbuv_s vp8_build_intra_predictors_mbuv_s_c
 
 void vp8_intra4x4_predict_c(unsigned char *Above, unsigned char *yleft, int left_stride, B_PREDICTION_MODE b_mode, unsigned char *dst, int dst_stride, unsigned char top_left);
-#define vp8_intra4x4_predict vp8_intra4x4_predict_c
+void vp8_intra4x4_predict_armv6(unsigned char *Above, unsigned char *yleft, int left_stride, B_PREDICTION_MODE b_mode, unsigned char *dst, int dst_stride, unsigned char top_left);
+#define vp8_intra4x4_predict vp8_intra4x4_predict_armv6
 
 void vp8_mbpost_proc_down_c(unsigned char *dst, int pitch, int rows, int cols,int flimit);
 #define vp8_mbpost_proc_down vp8_mbpost_proc_down_c

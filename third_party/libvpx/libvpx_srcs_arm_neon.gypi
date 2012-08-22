@@ -17,6 +17,7 @@
     'source/libvpx/vp8/common/arm/armv6/filter_v6.asm',
     'source/libvpx/vp8/common/arm/armv6/idct_blk_v6.c',
     'source/libvpx/vp8/common/arm/armv6/idct_v6.asm',
+    'source/libvpx/vp8/common/arm/armv6/intra4x4_predict_v6.asm',
     'source/libvpx/vp8/common/arm/armv6/iwalsh_v6.asm',
     'source/libvpx/vp8/common/arm/armv6/loopfilter_v6.asm',
     'source/libvpx/vp8/common/arm/armv6/simpleloopfilter_v6.asm',
