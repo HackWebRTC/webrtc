@@ -60,38 +60,40 @@ static void HighpassFilterFixDec32(
   WebRtc_Word32 a2 = 0, b2 = 0;
   WebRtc_Word32 state0 = state[0];
   WebRtc_Word32 state1 = state[1];
-#ifdef WEBRTC_ARCH_ARM_V7A
-  WebRtc_Word32* coeff_ptr = (WebRtc_Word32*) coeff;
-#endif
 
   for (k=0; k<len; k++) {
     in = (WebRtc_Word32)io[k];
 
 #ifdef WEBRTC_ARCH_ARM_V7A
-    __asm __volatile(
-      "smmul %[a2], %[coeff01], %[state0]\n\t"
-      "smmul %[b2], %[coeff23], %[state1]\n\t"
-      "smmul %[a1], %[coeff45], %[state0]\n\t"
-      "smmul %[b1], %[coeff67], %[state1]\n\t"
-      :[a2]"+r"(a2),
-       [b2]"+r"(b2),
-       [a1]"+r"(a1),
-       [b1]"+r"(b1)
-      :[coeff01]"r"(coeff_ptr[0]),
-       [coeff23]"r"(coeff_ptr[1]),
-       [coeff45]"r"(coeff_ptr[2]),
-       [coeff67]"r"(coeff_ptr[3]),
-       [state0]"r"(state0),
-       [state1]"r"(state1)
-    );
+    {
+      int tmp_coeff = 0;
+      __asm __volatile(
+        "ldr %[tmp_coeff], [%[coeff]]\n\t"
+        "smmulr %[a2], %[tmp_coeff], %[state0]\n\t"
+        "ldr %[tmp_coeff], [%[coeff], #4]\n\t"
+        "smmulr %[b2], %[tmp_coeff], %[state1]\n\t"
+        "ldr %[tmp_coeff], [%[coeff], #8]\n\t"
+        "smmulr %[a1], %[tmp_coeff], %[state0]\n\t"
+        "ldr %[tmp_coeff], [%[coeff], #12]\n\t"
+        "smmulr %[b1], %[tmp_coeff], %[state1]\n\t"
+        :[a2]"+r"(a2),
+         [b2]"+r"(b2),
+         [a1]"+r"(a1),
+         [b1]"+r"(b1),
+         [tmp_coeff]"+r"(tmp_coeff)
+        :[coeff]"r"(coeff),
+         [state0]"r"(state0),
+         [state1]"r"(state1)
+      );
+    }
 #else
     /* Q35 * Q4 = Q39 ; shift 32 bit => Q7 */
-    a1 = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[5], coeff[4], state[0]);
-    b1 = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[7], coeff[6], state[1]);
+    a1 = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[5], coeff[4], state0);
+    b1 = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[7], coeff[6], state1);
 
     /* Q30 * Q4 = Q34 ; shift 32 bit => Q2 */
-    a2 = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[1], coeff[0], state[0]);
-    b2 = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[3], coeff[2], state[1]);
+    a2 = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[1], coeff[0], state0);
+    b2 = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[3], coeff[2], state1);
 #endif
 
     c = ((WebRtc_Word32)in) + WEBRTC_SPL_RSHIFT_W32(a1+b1, 7);  // Q0
