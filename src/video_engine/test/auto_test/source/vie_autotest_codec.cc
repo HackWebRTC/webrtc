@@ -226,6 +226,10 @@ void ViEAutoTest::ViECodecStandardTest() {
     ViETest::Log("Done!");
   }
 
+  // Test debug information recording.
+  EXPECT_EQ(0, codec->StartDebugRecording(video_channel,
+                                          "vie_autotest_debug"));
+
   // Test Callbacks
   TestCodecObserver codec_observer;
   EXPECT_EQ(0, codec->RegisterEncoderObserver(video_channel, codec_observer));
@@ -249,6 +253,9 @@ void ViEAutoTest::ViECodecStandardTest() {
   EXPECT_GT(codec_observer.incoming_codec_called_, 0);
   EXPECT_GT(codec_observer.incoming_rate_called_, 0);
   EXPECT_GT(codec_observer.outgoing_rate_called_, 0);
+
+  // Stop debug record.
+  EXPECT_EQ(0, codec->StopDebugRecording(video_channel));
 
   EXPECT_EQ(0, base->StopReceive(video_channel));
   EXPECT_EQ(0, render->StopRender(video_channel));

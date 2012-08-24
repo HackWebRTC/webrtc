@@ -868,6 +868,14 @@ ViEFileRecorder& ViEEncoder::GetOutgoingFileRecorder() {
   return file_recorder_;
 }
 
+int ViEEncoder::StartDebugRecording(const char* fileNameUTF8) {
+  return vcm_.StartDebugRecording(fileNameUTF8);
+}
+
+int ViEEncoder::StopDebugRecording() {
+  return vcm_.StopDebugRecording();
+}
+
 QMVideoSettingsCallback::QMVideoSettingsCallback(VideoProcessingModule* vpm)
     : vpm_(vpm) {
 }
