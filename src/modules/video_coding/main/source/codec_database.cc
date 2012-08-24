@@ -175,6 +175,7 @@ VCMCodecDataBase::Codec(WebRtc_UWord8 listId, VideoCodec *settings)
             settings->codecSpecific.VP8.denoisingOn = true;
             settings->codecSpecific.VP8.errorConcealmentOn = false;
             settings->codecSpecific.VP8.automaticResizeOn = false;
+            settings->codecSpecific.VP8.frameDroppingOn = true;
             break;
         }
 #endif

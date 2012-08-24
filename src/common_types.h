@@ -522,6 +522,7 @@ struct VideoCodecVP8
     bool                 denoisingOn;
     bool                 errorConcealmentOn;
     bool                 automaticResizeOn;
+    bool                 frameDroppingOn;
 };
 
 // Unknown specific
