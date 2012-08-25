@@ -142,11 +142,6 @@ class ViEEncoder
 
   // Recording.
   ViEFileRecorder& GetOutgoingFileRecorder();
-  // Enables recording of debugging information.
-  virtual int StartDebugRecording(const char* fileNameUTF8);
-
-  // Disables recording of debugging information.
-  virtual int StopDebugRecording();
 
  protected:
   // Called by BitrateObserver.

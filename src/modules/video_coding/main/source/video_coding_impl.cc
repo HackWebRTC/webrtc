@@ -21,6 +21,7 @@ namespace webrtc
 {
 
 //#define DEBUG_DECODER_BIT_STREAM
+//#define DEBUG_ENCODER_INPUT
 
 WebRtc_UWord32
 VCMProcessTimer::Period() const
@@ -77,7 +78,10 @@ _nextFrameType(kVideoFrameDelta),
 _mediaOpt(id, clock_),
 _sendCodecType(kVideoCodecUnknown),
 _sendStatsCallback(NULL),
+#ifdef DEBUG_ENCODER_INPUT
 _encoderInputFile(NULL),
+#endif
+
 _codecDataBase(id),
 _receiveStatsTimer(1000, clock_),
 _sendStatsTimer(1000, clock_),
@@ -87,6 +91,9 @@ _keyRequestTimer(500, clock_)
     assert(clock_);
 #ifdef DEBUG_DECODER_BIT_STREAM
     _bitStreamBeforeDecoder = fopen("decoderBitStream.bit", "wb");
+#endif
+#ifdef DEBUG_ENCODER_INPUT
+    _encoderInputFile = fopen("encoderInput.yuv", "wb");
 #endif
 }
 
@@ -102,10 +109,9 @@ VideoCodingModuleImpl::~VideoCodingModuleImpl()
 #ifdef DEBUG_DECODER_BIT_STREAM
     fclose(_bitStreamBeforeDecoder);
 #endif
-    if (_encoderInputFile != NULL)
-    {
-        fclose(_encoderInputFile);
-    }
+#ifdef DEBUG_ENCODER_INPUT
+    fclose(_encoderInputFile);
+#endif
 }
 
 VideoCodingModule*
@@ -680,6 +686,7 @@ VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
         WebRtc_Word32 ret = _encoder->Encode(videoFrame,
                                              codecSpecificInfo,
                                              _nextFrameType);
+#ifdef DEBUG_ENCODER_INPUT
         if (_encoderInputFile != NULL)
         {
           if (fwrite(videoFrame.Buffer(), 1, videoFrame.Length(),
@@ -687,6 +694,7 @@ VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
             return -1;
           }
         }
+#endif
         if (ret < 0)
         {
             WEBRTC_TRACE(webrtc::kTraceError,
@@ -1362,21 +1370,6 @@ int VideoCodingModuleImpl::SetReceiverRobustnessMode(
       _receiver.SetNackMode(kNoNack);
       _dualReceiver.SetNackMode(kNoNack);
       break;
-  }
-  return VCM_OK;
-}
-
-int VideoCodingModuleImpl::StartDebugRecording(const char* file_name_utf8) {
-  _encoderInputFile = fopen(file_name_utf8, "wb");
-  if (_encoderInputFile == NULL)
-    return VCM_GENERAL_ERROR;
-  return VCM_OK;
-}
-
-int VideoCodingModuleImpl::StopDebugRecording(){
-  if (_encoderInputFile != NULL) {
-    fclose(_encoderInputFile);
-    _encoderInputFile = NULL;
   }
   return VCM_OK;
 }

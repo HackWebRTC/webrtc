@@ -65,11 +65,6 @@ class ViECodecImpl
   virtual int DeregisterDecoderObserver(const int video_channel);
   virtual int SendKeyFrame(const int video_channel);
   virtual int WaitForFirstKeyFrame(const int video_channel, const bool wait);
-  // Enables recording of debugging information.
-  virtual int StartDebugRecording(int video_channel,
-                                  const char* file_name_utf8);
-  // Disables recording of debugging information.
-  virtual int StopDebugRecording(int video_channel);
 
  protected:
   explicit ViECodecImpl(ViESharedData* shared_data);
