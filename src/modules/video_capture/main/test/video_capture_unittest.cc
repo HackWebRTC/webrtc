@@ -360,7 +360,9 @@ TEST_F(VideoCaptureTest, Capabilities) {
   }
 }
 
-TEST_F(VideoCaptureTest, TestTwoCameras) {
+// NOTE: flaky, crashes sometimes.
+// http://code.google.com/p/webrtc/issues/detail?id=777
+TEST_F(VideoCaptureTest, DISABLED_TestTwoCameras) {
   if (number_of_devices_ < 2) {
     printf("There are not two cameras available. Aborting test. \n");
     return;
@@ -457,7 +459,9 @@ TEST_F(VideoCaptureExternalTest , TestExternalCapture) {
 }
 
 // Test input of planar I420 frames.
-TEST_F(VideoCaptureExternalTest , TestExternalCaptureI420) {
+// NOTE: flaky, sometimes fails on the last CompareLastFrame.
+// http://code.google.com/p/webrtc/issues/detail?id=777
+TEST_F(VideoCaptureExternalTest, DISABLED_TestExternalCaptureI420) {
   webrtc::VideoFrameI420 frame_i420;
   frame_i420.width = kTestWidth;
   frame_i420.height = kTestHeight;
