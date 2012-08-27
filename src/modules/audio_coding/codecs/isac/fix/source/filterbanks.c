@@ -19,6 +19,7 @@
  */
 
 #include "codec.h"
+#include "filterbank_internal.h"
 #include "filterbank_tables.h"
 #include "settings.h"
 
@@ -49,11 +50,10 @@ static void AllpassFilter2FixDec16(WebRtc_Word16 *InOut16, //Q0
 }
 
 
-static void HighpassFilterFixDec32(
-    WebRtc_Word16 *io,   /* Q0:input Q0: Output */
-    WebRtc_Word16 len, /* length of input, Input */
-    const WebRtc_Word16 *coeff, /* Coeff: [Q30hi Q30lo Q30hi Q30lo Q35hi Q35lo Q35hi Q35lo] */
-    WebRtc_Word32 *state) /* Q4:filter state Input/Output */
+void WebRtcIsacfix_HighpassFilterFixDec32(int16_t *io,
+                                          int16_t len,
+                                          const int16_t *coefficient,
+                                          int32_t *state)
 {
   int k;
   WebRtc_Word32 a1 = 0, b1 = 0, c = 0, in = 0;
@@ -66,34 +66,36 @@ static void HighpassFilterFixDec32(
 
 #ifdef WEBRTC_ARCH_ARM_V7A
     {
-      int tmp_coeff = 0;
+      int tmp_coeff0 = 0;
+      int tmp_coeff1 = 0;
       __asm __volatile(
-        "ldr %[tmp_coeff], [%[coeff]]\n\t"
-        "smmulr %[a2], %[tmp_coeff], %[state0]\n\t"
-        "ldr %[tmp_coeff], [%[coeff], #4]\n\t"
-        "smmulr %[b2], %[tmp_coeff], %[state1]\n\t"
-        "ldr %[tmp_coeff], [%[coeff], #8]\n\t"
-        "smmulr %[a1], %[tmp_coeff], %[state0]\n\t"
-        "ldr %[tmp_coeff], [%[coeff], #12]\n\t"
-        "smmulr %[b1], %[tmp_coeff], %[state1]\n\t"
+        "ldr %[tmp_coeff0], [%[coeff]]\n\t"
+        "ldr %[tmp_coeff1], [%[coeff], #4]\n\t"
+        "smmulr %[a2], %[tmp_coeff0], %[state0]\n\t"
+        "smmulr %[b2], %[tmp_coeff1], %[state1]\n\t"
+        "ldr %[tmp_coeff0], [%[coeff], #8]\n\t"
+        "ldr %[tmp_coeff1], [%[coeff], #12]\n\t"
+        "smmulr %[a1], %[tmp_coeff0], %[state0]\n\t"
+        "smmulr %[b1], %[tmp_coeff1], %[state1]\n\t"
         :[a2]"+r"(a2),
          [b2]"+r"(b2),
          [a1]"+r"(a1),
          [b1]"+r"(b1),
-         [tmp_coeff]"+r"(tmp_coeff)
-        :[coeff]"r"(coeff),
+         [tmp_coeff0]"+r"(tmp_coeff0),
+         [tmp_coeff1]"+r"(tmp_coeff1)
+        :[coeff]"r"(coefficient),
          [state0]"r"(state0),
          [state1]"r"(state1)
       );
     }
 #else
     /* Q35 * Q4 = Q39 ; shift 32 bit => Q7 */
-    a1 = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[5], coeff[4], state0);
-    b1 = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[7], coeff[6], state1);
+    a1 = WEBRTC_SPL_MUL_32_32_RSFT32(coefficient[5], coefficient[4], state0);
+    b1 = WEBRTC_SPL_MUL_32_32_RSFT32(coefficient[7], coefficient[6], state1);
 
     /* Q30 * Q4 = Q34 ; shift 32 bit => Q2 */
-    a2 = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[1], coeff[0], state0);
-    b2 = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[3], coeff[2], state1);
+    a2 = WEBRTC_SPL_MUL_32_32_RSFT32(coefficient[1], coefficient[0], state0);
+    b2 = WEBRTC_SPL_MUL_32_32_RSFT32(coefficient[3], coefficient[2], state1);
 #endif
 
     c = ((WebRtc_Word32)in) + WEBRTC_SPL_RSHIFT_W32(a1+b1, 7);  // Q0
@@ -127,7 +129,7 @@ void WebRtcIsacfix_SplitAndFilter1(WebRtc_Word16 *pin,
 
 
   /* High pass filter */
-  HighpassFilterFixDec32(pin, FRAMESAMPLES, WebRtcIsacfix_kHpStCoeffInQ30, prefiltdata->HPstates_fix);
+  WebRtcIsacfix_HighpassFilterFixDec32(pin, FRAMESAMPLES, WebRtcIsacfix_kHpStCoeffInQ30, prefiltdata->HPstates_fix);
 
 
   /* First Channel */
@@ -197,7 +199,7 @@ void WebRtcIsacfix_SplitAndFilter2(WebRtc_Word16 *pin,
 
 
   /* High pass filter */
-  HighpassFilterFixDec32(pin, FRAMESAMPLES, WebRtcIsacfix_kHpStCoeffInQ30, prefiltdata->HPstates_fix);
+  WebRtcIsacfix_HighpassFilterFixDec32(pin, FRAMESAMPLES, WebRtcIsacfix_kHpStCoeffInQ30, prefiltdata->HPstates_fix);
 
 
   /* First Channel */
@@ -284,8 +286,8 @@ void WebRtcIsacfix_FilterAndCombine1(WebRtc_Word16 *tempin_ch1,
   }
 
   /* High pass filter */
-  HighpassFilterFixDec32(in, FRAMESAMPLES, WebRtcIsacfix_kHPStCoeffOut1Q30, postfiltdata->HPstates1_fix);
-  HighpassFilterFixDec32(in, FRAMESAMPLES, WebRtcIsacfix_kHPStCoeffOut2Q30, postfiltdata->HPstates2_fix);
+  WebRtcIsacfix_HighpassFilterFixDec32(in, FRAMESAMPLES, WebRtcIsacfix_kHPStCoeffOut1Q30, postfiltdata->HPstates1_fix);
+  WebRtcIsacfix_HighpassFilterFixDec32(in, FRAMESAMPLES, WebRtcIsacfix_kHPStCoeffOut2Q30, postfiltdata->HPstates2_fix);
 
   for (k=0;k<FRAMESAMPLES;k++) {
     out16[k] = in[k];
@@ -341,8 +343,8 @@ void WebRtcIsacfix_FilterAndCombine2(WebRtc_Word16 *tempin_ch1,
   }
 
   /* High pass filter */
-  HighpassFilterFixDec32(in, len, WebRtcIsacfix_kHPStCoeffOut1Q30, postfiltdata->HPstates1_fix);
-  HighpassFilterFixDec32(in, len, WebRtcIsacfix_kHPStCoeffOut2Q30, postfiltdata->HPstates2_fix);
+  WebRtcIsacfix_HighpassFilterFixDec32(in, len, WebRtcIsacfix_kHPStCoeffOut1Q30, postfiltdata->HPstates1_fix);
+  WebRtcIsacfix_HighpassFilterFixDec32(in, len, WebRtcIsacfix_kHPStCoeffOut2Q30, postfiltdata->HPstates2_fix);
 
   for (k=0;k<len;k++) {
     out16[k] = in[k];

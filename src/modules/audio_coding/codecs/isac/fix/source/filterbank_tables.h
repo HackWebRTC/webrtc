@@ -21,6 +21,10 @@
 
 #include "typedefs.h"
 
+#if defined(__cplusplus) || defined(c_plusplus)
+extern "C" {
+#endif
+
 /********************* Coefficient Tables ************************/
 
 /* HPstcoeff_in_Q14 = {a1, a2, b1 - b0 * a1, b2 - b0 * a2}; */
@@ -40,5 +44,9 @@ extern const int16_t WebRtcIsacfix_kUpperApFactorsQ15[2];
 
 /* The lower channel all-pass filter factors */
 extern const int16_t WebRtcIsacfix_kLowerApFactorsQ15[2];
+
+#if defined(__cplusplus) || defined(c_plusplus)
+}
+#endif
 
 #endif /* WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_FILTERBANK_TABLES_H_ */

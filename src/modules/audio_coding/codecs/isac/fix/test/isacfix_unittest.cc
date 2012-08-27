@@ -10,6 +10,8 @@
 #include <typedefs.h>
 
 #include "gtest/gtest.h"
+#include "modules/audio_coding/codecs/isac/fix/source/filterbank_internal.h"
+#include "modules/audio_coding/codecs/isac/fix/source/filterbank_tables.h"
 #include "modules/audio_coding/codecs/isac/fix/source/lpc_masking_model.h"
 #include "system_wrappers/interface/cpu_features_wrapper.h"
 
@@ -65,4 +67,30 @@ TEST_F(IsacUnitTest, CalculateResidualEnergyTest) {
 #elif defined(WEBRTC_ARCH_ARM_NEON)
   CalculateResidualEnergyTester(WebRtcIsacfix_CalculateResidualEnergyNeon);
 #endif
+}
+
+TEST_F(IsacUnitTest, HighpassFilterFixDec32Test) {
+  const int kSamples = 20;
+  int16_t in[kSamples];
+  int32_t state[2] = {12345, 987654};
+#ifdef WEBRTC_ARCH_ARM_V7A
+  int32_t out[kSamples] = {-1040, -1035, -22875, -1397, -27604, 20018, 7917,
+    -1279, -8552, -14494, -7558, -23537, -27258, -30554, -32768, -3432, -32768,
+    25215, -27536, 22436};
+#else
+  int32_t out[kSamples] = {-1040, -1035, -22875, -1397, -27604, 20017, 7915,
+    -1280, -8554, -14496, -7561, -23541, -27263, -30560, -32768, -3441, -32768,
+    25203, -27550, 22419};
+#endif
+
+  for(int i = 0; i < kSamples; i++) {
+    in[i] = WEBRTC_SPL_WORD32_MAX / (i + 1);
+  }
+
+  WebRtcIsacfix_HighpassFilterFixDec32(in, kSamples,
+      WebRtcIsacfix_kHPStCoeffOut1Q30, state);
+
+  for(int i = 0; i < kSamples; i++) {
+    EXPECT_EQ(out[i], in[i]);
+  }
 }
