@@ -67,7 +67,7 @@ void PrintMaxRepeatedAndSkippedFrames(const char* stats_file_name);
 bool GetNextStatsLine(FILE* stats_file, char* line);
 
 // Calculates the size of a I420 frame if given the width and height.
-unsigned int GetI420FrameSize(unsigned int width, unsigned int height);
+int GetI420FrameSize(int width, int height);
 
 // Extract the sequence of the frame in the video. I.e. if line is
 // frame_0023 0284, we will get 23.

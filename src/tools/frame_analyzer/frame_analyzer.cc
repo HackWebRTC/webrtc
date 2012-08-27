@@ -8,10 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <cassert>
 #include <cstdio>
 #include <cstdlib>
-#include <sstream>
 #include <string>
 #include <map>
 #include <vector>
@@ -19,15 +17,38 @@
 #include "tools/frame_analyzer/video_quality_analysis.h"
 #include "tools/simple_command_line_parser.h"
 
-#define STATS_LINE_LENGTH 25
-
+/*
+ * A command line tool running PSNR and SSIM on a reference video and a test
+ * video. The test video is a record of the reference video which can start at
+ * an arbitrary point. It is possible that there will be repeated frames or
+ * skipped frames as well. In order to have a way to compare corresponding
+ * frames from the two videos, a stats file should be provided. The stats file
+ * is a text file assumed to be in the format:
+ * frame_xxxx yyyy
+ * where xxxx is the frame number in the test video and yyyy is the
+ * corresponding frame number in the original video.
+ * The video files should be 1420 YUV videos.
+ * The tool prints the result to the standard output in the following format:
+ * BSTATS
+ * <psnr_value> <ssim_value>; <psnr_value> <ssim_value>; ....
+ * ESTATS
+ * Unique_frames_count:<value>
+ * Max_repeated:<value>
+ * Max_skipped<value>
+ *
+ * The max value for PSNR is 48.0 (between equal frames), as for SSIM it is 1.0.
+ *
+ * Usage:
+ * frame_analyzer --reference_file=<name_of_file> --test_file=<name_of_file>
+ * --stats_file=<name_of_file> --width=<frame_width> --height=<frame_height>
+ */
 int main(int argc, char** argv) {
   std::string program_name = argv[0];
   std::string usage = "Compares the output video with the initially sent video."
       "\nExample usage:\n" + program_name + " --stats_file=stats.txt "
       "--reference_file=ref.yuv --test_file=test.yuv --width=320 --height=240\n"
       "Command line flags:\n"
-      "  - width(int): The width of the refence and test files. Default: -1\n"
+      "  - width(int): The width of the reference and test files. Default: -1\n"
       "  - height(int): The height of the reference and test files. "
       " Default: -1\n"
       "  - stats_file(string): The full name of the file containing the stats"

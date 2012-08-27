@@ -20,13 +20,13 @@
 namespace webrtc {
 namespace test {
 
-unsigned int GetI420FrameSize(unsigned int width, unsigned int height) {
-  unsigned int half_width = (width + 1) >> 1;
-  unsigned int half_height = (height + 1) >> 1;
+int GetI420FrameSize(int width, int height) {
+  int half_width = (width + 1) >> 1;
+  int half_height = (height + 1) >> 1;
 
-  unsigned int y_plane = width * height;  // I420 Y plane.
-  unsigned int u_plane = half_width * half_height;  // I420 U plane.
-  unsigned int v_plane = half_width * half_height;  // I420 V plane.
+  int y_plane = width * height;  // I420 Y plane.
+  int u_plane = half_width * half_height;  // I420 U plane.
+  int v_plane = half_width * half_height;  // I420 V plane.
 
   return y_plane + u_plane + v_plane;
 }
@@ -83,11 +83,15 @@ bool GetNextStatsLine(FILE* stats_file, char* line) {
 
 bool GetNextI420Frame(FILE* input_file, int width, int height,
                       uint8* result_frame) {
-  unsigned int frame_size = GetI420FrameSize(width, height);
+  int frame_size = GetI420FrameSize(width, height);
   bool errors = false;
 
   size_t bytes_read = fread(result_frame, 1, frame_size, input_file);
-  if (bytes_read != frame_size) {
+  if (bytes_read != static_cast<size_t>(frame_size)) {
+    // If end-of-file is reached, don't print an error.
+    if (feof(input_file)) {
+      return false;
+    }
     fprintf(stdout, "Error while reading frame from file\n");
     errors = true;
   }
@@ -96,7 +100,7 @@ bool GetNextI420Frame(FILE* input_file, int width, int height,
 
 bool ExtractFrameFromI420(const char* i420_file_name, int width, int height,
                           int frame_number, uint8* result_frame) {
-  unsigned int frame_size = GetI420FrameSize(width, height);
+  int frame_size = GetI420FrameSize(width, height);
   int offset = frame_number * frame_size;  // Calculate offset for the frame.
   bool errors = false;
 
@@ -111,7 +115,7 @@ bool ExtractFrameFromI420(const char* i420_file_name, int width, int height,
   fseek(input_file, offset, SEEK_SET);
 
   size_t bytes_read = fread(result_frame, 1, frame_size, input_file);
-  if (bytes_read != frame_size &&
+  if (bytes_read != static_cast<size_t>(frame_size) &&
       ferror(input_file)) {
     fprintf(stdout, "Error while reading frame no %d from file %s\n",
             frame_number, i420_file_name);
