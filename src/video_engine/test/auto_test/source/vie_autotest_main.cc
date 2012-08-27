@@ -117,7 +117,7 @@ int ViEAutoTestMain::RunSpecificTestCaseIn(const std::string test_case_name)
 
 int ViEAutoTestMain::RunSpecialTestCase(int choice) {
   // 7-9 don't run in GTest and need to initialize by themselves.
-  assert(choice >= 7 && choice <= 9);
+  assert(choice >= 7 && choice <= 10);
 
   // Create the windows
   ViEWindowCreator windowCreator;
@@ -133,6 +133,7 @@ int ViEAutoTestMain::RunSpecialTestCase(int choice) {
     case 7: errors = vieAutoTest.ViELoopbackCall();  break;
     case 8: errors = vieAutoTest.ViECustomCall();    break;
     case 9: errors = vieAutoTest.ViESimulcastCall(); break;
+    case 10: errors = vieAutoTest.ViERecordCall(); break;
   }
 
   windowCreator.TerminateWindows();
@@ -158,9 +159,10 @@ int ViEAutoTestMain::RunInteractiveMode() {
     ViETest::Log("\t 7. Simple loopback call");
     ViETest::Log("\t 8. Custom configure a call");
     ViETest::Log("\t 9. Simulcast in loopback");
+    ViETest::Log("\t 10. Record");
     ViETest::Log("Select type of test:");
 
-    choice = AskUserForNumber(0, 9);
+    choice = AskUserForNumber(0, 10);
     if (choice == kInvalidChoice) {
       continue;
     }

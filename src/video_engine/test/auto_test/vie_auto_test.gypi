@@ -77,6 +77,7 @@
         'source/vie_autotest_main.cc',
         'source/vie_autotest_network.cc',
         'source/vie_autotest_render.cc',
+        'source/vie_autotest_record.cc',
         'source/vie_autotest_rtp_rtcp.cc',
         'source/vie_autotest_custom_call.cc',
         'source/vie_autotest_simulcast.cc',
