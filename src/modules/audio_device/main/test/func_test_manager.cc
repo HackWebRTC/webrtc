@@ -15,6 +15,7 @@
 
 #include "func_test_manager.h"
 #include "gtest/gtest.h"
+#include "system_wrappers/interface/sleep.h"
 #include "testsupport/fileutils.h"
 
 #include "../source/audio_device_config.h"
@@ -1301,7 +1302,7 @@ WebRtc_Word32 FuncTestManager::TestAudioTransport()
             EXPECT_EQ(0, audioDevice->SetRecordingChannel(AudioDeviceModule::kChannelLeft));
         }
         EXPECT_EQ(0, audioDevice->StartRecording());
-        AudioDeviceUtility::Sleep(100);
+        SleepMs(100);
 
         EXPECT_TRUE(audioDevice->Recording());
         if (audioDevice->Recording())
@@ -1337,7 +1338,7 @@ WebRtc_Word32 FuncTestManager::TestAudioTransport()
         {
             EXPECT_EQ(0, audioDevice->InitPlayout());
             EXPECT_EQ(0, audioDevice->StartPlayout());
-            AudioDeviceUtility::Sleep(100);
+            SleepMs(100);
         }
 
         EXPECT_TRUE(audioDevice->Playing());
@@ -1392,7 +1393,7 @@ WebRtc_Word32 FuncTestManager::TestAudioTransport()
 
         EXPECT_EQ(0, audioDevice->StartRecording());
         EXPECT_EQ(0, audioDevice->StartPlayout());
-        AudioDeviceUtility::Sleep(100);
+        SleepMs(100);
 
         if (audioDevice->Playing() && audioDevice->Recording())
         {
@@ -2426,7 +2427,7 @@ WebRtc_Word32 FuncTestManager::TestDeviceRemoval()
                     while (_audioEventObserver->_error
                         == (AudioDeviceObserver::ErrorCode) (-1))
                     {
-                        SLEEP(500);
+                        SleepMs(500);
                     }
                 } else
                 {
@@ -2680,10 +2681,10 @@ WebRtc_Word32 FuncTestManager::TestAdvancedMBAPI()
         for (int l=0; l<20; ++l)
         {
             EXPECT_EQ(0, audioDevice->ResetAudioDevice());
-            AudioDeviceUtility::Sleep(p);
+            SleepMs(p);
         }
         TEST_LOG("\n> Speak into the microphone and verify that the audio is good.\n");
-        AudioDeviceUtility::Sleep(2000);
+        SleepMs(2000);
     }
 #endif
 

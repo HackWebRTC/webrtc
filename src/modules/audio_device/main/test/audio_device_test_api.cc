@@ -20,6 +20,7 @@
 #include "../source/audio_device_config.h"
 #include "../source/audio_device_impl.h"
 #include "../source/audio_device_utility.h"
+#include "system_wrappers/interface/sleep.h"
 
 // Helper functions
 #if defined(ANDROID)
@@ -531,7 +532,7 @@ TEST_F(AudioDeviceAPITest, InitPlayout) {
     EXPECT_EQ(0, audio_device_->InitPlayout());
     // Sleep is needed for e.g. iPhone since we after stopping then starting may
     // have a hangover time of a couple of ms before initialized.
-    AudioDeviceUtility::Sleep(50);
+    SleepMs(50);
     EXPECT_TRUE(audio_device_->PlayoutIsInitialized());
   }
 
@@ -580,7 +581,7 @@ TEST_F(AudioDeviceAPITest, InitRecording) {
   EXPECT_EQ(0, audio_device_->RecordingIsAvailable(&available));
   if (available) {
     EXPECT_EQ(0, audio_device_->InitRecording());
-    AudioDeviceUtility::Sleep(50);
+    SleepMs(50);
     EXPECT_TRUE(audio_device_->RecordingIsInitialized());
   }
 
@@ -1704,7 +1705,7 @@ TEST_F(AudioDeviceAPITest, StartAndStopRawOutputFileRecording) {
 
   EXPECT_EQ(0, audio_device_->StartRawOutputFileRecording(
       GetFilename("raw_output_playing.pcm")));
-  AudioDeviceUtility::Sleep(100);
+  SleepMs(100);
   EXPECT_EQ(0, audio_device_->StopRawOutputFileRecording());
   EXPECT_EQ(0, audio_device_->StopPlayout());
   EXPECT_EQ(0, audio_device_->StartRawOutputFileRecording(
@@ -1738,7 +1739,7 @@ TEST_F(AudioDeviceAPITest, StartAndStopRawInputFileRecording) {
 #endif
   EXPECT_EQ(0, audio_device_->StartRawInputFileRecording(
       GetFilename("raw_input_recording.pcm")));
-  AudioDeviceUtility::Sleep(100);
+  SleepMs(100);
   EXPECT_EQ(0, audio_device_->StopRawInputFileRecording());
   EXPECT_EQ(0, audio_device_->StopRecording());
   EXPECT_EQ(0, audio_device_->StartRawInputFileRecording(
@@ -1806,7 +1807,7 @@ TEST_F(AudioDeviceAPITest, ResetAudioDevice) {
   {
     TEST_LOG("Resetting sound device several time with pause %d ms\n", l);
     EXPECT_EQ(0, audio_device_->ResetAudioDevice());
-    AudioDeviceUtility::Sleep(l);
+    SleepMs(l);
   }
 #else
   // Fail tests

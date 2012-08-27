@@ -42,6 +42,7 @@
 #include <uuids.h>
 
 #include "audio_device_utility.h"
+#include "system_wrappers/interface/sleep.h"
 #include "trace.h"
 
 // Macro that calls a COM method returning HRESULT value.
@@ -3667,7 +3668,7 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
 
     // ------------------ THREAD LOOP ------------------ <<
 
-    Sleep(static_cast<DWORD>(endpointBufferSizeMS+0.5));
+    SleepMs(static_cast<DWORD>(endpointBufferSizeMS+0.5));
     hr = _ptrClientOut->Stop();
 
 Exit:
