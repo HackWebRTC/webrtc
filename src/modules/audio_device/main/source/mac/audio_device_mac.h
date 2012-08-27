@@ -341,9 +341,6 @@ private:
     bool _playing;
     bool _recIsInitialized;
     bool _playIsInitialized;
-    bool _startRec;
-    bool _stopRec;
-    bool _stopPlay;
     bool _AGC;
 
     // Atomically set varaibles

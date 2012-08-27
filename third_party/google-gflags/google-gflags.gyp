@@ -56,9 +56,12 @@
             'src/windows/port.cc',
           ],
         }],
-        ['OS=="mac" and clang==1', {
+        # TODO(andrew): Look into fixing this warning upstream:
+        # http://code.google.com/p/webrtc/issues/detail?id=760
+        ['clang==1', {
+          'cflags!': ['-Wheader-hygiene',],
           'xcode_settings': {
-            'WARNING_CFLAGS!': ['-Wheader-hygiene'],
+            'WARNING_CFLAGS!': ['-Wheader-hygiene',],
           },
         }],
       ],

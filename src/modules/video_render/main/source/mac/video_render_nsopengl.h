@@ -95,7 +95,6 @@ private:
     GLenum _pixelFormat;
     GLenum _pixelDataType;
     unsigned int _texture;
-    bool _bVideoSizeStartedChanging;
 };
 
 class VideoRenderNSOpenGL

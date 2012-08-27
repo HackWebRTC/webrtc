@@ -41,9 +41,7 @@ _bufferIsUpdated( false),
 _numberOfStreams( 0),
 _pixelFormat( GL_RGBA),
 _pixelDataType( GL_UNSIGNED_INT_8_8_8_8),
-_texture( 0),
-_bVideoSizeStartedChanging(false)
-
+_texture( 0)
 {
 
 }
