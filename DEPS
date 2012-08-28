@@ -83,7 +83,7 @@ deps_os = {
   "win": {
     # Use our own, stripped down, version of Cygwin (required by GYP).
     "third_party/cygwin":
-      (Var("googlecode_url") % "webrtc") + "/deps/third_party/cygwin",
+      (Var("googlecode_url") % "webrtc") + "/deps/third_party/cygwin@2672",
 
     # Used by libjpeg-turbo.
     "third_party/yasm/binaries":
