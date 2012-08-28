@@ -229,10 +229,8 @@
               ],
             }],
             ['OS == "android"', {
-              'include_dirs': [
-                '<(android_ndk_include)',
-                '<(android_ndk_include)/machine',
-              ],
+              # TODO(andrew): include_dirs block removed here. Should likely be
+              # upstreamed.
               'defines': [
                 'ANDROID_CPU_ARM_FEATURE_NEON=4',
               ],
