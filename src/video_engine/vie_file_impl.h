@@ -120,6 +120,9 @@ class ViEFileImpl
   virtual int SetRenderTimeoutImage(const int video_channel,
                                     const ViEPicture& picture,
                                     const unsigned int timeout_ms);
+  virtual int StartDebugRecording(int video_channel,
+                                  const char* file_name_utf8);
+  virtual int StopDebugRecording(int video_channel);
 
  protected:
   explicit ViEFileImpl(ViESharedData* shared_data);

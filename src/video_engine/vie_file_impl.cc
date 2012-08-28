@@ -949,6 +949,31 @@ WebRtc_Word32 ViEFileImpl::GetNextCapturedFrame(WebRtc_Word32 capture_id,
   return -1;
 }
 
+int ViEFileImpl::StartDebugRecording(int video_channel,
+                                     const char* file_name_utf8) {
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  if (!vie_encoder) {
+     WEBRTC_TRACE(kTraceError, kTraceVideo,
+                  ViEId(shared_data_->instance_id(), video_channel),
+                  "%s: No encoder %d", __FUNCTION__, video_channel);
+    return -1;
+  }
+  return vie_encoder->StartDebugRecording(file_name_utf8);
+}
+
+int ViEFileImpl::StopDebugRecording(int video_channel) {
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  if (!vie_encoder) {
+      WEBRTC_TRACE(kTraceError, kTraceVideo,
+                   ViEId(shared_data_->instance_id(), video_channel),
+                   "%s: No encoder %d", __FUNCTION__, video_channel);
+    return -1;
+  }
+  return vie_encoder->StopDebugRecording();
+}
+
 ViECaptureSnapshot::ViECaptureSnapshot()
     : crit_(CriticalSectionWrapper::CreateCriticalSection()),
       condition_varaible_(ConditionVariableWrapper::CreateConditionVariable()),

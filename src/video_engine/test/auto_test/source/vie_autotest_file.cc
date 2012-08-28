@@ -169,6 +169,10 @@ void ViEAutoTest::ViEFileStandardTest()
 
         AutoTestSleep(TEST_SPACING);
 
+        // Test debug information recording.
+        EXPECT_EQ(0, ptrViEFile->StartDebugRecording(videoChannel,
+                     "vie_autotest_debug.yuv"));
+
         // testing StartRecordIncomingVideo and StopRecordIncomingVideo
         {
             ViETest::Log("Recording incoming video (currently no audio) for %d "
@@ -456,6 +460,9 @@ void ViEAutoTest::ViEFileStandardTest()
             // Should fail since we don't observe this file.
             EXPECT_NE(0, ptrViEFile->DeregisterObserver(fileId, fileObserver));
         }
+
+        // Stop debug record.
+        EXPECT_EQ(0, ptrViEFile->StopDebugRecording(videoChannel));
 
         //***************************************************************
         //	Testing finished. Tear down Video Engine
