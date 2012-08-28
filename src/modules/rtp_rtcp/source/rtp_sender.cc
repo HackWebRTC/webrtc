@@ -914,7 +914,10 @@ RTPSender::SendToNetwork(WebRtc_UWord8* buffer,
     return 0;
   }
 
-  if (capture_time_ms >= 0) {
+  // |capture_time_ms| <= 0 is considered invalid.
+  // TODO(holmer): This should be changed all over Video Engine so that negative
+  // time is consider invalid, while 0 is considered a valid time.
+  if (capture_time_ms > 0) {
     ModuleRTPUtility::RTPHeaderParser rtpParser(buffer, length);
     WebRtcRTPHeader rtp_header;
     rtpParser.Parse(rtp_header);
