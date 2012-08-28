@@ -45,11 +45,12 @@ void WebRtcIsacfix_FilterArLoop(int16_t* ar_g_Q0,
                                 int16_t* sth_Q15,
                                 int16_t order_coef);
 
-/* Inner loop used for function WebRtcIsacfix_NormLatticeFilterMa().
-   It does:
+/* Inner loop used for function WebRtcIsacfix_NormLatticeFilterMa(). It does:
    for 0 <= n < HALF_SUBFRAMELEN - 1:
      *ptr2 = input2 * (*ptr2) + input0 * (*ptr0));
      *ptr1 = input1 * (*ptr0) + input0 * (*ptr2);
+   Note, function WebRtcIsacfix_FilterMaLoopNeon and WebRtcIsacfix_FilterMaLoopC
+   are not bit-exact. The accuracy by the ARM Neon function is same or better.
 */
 void WebRtcIsacfix_FilterMaLoopC(int16_t input0,  // Filter coefficient
                                  int16_t input1,  // Filter coefficient

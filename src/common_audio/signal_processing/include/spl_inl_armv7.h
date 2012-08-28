@@ -20,6 +20,10 @@
  * (e.g. __builtin_clz).
  */
 
+/* This function produces result that is not bit exact with that by the generic
+ * C version in some cases, although the former is at least as accurate as the
+ * later.
+ */
 static __inline WebRtc_Word32 WEBRTC_SPL_MUL_16_32_RSFT16(WebRtc_Word16 a,
                                                           WebRtc_Word32 b) {
   WebRtc_Word32 tmp = 0;
@@ -27,6 +31,10 @@ static __inline WebRtc_Word32 WEBRTC_SPL_MUL_16_32_RSFT16(WebRtc_Word16 a,
   return tmp;
 }
 
+/* This function produces result that is not bit exact with that by the generic
+ * C version in some cases, although the former is at least as accurate as the
+ * later.
+ */
 static __inline WebRtc_Word32 WEBRTC_SPL_MUL_32_32_RSFT32(WebRtc_Word16 a,
                                                           WebRtc_Word16 b,
                                                           WebRtc_Word32 c) {

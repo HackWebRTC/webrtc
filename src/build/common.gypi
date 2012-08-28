@@ -170,9 +170,6 @@
         'msvs_disabled_warnings!': [4189,],
       }],
       ['OS=="android"', {
-        # On Android, we always prefer fixed_point to reduce CPU usage.
-        'prefer_fixed_point%': 1,
-
         'defines': [
           'WEBRTC_LINUX',
           'WEBRTC_ANDROID',
