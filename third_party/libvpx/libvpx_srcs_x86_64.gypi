@@ -164,7 +164,7 @@
     'source/libvpx/vp8/encoder/treewriter.h',
     'source/libvpx/vp8/encoder/x86/dct_mmx.asm',
     'source/libvpx/vp8/encoder/x86/dct_sse2.asm',
-    # Hack; refer to libvpx.gyp
+    # Manually removed; refer to libvpx.gyp
     #'source/libvpx/vp8/encoder/x86/denoising_sse2.c',
     'source/libvpx/vp8/encoder/x86/encodeopt.asm',
     'source/libvpx/vp8/encoder/x86/fwalsh_sse2.asm',
