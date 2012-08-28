@@ -138,6 +138,27 @@
           }],
         ],
       }],
+      ['target_arch=="arm"', {
+        'defines': [
+          'WEBRTC_ARCH_ARM',
+        ],
+        'conditions': [
+          ['armv7==1', {
+            'defines': [
+              'WEBRTC_ARCH_ARM_V7',
+              'WEBRTC_DETECT_ARM_NEON',
+            ],
+          }],
+          ['arm_neon==1', {
+            'defines': [
+              'WEBRTC_ARCH_ARM_NEON',
+            ],
+            'defines!': [
+              'WEBRTC_DETECT_ARM_NEON',
+            ],
+          }],
+        ],
+      }],
       ['OS=="linux"', {
         'defines': [
           'WEBRTC_LINUX',
@@ -173,8 +194,6 @@
         'defines': [
           'WEBRTC_LINUX',
           'WEBRTC_ANDROID',
-          'WEBRTC_ARCH_ARM_V7A', # Set default platform to ARMv7.
-          'WEBRTC_DETECT_ARM_NEON',
           # TODO(leozwang): Investigate CLOCK_REALTIME and CLOCK_MONOTONIC
           # support on Android. Keep WEBRTC_CLOCK_TYPE_REALTIME for now,
           # remove it after I verify that CLOCK_MONOTONIC is fully functional

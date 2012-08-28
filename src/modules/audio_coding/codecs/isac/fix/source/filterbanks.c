@@ -64,7 +64,7 @@ void WebRtcIsacfix_HighpassFilterFixDec32(int16_t *io,
   for (k=0; k<len; k++) {
     in = (WebRtc_Word32)io[k];
 
-#ifdef WEBRTC_ARCH_ARM_V7A
+#ifdef WEBRTC_ARCH_ARM_V7
     {
       int tmp_coeff0 = 0;
       int tmp_coeff1 = 0;

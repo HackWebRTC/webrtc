@@ -1409,7 +1409,7 @@ static int TimeToFrequencyDomain(const WebRtc_Word16* time_signal,
     WebRtc_Word16 *fft = (WebRtc_Word16 *) (((uintptr_t) fft_buf + 31) & ~31);
 
     WebRtc_Word16 tmp16no1;
-#ifndef WEBRTC_ARCH_ARM_V7A
+#ifndef WEBRTC_ARCH_ARM_V7
     WebRtc_Word16 tmp16no2;
 #endif
 #ifdef AECM_WITH_ABS_APPROX
@@ -1494,7 +1494,7 @@ static int TimeToFrequencyDomain(const WebRtc_Word16* time_signal,
             freq_signal_abs[i] = (WebRtc_UWord16)tmp16no1 +
                 (WebRtc_UWord16)tmp16no2;
 #else
-#ifdef WEBRTC_ARCH_ARM_V7A
+#ifdef WEBRTC_ARCH_ARM_V7
             __asm __volatile(
               "smulbb %[tmp32no1], %[real], %[real]\n\t"
               "smlabb %[tmp32no2], %[imag], %[imag], %[tmp32no1]\n\t"
@@ -1509,7 +1509,7 @@ static int TimeToFrequencyDomain(const WebRtc_Word16* time_signal,
             tmp32no1 = WEBRTC_SPL_MUL_16_16(tmp16no1, tmp16no1);
             tmp32no2 = WEBRTC_SPL_MUL_16_16(tmp16no2, tmp16no2);
             tmp32no2 = WEBRTC_SPL_ADD_SAT_W32(tmp32no1, tmp32no2);
-#endif // WEBRTC_ARCH_ARM_V7A
+#endif // WEBRTC_ARCH_ARM_V7
             tmp32no1 = WebRtcSpl_SqrtFloor(tmp32no2);
 
             freq_signal_abs[i] = (WebRtc_UWord16)tmp32no1;

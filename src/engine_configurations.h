@@ -27,7 +27,7 @@
 //  [Voice] Codec settings
 // ----------------------------------------------------------------------------
 
-#ifdef WEBRTC_ANDROID
+#ifdef WEBRTC_ARCH_ARM
 #define WEBRTC_CODEC_ISACFX     // fix-point iSAC implementation
 #else
 #define WEBRTC_CODEC_ISAC       // floating-point iSAC implementation (default)

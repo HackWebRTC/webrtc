@@ -15,7 +15,7 @@
 #ifndef WEBRTC_SPL_SPL_INL_H_
 #define WEBRTC_SPL_SPL_INL_H_
 
-#ifdef WEBRTC_ARCH_ARM_V7A
+#ifdef WEBRTC_ARCH_ARM_V7
 #include "spl_inl_armv7.h"
 #else
 
@@ -116,7 +116,7 @@ static __inline int32_t WebRtc_MulAccumW16(int16_t a,
   return (a * b + c);
 }
 
-#endif  // WEBRTC_ARCH_ARM_V7A
+#endif  // WEBRTC_ARCH_ARM_V7
 
 // The following functions have no optimized versions.
 // TODO(kma): Consider saturating add/sub instructions in X86 platform.

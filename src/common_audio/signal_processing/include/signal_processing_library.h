@@ -75,7 +75,7 @@
 #define WEBRTC_SPL_UDIV(a, b) \
     ((WebRtc_UWord32) ((WebRtc_UWord32)(a) / (WebRtc_UWord32)(b)))
 
-#ifndef WEBRTC_ARCH_ARM_V7A
+#ifndef WEBRTC_ARCH_ARM_V7
 // For ARMv7 platforms, these are inline functions in spl_inl_armv7.h
 #define WEBRTC_SPL_MUL_16_16(a, b) \
     ((WebRtc_Word32) (((WebRtc_Word16)(a)) * ((WebRtc_Word16)(b))))
