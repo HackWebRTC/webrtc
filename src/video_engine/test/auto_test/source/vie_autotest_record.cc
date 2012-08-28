@@ -25,6 +25,7 @@
 #include "video_engine/include/vie_base.h"
 #include "video_engine/include/vie_capture.h"
 #include "video_engine/include/vie_codec.h"
+#include "video_engine/include/vie_file.h"
 #include "video_engine/include/vie_network.h"
 #include "video_engine/include/vie_render.h"
 #include "video_engine/include/vie_rtp_rtcp.h"
@@ -40,6 +41,7 @@
 #define DEFAULT_VIDEO_CODEC_START_RATE  1000
 #define DEFAULT_RECORDING_FOLDER        "RECORDING"
 #define DEFAULT_RECORDING_AUDIO         "/audio_debug.aec"
+#define DEFAULT_RECORDING_VIDEO         "/video_debug.yuv"
 #define DEFAULT_RECORDING_AUDIO_RTP     "/audio_rtpdump.rtp"
 #define DEFAULT_RECORDING_VIDEO_RTP     "/video_rtpdump.rtp"
 
@@ -387,6 +389,7 @@ int VideoEngineSampleRecordCode(void* window1, void* window2) {
   mkdir(folder_name.c_str(), 0777);
 #endif
   const std::string audio_filename =  folder_name + DEFAULT_RECORDING_AUDIO;
+  const std::string video_filename =  folder_name + DEFAULT_RECORDING_VIDEO;
   const std::string audio_rtp_filename = folder_name +
     DEFAULT_RECORDING_AUDIO_RTP;
   const std::string video_rtp_filename = folder_name +
@@ -401,7 +404,6 @@ int VideoEngineSampleRecordCode(void* window1, void* window2) {
   std::getline(std::cin, str);
   printf("\nRecording started\n\n");
 
-  // Start record
   error = ptrViEBase->StartReceive(videoChannel);
   if (error == -1) {
     printf("ERROR in ViENetwork::StartReceive\n");
@@ -419,9 +421,12 @@ int VideoEngineSampleRecordCode(void* window1, void* window2) {
     return -1;
   }
 
+  // Get file interface (video recording)
+  webrtc::ViEFile* vie_file = webrtc::ViEFile::GetInterface(ptrViE);
   //  Engine started
 
   voe_apm->StartDebugRecording(audio_filename.c_str());
+  vie_file->StartDebugRecording(videoChannel, video_filename.c_str());
   ptrViERtpRtcp->StartRTPDump(videoChannel,
                               video_rtp_filename.c_str(), webrtc::kRtpOutgoing);
   ptrVoERtpRtcp->StartRTPDump(audio_channel,
@@ -449,10 +454,11 @@ int VideoEngineSampleRecordCode(void* window1, void* window2) {
   ptrViERtpRtcp->StopRTPDump(videoChannel, webrtc::kRtpOutgoing);
   ptrVoERtpRtcp->StopRTPDump(audio_channel, webrtc::kRtpOutgoing);
   voe_apm->StopDebugRecording();
+  vie_file->StopDebugRecording(videoChannel);
   if (enable_labeling == 1)
     timing.close();
 
-  //  Testing finished. Tear down Video Engine
+  //  Recording finished. Tear down Video Engine.
 
   error = ptrViEBase->StopReceive(videoChannel);
   if (error == -1) {
