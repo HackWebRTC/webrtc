@@ -940,6 +940,8 @@ TEST_F(AudioDeviceAPITest, SpeakerVolumeIsAvailable) {
 // SpeakerVolume
 // MaxSpeakerVolume
 // MinSpeakerVolume
+// NOTE: Disabled on mac due to issue 257.
+#ifndef WEBRTC_MAC
 TEST_F(AudioDeviceAPITest, SpeakerVolumeTests) {
   WebRtc_UWord32 vol(0);
   WebRtc_UWord32 volume(0);
@@ -1035,6 +1037,7 @@ TEST_F(AudioDeviceAPITest, SpeakerVolumeTests) {
         maxVolume/3 : maxVolume/10) == 0);
   }
 }
+#endif  // !WEBRTC_MAC
 
 TEST_F(AudioDeviceAPITest, AGC) {
   // NOTE: The AGC API only enables/disables the AGC. To ensure that it will
@@ -1081,6 +1084,8 @@ TEST_F(AudioDeviceAPITest, MicrophoneVolumeIsAvailable) {
 // MicrophoneVolume
 // MaxMicrophoneVolume
 // MinMicrophoneVolume
+// NOTE: Disabled on mac due to issue 257.
+#ifndef WEBRTC_MAC
 TEST_F(AudioDeviceAPITest, MicrophoneVolumeTests) {
   WebRtc_UWord32 vol(0);
   WebRtc_UWord32 volume(0);
@@ -1174,6 +1179,7 @@ TEST_F(AudioDeviceAPITest, MicrophoneVolumeTests) {
     EXPECT_EQ(0, audio_device_->SetMicrophoneVolume(maxVolume/10));
   }
 }
+#endif  // !WEBRTC_MAC
 
 TEST_F(AudioDeviceAPITest, SpeakerMuteIsAvailable) {
   bool available;
