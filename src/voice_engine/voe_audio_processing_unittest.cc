@@ -26,6 +26,7 @@ class VoEAudioProcessingTest : public ::testing::Test {
   }
 
   virtual ~VoEAudioProcessingTest() {
+    base_->Terminate();
     audioproc_->Release();
     base_->Release();
     VoiceEngine::Delete(voe_);
