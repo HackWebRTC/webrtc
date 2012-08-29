@@ -43,9 +43,11 @@ TEST_F(VoEAudioProcessingTest, FailureIfNotInitialized) {
   EXPECT_FALSE(audioproc_->DriftCompensationEnabled());
 }
 
-// TODO(andrew): Ideally, DriftCompensationSupported() would be mocked for this.
-TEST_F(VoEAudioProcessingTest, DriftCompensationIsEnabledIfSupported) {
+// TODO(andrew): Investigate race conditions triggered by this test:
+// https://code.google.com/p/webrtc/issues/detail?id=788
+TEST_F(VoEAudioProcessingTest, DISABLED_DriftCompensationIsEnabledIfSupported) {
   ASSERT_EQ(0, base_->Init());
+  // TODO(andrew): Ideally, DriftCompensationSupported() would be mocked.
   bool supported = VoEAudioProcessing::DriftCompensationSupported();
   if (supported) {
     EXPECT_EQ(0, audioproc_->EnableDriftCompensation(true));
