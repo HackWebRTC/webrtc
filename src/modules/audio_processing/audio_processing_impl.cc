@@ -100,6 +100,7 @@ AudioProcessingImpl::AudioProcessingImpl(int id)
 }
 
 AudioProcessingImpl::~AudioProcessingImpl() {
+  crit_->Enter();
   while (!component_list_.empty()) {
     ProcessingComponent* component = component_list_.front();
     component->Destroy();
@@ -113,9 +114,6 @@ AudioProcessingImpl::~AudioProcessingImpl() {
   }
 #endif
 
-  delete crit_;
-  crit_ = NULL;
-
   if (render_audio_) {
     delete render_audio_;
     render_audio_ = NULL;
@@ -125,6 +123,10 @@ AudioProcessingImpl::~AudioProcessingImpl() {
     delete capture_audio_;
     capture_audio_ = NULL;
   }
+
+  crit_->Leave();
+  delete crit_;
+  crit_ = NULL;
 }
 
 CriticalSectionWrapper* AudioProcessingImpl::crit() const {
