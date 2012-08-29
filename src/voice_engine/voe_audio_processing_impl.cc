@@ -25,6 +25,23 @@
                  VoEId(_shared->instance_id(), -1), __FUNCTION__); \
   } while (0)
 
+#define WEBRTC_VOICE_INIT_CHECK()                        \
+  do {                                                   \
+    if (!_shared->statistics().Initialized()) {          \
+      _shared->SetLastError(VE_NOT_INITED, kTraceError); \
+      return -1;                                         \
+    }                                                    \
+  } while (0)
+
+#define WEBRTC_VOICE_INIT_CHECK_BOOL()                   \
+  do {                                                   \
+    if (!_shared->statistics().Initialized()) {          \
+      _shared->SetLastError(VE_NOT_INITED, kTraceError); \
+      return false;                                      \
+    }                                                    \
+  } while (0)
+
+
 namespace webrtc {
 
 #if defined(WEBRTC_ANDROID) || defined(MAC_IPHONE) || defined(MAC_IPHONE_SIM)
@@ -48,7 +65,8 @@ VoEAudioProcessing* VoEAudioProcessing::GetInterface(VoiceEngine* voiceEngine) {
 
 #ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
 VoEAudioProcessingImpl::VoEAudioProcessingImpl(voe::SharedData* shared)
-    : _isAecMode(kDefaultEcMode == kEcAec), _shared(shared) {
+    : _isAecMode(kDefaultEcMode == kEcAec),
+      _shared(shared) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "VoEAudioProcessingImpl::VoEAudioProcessingImpl() - ctor");
 }
@@ -487,6 +505,41 @@ int VoEAudioProcessingImpl::GetRxAgcConfig(int channel, AgcConfig& config) {
 #endif
 }
 
+bool VoEAudioProcessing::DriftCompensationSupported() {
+#if defined(WEBRTC_DRIFT_COMPENSATION_SUPPORTED)
+  return true;
+#else
+  return false;
+#endif
+}
+
+int VoEAudioProcessingImpl::EnableDriftCompensation(bool enable) {
+  WEBRTC_TRACE_VOICE_API();
+  WEBRTC_VOICE_INIT_CHECK();
+
+  if (!DriftCompensationSupported()) {
+    _shared->SetLastError(VE_APM_ERROR, kTraceWarning,
+        "Drift compensation is not supported on this platform.");
+    return -1;
+  }
+
+  EchoCancellation* aec = _shared->audio_processing()->echo_cancellation();
+  if (aec->enable_drift_compensation(enable) != 0) {
+    _shared->SetLastError(VE_APM_ERROR, kTraceError,
+        "aec->enable_drift_compensation() failed");
+    return -1;
+  }
+  return 0;
+}
+
+bool VoEAudioProcessingImpl::DriftCompensationEnabled() {
+  WEBRTC_TRACE_VOICE_API();
+  WEBRTC_VOICE_INIT_CHECK_BOOL();
+
+  EchoCancellation* aec = _shared->audio_processing()->echo_cancellation();
+  return aec->is_drift_compensation_enabled();
+}
+
 int VoEAudioProcessingImpl::SetEcStatus(bool enable, EcModes mode) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetEcStatus(enable=%d, mode=%d)", enable, mode);
@@ -520,21 +573,6 @@ int VoEAudioProcessingImpl::SetEcStatus(bool enable, EcModes mode) {
           "SetEcStatus() failed to set AEC state");
       return -1;
     }
-#ifdef CLOCK_SKEW_COMP
-    if (_shared->audio_processing()->echo_cancellation()->
-        enable_drift_compensation(true) != 0) {
-      _shared->SetLastError(VE_APM_ERROR, kTraceError,
-          "SetEcStatus() failed to enable drift compensation");
-      return -1;
-    }
-#else
-    if (_shared->audio_processing()->echo_cancellation()->
-        enable_drift_compensation(false) != 0) {
-      _shared->SetLastError(VE_APM_ERROR, kTraceError,
-          "SetEcStatus() failed to disable drift compensation");
-      return -1;
-    }
-#endif
     if (mode == kEcConference) {
       if (_shared->audio_processing()->echo_cancellation()->
           set_suppression_level(EchoCancellation::kHighSuppression) != 0) {
@@ -1110,8 +1148,6 @@ bool VoEAudioProcessingImpl::IsStereoChannelSwappingEnabled() {
   WEBRTC_TRACE_VOICE_API();
   return _shared->transmit_mixer()->IsStereoChannelSwappingEnabled();
 }
-
-
 
 #endif  // #ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
 

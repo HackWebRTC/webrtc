@@ -97,6 +97,15 @@ public:
     // Gets the EC status and mode.
     virtual int GetEcStatus(bool& enabled, EcModes& mode) = 0;
 
+    // Enables the compensation of clock drift between the capture and render
+    // streams by the echo canceller (i.e. only using EcMode==kEcAec). It will
+    // only be enabled if supported on the current platform; otherwise an error
+    // will be returned. Check if the platform is supported by calling
+    // |DriftCompensationSupported()|.
+    virtual int EnableDriftCompensation(bool enable) = 0;
+    virtual bool DriftCompensationEnabled() = 0;
+    static bool DriftCompensationSupported();
+
     // Sets a delay |offset| in ms to add to the system delay reported by the
     // OS, which is used by the AEC to synchronize far- and near-end streams.
     // In some cases a system may introduce a delay which goes unreported by the

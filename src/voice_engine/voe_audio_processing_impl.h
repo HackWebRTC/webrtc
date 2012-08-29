@@ -48,11 +48,11 @@ class VoEAudioProcessingImpl : public VoEAudioProcessing {
   virtual int GetRxAgcConfig(int channel, AgcConfig& config);
 
   virtual int SetEcStatus(bool enable, EcModes mode = kEcUnchanged);
-
   virtual int GetEcStatus(bool& enabled, EcModes& mode);
+  virtual int EnableDriftCompensation(bool enable);
+  virtual bool DriftCompensationEnabled();
 
   virtual void SetDelayOffsetMs(int offset);
-
   virtual int DelayOffsetMs();
 
   virtual int SetAecmMode(AecmModes mode = kAecmSpeakerphone,
