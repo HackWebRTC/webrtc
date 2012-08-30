@@ -34,22 +34,6 @@ def zero_pad(number, padding=_DEFAULT_PADDING):
   return str(number).zfill(padding)
 
 
-def delete_file(file_name):
-  """Deletes the file with file_name.
-
-  Args:
-    file_name(string): The file to be deleted.
-  Return:
-    (bool): True on success, False otherwise.
-  """
-  try:
-    subprocess.check_call(['rm', '%s' % file_name])
-  except subprocess.CalledProcessError, err:
-    sys.stderr.write('Error in deleting file %s' % file_name)
-    return False
-  return True
-
-
 def run_shell_command(command, msg=None):
   """Executes a command.
 

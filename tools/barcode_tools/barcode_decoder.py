@@ -129,7 +129,7 @@ def _generate_stats_file(stats_file_name, input_directory='.'):
 
     if os.path.isfile(barcode_file_name):
       barcode = _read_barcode_from_text_file(barcode_file_name)
-      helper_functions.delete_file(barcode_file_name)
+      os.remove(barcode_file_name)
 
       if _check_barcode(barcode):
         entry += (helper_functions.zero_pad(int(barcode[0:11])) + '\n')
@@ -139,7 +139,7 @@ def _generate_stats_file(stats_file_name, input_directory='.'):
       entry += 'Barcode error\n'
 
     stats_file.write(entry)
-    helper_functions.delete_file(png_frame)
+    os.remove(png_frame)
 
   stats_file.close()
 

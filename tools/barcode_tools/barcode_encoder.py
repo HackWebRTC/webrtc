@@ -110,10 +110,10 @@ def _convert_to_yuv_and_delete(output_directory, file_name, pattern):
     helper_functions.run_shell_command(
         command, msg=('Error during PNG to YUV conversion of %s' %
                        file_name));
-    helper_functions.delete_file(file_name)
+    os.remove(file_name)
   except helper_functions.HelperError, err:
     print err
-    return Flase
+    return False
   return True
 
 
@@ -152,7 +152,12 @@ def _add_to_file_and_delete(output_file, file_name):
   input_file_contents = input_file.read()
   output_file.write(input_file_contents)
   input_file.close()
-  return helper_functions.delete_file(file_name)
+  try:
+    os.remove(file_name)
+  except Exception as e:
+    sys.stderr.write('Error in deleting file %s' % file_name)
+    return False
+  return True
 
 
 def _overlay_barcode_and_base_frames(barcodes_file, base_file, output_file,
@@ -346,7 +351,7 @@ def _main():
 
   if not keep_barcodes_yuv_file:
     # Remove the temporary barcodes YUV file
-    helper_functions.delete_file(options.barcodes_yuv)
+    os.remove(options.barcodes_yuv)
 
 
 if __name__ == '__main__':
