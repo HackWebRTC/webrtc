@@ -35,6 +35,18 @@ class TemporalLayers {
 
  private:
   enum TemporalReferences {
+    // First base layer frame for 3 temporal layers, which updates last and
+    // golden with alt ref dependency.
+    kTemporalUpdateLastAndGoldenRefAltRef = 11,
+    // First enhancement layer with alt ref dependency.
+    kTemporalUpdateGoldenRefAltRef = 10,
+    // First enhancement layer with alt ref dependency.
+    kTemporalUpdateGoldenWithoutDependencyRefAltRef = 9,
+    // Base layer with alt ref dependency.
+    kTemporalUpdateLastRefAltRef = 8,
+    // Highest enhacement layer without dependency on golden with alt ref
+    // dependency.
+    kTemporalUpdateNoneNoRefGoldenRefAltRef = 7,
     // Second layer and last frame in cycle, for 2 layers.
     kTemporalUpdateNoneNoRefAltref = 6,
     // Highest enhancement layer.

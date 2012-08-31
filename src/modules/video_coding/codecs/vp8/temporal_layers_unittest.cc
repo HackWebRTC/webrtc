@@ -45,6 +45,21 @@ enum {
                                    VP8_EFLAG_NO_UPD_ARF |
                                    VP8_EFLAG_NO_UPD_LAST |
                                    VP8_EFLAG_NO_UPD_ENTROPY,
+  kTemporalUpdateNoneNoRefGolden = VP8_EFLAG_NO_REF_GF |
+                                   VP8_EFLAG_NO_UPD_GF |
+                                   VP8_EFLAG_NO_UPD_ARF |
+                                   VP8_EFLAG_NO_UPD_LAST |
+                                   VP8_EFLAG_NO_UPD_ENTROPY,
+  kTemporalUpdateGoldenWithoutDependencyRefAltRef = VP8_EFLAG_NO_REF_GF |
+                                                    VP8_EFLAG_NO_UPD_ARF |
+                                                    VP8_EFLAG_NO_UPD_LAST,
+  kTemporalUpdateGoldenRefAltRef = VP8_EFLAG_NO_UPD_ARF |
+                                   VP8_EFLAG_NO_UPD_LAST,
+  kTemporalUpdateLastRefAltRef = VP8_EFLAG_NO_UPD_GF |
+                                 VP8_EFLAG_NO_UPD_ARF |
+                                 VP8_EFLAG_NO_REF_GF,
+  kTemporalUpdateLastAndGoldenRefAltRef = VP8_EFLAG_NO_UPD_ARF |
+                                          VP8_EFLAG_NO_REF_GF,
 };
 
 TEST(TemporalLayersTest, 2Layers) {
@@ -92,21 +107,21 @@ TEST(TemporalLayersTest, 3Layers) {
   CodecSpecificInfoVP8 vp8_info;
   tl.ConfigureBitrates(500, &cfg);
 
-  int expected_flags[16] = { kTemporalUpdateLast,
-                             kTemporalUpdateAltrefWithoutDependency,
-                             kTemporalUpdateGoldenWithoutDependency,
-                             kTemporalUpdateAltref,
-                             kTemporalUpdateLast,
-                             kTemporalUpdateAltref,
-                             kTemporalUpdateGolden,
+  int expected_flags[16] = { kTemporalUpdateLastAndGoldenRefAltRef,
+                             kTemporalUpdateNoneNoRefGolden,
+                             kTemporalUpdateGoldenWithoutDependencyRefAltRef,
                              kTemporalUpdateNone,
-                             kTemporalUpdateLast,
-                             kTemporalUpdateAltrefWithoutDependency,
-                             kTemporalUpdateGoldenWithoutDependency,
-                             kTemporalUpdateAltref,
-                             kTemporalUpdateLast,
-                             kTemporalUpdateAltref,
-                             kTemporalUpdateGolden,
+                             kTemporalUpdateLastRefAltRef,
+                             kTemporalUpdateNone,
+                             kTemporalUpdateGoldenRefAltRef,
+                             kTemporalUpdateNone,
+                             kTemporalUpdateLastAndGoldenRefAltRef,
+                             kTemporalUpdateNoneNoRefGolden,
+                             kTemporalUpdateGoldenWithoutDependencyRefAltRef,
+                             kTemporalUpdateNone,
+                             kTemporalUpdateLastRefAltRef,
+                             kTemporalUpdateNone,
+                             kTemporalUpdateGoldenRefAltRef,
                              kTemporalUpdateNone,
   };
   int expected_temporal_idx[16] =
@@ -171,13 +186,13 @@ TEST(TemporalLayersTest, KeyFrame) {
   tl.ConfigureBitrates(500, &cfg);
 
   int expected_flags[8] = {
-      kTemporalUpdateLast,
-      kTemporalUpdateAltrefWithoutDependency,
-      kTemporalUpdateGoldenWithoutDependency,
-      kTemporalUpdateAltref,
-      kTemporalUpdateLast,
-      kTemporalUpdateAltref,
-      kTemporalUpdateGolden,
+      kTemporalUpdateLastAndGoldenRefAltRef,
+      kTemporalUpdateNoneNoRefGolden,
+      kTemporalUpdateGoldenWithoutDependencyRefAltRef,
+      kTemporalUpdateNone,
+      kTemporalUpdateLastRefAltRef,
+      kTemporalUpdateNone,
+      kTemporalUpdateGoldenRefAltRef,
       kTemporalUpdateNone,
   };
   int expected_temporal_idx[8] =
