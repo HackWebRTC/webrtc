@@ -3,10 +3,10 @@ vars = {
   # If you do not know, use the full path while defining your new deps entry.
   "googlecode_url": "http://%s.googlecode.com/svn",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "139469",
+  "chromium_revision": "153489",
   # Still needs the libjingle_revision here because some of
   # the deps have to be pulled from libjingle repository.
-  "libjingle_revision": "145",
+  "libjingle_revision": "175",
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
