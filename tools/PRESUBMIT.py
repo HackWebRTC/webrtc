@@ -8,6 +8,10 @@
 
 def _LicenseHeader(input_api):
   """Returns the license header regexp."""
+  # Accept any year number from 2011 to the current year
+  current_year = int(input_api.time.strftime('%Y'))
+  allowed_years = (str(s) for s in reversed(xrange(2011, current_year + 1)))
+  years_re = '(' + '|'.join(allowed_years) + ')'
   license_header = (
       r'.*? Copyright \(c\) %(year)s The WebRTC project authors\. '
         r'All Rights Reserved\.\n'
@@ -19,7 +23,7 @@ def _LicenseHeader(input_api):
       r'.*? in the file PATENTS\.  All contributing project authors may\n'
       r'.*? be found in the AUTHORS file in the root of the source tree\.\n'
   ) % {
-      'year': input_api.time.strftime('%Y'),
+      'year': years_re,
   }
   return license_header
 
