@@ -1367,6 +1367,7 @@ int VideoCodingModuleImpl::SetReceiverRobustnessMode(
 }
 
 int VideoCodingModuleImpl::StartDebugRecording(const char* file_name_utf8) {
+  CriticalSectionScoped cs(_sendCritSect);
   _encoderInputFile = fopen(file_name_utf8, "wb");
   if (_encoderInputFile == NULL)
     return VCM_GENERAL_ERROR;
@@ -1374,6 +1375,7 @@ int VideoCodingModuleImpl::StartDebugRecording(const char* file_name_utf8) {
 }
 
 int VideoCodingModuleImpl::StopDebugRecording(){
+  CriticalSectionScoped cs(_sendCritSect);
   if (_encoderInputFile != NULL) {
     fclose(_encoderInputFile);
     _encoderInputFile = NULL;
