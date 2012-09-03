@@ -112,7 +112,7 @@ TEST_F(SplTest, MacroTest) {
                                                       WEBRTC_SPL_WORD32_MAX));
     EXPECT_EQ(1073741824, WEBRTC_SPL_MUL_16_32_RSFT16(WEBRTC_SPL_WORD16_MIN,
                                                       WEBRTC_SPL_WORD32_MIN));
-#ifdef WEBRTC_ARCH_ARM_V7A
+#ifdef WEBRTC_ARCH_ARM_V7
     EXPECT_EQ(-1073741824,
               WEBRTC_SPL_MUL_16_32_RSFT16(WEBRTC_SPL_WORD16_MIN,
                                           WEBRTC_SPL_WORD32_MAX));

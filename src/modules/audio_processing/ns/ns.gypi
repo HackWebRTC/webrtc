@@ -55,14 +55,14 @@
         'nsx_core.h',
       ],
       'conditions': [
-        ['OS=="android"', {
+        ['target_arch=="arm" and armv7==1', {
           'dependencies': [ 'ns_neon', ],
         }],
       ],
     },
   ],
   'conditions': [
-    ['OS=="android"', {
+    ['target_arch=="arm" and armv7==1', {
       'targets': [
         {
           'target_name': 'ns_neon',

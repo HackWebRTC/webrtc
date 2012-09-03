@@ -57,12 +57,22 @@
         'vector_scaling_operations.c',
       ],
       'conditions': [
-        ['OS=="android"', {
+        ['target_arch=="arm"', {
           'sources': [
             'spl_sqrt_floor_arm.s',
           ],
           'sources!': [
             'spl_sqrt_floor.c',
+          ],
+          'conditions': [
+            ['armv7==1', {
+              'sources': [
+                'filter_ar_fast_q12_armv7.s',
+              ],
+              'sources!': [
+                'filter_ar_fast_q12.c',
+              ],
+            }],
           ],
         }],
       ],

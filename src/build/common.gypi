@@ -64,10 +64,6 @@
     'libyuv_dir%': '<(DEPTH)/third_party/libyuv',
 
     'conditions': [
-      ['OS=="android"', {
-        # On Android, we always prefer fixed_point to reduce CPU usage.
-        'prefer_fixed_point%': 1,
-      }],
       ['build_with_chromium==1', {
         # Exclude pulse audio on Chromium since its prerequisites don't require
         # pulse audio.
@@ -139,6 +135,7 @@
         ],
       }],
       ['target_arch=="arm"', {
+        'prefer_fixed_point%': 1,
         'defines': [
           'WEBRTC_ARCH_ARM',
         ],
@@ -191,6 +188,8 @@
         'msvs_disabled_warnings!': [4189,],
       }],
       ['OS=="android"', {
+        # TODO(kma): Remove prefer_fixed_point for Android.
+        'prefer_fixed_point%': 1,
         'defines': [
           'WEBRTC_LINUX',
           'WEBRTC_ANDROID',

@@ -72,7 +72,7 @@
             'WEBRTC_LINUX',
           ],
         }],
-        ['OS=="android"', {
+        ['target_arch=="arm" and armv7==1', {
           'dependencies': [ 'isac_neon', ],
           'sources': [
             'lattice_armv7.S',
@@ -87,7 +87,7 @@
     },
   ],
   'conditions': [
-    ['OS=="android"', {
+    ['target_arch=="arm" and armv7==1', {
       'targets': [
         {
           'target_name': 'isac_neon',

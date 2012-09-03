@@ -31,14 +31,14 @@
         'aecm_core.h',
       ],
       'conditions': [
-        ['OS=="android"', {
+        ['target_arch=="arm" and armv7==1', {
           'dependencies': [ 'aecm_neon', ],
         }],
       ],
     },
   ],
   'conditions': [
-    ['OS=="android"', {
+    ['target_arch=="arm" and armv7==1', {
       'targets': [
         {
           'target_name': 'aecm_neon',

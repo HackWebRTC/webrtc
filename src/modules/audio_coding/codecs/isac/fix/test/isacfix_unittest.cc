@@ -73,7 +73,7 @@ TEST_F(IsacUnitTest, HighpassFilterFixDec32Test) {
   const int kSamples = 20;
   int16_t in[kSamples];
   int32_t state[2] = {12345, 987654};
-#ifdef WEBRTC_ARCH_ARM_V7A
+#ifdef WEBRTC_ARCH_ARM_V7
   int32_t out[kSamples] = {-1040, -1035, -22875, -1397, -27604, 20018, 7917,
     -1279, -8552, -14494, -7558, -23537, -27258, -30554, -32768, -3432, -32768,
     25215, -27536, 22436};
