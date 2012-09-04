@@ -20,6 +20,7 @@
         ],
       },
       'sources': [
+        'include/real_fft.h',
         'include/signal_processing_library.h',
         'include/spl_inl.h',
         'auto_corr_to_refl_coef.c',
@@ -43,6 +44,7 @@
         'min_max_operations.c',
         'randomization_functions.c',
         'refl_coef_to_lpc.c',
+        'real_fft.c',
         'resample.c',
         'resample_48khz.c',
         'resample_by_2.c',
@@ -100,10 +102,11 @@
           'type': 'executable',
           'dependencies': [
             'signal_processing',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
             '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'sources': [
+            'real_fft_unittest.cc',
             'signal_processing_unittest.cc',
           ],
         }, # spl_unittests
