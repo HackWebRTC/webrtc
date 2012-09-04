@@ -59,9 +59,11 @@
       'conditions': [
         ['target_arch=="arm"', {
           'sources': [
+            'complex_bit_reverse_arm.s',
             'spl_sqrt_floor_arm.s',
           ],
           'sources!': [
+            'complex_bit_reverse.c',
             'spl_sqrt_floor.c',
           ],
           'conditions': [
@@ -71,6 +73,18 @@
               ],
               'sources!': [
                 'filter_ar_fast_q12.c',
+              ],
+            }],
+            ['arm_neon==1', {
+              'sources': [
+                'cross_correlation_neon.s',
+                'downsample_fast_neon.s',
+                'min_max_operations_neon.s',
+                'vector_scaling_operations_neon.s',
+              ],
+              'sources!': [
+                'cross_correlation.c',
+                'downsample_fast.c',
               ],
             }],
           ],
