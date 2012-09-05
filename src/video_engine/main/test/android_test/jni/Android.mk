@@ -119,6 +119,12 @@ LOCAL_SRC_FILES := \
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
+LOCAL_MODULE := libns
+LOCAL_SRC_FILES := \
+    $(MY_LIBS_PATH)/src/modules/libns.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
 LOCAL_MODULE := libns_fix
 LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/src/modules/libns_fix.a
@@ -326,6 +332,7 @@ LOCAL_STATIC_LIBRARIES := \
     libiSACFix \
     libisac_neon \
     libvad \
+    libns \
     libns_fix \
     libns_neon \
     libagc \
