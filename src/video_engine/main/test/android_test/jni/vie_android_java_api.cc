@@ -1699,10 +1699,10 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Sta
 
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_StopRTPDump
+ * Method:    VoE_StopIncomingRTPDump
  * Signature: (I)I
  */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StopRTPDump(
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StopIncomingRTPDump(
     JNIEnv *,
     jobject,
     jint channel) {
