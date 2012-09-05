@@ -21,11 +21,6 @@
 #include "system_wrappers/interface/compile_assert.h"
 #include "typedefs.h"
 
-#ifdef ARM_WINM_LOG
-#include <stdio.h>
-#include <windows.h>
-#endif
-
 #ifdef AEC_DEBUG
 FILE *dfile;
 FILE *testfile;
@@ -262,10 +257,6 @@ static const uint16_t* AlignedFarend(AecmCore_t* self, int* far_q, int delay) {
   return &(self->far_history[buffer_position * PART_LEN1]);
 }
 
-#ifdef ARM_WINM_LOG
-HANDLE logFile = NULL;
-#endif
-
 // Declare function pointers.
 CalcLinearEnergies WebRtcAecm_CalcLinearEnergies;
 StoreAdaptiveChannel WebRtcAecm_StoreAdaptiveChannel;
@@ -472,14 +463,6 @@ static void InverseFFTAndWindowC(AecmCore_t* aecm,
                 tmp32no1,
                 WEBRTC_SPL_WORD16_MIN);
     }
-
-#ifdef ARM_WINM_LOG_
-    // measure tick end
-    QueryPerformanceCounter((LARGE_INTEGER*)&end);
-    diff__ = ((end - start) * 1000) / (freq/1000);
-    milliseconds = (unsigned int)(diff__ & 0xffffffff);
-    WriteFile (logFile, &milliseconds, sizeof(unsigned int), &temp, NULL);
-#endif
 
     // Copy the current block to the old position (aecm->outBuf is shifted elsewhere)
     memcpy(aecm->xBuf, aecm->xBuf + PART_LEN, sizeof(WebRtc_Word16) * PART_LEN);
@@ -1572,13 +1555,6 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
     const int kMaxPrefBand = 24;
     WebRtc_Word32 avgHnl32 = 0;
 
-#ifdef ARM_WINM_LOG_
-    DWORD temp;
-    static int flag0 = 0;
-    __int64 freq, start, end, diff__;
-    unsigned int milliseconds;
-#endif
-
     // Determine startup state. There are three states:
     // (0) the first CONV_LEN blocks
     // (1) another CONV_LEN blocks
@@ -1597,12 +1573,6 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
     {
         memcpy(aecm->dBufClean + PART_LEN, nearendClean, sizeof(WebRtc_Word16) * PART_LEN);
     }
-
-#ifdef ARM_WINM_LOG_
-    // measure tick start
-    QueryPerformanceFrequency((LARGE_INTEGER*)&freq);
-    QueryPerformanceCounter((LARGE_INTEGER*)&start);
-#endif
 
     // Transform far end signal from time domain to frequency domain.
     far_q = TimeToFrequencyDomain(aecm->xBuf,
@@ -1636,16 +1606,6 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
         aecm->dfaCleanQDomain = (WebRtc_Word16)zerosDBufClean;
     }
 
-#ifdef ARM_WINM_LOG_
-    // measure tick end
-    QueryPerformanceCounter((LARGE_INTEGER*)&end);
-    diff__ = ((end - start) * 1000) / (freq/1000);
-    milliseconds = (unsigned int)(diff__ & 0xffffffff);
-    WriteFile (logFile, &milliseconds, sizeof(unsigned int), &temp, NULL);
-    // measure tick start
-    QueryPerformanceCounter((LARGE_INTEGER*)&start);
-#endif
-
     // Get the delay
     // Save far-end history and estimate delay
     UpdateFarHistory(aecm, xfa, far_q);
@@ -1672,15 +1632,6 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
         delay = aecm->fixedDelay;
     }
 
-#ifdef ARM_WINM_LOG_
-    // measure tick end
-    QueryPerformanceCounter((LARGE_INTEGER*)&end);
-    diff__ = ((end - start) * 1000) / (freq/1000);
-    milliseconds = (unsigned int)(diff__ & 0xffffffff);
-    WriteFile (logFile, &milliseconds, sizeof(unsigned int), &temp, NULL);
-    // measure tick start
-    QueryPerformanceCounter((LARGE_INTEGER*)&start);
-#endif
     // Get aligned far end spectrum
     far_spectrum_ptr = AlignedFarend(aecm, &far_q, delay);
     zerosXBuf = (WebRtc_Word16) far_q;
@@ -1707,15 +1658,6 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
     WebRtcAecm_UpdateChannel(aecm, far_spectrum_ptr, zerosXBuf, dfaNoisy, mu, echoEst32);
     supGain = CalcSuppressionGain(aecm);
 
-#ifdef ARM_WINM_LOG_
-    // measure tick end
-    QueryPerformanceCounter((LARGE_INTEGER*)&end);
-    diff__ = ((end - start) * 1000) / (freq/1000);
-    milliseconds = (unsigned int)(diff__ & 0xffffffff);
-    WriteFile (logFile, &milliseconds, sizeof(unsigned int), &temp, NULL);
-    // measure tick start
-    QueryPerformanceCounter((LARGE_INTEGER*)&start);
-#endif
 
     // Calculate Wiener filter hnl[]
     for (i = 0; i < PART_LEN1; i++)
@@ -1845,16 +1787,6 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
         }
     }
 
-#ifdef ARM_WINM_LOG_
-    // measure tick end
-    QueryPerformanceCounter((LARGE_INTEGER*)&end);
-    diff__ = ((end - start) * 1000) / (freq/1000);
-    milliseconds = (unsigned int)(diff__ & 0xffffffff);
-    WriteFile (logFile, &milliseconds, sizeof(unsigned int), &temp, NULL);
-    // measure tick start
-    QueryPerformanceCounter((LARGE_INTEGER*)&start);
-#endif
-
     // Calculate NLP gain, result is in Q14
     if (aecm->nlpFlag)
     {
@@ -1910,16 +1842,6 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
     {
         ComfortNoise(aecm, ptrDfaClean, efw, hnl);
     }
-
-#ifdef ARM_WINM_LOG_
-    // measure tick end
-    QueryPerformanceCounter((LARGE_INTEGER*)&end);
-    diff__ = ((end - start) * 1000) / (freq/1000);
-    milliseconds = (unsigned int)(diff__ & 0xffffffff);
-    WriteFile (logFile, &milliseconds, sizeof(unsigned int), &temp, NULL);
-    // measure tick start
-    QueryPerformanceCounter((LARGE_INTEGER*)&start);
-#endif
 
     WebRtcAecm_InverseFFTAndWindow(aecm, fft, efw, output, nearendClean);
 
@@ -2062,26 +1984,11 @@ static void ComfortNoise(AecmCore_t* aecm,
     }
     uImag[PART_LEN] = 0;
 
-#if (!defined ARM_WINM) && (!defined ARM9E_GCC) && (!defined ANDROID_AECOPT)
     for (i = 0; i < PART_LEN1; i++)
     {
         out[i].real = WEBRTC_SPL_ADD_SAT_W16(out[i].real, uReal[i]);
         out[i].imag = WEBRTC_SPL_ADD_SAT_W16(out[i].imag, uImag[i]);
     }
-#else
-    for (i = 0; i < PART_LEN1 -1; )
-    {
-        out[i].real = WEBRTC_SPL_ADD_SAT_W16(out[i].real, uReal[i]);
-        out[i].imag = WEBRTC_SPL_ADD_SAT_W16(out[i].imag, uImag[i]);
-        i++;
-
-        out[i].real = WEBRTC_SPL_ADD_SAT_W16(out[i].real, uReal[i]);
-        out[i].imag = WEBRTC_SPL_ADD_SAT_W16(out[i].imag, uImag[i]);
-        i++;
-    }
-    out[i].real = WEBRTC_SPL_ADD_SAT_W16(out[i].real, uReal[i]);
-    out[i].imag = WEBRTC_SPL_ADD_SAT_W16(out[i].imag, uImag[i]);
-#endif
 }
 
 void WebRtcAecm_BufferFarFrame(AecmCore_t* const aecm,

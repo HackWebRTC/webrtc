@@ -21,10 +21,6 @@
 #include <string.h>
 #include "typedefs.h"
 
-#ifdef ARM_WINM
-#include <Armintr.h> // intrinsic file for windows mobile
-#endif
-
 // Macros specific for the fixed point implementation
 #define WEBRTC_SPL_WORD16_MAX       32767
 #define WEBRTC_SPL_WORD16_MIN       -32768
@@ -101,11 +97,6 @@
 #define WEBRTC_SPL_MUL_16_32_RSFT15(a, b) \
     ((WEBRTC_SPL_MUL_16_16(a, (b) >> 16) << 1) \
     + (((WEBRTC_SPL_MUL_16_U16(a, (WebRtc_UWord16)(b)) >> 1) + 0x2000) >> 14))
-
-#ifdef ARM_WINM
-#define WEBRTC_SPL_MUL_16_16(a, b) \
-    _SmulLo_SW_SL((WebRtc_Word16)(a), (WebRtc_Word16)(b))
-#endif
 
 #define WEBRTC_SPL_MUL_16_16_RSFT(a, b, c) \
     (WEBRTC_SPL_MUL_16_16(a, b) >> (c))

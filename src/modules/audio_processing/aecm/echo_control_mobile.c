@@ -17,13 +17,6 @@
 #ifdef AEC_DEBUG
 #include <stdio.h>
 #endif
-#ifdef MAC_IPHONE_PRINT
-#include <time.h>
-#include <stdio.h>
-#elif defined ARM_WINM_LOG
-#include "windows.h"
-extern HANDLE logFile;
-#endif
 
 #define BUF_SIZE_FRAMES 50 // buffer size (frames)
 // Maximum length of resampled signal. Must be an integer multiple of frames
@@ -277,18 +270,6 @@ WebRtc_Word32 WebRtcAecm_Process(void *aecmInst, const WebRtc_Word16 *nearendNoi
     short msInAECBuf;
 #endif
 
-#ifdef ARM_WINM_LOG
-    __int64 freq, start, end, diff;
-    unsigned int milliseconds;
-    DWORD temp;
-#elif defined MAC_IPHONE_PRINT
-    //       double endtime = 0, starttime = 0;
-    struct timeval starttime;
-    struct timeval endtime;
-    static long int timeused = 0;
-    static int timecount = 0;
-#endif
-
     if (aecm == NULL)
     {
         return -1;
@@ -455,14 +436,6 @@ WebRtc_Word32 WebRtcAecm_Process(void *aecmInst, const WebRtc_Word16 *nearendNoi
                 WebRtcAecm_EstBufDelay(aecm, aecm->msInSndCardBuf);
             }
 
-#ifdef ARM_WINM_LOG
-            // measure tick start
-            QueryPerformanceFrequency((LARGE_INTEGER*)&freq);
-            QueryPerformanceCounter((LARGE_INTEGER*)&start);
-#elif defined MAC_IPHONE_PRINT
-            //            starttime = clock()/(double)CLOCKS_PER_SEC;
-            gettimeofday(&starttime, NULL);
-#endif
             // Call the AECM
             /*WebRtcAecm_ProcessFrame(aecm->aecmCore, farend, &nearend[FRAME_LEN * i],
              &out[FRAME_LEN * i], aecm->knownDelay);*/
@@ -487,40 +460,6 @@ WebRtc_Word32 WebRtcAecm_Process(void *aecmInst, const WebRtc_Word16 *nearendNoi
                     return -1;
                 }
             }
-
-#ifdef ARM_WINM_LOG
-
-            // measure tick end
-            QueryPerformanceCounter((LARGE_INTEGER*)&end);
-
-            if(end > start)
-            {
-                diff = ((end - start) * 1000) / (freq/1000);
-                milliseconds = (unsigned int)(diff & 0xffffffff);
-                WriteFile (logFile, &milliseconds, sizeof(unsigned int), &temp, NULL);
-            }
-#elif defined MAC_IPHONE_PRINT
-            //            endtime = clock()/(double)CLOCKS_PER_SEC;
-            //            printf("%f\n", endtime - starttime);
-
-            gettimeofday(&endtime, NULL);
-
-            if( endtime.tv_usec > starttime.tv_usec)
-            {
-                timeused += endtime.tv_usec - starttime.tv_usec;
-            } else
-            {
-                timeused += endtime.tv_usec + 1000000 - starttime.tv_usec;
-            }
-
-            if(++timecount == 1000)
-            {
-                timecount = 0;
-                printf("AEC: %ld\n", timeused);
-                timeused = 0;
-            }
-#endif
-
         }
     }
 
