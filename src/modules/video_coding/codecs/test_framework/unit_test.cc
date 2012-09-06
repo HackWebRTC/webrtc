@@ -764,7 +764,7 @@ UnitTest::RateControlTests()
         if (_bitRate >= 100 && _bitRate <= 2500)
         {
             EXPECT_TRUE(abs(WebRtc_Word32(actualBitrate - _bitRate)) <
-                0.1 * _bitRate); // for VP8
+                0.12 * _bitRate); // for VP8
         }
         ASSERT_TRUE(feof(_sourceFile) != 0);
         rewind(_sourceFile);
