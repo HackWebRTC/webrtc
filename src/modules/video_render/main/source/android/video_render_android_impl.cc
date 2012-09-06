@@ -248,7 +248,7 @@ bool VideoRenderAndroid::JavaRenderThreadProcess()
       WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id,
                    "%s: Java thread detached", __FUNCTION__);
     }
-    _javaRenderJniEnv = false;
+    _javaRenderJniEnv = NULL;
     _javaShutDownFlag = false;
     _javaShutdownEvent.Set();
     return false; // Do not run this thread again.

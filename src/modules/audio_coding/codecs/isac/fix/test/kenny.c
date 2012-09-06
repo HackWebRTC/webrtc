@@ -124,10 +124,10 @@ int main(int argc, char* argv[])
   char version_number[20];
   char tmpBit[5] = ".bit";
 
-  double kbps;
   int totalbits =0;
   int totalsmpls =0;
 #ifdef _DEBUG
+  double kbps;
   FILE *fy;
 #endif
   WebRtc_Word16 testNum, testCE;
@@ -793,8 +793,6 @@ int main(int argc, char* argv[])
 
     totalsmpls += declen;
     totalbits += 8 * stream_len;
-    kbps = ((double) FS) / ((double) cur_framesmpls) * 8.0 *
-        stream_len / 1000.0;// kbits/s
 
     /* Error test number 10, garbage data */
     if (testNum == 10) {
@@ -809,6 +807,8 @@ int main(int argc, char* argv[])
 
 #ifdef _DEBUG
 
+    kbps = ((double) FS) / ((double) cur_framesmpls) * 8.0 *
+        stream_len / 1000.0;// kbits/s
     fy = fopen("bit_rate.dat", "a");
     fprintf(fy, "Frame %i = %0.14f\n", framecnt, kbps);
     fclose(fy);

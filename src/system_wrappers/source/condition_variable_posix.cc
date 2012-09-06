@@ -45,10 +45,10 @@ ConditionVariablePosix::ConditionVariablePosix()
 
 int ConditionVariablePosix::Construct()
 {
-    int result = 0;
 #ifdef WEBRTC_CLOCK_TYPE_REALTIME
-    result = pthread_cond_init(&_cond, NULL);
+    pthread_cond_init(&_cond, NULL);
 #else
+    int result = 0;
     pthread_condattr_t condAttr;
     result = pthread_condattr_init(&condAttr);
     if (result != 0)
