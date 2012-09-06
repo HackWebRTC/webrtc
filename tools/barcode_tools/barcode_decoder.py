@@ -92,7 +92,7 @@ def _decode_barcode_in_file(file_name, barcode_width, barcode_height, jars,
   Return:
     (bool): True upon success, False otherwise.
   """
-  command = ['java', '-cp', '%s' % jars,
+  command = ['java', '-Djava.awt.headless=true', '-cp', '%s' % jars,
              '%s' % command_line_decoder, '--products_only',
              '--dump_results', '--brief', '--crop=%d,%d,%d,%d' %
              (0, 0, barcode_width, barcode_height),
