@@ -419,7 +419,7 @@ int ViECaptureImpl::NumberOfCapabilities(
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(shared_data_->instance_id()),
                "%s(capture_device_name: %s)", __FUNCTION__, unique_idUTF8);
 
-#if defined(WEBRTC_MAC_INTEL)
+#if defined(WEBRTC_MAC)
   // TODO(mflodman) Move to capture module!
   // QTKit framework handles all capabilities and capture settings
   // automatically (mandatory).
@@ -450,7 +450,7 @@ int ViECaptureImpl::GetCaptureCapability(const char* unique_idUTF8,
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(shared_data_->instance_id()),
                "%s(capture_device_name: %s)", __FUNCTION__, unique_idUTF8);
 
-#if defined(WEBRTC_MAC_INTEL)
+#if defined(WEBRTC_MAC)
   // TODO(mflodman) Move to capture module!
   // QTKit framework handles all capabilities and capture settings
   // automatically (mandatory).
@@ -483,7 +483,7 @@ int ViECaptureImpl::ShowCaptureSettingsDialogBox(
     void* parent_window,
     const unsigned int x,
     const unsigned int y) {
-#if defined(WEBRTC_MAC_INTEL)
+#if defined(WEBRTC_MAC)
   // TODO(mflodman) Move to capture module
   // QTKit framework handles all capabilities and capture settings
   // automatically (mandatory).

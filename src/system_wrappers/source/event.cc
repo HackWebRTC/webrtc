@@ -13,7 +13,7 @@
 #if defined(_WIN32)
     #include <windows.h>
     #include "event_win.h"
-#elif defined(WEBRTC_MAC_INTEL)
+#elif defined(WEBRTC_MAC)
     #include <ApplicationServices/ApplicationServices.h>
     #include <pthread.h>
     #include "event_posix.h"
@@ -49,7 +49,7 @@ int EventWrapper::KeyPressed()
     {
         return 0;
     }
-#elif defined(WEBRTC_MAC_INTEL)
+#elif defined(WEBRTC_MAC)
     bool keyDown = false;
     // loop through all Mac virtual key constant values
     for(int keyIndex = 0; keyIndex <= 0x5C; keyIndex++) 

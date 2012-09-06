@@ -16,7 +16,7 @@
    #include <pthread.h>
    #include "condition_variable_wrapper.h"
    #include "condition_variable_posix.h"
-#elif defined(WEBRTC_MAC) || defined(WEBRTC_MAC_INTEL)
+#elif defined(WEBRTC_MAC)
    #include <pthread.h>
    #include "condition_variable_wrapper.h"
    #include "condition_variable_posix.h"
@@ -28,7 +28,7 @@ ConditionVariableWrapper::CreateConditionVariable()
 {
 #if defined(_WIN32)
     return new ConditionVariableWindows;
-#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC) || defined(WEBRTC_MAC_INTEL)
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
     return ConditionVariablePosix::Create();
 #else
     return NULL;

@@ -192,7 +192,7 @@ private:
 // milliseconds
 #if defined(_WIN32)
 #define AutoTestSleep ::Sleep
-#elif defined(WEBRTC_MAC_INTEL)
+#elif defined(WEBRTC_MAC)
 #define AutoTestSleep(x) usleep(x * 1000)
 #elif defined(WEBRTC_LINUX)
 namespace {

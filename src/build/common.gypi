@@ -168,7 +168,6 @@
       ['OS=="mac"', {
         'defines': [
           'WEBRTC_MAC',
-          'WEBRTC_MAC_INTEL',  # TODO(andrew): remove this.
           'WEBRTC_THREAD_RR',
           'WEBRTC_CLOCK_TYPE_REALTIME',
         ],

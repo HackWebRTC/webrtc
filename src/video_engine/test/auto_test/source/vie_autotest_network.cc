@@ -23,8 +23,6 @@
 
 #if defined(_WIN32)
 #include <qos.h>
-#elif defined(WEBRTC_MAC_INTEL)
-
 #endif
 
 class ViEAutoTestNetworkObserver: public webrtc::ViENetworkObserver

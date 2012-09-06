@@ -148,7 +148,7 @@ inline int ChannelId(const int moduleId) {
 #endif
 
 // Mac specific.
-#ifdef WEBRTC_MAC_INTEL
+#ifdef WEBRTC_MAC
   #define SLEEP(x) usleep(x * 1000)
 
   //  Build information macros.

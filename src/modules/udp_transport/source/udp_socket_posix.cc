@@ -183,7 +183,7 @@ void UdpSocketPosix::HasIncoming()
     WebRtc_Word8 buf[2048];
     int retval;
     SocketAddress from;
-#if defined(WEBRTC_MAC_INTEL) || defined(WEBRTC_MAC)
+#if defined(WEBRTC_MAC)
     sockaddr sockaddrfrom;
     memset(&from, 0, sizeof(from));
     memset(&sockaddrfrom, 0, sizeof(sockaddrfrom));
@@ -193,7 +193,7 @@ void UdpSocketPosix::HasIncoming()
     socklen_t fromlen = sizeof(from);
 #endif
 
-#if defined(WEBRTC_MAC_INTEL) || defined(WEBRTC_MAC)
+#if defined(WEBRTC_MAC)
         retval = recvfrom(_socket,buf, sizeof(buf), 0,
                           reinterpret_cast<sockaddr*>(&sockaddrfrom), &fromlen);
         memcpy(&from, &sockaddrfrom, fromlen);

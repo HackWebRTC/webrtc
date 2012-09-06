@@ -140,7 +140,7 @@ void ViEAutoTest::ViECaptureStandardTest() {
     ViETest::Log("Found capture device %s\nUnique name %s",
                           device_name, device_unique_name);
 
-#if !defined(WEBRTC_MAC_INTEL)  // these functions will return -1
+#if !defined(WEBRTC_MAC)  // these functions will return -1
     int number_of_capabilities =
         dev_info->NumberOfCapabilities(device_unique_name);
     EXPECT_GT(number_of_capabilities, 0);
@@ -163,8 +163,8 @@ void ViEAutoTest::ViECaptureStandardTest() {
     }
 #endif
   }
-  // Capture Capability Functions are not supported on WEBRTC_MAC_INTEL.
-#if !defined(WEBRTC_MAC_INTEL)
+  // Capture Capability Functions are not supported on WEBRTC_MAC.
+#if !defined(WEBRTC_MAC)
 
   // Check allocation. Try to allocate them all after each other.
   for (int device_index = 0; device_index < number_of_capture_devices;
@@ -250,7 +250,7 @@ void ViEAutoTest::ViECaptureStandardTest() {
 #endif  // !WEBRTC_ANDROID
     vcpms[device_index]->Release();
   }
-#endif  // !WEBRTC_MAC_INTEL
+#endif  // !WEBRTC_MAC
 }
 
 void ViEAutoTest::ViECaptureExtendedTest() {
