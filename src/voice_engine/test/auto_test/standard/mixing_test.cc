@@ -112,8 +112,10 @@ class MixingTest : public AfterInitializationFixture {
       EXPECT_GE(output_value, min_output_value);
     }
     // Ensure the recording length is close to the duration of the test.
+    // We have to use a relaxed tolerance here due to filesystem flakiness on
+    // the bots.
     ASSERT_GE((samples_read * 1000.0) / kSampleRateHz,
-              0.9 * (kTestDurationMs - kSkipOutputMs));
+              0.7 * (kTestDurationMs - kSkipOutputMs));
     // Ensure we read the entire file.
     ASSERT_NE(0, feof(output_file));
     ASSERT_EQ(0, fclose(output_file));
