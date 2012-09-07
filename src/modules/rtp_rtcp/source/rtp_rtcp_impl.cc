@@ -1645,7 +1645,6 @@ void ModuleRtpRtcpImpl::SetTargetSendBitrate(const uint32_t bitrate) {
       for (int i = 0; it != _childModules.end() &&
           i < _sendVideoCodec.numberOfSimulcastStreams; ++it) {
         if ((*it)->SendingMedia()) {
-          ++i;
           RTPSender& rtpSender = (*it)->_rtpSender;
           if (_sendVideoCodec.simulcastStream[i].maxBitrate * 1000 >
               bitrate_remainder) {
@@ -1657,6 +1656,7 @@ void ModuleRtpRtcpImpl::SetTargetSendBitrate(const uint32_t bitrate) {
             bitrate_remainder -=
                 _sendVideoCodec.simulcastStream[i].maxBitrate * 1000;
           }
+          ++i;
         }
       }
     } else {
