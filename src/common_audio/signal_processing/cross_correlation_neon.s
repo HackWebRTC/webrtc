@@ -9,7 +9,7 @@
 @
 
 @ cross_correlation_neon.s
-@ This file contains the function WebRtcSpl_CrossCorrelation(),
+@ This file contains the function WebRtcSpl_CrossCorrelationNeon(),
 @ optimized for ARM Neon platform.
 @
 @ Reference Ccode at end of this file.
@@ -33,9 +33,9 @@
 .fpu neon
 
 .align  2
-.global WebRtcSpl_CrossCorrelation
+.global WebRtcSpl_CrossCorrelationNeon
 
-WebRtcSpl_CrossCorrelation:
+WebRtcSpl_CrossCorrelationNeon:
 
 .fnstart
 
@@ -109,13 +109,13 @@ POST_LOOP_DIM_SEQ_RESIDUAL:   @ Sum the results up and do the shift.
 
 
 @ TODO(kma): Place this piece of reference code into a C code file.
-@ void WebRtcSpl_CrossCorrelation(WebRtc_Word32* cross_correlation,
-@                                 WebRtc_Word16* seq1,
-@                                 WebRtc_Word16* seq2,
-@                                 WebRtc_Word16 dim_seq,
-@                                 WebRtc_Word16 dim_cross_correlation,
-@                                 WebRtc_Word16 right_shifts,
-@                                 WebRtc_Word16 step_seq2) {
+@ void WebRtcSpl_CrossCorrelationNeon(WebRtc_Word32* cross_correlation,
+@                                     WebRtc_Word16* seq1,
+@                                     WebRtc_Word16* seq2,
+@                                     WebRtc_Word16 dim_seq,
+@                                     WebRtc_Word16 dim_cross_correlation,
+@                                     WebRtc_Word16 right_shifts,
+@                                     WebRtc_Word16 step_seq2) {
 @   int i = 0;
 @   int j = 0;
 @   int inner_loop_len1 = dim_seq >> 3;

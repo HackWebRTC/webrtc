@@ -8,7 +8,7 @@
 @ be found in the AUTHORS file in the root of the source tree.
 @
 
-@ This file contains the function WebRtcSpl_MaxAbsValueW16(), optimized for
+@ This file contains some minimum and maximum functions, optimized for
 @ ARM Neon platform. The description header can be found in
 @ signal_processing_library.h
 @
@@ -17,16 +17,16 @@
 
 .arch armv7-a
 .fpu neon
-.global WebRtcSpl_MaxAbsValueW16
-.global WebRtcSpl_MaxAbsValueW32
-.global WebRtcSpl_MaxValueW16
-.global WebRtcSpl_MaxValueW32
-.global WebRtcSpl_MinValueW16
-.global WebRtcSpl_MinValueW32
+.global WebRtcSpl_MaxAbsValueW16Neon
+.global WebRtcSpl_MaxAbsValueW32Neon
+.global WebRtcSpl_MaxValueW16Neon
+.global WebRtcSpl_MaxValueW32Neon
+.global WebRtcSpl_MinValueW16Neon
+.global WebRtcSpl_MinValueW32Neon
 .align  2
 
-@ int16_t WebRtcSpl_MaxAbsValueW16(const int16_t* vector, int length);
-WebRtcSpl_MaxAbsValueW16:
+@ int16_t WebRtcSpl_MaxAbsValueW16Neon(const int16_t* vector, int length);
+WebRtcSpl_MaxAbsValueW16Neon:
 .fnstart
 
   mov r2, #-1                 @ Initialize the return value.
@@ -73,8 +73,8 @@ END_MAX_ABS_VALUE_W16:
 
 .fnend
 
-@ int32_t WebRtcSpl_MaxAbsValueW32(const int32_t* vector, int length);
-WebRtcSpl_MaxAbsValueW32:
+@ int32_t WebRtcSpl_MaxAbsValueW32Neon(const int32_t* vector, int length);
+WebRtcSpl_MaxAbsValueW32Neon:
 .fnstart
 
   cmp r0, #0
@@ -127,8 +127,8 @@ EXIT:
 
 .fnend
 
-@ int16_t WebRtcSpl_MaxValueW16(const int16_t* vector, int length);
-WebRtcSpl_MaxValueW16:
+@ int16_t WebRtcSpl_MaxValueW16Neon(const int16_t* vector, int length);
+WebRtcSpl_MaxValueW16Neon:
 .fnstart
 
   mov r2, #0x8000             @ Initialize the return value.
@@ -170,8 +170,8 @@ END_MAX_VALUE_W16:
 
 .fnend
 
-@ int32_t WebRtcSpl_MaxValueW32(const int32_t* vector, int length);
-WebRtcSpl_MaxValueW32:
+@ int32_t WebRtcSpl_MaxValueW32Neon(const int32_t* vector, int length);
+WebRtcSpl_MaxValueW32Neon:
 .fnstart
 
   mov r2, #0x80000000         @ Initialize the return value.
@@ -215,8 +215,8 @@ END_MAX_VALUE_W32:
 
 .fnend
 
-@ int16_t WebRtcSpl_MinValueW16(const int16_t* vector, int length);
-WebRtcSpl_MinValueW16:
+@ int16_t WebRtcSpl_MinValueW16Neon(const int16_t* vector, int length);
+WebRtcSpl_MinValueW16Neon:
 .fnstart
 
   movw r2, #0x7FFF            @ Initialize the return value.
@@ -259,8 +259,8 @@ END_MIN_VALUE_W16:
 
 .fnend
 
-@ int32_t WebRtcSpl_MinValueW32(const int32_t* vector, int length);
-WebRtcSpl_MinValueW32:
+@ int32_t WebRtcSpl_MinValueW32Neon(const int32_t* vector, int length);
+WebRtcSpl_MinValueW32Neon:
 .fnstart
 
   mov r2, #0x7FFFFFFF         @ Initialize the return value.

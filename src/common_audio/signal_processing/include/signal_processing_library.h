@@ -162,6 +162,16 @@ extern "C"
 // inline functions:
 #include "spl_inl.h"
 
+// Initialize SPL. Currently it contains only function pointer initialization.
+// If the underlying platform is known to be ARM-Neon (WEBRTC_ARCH_ARM_NEON
+// defined), the pointers will be assigned to code optimized for Neon; otherwise
+// if run-time Neon detection (WEBRTC_DETECT_ARM_NEON) is enabled, the pointers
+// will be assigned to either Neon code or generic C code; otherwise, generic C
+// code will be assigned.
+// Note that this function MUST be called in any application that uses SPL
+// functions.
+void WebRtcSpl_Init();
+
 // Get SPL Version
 WebRtc_Word16 WebRtcSpl_get_version(char* version,
                                     WebRtc_Word16 length_in_bytes);
@@ -196,7 +206,8 @@ WebRtc_Word16 WebRtcSpl_OnesArrayW32(WebRtc_Word32* vector,
 // End: Copy and set operations.
 
 
-// Minimum and maximum operations. Implementation in min_max_operations.c.
+// Minimum and maximum operation functions and their pointers.
+// Implementation in min_max_operations.c.
 
 // Returns the largest absolute value in a signed 16-bit vector.
 //
@@ -206,7 +217,12 @@ WebRtc_Word16 WebRtcSpl_OnesArrayW32(WebRtc_Word32* vector,
 //
 // Return value  : Maximum absolute value in vector;
 //                 or -1, if (vector == NULL || length <= 0).
-int16_t WebRtcSpl_MaxAbsValueW16(const int16_t* vector, int length);
+typedef int16_t (*MaxAbsValueW16)(const int16_t* vector, int length);
+extern MaxAbsValueW16 WebRtcSpl_MaxAbsValueW16;
+int16_t WebRtcSpl_MaxAbsValueW16C(const int16_t* vector, int length);
+#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
+int16_t WebRtcSpl_MaxAbsValueW16Neon(const int16_t* vector, int length);
+#endif
 
 // Returns the largest absolute value in a signed 32-bit vector.
 //
@@ -216,7 +232,12 @@ int16_t WebRtcSpl_MaxAbsValueW16(const int16_t* vector, int length);
 //
 // Return value  : Maximum absolute value in vector;
 //                 or -1, if (vector == NULL || length <= 0).
-int32_t WebRtcSpl_MaxAbsValueW32(const int32_t* vector, int length);
+typedef int32_t (*MaxAbsValueW32)(const int32_t* vector, int length);
+extern MaxAbsValueW32 WebRtcSpl_MaxAbsValueW32;
+int32_t WebRtcSpl_MaxAbsValueW32C(const int32_t* vector, int length);
+#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
+int32_t WebRtcSpl_MaxAbsValueW32Neon(const int32_t* vector, int length);
+#endif
 
 // Returns the maximum value of a 16-bit vector.
 //
@@ -228,7 +249,12 @@ int32_t WebRtcSpl_MaxAbsValueW32(const int32_t* vector, int length);
 //                 If (vector == NULL || length <= 0) WEBRTC_SPL_WORD16_MIN
 //                 is returned. Note that WEBRTC_SPL_WORD16_MIN is a feasible
 //                 value and we can't catch errors purely based on it.
-int16_t WebRtcSpl_MaxValueW16(const int16_t* vector, int length);
+typedef int16_t (*MaxValueW16)(const int16_t* vector, int length);
+extern MaxValueW16 WebRtcSpl_MaxValueW16;
+int16_t WebRtcSpl_MaxValueW16C(const int16_t* vector, int length);
+#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
+int16_t WebRtcSpl_MaxValueW16Neon(const int16_t* vector, int length);
+#endif
 
 // Returns the maximum value of a 32-bit vector.
 //
@@ -240,7 +266,12 @@ int16_t WebRtcSpl_MaxValueW16(const int16_t* vector, int length);
 //                 If (vector == NULL || length <= 0) WEBRTC_SPL_WORD32_MIN
 //                 is returned. Note that WEBRTC_SPL_WORD32_MIN is a feasible
 //                 value and we can't catch errors purely based on it.
-int32_t WebRtcSpl_MaxValueW32(const int32_t* vector, int length);
+typedef int32_t (*MaxValueW32)(const int32_t* vector, int length);
+extern MaxValueW32 WebRtcSpl_MaxValueW32;
+int32_t WebRtcSpl_MaxValueW32C(const int32_t* vector, int length);
+#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
+int32_t WebRtcSpl_MaxValueW32Neon(const int32_t* vector, int length);
+#endif
 
 // Returns the minimum value of a 16-bit vector.
 //
@@ -252,7 +283,12 @@ int32_t WebRtcSpl_MaxValueW32(const int32_t* vector, int length);
 //                 If (vector == NULL || length <= 0) WEBRTC_SPL_WORD16_MAX
 //                 is returned. Note that WEBRTC_SPL_WORD16_MAX is a feasible
 //                 value and we can't catch errors purely based on it.
-int16_t WebRtcSpl_MinValueW16(const int16_t* vector, int length);
+typedef int16_t (*MinValueW16)(const int16_t* vector, int length);
+extern MinValueW16 WebRtcSpl_MinValueW16;
+int16_t WebRtcSpl_MinValueW16C(const int16_t* vector, int length);
+#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
+int16_t WebRtcSpl_MinValueW16Neon(const int16_t* vector, int length);
+#endif
 
 // Returns the minimum value of a 32-bit vector.
 //
@@ -264,7 +300,12 @@ int16_t WebRtcSpl_MinValueW16(const int16_t* vector, int length);
 //                 If (vector == NULL || length <= 0) WEBRTC_SPL_WORD32_MAX
 //                 is returned. Note that WEBRTC_SPL_WORD32_MAX is a feasible
 //                 value and we can't catch errors purely based on it.
-int32_t WebRtcSpl_MinValueW32(const int32_t* vector, int length);
+typedef int32_t (*MinValueW32)(const int32_t* vector, int length);
+extern MinValueW32 WebRtcSpl_MinValueW32;
+int32_t WebRtcSpl_MinValueW32C(const int32_t* vector, int length);
+#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
+int32_t WebRtcSpl_MinValueW32Neon(const int32_t* vector, int length);
+#endif
 
 // Returns the vector index to the largest absolute value of a 16-bit vector.
 //
@@ -358,7 +399,7 @@ void WebRtcSpl_ScaleAndAddVectors(G_CONST WebRtc_Word16* in_vector1,
                                   WebRtc_Word16* out_vector,
                                   int vector_length);
 
-// Performs the vector operation:
+// The functions (with related pointer) perform the vector operation:
 //   out_vector[k] = ((scale1 * in_vector1[k]) + (scale2 * in_vector2[k])
 //        + round_value) >> right_shifts,
 //   where  round_value = (1 << right_shifts) >> 1.
@@ -376,14 +417,30 @@ void WebRtcSpl_ScaleAndAddVectors(G_CONST WebRtc_Word16* in_vector1,
 // Return value            : 0 if OK, -1 if (in_vector1 == NULL
 //                           || in_vector2 == NULL || out_vector == NULL
 //                           || length <= 0 || right_shift < 0).
-int WebRtcSpl_ScaleAndAddVectorsWithRound(const int16_t* in_vector1,
-                                          int16_t in_vector1_scale,
-                                          const int16_t* in_vector2,
-                                          int16_t in_vector2_scale,
-                                          int right_shifts,
-                                          int16_t* out_vector,
-                                          int length);
-
+typedef int (*ScaleAndAddVectorsWithRound)(const int16_t* in_vector1,
+                                           int16_t in_vector1_scale,
+                                           const int16_t* in_vector2,
+                                           int16_t in_vector2_scale,
+                                           int right_shifts,
+                                           int16_t* out_vector,
+                                           int length);
+extern ScaleAndAddVectorsWithRound WebRtcSpl_ScaleAndAddVectorsWithRound;
+int WebRtcSpl_ScaleAndAddVectorsWithRoundC(const int16_t* in_vector1,
+                                           int16_t in_vector1_scale,
+                                           const int16_t* in_vector2,
+                                           int16_t in_vector2_scale,
+                                           int right_shifts,
+                                           int16_t* out_vector,
+                                           int length);
+#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
+int WebRtcSpl_ScaleAndAddVectorsWithRoundNeon(const int16_t* in_vector1,
+                                              int16_t in_vector1_scale,
+                                              const int16_t* in_vector2,
+                                              int16_t in_vector2_scale,
+                                              int right_shifts,
+                                              int16_t* out_vector,
+                                              int length);
+#endif
 // End: Vector scaling operations.
 
 // iLBC specific functions. Implementations in ilbc_specific_functions.c.
@@ -508,7 +565,8 @@ void WebRtcSpl_AutoCorrToReflCoef(G_CONST WebRtc_Word32* auto_corr,
                                   int use_order,
                                   WebRtc_Word16* refl_coef);
 
-// Calculates the cross-correlation between two sequences |seq1| and |seq2|.
+// The functions (with related pointer) calculate the cross-correlation between
+// two sequences |seq1| and |seq2|.
 // |seq1| is fixed and |seq2| slides as the pointer is increased with the
 // amount |step_seq2|. Note the arguments should obey the relationship:
 // |dim_seq| - 1 + |step_seq2| * (|dim_cross_correlation| - 1) <
@@ -530,13 +588,30 @@ void WebRtcSpl_AutoCorrToReflCoef(G_CONST WebRtc_Word32* auto_corr,
 //
 // Output:
 //      - cross_correlation : The cross-correlation in Q(-right_shifts)
-void WebRtcSpl_CrossCorrelation(int32_t* cross_correlation,
-                                const int16_t* seq1,
-                                const int16_t* seq2,
-                                int16_t dim_seq,
-                                int16_t dim_cross_correlation,
-                                int16_t right_shifts,
-                                int16_t step_seq2);
+typedef void (*CrossCorrelation)(int32_t* cross_correlation,
+                                 const int16_t* seq1,
+                                 const int16_t* seq2,
+                                 int16_t dim_seq,
+                                 int16_t dim_cross_correlation,
+                                 int16_t right_shifts,
+                                 int16_t step_seq2);
+extern CrossCorrelation WebRtcSpl_CrossCorrelation;
+void WebRtcSpl_CrossCorrelationC(int32_t* cross_correlation,
+                                 const int16_t* seq1,
+                                 const int16_t* seq2,
+                                 int16_t dim_seq,
+                                 int16_t dim_cross_correlation,
+                                 int16_t right_shifts,
+                                 int16_t step_seq2);
+#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
+void WebRtcSpl_CrossCorrelationNeon(int32_t* cross_correlation,
+                                    const int16_t* seq1,
+                                    const int16_t* seq2,
+                                    int16_t dim_seq,
+                                    int16_t dim_cross_correlation,
+                                    int16_t right_shifts,
+                                    int16_t step_seq2);
+#endif
 
 // Creates (the first half of) a Hanning window. Size must be at least 1 and
 // at most 512.
@@ -636,7 +711,8 @@ void WebRtcSpl_FilterARFastQ12(const int16_t* data_in,
                                int coefficients_length,
                                int data_length);
 
-// Performs a MA down sampling filter on a vector
+// The functions (with related pointer) perform a MA down sampling filter
+// on a vector.
 // Input:
 //      - data_in            : Input samples (state in positions
 //                               data_in[-order] .. data_in[-1])
@@ -651,14 +727,33 @@ void WebRtcSpl_FilterARFastQ12(const int16_t* data_in,
 // Output:
 //      - data_out           : Filtered samples
 // Return value              : 0 if OK, -1 if |in_vector| is too short
-int WebRtcSpl_DownsampleFast(const int16_t* data_in,
-                             int data_in_length,
-                             int16_t* data_out,
-                             int data_out_length,
-                             const int16_t* __restrict coefficients,
-                             int coefficients_length,
-                             int factor,
-                             int delay);
+typedef int (*DownsampleFast)(const int16_t* data_in,
+                              int data_in_length,
+                              int16_t* data_out,
+                              int data_out_length,
+                              const int16_t* __restrict coefficients,
+                              int coefficients_length,
+                              int factor,
+                              int delay);
+extern DownsampleFast WebRtcSpl_DownsampleFast;
+int WebRtcSpl_DownsampleFastC(const int16_t* data_in,
+                              int data_in_length,
+                              int16_t* data_out,
+                              int data_out_length,
+                              const int16_t* __restrict coefficients,
+                              int coefficients_length,
+                              int factor,
+                              int delay);
+#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
+int WebRtcSpl_DownsampleFastNeon(const int16_t* data_in,
+                                 int data_in_length,
+                                 int16_t* data_out,
+                                 int data_out_length,
+                                 const int16_t* __restrict coefficients,
+                                 int coefficients_length,
+                                 int factor,
+                                 int delay);
+#endif
 
 // End: Filter operations.
 

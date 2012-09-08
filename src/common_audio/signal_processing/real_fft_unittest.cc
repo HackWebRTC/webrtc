@@ -25,6 +25,10 @@ const int16_t kRefData[kLength] = {
 };
 
 class RealFFTTest : public ::testing::Test {
+ protected:
+   RealFFTTest() {
+     WebRtcSpl_Init();
+   }
 };
 
 TEST_F(RealFFTTest, CreateFailsOnBadInput) {

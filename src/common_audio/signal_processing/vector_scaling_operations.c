@@ -17,7 +17,7 @@
  * WebRtcSpl_ScaleVector()
  * WebRtcSpl_ScaleVectorWithSat()
  * WebRtcSpl_ScaleAndAddVectors()
- * WebRtcSpl_ScaleAndAddVectorsWithRound()
+ * WebRtcSpl_ScaleAndAddVectorsWithRoundC()
  */
 
 #include "signal_processing_library.h"
@@ -148,14 +148,14 @@ void WebRtcSpl_ScaleAndAddVectors(G_CONST WebRtc_Word16 *in1, WebRtc_Word16 gain
     }
 }
 
-#ifndef WEBRTC_ARCH_ARM_NEON
-int WebRtcSpl_ScaleAndAddVectorsWithRound(const int16_t* in_vector1,
-                                          int16_t in_vector1_scale,
-                                          const int16_t* in_vector2,
-                                          int16_t in_vector2_scale,
-                                          int right_shifts,
-                                          int16_t* out_vector,
-                                          int length) {
+// C version of WebRtcSpl_ScaleAndAddVectorsWithRound() for generic platforms.
+int WebRtcSpl_ScaleAndAddVectorsWithRoundC(const int16_t* in_vector1,
+                                           int16_t in_vector1_scale,
+                                           const int16_t* in_vector2,
+                                           int16_t in_vector2_scale,
+                                           int right_shifts,
+                                           int16_t* out_vector,
+                                           int length) {
   int i = 0;
   int round_value = (1 << right_shifts) >> 1;
 
@@ -173,4 +173,3 @@ int WebRtcSpl_ScaleAndAddVectorsWithRound(const int16_t* in_vector1,
 
   return 0;
 }
-#endif  // WEBRTC_ARCH_ARM_NEON

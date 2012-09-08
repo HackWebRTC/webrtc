@@ -10,6 +10,7 @@
 
 #include "audio_device_impl.h"
 #include "audio_device_config.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "system_wrappers/interface/ref_count.h"
 
 #include <assert.h>
@@ -603,6 +604,8 @@ WebRtc_Word32 AudioDeviceModuleImpl::Init()
 
     if (!_ptrAudioDevice)
         return -1;
+
+    WebRtcSpl_Init();
 
     _ptrAudioDeviceUtility->Init();
 

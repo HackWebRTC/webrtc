@@ -217,6 +217,8 @@ WebRtc_Word16 WebRtcIsacfix_EncoderInit(ISACFIX_MainStruct *ISAC_main_inst,
   /* flag encoder init */
   ISAC_inst->initflag |= 2;
 
+  WebRtcSpl_Init();
+
   if (CodingMode == 0)
     /* Adaptive mode */
     ISAC_inst->ISACenc_obj.new_framelength  = INITIAL_FRAMESAMPLES;
@@ -527,6 +529,7 @@ WebRtc_Word16 WebRtcIsacfix_DecoderInit(ISACFIX_MainStruct *ISAC_main_inst)
   /* flag decoder init */
   ISAC_inst->initflag |= 1;
 
+  WebRtcSpl_Init();
 
   WebRtcIsacfix_InitMaskingDec(&ISAC_inst->ISACdec_obj.maskfiltstr_obj);
   WebRtcIsacfix_InitPostFilterbank(&ISAC_inst->ISACdec_obj.postfiltbankstr_obj);

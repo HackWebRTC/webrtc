@@ -11,14 +11,15 @@
 #include "signal_processing_library.h"
 
 // TODO(Bjornv): Change the function parameter order to WebRTC code style.
-int WebRtcSpl_DownsampleFast(const int16_t* data_in,
-                             int data_in_length,
-                             int16_t* data_out,
-                             int data_out_length,
-                             const int16_t* __restrict coefficients,
-                             int coefficients_length,
-                             int factor,
-                             int delay) {
+// C version of WebRtcSpl_DownsampleFast() for generic platforms.
+int WebRtcSpl_DownsampleFastC(const int16_t* data_in,
+                              int data_in_length,
+                              int16_t* data_out,
+                              int data_out_length,
+                              const int16_t* __restrict coefficients,
+                              int coefficients_length,
+                              int factor,
+                              int delay) {
   int i = 0;
   int j = 0;
   int32_t out_s32 = 0;

@@ -21,8 +21,10 @@ LOCAL_SRC_FILES := \
     auto_correlation.c \
     complex_fft.c \
     copy_set_operations.c \
+    cross_correlation.c \
     division_operations.c \
     dot_product_with_scale.c \
+    downsample_fast.c \
     energy.c \
     filter_ar.c \
     filter_ma_fast_q12.c \
@@ -39,6 +41,7 @@ LOCAL_SRC_FILES := \
     resample_by_2.c \
     resample_by_2_internal.c \
     resample_fractional.c \
+    spl_init.c \
     spl_sqrt.c \
     spl_version.c \
     splitting_filter.c \
@@ -52,20 +55,6 @@ LOCAL_CFLAGS := \
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/include \
     $(LOCAL_PATH)/../.. 
-
-ifeq ($(ARCH_ARM_HAVE_NEON),true)
-LOCAL_SRC_FILES += \
-    cross_correlation_neon.s \
-    downsample_fast_neon.s \
-    min_max_operations_neon.s \
-    vector_scaling_operations_neon.s
-LOCAL_CFLAGS += \
-    $(MY_ARM_CFLAGS_NEON)
-else
-LOCAL_SRC_FILES += \
-    cross_correlation.c \
-    downsample_fast.c
-endif
 
 ifeq ($(ARCH_ARM_HAVE_ARMV7A),true)
 LOCAL_SRC_FILES += \
@@ -99,3 +88,34 @@ ifndef NDK_ROOT
 include external/stlport/libstlport.mk
 endif
 include $(BUILD_STATIC_LIBRARY)
+
+#########################
+# Build the neon library.
+ifeq ($(WEBRTC_BUILD_NEON_LIBS),true)
+
+include $(CLEAR_VARS)
+
+LOCAL_ARM_MODE := arm
+LOCAL_MODULE_CLASS := STATIC_LIBRARIES
+LOCAL_MODULE := libwebrtc_spl_neon
+LOCAL_MODULE_TAGS := optional
+LOCAL_SRC_FILES := \
+    cross_correlation_neon.s \
+    downsample_fast_neon.s \
+    min_max_operations_neon.s \
+    vector_scaling_operations_neon.s
+
+# Flags passed to both C and C++ files.
+LOCAL_CFLAGS := $(MY_WEBRTC_COMMON_DEFS)
+
+LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH)/include \
+    $(LOCAL_PATH)/../.. 
+
+ifndef NDK_ROOT
+include external/stlport/libstlport.mk
+endif
+include $(BUILD_STATIC_LIBRARY)
+
+endif # ifeq ($(WEBRTC_BUILD_NEON_LIBS),true)
+

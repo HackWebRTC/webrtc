@@ -45,7 +45,8 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
 ifeq ($(WEBRTC_BUILD_NEON_LIBS),true)
 LOCAL_WHOLE_STATIC_LIBRARIES += \
     libwebrtc_aecm_neon \
-    libwebrtc_ns_neon
+    libwebrtc_ns_neon \
+    libwebrtc_spl_neon
 endif
 
 LOCAL_STATIC_LIBRARIES := \

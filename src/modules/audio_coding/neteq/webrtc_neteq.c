@@ -414,6 +414,8 @@ int WebRtcNetEQ_Init(void *inst, WebRtc_UWord16 fs)
         return (-1);
     }
 
+    WebRtcSpl_Init();
+
 #ifdef NETEQ_VAD
     /* Start out with no PostDecode VAD instance */
     NetEqMainInst->DSPinst.VADInst.VADState = NULL;

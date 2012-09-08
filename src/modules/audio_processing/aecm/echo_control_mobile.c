@@ -13,6 +13,7 @@
 
 #include "echo_control_mobile.h"
 #include "aecm_core.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "ring_buffer.h"
 #ifdef AEC_DEBUG
 #include <stdio.h>
@@ -169,6 +170,8 @@ WebRtc_Word32 WebRtcAecm_Init(void *aecmInst, WebRtc_Word32 sampFreq)
         return -1;
     }
     aecm->sampFreq = sampFreq;
+
+    WebRtcSpl_Init();
 
     // Initialize AECM core
     if (WebRtcAecm_InitCore(aecm->aecmCore, aecm->sampFreq) == -1)

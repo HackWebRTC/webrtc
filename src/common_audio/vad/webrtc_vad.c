@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "common_audio/vad/vad_core.h"
 #include "typedefs.h"
 
@@ -53,6 +54,7 @@ int WebRtcVad_Free(VadInst* handle) {
 
 // TODO(bjornv): Move WebRtcVad_InitCore() code here.
 int WebRtcVad_Init(VadInst* handle) {
+  WebRtcSpl_Init();
   // Initialize the core VAD component.
   return WebRtcVad_InitCore((VadInstT*) handle);
 }

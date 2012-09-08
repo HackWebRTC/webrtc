@@ -23,10 +23,11 @@
  *  Initiation of encoder instance.
  *---------------------------------------------------------------*/
 
-WebRtc_Word16 WebRtcIlbcfix_InitEncode( /* (o) Number of bytes encoded */
-    iLBC_Enc_Inst_t *iLBCenc_inst,     /* (i/o) Encoder instance */
-    WebRtc_Word16 mode     /* (i) frame size mode */
-                                        ){
+WebRtc_Word16 WebRtcIlbcfix_InitEncode(  /* (o) Number of bytes encoded */
+    iLBC_Enc_Inst_t *iLBCenc_inst,  /* (i/o) Encoder instance */
+    WebRtc_Word16 mode) {  /* (i) frame size mode */
+  WebRtcSpl_Init();
+
   iLBCenc_inst->mode = mode;
 
   /* Set all the variables that are dependent on the frame size mode */

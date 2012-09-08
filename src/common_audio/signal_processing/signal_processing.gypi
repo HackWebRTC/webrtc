@@ -14,6 +14,9 @@
       'include_dirs': [
         'include',
       ],
+      'dependencies': [
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+      ],
       'direct_dependent_settings': {
         'include_dirs': [
           'include',
@@ -51,6 +54,7 @@
         'resample_by_2_internal.c',
         'resample_by_2_internal.h',
         'resample_fractional.c',
+        'spl_init.c',
         'spl_sqrt.c',
         'spl_sqrt_floor.c',
         'spl_version.c',
@@ -70,23 +74,12 @@
           ],
           'conditions': [
             ['armv7==1', {
+              'dependencies': ['signal_processing_neon',],
               'sources': [
                 'filter_ar_fast_q12_armv7.s',
               ],
               'sources!': [
                 'filter_ar_fast_q12.c',
-              ],
-            }],
-            ['arm_neon==1', {
-              'sources': [
-                'cross_correlation_neon.s',
-                'downsample_fast_neon.s',
-                'min_max_operations_neon.s',
-                'vector_scaling_operations_neon.s',
-              ],
-              'sources!': [
-                'cross_correlation.c',
-                'downsample_fast.c',
               ],
             }],
           ],
@@ -112,5 +105,20 @@
         }, # spl_unittests
       ], # targets
     }], # include_tests
+    ['target_arch=="arm" and armv7==1', {
+      'targets': [
+        {
+          'target_name': 'signal_processing_neon',
+          'type': '<(library)',
+          'includes': ['../../build/arm_neon.gypi',],
+          'sources': [
+            'cross_correlation_neon.s',
+            'downsample_fast_neon.s',
+            'min_max_operations_neon.s',
+            'vector_scaling_operations_neon.s',
+          ],
+        },
+      ],
+    }], # 'target_arch=="arm" and armv7==1'
   ], # conditions
 }

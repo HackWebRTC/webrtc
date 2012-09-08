@@ -8,7 +8,7 @@
 @ be found in the AUTHORS file in the root of the source tree.
 @
 
-@ This file contains the function WebRtcSpl_DownsampleFast(), optimized for
+@ This file contains the function WebRtcSpl_DownsampleFastNeon(), optimized for
 @ ARM Neon platform. The description header can be found in
 @ signal_processing_library.h
 @
@@ -18,9 +18,9 @@
 .fpu neon
 
 .align  2
-.global WebRtcSpl_DownsampleFast
+.global WebRtcSpl_DownsampleFastNeon
 
-WebRtcSpl_DownsampleFast:
+WebRtcSpl_DownsampleFastNeon:
 
 .fnstart
 
