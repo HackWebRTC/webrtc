@@ -34,8 +34,8 @@ endif
 ifneq (,$(filter '-DWEBRTC_DETECT_ARM_NEON' '-DWEBRTC_ARCH_ARM_NEON', \
     $(MY_WEBRTC_COMMON_DEFS)))
 WEBRTC_BUILD_NEON_LIBS := true
-# TODO(kma): Use MY_WEBRTC_COMMON_DEFS for Neon libraies in AECM, NS, and iSAC.
-MY_WEBRTC_COMMON_DEFS += \
+# TODO(kma): Use MY_ARM_CFLAGS_NEON for Neon libraies in AECM, NS, and iSAC.
+MY_ARM_CFLAGS_NEON := \
     -mfpu=neon \
     -mfloat-abi=softfp \
     -flax-vector-conversions

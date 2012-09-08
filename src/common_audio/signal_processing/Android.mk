@@ -106,7 +106,9 @@ LOCAL_SRC_FILES := \
     vector_scaling_operations_neon.s
 
 # Flags passed to both C and C++ files.
-LOCAL_CFLAGS := $(MY_WEBRTC_COMMON_DEFS)
+LOCAL_CFLAGS := \
+    $(MY_WEBRTC_COMMON_DEFS) \
+    $(MY_ARM_CFLAGS_NEON)
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/include \
