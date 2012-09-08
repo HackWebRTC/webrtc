@@ -59,6 +59,12 @@ LOCAL_SRC_FILES := \
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
+LOCAL_MODULE := libaudio_processing_neon
+LOCAL_SRC_FILES := \
+    $(MY_LIBS_PATH)/src/modules/libaudio_processing_neon.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
 LOCAL_MODULE := libPCM16B
 LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/src/modules/libPCM16B.a
@@ -119,48 +125,6 @@ LOCAL_SRC_FILES := \
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := libns
-LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libns.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := libns_fix
-LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libns_fix.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := libns_neon
-LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libns_neon.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := libagc
-LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libagc.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := libaec
-LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libaec.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := libaecm
-LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libaecm.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := libaecm_neon
-LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libaecm_neon.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
 LOCAL_MODULE := libbitrate_controller
 LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/src/modules/libbitrate_controller.a
@@ -179,9 +143,9 @@ LOCAL_SRC_FILES := \
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := libapm_util
+LOCAL_MODULE := libsignal_processing_neon
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libapm_util.a
+    $(MY_LIBS_PATH)/src/common_audio/libsignal_processing_neon.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
@@ -322,6 +286,7 @@ LOCAL_STATIC_LIBRARIES := \
     libvideo_capture_module \
     libaudio_coding_module \
     libaudio_processing \
+    libaudio_processing_neon \
     libPCM16B \
     libCNG \
     libNetEq \
@@ -332,17 +297,10 @@ LOCAL_STATIC_LIBRARIES := \
     libiSACFix \
     libisac_neon \
     libvad \
-    libns \
-    libns_fix \
-    libns_neon \
-    libagc \
-    libaec \
-    libaecm \
-    libaecm_neon \
     libbitrate_controller \
     libresampler \
     libsignal_processing \
-    libapm_util \
+    libsignal_processing_neon \
     libsystem_wrappers \
     libcpu_features_android \
     libaudio_device \
