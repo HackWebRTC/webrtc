@@ -39,8 +39,8 @@
     #include "audio_device_pulse_linux.h"
  #endif
 #elif defined(MAC_IPHONE)
-    #include "audio_device_utility_iphone.h"
-    #include "audio_device_iphone.h"
+    #include "audio_device_utility_ios.h"
+    #include "audio_device_ios.h"
 #elif defined(WEBRTC_MAC)
     #include "audio_device_utility_mac.h"
     #include "audio_device_mac.h"
@@ -160,6 +160,9 @@ WebRtc_Word32 AudioDeviceModuleImpl::CheckPlatform()
 #elif defined(WEBRTC_LINUX)
     platform = kPlatformLinux;
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "current platform is LINUX");
+#elif defined(MAC_IPHONE)
+    platform = kPlatformIOS;
+    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "current platform is IOS");
 #elif defined(WEBRTC_MAC)
     platform = kPlatformMac;
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "current platform is MAC");

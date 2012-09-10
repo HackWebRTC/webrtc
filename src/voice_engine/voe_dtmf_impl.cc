@@ -395,7 +395,7 @@ int VoEDtmfImpl::SetDtmfPlayoutStatus(int channel, bool enable)
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "SetDtmfPlayoutStatus(channel=%d, enable=%d)",
                  channel, enable);
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
@@ -417,7 +417,7 @@ int VoEDtmfImpl::GetDtmfPlayoutStatus(int channel, bool& enabled)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetDtmfPlayoutStatus(channel=%d, enabled=?)", channel);
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
     if (!_shared->statistics().Initialized())
     {
         _shared->SetLastError(VE_NOT_INITED, kTraceError);

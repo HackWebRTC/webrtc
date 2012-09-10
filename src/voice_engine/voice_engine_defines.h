@@ -553,9 +553,9 @@ namespace webrtc
   #define WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE \
       GainControl::kAdaptiveDigital
 
-  #define IPHONE_NOT_SUPPORTED() \
-    _engineStatistics.SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError, \
-                                   "API call not supported"); \
+  #define IPHONE_NOT_SUPPORTED(stat) \
+    stat.SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError, \
+                      "API call not supported"); \
     return -1;
 
 #else // Non-iPhone
@@ -576,11 +576,11 @@ namespace webrtc
 //  Defines
 // ----------------------------------------------------------------------------
 
-  #define IPHONE_NOT_SUPPORTED()
+  #define IPHONE_NOT_SUPPORTED(stat)
 #endif
 
 #else
-#define IPHONE_NOT_SUPPORTED()
+#define IPHONE_NOT_SUPPORTED(stat)
 #endif  // #ifdef WEBRTC_MAC
 
 

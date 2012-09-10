@@ -184,7 +184,11 @@ inline TickTime TickTime::Now()
       if (retval != KERN_SUCCESS) {
         // TODO(wu): Implement CHECK similar to chrome for all the platforms.
         // Then replace this with a CHECK(retval == KERN_SUCCESS);
+#ifndef MAC_IPHONE
         asm("int3");
+#else
+        __builtin_trap();
+#endif // MAC_IPHONE
       }
     }
     // Use timebase to convert absolute time tick units into nanoseconds.

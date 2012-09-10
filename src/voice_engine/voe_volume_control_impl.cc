@@ -54,7 +54,7 @@ int VoEVolumeControlImpl::SetSpeakerVolume(unsigned int volume)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetSpeakerVolume(volume=%u)", volume);
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
@@ -96,7 +96,7 @@ int VoEVolumeControlImpl::GetSpeakerVolume(unsigned int& volume)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "GetSpeakerVolume()");
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
@@ -180,7 +180,7 @@ int VoEVolumeControlImpl::SetMicVolume(unsigned int volume)
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetMicVolume(volume=%u)", volume);
     ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
@@ -239,7 +239,7 @@ int VoEVolumeControlImpl::GetMicVolume(unsigned int& volume)
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "GetMicVolume()");
     ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
@@ -491,7 +491,7 @@ int VoEVolumeControlImpl::SetChannelOutputVolumeScaling(int channel,
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetChannelOutputVolumeScaling(channel=%d, scaling=%3.2f)",
                channel, scaling);
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
     if (!_shared->statistics().Initialized())
     {
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
@@ -520,7 +520,7 @@ int VoEVolumeControlImpl::GetChannelOutputVolumeScaling(int channel,
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "GetChannelOutputVolumeScaling(channel=%d, scaling=?)", channel);
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
     if (!_shared->statistics().Initialized())
     {
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
@@ -545,7 +545,7 @@ int VoEVolumeControlImpl::SetOutputVolumePan(int channel,
                "SetOutputVolumePan(channel=%d, left=%2.1f, right=%2.1f)",
                channel, left, right);
     ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {
@@ -599,7 +599,7 @@ int VoEVolumeControlImpl::GetOutputVolumePan(int channel,
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "GetOutputVolumePan(channel=%d, left=?, right=?)", channel);
     ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
     {

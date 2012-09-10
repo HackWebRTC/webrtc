@@ -216,7 +216,7 @@ int VoENetworkImpl::GetLocalIP(char ipAddr[64], bool ipv6)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetLocalIP(ipAddr[]=?, ipv6=%d)", ipv6);
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
     if (!_shared->statistics().Initialized())
     {
@@ -304,7 +304,7 @@ int VoENetworkImpl::EnableIPv6(int channel)
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "EnableIPv6(channel=%d)", channel);
     ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
     if (!_shared->statistics().Initialized())
     {
@@ -594,7 +594,7 @@ int VoENetworkImpl::SetSendGQoS(int channel,
                  " overrideDSCP=%d)",
                  channel, (int) enable, serviceType, overrideDSCP);
     ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
 #if !defined(_WIN32)
     _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceWarning,
         "SetSendGQOS() is not supported on this platform");
@@ -635,7 +635,7 @@ int VoENetworkImpl::GetSendGQoS(int channel,
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetSendGQOS(channel=%d)", channel);
     ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
 #if !defined(_WIN32)
     _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceWarning,
         "GetSendGQOS() is not supported on this platform");

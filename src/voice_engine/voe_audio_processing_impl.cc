@@ -788,7 +788,7 @@ int VoEAudioProcessingImpl::RegisterRxVadObserver(
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "RegisterRxVadObserver()");
   ANDROID_NOT_SUPPORTED(_shared->statistics());
-  IPHONE_NOT_SUPPORTED();
+  IPHONE_NOT_SUPPORTED(_shared->statistics());
 
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
@@ -808,7 +808,7 @@ int VoEAudioProcessingImpl::DeRegisterRxVadObserver(int channel) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "DeRegisterRxVadObserver()");
   ANDROID_NOT_SUPPORTED(_shared->statistics());
-  IPHONE_NOT_SUPPORTED();
+  IPHONE_NOT_SUPPORTED(_shared->statistics());
 
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
@@ -850,7 +850,7 @@ int VoEAudioProcessingImpl::SetEcMetricsStatus(bool enable) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetEcMetricsStatus(enable=%d)", enable);
   ANDROID_NOT_SUPPORTED(_shared->statistics());
-  IPHONE_NOT_SUPPORTED();
+  IPHONE_NOT_SUPPORTED(_shared->statistics());
 
 #ifdef WEBRTC_VOICE_ENGINE_ECHO
   if (!_shared->statistics().Initialized()) {
@@ -878,7 +878,7 @@ int VoEAudioProcessingImpl::GetEcMetricsStatus(bool& enabled) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "GetEcMetricsStatus(enabled=?)");
   ANDROID_NOT_SUPPORTED(_shared->statistics());
-  IPHONE_NOT_SUPPORTED();
+  IPHONE_NOT_SUPPORTED(_shared->statistics());
 
 #ifdef WEBRTC_VOICE_ENGINE_ECHO
   if (!_shared->statistics().Initialized()) {
@@ -916,7 +916,7 @@ int VoEAudioProcessingImpl::GetEchoMetrics(int& ERL,
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "GetEchoMetrics(ERL=?, ERLE=?, RERL=?, A_NLP=?)");
   ANDROID_NOT_SUPPORTED(_shared->statistics());
-  IPHONE_NOT_SUPPORTED();
+  IPHONE_NOT_SUPPORTED(_shared->statistics());
 
 #ifdef WEBRTC_VOICE_ENGINE_ECHO
   if (!_shared->statistics().Initialized()) {
@@ -960,7 +960,7 @@ int VoEAudioProcessingImpl::GetEcDelayMetrics(int& delay_median,
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "GetEcDelayMetrics(median=?, std=?)");
   ANDROID_NOT_SUPPORTED(_shared->statistics());
-  IPHONE_NOT_SUPPORTED();
+  IPHONE_NOT_SUPPORTED(_shared->statistics());
 
 #ifdef WEBRTC_VOICE_ENGINE_ECHO
   if (!_shared->statistics().Initialized()) {
@@ -1026,7 +1026,7 @@ int VoEAudioProcessingImpl::SetTypingDetectionStatus(bool enable) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetTypingDetectionStatus()");
   ANDROID_NOT_SUPPORTED(_shared->statistics());
-  IPHONE_NOT_SUPPORTED();
+  IPHONE_NOT_SUPPORTED(_shared->statistics());
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
@@ -1060,7 +1060,7 @@ int VoEAudioProcessingImpl::GetTypingDetectionStatus(bool& enabled) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "GetTypingDetectionStatus()");
   ANDROID_NOT_SUPPORTED(_shared->statistics());
-  IPHONE_NOT_SUPPORTED();
+  IPHONE_NOT_SUPPORTED(_shared->statistics());
 
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
   if (!_shared->statistics().Initialized()) {
@@ -1085,7 +1085,7 @@ int VoEAudioProcessingImpl::TimeSinceLastTyping(int &seconds) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "TimeSinceLastTyping()");
   ANDROID_NOT_SUPPORTED(_shared->statistics());
-  IPHONE_NOT_SUPPORTED();
+  IPHONE_NOT_SUPPORTED(_shared->statistics());
 
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
   if (!_shared->statistics().Initialized()) {
@@ -1120,7 +1120,7 @@ int VoEAudioProcessingImpl::SetTypingDetectionParameters(int timeWindow,
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetTypingDetectionParameters()");
   ANDROID_NOT_SUPPORTED(_shared->statistics());
-  IPHONE_NOT_SUPPORTED();
+  IPHONE_NOT_SUPPORTED(_shared->statistics());
 
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
   if (!_shared->statistics().Initialized()) {

@@ -51,16 +51,21 @@
             'linux',
           ],
         }], # OS==linux
+        ['OS=="ios"', {
+          'include_dirs': [
+            'ios',
+          ],
+        }], # OS==ios
         ['OS=="mac"', {
-            'include_dirs': [
-              'mac',
-            ],
+          'include_dirs': [
+            'mac',
+          ],
         }], # OS==mac
         ['OS=="win"', {
-            'include_dirs': [
-              'win',
-              '../../../../../..',
-            ],
+          'include_dirs': [
+            'win',
+            '../../../../../..',
+          ],
         }],
         ['OS=="android"', {
             'include_dirs': [
@@ -84,6 +89,10 @@
             'linux/audio_mixer_manager_alsa_linux.h',
             'linux/latebindingsymboltable_linux.cc',
             'linux/latebindingsymboltable_linux.h',
+            'ios/audio_device_ios.cc',
+            'ios/audio_device_ios.h',
+            'ios/audio_device_utility_ios.cc',
+            'ios/audio_device_utility_ios.h',
             'mac/audio_device_mac.cc',
             'mac/audio_device_mac.h',
             'mac/audio_device_utility_mac.cc',
@@ -140,7 +149,7 @@
                 }],
               ],
             }],
-            ['OS=="mac"', {
+            ['OS=="mac" or OS=="ios"', {
               'link_settings': {
                 'libraries': [
                   '$(SDKROOT)/System/Library/Frameworks/AudioToolbox.framework',

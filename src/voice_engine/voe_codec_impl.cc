@@ -270,7 +270,7 @@ int VoECodecImpl::SetAMRWbEncFormat(int channel, AmrMode mode)
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "SetAMRWbEncFormat(channel=%d, mode=%d)", channel, mode);
     ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
 #ifdef WEBRTC_CODEC_GSMAMRWB
     if (!_shared->statistics().Initialized())
     {
@@ -298,7 +298,7 @@ int VoECodecImpl::SetAMRWbDecFormat(int channel, AmrMode mode)
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "SetAMRWbDecFormat(channel=%i, mode=%i)", channel, mode);
     ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
 #ifdef WEBRTC_CODEC_GSMAMRWB
     if (!_shared->statistics().Initialized())
     {
@@ -410,7 +410,7 @@ int VoECodecImpl::SetISACInitTargetRate(int channel, int rateBps,
                  "SetISACInitTargetRate(channel=%d, rateBps=%d, "
                  "useFixedFrameSize=%d)", channel, rateBps, useFixedFrameSize);
     ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
 #ifdef WEBRTC_CODEC_ISAC
     if (!_shared->statistics().Initialized())
     {
@@ -438,7 +438,7 @@ int VoECodecImpl::SetISACMaxRate(int channel, int rateBps)
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "SetISACMaxRate(channel=%d, rateBps=%d)", channel, rateBps);
     ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
 #ifdef WEBRTC_CODEC_ISAC
     if (!_shared->statistics().Initialized())
     {
@@ -467,7 +467,7 @@ int VoECodecImpl::SetISACMaxPayloadSize(int channel, int sizeBytes)
                  "SetISACMaxPayloadSize(channel=%d, sizeBytes=%d)", channel,
                  sizeBytes);
     ANDROID_NOT_SUPPORTED(_shared->statistics());
-    IPHONE_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
 #ifdef WEBRTC_CODEC_ISAC
     if (!_shared->statistics().Initialized())
     {

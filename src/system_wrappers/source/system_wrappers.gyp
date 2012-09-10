@@ -151,7 +151,22 @@
             'trace_impl_no_op.cc',
           ],
         }]
-      ] # conditions
+      ], # conditions
+      'target_conditions': [
+        # We need to do this in a target_conditions block to override the
+        # filename_rules filters.
+        ['OS=="ios"', {
+          # Pull in specific Mac files for iOS (which have been filtered out
+          # by file name rules).
+          'sources/': [
+            ['include', '^atomic32_mac\\.'],
+            ['include', '^cpu_mac\\.'],
+          ],
+          'sources!': [
+            'atomic32_posix.cc',
+          ],
+        }],
+      ],
     },
   ], # targets
   'conditions': [

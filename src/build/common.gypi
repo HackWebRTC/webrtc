@@ -60,6 +60,7 @@
     # Disable these to not build components which can be externally provided.
     'build_libjpeg%': 1,
     'build_libyuv%': 1,
+    'build_libvpx%': 1,
 
     'libyuv_dir%': '<(DEPTH)/third_party/libyuv',
 
@@ -97,6 +98,14 @@
         # flood of chromium-style warnings. Investigate enabling them:
         # http://code.google.com/p/webrtc/issues/detail?id=163
         'clang_use_chrome_plugins%': 0,
+      }],
+      ['OS=="ios"', {
+        'enable_video%': 0,
+        'enable_protobuf%': 0,
+        'build_libjpeg%': 0,
+        'build_libyuv%': 0,
+        'build_libvpx%': 0,
+        'include_tests%': 0,
       }],
     ], # conditions
   },
@@ -154,6 +163,14 @@
               'WEBRTC_DETECT_ARM_NEON',
             ],
           }],
+        ],
+      }],
+      ['OS=="ios"', {
+        'defines': [
+          'WEBRTC_MAC',
+          'MAC_IPHONE', # TODO(sjlee): This should be changed to WEBRTC_IOS.
+          'WEBRTC_THREAD_RR',
+          'WEBRTC_CLOCK_TYPE_REALTIME',
         ],
       }],
       ['OS=="linux"', {
