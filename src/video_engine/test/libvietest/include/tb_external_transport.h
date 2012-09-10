@@ -16,6 +16,7 @@
 #define WEBRTC_VIDEO_ENGINE_TEST_AUTOTEST_INTERFACE_TB_EXTERNAL_TRANSPORT_H_
 
 #include <list>
+#include <map>
 
 #include "common_types.h"
 
@@ -61,7 +62,11 @@ protected:
 class TbExternalTransport : public webrtc::Transport
 {
 public:
-    TbExternalTransport(webrtc::ViENetwork& vieNetwork);
+    typedef std::map<unsigned int, unsigned int> SsrcChannelMap;
+
+    TbExternalTransport(webrtc::ViENetwork& vieNetwork,
+                        int sender_channel,
+                        TbExternalTransport::SsrcChannelMap* receive_channels);
     ~TbExternalTransport(void);
 
     virtual int SendPacket(int channel, const void *data, int len);
@@ -115,6 +120,8 @@ private:
         WebRtc_Word64 receiveTime;
     } VideoPacket;
 
+    int sender_channel_;
+    SsrcChannelMap* receive_channels_;
     webrtc::ViENetwork& _vieNetwork;
     webrtc::ThreadWrapper& _thread;
     webrtc::EventWrapper& _event;

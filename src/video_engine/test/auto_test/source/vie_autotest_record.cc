@@ -354,7 +354,7 @@ int VideoEngineSampleRecordCode(void* window1, void* window2) {
   }
 
   // Setting External transport
-  TbExternalTransport extTransport(*(ptrViENetwork));
+  TbExternalTransport extTransport(*(ptrViENetwork), videoChannel, NULL);
   error = ptrViENetwork->SetLocalReceiver(videoChannel, rtpPort);
   if (error == -1) {
     printf("ERROR in ViENetwork::SetLocalReceiver\n");

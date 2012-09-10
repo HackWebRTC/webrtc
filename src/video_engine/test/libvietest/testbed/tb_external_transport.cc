@@ -31,39 +31,48 @@
 #pragma warning(disable: 4355) // 'this' : used in base member initializer list
 #endif
 
-TbExternalTransport::TbExternalTransport(webrtc::ViENetwork& vieNetwork) :
-        _vieNetwork(vieNetwork),
-        _thread(*webrtc::ThreadWrapper::CreateThread(
-            ViEExternalTransportRun, this, webrtc::kHighPriority,
-            "AutotestTransport")),
-        _event(*webrtc::EventWrapper::Create()),
-        _crit(*webrtc::CriticalSectionWrapper::CreateCriticalSection()),
-        _statCrit(*webrtc::CriticalSectionWrapper::CreateCriticalSection()),
-        _lossRate(0),
-        _networkDelayMs(0),
-        _rtpCount(0),
-        _rtcpCount(0),
-        _dropCount(0),
-        _rtpPackets(),
-        _rtcpPackets(),
-        _send_frame_callback(NULL),
-        _receive_frame_callback(NULL),
-        _temporalLayers(0),
-        _seqNum(0),
-        _sendPID(0),
-        _receivedPID(0),
-        _switchLayer(false),
-        _currentRelayLayer(0),
-        _lastTimeMs(webrtc::TickTime::MillisecondTimestamp()),
-        _checkSSRC(false),
-        _lastSSRC(0),
-        _filterSSRC(false),
-        _SSRC(0),
-        _checkSequenceNumber(0),
-        _firstSequenceNumber(0),
-        _firstRTPTimestamp(0),
-        _lastSendRTPTimestamp(0),
-        _lastReceiveRTPTimestamp(0)
+const uint8_t kSenderReportPayloadType = 200;
+const uint8_t kReceiverReportPayloadType = 201;
+
+TbExternalTransport::TbExternalTransport(
+    webrtc::ViENetwork& vieNetwork,
+    int sender_channel,
+    TbExternalTransport::SsrcChannelMap* receive_channels)
+    :
+      sender_channel_(sender_channel),
+      receive_channels_(receive_channels),
+      _vieNetwork(vieNetwork),
+      _thread(*webrtc::ThreadWrapper::CreateThread(
+          ViEExternalTransportRun, this, webrtc::kHighPriority,
+          "AutotestTransport")),
+      _event(*webrtc::EventWrapper::Create()),
+      _crit(*webrtc::CriticalSectionWrapper::CreateCriticalSection()),
+      _statCrit(*webrtc::CriticalSectionWrapper::CreateCriticalSection()),
+      _lossRate(0),
+      _networkDelayMs(0),
+      _rtpCount(0),
+      _rtcpCount(0),
+      _dropCount(0),
+      _rtpPackets(),
+      _rtcpPackets(),
+      _send_frame_callback(NULL),
+      _receive_frame_callback(NULL),
+      _temporalLayers(0),
+      _seqNum(0),
+      _sendPID(0),
+      _receivedPID(0),
+      _switchLayer(false),
+      _currentRelayLayer(0),
+      _lastTimeMs(webrtc::TickTime::MillisecondTimestamp()),
+      _checkSSRC(false),
+      _lastSSRC(0),
+      _filterSSRC(false),
+      _SSRC(0),
+      _checkSequenceNumber(0),
+      _firstSequenceNumber(0),
+      _firstRTPTimestamp(0),
+      _lastSendRTPTimestamp(0),
+      _lastReceiveRTPTimestamp(0)
 {
     srand((int) webrtc::TickTime::MicrosecondTimestamp());
     unsigned int tId = 0;
@@ -360,8 +369,13 @@ bool TbExternalTransport::ViEExternalTransportProcess()
         // Send to ViE
         if (packet)
         {
+            unsigned int ssrc = 0;
             {
                 webrtc::CriticalSectionScoped cs(_statCrit);
+                ssrc = ((packet->packetBuffer[8]) << 24);
+                ssrc += (packet->packetBuffer[9] << 16);
+                ssrc += (packet->packetBuffer[10] << 8);
+                ssrc += packet->packetBuffer[11];
                 if (_checkSSRC)
                 {
                     _lastSSRC = ((packet->packetBuffer[8]) << 24);
@@ -390,9 +404,17 @@ bool TbExternalTransport::ViEExternalTransportProcess()
               _receive_frame_callback->FrameReceived(rtp_timestamp);
             }
             _lastReceiveRTPTimestamp = rtp_timestamp;
-
-            _vieNetwork.ReceivedRTPPacket(packet->channel,
-                                          packet->packetBuffer, packet->length);
+            int destination_channel = sender_channel_;
+            if (receive_channels_) {
+              SsrcChannelMap::iterator it = receive_channels_->find(ssrc);
+              if (it == receive_channels_->end()) {
+                return false;
+              }
+              destination_channel = it->second;
+            }
+            _vieNetwork.ReceivedRTPPacket(destination_channel,
+                                          packet->packetBuffer,
+                                          packet->length);
             delete packet;
             packet = NULL;
         }
@@ -428,9 +450,27 @@ bool TbExternalTransport::ViEExternalTransportProcess()
         // Send to ViE
         if (packet)
         {
-            _vieNetwork.ReceivedRTCPPacket(
-                 packet->channel,
-                 packet->packetBuffer, packet->length);
+            uint8_t pltype = static_cast<uint8_t>(packet->packetBuffer[1]);
+            if (pltype == kSenderReportPayloadType) {
+              // Sender report.
+              if (receive_channels_) {
+                for (SsrcChannelMap::iterator it = receive_channels_->begin();
+                    it != receive_channels_->end(); ++it) {
+                  _vieNetwork.ReceivedRTCPPacket(it->second,
+                                                 packet->packetBuffer,
+                                                 packet->length);
+                }
+              } else {
+                _vieNetwork.ReceivedRTCPPacket(sender_channel_,
+                                               packet->packetBuffer,
+                                               packet->length);
+              }
+            } else if (pltype == kReceiverReportPayloadType) {
+              // Receiver report.
+              _vieNetwork.ReceivedRTCPPacket(sender_channel_,
+                                             packet->packetBuffer,
+                                             packet->length);
+            }
             delete packet;
             packet = NULL;
         }

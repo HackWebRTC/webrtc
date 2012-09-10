@@ -22,8 +22,15 @@
 #include "vie_render.h"
 #include "vie_rtp_rtcp.h"
 
+enum RelayMode {
+  kRelayOneStream = 1,
+  kRelayAllStreams = 2
+};
+
 #define VCM_RED_PAYLOAD_TYPE        96
 #define VCM_ULPFEC_PAYLOAD_TYPE     97
+
+const int kNumStreams = 3;
 
 void InitialSingleStreamSettings(webrtc::VideoCodec* video_codec) {
   video_codec->numberOfSimulcastStreams = 0;
@@ -35,7 +42,7 @@ void SetSimulcastSettings(webrtc::VideoCodec* video_codec) {
   video_codec->width = 1280;
   video_codec->height = 720;
   // simulcast settings
-  video_codec->numberOfSimulcastStreams = 3;
+  video_codec->numberOfSimulcastStreams = kNumStreams;
   video_codec->simulcastStream[0].width = 320;
   video_codec->simulcastStream[0].height = 180;
   video_codec->simulcastStream[0].numberOfTemporalLayers = 0;
@@ -59,7 +66,7 @@ void RuntimeSingleStreamSettings(webrtc::VideoCodec* video_codec) {
   SetSimulcastSettings(video_codec);
   video_codec->width = 1200;
   video_codec->height = 800;
-  video_codec->numberOfSimulcastStreams = 3;
+  video_codec->numberOfSimulcastStreams = kNumStreams;
   video_codec->simulcastStream[0].maxBitrate = 0;
   video_codec->simulcastStream[1].maxBitrate = 0;
   video_codec->simulcastStream[2].maxBitrate = 0;
@@ -72,6 +79,7 @@ int VideoEngineSimulcastTest(void* window1, void* window2)
     //********************************************************
 
     int error = 0;
+    int receive_channels[kNumStreams];
 
     //
     // Create a VideoEngine instance
@@ -118,12 +126,34 @@ int VideoEngineSimulcastTest(void* window1, void* window2)
         return -1;
     }
 
+    RelayMode relay_mode = kRelayOneStream;
+    printf("Select relay mode:\n");
+    printf("\t1. Relay one stream\n");
+    printf("\t2. Relay all streams\n");
+    if (scanf("%d", reinterpret_cast<int*>(&relay_mode)) != 1)
+    {
+        printf("Error in scanf()\n");
+        return -1;
+    }
+    getchar();
+
     int videoChannel = -1;
     error = ptrViEBase->CreateChannel(videoChannel);
     if (error == -1)
     {
         printf("ERROR in ViEBase::CreateChannel\n");
         return -1;
+    }
+
+    for (int i = 0; i < kNumStreams; ++i) {
+      receive_channels[i] = -1;
+      error = ptrViEBase->CreateReceiveChannel(receive_channels[i],
+                                               videoChannel);
+      if (error == -1)
+      {
+          printf("ERROR in ViEBase::CreateChannel\n");
+          return -1;
+      }
     }
 
     //
@@ -227,12 +257,44 @@ int VideoEngineSimulcastTest(void* window1, void* window2)
         return -1;
     }
 
+    ptrViERtpRtcp->SetRembStatus(videoChannel, true, false);
+    if (error == -1)
+    {
+        printf("ERROR in ViERTP_RTCP::SetRTCPStatus\n");
+        return -1;
+    }
+
     error = ptrViERtpRtcp->SetKeyFrameRequestMethod(
         videoChannel, webrtc::kViEKeyFrameRequestPliRtcp);
     if (error == -1)
     {
         printf("ERROR in ViERTP_RTCP::SetKeyFrameRequestMethod\n");
         return -1;
+    }
+
+    for (int i = 0; i < kNumStreams; ++i) {
+      error = ptrViERtpRtcp->SetRTCPStatus(receive_channels[i],
+                                           webrtc::kRtcpCompound_RFC4585);
+      if (error == -1)
+      {
+          printf("ERROR in ViERTP_RTCP::SetRTCPStatus\n");
+          return -1;
+      }
+
+      ptrViERtpRtcp->SetRembStatus(receive_channels[i], false, true);
+      if (error == -1)
+      {
+          printf("ERROR in ViERTP_RTCP::SetRTCPStatus\n");
+          return -1;
+      }
+
+      error = ptrViERtpRtcp->SetKeyFrameRequestMethod(
+          receive_channels[i], webrtc::kViEKeyFrameRequestPliRtcp);
+      if (error == -1)
+      {
+          printf("ERROR in ViERTP_RTCP::SetKeyFrameRequestMethod\n");
+          return -1;
+      }
     }
 
     //
@@ -260,15 +322,20 @@ int VideoEngineSimulcastTest(void* window1, void* window2)
         return -1;
     }
 
-    error = ptrViERender->AddRenderer(videoChannel, window2, 1, 0.0, 0.0, 1.0,
-                                      1.0);
+    // Only rendering the thumbnail.
+    int channel_to_render = videoChannel;
+    if (relay_mode == kRelayAllStreams) {
+      channel_to_render = receive_channels[0];
+    }
+    error = ptrViERender->AddRenderer(channel_to_render, window2, 1, 0.0,
+                                      0.0, 1.0, 1.0);
     if (error == -1)
     {
         printf("ERROR in ViERender::AddRenderer\n");
         return -1;
     }
 
-    error = ptrViERender->StartRender(videoChannel);
+    error = ptrViERender->StartRender(channel_to_render);
     if (error == -1)
     {
         printf("ERROR in ViERender::StartRender\n");
@@ -303,11 +370,13 @@ int VideoEngineSimulcastTest(void* window1, void* window2)
         {
             continue;
         }
-        error = ptrViECodec->SetReceiveCodec(videoChannel, videoCodec);
-        if (error == -1)
-        {
+        for (int i = 0; i < kNumStreams; ++i) {
+          error = ptrViECodec->SetReceiveCodec(receive_channels[i], videoCodec);
+          if (error == -1)
+          {
             printf("ERROR in ViECodec::SetReceiveCodec\n");
             return -1;
+          }
         }
         if (videoCodec.codecType != webrtc::kVideoCodecRED
             && videoCodec.codecType != webrtc::kVideoCodecULPFEC)
@@ -362,8 +431,31 @@ int VideoEngineSimulcastTest(void* window1, void* window2)
         return -1;
     }
 
+    TbExternalTransport::SsrcChannelMap ssrc_channel_map;
+    for (int idx = 0; idx < num_streams; idx++)
+    {
+        error = ptrViERtpRtcp->SetLocalSSRC(
+            videoChannel,
+            idx+1, // SSRC
+            webrtc::kViEStreamTypeNormal,
+            idx);
+        ssrc_channel_map[idx + 1] = receive_channels[idx];
+        if (error == -1)
+        {
+            printf("ERROR in ViERTP_RTCP::SetLocalSSRC(idx:%d)\n",
+                   idx);
+            return -1;
+        }
+    }
+
+    TbExternalTransport::SsrcChannelMap* channel_map_ptr = &ssrc_channel_map;
+    if (relay_mode == kRelayOneStream) {
+      channel_map_ptr = NULL;
+    }
+
     // Setting External transport
-    TbExternalTransport extTransport(*(ptrViENetwork));
+    TbExternalTransport extTransport(*(ptrViENetwork), videoChannel,
+                                     channel_map_ptr);
 
     error = ptrViENetwork->RegisterSendTransport(videoChannel,
                                                  extTransport);
@@ -373,32 +465,23 @@ int VideoEngineSimulcastTest(void* window1, void* window2)
         return -1;
     }
 
+    for (int i = 0; i < kNumStreams; ++i) {
+      error = ptrViENetwork->RegisterSendTransport(receive_channels[i],
+                                                   extTransport);
+      if (error == -1)
+      {
+          printf("ERROR in ViECodec::RegisterSendTransport \n");
+          return -1;
+      }
+    }
+
     extTransport.SetPacketLoss(0);
 
     // Set network delay value
     extTransport.SetNetworkDelay(10);
 
-    for (int idx = 0; idx < num_streams; idx++)
-    {
-        error = ptrViERtpRtcp->SetLocalSSRC(
-            videoChannel,
-            idx+1, // SSRC
-            webrtc::kViEStreamTypeNormal,
-            idx);
-        if (error == -1)
-        {
-            printf("ERROR in ViERTP_RTCP::SetLocalSSRC(idx:%d)\n",
-                   idx);
-            return -1;
-        }
-    }
-    extTransport.SetSSRCFilter(num_streams);
-
-    error = ptrViEBase->StartReceive(videoChannel);
-    if (error == -1)
-    {
-        printf("ERROR in ViENetwork::StartReceive\n");
-        return -1;
+    if (relay_mode == kRelayOneStream) {
+      extTransport.SetSSRCFilter(num_streams);
     }
 
     error = ptrViEBase->StartSend(videoChannel);
@@ -406,6 +489,21 @@ int VideoEngineSimulcastTest(void* window1, void* window2)
     {
         printf("ERROR in ViENetwork::StartSend\n");
         return -1;
+    }
+    error = ptrViEBase->StartReceive(videoChannel);
+    if (error == -1)
+    {
+        printf("ERROR in ViENetwork::StartReceive\n");
+        return -1;
+    }
+
+    for (int i = 0; i < kNumStreams; ++i) {
+      error = ptrViEBase->StartReceive(receive_channels[i]);
+      if (error == -1)
+      {
+          printf("ERROR in ViENetwork::StartReceive\n");
+          return -1;
+      }
     }
 
     // Create a receive channel to verify that it doesn't mess up toggling
@@ -463,10 +561,14 @@ int VideoEngineSimulcastTest(void* window1, void* window2)
                       return -1;
                   }
               }
-              extTransport.SetSSRCFilter(num_streams);
+              if (relay_mode == kRelayOneStream) {
+                extTransport.SetSSRCFilter(num_streams);
+              }
             } else if (ssrc > 0 && ssrc < 4)
             {
+              if (relay_mode == kRelayOneStream) {
                 extTransport.SetSSRCFilter(ssrc);
+              }
             } else
             {
                 printf("Invalid SSRC\n");
@@ -486,6 +588,15 @@ int VideoEngineSimulcastTest(void* window1, void* window2)
     {
         printf("ERROR in ViEBase::DeleteChannel\n");
         return -1;
+    }
+
+    for (int i = 0; i < kNumStreams; ++i) {
+      error = ptrViEBase->StopReceive(receive_channels[i]);
+      if (error == -1)
+      {
+          printf("ERROR in ViEBase::StopReceive\n");
+          return -1;
+      }
     }
 
     error = ptrViEBase->StopReceive(videoChannel);
@@ -516,14 +627,14 @@ int VideoEngineSimulcastTest(void* window1, void* window2)
         return -1;
     }
 
-    error = ptrViERender->StopRender(videoChannel);
+    error = ptrViERender->StopRender(channel_to_render);
     if (error == -1)
     {
         printf("ERROR in ViERender::StopRender\n");
         return -1;
     }
 
-    error = ptrViERender->RemoveRenderer(videoChannel);
+    error = ptrViERender->RemoveRenderer(channel_to_render);
     if (error == -1)
     {
         printf("ERROR in ViERender::RemoveRenderer\n");
@@ -549,6 +660,15 @@ int VideoEngineSimulcastTest(void* window1, void* window2)
     {
         printf("ERROR in ViECapture::ReleaseCaptureDevice\n");
         return -1;
+    }
+
+    for (int i = 0; i < kNumStreams; ++i) {
+      error = ptrViEBase->DeleteChannel(receive_channels[i]);
+      if (error == -1)
+      {
+          printf("ERROR in ViEBase::DeleteChannel\n");
+          return -1;
+      }
     }
 
     error = ptrViEBase->DeleteChannel(videoChannel);

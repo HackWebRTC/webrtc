@@ -126,7 +126,8 @@ void TestFullStack(const TbInterfaces& interfaces,
   }
 
   // Configure External transport to simulate network interference:
-  TbExternalTransport external_transport(*interfaces.network);
+  TbExternalTransport external_transport(*interfaces.network, video_channel,
+                                         NULL);
   external_transport.SetPacketLoss(packet_loss_percent);
   external_transport.SetNetworkDelay(network_delay_ms);
 
