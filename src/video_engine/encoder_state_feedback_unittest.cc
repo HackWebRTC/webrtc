@@ -60,7 +60,7 @@ class VieKeyRequestTest : public ::testing::Test {
 TEST_F(VieKeyRequestTest, CreateAndTriggerRequests) {
   const int ssrc = 1234;
   MockVieEncoder encoder(process_thread_.get());
-  EXPECT_EQ(true, encoder_state_feedback_->AddEncoder(ssrc, &encoder));
+  EXPECT_TRUE(encoder_state_feedback_->AddEncoder(ssrc, &encoder));
 
   EXPECT_CALL(encoder, OnReceivedIntraFrameRequest(ssrc))
       .Times(1);
@@ -89,8 +89,8 @@ TEST_F(VieKeyRequestTest, MultipleEncoders) {
   const int ssrc_2 = 5678;
   MockVieEncoder encoder_1(process_thread_.get());
   MockVieEncoder encoder_2(process_thread_.get());
-  EXPECT_EQ(true, encoder_state_feedback_->AddEncoder(ssrc_1, &encoder_1));
-  EXPECT_EQ(true, encoder_state_feedback_->AddEncoder(ssrc_2, &encoder_2));
+  EXPECT_TRUE(encoder_state_feedback_->AddEncoder(ssrc_1, &encoder_1));
+  EXPECT_TRUE(encoder_state_feedback_->AddEncoder(ssrc_2, &encoder_2));
 
   EXPECT_CALL(encoder_1, OnReceivedIntraFrameRequest(ssrc_1))
       .Times(1);
@@ -134,8 +134,8 @@ TEST_F(VieKeyRequestTest, MultipleEncoders) {
 TEST_F(VieKeyRequestTest, AddTwiceError) {
   const int ssrc = 1234;
   MockVieEncoder encoder(process_thread_.get());
-  EXPECT_EQ(true, encoder_state_feedback_->AddEncoder(ssrc, &encoder));
-  EXPECT_EQ(false, encoder_state_feedback_->AddEncoder(ssrc, &encoder));
+  EXPECT_TRUE(encoder_state_feedback_->AddEncoder(ssrc, &encoder));
+  EXPECT_FALSE(encoder_state_feedback_->AddEncoder(ssrc, &encoder));
   encoder_state_feedback_->RemoveEncoder(ssrc);
 }
 
