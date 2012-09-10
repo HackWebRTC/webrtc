@@ -125,9 +125,6 @@
     },
   ],
   'conditions': [
-    ['include_tests==1', {
-      'includes': ['audio_processing_tests.gypi'],
-    }],
     ['enable_protobuf==1', {
       'targets': [
         {

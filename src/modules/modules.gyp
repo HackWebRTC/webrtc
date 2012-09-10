@@ -39,6 +39,7 @@
       'includes': [
         'audio_coding/codecs/isac/isac_test.gypi',
         'audio_coding/codecs/isac/isacfix_test.gypi',
+        'audio_processing/audio_processing_tests.gypi',
         'rtp_rtcp/source/rtp_rtcp_tests.gypi',
         'rtp_rtcp/test/testFec/test_fec.gypi',
         'rtp_rtcp/test/testAPI/test_api.gypi',
