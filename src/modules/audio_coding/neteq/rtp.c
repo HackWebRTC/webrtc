@@ -138,7 +138,7 @@ int WebRtcNetEQ_RedundancySplit(RTPPacket_t* RTPheader[], int i_MaximumPayloads,
     else
     {
         /* Discard all but the two last payloads. */
-        while (((pw16_data[2] & 0x8000) == 1)&&
+        while (((pw16_data[2] & 0x8000) != 0) &&
             (pw16_data<((RTPheader[0]->payload)+((RTPheader[0]->payloadLen+1)>>1))))
         {
             i_discardedBlockLength += (4+(((WebRtc_UWord16)pw16_data[1]) & 0x3FF));
@@ -167,7 +167,7 @@ int WebRtcNetEQ_RedundancySplit(RTPPacket_t* RTPheader[], int i_MaximumPayloads,
     else
     {
         /* Discard all but the two last payloads. */
-        while (((pw16_data[2] & 0x80) == 1) && (pw16_data < ((RTPheader[0]->payload)
+        while (((pw16_data[2] & 0x80) != 0) && (pw16_data < ((RTPheader[0]->payload)
             + ((RTPheader[0]->payloadLen + 1) >> 1))))
         {
             i_discardedBlockLength += (4 + ((((WebRtc_UWord16) pw16_data[1]) & 0x3) << 8)

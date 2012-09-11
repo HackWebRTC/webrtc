@@ -726,12 +726,18 @@ WebRtc_UWord16 WebRtcNetEQ_DbGetSampleRate(CodecDbInst_t *inst, int payloadType)
         {
             switch (i)
             {
+#ifdef NETEQ_WIDEBAND
                 case 1:
                     return 16000;
+#endif
+#ifdef NETEQ_32KHZ_WIDEBAND
                 case 2:
                     return 32000;
+#endif
+#ifdef NETEQ_48KHZ_WIDEBAND
                 case 3:
                     return 48000;
+#endif
                 default:
                     return 8000;
             }

@@ -173,8 +173,8 @@ WebRtc_Word16 WebRtcNetEQ_DTMFGenerate(dtmf_tone_inst_t *DTMFdecInst, WebRtc_Wor
     WebRtc_Word16 a2 = 0; /* a-coefficient for second tone (high tone) */
     int i;
     int frameLen; /* number of samples to generate */
-    int lowIndex;
-    int highIndex;
+    int lowIndex = 0;  /* Default to avoid compiler warnings. */
+    int highIndex = 4;  /* Default to avoid compiler warnings. */
     WebRtc_Word32 tempVal;
     WebRtc_Word16 tempValLow;
     WebRtc_Word16 tempValHigh;
@@ -308,10 +308,6 @@ WebRtc_Word16 WebRtcNetEQ_DTMFGenerate(dtmf_tone_inst_t *DTMFdecInst, WebRtc_Wor
         {
             highIndex = 7;/* high frequency: 1633 Hz */
             break;
-        }
-        default:
-        {
-            return DTMF_DEC_PARAMETER_ERROR;
         }
     } /* end switch */
 

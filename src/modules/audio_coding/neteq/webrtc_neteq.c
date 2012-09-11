@@ -345,12 +345,7 @@ int WebRtcNetEQ_GetRecommendedBufferSize(void *inst, const enum WebRtcNetEQDecod
     }
     *MaxNoOfPackets = (*MaxNoOfPackets) * multiplier;
     *sizeinbytes = (*sizeinbytes) * multiplier;
-    if (ok != 0)
-    {
-        NetEqMainInst->ErrorCode = -ok;
-        return (-1);
-    }
-    return (ok);
+    return 0;
 }
 
 int WebRtcNetEQ_AssignBuffer(void *inst, int MaxNoOfPackets, void *NETEQ_Buffer_Addr,
