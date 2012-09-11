@@ -13,7 +13,7 @@
       'type': '<(library)',
       'dependencies': [
         'webrtc_utility',
-        '<(webrtc_root)/common_video/common_video.gyp:webrtc_libyuv',
+        '<(webrtc_root)/common_video/common_video.gyp:common_video',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
@@ -174,7 +174,7 @@
             'video_render_module',
             'webrtc_utility',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(webrtc_root)/common_video/common_video.gyp:webrtc_libyuv',
+            '<(webrtc_root)/common_video/common_video.gyp:common_video',
           ],
           'sources': [
             '../test/testAPI/testAPI.cc',

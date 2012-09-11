@@ -18,7 +18,7 @@
          'rtp_rtcp',
          'webrtc_utility',
          'video_processing',
-         '<(webrtc_root)/common_video/common_video.gyp:webrtc_libyuv',
+         '<(webrtc_root)/common_video/common_video.gyp:common_video',
       ],
       'include_dirs': [
          '../../../interface',
