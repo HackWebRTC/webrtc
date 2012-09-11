@@ -590,7 +590,7 @@ struct OverUseDetectorOptions {
         initial_e(),
         initial_process_noise(),
         initial_avg_noise(0.0),
-        initial_var_noise(500),
+        initial_var_noise(50),
         initial_threshold(25.0) {
     initial_e[0][0] = 100;
     initial_e[1][1] = 1e-1;

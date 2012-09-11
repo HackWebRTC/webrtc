@@ -220,10 +220,15 @@ TEST_F(RemoteBitrateEstimatorTest, TestInitialBehavior) {
   EXPECT_FALSE(bitrate_observer_->updated());
   bitrate_observer_->Reset();
   // Waiting more than one second gives us a valid estimate.
-  time_now += 1001;
+  // We need at least two packets for the incoming bitrate to be > 0 since the
+  // window is 500 ms.
+  time_now += 499;
+  bitrate_estimator_->IncomingPacket(ssrc, kMtu, time_now,
+                                     timestamp, -1);
+  time_now += 2;
   bitrate_estimator_->UpdateEstimate(ssrc, time_now);
   EXPECT_TRUE(bitrate_estimator_->LatestEstimate(ssrc, &bitrate_bps));
-  EXPECT_EQ(bitrate_bps, 10734u);
+  EXPECT_EQ(20607u, bitrate_bps);
   EXPECT_TRUE(bitrate_observer_->updated());
   bitrate_observer_->Reset();
   EXPECT_EQ(bitrate_observer_->latest_bitrate(), bitrate_bps);
@@ -231,7 +236,7 @@ TEST_F(RemoteBitrateEstimatorTest, TestInitialBehavior) {
 
 // Make sure we initially increase the bitrate as expected.
 TEST_F(RemoteBitrateEstimatorTest, TestRateIncreaseRtpTimestamps) {
-  const int kExpectedIterations = 323;
+  const int kExpectedIterations = 277;
   unsigned int bitrate_bps = 30000;
   unsigned int ssrc = 0;
   int iterations = 0;

@@ -143,7 +143,8 @@ RateControlRegion RemoteRateControl::Update(const RateControlInput* input,
     }
 #endif
 
-    // Set the initial bit rate value to what we're receiving the first second
+    // Set the initial bit rate value to what we're receiving the first half
+    // second.
     if (!_initializedBitRate)
     {
         if (_timeFirstIncomingEstimate < 0)
@@ -153,7 +154,7 @@ RateControlRegion RemoteRateControl::Update(const RateControlInput* input,
                 _timeFirstIncomingEstimate = nowMS;
             }
         }
-        else if (nowMS - _timeFirstIncomingEstimate > 1000 &&
+        else if (nowMS - _timeFirstIncomingEstimate > 500 &&
             input->_incomingBitRate > 0)
         {
             _currentBitRate = input->_incomingBitRate;

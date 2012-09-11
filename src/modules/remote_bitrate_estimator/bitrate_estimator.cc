@@ -12,7 +12,7 @@
 
 namespace webrtc {
 
-enum { kBitrateAverageWindow = 2000 };
+const float kBitrateAverageWindow = 500.0f;
 
 BitRateStats::BitRateStats()
     :_dataSamples(), _accumulatedBytes(0)
@@ -76,16 +76,8 @@ WebRtc_UWord32 BitRateStats::BitRate(WebRtc_Word64 nowMs)
     {
         timeOldest = _dataSamples.front()->_timeCompleteMs;
     }
-    // Update average bit rate
-    float denom = static_cast<float>(nowMs - timeOldest);
-    if (nowMs == timeOldest)
-    {
-        // Calculate with a one second window when we haven't
-        // received more than one packet.
-        denom = 1000.0;
-    }
     return static_cast<WebRtc_UWord32>(_accumulatedBytes * 8.0f * 1000.0f /
-                                       denom + 0.5f);
+                                       kBitrateAverageWindow + 0.5f);
 }
 
 }  // namespace webrtc
