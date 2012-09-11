@@ -71,11 +71,6 @@ WebRtc_UWord32 BitRateStats::BitRate(WebRtc_Word64 nowMs)
     // Calculate the average bit rate the past BITRATE_AVERAGE_WINDOW ms.
     // Removes any old samples from the list.
     EraseOld(nowMs);
-    WebRtc_Word64 timeOldest = nowMs;
-    if (_dataSamples.size() > 0)
-    {
-        timeOldest = _dataSamples.front()->_timeCompleteMs;
-    }
     return static_cast<WebRtc_UWord32>(_accumulatedBytes * 8.0f * 1000.0f /
                                        kBitrateAverageWindow + 0.5f);
 }
