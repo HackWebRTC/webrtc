@@ -69,7 +69,8 @@ void WebRtcIlbcfix_CbSearch(
   WebRtc_Word32 cDot[128];
   WebRtc_Word32 Crit[128];
   WebRtc_Word16 targetVec[SUBL+LPC_FILTERORDER];
-  WebRtc_Word16 cbvectors[CB_MEML];
+  WebRtc_Word16 cbvectors[CB_MEML + 1];  /* Adding one extra position for
+                                            Coverity warnings. */
   WebRtc_Word16 codedVec[SUBL];
   WebRtc_Word16 interpSamples[20*4];
   WebRtc_Word16 interpSamplesFilt[20*4];

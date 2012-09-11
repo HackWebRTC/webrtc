@@ -1518,7 +1518,7 @@ int WebRtcIsac_DecodePitchGain(Bitstr* streamdata,
                                       WebRtcIsac_kQPitchGainCdf_ptr,
                                       WebRtcIsac_kQCdfTableSizeGain, 1);
   /* Error check, Q_mean_Gain.. tables are of size 144 */
-  if ((err < 0) || (index_comb < 0) || (index_comb > 144)) {
+  if ((err < 0) || (index_comb < 0) || (index_comb >= 144)) {
     return -ISAC_RANGE_ERROR_DECODE_PITCH_GAIN;
   }
   /* De-quantize back to pitch gains by table look-up. */

@@ -614,13 +614,6 @@ WebRtc_Word16 WebRtcIsacfix_UpdateBwEstimate1(ISACFIX_MainStruct *ISAC_main_inst
   memcpy(streamdata.stream, encoded, 5);
 #endif
 
-  if (packet_size == 0)
-  {
-    /* return error code if the packet length is null */
-    ISAC_inst->errorcode = ISAC_EMPTY_PACKET;
-    return -1;
-  }
-
   err = WebRtcIsacfix_EstimateBandwidth(&ISAC_inst->bwestimator_obj,
                                         &streamdata,
                                         packet_size,
@@ -708,13 +701,6 @@ WebRtc_Word16 WebRtcIsacfix_UpdateBwEstimate(ISACFIX_MainStruct *ISAC_main_inst,
 #else
   memcpy(streamdata.stream, encoded, 5);
 #endif
-
-  if (packet_size == 0)
-  {
-    /* return error code if the packet length is null */
-    ISAC_inst->errorcode = ISAC_EMPTY_PACKET;
-    return -1;
-  }
 
   err = WebRtcIsacfix_EstimateBandwidth(&ISAC_inst->bwestimator_obj,
                                         &streamdata,

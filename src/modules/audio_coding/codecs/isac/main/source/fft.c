@@ -335,10 +335,6 @@ static int   FFTRADIX (REAL Re[],
     /* allow full use of alloc'd space */
     max_perm = fftstate->MaxPermAlloced;
   }
-  if (fftstate->Tmp0 == NULL || fftstate->Tmp1 == NULL || fftstate->Tmp2 == NULL || fftstate->Tmp3 == NULL
-      || fftstate->Perm == NULL) {
-    return -1;
-  }
 
   /* assign pointers */
   Rtmp = (REAL *) fftstate->Tmp0;

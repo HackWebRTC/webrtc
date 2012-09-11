@@ -630,8 +630,10 @@ WebRtc_UWord16 WebRtcIsacfix_GetDownlinkBwIndexImpl(BwEstimatorstr *bweStr)
       WEBRTC_SPL_UMUL(102, WEBRTC_SPL_LSHIFT_U32((WebRtc_UWord32)rate + bweStr->recHeaderRate, 5));
   bweStr->recBwAvg = WEBRTC_SPL_RSHIFT_U32(bweStr->recBwAvg, 10);
 
-  /* find quantization index that gives the closest rate after averaging */
-  for (rateInd = 1; rateInd < 12; rateInd++) {
+  /* Find quantization index that gives the closest rate after averaging.
+   * Note that we don't need to check the last value, rate <= kQRateTable[11],
+   * because we will use rateInd = 11 even if rate > kQRateTable[11]. */
+  for (rateInd = 1; rateInd < 11; rateInd++) {
     if (rate <= kQRateTable[rateInd]){
       break;
     }
