@@ -30,6 +30,7 @@ VCMQmMethod::VCMQmMethod()
       native_width_(0),
       native_height_(0),
       native_frame_rate_(0.0f),
+      image_type_(kVGA),
       framerate_level_(kFrameRateHigh),
       init_(false) {
   ResetQM();
