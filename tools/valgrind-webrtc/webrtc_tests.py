@@ -139,7 +139,11 @@ if __name__ == "__main__":
   }
 
   # We do this so the user can write -t <binary> instead of -t cmdline <binary>.
-  sys.argv.insert(sys.argv.index('-t') + 1, 'cmdline')
+  if '-t' in sys.argv:
+    sys.argv.insert(sys.argv.index('-t') + 1, 'cmdline')
+  elif '--test' in sys.argv:
+    sys.argv.insert(sys.argv.index('--test') + 1, 'cmdline')
+
   print sys.argv
   ret = _main(sys.argv)
   sys.exit(ret)
