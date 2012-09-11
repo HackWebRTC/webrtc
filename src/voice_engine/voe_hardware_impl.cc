@@ -634,7 +634,7 @@ int VoEHardwareImpl::ResetAudioDevice()
         return -1;
     }
 
-#if defined(MAC_IPHONE)
+#if defined(WEBRTC_IOS)
     if (_shared->audio_device()->ResetAudioDevice() < 0)
     {
         _shared->SetLastError(VE_SOUNDCARD_ERROR, kTraceError,

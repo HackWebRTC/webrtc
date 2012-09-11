@@ -42,14 +42,14 @@ TEST_F(HardwareBeforeStreamingTest,
 
 // Tests that only apply to mobile:
 
-#ifdef MAC_IPHONE
+#ifdef WEBRTC_IOS
 TEST_F(HardwareBeforeStreamingTest, ResetsAudioDeviceOnIphone) {
   EXPECT_EQ(0, voe_hardware_->ResetAudioDevice());
 }
 #endif
 
 // Tests that only apply to desktop:
-#if !defined(MAC_IPHONE) & !defined(WEBRTC_ANDROID)
+#if !defined(WEBRTC_IOS) & !defined(WEBRTC_ANDROID)
 
 TEST_F(HardwareBeforeStreamingTest, GetSystemCpuLoadSucceeds) {
 #ifdef _WIN32
@@ -163,4 +163,4 @@ TEST_F(HardwareBeforeStreamingTest,
 #endif
 }
 
-#endif // !defined(MAC_IPHONE) & !defined(WEBRTC_ANDROID)
+#endif // !defined(WEBRTC_IOS) & !defined(WEBRTC_ANDROID)

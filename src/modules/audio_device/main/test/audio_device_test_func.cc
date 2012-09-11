@@ -25,7 +25,7 @@ int func_test(int);
 //  main()
 // ----------------------------------------------------------------------------
 
-#if !defined(MAC_IPHONE)
+#if !defined(WEBRTC_IOS)
 int main(int /*argc*/, char* /*argv*/[])
 {
     func_test(0);

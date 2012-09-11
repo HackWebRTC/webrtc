@@ -38,7 +38,7 @@
  #if defined(LINUX_PULSE)
     #include "audio_device_pulse_linux.h"
  #endif
-#elif defined(MAC_IPHONE)
+#elif defined(WEBRTC_IOS)
     #include "audio_device_utility_ios.h"
     #include "audio_device_ios.h"
 #elif defined(WEBRTC_MAC)
@@ -160,7 +160,7 @@ WebRtc_Word32 AudioDeviceModuleImpl::CheckPlatform()
 #elif defined(WEBRTC_LINUX)
     platform = kPlatformLinux;
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "current platform is LINUX");
-#elif defined(MAC_IPHONE)
+#elif defined(WEBRTC_IOS)
     platform = kPlatformIOS;
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "current platform is IOS");
 #elif defined(WEBRTC_MAC)
@@ -341,7 +341,7 @@ WebRtc_Word32 AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
 
     // Create the *iPhone* implementation of the Audio Device
     //
-#if defined(MAC_IPHONE)
+#if defined(WEBRTC_IOS)
     if (audioLayer == kPlatformDefaultAudio)
     {
         // Create *iPhone Audio* implementation
@@ -354,7 +354,7 @@ WebRtc_Word32 AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
         // Create the Mac implementation of the Device Utility.
         ptrAudioDeviceUtility = new AudioDeviceUtilityIPhone(Id());
     }
-    // END #if defined(MAC_IPHONE)
+    // END #if defined(WEBRTC_IOS)
 
     // Create the *Mac* implementation of the Audio Device
     //

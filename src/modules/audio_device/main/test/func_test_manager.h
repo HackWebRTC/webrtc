@@ -22,7 +22,7 @@
 #include "list_wrapper.h"
 #include "resampler.h"
 
-#if defined(MAC_IPHONE) || defined(ANDROID)
+#if defined(WEBRTC_IOS) || defined(ANDROID)
 #define USE_SLEEP_AS_PAUSE
 #else
 //#define USE_SLEEP_AS_PAUSE

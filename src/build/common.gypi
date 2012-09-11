@@ -168,7 +168,7 @@
       ['OS=="ios"', {
         'defines': [
           'WEBRTC_MAC',
-          'MAC_IPHONE', # TODO(sjlee): This should be changed to WEBRTC_IOS.
+          'WEBRTC_IOS',
           'WEBRTC_THREAD_RR',
           'WEBRTC_CLOCK_TYPE_REALTIME',
         ],

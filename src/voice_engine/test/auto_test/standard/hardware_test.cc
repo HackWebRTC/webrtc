@@ -15,7 +15,7 @@
 class HardwareTest : public AfterStreamingFixture {
 };
 
-#if !defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID)
+#if !defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID)
 TEST_F(HardwareTest, AbleToQueryForDevices) {
   int num_recording_devices = 0;
   int num_playout_devices = 0;
@@ -84,7 +84,7 @@ TEST_F(HardwareTest, GetSystemCpuLoadWorksExceptOnMacAndAndroid) {
 #endif
 
 TEST_F(HardwareTest, BuiltInWasapiAECWorksForAudioWindowsCoreAudioLayer) {
-#ifdef MAC_IPHONE
+#ifdef WEBRTC_IOS
   // Ensure the sound device is reset on iPhone.
   EXPECT_EQ(0, voe_hardware_->ResetAudioDevice());
   Sleep(2000);

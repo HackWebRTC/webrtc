@@ -24,9 +24,9 @@
 #include "windows/video_render_windows_impl.h"
 #define STANDARD_RENDERING kRenderWindows
 
-// MAC_IPHONE should go before WEBRTC_MAC because WEBRTC_MAC
-// gets defined if MAC_IPHONE is defined
-#elif defined(MAC_IPHONE)
+// WEBRTC_IOS should go before WEBRTC_MAC because WEBRTC_MAC
+// gets defined if WEBRTC_IOS is defined
+#elif defined(WEBRTC_IOS)
 #if defined(IPHONE_GLES_RENDERING)
 #define STANDARD_RENDERING kRenderiPhone
 #include "iPhone/video_render_iphone_impl.h"
@@ -116,7 +116,7 @@ ModuleVideoRenderImpl::ModuleVideoRenderImpl(
         }
         break;
 
-#elif defined(MAC_IPHONE)
+#elif defined(WEBRTC_IOS)
         case kRenderiPhone:
         {
             VideoRenderIPhoneImpl* ptrRenderer = new VideoRenderIPhoneImpl(_id, videoRenderType, window, _fullScreen);
@@ -276,7 +276,7 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
             break;
 #endif
 
-#elif defined(MAC_IPHONE)
+#elif defined(WEBRTC_IOS)
             case kRenderiPhone:
             break;
 
@@ -350,7 +350,7 @@ WebRtc_Word32 ModuleVideoRenderImpl::ChangeWindow(void* window)
 
 #ifdef WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER
 
-#if defined(MAC_IPHONE) // MAC_IPHONE must go before WEBRTC_MAC
+#if defined(WEBRTC_IOS) // WEBRTC_IOS must go before WEBRTC_MAC
     _ptrRenderer = NULL;
     delete _ptrRenderer;
 

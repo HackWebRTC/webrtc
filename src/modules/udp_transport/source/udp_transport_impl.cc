@@ -30,7 +30,7 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
-#ifndef MAC_IPHONE
+#ifndef WEBRTC_IOS
 #include <net/if_arp.h>
 #endif
 #endif // defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)

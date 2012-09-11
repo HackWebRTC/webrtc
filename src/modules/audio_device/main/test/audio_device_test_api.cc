@@ -36,7 +36,7 @@ const char* GetFilename(const char* filename)
   sprintf(filenameStr[currentStr], "/sdcard/admtest/%s", filename);
   return filenameStr[currentStr];
 }
-#elif !defined(MAC_IPHONE)
+#elif !defined(WEBRTC_IOS)
 const char* GetFilename(const char* filename) {
   std::string full_path_filename = webrtc::test::OutputPath() + filename;
   return full_path_filename.c_str();
@@ -1588,7 +1588,7 @@ TEST_F(AudioDeviceAPITest, PlayoutBufferTests) {
 
   CheckInitialPlayoutStates();
   EXPECT_EQ(0, audio_device_->PlayoutBuffer(&bufferType, &sizeMS));
-#if defined(_WIN32) || defined(ANDROID) || defined(MAC_IPHONE)
+#if defined(_WIN32) || defined(ANDROID) || defined(WEBRTC_IOS)
   EXPECT_EQ(AudioDeviceModule::kAdaptiveBufferSize, bufferType);
 #else
   EXPECT_EQ(AudioDeviceModule::kFixedBufferSize, bufferType);
@@ -1625,7 +1625,7 @@ TEST_F(AudioDeviceAPITest, PlayoutBufferTests) {
   EXPECT_EQ(0, audio_device_->PlayoutBuffer(&bufferType, &sizeMS));
   EXPECT_EQ(AudioDeviceModule::kAdaptiveBufferSize, bufferType);
 #endif
-#if defined(ANDROID) || defined(MAC_IPHONE)
+#if defined(ANDROID) || defined(WEBRTC_IOS)
   EXPECT_EQ(-1,
             audio_device_->SetPlayoutBuffer(AudioDeviceModule::kFixedBufferSize,
                                           kAdmMinPlayoutBufferSizeMs));
@@ -1770,7 +1770,7 @@ TEST_F(AudioDeviceAPITest, RecordingSampleRate) {
 #elif defined(ANDROID)
   TEST_LOG("Recording sample rate is %u\n\n", sampleRate);
   EXPECT_TRUE((sampleRate == 44000) || (sampleRate == 16000));
-#elif defined(MAC_IPHONE)
+#elif defined(WEBRTC_IOS)
   TEST_LOG("Recording sample rate is %u\n\n", sampleRate);
   EXPECT_TRUE((sampleRate == 44000) || (sampleRate == 16000) ||
               (sampleRate == 8000));
@@ -1789,7 +1789,7 @@ TEST_F(AudioDeviceAPITest, PlayoutSampleRate) {
 #elif defined(ANDROID)
   TEST_LOG("Playout sample rate is %u\n\n", sampleRate);
   EXPECT_TRUE((sampleRate == 44000) || (sampleRate == 16000));
-#elif defined(MAC_IPHONE)
+#elif defined(WEBRTC_IOS)
   TEST_LOG("Playout sample rate is %u\n\n", sampleRate);
   EXPECT_TRUE((sampleRate == 44000) || (sampleRate == 16000) ||
               (sampleRate == 8000));
@@ -1802,7 +1802,7 @@ TEST_F(AudioDeviceAPITest, ResetAudioDevice) {
   EXPECT_EQ(0, audio_device_->SetPlayoutDevice(MACRO_DEFAULT_DEVICE));
   EXPECT_EQ(0, audio_device_->SetRecordingDevice(MACRO_DEFAULT_DEVICE));
 
-#if defined(MAC_IPHONE)
+#if defined(WEBRTC_IOS)
   // Not playing or recording, should just return 0
   EXPECT_EQ(0, audio_device_->ResetAudioDevice());
 
@@ -1838,7 +1838,7 @@ TEST_F(AudioDeviceAPITest, SetPlayoutSpeaker) {
   EXPECT_EQ(0, audio_device_->SetPlayoutDevice(MACRO_DEFAULT_DEVICE));
 
   bool loudspeakerOn(false);
-#if defined(MAC_IPHONE)
+#if defined(WEBRTC_IOS)
   // Not playing or recording, should just return a success
   EXPECT_EQ(0, audio_device_->SetLoudspeakerStatus(true));
   EXPECT_EQ(0, audio_device_->GetLoudspeakerStatus(loudspeakerOn));

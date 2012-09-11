@@ -24,7 +24,7 @@ namespace webrtc {
 // TODO (hellner) the buffer should be close to how much the system can write to
 //                file. Increasing the buffer will not solve anything. Sooner or
 //                later the buffer is going to fill up anyways.
-#if defined(MAC_IPHONE)
+#if defined(WEBRTC_IOS)
     #define WEBRTC_TRACE_MAX_QUEUE  2000
 #else
     #define WEBRTC_TRACE_MAX_QUEUE  8000

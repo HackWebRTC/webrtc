@@ -157,8 +157,7 @@ ThreadPosix::~ThreadPosix()
     delete _crit_state;
 }
 
-#define HAS_THREAD_ID !defined(MAC_IPHONE) && !defined(MAC_IPHONE_SIM) && \
-                      !defined(WEBRTC_MAC)
+#define HAS_THREAD_ID !defined(WEBRTC_IOS) && !defined(WEBRTC_MAC)
 #if HAS_THREAD_ID
 bool ThreadPosix::Start(unsigned int& threadID)
 #else

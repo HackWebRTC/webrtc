@@ -457,7 +457,7 @@ namespace webrtc
 #include <sys/time.h>
 #include <time.h>
 #include <AudioUnit/AudioUnit.h>
-#if !defined(MAC_IPHONE) && !defined(MAC_IPHONE_SIM)
+#if !defined(WEBRTC_IOS)
   #include <CoreServices/CoreServices.h>
   #include <CoreAudio/CoreAudio.h>
   #include <AudioToolbox/DefaultAudioOutput.h>
@@ -517,7 +517,7 @@ namespace
 #define WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE 0
 
 // iPhone specific
-#if defined(MAC_IPHONE) || defined(MAC_IPHONE_SIM)
+#if defined(WEBRTC_IOS)
 
 // ----------------------------------------------------------------------------
 //  Enumerators

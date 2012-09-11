@@ -138,7 +138,7 @@ class AudioProcessingTest : public AfterStreamingFixture {
   }
 };
 
-#if !defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID)
+#if !defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID)
 
 TEST_F(AudioProcessingTest, AgcIsOnByDefault) {
   bool agc_enabled = false;
@@ -219,7 +219,7 @@ TEST_F(AudioProcessingTest, DISABLED_TestVoiceActivityDetectionWithObserver) {
   EXPECT_EQ(0, voe_apm_->DeRegisterRxVadObserver(channel_));
 }
 
-#endif   // !MAC_IPHONE && !WEBRTC_ANDROID
+#endif   // !WEBRTC_IOS && !WEBRTC_ANDROID
 
 TEST_F(AudioProcessingTest, EnablingEcAecmShouldEnableEcAecm) {
   // This one apparently applies to Android and iPhone as well.
@@ -377,7 +377,7 @@ TEST_F(AudioProcessingTest, CanStartAndStopDebugRecording) {
   EXPECT_EQ(0, voe_apm_->StopDebugRecording());
 }
 
-#if defined(MAC_IPHONE) || defined(WEBRTC_ANDROID)
+#if defined(WEBRTC_IOS) || defined(WEBRTC_ANDROID)
 
 TEST_F(AudioProcessingTest, AgcIsOffByDefaultAndDigital) {
   bool agc_enabled = true;
@@ -412,4 +412,4 @@ TEST_F(AudioProcessingTest, TestVoiceActivityDetection) {
   TryDetectingSpeechAfterSilence();
 }
 
-#endif  // MAC_IPHONE || WEBRTC_ANDROID
+#endif  // WEBRTC_IOS || WEBRTC_ANDROID

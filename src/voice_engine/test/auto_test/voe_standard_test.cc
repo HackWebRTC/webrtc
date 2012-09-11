@@ -598,7 +598,7 @@ int RunInManualMode(int argc, char** argv) {
 //                                       main
 // ----------------------------------------------------------------------------
 
-#if !defined(MAC_IPHONE)
+#if !defined(WEBRTC_IOS)
 int main(int argc, char** argv) {
   if (argc > 1 && std::string(argv[1]) == "--automated") {
     // This function is defined in automated_mode.cc to avoid macro clashes
@@ -608,4 +608,4 @@ int main(int argc, char** argv) {
 
   return RunInManualMode(argc, argv);
 }
-#endif //#if !defined(MAC_IPHONE)
+#endif //#if !defined(WEBRTC_IOS)

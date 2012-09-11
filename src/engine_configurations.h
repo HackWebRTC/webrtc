@@ -126,7 +126,7 @@
 //  VideoEngine MAC
 // ----------------------------------------------------------------------------
 
-#if defined(WEBRTC_MAC) && !defined(MAC_IPHONE)
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 // #define CARBON_RENDERING
 #define COCOA_RENDERING
 #endif
@@ -135,7 +135,7 @@
 //  VideoEngine Mobile iPhone
 // ----------------------------------------------------------------------------
 
-#if defined(MAC_IPHONE)
+#if defined(WEBRTC_IOS)
 #define EAGL_RENDERING
 #endif
 
