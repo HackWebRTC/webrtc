@@ -47,6 +47,11 @@ public:
 
     WebRtc_Word32 SetNackStatus(const bool enable);
 
+    void SetStartTimestamp(uint32_t start_timestamp);
+
+    void SetLastRtpTime(uint32_t rtp_timestamp,
+                        int64_t capture_time_ms);
+
     void SetSSRC( const WebRtc_UWord32 ssrc);
 
     WebRtc_Word32 SetRemoteSSRC( const WebRtc_UWord32 ssrc);
@@ -200,6 +205,9 @@ private:
 
     WebRtc_Word64        _nextTimeToSendRTCP;
 
+    uint32_t start_timestamp_;
+    uint32_t last_rtp_timestamp_;
+    int64_t last_frame_capture_time_ms_;
     WebRtc_UWord32 _SSRC;
     WebRtc_UWord32 _remoteSSRC;  // SSRC that we receive on our RTP channel
     char _CNAME[RTCP_CNAME_SIZE];

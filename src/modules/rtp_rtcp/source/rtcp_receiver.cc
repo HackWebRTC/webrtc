@@ -203,7 +203,8 @@ WebRtc_Word32
 RTCPReceiver::NTP(WebRtc_UWord32 *ReceivedNTPsecs,
                   WebRtc_UWord32 *ReceivedNTPfrac,
                   WebRtc_UWord32 *RTCPArrivalTimeSecs,
-                  WebRtc_UWord32 *RTCPArrivalTimeFrac) const
+                  WebRtc_UWord32 *RTCPArrivalTimeFrac,
+                  WebRtc_UWord32 *rtcp_timestamp) const
 {
     CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
     if(ReceivedNTPsecs)
@@ -221,6 +222,9 @@ RTCPReceiver::NTP(WebRtc_UWord32 *ReceivedNTPsecs,
     if(RTCPArrivalTimeSecs)
     {
         *RTCPArrivalTimeSecs = _lastReceivedSRNTPsecs;
+    }
+    if (rtcp_timestamp) {
+      *rtcp_timestamp = _remoteSenderInfo.RTPtimeStamp;
     }
     return 0;
 }

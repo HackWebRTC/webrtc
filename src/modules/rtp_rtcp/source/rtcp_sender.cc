@@ -45,6 +45,9 @@ RTCPSender::RTCPSender(const WebRtc_Word32 id,
     _TMMBR(false),
     _IJ(false),
     _nextTimeToSendRTCP(0),
+    start_timestamp_(0),
+    last_rtp_timestamp_(0),
+    last_frame_capture_time_ms_(-1),
     _SSRC(0),
     _remoteSSRC(0),
     _CNAME(),
@@ -122,6 +125,9 @@ RTCPSender::Init()
     _IJ = false;
     _REMB = false;
     _sendREMB = false;
+    last_rtp_timestamp_ = 0;
+    last_frame_capture_time_ms_ = -1;
+    start_timestamp_ = -1;
     _SSRC = 0;
     _remoteSSRC = 0;
     _cameraDelayMS = 0;
@@ -287,6 +293,21 @@ RTCPSender::SetIJStatus(const bool enable)
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
     _IJ = enable;
     return 0;
+}
+
+void RTCPSender::SetStartTimestamp(uint32_t start_timestamp) {
+  start_timestamp_ = start_timestamp;
+}
+
+void RTCPSender::SetLastRtpTime(uint32_t rtp_timestamp,
+                                int64_t capture_time_ms) {
+  last_rtp_timestamp_ = rtp_timestamp;
+  if (capture_time_ms < 0) {
+    // We don't currently get a capture time from VoiceEngine.
+    last_frame_capture_time_ms_ = _clock.GetTimeInMS();
+  } else {
+    last_frame_capture_time_ms_ = capture_time_ms;
+  }
 }
 
 void
@@ -538,8 +559,6 @@ RTCPSender::BuildSR(WebRtc_UWord8* rtcpbuffer,
         return -2;
     }
     WebRtc_UWord32 RTPtime;
-    WebRtc_UWord32 BackTimedNTPsec;
-    WebRtc_UWord32 BackTimedNTPfrac;
 
     WebRtc_UWord32 posNumberOfReportBlocks = pos;
     rtcpbuffer[pos++]=(WebRtc_UWord8)0x80;
@@ -554,62 +573,19 @@ RTCPSender::BuildSR(WebRtc_UWord8* rtcpbuffer,
         _lastRTCPTime[i+1] =_lastRTCPTime[i];
     }
 
-    _lastRTCPTime[0] = ModuleRTPUtility::ConvertNTPTimeToMS(NTPsec, NTPfrac); // before video cam compensation
-
-    if(_cameraDelayMS >= 0)
-    {
-        // fraction of a second as an unsigned word32 4.294 967 296E9
-        WebRtc_UWord32 cameraDelayFixFrac =  (WebRtc_UWord32)_cameraDelayMS* 4294967; // note camera delay can't be larger than +/-1000ms
-        if(NTPfrac > cameraDelayFixFrac)
-        {
-            // no problem just reduce the fraction part
-            BackTimedNTPfrac = NTPfrac - cameraDelayFixFrac;
-            BackTimedNTPsec = NTPsec;
-        } else
-        {
-            // we need to reduce the sec and add that sec to the frac
-            BackTimedNTPsec = NTPsec - 1;
-            BackTimedNTPfrac = 0xffffffff - (cameraDelayFixFrac - NTPfrac);
-        }
-    } else
-    {
-        // fraction of a second as an unsigned word32 4.294 967 296E9
-        WebRtc_UWord32 cameraDelayFixFrac =  (WebRtc_UWord32)(-_cameraDelayMS)* 4294967; // note camera delay can't be larger than +/-1000ms
-        if(NTPfrac > 0xffffffff - cameraDelayFixFrac)
-        {
-            // we need to add the sec and add that sec to the frac
-            BackTimedNTPsec = NTPsec + 1;
-            BackTimedNTPfrac = cameraDelayFixFrac + NTPfrac; // this will wrap but that is ok
-        } else
-        {
-            // no problem just add the fraction part
-            BackTimedNTPsec = NTPsec;
-            BackTimedNTPfrac = NTPfrac + cameraDelayFixFrac;
-        }
-    }
-    _lastSendReport[0] = (BackTimedNTPsec <<16) + (BackTimedNTPfrac >> 16);
-
-    // RTP timestamp
-    // This should have a ramdom start value added
-    // RTP is counted from NTP not the acctual RTP
-    // This reflects the perfect RTP time
-    // we solve this by initiating RTP to our NTP :)
+    _lastRTCPTime[0] = ModuleRTPUtility::ConvertNTPTimeToMS(NTPsec, NTPfrac);
+    _lastSendReport[0] = (NTPsec << 16) + (NTPfrac >> 16);
 
     WebRtc_UWord32 freqHz = 90000; // For video
-    if(_audio)
-    {
-        freqHz =  _rtpRtcp.CurrentSendFrequencyHz();
-        RTPtime = ModuleRTPUtility::GetCurrentRTP(&_clock, freqHz);
+    if(_audio) {
+      freqHz =  _rtpRtcp.CurrentSendFrequencyHz();
     }
-    else // video 
-    {
-        // used to be (WebRtc_UWord32)(((float)BackTimedNTPfrac/(float)FRAC)* 90000)
-        WebRtc_UWord32 tmp = 9*(BackTimedNTPfrac/429496);
-        RTPtime = BackTimedNTPsec*freqHz + tmp;
-    }
-
-    
-    
+    // The timestamp of this RTCP packet should be estimated as the timestamp of
+    // the frame being captured at this moment. We are calculating that
+    // timestamp as the last frame's timestamp + the time since the last frame
+    // was captured.
+    RTPtime = start_timestamp_ + last_rtp_timestamp_ + (_clock.GetTimeInMS() -
+        last_frame_capture_time_ms_) * (freqHz / 1000);
 
     // Add sender data
     // Save  for our length field
@@ -620,9 +596,9 @@ RTCPSender::BuildSR(WebRtc_UWord8* rtcpbuffer,
     ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _SSRC);
     pos += 4;
     // NTP
-    ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, BackTimedNTPsec);
+    ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, NTPsec);
     pos += 4;
-    ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, BackTimedNTPfrac);
+    ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, NTPfrac);
     pos += 4;
     ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, RTPtime);
     pos += 4;

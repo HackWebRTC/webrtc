@@ -21,17 +21,34 @@ enum { kMaxVideoDiffMs = 80 };
 enum { kMaxAudioDiffMs = 80 };
 enum { kMaxDelay = 1500 };
 
+// Test constants.
+enum { kDefaultAudioFrequency = 8000 };
+enum { kDefaultVideoFrequency = 90000 };
+const double kNtpFracPerMs = 4.294967296E6;
+
 class Time {
  public:
   explicit Time(int64_t offset)
       : kNtpJan1970(2208988800UL),
         time_now_ms_(offset) {}
 
+    synchronization::RtcpMeasurement GenerateRtcp(int frequency,
+                                                  uint32_t offset) const {
+    synchronization::RtcpMeasurement rtcp;
+    NowNtp(&rtcp.ntp_secs, &rtcp.ntp_frac);
+    rtcp.rtp_timestamp = NowRtp(frequency, offset);
+    return rtcp;
+  }
+
   void NowNtp(uint32_t* ntp_secs, uint32_t* ntp_frac) const {
     *ntp_secs = time_now_ms_ / 1000 + kNtpJan1970;
-    int64_t remainder = time_now_ms_ % 1000;
+    int64_t remainder_ms = time_now_ms_ % 1000;
     *ntp_frac = static_cast<uint32_t>(
-        static_cast<double>(remainder) / 1000.0 * pow(2.0, 32.0) + 0.5);
+        static_cast<double>(remainder_ms) * kNtpFracPerMs + 0.5);
+  }
+
+  uint32_t NowRtp(int frequency, uint32_t offset) const {
+    return frequency * time_now_ms_ / 1000 + offset;
   }
 
   void IncreaseTimeMs(int64_t inc) {
@@ -41,6 +58,7 @@ class Time {
   int64_t time_now_ms() const {
     return time_now_ms_;
   }
+
  private:
   // January 1970, in NTP seconds.
   const uint32_t kNtpJan1970;
@@ -53,6 +71,8 @@ class StreamSynchronizationTest : public ::testing::Test {
     sync_ = new StreamSynchronization(0, 0);
     send_time_ = new Time(kSendTimeOffsetMs);
     receive_time_ = new Time(kReceiveTimeOffsetMs);
+    audio_clock_drift_ = 1.0;
+    video_clock_drift_ = 1.0;
   }
 
   virtual void TearDown() {
@@ -61,80 +81,153 @@ class StreamSynchronizationTest : public ::testing::Test {
     delete receive_time_;
   }
 
-  int DelayedAudio(int delay_ms,
-                   int current_audio_delay_ms,
-                   int* extra_audio_delay_ms,
-                   int* total_video_delay_ms) {
+  // Generates the necessary RTCP measurements and RTP timestamps and computes
+  // the audio and video delays needed to get the two streams in sync.
+  // |audio_delay_ms| and |video_delay_ms| are the number of milliseconds after
+  // capture which the frames are rendered.
+  // |current_audio_delay_ms| is the number of milliseconds which audio is
+  // currently being delayed by the receiver.
+  bool DelayedStreams(int audio_delay_ms,
+                      int video_delay_ms,
+                      int current_audio_delay_ms,
+                      int* extra_audio_delay_ms,
+                      int* total_video_delay_ms) {
+    int audio_frequency = static_cast<int>(kDefaultAudioFrequency *
+                                           audio_clock_drift_ + 0.5);
+    int audio_offset = 0;
+    int video_frequency = static_cast<int>(kDefaultVideoFrequency *
+                                           video_clock_drift_ + 0.5);
+    int video_offset = 0;
     StreamSynchronization::Measurements audio;
     StreamSynchronization::Measurements video;
-    send_time_->NowNtp(&audio.received_ntp_secs, &audio.received_ntp_frac);
-    send_time_->NowNtp(&video.received_ntp_secs, &video.received_ntp_frac);
-    receive_time_->NowNtp(&video.rtcp_arrivaltime_secs,
-                          &video.rtcp_arrivaltime_frac);
-    // Audio later than video.
-    receive_time_->IncreaseTimeMs(delay_ms);
-    receive_time_->NowNtp(&audio.rtcp_arrivaltime_secs,
-                          &audio.rtcp_arrivaltime_frac);
-    return sync_->ComputeDelays(audio,
-                                current_audio_delay_ms,
-                                extra_audio_delay_ms,
-                                video,
-                                total_video_delay_ms);
-  }
+    // Generate NTP/RTP timestamp pair for both streams corresponding to RTCP.
+    audio.rtcp.push_front(send_time_->GenerateRtcp(audio_frequency,
+                                                   audio_offset));
+    send_time_->IncreaseTimeMs(100);
+    receive_time_->IncreaseTimeMs(100);
+    video.rtcp.push_front(send_time_->GenerateRtcp(video_frequency,
+                                                   video_offset));
+    send_time_->IncreaseTimeMs(900);
+    receive_time_->IncreaseTimeMs(900);
+    audio.rtcp.push_front(send_time_->GenerateRtcp(audio_frequency,
+                                                   audio_offset));
+    send_time_->IncreaseTimeMs(100);
+    receive_time_->IncreaseTimeMs(100);
+    video.rtcp.push_front(send_time_->GenerateRtcp(video_frequency,
+                                                   video_offset));
+    send_time_->IncreaseTimeMs(900);
+    receive_time_->IncreaseTimeMs(900);
 
-  int DelayedVideo(int delay_ms,
-                   int current_audio_delay_ms,
-                   int* extra_audio_delay_ms,
-                   int* total_video_delay_ms) {
-    StreamSynchronization::Measurements audio;
-    StreamSynchronization::Measurements video;
-    send_time_->NowNtp(&audio.received_ntp_secs, &audio.received_ntp_frac);
-    send_time_->NowNtp(&video.received_ntp_secs, &video.received_ntp_frac);
-    receive_time_->NowNtp(&audio.rtcp_arrivaltime_secs,
-                          &audio.rtcp_arrivaltime_frac);
-    // Video later than audio.
-    receive_time_->IncreaseTimeMs(delay_ms);
-    receive_time_->NowNtp(&video.rtcp_arrivaltime_secs,
-                          &video.rtcp_arrivaltime_frac);
-    return sync_->ComputeDelays(audio,
-                                current_audio_delay_ms,
-                                extra_audio_delay_ms,
-                                video,
-                                total_video_delay_ms);
-  }
-
-  int DelayedAudioAndVideo(int audio_delay_ms,
-                           int video_delay_ms,
-                           int current_audio_delay_ms,
-                           int* extra_audio_delay_ms,
-                           int* total_video_delay_ms) {
-    StreamSynchronization::Measurements audio;
-    StreamSynchronization::Measurements video;
-    send_time_->NowNtp(&audio.received_ntp_secs, &audio.received_ntp_frac);
-    send_time_->NowNtp(&video.received_ntp_secs, &video.received_ntp_frac);
+    // Capture an audio and a video frame at the same time.
+    audio.latest_timestamp = send_time_->NowRtp(audio_frequency,
+                                                      audio_offset);
+    video.latest_timestamp = send_time_->NowRtp(video_frequency,
+                                                      video_offset);
 
     if (audio_delay_ms > video_delay_ms) {
       // Audio later than video.
       receive_time_->IncreaseTimeMs(video_delay_ms);
-      receive_time_->NowNtp(&video.rtcp_arrivaltime_secs,
-                            &video.rtcp_arrivaltime_frac);
+      video.latest_receive_time_ms = receive_time_->time_now_ms();
       receive_time_->IncreaseTimeMs(audio_delay_ms - video_delay_ms);
-      receive_time_->NowNtp(&audio.rtcp_arrivaltime_secs,
-                            &audio.rtcp_arrivaltime_frac);
+      audio.latest_receive_time_ms = receive_time_->time_now_ms();
     } else {
       // Video later than audio.
       receive_time_->IncreaseTimeMs(audio_delay_ms);
-      receive_time_->NowNtp(&audio.rtcp_arrivaltime_secs,
-                            &audio.rtcp_arrivaltime_frac);
+      audio.latest_receive_time_ms = receive_time_->time_now_ms();
       receive_time_->IncreaseTimeMs(video_delay_ms - audio_delay_ms);
-      receive_time_->NowNtp(&video.rtcp_arrivaltime_secs,
-                            &video.rtcp_arrivaltime_frac);
+      video.latest_receive_time_ms = receive_time_->time_now_ms();
     }
-    return sync_->ComputeDelays(audio,
+    int relative_delay_ms;
+    StreamSynchronization::ComputeRelativeDelay(audio, video,
+                                                &relative_delay_ms);
+    EXPECT_EQ(video_delay_ms - audio_delay_ms, relative_delay_ms);
+    return sync_->ComputeDelays(relative_delay_ms,
                                 current_audio_delay_ms,
                                 extra_audio_delay_ms,
-                                video,
                                 total_video_delay_ms);
+  }
+
+  // Simulate audio playback 300 ms after capture and video rendering 100 ms
+  // after capture. Verify that the correct extra delays are calculated for
+  // audio and video, and that they change correctly when we simulate that
+  // NetEQ or the VCM adds more delay to the streams.
+  // TODO(holmer): This is currently wrong! We should simply change
+  // audio_delay_ms or video_delay_ms since those now include VCM and NetEQ
+  // delays.
+  void BothDelayedAudioLaterTest() {
+    int current_audio_delay_ms = 0;
+    int audio_delay_ms = 300;
+    int video_delay_ms = 100;
+    int extra_audio_delay_ms = 0;
+    int total_video_delay_ms = 0;
+
+    EXPECT_TRUE(DelayedStreams(audio_delay_ms,
+                               video_delay_ms,
+                               current_audio_delay_ms,
+                               &extra_audio_delay_ms,
+                               &total_video_delay_ms));
+    EXPECT_EQ(kMaxVideoDiffMs, total_video_delay_ms);
+    EXPECT_EQ(0, extra_audio_delay_ms);
+    current_audio_delay_ms = extra_audio_delay_ms;
+
+    send_time_->IncreaseTimeMs(1000);
+    receive_time_->IncreaseTimeMs(1000 - std::max(audio_delay_ms,
+                                                  video_delay_ms));
+    // Simulate 0 minimum delay in the VCM.
+    total_video_delay_ms = 0;
+    EXPECT_TRUE(DelayedStreams(audio_delay_ms,
+                               video_delay_ms,
+                               current_audio_delay_ms,
+                               &extra_audio_delay_ms,
+                               &total_video_delay_ms));
+    EXPECT_EQ(2 * kMaxVideoDiffMs, total_video_delay_ms);
+    EXPECT_EQ(0, extra_audio_delay_ms);
+    current_audio_delay_ms = extra_audio_delay_ms;
+
+    send_time_->IncreaseTimeMs(1000);
+    receive_time_->IncreaseTimeMs(1000 - std::max(audio_delay_ms,
+                                                  video_delay_ms));
+    // Simulate 0 minimum delay in the VCM.
+    total_video_delay_ms = 0;
+    EXPECT_TRUE(DelayedStreams(audio_delay_ms,
+                               video_delay_ms,
+                               current_audio_delay_ms,
+                               &extra_audio_delay_ms,
+                               &total_video_delay_ms));
+    EXPECT_EQ(audio_delay_ms - video_delay_ms, total_video_delay_ms);
+    EXPECT_EQ(0, extra_audio_delay_ms);
+
+    // Simulate that NetEQ introduces some audio delay.
+    current_audio_delay_ms = 50;
+    send_time_->IncreaseTimeMs(1000);
+    receive_time_->IncreaseTimeMs(1000 - std::max(audio_delay_ms,
+                                                  video_delay_ms));
+    // Simulate 0 minimum delay in the VCM.
+    total_video_delay_ms = 0;
+    EXPECT_TRUE(DelayedStreams(audio_delay_ms,
+                               video_delay_ms,
+                               current_audio_delay_ms,
+                               &extra_audio_delay_ms,
+                               &total_video_delay_ms));
+    EXPECT_EQ(audio_delay_ms - video_delay_ms + current_audio_delay_ms,
+              total_video_delay_ms);
+    EXPECT_EQ(0, extra_audio_delay_ms);
+
+    // Simulate that NetEQ reduces its delay.
+    current_audio_delay_ms = 10;
+    send_time_->IncreaseTimeMs(1000);
+    receive_time_->IncreaseTimeMs(1000 - std::max(audio_delay_ms,
+                                                  video_delay_ms));
+    // Simulate 0 minimum delay in the VCM.
+    total_video_delay_ms = 0;
+    EXPECT_TRUE(DelayedStreams(audio_delay_ms,
+                               video_delay_ms,
+                               current_audio_delay_ms,
+                               &extra_audio_delay_ms,
+                               &total_video_delay_ms));
+    EXPECT_EQ(audio_delay_ms - video_delay_ms + current_audio_delay_ms,
+              total_video_delay_ms);
+    EXPECT_EQ(0, extra_audio_delay_ms);
   }
 
   int MaxAudioDelayIncrease(int current_audio_delay_ms, int delay_ms) {
@@ -146,22 +239,23 @@ class StreamSynchronizationTest : public ::testing::Test {
     return std::max((delay_ms - current_audio_delay_ms) / 2, -kMaxAudioDiffMs);
   }
 
-  enum { kSendTimeOffsetMs = 0 };
-  enum { kReceiveTimeOffsetMs = 123456 };
+  enum { kSendTimeOffsetMs = 98765 };
+  enum { kReceiveTimeOffsetMs = 43210 };
 
   StreamSynchronization* sync_;
-  Time* send_time_;
-  Time* receive_time_;
+  Time* send_time_;  // The simulated clock at the sender.
+  Time* receive_time_;  // The simulated clock at the receiver.
+  double audio_clock_drift_;
+  double video_clock_drift_;
 };
 
 TEST_F(StreamSynchronizationTest, NoDelay) {
   uint32_t current_audio_delay_ms = 0;
-  int delay_ms = 0;
   int extra_audio_delay_ms = 0;
   int total_video_delay_ms = 0;
 
-  EXPECT_EQ(0, DelayedAudio(delay_ms, current_audio_delay_ms,
-                            &extra_audio_delay_ms, &total_video_delay_ms));
+  EXPECT_TRUE(DelayedStreams(0, 0, current_audio_delay_ms,
+                             &extra_audio_delay_ms, &total_video_delay_ms));
   EXPECT_EQ(0, extra_audio_delay_ms);
   EXPECT_EQ(0, total_video_delay_ms);
 }
@@ -172,8 +266,8 @@ TEST_F(StreamSynchronizationTest, VideoDelay) {
   int extra_audio_delay_ms = 0;
   int total_video_delay_ms = 0;
 
-  EXPECT_EQ(0, DelayedAudio(delay_ms, current_audio_delay_ms,
-                            &extra_audio_delay_ms, &total_video_delay_ms));
+  EXPECT_TRUE(DelayedStreams(delay_ms, 0, current_audio_delay_ms,
+                             &extra_audio_delay_ms, &total_video_delay_ms));
   EXPECT_EQ(0, extra_audio_delay_ms);
   // The video delay is not allowed to change more than this in 1 second.
   EXPECT_EQ(kMaxVideoDiffMs, total_video_delay_ms);
@@ -182,8 +276,8 @@ TEST_F(StreamSynchronizationTest, VideoDelay) {
   receive_time_->IncreaseTimeMs(800);
   // Simulate 0 minimum delay in the VCM.
   total_video_delay_ms = 0;
-  EXPECT_EQ(0, DelayedAudio(delay_ms, current_audio_delay_ms,
-                            &extra_audio_delay_ms, &total_video_delay_ms));
+  EXPECT_TRUE(DelayedStreams(delay_ms, 0, current_audio_delay_ms,
+                             &extra_audio_delay_ms, &total_video_delay_ms));
   EXPECT_EQ(0, extra_audio_delay_ms);
   // The video delay is not allowed to change more than this in 1 second.
   EXPECT_EQ(2*kMaxVideoDiffMs, total_video_delay_ms);
@@ -192,10 +286,11 @@ TEST_F(StreamSynchronizationTest, VideoDelay) {
   receive_time_->IncreaseTimeMs(800);
   // Simulate 0 minimum delay in the VCM.
   total_video_delay_ms = 0;
-  EXPECT_EQ(0, DelayedAudio(delay_ms, current_audio_delay_ms,
-                            &extra_audio_delay_ms, &total_video_delay_ms));
+  EXPECT_TRUE(DelayedStreams(delay_ms, 0, current_audio_delay_ms,
+                             &extra_audio_delay_ms, &total_video_delay_ms));
   EXPECT_EQ(0, extra_audio_delay_ms);
-  // The video delay is not allowed to change more than this in 1 second.
+  // Enough time should have elapsed for the requested total video delay to be
+  // equal to the relative delay between audio and video, i.e., we are in sync.
   EXPECT_EQ(delay_ms, total_video_delay_ms);
 }
 
@@ -205,8 +300,8 @@ TEST_F(StreamSynchronizationTest, AudioDelay) {
   int extra_audio_delay_ms = 0;
   int total_video_delay_ms = 0;
 
-  EXPECT_EQ(0, DelayedVideo(delay_ms, current_audio_delay_ms,
-                            &extra_audio_delay_ms, &total_video_delay_ms));
+  EXPECT_TRUE(DelayedStreams(0, delay_ms, current_audio_delay_ms,
+                             &extra_audio_delay_ms, &total_video_delay_ms));
   EXPECT_EQ(0, total_video_delay_ms);
   // The audio delay is not allowed to change more than this in 1 second.
   EXPECT_EQ(kMaxAudioDiffMs, extra_audio_delay_ms);
@@ -215,8 +310,8 @@ TEST_F(StreamSynchronizationTest, AudioDelay) {
 
   send_time_->IncreaseTimeMs(1000);
   receive_time_->IncreaseTimeMs(800);
-  EXPECT_EQ(0, DelayedVideo(delay_ms, current_audio_delay_ms,
-                            &extra_audio_delay_ms, &total_video_delay_ms));
+  EXPECT_TRUE(DelayedStreams(0, delay_ms, current_audio_delay_ms,
+                             &extra_audio_delay_ms, &total_video_delay_ms));
   EXPECT_EQ(0, total_video_delay_ms);
   // The audio delay is not allowed to change more than the half of the required
   // change in delay.
@@ -228,8 +323,8 @@ TEST_F(StreamSynchronizationTest, AudioDelay) {
 
   send_time_->IncreaseTimeMs(1000);
   receive_time_->IncreaseTimeMs(800);
-  EXPECT_EQ(0, DelayedVideo(delay_ms, current_audio_delay_ms,
-                            &extra_audio_delay_ms, &total_video_delay_ms));
+  EXPECT_TRUE(DelayedStreams(0, delay_ms, current_audio_delay_ms,
+                             &extra_audio_delay_ms, &total_video_delay_ms));
   EXPECT_EQ(0, total_video_delay_ms);
   // The audio delay is not allowed to change more than the half of the required
   // change in delay.
@@ -242,8 +337,8 @@ TEST_F(StreamSynchronizationTest, AudioDelay) {
   current_audio_delay_ms = 170;
   send_time_->IncreaseTimeMs(1000);
   receive_time_->IncreaseTimeMs(800);
-  EXPECT_EQ(0, DelayedVideo(delay_ms, current_audio_delay_ms,
-                            &extra_audio_delay_ms, &total_video_delay_ms));
+  EXPECT_TRUE(DelayedStreams(0, delay_ms, current_audio_delay_ms,
+                             &extra_audio_delay_ms, &total_video_delay_ms));
   EXPECT_EQ(0, total_video_delay_ms);
   // Since we only can ask NetEQ for a certain amount of extra delay, and
   // we only measure the total NetEQ delay, we will ask for additional delay
@@ -257,8 +352,8 @@ TEST_F(StreamSynchronizationTest, AudioDelay) {
   current_audio_delay_ms = 250;
   send_time_->IncreaseTimeMs(1000);
   receive_time_->IncreaseTimeMs(800);
-  EXPECT_EQ(0, DelayedVideo(delay_ms, current_audio_delay_ms,
-                            &extra_audio_delay_ms, &total_video_delay_ms));
+  EXPECT_TRUE(DelayedStreams(0, delay_ms, current_audio_delay_ms,
+                             &extra_audio_delay_ms, &total_video_delay_ms));
   EXPECT_EQ(0, total_video_delay_ms);
   // The audio delay is not allowed to change more than the half of the required
   // change in delay.
@@ -274,11 +369,11 @@ TEST_F(StreamSynchronizationTest, BothDelayedVideoLater) {
   int extra_audio_delay_ms = 0;
   int total_video_delay_ms = 0;
 
-  EXPECT_EQ(0, DelayedAudioAndVideo(audio_delay_ms,
-                                    video_delay_ms,
-                                    current_audio_delay_ms,
-                                    &extra_audio_delay_ms,
-                                    &total_video_delay_ms));
+  EXPECT_TRUE(DelayedStreams(audio_delay_ms,
+                             video_delay_ms,
+                             current_audio_delay_ms,
+                             &extra_audio_delay_ms,
+                             &total_video_delay_ms));
   EXPECT_EQ(0, total_video_delay_ms);
   // The audio delay is not allowed to change more than this in 1 second.
   EXPECT_EQ(kMaxAudioDiffMs, extra_audio_delay_ms);
@@ -287,11 +382,11 @@ TEST_F(StreamSynchronizationTest, BothDelayedVideoLater) {
 
   send_time_->IncreaseTimeMs(1000);
   receive_time_->IncreaseTimeMs(800);
-  EXPECT_EQ(0, DelayedAudioAndVideo(audio_delay_ms,
-                                    video_delay_ms,
-                                    current_audio_delay_ms,
-                                    &extra_audio_delay_ms,
-                                    &total_video_delay_ms));
+  EXPECT_TRUE(DelayedStreams(audio_delay_ms,
+                             video_delay_ms,
+                             current_audio_delay_ms,
+                             &extra_audio_delay_ms,
+                             &total_video_delay_ms));
   EXPECT_EQ(0, total_video_delay_ms);
   // The audio delay is not allowed to change more than the half of the required
   // change in delay.
@@ -303,11 +398,11 @@ TEST_F(StreamSynchronizationTest, BothDelayedVideoLater) {
 
   send_time_->IncreaseTimeMs(1000);
   receive_time_->IncreaseTimeMs(800);
-  EXPECT_EQ(0, DelayedAudioAndVideo(audio_delay_ms,
-                                    video_delay_ms,
-                                    current_audio_delay_ms,
-                                    &extra_audio_delay_ms,
-                                    &total_video_delay_ms));
+  EXPECT_TRUE(DelayedStreams(audio_delay_ms,
+                             video_delay_ms,
+                             current_audio_delay_ms,
+                             &extra_audio_delay_ms,
+                             &total_video_delay_ms));
   EXPECT_EQ(0, total_video_delay_ms);
   // The audio delay is not allowed to change more than the half of the required
   // change in delay.
@@ -320,11 +415,11 @@ TEST_F(StreamSynchronizationTest, BothDelayedVideoLater) {
   current_audio_delay_ms = 170;
   send_time_->IncreaseTimeMs(1000);
   receive_time_->IncreaseTimeMs(800);
-  EXPECT_EQ(0, DelayedAudioAndVideo(audio_delay_ms,
-                                    video_delay_ms,
-                                    current_audio_delay_ms,
-                                    &extra_audio_delay_ms,
-                                    &total_video_delay_ms));
+  EXPECT_TRUE(DelayedStreams(audio_delay_ms,
+                             video_delay_ms,
+                             current_audio_delay_ms,
+                             &extra_audio_delay_ms,
+                             &total_video_delay_ms));
   EXPECT_EQ(0, total_video_delay_ms);
   // Since we only can ask NetEQ for a certain amount of extra delay, and
   // we only measure the total NetEQ delay, we will ask for additional delay
@@ -338,11 +433,11 @@ TEST_F(StreamSynchronizationTest, BothDelayedVideoLater) {
   current_audio_delay_ms = 250;
   send_time_->IncreaseTimeMs(1000);
   receive_time_->IncreaseTimeMs(800);
-  EXPECT_EQ(0, DelayedAudioAndVideo(audio_delay_ms,
-                                    video_delay_ms,
-                                    current_audio_delay_ms,
-                                    &extra_audio_delay_ms,
-                                    &total_video_delay_ms));
+  EXPECT_TRUE(DelayedStreams(audio_delay_ms,
+                             video_delay_ms,
+                             current_audio_delay_ms,
+                             &extra_audio_delay_ms,
+                             &total_video_delay_ms));
   EXPECT_EQ(0, total_video_delay_ms);
   // The audio delay is not allowed to change more than the half of the required
   // change in delay.
@@ -352,78 +447,164 @@ TEST_F(StreamSynchronizationTest, BothDelayedVideoLater) {
 }
 
 TEST_F(StreamSynchronizationTest, BothDelayedAudioLater) {
-  int current_audio_delay_ms = 0;
-  int audio_delay_ms = 300;
-  int video_delay_ms = 100;
-  int extra_audio_delay_ms = 0;
-  int total_video_delay_ms = 0;
+  BothDelayedAudioLaterTest();
+}
 
-  EXPECT_EQ(0, DelayedAudioAndVideo(audio_delay_ms,
-                                    video_delay_ms,
-                                    current_audio_delay_ms,
-                                    &extra_audio_delay_ms,
-                                    &total_video_delay_ms));
-  EXPECT_EQ(kMaxVideoDiffMs, total_video_delay_ms);
-  EXPECT_EQ(0, extra_audio_delay_ms);
-  current_audio_delay_ms = extra_audio_delay_ms;
+TEST_F(StreamSynchronizationTest, BothDelayedAudioClockDrift) {
+  audio_clock_drift_ = 1.05;
+  BothDelayedAudioLaterTest();
+}
 
-  send_time_->IncreaseTimeMs(1000);
-  receive_time_->IncreaseTimeMs(1000 - std::max(audio_delay_ms,
-                                                video_delay_ms));
-  // Simulate 0 minimum delay in the VCM.
-  total_video_delay_ms = 0;
-  EXPECT_EQ(0, DelayedAudioAndVideo(audio_delay_ms,
-                                    video_delay_ms,
-                                    current_audio_delay_ms,
-                                    &extra_audio_delay_ms,
-                                    &total_video_delay_ms));
-  EXPECT_EQ(2 * kMaxVideoDiffMs, total_video_delay_ms);
-  EXPECT_EQ(0, extra_audio_delay_ms);
-  current_audio_delay_ms = extra_audio_delay_ms;
+TEST_F(StreamSynchronizationTest, BothDelayedVideoClockDrift) {
+  video_clock_drift_ = 1.05;
+  BothDelayedAudioLaterTest();
+}
 
-  send_time_->IncreaseTimeMs(1000);
-  receive_time_->IncreaseTimeMs(1000 - std::max(audio_delay_ms,
-                                                video_delay_ms));
-  // Simulate 0 minimum delay in the VCM.
-  total_video_delay_ms = 0;
-  EXPECT_EQ(0, DelayedAudioAndVideo(audio_delay_ms,
-                                    video_delay_ms,
-                                    current_audio_delay_ms,
-                                    &extra_audio_delay_ms,
-                                    &total_video_delay_ms));
-  EXPECT_EQ(audio_delay_ms - video_delay_ms, total_video_delay_ms);
-  EXPECT_EQ(0, extra_audio_delay_ms);
+TEST(WrapAroundTests, NoWrap) {
+  EXPECT_EQ(0, synchronization::CheckForWrapArounds(0xFFFFFFFF, 0xFFFFFFFE));
+  EXPECT_EQ(0, synchronization::CheckForWrapArounds(1, 0));
+  EXPECT_EQ(0, synchronization::CheckForWrapArounds(0x00010000, 0x0000FFFF));
+}
 
-  // Simulate that NetEQ introduces some audio delay.
-  current_audio_delay_ms = 50;
-  send_time_->IncreaseTimeMs(1000);
-  receive_time_->IncreaseTimeMs(1000 - std::max(audio_delay_ms,
-                                                video_delay_ms));
-  // Simulate 0 minimum delay in the VCM.
-  total_video_delay_ms = 0;
-  EXPECT_EQ(0, DelayedAudioAndVideo(audio_delay_ms,
-                                    video_delay_ms,
-                                    current_audio_delay_ms,
-                                    &extra_audio_delay_ms,
-                                    &total_video_delay_ms));
-  EXPECT_EQ(audio_delay_ms - video_delay_ms + current_audio_delay_ms,
-            total_video_delay_ms);
-  EXPECT_EQ(0, extra_audio_delay_ms);
+TEST(WrapAroundTests, ForwardWrap) {
+  EXPECT_EQ(1, synchronization::CheckForWrapArounds(0, 0xFFFFFFFF));
+  EXPECT_EQ(1, synchronization::CheckForWrapArounds(0, 0xFFFF0000));
+  EXPECT_EQ(1, synchronization::CheckForWrapArounds(0x0000FFFF, 0xFFFFFFFF));
+  EXPECT_EQ(1, synchronization::CheckForWrapArounds(0x0000FFFF, 0xFFFF0000));
+}
 
-  // Simulate that NetEQ reduces its delay.
-  current_audio_delay_ms = 10;
-  send_time_->IncreaseTimeMs(1000);
-  receive_time_->IncreaseTimeMs(1000 - std::max(audio_delay_ms,
-                                                video_delay_ms));
-  // Simulate 0 minimum delay in the VCM.
-  total_video_delay_ms = 0;
-  EXPECT_EQ(0, DelayedAudioAndVideo(audio_delay_ms,
-                                    video_delay_ms,
-                                    current_audio_delay_ms,
-                                    &extra_audio_delay_ms,
-                                    &total_video_delay_ms));
-  EXPECT_EQ(audio_delay_ms - video_delay_ms + current_audio_delay_ms,
-            total_video_delay_ms);
-  EXPECT_EQ(0, extra_audio_delay_ms);
+TEST(WrapAroundTests, BackwardWrap) {
+  EXPECT_EQ(-1, synchronization::CheckForWrapArounds(0xFFFFFFFF, 0));
+  EXPECT_EQ(-1, synchronization::CheckForWrapArounds(0xFFFF0000, 0));
+  EXPECT_EQ(-1, synchronization::CheckForWrapArounds(0xFFFFFFFF, 0x0000FFFF));
+  EXPECT_EQ(-1, synchronization::CheckForWrapArounds(0xFFFF0000, 0x0000FFFF));
+}
+
+TEST(WrapAroundTests, OldRtcpWrapped) {
+  synchronization::RtcpList rtcp;
+  uint32_t ntp_sec = 0;
+  uint32_t ntp_frac = 0;
+  uint32_t timestamp = 0;
+  const uint32_t kOneMsInNtpFrac = 4294967;
+  const uint32_t kTimestampTicksPerMs = 90;
+  rtcp.push_front(synchronization::RtcpMeasurement(ntp_sec, ntp_frac,
+                                                   timestamp));
+  ntp_frac += kOneMsInNtpFrac;
+  timestamp -= kTimestampTicksPerMs;
+  rtcp.push_front(synchronization::RtcpMeasurement(ntp_sec, ntp_frac,
+                                                   timestamp));
+  ntp_frac += kOneMsInNtpFrac;
+  timestamp -= kTimestampTicksPerMs;
+  int64_t timestamp_in_ms = -1;
+  // This expected to fail since it's highly unlikely that the older RTCP
+  // has a much smaller RTP timestamp than the newer.
+  EXPECT_FALSE(synchronization::RtpToNtpMs(timestamp, rtcp, &timestamp_in_ms));
+}
+
+TEST(WrapAroundTests, NewRtcpWrapped) {
+  synchronization::RtcpList rtcp;
+  uint32_t ntp_sec = 0;
+  uint32_t ntp_frac = 0;
+  uint32_t timestamp = 0xFFFFFFFF;
+  const uint32_t kOneMsInNtpFrac = 4294967;
+  const uint32_t kTimestampTicksPerMs = 90;
+  rtcp.push_front(synchronization::RtcpMeasurement(ntp_sec, ntp_frac,
+                                                         timestamp));
+  ntp_frac += kOneMsInNtpFrac;
+  timestamp += kTimestampTicksPerMs;
+  rtcp.push_front(synchronization::RtcpMeasurement(ntp_sec, ntp_frac,
+                                                         timestamp));
+  int64_t timestamp_in_ms = -1;
+  EXPECT_TRUE(synchronization::RtpToNtpMs(rtcp.back().rtp_timestamp, rtcp,
+                                          &timestamp_in_ms));
+  // Since this RTP packet has the same timestamp as the RTCP packet constructed
+  // at time 0 it should be mapped to 0 as well.
+  EXPECT_EQ(0, timestamp_in_ms);
+}
+
+TEST(WrapAroundTests, RtpWrapped) {
+  const uint32_t kOneMsInNtpFrac = 4294967;
+  const uint32_t kTimestampTicksPerMs = 90;
+  synchronization::RtcpList rtcp;
+  uint32_t ntp_sec = 0;
+  uint32_t ntp_frac = 0;
+  uint32_t timestamp = 0xFFFFFFFF - 2 * kTimestampTicksPerMs;
+  rtcp.push_front(synchronization::RtcpMeasurement(ntp_sec, ntp_frac,
+                                                   timestamp));
+  ntp_frac += kOneMsInNtpFrac;
+  timestamp += kTimestampTicksPerMs;
+  rtcp.push_front(synchronization::RtcpMeasurement(ntp_sec, ntp_frac,
+                                                   timestamp));
+  ntp_frac += kOneMsInNtpFrac;
+  timestamp += kTimestampTicksPerMs;
+  int64_t timestamp_in_ms = -1;
+  EXPECT_TRUE(synchronization::RtpToNtpMs(timestamp, rtcp,
+                                          &timestamp_in_ms));
+  // Since this RTP packet has the same timestamp as the RTCP packet constructed
+  // at time 0 it should be mapped to 0 as well.
+  EXPECT_EQ(2, timestamp_in_ms);
+}
+
+TEST(WrapAroundTests, OldRtp_RtcpsWrapped) {
+  const uint32_t kOneMsInNtpFrac = 4294967;
+  const uint32_t kTimestampTicksPerMs = 90;
+  synchronization::RtcpList rtcp;
+  uint32_t ntp_sec = 0;
+  uint32_t ntp_frac = 0;
+  uint32_t timestamp = 0;
+  rtcp.push_front(synchronization::RtcpMeasurement(ntp_sec, ntp_frac,
+                                                   timestamp));
+  ntp_frac += kOneMsInNtpFrac;
+  timestamp += kTimestampTicksPerMs;
+  rtcp.push_front(synchronization::RtcpMeasurement(ntp_sec, ntp_frac,
+                                                   timestamp));
+  ntp_frac += kOneMsInNtpFrac;
+  timestamp -= 2*kTimestampTicksPerMs;
+  int64_t timestamp_in_ms = -1;
+  EXPECT_FALSE(synchronization::RtpToNtpMs(timestamp, rtcp,
+                                           &timestamp_in_ms));
+}
+
+TEST(WrapAroundTests, OldRtp_NewRtcpWrapped) {
+  const uint32_t kOneMsInNtpFrac = 4294967;
+  const uint32_t kTimestampTicksPerMs = 90;
+  synchronization::RtcpList rtcp;
+  uint32_t ntp_sec = 0;
+  uint32_t ntp_frac = 0;
+  uint32_t timestamp = 0xFFFFFFFF;
+  rtcp.push_front(synchronization::RtcpMeasurement(ntp_sec, ntp_frac,
+                                                   timestamp));
+  ntp_frac += kOneMsInNtpFrac;
+  timestamp += kTimestampTicksPerMs;
+  rtcp.push_front(synchronization::RtcpMeasurement(ntp_sec, ntp_frac,
+                                                   timestamp));
+  ntp_frac += kOneMsInNtpFrac;
+  timestamp -= kTimestampTicksPerMs;
+  int64_t timestamp_in_ms = -1;
+  EXPECT_TRUE(synchronization::RtpToNtpMs(timestamp, rtcp,
+                                          &timestamp_in_ms));
+  // Constructed at the same time as the first RTCP and should therefore be
+  // mapped to zero.
+  EXPECT_EQ(0, timestamp_in_ms);
+}
+
+TEST(WrapAroundTests, OldRtp_OldRtcpWrapped) {
+  const uint32_t kOneMsInNtpFrac = 4294967;
+  const uint32_t kTimestampTicksPerMs = 90;
+  synchronization::RtcpList rtcp;
+  uint32_t ntp_sec = 0;
+  uint32_t ntp_frac = 0;
+  uint32_t timestamp = 0;
+  rtcp.push_front(synchronization::RtcpMeasurement(ntp_sec, ntp_frac,
+                                                   timestamp));
+  ntp_frac += kOneMsInNtpFrac;
+  timestamp -= kTimestampTicksPerMs;
+  rtcp.push_front(synchronization::RtcpMeasurement(ntp_sec, ntp_frac,
+                                                   timestamp));
+  ntp_frac += kOneMsInNtpFrac;
+  timestamp += 2*kTimestampTicksPerMs;
+  int64_t timestamp_in_ms = -1;
+  EXPECT_FALSE(synchronization::RtpToNtpMs(timestamp, rtcp,
+                                           &timestamp_in_ms));
 }
 }  // namespace webrtc

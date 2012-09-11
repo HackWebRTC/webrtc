@@ -63,6 +63,8 @@ class MockRtpRtcp : public RtpRtcp {
                WebRtc_Word32(const RTPExtensionType type));
   MOCK_CONST_METHOD0(RemoteTimestamp,
       WebRtc_UWord32());
+  MOCK_CONST_METHOD0(LocalTimeOfRemoteTimeStamp,
+        int64_t());
   MOCK_CONST_METHOD1(EstimatedRemoteTimeStamp,
       WebRtc_Word32(WebRtc_UWord32& timestamp));
   MOCK_CONST_METHOD0(RemoteSSRC,
@@ -169,8 +171,12 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_CONST_METHOD2(RemoteCNAME,
       WebRtc_Word32(const WebRtc_UWord32 remoteSSRC,
                     char cName[RTCP_CNAME_SIZE]));
-  MOCK_CONST_METHOD4(RemoteNTP,
-      WebRtc_Word32(WebRtc_UWord32 *ReceivedNTPsecs, WebRtc_UWord32 *ReceivedNTPfrac, WebRtc_UWord32 *RTCPArrivalTimeSecs, WebRtc_UWord32 *RTCPArrivalTimeFrac));
+  MOCK_CONST_METHOD5(RemoteNTP,
+      WebRtc_Word32(WebRtc_UWord32 *ReceivedNTPsecs,
+                    WebRtc_UWord32 *ReceivedNTPfrac,
+                    WebRtc_UWord32 *RTCPArrivalTimeSecs,
+                    WebRtc_UWord32 *RTCPArrivalTimeFrac,
+                    WebRtc_UWord32 *rtcp_timestamp));
   MOCK_METHOD2(AddMixedCNAME,
       WebRtc_Word32(const WebRtc_UWord32 SSRC,
                     const char cName[RTCP_CNAME_SIZE]));

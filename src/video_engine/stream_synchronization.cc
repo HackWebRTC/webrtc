@@ -9,15 +9,126 @@
  */
 
 #include "video_engine/stream_synchronization.h"
+
+#include <assert.h>
+#include <algorithm>
+#include <cmath>
+
 #include "system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
-enum { kMaxVideoDiffMs = 80 };
-enum { kMaxAudioDiffMs = 80 };
-enum { kMaxDelay = 1500 };
+const int kMaxVideoDiffMs = 80;
+const int kMaxAudioDiffMs = 80;
+const int kMaxDelay = 1500;
 
-const float FracMS = 4.294967296E6f;
+const double kNtpFracPerMs = 4.294967296E6;
+
+namespace synchronization {
+
+RtcpMeasurement::RtcpMeasurement()
+    : ntp_secs(0), ntp_frac(0), rtp_timestamp(0) {}
+
+RtcpMeasurement::RtcpMeasurement(uint32_t ntp_secs, uint32_t ntp_frac,
+                                 uint32_t timestamp)
+    : ntp_secs(ntp_secs), ntp_frac(ntp_frac), rtp_timestamp(timestamp) {}
+
+// Calculates the RTP timestamp frequency from two pairs of NTP and RTP
+// timestamps.
+bool CalculateFrequency(
+    int64_t rtcp_ntp_ms1,
+    uint32_t rtp_timestamp1,
+    int64_t rtcp_ntp_ms2,
+    uint32_t rtp_timestamp2,
+    double* frequency_khz) {
+  if (rtcp_ntp_ms1 == rtcp_ntp_ms2) {
+    return false;
+  }
+  assert(rtcp_ntp_ms1 > rtcp_ntp_ms2);
+  *frequency_khz = static_cast<double>(rtp_timestamp1 - rtp_timestamp2) /
+      static_cast<double>(rtcp_ntp_ms1 - rtcp_ntp_ms2);
+  return true;
+}
+
+// Detects if there has been a wraparound between |old_timestamp| and
+// |new_timestamp|, and compensates by adding 2^32 if that is the case.
+bool CompensateForWrapAround(uint32_t new_timestamp,
+                             uint32_t old_timestamp,
+                             int64_t* compensated_timestamp) {
+  assert(compensated_timestamp);
+  int64_t wraps = synchronization::CheckForWrapArounds(new_timestamp,
+                                                       old_timestamp);
+  if (wraps < 0) {
+    // Reordering, don't use this packet.
+    return false;
+  }
+  *compensated_timestamp = new_timestamp + (wraps << 32);
+  return true;
+}
+
+// Converts an NTP timestamp to a millisecond timestamp.
+int64_t NtpToMs(uint32_t ntp_secs, uint32_t ntp_frac) {
+  const double ntp_frac_ms = static_cast<double>(ntp_frac) / kNtpFracPerMs;
+  return ntp_secs * 1000 + ntp_frac_ms + 0.5;
+}
+
+// Converts |rtp_timestamp| to the NTP time base using the NTP and RTP timestamp
+// pairs in |rtcp|. The converted timestamp is returned in
+// |rtp_timestamp_in_ms|. This function compensates for wrap arounds in RTP
+// timestamps and returns false if it can't do the conversion due to reordering.
+bool RtpToNtpMs(int64_t rtp_timestamp,
+                const synchronization::RtcpList& rtcp,
+                int64_t* rtp_timestamp_in_ms) {
+  assert(rtcp.size() == 2);
+  int64_t rtcp_ntp_ms_new = synchronization::NtpToMs(rtcp.front().ntp_secs,
+                                                     rtcp.front().ntp_frac);
+  int64_t rtcp_ntp_ms_old = synchronization::NtpToMs(rtcp.back().ntp_secs,
+                                                     rtcp.back().ntp_frac);
+  int64_t rtcp_timestamp_new = rtcp.front().rtp_timestamp;
+  int64_t rtcp_timestamp_old = rtcp.back().rtp_timestamp;
+  if (!CompensateForWrapAround(rtcp_timestamp_new,
+                               rtcp_timestamp_old,
+                               &rtcp_timestamp_new)) {
+    return false;
+  }
+  double freq_khz;
+  if (!CalculateFrequency(rtcp_ntp_ms_new,
+                          rtcp_timestamp_new,
+                          rtcp_ntp_ms_old,
+                          rtcp_timestamp_old,
+                          &freq_khz)) {
+    return false;
+  }
+  double offset = rtcp_timestamp_new - freq_khz * rtcp_ntp_ms_new;
+  int64_t rtp_timestamp_unwrapped;
+  if (!CompensateForWrapAround(rtp_timestamp, rtcp_timestamp_old,
+                               &rtp_timestamp_unwrapped)) {
+    return false;
+  }
+  double rtp_timestamp_ntp_ms = (static_cast<double>(rtp_timestamp_unwrapped) -
+      offset) / freq_khz + 0.5f;
+  assert(rtp_timestamp_ntp_ms >= 0);
+  *rtp_timestamp_in_ms = rtp_timestamp_ntp_ms;
+  return true;
+}
+
+int CheckForWrapArounds(uint32_t new_timestamp, uint32_t old_timestamp) {
+  if (new_timestamp < old_timestamp) {
+    // This difference should be less than -2^31 if we have had a wrap around
+    // (e.g. |new_timestamp| = 1, |rtcp_rtp_timestamp| = 2^32 - 1). Since it is
+    // cast to a int32_t, it should be positive.
+    if (static_cast<int32_t>(new_timestamp - old_timestamp) > 0) {
+      // Forward wrap around.
+      return 1;
+    }
+  } else if (static_cast<int32_t>(old_timestamp - new_timestamp) > 0) {
+    // This difference should be less than -2^31 if we have had a backward wrap
+    // around. Since it is cast to a int32_t, it should be positive.
+    return -1;
+  }
+  return 0;
+}
+}  // namespace synchronization
 
 struct ViESyncDelay {
   ViESyncDelay() {
@@ -45,41 +156,45 @@ StreamSynchronization::~StreamSynchronization() {
   delete channel_delay_;
 }
 
-int StreamSynchronization::ComputeDelays(const Measurements& audio,
-                                         int current_audio_delay_ms,
-                                         int* extra_audio_delay_ms,
-                                         const Measurements& video,
-                                         int* total_video_delay_target_ms) {
-  // ReceivedNTPxxx is NTP at sender side when sent.
-  // RTCPArrivalTimexxx is NTP at receiver side when received.
-  // can't use ConvertNTPTimeToMS since calculation can be
-  //  negative
-  int NTPdiff = (audio.received_ntp_secs - video.received_ntp_secs)
-                * 1000;  // ms
-  float ntp_diff_frac = audio.received_ntp_frac / FracMS -
-        video.received_ntp_frac / FracMS;
-  if (ntp_diff_frac > 0.0f)
-    NTPdiff += static_cast<int>(ntp_diff_frac + 0.5f);
-  else
-    NTPdiff += static_cast<int>(ntp_diff_frac - 0.5f);
-
-  int RTCPdiff = (audio.rtcp_arrivaltime_secs - video.rtcp_arrivaltime_secs)
-                 * 1000;  // ms
-  float rtcp_diff_frac = audio.rtcp_arrivaltime_frac / FracMS -
-        video.rtcp_arrivaltime_frac / FracMS;
-  if (rtcp_diff_frac > 0.0f)
-    RTCPdiff += static_cast<int>(rtcp_diff_frac + 0.5f);
-  else
-    RTCPdiff += static_cast<int>(rtcp_diff_frac - 0.5f);
-
-  int diff = NTPdiff - RTCPdiff;
-  // if diff is + video is behind
-  if (diff < -1000 || diff > 1000) {
-    // unresonable ignore value.
-    return -1;
+bool StreamSynchronization::ComputeRelativeDelay(
+    const Measurements& audio_measurement,
+    const Measurements& video_measurement,
+    int* relative_delay_ms) {
+  assert(relative_delay_ms);
+  if (audio_measurement.rtcp.size() < 2 || video_measurement.rtcp.size() < 2) {
+    // We need two RTCP SR reports per stream to do synchronization.
+    return false;
   }
-  channel_delay_->network_delay = diff;
+  int64_t audio_last_capture_time_ms;
+  if (!synchronization::RtpToNtpMs(audio_measurement.latest_timestamp,
+                                   audio_measurement.rtcp,
+                                   &audio_last_capture_time_ms)) {
+    return false;
+  }
+  int64_t video_last_capture_time_ms;
+  if (!synchronization::RtpToNtpMs(video_measurement.latest_timestamp,
+                                   video_measurement.rtcp,
+                                   &video_last_capture_time_ms)) {
+    return false;
+  }
+  if (video_last_capture_time_ms < 0) {
+    return false;
+  }
+  // Positive diff means that video_measurement is behind audio_measurement.
+  *relative_delay_ms = video_measurement.latest_receive_time_ms -
+      audio_measurement.latest_receive_time_ms -
+      (video_last_capture_time_ms - audio_last_capture_time_ms);
+  if (*relative_delay_ms > 1000 || *relative_delay_ms < -1000) {
+    return false;
+  }
+  return true;
+}
 
+bool StreamSynchronization::ComputeDelays(int relative_delay_ms,
+                                          int current_audio_delay_ms,
+                                          int* extra_audio_delay_ms,
+                                          int* total_video_delay_target_ms) {
+  assert(extra_audio_delay_ms && total_video_delay_target_ms);
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, video_channel_id_,
                "Audio delay is: %d for voice channel: %d",
                current_audio_delay_ms, audio_channel_id_);
@@ -88,11 +203,12 @@ int StreamSynchronization::ComputeDelays(const Measurements& audio,
                channel_delay_->network_delay, audio_channel_id_);
   // Calculate the difference between the lowest possible video delay and
   // the current audio delay.
-  int current_diff_ms = *total_video_delay_target_ms - current_audio_delay_ms +
-      channel_delay_->network_delay;
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, video_channel_id_,
                "Current diff is: %d for audio channel: %d",
-               current_diff_ms, audio_channel_id_);
+               relative_delay_ms, audio_channel_id_);
+
+  int current_diff_ms = *total_video_delay_target_ms - current_audio_delay_ms +
+      relative_delay_ms;
 
   int video_delay_ms = 0;
   if (current_diff_ms > 0) {
@@ -235,6 +351,6 @@ int StreamSynchronization::ComputeDelays(const Measurements& audio,
   *total_video_delay_target_ms =
       (*total_video_delay_target_ms  >  video_delay_ms) ?
       *total_video_delay_target_ms : video_delay_ms;
-  return 0;
+  return true;
 }
 }  // namespace webrtc

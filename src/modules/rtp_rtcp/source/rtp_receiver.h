@@ -92,6 +92,7 @@ public:
 
     // last received
     virtual WebRtc_UWord32 TimeStamp() const;
+    int32_t LastReceivedTimeMs() const;
     virtual WebRtc_UWord16 SequenceNumber() const;
 
     WebRtc_Word32 EstimatedRemoteTimeStamp(WebRtc_UWord32& timestamp) const;
@@ -227,6 +228,7 @@ private:
     WebRtc_UWord32            _jitterQ4TransmissionTimeOffset;
 
     WebRtc_UWord32            _localTimeLastReceivedTimestamp;
+    int64_t                   _lastReceivedFrameTimeMs;
     WebRtc_UWord32            _lastReceivedTimestamp;
     WebRtc_UWord16            _lastReceivedSequenceNumber;
     WebRtc_Word32             _lastReceivedTransmissionTimeOffset;
