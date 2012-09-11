@@ -23,6 +23,9 @@ RtpFormatVp8TestHelper::RtpFormatVp8TestHelper(const RTPVideoHeaderVP8* hdr)
       data_ptr_(NULL),
       fragmentation_(NULL),
       hdr_info_(hdr),
+      payload_start_(0),
+      payload_size_(0),
+      buffer_size_(0),
       sloppy_partitioning_(false),
       inited_(false) {}
 
