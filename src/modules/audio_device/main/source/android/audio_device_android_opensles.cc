@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <time.h>
+#include <sys/resource.h>
+#include <sys/syscall.h>
 #include <sys/time.h>
+#include <time.h>
 
 #include "audio_device_utility.h"
 #include "audio_device_android_opensles.h"
@@ -56,8 +58,6 @@ AudioDeviceAndroidOpenSLES::AudioDeviceAndroidOpenSLES(const WebRtc_Word32 id) :
     _ptrThreadRec(NULL),
     _recThreadID(0),
     _playQueueSeq(0),
-    _recCurrentSeq(0),
-    _recBufferTotalSize(0),
     _recordingDeviceIsSpecified(false),
     _playoutDeviceIsSpecified(false),
     _initialized(false),
@@ -79,14 +79,11 @@ AudioDeviceAndroidOpenSLES::AudioDeviceAndroidOpenSLES(const WebRtc_Word32 id) :
     _samplingRateOut(SL_SAMPLINGRATE_16),
     _maxSpeakerVolume(0),
     _minSpeakerVolume(0),
-    _loudSpeakerOn(false) {
+    _loudSpeakerOn(false),
+    is_thread_priority_set_(false) {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, id, "%s created",
                  __FUNCTION__);
     memset(_playQueueBuffer, 0, sizeof(_playQueueBuffer));
-    memset(_recQueueBuffer, 0, sizeof(_recQueueBuffer));
-    memset(_recBuffer, 0, sizeof(_recBuffer));
-    memset(_recLength, 0, sizeof(_recLength));
-    memset(_recSeqNumber, 0, sizeof(_recSeqNumber));
 }
 
 AudioDeviceAndroidOpenSLES::~AudioDeviceAndroidOpenSLES() {
@@ -1068,9 +1065,16 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::StartRecording() {
         return -1;
     }
 
-    // Reset recording buffer
-    memset(_recQueueBuffer, 0, sizeof(_recQueueBuffer)); // empty the queue
-    _recQueueSeq = 0;
+    // Make sure the queues are empty.
+    assert(rec_callback_queue_.empty());
+    assert(rec_available_queue_.empty());
+    assert(rec_worker_queue_.empty());
+
+    // Reset recording buffer and put them to the available buffer queue.
+    memset(rec_buffer_, 0, sizeof(rec_buffer_)); // empty the queue
+    for (int i = 0; i < N_REC_BUFFERS; ++i) {
+      rec_available_queue_.push(rec_buffer_[i]);
+    }
 
     const char* threadName = "webrtc_opensles_audio_capture_thread";
     _ptrThreadRec = ThreadWrapper::CreateThread(RecThreadFunc, this,
@@ -1093,31 +1097,29 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::StartRecording() {
     }
     _recThreadID = threadID;
     _recThreadIsInitialized = true;
-    memset(_recBuffer, 0, sizeof(_recBuffer));
-    memset(_recLength, 0, sizeof(_recLength));
-    memset(_recSeqNumber, 0, sizeof(_recSeqNumber));
-    _recCurrentSeq = 0;
-    _recBufferTotalSize = 0;
     _recWarning = 0;
     _recError = 0;
 
-    // Enqueue N_REC_QUEUE_BUFFERS -1 zero buffers to get the ball rolling
+    // Enqueue N_REC_QUEUE_BUFFERS-1 zero buffers to get the ball rolling
     // find out how it behaves when the sample rate is 44100
     WebRtc_Word32 res(-1);
     WebRtc_UWord32 nSample10ms = _adbSampleRate / 100;
-    for (int i = 0; i < (N_REC_QUEUE_BUFFERS - 1); i++) {
-        // We assign 10ms buffer to each queue, size given in bytes.
-        res = (*_slRecorderSimpleBufferQueue)->Enqueue(
-            _slRecorderSimpleBufferQueue,
-            (void*) _recQueueBuffer[_recQueueSeq],
-            2 * nSample10ms);
-        if (res != SL_RESULT_SUCCESS) {
-            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                         "  failed to Enqueue Empty Buffer to recorder");
-            return -1;
-        }
-        _recQueueSeq++;
+    for (int i = 0; i < (N_REC_QUEUE_BUFFERS - 1); ++i) {
+      int8_t* buf = rec_available_queue_.front();
+      rec_available_queue_.pop();
+      rec_callback_queue_.push(buf);
+      // We assign 10ms buffer to each queue, size given in bytes.
+      res = (*_slRecorderSimpleBufferQueue)->Enqueue(
+          _slRecorderSimpleBufferQueue,
+          buf,
+          2 * nSample10ms);
+      if (res != SL_RESULT_SUCCESS) {
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                     "  failed to Enqueue Empty Buffer to recorder");
+        return -1;
+      }
     }
+
     // Record the audio
     res = (*_slRecorderRecord)->SetRecordState(_slRecorderRecord,
                                                SL_RECORDSTATE_RECORDING);
@@ -1132,7 +1134,7 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::StartRecording() {
 }
 
 WebRtc_Word32 AudioDeviceAndroidOpenSLES::StopRecording() {
-
+  {
     CriticalSectionScoped lock(&_critSect);
 
     if (!_recIsInitialized) {
@@ -1140,54 +1142,64 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::StopRecording() {
                      "  Recording is not initialized");
         return 0;
     }
+  }
 
-    // Stop the recording thread
-    if (_ptrThreadRec != NULL)
-    {
-        WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
-                "Stopping capture thread");
-        bool res = _ptrThreadRec->Stop();
-        if (!res) {
-            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                                    "Failed to stop Capture thread ");
-        } else {
-            delete _ptrThreadRec;
-            _ptrThreadRec = NULL;
-            _recThreadIsInitialized = false;
-        }
+  // Stop the recording thread
+  if (_ptrThreadRec != NULL) {
+    bool res = _ptrThreadRec->Stop();
+    if (!res) {
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                   "Failed to stop Capture thread ");
+    } else {
+      delete _ptrThreadRec;
+      _ptrThreadRec = NULL;
+      _recThreadIsInitialized = false;
+    }
+  }
+
+  CriticalSectionScoped lock(&_critSect);
+  if ((_slRecorderRecord != NULL) && (_slRecorder != NULL)) {
+    // Record the audio
+    int res = (*_slRecorderRecord)->SetRecordState(_slRecorderRecord,
+                                                   SL_RECORDSTATE_STOPPED);
+    if (res != SL_RESULT_SUCCESS) {
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                   "  failed to stop recording");
+      return -1;
+    }
+    res = (*_slRecorderSimpleBufferQueue)->Clear(_slRecorderSimpleBufferQueue);
+    if (res != SL_RESULT_SUCCESS) {
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                   "  failed to clear recorder buffer queue");
+      return -1;
     }
 
-    if ((_slRecorderRecord != NULL) && (_slRecorder != NULL)) {
-        // Record the audio
-        WebRtc_Word32 res = (*_slRecorderRecord)->SetRecordState(
-            _slRecorderRecord,
-            SL_RECORDSTATE_STOPPED);
-        if (res != SL_RESULT_SUCCESS) {
-            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                         "  failed to stop recording");
-            return -1;
-        }
-        res = (*_slRecorderSimpleBufferQueue)->Clear(
-              _slRecorderSimpleBufferQueue);
-        if (res != SL_RESULT_SUCCESS) {
-            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                         "  failed to clear recorder buffer queue");
-            return -1;
-        }
+    // Destroy the recorder object
+    (*_slRecorder)->Destroy(_slRecorder);
+    _slRecorder = NULL;
+    _slRecorderRecord = NULL;
+    _slRecorderRecord = NULL;
+  }
 
-        // Destroy the recorder object
-        (*_slRecorder)->Destroy(_slRecorder);
-        _slRecorder = NULL;
-        _slRecorderRecord = NULL;
-        _slRecorderRecord = NULL;
-    }
+  _recIsInitialized = false;
+  _recording = false;
+  _recWarning = 0;
+  _recError = 0;
+  is_thread_priority_set_ = false;
 
-    _recIsInitialized = false;
-    _recording = false;
-    _recWarning = 0;
-    _recError = 0;
-    _recQueueSeq = 0;
-    return 0;
+  // Clear the callback queue.
+  while(!rec_callback_queue_.empty())
+    rec_callback_queue_.pop();
+
+  // Clear the available buffer queue.
+  while(!rec_available_queue_.empty())
+    rec_available_queue_.pop();
+
+  // Clear the buffer queue.
+  while(!rec_worker_queue_.empty())
+    rec_worker_queue_.pop();
+
+  return 0;
 }
 
 bool AudioDeviceAndroidOpenSLES::RecordingIsInitialized() const {
@@ -1496,105 +1508,60 @@ void AudioDeviceAndroidOpenSLES::RecorderSimpleBufferQueueCallback(
 
 void AudioDeviceAndroidOpenSLES::RecorderSimpleBufferQueueCallbackHandler(
     SLAndroidSimpleBufferQueueItf queueItf) {
-    WebRtc_Word32 res;
-    //WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-    //"  RecorderSimpleBufferQueueCallbackHandler");
-    if (_recording) {
-        // Insert all data in temp buffer into recording buffers
-        // There is zero or one buffer partially full at any given time,
-        // all others are full or empty
-        // Full means filled with noSamp10ms samples.
+  if (_recording) {
+    const unsigned int samples_10_ms = _adbSampleRate / 100;
 
-        const unsigned int noSamp10ms = _adbSampleRate / 100;
-        //        WebRtc_UWord16 queuePos = 0;
-        //        WebRtc_UWord16 checkQueuePos = 0;
-        unsigned int dataPos = 0;
-        WebRtc_UWord16 bufPos = 0;
-        WebRtc_Word16 insertPos = -1;
-        unsigned int nCopy = 0; // Number of samples to copy
-        //        WebRtc_Word32 isData = 0;
-
-        while (dataPos < noSamp10ms)//REC_BUF_SIZE_IN_SAMPLES) //noSamp10ms)
-
-        {
-            // Loop over all recording buffers or until we find the partially
-            // full buffer
-            // First choice is to insert into partially full buffer,
-            // second choice is to insert into empty buffer
-            bufPos = 0;
-            insertPos = -1;
-            nCopy = 0;
-            while (bufPos < N_REC_BUFFERS)
-            {
-                if ((_recLength[bufPos] > 0) && (_recLength[bufPos]
-                                < noSamp10ms))
-                {
-                    // Found the partially full buffer
-                    insertPos = static_cast<WebRtc_Word16> (bufPos);
-                    bufPos = N_REC_BUFFERS; // Don't need to search more
-                }
-                else if ((-1 == insertPos) && (0 == _recLength[bufPos]))
-                {
-                    // Found an empty buffer
-                    insertPos = static_cast<WebRtc_Word16> (bufPos);
-                }
-                ++bufPos;
-            }
-
-            if (insertPos > -1)
-            {
-                // We found a non-full buffer, copy data from the buffer queue
-                // o recBuffer
-                unsigned int dataToCopy = noSamp10ms - dataPos;
-                unsigned int currentRecLen = _recLength[insertPos];
-                unsigned int roomInBuffer = noSamp10ms - currentRecLen;
-                nCopy = (dataToCopy < roomInBuffer ? dataToCopy : roomInBuffer);
-                memcpy(&_recBuffer[insertPos][currentRecLen],
-                        &_recQueueBuffer[_recQueueSeq][dataPos],
-                        nCopy * sizeof(short));
-                if (0 == currentRecLen)
-                {
-                    _recSeqNumber[insertPos] = _recCurrentSeq;
-                    ++_recCurrentSeq;
-                }
-                _recBufferTotalSize += nCopy;
-                // Has to be done last to avoid interrupt problems
-                // between threads
-                _recLength[insertPos] += nCopy;
-                dataPos += nCopy;
-            }
-            else
-            {
-                // Didn't find a non-full buffer
-                WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice,
-                        _id, "  Could not insert into recording buffer");
-                if (_recWarning > 0)
-                {
-                    WEBRTC_TRACE(kTraceWarning,
-                            kTraceAudioDevice, _id,
-                            "  Pending rec warning exists");
-                }
-                _recWarning = 1;
-                dataPos = noSamp10ms; // Don't try to insert more
-            }
+    // Move the buffer from the callback queue to buffer queue so that VoE can
+    // process the data in RecThreadProcess().
+    int8_t* buf = rec_callback_queue_.front();
+    rec_callback_queue_.pop();
+    int8_t* new_buf = NULL;
+    {
+      // |rec_available_queue_| and |rec_worker_queue_| are accessed by
+      // callback thread and recording thread, so we need a lock here to
+      // protect them.
+      CriticalSectionScoped lock(&_critSect);
+      if (!rec_available_queue_.empty()) {
+        // Put the data to buffer queue for VoE to process the data.
+        rec_worker_queue_.push(buf);
+        new_buf = rec_available_queue_.front();
+        rec_available_queue_.pop();
+        // TODO(xians): Remove the following test code once we are sure it
+        // won't happen anymore.
+        if (rec_worker_queue_.size() > 10) {
+          WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
+                       "Number of buffers pending in the recording thread"
+                       " has been increased to %d", rec_worker_queue_.size());
         }
+      } else {
+        // Didn't find an empty buffer, probably VoE is slowed on processing
+        // the data. Put the buffer back to the callback queue so that we can
+        // keep the recording rolling. But this means we are losing 10ms data.
+        // TODO(xians): Enlarge the buffer instead of dropping data?
+        new_buf = buf;
 
-        // clean the queue buffer
-        // Start with empty buffer
-        memset(_recQueueBuffer[_recQueueSeq], 0, 2 * REC_BUF_SIZE_IN_SAMPLES);
-        // write the empty buffer to the queue
-        res = (*_slRecorderSimpleBufferQueue)->Enqueue(
-              _slRecorderSimpleBufferQueue,
-              (void*) _recQueueBuffer[_recQueueSeq],
-              2 * noSamp10ms);
-        if (res != SL_RESULT_SUCCESS) {
-            return;
-        }
-        // update the rec queue seq
-        _recQueueSeq = (_recQueueSeq + 1) % N_REC_QUEUE_BUFFERS;
-        // wake up the recording thread
-        _timeEventRec.Set();
+        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
+                     "No available buffer slot in |rec_available_queue_|"
+                     " It will lose 10ms data");
+        _recWarning = 1;
+      }
     }
+
+    // Clear the new buffer and enqueue for new data.
+    memset(new_buf, 0, 2 * REC_BUF_SIZE_IN_SAMPLES);
+    rec_callback_queue_.push(new_buf);
+    if (SL_RESULT_SUCCESS != (*_slRecorderSimpleBufferQueue)->Enqueue(
+        _slRecorderSimpleBufferQueue,
+        static_cast<void*>(new_buf),
+        2 * samples_10_ms)) {
+      WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
+                   "Failed on Enqueue()");
+      _recWarning = 1;
+    }
+
+    // wake up the recording thread
+    _timeEventRec.Set();
+  }
 }
 
 void AudioDeviceAndroidOpenSLES::CheckErr(SLresult res) {
@@ -1616,15 +1583,12 @@ void AudioDeviceAndroidOpenSLES::UpdatePlayoutDelay(
 }
 
 void AudioDeviceAndroidOpenSLES::UpdateRecordingDelay() {
-    // // Android CCD asks for 10ms as the maximum warm input latency,
+    // Android CCD asks for 10ms as the maximum warm input latency,
     // so we simply add 10ms
-    _recordingDelay = 10;
-    const WebRtc_UWord32 noSamp10ms = _adbSampleRate / 100;
-    //    if (_recBufferTotalSize > noSamp10ms)
-    //    {
-    _recordingDelay += (N_REC_QUEUE_BUFFERS * noSamp10ms) / (_adbSampleRate
-            / 1000);
-    //    }
+    int max_warm_input_latency = 10;
+    int samples_per_queue_in_ms = 10;
+    _recordingDelay = max_warm_input_latency + ((rec_worker_queue_.size() +
+        N_REC_QUEUE_BUFFERS) * samples_per_queue_in_ms);
 }
 
 WebRtc_Word32 AudioDeviceAndroidOpenSLES::InitSampleRate() {
@@ -1652,72 +1616,54 @@ bool AudioDeviceAndroidOpenSLES::RecThreadFunc(void* pThis) {
 }
 
 bool AudioDeviceAndroidOpenSLES::RecThreadProcess() {
+  if (!is_thread_priority_set_) {
+    // TODO(xians): Move the thread setting code to thread_posix.cc. Figure out
+    // if we should raise the priority to THREAD_PRIORITY_URGENT_AUDIO(-19).
+    int nice_value = -16; // THREAD_PRIORITY_AUDIO in Android.
+    if (setpriority(PRIO_PROCESS, syscall(__NR_gettid), nice_value)) {
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
+                   "Failed to set nice value of thread to %d ", nice_value);
+    }
 
-    //    Lock();
-    // Wait for 100ms for the signal from device callback
-    // In case no callback comes in 100ms, we check the buffer anyway
-    _timeEventRec.Wait(100);
+    is_thread_priority_set_ = true;
+  }
 
-    int bufPos = 0;
-    unsigned int lowestSeq = 0;
-    int lowestSeqBufPos = 0;
-    bool foundBuf = true;
-    const unsigned int noSamp10ms = _adbSampleRate / 100;
+  // Wait for 12ms for the signal from device callback. In case no callback
+  // comes in 12ms, we check the buffer anyway.
+  _timeEventRec.Wait(12);
 
-    while (foundBuf)
+  const unsigned int noSamp10ms = _adbSampleRate / 100;
+  bool buffer_available = true;
+  while (buffer_available) {
     {
-        // Check if we have any buffer with data to insert into the
-        // Audio Device Buffer,
-        // and find the one with the lowest seq number
-        foundBuf = false;
+      CriticalSectionScoped lock(&_critSect);
+      if (rec_worker_queue_.empty())
+        break;
 
-        for (bufPos = 0; bufPos < N_REC_BUFFERS; ++bufPos)
-        {
-            if (noSamp10ms == _recLength[bufPos])
-            {
-                if (!foundBuf) {
-                    lowestSeq = _recSeqNumber[bufPos];
-                    lowestSeqBufPos = bufPos;
-                    foundBuf = true;
-                } else if (_recSeqNumber[bufPos] < lowestSeq)
-                {
-                    lowestSeq = _recSeqNumber[bufPos];
-                    lowestSeqBufPos = bufPos;
-                }
-            }
-        } // for
+      // Release the buffer from the |rec_worker_queue_| and pass the data to
+      // VoE.
+      int8_t* buf = rec_worker_queue_.front();
+      rec_worker_queue_.pop();
+      buffer_available = !rec_worker_queue_.empty();
+      // Set the recorded buffer.
+      _ptrAudioBuffer->SetRecordedBuffer(buf, noSamp10ms);
 
-        // Insert data into the Audio Device Buffer if found any
-        if (foundBuf)
-        {
-            UpdateRecordingDelay();
-            // Set the recorded buffer
-            _ptrAudioBuffer->SetRecordedBuffer(_recBuffer[lowestSeqBufPos],
-                                               noSamp10ms);
+      // Put the free buffer to |rec_available_queue_|.
+      rec_available_queue_.push(buf);
 
-            // Don't need to set the current mic level in ADB since we only
-            // support digital AGC,
-            // and besides we cannot get or set the iPhone mic level anyway.
+      // Update the recording delay.
+      UpdateRecordingDelay();
+    }
 
-            // Set VQE info, use clockdrift == 0
-            _ptrAudioBuffer->SetVQEData(_playoutDelay, _recordingDelay, 0);
+    // Set VQE info, use clockdrift == 0
+    _ptrAudioBuffer->SetVQEData(_playoutDelay, _recordingDelay, 0);
 
-            // Deliver recorded samples at specified sample rate, mic level
-            // etc. to the observer using callback
-            //UnLock();
-            _ptrAudioBuffer->DeliverRecordedData();
-            //Lock();
+    // Deliver recorded samples at specified sample rate, mic level
+    // etc. to the observer using callback.
+    _ptrAudioBuffer->DeliverRecordedData();
+  }
 
-            // Make buffer available
-            _recSeqNumber[lowestSeqBufPos] = 0;
-            _recBufferTotalSize -= _recLength[lowestSeqBufPos];
-            // Must be done last to avoid interrupt problems between threads
-            _recLength[lowestSeqBufPos] = 0;
-        }
-
-    } // while (foundBuf)
-    //UnLock();
-    return true;
+  return true;
 }
 
 } // namespace webrtc

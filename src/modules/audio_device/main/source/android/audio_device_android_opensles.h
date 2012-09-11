@@ -15,6 +15,7 @@
 #include "critical_section_wrapper.h"
 
 #include <jni.h> // For accessing AudioDeviceAndroid.java
+#include <queue>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -261,15 +262,6 @@ private:
     WebRtc_Word8 _playQueueBuffer[N_PLAY_QUEUE_BUFFERS][2
             * PLAY_BUF_SIZE_IN_SAMPLES];
     WebRtc_UWord32 _playQueueSeq;
-    // Recording buffer
-    WebRtc_Word8 _recQueueBuffer[N_REC_QUEUE_BUFFERS][2
-            * REC_BUF_SIZE_IN_SAMPLES];
-    WebRtc_Word8 _recBuffer[N_REC_BUFFERS][2*REC_BUF_SIZE_IN_SAMPLES];
-    WebRtc_UWord32 _recLength[N_REC_BUFFERS];
-    WebRtc_UWord32 _recSeqNumber[N_REC_BUFFERS];
-    WebRtc_UWord32 _recCurrentSeq;
-    // Current total size all data in buffers, used for delay estimate
-    WebRtc_UWord32 _recBufferTotalSize;
 
     // States
     bool _recordingDeviceIsSpecified;
@@ -303,6 +295,20 @@ private:
     WebRtc_UWord32 _maxSpeakerVolume; // The maximum speaker volume value
     WebRtc_UWord32 _minSpeakerVolume; // The minimum speaker volume value
     bool _loudSpeakerOn;
+
+    // Recording buffer used by the queues.
+    int8_t rec_buffer_[N_REC_BUFFERS][2 * REC_BUF_SIZE_IN_SAMPLES];
+
+    // Queues accessed by both callback thread and recording thread after
+    // recording has been started.
+    std::queue<int8_t*> rec_worker_queue_;
+    std::queue<int8_t*> rec_available_queue_;
+
+    // Queue accssed by only callback thread after recording has been started.
+    std::queue<int8_t*> rec_callback_queue_;
+
+    // Flag to protect setting the recording thread priority multiple times.
+    bool is_thread_priority_set_;
 };
 
 } // namespace webrtc
