@@ -121,6 +121,11 @@ def _main(_):
   if len(options.test) != 1 and options.gtest_filter:
     parser.error("--gtest_filter and multiple tests don't make sense together")
 
+  # If --build_dir is provided, prepend that path to the test name to make it a
+  # valid path when running on the build slaves using Chromium's runtest.py
+  if options.build_dir and 'cmdline' in options.test and len(args) == 1:
+    args[0] = os.path.join(options.build_dir, args[0])
+
   # Performs the deferred-argument black magic described in the usage.
   translated_args = map(lambda arg: arg.replace('+', '-'), args)
 
