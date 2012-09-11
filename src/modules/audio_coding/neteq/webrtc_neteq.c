@@ -56,21 +56,8 @@ int WebRtcNetEQ_strncpy(char *strDest, int numberOfElements,
  */
 
 /*****************************************
- * Info functions
+ * Error functions
  */
-
-int WebRtcNetEQ_GetVersion(char *version)
-{
-    char versionString[] = "3.3.0\0    ";
-    char endChar[] = " ";
-    int i = 0;
-    while ((versionString[i] != endChar[0]) && (i <= 20))
-    {
-        version[i] = versionString[i]; /* To avoid using strcpy */
-        i++;
-    }
-    return (0);
-}
 
 int WebRtcNetEQ_GetErrorCode(void *inst)
 {

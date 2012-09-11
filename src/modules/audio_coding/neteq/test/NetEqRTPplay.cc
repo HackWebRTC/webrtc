@@ -153,7 +153,6 @@ WebRtc_UWord32 simClock=0;
 int main(int argc, char* argv[])
 {
     std::vector<NETEQTEST_NetEQClass *> NetEQvector;
-    char   version[20];
 
     enum WebRtcNetEQDecoder usedCodec[kDecoderReservedEnd-1];
     int noOfCodecs;
@@ -187,9 +186,6 @@ int main(int argc, char* argv[])
     bool dummyRtp = false;
     bool noDecode = false;
 
-    /* get the version string */
-    WebRtcNetEQ_GetVersion(version);
-    printf("\n\nNetEq version: %s\n", version);
 #ifdef DEF_BUILD_DATE
     printf("Build time: %s\n", __BUILD_DATE);
 #endif
@@ -1578,7 +1574,6 @@ void free_coders(std::map<WebRtc_UWord8, decoderStruct> & decoders)
 
 int doAPItest() {
 
-    char   version[20];
     void *inst;
     enum WebRtcNetEQDecoder usedCodec;
     int NetEqBufferMaxPackets, BufferSizeInBytes;
@@ -1588,11 +1583,7 @@ int doAPItest() {
     int memorySize;
     int ok;
 
-    printf("API-test:\n");
-
-    /* get the version string */
-    WebRtcNetEQ_GetVersion(version);
-    printf("NetEq version: %s\n\n", version);
+    printf("API-test:\n\n");
 
     /* test that API functions return -1 if instance is NULL */
 #define CHECK_MINUS_ONE(x) {int errCode = x; if((errCode)!=-1){printf("\n API test failed at line %d: %s. Function did not return -1 as expected\n",__LINE__,#x); return(-1);}}

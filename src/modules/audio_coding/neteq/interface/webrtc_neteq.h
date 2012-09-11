@@ -163,7 +163,6 @@ typedef struct
 /* Info functions */
 
 #define WEBRTC_NETEQ_MAX_ERROR_NAME 40
-int WebRtcNetEQ_GetVersion(char *version);
 int WebRtcNetEQ_GetErrorCode(void *inst);
 int WebRtcNetEQ_GetErrorName(int errorCode, char *errorName, int maxStrLen);
 
