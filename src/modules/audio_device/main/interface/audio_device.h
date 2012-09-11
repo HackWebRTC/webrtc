@@ -11,7 +11,7 @@
 #ifndef MODULES_AUDIO_DEVICE_MAIN_INTERFACE_AUDIO_DEVICE_H_
 #define MODULES_AUDIO_DEVICE_MAIN_INTERFACE_AUDIO_DEVICE_H_
 
-#ifdef WEBRTC_ANDROID
+#ifdef HAVE_WEBRTC_VOICE
 // TODO(leozwang): It's a temporal workaround for binary delivery,
 // remove the following two lines once we can build from source
 // on Android.
