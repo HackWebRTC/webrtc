@@ -7,6 +7,16 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
+  'variables': {
+    'use_libjpeg_turbo%': '<(use_libjpeg_turbo)',
+    'conditions': [
+      ['use_libjpeg_turbo==1', {
+        'libjpeg_include_dir%': [ '<(DEPTH)/third_party/libjpeg_turbo', ],
+      }, {
+        'libjpeg_include_dir%': [ '<(DEPTH)/third_party/libjpeg', ],
+       }],
+    ],
+  },
   'includes': ['../build/common.gypi'],
   'targets': [
     {
