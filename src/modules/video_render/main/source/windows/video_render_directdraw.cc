@@ -375,21 +375,27 @@ int DirectDrawTextSettings::SetText(const char* text, int textLength,
 
 // this need to have a refcount dueto multiple HWNDS demux
 DirectDrawChannel::DirectDrawChannel(DirectDraw* directDraw,
-                                             VideoType blitVideoType,
-                                             VideoType incomingVideoType,
-                                             VideoType screenVideoType,
-                                             VideoRenderDirectDraw* owner) :
-
-    _critSect(CriticalSectionWrapper::CreateCriticalSection()), _refCount(1),
-            _width(0), _height(0), _numberOfStreams(0), _doubleBuffer(false),
-            _directDraw(directDraw), _offScreenSurface(NULL),
-            _offScreenSurfaceNext(NULL), _incomingVideoType(incomingVideoType),
-            _blitVideoType(blitVideoType),
-            _originalBlitVideoType(blitVideoType),
-            _screenVideoType(screenVideoType), _deliverInScreenType(false),
-            _owner(owner)
-{
-    _directDraw->AddRef();
+                                     VideoType blitVideoType,
+                                     VideoType incomingVideoType,
+                                     VideoType screenVideoType,
+                                     VideoRenderDirectDraw* owner)
+    : _critSect(CriticalSectionWrapper::CreateCriticalSection()),
+      _refCount(1),
+      _width(0),
+      _height(0),
+      _numberOfStreams(0),
+      _doubleBuffer(false),
+      _directDraw(directDraw),
+      _offScreenSurface(NULL),
+      _offScreenSurfaceNext(NULL),
+      _incomingVideoType(incomingVideoType),
+      _blitVideoType(blitVideoType),
+      _originalBlitVideoType(blitVideoType),
+      _screenVideoType(screenVideoType),
+      _deliverInScreenType(false),
+      _offScreenSurfaceUpdated(false),
+      _owner(owner) {
+  _directDraw->AddRef();
 }
 
 DirectDrawChannel::~DirectDrawChannel()

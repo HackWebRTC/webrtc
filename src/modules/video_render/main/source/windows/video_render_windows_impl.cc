@@ -24,16 +24,14 @@
 
 namespace webrtc {
 
-VideoRenderWindowsImpl::VideoRenderWindowsImpl(
-                                               const WebRtc_Word32 id,
-                                               const VideoRenderType videoRenderType,
-                                               void* window,
-                                               const bool fullscreen) :
-            _id(id),
-            _renderWindowsCritsect(
-                                   *CriticalSectionWrapper::CreateCriticalSection()),
-            _prtWindow(window), _fullscreen(fullscreen), _ptrRendererWin(NULL)
-{
+VideoRenderWindowsImpl::VideoRenderWindowsImpl(const WebRtc_Word32 id,
+    const VideoRenderType videoRenderType, void* window, const bool fullscreen)
+    : _id(id),
+      _renderWindowsCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
+      _prtWindow(window),
+      _fullscreen(fullscreen),
+      _renderMethod(kVideoRenderWinD3D9),
+      _ptrRendererWin(NULL) {
 }
 
 VideoRenderWindowsImpl::~VideoRenderWindowsImpl()
@@ -50,8 +48,6 @@ WebRtc_Word32 VideoRenderWindowsImpl::Init()
 {
     //LogOSAndHardwareDetails();
     CheckHWAcceleration();
-
-    _renderMethod = kVideoRenderWinD3D9;
 
     // Create the win renderer
     switch (_renderMethod)
@@ -505,8 +501,8 @@ void VideoRenderWindowsImpl::LogOSAndHardwareDetails()
     // Get the IDxDiagContainer object called "DxDiag_DisplayDevices".
     // This call may take some time while dxdiag gathers the info.
     if (FAILED(hr = m_pDxDiagRoot->GetChildContainer(L"DxDiag_DisplayDevices",
-                                                     &pContainer)))
-    {
+                                                     &pContainer)) ||
+        !pContainer) {
         m_pDxDiagRoot->Release();
         m_pDxDiagProvider->Release();
         if (coUninitializeIsRequired)
@@ -603,7 +599,8 @@ void VideoRenderWindowsImpl::LogOSAndHardwareDetails()
                  pDisplayInfo->m_szDriverVersion);
     WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, -1,
                  "DirectDraw Acceleration Enabled --- %s",
-                 pDisplayInfo->m_szDescription ? "Enabled" : "Disabled");
+                 pDisplayInfo->m_bDDAccelerationEnabled ?
+                 "Enabled" : "Disabled");
     WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, -1,
                  "bNoHardware                     --- %s",
                  pDisplayInfo->m_bNoHardware ? "Enabled" : "Disabled");

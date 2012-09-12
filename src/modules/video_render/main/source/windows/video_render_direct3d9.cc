@@ -1064,6 +1064,7 @@ WebRtc_Word32 VideoRenderDirect3D9::SetBitmap(const void* bitMap,
     {
         WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
                      "Direct3D failed to GetDIBits in SetBitmap");
+        delete srcPtr;
         return -1;
     }
     DeleteDC(hdcNew);
@@ -1071,6 +1072,7 @@ WebRtc_Word32 VideoRenderDirect3D9::SetBitmap(const void* bitMap,
     {
         WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
                      "Direct3D failed to SetBitmap invalid bit depth");
+        delete srcPtr;
         return -1;
     }
 
@@ -1087,18 +1089,21 @@ WebRtc_Word32 VideoRenderDirect3D9::SetBitmap(const void* bitMap,
     if (FAILED(ret))
     {
         _pTextureLogo = NULL;
+        delete srcPtr;
         return -1;
     }
     if (!_pTextureLogo)
     {
         WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
                      "Texture for rendering not initialized.");
+        delete srcPtr;
         return -1;
     }
 
     D3DLOCKED_RECT lr;
     if (FAILED(_pTextureLogo->LockRect(0, &lr, NULL, 0)))
     {
+        delete srcPtr;
         return -1;
     }
     unsigned char* dstPtr = (UCHAR*) lr.pBits;
