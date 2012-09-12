@@ -1014,8 +1014,7 @@ bool GetVideoDevice(webrtc::ViEBase* vie_base,
     const int kCaptureLineLength =
         KMaxDeviceNameLength + KMaxUniqueIdLength + 8;
     char capture_line[kCaptureLineLength];
-    snprintf(capture_line, kCaptureLineLength, "%s (%s)",
-        device_name, unique_id);
+    sprintf(capture_line, "%s (%s)", device_name, unique_id);
     capture_choices += capture_line;
     capture_choices += "\n";
     if (first_device.empty())
@@ -1282,7 +1281,7 @@ bool GetAudioCodec(webrtc::VoECodec* voe_codec,
         __FUNCTION__, __LINE__);
 
     char codec_line[128];
-    snprintf(codec_line, 128, "%s type: %d freq: %d chan: %d",
+    sprintf(codec_line, "%s type: %d freq: %d chan: %d",
         audio_codec.plname, audio_codec.pltype, audio_codec.plfreq,
         audio_codec.channels);
     codec_choices += codec_line;
