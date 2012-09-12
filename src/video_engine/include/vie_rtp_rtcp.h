@@ -219,6 +219,14 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
                                               bool enable,
                                               int id) = 0;
 
+  // Enables transmission smoothening, i.e. packets belonging to the same frame
+  // will be sent over a longer period of time instead of sending them
+  // back-to-back.
+  // NOTE: This is still experimental functionality.
+  // TODO(mflodman) Remove this note when BUG=818 is closed.
+  virtual int SetTransmissionSmoothingStatus(int video_channel,
+                                             bool enable) = 0;
+
   // This function returns our locally created statistics of the received RTP
   // stream.
   virtual int GetReceivedRTCPStatistics(

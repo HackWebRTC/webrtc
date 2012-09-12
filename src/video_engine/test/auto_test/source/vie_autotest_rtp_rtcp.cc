@@ -648,7 +648,18 @@ void ViEAutoTest::ViERtpRtcpAPITest()
     EXPECT_EQ(0, ViE.rtp_rtcp->SetReceiveTimestampOffsetStatus(
             tbChannel.videoChannel, false, 3));
 
-
+    // Transmission smoothening.
+    const int invalid_channel_id = 17;
+    EXPECT_EQ(-1, ViE.rtp_rtcp->SetTransmissionSmoothingStatus(
+        invalid_channel_id, true));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetTransmissionSmoothingStatus(
+        tbChannel.videoChannel, true));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetTransmissionSmoothingStatus(
+        tbChannel.videoChannel, true));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetTransmissionSmoothingStatus(
+        tbChannel.videoChannel, false));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetTransmissionSmoothingStatus(
+        tbChannel.videoChannel, false));
 
     //***************************************************************
     //  Testing finished. Tear down Video Engine
