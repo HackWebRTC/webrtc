@@ -9,6 +9,7 @@
  */
 
 #include <cstdarg>
+#include <cstdio>
 
 #include "video_engine/test/auto_test/interface/vie_autotest.h"
 #include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
