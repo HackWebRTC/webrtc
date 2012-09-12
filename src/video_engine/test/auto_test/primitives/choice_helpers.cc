@@ -36,7 +36,8 @@ int ChoiceBuilder::Choose() {
     printf("  Hit enter for default (%s):\n", default_choice_text_.c_str());
   printf("# ");
   char input[8];
-  fgets(input, 8, input_source_);
+  if (!fgets(input, 8, input_source_))
+    input[0] = '0';  // Make the selection fail
   int selection;
   if (input[0] == '\n')
     selection = default_choice_;
