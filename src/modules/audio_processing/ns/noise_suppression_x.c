@@ -18,6 +18,7 @@
 int WebRtcNsx_Create(NsxHandle** nsxInst) {
   *nsxInst = (NsxHandle*)malloc(sizeof(NsxInst_t));
   if (*nsxInst != NULL) {
+    WebRtcSpl_Init();
     (*(NsxInst_t**)nsxInst)->initFlag = 0;
     return 0;
   } else {
