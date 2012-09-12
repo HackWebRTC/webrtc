@@ -57,6 +57,9 @@
         # Test primitives
         'primitives/base_primitives.cc',
         'primitives/base_primitives.h',
+        'primitives/choice_helpers.cc',
+        'primitives/choice_helpers.h',
+        'primitives/choice_helpers_unittest.cc',
         'primitives/codec_primitives.cc',
         'primitives/codec_primitives.h',
         'primitives/framedrop_primitives.h',
