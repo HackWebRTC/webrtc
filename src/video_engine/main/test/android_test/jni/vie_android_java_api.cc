@@ -1594,8 +1594,16 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Set
     jobject,
     jboolean enable) {
   VALIDATE_APM_POINTER;
-  if (voeData.apm->SetEcStatus(enable, kEcAecm) < 0)
+  if (voeData.apm->SetEcStatus(enable, kEcAecm) < 0) {
+    __android_log_print(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "Failed SetECStatus(%d,%d)", enable, kEcAecm);
     return -1;
+  }
+  if (voeData.apm->SetAecmMode(kAecmSpeakerphone, false) != 0) {
+    __android_log_print(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "Failed SetAecmMode(%d,%d)", kAecmSpeakerphone, 0);
+    return -1;
+  }
   return 0;
 }
 
@@ -1609,8 +1617,24 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Set
     jobject,
     jboolean enable) {
   VALIDATE_APM_POINTER;
-  if (voeData.apm->SetAgcStatus(enable, kAgcFixedDigital) < 0)
+  if (voeData.apm->SetAgcStatus(enable, kAgcFixedDigital) < 0) {
+    __android_log_print(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "Failed SetAgcStatus(%d,%d)", enable, kAgcFixedDigital);
     return -1;
+  }
+  webrtc::AgcConfig config;
+  // The following settings are by default, explicitly set here.
+  config.targetLeveldBOv = 3;
+  config.digitalCompressionGaindB = 9;
+  config.limiterEnable = true;
+  if (voeData.apm->SetAgcConfig(config) != 0) {
+    __android_log_print(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "Failed SetAgcConfig(%d,%d,%d)",
+                        config.targetLeveldBOv,
+                        config.digitalCompressionGaindB,
+                        config.limiterEnable);
+    return -1;
+  }
   return 0;
 }
 
@@ -1624,7 +1648,10 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Set
     jobject,
     jboolean enable) {
   VALIDATE_APM_POINTER;
-  if (voeData.apm->SetNsStatus(enable) < 0) {
+  if (voeData.apm->SetNsStatus(enable, kNsModerateSuppression) < 0) {
+    __android_log_print(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "Failed SetNsStatus(%d,%d)",
+                        enable, kNsModerateSuppression);
     return -1;
   }
   return 0;
