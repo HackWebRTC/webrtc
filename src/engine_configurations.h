@@ -118,7 +118,6 @@
 // ----------------------------------------------------------------------------
 
 #if defined(_WIN32)
-// #define DIRECTDRAW_RENDERING
 #define DIRECT3D9_RENDERING  // Requires DirectX 9.
 #endif
 

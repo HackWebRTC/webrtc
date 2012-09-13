@@ -56,7 +56,6 @@
         # Windows
         'windows/i_video_render_win.h',
         'windows/video_render_direct3d9.h',
-        'windows/video_render_directdraw.h',
         'windows/video_render_windows_impl.h',
         # External
         'external/video_render_external_impl.h',
@@ -84,7 +83,6 @@
         'mac/cocoa_full_screen_window.mm',
         # Windows
         'windows/video_render_direct3d9.cc',
-        'windows/video_render_directdraw.cc',
         'windows/video_render_windows_impl.cc',
         # External
         'external/video_render_external_impl.cc',
@@ -147,10 +145,8 @@
           'sources!': [
             'windows/i_video_render_win.h',
             'windows/video_render_direct3d9.h',
-            'windows/video_render_directdraw.h',
             'windows/video_render_windows_impl.h',
             'windows/video_render_direct3d9.cc',
-            'windows/video_render_directdraw.cc',
             'windows/video_render_windows_impl.cc',
           ],
         }],
