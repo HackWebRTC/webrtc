@@ -107,6 +107,9 @@
         'build_libvpx%': 0,
         'include_tests%': 0,
       }],
+      ['target_arch=="arm"', {
+        'prefer_fixed_point%': 1,
+      }],
     ], # conditions
   },
   'target_defaults': {
@@ -144,7 +147,6 @@
         ],
       }],
       ['target_arch=="arm"', {
-        'prefer_fixed_point%': 1,
         'defines': [
           'WEBRTC_ARCH_ARM',
         ],
@@ -200,8 +202,6 @@
         'msvs_disabled_warnings!': [4189,],
       }],
       ['OS=="android"', {
-        # TODO(kma): Remove prefer_fixed_point for Android.
-        'prefer_fixed_point%': 1,
         'defines': [
           'WEBRTC_LINUX',
           'WEBRTC_ANDROID',
