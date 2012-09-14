@@ -8,55 +8,9 @@
 #  be found in the AUTHORS file in the root of the source tree.
 
 import random
-import string
 
-
-class MissingParameterException(Exception):
-  pass
-
-
-def FillInParameter(parameter, value, template):
-  if parameter not in template:
-    raise MissingParameterException('Did not find parameter %s in template.' %
-                                    parameter)
-
-  return template.replace(parameter, value)
-
-
-def RandomIdentifier():
-  length = random.randint(1, 25)
-  return (random.choice(string.letters) +
-          ''.join(random.choice(string.letters + string.digits)
-                  for i in xrange(length)))
-
-
-def GenerateRandomJavascriptAttributes(num_attributes):
-  return ['%s: %s' % (RandomIdentifier(), GenerateRandomJavascriptValue())
-          for i in xrange(num_attributes)]
-
-
-def MakeJavascriptObject(attributes):
-  return '{ ' + ', '.join(attributes) + ' }'
-
-
-def GenerateRandomJavascriptFunction():
-  num_parameters = random.randint(0, 10)
-  parameter_list = ', '.join(RandomIdentifier() for i in xrange(num_parameters))
-  return 'function ' + RandomIdentifier() + '(' + parameter_list + ')' + '{ }'
-
-
-def GenerateRandomJavascriptValue():
-  roll = random.random()
-  if roll < 0.3:
-    return '"' + RandomIdentifier() + '"'
-  elif roll < 0.6:
-    return str(random.randint(-10000000, 10000000))
-  elif roll < 0.9:
-    # Functions are first-class objects.
-    return GenerateRandomJavascriptFunction()
-  else:
-    return 'true' if random.random() < 0.5 else 'false'
-
+from common.fuzz_parameters import FillInParameter
+from common.random_javascript import *
 
 def Fuzz(template):
   """Generates a single random HTML page which tries to mess with getUserMedia.
@@ -72,19 +26,19 @@ def Fuzz(template):
   looks like.
   """
   random.seed()
-  attributes = GenerateRandomJavascriptAttributes(random.randint(0, 10))
+  attributes = RandomJavascriptAttributes(random.randint(0, 10))
   if (random.random() < 0.8):
-    attributes.append('video: %s' % GenerateRandomJavascriptValue())
+    attributes.append('video: %s' % RandomJavascriptValue())
   if (random.random() < 0.8):
-    attributes.append('audio: %s' % GenerateRandomJavascriptValue())
+    attributes.append('audio: %s' % RandomJavascriptValue())
   input_object = MakeJavascriptObject(attributes)
   template = FillInParameter('FUZZ_USER_MEDIA_INPUT', input_object, template)
 
-  ok_callback = (GenerateRandomJavascriptValue()
+  ok_callback = (RandomJavascriptValue()
                  if random.random() < 0.5 else 'getUserMediaOkCallback')
   template = FillInParameter('FUZZ_OK_CALLBACK', ok_callback, template)
 
-  fail_callback = (GenerateRandomJavascriptValue()
+  fail_callback = (RandomJavascriptValue()
                    if random.random() < 0.5 else 'getUserMediaFailedCallback')
   template = FillInParameter('FUZZ_FAIL_CALLBACK', fail_callback, template)
 

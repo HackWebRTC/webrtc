@@ -1,0 +1,118 @@
+﻿<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<!--
+  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+
+  Use of this source code is governed by a BSD-style license
+  that can be found in the LICENSE file in the root of the source
+  tree. An additional intellectual property rights grant can be found
+  in the file PATENTS.  All contributing project authors may
+  be found in the AUTHORS file in the root of the source tree.
+-->
+<html>
+<head>
+  <title>WebRTC PeerConnection Fuzz Test Template</title>
+  <script type="text/javascript" src="random.js"></script>
+  <script type="text/javascript" src="fuzz_sdp.js"></script>
+  <script type="text/javascript">
+  var gFirstConnection = null;
+  var gSecondConnection = null;
+
+  // Variables in caps are filled in by the fuzzer.
+  var gTransformOfferSdp = TRANSFORM_OFFER_SDP;
+  var gTransformAnswerSdp = TRANSFORM_ANSWER_SDP;
+  var gRandomRolls = ARRAY_OF_RANDOM_ROLLS;
+
+  function startTest() {
+    navigator.webkitGetUserMedia(REQUEST_AUDIO_AND_VIDEO,
+                                 getUserMediaOkCallback,
+                                 getUserMediaFailedCallback);
+  }
+
+  function getUserMediaFailedCallback(error) {
+    console.log('getUserMedia request failed with code ' + error.code);
+  }
+
+  function callUsingStream(localStream) {
+    gFirstConnection = new webkitPeerConnection00(
+        null, onIceCandidateToFirst);
+    gFirstConnection.addStream(localStream);
+    var offer = gFirstConnection.createOffer(null);
+    gFirstConnection.setLocalDescription(
+        webkitPeerConnection00.SDP_OFFER, offer);
+    return offer.toSdp();
+  }
+
+  function receiveCall(offer_sdp) {
+    gSecondConnection = new webkitPeerConnection00(
+        null, onIceCandidateToSecond);
+    gSecondConnection.onaddstream = onRemoteStream;
+    var parsed_offer = new SessionDescription(offer_sdp);
+    gSecondConnection.setRemoteDescription(
+        webkitPeerConnection00.SDP_OFFER, parsed_offer);
+
+    var answer = gSecondConnection.createAnswer(
+        offer_sdp, { has_audio: true, has_video: true });
+    gSecondConnection.setLocalDescription(
+        webkitPeerConnection00.SDP_ANSWER, answer);
+    gSecondConnection.startIce();
+    return answer.toSdp();
+  }
+
+  function handleAnswer(answer_sdp) {
+    var parsed_answer = new SessionDescription(answer_sdp);
+    gFirstConnection.setRemoteDescription(
+        webkitPeerConnection00.SDP_ANSWER, parsed_answer);
+    gFirstConnection.startIce();
+  }
+
+  function getUserMediaOkCallback(localStream) {
+    var localStreamUrl = webkitURL.createObjectURL(localStream);
+    document.getElementById('local-view').src = localStreamUrl;
+
+    var offer_sdp = callUsingStream(localStream);
+    offer_sdp = gTransformOfferSdp(offer_sdp);
+    var answer_sdp = receiveCall(offer_sdp);
+    answer_sdp = gTransformAnswerSdp(answer_sdp);
+    console.log(offer_sdp);
+    console.log(answer_sdp);
+    handleAnswer(answer_sdp);
+  }
+
+  function onIceCandidateToFirst(candidate, more) {
+    if (candidate) {
+      gSecondConnection.processIceMessage(candidate);
+    }
+  }
+
+  function onIceCandidateToSecond(candidate, more) {
+    if (candidate) {
+      gFirstConnection.processIceMessage(candidate);
+    }
+  }
+
+  function onRemoteStream(e) {
+    var remoteStreamUrl = webkitURL.createObjectURL(e.stream);
+    document.getElementById('remote-view').src = remoteStreamUrl;
+  }
+
+  window.onload = function() {
+    setRandomRolls(gRandomRolls);
+    startTest();
+  }
+  </script>
+</head>
+<body>
+  <table border="0">
+    <tr>
+      <td>Local Preview</td>
+      <td>Remote Stream</td>
+    </tr>
+    <tr>
+      <td><video width="320" height="240" id="local-view"
+          autoplay="autoplay"></video></td>
+      <td><video width="320" height="240" id="remote-view"
+          autoplay="autoplay"></video></td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -21,12 +21,12 @@
   }
 
   function getUserMediaFailedCallback(error) {
-    console.log(error.code)
+    console.log('GetUserMedia call failed with code ' + error.code);
   }
 
   function getUserMediaOkCallback(stream) {
     var streamUrl = webkitURL.createObjectURL(stream);
-    document.getElementById("view1").src = streamUrl;
+    document.getElementById('view1').src = streamUrl;
     stream.stop()
   }
   </script>
