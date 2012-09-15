@@ -7,27 +7,22 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'variables': {
-    'voice_engine_dependencies': [
-      '<(webrtc_root)/common_audio/common_audio.gyp:resampler',
-      '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',
-      '<(webrtc_root)/modules/modules.gyp:audio_coding_module',
-      '<(webrtc_root)/modules/modules.gyp:audio_conference_mixer',
-      '<(webrtc_root)/modules/modules.gyp:audio_device',
-      '<(webrtc_root)/modules/modules.gyp:audio_processing',
-      '<(webrtc_root)/modules/modules.gyp:media_file',
-      '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
-      '<(webrtc_root)/modules/modules.gyp:udp_transport',
-      '<(webrtc_root)/modules/modules.gyp:webrtc_utility',
-      '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-    ],
-  },
   'targets': [
     {
       'target_name': 'voice_engine_core',
       'type': '<(library)',
       'dependencies': [
-        '<@(voice_engine_dependencies)',
+        '<(webrtc_root)/common_audio/common_audio.gyp:resampler',
+        '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',
+        '<(webrtc_root)/modules/modules.gyp:audio_coding_module',
+        '<(webrtc_root)/modules/modules.gyp:audio_conference_mixer',
+        '<(webrtc_root)/modules/modules.gyp:audio_device',
+        '<(webrtc_root)/modules/modules.gyp:audio_processing',
+        '<(webrtc_root)/modules/modules.gyp:media_file',
+        '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
+        '<(webrtc_root)/modules/modules.gyp:udp_transport',
+        '<(webrtc_root)/modules/modules.gyp:webrtc_utility',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
         'include',

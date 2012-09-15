@@ -7,15 +7,20 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'includes': [ 'common.gypi', ],
+  'includes': ['common.gypi',],
+  'variables': {
+    'merge_libs_dependencies': [
+      '../video_engine/video_engine.gyp:video_engine_core',
+    ],
+  },
   'targets': [
     {
       'target_name': 'no_op',
       'type': 'executable',
       'dependencies': [
-        '../video_engine/video_engine.gyp:video_engine_core',
+        '<@(merge_libs_dependencies)',
       ],
-      'sources': [ 'no_op.cc', ],
+      'sources': ['no_op.cc',],
     },
     {
       'target_name': 'merged_lib',
