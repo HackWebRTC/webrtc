@@ -149,6 +149,12 @@ LOCAL_SRC_FILES := \
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
+LOCAL_MODULE := libcommon_video
+LOCAL_SRC_FILES := \
+    $(MY_LIBS_PATH)/src/common_video/libcommon_video.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
 LOCAL_MODULE := libsystem_wrappers
 LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/src/system_wrappers/source/libsystem_wrappers.a
@@ -203,12 +209,6 @@ LOCAL_SRC_FILES := \
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := libwebrtc_libyuv
-LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/common_video/libwebrtc_libyuv.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
 LOCAL_MODULE := libyuv
 LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/third_party/libyuv/libyuv.a
@@ -224,12 +224,6 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := libwebrtc_vp8
 LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/src/modules/video_coding/codecs/vp8/libwebrtc_vp8.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := libwebrtc_jpeg
-LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/common_video/libwebrtc_jpeg.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
@@ -310,11 +304,10 @@ LOCAL_STATIC_LIBRARIES := \
     libudp_transport \
     libwebrtc_utility \
     libaudio_conference_mixer \
-    libwebrtc_libyuv \
+    libcommon_video \
     libyuv \
     libwebrtc_i420 \
     libwebrtc_vp8 \
-    libwebrtc_jpeg \
     libjpeg_turbo \
     libaudioproc_debug_proto \
     libprotobuf_lite \
