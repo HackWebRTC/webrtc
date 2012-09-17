@@ -49,7 +49,7 @@ ifeq ($(ARCH_ARM_HAVE_ARMV7A),true)
 # Using .S (instead of .s) extention is to include a C header file in assembly.
 LOCAL_SRC_FILES += \
     lattice_armv7.S \
-    pitchfilter_armv6.S
+    pitch_filter_armv6.S
 else
 LOCAL_SRC_FILES += \
     lattice_c.c
