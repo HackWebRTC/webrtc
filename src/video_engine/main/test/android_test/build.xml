@@ -891,7 +891,7 @@ Notice for all the files in this folder.
                     verbose="${verbose}"
                     classpathref="project.javac.classpath"
                     fork="${need.javac.fork}">
-                <src path="${source.absolute.dir}:../../../../modules/video_capture/main/source/android/java:../../../../modules/video_render/main/source/android/java" />
+                <src path="${source.absolute.dir}:../../../../modules/video_capture/main/source/android/java:../../../../modules/video_render/main/source/android/java:../../../../modules/audio_device/main/source/android" />
                 <src path="${gen.absolute.dir}" />
                 <compilerarg line="${java.compilerargs}" />
             </javac>

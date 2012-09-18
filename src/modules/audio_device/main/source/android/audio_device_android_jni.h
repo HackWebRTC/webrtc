@@ -33,234 +33,239 @@ const WebRtc_UWord32 N_PLAY_CHANNELS = 1; // default is mono playout
 const WebRtc_UWord32 REC_BUF_SIZE_IN_SAMPLES = 480; // Handle max 10 ms @ 48 kHz
 
 
-WebRtc_Word32 SetAndroidAudioDeviceObjects(void* javaVM, void* env,
-                                           void* context);
-
 class ThreadWrapper;
 
-class AudioDeviceAndroidJni: public AudioDeviceGeneric
-{
-public:
-    AudioDeviceAndroidJni(const WebRtc_Word32 id);
-    ~AudioDeviceAndroidJni();
+class AudioDeviceAndroidJni : public AudioDeviceGeneric {
+ public:
+  AudioDeviceAndroidJni(const WebRtc_Word32 id);
+  ~AudioDeviceAndroidJni();
 
-    virtual WebRtc_Word32 ActiveAudioLayer(
-        AudioDeviceModule::AudioLayer& audioLayer) const;
+  static WebRtc_Word32 SetAndroidAudioDeviceObjects(void* javaVM,
+                                                    void* env,
+                                                    void* context);
 
-    virtual WebRtc_Word32 Init();
-    virtual WebRtc_Word32 Terminate();
-    virtual bool Initialized() const;
+  virtual WebRtc_Word32 ActiveAudioLayer(
+      AudioDeviceModule::AudioLayer& audioLayer) const;
 
-    virtual WebRtc_Word16 PlayoutDevices();
-    virtual WebRtc_Word16 RecordingDevices();
-    virtual WebRtc_Word32 PlayoutDeviceName(
-        WebRtc_UWord16 index,
-        char name[kAdmMaxDeviceNameSize],
-        char guid[kAdmMaxGuidSize]);
-    virtual WebRtc_Word32 RecordingDeviceName(
-        WebRtc_UWord16 index,
-        char name[kAdmMaxDeviceNameSize],
-        char guid[kAdmMaxGuidSize]);
+  virtual WebRtc_Word32 Init();
+  virtual WebRtc_Word32 Terminate();
+  virtual bool Initialized() const;
 
-    virtual WebRtc_Word32 SetPlayoutDevice(WebRtc_UWord16 index);
-    virtual WebRtc_Word32 SetPlayoutDevice(
-        AudioDeviceModule::WindowsDeviceType device);
-    virtual WebRtc_Word32 SetRecordingDevice(WebRtc_UWord16 index);
-    virtual WebRtc_Word32 SetRecordingDevice(
-        AudioDeviceModule::WindowsDeviceType device);
+  virtual WebRtc_Word16 PlayoutDevices();
+  virtual WebRtc_Word16 RecordingDevices();
+  virtual WebRtc_Word32 PlayoutDeviceName(WebRtc_UWord16 index,
+                                          char name[kAdmMaxDeviceNameSize],
+                                          char guid[kAdmMaxGuidSize]);
+  virtual WebRtc_Word32 RecordingDeviceName(
+      WebRtc_UWord16 index,
+      char name[kAdmMaxDeviceNameSize],
+      char guid[kAdmMaxGuidSize]);
 
-    virtual WebRtc_Word32 PlayoutIsAvailable(bool& available);
-    virtual WebRtc_Word32 InitPlayout();
-    virtual bool PlayoutIsInitialized() const;
-    virtual WebRtc_Word32 RecordingIsAvailable(bool& available);
-    virtual WebRtc_Word32 InitRecording();
-    virtual bool RecordingIsInitialized() const;
+  virtual WebRtc_Word32 SetPlayoutDevice(WebRtc_UWord16 index);
+  virtual WebRtc_Word32 SetPlayoutDevice(
+      AudioDeviceModule::WindowsDeviceType device);
+  virtual WebRtc_Word32 SetRecordingDevice(WebRtc_UWord16 index);
+  virtual WebRtc_Word32 SetRecordingDevice(
+      AudioDeviceModule::WindowsDeviceType device);
 
-    virtual WebRtc_Word32 StartPlayout();
-    virtual WebRtc_Word32 StopPlayout();
-    virtual bool Playing() const;
-    virtual WebRtc_Word32 StartRecording();
-    virtual WebRtc_Word32 StopRecording();
-    virtual bool Recording() const;
+  virtual WebRtc_Word32 PlayoutIsAvailable(bool& available);
+  virtual WebRtc_Word32 InitPlayout();
+  virtual bool PlayoutIsInitialized() const;
+  virtual WebRtc_Word32 RecordingIsAvailable(bool& available);
+  virtual WebRtc_Word32 InitRecording();
+  virtual bool RecordingIsInitialized() const;
 
-    virtual WebRtc_Word32 SetAGC(bool enable);
-    virtual bool AGC() const;
+  virtual WebRtc_Word32 StartPlayout();
+  virtual WebRtc_Word32 StopPlayout();
+  virtual bool Playing() const;
+  virtual WebRtc_Word32 StartRecording();
+  virtual WebRtc_Word32 StopRecording();
+  virtual bool Recording() const;
 
-    virtual WebRtc_Word32 SetWaveOutVolume(WebRtc_UWord16 volumeLeft,
-                                           WebRtc_UWord16 volumeRight);
-    virtual WebRtc_Word32 WaveOutVolume(WebRtc_UWord16& volumeLeft,
-                                        WebRtc_UWord16& volumeRight) const;
+  virtual WebRtc_Word32 SetAGC(bool enable);
+  virtual bool AGC() const;
 
-    virtual WebRtc_Word32 SpeakerIsAvailable(bool& available);
-    virtual WebRtc_Word32 InitSpeaker();
-    virtual bool SpeakerIsInitialized() const;
-    virtual WebRtc_Word32 MicrophoneIsAvailable(bool& available);
-    virtual WebRtc_Word32 InitMicrophone();
-    virtual bool MicrophoneIsInitialized() const;
+  virtual WebRtc_Word32 SetWaveOutVolume(WebRtc_UWord16 volumeLeft,
+                                         WebRtc_UWord16 volumeRight);
+  virtual WebRtc_Word32 WaveOutVolume(WebRtc_UWord16& volumeLeft,
+                                      WebRtc_UWord16& volumeRight) const;
 
-    virtual WebRtc_Word32 SpeakerVolumeIsAvailable(bool& available);
-    virtual WebRtc_Word32 SetSpeakerVolume(WebRtc_UWord32 volume);
-    virtual WebRtc_Word32 SpeakerVolume(WebRtc_UWord32& volume) const;
-    virtual WebRtc_Word32 MaxSpeakerVolume(WebRtc_UWord32& maxVolume) const;
-    virtual WebRtc_Word32 MinSpeakerVolume(WebRtc_UWord32& minVolume) const;
-    virtual WebRtc_Word32 SpeakerVolumeStepSize(WebRtc_UWord16& stepSize) const;
+  virtual WebRtc_Word32 SpeakerIsAvailable(bool& available);
+  virtual WebRtc_Word32 InitSpeaker();
+  virtual bool SpeakerIsInitialized() const;
+  virtual WebRtc_Word32 MicrophoneIsAvailable(bool& available);
+  virtual WebRtc_Word32 InitMicrophone();
+  virtual bool MicrophoneIsInitialized() const;
 
-    virtual WebRtc_Word32 MicrophoneVolumeIsAvailable(bool& available);
-    virtual WebRtc_Word32 SetMicrophoneVolume(WebRtc_UWord32 volume);
-    virtual WebRtc_Word32 MicrophoneVolume(WebRtc_UWord32& volume) const;
-    virtual WebRtc_Word32 MaxMicrophoneVolume(WebRtc_UWord32& maxVolume) const;
-    virtual WebRtc_Word32 MinMicrophoneVolume(WebRtc_UWord32& minVolume) const;
-    virtual WebRtc_Word32 MicrophoneVolumeStepSize(WebRtc_UWord16& stepSize)
-        const;
+  virtual WebRtc_Word32 SpeakerVolumeIsAvailable(bool& available);
+  virtual WebRtc_Word32 SetSpeakerVolume(WebRtc_UWord32 volume);
+  virtual WebRtc_Word32 SpeakerVolume(WebRtc_UWord32& volume) const;
+  virtual WebRtc_Word32 MaxSpeakerVolume(WebRtc_UWord32& maxVolume) const;
+  virtual WebRtc_Word32 MinSpeakerVolume(WebRtc_UWord32& minVolume) const;
+  virtual WebRtc_Word32 SpeakerVolumeStepSize(WebRtc_UWord16& stepSize) const;
 
-    virtual WebRtc_Word32 SpeakerMuteIsAvailable(bool& available);
-    virtual WebRtc_Word32 SetSpeakerMute(bool enable);
-    virtual WebRtc_Word32 SpeakerMute(bool& enabled) const;
+  virtual WebRtc_Word32 MicrophoneVolumeIsAvailable(bool& available);
+  virtual WebRtc_Word32 SetMicrophoneVolume(WebRtc_UWord32 volume);
+  virtual WebRtc_Word32 MicrophoneVolume(WebRtc_UWord32& volume) const;
+  virtual WebRtc_Word32 MaxMicrophoneVolume(WebRtc_UWord32& maxVolume) const;
+  virtual WebRtc_Word32 MinMicrophoneVolume(WebRtc_UWord32& minVolume) const;
+  virtual WebRtc_Word32 MicrophoneVolumeStepSize(
+      WebRtc_UWord16& stepSize) const;
 
-    virtual WebRtc_Word32 MicrophoneMuteIsAvailable(bool& available);
-    virtual WebRtc_Word32 SetMicrophoneMute(bool enable);
-    virtual WebRtc_Word32 MicrophoneMute(bool& enabled) const;
+  virtual WebRtc_Word32 SpeakerMuteIsAvailable(bool& available);
+  virtual WebRtc_Word32 SetSpeakerMute(bool enable);
+  virtual WebRtc_Word32 SpeakerMute(bool& enabled) const;
 
-    virtual WebRtc_Word32 MicrophoneBoostIsAvailable(bool& available);
-    virtual WebRtc_Word32 SetMicrophoneBoost(bool enable);
-    virtual WebRtc_Word32 MicrophoneBoost(bool& enabled) const;
+  virtual WebRtc_Word32 MicrophoneMuteIsAvailable(bool& available);
+  virtual WebRtc_Word32 SetMicrophoneMute(bool enable);
+  virtual WebRtc_Word32 MicrophoneMute(bool& enabled) const;
 
-    virtual WebRtc_Word32 StereoPlayoutIsAvailable(bool& available);
-    virtual WebRtc_Word32 SetStereoPlayout(bool enable);
-    virtual WebRtc_Word32 StereoPlayout(bool& enabled) const;
-    virtual WebRtc_Word32 StereoRecordingIsAvailable(bool& available);
-    virtual WebRtc_Word32 SetStereoRecording(bool enable);
-    virtual WebRtc_Word32 StereoRecording(bool& enabled) const;
+  virtual WebRtc_Word32 MicrophoneBoostIsAvailable(bool& available);
+  virtual WebRtc_Word32 SetMicrophoneBoost(bool enable);
+  virtual WebRtc_Word32 MicrophoneBoost(bool& enabled) const;
 
-    virtual WebRtc_Word32 SetPlayoutBuffer(
-        const AudioDeviceModule::BufferType type, WebRtc_UWord16 sizeMS);
-    virtual WebRtc_Word32 PlayoutBuffer(
-        AudioDeviceModule::BufferType& type, WebRtc_UWord16& sizeMS) const;
-    virtual WebRtc_Word32 PlayoutDelay(WebRtc_UWord16& delayMS) const;
-    virtual WebRtc_Word32 RecordingDelay(WebRtc_UWord16& delayMS) const;
+  virtual WebRtc_Word32 StereoPlayoutIsAvailable(bool& available);
+  virtual WebRtc_Word32 SetStereoPlayout(bool enable);
+  virtual WebRtc_Word32 StereoPlayout(bool& enabled) const;
+  virtual WebRtc_Word32 StereoRecordingIsAvailable(bool& available);
+  virtual WebRtc_Word32 SetStereoRecording(bool enable);
+  virtual WebRtc_Word32 StereoRecording(bool& enabled) const;
 
-    virtual WebRtc_Word32 CPULoad(WebRtc_UWord16& load) const;
+  virtual WebRtc_Word32 SetPlayoutBuffer(
+      const AudioDeviceModule::BufferType type, WebRtc_UWord16 sizeMS);
+  virtual WebRtc_Word32 PlayoutBuffer(
+      AudioDeviceModule::BufferType& type, WebRtc_UWord16& sizeMS) const;
+  virtual WebRtc_Word32 PlayoutDelay(WebRtc_UWord16& delayMS) const;
+  virtual WebRtc_Word32 RecordingDelay(WebRtc_UWord16& delayMS) const;
 
-    virtual bool PlayoutWarning() const;
-    virtual bool PlayoutError() const;
-    virtual bool RecordingWarning() const;
-    virtual bool RecordingError() const;
-    virtual void ClearPlayoutWarning();
-    virtual void ClearPlayoutError();
-    virtual void ClearRecordingWarning();
-    virtual void ClearRecordingError();
+  virtual WebRtc_Word32 CPULoad(WebRtc_UWord16& load) const;
 
-    virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
+  virtual bool PlayoutWarning() const;
+  virtual bool PlayoutError() const;
+  virtual bool RecordingWarning() const;
+  virtual bool RecordingError() const;
+  virtual void ClearPlayoutWarning();
+  virtual void ClearPlayoutError();
+  virtual void ClearRecordingWarning();
+  virtual void ClearRecordingError();
 
-    virtual WebRtc_Word32 SetRecordingSampleRate(
-        const WebRtc_UWord32 samplesPerSec);
-    virtual WebRtc_Word32 SetPlayoutSampleRate(
-        const WebRtc_UWord32 samplesPerSec);
+  virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
 
-    virtual WebRtc_Word32 SetLoudspeakerStatus(bool enable);
-    virtual WebRtc_Word32 GetLoudspeakerStatus(bool& enable) const;
+  virtual WebRtc_Word32 SetRecordingSampleRate(
+      const WebRtc_UWord32 samplesPerSec);
+  virtual WebRtc_Word32 SetPlayoutSampleRate(
+      const WebRtc_UWord32 samplesPerSec);
 
-private:
-    // Lock
-    void Lock()
-    {
-        _critSect.Enter();
-    };
-    void UnLock()
-    {
-        _critSect.Leave();
-    };
+  virtual WebRtc_Word32 SetLoudspeakerStatus(bool enable);
+  virtual WebRtc_Word32 GetLoudspeakerStatus(bool& enable) const;
 
-    // Init
-    WebRtc_Word32 InitJavaResources();
-    WebRtc_Word32 InitSampleRate();
+ private:
+  // Lock
+  void Lock() {
+    _critSect.Enter();
+  };
+  void UnLock() {
+    _critSect.Leave();
+  };
 
-    // Threads
-    static bool RecThreadFunc(void*);
-    static bool PlayThreadFunc(void*);
-    bool RecThreadProcess();
-    bool PlayThreadProcess();
+  // Init
+  WebRtc_Word32 InitJavaResources();
+  WebRtc_Word32 InitSampleRate();
 
-    // Misc
-    AudioDeviceBuffer* _ptrAudioBuffer;
-    CriticalSectionWrapper& _critSect;
-    WebRtc_Word32 _id;
+  // Threads
+  static bool RecThreadFunc(void*);
+  static bool PlayThreadFunc(void*);
+  bool RecThreadProcess();
+  bool PlayThreadProcess();
 
-    // Events
-    EventWrapper& _timeEventRec;
-    EventWrapper& _timeEventPlay;
-    EventWrapper& _recStartStopEvent;
-    EventWrapper& _playStartStopEvent;
+  // Misc
+  AudioDeviceBuffer* _ptrAudioBuffer;
+  CriticalSectionWrapper& _critSect;
+  WebRtc_Word32 _id;
 
-    // Threads
-    ThreadWrapper* _ptrThreadPlay;
-    ThreadWrapper* _ptrThreadRec;
-    WebRtc_UWord32 _recThreadID;
-    WebRtc_UWord32 _playThreadID;
-    bool _playThreadIsInitialized;
-    bool _recThreadIsInitialized;
-    bool _shutdownPlayThread;
-    bool _shutdownRecThread;
+  // Events
+  EventWrapper& _timeEventRec;
+  EventWrapper& _timeEventPlay;
+  EventWrapper& _recStartStopEvent;
+  EventWrapper& _playStartStopEvent;
 
-    // Rec buffer
-    WebRtc_Word8 _recBuffer[2 * REC_BUF_SIZE_IN_SAMPLES];
+  // Threads
+  ThreadWrapper* _ptrThreadPlay;
+  ThreadWrapper* _ptrThreadRec;
+  WebRtc_UWord32 _recThreadID;
+  WebRtc_UWord32 _playThreadID;
+  bool _playThreadIsInitialized;
+  bool _recThreadIsInitialized;
+  bool _shutdownPlayThread;
+  bool _shutdownRecThread;
 
-    // States
-    bool _recordingDeviceIsSpecified;
-    bool _playoutDeviceIsSpecified;
-    bool _initialized;
-    bool _recording;
-    bool _playing;
-    bool _recIsInitialized;
-    bool _playIsInitialized;
-    bool _micIsInitialized;
-    bool _speakerIsInitialized;
+  // Rec buffer
+  WebRtc_Word8 _recBuffer[2 * REC_BUF_SIZE_IN_SAMPLES];
 
-    // Signal flags to threads
-    bool _startRec;
-    bool _stopRec;
-    bool _startPlay;
-    bool _stopPlay;
+  // States
+  bool _recordingDeviceIsSpecified;
+  bool _playoutDeviceIsSpecified;
+  bool _initialized;
+  bool _recording;
+  bool _playing;
+  bool _recIsInitialized;
+  bool _playIsInitialized;
+  bool _micIsInitialized;
+  bool _speakerIsInitialized;
 
-    // Warnings and errors
-    WebRtc_UWord16 _playWarning;
-    WebRtc_UWord16 _playError;
-    WebRtc_UWord16 _recWarning;
-    WebRtc_UWord16 _recError;
+  // Signal flags to threads
+  bool _startRec;
+  bool _stopRec;
+  bool _startPlay;
+  bool _stopPlay;
 
-    // Delay
-    WebRtc_UWord16 _delayPlayout;
-    WebRtc_UWord16 _delayRecording;
+  // Warnings and errors
+  WebRtc_UWord16 _playWarning;
+  WebRtc_UWord16 _playError;
+  WebRtc_UWord16 _recWarning;
+  WebRtc_UWord16 _recError;
 
-    // AGC state
-    bool _AGC;
+  // Delay
+  WebRtc_UWord16 _delayPlayout;
+  WebRtc_UWord16 _delayRecording;
 
-    // Stored device properties
-    WebRtc_UWord16 _samplingFreqIn; // Sampling frequency for Mic
-    WebRtc_UWord16 _samplingFreqOut; // Sampling frequency for Speaker
-    WebRtc_UWord32 _maxSpeakerVolume; // The maximum speaker volume value
-    bool _loudSpeakerOn;
-    // Stores the desired audio source to use, set in SetRecordingDevice
-    int _recAudioSource;
+  // AGC state
+  bool _AGC;
 
-    // JNI and Java
-    JavaVM* _javaVM; // denotes a Java VM
-    jobject _javaContext; // the application context
+  // Stored device properties
+  WebRtc_UWord16 _samplingFreqIn; // Sampling frequency for Mic
+  WebRtc_UWord16 _samplingFreqOut; // Sampling frequency for Speaker
+  WebRtc_UWord32 _maxSpeakerVolume; // The maximum speaker volume value
+  bool _loudSpeakerOn;
+  // Stores the desired audio source to use, set in SetRecordingDevice
+  int _recAudioSource;
 
-    JNIEnv* _jniEnvPlay; // The JNI env for playout thread
-    JNIEnv* _jniEnvRec; // The JNI env for recording thread
+  // JNI and Java
+  JavaVM* _javaVM; // denotes a Java VM
+  jobject _javaContext; // the application context
 
-    jclass _javaScClass; // AudioDeviceAndroid class
-    jobject _javaScObj; // AudioDeviceAndroid object
+  JNIEnv* _jniEnvPlay; // The JNI env for playout thread
+  JNIEnv* _jniEnvRec; // The JNI env for recording thread
 
-    // The play buffer field in AudioDeviceAndroid object (global ref)
-    jobject _javaPlayBuffer;
-    // The rec buffer field in AudioDeviceAndroid object (global ref)
-    jobject _javaRecBuffer;
-    void* _javaDirectPlayBuffer; // Direct buffer pointer to play buffer
-    void* _javaDirectRecBuffer; // Direct buffer pointer to rec buffer
-    jmethodID _javaMidPlayAudio; // Method ID of play in AudioDeviceAndroid
-    jmethodID _javaMidRecAudio; // Method ID of rec in AudioDeviceAndroid
+  jclass _javaScClass; // AudioDeviceAndroid class
+  jobject _javaScObj; // AudioDeviceAndroid object
+
+  // The play buffer field in AudioDeviceAndroid object (global ref)
+  jobject _javaPlayBuffer;
+  // The rec buffer field in AudioDeviceAndroid object (global ref)
+  jobject _javaRecBuffer;
+  void* _javaDirectPlayBuffer; // Direct buffer pointer to play buffer
+  void* _javaDirectRecBuffer; // Direct buffer pointer to rec buffer
+  jmethodID _javaMidPlayAudio; // Method ID of play in AudioDeviceAndroid
+  jmethodID _javaMidRecAudio; // Method ID of rec in AudioDeviceAndroid
+
+  // TODO(leozwang): Android holds only one JVM, all these jni handling
+  // will be consolidated into a single place to make it consistant and
+  // reliable. Chromium has a good example at base/android.
+  static JavaVM* globalJvm;
+  static JNIEnv* globalJNIEnv;
+  static jobject globalSndContext;
+  static jclass globalScClass;
 };
 
 } // namespace webrtc

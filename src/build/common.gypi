@@ -98,6 +98,10 @@
         # flood of chromium-style warnings. Investigate enabling them:
         # http://code.google.com/p/webrtc/issues/detail?id=163
         'clang_use_chrome_plugins%': 0,
+
+        # Switch between Android audio device OpenSL ES implementation
+        # and Java Implementation
+        'enable_android_opensl%': 1,
       }],
       ['OS=="ios"', {
         'enable_video%': 0,
@@ -211,7 +215,13 @@
           # with condition and event functions in system_wrappers.
           'WEBRTC_CLOCK_TYPE_REALTIME',
           'WEBRTC_THREAD_RR',
-          'WEBRTC_ANDROID_OPENSLES',
+         ],
+         'conditions': [
+           ['enable_android_opensl==1', {
+             'defines': [
+               'WEBRTC_ANDROID_OPENSLES',
+             ],
+           }],
          ],
       }],
     ], # conditions

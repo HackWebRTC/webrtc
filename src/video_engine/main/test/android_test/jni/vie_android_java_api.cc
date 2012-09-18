@@ -1103,9 +1103,11 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopInco
  */
 JNIEXPORT jboolean JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Create(
     JNIEnv *env,
-    jobject)
+    jobject context)
 {
-  __android_log_write(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG, "Create");
+  __android_log_write(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG, "Create VoiceEngine");
+
+  VoiceEngine::SetAndroidObjects(webrtcGlobalVM, env, context);
 
   // Check if already created
   if (voeData.ve) {

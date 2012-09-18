@@ -110,8 +110,6 @@
             'win/audio_device_utility_win.h',
             'win/audio_mixer_manager_win.cc',
             'win/audio_mixer_manager_win.h',
-            'android/audio_device_android_opensles.cc',
-            'android/audio_device_android_opensles.h',
             'android/audio_device_utility_android.cc',
             'android/audio_device_utility_android.h',
           ],
@@ -123,6 +121,19 @@
                   '-lOpenSLES',
                 ],
               },
+              'conditions': [
+                ['enable_android_opensl==1', {
+                  'sources': [
+                    'android/audio_device_android_opensles.cc',
+                    'android/audio_device_android_opensles.h',
+                  ],
+                }, {
+                  'sources': [
+                    'android/audio_device_android_jni.cc',
+                    'android/audio_device_android_jni.h',
+                  ],
+                }],
+              ],
             }],
             ['OS=="linux"', {
               'defines': [

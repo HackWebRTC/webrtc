@@ -21,7 +21,8 @@ LOCAL_SRC_FILES := \
     src/org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid.java \
     src/org/webrtc/videoengine/ViEAndroidGLES20.java \
     src/org/webrtc/videoengine/ViERenderer.java \
-    src/org/webrtc/videoengine/ViESurfaceRenderer.java
+    src/org/webrtc/videoengine/ViESurfaceRenderer.java \
+    src/org/webrtc/voiceengine/AudioDeviceAndroid.java
 
 LOCAL_PACKAGE_NAME := webrtc-video-demo
 LOCAL_CERTIFICATE := platform
