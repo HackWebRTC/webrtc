@@ -50,6 +50,8 @@
         }],
       ],
       'sources': [
+        'interface/i420_video_frame.h',
+        'i420_video_frame.cc',
         'jpeg/include/jpeg.h',
         'jpeg/data_manager.cc',
         'jpeg/data_manager.h',
@@ -58,6 +60,8 @@
         'libyuv/include/scaler.h',
         'libyuv/webrtc_libyuv.cc',
         'libyuv/scaler.cc',
+        'plane.h',
+        'plane.cc',
       ],
     },
   ],  # targets
@@ -74,9 +78,11 @@
              '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'sources': [
+            'i420_video_frame_unittest.cc',
             'jpeg/jpeg_unittest.cc',
             'libyuv/libyuv_unittest.cc',
             'libyuv/scaler_unittest.cc',
+            'plane_unittest.cc',
           ],
         },
       ],  # targets
