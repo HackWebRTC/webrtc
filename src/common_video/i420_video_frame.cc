@@ -27,8 +27,9 @@ int I420VideoFrame::CreateEmptyFrame(int width, int height,
   if (CheckDimensions(width, height, stride_y, stride_u, stride_v) < 0)
     return -1;
   int size_y = stride_y * height;
-  int size_u = (stride_u + 1) * (height + 1) / 4;
-  int size_v = (stride_v + 1) * (height + 1) / 4;
+  int half_height = (height + 1) / 2;
+  int size_u = stride_u * half_height;
+  int size_v = stride_v * half_height;
   width_ = width;
   height_ = height;
   y_plane_.CreateEmptyPlane(size_y, stride_y, size_y);
