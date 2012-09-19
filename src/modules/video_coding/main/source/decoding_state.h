@@ -52,6 +52,7 @@ class VCMDecodingState {
   bool ContinuousPictureId(int picture_id) const;
   bool ContinuousSeqNum(uint16_t seq_num) const;
   bool ContinuousLayer(int temporal_id, int tl0_pic_id) const;
+  bool UsingPictureId(const VCMFrameBuffer* frame) const;
 
   // Keep state of last decoded frame.
   // TODO(mikhal/stefan): create designated classes to handle these types.

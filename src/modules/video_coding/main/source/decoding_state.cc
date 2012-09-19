@@ -127,10 +127,11 @@ void VCMDecodingState::UpdateSyncState(const VCMFrameBuffer* frame) {
     // Verify that we are still in sync.
     // Sync will be broken if continuity is true for layers but not for the
     // other methods (PictureId and SeqNum).
-    if (!ContinuousPictureId(frame->PictureId()) &&
-        !ContinuousSeqNum(static_cast<uint16_t>(frame->GetLowSeqNum()))) {
-      // Non-layered methods have failed.
-      full_sync_ = false;
+    if (UsingPictureId(frame)) {
+      full_sync_ = ContinuousPictureId(frame->PictureId());
+    } else {
+      full_sync_ = ContinuousSeqNum(static_cast<uint16_t>(
+          frame->GetLowSeqNum()));
     }
   }
 }
@@ -152,17 +153,16 @@ bool VCMDecodingState::ContinuousFrame(const VCMFrameBuffer* frame) const {
     // continuity if sync can be restored by this frame.
     if (!full_sync_ && !frame->LayerSync())
       return false;
-    else if (!ContinuousPictureId(frame->PictureId()))
+    else if (UsingPictureId(frame)) {
+      return ContinuousPictureId(frame->PictureId());
+    } else {
       return ContinuousSeqNum(static_cast<uint16_t>(frame->GetLowSeqNum()));
+    }
   }
   return true;
 }
 
 bool VCMDecodingState::ContinuousPictureId(int picture_id) const {
-  // First, check if applicable.
-  if (picture_id == kNoPictureId || picture_id_ == kNoPictureId)
-    return false;
-
   int next_picture_id = picture_id_ + 1;
   if (picture_id < picture_id_) {
     // Wrap
@@ -197,6 +197,10 @@ bool VCMDecodingState::ContinuousLayer(int temporal_id,
   if (temporal_id != 0)
     return false;
   return (static_cast<uint8_t>(tl0_pic_id_ + 1) == tl0_pic_id);
+}
+
+bool VCMDecodingState::UsingPictureId(const VCMFrameBuffer* frame) const {
+  return (frame->PictureId() != kNoPictureId && picture_id_ != kNoPictureId);
 }
 
 }  // namespace webrtc

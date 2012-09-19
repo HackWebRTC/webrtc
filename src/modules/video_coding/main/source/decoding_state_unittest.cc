@@ -405,6 +405,38 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   delete packet;
 }
 
+TEST(TestDecodingState, DiscontinuousPicIdContinuousSeqNum) {
+  VCMDecodingState dec_state;
+  VCMFrameBuffer frame;
+  VCMPacket packet;
+  frame.Reset();
+  frame.SetState(kStateEmpty);
+  packet.frameType = kVideoFrameKey;
+  packet.codecSpecificHeader.codec = kRTPVideoVP8;
+  packet.timestamp = 0;
+  packet.seqNum = 0;
+  packet.codecSpecificHeader.codecHeader.VP8.tl0PicIdx = 0;
+  packet.codecSpecificHeader.codecHeader.VP8.temporalIdx = 0;
+  packet.codecSpecificHeader.codecHeader.VP8.pictureId = 0;
+  frame.InsertPacket(packet, 0, false, 0);
+  dec_state.SetState(&frame);
+  EXPECT_TRUE(dec_state.full_sync());
+
+  // Continuous sequence number but discontinuous picture id. This implies a
+  // a loss and we have to fall back to only decoding the base layer.
+  frame.Reset();
+  frame.SetState(kStateEmpty);
+  packet.frameType = kVideoFrameDelta;
+  packet.timestamp += 3000;
+  ++packet.seqNum;
+  packet.codecSpecificHeader.codecHeader.VP8.temporalIdx = 1;
+  packet.codecSpecificHeader.codecHeader.VP8.pictureId = 2;
+  frame.InsertPacket(packet, 0, false, 0);
+  EXPECT_FALSE(dec_state.ContinuousFrame(&frame));
+  dec_state.SetState(&frame);
+  EXPECT_FALSE(dec_state.full_sync());
+}
+
 TEST(TestDecodingState, OldInput) {
   VCMDecodingState dec_state;
   // Identify packets belonging to old frames/packets.
