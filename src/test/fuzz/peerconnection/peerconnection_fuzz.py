@@ -15,11 +15,11 @@ from common.fuzz_parameters import FillInParameter
 from common.random_javascript import *
 
 
-def ArrayOfRandomRolls(num_rolls):
+def _ArrayOfRandomRolls(num_rolls):
   return str([random.random() for x in xrange(num_rolls)])
 
 
-def RandomAudioOrVideo():
+def _RandomAudioOrVideo():
   roll = random.random()
   if roll < 0.5:
     return '{ video: true, audio:true }'
@@ -31,29 +31,29 @@ def RandomAudioOrVideo():
     return '{ video: false, audio: true }'
 
 
-def ReturnFirstArgument():
+def _ReturnFirstArgument():
   return 'function(arg) { return arg; }'
 
 
-def ReturnRandomUtf8String():
+def _ReturnRandomUtf8String():
   unicode_glyphs = ''.join(unichr(char) for char in xrange(0x10ffff + 1)
     if unicodedata.category(unichr(char))[0] in ('LMNPSZ'))
   oh_dear = random.sample(unicode_glyphs, random.randint(50, 1500))
   return 'function(arg) { return "%s"; }' % ''.join(oh_dear)
 
 
-def ReturnFuzzedSdp():
+def _ReturnFuzzedSdp():
   return 'function(arg) { return fuzzSdp(arg); }'
 
 
-def RandomSdpTransform():
+def _RandomSdpTransform():
   roll = random.random()
   if roll < 0.1:
-    return ReturnRandomUtf8String()
+    return _ReturnRandomUtf8String()
   elif roll < 0.5:
-    return ReturnFuzzedSdp()
+    return _ReturnFuzzedSdp()
   else:
-    return ReturnFirstArgument()
+    return _ReturnFirstArgument()
 
 
 def Fuzz(file_data):
@@ -62,16 +62,16 @@ def Fuzz(file_data):
   # Generate a bunch of random numbers and encode them into the page. Since the
   # values get hard-coded into the page the page's choices will be reproducible.
   file_data = FillInParameter('ARRAY_OF_RANDOM_ROLLS',
-                              ArrayOfRandomRolls(500),
+                              _ArrayOfRandomRolls(500),
                               file_data)
   file_data = FillInParameter('REQUEST_AUDIO_AND_VIDEO',
-                              RandomAudioOrVideo(),
+                              _RandomAudioOrVideo(),
                               file_data)
   file_data = FillInParameter('TRANSFORM_OFFER_SDP',
-                              RandomSdpTransform(),
+                              _RandomSdpTransform(),
                               file_data)
   file_data = FillInParameter('TRANSFORM_ANSWER_SDP',
-                              RandomSdpTransform(),
+                              _RandomSdpTransform(),
                               file_data)
 
   return file_data

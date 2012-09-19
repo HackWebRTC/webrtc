@@ -11,8 +11,8 @@
 <html>
 <head>
   <title>WebRTC PeerConnection Fuzz Test Template</title>
-  <script type="text/javascript" src="random.js"></script>
-  <script type="text/javascript" src="fuzz_sdp.js"></script>
+INCLUDE_RANDOM_JS
+INCLUDE_FUZZ_SDP_JS
   <script type="text/javascript">
   var gFirstConnection = null;
   var gSecondConnection = null;
@@ -20,7 +20,6 @@
   // Variables in caps are filled in by the fuzzer.
   var gTransformOfferSdp = TRANSFORM_OFFER_SDP;
   var gTransformAnswerSdp = TRANSFORM_ANSWER_SDP;
-  var gRandomRolls = ARRAY_OF_RANDOM_ROLLS;
 
   function startTest() {
     navigator.webkitGetUserMedia(REQUEST_AUDIO_AND_VIDEO,
@@ -99,6 +98,9 @@
     setRandomRolls(gRandomRolls);
     startTest();
   }
+
+  // This variable is placed here since its value is pretty big.
+  var gRandomRolls = ARRAY_OF_RANDOM_ROLLS;
   </script>
 </head>
 <body>

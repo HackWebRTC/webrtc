@@ -16,23 +16,49 @@ import sys
 import tempfile
 import time
 
+from common.fuzz_parameters import FillInParameter
 import peerconnection_fuzz
 
 # TODO(phoglund): remove duplication wrt getusermedia once this code stabilizes.
 
 
-def ReadFile(input_dir, file):
-  file_handle = open(os.path.join(input_dir, file))
+def _ReadFile(path):
+  file_handle = open(path)
   file_data = file_handle.read()
   file_handle.close()
   return file_data
 
 
-def GenerateData(input_dir):
-  template = ReadFile(input_dir, 'template.html')
-  file_extension = 'html'
+def _Indent(file_data, num_spaces):
+  spaces = ' ' * num_spaces
+  return spaces + file_data.replace('\n', '\n' + spaces)
 
+
+def _IncludeJsFile(js_include_to_replace, js_path, file_data):
+  js_file_data = _ReadFile(js_path)
+  js_file_data = _Indent(js_file_data, 4)
+  js_file_data = ('  <script type="text/javascript">\n' +
+                  js_file_data + '\n  </script>\n')
+  return FillInParameter(js_include_to_replace, js_file_data, file_data)
+
+
+def GenerateData():
+  this_scripts_path = os.path.dirname(os.path.realpath(__file__))
+  corpus_path = os.path.join(this_scripts_path, 'corpus');
+
+  template = _ReadFile(os.path.join(corpus_path, 'template.html'))
+
+  file_extension = 'html'
   file_data = peerconnection_fuzz.Fuzz(template)
+
+  # Paste the javascript code in directly since it's hard to make javascript
+  # includes work without data bundles.
+  file_data = _IncludeJsFile('INCLUDE_RANDOM_JS',
+                             os.path.join(corpus_path, 'random.js'),
+                             file_data)
+  file_data = _IncludeJsFile('INCLUDE_FUZZ_SDP_JS',
+                             os.path.join(corpus_path, 'fuzz_sdp.js'),
+                             file_data)
 
   return file_data, file_extension
 
@@ -54,13 +80,13 @@ if __name__ == '__main__':
   assert input_dir is not None, 'Missing "--input_dir" argument'
 
   for file_no in range(no_of_files):
-    file_data, file_extension = GenerateData(input_dir)
+    file_data, file_extension = GenerateData()
+    file_data = file_data.encode('utf-8')
     file_descriptor, file_path = tempfile.mkstemp(
-        prefix='fuzz-%d-%d' % (start_time, file_no),
+        prefix='fuzz-http-%d-%d' % (start_time, file_no),
         suffix='.' + file_extension,
         dir=output_dir)
     file = os.fdopen(file_descriptor, 'wb')
     print 'Writing %d bytes to "%s"' % (len(file_data), file_path)
-    print file_data
-    file.write(file_data.encode('utf-8'))
+    file.write(file_data)
     file.close()
