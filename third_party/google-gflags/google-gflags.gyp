@@ -51,10 +51,12 @@
         'src/gflags_reporting.cc',
       ],
       'conditions': [
-        ['OS == "win"', {
+        ['OS=="win"', {
           'sources': [
             'src/windows/port.cc',
           ],
+          # Suppress warnings about WIN32_LEAN_AND_MEAN.
+          'msvs_disabled_warnings': [4005,],
         }],
         # TODO(andrew): Look into fixing this warning upstream:
         # http://code.google.com/p/webrtc/issues/detail?id=760

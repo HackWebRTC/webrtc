@@ -32,6 +32,7 @@
 .settings
 /build
 /chromium_deps
+/google_apis
 /gyp-mac-tool
 /Makefile
 /out
