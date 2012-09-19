@@ -64,7 +64,8 @@ TEST(TestI420VideoFrame, SizeAllocation) {
   EXPECT_EQ((height + 1) * (stride_v + 1) / 4, frame.size(kVPlane));
 }
 
-TEST(TestI420VideoFrame, CopyFrame) {
+// Disabled due to BUG=852.
+TEST(TestI420VideoFrame, DISABLED_CopyFrame) {
   I420VideoFrame frame1, frame2;
   uint32_t timestamp = 1;
   int64_t render_time_ms = 1;
@@ -128,7 +129,8 @@ TEST(TestI420VideoFrame, CopyBuffer) {
   EXPECT_LE(kSizeUv, frame2.size(kVPlane));
 }
 
-TEST(TestI420VideoFrame, FrameSwap) {
+// Disabled due to BUG=852.
+TEST(TestI420VideoFrame, DISABLED_FrameSwap) {
   I420VideoFrame frame1, frame2;
   uint32_t timestamp1 = 1;
   int64_t render_time_ms1 = 1;
@@ -215,14 +217,19 @@ bool EqualFramesExceptSize(const I420VideoFrame& frame1,
   ret |= (frame1.stride(kVPlane) == frame2.stride(kVPlane));
   ret |= (frame1.timestamp() == frame2.timestamp());
   ret |= (frame1.render_time_ms() == frame2.render_time_ms());
+  if (!ret)
+    return false;
   // Memory should be the equal for the minimum of the two sizes.
   int size_y = std::min(frame1.size(kYPlane), frame2.size(kYPlane));
   int size_u = std::min(frame1.size(kUPlane), frame1.size(kUPlane));
   int size_v = std::min(frame1.size(kVPlane), frame1.size(kVPlane));
-  ret |= memcmp(frame1.buffer(kYPlane), frame2.buffer(kYPlane), size_y);
-  ret |= memcmp(frame1.buffer(kUPlane), frame2.buffer(kYPlane), size_u);
-  ret |= memcmp(frame1.buffer(kVPlane), frame2.buffer(kYPlane), size_v);
-  return ret;
+  int ret_val = 0;
+  ret_val += memcmp(frame1.buffer(kYPlane), frame2.buffer(kYPlane), size_y);
+  ret_val += memcmp(frame1.buffer(kUPlane), frame2.buffer(kUPlane), size_u);
+  ret_val += memcmp(frame1.buffer(kVPlane), frame2.buffer(kVPlane), size_v);
+  if (ret_val == 0)
+    return true;
+  return false;
 }
 
 }  // namespace webrtc
