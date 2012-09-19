@@ -29,7 +29,7 @@ namespace webrtc
 
 JavaVM* AudioDeviceAndroidJni::globalJvm = NULL;
 JNIEnv* AudioDeviceAndroidJni::globalJNIEnv = NULL;
-jobject AudioDeviceAndroidJni::globalSndContext = NULL;
+jobject AudioDeviceAndroidJni::globalContext = NULL;
 jclass AudioDeviceAndroidJni::globalScClass = NULL;
 
 // ----------------------------------------------------------------------------
@@ -46,7 +46,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetAndroidAudioDeviceObjects(
     void* context) {
   // TODO(leozwang): Make this function thread-safe.
   globalJvm = reinterpret_cast<JavaVM*>(javaVM);
-  globalSndContext = reinterpret_cast<jobject>(context);
 
   if (env) {
     globalJNIEnv = reinterpret_cast<JNIEnv*>(env);
@@ -54,9 +53,9 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetAndroidAudioDeviceObjects(
     jclass javaScClassLocal = globalJNIEnv->FindClass(
         "org/webrtc/voiceengine/AudioDeviceAndroid");
     if (!javaScClassLocal) {
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
+                   "%s: could not find java class", __FUNCTION__);
       return -1; // exception thrown
-    }
-    else {
     }
 
     // Create a global reference to the class (to tell JNI that we are
@@ -64,6 +63,16 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetAndroidAudioDeviceObjects(
     globalScClass = reinterpret_cast<jclass> (
         globalJNIEnv->NewGlobalRef(javaScClassLocal));
     if (!globalScClass) {
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
+                   "%s: could not create reference", __FUNCTION__);
+      return -1;
+    }
+
+    globalContext = globalJNIEnv->NewGlobalRef(
+        reinterpret_cast<jobject>(context));
+    if (!globalContext) {
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
+                   "%s: could not create context reference", __FUNCTION__);
       return -1;
     }
 
@@ -71,12 +80,17 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetAndroidAudioDeviceObjects(
     globalJNIEnv->DeleteLocalRef(javaScClassLocal);
   }
   else { // User is resetting the env variable
+    WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, -1,
+                 "%s: env is NULL, assuming deinit", __FUNCTION__);
+
     if (!globalJNIEnv) {
+      WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, -1,
+                   "%s: saved env already NULL", __FUNCTION__);
       return 0;
     }
 
     globalJNIEnv->DeleteGlobalRef(globalScClass);
-    globalJNIEnv = (JNIEnv *) NULL;
+    globalJNIEnv = reinterpret_cast<JNIEnv*>(NULL);
   }
 
   return 0;
@@ -405,6 +419,9 @@ WebRtc_Word32 AudioDeviceAndroidJni::Terminate()
     _javaMidRecAudio = 0;
     _javaDirectPlayBuffer = NULL;
     _javaDirectRecBuffer = NULL;
+
+    env->DeleteGlobalRef(_javaContext);
+    _javaContext = NULL;
 
     // Delete the references to the java buffers, this allows the
     // garbage collector to delete them
@@ -2144,7 +2161,7 @@ WebRtc_Word32 AudioDeviceAndroidJni::InitJavaResources()
 {
     // todo: Check if we already have created the java object
     _javaVM = globalJvm;
-    _javaContext = globalSndContext;
+    _javaContext = globalContext;
     _javaScClass = globalScClass;
 
     // use the jvm that has been set
@@ -2199,7 +2216,7 @@ WebRtc_Word32 AudioDeviceAndroidJni::InitJavaResources()
         return -1;
     }
 
-    // create a reference to the object (to tell JNI that we are referencing it
+    // Create a reference to the object (to tell JNI that we are referencing it
     // after this function has returned).
     _javaScObj = env->NewGlobalRef(javaScObjLocal);
     if (!_javaScObj)
@@ -2215,29 +2232,25 @@ WebRtc_Word32 AudioDeviceAndroidJni::InitJavaResources()
 
     //////////////////////
     // AUDIO MANAGEMENT
-    // This is not mandatory functionality.
+
+    // This is not mandatory functionality
     if (_javaContext) {
-      // Get Context field ID
-      jfieldID fidContext = env->GetFieldID(_javaScClass, "_context",
+      jfieldID context_id = env->GetFieldID(globalScClass,
+                                            "_context",
                                             "Landroid/content/Context;");
-      if (!fidContext) {
+      if (!context_id) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "%s: could not get Context fid", __FUNCTION__);
+                     "%s: could not get _context id", __FUNCTION__);
         return -1;
       }
 
-      // Set the Java application Context so we can use AudioManager
-      // Get Context object and check it.
-      jobject javaContext = (jobject) _javaContext;
-      env->SetObjectField(_javaScObj, fidContext, javaContext);
-      javaContext = env->GetObjectField(_javaScObj, fidContext);
+      env->SetObjectField(_javaScObj, context_id, globalContext);
+      jobject javaContext = env->GetObjectField(_javaScObj, context_id);
       if (!javaContext) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "%s: could not set Context", __FUNCTION__);
+                     "%s: could not set or get _context", __FUNCTION__);
         return -1;
       }
-      // Delete local object ref.
-      env->DeleteLocalRef(javaContext);
     }
     else {
       WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,

@@ -671,7 +671,7 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     private int SetupVoE() {
         // Create VoiceEngine
         // Error logging is done in native API wrapper
-        ViEAndroidAPI.VoE_Create();
+        ViEAndroidAPI.VoE_Create(getApplicationContext());
 
         // Initialize
         if (0 != ViEAndroidAPI.VoE_Init(enableTrace)) {

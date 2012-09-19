@@ -24,8 +24,8 @@ namespace webrtc
 {
 class EventWrapper;
 
-const WebRtc_UWord32 N_REC_SAMPLES_PER_SEC = 44000; // Default is 44.1 kHz
-const WebRtc_UWord32 N_PLAY_SAMPLES_PER_SEC = 44000; // Default is 44.1 kHz
+const WebRtc_UWord32 N_REC_SAMPLES_PER_SEC = 16000; // Default is 16 kHz
+const WebRtc_UWord32 N_PLAY_SAMPLES_PER_SEC = 16000; // Default is 16 kHz
 
 const WebRtc_UWord32 N_REC_CHANNELS = 1; // default is mono recording
 const WebRtc_UWord32 N_PLAY_CHANNELS = 1; // default is mono playout
@@ -264,7 +264,7 @@ class AudioDeviceAndroidJni : public AudioDeviceGeneric {
   // reliable. Chromium has a good example at base/android.
   static JavaVM* globalJvm;
   static JNIEnv* globalJNIEnv;
-  static jobject globalSndContext;
+  static jobject globalContext;
   static jclass globalScClass;
 };
 

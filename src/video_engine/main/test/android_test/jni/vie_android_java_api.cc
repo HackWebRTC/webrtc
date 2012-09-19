@@ -225,7 +225,7 @@ public:
 };
 
 // JNI_OnLoad
-jint JNI_OnLoad(JavaVM* vm, void* /*reserved*/) {
+jint JNI_OnLoad(JavaVM* vm, void* reserved) {
   webrtcGlobalVM = vm;
   if (!webrtcGlobalVM)
   {
@@ -1099,15 +1099,15 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopInco
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
  * Method:    VoE_Create
- * Signature: ()Z
+ * Signature: (Landroid/content/Context)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Create(
     JNIEnv *env,
-    jobject context)
-{
+    jobject context,
+    jobject ctx) {
   __android_log_write(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG, "Create VoiceEngine");
 
-  VoiceEngine::SetAndroidObjects(webrtcGlobalVM, env, context);
+  VoiceEngine::SetAndroidObjects(webrtcGlobalVM, env, ctx);
 
   // Check if already created
   if (voeData.ve) {

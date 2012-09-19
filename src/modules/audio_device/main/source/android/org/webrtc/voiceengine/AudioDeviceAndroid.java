@@ -1,15 +1,11 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
  *  tree. An additional intellectual property rights grant can be found
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
- */
-
-/*
- *  Android audio device test app
  */
 
 package org.webrtc.voiceengine;
@@ -23,7 +19,6 @@ import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.util.Log;
-
 
 class AudioDeviceAndroid {
     private AudioTrack _audioTrack = null;

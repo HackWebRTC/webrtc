@@ -238,10 +238,10 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopInco
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
  * Method:    VoE_Create
- * Signature: ()Z
+ * Signature: (Landroid/content/Context)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Create
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jobject);
 
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI

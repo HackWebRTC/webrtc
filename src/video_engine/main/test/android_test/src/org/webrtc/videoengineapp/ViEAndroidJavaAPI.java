@@ -86,7 +86,7 @@ public class ViEAndroidJavaAPI {
 
     // Voice Engine API
     // Create and Delete functions
-    public native boolean VoE_Create();
+    public native boolean VoE_Create(Context context);
     public native boolean VoE_Delete();
 
     // Initialization and Termination functions
