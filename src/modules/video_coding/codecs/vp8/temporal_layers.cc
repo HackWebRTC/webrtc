@@ -57,14 +57,14 @@ bool TemporalLayers::ConfigureBitrates(int bitrateKbit,
              temporal_ids_,
              sizeof(unsigned int) * temporal_ids_length_);
       temporal_pattern_length_ = 8;
-      temporal_pattern_[0] = kTemporalUpdateLast;
-      temporal_pattern_[1] = kTemporalUpdateGoldenWithoutDependency;
-      temporal_pattern_[2] = kTemporalUpdateLast;
-      temporal_pattern_[3] = kTemporalUpdateGolden;
-      temporal_pattern_[4] = kTemporalUpdateLast;
-      temporal_pattern_[5] = kTemporalUpdateGolden;
-      temporal_pattern_[6] = kTemporalUpdateLast;
-      temporal_pattern_[7] = kTemporalUpdateNoneNoRefAltref;
+      temporal_pattern_[0] = kTemporalUpdateLastAndGoldenRefAltRef;
+      temporal_pattern_[1] = kTemporalUpdateGoldenWithoutDependencyRefAltRef;
+      temporal_pattern_[2] = kTemporalUpdateLastRefAltRef;
+      temporal_pattern_[3] = kTemporalUpdateGoldenRefAltRef;
+      temporal_pattern_[4] = kTemporalUpdateLastRefAltRef;
+      temporal_pattern_[5] = kTemporalUpdateGoldenRefAltRef;
+      temporal_pattern_[6] = kTemporalUpdateLastRefAltRef;
+      temporal_pattern_[7] = kTemporalUpdateNone;
       break;
     case 3:
       temporal_ids_length_ = 4;

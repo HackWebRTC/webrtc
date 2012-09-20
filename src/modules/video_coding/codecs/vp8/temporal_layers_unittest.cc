@@ -68,23 +68,23 @@ TEST(TemporalLayersTest, 2Layers) {
   CodecSpecificInfoVP8 vp8_info;
   tl.ConfigureBitrates(500, &cfg);
 
-  int expected_flags[16] = { kTemporalUpdateLast,
-                             kTemporalUpdateGoldenWithoutDependency,
-                             kTemporalUpdateLast,
-                             kTemporalUpdateGolden,
-                             kTemporalUpdateLast,
-                             kTemporalUpdateGolden,
-                             kTemporalUpdateLast,
-                             kTemporalUpdateNoneNoRefAltRef,
-                             kTemporalUpdateLast,
-                             kTemporalUpdateGoldenWithoutDependency,
-                             kTemporalUpdateLast,
-                             kTemporalUpdateGolden,
-                             kTemporalUpdateLast,
-                             kTemporalUpdateGolden,
-                             kTemporalUpdateLast,
-                             kTemporalUpdateNoneNoRefAltRef
-  };
+  int expected_flags[16] = { kTemporalUpdateLastAndGoldenRefAltRef,
+                             kTemporalUpdateGoldenWithoutDependencyRefAltRef,
+                             kTemporalUpdateLastRefAltRef,
+                             kTemporalUpdateGoldenRefAltRef,
+                             kTemporalUpdateLastRefAltRef,
+                             kTemporalUpdateGoldenRefAltRef,
+                             kTemporalUpdateLastRefAltRef,
+                             kTemporalUpdateNone,
+                             kTemporalUpdateLastAndGoldenRefAltRef,
+                             kTemporalUpdateGoldenWithoutDependencyRefAltRef,
+                             kTemporalUpdateLastRefAltRef,
+                             kTemporalUpdateGoldenRefAltRef,
+                             kTemporalUpdateLastRefAltRef,
+                             kTemporalUpdateGoldenRefAltRef,
+                             kTemporalUpdateLastRefAltRef,
+                             kTemporalUpdateNone,
+   };
   int expected_temporal_idx[16] =
       { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
 
