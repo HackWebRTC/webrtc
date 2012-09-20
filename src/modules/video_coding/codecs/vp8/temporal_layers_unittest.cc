@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -94,10 +94,9 @@ TEST(TemporalLayersTest, 2Layers) {
 
   for (int i = 0; i < 16; ++i) {
     EXPECT_EQ(expected_flags[i], tl.EncodeFlags());
-    tl.PopulateCodecSpecific(false, &vp8_info);
+    tl.PopulateCodecSpecific(false, &vp8_info, 0);
     EXPECT_EQ(expected_temporal_idx[i], vp8_info.temporalIdx);
-    bool expected_sync = expected_layer_sync[i];
-    EXPECT_EQ(expected_sync, vp8_info.layerSync);
+    EXPECT_EQ(expected_layer_sync[i], vp8_info.layerSync);
   }
 }
 
@@ -133,10 +132,9 @@ TEST(TemporalLayersTest, 3Layers) {
 
   for (int i = 0; i < 16; ++i) {
     EXPECT_EQ(expected_flags[i], tl.EncodeFlags());
-    tl.PopulateCodecSpecific(false, &vp8_info);
+    tl.PopulateCodecSpecific(false, &vp8_info, 0);
     EXPECT_EQ(expected_temporal_idx[i], vp8_info.temporalIdx);
-    bool expected_sync = expected_layer_sync[i];
-    EXPECT_EQ(expected_sync, vp8_info.layerSync);
+    EXPECT_EQ(expected_layer_sync[i], vp8_info.layerSync);
   }
 }
 
@@ -172,10 +170,9 @@ TEST(TemporalLayersTest, 4Layers) {
 
   for (int i = 0; i < 16; ++i) {
     EXPECT_EQ(expected_flags[i], tl.EncodeFlags());
-    tl.PopulateCodecSpecific(false, &vp8_info);
+    tl.PopulateCodecSpecific(false, &vp8_info, 0);
     EXPECT_EQ(expected_temporal_idx[i], vp8_info.temporalIdx);
-    bool expected_sync = expected_layer_sync[i];
-    EXPECT_EQ(expected_sync, vp8_info.layerSync);
+    EXPECT_EQ(expected_layer_sync[i], vp8_info.layerSync);
   }
 }
 
@@ -203,15 +200,14 @@ TEST(TemporalLayersTest, KeyFrame) {
 
   for (int i = 0; i < 7; ++i) {
     EXPECT_EQ(expected_flags[i], tl.EncodeFlags());
-    tl.PopulateCodecSpecific(true, &vp8_info);
+    tl.PopulateCodecSpecific(true, &vp8_info, 0);
     EXPECT_EQ(expected_temporal_idx[i], vp8_info.temporalIdx);
-    bool expected_sync = expected_layer_sync[i];
-    EXPECT_EQ(expected_sync, vp8_info.layerSync);
+    EXPECT_EQ(expected_layer_sync[i], vp8_info.layerSync);
   }
   EXPECT_EQ(expected_flags[7], tl.EncodeFlags());
-  tl.PopulateCodecSpecific(false, &vp8_info);
+  tl.PopulateCodecSpecific(false, &vp8_info, 0);
   EXPECT_EQ(expected_temporal_idx[7], vp8_info.temporalIdx);
-  bool expected_sync = expected_layer_sync[7];
-  EXPECT_EQ(expected_sync, vp8_info.layerSync);
+  EXPECT_EQ(expected_layer_sync[7], vp8_info.layerSync);
 }
 }  // namespace webrtc
+

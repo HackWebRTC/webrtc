@@ -18,7 +18,7 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES := \
     reference_picture_selection.cc \
-    vp8.cc
+    vp8_impl.cc
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \

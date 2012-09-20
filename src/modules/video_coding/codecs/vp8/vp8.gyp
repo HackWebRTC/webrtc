@@ -60,7 +60,7 @@
         'reference_picture_selection.cc',
         'include/vp8.h',
         'include/vp8_common_types.h',
-        'vp8.cc',
+        'vp8_impl.cc',
       ],
     },
   ], # targets

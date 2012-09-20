@@ -31,7 +31,8 @@ class TemporalLayers {
 
   bool ConfigureBitrates(int bitrate_kbit, vpx_codec_enc_cfg_t* cfg);
 
-  void PopulateCodecSpecific(bool key_frame, CodecSpecificInfoVP8 *vp8_info);
+  void PopulateCodecSpecific(bool key_frame, CodecSpecificInfoVP8 *vp8_info,
+                             uint32_t timestamp);
 
  private:
   enum TemporalReferences {
@@ -73,6 +74,7 @@ class TemporalLayers {
   TemporalReferences temporal_pattern_[kMaxTemporalPattern];
   uint8_t tl0_pic_idx_;
   uint8_t pattern_idx_;
+  uint32_t timestamp_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_TEMPORAL_LAYERS_H_

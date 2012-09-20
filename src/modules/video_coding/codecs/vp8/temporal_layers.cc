@@ -1,4 +1,4 @@
-/* Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+/* Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 *
 *  Use of this source code is governed by a BSD-style license
 *  that can be found in the LICENSE file in the root of the source
@@ -27,7 +27,8 @@ TemporalLayers::TemporalLayers(int numberOfTemporalLayers)
       temporal_ids_length_(0),
       temporal_pattern_length_(0),
       tl0_pic_idx_(rand()),
-      pattern_idx_(255) {
+      pattern_idx_(255),
+      timestamp_(0) {
   assert(kMaxTemporalStreams >= numberOfTemporalLayers);
   memset(temporal_ids_, 0, sizeof(temporal_ids_));
   memset(temporal_pattern_, 0, sizeof(temporal_pattern_));
@@ -214,7 +215,8 @@ int TemporalLayers::EncodeFlags() {
 }
 
 void TemporalLayers::PopulateCodecSpecific(bool key_frame,
-                                           CodecSpecificInfoVP8 *vp8_info) {
+                                           CodecSpecificInfoVP8 *vp8_info,
+                                           uint32_t timestamp) {
   assert(number_of_temporal_layers_ > 1);
   assert(0 < temporal_ids_length_);
 
@@ -237,10 +239,11 @@ void TemporalLayers::PopulateCodecSpecific(bool key_frame,
   } else {
     vp8_info->layerSync = false;
   }
-
-  if (vp8_info->temporalIdx == 0) {
+  if (vp8_info->temporalIdx == 0 && timestamp != timestamp_) {
+    timestamp_ = timestamp;
     tl0_pic_idx_++;
   }
   vp8_info->tl0PicIdx = tl0_pic_idx_;
 }
 }  // namespace webrtc
+
