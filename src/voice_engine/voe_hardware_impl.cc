@@ -324,8 +324,8 @@ int VoEHardwareImpl::SetRecordingDevice(int index,
                  "SetRecordingDevice(index=%d, recordingChannel=%d)",
                  index, (int) recordingChannel);
     CriticalSectionScoped cs(_shared->crit_sec());
-    ANDROID_NOT_SUPPORTED(_shared->statistics());
     IPHONE_NOT_SUPPORTED(_shared->statistics());
+    // TODO(leozwang): Add this api to Android OpenSL ES implementation.
 
     if (!_shared->statistics().Initialized())
     {
