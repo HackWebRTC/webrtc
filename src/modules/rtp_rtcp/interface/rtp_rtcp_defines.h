@@ -211,13 +211,13 @@ class RtpAudioFeedback {
 
 class RtcpIntraFrameObserver {
  public:
-  virtual void OnReceivedIntraFrameRequest(const uint32_t ssrc) = 0;
+  virtual void OnReceivedIntraFrameRequest(uint32_t ssrc) = 0;
 
-  virtual void OnReceivedSLI(const uint32_t ssrc,
-                             const uint8_t picture_id) = 0;
+  virtual void OnReceivedSLI(uint32_t ssrc,
+                             uint8_t picture_id) = 0;
 
-  virtual void OnReceivedRPSI(const uint32_t ssrc,
-                              const uint64_t picture_id) = 0;
+  virtual void OnReceivedRPSI(uint32_t ssrc,
+                              uint64_t picture_id) = 0;
 
   virtual ~RtcpIntraFrameObserver() {}
 };

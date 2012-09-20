@@ -129,13 +129,13 @@ class ViEEncoder
   WebRtc_Word32 RegisterCodecObserver(ViEEncoderObserver* observer);
 
   // Implements RtcpIntraFrameObserver.
-  virtual void OnReceivedIntraFrameRequest(const uint32_t ssrc);
+  virtual void OnReceivedIntraFrameRequest(uint32_t ssrc);
 
-  virtual void OnReceivedSLI(const uint32_t ssrc,
-                             const uint8_t picture_id);
+  virtual void OnReceivedSLI(uint32_t ssrc,
+                             uint8_t picture_id);
 
-  virtual void OnReceivedRPSI(const uint32_t ssrc,
-                              const uint64_t picture_id);
+  virtual void OnReceivedRPSI(uint32_t ssrc,
+                              uint64_t picture_id);
 
   // Effect filter.
   WebRtc_Word32 RegisterEffectFilter(ViEEffectFilter* effect_filter);

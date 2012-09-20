@@ -794,19 +794,19 @@ WebRtc_Word32 ViEEncoder::RegisterCodecObserver(ViEEncoderObserver* observer) {
   return 0;
 }
 
-void ViEEncoder::OnReceivedSLI(const uint32_t /*ssrc*/,
-                               const uint8_t picture_id) {
+void ViEEncoder::OnReceivedSLI(uint32_t /*ssrc*/,
+                               uint8_t picture_id) {
   picture_id_sli_ = picture_id;
   has_received_sli_ = true;
 }
 
-void ViEEncoder::OnReceivedRPSI(const uint32_t /*ssrc*/,
-                                const uint64_t picture_id) {
+void ViEEncoder::OnReceivedRPSI(uint32_t /*ssrc*/,
+                                uint64_t picture_id) {
   picture_id_rpsi_ = picture_id;
   has_received_rpsi_ = true;
 }
 
-void ViEEncoder::OnReceivedIntraFrameRequest(const uint32_t /*ssrc*/) {
+void ViEEncoder::OnReceivedIntraFrameRequest(uint32_t /*ssrc*/) {
   // Key frame request from remote side, signal to VCM.
   WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceVideo,
                ViEId(engine_id_, channel_id_), "%s", __FUNCTION__);
