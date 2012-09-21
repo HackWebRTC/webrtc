@@ -144,9 +144,13 @@ bool VoiceEngine::Delete(VoiceEngine*& voiceEngine)
 
 int VoiceEngine::SetAndroidObjects(void* javaVM, void* env, void* context)
 {
-#if defined(WEBRTC_ANDROID) && !defined(WEBRTC_ANDROID_OPENSLES)
+#ifdef WEBRTC_ANDROID
+#ifdef WEBRTC_ANDROID_OPENSLES
+  return 0;
+#else
   return AudioDeviceAndroidJni::SetAndroidAudioDeviceObjects(
       javaVM, env, context);
+#endif
 #else
   return -1;
 #endif

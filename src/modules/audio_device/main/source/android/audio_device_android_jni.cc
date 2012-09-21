@@ -15,7 +15,9 @@
 // TODO(xians): Break out attach and detach current thread to JVM to
 // separate functions.
 
+#include <android/log.h>
 #include <stdlib.h>
+
 #include "audio_device_utility.h"
 #include "audio_device_android_jni.h"
 #include "audio_device_config.h"
@@ -44,6 +46,8 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetAndroidAudioDeviceObjects(
     void* javaVM,
     void* env,
     void* context) {
+  __android_log_print(ANDROID_LOG_DEBUG, "WEBRTC", "JNI:%s", __FUNCTION__);
+
   // TODO(leozwang): Make this function thread-safe.
   globalJvm = reinterpret_cast<JavaVM*>(javaVM);
 
