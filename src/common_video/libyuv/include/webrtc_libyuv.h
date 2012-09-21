@@ -56,13 +56,19 @@ enum VideoRotationMode {
   kRotate270 = 270,
 };
 
+// Align value to 64 bits.
+// Input:
+//   - value   : Input value to be aligned.
+// Return value: An aligned to 64 bit form of the input value.
+int AlignTo64Bit(int value);
+
 // Calculate the required buffer size.
 // Input:
-//   - type - The type of the designated video frame.
-//   - width - frame width in pixels.
-//   - height - frame height in pixels.
-// Return value:  The required size in bytes to accommodate the specified
-//                video frame or -1 in case of an error .
+//   - type         :The type of the designated video frame.
+//   - width        :frame width in pixels.
+//   - height       :frame height in pixels.
+// Return value:    :The required size in bytes to accommodate the specified
+//                   video frame or -1 in case of an error .
 int CalcBufferSize(VideoType type, int width, int height);
 
 // Convert To I420

@@ -301,4 +301,16 @@ TEST_F(TestLibYuv, DISABLED_MirrorTest) {
   delete [] test_frame2;
 }
 
+TEST_F(TestLibYuv, alignment) {
+  int value = 640;
+  int aligned_value = (value + 63) & ~63;
+  EXPECT_EQ(AlignTo64Bit(value), aligned_value);
+  value = 600;
+  aligned_value = (value + 63) & ~63;
+  EXPECT_EQ(AlignTo64Bit(value), aligned_value);
+  value = 0;
+  aligned_value = (value + 63) & ~63;
+  EXPECT_EQ(AlignTo64Bit(value), aligned_value);
+}
+
 }  // namespace
