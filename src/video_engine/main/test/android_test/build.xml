@@ -833,7 +833,7 @@ Notice for all the files in this folder.
             <echo level="info">----------</echo>
             <echo level="info">Handling RenderScript files...</echo>
             <renderscript executable="${renderscript}"
-                    includePath="${android.renderscript.include.path}"
+                    includePathRefId="android.renderscript.include.path"
                     genFolder="${gen.absolute.dir}"
                     resFolder="${out.res.absolute.dir}/raw"
                     targetApi="${project.minSdkVersion}"
