@@ -99,6 +99,7 @@ typedef struct NsxInst_t_ {
   int                     scaleEnergyIn;
   int                     normData;
 
+  struct RealFFT* real_fft;
 } NsxInst_t;
 
 #ifdef __cplusplus

@@ -8,18 +8,22 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <stdlib.h>
-#include <string.h>
-
 #include "noise_suppression_x.h"
+
+#include <stdlib.h>
+
+#include "common_audio/signal_processing/include/real_fft.h"
 #include "nsx_core.h"
 #include "nsx_defines.h"
 
 int WebRtcNsx_Create(NsxHandle** nsxInst) {
-  *nsxInst = (NsxHandle*)malloc(sizeof(NsxInst_t));
-  if (*nsxInst != NULL) {
+  NsxInst_t* self = malloc(sizeof(NsxInst_t));
+  *nsxInst = (NsxHandle*)self;
+
+  if (self != NULL) {
     WebRtcSpl_Init();
-    (*(NsxInst_t**)nsxInst)->initFlag = 0;
+    self->real_fft = NULL;
+    self->initFlag = 0;
     return 0;
   } else {
     return -1;
@@ -28,6 +32,7 @@ int WebRtcNsx_Create(NsxHandle** nsxInst) {
 }
 
 int WebRtcNsx_Free(NsxHandle* nsxInst) {
+  WebRtcSpl_FreeRealFFT(((NsxInst_t*)nsxInst)->real_fft);
   free(nsxInst);
   return 0;
 }

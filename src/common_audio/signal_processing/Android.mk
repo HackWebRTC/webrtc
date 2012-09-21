@@ -35,6 +35,7 @@ LOCAL_SRC_FILES := \
     lpc_to_refl_coef.c \
     min_max_operations.c \
     randomization_functions.c \
+    real_fft.c \
     refl_coef_to_lpc.c \
     resample.c \
     resample_48khz.c \

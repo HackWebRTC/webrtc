@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "common_audio/signal_processing/include/real_fft.h"
 #include "cpu_features_wrapper.h"
 #include "nsx_core.h"
 
@@ -794,6 +795,14 @@ WebRtc_Word32 WebRtcNsx_InitCore(NsxInst_t* inst, WebRtc_UWord32 fs) {
   inst->anaLen2 = WEBRTC_SPL_RSHIFT_W16(inst->anaLen, 1);
   inst->magnLen = inst->anaLen2 + 1;
 
+  if (inst->real_fft != NULL) {
+    WebRtcSpl_FreeRealFFT(inst->real_fft);
+  }
+  inst->real_fft = WebRtcSpl_CreateRealFFT(inst->stages);
+  if (inst->real_fft == NULL) {
+    return -1;
+  }
+
   WebRtcSpl_ZerosArrayW16(inst->analysisBuffer, ANAL_BLOCKL_MAX);
   WebRtcSpl_ZerosArrayW16(inst->synthesisBuffer, ANAL_BLOCKL_MAX);
 
@@ -1548,14 +1557,20 @@ void WebRtcNsx_DataAnalysis(NsxInst_t* inst, short* speechFrame, WebRtc_UWord16*
   WebRtc_Word16   frac = 0;
   WebRtc_Word16   log2 = 0;
   WebRtc_Word16   matrix_determinant = 0;
-  WebRtc_Word16   winData[ANAL_BLOCKL_MAX], maxWinData;
-  WebRtc_Word16   realImag[ANAL_BLOCKL_MAX << 1];
+  WebRtc_Word16   maxWinData;
 
   int i, j;
   int zeros;
   int net_norm = 0;
   int right_shifts_in_magnU16 = 0;
   int right_shifts_in_initMagnEst = 0;
+
+  int16_t winData_buff[ANAL_BLOCKL_MAX * 2 + 16];
+  int16_t realImag_buff[ANAL_BLOCKL_MAX * 2 + 16];
+
+  // Align the structures to 32-byte boundary for the FFT function.
+  int16_t* winData = (int16_t*) (((uintptr_t)winData_buff + 31) & ~31);
+  int16_t* realImag = (int16_t*) (((uintptr_t) realImag_buff + 31) & ~31);
 
   // Update analysis buffer for lower band, and window data before FFT.
   WebRtcNsx_AnalysisUpdate(inst, winData, speechFrame);
@@ -1585,14 +1600,13 @@ void WebRtcNsx_DataAnalysis(NsxInst_t* inst, short* speechFrame, WebRtc_UWord16*
   // create realImag as winData interleaved with zeros (= imag. part), normalize it
   WebRtcNsx_CreateComplexBuffer(inst, winData, realImag);
 
-  // bit-reverse position of elements in array and FFT the array
-  WebRtcSpl_ComplexBitReverse(realImag, inst->stages); // Q(normData-stages)
-  WebRtcSpl_ComplexFFT(realImag, inst->stages, 1);
+  // FFT output will be in winData[].
+  WebRtcSpl_RealForwardFFT(inst->real_fft, realImag, winData);
 
   inst->imag[0] = 0; // Q(normData-stages)
   inst->imag[inst->anaLen2] = 0;
-  inst->real[0] = realImag[0]; // Q(normData-stages)
-  inst->real[inst->anaLen2] = realImag[inst->anaLen];
+  inst->real[0] = winData[0]; // Q(normData-stages)
+  inst->real[inst->anaLen2] = winData[inst->anaLen];
   // Q(2*(normData-stages))
   inst->magnEnergy = (WebRtc_UWord32)WEBRTC_SPL_MUL_16_16(inst->real[0], inst->real[0]);
   inst->magnEnergy += (WebRtc_UWord32)WEBRTC_SPL_MUL_16_16(inst->real[inst->anaLen2],
@@ -1604,12 +1618,12 @@ void WebRtcNsx_DataAnalysis(NsxInst_t* inst, short* speechFrame, WebRtc_UWord16*
 
   if (inst->blockIndex >= END_STARTUP_SHORT) {
     for (i = 1, j = 2; i < inst->anaLen2; i += 1, j += 2) {
-      inst->real[i] = realImag[j];
-      inst->imag[i] = -realImag[j + 1];
+      inst->real[i] = winData[j];
+      inst->imag[i] = -winData[j + 1];
       // magnitude spectrum
       // energy in Q(2*(normData-stages))
-      tmpU32no1 = (WebRtc_UWord32)WEBRTC_SPL_MUL_16_16(realImag[j], realImag[j]);
-      tmpU32no1 += (WebRtc_UWord32)WEBRTC_SPL_MUL_16_16(realImag[j + 1], realImag[j + 1]);
+      tmpU32no1 = (WebRtc_UWord32)WEBRTC_SPL_MUL_16_16(winData[j], winData[j]);
+      tmpU32no1 += (WebRtc_UWord32)WEBRTC_SPL_MUL_16_16(winData[j + 1], winData[j + 1]);
       inst->magnEnergy += tmpU32no1; // Q(2*(normData-stages))
 
       magnU16[i] = (WebRtc_UWord16)WebRtcSpl_SqrtFloor(tmpU32no1); // Q(normData-stages)
@@ -1653,12 +1667,12 @@ void WebRtcNsx_DataAnalysis(NsxInst_t* inst, short* speechFrame, WebRtc_UWord16*
     sum_log_i_log_magn = (WEBRTC_SPL_MUL_16_16(kLogIndex[inst->anaLen2], log2) >> 3);
 
     for (i = 1, j = 2; i < inst->anaLen2; i += 1, j += 2) {
-      inst->real[i] = realImag[j];
-      inst->imag[i] = -realImag[j + 1];
+      inst->real[i] = winData[j];
+      inst->imag[i] = -winData[j + 1];
       // magnitude spectrum
       // energy in Q(2*(normData-stages))
-      tmpU32no1 = (WebRtc_UWord32)WEBRTC_SPL_MUL_16_16(realImag[j], realImag[j]);
-      tmpU32no1 += (WebRtc_UWord32)WEBRTC_SPL_MUL_16_16(realImag[j + 1], realImag[j + 1]);
+      tmpU32no1 = (WebRtc_UWord32)WEBRTC_SPL_MUL_16_16(winData[j], winData[j]);
+      tmpU32no1 += (WebRtc_UWord32)WEBRTC_SPL_MUL_16_16(winData[j + 1], winData[j + 1]);
       inst->magnEnergy += tmpU32no1; // Q(2*(normData-stages))
 
       magnU16[i] = (WebRtc_UWord16)WebRtcSpl_SqrtFloor(tmpU32no1); // Q(normData-stages)
@@ -1780,7 +1794,13 @@ void WebRtcNsx_DataAnalysis(NsxInst_t* inst, short* speechFrame, WebRtc_UWord16*
 void WebRtcNsx_DataSynthesis(NsxInst_t* inst, short* outFrame) {
   WebRtc_Word32 energyOut;
 
-  WebRtc_Word16 realImag[ANAL_BLOCKL_MAX << 1];
+  int16_t realImag_buff[ANAL_BLOCKL_MAX * 2 + 16];
+  int16_t rfft_out_buff[ANAL_BLOCKL_MAX * 2 + 16];
+
+  // Align the structures to 32-byte boundary for the FFT function.
+  int16_t* realImag = (int16_t*) (((uintptr_t)realImag_buff + 31) & ~31);
+  int16_t* rfft_out = (int16_t*) (((uintptr_t) rfft_out_buff + 31) & ~31);
+
   WebRtc_Word16 tmp16no1, tmp16no2;
   WebRtc_Word16 energyRatio;
   WebRtc_Word16 gainFactor, gainFactor1, gainFactor2;
@@ -1807,12 +1827,11 @@ void WebRtcNsx_DataSynthesis(NsxInst_t* inst, short* outFrame) {
   // Filter the data in the frequency domain, and create spectrum.
   WebRtcNsx_PrepareSpectrum(inst, realImag);
 
-  // bit-reverse position of elements in array and IFFT it
-  WebRtcSpl_ComplexBitReverse(realImag, inst->stages);
-  outCIFFT = WebRtcSpl_ComplexIFFT(realImag, inst->stages, 1);
+  // Inverse FFT output will be in rfft_out[].
+  outCIFFT = WebRtcSpl_RealInverseFFT(inst->real_fft, realImag, rfft_out);
 
   // Denormalize.
-  WebRtcNsx_Denormalize(inst, realImag, outCIFFT);
+  WebRtcNsx_Denormalize(inst, rfft_out, outCIFFT);
 
   //scale factor: only do it after END_STARTUP_LONG time
   gainFactor = 8192; // 8192 = Q13(1.0)

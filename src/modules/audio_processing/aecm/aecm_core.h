@@ -117,6 +117,8 @@ typedef struct
     WebRtc_Word16 supGainErrParamDiffAB;
     WebRtc_Word16 supGainErrParamDiffBD;
 
+    struct RealFFT* real_fft;
+
 #ifdef AEC_DEBUG
     FILE *farFile;
     FILE *nearFile;
@@ -276,6 +278,7 @@ typedef void (*ResetAdaptiveChannel)(AecmCore_t* aecm);
 extern ResetAdaptiveChannel WebRtcAecm_ResetAdaptiveChannel;
 
 typedef void (*WindowAndFFT)(
+    AecmCore_t* aecm,
     WebRtc_Word16* fft,
     const WebRtc_Word16* time_signal,
     complex16_t* freq_signal,
@@ -293,7 +296,8 @@ extern InverseFFTAndWindow WebRtcAecm_InverseFFTAndWindow;
 // and defined as static in file aecm_core.c, while those for ARM Neon platforms
 // are declared below and defined in file aecm_core_neon.s.
 #if (defined WEBRTC_DETECT_ARM_NEON) || defined (WEBRTC_ARCH_ARM_NEON)
-void WebRtcAecm_WindowAndFFTNeon(WebRtc_Word16* fft,
+void WebRtcAecm_WindowAndFFTNeon(AecmCore_t* aecm,
+                                 WebRtc_Word16* fft,
                                  const WebRtc_Word16* time_signal,
                                  complex16_t* freq_signal,
                                  int time_signal_scaling);

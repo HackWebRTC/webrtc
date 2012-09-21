@@ -17,11 +17,13 @@
 namespace webrtc {
 namespace {
 
-const int kOrder = 3;
+const int kOrder = 4;
 const int kLength = 1 << (kOrder + 1);  // +1 to hold complex data.
 const int16_t kRefData[kLength] = {
-    11739, -6848, -8688, 31980, -30295, 25242, 27085, 19410, -26299, -15607,
-    -10791, 11778, -23819, 14498, -25772, 10076
+  11739, 6848, -8688, 31980, -30295, 25242, 27085, 19410,
+  -26299, 15607, -10791, 11778, -23819, 14498, -25772, 10076,
+  1173, 6848, -8688, 31980, -30295, 2522, 27085, 19410,
+  -2629, 5607, -3, 1178, -23819, 1498, -25772, 10076
 };
 
 class RealFFTTest : public ::testing::Test {
@@ -38,49 +40,35 @@ TEST_F(RealFFTTest, CreateFailsOnBadInput) {
   EXPECT_TRUE(fft == NULL);
 }
 
-// TODO(andrew): Look more into why this was failing.
-TEST_F(RealFFTTest, DISABLED_TransformIsInvertible) {
-  int16_t data[kLength] = {0};
-  memcpy(data, kRefData, sizeof(kRefData));
-
-  RealFFT* fft = NULL;
-  fft = WebRtcSpl_CreateRealFFT(kOrder);
-  EXPECT_TRUE(fft != NULL);
-
-  EXPECT_EQ(0, WebRtcSpl_RealForwardFFT(fft, data));
-  int scale = WebRtcSpl_RealInverseFFT(fft, data);
-
-  EXPECT_GE(scale, 0);
-  for (int i = 0; i < kLength; i++) {
-    EXPECT_EQ(data[i] << scale, kRefData[i]);
-  }
-  WebRtcSpl_FreeRealFFT(fft);
-}
-
 // TODO(andrew): This won't always be the case, but verifies the current code
 // at least.
 TEST_F(RealFFTTest, RealAndComplexAreIdentical) {
   int16_t real_data[kLength] = {0};
+  int16_t real_data_out[kLength] = {0};
   int16_t complex_data[kLength] = {0};
   memcpy(real_data, kRefData, sizeof(kRefData));
   memcpy(complex_data, kRefData, sizeof(kRefData));
 
-  RealFFT* fft = NULL;
-  fft = WebRtcSpl_CreateRealFFT(kOrder);
+  RealFFT* fft = WebRtcSpl_CreateRealFFT(kOrder);
   EXPECT_TRUE(fft != NULL);
 
-  EXPECT_EQ(0, WebRtcSpl_RealForwardFFT(fft, real_data));
+  EXPECT_EQ(0, WebRtcSpl_RealForwardFFT(fft, real_data, real_data_out));
+  WebRtcSpl_ComplexBitReverse(complex_data, kOrder);
   EXPECT_EQ(0, WebRtcSpl_ComplexFFT(complex_data, kOrder, 1));
+
   for (int i = 0; i < kLength; i++) {
-    EXPECT_EQ(real_data[i], complex_data[i]);
+    EXPECT_EQ(real_data_out[i], complex_data[i]);
   }
 
-  int real_scale =  WebRtcSpl_RealInverseFFT(fft, real_data);
-  int complex_scale = WebRtcSpl_ComplexIFFT(complex_data, kOrder, 1);
+  memcpy(complex_data, kRefData, sizeof(kRefData));
+
+  int real_scale = WebRtcSpl_RealInverseFFT(fft, real_data, real_data_out);
   EXPECT_GE(real_scale, 0);
+  WebRtcSpl_ComplexBitReverse(complex_data, kOrder);
+  int complex_scale = WebRtcSpl_ComplexIFFT(complex_data, kOrder, 1);
   EXPECT_EQ(real_scale, complex_scale);
   for (int i = 0; i < kLength; i++) {
-    EXPECT_EQ(real_data[i], complex_data[i]);
+    EXPECT_EQ(real_data_out[i], complex_data[i]);
   }
   WebRtcSpl_FreeRealFFT(fft);
 }

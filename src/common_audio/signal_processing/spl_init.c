@@ -18,6 +18,7 @@
  * (AEC, NS, codecs etc.).
  */
 
+#include "common_audio/signal_processing/include/real_fft.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "system_wrappers/interface/cpu_features_wrapper.h"
 
@@ -31,6 +32,8 @@ MinValueW32 WebRtcSpl_MinValueW32;
 CrossCorrelation WebRtcSpl_CrossCorrelation;
 DownsampleFast WebRtcSpl_DownsampleFast;
 ScaleAndAddVectorsWithRound WebRtcSpl_ScaleAndAddVectorsWithRound;
+RealForwardFFT WebRtcSpl_RealForwardFFT;
+RealInverseFFT WebRtcSpl_RealInverseFFT;
 
 /* Initialize function pointers to the generic C version. */
 static void InitPointersToC() {
@@ -44,6 +47,8 @@ static void InitPointersToC() {
   WebRtcSpl_DownsampleFast = WebRtcSpl_DownsampleFastC;
   WebRtcSpl_ScaleAndAddVectorsWithRound =
       WebRtcSpl_ScaleAndAddVectorsWithRoundC;
+  WebRtcSpl_RealForwardFFT = WebRtcSpl_RealForwardFFTC;
+  WebRtcSpl_RealInverseFFT = WebRtcSpl_RealInverseFFTC;
 }
 
 #if defined(WEBRTC_DETECT_ARM_NEON) || defined(WEBRTC_ARCH_ARM_NEON)
@@ -59,6 +64,8 @@ static void InitPointersToNeon() {
   WebRtcSpl_DownsampleFast = WebRtcSpl_DownsampleFastNeon;
   WebRtcSpl_ScaleAndAddVectorsWithRound =
       WebRtcSpl_ScaleAndAddVectorsWithRoundNeon;
+  WebRtcSpl_RealForwardFFT = WebRtcSpl_RealForwardFFTNeon;
+  WebRtcSpl_RealInverseFFT = WebRtcSpl_RealInverseFFTNeon;
 }
 #endif
 
@@ -75,7 +82,6 @@ static void InitFunctionPointers(void) {
   InitPointersToC();
 #endif  /* WEBRTC_DETECT_ARM_NEON */
 }
-
 
 #if defined(WEBRTC_POSIX)
 #include <pthread.h>

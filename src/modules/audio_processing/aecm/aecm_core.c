@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+#include "common_audio/signal_processing/include/real_fft.h"
 #include "cpu_features_wrapper.h"
 #include "delay_estimator_wrapper.h"
 #include "echo_control_mobile.h"
@@ -313,6 +314,13 @@ int WebRtcAecm_CreateCore(AecmCore_t **aecmInst)
       return -1;
     }
 
+    aecm->real_fft = WebRtcSpl_CreateRealFFT(PART_LEN_SHIFT);
+    if (aecm->real_fft == NULL) {
+      WebRtcAecm_FreeCore(aecm);
+      aecm = NULL;
+      return -1;
+    }
+
     // Init some aecm pointers. 16 and 32 byte alignment is only necessary
     // for Neon code currently.
     aecm->xBuf = (WebRtc_Word16*) (((uintptr_t)aecm->xBuf_buf + 31) & ~ 31);
@@ -350,7 +358,8 @@ void WebRtcAecm_InitEchoPathCore(AecmCore_t* aecm, const WebRtc_Word16* echo_pat
     aecm->mseChannelCount = 0;
 }
 
-static void WindowAndFFTC(WebRtc_Word16* fft,
+static void WindowAndFFTC(AecmCore_t* aecm,
+                          WebRtc_Word16* fft,
                           const WebRtc_Word16* time_signal,
                           complex16_t* freq_signal,
                           int time_signal_scaling)
@@ -375,30 +384,13 @@ static void WindowAndFFTC(WebRtc_Word16* fft,
         // initialized the array with all zeros
     }
 
-    WebRtcSpl_ComplexBitReverse(fft, PART_LEN_SHIFT);
-    WebRtcSpl_ComplexFFT(fft, PART_LEN_SHIFT, 1);
-
-    // Take only the first PART_LEN2 samples
-    for (i = 0, j = 0; j < PART_LEN2; i += 1, j += 2)
-    {
-        freq_signal[i].real = fft[j];
-
-        // The imaginary part has to switch sign
-        freq_signal[i].imag = - fft[j+1];
+    // Do forward FFT, then take only the first PART_LEN complex samples,
+    // and change signs of the imaginary parts.
+    WebRtcSpl_RealForwardFFT(aecm->real_fft, fft, (int16_t*)freq_signal);
+    for (i = 0; i < PART_LEN; i++) {
+        freq_signal[i].imag = -freq_signal[i].imag;
     }
 }
-
-// Initialize function pointers for ARM Neon platform.
-#if (defined WEBRTC_DETECT_ARM_NEON || defined WEBRTC_ARCH_ARM_NEON)
-static void WebRtcAecm_InitNeon(void)
-{
-  WebRtcAecm_WindowAndFFT = WebRtcAecm_WindowAndFFTNeon;
-  WebRtcAecm_InverseFFTAndWindow = WebRtcAecm_InverseFFTAndWindowNeon;
-  WebRtcAecm_CalcLinearEnergies = WebRtcAecm_CalcLinearEnergiesNeon;
-  WebRtcAecm_StoreAdaptiveChannel = WebRtcAecm_StoreAdaptiveChannelNeon;
-  WebRtcAecm_ResetAdaptiveChannel = WebRtcAecm_ResetAdaptiveChannelNeon;
-}
-#endif
 
 static void InverseFFTAndWindowC(AecmCore_t* aecm,
                                  WebRtc_Word16* fft,
@@ -428,32 +420,23 @@ static void InverseFFTAndWindowC(AecmCore_t* aecm,
     fft[PART_LEN2] = efw[PART_LEN].real;
     fft[PART_LEN2 + 1] = -efw[PART_LEN].imag;
 
-    // inverse FFT, result should be scaled with outCFFT
-    WebRtcSpl_ComplexBitReverse(fft, PART_LEN_SHIFT);
-    outCFFT = WebRtcSpl_ComplexIFFT(fft, PART_LEN_SHIFT, 1);
-
-    //take only the real values and scale with outCFFT
-    for (i = 0; i < PART_LEN2; i++)
-    {
-        j = WEBRTC_SPL_LSHIFT_W32(i, 1);
-        fft[i] = fft[j];
-    }
-
-    for (i = 0; i < PART_LEN; i++)
-    {
-        fft[i] = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(
-                fft[i],
+    // Inverse FFT. Then take only the real values, and keep outCFFT
+    // to scale the samples in the next block.
+    outCFFT = WebRtcSpl_RealInverseFFT(aecm->real_fft, fft, (int16_t*)efw);
+    for (i = 0; i < PART_LEN; i++) {
+        efw[i].real = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(
+                      efw[i].real,
                 WebRtcAecm_kSqrtHanning[i],
                 14);
-        tmp32no1 = WEBRTC_SPL_SHIFT_W32((WebRtc_Word32)fft[i],
+        tmp32no1 = WEBRTC_SPL_SHIFT_W32((WebRtc_Word32)efw[i].real,
                 outCFFT - aecm->dfaCleanQDomain);
-        fft[i] = (WebRtc_Word16)WEBRTC_SPL_SAT(WEBRTC_SPL_WORD16_MAX,
+        efw[i].real = (WebRtc_Word16)WEBRTC_SPL_SAT(WEBRTC_SPL_WORD16_MAX,
                 tmp32no1 + aecm->outBuf[i],
                 WEBRTC_SPL_WORD16_MIN);
-        output[i] = fft[i];
+        output[i] = efw[i].real;
 
         tmp32no1 = WEBRTC_SPL_MUL_16_16_RSFT(
-                fft[PART_LEN + i],
+                efw[PART_LEN + i].real,
                 WebRtcAecm_kSqrtHanning[PART_LEN - i],
                 14);
         tmp32no1 = WEBRTC_SPL_SHIFT_W32(tmp32no1,
@@ -541,6 +524,19 @@ static void ResetAdaptiveChannelC(AecmCore_t* aecm)
     }
     aecm->channelAdapt32[i] = WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)aecm->channelStored[i], 16);
 }
+
+// Initialize function pointers for ARM Neon platform.
+#if (defined WEBRTC_DETECT_ARM_NEON || defined WEBRTC_ARCH_ARM_NEON)
+static void WebRtcAecm_InitNeon(void)
+{
+  // TODO(kma): Check why WebRtcAecm_InverseFFTAndWindowNeon() doesn't work.
+  WebRtcAecm_WindowAndFFT = WebRtcAecm_WindowAndFFTNeon;
+  WebRtcAecm_InverseFFTAndWindow = InverseFFTAndWindowC;
+  WebRtcAecm_StoreAdaptiveChannel = WebRtcAecm_StoreAdaptiveChannelNeon;
+  WebRtcAecm_ResetAdaptiveChannel = WebRtcAecm_ResetAdaptiveChannelNeon;
+  WebRtcAecm_CalcLinearEnergies = WebRtcAecm_CalcLinearEnergiesNeon;
+}
+#endif
 
 // WebRtcAecm_InitCore(...)
 //
@@ -704,6 +700,8 @@ int WebRtcAecm_FreeCore(AecmCore_t *aecm)
     WebRtc_FreeBuffer(aecm->outFrameBuf);
 
     WebRtc_FreeDelayEstimator(aecm->delay_estimator);
+    WebRtcSpl_FreeRealFFT(aecm->real_fft);
+
     free(aecm);
 
     return 0;
@@ -1376,7 +1374,8 @@ static WebRtc_Word16 CalcSuppressionGain(AecmCore_t * const aecm)
 //                              the frequency domain array
 // return value                 The Q-domain of current frequency values
 //
-static int TimeToFrequencyDomain(const WebRtc_Word16* time_signal,
+static int TimeToFrequencyDomain(AecmCore_t* aecm,
+                                 const WebRtc_Word16* time_signal,
                                  complex16_t* freq_signal,
                                  WebRtc_UWord16* freq_signal_abs,
                                  WebRtc_UWord32* freq_signal_sum_abs)
@@ -1407,12 +1406,11 @@ static int TimeToFrequencyDomain(const WebRtc_Word16* time_signal,
     time_signal_scaling = WebRtcSpl_NormW16(tmp16no1);
 #endif
 
-    WebRtcAecm_WindowAndFFT(fft, time_signal, freq_signal, time_signal_scaling);
+    WebRtcAecm_WindowAndFFT(aecm, fft, time_signal, freq_signal, time_signal_scaling);
 
     // Extract imaginary and real part, calculate the magnitude for all frequency bins
     freq_signal[0].imag = 0;
     freq_signal[PART_LEN].imag = 0;
-    freq_signal[PART_LEN].real = fft[PART_LEN2];
     freq_signal_abs[0] = (WebRtc_UWord16)WEBRTC_SPL_ABS_W16(
         freq_signal[0].real);
     freq_signal_abs[PART_LEN] = (WebRtc_UWord16)WEBRTC_SPL_ABS_W16(
@@ -1530,8 +1528,8 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
     // TODO (kma): define fft with complex16_t.
     WebRtc_Word16 fft_buf[PART_LEN4 + 2 + 16]; // +2 to make a loop safe.
     WebRtc_Word32 echoEst32_buf[PART_LEN1 + 8];
-    WebRtc_Word32 dfw_buf[PART_LEN1 + 8];
-    WebRtc_Word32 efw_buf[PART_LEN1 + 8];
+    WebRtc_Word32 dfw_buf[PART_LEN2 + 8];
+    WebRtc_Word32 efw_buf[PART_LEN2 + 8];
 
     WebRtc_Word16* fft = (WebRtc_Word16*) (((uintptr_t) fft_buf + 31) & ~ 31);
     WebRtc_Word32* echoEst32 = (WebRtc_Word32*) (((uintptr_t) echoEst32_buf + 31) & ~ 31);
@@ -1575,13 +1573,15 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
     }
 
     // Transform far end signal from time domain to frequency domain.
-    far_q = TimeToFrequencyDomain(aecm->xBuf,
+    far_q = TimeToFrequencyDomain(aecm,
+                                  aecm->xBuf,
                                   dfw,
                                   xfa,
                                   &xfaSum);
 
     // Transform noisy near end signal from time domain to frequency domain.
-    zerosDBufNoisy = TimeToFrequencyDomain(aecm->dBufNoisy,
+    zerosDBufNoisy = TimeToFrequencyDomain(aecm,
+                                           aecm->dBufNoisy,
                                            dfw,
                                            dfaNoisy,
                                            &dfaNoisySum);
@@ -1598,7 +1598,8 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
     } else
     {
         // Transform clean near end signal from time domain to frequency domain.
-        zerosDBufClean = TimeToFrequencyDomain(aecm->dBufClean,
+        zerosDBufClean = TimeToFrequencyDomain(aecm,
+                                               aecm->dBufClean,
                                                dfw,
                                                dfaClean,
                                                &dfaCleanSum);
