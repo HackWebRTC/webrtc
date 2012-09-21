@@ -18,8 +18,8 @@
 #include "system_wrappers/interface/sleep.h"
 #include "testsupport/fileutils.h"
 
-#include "../source/audio_device_config.h"
-#include "../source/audio_device_impl.h"
+#include "modules/audio_device/audio_device_config.h"
+#include "modules/audio_device/audio_device_impl.h"
 
 #ifndef __GNUC__
 // Disable warning message ('sprintf': name was marked as #pragma deprecated)

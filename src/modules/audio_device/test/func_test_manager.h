@@ -11,7 +11,7 @@
 #ifndef WEBRTC_AUDIO_DEVICE_FUNC_TEST_MANAGER_H
 #define WEBRTC_AUDIO_DEVICE_FUNC_TEST_MANAGER_H
 
-#include "../source/audio_device_utility.h"
+#include "modules/audio_device/audio_device_utility.h"
 
 #include <string>
 

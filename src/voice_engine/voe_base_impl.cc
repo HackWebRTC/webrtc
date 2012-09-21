@@ -11,11 +11,11 @@
 #include "voe_base_impl.h"
 
 #include "audio_coding_module.h"
-#include "audio_device_impl.h"
 #include "audio_processing.h"
 #include "channel.h"
 #include "critical_section_wrapper.h"
 #include "file_wrapper.h"
+#include "modules/audio_device/audio_device_impl.h"
 #include "output_mixer.h"
 #include "signal_processing_library.h"
 #include "trace.h"

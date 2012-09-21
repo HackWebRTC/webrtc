@@ -12,7 +12,7 @@
 #define WEBRTC_VOICE_ENGINE_VOE_EXTENDED_TEST_H
 
 #include "voe_standard_test.h"
-#include "audio_device.h"
+#include "modules/audio_device/include/audio_device.h"
 
 namespace voetest {
 

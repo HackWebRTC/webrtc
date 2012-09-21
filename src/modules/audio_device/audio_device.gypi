@@ -18,21 +18,20 @@
       ],
       'include_dirs': [
         '.',
-        '../../../interface',
         '../interface',
+        'include',
         'dummy', # dummy audio device
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../../../../',
-          '../../../interface',
           '../interface',
+          'include',
         ],
       },
       # TODO(xians): Rename files to e.g. *_linux.{ext}, remove sources in conditions section
       'sources': [
-        '../interface/audio_device.h',
-        '../interface/audio_device_defines.h',
+        'include/audio_device.h',
+        'include/audio_device_defines.h',
         'audio_device_buffer.cc',
         'audio_device_buffer.h',
         'audio_device_generic.cc',
@@ -64,13 +63,12 @@
         ['OS=="win"', {
           'include_dirs': [
             'win',
-            '../../../../../..',
           ],
         }],
         ['OS=="android"', {
-            'include_dirs': [
-              'android',
-            ],
+          'include_dirs': [
+            'android',
+          ],
         }], # OS==android
         ['include_internal_audio_device==0', {
           'defines': [
@@ -198,8 +196,8 @@
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
           ],
           'sources': [
-            '../test/audio_device_test_api.cc',
-            '../test/audio_device_test_defines.h',
+            'test/audio_device_test_api.cc',
+            'test/audio_device_test_defines.h',
           ],
         },
         {
@@ -214,10 +212,10 @@
             '<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [
-            '../test/audio_device_test_func.cc',
-            '../test/audio_device_test_defines.h',
-            '../test/func_test_manager.cc',
-            '../test/func_test_manager.h',
+            'test/audio_device_test_func.cc',
+            'test/audio_device_test_defines.h',
+            'test/func_test_manager.cc',
+            'test/func_test_manager.h',
           ],
         },
       ],
@@ -225,8 +223,3 @@
   ],
 }
 
-# Local Variables:
-# tab-width:2
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=2 shiftwidth=2:

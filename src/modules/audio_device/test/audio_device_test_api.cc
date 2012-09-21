@@ -17,9 +17,9 @@
 #include "gtest/gtest.h"
 #include "testsupport/fileutils.h"
 
-#include "../source/audio_device_config.h"
-#include "../source/audio_device_impl.h"
-#include "../source/audio_device_utility.h"
+#include "modules/audio_device/audio_device_config.h"
+#include "modules/audio_device/audio_device_impl.h"
+#include "modules/audio_device/audio_device_utility.h"
 #include "system_wrappers/interface/sleep.h"
 
 // Helper functions
