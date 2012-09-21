@@ -21,7 +21,7 @@ enum BandwidthUsage
 {
     kBwNormal,
     kBwOverusing,
-    kBwUnderUsing
+    kBwUnderusing
 };
 
 enum RateControlState

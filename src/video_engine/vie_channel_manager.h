@@ -17,6 +17,7 @@
 #include "engine_configurations.h"  // NOLINT
 #include "system_wrappers/interface/scoped_ptr.h"
 #include "typedefs.h"  // NOLINT
+#include "video_engine/include/vie_rtp_rtcp.h"
 #include "video_engine/vie_channel_group.h"
 #include "video_engine/vie_defines.h"
 #include "video_engine/vie_manager_base.h"
@@ -74,6 +75,10 @@ class ViEChannelManager: private ViEManagerBase {
   // Adds a channel to include when sending REMB.
   bool SetRembStatus(int channel_id, bool sender, bool receiver);
 
+  // Sets the bandwidth estimation mode. This can only be changed before
+  // adding a channel.
+  bool SetBandwidthEstimationMode(BandwidthEstimationMode mode);
+
  private:
   // Creates a channel object connected to |vie_encoder|. Assumed to be called
   // protected.
@@ -125,6 +130,7 @@ class ViEChannelManager: private ViEManagerBase {
   VoiceEngine* voice_engine_;
   ProcessThread* module_process_thread_;
   const OverUseDetectorOptions& over_use_detector_options_;
+  RemoteBitrateEstimator::EstimationMode bwe_mode_;
 };
 
 class ViEChannelManagerScoped: private ViEManagerScopedBase {

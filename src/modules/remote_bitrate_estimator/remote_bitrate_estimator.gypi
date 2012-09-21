@@ -35,9 +35,14 @@
         'bitrate_estimator.h',
         'overuse_detector.cc',
         'overuse_detector.h',
-        'remote_bitrate_estimator.cc',
+        'remote_bitrate_estimator_multi_stream.h',
+        'remote_bitrate_estimator_multi_stream.cc',
+        'remote_bitrate_estimator_single_stream.h',
+        'remote_bitrate_estimator_single_stream.cc',
         'remote_rate_control.cc',
         'remote_rate_control.h',
+        '../../video_engine/stream_synchronization.cc',
+        '../../video_engine/stream_synchronization.h',
       ], # source
     },
   ], # targets

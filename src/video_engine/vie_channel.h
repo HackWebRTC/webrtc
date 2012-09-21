@@ -182,6 +182,11 @@ class ViEChannel
                                          const WebRtc_UWord32 name,
                                          const WebRtc_UWord16 length,
                                          const WebRtc_UWord8* data);
+  virtual void OnSendReportReceived(const WebRtc_Word32 id,
+                                    const WebRtc_UWord32 senderSSRC,
+                                    uint32_t ntp_secs,
+                                    uint32_t ntp_frac,
+                                    uint32_t timestamp);
   // Implements RtpFeedback.
   virtual WebRtc_Word32 OnInitializeDecoder(
       const WebRtc_Word32 id,

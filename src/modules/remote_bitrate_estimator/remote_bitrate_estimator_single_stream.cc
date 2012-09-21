@@ -8,26 +8,25 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
 
 #include "system_wrappers/interface/tick_util.h"
 
 namespace webrtc {
 
-RemoteBitrateEstimator::RemoteBitrateEstimator(
-    RemoteBitrateObserver* observer,
-    const OverUseDetectorOptions& options)
+RemoteBitrateEstimatorSingleStream::RemoteBitrateEstimatorSingleStream(
+    RemoteBitrateObserver* observer, const OverUseDetectorOptions& options)
     : options_(options),
       observer_(observer),
       crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {
   assert(observer_);
 }
 
-void RemoteBitrateEstimator::IncomingPacket(unsigned int ssrc,
-                                            int packet_size,
-                                            int64_t arrival_time,
-                                            uint32_t rtp_timestamp,
-                                            int64_t packet_send_time) {
+void RemoteBitrateEstimatorSingleStream::IncomingPacket(
+    unsigned int ssrc,
+    int packet_size,
+    int64_t arrival_time,
+    uint32_t rtp_timestamp) {
   CriticalSectionScoped cs(crit_sect_.get());
   SsrcBitrateControlsMap::iterator it = bitrate_controls_.find(ssrc);
   if (it == bitrate_controls_.end()) {
@@ -40,10 +39,10 @@ void RemoteBitrateEstimator::IncomingPacket(unsigned int ssrc,
     bitrate_controls_.insert(std::make_pair(ssrc, BitrateControls(options_)));
     it = bitrate_controls_.find(ssrc);
   }
-  OverUseDetector* overuse_detector = &it->second.overuse_detector;
+  OveruseDetector* overuse_detector = &it->second.overuse_detector;
   it->second.incoming_bitrate.Update(packet_size, arrival_time);
   const BandwidthUsage prior_state = overuse_detector->State();
-  overuse_detector->Update(packet_size, rtp_timestamp, arrival_time);
+  overuse_detector->Update(packet_size, -1, rtp_timestamp, arrival_time);
   if (prior_state != overuse_detector->State() &&
       overuse_detector->State() == kBwOverusing) {
     // The first overuse should immediately trigger a new estimate.
@@ -51,14 +50,14 @@ void RemoteBitrateEstimator::IncomingPacket(unsigned int ssrc,
   }
 }
 
-void RemoteBitrateEstimator::UpdateEstimate(unsigned int ssrc,
-                                            int64_t time_now) {
+void RemoteBitrateEstimatorSingleStream::UpdateEstimate(unsigned int ssrc,
+                                                        int64_t time_now) {
   CriticalSectionScoped cs(crit_sect_.get());
   SsrcBitrateControlsMap::iterator it = bitrate_controls_.find(ssrc);
   if (it == bitrate_controls_.end()) {
     return;
   }
-  OverUseDetector* overuse_detector = &it->second.overuse_detector;
+  OveruseDetector* overuse_detector = &it->second.overuse_detector;
   RemoteRateControl* remote_rate = &it->second.remote_rate;
   const RateControlInput input(overuse_detector->State(),
                                it->second.incoming_bitrate.BitRate(time_now),
@@ -71,7 +70,7 @@ void RemoteBitrateEstimator::UpdateEstimate(unsigned int ssrc,
   overuse_detector->SetRateControlRegion(region);
 }
 
-void RemoteBitrateEstimator::SetRtt(unsigned int rtt) {
+void RemoteBitrateEstimatorSingleStream::SetRtt(unsigned int rtt) {
   CriticalSectionScoped cs(crit_sect_.get());
   for (SsrcBitrateControlsMap::iterator it = bitrate_controls_.begin();
       it != bitrate_controls_.end(); ++it) {
@@ -79,14 +78,14 @@ void RemoteBitrateEstimator::SetRtt(unsigned int rtt) {
   }
 }
 
-void RemoteBitrateEstimator::RemoveStream(unsigned int ssrc) {
+void RemoteBitrateEstimatorSingleStream::RemoveStream(unsigned int ssrc) {
   CriticalSectionScoped cs(crit_sect_.get());
   // Ignoring the return value which is the number of elements erased.
   bitrate_controls_.erase(ssrc);
 }
 
-bool RemoteBitrateEstimator::LatestEstimate(unsigned int ssrc,
-                                            unsigned int* bitrate_bps) const {
+bool RemoteBitrateEstimatorSingleStream::LatestEstimate(
+    unsigned int ssrc, unsigned int* bitrate_bps) const {
   CriticalSectionScoped cs(crit_sect_.get());
   assert(bitrate_bps != NULL);
   SsrcBitrateControlsMap::const_iterator it = bitrate_controls_.find(ssrc);

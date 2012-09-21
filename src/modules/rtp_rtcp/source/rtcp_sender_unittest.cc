@@ -100,8 +100,11 @@ class RtcpSenderTest : public ::testing::Test {
   RtcpSenderTest()
       : over_use_detector_options_(),
         remote_bitrate_observer_(),
-        remote_bitrate_estimator_(&remote_bitrate_observer_,
-                                  over_use_detector_options_) {
+        remote_bitrate_estimator_(
+            RemoteBitrateEstimator::Create(
+                &remote_bitrate_observer_,
+                over_use_detector_options_,
+                RemoteBitrateEstimator::kMultiStreamEstimation)) {
     system_clock_ = ModuleRTPUtility::GetSystemClock();
     test_transport_ = new TestTransport();
 
@@ -111,7 +114,7 @@ class RtcpSenderTest : public ::testing::Test {
     configuration.clock = system_clock_;
     configuration.incoming_data = test_transport_;
     configuration.outgoing_transport = test_transport_;
-    configuration.remote_bitrate_estimator = &remote_bitrate_estimator_;
+    configuration.remote_bitrate_estimator = remote_bitrate_estimator_.get();
 
     rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(configuration);
     rtcp_sender_ = new RTCPSender(0, false, system_clock_, rtp_rtcp_impl_);
@@ -142,7 +145,7 @@ class RtcpSenderTest : public ::testing::Test {
   RTCPReceiver* rtcp_receiver_;
   TestTransport* test_transport_;
   MockRemoteBitrateObserver remote_bitrate_observer_;
-  RemoteBitrateEstimator remote_bitrate_estimator_;
+  scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
 
   enum {kMaxPacketLength = 1500};
   uint8_t packet_[kMaxPacketLength];

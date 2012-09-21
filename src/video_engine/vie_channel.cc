@@ -56,7 +56,7 @@ ViEChannel::ViEChannel(WebRtc_Word32 channel_id,
           ViEModuleId(engine_id, channel_id), num_socket_threads_)),
 #endif
       vcm_(*VideoCodingModule::Create(ViEModuleId(engine_id, channel_id))),
-      vie_receiver_(channel_id, &vcm_),
+      vie_receiver_(channel_id, &vcm_, remote_bitrate_estimator),
       vie_sender_(channel_id),
       vie_sync_(&vcm_, this),
       module_process_thread_(module_process_thread),
@@ -2335,6 +2335,15 @@ void ViEChannel::OnApplicationDataReceived(const WebRtc_Word32 id,
           length);
     }
   }
+}
+
+void ViEChannel::OnSendReportReceived(const WebRtc_Word32 id,
+                                      const WebRtc_UWord32 senderSSRC,
+                                      uint32_t ntp_secs,
+                                      uint32_t ntp_frac,
+                                      uint32_t timestamp) {
+  vie_receiver_.OnSendReportReceived(id, senderSSRC, ntp_secs, ntp_frac,
+                                     timestamp);
 }
 
 WebRtc_Word32 ViEChannel::OnInitializeDecoder(

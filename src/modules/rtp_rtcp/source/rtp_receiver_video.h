@@ -16,9 +16,6 @@
 
 #include "typedefs.h"
 
-#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "modules/remote_bitrate_estimator/overuse_detector.h"
-#include "modules/remote_bitrate_estimator/remote_rate_control.h"
 #include "Bitrate.h"
 #include "scoped_ptr.h"
 
@@ -30,7 +27,6 @@ class CriticalSectionWrapper;
 class RTPReceiverVideo {
  public:
   RTPReceiverVideo(const WebRtc_Word32 id,
-                   RemoteBitrateEstimator* remote_bitrate,
                    ModuleRtpRtcpImpl* owner);
 
   virtual ~RTPReceiverVideo();
@@ -104,10 +100,6 @@ class RTPReceiverVideo {
   // FEC
   bool                      _currentFecFrameDecoded;
   ReceiverFEC*              _receiveFEC;
-
-  // BWE
-  RemoteBitrateEstimator* remote_bitrate_;
-  WebRtc_UWord16            _packetOverHead;
 };
 } // namespace webrtc
 #endif // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_VIDEO_H_

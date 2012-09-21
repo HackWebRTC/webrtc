@@ -88,6 +88,41 @@ int VideoEngineSampleCode(void* window1, void* window2)
         return -1;
     }
 
+    webrtc::ViERTP_RTCP* ptrViERtpRtcp =
+        webrtc::ViERTP_RTCP::GetInterface(ptrViE);
+    if (ptrViERtpRtcp == NULL)
+    {
+        printf("ERROR in ViERTP_RTCP::GetInterface\n");
+        return -1;
+    }
+
+    printf("Bandwidth estimation modes:\n");
+    printf("1. Multi-stream bandwidth estimation\n");
+    printf("2. Single-stream bandwidth estimation\n");
+    printf("Choose bandwidth estimation mode (default is 1): ");
+    std::string str;
+    std::getline(std::cin, str);
+    int bwe_mode_choice = atoi(str.c_str());
+    webrtc::BandwidthEstimationMode bwe_mode;
+    switch (bwe_mode_choice) {
+      case 1:
+        bwe_mode = webrtc::kViEMultiStreamEstimation;
+        break;
+      case 2:
+        bwe_mode = webrtc::kViESingleStreamEstimation;
+        break;
+      default:
+        bwe_mode = webrtc::kViEMultiStreamEstimation;
+        break;
+    }
+
+    error = ptrViERtpRtcp->SetBandwidthEstimationMode(bwe_mode);
+    if (error == -1)
+    {
+        printf("ERROR in ViERTP_RTCP::SetBandwidthEstimationMode\n");
+        return -1;
+    }
+
     int videoChannel = -1;
     error = ptrViEBase->CreateChannel(videoChannel);
     if (error == -1)
@@ -181,13 +216,6 @@ int VideoEngineSampleCode(void* window1, void* window2)
     //
     // RTP/RTCP settings
     //
-    webrtc::ViERTP_RTCP* ptrViERtpRtcp =
-        webrtc::ViERTP_RTCP::GetInterface(ptrViE);
-    if (ptrViERtpRtcp == NULL)
-    {
-        printf("ERROR in ViERTP_RTCP::GetInterface\n");
-        return -1;
-    }
 
     error = ptrViERtpRtcp->SetRTCPStatus(videoChannel,
                                          webrtc::kRtcpCompound_RFC4585);
@@ -317,7 +345,6 @@ int VideoEngineSampleCode(void* window1, void* window2)
     }
 
     // Set spatial resolution option
-    std::string str;
     std::cout << std::endl;
     std::cout << "Enter frame size option (default is CIF):" << std::endl;
     std::cout << "1. QCIF (176X144) " << std::endl;

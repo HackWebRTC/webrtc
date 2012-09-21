@@ -185,8 +185,11 @@ class RtcpReceiverTest : public ::testing::Test {
   RtcpReceiverTest()
       : over_use_detector_options_(),
         remote_bitrate_observer_(),
-        remote_bitrate_estimator_(&remote_bitrate_observer_,
-                                  over_use_detector_options_) {
+        remote_bitrate_estimator_(
+            RemoteBitrateEstimator::Create(
+                &remote_bitrate_observer_,
+                over_use_detector_options_,
+                RemoteBitrateEstimator::kMultiStreamEstimation)) {
     // system_clock_ = ModuleRTPUtility::GetSystemClock();
     system_clock_ = new FakeSystemClock();
     test_transport_ = new TestTransport();
@@ -196,7 +199,7 @@ class RtcpReceiverTest : public ::testing::Test {
     configuration.audio = false;
     configuration.clock = system_clock_;
     configuration.outgoing_transport = test_transport_;
-    configuration.remote_bitrate_estimator = &remote_bitrate_estimator_;
+    configuration.remote_bitrate_estimator = remote_bitrate_estimator_.get();
     rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(configuration);
     rtcp_receiver_ = new RTCPReceiver(0, system_clock_, rtp_rtcp_impl_);
     test_transport_->SetRTCPReceiver(rtcp_receiver_);
@@ -230,7 +233,7 @@ class RtcpReceiverTest : public ::testing::Test {
   TestTransport* test_transport_;
   RTCPHelp::RTCPPacketInformation rtcp_packet_info_;
   MockRemoteBitrateObserver remote_bitrate_observer_;
-  RemoteBitrateEstimator remote_bitrate_estimator_;
+  scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
 };
 
 

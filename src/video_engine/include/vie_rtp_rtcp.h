@@ -48,6 +48,11 @@ enum StreamType {
   kViEStreamTypeRtx = 1  // Retransmission media stream
 };
 
+enum BandwidthEstimationMode {
+  kViEMultiStreamEstimation,
+  kViESingleStreamEstimation
+};
+
 // This class declares an abstract interface for a user defined observer. It is
 // up to the VideoEngine user to implement a derived class which implements the
 // observer class. The observer is registered using RegisterRTPObserver() and
@@ -208,6 +213,10 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   virtual int SetRembStatus(int video_channel,
                             bool sender,
                             bool receiver) = 0;
+
+  // Sets the bandwidth estimation mode. This can only be changed before
+  // adding a channel.
+  virtual int SetBandwidthEstimationMode(BandwidthEstimationMode mode) = 0;
 
   // Enables RTP timestamp extension offset described in RFC 5450. This call
   // must be done before ViECodec::SetSendCodec is called.

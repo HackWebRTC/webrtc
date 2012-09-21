@@ -13,6 +13,7 @@
 
 #include <set>
 
+#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
@@ -20,8 +21,6 @@ namespace webrtc {
 class BitrateController;
 struct OverUseDetectorOptions;
 class ProcessThread;
-class RemoteBitrateEstimator;
-class RemoteBitrateObserver;
 class ViEChannel;
 class ViEEncoder;
 class VieRemb;
@@ -31,7 +30,8 @@ class VieRemb;
 class ChannelGroup {
  public:
   ChannelGroup(ProcessThread* process_thread,
-               const OverUseDetectorOptions& options);
+               const OverUseDetectorOptions& options,
+               RemoteBitrateEstimator::EstimationMode mode);
   ~ChannelGroup();
 
   void AddChannel(int channel_id);

@@ -414,7 +414,7 @@ void RemoteRateControl::ChangeState(const RateControlInput& input, WebRtc_Word64
             }
             break;
         }
-    case kBwUnderUsing:
+    case kBwUnderusing:
         {
             ChangeState(kRcHold);
             break;
@@ -481,7 +481,7 @@ void RemoteRateControl::StateStr(BandwidthUsage state, char* str)
     case kBwOverusing:
         strncpy(str, "OVER USING", 11);
         break;
-    case kBwUnderUsing:
+    case kBwUnderusing:
         strncpy(str, "UNDER USING", 12);
         break;
     }

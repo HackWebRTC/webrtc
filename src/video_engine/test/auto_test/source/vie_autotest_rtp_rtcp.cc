@@ -431,8 +431,22 @@ void ViEAutoTest::ViERtpRtcpAPITest()
     //***************************************************************
     // Create VIE
     TbInterfaces ViE("ViERtpRtcpAPITest");
+
+    // Verify that we can set the bandwidth estimation mode, as that API only
+    // is valid to call before creating channels.
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetBandwidthEstimationMode(
+        webrtc::kViESingleStreamEstimation));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetBandwidthEstimationMode(
+        webrtc::kViEMultiStreamEstimation));
+
     // Create a video channel
     TbVideoChannel tbChannel(ViE, webrtc::kVideoCodecVP8);
+
+    EXPECT_EQ(-1, ViE.rtp_rtcp->SetBandwidthEstimationMode(
+        webrtc::kViESingleStreamEstimation));
+    EXPECT_EQ(-1, ViE.rtp_rtcp->SetBandwidthEstimationMode(
+        webrtc::kViEMultiStreamEstimation));
+
     // Create a capture device
     TbCaptureDevice tbCapture(ViE);
     tbCapture.ConnectTo(tbChannel.videoChannel);

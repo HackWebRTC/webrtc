@@ -27,15 +27,12 @@ WebRtc_UWord32 BitRateBPS(WebRtc_UWord16 x )
 }
 
 RTPReceiverVideo::RTPReceiverVideo(const WebRtc_Word32 id,
-                                   RemoteBitrateEstimator* remote_bitrate,
                                    ModuleRtpRtcpImpl* owner)
     : _id(id),
       _criticalSectionReceiverVideo(
           CriticalSectionWrapper::CreateCriticalSection()),
       _currentFecFrameDecoded(false),
-      _receiveFEC(NULL),
-      remote_bitrate_(remote_bitrate),
-      _packetOverHead(28) {
+      _receiveFEC(NULL) {
 }
 
 RTPReceiverVideo::~RTPReceiverVideo() {
@@ -88,18 +85,6 @@ WebRtc_Word32 RTPReceiverVideo::ParseVideoCodecSpecific(
 
   _criticalSectionReceiverVideo->Enter();
 
-  // Add headers, ideally we would like to include for instance
-  // Ethernet header here as well.
-  const WebRtc_UWord16 packetSize = payloadDataLength + _packetOverHead +
-      rtpHeader->header.headerLength + rtpHeader->header.paddingLength;
-  uint32_t compensated_timestamp = rtpHeader->header.timestamp +
-      rtpHeader->extension.transmissionTimeOffset;
-  remote_bitrate_->IncomingPacket(rtpHeader->header.ssrc,
-                                  packetSize,
-                                  nowMS,
-                                  compensated_timestamp,
-                                  -1);
-
   if (isRED) {
     if(_receiveFEC == NULL) {
       _criticalSectionReceiverVideo->Leave();
@@ -127,7 +112,10 @@ WebRtc_Word32 RTPReceiverVideo::ParseVideoCodecSpecific(
       if(retVal != 0) {
         return retVal;
       }
-      retVal = CallbackOfReceivedPayloadData(NULL, 0, rtpHeader);
+      // Pass the length of FEC packets so that they can be accounted for in
+      // the bandwidth estimator.
+      retVal = CallbackOfReceivedPayloadData(NULL, payloadDataLength,
+                                             rtpHeader);
     }
   } else {
     // will leave the _criticalSectionReceiverVideo critsect
@@ -343,9 +331,5 @@ WebRtc_Word32 RTPReceiverVideo::ReceiveGenericCodec(
     return -1;
   }
   return 0;
-}
-
-void RTPReceiverVideo::SetPacketOverHead(WebRtc_UWord16 packetOverHead) {
-  _packetOverHead = packetOverHead;
 }
 } // namespace webrtc

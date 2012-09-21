@@ -23,11 +23,11 @@
 extern MatlabEngine eng;  // global variable defined elsewhere
 #endif
 
-#define OVER_USING_TIME_THRESHOLD 100
-#define MIN_FRAME_PERIOD_HISTORY_LEN 60
+enum { kOverUsingTimeThreshold = 100 };
+enum { kMinFramePeriodHistoryLength = 60 };
 
 namespace webrtc {
-OverUseDetector::OverUseDetector(const OverUseDetectorOptions& options)
+OveruseDetector::OveruseDetector(const OverUseDetectorOptions& options)
     : options_(options),
       current_frame_(),
       prev_frame_(),
@@ -53,7 +53,7 @@ OverUseDetector::OverUseDetector(const OverUseDetectorOptions& options)
          sizeof(process_noise_));
 }
 
-OverUseDetector::~OverUseDetector() {
+OveruseDetector::~OveruseDetector() {
 #ifdef WEBRTC_BWE_MATLAB
   if (plots_.plot1_) {
     eng.DeletePlot(plots_.plot1_);
@@ -76,7 +76,8 @@ OverUseDetector::~OverUseDetector() {
   ts_delta_hist_.clear();
 }
 
-void OverUseDetector::Update(uint16_t packet_size,
+void OveruseDetector::Update(uint16_t packet_size,
+                             int64_t timestamp_ms,
                              uint32_t timestamp,
                              const int64_t now_ms) {
 #ifdef WEBRTC_BWE_MATLAB
@@ -108,54 +109,51 @@ void OverUseDetector::Update(uint16_t packet_size,
   }
 
 #endif
-
-  bool wrapped = false;
-  if (current_frame_.timestamp_ == -1) {
-    current_frame_.timestamp_ = timestamp;
-  } else if (OldTimestamp(
-      timestamp,
-      static_cast<uint32_t>(current_frame_.timestamp_),
-      &wrapped)) {
-    // Don't update with old data
-    return;
-  } else if (timestamp != current_frame_.timestamp_) {
+  bool new_timestamp = (timestamp != current_frame_.timestamp);
+  if (timestamp_ms >= 0) {
+    if (prev_frame_.timestamp_ms == -1 && current_frame_.timestamp_ms == -1) {
+      SwitchTimeBase();
+    }
+    new_timestamp = (timestamp_ms != current_frame_.timestamp_ms);
+  }
+  if (current_frame_.timestamp == -1) {
+    current_frame_.timestamp = timestamp;
+    current_frame_.timestamp_ms = timestamp_ms;
+  } else if (new_timestamp) {
     // First packet of a later frame, the previous frame sample is ready
     WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
-                 "Frame complete at %I64i", current_frame_.completeTimeMs_);
-    if (prev_frame_.completeTimeMs_ >= 0) {  // This is our second frame
+                 "Frame complete at %I64i", current_frame_.complete_time_ms);
+    if (prev_frame_.complete_time_ms >= 0) {  // This is our second frame
       int64_t t_delta = 0;
       double ts_delta = 0;
-      // Check for wrap
-      OldTimestamp(
-          static_cast<uint32_t>(prev_frame_.timestamp_),
-          static_cast<uint32_t>(current_frame_.timestamp_),
-          &wrapped);
-      CompensatedTimeDelta(current_frame_, prev_frame_, t_delta, ts_delta,
-                           wrapped);
-      UpdateKalman(t_delta, ts_delta, current_frame_.size_,
-                   prev_frame_.size_);
+      if (!TimeDeltas(current_frame_, prev_frame_,
+                                &t_delta, &ts_delta)) {
+        // Frame reordering, dropping this sample.
+        return;
+      }
+      UpdateKalman(t_delta, ts_delta, current_frame_.size, prev_frame_.size);
     }
     // The new timestamp is now the current frame,
     // and the old timestamp becomes the previous frame.
     prev_frame_ = current_frame_;
-    current_frame_.timestamp_ = timestamp;
-    current_frame_.size_ = 0;
-    current_frame_.completeTimeMs_ = -1;
+    current_frame_.timestamp = timestamp;
+    current_frame_.timestamp_ms = timestamp_ms;
+    current_frame_.size = 0;
   }
   // Accumulate the frame size
-  current_frame_.size_ += packet_size;
-  current_frame_.completeTimeMs_ = now_ms;
+  current_frame_.size += packet_size;
+  current_frame_.complete_time_ms = now_ms;
 }
 
-BandwidthUsage OverUseDetector::State() const {
+BandwidthUsage OveruseDetector::State() const {
   return hypothesis_;
 }
 
-double OverUseDetector::NoiseVar() const {
+double OveruseDetector::NoiseVar() const {
   return var_noise_;
 }
 
-void OverUseDetector::SetRateControlRegion(RateControlRegion region) {
+void OveruseDetector::SetRateControlRegion(RateControlRegion region) {
   switch (region) {
     case kRcMaxUnknown: {
       threshold_ = options_.initial_threshold;
@@ -169,65 +167,82 @@ void OverUseDetector::SetRateControlRegion(RateControlRegion region) {
   }
 }
 
-void OverUseDetector::CompensatedTimeDelta(const FrameSample& currentFrame,
-                                           const FrameSample& prevFrame,
-                                           int64_t& t_delta,
-                                           double& ts_delta,
-                                           bool wrapped) {
+void OveruseDetector::SwitchTimeBase() {
+  current_frame_.size = 0;
+  current_frame_.complete_time_ms = -1;
+  current_frame_.timestamp = -1;
+  prev_frame_ = current_frame_;
+}
+
+bool OveruseDetector::TimeDeltas(const FrameSample& current_frame,
+                                 const FrameSample& prev_frame,
+                                 int64_t* t_delta,
+                                 double* ts_delta) {
+  assert(t_delta);
+  assert(ts_delta);
   num_of_deltas_++;
   if (num_of_deltas_ > 1000) {
     num_of_deltas_ = 1000;
   }
-  // Add wrap-around compensation
-  int64_t wrapCompensation = 0;
-  if (wrapped) {
-    wrapCompensation = static_cast<int64_t>(1)<<32;
+  if (current_frame.timestamp_ms == -1) {
+    const uint32_t timestamp_diff = current_frame.timestamp -
+        prev_frame.timestamp;
+    if (timestamp_diff > 0x80000000) {
+      // Assume that a diff this big must be due to reordering. Don't update
+      // with reordered samples.
+      return false;
+    }
+    *ts_delta = timestamp_diff / 90.0;
+  } else {
+    *ts_delta = current_frame.timestamp_ms - prev_frame.timestamp_ms;
+    if (*ts_delta < 0) {
+      // Frame reordering.
+      return false;
+    }
   }
-  ts_delta = (currentFrame.timestamp_
-             + wrapCompensation
-             - prevFrame.timestamp_) / 90.0;
-  t_delta = currentFrame.completeTimeMs_ - prevFrame.completeTimeMs_;
-  assert(ts_delta > 0);
+  *t_delta = current_frame.complete_time_ms - prev_frame.complete_time_ms;
+  assert(*ts_delta > 0);
+  return true;
 }
 
-double OverUseDetector::CurrentDrift() {
+double OveruseDetector::CurrentDrift() {
   return 1.0;
 }
 
-void OverUseDetector::UpdateKalman(int64_t t_delta,
+void OveruseDetector::UpdateKalman(int64_t t_delta,
                                    double ts_delta,
                                    uint32_t frame_size,
                                    uint32_t prev_frame_size) {
-  const double minFramePeriod = UpdateMinFramePeriod(ts_delta);
+  const double min_frame_period = UpdateMinFramePeriod(ts_delta);
   const double drift = CurrentDrift();
   // Compensate for drift
-  const double tTsDelta = t_delta - ts_delta / drift;
-  double fsDelta = static_cast<double>(frame_size) - prev_frame_size;
+  const double t_ts_delta = t_delta - ts_delta / drift;
+  double fs_delta = static_cast<double>(frame_size) - prev_frame_size;
 
   // Update the Kalman filter
-  const double scaleFactor =  minFramePeriod / (1000.0 / 30.0);
-  E_[0][0] += process_noise_[0] * scaleFactor;
-  E_[1][1] += process_noise_[1] * scaleFactor;
+  const double scale_factor =  min_frame_period / (1000.0 / 30.0);
+  E_[0][0] += process_noise_[0] * scale_factor;
+  E_[1][1] += process_noise_[1] * scale_factor;
 
   if ((hypothesis_ == kBwOverusing && offset_ < prev_offset_) ||
-      (hypothesis_ == kBwUnderUsing && offset_ > prev_offset_)) {
-    E_[1][1] += 10 * process_noise_[1] * scaleFactor;
+      (hypothesis_ == kBwUnderusing && offset_ > prev_offset_)) {
+    E_[1][1] += 10 * process_noise_[1] * scale_factor;
   }
 
-  const double h[2] = {fsDelta, 1.0};
+  const double h[2] = {fs_delta, 1.0};
   const double Eh[2] = {E_[0][0]*h[0] + E_[0][1]*h[1],
                         E_[1][0]*h[0] + E_[1][1]*h[1]};
 
-  const double residual = tTsDelta - slope_*h[0] - offset_;
+  const double residual = t_ts_delta - slope_*h[0] - offset_;
 
   const bool stable_state =
       (BWE_MIN(num_of_deltas_, 60) * fabsf(offset_) < threshold_);
   // We try to filter out very late frames. For instance periodic key
   // frames doesn't fit the Gaussian model well.
   if (fabsf(residual) < 3 * sqrt(var_noise_)) {
-    UpdateNoiseEstimate(residual, minFramePeriod, stable_state);
+    UpdateNoiseEstimate(residual, min_frame_period, stable_state);
   } else {
-    UpdateNoiseEstimate(3 * sqrt(var_noise_), minFramePeriod, stable_state);
+    UpdateNoiseEstimate(3 * sqrt(var_noise_), min_frame_period, stable_state);
   }
 
   const double denom = var_noise_ + h[0]*Eh[0] + h[1]*Eh[1];
@@ -268,7 +283,7 @@ void OverUseDetector::UpdateKalman(int64_t t_delta,
 
 #ifdef WEBRTC_BWE_MATLAB
   plots_.plot1_->Append("scatter",
-                 static_cast<double>(current_frame_.size_) - prev_frame_.size_,
+                 static_cast<double>(current_frame_.size) - prev_frame_.size,
                  static_cast<double>(t_delta - ts_delta));
   plots_.plot1_->MakeTrend("scatter", "slope", slope_, offset_, "k-");
   plots_.plot1_->MakeTrend("scatter", "thresholdPos",
@@ -286,21 +301,21 @@ void OverUseDetector::UpdateKalman(int64_t t_delta,
 #endif
 }
 
-double OverUseDetector::UpdateMinFramePeriod(double ts_delta) {
-  double minFramePeriod = ts_delta;
-  if (ts_delta_hist_.size() >= MIN_FRAME_PERIOD_HISTORY_LEN) {
-    std::list<double>::iterator firstItem = ts_delta_hist_.begin();
-    ts_delta_hist_.erase(firstItem);
+double OveruseDetector::UpdateMinFramePeriod(double ts_delta) {
+  double min_frame_period = ts_delta;
+  if (ts_delta_hist_.size() >= kMinFramePeriodHistoryLength) {
+    std::list<double>::iterator first_item = ts_delta_hist_.begin();
+    ts_delta_hist_.erase(first_item);
   }
   std::list<double>::iterator it = ts_delta_hist_.begin();
   for (; it != ts_delta_hist_.end(); it++) {
-    minFramePeriod = BWE_MIN(*it, minFramePeriod);
+    min_frame_period = BWE_MIN(*it, min_frame_period);
   }
   ts_delta_hist_.push_back(ts_delta);
-  return minFramePeriod;
+  return min_frame_period;
 }
 
-void OverUseDetector::UpdateNoiseEstimate(double residual,
+void OveruseDetector::UpdateNoiseEstimate(double residual,
                                           double ts_delta,
                                           bool stable_state) {
   if (!stable_state) {
@@ -325,7 +340,7 @@ void OverUseDetector::UpdateNoiseEstimate(double residual,
   }
 }
 
-BandwidthUsage OverUseDetector::Detect(double ts_delta) {
+BandwidthUsage OveruseDetector::Detect(double ts_delta) {
   if (num_of_deltas_ < 2) {
     return kBwNormal;
   }
@@ -342,7 +357,7 @@ BandwidthUsage OverUseDetector::Detect(double ts_delta) {
         time_over_using_ += ts_delta;
       }
       over_use_counter_++;
-      if (time_over_using_ > OVER_USING_TIME_THRESHOLD
+      if (time_over_using_ > kOverUsingTimeThreshold
           && over_use_counter_ > 1) {
         if (offset_ >= prev_offset_) {
 #ifdef _DEBUG
@@ -363,13 +378,13 @@ BandwidthUsage OverUseDetector::Detect(double ts_delta) {
 #endif
     } else {
 #ifdef _DEBUG
-      if (hypothesis_ != kBwUnderUsing) {
+      if (hypothesis_ != kBwUnderusing) {
         WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1, "BWE: kBwUnderUsing");
       }
 #endif
       time_over_using_ = -1;
       over_use_counter_ = 0;
-      hypothesis_ = kBwUnderUsing;
+      hypothesis_ = kBwUnderusing;
     }
   } else {
 #ifdef _DEBUG
@@ -384,7 +399,7 @@ BandwidthUsage OverUseDetector::Detect(double ts_delta) {
   return hypothesis_;
 }
 
-bool OverUseDetector::OldTimestamp(uint32_t new_timestamp,
+bool OveruseDetector::OldTimestamp(uint32_t new_timestamp,
                                    uint32_t existing_timestamp,
                                    bool* wrapped) {
   bool tmpWrapped =

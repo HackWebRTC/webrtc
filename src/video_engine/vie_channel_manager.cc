@@ -37,7 +37,8 @@ ViEChannelManager::ViEChannelManager(
       voice_sync_interface_(NULL),
       voice_engine_(NULL),
       module_process_thread_(NULL),
-      over_use_detector_options_(options) {
+      over_use_detector_options_(options),
+      bwe_mode_(RemoteBitrateEstimator::kMultiStreamEstimation) {
   WEBRTC_TRACE(kTraceMemory, kTraceVideo, ViEId(engine_id),
                "ViEChannelManager::ViEChannelManager(engine_id: %d)",
                engine_id);
@@ -90,7 +91,8 @@ int ViEChannelManager::CreateChannel(int* channel_id) {
 
   // Create a new channel group and add this channel.
   ChannelGroup* group = new ChannelGroup(module_process_thread_,
-                                         over_use_detector_options_);
+                                         over_use_detector_options_,
+                                         bwe_mode_);
   BitrateController* bitrate_controller = group->GetBitrateController();
   ViEEncoder* vie_encoder = new ViEEncoder(engine_id_, new_channel_id,
                                            number_of_cores_,
@@ -324,6 +326,26 @@ bool ViEChannelManager::SetRembStatus(int channel_id, bool sender,
 
   return group->SetChannelRembStatus(channel_id, sender, receiver, channel,
                                      encoder);
+}
+
+bool ViEChannelManager::SetBandwidthEstimationMode(
+    BandwidthEstimationMode mode) {
+  CriticalSectionScoped cs(*channel_id_critsect_);
+  if (channel_groups_.size() > 0) {
+    return false;
+  }
+  switch (mode) {
+    case kViEMultiStreamEstimation:
+      bwe_mode_ = RemoteBitrateEstimator::kMultiStreamEstimation;
+      break;
+    case kViESingleStreamEstimation:
+      bwe_mode_ = RemoteBitrateEstimator::kSingleStreamEstimation;
+      break;
+    default:
+      assert(false);
+      return false;
+  }
+  return true;
 }
 
 bool ViEChannelManager::CreateChannelObject(

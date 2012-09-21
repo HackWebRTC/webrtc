@@ -10,24 +10,31 @@
 
 #include "video_engine/vie_receiver.h"
 
+#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "modules/utility/interface/rtp_dump.h"
 #include "modules/video_coding/main/interface/video_coding.h"
 #include "system_wrappers/interface/critical_section_wrapper.h"
+#include "system_wrappers/interface/tick_util.h"
 #include "system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
+enum { kPacketOverheadBytes = 28 };
+
 ViEReceiver::ViEReceiver(const int32_t channel_id,
-                         VideoCodingModule* module_vcm)
+                         VideoCodingModule* module_vcm,
+                         RemoteBitrateEstimator* remote_bitrate_estimator)
     : receive_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       channel_id_(channel_id),
       rtp_rtcp_(NULL),
       vcm_(module_vcm),
+      remote_bitrate_estimator_(remote_bitrate_estimator),
       external_decryption_(NULL),
       decryption_buffer_(NULL),
       rtp_dump_(NULL),
       receiving_(false) {
+  assert(remote_bitrate_estimator);
 }
 
 ViEReceiver::~ViEReceiver() {
@@ -118,11 +125,33 @@ WebRtc_Word32 ViEReceiver::OnReceivedPayloadData(
     return 0;
   }
 
+  // TODO(holmer): Make sure packets reconstructed using FEC are not passed to
+  // the bandwidth estimator.
+  // Add headers, ideally we would like to include for instance
+  // Ethernet header here as well.
+  const int packet_size = payload_size + kPacketOverheadBytes +
+      rtp_header->header.headerLength + rtp_header->header.paddingLength;
+  uint32_t compensated_timestamp = rtp_header->header.timestamp +
+      rtp_header->extension.transmissionTimeOffset;
+  remote_bitrate_estimator_->IncomingPacket(rtp_header->header.ssrc,
+                                            packet_size,
+                                            TickTime::MillisecondTimestamp(),
+                                            compensated_timestamp);
+
   if (vcm_->IncomingPacket(payload_data, payload_size, *rtp_header) != 0) {
     // Check this...
     return -1;
   }
   return 0;
+}
+
+void ViEReceiver::OnSendReportReceived(const WebRtc_Word32 id,
+                                       const WebRtc_UWord32 senderSSRC,
+                                       uint32_t ntp_secs,
+                                       uint32_t ntp_frac,
+                                       uint32_t timestamp) {
+  remote_bitrate_estimator_->IncomingRtcp(senderSSRC, ntp_secs, ntp_frac,
+                                          timestamp);
 }
 
 int ViEReceiver::InsertRTPPacket(const WebRtc_Word8* rtp_packet,

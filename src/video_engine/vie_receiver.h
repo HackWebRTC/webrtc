@@ -24,13 +24,15 @@ namespace webrtc {
 
 class CriticalSectionWrapper;
 class Encryption;
+class RemoteBitrateEstimator;
 class RtpDump;
 class RtpRtcp;
 class VideoCodingModule;
 
 class ViEReceiver : public UdpTransportData, public RtpData {
  public:
-  ViEReceiver(const int32_t channel_id, VideoCodingModule* module_vcm);
+  ViEReceiver(const int32_t channel_id, VideoCodingModule* module_vcm,
+              RemoteBitrateEstimator* remote_bitrate_estimator);
   ~ViEReceiver();
 
   int RegisterExternalDecryption(Encryption* decryption);
@@ -66,6 +68,12 @@ class ViEReceiver : public UdpTransportData, public RtpData {
       const WebRtc_UWord16 payload_size,
       const WebRtcRTPHeader* rtp_header);
 
+  void OnSendReportReceived(const WebRtc_Word32 id,
+                            const WebRtc_UWord32 senderSSRC,
+                            uint32_t ntp_secs,
+                            uint32_t ntp_frac,
+                            uint32_t timestamp);
+
  private:
   int InsertRTPPacket(const WebRtc_Word8* rtp_packet, int rtp_packet_length);
   int InsertRTCPPacket(const WebRtc_Word8* rtcp_packet, int rtcp_packet_length);
@@ -75,6 +83,7 @@ class ViEReceiver : public UdpTransportData, public RtpData {
   RtpRtcp* rtp_rtcp_;
   std::list<RtpRtcp*> rtp_rtcp_simulcast_;
   VideoCodingModule* vcm_;
+  RemoteBitrateEstimator* remote_bitrate_estimator_;
 
   Encryption* external_decryption_;
   WebRtc_UWord8* decryption_buffer_;

@@ -10,12 +10,13 @@
 
 // This class estimates the incoming available bandwidth.
 
-#ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_REMOTE_BITRATE_ESTIMATOR_H_
-#define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_REMOTE_BITRATE_ESTIMATOR_H_
+#ifndef WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_REMOTE_BITRATE_ESTIMATOR_IMPL_H_
+#define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_REMOTE_BITRATE_ESTIMATOR_IMPL_H_
 
 #include <map>
 
 #include "modules/remote_bitrate_estimator/bitrate_estimator.h"
+#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/remote_bitrate_estimator/overuse_detector.h"
 #include "modules/remote_bitrate_estimator/remote_rate_control.h"
 #include "system_wrappers/interface/constructor_magic.h"
@@ -26,62 +27,56 @@
 
 namespace webrtc {
 
-// RemoteBitrateObserver is used to signal changes in bitrate estimates for
-// the incoming streams.
-class RemoteBitrateObserver {
+class RemoteBitrateEstimatorMultiStream : public RemoteBitrateEstimator {
  public:
-  // Called when a receive channel has a new bitrate estimate for the incoming
-  // stream.
-  // TODO(holmer): Remove |ssrc| argument and remove SSRC map from VieRemb.
-  virtual void OnReceiveBitrateChanged(unsigned int ssrc,
-                                       unsigned int bitrate) = 0;
+  RemoteBitrateEstimatorMultiStream(RemoteBitrateObserver* observer,
+                                    const OverUseDetectorOptions& options);
 
-  virtual ~RemoteBitrateObserver() {}
-};
-
-class RemoteBitrateEstimator {
- public:
-  enum EstimationMode {
-    kMultiStreamEstimation,
-    kSingleStreamEstimation
-  };
-
-  virtual ~RemoteBitrateEstimator() {}
-
-  static RemoteBitrateEstimator* Create(RemoteBitrateObserver* observer,
-                                        const OverUseDetectorOptions& options,
-                                        EstimationMode mode);
+  ~RemoteBitrateEstimatorMultiStream() {}
 
   // Stores an RTCP SR (NTP, RTP timestamp) tuple for a specific SSRC to be used
   // in future RTP timestamp to NTP time conversions. As soon as any SSRC has
   // two tuples the RemoteBitrateEstimator will switch to multi-stream mode.
-  virtual void IncomingRtcp(unsigned int ssrc, uint32_t ntp_secs,
-                            uint32_t ntp_frac, uint32_t rtp_timestamp) = 0;
+  void IncomingRtcp(unsigned int ssrc, uint32_t ntp_secs, uint32_t ntp_frac,
+                    uint32_t rtp_timestamp);
 
   // Called for each incoming packet. The first SSRC will immediately be used
   // for overuse detection. Subsequent SSRCs will only be used when at least
   // two RTCP SR reports with the same SSRC have been received.
-  virtual void IncomingPacket(unsigned int ssrc,
-                              int packet_size,
-                              int64_t arrival_time,
-                              uint32_t rtp_timestamp) = 0;
+  void IncomingPacket(unsigned int ssrc,
+                      int packet_size,
+                      int64_t arrival_time,
+                      uint32_t rtp_timestamp);
 
   // Triggers a new estimate calculation.
-  virtual void UpdateEstimate(unsigned int ssrc, int64_t time_now) = 0;
+  void UpdateEstimate(unsigned int ssrc, int64_t time_now);
 
   // Set the current round-trip time experienced by the streams going into this
   // estimator.
-  virtual void SetRtt(unsigned int rtt) = 0;
+  void SetRtt(unsigned int rtt);
 
   // Removes all data for |ssrc|.
-  virtual void RemoveStream(unsigned int ssrc) = 0;
+  void RemoveStream(unsigned int ssrc);
 
   // Returns true if a valid estimate exists and sets |bitrate_bps| to the
   // estimated bitrate in bits per second.
-  virtual bool LatestEstimate(unsigned int ssrc,
-                              unsigned int* bitrate_bps) const = 0;
+  bool LatestEstimate(unsigned int ssrc, unsigned int* bitrate_bps) const;
+
+ private:
+  typedef std::map<unsigned int, synchronization::RtcpList> StreamMap;
+
+  RemoteRateControl remote_rate_;
+  OveruseDetector overuse_detector_;
+  BitRateStats incoming_bitrate_;
+  RemoteBitrateObserver* observer_;
+  StreamMap streams_;
+  scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  unsigned int initial_ssrc_;
+  bool multi_stream_;
+
+  DISALLOW_COPY_AND_ASSIGN(RemoteBitrateEstimatorMultiStream);
 };
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_REMOTE_BITRATE_ESTIMATOR_H_
+#endif  // WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_REMOTE_BITRATE_ESTIMATOR_IMPL_H_

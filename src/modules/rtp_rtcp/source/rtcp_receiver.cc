@@ -377,6 +377,10 @@ RTCPReceiver::HandleSenderReceiverReport(RTCPUtility::RTCPParserV2& rtcpParser,
             // only signal that we have received a SR when we accept one
             rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpSr;
 
+            rtcpPacketInformation.ntp_secs = rtcpPacket.SR.NTPMostSignificant;
+            rtcpPacketInformation.ntp_frac = rtcpPacket.SR.NTPLeastSignificant;
+            rtcpPacketInformation.rtp_timestamp = rtcpPacket.SR.RTPTimestamp;
+
             // We will only store the send report from one source, but
             // we will store all the receive block
 
@@ -1261,7 +1265,10 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
     if(_cbRtcpFeedback) {
       if(rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpSr) {
         _cbRtcpFeedback->OnSendReportReceived(_id,
-            rtcpPacketInformation.remoteSSRC);
+            rtcpPacketInformation.remoteSSRC,
+            rtcpPacketInformation.ntp_secs,
+            rtcpPacketInformation.ntp_frac,
+            rtcpPacketInformation.rtp_timestamp);
       } else {
         _cbRtcpFeedback->OnReceiveReportReceived(_id,
             rtcpPacketInformation.remoteSSRC);

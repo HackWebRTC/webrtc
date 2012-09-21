@@ -54,7 +54,7 @@ RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
 ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
     : _rtpSender(configuration.id, configuration.audio, configuration.clock),
       _rtpReceiver(configuration.id, configuration.audio, configuration.clock,
-                   configuration.remote_bitrate_estimator, this),
+                   this),
       _rtcpSender(configuration.id, configuration.audio, configuration.clock,
                   this),
       _rtcpReceiver(configuration.id, configuration.clock, this),
@@ -987,7 +987,6 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetTransportOverhead(
   // store new
   _packetOverHead = packetOverHead;
 
-  _rtpReceiver.SetPacketOverHead(_packetOverHead);
   WebRtc_UWord16 length = _rtpSender.MaxPayloadLength() - packetOverHeadDiff;
   return _rtpSender.SetMaxPayloadLength(length, _packetOverHead);
 }

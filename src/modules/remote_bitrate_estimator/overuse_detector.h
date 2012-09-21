@@ -23,24 +23,30 @@
 namespace webrtc {
 enum RateControlRegion;
 
-class OverUseDetector {
+class OveruseDetector {
  public:
-  explicit OverUseDetector(const OverUseDetectorOptions& options);
-  ~OverUseDetector();
-  void Update(const WebRtc_UWord16 packet_size,
-              const uint32_t timestamp,
-              const int64_t now_ms);
+  explicit OveruseDetector(const OverUseDetectorOptions& options);
+  ~OveruseDetector();
+  void Update(uint16_t packet_size,
+              int64_t timestamp_ms,
+              uint32_t rtp_timestamp,
+              int64_t now_ms);
   BandwidthUsage State() const;
   double NoiseVar() const;
   void SetRateControlRegion(RateControlRegion region);
 
  private:
   struct FrameSample {
-    FrameSample() : size_(0), completeTimeMs_(-1), timestamp_(-1) {}
+    FrameSample()
+        : size(0),
+          complete_time_ms(-1),
+          timestamp(-1),
+          timestamp_ms(-1) {}
 
-    uint32_t size_;
-    int64_t  completeTimeMs_;
-    int64_t  timestamp_;
+    uint32_t size;
+    int64_t complete_time_ms;
+    int64_t timestamp;
+    int64_t timestamp_ms;
   };
 
   struct DebugPlots {
@@ -57,11 +63,14 @@ class OverUseDetector {
                            uint32_t existing_timestamp,
                            bool* wrapped);
 
-  void CompensatedTimeDelta(const FrameSample& current_frame,
-                            const FrameSample& prev_frame,
-                            int64_t& t_delta,
-                            double& ts_delta,
-                            bool wrapped);
+  // Prepares the overuse detector to start using timestamps in milliseconds
+  // instead of 90 kHz timestamps.
+  void SwitchTimeBase();
+
+  bool TimeDeltas(const FrameSample& current_frame,
+                  const FrameSample& prev_frame,
+                  int64_t* t_delta,
+                  double* ts_delta);
   void UpdateKalman(int64_t t_delta,
                     double ts_elta,
                     uint32_t frame_size,

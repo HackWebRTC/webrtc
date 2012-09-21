@@ -64,6 +64,10 @@ public:
     WebRtc_UWord64  rpsiPictureId;
     WebRtc_UWord32  receiverEstimatedMaxBitrate;
 
+    uint32_t ntp_secs;
+    uint32_t ntp_frac;
+    uint32_t rtp_timestamp;
+
     RTCPVoIPMetric*  VoIPMetric;
 };
 

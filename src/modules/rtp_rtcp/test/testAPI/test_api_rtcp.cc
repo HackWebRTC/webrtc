@@ -51,7 +51,10 @@ class RtcpCallback : public RtcpFeedback, public RtcpIntraFrameObserver {
     EXPECT_STRCASEEQ("test", print_name);
   };
   virtual void OnSendReportReceived(const WebRtc_Word32 id,
-                                    const WebRtc_UWord32 senderSSRC) {
+                                    const WebRtc_UWord32 senderSSRC,
+                                    uint32_t ntp_secs,
+                                    uint32_t ntp_frac,
+                                    uint32_t timestamp) {
     RTCPSenderInfo senderInfo;
     EXPECT_EQ(0, _rtpRtcpModule->RemoteRTCPStat(&senderInfo));
   };

@@ -170,27 +170,32 @@ WebRtc_Word32 VieRemb::Process() {
 
   int num_bitrates = update_time_bitrates_.size();
 
-  if (num_bitrates == 0) {
+  if (num_bitrates == 0 || receive_modules_.empty()) {
     list_crit_->Leave();
     return 0;
   }
 
   // TODO(mflodman) Use std::vector and change RTP module API.
-  unsigned int* ssrcs = new unsigned int[num_bitrates];
+  unsigned int* ssrcs = new unsigned int[receive_modules_.size()];
 
   unsigned int total_bitrate = 0;
-  int idx = 0;
   for (it = update_time_bitrates_.begin(); it != update_time_bitrates_.end();
-      ++it, ++idx) {
+      ++it) {
     total_bitrate += it->second.second;
-    ssrcs[idx] = it->first;
+  }
+
+  int idx = 0;
+  RtpModules::iterator rtp_it;
+  for (rtp_it = receive_modules_.begin(); rtp_it != receive_modules_.end();
+      ++rtp_it, ++idx) {
+    ssrcs[idx] = (*rtp_it)->RemoteSSRC();
   }
 
   // Send a REMB packet.
   RtpRtcp* sender = NULL;
   if (!rtcp_sender_.empty()) {
     sender = rtcp_sender_.front();
-  } else if (!receive_modules_.empty()) {
+  } else {
     sender = receive_modules_.front();
   }
   last_send_bitrate_ = total_bitrate;

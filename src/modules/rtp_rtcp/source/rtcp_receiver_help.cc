@@ -36,6 +36,9 @@ RTCPPacketInformation::RTCPPacketInformation()
       sliPictureId(0),
       rpsiPictureId(0),
       receiverEstimatedMaxBitrate(0),
+      ntp_secs(0),
+      ntp_frac(0),
+      rtp_timestamp(0),
       VoIPMetric(NULL) {
 }
 
