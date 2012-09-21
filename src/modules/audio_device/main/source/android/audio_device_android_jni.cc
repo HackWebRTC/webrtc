@@ -130,8 +130,8 @@ AudioDeviceAndroidJni::AudioDeviceAndroidJni(const WebRtc_Word32 id) :
             _playError(0), _recWarning(0), _recError(0), _delayPlayout(0),
             _delayRecording(0),
             _AGC(false),
-            _samplingFreqIn(0),
-            _samplingFreqOut(0),
+            _samplingFreqIn((N_REC_SAMPLES_PER_SEC/1000)),
+            _samplingFreqOut((N_PLAY_SAMPLES_PER_SEC/1000)),
             _maxSpeakerVolume(0),
             _loudSpeakerOn(false),
             _recAudioSource(1), // 1 is AudioSource.MIC which is our default
