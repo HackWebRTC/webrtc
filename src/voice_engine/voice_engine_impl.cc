@@ -9,7 +9,7 @@
  */
 
 #if defined(WEBRTC_ANDROID) && !defined(WEBRTC_ANDROID_OPENSLES)
-#include "modules/audio_device/main/source/android/audio_device_android_jni.h"
+#include "modules/audio_device/android/audio_device_android_jni.h"
 #endif
 
 #include "voice_engine_impl.h"

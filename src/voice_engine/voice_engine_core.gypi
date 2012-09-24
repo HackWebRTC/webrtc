@@ -26,7 +26,7 @@
       ],
       'include_dirs': [
         'include',
-        '<(webrtc_root)/modules/audio_device/main/source',
+        '<(webrtc_root)/modules/audio_device',
       ],
       'direct_dependent_settings': {
         'include_dirs': [

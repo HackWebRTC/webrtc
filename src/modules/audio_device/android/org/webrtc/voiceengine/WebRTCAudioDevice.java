@@ -20,7 +20,7 @@ import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.util.Log;
 
-class AudioDeviceAndroid {
+class WebRTCAudioDevice {
     private AudioTrack _audioTrack = null;
     private AudioRecord _audioRecord = null;
 
@@ -44,7 +44,7 @@ class AudioDeviceAndroid {
     private int _bufferedPlaySamples = 0;
     private int _playPosition = 0;
 
-    AudioDeviceAndroid() {
+    WebRTCAudioDevice() {
         try {
             _playBuffer = ByteBuffer.allocateDirect(2 * 480); // Max 10 ms @ 48
                                                               // kHz
@@ -125,10 +125,10 @@ class AudioDeviceAndroid {
     @SuppressWarnings("unused")
     private int InitPlayback(int sampleRate) {
         // get the minimum buffer size that can be used
-        int minPlayBufSize =
-                        AudioTrack.getMinBufferSize(sampleRate,
-                                        AudioFormat.CHANNEL_CONFIGURATION_MONO,
-                                        AudioFormat.ENCODING_PCM_16BIT);
+        int minPlayBufSize = AudioTrack.getMinBufferSize(
+            sampleRate,
+            AudioFormat.CHANNEL_CONFIGURATION_MONO,
+            AudioFormat.ENCODING_PCM_16BIT);
 
         // DoLog("min play buf size is " + minPlayBufSize);
 
@@ -479,12 +479,12 @@ class AudioDeviceAndroid {
         // ***IMPORTANT*** When the API level for honeycomb (H) has been
         // decided,
         // the condition should be changed to include API level 8 to H-1.
-        if ((android.os.Build.BRAND.equals("Samsung") || android.os.Build.BRAND
-                        .equals("samsung")) && (8 == apiLevel)) {
+        if ((android.os.Build.BRAND.equals("Samsung") ||
+                        android.os.Build.BRAND.equals("samsung")) &&
+                (8 == apiLevel)) {
             // Set Samsung specific VoIP mode for 2.2 devices
-            int mode =
-                            (startCall ? 4 /* VoIP mode */
-                                            : AudioManager.MODE_NORMAL);
+            // 4 is VoIP mode
+            int mode = (startCall ? 4 : AudioManager.MODE_NORMAL);
             _audioManager.setMode(mode);
             if (_audioManager.getMode() != mode) {
                 DoLogErr("Could not set audio mode for Samsung device");
