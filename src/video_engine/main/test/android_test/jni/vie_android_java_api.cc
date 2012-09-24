@@ -1402,14 +1402,13 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Set
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1SetLoudspeakerStatus(
     JNIEnv *,
     jobject,
-    jboolean enable)
-{
+    jboolean enable) {
   VALIDATE_HARDWARE_POINTER;
-
   if (voeData.hardware->SetLoudspeakerStatus(enable) != 0) {
+    __android_log_print(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+                        "SetLoudspeakerStatus(%d) failed", enable);
     return -1;
   }
-
   return 0;
 }
 
