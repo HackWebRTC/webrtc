@@ -23,7 +23,8 @@ namespace webrtc {
 enum PlaneType {
   kYPlane = 0,
   kUPlane = 1,
-  kVPlane = 2
+  kVPlane = 2,
+  KNumOfPlanes = 3
 };
 
 class I420VideoFrame {
