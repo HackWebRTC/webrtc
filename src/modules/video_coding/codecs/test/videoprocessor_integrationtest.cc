@@ -649,7 +649,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeFrameRateFrameDrop) {
   config_.networking_config.packet_loss_probability = 0;
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
-  SetRateProfilePars(&rate_profile, 0, 80, 30, 0);
+  SetRateProfilePars(&rate_profile, 0, 80, 24, 0);
   SetRateProfilePars(&rate_profile, 1, 80, 15, 100);
   SetRateProfilePars(&rate_profile, 2, 80, 10, 200);
   rate_profile.frame_index_rate_update[3] = kNbrFramesLong + 1;
@@ -668,7 +668,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeFrameRateFrameDrop) {
   RateControlMetrics rc_metrics[3];
   SetRateControlMetrics(rc_metrics, 0, 40, 20, 75, 15, 60, 0);
   SetRateControlMetrics(rc_metrics, 1, 10, 0, 25, 10, 35, 0);
-  SetRateControlMetrics(rc_metrics, 2, 0, 0, 20, 10, 10, 0);
+  SetRateControlMetrics(rc_metrics, 2, 0, 0, 20, 10, 15, 0);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,
                          process_settings,
@@ -686,7 +686,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossSpatialResizeFrameDrop) {
   config_.networking_config.packet_loss_probability = 0;
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
-  SetRateProfilePars(&rate_profile, 0, 80, 30, 0);
+  SetRateProfilePars(&rate_profile, 0, 100, 30, 0);
   SetRateProfilePars(&rate_profile, 1, 200, 30, 120);
   SetRateProfilePars(&rate_profile, 2, 200, 30, 240);
   rate_profile.frame_index_rate_update[3] = kNbrFramesLong + 1;
@@ -700,11 +700,9 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossSpatialResizeFrameDrop) {
   SetQualityMetrics(&quality_metrics, 29.0, 20.0, 0.75, 0.60);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[3];
-  SetRateControlMetrics(rc_metrics, 0, 45, 20, 75, 20, 70, 0);
+  SetRateControlMetrics(rc_metrics, 0, 45, 30, 75, 20, 70, 0);
   SetRateControlMetrics(rc_metrics, 1, 20, 35, 30, 20, 15, 1);
-  // TODO(marpan): Lower this mismatch value for key frame when we upgrade to
-  // new libvpx: currently there is bug in the QP selection.
-  SetRateControlMetrics(rc_metrics, 2, 0, 110, 30, 15, 25, 1);
+  SetRateControlMetrics(rc_metrics, 2, 0, 30, 30, 15, 25, 1);
   ProcessFramesAndVerify(quality_metrics,
                          rate_profile,
                          process_settings,
