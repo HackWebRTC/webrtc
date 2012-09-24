@@ -8,7 +8,7 @@
 
 LOCAL_PATH := $(call my-dir)
 
-MY_LIBS_PATH := ../../../../../../out/Release/obj.target
+MY_LIBS_PATH := ../../../../../../out/Debug/obj.target
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libvoice_engine_core
