@@ -133,9 +133,19 @@ void RTCPReceiver::RegisterRtcpObservers(
 }
 
 
-void RTCPReceiver::SetSSRC( const WebRtc_UWord32 ssrc) {
+void RTCPReceiver::SetSSRC(const WebRtc_UWord32 ssrc) {
+  WebRtc_UWord32 old_ssrc = 0;
+  {
     CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+    old_ssrc = _SSRC;
     _SSRC = ssrc;
+  }
+  {
+    CriticalSectionScoped lock(_criticalSectionFeedbacks);
+    if (_cbRtcpIntraFrameObserver && old_ssrc != ssrc) {
+      _cbRtcpIntraFrameObserver->OnLocalSsrcChanged(old_ssrc, ssrc);
+    }
+  }
 }
 
 WebRtc_Word32 RTCPReceiver::ResetRTT(const WebRtc_UWord32 remoteSSRC) {
@@ -1196,6 +1206,12 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
     // Might trigger a OnReceivedBandwidthEstimateUpdate.
     UpdateTMMBR();
   }
+  unsigned int local_ssrc = 0;
+  {
+    // We don't want to hold this critsect when triggering the callbacks below.
+    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+    local_ssrc = _SSRC;
+  }
   if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpSrReq) {
     _rtpRtcp.OnRequestSendReport();
   }
@@ -1228,18 +1244,15 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
                        "SIG [RTCP] Incoming FIR from SSRC:0x%x",
                        rtcpPacketInformation.remoteSSRC);
         }
-        _cbRtcpIntraFrameObserver->OnReceivedIntraFrameRequest(
-            rtcpPacketInformation.remoteSSRC);
+        _cbRtcpIntraFrameObserver->OnReceivedIntraFrameRequest(local_ssrc);
       }
       if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpSli) {
         _cbRtcpIntraFrameObserver->OnReceivedSLI(
-            rtcpPacketInformation.remoteSSRC,
-            rtcpPacketInformation.sliPictureId);
+            local_ssrc, rtcpPacketInformation.sliPictureId);
       }
       if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRpsi) {
         _cbRtcpIntraFrameObserver->OnReceivedRPSI(
-            rtcpPacketInformation.remoteSSRC,
-            rtcpPacketInformation.rpsiPictureId);
+            local_ssrc, rtcpPacketInformation.rpsiPictureId);
       }
     }
     if (_cbRtcpBandwidthObserver) {

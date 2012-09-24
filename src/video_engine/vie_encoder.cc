@@ -822,6 +822,9 @@ void ViEEncoder::OnReceivedIntraFrameRequest(uint32_t /*ssrc*/) {
   time_last_intra_request_ms_ = now;
 }
 
+void ViEEncoder::OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc) {
+}
+
 // Called from ViEBitrateObserver.
 void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
                                   const uint8_t fraction_lost,

@@ -13,6 +13,7 @@
 #include "modules/bitrate_controller/include/bitrate_controller.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "video_engine/encoder_state_feedback.h"
 #include "video_engine/vie_channel.h"
 #include "video_engine/vie_encoder.h"
 #include "video_engine/vie_remb.h"
@@ -25,7 +26,8 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread,
     : remb_(new VieRemb(process_thread)),
       bitrate_controller_(BitrateController::CreateBitrateController()),
       remote_bitrate_estimator_(RemoteBitrateEstimator::Create(remb_.get(),
-                                                               options, mode)) {
+                                                               options, mode)),
+      encoder_state_feedback_(new EncoderStateFeedback()) {
 }
 
 ChannelGroup::~ChannelGroup() {
@@ -55,6 +57,10 @@ BitrateController* ChannelGroup::GetBitrateController() {
 
 RemoteBitrateEstimator* ChannelGroup::GetRemoteBitrateEstimator() {
   return remote_bitrate_estimator_.get();
+}
+
+EncoderStateFeedback* ChannelGroup::GetEncoderStateFeedback() {
+  return encoder_state_feedback_.get();
 }
 
 bool ChannelGroup::SetChannelRembStatus(int channel_id,
