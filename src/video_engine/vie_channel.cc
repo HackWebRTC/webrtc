@@ -232,6 +232,11 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   NACKMethod nack_method = rtp_rtcp_->NACK();
   bool transmission_smoothening = rtp_rtcp_->TransmissionSmoothingStatus();
 
+  bool fec_enabled = false;
+  WebRtc_UWord8 payload_type_red;
+  WebRtc_UWord8 payload_type_fec;
+  rtp_rtcp_->GenericFECStatus(fec_enabled, payload_type_red, payload_type_fec);
+
   CriticalSectionScoped cs(rtp_rtcp_cs_.get());
 
   if (video_codec.numberOfSimulcastStreams > 0) {
@@ -260,6 +265,10 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       if (nack_method != kNackOff) {
         rtp_rtcp->SetStorePacketsStatus(true, kNackHistorySize);
         rtp_rtcp->SetNACKStatus(nack_method);
+      }
+      if (fec_enabled) {
+        rtp_rtcp->SetGenericFECStatus(fec_enabled, payload_type_red,
+            payload_type_fec);
       }
       rtp_rtcp->SetSendingMediaStatus(rtp_rtcp_->SendingMedia());
       simulcast_rtp_rtcp_.push_back(rtp_rtcp);
