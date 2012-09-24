@@ -31,61 +31,65 @@ INCLUDE_FUZZ_SDP_JS
     console.log('getUserMedia request failed with code ' + error.code);
   }
 
-  function callUsingStream(localStream) {
-    gFirstConnection = new webkitPeerConnection00(
-        null, onIceCandidateToFirst);
-    gFirstConnection.addStream(localStream);
-    var offer = gFirstConnection.createOffer(null);
-    gFirstConnection.setLocalDescription(
-        webkitPeerConnection00.SDP_OFFER, offer);
-    return offer.toSdp();
-  }
-
-  function receiveCall(offer_sdp) {
-    gSecondConnection = new webkitPeerConnection00(
-        null, onIceCandidateToSecond);
-    gSecondConnection.onaddstream = onRemoteStream;
-    var parsed_offer = new SessionDescription(offer_sdp);
-    gSecondConnection.setRemoteDescription(
-        webkitPeerConnection00.SDP_OFFER, parsed_offer);
-
-    var answer = gSecondConnection.createAnswer(
-        offer_sdp, { has_audio: true, has_video: true });
-    gSecondConnection.setLocalDescription(
-        webkitPeerConnection00.SDP_ANSWER, answer);
-    gSecondConnection.startIce();
-    return answer.toSdp();
-  }
-
-  function handleAnswer(answer_sdp) {
-    var parsed_answer = new SessionDescription(answer_sdp);
-    gFirstConnection.setRemoteDescription(
-        webkitPeerConnection00.SDP_ANSWER, parsed_answer);
-    gFirstConnection.startIce();
-  }
-
   function getUserMediaOkCallback(localStream) {
     var localStreamUrl = webkitURL.createObjectURL(localStream);
     document.getElementById('local-view').src = localStreamUrl;
 
-    var offer_sdp = callUsingStream(localStream);
-    offer_sdp = gTransformOfferSdp(offer_sdp);
-    var answer_sdp = receiveCall(offer_sdp);
-    answer_sdp = gTransformAnswerSdp(answer_sdp);
-    console.log(offer_sdp);
-    console.log(answer_sdp);
-    handleAnswer(answer_sdp);
+    callUsingStream(localStream);
   }
 
-  function onIceCandidateToFirst(candidate, more) {
-    if (candidate) {
-      gSecondConnection.processIceMessage(candidate);
+  function callUsingStream(localStream) {
+    gFirstConnection = new webkitRTCPeerConnection(null, null);
+    gFirstConnection.onicecandidate = onIceCandidateToFirst;
+    gFirstConnection.addStream(localStream);
+    gFirstConnection.createOffer(onOfferCreated);
+  }
+
+  function onOfferCreated(offer) {
+    gFirstConnection.setLocalDescription(offer);
+
+    var offerSdp = gTransformOfferSdp(offer.sdp);
+    console.log("OFFER SDP MESSAGE===========================\n" + offerSdp);
+    receiveCall(offerSdp);
+  }
+
+  function receiveCall(offerSdp) {
+    gSecondConnection = new webkitRTCPeerConnection(null, null);
+    gSecondConnection.onicecandidate = onIceCandidateToSecond;
+    gSecondConnection.onaddstream = onRemoteStream;
+
+    var parsedOffer = new RTCSessionDescription({ type: "offer",
+                                                  sdp: offerSdp });
+    gSecondConnection.setRemoteDescription(parsedOffer);
+
+    gSecondConnection.createAnswer(onAnswerCreated);
+  }
+
+  function onAnswerCreated(answer) {
+    gSecondConnection.setLocalDescription(answer);
+
+    answerSdp = gTransformAnswerSdp(answer.sdp);
+    console.log("ANSWER SDP MESSAGE===========================\n" + answerSdp);
+    handleAnswer(answerSdp);
+  }
+
+  function handleAnswer(answerSdp) {
+    var parsedAnswer = new RTCSessionDescription({ type: "answer",
+                                                   sdp: answerSdp });
+    gFirstConnection.setRemoteDescription(parsedAnswer);
+  }
+
+  function onIceCandidateToFirst(event) {
+    if (event.candidate) {
+      var candidate = new RTCIceCandidate(event.candidate);
+      gSecondConnection.addIceCandidate(candidate);
     }
   }
 
-  function onIceCandidateToSecond(candidate, more) {
-    if (candidate) {
-      gFirstConnection.processIceMessage(candidate);
+  function onIceCandidateToSecond(event) {
+    if (event.candidate) {
+      var candidate = new RTCIceCandidate(event.candidate);
+      gFirstConnection.addIceCandidate(candidate);
     }
   }
 

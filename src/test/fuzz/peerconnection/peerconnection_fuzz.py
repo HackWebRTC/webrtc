@@ -57,6 +57,7 @@ def _RandomSdpTransform():
 
 
 def Fuzz(file_data):
+  """Fuzzes the passed in template."""
   file_data = file_data.decode('utf-8')
 
   # Generate a bunch of random numbers and encode them into the page. Since the
@@ -72,6 +73,29 @@ def Fuzz(file_data):
                               file_data)
   file_data = FillInParameter('TRANSFORM_ANSWER_SDP',
                               _RandomSdpTransform(),
+                              file_data)
+
+  return file_data
+
+
+def MakeWorkingFile(file_data):
+  """Fills in arguments to make a basic working file.
+
+  Used for ensuring that the basic template is standards-compliant.
+  """
+  file_data = file_data.decode('utf-8')
+
+  file_data = FillInParameter('ARRAY_OF_RANDOM_ROLLS',
+                              _ArrayOfRandomRolls(500),
+                              file_data)
+  file_data = FillInParameter('REQUEST_AUDIO_AND_VIDEO',
+                              '{ video: true, audio: true }',
+                              file_data)
+  file_data = FillInParameter('TRANSFORM_OFFER_SDP',
+                              _ReturnFirstArgument(),
+                              file_data)
+  file_data = FillInParameter('TRANSFORM_ANSWER_SDP',
+                              _ReturnFirstArgument(),
                               file_data)
 
   return file_data
