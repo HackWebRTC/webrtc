@@ -16,6 +16,7 @@
 #define WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_
 
 #include "common_types.h"  // RawVideoTypes.
+#include "modules/interface/module_common_types.h"  // VideoFrame
 #include "typedefs.h"
 
 namespace webrtc {
@@ -76,13 +77,12 @@ int CalcBufferSize(VideoType type, int width, int height);
 //   - src_video_type   : Type of input video.
 //   - src_frame        : Pointer to a source frame.
 //   - crop_x/crop_y    : Starting positions for cropping (0 for no crop).
-//   - src/dst_width    : src/dst width in pixels.
-//   - src/dst_height   : src/dst height in pixels.
+//   - src_width        : src width in pixels.
+//   - src_height       : src height in pixels.
 //   - sample_size      : Required only for the parsing of MJPG (set to 0 else).
-//   - dst_stride       : Number of bytes in a row of the dst Y plane.
 //   - rotate           : Rotation mode of output image.
 // Output:
-//   - dst_frame        : Pointer to a destination frame.
+//   - dst_frame        : Reference to a destination frame.
 // Return value: 0 if OK, < 0 otherwise.
 
 int ConvertToI420(VideoType src_video_type,
@@ -90,9 +90,8 @@ int ConvertToI420(VideoType src_video_type,
                   int crop_x, int crop_y,
                   int src_width, int src_height,
                   int sample_size,
-                  int dst_width, int dst_height, int dst_stride,
                   VideoRotationMode rotation,
-                  uint8_t* dst_frame);
+                  VideoFrame* dst_frame);
 
 // Convert From I420
 // Input:

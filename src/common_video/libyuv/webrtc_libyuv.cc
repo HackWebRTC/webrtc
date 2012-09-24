@@ -170,15 +170,17 @@ int ConvertToI420(VideoType src_video_type,
                   int crop_x, int crop_y,
                   int src_width, int src_height,
                   int sample_size,
-                  int dst_width, int dst_height, int dst_stride,
                   VideoRotationMode rotation,
-                  uint8_t* dst_frame) {
+                  VideoFrame* dst_frame) {
   // All sanity tests are conducted within LibYuv.
-  int abs_dst_height = (dst_height < 0) ? -dst_height : dst_height;
+  int dst_height = dst_frame->Height();
+  int dst_width = dst_frame->Width();
+  // TODO(mikhal): When available, use actual stride value.
+  int dst_stride = dst_frame->Width();
   int half_dst_width = (dst_width + 1) >> 1;
-  int half_dst_height = (abs_dst_height + 1) >> 1;
-  uint8_t* dst_yplane = dst_frame;
-  uint8_t* dst_uplane = dst_yplane + dst_width * abs_dst_height;
+  int half_dst_height = (dst_height + 1) >> 1;
+  uint8_t* dst_yplane = dst_frame->Buffer();
+  uint8_t* dst_uplane = dst_yplane + dst_width * dst_height;
   uint8_t* dst_vplane = dst_uplane + half_dst_width * half_dst_height;
   return libyuv::ConvertToI420(src_frame, sample_size,
                                dst_yplane, dst_stride,

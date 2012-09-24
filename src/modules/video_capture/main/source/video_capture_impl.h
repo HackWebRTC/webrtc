@@ -102,7 +102,7 @@ protected:
     VideoCaptureImpl(const WebRtc_Word32 id);
     virtual ~VideoCaptureImpl();
     WebRtc_Word32 DeliverCapturedFrame(
-        VideoFrame& captureFrame, WebRtc_Word32 width, WebRtc_Word32 height,
+        VideoFrame& captureFrame,
         WebRtc_Word64 capture_time, VideoCodecType codec_type);
 
     WebRtc_Word32 _id; // Module ID
