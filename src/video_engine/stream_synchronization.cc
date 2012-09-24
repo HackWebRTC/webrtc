@@ -41,10 +41,9 @@ bool CalculateFrequency(
     int64_t rtcp_ntp_ms2,
     uint32_t rtp_timestamp2,
     double* frequency_khz) {
-  if (rtcp_ntp_ms1 == rtcp_ntp_ms2) {
+  if (rtcp_ntp_ms1 <= rtcp_ntp_ms2) {
     return false;
   }
-  assert(rtcp_ntp_ms1 > rtcp_ntp_ms2);
   *frequency_khz = static_cast<double>(rtp_timestamp1 - rtp_timestamp2) /
       static_cast<double>(rtcp_ntp_ms1 - rtcp_ntp_ms2);
   return true;
@@ -107,7 +106,9 @@ bool RtpToNtpMs(int64_t rtp_timestamp,
   }
   double rtp_timestamp_ntp_ms = (static_cast<double>(rtp_timestamp_unwrapped) -
       offset) / freq_khz + 0.5f;
-  assert(rtp_timestamp_ntp_ms >= 0);
+  if (rtp_timestamp_ntp_ms < 0) {
+    return false;
+  }
   *rtp_timestamp_in_ms = rtp_timestamp_ntp_ms;
   return true;
 }
