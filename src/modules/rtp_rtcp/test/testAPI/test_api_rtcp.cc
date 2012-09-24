@@ -71,7 +71,6 @@ class RtcpCallback : public RtcpFeedback, public RtcpIntraFrameObserver {
                               uint64_t pictureId) {
     EXPECT_EQ(kTestPictureId, pictureId);
   };
-  virtual void OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc) {};
  private:
   RtpRtcp* _rtpRtcpModule;
 };

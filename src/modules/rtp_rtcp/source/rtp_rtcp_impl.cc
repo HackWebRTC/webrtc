@@ -106,7 +106,6 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
   // make sure that RTCP objects are aware of our SSRC
   WebRtc_UWord32 SSRC = _rtpSender.SSRC();
   _rtcpSender.SetSSRC(SSRC);
-  _rtcpReceiver.SetSSRC(SSRC);
 
   WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, _id, "%s created", __FUNCTION__);
 }
