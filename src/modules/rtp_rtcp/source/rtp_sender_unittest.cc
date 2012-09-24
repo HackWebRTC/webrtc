@@ -221,6 +221,7 @@ TEST_F(RtpSenderTest, TrafficSmoothing) {
   EXPECT_EQ(0, rtp_sender_->SetStorePacketsStatus(true, 10));
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kType, kId));
   EXPECT_EQ(0, rtp_sender_->RegisterSendTransport(&transport_));
+  rtp_sender_->SetTargetSendBitrate(300000);
 
   WebRtc_Word32 rtp_length = rtp_sender_->BuildRTPheader(packet_,
                                                          kPayload,

@@ -12,16 +12,17 @@
 
 #include <assert.h>
 #include "critical_section_wrapper.h"
+#include "rtp_utility.h"
 
 namespace webrtc {
 
-TransmissionBucket::TransmissionBucket()
-  : critsect_(CriticalSectionWrapper::CreateCriticalSection()),
+TransmissionBucket::TransmissionBucket(RtpRtcpClock* clock)
+  : clock_(clock),
+    critsect_(CriticalSectionWrapper::CreateCriticalSection()),
     accumulator_(0),
-    bytes_rem_total_(0),
     bytes_rem_interval_(0),
     packets_(),
-    first_(true) {
+    last_transmitted_packet_(0, 0, 0, 0) {
 }
 
 TransmissionBucket::~TransmissionBucket() {
@@ -32,18 +33,17 @@ TransmissionBucket::~TransmissionBucket() {
 void TransmissionBucket::Reset() {
   webrtc::CriticalSectionScoped cs(*critsect_);
   accumulator_ = 0;
-  bytes_rem_total_ = 0;
   bytes_rem_interval_ = 0;
   packets_.clear();
-  first_ = true;
 }
 
-void TransmissionBucket::Fill(const uint16_t seq_num,
-                              const uint32_t num_bytes) {
+void TransmissionBucket::Fill(uint16_t seq_num,
+                              uint32_t timestamp,
+                              uint16_t num_bytes) {
   webrtc::CriticalSectionScoped cs(*critsect_);
   accumulator_ += num_bytes;
 
-  Packet p(seq_num, num_bytes);
+  Packet p(seq_num, timestamp, num_bytes, clock_->GetTimeInMS());
   packets_.push_back(p);
 }
 
@@ -53,11 +53,11 @@ bool TransmissionBucket::Empty() {
 }
 
 void TransmissionBucket::UpdateBytesPerInterval(
-    const uint32_t delta_time_ms,
-    const uint16_t target_bitrate_kbps) {
+    uint32_t delta_time_ms,
+    uint16_t target_bitrate_kbps) {
   webrtc::CriticalSectionScoped cs(*critsect_);
 
-  const float kMargin = 1.05f;
+  const float kMargin = 1.5f;
   uint32_t bytes_per_interval = 
       kMargin * (target_bitrate_kbps * delta_time_ms / 8);
 
@@ -66,12 +66,6 @@ void TransmissionBucket::UpdateBytesPerInterval(
   } else {
     bytes_rem_interval_ = bytes_per_interval;
   }
-
-  if (accumulator_) {
-    bytes_rem_total_ += bytes_per_interval;
-    return;
-  }
-  bytes_rem_total_ = bytes_per_interval;
 }
 
 int32_t TransmissionBucket::GetNextPacket() {
@@ -83,35 +77,64 @@ int32_t TransmissionBucket::GetNextPacket() {
   }
 
   std::vector<Packet>::const_iterator it_begin = packets_.begin();
-  const uint16_t num_bytes = (*it_begin).length_;
-  const uint16_t seq_num = (*it_begin).sequence_number_;
+  const uint16_t num_bytes = (*it_begin).length;
+  const uint16_t seq_num = (*it_begin).sequence_number;
 
-  if (first_) {
-    // Ok to transmit first packet.
-    first_ = false;
-    packets_.erase(packets_.begin());
-    return seq_num;
-  }
-
-  const float kFrameComplete = 0.80f;
-  if (num_bytes * kFrameComplete > bytes_rem_total_) {
-    // Packet does not fit.
-    return -1;
-  }
-
-  if (bytes_rem_interval_ <= 0) {
+  if (bytes_rem_interval_ <= 0 &&
+      !SameFrameAndPacketIntervalTimeElapsed(*it_begin) &&
+      !NewFrameAndFrameIntervalTimeElapsed(*it_begin)) {
     // All bytes consumed for this interval.
     return -1;
   }
 
   // Ok to transmit packet.
-  bytes_rem_total_ -= num_bytes;
   bytes_rem_interval_ -= num_bytes;
 
   assert(accumulator_ >= num_bytes);
   accumulator_ -= num_bytes;
 
+  last_transmitted_packet_ = packets_[0];
+  last_transmitted_packet_.transmitted_ms = clock_->GetTimeInMS();
   packets_.erase(packets_.begin());
   return seq_num;
+}
+
+bool TransmissionBucket::SameFrameAndPacketIntervalTimeElapsed(
+    const Packet& current_packet) {
+  if (last_transmitted_packet_.length == 0) {
+    // Not stored.
+    return false;
+  }
+  if (current_packet.timestamp != last_transmitted_packet_.timestamp) {
+    // Not same frame.
+    return false;
+  }
+  const int kPacketLimitMs = 5;
+  if ((clock_->GetTimeInMS() - last_transmitted_packet_.transmitted_ms) <
+      kPacketLimitMs) {
+    // Time has not elapsed.
+    return false;
+  }
+  return true;
+}
+
+bool TransmissionBucket::NewFrameAndFrameIntervalTimeElapsed(
+    const Packet& current_packet) {
+  if (last_transmitted_packet_.length == 0) {
+    // Not stored.
+    return false;
+  }
+  if (current_packet.timestamp == last_transmitted_packet_.timestamp) {
+    // Not a new frame.
+    return false;
+  }
+  const float kFrameLimitFactor = 1.2f;
+  if ((clock_->GetTimeInMS() - last_transmitted_packet_.transmitted_ms)  <
+      kFrameLimitFactor *
+      (current_packet.stored_ms - last_transmitted_packet_.stored_ms)) {
+    // Time has not elapsed.
+    return false;
+  }
+  return true;
 }
 } // namespace webrtc

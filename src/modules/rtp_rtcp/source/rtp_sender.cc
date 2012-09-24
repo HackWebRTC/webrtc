@@ -51,7 +51,7 @@ RTPSender::RTPSender(const WebRtc_Word32 id,
     _nackBitrate(clock),
 
     _packetHistory(new RTPPacketHistory(clock)),
-    _sendBucket(),
+    _sendBucket(clock),
     _timeLastSendToNetworkUpdate(clock->GetTimeInMS()),
     _transmissionSmoothing(false),
 
@@ -882,7 +882,9 @@ RTPSender::SendToNetwork(WebRtc_UWord8* buffer,
 
   if (_transmissionSmoothing) {
     const WebRtc_UWord16 sequenceNumber = (buffer[2] << 8) + buffer[3];
-    _sendBucket.Fill(sequenceNumber, rtpLength + length);
+    const WebRtc_UWord32 timestamp = (buffer[4] << 24) + (buffer[5] << 16) +
+                                     (buffer[6] << 8) + buffer[7];
+    _sendBucket.Fill(sequenceNumber, timestamp, rtpLength + length);
     // Packet will be sent at a later time.
     return 0;
   }

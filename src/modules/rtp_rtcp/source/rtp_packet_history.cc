@@ -139,7 +139,8 @@ int32_t RTPPacketHistory::PutRTPPacket(const uint8_t* packet,
 
   stored_seq_nums_[prev_index_] = seq_num;
   stored_lengths_[prev_index_] = packet_length;
-  stored_times_[prev_index_] = capture_time_ms;
+  stored_times_[prev_index_] =
+      (capture_time_ms > 0) ? capture_time_ms : clock_.GetTimeInMS();
   stored_resend_times_[prev_index_] = 0;  // packet not resent
   stored_types_[prev_index_] = type;
 
