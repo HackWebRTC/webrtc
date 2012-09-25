@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,179 +8,90 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rw_lock_win.h"
+#include "system_wrappers/source/rw_lock_win.h"
 
-#include "critical_section_wrapper.h"
-#include "condition_variable_wrapper.h"
 #include "trace.h"
 
-// TODO (hellner) why not just use the rw_lock_generic.cc solution if
-//                           native is not supported? Unnecessary redundancy!
-
 namespace webrtc {
-bool RWLockWindows::_winSupportRWLockPrimitive = false;
+
+static bool native_rw_locks_supported = false;
+static bool module_load_attempted = false;
 static HMODULE library = NULL;
 
-PInitializeSRWLock       _PInitializeSRWLock;
-PAcquireSRWLockExclusive _PAcquireSRWLockExclusive;
-PAcquireSRWLockShared    _PAcquireSRWLockShared;
-PReleaseSRWLockShared    _PReleaseSRWLockShared;
-PReleaseSRWLockExclusive _PReleaseSRWLockExclusive;
+typedef void (WINAPI *InitializeSRWLock)(PSRWLOCK);
 
-RWLockWindows::RWLockWindows()
-    : _critSectPtr(NULL),
-      _readCondPtr(NULL),
-      _writeCondPtr(NULL),
-      _readersActive(0),
-      _writerActive(false),
-      _readersWaiting(0),
-      _writersWaiting(0)
-{
+typedef void (WINAPI *AcquireSRWLockExclusive)(PSRWLOCK);
+typedef void (WINAPI *ReleaseSRWLockExclusive)(PSRWLOCK);
+
+typedef void (WINAPI *AcquireSRWLockShared)(PSRWLOCK);
+typedef void (WINAPI *ReleaseSRWLockShared)(PSRWLOCK);
+
+InitializeSRWLock       initialize_srw_lock;
+AcquireSRWLockExclusive acquire_srw_lock_exclusive;
+AcquireSRWLockShared    acquire_srw_lock_shared;
+ReleaseSRWLockShared    release_srw_lock_shared;
+ReleaseSRWLockExclusive release_srw_lock_exclusive;
+
+RWLockWin::RWLockWin() {
+  initialize_srw_lock(&lock_);
 }
 
-RWLockWindows::~RWLockWindows()
-{
-    delete _writeCondPtr;
-    delete _readCondPtr;
-    delete _critSectPtr;
+RWLockWin* RWLockWin::Create() {
+  if (!LoadModule()) {
+    return NULL;
+  }
+  return new RWLockWin();
 }
 
-int RWLockWindows::Init()
-{
-    if(!library)
-    {
-        // Use native implementation if supported (i.e Vista+)
-        library = LoadLibrary(TEXT("Kernel32.dll"));
-        if(library)
-        {
-            WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
-                         "Loaded Kernel.dll");
-
-            _PInitializeSRWLock =
-                (PInitializeSRWLock)GetProcAddress(
-                    library,
-                    "InitializeSRWLock");
-
-            _PAcquireSRWLockExclusive =
-               (PAcquireSRWLockExclusive)GetProcAddress(
-                   library,
-                   "AcquireSRWLockExclusive");
-            _PReleaseSRWLockExclusive =
-                (PReleaseSRWLockExclusive)GetProcAddress(
-                    library,
-                    "ReleaseSRWLockExclusive");
-            _PAcquireSRWLockShared =
-                (PAcquireSRWLockShared)GetProcAddress(
-                    library,
-                    "AcquireSRWLockShared");
-            _PReleaseSRWLockShared =
-                (PReleaseSRWLockShared)GetProcAddress(
-                    library,
-                    "ReleaseSRWLockShared");
-
-            if( _PInitializeSRWLock &&
-                _PAcquireSRWLockExclusive &&
-                _PReleaseSRWLockExclusive &&
-                _PAcquireSRWLockShared &&
-                _PReleaseSRWLockShared )
-            {
-                WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
-                            "Loaded Simple RW Lock");
-                _winSupportRWLockPrimitive = true;
-            }
-        }
-    }
-    if(_winSupportRWLockPrimitive)
-    {
-        _PInitializeSRWLock(&_lock);
-    } else {
-        _critSectPtr  = CriticalSectionWrapper::CreateCriticalSection();
-        _readCondPtr  = ConditionVariableWrapper::CreateConditionVariable();
-        _writeCondPtr = ConditionVariableWrapper::CreateConditionVariable();
-    }
-    return 0;
+void RWLockWin::AcquireLockExclusive() {
+  acquire_srw_lock_exclusive(&lock_);
 }
 
-void RWLockWindows::AcquireLockExclusive()
-{
-    if (_winSupportRWLockPrimitive)
-    {
-        _PAcquireSRWLockExclusive(&_lock);
-    } else {
-        _critSectPtr->Enter();
-
-        if (_writerActive || _readersActive > 0)
-        {
-            ++_writersWaiting;
-            while (_writerActive || _readersActive > 0)
-            {
-                _writeCondPtr->SleepCS(*_critSectPtr);
-            }
-            --_writersWaiting;
-        }
-        _writerActive = true;
-        _critSectPtr->Leave();
-    }
+void RWLockWin::ReleaseLockExclusive() {
+  release_srw_lock_exclusive(&lock_);
 }
 
-void RWLockWindows::ReleaseLockExclusive()
-{
-    if(_winSupportRWLockPrimitive)
-    {
-        _PReleaseSRWLockExclusive(&_lock);
-    } else {
-        _critSectPtr->Enter();
-        _writerActive = false;
-        if (_writersWaiting > 0)
-        {
-            _writeCondPtr->Wake();
-
-        }else if (_readersWaiting > 0) {
-            _readCondPtr->WakeAll();
-        }
-        _critSectPtr->Leave();
-    }
+void RWLockWin::AcquireLockShared() {
+  acquire_srw_lock_shared(&lock_);
 }
 
-void RWLockWindows::AcquireLockShared()
-{
-    if(_winSupportRWLockPrimitive)
-    {
-        _PAcquireSRWLockShared(&_lock);
-    } else
-    {
-        _critSectPtr->Enter();
-        if (_writerActive || _writersWaiting > 0)
-        {
-            ++_readersWaiting;
-
-            while (_writerActive || _writersWaiting > 0)
-            {
-                _readCondPtr->SleepCS(*_critSectPtr);
-            }
-            --_readersWaiting;
-        }
-        ++_readersActive;
-        _critSectPtr->Leave();
-    }
+void RWLockWin::ReleaseLockShared() {
+  release_srw_lock_shared(&lock_);
 }
 
-void RWLockWindows::ReleaseLockShared()
-{
-    if(_winSupportRWLockPrimitive)
-    {
-        _PReleaseSRWLockShared(&_lock);
-    } else
-    {
-        _critSectPtr->Enter();
+bool RWLockWin::LoadModule() {
+  if (module_load_attempted) {
+    return native_rw_locks_supported;
+  }
+  module_load_attempted = true;
+  // Use native implementation if supported (i.e Vista+)
+  library = LoadLibrary(TEXT("Kernel32.dll"));
+  if (!library) {
+    return false;
+  }
+  WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1, "Loaded Kernel.dll");
 
-        --_readersActive;
+  initialize_srw_lock =
+      (InitializeSRWLock)GetProcAddress(library, "InitializeSRWLock");
 
-        if (_readersActive == 0 && _writersWaiting > 0)
-        {
-            _writeCondPtr->Wake();
-        }
-        _critSectPtr->Leave();
-    }
+  acquire_srw_lock_exclusive =
+      (AcquireSRWLockExclusive)GetProcAddress(library,
+                                              "AcquireSRWLockExclusive");
+  release_srw_lock_exclusive =
+      (ReleaseSRWLockExclusive)GetProcAddress(library,
+                                              "ReleaseSRWLockExclusive");
+  acquire_srw_lock_shared =
+      (AcquireSRWLockShared)GetProcAddress(library, "AcquireSRWLockShared");
+  release_srw_lock_shared =
+      (ReleaseSRWLockShared)GetProcAddress(library, "ReleaseSRWLockShared");
+
+  if (initialize_srw_lock && acquire_srw_lock_exclusive &&
+      release_srw_lock_exclusive && acquire_srw_lock_shared &&
+      release_srw_lock_shared) {
+    WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1, "Loaded Native RW Lock");
+    native_rw_locks_supported = true;
+  }
+  return native_rw_locks_supported;
 }
-} // namespace webrtc
+
+}  // namespace webrtc

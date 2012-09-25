@@ -16,20 +16,18 @@
 // functionality and will therefore have worse performance.
 
 namespace webrtc {
+
 class RWLockWrapper
 {
 public:
     static RWLockWrapper* CreateRWLock();
-    virtual ~RWLockWrapper();
+    virtual ~RWLockWrapper() {}
 
     virtual void AcquireLockExclusive() = 0;
     virtual void ReleaseLockExclusive() = 0;
 
     virtual void AcquireLockShared() = 0;
     virtual void ReleaseLockShared() = 0;
-
-protected:
-    virtual int Init() = 0;
 };
 
 // RAII extensions of the RW lock. Prevents Acquire/Release missmatches and
@@ -71,6 +69,7 @@ public:
 private:
     RWLockWrapper& _rwLock;
 };
+
 } // namespace webrtc
 
 #endif // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_RW_LOCK_WRAPPER_H_

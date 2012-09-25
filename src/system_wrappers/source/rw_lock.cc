@@ -13,29 +13,25 @@
 #include <assert.h>
 
 #if defined(_WIN32)
-    #include "rw_lock_win.h"
+#include "rw_lock_generic.h"
+#include "rw_lock_win.h"
 #else
-    #include "rw_lock_posix.h"
+#include "rw_lock_posix.h"
 #endif
 
 namespace webrtc {
-RWLockWrapper* RWLockWrapper::CreateRWLock()
-{
+
+RWLockWrapper* RWLockWrapper::CreateRWLock() {
 #ifdef _WIN32
-    RWLockWrapper* lock =  new RWLockWindows();
-#else
-    RWLockWrapper* lock =  new RWLockPosix();
-#endif
-    if(lock->Init() != 0)
-    {
-        delete lock;
-        assert(false);
-        return NULL;
-    }
+  // Native implementation is faster, so use that if available.
+  RWLockWrapper* lock = RWLockWin::Create();
+  if (lock) {
     return lock;
+  }
+  return new RWLockGeneric();
+#else
+  return RWLockPosix::Create();
+#endif
 }
 
-RWLockWrapper::~RWLockWrapper()
-{
-}
-} // namespace webrtc
+}  // namespace webrtc

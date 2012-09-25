@@ -11,17 +11,17 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_GENERIC_H_
 #define WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_GENERIC_H_
 
-#include "rw_lock_wrapper.h"
+#include "system_wrappers/interface/rw_lock_wrapper.h"
 
 namespace webrtc {
+
 class CriticalSectionWrapper;
 class ConditionVariableWrapper;
 
-class RWLockWrapperGeneric : public RWLockWrapper
-{
+class RWLockGeneric : public RWLockWrapper {
 public:
-    RWLockWrapperGeneric();
-    virtual ~RWLockWrapperGeneric();
+    RWLockGeneric();
+    virtual ~RWLockGeneric();
 
     virtual void AcquireLockExclusive();
     virtual void ReleaseLockExclusive();
@@ -29,18 +29,17 @@ public:
     virtual void AcquireLockShared();
     virtual void ReleaseLockShared();
 
-protected:
-    virtual int Init();
-
 private:
-    CriticalSectionWrapper*   _critSectPtr;
-    ConditionVariableWrapper* _readCondPtr;
-    ConditionVariableWrapper* _writeCondPtr;
+    CriticalSectionWrapper* critical_section_;
+    ConditionVariableWrapper* read_condition_;
+    ConditionVariableWrapper* write_condition_;
 
-    int  _readersActive;
-    bool _writerActive;
-    int  _readersWaiting;
-    int  _writersWaiting;
+    int readers_active_;
+    bool writer_active_;
+    int readers_waiting_;
+    int writers_waiting_;
 };
-} // namespace webrtc
-#endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_GENERIC_H_
+
+}  // namespace webrtc
+
+#endif  // WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_GENERIC_H_

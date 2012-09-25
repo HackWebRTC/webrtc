@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,64 +8,33 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_WINDOWS_H_
-#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_WINDOWS_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_WIN__H_
+#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_WIN__H_
 
-#include "rw_lock_wrapper.h"
+#include "system_wrappers/interface/rw_lock_wrapper.h"
 
 #include <Windows.h>
 
-#if !defined(RTL_SRWLOCK_INIT)
-    typedef struct _RTL_SRWLOCK
-    {
-        void* Ptr;
-    } RTL_SRWLOCK, *PRTL_SRWLOCK;
-    typedef RTL_SRWLOCK SRWLOCK, *PSRWLOCK;
-#endif
-
 namespace webrtc {
-class CriticalSectionWrapper;
-class ConditionVariableWrapper;
 
-typedef void (WINAPI *PInitializeSRWLock)(PSRWLOCK);
+class RWLockWin : public RWLockWrapper {
+ public:
+  static RWLockWin* Create();
+  ~RWLockWin() {}
 
-typedef void (WINAPI *PAcquireSRWLockExclusive)(PSRWLOCK);
-typedef void (WINAPI *PReleaseSRWLockExclusive)(PSRWLOCK);
+  virtual void AcquireLockExclusive();
+  virtual void ReleaseLockExclusive();
 
-typedef void (WINAPI *PAcquireSRWLockShared)(PSRWLOCK);
-typedef void (WINAPI *PReleaseSRWLockShared)(PSRWLOCK);
+  virtual void AcquireLockShared();
+  virtual void ReleaseLockShared();
 
+ private:
+  RWLockWin();
+  static bool LoadModule();
 
-class RWLockWindows :public RWLockWrapper
-{
-public:
-    RWLockWindows();
-    virtual ~RWLockWindows();
-
-    virtual void AcquireLockExclusive();
-    virtual void ReleaseLockExclusive();
-
-    virtual void AcquireLockShared();
-    virtual void ReleaseLockShared();
-
-protected:
-    virtual int Init();
-
-private:
-    // For native implementation.
-    static bool _winSupportRWLockPrimitive;
-    SRWLOCK     _lock;
-
-    // Genric implementation, fallback if native is not supported.
-    CriticalSectionWrapper*   _critSectPtr;
-    ConditionVariableWrapper* _readCondPtr;
-    ConditionVariableWrapper* _writeCondPtr;
-
-    int  _readersActive;
-    bool _writerActive;
-    int  _readersWaiting;
-    int  _writersWaiting;
+  SRWLOCK lock_;
 };
-} // namespace webrtc
 
-#endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_WINDOWS_H_
+}  // namespace webrtc
+
+#endif  // WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_WIN__H_

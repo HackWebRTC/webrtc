@@ -85,6 +85,8 @@
         'list_no_stl.cc',
         'map.cc',
         'rw_lock.cc',
+        'rw_lock_generic.cc',
+        'rw_lock_generic.h',
         'rw_lock_posix.cc',
         'rw_lock_posix.h',
         'rw_lock_win.cc',

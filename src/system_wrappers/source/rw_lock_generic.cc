@@ -8,99 +8,70 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rw_lock_generic.h"
+#include "system_wrappers/source/rw_lock_generic.h"
 
-#include "condition_variable_wrapper.h"
-#include "critical_section_wrapper.h"
+#include "system_wrappers/interface/condition_variable_wrapper.h"
+#include "system_wrappers/interface/critical_section_wrapper.h"
 
 namespace webrtc {
-RWLockWrapperGeneric::RWLockWrapperGeneric()
-    : _readersActive(0),
-      _writerActive(false),
-      _readersWaiting(0),
-      _writersWaiting(0)
-{
-    _critSectPtr  = CriticalSectionWrapper::CreateCriticalSection();
-    _readCondPtr  = ConditionVariableWrapper::CreateConditionVariable();
-    _writeCondPtr = ConditionVariableWrapper::CreateConditionVariable();
+
+RWLockGeneric::RWLockGeneric()
+    : readers_active_(0),
+      writer_active_(false),
+      readers_waiting_(0),
+      writers_waiting_(0) {
+  critical_section_ = CriticalSectionWrapper::CreateCriticalSection();
+  read_condition_ = ConditionVariableWrapper::CreateConditionVariable();
+  write_condition_ = ConditionVariableWrapper::CreateConditionVariable();
 }
 
-RWLockWrapperGeneric::~RWLockWrapperGeneric()
-{
-    delete _writeCondPtr;
-    delete _readCondPtr;
-    delete _critSectPtr;
+RWLockGeneric::~RWLockGeneric() {
+  delete write_condition_;
+  delete read_condition_;
+  delete critical_section_;
 }
 
-int RWLockWrapperGeneric::Init()
-{
-    return 0;
-}
-
-void RWLockWrapperGeneric::AcquireLockExclusive()
-{
-    _critSectPtr->Enter();
-
-    if (_writerActive || _readersActive > 0)
-    {
-        ++_writersWaiting;
-
-        while (_writerActive || _readersActive > 0)
-        {
-            _writeCondPtr->SleepCS(*_critSectPtr);
-        }
-
-        --_writersWaiting;
+void RWLockGeneric::AcquireLockExclusive() {
+  CriticalSectionScoped cs(critical_section_);
+  if (writer_active_ || readers_active_ > 0) {
+    ++writers_waiting_;
+    while (writer_active_ || readers_active_ > 0) {
+      write_condition_->SleepCS(*critical_section_);
     }
-    _writerActive = true;
-    _critSectPtr->Leave();
+    --writers_waiting_;
+  }
+  writer_active_ = true;
 }
 
-void RWLockWrapperGeneric::ReleaseLockExclusive()
-{
-    _critSectPtr->Enter();
+void RWLockGeneric::ReleaseLockExclusive() {
+  CriticalSectionScoped cs(critical_section_);
+  writer_active_ = false;
+  if (writers_waiting_ > 0) {
+    write_condition_->Wake();
+  } else if (readers_waiting_ > 0) {
+    read_condition_->WakeAll();
+  }
+}
 
-    _writerActive = false;
+void RWLockGeneric::AcquireLockShared() {
+  CriticalSectionScoped cs(critical_section_);
+  if (writer_active_ || writers_waiting_ > 0) {
+    ++readers_waiting_;
 
-    if (_writersWaiting > 0)
-    {
-        _writeCondPtr->Wake();
-
-    }else if (_readersWaiting > 0)
-    {
-        _readCondPtr->WakeAll();
+    while (writer_active_ || writers_waiting_ > 0) {
+      read_condition_->SleepCS(*critical_section_);
     }
-    _critSectPtr->Leave();
+    --readers_waiting_;
+  }
+  ++readers_active_;
 }
 
-void RWLockWrapperGeneric::AcquireLockShared()
-{
-    _critSectPtr->Enter();
-
-    if (_writerActive || _writersWaiting > 0)
-    {
-        ++_readersWaiting;
-
-        while (_writerActive || _writersWaiting > 0)
-        {
-            _readCondPtr->SleepCS(*_critSectPtr);
-        }
-        --_readersWaiting;
-    }
-    ++_readersActive;
-    _critSectPtr->Leave();
+void RWLockGeneric::ReleaseLockShared() {
+  CriticalSectionScoped cs(critical_section_);
+  --readers_active_;
+  if (readers_active_ == 0 && writers_waiting_ > 0) {
+    write_condition_->Wake();
+  }
 }
 
-void RWLockWrapperGeneric::ReleaseLockShared()
-{
-    _critSectPtr->Enter();
-
-    --_readersActive;
-
-    if (_readersActive == 0 && _writersWaiting > 0)
-    {
-        _writeCondPtr->Wake();
-    }
-    _critSectPtr->Leave();
-}
-} // namespace webrtc
+}  // namespace webrtc
