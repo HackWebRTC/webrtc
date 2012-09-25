@@ -8,10 +8,11 @@
 #  be found in the AUTHORS file in the root of the source tree.
 
 import random
+import re
 import string
 import unicodedata
 
-from common.fuzz_parameters import FillInParameter
+from common.fuzz_parameters import FillInParameter, MissingParameterException
 from common.random_javascript import *
 
 
@@ -56,6 +57,67 @@ def _RandomSdpTransform():
     return _ReturnFirstArgument()
 
 
+def _InsertRandomLocationReload(list_of_lines, num_to_insert):
+  length = len(list_of_lines)
+  assert length > num_to_insert
+
+  # Randomly choose insertion points to insert at (if
+  # num_to_insert == length - 1, all will be replaced).
+  lines_to_insert_behind = sorted(random.sample(xrange(length - 1),
+                                                num_to_insert))
+
+  result = list(list_of_lines)
+  num_inserted = 0
+  for i in lines_to_insert_behind:
+    # We're just guessing the indentation the reloads will be at, but that's
+    # just cosmetic anyway.
+    result.insert(num_inserted + i + 1, '    location.reload()')
+    num_inserted += 1
+
+  return result
+
+
+def _InsertRandomLocationReloads(file_data, replace_all):
+  lines = file_data.split(';\n')
+  if replace_all:
+    lines = _InsertRandomLocationReload(lines, len(lines) - 1)
+  else:
+    num_lines_to_insert = random.randint(1, 3)
+    lines = _InsertRandomLocationReload(lines, num_lines_to_insert)
+  return ';\n'.join(lines)
+
+
+def _InsertRandomLocationReloadsWithinMarkers(file_data,
+                                              insert_everywhere=False):
+  """Inserts random location.reload() statements in the file.
+
+  We can insert statements after other statements (e.g. after ; and newline).
+  We only consider the text between the "reload injection markers" so that we
+  can avoid injecting location.reload()s into the HTML or after variable
+  declarations, for instance. Therefore, the markers must be present in the
+  file data passed into this function.
+
+  Args:
+    file_data: The template file data as a string.
+    insert_everywhere: If true, will replace at all possible injection points.
+        If false, we will randomly choose 1-3 injection points.
+"""
+  start_marker = '// START_OF_POSSIBLE_INJECTED_LOCATION_RELOADS'
+  end_marker = '// END_OF_POSSIBLE_INJECTED_LOCATION_RELOADS'
+  within_markers_regex = re.compile(start_marker + '(.+)' + end_marker,
+                                    re.DOTALL)
+  within_markers = within_markers_regex.search(file_data)
+  if not within_markers:
+    raise MissingParameterException(
+        'Missing %s and/or %s in template.' % (start_marker, end_marker))
+
+  # Now insert the location.reload()s.
+  modified_data = _InsertRandomLocationReloads(
+      within_markers.group(1), insert_everywhere)
+
+  return within_markers_regex.sub(modified_data, file_data)
+
+
 def Fuzz(file_data):
   """Fuzzes the passed in template."""
   file_data = file_data.decode('utf-8')
@@ -65,6 +127,8 @@ def Fuzz(file_data):
   file_data = FillInParameter('ARRAY_OF_RANDOM_ROLLS',
                               _ArrayOfRandomRolls(500),
                               file_data)
+
+  # Randomly decide how to fuzz SDP data.
   file_data = FillInParameter('REQUEST_AUDIO_AND_VIDEO',
                               _RandomAudioOrVideo(),
                               file_data)
@@ -74,6 +138,11 @@ def Fuzz(file_data):
   file_data = FillInParameter('TRANSFORM_ANSWER_SDP',
                               _RandomSdpTransform(),
                               file_data)
+
+  # Random location.reload() calls in the call sequence can be challenging for
+  # the code to deal with, so insert some here and there.
+  if random.random() < 0.3:
+    file_data = _InsertRandomLocationReloadsWithinMarkers(file_data)
 
   return file_data
 

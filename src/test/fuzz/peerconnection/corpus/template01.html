@@ -21,6 +21,7 @@ INCLUDE_FUZZ_SDP_JS
   var gTransformOfferSdp = TRANSFORM_OFFER_SDP;
   var gTransformAnswerSdp = TRANSFORM_ANSWER_SDP;
 
+  // START_OF_POSSIBLE_INJECTED_LOCATION_RELOADS
   function startTest() {
     navigator.webkitGetUserMedia(REQUEST_AUDIO_AND_VIDEO,
                                  getUserMediaOkCallback,
@@ -49,7 +50,7 @@ INCLUDE_FUZZ_SDP_JS
     gFirstConnection.setLocalDescription(offer);
 
     var offerSdp = gTransformOfferSdp(offer.sdp);
-    console.log("OFFER SDP MESSAGE===========================\n" + offerSdp);
+    console.log('OFFER SDP MESSAGE:' + offerSdp);
     receiveCall(offerSdp);
   }
 
@@ -58,7 +59,7 @@ INCLUDE_FUZZ_SDP_JS
     gSecondConnection.onicecandidate = onIceCandidateToSecond;
     gSecondConnection.onaddstream = onRemoteStream;
 
-    var parsedOffer = new RTCSessionDescription({ type: "offer",
+    var parsedOffer = new RTCSessionDescription({ type: 'offer',
                                                   sdp: offerSdp });
     gSecondConnection.setRemoteDescription(parsedOffer);
 
@@ -69,12 +70,12 @@ INCLUDE_FUZZ_SDP_JS
     gSecondConnection.setLocalDescription(answer);
 
     answerSdp = gTransformAnswerSdp(answer.sdp);
-    console.log("ANSWER SDP MESSAGE===========================\n" + answerSdp);
+    console.log('ANSWER SDP MESSAGE:' + answerSdp);
     handleAnswer(answerSdp);
   }
 
   function handleAnswer(answerSdp) {
-    var parsedAnswer = new RTCSessionDescription({ type: "answer",
+    var parsedAnswer = new RTCSessionDescription({ type: 'answer',
                                                    sdp: answerSdp });
     gFirstConnection.setRemoteDescription(parsedAnswer);
   }
@@ -102,6 +103,7 @@ INCLUDE_FUZZ_SDP_JS
     setRandomRolls(gRandomRolls);
     startTest();
   }
+  // END_OF_POSSIBLE_INJECTED_LOCATION_RELOADS
 
   // This variable is placed here since its value is pretty big.
   var gRandomRolls = ARRAY_OF_RANDOM_ROLLS;
