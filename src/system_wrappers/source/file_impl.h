@@ -11,15 +11,11 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_FILE_IMPL_H_
 #define WEBRTC_SYSTEM_WRAPPERS_SOURCE_FILE_IMPL_H_
 
-#include "system_wrappers/interface/file_wrapper.h"
+#include "file_wrapper.h"
 
 #include <stdio.h>
 
-#include "system_wrappers/interface/scoped_ptr.h"
-
 namespace webrtc {
-
-class RWLockWrapper;
 
 class FileWrapperImpl : public FileWrapper
 {
@@ -47,8 +43,6 @@ public:
     virtual int Rewind();
 
 private:
-    scoped_ptr<RWLockWrapper> _rwLock;
-
     FILE* _id;
     bool _open;
     bool _looping;
