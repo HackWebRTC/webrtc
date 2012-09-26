@@ -15,6 +15,24 @@
 #include "rtp_utility.h"
 
 namespace webrtc {
+namespace {
+// Factor that is applied to the target bitrate to calculate the number of
+// bytes that can be transmitted per interval.
+// Increasing this factor will result in lower delays in cases of bitrate
+// overshoots.
+const float kBytesPerIntervalMargin = 1.5f;
+
+// Time limit in ms between packets within a frame.
+// A packet will be transmitted if the elapsed time since the last transmitted
+// packet (for packets within same frames) has exceed this time limit.
+const int kPacketLimitMs = 5;
+
+// Time limit factor between frames.
+// A packet in a new frame will be transmitted if the elapsed time since the
+// last transmitted packet in the previous frame has exceeded the time
+// difference for when the packets were stored, multiplied by this factor.
+const float kFrameLimitFactor = 1.2f;
+}  // namespace
 
 TransmissionBucket::TransmissionBucket(RtpRtcpClock* clock)
   : clock_(clock),
@@ -57,9 +75,8 @@ void TransmissionBucket::UpdateBytesPerInterval(
     uint16_t target_bitrate_kbps) {
   webrtc::CriticalSectionScoped cs(*critsect_);
 
-  const float kMargin = 1.5f;
   uint32_t bytes_per_interval = 
-      kMargin * (target_bitrate_kbps * delta_time_ms / 8);
+      kBytesPerIntervalMargin * (target_bitrate_kbps * delta_time_ms / 8);
 
   if (bytes_rem_interval_ < 0) {
     bytes_rem_interval_ += bytes_per_interval;
@@ -109,7 +126,6 @@ bool TransmissionBucket::SameFrameAndPacketIntervalTimeElapsed(
     // Not same frame.
     return false;
   }
-  const int kPacketLimitMs = 5;
   if ((clock_->GetTimeInMS() - last_transmitted_packet_.transmitted_ms) <
       kPacketLimitMs) {
     // Time has not elapsed.
@@ -128,7 +144,6 @@ bool TransmissionBucket::NewFrameAndFrameIntervalTimeElapsed(
     // Not a new frame.
     return false;
   }
-  const float kFrameLimitFactor = 1.2f;
   if ((clock_->GetTimeInMS() - last_transmitted_packet_.transmitted_ms)  <
       kFrameLimitFactor *
       (current_packet.stored_ms - last_transmitted_packet_.stored_ms)) {
