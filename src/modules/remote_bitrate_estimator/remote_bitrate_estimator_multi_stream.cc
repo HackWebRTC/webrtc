@@ -10,9 +10,9 @@
 
 #include "modules/remote_bitrate_estimator/remote_bitrate_estimator_multi_stream.h"
 
+#include "modules/remote_bitrate_estimator/include/rtp_to_ntp.h"
 #include "modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
 #include "system_wrappers/interface/tick_util.h"
-#include "video_engine/stream_synchronization.h"
 
 namespace webrtc {
 

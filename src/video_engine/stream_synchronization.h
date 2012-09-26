@@ -13,30 +13,10 @@
 
 #include <list>
 
+#include "modules/remote_bitrate_estimator/include/rtp_to_ntp.h"
 #include "typedefs.h"  // NOLINT
 
 namespace webrtc {
-
-namespace synchronization {
-struct RtcpMeasurement {
-  RtcpMeasurement();
-  RtcpMeasurement(uint32_t ntp_secs, uint32_t ntp_frac, uint32_t timestamp);
-  uint32_t ntp_secs;
-  uint32_t ntp_frac;
-  uint32_t rtp_timestamp;
-};
-
-typedef std::list<RtcpMeasurement> RtcpList;
-
-// Converts an RTP timestamp to the NTP domain in milliseconds using two
-// (RTP timestamp, NTP timestamp) pairs.
-bool RtpToNtpMs(int64_t rtp_timestamp, const RtcpList& rtcp,
-                int64_t* timestamp_in_ms);
-
-// Returns 1 there has been a forward wrap around, 0 if there has been no wrap
-// around and -1 if there has been a backwards wrap around (i.e. reordering).
-int CheckForWrapArounds(uint32_t rtp_timestamp, uint32_t rtcp_rtp_timestamp);
-}  // namespace synchronization
 
 struct ViESyncDelay;
 

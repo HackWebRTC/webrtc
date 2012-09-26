@@ -29,6 +29,7 @@
         # interface
         'include/bwe_defines.h',
         'include/remote_bitrate_estimator.h',
+        'include/rtp_to_ntp.h',
 
         # source
         'bitrate_estimator.cc',
@@ -41,6 +42,7 @@
         'remote_bitrate_estimator_single_stream.cc',
         'remote_rate_control.cc',
         'remote_rate_control.h',
+        'rtp_to_ntp.cc',
         '../../video_engine/stream_synchronization.cc',
         '../../video_engine/stream_synchronization.h',
       ], # source
@@ -62,6 +64,7 @@
             'include/mock/mock_remote_bitrate_observer.h',
             'bitrate_estimator_unittest.cc',
             'remote_bitrate_estimator_unittest.cc',
+            'rtp_to_ntp_unittest.cc',
           ],
         },
       ], # targets
