@@ -787,10 +787,10 @@ VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
         _waitingForKeyFrame = false;
     }
 
-    _critSect->Leave();
-
     // We have a frame - update decoded state with frame info.
     _lastDecodedState.SetState(oldestFrame);
+
+    _critSect->Leave();
 
     return oldestFrame;
 }
