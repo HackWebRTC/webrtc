@@ -23,7 +23,6 @@
 #include "system_wrappers/interface/critical_section_wrapper.h"
 #include "system_wrappers/interface/scoped_ptr.h"
 #include "typedefs.h"
-#include "video_engine/stream_synchronization.h"
 
 namespace webrtc {
 
