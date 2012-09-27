@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "file_impl.h"
+#include "system_wrappers/source/file_impl.h"
 
 #include <assert.h>
 
@@ -19,6 +19,8 @@
 #include <string.h>
 #endif
 
+#include "system_wrappers/interface/rw_lock_wrapper.h"
+
 namespace webrtc {
 
 FileWrapper* FileWrapper::Create()
@@ -27,7 +29,8 @@ FileWrapper* FileWrapper::Create()
 }
 
 FileWrapperImpl::FileWrapperImpl()
-    : _id(NULL),
+    : _rwLock(RWLockWrapper::CreateRWLock()),
+      _id(NULL),
       _open(false),
       _looping(false),
       _readOnly(false),
@@ -47,18 +50,13 @@ FileWrapperImpl::~FileWrapperImpl()
 
 int FileWrapperImpl::CloseFile()
 {
-    if (_id != NULL)
-    {
-        fclose(_id);
-        _id = NULL;
-    }
-    memset(_fileNameUTF8, 0, kMaxFileNameSize);
-    _open = false;
-    return 0;
+    WriteLockScoped write(*_rwLock);
+    return CloseFileImpl();
 }
 
 int FileWrapperImpl::Rewind()
 {
+    WriteLockScoped write(*_rwLock);
     if(_looping || !_readOnly)
     {
         if (_id != NULL)
@@ -72,22 +70,21 @@ int FileWrapperImpl::Rewind()
 
 int FileWrapperImpl::SetMaxFileSize(size_t bytes)
 {
+    WriteLockScoped write(*_rwLock);
     _maxSizeInBytes = bytes;
     return 0;
 }
 
 int FileWrapperImpl::Flush()
 {
-    if (_id != NULL)
-    {
-        return fflush(_id);
-    }
-    return -1;
+    WriteLockScoped write(*_rwLock);
+    return FlushImpl();
 }
 
 int FileWrapperImpl::FileName(char* fileNameUTF8,
                               size_t size) const
 {
+    ReadLockScoped read(*_rwLock);
     size_t length = strlen(_fileNameUTF8);
     if(length > kMaxFileNameSize)
     {
@@ -111,12 +108,14 @@ int FileWrapperImpl::FileName(char* fileNameUTF8,
 
 bool FileWrapperImpl::Open() const
 {
+    ReadLockScoped read(*_rwLock);
     return _open;
 }
 
 int FileWrapperImpl::OpenFile(const char *fileNameUTF8, bool readOnly,
                               bool loop, bool text)
 {
+    WriteLockScoped write(*_rwLock);
     size_t length = strlen(fileNameUTF8);
     if (length > kMaxFileNameSize - 1)
     {
@@ -189,6 +188,7 @@ int FileWrapperImpl::OpenFile(const char *fileNameUTF8, bool readOnly,
 
 int FileWrapperImpl::Read(void* buf, int length)
 {
+    WriteLockScoped write(*_rwLock);
     if (length < 0)
         return -1;
 
@@ -198,13 +198,14 @@ int FileWrapperImpl::Read(void* buf, int length)
     int bytes_read = static_cast<int>(fread(buf, 1, length, _id));
     if (bytes_read != length && !_looping)
     {
-        CloseFile();
+        CloseFileImpl();
     }
     return bytes_read;
 }
 
 int FileWrapperImpl::WriteText(const char* format, ...)
 {
+    WriteLockScoped write(*_rwLock);
     if (format == NULL)
         return -1;
 
@@ -225,13 +226,14 @@ int FileWrapperImpl::WriteText(const char* format, ...)
     }
     else
     {
-        CloseFile();
+        CloseFileImpl();
         return -1;
     }
 }
 
 bool FileWrapperImpl::Write(const void* buf, int length)
 {
+    WriteLockScoped write(*_rwLock);
     if (buf == NULL)
         return false;
 
@@ -247,7 +249,7 @@ bool FileWrapperImpl::Write(const void* buf, int length)
     // Check if it's time to stop writing.
     if (_maxSizeInBytes > 0 && (_sizeInBytes + length) > _maxSizeInBytes)
     {
-        Flush();
+        FlushImpl();
         return false;
     }
 
@@ -258,8 +260,28 @@ bool FileWrapperImpl::Write(const void* buf, int length)
         return true;
     }
 
-    CloseFile();
+    CloseFileImpl();
     return false;
 }
+
+int FileWrapperImpl::CloseFileImpl() {
+    if (_id != NULL)
+    {
+        fclose(_id);
+        _id = NULL;
+    }
+    memset(_fileNameUTF8, 0, kMaxFileNameSize);
+    _open = false;
+    return 0;
+}
+
+int FileWrapperImpl::FlushImpl() {
+    if (_id != NULL)
+    {
+        return fflush(_id);
+    }
+    return -1;
+}
+
 
 } // namespace webrtc
