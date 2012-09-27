@@ -34,14 +34,12 @@ class CoverageDataLoader:
       data.append({'aa_date': coverage_entry.date,
                    'line_coverage': coverage_entry.line_coverage,
                    'function_coverage': coverage_entry.function_coverage,
-                   'branch_coverage': coverage_entry.branch_coverage,
                   })
 
     description = {
         'aa_date': ('datetime', 'Date'),
         'line_coverage': ('number', 'Line Coverage'),
         'function_coverage': ('number', 'Function Coverage'),
-        'branch_coverage': ('number', 'Branch Coverage'),
     }
     coverage_data = gviz_api.DataTable(description, data)
     return coverage_data.ToJSon(order_by='date')
