@@ -230,15 +230,20 @@ int ConvertFromYV12(const uint8_t* src_frame, int src_stride,
                                  ConvertVideoType(dst_video_type));
 }
 
-int MirrorI420LeftRight(const uint8_t* src_frame,
-                        uint8_t* dst_frame,
-                        int width, int height) {
+int MirrorI420LeftRight(const VideoFrame* src_frame,
+                        VideoFrame* dst_frame) {
+  // Source and destination frames should have equal resolution.
+  if (src_frame->Width() != dst_frame->Width() ||
+      src_frame->Height() != dst_frame->Height())
+    return -1;
+  int width = src_frame->Width();
+  int height = src_frame->Height();
   int half_width = (width + 1) >> 1;
   int half_height = (height + 1) >> 1;
-  const uint8_t* src_yplane = src_frame;
+  const uint8_t* src_yplane = src_frame->Buffer();
   const uint8_t* src_uplane = src_yplane + width * height;
   const uint8_t* src_vplane = src_uplane + half_width * half_height;
-  uint8_t* dst_yplane = dst_frame;
+  uint8_t* dst_yplane = dst_frame->Buffer();
   uint8_t* dst_uplane = dst_yplane + width * height;
   uint8_t* dst_vplane = dst_uplane + half_width * half_height;
   return libyuv::I420Mirror(src_yplane, width,
@@ -250,15 +255,21 @@ int MirrorI420LeftRight(const uint8_t* src_frame,
                             width, height);
 }
 
-int MirrorI420UpDown(const uint8_t* src_frame, uint8_t* dst_frame,
-                     int width, int height) {
+int MirrorI420UpDown(const VideoFrame* src_frame,
+                     VideoFrame* dst_frame) {
+  // Source and destination frames should have equal resolution
+  if (src_frame->Width() != dst_frame->Width() ||
+      src_frame->Height() != dst_frame->Height())
+    return -1;
+  int width = src_frame->Width();
+  int height = src_frame->Height();
   int half_width = (width + 1) >> 1;
   int half_height = (height + 1) >> 1;
-  const uint8_t* src_yplane = src_frame;
-  const uint8_t* src_uplane = src_frame + width * height;
+  const uint8_t* src_yplane = src_frame->Buffer();
+  const uint8_t* src_uplane = src_yplane + width * height;
   const uint8_t* src_vplane = src_uplane + half_width * half_height;
-  uint8_t* dst_yplane = dst_frame;
-  uint8_t* dst_uplane = dst_frame + width * height;
+  uint8_t* dst_yplane = dst_frame->Buffer();
+  uint8_t* dst_uplane = dst_yplane + width * height;
   uint8_t* dst_vplane = dst_uplane + half_width * half_height;
 
   // Inserting negative height flips the frame.

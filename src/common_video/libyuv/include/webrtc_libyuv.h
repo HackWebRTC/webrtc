@@ -130,17 +130,14 @@ int ConvertNV12ToRGB565(const uint8_t* src_frame,
 // The following 2 functions perform mirroring on a given image
 // (LeftRight/UpDown).
 // Input:
-//    - width       : Image width in pixels.
-//    - height      : Image height in pixels.
 //    - src_frame   : Pointer to a source frame.
 //    - dst_frame   : Pointer to a destination frame.
 // Return value: 0 if OK, < 0 otherwise.
-int MirrorI420LeftRight(const uint8_t* src_frame,
-                        uint8_t* dst_frame,
-                        int width, int height);
-int MirrorI420UpDown(const uint8_t* src_frame,
-                     uint8_t* dst_frame,
-                     int width, int height);
+// It is assumed that src and dst frames have equal dimensions.
+int MirrorI420LeftRight(const VideoFrame* src_frame,
+                        VideoFrame* dst_frame);
+int MirrorI420UpDown(const VideoFrame* src_frame,
+                     VideoFrame* dst_frame);
 
 // Compute PSNR for an I420 frame (all planes).
 double I420PSNR(const uint8_t* ref_frame,

@@ -19,13 +19,13 @@
 
 namespace webrtc {
 
-int PrintFrame(const uint8_t* frame, int width, int height) {
-  if (frame == NULL)
+int PrintBuffer(const uint8_t* buffer, int width, int height) {
+  if (buffer == NULL)
     return -1;
   int k = 0;
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
-      printf("%d ", frame[k++]);
+      printf("%d ", buffer[k++]);
     }
     printf(" \n");
   }
@@ -33,34 +33,55 @@ int PrintFrame(const uint8_t* frame, int width, int height) {
   return 0;
 }
 
-int PrintFrame(const uint8_t* frame, int width,
-                int height, const char* str) {
+
+int PrintFrame(const VideoFrame* frame, const char* str) {
   if (frame == NULL)
      return -1;
-  printf("%s %dx%d \n", str, width, height);
-
-  const uint8_t* frame_y = frame;
-  const uint8_t* frame_u = frame_y + width * height;
-  const uint8_t* frame_v = frame_u + width * height / 4;
+  printf("%s %dx%d \n", str, frame->Width(), frame->Height());
 
   int ret = 0;
-  ret += PrintFrame(frame_y, width, height);
-  ret += PrintFrame(frame_u, width / 2, height / 2);
-  ret += PrintFrame(frame_v, width / 2, height / 2);
-
+  int width = frame->Width();
+  int height = frame->Height();
+  ret += PrintBuffer(frame->Buffer(), width, height);
+  int half_width = (frame->Width() + 1) / 2;
+  int half_height = (frame->Height() + 1) / 2;
+  ret += PrintBuffer(frame->Buffer() + width * height, half_width, half_height);
+  ret += PrintBuffer(frame->Buffer() + width * height +
+                     half_width * half_height, half_width, half_height);
   return ret;
 }
 
-void CreateImage(int width, int height,
-                 uint8_t* frame, int offset,
-                 int height_factor, int width_factor) {
+
+// Create an image from on a YUV frame. Every plane value starts with a start
+// value, and will be set to increasing values.
+// plane_offset - prep for PlaneType.
+void CreateImage(VideoFrame* frame, int plane_offset[3]) {
   if (frame == NULL)
     return;
+  int width = frame->Width();
+  int height = frame->Height();
+  int half_width = (frame->Width() + 1) / 2;
+  int half_height = (frame->Height() + 1) / 2;
+  uint8_t *data = frame->Buffer();
+  // Y plane.
   for (int i = 0; i < height; i++) {
     for (int j = 0; j < width; j++) {
-      *frame = static_cast<uint8_t>((i + offset) * height_factor
-                                     + j * width_factor);
-      frame++;
+      *data = static_cast<uint8_t>((i + plane_offset[0]) + j);
+      data++;
+    }
+  }
+  // U plane.
+  for (int i = 0; i < half_height; i++) {
+    for (int j = 0; j < half_width; j++) {
+      *data = static_cast<uint8_t>((i + plane_offset[1]) + j);
+      data++;
+    }
+  }
+  // V Plane.
+  for (int i = 0; i < half_height; i++) {
+    for (int j = 0; j < half_width; j++) {
+      *data = static_cast<uint8_t>((i + plane_offset[2]) + j);
+      data++;
     }
   }
 }
@@ -251,52 +272,63 @@ TEST_F(TestLibYuv, ConvertTest) {
 // See http://code.google.com/p/webrtc/issues/detail?id=335 for more info.
 TEST_F(TestLibYuv, DISABLED_MirrorTest) {
   // TODO (mikhal): Add an automated test to confirm output.
+  // TODO(mikhal): Update to new I420VideoFrame and align values. Until then,
+  // this test is disabled, only insuring build.
   std::string str;
   int width = 16;
   int height = 8;
-  int factor_y = 1;
-  int factor_u = 1;
-  int factor_v = 1;
-  int start_buffer_offset = 10;
   int length = webrtc::CalcBufferSize(kI420, width, height);
 
-  uint8_t* test_frame = new uint8_t[length];
-  memset(test_frame, 255, length);
+  VideoFrame test_frame;
+  test_frame.VerifyAndAllocate(length);
+  test_frame.SetWidth(width);
+  test_frame.SetHeight(height);
+  memset(test_frame.Buffer(), 255, length);
 
-  // Create input frame
-  uint8_t* in_frame = test_frame;
-  uint8_t* in_frame_cb = in_frame + width * height;
-  uint8_t* in_frame_cr = in_frame_cb + (width * height) / 4;
-  CreateImage(width, height, in_frame, 10, factor_y, 1);  // Y
-  CreateImage(width / 2, height / 2, in_frame_cb, 100, factor_u, 1);  // Cb
-  CreateImage(width / 2, height / 2, in_frame_cr, 200, factor_v, 1);  // Cr
-  EXPECT_EQ(0, PrintFrame(test_frame, width, height, "InputFrame"));
+  // Create input frame.
+  VideoFrame in_frame, test_in_frame;
+  in_frame.VerifyAndAllocate(length);
+  in_frame.SetWidth(width);
+  in_frame.SetHeight(height);
+  in_frame.SetLength(length);
+  int plane_offset[3];  // prep for kNumPlanes.
+  plane_offset[0] = 10;
+  plane_offset[1] = 100;
+  plane_offset[2] = 200;
+  CreateImage(&in_frame, plane_offset);
+  test_in_frame.CopyFrame(in_frame);
+  EXPECT_EQ(0, PrintFrame(&in_frame, "InputFrame"));
 
-  uint8_t* test_frame2 = new uint8_t[length + start_buffer_offset * 2];
-  memset(test_frame2, 255, length + start_buffer_offset * 2);
-  uint8_t* out_frame = test_frame2;
+  VideoFrame out_frame, test_out_frame;
+  out_frame.VerifyAndAllocate(length);
+  out_frame.SetWidth(width);
+  out_frame.SetHeight(height);
+  out_frame.SetLength(length);
+  CreateImage(&out_frame, plane_offset);
+  test_out_frame.CopyFrame(out_frame);
 
-  // LeftRight
+  // Left-Right.
   std::cout << "Test Mirror function: LeftRight" << std::endl;
-  EXPECT_EQ(0, MirrorI420LeftRight(in_frame, out_frame, width, height));
-  EXPECT_EQ(0, PrintFrame(test_frame2, width, height, "OutputFrame"));
-  EXPECT_EQ(0, MirrorI420LeftRight(out_frame, test_frame, width, height));
+  EXPECT_EQ(0, MirrorI420LeftRight(&in_frame, &out_frame));
+  EXPECT_EQ(0, PrintFrame(&out_frame, "OutputFrame"));
+  EXPECT_EQ(0, MirrorI420LeftRight(&out_frame, &in_frame));
 
-  EXPECT_EQ(0, memcmp(in_frame, test_frame, length));
+  EXPECT_EQ(0, memcmp(in_frame.Buffer(), test_in_frame.Buffer(), length));
 
   // UpDown
   std::cout << "Test Mirror function: UpDown" << std::endl;
-  EXPECT_EQ(0, MirrorI420UpDown(in_frame, out_frame, width, height));
-  EXPECT_EQ(0, PrintFrame(test_frame2, width, height, "OutputFrame"));
-  EXPECT_EQ(0, MirrorI420UpDown(out_frame, test_frame, width, height));
-
-  EXPECT_EQ(0, memcmp(in_frame, test_frame, length));
+  EXPECT_EQ(0, MirrorI420UpDown(&in_frame, &out_frame));
+  EXPECT_EQ(0, PrintFrame(&test_out_frame, "OutputFrame"));
+  EXPECT_EQ(0, MirrorI420UpDown(&out_frame, &test_frame));
+  EXPECT_EQ(0, memcmp(in_frame.Buffer(), test_frame.Buffer(), length));
 
   // TODO(mikhal): Write to a file, and ask to look at the file.
 
   std::cout << "Do the mirrored frames look correct?" << std::endl;
-  delete [] test_frame;
-  delete [] test_frame2;
+  in_frame.Free();
+  test_in_frame.Free();
+  out_frame.Free();
+  test_out_frame.Free();
 }
 
 TEST_F(TestLibYuv, alignment) {

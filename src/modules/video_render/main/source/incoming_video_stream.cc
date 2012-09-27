@@ -104,21 +104,19 @@ WebRtc_Word32 IncomingVideoStream::RenderFrame(const WebRtc_UWord32 stream_id,
   if (true == mirror_frames_enabled_) {
     transformed_video_frame_.VerifyAndAllocate(video_frame.Length());
     if (mirroring_.mirror_x_axis) {
-      MirrorI420UpDown(video_frame.Buffer(),
-                       transformed_video_frame_.Buffer(),
-                       video_frame.Width(), video_frame.Height());
       transformed_video_frame_.SetLength(video_frame.Length());
       transformed_video_frame_.SetWidth(video_frame.Width());
       transformed_video_frame_.SetHeight(video_frame.Height());
+      MirrorI420UpDown(&video_frame,
+                       &transformed_video_frame_);
       video_frame.SwapFrame(transformed_video_frame_);
     }
     if (mirroring_.mirror_y_axis) {
-      MirrorI420LeftRight(video_frame.Buffer(),
-                          transformed_video_frame_.Buffer(),
-                          video_frame.Width(), video_frame.Height());
       transformed_video_frame_.SetLength(video_frame.Length());
       transformed_video_frame_.SetWidth(video_frame.Width());
       transformed_video_frame_.SetHeight(video_frame.Height());
+      MirrorI420LeftRight(&video_frame,
+                          &transformed_video_frame_);
       video_frame.SwapFrame(transformed_video_frame_);
     }
   }
