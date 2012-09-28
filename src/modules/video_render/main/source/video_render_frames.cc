@@ -19,8 +19,8 @@
 namespace webrtc {
 
 const WebRtc_Word32 KEventMaxWaitTimeMs = 200;
-const WebRtc_Word32 kMinRenderDelayMs = 10;
-const WebRtc_Word32 kMaxRenderDelayMs= 500;
+const WebRtc_UWord32 kMinRenderDelayMs = 10;
+const WebRtc_UWord32 kMaxRenderDelayMs= 500;
 
 VideoRenderFrames::VideoRenderFrames()
     : incoming_frames_(),
