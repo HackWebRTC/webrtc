@@ -18,7 +18,9 @@
 
 namespace webrtc {
 
-WebRtc_Word32 KEventMaxWaitTimeMs = 200;
+const WebRtc_Word32 KEventMaxWaitTimeMs = 200;
+const WebRtc_Word32 kMinRenderDelayMs = 10;
+const WebRtc_Word32 kMaxRenderDelayMs= 500;
 
 VideoRenderFrames::VideoRenderFrames()
     : incoming_frames_(),
@@ -167,6 +169,14 @@ WebRtc_UWord32 VideoRenderFrames::TimeToNextFrameRelease() {
 
 WebRtc_Word32 VideoRenderFrames::SetRenderDelay(
     const WebRtc_UWord32 render_delay) {
+  if (render_delay < kMinRenderDelayMs ||
+      render_delay > kMaxRenderDelayMs) {
+    WEBRTC_TRACE(kTraceWarning, kTraceVideoRenderer,
+                 -1, "%s(%d): Invalid argument.", __FUNCTION__,
+                 render_delay);
+    return -1;
+  }
+
   render_delay_ms_ = render_delay;
   return 0;
 }

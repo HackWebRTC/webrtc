@@ -175,6 +175,18 @@ WebRtc_Word32 IncomingVideoStream::EnableMirroring(const bool enable,
   return 0;
 }
 
+WebRtc_Word32 IncomingVideoStream::SetExpectedRenderDelay(
+    WebRtc_Word32 delay_ms) {
+  CriticalSectionScoped csS(&stream_critsect_);
+  if (running_) {
+    WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, module_id_,
+                 "%s(%d) for stream %d", __FUNCTION__, delay_ms, stream_id_);
+    return -1;
+  }
+  CriticalSectionScoped cs(buffer_critsect_);
+  return render_buffers_.SetRenderDelay(delay_ms);
+}
+
 WebRtc_Word32 IncomingVideoStream::SetExternalCallback(
     VideoRenderCallback* external_callback) {
   CriticalSectionScoped cs(&stream_critsect_);

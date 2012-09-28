@@ -236,6 +236,13 @@ public:
     /*
      * re-configure renderer
      */
+
+    // Set the expected time needed by the graphics card or external renderer,
+    // i.e. frames will be released for rendering |delay_ms| before set render
+    // time in the video frame.
+    virtual WebRtc_Word32 SetExpectedRenderDelay(WebRtc_UWord32 stream_id,
+                                                 WebRtc_Word32 delay_ms) = 0;
+
     virtual WebRtc_Word32 ConfigureRenderer(const WebRtc_UWord32 streamId,
                                             const unsigned int zOrder,
                                             const float left, const float top,

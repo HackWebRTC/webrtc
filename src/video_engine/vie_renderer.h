@@ -62,6 +62,8 @@ class ViERenderer: public ViEFrameCallback {
   WebRtc_Word32 GetLastRenderedFrame(const WebRtc_Word32 renderID,
                                      VideoFrame& video_frame);
 
+  int SetExpectedRenderDelay(int render_delay);
+
   WebRtc_Word32 ConfigureRenderer(const unsigned int z_order,
                                   const float left,
                                   const float top,

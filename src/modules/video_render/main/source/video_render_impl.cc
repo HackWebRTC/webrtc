@@ -845,6 +845,37 @@ WebRtc_Word32 ModuleVideoRenderImpl::GetLastRenderedFrame(
     return incomingStream->GetLastRenderedFrame(frame);
 }
 
+WebRtc_Word32 ModuleVideoRenderImpl::SetExpectedRenderDelay(
+    WebRtc_UWord32 stream_id, WebRtc_Word32 delay_ms) {
+  CriticalSectionScoped cs(_moduleCrit);
+
+  if (!_ptrRenderer) {
+    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
+                 "%s: No renderer", __FUNCTION__);
+    return false;
+  }
+
+  MapItem *item = _streamRenderMap.Find(stream_id);
+  if (item == NULL) {
+    // This stream doesn't exist
+    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
+                 "%s(%u, %d): stream doesn't exist", __FUNCTION__, stream_id,
+                 delay_ms);
+    return -1;
+  }
+
+  IncomingVideoStream* incoming_stream =
+      static_cast<IncomingVideoStream*> (item->GetItem());
+  if (incoming_stream == NULL) {
+      // This should never happen
+      assert(false);
+      _streamRenderMap.Erase(item);
+      return 0;
+  }
+
+  return incoming_stream->SetExpectedRenderDelay(delay_ms);
+}
+
 WebRtc_Word32 ModuleVideoRenderImpl::ConfigureRenderer(
                                                        const WebRtc_UWord32 streamId,
                                                        const unsigned int zOrder,

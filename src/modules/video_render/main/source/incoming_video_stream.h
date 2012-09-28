@@ -68,6 +68,8 @@ class IncomingVideoStream : public VideoRenderCallback {
                                 const bool mirror_xaxis,
                                 const bool mirror_yaxis);
 
+  WebRtc_Word32 SetExpectedRenderDelay(WebRtc_Word32 delay_ms);
+
  protected:
   static bool IncomingVideoStreamThreadFun(void* obj);
   bool IncomingVideoStreamProcess();

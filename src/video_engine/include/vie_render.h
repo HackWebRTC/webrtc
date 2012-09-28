@@ -81,6 +81,11 @@ class WEBRTC_DLLEXPORT ViERender {
   // Stops rendering a render stream.
   virtual int StopRender(const int render_id) = 0;
 
+  // Set expected render time needed by graphics card or external renderer, i.e.
+  // the number of ms a frame will be sent to rendering before the actual render
+  // time.
+  virtual int SetExpectedRenderDelay(int render_id, int render_delay) = 0;
+
   // Configures an already added render stream.
   virtual int ConfigureRender(int render_id,
                               const unsigned int z_order,

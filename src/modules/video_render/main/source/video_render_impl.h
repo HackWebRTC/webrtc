@@ -119,6 +119,9 @@ public:
     virtual WebRtc_Word32 GetLastRenderedFrame(const WebRtc_UWord32 streamId,
                                                VideoFrame &frame) const;
 
+    virtual WebRtc_Word32 SetExpectedRenderDelay(WebRtc_UWord32 stream_id,
+                                                 WebRtc_Word32 delay_ms);
+
     /**************************************************************************
      *
      *   Start/Stop

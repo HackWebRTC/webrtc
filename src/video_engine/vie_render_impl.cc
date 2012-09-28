@@ -262,6 +262,27 @@ int ViERenderImpl::StopRender(const int render_id) {
   return 0;
 }
 
+int ViERenderImpl::SetExpectedRenderDelay(int render_id, int render_delay) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
+               ViEId(shared_data_->instance_id(), render_id),
+               "%s(channel: %d)", __FUNCTION__, render_id);
+  ViERenderManagerScoped rs(*(shared_data_->render_manager()));
+  ViERenderer* renderer = rs.Renderer(render_id);
+  if (!renderer) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), render_id),
+                 "%s: No renderer with render_id %d exist.", __FUNCTION__,
+                 render_id);
+    shared_data_->SetLastError(kViERenderInvalidRenderId);
+    return -1;
+  }
+  if (renderer->SetExpectedRenderDelay(render_delay) != 0) {
+    shared_data_->SetLastError(kViERenderUnknownError);
+    return -1;
+  }
+  return 0;
+}
+
 int ViERenderImpl::ConfigureRender(int render_id, const unsigned int z_order,
                                    const float left, const float top,
                                    const float right, const float bottom) {
