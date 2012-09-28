@@ -54,8 +54,8 @@ void CngTest::SetUp() {
         webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
   input_file = fopen(file_name.c_str(), "rb");
   ASSERT_TRUE(input_file != NULL);
-  ASSERT_EQ(480, static_cast<int32_t>(fread(speech_data_, sizeof(int16_t),
-                                             480, input_file)));
+  ASSERT_EQ(640, static_cast<int32_t>(fread(speech_data_, sizeof(int16_t),
+                                             640, input_file)));
   fclose(input_file);
   input_file = NULL;
 }
@@ -315,6 +315,7 @@ TEST_F(CngTest, CngAutoSid) {
 
   // Free encoder and decoder memory.
   EXPECT_EQ(0, WebRtcCng_FreeEnc(cng_enc_inst_));
+  EXPECT_EQ(0, WebRtcCng_FreeDec(cng_dec_inst_));
 }
 
 // Test automatic SID, with very short interval.
@@ -341,6 +342,7 @@ TEST_F(CngTest, CngAutoSidShort) {
 
   // Free encoder and decoder memory.
   EXPECT_EQ(0, WebRtcCng_FreeEnc(cng_enc_inst_));
+  EXPECT_EQ(0, WebRtcCng_FreeDec(cng_dec_inst_));
 }
 
 }  // namespace webrtc
