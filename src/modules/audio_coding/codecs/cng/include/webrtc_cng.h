@@ -21,71 +21,18 @@ extern "C" {
 #define WEBRTC_CNG_MAX_LPC_ORDER 12
 #define WEBRTC_CNG_MAX_OUTSIZE_ORDER 640
 
-/* Define Error codes */
+/* Define Error codes. */
 
 /* 6100 Encoder */
-#define CNG_ENCODER_MEMORY_ALLOCATION_FAILED    6110
 #define CNG_ENCODER_NOT_INITIATED               6120
 #define CNG_DISALLOWED_LPC_ORDER                6130
 #define CNG_DISALLOWED_FRAME_SIZE               6140
 #define CNG_DISALLOWED_SAMPLING_FREQUENCY       6150
 /* 6200 Decoder */
-#define CNG_DECODER_MEMORY_ALLOCATION_FAILED    6210
 #define CNG_DECODER_NOT_INITIATED               6220
 
-
-typedef struct WebRtcCngEncInst         CNG_enc_inst;
-typedef struct WebRtcCngDecInst         CNG_dec_inst;
-
-
-/****************************************************************************
- * WebRtcCng_Version(...)
- *
- * These functions returns the version name (string must be at least
- * 500 characters long)
- *
- * Output:
- *    - version    : Pointer to character string
- *
- * Return value    :  0 - Ok
- *                   -1 - Error
- */
-
-WebRtc_Word16 WebRtcCng_Version(char *version);
-
-/****************************************************************************
- * WebRtcCng_AssignSizeEnc/Dec(...)
- *
- * These functions get the size needed for storing the instance for encoder
- * and decoder, respectively
- *
- * Input/Output:
- *    - sizeinbytes     : Pointer to integer where the size is returned
- *
- * Return value         :  0
- */
-
-WebRtc_Word16 WebRtcCng_AssignSizeEnc(int *sizeinbytes);
-WebRtc_Word16 WebRtcCng_AssignSizeDec(int *sizeinbytes);
-
-
-/****************************************************************************
- * WebRtcCng_AssignEnc/Dec(...)
- *
- * These functions Assignes memory for the instances.
- *
- * Input:
- *    - CNG_inst_Addr :  Adress to where to assign memory
- * Output:
- *    - inst          :  Pointer to the instance that should be created
- *
- * Return value       :  0 - Ok
- *                      -1 - Error
- */
-
-WebRtc_Word16 WebRtcCng_AssignEnc(CNG_enc_inst **inst, void *CNG_inst_Addr);
-WebRtc_Word16 WebRtcCng_AssignDec(CNG_dec_inst **inst, void *CNG_inst_Addr);
-
+typedef struct WebRtcCngEncInst CNG_enc_inst;
+typedef struct WebRtcCngDecInst CNG_dec_inst;
 
 /****************************************************************************
  * WebRtcCng_CreateEnc/Dec(...)
@@ -98,10 +45,8 @@ WebRtc_Word16 WebRtcCng_AssignDec(CNG_dec_inst **inst, void *CNG_inst_Addr);
  * Return value       :  0 - Ok
  *                      -1 - Error
  */
-
-WebRtc_Word16 WebRtcCng_CreateEnc(CNG_enc_inst **cng_inst);
-WebRtc_Word16 WebRtcCng_CreateDec(CNG_dec_inst **cng_inst);
-
+int16_t WebRtcCng_CreateEnc(CNG_enc_inst** cng_inst);
+int16_t WebRtcCng_CreateDec(CNG_dec_inst** cng_inst);
 
 /****************************************************************************
  * WebRtcCng_InitEnc/Dec(...)
@@ -122,13 +67,10 @@ WebRtc_Word16 WebRtcCng_CreateDec(CNG_dec_inst **cng_inst);
  *                      -1 - Error
  */
 
-WebRtc_Word16 WebRtcCng_InitEnc(CNG_enc_inst *cng_inst,
-                                WebRtc_Word16 fs,
-                                WebRtc_Word16 interval,
-                                WebRtc_Word16 quality);
-WebRtc_Word16 WebRtcCng_InitDec(CNG_dec_inst *cng_dec_inst);
+int16_t WebRtcCng_InitEnc(CNG_enc_inst* cng_inst, uint16_t fs, int16_t interval,
+                          int16_t quality);
+int16_t WebRtcCng_InitDec(CNG_dec_inst* cng_inst);
 
- 
 /****************************************************************************
  * WebRtcCng_FreeEnc/Dec(...)
  *
@@ -140,12 +82,8 @@ WebRtc_Word16 WebRtcCng_InitDec(CNG_dec_inst *cng_dec_inst);
  * Return value       :  0 - Ok
  *                      -1 - Error
  */
-
-
-WebRtc_Word16 WebRtcCng_FreeEnc(CNG_enc_inst *cng_inst);
-WebRtc_Word16 WebRtcCng_FreeDec(CNG_dec_inst *cng_inst);
-
-
+int16_t WebRtcCng_FreeEnc(CNG_enc_inst* cng_inst);
+int16_t WebRtcCng_FreeDec(CNG_dec_inst* cng_inst);
 
 /****************************************************************************
  * WebRtcCng_Encode(...)
@@ -164,14 +102,9 @@ WebRtc_Word16 WebRtcCng_FreeDec(CNG_dec_inst *cng_inst);
  * Return value       :  0 - Ok
  *                      -1 - Error
  */
-
-WebRtc_Word16 WebRtcCng_Encode(CNG_enc_inst *cng_inst,
-                               WebRtc_Word16 *speech,
-                               WebRtc_Word16 nrOfSamples,
-                               WebRtc_UWord8* SIDdata,
-                               WebRtc_Word16 *bytesOut,
-                               WebRtc_Word16 forceSID);
-
+int16_t WebRtcCng_Encode(CNG_enc_inst* cng_inst, int16_t* speech,
+                         int16_t nrOfSamples, uint8_t* SIDdata,
+                         int16_t* bytesOut, int16_t forceSID);
 
 /****************************************************************************
  * WebRtcCng_UpdateSid(...)
@@ -186,10 +119,8 @@ WebRtc_Word16 WebRtcCng_Encode(CNG_enc_inst *cng_inst,
  * Return value       :  0 - Ok
  *                      -1 - Error
  */
-WebRtc_Word16 WebRtcCng_UpdateSid(CNG_dec_inst *cng_inst,
-                                  WebRtc_UWord8 *SID,
-                                  WebRtc_Word16 length);
-
+int16_t WebRtcCng_UpdateSid(CNG_dec_inst* cng_inst, uint8_t* SID,
+                            int16_t length);
 
 /****************************************************************************
  * WebRtcCng_Generate(...)
@@ -205,11 +136,8 @@ WebRtc_Word16 WebRtcCng_UpdateSid(CNG_dec_inst *cng_inst,
  * Return value       :  0 - Ok
  *                      -1 - Error
  */
-WebRtc_Word16 WebRtcCng_Generate(CNG_dec_inst *cng_inst,
-                                 WebRtc_Word16 * outData,
-                                 WebRtc_Word16 nrOfSamples,
-                                 WebRtc_Word16 new_period);
-
+int16_t WebRtcCng_Generate(CNG_dec_inst* cng_inst, int16_t* outData,
+                           int16_t nrOfSamples, int16_t new_period);
 
 /*****************************************************************************
  * WebRtcCng_GetErrorCodeEnc/Dec(...)
@@ -224,10 +152,8 @@ WebRtc_Word16 WebRtcCng_Generate(CNG_dec_inst *cng_inst,
  *
  * Return value     : Error code
  */
-
-WebRtc_Word16 WebRtcCng_GetErrorCodeEnc(CNG_enc_inst *cng_inst);
-WebRtc_Word16 WebRtcCng_GetErrorCodeDec(CNG_dec_inst *cng_inst);
-
+int16_t WebRtcCng_GetErrorCodeEnc(CNG_enc_inst* cng_inst);
+int16_t WebRtcCng_GetErrorCodeDec(CNG_dec_inst* cng_inst);
 
 #ifdef __cplusplus
 }

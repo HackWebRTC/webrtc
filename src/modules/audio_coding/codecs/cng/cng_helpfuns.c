@@ -8,57 +8,43 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
-#include "webrtc_cng.h"
-#include "signal_processing_library.h"
-#include "typedefs.h"
 #include "cng_helpfuns.h"
 
+#include "signal_processing_library.h"
+#include "typedefs.h"
+#include "webrtc_cng.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/* Values in |k| are Q15, and |a| Q12. */
+void WebRtcCng_K2a16(int16_t* k, int useOrder, int16_t* a) {
+  int16_t any[WEBRTC_SPL_MAX_LPC_ORDER + 1];
+  int16_t *aptr, *aptr2, *anyptr;
+  const int16_t *kptr;
+  int m, i;
 
+  kptr = k;
+  *a = 4096;  /* i.e., (Word16_MAX >> 3) + 1 */
+  *any = *a;
+  a[1] = (*k + 4) >> 3;
+  for (m = 1; m < useOrder; m++) {
+    kptr++;
+    aptr = a;
+    aptr++;
+    aptr2 = &a[m];
+    anyptr = any;
+    anyptr++;
 
-void WebRtcCng_K2a16( 
-    WebRtc_Word16 *k,           /* Q15.    */
-    int            useOrder,
-    WebRtc_Word16 *a            /* Q12.    */
-)
-{
-    WebRtc_Word16 any[WEBRTC_SPL_MAX_LPC_ORDER+1];
-    WebRtc_Word16 *aptr, *aptr2, *anyptr;
-    G_CONST WebRtc_Word16 *kptr;
-    int m, i;
-    
-    kptr = k;
-    *a   = 4096;  /* i.e., (Word16_MAX >> 3)+1 */
-     *any = *a;
-    a[1] = (*k+4) >> 3;
-    for( m=1; m<useOrder; m++ )
-    {
-        kptr++;
-        aptr = a;
-        aptr++;
-        aptr2 = &a[m];
-        anyptr = any;
-        anyptr++;
-
-        any[m+1] = (*kptr+4) >> 3;
-        for( i=0; i<m; i++ ) {
-            *anyptr++ = (*aptr++) + (WebRtc_Word16)( (( (WebRtc_Word32)(*aptr2--) * (WebRtc_Word32)*kptr )+16384) >> 15);
-        }
-
-        aptr   = a;
-        anyptr = any;
-        for( i=0; i<(m+2); i++ ){
-            *aptr++ = *anyptr++;
-        }
+    any[m + 1] = (*kptr + 4) >> 3;
+    for (i = 0; i < m; i++) {
+      *anyptr++ = (*aptr++) +
+          (WebRtc_Word16)(
+              (((WebRtc_Word32)(*aptr2--) * (WebRtc_Word32) * kptr) + 16384)
+                  >> 15);
     }
+
+    aptr = a;
+    anyptr = any;
+    for (i = 0; i < (m + 2); i++) {
+      *aptr++ = *anyptr++;
+    }
+  }
 }
-
-
-#ifdef __cplusplus
-}
-#endif
-
