@@ -27,8 +27,6 @@ enum ScaleMethod {
   kScaleBox
 };
 
-// TODO (mikhal): Have set return the expected value of the dst_frame, such
-// that the user can allocate memory for Scale().
 class Scaler {
  public:
   Scaler();
@@ -49,9 +47,8 @@ class Scaler {
   // Return value: 0 - OK,
   //               -1 - parameter error
   //               -2 - scaler not set
-  int Scale(const uint8_t* src_frame,
-            uint8_t*& dst_frame,
-            int& dst_size);
+  int Scale(const VideoFrame& src_frame,
+            VideoFrame* dst_frame);
 
  private:
   // Determine if the VideoTypes are currently supported.

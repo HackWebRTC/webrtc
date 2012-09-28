@@ -293,15 +293,7 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
   // upsample back to original size: needed for PSNR and SSIM computations.
   if (image.Width() !=  config_.codec_settings->width ||
       image.Height() != config_.codec_settings->height) {
-    int required_size = CalcBufferSize(kI420,
-                                       config_.codec_settings->width,
-                                       config_.codec_settings->height);
     VideoFrame up_image;
-    up_image.VerifyAndAllocate(required_size);
-    up_image.SetLength(required_size);
-    up_image.SetWidth(config_.codec_settings->width);
-    up_image.SetHeight(config_.codec_settings->height);
-
     int ret_val = scaler_.Set(image.Width(), image.Height(),
                               config_.codec_settings->width,
                               config_.codec_settings->height,
@@ -311,8 +303,7 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
       fprintf(stderr, "Failed to set scalar for frame: %d, return code: %d\n",
               frame_number, ret_val);
     }
-    ret_val = scaler_.Scale(image.Buffer(), up_image.Buffer(),
-                            required_size);
+    ret_val = scaler_.Scale(image, &up_image);
     assert(ret_val >= 0);
     if (ret_val < 0) {
       fprintf(stderr, "Failed to scale frame: %d, return code: %d\n",

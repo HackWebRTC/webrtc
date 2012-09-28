@@ -35,17 +35,11 @@ int FrameScaler::ResizeFrameIfNeeded(VideoFrame* video_frame,
     // Set correct scale settings and scale |video_frame| into |scaled_frame_|.
     scaler_->Set(video_frame->Width(), video_frame->Height(), out_width,
                  out_height, kI420, kI420, kScaleBox);
-    int out_length = CalcBufferSize(kI420, out_width, out_height);
-    scaled_frame_.VerifyAndAllocate(out_length);
-    int ret = scaler_->Scale(video_frame->Buffer(), scaled_frame_.Buffer(),
-                             out_length);
+    int ret = scaler_->Scale(*video_frame, &scaled_frame_);
     if (ret < 0) {
       return ret;
     }
 
-    scaled_frame_.SetWidth(out_width);
-    scaled_frame_.SetHeight(out_height);
-    scaled_frame_.SetLength(out_length);
     scaled_frame_.SetRenderTime(video_frame->RenderTimeMs());
     scaled_frame_.SetTimeStamp(video_frame->TimeStamp());
     video_frame->SwapFrame(scaled_frame_);
