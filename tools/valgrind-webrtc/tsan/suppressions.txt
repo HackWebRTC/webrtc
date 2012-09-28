@@ -7,5 +7,11 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 # This file is used in addition to the one already maintained in Chrome.
-# It acts as a place holder for future additions for WebRTC.
 # It must exist for the Python wrapper script to work properly.
+
+{
+  bug_884 (Wider timezone filter than Chromium's suppressions)
+  ThreadSanitizer:Race
+  ...
+  fun:__tz*
+}
