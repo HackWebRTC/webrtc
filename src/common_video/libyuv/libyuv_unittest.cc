@@ -332,15 +332,10 @@ TEST_F(TestLibYuv, DISABLED_MirrorTest) {
 }
 
 TEST_F(TestLibYuv, alignment) {
-  int value = 640;
-  int aligned_value = (value + 63) & ~63;
-  EXPECT_EQ(AlignTo64Bit(value), aligned_value);
-  value = 600;
-  aligned_value = (value + 63) & ~63;
-  EXPECT_EQ(AlignTo64Bit(value), aligned_value);
-  value = 0;
-  aligned_value = (value + 63) & ~63;
-  EXPECT_EQ(AlignTo64Bit(value), aligned_value);
+  int value = 0x3FF; // 1023
+  EXPECT_EQ(0x400, AlignInt(value, 128));  // Low 7 bits are zero.
+  EXPECT_EQ(0x400, AlignInt(value, 64));  // Low 6 bits are zero.
+  EXPECT_EQ(0x400, AlignInt(value, 32));  // Low 5 bits are zero.
 }
 
 }  // namespace

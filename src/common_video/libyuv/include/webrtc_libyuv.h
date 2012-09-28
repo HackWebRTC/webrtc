@@ -57,11 +57,12 @@ enum VideoRotationMode {
   kRotate270 = 270,
 };
 
-// Align value to 64 bits.
+// Align integer values.
 // Input:
-//   - value   : Input value to be aligned.
-// Return value: An aligned to 64 bit form of the input value.
-int AlignTo64Bit(int value);
+//   - value     : Input value to be aligned.
+//   - alignment : Alignment basis (power of 2).
+// Return value: An aligned form of the input value.
+int AlignInt(int value, int alignment);
 
 // Calculate the required buffer size.
 // Input:

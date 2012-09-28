@@ -52,8 +52,9 @@ VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type) {
   return kUnknown;
 }
 
-int AlignTo64Bit(int value) {
-  return ((value + 63) & ~63);
+int AlignInt(int value, int alignment) {
+  assert(!((alignment - 1) & alignment));
+  return ((value + alignment - 1) & ~ (alignment - 1));
 }
 
 int CalcBufferSize(VideoType type, int width, int height) {
