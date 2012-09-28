@@ -27,14 +27,6 @@ FILE *dfile;
 FILE *testfile;
 #endif
 
-#ifdef _MSC_VER // visual c++
-#define ALIGN8_BEG __declspec(align(8))
-#define ALIGN8_END
-#else // gcc or icc
-#define ALIGN8_BEG
-#define ALIGN8_END __attribute__((aligned(8)))
-#endif
-
 #ifdef AECM_SHORT
 
 // Square root of Hanning window in Q14

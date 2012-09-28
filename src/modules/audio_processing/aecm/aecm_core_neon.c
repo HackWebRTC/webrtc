@@ -19,7 +19,7 @@
 // generating script and makefile, to replace these C functions.
 
 // Square root of Hanning window in Q14.
-static const WebRtc_Word16 kSqrtHanningReversed[] __attribute__((aligned(8))) = {
+static const WebRtc_Word16 kSqrtHanningReversed[] ALIGN8_END = {
   16384, 16373, 16354, 16325,
   16286, 16237, 16179, 16111,
   16034, 15947, 15851, 15746,

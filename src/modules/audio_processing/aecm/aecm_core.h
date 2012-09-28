@@ -18,7 +18,15 @@
 
 #include "aecm_defines.h"
 
-extern const WebRtc_Word16 WebRtcAecm_kSqrtHanning[];
+#ifdef _MSC_VER // visual c++
+#define ALIGN8_BEG __declspec(align(8))
+#define ALIGN8_END
+#else // gcc or icc
+#define ALIGN8_BEG
+#define ALIGN8_END __attribute__((aligned(8)))
+#endif
+
+extern const WebRtc_Word16 WebRtcAecm_kSqrtHanning[] ALIGN8_END;
 
 typedef struct {
     WebRtc_Word16 real;
