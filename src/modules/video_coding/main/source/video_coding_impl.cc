@@ -1178,6 +1178,12 @@ VideoCodingModuleImpl::IncomingPacket(const WebRtc_UWord8* incomingPayload,
                                     WebRtc_UWord32 payloadLength,
                                     const WebRtcRTPHeader& rtpInfo)
 {
+    if (incomingPayload == NULL) {
+      // The jitter buffer doesn't handle non-zero payload lengths for packets
+      // without payload.
+      // TODO(holmer): We should fix this in the jitter buffer.
+      payloadLength = 0;
+    }
     const VCMPacket packet(incomingPayload, payloadLength, rtpInfo);
     WebRtc_Word32 ret;
     if (_dualReceiver.State() != kPassive)

@@ -137,7 +137,6 @@ WebRtc_Word32 ViEReceiver::OnReceivedPayloadData(
                                             packet_size,
                                             TickTime::MillisecondTimestamp(),
                                             compensated_timestamp);
-
   if (vcm_->IncomingPacket(payload_data, payload_size, *rtp_header) != 0) {
     // Check this...
     return -1;
