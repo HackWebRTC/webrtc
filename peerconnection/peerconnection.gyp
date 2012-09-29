@@ -36,6 +36,7 @@
             },
           },
           'dependencies': [
+            'third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
             'third_party/libjingle/libjingle.gyp:libjingle_peerconnection',
           ],
           'include_dirs': [
