@@ -45,15 +45,43 @@ struct AlignedMemory
   void* memoryPointer;
 };
 
-void* AlignedMalloc(size_t size, size_t alignment)
+uintptr_t GetRightAlign(uintptr_t startPos, size_t alignment)
 {
-    if(alignment == 0)
+    // The pointer should be aligned with |alignment| bytes. The - 1 guarantees
+    // that it is aligned towards the closest higher (right) address.
+    return (startPos + alignment - 1) & ~(alignment - 1);
+}
+
+// Alignment must be an integer power of two.
+bool ValidAlignment(size_t alignment)
+{
+    if (!alignment)
     {
-        // Don't allow alignment 0 since it's undefined.
+        return false;
+    }
+    return (alignment & (alignment - 1)) == 0;
+}
+
+void* GetRightAlign(const void* ptr, size_t alignment)
+{
+    if (!ptr)
+    {
         return NULL;
     }
-    // Make sure that the alignment is an integer power of two or fail.
-    if(alignment & (alignment - 1))
+    if (!ValidAlignment(alignment))
+    {
+        return NULL;
+    }
+    uintptr_t startPos = reinterpret_cast<uintptr_t> (ptr);
+    return reinterpret_cast<void*> (GetRightAlign(startPos, alignment));
+}
+
+void* AlignedMalloc(size_t size, size_t alignment)
+{
+    if (size == 0) {
+        return NULL;
+    }
+    if (!ValidAlignment(alignment))
     {
         return NULL;
     }
@@ -80,19 +108,14 @@ void* AlignedMalloc(size_t size, size_t alignment)
     // in the same memory block.
     uintptr_t alignStartPos = (uintptr_t)returnValue->memoryPointer;
     alignStartPos += sizeof(uintptr_t);
-
-    // The buffer should be aligned with 'alignment' bytes. The - 1 guarantees
-    // that we align towards the lowest address.
-    uintptr_t alignedPos = (alignStartPos + alignment - 1) & ~(alignment - 1);
-
-    // alignedPos is the address sought for.
-    returnValue->alignedBuffer = (void*)alignedPos;
+    uintptr_t alignedPos = GetRightAlign(alignStartPos, alignment);
+    returnValue->alignedBuffer = reinterpret_cast<void*> (alignedPos);
 
     // Store the address to the AlignedMemory struct in the header so that a
     // it's possible to reclaim all memory.
     uintptr_t headerPos = alignedPos;
     headerPos -= sizeof(uintptr_t);
-    void* headerPtr = (void*) headerPos;
+    void* headerPtr = reinterpret_cast<void*> (headerPos);
     uintptr_t headerValue = (uintptr_t)returnValue;
     memcpy(headerPtr,&headerValue,sizeof(uintptr_t));
 
@@ -118,4 +141,4 @@ void AlignedFree(void* memBlock)
     }
     delete deleteMemory;
 }
-} // namespace webrtc
+}  // namespace webrtc

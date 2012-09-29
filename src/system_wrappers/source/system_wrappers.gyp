@@ -202,6 +202,7 @@
             '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'sources': [
+            'aligned_malloc_unittest.cc',
             'condition_variable_unittest.cc',
             'cpu_wrapper_unittest.cc',
             'cpu_measurement_harness.h',
