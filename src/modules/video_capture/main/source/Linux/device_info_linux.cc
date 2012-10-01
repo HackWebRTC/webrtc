@@ -142,7 +142,7 @@ WebRtc_Word32 DeviceInfoLinux::GetDeviceName(
 
     if (cap.bus_info[0] != 0) // may not available in all drivers
     {
-        // copy device id 
+        // copy device id
         if (deviceUniqueIdUTF8Length >= strlen((const char*) cap.bus_info))
         {
             memset(deviceUniqueIdUTF8, 0, deviceUniqueIdUTF8Length);

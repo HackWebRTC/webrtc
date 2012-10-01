@@ -237,6 +237,7 @@ void ViEAutoTest::ViECaptureStandardTest() {
   /// **************************************************************
   //  Testing finished. Tear down Video Engine
   /// **************************************************************
+  delete dev_info;
 
   // Stop all started capture devices.
   for (int device_index = 0; device_index < number_of_capture_devices;

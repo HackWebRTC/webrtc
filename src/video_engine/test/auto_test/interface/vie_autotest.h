@@ -16,24 +16,22 @@
 #define WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_VIE_AUTOTEST_H_
 
 #include "common_types.h"
-
-#include "voe_base.h"
-#include "voe_codec.h"
-#include "voe_hardware.h"
-#include "voe_audio_processing.h"
-
-#include "vie_base.h"
-#include "vie_capture.h"
-#include "vie_codec.h"
-#include "vie_file.h"
-#include "vie_network.h"
-#include "vie_render.h"
-#include "vie_rtp_rtcp.h"
-#include "vie_defines.h"
-#include "vie_errors.h"
-#include "video_render_defines.h"
-
-#include "vie_autotest_defines.h"
+#include "gflags/gflags.h"
+#include "modules/video_render/main/interface/video_render_defines.h"
+#include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
+#include "video_engine/include/vie_base.h"
+#include "video_engine/include/vie_capture.h"
+#include "video_engine/include/vie_codec.h"
+#include "video_engine/include/vie_file.h"
+#include "video_engine/include/vie_network.h"
+#include "video_engine/include/vie_render.h"
+#include "video_engine/include/vie_rtp_rtcp.h"
+#include "video_engine/include/vie_errors.h"
+#include "video_engine/vie_defines.h"
+#include "voice_engine/include/voe_audio_processing.h"
+#include "voice_engine/include/voe_base.h"
+#include "voice_engine/include/voe_codec.h"
+#include "voice_engine/include/voe_hardware.h"
 
 #ifndef WEBRTC_ANDROID
 #include <string>
@@ -43,6 +41,8 @@ class TbCaptureDevice;
 class TbInterfaces;
 class TbVideoChannel;
 class ViEToFileRenderer;
+
+DECLARE_bool(include_timing_dependent_tests);
 
 // This class provides a bunch of methods, implemented across several .cc
 // files, which runs tests on the video engine. All methods will report

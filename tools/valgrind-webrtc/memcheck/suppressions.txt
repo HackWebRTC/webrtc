@@ -22,3 +22,108 @@
    fun:_ZN15TbCaptureDeviceC1ER12TbInterfaces
    fun:_ZN12_GLOBAL__N_114ViERtpFuzzTest5SetUpEv
 }
+
+{
+   bug_329_1
+   Memcheck:Unaddressable
+   fun:I422ToARGBRow_SSSE3
+   fun:I420ToARGB
+   fun:ConvertFromI420
+   fun:_ZN6webrtc15ConvertFromI420EPKhiNS_9VideoTypeEiiiPh
+   fun:_ZN6webrtc15VideoX11Channel12DeliverFrameEPhij
+   fun:_ZN6webrtc15VideoX11Channel11RenderFrameEjRNS_10VideoFrameE
+   fun:_ZN6webrtc19IncomingVideoStream26IncomingVideoStreamProcessEv
+   fun:_ZN6webrtc19IncomingVideoStream28IncomingVideoStreamThreadFunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:StartThread
+}
+
+{
+   bug_329_2
+   Memcheck:Leak
+   fun:_Znw*
+   fun:_ZN6webrtc18videocapturemodule16VideoCaptureImpl16CreateDeviceInfoEi
+   fun:_ZN6webrtc19VideoCaptureFactory16CreateDeviceInfoEi
+   fun:_ZN11ViEAutoTest22ViECaptureStandardTestEv
+   fun:_ZN12_GLOBAL__N_160ViEStandardIntegrationTest_RunsCaptureTestWithoutErrors_Test8TestBodyEv
+}
+
+{
+   bug_329_3
+   Memcheck:Unaddressable
+   fun:I422ToARGBRow_SSSE3
+   fun:I420ToARGB
+   fun:ConvertFromI420
+   fun:_ZN6webrtc15ConvertFromI420EPKhiNS_9VideoTypeEiiiPh
+   fun:_ZN6webrtc15VideoX11Channel12DeliverFrameEPhij
+   fun:_ZN6webrtc15VideoX11Channel11RenderFrameEjRNS_10VideoFrameE
+   fun:_ZN6webrtc19IncomingVideoStream26IncomingVideoStreamProcessEv
+   fun:_ZN6webrtc19IncomingVideoStream28IncomingVideoStreamThreadFunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:StartThread
+}
+
+{
+   bug_329_4
+   Memcheck:Param
+   socketcall.sendto(msg)
+   obj:/lib/x86_64-linux-gnu/libpthread-2.15.so
+   fun:_ZN6webrtc14UdpSocketPosix6SendToEPKaiRKNS_13SocketAddressE
+   fun:_ZN6webrtc16UdpTransportImpl10SendPacketEiPKvi
+   fun:_ZN6webrtc9ViESender10SendPacketEiPKvi
+   fun:_ZN6webrtc9RTPSender13SendToNetworkEPhttlNS_11StorageTypeE
+   fun:_ZN6webrtc14RTPSenderVideo15SendVideoPacketEPhttlNS_11StorageTypeEb
+   fun:_ZN6webrtc14RTPSenderVideo7SendVP8ENS_9FrameTypeEajlPKhjPKNS_22RTPFragmentationHeaderEPKNS_18RTPVideoTypeHeaderE
+   fun:_ZN6webrtc14RTPSenderVideo9SendVideoENS_18RtpVideoCodecTypesENS_9FrameTypeEajlPKhjPKNS_22RTPFragmentationHeaderEPNS_21VideoCodecInformationEPKNS_18RTPVideoTypeHeaderE
+   fun:_ZN6webrtc9RTPSender16SendOutgoingDataENS_9FrameTypeEajlPKhjPKNS_22RTPFragmentationHeaderEPNS_21VideoCodecInformationEPKNS_18RTPVideoTypeHeaderE
+   fun:_ZN6webrtc17ModuleRtpRtcpImpl16SendOutgoingDataENS_9FrameTypeEajlPKhjPKNS_22RTPFragmentationHeaderEPKNS_14RTPVideoHeaderE
+   fun:_ZN6webrtc17ModuleRtpRtcpImpl16SendOutgoingDataENS_9FrameTypeEajlPKhjPKNS_22RTPFragmentationHeaderEPKNS_14RTPVideoHeaderE
+   fun:_ZN6webrtc10ViEEncoder8SendDataENS_9FrameTypeEhjlPKhjRKNS_22RTPFragmentationHeaderEPKNS_14RTPVideoHeaderE
+   fun:_ZN6webrtc23VCMEncodedFrameCallback7EncodedERNS_12EncodedImageEPKNS_17CodecSpecificInfoEPKNS_22RTPFragmentationHeaderE
+   fun:_ZN6webrtc10VP8Encoder20GetEncodedPartitionsERKNS_10VideoFrameE
+   fun:_ZN6webrtc10VP8Encoder6EncodeERKNS_10VideoFrameEPKNS_17CodecSpecificInfoENS_14VideoFrameTypeE
+   fun:_ZN6webrtc17VCMGenericEncoder6EncodeERKNS_10VideoFrameEPKNS_17CodecSpecificInfoENS_9FrameTypeE
+   fun:_ZN6webrtc21VideoCodingModuleImpl13AddVideoFrameERKNS_10VideoFrameEPKNS_19VideoContentMetricsEPKNS_17CodecSpecificInfoE
+   fun:_ZN6webrtc10ViEEncoder12DeliverFrameEiPNS_10VideoFrameEiPKj
+   fun:_ZN6webrtc20ViEFrameProviderBase12DeliverFrameEPNS_10VideoFrameEiPKj
+   fun:_ZN6webrtc11ViECapturer16DeliverI420FrameEPNS_10VideoFrameE
+   fun:_ZN6webrtc11ViECapturer17ViECaptureProcessEv
+}
+
+{
+   bug_329_5
+   Memcheck:Param
+   socketcall.sendto(msg)
+   obj:/lib/x86_64-linux-gnu/libpthread-2.15.so
+   fun:_ZN6webrtc14UdpSocketPosix6SendToEPKaiRKNS_13SocketAddressE
+   fun:_ZN6webrtc16UdpTransportImpl14SendRTCPPacketEiPKvi
+   fun:_ZN6webrtc9ViESender14SendRTCPPacketEiPKvi
+   fun:_ZN6webrtc10RTCPSender13SendToNetworkEPKht
+   fun:_ZN6webrtc10RTCPSender8SendRTCPEjiPKtbm
+   fun:_ZN6webrtc17ModuleRtpRtcpImpl7ProcessEv
+   fun:_ZN6webrtc17ProcessThreadImpl7ProcessEv
+   fun:_ZN6webrtc17ProcessThreadImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:StartThread
+}
+
+{
+   bug_891
+   Memcheck:Unaddressable
+   fun:XShmPutImage
+   fun:_ZN6webrtc15VideoX11Channel12DeliverFrameEPhij
+   fun:_ZN6webrtc15VideoX11Channel11RenderFrameEjRNS_10VideoFrameE
+   fun:_ZN6webrtc19IncomingVideoStream26IncomingVideoStreamProcessEv
+   fun:_ZN6webrtc19IncomingVideoStream28IncomingVideoStreamThreadFunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:StartThread
+}
+
+{
+   ignore_common_benevolent_trace_library_errors
+   Memcheck:Uninitialized
+   ...
+   fun:vsnprintf
+   fun:_ZN6webrtc5Trace3AddENS_10TraceLevelENS_11TraceModuleEiPKcz
+   ...
+}

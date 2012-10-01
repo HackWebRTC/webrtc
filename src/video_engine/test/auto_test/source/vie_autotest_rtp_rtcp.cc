@@ -8,19 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-//
-// vie_autotest_rtp_rtcp.cc
-//
 #include <iostream>
 
 #include "engine_configurations.h"
-#include "tb_capture_device.h"
-#include "tb_external_transport.h"
-#include "tb_interfaces.h"
-#include "tb_video_channel.h"
-#include "testsupport/fileutils.h"
-#include "vie_autotest.h"
-#include "vie_autotest_defines.h"
+#include "video_engine/test/libvietest/include/tb_capture_device.h"
+#include "video_engine/test/libvietest/include/tb_external_transport.h"
+#include "video_engine/test/libvietest/include/tb_interfaces.h"
+#include "video_engine/test/libvietest/include/tb_video_channel.h"
+#include "test/testsupport/fileutils.h"
+#include "video_engine/test/auto_test/interface/vie_autotest.h"
+#include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
 
 class ViERtpObserver: public webrtc::ViERTPObserver
 {
@@ -150,11 +147,13 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
 
     AutoTestSleep(1000);
 
-    char remoteCName[webrtc::ViERTP_RTCP::KMaxRTCPCNameLength];
-    memset(remoteCName, 0, webrtc::ViERTP_RTCP::KMaxRTCPCNameLength);
-    EXPECT_EQ(0, ViE.rtp_rtcp->GetRemoteRTCPCName(
-        tbChannel.videoChannel, remoteCName));
-    EXPECT_STRCASEEQ(sendCName, remoteCName);
+    if (FLAGS_include_timing_dependent_tests) {
+      char remoteCName[webrtc::ViERTP_RTCP::KMaxRTCPCNameLength];
+      memset(remoteCName, 0, webrtc::ViERTP_RTCP::KMaxRTCPCNameLength);
+      EXPECT_EQ(0, ViE.rtp_rtcp->GetRemoteRTCPCName(
+          tbChannel.videoChannel, remoteCName));
+      EXPECT_STRCASEEQ(sendCName, remoteCName);
+    }
 
     //
     //  Statistics
@@ -228,10 +227,12 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
         &estimated_bandwidth));
     EXPECT_GT(estimated_bandwidth, 0u);
 
-    EXPECT_EQ(0, ViE.rtp_rtcp->GetEstimatedReceiveBandwidth(
-        tbChannel.videoChannel,
-        &estimated_bandwidth));
-    EXPECT_GT(estimated_bandwidth, 0u);
+    if (FLAGS_include_timing_dependent_tests) {
+      EXPECT_EQ(0, ViE.rtp_rtcp->GetEstimatedReceiveBandwidth(
+          tbChannel.videoChannel,
+          &estimated_bandwidth));
+      EXPECT_GT(estimated_bandwidth, 0u);
+    }
 
     // Check that rec stats extended max is greater than what we've sent.
     EXPECT_GE(recExtendedMax, sentExtendedMax);
@@ -298,16 +299,20 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     AutoTestSleep(2000);
     unsigned int receivedSSRC = myTransport.ReceivedSSRC();
     ViETest::Log("Received SSRC %u\n", receivedSSRC);
-    EXPECT_EQ(setSSRC, receivedSSRC);
 
-    unsigned int localSSRC = 0;
-    EXPECT_EQ(0, ViE.rtp_rtcp->GetLocalSSRC(tbChannel.videoChannel, localSSRC));
-    EXPECT_EQ(setSSRC, localSSRC);
+    if (FLAGS_include_timing_dependent_tests) {
+      EXPECT_EQ(setSSRC, receivedSSRC);
 
-    unsigned int remoteSSRC = 0;
-    EXPECT_EQ(0, ViE.rtp_rtcp->GetRemoteSSRC(
-        tbChannel.videoChannel, remoteSSRC));
-    EXPECT_EQ(setSSRC, remoteSSRC);
+      unsigned int localSSRC = 0;
+      EXPECT_EQ(0, ViE.rtp_rtcp->GetLocalSSRC(
+          tbChannel.videoChannel, localSSRC));
+      EXPECT_EQ(setSSRC, localSSRC);
+
+      unsigned int remoteSSRC = 0;
+      EXPECT_EQ(0, ViE.rtp_rtcp->GetRemoteSSRC(
+          tbChannel.videoChannel, remoteSSRC));
+      EXPECT_EQ(setSSRC, remoteSSRC);
+    }
 
     EXPECT_EQ(0, ViE.base->StopSend(tbChannel.videoChannel));
 

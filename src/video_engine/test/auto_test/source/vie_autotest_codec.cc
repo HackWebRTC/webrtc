@@ -203,20 +203,10 @@ void ViEAutoTest::ViECodecStandardTest() {
       EXPECT_EQ(video_codec.codecType,
                 codec_observer.incoming_codec_.codecType);
 
-      int max_number_of_possible_frames = video_codec.maxFramerate
-          * KAutoTestSleepTimeMs / 1000;
-
-      if (video_codec.codecType == webrtc::kVideoCodecI420) {
-        // Don't expect too much from I420, it requires a lot of bandwidth.
-        EXPECT_GT(frame_counter.num_frames_, 0);
-      } else {
-#ifdef WEBRTC_ANDROID
-        // To get the autotest to pass on some slow devices
-        EXPECT_GT(frame_counter.num_frames_, max_number_of_possible_frames / 6);
-#else
-        EXPECT_GT(frame_counter.num_frames_, max_number_of_possible_frames / 4);
-#endif
-      }
+      // This requirement is quite relaxed, but it's hard to say what's an
+      // acceptable number of received frames when we take into account the
+      // wide variety of devices (and that we run under valgrind).
+      EXPECT_GT(frame_counter.num_frames_, 0);
 
       EXPECT_EQ(0, image_process->DeregisterRenderEffectFilter(
           video_channel));

@@ -25,6 +25,10 @@
 #include "video_engine/test/libvietest/include/tb_interfaces.h"
 #include "video_engine/test/libvietest/include/tb_video_channel.h"
 
+DEFINE_bool(include_timing_dependent_tests, true,
+            "If true, we will include tests / parts of tests that are known "
+            "to break in slow execution environments (such as valgrind).");
+
 // ViETest implementation
 FILE* ViETest::log_file_ = NULL;
 char* ViETest::log_str_ = NULL;
