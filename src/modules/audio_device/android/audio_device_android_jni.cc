@@ -243,7 +243,7 @@ WebRtc_Word32 AudioDeviceAndroidJni::Init()
     }
 
     // RECORDING
-    const char* threadName = "webrtc_jni_audio_capture_thread";
+    const char* threadName = "jni_audio_capture_thread";
     _ptrThreadRec = ThreadWrapper::CreateThread(RecThreadFunc, this,
                                                 kRealtimePriority, threadName);
     if (_ptrThreadRec == NULL)
@@ -265,7 +265,7 @@ WebRtc_Word32 AudioDeviceAndroidJni::Init()
     _recThreadID = threadID;
 
     // PLAYOUT
-    threadName = "webrtc_jni_audio_render_thread";
+    threadName = "jni_audio_render_thread";
     _ptrThreadPlay = ThreadWrapper::CreateThread(PlayThreadFunc, this,
                                                  kRealtimePriority, threadName);
     if (_ptrThreadPlay == NULL)

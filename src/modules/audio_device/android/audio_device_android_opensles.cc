@@ -1076,7 +1076,7 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::StartRecording() {
       rec_available_queue_.push(rec_buffer_[i]);
     }
 
-    const char* threadName = "webrtc_opensles_audio_capture_thread";
+    const char* threadName = "sles_audio_capture_thread";
     _ptrThreadRec = ThreadWrapper::CreateThread(RecThreadFunc, this,
             kRealtimePriority, threadName);
     if (_ptrThreadRec == NULL)
