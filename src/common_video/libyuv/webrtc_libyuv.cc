@@ -194,14 +194,15 @@ int ConvertToI420(VideoType src_video_type,
                                ConvertVideoType(src_video_type));
 }
 
-int ConvertFromI420(const uint8_t* src_frame, int src_stride,
+int ConvertFromI420(const VideoFrame& src_frame, int src_stride,
                     VideoType dst_video_type, int dst_sample_size,
-                    int width, int height,
                     uint8_t* dst_frame) {
+  int height = src_frame.Height();
+  int width = src_frame.Width();
   int abs_height = (height < 0) ? -height : height;
   int half_width = (width + 1) >> 1;
   int half_height = (abs_height + 1) >> 1;
-  const uint8_t* src_yplane = src_frame;
+  const uint8_t* src_yplane = src_frame.Buffer();
   const uint8_t* src_uplane = src_yplane + width * abs_height;
   const uint8_t* src_vplane = src_uplane + half_width * half_height;
   return libyuv::ConvertFromI420(src_yplane, src_stride,

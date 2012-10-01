@@ -38,8 +38,7 @@ public:
 
     WebRtc_Word32 FrameSizeChange(WebRtc_Word32 width, WebRtc_Word32 height,
                                   WebRtc_Word32 numberOfStreams);
-    WebRtc_Word32 DeliverFrame(unsigned char* buffer, WebRtc_Word32 bufferSize,
-                               unsigned WebRtc_Word32 /*timeStamp90kHz*/);
+    WebRtc_Word32 DeliverFrame(const VideoFrame& videoFrame);
     WebRtc_Word32 GetFrameSize(WebRtc_Word32& width, WebRtc_Word32& height);
     WebRtc_Word32 Init(Window window, float left, float top, float right,
                        float bottom);

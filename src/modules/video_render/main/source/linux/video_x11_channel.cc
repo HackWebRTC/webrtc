@@ -44,19 +44,15 @@ VideoX11Channel::~VideoX11Channel()
 }
 
 WebRtc_Word32 VideoX11Channel::RenderFrame(const WebRtc_UWord32 streamId,
-                                               VideoFrame& videoFrame)
-{
-    CriticalSectionScoped cs(&_crit);
-    if (_width != (WebRtc_Word32) videoFrame.Width() || _height
-            != (WebRtc_Word32) videoFrame.Height())
-    {
-        if (FrameSizeChange(videoFrame.Width(), videoFrame.Height(), 1) == -1)
-        {
-            return -1;
-        }
+                                           VideoFrame& videoFrame) {
+  CriticalSectionScoped cs(&_crit);
+  if (_width != (WebRtc_Word32) videoFrame.Width() || _height
+      != (WebRtc_Word32) videoFrame.Height()) {
+      if (FrameSizeChange(videoFrame.Width(), videoFrame.Height(), 1) == -1) {
+        return -1;
     }
-    return DeliverFrame(videoFrame.Buffer(), videoFrame.Length(),
-                        videoFrame.TimeStamp());
+  }
+  return DeliverFrame(videoFrame);
 }
 
 WebRtc_Word32 VideoX11Channel::FrameSizeChange(WebRtc_Word32 width,
@@ -76,33 +72,26 @@ WebRtc_Word32 VideoX11Channel::FrameSizeChange(WebRtc_Word32 width,
     return 0;
 }
 
-WebRtc_Word32 VideoX11Channel::DeliverFrame(unsigned char* buffer,
-                                                WebRtc_Word32 bufferSize,
-                                                unsigned WebRtc_Word32 /*timeStamp90kHz*/)
-{
-    CriticalSectionScoped cs(&_crit);
-    if (!_prepared)
-    {
-        return 0;
-    }
-
-    if (!dispArray[_dispCount])
-    {
-        return -1;
-    }
-
-    unsigned char *pBuf = buffer;
-    // convert to RGB32, setting stride = width.
-    ConvertFromI420(pBuf, _width, kARGB, 0, _width, _height, _buffer);
-
-    // put image in window
-    XShmPutImage(_display, _window, _gc, _image, 0, 0, _xPos, _yPos, _width,
-                 _height, True);
-
-    // very important for the image to update properly!
-    XSync(_display, False);
+WebRtc_Word32 VideoX11Channel::DeliverFrame(const VideoFrame& videoFrame) {
+  CriticalSectionScoped cs(&_crit);
+  if (!_prepared) {
     return 0;
+  }
 
+  if (!dispArray[_dispCount]) {
+    return -1;
+  }
+
+  // convert to RGB32, setting stride = width.
+  ConvertFromI420(videoFrame, _width, kARGB, 0, _buffer);
+
+  // Put image in window.
+  XShmPutImage(_display, _window, _gc, _image, 0, 0, _xPos, _yPos, _width,
+               _height, True);
+
+  // Very important for the image to update properly!
+  XSync(_display, False);
+  return 0;
 }
 
 WebRtc_Word32 VideoX11Channel::GetFrameSize(WebRtc_Word32& width,

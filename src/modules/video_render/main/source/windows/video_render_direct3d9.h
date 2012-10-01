@@ -43,10 +43,8 @@ public:
     // Called when the incomming frame size and/or number of streams in mix changes
     virtual int FrameSizeChange(int width, int height, int numberOfStreams);
 
-    // A new frame is delivered
-    virtual int DeliverFrame(unsigned char* buffer,
-                             int bufferSize,
-                             unsigned int timeStame90kHz);
+    // A new frame is delivered.
+    virtual int DeliverFrame(const VideoFrame& videoFrame);
     virtual WebRtc_Word32 RenderFrame(const WebRtc_UWord32 streamId,
                                       VideoFrame& videoFrame);
 

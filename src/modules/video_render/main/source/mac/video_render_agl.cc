@@ -80,21 +80,21 @@ VideoChannelAGL::~VideoChannelAGL()
     }
 }
 
-WebRtc_Word32 VideoChannelAGL::RenderFrame(const WebRtc_UWord32 streamId, VideoFrame& videoFrame)
-{
-    _owner->LockAGLCntx();
-    if(_width != videoFrame.Width() ||
-            _height != videoFrame.Height())
-    {
-        if(FrameSizeChange(videoFrame.Width(), videoFrame.Height(), 1) == -1)
-        { //WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s:%d FrameSizeChange returned an error", __FUNCTION__, __LINE__);
-            _owner->UnlockAGLCntx();
-            return -1;
-        }
+WebRtc_Word32 VideoChannelAGL::RenderFrame(const WebRtc_UWord32 streamId,
+                                           VideoFrame& videoFrame) {
+  _owner->LockAGLCntx();
+  if (_width != videoFrame.Width() ||
+      _height != videoFrame.Height()) {
+    if (FrameSizeChange(videoFrame.Width(), videoFrame.Height(), 1) == -1) {
+      WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s:%d FrameSize
+                   Change returned an error", __FUNCTION__, __LINE__);
+      _owner->UnlockAGLCntx();
+      return -1;
     }
+  }
 
-    _owner->UnlockAGLCntx();
-    return DeliverFrame(videoFrame.Buffer(), videoFrame.Length(), videoFrame.TimeStamp());
+  _owner->UnlockAGLCntx();
+  return DeliverFrame(videoFrame);
 }
 
 int VideoChannelAGL::UpdateSize(int /*width*/, int /*height*/)
@@ -220,63 +220,58 @@ int VideoChannelAGL::FrameSizeChange(int width, int height, int numberOfStreams)
 }
 
 // Called from video engine when a new frame should be rendered.
-int VideoChannelAGL::DeliverFrame(unsigned char* buffer, int bufferSize, unsigned int /*timeStamp90kHz*/)
-{
-    _owner->LockAGLCntx();
+int VideoChannelAGL::DeliverFrame(const VideoFrame& videoFrame) {
+  _owner->LockAGLCntx();
 
-    if (_texture == 0)
-    {
-        _owner->UnlockAGLCntx();
-        return 0;
-    }
-
-    if (bufferSize != _incommingBufferSize)
-    {
-        _owner->UnlockAGLCntx();
-        return -1;
-    }
-
-    // Setting stride = width.
-    int rgbret = ConvertFromYV12(buffer, _width, kBGRA, 0, _width, _height,
-                                 _buffer);
-    if (rgbret < 0)
-    {
-        _owner->UnlockAGLCntx();
-        return -1;
-    }
-
-    aglSetCurrentContext(_aglContext);
-
-    // Put the new frame into the graphic card texture.
-    glBindTexture(GL_TEXTURE_RECTANGLE_EXT, _texture); // Make sure this texture is the active one
-    GLenum glErr = glGetError();
-    if (glErr != GL_NO_ERROR)
-    {
-        _owner->UnlockAGLCntx();
-        return -1;
-    }
-
-    // Copy buffer to texture
-    glTexSubImage2D(GL_TEXTURE_RECTANGLE_EXT,
-            0, // Level, not use
-            0, // start point x, (low left of pic)
-            0, // start point y,
-            _width, // width
-            _height, // height
-            _pixelFormat, // pictue format for _buffer
-            _pixelDataType, // data type of _buffer
-            (const GLvoid*) _buffer); // the pixel data
-
-    if (glGetError() != GL_NO_ERROR)
-    {
-        _owner->UnlockAGLCntx();
-        return -1;
-    }
-
-    _bufferIsUpdated = true;
+  if (_texture == 0) {
     _owner->UnlockAGLCntx();
-
     return 0;
+  }
+
+  if (bufferSize != _incommingBufferSize) {
+    _owner->UnlockAGLCntx();
+    return -1;
+  }
+
+  // Setting stride = width.
+  int rgbret = ConvertFromYV12(videoFrame.Buffer(), _width, kBGRA, 0, _width,
+                               _height, _buffer);
+  if (rgbret < 0) {
+    _owner->UnlockAGLCntx();
+    return -1;
+  }
+
+  aglSetCurrentContext(_aglContext);
+
+  // Put the new frame into the graphic card texture.
+  // Make sure this texture is the active one
+  glBindTexture(GL_TEXTURE_RECTANGLE_EXT, _texture);
+  GLenum glErr = glGetError();
+  if (glErr != GL_NO_ERROR) {
+    _owner->UnlockAGLCntx();
+    return -1;
+  }
+
+  // Copy buffer to texture
+  glTexSubImage2D(GL_TEXTURE_RECTANGLE_EXT,
+                  0, // Level, not use
+                  0, // start point x, (low left of pic)
+                  0, // start point y,
+                  _width, // width
+                  _height, // height
+                  _pixelFormat, // pictue format for _buffer
+                  _pixelDataType, // data type of _buffer
+                  (const GLvoid*) _buffer); // the pixel data
+
+  if (glGetError() != GL_NO_ERROR) {
+    _owner->UnlockAGLCntx();
+    return -1;
+  }
+
+  _bufferIsUpdated = true;
+  _owner->UnlockAGLCntx();
+
+  return 0;
 }
 
 int VideoChannelAGL::RenderOffScreenBuffer()

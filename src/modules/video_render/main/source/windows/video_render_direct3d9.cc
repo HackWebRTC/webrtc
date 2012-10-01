@@ -153,65 +153,55 @@ WebRtc_Word32 D3D9Channel::RenderFrame(const WebRtc_UWord32 streamId,
             return -1;
         }
     }
-    return DeliverFrame(videoFrame.Buffer(), videoFrame.Length(),
-                        videoFrame.TimeStamp());
+    return DeliverFrame(videoFrame);
 }
 
 // Called from video engine when a new frame should be rendered.
-int D3D9Channel::DeliverFrame(unsigned char* buffer,
-                                  int bufferSize,
-                                  unsigned int timeStamp90kHz)
-{
+int D3D9Channel::DeliverFrame(const VideoFrame& videoFrame) {
+  WEBRTC_TRACE(kTraceStream, kTraceVideo, -1,
+               "DeliverFrame to D3D9Channel");
+
+  CriticalSectionScoped cs(_critSect);
+
+  // FIXME if _bufferIsUpdated is still true (not be renderred), do we want to
+  // update the texture? probably not
+  if (_bufferIsUpdated) {
     WEBRTC_TRACE(kTraceStream, kTraceVideo, -1,
-                 "DeliverFrame to D3D9Channel");
+                 "Last frame hasn't been rendered yet. Drop this frame.");
+    return -1;
+  }
 
-    CriticalSectionScoped cs(_critSect);
+  if (!_pd3dDevice) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
+                 "D3D for rendering not initialized.");
+    return -1;
+  }
 
-    //FIXME if _bufferIsUpdated is still true (not be renderred), do we what to update the texture?)
-    //probably not
-    if (_bufferIsUpdated)
-    {
-        WEBRTC_TRACE(kTraceStream, kTraceVideo, -1,
-                     "Last frame hasn't been rendered yet. Drop this frame.");
-        return -1;
-    }
+  if (!_pTexture) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
+                 "Texture for rendering not initialized.");
+    return -1;
+  }
 
-    if (!_pd3dDevice)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
-                     "D3D for rendering not initialized.");
-        return -1;
-    }
+  D3DLOCKED_RECT lr;
 
-    if (!_pTexture)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
-                     "Texture for rendering not initialized.");
-        return -1;
-    }
+  if (FAILED(_pTexture->LockRect(0, &lr, NULL, 0))) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
+                 "Failed to lock a texture in D3D9 Channel.");
+    return -1;
+  }
+  UCHAR* pRect = (UCHAR*) lr.pBits;
 
-    D3DLOCKED_RECT lr;
+  ConvertFromI420(videoFrame, _width, kARGB, 0, pRect);
 
-    if (FAILED(_pTexture->LockRect(0, &lr, NULL, 0)))
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
-                     "Failed to lock a texture in D3D9 Channel.");
-        return -1;
-    }
-    UCHAR* pRect = (UCHAR*) lr.pBits;
+  if (FAILED(_pTexture->UnlockRect(0))) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
+                 "Failed to unlock a texture in D3D9 Channel.");
+    return -1;
+  }
 
-    ConvertFromI420(buffer, _width, kARGB, 0, _width, _height, pRect);
-
-    if (FAILED(_pTexture->UnlockRect(0)))
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
-                     "Failed to unlock a texture in D3D9 Channel.");
-        return -1;
-    }
-
-    _bufferIsUpdated = true;
-
-    return 0;
+  _bufferIsUpdated = true;
+  return 0;
 }
 
 // Called by d3d channel owner to indicate the frame/texture has been rendered off

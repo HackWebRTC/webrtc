@@ -195,8 +195,7 @@ WebRtc_Word32 ViEExternalRendererImpl::RenderFrame(
     case kVideoARGB4444:
     case kVideoARGB1555 :
       {
-        ConvertFromI420(video_frame.Buffer(), video_frame.Width(), type, 0,
-                        video_frame.Width(), video_frame.Height(),
+        ConvertFromI420(video_frame, video_frame.Width(), type, 0,
                         converted_frame_->Buffer());
       }
       break;

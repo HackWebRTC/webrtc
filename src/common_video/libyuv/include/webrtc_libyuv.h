@@ -100,13 +100,11 @@ int ConvertToI420(VideoType src_video_type,
 //   - src_stride       : Number of bytes in a row of the src Y plane.
 //   - dst_video_type   : Type of output video.
 //   - dst_sample_size  : Required only for the parsing of MJPG.
-//   - width            : Width in pixels.
-//   - height           : Height in pixels.
 //   - dst_frame        : Pointer to a destination frame.
 // Return value: 0 if OK, < 0 otherwise.
-int ConvertFromI420(const uint8_t* src_frame, int src_stride,
+// It is assumed that source and destination have equal height.
+int ConvertFromI420(const VideoFrame& src_frame, int src_stride,
                     VideoType dst_video_type, int dst_sample_size,
-                    int width, int height,
                     uint8_t* dst_frame);
 // ConvertFrom YV12.
 // Interface - same as above.

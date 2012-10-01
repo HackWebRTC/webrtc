@@ -18,6 +18,7 @@
 
 #include "video_render.h"
 
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "tb_interfaces.h"
 #include "tb_video_channel.h"
 #include "tb_capture_device.h"
@@ -57,15 +58,13 @@ public:
 
     virtual int DeliverFrame(unsigned char* buffer, int bufferSize,
                              uint32_t time_stamp,
-                             int64_t render_time)
-    {
-        if (bufferSize != _width * _height * 3 / 2)
-        {
-            ViETest::Log("incorrect render buffer received, of length = %d\n",
-                         bufferSize);
-            return 0;
-        }
+                             int64_t render_time) {
+      if (bufferSize != CalcBufferSize(webrtc::kI420, _width, _height)) {
+        ViETest::Log("Incorrect render buffer received, of length = %d\n",
+                     bufferSize);
         return 0;
+      }
+      return 0;
     }
 
 public:

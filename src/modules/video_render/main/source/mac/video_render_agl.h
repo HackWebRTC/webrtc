@@ -45,7 +45,7 @@ public:
 	VideoChannelAGL(AGLContext& aglContext, int iId, VideoRenderAGL* owner);
     virtual ~VideoChannelAGL();
     virtual int FrameSizeChange(int width, int height, int numberOfStreams);
-    virtual int DeliverFrame(unsigned char* buffer, int bufferSize, unsigned int timeStame90kHz);    
+    virtual int DeliverFrame(const VideoFrame& videoFrame);
     virtual int UpdateSize(int width, int height);
     int SetStreamSettings(int streamId, float startWidth, float startHeight, float stopWidth, float stopHeight);
     int SetStreamCropSettings(int streamId, float startWidth, float startHeight, float stopWidth, float stopHeight);

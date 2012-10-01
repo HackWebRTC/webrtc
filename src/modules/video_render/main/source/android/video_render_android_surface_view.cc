@@ -459,8 +459,8 @@ void AndroidSurfaceViewChannel::DeliverFrame(JNIEnv* jniEnv) {
 
   if(_javaByteBufferObj && _bitmapWidth && _bitmapHeight) {
     const int conversionResult =
-        ConvertFromI420((unsigned char* )_bufferToRender.Buffer(), _bitmapWidth,
-                        kRGB565, 0, _bitmapWidth, _bitmapHeight, _directBuffer);
+        ConvertFromI420(_bufferToRender, _bitmapWidth,
+                        kRGB565, 0, _directBuffer);
 
     if (conversionResult < 0)  {
       WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s: Color conversion"

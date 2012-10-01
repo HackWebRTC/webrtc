@@ -44,7 +44,7 @@ public:
     virtual ~VideoChannelNSOpenGL();
 
     // A new frame is delivered
-    virtual int DeliverFrame(unsigned char* buffer, int bufferSize, unsigned int timeStame90kHz);
+    virtual int DeliverFrame(const VideoFrame& videoFrame);
 
     // Called when the incomming frame size and/or number of streams in mix changes
     virtual int FrameSizeChange(int width, int height, int numberOfStreams);

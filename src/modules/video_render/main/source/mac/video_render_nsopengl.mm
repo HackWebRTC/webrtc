@@ -91,25 +91,22 @@ WebRtc_Word32 VideoChannelNSOpenGL::GetChannelProperties(float& left,
     return 0;
 }
 
-WebRtc_Word32 VideoChannelNSOpenGL::RenderFrame(const WebRtc_UWord32 /*streamId*/, VideoFrame& videoFrame)
-{
+WebRtc_Word32 VideoChannelNSOpenGL::RenderFrame(
+  const WebRtc_UWord32 /*streamId*/, VideoFrame& videoFrame) {
 
-    _owner->LockAGLCntx();
+  _owner->LockAGLCntx();
 
-    if(_width != (int)videoFrame.Width() ||
-            _height != (int)videoFrame.Height())
-    {
-        if(FrameSizeChange(videoFrame.Width(), videoFrame.Height(), 1) == -1)
-        {
-            _owner->UnlockAGLCntx();
-            return -1;
-        }
-    }
+  if(_width != (int)videoFrame.Width() ||
+     _height != (int)videoFrame.Height()) {
+      if(FrameSizeChange(videoFrame.Width(), videoFrame.Height(), 1) == -1) {
+        _owner->UnlockAGLCntx();
+        return -1;
+      }
+  }
+  int ret = DeliverFrame(videoFrame);
 
-    int ret = DeliverFrame(videoFrame.Buffer(), videoFrame.Length(), videoFrame.TimeStamp());
-
-    _owner->UnlockAGLCntx();
-    return ret;
+  _owner->UnlockAGLCntx();
+  return ret;
 }
 
 int VideoChannelNSOpenGL::UpdateSize(int width, int height)
@@ -156,7 +153,7 @@ int VideoChannelNSOpenGL::FrameSizeChange(int width, int height, int numberOfStr
     }
 
     _incommingBufferSize = CalcBufferSize(kI420, _width, _height);
-    _bufferSize = CalcBufferSize(kARGB, _width, _height);//_width * _height * bytesPerPixel;
+    _bufferSize = CalcBufferSize(kARGB, _width, _height);
     _buffer = new unsigned char [_bufferSize];
     memset(_buffer, 0, _bufferSize * sizeof(unsigned char));
 
@@ -211,66 +208,61 @@ int VideoChannelNSOpenGL::FrameSizeChange(int width, int height, int numberOfStr
     return 0;
 }
 
-int VideoChannelNSOpenGL::DeliverFrame(unsigned char* buffer, int bufferSize, unsigned int /*timeStamp90kHz*/)
-{
+int VideoChannelNSOpenGL::DeliverFrame(const VideoFrame& videoFrame) {
 
-    _owner->LockAGLCntx();
+  _owner->LockAGLCntx();
 
-    if (_texture == 0)
-    {
-        _owner->UnlockAGLCntx();
-        return 0;
-    }
-
-    if (bufferSize != _incommingBufferSize)
-    {
-        _owner->UnlockAGLCntx();
-        return -1;
-    }
-
-    int rgbRet = ConvertFromYV12(buffer, _width,
-                                 kBGRA, 0, _width, _height,
-                                 _buffer);
-    if (rgbRet < 0)
-    {
-        _owner->UnlockAGLCntx();
-        return -1;
-    }
-
-    [_nsglContext makeCurrentContext];
-
-
-    glBindTexture(GL_TEXTURE_RECTANGLE_EXT, _texture); // Make sure this texture is the active one
-    GLenum glErr = glGetError();
-    if (glErr != GL_NO_ERROR)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "ERROR %d while calling glBindTexture", glErr);
-        _owner->UnlockAGLCntx();
-        return -1;
-    }
-
-    glTexSubImage2D(GL_TEXTURE_RECTANGLE_EXT,
-            0, // Level, not use
-            0, // start point x, (low left of pic)
-            0, // start point y,
-            _width, // width
-            _height, // height
-            _pixelFormat, // pictue format for _buffer
-            _pixelDataType, // data type of _buffer
-            (const GLvoid*) _buffer); // the pixel data
-
-    glErr = glGetError();
-    if (glErr != GL_NO_ERROR)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "ERROR %d while calling glTexSubImage2d", glErr);
-        _owner->UnlockAGLCntx();
-        return -1;
-    }
-
-    _bufferIsUpdated = true;
-
+  if (_texture == 0) {
     _owner->UnlockAGLCntx();
     return 0;
+  }
+
+  if (static_cast<int>(videoFrame.Length()) != _incommingBufferSize) {
+    _owner->UnlockAGLCntx();
+    return -1;
+  }
+
+  int rgbRet = ConvertFromYV12(videoFrame.Buffer(), _width,
+                               kBGRA, 0, _width, _height, _buffer);
+  if (rgbRet < 0) {
+    _owner->UnlockAGLCntx();
+    return -1;
+  }
+
+  [_nsglContext makeCurrentContext];
+
+  // Make sure this texture is the active one
+  glBindTexture(GL_TEXTURE_RECTANGLE_EXT, _texture);
+  GLenum glErr = glGetError();
+  if (glErr != GL_NO_ERROR) {
+    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
+    "ERROR %d while calling glBindTexture", glErr);
+    _owner->UnlockAGLCntx();
+    return -1;
+  }
+
+  glTexSubImage2D(GL_TEXTURE_RECTANGLE_EXT,
+                  0, // Level, not use
+                  0, // start point x, (low left of pic)
+                  0, // start point y,
+                  _width, // width
+                  _height, // height
+                  _pixelFormat, // pictue format for _buffer
+                  _pixelDataType, // data type of _buffer
+                  (const GLvoid*) _buffer); // the pixel data
+
+  glErr = glGetError();
+  if (glErr != GL_NO_ERROR) {
+    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
+    "ERROR %d while calling glTexSubImage2d", glErr);
+    _owner->UnlockAGLCntx();
+    return -1;
+  }
+
+  _bufferIsUpdated = true;
+
+  _owner->UnlockAGLCntx();
+  return 0;
 }
 
 int VideoChannelNSOpenGL::RenderOffScreenBuffer()
