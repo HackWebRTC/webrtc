@@ -883,7 +883,7 @@ Notice for all the files in this folder.
                 <path refid="project.all.jars.path" />
                 <path refid="tested.project.classpath" />
             </path>
-            <property name="webrtc.modules.dir" value="../../../../modules" />
+            <property name="webrtc.modules.dir" value="../../../modules" />
             <javac encoding="${java.encoding}"
                     source="${java.source}" target="${java.target}"
                     debug="true" extdirs="" includeantruntime="false"
