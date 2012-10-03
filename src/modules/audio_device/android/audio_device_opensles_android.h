@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_ANDROID_OPENSLES_H
-#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_ANDROID_OPENSLES_H
+#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_OPENSLES_ANDROID_H
+#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_OPENSLES_ANDROID_H
 
 #include "audio_device_generic.h"
 #include "critical_section_wrapper.h"
@@ -313,4 +313,4 @@ private:
 
 } // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_ANDROID_OPENSLES_H
+#endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_OPENSLES_ANDROID_H

@@ -12,8 +12,8 @@
  *  Android audio device interface (JNI/AudioTrack/AudioRecord usage)
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_ANDROID_JNI_H
-#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_ANDROID_JNI_H
+#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_JNI_ANDROID_H
+#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_JNI_ANDROID_H
 
 #include "audio_device_generic.h"
 #include "critical_section_wrapper.h"
@@ -270,4 +270,4 @@ class AudioDeviceAndroidJni : public AudioDeviceGeneric {
 
 } // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_ANDROID_JNI_H
+#endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_JNI_ANDROID_H

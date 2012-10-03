@@ -122,13 +122,13 @@
               'conditions': [
                 ['enable_android_opensl==1', {
                   'sources': [
-                    'android/audio_device_android_opensles.cc',
-                    'android/audio_device_android_opensles.h',
+                    'android/audio_device_opensles_android.cc',
+                    'android/audio_device_opensles_android.h',
                   ],
                 }, {
                   'sources': [
-                    'android/audio_device_android_jni.cc',
-                    'android/audio_device_android_jni.h',
+                    'android/audio_device_jni_android.cc',
+                    'android/audio_device_jni_android.h',
                   ],
                 }],
               ],

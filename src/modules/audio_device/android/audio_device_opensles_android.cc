@@ -14,7 +14,7 @@
 #include <time.h>
 
 #include "audio_device_utility.h"
-#include "audio_device_android_opensles.h"
+#include "audio_device_opensles_android.h"
 #include "audio_device_config.h"
 
 #include "trace.h"

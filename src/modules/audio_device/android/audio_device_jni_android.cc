@@ -19,7 +19,7 @@
 #include <stdlib.h>
 
 #include "audio_device_utility.h"
-#include "audio_device_android_jni.h"
+#include "audio_device_jni_android.h"
 #include "audio_device_config.h"
 
 #include "trace.h"
