@@ -43,8 +43,6 @@
         'remote_rate_control.cc',
         'remote_rate_control.h',
         'rtp_to_ntp.cc',
-        '../../video_engine/stream_synchronization.cc',
-        '../../video_engine/stream_synchronization.h',
       ], # source
     },
   ], # targets
