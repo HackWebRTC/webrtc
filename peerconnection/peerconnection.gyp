@@ -12,6 +12,7 @@
     'peerconnection_sample': 'third_party/libjingle/source/talk/examples/peerconnection',
   },  
   'conditions': [
+    # TODO(wu): Merge the target for different platforms.
     ['OS=="win"', {
       'targets': [
         {
@@ -89,5 +90,16 @@
         },
       ],  # targets
     }, ],  # OS="linux"
+    # There's no peerconnection_client implementation for Mac.
+    # But add this dummy peerconnection_client target so that the runhooks
+    # won't complain.
+    ['OS=="mac"', {
+      'targets': [
+        {
+          'target_name': 'peerconnection_client',
+          'type': 'none',
+        },
+      ],
+    }, ],
   ],
 }

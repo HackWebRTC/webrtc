@@ -102,9 +102,18 @@ hooks = [
     "action": ["python", "trunk/tools/clang/scripts/update.py", "--mac-only"],
   },
   {
+    # Update the cygwin mount on Windows.
+    # This is necessary to get the correct mapping between e.g. /bin and the
+    # cygwin path on Windows. Without it we can't run bash scripts in actions.
+    # Ideally this should be solved in "pylib/gyp/msvs_emulation.py".
+    "pattern": ".",
+    "action": ["python", "trunk/build/win/setup_cygwin_mount.py",
+               "--win-only"],
+  },
+  {
     # A change to a .gyp, .gypi, or to GYP itself should run the generator.
     "pattern": ".",
-    "action": ["python", "trunk/build/gyp_chromium", "--depth=trunk", "trunk/peerconnection.gyp"],
+    "action": ["python", "trunk/build/gyp_chromium", "--depth=trunk", "trunk/peerconnection_all.gyp"],
   },
 ]
 
