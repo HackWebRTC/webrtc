@@ -23,7 +23,7 @@
 // Returns true if |size| and |alignment| are valid combinations.
 bool CorrectUsage(size_t size, size_t alignment) {
   webrtc::Allocator<char>::scoped_ptr_aligned scoped(
-    static_cast<char*> (webrtc::AlignedMalloc(size, alignment)));
+      webrtc::AlignedMalloc<char>(size, alignment));
   if (scoped.get() == NULL) {
     return false;
   }
@@ -36,14 +36,15 @@ TEST(AlignedMalloc, GetRightAlign) {
   const size_t alignment = 32;
   const size_t left_missalignment = 8;
   webrtc::Allocator<char>::scoped_ptr_aligned scoped(
-    static_cast<char*> (webrtc::AlignedMalloc(size, alignment)));
+      webrtc::AlignedMalloc<char>(size, alignment));
   EXPECT_TRUE(scoped.get() != NULL);
   const uintptr_t aligned_address = reinterpret_cast<uintptr_t> (scoped.get());
   const uintptr_t missaligned_address = aligned_address - left_missalignment;
-  const void* missaligned_ptr =  reinterpret_cast<void*> (missaligned_address);
-  const void* realignedPtr = webrtc::GetRightAlign(
-    missaligned_ptr, alignment);
-  EXPECT_EQ(scoped.get(), realignedPtr);
+  const char* missaligned_ptr = reinterpret_cast<const char*>(
+      missaligned_address);
+  const char* realigned_ptr = webrtc::GetRightAlign(
+      missaligned_ptr, alignment);
+  EXPECT_EQ(scoped.get(), realigned_ptr);
 }
 
 TEST(AlignedMalloc, IncorrectSize) {
