@@ -87,9 +87,9 @@ TEST(TestI420VideoFrame, CopyFrame) {
   memset(buffer_y, 16, kSizeY);
   memset(buffer_u, 8, kSizeU);
   memset(buffer_v, 4, kSizeV);
-  frame2.CreateFrame(kSizeY, *buffer_y,
-                     kSizeU, *buffer_u,
-                     kSizeV, *buffer_v,
+  frame2.CreateFrame(kSizeY, buffer_y,
+                     kSizeU, buffer_u,
+                     kSizeV, buffer_v,
                      width + 5, height + 5, stride_y + 5, stride_u, stride_v);
   // Frame of smaller dimensions - allocated sizes should not vary.
   EXPECT_EQ(0, frame1.CopyFrame(frame2));
@@ -119,9 +119,9 @@ TEST(TestI420VideoFrame, CopyBuffer) {
   memset(buffer_y, 16, kSizeY);
   memset(buffer_u, 8, kSizeUv);
   memset(buffer_v, 4, kSizeUv);
-  frame2.CreateFrame(kSizeY, *buffer_y,
-                     kSizeUv, *buffer_u,
-                     kSizeUv, *buffer_v,
+  frame2.CreateFrame(kSizeY, buffer_y,
+                     kSizeUv, buffer_u,
+                     kSizeUv, buffer_v,
                      width, height, stride_y, stride_uv, stride_uv);
   // Copy memory (at least allocated size).
   EXPECT_EQ(memcmp(buffer_y, frame2.buffer(kYPlane), kSizeY), 0);
@@ -167,9 +167,9 @@ TEST(TestI420VideoFrame, FrameSwap) {
   memset(buffer_y1, 2, kSizeY1);
   memset(buffer_u1, 4, kSizeU1);
   memset(buffer_v1, 8, kSizeV1);
-  frame1.CreateFrame(kSizeY1, *buffer_y1,
-                     kSizeU1, *buffer_u1,
-                     kSizeV1, *buffer_v1,
+  frame1.CreateFrame(kSizeY1, buffer_y1,
+                     kSizeU1, buffer_u1,
+                     kSizeV1, buffer_v1,
                      width1, height1, stride_y1, stride_u1, stride_v1);
   // Initialize frame2 values.
   EXPECT_EQ(0, frame2.CreateEmptyFrame(width2, height2,
@@ -183,9 +183,9 @@ TEST(TestI420VideoFrame, FrameSwap) {
   memset(buffer_y2, 0, kSizeY2);
   memset(buffer_u2, 1, kSizeU2);
   memset(buffer_v2, 2, kSizeV2);
-  frame2.CreateFrame(kSizeY2, *buffer_y2,
-                     kSizeU2, *buffer_u2,
-                     kSizeV2, *buffer_v2,
+  frame2.CreateFrame(kSizeY2, buffer_y2,
+                     kSizeU2, buffer_u2,
+                     kSizeV2, buffer_v2,
                      width2, height2, stride_y2, stride_u2, stride_v2);
   // Copy frames for subsequent comparison.
   I420VideoFrame frame1_copy, frame2_copy;

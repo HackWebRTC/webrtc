@@ -38,9 +38,9 @@ int I420VideoFrame::CreateEmptyFrame(int width, int height,
   return 0;
 }
 
-int I420VideoFrame::CreateFrame(int size_y, const uint8_t& buffer_y,
-                                int size_u, const uint8_t& buffer_u,
-                                int size_v, const uint8_t& buffer_v,
+int I420VideoFrame::CreateFrame(int size_y, const uint8_t* buffer_y,
+                                int size_u, const uint8_t* buffer_u,
+                                int size_v, const uint8_t* buffer_v,
                                 int width, int height,
                                 int stride_y, int stride_u, int stride_v) {
   if (size_y < 1 || size_u < 1 || size_v < 1)
@@ -56,9 +56,9 @@ int I420VideoFrame::CreateFrame(int size_y, const uint8_t& buffer_y,
 }
 
 int I420VideoFrame::CopyFrame(const I420VideoFrame& videoFrame) {
-  int ret = CreateFrame(videoFrame.size(kYPlane), *videoFrame.buffer(kYPlane),
-                        videoFrame.size(kUPlane), *videoFrame.buffer(kUPlane),
-                        videoFrame.size(kVPlane), *videoFrame.buffer(kVPlane),
+  int ret = CreateFrame(videoFrame.size(kYPlane), videoFrame.buffer(kYPlane),
+                        videoFrame.size(kUPlane), videoFrame.buffer(kUPlane),
+                        videoFrame.size(kVPlane), videoFrame.buffer(kVPlane),
                         videoFrame.width_, videoFrame.height_,
                         videoFrame.stride(kYPlane), videoFrame.stride(kUPlane),
                         videoFrame.stride(kVPlane));
@@ -77,6 +77,13 @@ void I420VideoFrame::SwapFrame(I420VideoFrame* videoFrame) {
   std::swap(height_, videoFrame->height_);
   std::swap(timestamp_, videoFrame->timestamp_);
   std::swap(render_time_ms_, videoFrame->render_time_ms_);
+}
+
+uint8_t* I420VideoFrame::buffer(PlaneType type) {
+  Plane* plane_ptr = GetPlane(type);
+  if (plane_ptr)
+    return plane_ptr->buffer();
+  return NULL;
 }
 
 const uint8_t* I420VideoFrame::buffer(PlaneType type) const {
@@ -128,6 +135,20 @@ int I420VideoFrame::CheckDimensions(int width, int height,
 }
 
 const Plane* I420VideoFrame::GetPlane(PlaneType type) const {
+  switch (type) {
+    case kYPlane :
+      return &y_plane_;
+    case kUPlane :
+      return &u_plane_;
+    case kVPlane :
+      return &v_plane_;
+    default:
+      assert(false);
+  }
+  return NULL;
+}
+
+Plane* I420VideoFrame::GetPlane(PlaneType type) {
   switch (type) {
     case kYPlane :
       return &y_plane_;

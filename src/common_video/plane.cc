@@ -57,10 +57,10 @@ int Plane::Copy(const Plane& plane) {
   return 0;
 }
 
-int Plane::Copy(int size, int stride, const uint8_t& buffer) {
+int Plane::Copy(int size, int stride, const uint8_t* buffer) {
   if (MaybeResize(size) < 0)
     return -1;
-  memcpy(buffer_.get(), &buffer, size);
+  memcpy(buffer_.get(), buffer, size);
   plane_size_ = size;
   stride_ = stride;
   return 0;

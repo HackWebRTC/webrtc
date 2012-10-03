@@ -35,7 +35,7 @@ class Plane {
   // Copy buffer: If current size is smaller
   // than current size, then a buffer of sufficient size will be allocated.
   // Return value: 0 on success ,-1 on error.
-  int Copy(int size, int stride, const uint8_t& buffer);
+  int Copy(int size, int stride, const uint8_t* buffer);
 
   // Swap plane data.
   void Swap(Plane& plane);
@@ -48,6 +48,8 @@ class Plane {
 
   // Return data pointer.
   const uint8_t* buffer() const {return buffer_.get();}
+  // Overloading with non-const.
+  uint8_t* buffer() {return buffer_.get();}
 
  private:
   // Resize when needed: If current allocated size is less than new_size, buffer

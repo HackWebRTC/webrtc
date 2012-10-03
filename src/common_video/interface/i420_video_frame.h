@@ -43,9 +43,9 @@ class I420VideoFrame {
   // CreateFrame: Sets the frame's members and buffers. If required size is
   // bigger than allocated one, new buffers of adequate size will be allocated.
   // Return value: 0 on success ,-1 on error.
-  int CreateFrame(int size_y, const uint8_t& buffer_y,
-                  int size_u, const uint8_t& buffer_u,
-                  int size_v, const uint8_t& buffer_v,
+  int CreateFrame(int size_y, const uint8_t* buffer_y,
+                  int size_u, const uint8_t* buffer_u,
+                  int size_v, const uint8_t* buffer_v,
                   int width, int height,
                   int stride_y, int stride_u, int stride_v);
 
@@ -58,6 +58,8 @@ class I420VideoFrame {
   void SwapFrame(I420VideoFrame* videoFrame);
 
   // Get pointer to buffer per plane.
+  uint8_t* buffer(PlaneType type);
+  // Overloading with const.
   const uint8_t* buffer(PlaneType type) const;
 
   // Get allocated size per plane.
@@ -98,6 +100,8 @@ class I420VideoFrame {
                       int stride_y, int stride_u, int stride_v);
   // Get the pointer to a specific plane.
   const Plane* GetPlane(PlaneType type) const;
+  // Overloading with non-const.
+  Plane* GetPlane(PlaneType type);
 
   Plane y_plane_;
   Plane u_plane_;

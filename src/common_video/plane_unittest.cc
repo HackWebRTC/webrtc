@@ -56,7 +56,7 @@ TEST(TestPlane, PlaneCopy) {
   uint8_t buffer1[100];
   size1 = 80;
   memset(&buffer1, 0, size1);
-  plane2.Copy(size1, stride1, *buffer1);
+  plane2.Copy(size1, stride1, buffer1);
   EXPECT_GE(plane2.allocated_size(), size1);
   EXPECT_EQ(0, memcmp(buffer1, plane2.buffer(), size1));
 }
