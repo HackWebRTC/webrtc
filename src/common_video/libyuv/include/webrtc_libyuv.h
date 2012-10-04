@@ -139,10 +139,18 @@ int MirrorI420UpDown(const VideoFrame* src_frame,
                      VideoFrame* dst_frame);
 
 // Compute PSNR for an I420 frame (all planes).
+double I420PSNR(const VideoFrame* ref_frame,
+                const VideoFrame* test_frame);
+// Compute SSIM for an I420 frame (all planes).
+double I420SSIM(const VideoFrame* ref_frame,
+                const VideoFrame* test_frame);
+
+// TODO(mikhal): Remove these functions and keep only the above functionality.
+// Compute PSNR for an I420 buffer (all planes).
 double I420PSNR(const uint8_t* ref_frame,
                 const uint8_t* test_frame,
                 int width, int height);
-// Compute SSIM for an I420 frame (all planes).
+// Compute SSIM for an I420 buffer (all planes).
 double I420SSIM(const uint8_t* ref_frame,
                 const uint8_t* test_frame,
                 int width, int height);

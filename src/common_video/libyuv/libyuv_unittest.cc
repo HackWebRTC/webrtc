@@ -158,8 +158,7 @@ TEST_F(TestLibYuv, ConvertTest) {
              output_file) != static_cast<unsigned int>(frame_length_)) {
     return;
   }
-  psnr = I420PSNR(orig_frame.Buffer(), res_i420_frame.Buffer(),
-                  width_, height_);
+  psnr = I420PSNR(&orig_frame, &res_i420_frame);
   // Optimization Speed- quality trade-off => 45 dB only (platform dependant).
   EXPECT_GT(ceil(psnr), 44);
   j++;
@@ -171,8 +170,7 @@ TEST_F(TestLibYuv, ConvertTest) {
                                kUYVY, 0, out_uyvy_buffer));
   EXPECT_EQ(0, ConvertToI420(kUYVY, out_uyvy_buffer, 0, 0, width_, height_,
             0, kRotateNone, &res_i420_frame));
-  psnr = I420PSNR(orig_frame.Buffer(), res_i420_frame.Buffer(),
-                  width_, height_);
+  psnr = I420PSNR(&orig_frame, &res_i420_frame);
   EXPECT_EQ(48.0, psnr);
   if (fwrite(res_i420_frame.Buffer(), 1, frame_length_,
              output_file) !=  static_cast<unsigned int>(frame_length_)) {
@@ -211,8 +209,7 @@ TEST_F(TestLibYuv, ConvertTest) {
     return;
   }
 
-  psnr = I420PSNR(orig_frame.Buffer(), res_i420_frame.Buffer(),
-                  width_, height_);
+  psnr = I420PSNR(&orig_frame, &res_i420_frame);
   EXPECT_EQ(48.0, psnr);
   j++;
   delete [] outYV120Buffer;
@@ -229,8 +226,7 @@ TEST_F(TestLibYuv, ConvertTest) {
              output_file) !=  static_cast<unsigned int>(frame_length_)) {
     return;
   }
-  psnr = I420PSNR(orig_frame.Buffer(), res_i420_frame.Buffer(),
-                  width_, height_);
+  psnr = I420PSNR(&orig_frame, &res_i420_frame);
   EXPECT_EQ(48.0, psnr);
 
   // printf("\nConvert #%d I420 <-> RGB565\n", j);
@@ -245,8 +241,7 @@ TEST_F(TestLibYuv, ConvertTest) {
              output_file) !=  static_cast<unsigned int>(frame_length_)) {
     return;
   }
-  psnr = I420PSNR(orig_frame.Buffer(), res_i420_frame.Buffer(),
-                  width_, height_);
+  psnr = I420PSNR(&orig_frame, &res_i420_frame);
   // TODO(leozwang) Investigate the right psnr should be set for I420ToRGB565,
   // Another example is I420ToRGB24, the psnr is 44
   EXPECT_GT(ceil(psnr), 40);
@@ -263,8 +258,7 @@ TEST_F(TestLibYuv, ConvertTest) {
              output_file) !=  static_cast<unsigned int>(frame_length_)) {
     return;
   }
-  psnr = I420PSNR(orig_frame.Buffer(), res_i420_frame.Buffer(),
-                  width_, height_);
+  psnr = I420PSNR(&orig_frame, &res_i420_frame);
   // TODO(leozwang) Investigate the right psnr should be set for I420ToARGB8888,
   EXPECT_GT(ceil(psnr), 42);
 

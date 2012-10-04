@@ -285,6 +285,69 @@ int MirrorI420UpDown(const VideoFrame* src_frame,
 }
 
 // Compute PSNR for an I420 frame (all planes)
+double I420PSNR(const VideoFrame* ref_frame,
+                const VideoFrame* test_frame) {
+  if (!ref_frame || !test_frame)
+    return -1;
+  else if ((ref_frame->Width() !=  test_frame->Width()) ||
+          (ref_frame->Height() !=  test_frame->Height()))
+    return -1;
+  else if (ref_frame->Width() == 0u || ref_frame->Height() == 0u)
+    return -1;
+  int height = ref_frame->Height() ;
+  int width = ref_frame->Width();
+  int half_width = (width + 1) >> 1;
+  int half_height = (height + 1) >> 1;
+  const uint8_t* src_y_a = ref_frame->Buffer();
+  const uint8_t* src_u_a = src_y_a + width * height;
+  const uint8_t* src_v_a = src_u_a + half_width * half_height;
+  const uint8_t* src_y_b = test_frame->Buffer();
+  const uint8_t* src_u_b = src_y_b + width * height;
+  const uint8_t* src_v_b = src_u_b + half_width * half_height;
+  // In the following: stride is determined by width.
+  double psnr = libyuv::I420Psnr(src_y_a, width,
+                                 src_u_a, half_width,
+                                 src_v_a, half_width,
+                                 src_y_b, width,
+                                 src_u_b, half_width,
+                                 src_v_b, half_width,
+                                 width, height);
+  // LibYuv sets the max psnr value to 128, we restrict it to 48.
+  // In case of 0 mse in one frame, 128 can skew the results significantly.
+  return (psnr > 48.0) ? 48.0 : psnr;
+}
+// Compute SSIM for an I420 frame (all planes)
+double I420SSIM(const VideoFrame* ref_frame,
+                const VideoFrame* test_frame) {
+  if (!ref_frame || !test_frame)
+    return -1;
+  else if ((ref_frame->Width() !=  test_frame->Width()) ||
+          (ref_frame->Height() !=  test_frame->Height()))
+    return -1;
+  else if (ref_frame->Width() == 0u || ref_frame->Height() == 0u)
+    return -1;
+  int height = ref_frame->Height() ;
+  int width = ref_frame->Width();
+  int half_width = (width + 1) >> 1;
+  int half_height = (height + 1) >> 1;
+  const uint8_t* src_y_a = ref_frame->Buffer();
+  const uint8_t* src_u_a = src_y_a + width * height;
+  const uint8_t* src_v_a = src_u_a + half_width * half_height;
+  const uint8_t* src_y_b = test_frame->Buffer();
+  const uint8_t* src_u_b = src_y_b + width * height;
+  const uint8_t* src_v_b = src_u_b + half_width * half_height;
+  int stride_y = width;
+  int stride_uv = half_width;
+  return libyuv::I420Ssim(src_y_a, stride_y,
+                          src_u_a, stride_uv,
+                          src_v_a, stride_uv,
+                          src_y_b, stride_y,
+                          src_u_b, stride_uv,
+                          src_v_b, stride_uv,
+                          width, height);
+}
+
+// Compute PSNR for an I420 frame (all planes)
 double I420PSNR(const uint8_t* ref_frame,
                 const uint8_t* test_frame,
                 int width, int height) {
