@@ -8,6 +8,8 @@
 
 LOCAL_PATH := $(call my-dir)
 
+include $(call all-makefiles-under, $(LOCAL_PATH))
+
 MY_LIBS_PATH := ../../../../../out/Debug/obj.target
 
 include $(CLEAR_VARS)
@@ -311,6 +313,7 @@ LOCAL_STATIC_LIBRARIES := \
     libjpeg_turbo \
     libaudioproc_debug_proto \
     libprotobuf_lite \
-    libvpx
+    libvpx \
+    $(MY_SUPPLEMENTAL_LIBS)
 
 include $(BUILD_SHARED_LIBRARY)
