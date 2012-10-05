@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 
+#include "video_engine/test/auto_test/primitives/input_helpers.h"
+
 namespace webrtc {
 
 typedef std::vector<std::string> Choices;
@@ -52,13 +54,12 @@ class ChoiceBuilder {
   // Prints the choice list and requests input from the input source. Returns
   // the choice number (choices start at 1).
   int Choose();
-
  private:
+  std::string MakeTitleWithOptions();
+
   Choices choices_;
-  int default_choice_;
-  std::string default_choice_text_;
+  InputBuilder input_helper_;
   std::string title_;
-  FILE* input_source_;
 };
 
 // Convenience function that creates a choice builder given a string where

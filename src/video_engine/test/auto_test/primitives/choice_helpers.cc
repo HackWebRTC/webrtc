@@ -17,39 +17,16 @@
 
 namespace webrtc {
 
-static const int kNoDefault = 0;
-
 ChoiceBuilder::ChoiceBuilder(const Choices& choices)
-    : choices_(choices), default_choice_(kNoDefault), input_source_(stdin) {
+    : choices_(choices),
+      input_helper_(new IntegerWithinRangeValidator(1, choices.size())) {
 }
 
 int ChoiceBuilder::Choose() {
-  if (!title_.empty()) {
-    printf("\n%s\n", title_.c_str());
-  }
-
-  Choices::const_iterator iterator = choices_.begin();
-  for (int number = 1; iterator != choices_.end(); ++iterator, ++number)
-    printf("  %d. %s\n", number, (*iterator).c_str());
-
-  if (default_choice_ != kNoDefault)
-    printf("  Hit enter for default (%s):\n", default_choice_text_.c_str());
-  printf("# ");
-  char input[8];
-  if (!fgets(input, 8, input_source_))
-    input[0] = '0';  // Make the selection fail
-  int selection;
-  if (input[0] == '\n')
-    selection = default_choice_;
-  else
-    selection = atoi(input);
-
-  if (selection < 1 || selection > static_cast<int>(choices_.size())) {
-    printf("Please select one of the given options.\n");
-    return Choose();
-  }
-
-  return selection;
+  std::string input = input_helper_
+      .WithTitle(MakeTitleWithOptions())
+      .AskForInput();
+  return atoi(input.c_str());
 }
 
 ChoiceBuilder& ChoiceBuilder::WithDefault(const std::string& default_choice) {
@@ -58,19 +35,33 @@ ChoiceBuilder& ChoiceBuilder::WithDefault(const std::string& default_choice) {
   assert(iterator != choices_.end() && "No such choice.");
 
   // Store the value as the choice number, e.g. its index + 1.
-  default_choice_ = (iterator - choices_.begin()) + 1;
-  default_choice_text_ = default_choice;
+  int choice_index = (iterator - choices_.begin()) + 1;
+  char number[16];
+  sprintf(number, "%d", choice_index);
+
+  input_helper_.WithDefault(number);
   return *this;
 }
 
 ChoiceBuilder& ChoiceBuilder::WithInputSource(FILE* input_source) {
-  input_source_ = input_source;
+  input_helper_.WithInputSource(input_source);
   return *this;
 }
 
 ChoiceBuilder& ChoiceBuilder::WithTitle(const std::string& title) {
   title_ = title;
   return *this;
+}
+
+std::string ChoiceBuilder::MakeTitleWithOptions() {
+  std::string title_with_options = title_;
+  Choices::const_iterator iterator = choices_.begin();
+  for (int number = 1; iterator != choices_.end(); ++iterator, ++number) {
+    char buffer[128];
+    sprintf(buffer, "\n  %d. %s", number, (*iterator).c_str());
+    title_with_options += buffer;
+  }
+  return title_with_options;
 }
 
 Choices SplitChoices(const std::string& raw_choices) {

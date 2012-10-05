@@ -62,11 +62,16 @@
         'primitives/choice_helpers_unittest.cc',
         'primitives/codec_primitives.cc',
         'primitives/codec_primitives.h',
+        'primitives/fake_stdin.h',
+        'primitives/fake_stdin.cc',
         'primitives/framedrop_primitives.h',
         'primitives/framedrop_primitives.cc',
         'primitives/framedrop_primitives_unittest.cc',
         'primitives/general_primitives.cc',
         'primitives/general_primitives.h',
+        'primitives/input_helpers.cc',
+        'primitives/input_helpers.h',
+        'primitives/input_helpers_unittest.cc',
 
         # Platform independent
         'source/vie_autotest.cc',

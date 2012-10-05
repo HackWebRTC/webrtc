@@ -8,30 +8,34 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <climits>
 #include <cstdarg>
 #include <cstdio>
+
+#include <algorithm>
 
 #include "video_engine/test/auto_test/interface/vie_autotest.h"
 #include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
 #include "video_engine/test/auto_test/primitives/choice_helpers.h"
+#include "video_engine/test/auto_test/primitives/input_helpers.h"
 
 #define VCM_RED_PAYLOAD_TYPE                            96
 #define VCM_ULPFEC_PAYLOAD_TYPE                         97
 #define DEFAULT_SEND_IP                                 "127.0.0.1"
-#define DEFAULT_VIDEO_PORT                              11111
+#define DEFAULT_VIDEO_PORT                              "11111"
 #define DEFAULT_VIDEO_CODEC                             "VP8"
-#define DEFAULT_VIDEO_CODEC_WIDTH                       640
-#define DEFAULT_VIDEO_CODEC_HEIGHT                      480
-#define DEFAULT_VIDEO_CODEC_BITRATE                     300
-#define DEFAULT_VIDEO_CODEC_MIN_BITRATE                 100
-#define DEFAULT_VIDEO_CODEC_MAX_BITRATE                 1000
-#define DEFAULT_AUDIO_PORT                              11113
+#define DEFAULT_VIDEO_CODEC_WIDTH                       "640"
+#define DEFAULT_VIDEO_CODEC_HEIGHT                      "480"
+#define DEFAULT_VIDEO_CODEC_BITRATE                     "300"
+#define DEFAULT_VIDEO_CODEC_MIN_BITRATE                 "100"
+#define DEFAULT_VIDEO_CODEC_MAX_BITRATE                 "1000"
+#define DEFAULT_AUDIO_PORT                              "11113"
 #define DEFAULT_AUDIO_CODEC                             "ISAC"
 #define DEFAULT_INCOMING_FILE_NAME                      "IncomingFile.avi"
 #define DEFAULT_OUTGOING_FILE_NAME                      "OutgoingFile.avi"
-#define DEFAULT_VIDEO_CODEC_MAX_FRAMERATE               30
+#define DEFAULT_VIDEO_CODEC_MAX_FRAMERATE               "30"
 #define DEFAULT_VIDEO_PROTECTION_METHOD                 "None"
-#define DEFAULT_TEMPORAL_LAYER                          0
+#define DEFAULT_TEMPORAL_LAYER                          "0"
 
 enum StatisticsType {
   kSendStatistic,
@@ -46,6 +50,7 @@ enum VideoProtectionMethod {
 };
 
 using webrtc::FromChoices;
+using webrtc::TypedInput;
 
 class ViEAutotestFileObserver : public webrtc::ViEFileObserver {
  public:
@@ -92,18 +97,18 @@ class ViEAutotestDecoderObserver : public webrtc::ViEDecoderObserver {
 bool GetVideoDevice(webrtc::ViEBase* vie_base,
                     webrtc::ViECapture* vie_capture,
                     char* capture_device_name, char* capture_device_unique_id);
-bool GetIPAddress(char* IP);
+std::string GetIPAddress();
 bool ValidateIP(std::string i_str);
 
 // The following are Print to stdout functions.
-void PrintCallInformation(char* IP,
-                          char* video_capture_device_name,
-                          char* video_capture_unique_id,
+void PrintCallInformation(const char* IP,
+                          const char* video_capture_device_name,
+                          const char* video_capture_unique_id,
                           webrtc::VideoCodec video_codec,
                           int video_tx_port,
                           int video_rx_port,
-                          char* audio_capture_device_name,
-                          char* audio_playbackDeviceName,
+                          const char* audio_capture_device_name,
+                          const char* audio_playbackDeviceName,
                           webrtc::CodecInst audio_codec,
                           int audio_tx_port,
                           int audio_rx_port,
@@ -125,24 +130,16 @@ void PrintVideoStreamInformation(webrtc::ViECodec* vie_codec,
 void PrintVideoCodec(webrtc::VideoCodec video_codec);
 
 // The following are video functions.
-// TODO(amyfong): change to pointers as input arguments
-// instead of references
-bool SetVideoPorts(int* tx_port, int* rx_port);
-bool SetVideoCodecType(webrtc::ViECodec* vie_codec,
+void GetVideoPorts(int* tx_port, int* rx_port);
+void SetVideoCodecType(webrtc::ViECodec* vie_codec,
                        webrtc::VideoCodec* video_codec);
-bool SetVideoCodecResolution(webrtc::ViECodec* vie_codec,
-                             webrtc::VideoCodec* video_codec);
-bool SetVideoCodecSize(webrtc::ViECodec* vie_codec,
-                       webrtc::VideoCodec* video_codec);
-bool SetVideoCodecBitrate(webrtc::ViECodec* vie_codec,
-                          webrtc::VideoCodec* video_codec);
-bool SetVideoCodecMinBitrate(webrtc::ViECodec* vie_codec,
-                             webrtc::VideoCodec* video_codec);
-bool SetVideoCodecMaxBitrate(webrtc::ViECodec* vie_codec,
-                             webrtc::VideoCodec* video_codec);
-bool SetVideoCodecMaxFramerate(webrtc::ViECodec* vie_codec,
-                               webrtc::VideoCodec* video_codec);
-bool SetVideoCodecTemporalLayer(webrtc::VideoCodec* video_codec);
+void SetVideoCodecResolution(webrtc::VideoCodec* video_codec);
+void SetVideoCodecSize(webrtc::VideoCodec* video_codec);
+void SetVideoCodecBitrate(webrtc::VideoCodec* video_codec);
+void SetVideoCodecMinBitrate(webrtc::VideoCodec* video_codec);
+void SetVideoCodecMaxBitrate(webrtc::VideoCodec* video_codec);
+void SetVideoCodecMaxFramerate(webrtc::VideoCodec* video_codec);
+void SetVideoCodecTemporalLayer(webrtc::VideoCodec* video_codec);
 VideoProtectionMethod GetVideoProtection();
 bool SetVideoProtection(webrtc::ViECodec* vie_codec,
                         webrtc::ViERTP_RTCP* vie_rtp_rtcp,
@@ -158,7 +155,7 @@ bool GetAudioDevices(webrtc::VoEBase* voe_base,
 bool GetAudioDevices(webrtc::VoEBase* voe_base,
                      webrtc::VoEHardware* voe_hardware,
                      int& recording_device_index, int& playback_device_index);
-bool GetAudioPorts(int* tx_port, int* rx_port);
+void GetAudioPorts(int* tx_port, int* rx_port);
 bool GetAudioCodec(webrtc::VoECodec* voe_codec,
                    webrtc::CodecInst& audio_codec);
 
@@ -244,8 +241,7 @@ int ViEAutoTest::ViECustomCall() {
                                          __LINE__);
 
   bool start_call = false;
-  const unsigned int kMaxIPLength = 16;
-  char ip_address[kMaxIPLength] = "";
+  std::string ip_address;
   const unsigned int KMaxUniqueIdLength = 256;
   char unique_id[KMaxUniqueIdLength] = "";
   char device_name[KMaxUniqueIdLength] = "";
@@ -267,8 +263,7 @@ int ViEAutoTest::ViECustomCall() {
 
   while (!start_call) {
     // Get the IP address to use from call.
-    memset(ip_address, 0, kMaxIPLength);
-    GetIPAddress(ip_address);
+    ip_address = GetIPAddress();
 
     // Get the video device to use for call.
     memset(device_name, 0, KMaxUniqueIdLength);
@@ -279,16 +274,16 @@ int ViEAutoTest::ViECustomCall() {
     // Get and set the video ports for the call.
     video_tx_port = 0;
     video_rx_port = 0;
-    SetVideoPorts(&video_tx_port, &video_rx_port);
+    GetVideoPorts(&video_tx_port, &video_rx_port);
 
     // Get and set the video codec parameters for the call.
     memset(&video_send_codec, 0, sizeof(webrtc::VideoCodec));
     SetVideoCodecType(vie_codec, &video_send_codec);
-    SetVideoCodecSize(vie_codec, &video_send_codec);
-    SetVideoCodecBitrate(vie_codec, &video_send_codec);
-    SetVideoCodecMinBitrate(vie_codec, &video_send_codec);
-    SetVideoCodecMaxBitrate(vie_codec, &video_send_codec);
-    SetVideoCodecMaxFramerate(vie_codec, &video_send_codec);
+    SetVideoCodecSize(&video_send_codec);
+    SetVideoCodecBitrate(&video_send_codec);
+    SetVideoCodecMinBitrate(&video_send_codec);
+    SetVideoCodecMaxBitrate(&video_send_codec);
+    SetVideoCodecMaxFramerate(&video_send_codec);
     SetVideoCodecTemporalLayer(&video_send_codec);
     remb = GetBitrateSignaling();
 
@@ -312,8 +307,8 @@ int ViEAutoTest::ViECustomCall() {
     GetAudioCodec(voe_codec, audio_codec);
 
     // Now ready to start the call.  Check user wants to continue.
-    PrintCallInformation(ip_address, device_name, unique_id, video_send_codec,
-                         video_tx_port, video_rx_port,
+    PrintCallInformation(ip_address.c_str(), device_name, unique_id,
+                         video_send_codec, video_tx_port, video_rx_port,
                          audio_capture_device_name, audio_playbackDeviceName,
                          audio_codec, audio_tx_port, audio_rx_port,
                          protection_method);
@@ -332,7 +327,7 @@ int ViEAutoTest::ViECustomCall() {
     // Configure audio channel first.
     audio_channel = voe_base->CreateChannel();
     error = voe_base->SetSendDestination(audio_channel, audio_tx_port,
-                                         ip_address);
+                                         ip_address.c_str());
     number_of_errors += ViETest::TestError(error == 0,
                                            "ERROR: %s at line %d",
                                            __FUNCTION__, __LINE__);
@@ -451,7 +446,7 @@ int ViEAutoTest::ViECustomCall() {
     number_of_errors += ViETest::TestError(error == 0,
                                            "ERROR: %s at line %d",
                                            __FUNCTION__, __LINE__);
-    error = vie_network->SetSendDestination(video_channel, ip_address,
+    error = vie_network->SetSendDestination(video_channel, ip_address.c_str(),
                                                 video_tx_port);
     number_of_errors += ViETest::TestError(error == 0,
                                            "ERROR: %s at line %d",
@@ -527,7 +522,7 @@ int ViEAutoTest::ViECustomCall() {
     printf("\n");
     int selection = FromChoices(
         "Stop the call\n"
-        "Modify the call\n").WithDefault("Stop the call").Choose();
+        "Modify the call\n").Choose();
 
     int file_selection = 0;
 
@@ -560,13 +555,13 @@ int ViEAutoTest::ViECustomCall() {
         case 2:
           // Change video codec.
           SetVideoCodecType(vie_codec, &video_send_codec);
-          SetVideoCodecSize(vie_codec, &video_send_codec);
-          SetVideoCodecBitrate(vie_codec, &video_send_codec);
-          SetVideoCodecMinBitrate(vie_codec, &video_send_codec);
-          SetVideoCodecMaxBitrate(vie_codec, &video_send_codec);
-          SetVideoCodecMaxFramerate(vie_codec, &video_send_codec);
+          SetVideoCodecSize(&video_send_codec);
+          SetVideoCodecBitrate(&video_send_codec);
+          SetVideoCodecMinBitrate(&video_send_codec);
+          SetVideoCodecMaxBitrate(&video_send_codec);
+          SetVideoCodecMaxFramerate(&video_send_codec);
           SetVideoCodecTemporalLayer(&video_send_codec);
-          PrintCallInformation(ip_address, device_name,
+          PrintCallInformation(ip_address.c_str(), device_name,
                                unique_id, video_send_codec,
                                video_tx_port, video_rx_port,
                                audio_capture_device_name,
@@ -583,8 +578,8 @@ int ViEAutoTest::ViECustomCall() {
           break;
         case 3:
           // Change Video codec size by common resolution.
-          SetVideoCodecResolution(vie_codec, &video_send_codec);
-          PrintCallInformation(ip_address, device_name,
+          SetVideoCodecResolution(&video_send_codec);
+          PrintCallInformation(ip_address.c_str(), device_name,
                                unique_id, video_send_codec,
                                video_tx_port, video_rx_port,
                                audio_capture_device_name,
@@ -601,8 +596,8 @@ int ViEAutoTest::ViECustomCall() {
           break;
         case 4:
           // Change video codec by size height and width.
-          SetVideoCodecSize(vie_codec, &video_send_codec);
-          PrintCallInformation(ip_address, device_name,
+          SetVideoCodecSize(&video_send_codec);
+          PrintCallInformation(ip_address.c_str(), device_name,
                                unique_id, video_send_codec,
                                video_tx_port, video_rx_port,
                                audio_capture_device_name,
@@ -809,7 +804,7 @@ int ViEAutoTest::ViECustomCall() {
           break;
         case 12:
           // Print Call information..
-          PrintCallInformation(ip_address, device_name,
+          PrintCallInformation(ip_address.c_str(), device_name,
                                unique_id, video_send_codec,
                                video_tx_port, video_rx_port,
                                audio_capture_device_name,
@@ -1123,148 +1118,55 @@ bool GetAudioDevices(webrtc::VoEBase* voe_base,
 
 // General helper functions.
 
-bool GetIPAddress(char* i_ip) {
-  char o_ip[16] = DEFAULT_SEND_IP;
-  std::string str;
-
-  while (1) {
-    std::cout << std::endl;
-    std::cout << "Enter destination IP. Press enter for default ("
-              << o_ip << "): ";
-    std::getline(std::cin, str);
-
-    if (str.compare("") == 0) {
-      // use default value;
-      strcpy(i_ip, o_ip);
-      return true;
+std::string GetIPAddress() {
+  class IpValidator : public webrtc::InputValidator {
+   public:
+    bool InputOk(const std::string& input) const {
+      // Just check quickly that it's on the form x.y.z.w
+      return std::count(input.begin(), input.end(), '.') == 3;
     }
-    if (ValidateIP(str) == false) {
-      std::cout << "Invalid entry. Try again." << std::endl;
-      continue;
-    }
-    // Done, copy std::string to c_string and return.
-    strcpy(i_ip, str.c_str());
-    return true;
-  }
-  assert(false);
-  return false;
-}
-
-bool ValidateIP(std::string i_str) {
-  if (0 == i_str.compare("")) {
-    return false;
-  }
-  return true;
+  };
+  return TypedInput()
+      .WithDefault(DEFAULT_SEND_IP)
+      .WithTitle("Enter destination IP.")
+      .WithInputValidator(new IpValidator())
+      .AskForInput();
 }
 
 // Video settings functions.
 
-bool SetVideoPorts(int* tx_port, int* rx_port) {
-  std::string str;
-  int port = 0;
+void GetVideoPorts(int* tx_port, int* rx_port) {
+  std::string tx_input = TypedInput()
+      .WithTitle("Enter video send port.")
+      .WithDefault(DEFAULT_VIDEO_PORT)
+      .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, 65536))
+      .AskForInput();
+  *tx_port = atoi(tx_input.c_str());
 
-  // Set to default values.
-  *tx_port = DEFAULT_VIDEO_PORT;
-  *rx_port = DEFAULT_VIDEO_PORT;
-
-  while (1) {
-    std::cout << "Enter video send port. Press enter for default ("
-              << *tx_port << "):  ";
-    std::getline(std::cin, str);
-    port = atoi(str.c_str());
-
-    if (port == 0) {
-      // Default value.
-      break;
-    } else {
-      // User selection.
-      if (port <= 0 || port > 63556) {
-        // Invalid selection.
-        continue;
-      } else {
-        *tx_port = port;
-        break;  // Move on to rx_port.
-      }
-    }
-  }
-
-  while (1) {
-    std::cout << "Enter video receive port. Press enter for default ("
-              << *rx_port << "):  ";
-    std::getline(std::cin, str);
-    port = atoi(str.c_str());
-
-    if (port == 0) {
-      // Default value
-      return true;
-    } else {
-      // User selection.
-      if (port <= 0 || port > 63556) {
-        // Invalid selection.
-        continue;
-      } else {
-        *rx_port = port;
-        return true;
-      }
-    }
-  }
-  assert(false);
-  return false;
+  std::string rx_input = TypedInput()
+      .WithTitle("Enter video receive port.")
+      .WithDefault(DEFAULT_VIDEO_PORT)
+      .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, 65536))
+      .AskForInput();
+  *rx_port = atoi(rx_input.c_str());
 }
 
 // Audio settings functions.
 
-bool GetAudioPorts(int* tx_port, int* rx_port) {
-  int port = 0;
-  std::string str;
+void GetAudioPorts(int* tx_port, int* rx_port) {
+  std::string tx_input = TypedInput()
+      .WithTitle("Enter audio send port.")
+      .WithDefault(DEFAULT_AUDIO_PORT)
+      .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, 65536))
+      .AskForInput();
+  *tx_port = atoi(tx_input.c_str());
 
-  // set to default values.
-  *tx_port = DEFAULT_AUDIO_PORT;
-  *rx_port = DEFAULT_AUDIO_PORT;
-
-  while (1) {
-    std::cout << "Enter audio send port. Press enter for default ("
-              << *tx_port << "):  ";
-    std::getline(std::cin, str);
-    port = atoi(str.c_str());
-
-    if (port == 0) {
-      // Default value.
-      break;
-    } else {
-      // User selection.
-      if (port <= 0 || port > 63556) {
-        // Invalid selection.
-        continue;
-      } else {
-        *tx_port = port;
-        break;  // Move on to rx_port.
-      }
-    }
-  }
-
-  while (1) {
-    std::cout << "Enter audio receive port. Press enter for default ("
-              << *rx_port << "):  ";
-    std::getline(std::cin, str);
-    port = atoi(str.c_str());
-
-    if (port == 0) {
-      // Default value.
-      return true;
-    } else {
-      // User selection.
-      if (port <= 0 || port > 63556) {
-        // Invalid selection.
-        continue;
-      } else {
-        *rx_port = port;
-        return true;
-      }
-    }
-  }
-  assert(false);
-  return false;
+  std::string rx_input = TypedInput()
+      .WithTitle("Enter audio receive port.")
+      .WithDefault(DEFAULT_AUDIO_PORT)
+      .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, 65536))
+      .AskForInput();
+  *rx_port = atoi(rx_input.c_str());
 }
 
 bool GetAudioCodec(webrtc::VoECodec* voe_codec,
@@ -1305,12 +1207,12 @@ bool GetAudioCodec(webrtc::VoECodec* voe_codec,
   return true;
 }
 
-void PrintCallInformation(char* IP, char* video_capture_device_name,
-                          char* video_capture_unique_id,
+void PrintCallInformation(const char* IP, const char* video_capture_device_name,
+                          const char* video_capture_unique_id,
                           webrtc::VideoCodec video_codec,
                           int video_tx_port, int video_rx_port,
-                          char* audio_capture_device_name,
-                          char* audio_playbackDeviceName,
+                          const char* audio_capture_device_name,
+                          const char* audio_playbackDeviceName,
                           webrtc::CodecInst audio_codec,
                           int audio_tx_port, int audio_rx_port,
                           int protection_method) {
@@ -1343,7 +1245,7 @@ void PrintCallInformation(char* IP, char* video_capture_device_name,
             << std::endl;
 }
 
-bool SetVideoCodecType(webrtc::ViECodec* vie_codec,
+void SetVideoCodecType(webrtc::ViECodec* vie_codec,
                        webrtc::VideoCodec* video_codec) {
   int error = 0;
   int number_of_errors = 0;
@@ -1375,14 +1277,12 @@ bool SetVideoCodecType(webrtc::ViECodec* vie_codec,
     video_codec->width = 176;
     video_codec->height = 144;
   }
-  return true;
 }
 
-bool SetVideoCodecResolution(webrtc::ViECodec* vie_codec,
-                             webrtc::VideoCodec* video_codec) {
+void SetVideoCodecResolution(webrtc::VideoCodec* video_codec) {
   if (video_codec->codecType != webrtc::kVideoCodecVP8) {
     printf("Can only change codec size if it's VP8\n");
-    return false;
+    return;
   }
 
   int choice = FromChoices(
@@ -1441,113 +1341,78 @@ bool SetVideoCodecResolution(webrtc::ViECodec* vie_codec,
       video_codec->height = 768;
       break;
   }
-  return true;
 }
 
-bool SetVideoCodecSize(webrtc::ViECodec* vie_codec,
-                       webrtc::VideoCodec* video_codec) {
+void SetVideoCodecSize(webrtc::VideoCodec* video_codec) {
   if (video_codec->codecType != webrtc::kVideoCodecVP8) {
     printf("Can only change codec size if it's VP8\n");
-    return false;
+    return;
   }
 
-  std::string str;
-  video_codec->width = DEFAULT_VIDEO_CODEC_WIDTH;
-  video_codec->height = DEFAULT_VIDEO_CODEC_HEIGHT;
-  std::cout << "Choose video width. Press enter for default ("
-      << DEFAULT_VIDEO_CODEC_WIDTH << "):  ";
-  std::getline(std::cin, str);
-  int size_selection = atoi(str.c_str());
-  if (size_selection != 0) {
-    video_codec->width = size_selection;
-  }
-  std::cout << "Choose video height. Press enter for default ("
-      << DEFAULT_VIDEO_CODEC_HEIGHT << "):  ";
-  std::getline(std::cin, str);
-  size_selection = atoi(str.c_str());
-  if (size_selection != 0) {
-    video_codec->height = size_selection;
-  }
-  return true;
+  std::string input = TypedInput()
+      .WithDefault(DEFAULT_VIDEO_CODEC_WIDTH)
+      .WithTitle("Choose video width.")
+      .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, INT_MAX))
+      .AskForInput();
+  video_codec->width = atoi(input.c_str());
+
+  input = TypedInput()
+      .WithDefault(DEFAULT_VIDEO_CODEC_HEIGHT)
+      .WithTitle("Choose video height.")
+      .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, INT_MAX))
+      .AskForInput();
+  video_codec->height = atoi(input.c_str());
 }
 
-bool SetVideoCodecBitrate(webrtc::ViECodec* vie_codec,
-                          webrtc::VideoCodec* video_codec) {
-  std::string str;
-  std::cout << std::endl;
-  std::cout << "Choose start rate (in kbps). Press enter for default ("
-            << DEFAULT_VIDEO_CODEC_BITRATE << "):  ";
-  std::getline(std::cin, str);
-  int start_rate = atoi(str.c_str());
-  video_codec->startBitrate = DEFAULT_VIDEO_CODEC_BITRATE;
-  if (start_rate != 0) {
-    video_codec->startBitrate = start_rate;
-  }
-  return true;
+void SetVideoCodecBitrate(webrtc::VideoCodec* video_codec) {
+  std::string input = TypedInput()
+      .WithDefault(DEFAULT_VIDEO_CODEC_BITRATE)
+      .WithTitle("Choose start rate (in kbps).")
+      .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, INT_MAX))
+      .AskForInput();
+
+  video_codec->startBitrate = atoi(input.c_str());
 }
 
-bool SetVideoCodecMaxBitrate(webrtc::ViECodec* vie_codec,
-                             webrtc::VideoCodec* video_codec) {
-  std::string str;
-  std::cout << std::endl;
-  std::cout << "Choose max bitrate (in kbps). Press enter for default ("
-            << DEFAULT_VIDEO_CODEC_MAX_BITRATE << "):  ";
-  std::getline(std::cin, str);
-  int max_rate = atoi(str.c_str());
-  video_codec->maxBitrate = DEFAULT_VIDEO_CODEC_MAX_BITRATE;
-  if (max_rate != 0) {
-    video_codec->maxBitrate = max_rate;
-  }
-  return true;
+void SetVideoCodecMaxBitrate(webrtc::VideoCodec* video_codec) {
+  std::string input = TypedInput()
+      .WithDefault(DEFAULT_VIDEO_CODEC_MAX_BITRATE)
+      .WithTitle("Choose max bitrate (in kbps).")
+      .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, INT_MAX))
+      .AskForInput();
+
+  video_codec->maxBitrate = atoi(input.c_str());
 }
 
-bool SetVideoCodecMinBitrate(webrtc::ViECodec* vie_codec,
-                             webrtc::VideoCodec* video_codec) {
-  std::string str;
-  std::cout << std::endl;
-  std::cout << "Choose min bitrate (in fps). Press enter for default ("
-            << DEFAULT_VIDEO_CODEC_MIN_BITRATE << "):  ";
-  std::getline(std::cin, str);
-  char min_bit_rate = atoi(str.c_str());
-  video_codec->minBitrate = DEFAULT_VIDEO_CODEC_MIN_BITRATE;
-  if (min_bit_rate != 0) {
-    video_codec->minBitrate = min_bit_rate;
-  }
-  return true;
+void SetVideoCodecMinBitrate(webrtc::VideoCodec* video_codec) {
+  std::string input = TypedInput()
+      .WithDefault(DEFAULT_VIDEO_CODEC_MIN_BITRATE)
+      .WithTitle("Choose min bitrate (in kbps).")
+      .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, INT_MAX))
+      .AskForInput();
+
+  video_codec->minBitrate = atoi(input.c_str());
 }
 
-bool SetVideoCodecMaxFramerate(webrtc::ViECodec* vie_codec,
-                               webrtc::VideoCodec* video_codec) {
-  std::string str;
-  std::cout << std::endl;
-  std::cout << "Choose max framerate (in fps). Press enter for default ("
-            << DEFAULT_VIDEO_CODEC_MAX_FRAMERATE << "):  ";
-  std::getline(std::cin, str);
-  char max_frame_rate = atoi(str.c_str());
-  video_codec->maxFramerate = DEFAULT_VIDEO_CODEC_MAX_FRAMERATE;
-  if (max_frame_rate != 0) {
-    video_codec->maxFramerate = max_frame_rate;
-  }
-  return true;
+void SetVideoCodecMaxFramerate(webrtc::VideoCodec* video_codec) {
+  std::string input = TypedInput()
+      .WithDefault(DEFAULT_VIDEO_CODEC_MAX_FRAMERATE)
+      .WithTitle("Choose max framerate (in fps).")
+      .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, INT_MAX))
+      .AskForInput();
+  video_codec->maxFramerate = atoi(input.c_str());
 }
 
-bool SetVideoCodecTemporalLayer(webrtc::VideoCodec* video_codec) {
-  if (video_codec->codecType == webrtc::kVideoCodecVP8) {
-    std::string str;
-    std::cout << std::endl;
-    std::cout << "Choose number of temporal layers (1 to 4). "
-              << "Press enter for default ("
-              << DEFAULT_TEMPORAL_LAYER << "):  ";
-    std::getline(std::cin, str);
-    char num_temporal_layers = atoi(str.c_str());
-    video_codec->codecSpecific.VP8.numberOfTemporalLayers =
-        DEFAULT_TEMPORAL_LAYER;
-    if (num_temporal_layers != 0) {
-      video_codec->codecSpecific.VP8.numberOfTemporalLayers =
-          num_temporal_layers;
-    }
-  }
-  return true;
+void SetVideoCodecTemporalLayer(webrtc::VideoCodec* video_codec) {
+  if (video_codec->codecType != webrtc::kVideoCodecVP8)
+    return;
+
+  std::string input = TypedInput()
+      .WithDefault(DEFAULT_TEMPORAL_LAYER)
+      .WithTitle("Choose number of temporal layers (0 to 4).")
+      .WithInputValidator(new webrtc::IntegerWithinRangeValidator(0, 4))
+      .AskForInput();
+  video_codec->codecSpecific.VP8.numberOfTemporalLayers = atoi(input.c_str());
 }
 
 // GetVideoProtection only prints the prompt to get a number
