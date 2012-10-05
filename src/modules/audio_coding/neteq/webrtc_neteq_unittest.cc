@@ -602,4 +602,32 @@ TEST_F(NetEqDecodingTest, LongCngWithClockDrift) {
   EXPECT_GE(delay_after, delay_before - 20 * 16);
 }
 
+TEST_F(NetEqDecodingTest, NoInputDataStereo) {
+  void *ms_info;
+  ms_info = malloc(WebRtcNetEQ_GetMasterSlaveInfoSize());
+  neteq_inst_->setMaster();
+
+  // Slave instance without decoders (because it is easier).
+  WebRtcNetEQDecoder usedCodec[kDecoderReservedEnd - 1];
+  usedCodec[0] = kDecoderPCMu;
+  NETEQTEST_NetEQClass* slave_inst =
+      new NETEQTEST_NetEQClass(usedCodec, 1, 8000, kTCPLargeJitter);
+  ASSERT_TRUE(slave_inst);
+  NETEQTEST_Decoder* dec = new decoder_PCMU(0);
+  ASSERT_TRUE(dec != NULL);
+  dec->loadToNetEQ(*slave_inst);
+  slave_inst->setSlave();
+
+  // Pull out data.
+  const int kNumFrames = 100;
+  for (int i = 0; i < kNumFrames; ++i) {
+    ASSERT_TRUE(kBlockSize8kHz == neteq_inst_->recOut(out_data_, ms_info));
+    ASSERT_TRUE(kBlockSize8kHz == slave_inst->recOut(out_data_, ms_info));
+  }
+
+  delete dec;
+  delete slave_inst;
+  free(ms_info);
+}
+
 }  // namespace
