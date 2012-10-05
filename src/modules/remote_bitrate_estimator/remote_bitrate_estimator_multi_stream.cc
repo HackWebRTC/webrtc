@@ -151,7 +151,7 @@ bool RemoteBitrateEstimatorMultiStream::LatestEstimate(
   if (streams_.size() > 0)
     *bitrate_bps = remote_rate_.LatestEstimate() / streams_.size();
   else
-    *bitrate_bps = 0;
+    *bitrate_bps = remote_rate_.LatestEstimate();
   return true;
 }
 
