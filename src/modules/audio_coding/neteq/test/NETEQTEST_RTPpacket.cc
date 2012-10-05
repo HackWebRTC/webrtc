@@ -32,7 +32,9 @@ _datagramLen(-1),
 _payloadLen(0),
 _rtpParsed(false),
 _receiveTime(0),
-_lost(false)
+_lost(false),
+_selectSSRC(0),
+_filterSSRC(false)
 {
     memset(&_rtpInfo, 0, sizeof(_rtpInfo));
     _blockList.clear();
@@ -157,6 +159,12 @@ int NETEQTEST_RTPpacket::readFromFile(FILE *fp)
         return(readFromFile(fp));
     }
 
+    if (_filterSSRC && _selectSSRC != SSRC())
+    {
+        // Discard this payload.
+        return(readFromFile(fp));
+    }
+
     return(packetLen);
 
 }
@@ -250,6 +258,11 @@ void NETEQTEST_RTPpacket::blockPT(WebRtc_UWord8 pt)
     _blockList[pt] = true;
 }
 
+void NETEQTEST_RTPpacket::selectSSRC(uint32_t ssrc)
+{
+    _selectSSRC = ssrc;
+    _filterSSRC = true;
+}
 
 void NETEQTEST_RTPpacket::parseHeader()
 {

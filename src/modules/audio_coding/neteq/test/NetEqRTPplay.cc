@@ -185,6 +185,8 @@ int main(int argc, char* argv[])
     std::map<WebRtc_UWord8, decoderStruct> decoders;
     bool dummyRtp = false;
     bool noDecode = false;
+    bool filterSSRC = false;
+    uint32_t ssrc;
 
 #ifdef DEF_BUILD_DATE
     printf("Build time: %s\n", __BUILD_DATE);
@@ -224,6 +226,7 @@ int main(int argc, char* argv[])
         printf("\t-rtponly packLenBytes  : input file consists of constant size RTP packets without RTPplay headers\n");
         printf("\t-dummyrtp              : input file contains only RTP headers\n");
         printf("\t-nodecode              : no decoding will be done\n");
+        printf("\t-ssrc 0xNNNNNNNN       : discard all other SSRCs\n");
         //printf("\t-switchms              : switch from mono to stereo (copy channel) after 10 seconds\n");
         //printf("\t-duplicate             : use two instances with identical input (2-channel mono)\n");
 
@@ -321,6 +324,17 @@ int main(int argc, char* argv[])
             argIx++;
             noDecode = true;
         }
+        else if (strcmp(argv[argIx], "-ssrc") == 0)
+        {
+            argIx++;
+            filterSSRC = true;
+            if (sscanf(argv[argIx], "%X", &ssrc) != 1)
+            {
+                printf("Could not read SSRC argument.\n");
+                exit(1);
+            }
+            argIx++;
+        }
         //else if( strcmp(argv[argIx], "-switchms") == 0 ) {
         //    argIx++;
         //    switchMS = true;
@@ -407,6 +421,15 @@ int main(int argc, char* argv[])
         slaveRtp = new NETEQTEST_DummyRTPpacket();
     }
 
+    /* Uncomment and edit the line(s) below to block some payload types. */
+    //rtp->blockPT(72);
+    //rtp->blockPT(23);
+
+    /* Select a specific SSRC. */
+    if (filterSSRC) {
+        rtp->selectSSRC(ssrc);
+    }
+
     if (!rtpOnly)
     {
         while (rtp->readFromFile(in_file) >= 0)
@@ -439,11 +462,6 @@ int main(int argc, char* argv[])
     }
 
     fseek(in_file, tempFilePos, SEEK_SET /* from beginning */);
-
-
-    /* block some payload types */
-    //rtp->blockPT(72);
-    //rtp->blockPT(23);
 
     /* read first packet */
     if (!rtpOnly)

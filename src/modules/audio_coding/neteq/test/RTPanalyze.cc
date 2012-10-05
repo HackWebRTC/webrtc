@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
   printf("Output file: %s\n\n", argv[2]);
 
   // Print file header.
-  fprintf(out_file, "SeqNo  TimeStamp   SendTime  Size    PT  M\n");
+  fprintf(out_file, "SeqNo  TimeStamp   SendTime  Size    PT  M       SSRC\n");
 
   // Read file header.
   NETEQTEST_RTPpacket::skipFileHeader(in_file);
@@ -49,9 +49,10 @@ int main(int argc, char* argv[]) {
 
   while (packet.readFromFile(in_file) >= 0) {
     // Write packet data to file.
-    fprintf(out_file, "%5u %10u %10u %5i %5i %2i\n",
+    fprintf(out_file, "%5u %10u %10u %5i %5i %2i %#08X\n",
             packet.sequenceNumber(), packet.timeStamp(), packet.time(),
-            packet.dataLen(), packet.payloadType(), packet.markerBit());
+            packet.dataLen(), packet.payloadType(), packet.markerBit(),
+            packet.SSRC());
     if (packet.payloadType() == kRedPayloadType) {
       WebRtcNetEQ_RTPInfo red_header;
       int len;

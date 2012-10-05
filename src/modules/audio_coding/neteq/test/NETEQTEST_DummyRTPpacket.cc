@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <algorithm>  // max
+
 #ifdef WIN32
 #include <winsock2.h>
 #else
@@ -56,17 +58,18 @@ int NETEQTEST_DummyRTPpacket::readFromFile(FILE *fp)
     length = (WebRtc_UWord16) (length - _kRDHeaderLen);
 
     // check buffer size
-    if (_datagram && _memSize < length)
+    if (_datagram && _memSize < length + 1)
     {
         reset();
     }
 
     if (!_datagram)
     {
-        _datagram = new WebRtc_UWord8[length];
-        _memSize = length;
+        // Add one extra byte, to be able to fake a dummy payload of one byte.
+        _datagram = new WebRtc_UWord8[length + 1];
+        _memSize = length + 1;
     }
-    memset(_datagram, 0, length);
+    memset(_datagram, 0, length + 1);
 
     if (length == 0)
     {
@@ -75,7 +78,7 @@ int NETEQTEST_DummyRTPpacket::readFromFile(FILE *fp)
     }
 
     // Read basic header
-    if (fread((unsigned short *) _datagram, 1, _kBasicHeaderLen, fp)
+    if (fread(_datagram, 1, _kBasicHeaderLen, fp)
         != (size_t)_kBasicHeaderLen)
     {
         reset();
@@ -83,6 +86,7 @@ int NETEQTEST_DummyRTPpacket::readFromFile(FILE *fp)
     }
     _receiveTime = receiveTime;
     _datagramLen = _kBasicHeaderLen;
+    int header_length = _kBasicHeaderLen;
 
     // Parse the basic header
     WebRtcNetEQ_RTPInfo tempRTPinfo;
@@ -93,17 +97,18 @@ int NETEQTEST_DummyRTPpacket::readFromFile(FILE *fp)
     if (X != 0 || CC != 0)
     {
         int newLen = _kBasicHeaderLen + CC * 4 + X * 4;
-        assert(_memSize >= newLen);
+        assert(_memSize >= newLen + 1);
 
         // Read extension from file
         size_t readLen = newLen - _kBasicHeaderLen;
-        if (fread((unsigned short *) _datagram + _kBasicHeaderLen, 1, readLen,
+        if (fread(_datagram + _kBasicHeaderLen, 1, readLen,
             fp) != readLen)
         {
             reset();
             return -1;
         }
         _datagramLen = newLen;
+        header_length = newLen;
 
         if (X != 0)
         {
@@ -112,21 +117,30 @@ int NETEQTEST_DummyRTPpacket::readFromFile(FILE *fp)
 
             // Read extension from file
             size_t readLen = totHdrLen - newLen;
-            if (fread((unsigned short *) _datagram + newLen, 1, readLen, fp)
+            if (fread(_datagram + newLen, 1, readLen, fp)
                 != readLen)
             {
                 reset();
                 return -1;
             }
             _datagramLen = totHdrLen;
+            header_length = totHdrLen;
         }
     }
-    _datagramLen = length;
+    // Make sure that we have at least one byte of dummy payload.
+    _datagramLen = std::max(static_cast<int>(length), header_length + 1);
+    assert(_datagramLen <= _memSize);
 
     if (!_blockList.empty() && _blockList.count(payloadType()) > 0)
     {
         // discard this payload
         return readFromFile(fp);
+    }
+
+    if (_filterSSRC && _selectSSRC != SSRC())
+    {
+        // Discard this payload.
+        return(readFromFile(fp));
     }
 
     return packetLen;

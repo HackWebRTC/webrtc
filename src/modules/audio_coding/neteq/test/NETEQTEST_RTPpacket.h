@@ -36,6 +36,7 @@ public:
     int readFixedFromFile(FILE *fp, size_t len);
     virtual int writeToFile(FILE *fp);
     void blockPT(WebRtc_UWord8 pt);
+    void selectSSRC(uint32_t ssrc);
     //WebRtc_Word16 payloadType();
     void parseHeader();
     void parseHeader(WebRtcNetEQ_RTPInfo & rtpInfo);
@@ -79,6 +80,8 @@ public:
     WebRtc_UWord32        _receiveTime;
     bool                _lost;
     std::map<WebRtc_UWord8, bool> _blockList;
+    uint32_t            _selectSSRC;
+    bool                _filterSSRC;
 
 protected:
     static const int _kRDHeaderLen;

@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
   uint32_t send_time;
 
   while (fscanf(stat_file,
-                "%hu %u %u %*i %*i\n", &seq_no, &ts, &send_time) == 3) {
+                "%hu %u %u %*i %*i %*i %*x\n", &seq_no, &ts, &send_time) == 3) {
     std::pair<uint16_t, uint32_t>
         temp_pair = std::pair<uint16_t, uint32_t>(seq_no, ts);
 
