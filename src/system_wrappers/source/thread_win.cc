@@ -75,6 +75,9 @@ unsigned int WINAPI ThreadWindows::StartThread(LPVOID lpParameter)
 
 bool ThreadWindows::Start(unsigned int& threadID)
 {
+    if (!_runFunction) {
+      return false;
+    }
     _doNotCloseHandle = false;
 
     // Set stack size to 1M

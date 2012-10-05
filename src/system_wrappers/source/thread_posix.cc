@@ -44,6 +44,9 @@
 
 #include "thread_posix.h"
 
+#include <algorithm>
+
+#include <assert.h>
 #include <errno.h>
 #include <string.h> // strncpy
 #include <time.h>   // nanosleep
@@ -65,6 +68,32 @@
 #include "system_wrappers/interface/trace.h"
 
 namespace webrtc {
+
+int ConvertToSystemPriority(ThreadPriority priority, int minPrio, int maxPrio)
+{
+    assert(maxPrio - minPrio > 2);
+    const int topPrio = maxPrio - 1;
+    const int lowPrio = minPrio + 1;
+
+    switch (priority)
+    {
+    case kLowPriority:
+        return lowPrio;
+    case kNormalPriority:
+        // The -1 ensures that the kHighPriority is always greater or equal to
+        // kNormalPriority.
+        return (lowPrio + topPrio - 1) / 2;
+    case kHighPriority:
+        return std::max(topPrio - 2, lowPrio);
+    case kHighestPriority:
+        return std::max(topPrio - 1, lowPrio);
+    case kRealtimePriority:
+        return topPrio;
+    }
+    assert(false);
+    return lowPrio;
+}
+
 extern "C"
 {
     static void* StartThread(void* lpParameter)
@@ -177,6 +206,11 @@ bool ThreadPosix::Start(unsigned int& /*threadID*/)
     const int policy = SCHED_FIFO;
 #endif
     _event->Reset();
+    // If pthread_create was successful, a thread was created and is running.
+    // Don't return false if it was successful since if there are any other
+    // failures the state will be: thread was started but not configured as
+    // asked for. However, the caller of this API will assume that a false
+    // return value means that the thread never started.
     result |= pthread_create(&_thread, &_attr, &StartThread, this);
     if (result != 0)
     {
@@ -187,9 +221,11 @@ bool ThreadPosix::Start(unsigned int& /*threadID*/)
     // race condition if Stop() is called too quickly after start.
     if (kEventSignaled != _event->Wait(WEBRTC_EVENT_10_SEC))
     {
+        WEBRTC_TRACE(kTraceError, kTraceUtility, -1,
+                     "posix thread event never triggered");
         // Timed out. Something went wrong.
         _runFunction = NULL;
-        return false;
+        return true;
     }
 
 #if HAS_THREAD_ID
@@ -201,31 +237,21 @@ bool ThreadPosix::Start(unsigned int& /*threadID*/)
     const int maxPrio = sched_get_priority_max(policy);
     if ((minPrio == EINVAL) || (maxPrio == EINVAL))
     {
-        return false;
+        WEBRTC_TRACE(kTraceError, kTraceUtility, -1,
+                     "unable to retreive min or max priority for threads");
+        return true;
     }
-
-    switch (_prio)
+    if (maxPrio - minPrio <= 2)
     {
-    case kLowPriority:
-        param.sched_priority = minPrio + 1;
-        break;
-    case kNormalPriority:
-        param.sched_priority = (minPrio + maxPrio) / 2;
-        break;
-    case kHighPriority:
-        param.sched_priority = maxPrio - 3;
-        break;
-    case kHighestPriority:
-        param.sched_priority = maxPrio - 2;
-        break;
-    case kRealtimePriority:
-        param.sched_priority = maxPrio - 1;
-        break;
+      // There is no room for setting priorities with any granularity.
+      return true;
     }
+    param.sched_priority = ConvertToSystemPriority(_prio, minPrio, maxPrio);
     result = pthread_setschedparam(_thread, policy, &param);
     if (result == EINVAL)
     {
-        return false;
+        WEBRTC_TRACE(kTraceError, kTraceUtility, -1,
+                     "unable to set thread priority");
     }
     return true;
 }
@@ -344,7 +370,7 @@ void ThreadPosix::Run()
 #ifdef WEBRTC_LINUX
         prctl(PR_SET_NAME, (unsigned long)_name, 0, 0, 0);
 #endif
-        WEBRTC_TRACE(kTraceStateInfo, kTraceUtility,-1,
+        WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
                      "Thread with name:%s started ", _name);
     } else
     {
@@ -382,13 +408,13 @@ void ThreadPosix::Run()
         // coupling the thread and the trace class like this.
         if (strcmp(_name, "Trace"))
         {
-            WEBRTC_TRACE(kTraceStateInfo, kTraceUtility,-1,
+            WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
                          "Thread with name:%s stopped", _name);
         }
     }
     else
     {
-        WEBRTC_TRACE(kTraceStateInfo, kTraceUtility,-1,
+        WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
                      "Thread without name stopped");
     }
     {

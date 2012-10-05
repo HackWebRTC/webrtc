@@ -11,6 +11,7 @@
 #include "system_wrappers/interface/thread_wrapper.h"
 
 #include "gtest/gtest.h"
+#include "system_wrappers/interface/scoped_ptr.h"
 #include "system_wrappers/interface/trace.h"
 
 namespace webrtc {
@@ -59,6 +60,13 @@ class ThreadTest : public ::testing::Test {
 
   TestTraceCallback trace_;
 };
+
+TEST_F(ThreadTest, NullFunctionPointer) {
+  webrtc::scoped_ptr<ThreadWrapper> thread(
+      webrtc::ThreadWrapper::CreateThread());
+  unsigned int id = 42;
+  EXPECT_FALSE(thread->Start(id));
+}
 
 // Function that does nothing, and reports success.
 bool NullRunFunction(void* /* obj */) {

@@ -19,6 +19,8 @@ namespace webrtc {
 class CriticalSectionWrapper;
 class EventWrapper;
 
+int ConvertToSystemPriority(ThreadPriority priority, int minPrio, int maxPrio);
+
 class ThreadPosix : public ThreadWrapper
 {
 public:

@@ -216,6 +216,7 @@
             'data_log_c_helpers_unittest.c',
             'data_log_c_helpers_unittest.h',
             'thread_unittest.cc',
+            'thread_posix_unittest.cc',
             'trace_unittest.cc',
             'unittest_utilities_unittest.cc',
           ],
@@ -224,6 +225,9 @@
               'sources!': [ 'data_log_unittest_disabled.cc', ],
             }, {
               'sources!': [ 'data_log_unittest.cc', ],
+            }],
+            ['os_posix!=1', {
+              'sources!': [ 'thread_posix_unittest.cc', ],
             }],
           ],
         },

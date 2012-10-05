@@ -65,8 +65,12 @@ public:
     // to delete this class until the spawned thread has been reclaimed.
     virtual void SetNotAlive() = 0;
 
-    // Spawns the thread. This will start the triggering of the callback
-    // function.
+    // Tries to spawns a thread and returns true if that was successful.
+    // Additionally, it tries to set thread priority according to the priority
+    // from when CreateThread was called. However, failure to set priority will
+    // not result in a false return value.
+    // TODO(henrike): add a function for polling whether priority was set or
+    //                not.
     virtual bool Start(unsigned int& id) = 0;
 
     // Sets the threads CPU affinity. CPUs are listed 0 - (number of CPUs - 1).
