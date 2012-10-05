@@ -145,7 +145,13 @@ bool RemoteBitrateEstimatorMultiStream::LatestEstimate(
   if (!remote_rate_.ValidEstimate()) {
     return false;
   }
-  *bitrate_bps = remote_rate_.LatestEstimate();
+  // TODO(holmer): For now we're returning the estimate bandwidth per stream as
+  // it corresponds better to how the ViE API is designed. Will fix this when
+  // the API changes.
+  if (streams_.size() > 0)
+    *bitrate_bps = remote_rate_.LatestEstimate() / streams_.size();
+  else
+    *bitrate_bps = 0;
   return true;
 }
 
