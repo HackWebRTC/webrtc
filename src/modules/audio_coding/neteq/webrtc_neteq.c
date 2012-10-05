@@ -290,6 +290,9 @@ int WebRtcNetEQ_Assign(void **inst, void *NETEQ_inst_Addr)
     MainInst_t *NetEqMainInst = (MainInst_t*) NETEQ_inst_Addr;
     *inst = NETEQ_inst_Addr;
     if (*inst == NULL) return (-1);
+
+    WebRtcSpl_Init();
+
     /* Clear memory */
     WebRtcSpl_MemSetW16((WebRtc_Word16*) NetEqMainInst, 0,
         (sizeof(MainInst_t) / sizeof(WebRtc_Word16)));
@@ -395,8 +398,6 @@ int WebRtcNetEQ_Init(void *inst, WebRtc_UWord16 fs)
     {
         return (-1);
     }
-
-    WebRtcSpl_Init();
 
 #ifdef NETEQ_VAD
     /* Start out with no PostDecode VAD instance */

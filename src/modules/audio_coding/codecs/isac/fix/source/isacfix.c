@@ -86,6 +86,7 @@ WebRtc_Word16 WebRtcIsacfix_Create(ISACFIX_MainStruct **ISAC_main_inst)
     (*(ISACFIX_SubStruct**)ISAC_main_inst)->errorcode = 0;
     (*(ISACFIX_SubStruct**)ISAC_main_inst)->initflag = 0;
     (*(ISACFIX_SubStruct**)ISAC_main_inst)->ISACenc_obj.SaveEnc_ptr = NULL;
+    WebRtcSpl_Init();
     return(0);
   } else {
     return(-1);
@@ -216,8 +217,6 @@ WebRtc_Word16 WebRtcIsacfix_EncoderInit(ISACFIX_MainStruct *ISAC_main_inst,
 
   /* flag encoder init */
   ISAC_inst->initflag |= 2;
-
-  WebRtcSpl_Init();
 
   if (CodingMode == 0)
     /* Adaptive mode */
@@ -528,8 +527,6 @@ WebRtc_Word16 WebRtcIsacfix_DecoderInit(ISACFIX_MainStruct *ISAC_main_inst)
 
   /* flag decoder init */
   ISAC_inst->initflag |= 1;
-
-  WebRtcSpl_Init();
 
   WebRtcIsacfix_InitMaskingDec(&ISAC_inst->ISACdec_obj.maskfiltstr_obj);
   WebRtcIsacfix_InitPostFilterbank(&ISAC_inst->ISACdec_obj.postfiltbankstr_obj);

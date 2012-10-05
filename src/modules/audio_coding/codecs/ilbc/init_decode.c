@@ -29,8 +29,6 @@ WebRtc_Word16 WebRtcIlbcfix_InitDecode(  /* (o) Number of decoded samples */
     int use_enhancer) {  /* (i) 1: use enhancer, 0: no enhancer */
   int i;
 
-  WebRtcSpl_Init();
-
   iLBCdec_inst->mode = mode;
 
   /* Set all the variables that are dependent on the frame size mode */

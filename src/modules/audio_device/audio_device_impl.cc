@@ -111,6 +111,8 @@ AudioDeviceModule* AudioDeviceModuleImpl::Create(const WebRtc_Word32 id,
         return NULL;
     }
 
+    WebRtcSpl_Init();
+
     return audioDevice;
 }
 
@@ -607,8 +609,6 @@ WebRtc_Word32 AudioDeviceModuleImpl::Init()
 
     if (!_ptrAudioDevice)
         return -1;
-
-    WebRtcSpl_Init();
 
     _ptrAudioDeviceUtility->Init();
 

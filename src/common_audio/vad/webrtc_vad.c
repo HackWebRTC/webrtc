@@ -37,6 +37,8 @@ int WebRtcVad_Create(VadInst** handle) {
     return -1;
   }
 
+  WebRtcSpl_Init();
+
   self->init_flag = 0;
 
   return 0;
@@ -54,7 +56,6 @@ int WebRtcVad_Free(VadInst* handle) {
 
 // TODO(bjornv): Move WebRtcVad_InitCore() code here.
 int WebRtcVad_Init(VadInst* handle) {
-  WebRtcSpl_Init();
   // Initialize the core VAD component.
   return WebRtcVad_InitCore((VadInstT*) handle);
 }

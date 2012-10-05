@@ -48,6 +48,7 @@ WebRtc_Word16 WebRtcIlbcfix_DecoderAssign(iLBC_decinst_t **iLBC_decinst, WebRtc_
 WebRtc_Word16 WebRtcIlbcfix_EncoderCreate(iLBC_encinst_t **iLBC_encinst) {
   *iLBC_encinst=(iLBC_encinst_t*)malloc(sizeof(iLBC_Enc_Inst_t));
   if (*iLBC_encinst!=NULL) {
+    WebRtcSpl_Init();
     return(0);
   } else {
     return(-1);
@@ -57,6 +58,7 @@ WebRtc_Word16 WebRtcIlbcfix_EncoderCreate(iLBC_encinst_t **iLBC_encinst) {
 WebRtc_Word16 WebRtcIlbcfix_DecoderCreate(iLBC_decinst_t **iLBC_decinst) {
   *iLBC_decinst=(iLBC_decinst_t*)malloc(sizeof(iLBC_Dec_Inst_t));
   if (*iLBC_decinst!=NULL) {
+    WebRtcSpl_Init();
     return(0);
   } else {
     return(-1);

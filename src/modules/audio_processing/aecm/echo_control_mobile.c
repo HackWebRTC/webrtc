@@ -110,6 +110,8 @@ WebRtc_Word32 WebRtcAecm_Create(void **aecmInst)
         return -1;
     }
 
+    WebRtcSpl_Init();
+
     aecm->initFlag = 0;
     aecm->lastError = 0;
 
@@ -170,8 +172,6 @@ WebRtc_Word32 WebRtcAecm_Init(void *aecmInst, WebRtc_Word32 sampFreq)
         return -1;
     }
     aecm->sampFreq = sampFreq;
-
-    WebRtcSpl_Init();
 
     // Initialize AECM core
     if (WebRtcAecm_InitCore(aecm->aecmCore, aecm->sampFreq) == -1)

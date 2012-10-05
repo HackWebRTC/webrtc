@@ -14,10 +14,6 @@
  * Some code came from common/rtcd.c in the WebM project.
  */
 
-/* TODO(kma): Add calls to WebRtcSpl_Init() in all related modules
- * (AEC, NS, codecs etc.).
- */
-
 #include "common_audio/signal_processing/include/real_fft.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "system_wrappers/interface/cpu_features_wrapper.h"
