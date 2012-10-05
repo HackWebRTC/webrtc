@@ -225,6 +225,8 @@ class RtcpIntraFrameObserver {
   virtual void OnReceivedRPSI(uint32_t ssrc,
                               uint64_t picture_id) = 0;
 
+  virtual void OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc) = 0;
+
   virtual ~RtcpIntraFrameObserver() {}
 };
 

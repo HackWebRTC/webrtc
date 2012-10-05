@@ -19,6 +19,7 @@
 namespace webrtc {
 
 class BitrateController;
+class EncoderStateFeedback;
 struct OverUseDetectorOptions;
 class ProcessThread;
 class ViEChannel;
@@ -47,6 +48,7 @@ class ChannelGroup {
 
   BitrateController* GetBitrateController();
   RemoteBitrateEstimator* GetRemoteBitrateEstimator();
+  EncoderStateFeedback* GetEncoderStateFeedback();
 
  private:
   typedef std::set<int> ChannelSet;
@@ -54,6 +56,7 @@ class ChannelGroup {
   scoped_ptr<VieRemb> remb_;
   scoped_ptr<BitrateController> bitrate_controller_;
   scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
+  scoped_ptr<EncoderStateFeedback> encoder_state_feedback_;
   ChannelSet channels_;
 };
 

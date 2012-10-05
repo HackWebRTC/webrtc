@@ -343,10 +343,12 @@ void ViEAutoTest::ViECodecExtendedTest() {
         video_channel_1, rtp_port_1));
     EXPECT_EQ(0, video_engine.network->SetSendDestination(
         video_channel_1, "127.0.0.1", rtp_port_1));
+    EXPECT_EQ(0, video_engine.rtp_rtcp->SetLocalSSRC(video_channel_1, 1));
     EXPECT_EQ(0, video_engine.network->SetLocalReceiver(
         video_channel_2, rtp_port_2));
     EXPECT_EQ(0, video_engine.network->SetSendDestination(
         video_channel_2, "127.0.0.1", rtp_port_2));
+    EXPECT_EQ(0, video_engine.rtp_rtcp->SetLocalSSRC(video_channel_2, 2));
     tb_capture.ConnectTo(video_channel_1);
     tb_capture.ConnectTo(video_channel_2);
     EXPECT_EQ(0, video_engine.rtp_rtcp->SetKeyFrameRequestMethod(

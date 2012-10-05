@@ -136,6 +136,10 @@ void ViEAutoTest::ViEBaseAPITest() {
       webrtc::ViENetwork::GetInterface(video_engine);
   EXPECT_TRUE(vie_network != NULL);
 
+  webrtc::ViERTP_RTCP* vie_rtp =
+      webrtc::ViERTP_RTCP::GetInterface(video_engine);
+  EXPECT_TRUE(vie_rtp != NULL);
+
   // ***************************************************************
   // Engine ready. Begin testing class
   // ***************************************************************
@@ -169,12 +173,15 @@ void ViEAutoTest::ViEBaseAPITest() {
 
   const char* ip_address = "127.0.0.1\0";
   const int send_port = 1234;
+  EXPECT_EQ(0, vie_rtp->SetLocalSSRC(video_channel, 1));
   EXPECT_EQ(0, vie_network->SetSendDestination(video_channel, ip_address,
-                                                   send_port));
+                                               send_port));
+  EXPECT_EQ(0, vie_rtp->SetLocalSSRC(video_channel, 2));
   EXPECT_EQ(0, vie_network->SetSendDestination(video_channel2, ip_address,
-                                                   send_port + 2));
+                                               send_port + 2));
+  EXPECT_EQ(0, vie_rtp->SetLocalSSRC(video_channel, 3));
   EXPECT_EQ(0, vie_network->SetSendDestination(video_channel3, ip_address,
-                                                   send_port + 4));
+                                               send_port + 4));
 
   EXPECT_EQ(0, vie_base->StartSend(video_channel));
   EXPECT_EQ(-1, vie_base->StartSend(video_channel2));
@@ -214,6 +221,7 @@ void ViEAutoTest::ViEBaseAPITest() {
   EXPECT_EQ(0, vie_base->DisconnectAudioChannel(video_channel));
 
   // Clean up voice engine
+  EXPECT_EQ(0, vie_rtp->Release());
   EXPECT_EQ(0, vie_network->Release());
   EXPECT_EQ(0, vie_base->SetVoiceEngine(NULL));
   // VoiceEngine reference counting is per object, not per interface, so
