@@ -64,6 +64,7 @@ static __inline WebRtc_Word32 WEBRTC_SPL_MUL_16_16(WebRtc_Word16 a,
   return tmp;
 }
 
+// TODO(kma): add unit test.
 static __inline int32_t WebRtc_MulAccumW16(int16_t a,
                                           int16_t b,
                                           int32_t c) {
@@ -124,7 +125,12 @@ static __inline WebRtc_Word16 WebRtcSpl_GetSizeInBits(WebRtc_UWord32 n) {
 static __inline int WebRtcSpl_NormW32(WebRtc_Word32 a) {
   WebRtc_Word32 tmp = 0;
 
-  if (a <= 0) a ^= 0xFFFFFFFF;
+  if (a == 0) {
+    return 0;
+  }
+  else if (a < 0) {
+    a ^= 0xFFFFFFFF;
+  }
 
   __asm __volatile ("clz %0, %1":"=r"(tmp):"r"(a));
 
@@ -144,13 +150,19 @@ static __inline int WebRtcSpl_NormU32(WebRtc_UWord32 a) {
 static __inline int WebRtcSpl_NormW16(WebRtc_Word16 a) {
   WebRtc_Word32 tmp = 0;
 
-  if (a <= 0) a ^= 0xFFFFFFFF;
+  if (a == 0) {
+    return 0;
+  }
+  else if (a < 0) {
+    a ^= 0xFFFFFFFF;
+  }
 
   __asm __volatile ("clz %0, %1":"=r"(tmp):"r"(a));
 
   return tmp - 17;
 }
 
+// TODO(kma): add unit test.
 static __inline WebRtc_Word16 WebRtcSpl_SatW32ToW16(WebRtc_Word32 value32) {
   WebRtc_Word16 out16 = 0;
 
@@ -158,4 +170,5 @@ static __inline WebRtc_Word16 WebRtcSpl_SatW32ToW16(WebRtc_Word32 value32) {
 
   return out16;
 }
+
 #endif  // WEBRTC_SPL_SPL_INL_ARMV7_H_

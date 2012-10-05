@@ -138,8 +138,20 @@ TEST_F(SplTest, InlineTest) {
     char bVersion[8];
 
     EXPECT_EQ(17, WebRtcSpl_GetSizeInBits(a32));
+
+    EXPECT_EQ(0, WebRtcSpl_NormW32(0));
+    EXPECT_EQ(31, WebRtcSpl_NormW32(-1));
+    EXPECT_EQ(0, WebRtcSpl_NormW32(WEBRTC_SPL_WORD32_MIN));
     EXPECT_EQ(14, WebRtcSpl_NormW32(a32));
+
+    EXPECT_EQ(0, WebRtcSpl_NormW16(0));
+    EXPECT_EQ(15, WebRtcSpl_NormW16(-1));
+    EXPECT_EQ(0, WebRtcSpl_NormW16(WEBRTC_SPL_WORD16_MIN));
     EXPECT_EQ(4, WebRtcSpl_NormW16(b32));
+
+    EXPECT_EQ(0, WebRtcSpl_NormU32(0));
+    EXPECT_EQ(0, WebRtcSpl_NormU32(-1));
+    EXPECT_EQ(0, WebRtcSpl_NormU32(WEBRTC_SPL_WORD32_MIN));
     EXPECT_EQ(15, WebRtcSpl_NormU32(a32));
 
     EXPECT_EQ(104, WebRtcSpl_AddSatW16(a16, b16));
@@ -147,6 +159,7 @@ TEST_F(SplTest, InlineTest) {
 
     EXPECT_EQ(109410, WebRtcSpl_AddSatW32(a32, b32));
     EXPECT_EQ(112832, WebRtcSpl_SubSatW32(a32, b32));
+
     a32 = 0x80000000;
     b32 = 0x80000000;
     // Cast to signed int to avoid compiler complaint on gtest.h.
