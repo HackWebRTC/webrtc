@@ -41,16 +41,25 @@ public:
     FrameReceiveCallback(std::string outFilename) :
         _outFilename(outFilename),
         _outFile(NULL),
-        _timingFile(NULL) {}
+        _timingFile(NULL),
+        width_(0),
+        height_(0) {}
 
     virtual ~FrameReceiveCallback();
 
     WebRtc_Word32 FrameToRender(webrtc::VideoFrame& videoFrame);
 
 private:
+    static void SplitFilename(std::string filename, std::string* basename,
+                              std::string* ending);
+    static std::string AppendWidthAndHeight(std::string basename,
+                                            unsigned int width,
+                                            unsigned int height);
     std::string     _outFilename;
     FILE*           _outFile;
     FILE*           _timingFile;
+    unsigned int width_;
+    unsigned int height_;
 };
 
 class SharedState

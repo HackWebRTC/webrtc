@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <sstream>
 
 using namespace webrtc;
 
@@ -55,9 +56,18 @@ FrameReceiveCallback::FrameToRender(VideoFrame& videoFrame)
             return -1;
         }
     }
-    if (_outFile == NULL)
+    if (_outFile == NULL || videoFrame.Width() != width_ ||
+        videoFrame.Height() != height_)
     {
-        _outFile = fopen(_outFilename.c_str(), "wb");
+        if (_outFile) {
+          fclose(_outFile);
+        }
+        printf("New size: %ux%u\n", videoFrame.Width(), videoFrame.Height());
+        width_ = videoFrame.Width();
+        height_ = videoFrame.Height();
+        std::string filename_with_width_height = AppendWidthAndHeight(
+            _outFilename, width_, height_);
+        _outFile = fopen(filename_with_width_height.c_str(), "wb");
         if (_outFile == NULL)
         {
             return -1;
@@ -73,6 +83,30 @@ FrameReceiveCallback::FrameToRender(VideoFrame& videoFrame)
     return 0;
 }
 
+void FrameReceiveCallback::SplitFilename(std::string filename,
+                                         std::string* basename,
+                                         std::string* ending) {
+  std::string::size_type idx;
+  idx = filename.rfind('.');
+
+  if(idx != std::string::npos) {
+      *ending = filename.substr(idx + 1);
+      *basename = filename.substr(0, idx);
+  } else {
+      *basename = filename;
+      *ending = "";
+  }
+}
+std::string FrameReceiveCallback::AppendWidthAndHeight(
+    std::string filename, unsigned int width, unsigned int height) {
+  std::string basename;
+  std::string ending;
+  SplitFilename(filename, &basename, &ending);
+  std::stringstream ss;
+  ss << basename << "." <<  width << "_" << height << "." << ending;
+  return ss.str();
+}
+
 int RtpPlay(CmdArgs& args)
 {
     // Make sure this test isn't executed without simulated events.
@@ -81,7 +115,7 @@ int RtpPlay(CmdArgs& args)
 #endif
     // BEGIN Settings
 
-    bool protectionEnabled = false;
+    bool protectionEnabled = true;
     VCMVideoProtection protectionMethod = kProtectionNack;
     WebRtc_UWord32 rttMS = 0;
     float lossRate = 0.0f;
@@ -102,6 +136,10 @@ int RtpPlay(CmdArgs& args)
     PayloadTypeList payloadTypes;
     payloadTypes.push_front(new PayloadCodecTuple(VCM_VP8_PAYLOAD_TYPE, "VP8",
                                                   kVideoCodecVP8));
+    payloadTypes.push_front(new PayloadCodecTuple(VCM_RED_PAYLOAD_TYPE, "RED",
+                                                  kVideoCodecRED));
+    payloadTypes.push_front(new PayloadCodecTuple(VCM_ULPFEC_PAYLOAD_TYPE,
+                                                  "ULPFEC", kVideoCodecULPFEC));
 
     Trace::CreateTrace();
     Trace::SetTraceFile((test::OutputPath() + "receiverTestTrace.txt").c_str());
@@ -125,14 +163,17 @@ int RtpPlay(CmdArgs& args)
         if (payloadType != NULL)
         {
             VideoCodec codec;
-            if (VideoCodingModule::Codec(payloadType->codecType, &codec) < 0)
-            {
-                return -1;
-            }
-            codec.plType = payloadType->payloadType;
-            if (vcm->RegisterReceiveCodec(&codec, 1) < 0)
-            {
-                return -1;
+            if (payloadType->codecType != kVideoCodecULPFEC &&
+                payloadType->codecType != kVideoCodecRED) {
+              if (VideoCodingModule::Codec(payloadType->codecType, &codec) < 0)
+              {
+                  return -1;
+              }
+              codec.plType = payloadType->payloadType;
+              if (vcm->RegisterReceiveCodec(&codec, 1) < 0)
+              {
+                  return -1;
+              }
             }
         }
     }
