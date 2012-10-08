@@ -865,7 +865,7 @@ bool ViEEncoder::SetSsrcs(const std::list<unsigned int>& ssrcs) {
 
   if (codec.numberOfSimulcastStreams > 0 &&
       ssrcs.size() != codec.numberOfSimulcastStreams) {
-    return -1;
+    return false;
   }
 
   CriticalSectionScoped cs(data_cs_.get());
@@ -877,7 +877,7 @@ bool ViEEncoder::SetSsrcs(const std::list<unsigned int>& ssrcs) {
     unsigned int ssrc = *it;
     ssrc_streams_[ssrc] = idx;
   }
-  return 0;
+  return true;
 }
 
 // Called from ViEBitrateObserver.
