@@ -24,12 +24,6 @@
 // Reference on memory alignment:
 // http://stackoverflow.com/questions/227897/solve-the-memory-alignment-in-c-interview-question-that-stumped-me
 namespace webrtc {
-// TODO(henrike): better to create just one memory block and interpret the
-//                first sizeof(AlignedMemory) bytes as an AlignedMemory struct.
-struct AlignedMemory {
-  void* aligned_buffer;
-  void* memory_pointer;
-};
 
 uintptr_t GetRightAlign(uintptr_t start_pos, size_t alignment) {
   // The pointer should be aligned with |alignment| bytes. The - 1 guarantees
@@ -45,14 +39,14 @@ bool ValidAlignment(size_t alignment) {
   return (alignment & (alignment - 1)) == 0;
 }
 
-void* GetRightAlign(const void* ptr, size_t alignment) {
-  if (!ptr) {
+void* GetRightAlign(const void* pointer, size_t alignment) {
+  if (!pointer) {
     return NULL;
   }
   if (!ValidAlignment(alignment)) {
     return NULL;
   }
-  uintptr_t start_pos = reinterpret_cast<uintptr_t>(ptr);
+  uintptr_t start_pos = reinterpret_cast<uintptr_t>(pointer);
   return reinterpret_cast<void*>(GetRightAlign(start_pos, alignment));
 }
 
@@ -64,38 +58,30 @@ void* AlignedMalloc(size_t size, size_t alignment) {
     return NULL;
   }
 
-  AlignedMemory* return_value = new AlignedMemory();
-  if (return_value == NULL) {
-    return NULL;
-  }
-
   // The memory is aligned towards the lowest address that so only
   // alignment - 1 bytes needs to be allocated.
-  // A pointer to AlignedMemory must be stored so that it can be retreived for
-  // deletion, ergo the sizeof(uintptr_t).
-  return_value->memory_pointer = malloc(size + sizeof(uintptr_t) +
-                                        alignment - 1);
-  if (return_value->memory_pointer == NULL) {
-    delete return_value;
+  // A pointer to the start of the memory must be stored so that it can be
+  // retreived for deletion, ergo the sizeof(uintptr_t).
+  void* memory_pointer = malloc(size + sizeof(uintptr_t) + alignment - 1);
+  if (memory_pointer == NULL) {
     return NULL;
   }
 
-  // Aligning after the sizeof(header) bytes will leave room for the header
+  // Aligning after the sizeof(uintptr_t) bytes will leave room for the header
   // in the same memory block.
-  uintptr_t align_start_pos =
-      reinterpret_cast<uintptr_t>(return_value->memory_pointer);
+  uintptr_t align_start_pos = reinterpret_cast<uintptr_t>(memory_pointer);
   align_start_pos += sizeof(uintptr_t);
   uintptr_t aligned_pos = GetRightAlign(align_start_pos, alignment);
-  return_value->aligned_buffer = reinterpret_cast<void*>(aligned_pos);
+  void* aligned_pointer = reinterpret_cast<void*>(aligned_pos);
 
-  // Store the address to the AlignedMemory struct in the header so that a
-  // it's possible to reclaim all memory.
-  uintptr_t header_pos = aligned_pos;
-  header_pos -= sizeof(uintptr_t);
-  void* header_ptr = reinterpret_cast<void*>(header_pos);
-  uintptr_t header_value = reinterpret_cast<uintptr_t>(return_value);
-  memcpy(header_ptr, &header_value, sizeof(uintptr_t));
-  return return_value->aligned_buffer;
+  // Store the address to the beginning of the memory just before the aligned
+  // memory.
+  uintptr_t header_pos = aligned_pos - sizeof(uintptr_t);
+  void* header_pointer = reinterpret_cast<void*>(header_pos);
+  uintptr_t memory_start = reinterpret_cast<uintptr_t>(memory_pointer);
+  memcpy(header_pointer, &memory_start, sizeof(uintptr_t));
+
+  return aligned_pointer;
 }
 
 void AlignedFree(void* mem_block) {
@@ -106,13 +92,9 @@ void AlignedFree(void* mem_block) {
   uintptr_t header_pos = aligned_pos - sizeof(uintptr_t);
 
   // Read out the address of the AlignedMemory struct from the header.
-  uintptr_t* header_ptr = reinterpret_cast<uintptr_t*>(header_pos);
-  AlignedMemory* delete_memory = reinterpret_cast<AlignedMemory*>(*header_ptr);
-
-  if (delete_memory->memory_pointer != NULL) {
-    free(delete_memory->memory_pointer);
-  }
-  delete delete_memory;
+  uintptr_t memory_start_pos = *reinterpret_cast<uintptr_t*>(header_pos);
+  void* memory_start = reinterpret_cast<void*>(memory_start_pos);
+  free(memory_start);
 }
 
 }  // namespace webrtc
