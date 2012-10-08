@@ -73,7 +73,7 @@ _scheduleKeyRequest(false),
 _sendCritSect(CriticalSectionWrapper::CreateCriticalSection()),
 _encoder(),
 _encodedFrameCallback(),
-_nextFrameType(kVideoFrameDelta),
+_nextFrameTypes(1, kVideoFrameDelta),
 _mediaOpt(id, clock_),
 _sendCodecType(kVideoCodecUnknown),
 _sendStatsCallback(NULL),
@@ -334,6 +334,9 @@ VideoCodingModuleImpl::RegisterSendCodec(const VideoCodec* sendCodec,
     _sendCodecType = sendCodec->codecType;
     int numLayers = (_sendCodecType != kVideoCodecVP8) ? 1 :
                         sendCodec->codecSpecific.VP8.numberOfTemporalLayers;
+    _nextFrameTypes.clear();
+    _nextFrameTypes.resize(VCM_MAX(sendCodec->numberOfSimulcastStreams, 1),
+                           kVideoFrameDelta);
 
     _mediaOpt.SetEncodingData(_sendCodecType,
                               sendCodec->maxBitrate,
@@ -661,7 +664,9 @@ VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
     {
         return VCM_UNINITIALIZED;
     }
-    if (_nextFrameType == kFrameEmpty)
+    // TODO(holmer): Add support for dropping frames per stream. Currently we
+    // only have one frame dropper for all streams.
+    if (_nextFrameTypes[0] == kFrameEmpty)
     {
         return VCM_OK;
     }
@@ -679,7 +684,7 @@ VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
         _mediaOpt.updateContentData(contentMetrics);
         WebRtc_Word32 ret = _encoder->Encode(videoFrame,
                                              codecSpecificInfo,
-                                             _nextFrameType);
+                                             &_nextFrameTypes);
         if (_encoderInputFile != NULL)
         {
           if (fwrite(videoFrame.Buffer(), 1, videoFrame.Length(),
@@ -695,19 +700,23 @@ VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
                          "Encode error: %d", ret);
             return ret;
         }
-        _nextFrameType = kVideoFrameDelta; // default frame type
+        for (size_t i = 0; i < _nextFrameTypes.size(); ++i) {
+          _nextFrameTypes[i] = kVideoFrameDelta;  // Default frame type.
+        }
     }
     return VCM_OK;
 }
 
-WebRtc_Word32 VideoCodingModuleImpl::IntraFrameRequest() {
+WebRtc_Word32 VideoCodingModuleImpl::IntraFrameRequest(int stream_index) {
+  assert(stream_index >= 0);
   CriticalSectionScoped cs(_sendCritSect);
-  _nextFrameType = kVideoFrameKey;
+  _nextFrameTypes[stream_index] = kVideoFrameKey;
   if (_encoder != NULL && _encoder->InternalSource()) {
     // Try to request the frame if we have an external encoder with
     // internal source since AddVideoFrame never will be called.
-    if (_encoder->RequestFrame(_nextFrameType) == WEBRTC_VIDEO_CODEC_OK) {
-      _nextFrameType = kVideoFrameDelta;
+    if (_encoder->RequestFrame(&_nextFrameTypes) ==
+        WEBRTC_VIDEO_CODEC_OK) {
+      _nextFrameTypes[stream_index] = kVideoFrameDelta;
     }
   }
   return VCM_OK;

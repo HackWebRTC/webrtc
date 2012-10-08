@@ -49,7 +49,7 @@ public:
 //                                <0 - Error
   virtual int Encode(const VideoFrame& inputImage,
                      const CodecSpecificInfo* /*codecSpecificInfo*/,
-                     const VideoFrameType /*frameTypes*/);
+                     const std::vector<VideoFrameType>* /*frame_types*/);
 
 // Register an encode complete callback object.
 //

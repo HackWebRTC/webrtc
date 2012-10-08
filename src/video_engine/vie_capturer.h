@@ -11,6 +11,8 @@
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_CAPTURER_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_CAPTURER_H_
 
+#include <vector>
+
 #include "common_types.h"  // NOLINT
 #include "engine_configurations.h"  // NOLINT
 #include "modules/video_capture/main/interface/video_capture.h"
@@ -142,7 +144,7 @@ class ViECapturer
                                    WebRtc_UWord32 max_payload_size);
   virtual WebRtc_Word32 Encode(const VideoFrame& input_image,
                                const CodecSpecificInfo* codec_specific_info,
-                               const VideoFrameType frame_type);
+                               const std::vector<VideoFrameType>* frame_types);
   virtual WebRtc_Word32 RegisterEncodeCompleteCallback(
       EncodedImageCallback* callback);
   virtual WebRtc_Word32 Release();

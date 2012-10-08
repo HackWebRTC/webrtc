@@ -11,19 +11,20 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_VIDEO_CODING_IMPL_H_
 #define WEBRTC_MODULES_VIDEO_CODING_VIDEO_CODING_IMPL_H_
 
-#include "video_coding.h"
-#include "critical_section_wrapper.h"
-#include "frame_buffer.h"
-#include "receiver.h"
-#include "timing.h"
-#include "jitter_buffer.h"
-#include "codec_database.h"
-#include "generic_decoder.h"
-#include "generic_encoder.h"
-#include "media_optimization.h"
-#include "modules/video_coding/main/source/tick_time_base.h"
+#include "modules/video_coding/main/interface/video_coding.h"
 
-#include <stdio.h>
+#include <vector>
+
+#include "modules/video_coding/main/source/codec_database.h"
+#include "modules/video_coding/main/source/frame_buffer.h"
+#include "modules/video_coding/main/source/generic_decoder.h"
+#include "modules/video_coding/main/source/generic_encoder.h"
+#include "modules/video_coding/main/source/jitter_buffer.h"
+#include "modules/video_coding/main/source/media_optimization.h"
+#include "modules/video_coding/main/source/receiver.h"
+#include "modules/video_coding/main/source/tick_time_base.h"
+#include "modules/video_coding/main/source/timing.h"
+#include "system_wrappers/interface/critical_section_wrapper.h"
 
 namespace webrtc
 {
@@ -147,7 +148,7 @@ public:
         const VideoContentMetrics* _contentMetrics = NULL,
         const CodecSpecificInfo* codecSpecificInfo = NULL);
 
-    virtual WebRtc_Word32 IntraFrameRequest();
+    virtual WebRtc_Word32 IntraFrameRequest(int stream_index);
 
     //Enable frame dropper
     virtual WebRtc_Word32 EnableFrameDropper(bool enable);
@@ -300,7 +301,7 @@ private:
     CriticalSectionWrapper*             _sendCritSect; // Critical section for send side
     VCMGenericEncoder*                  _encoder;
     VCMEncodedFrameCallback             _encodedFrameCallback;
-    FrameType                           _nextFrameType;
+    std::vector<FrameType>              _nextFrameTypes;
     VCMMediaOptimization                _mediaOpt;
     VideoCodecType                      _sendCodecType;
     VCMSendStatisticsCallback*          _sendStatsCallback;

@@ -103,6 +103,7 @@
           'type': 'executable',
           'dependencies': [
             'webrtc_vp8',
+            '<(DEPTH)/testing/gmock.gyp:gmock',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/test/test.gyp:test_support_main',
           ],

@@ -180,17 +180,17 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
     source_frame_.SetTimeStamp(frame_number);
 
     // Decide if we're going to force a keyframe:
-    VideoFrameType frame_type = kDeltaFrame;
+    std::vector<VideoFrameType> frame_types(1, kDeltaFrame);
     if (config_.keyframe_interval > 0 &&
         frame_number % config_.keyframe_interval == 0) {
-      frame_type = kKeyFrame;
+      frame_types[0] = kKeyFrame;
     }
 
     // For dropped frames, we regard them as zero size encoded frames.
     encoded_frame_size_ = 0;
 
     WebRtc_Word32 encode_result = encoder_->Encode(source_frame_, NULL,
-                                                   frame_type);
+                                                   &frame_types);
 
     if (encode_result != WEBRTC_VIDEO_CODEC_OK) {
       fprintf(stderr, "Failed to encode frame %d, return code: %d\n",

@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_INTERFACE_VIDEO_CODEC_INTERFACE_H
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_INTERFACE_VIDEO_CODEC_INTERFACE_H
 
+#include <vector>
+
 #include "common_types.h"
 #include "modules/interface/module_common_types.h"
 #include "modules/video_coding/codecs/interface/video_error_codes.h"
@@ -95,12 +97,14 @@ public:
     // Input:
     //          - inputImage        : Image to be encoded
     //          - codecSpecificInfo : Pointer to codec specific data
-    //          - frameType         : The frame type to encode
+    //          - frame_types        : The frame type to encode
     //
-    // Return value                 : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
-    virtual WebRtc_Word32 Encode(const VideoFrame& inputImage,
-                                 const CodecSpecificInfo* codecSpecificInfo,
-                                 const VideoFrameType frameType) = 0;
+    // Return value                 : WEBRTC_VIDEO_CODEC_OK if OK, < 0
+    //                                otherwise.
+    virtual WebRtc_Word32 Encode(
+        const VideoFrame& inputImage,
+        const CodecSpecificInfo* codecSpecificInfo,
+        const std::vector<VideoFrameType>* frame_types) = 0;
 
     // Register an encode complete callback object.
     //

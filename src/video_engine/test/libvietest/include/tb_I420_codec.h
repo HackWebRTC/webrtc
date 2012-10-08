@@ -36,7 +36,7 @@ public:
     virtual WebRtc_Word32 Encode(
         const webrtc::VideoFrame& inputImage,
         const webrtc::CodecSpecificInfo* codecSpecificInfo,
-        const webrtc::VideoFrameType frameType);
+        const std::vector<webrtc::VideoFrameType>* frameTypes);
 
     virtual WebRtc_Word32 RegisterEncodeCompleteCallback(
         webrtc::EncodedImageCallback* callback);

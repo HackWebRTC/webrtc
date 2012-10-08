@@ -267,13 +267,13 @@ bool PerformanceTest::Encode()
 {
     VideoFrame rawImage;
     VideoBufferToRawImage(_inputVideoBuffer, rawImage);
-    VideoFrameType frameType = kDeltaFrame;
+    std::vector<VideoFrameType> frameTypes(1, kDeltaFrame);
     if (_requestKeyFrame && !(_encFrameCnt%50))
     {
-        frameType = kKeyFrame;
+        frameTypes[0] = kKeyFrame;
     }
     webrtc::CodecSpecificInfo* codecSpecificInfo = CreateEncoderSpecificInfo();
-    int ret = _encoder->Encode(rawImage, codecSpecificInfo, frameType);
+    int ret = _encoder->Encode(rawImage, codecSpecificInfo, &frameTypes);
     EXPECT_EQ(ret, WEBRTC_VIDEO_CODEC_OK);
     if (codecSpecificInfo != NULL)
     {

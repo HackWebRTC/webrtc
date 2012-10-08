@@ -83,6 +83,7 @@
         'jitter_buffer_unittest.cc',
         'session_info_unittest.cc',
         'video_coding_robustness_unittest.cc',
+        'video_coding_impl_unittest.cc',
         'qm_select_unittest.cc',
       ],
     },

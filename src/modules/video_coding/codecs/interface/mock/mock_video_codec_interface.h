@@ -39,7 +39,7 @@ class MockVideoEncoder : public VideoEncoder {
   MOCK_METHOD3(Encode,
                WebRtc_Word32(const VideoFrame& inputImage,
                              const CodecSpecificInfo* codecSpecificInfo,
-                             const VideoFrameType frameType));
+                             const std::vector<VideoFrameType>* frame_types));
   MOCK_METHOD1(RegisterEncodeCompleteCallback,
                WebRtc_Word32(EncodedImageCallback* callback));
   MOCK_METHOD0(Release, WebRtc_Word32());

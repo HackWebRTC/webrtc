@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_ENCODED_FRAME_H_
 #define WEBRTC_MODULES_VIDEO_CODING_ENCODED_FRAME_H_
 
+#include <vector>
+
 #include "common_types.h"
 #include "common_video/interface/video_image.h"
 #include "modules/interface/module_common_types.h"
@@ -93,6 +95,9 @@ public:
 
     static webrtc::FrameType ConvertFrameType(VideoFrameType frameType);
     static VideoFrameType ConvertFrameType(webrtc::FrameType frameType);
+    static void ConvertFrameTypes(
+        const std::vector<webrtc::FrameType>& frame_types,
+        std::vector<VideoFrameType>* video_frame_types);
 
 protected:
     /**

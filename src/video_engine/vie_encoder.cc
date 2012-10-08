@@ -585,7 +585,7 @@ int ViEEncoder::GetPreferedFrameSettings(int* width,
 int ViEEncoder::SendKeyFrame() {
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
                ViEId(engine_id_, channel_id_), "%s", __FUNCTION__);
-  return vcm_.IntraFrameRequest();
+  return vcm_.IntraFrameRequest(0);
 }
 
 WebRtc_Word32 ViEEncoder::SendCodecStatistics(
@@ -818,7 +818,7 @@ void ViEEncoder::OnReceivedIntraFrameRequest(uint32_t /*ssrc*/) {
                  "%s: Not not encoding new intra due to timing", __FUNCTION__);
     return;
   }
-  vcm_.IntraFrameRequest();
+  vcm_.IntraFrameRequest(0);
   time_last_intra_request_ms_ = now;
 }
 

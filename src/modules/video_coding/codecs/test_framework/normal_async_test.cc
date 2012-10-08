@@ -12,8 +12,9 @@
 
 #include <assert.h>
 #include <string.h>
-#include <sstream>
 #include <queue>
+#include <sstream>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "tick_util.h"
@@ -422,7 +423,7 @@ NormalAsyncTest::Encode()
     }
     _encodeCompleteTime = 0;
     _encodeTimes[rawImage.TimeStamp()] = tGetTime();
-    VideoFrameType frameType = kDeltaFrame;
+    std::vector<VideoFrameType> frame_types(1, kDeltaFrame);
 
     // check SLI queue
     _hasReceivedSLI = false;
@@ -458,13 +459,13 @@ NormalAsyncTest::Encode()
     if (_hasReceivedPLI)
     {
         // respond to PLI by encoding a key frame
-        frameType = kKeyFrame;
+        frame_types[0] = kKeyFrame;
         _hasReceivedPLI = false;
         _hasReceivedSLI = false; // don't trigger both at once
     }
 
     webrtc::CodecSpecificInfo* codecSpecificInfo = CreateEncoderSpecificInfo();
-    int ret = _encoder->Encode(rawImage, codecSpecificInfo, frameType);
+    int ret = _encoder->Encode(rawImage, codecSpecificInfo, &frame_types);
     EXPECT_EQ(ret, WEBRTC_VIDEO_CODEC_OK);
     if (codecSpecificInfo != NULL)
     {

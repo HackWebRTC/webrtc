@@ -326,7 +326,7 @@ uint32_t VP8EncoderImpl::MaxIntraTarget(uint32_t optimalBuffersize) {
 
 int VP8EncoderImpl::Encode(const VideoFrame& input_image,
                            const CodecSpecificInfo* codec_specific_info,
-                           const VideoFrameType frame_type) {
+                           const std::vector<VideoFrameType>* frame_types) {
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
@@ -335,6 +335,12 @@ int VP8EncoderImpl::Encode(const VideoFrame& input_image,
   }
   if (encoded_complete_callback_ == NULL) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+  }
+
+  VideoFrameType frame_type = kDeltaFrame;
+  // We only support one stream at the moment.
+  if (frame_types && frame_types->size() > 0) {
+    frame_type = (*frame_types)[0];
   }
 
   // Check for change in frame size.

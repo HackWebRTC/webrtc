@@ -227,31 +227,30 @@ webrtc::FrameType VCMEncodedFrame::ConvertFrameType(VideoFrameType frameType)
     }
 }
 
-VideoFrameType VCMEncodedFrame::ConvertFrameType(webrtc::FrameType frameType)
-{
-    switch (frameType)
-    {
+VideoFrameType VCMEncodedFrame::ConvertFrameType(webrtc::FrameType frame_type) {
+  switch (frame_type) {
     case kVideoFrameKey:
-        {
-            return kKeyFrame;
-        }
+      return kKeyFrame;
     case kVideoFrameDelta:
-        {
-            return kDeltaFrame;
-        }
+      return kDeltaFrame;
     case kVideoFrameGolden:
-        {
-            return kGoldenFrame;
-        }
+      return kGoldenFrame;
     case kVideoFrameAltRef:
-        {
-            return kAltRefFrame;
-        }
+      return kAltRefFrame;
     default:
-        {
-            return kDeltaFrame;
-        }
-    }
+      assert(false);
+      return kDeltaFrame;
+  }
+}
+
+void VCMEncodedFrame::ConvertFrameTypes(
+    const std::vector<webrtc::FrameType>& frame_types,
+    std::vector<VideoFrameType>* video_frame_types) {
+  assert(video_frame_types);
+  video_frame_types->reserve(frame_types.size());
+  for (size_t i = 0; i < frame_types.size(); ++i) {
+    (*video_frame_types)[i] = ConvertFrameType(frame_types[i]);
+  }
 }
 
 }

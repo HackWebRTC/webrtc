@@ -149,7 +149,6 @@ bool VP8RpsTest::EncodeRps(RpsDecodeCompleteCallback* decodeCallback) {
   }
   _encodeCompleteTime = 0;
   _encodeTimes[rawImage.TimeStamp()] = tGetTime();
-  webrtc::VideoFrameType frameType = webrtc::kDeltaFrame;
 
   webrtc::CodecSpecificInfo* codecSpecificInfo = CreateEncoderSpecificInfo();
   codecSpecificInfo->codecSpecific.VP8.pictureIdRPSI =
@@ -162,7 +161,7 @@ bool VP8RpsTest::EncodeRps(RpsDecodeCompleteCallback* decodeCallback) {
     sli_ = false;
   }
   printf("Encoding: %u\n", _framecnt);
-  int ret = _encoder->Encode(rawImage, codecSpecificInfo, frameType);
+  int ret = _encoder->Encode(rawImage, codecSpecificInfo, NULL);
   if (ret < 0)
     printf("Failed to encode: %u\n", _framecnt);
 

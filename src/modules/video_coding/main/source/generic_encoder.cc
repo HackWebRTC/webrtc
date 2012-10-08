@@ -59,9 +59,13 @@ VCMGenericEncoder::InitEncode(const VideoCodec* settings,
 WebRtc_Word32
 VCMGenericEncoder::Encode(const VideoFrame& inputFrame,
                           const CodecSpecificInfo* codecSpecificInfo,
-                          const FrameType frameType) {
-  VideoFrameType videoFrameType = VCMEncodedFrame::ConvertFrameType(frameType);
-  return _encoder.Encode(inputFrame, codecSpecificInfo, videoFrameType);
+                          const std::vector<FrameType>* frameTypes) {
+  std::vector<VideoFrameType> video_frame_types(frameTypes->size(),
+                                                kDeltaFrame);
+  if (frameTypes) {
+    VCMEncodedFrame::ConvertFrameTypes(*frameTypes, &video_frame_types);
+  }
+  return _encoder.Encode(inputFrame, codecSpecificInfo, &video_frame_types);
 }
 
 WebRtc_Word32
@@ -110,10 +114,17 @@ VCMGenericEncoder::SetPeriodicKeyFrames(bool enable)
     return _encoder.SetPeriodicKeyFrames(enable);
 }
 
-WebRtc_Word32 VCMGenericEncoder::RequestFrame(const FrameType frameType) {
+WebRtc_Word32 VCMGenericEncoder::RequestFrame(
+    const std::vector<FrameType>* frame_types) {
+  if (!frame_types) {
+    return 0;
+  }
   VideoFrame image;
-  VideoFrameType videoFrameType = VCMEncodedFrame::ConvertFrameType(frameType);
-  return _encoder.Encode(image, NULL,  videoFrameType);
+  std::vector<VideoFrameType> video_frame_types(kVideoFrameDelta);
+  if (frame_types) {
+    VCMEncodedFrame::ConvertFrameTypes(*frame_types, &video_frame_types);
+  }
+  return _encoder.Encode(image, NULL, &video_frame_types);
 }
 
 WebRtc_Word32

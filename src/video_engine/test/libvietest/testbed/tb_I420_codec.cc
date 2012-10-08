@@ -120,7 +120,7 @@ WebRtc_Word32 TbI420Encoder::InitEncode(const webrtc::VideoCodec* inst,
 WebRtc_Word32 TbI420Encoder::Encode(
     const webrtc::VideoFrame& inputImage,
     const webrtc::CodecSpecificInfo* /*codecSpecificInfo*/,
-    const webrtc::VideoFrameType /*frameType*/)
+    const std::vector<webrtc::VideoFrameType>* /*frameTypes*/)
 {
     _functionCalls.Encode++;
     if (!_inited)

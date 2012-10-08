@@ -260,7 +260,7 @@ public:
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
-    virtual WebRtc_Word32 IntraFrameRequest() = 0;
+    virtual WebRtc_Word32 IntraFrameRequest(int stream_index) = 0;
 
     // Frame Dropper enable. Can be used to disable the frame dropping when the encoder
     // over-uses its bit rate. This API is designed to be used when the encoded frames
