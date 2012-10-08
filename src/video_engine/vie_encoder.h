@@ -11,6 +11,9 @@
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_ENCODER_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_ENCODER_H_
 
+#include <list>
+#include <map>
+
 #include "common_types.h"  // NOLINT
 #include "typedefs.h"  //NOLINT
 #include "modules/bitrate_controller/include/bitrate_controller.h"
@@ -134,6 +137,9 @@ class ViEEncoder
   virtual void OnReceivedRPSI(uint32_t ssrc, uint64_t picture_id);
   virtual void OnLocalSsrcChanged(uint32_t old_ssrc, uint32_t new_ssrc);
 
+  // Sets SSRCs for all streams.
+  bool SetSsrcs(const std::list<unsigned int>& ssrcs);
+
   // Effect filter.
   WebRtc_Word32 RegisterEffectFilter(ViEEffectFilter* effect_filter);
 
@@ -167,7 +173,7 @@ class ViEEncoder
   BitrateController* bitrate_controller_;
 
   bool paused_;
-  WebRtc_Word64 time_last_intra_request_ms_;
+  std::map<unsigned int, int64_t> time_last_intra_request_ms_;
   WebRtc_Word32 channels_dropping_delta_frames_;
   bool drop_next_frame_;
 
@@ -182,6 +188,7 @@ class ViEEncoder
   WebRtc_UWord8 picture_id_sli_;
   bool has_received_rpsi_;
   WebRtc_UWord64 picture_id_rpsi_;
+  std::map<unsigned int, int> ssrc_streams_;
 
   ViEFileRecorder file_recorder_;
 
