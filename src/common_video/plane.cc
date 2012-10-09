@@ -15,6 +15,9 @@
 
 namespace webrtc {
 
+// Aligning pointer to 64 bytes for improved performance, e.g. use SIMD.
+static const int kBufferAlignment =  64;
+
 Plane::Plane()
     : buffer_(NULL),
       allocated_size_(0),
@@ -37,12 +40,12 @@ int Plane::MaybeResize(int new_size) {
     return -1;
   if (new_size <= allocated_size_)
     return 0;
-  uint8_t* new_buffer = new uint8_t[new_size];
+  Allocator<uint8_t>::scoped_ptr_aligned new_buffer(
+    AlignedMalloc<uint8_t>(new_size, kBufferAlignment));
   if (buffer_.get()) {
-    memcpy(new_buffer, buffer_.get(), plane_size_);
-    buffer_.reset();
+    memcpy(new_buffer.get(), buffer_.get(), plane_size_);
   }
-  buffer_.reset(new_buffer);
+  buffer_.reset(new_buffer.release());
   allocated_size_ = new_size;
   return 0;
 }
