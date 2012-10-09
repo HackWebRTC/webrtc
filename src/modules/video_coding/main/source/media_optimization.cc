@@ -176,7 +176,8 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
     _targetBitRate = bitRate - protection_overhead_kbps;
 
     // Update encoding rates following protection settings
-    _frameDropper->SetRates(static_cast<float>(_targetBitRate), 0);
+    _frameDropper->SetRates(static_cast<float>(_targetBitRate),
+                                               _incomingFrameRate);
 
     if (_enableQm)
     {

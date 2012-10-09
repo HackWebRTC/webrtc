@@ -60,16 +60,18 @@ public:
     //
     // Input:
     //          - bitRate       : The target bit rate
-    void SetRates(float bitRate, float userFrameRate);
+    void SetRates(float bitRate, float incoming_frame_rate);
 
     // Return value     : The current average frame rate produced
     //                    if the DropFrame() function is used as
     //                    instruction of when to drop frames.
     float ActualFrameRate(WebRtc_UWord32 inputFrameRate) const;
 
+
 private:
     void FillBucket(float inKbits, float outKbits);
     void UpdateRatio();
+    void CapAccumulator();
 
     WebRtc_Word32     _vcmId;
     VCMExpFilter       _keyFrameSizeAvgKbits;
@@ -83,10 +85,12 @@ private:
     VCMExpFilter       _dropRatio;
     WebRtc_Word32     _dropCount;
     float           _windowSize;
-    float           _userFrameRate;
+    float           _incoming_frame_rate;
     bool            _wasBelowMax;
     bool            _enabled;
     bool            _fastMode;
+    float           _cap_buffer_size;
+    float           _max_time_drops;
 }; // end of VCMFrameDropper class
 
 } // namespace webrtc

@@ -35,8 +35,8 @@ VCMFrameDropper::Reset()
     _accumulator = 0.0f;
     _accumulatorMax = 150.0f; // assume 300 kb/s and 0.5 s window
     _targetBitRate = 300.0f;
-    _userFrameRate = 30;
-    _keyFrameSpreadFrames = 0.5f * _userFrameRate;
+    _incoming_frame_rate = 30;
+    _keyFrameSpreadFrames = 0.5f * _incoming_frame_rate;
     _dropNext = false;
     _dropRatio.Reset(0.9f);
     _dropRatio.Apply(0.0f, 0.0f); // Initialize to 0
@@ -45,6 +45,10 @@ VCMFrameDropper::Reset()
     _wasBelowMax = true;
     _enabled = true;
     _fastMode = false; // start with normal (non-aggressive) mode
+    // Cap for the encoder buffer level/accumulator, in secs.
+    _cap_buffer_size = 3.0f;
+    // Cap on maximum amount of dropped frames between kept frames, in secs.
+    _max_time_drops = 4.0f;
 }
 
 void
@@ -98,6 +102,7 @@ VCMFrameDropper::Fill(WebRtc_UWord32 frameSizeBytes, bool deltaFrame)
     }
     // Change the level of the accumulator (bucket)
     _accumulator += frameSizeKbits;
+    CapAccumulator();
 }
 
 void
@@ -135,7 +140,6 @@ VCMFrameDropper::Leak(WebRtc_UWord32 inputFrameRate)
     }
     _accumulator -= T;
     UpdateRatio();
-
 }
 
 void
@@ -222,6 +226,13 @@ VCMFrameDropper::DropFrame()
             denom = (float)1e-5;
         }
         WebRtc_Word32 limit = static_cast<WebRtc_Word32>(1.0f / denom - 1.0f + 0.5f);
+        // Put a bound on the max amount of dropped frames between each kept
+        // frame, in terms of frame rate and window size (secs).
+        int max_limit = static_cast<int>(_incoming_frame_rate *
+                                         _max_time_drops);
+        if (limit > max_limit) {
+          limit = max_limit;
+        }
         if (_dropCount < 0)
         {
             // Reset the _dropCount since it was negative and should be positive.
@@ -302,7 +313,7 @@ VCMFrameDropper::DropFrame()
 }
 
 void
-VCMFrameDropper::SetRates(float bitRate, float userFrameRate)
+VCMFrameDropper::SetRates(float bitRate, float incoming_frame_rate)
 {
     // Bit rate of -1 means infinite bandwidth.
     _accumulatorMax = bitRate * _windowSize; // bitRate * windowSize (in seconds)
@@ -312,10 +323,8 @@ VCMFrameDropper::SetRates(float bitRate, float userFrameRate)
         _accumulator = bitRate / _targetBitRate * _accumulator;
     }
     _targetBitRate = bitRate;
-    if (userFrameRate > 0.0f)
-    {
-        _userFrameRate = userFrameRate;
-    }
+    CapAccumulator();
+    _incoming_frame_rate = incoming_frame_rate;
 }
 
 float
@@ -326,6 +335,16 @@ VCMFrameDropper::ActualFrameRate(WebRtc_UWord32 inputFrameRate) const
         return static_cast<float>(inputFrameRate);
     }
     return inputFrameRate * (1.0f - _dropRatio.Value());
+}
+
+// Put a cap on the accumulator, i.e., don't let it grow beyond some level.
+// This is a temporary fix for screencasting where very large frames from
+// encoder will cause very slow response (too many frame drops).
+void VCMFrameDropper::CapAccumulator() {
+  float max_accumulator = _targetBitRate * _cap_buffer_size;
+  if (_accumulator > max_accumulator) {
+    _accumulator = max_accumulator;
+  }
 }
 
 }
