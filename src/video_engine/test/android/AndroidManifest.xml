@@ -13,15 +13,10 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.intent.action.HEADSET_PLUG"/>
             </intent-filter>
         </activity>
     </application>
-
-    <receiver android:name="com.juno.brheadset.HeadsetStateReceiver">
-      <intent-filter>
-        <action android:name="android.intent.action.HEADSET_PLUG"/>
-      </intent-filter>
-    </receiver>
 
     <uses-sdk android:minSdkVersion="10" />
     <uses-permission android:name="android.permission.CAMERA"></uses-permission>

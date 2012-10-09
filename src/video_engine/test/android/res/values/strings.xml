@@ -10,6 +10,7 @@
 <string name="remoteIp">Remote IP address</string>
 <string name="loopback">Loopback</string>
 <string name="stats">Stats</string>
+<string name="cpuload">CPULoad</string>
 <string name="startListen">Start Listen</string>
 <string name="startSend">Start Send</string>
 <string name="startBoth">Start Both</string>

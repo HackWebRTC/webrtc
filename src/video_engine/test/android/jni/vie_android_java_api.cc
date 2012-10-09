@@ -447,7 +447,6 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_Terminat
       return -1;
     }
     memset(&vieData, 0, sizeof(vieData));
-    VideoEngine::SetAndroidObjects(NULL, NULL);
     return 0;
   }
   else {
