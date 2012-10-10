@@ -18,6 +18,7 @@
         '<(webrtc_root)/test/test.gyp:test_support',
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/testing/gmock.gyp:gmock',
+        '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
         '<(webrtc_root)/test/libtest/libtest.gyp:libtest',
       ],
       'include_dirs': [

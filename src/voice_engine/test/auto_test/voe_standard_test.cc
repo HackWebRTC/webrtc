@@ -8,37 +8,27 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-
-#include "engine_configurations.h"
-#if defined(_WIN32)
-#include <conio.h>   // Exists only on windows.
-#include <tchar.h>
-#endif
-
 #include "voice_engine/test/auto_test/voe_standard_test.h"
 
-#if defined (_ENABLE_VISUAL_LEAK_DETECTOR_) && defined(_DEBUG) && \
-    defined(_WIN32) && !defined(_INSTRUMENTATION_TESTING_)
-#include "vld.h"
-#endif
+#include <stdio.h>
+#include <string.h>
 
-#include "system_wrappers/interface/critical_section_wrapper.h"
+#include "engine_configurations.h"
 #include "system_wrappers/interface/event_wrapper.h"
-#include "system_wrappers/interface/thread_wrapper.h"
-#include "voice_engine/voice_engine_defines.h"
-#include "voice_engine/test/auto_test/automated_mode.h"
-
-#ifdef _TEST_NETEQ_STATS_
 #include "voice_engine/include/voe_neteq_stats.h"
-#endif
-
+#include "voice_engine/test/auto_test/automated_mode.h"
 #include "voice_engine/test/auto_test/voe_cpu_test.h"
 #include "voice_engine/test/auto_test/voe_extended_test.h"
 #include "voice_engine/test/auto_test/voe_stress_test.h"
 #include "voice_engine/test/auto_test/voe_unit_test.h"
+#include "voice_engine/voice_engine_defines.h"
+
+DEFINE_bool(include_timing_dependent_tests, true,
+            "If true, we will include tests / parts of tests that are known "
+            "to break in slow execution environments (such as valgrind).");
+DEFINE_bool(automated, false,
+            "If true, we'll run the automated tests we have in noninteractive "
+            "mode.");
 
 using namespace webrtc;
 
@@ -535,7 +525,7 @@ int run_auto_test(TestType test_type, ExtendedSelection ext_selection) {
 }
 } // namespace voetest
 
-int RunInManualMode(int argc, char** argv) {
+int RunInManualMode() {
   using namespace voetest;
 
   SubAPIManager api_manager;
@@ -587,7 +577,7 @@ int RunInManualMode(int argc, char** argv) {
     TEST_LOG("\n\n+++ Running standard tests +++\n\n");
 
     // Currently, all googletest-rewritten tests are in the "automated" suite.
-    return RunInAutomatedMode(argc, argv);
+    return RunInAutomatedMode();
   }
 
   // Function that can be called from other entry functions.
@@ -600,12 +590,15 @@ int RunInManualMode(int argc, char** argv) {
 
 #if !defined(WEBRTC_IOS)
 int main(int argc, char** argv) {
-  if (argc > 1 && std::string(argv[1]) == "--automated") {
-    // This function is defined in automated_mode.cc to avoid macro clashes
-    // with googletest (for instance the ASSERT_TRUE macro).
-    return RunInAutomatedMode(argc, argv);
+  // This function and RunInAutomatedMode is defined in automated_mode.cc
+  // to avoid macro clashes with googletest (for instance ASSERT_TRUE).
+  InitializeGoogleTest(&argc, argv);
+  google::ParseCommandLineFlags(&argc, &argv, true);
+
+  if (FLAGS_automated) {
+    return RunInAutomatedMode();
   }
 
-  return RunInManualMode(argc, argv);
+  return RunInManualMode();
 }
 #endif //#if !defined(WEBRTC_IOS)

@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "after_streaming_fixture.h"
-#include "voe_standard_test.h"
-#include "testsupport/fileutils.h"
+#include "test/testsupport/fileutils.h"
+#include "voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"
+#include "voice_engine/test/auto_test/voe_standard_test.h"
 
 class TestRtpObserver : public webrtc::VoERTPObserver {
  public:
@@ -139,6 +139,11 @@ void RtcpAppHandler::Reset() {
 }
 
 TEST_F(RtpRtcpTest, RemoteRtcpCnameHasPropagatedToRemoteSide) {
+  if (!FLAGS_include_timing_dependent_tests) {
+    TEST_LOG("Skipping test - running in slow execution environment.../n");
+    return;
+  }
+
   // We need to sleep a bit here for the name to propagate. For instance,
   // 200 milliseconds is not enough, so we'll go with one second here.
   Sleep(1000);

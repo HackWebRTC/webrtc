@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <string>
 
+#include "gflags/gflags.h"
 #include "resource_manager.h"
 #include "voe_audio_processing.h"
 #include "voe_base.h"
@@ -59,6 +60,8 @@ class VoENetEqStats;
 #if defined(WEBRTC_ANDROID)
 extern char mobileLogMsg[640];
 #endif
+
+DECLARE_bool(include_timing_dependent_tests);
 
 namespace voetest {
 

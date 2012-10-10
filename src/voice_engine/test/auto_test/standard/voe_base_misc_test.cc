@@ -8,7 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "before_initialization_fixture.h"
+#include "voice_engine/test/auto_test/fixtures/before_initialization_fixture.h"
+
+#include <cstdlib>
 
 class VoeBaseMiscTest : public BeforeInitializationFixture {
 };
@@ -21,6 +23,7 @@ TEST_F(VoeBaseMiscTest, MaxNumChannelsIs32) {
 
 TEST_F(VoeBaseMiscTest, GetVersionPrintsSomeUsefulInformation) {
   char char_buffer[1024];
+  memset(char_buffer, 0, sizeof(char_buffer));
   EXPECT_EQ(0, voe_base_->GetVersion(char_buffer));
   EXPECT_THAT(char_buffer, ContainsRegex("VoiceEngine"));
 }

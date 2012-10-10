@@ -11,6 +11,7 @@
 #include "voice_engine/test/auto_test/fakes/fake_external_transport.h"
 #include "voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"
 #include "voice_engine/test/auto_test/voe_test_interface.h"
+#include "voice_engine/test/auto_test/voe_standard_test.h"
 #include "voice_engine/include/mock/mock_voe_connection_observer.h"
 #include "voice_engine/include/mock/mock_voe_observer.h"
 
@@ -143,6 +144,11 @@ TEST_F(NetworkTest, DoesNotCallDeRegisteredObserver) {
 }
 
 TEST_F(NetworkTest, DeadOrAliveObserverSeesAliveMessagesIfEnabled) {
+  if (!FLAGS_include_timing_dependent_tests) {
+    TEST_LOG("Skipping test - running in slow execution environment.../n");
+    return;
+  }
+
   webrtc::MockVoeConnectionObserver mock_observer;
   EXPECT_EQ(0, voe_network_->RegisterDeadOrAliveObserver(
       channel_, mock_observer));
@@ -158,6 +164,11 @@ TEST_F(NetworkTest, DeadOrAliveObserverSeesAliveMessagesIfEnabled) {
 }
 
 TEST_F(NetworkTest, DeadOrAliveObserverSeesDeadMessagesIfEnabled) {
+  if (!FLAGS_include_timing_dependent_tests) {
+    TEST_LOG("Skipping test - running in slow execution environment.../n");
+    return;
+  }
+
   // "When do you see them?" - "All the time!"
   webrtc::MockVoeConnectionObserver mock_observer;
   EXPECT_EQ(0, voe_network_->RegisterDeadOrAliveObserver(

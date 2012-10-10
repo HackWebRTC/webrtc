@@ -219,6 +219,171 @@
 }
 
 {
+   bug_898_1
+   Memcheck:Uninitialized
+   ...
+   fun:_ZN16FakeMediaProcess7ProcessEiN6webrtc15ProcessingTypesEPsiib
+   ...
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse17PlayThreadProcessEv
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse14PlayThreadFuncEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:StartThread
+}
+
+{
+   bug_898_2
+   Memcheck:Uninitialized
+   ...
+   fun:_ZN16FakeMediaProcess7ProcessEiN6webrtc15ProcessingTypesEPsiib
+   ...
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse16RecThreadProcessEv
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse13RecThreadFuncEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:StartThread
+}
+
+
+{
+   bug_332_1
+   Memcheck:Uninitialized
+   ...
+   fun:_ZN6webrtc11VoEBaseImpl16NeedMorePlayDataEjhhjPvRj
+   fun:_ZN6webrtc17AudioDeviceBuffer18RequestPlayoutDataEj
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse17PlayThreadProcessEv
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse14PlayThreadFuncEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:StartThread
+}
+
+{
+   bug_332_2
+   Memcheck:Unaddressable
+   fun:memcpy@@GLIBC_2.14
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse16ReadRecordedDataEPKvm
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse16RecThreadProcessEv
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse13RecThreadFuncEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:StartThread
+}
+
+{
+   bug_332_3
+   Memcheck:Uninitialized
+   fun:_ZN6webrtc11RTCPUtility21RTCPParseCommonHeaderEPKhS2_RNS0_16RTCPCommonHeaderE
+   ...
+   fun:_ZN6webrtc12RTCPReceiver10HandleSDESERNS_11RTCPUtility12RTCPParserV2E
+   fun:_ZN6webrtc12RTCPReceiver18IncomingRTCPPacketERNS_8RTCPHelp21RTCPPacketInformationEPNS_11RTCPUtility12RTCPParserV2E
+   fun:_ZN6webrtc17ModuleRtpRtcpImpl14IncomingPacketEPKht
+   fun:_ZN6webrtc3voe7Channel18IncomingRTCPPacketEPKaiPKct
+   fun:_ZN6webrtc16UdpTransportImpl20IncomingRTCPFunctionEPKaiPKNS_13SocketAddressE
+   fun:_ZN6webrtc16UdpTransportImpl20IncomingRTCPCallbackEPvPKaiPKNS_13SocketAddressE
+   fun:_ZN6webrtc14UdpSocketPosix11HasIncomingEv
+   fun:_ZN6webrtc25UdpSocketManagerPosixImpl7ProcessEv
+   fun:_ZN6webrtc25UdpSocketManagerPosixImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:StartThread
+}
+
+{
+   bug_332_4
+   Memcheck:Uninitialized
+   ...
+   fun:_ZN6webrtc3voe10AudioLevel12ComputeLevelERKNS_10AudioFrameE
+   fun:_ZN6webrtc3voe11OutputMixer28DoOperationsOnCombinedSignalEv
+   fun:_ZN6webrtc11VoEBaseImpl16NeedMorePlayDataEjhhjPvRj
+   fun:_ZN6webrtc17AudioDeviceBuffer18RequestPlayoutDataEj
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse17PlayThreadProcessEv
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse14PlayThreadFuncEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:StartThread
+}
+
+{
+   bug_332_5
+   Memcheck:Uninitialized
+   fun:WebRtcSpl_UpBy2ShortToInt
+   fun:WebRtcSpl_Resample8khzTo22khz
+   fun:_ZN6webrtc9Resampler4PushEPKsiPsiRi
+   fun:_ZN6webrtc3voe16RemixAndResampleERKNS_10AudioFrameEPNS_9ResamplerEPS1_
+   fun:_ZN6webrtc3voe11OutputMixer13GetMixedAudioEiiPNS_10AudioFrameE
+   fun:_ZN6webrtc11VoEBaseImpl16NeedMorePlayDataEjhhjPvRj
+   fun:_ZN6webrtc17AudioDeviceBuffer18RequestPlayoutDataEj
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse17PlayThreadProcessEv
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse14PlayThreadFuncEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:StartThread
+}
+
+{
+   bug_332_6
+   Memcheck:Param
+   socketcall.sendto(msg)
+   obj:/lib/x86_64-linux-gnu/libpthread-2.15.so
+   fun:_ZN6webrtc14UdpSocketPosix6SendToEPKaiRKNS_13SocketAddressE
+   fun:_ZN6webrtc16UdpTransportImpl10SendPacketEiPKvi
+   ...
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse16ReadRecordedDataEPKvm
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse16RecThreadProcessEv
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse13RecThreadFuncEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:StartThread
+}
+
+{
+   bug_332_7
+   Memcheck:Param
+   socketcall.sendto(msg)
+   obj:/lib/x86_64-linux-gnu/libpthread-2.15.so
+   fun:_ZN6webrtc14UdpSocketPosix6SendToEPKaiRKNS_13SocketAddressE
+   fun:_ZN6webrtc16UdpTransportImpl14SendRTCPPacketEiPKvi
+   fun:_ZN6webrtc3voe7Channel14SendRTCPPacketEiPKvi
+   fun:_ZN6webrtc10RTCPSender13SendToNetworkEPKht
+   fun:_ZN6webrtc10RTCPSender8SendRTCPEjiPKtbm
+   fun:_ZN6webrtc17ModuleRtpRtcpImpl7ProcessEv
+   fun:_ZN6webrtc17ProcessThreadImpl7ProcessEv
+   fun:_ZN6webrtc17ProcessThreadImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:StartThread
+}
+
+{
+   bug_332_8
+   Memcheck:Uninitialized
+   fun:linear_to_ulaw
+   fun:WebRtcG711_EncodeU
+   fun:_ZN6webrtc7ACMPCMU14InternalEncodeEPhPs
+   fun:_ZN6webrtc15ACMGenericCodec10EncodeSafeEPhPsPjPNS_21WebRtcACMEncodingTypeE
+   fun:_ZN6webrtc15ACMGenericCodec6EncodeEPhPsPjPNS_21WebRtcACMEncodingTypeE
+   fun:_ZN6webrtc21AudioCodingModuleImpl7ProcessEv
+   fun:_ZN6webrtc3voe7Channel13EncodeAndSendEv
+   fun:_ZN6webrtc3voe13TransmitMixer13EncodeAndSendEv
+   fun:_ZN6webrtc11VoEBaseImpl23RecordedDataIsAvailableEPKvjhhjjijRj
+   fun:_ZN6webrtc17AudioDeviceBuffer19DeliverRecordedDataEv
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse19ProcessRecordedDataEPajj
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse16ReadRecordedDataEPKvm
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse16RecThreadProcessEv
+   fun:_ZN6webrtc21AudioDeviceLinuxPulse13RecThreadFuncEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:StartThread
+}
+
+{
+   bug_332_9
+   Memcheck:Uninitialized
+   ...
+   fun:_ZN6webrtc12RTCPReceiver18IncomingRTCPPacketERNS_8RTCPHelp21RTCPPacketInformationEPNS_11RTCPUtility12RTCPParserV2E
+   fun:_ZN6webrtc17ModuleRtpRtcpImpl14IncomingPacketEPKht
+   fun:_ZN6webrtc3voe7Channel18IncomingRTCPPacketEPKaiPKct
+   fun:_ZN6webrtc16UdpTransportImpl20IncomingRTCPFunctionEPKaiPKNS_13SocketAddressE
+   fun:_ZN6webrtc16UdpTransportImpl20IncomingRTCPCallbackEPvPKaiPKNS_13SocketAddressE
+   fun:_ZN6webrtc14UdpSocketPosix11HasIncomingEv
+   fun:_ZN6webrtc25UdpSocketManagerPosixImpl7ProcessEv
+   fun:_ZN6webrtc25UdpSocketManagerPosixImpl3RunEPv
+   fun:_ZN6webrtc11ThreadPosix3RunEv
+   fun:StartThread
+}
+
+{
    bug_891
    Memcheck:Unaddressable
    fun:XShmPutImage
@@ -238,3 +403,5 @@
    fun:_ZN6webrtc5Trace3AddENS_10TraceLevelENS_11TraceModuleEiPKcz
    ...
 }
+
+

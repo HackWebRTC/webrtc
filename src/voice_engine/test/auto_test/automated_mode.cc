@@ -10,8 +10,10 @@
 
 #include "gtest/gtest.h"
 
-int RunInAutomatedMode(int argc, char** argv) {
-  testing::InitGoogleTest(&argc, argv);
+void InitializeGoogleTest(int* argc, char** argv) {
+  testing::InitGoogleTest(argc, argv);
+}
 
+int RunInAutomatedMode() {
   return RUN_ALL_TESTS();
 }

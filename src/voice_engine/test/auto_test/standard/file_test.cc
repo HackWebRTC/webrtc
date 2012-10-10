@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "after_streaming_fixture.h"
-#include "testsupport/fileutils.h"
+#include "voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"
+#include "voice_engine/test/auto_test/voe_standard_test.h"
+#include "test/testsupport/fileutils.h"
+
 
 class FileTest : public AfterStreamingFixture {
  protected:
@@ -24,6 +26,11 @@ class FileTest : public AfterStreamingFixture {
 };
 
 TEST_F(FileTest, ManualRecordToFileForThreeSecondsAndPlayback) {
+  if (!FLAGS_include_timing_dependent_tests) {
+    TEST_LOG("Skipping test - running in slow execution environment.../n");
+    return;
+  }
+
   SwitchToManualMicrophone();
 
   std::string recording_filename =
