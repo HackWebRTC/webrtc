@@ -576,7 +576,7 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLoss) {
   SetCodecParameters(&process_settings, 0.05f, -1, 1, true, true);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
-  SetQualityMetrics(&quality_metrics, 21.0, 16.0, 0.60, 0.40);
+  SetQualityMetrics(&quality_metrics, 20.0, 16.0, 0.60, 0.40);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[1];
   SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 15, 0);
