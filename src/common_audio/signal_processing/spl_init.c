@@ -31,6 +31,7 @@ ScaleAndAddVectorsWithRound WebRtcSpl_ScaleAndAddVectorsWithRound;
 RealForwardFFT WebRtcSpl_RealForwardFFT;
 RealInverseFFT WebRtcSpl_RealInverseFFT;
 
+#if defined(WEBRTC_DETECT_ARM_NEON) || !defined(WEBRTC_ARCH_ARM_NEON)
 /* Initialize function pointers to the generic C version. */
 static void InitPointersToC() {
   WebRtcSpl_MaxAbsValueW16 = WebRtcSpl_MaxAbsValueW16C;
@@ -46,6 +47,7 @@ static void InitPointersToC() {
   WebRtcSpl_RealForwardFFT = WebRtcSpl_RealForwardFFTC;
   WebRtcSpl_RealInverseFFT = WebRtcSpl_RealInverseFFTC;
 }
+#endif
 
 #if defined(WEBRTC_DETECT_ARM_NEON) || defined(WEBRTC_ARCH_ARM_NEON)
 /* Initialize function pointers to the Neon version. */
