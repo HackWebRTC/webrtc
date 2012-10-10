@@ -21,11 +21,12 @@ def run_ant_build_command(path_to_ant_build_file):
                                stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
     if process.returncode != 0:
-      print 'Failed to execute: %s\nError: %s' % (' '.join(cmd), stderr)
+      print >> sys.stderr, 'Failed to execute: %s\nError: %s' % (' '.join(cmd),
+                                                                 stderr)
     else:
       print stdout
   except Exception as e:
-    print 'Failed to execute: %s\nError: %s' % (' '.join(cmd), e)
+    print >> sys.stderr, 'Failed to execute: %s\nError: %s' % (' '.join(cmd), e)
 
 
 def _main():

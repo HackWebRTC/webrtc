@@ -55,7 +55,7 @@ def run_shell_command(command, msg=None):
   output, error = process.communicate()
   if process.returncode != 0:
     if msg:
-      print msg
+      print >> sys.stderr, msg
     raise HelperError('Failed to run %s: command returned %d and printed '
                       '%s and %s' % (cmd, process.returncode, output, error))
   return output.strip()
@@ -90,7 +90,8 @@ def perform_action_on_all_files(directory, file_pattern, file_extension,
     file_pattern(string): The name pattern of the files.
     file_extension(string): The files' extension.
     start_number(int): From where to start to count frames.
-    action(function): The action to be performed over the files.
+    action(function): The action to be performed over the files. Must return
+      False if the action failed, True otherwise.
 
   Return:
     (bool): Whether performing the action over all files was successful or not.
@@ -106,6 +107,7 @@ def perform_action_on_all_files(directory, file_pattern, file_extension,
     if os.path.isfile(file_name):
       if not action(file_name=file_name, **kwargs):
         errors = True
+        break
       file_number += 1
     else:
       file_exists = False

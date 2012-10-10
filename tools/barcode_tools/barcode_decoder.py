@@ -9,7 +9,6 @@
 
 import optparse
 import os
-import subprocess
 import sys
 
 import helper_functions
@@ -43,7 +42,8 @@ def convert_yuv_to_png_files(yuv_file_name, yuv_frame_width, yuv_frame_height,
     helper_functions.run_shell_command(
         command, msg='Error during YUV to PNG conversion')
   except helper_functions.HelperError, err:
-    print err
+    print >> sys.stderr, 'Error executing command: %s. Error: %s' % (command,
+                                                                     err)
     return False
   return True
 
@@ -101,10 +101,10 @@ def _decode_barcode_in_file(file_name, barcode_width, barcode_height, jars,
     out = helper_functions.run_shell_command(
         command, msg='Error during decoding of %s' % file_name)
     if not 'Success' in out:
-      sys.stderr.write('Barcode in %s cannot be decoded\n' % file_name)
+      print >> sys.stderr, 'Barcode in %s cannot be decoded\n' % file_name
       return False
   except helper_functions.HelperError, err:
-    print err
+    print >> sys.stderr, err
     return False
   return True
 
@@ -155,7 +155,6 @@ def _read_barcode_from_text_file(barcode_file_name):
   barcode_file = open(barcode_file_name, 'r')
   barcode = barcode_file.read()
   barcode_file.close()
-
   return barcode
 
 
@@ -270,16 +269,24 @@ def _main():
   zxing_dir = os.path.join(script_dir, 'third_party', 'zxing')
 
   # Convert the overlaid YUV video into a set of PNG frames.
-  convert_yuv_to_png_files(options.yuv_file, options.yuv_frame_width,
-                           options.yuv_frame_height,
-                           output_directory=options.png_output_dir)
+  if not convert_yuv_to_png_files(options.yuv_file, options.yuv_frame_width,
+                                  options.yuv_frame_height,
+                                  output_directory=options.png_output_dir):
+    print >> sys.stderr, 'An error occurred converting from YUV to PNG frames.'
+    return -1
+
   # Decode the barcodes from the PNG frames.
-  decode_frames(options.barcode_width, options.barcode_height,
-                input_directory=options.png_input_dir, path_to_zxing=zxing_dir)
+  if not decode_frames(options.barcode_width, options.barcode_height,
+                       input_directory=options.png_input_dir,
+                       path_to_zxing=zxing_dir):
+    print >> sys.stderr, ('An error occurred decoding barcodes from PNG frames.'
+                          'Have you built the zxing library JAR files?')
+    return -2
+
   # Generate statistics file.
   _generate_stats_file(options.stats_file,
                        input_directory=options.png_input_dir)
-
+  return 0
 
 if __name__ == '__main__':
   sys.exit(_main())
