@@ -38,15 +38,6 @@ public:
 class CriticalSectionScoped
 {
 public:
-    // Deprecated, don't add more users of this constructor.
-    // TODO(mflodman) Remove this version of the constructor when no one is
-    // using it any longer.
-    explicit CriticalSectionScoped(CriticalSectionWrapper& critsec)
-        : _ptrCritSec(&critsec)
-    {
-        _ptrCritSec->Enter();
-    }
-
     explicit CriticalSectionScoped(CriticalSectionWrapper* critsec)
         : _ptrCritSec(critsec)
     {
