@@ -209,8 +209,44 @@ WebRtc_Word32 VideoCaptureImpl::CaptureDelay()
 
 WebRtc_Word32 VideoCaptureImpl::DeliverCapturedFrame(VideoFrame& captureFrame,
     WebRtc_Word64 capture_time, VideoCodecType codec_type) {
-  UpdateFrameCount();// frame count used for local frame rate callback.
-  _startImageFrameIntervall = 0; // prevent the start image to be displayed.
+  UpdateFrameCount();  // frame count used for local frame rate callback.
+  _startImageFrameIntervall = 0;  // prevent the start image to be displayed.
+
+  const bool callOnCaptureDelayChanged = _setCaptureDelay != _captureDelay;
+  // Capture delay changed
+  if (_setCaptureDelay != _captureDelay) {
+      _setCaptureDelay = _captureDelay;
+  }
+
+  // Set the capture time
+  if (capture_time != 0) {
+      captureFrame.SetRenderTime(capture_time);
+  }
+  else {
+      captureFrame.SetRenderTime(TickTime::MillisecondTimestamp());
+  }
+
+  if (captureFrame.RenderTimeMs() == last_capture_time_) {
+    // We don't allow the same capture time for two frames, drop this one.
+    return -1;
+  }
+  last_capture_time_ = captureFrame.RenderTimeMs();
+
+  if (_dataCallBack) {
+    if (callOnCaptureDelayChanged) {
+      _dataCallBack->OnCaptureDelayChanged(_id, _captureDelay);
+    }
+    _dataCallBack->OnIncomingCapturedFrame(_id, captureFrame, codec_type);
+  }
+
+  return 0;
+}
+
+WebRtc_Word32 VideoCaptureImpl::DeliverEncodedCapturedFrame(
+    VideoFrame& captureFrame, WebRtc_Word64 capture_time,
+    VideoCodecType codec_type) {
+  UpdateFrameCount();  // frame count used for local frame rate callback.
+  _startImageFrameIntervall = 0;  // prevent the start image to be displayed.
 
   const bool callOnCaptureDelayChanged = _setCaptureDelay != _captureDelay;
   // Capture delay changed
@@ -306,17 +342,19 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(
             return -1;
         }
         _captureFrame.SetLength(requiredLength);
+        DeliverCapturedFrame(_captureFrame, captureTime, frameInfo.codecType);
     }
     else // Encoded format
     {
-        if (_captureFrame.CopyFrame(videoFrameLength, videoFrame) != 0)
+        if (_capture_encoded_frame.CopyFrame(videoFrameLength, videoFrame) != 0)
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-                       "Failed to copy captured frame of length %d", (int) videoFrameLength);
+                       "Failed to copy captured frame of length %d",
+                       static_cast<int>(videoFrameLength));
         }
+        DeliverEncodedCapturedFrame(_capture_encoded_frame, captureTime,
+                                    frameInfo.codecType);
     }
-
-    DeliverCapturedFrame(_captureFrame, captureTime, frameInfo.codecType);
 
 
     const WebRtc_UWord32 processTime =
