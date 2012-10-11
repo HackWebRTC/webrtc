@@ -359,7 +359,7 @@ VideoCodingModuleImpl::SendCodec(VideoCodec* currentSendCodec) const
     {
         return VCM_PARAMETER_ERROR;
     }
-    return _codecDataBase.SendCodec(currentSendCodec);
+    return _codecDataBase.SendCodec(currentSendCodec) ? 0 : -1;
 }
 
 // Get the current send codec type
@@ -643,7 +643,7 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection,
     case kProtectionPeriodicKeyFrames:
         {
             CriticalSectionScoped cs(_sendCritSect);
-            return _codecDataBase.SetPeriodicKeyFrames(enable);
+            return _codecDataBase.SetPeriodicKeyFrames(enable) ? 0 : -1;
             break;
         }
     }
@@ -1167,7 +1167,7 @@ VideoCodingModuleImpl::ReceiveCodec(VideoCodec* currentReceiveCodec) const
     {
         return VCM_PARAMETER_ERROR;
     }
-    return _codecDataBase.ReceiveCodec(currentReceiveCodec);
+    return _codecDataBase.ReceiveCodec(currentReceiveCodec) ? 0 : -1;
 }
 
 // Get current received codec
