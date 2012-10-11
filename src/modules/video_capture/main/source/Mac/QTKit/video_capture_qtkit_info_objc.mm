@@ -86,7 +86,7 @@ using namespace webrtc;
         return [NSNumber numberWithInt:0];
     }
 
-    if(index > (WebRtc_UWord32)_captureDeviceCountInfo)
+    if(index >= (WebRtc_UWord32)_captureDeviceCountInfo)
     {
         return [NSNumber numberWithInt:-1];
     }
@@ -179,9 +179,7 @@ using namespace webrtc;
                                            inputDevicesWithMediaType:QTMediaTypeVideo]];
 
     _captureDeviceCountInfo = _captureDevicesInfo.count;
-    if(_captureDeviceCountInfo < 1){
-        return [NSNumber numberWithInt:0];
-    }
+
     return [NSNumber numberWithInt:0];
 }
 
