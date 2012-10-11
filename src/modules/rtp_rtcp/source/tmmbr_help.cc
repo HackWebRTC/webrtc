@@ -469,7 +469,7 @@ bool TMMBRHelp::CalcMinBitRate( WebRtc_UWord32* minBitrateKbit) const {
   }
   *minBitrateKbit = std::numeric_limits<uint32_t>::max();
 
-  for (WebRtc_UWord32 i = 0; i < _candidateSet.sizeOfSet(); ++i) {
+  for (WebRtc_UWord32 i = 0; i < _candidateSet.lengthOfSet(); ++i) {
     WebRtc_UWord32 curNetBitRateKbit = _candidateSet.Tmmbr(i);
     if (curNetBitRateKbit < MIN_VIDEO_BW_MANAGEMENT_BITRATE) {
       curNetBitRateKbit = MIN_VIDEO_BW_MANAGEMENT_BITRATE;
