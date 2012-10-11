@@ -20,16 +20,11 @@
 # }
 
 {
-  'conditions': [
-    ['OS=="android"', {
-      'cflags!': [
-        '-mfpu=vfpv3-d16',
-      ],
-      'cflags': [
-        '-mfpu=neon',
-        '-mfloat-abi=softfp',
-        '-flax-vector-conversions',
-      ],
-    }],
+  'cflags!': [
+    '-mfpu=vfpv3-d16',
+  ],
+  'cflags': [
+    '-mfpu=neon',
+    '-flax-vector-conversions',
   ],
 }
