@@ -43,7 +43,7 @@ int ViEFileRecorder::StartRecording(const char* file_nameUTF8,
                                     const CodecInst& audio_codec_inst,
                                     VoiceEngine* voe_ptr,
                                     const FileFormats file_format) {
-  CriticalSectionScoped lock(*recorder_cs_);
+  CriticalSectionScoped lock(recorder_cs_);
 
   if (file_recorder_) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
@@ -138,7 +138,7 @@ int ViEFileRecorder::StopRecording() {
                    "audio");
     }
   }
-  CriticalSectionScoped lock(*recorder_cs_);
+  CriticalSectionScoped lock(recorder_cs_);
   if (voe_file_interface_) {
     voe_file_interface_->Release();
     voe_file_interface_ = NULL;
@@ -160,27 +160,27 @@ int ViEFileRecorder::StopRecording() {
 }
 
 void ViEFileRecorder::SetFrameDelay(int frame_delay) {
-  CriticalSectionScoped lock(*recorder_cs_);
+  CriticalSectionScoped lock(recorder_cs_);
   frame_delay_ = frame_delay;
 }
 
 bool ViEFileRecorder::RecordingStarted() {
-  CriticalSectionScoped lock(*recorder_cs_);
+  CriticalSectionScoped lock(recorder_cs_);
   return file_recorder_ && file_recorder_->IsRecording();
 }
 
 bool ViEFileRecorder::FirstFrameRecorded() {
-  CriticalSectionScoped lock(*recorder_cs_);
+  CriticalSectionScoped lock(recorder_cs_);
   return is_first_frame_recorded_;
 }
 
 bool ViEFileRecorder::IsRecordingFileFormat(const FileFormats file_format) {
-  CriticalSectionScoped lock(*recorder_cs_);
+  CriticalSectionScoped lock(recorder_cs_);
   return (file_recorder_->RecordingFileFormat() == file_format) ? true : false;
 }
 
 void ViEFileRecorder::RecordVideoFrame(const VideoFrame& video_frame) {
-  CriticalSectionScoped lock(*recorder_cs_);
+  CriticalSectionScoped lock(recorder_cs_);
 
   if (file_recorder_ && file_recorder_->IsRecording()) {
     if (!IsRecordingFileFormat(kFileFormatAviFile))
@@ -221,7 +221,7 @@ bool ViEFileRecorder::Write(const void* buf, int len) {
                           AudioFrame::kUndefined,
                           AudioFrame::kVadUnknown);
 
-  CriticalSectionScoped lock(*recorder_cs_);
+  CriticalSectionScoped lock(recorder_cs_);
   if (file_recorder_ && file_recorder_->IsRecording()) {
     TickTime tick_time = TickTime::Now();
     file_recorder_->RecordAudioToFile(audio_frame, &tick_time);

@@ -183,7 +183,7 @@ WebRtc_Word32 IncomingVideoStream::SetExpectedRenderDelay(
                  "%s(%d) for stream %d", __FUNCTION__, delay_ms, stream_id_);
     return -1;
   }
-  CriticalSectionScoped cs(buffer_critsect_);
+  CriticalSectionScoped cs(&buffer_critsect_);
   return render_buffers_.SetRenderDelay(delay_ms);
 }
 

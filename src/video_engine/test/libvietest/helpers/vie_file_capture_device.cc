@@ -52,7 +52,7 @@ ViEFileCaptureDevice::~ViEFileCaptureDevice() {
 bool ViEFileCaptureDevice::OpenI420File(const std::string& path,
                                         int width,
                                         int height) {
-  webrtc::CriticalSectionScoped cs(*mutex_);
+  webrtc::CriticalSectionScoped cs(mutex_);
   assert(input_file_ == NULL);
 
   input_file_ = std::fopen(path.c_str(), "rb");
@@ -68,7 +68,7 @@ bool ViEFileCaptureDevice::OpenI420File(const std::string& path,
 
 void ViEFileCaptureDevice::ReadFileFor(uint64_t time_slice_ms,
                                        uint32_t max_fps) {
-  webrtc::CriticalSectionScoped cs(*mutex_);
+  webrtc::CriticalSectionScoped cs(mutex_);
   assert(input_file_ != NULL);
 
   unsigned char* frame_buffer = new unsigned char[frame_length_];
@@ -98,7 +98,7 @@ void ViEFileCaptureDevice::ReadFileFor(uint64_t time_slice_ms,
 }
 
 void ViEFileCaptureDevice::CloseFile() {
-  webrtc::CriticalSectionScoped cs(*mutex_);
+  webrtc::CriticalSectionScoped cs(mutex_);
   assert(input_file_ != NULL);
 
   std::fclose(input_file_);

@@ -49,7 +49,7 @@ TransmissionBucket::~TransmissionBucket() {
 }
 
 void TransmissionBucket::Reset() {
-  webrtc::CriticalSectionScoped cs(*critsect_);
+  CriticalSectionScoped cs(critsect_);
   accumulator_ = 0;
   bytes_rem_interval_ = 0;
   packets_.clear();
@@ -58,7 +58,7 @@ void TransmissionBucket::Reset() {
 void TransmissionBucket::Fill(uint16_t seq_num,
                               uint32_t timestamp,
                               uint16_t num_bytes) {
-  webrtc::CriticalSectionScoped cs(*critsect_);
+  CriticalSectionScoped cs(critsect_);
   accumulator_ += num_bytes;
 
   Packet p(seq_num, timestamp, num_bytes, clock_->GetTimeInMS());
@@ -66,14 +66,14 @@ void TransmissionBucket::Fill(uint16_t seq_num,
 }
 
 bool TransmissionBucket::Empty() {
-  webrtc::CriticalSectionScoped cs(*critsect_);
+  CriticalSectionScoped cs(critsect_);
   return packets_.empty();
 }
 
 void TransmissionBucket::UpdateBytesPerInterval(
     uint32_t delta_time_ms,
     uint16_t target_bitrate_kbps) {
-  webrtc::CriticalSectionScoped cs(*critsect_);
+  CriticalSectionScoped cs(critsect_);
 
   uint32_t bytes_per_interval = 
       kBytesPerIntervalMargin * (target_bitrate_kbps * delta_time_ms / 8);
@@ -86,7 +86,7 @@ void TransmissionBucket::UpdateBytesPerInterval(
 }
 
 int32_t TransmissionBucket::GetNextPacket() {
-  webrtc::CriticalSectionScoped cs(*critsect_);
+  CriticalSectionScoped cs(critsect_);
 
   if (accumulator_ == 0) {
     // Empty.

@@ -82,7 +82,7 @@ void ViEChannelManager::SetModuleProcessThread(
 }
 
 int ViEChannelManager::CreateChannel(int* channel_id) {
-  CriticalSectionScoped cs(*channel_id_critsect_);
+  CriticalSectionScoped cs(channel_id_critsect_);
 
   // Get a new channel id.
   int new_channel_id = FreeChannelId();
@@ -137,7 +137,7 @@ int ViEChannelManager::CreateChannel(int* channel_id) {
 int ViEChannelManager::CreateChannel(int* channel_id,
                                      int original_channel,
                                      bool sender) {
-  CriticalSectionScoped cs(*channel_id_critsect_);
+  CriticalSectionScoped cs(channel_id_critsect_);
 
   ChannelGroup* channel_group = FindGroup(original_channel);
   if (!channel_group) {
@@ -207,7 +207,7 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
     ViEManagerWriteScoped wl(this);
 
     // Protect the maps.
-    CriticalSectionScoped cs(*channel_id_critsect_);
+    CriticalSectionScoped cs(channel_id_critsect_);
 
     ChannelMap::iterator c_it = channel_map_.find(channel_id);
     if (c_it == channel_map_.end()) {
@@ -281,7 +281,7 @@ int ViEChannelManager::SetVoiceEngine(VoiceEngine* voice_engine) {
   // Write lock to make sure no one is using the channel.
   ViEManagerWriteScoped wl(this);
 
-  CriticalSectionScoped cs(*channel_id_critsect_);
+  CriticalSectionScoped cs(channel_id_critsect_);
 
   VoEVideoSync* sync_interface = NULL;
   if (voice_engine) {
@@ -309,7 +309,7 @@ int ViEChannelManager::SetVoiceEngine(VoiceEngine* voice_engine) {
 
 int ViEChannelManager::ConnectVoiceChannel(int channel_id,
                                            int audio_channel_id) {
-  CriticalSectionScoped cs(*channel_id_critsect_);
+  CriticalSectionScoped cs(channel_id_critsect_);
   if (!voice_sync_interface_) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id),
                  "No VoE set");
@@ -323,7 +323,7 @@ int ViEChannelManager::ConnectVoiceChannel(int channel_id,
 }
 
 int ViEChannelManager::DisconnectVoiceChannel(int channel_id) {
-  CriticalSectionScoped cs(*channel_id_critsect_);
+  CriticalSectionScoped cs(channel_id_critsect_);
   ViEChannel* channel = ViEChannelPtr(channel_id);
   if (channel) {
     channel->SetVoiceChannel(-1, NULL);
@@ -333,13 +333,13 @@ int ViEChannelManager::DisconnectVoiceChannel(int channel_id) {
 }
 
 VoiceEngine* ViEChannelManager::GetVoiceEngine() {
-  CriticalSectionScoped cs(*channel_id_critsect_);
+  CriticalSectionScoped cs(channel_id_critsect_);
   return voice_engine_;
 }
 
 bool ViEChannelManager::SetRembStatus(int channel_id, bool sender,
                                       bool receiver) {
-  CriticalSectionScoped cs(*channel_id_critsect_);
+  CriticalSectionScoped cs(channel_id_critsect_);
   ChannelGroup* group = FindGroup(channel_id);
   if (!group) {
     return false;
@@ -355,7 +355,7 @@ bool ViEChannelManager::SetRembStatus(int channel_id, bool sender,
 
 bool ViEChannelManager::SetBandwidthEstimationMode(
     BandwidthEstimationMode mode) {
-  CriticalSectionScoped cs(*channel_id_critsect_);
+  CriticalSectionScoped cs(channel_id_critsect_);
   if (channel_groups_.size() > 0) {
     return false;
   }
@@ -375,7 +375,7 @@ bool ViEChannelManager::SetBandwidthEstimationMode(
 
 void ViEChannelManager::UpdateSsrcs(int channel_id,
                                     const std::list<unsigned int>& ssrcs) {
-  CriticalSectionScoped cs(*channel_id_critsect_);
+  CriticalSectionScoped cs(channel_id_critsect_);
   ChannelGroup* channel_group =  FindGroup(channel_id);
   if (channel_group == NULL) {
     return;
@@ -435,7 +435,7 @@ bool ViEChannelManager::CreateChannelObject(
 }
 
 ViEChannel* ViEChannelManager::ViEChannelPtr(int channel_id) const {
-  CriticalSectionScoped cs(*channel_id_critsect_);
+  CriticalSectionScoped cs(channel_id_critsect_);
   ChannelMap::const_iterator it = channel_map_.find(channel_id);
   if (it == channel_map_.end()) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_),
@@ -446,7 +446,7 @@ ViEChannel* ViEChannelManager::ViEChannelPtr(int channel_id) const {
 }
 
 ViEEncoder* ViEChannelManager::ViEEncoderPtr(int video_channel_id) const {
-  CriticalSectionScoped cs(*channel_id_critsect_);
+  CriticalSectionScoped cs(channel_id_critsect_);
   EncoderMap::const_iterator it = vie_encoder_map_.find(video_channel_id);
   if (it == vie_encoder_map_.end()) {
     return NULL;
@@ -470,7 +470,7 @@ int ViEChannelManager::FreeChannelId() {
 }
 
 void ViEChannelManager::ReturnChannelId(int channel_id) {
-  CriticalSectionScoped cs(*channel_id_critsect_);
+  CriticalSectionScoped cs(channel_id_critsect_);
   assert(channel_id < kViEMaxNumberOfChannels + kViEChannelIdBase &&
          channel_id >= kViEChannelIdBase);
   free_channel_ids_[channel_id - kViEChannelIdBase] = true;
@@ -487,7 +487,7 @@ ChannelGroup* ViEChannelManager::FindGroup(int channel_id) {
 }
 
 bool ViEChannelManager::ChannelUsingViEEncoder(int channel_id) const {
-  CriticalSectionScoped cs(*channel_id_critsect_);
+  CriticalSectionScoped cs(channel_id_critsect_);
   EncoderMap::const_iterator orig_it = vie_encoder_map_.find(channel_id);
   if (orig_it == vie_encoder_map_.end()) {
     // No ViEEncoder for this channel.
@@ -510,7 +510,7 @@ bool ViEChannelManager::ChannelUsingViEEncoder(int channel_id) const {
 
 void ViEChannelManager::ChannelsUsingViEEncoder(int channel_id,
                                                 ChannelList* channels) const {
-  CriticalSectionScoped cs(*channel_id_critsect_);
+  CriticalSectionScoped cs(channel_id_critsect_);
   EncoderMap::const_iterator orig_it = vie_encoder_map_.find(channel_id);
 
   for (ChannelMap::const_iterator c_it = channel_map_.begin();

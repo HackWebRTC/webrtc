@@ -847,7 +847,7 @@ WebRtc_Word32 ModuleVideoRenderImpl::GetLastRenderedFrame(
 
 WebRtc_Word32 ModuleVideoRenderImpl::SetExpectedRenderDelay(
     WebRtc_UWord32 stream_id, WebRtc_Word32 delay_ms) {
-  CriticalSectionScoped cs(_moduleCrit);
+  CriticalSectionScoped cs(&_moduleCrit);
 
   if (!_ptrRenderer) {
     WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,

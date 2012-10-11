@@ -289,7 +289,7 @@ int ViEFilePlayer::StopPlayAudio() {
 
 int ViEFilePlayer::Read(void* buf, int len) {
   // Protect from simultaneous reading from multiple channels.
-  CriticalSectionScoped lock(*audio_cs_);
+  CriticalSectionScoped lock(audio_cs_);
   if (NeedsAudioFromFile(buf)) {
     // We will run the VoE in 16KHz.
     if (file_player_->Get10msAudioFromFile(decoded_audio_,
@@ -336,19 +336,19 @@ void ViEFilePlayer::PlayFileEnded(const WebRtc_Word32 id) {
                "%s: file_id %d", __FUNCTION__, id_);
   file_player_->StopPlayingFile();
 
-  CriticalSectionScoped lock(*feedback_cs_);
+  CriticalSectionScoped lock(feedback_cs_);
   if (observer_) {
     observer_->PlayFileEnded(id_);
   }
 }
 
 bool ViEFilePlayer::IsObserverRegistered() {
-  CriticalSectionScoped lock(*feedback_cs_);
+  CriticalSectionScoped lock(feedback_cs_);
   return observer_ != NULL;
 }
 
 int ViEFilePlayer::RegisterObserver(ViEFileObserver* observer) {
-  CriticalSectionScoped lock(*feedback_cs_);
+  CriticalSectionScoped lock(feedback_cs_);
   if (observer_) {
     return -1;
   }
@@ -357,7 +357,7 @@ int ViEFilePlayer::RegisterObserver(ViEFileObserver* observer) {
 }
 
 int ViEFilePlayer::DeRegisterObserver() {
-  CriticalSectionScoped lock(*feedback_cs_);
+  CriticalSectionScoped lock(feedback_cs_);
   observer_ = NULL;
   return 0;
 }
@@ -383,7 +383,7 @@ int ViEFilePlayer::SendAudioOnChannel(const int audio_channel,
   }
   audio_channels_sending_.insert(audio_channel);
 
-  CriticalSectionScoped lock(*audio_cs_);
+  CriticalSectionScoped lock(audio_cs_);
   audio_clients_++;
   return 0;
 }
@@ -410,7 +410,7 @@ int ViEFilePlayer::StopSendAudioOnChannel(const int audio_channel) {
                  audio_channel);
   }
   audio_channels_sending_.erase(audio_channel);
-  CriticalSectionScoped lock(*audio_cs_);
+  CriticalSectionScoped lock(audio_cs_);
   audio_clients_--;
   assert(audio_clients_ >= 0);
   return 0;
@@ -433,7 +433,7 @@ int ViEFilePlayer::PlayAudioLocally(const int audio_channel,
     return -1;
   }
 
-  CriticalSectionScoped lock(*audio_cs_);
+  CriticalSectionScoped lock(audio_cs_);
   local_audio_channel_ = audio_channel;
   audio_clients_++;
   return 0;
@@ -452,7 +452,7 @@ int ViEFilePlayer::StopPlayAudioLocally(const int audio_channel) {
     return -1;
   }
 
-  CriticalSectionScoped lock(*audio_cs_);
+  CriticalSectionScoped lock(audio_cs_);
   local_audio_channel_ = -1;
   audio_clients_--;
   return 0;

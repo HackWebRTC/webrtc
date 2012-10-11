@@ -267,27 +267,27 @@ int TbExternalTransport::SendRTCPPacket(int channel, const void *data, int len)
 
 WebRtc_Word32 TbExternalTransport::SetPacketLoss(WebRtc_Word32 lossRate)
 {
-    webrtc::CriticalSectionScoped cs(_statCrit);
+    webrtc::CriticalSectionScoped cs(&_statCrit);
     _lossRate = lossRate;
     return 0;
 }
 
 void TbExternalTransport::SetNetworkDelay(WebRtc_Word64 delayMs)
 {
-    webrtc::CriticalSectionScoped cs(_crit);
+    webrtc::CriticalSectionScoped cs(&_crit);
     _networkDelayMs = delayMs;
 }
 
 void TbExternalTransport::SetSSRCFilter(WebRtc_UWord32 ssrc)
 {
-    webrtc::CriticalSectionScoped cs(_crit);
+    webrtc::CriticalSectionScoped cs(&_crit);
     _filterSSRC = true;
     _SSRC = ssrc;
 }
 
 void TbExternalTransport::ClearStats()
 {
-    webrtc::CriticalSectionScoped cs(_statCrit);
+    webrtc::CriticalSectionScoped cs(&_statCrit);
     _rtpCount = 0;
     _dropCount = 0;
     _rtcpCount = 0;
@@ -297,7 +297,7 @@ void TbExternalTransport::GetStats(WebRtc_Word32& numRtpPackets,
                                    WebRtc_Word32& numDroppedPackets,
                                    WebRtc_Word32& numRtcpPackets)
 {
-    webrtc::CriticalSectionScoped cs(_statCrit);
+    webrtc::CriticalSectionScoped cs(&_statCrit);
     numRtpPackets = _rtpCount;
     numDroppedPackets = _dropCount;
     numRtcpPackets = _rtcpCount;
@@ -305,25 +305,25 @@ void TbExternalTransport::GetStats(WebRtc_Word32& numRtpPackets,
 
 void TbExternalTransport::EnableSSRCCheck()
 {
-    webrtc::CriticalSectionScoped cs(_statCrit);
+    webrtc::CriticalSectionScoped cs(&_statCrit);
     _checkSSRC = true;
 }
 
 unsigned int TbExternalTransport::ReceivedSSRC()
 {
-    webrtc::CriticalSectionScoped cs(_statCrit);
+    webrtc::CriticalSectionScoped cs(&_statCrit);
     return _lastSSRC;
 }
 
 void TbExternalTransport::EnableSequenceNumberCheck()
 {
-    webrtc::CriticalSectionScoped cs(_statCrit);
+    webrtc::CriticalSectionScoped cs(&_statCrit);
     _checkSequenceNumber = true;
 }
 
 unsigned short TbExternalTransport::GetFirstSequenceNumber()
 {
-    webrtc::CriticalSectionScoped cs(_statCrit);
+    webrtc::CriticalSectionScoped cs(&_statCrit);
     return _firstSequenceNumber;
 }
 
@@ -371,7 +371,7 @@ bool TbExternalTransport::ViEExternalTransportProcess()
         {
             unsigned int ssrc = 0;
             {
-                webrtc::CriticalSectionScoped cs(_statCrit);
+                webrtc::CriticalSectionScoped cs(&_statCrit);
                 ssrc = ((packet->packetBuffer[8]) << 24);
                 ssrc += (packet->packetBuffer[9] << 16);
                 ssrc += (packet->packetBuffer[10] << 8);

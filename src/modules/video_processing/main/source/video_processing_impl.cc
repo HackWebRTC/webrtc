@@ -65,7 +65,7 @@ VideoProcessingModule::Destroy(VideoProcessingModule* module)
 WebRtc_Word32
 VideoProcessingModuleImpl::ChangeUniqueId(const WebRtc_Word32 id)
 {
-    CriticalSectionScoped mutex(_mutex);
+    CriticalSectionScoped mutex(&_mutex);
     _id = id;
     _brightnessDetection.ChangeUniqueId(id);
     _deflickering.ChangeUniqueId(id);
@@ -77,7 +77,7 @@ VideoProcessingModuleImpl::ChangeUniqueId(const WebRtc_Word32 id)
 WebRtc_Word32
 VideoProcessingModuleImpl::Id() const
 {
-    CriticalSectionScoped mutex(_mutex);
+    CriticalSectionScoped mutex(&_mutex);
     return _id;
 }
 
@@ -103,7 +103,7 @@ VideoProcessingModuleImpl::~VideoProcessingModuleImpl()
 void
 VideoProcessingModuleImpl::Reset()
 {
-    CriticalSectionScoped mutex(_mutex);
+    CriticalSectionScoped mutex(&_mutex);
     _deflickering.Reset();
     _denoising.Reset();
     _brightnessDetection.Reset();
@@ -225,7 +225,7 @@ VideoProcessingModuleImpl::Deflickering(WebRtc_UWord8* frame,
                                             const WebRtc_UWord32 timestamp,
                                             FrameStats& stats)
 {
-    CriticalSectionScoped mutex(_mutex);
+    CriticalSectionScoped mutex(&_mutex);
     return _deflickering.ProcessFrame(frame, width, height, timestamp, stats);
 }
 
@@ -240,7 +240,7 @@ VideoProcessingModuleImpl::Denoising(WebRtc_UWord8* frame,
                                          const WebRtc_UWord32 width,
                                          const WebRtc_UWord32 height)
 {
-    CriticalSectionScoped mutex(_mutex);
+    CriticalSectionScoped mutex(&_mutex);
     return _denoising.ProcessFrame(frame, width, height);
 }
 
@@ -257,7 +257,7 @@ VideoProcessingModuleImpl::BrightnessDetection(const WebRtc_UWord8* frame,
                                                    const WebRtc_UWord32 height,
                                                    const FrameStats& stats)
 {
-    CriticalSectionScoped mutex(_mutex);
+    CriticalSectionScoped mutex(&_mutex);
     return _brightnessDetection.ProcessFrame(frame, width, height, stats);
 }
 
@@ -265,7 +265,7 @@ VideoProcessingModuleImpl::BrightnessDetection(const WebRtc_UWord8* frame,
 void 
 VideoProcessingModuleImpl::EnableTemporalDecimation(bool enable)
 {
-    CriticalSectionScoped mutex(_mutex);
+    CriticalSectionScoped mutex(&_mutex);
     _framePreProcessor.EnableTemporalDecimation(enable);
 }
 
@@ -273,14 +273,14 @@ VideoProcessingModuleImpl::EnableTemporalDecimation(bool enable)
 void 
 VideoProcessingModuleImpl::SetInputFrameResampleMode(VideoFrameResampling resamplingMode)
 {
-    CriticalSectionScoped cs(_mutex);
+    CriticalSectionScoped cs(&_mutex);
     _framePreProcessor.SetInputFrameResampleMode(resamplingMode);
 }
 
 WebRtc_Word32
 VideoProcessingModuleImpl::SetMaxFrameRate(WebRtc_UWord32 maxFrameRate)
 {
-    CriticalSectionScoped cs(_mutex);
+    CriticalSectionScoped cs(&_mutex);
     return _framePreProcessor.SetMaxFrameRate(maxFrameRate);
 
 }
@@ -288,7 +288,7 @@ VideoProcessingModuleImpl::SetMaxFrameRate(WebRtc_UWord32 maxFrameRate)
 WebRtc_Word32
 VideoProcessingModuleImpl::SetTargetResolution(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord32 frameRate)
 {
-    CriticalSectionScoped cs(_mutex);
+    CriticalSectionScoped cs(&_mutex);
     return _framePreProcessor.SetTargetResolution(width, height, frameRate);
 }
 
@@ -296,7 +296,7 @@ VideoProcessingModuleImpl::SetTargetResolution(WebRtc_UWord32 width, WebRtc_UWor
 WebRtc_UWord32
 VideoProcessingModuleImpl::DecimatedFrameRate()
 {
-    CriticalSectionScoped cs(_mutex);
+    CriticalSectionScoped cs(&_mutex);
     return  _framePreProcessor.DecimatedFrameRate();
 }
 
@@ -304,28 +304,28 @@ VideoProcessingModuleImpl::DecimatedFrameRate()
 WebRtc_UWord32
 VideoProcessingModuleImpl::DecimatedWidth() const
 {
-    CriticalSectionScoped cs(_mutex);
+    CriticalSectionScoped cs(&_mutex);
     return _framePreProcessor.DecimatedWidth();
 }
 
 WebRtc_UWord32
 VideoProcessingModuleImpl::DecimatedHeight() const
 {
-    CriticalSectionScoped cs(_mutex);
+    CriticalSectionScoped cs(&_mutex);
     return _framePreProcessor.DecimatedHeight();
 }
 
 WebRtc_Word32
 VideoProcessingModuleImpl::PreprocessFrame(const VideoFrame *frame, VideoFrame **processedFrame)
 {
-    CriticalSectionScoped mutex(_mutex);
+    CriticalSectionScoped mutex(&_mutex);
     return _framePreProcessor.PreprocessFrame(frame, processedFrame);
 }
 
 VideoContentMetrics*
 VideoProcessingModuleImpl::ContentMetrics() const
 {
-    CriticalSectionScoped mutex(_mutex);
+    CriticalSectionScoped mutex(&_mutex);
     return _framePreProcessor.ContentMetrics();
 }
 
@@ -333,7 +333,7 @@ VideoProcessingModuleImpl::ContentMetrics() const
 void
 VideoProcessingModuleImpl::EnableContentAnalysis(bool enable)
 {
-    CriticalSectionScoped mutex(_mutex);
+    CriticalSectionScoped mutex(&_mutex);
     _framePreProcessor.EnableContentAnalysis(enable);
 }
 

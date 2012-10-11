@@ -43,7 +43,7 @@ void RTPPacketHistory::SetStorePacketsStatus(bool enable,
 
 void RTPPacketHistory::Allocate(uint16_t number_to_store) {
   assert(number_to_store > 0);
-  webrtc::CriticalSectionScoped cs(*critsect_); 
+  CriticalSectionScoped cs(critsect_);
   if (store_) {
     WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
         "SetStorePacketsStatus already set, number: %d", number_to_store);
@@ -60,7 +60,7 @@ void RTPPacketHistory::Allocate(uint16_t number_to_store) {
 }
 
 void RTPPacketHistory::Free() {
-  webrtc::CriticalSectionScoped cs(*critsect_);
+  CriticalSectionScoped cs(critsect_);
   if (!store_) {
     return;
   }
@@ -83,7 +83,7 @@ void RTPPacketHistory::Free() {
 }
 
 bool RTPPacketHistory::StorePackets() const {
-  webrtc::CriticalSectionScoped cs(*critsect_);
+  CriticalSectionScoped cs(critsect_);
   return store_;
 }
 
@@ -114,7 +114,7 @@ int32_t RTPPacketHistory::PutRTPPacket(const uint8_t* packet,
     return 0;
   }
 
-  webrtc::CriticalSectionScoped cs(*critsect_);
+  CriticalSectionScoped cs(critsect_);
   if (!store_) {
     return 0;
   }
@@ -152,7 +152,7 @@ int32_t RTPPacketHistory::PutRTPPacket(const uint8_t* packet,
 }
 
 bool RTPPacketHistory::HasRTPPacket(uint16_t sequence_number) const {
-  webrtc::CriticalSectionScoped cs(*critsect_);
+  CriticalSectionScoped cs(critsect_);
   if (!store_) {
     return false;
   }
@@ -177,7 +177,7 @@ bool RTPPacketHistory::GetRTPPacket(uint16_t sequence_number,
                                     uint16_t* packet_length,
                                     int64_t* stored_time_ms,
                                     StorageType* type) const {
-  webrtc::CriticalSectionScoped cs(*critsect_);
+  CriticalSectionScoped cs(critsect_);
   if (!store_) {
     return false;
   }
@@ -224,7 +224,7 @@ bool RTPPacketHistory::GetRTPPacket(uint16_t sequence_number,
 }
 
 void RTPPacketHistory::UpdateResendTime(uint16_t sequence_number) {
-  webrtc::CriticalSectionScoped cs(*critsect_);
+  CriticalSectionScoped cs(critsect_);
   if (!store_) {
     return;
   }
