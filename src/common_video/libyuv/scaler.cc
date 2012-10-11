@@ -84,6 +84,35 @@ int Scaler::Scale(const VideoFrame& src_frame,
                            libyuv::FilterMode(method_));
 }
 
+
+// TODO(mikhal): Add test to new function. Currently not used.
+int Scaler::Scale(const I420VideoFrame& src_frame,
+                  I420VideoFrame* dst_frame) {
+  assert(dst_frame);
+  // TODO(mikhal): Add isEmpty
+  //  if (src_frame.Buffer() == NULL || src_frame.Length() == 0)
+  //    return -1;
+  if (!set_)
+    return -2;
+
+  // TODO(mikhal): Setting stride equal to width - should align.
+  dst_frame->CreateEmptyFrame(dst_width_, dst_height_, dst_width_ ,
+                              (dst_width_ + 1) / 2, (dst_width_ + 1) / 2);
+
+  return libyuv::I420Scale(src_frame.buffer(kYPlane), src_frame.stride(kYPlane),
+                           src_frame.buffer(kUPlane), src_frame.stride(kYPlane),
+                           src_frame.buffer(kVPlane), src_frame.stride(kYPlane),
+                           src_width_, src_height_,
+                           dst_frame->buffer(kYPlane),
+                           dst_frame->stride(kYPlane),
+                           dst_frame->buffer(kYPlane),
+                           dst_frame->stride(kYPlane),
+                           dst_frame->buffer(kYPlane),
+                           dst_frame->stride(kYPlane),
+                           dst_width_, dst_height_,
+                           libyuv::FilterMode(method_));
+}
+
 // TODO(mikhal): Add support for more types.
 bool Scaler::SupportedVideoType(VideoType src_video_type,
                                 VideoType dst_video_type) {
