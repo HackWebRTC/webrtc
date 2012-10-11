@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_CODEC_DATABASE_H_
-#define WEBRTC_MODULES_VIDEO_CODING_CODEC_DATABASE_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_CODEC_DATABASE_H_
+#define WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_CODEC_DATABASE_H_
 
 #include <map>
 
@@ -17,194 +17,184 @@
 #include "modules/video_coding/main/interface/video_coding.h"
 #include "modules/video_coding/main/source/generic_decoder.h"
 #include "modules/video_coding/main/source/generic_encoder.h"
+#include "system_wrappers/interface/scoped_ptr.h"
 #include "typedefs.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
-enum VCMCodecDBProperties
-{
-    kDefaultPayloadSize = 1440
+enum VCMCodecDBProperties {
+  kDefaultPayloadSize = 1440
 };
 
-class VCMDecoderMapItem {
-public:
-    VCMDecoderMapItem(VideoCodec* settings,
-                      WebRtc_UWord32 numberOfCores,
-                      bool requireKeyFrame);
+struct VCMDecoderMapItem {
+ public:
+  VCMDecoderMapItem(VideoCodec* settings,
+                    int number_of_cores,
+                    bool require_key_frame);
 
-    VideoCodec*     _settings;
-    WebRtc_UWord32  _numberOfCores;
-    bool            _requireKeyFrame;
+  scoped_ptr<VideoCodec> settings;
+  int number_of_cores;
+  bool require_key_frame;
 };
 
-class VCMExtDecoderMapItem {
-public:
-    VCMExtDecoderMapItem(VideoDecoder* externalDecoderInstance,
-                         WebRtc_UWord8 payloadType,
-                         bool internalRenderTiming);
+struct VCMExtDecoderMapItem {
+ public:
+  VCMExtDecoderMapItem(VideoDecoder* external_decoder_instance,
+                       uint8_t payload_type,
+                       bool internal_render_timing);
 
-    WebRtc_UWord8   _payloadType;
-    VideoDecoder*   _externalDecoderInstance;
-    bool            _internalRenderTiming;
+  uint8_t payload_type;
+  VideoDecoder* external_decoder_instance;
+  bool internal_render_timing;
 };
 
-/*******************************/
-/* VCMCodecDataBase class      */
-/*******************************/
-class VCMCodecDataBase
-{
-public:
-    VCMCodecDataBase(WebRtc_Word32 id);
-    ~VCMCodecDataBase();
-    /**
-    * Release codecdatabase - release all memory for both send and receive side
-    */
-    WebRtc_Word32 Reset();
-    /**
-    * Sender Side
-    */
-    /**
-    * Returns the number of supported codecs (or -1 in case of error).
-    */
-    static WebRtc_UWord8 NumberOfCodecs();
-    /**
-    * Get supported codecs with ID
-    * Input Values:
-    *       listnr    : Requested codec id number
-    *       codec_inst: Pointer to the struct in which the returned codec information is copied
-    * Return Values: 0 if successful, otherwise
-    */
-    static WebRtc_Word32 Codec(WebRtc_UWord8 listId, VideoCodec* settings);
-    static WebRtc_Word32 Codec(VideoCodecType codecType, VideoCodec* settings);
-    /**
-    * Reset Sender side
-    */
-    WebRtc_Word32 ResetSender();
-    /**
-    * Setting the sender side codec and initiaiting the desired codec given the VideoCodec
-    * struct.
-    * Return Value:	0 if the codec and the settings are supported, otherwise
-    */
-    WebRtc_Word32 RegisterSendCodec(const VideoCodec* sendCodec,
-                                  WebRtc_UWord32 numberOfCores,
-                                  WebRtc_UWord32 maxPayloadSize);
-    /**
-    * Get current send side codec. Relevant for internal codecs only.
-    */
-    WebRtc_Word32 SendCodec(VideoCodec* currentSendCodec) const;
-    /**
-    * Get current send side codec type. Relevant for internal codecs only.
-    */
-    VideoCodecType SendCodec() const;
-    /**
-    * Register external encoder - current assumption - if one is registered then it will also
-    * be used, and therefore it is also initialized
-    * Return value: A pointer to the encoder on success, or null, in case of an error.
-    */
-    WebRtc_Word32 DeRegisterExternalEncoder(WebRtc_UWord8 payloadType, bool& wasSendCodec);
-    WebRtc_Word32 RegisterExternalEncoder(VideoEncoder* externalEncoder,
-                                        WebRtc_UWord8 payloadType,
-                                        bool internalSource);
-    /**
-    * Returns a encoder given a payloadname - to be used with internal encoders only.
-    * Special cases:
-    *	 Encoder exists -  If payload matches, returns existing one, otherwise,
-    *	 deletes existing one and creates new one.
-    *	 No match found / Error - returns NULL.
-    */
-    VCMGenericEncoder* SetEncoder(const VideoCodec* settings,
-                                  VCMEncodedFrameCallback* VCMencodedFrameCallback);
+class VCMCodecDataBase {
+ public:
+  explicit VCMCodecDataBase(int id);
+  ~VCMCodecDataBase();
 
-    WebRtc_Word32 SetPeriodicKeyFrames(bool enable);
+  // Sender Side
+  // Returns the number of supported codecs (or -1 in case of error).
+  static int NumberOfCodecs();
 
-    bool InternalSource() const;
+  // Returns the default settings for the codec with id |list_id|.
+  static bool Codec(int list_id, VideoCodec* settings);
 
-    /*
-    * Receiver Side
-    */
-    WebRtc_Word32 ResetReceiver();
-    /**
-    * Register external decoder/render object
-    */
-    WebRtc_Word32 DeRegisterExternalDecoder(WebRtc_UWord8 payloadType);
-    WebRtc_Word32 RegisterExternalDecoder(VideoDecoder* externalDecoder,
-                                        WebRtc_UWord8 payloadType,
-                                        bool internalRenderTiming);
+  // Returns the default settings for the codec with type |codec_type|.
+  static bool Codec(VideoCodecType codec_type, VideoCodec* settings);
 
-    bool DecoderRegistered() const;
-    /**
-    * Register recieve codec
-    */
-    WebRtc_Word32 RegisterReceiveCodec(const VideoCodec* receiveCodec,
-                                     WebRtc_UWord32 numberOfCores,
-                                     bool requireKeyFrame);
-    WebRtc_Word32 DeRegisterReceiveCodec(WebRtc_UWord8 payloadType);
-    /**
-    * Get current receive side codec. Relevant for internal codecs only.
-    */
-    WebRtc_Word32 ReceiveCodec(VideoCodec* currentReceiveCodec) const;
-    /**
-    * Get current receive side codec type. Relevant for internal codecs only.
-    */
-    VideoCodecType ReceiveCodec() const;
-    /**
-    * Returns a decoder given which matches a payload type.
-    * Special cases:
-    *	 Decoder exists -  If payload matches, returns existing one, otherwise, deletes
-    *	 existing one, and creates new one.
-    *	 No match found / Error - returns NULL.
-    */
-    VCMGenericDecoder* SetDecoder(WebRtc_UWord8 payloadType, VCMDecodedFrameCallback& callback);
+  void ResetSender();
 
-    VCMGenericDecoder* CreateAndInitDecoder(WebRtc_UWord8 payloadType,
-                                            VideoCodec& newCodec,
-                                            bool &external) const;
+  // Sets the sender side codec and initiates the desired codec given the
+  // VideoCodec struct.
+  // Returns true if the codec was successfully registered, false otherwise.
+  bool RegisterSendCodec(const VideoCodec* send_codec,
+                         int number_of_cores,
+                         int max_payload_size);
 
-    VCMGenericDecoder* CreateDecoderCopy() const;
+  // Gets the current send codec. Relevant for internal codecs only.
+  // Returns true if there is a send codec, false otherwise.
+  bool SendCodec(VideoCodec* current_send_codec) const;
 
-    void ReleaseDecoder(VCMGenericDecoder* decoder) const;
+  // Gets current send side codec type. Relevant for internal codecs only.
+  // Returns kVideoCodecUnknown if there is no send codec.
+  VideoCodecType SendCodec() const;
 
-    void CopyDecoder(const VCMGenericDecoder& decoder);
+  // Registers and initializes an external encoder object.
+  // |internal_source| should be set to true if the codec has an internal
+  // video source and doesn't need the user to provide it with frames via
+  // the Encode() method.
+  void RegisterExternalEncoder(VideoEncoder* external_encoder,
+                               uint8_t payload_type,
+                               bool internal_source);
 
-    bool RenderTiming() const;
+  // Deregisters an external encoder. Returns true if the encoder was
+  // found and deregistered, false otherwise. |was_send_codec| is set to true
+  // if the external encoder was the send codec before being deregistered.
+  bool DeregisterExternalEncoder(uint8_t payload_type, bool* was_send_codec);
 
-protected:
-    /**
-    * Create an internal Encoder given a codec type
-    */
-    VCMGenericEncoder* CreateEncoder(const VideoCodecType type) const;
+  // Returns an encoder specified by the payload type in |settings|. The
+  // encoded frame callback of the encoder is set to |encoded_frame_callback|.
+  // If no such encoder already exists an instance will be created and
+  // initialized using |settings|.
+  // NULL is returned if no encoder with the specified payload type was found
+  // and the function failed to create one.
+  VCMGenericEncoder* GetEncoder(
+      const VideoCodec* settings,
+      VCMEncodedFrameCallback* encoded_frame_callback);
 
-    void DeleteEncoder();
-    /*
-    * Create an internal Decoder given a codec type
-    */
-    VCMGenericDecoder* CreateDecoder(VideoCodecType type) const;
+  bool SetPeriodicKeyFrames(bool enable);
 
-    VCMDecoderMapItem* FindDecoderItem(WebRtc_UWord8 payloadType) const;
+  // Receiver Side
+  void ResetReceiver();
 
-    VCMExtDecoderMapItem* FindExternalDecoderItem(WebRtc_UWord8 payloadType) const;
+  // Deregisters an external decoder object specified by |payload_type|.
+  bool DeregisterExternalDecoder(uint8_t payload_type);
 
-private:
-    typedef std::map<uint8_t, VCMDecoderMapItem*> DecoderMap;
-    typedef std::map<uint8_t, VCMExtDecoderMapItem*> ExternalDecoderMap;
-    WebRtc_Word32 _id;
-    WebRtc_UWord32 _numberOfCores;
-    WebRtc_UWord32 _maxPayloadSize;
-    bool _periodicKeyFrames;
-    bool _currentEncIsExternal;
-    VideoCodec _sendCodec;
-    VideoCodec _receiveCodec;
-    WebRtc_UWord8 _externalPayloadType;
-    VideoEncoder* _externalEncoder;
-    bool _internalSource;
-    VCMGenericEncoder* _ptrEncoder;
-    VCMGenericDecoder* _ptrDecoder;
-    bool _currentDecIsExternal;
-    DecoderMap _decMap;
-    ExternalDecoderMap _decExternalMap;
-}; // end of VCMCodecDataBase class definition
+  // Registers an external decoder object to the payload type |payload_type|.
+  // |internal_render_timing| is set to true if the |external_decoder| has
+  // built in rendering which is able to obey the render timestamps of the
+  // encoded frames.
+  bool RegisterExternalDecoder(VideoDecoder* external_decoder,
+                               uint8_t payload_type,
+                               bool internal_render_timing);
 
-} // namespace webrtc
+  bool DecoderRegistered() const;
 
-#endif // WEBRTC_MODULES_VIDEO_CODING_CODEC_DATABASE_H_
+  bool RegisterReceiveCodec(const VideoCodec* receive_codec,
+                            int number_of_cores,
+                            bool require_key_frame);
+
+  bool DeregisterReceiveCodec(uint8_t payload_type);
+
+  // Get current receive side codec. Relevant for internal codecs only.
+  bool ReceiveCodec(VideoCodec* current_receive_codec) const;
+
+  // Get current receive side codec type. Relevant for internal codecs only.
+  VideoCodecType ReceiveCodec() const;
+
+  // Returns a decoder specified by |payload_type|. The decoded frame callback
+  // of the encoder is set to |decoded_frame_callback|. If no such decoder
+  // already exists an instance will be created and initialized.
+  // NULL is returned if no encoder with the specified payload type was found
+  // and the function failed to create one.
+  VCMGenericDecoder* GetDecoder(
+      uint8_t payload_type, VCMDecodedFrameCallback* decoded_frame_callback);
+
+  // Returns a deep copy of the currently active decoder.
+  VCMGenericDecoder* CreateDecoderCopy() const;
+
+  // Deletes the memory of the decoder instance |decoder|. Used to delete
+  // deep copies returned by CreateDecoderCopy().
+  void ReleaseDecoder(VCMGenericDecoder* decoder) const;
+
+  // Creates a deep copy of |decoder| and replaces the currently used decoder
+  // with it.
+  void CopyDecoder(const VCMGenericDecoder& decoder);
+
+  // Returns true if the currently active decoder supports render scheduling,
+  // that is, it is able to render frames according to the render timestamp of
+  // the encoded frames.
+  bool SupportsRenderScheduling() const;
+
+ private:
+  typedef std::map<uint8_t, VCMDecoderMapItem*> DecoderMap;
+  typedef std::map<uint8_t, VCMExtDecoderMapItem*> ExternalDecoderMap;
+
+  VCMGenericDecoder* CreateAndInitDecoder(uint8_t payload_type,
+                                          VideoCodec* new_codec,
+                                          bool* external) const;
+
+  // Create an internal encoder given a codec type.
+  VCMGenericEncoder* CreateEncoder(const VideoCodecType type) const;
+
+  void DeleteEncoder();
+
+  // Create an internal Decoder given a codec type
+  VCMGenericDecoder* CreateDecoder(VideoCodecType type) const;
+
+  const VCMDecoderMapItem* FindDecoderItem(uint8_t payload_type) const;
+
+  const VCMExtDecoderMapItem* FindExternalDecoderItem(
+      uint8_t payload_type) const;
+
+  int id_;
+  int number_of_cores_;
+  int max_payload_size_;
+  bool periodic_key_frames_;
+  bool current_enc_is_external_;
+  VideoCodec send_codec_;
+  VideoCodec receive_codec_;
+  uint8_t external_payload_type_;
+  VideoEncoder* external_encoder_;
+  bool internal_source_;
+  VCMGenericEncoder* ptr_encoder_;
+  VCMGenericDecoder* ptr_decoder_;
+  bool current_dec_is_external_;
+  DecoderMap dec_map_;
+  ExternalDecoderMap dec_external_map_;
+};  // VCMCodecDataBase
+
+}  // namespace webrtc
+
+#endif  // WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_CODEC_DATABASE_H_

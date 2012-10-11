@@ -125,8 +125,9 @@ CodecDataBaseTest::Perform(CmdArgs& args)
     sourceFrame.SetTimeStamp(_timeStamp);
     // Encoder registration
     TEST (VideoCodingModule::NumberOfCodecs() > 0);
-    TEST(VideoCodingModule::Codec(-1, &sendCodec) == VCM_PARAMETER_ERROR);
-    TEST(VideoCodingModule::Codec(VideoCodingModule::NumberOfCodecs() + 1, &sendCodec) == VCM_PARAMETER_ERROR);
+    TEST(VideoCodingModule::Codec(-1, &sendCodec) < 0);
+    TEST(VideoCodingModule::Codec(VideoCodingModule::NumberOfCodecs() + 1,
+                                  &sendCodec) < 0);
     VideoCodingModule::Codec(1, &sendCodec);
     sendCodec.plType = 0; // random value
     TEST(_vcm->RegisterSendCodec(&sendCodec, 1, 1440) < 0);

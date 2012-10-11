@@ -271,7 +271,7 @@ VideoCodingModule::Codec(WebRtc_UWord8 listId, VideoCodec* codec)
     {
         return VCM_PARAMETER_ERROR;
     }
-    return VCMCodecDataBase::Codec(listId, codec);
+    return VCMCodecDataBase::Codec(listId, codec) ? 0 : -1;
 }
 
 // Get supported codec with type
@@ -282,7 +282,7 @@ VideoCodingModule::Codec(VideoCodecType codecType, VideoCodec* codec)
     {
         return VCM_PARAMETER_ERROR;
     }
-    return VCMCodecDataBase::Codec(codecType, codec);
+    return VCMCodecDataBase::Codec(codecType, codec) ? 0 : -1;
 }
 
 /*
@@ -314,15 +314,14 @@ VideoCodingModuleImpl::RegisterSendCodec(const VideoCodec* sendCodec,
     {
         return VCM_PARAMETER_ERROR;
     }
-    WebRtc_Word32 ret = _codecDataBase.RegisterSendCodec(sendCodec,
-                                                         numberOfCores,
-                                                         maxPayloadSize);
-    if (ret < 0)
+    bool ret = _codecDataBase.RegisterSendCodec(sendCodec, numberOfCores,
+                                                maxPayloadSize);
+    if (!ret)
     {
-        return ret;
+        return -1;
     }
 
-    _encoder = _codecDataBase.SetEncoder(sendCodec, &_encodedFrameCallback);
+    _encoder = _codecDataBase.GetEncoder(sendCodec, &_encodedFrameCallback);
     if (_encoder == NULL)
     {
         WEBRTC_TRACE(webrtc::kTraceError,
@@ -384,19 +383,18 @@ VideoCodingModuleImpl::RegisterExternalEncoder(VideoEncoder* externalEncoder,
     if (externalEncoder == NULL)
     {
         bool wasSendCodec = false;
-        const WebRtc_Word32 ret = _codecDataBase.DeRegisterExternalEncoder(
-                                                                  payloadType,
-                                                                  wasSendCodec);
+        const bool ret = _codecDataBase.DeregisterExternalEncoder(
+            payloadType, &wasSendCodec);
         if (wasSendCodec)
         {
             // Make sure the VCM doesn't use the de-registered codec
             _encoder = NULL;
         }
-        return ret;
+        return ret ? 0 : -1;
     }
-    return _codecDataBase.RegisterExternalEncoder(externalEncoder,
-                                                  payloadType,
-                                                  internalSource);
+    _codecDataBase.RegisterExternalEncoder(externalEncoder, payloadType,
+                                           internalSource);
+    return 0;
 }
 
 // Get codec config parameters
@@ -802,14 +800,10 @@ VideoCodingModuleImpl::RegisterExternalDecoder(VideoDecoder* externalDecoder,
     {
         // Make sure the VCM updates the decoder next time it decodes.
         _decoder = NULL;
-        return _codecDataBase.DeRegisterExternalDecoder(payloadType);
+        return _codecDataBase.DeregisterExternalDecoder(payloadType) ? 0 : -1;
     }
-    else
-    {
-        return _codecDataBase.RegisterExternalDecoder(externalDecoder,
-                                                      payloadType,
-                                                      internalRenderTiming);
-    }
+    return _codecDataBase.RegisterExternalDecoder(
+        externalDecoder, payloadType, internalRenderTiming) ? 0 : -1;
 }
 
 // Register a frame type request callback.
@@ -863,10 +857,10 @@ VideoCodingModuleImpl::Decode(WebRtc_UWord16 maxWaitTimeMs)
          _dualReceiver.NackMode() == kNackInfinite);
 
     VCMEncodedFrame* frame = _receiver.FrameForDecoding(
-                                                  maxWaitTimeMs,
-                                                  nextRenderTimeMs,
-                                                  _codecDataBase.RenderTiming(),
-                                                  &_dualReceiver);
+        maxWaitTimeMs,
+        nextRenderTimeMs,
+        _codecDataBase.SupportsRenderScheduling(),
+        &_dualReceiver);
 
     if (dualReceiverEnabledNotReceiving && _dualReceiver.State() == kReceiving)
     {
@@ -1045,10 +1039,10 @@ WebRtc_Word32
 VideoCodingModuleImpl::Decode(const VCMEncodedFrame& frame)
 {
     // Change decoder if payload type has changed
-    const bool renderTimingBefore = _codecDataBase.RenderTiming();
-    _decoder = _codecDataBase.SetDecoder(frame.PayloadType(),
-                                         _decodedFrameCallback);
-    if (renderTimingBefore != _codecDataBase.RenderTiming())
+    const bool renderTimingBefore = _codecDataBase.SupportsRenderScheduling();
+    _decoder = _codecDataBase.GetDecoder(frame.PayloadType(),
+                                         &_decodedFrameCallback);
+    if (renderTimingBefore != _codecDataBase.SupportsRenderScheduling())
     {
         // Make sure we reset the decode time estimate since it will
         // be zero for codecs without render timing.
@@ -1157,8 +1151,11 @@ VideoCodingModuleImpl::RegisterReceiveCodec(const VideoCodec* receiveCodec,
     {
         return VCM_PARAMETER_ERROR;
     }
-    return _codecDataBase.RegisterReceiveCodec(receiveCodec, numberOfCores,
-                                               requireKeyFrame);
+    if (!_codecDataBase.RegisterReceiveCodec(receiveCodec, numberOfCores,
+                                             requireKeyFrame)) {
+      return -1;
+    }
+    return 0;
 }
 
 // Get current received codec
