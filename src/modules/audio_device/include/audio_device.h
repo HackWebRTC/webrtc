@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_DEVICE_MAIN_INTERFACE_AUDIO_DEVICE_H_
-#define MODULES_AUDIO_DEVICE_MAIN_INTERFACE_AUDIO_DEVICE_H_
+#ifndef MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_H_
+#define MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_H_
 
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "modules/interface/module.h"
@@ -204,4 +204,4 @@ AudioDeviceModule* CreateAudioDeviceModule(
 
 }  // namespace webrtc
 
-#endif  // MODULES_AUDIO_DEVICE_MAIN_INTERFACE_AUDIO_DEVICE_H_
+#endif  // MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_H_
