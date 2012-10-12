@@ -217,7 +217,7 @@ int VoECodecImpl::SetAMREncFormat(int channel, AmrMode mode)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "SetAMREncFormat(channel=%d, mode=%d)", channel, mode);
-#ifdef WEBRTC_CODEC_GSMAMR
+#ifdef WEBRTC_CODEC_AMR
     if (!_shared->statistics().Initialized())
     {
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
@@ -243,7 +243,7 @@ int VoECodecImpl::SetAMRDecFormat(int channel, AmrMode mode)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "SetAMRDecFormat(channel=%i, mode=%i)", channel, mode);
-#ifdef WEBRTC_CODEC_GSMAMR
+#ifdef WEBRTC_CODEC_AMR
     if (!_shared->statistics().Initialized())
     {
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
@@ -271,7 +271,7 @@ int VoECodecImpl::SetAMRWbEncFormat(int channel, AmrMode mode)
                  "SetAMRWbEncFormat(channel=%d, mode=%d)", channel, mode);
     ANDROID_NOT_SUPPORTED(_shared->statistics());
     IPHONE_NOT_SUPPORTED(_shared->statistics());
-#ifdef WEBRTC_CODEC_GSMAMRWB
+#ifdef WEBRTC_CODEC_AMRWB
     if (!_shared->statistics().Initialized())
     {
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
@@ -299,7 +299,7 @@ int VoECodecImpl::SetAMRWbDecFormat(int channel, AmrMode mode)
                  "SetAMRWbDecFormat(channel=%i, mode=%i)", channel, mode);
     ANDROID_NOT_SUPPORTED(_shared->statistics());
     IPHONE_NOT_SUPPORTED(_shared->statistics());
-#ifdef WEBRTC_CODEC_GSMAMRWB
+#ifdef WEBRTC_CODEC_AMRWB
     if (!_shared->statistics().Initialized())
     {
         _shared->SetLastError(VE_NOT_INITED, kTraceError);

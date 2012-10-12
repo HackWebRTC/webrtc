@@ -2244,7 +2244,7 @@ int VoEExtendedTest::TestCodec() {
   ANL();
   ANL();
 
-#ifdef WEBRTC_CODEC_GSMAMR
+#ifdef WEBRTC_CODEC_AMR
   //////////////////////////
   // SetAMREncFormat
 
@@ -2308,8 +2308,8 @@ int VoEExtendedTest::TestCodec() {
   ANL();
   AOK();
   ANL();
-#endif // #ifdef WEBRTC_CODEC_GSMAMR
-#ifdef WEBRTC_CODEC_GSMAMRWB
+#endif // #ifdef WEBRTC_CODEC_AMR
+#ifdef WEBRTC_CODEC_AMRWB
   //////////////////////////
   // SetAMRWbEncFormat
 
@@ -2373,7 +2373,7 @@ int VoEExtendedTest::TestCodec() {
   ANL();
   AOK();
   ANL();
-#endif // #ifdef WEBRTC_CODEC_GSMAMRWB
+#endif // #ifdef WEBRTC_CODEC_AMRWB
   ///////////////////////////////
   // SetSendCNPayloadType
   TEST(SetSendCNPayloadType);

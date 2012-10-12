@@ -1407,7 +1407,7 @@ WebRtc_Word32 ModuleFileUtility::InitCompressedReading(
         start,
         stop);
 
-#if defined(WEBRTC_CODEC_GSMAMR) || defined(WEBRTC_CODEC_GSMAMRWB) || \
+#if defined(WEBRTC_CODEC_AMR) || defined(WEBRTC_CODEC_AMRWB) || \
     defined(WEBRTC_CODEC_ILBC)
     WebRtc_Word16 read_len = 0;
 #endif
@@ -1418,10 +1418,10 @@ WebRtc_Word32 ModuleFileUtility::InitCompressedReading(
     _startPointInMs = start;
     _stopPointInMs = stop;
 
-#ifdef WEBRTC_CODEC_GSMAMR
+#ifdef WEBRTC_CODEC_AMR
     WebRtc_Word32 AMRmode2bytes[9]={12,13,15,17,19,20,26,31,5};
 #endif
-#ifdef WEBRTC_CODEC_GSMAMRWB
+#ifdef WEBRTC_CODEC_AMRWB
     WebRtc_Word32 AMRWBmode2bytes[10]={17,23,32,36,40,46,50,58,60,6};
 #endif
 
@@ -1440,7 +1440,7 @@ WebRtc_Word32 ModuleFileUtility::InitCompressedReading(
         buf[cnt]=0;
     }
 
-#ifdef WEBRTC_CODEC_GSMAMR
+#ifdef WEBRTC_CODEC_AMR
     if(!strcmp("#!AMR\n", buf))
     {
         strcpy(codec_info_.plname, "amr");
@@ -1484,7 +1484,7 @@ WebRtc_Word32 ModuleFileUtility::InitCompressedReading(
         }
     }
 #endif
-#ifdef WEBRTC_CODEC_GSMAMRWB
+#ifdef WEBRTC_CODEC_AMRWB
     if(!strcmp("#!AMRWB\n", buf))
     {
         strcpy(codec_info_.plname, "amr-wb");
@@ -1605,10 +1605,10 @@ WebRtc_Word32 ModuleFileUtility::ReadCompressedData(InStream& in,
         outData,
         bufferSize);
 
-#ifdef WEBRTC_CODEC_GSMAMR
+#ifdef WEBRTC_CODEC_AMR
     WebRtc_UWord32 AMRmode2bytes[9]={12,13,15,17,19,20,26,31,5};
 #endif
-#ifdef WEBRTC_CODEC_GSMAMRWB
+#ifdef WEBRTC_CODEC_AMRWB
     WebRtc_UWord32 AMRWBmode2bytes[10]={17,23,32,36,40,46,50,58,60,6};
 #endif
     WebRtc_UWord32 bytesRead = 0;
@@ -1619,7 +1619,7 @@ WebRtc_Word32 ModuleFileUtility::ReadCompressedData(InStream& in,
         return -1;
     }
 
-#ifdef WEBRTC_CODEC_GSMAMR
+#ifdef WEBRTC_CODEC_AMR
     if(_codecId == kCodecAmr)
     {
         WebRtc_Word32 res = in.Read(outData, 1);
@@ -1677,7 +1677,7 @@ WebRtc_Word32 ModuleFileUtility::ReadCompressedData(InStream& in,
         }
     }
 #endif
-#ifdef WEBRTC_CODEC_GSMAMRWB
+#ifdef WEBRTC_CODEC_AMRWB
     if(_codecId == kCodecAmrWb)
     {
         WebRtc_Word32 res = in.Read(outData, 1);
@@ -1809,7 +1809,7 @@ WebRtc_Word32 ModuleFileUtility::InitCompressedWriting(
 
     _writing = false;
 
-#ifdef WEBRTC_CODEC_GSMAMR
+#ifdef WEBRTC_CODEC_AMR
     if(STR_CASE_CMP(codecInst.plname, "amr") == 0)
     {
         if(codecInst.pacsize == 160)
@@ -1822,7 +1822,7 @@ WebRtc_Word32 ModuleFileUtility::InitCompressedWriting(
         }
     }
 #endif
-#ifdef WEBRTC_CODEC_GSMAMRWB
+#ifdef WEBRTC_CODEC_AMRWB
     if(STR_CASE_CMP(codecInst.plname, "amr-wb") == 0)
     {
         if(codecInst.pacsize == 320)
@@ -2172,13 +2172,13 @@ WebRtc_Word32 ModuleFileUtility::set_codec_info(const CodecInst& codecInst)
             _codecId = kCodecL16_32Khz;
         }
     }
-#ifdef WEBRTC_CODEC_GSMAMR
+#ifdef WEBRTC_CODEC_AMR
     else if(STR_CASE_CMP(codecInst.plname, "amr") == 0)
     {
         _codecId = kCodecAmr;
     }
 #endif
-#ifdef WEBRTC_CODEC_GSMAMRWB
+#ifdef WEBRTC_CODEC_AMRWB
     else if(STR_CASE_CMP(codecInst.plname, "amr-wb") == 0)
     {
         _codecId = kCodecAmrWb;
@@ -2394,7 +2394,7 @@ WebRtc_Word32 ModuleFileUtility::FileDurationMs(const char* fileName,
             {
                 buf[cnt] = 0;
             }
-#ifdef WEBRTC_CODEC_GSMAMR
+#ifdef WEBRTC_CODEC_AMR
             if(!strcmp("#!AMR\n", buf))
             {
                 WebRtc_UWord8 dummy;
@@ -2456,7 +2456,7 @@ WebRtc_Word32 ModuleFileUtility::FileDurationMs(const char* fileName,
                 }
             }
 #endif
-#ifdef WEBRTC_CODEC_GSMAMRWB
+#ifdef WEBRTC_CODEC_AMRWB
             if(!strcmp("#!AMRWB\n", buf))
             {
                 WebRtc_UWord8 dummy;
