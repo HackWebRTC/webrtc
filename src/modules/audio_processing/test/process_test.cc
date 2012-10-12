@@ -35,6 +35,7 @@ using webrtc::NoiseSuppression;
 using webrtc::scoped_array;
 using webrtc::TickInterval;
 using webrtc::TickTime;
+using webrtc::VoiceDetection;
 
 using webrtc::audioproc::Event;
 using webrtc::audioproc::Init;
@@ -345,6 +346,30 @@ void void_main(int argc, char* argv[]) {
 
     } else if (strcmp(argv[i], "-vad") == 0) {
       ASSERT_EQ(apm->kNoError, apm->voice_detection()->Enable(true));
+
+    } else if (strcmp(argv[i], "--vad_very_low") == 0) {
+      ASSERT_EQ(apm->kNoError, apm->voice_detection()->Enable(true));
+      ASSERT_EQ(apm->kNoError,
+          apm->voice_detection()->set_likelihood(
+              VoiceDetection::kVeryLowLikelihood));
+
+    } else if (strcmp(argv[i], "--vad_low") == 0) {
+      ASSERT_EQ(apm->kNoError, apm->voice_detection()->Enable(true));
+      ASSERT_EQ(apm->kNoError,
+          apm->voice_detection()->set_likelihood(
+              VoiceDetection::kLowLikelihood));
+
+    } else if (strcmp(argv[i], "--vad_moderate") == 0) {
+      ASSERT_EQ(apm->kNoError, apm->voice_detection()->Enable(true));
+      ASSERT_EQ(apm->kNoError,
+          apm->voice_detection()->set_likelihood(
+              VoiceDetection::kModerateLikelihood));
+
+    } else if (strcmp(argv[i], "--vad_high") == 0) {
+      ASSERT_EQ(apm->kNoError, apm->voice_detection()->Enable(true));
+      ASSERT_EQ(apm->kNoError,
+          apm->voice_detection()->set_likelihood(
+              VoiceDetection::kHighLikelihood));
 
     } else if (strcmp(argv[i], "--vad_out_file") == 0) {
       i++;
