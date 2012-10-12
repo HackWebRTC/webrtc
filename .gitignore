@@ -1,6 +1,5 @@
-*.host.mk
-*.target.mk
 *.Makefile
+*.host.mk
 *.ncb
 *.ninja
 *.props
@@ -10,6 +9,7 @@
 *.sdf
 *.sln
 *.suo
+*.target.mk
 *.targets
 *.user
 *.vcproj
@@ -20,6 +20,8 @@
 *.vpwhistu
 *.vtg
 *.xcodeproj
+*_proto.xml
+*_proto_cpp.xml
 *~
 .*.sw?
 .DS_Store
