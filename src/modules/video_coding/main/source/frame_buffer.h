@@ -74,7 +74,7 @@ public:
     void IncrementNackCount();
     WebRtc_Word16 GetNackCount() const;
 
-    WebRtc_Word64 LatestPacketTimeMs();
+    WebRtc_Word64 LatestPacketTimeMs() const;
 
     webrtc::FrameType FrameType() const;
     void SetPreviousFrameLoss();

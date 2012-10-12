@@ -287,7 +287,8 @@ TEST_F(TestJitterBufferNack, TestNackListFull) {
 
   uint16_t nack_list_length = kNackHistoryLength;
   bool extended;
-  uint16_t* nack_list = jitter_buffer_->GetNackList(nack_list_length, extended);
+  uint16_t* nack_list = jitter_buffer_->CreateNackList(&nack_list_length,
+                                                       &extended);
   // Verify that the jitter buffer requests a key frame.
   EXPECT_TRUE(nack_list_length == 0xffff && nack_list == NULL);
 
@@ -302,14 +303,14 @@ TEST_F(TestJitterBufferNack, TestNackBeforeDecode) {
   InsertFrame(kVideoFrameDelta);
   uint16_t nack_list_size = 0;
   bool extended = false;
-  uint16_t* list = jitter_buffer_->GetNackList(nack_list_size, extended);
+  uint16_t* list = jitter_buffer_->CreateNackList(&nack_list_size, &extended);
   // No list generated, and a key frame request is signaled.
   EXPECT_TRUE(list == NULL);
   EXPECT_EQ(0xFFFF, nack_list_size);
 }
 
 TEST_F(TestJitterBufferNack, TestNormalOperation) {
-  EXPECT_EQ(kNackInfinite, jitter_buffer_->GetNackMode());
+  EXPECT_EQ(kNackInfinite, jitter_buffer_->nack_mode());
 
   InsertFrame(kVideoFrameKey);
   EXPECT_TRUE(DecodeFrame());
@@ -335,7 +336,7 @@ TEST_F(TestJitterBufferNack, TestNormalOperation) {
   EXPECT_FALSE(DecodeFrame());
   uint16_t nack_list_size = 0;
   bool extended = false;
-  uint16_t* list = jitter_buffer_->GetNackList(nack_list_size, extended);
+  uint16_t* list = jitter_buffer_->CreateNackList(&nack_list_size, &extended);
   // Verify the NACK list.
   const int kExpectedNackSize = 9;
   ASSERT_EQ(kExpectedNackSize, nack_list_size);
@@ -365,7 +366,7 @@ TEST_F(TestJitterBufferNack, TestNormalOperationWrap) {
   EXPECT_FALSE(DecodeCompleteFrame());
   uint16_t nack_list_size = 0;
   bool extended = false;
-  uint16_t* list = jitter_buffer_->GetNackList(nack_list_size, extended);
+  uint16_t* list = jitter_buffer_->CreateNackList(&nack_list_size, &extended);
   // Verify the NACK list.
   const int kExpectedNackSize = 10;
   ASSERT_EQ(kExpectedNackSize, nack_list_size);

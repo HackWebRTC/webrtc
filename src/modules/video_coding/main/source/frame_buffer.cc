@@ -199,7 +199,7 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs,
 }
 
 WebRtc_Word64
-VCMFrameBuffer::LatestPacketTimeMs()
+VCMFrameBuffer::LatestPacketTimeMs() const
 {
     return _latestPacketTimeMs;
 }

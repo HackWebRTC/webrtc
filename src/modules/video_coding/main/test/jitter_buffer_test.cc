@@ -135,13 +135,9 @@ int JitterBufferTest(CmdArgs& args)
         }
     }
 
-    // Test out of range inputs
-    TEST(kSizeError == jb.InsertPacket(0, packet));
-    jb.ReleaseFrame(0);
-
     // Not started
     TEST(0 == jb.GetFrame(packet));
-    TEST(-1 == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(-1 == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
     TEST(0 == jb.GetCompleteFrameForDecoding(10));
     TEST(0 == jb.GetFrameForDecoding());
 
@@ -179,7 +175,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // get packet notification
-    TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
 
     // check incoming frame type
     TEST(incomingFrameType == kVideoFrameDelta);
@@ -220,7 +216,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // get packet notification
-    TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
 
     // check incoming frame type
     TEST(incomingFrameType == kVideoFrameDelta);
@@ -279,7 +275,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // get packet notification
-    TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
 
     // check incoming frame type
     TEST(incomingFrameType == kVideoFrameKey);
@@ -355,7 +351,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // get packet notification
-    TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
 
     // check incoming frame type
     TEST(incomingFrameType == kVideoFrameDelta);
@@ -432,7 +428,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // get packet notification
-    TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
 
     // check incoming frame type
     TEST(incomingFrameType == kVideoFrameDelta);
@@ -509,7 +505,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // get packet notification
-    TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
 
     // check incoming frame type
     TEST(incomingFrameType == kVideoFrameDelta);
@@ -550,7 +546,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // get packet notification
-    TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
 
     // check incoming frame type
     TEST(incomingFrameType == kVideoFrameDelta);
@@ -624,7 +620,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // get packet notification
-    TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
 
     // check incoming frame type
     TEST(incomingFrameType == kVideoFrameDelta);
@@ -686,7 +682,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // get packet notification
-    TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
 
     // check incoming frame type
     TEST(incomingFrameType == kVideoFrameDelta);
@@ -728,14 +724,14 @@ int JitterBufferTest(CmdArgs& args)
     //
     WebRtc_UWord32 numDeltaFrames = 0;
     WebRtc_UWord32 numKeyFrames = 0;
-    TEST(jb.GetFrameStatistics(numDeltaFrames, numKeyFrames) == 0);
+    jb.FrameStatistics(&numDeltaFrames, &numKeyFrames);
 
     TEST(numDeltaFrames == 8);
     TEST(numKeyFrames == 1);
 
     WebRtc_UWord32 frameRate;
     WebRtc_UWord32 bitRate;
-    TEST(jb.GetUpdate(frameRate, bitRate) == 0);
+    jb.IncomingRateStatistics(&frameRate, &bitRate);
 
     // these depend on CPU speed works on a T61
     TEST(frameRate > 30);
@@ -786,8 +782,8 @@ int JitterBufferTest(CmdArgs& args)
       TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
       // Get packet notification
-      TEST(timeStamp - 33 * 90 == jb.GetNextTimeStamp(10, incomingFrameType,
-                                                      renderTimeMs));
+      TEST(timeStamp - 33 * 90 == jb.NextTimestamp(10, &incomingFrameType,
+                                                   &renderTimeMs));
 
       // Check incoming frame type
       if (i == 0)
@@ -858,7 +854,7 @@ int JitterBufferTest(CmdArgs& args)
       jb.ReleaseFrame(frameOut);
     }
 
-    TEST(jb.NumNotDecodablePackets() == 10);
+    TEST(jb.num_not_decodable_packets() == 10);
 
     // Insert 3 old packets and verify that we have 3 discarded packets
     // Match value to actual latest timestamp decoded
@@ -875,12 +871,12 @@ int JitterBufferTest(CmdArgs& args)
     frameIn = jb.GetFrame(packet);
     TEST(frameIn == NULL);
 
-    TEST(jb.DiscardedPackets() == 3);
+    TEST(jb.num_discarded_packets() == 3);
 
     jb.Flush();
 
     // This statistic shouldn't be reset by a flush.
-    TEST(jb.DiscardedPackets() == 3);
+    TEST(jb.num_discarded_packets() == 3);
 
     //printf("DONE Statistics\n");
 
@@ -916,7 +912,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // get packet notification
-    TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
 
     // check incoming frame type
     TEST(incomingFrameType == kVideoFrameDelta);
@@ -943,7 +939,8 @@ int JitterBufferTest(CmdArgs& args)
         TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
 
         // get packet notification
-        TEST(timeStamp == jb.GetNextTimeStamp(2, incomingFrameType, renderTimeMs));
+        TEST(timeStamp == jb.NextTimestamp(2, &incomingFrameType,
+                                           &renderTimeMs));
 
         // check incoming frame type
         TEST(incomingFrameType == kVideoFrameDelta);
@@ -1009,7 +1006,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // get packet notification
-    TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
 
     // check incoming frame type
     TEST(incomingFrameType == kVideoFrameDelta);
@@ -1036,7 +1033,8 @@ int JitterBufferTest(CmdArgs& args)
         TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
 
         // get packet notification
-        TEST(timeStamp == jb.GetNextTimeStamp(2, incomingFrameType, renderTimeMs));
+        TEST(timeStamp == jb.NextTimestamp(2, &incomingFrameType,
+                                           &renderTimeMs));
 
         // check incoming frame type
         TEST(incomingFrameType == kVideoFrameDelta);
@@ -1101,7 +1099,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // get packet notification
-    TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
 
     // check incoming frame type
     TEST(incomingFrameType == kVideoFrameDelta);
@@ -1125,7 +1123,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
 
     // get packet notification
-    TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
 
     // check incoming frame type
     TEST(incomingFrameType == kVideoFrameDelta);
@@ -1186,7 +1184,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // get packet notification
-    TEST(3000 == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(3000 == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
     TEST(kVideoFrameDelta == incomingFrameType);
 
     // Get the frame
@@ -1240,7 +1238,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // get packet notification
-    TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
     TEST(kVideoFrameDelta == incomingFrameType);
 
     // Get the frame
@@ -1291,7 +1289,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // get packet notification
-    TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
 
     // check incoming frame type
     TEST(incomingFrameType == kVideoFrameDelta);
@@ -1334,7 +1332,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // get packet notification
-    TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
 
     // check incoming frame type
     TEST(incomingFrameType == kVideoFrameDelta);
@@ -1394,7 +1392,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // Get packet notification
-    TEST(0xffffff00 == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(0xffffff00 == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
     TEST(kVideoFrameDelta == incomingFrameType);
 
     // Insert next frame
@@ -1413,7 +1411,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // Get packet notification
-    TEST(0xffffff00 == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(0xffffff00 == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
     TEST(kVideoFrameDelta == incomingFrameType);
 
     // Get frame
@@ -1426,7 +1424,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(frameOut->FrameType() == kVideoFrameDelta);
 
     // Get packet notification
-    TEST(2700 == jb.GetNextTimeStamp(0, incomingFrameType, renderTimeMs));
+    TEST(2700 == jb.NextTimestamp(0, &incomingFrameType, &renderTimeMs));
     TEST(kVideoFrameDelta == incomingFrameType);
 
     // Get frame
@@ -1469,7 +1467,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // Get packet notification
-    TEST(2700 == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(2700 == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
     TEST(kVideoFrameDelta == incomingFrameType);
 
     // Insert second frame
@@ -1488,7 +1486,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // Get packet notification
-    TEST(0xffffff00 == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(0xffffff00 == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
     TEST(kVideoFrameDelta == incomingFrameType);
 
     // Get frame
@@ -1501,7 +1499,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(frameOut->FrameType() == kVideoFrameDelta);
 
     // get packet notification
-    TEST(2700 == jb.GetNextTimeStamp(0, incomingFrameType, renderTimeMs));
+    TEST(2700 == jb.NextTimestamp(0, &incomingFrameType, &renderTimeMs));
     TEST(kVideoFrameDelta == incomingFrameType);
 
     // Get frame
@@ -1551,7 +1549,8 @@ int JitterBufferTest(CmdArgs& args)
         }
 
         // get packet notification
-        TEST(packet.timestamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+        TEST(packet.timestamp == jb.NextTimestamp(10, &incomingFrameType,
+                                                  &renderTimeMs));
 
         // check incoming frame type
         TEST(incomingFrameType == kVideoFrameDelta);
@@ -1622,8 +1621,8 @@ int JitterBufferTest(CmdArgs& args)
         TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
         // Get packet notification, should be first inserted frame
-        TEST(timeStampStart == jb.GetNextTimeStamp(10, incomingFrameType,
-                                                   renderTimeMs));
+        TEST(timeStampStart == jb.NextTimestamp(10, &incomingFrameType,
+                                                &renderTimeMs));
 
         // check incoming frame type
         TEST(incomingFrameType == kVideoFrameDelta);
@@ -1650,8 +1649,8 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // First inserted key frame should be oldest in buffer
-    TEST(timeStampFirstKey == jb.GetNextTimeStamp(10, incomingFrameType,
-                                                  renderTimeMs));
+    TEST(timeStampFirstKey == jb.NextTimestamp(10, &incomingFrameType,
+                                               &renderTimeMs));
 
     // check incoming frame type
     TEST(incomingFrameType == kVideoFrameKey);
@@ -1764,7 +1763,8 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // Get packet notification
-    TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType,
+                                       &renderTimeMs));
     frameOut = jb.GetFrameForDecoding();
 
     // We can decode everything from a NALU until a packet has been lost.

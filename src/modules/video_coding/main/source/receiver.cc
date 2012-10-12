@@ -200,9 +200,9 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(WebRtc_UWord16 maxWaitTimeMs,
     FrameType incomingFrameType = kVideoFrameDelta;
     nextRenderTimeMs = -1;
     const WebRtc_Word64 startTimeMs = _clock->MillisecondTimestamp();
-    WebRtc_Word64 ret = _jitterBuffer.GetNextTimeStamp(maxWaitTimeMs,
-                                                       incomingFrameType,
-                                                       nextRenderTimeMs);
+    WebRtc_Word64 ret = _jitterBuffer.NextTimestamp(maxWaitTimeMs,
+                                                    &incomingFrameType,
+                                                    &nextRenderTimeMs);
     if (ret < 0)
     {
         // No timestamp in jitter buffer at the moment
@@ -211,7 +211,7 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(WebRtc_UWord16 maxWaitTimeMs,
     const WebRtc_UWord32 timeStamp = static_cast<WebRtc_UWord32>(ret);
 
     // Update the timing
-    _timing.SetRequiredDelay(_jitterBuffer.GetEstimatedJitterMS());
+    _timing.SetRequiredDelay(_jitterBuffer.EstimatedJitterMs());
     _timing.UpdateCurrentDelay(timeStamp);
 
     const WebRtc_Word32 tempWaitTime = maxWaitTimeMs -
@@ -233,7 +233,7 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(WebRtc_UWord16 maxWaitTimeMs,
     {
         bool retransmitted = false;
         const WebRtc_Word64 lastPacketTimeMs =
-                _jitterBuffer.LastPacketTime(frame, retransmitted);
+                _jitterBuffer.LastPacketTime(frame, &retransmitted);
         if (lastPacketTimeMs >= 0 && !retransmitted)
         {
             // We don't want to include timestamps which have suffered from retransmission
@@ -367,20 +367,21 @@ VCMReceiver::ReleaseFrame(VCMEncodedFrame* frame)
 WebRtc_Word32
 VCMReceiver::ReceiveStatistics(WebRtc_UWord32& bitRate, WebRtc_UWord32& frameRate)
 {
-    const WebRtc_Word32 ret = _jitterBuffer.GetUpdate(frameRate, bitRate);
+    _jitterBuffer.IncomingRateStatistics(&frameRate, &bitRate);
     bitRate /= 1000; // Should be in kbps
-    return ret;
+    return 0;
 }
 
 WebRtc_Word32
 VCMReceiver::ReceivedFrameCount(VCMFrameCount& frameCount) const
 {
-    return _jitterBuffer.GetFrameStatistics(frameCount.numDeltaFrames,
-                                            frameCount.numKeyFrames);
+    _jitterBuffer.FrameStatistics(&frameCount.numDeltaFrames,
+                                     &frameCount.numKeyFrames);
+    return 0;
 }
 
 WebRtc_UWord32 VCMReceiver::DiscardedPackets() const {
-  return _jitterBuffer.DiscardedPackets();
+  return _jitterBuffer.num_discarded_packets();
 }
 
 void
@@ -399,7 +400,7 @@ VCMNackMode
 VCMReceiver::NackMode() const
 {
     CriticalSectionScoped cs(_critSect);
-    return _jitterBuffer.GetNackMode();
+    return _jitterBuffer.nack_mode();
 }
 
 VCMNackStatus
@@ -407,7 +408,8 @@ VCMReceiver::NackList(WebRtc_UWord16* nackList, WebRtc_UWord16& size)
 {
     bool extended = false;
     WebRtc_UWord16 nackListSize = 0;
-    WebRtc_UWord16* internalNackList = _jitterBuffer.GetNackList(nackListSize, extended);
+    WebRtc_UWord16* internalNackList = _jitterBuffer.CreateNackList(
+        &nackListSize, &extended);
     if (internalNackList == NULL && nackListSize == 0xffff)
     {
         // This combination is used to trigger key frame requests.
@@ -468,7 +470,7 @@ VCMReceiver::UpdateState(VCMReceiverState newState)
 void
 VCMReceiver::UpdateState(VCMEncodedFrame& frame)
 {
-    if (_jitterBuffer.GetNackMode() == kNoNack)
+    if (_jitterBuffer.nack_mode() == kNoNack)
     {
         // Dual decoder mode has not been enabled.
         return;
