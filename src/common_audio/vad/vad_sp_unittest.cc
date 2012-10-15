@@ -23,10 +23,11 @@ namespace {
 
 TEST_F(VadTest, vad_sp) {
   VadInstT* self = reinterpret_cast<VadInstT*>(malloc(sizeof(VadInstT)));
-  int16_t zeros[kMaxFrameLength] = { 0 };
+  const int kMaxFrameLenSp = 960;  // Maximum frame length in this unittest.
+  int16_t zeros[kMaxFrameLenSp] = { 0 };
   int32_t state[2] = { 0 };
-  int16_t data_in[kMaxFrameLength];
-  int16_t data_out[kMaxFrameLength];
+  int16_t data_in[kMaxFrameLenSp];
+  int16_t data_out[kMaxFrameLenSp];
 
   // We expect the first value to be 1600 as long as |frame_counter| is zero,
   // which is true for the first iteration.
@@ -39,20 +40,18 @@ TEST_F(VadTest, vad_sp) {
 
   // Construct a speech signal that will trigger the VAD in all modes. It is
   // known that (i * i) will wrap around, but that doesn't matter in this case.
-  for (int16_t i = 0; i < kMaxFrameLength; ++i) {
+  for (int16_t i = 0; i < kMaxFrameLenSp; ++i) {
     data_in[i] = (i * i);
   }
   // Input values all zeros, expect all zeros out.
-  WebRtcVad_Downsampling(zeros, data_out, state,
-                         static_cast<int>(kMaxFrameLength));
+  WebRtcVad_Downsampling(zeros, data_out, state, kMaxFrameLenSp);
   EXPECT_EQ(0, state[0]);
   EXPECT_EQ(0, state[1]);
-  for (int16_t i = 0; i < kMaxFrameLength / 2; ++i) {
+  for (int16_t i = 0; i < kMaxFrameLenSp / 2; ++i) {
     EXPECT_EQ(0, data_out[i]);
   }
   // Make a simple non-zero data test.
-  WebRtcVad_Downsampling(data_in, data_out, state,
-                         static_cast<int>(kMaxFrameLength));
+  WebRtcVad_Downsampling(data_in, data_out, state, kMaxFrameLenSp);
   EXPECT_EQ(207, state[0]);
   EXPECT_EQ(2270, state[1]);
 

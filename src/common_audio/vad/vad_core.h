@@ -16,6 +16,7 @@
 #ifndef WEBRTC_COMMON_AUDIO_VAD_VAD_CORE_H_
 #define WEBRTC_COMMON_AUDIO_VAD_VAD_CORE_H_
 
+#include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "typedefs.h"
 
 enum { kNumChannels = 6 };  // Number of frequency bands (named channels).
@@ -28,6 +29,7 @@ typedef struct VadInstT_
 
     int vad;
     int32_t downsampling_filter_states[4];
+    WebRtcSpl_State48khzTo8khz state_48_to_8;
     int16_t noise_means[kTableSize];
     int16_t speech_means[kTableSize];
     int16_t noise_stds[kTableSize];
@@ -82,6 +84,7 @@ int WebRtcVad_InitCore(VadInstT* self);
 int WebRtcVad_set_mode_core(VadInstT* self, int mode);
 
 /****************************************************************************
+ * WebRtcVad_CalcVad48khz(...)
  * WebRtcVad_CalcVad32khz(...) 
  * WebRtcVad_CalcVad16khz(...) 
  * WebRtcVad_CalcVad8khz(...) 
@@ -100,6 +103,8 @@ int WebRtcVad_set_mode_core(VadInstT* self, int mode);
  *                        0 - No active speech
  *                        1-6 - Active speech
  */
+int WebRtcVad_CalcVad48khz(VadInstT* inst, int16_t* speech_frame,
+                           int frame_length);
 int WebRtcVad_CalcVad32khz(VadInstT* inst, int16_t* speech_frame,
                            int frame_length);
 int WebRtcVad_CalcVad16khz(VadInstT* inst, int16_t* speech_frame,

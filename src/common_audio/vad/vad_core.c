@@ -504,6 +504,9 @@ int WebRtcVad_InitCore(VadInstT* self) {
   memset(self->downsampling_filter_states, 0,
          sizeof(self->downsampling_filter_states));
 
+  // Initialization of 48 to 8 kHz downsampling.
+  WebRtcSpl_ResetResample48khzTo8khz(&self->state_48_to_8);
+
   // Read initial PDF parameters.
   for (i = 0; i < kTableSize; i++) {
     self->noise_means[i] = kNoiseDataMeans[i];
@@ -599,6 +602,31 @@ int WebRtcVad_set_mode_core(VadInstT* self, int mode) {
 
 // Calculate VAD decision by first extracting feature values and then calculate
 // probability for both speech and background noise.
+
+int WebRtcVad_CalcVad48khz(VadInstT* inst, int16_t* speech_frame,
+                           int frame_length) {
+  int vad;
+  int i;
+  int16_t speech_nb[240];  // 30 ms in 8 kHz.
+  // |tmp_mem| is a temporary memory used by resample function, length is
+  // frame length in 10 ms (480 samples) + 256 extra.
+  int32_t tmp_mem[480 + 256] = { 0 };
+  const int kFrameLen10ms48khz = 480;
+  const int kFrameLen10ms8khz = 80;
+  int num_10ms_frames = frame_length / kFrameLen10ms48khz;
+
+  for (i = 0; i < num_10ms_frames; i++) {
+    WebRtcSpl_Resample48khzTo8khz(speech_frame,
+                                  &speech_nb[i * kFrameLen10ms8khz],
+                                  &inst->state_48_to_8,
+                                  tmp_mem);
+  }
+
+  // Do VAD on an 8 kHz signal
+  vad = WebRtcVad_CalcVad8khz(inst, speech_nb, frame_length / 6);
+
+  return vad;
+}
 
 int WebRtcVad_CalcVad32khz(VadInstT* inst, int16_t* speech_frame,
                            int frame_length)

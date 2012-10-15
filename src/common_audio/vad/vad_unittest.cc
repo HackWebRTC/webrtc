@@ -36,9 +36,13 @@ bool VadTest::ValidRatesAndFrameLengths(int rate, int frame_length) {
       return true;
     }
     return false;
-  }
-  if (rate == 32000) {
+  } else if (rate == 32000) {
     if (frame_length == 320 || frame_length == 640 || frame_length == 960) {
+      return true;
+    }
+    return false;
+  } else if (rate == 48000) {
+    if (frame_length == 480 || frame_length == 960 || frame_length == 1440) {
       return true;
     }
     return false;
@@ -122,15 +126,26 @@ TEST_F(VadTest, ApiTest) {
 
 TEST_F(VadTest, ValidRatesFrameLengths) {
   // This test verifies valid and invalid rate/frame_length combinations. We
-  // loop through sampling rates and frame lengths from negative values to
+  // loop through some sampling rates and frame lengths from negative values to
   // values larger than possible.
-  for (int16_t rate = -1; rate <= kRates[kRatesSize - 1] + 1; rate++) {
-    for (int16_t frame_length = -1; frame_length <= kMaxFrameLength + 1;
-        frame_length++) {
-      if (ValidRatesAndFrameLengths(rate, frame_length)) {
-        EXPECT_EQ(0, WebRtcVad_ValidRateAndFrameLength(rate, frame_length));
+  const int kNumRates = 12;
+  const int kRates[kNumRates] = {
+    -8000, -4000, 0, 4000, 8000, 8001, 15999, 16000, 32000, 48000, 48001, 96000
+  };
+
+  const int kNumFrameLengths = 13;
+  const int kFrameLengths[kNumFrameLengths] = {
+    -10, 0, 80, 81, 159, 160, 240, 320, 480, 640, 960, 1440, 2000
+  };
+
+  for (int i = 0; i < kNumRates; i++) {
+    for (int j = 0; j < kNumFrameLengths; j++) {
+      if (ValidRatesAndFrameLengths(kRates[i], kFrameLengths[j])) {
+        EXPECT_EQ(0, WebRtcVad_ValidRateAndFrameLength(kRates[i],
+                                                       kFrameLengths[j]));
       } else {
-        EXPECT_EQ(-1, WebRtcVad_ValidRateAndFrameLength(rate, frame_length));
+        EXPECT_EQ(-1, WebRtcVad_ValidRateAndFrameLength(kRates[i],
+                                                        kFrameLengths[j]));
       }
     }
   }

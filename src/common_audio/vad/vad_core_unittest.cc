@@ -75,6 +75,9 @@ TEST_F(VadTest, CalcVad) {
     if (ValidRatesAndFrameLengths(32000, kFrameLengths[j])) {
       EXPECT_EQ(0, WebRtcVad_CalcVad32khz(self, speech, kFrameLengths[j]));
     }
+    if (ValidRatesAndFrameLengths(48000, kFrameLengths[j])) {
+      EXPECT_EQ(0, WebRtcVad_CalcVad48khz(self, speech, kFrameLengths[j]));
+    }
   }
 
   // Construct a speech signal that will trigger the VAD in all modes. It is
@@ -91,6 +94,9 @@ TEST_F(VadTest, CalcVad) {
     }
     if (ValidRatesAndFrameLengths(32000, kFrameLengths[j])) {
       EXPECT_EQ(1, WebRtcVad_CalcVad32khz(self, speech, kFrameLengths[j]));
+    }
+    if (ValidRatesAndFrameLengths(48000, kFrameLengths[j])) {
+      EXPECT_EQ(1, WebRtcVad_CalcVad48khz(self, speech, kFrameLengths[j]));
     }
   }
 
