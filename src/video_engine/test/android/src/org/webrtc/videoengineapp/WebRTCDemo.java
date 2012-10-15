@@ -10,32 +10,18 @@
 
 package org.webrtc.videoengineapp;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.Enumeration;
-
-import org.webrtc.videoengine.ViERenderer;
-
-import android.app.TabActivity;
 import android.app.AlertDialog;
-import android.app.Dialog;
+import android.app.TabActivity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.Configuration;
 import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.DashPathEffect;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.PixelFormat;
-import android.graphics.Rect;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -45,19 +31,19 @@ import android.os.Environment;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Display;
-import android.view.OrientationEventListener;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.WindowManager.LayoutParams;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -66,14 +52,23 @@ import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TabHost;
-import android.widget.TextView;
-import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.TabHost.TabSpec;
+import android.widget.TextView;
 
+import org.webrtc.videoengine.ViERenderer;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
+
+/** {@} */
 public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                                                 View.OnClickListener,
                                                 OnItemSelectedListener {
-    private ViEAndroidJavaAPI ViEAndroidAPI = null;
+    private ViEAndroidJavaAPI vieAndroidAPI = null;
 
     // remote renderer
     private SurfaceView remoteSurfaceView = null;
@@ -195,7 +190,7 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
 
     private BroadcastReceiver receiver;
 
-    public int GetCameraOrientation(int cameraOrientation) {
+    public int getCameraOrientation(int cameraOrientation) {
         Display display = this.getWindowManager().getDefaultDisplay();
         int displatyRotation = display.getRotation();
         int degrees = 0;
@@ -205,21 +200,20 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
             case Surface.ROTATION_180: degrees = 180; break;
             case Surface.ROTATION_270: degrees = 270; break;
         }
-        int result=0;
-        if(cameraOrientation>180) {
-            result=(cameraOrientation + degrees) % 360;
-        }
-        else {
-            result=(cameraOrientation - degrees+360) % 360;
+        int result = 0;
+        if (cameraOrientation > 180) {
+            result = (cameraOrientation + degrees) % 360;
+        } else {
+            result = (cameraOrientation - degrees + 360) % 360;
         }
         return result;
     }
 
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        int newRotation = GetCameraOrientation(currentCameraOrientation);
-        if (viERunning){
-            ViEAndroidAPI.SetRotation(cameraId,newRotation);
+        int newRotation = getCameraOrientation(currentCameraOrientation);
+        if (viERunning) {
+            vieAndroidAPI.SetRotation(cameraId, newRotation);
         }
     }
 
@@ -235,7 +229,7 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         // Set screen orientation
         setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
-        PowerManager pm = (PowerManager)this.getSystemService(
+        PowerManager pm = (PowerManager) this.getSystemService(
             Context.POWER_SERVICE);
         wakeLock = pm.newWakeLock(
             PowerManager.SCREEN_DIM_WAKE_LOCK, TAG);
@@ -255,16 +249,15 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                         if (voERunning) {
                             if (state == 1) {
                                 enableSpeaker = true;
-                            }
-                            else {
+                            } else {
                                 enableSpeaker = false;
                             }
-                            RouteAudio(enableSpeaker);
+                            routeAudio(enableSpeaker);
                         }
                     }
                 }
             };
-        registerReceiver(receiver, receiverFilter );
+        registerReceiver(receiver, receiverFilter);
 
         mTabHost = getTabHost();
 
@@ -293,11 +286,11 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         mTabHost.addTab(mTaba);
 
         int childCount = mTabHost.getTabWidget().getChildCount();
-        for (int i=0; i<childCount; i++)
+        for (int i = 0; i < childCount; i++) {
             mTabHost.getTabWidget().getChildAt(i).getLayoutParams().height = 50;
-
+        }
         orientationListener =
-                new OrientationEventListener(this,SensorManager.SENSOR_DELAY_UI) {
+                new OrientationEventListener(this, SensorManager.SENSOR_DELAY_UI) {
                     public void onOrientationChanged (int orientation) {
                         if (orientation != ORIENTATION_UNKNOWN) {
                             currentOrientation = orientation;
@@ -312,13 +305,12 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         File webrtcDir = new File(webrtcDebugDir);
         if (!webrtcDir.exists() && webrtcDir.mkdir() == false) {
             Log.v(TAG, "Failed to create " + webrtcDebugDir);
-        }
-        else if (!webrtcDir.isDirectory()) {
+        } else if (!webrtcDir.isDirectory()) {
             Log.v(TAG, webrtcDebugDir + " exists but not a folder");
             webrtcDebugDir = null;
         }
 
-        StartMain();
+        startMain();
         return;
     }
 
@@ -357,7 +349,7 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         }
     }
 
-    private String GetLocalIpAddress() {
+    private String getLocalIpAddress() {
         String localIPs = "";
         try {
             for (Enumeration<NetworkInterface> en = NetworkInterface
@@ -386,8 +378,8 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             if (viERunning) {
-                StopAll();
-                StartMain();
+                stopAll();
+                startMain();
             }
             finish();
             return true;
@@ -395,26 +387,26 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         return super.onKeyDown(keyCode, event);
     }
 
-    private void StopAll() {
-        Log.d(TAG, "StopAll");
+    private void stopAll() {
+        Log.d(TAG, "stopAll");
 
-        if (ViEAndroidAPI != null) {
+        if (vieAndroidAPI != null) {
 
-            StopCPULoad();
+            stopCPULoad();
 
             if (voERunning) {
                 voERunning = false;
-                StopVoiceEngine();
+                stopVoiceEngine();
             }
 
             if (viERunning) {
                 viERunning = false;
-                ViEAndroidAPI.StopRender(channel);
-                ViEAndroidAPI.StopReceive(channel);
-                ViEAndroidAPI.StopSend(channel);
-                ViEAndroidAPI.RemoveRemoteRenderer(channel);
-                ViEAndroidAPI.StopCamera(cameraId);
-                ViEAndroidAPI.Terminate();
+                vieAndroidAPI.StopRender(channel);
+                vieAndroidAPI.StopReceive(channel);
+                vieAndroidAPI.StopSend(channel);
+                vieAndroidAPI.RemoveRemoteRenderer(channel);
+                vieAndroidAPI.StopCamera(cameraId);
+                vieAndroidAPI.Terminate();
                 mLlRemoteSurface.removeView(remoteSurfaceView);
                 mLlLocalSurface.removeView(svLocal);
                 remoteSurfaceView = null;
@@ -423,6 +415,7 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         }
     }
 
+    /** {@ArrayAdapter} */
     public class SpinnerAdapter extends ArrayAdapter<String> {
         private String[] mCodecString = null;
         public SpinnerAdapter(Context context, int textViewResourceId, String[] objects) {
@@ -441,23 +434,23 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         public View getCustomView(int position, View convertView, ViewGroup parent) {
             LayoutInflater inflater = getLayoutInflater();
             View row = inflater.inflate(R.layout.row, parent, false);
-            TextView label = (TextView)row.findViewById(R.id.spinner_row);
+            TextView label = (TextView) row.findViewById(R.id.spinner_row);
             label.setText(mCodecString[position]);
             return row;
         }
     }
 
-    private void StartMain() {
+    private void startMain() {
         mTabHost.setCurrentTab(0);
 
         mLlRemoteSurface = (LinearLayout) findViewById(R.id.llRemoteView);
         mLlLocalSurface = (LinearLayout) findViewById(R.id.llLocalView);
 
-        if (null == ViEAndroidAPI)
-            ViEAndroidAPI = new ViEAndroidJavaAPI(this);
-
-        if (0 > SetupVoE() || 0 > ViEAndroidAPI.GetVideoEngine() ||
-                0 > ViEAndroidAPI.Init(enableTrace) ) {
+        if (null == vieAndroidAPI) {
+            vieAndroidAPI = new ViEAndroidJavaAPI(this);
+        }
+        if (0 > setupVoE() || 0 > vieAndroidAPI.GetVideoEngine() ||
+                0 > vieAndroidAPI.Init(enableTrace)) {
             // Show dialog
             AlertDialog alertDialog = new AlertDialog.Builder(this).create();
             alertDialog.setTitle("WebRTC Error");
@@ -469,9 +462,9 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
             alertDialog.show();
         }
 
-        btSwitchCamera = (Button)findViewById(R.id.btSwitchCamera);
+        btSwitchCamera = (Button) findViewById(R.id.btSwitchCamera);
         btSwitchCamera.setOnClickListener(this);
-        btStartStopCall = (Button)findViewById(R.id.btStartStopCall);
+        btStartStopCall = (Button) findViewById(R.id.btStartStopCall);
         btStartStopCall.setOnClickListener(this);
         findViewById(R.id.btExit).setOnClickListener(this);
 
@@ -480,8 +473,8 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         svLocal = null;
 
         // Video codec
-        mVideoCodecsStrings = ViEAndroidAPI.GetCodecs();
-        spCodecType = (Spinner)findViewById(R.id.spCodecType);
+        mVideoCodecsStrings = vieAndroidAPI.GetCodecs();
+        spCodecType = (Spinner) findViewById(R.id.spCodecType);
         spCodecType.setOnItemSelectedListener(this);
         spCodecType.setAdapter(new SpinnerAdapter(this,
                         R.layout.row,
@@ -497,8 +490,8 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         spCodecSize.setSelection(0);
 
         // Voice codec
-        mVoiceCodecsStrings = ViEAndroidAPI.VoE_GetCodecs();
-        spVoiceCodecType = (Spinner)findViewById(R.id.spVoiceCodecType);
+        mVoiceCodecsStrings = vieAndroidAPI.VoE_GetCodecs();
+        spVoiceCodecType = (Spinner) findViewById(R.id.spVoiceCodecType);
         spVoiceCodecType.setOnItemSelectedListener(this);
         spVoiceCodecType.setAdapter(new SpinnerAdapter(this,
                         R.layout.row,
@@ -512,12 +505,11 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
             }
         }
 
-        RadioGroup radioGroup = (RadioGroup)findViewById(R.id.radio_group1);
+        RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radio_group1);
         radioGroup.clearCheck();
         if (useOpenGLRender == true) {
             radioGroup.check(R.id.radio_opengl);
-        }
-        else {
+        } else {
             radioGroup.check(R.id.radio_surface);
         }
 
@@ -590,21 +582,20 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         if (loopbackMode) {
             remoteIp = LOOPBACK_IP;
             etRemoteIp.setText(remoteIp);
-        }
-        else {
-            GetLocalIpAddress();
+        } else {
+            getLocalIpAddress();
             etRemoteIp.setText(remoteIp);
         }
 
         // Read settings to refresh each configuration
-        ReadSettings();
+        readSettings();
     }
 
-    private String GetRemoteIPString() {
+    private String getRemoteIPString() {
         return etRemoteIp.getText().toString();
     }
 
-    private void StartPlayingRingtone() {
+    private void startPlayingRingtone() {
         MediaPlayer mMediaPlayer = new MediaPlayer();
         try {
             mMediaPlayer.setDataSource(this, Uri.parse(RINGTONE_URL));
@@ -616,13 +607,13 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         }
     }
 
-    private void StartCall() {
+    private void startCall() {
         int ret = 0;
 
-        StartPlayingRingtone();
+        startPlayingRingtone();
 
         if (enableVoice) {
-            StartVoiceEngine();
+            startVoiceEngine();
         }
 
         if (enableVideo) {
@@ -631,61 +622,60 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                 svLocal = ViERenderer.CreateLocalRenderer(this);
             }
 
-            channel = ViEAndroidAPI.CreateChannel(voiceChannel);
-            ret = ViEAndroidAPI.SetLocalReceiver(channel,
+            channel = vieAndroidAPI.CreateChannel(voiceChannel);
+            ret = vieAndroidAPI.SetLocalReceiver(channel,
                                                  receivePortVideo);
-            ret = ViEAndroidAPI.SetSendDestination(channel,
+            ret = vieAndroidAPI.SetSendDestination(channel,
                                                    destinationPortVideo,
-                                                   GetRemoteIPString());
+                                                   getRemoteIPString());
 
             if (enableVideoReceive) {
-                if(useOpenGLRender) {
+                if (useOpenGLRender) {
                     Log.v(TAG, "Create OpenGL Render");
                     remoteSurfaceView = ViERenderer.CreateRenderer(this, true);
-                    ret = ViEAndroidAPI.AddRemoteRenderer(channel, remoteSurfaceView);
-                }
-                else {
+                    ret = vieAndroidAPI.AddRemoteRenderer(channel, remoteSurfaceView);
+                } else {
                     Log.v(TAG, "Create SurfaceView Render");
                     remoteSurfaceView = ViERenderer.CreateRenderer(this, false);
-                    ret = ViEAndroidAPI.AddRemoteRenderer(channel, remoteSurfaceView);
+                    ret = vieAndroidAPI.AddRemoteRenderer(channel, remoteSurfaceView);
                 }
 
-                ret = ViEAndroidAPI.SetReceiveCodec(channel,
+                ret = vieAndroidAPI.SetReceiveCodec(channel,
                         codecType,
                         INIT_BITRATE,
                         codecSizeWidth,
                         codecSizeHeight,
                         RECEIVE_CODEC_FRAMERATE);
-                ret = ViEAndroidAPI.StartRender(channel);
-                ret = ViEAndroidAPI.StartReceive(channel);
+                ret = vieAndroidAPI.StartRender(channel);
+                ret = vieAndroidAPI.StartReceive(channel);
             }
 
             if (enableVideoSend) {
                 currentCameraOrientation =
-                        ViEAndroidAPI.GetCameraOrientation(usingFrontCamera ? 1 : 0);
-                ret = ViEAndroidAPI.SetSendCodec(channel, codecType, INIT_BITRATE,
+                        vieAndroidAPI.GetCameraOrientation(usingFrontCamera ? 1 : 0);
+                ret = vieAndroidAPI.SetSendCodec(channel, codecType, INIT_BITRATE,
                         codecSizeWidth, codecSizeHeight, SEND_CODEC_FRAMERATE);
-                int camId = ViEAndroidAPI.StartCamera(channel, usingFrontCamera ? 1 : 0);
+                int camId = vieAndroidAPI.StartCamera(channel, usingFrontCamera ? 1 : 0);
 
-                if(camId > 0) {
+                if (camId > 0) {
                     cameraId = camId;
-                    int neededRotation = GetCameraOrientation(currentCameraOrientation);
-                    ViEAndroidAPI.SetRotation(cameraId, neededRotation);
-                }
-                else {
+                    int neededRotation = getCameraOrientation(currentCameraOrientation);
+                    vieAndroidAPI.SetRotation(cameraId, neededRotation);
+                } else {
                     ret = camId;
                 }
-                ret = ViEAndroidAPI.StartSend(channel);
+                ret = vieAndroidAPI.StartSend(channel);
             }
 
             // TODO(leozwang): Add more options besides PLI, currently use pli
             // as the default. Also check return value.
-            ret = ViEAndroidAPI.EnablePLI(channel, true);
-            ret = ViEAndroidAPI.SetCallback(channel, this);
+            ret = vieAndroidAPI.EnablePLI(channel, true);
+            ret = vieAndroidAPI.SetCallback(channel, this);
 
             if (enableVideoSend) {
-                if (mLlLocalSurface != null)
+                if (mLlLocalSurface != null) {
                     mLlLocalSurface.addView(svLocal);
+                }
             }
 
             if (enableVideoReceive) {
@@ -696,64 +686,62 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
 
             isStatsOn = cbStats.isChecked();
             if (isStatsOn) {
-                AddStatsView();
-            }
-            else {
-                RemoveSatsView();
+                addStatusView();
+            } else {
+                removeStatusView();
             }
 
             isCPULoadOn = cbCPULoad.isChecked();
             if (isCPULoadOn) {
-                StartCPULoad();
-            }
-            else {
-                StopCPULoad();
+                startCPULoad();
+            } else {
+                stopCPULoad();
             }
 
             viERunning = true;
         }
     }
 
-    private void StopVoiceEngine() {
+    private void stopVoiceEngine() {
         // Stop send
-        if (0 != ViEAndroidAPI.VoE_StopSend(voiceChannel)) {
+        if (0 != vieAndroidAPI.VoE_StopSend(voiceChannel)) {
             Log.d(TAG, "VoE stop send failed");
         }
 
         // Stop listen
-        if (0 != ViEAndroidAPI.VoE_StopListen(voiceChannel)) {
+        if (0 != vieAndroidAPI.VoE_StopListen(voiceChannel)) {
             Log.d(TAG, "VoE stop listen failed");
         }
 
         // Stop playout
-        if (0 != ViEAndroidAPI.VoE_StopPlayout(voiceChannel)) {
+        if (0 != vieAndroidAPI.VoE_StopPlayout(voiceChannel)) {
             Log.d(TAG, "VoE stop playout failed");
         }
 
-        if (0 != ViEAndroidAPI.VoE_DeleteChannel(voiceChannel)) {
+        if (0 != vieAndroidAPI.VoE_DeleteChannel(voiceChannel)) {
             Log.d(TAG, "VoE delete channel failed");
         }
-        voiceChannel=-1;
+        voiceChannel = -1;
 
         // Terminate
-        if (0 != ViEAndroidAPI.VoE_Terminate()) {
+        if (0 != vieAndroidAPI.VoE_Terminate()) {
             Log.d(TAG, "VoE terminate failed");
         }
     }
 
-    private int SetupVoE() {
+    private int setupVoE() {
         // Create VoiceEngine
         // Error logging is done in native API wrapper
-        ViEAndroidAPI.VoE_Create(getApplicationContext());
+        vieAndroidAPI.VoE_Create(getApplicationContext());
 
         // Initialize
-        if (0 != ViEAndroidAPI.VoE_Init(enableTrace)) {
+        if (0 != vieAndroidAPI.VoE_Init(enableTrace)) {
             Log.d(TAG, "VoE init failed");
             return -1;
         }
 
         // Create channel
-        voiceChannel = ViEAndroidAPI.VoE_CreateChannel();
+        voiceChannel = vieAndroidAPI.VoE_CreateChannel();
         if (0 != voiceChannel) {
             Log.d(TAG, "VoE create channel failed");
             return -1;
@@ -764,53 +752,53 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         return 0;
     }
 
-    private int StartVoiceEngine() {
+    private int startVoiceEngine() {
         // Set local receiver
-        if (0 != ViEAndroidAPI.VoE_SetLocalReceiver(voiceChannel,
+        if (0 != vieAndroidAPI.VoE_SetLocalReceiver(voiceChannel,
                         receivePortVoice)) {
             Log.d(TAG, "VoE set local receiver failed");
         }
 
-        if (0 != ViEAndroidAPI.VoE_StartListen(voiceChannel)) {
+        if (0 != vieAndroidAPI.VoE_StartListen(voiceChannel)) {
             Log.d(TAG, "VoE start listen failed");
         }
 
         // Route audio
-        RouteAudio(enableSpeaker);
+        routeAudio(enableSpeaker);
 
         // set volume to default value
-        if (0 != ViEAndroidAPI.VoE_SetSpeakerVolume(volumeLevel)) {
+        if (0 != vieAndroidAPI.VoE_SetSpeakerVolume(volumeLevel)) {
             Log.d(TAG, "VoE set speaker volume failed");
         }
 
         // Start playout
-        if (0 != ViEAndroidAPI.VoE_StartPlayout(voiceChannel)) {
+        if (0 != vieAndroidAPI.VoE_StartPlayout(voiceChannel)) {
             Log.d(TAG, "VoE start playout failed");
         }
 
-        if (0 != ViEAndroidAPI.VoE_SetSendDestination(voiceChannel,
+        if (0 != vieAndroidAPI.VoE_SetSendDestination(voiceChannel,
                                                       destinationPortVoice,
-                                                      GetRemoteIPString())) {
+                                                      getRemoteIPString())) {
             Log.d(TAG, "VoE set send  destination failed");
         }
 
-        if (0 != ViEAndroidAPI.VoE_SetSendCodec(voiceChannel, voiceCodecType)) {
+        if (0 != vieAndroidAPI.VoE_SetSendCodec(voiceChannel, voiceCodecType)) {
             Log.d(TAG, "VoE set send codec failed");
         }
 
-        if (0 != ViEAndroidAPI.VoE_SetECStatus(enableAECM)) {
+        if (0 != vieAndroidAPI.VoE_SetECStatus(enableAECM)) {
             Log.d(TAG, "VoE set EC Status failed");
         }
 
-        if (0 != ViEAndroidAPI.VoE_SetAGCStatus(enableAGC)) {
+        if (0 != vieAndroidAPI.VoE_SetAGCStatus(enableAGC)) {
             Log.d(TAG, "VoE set AGC Status failed");
         }
 
-        if (0 != ViEAndroidAPI.VoE_SetNSStatus(enableNS)) {
+        if (0 != vieAndroidAPI.VoE_SetNSStatus(enableNS)) {
             Log.d(TAG, "VoE set NS Status failed");
         }
 
-        if (0 != ViEAndroidAPI.VoE_StartSend(voiceChannel)) {
+        if (0 != vieAndroidAPI.VoE_StartSend(voiceChannel)) {
             Log.d(TAG, "VoE start send failed");
         }
 
@@ -818,8 +806,8 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         return 0;
     }
 
-    private void RouteAudio(boolean enableSpeaker) {
-        if (0 != ViEAndroidAPI.VoE_SetLoudspeakerStatus(enableSpeaker)) {
+    private void routeAudio(boolean enableSpeaker) {
+        if (0 != vieAndroidAPI.VoE_SetLoudspeakerStatus(enableSpeaker)) {
             Log.d(TAG, "VoE set louspeaker status failed");
         }
     }
@@ -827,41 +815,39 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     public void onClick(View arg0) {
         switch (arg0.getId()) {
             case R.id.btSwitchCamera:
-                if (usingFrontCamera ){
+                if (usingFrontCamera) {
                     btSwitchCamera.setText(R.string.frontCamera);
-                }
-                else {
+                } else {
                     btSwitchCamera.setText(R.string.backCamera);
                 }
                 usingFrontCamera = !usingFrontCamera;
 
                 if (viERunning) {
                     currentCameraOrientation =
-                            ViEAndroidAPI.GetCameraOrientation(usingFrontCamera?1:0);
-                    ViEAndroidAPI.StopCamera(cameraId);
+                            vieAndroidAPI.GetCameraOrientation(usingFrontCamera ? 1 : 0);
+                    vieAndroidAPI.StopCamera(cameraId);
                     mLlLocalSurface.removeView(svLocal);
 
-                    ViEAndroidAPI.StartCamera(channel,usingFrontCamera?1:0);
+                    vieAndroidAPI.StartCamera(channel, usingFrontCamera ? 1 : 0);
                     mLlLocalSurface.addView(svLocal);
-                    int neededRotation = GetCameraOrientation(currentCameraOrientation);
-                    ViEAndroidAPI.SetRotation(cameraId, neededRotation);
+                    int neededRotation = getCameraOrientation(currentCameraOrientation);
+                    vieAndroidAPI.SetRotation(cameraId, neededRotation);
                 }
                 break;
             case R.id.btStartStopCall:
-                ReadSettings();
+                readSettings();
                 if (viERunning || voERunning) {
-                    StopAll();
+                    stopAll();
                     wakeLock.release(); // release the wake lock
                     btStartStopCall.setText(R.string.startCall);
-                }
-                else if (enableVoice || enableVideo){
-                    StartCall();
+                } else if (enableVoice || enableVideo){
+                    startCall();
                     wakeLock.acquire(); // screen stay on during the call
                     btStartStopCall.setText(R.string.stopCall);
                 }
                 break;
             case R.id.btExit:
-                StopAll();
+                stopAll();
                 finish();
                 break;
             case R.id.cbLoopback:
@@ -869,9 +855,8 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                 if (loopbackMode) {
                     remoteIp = LOOPBACK_IP;
                     etRemoteIp.setText(LOOPBACK_IP);
-                }
-                else {
-                    GetLocalIpAddress();
+                } else {
+                    getLocalIpAddress();
                     etRemoteIp.setText(remoteIp);
                 }
                 break;
@@ -881,19 +866,17 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
             case R.id.cbStats:
                 isStatsOn = cbStats.isChecked();
                 if (isStatsOn) {
-                    AddStatsView();
-                }
-                else {
-                    RemoveSatsView();
+                    addStatusView();
+                } else {
+                    removeStatusView();
                 }
                 break;
             case R.id.cbCPULoad:
                 isCPULoadOn = cbCPULoad.isChecked();
                 if (isCPULoadOn) {
-                    StartCPULoad();
-                }
-                else {
-                    StopCPULoad();
+                    startCPULoad();
+                } else {
+                    stopCPULoad();
                 }
                 break;
             case R.id.radio_surface:
@@ -905,73 +888,70 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
             case R.id.cbNack:
                 enableNack  = cbEnableNack.isChecked();
                 if (viERunning) {
-                    ViEAndroidAPI.EnableNACK(channel, enableNack);
+                    vieAndroidAPI.EnableNACK(channel, enableNack);
                 }
                 break;
             case R.id.cbSpeaker:
                 enableSpeaker = cbEnableSpeaker.isChecked();
-                if (voERunning){
-                    RouteAudio(enableSpeaker);
+                if (voERunning) {
+                    routeAudio(enableSpeaker);
                 }
                 break;
             case R.id.cbDebugRecording:
-                if(voERunning && webrtcDebugDir != null) {
-                    if (cbEnableDebugAPM.isChecked() ) {
-                        ViEAndroidAPI.VoE_StartDebugRecording(
+                if (voERunning && webrtcDebugDir != null) {
+                    if (cbEnableDebugAPM.isChecked()) {
+                        vieAndroidAPI.VoE_StartDebugRecording(
                             webrtcDebugDir + String.format("/apm_%d.dat",
                                     System.currentTimeMillis()));
-                    }
-                    else {
-                        ViEAndroidAPI.VoE_StopDebugRecording();
+                    } else {
+                        vieAndroidAPI.VoE_StopDebugRecording();
                     }
                 }
                 break;
             case R.id.cbVoiceRTPDump:
-                if(voERunning && webrtcDebugDir != null) {
-                    if (cbEnableVoiceRTPDump.isChecked() ) {
-                        ViEAndroidAPI.VoE_StartIncomingRTPDump(channel,
+                if (voERunning && webrtcDebugDir != null) {
+                    if (cbEnableVoiceRTPDump.isChecked()) {
+                        vieAndroidAPI.VoE_StartIncomingRTPDump(channel,
                                 webrtcDebugDir + String.format("/voe_%d.rtp",
                                         System.currentTimeMillis()));
-                    }
-                    else {
-                        ViEAndroidAPI.VoE_StopIncomingRTPDump(channel);
+                    } else {
+                        vieAndroidAPI.VoE_StopIncomingRTPDump(channel);
                     }
                 }
                 break;
             case R.id.cbVideoRTPDump:
-                if(viERunning && webrtcDebugDir != null) {
-                    if (cbEnableVideoRTPDump.isChecked() ) {
-                        ViEAndroidAPI.StartIncomingRTPDump(channel,
+                if (viERunning && webrtcDebugDir != null) {
+                    if (cbEnableVideoRTPDump.isChecked()) {
+                        vieAndroidAPI.StartIncomingRTPDump(channel,
                                 webrtcDebugDir + String.format("/vie_%d.rtp",
                                         System.currentTimeMillis()));
-                    }
-                    else {
-                        ViEAndroidAPI.StopIncomingRTPDump(channel);
+                    } else {
+                        vieAndroidAPI.StopIncomingRTPDump(channel);
                     }
                 }
                 break;
             case R.id.cbAutoGainControl:
-                enableAGC=cbEnableAGC.isChecked();
-                if(voERunning) {
-                    ViEAndroidAPI.VoE_SetAGCStatus(enableAGC);
+                enableAGC = cbEnableAGC.isChecked();
+                if (voERunning) {
+                    vieAndroidAPI.VoE_SetAGCStatus(enableAGC);
                 }
                 break;
             case R.id.cbNoiseSuppression:
-                enableNS=cbEnableNS.isChecked();
-                if(voERunning) {
-                    ViEAndroidAPI.VoE_SetNSStatus(enableNS);
+                enableNS = cbEnableNS.isChecked();
+                if (voERunning) {
+                    vieAndroidAPI.VoE_SetNSStatus(enableNS);
                 }
                 break;
             case R.id.cbAECM:
                 enableAECM = cbEnableAECM.isChecked();
                 if (voERunning) {
-                    ViEAndroidAPI.VoE_SetECStatus(enableAECM);
+                    vieAndroidAPI.VoE_SetECStatus(enableAECM);
                 }
                 break;
         }
     }
 
-    private void ReadSettings() {
+    private void readSettings() {
         codecType = spCodecType.getSelectedItemPosition();
         voiceCodecType = spVoiceCodecType.getSelectedItemPosition();
 
@@ -1006,26 +986,27 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
             int position, long id) {
         if ((adapterView == spCodecType || adapterView == spCodecSize) &&
                 viERunning) {
-            ReadSettings();
+            readSettings();
             // change the codectype
             if (enableVideoReceive) {
-                if (0 != ViEAndroidAPI.SetReceiveCodec(channel, codecType,
+                if (0 != vieAndroidAPI.SetReceiveCodec(channel, codecType,
                                 INIT_BITRATE, codecSizeWidth,
                                 codecSizeHeight,
-                                RECEIVE_CODEC_FRAMERATE))
+                                RECEIVE_CODEC_FRAMERATE)) {
                     Log.d(TAG, "ViE set receive codec failed");
+                }
             }
             if (enableVideoSend) {
-                if (0 != ViEAndroidAPI.SetSendCodec(channel, codecType,
+                if (0 != vieAndroidAPI.SetSendCodec(channel, codecType,
                                 INIT_BITRATE, codecSizeWidth, codecSizeHeight,
-                                SEND_CODEC_FRAMERATE))
+                                SEND_CODEC_FRAMERATE)) {
                     Log.d(TAG, "ViE set send codec failed");
+                }
             }
-        }
-        else if ((adapterView == spVoiceCodecType) && voERunning) {
+        } else if ((adapterView == spVoiceCodecType) && voERunning) {
             // change voice engine codec
-            ReadSettings();
-            if (0 != ViEAndroidAPI.VoE_SetSendCodec(voiceChannel, voiceCodecType)) {
+            readSettings();
+            if (0 != vieAndroidAPI.VoE_SetSendCodec(voiceChannel, voiceCodecType)) {
                 Log.d(TAG, "VoE set send codec failed");
             }
         }
@@ -1035,17 +1016,17 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         Log.d(TAG, "No setting selected");
     }
 
-    public int UpdateStats(int in_frameRateI, int in_bitRateI, int in_packetLoss,
-            int in_frameRateO, int in_bitRateO) {
-        frameRateI = in_frameRateI;
-        bitRateI = in_bitRateI;
-        packetLoss = in_packetLoss;
-        frameRateO = in_frameRateO;
-        bitRateO = in_bitRateO;
+    public int updateStats(int inFrameRateI, int inBitRateI,
+            int inPacketLoss, int inFrameRateO, int inBitRateO) {
+        frameRateI = inFrameRateI;
+        bitRateI = inBitRateI;
+        packetLoss = inPacketLoss;
+        frameRateO = inFrameRateO;
+        bitRateO = inBitRateO;
         return 0;
     }
 
-    private void AddStatsView() {
+    private void addStatusView() {
         if (statsView != null) {
             return;
         }
@@ -1063,45 +1044,42 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         statsView.setBackgroundColor(0);
     }
 
-    private void RemoveSatsView() {
+    private void removeStatusView() {
         mTabHost.removeView(statsView);
         statsView = null;
     }
 
-    private void StartCPULoad() {
+    private void startCPULoad() {
         if (null == mBackgroundLoad) {
             mBackgroundLoad = new Thread(new Runnable() {
                     public void run() {
                         Log.v(TAG, "Background load started");
                         mIsBackgroudLoadRunning = true;
-                        try{
+                        try {
                             while (mIsBackgroudLoadRunning) {
-                                // This while simulates cpu load.
+                                // This while loop simulates cpu load.
                                 // Log.v(TAG, "Runnable!!!");
                             }
-                        }
-                        catch(Throwable t) {
-                            Log.v(TAG, "StartCPULoad failed");
+                        } catch (Throwable t) {
+                            Log.v(TAG, "startCPULoad failed");
                         }
                     }
                 });
             mBackgroundLoad.start();
-        }
-        else {
+        } else {
             if (mBackgroundLoad.getState() == Thread.State.TERMINATED) {
                 mBackgroundLoad.start();
             }
         }
     }
 
-    private void StopCPULoad() {
+    private void stopCPULoad() {
         if (null != mBackgroundLoad) {
             mIsBackgroudLoadRunning = false;
-            try{
+            try {
                 mBackgroundLoad.join();
-            }
-            catch(Throwable t) {
-                Log.v(TAG, "StopCPULoad failed");
+            } catch (Throwable t) {
+                Log.v(TAG, "stopCPULoad failed");
             }
         }
     }

@@ -215,7 +215,7 @@ public:
       _frameRateO(0), _bitRateO(0) {
     _callbackCls = _env->GetObjectClass(_callbackObj);
     _callbackId
-        = _env->GetMethodID(_callbackCls, "UpdateStats", "(IIIII)I");
+        = _env->GetMethodID(_callbackCls, "updateStats", "(IIIII)I");
     if (_callbackId == NULL) {
       __android_log_print(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                           "Failed to get jid");
