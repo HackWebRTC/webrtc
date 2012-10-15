@@ -56,9 +56,12 @@ int I420VideoFrame::CreateFrame(int size_y, const uint8_t* buffer_y,
 }
 
 int I420VideoFrame::CopyFrame(const I420VideoFrame& videoFrame) {
-  int ret = CreateFrame(videoFrame.size(kYPlane), videoFrame.buffer(kYPlane),
-                        videoFrame.size(kUPlane), videoFrame.buffer(kUPlane),
-                        videoFrame.size(kVPlane), videoFrame.buffer(kVPlane),
+  int ret = CreateFrame(videoFrame.allocated_size(kYPlane),
+                        videoFrame.buffer(kYPlane),
+                        videoFrame.allocated_size(kUPlane),
+                        videoFrame.buffer(kUPlane),
+                        videoFrame.allocated_size(kVPlane),
+                        videoFrame.buffer(kVPlane),
                         videoFrame.width_, videoFrame.height_,
                         videoFrame.stride(kYPlane), videoFrame.stride(kUPlane),
                         videoFrame.stride(kVPlane));
@@ -93,7 +96,7 @@ const uint8_t* I420VideoFrame::buffer(PlaneType type) const {
   return NULL;
 }
 
-int I420VideoFrame::size(PlaneType type) const {
+int I420VideoFrame::allocated_size(PlaneType type) const {
   const Plane* plane_ptr = GetPlane(type);
     if (plane_ptr)
       return plane_ptr->allocated_size();
@@ -123,6 +126,17 @@ int I420VideoFrame::set_height(int height) {
     return -1;
   height_ = height;
   return 0;
+}
+
+bool I420VideoFrame::IsZeroSize() {
+  return (y_plane_.IsZeroSize() && u_plane_.IsZeroSize() &&
+    v_plane_.IsZeroSize());
+}
+
+void I420VideoFrame::ResetSize() {
+  y_plane_.ResetSize();
+  u_plane_.ResetSize();
+  v_plane_.ResetSize();
 }
 
 int I420VideoFrame::CheckDimensions(int width, int height,

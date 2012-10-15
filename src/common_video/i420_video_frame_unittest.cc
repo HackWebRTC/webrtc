@@ -26,12 +26,14 @@ int ExpectedSize(int plane_stride, int image_height, PlaneType type);
 TEST(TestI420VideoFrame, InitialValues) {
   I420VideoFrame frame;
   // Invalid arguments - one call for each variable.
+  EXPECT_TRUE(frame.IsZeroSize());
   EXPECT_EQ(-1, frame.CreateEmptyFrame(0, 10, 10, 14, 14));
   EXPECT_EQ(-1, frame.CreateEmptyFrame(10, -1, 10, 90, 14));
   EXPECT_EQ(-1, frame.CreateEmptyFrame(10, 10, 0, 14, 18));
   EXPECT_EQ(-1, frame.CreateEmptyFrame(10, 10, 10, -2, 13));
   EXPECT_EQ(-1, frame.CreateEmptyFrame(10, 10, 10, 14, 0));
   EXPECT_EQ(0, frame.CreateEmptyFrame(10, 10, 10, 14, 90));
+  EXPECT_FALSE(frame.IsZeroSize());
 }
 
 TEST(TestI420VideoFrame, WidthHeightValues) {
@@ -59,9 +61,20 @@ TEST(TestI420VideoFrame, SizeAllocation) {
   int stride_u = frame.stride(kUPlane);
   int stride_v = frame.stride(kVPlane);
   // Verify that allocated size was computed correctly.
-  EXPECT_EQ(ExpectedSize(stride_y, height, kYPlane), frame.size(kYPlane));
-  EXPECT_EQ(ExpectedSize(stride_u, height, kUPlane), frame.size(kUPlane));
-  EXPECT_EQ(ExpectedSize(stride_v, height, kVPlane), frame.size(kVPlane));
+  EXPECT_EQ(ExpectedSize(stride_y, height, kYPlane),
+            frame.allocated_size(kYPlane));
+  EXPECT_EQ(ExpectedSize(stride_u, height, kUPlane),
+            frame.allocated_size(kUPlane));
+  EXPECT_EQ(ExpectedSize(stride_v, height, kVPlane),
+            frame.allocated_size(kVPlane));
+}
+
+TEST(TestI420VideoFrame, ResetSize) {
+  I420VideoFrame frame;
+  EXPECT_EQ(0, frame. CreateEmptyFrame(10, 10, 12, 14, 220));
+  EXPECT_FALSE(frame.IsZeroSize());
+  frame.ResetSize();
+  EXPECT_TRUE(frame.IsZeroSize());
 }
 
 TEST(TestI420VideoFrame, CopyFrame) {
@@ -94,9 +107,9 @@ TEST(TestI420VideoFrame, CopyFrame) {
   // Frame of smaller dimensions - allocated sizes should not vary.
   EXPECT_EQ(0, frame1.CopyFrame(frame2));
   EXPECT_TRUE(EqualFramesExceptSize(frame1, frame2));
-  EXPECT_EQ(kSizeY, frame1.size(kYPlane));
-  EXPECT_EQ(kSizeU, frame1.size(kUPlane));
-  EXPECT_EQ(kSizeV, frame1.size(kVPlane));
+  EXPECT_EQ(kSizeY, frame1.allocated_size(kYPlane));
+  EXPECT_EQ(kSizeU, frame1.allocated_size(kUPlane));
+  EXPECT_EQ(kSizeV, frame1.allocated_size(kVPlane));
   // Verify copy of all parameters.
   // Frame of larger dimensions - update allocated sizes.
   EXPECT_EQ(0, frame2.CopyFrame(frame1));
@@ -128,9 +141,9 @@ TEST(TestI420VideoFrame, CopyBuffer) {
   EXPECT_EQ(memcmp(buffer_u, frame2.buffer(kUPlane), kSizeUv), 0);
   EXPECT_EQ(memcmp(buffer_v, frame2.buffer(kVPlane), kSizeUv), 0);
   // Comapre size.
-  EXPECT_LE(kSizeY, frame2.size(kYPlane));
-  EXPECT_LE(kSizeUv, frame2.size(kUPlane));
-  EXPECT_LE(kSizeUv, frame2.size(kVPlane));
+  EXPECT_LE(kSizeY, frame2.allocated_size(kYPlane));
+  EXPECT_LE(kSizeUv, frame2.allocated_size(kUPlane));
+  EXPECT_LE(kSizeUv, frame2.allocated_size(kVPlane));
 }
 
 TEST(TestI420VideoFrame, FrameSwap) {
@@ -204,9 +217,9 @@ bool EqualFrames(const I420VideoFrame& frame1,
     return false;
   // Compare allocated memory size.
   bool ret = true;
-  ret |= (frame1.size(kYPlane) == frame2.size(kYPlane));
-  ret |= (frame1.size(kUPlane) == frame2.size(kUPlane));
-  ret |= (frame1.size(kVPlane) == frame2.size(kVPlane));
+  ret |= (frame1.allocated_size(kYPlane) == frame2.allocated_size(kYPlane));
+  ret |= (frame1.allocated_size(kUPlane) == frame2.allocated_size(kUPlane));
+  ret |= (frame1.allocated_size(kVPlane) == frame2.allocated_size(kVPlane));
   return ret;
 }
 
@@ -223,9 +236,12 @@ bool EqualFramesExceptSize(const I420VideoFrame& frame1,
   if (!ret)
     return false;
   // Memory should be the equal for the minimum of the two sizes.
-  int size_y = std::min(frame1.size(kYPlane), frame2.size(kYPlane));
-  int size_u = std::min(frame1.size(kUPlane), frame2.size(kUPlane));
-  int size_v = std::min(frame1.size(kVPlane), frame2.size(kVPlane));
+  int size_y = std::min(frame1.allocated_size(kYPlane),
+                        frame2.allocated_size(kYPlane));
+  int size_u = std::min(frame1.allocated_size(kUPlane),
+                        frame2.allocated_size(kUPlane));
+  int size_v = std::min(frame1.allocated_size(kVPlane),
+                        frame2.allocated_size(kVPlane));
   int ret_val = 0;
   ret_val += memcmp(frame1.buffer(kYPlane), frame2.buffer(kYPlane), size_y);
   ret_val += memcmp(frame1.buffer(kUPlane), frame2.buffer(kUPlane), size_u);

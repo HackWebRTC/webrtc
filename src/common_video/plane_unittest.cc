@@ -17,11 +17,12 @@
 
 namespace webrtc {
 
-TEST(TestPlane, CreateEmptyPlaneialValues) {
+TEST(TestPlane, CreateEmptyPlaneValues) {
   Plane plane;
   int size, stride;
   EXPECT_EQ(0, plane.allocated_size());
   EXPECT_EQ(0, plane.stride());
+  EXPECT_TRUE(plane.IsZeroSize());
   size = 0;
   stride = 20;
   EXPECT_EQ(-1, plane.CreateEmptyPlane(size, stride, 1));
@@ -33,6 +34,22 @@ TEST(TestPlane, CreateEmptyPlaneialValues) {
   EXPECT_EQ(0, plane.CreateEmptyPlane(size, stride, size));
   EXPECT_EQ(size, plane.allocated_size());
   EXPECT_EQ(stride, plane.stride());
+  EXPECT_FALSE(plane.IsZeroSize());
+}
+
+TEST(TestPlane, ResetSize) {
+  Plane plane;
+  EXPECT_TRUE(plane.IsZeroSize());
+  int allocated_size, plane_size, stride;
+  EXPECT_EQ(0, plane.allocated_size());
+  allocated_size = 30;
+  plane_size = 20;
+  stride = 10;
+  EXPECT_EQ(0, plane.CreateEmptyPlane(allocated_size, stride, plane_size));
+  EXPECT_EQ(allocated_size, plane.allocated_size());
+  EXPECT_FALSE(plane.IsZeroSize());
+  plane.ResetSize();
+  EXPECT_TRUE(plane.IsZeroSize());
 }
 
 TEST(TestPlane, PlaneCopy) {
