@@ -138,6 +138,13 @@ bool CreateDirectory(std::string directory_name);
 // empty or if the file does not exist/is readable.
 size_t GetFileSize(std::string filename);
 
+// Sets the relative executable path, i.e. the path to the executable relative
+// to the working directory (the value of argv[0] for the main function on most
+// platforms). By using this function, it becomes possible to fileutils.h to
+// find the correct project paths even when the working directory is outside the
+// project tree when running programs linked with the test_support_main target.
+void SetRelativeExecutablePath(const std::string& relative_path_to_executable);
+
 }  // namespace test
 }  // namespace webrtc
 

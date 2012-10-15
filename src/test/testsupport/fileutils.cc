@@ -24,6 +24,7 @@
 #endif
 
 #include <cstdio>
+#include <cstring>
 
 #include "typedefs.h"  // For architecture defines
 
@@ -46,26 +47,41 @@ static const char* kResourcesDirName = "resources";
 #endif
 const char* kCannotFindProjectRootDir = "ERROR_CANNOT_FIND_PROJECT_ROOT_DIR";
 
+namespace {
+char relative_dir_path[FILENAME_MAX];
+bool relative_dir_path_set = false;
+}
+
+void SetRelativeExecutablePath(const std::string& path) {
+  // Trim away the executable name; we only want to store the relative dir path.
+  std::string temp_path = path.substr(0, path.find_last_of(kPathDelimiter));
+  strncpy(relative_dir_path, temp_path.c_str(), FILENAME_MAX);
+  relative_dir_path_set = true;
+}
+
+bool FileExists(std::string& file_name) {
+  struct stat file_info = {0};
+  return stat(file_name.c_str(), &file_info) == 0;
+}
+
 std::string ProjectRootPath() {
-  std::string working_dir = WorkingDir();
-  if (working_dir == kFallbackPath) {
+  std::string path = WorkingDir();
+  if (path == kFallbackPath) {
     return kCannotFindProjectRootDir;
   }
+  if (relative_dir_path_set) {
+    path = path + kPathDelimiter + relative_dir_path;
+  }
   // Check for our file that verifies the root dir.
-  std::string current_path(working_dir);
-  FILE* file = NULL;
-  int path_delimiter_index = current_path.find_last_of(kPathDelimiter);
+  int path_delimiter_index = path.find_last_of(kPathDelimiter);
   while (path_delimiter_index > -1) {
-    std::string root_filename = current_path + kPathDelimiter +
-        kProjectRootFileName;
-    file = fopen(root_filename.c_str(), "r");
-    if (file != NULL) {
-      fclose(file);
-      return current_path + kPathDelimiter;
+    std::string root_filename = path + kPathDelimiter + kProjectRootFileName;
+    if (FileExists(root_filename)) {
+      return path + kPathDelimiter;
     }
     // Move up one directory in the directory tree.
-    current_path = current_path.substr(0, path_delimiter_index);
-    path_delimiter_index = current_path.find_last_of(kPathDelimiter);
+    path = path.substr(0, path_delimiter_index);
+    path_delimiter_index = path.find_last_of(kPathDelimiter);
   }
   // Reached the root directory.
   fprintf(stderr, "Cannot find project root directory!\n");
@@ -124,11 +140,6 @@ bool CreateDirectory(std::string directory_name) {
 #endif
   }
   return true;
-}
-
-bool FileExists(std::string file_name) {
-  struct stat file_info = {0};
-  return stat(file_name.c_str(), &file_info) == 0;
 }
 
 std::string ResourcePath(std::string name, std::string extension) {

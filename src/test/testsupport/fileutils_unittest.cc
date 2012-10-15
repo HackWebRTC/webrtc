@@ -23,7 +23,6 @@ static const char* kPathDelimiter = "\\";
 static const char* kPathDelimiter = "/";
 #endif
 
-static const std::string kDummyDir = "file_utils_unittest_dummy_dir";
 static const std::string kResourcesDir = "resources";
 static const std::string kTestName = "fileutils_unittest";
 static const std::string kExtension = "tmp";
@@ -68,9 +67,6 @@ class FileUtilsTest : public testing::Test {
       ASSERT_GT(fprintf(file, "%s",  "Dummy data"), 0);
       fclose(file);
     }
-    // Create a dummy subdir that can be chdir'ed into for testing purposes.
-    empty_dummy_dir_ = original_working_dir_ + kPathDelimiter + kDummyDir;
-    webrtc::test::CreateDirectory(empty_dummy_dir_);
   }
   static void TearDownTestCase() {
     // Clean up all resource files written
@@ -78,7 +74,6 @@ class FileUtilsTest : public testing::Test {
             file_it != files_.end(); ++file_it) {
       remove(file_it->c_str());
     }
-    std::remove(empty_dummy_dir_.c_str());
   }
   void SetUp() {
     ASSERT_EQ(chdir(original_working_dir_.c_str()), 0);
@@ -88,14 +83,12 @@ class FileUtilsTest : public testing::Test {
   }
  protected:
   static FileList files_;
-  static std::string empty_dummy_dir_;
  private:
   static std::string original_working_dir_;
 };
 
 FileList FileUtilsTest::files_;
 std::string FileUtilsTest::original_working_dir_ = "";
-std::string FileUtilsTest::empty_dummy_dir_ = "";
 
 // Tests that the project root path is returned for the default working
 // directory that is automatically set when the test executable is launched.
@@ -115,25 +108,6 @@ TEST_F(FileUtilsTest, OutputPathFromUnchangedWorkingDir) {
   std::string expected_end = "out";
   expected_end = kPathDelimiter + expected_end + kPathDelimiter;
   ASSERT_EQ(path.length() - expected_end.length(), path.find(expected_end));
-}
-
-// Tests setting the current working directory to a directory three levels
-// deeper from the current one. Then testing that the project path returned
-// is still the same, when the function under test is called again.
-TEST_F(FileUtilsTest, ProjectRootPathFromDeeperWorkingDir) {
-  std::string path = webrtc::test::ProjectRootPath();
-  std::string original_working_dir = path;  // This is the correct project root
-  // Change to a subdirectory path.
-  ASSERT_EQ(0, chdir(empty_dummy_dir_.c_str()));
-  ASSERT_EQ(original_working_dir, webrtc::test::ProjectRootPath());
-}
-
-// Similar to the above test, but for the output dir
-TEST_F(FileUtilsTest, OutputPathFromDeeperWorkingDir) {
-  std::string path = webrtc::test::OutputPath();
-  std::string original_working_dir = path;
-  ASSERT_EQ(0, chdir(empty_dummy_dir_.c_str()));
-  ASSERT_EQ(original_working_dir, webrtc::test::OutputPath());
 }
 
 // Tests with current working directory set to a directory higher up in the
