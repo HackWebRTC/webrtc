@@ -36,13 +36,15 @@ static const char* kPathDelimiter = "\\";
 #else
 static const char* kPathDelimiter = "/";
 #endif
+
+#ifdef WEBRTC_ANDROID
+static const char* kRootDirName = "/sdcard/";
+static const char* kResourcesDirName = "resources";
+#else
 // The file we're looking for to identify the project root dir.
 static const char* kProjectRootFileName = "DEPS";
 static const char* kOutputDirName = "out";
 static const char* kFallbackPath = "./";
-#ifdef WEBRTC_ANDROID
-static const char* kResourcesDirName = "/sdcard/";
-#else
 static const char* kResourcesDirName = "resources";
 #endif
 const char* kCannotFindProjectRootDir = "ERROR_CANNOT_FIND_PROJECT_ROOT_DIR";
@@ -63,6 +65,22 @@ bool FileExists(std::string& file_name) {
   struct stat file_info = {0};
   return stat(file_name.c_str(), &file_info) == 0;
 }
+
+#ifdef WEBRTC_ANDROID
+
+std::string ProjectRootPath() {
+  return kRootDirName;
+}
+
+std::string OutputPath() {
+  return kRootDirName;
+}
+
+std::string WorkingDir() {
+  return kRootDirName;
+}
+
+#else // WEBRTC_ANDROID
 
 std::string ProjectRootPath() {
   std::string path = WorkingDir();
@@ -88,16 +106,6 @@ std::string ProjectRootPath() {
   return kCannotFindProjectRootDir;
 }
 
-#ifdef WEBRTC_ANDROID
-
-std::string OutputPath() {
-  // We need to touch this variable so it doesn't get flagged as unused.
-  (void)kOutputDirName;
-  return "/sdcard/";
-}
-
-#else  // WEBRTC_ANDROID
-
 std::string OutputPath() {
   std::string path = ProjectRootPath();
   if (path == kCannotFindProjectRootDir) {
@@ -110,8 +118,6 @@ std::string OutputPath() {
   return path + kPathDelimiter;
 }
 
-#endif  // !WEBRTC_ANDROID
-
 std::string WorkingDir() {
   char path_buffer[FILENAME_MAX];
   if (!GET_CURRENT_DIR(path_buffer, sizeof(path_buffer))) {
@@ -121,6 +127,8 @@ std::string WorkingDir() {
     return std::string(path_buffer);
   }
 }
+
+#endif  // !WEBRTC_ANDROID
 
 bool CreateDirectory(std::string directory_name) {
   struct stat path_info = {0};
@@ -157,9 +165,6 @@ std::string ResourcePath(std::string name, std::string extension) {
   std::string architecture = "32";
 #endif  // WEBRTC_ARCH_64_BITS
 
-#ifdef WEBRTC_ANDROID
-  std::string resources_path = kResourcesDirName;
-#else
   std::string resources_path = ProjectRootPath() + kResourcesDirName +
       kPathDelimiter;
   std::string resource_file = resources_path + name + "_" + platform + "_" +
@@ -177,7 +182,7 @@ std::string ResourcePath(std::string name, std::string extension) {
   if (FileExists(resource_file)) {
     return resource_file;
   }
-#endif
+
   // Fall back on name without architecture or platform.
   return resources_path + name + "." + extension;
 }
