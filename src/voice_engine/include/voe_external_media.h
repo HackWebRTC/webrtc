@@ -47,9 +47,9 @@ public:
     // given by the |type| parameter. The function should modify the
     // original data and ensure that it is copied back to the |audio10ms|
     // array. The number of samples in the frame cannot be changed.
-    // The sampling frequency will depend upon the codec used. 
+    // The sampling frequency will depend upon the codec used.
     // If |isStereo| is true, audio10ms will contain 16-bit PCM data
-    // samples in interleaved stereo format (L0,R0,L1,R1,…):
+    // samples in interleaved stereo format (L0,R0,L1,R1,...).
     virtual void Process(const int channel, const ProcessingTypes type,
                          WebRtc_Word16 audio10ms[], const int length,
                          const int samplingFreq, const bool isStereo) = 0;
