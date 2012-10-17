@@ -19,6 +19,7 @@
 #include "module_common_types.h"
 #include "scoped_ptr.h"
 #include "signal_processing_library.h"
+#include "test/test_suite.h"
 #include "test/testsupport/fileutils.h"
 #include "thread_wrapper.h"
 #include "trace.h"
@@ -1422,17 +1423,16 @@ TEST_F(ApmTest, Process) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "--write_ref_data") == 0) {
       write_ref_data = true;
     }
   }
 
-  int err = RUN_ALL_TESTS();
+  webrtc::test::TestSuite test_suite(argc, argv);
+  int error = test_suite.Run();
 
   // Optional, but removes memory leak noise from Valgrind.
   google::protobuf::ShutdownProtobufLibrary();
-  return err;
+  return error;
 }
