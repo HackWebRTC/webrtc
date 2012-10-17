@@ -18,7 +18,7 @@ namespace webrtc {
 namespace test {
 
 TestSuite::TestSuite(int argc, char** argv) {
-  SetRelativeExecutablePath(argv[0]);
+  SetExecutablePath(argv[0]);
   testing::InitGoogleMock(&argc, argv);  // Runs InitGoogleTest() internally.
 }
 

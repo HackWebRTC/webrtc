@@ -111,17 +111,7 @@ TEST_F(FileUtilsTest, OutputPathFromUnchangedWorkingDir) {
 }
 
 // Tests with current working directory set to a directory higher up in the
-// directory tree than the project root dir. This case shall return a specified
-// error string as a directory (which will be an invalid path).
-TEST_F(FileUtilsTest, ProjectRootPathFromRootWorkingDir) {
-  // Change current working dir to the root of the current file system
-  // (this will always be "above" our project root dir).
-  ASSERT_EQ(0, chdir(kPathDelimiter));
-  ASSERT_EQ(webrtc::test::kCannotFindProjectRootDir,
-            webrtc::test::ProjectRootPath());
-}
-
-// Similar to the above test, but for the output dir
+// directory tree than the project root dir.
 TEST_F(FileUtilsTest, OutputPathFromRootWorkingDir) {
   ASSERT_EQ(0, chdir(kPathDelimiter));
   ASSERT_EQ("./", webrtc::test::OutputPath());
@@ -151,8 +141,14 @@ TEST_F(FileUtilsTest, ResourcePathReturnsValue) {
   std::string resource = webrtc::test::ResourcePath(kTestName, kExtension);
   ASSERT_GT(resource.find(kTestName), 0u);
   ASSERT_GT(resource.find(kExtension), 0u);
+}
+
+TEST_F(FileUtilsTest, ResourcePathFromRootWorkingDir) {
   ASSERT_EQ(0, chdir(kPathDelimiter));
-  ASSERT_EQ("./", webrtc::test::OutputPath());
+  std::string resource = webrtc::test::ResourcePath(kTestName, kExtension);
+  ASSERT_NE(resource.find("resources"), std::string::npos);
+  ASSERT_GT(resource.find(kTestName), 0u);
+  ASSERT_GT(resource.find(kExtension), 0u);
 }
 
 TEST_F(FileUtilsTest, GetFileSizeExistingFile) {

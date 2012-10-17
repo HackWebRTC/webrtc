@@ -54,9 +54,16 @@ char relative_dir_path[FILENAME_MAX];
 bool relative_dir_path_set = false;
 }
 
-void SetRelativeExecutablePath(const std::string& path) {
-  // Trim away the executable name; we only want to store the relative dir path.
-  std::string temp_path = path.substr(0, path.find_last_of(kPathDelimiter));
+void SetExecutablePath(const std::string& path) {
+  std::string working_dir = WorkingDir();
+  std::string temp_path = path;
+
+  // Handle absolute paths; convert them to relative paths to the working dir.
+  if (path.find(working_dir) != std::string::npos) {
+    temp_path = path.substr(working_dir.length() + 1);
+  }
+  // Trim away the executable name; only store the relative dir path.
+  temp_path = temp_path.substr(0, temp_path.find_last_of(kPathDelimiter));
   strncpy(relative_dir_path, temp_path.c_str(), FILENAME_MAX);
   relative_dir_path_set = true;
 }
@@ -91,8 +98,8 @@ std::string ProjectRootPath() {
     path = path + kPathDelimiter + relative_dir_path;
   }
   // Check for our file that verifies the root dir.
-  int path_delimiter_index = path.find_last_of(kPathDelimiter);
-  while (path_delimiter_index > -1) {
+  size_t path_delimiter_index = path.find_last_of(kPathDelimiter);
+  while (path_delimiter_index != std::string::npos) {
     std::string root_filename = path + kPathDelimiter + kProjectRootFileName;
     if (FileExists(root_filename)) {
       return path + kPathDelimiter;
