@@ -126,10 +126,6 @@ int main(int argc, char* argv[])
 
   int totalbits =0;
   int totalsmpls =0;
-#ifdef _DEBUG
-  double kbps;
-  FILE *fy;
-#endif
   WebRtc_Word16 testNum, testCE;
 
   FILE *fp_gns = NULL;
@@ -149,13 +145,6 @@ int main(int argc, char* argv[])
 
   BottleNeckModel       BN_data;
   f_bn  = NULL;
-
-#ifdef _DEBUG
-  fy = fopen("bit_rate.dat", "w");
-  fclose(fy);
-  fy = fopen("bytes_frames.dat", "w");
-  fclose(fy);
-#endif
 
   readLoss = 0;
   packetLossPercent = 0;
@@ -719,9 +708,6 @@ int main(int argc, char* argv[])
           printf("\nError in decoder: %d.\n", errtype);
         }
       }
-#ifdef _DEBUG
-      fprintf(stderr,"  \rframe = %7d", framecnt);
-#endif
 
       if( readLoss == 1 ) {
         if( fread( &lostFrame, sizeof(WebRtc_Word16), 1, plFile ) != 1 ) {
@@ -804,17 +790,6 @@ int main(int argc, char* argv[])
         fclose(seedfile);
       }
     }
-
-#ifdef _DEBUG
-
-    kbps = ((double) FS) / ((double) cur_framesmpls) * 8.0 *
-        stream_len / 1000.0;// kbits/s
-    fy = fopen("bit_rate.dat", "a");
-    fprintf(fy, "Frame %i = %0.14f\n", framecnt, kbps);
-    fclose(fy);
-
-#endif /* _DEBUG */
-
   }
   printf("\nLost Frames %d ~ %4.1f%%\n", lostPackets,
          (double)lostPackets/(double)framecnt*100.0 );
@@ -822,14 +797,6 @@ int main(int argc, char* argv[])
   printf("\nmeasured average bitrate              = %0.3f kbits/s",
          (double)totalbits *(FS/1000) / totalsmpls);
   printf("\n");
-
-#ifdef _DEBUG
-  /* fprintf(stderr,"\n\ntotal bits    = %d bits", totalbits);
-     fprintf(stderr,"\nmeasured average bitrate  = %0.3f kbits/s",
-     (double)totalbits *(FS/1000) / totalsmpls);
-     fprintf(stderr,"\n");
-  */
-#endif /* _DEBUG */
 
   /* Runtime statistics */
 
