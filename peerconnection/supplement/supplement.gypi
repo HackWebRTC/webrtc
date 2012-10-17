@@ -9,5 +9,6 @@
     'include_internal_video_capture': 1,
     'include_internal_video_render': 1,
     'include_pulse_audio': 1,
+    'use_openssl': 1,
   }
 }

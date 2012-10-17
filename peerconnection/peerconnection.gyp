@@ -84,7 +84,9 @@
             'libraries': [
               '<!@(pkg-config --libs-only-l gtk+-2.0 gthread-2.0)',
               '-lX11',
+              '-lXcomposite',
               '-lXext',
+              '-lXrender',
             ],
           },
         },

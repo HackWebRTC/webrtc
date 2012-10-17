@@ -19,6 +19,15 @@
             ],
           },
         }],
+        ['OS == "mac"', {
+          'link_settings': {
+            'libraries': [
+              '$(SDKROOT)/System/Library/Frameworks/CoreFoundation.framework',
+              '$(SDKROOT)/System/Library/Frameworks/CoreServices.framework',
+              '$(SDKROOT)/System/Library/Frameworks/Foundation.framework',
+            ],
+          },
+        }],
       ],
     },
   ],
