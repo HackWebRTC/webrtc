@@ -526,8 +526,8 @@ void ViEAutoTest::ViECodecExternalCodecTest() {
     number_of_errors += ViETest::TestError(vie_external_codec != NULL,
                                            "ERROR: %s at line %d",
                                            __FUNCTION__, __LINE__);
-    webrtc::VideoCodec codec_struct;
-    error = ViE.codec->GetSendCodec(channel.videoChannel, codecStruct);
+    webrtc::VideoCodec codec;
+    error = ViE.codec->GetSendCodec(channel.videoChannel, codec);
     number_of_errors += ViETest::TestError(vie_external_codec != NULL,
                                            "ERROR: %s at line %d",
                                            __FUNCTION__, __LINE__);
@@ -538,7 +538,7 @@ void ViEAutoTest::ViECodecExternalCodecTest() {
 
       // Test to register on wrong channel.
       error = vie_external_codec->RegisterExternalSendCodec(
-          channel.videoChannel + 5, codecStruct.plType, &ext_encoder);
+          channel.videoChannel + 5, codec.plType, &ext_encoder);
       number_of_errors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -547,22 +547,22 @@ void ViEAutoTest::ViECodecExternalCodecTest() {
           "ERROR: %s at line %d", __FUNCTION__, __LINE__);
 
       error = vie_external_codec->RegisterExternalSendCodec(
-                channel.videoChannel, codecStruct.plType, &ext_encoder);
+                channel.videoChannel, codec.plType, &ext_encoder);
       number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
       // Use new external encoder
-      error = ViE.codec->SetSendCodec(channel.videoChannel, codecStruct);
+      error = ViE.codec->SetSendCodec(channel.videoChannel, codec);
       number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
       TbI420Decoder ext_decoder;
       error = vie_external_codec->RegisterExternalReceiveCodec(
-          channel.videoChannel, codecStruct.plType, &ext_decoder);
+          channel.videoChannel, codec.plType, &ext_decoder);
       number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-      error = ViE.codec->SetReceiveCodec(channel.videoChannel, codec_struct);
+      error = ViE.codec->SetReceiveCodec(channel.videoChannel, codec);
       number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
@@ -571,7 +571,7 @@ void ViEAutoTest::ViECodecExternalCodecTest() {
 
       // Test to deregister on wrong channel
       error = vie_external_codec->DeRegisterExternalSendCodec(
-          channel.videoChannel + 5, codecStruct.plType);
+          channel.videoChannel + 5, codec.plType);
       number_of_errors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -581,19 +581,19 @@ void ViEAutoTest::ViECodecExternalCodecTest() {
 
       // Test to deregister wrong payload type.
       error = vie_external_codec->DeRegisterExternalSendCodec(
-          channel.videoChannel, codecStruct.plType - 1);
+          channel.videoChannel, codec.plType - 1);
       number_of_errors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
       // Deregister external send codec
       error = vie_external_codec->DeRegisterExternalSendCodec(
-          channel.videoChannel, codecStruct.plType);
+          channel.videoChannel, codec.plType);
       number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
       error = vie_external_codec->DeRegisterExternalReceiveCodec(
-          channel.videoChannel, codecStruct.plType);
+          channel.videoChannel, codec.plType);
       number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
@@ -612,10 +612,10 @@ void ViEAutoTest::ViECodecExternalCodecTest() {
       number_of_errors += ViETest::TestError(
           encode_calls.RegisterEncodeCompleteCallback == 1,
           "ERROR: %s at line %d", __FUNCTION__, __LINE__);
+      number_of_errors += ViETest::TestError(
+          encode_calls.SetChannelParameters > 1, "ERROR: %s at line %d",
+          __FUNCTION__, __LINE__);
       number_of_errors += ViETest::TestError(encode_calls.SetRates > 1,
-                                             "ERROR: %s at line %d",
-                                             __FUNCTION__, __LINE__);
-      number_of_errors += ViETest::TestError(encode_calls.SetPacketLoss > 1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
@@ -636,26 +636,26 @@ void ViEAutoTest::ViECodecExternalCodecTest() {
 
       ViETest::Log("Changing payload type Using external I420 codec");
 
-      codec_struct.plType = codecStruct.plType - 1;
+      codec.plType = codec.plType - 1;
       error = vie_external_codec->RegisterExternalReceiveCodec(
-          channel.videoChannel, codec_struct.plType, &ext_decoder);
+          channel.videoChannel, codec.plType, &ext_decoder);
       number_of_errors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
       error = ViE.codec->SetReceiveCodec(channel.videoChannel,
-                                         codec_struct);
+                                         codec);
       number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
       error = vie_external_codec->RegisterExternalSendCodec(
-                channel.videoChannel, codec_struct.plType, &ext_encoder);
+                channel.videoChannel, codec.plType, &ext_encoder);
       number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
       // Use new external encoder
       error = ViE.codec->SetSendCodec(channel.videoChannel,
-                                      codec_struct);
+                                      codec);
       number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
@@ -666,11 +666,11 @@ void ViEAutoTest::ViECodecExternalCodecTest() {
       /// **************************************************************
 
       error = vie_external_codec->DeRegisterExternalSendCodec(
-                channel.videoChannel, codecStruct.plType);
+                channel.videoChannel, codec.plType);
       number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
       error = vie_external_codec->DeRegisterExternalReceiveCodec(
-                channel.videoChannel, codecStruct.plType);
+                channel.videoChannel, codec.plType);
       number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
@@ -688,13 +688,12 @@ void ViEAutoTest::ViECodecExternalCodecTest() {
       number_of_errors += ViETest::TestError(
           encode_calls.RegisterEncodeCompleteCallback == 2,
           "ERROR: %s at line %d", __FUNCTION__, __LINE__);
+      number_of_errors += ViETest::TestError(
+          encode_calls.SetChannelParameters > 1, "ERROR: %s at line %d",
+          __FUNCTION__, __LINE__);
       number_of_errors += ViETest::TestError(encode_calls.SetRates > 1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-      number_of_errors += ViETest::TestError(encode_calls.SetPacketLoss > 1,
-                                             "ERROR: %s at line %d",
-                                             __FUNCTION__, __LINE__);
-
       decode_calls = ext_decoder.GetFunctionCalls();
       number_of_errors += ViETest::TestError(decode_calls.InitDecode == 2,
                                              "ERROR: %s at line %d",

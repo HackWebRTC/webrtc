@@ -79,7 +79,8 @@ WebRtc_Word32 TbI420Encoder::Reset()
 
 WebRtc_Word32 TbI420Encoder::SetChannelParameters(WebRtc_UWord32 packetLoss,
                                                   int rtt) {
-  return 0;
+  _functionCalls.SetChannelParameters++;
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
 WebRtc_Word32 TbI420Encoder::InitEncode(const webrtc::VideoCodec* inst,
@@ -168,12 +169,6 @@ WebRtc_Word32 TbI420Encoder::RegisterEncodeCompleteCallback(
 {
     _functionCalls.RegisterEncodeCompleteCallback++;
     _encodedCompleteCallback = callback;
-    return WEBRTC_VIDEO_CODEC_OK;
-}
-
-WebRtc_Word32 TbI420Encoder::SetPacketLoss(WebRtc_UWord32 packetLoss)
-{
-    _functionCalls.SetPacketLoss++;
     return WEBRTC_VIDEO_CODEC_OK;
 }
 

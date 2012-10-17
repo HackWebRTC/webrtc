@@ -48,8 +48,6 @@ public:
     virtual WebRtc_Word32 SetChannelParameters(WebRtc_UWord32 packetLoss,
                                                int rtt);
 
-    virtual WebRtc_Word32 SetPacketLoss(WebRtc_UWord32 packetLoss);
-
     virtual WebRtc_Word32 SetRates(WebRtc_UWord32 newBitRate,
                                    WebRtc_UWord32 frameRate);
 
@@ -65,8 +63,8 @@ public:
         WebRtc_Word32 RegisterEncodeCompleteCallback;
         WebRtc_Word32 Release;
         WebRtc_Word32 Reset;
+        WebRtc_Word32 SetChannelParameters;
         WebRtc_Word32 SetRates;
-        WebRtc_Word32 SetPacketLoss;
         WebRtc_Word32 SetPeriodicKeyFrames;
         WebRtc_Word32 CodecConfigParameters;
 
