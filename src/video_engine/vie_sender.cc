@@ -137,6 +137,8 @@ int ViESender::SendPacket(int vie_id, const void* data, int len) {
   // TODO(mflodman) Change decrypt to get rid of this cast.
   void* tmp_ptr = const_cast<void*>(data);
   unsigned char* send_packet = static_cast<unsigned char*>(tmp_ptr);
+
+  // Data length for packets sent to possible encryption and to the transport.
   int send_packet_length = len;
 
   if (rtp_dump_) {
@@ -144,10 +146,13 @@ int ViESender::SendPacket(int vie_id, const void* data, int len) {
   }
 
   if (external_encryption_) {
-    external_encryption_->encrypt(channel_id_, send_packet,
-                                  encryption_buffer_, send_packet_length,
-                                  static_cast<int*>(&send_packet_length));
+    // Encryption buffer size.
+    int encrypted_packet_length = kViEMaxMtu;
+
+    external_encryption_->encrypt(channel_id_, send_packet, encryption_buffer_,
+                                  send_packet_length, &encrypted_packet_length);
     send_packet = encryption_buffer_;
+    send_packet_length = encrypted_packet_length;
   }
   const int bytes_sent = transport_->SendPacket(channel_id_, send_packet,
                                                 send_packet_length);
@@ -171,6 +176,8 @@ int ViESender::SendRTCPPacket(int vie_id, const void* data, int len) {
   // TODO(mflodman) Change decrypt to get rid of this cast.
   void* tmp_ptr = const_cast<void*>(data);
   unsigned char* send_packet = static_cast<unsigned char*>(tmp_ptr);
+
+  // Data length for packets sent to possible encryption and to the transport.
   int send_packet_length = len;
 
   if (rtp_dump_) {
@@ -178,10 +185,14 @@ int ViESender::SendRTCPPacket(int vie_id, const void* data, int len) {
   }
 
   if (external_encryption_) {
+    // Encryption buffer size.
+    int encrypted_packet_length = kViEMaxMtu;
+
     external_encryption_->encrypt_rtcp(
         channel_id_, send_packet, encryption_buffer_, send_packet_length,
-        static_cast<int*>(&send_packet_length));
+        &encrypted_packet_length);
     send_packet = encryption_buffer_;
+    send_packet_length = encrypted_packet_length;
   }
 
   const int bytes_sent = transport_->SendRTCPPacket(channel_id_, send_packet,

@@ -164,7 +164,7 @@ int ViEReceiver::InsertRTPPacket(const WebRtc_Word8* rtp_packet,
     CriticalSectionScoped cs(receive_cs_.get());
 
     if (external_decryption_) {
-      int decrypted_length = 0;
+      int decrypted_length = kViEMaxMtu;
       external_decryption_->decrypt(channel_id_, received_packet,
                                     decryption_buffer_, received_packet_length,
                                     &decrypted_length);
@@ -202,7 +202,7 @@ int ViEReceiver::InsertRTCPPacket(const WebRtc_Word8* rtcp_packet,
     CriticalSectionScoped cs(receive_cs_.get());
 
     if (external_decryption_) {
-      int decrypted_length = 0;
+      int decrypted_length = kViEMaxMtu;
       external_decryption_->decrypt_rtcp(channel_id_, received_packet,
                                          decryption_buffer_,
                                          received_packet_length,
