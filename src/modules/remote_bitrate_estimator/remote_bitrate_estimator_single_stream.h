@@ -55,26 +55,12 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
   bool LatestEstimate(unsigned int ssrc, unsigned int* bitrate_bps) const;
 
  private:
-  struct BitrateControls {
-    explicit BitrateControls(const OverUseDetectorOptions& options)
-        : remote_rate(),
-          overuse_detector(options),
-          incoming_bitrate() {
-    }
-    BitrateControls(const BitrateControls& other)
-        : remote_rate(other.remote_rate),
-          overuse_detector(other.overuse_detector),
-          incoming_bitrate(other.incoming_bitrate) {
-    }
-    RemoteRateControl remote_rate;
-    OveruseDetector overuse_detector;
-    BitRateStats incoming_bitrate;
-  };
-
-  typedef std::map<unsigned int, BitrateControls> SsrcBitrateControlsMap;
+  typedef std::map<unsigned int, OveruseDetector> SsrcOveruseDetectorMap;
 
   const OverUseDetectorOptions& options_;
-  SsrcBitrateControlsMap bitrate_controls_;
+  SsrcOveruseDetectorMap overuse_detectors_;
+  BitRateStats incoming_bitrate_;
+  RemoteRateControl remote_rate_;
   RemoteBitrateObserver* observer_;
   scoped_ptr<CriticalSectionWrapper> crit_sect_;
 };

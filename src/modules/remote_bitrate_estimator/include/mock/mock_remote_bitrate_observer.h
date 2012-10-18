@@ -19,8 +19,8 @@ namespace webrtc {
 
 class MockRemoteBitrateObserver : public RemoteBitrateObserver {
  public:
-  MOCK_METHOD2(OnReceiveBitrateChanged,
-      void(unsigned int ssrc, unsigned int bitrate));
+  MOCK_METHOD1(OnReceiveBitrateChanged,
+      void(unsigned int bitrate));
 };
 
 }  // namespace webrtc

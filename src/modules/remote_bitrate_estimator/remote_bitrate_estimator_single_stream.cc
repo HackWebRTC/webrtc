@@ -28,19 +28,21 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
     int64_t arrival_time,
     uint32_t rtp_timestamp) {
   CriticalSectionScoped cs(crit_sect_.get());
-  SsrcBitrateControlsMap::iterator it = bitrate_controls_.find(ssrc);
-  if (it == bitrate_controls_.end()) {
+  SsrcOveruseDetectorMap::iterator it = overuse_detectors_.find(ssrc);
+  if (it == overuse_detectors_.end()) {
     // This is a new SSRC. Adding to map.
     // TODO(holmer): If the channel changes SSRC the old SSRC will still be
     // around in this map until the channel is deleted. This is OK since the
     // callback will no longer be called for the old SSRC. This will be
     // automatically cleaned up when we have one RemoteBitrateEstimator per REMB
     // group.
-    bitrate_controls_.insert(std::make_pair(ssrc, BitrateControls(options_)));
-    it = bitrate_controls_.find(ssrc);
+    std::pair<SsrcOveruseDetectorMap::iterator, bool> insert_result =
+        overuse_detectors_.insert(std::make_pair(ssrc, OveruseDetector(
+            options_)));
+    it = insert_result.first;
   }
-  OveruseDetector* overuse_detector = &it->second.overuse_detector;
-  it->second.incoming_bitrate.Update(packet_size, arrival_time);
+  OveruseDetector* overuse_detector = &it->second;
+  incoming_bitrate_.Update(packet_size, arrival_time);
   const BandwidthUsage prior_state = overuse_detector->State();
   overuse_detector->Update(packet_size, -1, rtp_timestamp, arrival_time);
   if (prior_state != overuse_detector->State() &&
@@ -53,49 +55,47 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
 void RemoteBitrateEstimatorSingleStream::UpdateEstimate(unsigned int ssrc,
                                                         int64_t time_now) {
   CriticalSectionScoped cs(crit_sect_.get());
-  SsrcBitrateControlsMap::iterator it = bitrate_controls_.find(ssrc);
-  if (it == bitrate_controls_.end()) {
+  SsrcOveruseDetectorMap::iterator it = overuse_detectors_.find(ssrc);
+  if (it == overuse_detectors_.end()) {
     return;
   }
-  OveruseDetector* overuse_detector = &it->second.overuse_detector;
-  RemoteRateControl* remote_rate = &it->second.remote_rate;
+  OveruseDetector* overuse_detector = &it->second;
   const RateControlInput input(overuse_detector->State(),
-                               it->second.incoming_bitrate.BitRate(time_now),
+                               incoming_bitrate_.BitRate(time_now),
                                overuse_detector->NoiseVar());
-  const RateControlRegion region = remote_rate->Update(&input, time_now);
-  unsigned int target_bitrate = remote_rate->UpdateBandwidthEstimate(time_now);
-  if (remote_rate->ValidEstimate()) {
-    observer_->OnReceiveBitrateChanged(ssrc, target_bitrate);
+  const RateControlRegion region = remote_rate_.Update(&input, time_now);
+  unsigned int target_bitrate = remote_rate_.UpdateBandwidthEstimate(time_now);
+  if (remote_rate_.ValidEstimate()) {
+    observer_->OnReceiveBitrateChanged(target_bitrate);
   }
   overuse_detector->SetRateControlRegion(region);
 }
 
 void RemoteBitrateEstimatorSingleStream::SetRtt(unsigned int rtt) {
   CriticalSectionScoped cs(crit_sect_.get());
-  for (SsrcBitrateControlsMap::iterator it = bitrate_controls_.begin();
-      it != bitrate_controls_.end(); ++it) {
-    it->second.remote_rate.SetRtt(rtt);
-  }
+  remote_rate_.SetRtt(rtt);
 }
 
 void RemoteBitrateEstimatorSingleStream::RemoveStream(unsigned int ssrc) {
   CriticalSectionScoped cs(crit_sect_.get());
   // Ignoring the return value which is the number of elements erased.
-  bitrate_controls_.erase(ssrc);
+  overuse_detectors_.erase(ssrc);
 }
 
 bool RemoteBitrateEstimatorSingleStream::LatestEstimate(
     unsigned int ssrc, unsigned int* bitrate_bps) const {
   CriticalSectionScoped cs(crit_sect_.get());
   assert(bitrate_bps != NULL);
-  SsrcBitrateControlsMap::const_iterator it = bitrate_controls_.find(ssrc);
-  if (it == bitrate_controls_.end()) {
+  if (!remote_rate_.ValidEstimate()) {
     return false;
   }
-  if (!it->second.remote_rate.ValidEstimate()) {
-    return false;
-  }
-  *bitrate_bps = it->second.remote_rate.LatestEstimate();
+  // TODO(holmer): For now we're returning the estimate bandwidth per stream as
+  // it corresponds better to how the ViE API is designed. Will fix this when
+  // the API changes.
+  if (overuse_detectors_.size() > 0)
+    *bitrate_bps = remote_rate_.LatestEstimate() / overuse_detectors_.size();
+  else
+    *bitrate_bps = 0;
   return true;
 }
 

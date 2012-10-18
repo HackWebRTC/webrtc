@@ -53,12 +53,12 @@ class VieRemb : public RemoteBitrateObserver, public Module {
   // Returns true if the instance is in use, false otherwise.
   bool InUse() const;
 
-  // Called every time there is a new bitrate estimate for the received stream
-  // with given SSRC. This call will trigger a new RTCP REMB packet if the
-  // bitrate estimate has decreased or if no RTCP REMB packet has been sent for
+  // Called every time there is a new bitrate estimate for a receive channel
+  // group. This call will trigger a new RTCP REMB packet if the bitrate
+  // estimate has decreased or if no RTCP REMB packet has been sent for
   // a certain time interval.
   // Implements RtpReceiveBitrateUpdate.
-  virtual void OnReceiveBitrateChanged(unsigned int ssrc, unsigned int bitrate);
+  virtual void OnReceiveBitrateChanged(unsigned int bitrate);
 
   // Implements Module.
   virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
@@ -67,8 +67,6 @@ class VieRemb : public RemoteBitrateObserver, public Module {
 
  private:
   typedef std::list<RtpRtcp*> RtpModules;
-  typedef std::map<unsigned int, std::pair<int64_t, unsigned int> >
-      SsrcTimeBitrate;
 
   ProcessThread* process_thread_;
   scoped_ptr<CriticalSectionWrapper> list_crit_;
@@ -83,8 +81,9 @@ class VieRemb : public RemoteBitrateObserver, public Module {
   // All modules that can send REMB RTCP.
   RtpModules rtcp_sender_;
 
-  // The last bitrate update for each SSRC.
-  SsrcTimeBitrate update_time_bitrates_;
+  // The last bitrate update.
+  unsigned int bitrate_;
+  int64_t bitrate_update_time_ms_;
 };
 
 }  // namespace webrtc

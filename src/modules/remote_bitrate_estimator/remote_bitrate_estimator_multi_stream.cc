@@ -122,7 +122,7 @@ void RemoteBitrateEstimatorMultiStream::UpdateEstimate(unsigned int ssrc,
   const RateControlRegion region = remote_rate_.Update(&input, time_now);
   unsigned int target_bitrate = remote_rate_.UpdateBandwidthEstimate(time_now);
   if (remote_rate_.ValidEstimate()) {
-    observer_->OnReceiveBitrateChanged(1, target_bitrate);
+    observer_->OnReceiveBitrateChanged(target_bitrate);
   }
   overuse_detector_.SetRateControlRegion(region);
 }

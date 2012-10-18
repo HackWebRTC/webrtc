@@ -24,11 +24,9 @@ namespace webrtc {
 // the incoming streams.
 class RemoteBitrateObserver {
  public:
-  // Called when a receive channel has a new bitrate estimate for the incoming
-  // stream.
-  // TODO(holmer): Remove |ssrc| argument and remove SSRC map from VieRemb.
-  virtual void OnReceiveBitrateChanged(unsigned int ssrc,
-                                       unsigned int bitrate) = 0;
+  // Called when a receive channel group has a new bitrate estimate for the
+  // incoming streams.
+  virtual void OnReceiveBitrateChanged(unsigned int bitrate) = 0;
 
   virtual ~RemoteBitrateObserver() {}
 };

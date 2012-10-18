@@ -27,7 +27,7 @@ class TestBitrateObserver : public RemoteBitrateObserver {
  public:
   TestBitrateObserver() : updated_(false), latest_bitrate_(0) {}
 
-  void OnReceiveBitrateChanged(unsigned int ssrc, unsigned int bitrate) {
+  void OnReceiveBitrateChanged(unsigned int bitrate) {
     latest_bitrate_ = bitrate;
     updated_ = true;
   }
