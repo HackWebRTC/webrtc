@@ -138,7 +138,7 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     private TextView etVTxPort;
     private int destinationPortVideo = 11111;
     private CheckBox cbEnableNack;
-    private boolean enableNack = false;
+    private boolean enableNack = true;
     private CheckBox cbEnableVideoRTPDump;
 
     // Audio settings
@@ -670,6 +670,7 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
             // TODO(leozwang): Add more options besides PLI, currently use pli
             // as the default. Also check return value.
             ret = vieAndroidAPI.EnablePLI(channel, true);
+            ret = vieAndroidAPI.EnableNACK(channel, enableNack);
             ret = vieAndroidAPI.SetCallback(channel, this);
 
             if (enableVideoSend) {
