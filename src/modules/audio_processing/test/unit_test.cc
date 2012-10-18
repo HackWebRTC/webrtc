@@ -19,7 +19,6 @@
 #include "module_common_types.h"
 #include "scoped_ptr.h"
 #include "signal_processing_library.h"
-#include "test/test_suite.h"
 #include "test/testsupport/fileutils.h"
 #include "thread_wrapper.h"
 #include "trace.h"
@@ -1429,10 +1428,12 @@ int main(int argc, char** argv) {
     }
   }
 
-  webrtc::test::TestSuite test_suite(argc, argv);
-  int error = test_suite.Run();
-
+  // We don't use TestSuite here because it would require the Android platform
+  // build to depend on Gmock.
+  webrtc::test::SetExecutablePath(argv[0]);
+  testing::InitGoogleTest(&argc, argv);
+  int result = RUN_ALL_TESTS();
   // Optional, but removes memory leak noise from Valgrind.
   google::protobuf::ShutdownProtobufLibrary();
-  return error;
+  return result;
 }
