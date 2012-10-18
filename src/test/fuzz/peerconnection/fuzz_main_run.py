@@ -71,11 +71,7 @@ def GenerateData(be_nice):
   this_scripts_path = os.path.dirname(os.path.realpath(__file__))
   corpus_path = os.path.join(this_scripts_path, 'corpus');
 
-  # Choose the newest version of the API more often than the old one.
-  if random.random() < 0.8:
-    template_to_use = 'template01.html'
-  else:
-    template_to_use = 'template00.html'
+  template_to_use = 'template01.html'
   template = _ReadFile(os.path.join(corpus_path, template_to_use))
 
   file_extension = 'html'
