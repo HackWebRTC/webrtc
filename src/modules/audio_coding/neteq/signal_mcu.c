@@ -319,7 +319,13 @@ int WebRtcNetEQ_SignalMcu(MCUInst_t *inst)
                 WebRtc_UWord16 tempFs;
 
                 tempFs = WebRtcNetEQ_DbGetSampleRate(&inst->codec_DB_inst, payloadType);
-                if (tempFs > 0)
+                /* TODO(tlegrand): Remove this limitation once ACM has full
+                 * 48 kHz support. */
+                if (tempFs > 32000)
+                {
+                    inst->fs = 32000;
+                }
+                else if (tempFs > 0)
                 {
                     inst->fs = tempFs;
                 }

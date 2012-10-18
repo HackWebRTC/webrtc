@@ -62,6 +62,7 @@ enum WebRtcNetEQDecoder
     kDecoderG722_1C_24,
     kDecoderG722_1C_32,
     kDecoderG722_1C_48,
+    kDecoderOpus,
     kDecoderSPEEX_8,
     kDecoderSPEEX_16,
     kDecoderCELT_32,

@@ -77,6 +77,8 @@
  *
  * NETEQ_G722_1C_CODEC            Enable G722.1 Annex C
  *
+ * NETEQ_OPUS_CODEC               Enable Opus
+ *
  * NETEQ_SPEEX_CODEC              Enable Speex (at 8 and 16 kHz sample rate)
  *
  * NETEQ_CELT_CODEC               Enable Celt (at 32 kHz sample rate)
@@ -244,6 +246,7 @@
     #define NETEQ_G729_CODEC
     #define NETEQ_G726_CODEC
     #define NETEQ_GSMFR_CODEC
+    #define NETEQ_OPUS_CODEC
     #define NETEQ_AMR_CODEC
 #endif
 
@@ -252,6 +255,7 @@
     #define NETEQ_G722_CODEC
     #define NETEQ_G722_1_CODEC
     #define NETEQ_G729_1_CODEC
+    #define NETEQ_OPUS_CODEC
     #define NETEQ_SPEEX_CODEC
     #define NETEQ_AMRWB_CODEC
     #define NETEQ_WIDEBAND
@@ -262,6 +266,7 @@
     #define NETEQ_32KHZ_WIDEBAND
     #define NETEQ_G722_1C_CODEC
     #define NETEQ_CELT_CODEC
+    #define NETEQ_OPUS_CODEC
 #endif
 
 #if (defined(NETEQ_VOICEENGINE_CODECS))
@@ -295,6 +300,8 @@
     #define NETEQ_G722_1C_CODEC
     #define NETEQ_CELT_CODEC
 
+    /* Fullband 48 kHz codecs */
+    #define NETEQ_OPUS_CODEC
 #endif 
 
 #if (defined(NETEQ_ALL_CODECS))
@@ -331,21 +338,26 @@
 
     /* Super wideband 48kHz codecs */
     #define NETEQ_48KHZ_WIDEBAND
+    #define NETEQ_OPUS_CODEC
 #endif
 
 /* Max output size from decoding one frame */
 #if defined(NETEQ_48KHZ_WIDEBAND)
-    #define NETEQ_MAX_FRAME_SIZE     2880    /* 60 ms super wideband */
-    #define NETEQ_MAX_OUTPUT_SIZE    3600    /* 60+15 ms super wideband (60 ms decoded + 15 ms for merge overlap) */
+    #define NETEQ_MAX_FRAME_SIZE 5760  /* 120 ms super wideband */
+    #define NETEQ_MAX_OUTPUT_SIZE 6480  /* 120+15 ms super wideband (120 ms
+                                         * decoded + 15 ms for merge overlap) */
 #elif defined(NETEQ_32KHZ_WIDEBAND)
-    #define NETEQ_MAX_FRAME_SIZE     1920    /* 60 ms super wideband */
-    #define NETEQ_MAX_OUTPUT_SIZE    2400    /* 60+15 ms super wideband (60 ms decoded + 15 ms for merge overlap) */
+    #define NETEQ_MAX_FRAME_SIZE 3840  /* 120 ms super wideband */
+    #define NETEQ_MAX_OUTPUT_SIZE 4320  /* 120+15 ms super wideband (120 ms
+                                         * decoded + 15 ms for merge overlap) */
 #elif defined(NETEQ_WIDEBAND)
-    #define NETEQ_MAX_FRAME_SIZE     960        /* 60 ms wideband */
-    #define NETEQ_MAX_OUTPUT_SIZE    1200    /* 60+15 ms wideband (60 ms decoded + 10 ms for merge overlap) */
+    #define NETEQ_MAX_FRAME_SIZE 1920  /* 120 ms wideband */
+    #define NETEQ_MAX_OUTPUT_SIZE 2160  /* 120+15 ms wideband (120 ms decoded +
+                                         * 15 ms for merge overlap) */
 #else
-    #define NETEQ_MAX_FRAME_SIZE     480        /* 60 ms narrowband */
-    #define NETEQ_MAX_OUTPUT_SIZE    600        /* 60+15 ms narrowband (60 ms decoded + 10 ms for merge overlap) */
+    #define NETEQ_MAX_FRAME_SIZE 960  /* 120 ms narrowband */
+    #define NETEQ_MAX_OUTPUT_SIZE 1080  /* 120+15 ms narrowband (120 ms decoded
+                                         * + 15 ms for merge overlap) */
 #endif
 
 

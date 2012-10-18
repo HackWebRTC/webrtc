@@ -84,7 +84,7 @@ int WebRtcNetEQ_DbAdd(CodecDbInst_t *inst, enum WebRtcNetEQDecoder codec,
 #ifdef NETEQ_32KHZ_WIDEBAND
     &&(codec_fs!=32000)
 #endif
-#ifdef NETEQ_48KHZ_WIDEBAND
+#if defined(NETEQ_48KHZ_WIDEBAND) || defined(NETEQ_OPUS_CODEC)
     &&(codec_fs!=48000)
 #endif
     )
@@ -113,6 +113,9 @@ int WebRtcNetEQ_DbAdd(CodecDbInst_t *inst, enum WebRtcNetEQDecoder codec,
 #endif
 #ifdef NETEQ_ISAC_SWB_CODEC
         case kDecoderISACswb :
+#endif
+#ifdef NETEQ_OPUS_CODEC
+        case kDecoderOpus :
 #endif
 #ifdef NETEQ_G722_CODEC
         case kDecoderG722 :
@@ -457,6 +460,9 @@ int WebRtcNetEQ_DbGetSplitInfo(SplitInfo_t *inst, enum WebRtcNetEQDecoder codecI
 #endif
 #ifdef NETEQ_ISAC_SWB_CODEC
         case kDecoderISACswb:
+#endif
+#ifdef NETEQ_OPUS_CODEC
+        case kDecoderOpus:
 #endif
 #ifdef NETEQ_ARBITRARY_CODEC
         case kDecoderArbitrary:

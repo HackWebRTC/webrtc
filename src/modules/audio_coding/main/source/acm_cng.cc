@@ -81,7 +81,8 @@ WebRtc_Word32 ACMCNG::CodecDef(WebRtcNetEQ_CodecDef& codecDef,
   // Then return the structure back to NetEQ to add the codec to it's
   // database.
 
-  if (_sampFreqHz == 8000 || _sampFreqHz == 16000 || _sampFreqHz == 32000) {
+  if (_sampFreqHz == 8000 || _sampFreqHz == 16000 || _sampFreqHz == 32000 ||
+      _sampFreqHz == 48000) {
     SET_CODEC_PAR((codecDef), kDecoderCNG, codecInst.pltype,
         _decoderInstPtr, _sampFreqHz);
     SET_CNG_FUNCTIONS((codecDef));

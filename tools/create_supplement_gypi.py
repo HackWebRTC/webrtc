@@ -15,6 +15,7 @@ supplement_gypi = """#!/usr/bin/env python
 {
   'variables': {
     'build_with_chromium': 0,
+    'build_with_mozilla': 0,
   }
 }
 """

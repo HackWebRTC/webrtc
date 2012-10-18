@@ -58,6 +58,7 @@ ACMGenericCodec::ACMGenericCodec()
       _numLPCParams(kNewCNGNumPLCParams),
       _sentCNPrevious(false),
       _isMaster(true),
+      _prev_frame_cng(0),
       _netEqDecodeLock(NULL),
       _codecWrapperLock(*RWLockWrapper::CreateRWLock()),
       _lastEncodedTimestamp(0),
@@ -294,6 +295,8 @@ ACMGenericCodec::EncodeSafe(
                 *encodingType = kPassiveDTXWB;
             } else if (sampFreqHz == 32000) {
                 *encodingType = kPassiveDTXSWB;
+            } else if (sampFreqHz == 48000) {
+                *encodingType = kPassiveDTXFB;
             } else {
                 status = -1;
                 WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
@@ -1169,7 +1172,7 @@ ACMGenericCodec::EnableDTX()
         }
         WebRtc_UWord16 freqHz;
         EncoderSampFreq(freqHz);
-        if(WebRtcCng_InitEnc(_ptrDTXInst, (WebRtc_Word16)freqHz,
+        if(WebRtcCng_InitEnc(_ptrDTXInst, freqHz,
             ACM_SID_INTERVAL_MSEC, _numLPCParams) < 0)
         {
             // Couldn't initialize, has to return -1, and free the memory
@@ -1313,6 +1316,7 @@ ACMGenericCodec::ProcessFrameVADDTX(
         *samplesProcessed = 0;
         return 0;
     }
+
     WebRtc_UWord16 freqHz;
     EncoderSampFreq(freqHz);
 
@@ -1321,8 +1325,8 @@ ACMGenericCodec::ProcessFrameVADDTX(
     WebRtc_Word32 frameLenMsec = (((WebRtc_Word32)_frameLenSmpl * 1000) / freqHz);
     WebRtc_Word16 status;
 
-    // Vector for storing maximum 30 ms of mono audio at 32 kHz
-    WebRtc_Word16 audio[960];
+    // Vector for storing maximum 30 ms of mono audio at 48 kHz.
+    WebRtc_Word16 audio[1440];
 
     // Calculate number of VAD-blocks to process, and number of samples in each block.
     int noSamplesToProcess[2];
@@ -1378,12 +1382,18 @@ ACMGenericCodec::ProcessFrameVADDTX(
             *bitStreamLenByte = 0;
             for(WebRtc_Word16 n = 0; n < num10MsecFrames; n++)
             {
-                // This block is (passive) && (vad enabled)
-                status = WebRtcCng_Encode(_ptrDTXInst, &audio[n*samplesIn10Msec],
-                    samplesIn10Msec, bitStream, &bitStreamLen, 0);
+                // This block is (passive) && (vad enabled). If first CNG after
+                // speech, force SID by setting last parameter to "1".
+                status = WebRtcCng_Encode(_ptrDTXInst,
+                                          &audio[n*samplesIn10Msec],
+                                          samplesIn10Msec, bitStream,
+                                          &bitStreamLen, !_prev_frame_cng);
                 if (status < 0) {
                     return -1;
                 }
+
+                // Update previous frame was CNG.
+                _prev_frame_cng = 1;
 
                 *samplesProcessed += samplesIn10Msec*_noChannels;
 
@@ -1391,12 +1401,14 @@ ACMGenericCodec::ProcessFrameVADDTX(
                 *bitStreamLenByte += bitStreamLen;
             }
 
-
             // Check if all samples got processed by the DTX
             if(*samplesProcessed != noSamplesToProcess[i]*_noChannels) {
                 // Set to zero since something went wrong. Shouldn't happen.
                 *samplesProcessed = 0;
             }
+        } else {
+            // Update previous frame was not CNG.
+            _prev_frame_cng = 0;
         }
 
         if(*samplesProcessed > 0)

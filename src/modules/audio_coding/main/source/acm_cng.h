@@ -62,7 +62,7 @@ protected:
 
   WebRtcCngEncInst* _encoderInstPtr;
   WebRtcCngDecInst* _decoderInstPtr;
-  WebRtc_Word16 _sampFreqHz;
+  WebRtc_UWord16 _sampFreqHz;
 };
 
 } // namespace webrtc

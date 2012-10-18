@@ -38,6 +38,7 @@ RTPSenderAudio::RTPSenderAudio(const WebRtc_Word32 id, RtpRtcpClock* clock,
     _cngNBPayloadType(-1),
     _cngWBPayloadType(-1),
     _cngSWBPayloadType(-1),
+    _cngFBPayloadType(-1),
     _lastPayloadType(-1),
     _includeAudioLevelIndication(false),    // @TODO - reset at Init()?
     _audioLevelIndicationID(0),
@@ -101,6 +102,10 @@ WebRtc_Word32 RTPSenderAudio::RegisterAudioPayload(
 
     } else if (frequency == 32000) {
       _cngSWBPayloadType = payloadType;
+
+    } else if (frequency == 48000) {
+      _cngFBPayloadType = payloadType;
+
     } else {
       return -1;
     }
@@ -154,6 +159,15 @@ RTPSenderAudio::MarkerBit(const FrameType frameType,
         {
             // we have configured SWB CNG
             if(_cngSWBPayloadType == payloadType)
+            {
+                // only set a marker bit when we change payload type to a non CNG
+                return false;
+            }
+        }
+        if(_cngFBPayloadType != -1)
+        {
+            // we have configured SWB CNG
+            if(_cngFBPayloadType == payloadType)
             {
                 // only set a marker bit when we change payload type to a non CNG
                 return false;

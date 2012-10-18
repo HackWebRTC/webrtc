@@ -27,19 +27,27 @@
 //  [Voice] Codec settings
 // ----------------------------------------------------------------------------
 
+// iSAC is not included in the Mozilla build, but in all other builds.
+#ifndef WEBRTC_MOZILLA_BUILD
 #ifdef WEBRTC_ARCH_ARM
-#define WEBRTC_CODEC_ISACFX     // fix-point iSAC implementation
+#define WEBRTC_CODEC_ISACFX  // Fix-point iSAC implementation.
 #else
-#define WEBRTC_CODEC_ISAC       // floating-point iSAC implementation (default)
-#endif
+#define WEBRTC_CODEC_ISAC  // Floating-point iSAC implementation (default).
+#endif  // WEBRTC_ARCH_ARM
+#endif  // !WEBRTC_MOZILLA_BUILD
+
+// AVT is included in all builds, along with G.711, NetEQ and CNG
+// (which are mandatory and don't have any defines).
 #define WEBRTC_CODEC_AVT
 
-#ifndef WEBRTC_CHROMIUM_BUILD
+// iLBC, G.722, PCM16B and Redundancy coding are excluded from Chromium and
+// Mozilla builds.
+#if !defined(WEBRTC_CHROMIUM_BUILD) && !defined(WEBRTC_MOZILLA_BUILD)
 #define WEBRTC_CODEC_ILBC
 #define WEBRTC_CODEC_G722
 #define WEBRTC_CODEC_PCM16
 #define WEBRTC_CODEC_RED
-#endif
+#endif  // !WEBRTC_CHROMIUM_BUILD && !WEBRTC_MOZILLA_BUILD
 
 // ----------------------------------------------------------------------------
 //  [Video] Codec settings

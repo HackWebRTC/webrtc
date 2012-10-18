@@ -45,6 +45,7 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(const WebRtc_Word32 id)
       _cng_nb_pltype(255),
       _cng_wb_pltype(255),
       _cng_swb_pltype(255),
+      _cng_fb_pltype(255),
       _red_pltype(255),
       _vadEnabled(false),
       _dtxEnabled(false),
@@ -112,6 +113,8 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(const WebRtc_Word32 id)
         _cng_wb_pltype = static_cast<uint8_t>(ACMCodecDB::database_[i].pltype);
       } else if (ACMCodecDB::database_[i].plfreq == 32000) {
         _cng_swb_pltype = static_cast<uint8_t>(ACMCodecDB::database_[i].pltype);
+      } else if (ACMCodecDB::database_[i].plfreq == 48000) {
+        _cng_fb_pltype = static_cast<uint8_t>(ACMCodecDB::database_[i].pltype);
       }
     }
   }
@@ -316,6 +319,12 @@ WebRtc_Word32 AudioCodingModuleImpl::Process() {
         }
         case kPassiveDTXSWB: {
           current_payload_type = _cng_swb_pltype;
+          frame_type = kAudioFrameCN;
+          _isFirstRED = true;
+          break;
+        }
+        case kPassiveDTXFB: {
+          current_payload_type = _cng_fb_pltype;
           frame_type = kAudioFrameCN;
           _isFirstRED = true;
           break;
@@ -610,6 +619,10 @@ WebRtc_Word32 AudioCodingModuleImpl::RegisterSendCodec(
       }
       case 32000: {
         _cng_swb_pltype = static_cast<uint8_t>(send_codec.pltype);
+        break;
+      }
+      case 48000: {
+        _cng_fb_pltype = static_cast<uint8_t>(send_codec.pltype);
         break;
       }
       default: {
@@ -1254,6 +1267,9 @@ WebRtc_Word32 AudioCodingModuleImpl::ReceiveFrequency() const {
   CriticalSectionScoped lock(_acmCritSect);
   if (DecoderParamByPlType(_lastRecvAudioCodecPlType, codec_params) < 0) {
     return _netEq.CurrentSampFreqHz();
+  } else if (codec_params.codecInstant.plfreq == 48000) {
+    // TODO(tlegrand): Remove this option when we have full 48 kHz support.
+    return 32000;
   } else {
     return codec_params.codecInstant.plfreq;
   }

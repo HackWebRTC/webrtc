@@ -36,7 +36,7 @@ typedef struct WebRtcCngDecInst_t_ {
 
 typedef struct WebRtcCngEncInst_t_ {
   int16_t enc_nrOfCoefs;
-  int16_t enc_sampfreq;
+  uint16_t enc_sampfreq;
   int16_t enc_interval;
   int16_t enc_msSinceSID;
   int32_t enc_Energy;

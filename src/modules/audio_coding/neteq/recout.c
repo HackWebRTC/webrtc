@@ -41,8 +41,8 @@
 /* Scratch usage:
 
  Type           Name                            size             startpos      endpos
- WebRtc_Word16  pw16_NetEqAlgorithm_buffer      600*fs/8000      0             600*fs/8000-1
- struct         dspInfo                         6                600*fs/8000   605*fs/8000
+ WebRtc_Word16  pw16_NetEqAlgorithm_buffer      1080*fs/8000     0             1080*fs/8000-1
+ struct         dspInfo                         6                1080*fs/8000  1085*fs/8000
 
  func           WebRtcNetEQ_Normal              40+495*fs/8000   0             39+495*fs/8000
  func           WebRtcNetEQ_Merge               40+496*fs/8000   0             39+496*fs/8000
@@ -50,7 +50,7 @@
  func           WebRtcNetEQ_Accelerate          210              240*fs/8000   209+240*fs/8000
  func           WebRtcNetEQ_BGNUpdate           69               480*fs/8000   68+480*fs/8000
 
- Total:  605*fs/8000
+ Total:  1086*fs/8000
  */
 
 #define SCRATCH_ALGORITHM_BUFFER            0
@@ -58,35 +58,35 @@
 #define SCRATCH_NETEQ_MERGE                 0
 
 #if (defined(NETEQ_48KHZ_WIDEBAND)) 
-#define SCRATCH_DSP_INFO                     3600
+#define SCRATCH_DSP_INFO                     6480
 #define SCRATCH_NETEQ_ACCELERATE            1440
 #define SCRATCH_NETEQ_BGN_UPDATE            2880
 #define SCRATCH_NETEQ_EXPAND                756
 #elif (defined(NETEQ_32KHZ_WIDEBAND)) 
-#define SCRATCH_DSP_INFO                     2400
+#define SCRATCH_DSP_INFO                     4320
 #define SCRATCH_NETEQ_ACCELERATE            960
 #define SCRATCH_NETEQ_BGN_UPDATE            1920
 #define SCRATCH_NETEQ_EXPAND                504
 #elif (defined(NETEQ_WIDEBAND)) 
-#define SCRATCH_DSP_INFO                     1200
+#define SCRATCH_DSP_INFO                     2160
 #define SCRATCH_NETEQ_ACCELERATE            480
 #define SCRATCH_NETEQ_BGN_UPDATE            960
 #define SCRATCH_NETEQ_EXPAND                252
 #else    /* NB */
-#define SCRATCH_DSP_INFO                     600
+#define SCRATCH_DSP_INFO                     1080
 #define SCRATCH_NETEQ_ACCELERATE            240
 #define SCRATCH_NETEQ_BGN_UPDATE            480
 #define SCRATCH_NETEQ_EXPAND                126
 #endif
 
 #if (defined(NETEQ_48KHZ_WIDEBAND)) 
-#define SIZE_SCRATCH_BUFFER                 3636
+#define SIZE_SCRATCH_BUFFER                 6516
 #elif (defined(NETEQ_32KHZ_WIDEBAND)) 
-#define SIZE_SCRATCH_BUFFER                 2424
+#define SIZE_SCRATCH_BUFFER                 4344
 #elif (defined(NETEQ_WIDEBAND)) 
-#define SIZE_SCRATCH_BUFFER                 1212
+#define SIZE_SCRATCH_BUFFER                 2172
 #else    /* NB */
-#define SIZE_SCRATCH_BUFFER                 606
+#define SIZE_SCRATCH_BUFFER                 1086
 #endif
 
 #ifdef NETEQ_DELAY_LOGGING
@@ -110,13 +110,15 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
 #ifdef SCRATCH
     char pw8_ScratchBuffer[((SIZE_SCRATCH_BUFFER + 1) * 2)];
     WebRtc_Word16 *pw16_scratchPtr = (WebRtc_Word16*) pw8_ScratchBuffer;
-    WebRtc_Word16 pw16_decoded_buffer[NETEQ_MAX_FRAME_SIZE];
+    /* pad with 240*fs_mult to match the overflow guard below */
+    WebRtc_Word16 pw16_decoded_buffer[NETEQ_MAX_FRAME_SIZE+240*6];
     WebRtc_Word16 *pw16_NetEqAlgorithm_buffer = pw16_scratchPtr
         + SCRATCH_ALGORITHM_BUFFER;
     DSP2MCU_info_t *dspInfo = (DSP2MCU_info_t*) (pw16_scratchPtr + SCRATCH_DSP_INFO);
 #else
-    WebRtc_Word16 pw16_decoded_buffer[NETEQ_MAX_FRAME_SIZE];
-    WebRtc_Word16 pw16_NetEqAlgorithm_buffer[NETEQ_MAX_OUTPUT_SIZE];
+    /* pad with 240*fs_mult to match the overflow guard below */
+    WebRtc_Word16 pw16_decoded_buffer[NETEQ_MAX_FRAME_SIZE+240*6];
+    WebRtc_Word16 pw16_NetEqAlgorithm_buffer[NETEQ_MAX_OUTPUT_SIZE+240*6];
     DSP2MCU_info_t dspInfoStruct;
     DSP2MCU_info_t *dspInfo = &dspInfoStruct;
 #endif

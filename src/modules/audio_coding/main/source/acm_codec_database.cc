@@ -86,6 +86,10 @@
     #include "acm_gsmfr.h"
     #include "gsmfr_interface.h"
 #endif
+#ifdef WEBRTC_CODEC_OPUS
+    #include "acm_opus.h"
+    #include "opus_interface.h"
+#endif
 #ifdef WEBRTC_CODEC_SPEEX
     #include "acm_speex.h"
     #include "speex_interface.h"
@@ -103,22 +107,20 @@ namespace webrtc {
 // codecs. Note! There are a limited number of payload types. If more codecs
 // are defined they will receive reserved fixed payload types (values 69-95).
 const int kDynamicPayloadtypes[ACMCodecDB::kMaxNumCodecs] = {
-  105, 107, 108, 109, 111, 112, 113, 114, 115, 116, 117, 120,
-  121, 122, 123, 124, 125, 126, 101, 100,  97,  96,  95,  94,
-   93,  92,  91,  90,  89,  88,  87,  86,  85,  84,  83,  82,
-   81,  80,  79,  78,  77,  76,  75,  74,  73,  72,  71,  70,
-   69,
+  105, 107, 108, 109, 111, 112, 113, 114, 115, 116, 117, 121,
+   92,  91,  90,  89,  88,  87,  86,  85,  84,  83,  82,  81,
+   80,  79,  78,  77,  76,  75,  74,  73,  72,  71,  70,  69,
+   68, 67
 };
 
 // Creates database with all supported codecs at compile time.
 // Each entry needs the following parameters in the given order:
 // payload type, name, sampling frequency, packet size in samples,
 // number of channels, and default rate.
-#if (defined(WEBRTC_CODEC_PCM16) || \
-     defined(WEBRTC_CODEC_AMR) || defined(WEBRTC_CODEC_AMRWB) || \
-     defined(WEBRTC_CODEC_CELT) || defined(WEBRTC_CODEC_G729_1) || \
-     defined(WEBRTC_CODEC_SPEEX) || defined(WEBRTC_CODEC_G722_1) || \
-     defined(WEBRTC_CODEC_G722_1C))
+#if (defined(WEBRTC_CODEC_AMR) || defined(WEBRTC_CODEC_AMRWB) \
+  || defined(WEBRTC_CODEC_CELT) || defined(WEBRTC_CODEC_G722_1) \
+  || defined(WEBRTC_CODEC_G722_1C) || defined(WEBRTC_CODEC_G729_1) \
+  || defined(WEBRTC_CODEC_PCM16) || defined(WEBRTC_CODEC_SPEEX))
 static int count_database = 0;
 #endif
 
@@ -186,14 +188,19 @@ const CodecInst ACMCodecDB::database_[] = {
 #ifdef WEBRTC_CODEC_GSMFR
   {3, "GSM", 8000, 160, 1, 13200},
 #endif
+#ifdef WEBRTC_CODEC_OPUS
+  // Opus supports 48, 24, 16, 12, 8 kHz.
+  {120, "opus", 48000, 960, 1, 32000},
+#endif
 #ifdef WEBRTC_CODEC_SPEEX
   {kDynamicPayloadtypes[count_database++], "speex", 8000, 160, 1, 11000},
   {kDynamicPayloadtypes[count_database++], "speex", 16000, 320, 1, 22000},
 #endif
-  // Comfort noise for three different sampling frequencies.
+  // Comfort noise for four different sampling frequencies.
   {13, "CN", 8000, 240, 1, 0},
   {98, "CN", 16000, 480, 1, 0},
   {99, "CN", 32000, 960, 1, 0},
+  {100, "CN", 48000, 1440, 1, 0},
 #ifdef WEBRTC_CODEC_AVT
   {106, "telephone-event", 8000, 240, 1, 0},
 #endif
@@ -272,6 +279,11 @@ const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
 #ifdef WEBRTC_CODEC_GSMFR
   {3, {160, 320, 480}, 160, 1},
 #endif
+#ifdef WEBRTC_CODEC_OPUS
+  // Opus supports frames shorter than 10ms,
+  // but it doesn't help us to use them.
+  {1, {960}, 0, 2},
+#endif
 #ifdef WEBRTC_CODEC_SPEEX
   {3, {160, 320, 480}, 0, 1},
   {3, {320, 640, 960}, 0, 1},
@@ -280,6 +292,7 @@ const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
   {1, {240}, 240, 1},
   {1, {480}, 480, 1},
   {1, {960}, 960, 1},
+  {1, {1440}, 1440, 1},
 #ifdef WEBRTC_CODEC_AVT
   {1, {240}, 240, 1},
 #endif
@@ -355,11 +368,15 @@ const WebRtcNetEQDecoder ACMCodecDB::neteq_decoders_[] = {
 #ifdef WEBRTC_CODEC_GSMFR
   kDecoderGSMFR,
 #endif
+#ifdef WEBRTC_CODEC_OPUS
+  kDecoderOpus,
+#endif
 #ifdef WEBRTC_CODEC_SPEEX
   kDecoderSPEEX_8,
   kDecoderSPEEX_16,
 #endif
   // Comfort noise for three different sampling frequencies.
+  kDecoderCNG,
   kDecoderCNG,
   kDecoderCNG,
   kDecoderCNG,
@@ -508,6 +525,9 @@ int ACMCodecDB::CodecNumber(const CodecInst* codec_inst, int* mirror_id) {
         ? codec_id : kInvalidRate;
   } else if (STR_CASE_CMP("g7291", codec_inst->plname) == 0) {
     return IsG7291RateValid(codec_inst->rate)
+        ? codec_id : kInvalidRate;
+  } else if (STR_CASE_CMP("opus", codec_inst->plname) == 0) {
+    return IsOpusRateValid(codec_inst->rate)
         ? codec_id : kInvalidRate;
   } else if (STR_CASE_CMP("speex", codec_inst->plname) == 0) {
     return IsSpeexRateValid(codec_inst->rate)
@@ -719,6 +739,10 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst* codec_inst) {
         codec_id = kCNSWB;
         break;
       }
+      case 48000: {
+        codec_id = kCNFB;
+        break;
+      }
       default: {
         return NULL;
       }
@@ -731,6 +755,10 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst* codec_inst) {
   } else if (!STR_CASE_CMP(codec_inst->plname, "G7291")) {
 #ifdef WEBRTC_CODEC_G729_1
     return new ACMG729_1(kG729_1);
+#endif
+  } else if (!STR_CASE_CMP(codec_inst->plname, "opus")) {
+#ifdef WEBRTC_CODEC_OPUS
+    return new ACMOpus(kOpus);
 #endif
   } else if (!STR_CASE_CMP(codec_inst->plname, "speex")) {
 #ifdef WEBRTC_CODEC_SPEEX
@@ -764,6 +792,10 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst* codec_inst) {
       }
       case 32000: {
         codec_id = kCNSWB;
+        break;
+      }
+      case 48000: {
+        codec_id = kCNFB;
         break;
       }
       default: {
@@ -926,6 +958,14 @@ bool ACMCodecDB::IsSpeexRateValid(int rate) {
   } else {
     return false;
   }
+}
+
+// Checks if the bitrate is valid for Opus.
+bool ACMCodecDB::IsOpusRateValid(int rate) {
+  if ((rate < 6000) || (rate > 510000)) {
+    return false;
+  }
+  return true;
 }
 
 // Checks if the bitrate is valid for Celt.

@@ -63,14 +63,15 @@ const int kIsacPacSize960 = 960;
 //   kPassiveDTXNB            : Passive audio frame coded by narrow-band CN.
 //   kPassiveDTXWB            : Passive audio frame coded by wide-band CN.
 //   kPassiveDTXSWB           : Passive audio frame coded by super-wide-band CN.
-//
+//   kPassiveDTXFB            : Passive audio frame coded by full-band CN.
 enum WebRtcACMEncodingType {
   kNoEncoding,
   kActiveNormalEncoded,
   kPassiveNormalEncoded,
   kPassiveDTXNB,
   kPassiveDTXWB,
-  kPassiveDTXSWB
+  kPassiveDTXSWB,
+  kPassiveDTXFB
 };
 
 // A structure which contains codec parameters. For instance, used when

@@ -117,6 +117,7 @@ private:
     WebRtc_Word8      _cngNBPayloadType;
     WebRtc_Word8      _cngWBPayloadType;
     WebRtc_Word8      _cngSWBPayloadType;
+    WebRtc_Word8      _cngFBPayloadType;
     WebRtc_Word8      _lastPayloadType;
 
     // Audio level indication (https://datatracker.ietf.org/doc/draft-lennox-avt-rtp-audio-level-exthdr/)

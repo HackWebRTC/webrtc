@@ -614,6 +614,28 @@ void TestAllCodecs::Perform() {
   Run(channel_a_to_b_);
   outfile_b_.Close();
 #endif
+#ifdef WEBRTC_CODEC_OPUS
+  if (test_mode_ != 0) {
+    printf("===============================================================\n");
+  }
+  test_count_++;
+  OpenOutFile(test_count_);
+  char codec_opus[] = "OPUS";
+  RegisterSendCodec('A', codec_opus, 48000, 6000, 960, -1);
+  Run(channel_a_to_b_);
+  RegisterSendCodec('A', codec_opus, 48000, 20000, 960, -1);
+  Run(channel_a_to_b_);
+  RegisterSendCodec('A', codec_opus, 48000, 32000, 960, -1);
+  Run(channel_a_to_b_);
+  RegisterSendCodec('A', codec_opus, 48000, 48000, 960, -1);
+  Run(channel_a_to_b_);
+  RegisterSendCodec('A', codec_opus, 48000, 64000, 960, -1);
+  Run(channel_a_to_b_);
+  RegisterSendCodec('A', codec_opus, 48000, 96000, 960, -1);
+  Run(channel_a_to_b_);
+  RegisterSendCodec('A', codec_opus, 48000, 500000, 960, -1);
+  Run(channel_a_to_b_);
+#endif
   if (test_mode_ != 0) {
     printf("===============================================================\n");
 

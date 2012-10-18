@@ -322,8 +322,14 @@ void TransmitMixer::CheckForSendCodecChanges() {
 
       if (codec.channels == 2)
         stereo_codec_ = true;
-      if (codec.plfreq > _mixingFrequency)
+
+      // TODO(tlegrand): Remove once we have full 48 kHz support in
+      // Audio Coding Module.
+      if (codec.plfreq > 32000) {
+        _mixingFrequency = 32000;
+      } else if (codec.plfreq > _mixingFrequency) {
         _mixingFrequency = codec.plfreq;
+      }
     }
     channel = sc.GetNextChannel(iterator);
   }

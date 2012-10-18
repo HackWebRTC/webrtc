@@ -6403,12 +6403,12 @@ Channel::GetPlayoutTimeStamp(WebRtc_UWord32& playoutTimestamp)
     }
 
     WebRtc_Word32 playoutFrequency = _audioCodingModule.PlayoutFrequency();
-    if (_audioCodingModule.ReceiveCodec(currRecCodec) == 0)
-    {
-        if (STR_CASE_CMP("G722", currRecCodec.plname) == 0)
-        {
-            playoutFrequency = 8000;
-        }
+    if (_audioCodingModule.ReceiveCodec(currRecCodec) == 0) {
+      if (STR_CASE_CMP("G722", currRecCodec.plname) == 0) {
+        playoutFrequency = 8000;
+      } else if (STR_CASE_CMP("opus", currRecCodec.plname) == 0) {
+        playoutFrequency = 48000;
+      }
     }
     timestamp -= (delayMS * (playoutFrequency/1000));
 
@@ -6482,16 +6482,20 @@ Channel::UpdatePacketDelay(const WebRtc_UWord32 timestamp,
     rtpReceiveFrequency = _audioCodingModule.ReceiveFrequency();
 
     CodecInst currRecCodec;
-    if (_audioCodingModule.ReceiveCodec(currRecCodec) == 0)
-    {
-        if (STR_CASE_CMP("G722", currRecCodec.plname) == 0)
-        {
-            // Even though the actual sampling rate for G.722 audio is
-            // 16,000 Hz, the RTP clock rate for the G722 payload format is
-            // 8,000 Hz because that value was erroneously assigned in
-            // RFC 1890 and must remain unchanged for backward compatibility.
-            rtpReceiveFrequency = 8000;
-        }
+    if (_audioCodingModule.ReceiveCodec(currRecCodec) == 0) {
+      if (STR_CASE_CMP("G722", currRecCodec.plname) == 0) {
+        // Even though the actual sampling rate for G.722 audio is
+        // 16,000 Hz, the RTP clock rate for the G722 payload format is
+        // 8,000 Hz because that value was erroneously assigned in
+        // RFC 1890 and must remain unchanged for backward compatibility.
+        rtpReceiveFrequency = 8000;
+      } else if (STR_CASE_CMP("opus", currRecCodec.plname) == 0) {
+        // We are resampling Opus internally to 32,000 Hz until all our
+        // DSP routines can operate at 48,000 Hz, but the RTP clock
+        // rate for the Opus payload format is standardized to 48,000 Hz,
+        // because that is the maximum supported decoding sampling rate.
+        rtpReceiveFrequency = 48000;
+      }
     }
 
     const WebRtc_UWord32 timeStampDiff = timestamp - _playoutTimeStampRTP;
@@ -6499,24 +6503,25 @@ Channel::UpdatePacketDelay(const WebRtc_UWord32 timestamp,
 
     if (timeStampDiff > 0)
     {
-        switch (rtpReceiveFrequency)
-        {
-            case 8000:
-                timeStampDiffMs = timeStampDiff >> 3;
-                break;
-            case 16000:
-                timeStampDiffMs = timeStampDiff >> 4;
-                break;
-            case 32000:
-                timeStampDiffMs = timeStampDiff >> 5;
-                break;
-            default:
-                WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-                             VoEId(_instanceId, _channelId),
-                             "Channel::UpdatePacketDelay() invalid sample "
-                             "rate");
-                timeStampDiffMs = 0;
-                return -1;
+        switch (rtpReceiveFrequency) {
+          case 8000:
+            timeStampDiffMs = static_cast<WebRtc_UWord32>(timeStampDiff >> 3);
+            break;
+          case 16000:
+            timeStampDiffMs = static_cast<WebRtc_UWord32>(timeStampDiff >> 4);
+            break;
+          case 32000:
+            timeStampDiffMs = static_cast<WebRtc_UWord32>(timeStampDiff >> 5);
+            break;
+          case 48000:
+            timeStampDiffMs = static_cast<WebRtc_UWord32>(timeStampDiff / 48);
+            break;
+          default:
+            WEBRTC_TRACE(kTraceWarning, kTraceVoice,
+                         VoEId(_instanceId, _channelId),
+                         "Channel::UpdatePacketDelay() invalid sample rate");
+            timeStampDiffMs = 0;
+            return -1;
         }
         if (timeStampDiffMs > 5000)
         {
@@ -6539,19 +6544,22 @@ Channel::UpdatePacketDelay(const WebRtc_UWord32 timestamp,
         if (sequenceNumber - _previousSequenceNumber == 1)
         {
             WebRtc_UWord16 packetDelayMs = 0;
-            switch (rtpReceiveFrequency)
-            {
-            case 8000:
-                packetDelayMs = (WebRtc_UWord16)(
+            switch (rtpReceiveFrequency) {
+              case 8000:
+                packetDelayMs = static_cast<WebRtc_UWord16>(
                     (timestamp - _previousTimestamp) >> 3);
                 break;
-            case 16000:
-                packetDelayMs = (WebRtc_UWord16)(
+              case 16000:
+                packetDelayMs = static_cast<WebRtc_UWord16>(
                     (timestamp - _previousTimestamp) >> 4);
                 break;
-            case 32000:
-                packetDelayMs = (WebRtc_UWord16)(
+              case 32000:
+                packetDelayMs = static_cast<WebRtc_UWord16>(
                     (timestamp - _previousTimestamp) >> 5);
+                break;
+              case 48000:
+                packetDelayMs = static_cast<WebRtc_UWord16>(
+                    (timestamp - _previousTimestamp) / 48);
                 break;
             }
 

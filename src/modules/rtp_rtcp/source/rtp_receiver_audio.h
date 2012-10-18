@@ -81,6 +81,7 @@ private:
     WebRtc_Word8              _cngNBPayloadType;
     WebRtc_Word8              _cngWBPayloadType;
     WebRtc_Word8              _cngSWBPayloadType;
+    WebRtc_Word8              _cngFBPayloadType;
     WebRtc_Word8                _cngPayloadType;
 
     // G722 is special since it use the wrong number of RTP samples in timestamp VS. number of samples in the frame

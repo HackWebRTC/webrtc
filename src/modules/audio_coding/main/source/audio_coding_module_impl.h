@@ -279,6 +279,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   uint8_t _cng_nb_pltype;
   uint8_t _cng_wb_pltype;
   uint8_t _cng_swb_pltype;
+  uint8_t _cng_fb_pltype;
   uint8_t _red_pltype;
   bool _vadEnabled;
   bool _dtxEnabled;

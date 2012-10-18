@@ -27,6 +27,7 @@ RTPReceiverAudio::RTPReceiverAudio(const WebRtc_Word32 id):
     _cngNBPayloadType(-1),
     _cngWBPayloadType(-1),
     _cngSWBPayloadType(-1),
+    _cngFBPayloadType(-1),
     _cngPayloadType(-1),
     _G722PayloadType(-1),
     _lastReceivedG722(false),
@@ -94,7 +95,7 @@ bool
 RTPReceiverAudio::CNGPayloadType(const WebRtc_Word8 payloadType,
                                  WebRtc_UWord32& frequency)
 {
-    //  we can have three CNG on 8000Hz, 16000Hz and 32000Hz
+    //  We can have four CNG on 8000Hz, 16000Hz, 32000Hz and 48000Hz.
     if(_cngNBPayloadType == payloadType)
     {
         frequency = 8000;
@@ -128,6 +129,15 @@ RTPReceiverAudio::CNGPayloadType(const WebRtc_Word8 payloadType,
             ResetStatistics();
         }
         _cngPayloadType = _cngSWBPayloadType;
+        return true;
+    }else if(_cngFBPayloadType == payloadType)
+    {
+        frequency = 48000;
+        if ((_cngPayloadType != -1) &&(_cngPayloadType !=_cngFBPayloadType))
+        {
+            ResetStatistics();
+        }
+        _cngPayloadType = _cngFBPayloadType;
         return true;
     }else
     {
@@ -195,6 +205,8 @@ ModuleRTPUtility::Payload* RTPReceiverAudio::RegisterReceiveAudioPayload(
       _cngWBPayloadType = payloadType;
     } else if(frequency == 32000) {
       _cngSWBPayloadType = payloadType;
+    } else if(frequency == 48000) {
+      _cngFBPayloadType = payloadType;
     } else {
       assert(false);
       return NULL;

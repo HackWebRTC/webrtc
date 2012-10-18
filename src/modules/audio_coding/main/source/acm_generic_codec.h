@@ -1310,6 +1310,7 @@ protected:
     WebRtc_UWord8         _numLPCParams;
     bool                  _sentCNPrevious;
     bool                  _isMaster;
+    int16_t               _prev_frame_cng;
 
     WebRtcACMCodecParams  _encoderParams;
     WebRtcACMCodecParams  _decoderParams;

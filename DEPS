@@ -57,6 +57,9 @@ deps = {
   "third_party/libyuv":
     (Var("googlecode_url") % "libyuv") + "/trunk@389",
 
+  "third_party/opus/source":
+    "http://git.xiph.org/opus.git@v1.0.1",
+
   "third_party/protobuf":
     Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
 

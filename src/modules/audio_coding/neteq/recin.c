@@ -202,6 +202,13 @@ int WebRtcNetEQ_RecInInternal(MCUInst_t *MCU_inst, RTPPacket_t *RTPpacketInput,
             /* Get CNG sample rate */
             WebRtc_UWord16 fsCng = WebRtcNetEQ_DbGetSampleRate(&MCU_inst->codec_DB_inst,
                 RTPpacket[i_k].payloadType);
+
+            /* Force sampling frequency to 32000 Hz CNG 48000 Hz. */
+            /* TODO(tlegrand): remove limitation once ACM has full 48 kHz
+             * support. */
+            if (fsCng > 32000) {
+                fsCng = 32000;
+            }
             if ((fsCng != MCU_inst->fs) && (fsCng > 8000))
             {
                 /*
@@ -370,10 +377,29 @@ int WebRtcNetEQ_GetTimestampScaling(MCUInst_t *MCU_inst, int rtpPayloadType)
             MCU_inst->scalingFactor = kTSscalingTwo;
             break;
         }
+        case kDecoderOpus:
+        {
+            /* We resample Opus internally to 32 kHz, but timestamps
+             * are counted at 48 kHz. So there are two output samples
+             * per three RTP timestamp ticks. */
+            MCU_inst->scalingFactor = kTSscalingTwoThirds;
+            break;
+        }
+
         case kDecoderAVT:
         case kDecoderCNG:
         {
-            /* do not change the timestamp scaling settings */
+            /* TODO(tlegrand): remove scaling once ACM has full 48 kHz
+             * support. */
+            WebRtc_UWord16 sample_freq =
+                WebRtcNetEQ_DbGetSampleRate(&MCU_inst->codec_DB_inst,
+                                            rtpPayloadType);
+            if (sample_freq == 48000) {
+              MCU_inst->scalingFactor = kTSscalingTwoThirds;
+            }
+
+            /* For sample_freq <= 32 kHz, do not change the timestamp scaling
+             * settings. */
             break;
         }
         default:

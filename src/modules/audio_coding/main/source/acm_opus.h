@@ -12,68 +12,48 @@
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_OPUS_H_
 
 #include "acm_generic_codec.h"
+#include "opus_interface.h"
+#include "resampler.h"
 
-// forward declaration
-struct OPUS_inst_t_;
-struct OPUS_inst_t_;
+namespace webrtc {
 
-namespace webrtc
-{
+class ACMOpus : public ACMGenericCodec {
+ public:
+  ACMOpus(int16_t codecID);
+  ~ACMOpus();
 
-class ACMOPUS: public ACMGenericCodec
-{
-public:
-    ACMOPUS(WebRtc_Word16 codecID);
-    ~ACMOPUS();
-    // for FEC
-    ACMGenericCodec* CreateInstance(void);
+  ACMGenericCodec* CreateInstance(void);
 
-    WebRtc_Word16 InternalEncode(
-        WebRtc_UWord8* bitstream,
-        WebRtc_Word16* bitStreamLenByte);
+  int16_t InternalEncode(uint8_t* bitstream, int16_t* bitStreamLenByte);
 
-    WebRtc_Word16 InternalInitEncoder(
-        WebRtcACMCodecParams *codecParams);
+  int16_t InternalInitEncoder(WebRtcACMCodecParams *codecParams);
 
-    WebRtc_Word16 InternalInitDecoder(
-        WebRtcACMCodecParams *codecParams);
+  int16_t InternalInitDecoder(WebRtcACMCodecParams *codecParams);
 
-protected:
-    WebRtc_Word16 DecodeSafe(
-        WebRtc_UWord8* bitStream,
-        WebRtc_Word16  bitStreamLenByte,
-        WebRtc_Word16* audio,
-        WebRtc_Word16* audioSamples,
-        WebRtc_Word8*  speechType);
+ protected:
+  int16_t DecodeSafe(uint8_t* bitStream, int16_t bitStreamLenByte,
+                     int16_t* audio, int16_t* audioSamples, int8_t* speechType);
 
-    WebRtc_Word32 CodecDef(
-        WebRtcNetEQ_CodecDef& codecDef,
-        const CodecInst& codecInst);
+  int32_t CodecDef(WebRtcNetEQ_CodecDef& codecDef, const CodecInst& codecInst);
 
-    void DestructEncoderSafe();
+  void DestructEncoderSafe();
 
-    void DestructDecoderSafe();
+  void DestructDecoderSafe();
 
-    WebRtc_Word16 InternalCreateEncoder();
+  int16_t InternalCreateEncoder();
 
-    WebRtc_Word16 InternalCreateDecoder();
+  int16_t InternalCreateDecoder();
 
-    void InternalDestructEncoderInst(
-        void* ptrInst);
+  void InternalDestructEncoderInst(void* ptrInst);
 
-    WebRtc_Word16 SetBitRateSafe(
-        const WebRtc_Word32 rate);
+  int16_t SetBitRateSafe(const int32_t rate);
 
-    OPUS_inst_t_* _encoderInstPtr;
-    OPUS_inst_t_* _decoderInstPtr;
-
-    WebRtc_UWord16    _mySampFreq;
-    WebRtc_UWord16    _myRate;
-    WebRtc_Word16     _opusMode;
-    WebRtc_Word16     _flagVBR;
-
+  OpusEncInst* _encoderInstPtr;
+  OpusDecInst* _decoderInstPtr;
+  uint16_t _sampleFreq;
+  uint16_t _bitrate;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_OPUS_H_

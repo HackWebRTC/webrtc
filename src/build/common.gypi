@@ -85,6 +85,10 @@
 
         # Disable the use of protocol buffers in production code.
         'enable_protobuf%': 0,
+
+        # Disable Mozilla internal Opus version
+        'build_with_mozilla%': 0,
+
       }, {  # Settings for the standalone (not-in-Chromium) build.
         'include_pulse_audio%': 1,
         'include_internal_audio_device%': 1,

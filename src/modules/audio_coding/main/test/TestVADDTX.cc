@@ -138,6 +138,21 @@ void TestVADDTX::Perform()
     _outFileB.Close();
 
 #endif
+#ifdef WEBRTC_CODEC_OPUS
+    // Open outputfile
+    OpenOutFile(testCntr++);
+
+    // Register Opus as send codec
+    char nameOPUS[] = "opus";
+    RegisterSendCodec('A', nameOPUS);
+
+    // Run the five test cased
+    runTestCases();
+
+    // Close file
+    _outFileB.Close();
+
+#endif
     if(_testMode) {
         printf("Done!\n");
     }
