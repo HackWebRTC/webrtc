@@ -18,6 +18,8 @@
 #include "common_video/jpeg/include/jpeg.h"
 #include "common_video/jpeg/data_manager.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "libyuv.h"
+#include "libyuv/mjpeg_decoder.h"
 
 extern "C" {
 #if defined(USE_SYSTEM_LIBJPEG)
@@ -194,172 +196,33 @@ JpegEncoder::Encode(const VideoFrame& inputImage)
     return 0;
 }
 
-JpegDecoder::JpegDecoder()
-{
-    _cinfo = new jpeg_decompress_struct;
-}
+int ConvertJpegToI420(const EncodedImage& input_image,
+                      VideoFrame* output_image) {
 
-JpegDecoder::~JpegDecoder()
-{
-    if (_cinfo != NULL)
-    {
-        delete _cinfo;
-        _cinfo = NULL;
-    }
-}
-
-WebRtc_Word32
-JpegDecoder::Decode(const EncodedImage& inputImage,
-                    VideoFrame& outputImage)
-{
-
-    WebRtc_UWord8* tmpBuffer = NULL;
-    // Set error handler
-    myErrorMgr    jerr;
-    _cinfo->err = jpeg_std_error(&jerr.pub);
-    jerr.pub.error_exit = MyErrorExit;
-
-    // Establish the setjmp return context
-    if (setjmp(jerr.setjmp_buffer))
-    {
-        if (_cinfo->is_decompressor)
-        {
-            jpeg_destroy_decompress(_cinfo);
-        }
-        if (tmpBuffer != NULL)
-        {
-            delete [] tmpBuffer;
-        }
-        return -1;
-    }
-
-    _cinfo->out_color_space = JCS_YCbCr;
-
-    // Create decompression object
-    jpeg_create_decompress(_cinfo);
-
-    // Specify data source
-    jpegSetSrcBuffer(_cinfo, (JOCTET*) inputImage._buffer, inputImage._size);
-
-    // Read header data
-    jpeg_read_header(_cinfo, TRUE);
-
-    _cinfo->raw_data_out = TRUE;
-    jpeg_start_decompress(_cinfo);
-
-    // Check header
-    if (_cinfo->num_components == 4)
-    {
-        return -2; // not supported
-    }
-    if (_cinfo->progressive_mode == 1)
-    {
-        return -2; // not supported
-    }
-
-
-    WebRtc_UWord32 height = _cinfo->image_height;
-    WebRtc_UWord32 width = _cinfo->image_width;
-
-    // Making sure width and height are even
-    if (height % 2)
-    {
-        height++;
-    }
-    if (width % 2)
-    {
-         width++;
-    }
-
-    WebRtc_UWord32 height16 = (height + 15) & ~15;
-    WebRtc_UWord32 stride = (width + 15) & ~15;
-    WebRtc_UWord32 uvStride = ((((stride + 1) >> 1) + 15) & ~15);
-
-    WebRtc_UWord32 tmpRequiredSize =  stride * height16 +
-                                      2 * (uvStride * ((height16 + 1) >> 1));
-    WebRtc_UWord32 requiredSize = width * height * 3 >> 1;
-
-    // Verify sufficient buffer size.
-    outputImage.VerifyAndAllocate(requiredSize);
-    WebRtc_UWord8* outPtr = outputImage.Buffer();
-
-    if (tmpRequiredSize > requiredSize)
-    {
-        tmpBuffer = new WebRtc_UWord8[(int) (tmpRequiredSize)];
-        outPtr = tmpBuffer;
-    }
-
-    JSAMPROW y[16],u[8],v[8];
-    JSAMPARRAY data[3];
-    data[0] = y;
-    data[1] = u;
-    data[2] = v;
-
-    WebRtc_UWord32 hInd, i;
-    WebRtc_UWord32 numScanLines = 16;
-    WebRtc_UWord32 numLinesProcessed = 0;
-
-    while (_cinfo->output_scanline < _cinfo->output_height)
-    {
-        hInd = _cinfo->output_scanline;
-        for (i = 0; i < numScanLines; i++)
-        {
-            y[i] = outPtr + stride * (i + hInd);
-
-            if (i % 2 == 0)
-            {
-                 u[i / 2] = outPtr + stride * height16 +
-                            stride / 2 * ((i + hInd) / 2);
-                 v[i / 2] = outPtr + stride * height16 +
-                            stride * height16 / 4 +
-                            stride / 2 * ((i + hInd) / 2);
-            }
-        }
-        // Processes exactly one iMCU row per call
-        numLinesProcessed = jpeg_read_raw_data(_cinfo, data, numScanLines);
-        // Error in read
-        if (numLinesProcessed == 0)
-        {
-            jpeg_abort((j_common_ptr)_cinfo);
-            return -1;
-        }
-    }
-
-    if (tmpRequiredSize > requiredSize)
-    {
-         WebRtc_UWord8* dstFramePtr = outputImage.Buffer();
-         WebRtc_UWord8* tmpPtr = outPtr;
-
-         for (WebRtc_UWord32 p = 0; p < 3; p++)
-         {
-             const WebRtc_UWord32 h = (p == 0) ? height : height >> 1;
-             const WebRtc_UWord32 h16 = (p == 0) ? height16 : height16 >> 1;
-             const WebRtc_UWord32 w = (p == 0) ? width : width >> 1;
-             const WebRtc_UWord32 s = (p == 0) ? stride : stride >> 1;
-
-             for (WebRtc_UWord32 i = 0; i < h; i++)
-             {
-                 memcpy(dstFramePtr, tmpPtr, w);
-                 dstFramePtr += w;
-                 tmpPtr += s;
-             }
-             tmpPtr += (h16 - h) * s;
-         }
-    }
-
-    if (tmpBuffer != NULL)
-    {
-        delete [] tmpBuffer;
-    }
-    // Setting output Image parameter
-    outputImage.SetWidth(width);
-    outputImage.SetHeight(height);
-    outputImage.SetLength(requiredSize);
-    outputImage.SetTimeStamp(inputImage._timeStamp);
-
-    jpeg_finish_decompress(_cinfo);
-    jpeg_destroy_decompress(_cinfo);
-    return 0;
+  if (output_image == NULL)
+    return -1;
+  // TODO(mikhal): Update to use latest API from LibYuv when that becomes
+  // available.
+  libyuv::MJpegDecoder jpeg_decoder;
+  bool ret = jpeg_decoder.LoadFrame(input_image._buffer, input_image._size);
+  if (ret == false)
+    return -1;
+  if (jpeg_decoder.GetNumComponents() == 4)
+    return -2;  // not supported.
+  int width = jpeg_decoder.GetWidth();
+  int height = jpeg_decoder.GetHeight();
+  int req_size = CalcBufferSize(kI420, width, height);
+  output_image->VerifyAndAllocate(req_size);
+  output_image->SetWidth(width);
+  output_image->SetHeight(height);
+  output_image->SetLength(req_size);
+  return ConvertToI420(kMJPG,
+                       input_image._buffer,
+                       0, 0,  // no cropping
+                       width, height,
+                       input_image._size,
+                       kRotateNone,
+                       output_image);
 }
 
 

@@ -34,7 +34,6 @@ class JpegTest: public testing::Test {
 
   void SetUp() {
     encoder_ = new JpegEncoder();
-    decoder_ = new JpegDecoder();
   }
 
   void TearDown() {
@@ -45,7 +44,6 @@ class JpegTest: public testing::Test {
       delete encoded_buffer_;
     }
     delete encoder_;
-    delete decoder_;
   }
 
   // Reads an encoded image. Caller will have to deallocate the memory of this
@@ -70,13 +68,12 @@ class JpegTest: public testing::Test {
   std::string encoded_filename_;
   EncodedImage* encoded_buffer_;
   JpegEncoder* encoder_;
-  JpegDecoder* decoder_;
 };
 
 TEST_F(JpegTest, Decode) {
   encoded_buffer_ = ReadEncodedImage(input_filename_);
   VideoFrame image_buffer;
-  EXPECT_EQ(0, decoder_->Decode(*encoded_buffer_, image_buffer));
+  EXPECT_EQ(0, ConvertJpegToI420(*encoded_buffer_, &image_buffer));
   EXPECT_GT(image_buffer.Length(), 0u);
   EXPECT_EQ(kImageWidth, image_buffer.Width());
   EXPECT_EQ(kImageHeight, image_buffer.Height());
@@ -107,7 +104,7 @@ TEST_F(JpegTest, Encode) {
   // Decode our input image then encode it again to a new file:
   encoded_buffer_ = ReadEncodedImage(input_filename_);
   VideoFrame image_buffer;
-  EXPECT_EQ(0, decoder_->Decode(*encoded_buffer_, image_buffer));
+  EXPECT_EQ(0, ConvertJpegToI420(*encoded_buffer_, &image_buffer));
 
   EXPECT_EQ(0, encoder_->SetFileName(encoded_filename_.c_str()));
   EXPECT_EQ(0, encoder_->Encode(image_buffer));

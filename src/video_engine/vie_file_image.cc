@@ -69,8 +69,7 @@ int ViEFileImage::ConvertJPEGToVideoFrame(int engine_id,
   }
   fclose(image_file);
 
-  JpegDecoder decoder;
-  int ret = decoder.Decode(image_buffer, *video_frame);
+  int ret = ConvertJpegToI420(image_buffer, video_frame);
 
   delete [] image_buffer._buffer;
   image_buffer._buffer = NULL;
