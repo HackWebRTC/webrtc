@@ -39,7 +39,7 @@ ViEChannelManager::ViEChannelManager(
       voice_engine_(NULL),
       module_process_thread_(NULL),
       over_use_detector_options_(options),
-      bwe_mode_(RemoteBitrateEstimator::kMultiStreamEstimation) {
+      bwe_mode_(RemoteBitrateEstimator::kSingleStreamEstimation) {
   WEBRTC_TRACE(kTraceMemory, kTraceVideo, ViEId(engine_id),
                "ViEChannelManager::ViEChannelManager(engine_id: %d)",
                engine_id);
