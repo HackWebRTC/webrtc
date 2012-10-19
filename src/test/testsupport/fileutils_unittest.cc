@@ -94,12 +94,10 @@ std::string FileUtilsTest::original_working_dir_ = "";
 // directory that is automatically set when the test executable is launched.
 // The test is not fully testing the implementation, since we cannot be sure
 // of where the executable was launched from.
-// The test will fail if the top level directory is not named "trunk".
-TEST_F(FileUtilsTest, ProjectRootPathFromUnchangedWorkingDir) {
-  std::string path = webrtc::test::ProjectRootPath();
-  std::string expected_end = "trunk";
-  expected_end = kPathDelimiter + expected_end + kPathDelimiter;
-  ASSERT_EQ(path.length() - expected_end.length(), path.find(expected_end));
+TEST_F(FileUtilsTest, ProjectRootPath) {
+  std::string project_root = webrtc::test::ProjectRootPath();
+  // Not very smart, but at least tests something.
+  ASSERT_GT(project_root.length(), 0u);
 }
 
 // Similar to the above test, but for the output dir
