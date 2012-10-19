@@ -18,12 +18,14 @@ TEST_F(VideoProcessingModuleTest, BrightnessDetection)
     WebRtc_UWord32 frameNum = 0;
     WebRtc_Word32 brightnessWarning = 0;
     WebRtc_UWord32 warningCount = 0;
-    while (fread(_videoFrame.Buffer(), 1, _frameLength, _sourceFile) == _frameLength)
+    while (fread(_videoFrame.Buffer(), 1, _frameLength, _sourceFile) ==
+        _frameLength)
     {
         frameNum++;
         VideoProcessingModule::FrameStats stats;
-        ASSERT_EQ(0, _vpm->GetFrameStats(stats, _videoFrame));
-        ASSERT_GE(brightnessWarning = _vpm->BrightnessDetection(_videoFrame, stats), 0);
+        ASSERT_EQ(0, _vpm->GetFrameStats(&stats, _videoFrame));
+        ASSERT_GE(brightnessWarning = _vpm->BrightnessDetection(_videoFrame,
+                                                                stats), 0);
         if (brightnessWarning != VideoProcessingModule::kNoWarning)
         {
             warningCount++;
@@ -40,7 +42,8 @@ TEST_F(VideoProcessingModuleTest, BrightnessDetection)
     rewind(_sourceFile);
     frameNum = 0;
     warningCount = 0;
-    while (fread(_videoFrame.Buffer(), 1, _frameLength, _sourceFile) == _frameLength &&
+    while (fread(_videoFrame.Buffer(), 1, _frameLength, _sourceFile) ==
+        _frameLength &&
         frameNum < 300)
     {
         frameNum++;
@@ -58,8 +61,9 @@ TEST_F(VideoProcessingModuleTest, BrightnessDetection)
         }
 
         VideoProcessingModule::FrameStats stats;
-        ASSERT_EQ(0, _vpm->GetFrameStats(stats, _videoFrame));
-        ASSERT_GE(brightnessWarning = _vpm->BrightnessDetection(_videoFrame, stats), 0);
+        ASSERT_EQ(0, _vpm->GetFrameStats(&stats, _videoFrame));
+        ASSERT_GE(brightnessWarning = _vpm->BrightnessDetection(_videoFrame,
+                                                                stats), 0);
         EXPECT_NE(VideoProcessingModule::kDarkWarning, brightnessWarning);
         if (brightnessWarning == VideoProcessingModule::kBrightWarning)
         {
@@ -90,8 +94,9 @@ TEST_F(VideoProcessingModuleTest, BrightnessDetection)
         }
 
         VideoProcessingModule::FrameStats stats;
-        ASSERT_EQ(0, _vpm->GetFrameStats(stats, _videoFrame));
-        ASSERT_GE(brightnessWarning = _vpm->BrightnessDetection(_videoFrame, stats), 0);
+        ASSERT_EQ(0, _vpm->GetFrameStats(&stats, _videoFrame));
+        ASSERT_GE(brightnessWarning = _vpm->BrightnessDetection(_videoFrame,
+                                                                stats), 0);
         EXPECT_NE(VideoProcessingModule::kBrightWarning, brightnessWarning);
         if (brightnessWarning == VideoProcessingModule::kDarkWarning)
         {

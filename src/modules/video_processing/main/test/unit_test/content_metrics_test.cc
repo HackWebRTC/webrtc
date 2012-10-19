@@ -26,8 +26,8 @@ TEST_F(VideoProcessingModuleTest, ContentAnalysis)
     while (fread(_videoFrame.Buffer(), 1, _frameLength, _sourceFile)
            == _frameLength)
     {
-        _cM_c   = _ca_c.ComputeContentMetrics(&_videoFrame);
-        _cM_SSE = _ca_sse.ComputeContentMetrics(&_videoFrame);
+        _cM_c   = _ca_c.ComputeContentMetrics(_videoFrame);
+        _cM_SSE = _ca_sse.ComputeContentMetrics(_videoFrame);
 
         ASSERT_EQ(_cM_c->spatial_pred_err, _cM_SSE->spatial_pred_err);
         ASSERT_EQ(_cM_c->spatial_pred_err_v, _cM_SSE->spatial_pred_err_v);

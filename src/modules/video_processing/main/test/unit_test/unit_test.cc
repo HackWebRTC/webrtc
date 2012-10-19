@@ -68,28 +68,21 @@ void VideoProcessingModuleTest::TearDown()
 TEST_F(VideoProcessingModuleTest, HandleNullBuffer)
 {
   VideoProcessingModule::FrameStats stats;
-  ASSERT_EQ(0, _vpm->GetFrameStats(stats, _videoFrame));
+  ASSERT_EQ(0, _vpm->GetFrameStats(&stats, _videoFrame));
   // Video frame with unallocated buffer.
   VideoFrame videoFrame;
   videoFrame.SetWidth(_width);
   videoFrame.SetHeight(_height);
 
-  EXPECT_EQ(-3, _vpm->GetFrameStats(stats, NULL, _width, _height));
-  EXPECT_EQ(-3, _vpm->GetFrameStats(stats, videoFrame));
+  EXPECT_EQ(-3, _vpm->GetFrameStats(&stats, videoFrame));
 
-  EXPECT_EQ(-1, _vpm->ColorEnhancement(NULL, _width, _height));
-  EXPECT_EQ(-1, _vpm->ColorEnhancement(videoFrame));
+  EXPECT_EQ(-1, _vpm->ColorEnhancement(&videoFrame));
 
-  EXPECT_EQ(-1, _vpm->Deflickering(NULL, _width, _height, 0, stats));
-  EXPECT_EQ(-1, _vpm->Deflickering(videoFrame, stats));
+  EXPECT_EQ(-1, _vpm->Deflickering(&videoFrame, &stats));
 
-  EXPECT_EQ(-1, _vpm->Denoising(NULL, _width, _height));
-  EXPECT_EQ(-1, _vpm->Denoising(videoFrame));
+  EXPECT_EQ(-1, _vpm->Denoising(&videoFrame));
 
-  EXPECT_EQ(-3, _vpm->BrightnessDetection(NULL, _width, _height, stats));
   EXPECT_EQ(-3, _vpm->BrightnessDetection(videoFrame, stats));
-
-  EXPECT_EQ(VPM_PARAMETER_ERROR, _vpm->PreprocessFrame(NULL, NULL));
 }
 
 TEST_F(VideoProcessingModuleTest, HandleBadStats)
@@ -99,65 +92,48 @@ TEST_F(VideoProcessingModuleTest, HandleBadStats)
   ASSERT_EQ(_frameLength, fread(_videoFrame.Buffer(), 1, _frameLength,
                                 _sourceFile));
 
-  EXPECT_EQ(-1, _vpm->Deflickering(_videoFrame.Buffer(), _width, _height, 0,
-                                   stats));
-  EXPECT_EQ(-1, _vpm->Deflickering(_videoFrame, stats));
+  _videoFrame.SetWidth(_width);
+  _videoFrame.SetHeight(_height);
+  EXPECT_EQ(-1, _vpm->Deflickering(&_videoFrame, &stats));
 
-  EXPECT_EQ(-3, _vpm->BrightnessDetection(_videoFrame.Buffer(), _width,
-                                          _height, stats));
   EXPECT_EQ(-3, _vpm->BrightnessDetection(_videoFrame, stats));
 }
 
 TEST_F(VideoProcessingModuleTest, HandleBadSize)
 {
   VideoProcessingModule::FrameStats stats;
-  ASSERT_EQ(0, _vpm->GetFrameStats(stats, _videoFrame));
+  ASSERT_EQ(0, _vpm->GetFrameStats(&stats, _videoFrame));
 
   // Bad width
   _videoFrame.SetWidth(0);
-  EXPECT_EQ(-3, _vpm->GetFrameStats(stats, _videoFrame.Buffer(), 0, _height));
-  EXPECT_EQ(-3, _vpm->GetFrameStats(stats, _videoFrame));
+  EXPECT_EQ(-3, _vpm->GetFrameStats(&stats, _videoFrame));
 
-  EXPECT_EQ(-1, _vpm->ColorEnhancement(_videoFrame.Buffer(), 0, _height));
-  EXPECT_EQ(-1, _vpm->ColorEnhancement(_videoFrame));
+  EXPECT_EQ(-1, _vpm->ColorEnhancement(&_videoFrame));
 
-  EXPECT_EQ(-1, _vpm->Deflickering(_videoFrame.Buffer(), 0, _height, 0,
-                                   stats));
-  EXPECT_EQ(-1, _vpm->Deflickering(_videoFrame, stats));
+  EXPECT_EQ(-1, _vpm->Deflickering(&_videoFrame, &stats));
 
-  EXPECT_EQ(-1, _vpm->Denoising(_videoFrame.Buffer(), 0, _height));
-  EXPECT_EQ(-1, _vpm->Denoising(_videoFrame));
+  EXPECT_EQ(-1, _vpm->Denoising(&_videoFrame));
 
-  EXPECT_EQ(-3, _vpm->BrightnessDetection(_videoFrame.Buffer(), 0, _height,
-                                          stats));
   EXPECT_EQ(-3, _vpm->BrightnessDetection(_videoFrame, stats));
-
 
   // Bad height
   _videoFrame.SetWidth(_width);
   _videoFrame.SetHeight(0);
-  EXPECT_EQ(-3, _vpm->GetFrameStats(stats, _videoFrame.Buffer(), _width, 0));
-  EXPECT_EQ(-3, _vpm->GetFrameStats(stats, _videoFrame));
+  EXPECT_EQ(-3, _vpm->GetFrameStats(&stats, _videoFrame));
 
-  EXPECT_EQ(-1, _vpm->ColorEnhancement(_videoFrame.Buffer(), _width, 0));
-  EXPECT_EQ(-1, _vpm->ColorEnhancement(_videoFrame));
+  EXPECT_EQ(-1, _vpm->ColorEnhancement(&_videoFrame));
 
-  EXPECT_EQ(-1, _vpm->Deflickering(_videoFrame.Buffer(), _width, 0, 0,
-                                   stats));
-  EXPECT_EQ(-1, _vpm->Deflickering(_videoFrame, stats));
+  EXPECT_EQ(-1, _vpm->Deflickering(&_videoFrame, &stats));
 
-  EXPECT_EQ(-1, _vpm->Denoising(_videoFrame.Buffer(), _width, 0));
-  EXPECT_EQ(-1, _vpm->Denoising(_videoFrame));
+  EXPECT_EQ(-1, _vpm->Denoising(&_videoFrame));
 
-  EXPECT_EQ(-3, _vpm->BrightnessDetection(_videoFrame.Buffer(), _width, 0,
-                                          stats));
   EXPECT_EQ(-3, _vpm->BrightnessDetection(_videoFrame, stats));
 
   EXPECT_EQ(VPM_PARAMETER_ERROR, _vpm->SetTargetResolution(0,0,0));
   EXPECT_EQ(VPM_PARAMETER_ERROR, _vpm->SetMaxFrameRate(0));
 
   VideoFrame *outFrame = NULL;
-  EXPECT_EQ(VPM_PARAMETER_ERROR, _vpm->PreprocessFrame(&_videoFrame,
+  EXPECT_EQ(VPM_PARAMETER_ERROR, _vpm->PreprocessFrame(_videoFrame,
                                                        &outFrame));
 }
 
@@ -173,28 +149,28 @@ TEST_F(VideoProcessingModuleTest, IdenticalResultsAfterReset)
   // Only testing non-static functions here.
   ASSERT_EQ(_frameLength, fread(_videoFrame.Buffer(), 1, _frameLength,
                                 _sourceFile));
-  ASSERT_EQ(0, _vpm->GetFrameStats(stats, _videoFrame));
+  ASSERT_EQ(0, _vpm->GetFrameStats(&stats, _videoFrame));
   memcpy(videoFrame2.Buffer(), _videoFrame.Buffer(), _frameLength);
-  ASSERT_EQ(0, _vpm->Deflickering(_videoFrame, stats));
+  ASSERT_EQ(0, _vpm->Deflickering(&_videoFrame, &stats));
   _vpm->Reset();
   // Retrieve frame stats again in case Deflickering() has zeroed them.
-  ASSERT_EQ(0, _vpm->GetFrameStats(stats, videoFrame2));
-  ASSERT_EQ(0, _vpm->Deflickering(videoFrame2, stats));
+  ASSERT_EQ(0, _vpm->GetFrameStats(&stats, videoFrame2));
+  ASSERT_EQ(0, _vpm->Deflickering(&videoFrame2, &stats));
   EXPECT_EQ(0, memcmp(_videoFrame.Buffer(), videoFrame2.Buffer(),
                       _frameLength));
 
   ASSERT_EQ(_frameLength, fread(_videoFrame.Buffer(), 1, _frameLength,
                                 _sourceFile));
   memcpy(videoFrame2.Buffer(), _videoFrame.Buffer(), _frameLength);
-  ASSERT_GE(_vpm->Denoising(_videoFrame), 0);
+  ASSERT_GE(_vpm->Denoising(&_videoFrame), 0);
   _vpm->Reset();
-  ASSERT_GE(_vpm->Denoising(videoFrame2), 0);
+  ASSERT_GE(_vpm->Denoising(&videoFrame2), 0);
   EXPECT_EQ(0, memcmp(_videoFrame.Buffer(), videoFrame2.Buffer(),
                       _frameLength));
 
   ASSERT_EQ(_frameLength, fread(_videoFrame.Buffer(), 1, _frameLength,
                                 _sourceFile));
-  ASSERT_EQ(0, _vpm->GetFrameStats(stats, _videoFrame));
+  ASSERT_EQ(0, _vpm->GetFrameStats(&stats, _videoFrame));
   memcpy(videoFrame2.Buffer(), _videoFrame.Buffer(), _frameLength);
   ASSERT_EQ(0, _vpm->BrightnessDetection(_videoFrame, stats));
   _vpm->Reset();
@@ -210,7 +186,7 @@ TEST_F(VideoProcessingModuleTest, FrameStats)
                                 _sourceFile));
 
   EXPECT_FALSE(_vpm->ValidFrameStats(stats));
-  EXPECT_EQ(0, _vpm->GetFrameStats(stats, _videoFrame));
+  EXPECT_EQ(0, _vpm->GetFrameStats(&stats, _videoFrame));
   EXPECT_TRUE(_vpm->ValidFrameStats(stats));
 
   printf("\nFrameStats\n");
@@ -222,7 +198,7 @@ TEST_F(VideoProcessingModuleTest, FrameStats)
          static_cast<unsigned int>(stats.subSamplWidth),
          static_cast<unsigned int>(stats.sum));
 
-  _vpm->ClearFrameStats(stats);
+  _vpm->ClearFrameStats(&stats);
   EXPECT_FALSE(_vpm->ValidFrameStats(stats));
 }
 
@@ -239,7 +215,7 @@ TEST_F(VideoProcessingModuleTest, PreprocessorLogic)
   _vpm->SetInputFrameResampleMode(kNoRescaling);
   ASSERT_EQ(VPM_OK, _vpm->SetTargetResolution(100, 100, 30));
   VideoFrame *outFrame = NULL;
-  ASSERT_EQ(VPM_OK, _vpm->PreprocessFrame(&_videoFrame, &outFrame));
+  ASSERT_EQ(VPM_OK, _vpm->PreprocessFrame(_videoFrame, &outFrame));
   // No rescaling=> output frame = NULL
   ASSERT_TRUE(outFrame == NULL);
 }
@@ -324,7 +300,7 @@ void TestSize(const VideoFrame& source_frame, int target_width,
   VideoFrame* out_frame = NULL;
 
   ASSERT_EQ(VPM_OK, vpm->SetTargetResolution(target_width, target_height, 30));
-  ASSERT_EQ(VPM_OK, vpm->PreprocessFrame(&source_frame, &out_frame));
+  ASSERT_EQ(VPM_OK, vpm->PreprocessFrame(source_frame, &out_frame));
 
   // If the frame was resampled (scale changed) then:
   // (1) verify the new size and write out processed frame for viewing.
@@ -362,7 +338,7 @@ void TestSize(const VideoFrame& source_frame, int target_width,
     ASSERT_EQ(VPM_OK, vpm->SetTargetResolution(source_width,
                                                source_height,
                                                30));
-    ASSERT_EQ(VPM_OK, vpm->PreprocessFrame(&resampled_source_frame,
+    ASSERT_EQ(VPM_OK, vpm->PreprocessFrame(resampled_source_frame,
                                            &out_frame));
 
     // Write the processed frame to file for visual inspection.

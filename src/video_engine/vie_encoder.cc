@@ -495,7 +495,7 @@ void ViEEncoder::DeliverFrame(int id,
       has_received_rpsi_ = false;
     }
     VideoFrame* decimated_frame = NULL;
-    const int ret = vpm_.PreprocessFrame(video_frame, &decimated_frame);
+    const int ret = vpm_.PreprocessFrame(*video_frame, &decimated_frame);
     if (ret == 1) {
       // Drop this frame.
       return;
@@ -528,7 +528,7 @@ void ViEEncoder::DeliverFrame(int id,
   // TODO(mflodman) Rewrite this to use code common to VP8 case.
   // Pass frame via preprocessor.
   VideoFrame* decimated_frame = NULL;
-  const int ret = vpm_.PreprocessFrame(video_frame, &decimated_frame);
+  const int ret = vpm_.PreprocessFrame(*video_frame, &decimated_frame);
   if (ret == 1) {
     // Drop this frame.
     return;

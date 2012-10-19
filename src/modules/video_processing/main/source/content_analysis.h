@@ -35,7 +35,7 @@ public:
     // Input:           new frame
     // Return value:    pointer to structure containing content Analysis
     //                  metrics or NULL value upon error
-    VideoContentMetrics* ComputeContentMetrics(const VideoFrame* inputFrame);
+    VideoContentMetrics* ComputeContentMetrics(const VideoFrame& inputFrame);
 
     // Release all allocated memory
     // Output: 0 if OK, negative value upon error

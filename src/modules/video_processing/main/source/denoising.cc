@@ -72,28 +72,31 @@ VPMDenoising::Reset()
 }
 
 WebRtc_Word32
-VPMDenoising::ProcessFrame(WebRtc_UWord8* frame,
-                           const WebRtc_UWord32 width,
-                           const WebRtc_UWord32 height)
+VPMDenoising::ProcessFrame(VideoFrame* frame)
 {
+    assert(frame);
     WebRtc_Word32     thevar;
-    WebRtc_UWord32    k;
-    WebRtc_UWord32    jsub, ksub;
+    int               k;
+    int               jsub, ksub;
     WebRtc_Word32     diff0;
     WebRtc_UWord32    tmpMoment1;
     WebRtc_UWord32    tmpMoment2;
     WebRtc_UWord32    tmp;
     WebRtc_Word32     numPixelsChanged = 0;
 
-    if (frame == NULL)
+    if (frame->Buffer() == NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, _id, "Null frame pointer");
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, _id,
+                     "Null frame pointer");
         return VPM_GENERAL_ERROR;
     }
 
+    int width = frame->Width();
+    int height = frame->Height();
     if (width == 0 || height == 0)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, _id, "Invalid frame size");
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, _id,
+                     "Invalid frame size");
         return VPM_GENERAL_ERROR;
     }
 
@@ -124,31 +127,34 @@ VPMDenoising::ProcessFrame(WebRtc_UWord8* frame,
     }
 
     /* Apply de-noising on each pixel, but update variance sub-sampled */
-    for (WebRtc_UWord32 i = 0; i < height; i++)
+    uint8_t* buffer = frame->Buffer();
+    for (int i = 0; i < height; i++)
     { // Collect over height
         k = i * width;
         ksub = ((i >> kSubsamplingHeight) << kSubsamplingHeight) * width;
-        for (WebRtc_UWord32 j = 0; j < width; j++)
+        for (int j = 0; j < width; j++)
         { // Collect over width
             jsub = ((j >> kSubsamplingWidth) << kSubsamplingWidth);
             /* Update mean value for every pixel and every frame */
             tmpMoment1 = _moment1[k + j];
             tmpMoment1 *= kDenoiseFiltParam; // Q16
-            tmpMoment1 += ((kDenoiseFiltParamRec * ((WebRtc_UWord32)frame[k + j])) << 8);
+            tmpMoment1 += ((kDenoiseFiltParamRec *
+                          ((WebRtc_UWord32)buffer[k + j])) << 8);
             tmpMoment1 >>= 8; // Q8
             _moment1[k + j] = tmpMoment1;
 
             tmpMoment2 = _moment2[ksub + jsub];
             if ((ksub == k) && (jsub == j) && (_denoiseFrameCnt == 0))
             {
-                tmp = ((WebRtc_UWord32)frame[k + j] * (WebRtc_UWord32)frame[k + j]);
+                tmp = ((WebRtc_UWord32)buffer[k + j] *
+                      (WebRtc_UWord32)buffer[k + j]);
                 tmpMoment2 *= kDenoiseFiltParam; // Q16
                 tmpMoment2 += ((kDenoiseFiltParamRec * tmp)<<8);
                 tmpMoment2 >>= 8; // Q8
             }
             _moment2[k + j] = tmpMoment2;
             /* Current event = deviation from mean value */
-            diff0 = ((WebRtc_Word32)frame[k + j] << 8) - _moment1[k + j];
+            diff0 = ((WebRtc_Word32)buffer[k + j] << 8) - _moment1[k + j];
             /* Recent events = variance (variations over time) */
             thevar = _moment2[k + j];
             thevar -= ((_moment1[k + j] * _moment1[k + j]) >> 8);
@@ -161,7 +167,7 @@ VPMDenoising::ProcessFrame(WebRtc_UWord8* frame,
             if ((thevar < kDenoiseThreshold)
                 && ((diff0 * diff0 >> 8) < kDenoiseThreshold))
             { // Replace with mean
-                frame[k + j] = (WebRtc_UWord8)(_moment1[k + j] >> 8);
+                buffer[k + j] = (WebRtc_UWord8)(_moment1[k + j] >> 8);
                 numPixelsChanged++;
             }
         }

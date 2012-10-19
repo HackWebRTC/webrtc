@@ -29,10 +29,8 @@ public:
 
     void Reset();
 
-    WebRtc_Word32 ProcessFrame(const WebRtc_UWord8* frame,
-                             WebRtc_UWord32 width,
-                             WebRtc_UWord32 height,
-                             const VideoProcessingModule::FrameStats& stats);
+    WebRtc_Word32 ProcessFrame(const VideoFrame& frame,
+                               const VideoProcessingModule::FrameStats& stats);
 
 private:
     WebRtc_Word32 _id;

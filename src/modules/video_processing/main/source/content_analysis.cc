@@ -56,25 +56,25 @@ VPMContentAnalysis::~VPMContentAnalysis()
 
 
 VideoContentMetrics*
-VPMContentAnalysis::ComputeContentMetrics(const VideoFrame* inputFrame)
+VPMContentAnalysis::ComputeContentMetrics(const VideoFrame& inputFrame)
 {
-    if (inputFrame == NULL)
+    if (inputFrame.Buffer() == NULL)
     {
         return NULL;
     }
 
     // Init if needed (native dimension change)
-    if (_width != static_cast<int>(inputFrame->Width()) ||
-        _height != static_cast<int>(inputFrame->Height()))
+    if (_width != static_cast<int>(inputFrame.Width()) ||
+        _height != static_cast<int>(inputFrame.Height()))
     {
-        if (VPM_OK != Initialize(static_cast<int>(inputFrame->Width()),
-                                 static_cast<int>(inputFrame->Height())))
+        if (VPM_OK != Initialize(static_cast<int>(inputFrame.Width()),
+                                 static_cast<int>(inputFrame.Height())))
         {
             return NULL;
         }
     }
 
-    _origFrame = inputFrame->Buffer();
+    _origFrame = inputFrame.Buffer();
 
     // compute spatial metrics: 3 spatial prediction errors
     (this->*ComputeSpatialMetrics)();

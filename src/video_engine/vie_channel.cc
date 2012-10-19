@@ -2096,7 +2096,7 @@ WebRtc_Word32 ViEChannel::FrameToRender(VideoFrame& video_frame) {  // NOLINT
                               video_frame.Height());
   }
   if (color_enhancement_) {
-    VideoProcessingModule::ColorEnhancement(video_frame);
+    VideoProcessingModule::ColorEnhancement(&video_frame);
   }
 
   // Record videoframe.

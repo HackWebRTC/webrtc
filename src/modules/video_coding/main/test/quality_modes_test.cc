@@ -251,7 +251,7 @@ QualityModesTest::Perform()
         _timeStamp += (WebRtc_UWord32)(9e4 / static_cast<float>(codec.maxFramerate));
         sourceFrame.SetTimeStamp(_timeStamp);
 
-        ret = _vpm->PreprocessFrame(&sourceFrame, &decimatedFrame);
+        ret = _vpm->PreprocessFrame(sourceFrame, &decimatedFrame);
         if (ret  == 1)
         {
             printf("VD: frame drop %d \n",_frameCnt);

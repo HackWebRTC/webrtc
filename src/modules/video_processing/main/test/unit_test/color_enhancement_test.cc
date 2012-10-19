@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_processing/main/interface/video_processing.h"
 #include "modules/video_processing/main/test/unit_test/unit_test.h"
 #include "system_wrappers/interface/tick_util.h"
@@ -42,7 +43,7 @@ TEST_F(VideoProcessingModuleTest, ColorEnhancement)
     {
         frameNum++;
         t0 = TickTime::Now();
-        ASSERT_EQ(0, VideoProcessingModule::ColorEnhancement(_videoFrame));
+        ASSERT_EQ(0, VideoProcessingModule::ColorEnhancement(&_videoFrame));
         t1 = TickTime::Now();
         accTicks += t1 - t0;
         if (fwrite(_videoFrame.Buffer(), 1, _frameLength,
@@ -88,41 +89,31 @@ TEST_F(VideoProcessingModuleTest, ColorEnhancement)
     }
     ASSERT_NE(0, feof(_sourceFile)) << "Error reading source file";
 
-    // Verify that all color pixels are enhanced, that no luminance values are altered,
-    // and that the function does not write outside the vector.
-    WebRtc_UWord32 safeGuard = 1000;
-    WebRtc_UWord32 numPixels = 352*288; // CIF size
-    WebRtc_UWord8 *testFrame = new WebRtc_UWord8[numPixels + (numPixels / 2) + (2 * safeGuard)];
-    WebRtc_UWord8 *refFrame = new WebRtc_UWord8[numPixels + (numPixels / 2) + (2 * safeGuard)];
+    // Verify that all color pixels are enhanced, and no luminance values are
+    // altered.
 
-    // use value 128 as probe value, since we know that this will be changed in the enhancement
-    memset(testFrame, 128, safeGuard);
-    memset(&testFrame[safeGuard], 128, numPixels);
-    memset(&testFrame[safeGuard + numPixels], 128, numPixels / 2);
-    memset(&testFrame[safeGuard + numPixels + (numPixels / 2)], 128, safeGuard);
+    WebRtc_UWord8 *testFrame = new WebRtc_UWord8[_frameLength];
 
-    memcpy(refFrame, testFrame, numPixels + (numPixels / 2) + (2 * safeGuard));
+    // Use value 128 as probe value, since we know that this will be changed
+    // in the enhancement.
+    memset(testFrame, 128, _frameLength);
 
-    ASSERT_EQ(0, VideoProcessingModule::ColorEnhancement(&testFrame[safeGuard], 352, 288));
+    VideoFrame testVideoFrame;
+    testVideoFrame.CopyFrame(_frameLength, testFrame);
+    testVideoFrame.SetWidth(_width);
+    testVideoFrame.SetHeight(_height);
+    ASSERT_EQ(0, VideoProcessingModule::ColorEnhancement(&testVideoFrame));
 
-    EXPECT_EQ(0, memcmp(testFrame, refFrame, safeGuard)) <<
-        "Function is writing outside the frame memory.";
-    
-    EXPECT_EQ(0, memcmp(&testFrame[safeGuard + numPixels + (numPixels / 2)], 
-        &refFrame[safeGuard + numPixels + (numPixels / 2)], safeGuard)) <<
-        "Function is writing outside the frame memory.";
+    EXPECT_EQ(0, memcmp(testVideoFrame.Buffer(), testFrame, _width * _height))
+      << "Function is modifying the luminance.";
 
-    EXPECT_EQ(0, memcmp(&testFrame[safeGuard], &refFrame[safeGuard], numPixels)) <<
-        "Function is modifying the luminance.";
-
-    EXPECT_NE(0, memcmp(&testFrame[safeGuard + numPixels],
-        &refFrame[safeGuard + numPixels], numPixels / 2)) <<
+    EXPECT_NE(0, memcmp(testVideoFrame.Buffer() + _width * _height,
+        &testFrame[_width * _height], _width * _height / 2)) <<
         "Function is not modifying all chrominance pixels";
 
     ASSERT_EQ(0, fclose(refFile));
     ASSERT_EQ(0, fclose(modFile));
     delete [] testFrame;
-    delete [] refFrame;
 }
 
 }  // namespace webrtc

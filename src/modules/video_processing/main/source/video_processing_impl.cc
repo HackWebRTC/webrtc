@@ -19,29 +19,29 @@ namespace webrtc {
 namespace
 {
     void
-    SetSubSampling(VideoProcessingModule::FrameStats& stats,
+    SetSubSampling(VideoProcessingModule::FrameStats* stats,
                    const WebRtc_Word32 width,
                    const WebRtc_Word32 height)
     {
         if (width * height >= 640 * 480)
         {
-            stats.subSamplWidth = 3; 
-            stats.subSamplHeight = 3;
+            stats->subSamplWidth = 3;
+            stats->subSamplHeight = 3;
         }
         else if (width * height >= 352 * 288)
         {
-            stats.subSamplWidth = 2; 
-            stats.subSamplHeight = 2;
+            stats->subSamplWidth = 2;
+            stats->subSamplHeight = 2;
         }
         else if (width * height >= 176 * 144)
         {
-            stats.subSamplWidth = 1; 
-            stats.subSamplHeight = 1;
+            stats->subSamplWidth = 1;
+            stats->subSamplHeight = 1;
         }
         else
         {
-            stats.subSamplWidth = 0; 
-            stats.subSamplHeight = 0;
+            stats->subSamplWidth = 0;
+            stats->subSamplHeight = 0;
         }
     }
 }
@@ -89,13 +89,15 @@ VideoProcessingModuleImpl::VideoProcessingModuleImpl(const WebRtc_Word32 id) :
     _deflickering.ChangeUniqueId(id);
     _denoising.ChangeUniqueId(id);
     _framePreProcessor.ChangeUniqueId(id);
-    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideoPreocessing, _id, "Created");
+    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideoPreocessing, _id,
+                 "Created");
 }
 
 
 VideoProcessingModuleImpl::~VideoProcessingModuleImpl()
 {
-    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideoPreocessing, _id, "Destroyed");
+    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideoPreocessing, _id,
+                 "Destroyed");
     
     delete &_mutex;
 }
@@ -112,49 +114,47 @@ VideoProcessingModuleImpl::Reset()
 }
 
 WebRtc_Word32
-VideoProcessingModule::GetFrameStats(FrameStats& stats,
-                                         const VideoFrame& frame)
+VideoProcessingModule::GetFrameStats(FrameStats* stats,
+                                     const VideoFrame& frame)
 {
-    return GetFrameStats(stats, frame.Buffer(), frame.Width(), frame.Height());
-}
-
-WebRtc_Word32
-VideoProcessingModule::GetFrameStats(FrameStats& stats,
-                                         const WebRtc_UWord8* frame,
-                                         const WebRtc_UWord32 width,
-                                         const WebRtc_UWord32 height)
-{
-    if (frame == NULL)
+    if (frame.Buffer() == NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, -1, "Null frame pointer");
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, -1,
+                     "Null frame pointer");
         return VPM_PARAMETER_ERROR;
     }
     
+    int width = frame.Width();
+    int height = frame.Height();
+
     if (width == 0 || height == 0)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, -1, "Invalid frame size");
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, -1,
+                     "Invalid frame size");
         return VPM_PARAMETER_ERROR;
     }
 
     ClearFrameStats(stats); // The histogram needs to be zeroed out.
     SetSubSampling(stats, width, height);
 
+    uint8_t* buffer = frame.Buffer();
     // Compute histogram and sum of frame
-    for (WebRtc_UWord32 i = 0; i < height; i += (1 << stats.subSamplHeight))
+    for (int i = 0; i < height; i += (1 << stats->subSamplHeight))
     {
-        WebRtc_Word32 k = i * width;
-        for (WebRtc_UWord32 j = 0; j < width; j += (1 << stats.subSamplWidth))
+        int k = i * width;
+        for (int j = 0; j < width; j += (1 << stats->subSamplWidth))
         { 
-            stats.hist[frame[k + j]]++;
-            stats.sum += frame[k + j];
+            stats->hist[buffer[k + j]]++;
+            stats->sum += buffer[k + j];
         }
     }
 
-    stats.numPixels = (width * height) / ((1 << stats.subSamplWidth) * (1 << stats.subSamplHeight));
-    assert(stats.numPixels > 0);
+    stats->numPixels = (width * height) / ((1 << stats->subSamplWidth) *
+        (1 << stats->subSamplHeight));
+    assert(stats->numPixels > 0);
 
     // Compute mean value of frame
-    stats.mean = stats.sum / stats.numPixels;
+    stats->mean = stats->sum / stats->numPixels;
     
     return VPM_OK;
 }
@@ -171,94 +171,48 @@ VideoProcessingModule::ValidFrameStats(const FrameStats& stats)
 }
 
 void
-VideoProcessingModule::ClearFrameStats(FrameStats& stats)
+VideoProcessingModule::ClearFrameStats(FrameStats* stats)
 {
-    stats.mean = 0;
-    stats.sum = 0;
-    stats.numPixels = 0;
-    stats.subSamplWidth = 0;
-    stats.subSamplHeight = 0;
-    memset(stats.hist, 0, sizeof(stats.hist));
+    stats->mean = 0;
+    stats->sum = 0;
+    stats->numPixels = 0;
+    stats->subSamplWidth = 0;
+    stats->subSamplHeight = 0;
+    memset(stats->hist, 0, sizeof(stats->hist));
 }
 
 WebRtc_Word32
-VideoProcessingModule::ColorEnhancement(VideoFrame& frame)
+VideoProcessingModule::ColorEnhancement(VideoFrame* frame)
 {
-    return ColorEnhancement(frame.Buffer(), frame.Width(), frame.Height());
+    return VideoProcessing::ColorEnhancement(frame);
 }
 
 WebRtc_Word32
-VideoProcessingModule::ColorEnhancement(WebRtc_UWord8* frame,
-                                            const WebRtc_UWord32 width,
-                                            const WebRtc_UWord32 height)
+VideoProcessingModule::Brighten(VideoFrame* frame, int delta)
 {
-    return VideoProcessing::ColorEnhancement(frame, width, height);
+    return VideoProcessing::Brighten(frame, delta);
 }
 
 WebRtc_Word32
-VideoProcessingModule::Brighten(VideoFrame& frame, int delta)
-{
-    return Brighten(frame.Buffer(), frame.Width(), frame.Height(), delta);
-}
-
-WebRtc_Word32
-VideoProcessingModule::Brighten(WebRtc_UWord8* frame,
-                                    int width,
-                                    int height,
-                                    int delta)
-{
-    return VideoProcessing::Brighten(frame, width, height, delta);
-}
-
-WebRtc_Word32
-VideoProcessingModuleImpl::Deflickering(VideoFrame& frame,
-                                            FrameStats& stats)
-{
-    return Deflickering(frame.Buffer(), frame.Width(), frame.Height(), 
-        frame.TimeStamp(), stats);
-}
-
-WebRtc_Word32
-VideoProcessingModuleImpl::Deflickering(WebRtc_UWord8* frame,
-                                            const WebRtc_UWord32 width,
-                                            const WebRtc_UWord32 height,
-                                            const WebRtc_UWord32 timestamp,
-                                            FrameStats& stats)
+VideoProcessingModuleImpl::Deflickering(VideoFrame* frame, FrameStats* stats)
 {
     CriticalSectionScoped mutex(&_mutex);
-    return _deflickering.ProcessFrame(frame, width, height, timestamp, stats);
+    return _deflickering.ProcessFrame(frame, stats);
 }
 
 WebRtc_Word32
-VideoProcessingModuleImpl::Denoising(VideoFrame& frame)
-{
-    return Denoising(frame.Buffer(), frame.Width(), frame.Height());
-}
-
-WebRtc_Word32
-VideoProcessingModuleImpl::Denoising(WebRtc_UWord8* frame,
-                                         const WebRtc_UWord32 width,
-                                         const WebRtc_UWord32 height)
+VideoProcessingModuleImpl::Denoising(VideoFrame* frame)
 {
     CriticalSectionScoped mutex(&_mutex);
-    return _denoising.ProcessFrame(frame, width, height);
+    return _denoising.ProcessFrame(frame);
 }
 
 WebRtc_Word32
 VideoProcessingModuleImpl::BrightnessDetection(const VideoFrame& frame,
-                                                   const FrameStats& stats)
-{
-    return BrightnessDetection(frame.Buffer(), frame.Width(), frame.Height(), stats);
-}
-
-WebRtc_Word32
-VideoProcessingModuleImpl::BrightnessDetection(const WebRtc_UWord8* frame,
-                                                   const WebRtc_UWord32 width,
-                                                   const WebRtc_UWord32 height,
-                                                   const FrameStats& stats)
+                                               const FrameStats& stats)
 {
     CriticalSectionScoped mutex(&_mutex);
-    return _brightnessDetection.ProcessFrame(frame, width, height, stats);
+    return _brightnessDetection.ProcessFrame(frame, stats);
 }
 
 
@@ -271,7 +225,8 @@ VideoProcessingModuleImpl::EnableTemporalDecimation(bool enable)
 
 
 void 
-VideoProcessingModuleImpl::SetInputFrameResampleMode(VideoFrameResampling resamplingMode)
+VideoProcessingModuleImpl::SetInputFrameResampleMode(VideoFrameResampling
+                                                     resamplingMode)
 {
     CriticalSectionScoped cs(&_mutex);
     _framePreProcessor.SetInputFrameResampleMode(resamplingMode);
@@ -286,7 +241,9 @@ VideoProcessingModuleImpl::SetMaxFrameRate(WebRtc_UWord32 maxFrameRate)
 }
 
 WebRtc_Word32
-VideoProcessingModuleImpl::SetTargetResolution(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord32 frameRate)
+VideoProcessingModuleImpl::SetTargetResolution(WebRtc_UWord32 width,
+                                               WebRtc_UWord32 height,
+                                               WebRtc_UWord32 frameRate)
 {
     CriticalSectionScoped cs(&_mutex);
     return _framePreProcessor.SetTargetResolution(width, height, frameRate);
@@ -316,7 +273,8 @@ VideoProcessingModuleImpl::DecimatedHeight() const
 }
 
 WebRtc_Word32
-VideoProcessingModuleImpl::PreprocessFrame(const VideoFrame *frame, VideoFrame **processedFrame)
+VideoProcessingModuleImpl::PreprocessFrame(const VideoFrame& frame,
+                                           VideoFrame **processedFrame)
 {
     CriticalSectionScoped mutex(&_mutex);
     return _framePreProcessor.PreprocessFrame(frame, processedFrame);

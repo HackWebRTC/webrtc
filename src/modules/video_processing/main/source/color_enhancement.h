@@ -21,9 +21,7 @@ namespace webrtc {
 
 namespace VideoProcessing
 {
-    WebRtc_Word32 ColorEnhancement(WebRtc_UWord8* frame,
-                                 WebRtc_UWord32 width,
-                                 WebRtc_UWord32 height);
+    WebRtc_Word32 ColorEnhancement(VideoFrame* frame);
 }
 
 } //namespace

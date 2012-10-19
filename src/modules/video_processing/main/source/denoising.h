@@ -29,9 +29,7 @@ public:
 
     void Reset();
 
-    WebRtc_Word32 ProcessFrame(WebRtc_UWord8* frame,
-                             WebRtc_UWord32 width,
-                             WebRtc_UWord32 height);
+    WebRtc_Word32 ProcessFrame(VideoFrame* frame);
 
 private:
     WebRtc_Word32 _id;
@@ -39,7 +37,7 @@ private:
     WebRtc_UWord32*   _moment1;           // (Q8) First order moment (mean)
     WebRtc_UWord32*   _moment2;           // (Q8) Second order moment
     WebRtc_UWord32    _frameSize;         // Size (# of pixels) of frame
-    WebRtc_Word32     _denoiseFrameCnt;   // Counter for subsampling in time
+    int               _denoiseFrameCnt;   // Counter for subsampling in time
 };
 
 } //namespace

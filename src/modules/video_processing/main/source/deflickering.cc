@@ -89,12 +89,10 @@ VPMDeflickering::Reset()
 }
 
 WebRtc_Word32
-VPMDeflickering::ProcessFrame(WebRtc_UWord8* frame,
-                              const WebRtc_UWord32 width,
-                              const WebRtc_UWord32 height,
-                              const WebRtc_UWord32 timestamp,
-                              VideoProcessingModule::FrameStats& stats)
+VPMDeflickering::ProcessFrame(VideoFrame* frame,
+                              VideoProcessingModule::FrameStats* stats)
 {
+    assert(frame);
     WebRtc_UWord32 frameMemory;
     WebRtc_UWord8 quantUW8[kNumQuants];
     WebRtc_UWord8 maxQuantUW8[kNumQuants];
@@ -105,27 +103,32 @@ VPMDeflickering::ProcessFrame(WebRtc_UWord8* frame,
 
     WebRtc_UWord16 tmpUW16;
     WebRtc_UWord32 tmpUW32;
+    int width = frame->Width();
+    int height = frame->Height();
 
-    if (frame == NULL)
+    if (frame->Buffer() == NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, _id, "Null frame pointer");
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, _id,
+                     "Null frame pointer");
         return VPM_GENERAL_ERROR;
     }
 
     // Stricter height check due to subsampling size calculation below.
     if (width == 0 || height < 2)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, _id, "Invalid frame size");
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, _id,
+                     "Invalid frame size");
         return VPM_GENERAL_ERROR;
     }
 
-    if (!VideoProcessingModule::ValidFrameStats(stats))
+    if (!VideoProcessingModule::ValidFrameStats(*stats))
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, _id, "Invalid frame stats");
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, _id,
+                     "Invalid frame stats");
         return VPM_GENERAL_ERROR;
     }
 
-    if (PreDetection(timestamp, stats) == -1)
+    if (PreDetection(frame->TimeStamp(), *stats) == -1)
     {
         return VPM_GENERAL_ERROR;
     }
@@ -148,9 +151,10 @@ VPMDeflickering::ProcessFrame(WebRtc_UWord8* frame,
         kLog2OfDownsamplingFactor) + 1);
     WebRtc_UWord8* ySorted = new WebRtc_UWord8[ySubSize];
     WebRtc_UWord32 sortRowIdx = 0;
-    for (WebRtc_UWord32 i = 0; i < height; i += kDownsamplingFactor)
+    for (int i = 0; i < height; i += kDownsamplingFactor)
     {
-        memcpy(ySorted + sortRowIdx * width, frame + i * width, width);
+        memcpy(ySorted + sortRowIdx * width,
+               frame->Buffer() + i * width, width);
         sortRowIdx++;
     }
     
@@ -254,9 +258,10 @@ VPMDeflickering::ProcessFrame(WebRtc_UWord8* frame,
     }
 
     // Map to the output frame.
+    uint8_t* buffer = frame->Buffer();
     for (WebRtc_UWord32 i = 0; i < ySize; i++)
     {
-        frame[i] = mapUW8[frame[i]];
+      buffer[i] = mapUW8[buffer[i]];
     }
 
     // Frame was altered, so reset stats.

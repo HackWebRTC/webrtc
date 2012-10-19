@@ -32,14 +32,11 @@ public:
 
     void Reset();
 
-    WebRtc_Word32 ProcessFrame(WebRtc_UWord8* frame,
-                             WebRtc_UWord32 width,
-                             WebRtc_UWord32 height,
-                             WebRtc_UWord32 timestamp,
-                             VideoProcessingModule::FrameStats& stats);
+    WebRtc_Word32 ProcessFrame(VideoFrame* frame,
+                               VideoProcessingModule::FrameStats* stats);
 private:
     WebRtc_Word32 PreDetection(WebRtc_UWord32 timestamp,
-                             const VideoProcessingModule::FrameStats& stats);
+                               const VideoProcessingModule::FrameStats& stats);
 
     WebRtc_Word32 DetectFlicker();
 

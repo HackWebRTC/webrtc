@@ -18,39 +18,38 @@ namespace webrtc {
 namespace VideoProcessing
 { 
     WebRtc_Word32
-    ColorEnhancement(WebRtc_UWord8* frame,
-                     const WebRtc_UWord32 width,
-                     const WebRtc_UWord32 height)
+    ColorEnhancement(VideoFrame* frame)
     {
+        assert(frame);
         // pointers to U and V color pixels
         WebRtc_UWord8* ptrU;
         WebRtc_UWord8* ptrV;
         WebRtc_UWord8 tempChroma;
-        const WebRtc_UWord32 numPixels = width * height;
+        const unsigned int size_y = frame->Width() * frame->Height();
+        const unsigned int size_uv = ((frame->Width() + 1) / 2) *
+            ((frame->Height() + 1 ) / 2);
 
 
-        if (frame == NULL)
+        if (frame->Buffer() == NULL)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, -1, "Null frame pointer");
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing,
+                         -1, "Null frame pointer");
             return VPM_GENERAL_ERROR;
         }
 
-        if (width == 0 || height == 0)
+        if (frame->Width() == 0 || frame->Height() == 0)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, -1, "Invalid frame size");
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing,
+                         -1, "Invalid frame size");
             return VPM_GENERAL_ERROR;
         }
         
-        // set pointers to first U and V pixels
-        
-        // stream format:
-        // | numPixels bytes luminance | numPixels/4 bytes chroma U | numPixels/4 chroma V |
-        
-        ptrU = frame + numPixels;       // skip luminance
-        ptrV = ptrU + (numPixels>>2);
+        // set pointers to first U and V pixels (skip luminance)
+        ptrU = frame->Buffer() + size_y;
+        ptrV = ptrU + size_uv;
 
         // loop through all chrominance pixels and modify color
-        for (WebRtc_UWord32 ix = 0; ix < (numPixels>>2); ix++)
+        for (unsigned int ix = 0; ix < size_uv; ix++)
         {
             tempChroma = colorTable[*ptrU][*ptrV];
             *ptrV = colorTable[*ptrV][*ptrU];
