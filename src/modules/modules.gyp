@@ -15,7 +15,6 @@
     'audio_coding/codecs/ilbc/ilbc.gypi',
     'audio_coding/codecs/isac/main/source/isac.gypi',
     'audio_coding/codecs/isac/fix/source/isacfix.gypi',
-    'audio_coding/codecs/opus/opus.gypi',
     'audio_coding/codecs/pcm16b/pcm16b.gypi',
     'audio_coding/main/source/audio_coding_module.gypi',
     'audio_coding/neteq/neteq.gypi',
@@ -34,8 +33,10 @@
     'video_render/main/source/video_render.gypi',
     'rtp_rtcp/source/rtp_rtcp.gypi',
   ],
-
   'conditions': [
+    ['include_opus==1', {
+      'includes': ['audio_coding/codecs/opus/opus.gypi',],
+    }],
     ['include_tests==1', {
       'includes': [
         'audio_coding/codecs/isac/isac_test.gypi',

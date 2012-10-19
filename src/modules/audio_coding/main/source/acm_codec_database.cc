@@ -88,7 +88,7 @@
 #endif
 #ifdef WEBRTC_CODEC_OPUS
     #include "acm_opus.h"
-    #include "opus_interface.h"
+    #include "modules/audio_coding/codecs/opus/interface/opus_interface.h"
 #endif
 #ifdef WEBRTC_CODEC_SPEEX
     #include "acm_speex.h"

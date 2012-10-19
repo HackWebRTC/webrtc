@@ -32,10 +32,12 @@
       'webrtc_root%': '<(webrtc_root)',
 
       'webrtc_vp8_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp8',
+      'include_opus%': 0,
     },
     'build_with_chromium%': '<(build_with_chromium)',
     'webrtc_root%': '<(webrtc_root)',
     'webrtc_vp8_dir%': '<(webrtc_vp8_dir)',
+    'include_opus%': '<(include_opus)',
 
     # The Chromium common.gypi we use treats all gyp files without
     # chromium_code==1 as third party code. This disables many of the
@@ -62,6 +64,9 @@
     'build_libyuv%': 1,
     'build_libvpx%': 1,
 
+    # Enable to use the Mozilla internal Opus version.
+    'build_with_mozilla%': 0,
+
     'libyuv_dir%': '<(DEPTH)/third_party/libyuv',
 
     'conditions': [
@@ -85,9 +90,6 @@
 
         # Disable the use of protocol buffers in production code.
         'enable_protobuf%': 0,
-
-        # Disable Mozilla internal Opus version
-        'build_with_mozilla%': 0,
 
       }, {  # Settings for the standalone (not-in-Chromium) build.
         'include_pulse_audio%': 1,

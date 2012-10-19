@@ -18,7 +18,7 @@
 #include "webrtc_neteq_help_macros.h"
 
 #ifdef WEBRTC_CODEC_OPUS
-#include "opus_interface.h"
+#include "modules/audio_coding/codecs/opus/interface/opus_interface.h"
 #endif
 
 namespace webrtc {

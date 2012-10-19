@@ -12,8 +12,10 @@
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_OPUS_H_
 
 #include "acm_generic_codec.h"
-#include "opus_interface.h"
 #include "resampler.h"
+
+struct WebRtcOpusEncInst;
+struct WebRtcOpusDecInst;
 
 namespace webrtc {
 
@@ -48,8 +50,8 @@ class ACMOpus : public ACMGenericCodec {
 
   int16_t SetBitRateSafe(const int32_t rate);
 
-  OpusEncInst* _encoderInstPtr;
-  OpusDecInst* _decoderInstPtr;
+  WebRtcOpusEncInst* _encoderInstPtr;
+  WebRtcOpusDecInst* _decoderInstPtr;
   uint16_t _sampleFreq;
   uint16_t _bitrate;
 };

@@ -15,7 +15,6 @@
       'iLBC',
       'iSAC',
       'iSACFix',
-      'webrtc_opus',
       'PCM16B',
       'NetEq',
       '<(webrtc_root)/common_audio/common_audio.gyp:resampler',
@@ -24,6 +23,12 @@
       '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
     ],
     'audio_coding_defines': [],
+    'conditions': [
+      ['include_opus==1', {
+        'audio_coding_dependencies': ['webrtc_opus',],
+        'audio_coding_defines': ['WEBRTC_CODEC_OPUS',],
+      }],
+    ],
   },
   'targets': [
     {
@@ -38,13 +43,11 @@
       'include_dirs': [
         '../interface',
         '../../../interface',
-        '../../codecs/opus/interface',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-        '../interface',
-        '../../../interface',
-        '../../codecs/opus/interface',
+          '../interface',
+          '../../../interface',
         ],
       },
       'sources': [
