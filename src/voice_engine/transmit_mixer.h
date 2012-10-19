@@ -73,9 +73,9 @@ public:
     void UpdateMuteMicrophoneTime(const WebRtc_UWord32 lengthMs);
 
     // VoEExternalMedia
-    int RegisterExternalMediaProcessing(VoEMediaProcess& proccess_object);
-
-    int DeRegisterExternalMediaProcessing();
+    int RegisterExternalMediaProcessing(VoEMediaProcess* object,
+                                        ProcessingTypes type);
+    int DeRegisterExternalMediaProcessing(ProcessingTypes type);
 
     int GetMixingFrequency();
 
@@ -193,8 +193,8 @@ private:
     // owns
     MonitorModule _monitorModule;
     AudioFrame _audioFrame;
-    Resampler _audioResampler;		// ADM sample rate -> mixing rate
-    FilePlayer*	_filePlayerPtr;
+    Resampler _audioResampler; // ADM sample rate -> mixing rate
+    FilePlayer* _filePlayerPtr;
     FileRecorder* _fileRecorderPtr;
     FileRecorder* _fileCallRecorderPtr;
     int _filePlayerId;
@@ -228,8 +228,8 @@ private:
     int _instanceId;
     bool _mixFileWithMicrophone;
     WebRtc_UWord32 _captureLevel;
-    bool _externalMedia;
-    VoEMediaProcess* _externalMediaCallbackPtr;
+    VoEMediaProcess* external_postproc_ptr_;
+    VoEMediaProcess* external_preproc_ptr_;
     bool _mute;
     WebRtc_Word32 _remainingMuteMicTimeMs;
     int _mixingFrequency;

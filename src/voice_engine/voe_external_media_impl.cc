@@ -88,9 +88,10 @@ int VoEExternalMediaImpl::RegisterExternalMediaProcessing(
                 processObject);
         }
         case kRecordingAllChannelsMixed:
+        case kRecordingPreprocessing:
         {
             return shared_->transmit_mixer()->RegisterExternalMediaProcessing(
-                processObject);
+                &processObject, type);
         }
     }
     return -1;
@@ -131,9 +132,10 @@ int VoEExternalMediaImpl::DeRegisterExternalMediaProcessing(
                 DeRegisterExternalMediaProcessing();
         }
         case kRecordingAllChannelsMixed:
+        case kRecordingPreprocessing:
         {
             return shared_->transmit_mixer()->
-                DeRegisterExternalMediaProcessing();
+                DeRegisterExternalMediaProcessing(type);
         }
     }
     return -1;

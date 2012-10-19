@@ -131,7 +131,8 @@ enum ProcessingTypes
     kPlaybackPerChannel = 0,
     kPlaybackAllChannelsMixed,
     kRecordingPerChannel,
-    kRecordingAllChannelsMixed
+    kRecordingAllChannelsMixed,
+    kRecordingPreprocessing
 };
 
 // Encryption enums
