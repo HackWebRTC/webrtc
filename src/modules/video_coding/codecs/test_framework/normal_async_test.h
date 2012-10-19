@@ -22,14 +22,14 @@
 class FrameQueueTuple
 {
 public:
-    FrameQueueTuple(TestVideoEncodedBuffer *frame,
+    FrameQueueTuple(webrtc::VideoFrame *frame,
                     const webrtc::CodecSpecificInfo* codecSpecificInfo = NULL)
     :
         _frame(frame),
         _codecSpecificInfo(codecSpecificInfo)
     {};
     ~FrameQueueTuple();
-    TestVideoEncodedBuffer*          _frame;
+    webrtc::VideoFrame*          _frame;
     const webrtc::CodecSpecificInfo* _codecSpecificInfo;
 };
 
@@ -47,7 +47,7 @@ public:
         delete &_queueRWLock;
     }
 
-    void PushFrame(TestVideoEncodedBuffer *frame,
+    void PushFrame(webrtc::VideoFrame *frame,
                    webrtc::CodecSpecificInfo* codecSpecificInfo = NULL);
     FrameQueueTuple* PopFrame();
     bool Empty();
@@ -84,7 +84,7 @@ public:
     virtual webrtc::CodecSpecificInfo*
     CopyCodecSpecificInfo(
         const webrtc::CodecSpecificInfo* codecSpecificInfo) const;
-    virtual void CopyEncodedImage(TestVideoEncodedBuffer& dest,
+    virtual void CopyEncodedImage(webrtc::VideoFrame& dest,
                                   webrtc::EncodedImage& src,
                                   void* /*codecSpecificInfo*/) const;
     virtual webrtc::CodecSpecificInfo* CreateEncoderSpecificInfo() const

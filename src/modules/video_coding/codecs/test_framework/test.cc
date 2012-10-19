@@ -135,26 +135,17 @@ bool CodecTest::PacketLoss(double lossRate, int /*thrown*/)
 }
 
 void
-CodecTest::VideoBufferToRawImage(TestVideoBuffer& videoBuffer,
-                                 VideoFrame &image)
-{
-  // TODO(mikhal): Use videoBuffer in lieu of TestVideoBuffer.
-  image.CopyFrame(videoBuffer.GetLength(), videoBuffer.GetBuffer());
-  image.SetWidth(videoBuffer.GetWidth());
-  image.SetHeight(videoBuffer.GetHeight());
-  image.SetTimeStamp(videoBuffer.GetTimeStamp());
-}
-void
-CodecTest::VideoEncodedBufferToEncodedImage(TestVideoEncodedBuffer& videoBuffer,
+CodecTest::VideoEncodedBufferToEncodedImage(VideoFrame& videoBuffer,
                                             EncodedImage &image)
 {
-    image._buffer = videoBuffer.GetBuffer();
-    image._length = videoBuffer.GetLength();
-    image._size = videoBuffer.GetSize();
-    image._frameType = static_cast<VideoFrameType>(videoBuffer.GetFrameType());
-    image._timeStamp = videoBuffer.GetTimeStamp();
-    image._encodedWidth = videoBuffer.GetCaptureWidth();
-    image._encodedHeight = videoBuffer.GetCaptureHeight();
+    image._buffer = videoBuffer.Buffer();
+    image._length = videoBuffer.Length();
+    image._size = videoBuffer.Size();
+    //image._frameType = static_cast<VideoFrameType>
+    //  (videoBuffer.GetFrameType());
+    image._timeStamp = videoBuffer.TimeStamp();
+    image._encodedWidth = videoBuffer.Width();
+    image._encodedHeight = videoBuffer.Height();
     image._completeFrame = true;
 }
 

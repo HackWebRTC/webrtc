@@ -40,10 +40,8 @@
             'normal_async_test.h',
             'normal_test.h',
             'packet_loss_test.h',
-            'performance_test.h',
             'test.h',
             'unit_test.h',
-            'video_buffer.h',
             'video_source.h',
 
             # source files
@@ -51,10 +49,8 @@
             'normal_async_test.cc',
             'normal_test.cc',
             'packet_loss_test.cc',
-            'performance_test.cc',
             'test.cc',
             'unit_test.cc',
-            'video_buffer.cc',
             'video_source.cc',
           ],
         },

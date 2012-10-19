@@ -36,7 +36,8 @@ protected:
     virtual int DoPacketLoss();
     virtual int NextPacket(int size, unsigned char **pkg);
     virtual int ByteLoss(int size, unsigned char *pkg, int bytesToLose);
-    virtual void InsertPacket(TestVideoEncodedBuffer *buf, unsigned char *pkg, int size);
+    virtual void InsertPacket(webrtc::VideoFrame *buf, unsigned char *pkg,
+                              int size);
     int _inBufIdx;
     int _outBufIdx;
 

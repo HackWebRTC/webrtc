@@ -149,7 +149,7 @@ VP8DualDecoderTest::Perform()
 int
 VP8DualDecoderTest::Decode(int lossValue)
 {
-    _sumEncBytes += _frameToDecode->_frame->GetLength();
+    _sumEncBytes += _frameToDecode->_frame->Length();
     webrtc::EncodedImage encodedImage;
     VideoEncodedBufferToEncodedImage(*(_frameToDecode->_frame), encodedImage);
     encodedImage._completeFrame = !lossValue;
@@ -171,9 +171,9 @@ VP8DualDecoderTest::Decode(int lossValue)
         }
 
         // compare decoded images
-        if (!CheckIfBitExact(_decodedVideoBuffer.GetBuffer(),
-            _decodedVideoBuffer.GetLength(),
-            _decodedVideoBuffer2.GetBuffer(), _decodedVideoBuffer.GetLength()))
+        if (!CheckIfBitExact(_decodedVideoBuffer.Buffer(),
+            _decodedVideoBuffer.Length(),
+            _decodedVideoBuffer2.Buffer(), _decodedVideoBuffer.Length()))
         {
             fprintf(stderr,"\n\nClone output different from master.\n\n");
             exit(EXIT_FAILURE);
@@ -201,7 +201,7 @@ VP8DualDecoderTest::CheckIfBitExact(const void* ptrA, unsigned int aLengthBytes,
 WebRtc_Word32 DualDecoderCompleteCallback::Decoded(webrtc::VideoFrame& image)
 {
     _decodedVideoBuffer->VerifyAndAllocate(image.Length());
-    _decodedVideoBuffer->CopyBuffer(image.Length(), image.Buffer());
+    _decodedVideoBuffer->CopyFrame(image.Length(), image.Buffer());
     _decodedVideoBuffer->SetWidth(image.Width());
     _decodedVideoBuffer->SetHeight(image.Height());
     _decodedVideoBuffer->SetTimeStamp(image.TimeStamp());

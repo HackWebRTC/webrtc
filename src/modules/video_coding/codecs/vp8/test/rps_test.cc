@@ -137,18 +137,16 @@ bool VP8RpsTest::EncodeRps(RpsDecodeCompleteCallback* decodeCallback) {
   size_t bytes_read = fread(_sourceBuffer, 1, _lengthSourceFrame, _sourceFile);
   if (bytes_read < _lengthSourceFrame)
     return true;
-  _inputVideoBuffer.CopyBuffer(_lengthSourceFrame, _sourceBuffer);
+  _inputVideoBuffer.CopyFrame(_lengthSourceFrame, _sourceBuffer);
   _inputVideoBuffer.SetTimeStamp((unsigned int)
       (_encFrameCnt * 9e4 / _inst.maxFramerate));
   _inputVideoBuffer.SetWidth(_inst.width);
   _inputVideoBuffer.SetHeight(_inst.height);
-  webrtc::VideoFrame rawImage;
-  VideoBufferToRawImage(_inputVideoBuffer, rawImage);
   if (feof(_sourceFile) != 0) {
       return true;
   }
   _encodeCompleteTime = 0;
-  _encodeTimes[rawImage.TimeStamp()] = tGetTime();
+  _encodeTimes[_inputVideoBuffer.TimeStamp()] = tGetTime();
 
   webrtc::CodecSpecificInfo* codecSpecificInfo = CreateEncoderSpecificInfo();
   codecSpecificInfo->codecSpecific.VP8.pictureIdRPSI =
@@ -161,7 +159,7 @@ bool VP8RpsTest::EncodeRps(RpsDecodeCompleteCallback* decodeCallback) {
     sli_ = false;
   }
   printf("Encoding: %u\n", _framecnt);
-  int ret = _encoder->Encode(rawImage, codecSpecificInfo, NULL);
+  int ret = _encoder->Encode(_inputVideoBuffer, codecSpecificInfo, NULL);
   if (ret < 0)
     printf("Failed to encode: %u\n", _framecnt);
 
@@ -171,10 +169,11 @@ bool VP8RpsTest::EncodeRps(RpsDecodeCompleteCallback* decodeCallback) {
   }
   if (_encodeCompleteTime > 0) {
       _totalEncodeTime += _encodeCompleteTime -
-          _encodeTimes[rawImage.TimeStamp()];
+          _encodeTimes[_inputVideoBuffer.TimeStamp()];
   }
   else {
-      _totalEncodeTime += tGetTime() - _encodeTimes[rawImage.TimeStamp()];
+      _totalEncodeTime += tGetTime() -
+          _encodeTimes[_inputVideoBuffer.TimeStamp()];
   }
   return false;
 }
@@ -182,7 +181,7 @@ bool VP8RpsTest::EncodeRps(RpsDecodeCompleteCallback* decodeCallback) {
 //#define FRAME_LOSS 1
 
 int VP8RpsTest::Decode(int lossValue) {
-  _sumEncBytes += _frameToDecode->_frame->GetLength();
+  _sumEncBytes += _frameToDecode->_frame->Length();
   webrtc::EncodedImage encodedImage;
   VideoEncodedBufferToEncodedImage(*(_frameToDecode->_frame), encodedImage);
   encodedImage._completeFrame = !lossValue;
@@ -230,9 +229,9 @@ int VP8RpsTest::Decode(int lossValue) {
     }
 #else
     if (_framecnt > 0 && _framecnt % 10 != 0) {
-      if (!CheckIfBitExact(_decodedVideoBuffer.GetBuffer(),
-        _decodedVideoBuffer.GetLength(),
-        decoded_frame2_.GetBuffer(), _decodedVideoBuffer.GetLength())) {
+      if (!CheckIfBitExact(_decodedVideoBuffer.Buffer(),
+        _decodedVideoBuffer.Length(),
+        decoded_frame2_.Buffer(), _decodedVideoBuffer.Length())) {
         fprintf(stderr,"\n\nRPS decoder different from master: %u\n\n",
                 _framecnt);
         return -1;
@@ -257,7 +256,7 @@ VP8RpsTest::CheckIfBitExact(const void* ptrA, unsigned int aLengthBytes,
   return memcmp(ptrA, ptrB, aLengthBytes) == 0;
 }
 
-RpsDecodeCompleteCallback::RpsDecodeCompleteCallback(TestVideoBuffer* buffer)
+RpsDecodeCompleteCallback::RpsDecodeCompleteCallback(webrtc::VideoFrame* buffer)
     : decoded_frame_(buffer),
       decode_complete_(false),
       last_decoded_picture_id_(0),
@@ -266,13 +265,8 @@ RpsDecodeCompleteCallback::RpsDecodeCompleteCallback(TestVideoBuffer* buffer)
 }
 
 WebRtc_Word32 RpsDecodeCompleteCallback::Decoded(webrtc::VideoFrame& image) {
-  decoded_frame_->VerifyAndAllocate(image.Length());
-  decoded_frame_->CopyBuffer(image.Length(), image.Buffer());
-  decoded_frame_->SetWidth(image.Width());
-  decoded_frame_->SetHeight(image.Height());
-  decoded_frame_->SetTimeStamp(image.TimeStamp());
+  return decoded_frame_->CopyFrame(image);
   decode_complete_ = true;
-  return 0;
 }
 
 bool RpsDecodeCompleteCallback::DecodeComplete() {

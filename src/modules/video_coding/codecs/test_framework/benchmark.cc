@@ -283,7 +283,6 @@ Benchmark::PerformNormalTest()
     }
 
     _inputVideoBuffer.Free();
-    //_encodedVideoBuffer.Reset(); ?
     _encodedVideoBuffer.Free();
     _decodedVideoBuffer.Free();
 

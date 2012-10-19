@@ -32,13 +32,13 @@ class VP8RpsTest : public VP8NormalAsyncTest {
       const void *ptrB, unsigned int bLengthBytes);
 
   webrtc::VP8Decoder* decoder2_;
-  TestVideoBuffer decoded_frame2_;
+  webrtc::VideoFrame decoded_frame2_;
   bool sli_;
 };
 
 class RpsDecodeCompleteCallback : public webrtc::DecodedImageCallback {
  public:
-  RpsDecodeCompleteCallback(TestVideoBuffer* buffer);
+  RpsDecodeCompleteCallback(webrtc::VideoFrame* buffer);
   WebRtc_Word32 Decoded(webrtc::VideoFrame& decodedImage);
   bool DecodeComplete();
   WebRtc_Word32 ReceivedDecodedReferenceFrame(const WebRtc_UWord64 picture_id);
@@ -47,7 +47,7 @@ class RpsDecodeCompleteCallback : public webrtc::DecodedImageCallback {
   WebRtc_UWord64 LastDecodedRefPictureId(bool *updated);
 
  private:
-  TestVideoBuffer* decoded_frame_;
+  webrtc::VideoFrame* decoded_frame_;
   bool decode_complete_;
   WebRtc_UWord64 last_decoded_picture_id_;
   WebRtc_UWord64 last_decoded_ref_picture_id_;

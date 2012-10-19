@@ -172,13 +172,15 @@ PacketLossTest::CodecSpecific_InitBitrate()
 int PacketLossTest::DoPacketLoss()
 {
     // Only packet loss for delta frames
-    if (_frameToDecode->_frame->GetLength() == 0 || _frameToDecode->_frame->GetFrameType() != kDeltaFrame)
+    // TODO(mikhal): Identify delta frames
+    // First frame so never a delta frame.
+    if (_frameToDecode->_frame->Length() == 0 || _sumChannelBytes == 0)
     {
-        _sumChannelBytes += _frameToDecode->_frame->GetLength();
+        _sumChannelBytes += _frameToDecode->_frame->Length();
         return 0;
     }
     unsigned char *packet = NULL;
-    TestVideoEncodedBuffer newEncBuf;
+    VideoFrame newEncBuf;
     newEncBuf.VerifyAndAllocate(_lengthSourceFrame);
     _inBufIdx = 0;
     _outBufIdx = 0;
@@ -210,24 +212,24 @@ int PacketLossTest::DoPacketLoss()
     {
         lossResult += (kept==0);	// 2 = all lost = full frame
     }
-    _frameToDecode->_frame->CopyBuffer(newEncBuf.GetLength(), newEncBuf.GetBuffer());
-    _sumChannelBytes += newEncBuf.GetLength();
+    _frameToDecode->_frame->CopyFrame(newEncBuf.Length(), newEncBuf.Buffer());
+    _sumChannelBytes += newEncBuf.Length();
     _totalKept += kept;
     _totalThrown += thrown;
 
     return lossResult;
     //printf("Threw away: %d out of %d packets\n", thrown, thrown + kept);
-    //printf("Encoded left: %d bytes\n", _encodedVideoBuffer.GetLength());
+    //printf("Encoded left: %d bytes\n", _encodedVideoBuffer.Length());
 }
 
 int PacketLossTest::NextPacket(int mtu, unsigned char **pkg)
 {
-    unsigned char *buf = _frameToDecode->_frame->GetBuffer();
+    unsigned char *buf = _frameToDecode->_frame->Buffer();
     *pkg = buf + _inBufIdx;
-    if (static_cast<long>(_frameToDecode->_frame->GetLength()) - _inBufIdx <= mtu)
+    if (static_cast<long>(_frameToDecode->_frame->Length()) - _inBufIdx <= mtu)
     {
-        int size = _frameToDecode->_frame->GetLength() - _inBufIdx;
-        _inBufIdx = _frameToDecode->_frame->GetLength();
+        int size = _frameToDecode->_frame->Length() - _inBufIdx;
+        _inBufIdx = _frameToDecode->_frame->Length();
         return size;
     }
     _inBufIdx += mtu;
@@ -239,14 +241,14 @@ int PacketLossTest::ByteLoss(int size, unsigned char *pkg, int bytesToLose)
     return size;
 }
 
-void PacketLossTest::InsertPacket(TestVideoEncodedBuffer *buf, unsigned char *pkg, int size)
+void PacketLossTest::InsertPacket(VideoFrame *buf, unsigned char *pkg, int size)
 {
-    if (static_cast<long>(buf->GetSize()) - _outBufIdx < size)
+    if (static_cast<long>(buf->Size()) - _outBufIdx < size)
     {
         printf("InsertPacket error!\n");
         return;
     }
-    memcpy(buf->GetBuffer() + _outBufIdx, pkg, size);
-    buf->UpdateLength(buf->GetLength() + size);
+    memcpy(buf->Buffer() + _outBufIdx, pkg, size);
+    buf->SetLength(buf->Length() + size);
     _outBufIdx += size;
 }

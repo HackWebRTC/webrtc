@@ -197,7 +197,7 @@ FrameQueueTuple::~FrameQueueTuple()
     }
 }
 
-void FrameQueue::PushFrame(TestVideoEncodedBuffer *frame,
+void FrameQueue::PushFrame(VideoFrame *frame,
                            webrtc::CodecSpecificInfo* codecSpecificInfo)
 {
     WriteLockScoped cs(_queueRWLock);
@@ -234,7 +234,7 @@ VideoEncodeCompleteCallback::Encoded(EncodedImage& encodedImage,
                                      fragmentation)
 {
     _test.Encoded(encodedImage);
-    TestVideoEncodedBuffer *newBuffer = new TestVideoEncodedBuffer();
+    VideoFrame *newBuffer = new VideoFrame();
     //newBuffer->VerifyAndAllocate(encodedImage._length);
     newBuffer->VerifyAndAllocate(encodedImage._size);
     _encodedBytes += encodedImage._length;
@@ -247,8 +247,8 @@ VideoEncodeCompleteCallback::Encoded(EncodedImage& encodedImage,
     _test.CopyEncodedImage(*newBuffer, encodedImage, codecSpecificInfoCopy);
     if (_encodedFile != NULL)
     {
-      if (fwrite(newBuffer->GetBuffer(), 1, newBuffer->GetLength(),
-                 _encodedFile) !=  newBuffer->GetLength()) {
+      if (fwrite(newBuffer->Buffer(), 1, newBuffer->Length(),
+                 _encodedFile) !=  newBuffer->Length()) {
         return -1;
       }
     }
@@ -410,19 +410,17 @@ NormalAsyncTest::Encode()
 {
     _lengthEncFrame = 0;
     EXPECT_GT(fread(_sourceBuffer, 1, _lengthSourceFrame, _sourceFile), 0u);
-    _inputVideoBuffer.CopyBuffer(_lengthSourceFrame, _sourceBuffer);
+    _inputVideoBuffer.CopyFrame(_lengthSourceFrame, _sourceBuffer);
     _inputVideoBuffer.SetTimeStamp((unsigned int)
         (_encFrameCnt * 9e4 / _inst.maxFramerate));
     _inputVideoBuffer.SetWidth(_inst.width);
     _inputVideoBuffer.SetHeight(_inst.height);
-    VideoFrame rawImage;
-    VideoBufferToRawImage(_inputVideoBuffer, rawImage);
     if (feof(_sourceFile) != 0)
     {
         return true;
     }
     _encodeCompleteTime = 0;
-    _encodeTimes[rawImage.TimeStamp()] = tGetTime();
+    _encodeTimes[_inputVideoBuffer.TimeStamp()] = tGetTime();
     std::vector<VideoFrameType> frame_types(1, kDeltaFrame);
 
     // check SLI queue
@@ -465,7 +463,8 @@ NormalAsyncTest::Encode()
     }
 
     webrtc::CodecSpecificInfo* codecSpecificInfo = CreateEncoderSpecificInfo();
-    int ret = _encoder->Encode(rawImage, codecSpecificInfo, &frame_types);
+    int ret = _encoder->Encode(_inputVideoBuffer,
+                               codecSpecificInfo, &frame_types);
     EXPECT_EQ(ret, WEBRTC_VIDEO_CODEC_OK);
     if (codecSpecificInfo != NULL)
     {
@@ -475,11 +474,12 @@ NormalAsyncTest::Encode()
     if (_encodeCompleteTime > 0)
     {
         _totalEncodeTime += _encodeCompleteTime -
-            _encodeTimes[rawImage.TimeStamp()];
+            _encodeTimes[_inputVideoBuffer.TimeStamp()];
     }
     else
     {
-        _totalEncodeTime += tGetTime() - _encodeTimes[rawImage.TimeStamp()];
+        _totalEncodeTime += tGetTime() -
+            _encodeTimes[_inputVideoBuffer.TimeStamp()];
     }
     assert(ret >= 0);
     return false;
@@ -488,7 +488,7 @@ NormalAsyncTest::Encode()
 int
 NormalAsyncTest::Decode(int lossValue)
 {
-    _sumEncBytes += _frameToDecode->_frame->GetLength();
+    _sumEncBytes += _frameToDecode->_frame->Length();
     EncodedImage encodedImage;
     VideoEncodedBufferToEncodedImage(*(_frameToDecode->_frame), encodedImage);
     encodedImage._completeFrame = !lossValue;
@@ -570,14 +570,14 @@ void NormalAsyncTest::CodecSpecific_InitBitrate()
     }
 }
 
-void NormalAsyncTest::CopyEncodedImage(TestVideoEncodedBuffer& dest,
+void NormalAsyncTest::CopyEncodedImage(VideoFrame& dest,
                                        EncodedImage& src,
                                        void* /*codecSpecificInfo*/) const
 {
-    dest.CopyBuffer(src._length, src._buffer);
-    dest.SetFrameType(src._frameType);
-    dest.SetCaptureWidth((WebRtc_UWord16)src._encodedWidth);
-    dest.SetCaptureHeight((WebRtc_UWord16)src._encodedHeight);
+    dest.CopyFrame(src._length, src._buffer);
+    //dest.SetFrameType(src._frameType);
+    dest.SetWidth((WebRtc_UWord16)src._encodedWidth);
+    dest.SetHeight((WebRtc_UWord16)src._encodedHeight);
     dest.SetTimeStamp(src._timeStamp);
 }
 

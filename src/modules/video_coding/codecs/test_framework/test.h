@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_FRAWEWORK_TEST_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_FRAWEWORK_TEST_H_
 
+#include "modules/interface/module_common_types.h"
 #include "video_codec_interface.h"
-#include "video_buffer.h"
 #include <string>
 #include <fstream>
 #include <cstdlib>
@@ -40,10 +40,8 @@ protected:
     double ActualBitRate(int nFrames);
     virtual bool PacketLoss(double lossRate, int /*thrown*/);
     static double RandUniform() { return (std::rand() + 1.0)/(RAND_MAX + 1.0); }
-    static void VideoBufferToRawImage(TestVideoBuffer& videoBuffer,
-                                      webrtc::VideoFrame &image);
     static void VideoEncodedBufferToEncodedImage(
-        TestVideoEncodedBuffer& videoBuffer,
+        webrtc::VideoFrame& videoBuffer,
         webrtc::EncodedImage &image);
 
     webrtc::VideoEncoder*   _encoder;
@@ -51,9 +49,11 @@ protected:
     WebRtc_UWord32          _bitRate;
     unsigned int            _lengthSourceFrame;
     unsigned char*          _sourceBuffer;
-    TestVideoBuffer         _inputVideoBuffer;
-    TestVideoEncodedBuffer  _encodedVideoBuffer;
-    TestVideoBuffer         _decodedVideoBuffer;
+    webrtc::VideoFrame      _inputVideoBuffer;
+    // TODO(mikhal): For now using VideoFrame for encodedBuffer, should use a
+    // designated class.
+    webrtc::VideoFrame      _encodedVideoBuffer;
+    webrtc::VideoFrame      _decodedVideoBuffer;
     webrtc::VideoCodec      _inst;
     std::fstream*           _log;
     std::string             _inname;

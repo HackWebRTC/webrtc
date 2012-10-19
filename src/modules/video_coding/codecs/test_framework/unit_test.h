@@ -73,7 +73,7 @@ protected:
 class UnitTestEncodeCompleteCallback : public webrtc::EncodedImageCallback
 {
 public:
-    UnitTestEncodeCompleteCallback(TestVideoEncodedBuffer* buffer,
+    UnitTestEncodeCompleteCallback(webrtc::VideoFrame* buffer,
                                    WebRtc_UWord32 decoderSpecificSize = 0,
                                    void* decoderSpecificInfo = NULL) :
       _encodedVideoBuffer(buffer),
@@ -86,7 +86,7 @@ public:
     // Note that this only makes sense if an encode has been completed
     webrtc::VideoFrameType EncodedFrameType() const;
 private:
-    TestVideoEncodedBuffer* _encodedVideoBuffer;
+    webrtc::VideoFrame* _encodedVideoBuffer;
     bool _encodeComplete;
     webrtc::VideoFrameType _encodedFrameType;
 };
@@ -94,12 +94,12 @@ private:
 class UnitTestDecodeCompleteCallback : public webrtc::DecodedImageCallback
 {
 public:
-    UnitTestDecodeCompleteCallback(TestVideoBuffer* buffer) :
+    UnitTestDecodeCompleteCallback(webrtc::VideoFrame* buffer) :
         _decodedVideoBuffer(buffer), _decodeComplete(false) {}
     WebRtc_Word32 Decoded(webrtc::VideoFrame& image);
     bool DecodeComplete();
 private:
-    TestVideoBuffer* _decodedVideoBuffer;
+    webrtc::VideoFrame* _decodedVideoBuffer;
     bool _decodeComplete;
 };
 

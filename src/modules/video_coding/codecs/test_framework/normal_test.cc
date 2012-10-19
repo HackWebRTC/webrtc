@@ -128,10 +128,10 @@ NormalTest::Perform()
     while (!Encode())
     {
         DoPacketLoss();
-        _encodedVideoBuffer.UpdateLength(_encodedVideoBuffer.GetLength());
-        if (fwrite(_encodedVideoBuffer.GetBuffer(), 1,
-                   _encodedVideoBuffer.GetLength(),
-                   _encodedFile) !=  _encodedVideoBuffer.GetLength()) {
+        _encodedVideoBuffer.SetLength(_encodedVideoBuffer.Length());
+        if (fwrite(_encodedVideoBuffer.Buffer(), 1,
+                   _encodedVideoBuffer.Length(),
+                   _encodedFile) !=  _encodedVideoBuffer.Length()) {
           return;
         }
         decodeLength = Decode();
@@ -140,7 +140,7 @@ NormalTest::Perform()
             fprintf(stderr,"\n\nError in decoder: %d\n\n", decodeLength);
             exit(EXIT_FAILURE);
         }
-        if (fwrite(_decodedVideoBuffer.GetBuffer(), 1, decodeLength,
+        if (fwrite(_decodedVideoBuffer.Buffer(), 1, decodeLength,
                    _decodedFile) != static_cast<unsigned int>(decodeLength)) {
           return;
         }
@@ -157,7 +157,7 @@ NormalTest::Perform()
             fprintf(stderr,"\n\nError in decoder: %d\n\n", decodeLength);
             exit(EXIT_FAILURE);
         }
-        if (fwrite(_decodedVideoBuffer.GetBuffer(), 1, decodeLength,
+        if (fwrite(_decodedVideoBuffer.Buffer(), 1, decodeLength,
                    _decodedFile) != static_cast<unsigned int>(decodeLength)) {
           return;
         }
@@ -174,8 +174,6 @@ NormalTest::Perform()
     (*_log) << "Average decode time: " << avgDecTime << " s" << std::endl;
 
     _inputVideoBuffer.Free();
-    _encodedVideoBuffer.Reset();
-    _decodedVideoBuffer.Free();
 
     _encoder->Release();
     _decoder->Release();
@@ -192,7 +190,7 @@ NormalTest::Encode()
     {
         return true;
     }
-    _inputVideoBuffer.CopyBuffer(_lengthSourceFrame, _sourceBuffer);
+    _inputVideoBuffer.CopyFrame(_lengthSourceFrame, _sourceBuffer);
     _inputVideoBuffer.SetTimeStamp(_framecnt);
 
     // This multiple attempt ridiculousness is to accomodate VP7:
@@ -213,8 +211,8 @@ NormalTest::Encode()
 
         endtime = clock()/(double)CLOCKS_PER_SEC;
 
-        _encodedVideoBuffer.SetCaptureHeight(_inst.height);
-        _encodedVideoBuffer.SetCaptureWidth(_inst.width);
+        _encodedVideoBuffer.SetHeight(_inst.height);
+        _encodedVideoBuffer.SetWidth(_inst.width);
         if (_lengthEncFrame < 0)
         {
             (*_log) << "Error in encoder: " << _lengthEncFrame << std::endl;
@@ -256,7 +254,6 @@ NormalTest::Decode(int lossValue)
     {
         return lengthDecFrame;
     }
-    _encodedVideoBuffer.Reset();
-    _encodedVideoBuffer.UpdateLength(0);
+    _encodedVideoBuffer.SetLength(0);
     return lengthDecFrame;
 }
