@@ -122,12 +122,6 @@ class VideoCaptureModule: public RefCountedModule {
 
   virtual WebRtc_Word32 StopCapture() = 0;
 
-  // Send an image when the capture device is not running.
-  virtual WebRtc_Word32 StartSendImage(const VideoFrame& videoFrame,
-                                       WebRtc_Word32 frameRate = 1) = 0;
-
-  virtual WebRtc_Word32 StopSendImage() = 0;
-
   // Returns the name of the device used by this module.
   virtual const char* CurrentDeviceName() const = 0;
 

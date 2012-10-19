@@ -74,8 +74,6 @@ enum ViEErrors {
   kViEFileInvalidFile,                // Can't open the file with provided filename. Is the path and file format correct?
   kViEFileInvalidCapture,             // Can't use ViEPicture. Is the object correct?
   kViEFileSetRenderTimeoutError,      // SetRenderTimeoutImage- Please see log file.
-  kViEFileInvalidCaptureId,           // SetCaptureDeviceImage capture id does not exist.
-  kViEFileSetCaptureImageError,       // SetCaptureDeviceImage error. Please see log file.
   kViEFileSetStartImageError,         // SetRenderStartImage error. Please see log file.
   kViEFileUnknownError,               // An unknown error has occurred. Check the log file.
 

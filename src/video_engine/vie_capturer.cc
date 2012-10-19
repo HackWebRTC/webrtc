@@ -898,9 +898,4 @@ void ViECapturer::OnNoPictureAlarm(const WebRtc_Word32 id,
   observer_->NoPictureAlarm(id, vie_alarm);
 }
 
-WebRtc_Word32 ViECapturer::SetCaptureDeviceImage(
-    const VideoFrame& capture_device_image) {
-  return capture_module_->StartSendImage(capture_device_image, 10);
-}
-
 }  // namespace webrtc

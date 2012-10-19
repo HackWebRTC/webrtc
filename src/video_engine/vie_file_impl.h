@@ -106,10 +106,6 @@ class ViEFileImpl
                                        const char* file_nameUTF8);
   virtual int GetCaptureDeviceSnapshot(const int capture_id,
                                        ViEPicture& picture);
-  virtual int SetCaptureDeviceImage(const int capture_id,
-                                    const char* file_nameUTF8);
-  virtual int SetCaptureDeviceImage(const int capture_id,
-                                    const ViEPicture& picture);
   virtual int SetRenderStartImage(const int video_channel,
                                   const char* file_nameUTF8);
   virtual int SetRenderStartImage(const int video_channel,

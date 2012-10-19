@@ -175,18 +175,6 @@ class WEBRTC_DLLEXPORT ViEFile {
   virtual int GetCaptureDeviceSnapshot(const int capture_id,
                                        ViEPicture& picture) = 0;
 
-  // This function sets a jpg image to show before the first frame is captured
-  // by the capture device. This frame will be encoded and transmitted to a
-  // possible receiver
-  virtual int SetCaptureDeviceImage(const int capture_id,
-                                    const char* file_name_utf8) = 0;
-
-  // This function sets an image to show before the first frame is captured by
-  // the capture device. This frame will be encoded and transmitted to a
-  // possible receiver
-  virtual int SetCaptureDeviceImage(const int capture_id,
-                                    const ViEPicture& picture) = 0;
-
   virtual int FreePicture(ViEPicture& picture) = 0;
 
   // This function sets a jpg image to render before the first received video

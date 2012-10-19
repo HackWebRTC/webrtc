@@ -59,10 +59,6 @@ public:
     virtual WebRtc_Word32 RegisterCaptureCallback(VideoCaptureFeedBack& callBack);
     virtual WebRtc_Word32 DeRegisterCaptureCallback();
 
-    virtual WebRtc_Word32 StartSendImage(const VideoFrame& videoFrame,
-                                         WebRtc_Word32 frameRate = 1);
-    virtual WebRtc_Word32 StopSendImage();
-
     virtual WebRtc_Word32 SetCaptureDelay(WebRtc_Word32 delayMS);
     virtual WebRtc_Word32 CaptureDelay();
     virtual WebRtc_Word32 SetCaptureRotation(VideoCaptureRotation rotation);
@@ -129,9 +125,6 @@ private:
     VideoCaptureDataCallback* _dataCallBack;
     VideoCaptureFeedBack* _captureCallBack;
 
-    VideoFrame _startImage;
-    WebRtc_Word32 _startImageFrameIntervall;
-    TickTime _lastSentStartImageTime; // last time the start image was sent
     TickTime _lastProcessFrameCount;
     TickTime _incomingFrameTimes[kFrameRateCountHistorySize];// timestamp for local captured frames
     VideoRotationMode _rotateFrame; //Set if the frame should be rotated by the capture module.

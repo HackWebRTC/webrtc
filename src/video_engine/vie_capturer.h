@@ -105,9 +105,6 @@ class ViECapturer
   // Information.
   const char* CurrentDeviceName() const;
 
-  // Set device image.
-  WebRtc_Word32 SetCaptureDeviceImage(const VideoFrame& capture_device_image);
-
  protected:
   ViECapturer(int capture_id,
               int engine_id,

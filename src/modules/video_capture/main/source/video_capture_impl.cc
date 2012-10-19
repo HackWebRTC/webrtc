@@ -49,22 +49,11 @@ WebRtc_Word32 VideoCaptureImpl::ChangeUniqueId(const WebRtc_Word32 id)
 WebRtc_Word32 VideoCaptureImpl::TimeUntilNextProcess()
 {
     CriticalSectionScoped cs(&_callBackCs);
-    TickTime timeNow = TickTime::Now();
 
     WebRtc_Word32 timeToNormalProcess = kProcessInterval
         - (WebRtc_Word32)((TickTime::Now() - _lastProcessTime).Milliseconds());
-    WebRtc_Word32 timeToStartImage = timeToNormalProcess;
-    if (_startImageFrameIntervall)
-    {
-        timeToStartImage = _startImageFrameIntervall
-            - (WebRtc_Word32)((timeNow - _lastSentStartImageTime).Milliseconds());
-        if (timeToStartImage < 0)
-        {
-            timeToStartImage = 0;
-        }
-    }
-    return (timeToStartImage < timeToNormalProcess)
-            ? timeToStartImage : timeToNormalProcess;
+
+    return timeToNormalProcess;
 }
 
 // Process any pending tasks such as timeouts
@@ -112,19 +101,6 @@ WebRtc_Word32 VideoCaptureImpl::Process()
 
     _lastProcessFrameCount = _incomingFrameTimes[0];
 
-    // Handle start image frame rates.
-    if (_startImageFrameIntervall
-        && (now - _lastSentStartImageTime).Milliseconds() >= _startImageFrameIntervall)
-    {
-        _lastSentStartImageTime = now;
-        if (_dataCallBack)
-        {
-            _captureFrame.CopyFrame(_startImage);
-            _captureFrame.SetRenderTime(TickTime::MillisecondTimestamp());
-            _dataCallBack->OnIncomingCapturedFrame(_id, _captureFrame,
-                                                   kVideoCodecUnknown);
-        }
-    }
     return 0;
 }
 
@@ -136,8 +112,6 @@ VideoCaptureImpl::VideoCaptureImpl(const WebRtc_Word32 id)
       _lastFrameRateCallbackTime(TickTime::Now()), _frameRateCallBack(false),
       _noPictureAlarmCallBack(false), _captureAlarm(Cleared), _setCaptureDelay(0),
       _dataCallBack(NULL), _captureCallBack(NULL),
-      _startImage(), _startImageFrameIntervall(0),
-      _lastSentStartImageTime(TickTime::Now()),
       _lastProcessFrameCount(TickTime::Now()), _rotateFrame(kRotateNone),
       last_capture_time_(TickTime::MillisecondTimestamp())
 
@@ -210,7 +184,6 @@ WebRtc_Word32 VideoCaptureImpl::CaptureDelay()
 WebRtc_Word32 VideoCaptureImpl::DeliverCapturedFrame(VideoFrame& captureFrame,
     WebRtc_Word64 capture_time, VideoCodecType codec_type) {
   UpdateFrameCount();  // frame count used for local frame rate callback.
-  _startImageFrameIntervall = 0;  // prevent the start image to be displayed.
 
   const bool callOnCaptureDelayChanged = _setCaptureDelay != _captureDelay;
   // Capture delay changed
@@ -246,7 +219,6 @@ WebRtc_Word32 VideoCaptureImpl::DeliverEncodedCapturedFrame(
     VideoFrame& captureFrame, WebRtc_Word64 capture_time,
     VideoCodecType codec_type) {
   UpdateFrameCount();  // frame count used for local frame rate callback.
-  _startImageFrameIntervall = 0;  // prevent the start image to be displayed.
 
   const bool callOnCaptureDelayChanged = _setCaptureDelay != _captureDelay;
   // Capture delay changed
@@ -443,31 +415,6 @@ WebRtc_Word32 VideoCaptureImpl::SetCaptureRotation(VideoCaptureRotation rotation
             _rotateFrame = kRotate270;
             break;
     }
-    return 0;
-}
-
-WebRtc_Word32 VideoCaptureImpl::StartSendImage(const VideoFrame& videoFrame,
-                                                     WebRtc_Word32 frameRate)
-{
-    CriticalSectionScoped cs(&_apiCs);
-    CriticalSectionScoped cs2(&_callBackCs);
-    if (frameRate < 1 || frameRate > kMaxFrameRate)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-                   "StartSendImage Invalid parameter. frameRate %d", (int) frameRate);
-        return -1;;
-    }
-    _startImage.CopyFrame(videoFrame);
-    _startImageFrameIntervall = 1000 / frameRate;
-    _lastSentStartImageTime = TickTime::Now();
-    return 0;
-
-}
-WebRtc_Word32 VideoCaptureImpl::StopSendImage()
-{
-    CriticalSectionScoped cs(&_apiCs);
-    CriticalSectionScoped cs2(&_callBackCs);
-    _startImageFrameIntervall = 0;
     return 0;
 }
 

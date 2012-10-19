@@ -557,19 +557,3 @@ TEST_F(VideoCaptureExternalTest , FrameRate) {
   EXPECT_TRUE(capture_feedback_.frame_rate() >= 25 &&
               capture_feedback_.frame_rate() <= 33);
 }
-
-// Test start image
-TEST_F(VideoCaptureExternalTest , StartImage) {
-  EXPECT_EQ(0, capture_module_->StartSendImage(
-      test_frame_, 10));
-
-  EXPECT_TRUE_WAIT(capture_callback_.incoming_frames() == 5, kTimeOut);
-  EXPECT_EQ(0, capture_module_->StopSendImage());
-
-  SleepMs(200);
-  // Test that no more start images have arrived.
-  EXPECT_TRUE(capture_callback_.incoming_frames() >= 4 &&
-              capture_callback_.incoming_frames() <= 5);
-  EXPECT_TRUE(capture_callback_.CompareLastFrame(test_frame_));
-}
-

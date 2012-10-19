@@ -332,37 +332,6 @@ void ViEAutoTest::ViEFileStandardTest()
 
         AutoTestSleep(TEST_SPACING);
 
-        // Testing: SetCaptureDeviceImage
-        {
-            ViETest::Log("Testing SetCaptureDeviceImage(int, char*)");
-            EXPECT_EQ(0, ptrViECapture->StopCapture(captureId));
-            EXPECT_EQ(0, ptrViEFile->SetCaptureDeviceImage(
-                captureId, captureDeviceImage.c_str()));
-
-            ViETest::Log("you should see the capture device image now");
-            AutoTestSleep(2 * RENDER_TIMEOUT);
-            EXPECT_EQ(0, ptrViECapture->StartCapture(captureId));
-            ViETest::Log("Done\n");
-        }
-
-        AutoTestSleep(TEST_SPACING);
-
-        // Testing: SetCaptureDeviceImage
-        if (FLAGS_include_timing_dependent_tests)
-        {
-            ViETest::Log("Testing SetCaptureDeviceImage(int, ViEPicture)");
-            EXPECT_EQ(0, ptrViECapture->StopCapture(captureId));
-            EXPECT_EQ(0, ptrViEFile->SetCaptureDeviceImage(
-                captureId, capturePicture));
-
-            ViETest::Log("you should see the capture device image now");
-            AutoTestSleep(2 * RENDER_TIMEOUT);
-            EXPECT_EQ(0, ptrViECapture->StartCapture(captureId));
-            ViETest::Log("Done\n");
-        }
-
-        AutoTestSleep(TEST_SPACING);
-
         // testing SetRenderStartImage(videoChannel, renderStartImage);
         if (FLAGS_include_timing_dependent_tests)
         {
