@@ -124,8 +124,9 @@
   },
   'target_defaults': {
     'include_dirs': [
-      # TODO(andrew): we should be able to just use <(webrtc_root) here.
-      '..','../..',
+      # TODO(andrew): Remove '..' when we've added webrtc/ to include paths.
+      '..',
+      '../..',
     ],
     'defines': [
       # TODO(leozwang): Run this as a gclient hook rather than at build-time:

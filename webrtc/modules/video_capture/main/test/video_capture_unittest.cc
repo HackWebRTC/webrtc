@@ -10,17 +10,15 @@
 
 #include <stdio.h>
 
-
-
+#include "gtest/gtest.h"
+#include "modules/utility/interface/process_thread.h"
+#include "modules/video_capture/main/interface/video_capture.h"
+#include "modules/video_capture/main/interface/video_capture_factory.h"
 #include "system_wrappers/interface/critical_section_wrapper.h"
 #include "system_wrappers/interface/scoped_ptr.h"
 #include "system_wrappers/interface/scoped_refptr.h"
 #include "system_wrappers/interface/sleep.h"
 #include "system_wrappers/interface/tick_util.h"
-#include "testing/gtest/include/gtest/gtest.h"
-#include "modules/utility/interface/process_thread.h"
-#include "modules/video_capture/main/interface/video_capture.h"
-#include "modules/video_capture/main/interface/video_capture_factory.h"
 
 using webrtc::CriticalSectionWrapper;
 using webrtc::CriticalSectionScoped;
