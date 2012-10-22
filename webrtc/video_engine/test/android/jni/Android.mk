@@ -15,199 +15,199 @@ MY_LIBS_PATH := ../../../../../out/Debug/obj.target
 include $(CLEAR_VARS)
 LOCAL_MODULE := libvoice_engine_core
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/voice_engine/libvoice_engine_core.a
+    $(MY_LIBS_PATH)/webrtc/voice_engine/libvoice_engine_core.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libvideo_engine_core
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/video_engine/libvideo_engine_core.a
+    $(MY_LIBS_PATH)/webrtc/video_engine/libvideo_engine_core.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libvideo_processing
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libvideo_processing.a
+    $(MY_LIBS_PATH)/webrtc/modules/libvideo_processing.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libwebrtc_video_coding
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libwebrtc_video_coding.a
+    $(MY_LIBS_PATH)/webrtc/modules/libwebrtc_video_coding.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libvideo_render_module
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libvideo_render_module.a
+    $(MY_LIBS_PATH)/webrtc/modules/libvideo_render_module.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libvideo_capture_module
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libvideo_capture_module.a
+    $(MY_LIBS_PATH)/webrtc/modules/libvideo_capture_module.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libaudio_coding_module
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libaudio_coding_module.a
+    $(MY_LIBS_PATH)/webrtc/modules/libaudio_coding_module.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libaudio_processing
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libaudio_processing.a
+    $(MY_LIBS_PATH)/webrtc/modules/libaudio_processing.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libaudio_processing_neon
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libaudio_processing_neon.a
+    $(MY_LIBS_PATH)/webrtc/modules/libaudio_processing_neon.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libPCM16B
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libPCM16B.a
+    $(MY_LIBS_PATH)/webrtc/modules/libPCM16B.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libCNG
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libCNG.a
+    $(MY_LIBS_PATH)/webrtc/modules/libCNG.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libNetEq
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libNetEq.a
+    $(MY_LIBS_PATH)/webrtc/modules/libNetEq.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libG722
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libG722.a
+    $(MY_LIBS_PATH)/webrtc/modules/libG722.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libiSAC
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libiSAC.a
+    $(MY_LIBS_PATH)/webrtc/modules/libiSAC.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libG711
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libG711.a
+    $(MY_LIBS_PATH)/webrtc/modules/libG711.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libiLBC
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libiLBC.a
+    $(MY_LIBS_PATH)/webrtc/modules/libiLBC.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libiSACFix
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libiSACFix.a
+    $(MY_LIBS_PATH)/webrtc/modules/libiSACFix.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libisac_neon
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libisac_neon.a
+    $(MY_LIBS_PATH)/webrtc/modules/libisac_neon.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libvad
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/common_audio/libvad.a
+    $(MY_LIBS_PATH)/webrtc/common_audio/libvad.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libbitrate_controller
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libbitrate_controller.a
+    $(MY_LIBS_PATH)/webrtc/modules/libbitrate_controller.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libresampler
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/common_audio/libresampler.a
+    $(MY_LIBS_PATH)/webrtc/common_audio/libresampler.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libsignal_processing
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/common_audio/libsignal_processing.a
+    $(MY_LIBS_PATH)/webrtc/common_audio/libsignal_processing.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libsignal_processing_neon
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/common_audio/libsignal_processing_neon.a
+    $(MY_LIBS_PATH)/webrtc/common_audio/libsignal_processing_neon.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libcommon_video
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/common_video/libcommon_video.a
+    $(MY_LIBS_PATH)/webrtc/common_video/libcommon_video.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libsystem_wrappers
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/system_wrappers/source/libsystem_wrappers.a
+    $(MY_LIBS_PATH)/webrtc/system_wrappers/source/libsystem_wrappers.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libcpu_features_android
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/system_wrappers/source/libcpu_features_android.a
+    $(MY_LIBS_PATH)/webrtc/system_wrappers/source/libcpu_features_android.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libaudio_device
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libaudio_device.a
+    $(MY_LIBS_PATH)/webrtc/modules/libaudio_device.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libremote_bitrate_estimator
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libremote_bitrate_estimator.a
+    $(MY_LIBS_PATH)/webrtc/modules/libremote_bitrate_estimator.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := librtp_rtcp
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/librtp_rtcp.a
+    $(MY_LIBS_PATH)/webrtc/modules/librtp_rtcp.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libmedia_file
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libmedia_file.a
+    $(MY_LIBS_PATH)/webrtc/modules/libmedia_file.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libudp_transport
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libudp_transport.a
+    $(MY_LIBS_PATH)/webrtc/modules/libudp_transport.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libwebrtc_utility
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libwebrtc_utility.a
+    $(MY_LIBS_PATH)/webrtc/modules/libwebrtc_utility.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libaudio_conference_mixer
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libaudio_conference_mixer.a
+    $(MY_LIBS_PATH)/webrtc/modules/libaudio_conference_mixer.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
@@ -219,13 +219,13 @@ include $(PREBUILT_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE := libwebrtc_i420
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libwebrtc_i420.a
+    $(MY_LIBS_PATH)/webrtc/modules/libwebrtc_i420.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libwebrtc_vp8
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/video_coding/codecs/vp8/libwebrtc_vp8.a
+    $(MY_LIBS_PATH)/webrtc/modules/video_coding/codecs/vp8/libwebrtc_vp8.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
@@ -237,7 +237,7 @@ include $(PREBUILT_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE := libaudioproc_debug_proto
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/src/modules/libaudioproc_debug_proto.a
+    $(MY_LIBS_PATH)/webrtc/modules/libaudioproc_debug_proto.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
