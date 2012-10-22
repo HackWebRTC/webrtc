@@ -104,11 +104,11 @@ deps_os = {
 
 hooks = [
   {
-    # Create a supplement.gypi file under trunk/src.  This file will be picked
+    # Create a supplement.gypi file under trunk/webrtc. This file will be picked
     # up by gyp and used to enable the standalone build.
     "pattern": ".",
     "action": ["python", Var("root_dir") + "/tools/create_supplement_gypi.py",
-               Var("root_dir") + "/src/supplement.gypi"],
+               Var("root_dir") + "/webrtc/supplement.gypi"],
   },
   {
     # Pull clang on mac. If nothing changed, or on non-mac platforms, this takes

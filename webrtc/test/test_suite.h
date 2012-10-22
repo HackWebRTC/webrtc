@@ -17,7 +17,7 @@
 // instantiate this class in your main function and call its Run method to run
 // any gtest based tests that are linked into your executable.
 
-#include "src/system_wrappers/interface/constructor_magic.h"
+#include "system_wrappers/interface/constructor_magic.h"
 
 namespace webrtc {
 namespace test {

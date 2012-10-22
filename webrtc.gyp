@@ -7,15 +7,15 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'includes': [ 'src/build/common.gypi', ],
+  'includes': ['webrtc/build/common.gypi',],
   'variables': {
     'webrtc_all_dependencies': [
-      'src/common_audio/common_audio.gyp:*',
-      'src/common_video/common_video.gyp:*',
-      'src/modules/modules.gyp:*',
-      'src/system_wrappers/source/system_wrappers.gyp:*',
-      'src/video_engine/video_engine.gyp:*',
-      'src/voice_engine/voice_engine.gyp:*',
+      'webrtc/common_audio/common_audio.gyp:*',
+      'webrtc/common_video/common_video.gyp:*',
+      'webrtc/modules/modules.gyp:*',
+      'webrtc/system_wrappers/source/system_wrappers.gyp:*',
+      'webrtc/video_engine/video_engine.gyp:*',
+      'webrtc/voice_engine/voice_engine.gyp:*',
       '<(webrtc_vp8_dir)/vp8.gyp:*',
     ],
   },
@@ -29,9 +29,9 @@
       'conditions': [
         ['include_tests==1', {
           'dependencies': [
-            'src/test/metrics.gyp:*',
-            'src/test/test.gyp:*',
-            'src/tools/tools.gyp:*',
+            'webrtc/test/metrics.gyp:*',
+            'webrtc/test/test.gyp:*',
+            'webrtc/tools/tools.gyp:*',
             'tools/e2e_quality/e2e_quality.gyp:*',
           ],
         }],

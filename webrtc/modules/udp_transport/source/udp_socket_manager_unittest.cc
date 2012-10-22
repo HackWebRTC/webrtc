@@ -18,7 +18,7 @@
 #include "udp_socket_wrapper.h"
 #include "udp_socket_manager_wrapper.h"
 #include "gtest/gtest.h"
-#include "src/system_wrappers/interface/trace.h"
+#include "system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
