@@ -134,7 +134,7 @@ void ViEAutoTest::ViEFileStandardTest()
         webrtc::CodecInst audioCodec2;
 
         //***************************************************************
-        //	Engine ready. Begin testing class
+        // Engine ready. Begin testing class
         //***************************************************************
 
         // Call started
@@ -147,7 +147,7 @@ void ViEAutoTest::ViEFileStandardTest()
         const int VIDEO_LENGTH = 5000;
 
         const std::string root = webrtc::test::ProjectRootPath() +
-            "src/video_engine/test/auto_test/media/";
+            "webrtc/video_engine/test/auto_test/media/";
         const std::string renderStartImage = root + "renderStartImage.jpg";
         const std::string captureDeviceImage = root + "captureDeviceImage.jpg";
         const std::string renderTimeoutFile = root + "renderTimeoutImage.jpg";
