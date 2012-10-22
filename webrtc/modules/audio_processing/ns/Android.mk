@@ -61,7 +61,7 @@ GEN := $(LOCAL_PATH)/nsx_core_neon_offsets.h
 
 # Generate a header file nsx_core_neon_offsets.h which will be included in
 # assembly file nsx_core_neon.S, from file nsx_core_neon_offsets.c.
-$(GEN): $(LOCAL_PATH)/../../../../src/build/generate_asm_header.py \
+$(GEN): $(LOCAL_PATH)/../../../build/generate_asm_header.py \
             $(intermediates)/nsx_core_neon_offsets.S
 	@python $^ $@ offset_nsx_
 

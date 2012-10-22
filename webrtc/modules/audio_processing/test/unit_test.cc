@@ -23,7 +23,7 @@
 #include "thread_wrapper.h"
 #include "trace.h"
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
-#include "external/webrtc/src/modules/audio_processing/test/unittest.pb.h"
+#include "external/webrtc/webrtc/modules/audio_processing/test/unittest.pb.h"
 #else
 #include "webrtc/audio_processing/unittest.pb.h"
 #endif

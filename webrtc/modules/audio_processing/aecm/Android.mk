@@ -60,7 +60,7 @@ GEN := $(LOCAL_PATH)/aecm_core_neon_offsets.h
 
 # Generate a header file aecm_core_neon_offsets.h which will be included in
 # assembly file aecm_core_neon.S, from file aecm_core_neon_offsets.c.
-$(GEN): $(LOCAL_PATH)/../../../../src/build/generate_asm_header.py \
+$(GEN): $(LOCAL_PATH)/../../../build/generate_asm_header.py \
             $(intermediates)/aecm_core_neon_offsets.S
 	@python $^ $@ offset_aecm_
 

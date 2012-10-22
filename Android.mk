@@ -9,16 +9,16 @@
 MY_WEBRTC_ROOT_PATH := $(call my-dir)
 
 # voice
-include $(MY_WEBRTC_ROOT_PATH)/src/common_audio/signal_processing/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/common_audio/vad/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/aec/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/aecm/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/agc/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/ns/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/utility/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/utility/source/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/system_wrappers/source/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/webrtc/common_audio/signal_processing/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/webrtc/common_audio/vad/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/webrtc/modules/audio_processing/aec/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/webrtc/modules/audio_processing/aecm/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/webrtc/modules/audio_processing/agc/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/webrtc/modules/audio_processing/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/webrtc/modules/audio_processing/ns/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/webrtc/modules/audio_processing/utility/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/webrtc/modules/utility/source/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/webrtc/system_wrappers/source/Android.mk
 
 # build .so
 LOCAL_PATH := $(call my-dir)
