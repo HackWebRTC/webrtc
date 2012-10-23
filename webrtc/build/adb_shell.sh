@@ -15,7 +15,7 @@
 adb_shell () {
   local RET ADB_LOG
   ADB_LOG=$(mktemp "${TMPDIR:-/tmp}/adb-XXXXXXXX")
-  adb shell "$@" ";" echo \$? | tee "$ADB_LOG"
+  adb "$1" shell "$@" ";" echo \$? | tee "$ADB_LOG"
   sed -i -e 's![[:cntrl:]]!!g' "$ADB_LOG"  # Remove \r.
   RET=$(sed -e '$!d' "$ADB_LOG")           # Last line contains status code.
   rm -f "$ADB_LOG"
