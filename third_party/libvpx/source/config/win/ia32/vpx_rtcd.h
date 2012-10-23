@@ -129,10 +129,9 @@ void vp8_mbpost_proc_across_ip_c(unsigned char *dst, int pitch, int rows, int co
 void vp8_mbpost_proc_across_ip_xmm(unsigned char *dst, int pitch, int rows, int cols,int flimit);
 RTCD_EXTERN void (*vp8_mbpost_proc_across_ip)(unsigned char *dst, int pitch, int rows, int cols,int flimit);
 
-void vp8_post_proc_down_and_across_c(unsigned char *src, unsigned char *dst, int src_pitch, int dst_pitch, int rows, int cols, int flimit);
-void vp8_post_proc_down_and_across_mmx(unsigned char *src, unsigned char *dst, int src_pitch, int dst_pitch, int rows, int cols, int flimit);
-void vp8_post_proc_down_and_across_xmm(unsigned char *src, unsigned char *dst, int src_pitch, int dst_pitch, int rows, int cols, int flimit);
-RTCD_EXTERN void (*vp8_post_proc_down_and_across)(unsigned char *src, unsigned char *dst, int src_pitch, int dst_pitch, int rows, int cols, int flimit);
+void vp8_post_proc_down_and_across_mb_row_c(unsigned char *src, unsigned char *dst, int src_pitch, int dst_pitch, int cols, unsigned char *flimits, int size);
+void vp8_post_proc_down_and_across_mb_row_sse2(unsigned char *src, unsigned char *dst, int src_pitch, int dst_pitch, int cols, unsigned char *flimits, int size);
+RTCD_EXTERN void (*vp8_post_proc_down_and_across_mb_row)(unsigned char *src, unsigned char *dst, int src_pitch, int dst_pitch, int cols, unsigned char *flimits, int size);
 
 void vp8_plane_add_noise_c(unsigned char *s, char *noise, char blackclamp[16], char whiteclamp[16], char bothclamp[16], unsigned int w, unsigned int h, int pitch);
 void vp8_plane_add_noise_mmx(unsigned char *s, char *noise, char blackclamp[16], char whiteclamp[16], char bothclamp[16], unsigned int w, unsigned int h, int pitch);
@@ -638,9 +637,8 @@ static void setup_rtcd_internal(void)
     vp8_mbpost_proc_across_ip = vp8_mbpost_proc_across_ip_c;
     if (flags & HAS_SSE2) vp8_mbpost_proc_across_ip = vp8_mbpost_proc_across_ip_xmm;
 
-    vp8_post_proc_down_and_across = vp8_post_proc_down_and_across_c;
-    if (flags & HAS_MMX) vp8_post_proc_down_and_across = vp8_post_proc_down_and_across_mmx;
-    if (flags & HAS_SSE2) vp8_post_proc_down_and_across = vp8_post_proc_down_and_across_xmm;
+    vp8_post_proc_down_and_across_mb_row = vp8_post_proc_down_and_across_mb_row_c;
+    if (flags & HAS_SSE2) vp8_post_proc_down_and_across_mb_row = vp8_post_proc_down_and_across_mb_row_sse2;
 
     vp8_plane_add_noise = vp8_plane_add_noise_c;
     if (flags & HAS_MMX) vp8_plane_add_noise = vp8_plane_add_noise_mmx;
