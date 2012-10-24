@@ -33,10 +33,10 @@ VideoProcessingModuleTest::VideoProcessingModuleTest() :
   _vpm(NULL),
   _sourceFile(NULL),
   _width(352),
-  _half_width(_width / 2),
+  _half_width((_width + 1) / 2),
   _height(288),
   _size_y(_width * _height),
-  _size_uv(_half_width * _height /2),
+  _size_uv(_half_width * ((_height + 1) / 2)),
   _frame_length(CalcBufferSize(kI420, _width, _height))
 {
 }
@@ -72,6 +72,9 @@ void VideoProcessingModuleTest::TearDown()
 TEST_F(VideoProcessingModuleTest, HandleNullBuffer)
 {
   VideoProcessingModule::FrameStats stats;
+  memset(_videoFrame.buffer(kYPlane), 0, _size_y);
+  memset(_videoFrame.buffer(kUPlane), 0, _size_uv);
+  memset(_videoFrame.buffer(kVPlane), 0, _size_uv);
   ASSERT_EQ(0, _vpm->GetFrameStats(&stats, _videoFrame));
   // Video frame with unallocated buffer.
   I420VideoFrame videoFrame;
