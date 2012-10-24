@@ -11,6 +11,15 @@
     '../../../../build/common.gypi',
     '../test_framework/test_framework.gypi'
   ],
+  'variables': {
+    'conditions': [
+      ['build_with_chromium==1', {
+        'use_temporal_layers%': 0,
+      }, {
+        'use_temporal_layers%': 1,
+      }],
+    ],
+  },
   'targets': [
     {
       'target_name': 'webrtc_vp8',
@@ -42,6 +51,8 @@
           'defines': [
             'WEBRTC_LIBVPX_VERSION=971' # Cayuga
           ],
+        }],
+        ['use_temporal_layers==1', {
           'sources': [
             'temporal_layers.h',
             'temporal_layers.cc',
