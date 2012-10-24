@@ -44,10 +44,10 @@ class Plane {
   int allocated_size() const {return allocated_size_;}
 
   // Set actual size.
-  void ResetSize() {plane_size_ = 0;};
+  void ResetSize() {plane_size_ = 0;}
 
   // Return true is plane size is zero, false if not.
-  bool IsZeroSize() {return plane_size_ == 0;};
+  bool IsZeroSize() const {return plane_size_ == 0;}
 
   // Get stride value.
   int stride() const {return stride_;}

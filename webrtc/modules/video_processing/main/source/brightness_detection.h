@@ -29,7 +29,7 @@ public:
 
     void Reset();
 
-    WebRtc_Word32 ProcessFrame(const VideoFrame& frame,
+    WebRtc_Word32 ProcessFrame(const I420VideoFrame& frame,
                                const VideoProcessingModule::FrameStats& stats);
 
 private:

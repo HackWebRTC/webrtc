@@ -44,11 +44,11 @@ VideoX11Channel::~VideoX11Channel()
 }
 
 WebRtc_Word32 VideoX11Channel::RenderFrame(const WebRtc_UWord32 streamId,
-                                           VideoFrame& videoFrame) {
+                                           I420VideoFrame& videoFrame) {
   CriticalSectionScoped cs(&_crit);
-  if (_width != (WebRtc_Word32) videoFrame.Width() || _height
-      != (WebRtc_Word32) videoFrame.Height()) {
-      if (FrameSizeChange(videoFrame.Width(), videoFrame.Height(), 1) == -1) {
+  if (_width != videoFrame.width() || _height
+      != videoFrame.height()) {
+      if (FrameSizeChange(videoFrame.width(), videoFrame.height(), 1) == -1) {
         return -1;
     }
   }
@@ -72,7 +72,7 @@ WebRtc_Word32 VideoX11Channel::FrameSizeChange(WebRtc_Word32 width,
     return 0;
 }
 
-WebRtc_Word32 VideoX11Channel::DeliverFrame(const VideoFrame& videoFrame) {
+WebRtc_Word32 VideoX11Channel::DeliverFrame(const I420VideoFrame& videoFrame) {
   CriticalSectionScoped cs(&_crit);
   if (!_prepared) {
     return 0;
@@ -82,8 +82,7 @@ WebRtc_Word32 VideoX11Channel::DeliverFrame(const VideoFrame& videoFrame) {
     return -1;
   }
 
-  // convert to RGB32, setting stride = width.
-  ConvertFromI420(videoFrame, _width, kARGB, 0, _buffer);
+  ConvertFromI420(videoFrame, kARGB, 0, _buffer);
 
   // Put image in window.
   XShmPutImage(_display, _window, _gc, _image, 0, 0, _xPos, _yPos, _width,

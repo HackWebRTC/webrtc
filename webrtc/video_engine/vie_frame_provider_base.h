@@ -21,14 +21,14 @@ namespace webrtc {
 
 class CriticalSectionWrapper;
 class VideoEncoder;
-class VideoFrame;
+class I420VideoFrame;
 
 // ViEFrameCallback shall be implemented by all classes receiving frames from a
 // frame provider.
 class ViEFrameCallback {
  public:
   virtual void DeliverFrame(int id,
-                            VideoFrame* video_frame,
+                            I420VideoFrame* video_frame,
                             int num_csrcs = 0,
                             const WebRtc_UWord32 CSRC[kRtpCsrcSize] = NULL) = 0;
 
@@ -75,7 +75,7 @@ class ViEFrameProviderBase {
   virtual int FrameCallbackChanged() = 0;
 
  protected:
-  void DeliverFrame(VideoFrame* video_frame,
+  void DeliverFrame(I420VideoFrame* video_frame,
                     int num_csrcs = 0,
                     const WebRtc_UWord32 CSRC[kRtpCsrcSize] = NULL);
   void SetFrameDelay(int frame_delay);
@@ -93,7 +93,7 @@ class ViEFrameProviderBase {
   scoped_ptr<CriticalSectionWrapper> provider_cs_;
 
  private:
-  scoped_ptr<VideoFrame> extra_frame_;
+  scoped_ptr<I420VideoFrame> extra_frame_;
   int frame_delay_;
 };
 

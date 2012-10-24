@@ -142,7 +142,7 @@ public:
         _decodedFile(decodedFile), _decodedBytes(0) {}
     virtual ~VCMDecodeCompleteCallback() {}
     // Write decoded frame into file
-    WebRtc_Word32 FrameToRender(webrtc::VideoFrame& videoFrame);
+    WebRtc_Word32 FrameToRender(webrtc::I420VideoFrame& videoFrame);
     WebRtc_Word32 DecodedBytes();
 private:
     FILE*               _decodedFile;

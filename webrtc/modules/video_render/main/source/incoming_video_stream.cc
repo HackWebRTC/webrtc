@@ -89,11 +89,11 @@ VideoRenderCallback* IncomingVideoStream::ModuleCallback() {
 }
 
 WebRtc_Word32 IncomingVideoStream::RenderFrame(const WebRtc_UWord32 stream_id,
-                                               VideoFrame& video_frame) {
+                                               I420VideoFrame& video_frame) {
   CriticalSectionScoped csS(&stream_critsect_);
   WEBRTC_TRACE(kTraceStream, kTraceVideoRenderer, module_id_,
                "%s for stream %d, render time: %u", __FUNCTION__, stream_id_,
-               video_frame.RenderTimeMs());
+               video_frame.render_time_ms());
 
   if (!running_) {
     WEBRTC_TRACE(kTraceStream, kTraceVideoRenderer, module_id_,
@@ -102,22 +102,20 @@ WebRtc_Word32 IncomingVideoStream::RenderFrame(const WebRtc_UWord32 stream_id,
   }
 
   if (true == mirror_frames_enabled_) {
-    transformed_video_frame_.VerifyAndAllocate(video_frame.Length());
+    transformed_video_frame_.CreateEmptyFrame(video_frame.width(),
+                                              video_frame.height(),
+                                              video_frame.stride(kYPlane),
+                                              video_frame.stride(kUPlane),
+                                              video_frame.stride(kVPlane));
     if (mirroring_.mirror_x_axis) {
-      transformed_video_frame_.SetLength(video_frame.Length());
-      transformed_video_frame_.SetWidth(video_frame.Width());
-      transformed_video_frame_.SetHeight(video_frame.Height());
       MirrorI420UpDown(&video_frame,
                        &transformed_video_frame_);
-      video_frame.SwapFrame(transformed_video_frame_);
+      video_frame.SwapFrame(&transformed_video_frame_);
     }
     if (mirroring_.mirror_y_axis) {
-      transformed_video_frame_.SetLength(video_frame.Length());
-      transformed_video_frame_.SetWidth(video_frame.Width());
-      transformed_video_frame_.SetHeight(video_frame.Height());
       MirrorI420LeftRight(&video_frame,
                           &transformed_video_frame_);
-      video_frame.SwapFrame(transformed_video_frame_);
+      video_frame.SwapFrame(&transformed_video_frame_);
     }
   }
 
@@ -141,13 +139,13 @@ WebRtc_Word32 IncomingVideoStream::RenderFrame(const WebRtc_UWord32 stream_id,
 }
 
 WebRtc_Word32 IncomingVideoStream::SetStartImage(
-    const VideoFrame& video_frame) {
+    const I420VideoFrame& video_frame) {
   CriticalSectionScoped csS(&thread_critsect_);
   return start_image_.CopyFrame(video_frame);
 }
 
 WebRtc_Word32 IncomingVideoStream::SetTimeoutImage(
-    const VideoFrame& video_frame, const WebRtc_UWord32 timeout) {
+    const I420VideoFrame& video_frame, const WebRtc_UWord32 timeout) {
   CriticalSectionScoped csS(&thread_critsect_);
   timeout_time_ = timeout;
   return timeout_image_.CopyFrame(video_frame);
@@ -300,7 +298,7 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
     }
 
     thread_critsect_.Enter();
-    VideoFrame* frame_to_render = NULL;
+    I420VideoFrame* frame_to_render = NULL;
 
     // Get a new frame to render and the time for the frame after this one.
     buffer_critsect_.Enter();
@@ -316,13 +314,13 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
 
     if (!frame_to_render) {
       if (render_callback_) {
-        if (last_rendered_frame_.RenderTimeMs() == 0 &&
-            start_image_.Size()) {
+        if (last_rendered_frame_.render_time_ms() == 0 &&
+            !start_image_.IsZeroSize()) {
           // We have not rendered anything and have a start image.
           temp_frame_.CopyFrame(start_image_);
           render_callback_->RenderFrame(stream_id_, temp_frame_);
-        } else if (timeout_image_.Size() &&
-                   last_rendered_frame_.RenderTimeMs() + timeout_time_ <
+        } else if (!timeout_image_.IsZeroSize() &&
+                   last_rendered_frame_.render_time_ms() + timeout_time_ <
                        TickTime::MillisecondTimestamp()) {
           // Render a timeout image.
           temp_frame_.CopyFrame(timeout_image_);
@@ -339,13 +337,13 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
     if (external_callback_) {
       WEBRTC_TRACE(kTraceStream, kTraceVideoRenderer, module_id_,
                    "%s: executing external renderer callback to deliver frame",
-                   __FUNCTION__, frame_to_render->RenderTimeMs());
+                   __FUNCTION__, frame_to_render->render_time_ms());
       external_callback_->RenderFrame(stream_id_, *frame_to_render);
     } else {
       if (render_callback_) {
         WEBRTC_TRACE(kTraceStream, kTraceVideoRenderer, module_id_,
                      "%s: Render frame, time: ", __FUNCTION__,
-                     frame_to_render->RenderTimeMs());
+                     frame_to_render->render_time_ms());
         render_callback_->RenderFrame(stream_id_, *frame_to_render);
       }
     }
@@ -356,7 +354,7 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
     // We're done with this frame, delete it.
     if (frame_to_render) {
       CriticalSectionScoped cs(&buffer_critsect_);
-      last_rendered_frame_.SwapFrame(*frame_to_render);
+      last_rendered_frame_.SwapFrame(frame_to_render);
       render_buffers_.ReturnFrame(frame_to_render);
     }
   }
@@ -364,7 +362,7 @@ bool IncomingVideoStream::IncomingVideoStreamProcess() {
 }
 
 WebRtc_Word32 IncomingVideoStream::GetLastRenderedFrame(
-    VideoFrame& video_frame) const {
+    I420VideoFrame& video_frame) const {
   CriticalSectionScoped cs(&buffer_critsect_);
   return video_frame.CopyFrame(last_rendered_frame_);
 }

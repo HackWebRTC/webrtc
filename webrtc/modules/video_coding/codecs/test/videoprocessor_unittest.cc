@@ -64,7 +64,7 @@ class VideoProcessorTest: public testing::Test {
     EXPECT_CALL(frame_reader_mock_, NumberOfFrames())
       .WillOnce(Return(1));
     EXPECT_CALL(frame_reader_mock_, FrameLength())
-      .WillOnce(Return(150000));
+      .WillOnce(Return(152064));
   }
 };
 

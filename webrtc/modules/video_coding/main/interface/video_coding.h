@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_INTERFACE_VIDEO_CODING_H_
 #define WEBRTC_MODULES_INTERFACE_VIDEO_CODING_H_
 
+#include "common_video/interface/i420_video_frame.h"
 #include "modules/interface/module.h"
 #include "modules/interface/module_common_types.h"
 #include "modules/video_coding/main/interface/video_coding_defines.h"
@@ -252,7 +253,7 @@ public:
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
     virtual WebRtc_Word32 AddVideoFrame(
-        const VideoFrame& videoFrame,
+        const I420VideoFrame& videoFrame,
         const VideoContentMetrics* contentMetrics = NULL,
         const CodecSpecificInfo* codecSpecificInfo = NULL) = 0;
 

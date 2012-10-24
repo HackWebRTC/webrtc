@@ -119,7 +119,7 @@ WebRtc_Word32 TbI420Encoder::InitEncode(const webrtc::VideoCodec* inst,
 }
 
 WebRtc_Word32 TbI420Encoder::Encode(
-    const webrtc::VideoFrame& inputImage,
+    const webrtc::I420VideoFrame& inputImage,
     const webrtc::CodecSpecificInfo* /*codecSpecificInfo*/,
     const std::vector<webrtc::VideoFrameType>* /*frameTypes*/)
 {
@@ -134,10 +134,13 @@ WebRtc_Word32 TbI420Encoder::Encode(
     }
 
     _encodedImage._frameType = webrtc::kKeyFrame; // no coding
-    _encodedImage._timeStamp = inputImage.TimeStamp();
-    _encodedImage._encodedHeight = inputImage.Height();
-    _encodedImage._encodedWidth = inputImage.Width();
-    if (inputImage.Length() > _encodedImage._size)
+    _encodedImage._timeStamp = inputImage.timestamp();
+    _encodedImage._encodedHeight = inputImage.height();
+    _encodedImage._encodedWidth = inputImage.width();
+    unsigned int reqSize = webrtc::CalcBufferSize(webrtc::kI420,
+                                                  _encodedImage._encodedWidth,
+                                                  _encodedImage._encodedHeight);
+    if (reqSize > _encodedImage._size)
     {
 
         // allocating encoded memory
@@ -147,19 +150,20 @@ WebRtc_Word32 TbI420Encoder::Encode(
             _encodedImage._buffer = NULL;
             _encodedImage._size = 0;
         }
-        const WebRtc_UWord32 newSize = (3 * _encodedImage._encodedWidth
-            * _encodedImage._encodedHeight) >> 1;
-        WebRtc_UWord8* newBuffer = new WebRtc_UWord8[newSize];
+        WebRtc_UWord8* newBuffer = new WebRtc_UWord8[reqSize];
         if (newBuffer == NULL)
         {
             return WEBRTC_VIDEO_CODEC_MEMORY;
         }
-        _encodedImage._size = newSize;
+        _encodedImage._size = reqSize;
         _encodedImage._buffer = newBuffer;
     }
-    assert(_encodedImage._size >= inputImage.Length());
-    memcpy(_encodedImage._buffer, inputImage.Buffer(), inputImage.Length());
-    _encodedImage._length = inputImage.Length();
+    if (ExtractBuffer(inputImage, _encodedImage._size,
+                      _encodedImage._buffer) < 0) {
+      return -1;
+    }
+
+    _encodedImage._length = reqSize;
     _encodedCompleteCallback->Encoded(_encodedImage);
     return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -257,16 +261,18 @@ WebRtc_Word32 TbI420Decoder::Decode(
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
     }
 
-    // Allocate memory for decoded image.
-    const WebRtc_UWord32 newSize = webrtc::CalcBufferSize(webrtc::kI420,
-                                                          _width, _height);
-    _decodedImage.VerifyAndAllocate(newSize);
-
-    // Set decoded image parameters.
-    _decodedImage.SetHeight(_height);
-    _decodedImage.SetWidth(_width);
-    _decodedImage.SetTimeStamp(inputImage._timeStamp);
-    _decodedImage.CopyFrame(inputImage._length, inputImage._buffer);
+    int size_y = _width * _height;
+    int size_uv = ((_width + 1 ) / 2) * ((_height + 1) / 2);
+    int ret = _decodedImage.CreateFrame(size_y, inputImage._buffer,
+                                        size_uv, inputImage._buffer + size_y,
+                                        size_uv, inputImage._buffer + size_y +
+                                        size_uv,
+                                        _width, _height,
+                                        _width, (_width + 1 ) / 2,
+                                        (_width + 1 ) / 2);
+    if (ret < 0)
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    _decodedImage.set_timestamp(inputImage._timeStamp);
 
     _decodeCompleteCallback->Decoded(_decodedImage);
     return WEBRTC_VIDEO_CODEC_OK;
@@ -283,7 +289,6 @@ WebRtc_Word32 TbI420Decoder::RegisterDecodeCompleteCallback(
 WebRtc_Word32 TbI420Decoder::Release()
 {
     _functionCalls.Release++;
-    _decodedImage.Free();
     _inited = false;
     return WEBRTC_VIDEO_CODEC_OK;
 }

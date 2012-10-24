@@ -297,6 +297,7 @@ LOCAL_STATIC_LIBRARIES := \
     libresampler \
     libsignal_processing \
     libsignal_processing_neon \
+    libcommon_video \
     libsystem_wrappers \
     libcpu_features_android \
     libaudio_device \
@@ -306,7 +307,6 @@ LOCAL_STATIC_LIBRARIES := \
     libudp_transport \
     libwebrtc_utility \
     libaudio_conference_mixer \
-    libcommon_video \
     libyuv \
     libwebrtc_i420 \
     libwebrtc_vp8 \

@@ -57,7 +57,7 @@ VCMGenericEncoder::InitEncode(const VideoCodec* settings,
 }
 
 WebRtc_Word32
-VCMGenericEncoder::Encode(const VideoFrame& inputFrame,
+VCMGenericEncoder::Encode(const I420VideoFrame& inputFrame,
                           const CodecSpecificInfo* codecSpecificInfo,
                           const std::vector<FrameType>* frameTypes) {
   std::vector<VideoFrameType> video_frame_types(frameTypes->size(),
@@ -119,7 +119,7 @@ WebRtc_Word32 VCMGenericEncoder::RequestFrame(
   if (!frame_types) {
     return 0;
   }
-  VideoFrame image;
+  I420VideoFrame image;
   std::vector<VideoFrameType> video_frame_types(kVideoFrameDelta);
   if (frame_types) {
     VCMEncodedFrame::ConvertFrameTypes(*frame_types, &video_frame_types);

@@ -44,7 +44,7 @@ public:
     virtual ~VideoChannelNSOpenGL();
 
     // A new frame is delivered
-    virtual int DeliverFrame(const VideoFrame& videoFrame);
+    virtual int DeliverFrame(const I420VideoFrame& videoFrame);
 
     // Called when the incomming frame size and/or number of streams in mix changes
     virtual int FrameSizeChange(int width, int height, int numberOfStreams);
@@ -63,7 +63,8 @@ public:
     virtual int UpdateStretchSize(int stretchHeight, int stretchWidth);
 
     // ********** new module functions ************ //
-    virtual WebRtc_Word32 RenderFrame(const WebRtc_UWord32 streamId, VideoFrame& videoFrame);
+    virtual WebRtc_Word32 RenderFrame(const WebRtc_UWord32 streamId,
+                                      I420VideoFrame& videoFrame);
 
     // ********** new module helper functions ***** //
     int ChangeContext(NSOpenGLContext *nsglContext);

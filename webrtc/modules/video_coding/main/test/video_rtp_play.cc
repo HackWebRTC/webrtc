@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "receiver_tests.h"
 #include "video_coding.h"
 #include "rtp_rtcp.h"
@@ -45,7 +46,7 @@ FrameReceiveCallback::~FrameReceiveCallback()
 }
 
 WebRtc_Word32
-FrameReceiveCallback::FrameToRender(VideoFrame& videoFrame)
+FrameReceiveCallback::FrameToRender(I420VideoFrame& videoFrame)
 {
     if (_timingFile == NULL)
     {
@@ -56,15 +57,16 @@ FrameReceiveCallback::FrameToRender(VideoFrame& videoFrame)
             return -1;
         }
     }
-    if (_outFile == NULL || videoFrame.Width() != width_ ||
-        videoFrame.Height() != height_)
+    if (_outFile == NULL ||
+        videoFrame.width() != static_cast<int>(width_) ||
+        videoFrame.height() != static_cast<int>(height_))
     {
         if (_outFile) {
           fclose(_outFile);
         }
-        printf("New size: %ux%u\n", videoFrame.Width(), videoFrame.Height());
-        width_ = videoFrame.Width();
-        height_ = videoFrame.Height();
+        printf("New size: %ux%u\n", videoFrame.width(), videoFrame.height());
+        width_ = videoFrame.width();
+        height_ = videoFrame.height();
         std::string filename_with_width_height = AppendWidthAndHeight(
             _outFilename, width_, height_);
         _outFile = fopen(filename_with_width_height.c_str(), "wb");
@@ -74,10 +76,9 @@ FrameReceiveCallback::FrameToRender(VideoFrame& videoFrame)
         }
     }
     fprintf(_timingFile, "%u, %u\n",
-            videoFrame.TimeStamp(),
-            MaskWord64ToUWord32(videoFrame.RenderTimeMs()));
-    if (fwrite(videoFrame.Buffer(), 1, videoFrame.Length(),
-               _outFile) !=  videoFrame.Length()) {
+            videoFrame.timestamp(),
+            MaskWord64ToUWord32(videoFrame.render_time_ms()));
+    if (PrintI420VideoFrame(videoFrame, _outFile) < 0) {
       return -1;
     }
     return 0;

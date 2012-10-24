@@ -100,12 +100,11 @@ class RenderFilter : public webrtc::ViEEffectFilter {
 
   virtual ~RenderFilter() {
   }
-
   virtual int Transform(int size,
                         unsigned char* frame_buffer,
                         unsigned int time_stamp90KHz,
                         unsigned int width,
-                        unsigned int height) {
+                        unsigned int height)  {
     num_frames_++;
     last_render_width_ = width;
     last_render_height_ = height;

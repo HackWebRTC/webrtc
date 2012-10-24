@@ -215,17 +215,17 @@ bool ViEFilePlayer::FilePlayDecodeProcess() {
       if (file_player_->GetVideoFromFile(decoded_video_) != 0) {
       }
     }
-    if (decoded_video_.Length() > 0) {
+    if (!decoded_video_.IsZeroSize()) {
       if (local_audio_channel_ != -1 && voe_video_sync_) {
         // We are playing audio locally.
         int audio_delay = 0;
         if (voe_video_sync_->GetPlayoutBufferSize(audio_delay) == 0) {
-          decoded_video_.SetRenderTime(decoded_video_.RenderTimeMs() +
-                                       audio_delay);
+          decoded_video_.set_render_time_ms(decoded_video_.render_time_ms() +
+                                            audio_delay);
         }
       }
       DeliverFrame(&decoded_video_);
-      decoded_video_.SetLength(0);
+      decoded_video_.ResetSize();
     }
   }
   return true;

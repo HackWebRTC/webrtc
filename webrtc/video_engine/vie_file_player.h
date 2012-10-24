@@ -15,6 +15,7 @@
 #include <set>
 
 #include "common_types.h"  // NOLINT
+#include "common_video/interface/i420_video_frame.h"
 #include "modules/media_file/interface/media_file_defines.h"
 #include "system_wrappers/interface/file_wrapper.h"
 #include "typedefs.h"  // NOLINT
@@ -130,7 +131,7 @@ class ViEFilePlayer
   std::set<int> audio_channels_sending_;
 
   // Frame receiving decoded video from file.
-  VideoFrame decoded_video_;
+  I420VideoFrame decoded_video_;
 };
 
 }  // namespace webrtc

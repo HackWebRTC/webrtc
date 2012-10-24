@@ -296,7 +296,7 @@ class ViEChannel
   RtpRtcp* rtp_rtcp();
 
   // Implements VCMReceiveCallback.
-  virtual WebRtc_Word32 FrameToRender(VideoFrame& video_frame);  // NOLINT
+  virtual WebRtc_Word32 FrameToRender(I420VideoFrame& video_frame);  // NOLINT
 
   // Implements VCMReceiveCallback.
   virtual WebRtc_Word32 ReceivedDecodedReferenceFrame(

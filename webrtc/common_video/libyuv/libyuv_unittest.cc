@@ -11,22 +11,26 @@
 #include <math.h>
 #include <string.h>
 
+#include "common_video/interface/i420_video_frame.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "gtest/gtest.h"
-#include "modules/interface/module_common_types.h"  // VideoFrame
 #include "system_wrappers/interface/tick_util.h"
+#include "system_wrappers/interface/scoped_ptr.h"
 #include "testsupport/fileutils.h"
 
 namespace webrtc {
 
-int PrintBuffer(const uint8_t* buffer, int width, int height) {
+int PrintBuffer(const uint8_t* buffer, int width, int height, int stride) {
   if (buffer == NULL)
     return -1;
-  int k = 0;
+  int k;
+  const uint8_t* tmp_buffer = buffer;
   for (int i = 0; i < height; i++) {
+    k = 0;
     for (int j = 0; j < width; j++) {
-      printf("%d ", buffer[k++]);
+      printf("%d ", tmp_buffer[k++]);
     }
+    tmp_buffer += stride;
     printf(" \n");
   }
   printf(" \n");
@@ -34,54 +38,40 @@ int PrintBuffer(const uint8_t* buffer, int width, int height) {
 }
 
 
-int PrintFrame(const VideoFrame* frame, const char* str) {
+int PrintFrame(const I420VideoFrame* frame, const char* str) {
   if (frame == NULL)
      return -1;
-  printf("%s %dx%d \n", str, frame->Width(), frame->Height());
+  printf("%s %dx%d \n", str, frame->width(), frame->height());
 
   int ret = 0;
-  int width = frame->Width();
-  int height = frame->Height();
-  ret += PrintBuffer(frame->Buffer(), width, height);
-  int half_width = (frame->Width() + 1) / 2;
-  int half_height = (frame->Height() + 1) / 2;
-  ret += PrintBuffer(frame->Buffer() + width * height, half_width, half_height);
-  ret += PrintBuffer(frame->Buffer() + width * height +
-                     half_width * half_height, half_width, half_height);
+  for (int plane_num = 0; plane_num < kNumOfPlanes; ++plane_num) {
+    PlaneType plane_type = static_cast<PlaneType>(plane_num);
+    int width = (plane_num ? (frame->width() + 1) / 2 : frame->width());
+    int height = (plane_num ? (frame->height() + 1) / 2 : frame->height());
+    ret += PrintBuffer(frame->buffer(plane_type), width, height,
+                       frame->stride(plane_type));
+  }
   return ret;
 }
 
 
 // Create an image from on a YUV frame. Every plane value starts with a start
 // value, and will be set to increasing values.
-// plane_offset - prep for PlaneType.
-void CreateImage(VideoFrame* frame, int plane_offset[3]) {
+void CreateImage(I420VideoFrame* frame, int plane_offset[kNumOfPlanes]) {
   if (frame == NULL)
     return;
-  int width = frame->Width();
-  int height = frame->Height();
-  int half_width = (frame->Width() + 1) / 2;
-  int half_height = (frame->Height() + 1) / 2;
-  uint8_t *data = frame->Buffer();
-  // Y plane.
-  for (int i = 0; i < height; i++) {
-    for (int j = 0; j < width; j++) {
-      *data = static_cast<uint8_t>((i + plane_offset[0]) + j);
-      data++;
-    }
-  }
-  // U plane.
-  for (int i = 0; i < half_height; i++) {
-    for (int j = 0; j < half_width; j++) {
-      *data = static_cast<uint8_t>((i + plane_offset[1]) + j);
-      data++;
-    }
-  }
-  // V Plane.
-  for (int i = 0; i < half_height; i++) {
-    for (int j = 0; j < half_width; j++) {
-      *data = static_cast<uint8_t>((i + plane_offset[2]) + j);
-      data++;
+  for (int plane_num = 0; plane_num < kNumOfPlanes; ++plane_num) {
+    int width = (plane_num != kYPlane ? (frame->width() + 1) / 2 :
+      frame->width());
+    int height = (plane_num != kYPlane ? (frame->height() + 1) / 2 :
+      frame->height());
+    PlaneType plane_type = static_cast<PlaneType>(plane_num);
+    uint8_t *data = frame->buffer(plane_type);
+    for (int i = 0; i < height; i++) {
+      for (int j = 0; j < width; j++) {
+        data[j] = static_cast<uint8_t>(i + plane_offset[plane_num] + j);
+      }
+      data += frame->stride(plane_type);
     }
   }
 }
@@ -98,7 +88,6 @@ class TestLibYuv : public ::testing::Test {
   const int frame_length_;
 };
 
-// TODO (mikhal): Use scoped_ptr when handling buffers.
 TestLibYuv::TestLibYuv()
     : source_file_(NULL),
       width_(352),
@@ -135,179 +124,162 @@ TEST_F(TestLibYuv, ConvertTest) {
 
   double psnr = 0;
 
-  VideoFrame orig_frame;
-  orig_frame.VerifyAndAllocate(frame_length_);
-  orig_frame.SetWidth(width_);
-  orig_frame.SetHeight(height_);
-  EXPECT_GT(fread(orig_frame.Buffer(), 1, frame_length_, source_file_), 0U);
-  orig_frame.SetLength(frame_length_);
+  I420VideoFrame orig_frame;
+  scoped_array<uint8_t> orig_buffer(new uint8_t[frame_length_]);
+  EXPECT_EQ(fread(orig_buffer.get(), 1, frame_length_, source_file_),
+            static_cast<unsigned int>(frame_length_));
+  int size_y = width_ * height_;
+  int size_uv = ((width_ + 1 ) / 2) * ((height_ + 1) / 2);
+  orig_frame.CreateFrame(size_y, orig_buffer.get(),
+                         size_uv, orig_buffer.get() + size_y,
+                         size_uv, orig_buffer.get() + size_y + size_uv,
+                         width_, height_,
+                         width_, (width_ + 1) / 2, (width_ + 1) / 2);
+  printf("\nConvert #%d I420 <-> RGB24\n", j);
+  scoped_array<uint8_t> res_rgb_buffer2(new uint8_t[width_ * height_ * 3]);
+  I420VideoFrame res_i420_frame;
+  res_i420_frame.CreateEmptyFrame(width_, height_, width_,
+                                  (width_ + 1) / 2, (width_ + 1) / 2);
+  EXPECT_EQ(0, ConvertFromI420(orig_frame, kRGB24, 0, res_rgb_buffer2.get()));
 
-  // printf("\nConvert #%d I420 <-> RGB24\n", j);
-  uint8_t* res_rgb_buffer2  = new uint8_t[width_ * height_ * 3];
-  VideoFrame res_i420_frame;
-  res_i420_frame.VerifyAndAllocate(frame_length_);
-  res_i420_frame.SetHeight(height_);
-  res_i420_frame.SetWidth(width_);
-  EXPECT_EQ(0, ConvertFromI420(orig_frame, width_, kRGB24, 0,
-                               res_rgb_buffer2));
+  EXPECT_EQ(0, ConvertToI420(kRGB24, res_rgb_buffer2.get(), 0, 0, width_,
+                             height_, 0, kRotateNone, &res_i420_frame));
 
-  EXPECT_EQ(0, ConvertToI420(kRGB24, res_rgb_buffer2, 0, 0, width_, height_,
-                             0, kRotateNone, &res_i420_frame));
-
-  if (fwrite(res_i420_frame.Buffer(), 1, frame_length_,
-             output_file) != static_cast<unsigned int>(frame_length_)) {
+  if (PrintI420VideoFrame(res_i420_frame, output_file) < 0) {
     return;
   }
   psnr = I420PSNR(&orig_frame, &res_i420_frame);
+
   // Optimization Speed- quality trade-off => 45 dB only (platform dependant).
   EXPECT_GT(ceil(psnr), 44);
   j++;
-  delete [] res_rgb_buffer2;
 
-  // printf("\nConvert #%d I420 <-> UYVY\n", j);
-  uint8_t* out_uyvy_buffer = new uint8_t[width_ * height_ * 2];
-  EXPECT_EQ(0, ConvertFromI420(orig_frame, width_,
-                               kUYVY, 0, out_uyvy_buffer));
-  EXPECT_EQ(0, ConvertToI420(kUYVY, out_uyvy_buffer, 0, 0, width_, height_,
-            0, kRotateNone, &res_i420_frame));
+  printf("\nConvert #%d I420 <-> UYVY\n", j);
+  scoped_array<uint8_t> out_uyvy_buffer(new uint8_t[width_ * height_ * 2]);
+  EXPECT_EQ(0, ConvertFromI420(orig_frame,  kUYVY, 0, out_uyvy_buffer.get()));
+  EXPECT_EQ(0, ConvertToI420(kUYVY, out_uyvy_buffer.get(), 0, 0, width_,
+                             height_, 0, kRotateNone, &res_i420_frame));
   psnr = I420PSNR(&orig_frame, &res_i420_frame);
   EXPECT_EQ(48.0, psnr);
-  if (fwrite(res_i420_frame.Buffer(), 1, frame_length_,
-             output_file) !=  static_cast<unsigned int>(frame_length_)) {
-    return;
+  if (PrintI420VideoFrame(res_i420_frame, output_file) < 0) {
+      return;
   }
 
   j++;
-  delete [] out_uyvy_buffer;
 
-  // printf("\nConvert #%d I420 <-> I420 \n", j);
- uint8_t* out_i420_buffer = new uint8_t[width_ * height_ * 3 / 2 ];
-  EXPECT_EQ(0, ConvertToI420(kI420, orig_frame.Buffer(), 0, 0, width_, height_,
+  printf("\nConvert #%d I420 <-> I420 \n", j);
+  scoped_array<uint8_t> out_i420_buffer(new uint8_t[width_ * height_ * 3 / 2]);
+  EXPECT_EQ(0, ConvertToI420(kI420, orig_buffer.get(), 0, 0, width_, height_,
                              0, kRotateNone, &res_i420_frame));
-  EXPECT_EQ(0, ConvertFromI420(res_i420_frame, width_, kI420, 0,
-                               out_i420_buffer));
-  if (fwrite(res_i420_frame.Buffer(), 1, frame_length_,
+  EXPECT_EQ(0, ConvertFromI420(res_i420_frame, kI420, 0,
+                               out_i420_buffer.get()));
+  if (PrintI420VideoFrame(res_i420_frame, output_file) < 0) {
+    return;
+  }
+  psnr = I420PSNR(orig_buffer.get(), out_i420_buffer.get(), width_, height_);
+  EXPECT_EQ(48.0, psnr);
+  j++;
+
+  printf("\nConvert #%d I420 <-> YV12\n", j);
+  scoped_array<uint8_t> outYV120Buffer(new uint8_t[frame_length_]);
+  scoped_array<uint8_t> res_i420_buffer(new uint8_t[frame_length_]);
+  I420VideoFrame yv12_frame;
+  EXPECT_EQ(0, ConvertFromI420(orig_frame, kYV12, 0, outYV120Buffer.get()));
+  yv12_frame.CreateFrame(size_y, outYV120Buffer.get(),
+                         size_uv, outYV120Buffer.get() + size_y,
+                         size_uv, outYV120Buffer.get() + size_y + size_uv,
+                         width_, height_,
+                         width_, (width_ + 1) / 2, (width_ + 1) / 2);
+  EXPECT_EQ(0, ConvertFromYV12(yv12_frame, kI420, 0, res_i420_buffer.get()));
+  if (fwrite(res_i420_buffer.get(), 1, frame_length_,
              output_file) != static_cast<unsigned int>(frame_length_)) {
     return;
   }
-  psnr = I420PSNR(orig_frame.Buffer(), out_i420_buffer, width_, height_);
+
+  psnr = I420PSNR(orig_buffer.get(), res_i420_buffer.get(), width_, height_);
   EXPECT_EQ(48.0, psnr);
   j++;
-  delete [] out_i420_buffer;
 
-  // printf("\nConvert #%d I420 <-> YV12\n", j);
-  uint8_t* outYV120Buffer = new uint8_t[frame_length_];
+  printf("\nConvert #%d I420 <-> YUY2\n", j);
+  scoped_array<uint8_t> out_yuy2_buffer(new uint8_t[width_ * height_ * 2]);
+  EXPECT_EQ(0, ConvertFromI420(orig_frame,  kYUY2, 0, out_yuy2_buffer.get()));
 
-  EXPECT_EQ(0, ConvertFromI420(orig_frame, width_, kYV12, 0,
-                               outYV120Buffer));
-  EXPECT_EQ(0, ConvertFromYV12(outYV120Buffer, width_,
-                               kI420, 0,
-                               width_, height_,
-                               res_i420_frame.Buffer()));
-  if (fwrite(res_i420_frame.Buffer(), 1, frame_length_,
-             output_file) !=  static_cast<unsigned int>(frame_length_)) {
-    return;
+  EXPECT_EQ(0, ConvertToI420(kYUY2, out_yuy2_buffer.get(), 0, 0, width_,
+                             height_, 0, kRotateNone, &res_i420_frame));
+
+  if (PrintI420VideoFrame(res_i420_frame, output_file) < 0) {
+      return;
   }
 
   psnr = I420PSNR(&orig_frame, &res_i420_frame);
   EXPECT_EQ(48.0, psnr);
+  printf("\nConvert #%d I420 <-> RGB565\n", j);
+  scoped_array<uint8_t> out_rgb565_buffer(new uint8_t[width_ * height_ * 2]);
+  EXPECT_EQ(0, ConvertFromI420(orig_frame, kRGB565, 0,
+                               out_rgb565_buffer.get()));
+
+  EXPECT_EQ(0, ConvertToI420(kRGB565, out_rgb565_buffer.get(), 0, 0, width_,
+                             height_, 0, kRotateNone, &res_i420_frame));
+
+  if (PrintI420VideoFrame(res_i420_frame, output_file) < 0) {
+      return;
+  }
   j++;
-  delete [] outYV120Buffer;
 
-  // printf("\nConvert #%d I420 <-> YUY2\n", j);
-  uint8_t* out_yuy2_buffer = new uint8_t[width_ * height_ * 2];
-  EXPECT_EQ(0, ConvertFromI420(orig_frame, width_,
-                               kYUY2, 0, out_yuy2_buffer));
-
-  EXPECT_EQ(0, ConvertToI420(kYUY2, out_yuy2_buffer, 0, 0, width_, height_,
-                             0, kRotateNone, &res_i420_frame));
-
-  if (fwrite(res_i420_frame.Buffer(), 1, frame_length_,
-             output_file) !=  static_cast<unsigned int>(frame_length_)) {
-    return;
-  }
-  psnr = I420PSNR(&orig_frame, &res_i420_frame);
-  EXPECT_EQ(48.0, psnr);
-
-  // printf("\nConvert #%d I420 <-> RGB565\n", j);
-  uint8_t* out_rgb565_buffer = new uint8_t[width_ * height_ * 2];
-  EXPECT_EQ(0, ConvertFromI420(orig_frame, width_,
-                               kRGB565, 0, out_rgb565_buffer));
-
-  EXPECT_EQ(0, ConvertToI420(kRGB565, out_rgb565_buffer, 0, 0, width_, height_,
-                             0, kRotateNone, &res_i420_frame));
-
-  if (fwrite(res_i420_frame.Buffer(), 1, frame_length_,
-             output_file) !=  static_cast<unsigned int>(frame_length_)) {
-    return;
-  }
   psnr = I420PSNR(&orig_frame, &res_i420_frame);
   // TODO(leozwang) Investigate the right psnr should be set for I420ToRGB565,
   // Another example is I420ToRGB24, the psnr is 44
   EXPECT_GT(ceil(psnr), 40);
 
-  // printf("\nConvert #%d I420 <-> ARGB8888\n", j);
-  uint8_t* out_argb8888_buffer = new uint8_t[width_ * height_ * 4];
-  EXPECT_EQ(0, ConvertFromI420(orig_frame, width_,
-                               kARGB, 0, out_argb8888_buffer));
+  printf("\nConvert #%d I420 <-> ARGB8888\n", j);
+  scoped_array<uint8_t> out_argb8888_buffer(new uint8_t[width_ * height_ * 4]);
+  EXPECT_EQ(0, ConvertFromI420(orig_frame, kARGB, 0,
+                               out_argb8888_buffer.get()));
 
-  EXPECT_EQ(0, ConvertToI420(kARGB, out_argb8888_buffer, 0, 0, width_, height_,
-                             0, kRotateNone, &res_i420_frame));
+  EXPECT_EQ(0, ConvertToI420(kARGB, out_argb8888_buffer.get(), 0, 0, width_,
+                             height_, 0, kRotateNone, &res_i420_frame));
 
-  if (fwrite(res_i420_frame.Buffer(), 1, frame_length_,
-             output_file) !=  static_cast<unsigned int>(frame_length_)) {
+  if (PrintI420VideoFrame(res_i420_frame, output_file) < 0) {
     return;
   }
+
   psnr = I420PSNR(&orig_frame, &res_i420_frame);
   // TODO(leozwang) Investigate the right psnr should be set for I420ToARGB8888,
   EXPECT_GT(ceil(psnr), 42);
 
   ASSERT_EQ(0, fclose(output_file));
-
-  res_i420_frame.Free();
-  orig_frame.Free();
-  delete [] out_argb8888_buffer;
-  delete [] out_rgb565_buffer;
-  delete [] out_yuy2_buffer;
 }
 
-// TODO(holmer): Disabled for now due to crashes on Linux 32 bit. The theory
-// is that it crashes due to the fact that the buffers are not 16 bit aligned.
-// See http://code.google.com/p/webrtc/issues/detail?id=335 for more info.
-TEST_F(TestLibYuv, DISABLED_MirrorTest) {
+TEST_F(TestLibYuv, MirrorTest) {
   // TODO (mikhal): Add an automated test to confirm output.
-  // TODO(mikhal): Update to new I420VideoFrame and align values. Until then,
-  // this test is disabled, only insuring build.
   std::string str;
   int width = 16;
+  int half_width = (width + 1) / 2;
   int height = 8;
-  int length = webrtc::CalcBufferSize(kI420, width, height);
+  int half_height = (height + 1) / 2;
 
-  VideoFrame test_frame;
-  test_frame.VerifyAndAllocate(length);
-  test_frame.SetWidth(width);
-  test_frame.SetHeight(height);
-  memset(test_frame.Buffer(), 255, length);
+  I420VideoFrame test_frame;
+  test_frame.CreateEmptyFrame(width, height, width,
+                              half_width, half_width);
+  memset(test_frame.buffer(kYPlane), 255, width * height);
+  memset(test_frame.buffer(kUPlane), 255, half_width * half_height);
+  memset(test_frame.buffer(kVPlane), 255, half_width * half_height);
 
   // Create input frame.
-  VideoFrame in_frame, test_in_frame;
-  in_frame.VerifyAndAllocate(length);
-  in_frame.SetWidth(width);
-  in_frame.SetHeight(height);
-  in_frame.SetLength(length);
-  int plane_offset[3];  // prep for kNumPlanes.
-  plane_offset[0] = 10;
-  plane_offset[1] = 100;
-  plane_offset[2] = 200;
+  I420VideoFrame in_frame, test_in_frame;
+  in_frame.CreateEmptyFrame(width, height, width,
+                            half_width ,half_width);
+  int plane_offset[kNumOfPlanes];
+  plane_offset[kYPlane] = 10;
+  plane_offset[kUPlane] = 100;
+  plane_offset[kVPlane] = 200;
   CreateImage(&in_frame, plane_offset);
-  test_in_frame.CopyFrame(in_frame);
   EXPECT_EQ(0, PrintFrame(&in_frame, "InputFrame"));
+  test_in_frame.CopyFrame(in_frame);
 
-  VideoFrame out_frame, test_out_frame;
-  out_frame.VerifyAndAllocate(length);
-  out_frame.SetWidth(width);
-  out_frame.SetHeight(height);
-  out_frame.SetLength(length);
+  I420VideoFrame out_frame, test_out_frame;
+  out_frame.CreateEmptyFrame(width, height, width,
+                             half_width ,half_width);
   CreateImage(&out_frame, plane_offset);
   test_out_frame.CopyFrame(out_frame);
 
@@ -317,22 +289,28 @@ TEST_F(TestLibYuv, DISABLED_MirrorTest) {
   EXPECT_EQ(0, PrintFrame(&out_frame, "OutputFrame"));
   EXPECT_EQ(0, MirrorI420LeftRight(&out_frame, &in_frame));
 
-  EXPECT_EQ(0, memcmp(in_frame.Buffer(), test_in_frame.Buffer(), length));
+  EXPECT_EQ(0, memcmp(in_frame.buffer(kYPlane),
+    test_in_frame.buffer(kYPlane), width * height));
+  EXPECT_EQ(0, memcmp(in_frame.buffer(kUPlane),
+    test_in_frame.buffer(kUPlane), half_width * half_height));
+  EXPECT_EQ(0, memcmp(in_frame.buffer(kVPlane),
+    test_in_frame.buffer(kVPlane), half_width * half_height));
 
   // UpDown
   std::cout << "Test Mirror function: UpDown" << std::endl;
   EXPECT_EQ(0, MirrorI420UpDown(&in_frame, &out_frame));
   EXPECT_EQ(0, PrintFrame(&test_out_frame, "OutputFrame"));
   EXPECT_EQ(0, MirrorI420UpDown(&out_frame, &test_frame));
-  EXPECT_EQ(0, memcmp(in_frame.Buffer(), test_frame.Buffer(), length));
+  EXPECT_EQ(0, memcmp(in_frame.buffer(kYPlane),
+    test_in_frame.buffer(kYPlane), width * height));
+  EXPECT_EQ(0, memcmp(in_frame.buffer(kUPlane),
+    test_in_frame.buffer(kUPlane), half_width * half_height));
+  EXPECT_EQ(0, memcmp(in_frame.buffer(kVPlane),
+    test_in_frame.buffer(kVPlane), half_width * half_height));
 
   // TODO(mikhal): Write to a file, and ask to look at the file.
 
   std::cout << "Do the mirrored frames look correct?" << std::endl;
-  in_frame.Free();
-  test_in_frame.Free();
-  out_frame.Free();
-  test_out_frame.Free();
 }
 
 TEST_F(TestLibYuv, alignment) {

@@ -412,10 +412,10 @@ WebRtc_Word32 AndroidSurfaceViewChannel::Init(
 
 WebRtc_Word32 AndroidSurfaceViewChannel::RenderFrame(
     const WebRtc_UWord32 /*streamId*/,
-    VideoFrame& videoFrame) {
+    I420VideoFrame& videoFrame) {
   // WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer,_id, "%s:" ,__FUNCTION__);
   _renderCritSect.Enter();
-  _bufferToRender.SwapFrame(videoFrame);
+  _bufferToRender.SwapFrame(&videoFrame);
   _renderCritSect.Leave();
   _renderer.ReDraw();
   return 0;
@@ -428,11 +428,11 @@ WebRtc_Word32 AndroidSurfaceViewChannel::RenderFrame(
 void AndroidSurfaceViewChannel::DeliverFrame(JNIEnv* jniEnv) {
   _renderCritSect.Enter();
 
-  if (_bitmapWidth != _bufferToRender.Width() ||
-      _bitmapHeight != _bufferToRender.Height()) {
+  if (_bitmapWidth != _bufferToRender.width() ||
+      _bitmapHeight != _bufferToRender.height()) {
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s: New render size %d "
                  "%d",__FUNCTION__,
-                 _bufferToRender.Width(), _bufferToRender.Height());
+                 _bufferToRender.width(), _bufferToRender.height());
     if (_javaByteBufferObj) {
       jniEnv->DeleteGlobalRef(_javaByteBufferObj);
       _javaByteBufferObj = NULL;
@@ -441,8 +441,8 @@ void AndroidSurfaceViewChannel::DeliverFrame(JNIEnv* jniEnv) {
 
     jobject javaByteBufferObj =
         jniEnv->CallObjectMethod(_javaRenderObj, _createByteBufferCid,
-                                 _bufferToRender.Width(),
-                                 _bufferToRender.Height());
+                                 _bufferToRender.width(),
+                                 _bufferToRender.height());
     _javaByteBufferObj = jniEnv->NewGlobalRef(javaByteBufferObj);
     if (!_javaByteBufferObj) {
       WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,  "%s: could not "
@@ -452,15 +452,14 @@ void AndroidSurfaceViewChannel::DeliverFrame(JNIEnv* jniEnv) {
     } else {
       _directBuffer = static_cast<unsigned char*>
           (jniEnv->GetDirectBufferAddress(_javaByteBufferObj));
-      _bitmapWidth = _bufferToRender.Width();
-      _bitmapHeight = _bufferToRender.Height();
+      _bitmapWidth = _bufferToRender.width();
+      _bitmapHeight = _bufferToRender.height();
     }
   }
 
   if(_javaByteBufferObj && _bitmapWidth && _bitmapHeight) {
     const int conversionResult =
-        ConvertFromI420(_bufferToRender, _bitmapWidth,
-                        kRGB565, 0, _directBuffer);
+        ConvertFromI420(_bufferToRender, kRGB565, 0, _directBuffer);
 
     if (conversionResult < 0)  {
       WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s: Color conversion"

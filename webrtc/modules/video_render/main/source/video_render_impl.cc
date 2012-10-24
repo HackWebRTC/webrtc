@@ -813,8 +813,8 @@ WebRtc_Word32 ModuleVideoRenderImpl::SetBitmap(const void* bitMap,
 }
 
 WebRtc_Word32 ModuleVideoRenderImpl::GetLastRenderedFrame(
-                                                          const WebRtc_UWord32 streamId,
-                                                          VideoFrame &frame) const
+    const WebRtc_UWord32 streamId,
+    I420VideoFrame &frame) const
 {
     CriticalSectionScoped cs(&_moduleCrit);
 
@@ -897,8 +897,8 @@ WebRtc_Word32 ModuleVideoRenderImpl::ConfigureRenderer(
 }
 
 WebRtc_Word32 ModuleVideoRenderImpl::SetStartImage(
-                                                   const WebRtc_UWord32 streamId,
-                                                   const VideoFrame& videoFrame)
+    const WebRtc_UWord32 streamId,
+    const I420VideoFrame& videoFrame)
 {
     CriticalSectionScoped cs(&_moduleCrit);
 
@@ -931,9 +931,9 @@ WebRtc_Word32 ModuleVideoRenderImpl::SetStartImage(
 }
 
 WebRtc_Word32 ModuleVideoRenderImpl::SetTimeoutImage(
-                                                     const WebRtc_UWord32 streamId,
-                                                     const VideoFrame& videoFrame,
-                                                     const WebRtc_UWord32 timeout)
+    const WebRtc_UWord32 streamId,
+    const I420VideoFrame& videoFrame,
+    const WebRtc_UWord32 timeout)
 {
     CriticalSectionScoped cs(&_moduleCrit);
 

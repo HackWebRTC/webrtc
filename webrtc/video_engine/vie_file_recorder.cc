@@ -179,7 +179,7 @@ bool ViEFileRecorder::IsRecordingFileFormat(const FileFormats file_format) {
   return (file_recorder_->RecordingFileFormat() == file_format) ? true : false;
 }
 
-void ViEFileRecorder::RecordVideoFrame(const VideoFrame& video_frame) {
+void ViEFileRecorder::RecordVideoFrame(const I420VideoFrame& video_frame) {
   CriticalSectionScoped lock(recorder_cs_);
 
   if (file_recorder_ && file_recorder_->IsRecording()) {
@@ -188,16 +188,17 @@ void ViEFileRecorder::RecordVideoFrame(const VideoFrame& video_frame) {
 
     // Compensate for frame delay in order to get audio/video sync when
     // recording local video.
-    const WebRtc_UWord32 time_stamp = video_frame.TimeStamp();
-    const WebRtc_Word64 render_time_stamp = video_frame.RenderTimeMs();
-    VideoFrame& unconst_video_frame = const_cast<VideoFrame&>(video_frame);
-    unconst_video_frame.SetTimeStamp(time_stamp - 90 * frame_delay_);
-    unconst_video_frame.SetRenderTime(render_time_stamp - frame_delay_);
+    const WebRtc_UWord32 time_stamp = video_frame.timestamp();
+    const WebRtc_Word64 render_time_stamp = video_frame.render_time_ms();
+    I420VideoFrame& unconst_video_frame =
+        const_cast<I420VideoFrame&>(video_frame);
+    unconst_video_frame.set_timestamp(time_stamp - 90 * frame_delay_);
+    unconst_video_frame.set_render_time_ms(render_time_stamp - frame_delay_);
 
     file_recorder_->RecordVideoToFile(unconst_video_frame);
 
-    unconst_video_frame.SetRenderTime(render_time_stamp);
-    unconst_video_frame.SetTimeStamp(time_stamp);
+    unconst_video_frame.set_render_time_ms(render_time_stamp);
+    unconst_video_frame.set_timestamp(time_stamp);
   }
 }
 

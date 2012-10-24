@@ -16,6 +16,7 @@
 #include <sstream>
 #include <vector>
 
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "gtest/gtest.h"
 #include "tick_util.h"
 #include "testsupport/fileutils.h"
@@ -262,16 +263,13 @@ WebRtc_UWord32 VideoDecodeCompleteCallback::DecodedBytes()
 }
 
 WebRtc_Word32
-VideoDecodeCompleteCallback::Decoded(VideoFrame& image)
+VideoDecodeCompleteCallback::Decoded(I420VideoFrame& image)
 {
     _test.Decoded(image);
-    _decodedBytes += image.Length();
+    _decodedBytes += CalcBufferSize(kI420, image.width(), image.height());
     if (_decodedFile != NULL)
     {
-      if (fwrite(image.Buffer(), 1, image.Length(),
-                 _decodedFile) !=  image.Length()) {
-        return -1;
-      }
+       return PrintI420VideoFrame(image, _decodedFile);
     }
     return 0;
 }
@@ -300,14 +298,14 @@ NormalAsyncTest::Encoded(const EncodedImage& encodedImage)
 }
 
 void
-NormalAsyncTest::Decoded(const VideoFrame& decodedImage)
+NormalAsyncTest::Decoded(const I420VideoFrame& decodedImage)
 {
     _decodeCompleteTime = tGetTime();
     _decFrameCnt++;
     _totalDecodePipeTime += _decodeCompleteTime -
-        _decodeTimes[decodedImage.TimeStamp()];
-    _decodedWidth = decodedImage.Width();
-    _decodedHeight = decodedImage.Height();
+        _decodeTimes[decodedImage.timestamp()];
+    _decodedWidth = decodedImage.width();
+    _decodedHeight = decodedImage.height();
 }
 
 void
@@ -316,8 +314,6 @@ NormalAsyncTest::Perform()
     _inname = webrtc::test::ProjectRootPath() + "resources/foreman_cif.yuv";
     CodecSettings(352, 288, 30, _bitRate);
     Setup();
-    _inputVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);
-    _decodedVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);
     if(_encoder->InitEncode(&_inst, 1, 1440) < 0)
     {
         exit(EXIT_FAILURE);
@@ -410,17 +406,19 @@ NormalAsyncTest::Encode()
 {
     _lengthEncFrame = 0;
     EXPECT_GT(fread(_sourceBuffer, 1, _lengthSourceFrame, _sourceFile), 0u);
-    _inputVideoBuffer.CopyFrame(_lengthSourceFrame, _sourceBuffer);
-    _inputVideoBuffer.SetTimeStamp((unsigned int)
+    _inputVideoBuffer.CreateFrame(_sizeY, _sourceBuffer,
+                                  _sizeUv, _sourceBuffer + _sizeY,
+                                  _sizeUv, _sourceBuffer + _sizeY + _sizeUv,
+                                  _width, _height,
+                                  _width, _halfWidth, _halfWidth);
+    _inputVideoBuffer.set_timestamp((unsigned int)
         (_encFrameCnt * 9e4 / _inst.maxFramerate));
-    _inputVideoBuffer.SetWidth(_inst.width);
-    _inputVideoBuffer.SetHeight(_inst.height);
     if (feof(_sourceFile) != 0)
     {
         return true;
     }
     _encodeCompleteTime = 0;
-    _encodeTimes[_inputVideoBuffer.TimeStamp()] = tGetTime();
+    _encodeTimes[_inputVideoBuffer.timestamp()] = tGetTime();
     std::vector<VideoFrameType> frame_types(1, kDeltaFrame);
 
     // check SLI queue
@@ -474,12 +472,12 @@ NormalAsyncTest::Encode()
     if (_encodeCompleteTime > 0)
     {
         _totalEncodeTime += _encodeCompleteTime -
-            _encodeTimes[_inputVideoBuffer.TimeStamp()];
+            _encodeTimes[_inputVideoBuffer.timestamp()];
     }
     else
     {
         _totalEncodeTime += tGetTime() -
-            _encodeTimes[_inputVideoBuffer.TimeStamp()];
+            _encodeTimes[_inputVideoBuffer.timestamp()];
     }
     assert(ret >= 0);
     return false;

@@ -40,6 +40,12 @@ protected:
     unsigned int            _testNo;
     int                     _lengthEncFrame;
     bool                    _appendNext;
+    int                     _width;
+    int                     _halfWidth;
+    int                     _height;
+    int                     _halfHeight;
+    int                     _sizeY;
+    int                     _sizeUv;
 };
 
 #endif // WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_FRAMEWORK_NORMAL_TEST_H_

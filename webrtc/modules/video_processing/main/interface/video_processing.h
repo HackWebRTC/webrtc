@@ -18,6 +18,7 @@
 #ifndef WEBRTC_MODULES_INTERFACE_VIDEO_PROCESSING_H
 #define WEBRTC_MODULES_INTERFACE_VIDEO_PROCESSING_H
 
+#include "common_video/interface/i420_video_frame.h"
 #include "module.h"
 #include "module_common_types.h"
 #include "video_processing_defines.h"
@@ -120,7 +121,7 @@ public:
        \return 0 on success, -1 on failure.
     */
     static WebRtc_Word32 GetFrameStats(FrameStats* stats,
-                                       const VideoFrame& frame);
+                                       const I420VideoFrame& frame);
 
     /**
        Checks the validity of a FrameStats struct. Currently, valid implies only
@@ -148,7 +149,7 @@ public:
        \param[in,out] frame
            Pointer to the video frame.
     */
-    static WebRtc_Word32 ColorEnhancement(VideoFrame* frame);
+    static WebRtc_Word32 ColorEnhancement(I420VideoFrame* frame);
 
     /**
        Increases/decreases the luminance value.
@@ -162,7 +163,7 @@ public:
 
        \return 0 on success, -1 on failure.
     */
-    static WebRtc_Word32 Brighten(VideoFrame* frame, int delta);
+    static WebRtc_Word32 Brighten(I420VideoFrame* frame, int delta);
 
     /**
        Detects and removes camera flicker from a video stream. Every frame from
@@ -179,7 +180,7 @@ public:
       
        \return 0 on success, -1 on failure.
     */
-    virtual WebRtc_Word32 Deflickering(VideoFrame* frame,
+    virtual WebRtc_Word32 Deflickering(I420VideoFrame* frame,
                                        FrameStats* stats) = 0;
     
     /**
@@ -191,7 +192,7 @@ public:
       
        \return The number of modified pixels on success, -1 on failure.
     */
-    virtual WebRtc_Word32 Denoising(VideoFrame* frame) = 0;
+    virtual WebRtc_Word32 Denoising(I420VideoFrame* frame) = 0;
     
     /**
        Detects if a video frame is excessively bright or dark. Returns a
@@ -206,7 +207,7 @@ public:
       
        \return A member of BrightnessWarning on success, -1 on error
     */
-    virtual WebRtc_Word32 BrightnessDetection(const VideoFrame& frame,
+    virtual WebRtc_Word32 BrightnessDetection(const I420VideoFrame& frame,
                                               const FrameStats& stats) = 0;
 
     /**
@@ -283,8 +284,8 @@ public:
     
     \return VPM_OK on success, a negative value on error (see error codes)
     */
-    virtual WebRtc_Word32 PreprocessFrame(const VideoFrame& frame,
-                                          VideoFrame** processedFrame) = 0;
+    virtual WebRtc_Word32 PreprocessFrame(const I420VideoFrame& frame,
+                                          I420VideoFrame** processedFrame) = 0;
 
     /**
     Return content metrics for the last processed frame

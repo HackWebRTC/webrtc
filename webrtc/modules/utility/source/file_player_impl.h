@@ -93,8 +93,8 @@ public:
                                                 bool videoOnly);
     virtual WebRtc_Word32 StopPlayingFile();
     virtual WebRtc_Word32 video_codec_info(VideoCodec& videoCodec) const;
-    virtual WebRtc_Word32 GetVideoFromFile(VideoFrame& videoFrame);
-    virtual WebRtc_Word32 GetVideoFromFile(VideoFrame& videoFrame,
+    virtual WebRtc_Word32 GetVideoFromFile(I420VideoFrame& videoFrame);
+    virtual WebRtc_Word32 GetVideoFromFile(I420VideoFrame& videoFrame,
                                            const WebRtc_UWord32 outWidth,
                                            const WebRtc_UWord32 outHeight);
 

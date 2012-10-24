@@ -15,11 +15,11 @@
 #include <time.h>
 
 #include "../source/event.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/main/source/tick_time_base.h"
 #include "test_callbacks.h"
 #include "test_macros.h"
 #include "testsupport/metrics/video_metrics.h"
-#include "common_video/libyuv/include/webrtc_libyuv.h"
 
 using namespace webrtc;
 
@@ -215,9 +215,8 @@ QualityModesTest::Perform()
     // disabling internal VCM frame dropper
     _vcm->EnableFrameDropper(false);
 
-    VideoFrame sourceFrame;
-    VideoFrame *decimatedFrame = NULL;
-    sourceFrame.VerifyAndAllocate(_lengthSourceFrame);
+    I420VideoFrame sourceFrame;
+    I420VideoFrame *decimatedFrame = NULL;
     WebRtc_UWord8* tmpBuffer = new WebRtc_UWord8[_lengthSourceFrame];
     double startTime = clock()/(double)CLOCKS_PER_SEC;
     _vcm->SetChannelParameters((WebRtc_UWord32)_bitRate, 0, 0);
@@ -238,18 +237,22 @@ QualityModesTest::Perform()
 
 
     WebRtc_Word32 ret = 0;
-      _numFramesDroppedVPM = 0;
-
+    _numFramesDroppedVPM = 0;
     while (feof(_sourceFile)== 0)
     {
         TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
         _frameCnt++;
-        sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
-        sourceFrame.SetHeight(_nativeHeight);
-        sourceFrame.SetWidth(_nativeWidth);
+        int size_y = _nativeWidth * _nativeHeight;
+        int size_uv = ((_nativeWidth + 1) / 2) * ((_nativeHeight  + 1) / 2);
+        sourceFrame.CreateFrame(size_y, tmpBuffer,
+                                size_uv, tmpBuffer + size_y,
+                                size_uv, tmpBuffer + size_y + size_uv,
+                                _nativeWidth, _nativeHeight,
+                                _nativeWidth, (_nativeWidth + 1) / 2,
+                                (_nativeWidth + 1) / 2);
 
         _timeStamp += (WebRtc_UWord32)(9e4 / static_cast<float>(codec.maxFramerate));
-        sourceFrame.SetTimeStamp(_timeStamp);
+        sourceFrame.set_timestamp(_timeStamp);
 
         ret = _vpm->PreprocessFrame(sourceFrame, &decimatedFrame);
         if (ret  == 1)
@@ -270,20 +273,24 @@ QualityModesTest::Perform()
         }
 
         // counting only encoding time
-        _encodeTimes[int(sourceFrame.TimeStamp())] = clock()/(double)CLOCKS_PER_SEC;
+        _encodeTimes[int(sourceFrame.timestamp())] =
+            clock()/(double)CLOCKS_PER_SEC;
 
         WebRtc_Word32 ret = _vcm->AddVideoFrame(*decimatedFrame, contentMetrics);
 
-        _totalEncodeTime += clock()/(double)CLOCKS_PER_SEC - _encodeTimes[int(sourceFrame.TimeStamp())];
+        _totalEncodeTime += clock()/(double)CLOCKS_PER_SEC -
+            _encodeTimes[int(sourceFrame.timestamp())];
 
         if (ret < 0)
         {
             printf("Error in AddFrame: %d\n", ret);
             //exit(1);
         }
-        _decodeTimes[int(sourceFrame.TimeStamp())] = clock()/(double)CLOCKS_PER_SEC; // same timestamp value for encode and decode
+        _decodeTimes[int(sourceFrame.timestamp())] = clock() /
+            (double)CLOCKS_PER_SEC - _decodeTimes[int(sourceFrame.timestamp())];
         ret = _vcm->Decode();
-        _totalDecodeTime += clock()/(double)CLOCKS_PER_SEC - _decodeTimes[int(sourceFrame.TimeStamp())];
+        _totalDecodeTime += clock()/(double)CLOCKS_PER_SEC -
+            _decodeTimes[int(sourceFrame.timestamp())];
         if (ret < 0)
         {
             printf("Error in Decode: %d\n", ret);
@@ -308,7 +315,7 @@ QualityModesTest::Perform()
             _frameRate = frameRateUpdate[change];
             codec.startBitrate = (int)_bitRate;
             codec.maxFramerate = (WebRtc_UWord8) _frameRate;
-            TEST(_vcm->RegisterSendCodec(&codec, 2, 1440) == VCM_OK);// will also set and init the desired codec
+            TEST(_vcm->RegisterSendCodec(&codec, 2, 1440) == VCM_OK);
             change++;
         }
     }
@@ -326,8 +333,6 @@ QualityModesTest::Perform()
     return 0;
 }
 
-
-// implementing callback to be called from VCM to update VPM of frame rate and size
 QMTestVideoSettingsCallback::QMTestVideoSettingsCallback():
 _vpm(NULL),
 _vcm(NULL)
@@ -415,48 +420,32 @@ VCMQMDecodeCompleCallback::~VCMQMDecodeCompleCallback()
      }
  }
 WebRtc_Word32
-VCMQMDecodeCompleCallback::FrameToRender(VideoFrame& videoFrame)
+VCMQMDecodeCompleCallback::FrameToRender(I420VideoFrame& videoFrame)
 {
-    if ((_origWidth == videoFrame.Width()) && (_origHeight == videoFrame.Height()))
+    if ((_origWidth == videoFrame.width()) &&
+        (_origHeight == videoFrame.height()))
     {
-      if (fwrite(videoFrame.Buffer(), 1, videoFrame.Length(),
-                 _decodedFile) !=  videoFrame.Length()) {
+      if (PrintI420VideoFrame(videoFrame, _decodedFile) < 0) {
         return -1;
       }
       _frameCnt++;
-      //printf("frame dec # %d", _frameCnt);
         // no need for interpolator and decBuffer
         if (_decBuffer != NULL)
         {
             delete [] _decBuffer;
             _decBuffer = NULL;
         }
-//        if (_interpolator != NULL)
-//        {
-//            deleteInterpolator(_interpolator);
-//            _interpolator = NULL;
-//        }
         _decWidth = 0;
         _decHeight = 0;
     }
     else
     {
-        if ((_decWidth != videoFrame.Width()) || (_decHeight != videoFrame.Height()))
-        {
-            _decWidth = videoFrame.Width();
-            _decHeight = videoFrame.Height();
-            buildInterpolator();
-        }
-
-//        interpolateFrame(_interpolator, videoFrame.Buffer(),_decBuffer);
-        if (fwrite(_decBuffer, 1, _origWidth*_origHeight * 3/2,
-                   _decodedFile) !=  _origWidth*_origHeight * 3/2) {
-          return -1;
-        }
-        _frameCnt++;
+      // TODO(mikhal): Add support for scaling.
+      return -1;
     }
 
-    _decodedBytes += videoFrame.Length();
+    _decodedBytes += CalcBufferSize(kI420, videoFrame.width(),
+                                    videoFrame.height());
     return VCM_OK;
 }
 
@@ -467,7 +456,8 @@ VCMQMDecodeCompleCallback::DecodedBytes()
 }
 
 void
-VCMQMDecodeCompleCallback::SetOriginalFrameDimensions(WebRtc_Word32 width, WebRtc_Word32 height)
+VCMQMDecodeCompleCallback::SetOriginalFrameDimensions(WebRtc_Word32 width,
+                                                      WebRtc_Word32 height)
 {
     _origWidth = width;
     _origHeight = height;

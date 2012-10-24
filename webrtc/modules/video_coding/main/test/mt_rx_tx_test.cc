@@ -34,12 +34,11 @@ MainSenderThread(void* obj)
     SendSharedState* state = static_cast<SendSharedState*>(obj);
     EventWrapper& waitEvent = *EventWrapper::Create();
     // preparing a frame for encoding
-    VideoFrame sourceFrame;
+    I420VideoFrame sourceFrame;
     WebRtc_Word32 width = state->_args.width;
     WebRtc_Word32 height = state->_args.height;
     float frameRate = state->_args.frameRate;
     WebRtc_Word32 lengthSourceFrame  = 3*width*height/2;
-    sourceFrame.VerifyAndAllocate(lengthSourceFrame);
     WebRtc_UWord8* tmpBuffer = new WebRtc_UWord8[lengthSourceFrame];
 
     if (state->_sourceFile == NULL)
@@ -58,11 +57,17 @@ MainSenderThread(void* obj)
         TEST(fread(tmpBuffer, 1, lengthSourceFrame,state->_sourceFile) > 0 ||
              feof(state->_sourceFile));
         state->_frameCnt++;
-        sourceFrame.CopyFrame(lengthSourceFrame, tmpBuffer);
-        sourceFrame.SetHeight(height);
-        sourceFrame.SetWidth(width);
+        int size_y = width * height;
+        int half_width = (width + 1) / 2;
+        int half_height = (height + 1) / 2;
+        int size_uv = half_width * half_height;
+        sourceFrame.CreateFrame(size_y, tmpBuffer,
+                                size_uv, tmpBuffer + size_y,
+                                size_uv, tmpBuffer + size_y + size_uv,
+                                width, height,
+                                width, half_width, half_width);
         state->_timestamp += (WebRtc_UWord32)(9e4 / frameRate);
-        sourceFrame.SetTimeStamp(state->_timestamp);
+        sourceFrame.set_timestamp(state->_timestamp);
 
         WebRtc_Word32 ret = state->_vcm.AddVideoFrame(sourceFrame);
         if (ret < 0)

@@ -39,19 +39,25 @@ class TestScaler : public ::testing::Test {
 
   Scaler test_scaler_;
   FILE* source_file_;
-  VideoFrame test_frame_;
+  I420VideoFrame test_frame_;
   const int width_;
+  const int half_width_;
   const int height_;
+  const int half_height_;
+  const int size_y_;
+  const int size_uv_;
   const int frame_length_;
 };
 
-
-// TODO (mikhal): Use scoped_ptr when handling buffers.
 TestScaler::TestScaler()
     : source_file_(NULL),
       width_(352),
+      half_width_(width_ / 2),
       height_(288),
-      frame_length_(CalcBufferSize(kI420, 352, 288)) {
+      half_height_(height_ / 2),
+      size_y_(width_ * height_),
+      size_uv_(half_width_ * half_height_),
+      frame_length_(CalcBufferSize(kI420, width_, height_)) {
 }
 
 void TestScaler::SetUp() {
@@ -60,8 +66,8 @@ void TestScaler::SetUp() {
   source_file_  = fopen(input_file_name.c_str(), "rb");
   ASSERT_TRUE(source_file_ != NULL) << "Cannot read file: "<<
                                        input_file_name << "\n";
-  test_frame_.VerifyAndAllocate(frame_length_);
-  test_frame_.SetLength(frame_length_);
+  test_frame_.CreateEmptyFrame(width_, height_,
+                               width_, half_width_, half_width_);
 }
 
 void TestScaler::TearDown() {
@@ -69,7 +75,6 @@ void TestScaler::TearDown() {
     ASSERT_EQ(0, fclose(source_file_));
   }
   source_file_ = NULL;
-  test_frame_.Free();
 }
 
 TEST_F(TestScaler, ScaleWithoutSettingValues) {
@@ -85,22 +90,30 @@ TEST_F(TestScaler, ScaleBadInitialValues) {
 }
 
 TEST_F(TestScaler, ScaleSendingNullSourcePointer) {
-  VideoFrame null_src_frame;
+  I420VideoFrame null_src_frame;
   EXPECT_EQ(-1, test_scaler_.Scale(null_src_frame, &test_frame_));
 }
 
 TEST_F(TestScaler, ScaleSendingBufferTooSmall) {
   // Sending a buffer which is too small (should reallocate and update size)
-  EXPECT_EQ(0, test_scaler_.Set(352, 288, 144, 288, kI420, kI420, kScalePoint));
-  VideoFrame test_frame2;
-  EXPECT_GT(fread(test_frame_.Buffer(), 1, frame_length_, source_file_), 0U);
+  EXPECT_EQ(0, test_scaler_.Set(width_, height_,
+                                half_width_, half_height_,
+                                kI420, kI420,
+                                kScalePoint));
+  I420VideoFrame test_frame2;
+  scoped_array<uint8_t> orig_buffer(new uint8_t[frame_length_]);
+  EXPECT_GT(fread(orig_buffer.get(), 1, frame_length_, source_file_), 0U);
+  test_frame_.CreateFrame(size_y_, orig_buffer.get(),
+                          size_uv_, orig_buffer.get() + size_y_,
+                          size_uv_, orig_buffer.get() + size_y_ + size_uv_,
+                          width_, height_,
+                          width_, half_width_, half_width_);
   EXPECT_EQ(0, test_scaler_.Scale(test_frame_, &test_frame2));
-  EXPECT_EQ(CalcBufferSize(kI420, 144, 288),
-            static_cast<int>(test_frame2.Size()));
-  EXPECT_EQ(144u, test_frame2.Width());
-  EXPECT_EQ(288u, test_frame2.Height());
-  EXPECT_EQ(CalcBufferSize(kI420, 144, 288),
-            static_cast<int>(test_frame2.Length()));
+  EXPECT_GT(width_ * height_, test_frame2.allocated_size(kYPlane));
+  EXPECT_GT(size_uv_, test_frame2.allocated_size(kUPlane));
+  EXPECT_GT(size_uv_, test_frame2.allocated_size(kVPlane));
+  EXPECT_EQ(half_width_, test_frame2.width());
+  EXPECT_EQ(half_height_, test_frame2.height());
 }
 
 //TODO (mikhal): Converge the test into one function that accepts the method.
@@ -113,7 +126,7 @@ TEST_F(TestScaler, PointScaleTest) {
   ScaleSequence(method,
                 source_file_, out_name,
                 width_, height_,
-                width_ / 2, height_ / 2);
+                half_width_, half_height_);
   // Upsample back up and check PSNR.
   source_file2 = fopen(out_name.c_str(), "rb");
   out_name = webrtc::test::OutputPath() + "LibYuvTest_PointScale_352_288_"
@@ -422,31 +435,34 @@ void TestScaler::ScaleSequence(ScaleMethod method,
 
   rewind(source_file);
 
-  int out_required_size = CalcBufferSize(kI420, dst_width, dst_height);
-  int in_required_size = CalcBufferSize(kI420, src_width, src_height);
-
-  VideoFrame input_frame, output_frame;
-  input_frame.VerifyAndAllocate(in_required_size);
-  input_frame.SetLength(in_required_size);
-  output_frame.VerifyAndAllocate(out_required_size);
-  output_frame.SetLength(out_required_size);
-
+  I420VideoFrame input_frame;
+  I420VideoFrame output_frame;
   int64_t start_clock, total_clock;
   total_clock = 0;
   int frame_count = 0;
+  int src_required_size = CalcBufferSize(kI420, src_width, src_height);
+  scoped_array<uint8_t> frame_buffer(new uint8_t[src_required_size]);
+  int size_y = src_width * src_height;
+  int size_uv = ((src_width + 1) / 2) * ((src_height + 1) / 2);
 
   // Running through entire sequence.
   while (feof(source_file) == 0) {
-      if ((size_t)in_required_size !=
-          fread(input_frame.Buffer(), 1, in_required_size, source_file))
-        break;
+    if ((size_t)src_required_size !=
+      fread(frame_buffer.get(), 1, src_required_size, source_file))
+      break;
+
+    input_frame.CreateFrame(size_y, frame_buffer.get(),
+                            size_uv, frame_buffer.get() + size_y,
+                            size_uv, frame_buffer.get() + size_y + size_uv,
+                            src_width, src_height,
+                            src_width, (src_width + 1) / 2,
+                            (src_width + 1) / 2);
 
     start_clock = TickTime::MillisecondTimestamp();
     EXPECT_EQ(0, test_scaler_.Scale(input_frame, &output_frame));
     total_clock += TickTime::MillisecondTimestamp() - start_clock;
-    if (fwrite(output_frame.Buffer(), 1, output_frame.Size(),
-        output_file) !=  static_cast<unsigned int>(output_frame.Size())) {
-      return;
+    if (PrintI420VideoFrame(output_frame, output_file) < 0) {
+        return;
     }
     frame_count++;
   }

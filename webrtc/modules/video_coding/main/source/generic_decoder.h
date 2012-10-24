@@ -38,7 +38,7 @@ public:
     virtual ~VCMDecodedFrameCallback();
     void SetUserReceiveCallback(VCMReceiveCallback* receiveCallback);
 
-    virtual WebRtc_Word32 Decoded(VideoFrame& decodedImage);
+    virtual WebRtc_Word32 Decoded(I420VideoFrame& decodedImage);
     virtual WebRtc_Word32 ReceivedDecodedReferenceFrame(const WebRtc_UWord64 pictureId);
     virtual WebRtc_Word32 ReceivedDecodedFrame(const WebRtc_UWord64 pictureId);
 
@@ -50,7 +50,7 @@ public:
 private:
     CriticalSectionWrapper* _critSect;
     TickTimeBase* _clock;
-    VideoFrame _frame;
+    I420VideoFrame _frame;
     VCMReceiveCallback* _receiveCallback;
     VCMTiming& _timing;
     VCMTimestampMap _timestampMap;

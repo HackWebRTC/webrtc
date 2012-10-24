@@ -23,26 +23,26 @@ FrameScaler::FrameScaler()
 
 FrameScaler::~FrameScaler() {}
 
-int FrameScaler::ResizeFrameIfNeeded(VideoFrame* video_frame,
-                                     WebRtc_UWord32 out_width,
-                                     WebRtc_UWord32 out_height) {
-  if (video_frame->Length() == 0) {
+int FrameScaler::ResizeFrameIfNeeded(I420VideoFrame* video_frame,
+                                     int out_width,
+                                     int out_height) {
+  if (video_frame->IsZeroSize()) {
     return -1;
   }
 
-  if ((video_frame->Width() != out_width) ||
-      (video_frame->Height() != out_height)) {
+  if ((video_frame->width() != out_width) ||
+      (video_frame->height() != out_height)) {
     // Set correct scale settings and scale |video_frame| into |scaled_frame_|.
-    scaler_->Set(video_frame->Width(), video_frame->Height(), out_width,
+    scaler_->Set(video_frame->width(), video_frame->height(), out_width,
                  out_height, kI420, kI420, kScaleBox);
     int ret = scaler_->Scale(*video_frame, &scaled_frame_);
     if (ret < 0) {
       return ret;
     }
 
-    scaled_frame_.SetRenderTime(video_frame->RenderTimeMs());
-    scaled_frame_.SetTimeStamp(video_frame->TimeStamp());
-    video_frame->SwapFrame(scaled_frame_);
+    scaled_frame_.set_render_time_ms(video_frame->render_time_ms());
+    scaled_frame_.set_timestamp(video_frame->timestamp());
+    video_frame->SwapFrame(&scaled_frame_);
   }
   return 0;
 }

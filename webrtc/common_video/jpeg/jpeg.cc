@@ -84,21 +84,21 @@ JpegEncoder::SetFileName(const char* fileName)
 
 
 WebRtc_Word32
-JpegEncoder::Encode(const VideoFrame& inputImage)
+JpegEncoder::Encode(const I420VideoFrame& inputImage)
 {
-    if (inputImage.Buffer() == NULL || inputImage.Size() == 0)
+    if (inputImage.IsZeroSize())
     {
         return -1;
     }
-    if (inputImage.Width() < 1 || inputImage.Height() < 1)
+    if (inputImage.width() < 1 || inputImage.height() < 1)
     {
         return -1;
     }
 
     FILE* outFile = NULL;
 
-    const WebRtc_UWord32 width = inputImage.Width();
-    const WebRtc_UWord32 height = inputImage.Height();
+    const int width = inputImage.width();
+    const int height = inputImage.height();
 
     // Set error handler
     myErrorMgr      jerr;
@@ -141,9 +141,15 @@ JpegEncoder::Encode(const VideoFrame& inputImage)
     _cinfo->comp_info[2].h_samp_factor = 1;   // V
     _cinfo->comp_info[2].v_samp_factor = 1;
     _cinfo->raw_data_in = TRUE;
+    // Converting to a buffer
+    // TODO(mikhal): This is a tmp implementation. Will update to use LibYuv
+    // Encode when that becomes available.
+    unsigned int length = CalcBufferSize(kI420, width, height);
+    scoped_array<uint8_t> image_buffer(new uint8_t[length]);
+    ExtractBuffer(inputImage, length, image_buffer.get());
+    int height16 = (height + 15) & ~15;
+    WebRtc_UWord8* imgPtr = image_buffer.get();
 
-    WebRtc_UWord32 height16 = (height + 15) & ~15;
-    WebRtc_UWord8* imgPtr = inputImage.Buffer();
     WebRtc_UWord8* origImagePtr = NULL;
     if (height16 != height)
     {
@@ -151,7 +157,7 @@ JpegEncoder::Encode(const VideoFrame& inputImage)
         WebRtc_UWord32 requiredSize = CalcBufferSize(kI420, width, height16);
         origImagePtr = new WebRtc_UWord8[requiredSize];
         memset(origImagePtr, 0, requiredSize);
-        memcpy(origImagePtr, inputImage.Buffer(), inputImage.Length());
+        memcpy(origImagePtr, image_buffer.get(), length);
         imgPtr = origImagePtr;
     }
 
@@ -164,7 +170,7 @@ JpegEncoder::Encode(const VideoFrame& inputImage)
     data[1] = u;
     data[2] = v;
 
-    WebRtc_UWord32 i, j;
+    int i, j;
 
     for (j = 0; j < height; j += 16)
     {
@@ -197,7 +203,7 @@ JpegEncoder::Encode(const VideoFrame& inputImage)
 }
 
 int ConvertJpegToI420(const EncodedImage& input_image,
-                      VideoFrame* output_image) {
+                      I420VideoFrame* output_image) {
 
   if (output_image == NULL)
     return -1;
@@ -211,11 +217,8 @@ int ConvertJpegToI420(const EncodedImage& input_image,
     return -2;  // not supported.
   int width = jpeg_decoder.GetWidth();
   int height = jpeg_decoder.GetHeight();
-  int req_size = CalcBufferSize(kI420, width, height);
-  output_image->VerifyAndAllocate(req_size);
-  output_image->SetWidth(width);
-  output_image->SetHeight(height);
-  output_image->SetLength(req_size);
+  output_image->CreateEmptyFrame(width, height, width,
+                                 (width + 1) / 2, (width + 1) / 2);
   return ConvertToI420(kMJPG,
                        input_image._buffer,
                        0, 0,  // no cropping

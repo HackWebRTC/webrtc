@@ -23,13 +23,13 @@ class VideoRenderFrames {
   ~VideoRenderFrames();
 
   // Add a frame to the render queue
-  WebRtc_Word32 AddFrame(VideoFrame* new_frame);
+  WebRtc_Word32 AddFrame(I420VideoFrame* new_frame);
 
   // Get a frame for rendering, if it's time to render.
-  VideoFrame* FrameToRender();
+  I420VideoFrame* FrameToRender();
 
   // Return an old frame
-  WebRtc_Word32 ReturnFrame(VideoFrame* old_frame);
+  WebRtc_Word32 ReturnFrame(I420VideoFrame* old_frame);
 
   // Releases all frames
   WebRtc_Word32 ReleaseAllFrames();

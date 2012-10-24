@@ -119,7 +119,7 @@ public:
 
     // VideoRenderCallback
     virtual WebRtc_Word32 RenderFrame(const WebRtc_UWord32 streamId,
-                                      VideoFrame& videoFrame);
+                                      I420VideoFrame& videoFrame);
 
 private:
     WebRtc_Word32 _id;

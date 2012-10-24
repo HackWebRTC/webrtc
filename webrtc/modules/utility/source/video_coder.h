@@ -35,10 +35,10 @@ public:
     WebRtc_Word32 SetDecodeCodec(VideoCodec& videoCodecInst,
                                  WebRtc_Word32 numberOfCores);
 
-    WebRtc_Word32 Decode(VideoFrame& decodedVideo,
+    WebRtc_Word32 Decode(I420VideoFrame& decodedVideo,
                          const EncodedVideoData& encodedData);
 
-    WebRtc_Word32 Encode(const VideoFrame& videoFrame,
+    WebRtc_Word32 Encode(const I420VideoFrame& videoFrame,
                          EncodedVideoData& videoEncodedData);
 
     WebRtc_Word8 DefaultPayloadType(const char* plName);
@@ -46,7 +46,7 @@ public:
 private:
     // VCMReceiveCallback function.
     // Note: called by VideoCodingModule when decoding finished.
-    WebRtc_Word32 FrameToRender(VideoFrame& videoFrame);
+    WebRtc_Word32 FrameToRender(I420VideoFrame& videoFrame);
 
     // VCMPacketizationCallback function.
     // Note: called by VideoCodingModule when encoding finished.
@@ -61,7 +61,7 @@ private:
         const RTPVideoHeader* rtpTypeHdr);
 
     VideoCodingModule* _vcm;
-    VideoFrame* _decodedVideo;
+    I420VideoFrame* _decodedVideo;
     EncodedVideoData* _videoEncodedData;
 };
 } // namespace webrtc

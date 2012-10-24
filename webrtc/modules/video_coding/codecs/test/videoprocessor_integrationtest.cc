@@ -156,7 +156,8 @@ class VideoProcessorIntegrationTest: public testing::Test {
         webrtc::test::ResourcePath("foreman_cif", "yuv");
     config_.output_filename = webrtc::test::OutputPath() +
           "foreman_cif_short_video_codecs_test_framework_integrationtests.yuv";
-    config_.frame_length_in_bytes = 3 * kCIFWidth * kCIFHeight / 2;
+    config_.frame_length_in_bytes = CalcBufferSize(kI420,
+                                                   kCIFWidth, kCIFHeight);
     config_.verbose = false;
     // Only allow encoder/decoder to use single core, for predictability.
     config_.use_single_core = true;

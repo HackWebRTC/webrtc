@@ -14,6 +14,8 @@
 #include "modules/utility/interface/process_thread.h"
 #include "modules/video_capture/main/interface/video_capture.h"
 #include "modules/video_capture/main/interface/video_capture_factory.h"
+#include "common_video/interface/i420_video_frame.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "system_wrappers/interface/critical_section_wrapper.h"
 #include "system_wrappers/interface/scoped_ptr.h"
 #include "system_wrappers/interface/scoped_refptr.h"
@@ -57,63 +59,80 @@ static const int kTestWidth = 352;
 static const int kTestFramerate = 30;
 
 // Compares the content of two video frames.
-static bool CompareFrames(const webrtc::VideoFrame& frame1,
-                          const webrtc::VideoFrame& frame2) {
+static bool CompareFrames(const webrtc::I420VideoFrame& frame1,
+                          const webrtc::I420VideoFrame& frame2) {
   bool result =
-      (frame1.Length() == frame2.Length()) &&
-      (frame1.Width() == frame2.Width()) &&
-      (frame1.Height() == frame2.Height());
+      (frame1.stride(webrtc::kYPlane) == frame2.stride(webrtc::kYPlane)) &&
+      (frame1.stride(webrtc::kUPlane) == frame2.stride(webrtc::kUPlane)) &&
+      (frame1.stride(webrtc::kVPlane) == frame2.stride(webrtc::kVPlane)) &&
+      (frame1.width() == frame2.width()) &&
+      (frame1.height() == frame2.height());
 
-  for (unsigned int i = 0; i < frame1.Length() && result; ++i)
-    result = (*(frame1.Buffer()+i) == *(frame2.Buffer()+i));
-  return result;
+  if (!result)
+    return false;
+  for (int plane = 0; plane < webrtc::kNumOfPlanes; plane ++) {
+      webrtc::PlaneType plane_type = static_cast<webrtc::PlaneType>(plane);
+      int allocated_size1 = frame1.allocated_size(plane_type);
+      int allocated_size2 = frame2.allocated_size(plane_type);
+      if (allocated_size1 != allocated_size2)
+        return false;
+      const uint8_t* plane_buffer1 = frame1.buffer(plane_type);
+      const uint8_t* plane_buffer2 = frame2.buffer(plane_type);
+      if (memcmp(plane_buffer1, plane_buffer2, allocated_size1))
+        return false;
+    }
+    return true;
 }
 
-// Compares the content of a I420 frame in planar form and video frame.
+// Compares the content of a I420 frame in planar form and the new video frame.
 static bool CompareFrames(const webrtc::VideoFrameI420& frame1,
-                          const webrtc::VideoFrame& frame2) {
-  if (frame1.width != frame2.Width() ||
-      frame1.height != frame2.Height()) {
+                          const webrtc::I420VideoFrame& frame2) {
+  if (frame1.width != frame2.width() ||
+      frame1.height != frame2.height()) {
       return false;
   }
 
   // Compare Y
-  unsigned char* y_plane = frame1.y_plane;
-  for (unsigned int i = 0; i < frame2.Height(); ++i) {
-    for (unsigned int j = 0; j < frame2.Width(); ++j) {
-      if (*y_plane != *(frame2.Buffer()+i*frame2.Width() +j))
+  const unsigned char* y_plane = frame1.y_plane;
+  const unsigned char* y_plane2 = frame2.buffer(webrtc::kYPlane);
+  for (int i = 0; i < frame2.height(); ++i) {
+    for (int j = 0; j < frame2.width(); ++j) {
+      if (*y_plane != *y_plane2)
         return false;
       ++y_plane;
+      ++y_plane2;
     }
     y_plane += frame1.y_pitch - frame1.width;
+    y_plane2 += frame2.stride(webrtc::kYPlane) - frame2.width();
   }
 
   // Compare U
-  unsigned char* u_plane = frame1.u_plane;
-  for (unsigned int i = 0; i < frame2.Height() /2; ++i) {
-    for (unsigned int j = 0; j < frame2.Width() /2; ++j) {
-      if (*u_plane !=*(
-          frame2.Buffer()+frame2.Width() * frame2.Height() +
-          i*frame2.Width() / 2 + j)) {
+  const unsigned char* u_plane = frame1.u_plane;
+  const unsigned char* u_plane2 = frame2.buffer(webrtc::kUPlane);
+  for (int i = 0; i < (frame2.height() + 1) / 2; ++i) {
+    for (int j = 0; j < (frame2.width() + 1) / 2; ++j) {
+      if (*u_plane != *u_plane2)
         return false;
-      }
       ++u_plane;
+      ++u_plane2;
     }
-    u_plane += frame1.u_pitch - frame1.width / 2;
+    u_plane += frame1.u_pitch - (frame1.width + 1) / 2;
+    u_plane2+= frame2.stride(webrtc::kUPlane) - (frame2.width() + 1) / 2;
   }
 
   // Compare V
   unsigned char* v_plane = frame1.v_plane;
-  for (unsigned int i = 0; i < frame2.Height() /2; ++i) {
-    for (unsigned int j = 0; j < frame2.Width() /2; ++j) {
-      if (*v_plane != *(
-          frame2.Buffer()+frame2.Width() * frame2.Height()* 5 / 4 +
-          i*frame2.Width() / 2 + j)) {
+  const unsigned char* v_plane2 = frame2.buffer(webrtc::kVPlane);
+  for (int i = 0; i < frame2.height() /2; ++i) {
+    for (int j = 0; j < frame2.width() /2; ++j) {
+      if (*u_plane != *u_plane2) {
         return false;
       }
       ++v_plane;
+      ++v_plane2;
     }
-    v_plane += frame1.v_pitch - frame1.width / 2;
+    v_plane += frame1.v_pitch - (frame1.width + 1) / 2;
+    u_plane2+= frame2.stride(webrtc::kVPlane) - (frame2.width() + 1) / 2;
   }
   return true;
 }
@@ -135,32 +154,38 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
   }
 
   virtual void OnIncomingCapturedFrame(const WebRtc_Word32 id,
-                                       webrtc::VideoFrame& videoFrame,
+                                       webrtc::I420VideoFrame& videoFrame,
                                        webrtc::VideoCodecType codecType) {
     CriticalSectionScoped cs(capture_cs_.get());
 
-    int height = static_cast<int>(videoFrame.Height());
-    int width = static_cast<int>(videoFrame.Width());
+    int height = videoFrame.height();
+    int width = videoFrame.width();
     EXPECT_EQ(height, capability_.height);
     EXPECT_EQ(width, capability_.width);
     // RenderTimstamp should be the time now.
     EXPECT_TRUE(
-        videoFrame.RenderTimeMs() >= TickTime::MillisecondTimestamp()-30 &&
-        videoFrame.RenderTimeMs() <= TickTime::MillisecondTimestamp());
+        videoFrame.render_time_ms() >= TickTime::MillisecondTimestamp()-30 &&
+        videoFrame.render_time_ms() <= TickTime::MillisecondTimestamp());
 
-    if ((videoFrame.RenderTimeMs() >
+    if ((videoFrame.render_time_ms() >
             last_render_time_ms_ + (1000 * 1.1) / capability_.maxFPS &&
             last_render_time_ms_ > 0) ||
-        (videoFrame.RenderTimeMs() <
+        (videoFrame.render_time_ms() <
             last_render_time_ms_ + (1000 * 0.9) / capability_.maxFPS &&
             last_render_time_ms_ > 0)) {
       timing_warnings_++;
     }
 
     incoming_frames_++;
-    last_render_time_ms_ = videoFrame.RenderTimeMs();
+    last_render_time_ms_ = videoFrame.render_time_ms();
     last_frame_.CopyFrame(videoFrame);
   }
+  virtual void OnIncomingCapturedEncodedFrame(const WebRtc_Word32 id,
+                                              webrtc::VideoFrame& videoFrame,
+                                              webrtc::VideoCodecType codecType)
+ {
+     assert(!"NOTIMPLEMENTED");
+ }
 
   virtual void OnCaptureDelayChanged(const WebRtc_Word32 id,
                                      const WebRtc_Word32 delay) {
@@ -193,7 +218,7 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
     return capability_;
   }
 
-  bool CompareLastFrame(const webrtc::VideoFrame& frame) {
+  bool CompareLastFrame(const webrtc::I420VideoFrame& frame) {
     CriticalSectionScoped cs(capture_cs_.get());
     return CompareFrames(last_frame_, frame);
   }
@@ -210,7 +235,7 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
   WebRtc_Word64 last_render_time_ms_;
   int incoming_frames_;
   int timing_warnings_;
-  webrtc::VideoFrame last_frame_;
+  webrtc::I420VideoFrame last_frame_;
 };
 
 class TestVideoCaptureFeedBack : public VideoCaptureFeedBack {
@@ -421,12 +446,14 @@ class VideoCaptureExternalTest : public testing::Test {
     capability.maxFPS = kTestFramerate;
     capture_callback_.SetExpectedCapability(capability);
 
-    test_frame_.VerifyAndAllocate(kTestWidth * kTestHeight * 3 / 2);
-    test_frame_.SetLength(kTestWidth * kTestHeight * 3 / 2);
-    test_frame_.SetHeight(kTestHeight);
-    test_frame_.SetWidth(kTestWidth);
+    test_frame_.CreateEmptyFrame(kTestWidth, kTestHeight, kTestWidth,
+                                 ((kTestWidth + 1) / 2), (kTestWidth + 1) / 2);
     SleepMs(1); // Wait 1ms so that two tests can't have the same timestamp.
-    memset(test_frame_.Buffer(), 127, test_frame_.Length());
+    memset(test_frame_.buffer(webrtc::kYPlane), 127, kTestWidth * kTestHeight);
+    memset(test_frame_.buffer(webrtc::kUPlane), 127,
+           ((kTestWidth + 1) / 2) * ((kTestHeight + 1) / 2));
+    memset(test_frame_.buffer(webrtc::kVPlane), 127,
+           ((kTestWidth + 1) / 2) * ((kTestHeight + 1) / 2));
 
     EXPECT_EQ(0, capture_module_->RegisterCaptureDataCallback(
         capture_callback_));
@@ -443,16 +470,20 @@ class VideoCaptureExternalTest : public testing::Test {
   webrtc::VideoCaptureExternal* capture_input_interface_;
   webrtc::scoped_refptr<VideoCaptureModule> capture_module_;
   webrtc::ProcessThread* process_module_;
-  webrtc::VideoFrame test_frame_;
+  webrtc::I420VideoFrame test_frame_;
   TestVideoCaptureCallback capture_callback_;
   TestVideoCaptureFeedBack capture_feedback_;
 };
 
 // Test input of external video frames.
-TEST_F(VideoCaptureExternalTest , TestExternalCapture) {
-  EXPECT_EQ(0, capture_input_interface_->IncomingFrame(
-      test_frame_.Buffer(), test_frame_.Length(),
-      capture_callback_.capability(), 0));
+TEST_F(VideoCaptureExternalTest, TestExternalCapture) {
+  unsigned int length = webrtc::CalcBufferSize(webrtc::kI420,
+                                               test_frame_.width(),
+                                               test_frame_.height());
+  webrtc::scoped_array<uint8_t> test_buffer(new uint8_t[length]);
+  webrtc::ExtractBuffer(test_frame_, length, test_buffer.get());
+  EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),
+      length, capture_callback_.capability(), 0));
   EXPECT_TRUE(capture_callback_.CompareLastFrame(test_frame_));
 }
 
@@ -463,7 +494,7 @@ TEST_F(VideoCaptureExternalTest, DISABLED_TestExternalCaptureI420) {
   webrtc::VideoFrameI420 frame_i420;
   frame_i420.width = kTestWidth;
   frame_i420.height = kTestHeight;
-  frame_i420.y_plane = test_frame_.Buffer();
+  frame_i420.y_plane = test_frame_.buffer(webrtc::kYPlane);
   frame_i420.u_plane = frame_i420.y_plane + (kTestWidth * kTestHeight);
   frame_i420.v_plane = frame_i420.u_plane + ((kTestWidth * kTestHeight) >> 2);
   frame_i420.y_pitch = kTestWidth;
@@ -473,26 +504,34 @@ TEST_F(VideoCaptureExternalTest, DISABLED_TestExternalCaptureI420) {
   EXPECT_TRUE(capture_callback_.CompareLastFrame(frame_i420));
 
   // Test with a frame with pitch not equal to width
-  memset(test_frame_.Buffer(), 0xAA, test_frame_.Length());
-  webrtc::VideoFrame aligned_test_frame;
+  memset(test_frame_.buffer(webrtc::kYPlane), 0xAA,
+         test_frame_.allocated_size(webrtc::kYPlane));
+  memset(test_frame_.buffer(webrtc::kUPlane), 0xAA,
+         test_frame_.allocated_size(webrtc::kUPlane));
+  memset(test_frame_.buffer(webrtc::kVPlane), 0xAA,
+         test_frame_.allocated_size(webrtc::kVPlane));
+  webrtc::I420VideoFrame aligned_test_frame;
   int y_pitch = kTestWidth + 2;
   int u_pitch = kTestWidth / 2 + 1;
   int v_pitch = u_pitch;
-  aligned_test_frame.VerifyAndAllocate(kTestHeight * y_pitch +
-                                       (kTestHeight / 2) * u_pitch +
-                                       (kTestHeight / 2) * v_pitch);
-  aligned_test_frame.SetLength(aligned_test_frame.Size());
-  memset(aligned_test_frame.Buffer(), 0, aligned_test_frame.Length());
+  aligned_test_frame.CreateEmptyFrame(kTestWidth, kTestHeight,
+                                      y_pitch, u_pitch, v_pitch);
+  memset(aligned_test_frame.buffer(webrtc::kYPlane), 0,
+         kTestWidth * kTestHeight);
+  memset(aligned_test_frame.buffer(webrtc::kUPlane), 0,
+         (kTestWidth + 1) / 2  * (kTestHeight + 1) / 2);
+  memset(aligned_test_frame.buffer(webrtc::kVPlane), 0,
+         (kTestWidth + 1) / 2  * (kTestHeight + 1) / 2);
   // Copy the test_frame_ to aligned_test_frame.
   int y_width = kTestWidth;
   int uv_width = kTestWidth / 2;
   int y_rows = kTestHeight;
   int uv_rows = kTestHeight / 2;
-  unsigned char* current_pointer = aligned_test_frame.Buffer();
-  unsigned char* y_plane = test_frame_.Buffer();
-  unsigned char* u_plane = y_plane + kTestWidth * kTestHeight;
-  unsigned char* v_plane = u_plane + ((kTestWidth * kTestHeight) >> 2);
+  unsigned char* y_plane = test_frame_.buffer(webrtc::kYPlane);
+  unsigned char* u_plane = test_frame_.buffer(webrtc::kUPlane);
+  unsigned char* v_plane = test_frame_.buffer(webrtc::kVPlane);
   // Copy Y
+  unsigned char* current_pointer = aligned_test_frame.buffer(webrtc::kYPlane);
   for (int i = 0; i < y_rows; ++i) {
     memcpy(current_pointer, y_plane, y_width);
     // Remove the alignment which ViE doesn't support.
@@ -500,6 +539,7 @@ TEST_F(VideoCaptureExternalTest, DISABLED_TestExternalCaptureI420) {
     y_plane += y_width;
   }
   // Copy U
+  current_pointer = aligned_test_frame.buffer(webrtc::kUPlane);
   for (int i = 0; i < uv_rows; ++i) {
     memcpy(current_pointer, u_plane, uv_width);
     // Remove the alignment which ViE doesn't support.
@@ -507,6 +547,7 @@ TEST_F(VideoCaptureExternalTest, DISABLED_TestExternalCaptureI420) {
     u_plane += uv_width;
   }
   // Copy V
+  current_pointer = aligned_test_frame.buffer(webrtc::kVPlane);
   for (int i = 0; i < uv_rows; ++i) {
     memcpy(current_pointer, v_plane, uv_width);
     // Remove the alignment which ViE doesn't support.
@@ -515,9 +556,9 @@ TEST_F(VideoCaptureExternalTest, DISABLED_TestExternalCaptureI420) {
   }
   frame_i420.width = kTestWidth;
   frame_i420.height = kTestHeight;
-  frame_i420.y_plane = aligned_test_frame.Buffer();
-  frame_i420.u_plane = frame_i420.y_plane + (y_pitch * y_rows);
-  frame_i420.v_plane = frame_i420.u_plane + (u_pitch * uv_rows);
+  frame_i420.y_plane = aligned_test_frame.buffer(webrtc::kYPlane);
+  frame_i420.u_plane = aligned_test_frame.buffer(webrtc::kYPlane);
+  frame_i420.v_plane = aligned_test_frame.buffer(webrtc::kVPlane);
   frame_i420.y_pitch = y_pitch;
   frame_i420.u_pitch = u_pitch;
   frame_i420.v_pitch = v_pitch;
@@ -532,9 +573,13 @@ TEST_F(VideoCaptureExternalTest , FrameRate) {
   TickTime startTime = TickTime::Now();
 
   while ((TickTime::Now() - startTime).Milliseconds() < testTime * 1000) {
-    EXPECT_EQ(0, capture_input_interface_->IncomingFrame(
-        test_frame_.Buffer(), test_frame_.Length(),
-        capture_callback_.capability(), 0));
+     unsigned int length = webrtc::CalcBufferSize(webrtc::kI420,
+                                                 test_frame_.width(),
+                                                 test_frame_.height());
+     webrtc::scoped_array<uint8_t> test_buffer(new uint8_t[length]);
+     webrtc::ExtractBuffer(test_frame_, length, test_buffer.get());
+     EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),
+       length, capture_callback_.capability(), 0));
     SleepMs(100);
   }
   EXPECT_TRUE(capture_feedback_.frame_rate() >= 8 &&
@@ -544,9 +589,13 @@ TEST_F(VideoCaptureExternalTest , FrameRate) {
 
   startTime = TickTime::Now();
   while ((TickTime::Now() - startTime).Milliseconds() < testTime * 1000) {
-    EXPECT_EQ(0, capture_input_interface_->IncomingFrame(
-        test_frame_.Buffer(), test_frame_.Length(),
-        capture_callback_.capability(), 0));
+    unsigned int length = webrtc::CalcBufferSize(webrtc::kI420,
+                                                 test_frame_.width(),
+                                                 test_frame_.height());
+    webrtc::scoped_array<uint8_t> test_buffer(new uint8_t[length]);
+    webrtc::ExtractBuffer(test_frame_, length, test_buffer.get());
+    EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),
+      length, capture_callback_.capability(), 0));
     SleepMs(1000 / 30);
   }
   EXPECT_EQ(webrtc::Cleared, capture_feedback_.alarm());

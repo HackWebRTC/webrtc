@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include "../source/event.h"
 #include "rtp_rtcp.h"
-#include "module_common_types.h"
+#include "common_video/interface/i420_video_frame.h"
 #include "test_macros.h"
 #include "modules/video_coding/main/source/mock/fake_tick_time.h"
 
@@ -122,8 +122,7 @@ GenericCodecTest::Perform(CmdArgs& args)
     _vcm->Codec(0, &_sendCodec);
     TEST(_vcm->RegisterSendCodec(&_sendCodec, 4, 1440) == VCM_OK);
     // sanity on encoder registration
-    VideoFrame sourceFrame;
-    sourceFrame.VerifyAndAllocate(_lengthSourceFrame);
+    I420VideoFrame sourceFrame;
     _vcm->InitializeSender();
     TEST(_vcm->Codec(kVideoCodecVP8, &sendCodec) == 0);
     TEST(_vcm->RegisterSendCodec(&sendCodec, -1, 1440) < 0); // bad number of cores
@@ -147,12 +146,16 @@ GenericCodecTest::Perform(CmdArgs& args)
     }
     WebRtc_UWord8* tmpBuffer = new WebRtc_UWord8[_lengthSourceFrame];
     TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
-    // building source frame
-    sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
-    sourceFrame.SetHeight(_height);
-    sourceFrame.SetWidth(_width);
-    sourceFrame.SetTimeStamp(_timeStamp++);
-    // encode/decode
+    int half_width = (_width + 1) / 2;
+    int half_height = (_height + 1) / 2;
+    int size_y = _width * _height;
+    int size_uv = half_width * half_height;
+    sourceFrame.CreateFrame(size_y, tmpBuffer,
+                            size_uv, tmpBuffer + size_y,
+                            size_uv, tmpBuffer + size_y + size_uv,
+                            _width, _height,
+                            _width, half_width, half_width);
+    sourceFrame.set_timestamp(_timeStamp++);
     TEST(_vcm->AddVideoFrame(sourceFrame) < 0 ); // encoder uninitialized
     _vcm->InitializeReceiver();
     TEST(_vcm->SetChannelParameters(100, 0, 0) < 0);// setting rtt when receiver uninitialized
@@ -162,7 +165,6 @@ GenericCodecTest::Perform(CmdArgs& args)
     /**************************************/
     //Register both encoder and decoder, reset decoder - encode, set up decoder, reset encoder - decode.
     rewind(_sourceFile);
-    sourceFrame.Free();
     _vcm->InitializeReceiver();
     _vcm->InitializeSender();
     NumberOfCodecs = _vcm->NumberOfCodecs();
@@ -195,11 +197,13 @@ GenericCodecTest::Perform(CmdArgs& args)
     for (i = 0; i < _frameRate; i++)
     {
         TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
-        sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
-        sourceFrame.SetHeight(_height);
-        sourceFrame.SetWidth(_width);
+        sourceFrame.CreateFrame(size_y, tmpBuffer,
+                                size_uv, tmpBuffer + size_y,
+                                size_uv, tmpBuffer + size_y + size_uv,
+                                _width, _height,
+                                _width, half_width, half_width);
         _timeStamp += (WebRtc_UWord32)(9e4 / static_cast<float>(_frameRate));
-        sourceFrame.SetTimeStamp(_timeStamp);
+        sourceFrame.set_timestamp(_timeStamp);
         TEST(_vcm->AddVideoFrame(sourceFrame) == VCM_OK);
         IncrementDebugClock(_frameRate);
         _vcm->Process();
@@ -245,7 +249,7 @@ GenericCodecTest::Perform(CmdArgs& args)
     TEST(_vcm->RegisterReceiveCodec(&sendCodec, 1) == VCM_OK);
     TEST(_vcm->AddVideoFrame(sourceFrame) == VCM_OK);
     _timeStamp += (WebRtc_UWord32)(9e4 / static_cast<float>(_frameRate));
-    sourceFrame.SetTimeStamp(_timeStamp);
+    sourceFrame.set_timestamp(_timeStamp);
     // First packet of a subsequent frame required before the jitter buffer
     // will allow decoding an incomplete frame.
     TEST(_vcm->AddVideoFrame(sourceFrame) == VCM_OK);
@@ -269,8 +273,8 @@ GenericCodecTest::Perform(CmdArgs& args)
     _vcm->InitializeSender();
     _vcm->InitializeReceiver();
     rewind(_sourceFile);
-    sourceFrame.Free();
-    sourceFrame.VerifyAndAllocate(_lengthSourceFrame);
+    sourceFrame.CreateEmptyFrame(_width, _height, _width,
+                                 (_width + 1) / 2, (_width + 1) / 2);
     const float bitRate[] = {100, 400, 600, 1000, 2000};
     const float nBitrates = sizeof(bitRate)/sizeof(*bitRate);
     float _bitRate = 0;
@@ -315,11 +319,14 @@ GenericCodecTest::Perform(CmdArgs& args)
                 _lengthSourceFrame)
             {
                 _frameCnt++;
-                sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
-                sourceFrame.SetHeight(_height);
-                sourceFrame.SetWidth(_width);
+                sourceFrame.CreateFrame(size_y, tmpBuffer,
+                                        size_uv, tmpBuffer + size_y,
+                                        size_uv, tmpBuffer + size_y + size_uv,
+                                        _width, _height,
+                                        _width, (_width + 1) / 2,
+                                        (_width + 1) / 2);
                 _timeStamp += (WebRtc_UWord32)(9e4 / static_cast<float>(_frameRate));
-                sourceFrame.SetTimeStamp(_timeStamp);
+                sourceFrame.set_timestamp(_timeStamp);
 
                 ret = _vcm->AddVideoFrame(sourceFrame);
                 IncrementDebugClock(_frameRate);
@@ -364,8 +371,6 @@ GenericCodecTest::Perform(CmdArgs& args)
     /* Encoder Pipeline Delay Test */
     /******************************/
     _vcm->InitializeSender();
-    sourceFrame.Free();
-    sourceFrame.VerifyAndAllocate(_lengthSourceFrame);
     NumberOfCodecs = _vcm->NumberOfCodecs();
     bool encodeComplete = false;
     // going over all available codecs
@@ -383,11 +388,13 @@ GenericCodecTest::Perform(CmdArgs& args)
         {
             TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
             _frameCnt++;
-            sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
-            sourceFrame.SetHeight(_height);
-            sourceFrame.SetWidth(_width);
+            sourceFrame.CreateFrame(size_y, tmpBuffer,
+                                    size_uv, tmpBuffer + size_y,
+                                    size_uv, tmpBuffer + size_y + size_uv,
+                                    _width, _height,
+                                    _width, half_width, half_width);
             _timeStamp += (WebRtc_UWord32)(9e4 / static_cast<float>(_frameRate));
-            sourceFrame.SetTimeStamp(_timeStamp);
+            sourceFrame.set_timestamp(_timeStamp);
             _vcm->AddVideoFrame(sourceFrame);
             encodeComplete = _encodeCompleteCallback->EncodeComplete();
         } // first frame encoded
@@ -409,47 +416,6 @@ GenericCodecTest::Perform(CmdArgs& args)
 
     VCMRTPEncodeCompleteCallback encCompleteCallback(&rtpModule);
     _vcm->InitializeSender();
-
-    // TEST DISABLED FOR NOW SINCE VP8 DOESN'T HAVE THIS FEATURE
-
-//    sourceFrame.Free();
-//    sourceFrame.VerifyAndAllocate(_lengthSourceFrame);
-//    NumberOfCodecs = _vcm->NumberOfCodecs();
-//    WebRtc_UWord32 targetPayloadSize = 500;
-//    rtpModule.SetMaxTransferUnit(targetPayloadSize);
-//    // going over all available codecs
-//    for (int k = 0; k < NumberOfCodecs; k++)
-//    {
-//        _vcm->Codec(k, &_sendCodec);
-//        if (strncmp(_sendCodec.plName, "VP8", 3) == 0)
-//        {
-//            // Only test with VP8
-//            continue;
-//        }
-//        rtpModule.RegisterSendPayload(_sendCodec.plName, _sendCodec.plType);
-//        // Make sure we only get one NAL unit per packet
-//        _vcm->InitializeSender();
-//        _vcm->RegisterSendCodec(&_sendCodec, 4, targetPayloadSize);
-//        sendCallback.SetMaxPayloadSize(targetPayloadSize);
-//        _vcm->RegisterTransportCallback(&encCompleteCallback);
-//        sendCallback.Reset();
-//        _frameCnt = 0;
-//        rewind(_sourceFile);
-//        while (!feof(_sourceFile))
-//        {
-//            fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile);
-//            _frameCnt++;
-//            sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
-//            sourceFrame.SetHeight(_height);
-//            sourceFrame.SetWidth(_width);
-//            _timeStamp += (WebRtc_UWord32)(9e4 / static_cast<float>(_frameRate));
-//            sourceFrame.SetTimeStamp(_timeStamp);
-//            ret = _vcm->AddVideoFrame(sourceFrame);
-//        } // first frame encoded
-//        printf ("\n Codec type = %s \n",_sendCodec.plName);
-//        printf(" Average payload size = %f bytes, target = %u bytes\n", sendCallback.AveragePayloadSize(), targetPayloadSize);
-//    } // end for all codecs
-
 
     // Test temporal decimation settings
     for (int k = 0; k < NumberOfCodecs; k++)
@@ -474,13 +440,14 @@ GenericCodecTest::Perform(CmdArgs& args)
     _vcm->RegisterSendStatisticsCallback(&sendStats);
     rewind(_sourceFile);
     while (fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) ==
-        _lengthSourceFrame)
-    {
-        sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
-        sourceFrame.SetHeight(_height);
-        sourceFrame.SetWidth(_width);
+        _lengthSourceFrame) {
+        sourceFrame.CreateFrame(size_y, tmpBuffer,
+                                size_uv, tmpBuffer + size_y,
+                                size_uv, tmpBuffer + size_y + size_uv,
+                                _width, _height,
+                                _width, half_width, half_width);
         _timeStamp += (WebRtc_UWord32)(9e4 / static_cast<float>(_frameRate));
-        sourceFrame.SetTimeStamp(_timeStamp);
+        sourceFrame.set_timestamp(_timeStamp);
         ret = _vcm->AddVideoFrame(sourceFrame);
         if (_vcm->TimeUntilNextProcess() <= 0)
         {

@@ -38,7 +38,7 @@ class AndroidNativeOpenGl2Channel: public AndroidStream {
   //Implement VideoRenderCallback
   virtual WebRtc_Word32 RenderFrame(
       const WebRtc_UWord32 streamId,
-      VideoFrame& videoFrame);
+      I420VideoFrame& videoFrame);
 
   //Implements AndroidStream
   virtual void DeliverFrame(JNIEnv* jniEnv);
@@ -57,7 +57,7 @@ class AndroidNativeOpenGl2Channel: public AndroidStream {
   WebRtc_UWord32 _id;
   CriticalSectionWrapper& _renderCritSect;
 
-  VideoFrame _bufferToRender;
+  I420VideoFrame _bufferToRender;
   VideoRenderAndroid& _renderer;
   JavaVM*     _jvm;
   jobject     _javaRenderObj;

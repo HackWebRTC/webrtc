@@ -34,11 +34,11 @@ private:
 
     webrtc::VideoProcessingModule*  _vpm;
 
-    WebRtc_UWord32                      _width;
-    WebRtc_UWord32                      _height;
+    int                                 _width;
+    int                                 _height;
     float                               _frameRate;
-    WebRtc_UWord32                      _nativeWidth;
-    WebRtc_UWord32                      _nativeHeight;
+    int                                 _nativeWidth;
+    int                                 _nativeHeight;
     float                               _nativeFrameRate;
 
     WebRtc_UWord32                      _numFramesDroppedVPM;
@@ -54,7 +54,7 @@ public:
     virtual ~VCMQMDecodeCompleCallback();
     void SetUserReceiveCallback(webrtc::VCMReceiveCallback* receiveCallback);
     // will write decoded frame into file
-    WebRtc_Word32 FrameToRender(webrtc::VideoFrame& videoFrame);
+    WebRtc_Word32 FrameToRender(webrtc::I420VideoFrame& videoFrame);
     WebRtc_Word32 DecodedBytes();
     void SetOriginalFrameDimensions(WebRtc_Word32 width, WebRtc_Word32 height);
     WebRtc_Word32 buildInterpolator();
@@ -62,10 +62,10 @@ private:
     FILE*                _decodedFile;
     WebRtc_UWord32       _decodedBytes;
    // QualityModesTest&  _test;
-    WebRtc_UWord32       _origWidth;
-    WebRtc_UWord32       _origHeight;
-    WebRtc_UWord32       _decWidth;
-    WebRtc_UWord32       _decHeight;
+    int                  _origWidth;
+    int                  _origHeight;
+    int                  _decWidth;
+    int                  _decHeight;
 //    VideoInterpolator* _interpolator;
     WebRtc_UWord8*       _decBuffer;
     WebRtc_UWord32       _frameCnt; // debug

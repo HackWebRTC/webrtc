@@ -32,9 +32,9 @@ VideoFramesQueue::~VideoFramesQueue()
         ListItem* item = _incomingFrames.First();
         if (item)
         {
-            VideoFrame* ptrFrame = static_cast<VideoFrame*>(item->GetItem());
+            I420VideoFrame* ptrFrame =
+              static_cast<I420VideoFrame*>(item->GetItem());
             assert(ptrFrame != NULL);
-            ptrFrame->Free();
             delete ptrFrame;
         }
         _incomingFrames.Erase(item);
@@ -42,27 +42,20 @@ VideoFramesQueue::~VideoFramesQueue()
     while (!_emptyFrames.Empty())
     {
         ListItem* item = _emptyFrames.First();
-        if (item)
-        {
-            VideoFrame* ptrFrame = static_cast<VideoFrame*>(item->GetItem());
-            assert(ptrFrame != NULL);
-            ptrFrame->Free();
-            delete ptrFrame;
-        }
         _emptyFrames.Erase(item);
     }
 }
 
-WebRtc_Word32 VideoFramesQueue::AddFrame(const VideoFrame& newFrame)
+WebRtc_Word32 VideoFramesQueue::AddFrame(const I420VideoFrame& newFrame)
 {
-    VideoFrame* ptrFrameToAdd = NULL;
+    I420VideoFrame* ptrFrameToAdd = NULL;
     // Try to re-use a VideoFrame. Only allocate new memory if it is necessary.
     if (!_emptyFrames.Empty())
     {
         ListItem* item = _emptyFrames.First();
         if (item)
         {
-            ptrFrameToAdd = static_cast<VideoFrame*>(item->GetItem());
+            ptrFrameToAdd = static_cast<I420VideoFrame*>(item->GetItem());
             _emptyFrames.Erase(item);
         }
     }
@@ -81,7 +74,7 @@ WebRtc_Word32 VideoFramesQueue::AddFrame(const VideoFrame& newFrame)
                      "%s: allocating buffer %d", __FUNCTION__,
                      _emptyFrames.GetSize() + _incomingFrames.GetSize());
 
-        ptrFrameToAdd = new VideoFrame();
+        ptrFrameToAdd = new I420VideoFrame();
         if (!ptrFrameToAdd)
         {
             WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, -1,
@@ -98,15 +91,15 @@ WebRtc_Word32 VideoFramesQueue::AddFrame(const VideoFrame& newFrame)
 // lower than current time in ms (TickTime::MillisecondTimestamp()).
 // Note _incomingFrames is sorted so that the oldest frame is first.
 // Recycle all frames that are older than the most recent frame.
-VideoFrame* VideoFramesQueue::FrameToRecord()
+I420VideoFrame* VideoFramesQueue::FrameToRecord()
 {
-    VideoFrame* ptrRenderFrame = NULL;
+    I420VideoFrame* ptrRenderFrame = NULL;
     ListItem* item = _incomingFrames.First();
     while(item)
     {
-        VideoFrame* ptrOldestFrameInList =
-            static_cast<VideoFrame*>(item->GetItem());
-        if (ptrOldestFrameInList->RenderTimeMs() <=
+        I420VideoFrame* ptrOldestFrameInList =
+            static_cast<I420VideoFrame*>(item->GetItem());
+        if (ptrOldestFrameInList->render_time_ms() <=
             TickTime::MillisecondTimestamp() + _renderDelayMs)
         {
             if (ptrRenderFrame)
@@ -129,13 +122,13 @@ VideoFrame* VideoFramesQueue::FrameToRecord()
     return ptrRenderFrame;
 }
 
-WebRtc_Word32 VideoFramesQueue::ReturnFrame(VideoFrame* ptrOldFrame)
+WebRtc_Word32 VideoFramesQueue::ReturnFrame(I420VideoFrame* ptrOldFrame)
 {
-    ptrOldFrame->SetTimeStamp(0);
-    ptrOldFrame->SetWidth(0);
-    ptrOldFrame->SetHeight(0);
-    ptrOldFrame->SetRenderTime(0);
-    ptrOldFrame->SetLength(0);
+    ptrOldFrame->set_timestamp(0);
+    ptrOldFrame->set_width(0);
+    ptrOldFrame->set_height(0);
+    ptrOldFrame->set_render_time_ms(0);
+    ptrOldFrame->ResetSize();
     _emptyFrames.PushBack(ptrOldFrame);
     return 0;
 }

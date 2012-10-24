@@ -29,7 +29,7 @@ public:
 
     void Reset();
 
-    WebRtc_Word32 ProcessFrame(VideoFrame* frame);
+    WebRtc_Word32 ProcessFrame(I420VideoFrame* frame);
 
 private:
     WebRtc_Word32 _id;

@@ -31,26 +31,26 @@ VideoRenderFrames::~VideoRenderFrames() {
   ReleaseAllFrames();
 }
 
-WebRtc_Word32 VideoRenderFrames::AddFrame(VideoFrame* new_frame) {
+WebRtc_Word32 VideoRenderFrames::AddFrame(I420VideoFrame* new_frame) {
   const WebRtc_Word64 time_now = TickTime::MillisecondTimestamp();
 
-  if (new_frame->RenderTimeMs() + KOldRenderTimestampMS < time_now) {
+  if (new_frame->render_time_ms() + KOldRenderTimestampMS < time_now) {
     WEBRTC_TRACE(kTraceWarning, kTraceVideoRenderer, -1,
                  "%s: too old frame.", __FUNCTION__);
     return -1;
   }
-  if (new_frame->RenderTimeMs() > time_now + KFutureRenderTimestampMS) {
+  if (new_frame->render_time_ms() > time_now + KFutureRenderTimestampMS) {
     WEBRTC_TRACE(kTraceWarning, kTraceVideoRenderer, -1,
                  "%s: frame too long into the future.", __FUNCTION__);
     return -1;
   }
 
   // Get an empty frame
-  VideoFrame* frame_to_add = NULL;
+  I420VideoFrame* frame_to_add = NULL;
   if (!empty_frames_.Empty()) {
     ListItem* item = empty_frames_.First();
     if (item) {
-      frame_to_add = static_cast<VideoFrame*>(item->GetItem());
+      frame_to_add = static_cast<I420VideoFrame*>(item->GetItem());
       empty_frames_.Erase(item);
     }
   }
@@ -69,7 +69,7 @@ WebRtc_Word32 VideoRenderFrames::AddFrame(VideoFrame* new_frame) {
                  "%s: allocating buffer %d", __FUNCTION__,
                  empty_frames_.GetSize() + incoming_frames_.GetSize());
 
-    frame_to_add = new VideoFrame();
+    frame_to_add = new I420VideoFrame();
     if (!frame_to_add) {
       WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, -1,
                    "%s: could not create new frame for", __FUNCTION__);
@@ -77,32 +77,33 @@ WebRtc_Word32 VideoRenderFrames::AddFrame(VideoFrame* new_frame) {
     }
   }
 
-  frame_to_add->VerifyAndAllocate(new_frame->Length());
+  frame_to_add->CreateEmptyFrame(new_frame->width(), new_frame->height(),
+                                 new_frame->stride(kYPlane),
+                                 new_frame->stride(kUPlane),
+                                 new_frame->stride(kVPlane));
   // TODO(mflodman) Change this!
   // Remove const ness. Copying will be costly.
-  frame_to_add->SwapFrame(const_cast<VideoFrame&>(*new_frame));
+  frame_to_add->SwapFrame(new_frame);
   incoming_frames_.PushBack(frame_to_add);
 
   return incoming_frames_.GetSize();
 }
 
-VideoFrame* VideoRenderFrames::FrameToRender() {
-  VideoFrame* render_frame = NULL;
+I420VideoFrame* VideoRenderFrames::FrameToRender() {
+  I420VideoFrame* render_frame = NULL;
   while (!incoming_frames_.Empty()) {
     ListItem* item = incoming_frames_.First();
     if (item) {
-      VideoFrame* oldest_frame_in_list =
-          static_cast<VideoFrame*>(item->GetItem());
-      if (oldest_frame_in_list->RenderTimeMs() <=
+      I420VideoFrame* oldest_frame_in_list =
+          static_cast<I420VideoFrame*>(item->GetItem());
+      if (oldest_frame_in_list->render_time_ms() <=
           TickTime::MillisecondTimestamp() + render_delay_ms_) {
         // This is the oldest one so far and it's OK to render.
         if (render_frame) {
           // This one is older than the newly found frame, remove this one.
-          render_frame->SetWidth(0);
-          render_frame->SetHeight(0);
-          render_frame->SetLength(0);
-          render_frame->SetRenderTime(0);
-          render_frame->SetTimeStamp(0);
+          render_frame->ResetSize();
+          render_frame->set_timestamp(0);
+          render_frame->set_render_time_ms(0);
           empty_frames_.PushFront(render_frame);
         }
         render_frame = oldest_frame_in_list;
@@ -118,11 +119,10 @@ VideoFrame* VideoRenderFrames::FrameToRender() {
   return render_frame;
 }
 
-WebRtc_Word32 VideoRenderFrames::ReturnFrame(VideoFrame* old_frame) {
-  old_frame->SetWidth(0);
-  old_frame->SetHeight(0);
-  old_frame->SetRenderTime(0);
-  old_frame->SetLength(0);
+WebRtc_Word32 VideoRenderFrames::ReturnFrame(I420VideoFrame* old_frame) {
+  old_frame->ResetSize();
+  old_frame->set_timestamp(0);
+  old_frame->set_render_time_ms(0);
   empty_frames_.PushBack(old_frame);
   return 0;
 }
@@ -131,9 +131,8 @@ WebRtc_Word32 VideoRenderFrames::ReleaseAllFrames() {
   while (!incoming_frames_.Empty()) {
     ListItem* item = incoming_frames_.First();
     if (item) {
-      VideoFrame* frame = static_cast<VideoFrame*>(item->GetItem());
+      I420VideoFrame* frame = static_cast<I420VideoFrame*>(item->GetItem());
       assert(frame != NULL);
-      frame->Free();
       delete frame;
     }
     incoming_frames_.Erase(item);
@@ -141,9 +140,8 @@ WebRtc_Word32 VideoRenderFrames::ReleaseAllFrames() {
   while (!empty_frames_.Empty()) {
     ListItem* item = empty_frames_.First();
     if (item) {
-      VideoFrame* frame = static_cast<VideoFrame*>(item->GetItem());
+      I420VideoFrame* frame = static_cast<I420VideoFrame*>(item->GetItem());
       assert(frame != NULL);
-      frame->Free();
       delete frame;
     }
     empty_frames_.Erase(item);
@@ -155,8 +153,9 @@ WebRtc_UWord32 VideoRenderFrames::TimeToNextFrameRelease() {
   WebRtc_Word64 time_to_release = 0;
   ListItem* item = incoming_frames_.First();
   if (item) {
-    VideoFrame* oldest_frame = static_cast<VideoFrame*>(item->GetItem());
-    time_to_release = oldest_frame->RenderTimeMs() - render_delay_ms_
+    I420VideoFrame* oldest_frame =
+        static_cast<I420VideoFrame*>(item->GetItem());
+    time_to_release = oldest_frame->render_time_ms() - render_delay_ms_
                       - TickTime::MillisecondTimestamp();
     if (time_to_release < 0) {
       time_to_release = 0;

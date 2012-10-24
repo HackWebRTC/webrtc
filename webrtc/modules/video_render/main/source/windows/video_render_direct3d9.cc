@@ -143,12 +143,12 @@ int D3D9Channel::FrameSizeChange(int width, int height, int numberOfStreams)
 }
 
 WebRtc_Word32 D3D9Channel::RenderFrame(const WebRtc_UWord32 streamId,
-                                           VideoFrame& videoFrame)
+                                       I420VideoFrame& videoFrame)
 {
     CriticalSectionScoped cs(_critSect);
-    if (_width != videoFrame.Width() || _height != videoFrame.Height())
+    if (_width != videoFrame.width() || _height != videoFrame.height())
     {
-        if (FrameSizeChange(videoFrame.Width(), videoFrame.Height(), 1) == -1)
+        if (FrameSizeChange(videoFrame.width(), videoFrame.height(), 1) == -1)
         {
             return -1;
         }
@@ -157,7 +157,7 @@ WebRtc_Word32 D3D9Channel::RenderFrame(const WebRtc_UWord32 streamId,
 }
 
 // Called from video engine when a new frame should be rendered.
-int D3D9Channel::DeliverFrame(const VideoFrame& videoFrame) {
+int D3D9Channel::DeliverFrame(const I420VideoFrame& videoFrame) {
   WEBRTC_TRACE(kTraceStream, kTraceVideo, -1,
                "DeliverFrame to D3D9Channel");
 
@@ -192,7 +192,7 @@ int D3D9Channel::DeliverFrame(const VideoFrame& videoFrame) {
   }
   UCHAR* pRect = (UCHAR*) lr.pBits;
 
-  ConvertFromI420(videoFrame, _width, kARGB, 0, pRect);
+  ConvertFromI420(videoFrame, kARGB, 0, pRect);
 
   if (FAILED(_pTexture->UnlockRect(0))) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, -1,

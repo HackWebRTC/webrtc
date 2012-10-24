@@ -144,7 +144,7 @@ public:
 
     // Add one raw video frame to the encoder, blocking.
     virtual WebRtc_Word32 AddVideoFrame(
-        const VideoFrame& videoFrame,
+        const I420VideoFrame& videoFrame,
         const VideoContentMetrics* _contentMetrics = NULL,
         const CodecSpecificInfo* codecSpecificInfo = NULL);
 

@@ -23,9 +23,16 @@ TEST_F(VideoProcessingModuleTest, ContentAnalysis)
     _ca_c.Initialize(_width,_height);
     _ca_sse.Initialize(_width,_height);
 
-    while (fread(_videoFrame.Buffer(), 1, _frameLength, _sourceFile)
-           == _frameLength)
+    scoped_array<uint8_t> video_buffer(new uint8_t[_frame_length]);
+    while (fread(video_buffer.get(), 1, _frame_length, _sourceFile)
+           == _frame_length)
     {
+        _videoFrame.CreateFrame(_size_y, video_buffer.get(),
+                                _size_uv, video_buffer.get() + _size_y,
+                                _size_uv, video_buffer.get() + _size_y +
+                                _size_uv,
+                                _width, _height,
+                                _width, _half_width, _half_width);
         _cM_c   = _ca_c.ComputeContentMetrics(_videoFrame);
         _cM_SSE = _ca_sse.ComputeContentMetrics(_videoFrame);
 

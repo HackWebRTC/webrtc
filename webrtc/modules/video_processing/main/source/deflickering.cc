@@ -89,7 +89,7 @@ VPMDeflickering::Reset()
 }
 
 WebRtc_Word32
-VPMDeflickering::ProcessFrame(VideoFrame* frame,
+VPMDeflickering::ProcessFrame(I420VideoFrame* frame,
                               VideoProcessingModule::FrameStats* stats)
 {
     assert(frame);
@@ -103,10 +103,10 @@ VPMDeflickering::ProcessFrame(VideoFrame* frame,
 
     WebRtc_UWord16 tmpUW16;
     WebRtc_UWord32 tmpUW32;
-    int width = frame->Width();
-    int height = frame->Height();
+    int width = frame->width();
+    int height = frame->height();
 
-    if (frame->Buffer() == NULL)
+    if (frame->IsZeroSize())
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, _id,
                      "Null frame pointer");
@@ -114,7 +114,7 @@ VPMDeflickering::ProcessFrame(VideoFrame* frame,
     }
 
     // Stricter height check due to subsampling size calculation below.
-    if (width == 0 || height < 2)
+    if (height < 2)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, _id,
                      "Invalid frame size");
@@ -128,7 +128,7 @@ VPMDeflickering::ProcessFrame(VideoFrame* frame,
         return VPM_GENERAL_ERROR;
     }
 
-    if (PreDetection(frame->TimeStamp(), *stats) == -1)
+    if (PreDetection(frame->timestamp(), *stats) == -1)
     {
         return VPM_GENERAL_ERROR;
     }
@@ -154,7 +154,7 @@ VPMDeflickering::ProcessFrame(VideoFrame* frame,
     for (int i = 0; i < height; i += kDownsamplingFactor)
     {
         memcpy(ySorted + sortRowIdx * width,
-               frame->Buffer() + i * width, width);
+               frame->buffer(kYPlane) + i * width, width);
         sortRowIdx++;
     }
     
@@ -258,7 +258,7 @@ VPMDeflickering::ProcessFrame(VideoFrame* frame,
     }
 
     // Map to the output frame.
-    uint8_t* buffer = frame->Buffer();
+    uint8_t* buffer = frame->buffer(kYPlane);
     for (WebRtc_UWord32 i = 0; i < ySize; i++)
     {
       buffer[i] = mapUW8[buffer[i]];

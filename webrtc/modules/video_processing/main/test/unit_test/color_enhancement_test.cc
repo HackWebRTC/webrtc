@@ -39,15 +39,22 @@ TEST_F(VideoProcessingModuleTest, ColorEnhancement)
     ASSERT_TRUE(modFile != NULL) << "Could not open output file.\n";
 
     WebRtc_UWord32 frameNum = 0;
-    while (fread(_videoFrame.Buffer(), 1, _frameLength, _sourceFile) == _frameLength)
+    scoped_array<uint8_t> video_buffer(new uint8_t[_frame_length]);
+    while (fread(video_buffer.get(), 1, _frame_length, _sourceFile) ==
+        _frame_length)
     {
+        _videoFrame.CreateFrame(_size_y, video_buffer.get(),
+                                _size_uv, video_buffer.get() + _size_y,
+                                _size_uv, video_buffer.get() + _size_y +
+                                _size_uv,
+                                _width, _height,
+                                _width, _half_width, _half_width);
         frameNum++;
         t0 = TickTime::Now();
         ASSERT_EQ(0, VideoProcessingModule::ColorEnhancement(&_videoFrame));
         t1 = TickTime::Now();
         accTicks += t1 - t0;
-        if (fwrite(_videoFrame.Buffer(), 1, _frameLength,
-                   modFile) !=  _frameLength) {
+        if (PrintI420VideoFrame(_videoFrame, modFile) < 0) {
           return;
         }
     }
@@ -76,44 +83,70 @@ TEST_F(VideoProcessingModuleTest, ColorEnhancement)
     rewind(modFile);
     ASSERT_EQ(refLen, testLen) << "File lengths differ.";
 
-    VideoFrame refVideoFrame;
-    refVideoFrame.VerifyAndAllocate(_frameLength);
-    refVideoFrame.SetWidth(_width);
-    refVideoFrame.SetHeight(_height);
+    I420VideoFrame refVideoFrame;
 
     // Compare frame-by-frame.
-    while (fread(_videoFrame.Buffer(), 1, _frameLength, modFile) == _frameLength)
+    scoped_array<uint8_t> ref_buffer(new uint8_t[_frame_length]);
+    while (fread(video_buffer.get(), 1, _frame_length, modFile) ==
+        _frame_length)
     {
-        ASSERT_EQ(_frameLength, fread(refVideoFrame.Buffer(), 1, _frameLength, refFile));
-        EXPECT_EQ(0, memcmp(_videoFrame.Buffer(), refVideoFrame.Buffer(), _frameLength));
+      _videoFrame.CreateFrame(_size_y, video_buffer.get(),
+                              _size_uv, video_buffer.get() + _size_y,
+                              _size_uv, video_buffer.get() + _size_y +
+                              _size_uv,
+                              _width, _height,
+                              _width, _half_width, _half_width);
+      ASSERT_EQ(_frame_length, fread(ref_buffer.get(), 1, _frame_length,
+                                     refFile));
+      refVideoFrame.CreateFrame(_size_y, ref_buffer.get(),
+                                _size_uv, ref_buffer.get() + _size_y,
+                                _size_uv, ref_buffer.get() + _size_y +
+                                _size_uv,
+                                _width, _height,
+                                _width, _half_width, _half_width);
+        EXPECT_EQ(0, memcmp(_videoFrame.buffer(kYPlane),
+                            refVideoFrame.buffer(kYPlane),
+                            _size_y));
+        EXPECT_EQ(0, memcmp(_videoFrame.buffer(kUPlane),
+                            refVideoFrame.buffer(kUPlane),
+                            _size_uv));
+        EXPECT_EQ(0, memcmp(_videoFrame.buffer(kVPlane),
+                            refVideoFrame.buffer(kVPlane),
+                            _size_uv));
     }
     ASSERT_NE(0, feof(_sourceFile)) << "Error reading source file";
 
     // Verify that all color pixels are enhanced, and no luminance values are
     // altered.
 
-    WebRtc_UWord8 *testFrame = new WebRtc_UWord8[_frameLength];
+    scoped_array<uint8_t> testFrame(new WebRtc_UWord8[_frame_length]);
 
     // Use value 128 as probe value, since we know that this will be changed
     // in the enhancement.
-    memset(testFrame, 128, _frameLength);
+    memset(testFrame.get(), 128, _frame_length);
 
-    VideoFrame testVideoFrame;
-    testVideoFrame.CopyFrame(_frameLength, testFrame);
-    testVideoFrame.SetWidth(_width);
-    testVideoFrame.SetHeight(_height);
+    I420VideoFrame testVideoFrame;
+    testVideoFrame.CreateFrame(_size_y, testFrame.get(),
+                               _size_uv, testFrame.get() + _size_y,
+                               _size_uv, testFrame.get() + _size_y + _size_uv,
+                               _width, _height,
+                               _width, _half_width, _half_width);
+
     ASSERT_EQ(0, VideoProcessingModule::ColorEnhancement(&testVideoFrame));
 
-    EXPECT_EQ(0, memcmp(testVideoFrame.Buffer(), testFrame, _width * _height))
+    EXPECT_EQ(0, memcmp(testVideoFrame.buffer(kYPlane), testFrame.get(),
+                        _size_y))
       << "Function is modifying the luminance.";
 
-    EXPECT_NE(0, memcmp(testVideoFrame.Buffer() + _width * _height,
-        &testFrame[_width * _height], _width * _height / 2)) <<
-        "Function is not modifying all chrominance pixels";
+    EXPECT_NE(0, memcmp(testVideoFrame.buffer(kUPlane),
+                        testFrame.get() + _size_y, _size_uv)) <<
+                        "Function is not modifying all chrominance pixels";
+    EXPECT_NE(0, memcmp(testVideoFrame.buffer(kVPlane),
+                        testFrame.get() + _size_y + _size_uv, _size_uv)) <<
+                        "Function is not modifying all chrominance pixels";
 
     ASSERT_EQ(0, fclose(refFile));
     ASSERT_EQ(0, fclose(modFile));
-    delete [] testFrame;
 }
 
 }  // namespace webrtc

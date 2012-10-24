@@ -13,6 +13,7 @@
 
 // Includes
 #include "common_types.h"
+#include "common_video/interface/i420_video_frame.h"
 #include "modules/interface/module_common_types.h"
 
 namespace webrtc
@@ -48,7 +49,7 @@ class VideoRenderCallback
 {
 public:
     virtual WebRtc_Word32 RenderFrame(const WebRtc_UWord32 streamId,
-                                      VideoFrame& videoFrame) = 0;
+                                      I420VideoFrame& videoFrame) = 0;
 
 protected:
     virtual ~VideoRenderCallback()

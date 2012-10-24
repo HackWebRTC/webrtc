@@ -84,7 +84,7 @@ class CaptureEffectFilter : public webrtc::ViEEffectFilter {
 
   // Implements video_engineEffectFilter.
   virtual int Transform(int size, unsigned char* frame_buffer,
-                        unsigned int time_stamp90KHz, unsigned int width,
+                        unsigned int timeStamp90KHz, unsigned int width,
                         unsigned int height) {
     EXPECT_TRUE(frame_buffer != NULL);
     EXPECT_EQ(expected_width_, width);

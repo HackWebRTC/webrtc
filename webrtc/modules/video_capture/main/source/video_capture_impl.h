@@ -18,6 +18,7 @@
 #include "video_capture.h"
 #include "video_capture_config.h"
 #include "tick_util.h"
+#include "common_video/interface/i420_video_frame.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 
 namespace webrtc
@@ -97,9 +98,10 @@ public:
 protected:
     VideoCaptureImpl(const WebRtc_Word32 id);
     virtual ~VideoCaptureImpl();
-    WebRtc_Word32 DeliverCapturedFrame(
-        VideoFrame& captureFrame,
-        WebRtc_Word64 capture_time, VideoCodecType codec_type);
+    // TODO(mikhal): Remove codec_type.
+    WebRtc_Word32 DeliverCapturedFrame(I420VideoFrame& captureFrame,
+                                       WebRtc_Word64 capture_time,
+                                       VideoCodecType codec_type);
     WebRtc_Word32 DeliverEncodedCapturedFrame(
            VideoFrame& captureFrame,
            WebRtc_Word64 capture_time, VideoCodecType codec_type);
@@ -129,7 +131,7 @@ private:
     TickTime _incomingFrameTimes[kFrameRateCountHistorySize];// timestamp for local captured frames
     VideoRotationMode _rotateFrame; //Set if the frame should be rotated by the capture module.
 
-    VideoFrame _captureFrame;
+    I420VideoFrame _captureFrame;
     VideoFrame _capture_encoded_frame;
 
     // Used to make sure incoming timestamp is increasing for every frame.

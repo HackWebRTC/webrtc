@@ -172,7 +172,7 @@ public:
      */
     virtual WebRtc_Word32
             GetLastRenderedFrame(const WebRtc_UWord32 streamId,
-                                 VideoFrame &frame) const = 0;
+                                 I420VideoFrame &frame) const = 0;
 
     /**************************************************************************
      *
@@ -272,13 +272,13 @@ public:
      */
     virtual WebRtc_Word32
             SetStartImage(const WebRtc_UWord32 streamId,
-                          const VideoFrame& videoFrame) = 0;
+                          const I420VideoFrame& videoFrame) = 0;
 
     /*
      * Set a timout image. The image is rendered if no videoframe has been delivered
      */
     virtual WebRtc_Word32 SetTimeoutImage(const WebRtc_UWord32 streamId,
-                                          const VideoFrame& videoFrame,
+                                          const I420VideoFrame& videoFrame,
                                           const WebRtc_UWord32 timeout)= 0;
 
     virtual WebRtc_Word32 MirrorRenderStream(const int renderId,

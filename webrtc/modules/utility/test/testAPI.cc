@@ -122,10 +122,11 @@ int main(int /*argc*/, char** /*argv*/)
 
         assert(fileRecorder.IsRecording());
 
-        WebRtc_UWord32 videoReadSize = static_cast<WebRtc_UWord32>( (videoCodec.width * videoCodec.height * 3.0) / 2.0);
-
-        webrtc::VideoFrame videoFrame;
-        videoFrame.VerifyAndAllocate(videoReadSize);
+        webrtc::I420VideoFrame videoFrame;
+        videoFrame.CreateEmptyFrame(videoCodec.width, videoCodec.height,
+                                    videoCodec.width,
+                                    (videoCodec.width + 1) / 2,
+                                    (videoCodec.width + 1) / 2);
 
         int  frameCount   = 0;
         bool audioNotDone = true;
@@ -142,7 +143,7 @@ int main(int /*argc*/, char** /*argv*/)
                     break;
                 }
                 frameCount++;
-                videoNotDone = ( videoFrame.Length() > 0);
+                videoNotDone = !videoFrame.IsZeroSize();
                 videoFrame.SetRenderTime(TickTime::MillisecondTimestamp());
                 if( videoNotDone)
                 {
@@ -219,12 +220,14 @@ int main(int /*argc*/, char** /*argv*/)
         audioFrame.sample_rate_hz_ = 8000;
 
         // prepare the video frame
-        videoFrame.VerifyAndAllocate(KVideoWriteSize);
-        memset(videoFrame.Buffer(), 127, videoCodec.width * videoCodec.height);
-        memset(videoFrame.Buffer() +(videoCodec.width * videoCodec.height), 0, videoCodec.width * videoCodec.height/2);
-        videoFrame.SetLength(KVideoWriteSize);
-        videoFrame.SetHeight(videoCodec.height);
-        videoFrame.SetWidth(videoCodec.width);
+        int half_width = (videoCodec.width + 1) / 2;
+        int half_height = (videoCodec.height + 1) / 2;
+        videoFrame.CreateEmptyFrame(videoCodec.width, videoCodec.height,
+                                    videoCodec.width, half_width, half_width);
+        memset(videoFrame.buffer(kYPlane), 127,
+               videoCodec.width * videoCodec.height);
+        memset(videoFrame.buffer(kUPlane), 0, half_width * half_height);
+        memset(videoFrame.buffer(kVPlane), 0, half_width * half_height);
 
         // write avi file, with 20 video frames
         const int KWriteNumFrames = 20;
@@ -310,10 +313,9 @@ int main(int /*argc*/, char** /*argv*/)
 
         assert(fileRecorder.IsRecording());
 
-        WebRtc_UWord32 videoReadSize = static_cast<WebRtc_UWord32>( (videoCodec.width * videoCodec.height * 3.0) / 2.0);
-
-        webrtc::VideoFrame videoFrame;
-        videoFrame.VerifyAndAllocate(videoReadSize);
+        webrtc::I420VideoFrame videoFrame;
+        videoFrame.CreateEmptyFrame(videoCodec.width, videoCodec.height,
+                                    videoCodec.width, half_width,half_width);
 
         int  videoFrameCount   = 0;
         int  audioFrameCount   = 0;
@@ -325,12 +327,12 @@ int main(int /*argc*/, char** /*argv*/)
         {
             if(filePlayer.TimeUntilNextVideoFrame() <= 0)
             {
-                if(filePlayer.GetVideoFromFile( videoFrame) != 0)
+                if(filePlayer.GetVideoFromFile(videoFrame) != 0)
                 {
                     break;
                 }
                 videoFrameCount++;
-                videoNotDone = ( videoFrame.Length() > 0);
+                videoNotDone = !videoFrame.IsZeroSize();
                 if( videoNotDone)
                 {
                     assert(fileRecorder.RecordVideoToFile(videoFrame) == 0);

@@ -24,7 +24,7 @@ enum PlaneType {
   kYPlane = 0,
   kUPlane = 1,
   kVPlane = 2,
-  KNumOfPlanes = 3
+  kNumOfPlanes = 3
 };
 
 class I420VideoFrame {
@@ -94,7 +94,7 @@ class I420VideoFrame {
   int64_t render_time_ms() const {return render_time_ms_;}
 
   // Return true if underlying plane buffers are of zero size, false if not.
-  bool IsZeroSize();
+  bool IsZeroSize() const;
 
   // Reset underlying plane buffers sizes to 0. This function doesn't
   // clear memory.

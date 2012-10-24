@@ -14,6 +14,7 @@
 #include <sstream>
 #include <string.h>
 
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "gtest/gtest.h"
 #include "testsupport/fileutils.h"
 
@@ -22,7 +23,13 @@ NormalTest::NormalTest()
 CodecTest("Normal Test 1", "A test of normal execution of the codec"),
 _testNo(1),
 _lengthEncFrame(0),
-_appendNext(false)
+_appendNext(false),
+_width(0),
+_halfWidth(0),
+_height(0),
+_halfHeight(0),
+_sizeY(0),
+_sizeUv(0)
 {
 }
 
@@ -33,7 +40,13 @@ CodecTest(name, description),
 _requestKeyFrame(false),
 _testNo(testNo),
 _lengthEncFrame(0),
-_appendNext(false)
+_appendNext(false),
+_width(0),
+_halfWidth(0),
+_height(0),
+_halfHeight(0),
+_sizeY(0),
+_sizeUv(0)
 {
 }
 
@@ -108,12 +121,22 @@ NormalTest::Teardown()
 void
 NormalTest::Perform()
 {
+    _width = 352;
+    _halfWidth = (_width + 1) / 2;
+    _height = 288;
+    _halfHeight = (_height + 1) / 2;
+    _sizeY = _width * _height;
+    _sizeUv = _halfWidth * _halfHeight;
     _inname = webrtc::test::ProjectRootPath() + "resources/foreman_cif.yuv";
-    CodecSettings(352, 288, 30, _bitRate);
+    CodecSettings(_width, _height, 30, _bitRate);
     Setup();
 
-    _inputVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);
-    _decodedVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);
+    _inputVideoBuffer.CreateEmptyFrame(_width, _height,
+                                       _width, _halfWidth, _halfWidth);
+    _inputVideoBuffer.CreateEmptyFrame(_width, _height,
+                                       _width, _halfWidth, _halfWidth);
+    _decodedVideoBuffer.CreateEmptyFrame(_width, _height,
+                                         _width, _halfWidth, _halfWidth);
     _encodedVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);
 
     _encoder->InitEncode(&_inst, 1, 1460);
@@ -140,8 +163,7 @@ NormalTest::Perform()
             fprintf(stderr,"\n\nError in decoder: %d\n\n", decodeLength);
             exit(EXIT_FAILURE);
         }
-        if (fwrite(_decodedVideoBuffer.Buffer(), 1, decodeLength,
-                   _decodedFile) != static_cast<unsigned int>(decodeLength)) {
+        if (PrintI420VideoFrame(_decodedVideoBuffer, _decodedFile) < 0) {
           return;
         }
         CodecSpecific_InitBitrate();
@@ -157,8 +179,7 @@ NormalTest::Perform()
             fprintf(stderr,"\n\nError in decoder: %d\n\n", decodeLength);
             exit(EXIT_FAILURE);
         }
-        if (fwrite(_decodedVideoBuffer.Buffer(), 1, decodeLength,
-                   _decodedFile) != static_cast<unsigned int>(decodeLength)) {
+        if (PrintI420VideoFrame(_decodedVideoBuffer, _decodedFile) < 0) {
           return;
         }
     }
@@ -172,8 +193,6 @@ NormalTest::Perform()
     (*_log) << "Actual bitrate: " << actualBitRate << " kbps\tTarget: " << _bitRate << " kbps" << std::endl;
     (*_log) << "Average encode time: " << avgEncTime << " s" << std::endl;
     (*_log) << "Average decode time: " << avgDecTime << " s" << std::endl;
-
-    _inputVideoBuffer.Free();
 
     _encoder->Release();
     _decoder->Release();
@@ -190,8 +209,13 @@ NormalTest::Encode()
     {
         return true;
     }
-    _inputVideoBuffer.CopyFrame(_lengthSourceFrame, _sourceBuffer);
-    _inputVideoBuffer.SetTimeStamp(_framecnt);
+        _inputVideoBuffer.CreateFrame(_sizeY, _sourceBuffer,
+                                      _sizeUv, _sourceBuffer + _sizeY,
+                                      _sizeUv, _sourceBuffer + _sizeY +
+                                      _sizeUv,
+                                      _width, _height,
+                                      _width, _halfWidth, _halfWidth);
+    _inputVideoBuffer.set_timestamp(_framecnt);
 
     // This multiple attempt ridiculousness is to accomodate VP7:
     // 1. The wrapper can unilaterally reduce the framerate for low bitrates.
@@ -204,8 +228,8 @@ NormalTest::Encode()
     {
         starttime = clock()/(double)CLOCKS_PER_SEC;
 
-        _inputVideoBuffer.SetWidth(_inst.width);
-        _inputVideoBuffer.SetHeight(_inst.height);
+        _inputVideoBuffer.set_width(_inst.width);
+        _inputVideoBuffer.set_height(_inst.height);
         //_lengthEncFrame = _encoder->Encode(_inputVideoBuffer, _encodedVideoBuffer, _frameInfo,
         //  _inst.frameRate, _requestKeyFrame && !(_framecnt%50));
 

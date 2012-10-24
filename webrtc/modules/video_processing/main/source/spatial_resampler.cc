@@ -62,32 +62,32 @@ VPMSimpleSpatialResampler::Reset()
 }
 
 WebRtc_Word32
-VPMSimpleSpatialResampler::ResampleFrame(const VideoFrame& inFrame,
-                                         VideoFrame& outFrame)
+VPMSimpleSpatialResampler::ResampleFrame(const I420VideoFrame& inFrame,
+                                         I420VideoFrame* outFrame)
 {
   if (_resamplingMode == kNoRescaling)
-     return outFrame.CopyFrame(inFrame);
+     return outFrame->CopyFrame(inFrame);
   // Check if re-sampling is needed
-  if ((inFrame.Width() == (WebRtc_UWord32)_targetWidth) &&
-    (inFrame.Height() == (WebRtc_UWord32)_targetHeight))  {
-    return outFrame.CopyFrame(inFrame);
+  if ((inFrame.width() == _targetWidth) &&
+    (inFrame.height() == _targetHeight))  {
+    return outFrame->CopyFrame(inFrame);
   }
 
   // Setting scaler
   // TODO(mikhal/marpan): Should we allow for setting the filter mode in
   // _scale.Set() with |_resamplingMode|?
   int retVal = 0;
-  retVal = _scaler.Set(inFrame.Width(), inFrame.Height(),
+  retVal = _scaler.Set(inFrame.width(), inFrame.height(),
                        _targetWidth, _targetHeight, kI420, kI420, kScaleBox);
   if (retVal < 0)
     return retVal;
 
   // Setting time parameters to the output frame - all the rest will be
   // set by the scaler.
-  outFrame.SetTimeStamp(inFrame.TimeStamp());
-  outFrame.SetRenderTime(inFrame.RenderTimeMs());
+  outFrame->set_timestamp(inFrame.timestamp());
+  outFrame->set_render_time_ms(inFrame.render_time_ms());
 
-  retVal = _scaler.Scale(inFrame, &outFrame);
+  retVal = _scaler.Scale(inFrame, outFrame);
   if (retVal == 0)
     return VPM_OK;
   else

@@ -49,11 +49,11 @@ protected:
     WebRtc_UWord32          _bitRate;
     unsigned int            _lengthSourceFrame;
     unsigned char*          _sourceBuffer;
-    webrtc::VideoFrame      _inputVideoBuffer;
+    webrtc::I420VideoFrame  _inputVideoBuffer;
     // TODO(mikhal): For now using VideoFrame for encodedBuffer, should use a
     // designated class.
     webrtc::VideoFrame      _encodedVideoBuffer;
-    webrtc::VideoFrame      _decodedVideoBuffer;
+    webrtc::I420VideoFrame  _decodedVideoBuffer;
     webrtc::VideoCodec      _inst;
     std::fstream*           _log;
     std::string             _inname;

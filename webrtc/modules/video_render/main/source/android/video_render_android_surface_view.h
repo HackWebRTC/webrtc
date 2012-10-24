@@ -36,7 +36,7 @@ class AndroidSurfaceViewChannel : public AndroidStream {
 
   //Implement VideoRenderCallback
   virtual WebRtc_Word32 RenderFrame(const WebRtc_UWord32 streamId,
-                                    VideoFrame& videoFrame);
+                                    I420VideoFrame& videoFrame);
 
   //Implements AndroidStream
   virtual void DeliverFrame(JNIEnv* jniEnv);
@@ -45,7 +45,7 @@ class AndroidSurfaceViewChannel : public AndroidStream {
   WebRtc_UWord32 _id;
   CriticalSectionWrapper& _renderCritSect;
 
-  VideoFrame _bufferToRender;
+  I420VideoFrame _bufferToRender;
   VideoRenderAndroid& _renderer;
   JavaVM* _jvm;
   jobject _javaRenderObj;
@@ -56,8 +56,8 @@ class AndroidSurfaceViewChannel : public AndroidStream {
   jmethodID _drawByteBufferCid;
 
   jmethodID _setCoordinatesCid;
-  unsigned int _bitmapWidth;
-  unsigned int _bitmapHeight;
+  int _bitmapWidth;
+  int _bitmapHeight;
 };
 
 class AndroidSurfaceViewRenderer : private VideoRenderAndroid {

@@ -15,14 +15,13 @@
 #ifndef WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_
 #define WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_WEBRTC_LIBYUV_H_
 
+#include <stdio.h>
+
 #include "common_types.h"  // RawVideoTypes.
-#include "modules/interface/module_common_types.h"  // VideoFrame
+#include "common_video/interface/i420_video_frame.h"
 #include "typedefs.h"
 
 namespace webrtc {
-
-// TODO(mikhal): 1. Sync libyuv and WebRtc meaning of stride.
-//               2. Reorder parameters for consistency.
 
 // Supported video types.
 enum VideoType {
@@ -73,6 +72,24 @@ int AlignInt(int value, int alignment);
 //                   video frame or -1 in case of an error .
 int CalcBufferSize(VideoType type, int width, int height);
 
+// TODO(mikhal): Add unit test for these two functions and determine location.
+// Print I420VideoFrame to file
+// Input:
+//    - frame       : Reference to video frame.
+//    - file        : pointer to file object. It is assumed that the file is
+//                    already open for writing.
+// Return value: 0 if OK, < 0 otherwise.
+int PrintI420VideoFrame(const I420VideoFrame& frame, FILE* file);
+
+// Extract buffer from I420VideoFrame (consecutive planes, no stride)
+// Input:
+//   - frame       : Reference to video frame.
+//   - size        : pointer to the size of the allocated buffer. If size is
+//                   insufficient, an error will be returned.
+//   - buffer      : Pointer to buffer
+// Return value: length of buffer if OK, < 0 otherwise.
+int ExtractBuffer(const I420VideoFrame& input_frame,
+                  int size, uint8_t* buffer);
 // Convert To I420
 // Input:
 //   - src_video_type   : Type of input video.
@@ -92,25 +109,23 @@ int ConvertToI420(VideoType src_video_type,
                   int src_width, int src_height,
                   int sample_size,
                   VideoRotationMode rotation,
-                  VideoFrame* dst_frame);
+                  I420VideoFrame* dst_frame);
 
 // Convert From I420
 // Input:
-//   - src_frame        : Pointer to a source frame.
-//   - src_stride       : Number of bytes in a row of the src Y plane.
+//   - src_frame        : Reference to a source frame.
 //   - dst_video_type   : Type of output video.
 //   - dst_sample_size  : Required only for the parsing of MJPG.
 //   - dst_frame        : Pointer to a destination frame.
 // Return value: 0 if OK, < 0 otherwise.
 // It is assumed that source and destination have equal height.
-int ConvertFromI420(const VideoFrame& src_frame, int src_stride,
+int ConvertFromI420(const I420VideoFrame& src_frame,
                     VideoType dst_video_type, int dst_sample_size,
                     uint8_t* dst_frame);
 // ConvertFrom YV12.
 // Interface - same as above.
-int ConvertFromYV12(const uint8_t* src_frame, int src_stride,
+int ConvertFromYV12(const I420VideoFrame& src_frame,
                     VideoType dst_video_type, int dst_sample_size,
-                    int width, int height,
                     uint8_t* dst_frame);
 
 // The following list describes designated conversion functions which
@@ -133,17 +148,17 @@ int ConvertNV12ToRGB565(const uint8_t* src_frame,
 //    - dst_frame   : Pointer to a destination frame.
 // Return value: 0 if OK, < 0 otherwise.
 // It is assumed that src and dst frames have equal dimensions.
-int MirrorI420LeftRight(const VideoFrame* src_frame,
-                        VideoFrame* dst_frame);
-int MirrorI420UpDown(const VideoFrame* src_frame,
-                     VideoFrame* dst_frame);
+int MirrorI420LeftRight(const I420VideoFrame* src_frame,
+                        I420VideoFrame* dst_frame);
+int MirrorI420UpDown(const I420VideoFrame* src_frame,
+                     I420VideoFrame* dst_frame);
 
 // Compute PSNR for an I420 frame (all planes).
-double I420PSNR(const VideoFrame* ref_frame,
-                const VideoFrame* test_frame);
+double I420PSNR(const I420VideoFrame* ref_frame,
+                const I420VideoFrame* test_frame);
 // Compute SSIM for an I420 frame (all planes).
-double I420SSIM(const VideoFrame* ref_frame,
-                const VideoFrame* test_frame);
+double I420SSIM(const I420VideoFrame* ref_frame,
+                const I420VideoFrame* test_frame);
 
 // TODO(mikhal): Remove these functions and keep only the above functionality.
 // Compute PSNR for an I420 buffer (all planes).

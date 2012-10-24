@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "engine_configurations.h"
 #include "file_recorder_impl.h"
 #include "media_file.h"
@@ -481,11 +482,10 @@ WebRtc_Word32 AviRecorder::SetUpVideoEncoder()
     return 0;
 }
 
-WebRtc_Word32 AviRecorder::RecordVideoToFile(const VideoFrame& videoFrame)
+WebRtc_Word32 AviRecorder::RecordVideoToFile(const I420VideoFrame& videoFrame)
 {
     CriticalSectionScoped lock(_critSec);
-
-    if(!IsRecording() || ( videoFrame.Length() == 0))
+    if(!IsRecording() || !videoFrame.IsZeroSize())
     {
         return -1;
     }
@@ -548,7 +548,7 @@ WebRtc_Word32 AviRecorder::ProcessAudio()
         // Get the most recent frame that is due for writing to file. Since
         // frames are unencoded it's safe to throw away frames if necessary
         // for synchronizing audio and video.
-        VideoFrame* frameToProcess = _videoFramesQueue->FrameToRecord();
+        I420VideoFrame* frameToProcess = _videoFramesQueue->FrameToRecord();
         if(frameToProcess)
         {
             // Syncronize audio to the current frame to process by throwing away
@@ -563,7 +563,7 @@ WebRtc_Word32 AviRecorder::ProcessAudio()
                 {
                     if(TickTime::TicksToMilliseconds(
                            frameInfo->_playoutTS.Ticks()) <
-                       frameToProcess->RenderTimeMs())
+                       frameToProcess->render_time_ms())
                     {
                         delete frameInfo;
                         _audioFramesToWrite.PopFront();
@@ -622,7 +622,7 @@ bool AviRecorder::Process()
     // Get the most recent frame to write to file (if any). Synchronize it with
     // the audio stream (if any). Synchronization the video based on its render
     // timestamp (i.e. VideoFrame::RenderTimeMS())
-    VideoFrame* frameToProcess = _videoFramesQueue->FrameToRecord();
+    I420VideoFrame* frameToProcess = _videoFramesQueue->FrameToRecord();
     if( frameToProcess == NULL)
     {
         return true;
@@ -692,9 +692,9 @@ bool AviRecorder::Process()
     return error == 0;
 }
 
-WebRtc_Word32 AviRecorder::EncodeAndWriteVideoToFile(VideoFrame& videoFrame)
+WebRtc_Word32 AviRecorder::EncodeAndWriteVideoToFile(I420VideoFrame& videoFrame)
 {
-    if(!IsRecording() || (videoFrame.Length() == 0))
+    if (!IsRecording() || videoFrame.IsZeroSize())
     {
         return -1;
     }
@@ -709,14 +709,18 @@ WebRtc_Word32 AviRecorder::EncodeAndWriteVideoToFile(VideoFrame& videoFrame)
 
     if( STR_CASE_CMP(_videoCodecInst.plName, "I420") == 0)
     {
-        _videoEncodedData.VerifyAndAllocate(videoFrame.Length());
+       int length  = CalcBufferSize(kI420, videoFrame.width(),
+                                    videoFrame.height());
+        _videoEncodedData.VerifyAndAllocate(length);
 
         // I420 is raw data. No encoding needed (each sample is represented by
         // 1 byte so there is no difference depending on endianness).
-        memcpy(_videoEncodedData.payloadData, videoFrame.Buffer(),
-               videoFrame.Length());
+        int ret_length = ExtractBuffer(videoFrame, length,
+                                       _videoEncodedData.payloadData);
+        if (ret_length < 0)
+          return -1;
 
-        _videoEncodedData.payloadSize = videoFrame.Length();
+        _videoEncodedData.payloadSize = ret_length;
         _videoEncodedData.frameType = kVideoFrameKey;
     }else {
         if( _videoEncoder->Encode(videoFrame, _videoEncodedData) != 0)

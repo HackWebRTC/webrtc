@@ -74,7 +74,7 @@ public:
     {
         return -1;
     }
-    virtual WebRtc_Word32 RecordVideoToFile(const VideoFrame& videoFrame)
+    virtual WebRtc_Word32 RecordVideoToFile(const I420VideoFrame& videoFrame)
     {
         return -1;
     }
@@ -117,7 +117,7 @@ public:
         ACMAMRPackingFormat amrFormat = AMRFileStorage,
         bool videoOnly = false);
     virtual WebRtc_Word32 StopRecording();
-    virtual WebRtc_Word32 RecordVideoToFile(const VideoFrame& videoFrame);
+    virtual WebRtc_Word32 RecordVideoToFile(const I420VideoFrame& videoFrame);
 
 protected:
     virtual WebRtc_Word32 WriteEncodedAudioData(
@@ -132,7 +132,7 @@ private:
     bool StartThread();
     bool StopThread();
 
-    WebRtc_Word32 EncodeAndWriteVideoToFile(VideoFrame& videoFrame);
+    WebRtc_Word32 EncodeAndWriteVideoToFile(I420VideoFrame& videoFrame);
     WebRtc_Word32 ProcessAudio();
 
     WebRtc_Word32 CalcI420FrameSize() const;

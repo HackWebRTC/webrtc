@@ -12,7 +12,7 @@
 #define WEBRTC_COMMON_VIDEO_JPEG
 
 #include "typedefs.h"
-#include "modules/interface/module_common_types.h"  // VideoFrame
+#include "common_video/interface/i420_video_frame.h"
 #include "common_video/interface/video_image.h"  // EncodedImage
 
 // jpeg forward declaration
@@ -21,7 +21,7 @@ struct jpeg_compress_struct;
 namespace webrtc
 {
 
-// TODO(mikhal): Move this to LibYuv wrappar, when LibYuv will have a JPG
+// TODO(mikhal): Move this to LibYuv wrapper, when LibYuv will have a JPG
 // Encode.
 class JpegEncoder
 {
@@ -46,7 +46,7 @@ public:
 //    Output:
 //    - 0             : OK
 //    - (-1)          : Error
-    WebRtc_Word32 Encode(const VideoFrame& inputImage);
+    WebRtc_Word32 Encode(const I420VideoFrame& inputImage);
 
 private:
 
@@ -67,6 +67,6 @@ private:
 //    - (-1)          : Error
 //    - (-2)          : Unsupported format
 int ConvertJpegToI420(const EncodedImage& input_image,
-                      VideoFrame* output_image);
+                      I420VideoFrame* output_image);
 }
 #endif /* WEBRTC_COMMON_VIDEO_JPEG  */

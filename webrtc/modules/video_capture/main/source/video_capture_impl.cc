@@ -181,8 +181,8 @@ WebRtc_Word32 VideoCaptureImpl::CaptureDelay()
     return _setCaptureDelay;
 }
 
-WebRtc_Word32 VideoCaptureImpl::DeliverCapturedFrame(VideoFrame& captureFrame,
-    WebRtc_Word64 capture_time, VideoCodecType codec_type) {
+WebRtc_Word32 VideoCaptureImpl::DeliverCapturedFrame(I420VideoFrame&
+  captureFrame, WebRtc_Word64 capture_time, VideoCodecType codec_type) {
   UpdateFrameCount();  // frame count used for local frame rate callback.
 
   const bool callOnCaptureDelayChanged = _setCaptureDelay != _captureDelay;
@@ -193,17 +193,17 @@ WebRtc_Word32 VideoCaptureImpl::DeliverCapturedFrame(VideoFrame& captureFrame,
 
   // Set the capture time
   if (capture_time != 0) {
-      captureFrame.SetRenderTime(capture_time);
+      captureFrame.set_render_time_ms(capture_time);
   }
   else {
-      captureFrame.SetRenderTime(TickTime::MillisecondTimestamp());
+      captureFrame.set_render_time_ms(TickTime::MillisecondTimestamp());
   }
 
-  if (captureFrame.RenderTimeMs() == last_capture_time_) {
+  if (captureFrame.render_time_ms() == last_capture_time_) {
     // We don't allow the same capture time for two frames, drop this one.
     return -1;
   }
-  last_capture_time_ = captureFrame.RenderTimeMs();
+  last_capture_time_ = captureFrame.render_time_ms();
 
   if (_dataCallBack) {
     if (callOnCaptureDelayChanged) {
@@ -228,7 +228,7 @@ WebRtc_Word32 VideoCaptureImpl::DeliverEncodedCapturedFrame(
 
   // Set the capture time
   if (capture_time != 0) {
-      captureFrame.SetRenderTime(capture_time);
+     captureFrame.SetRenderTime(capture_time);
   }
   else {
       captureFrame.SetRenderTime(TickTime::MillisecondTimestamp());
@@ -244,7 +244,8 @@ WebRtc_Word32 VideoCaptureImpl::DeliverEncodedCapturedFrame(
     if (callOnCaptureDelayChanged) {
       _dataCallBack->OnCaptureDelayChanged(_id, _captureDelay);
     }
-    _dataCallBack->OnIncomingCapturedFrame(_id, captureFrame, codec_type);
+    _dataCallBack->OnIncomingCapturedEncodedFrame(_id, captureFrame,
+                                                  codec_type);
   }
 
   return 0;
@@ -282,23 +283,18 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(
             return -1;
         }
 
-        // Allocate I420 buffer.
-        int requiredLength = CalcBufferSize(kI420, width, abs(height));
-        _captureFrame.VerifyAndAllocate(requiredLength);
-        if (!_captureFrame.Buffer())
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-                       "Failed to allocate frame buffer.");
-            return -1;
-        }
-
-        memset(_captureFrame.Buffer(), 0, _captureFrame.Size());
-        _captureFrame.SetWidth(width);
         // Setting absolute height (in case it was negative).
         // In Windows, the image starts bottom left, instead of top left.
         // Setting a negative source height, inverts the image (within LibYuv).
-        _captureFrame.SetHeight(abs(height));
-        // TODO(mikhal) : Set stride when available.
+        int ret = _captureFrame.CreateEmptyFrame(width, abs(height),
+                                                 width, (width + 1) / 2,
+                                                 (width + 1) / 2);
+        if (ret < 0)
+        {
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
+                       "Failed to allocate I420 frame.");
+            return -1;
+        }
         const int conversionResult = ConvertToI420(commonVideoType,
                                                    videoFrame,
                                                    0, 0,  // No cropping
@@ -313,7 +309,6 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(
                        frameInfo.rawType);
             return -1;
         }
-        _captureFrame.SetLength(requiredLength);
         DeliverCapturedFrame(_captureFrame, captureTime, frameInfo.codecType);
     }
     else // Encoded format
@@ -327,7 +322,6 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(
         DeliverEncodedCapturedFrame(_capture_encoded_frame, captureTime,
                                     frameInfo.codecType);
     }
-
 
     const WebRtc_UWord32 processTime =
         (WebRtc_UWord32)(TickTime::Now() - startProcessTime).Milliseconds();
@@ -345,51 +339,22 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrameI420(
     const VideoFrameI420& video_frame, WebRtc_Word64 captureTime) {
 
   CriticalSectionScoped cs(&_callBackCs);
-
-  // Allocate I420 buffer
-  int frame_size = CalcBufferSize(kI420,
-                                  video_frame.width,
-                                  video_frame.height);
-  _captureFrame.VerifyAndAllocate(frame_size);
-  if (!_captureFrame.Buffer()) {
+  // TODO(mikhal): Do we take the stride as is, or do we align it?
+  int size_y = video_frame.height * video_frame.y_pitch;
+  int size_u = video_frame.u_pitch * (video_frame.height + 1) / 2;
+  int size_v =  video_frame.v_pitch * (video_frame.height + 1) / 2;
+  // TODO(mikhal): Can we use Swap here? This will do a memcpy.
+  int ret = _captureFrame.CreateFrame(size_y, video_frame.y_plane,
+                                      size_u, video_frame.u_plane,
+                                      size_v, video_frame.v_plane,
+                                      video_frame.width, video_frame.height,
+                                      video_frame.y_pitch, video_frame.u_pitch,
+                                      video_frame.v_pitch);
+  if (ret < 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-               "Failed to allocate frame buffer.");
+                 "Failed to create I420VideoFrame");
     return -1;
   }
-
-  // Copy planes to the _captureFrame
-  int y_width = video_frame.width;
-  int uv_width = video_frame.width / 2;
-  int y_rows = video_frame.height;
-  int uv_rows = video_frame.height / 2;  // I420
-  unsigned char* current_pointer = _captureFrame.Buffer();
-  unsigned char* y_plane = video_frame.y_plane;
-  unsigned char* u_plane = video_frame.u_plane;
-  unsigned char* v_plane = video_frame.v_plane;
-  // Copy Y
-  for (int i = 0; i < y_rows; ++i) {
-    memcpy(current_pointer, y_plane, y_width);
-    // Remove the alignment which ViE doesn't support.
-    current_pointer += y_width;
-    y_plane += video_frame.y_pitch;
-  }
-  // Copy U
-  for (int i = 0; i < uv_rows; ++i) {
-    memcpy(current_pointer, u_plane, uv_width);
-    // Remove the alignment which ViE doesn't support.
-    current_pointer += uv_width;
-    u_plane += video_frame.u_pitch;
-  }
-  // Copy V
-  for (int i = 0; i < uv_rows; ++i) {
-    memcpy(current_pointer, v_plane, uv_width);
-    // Remove the alignment which ViE doesn't support.
-    current_pointer += uv_width;
-    v_plane += video_frame.v_pitch;
-  }
-  _captureFrame.SetLength(frame_size);
-  _captureFrame.SetWidth(video_frame.width);
-  _captureFrame.SetHeight(video_frame.height);
 
   DeliverCapturedFrame(_captureFrame, captureTime, kVideoCodecUnknown);
 

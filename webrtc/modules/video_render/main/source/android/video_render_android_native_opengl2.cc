@@ -382,10 +382,10 @@ WebRtc_Word32 AndroidNativeOpenGl2Channel::Init(WebRtc_Word32 zOrder,
 
 WebRtc_Word32 AndroidNativeOpenGl2Channel::RenderFrame(
     const WebRtc_UWord32 /*streamId*/,
-    VideoFrame& videoFrame) {
+    I420VideoFrame& videoFrame) {
   //   WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer,_id, "%s:" ,__FUNCTION__);
   _renderCritSect.Enter();
-  _bufferToRender.SwapFrame(videoFrame);
+  _bufferToRender.SwapFrame(&videoFrame);
   _renderCritSect.Leave();
   _renderer.ReDraw();
   return 0;

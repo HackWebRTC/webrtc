@@ -92,13 +92,13 @@ WebRtc_Word32 VideoChannelNSOpenGL::GetChannelProperties(float& left,
 }
 
 WebRtc_Word32 VideoChannelNSOpenGL::RenderFrame(
-  const WebRtc_UWord32 /*streamId*/, VideoFrame& videoFrame) {
+  const WebRtc_UWord32 /*streamId*/, I420VideoFrame& videoFrame) {
 
   _owner->LockAGLCntx();
 
-  if(_width != (int)videoFrame.Width() ||
-     _height != (int)videoFrame.Height()) {
-      if(FrameSizeChange(videoFrame.Width(), videoFrame.Height(), 1) == -1) {
+  if(_width != videoFrame.width() ||
+     _height != videoFrame.height()) {
+      if(FrameSizeChange(videoFrame.width(), videoFrame.height(), 1) == -1) {
         _owner->UnlockAGLCntx();
         return -1;
       }
@@ -208,7 +208,7 @@ int VideoChannelNSOpenGL::FrameSizeChange(int width, int height, int numberOfStr
     return 0;
 }
 
-int VideoChannelNSOpenGL::DeliverFrame(const VideoFrame& videoFrame) {
+int VideoChannelNSOpenGL::DeliverFrame(const I420VideoFrame& videoFrame) {
 
   _owner->LockAGLCntx();
 
@@ -217,13 +217,17 @@ int VideoChannelNSOpenGL::DeliverFrame(const VideoFrame& videoFrame) {
     return 0;
   }
 
-  if (static_cast<int>(videoFrame.Length()) != _incommingBufferSize) {
+  int length = CalcBufferSize(kI420, videoFrame.width(), videoFrame.height());
+  if (length != _incommingBufferSize) {
     _owner->UnlockAGLCntx();
     return -1;
   }
 
-  int rgbRet = ConvertFromYV12(videoFrame.Buffer(), _width,
-                               kBGRA, 0, _width, _height, _buffer);
+  // Using the I420VideoFrame for YV12: YV12 is YVU; I420 assumes
+  // YUV.
+  // TODO(mikhal) : Use appropriate functionality.
+  // TODO(wu): See if we are using glTexSubImage2D correctly.
+  int rgbRet = ConvertFromYV12(videoFrame, kBGRA, 0, _buffer);
   if (rgbRet < 0) {
     _owner->UnlockAGLCntx();
     return -1;

@@ -68,14 +68,14 @@ public:
     virtual ~VCMNTDecodeCompleCallback();
     void SetUserReceiveCallback(webrtc::VCMReceiveCallback* receiveCallback);
     // will write decoded frame into file
-    WebRtc_Word32 FrameToRender(webrtc::VideoFrame& videoFrame);
+    WebRtc_Word32 FrameToRender(webrtc::I420VideoFrame& videoFrame);
     WebRtc_Word32 DecodedBytes();
 private:
     FILE*             _decodedFile;
     std::string       _outname;
-    WebRtc_UWord32    _decodedBytes;
-    WebRtc_UWord32    _currentWidth;
-    WebRtc_UWord32    _currentHeight;
+    int               _decodedBytes;
+    int               _currentWidth;
+    int               _currentHeight;
 
 }; // end of VCMDecodeCompleCallback class
 
@@ -89,8 +89,8 @@ public:
     static int RunTest(CmdArgs& args);
     WebRtc_Word32    Perform(CmdArgs& args);
     // option:: turn into private and call from perform
-    WebRtc_UWord32   Width() const { return _width; };
-    WebRtc_UWord32   Height() const { return _height; };
+    int   Width() const { return _width; };
+    int   Height() const { return _height; };
     webrtc::VideoCodecType VideoType() const { return _videoType; };
 
 
@@ -118,8 +118,8 @@ protected:
     FILE*                            _decodedFile;
     FILE*                            _encodedFile;
     std::fstream                     _log;
-    WebRtc_UWord32                   _width;
-    WebRtc_UWord32                   _height;
+    int                              _width;
+    int                              _height;
     float                            _frameRate;
     float                            _bitRate;
     WebRtc_UWord32                   _lengthSourceFrame;

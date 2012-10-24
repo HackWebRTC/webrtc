@@ -44,9 +44,9 @@ public:
     virtual int FrameSizeChange(int width, int height, int numberOfStreams);
 
     // A new frame is delivered.
-    virtual int DeliverFrame(const VideoFrame& videoFrame);
+    virtual int DeliverFrame(const I420VideoFrame& videoFrame);
     virtual WebRtc_Word32 RenderFrame(const WebRtc_UWord32 streamId,
-                                      VideoFrame& videoFrame);
+                                      I420VideoFrame& videoFrame);
 
     // Called to check if the video frame is updated.
     int IsUpdated(bool& isUpdated);

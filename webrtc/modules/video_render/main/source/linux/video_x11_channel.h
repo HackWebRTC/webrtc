@@ -34,11 +34,11 @@ public:
     virtual ~VideoX11Channel();
 
     virtual WebRtc_Word32 RenderFrame(const WebRtc_UWord32 streamId,
-                                      VideoFrame& videoFrame);
+                                      I420VideoFrame& videoFrame);
 
     WebRtc_Word32 FrameSizeChange(WebRtc_Word32 width, WebRtc_Word32 height,
                                   WebRtc_Word32 numberOfStreams);
-    WebRtc_Word32 DeliverFrame(const VideoFrame& videoFrame);
+    WebRtc_Word32 DeliverFrame(const I420VideoFrame& videoFrame);
     WebRtc_Word32 GetFrameSize(WebRtc_Word32& width, WebRtc_Word32& height);
     WebRtc_Word32 Init(Window window, float left, float top, float right,
                        float bottom);

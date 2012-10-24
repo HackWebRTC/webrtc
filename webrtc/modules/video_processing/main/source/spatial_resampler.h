@@ -34,8 +34,8 @@ public:
   virtual void SetInputFrameResampleMode(VideoFrameResampling
                                          resamplingMode) = 0;
   virtual void Reset() = 0;
-  virtual WebRtc_Word32 ResampleFrame(const VideoFrame& inFrame,
-                                      VideoFrame& outFrame) = 0;
+  virtual WebRtc_Word32 ResampleFrame(const I420VideoFrame& inFrame,
+                                      I420VideoFrame* outFrame) = 0;
   virtual WebRtc_Word32 TargetWidth() = 0;
   virtual WebRtc_Word32 TargetHeight() = 0;
   virtual bool ApplyResample(WebRtc_Word32 width, WebRtc_Word32 height) = 0;
@@ -50,8 +50,8 @@ public:
                                            WebRtc_Word32 height);
   virtual void SetInputFrameResampleMode(VideoFrameResampling resamplingMode);
   virtual void Reset();
-  virtual WebRtc_Word32 ResampleFrame(const VideoFrame& inFrame,
-                                      VideoFrame& outFrame);
+  virtual WebRtc_Word32 ResampleFrame(const I420VideoFrame& inFrame,
+                                      I420VideoFrame* outFrame);
   virtual WebRtc_Word32 TargetWidth();
   virtual WebRtc_Word32 TargetHeight();
   virtual bool ApplyResample(WebRtc_Word32 width, WebRtc_Word32 height);

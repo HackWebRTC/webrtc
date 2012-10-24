@@ -81,11 +81,11 @@ VideoChannelAGL::~VideoChannelAGL()
 }
 
 WebRtc_Word32 VideoChannelAGL::RenderFrame(const WebRtc_UWord32 streamId,
-                                           VideoFrame& videoFrame) {
+                                           I420VideoFrame& videoFrame) {
   _owner->LockAGLCntx();
-  if (_width != videoFrame.Width() ||
-      _height != videoFrame.Height()) {
-    if (FrameSizeChange(videoFrame.Width(), videoFrame.Height(), 1) == -1) {
+  if (_width != videoFrame.width() ||
+      _height != videoFrame.height()) {
+    if (FrameSizeChange(videoFrame.width(), videoFrame.height(), 1) == -1) {
       WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s:%d FrameSize
                    Change returned an error", __FUNCTION__, __LINE__);
       _owner->UnlockAGLCntx();
@@ -220,7 +220,7 @@ int VideoChannelAGL::FrameSizeChange(int width, int height, int numberOfStreams)
 }
 
 // Called from video engine when a new frame should be rendered.
-int VideoChannelAGL::DeliverFrame(const VideoFrame& videoFrame) {
+int VideoChannelAGL::DeliverFrame(const I420VideoFrame& videoFrame) {
   _owner->LockAGLCntx();
 
   if (_texture == 0) {
@@ -228,14 +228,14 @@ int VideoChannelAGL::DeliverFrame(const VideoFrame& videoFrame) {
     return 0;
   }
 
-  if (bufferSize != _incommingBufferSize) {
+  int length = CalcBufferSize(kI420, videoFrame.width(), videoFrame.height());
+  if (length != _incommingBufferSize) {
     _owner->UnlockAGLCntx();
     return -1;
   }
 
   // Setting stride = width.
-  int rgbret = ConvertFromYV12(videoFrame.Buffer(), _width, kBGRA, 0, _width,
-                               _height, _buffer);
+  int rgbret = ConvertFromYV12(videoFrame, kBGRA, 0, _buffer);
   if (rgbret < 0) {
     _owner->UnlockAGLCntx();
     return -1;

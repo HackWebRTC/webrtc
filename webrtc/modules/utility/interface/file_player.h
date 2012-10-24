@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_UTILITY_INTERFACE_FILE_PLAYER_H_
 
 #include "common_types.h"
+#include "common_video/interface/i420_video_frame.h"
 #include "engine_configurations.h"
 #include "module_common_types.h"
 #include "typedefs.h"
@@ -93,12 +94,12 @@ public:
     virtual WebRtc_Word32 video_codec_info(VideoCodec& /*videoCodec*/) const
     {return -1;}
 
-    virtual WebRtc_Word32 GetVideoFromFile(VideoFrame& /*videoFrame*/)
+    virtual WebRtc_Word32 GetVideoFromFile(I420VideoFrame& /*videoFrame*/)
     { return -1;}
 
     // Same as GetVideoFromFile(). videoFrame will have the resolution specified
     // by the width outWidth and height outHeight in pixels.
-    virtual WebRtc_Word32 GetVideoFromFile(VideoFrame& /*videoFrame*/,
+    virtual WebRtc_Word32 GetVideoFromFile(I420VideoFrame& /*videoFrame*/,
                                            const WebRtc_UWord32 /*outWidth*/,
                                            const WebRtc_UWord32 /*outHeight*/)
     {return -1;}

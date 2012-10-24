@@ -30,8 +30,9 @@ int Plane::CreateEmptyPlane(int allocated_size, int stride, int plane_size) {
   if (allocated_size < 1 || stride < 1 || plane_size < 1)
     return -1;
   stride_ = stride;
+  if (MaybeResize(allocated_size) < 0)
+    return -1;
   plane_size_ = plane_size;
-  MaybeResize(allocated_size);
   return 0;
 }
 

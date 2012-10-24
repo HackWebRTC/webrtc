@@ -536,7 +536,7 @@ WebRtc_Word32 VideoFilePlayerImpl::StopPlayingFile()
     return FilePlayerImpl::StopPlayingFile();
 }
 
-WebRtc_Word32 VideoFilePlayerImpl::GetVideoFromFile(VideoFrame& videoFrame,
+WebRtc_Word32 VideoFilePlayerImpl::GetVideoFromFile(I420VideoFrame& videoFrame,
                                                     WebRtc_UWord32 outWidth,
                                                     WebRtc_UWord32 outHeight)
 {
@@ -547,7 +547,7 @@ WebRtc_Word32 VideoFilePlayerImpl::GetVideoFromFile(VideoFrame& videoFrame,
     {
         return retVal;
     }
-    if( videoFrame.Length() > 0)
+    if (!videoFrame.IsZeroSize())
     {
         retVal = _frameScaler.ResizeFrameIfNeeded(&videoFrame, outWidth,
                                                   outHeight);
@@ -555,22 +555,32 @@ WebRtc_Word32 VideoFilePlayerImpl::GetVideoFromFile(VideoFrame& videoFrame,
     return retVal;
 }
 
-WebRtc_Word32 VideoFilePlayerImpl::GetVideoFromFile(VideoFrame& videoFrame)
+WebRtc_Word32 VideoFilePlayerImpl::GetVideoFromFile(I420VideoFrame& videoFrame)
 {
     CriticalSectionScoped lock( _critSec);
     // No new video data read from file.
     if(_encodedData.payloadSize == 0)
     {
-        videoFrame.SetLength(0);
+        videoFrame.ResetSize();
         return -1;
     }
     WebRtc_Word32 retVal = 0;
     if(strncmp(video_codec_info_.plName, "I420", 5) == 0)
     {
-        videoFrame.CopyFrame(_encodedData.payloadSize,_encodedData.payloadData);
-        videoFrame.SetLength(_encodedData.payloadSize);
-        videoFrame.SetWidth(video_codec_info_.width);
-        videoFrame.SetHeight(video_codec_info_.height);
+      int size_y = video_codec_info_.width * video_codec_info_.height;
+      int half_width = (video_codec_info_.width + 1) / 2;
+      int half_height = (video_codec_info_.height + 1) / 2;
+      int size_uv = half_width * half_height;
+
+      // TODO(mikhal): Do we need to align the stride here?
+      const uint8_t* buffer_y = _encodedData.payloadData;
+      const uint8_t* buffer_u = buffer_y + size_y;
+      const uint8_t* buffer_v = buffer_u + size_uv;
+      videoFrame.CreateFrame(size_y, buffer_y,
+                             size_uv, buffer_u,
+                             size_uv, buffer_v,
+                             video_codec_info_.width, video_codec_info_.height,
+                             video_codec_info_.height, half_width, half_width);
     }else
     {
         // Set the timestamp manually since there is no timestamp in the file.
@@ -580,7 +590,7 @@ WebRtc_Word32 VideoFilePlayerImpl::GetVideoFromFile(VideoFrame& videoFrame)
     }
 
     WebRtc_Word64 renderTimeMs = TickTime::MillisecondTimestamp();
-    videoFrame.SetRenderTime(renderTimeMs);
+    videoFrame.set_render_time_ms(renderTimeMs);
 
      // Indicate that the current frame in the encoded buffer is old/has
      // already been read.

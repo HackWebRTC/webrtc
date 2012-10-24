@@ -197,7 +197,7 @@ WebRtc_Word32 VideoRenderExternalImpl::SetBitmap(const void* bitMap,
 // VideoRenderCallback
 WebRtc_Word32 VideoRenderExternalImpl::RenderFrame(
                                                    const WebRtc_UWord32 streamId,
-                                                   VideoFrame& videoFrame)
+                                                   I420VideoFrame& videoFrame)
 {
     return 0;
 }

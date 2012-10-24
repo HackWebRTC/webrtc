@@ -62,8 +62,8 @@ public:
     WebRtc_UWord32 DecimatedHeight() const;
 
     //Preprocess output:
-    WebRtc_Word32 PreprocessFrame(const VideoFrame& frame,
-                                  VideoFrame** processedFrame);
+    WebRtc_Word32 PreprocessFrame(const I420VideoFrame& frame,
+                                  I420VideoFrame** processedFrame);
     VideoContentMetrics* ContentMetrics() const;
 
 private:
@@ -74,7 +74,7 @@ private:
     WebRtc_Word32              _id;
     VideoContentMetrics*      _contentMetrics;
     WebRtc_UWord32             _maxFrameRate;
-    VideoFrame                _resampledFrame;
+    I420VideoFrame           _resampledFrame;
     VPMSpatialResampler*     _spatialResampler;
     VPMContentAnalysis*      _ca;
     VPMVideoDecimator*       _vd;

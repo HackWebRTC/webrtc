@@ -47,7 +47,7 @@ public:
 //
 // Return value                 : WEBRTC_VIDEO_CODEC_OK if OK.
 //                                <0 - Error
-  virtual int Encode(const VideoFrame& inputImage,
+  virtual int Encode(const I420VideoFrame& inputImage,
                      const CodecSpecificInfo* /*codecSpecificInfo*/,
                      const std::vector<VideoFrameType>* /*frame_types*/);
 
@@ -138,7 +138,7 @@ public:
 
 private:
 
-  VideoFrame                  _decodedImage;
+  I420VideoFrame              _decodedImage;
   int                         _width;
   int                         _height;
   bool                        _inited;

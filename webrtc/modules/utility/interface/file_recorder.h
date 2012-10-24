@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_UTILITY_INTERFACE_FILE_RECORDER_H_
 #define WEBRTC_MODULES_UTILITY_INTERFACE_FILE_RECORDER_H_
 
+#include "common_video/interface/i420_video_frame.h"
 #include "common_types.h"
 #include "engine_configurations.h"
 #include "modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
@@ -78,7 +79,8 @@ public:
         bool videoOnly = false) = 0;
 
     // Record the video frame in videoFrame to AVI file.
-    virtual WebRtc_Word32 RecordVideoToFile(const VideoFrame& videoFrame) = 0;
+    virtual WebRtc_Word32 RecordVideoToFile(
+        const I420VideoFrame& videoFrame) = 0;
 
 protected:
     virtual ~FileRecorder() {}

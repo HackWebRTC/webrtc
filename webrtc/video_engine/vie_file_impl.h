@@ -30,11 +30,11 @@ class ViECaptureSnapshot : public ViEFrameCallback {
   ViECaptureSnapshot();
   ~ViECaptureSnapshot();
 
-  bool GetSnapshot(unsigned int max_wait_time, VideoFrame* video_frame);
+  bool GetSnapshot(unsigned int max_wait_time, I420VideoFrame* video_frame);
 
   // Implements ViEFrameCallback.
   virtual void DeliverFrame(int id,
-                            VideoFrame* video_frame,
+                            I420VideoFrame* video_frame,
                             int num_csrcs = 0,
                             const WebRtc_UWord32 CSRC[kRtpCsrcSize] = NULL);
   virtual void DelayChanged(int id, int frame_delay) {}
@@ -48,7 +48,7 @@ class ViECaptureSnapshot : public ViEFrameCallback {
  private:
   scoped_ptr<CriticalSectionWrapper> crit_;
   scoped_ptr<ConditionVariableWrapper> condition_varaible_;
-  VideoFrame* video_frame_;
+  I420VideoFrame* video_frame_;
 };
 
 class ViEFileImpl
@@ -126,7 +126,7 @@ class ViEFileImpl
 
  private:
   WebRtc_Word32 GetNextCapturedFrame(WebRtc_Word32 capture_id,
-                                     VideoFrame* video_frame);
+                                     I420VideoFrame* video_frame);
 
   ViESharedData* shared_data_;
 };

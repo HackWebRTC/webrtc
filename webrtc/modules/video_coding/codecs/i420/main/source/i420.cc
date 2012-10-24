@@ -14,7 +14,6 @@
 
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 
-
 namespace webrtc
 {
 
@@ -76,9 +75,9 @@ int I420Encoder::InitEncode(const VideoCodec* codecSettings,
 
 
 
-int I420Encoder::Encode(const VideoFrame& inputImage,
-                    const CodecSpecificInfo* /*codecSpecificInfo*/,
-                    const std::vector<VideoFrameType>* /*frame_types*/) {
+int I420Encoder::Encode(const I420VideoFrame& inputImage,
+                        const CodecSpecificInfo* /*codecSpecificInfo*/,
+                        const std::vector<VideoFrameType>* /*frame_types*/) {
   if (!_inited) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
@@ -87,29 +86,32 @@ int I420Encoder::Encode(const VideoFrame& inputImage,
   }
 
   _encodedImage._frameType = kKeyFrame; // No coding.
-  _encodedImage._timeStamp = inputImage.TimeStamp();
-  _encodedImage._encodedHeight = inputImage.Height();
-  _encodedImage._encodedWidth = inputImage.Width();
-  if (inputImage.Length() > _encodedImage._size) {
+  _encodedImage._timeStamp = inputImage.timestamp();
+  _encodedImage._encodedHeight = inputImage.height();
+  _encodedImage._encodedWidth = inputImage.width();
 
+  int req_length = CalcBufferSize(kI420, inputImage.width(),
+                                  inputImage.height());
+  if (_encodedImage._size > static_cast<unsigned int>(req_length)) {
     // Allocating encoded memory.
     if (_encodedImage._buffer != NULL) {
       delete [] _encodedImage._buffer;
       _encodedImage._buffer = NULL;
       _encodedImage._size = 0;
     }
-    const uint32_t newSize = CalcBufferSize(kI420,
-                                            _encodedImage._encodedWidth,
-                                            _encodedImage._encodedHeight);
-    uint8_t* newBuffer = new uint8_t[newSize];
+    uint8_t* newBuffer = new uint8_t[req_length];
     if (newBuffer == NULL) {
       return WEBRTC_VIDEO_CODEC_MEMORY;
     }
-    _encodedImage._size = newSize;
+    _encodedImage._size = req_length;
     _encodedImage._buffer = newBuffer;
   }
-  memcpy(_encodedImage._buffer, inputImage.Buffer(), inputImage.Length());
-  _encodedImage._length = inputImage.Length();
+
+  int ret_length = ExtractBuffer(inputImage, req_length, _encodedImage._buffer);
+  if (ret_length < 0)
+    return WEBRTC_VIDEO_CODEC_MEMORY;
+  _encodedImage._length = ret_length;
+
   _encodedCompleteCallback->Encoded(_encodedImage);
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -174,12 +176,24 @@ I420Decoder::Decode(const EncodedImage& inputImage,
   }
 
   // Set decoded image parameters.
-  if (_decodedImage.CopyFrame(inputImage._length, inputImage._buffer) < 0) {
+  int half_width = (_width + 1) / 2;
+  int half_height = (_height + 1) / 2;
+  int size_y = _width * _height;
+  int size_uv = half_width * half_height;
+
+  const uint8_t* buffer_y = inputImage._buffer;
+  const uint8_t* buffer_u = buffer_y + size_y;
+  const uint8_t* buffer_v = buffer_u + size_uv;
+  // TODO(mikhal): Do we need an align stride?
+  int ret = _decodedImage.CreateFrame(size_y, buffer_y,
+                                      size_uv, buffer_u,
+                                      size_uv, buffer_v,
+                                      _width, _height,
+                                      _width, half_width, half_width);
+  if (ret < 0) {
     return WEBRTC_VIDEO_CODEC_MEMORY;
   }
-  _decodedImage.SetHeight(_height);
-  _decodedImage.SetWidth(_width);
-  _decodedImage.SetTimeStamp(inputImage._timeStamp);
+  _decodedImage.set_timestamp(inputImage._timeStamp);
 
   _decodeCompleteCallback->Decoded(_decodedImage);
   return WEBRTC_VIDEO_CODEC_OK;
@@ -193,7 +207,6 @@ I420Decoder::RegisterDecodeCompleteCallback(DecodedImageCallback* callback) {
 
 int
 I420Decoder::Release() {
-  _decodedImage.Free();
   _inited = false;
   return WEBRTC_VIDEO_CODEC_OK;
 }

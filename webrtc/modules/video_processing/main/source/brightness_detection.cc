@@ -41,25 +41,18 @@ VPMBrightnessDetection::Reset()
 }
 
 WebRtc_Word32
-VPMBrightnessDetection::ProcessFrame(const VideoFrame& frame,
+VPMBrightnessDetection::ProcessFrame(const I420VideoFrame& frame,
                                      const VideoProcessingModule::FrameStats&
                                      stats)
 {
-    if (frame.Buffer() == NULL)
+    if (frame.IsZeroSize())
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, _id,
                      "Null frame pointer");
         return VPM_PARAMETER_ERROR;
     }
-    int width = frame.Width();
-    int height = frame.Height();
-    
-    if (width == 0 || height == 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, _id,
-                     "Invalid frame size");
-        return VPM_PARAMETER_ERROR;
-    }
+    int width = frame.width();
+    int height = frame.height();
 
     if (!VideoProcessingModule::ValidFrameStats(stats))
     {
@@ -93,11 +86,11 @@ VPMBrightnessDetection::ProcessFrame(const VideoFrame& frame,
         if (stats.mean < 90 || stats.mean > 170)
         {
             // Standard deviation of Y
+            const uint8_t* buffer = frame.buffer(kYPlane);
             float stdY = 0;
-            uint8_t* buffer = frame.Buffer();
             for (int h = 0; h < height; h += (1 << stats.subSamplHeight))
             {
-                WebRtc_UWord32 row = h*width;
+                int row = h*width;
                 for (int w = 0; w < width; w += (1 << stats.subSamplWidth))
                 {
                     stdY += (buffer[w + row] - stats.mean) * (buffer[w + row] -

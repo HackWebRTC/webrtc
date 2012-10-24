@@ -290,8 +290,7 @@ MediaOptTest::Perform()
     }
 
     // START TEST
-    VideoFrame sourceFrame;
-    sourceFrame.VerifyAndAllocate(_lengthSourceFrame);
+    I420VideoFrame sourceFrame;
     WebRtc_UWord8* tmpBuffer = new WebRtc_UWord8[_lengthSourceFrame];
     _vcm->SetChannelParameters((WebRtc_UWord32)_bitRate, (WebRtc_UWord8)_lossRate, _rttMS);
     _vcm->RegisterReceiveCallback(&receiveCallback);
@@ -299,17 +298,22 @@ MediaOptTest::Perform()
     _frameCnt  = 0;
     _sumEncBytes = 0.0;
     _numFramesDropped = 0;
+    int half_width = (_width + 1) / 2;
+    int half_height = (_height + 1) / 2;
+    int size_y = _width * _height;
+    int size_uv = half_width * half_height;
 
     while (feof(_sourceFile)== 0)
     {
         TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
         _frameCnt++;
-
-        sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
-        sourceFrame.SetHeight(_height);
-        sourceFrame.SetWidth(_width);
+        sourceFrame.CreateFrame(size_y, tmpBuffer,
+                                size_uv, tmpBuffer + size_y,
+                                size_uv, tmpBuffer + size_y + size_uv,
+                                _width, _height,
+                                _width, half_width, half_width);
         _timeStamp += (WebRtc_UWord32)(9e4 / static_cast<float>(_frameRate));
-        sourceFrame.SetTimeStamp(_timeStamp);
+        sourceFrame.set_timestamp(_timeStamp);
         TEST(_vcm->AddVideoFrame(sourceFrame) == VCM_OK);
         // inform RTP Module of error resilience features
         //_rtp->SetFECCodeRate(protectionCallback.FECKeyRate(),protectionCallback.FECDeltaRate());
@@ -331,8 +335,7 @@ MediaOptTest::Perform()
         else
         {
           // write frame to file
-          if (fwrite(sourceFrame.Buffer(), 1, sourceFrame.Length(),
-                     _actualSourceFile) !=  sourceFrame.Length()) {
+          if (PrintI420VideoFrame(sourceFrame, _actualSourceFile) < 0) {
             return -1;
           }
         }

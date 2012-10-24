@@ -324,13 +324,13 @@ uint32_t VP8EncoderImpl::MaxIntraTarget(uint32_t optimalBuffersize) {
   return (targetPct < minIntraTh) ? minIntraTh: targetPct;
 }
 
-int VP8EncoderImpl::Encode(const VideoFrame& input_image,
+int VP8EncoderImpl::Encode(const I420VideoFrame& input_image,
                            const CodecSpecificInfo* codec_specific_info,
                            const std::vector<VideoFrameType>* frame_types) {
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  if (input_image.Buffer() == NULL) {
+  if (input_image.IsZeroSize()) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   if (encoded_complete_callback_ == NULL) {
@@ -344,20 +344,18 @@ int VP8EncoderImpl::Encode(const VideoFrame& input_image,
   }
 
   // Check for change in frame size.
-  if (input_image.Width() != codec_.width ||
-      input_image.Height() != codec_.height) {
-    int ret = UpdateCodecFrameSize(input_image.Width(), input_image.Height());
+  if (input_image.width() != codec_.width ||
+      input_image.height() != codec_.height) {
+    int ret = UpdateCodecFrameSize(input_image.width(), input_image.height());
     if (ret < 0) {
       return ret;
     }
   }
   // Image in vpx_image_t format.
-  uint8_t* buffer = input_image.Buffer();
-  uint32_t v_plane_loc = codec_.height * codec_.width +
-    ((codec_.width + 1) >> 1) * ((codec_.height + 1) >> 1);
-  raw_->planes[PLANE_Y] = buffer;
-  raw_->planes[PLANE_U] = &buffer[codec_.width * codec_.height];
-  raw_->planes[PLANE_V] = &buffer[v_plane_loc];
+  // Input image is const. VP8's raw image is not defined as const.
+  raw_->planes[PLANE_Y] = const_cast<uint8_t*>(input_image.buffer(kYPlane));
+  raw_->planes[PLANE_U] = const_cast<uint8_t*>(input_image.buffer(kUPlane));
+  raw_->planes[PLANE_V] = const_cast<uint8_t*>(input_image.buffer(kVPlane));
 
   int flags = 0;
 #if WEBRTC_LIBVPX_VERSION >= 971
@@ -379,11 +377,11 @@ int VP8EncoderImpl::Encode(const VideoFrame& input_image,
             codec_specific_info->codecSpecific.VP8.pictureIdRPSI);
       }
       if (codec_specific_info->codecSpecific.VP8.hasReceivedSLI) {
-        sendRefresh = rps_->ReceivedSLI(input_image.TimeStamp());
+        sendRefresh = rps_->ReceivedSLI(input_image.timestamp());
       }
     }
     flags = rps_->EncodeFlags(picture_id_, sendRefresh,
-                              input_image.TimeStamp());
+                              input_image.timestamp());
   }
 
   // TODO(holmer): Ideally the duration should be the timestamp diff of this
@@ -456,7 +454,7 @@ void VP8EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   picture_id_ = (picture_id_ + 1) & 0x7FFF;  // prepare next
 }
 
-int VP8EncoderImpl::GetEncodedFrame(const VideoFrame& input_image) {
+int VP8EncoderImpl::GetEncodedFrame(const I420VideoFrame& input_image) {
   vpx_codec_iter_t iter = NULL;
   encoded_image_._frameType = kDeltaFrame;
   const vpx_codec_cx_pkt_t *pkt= vpx_codec_get_cx_data(encoder_, &iter);
@@ -469,7 +467,7 @@ int VP8EncoderImpl::GetEncodedFrame(const VideoFrame& input_image) {
     }
   } else if (pkt->kind == VPX_CODEC_CX_FRAME_PKT) {
     CodecSpecificInfo codecSpecific;
-    PopulateCodecSpecific(&codecSpecific, *pkt, input_image.TimeStamp());
+    PopulateCodecSpecific(&codecSpecific, *pkt, input_image.timestamp());
 
     assert(pkt->data.frame.sz <= encoded_image_._size);
     memcpy(encoded_image_._buffer, pkt->data.frame.buf, pkt->data.frame.sz);
@@ -484,9 +482,9 @@ int VP8EncoderImpl::GetEncodedFrame(const VideoFrame& input_image) {
     }
 
     if (encoded_image_._length > 0) {
-      encoded_image_._timeStamp = input_image.TimeStamp();
+      encoded_image_._timeStamp = input_image.timestamp();
       // TODO(mikhal): Resolve confusion in terms.
-      encoded_image_.capture_time_ms_ = input_image.RenderTimeMs();
+      encoded_image_.capture_time_ms_ = input_image.render_time_ms();
 
       // Figure out where partition boundaries are located.
       RTPFragmentationHeader fragInfo;
@@ -518,7 +516,7 @@ int VP8EncoderImpl::GetEncodedFrame(const VideoFrame& input_image) {
 }
 
 #if WEBRTC_LIBVPX_VERSION >= 971
-int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image) {
+int VP8EncoderImpl::GetEncodedPartitions(const I420VideoFrame& input_image) {
   vpx_codec_iter_t iter = NULL;
   int part_idx = 0;
   encoded_image_._length = 0;
@@ -554,13 +552,13 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image) {
           encoded_image_._frameType = kKeyFrame;
           rps_->EncodedKeyFrame(picture_id_);
       }
-      PopulateCodecSpecific(&codec_specific, *pkt, input_image.TimeStamp());
+      PopulateCodecSpecific(&codec_specific, *pkt, input_image.timestamp());
       break;
     }
   }
   if (encoded_image_._length > 0) {
-    encoded_image_._timeStamp = input_image.TimeStamp();
-    encoded_image_.capture_time_ms_ = input_image.RenderTimeMs();
+    encoded_image_._timeStamp = input_image.timestamp();
+    encoded_image_.capture_time_ms_ = input_image.render_time_ms();
     encoded_image_._encodedHeight = raw_->h;
     encoded_image_._encodedWidth = raw_->w;
     encoded_complete_callback_->Encoded(encoded_image_, &codec_specific,
@@ -873,30 +871,18 @@ int VP8DecoderImpl::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
     // Decoder OK and NULL image => No show frame
     return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
   }
-
-  uint32_t required_size = CalcBufferSize(kI420, img->d_w, img->d_h);
-  decoded_image_.VerifyAndAllocate(required_size);
-
-  uint8_t* buf;
-  uint32_t pos = 0;
-  uint32_t plane, y;
-  uint8_t* buffer = decoded_image_.Buffer();
-  for (plane = 0; plane < 3; plane++) {
-    unsigned int width = (plane ? (img->d_w + 1) >> 1 : img->d_w);
-    unsigned int height = (plane ? (img->d_h + 1) >> 1 : img->d_h);
-    buf = img->planes[plane];
-    for (y = 0; y < height; y++) {
-      memcpy(&buffer[pos], buf, width);
-      pos += width;
-      buf += img->stride[plane];
-    }
-  }
-
-  // Set decoded image parameters.
-  decoded_image_.SetHeight(img->d_h);
-  decoded_image_.SetWidth(img->d_w);
-  decoded_image_.SetLength(CalcBufferSize(kI420, img->d_w, img->d_h));
-  decoded_image_.SetTimeStamp(timestamp);
+  int size_y = img->stride[VPX_PLANE_Y] * img->d_h;
+  int size_u = img->stride[VPX_PLANE_U] * ((img->d_h + 1) / 2);
+  int size_v = img->stride[VPX_PLANE_V] * ((img->d_h + 1) / 2);
+  // TODO(mikhal): This does  a copy - need to SwapBuffers.
+  decoded_image_.CreateFrame(size_y, img->planes[VPX_PLANE_Y],
+                             size_u, img->planes[VPX_PLANE_U],
+                             size_v, img->planes[VPX_PLANE_V],
+                             img->d_w, img->d_h,
+                             img->stride[VPX_PLANE_Y],
+                             img->stride[VPX_PLANE_U],
+                             img->stride[VPX_PLANE_V]);
+  decoded_image_.set_timestamp(timestamp);
   int ret = decode_complete_callback_->Decoded(decoded_image_);
   if (ret != 0)
     return ret;
@@ -913,7 +899,6 @@ int VP8DecoderImpl::RegisterDecodeCompleteCallback(
 }
 
 int VP8DecoderImpl::Release() {
-  decoded_image_.Free();
   if (last_keyframe_._buffer != NULL) {
     delete [] last_keyframe_._buffer;
     last_keyframe_._buffer = NULL;
@@ -941,7 +926,7 @@ VideoDecoder* VP8DecoderImpl::Copy() {
     assert(false);
     return NULL;
   }
-  if (decoded_image_.Buffer() == NULL) {
+  if (decoded_image_.IsZeroSize()) {
     // Nothing has been decoded before; cannot clone.
     return NULL;
   }
@@ -964,13 +949,13 @@ VideoDecoder* VP8DecoderImpl::Copy() {
     return NULL;
   }
   // Allocate memory for reference image copy
-  assert(decoded_image_.Width() > 0);
-  assert(decoded_image_.Height() > 0);
+  assert(decoded_image_.width() > 0);
+  assert(decoded_image_.height() > 0);
   assert(image_format_ > VPX_IMG_FMT_NONE);
   // Check if frame format has changed.
   if (ref_frame_ &&
-      (decoded_image_.Width() != ref_frame_->img.d_w ||
-          decoded_image_.Height() != ref_frame_->img.d_h ||
+      (decoded_image_.width() != static_cast<int>(ref_frame_->img.d_w) ||
+          decoded_image_.height() != static_cast<int>(ref_frame_->img.d_h) ||
           image_format_ != ref_frame_->img.fmt)) {
     vpx_img_free(&ref_frame_->img);
     delete ref_frame_;
@@ -982,12 +967,12 @@ VideoDecoder* VP8DecoderImpl::Copy() {
     ref_frame_ = new vpx_ref_frame_t;
 
     unsigned int align = 1;
-    if (decoded_image_.Width() % 32 == 0) {
+    if (decoded_image_.width() % 32 == 0) {
       align = 32;
     }
     if (!vpx_img_alloc(&ref_frame_->img,
                        static_cast<vpx_img_fmt_t>(image_format_),
-                       decoded_image_.Width(), decoded_image_.Height(),
+                       decoded_image_.width(), decoded_image_.height(),
                        align)) {
       assert(false);
       delete copy;

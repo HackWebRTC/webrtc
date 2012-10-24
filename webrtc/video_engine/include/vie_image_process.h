@@ -18,6 +18,7 @@
 #define WEBRTC_VIDEO_ENGINE_INCLUDE_VIE_IMAGE_PROCESS_H_
 
 #include "common_types.h"
+#include "common_video/interface/i420_video_frame.h"
 
 namespace webrtc {
 
@@ -31,10 +32,8 @@ class WEBRTC_DLLEXPORT ViEEffectFilter {
  public:
   // This method is called with an I420 video frame allowing the user to
   // modify the video frame.
-  virtual int Transform(int size,
-                        unsigned char* frame_buffer,
-                        unsigned int time_stamp90KHz,
-                        unsigned int width,
+  virtual int Transform(int size, unsigned char* frameBuffer,
+                        unsigned int timeStamp90KHz, unsigned int width,
                         unsigned int height) = 0;
  protected:
   ViEEffectFilter() {}

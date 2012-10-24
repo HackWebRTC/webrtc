@@ -42,9 +42,7 @@
 
 using namespace webrtc;
 
-void GetTestVideoFrame(WebRtc_UWord8* frame,
-                       WebRtc_Word32 width,
-                       WebRtc_Word32 height,
+void GetTestVideoFrame(I420VideoFrame* frame,
                        WebRtc_UWord8 startColor);
 int TestSingleStream(VideoRender* renderModule);
 int TestFullscreenStream(VideoRender* &renderModule,
@@ -264,7 +262,7 @@ public:
     }
     ;
     virtual WebRtc_Word32 RenderFrame(const WebRtc_UWord32 streamId,
-                                      VideoFrame& videoFrame)
+                                      I420VideoFrame& videoFrame)
     {
         _cnt++;
         if (_cnt % 100 == 0)
@@ -276,33 +274,16 @@ public:
     WebRtc_Word32 _cnt;
 };
 
-void GetTestVideoFrame(WebRtc_UWord8* frame,
-                       WebRtc_Word32 width,
-                       WebRtc_Word32 height,
+void GetTestVideoFrame(I420VideoFrame* frame,
                        WebRtc_UWord8 startColor) {
     // changing color
     static WebRtc_UWord8 color = startColor;
 
-    WebRtc_UWord8* destY = frame;
-    WebRtc_UWord8* destU = &frame[width*height];
-    WebRtc_UWord8* destV = &frame[width*height*5/4];
-    //Y
-    for (WebRtc_Word32 y=0; y<(width*height); y++)
-    {
-      destY[y] = color;
-    }
-    //U
-    for (WebRtc_Word32 u=0; u<(width*height/4); u++)
-    {
-      destU[u] = color;
-    }
-    //V
-    for (WebRtc_Word32 v=0; v<(width*height/4); v++)
-    {
-      destV[v] = color;
-    }
+    memset(frame->buffer(kYPlane), color, frame->allocated_size(kYPlane));
+    memset(frame->buffer(kUPlane), color, frame->allocated_size(kUPlane));
+    memset(frame->buffer(kVPlane), color, frame->allocated_size(kVPlane));
 
-    color++;
+    ++color;
 }
 
 int TestSingleStream(VideoRender* renderModule) {
@@ -328,26 +309,24 @@ int TestSingleStream(VideoRender* renderModule) {
     }
 
     // Loop through an I420 file and render each frame
-    const WebRtc_UWord32 width = 352;
-    const WebRtc_UWord32 height = 288;
-    const WebRtc_UWord32 numBytes = (WebRtc_UWord32)(1.5 * width * height);
+    const int width = 352;
+    const int half_width = (width + 1) / 2;
+    const int height = 288;
 
-    VideoFrame videoFrame0;
-    videoFrame0.VerifyAndAllocate(numBytes);
+    I420VideoFrame videoFrame0;
+    videoFrame0.CreateEmptyFrame(width, height, width, half_width, half_width);
 
     const WebRtc_UWord32 renderDelayMs = 500;
 
     for (int i=0; i<TEST_FRAME_NUM; i++) {
-        GetTestVideoFrame(videoFrame0.Buffer(), width, height, TEST_STREAM0_START_COLOR);
-        videoFrame0.SetRenderTime(TickTime::MillisecondTimestamp() + renderDelayMs); // Render this frame with the specified delay
-        videoFrame0.SetWidth(width);
-        videoFrame0.SetHeight(height);
-        videoFrame0.SetLength(numBytes);
+        GetTestVideoFrame(&videoFrame0, TEST_STREAM0_START_COLOR);
+        // Render this frame with the specified delay
+        videoFrame0.set_render_time_ms(TickTime::MillisecondTimestamp()
+                                       + renderDelayMs);
         renderCallback0->RenderFrame(streamId0, videoFrame0);
         SleepMs(1000/TEST_FRAME_RATE);
     }
 
-    videoFrame0.Free();
 
     // Shut down
     printf("Closing...\n");
@@ -403,26 +382,24 @@ int TestBitmapText(VideoRender* renderModule) {
     error = renderModule->StartRender(streamId0);
     assert(error == 0);
 
-        // Loop through an I420 file and render each frame
-    const WebRtc_UWord32 width = 352;
-    const WebRtc_UWord32 height = 288;
-    const WebRtc_UWord32 numBytes = (WebRtc_UWord32)(1.5 * width * height);
+    // Loop through an I420 file and render each frame
+    const int width = 352;
+    const int half_width = (width + 1) / 2;
+    const int height = 288;
 
-    VideoFrame videoFrame0;
-    videoFrame0.VerifyAndAllocate(numBytes);
+    I420VideoFrame videoFrame0;
+    videoFrame0.CreateEmptyFrame(width, height, width, half_width, half_width);
 
     const WebRtc_UWord32 renderDelayMs = 500;
 
     for (int i=0; i<TEST_FRAME_NUM; i++) {
-        GetTestVideoFrame(videoFrame0.Buffer(), width, height, TEST_STREAM0_START_COLOR);
-        videoFrame0.SetRenderTime(TickTime::MillisecondTimestamp() + renderDelayMs); // Render this frame with the specified delay
-        videoFrame0.SetWidth(width);
-        videoFrame0.SetHeight(height);
-        videoFrame0.SetLength(numBytes);
+        GetTestVideoFrame(&videoFrame0, TEST_STREAM0_START_COLOR);
+        // Render this frame with the specified delay
+        videoFrame0.set_render_time_ms(TickTime::MillisecondTimestamp() +
+                                       renderDelayMs);
         renderCallback0->RenderFrame(streamId0, videoFrame0);
         SleepMs(1000/TEST_FRAME_RATE);
     }
-    videoFrame0.Free();
     // Sleep and let all frames be rendered before closing
     SleepMs(renderDelayMs*2);
 
@@ -473,57 +450,46 @@ int TestMultipleStreams(VideoRender* renderModule) {
     assert(renderModule->StartRender(streamId3) == 0);
 
     // Loop through an I420 file and render each frame
-    const WebRtc_UWord32 width = 352;
-    const WebRtc_UWord32 height = 288;
-    const WebRtc_UWord32 numBytes = (WebRtc_UWord32)(1.5 * width * height);
+    const int width = 352;
+    const int half_width = (width + 1) / 2;
+    const int height = 288;
 
-    VideoFrame videoFrame0;
-    videoFrame0.VerifyAndAllocate(numBytes);
-    VideoFrame videoFrame1;
-    videoFrame1.VerifyAndAllocate(numBytes);
-    VideoFrame videoFrame2;
-    videoFrame2.VerifyAndAllocate(numBytes);
-    VideoFrame videoFrame3;
-    videoFrame3.VerifyAndAllocate(numBytes);
+    I420VideoFrame videoFrame0;
+    videoFrame0.CreateEmptyFrame(width, height, width, half_width, half_width);
+    I420VideoFrame videoFrame1;
+    videoFrame1.CreateEmptyFrame(width, height, width, half_width, half_width);
+    I420VideoFrame videoFrame2;
+    videoFrame2.CreateEmptyFrame(width, height, width, half_width, half_width);
+    I420VideoFrame videoFrame3;
+    videoFrame3.CreateEmptyFrame(width, height, width, half_width, half_width);
 
     const WebRtc_UWord32 renderDelayMs = 500;
 
+    // Render frames with the specified delay.
     for (int i=0; i<TEST_FRAME_NUM; i++) {
-        GetTestVideoFrame(videoFrame0.Buffer(), width, height, TEST_STREAM0_START_COLOR);
-        videoFrame0.SetRenderTime(TickTime::MillisecondTimestamp() + renderDelayMs); // Render this frame with the specified delay
-        videoFrame0.SetWidth(width);
-        videoFrame0.SetHeight(height);
-        videoFrame0.SetLength(numBytes);
-        renderCallback0->RenderFrame(streamId0, videoFrame0);
+      GetTestVideoFrame(&videoFrame0, TEST_STREAM0_START_COLOR);
 
-        GetTestVideoFrame(videoFrame1.Buffer(), width, height, TEST_STREAM1_START_COLOR);
-        videoFrame1.SetRenderTime(TickTime::MillisecondTimestamp() + renderDelayMs); // Render this frame with the specified delay
-        videoFrame1.SetWidth(width);
-        videoFrame1.SetHeight(height);
-        videoFrame1.SetLength(numBytes);
-        renderCallback1->RenderFrame(streamId1, videoFrame1);
+      videoFrame0.set_render_time_ms(TickTime::MillisecondTimestamp() +
+                                     renderDelayMs);
+      renderCallback0->RenderFrame(streamId0, videoFrame0);
 
-        GetTestVideoFrame(videoFrame2.Buffer(), width, height, TEST_STREAM2_START_COLOR);
-        videoFrame2.SetRenderTime(TickTime::MillisecondTimestamp() + renderDelayMs); // Render this frame with the specified delay
-        videoFrame2.SetWidth(width);
-        videoFrame2.SetHeight(height);
-        videoFrame2.SetLength(numBytes);
-        renderCallback2->RenderFrame(streamId2, videoFrame2);
+      GetTestVideoFrame(&videoFrame1, TEST_STREAM1_START_COLOR);
+      videoFrame1.set_render_time_ms(TickTime::MillisecondTimestamp() +
+                                     renderDelayMs);
+      renderCallback1->RenderFrame(streamId1, videoFrame1);
 
-        GetTestVideoFrame(videoFrame3.Buffer(), width, height, TEST_STREAM3_START_COLOR);
-        videoFrame3.SetRenderTime(TickTime::MillisecondTimestamp() + renderDelayMs); // Render this frame with the specified delay
-        videoFrame3.SetWidth(width);
-        videoFrame3.SetHeight(height);
-        videoFrame3.SetLength(numBytes);
-        renderCallback3->RenderFrame(streamId3, videoFrame3);
+      GetTestVideoFrame(&videoFrame2,  TEST_STREAM2_START_COLOR);
+      videoFrame2.set_render_time_ms(TickTime::MillisecondTimestamp() +
+                                     renderDelayMs);
+      renderCallback2->RenderFrame(streamId2, videoFrame2);
 
-        SleepMs(1000/TEST_FRAME_RATE);
+      GetTestVideoFrame(&videoFrame3, TEST_STREAM3_START_COLOR);
+      videoFrame3.set_render_time_ms(TickTime::MillisecondTimestamp() +
+                                     renderDelayMs);
+      renderCallback3->RenderFrame(streamId3, videoFrame3);
+
+      SleepMs(1000/TEST_FRAME_RATE);
     }
-
-    videoFrame0.Free();
-    videoFrame1.Free();
-    videoFrame2.Free();
-    videoFrame3.Free();
 
     // Shut down
     printf("Closing...\n");
@@ -552,25 +518,23 @@ int TestExternalRender(VideoRender* renderModule) {
 
     assert(renderModule->StartRender(streamId0) == 0);
 
-    const WebRtc_UWord32 width = 352;
-    const WebRtc_UWord32 height = 288;
-    const WebRtc_UWord32 numBytes = (WebRtc_UWord32) (1.5 * width * height);
-    VideoFrame videoFrame0;
-    videoFrame0.VerifyAndAllocate(numBytes);
+    const int width = 352;
+    const int half_width = (width + 1) / 2;
+    const int height = 288;
+    I420VideoFrame videoFrame0;
+    videoFrame0.CreateEmptyFrame(width, height, width, half_width, half_width);
 
     const WebRtc_UWord32 renderDelayMs = 500;
     int frameCount = TEST_FRAME_NUM;
     for (int i=0; i<frameCount; i++) {
-        videoFrame0.SetRenderTime(TickTime::MillisecondTimestamp() + renderDelayMs);
-        videoFrame0.SetWidth(width);
-        videoFrame0.SetHeight(height);
+        videoFrame0.set_render_time_ms(TickTime::MillisecondTimestamp() +
+                                       renderDelayMs);
         renderCallback0->RenderFrame(streamId0, videoFrame0);
         SleepMs(33);
     }
 
     // Sleep and let all frames be rendered before closing
     SleepMs(2*renderDelayMs);
-    videoFrame0.Free();
 
     assert(renderModule->StopRender(streamId0) == 0);
     assert(renderModule->DeleteIncomingRenderStream(streamId0) == 0);

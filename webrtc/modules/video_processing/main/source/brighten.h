@@ -17,7 +17,7 @@
 namespace webrtc {
 namespace VideoProcessing {
 
-WebRtc_Word32 Brighten(VideoFrame* frame, int delta);
+WebRtc_Word32 Brighten(I420VideoFrame* frame, int delta);
 
 }  // namespace VideoProcessing
 }  // namespace webrtc

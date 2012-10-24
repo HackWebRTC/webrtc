@@ -45,14 +45,15 @@ public:
 	VideoChannelAGL(AGLContext& aglContext, int iId, VideoRenderAGL* owner);
     virtual ~VideoChannelAGL();
     virtual int FrameSizeChange(int width, int height, int numberOfStreams);
-    virtual int DeliverFrame(const VideoFrame& videoFrame);
+    virtual int DeliverFrame(const I420VideoFrame& videoFrame);
     virtual int UpdateSize(int width, int height);
     int SetStreamSettings(int streamId, float startWidth, float startHeight, float stopWidth, float stopHeight);
     int SetStreamCropSettings(int streamId, float startWidth, float startHeight, float stopWidth, float stopHeight);
     int RenderOffScreenBuffer();
     int IsUpdated(bool& isUpdated);
-	virtual int UpdateStretchSize(int stretchHeight, int stretchWidth);
-	virtual WebRtc_Word32 RenderFrame(const WebRtc_UWord32 streamId, VideoFrame& videoFrame);
+    virtual int UpdateStretchSize(int stretchHeight, int stretchWidth);
+    virtual WebRtc_Word32 RenderFrame(const WebRtc_UWord32 streamId,
+                                      I420VideoFrame& videoFrame);
     
     
 private:

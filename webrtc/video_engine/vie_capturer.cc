@@ -10,6 +10,7 @@
 
 #include "video_engine/vie_capturer.h"
 
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/interface/module_common_types.h"
 #include "modules/utility/interface/process_thread.h"
 #include "modules/video_capture/main/interface/video_capture_factory.h"
@@ -344,10 +345,25 @@ int ViECapturer::IncomingFrameI420(const ViEVideoFrameI420& video_frame,
 }
 
 void ViECapturer::OnIncomingCapturedFrame(const WebRtc_Word32 capture_id,
-                                          VideoFrame& video_frame,
+                                          I420VideoFrame& video_frame,
                                           VideoCodecType codec_type) {
   WEBRTC_TRACE(kTraceStream, kTraceVideo, ViEId(engine_id_, capture_id_),
                "%s(capture_id: %d)", __FUNCTION__, capture_id);
+  CriticalSectionScoped cs(capture_cs_.get());
+  // Make sure we render this frame earlier since we know the render time set
+  // is slightly off since it's being set when the frame has been received from
+  // the camera, and not when the camera actually captured the frame.
+  video_frame.set_render_time_ms(video_frame.render_time_ms() - FrameDelay());
+  captured_frame_.SwapFrame(&video_frame);
+  capture_event_.Set();
+  return;
+}
+
+void ViECapturer::OnIncomingCapturedEncodedFrame(const WebRtc_Word32 capture_id,
+                                                 VideoFrame& video_frame,
+                                                 VideoCodecType codec_type) {
+  WEBRTC_TRACE(kTraceStream, kTraceVideo, ViEId(engine_id_, capture_id_),
+                "%s(capture_id: %d)", __FUNCTION__, capture_id);
   CriticalSectionScoped cs(capture_cs_.get());
   // Make sure we render this frame earlier since we know the render time set
   // is slightly off since it's being set when the frame has been received from
@@ -365,10 +381,10 @@ void ViECapturer::OnIncomingCapturedFrame(const WebRtc_Word32 capture_id,
       deliver_event_.Wait(kMaxDeliverWaitTime);
       assert(encoded_frame_.Length() == 0);
       capture_cs_->Enter();
+    } else {
+      assert(false);
     }
     encoded_frame_.SwapFrame(video_frame);
-  } else {
-    captured_frame_.SwapFrame(video_frame);
   }
   capture_event_.Set();
   return;
@@ -535,21 +551,21 @@ bool ViECapturer::ViECaptureThreadFunction(void* obj) {
 bool ViECapturer::ViECaptureProcess() {
   if (capture_event_.Wait(kThreadWaitTimeMs) == kEventSignaled) {
     deliver_cs_->Enter();
-    if (captured_frame_.Length() > 0) {
+    if (!captured_frame_.IsZeroSize()) {
       // New I420 frame.
       capture_cs_->Enter();
-      deliver_frame_.SwapFrame(captured_frame_);
-      captured_frame_.SetLength(0);
+      deliver_frame_.SwapFrame(&captured_frame_);
+      captured_frame_.ResetSize();
       capture_cs_->Leave();
       DeliverI420Frame(&deliver_frame_);
     }
     if (encoded_frame_.Length() > 0) {
       capture_cs_->Enter();
-      deliver_frame_.SwapFrame(encoded_frame_);
+      deliver_encoded_frame_.SwapFrame(encoded_frame_);
       encoded_frame_.SetLength(0);
       deliver_event_.Set();
       capture_cs_->Leave();
-      DeliverCodedFrame(&deliver_frame_);
+      DeliverCodedFrame(&deliver_encoded_frame_);
     }
     deliver_cs_->Leave();
     if (current_brightness_level_ != reported_brightness_level_) {
@@ -564,7 +580,7 @@ bool ViECapturer::ViECaptureProcess() {
   return true;
 }
 
-void ViECapturer::DeliverI420Frame(VideoFrame* video_frame) {
+void ViECapturer::DeliverI420Frame(I420VideoFrame* video_frame) {
   // Apply image enhancement and effect filter.
   if (deflicker_frame_stats_) {
     if (image_proc_module_->GetFrameStats(deflicker_frame_stats_,
@@ -602,9 +618,14 @@ void ViECapturer::DeliverI420Frame(VideoFrame* video_frame) {
     }
   }
   if (effect_filter_) {
-    effect_filter_->Transform(video_frame->Length(), video_frame->Buffer(),
-                              video_frame->TimeStamp(), video_frame->Width(),
-                              video_frame->Height());
+    unsigned int length = CalcBufferSize(kI420,
+                                         video_frame->width(),
+                                         video_frame->height());
+    scoped_array<uint8_t> video_buffer(new uint8_t[length]);
+    ExtractBuffer(*video_frame, length, video_buffer.get());
+    effect_filter_->Transform(length, video_buffer.get(),
+                              video_frame->timestamp(), video_frame->width(),
+                              video_frame->height());
   }
   // Deliver the captured frame to all observers (channels, renderer or file).
   ViEFrameProviderBase::DeliverFrame(video_frame);
@@ -750,7 +771,7 @@ WebRtc_Word32 ViECapturer::InitEncode(const VideoCodec* codec_settings,
 }
 
 WebRtc_Word32 ViECapturer::Encode(
-    const VideoFrame& input_image,
+    const I420VideoFrame& input_image,
     const CodecSpecificInfo* codec_specific_info,
     const std::vector<VideoFrameType>* frame_types) {
   CriticalSectionScoped cs(encoding_cs_.get());
@@ -838,7 +859,8 @@ WebRtc_Word32 ViECapturer::SetRates(WebRtc_UWord32 new_bit_rate,
   return capture_encoder_->SetRates(new_bit_rate, frame_rate);
 }
 
-WebRtc_Word32 ViECapturer::FrameToRender(VideoFrame& video_frame) {  // NOLINT
+WebRtc_Word32 ViECapturer::FrameToRender(
+    I420VideoFrame& video_frame) {  //NOLINT
   deliver_cs_->Enter();
   DeliverI420Frame(&video_frame);
   deliver_cs_->Leave();

@@ -47,7 +47,7 @@ public:
 
     virtual ~FrameReceiveCallback();
 
-    WebRtc_Word32 FrameToRender(webrtc::VideoFrame& videoFrame);
+    WebRtc_Word32 FrameToRender(webrtc::I420VideoFrame& videoFrame);
 
 private:
     static void SplitFilename(std::string filename, std::string* basename,

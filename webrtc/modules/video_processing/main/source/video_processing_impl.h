@@ -36,12 +36,12 @@ public:
 
     virtual void Reset();
 
-    virtual WebRtc_Word32 Deflickering(VideoFrame* frame,
+    virtual WebRtc_Word32 Deflickering(I420VideoFrame* frame,
                                        FrameStats* stats);
 
-    virtual WebRtc_Word32 Denoising(VideoFrame* frame);
+    virtual WebRtc_Word32 Denoising(I420VideoFrame* frame);
 
-    virtual WebRtc_Word32 BrightnessDetection(const VideoFrame& frame,
+    virtual WebRtc_Word32 BrightnessDetection(const I420VideoFrame& frame,
                                               const FrameStats& stats);
 
     //Frame pre-processor functions
@@ -72,8 +72,8 @@ public:
     // Pre-process incoming frame: Sample when needed and compute content
     // metrics when enabled.
     // If no resampling takes place - processedFrame is set to NULL.
-    virtual WebRtc_Word32 PreprocessFrame(const VideoFrame& frame,
-                                          VideoFrame** processedFrame);
+    virtual WebRtc_Word32 PreprocessFrame(const I420VideoFrame& frame,
+                                          I420VideoFrame** processedFrame);
     virtual VideoContentMetrics* ContentMetrics() const;
 
 private:

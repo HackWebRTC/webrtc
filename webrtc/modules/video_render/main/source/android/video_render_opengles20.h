@@ -25,7 +25,7 @@ class VideoRenderOpenGles20 {
   ~VideoRenderOpenGles20();
 
   WebRtc_Word32 Setup(WebRtc_Word32 widht, WebRtc_Word32 height);
-  WebRtc_Word32 Render(const VideoFrame& frameToRender);
+  WebRtc_Word32 Render(const I420VideoFrame& frameToRender);
   WebRtc_Word32 SetCoordinates(WebRtc_Word32 zOrder,
                                const float left,
                                const float top,
@@ -38,8 +38,8 @@ class VideoRenderOpenGles20 {
   GLuint loadShader(GLenum shaderType, const char* pSource);
   GLuint createProgram(const char* pVertexSource,
                        const char* pFragmentSource);
-  void SetupTextures(const VideoFrame& frameToRender);
-  void UpdateTextures(const VideoFrame& frameToRender);
+  void SetupTextures(const I420VideoFrame& frameToRender);
+  void UpdateTextures(const I420VideoFrame& frameToRender);
 
   WebRtc_Word32 _id;
   GLuint _textureIds[3]; // Texture id of Y,U and V texture.

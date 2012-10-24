@@ -12,7 +12,7 @@
 
 #include <algorithm>
 
-#include "modules/interface/module_common_types.h"
+#include "common_video/interface/i420_video_frame.h"
 #include "system_wrappers/interface/critical_section_wrapper.h"
 #include "system_wrappers/interface/tick_util.h"
 #include "system_wrappers/interface/trace.h"
@@ -46,7 +46,7 @@ int ViEFrameProviderBase::Id() {
 }
 
 void ViEFrameProviderBase::DeliverFrame(
-    VideoFrame* video_frame,
+    I420VideoFrame* video_frame,
     int num_csrcs,
     const WebRtc_UWord32 CSRC[kRtpCsrcSize]) {
 #ifdef DEBUG_
@@ -64,7 +64,7 @@ void ViEFrameProviderBase::DeliverFrame(
       for (FrameCallbacks::iterator it = frame_callbacks_.begin();
            it != frame_callbacks_.end(); ++it) {
         if (!extra_frame_.get()) {
-          extra_frame_.reset(new VideoFrame());
+          extra_frame_.reset(new I420VideoFrame());
         }
         extra_frame_->CopyFrame(*video_frame);
         (*it)->DeliverFrame(id_, extra_frame_.get(), num_csrcs, CSRC);

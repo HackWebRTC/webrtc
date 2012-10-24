@@ -38,7 +38,7 @@ class IncomingVideoStream : public VideoRenderCallback {
   // Get callback to deliver frames to the module.
   VideoRenderCallback* ModuleCallback();
   virtual WebRtc_Word32 RenderFrame(const WebRtc_UWord32 stream_id,
-                                    VideoFrame& video_frame);
+                                    I420VideoFrame& video_frame);
 
   // Set callback to the platform dependent code.
   WebRtc_Word32 SetRenderCallback(VideoRenderCallback* render_callback);
@@ -57,11 +57,11 @@ class IncomingVideoStream : public VideoRenderCallback {
   WebRtc_UWord32 StreamId() const;
   WebRtc_UWord32 IncomingRate() const;
 
-  WebRtc_Word32 GetLastRenderedFrame(VideoFrame& video_frame) const;
+  WebRtc_Word32 GetLastRenderedFrame(I420VideoFrame& video_frame) const;
 
-  WebRtc_Word32 SetStartImage(const VideoFrame& video_frame);
+  WebRtc_Word32 SetStartImage(const I420VideoFrame& video_frame);
 
-  WebRtc_Word32 SetTimeoutImage(const VideoFrame& video_frame,
+  WebRtc_Word32 SetTimeoutImage(const I420VideoFrame& video_frame,
                                 const WebRtc_UWord32 timeout);
 
   WebRtc_Word32 EnableMirroring(const bool enable,
@@ -100,15 +100,15 @@ class IncomingVideoStream : public VideoRenderCallback {
   WebRtc_UWord32 incoming_rate_;
   WebRtc_Word64 last_rate_calculation_time_ms_;
   WebRtc_UWord16 num_frames_since_last_calculation_;
-  VideoFrame last_rendered_frame_;
-  VideoFrame temp_frame_;
-  VideoFrame start_image_;
-  VideoFrame timeout_image_;
+  I420VideoFrame last_rendered_frame_;
+  I420VideoFrame temp_frame_;
+  I420VideoFrame start_image_;
+  I420VideoFrame timeout_image_;
   WebRtc_UWord32 timeout_time_;
 
   bool mirror_frames_enabled_;
   VideoMirroring mirroring_;
-  VideoFrame transformed_video_frame_;
+  I420VideoFrame transformed_video_frame_;
 };
 
 }  // namespace webrtc

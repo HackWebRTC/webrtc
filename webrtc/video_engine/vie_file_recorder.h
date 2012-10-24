@@ -37,7 +37,7 @@ class ViEFileRecorder : protected OutStream {
   bool RecordingStarted();
 
   // Records incoming decoded video frame to file.
-  void RecordVideoFrame(const VideoFrame& video_frame);
+  void RecordVideoFrame(const I420VideoFrame& video_frame);
 
  protected:
   bool FirstFrameRecorded();

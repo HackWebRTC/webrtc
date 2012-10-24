@@ -117,7 +117,7 @@ public:
                                      VideoRenderCallback* callbackObj);
 
     virtual WebRtc_Word32 GetLastRenderedFrame(const WebRtc_UWord32 streamId,
-                                               VideoFrame &frame) const;
+                                               I420VideoFrame &frame) const;
 
     virtual WebRtc_Word32 SetExpectedRenderDelay(WebRtc_UWord32 stream_id,
                                                  WebRtc_Word32 delay_ms);
@@ -205,10 +205,10 @@ public:
                                   const float right, const float bottom);
 
     virtual WebRtc_Word32 SetStartImage(const WebRtc_UWord32 streamId,
-                                        const VideoFrame& videoFrame);
+                                        const I420VideoFrame& videoFrame);
 
     virtual WebRtc_Word32 SetTimeoutImage(const WebRtc_UWord32 streamId,
-                                          const VideoFrame& videoFrame,
+                                          const I420VideoFrame& videoFrame,
                                           const WebRtc_UWord32 timeout);
 
     virtual WebRtc_Word32 MirrorRenderStream(const int renderId,

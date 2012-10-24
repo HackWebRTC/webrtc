@@ -99,7 +99,7 @@ public:
     *	cameraFrameRate	  :	request or information from the remote side
     *	frameType         : The requested frame type to encode
     */
-    WebRtc_Word32 Encode(const VideoFrame& inputFrame,
+    WebRtc_Word32 Encode(const I420VideoFrame& inputFrame,
                          const CodecSpecificInfo* codecSpecificInfo,
                          const std::vector<FrameType>* frameTypes);
     /**

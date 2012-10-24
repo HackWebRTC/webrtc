@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "modules/udp_transport/interface/udp_transport.h"
 #include "modules/utility/interface/process_thread.h"
@@ -2067,7 +2068,8 @@ RtpRtcp* ViEChannel::rtp_rtcp() {
   return rtp_rtcp_.get();
 }
 
-WebRtc_Word32 ViEChannel::FrameToRender(VideoFrame& video_frame) {  // NOLINT
+WebRtc_Word32 ViEChannel::FrameToRender(
+    I420VideoFrame& video_frame) {  // NOLINT
   CriticalSectionScoped cs(callback_cs_.get());
 
   if (decoder_reset_) {
@@ -2079,8 +2081,8 @@ WebRtc_Word32 ViEChannel::FrameToRender(VideoFrame& video_frame) {  // NOLINT
         // VCM::ReceiveCodec returns the codec set by
         // RegisterReceiveCodec, which might not be the size we're
         // actually decoding.
-        decoder.width = static_cast<uint16_t>(video_frame.Width());
-        decoder.height = static_cast<uint16_t>(video_frame.Height());
+        decoder.width = static_cast<uint16_t>(video_frame.width());
+        decoder.height = static_cast<uint16_t>(video_frame.height());
         codec_observer_->IncomingCodecChanged(channel_id_, decoder);
       } else {
         assert(false);
@@ -2091,9 +2093,14 @@ WebRtc_Word32 ViEChannel::FrameToRender(VideoFrame& video_frame) {  // NOLINT
     decoder_reset_ = false;
   }
   if (effect_filter_) {
-    effect_filter_->Transform(video_frame.Length(), video_frame.Buffer(),
-                              video_frame.TimeStamp(), video_frame.Width(),
-                              video_frame.Height());
+    unsigned int length = CalcBufferSize(kI420,
+                                         video_frame.width(),
+                                         video_frame.height());
+    scoped_array<uint8_t> video_buffer(new uint8_t[length]);
+    ExtractBuffer(video_frame, length, video_buffer.get());
+    effect_filter_->Transform(length, video_buffer.get(),
+                              video_frame.timestamp(), video_frame.width(),
+                              video_frame.height());
   }
   if (color_enhancement_) {
     VideoProcessingModule::ColorEnhancement(&video_frame);
@@ -2109,7 +2116,7 @@ WebRtc_Word32 ViEChannel::FrameToRender(VideoFrame& video_frame) {  // NOLINT
     no_of_csrcs = 1;
   }
   WEBRTC_TRACE(kTraceStream, kTraceVideo, ViEId(engine_id_, channel_id_),
-               "%s(timestamp:%u)", __FUNCTION__, video_frame.TimeStamp());
+               "%s(timestamp:%u)", __FUNCTION__, video_frame.timestamp());
   DeliverFrame(&video_frame, no_of_csrcs, arr_ofCSRC);
   return 0;
 }
