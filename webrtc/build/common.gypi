@@ -32,7 +32,15 @@
       'webrtc_root%': '<(webrtc_root)',
 
       'webrtc_vp8_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp8',
-      'include_opus%': 0,
+
+      # Enable opus for Chrome only right now.
+      'conditions': [
+        ['build_with_chromium==1', {
+          'include_opus%': 1,
+        }, {
+          'include_opus%': 0,
+        }],
+      ],
     },
     'build_with_chromium%': '<(build_with_chromium)',
     'webrtc_root%': '<(webrtc_root)',
