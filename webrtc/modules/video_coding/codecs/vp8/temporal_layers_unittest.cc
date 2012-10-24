@@ -195,19 +195,16 @@ TEST(TemporalLayersTest, KeyFrame) {
   int expected_temporal_idx[8] =
       { 0, 0, 0, 0, 0, 0, 0, 2};
 
-  bool expected_layer_sync[8] =
-      { false, true, true, false, false, false, false, false };
-
   for (int i = 0; i < 7; ++i) {
     EXPECT_EQ(expected_flags[i], tl.EncodeFlags());
     tl.PopulateCodecSpecific(true, &vp8_info, 0);
     EXPECT_EQ(expected_temporal_idx[i], vp8_info.temporalIdx);
-    EXPECT_EQ(expected_layer_sync[i], vp8_info.layerSync);
+    EXPECT_EQ(true, vp8_info.layerSync);
   }
   EXPECT_EQ(expected_flags[7], tl.EncodeFlags());
   tl.PopulateCodecSpecific(false, &vp8_info, 0);
   EXPECT_EQ(expected_temporal_idx[7], vp8_info.temporalIdx);
-  EXPECT_EQ(expected_layer_sync[7], vp8_info.layerSync);
+  EXPECT_EQ(true, vp8_info.layerSync);
 }
 }  // namespace webrtc
 

@@ -28,7 +28,8 @@ TemporalLayers::TemporalLayers(int numberOfTemporalLayers)
       temporal_pattern_length_(0),
       tl0_pic_idx_(rand()),
       pattern_idx_(255),
-      timestamp_(0) {
+      timestamp_(0),
+      last_base_layer_sync_(false) {
   assert(kMaxTemporalStreams >= numberOfTemporalLayers);
   memset(temporal_ids_, 0, sizeof(temporal_ids_));
   memset(temporal_pattern_, 0, sizeof(temporal_pattern_));
@@ -214,35 +215,41 @@ int TemporalLayers::EncodeFlags() {
   return flags;
 }
 
-void TemporalLayers::PopulateCodecSpecific(bool key_frame,
+void TemporalLayers::PopulateCodecSpecific(bool base_layer_sync,
                                            CodecSpecificInfoVP8 *vp8_info,
                                            uint32_t timestamp) {
   assert(number_of_temporal_layers_ > 1);
   assert(0 < temporal_ids_length_);
 
-  if (key_frame) {
-    // Keyframe is always temporal layer 0
+  if (base_layer_sync) {
     vp8_info->temporalIdx = 0;
-  } else {
-    vp8_info->temporalIdx = temporal_ids_[pattern_idx_ % temporal_ids_length_];
-  }
-  TemporalReferences temporal_reference =
-      temporal_pattern_[pattern_idx_ % temporal_pattern_length_];
-
-  if (temporal_reference == kTemporalUpdateAltrefWithoutDependency ||
-      temporal_reference == kTemporalUpdateGoldenWithoutDependency ||
-      temporal_reference == kTemporalUpdateGoldenWithoutDependencyRefAltRef ||
-      temporal_reference == kTemporalUpdateNoneNoRefGoldenRefAltRef ||
-      (temporal_reference == kTemporalUpdateNone &&
-      number_of_temporal_layers_ == 4)) {
     vp8_info->layerSync = true;
   } else {
-    vp8_info->layerSync = false;
+    vp8_info->temporalIdx = temporal_ids_[pattern_idx_ % temporal_ids_length_];
+    TemporalReferences temporal_reference =
+        temporal_pattern_[pattern_idx_ % temporal_pattern_length_];
+
+    if (temporal_reference == kTemporalUpdateAltrefWithoutDependency ||
+        temporal_reference == kTemporalUpdateGoldenWithoutDependency ||
+        temporal_reference == kTemporalUpdateGoldenWithoutDependencyRefAltRef ||
+        temporal_reference == kTemporalUpdateNoneNoRefGoldenRefAltRef ||
+        (temporal_reference == kTemporalUpdateNone &&
+        number_of_temporal_layers_ == 4)) {
+      vp8_info->layerSync = true;
+    } else {
+      vp8_info->layerSync = false;
+    }
+  }
+  if (last_base_layer_sync_ && vp8_info->temporalIdx != 0) {
+    // Regardless of pattern the frame after a base layer sync will always
+    // be a layer sync.
+    vp8_info->layerSync = true;
   }
   if (vp8_info->temporalIdx == 0 && timestamp != timestamp_) {
     timestamp_ = timestamp;
     tl0_pic_idx_++;
   }
+  last_base_layer_sync_ = base_layer_sync;
   vp8_info->tl0PicIdx = tl0_pic_idx_;
 }
 }  // namespace webrtc
