@@ -64,16 +64,13 @@ bool EncoderStateFeedback::AddEncoder(uint32_t ssrc, ViEEncoder* encoder)  {
   return true;
 }
 
-void EncoderStateFeedback::RemoveEncoder(const ViEEncoder* encoder)  {
+void EncoderStateFeedback::RemoveEncoder(uint32_t ssrc)  {
   CriticalSectionScoped lock(crit_.get());
-  SsrcEncoderMap::iterator it = encoders_.begin();
-  while (it != encoders_.end()) {
-    if (it->second == encoder) {
-      encoders_.erase(it++);
-    } else {
-      ++it;
-    }
-  }
+  SsrcEncoderMap::iterator it = encoders_.find(ssrc);
+  if (it == encoders_.end())
+    return;
+
+  encoders_.erase(it);
 }
 
 RtcpIntraFrameObserver* EncoderStateFeedback::GetRtcpIntraFrameObserver() {
@@ -115,10 +112,8 @@ void EncoderStateFeedback::OnLocalSsrcChanged(uint32_t old_ssrc,
     return;
   }
 
-  ViEEncoder* encoder = it->second;
+  encoders_[new_ssrc] = it->second;
   encoders_.erase(it);
-  encoders_[new_ssrc] = encoder;
-  encoder->OnLocalSsrcChanged(old_ssrc, new_ssrc);
 }
 
 }  // namespace webrtc

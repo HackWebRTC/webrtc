@@ -79,10 +79,6 @@ class ViEChannelManager: private ViEManagerBase {
   // adding a channel.
   bool SetBandwidthEstimationMode(BandwidthEstimationMode mode);
 
-  // Updates the SSRCs for a channel. If one of the SSRCs already is registered,
-  // it will simply be ignored and no error is returned.
-  void UpdateSsrcs(int channel_id, const std::list<unsigned int>& ssrcs);
-
  private:
   // Creates a channel object connected to |vie_encoder|. Assumed to be called
   // protected.

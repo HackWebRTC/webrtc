@@ -805,26 +805,10 @@ WebRtc_Word32 ViEChannel::SetRemoteSSRCType(const StreamType usage,
   return rtp_rtcp_->SetRTXReceiveStatus(true, SSRC);
 }
 
-// TODO(mflodman) Add kViEStreamTypeRtx.
-WebRtc_Word32 ViEChannel::GetLocalSSRC(uint8_t idx, unsigned int* ssrc) {
+WebRtc_Word32 ViEChannel::GetLocalSSRC(uint32_t* ssrc) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
-
-  if (idx == 0) {
-    *ssrc = rtp_rtcp_->SSRC();
-    return 0;
-  }
-  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
-  if (idx > simulcast_rtp_rtcp_.size()) {
-    return -1;
-  }
-  std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
-  for (int i = 1; i < idx; ++i, ++it) {
-    if (it ==  simulcast_rtp_rtcp_.end()) {
-      return -1;
-    }
-  }
-  *ssrc = (*it)->SSRC();
+  *ssrc = rtp_rtcp_->SSRC();
   return 0;
 }
 
