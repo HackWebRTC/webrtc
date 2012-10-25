@@ -10,6 +10,8 @@
 
 #include "video_engine/vie_codec_impl.h"
 
+#include <list>
+
 #include "engine_configurations.h"  // NOLINT
 #include "modules/video_coding/main/interface/video_coding.h"
 #include "system_wrappers/interface/trace.h"
@@ -237,6 +239,32 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
       return -1;
     }
   }
+
+  // TODO(mflodman) Break out this part in GetLocalSsrcList().
+  // Update all SSRCs to ViEEncoder.
+  std::list<unsigned int> ssrcs;
+  if (video_codec_internal.numberOfSimulcastStreams == 0) {
+    unsigned int ssrc = 0;
+    if (vie_channel->GetLocalSSRC(0, &ssrc) != 0) {
+      WEBRTC_TRACE(kTraceError, kTraceVideo,
+                   ViEId(shared_data_->instance_id(), video_channel),
+                   "%s: Could not get ssrc", __FUNCTION__);
+    }
+    ssrcs.push_back(ssrc);
+  } else {
+    for (int idx = 0; idx < video_codec_internal.numberOfSimulcastStreams;
+         ++idx) {
+      unsigned int ssrc = 0;
+      if (vie_channel->GetLocalSSRC(idx, &ssrc) != 0) {
+        WEBRTC_TRACE(kTraceError, kTraceVideo,
+                     ViEId(shared_data_->instance_id(), video_channel),
+                     "%s: Could not get ssrc for idx %d", __FUNCTION__, idx);
+      }
+      ssrcs.push_back(ssrc);
+    }
+  }
+  vie_encoder->SetSsrcs(ssrcs);
+  shared_data_->channel_manager()->UpdateSsrcs(video_channel, ssrcs);
 
   // Update the protection mode, we might be switching NACK/FEC.
   vie_encoder->UpdateProtectionMethod();

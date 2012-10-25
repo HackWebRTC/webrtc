@@ -183,7 +183,8 @@ int ViERTP_RTCPImpl::GetLocalSSRC(const int video_channel,
     shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
     return -1;
   }
-  if (vie_channel->GetLocalSSRC(&SSRC) != 0) {
+  uint8_t idx = 0;
+  if (vie_channel->GetLocalSSRC(idx, &SSRC) != 0) {
     shared_data_->SetLastError(kViERtpRtcpUnknownError);
     return -1;
   }

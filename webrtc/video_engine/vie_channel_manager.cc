@@ -121,8 +121,12 @@ int ViEChannelManager::CreateChannel(int* channel_id) {
 
   // Add ViEEncoder to EncoderFeedBackObserver.
   unsigned int ssrc = 0;
-  channel_map_[new_channel_id]->GetLocalSSRC(&ssrc);
+  int idx = 0;
+  channel_map_[new_channel_id]->GetLocalSSRC(idx, &ssrc);
   encoder_state_feedback->AddEncoder(ssrc, vie_encoder);
+  std::list<unsigned int> ssrcs;
+  ssrcs.push_back(ssrc);
+  vie_encoder->SetSsrcs(ssrcs);
 
   *channel_id = new_channel_id;
   group->AddChannel(*channel_id);
@@ -170,7 +174,8 @@ int ViEChannelManager::CreateChannel(int* channel_id,
     }
     // Register the ViEEncoder to get key frame requests for this channel.
     unsigned int ssrc = 0;
-    channel_map_[new_channel_id]->GetLocalSSRC(&ssrc);
+    int stream_idx = 0;
+    channel_map_[new_channel_id]->GetLocalSSRC(stream_idx, &ssrc);
     encoder_state_feedback->AddEncoder(ssrc, vie_encoder);
   } else {
     vie_encoder = ViEEncoderPtr(original_channel);
@@ -224,13 +229,11 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
     group = FindGroup(channel_id);
     group->SetChannelRembStatus(channel_id, false, false, vie_channel,
                                 vie_encoder);
+    group->GetEncoderStateFeedback()->RemoveEncoder(vie_encoder);
+
     unsigned int remote_ssrc = 0;
     vie_channel->GetRemoteSSRC(&remote_ssrc);
     group->RemoveChannel(channel_id, remote_ssrc);
-
-    unsigned int local_ssrc = 0;
-    vie_channel->GetLocalSSRC(&local_ssrc);
-    group->GetEncoderStateFeedback()->RemoveEncoder(local_ssrc);
 
     // Check if other channels are using the same encoder.
     if (ChannelUsingViEEncoder(channel_id)) {
@@ -368,6 +371,24 @@ bool ViEChannelManager::SetBandwidthEstimationMode(
       return false;
   }
   return true;
+}
+
+void ViEChannelManager::UpdateSsrcs(int channel_id,
+                                    const std::list<unsigned int>& ssrcs) {
+  CriticalSectionScoped cs(channel_id_critsect_);
+  ChannelGroup* channel_group =  FindGroup(channel_id);
+  if (channel_group == NULL) {
+    return;
+  }
+  ViEEncoder* encoder = ViEEncoderPtr(channel_id);
+  assert(encoder);
+
+  EncoderStateFeedback* encoder_state_feedback =
+      channel_group->GetEncoderStateFeedback();
+  for (std::list<unsigned int>::const_iterator it = ssrcs.begin();
+       it != ssrcs.end(); ++it) {
+    encoder_state_feedback->AddEncoder(*it, encoder);
+  }
 }
 
 bool ViEChannelManager::CreateChannelObject(

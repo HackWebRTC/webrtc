@@ -118,8 +118,8 @@ class ViEChannel
                         const StreamType usage,
                         const unsigned char simulcast_idx);
 
-  // Gets SSRC for outgoing stream.
-  WebRtc_Word32 GetLocalSSRC(uint32_t* ssrc);
+  // Gets SSRC for outgoing stream number |idx|.
+  WebRtc_Word32 GetLocalSSRC(uint8_t idx, unsigned int* ssrc);
 
   // Gets SSRC for the incoming stream.
   WebRtc_Word32 GetRemoteSSRC(uint32_t* ssrc);

@@ -38,7 +38,7 @@ class EncoderStateFeedback {
   bool AddEncoder(uint32_t ssrc, ViEEncoder* encoder);
 
   // Removes a registered ViEEncoder.
-  void RemoveEncoder(uint32_t ssrc);
+  void RemoveEncoder(const ViEEncoder* encoder);
 
   // Returns an observer to register at the requesting class. The observer has
   // the same lifetime as the EncoderStateFeedback instance.
