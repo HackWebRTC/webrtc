@@ -28,6 +28,8 @@ void BasicBitInverseEncryption::encrypt(int, unsigned char* in_data,
   int i;
   for (i = 0; i < bytes_in; i++)
     out_data[i] = ~in_data[i];
+  out_data[bytes_in] = 0;
+  out_data[bytes_in + 1] = 0;
   *bytes_out = bytes_in + 2;
 }
 
@@ -46,6 +48,8 @@ void BasicBitInverseEncryption::encrypt_rtcp(int, unsigned char* in_data,
   int i;
   for (i = 0; i < bytes_in; i++)
     out_data[i] = ~in_data[i];
+  out_data[bytes_in] = 0;
+  out_data[bytes_in + 1] = 0;
   *bytes_out = bytes_in + 2;
 }
 
@@ -55,6 +59,8 @@ void BasicBitInverseEncryption::decrypt_rtcp(int, unsigned char* in_data,
   int i;
   for (i = 0; i < bytes_in; i++)
     out_data[i] = ~in_data[i];
+  out_data[bytes_in] = 0;
+  out_data[bytes_in + 1] = 0;
   *bytes_out = bytes_in + 2;
 }
 

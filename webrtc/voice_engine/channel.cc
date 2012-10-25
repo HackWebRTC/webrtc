@@ -187,6 +187,8 @@ Channel::SendPacket(int channel, const void *data, int len)
                 // Allocate memory for encryption buffer one time only
                 _encryptionRTPBufferPtr =
                     new WebRtc_UWord8[kVoiceEngineMaxIpPacketSizeBytes];
+                memset(_encryptionRTPBufferPtr, 0,
+                       kVoiceEngineMaxIpPacketSizeBytes);
             }
 
             // Perform encryption (SRTP or external)
