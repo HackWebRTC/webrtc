@@ -485,7 +485,7 @@ WebRtc_Word32 AviRecorder::SetUpVideoEncoder()
 WebRtc_Word32 AviRecorder::RecordVideoToFile(const I420VideoFrame& videoFrame)
 {
     CriticalSectionScoped lock(_critSec);
-    if(!IsRecording() || !videoFrame.IsZeroSize())
+    if(!IsRecording() || videoFrame.IsZeroSize())
     {
         return -1;
     }
