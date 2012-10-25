@@ -22,19 +22,10 @@
             '<(DEPTH)/third_party/opus/opus.gyp:opus'
           ],
           'include_dirs': [
-            '<(webrtc_root)/../third_party/opus/source/include',
+            '<(DEPTH)/third_party/opus',
           ],
         }],
       ],
-      'direct_dependent_settings': {
-        'conditions': [
-          ['build_with_mozilla==1', {
-            'include_dirs': [
-              '$(DIST)/include/opus',
-            ],
-          }],
-        ],
-      },
       'sources': [
         'interface/opus_interface.h',
         'opus_interface.c',

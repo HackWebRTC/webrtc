@@ -72,7 +72,7 @@
     'build_libyuv%': 1,
     'build_libvpx%': 1,
 
-    # Enable to use the Mozilla internal Opus version.
+    # Enable to use the Mozilla internal settings.
     'build_with_mozilla%': 0,
 
     'libyuv_dir%': '<(DEPTH)/third_party/libyuv',
@@ -143,6 +143,12 @@
       #'WEBRTC_SVNREVISION="<!(python <(webrtc_root)/build/version.py)"',
     ],
     'conditions': [
+      ['build_with_mozilla==1', {
+        'defines': [
+          # Changes settings for Mozilla build.
+          'WEBRTC_MOZILLA_BUILD',
+         ],
+      }],
       ['build_with_chromium==1', {
         'defines': [
           # Changes settings for Chromium build.
