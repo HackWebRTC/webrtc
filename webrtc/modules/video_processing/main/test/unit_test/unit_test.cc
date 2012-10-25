@@ -71,11 +71,8 @@ void VideoProcessingModuleTest::TearDown()
 
 TEST_F(VideoProcessingModuleTest, HandleNullBuffer)
 {
+  // TODO(mikhal/stefan): Do we need this one?
   VideoProcessingModule::FrameStats stats;
-  memset(_videoFrame.buffer(kYPlane), 0, _size_y);
-  memset(_videoFrame.buffer(kUPlane), 0, _size_uv);
-  memset(_videoFrame.buffer(kVPlane), 0, _size_uv);
-  ASSERT_EQ(0, _vpm->GetFrameStats(&stats, _videoFrame));
   // Video frame with unallocated buffer.
   I420VideoFrame videoFrame;
   videoFrame.set_width(_width);
@@ -112,7 +109,6 @@ TEST_F(VideoProcessingModuleTest, HandleBadStats)
 TEST_F(VideoProcessingModuleTest, HandleBadSize)
 {
   VideoProcessingModule::FrameStats stats;
-  ASSERT_EQ(0, _vpm->GetFrameStats(&stats, _videoFrame));
 
   _videoFrame.ResetSize();
   _videoFrame.set_width(_width);
