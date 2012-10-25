@@ -109,6 +109,32 @@ TEST_F(TestVideoCodingModule, TestIntraRequests) {
   EXPECT_EQ(0, vcm_->AddVideoFrame(input_frame_, NULL, NULL));
   ExpectIntraRequest(-1);
   EXPECT_EQ(0, vcm_->AddVideoFrame(input_frame_, NULL, NULL));
+
+  EXPECT_EQ(-1, vcm_->IntraFrameRequest(3));
+  ExpectIntraRequest(-1);
+  EXPECT_EQ(0, vcm_->AddVideoFrame(input_frame_, NULL, NULL));
+
+  EXPECT_EQ(-1, vcm_->IntraFrameRequest(-1));
+  ExpectIntraRequest(-1);
+  EXPECT_EQ(0, vcm_->AddVideoFrame(input_frame_, NULL, NULL));
+}
+
+TEST_F(TestVideoCodingModule, TestIntraRequestsInternalCapture) {
+  // De-register current external encoder.
+  EXPECT_EQ(0, vcm_->RegisterExternalEncoder(NULL, kUnusedPayloadType, false));
+  // Register encoder with internal capture.
+  EXPECT_EQ(0, vcm_->RegisterExternalEncoder(&encoder_, kUnusedPayloadType,
+                                             true));
+  EXPECT_EQ(0, vcm_->RegisterSendCodec(&settings_, 1, 1200));
+  ExpectIntraRequest(0);
+  EXPECT_EQ(0, vcm_->IntraFrameRequest(0));
+  ExpectIntraRequest(1);
+  EXPECT_EQ(0, vcm_->IntraFrameRequest(1));
+  ExpectIntraRequest(2);
+  EXPECT_EQ(0, vcm_->IntraFrameRequest(2));
+  // No requests expected since these indices are out of bounds.
+  EXPECT_EQ(-1, vcm_->IntraFrameRequest(3));
+  EXPECT_EQ(-1, vcm_->IntraFrameRequest(-1));
 }
 
 }  // namespace webrtc
