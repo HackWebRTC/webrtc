@@ -21,9 +21,6 @@
           'dependencies': [
             '<(DEPTH)/third_party/opus/opus.gyp:opus'
           ],
-          'include_dirs': [
-            '<(DEPTH)/third_party/opus',
-          ],
         }],
       ],
       'sources': [
