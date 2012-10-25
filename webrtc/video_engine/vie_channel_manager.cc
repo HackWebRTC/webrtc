@@ -229,7 +229,11 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
     group = FindGroup(channel_id);
     group->SetChannelRembStatus(channel_id, false, false, vie_channel,
                                 vie_encoder);
-    group->GetEncoderStateFeedback()->RemoveEncoder(vie_encoder);
+
+    // Remove the feedback if we're owning the encoder.
+    if (vie_encoder->channel_id() == channel_id) {
+      group->GetEncoderStateFeedback()->RemoveEncoder(vie_encoder);
+    }
 
     unsigned int remote_ssrc = 0;
     vie_channel->GetRemoteSSRC(&remote_ssrc);

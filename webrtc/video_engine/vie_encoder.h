@@ -152,6 +152,7 @@ class ViEEncoder
   // Disables recording of debugging information.
   virtual int StopDebugRecording();
 
+  int channel_id() const { return channel_id_; }
  protected:
   // Called by BitrateObserver.
   void OnNetworkChanged(const uint32_t bitrate_bps,
