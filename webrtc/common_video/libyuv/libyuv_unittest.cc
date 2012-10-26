@@ -299,7 +299,7 @@ TEST_F(TestLibYuv, MirrorTest) {
   // UpDown
   std::cout << "Test Mirror function: UpDown" << std::endl;
   EXPECT_EQ(0, MirrorI420UpDown(&in_frame, &out_frame));
-  EXPECT_EQ(0, PrintFrame(&test_out_frame, "OutputFrame"));
+  EXPECT_EQ(0, PrintFrame(&out_frame, "OutputFrame"));
   EXPECT_EQ(0, MirrorI420UpDown(&out_frame, &test_frame));
   EXPECT_EQ(0, memcmp(in_frame.buffer(kYPlane),
     test_in_frame.buffer(kYPlane), width * height));
