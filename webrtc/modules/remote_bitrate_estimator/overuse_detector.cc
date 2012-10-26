@@ -110,6 +110,14 @@ void OveruseDetector::Update(uint16_t packet_size,
 
 #endif
   bool new_timestamp = (timestamp != current_frame_.timestamp);
+  if (current_frame_.timestamp_ms == -1) {
+    const uint32_t timestamp_diff = timestamp - current_frame_.timestamp;
+    if (timestamp_diff > 0x80000000) {
+      // Assume that a diff this big must be due to reordering. Don't update
+      // with reordered samples.
+      return;
+    }
+  }
   if (timestamp_ms >= 0) {
     if (prev_frame_.timestamp_ms == -1 && current_frame_.timestamp_ms == -1) {
       SwitchTimeBase();
@@ -126,16 +134,16 @@ void OveruseDetector::Update(uint16_t packet_size,
     if (prev_frame_.complete_time_ms >= 0) {  // This is our second frame
       int64_t t_delta = 0;
       double ts_delta = 0;
-      if (!TimeDeltas(current_frame_, prev_frame_,
+      if (TimeDeltas(current_frame_, prev_frame_,
                                 &t_delta, &ts_delta)) {
-        // Frame reordering, dropping this sample.
-        return;
+        // No reordering.
+        UpdateKalman(t_delta, ts_delta, current_frame_.size, prev_frame_.size);
+        prev_frame_ = current_frame_;
       }
-      UpdateKalman(t_delta, ts_delta, current_frame_.size, prev_frame_.size);
+    } else {
+      prev_frame_ = current_frame_;
     }
-    // The new timestamp is now the current frame,
-    // and the old timestamp becomes the previous frame.
-    prev_frame_ = current_frame_;
+    // The new timestamp is now the current frame.
     current_frame_.timestamp = timestamp;
     current_frame_.timestamp_ms = timestamp_ms;
     current_frame_.size = 0;

@@ -512,7 +512,7 @@ TEST_F(RemoteBitrateEstimatorTest, TestCapacityDropRtpTimestampsWrap) {
       bitrate_observer_->Reset();
     }
   }
-  EXPECT_EQ(8299, bitrate_drop_time);
+  EXPECT_EQ(8366, bitrate_drop_time);
 }
 
 // Verify that the time it takes for the estimator to reduce the bitrate when
@@ -552,7 +552,7 @@ TEST_F(RemoteBitrateEstimatorTestAlign, TestCapacityDropRtpTimestampsWrap) {
       bitrate_observer_->Reset();
     }
   }
-  EXPECT_EQ(8299, bitrate_drop_time);
+  EXPECT_EQ(8366, bitrate_drop_time);
 }
 
 // Verify that the time it takes for the estimator to reduce the bitrate when
@@ -666,7 +666,7 @@ TEST_F(RemoteBitrateEstimatorTestAlign, ThreeStreams) {
       bitrate_observer_->Reset();
     }
   }
-  EXPECT_EQ(3933, bitrate_drop_time);
+  EXPECT_EQ(3900, bitrate_drop_time);
 }
 
 }  // namespace webrtc
