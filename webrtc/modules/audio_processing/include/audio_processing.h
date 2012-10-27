@@ -13,8 +13,8 @@
 
 #include <stddef.h> // size_t
 
-#include "typedefs.h"
 #include "module.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
@@ -124,6 +124,10 @@ class AudioProcessing : public Module {
   // should be called before beginning to process a new audio stream. However,
   // it is not necessary to call before processing the first stream after
   // creation.
+  //
+  // set_sample_rate_hz(), set_num_channels() and set_num_reverse_channels()
+  // will trigger a full initialization if the settings are changed from their
+  // existing values. Otherwise they are no-ops.
   virtual int Initialize() = 0;
 
   // Sets the sample |rate| in Hz for both the primary and reverse audio

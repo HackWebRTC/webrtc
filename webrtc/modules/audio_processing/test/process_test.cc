@@ -8,11 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 #ifdef WEBRTC_ANDROID
 #include <sys/stat.h>
 #endif
+
+#include <algorithm>
 
 #include "gtest/gtest.h"
 
@@ -129,6 +132,22 @@ void usage() {
   printf("  --quiet            Suppress text output.\n");
   printf("  --no_progress      Suppress progress.\n");
   printf("  --debug_file FILE  Dump a debug recording.\n");
+}
+
+static double MicLevel2Gain(int level) {
+  return pow(10.0, ((level - 127.0) / 128.0 * 80.) / 20.);
+}
+
+static void SimulateMic(int mic_level, AudioFrame* frame) {
+  mic_level = std::min(std::max(mic_level, 0), 255);
+  double mic_gain = MicLevel2Gain(mic_level);
+  int num_samples = frame->samples_per_channel_ * frame->num_channels_;
+  double v;
+  for (int n = 0; n < num_samples; n++) {
+    v = floor(frame->data_[n] * mic_gain + 0.5);
+    v = std::max(std::min(32767., v), -32768.);
+    frame->data_[n] = static_cast<int16_t>(v);
+  }
 }
 
 // void function for gtest.
@@ -658,6 +677,10 @@ void void_main(int argc, char* argv[]) {
           fflush(stdout);
         }
 
+        if (apm->gain_control()->mode() == GainControl::kAdaptiveAnalog) {
+          SimulateMic(capture_level, &near_frame);
+        }
+
         if (perf_testing) {
           t0 = TickTime::Now();
         }
@@ -860,6 +883,10 @@ void void_main(int argc, char* argv[]) {
               fread(&delay_ms, 2, 1, delay_file));
           ASSERT_EQ(1u,
               fread(&drift_samples, sizeof(drift_samples), 1, drift_file));
+        }
+
+        if (apm->gain_control()->mode() == GainControl::kAdaptiveAnalog) {
+          SimulateMic(capture_level, &near_frame);
         }
 
         if (perf_testing) {

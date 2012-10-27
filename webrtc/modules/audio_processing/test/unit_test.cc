@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "audio_processing.h"
+
 #include <stdio.h>
 
 #include <algorithm>
 
 #include "gtest/gtest.h"
 
-#include "audio_processing.h"
 #include "event_wrapper.h"
 #include "module_common_types.h"
 #include "scoped_ptr.h"
@@ -66,6 +67,138 @@ const int kProcessSampleRates[] = {8000, 16000, 32000};
 const size_t kProcessSampleRatesSize = sizeof(kProcessSampleRates) /
     sizeof(*kProcessSampleRates);
 
+// TODO(andrew): Use the MonoToStereo routine from AudioFrameOperations.
+void MixStereoToMono(const int16_t* stereo,
+                     int16_t* mono,
+                     int samples_per_channel) {
+  for (int i = 0; i < samples_per_channel; i++) {
+    int32_t int32 = (static_cast<int32_t>(stereo[i * 2]) +
+                     static_cast<int32_t>(stereo[i * 2 + 1])) >> 1;
+    mono[i] = static_cast<int16_t>(int32);
+  }
+}
+
+void CopyLeftToRightChannel(int16_t* stereo, int samples_per_channel) {
+  for (int i = 0; i < samples_per_channel; i++) {
+    stereo[i * 2 + 1] = stereo[i * 2];
+  }
+}
+
+void VerifyChannelsAreEqual(int16_t* stereo, int samples_per_channel) {
+  for (int i = 0; i < samples_per_channel; i++) {
+    EXPECT_EQ(stereo[i * 2 + 1], stereo[i * 2]);
+  }
+}
+
+void SetFrameTo(AudioFrame* frame, int16_t value) {
+  for (int i = 0; i < frame->samples_per_channel_ * frame->num_channels_;
+      ++i) {
+    frame->data_[i] = value;
+  }
+}
+
+void SetFrameTo(AudioFrame* frame, int16_t left, int16_t right) {
+  ASSERT_EQ(2, frame->num_channels_);
+  for (int i = 0; i < frame->samples_per_channel_ * 2; i += 2) {
+    frame->data_[i] = left;
+    frame->data_[i + 1] = right;
+  }
+}
+
+template <class T>
+T AbsValue(T a) {
+  return a > 0 ? a: -a;
+}
+
+int16_t MaxAudioFrame(const AudioFrame& frame) {
+  const int length = frame.samples_per_channel_ * frame.num_channels_;
+  int16_t max_data = AbsValue(frame.data_[0]);
+  for (int i = 1; i < length; i++) {
+    max_data = std::max(max_data, AbsValue(frame.data_[i]));
+  }
+
+  return max_data;
+}
+
+bool FrameDataAreEqual(const AudioFrame& frame1, const AudioFrame& frame2) {
+  if (frame1.samples_per_channel_ !=
+      frame2.samples_per_channel_) {
+    return false;
+  }
+  if (frame1.num_channels_ !=
+      frame2.num_channels_) {
+    return false;
+  }
+  if (memcmp(frame1.data_, frame2.data_,
+             frame1.samples_per_channel_ * frame1.num_channels_ *
+               sizeof(int16_t))) {
+    return false;
+  }
+  return true;
+}
+
+void TestStats(const AudioProcessing::Statistic& test,
+               const webrtc::audioproc::Test::Statistic& reference) {
+  EXPECT_EQ(reference.instant(), test.instant);
+  EXPECT_EQ(reference.average(), test.average);
+  EXPECT_EQ(reference.maximum(), test.maximum);
+  EXPECT_EQ(reference.minimum(), test.minimum);
+}
+
+void WriteStatsMessage(const AudioProcessing::Statistic& output,
+                       webrtc::audioproc::Test::Statistic* message) {
+  message->set_instant(output.instant);
+  message->set_average(output.average);
+  message->set_maximum(output.maximum);
+  message->set_minimum(output.minimum);
+}
+
+void WriteMessageLiteToFile(const std::string filename,
+                            const ::google::protobuf::MessageLite& message) {
+  FILE* file = fopen(filename.c_str(), "wb");
+  ASSERT_TRUE(file != NULL) << "Could not open " << filename;
+  int size = message.ByteSize();
+  ASSERT_GT(size, 0);
+  unsigned char* array = new unsigned char[size];
+  ASSERT_TRUE(message.SerializeToArray(array, size));
+
+  ASSERT_EQ(1u, fwrite(&size, sizeof(int), 1, file));
+  ASSERT_EQ(static_cast<size_t>(size),
+      fwrite(array, sizeof(unsigned char), size, file));
+
+  delete [] array;
+  fclose(file);
+}
+
+void ReadMessageLiteFromFile(const std::string filename,
+                             ::google::protobuf::MessageLite* message) {
+  assert(message != NULL);
+
+  FILE* file = fopen(filename.c_str(), "rb");
+  ASSERT_TRUE(file != NULL) << "Could not open " << filename;
+  int size = 0;
+  ASSERT_EQ(1u, fread(&size, sizeof(int), 1, file));
+  ASSERT_GT(size, 0);
+  unsigned char* array = new unsigned char[size];
+  ASSERT_EQ(static_cast<size_t>(size),
+      fread(array, sizeof(unsigned char), size, file));
+
+  ASSERT_TRUE(message->ParseFromArray(array, size));
+
+  delete [] array;
+  fclose(file);
+}
+
+struct ThreadData {
+  ThreadData(int thread_num_, AudioProcessing* ap_)
+      : thread_num(thread_num_),
+        error(false),
+        ap(ap_) {}
+  int thread_num;
+  bool error;
+  AudioProcessing* ap;
+};
+
 class ApmTest : public ::testing::Test {
  protected:
   ApmTest();
@@ -75,7 +208,7 @@ class ApmTest : public ::testing::Test {
   static void SetUpTestCase() {
     Trace::CreateTrace();
     std::string trace_filename = webrtc::test::OutputPath() +
-      "audioproc_trace.txt";
+        "audioproc_trace.txt";
     ASSERT_EQ(0, Trace::SetTraceFile(trace_filename.c_str()));
   }
 
@@ -94,6 +227,10 @@ class ApmTest : public ::testing::Test {
                              int num_output_channels);
   void EnableAllComponents();
   bool ReadFrame(FILE* file, AudioFrame* frame);
+  void ProcessWithDefaultStreamParameters(AudioFrame* frame);
+  template <typename F>
+  void ChangeTriggersInit(F f, AudioProcessing* ap, int initial_value,
+                          int changed_value);
 
   const std::string output_path_;
   const std::string ref_path_;
@@ -241,28 +378,6 @@ void ApmTest::Init(int sample_rate_hz, int num_reverse_channels,
   }
 }
 
-void MixStereoToMono(const int16_t* stereo,
-                     int16_t* mono,
-                     int samples_per_channel) {
-  for (int i = 0; i < samples_per_channel; i++) {
-    int32_t int32 = (static_cast<int32_t>(stereo[i * 2]) +
-                     static_cast<int32_t>(stereo[i * 2 + 1])) >> 1;
-    mono[i] = static_cast<int16_t>(int32);
-  }
-}
-
-void CopyLeftToRightChannel(int16_t* stereo, int samples_per_channel) {
-  for (int i = 0; i < samples_per_channel; i++) {
-    stereo[i * 2 + 1] = stereo[i * 2];
-  }
-}
-
-void VerifyChannelsAreEqual(int16_t* stereo, int samples_per_channel) {
-  for (int i = 0; i < samples_per_channel; i++) {
-    EXPECT_EQ(stereo[i * 2 + 1], stereo[i * 2]);
-  }
-}
-
 void ApmTest::EnableAllComponents() {
 #if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
   EXPECT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(16000));
@@ -321,205 +436,56 @@ bool ApmTest::ReadFrame(FILE* file, AudioFrame* frame) {
   return true;
 }
 
-void SetFrameTo(AudioFrame* frame, int16_t value) {
-  for (int i = 0; i < frame->samples_per_channel_ * frame->num_channels_;
-      ++i) {
-    frame->data_[i] = value;
-  }
+void ApmTest::ProcessWithDefaultStreamParameters(AudioFrame* frame) {
+  EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(0));
+  EXPECT_EQ(apm_->kNoError,
+      apm_->echo_cancellation()->set_stream_drift_samples(0));
+  EXPECT_EQ(apm_->kNoError,
+      apm_->gain_control()->set_stream_analog_level(127));
+  EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame));
 }
 
-void SetFrameTo(AudioFrame* frame, int16_t left, int16_t right) {
-  ASSERT_EQ(2, frame->num_channels_);
-  for (int i = 0; i < frame->samples_per_channel_ * 2; i += 2) {
-    frame->data_[i] = left;
-    frame->data_[i + 1] = right;
-  }
+template <typename F>
+void ApmTest::ChangeTriggersInit(F f, AudioProcessing* ap, int initial_value,
+                                 int changed_value) {
+  EnableAllComponents();
+  Init(16000, 2, 2, 2, false);
+  SetFrameTo(frame_, 1000);
+  AudioFrame frame_copy = *frame_;
+  ProcessWithDefaultStreamParameters(frame_);
+  // Verify the processing has actually changed the frame.
+  EXPECT_FALSE(FrameDataAreEqual(*frame_, frame_copy));
+
+  // Test that a change in value triggers an init.
+  f(apm_, changed_value);
+  f(apm_, initial_value);
+  ProcessWithDefaultStreamParameters(&frame_copy);
+  EXPECT_TRUE(FrameDataAreEqual(*frame_, frame_copy));
+
+  apm_->Initialize();
+  SetFrameTo(frame_, 1000);
+  AudioFrame initial_frame = *frame_;
+  ProcessWithDefaultStreamParameters(frame_);
+  ProcessWithDefaultStreamParameters(frame_);
+  // Verify the processing has actually changed the frame.
+  EXPECT_FALSE(FrameDataAreEqual(*frame_, initial_frame));
+
+  frame_copy = initial_frame;
+  apm_->Initialize();
+  ProcessWithDefaultStreamParameters(&frame_copy);
+  // Verify an init here would result in different output.
+  apm_->Initialize();
+  ProcessWithDefaultStreamParameters(&frame_copy);
+  EXPECT_FALSE(FrameDataAreEqual(*frame_, frame_copy));
+
+  frame_copy = initial_frame;
+  apm_->Initialize();
+  ProcessWithDefaultStreamParameters(&frame_copy);
+  // Test that the same value does not trigger an init.
+  f(apm_, initial_value);
+  ProcessWithDefaultStreamParameters(&frame_copy);
+  EXPECT_TRUE(FrameDataAreEqual(*frame_, frame_copy));
 }
-
-template <class T>
-T AbsValue(T a) {
-  return a > 0 ? a: -a;
-}
-
-int16_t MaxAudioFrame(const AudioFrame& frame) {
-  const int length = frame.samples_per_channel_ * frame.num_channels_;
-  int16_t max_data = AbsValue(frame.data_[0]);
-  for (int i = 1; i < length; i++) {
-    max_data = std::max(max_data, AbsValue(frame.data_[i]));
-  }
-
-  return max_data;
-}
-
-bool FrameDataAreEqual(const AudioFrame& frame1, const AudioFrame& frame2) {
-  if (frame1.samples_per_channel_ !=
-      frame2.samples_per_channel_) {
-    return false;
-  }
-  if (frame1.num_channels_ !=
-      frame2.num_channels_) {
-    return false;
-  }
-  if (memcmp(frame1.data_, frame2.data_,
-             frame1.samples_per_channel_ * frame1.num_channels_ *
-               sizeof(int16_t))) {
-    return false;
-  }
-  return true;
-}
-
-void TestStats(const AudioProcessing::Statistic& test,
-               const webrtc::audioproc::Test::Statistic& reference) {
-  EXPECT_EQ(reference.instant(), test.instant);
-  EXPECT_EQ(reference.average(), test.average);
-  EXPECT_EQ(reference.maximum(), test.maximum);
-  EXPECT_EQ(reference.minimum(), test.minimum);
-}
-
-void WriteStatsMessage(const AudioProcessing::Statistic& output,
-                       webrtc::audioproc::Test::Statistic* message) {
-  message->set_instant(output.instant);
-  message->set_average(output.average);
-  message->set_maximum(output.maximum);
-  message->set_minimum(output.minimum);
-}
-
-void WriteMessageLiteToFile(const std::string filename,
-                            const ::google::protobuf::MessageLite& message) {
-  FILE* file = fopen(filename.c_str(), "wb");
-  ASSERT_TRUE(file != NULL) << "Could not open " << filename;
-  int size = message.ByteSize();
-  ASSERT_GT(size, 0);
-  unsigned char* array = new unsigned char[size];
-  ASSERT_TRUE(message.SerializeToArray(array, size));
-
-  ASSERT_EQ(1u, fwrite(&size, sizeof(int), 1, file));
-  ASSERT_EQ(static_cast<size_t>(size),
-      fwrite(array, sizeof(unsigned char), size, file));
-
-  delete [] array;
-  fclose(file);
-}
-
-void ReadMessageLiteFromFile(const std::string filename,
-                             ::google::protobuf::MessageLite* message) {
-  assert(message != NULL);
-
-  FILE* file = fopen(filename.c_str(), "rb");
-  ASSERT_TRUE(file != NULL) << "Could not open " << filename;
-  int size = 0;
-  ASSERT_EQ(1u, fread(&size, sizeof(int), 1, file));
-  ASSERT_GT(size, 0);
-  unsigned char* array = new unsigned char[size];
-  ASSERT_EQ(static_cast<size_t>(size),
-      fread(array, sizeof(unsigned char), size, file));
-
-  ASSERT_TRUE(message->ParseFromArray(array, size));
-
-  delete [] array;
-  fclose(file);
-}
-
-struct ThreadData {
-  ThreadData(int thread_num_, AudioProcessing* ap_)
-      : thread_num(thread_num_),
-        error(false),
-        ap(ap_) {}
-  int thread_num;
-  bool error;
-  AudioProcessing* ap;
-};
-
-// Don't use GTest here; non-thread-safe on Windows (as of 1.5.0).
-bool DeadlockProc(void* thread_object) {
-  ThreadData* thread_data = static_cast<ThreadData*>(thread_object);
-  AudioProcessing* ap = thread_data->ap;
-  int err = ap->kNoError;
-
-  AudioFrame primary_frame;
-  AudioFrame reverse_frame;
-  primary_frame.samples_per_channel_ = 320;
-  primary_frame.num_channels_ = 2;
-  primary_frame.sample_rate_hz_ = 32000;
-  reverse_frame.samples_per_channel_ = 320;
-  reverse_frame.num_channels_ = 2;
-  reverse_frame.sample_rate_hz_ = 32000;
-
-  ap->echo_cancellation()->Enable(true);
-  ap->gain_control()->Enable(true);
-  ap->high_pass_filter()->Enable(true);
-  ap->level_estimator()->Enable(true);
-  ap->noise_suppression()->Enable(true);
-  ap->voice_detection()->Enable(true);
-
-  if (thread_data->thread_num % 2 == 0) {
-    err = ap->AnalyzeReverseStream(&reverse_frame);
-    if (err != ap->kNoError) {
-      printf("Error in AnalyzeReverseStream(): %d\n", err);
-      thread_data->error = true;
-      return false;
-    }
-  }
-
-  if (thread_data->thread_num % 2 == 1) {
-    ap->set_stream_delay_ms(0);
-    ap->echo_cancellation()->set_stream_drift_samples(0);
-    ap->gain_control()->set_stream_analog_level(0);
-    err = ap->ProcessStream(&primary_frame);
-    if (err == ap->kStreamParameterNotSetError) {
-      printf("Expected kStreamParameterNotSetError in ProcessStream(): %d\n",
-          err);
-    } else if (err != ap->kNoError) {
-      printf("Error in ProcessStream(): %d\n", err);
-      thread_data->error = true;
-      return false;
-    }
-    ap->gain_control()->stream_analog_level();
-  }
-
-  EventWrapper* event = EventWrapper::Create();
-  event->Wait(1);
-  delete event;
-  event = NULL;
-
-  return true;
-}
-
-/*TEST_F(ApmTest, Deadlock) {
-  const int num_threads = 16;
-  std::vector<ThreadWrapper*> threads(num_threads);
-  std::vector<ThreadData*> thread_data(num_threads);
-
-  ASSERT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(32000));
-  ASSERT_EQ(apm_->kNoError, apm_->set_num_channels(2, 2));
-  ASSERT_EQ(apm_->kNoError, apm_->set_num_reverse_channels(2));
-
-  for (int i = 0; i < num_threads; i++) {
-    thread_data[i] = new ThreadData(i, apm_);
-    threads[i] = ThreadWrapper::CreateThread(DeadlockProc,
-                                             thread_data[i],
-                                             kNormalPriority,
-                                             0);
-    ASSERT_TRUE(threads[i] != NULL);
-    unsigned int thread_id = 0;
-    threads[i]->Start(thread_id);
-  }
-
-  EventWrapper* event = EventWrapper::Create();
-  ASSERT_EQ(kEventTimeout, event->Wait(5000));
-  delete event;
-  event = NULL;
-
-  for (int i = 0; i < num_threads; i++) {
-    // This will return false if the thread has deadlocked.
-    ASSERT_TRUE(threads[i]->Stop());
-    ASSERT_FALSE(thread_data[i]->error);
-    delete threads[i];
-    threads[i] = NULL;
-    delete thread_data[i];
-    thread_data[i] = NULL;
-  }
-}*/
 
 TEST_F(ApmTest, StreamParameters) {
   // No errors when the components are disabled.
@@ -665,6 +631,29 @@ TEST_F(ApmTest, SampleRates) {
   }
 }
 
+void SetSampleRate(AudioProcessing* ap, int value) {
+  EXPECT_EQ(ap->kNoError, ap->set_sample_rate_hz(value));
+}
+
+void SetNumReverseChannels(AudioProcessing* ap, int value) {
+  EXPECT_EQ(ap->kNoError, ap->set_num_reverse_channels(value));
+}
+
+void SetNumOutputChannels(AudioProcessing* ap, int value) {
+  EXPECT_EQ(ap->kNoError, ap->set_num_channels(2, value));
+}
+
+TEST_F(ApmTest, SampleRateChangeTriggersInit) {
+  ChangeTriggersInit(SetSampleRate, apm_, 16000, 8000);
+}
+
+TEST_F(ApmTest, ReverseChannelChangeTriggersInit) {
+  ChangeTriggersInit(SetNumReverseChannels, apm_, 2, 1);
+}
+
+TEST_F(ApmTest, ChannelChangeTriggersInit) {
+  ChangeTriggersInit(SetNumOutputChannels, apm_, 2, 1);
+}
 
 TEST_F(ApmTest, EchoCancellation) {
   EXPECT_EQ(apm_->kNoError,

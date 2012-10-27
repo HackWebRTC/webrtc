@@ -100,31 +100,32 @@ AudioProcessingImpl::AudioProcessingImpl(int id)
 }
 
 AudioProcessingImpl::~AudioProcessingImpl() {
-  crit_->Enter();
-  while (!component_list_.empty()) {
-    ProcessingComponent* component = component_list_.front();
-    component->Destroy();
-    delete component;
-    component_list_.pop_front();
-  }
+  {
+    CriticalSectionScoped crit_scoped(crit_);
+    while (!component_list_.empty()) {
+      ProcessingComponent* component = component_list_.front();
+      component->Destroy();
+      delete component;
+      component_list_.pop_front();
+    }
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-  if (debug_file_->Open()) {
-    debug_file_->CloseFile();
-  }
+    if (debug_file_->Open()) {
+      debug_file_->CloseFile();
+    }
 #endif
 
-  if (render_audio_) {
-    delete render_audio_;
-    render_audio_ = NULL;
+    if (render_audio_) {
+      delete render_audio_;
+      render_audio_ = NULL;
+    }
+
+    if (capture_audio_) {
+      delete capture_audio_;
+      capture_audio_ = NULL;
+    }
   }
 
-  if (capture_audio_) {
-    delete capture_audio_;
-    capture_audio_ = NULL;
-  }
-
-  crit_->Leave();
   delete crit_;
   crit_ = NULL;
 }
@@ -162,7 +163,7 @@ int AudioProcessingImpl::InitializeLocked() {
 
   // Initialize all components.
   std::list<ProcessingComponent*>::iterator it;
-  for (it = component_list_.begin(); it != component_list_.end(); it++) {
+  for (it = component_list_.begin(); it != component_list_.end(); ++it) {
     int err = (*it)->Initialize();
     if (err != kNoError) {
       return err;
@@ -183,6 +184,9 @@ int AudioProcessingImpl::InitializeLocked() {
 
 int AudioProcessingImpl::set_sample_rate_hz(int rate) {
   CriticalSectionScoped crit_scoped(crit_);
+  if (rate == sample_rate_hz_) {
+    return kNoError;
+  }
   if (rate != kSampleRate8kHz &&
       rate != kSampleRate16kHz &&
       rate != kSampleRate32kHz) {
@@ -207,6 +211,9 @@ int AudioProcessingImpl::sample_rate_hz() const {
 
 int AudioProcessingImpl::set_num_reverse_channels(int channels) {
   CriticalSectionScoped crit_scoped(crit_);
+  if (channels == num_reverse_channels_) {
+    return kNoError;
+  }
   // Only stereo supported currently.
   if (channels > 2 || channels < 1) {
     return kBadParameterError;
@@ -225,16 +232,16 @@ int AudioProcessingImpl::set_num_channels(
     int input_channels,
     int output_channels) {
   CriticalSectionScoped crit_scoped(crit_);
+  if (input_channels == num_input_channels_ &&
+      output_channels == num_output_channels_) {
+    return kNoError;
+  }
   if (output_channels > input_channels) {
     return kBadParameterError;
   }
-
   // Only stereo supported currently.
-  if (input_channels > 2 || input_channels < 1) {
-    return kBadParameterError;
-  }
-
-  if (output_channels > 2 || output_channels < 1) {
+  if (input_channels > 2 || input_channels < 1 ||
+      output_channels > 2 || output_channels < 1) {
     return kBadParameterError;
   }
 
