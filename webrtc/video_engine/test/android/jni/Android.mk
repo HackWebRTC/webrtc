@@ -121,6 +121,18 @@ LOCAL_SRC_FILES := \
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
+LOCAL_MODULE := libopus
+LOCAL_SRC_FILES := \
+    $(MY_LIBS_PATH)/third_party/opus/libopus.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := libwebrtc_opus
+LOCAL_SRC_FILES := \
+    $(MY_LIBS_PATH)/webrtc/modules/libwebrtc_opus.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
 LOCAL_MODULE := libvad
 LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/webrtc/common_audio/libvad.a
@@ -292,6 +304,8 @@ LOCAL_STATIC_LIBRARIES := \
     libiLBC \
     libiSACFix \
     libisac_neon \
+    libwebrtc_opus \
+    libopus \
     libvad \
     libbitrate_controller \
     libresampler \
