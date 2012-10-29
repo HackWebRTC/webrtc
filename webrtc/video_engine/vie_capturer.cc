@@ -345,8 +345,7 @@ int ViECapturer::IncomingFrameI420(const ViEVideoFrameI420& video_frame,
 }
 
 void ViECapturer::OnIncomingCapturedFrame(const WebRtc_Word32 capture_id,
-                                          I420VideoFrame& video_frame,
-                                          VideoCodecType codec_type) {
+                                          I420VideoFrame& video_frame) {
   WEBRTC_TRACE(kTraceStream, kTraceVideo, ViEId(engine_id_, capture_id_),
                "%s(capture_id: %d)", __FUNCTION__, capture_id);
   CriticalSectionScoped cs(capture_cs_.get());
@@ -360,8 +359,7 @@ void ViECapturer::OnIncomingCapturedFrame(const WebRtc_Word32 capture_id,
 }
 
 void ViECapturer::OnIncomingCapturedEncodedFrame(const WebRtc_Word32 capture_id,
-                                                 VideoFrame& video_frame,
-                                                 VideoCodecType codec_type) {
+                                                 VideoFrame& video_frame) {
   WEBRTC_TRACE(kTraceStream, kTraceVideo, ViEId(engine_id_, capture_id_),
                 "%s(capture_id: %d)", __FUNCTION__, capture_id);
   CriticalSectionScoped cs(capture_cs_.get());
@@ -369,23 +367,21 @@ void ViECapturer::OnIncomingCapturedEncodedFrame(const WebRtc_Word32 capture_id,
   // is slightly off since it's being set when the frame has been received from
   // the camera, and not when the camera actually captured the frame.
   video_frame.SetRenderTime(video_frame.RenderTimeMs() - FrameDelay());
-  if (codec_type != kVideoCodecUnknown) {
-    if (encoded_frame_.Length() != 0) {
-      // The last encoded frame has not been sent yet. Need to wait.
-      deliver_event_.Reset();
-      WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, capture_id_),
-                   "%s(capture_id: %d) Last encoded frame not yet delivered.",
-                   __FUNCTION__, capture_id);
-      capture_cs_->Leave();
-      // Wait for the coded frame to be sent before unblocking this.
-      deliver_event_.Wait(kMaxDeliverWaitTime);
-      assert(encoded_frame_.Length() == 0);
-      capture_cs_->Enter();
-    } else {
-      assert(false);
-    }
-    encoded_frame_.SwapFrame(video_frame);
+  if (encoded_frame_.Length() != 0) {
+    // The last encoded frame has not been sent yet. Need to wait.
+    deliver_event_.Reset();
+    WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, capture_id_),
+                 "%s(capture_id: %d) Last encoded frame not yet delivered.",
+                 __FUNCTION__, capture_id);
+    capture_cs_->Leave();
+    // Wait for the coded frame to be sent before unblocking this.
+    deliver_event_.Wait(kMaxDeliverWaitTime);
+    assert(encoded_frame_.Length() == 0);
+    capture_cs_->Enter();
+  } else {
+    assert(false);
   }
+  encoded_frame_.SwapFrame(video_frame);
   capture_event_.Set();
   return;
 }

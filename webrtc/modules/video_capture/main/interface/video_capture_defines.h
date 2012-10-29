@@ -133,11 +133,9 @@ class VideoCaptureDataCallback
 {
 public:
     virtual void OnIncomingCapturedFrame(const WebRtc_Word32 id,
-                                         I420VideoFrame& videoFrame,
-                                         VideoCodecType codecType) = 0;
+                                         I420VideoFrame& videoFrame) = 0;
     virtual void OnIncomingCapturedEncodedFrame(const WebRtc_Word32 id,
-                                                VideoFrame& videoFrame,
-                                                VideoCodecType codecType) = 0;
+                                                VideoFrame& videoFrame) = 0;
     virtual void OnCaptureDelayChanged(const WebRtc_Word32 id,
                                        const WebRtc_Word32 delay) = 0;
 protected:

@@ -182,7 +182,7 @@ WebRtc_Word32 VideoCaptureImpl::CaptureDelay()
 }
 
 WebRtc_Word32 VideoCaptureImpl::DeliverCapturedFrame(I420VideoFrame&
-  captureFrame, WebRtc_Word64 capture_time, VideoCodecType codec_type) {
+  captureFrame, WebRtc_Word64 capture_time) {
   UpdateFrameCount();  // frame count used for local frame rate callback.
 
   const bool callOnCaptureDelayChanged = _setCaptureDelay != _captureDelay;
@@ -209,15 +209,14 @@ WebRtc_Word32 VideoCaptureImpl::DeliverCapturedFrame(I420VideoFrame&
     if (callOnCaptureDelayChanged) {
       _dataCallBack->OnCaptureDelayChanged(_id, _captureDelay);
     }
-    _dataCallBack->OnIncomingCapturedFrame(_id, captureFrame, codec_type);
+    _dataCallBack->OnIncomingCapturedFrame(_id, captureFrame);
   }
 
   return 0;
 }
 
 WebRtc_Word32 VideoCaptureImpl::DeliverEncodedCapturedFrame(
-    VideoFrame& captureFrame, WebRtc_Word64 capture_time,
-    VideoCodecType codec_type) {
+    VideoFrame& captureFrame, WebRtc_Word64 capture_time) {
   UpdateFrameCount();  // frame count used for local frame rate callback.
 
   const bool callOnCaptureDelayChanged = _setCaptureDelay != _captureDelay;
@@ -244,8 +243,7 @@ WebRtc_Word32 VideoCaptureImpl::DeliverEncodedCapturedFrame(
     if (callOnCaptureDelayChanged) {
       _dataCallBack->OnCaptureDelayChanged(_id, _captureDelay);
     }
-    _dataCallBack->OnIncomingCapturedEncodedFrame(_id, captureFrame,
-                                                  codec_type);
+    _dataCallBack->OnIncomingCapturedEncodedFrame(_id, captureFrame);
   }
 
   return 0;
@@ -309,7 +307,7 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(
                        frameInfo.rawType);
             return -1;
         }
-        DeliverCapturedFrame(_captureFrame, captureTime, frameInfo.codecType);
+        DeliverCapturedFrame(_captureFrame, captureTime);
     }
     else // Encoded format
     {
@@ -319,8 +317,7 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(
                        "Failed to copy captured frame of length %d",
                        static_cast<int>(videoFrameLength));
         }
-        DeliverEncodedCapturedFrame(_capture_encoded_frame, captureTime,
-                                    frameInfo.codecType);
+        DeliverEncodedCapturedFrame(_capture_encoded_frame, captureTime);
     }
 
     const WebRtc_UWord32 processTime =
@@ -356,7 +353,7 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrameI420(
     return -1;
   }
 
-  DeliverCapturedFrame(_captureFrame, captureTime, kVideoCodecUnknown);
+  DeliverCapturedFrame(_captureFrame, captureTime);
 
   return 0;
 }

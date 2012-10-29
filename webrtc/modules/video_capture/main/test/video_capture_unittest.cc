@@ -154,8 +154,7 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
   }
 
   virtual void OnIncomingCapturedFrame(const WebRtc_Word32 id,
-                                       webrtc::I420VideoFrame& videoFrame,
-                                       webrtc::VideoCodecType codecType) {
+                                       webrtc::I420VideoFrame& videoFrame) {
     CriticalSectionScoped cs(capture_cs_.get());
 
     int height = videoFrame.height();
@@ -181,8 +180,7 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
     last_frame_.CopyFrame(videoFrame);
   }
   virtual void OnIncomingCapturedEncodedFrame(const WebRtc_Word32 id,
-                                              webrtc::VideoFrame& videoFrame,
-                                              webrtc::VideoCodecType codecType)
+                                              webrtc::VideoFrame& videoFrame)
  {
      assert(!"NOTIMPLEMENTED");
  }

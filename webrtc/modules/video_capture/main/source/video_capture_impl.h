@@ -100,11 +100,10 @@ protected:
     virtual ~VideoCaptureImpl();
     // TODO(mikhal): Remove codec_type.
     WebRtc_Word32 DeliverCapturedFrame(I420VideoFrame& captureFrame,
-                                       WebRtc_Word64 capture_time,
-                                       VideoCodecType codec_type);
+                                       WebRtc_Word64 capture_time);
     WebRtc_Word32 DeliverEncodedCapturedFrame(
            VideoFrame& captureFrame,
-           WebRtc_Word64 capture_time, VideoCodecType codec_type);
+           WebRtc_Word64 capture_time);
 
     WebRtc_Word32 _id; // Module ID
     char* _deviceUniqueId; // current Device unique name;

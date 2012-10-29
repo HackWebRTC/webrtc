@@ -116,11 +116,9 @@ class ViECapturer
 
   // Implements VideoCaptureDataCallback.
   virtual void OnIncomingCapturedFrame(const WebRtc_Word32 id,
-                                       I420VideoFrame& video_frame,
-                                       VideoCodecType codec_type);
+                                       I420VideoFrame& video_frame);
   virtual void OnIncomingCapturedEncodedFrame(const WebRtc_Word32 capture_id,
-                                              VideoFrame& video_frame,
-                                              VideoCodecType codec_type);
+                                              VideoFrame& video_frame);
   virtual void OnCaptureDelayChanged(const WebRtc_Word32 id,
                                      const WebRtc_Word32 delay);
 
