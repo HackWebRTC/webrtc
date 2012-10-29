@@ -277,7 +277,7 @@ class RemoteBitrateEstimatorTest : public ::testing::Test {
         RemoteBitrateEstimator::Create(
             bitrate_observer_.get(),
             over_use_detector_options_,
-            RemoteBitrateEstimator::kMultiStreamEstimation));
+            RemoteBitrateEstimator::kSingleStreamEstimation));
     stream_generator_.reset(new StreamGenerator(1e6,  // Capacity.
                                                 time_now_));
   }
@@ -415,10 +415,39 @@ TEST_F(RemoteBitrateEstimatorTest, TestInitialBehavior) {
   time_now += 2;
   bitrate_estimator_->UpdateEstimate(kDefaultSsrc, time_now);
   EXPECT_TRUE(bitrate_estimator_->LatestEstimate(kDefaultSsrc, &bitrate_bps));
-  EXPECT_EQ(20644u, bitrate_bps);
+  EXPECT_EQ(20607u, bitrate_bps);
   EXPECT_TRUE(bitrate_observer_->updated());
   bitrate_observer_->Reset();
   EXPECT_EQ(bitrate_observer_->latest_bitrate(), bitrate_bps);
+}
+
+TEST_F(RemoteBitrateEstimatorTest, TestRateIncreaseReordering) {
+  int64_t time_now = 0;
+  uint32_t timestamp = 0;
+  const int framerate = 50;  // 50 fps to avoid rounding errors.
+  const int frame_interval_ms = 1000 / framerate;
+  bitrate_estimator_->IncomingPacket(kDefaultSsrc, 1000, time_now, timestamp);
+  bitrate_estimator_->UpdateEstimate(kDefaultSsrc, time_now);
+  EXPECT_FALSE(bitrate_observer_->updated());  // No valid estimate.
+  // Increase time with 1 second to get a valid estimate.
+  time_now += 1000;
+  timestamp += 90 * 1000;
+  bitrate_estimator_->IncomingPacket(kDefaultSsrc, 1000, time_now, timestamp);
+  bitrate_estimator_->UpdateEstimate(kDefaultSsrc, time_now);
+  EXPECT_TRUE(bitrate_observer_->updated());
+  EXPECT_EQ(17645u, bitrate_observer_->latest_bitrate());
+  for (int i = 0; i < 10; ++i) {
+    time_now += 2 * frame_interval_ms;
+    timestamp += 2 * 90 * frame_interval_ms;
+    bitrate_estimator_->IncomingPacket(kDefaultSsrc, 1000, time_now, timestamp);
+    bitrate_estimator_->IncomingPacket(kDefaultSsrc,
+                                       1000,
+                                       time_now - frame_interval_ms,
+                                       timestamp - 90 * frame_interval_ms);
+  }
+  bitrate_estimator_->UpdateEstimate(kDefaultSsrc, time_now);
+  EXPECT_TRUE(bitrate_observer_->updated());
+  EXPECT_EQ(18985u, bitrate_observer_->latest_bitrate());
 }
 
 // Make sure we initially increase the bitrate as expected.
@@ -512,7 +541,7 @@ TEST_F(RemoteBitrateEstimatorTest, TestCapacityDropRtpTimestampsWrap) {
       bitrate_observer_->Reset();
     }
   }
-  EXPECT_EQ(8366, bitrate_drop_time);
+  EXPECT_EQ(8299, bitrate_drop_time);
 }
 
 // Verify that the time it takes for the estimator to reduce the bitrate when
@@ -552,7 +581,7 @@ TEST_F(RemoteBitrateEstimatorTestAlign, TestCapacityDropRtpTimestampsWrap) {
       bitrate_observer_->Reset();
     }
   }
-  EXPECT_EQ(8366, bitrate_drop_time);
+  EXPECT_EQ(8299, bitrate_drop_time);
 }
 
 // Verify that the time it takes for the estimator to reduce the bitrate when
@@ -605,7 +634,7 @@ TEST_F(RemoteBitrateEstimatorTestAlign, TwoStreamsCapacityDropWithWrap) {
       bitrate_observer_->Reset();
     }
   }
-  EXPECT_EQ(4966, bitrate_drop_time);
+  EXPECT_EQ(4933, bitrate_drop_time);
 }
 
 // Verify that the time it takes for the estimator to reduce the bitrate when
@@ -666,7 +695,7 @@ TEST_F(RemoteBitrateEstimatorTestAlign, ThreeStreams) {
       bitrate_observer_->Reset();
     }
   }
-  EXPECT_EQ(3900, bitrate_drop_time);
+  EXPECT_EQ(3966, bitrate_drop_time);
 }
 
 }  // namespace webrtc

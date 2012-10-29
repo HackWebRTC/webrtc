@@ -110,14 +110,6 @@ void OveruseDetector::Update(uint16_t packet_size,
 
 #endif
   bool new_timestamp = (timestamp != current_frame_.timestamp);
-  if (current_frame_.timestamp_ms == -1) {
-    const uint32_t timestamp_diff = timestamp - current_frame_.timestamp;
-    if (timestamp_diff > 0x80000000) {
-      // Assume that a diff this big must be due to reordering. Don't update
-      // with reordered samples.
-      return;
-    }
-  }
   if (timestamp_ms >= 0) {
     if (prev_frame_.timestamp_ms == -1 && current_frame_.timestamp_ms == -1) {
       SwitchTimeBase();
@@ -125,24 +117,23 @@ void OveruseDetector::Update(uint16_t packet_size,
     new_timestamp = (timestamp_ms != current_frame_.timestamp_ms);
   }
   if (current_frame_.timestamp == -1) {
+    // This is the first incoming packet. We don't have enough data to update
+    // the filter, so we store it until we have two frames of data to process.
     current_frame_.timestamp = timestamp;
     current_frame_.timestamp_ms = timestamp_ms;
+  } else if (!PacketInOrder(timestamp, timestamp_ms)) {
+    return;
   } else if (new_timestamp) {
-    // First packet of a later frame, the previous frame sample is ready
-    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
-                 "Frame complete at %I64i", current_frame_.complete_time_ms);
-    if (prev_frame_.complete_time_ms >= 0) {  // This is our second frame
+    // First packet of a later frame, the previous frame sample is ready.
+    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1, "Frame complete at %I64i",
+                 current_frame_.complete_time_ms);
+    if (prev_frame_.complete_time_ms >= 0) {  // This is our second frame.
       int64_t t_delta = 0;
       double ts_delta = 0;
-      if (TimeDeltas(current_frame_, prev_frame_,
-                                &t_delta, &ts_delta)) {
-        // No reordering.
-        UpdateKalman(t_delta, ts_delta, current_frame_.size, prev_frame_.size);
-        prev_frame_ = current_frame_;
-      }
-    } else {
-      prev_frame_ = current_frame_;
+      TimeDeltas(current_frame_, prev_frame_, &t_delta, &ts_delta);
+      UpdateKalman(t_delta, ts_delta, current_frame_.size, prev_frame_.size);
     }
+    prev_frame_ = current_frame_;
     // The new timestamp is now the current frame.
     current_frame_.timestamp = timestamp;
     current_frame_.timestamp_ms = timestamp_ms;
@@ -182,7 +173,7 @@ void OveruseDetector::SwitchTimeBase() {
   prev_frame_ = current_frame_;
 }
 
-bool OveruseDetector::TimeDeltas(const FrameSample& current_frame,
+void OveruseDetector::TimeDeltas(const FrameSample& current_frame,
                                  const FrameSample& prev_frame,
                                  int64_t* t_delta,
                                  double* ts_delta) {
@@ -193,24 +184,32 @@ bool OveruseDetector::TimeDeltas(const FrameSample& current_frame,
     num_of_deltas_ = 1000;
   }
   if (current_frame.timestamp_ms == -1) {
-    const uint32_t timestamp_diff = current_frame.timestamp -
-        prev_frame.timestamp;
-    if (timestamp_diff > 0x80000000) {
-      // Assume that a diff this big must be due to reordering. Don't update
-      // with reordered samples.
-      return false;
-    }
+    uint32_t timestamp_diff = current_frame.timestamp - prev_frame.timestamp;
     *ts_delta = timestamp_diff / 90.0;
   } else {
     *ts_delta = current_frame.timestamp_ms - prev_frame.timestamp_ms;
-    if (*ts_delta < 0) {
-      // Frame reordering.
-      return false;
-    }
   }
   *t_delta = current_frame.complete_time_ms - prev_frame.complete_time_ms;
   assert(*ts_delta > 0);
+}
+
+bool OveruseDetector::PacketInOrder(uint32_t timestamp, int64_t timestamp_ms) {
+  if (current_frame_.timestamp_ms == -1 && current_frame_.timestamp > -1) {
+    return InOrderTimestamp(timestamp, current_frame_.timestamp);
+  } else if (current_frame_.timestamp_ms > 0) {
+    // Using timestamps converted to NTP time.
+    return timestamp_ms > current_frame_.timestamp_ms;
+  }
+  // This is the first packet.
   return true;
+}
+
+bool OveruseDetector::InOrderTimestamp(uint32_t timestamp,
+                                       uint32_t prev_timestamp) {
+  uint32_t timestamp_diff = timestamp - prev_timestamp;
+  // Assume that a diff this big must be due to reordering. Don't update
+  // with reordered samples.
+  return (timestamp_diff < 0x80000000);
 }
 
 double OveruseDetector::CurrentDrift() {
@@ -406,23 +405,4 @@ BandwidthUsage OveruseDetector::Detect(double ts_delta) {
   }
   return hypothesis_;
 }
-
-bool OveruseDetector::OldTimestamp(uint32_t new_timestamp,
-                                   uint32_t existing_timestamp,
-                                   bool* wrapped) {
-  bool tmpWrapped =
-      (new_timestamp < 0x0000ffff && existing_timestamp > 0xffff0000) ||
-      (new_timestamp > 0xffff0000 && existing_timestamp < 0x0000ffff);
-  *wrapped = tmpWrapped;
-  if (existing_timestamp > new_timestamp && !tmpWrapped) {
-    return true;
-  } else if (existing_timestamp <= new_timestamp && !tmpWrapped) {
-    return false;
-  } else if (existing_timestamp < new_timestamp && tmpWrapped) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
 }  // namespace webrtc

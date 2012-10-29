@@ -59,15 +59,17 @@ class OveruseDetector {
 #endif
   };
 
-  static bool OldTimestamp(uint32_t new_timestamp,
-                           uint32_t existing_timestamp,
-                           bool* wrapped);
+  // Returns true if |timestamp| represent a time which is later than
+  // |prev_timestamp|.
+  static bool InOrderTimestamp(uint32_t timestamp, uint32_t prev_timestamp);
+
+  bool PacketInOrder(uint32_t timestamp, int64_t timestamp_ms);
 
   // Prepares the overuse detector to start using timestamps in milliseconds
   // instead of 90 kHz timestamps.
   void SwitchTimeBase();
 
-  bool TimeDeltas(const FrameSample& current_frame,
+  void TimeDeltas(const FrameSample& current_frame,
                   const FrameSample& prev_frame,
                   int64_t* t_delta,
                   double* ts_delta);
