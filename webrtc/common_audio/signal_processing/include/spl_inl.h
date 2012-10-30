@@ -60,7 +60,12 @@ static __inline WebRtc_Word16 WebRtcSpl_GetSizeInBits(WebRtc_UWord32 n) {
 static __inline int WebRtcSpl_NormW32(WebRtc_Word32 a) {
   int zeros;
 
-  if (a <= 0) a ^= 0xFFFFFFFF;
+  if (a == 0) {
+    return 0;
+  }
+  else if (a < 0) {
+    a = ~a;
+  }
 
   if (!(0xFFFF8000 & a)) {
     zeros = 16;
@@ -96,7 +101,12 @@ static __inline int WebRtcSpl_NormU32(WebRtc_UWord32 a) {
 static __inline int WebRtcSpl_NormW16(WebRtc_Word16 a) {
   int zeros;
 
-  if (a <= 0) a ^= 0xFFFF;
+  if (a == 0) {
+    return 0;
+  }
+  else if (a < 0) {
+    a = ~a;
+  }
 
   if (!(0xFF80 & a)) {
     zeros = 8;
