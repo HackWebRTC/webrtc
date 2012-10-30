@@ -894,7 +894,7 @@ Notice for all the files in this folder.
                     fork="${need.javac.fork}">
                 <src path="${source.absolute.dir}" />
                 <src path="${gen.absolute.dir}" />
-                <src path="${webrtc.modules.dir}/video_capture/main/source/android/java" />
+                <src path="${webrtc.modules.dir}/video_capture/android/java" />
                 <src path="${webrtc.modules.dir}/video_render/main/source/android/java" />
                 <src path="${webrtc.modules.dir}/audio_device/android" />
                 <compilerarg line="${java.compilerargs}" />
