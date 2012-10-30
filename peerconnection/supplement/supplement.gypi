@@ -10,5 +10,17 @@
     'include_internal_video_render': 1,
     'include_pulse_audio': 1,
     'use_openssl': 1,
-  }
+  },
+  'target_defaults': {
+    'conditions': [
+      ['OS=="linux" and clang==1', {
+        'cflags': [
+          # Suppress the warning caused by
+          # LateBindingSymbolTable::TableInfo from
+          # latebindingsymboltable.cc.def.
+          '-Wno-address-of-array-temporary',
+        ],
+      }],
+    ],
+  }, # target_defaults
 }
