@@ -162,7 +162,6 @@ void ViEAutoTest::ViEFileStandardTest()
 
         webrtc::ViEPicture capturePicture;
         webrtc::ViEPicture renderPicture;
-        webrtc::ViEPicture renderTimeoutPicture; // TODO: init with and image
 
         ViEAutotestFileObserver fileObserver;
         int fileId;
@@ -361,6 +360,8 @@ void ViEAutoTest::ViEFileStandardTest()
             // set render image, then stop capture and stop render to display it
             ViETest::Log("Stoping renderer, setting start image, then "
                          "restarting");
+            EXPECT_EQ(0, ptrViEFile->GetCaptureDeviceSnapshot(
+                      captureId, capturePicture));
             EXPECT_EQ(0, ptrViEFile->SetRenderStartImage(
                 videoChannel, capturePicture));
             EXPECT_EQ(0, ptrViECapture->StopCapture(captureId));
@@ -458,7 +459,6 @@ void ViEAutoTest::ViEFileStandardTest()
         EXPECT_EQ(0, ptrViECapture->DisconnectCaptureDevice(videoChannel));
         EXPECT_EQ(0, ptrViEFile->FreePicture(capturePicture));
         EXPECT_EQ(0, ptrViEFile->FreePicture(renderPicture));
-        EXPECT_EQ(0, ptrViEFile->FreePicture(renderTimeoutPicture));
         EXPECT_EQ(0, ptrViEBase->DeleteChannel(videoChannel));
 
         EXPECT_EQ(0, ptrViEFile->Release());
