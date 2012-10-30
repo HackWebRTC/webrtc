@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_capture/main/interface/video_capture_factory.h"
+#include "webrtc/modules/video_capture/include/video_capture_factory.h"
 #include "video_engine/test/auto_test/interface/vie_autotest.h"
 #include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
 #include "video_engine/test/auto_test/primitives/base_primitives.h"

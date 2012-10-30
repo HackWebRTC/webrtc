@@ -11,7 +11,7 @@
 #include "common_types.h"  // NOLINT
 #include "engine_configurations.h"  // NOLINT
 #include "gflags/gflags.h"
-#include "modules/video_capture/main/interface/video_capture_factory.h"
+#include "webrtc/modules/video_capture/include/video_capture_factory.h"
 #include "system_wrappers/interface/tick_util.h"
 #include "video_engine/include/vie_base.h"
 #include "video_engine/include/vie_capture.h"

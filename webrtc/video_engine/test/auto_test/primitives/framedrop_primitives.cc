@@ -11,7 +11,7 @@
 #include <cassert>
 #include <string>
 
-#include "modules/video_capture/main/interface/video_capture_factory.h"
+#include "webrtc/modules/video_capture/include/video_capture_factory.h"
 #include "system_wrappers/interface/tick_util.h"
 #include "testsupport/fileutils.h"
 #include "testsupport/frame_reader.h"

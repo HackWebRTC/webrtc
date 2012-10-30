@@ -11,7 +11,7 @@
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_INPUT_MANAGER_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_INPUT_MANAGER_H_
 
-#include "modules/video_capture/main/interface/video_capture.h"
+#include "webrtc/modules/video_capture/include/video_capture.h"
 #include "system_wrappers/interface/map_wrapper.h"
 #include "system_wrappers/interface/scoped_ptr.h"
 #include "typedefs.h"  // NOLINT

@@ -13,7 +13,7 @@
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/interface/module_common_types.h"
 #include "modules/utility/interface/process_thread.h"
-#include "modules/video_capture/main/interface/video_capture_factory.h"
+#include "webrtc/modules/video_capture/include/video_capture_factory.h"
 #include "modules/video_processing/main/interface/video_processing.h"
 #include "modules/video_render/main/interface/video_render_defines.h"
 #include "system_wrappers/interface/critical_section_wrapper.h"

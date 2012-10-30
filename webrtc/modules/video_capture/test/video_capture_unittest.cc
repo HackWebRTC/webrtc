@@ -12,8 +12,8 @@
 
 #include "gtest/gtest.h"
 #include "modules/utility/interface/process_thread.h"
-#include "modules/video_capture/main/interface/video_capture.h"
-#include "modules/video_capture/main/interface/video_capture_factory.h"
+#include "webrtc/modules/video_capture/include/video_capture.h"
+#include "webrtc/modules/video_capture/include/video_capture_factory.h"
 #include "common_video/interface/i420_video_frame.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "system_wrappers/interface/critical_section_wrapper.h"

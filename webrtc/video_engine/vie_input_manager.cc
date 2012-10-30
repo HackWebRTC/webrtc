@@ -13,7 +13,7 @@
 #include <cassert>
 
 #include "common_types.h"  // NOLINT
-#include "modules/video_capture/main/interface/video_capture_factory.h"
+#include "webrtc/modules/video_capture/include/video_capture_factory.h"
 #include "modules/video_coding/main/interface/video_coding.h"
 #include "modules/video_coding/main/interface/video_coding_defines.h"
 #include "system_wrappers/interface/critical_section_wrapper.h"

@@ -8,13 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_INTERFACE_VIDEO_CAPTURE_DEFINES_H_
-#define WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_INTERFACE_VIDEO_CAPTURE_DEFINES_H_
+#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_INCLUDE_VIDEO_CAPTURE_DEFINES_H_
+#define WEBRTC_MODULES_VIDEO_CAPTURE_INCLUDE_VIDEO_CAPTURE_DEFINES_H_
 
-// Includes
-#include "typedefs.h"
-#include "modules/interface/module_common_types.h"
-#include "common_video/interface/i420_video_frame.h"
+#include "webrtc/typedefs.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/common_video/interface/i420_video_frame.h"
 
 namespace webrtc
 {
@@ -153,5 +152,6 @@ protected:
     virtual ~VideoCaptureFeedBack(){}
 };
 
-} //namespace webrtc
-#endif  // WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_INTERFACE_VIDEO_CAPTURE_DEFINES_H_
+}  // namespace webrtc
+
+#endif  // WEBRTC_MODULES_VIDEO_CAPTURE_INCLUDE_VIDEO_CAPTURE_DEFINES_H_

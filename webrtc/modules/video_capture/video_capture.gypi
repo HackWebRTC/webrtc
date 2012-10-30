@@ -10,77 +10,65 @@
   'targets': [
     {
       'target_name': 'video_capture_module',
-      'type': '<(library)',
+      'type': 'static_library',
       'dependencies': [
         'webrtc_utility',
         '<(webrtc_root)/common_video/common_video.gyp:common_video',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
+        'include',
         '../interface',
-        '../../../interface',
         '<(webrtc_root)/common_video/libyuv/include',
       ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          '../interface',
-          '../../../interface',
-          '<(webrtc_root)/common_video/libyuv/include',
-        ],
-      },
       'sources': [
-        # interfaces
-        '../interface/video_capture.h',
-        '../interface/video_capture_defines.h',
-        '../interface/video_capture_factory.h',
-        # headers
+        'device_info_impl.cc',
+        'device_info_impl.h',
+        'include/video_capture.h',
+        'include/video_capture_defines.h',
+        'include/video_capture_factory.h',
         'video_capture_config.h',
         'video_capture_delay.h',
         'video_capture_impl.h',
-        'device_info_impl.h',
-
-        # DEFINE PLATFORM INDEPENDENT SOURCE FILES
         'video_capture_factory.cc',
         'video_capture_impl.cc',
-        'device_info_impl.cc',
       ],
       'conditions': [
         ['include_internal_video_capture==0', {
           'sources': [
-            'External/device_info_external.cc',
-            'External/video_capture_external.cc',
+            'external/device_info_external.cc',
+            'external/video_capture_external.cc',
           ],
         },{  # include_internal_video_capture == 1
           'conditions': [
-            # DEFINE PLATFORM SPECIFIC SOURCE FILES
             ['OS=="linux"', {
               'include_dirs': [
-                'Linux',
+                'linux',
               ],
               'sources': [
-                'Linux/device_info_linux.h',
-                'Linux/video_capture_linux.h',
-                'Linux/device_info_linux.cc',
-                'Linux/video_capture_linux.cc',
+                'linux/device_info_linux.h',
+                'linux/video_capture_linux.h',
+                'linux/device_info_linux.cc',
+                'linux/video_capture_linux.cc',
               ],
             }],  # linux
             ['OS=="mac"', {
               'sources': [
-                'Mac/QTKit/video_capture_recursive_lock.h',
-                'Mac/QTKit/video_capture_qtkit.h',
-                'Mac/QTKit/video_capture_qtkit_info.h',
-                'Mac/QTKit/video_capture_qtkit_info_objc.h',
-                'Mac/QTKit/video_capture_qtkit_objc.h',
-                'Mac/QTKit/video_capture_qtkit_utility.h',
-                'Mac/video_capture_mac.mm',
-                'Mac/QTKit/video_capture_qtkit.mm',
-                'Mac/QTKit/video_capture_qtkit_objc.mm',
-                'Mac/QTKit/video_capture_recursive_lock.mm',
-                'Mac/QTKit/video_capture_qtkit_info.mm',
-                'Mac/QTKit/video_capture_qtkit_info_objc.mm',
+                'mac/qtkit/video_capture_recursive_lock.h',
+                'mac/qtkit/video_capture_qtkit.h',
+                'mac/qtkit/video_capture_qtkit_info.h',
+                'mac/qtkit/video_capture_qtkit_info_objc.h',
+                'mac/qtkit/video_capture_qtkit_objc.h',
+                'mac/qtkit/video_capture_qtkit_utility.h',
+                'mac/qtkit/video_capture_qtkit.mm',
+                'mac/qtkit/video_capture_qtkit_objc.mm',
+                'mac/qtkit/video_capture_recursive_lock.mm',
+                'mac/qtkit/video_capture_qtkit_info.mm',
+                'mac/qtkit/video_capture_qtkit_info_objc.mm',
+                'mac/video_capture_mac.mm',
               ],
               'include_dirs': [
-                'Mac',
+                'mac',
               ],
               'link_settings': {
                 'xcode_settings': {
@@ -92,22 +80,22 @@
             }],  # mac
             ['OS=="win"', {
               'dependencies': [
-                '<(webrtc_root)/modules/video_capture/main/source/Windows/direct_show_base_classes.gyp:direct_show_base_classes',
+                '<(webrtc_root)/modules/video_capture/windows/direct_show_base_classes.gyp:direct_show_base_classes',
               ],
               'include_dirs': [
-                'Windows',
+                'windows',
               ],
               'sources': [
-                'Windows/help_functions_windows.h',
-                'Windows/sink_filter_windows.h',
-                'Windows/video_capture_windows.h',
-                'Windows/device_info_windows.h',
-                'Windows/capture_delay_values_windows.h',
-                'Windows/help_functions_windows.cc',
-                'Windows/sink_filter_windows.cc',
-                'Windows/video_capture_windows.cc',
-                'Windows/device_info_windows.cc',
-                'Windows/video_capture_factory_windows.cc',
+                'windows/help_functions_windows.h',
+                'windows/sink_filter_windows.h',
+                'windows/video_capture_windows.h',
+                'windows/device_info_windows.h',
+                'windows/capture_delay_values_windows.h',
+                'windows/help_functions_windows.cc',
+                'windows/sink_filter_windows.cc',
+                'windows/video_capture_windows.cc',
+                'windows/device_info_windows.cc',
+                'windows/video_capture_factory_windows.cc',
               ],
               'msvs_settings': {
                 'VCLibrarianTool': {
@@ -138,20 +126,19 @@
           'target_name': 'video_capture_module_test',
           'type': 'executable',
           'dependencies': [
-           'video_capture_module',
-           'webrtc_utility',
-           '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-           '<(DEPTH)/testing/gtest.gyp:gtest',
+            'video_capture_module',
+            'webrtc_utility',
+            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'include_dirs': [
-            '../interface',
+            'include',
           ],
           'sources': [
-            '../test/video_capture_unittest.cc',
-            '../test/video_capture_main_mac.mm',
+            'test/video_capture_unittest.cc',
+            'test/video_capture_main_mac.mm',
           ],
           'conditions': [
-           # DEFINE PLATFORM SPECIFIC INCLUDE AND CFLAGS
             ['OS=="mac" or OS=="linux"', {
               'cflags': [
                 '-Wno-write-strings',
@@ -192,8 +179,3 @@
   ],
 }
 
-# Local Variables:
-# tab-width:2
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=2 shiftwidth=2:

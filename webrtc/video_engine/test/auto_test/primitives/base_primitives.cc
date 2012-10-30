@@ -12,7 +12,7 @@
 
 #include "vie_autotest.h"
 #include "vie_autotest_defines.h"
-#include "video_capture_factory.h"
+#include "webrtc/modules/video_capture/include/video_capture_factory.h"
 
 void TestI420CallSetup(webrtc::ViECodec* codec_interface,
                        webrtc::VideoEngine* video_engine,

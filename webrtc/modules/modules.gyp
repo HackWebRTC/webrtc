@@ -24,14 +24,14 @@
     'bitrate_controller/bitrate_controller.gypi',
     'media_file/source/media_file.gypi',
     'remote_bitrate_estimator/remote_bitrate_estimator.gypi',
+    'rtp_rtcp/source/rtp_rtcp.gypi',
     'udp_transport/source/udp_transport.gypi',
     'utility/source/utility.gypi',
     'video_coding/codecs/i420/main/source/i420.gypi',
     'video_coding/main/source/video_coding.gypi',
-    'video_capture/main/source/video_capture.gypi',
+    'video_capture/video_capture.gypi',
     'video_processing/main/source/video_processing.gypi',
     'video_render/main/source/video_render.gypi',
-    'rtp_rtcp/source/rtp_rtcp.gypi',
   ],
   'conditions': [
     ['include_opus==1', {

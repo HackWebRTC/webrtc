@@ -10,7 +10,7 @@
 
 #include "general_primitives.h"
 
-#include "video_capture_factory.h"
+#include "webrtc/modules/video_capture/include/video_capture_factory.h"
 #include "vie_autotest.h"
 #include "vie_autotest_defines.h"
 #include "vie_to_file_renderer.h"
