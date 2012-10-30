@@ -284,9 +284,12 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(
         // Setting absolute height (in case it was negative).
         // In Windows, the image starts bottom left, instead of top left.
         // Setting a negative source height, inverts the image (within LibYuv).
+        int stride_y = 0;
+        int stride_uv = 0;
+        Calc16ByteAlignedStride(width, &stride_y, &stride_uv);
         int ret = _captureFrame.CreateEmptyFrame(width, abs(height),
-                                                 width, (width + 1) / 2,
-                                                 (width + 1) / 2);
+                                                 stride_y,
+                                                 stride_uv, stride_uv);
         if (ret < 0)
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
@@ -336,7 +339,6 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrameI420(
     const VideoFrameI420& video_frame, WebRtc_Word64 captureTime) {
 
   CriticalSectionScoped cs(&_callBackCs);
-  // TODO(mikhal): Do we take the stride as is, or do we align it?
   int size_y = video_frame.height * video_frame.y_pitch;
   int size_u = video_frame.u_pitch * (video_frame.height + 1) / 2;
   int size_v =  video_frame.v_pitch * (video_frame.height + 1) / 2;

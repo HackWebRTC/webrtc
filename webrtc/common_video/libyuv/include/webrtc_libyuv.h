@@ -63,6 +63,15 @@ enum VideoRotationMode {
 // Return value: An aligned form of the input value.
 int AlignInt(int value, int alignment);
 
+// Align stride values for I420 Video frames.
+// Input:
+//   - width    : Image width.
+//   - stride_y : Pointer to the stride of the y plane.
+//   - stride_uv: Pointer to the stride of the u and v planes (setting identical
+//                values for both).
+// Setting 16 byte alignment.
+void Calc16ByteAlignedStride(int width, int* stride_y, int* stride_uv);
+
 // Calculate the required buffer size.
 // Input:
 //   - type         :The type of the designated video frame.

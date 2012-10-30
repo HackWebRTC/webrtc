@@ -17,6 +17,8 @@
 
 namespace webrtc {
 
+const int k16ByteAlignment = 16;
+
 VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type) {
   switch (type) {
     case kVideoI420:
@@ -56,6 +58,11 @@ VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type) {
 int AlignInt(int value, int alignment) {
   assert(!((alignment - 1) & alignment));
   return ((value + alignment - 1) & ~ (alignment - 1));
+}
+
+void Calc16ByteAlignedStride(int width, int* stride_y, int* stride_uv) {
+  *stride_y = AlignInt(width, k16ByteAlignment);
+  *stride_uv = AlignInt((width + 1) / 2, k16ByteAlignment);
 }
 
 int CalcBufferSize(VideoType type, int width, int height) {

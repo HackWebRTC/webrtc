@@ -98,7 +98,6 @@ public:
 protected:
     VideoCaptureImpl(const WebRtc_Word32 id);
     virtual ~VideoCaptureImpl();
-    // TODO(mikhal): Remove codec_type.
     WebRtc_Word32 DeliverCapturedFrame(I420VideoFrame& captureFrame,
                                        WebRtc_Word64 capture_time);
     WebRtc_Word32 DeliverEncodedCapturedFrame(

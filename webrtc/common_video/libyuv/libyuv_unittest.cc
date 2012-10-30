@@ -138,8 +138,12 @@ TEST_F(TestLibYuv, ConvertTest) {
   printf("\nConvert #%d I420 <-> RGB24\n", j);
   scoped_array<uint8_t> res_rgb_buffer2(new uint8_t[width_ * height_ * 3]);
   I420VideoFrame res_i420_frame;
-  res_i420_frame.CreateEmptyFrame(width_, height_, width_,
-                                  (width_ + 1) / 2, (width_ + 1) / 2);
+  // Align the stride values for the output frame.
+  int stride_y = 0;
+  int stride_uv = 0;
+  Calc16ByteAlignedStride(width_, &stride_y, &stride_uv);
+  res_i420_frame.CreateEmptyFrame(width_, height_, stride_y,
+                                  stride_uv, stride_uv);
   EXPECT_EQ(0, ConvertFromI420(orig_frame, kRGB24, 0, res_rgb_buffer2.get()));
 
   EXPECT_EQ(0, ConvertToI420(kRGB24, res_rgb_buffer2.get(), 0, 0, width_,
@@ -318,6 +322,23 @@ TEST_F(TestLibYuv, alignment) {
   EXPECT_EQ(0x400, AlignInt(value, 128));  // Low 7 bits are zero.
   EXPECT_EQ(0x400, AlignInt(value, 64));  // Low 6 bits are zero.
   EXPECT_EQ(0x400, AlignInt(value, 32));  // Low 5 bits are zero.
+}
+
+TEST_F(TestLibYuv, StrideAlignment) {
+  int stride_y = 0;
+  int stride_uv = 0;
+  int width = 52;
+  Calc16ByteAlignedStride(width, &stride_y, &stride_uv);
+  EXPECT_EQ(64, stride_y);
+  EXPECT_EQ(32, stride_uv);
+  width = 128;
+  Calc16ByteAlignedStride(width, &stride_y, &stride_uv);
+  EXPECT_EQ(128, stride_y);
+  EXPECT_EQ(64, stride_uv);
+  width = 127;
+  Calc16ByteAlignedStride(width, &stride_y, &stride_uv);
+  EXPECT_EQ(128, stride_y);
+  EXPECT_EQ(64, stride_uv);
 }
 
 }  // namespace
