@@ -21,7 +21,7 @@
  */
 
 #include "modules/interface/module.h"
-#include "modules/video_render/main/interface/video_render_defines.h"
+#include "webrtc/modules/video_render/include/video_render_defines.h"
 
 namespace webrtc {
 

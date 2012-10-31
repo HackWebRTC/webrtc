@@ -17,7 +17,7 @@
 #include <stdio.h>
 
 #include "engine_configurations.h"
-#include "modules/video_render/main/interface/video_render.h"
+#include "webrtc/modules/video_render/include/video_render.h"
 #include "testsupport/fileutils.h"
 #include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
 #include "video_engine/test/auto_test/primitives/general_primitives.h"

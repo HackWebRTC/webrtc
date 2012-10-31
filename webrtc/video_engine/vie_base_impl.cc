@@ -18,7 +18,7 @@
 #include "modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "modules/video_coding/main/interface/video_coding.h"
 #include "modules/video_processing/main/interface/video_processing.h"
-#include "modules/video_render/main/interface/video_render.h"
+#include "webrtc/modules/video_render/include/video_render.h"
 #include "system_wrappers/interface/trace.h"
 #include "video_engine/vie_channel.h"
 #include "video_engine/vie_channel_manager.h"

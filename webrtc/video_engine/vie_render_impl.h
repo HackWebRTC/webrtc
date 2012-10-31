@@ -11,7 +11,7 @@
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_RENDER_IMPL_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_RENDER_IMPL_H_
 
-#include "modules/video_render/main/interface/video_render_defines.h"
+#include "webrtc/modules/video_render/include/video_render_defines.h"
 #include "typedefs.h"  // NOLINT
 #include "video_engine/include/vie_render.h"
 #include "video_engine/vie_ref_count.h"

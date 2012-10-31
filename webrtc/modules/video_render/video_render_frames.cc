@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_render/main/source/video_render_frames.h"
+#include "webrtc/modules/video_render//video_render_frames.h"
 
 #include <cassert>
 

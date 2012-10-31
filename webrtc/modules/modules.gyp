@@ -31,7 +31,7 @@
     'video_coding/main/source/video_coding.gypi',
     'video_capture/video_capture.gypi',
     'video_processing/main/source/video_processing.gypi',
-    'video_render/main/source/video_render.gypi',
+    'video_render/video_render.gypi',
   ],
   'conditions': [
     ['include_opus==1', {

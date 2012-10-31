@@ -14,7 +14,7 @@
 #include <Winerror.h>
 #include <dxdiag.h>
 
-#include "i_video_render.h"
+#include "webrtc/modules/video_render/i_video_render.h"
 #include "i_video_render_win.h"
 
 namespace webrtc {

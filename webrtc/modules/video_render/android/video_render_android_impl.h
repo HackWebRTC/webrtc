@@ -12,7 +12,7 @@
 #define WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_ANDROID_VIDEO_RENDER_ANDROID_IMPL_H_
 
 #include <jni.h>
-#include "i_video_render.h"
+#include "webrtc/modules/video_render/i_video_render.h"
 #include "map_wrapper.h"
 
 

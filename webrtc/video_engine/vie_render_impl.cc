@@ -11,8 +11,8 @@
 #include "video_engine/vie_render_impl.h"
 
 #include "engine_configurations.h"  // NOLINT
-#include "modules/video_render/main/interface/video_render.h"
-#include "modules/video_render/main/interface/video_render_defines.h"
+#include "webrtc/modules/video_render/include/video_render.h"
+#include "webrtc/modules/video_render/include/video_render_defines.h"
 #include "system_wrappers/interface/trace.h"
 #include "video_engine/include/vie_errors.h"
 #include "video_engine/vie_capturer.h"

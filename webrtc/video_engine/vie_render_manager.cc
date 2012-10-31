@@ -11,8 +11,8 @@
 #include "video_engine/vie_render_manager.h"
 
 #include "engine_configurations.h"  // NOLINT
-#include "modules/video_render/main/interface/video_render.h"
-#include "modules/video_render/main/interface/video_render_defines.h"
+#include "webrtc/modules/video_render/include/video_render.h"
+#include "webrtc/modules/video_render/include/video_render_defines.h"
 #include "system_wrappers/interface/critical_section_wrapper.h"
 #include "system_wrappers/interface/rw_lock_wrapper.h"
 #include "system_wrappers/interface/trace.h"

@@ -11,7 +11,7 @@
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_RENDERER_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_RENDERER_H_
 
-#include "modules/video_render/main/interface/video_render_defines.h"
+#include "webrtc/modules/video_render/include/video_render_defines.h"
 #include "system_wrappers/interface/map_wrapper.h"
 #include "system_wrappers/interface/scoped_ptr.h"
 #include "video_engine/include/vie_render.h"

@@ -19,7 +19,7 @@
 #include <sys/time.h>
 
 #include "common_types.h"
-#import "modules/video_render/main/source/mac/cocoa_render_view.h"
+#import "webrtc/modules/video_render//mac/cocoa_render_view.h"
 #include "module_common_types.h"
 #include "process_thread.h"
 #include "tick_util.h"

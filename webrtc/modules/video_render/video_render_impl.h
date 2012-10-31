@@ -15,8 +15,6 @@
 #include "video_render.h"
 #include "map_wrapper.h"
 
-//#include "video_render_defines.h"
-
 namespace webrtc {
 class CriticalSectionWrapper;
 class IncomingVideoStream;

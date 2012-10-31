@@ -14,7 +14,7 @@
 #include "video_render_defines.h"
 #include "trace.h"
 #include "incoming_video_stream.h"
-#include "i_video_render.h"
+#include "webrtc/modules/video_render/i_video_render.h"
 
 #include <cassert>
 

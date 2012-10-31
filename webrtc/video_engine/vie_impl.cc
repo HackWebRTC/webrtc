@@ -19,7 +19,7 @@
 
 #ifdef WEBRTC_ANDROID
 #include "webrtc/modules/video_capture/include/video_capture_factory.h"
-#include "modules/video_render/main/interface/video_render.h"
+#include "webrtc/modules/video_render/include/video_render.h"
 #endif
 
 // Global counter to get an id for each new ViE instance.

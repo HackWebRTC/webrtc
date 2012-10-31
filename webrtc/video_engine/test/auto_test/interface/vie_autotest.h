@@ -17,7 +17,7 @@
 
 #include "common_types.h"
 #include "gflags/gflags.h"
-#include "modules/video_render/main/interface/video_render_defines.h"
+#include "webrtc/modules/video_render/include/video_render_defines.h"
 #include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
 #include "video_engine/include/vie_base.h"
 #include "video_engine/include/vie_capture.h"

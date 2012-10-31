@@ -19,7 +19,7 @@
 #include "modules/utility/interface/process_thread.h"
 #include "modules/video_coding/main/interface/video_coding.h"
 #include "modules/video_processing/main/interface/video_processing.h"
-#include "modules/video_render/main/interface/video_render_defines.h"
+#include "webrtc/modules/video_render/include/video_render_defines.h"
 #include "system_wrappers/interface/critical_section_wrapper.h"
 #include "system_wrappers/interface/thread_wrapper.h"
 #include "system_wrappers/interface/trace.h"

@@ -15,7 +15,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_MAC_VIDEO_RENDER_MAC_COCOA_IMPL_H_
 #define WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_MAC_VIDEO_RENDER_MAC_COCOA_IMPL_H_
 
-#include "i_video_render.h"
+#include "webrtc/modules/video_render/i_video_render.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;

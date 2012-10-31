@@ -45,8 +45,7 @@
       'include_dirs': [
         'include',
         '../common_video/interface',
-        '../modules/video_capture/main/interface',
-        '../modules/video_render/main/interface',
+        '../modules/video_render/',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
