@@ -15,8 +15,8 @@
 //    for a specified SSRC.
 
 
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_REMB_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_REMB_H_
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_REMB_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_REMB_H_
 
 #include <list>
 #include <map>
@@ -88,4 +88,4 @@ class VieRemb : public RemoteBitrateObserver, public Module {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_REMB_H_
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_REMB_H_
