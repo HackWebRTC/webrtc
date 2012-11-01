@@ -14,17 +14,17 @@
     'this_file': {
       'filepath': '^WATCHLISTS$',
     },
-    'all_src': {
-      'filepath': 'src/.*',
+    'all_webrtc': {
+      'filepath': 'webrtc/.*',
     },
     'root_files': {
-      # src/build/ and non-recursive contents of ./ and src/
-      'filepath': '^[^/]*$|src/[^/]*$|src/build/.*',
+      # webrtc/build/ and non-recursive contents of ./ and webrtc/
+      'filepath': '^[^/]*$|webrtc/[^/]*$|webrtc/build/.*',
     },
     'documented_interfaces': {
-      'filepath': 'src/[^/]*\.h$|'\
-                  'src/video_engine/main/interface/.*|'\
-                  'src/voice_engine/main/interface/.*',
+      'filepath': 'webrtc/[^/]*\.h$|'\
+                  'webrtc/video_engine/main/interface/.*|'\
+                  'webrtc/voice_engine/main/interface/.*',
     },
     'build_files': {
       'filepath': '\.gyp$|\.gypi$|Android\.mk$',
@@ -33,49 +33,49 @@
       'filepath': '\.java$|\.xml$',
     },
     'video_engine': {
-      'filepath': 'src/video_engine/.*',
+      'filepath': 'webrtc/video_engine/.*',
     },
     'voice_engine': {
-      'filepath': 'src/voice_engine/.*',
+      'filepath': 'webrtc/voice_engine/.*',
     },
     'common_audio': {
-      'filepath': 'src/common_audio/.*',
+      'filepath': 'webrtc/common_audio/.*',
     },
     'video_capture': {
-      'filepath': 'src/modules/video_capture/.*',
+      'filepath': 'webrtc/modules/video_capture/.*',
     },
     'video_render': {
-      'filepath': 'src/modules/video_render/.*',
+      'filepath': 'webrtc/modules/video_render/.*',
     },
     'audio_device': {
-      'filepath': 'src/modules/audio_device/.*',
+      'filepath': 'webrtc/modules/audio_device/.*',
     },
     'audio_coding': {
-      'filepath': 'src/modules/audio_coding/.*',
+      'filepath': 'webrtc/modules/audio_coding/.*',
     },
     'neteq': {
-      'filepath': 'src/modules/audio_coding/neteq/.*',
+      'filepath': 'webrtc/modules/audio_coding/neteq/.*',
     },
     'audio_processing': {
-      'filepath': 'src/modules/audio_processing/.*',
+      'filepath': 'webrtc/modules/audio_processing/.*',
     },
     'video_codecs': {
-      'filepath': 'src/modules/video_coding/codecs/.*',
+      'filepath': 'webrtc/modules/video_coding/codecs/.*',
     },
     'video_coding': {
-      'filepath': 'src/modules/video_coding/.*',
+      'filepath': 'webrtc/modules/video_coding/.*',
     },
     'rtp_rtcp': {
-      'filepath': 'src/modules/rtp_rtcp/.*'
+      'filepath': 'webrtc/modules/rtp_rtcp/.*'
     },
     'system_wrappers': {
-      'filepath': 'src/system_wrappers/.*',
+      'filepath': 'webrtc/system_wrappers/.*',
     },
   },
 
   'WATCHLISTS': {
     'this_file': [''],
-    'all_src': ['tterriberry@mozilla.com',
+    'all_webrtc': ['tterriberry@mozilla.com',
                 'giles@mozilla.com'],
     'root_files': ['andrew@webrtc.org',
                    'niklas.enbom@webrtc.org'],
