@@ -14,12 +14,13 @@
 #include <cassert>
 #include <cstdio>
 
+#include "common_video/interface/i420_video_frame.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 
 namespace webrtc {
 namespace test {
 
-// Used for calculating min and max values
+// Used for calculating min and max values.
 static bool LessForFrameResultValue (const FrameResult& s1,
                                      const FrameResult& s2) {
     return s1.value < s2.value;
@@ -29,20 +30,18 @@ enum VideoMetricsType { kPSNR, kSSIM, kBoth };
 
 // Calculates metrics for a frame and adds statistics to the result for it.
 void CalculateFrame(VideoMetricsType video_metrics_type,
-                    uint8_t* ref,
-                    uint8_t* test,
-                    int width,
-                    int height,
+                    const I420VideoFrame* ref,
+                    const I420VideoFrame* test,
                     int frame_number,
                     QualityMetricsResult* result) {
   FrameResult frame_result = {0, 0};
   frame_result.frame_number = frame_number;
   switch (video_metrics_type) {
     case kPSNR:
-      frame_result.value = I420PSNR(ref, test, width, height);
+      frame_result.value = I420PSNR(ref, test);
       break;
     case kSSIM:
-      frame_result.value = I420SSIM(ref, test, width, height);
+      frame_result.value = I420SSIM(ref, test);
       break;
     default:
       assert(false);
@@ -55,7 +54,7 @@ void CalculateStats(QualityMetricsResult* result) {
   if (result == NULL || result->frames.size() == 0) {
     return;
   }
-  // Calculate average
+  // Calculate average.
   std::vector<FrameResult>::iterator iter;
   double metrics_values_sum = 0.0;
   for (iter = result->frames.begin(); iter != result->frames.end(); ++iter) {
@@ -63,7 +62,7 @@ void CalculateStats(QualityMetricsResult* result) {
   }
   result->average = metrics_values_sum / result->frames.size();
 
-  // Calculate min/max statistics
+  // Calculate min/max statistics.
   iter = std::min_element(result->frames.begin(), result->frames.end(),
                      LessForFrameResultValue);
   result->min = iter->value;
@@ -91,46 +90,61 @@ int CalculateMetrics(VideoMetricsType video_metrics_type,
 
   FILE* ref_fp = fopen(ref_filename, "rb");
   if (ref_fp == NULL) {
-    // cannot open reference file
+    // Cannot open reference file.
     fprintf(stderr, "Cannot open file %s\n", ref_filename);
     return -1;
   }
   FILE* test_fp = fopen(test_filename, "rb");
   if (test_fp == NULL) {
-    // cannot open test file
+    // Cannot open test file.
     fprintf(stderr, "Cannot open file %s\n", test_filename);
     fclose(ref_fp);
     return -2;
   }
   int frame_number = 0;
 
-  // Allocating size for one I420 frame.
+  // Read reference and test frames.
   const int frame_length = 3 * width * height >> 1;
-  uint8_t* ref = new uint8_t[frame_length];
-  uint8_t* test = new uint8_t[frame_length];
+  I420VideoFrame ref_frame;
+  I420VideoFrame test_frame;
+  scoped_array<uint8_t> ref_buffer(new uint8_t[frame_length]);
+  scoped_array<uint8_t> test_buffer(new uint8_t[frame_length]);
 
-  int ref_bytes = fread(ref, 1, frame_length, ref_fp);
-  int test_bytes = fread(test, 1, frame_length, test_fp);
+  int size_y = width * height;
+  int size_uv = ((width + 1 ) / 2) * ((height + 1) / 2);
+
+  int ref_bytes = fread(ref_buffer.get(), 1, frame_length, ref_fp);
+  int test_bytes = fread(test_buffer.get(), 1, frame_length, test_fp);
   while (ref_bytes == frame_length && test_bytes == frame_length) {
+    ref_frame.CreateFrame(size_y, ref_buffer.get(),
+                          size_uv, ref_buffer.get() + size_y,
+                          size_uv, ref_buffer.get() + size_y + size_uv,
+                          width, height,
+                          width, (width + 1) / 2, (width + 1) / 2);
+    test_frame.CreateFrame(size_y, test_buffer.get(),
+                           size_uv, test_buffer.get() + size_y,
+                           size_uv, test_buffer.get() + size_y + size_uv,
+                           width, height,
+                           width, (width + 1) / 2, (width + 1) / 2);
     switch (video_metrics_type) {
       case kPSNR:
-        CalculateFrame(kPSNR, ref, test, width, height, frame_number,
+        CalculateFrame(kPSNR, &ref_frame, &test_frame, frame_number,
                        psnr_result);
         break;
       case kSSIM:
-        CalculateFrame(kSSIM, ref, test, width, height, frame_number,
+        CalculateFrame(kSSIM, &ref_frame, &test_frame, frame_number,
                        ssim_result);
         break;
       case kBoth:
-        CalculateFrame(kPSNR, ref, test, width, height, frame_number,
+        CalculateFrame(kPSNR, &ref_frame, &test_frame, frame_number,
                        psnr_result);
-        CalculateFrame(kSSIM, ref, test, width, height, frame_number,
+        CalculateFrame(kSSIM, &ref_frame, &test_frame, frame_number,
                        ssim_result);
         break;
     }
     frame_number++;
-    ref_bytes = fread(ref, 1, frame_length, ref_fp);
-    test_bytes = fread(test, 1, frame_length, test_fp);
+    ref_bytes = fread(ref_buffer.get(), 1, frame_length, ref_fp);
+    test_bytes = fread(test_buffer.get(), 1, frame_length, test_fp);
   }
   int return_code = 0;
   if (frame_number == 0) {
@@ -142,8 +156,6 @@ int CalculateMetrics(VideoMetricsType video_metrics_type,
     CalculateStats(psnr_result);
     CalculateStats(ssim_result);
   }
-  delete [] ref;
-  delete [] test;
   fclose(ref_fp);
   fclose(test_fp);
   return return_code;
