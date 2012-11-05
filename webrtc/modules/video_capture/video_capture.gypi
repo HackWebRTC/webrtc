@@ -97,10 +97,10 @@
                 'windows/device_info_windows.cc',
                 'windows/video_capture_factory_windows.cc',
               ],
-              'msvs_settings': {
-                'VCLibrarianTool': {
-                  'AdditionalDependencies': 'Strmiids.lib',
-                },
+              'link_settings': {
+                'libraries': [
+                  '-lStrmiids.lib',
+                ],
               },
             }],  # win
             ['OS=="android"', {
