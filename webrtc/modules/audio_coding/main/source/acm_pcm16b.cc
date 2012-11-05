@@ -18,7 +18,7 @@
 #include "webrtc_neteq_help_macros.h"
 
 #ifdef WEBRTC_CODEC_PCM16
-    #include "pcm16b.h"
+#include "pcm16b.h"
 #endif
 
 namespace webrtc {
@@ -90,7 +90,6 @@ void ACMPCM16B::SplitStereoPacket(uint8_t* /*payload*/,
 }
 
 #else     //===================== Actual Implementation =======================
-
 ACMPCM16B::ACMPCM16B(WebRtc_Word16 codecID) {
   _codecID = codecID;
   _samplingFreqHz = ACMCodecDB::CodecFreq(_codecID);
@@ -103,8 +102,8 @@ ACMPCM16B::~ACMPCM16B() {
 WebRtc_Word16 ACMPCM16B::InternalEncode(WebRtc_UWord8* bitStream,
                                         WebRtc_Word16* bitStreamLenByte) {
   *bitStreamLenByte = WebRtcPcm16b_Encode(&_inAudio[_inAudioIxRead],
-                                          _frameLenSmpl * _noChannels,
-                                          bitStream);
+      _frameLenSmpl * _noChannels,
+      bitStream);
   // Increment the read index to tell the caller that how far
   // we have gone forward in reading the audio buffer.
   _inAudioIxRead += _frameLenSmpl * _noChannels;
@@ -144,13 +143,13 @@ WebRtc_Word32 ACMPCM16B::CodecDef(WebRtcNetEQ_CodecDef& codecDef,
       }
       case 16000: {
         SET_CODEC_PAR(codecDef, kDecoderPCM16Bwb, codecInst.pltype, NULL,
-                      16000);
+            16000);
         SET_PCM16B_WB_FUNCTIONS(codecDef);
         break;
       }
       case 32000: {
         SET_CODEC_PAR(codecDef, kDecoderPCM16Bswb32kHz, codecInst.pltype,
-                      NULL, 32000);
+            NULL, 32000);
         SET_PCM16B_SWB32_FUNCTIONS(codecDef);
         break;
       }
@@ -162,19 +161,19 @@ WebRtc_Word32 ACMPCM16B::CodecDef(WebRtcNetEQ_CodecDef& codecDef,
     switch(_samplingFreqHz) {
       case 8000: {
         SET_CODEC_PAR(codecDef, kDecoderPCM16B_2ch, codecInst.pltype, NULL,
-                      8000);
+            8000);
         SET_PCM16B_FUNCTIONS(codecDef);
         break;
       }
       case 16000: {
         SET_CODEC_PAR(codecDef, kDecoderPCM16Bwb_2ch, codecInst.pltype,
-                      NULL, 16000);
+            NULL, 16000);
         SET_PCM16B_WB_FUNCTIONS(codecDef);
         break;
       }
       case 32000: {
         SET_CODEC_PAR(codecDef, kDecoderPCM16Bswb32kHz_2ch, codecInst.pltype,
-                      NULL, 32000);
+            NULL, 32000);
         SET_PCM16B_SWB32_FUNCTIONS(codecDef);
         break;
       }
@@ -244,4 +243,4 @@ void ACMPCM16B::SplitStereoPacket(uint8_t* payload, int32_t* payload_length) {
 }
 #endif
 
-} // namespace webrtc
+}  // namespace webrtc

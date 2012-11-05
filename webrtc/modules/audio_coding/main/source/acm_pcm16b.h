@@ -13,55 +13,47 @@
 
 #include "acm_generic_codec.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
-class ACMPCM16B : public ACMGenericCodec
-{
-public:
-    ACMPCM16B(WebRtc_Word16 codecID);
-    ~ACMPCM16B();
-    // for FEC
-    ACMGenericCodec* CreateInstance(void);
+class ACMPCM16B : public ACMGenericCodec {
+ public:
+  ACMPCM16B(WebRtc_Word16 codecID);
+  ~ACMPCM16B();
+  // for FEC
+  ACMGenericCodec* CreateInstance(void);
 
-    WebRtc_Word16 InternalEncode(
-        WebRtc_UWord8* bitstream,
-        WebRtc_Word16* bitStreamLenByte);
+  WebRtc_Word16 InternalEncode(WebRtc_UWord8* bitstream,
+                               WebRtc_Word16* bitStreamLenByte);
 
-    WebRtc_Word16 InternalInitEncoder(
-        WebRtcACMCodecParams *codecParams);
+  WebRtc_Word16 InternalInitEncoder(WebRtcACMCodecParams *codecParams);
 
-    WebRtc_Word16 InternalInitDecoder(
-        WebRtcACMCodecParams *codecParams);
+  WebRtc_Word16 InternalInitDecoder(WebRtcACMCodecParams *codecParams);
 
-protected:
-    WebRtc_Word16 DecodeSafe(
-        WebRtc_UWord8* bitStream,
-        WebRtc_Word16  bitStreamLenByte,
-        WebRtc_Word16* audio,
-        WebRtc_Word16* audioSamples,
-        WebRtc_Word8*  speechType);
+ protected:
+  WebRtc_Word16 DecodeSafe(WebRtc_UWord8* bitStream,
+                           WebRtc_Word16 bitStreamLenByte,
+                           WebRtc_Word16* audio,
+                           WebRtc_Word16* audioSamples,
+                           WebRtc_Word8* speechType);
 
-    WebRtc_Word32 CodecDef(
-        WebRtcNetEQ_CodecDef& codecDef,
-        const CodecInst&      codecInst);
+  WebRtc_Word32 CodecDef(WebRtcNetEQ_CodecDef& codecDef,
+                         const CodecInst& codecInst);
 
-    void DestructEncoderSafe();
+  void DestructEncoderSafe();
 
-    void DestructDecoderSafe();
+  void DestructDecoderSafe();
 
-    WebRtc_Word16 InternalCreateEncoder();
+  WebRtc_Word16 InternalCreateEncoder();
 
-    WebRtc_Word16 InternalCreateDecoder();
+  WebRtc_Word16 InternalCreateDecoder();
 
-    void InternalDestructEncoderInst(
-        void* ptrInst);
+  void InternalDestructEncoderInst(void* ptrInst);
 
-    void SplitStereoPacket(uint8_t* payload, int32_t* payload_length);
+  void SplitStereoPacket(uint8_t* payload, int32_t* payload_length);
 
-    WebRtc_Word32 _samplingFreqHz;
+  WebRtc_Word32 _samplingFreqHz;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_PCM16B_H_

@@ -56,8 +56,8 @@ WebRtc_Word16 ACMPCMU::InternalInitEncoder(
 
 WebRtc_Word16 ACMPCMU::InternalInitDecoder(
     WebRtcACMCodecParams* /* codecParams */) {
-   // This codec does not need initialization, PCM has no instance.
-   return 0;
+  // This codec does not need initialization, PCM has no instance.
+  return 0;
 }
 
 WebRtc_Word32 ACMPCMU::CodecDef(WebRtcNetEQ_CodecDef& codecDef,
@@ -122,11 +122,11 @@ void ACMPCMU::SplitStereoPacket(uint8_t* payload, int32_t* payload_length) {
   // end of the bytestream vector. After looping the data is reordered to:
   // l1 l2 l3 l4 ... l(N-1) lN r1 r2 r3 r4 ... r(N-1) r(N),
   // where N is the total number of samples.
-  for (int i = 0; i < *payload_length / 2; i ++) {
+  for (int i = 0; i < *payload_length / 2; i++) {
     right_byte = payload[i + 1];
     memmove(&payload[i + 1], &payload[i + 2], *payload_length - i - 2);
     payload[*payload_length - 1] = right_byte;
   }
 }
 
-} // namespace webrtc
+}  // namespace webrtc
