@@ -58,8 +58,9 @@ std::string ChoiceBuilder::MakeTitleWithOptions() {
   Choices::const_iterator iterator = choices_.begin();
   for (int number = 1; iterator != choices_.end(); ++iterator, ++number) {
     char buffer[128];
-    sprintf(buffer, "\n  %d. %s", number, (*iterator).c_str());
+    sprintf(buffer, "\n  %d. ", number);
     title_with_options += buffer;
+    title_with_options += (*iterator);
   }
   return title_with_options;
 }
