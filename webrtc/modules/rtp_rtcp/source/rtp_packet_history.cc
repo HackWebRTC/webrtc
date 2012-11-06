@@ -151,6 +151,46 @@ int32_t RTPPacketHistory::PutRTPPacket(const uint8_t* packet,
   return 0;
 }
 
+int32_t RTPPacketHistory::ReplaceRTPHeader(const uint8_t* packet,
+                                           uint16_t sequence_number,
+                                           uint16_t rtp_header_length) {
+  CriticalSectionScoped cs(critsect_);
+  if (!store_) {
+    return 0;
+  }
+
+  assert(packet);
+  assert(rtp_header_length > 3);
+
+  if (rtp_header_length > max_packet_length_) {
+    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
+        "Failed to replace RTP packet, length: %d", rtp_header_length);
+    return -1;
+  }
+
+  int32_t index = 0;
+  bool found = FindSeqNum(sequence_number, &index);
+  if (!found) {
+    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
+        "No match for getting seqNum %u", sequence_number);
+    return -1;
+  }
+
+  uint16_t length = stored_lengths_.at(index);
+  if (length == 0 || length > max_packet_length_) {
+    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
+        "No match for getting seqNum %u, len %d", sequence_number, length);
+    return -1;
+  }
+  assert(stored_seq_nums_[index] == sequence_number);
+
+  // Update RTP header.
+  std::vector<std::vector<uint8_t> >::iterator it =
+      stored_packets_.begin() + index;
+  std::copy(packet, packet + rtp_header_length, it->begin());
+  return 0;
+}
+
 bool RTPPacketHistory::HasRTPPacket(uint16_t sequence_number) const {
   CriticalSectionScoped cs(critsect_);
   if (!store_) {

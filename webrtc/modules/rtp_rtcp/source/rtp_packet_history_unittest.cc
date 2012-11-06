@@ -178,6 +178,44 @@ TEST_F(RtpPacketHistoryTest, GetRtpPacket) {
   }
 }
 
+TEST_F(RtpPacketHistoryTest, ReplaceRtpHeader) {
+  hist_->SetStorePacketsStatus(true, 10);
+
+  uint16_t len = 0;
+  int64_t capture_time_ms = 1;
+  CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
+  // Replace should fail, packet is not stored.
+  EXPECT_EQ(-1, hist_->ReplaceRTPHeader(packet_, kSeqNum, len));
+  EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
+                                   capture_time_ms, kAllowRetransmission));
+
+  // Create modified packet and replace.
+  len = 0;
+  CreateRtpPacket(kSeqNum, kSsrc + 1, kPayload + 2, kTimestamp, packet_, &len);
+  EXPECT_EQ(0, hist_->ReplaceRTPHeader(packet_, kSeqNum, len));
+
+  uint16_t len_out = kMaxPacketLength;
+  int64_t time;
+  StorageType type;
+  EXPECT_TRUE(hist_->GetRTPPacket(kSeqNum, 0, packet_out_, &len_out, &time,
+                                  &type));
+  EXPECT_EQ(len, len_out);
+  EXPECT_EQ(kAllowRetransmission, type);
+  EXPECT_EQ(capture_time_ms, time);
+  for (int i = 0; i < len; i++)  {
+    EXPECT_EQ(packet_[i], packet_out_[i]);
+  }
+
+  // Replace should fail, too large length.
+  EXPECT_EQ(-1, hist_->ReplaceRTPHeader(packet_, kSeqNum,
+      kMaxPacketLength + 1));
+
+  // Replace should fail, packet is not stored.
+  len = 0;
+  CreateRtpPacket(kSeqNum + 1, kSsrc, kPayload, kTimestamp, packet_, &len);
+  EXPECT_EQ(-1, hist_->ReplaceRTPHeader(packet_, kSeqNum + 1, len));
+}
+
 TEST_F(RtpPacketHistoryTest, NoCaptureTime) {
   hist_->SetStorePacketsStatus(true, 10);
   uint16_t len = 0;

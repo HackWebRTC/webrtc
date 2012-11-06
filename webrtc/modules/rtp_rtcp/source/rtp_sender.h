@@ -56,9 +56,9 @@ public:
     virtual WebRtc_UWord16 PacketOverHead() const = 0;
     virtual WebRtc_UWord16 ActualSendBitrateKbit() const = 0;
 
-    virtual WebRtc_Word32 SendToNetwork(WebRtc_UWord8* dataBuffer,
-                                        const WebRtc_UWord16 payloadLength,
-                                        const WebRtc_UWord16 rtpHeaderLength,
+    virtual WebRtc_Word32 SendToNetwork(WebRtc_UWord8* data_buffer,
+                                        const WebRtc_UWord16 payload_length,
+                                        const WebRtc_UWord16 rtp_header_length,
                                         int64_t capture_time_ms,
                                         const StorageType storage) = 0;
 };
@@ -163,7 +163,7 @@ public:
     WebRtc_UWord8 BuildTransmissionTimeOffsetExtension(
         WebRtc_UWord8* dataBuffer) const;
 
-    void UpdateTransmissionTimeOffset(WebRtc_UWord8* rtp_packet,
+    bool UpdateTransmissionTimeOffset(WebRtc_UWord8* rtp_packet,
                                       const WebRtc_UWord16 rtp_packet_length,
                                       const WebRtcRTPHeader& rtp_header,
                                       const WebRtc_Word64 time_diff_ms) const;
@@ -222,9 +222,9 @@ public:
     virtual WebRtc_UWord32 Timestamp() const;
     virtual WebRtc_UWord32 SSRC() const;
 
-    virtual WebRtc_Word32 SendToNetwork(WebRtc_UWord8* dataBuffer,
-                                        const WebRtc_UWord16 payloadLength,
-                                        const WebRtc_UWord16 rtpHeaderLength,
+    virtual WebRtc_Word32 SendToNetwork(WebRtc_UWord8* data_buffer,
+                                        const WebRtc_UWord16 payload_length,
+                                        const WebRtc_UWord16 rtp_header_length,
                                         int64_t capture_time_ms,
                                         const StorageType storage);
 

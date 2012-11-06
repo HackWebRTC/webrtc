@@ -40,6 +40,14 @@ class RTPPacketHistory {
                        int64_t capture_time_ms,
                        StorageType type);
 
+  // Replaces the stored RTP packet with matching sequence number with the
+  // RTP header of the provided packet.
+  // Note: Calling this function assumes that the RTP header length should not
+  // have changed since the packet was stored.
+  int32_t ReplaceRTPHeader(const uint8_t* packet,
+                           uint16_t sequence_number,
+                           uint16_t rtp_header_length);
+
   // Gets stored RTP packet corresponding to the input sequence number.
   // The packet is copied to the buffer pointed to by ptr_rtp_packet.
   // The rtp_packet_length should show the available buffer size.
