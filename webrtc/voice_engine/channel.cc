@@ -4744,7 +4744,6 @@ Channel::SetRxAgcStatus(const bool enable, const AgcModes mode)
     }
 
     _rxAgcIsEnabled = enable;
-
     _rxApmIsEnabled = ((_rxAgcIsEnabled == true) || (_rxNsIsEnabled == true));
 
     return 0;
@@ -6622,26 +6621,27 @@ Channel::ApmProcessRx(AudioFrame& audioFrame)
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::ApmProcessRx()");
 
-    // Reset the APM frequency if the frequency has changed
-    if (_rxAudioProcessingModulePtr->sample_rate_hz() !=
-        audioFrame.sample_rate_hz_)
-    {
-        if (_rxAudioProcessingModulePtr->set_sample_rate_hz(
+    // Register the (possibly new) frame parameters.
+    if (_rxAudioProcessingModulePtr->set_sample_rate_hz(
             audioFrame.sample_rate_hz_) != 0)
-        {
-            WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,-1),
-                         "AudioProcessingModule::set_sample_rate_hz("
-                         "sample_rate_hz_=%u) => error",
-                         _audioFrame.sample_rate_hz_);
-        }
+    {
+        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,-1),
+                     "AudioProcessingModule::set_sample_rate_hz(%u) => error",
+                     audioFrame.sample_rate_hz_);
+    }
+    if (_rxAudioProcessingModulePtr->set_num_channels(audioFrame.num_channels_,
+            audioFrame.num_channels_) != 0)
+    {
+        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,-1),
+                     "AudioProcessingModule::set_num_channels(%u, %u) => error",
+                     audioFrame.num_channels_, audioFrame.num_channels_);
     }
 
     if (_rxAudioProcessingModulePtr->ProcessStream(&audioFrame) != 0)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,-1),
-                   "AudioProcessingModule::ProcessStream() => error");
+                     "AudioProcessingModule::ProcessStream() => error");
     }
-
     return 0;
 }
 

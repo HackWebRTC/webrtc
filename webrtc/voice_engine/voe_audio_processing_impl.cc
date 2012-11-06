@@ -356,7 +356,7 @@ int VoEAudioProcessingImpl::SetRxNsStatus(int channel,
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetRxNsStatus(channel=%d, enable=%d, mode=%d)",
                channel, (int)enable, (int)mode);
-#ifdef WEBRTC_VOICE_ENGINE_AGC
+#ifdef WEBRTC_VOICE_ENGINE_NR
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -372,7 +372,7 @@ int VoEAudioProcessingImpl::SetRxNsStatus(int channel,
   return channelPtr->SetRxNsStatus(enable, mode);
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "SetRxNsStatus() AGC is not supported");
+      "SetRxNsStatus() NS is not supported");
   return -1;
 #endif
 }
@@ -382,7 +382,7 @@ int VoEAudioProcessingImpl::GetRxNsStatus(int channel,
                                           NsModes& mode) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "GetRxNsStatus(channel=%d, enable=?, mode=?)", channel);
-#ifdef WEBRTC_VOICE_ENGINE_AGC
+#ifdef WEBRTC_VOICE_ENGINE_NR
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -398,7 +398,7 @@ int VoEAudioProcessingImpl::GetRxNsStatus(int channel,
   return channelPtr->GetRxNsStatus(enabled, mode);
 #else
   _shared->SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,
-      "GetRxNsStatus() Agc is not supported");
+      "GetRxNsStatus() NS is not supported");
   return -1;
 #endif
 }
