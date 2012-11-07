@@ -378,6 +378,7 @@ int WebRtcNetEQ_GetTimestampScaling(MCUInst_t *MCU_inst, int rtpPayloadType)
             break;
         }
         case kDecoderOpus:
+        case kDecoderOpus_2ch:
         {
             /* We resample Opus internally to 32 kHz, but timestamps
              * are counted at 48 kHz. So there are two output samples

@@ -120,6 +120,9 @@
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
           ],
+          'defines': [
+            '<@(audio_coding_defines)',
+          ],
           'sources': [
              '../test/ACMTest.cc',
              '../test/APITest.cc',

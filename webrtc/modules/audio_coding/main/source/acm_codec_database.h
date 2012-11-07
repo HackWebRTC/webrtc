@@ -92,7 +92,10 @@ class ACMCodecDB {
     , kGSMFR
 #endif
 #ifdef WEBRTC_CODEC_OPUS
+    // Mono
     , kOpus
+    // Stereo
+    , kOpus_2ch
 #endif
 #ifdef WEBRTC_CODEC_SPEEX
     , kSPEEX8
@@ -175,7 +178,10 @@ class ACMCodecDB {
   enum {kSPEEX16 = -1};
 #endif
 #ifndef WEBRTC_CODEC_OPUS
+  // Mono
   enum {kOpus = -1};
+  // Stereo
+  enum {kOpus_2ch = -1};
 #endif
 #ifndef WEBRTC_CODEC_AVT
   enum {kAVT = -1};

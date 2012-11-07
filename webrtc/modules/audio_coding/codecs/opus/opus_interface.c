@@ -29,8 +29,8 @@ enum {
    */
   kWebRtcOpusMaxDecodeFrameSizeMs = 120,
 
-  /* Sample count is 48 kHz * samples per frame. */
-  kWebRtcOpusMaxFrameSize = 48 * kWebRtcOpusMaxDecodeFrameSizeMs,
+  /* Sample count is 48 kHz * samples per frame * stereo. */
+  kWebRtcOpusMaxFrameSize = 48 * kWebRtcOpusMaxDecodeFrameSizeMs * 2,
 };
 
 struct WebRtcOpusEncInst {
@@ -82,18 +82,25 @@ int16_t WebRtcOpus_SetBitRate(OpusEncInst* inst, int32_t rate) {
 }
 
 struct WebRtcOpusDecInst {
-  int16_t state_48_32[8];
-  OpusDecoder* decoder;
+  int16_t state_48_32_left[8];
+  int16_t state_48_32_right[8];
+  OpusDecoder* decoder_left;
+  OpusDecoder* decoder_right;
+  int channels;
 };
 
 int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, int channels) {
   OpusDecInst* state;
   state = (OpusDecInst*) calloc(1, sizeof(OpusDecInst));
   if (state) {
-    int error;
+    int error_l;
+    int error_r;
     // Always create a 48000 Hz Opus decoder.
-    state->decoder = opus_decoder_create(48000, channels, &error);
-    if (error == OPUS_OK && state->decoder != NULL ) {
+    state->decoder_left = opus_decoder_create(48000, channels, &error_l);
+    state->decoder_right = opus_decoder_create(48000, channels, &error_r);
+    if (error_l == OPUS_OK && error_r == OPUS_OK &&
+        state->decoder_left != NULL && state->decoder_right != NULL) {
+      state->channels = channels;
       *inst = state;
       return 0;
     }
@@ -104,27 +111,37 @@ int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, int channels) {
 }
 
 int16_t WebRtcOpus_DecoderFree(OpusDecInst* inst) {
-  opus_decoder_destroy(inst->decoder);
+  opus_decoder_destroy(inst->decoder_left);
+  opus_decoder_destroy(inst->decoder_right);
   free(inst);
   return 0;
 }
 
 int16_t WebRtcOpus_DecoderInit(OpusDecInst* inst) {
-  int error = opus_decoder_ctl(inst->decoder, OPUS_RESET_STATE);
+  int error = opus_decoder_ctl(inst->decoder_left, OPUS_RESET_STATE);
   if (error == OPUS_OK) {
-    memset(inst->state_48_32, 0, sizeof(inst->state_48_32));
+    memset(inst->state_48_32_left, 0, sizeof(inst->state_48_32_left));
     return 0;
   }
   return -1;
 }
 
-static int DecodeNative(OpusDecInst* inst, int16_t* encoded,
+int16_t WebRtcOpus_DecoderInitSlave(OpusDecInst* inst) {
+  int error = opus_decoder_ctl(inst->decoder_right, OPUS_RESET_STATE);
+  if (error == OPUS_OK) {
+    memset(inst->state_48_32_right, 0, sizeof(inst->state_48_32_right));
+    return 0;
+  }
+  return -1;
+}
+
+static int DecodeNative(OpusDecoder* inst, int16_t* encoded,
                         int16_t encoded_bytes, int16_t* decoded,
                         int16_t* audio_type) {
   unsigned char* coded = (unsigned char*) encoded;
   opus_int16* audio = (opus_int16*) decoded;
 
-  int res = opus_decode(inst->decoder, coded, encoded_bytes, audio,
+  int res = opus_decode(inst, coded, encoded_bytes, audio,
                         kWebRtcOpusMaxFrameSize, 0);
   /* TODO(tlegrand): set to DTX for zero-length packets? */
   *audio_type = 0;
@@ -148,16 +165,82 @@ int16_t WebRtcOpus_Decode(OpusDecInst* inst, int16_t* encoded,
   int16_t output_samples;
   int i;
 
+  /* If mono case, just do a regular call to the decoder.
+   * If stereo, call to WebRtcOpus_Decode() gives left channel as output, and
+   * calls to WebRtcOpus_Decode_slave() give right channel as output.
+   * This is to make stereo work with the current setup of NetEQ, which
+   * requires two calls to the decoder to produce stereo. */
+
   /* Decode to a temporary buffer. */
-  decoded_samples = DecodeNative(inst, encoded, encoded_bytes, buffer16,
-                                 audio_type);
+  decoded_samples = DecodeNative(inst->decoder_left, encoded, encoded_bytes,
+                                 buffer16, audio_type);
   if (decoded_samples < 0) {
+    return -1;
+  }
+  if (inst->channels == 2) {
+    /* The parameter |decoded_samples| holds the number of samples pairs, in
+     * case of stereo. Number of samples in |buffer16| equals |decoded_samples|
+     * times 2. */
+    for (i = 0; i < decoded_samples; i++) {
+      /* Take every second sample, starting at the first sample. This gives
+       * the left channel. */
+      buffer16[i] = buffer16[i * 2];
+    }
+  }
+  /* Resample from 48 kHz to 32 kHz. */
+  for (i = 0; i < 7; i++) {
+    buffer32[i] = inst->state_48_32_left[i];
+    inst->state_48_32_left[i] = buffer16[decoded_samples - 7 + i];
+  }
+  for (i = 0; i < decoded_samples; i++) {
+    buffer32[7 + i] = buffer16[i];
+  }
+  /* Resampling 3 samples to 2. Function divides the input in |blocks| number
+   * of 3-sample groups, and output is |blocks| number of 2-sample groups. */
+  blocks = decoded_samples / 3;
+  WebRtcSpl_Resample48khzTo32khz(buffer32, buffer32, blocks);
+  output_samples = (int16_t) (blocks * 2);
+  WebRtcSpl_VectorBitShiftW32ToW16(decoded, output_samples, buffer32, 15);
+
+  return output_samples;
+}
+
+int16_t WebRtcOpus_DecodeSlave(OpusDecInst* inst, int16_t* encoded,
+                               int16_t encoded_bytes, int16_t* decoded,
+                               int16_t* audio_type) {
+  /* Enough for 120 ms (the largest Opus packet size) of mono audio at 48 kHz
+   * and resampler overlap. This will need to be enlarged for stereo decoding.
+   */
+  int16_t buffer16[kWebRtcOpusMaxFrameSize];
+  int32_t buffer32[kWebRtcOpusMaxFrameSize + 7];
+  int decoded_samples;
+  int blocks;
+  int16_t output_samples;
+  int i;
+
+  /* Decode to a temporary buffer. */
+  decoded_samples = DecodeNative(inst->decoder_right, encoded, encoded_bytes,
+                                 buffer16, audio_type);
+  if (decoded_samples < 0) {
+    return -1;
+  }
+  if (inst->channels == 2) {
+    /* The parameter |decoded_samples| holds the number of samples pairs, in
+     * case of stereo. Number of samples in |buffer16| equals |decoded_samples|
+     * times 2. */
+    for (i = 0; i < decoded_samples; i++) {
+      /* Take every second sample, starting at the second sample. This gives
+       * the right channel. */
+      buffer16[i] = buffer16[i * 2 + 1];
+    }
+  } else {
+    /* Decode slave should never be called for mono packets. */
     return -1;
   }
   /* Resample from 48 kHz to 32 kHz. */
   for (i = 0; i < 7; i++) {
-    buffer32[i] = inst->state_48_32[i];
-    inst->state_48_32[i] = buffer16[decoded_samples -7 + i];
+    buffer32[i] = inst->state_48_32_right[i];
+    inst->state_48_32_right[i] = buffer16[decoded_samples - 7 + i];
   }
   for (i = 0; i < decoded_samples; i++) {
     buffer32[7 + i] = buffer16[i];

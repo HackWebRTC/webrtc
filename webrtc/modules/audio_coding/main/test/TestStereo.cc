@@ -121,6 +121,7 @@ TestStereo::TestStereo(int test_mode)
       pcma_pltype_(-1),
       pcmu_pltype_(-1),
       celt_pltype_(-1),
+      opus_pltype_(-1),
       cn_8khz_pltype_(-1),
       cn_16khz_pltype_(-1),
       cn_32khz_pltype_(-1) {
@@ -433,6 +434,29 @@ void TestStereo::Perform() {
   Run(channel_a2b_, audio_channels, codec_channels);
   out_file_.Close();
 #endif
+#ifdef WEBRTC_CODEC_OPUS
+  if(test_mode_ != 0) {
+    printf("===========================================================\n");
+    printf("Test number: %d\n",test_cntr_ + 1);
+    printf("Test type: Stereo-to-stereo\n");
+  }
+  channel_a2b_->set_codec_mode(kStereo);
+  audio_channels = 2;
+  codec_channels = 2;
+  test_cntr_++;
+  OpenOutFile(test_cntr_);
+  char codec_opus[] = "opus";
+  RegisterSendCodec('A', codec_opus, 48000, 40000, 960, codec_channels,
+                    opus_pltype_);
+  Run(channel_a2b_, audio_channels, codec_channels);
+  RegisterSendCodec('A', codec_opus, 48000, 64000, 960, codec_channels,
+                    opus_pltype_);
+  Run(channel_a2b_, audio_channels, codec_channels);
+  RegisterSendCodec('A', codec_opus, 48000, 510000, 960, codec_channels,
+                    opus_pltype_);
+  Run(channel_a2b_, audio_channels, codec_channels);
+  out_file_.Close();
+#endif
   //
   // Test Mono-To-Stereo for all codecs.
   //
@@ -517,6 +541,20 @@ void TestStereo::Perform() {
   OpenOutFile(test_cntr_);
   RegisterSendCodec('A', codec_celt, 32000, 64000, 640, codec_channels,
                     celt_pltype_);
+  Run(channel_a2b_, audio_channels, codec_channels);
+  out_file_.Close();
+#endif
+#ifdef WEBRTC_CODEC_OPUS
+  if(test_mode_ != 0) {
+    printf("===============================================================\n");
+    printf("Test number: %d\n",test_cntr_ + 1);
+    printf("Test type: Mono-to-stereo\n");
+  }
+  test_cntr_++;
+  channel_a2b_->set_codec_mode(kStereo);
+  OpenOutFile(test_cntr_);
+  RegisterSendCodec('A', codec_opus, 48000, 64000, 960, codec_channels,
+                    opus_pltype_);
   Run(channel_a2b_, audio_channels, codec_channels);
   out_file_.Close();
 #endif
@@ -615,6 +653,19 @@ void TestStereo::Perform() {
   Run(channel_a2b_, audio_channels, codec_channels);
   out_file_.Close();
 #endif
+#ifdef WEBRTC_CODEC_OPUS
+  if(test_mode_ != 0) {
+    printf("===============================================================\n");
+    printf("Test number: %d\n",test_cntr_ + 1);
+    printf("Test type: Stereo-to-mono\n");
+  }
+  test_cntr_++;
+  OpenOutFile(test_cntr_);
+  RegisterSendCodec('A', codec_opus, 48000, 32000, 960, codec_channels,
+                     opus_pltype_);
+  Run(channel_a2b_, audio_channels, codec_channels);
+  out_file_.Close();
+#endif
 
   // Print out which codecs were tested, and which were not, in the run.
   if (test_mode_ != 0) {
@@ -696,6 +747,8 @@ void TestStereo::RegisterSendCodec(char side, char* codec_name,
   my_codec_param.rate = rate;
   my_codec_param.pacsize = pack_size;
   CHECK_ERROR(my_acm->RegisterSendCodec(my_codec_param));
+
+  send_codec_name_ = codec_name;
 }
 
 void TestStereo::Run(TestPackStereo* channel, int in_channels, int out_channels,
@@ -741,11 +794,13 @@ void TestStereo::Run(TestPackStereo* channel, int in_channels, int out_channels,
     // Verify that the received packet size matches the settings
     rec_size = channel->payload_size();
     if ((0 < rec_size) & (rec_size < 65535)) {
-      if ((rec_size != pack_size_bytes_ * out_channels)
-          && (pack_size_bytes_ < 65535)) {
-        error_count++;
+      // Opus is variable rate, skip this test.
+      if (strcmp(send_codec_name_, "opus")) {
+        if ((rec_size != pack_size_bytes_ * out_channels)
+            && (pack_size_bytes_ < 65535)) {
+          error_count++;
+        }
       }
-
       // Verify that the timestamp is updated with expected length
       time_stamp_diff = channel->timestamp_diff();
       if ((counter_ > 10) && (time_stamp_diff != pack_size_samp_)) {

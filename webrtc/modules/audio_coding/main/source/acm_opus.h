@@ -50,10 +50,15 @@ class ACMOpus : public ACMGenericCodec {
 
   int16_t SetBitRateSafe(const int32_t rate);
 
+  bool IsTrueStereoCodec();
+
+  void SplitStereoPacket(uint8_t* payload, int32_t* payload_length);
+
   WebRtcOpusEncInst* _encoderInstPtr;
   WebRtcOpusDecInst* _decoderInstPtr;
   uint16_t _sampleFreq;
   uint16_t _bitrate;
+  int _channels;
 };
 
 }  // namespace webrtc

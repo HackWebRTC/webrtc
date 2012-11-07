@@ -327,6 +327,17 @@
                     inst.funcUpdBWEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
+#define SET_OPUSSLAVE_FUNCTIONS(inst) \
+                    inst.funcDecode=(WebRtcNetEQ_FuncDecode)WebRtcOpus_DecodeSlave; \
+                    inst.funcDecodeRCU=NULL; \
+                    inst.funcDecodePLC=NULL; \
+                    inst.funcDecodeInit=(WebRtcNetEQ_FuncDecodeInit)WebRtcOpus_DecoderInitSlave; \
+                    inst.funcAddLatePkt=NULL; \
+                    inst.funcGetMDinfo=NULL; \
+                    inst.funcGetPitch=NULL; \
+                    inst.funcUpdBWEst=NULL; \
+                    inst.funcGetErrorCode=NULL;
+
 #define SET_SPEEX_FUNCTIONS(inst) \
                     inst.funcDecode=(WebRtcNetEQ_FuncDecode)WebRtcSpeex_Decode; \
                     inst.funcDecodeRCU=NULL; \

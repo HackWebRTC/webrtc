@@ -97,6 +97,7 @@ class TestStereo : public ACMTest {
   WebRtc_UWord16 pack_size_samp_;
   WebRtc_UWord16 pack_size_bytes_;
   int counter_;
+  char* send_codec_name_;
 
   // Payload types for stereo codecs and CNG
   int g722_pltype_;
@@ -106,6 +107,7 @@ class TestStereo : public ACMTest {
   int pcma_pltype_;
   int pcmu_pltype_;
   int celt_pltype_;
+  int opus_pltype_;
   int cn_8khz_pltype_;
   int cn_16khz_pltype_;
   int cn_32khz_pltype_;

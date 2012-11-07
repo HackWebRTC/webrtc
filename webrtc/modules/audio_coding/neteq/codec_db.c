@@ -116,6 +116,7 @@ int WebRtcNetEQ_DbAdd(CodecDbInst_t *inst, enum WebRtcNetEQDecoder codec,
 #endif
 #ifdef NETEQ_OPUS_CODEC
         case kDecoderOpus :
+        case kDecoderOpus_2ch :
 #endif
 #ifdef NETEQ_G722_CODEC
         case kDecoderG722 :
@@ -463,6 +464,7 @@ int WebRtcNetEQ_DbGetSplitInfo(SplitInfo_t *inst, enum WebRtcNetEQDecoder codecI
 #endif
 #ifdef NETEQ_OPUS_CODEC
         case kDecoderOpus:
+        case kDecoderOpus_2ch :
 #endif
 #ifdef NETEQ_ARBITRARY_CODEC
         case kDecoderArbitrary:
