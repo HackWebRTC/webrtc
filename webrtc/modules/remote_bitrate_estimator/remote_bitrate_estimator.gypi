@@ -62,6 +62,8 @@
             'include/mock/mock_remote_bitrate_observer.h',
             'bitrate_estimator_unittest.cc',
             'remote_bitrate_estimator_unittest.cc',
+            'remote_bitrate_estimator_unittest_helper.cc',
+            'remote_bitrate_estimator_unittest_helper.h',
             'rtp_to_ntp_unittest.cc',
           ],
         },
