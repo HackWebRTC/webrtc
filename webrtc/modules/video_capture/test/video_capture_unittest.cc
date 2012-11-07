@@ -180,7 +180,8 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
     last_frame_.CopyFrame(videoFrame);
   }
   virtual void OnIncomingCapturedEncodedFrame(const WebRtc_Word32 id,
-                                              webrtc::VideoFrame& videoFrame)
+                                              webrtc::VideoFrame& videoFrame,
+                                              webrtc::VideoCodecType codecType)
  {
      assert(!"NOTIMPLEMENTED");
  }
