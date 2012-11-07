@@ -27,7 +27,6 @@
 #include "video_engine/include/vie_errors.h"
 #include "video_engine/vie_impl.h"
 #include "video_engine/vie_input_manager.h"
-#include "video_engine/vie_performance_monitor.h"
 #include "video_engine/vie_shared_data.h"
 
 namespace webrtc {
@@ -359,30 +358,6 @@ int ViEBaseImpl::StopReceive(const int video_channel) {
     shared_data_.SetLastError(kViEBaseUnknownError);
     return -1;
   }
-  return 0;
-}
-
-int ViEBaseImpl::RegisterObserver(ViEBaseObserver& observer) {  // NOLINT
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(shared_data_.instance_id()),
-               "%s", __FUNCTION__);
-  if (shared_data_.vie_performance_monitor()->ViEBaseObserverRegistered()) {
-    shared_data_.SetLastError(kViEBaseObserverAlreadyRegistered);
-    return -1;
-  }
-  return shared_data_.vie_performance_monitor()->Init(&observer);
-}
-
-int ViEBaseImpl::DeregisterObserver() {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(shared_data_.instance_id()),
-               "%s", __FUNCTION__);
-
-  if (!shared_data_.vie_performance_monitor()->ViEBaseObserverRegistered()) {
-    shared_data_.SetLastError(kViEBaseObserverNotRegistered);
-    WEBRTC_TRACE(kTraceError, kTraceVideo, shared_data_.instance_id(),
-                 "%s No observer registered.", __FUNCTION__);
-    return -1;
-  }
-  shared_data_.vie_performance_monitor()->Terminate();
   return 0;
 }
 

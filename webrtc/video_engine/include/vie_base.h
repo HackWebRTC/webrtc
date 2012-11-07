@@ -25,17 +25,6 @@ namespace webrtc {
 
 class VoiceEngine;
 
-// Class used for all callbacks from ViEBase.
-class WEBRTC_DLLEXPORT ViEBaseObserver {
- public:
-  // This method will be called periodically if the average system CPU usage
-  // exceeds 75%.
-  virtual void PerformanceAlarm(const unsigned int cpu_load) = 0;
-
- protected:
-  virtual ~ViEBaseObserver() {}
-};
-
 class WEBRTC_DLLEXPORT VideoEngine {
  public:
   // Creates a VideoEngine object, which can then be used to acquire sub‐APIs.
@@ -125,13 +114,6 @@ class WEBRTC_DLLEXPORT ViEBase {
 
   // Stops receiving incoming RTP and RTCP packets on the specified channel.
   virtual int StopReceive(const int video_channel) = 0;
-
-  // Registers an instance of a user implementation of the ViEBase
-  // observer.
-  virtual int RegisterObserver(ViEBaseObserver& observer) = 0;
-
-  // Removes an already registered instance of ViEBaseObserver.
-  virtual int DeregisterObserver() = 0;
 
   // Retrieves the version information for VideoEngine and its components.
   virtual int GetVersion(char version[1024]) = 0;

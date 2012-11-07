@@ -15,17 +15,6 @@
 #include "video_engine/test/auto_test/primitives/general_primitives.h"
 #include "video_engine/test/libvietest/include/tb_interfaces.h"
 
-class BaseObserver : public webrtc::ViEBaseObserver {
- public:
-  BaseObserver()
-      : cpu_load_(0) {}
-
-  virtual void PerformanceAlarm(const unsigned int cpu_load) {
-    cpu_load_ = cpu_load;
-  }
-  unsigned int cpu_load_;
-};
-
 void ViEAutoTest::ViEBaseStandardTest() {
   // ***************************************************************
   // Begin create/initialize WebRTC Video Engine for testing
@@ -100,18 +89,6 @@ void ViEAutoTest::ViEBaseExtendedTest() {
   // Start with standard test
   ViEBaseAPITest();
   ViEBaseStandardTest();
-
-  // ***************************************************************
-  // Test BaseObserver
-  // ***************************************************************
-  // TODO(mflodman) Add test for base observer. Cpu load must be over 75%.
-//    BaseObserver base_observer;
-//    EXPECT_EQ(vie_base->RegisterObserver(base_observer), 0);
-//
-//    AutoTestSleep(KAutoTestSleepTimeMs);
-//
-//    EXPECT_EQ(vie_base->DeregisterObserver(), 0);
-//    EXPECT_GT(base_observer.cpu_load, 0);
 }
 
 void ViEAutoTest::ViEBaseAPITest() {

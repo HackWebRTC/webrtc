@@ -43,8 +43,6 @@ class ViEBaseImpl
   virtual int StopSend(const int video_channel);
   virtual int StartReceive(const int video_channel);
   virtual int StopReceive(const int video_channel);
-  virtual int RegisterObserver(ViEBaseObserver& observer);  // NOLINT
-  virtual int DeregisterObserver();
   virtual int GetVersion(char version[1024]);
   virtual int LastError();
 

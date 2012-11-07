@@ -30,7 +30,6 @@ class MapWrapper;
 class ProcessThread;
 class ViEChannel;
 class ViEEncoder;
-class ViEPerformanceMonitor;
 class VoEVideoSync;
 class VoiceEngine;
 
@@ -44,7 +43,6 @@ class ViEChannelManager: private ViEManagerBase {
  public:
   ViEChannelManager(int engine_id,
                     int number_of_cores,
-                    ViEPerformanceMonitor* vie_performance_monitor,
                     const OverUseDetectorOptions& options);
   ~ViEChannelManager();
 

@@ -28,7 +28,6 @@ namespace webrtc {
 ViEChannelManager::ViEChannelManager(
     int engine_id,
     int number_of_cores,
-    ViEPerformanceMonitor* vie_performance_monitor,
     const OverUseDetectorOptions& options)
     : channel_id_critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       engine_id_(engine_id),
