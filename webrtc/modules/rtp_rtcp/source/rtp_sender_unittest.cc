@@ -78,12 +78,11 @@ class RtpSenderTest : public ::testing::Test {
  protected:
   RtpSenderTest()
     : fake_clock_(),
-      rtp_sender_(new RTPSender(0, false, &fake_clock_)),
-      transport_(),
+      rtp_sender_(new RTPSender(0, false, &fake_clock_, &transport_, NULL)),
       kMarkerBit(true),
       kType(kRtpExtensionTransmissionTimeOffset),
       packet_() {
-    EXPECT_EQ(0, rtp_sender_->SetSequenceNumber(kSeqNum));
+    rtp_sender_->SetSequenceNumber(kSeqNum);
   }
   ~RtpSenderTest() {
     delete rtp_sender_;
@@ -199,8 +198,6 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithNegativeTransmissionOffsetExtension) {
 }
 
 TEST_F(RtpSenderTest, NoTrafficSmoothing) {
-  EXPECT_EQ(0, rtp_sender_->RegisterSendTransport(&transport_));
-
   WebRtc_Word32 rtp_length = rtp_sender_->BuildRTPheader(packet_,
                                                          kPayload,
                                                          kMarkerBit,
@@ -218,9 +215,8 @@ TEST_F(RtpSenderTest, NoTrafficSmoothing) {
 
 TEST_F(RtpSenderTest, TrafficSmoothing) {
   rtp_sender_->SetTransmissionSmoothingStatus(true);
-  EXPECT_EQ(0, rtp_sender_->SetStorePacketsStatus(true, 10));
+  rtp_sender_->SetStorePacketsStatus(true, 10);
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kType, kId));
-  EXPECT_EQ(0, rtp_sender_->RegisterSendTransport(&transport_));
   rtp_sender_->SetTargetSendBitrate(300000);
 
   WebRtc_Word32 rtp_length = rtp_sender_->BuildRTPheader(packet_,

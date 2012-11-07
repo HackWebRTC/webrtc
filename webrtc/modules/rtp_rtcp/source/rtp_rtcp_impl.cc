@@ -52,7 +52,11 @@ RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
 }
 
 ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
-    : _rtpSender(configuration.id, configuration.audio, configuration.clock),
+    : _rtpSender(configuration.id,
+                 configuration.audio,
+                 configuration.clock,
+                 configuration.outgoing_transport,
+                 configuration.audio_messages),
       _rtpReceiver(configuration.id, configuration.audio, configuration.clock,
                    this),
       _rtcpSender(configuration.id, configuration.audio, configuration.clock,
@@ -97,10 +101,8 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
   _rtcpReceiver.RegisterRtcpObservers(configuration.intra_frame_callback,
                                       configuration.bandwidth_callback,
                                       configuration.rtcp_feedback);
-  _rtpSender.RegisterAudioCallback(configuration.audio_messages);
   _rtpReceiver.RegisterIncomingAudioCallback(configuration.audio_messages);
 
-  _rtpSender.RegisterSendTransport(configuration.outgoing_transport);
   _rtcpSender.RegisterSendTransport(configuration.outgoing_transport);
 
   // make sure that RTCP objects are aware of our SSRC
@@ -628,7 +630,8 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetStartTimestamp(
                "SetStartTimestamp(%d)",
                timestamp);
   _rtcpSender.SetStartTimestamp(timestamp);
-  return _rtpSender.SetStartTimestamp(timestamp, true);
+  _rtpSender.SetStartTimestamp(timestamp, true);
+  return 0;  // TODO(pwestin): change to void.
 }
 
 WebRtc_UWord16 ModuleRtpRtcpImpl::SequenceNumber() const {
@@ -646,7 +649,8 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetSequenceNumber(
                "SetSequenceNumber(%d)",
                seqNum);
 
-  return _rtpSender.SetSequenceNumber(seqNum);
+  _rtpSender.SetSequenceNumber(seqNum);
+  return 0;  // TODO(pwestin): change to void.
 }
 
 WebRtc_UWord32 ModuleRtpRtcpImpl::SSRC() const {
@@ -659,17 +663,16 @@ WebRtc_UWord32 ModuleRtpRtcpImpl::SSRC() const {
 WebRtc_Word32 ModuleRtpRtcpImpl::SetSSRC(const WebRtc_UWord32 ssrc) {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id, "SetSSRC(%d)", ssrc);
 
-  if (_rtpSender.SetSSRC(ssrc) == 0) {
-    _rtcpReceiver.SetSSRC(ssrc);
-    _rtcpSender.SetSSRC(ssrc);
-    return 0;
-  }
-  return -1;
+  _rtpSender.SetSSRC(ssrc);
+  _rtcpReceiver.SetSSRC(ssrc);
+  _rtcpSender.SetSSRC(ssrc);
+  return 0;  // TODO(pwestin): change to void.
 }
 
 WebRtc_Word32 ModuleRtpRtcpImpl::SetCSRCStatus(const bool include) {
   _rtcpSender.SetCSRCStatus(include);
-  return _rtpSender.SetCSRCStatus(include);
+  _rtpSender.SetCSRCStatus(include);
+  return 0;  // TODO(pwestin): change to void.
 }
 
 WebRtc_Word32 ModuleRtpRtcpImpl::CSRCs(
@@ -702,16 +705,15 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetCSRCs(
       }
       it++;
     }
-    return 0;
-
   } else {
     for (int i = 0; i < arrLength; i++) {
       WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id, "\tidx:%d CSRC:%u", i,
                    arrOfCSRC[i]);
     }
     _rtcpSender.SetCSRCs(arrOfCSRC, arrLength);
-    return _rtpSender.SetCSRCs(arrOfCSRC, arrLength);
+    _rtpSender.SetCSRCs(arrOfCSRC, arrLength);
   }
+  return 0;  // TODO(pwestin): change to void.
 }
 
 WebRtc_UWord32 ModuleRtpRtcpImpl::PacketCountSent() const {
@@ -1129,7 +1131,8 @@ WebRtc_Word32 ModuleRtpRtcpImpl::ResetSendDataCountersRTP() {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id,
                "ResetSendDataCountersRTP()");
 
-  return _rtpSender.ResetDataCounters();
+  _rtpSender.ResetDataCounters();
+  return 0;  // TODO(pwestin): change to void.
 }
 
 // Force a send of an RTCP packet
@@ -1495,7 +1498,8 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetStorePacketsStatus(
     WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id,
                  "SetStorePacketsStatus(disable)");
   }
-  return _rtpSender.SetStorePacketsStatus(enable, numberToStore);
+  _rtpSender.SetStorePacketsStatus(enable, numberToStore);
+  return 0;  // TODO(pwestin): change to void.
 }
 
 /*
