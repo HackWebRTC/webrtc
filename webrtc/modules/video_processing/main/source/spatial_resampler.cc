@@ -82,12 +82,13 @@ VPMSimpleSpatialResampler::ResampleFrame(const I420VideoFrame& inFrame,
   if (retVal < 0)
     return retVal;
 
-  // Setting time parameters to the output frame - all the rest will be
-  // set by the scaler.
+  retVal = _scaler.Scale(inFrame, outFrame);
+
+  // Setting time parameters to the output frame.
+  // Timestamp will be reset in Scale call above, so we should set it after.
   outFrame->set_timestamp(inFrame.timestamp());
   outFrame->set_render_time_ms(inFrame.render_time_ms());
 
-  retVal = _scaler.Scale(inFrame, outFrame);
   if (retVal == 0)
     return VPM_OK;
   else
