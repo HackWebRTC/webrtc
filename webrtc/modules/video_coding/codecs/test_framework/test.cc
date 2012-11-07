@@ -14,6 +14,7 @@
 #include <iostream>
 
 #include "testsupport/metrics/video_metrics.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 
 using namespace webrtc;
 
@@ -73,8 +74,15 @@ CodecTest::Print()
 void
 CodecTest::Setup()
 {
-    int widhei          = _inst.width*_inst.height;
-    _lengthSourceFrame  = 3*widhei/2;
+    _width = _inst.width;
+    _halfWidth = (_width + 1) / 2;
+    _height = _inst.height;
+    _halfHeight = (_height + 1) / 2;;
+    _sizeY = _width * _height;
+    _sizeUv = _halfWidth * _halfHeight;
+    _lengthSourceFrame  = webrtc::CalcBufferSize(webrtc::kI420,
+                                                 _inst.width,
+                                                 _inst.height);
     _sourceBuffer       = new unsigned char[_lengthSourceFrame];
 }
 

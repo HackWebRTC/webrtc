@@ -236,7 +236,6 @@ VideoEncodeCompleteCallback::Encoded(EncodedImage& encodedImage,
 {
     _test.Encoded(encodedImage);
     VideoFrame *newBuffer = new VideoFrame();
-    //newBuffer->VerifyAndAllocate(encodedImage._length);
     newBuffer->VerifyAndAllocate(encodedImage._size);
     _encodedBytes += encodedImage._length;
     // If _frameQueue would have been a fixed sized buffer we could have asked
@@ -405,18 +404,18 @@ bool
 NormalAsyncTest::Encode()
 {
     _lengthEncFrame = 0;
-    EXPECT_GT(fread(_sourceBuffer, 1, _lengthSourceFrame, _sourceFile), 0u);
-    _inputVideoBuffer.CreateFrame(_sizeY, _sourceBuffer,
-                                  _sizeUv, _sourceBuffer + _sizeY,
-                                  _sizeUv, _sourceBuffer + _sizeY + _sizeUv,
-                                  _width, _height,
-                                  _width, _halfWidth, _halfWidth);
-    _inputVideoBuffer.set_timestamp((unsigned int)
-        (_encFrameCnt * 9e4 / _inst.maxFramerate));
     if (feof(_sourceFile) != 0)
     {
         return true;
     }
+    EXPECT_GT(fread(_sourceBuffer, 1, _lengthSourceFrame, _sourceFile), 0u);
+    EXPECT_EQ(0, _inputVideoBuffer.CreateFrame(_sizeY, _sourceBuffer,
+                                  _sizeUv, _sourceBuffer + _sizeY,
+                                  _sizeUv, _sourceBuffer + _sizeY + _sizeUv,
+                                  _width, _height,
+                                  _width, _halfWidth, _halfWidth));
+    _inputVideoBuffer.set_timestamp((unsigned int)
+        (_encFrameCnt * 9e4 / _inst.maxFramerate));
     _encodeCompleteTime = 0;
     _encodeTimes[_inputVideoBuffer.timestamp()] = tGetTime();
     std::vector<VideoFrameType> frame_types(1, kDeltaFrame);
@@ -493,7 +492,8 @@ NormalAsyncTest::Decode(int lossValue)
     _decodeCompleteTime = 0;
     _decodeTimes[encodedImage._timeStamp] = tGetTime();
     int ret = WEBRTC_VIDEO_CODEC_OK;
-    if (!_waitForKey || encodedImage._frameType == kKeyFrame)
+    // TODO(mikhal):  Update frame type.
+    //if (!_waitForKey || encodedImage._frameType == kKeyFrame)
     {
         _waitForKey = false;
         ret = _decoder->Decode(encodedImage, _missingFrames, NULL,

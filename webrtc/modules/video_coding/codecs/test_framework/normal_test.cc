@@ -23,13 +23,7 @@ NormalTest::NormalTest()
 CodecTest("Normal Test 1", "A test of normal execution of the codec"),
 _testNo(1),
 _lengthEncFrame(0),
-_appendNext(false),
-_width(0),
-_halfWidth(0),
-_height(0),
-_halfHeight(0),
-_sizeY(0),
-_sizeUv(0)
+_appendNext(false)
 {
 }
 
@@ -40,13 +34,7 @@ CodecTest(name, description),
 _requestKeyFrame(false),
 _testNo(testNo),
 _lengthEncFrame(0),
-_appendNext(false),
-_width(0),
-_halfWidth(0),
-_height(0),
-_halfHeight(0),
-_sizeY(0),
-_sizeUv(0)
+_appendNext(false)
 {
 }
 
@@ -131,8 +119,6 @@ NormalTest::Perform()
     CodecSettings(_width, _height, 30, _bitRate);
     Setup();
 
-    _inputVideoBuffer.CreateEmptyFrame(_width, _height,
-                                       _width, _halfWidth, _halfWidth);
     _inputVideoBuffer.CreateEmptyFrame(_width, _height,
                                        _width, _halfWidth, _halfWidth);
     _decodedVideoBuffer.CreateEmptyFrame(_width, _height,
@@ -230,9 +216,6 @@ NormalTest::Encode()
 
         _inputVideoBuffer.set_width(_inst.width);
         _inputVideoBuffer.set_height(_inst.height);
-        //_lengthEncFrame = _encoder->Encode(_inputVideoBuffer, _encodedVideoBuffer, _frameInfo,
-        //  _inst.frameRate, _requestKeyFrame && !(_framecnt%50));
-
         endtime = clock()/(double)CLOCKS_PER_SEC;
 
         _encodedVideoBuffer.SetHeight(_inst.height);
@@ -272,8 +255,6 @@ NormalTest::Decode(int lossValue)
     _encodedVideoBuffer.SetWidth(_inst.width);
     _encodedVideoBuffer.SetHeight(_inst.height);
     int lengthDecFrame = 0;
-    //int lengthDecFrame = _decoder->Decode(_encodedVideoBuffer, _decodedVideoBuffer);
-    //_totalDecodeTime += (double)((clock()/(double)CLOCKS_PER_SEC) - starttime);
     if (lengthDecFrame < 0)
     {
         return lengthDecFrame;

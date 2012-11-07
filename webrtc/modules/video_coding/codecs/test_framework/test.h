@@ -60,7 +60,12 @@ protected:
     std::string             _outname;
     std::string             _encodedName;
     int                     _sumEncBytes;
-
+    int                     _width;
+    int                     _halfWidth;
+    int                     _height;
+    int                     _halfHeight;
+    int                     _sizeY;
+    int                     _sizeUv;
 private:
     std::string             _name;
     std::string             _description;
