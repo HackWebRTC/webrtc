@@ -107,7 +107,7 @@ TEST_F(VideoProcessingModuleTest, Denoising)
             t0 = TickTime::Now();
             ASSERT_GE(modifiedPixels = _vpm->Denoising(&_videoFrame), 0);
             t1 = TickTime::Now();
-            accTicks += t1 - t0;
+            accTicks += (t1 - t0);
 
             if (runIdx == 0)
             {

@@ -128,10 +128,9 @@ WebRtc_Word32 ViEReceiver::OnReceivedPayloadData(
   const int packet_size = payload_size + rtp_header->header.paddingLength;
   uint32_t compensated_timestamp = rtp_header->header.timestamp +
       rtp_header->extension.transmissionTimeOffset;
-  remote_bitrate_estimator_->IncomingPacket(rtp_header->header.ssrc,
-                                            packet_size,
-                                            TickTime::MillisecondTimestamp(),
-                                            compensated_timestamp);
+  remote_bitrate_estimator_->IncomingPacket(
+      rtp_header->header.ssrc, packet_size,
+      TickTime::MillisecondTimestamp(), compensated_timestamp);
   if (vcm_->IncomingPacket(payload_data, payload_size, *rtp_header) != 0) {
     // Check this...
     return -1;

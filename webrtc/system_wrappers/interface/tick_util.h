@@ -32,9 +32,13 @@
 namespace webrtc {
 class TickInterval;
 
+// Class representing the current time. This class is immutable.
 class TickTime
 {
 public:
+    TickTime();
+    explicit TickTime(WebRtc_Word64 ticks);
+
     // Current time in the tick domain.
     static TickTime Now();
 
@@ -44,6 +48,7 @@ public:
     // Now in the time domain in us.
     static WebRtc_Word64 MicrosecondTimestamp();
 
+    // Returns the number of ticks in the tick domain.
     WebRtc_Word64 Ticks() const;
 
     static WebRtc_Word64 MillisecondsToTicks(const WebRtc_Word64 ms);
@@ -52,15 +57,28 @@ public:
 
     // Returns a TickTime that is ticks later than the passed TickTime
     friend TickTime operator+(const TickTime lhs, const WebRtc_Word64 ticks);
-    TickTime& operator+=(const WebRtc_Word64& rhs);
-
+    TickTime& operator+=(const WebRtc_Word64& ticks);
 
     // Returns a TickInterval that is the difference in ticks beween rhs and lhs
     friend TickInterval operator-(const TickTime& lhs, const TickTime& rhs);
+
+    // Call to engage the fake clock. This is useful for tests since relying on
+    // a real clock often makes the test flaky.
+    static void UseFakeClock(WebRtc_Word64 start_millisecond);
+
+    // Advance the fake clock. Must be called after UseFakeClock.
+    static void AdvanceFakeClock(WebRtc_Word64 milliseconds);
+
 private:
+    static WebRtc_Word64 QueryOsForTicks();
+
+    static bool _use_fake_clock;
+    static WebRtc_Word64 _fake_ticks;
+
     WebRtc_Word64 _ticks;
 };
 
+// Reperesents a time delta in ticks. This class is immutable.
 class TickInterval
 {
 public:
@@ -72,12 +90,12 @@ public:
     // Returns the sum of two TickIntervals as a TickInterval
     friend TickInterval operator+(const TickInterval& lhs,
                                   const TickInterval& rhs);
-    TickInterval& operator-=(const TickInterval& rhs);
+    TickInterval& operator+=(const TickInterval& rhs);
 
     // Returns a TickInterval corresponding to rhs - lhs
     friend TickInterval operator-(const TickInterval& lhs,
                                   const TickInterval& rhs);
-    TickInterval& operator+=(const TickInterval& rhs);
+    TickInterval& operator-=(const TickInterval& rhs);
 
     friend bool operator>(const TickInterval& lhs, const TickInterval& rhs);
     friend bool operator<=(const TickInterval& lhs, const TickInterval& rhs);
@@ -115,25 +133,44 @@ inline TickTime operator+(const TickTime lhs, const WebRtc_Word64 ticks)
     time._ticks += ticks;
     return time;
 }
+
 inline bool operator>(const TickInterval& lhs, const TickInterval& rhs)
 {
     return lhs._interval > rhs._interval;
 }
+
 inline bool operator<=(const TickInterval& lhs, const TickInterval& rhs)
 {
     return lhs._interval <= rhs._interval;
 }
+
 inline bool operator<(const TickInterval& lhs, const TickInterval& rhs)
 {
     return lhs._interval <= rhs._interval;
 }
+
 inline bool operator>=(const TickInterval& lhs, const TickInterval& rhs)
 {
     return lhs._interval >= rhs._interval;
 }
 
+inline TickTime::TickTime()
+    : _ticks(0) {
+}
+
+inline TickTime::TickTime(WebRtc_Word64 ticks)
+    : _ticks(ticks) {
+}
+
 inline TickTime TickTime::Now()
 {
+  if (_use_fake_clock)
+    return TickTime(_fake_ticks);
+  else
+    return TickTime(QueryOsForTicks());
+}
+
+inline WebRtc_Word64 TickTime::QueryOsForTicks() {
     TickTime result;
 #if _WIN32
     // TODO(wu): Remove QueryPerformanceCounter implementation.
@@ -159,7 +196,7 @@ inline TickTime TickTime::Now()
             // threads.
             // 0x0fffffff ~3.1 days, the code will not take that long to execute
             // so it must have been a wrap around.
-            if(old > 0xf0000000 && now < 0x0fffffff) 
+            if(old > 0xf0000000 && now < 0x0fffffff)
             {
                 numWrapTimeGetTime++;
             }
@@ -198,43 +235,42 @@ inline TickTime TickTime::Now()
     gettimeofday(&tv, NULL);
     result._ticks = 1000000LL * static_cast<WebRtc_Word64>(tv.tv_sec) + static_cast<WebRtc_Word64>(tv.tv_usec);
 #endif
-    return result;
+    return result._ticks;
 }
 
 inline WebRtc_Word64 TickTime::MillisecondTimestamp()
 {
-    TickTime now = TickTime::Now();
+  WebRtc_Word64 ticks = TickTime::Now().Ticks();
 #if _WIN32
     #ifdef USE_QUERY_PERFORMANCE_COUNTER
         LARGE_INTEGER qpfreq;
         QueryPerformanceFrequency(&qpfreq);
-        return (now._ticks * 1000) / qpfreq.QuadPart;
+        return (ticks * 1000) / qpfreq.QuadPart;
     #else
-        return now._ticks;
+        return ticks;
     #endif
 #elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-    return now._ticks / 1000000LL;
+    return ticks / 1000000LL;
 #else
-    return now._ticks / 1000LL;
+    return ticks / 1000LL;
 #endif
 }
 
 inline WebRtc_Word64 TickTime::MicrosecondTimestamp()
 {
-    TickTime now = TickTime::Now();
-
+  WebRtc_Word64 ticks = TickTime::Now().Ticks();
 #if _WIN32
     #ifdef USE_QUERY_PERFORMANCE_COUNTER
         LARGE_INTEGER qpfreq;
         QueryPerformanceFrequency(&qpfreq);
-        return (now._ticks * 1000) / (qpfreq.QuadPart/1000);
+        return (ticks * 1000) / (qpfreq.QuadPart/1000);
     #else
-        return now._ticks *1000LL;
+        return ticks *1000LL;
     #endif
 #elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-    return now._ticks / 1000LL;
+    return ticks / 1000LL;
 #else
-    return now._ticks;
+    return ticks;
 #endif
 }
 
@@ -300,7 +336,7 @@ inline WebRtc_Word64 TickInterval::Milliseconds() const
         QueryPerformanceFrequency(&qpfreq);
         return (_interval * 1000) / qpfreq.QuadPart;
     #else
-	// _interval is in ms
+        // _interval is in ms
         return _interval;
     #endif
 #elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
@@ -320,7 +356,7 @@ inline WebRtc_Word64 TickInterval::Microseconds() const
         QueryPerformanceFrequency(&qpfreq);
         return (_interval * 1000000) / qpfreq.QuadPart;
     #else
-	// _interval is in ms
+        // _interval is in ms
         return _interval *1000LL;
     #endif
 #elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
@@ -334,15 +370,16 @@ inline WebRtc_Word64 TickInterval::Microseconds() const
 
 inline TickInterval& TickInterval::operator+=(const TickInterval& rhs)
 {
-    _interval += rhs._interval;
-    return *this;
+     _interval += rhs._interval;
+     return *this;
 }
 
 inline TickInterval& TickInterval::operator-=(const TickInterval& rhs)
 {
     _interval -= rhs._interval;
-    return *this;
+     return *this;
 }
+
 } // namespace webrtc
 
 #endif // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_TICK_UTIL_H_

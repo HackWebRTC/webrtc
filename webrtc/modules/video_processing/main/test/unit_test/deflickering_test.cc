@@ -69,7 +69,7 @@ TEST_F(VideoProcessingModuleTest, Deflickering)
             ASSERT_EQ(0, _vpm->GetFrameStats(&stats, _videoFrame));
             ASSERT_EQ(0, _vpm->Deflickering(&_videoFrame, &stats));
             t1 = TickTime::Now();
-            accTicks += t1 - t0;
+            accTicks += (t1 - t0);
 
             if (runIdx == 0)
             {

@@ -14,7 +14,7 @@
 
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "system_wrappers/interface/tick_util.h"
-#include "testsupport/fileutils.h"
+#include "test/testsupport/fileutils.h"
 
 namespace webrtc {
 
@@ -283,7 +283,7 @@ TEST_F(VideoProcessingModuleTest, Resampler)
 
     // stop timer
     t1 = TickTime::Now();
-    accTicks += t1 - t0;
+    accTicks += (t1 - t0);
 
     if (accTicks.Microseconds() < minRuntime || runIdx == 0)  {
       minRuntime = accTicks.Microseconds();

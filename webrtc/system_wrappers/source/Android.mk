@@ -40,6 +40,7 @@ LOCAL_SRC_FILES := \
     event_posix.cc \
     sleep.cc \
     thread_posix.cc \
+    tick_util.cc \
     trace_posix.cc \
     rw_lock_posix.cc 
 

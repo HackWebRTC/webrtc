@@ -454,7 +454,7 @@ void ViEAutoTest::ViECaptureExternalCaptureTest() {
   while (frame_count < 120) {
     external_capture->IncomingFrame(
         video_frame, video_frame_length, capability,
-        webrtc::TickTime::Now().MillisecondTimestamp());
+        webrtc::TickTime::MillisecondTimestamp());
     AutoTestSleep(33);
 
     if (effect_filter.number_of_captured_frames_ > 2) {
@@ -478,7 +478,7 @@ void ViEAutoTest::ViECaptureExternalCaptureTest() {
   for (int frame = 0; frame < 30; ++frame) {
     external_capture->IncomingFrame(
         video_frame, video_frame_length, capability,
-        webrtc::TickTime::Now().MillisecondTimestamp());
+        webrtc::TickTime::MillisecondTimestamp());
     AutoTestSleep(33);
   }
   EXPECT_EQ(webrtc::Bright, observer.brightness_) <<
@@ -491,7 +491,7 @@ void ViEAutoTest::ViECaptureExternalCaptureTest() {
   for (int frame = 0; frame < 30; ++frame) {
     external_capture->IncomingFrame(
         video_frame, video_frame_length, capability,
-        webrtc::TickTime::Now().MillisecondTimestamp());
+        webrtc::TickTime::MillisecondTimestamp());
     AutoTestSleep(33);
   }
   EXPECT_EQ(webrtc::Dark, observer.brightness_) <<
@@ -513,7 +513,7 @@ void ViEAutoTest::ViECaptureExternalCaptureTest() {
   for (int frame = 0; frame < 10; ++frame) {
     external_capture->IncomingFrame(
         video_frame, video_frame_length, capability,
-        webrtc::TickTime::Now().MillisecondTimestamp());
+        webrtc::TickTime::MillisecondTimestamp());
     AutoTestSleep(33);
   }
   EXPECT_EQ(webrtc::AlarmCleared, observer.alarm_) <<
