@@ -351,7 +351,6 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
     CheckForSendCodecChanges();
 
     // --- Resample input audio and create/store the initial audio frame
-
     if (GenerateAudioFrame(static_cast<const WebRtc_Word16*>(audioSamples),
                            nSamples,
                            nChannels,
@@ -372,7 +371,6 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
     }
 
     // --- Near-end Voice Quality Enhancement (APM) processing
-
     APMProcessStream(totalDelayMS, clockDrift, currentMicLevel);
 
     if (swap_stereo_channels_ && stereo_codec_)
@@ -380,13 +378,11 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
       AudioFrameOperations::SwapStereoChannels(&_audioFrame);
 
     // --- Annoying typing detection (utilizes the APM/VAD decision)
-
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     TypingDetection();
 #endif
 
     // --- Mute during DTMF tone if direct feedback is enabled
-
     if (_remainingMuteMicTimeMs > 0)
     {
         AudioFrameOperations::Mute(_audioFrame);
@@ -398,25 +394,18 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
     }
 
     // --- Mute signal
-
     if (_mute)
     {
         AudioFrameOperations::Mute(_audioFrame);
     }
 
-    // --- Measure audio level of speech after APM processing
-
-    _audioLevel.ComputeLevel(_audioFrame);
-
     // --- Mix with file (does not affect the mixing frequency)
-
     if (_filePlaying)
     {
         MixOrReplaceAudioWithFile(_mixingFrequency);
     }
 
     // --- Record to file
-
     if (_fileRecording)
     {
         RecordAudioToFile(_mixingFrequency);
@@ -433,6 +422,8 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
       }
     }
 
+    // --- Measure audio level of speech after all processing.
+    _audioLevel.ComputeLevel(_audioFrame);
     return 0;
 }
 
