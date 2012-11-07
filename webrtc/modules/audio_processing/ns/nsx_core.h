@@ -11,10 +11,9 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_NS_MAIN_SOURCE_NSX_CORE_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_NS_MAIN_SOURCE_NSX_CORE_H_
 
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "modules/audio_processing/ns/nsx_defines.h"
 #include "typedefs.h"
-#include "signal_processing_library.h"
-
-#include "nsx_defines.h"
 
 #ifdef NS_FILEDEBUG
 #include <stdio.h>

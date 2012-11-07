@@ -13,10 +13,9 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AECM_AECM_CORE_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AECM_AECM_CORE_H_
 
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "modules/audio_processing/aecm/aecm_defines.h"
 #include "typedefs.h"
-#include "signal_processing_library.h"
-
-#include "aecm_defines.h"
 
 #ifdef _MSC_VER // visual c++
 #define ALIGN8_BEG __declspec(align(8))

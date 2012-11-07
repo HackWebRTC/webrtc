@@ -159,19 +159,50 @@
       ],
     }],
     ['target_arch=="arm" and armv7==1', {
-      'targets': [
-        {
-          'target_name': 'audio_processing_neon',
-          'type': 'static_library',
-          'includes': ['../../build/arm_neon.gypi',],
-          'dependencies': [
-            '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',
-          ],
-          'sources': [
-            'aecm/aecm_core_neon.c',
-            'ns/nsx_core_neon.c',
-          ],
-        },
+      'targets': [{
+        'target_name': 'audio_processing_neon',
+        'type': 'static_library',
+        'includes': ['../../build/arm_neon.gypi',],
+        'dependencies': [
+          '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',
+        ],
+        'sources': [
+          'aecm/aecm_core_neon.c',
+          'ns/nsx_core_neon.c',
+        ],
+        'conditions': [
+          ['OS=="android"', {
+            'dependencies': [
+              'audio_processing_offsets',
+            ],
+            # TODO(kma): port this block from Android into other build systems.
+            'sources': [
+              'aecm/aecm_core_neon.S',
+              'ns/nsx_core_neon.S',
+            ],
+            'sources!': [
+              'aecm/aecm_core_neon.c',
+              'ns/nsx_core_neon.c',
+            ],
+            'includes!': ['../../build/arm_neon.gypi',],
+          }],
+        ],
+      }],
+      'conditions': [
+        ['OS=="android"', {
+          'targets': [{
+            'target_name': 'audio_processing_offsets',
+            'type': 'none',
+            'sources': [
+              'aecm/aecm_core_neon_offsets.c',
+              'ns/nsx_core_neon_offsets.c',
+            ],
+            'variables': {
+              'asm_header_dir': 'asm_offsets',
+            },
+            'includes': ['../../build/generate_asm_header.gypi',],
+          }],
+        }],
       ],
     }],
   ],

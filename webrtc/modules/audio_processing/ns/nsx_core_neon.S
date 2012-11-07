@@ -335,7 +335,7 @@ UpdateNoiseEstimateNeon:
 
   mov r0, r4
   mov r1, r6
-  bl WebRtcSpl_MaxValueW16
+  bl WebRtcSpl_MaxValueW16Neon
 
   sub r12, r6, #1             @ Loop counter: inst->magnLen - 1.
 
@@ -350,7 +350,6 @@ UpdateNoiseEstimateNeon:
   add r2, r5                  @ &inst->noiseEstQuantile
   vdup.32 q13, r0
   str r0, [r5, r1]
-
 
 LOOP_UPDATE:
   vld1.16 {d0, d1}, [r4]!     @ &inst->noiseEstLogQuantile[offset + i]

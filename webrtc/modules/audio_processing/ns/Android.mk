@@ -57,19 +57,18 @@ LOCAL_ARM_MODE := arm
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE := libwebrtc_ns_neon
 LOCAL_MODULE_TAGS := optional
-GEN := $(LOCAL_PATH)/nsx_core_neon_offsets.h
+NS_ASM_HEADER := $(intermediates)/ns_core_neon_offsets.h
+NS_ASM_HEADER_DIR := $(intermediates)
 
 # Generate a header file nsx_core_neon_offsets.h which will be included in
 # assembly file nsx_core_neon.S, from file nsx_core_neon_offsets.c.
-$(GEN): $(LOCAL_PATH)/../../../build/generate_asm_header.py \
-            $(intermediates)/nsx_core_neon_offsets.S
-	@python $^ $@ offset_nsx_
+$(NS_ASM_HEADER): $(LOCAL_PATH)/../../../build/generate_asm_header.py \
+	    $(LOCAL_PATH)/nsx_core_neon_offsets.c
+	@python $^ --compiler=$(TARGET_CC) --options="$(addprefix -I, \
+		$(LOCAL_INCLUDES)) $(addprefix -isystem , $(TARGET_C_INCLUDES)) -S" \
+		--dir=$(NS_ASM_HEADER_DIR)
 
-$(intermediates)/nsx_core_neon_offsets.S: $(LOCAL_PATH)/nsx_core_neon_offsets.c
-	@$(TARGET_CC) $(addprefix -I, $(LOCAL_INCLUDES)) $(addprefix -isystem ,\
-            $(TARGET_C_INCLUDES)) -S -o $@ $^
-
-LOCAL_GENERATED_SOURCES := $(GEN)
+LOCAL_GENERATED_SOURCES := $(NS_ASM_HEADER)
 LOCAL_SRC_FILES := nsx_core_neon.S
 
 # Flags passed to both C and C++ files.
@@ -80,6 +79,7 @@ LOCAL_CFLAGS := \
     -flax-vector-conversions
 
 LOCAL_C_INCLUDES := \
+    $(NS_ASM_HEADER_DIR) \
     $(LOCAL_PATH)/include \
     $(LOCAL_PATH)/../../.. \
     $(LOCAL_PATH)/../../../common_audio/signal_processing/include

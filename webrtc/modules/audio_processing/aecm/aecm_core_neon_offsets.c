@@ -23,4 +23,4 @@ int offset_aecm_dBufClean = offsetof(AecmCore_t, dBufClean);
 int offset_aecm_channelStored = offsetof(AecmCore_t, channelStored);
 int offset_aecm_channelAdapt16 = offsetof(AecmCore_t, channelAdapt16);
 int offset_aecm_channelAdapt32 = offsetof(AecmCore_t, channelAdapt32);
-
+int offset_aecm_real_fft = offsetof(AecmCore_t, real_fft);
