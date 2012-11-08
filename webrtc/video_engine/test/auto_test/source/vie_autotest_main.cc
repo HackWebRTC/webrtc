@@ -12,11 +12,12 @@
 
 #include "gflags/gflags.h"
 #include "gtest/gtest.h"
-#include "vie_autotest.h"
-#include "vie_autotest_window_manager_interface.h"
-#include "vie_window_creator.h"
+#include "video_engine/test/auto_test/interface/vie_autotest.h"
+#include "video_engine/test/auto_test/interface/vie_autotest_window_manager_interface.h"
+#include "video_engine/test/auto_test/interface/vie_window_creator.h"
 
 DEFINE_bool(automated, false, "Run Video engine tests in noninteractive mode.");
+DEFINE_bool(auto_custom_call, false, "Run custom call directly.");
 
 static const std::string kStandardTest = "ViEStandardIntegrationTest";
 static const std::string kExtendedTest = "ViEExtendedIntegrationTest";
@@ -46,6 +47,9 @@ int ViEAutoTestMain::RunTests(int argc, char** argv) {
   if (FLAGS_automated) {
     // Run in automated mode.
     result = RUN_ALL_TESTS();
+  } else if (FLAGS_auto_custom_call) {
+    // Run automated custom call.
+    result = RunSpecialTestCase(8);
   } else {
     // Run in interactive mode.
     result = RunInteractiveMode();
@@ -116,7 +120,7 @@ int ViEAutoTestMain::RunSpecificTestCaseIn(const std::string test_case_name)
 }
 
 int ViEAutoTestMain::RunSpecialTestCase(int choice) {
-  // 7-9 don't run in GTest and need to initialize by themselves.
+  // 7-10 don't run in GTest and need to initialize by themselves.
   assert(choice >= 7 && choice <= 10);
 
   // Create the windows
@@ -133,7 +137,7 @@ int ViEAutoTestMain::RunSpecialTestCase(int choice) {
     case 7: errors = vieAutoTest.ViELoopbackCall();  break;
     case 8: errors = vieAutoTest.ViECustomCall();    break;
     case 9: errors = vieAutoTest.ViESimulcastCall(); break;
-    case 10: errors = vieAutoTest.ViERecordCall(); break;
+    case 10: errors = vieAutoTest.ViERecordCall();   break;
   }
 
   windowCreator.TerminateWindows();

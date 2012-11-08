@@ -59,32 +59,36 @@ TEST_F(ChoiceHelpersTest, SplitHandlesMultipleChoicesWithEndingNewline) {
 
 TEST_F(ChoiceHelpersTest, CanSelectUsingChoiceBuilder) {
   FILE* fake_stdin = FakeStdin("1\n2\n");
-  EXPECT_EQ(1, FromChoices("Choice 1\n"
+  EXPECT_EQ(1, FromChoices("Title",
+                           "Choice 1\n"
                            "Choice 2").WithInputSource(fake_stdin).Choose());
-  EXPECT_EQ(2, FromChoices("Choice 1\n"
+  EXPECT_EQ(2, FromChoices("","Choice 1\n"
                            "Choice 2").WithInputSource(fake_stdin).Choose());
   fclose(fake_stdin);
 }
 
 TEST_F(ChoiceHelpersTest, RetriesIfGivenInvalidChoice) {
   FILE* fake_stdin = FakeStdin("3\n0\n99\n23409234809\na\nwhatever\n1\n");
-  EXPECT_EQ(1, FromChoices("Choice 1\n"
+  EXPECT_EQ(1, FromChoices("Title",
+                           "Choice 1\n"
                            "Choice 2").WithInputSource(fake_stdin).Choose());
   fclose(fake_stdin);
 }
 
 TEST_F(ChoiceHelpersTest, RetriesOnEnterIfNoDefaultSet) {
   FILE* fake_stdin = FakeStdin("\n2\n");
-  EXPECT_EQ(2, FromChoices("Choice 1\n"
+  EXPECT_EQ(2, FromChoices("Title",
+                           "Choice 1\n"
                            "Choice 2").WithInputSource(fake_stdin).Choose());
   fclose(fake_stdin);
 }
 
 TEST_F(ChoiceHelpersTest, PicksDefaultOnEnterIfDefaultSet) {
   FILE* fake_stdin = FakeStdin("\n");
-  EXPECT_EQ(2, FromChoices("Choice 1\n"
+  EXPECT_EQ(2, FromChoices("Title",
+                           "Choice 1\n"
                            "Choice 2").WithInputSource(fake_stdin)
-                           .WithDefault("Choice 2").Choose());
+                               .WithDefault("Choice 2").Choose());
   fclose(fake_stdin);
 }
 

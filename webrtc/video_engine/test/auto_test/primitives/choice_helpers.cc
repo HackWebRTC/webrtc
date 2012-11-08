@@ -17,15 +17,16 @@
 
 namespace webrtc {
 
-ChoiceBuilder::ChoiceBuilder(const Choices& choices)
+ChoiceBuilder::ChoiceBuilder(const std::string& title, const Choices& choices)
     : choices_(choices),
-      input_helper_(new IntegerWithinRangeValidator(1, choices.size())) {
+      input_helper_(TypedInput(title)) {
+  input_helper_.WithInputValidator(
+      new IntegerWithinRangeValidator(1, choices.size()));
+  input_helper_.WithAdditionalInfo(MakeHumanReadableOptions());
 }
 
 int ChoiceBuilder::Choose() {
-  std::string input = input_helper_
-      .WithTitle(MakeTitleWithOptions())
-      .AskForInput();
+  std::string input = input_helper_.AskForInput();
   return atoi(input.c_str());
 }
 
@@ -48,43 +49,24 @@ ChoiceBuilder& ChoiceBuilder::WithInputSource(FILE* input_source) {
   return *this;
 }
 
-ChoiceBuilder& ChoiceBuilder::WithTitle(const std::string& title) {
-  title_ = title;
-  return *this;
-}
-
-std::string ChoiceBuilder::MakeTitleWithOptions() {
-  std::string title_with_options = title_;
+std::string ChoiceBuilder::MakeHumanReadableOptions() {
+  std::string result = "";
   Choices::const_iterator iterator = choices_.begin();
   for (int number = 1; iterator != choices_.end(); ++iterator, ++number) {
     char buffer[128];
-    sprintf(buffer, "\n  %d. ", number);
-    title_with_options += buffer;
-    title_with_options += (*iterator);
+    sprintf(buffer, "\n  %d. %s", number, (*iterator).c_str());
+    result += buffer;
   }
-  return title_with_options;
-}
-
-Choices SplitChoices(const std::string& raw_choices) {
-  Choices result;
-  size_t current_pos = 0;
-  size_t next_newline = 0;
-  while ((next_newline = raw_choices.find('\n', current_pos)) !=
-      std::string::npos) {
-    std::string choice = raw_choices.substr(
-        current_pos, next_newline - current_pos);
-    result.push_back(choice);
-    current_pos = next_newline + 1;
-  }
-  std::string last_choice = raw_choices.substr(current_pos);
-  if (!last_choice.empty())
-    result.push_back(last_choice);
-
   return result;
 }
 
-ChoiceBuilder FromChoices(const std::string& raw_choices) {
-  return ChoiceBuilder(SplitChoices(raw_choices));
+Choices SplitChoices(const std::string& raw_choices) {
+  return Split(raw_choices, "\n");
+}
+
+ChoiceBuilder FromChoices(
+    const std::string& title, const std::string& raw_choices) {
+  return ChoiceBuilder(title, SplitChoices(raw_choices));
 }
 
 }  // namespace webrtc

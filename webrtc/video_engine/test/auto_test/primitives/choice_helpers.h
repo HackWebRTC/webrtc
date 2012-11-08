@@ -38,7 +38,7 @@ typedef std::vector<std::string> Choices;
  */
 class ChoiceBuilder {
  public:
-  explicit ChoiceBuilder(const Choices& choices);
+  explicit ChoiceBuilder(const std::string& title, const Choices& choices);
 
   // Specifies the choice as the default. The choice must be one of the choices
   // passed in the constructor. If this method is not called, the user has to
@@ -48,23 +48,20 @@ class ChoiceBuilder {
   // Replaces the input source where we ask for input. Default is stdin.
   ChoiceBuilder& WithInputSource(FILE* input_source);
 
-  // Prints a title above the choice list when the choice is made.
-  ChoiceBuilder& WithTitle(const std::string& title);
-
   // Prints the choice list and requests input from the input source. Returns
   // the choice number (choices start at 1).
   int Choose();
  private:
-  std::string MakeTitleWithOptions();
+  std::string MakeHumanReadableOptions();
 
   Choices choices_;
   InputBuilder input_helper_;
-  std::string title_;
 };
 
 // Convenience function that creates a choice builder given a string where
 // choices are separated by \n.
-ChoiceBuilder FromChoices(const std::string& raw_choices);
+ChoiceBuilder FromChoices(const std::string& title,
+                          const std::string& raw_choices);
 
 // Creates choices from a string where choices are separated by \n.
 Choices SplitChoices(const std::string& raw_choices);

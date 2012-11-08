@@ -13,46 +13,77 @@
 
 #include <cstdlib>
 
+#include <map>
 #include <string>
+#include <vector>
+
+#include "gflags/gflags.h"
 
 namespace webrtc {
 
-class InputValidator {
- public:
-  virtual ~InputValidator() {}
+class InputValidator;
+class OverrideRegistry;
 
-  virtual bool InputOk(const std::string& value) const = 0;
-};
-
+// This class handles general user input to the application.
 class InputBuilder {
  public:
-  // The input builder takes ownership of the validator.
-  explicit InputBuilder(const InputValidator* input_validator);
+  // The input builder takes ownership of the validator (but not the
+  // override registry).
+  InputBuilder(const std::string& title,
+               const InputValidator* input_validator,
+               const OverrideRegistry& override_registry);
   ~InputBuilder();
 
   // Ask the user for input, reads input from the input source and returns
   // the answer. This method will keep asking the user until a correct answer
   // is returned and is thereby guaranteed to return a response that is
   // acceptable to the input validator.
+  //
+  // In some cases we will not actually ask the user for input, for instance
+  // if the --choose-defaults or --override flags are specified. See the
+  // definition of those flags in the .cc file for more information.
   std::string AskForInput() const;
 
   // Replaces the input source where we ask for input. Default is stdin.
   InputBuilder& WithInputSource(FILE* input_source);
-
   // Sets the input validator. The input builder takes ownership. If a default
   // value has been set, it must be acceptable to this validator.
   InputBuilder& WithInputValidator(const InputValidator* input_validator);
   // Sets a default value if the user doesn't want to give input. This value
   // must be acceptable to the input validator.
   InputBuilder& WithDefault(const std::string& default_value);
-  // Prints a title before querying the user.
-  InputBuilder& WithTitle(const std::string& title);
+  // Prints additional info after the title.
+  InputBuilder& WithAdditionalInfo(const std::string& title);
 
  private:
+  const std::string& GetOverride() const;
+  std::string ActuallyAskUser() const;
+
   FILE* input_source_;
   const InputValidator* input_validator_;
+  const OverrideRegistry& override_registry_;
   std::string default_value_;
   std::string title_;
+  std::string additional_info_;
+};
+
+// Keeps track of overrides for any input points. Overrides are passed in the
+// format Title 1=Value 1,Title 2=Value 2. Spaces are not trimmed anywhere.
+class OverrideRegistry {
+ public:
+  OverrideRegistry(const std::string& overrides);
+  bool HasOverrideFor(const std::string& title) const;
+  const std::string& GetOverrideFor(const std::string& title) const;
+ private:
+  typedef std::map<std::string, std::string> OverrideMap;
+  OverrideMap overrides_;
+};
+
+class InputValidator {
+ public:
+  virtual ~InputValidator() {}
+
+  virtual bool InputOk(const std::string& value) const = 0;
 };
 
 // Ensures input is an integer between low and high (inclusive).
@@ -74,8 +105,11 @@ class IntegerWithinRangeValidator : public InputValidator {
   int high_;
 };
 
+std::vector<std::string> Split(const std::string& to_split,
+                               const std::string& delimiter);
+
 // Convenience method for creating an input builder.
-InputBuilder TypedInput();
+InputBuilder TypedInput(const std::string& title);
 
 }  // namespace webrtc
 

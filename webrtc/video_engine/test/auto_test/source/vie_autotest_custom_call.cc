@@ -315,7 +315,8 @@ int ViEAutoTest::ViECustomCall() {
 
     printf("\n");
     int selection =
-        FromChoices("Start the call\n"
+        FromChoices("Ready to start:",
+                    "Start the call\n"
                     "Reconfigure call settings\n")
                         .WithDefault("Start the call").Choose();
     start_call = (selection == 1);
@@ -521,6 +522,7 @@ int ViEAutoTest::ViECustomCall() {
     // Modify call or stop call.
     printf("\n");
     int selection = FromChoices(
+        "And now?",
         "Stop the call\n"
         "Modify the call\n").Choose();
 
@@ -529,6 +531,7 @@ int ViEAutoTest::ViECustomCall() {
     while (selection == 2) {
       // Keep on modifying the call until user stops the call.
       int modify_selection = FromChoices(
+          "Modify the call:",
           "Stop call\n"
           "Change Video Send Codec\n"
           "Change Video Send Size by Common Resolutions\n"
@@ -545,7 +548,6 @@ int ViEAutoTest::ViECustomCall() {
           "Print Call Statistics\n"
           "Toggle Image Scaling (Warning: high CPU usage when enabled)\n")
               .WithDefault("Stop call")
-              .WithTitle("Modify the call:")
               .Choose();
 
       switch (modify_selection) {
@@ -696,6 +698,7 @@ int ViEAutoTest::ViECustomCall() {
         case 8:
           // Send the file on the video_channel.
           file_selection = FromChoices(
+              "Choose a file name:",
               DEFAULT_INCOMING_FILE_NAME "\n"
               DEFAULT_OUTGOING_FILE_NAME "\n")
                   .WithDefault(DEFAULT_INCOMING_FILE_NAME).Choose();
@@ -1016,9 +1019,8 @@ bool GetVideoDevice(webrtc::ViEBase* vie_base,
       first_device = capture_line;
   }
 
-  int choice = FromChoices(capture_choices)
+  int choice = FromChoices("Available Video Capture Devices", capture_choices)
       .WithDefault(first_device)
-      .WithTitle("Available Video Capture Devices")
       .Choose();
 
   error = vie_capture->GetCaptureDevice(
@@ -1069,9 +1071,8 @@ bool GetAudioDevices(webrtc::VoEBase* voe_base,
       default_recording_line = recording_device_name;
   }
 
-  int choice = FromChoices(device_choices)
+  int choice = FromChoices("Available audio capture devices:", device_choices)
       .WithDefault(default_recording_line)
-      .WithTitle("Available audio capture devices:")
       .Choose();
 
   recording_device_index = choice - 1;
@@ -1101,9 +1102,8 @@ bool GetAudioDevices(webrtc::VoEBase* voe_base,
       default_playback_line = playback_device_name;
   }
 
-  choice = FromChoices(playback_choices)
+  choice = FromChoices("Available audio playout devices:", playback_choices)
       .WithDefault(default_playback_line)
-      .WithTitle("Available audio playout devices:")
       .Choose();
 
   playback_device_index = choice - 1;
@@ -1126,9 +1126,8 @@ std::string GetIPAddress() {
       return std::count(input.begin(), input.end(), '.') == 3;
     }
   };
-  return TypedInput()
+  return TypedInput("Enter destination IP.")
       .WithDefault(DEFAULT_SEND_IP)
-      .WithTitle("Enter destination IP.")
       .WithInputValidator(new IpValidator())
       .AskForInput();
 }
@@ -1136,15 +1135,13 @@ std::string GetIPAddress() {
 // Video settings functions.
 
 void GetVideoPorts(int* tx_port, int* rx_port) {
-  std::string tx_input = TypedInput()
-      .WithTitle("Enter video send port.")
+  std::string tx_input = TypedInput("Enter video send port.")
       .WithDefault(DEFAULT_VIDEO_PORT)
       .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, 65536))
       .AskForInput();
   *tx_port = atoi(tx_input.c_str());
 
-  std::string rx_input = TypedInput()
-      .WithTitle("Enter video receive port.")
+  std::string rx_input = TypedInput("Enter video receive port.")
       .WithDefault(DEFAULT_VIDEO_PORT)
       .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, 65536))
       .AskForInput();
@@ -1154,15 +1151,13 @@ void GetVideoPorts(int* tx_port, int* rx_port) {
 // Audio settings functions.
 
 void GetAudioPorts(int* tx_port, int* rx_port) {
-  std::string tx_input = TypedInput()
-      .WithTitle("Enter audio send port.")
+  std::string tx_input = TypedInput("Enter audio send port.")
       .WithDefault(DEFAULT_AUDIO_PORT)
       .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, 65536))
       .AskForInput();
   *tx_port = atoi(tx_input.c_str());
 
-  std::string rx_input = TypedInput()
-      .WithTitle("Enter audio receive port.")
+  std::string rx_input = TypedInput("Enter audio receive port.")
       .WithDefault(DEFAULT_AUDIO_PORT)
       .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, 65536))
       .AskForInput();
@@ -1195,9 +1190,8 @@ bool GetAudioCodec(webrtc::VoECodec* voe_codec,
   }
   assert(!default_codec_line.empty() && "Default codec doesn't exist.");
 
-  int codec_selection = FromChoices(codec_choices)
+  int codec_selection = FromChoices("Available Audio Codecs:", codec_choices)
             .WithDefault(default_codec_line)
-            .WithTitle("Available Audio Codecs:")
             .Choose();
 
   error = voe_codec->GetCodec(codec_selection - 1, audio_codec);
@@ -1265,9 +1259,8 @@ void SetVideoCodecType(webrtc::ViECodec* vie_codec,
   }
   assert(!default_codec_line.empty() && "Default does not exist.");
 
-  int choice = FromChoices(codec_choices)
+  int choice = FromChoices("Available Video Codecs", codec_choices)
       .WithDefault(default_codec_line)
-      .WithTitle("Available Video Codecs")
       .Choose();
   error = vie_codec->GetCodec(choice - 1, *video_codec);
   number_of_errors += ViETest::TestError(
@@ -1286,6 +1279,7 @@ void SetVideoCodecResolution(webrtc::VideoCodec* video_codec) {
   }
 
   int choice = FromChoices(
+      "Available Common Resolutions:",
       "SQCIF (128X96)\n"
       "QQVGA (160X120)\n"
       "QCIF  (176X144)\n"
@@ -1296,7 +1290,6 @@ void SetVideoCodecResolution(webrtc::VideoCodec* video_codec) {
       "SVGA  (800X600)\n"
       "HD    (1280X720)\n"
       "XGA   (1024x768)\n")
-          .WithTitle("Available Common Resolutions:")
           .Choose();
 
   switch (choice) {
@@ -1349,25 +1342,22 @@ void SetVideoCodecSize(webrtc::VideoCodec* video_codec) {
     return;
   }
 
-  std::string input = TypedInput()
+  std::string input = TypedInput("Choose video width.")
       .WithDefault(DEFAULT_VIDEO_CODEC_WIDTH)
-      .WithTitle("Choose video width.")
       .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, INT_MAX))
       .AskForInput();
   video_codec->width = atoi(input.c_str());
 
-  input = TypedInput()
+  input = TypedInput("Choose video height.")
       .WithDefault(DEFAULT_VIDEO_CODEC_HEIGHT)
-      .WithTitle("Choose video height.")
       .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, INT_MAX))
       .AskForInput();
   video_codec->height = atoi(input.c_str());
 }
 
 void SetVideoCodecBitrate(webrtc::VideoCodec* video_codec) {
-  std::string input = TypedInput()
+  std::string input = TypedInput("Choose start rate (in kbps).")
       .WithDefault(DEFAULT_VIDEO_CODEC_BITRATE)
-      .WithTitle("Choose start rate (in kbps).")
       .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, INT_MAX))
       .AskForInput();
 
@@ -1375,9 +1365,8 @@ void SetVideoCodecBitrate(webrtc::VideoCodec* video_codec) {
 }
 
 void SetVideoCodecMaxBitrate(webrtc::VideoCodec* video_codec) {
-  std::string input = TypedInput()
+  std::string input = TypedInput("Choose max bitrate (in kbps).")
       .WithDefault(DEFAULT_VIDEO_CODEC_MAX_BITRATE)
-      .WithTitle("Choose max bitrate (in kbps).")
       .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, INT_MAX))
       .AskForInput();
 
@@ -1385,9 +1374,8 @@ void SetVideoCodecMaxBitrate(webrtc::VideoCodec* video_codec) {
 }
 
 void SetVideoCodecMinBitrate(webrtc::VideoCodec* video_codec) {
-  std::string input = TypedInput()
+  std::string input = TypedInput("Choose min bitrate (in kbps).")
       .WithDefault(DEFAULT_VIDEO_CODEC_MIN_BITRATE)
-      .WithTitle("Choose min bitrate (in kbps).")
       .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, INT_MAX))
       .AskForInput();
 
@@ -1395,9 +1383,8 @@ void SetVideoCodecMinBitrate(webrtc::VideoCodec* video_codec) {
 }
 
 void SetVideoCodecMaxFramerate(webrtc::VideoCodec* video_codec) {
-  std::string input = TypedInput()
+  std::string input = TypedInput("Choose max framerate (in fps).")
       .WithDefault(DEFAULT_VIDEO_CODEC_MAX_FRAMERATE)
-      .WithTitle("Choose max framerate (in fps).")
       .WithInputValidator(new webrtc::IntegerWithinRangeValidator(1, INT_MAX))
       .AskForInput();
   video_codec->maxFramerate = atoi(input.c_str());
@@ -1407,9 +1394,8 @@ void SetVideoCodecTemporalLayer(webrtc::VideoCodec* video_codec) {
   if (video_codec->codecType != webrtc::kVideoCodecVP8)
     return;
 
-  std::string input = TypedInput()
+  std::string input = TypedInput("Choose number of temporal layers (0 to 4).")
       .WithDefault(DEFAULT_TEMPORAL_LAYER)
-      .WithTitle("Choose number of temporal layers (0 to 4).")
       .WithInputValidator(new webrtc::IntegerWithinRangeValidator(0, 4))
       .AskForInput();
   video_codec->codecSpecific.VP8.numberOfTemporalLayers = atoi(input.c_str());
@@ -1419,12 +1405,12 @@ void SetVideoCodecTemporalLayer(webrtc::VideoCodec* video_codec) {
 // that SetVideoProtection method uses.
 VideoProtectionMethod GetVideoProtection() {
   int choice = FromChoices(
+      "Available Video Protection Methods:",
       "None\n"
       "FEC\n"
       "NACK\n"
       "NACK+FEC\n")
           .WithDefault(DEFAULT_VIDEO_PROTECTION_METHOD)
-          .WithTitle("Available Video Protection Methods:")
           .Choose();
 
   assert(choice >= kProtectionMethodNone &&
@@ -1530,10 +1516,10 @@ bool SetVideoProtection(webrtc::ViECodec* vie_codec,
 // Returns true if REMB, false if TMMBR.
 bool GetBitrateSignaling() {
   int choice = FromChoices(
+      "Available Bitrate Signaling Methods:",
       "REMB\n"
       "TMMBR\n")
           .WithDefault("REMB")
-          .WithTitle("Available Bitrate Signaling Methods:")
           .Choose();
   return choice == 1;
 }
