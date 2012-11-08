@@ -38,7 +38,6 @@ public:
     virtual bool SetAffinity(const int* processorNumbers,
                              unsigned int amountOfProcessors);
     virtual bool Stop();
-    virtual bool Shutdown();
 
     void Run();
 

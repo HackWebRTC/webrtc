@@ -34,8 +34,6 @@ public:
 
     static unsigned int WINAPI StartThread(LPVOID lpParameter);
 
-    virtual bool Shutdown();
-
 protected:
     virtual void Run();
 

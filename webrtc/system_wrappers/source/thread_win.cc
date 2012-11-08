@@ -133,20 +133,6 @@ void ThreadWindows::SetNotAlive()
     _alive = false;
 }
 
-bool ThreadWindows::Shutdown()
-{
-    DWORD exitCode = 0;
-    BOOL ret = TRUE;
-    if (_thread)
-    {
-        ret = TerminateThread(_thread, exitCode);
-        _alive = false;
-        _dead = true;
-        _thread = NULL;
-    }
-    return ret == TRUE;
-}
-
 bool ThreadWindows::Stop()
 {
     _critsectStop->Enter();

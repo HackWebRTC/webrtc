@@ -306,20 +306,6 @@ void ThreadPosix::SetNotAlive()
     _alive = false;
 }
 
-bool ThreadPosix::Shutdown()
-{
-#if !defined(WEBRTC_ANDROID)
-    if (_thread && (0 != pthread_cancel(_thread)))
-    {
-        return false;
-    }
-
-    return true;
-#else
-    return false;
-#endif
-}
-
 bool ThreadPosix::Stop()
 {
     bool dead = false;

@@ -88,11 +88,6 @@ public:
     // Multiple tries to Stop are allowed (e.g. to wait longer than 2 seconds).
     // It's ok to call Stop() even if the spawned thread has been reclaimed.
     virtual bool Stop() = 0;
-
-    // Stops the spawned thread dead in its tracks. Will likely result in a
-    // corrupt state. There should be an extremely good reason for even looking
-    // at this function. Can cause many problems deadlock being one of them.
-    virtual bool Shutdown() {return false;}
 };
 } // namespace webrtc
 
