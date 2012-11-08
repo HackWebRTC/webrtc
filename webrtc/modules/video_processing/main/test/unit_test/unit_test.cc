@@ -265,6 +265,10 @@ TEST_F(VideoProcessingModuleTest, Resampler)
     // initiate test timer
     t0 = TickTime::Now();
 
+    // Init the sourceFrame with a timestamp.
+    sourceFrame.set_render_time_ms(t0.MillisecondTimestamp());
+    sourceFrame.set_timestamp(t0.MillisecondTimestamp() * 90);
+
     // Test scaling to different sizes: source is of |width|/|height| = 352/288.
     // Scaling mode in VPM is currently fixed to kScaleBox (mode = 3).
     TestSize(sourceFrame, 100, 50, 3, 24.0, _vpm);
@@ -308,6 +312,11 @@ void TestSize(const I420VideoFrame& source_frame, int target_width,
 
   ASSERT_EQ(VPM_OK, vpm->SetTargetResolution(target_width, target_height, 30));
   ASSERT_EQ(VPM_OK, vpm->PreprocessFrame(source_frame, &out_frame));
+
+  if (out_frame) {
+    EXPECT_EQ(source_frame.render_time_ms(), out_frame->render_time_ms());
+    EXPECT_EQ(source_frame.timestamp(), out_frame->timestamp());
+  }
 
   // If the frame was resampled (scale changed) then:
   // (1) verify the new size and write out processed frame for viewing.
