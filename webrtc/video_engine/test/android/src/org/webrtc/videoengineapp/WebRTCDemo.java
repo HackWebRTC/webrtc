@@ -839,6 +839,7 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                 readSettings();
                 if (viERunning || voERunning) {
                     stopAll();
+                    startMain();
                     wakeLock.release(); // release the wake lock
                     btStartStopCall.setText(R.string.startCall);
                 } else if (enableVoice || enableVideo){
@@ -1079,6 +1080,7 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
             mIsBackgroudLoadRunning = false;
             try {
                 mBackgroundLoad.join();
+                mBackgroundLoad = null;
             } catch (Throwable t) {
                 Log.v(TAG, "stopCPULoad failed");
             }
