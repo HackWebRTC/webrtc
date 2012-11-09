@@ -171,10 +171,18 @@ I420Decoder::Decode(const EncodedImage& inputImage,
   if (inputImage._length <= 0) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
+  if (inputImage._completeFrame == false) {
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
   if (!_inited) {
    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
 
+  // Verify that the available length is sufficient:
+  int req_length = CalcBufferSize(kI420, _width, _height);
+  if (req_length > static_cast<int>(inputImage._length)) {
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
   // Set decoded image parameters.
   int half_width = (_width + 1) / 2;
   int half_height = (_height + 1) / 2;
