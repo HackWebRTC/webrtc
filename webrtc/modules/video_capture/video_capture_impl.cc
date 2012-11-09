@@ -342,8 +342,8 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrameI420(
 
   CriticalSectionScoped cs(&_callBackCs);
   int size_y = video_frame.height * video_frame.y_pitch;
-  int size_u = video_frame.u_pitch * (video_frame.height + 1) / 2;
-  int size_v =  video_frame.v_pitch * (video_frame.height + 1) / 2;
+  int size_u = video_frame.u_pitch * ((video_frame.height + 1) / 2);
+  int size_v =  video_frame.v_pitch * ((video_frame.height + 1) / 2);
   // TODO(mikhal): Can we use Swap here? This will do a memcpy.
   int ret = _captureFrame.CreateFrame(size_y, video_frame.y_plane,
                                       size_u, video_frame.u_plane,
