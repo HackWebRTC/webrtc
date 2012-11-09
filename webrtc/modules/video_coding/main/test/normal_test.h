@@ -18,42 +18,46 @@
 
 class NormalTest;
 
-//Send Side - Packetization callback - will create and send a packet to the VCMReceiver
+//Send Side - Packetization callback -
+// will create and send a packet to the VCMReceiver
 class VCMNTEncodeCompleteCallback : public webrtc::VCMPacketizationCallback
 {
-public:
-    // constructor input: file in which encoded data will be written
-    VCMNTEncodeCompleteCallback(FILE* encodedFile, NormalTest& test);
-    virtual ~VCMNTEncodeCompleteCallback();
-    // Register transport callback
-    void RegisterTransportCallback(webrtc::VCMPacketizationCallback* transport);
-    // process encoded data received from the encoder, pass stream to the VCMReceiver module
-    WebRtc_Word32 SendData(const webrtc::FrameType frameType,
-                           const WebRtc_UWord8 payloadType,
-                           const WebRtc_UWord32 timeStamp,
-                           int64_t capture_time_ms,
-                           const WebRtc_UWord8* payloadData,
-                           const WebRtc_UWord32 payloadSize,
-                           const webrtc::RTPFragmentationHeader& fragmentationHeader,
-                           const webrtc::RTPVideoHeader* videoHdr);
+ public:
+  // constructor input: file in which encoded data will be written
+  VCMNTEncodeCompleteCallback(FILE* encodedFile, NormalTest& test);
+  virtual ~VCMNTEncodeCompleteCallback();
+  // Register transport callback
+  void RegisterTransportCallback(webrtc::VCMPacketizationCallback* transport);
+  // process encoded data received from the encoder,
+  // pass stream to the VCMReceiver module
+  WebRtc_Word32
+  SendData(const webrtc::FrameType frameType,
+           const WebRtc_UWord8 payloadType,
+           const WebRtc_UWord32 timeStamp,
+           int64_t capture_time_ms,
+           const WebRtc_UWord8* payloadData,
+           const WebRtc_UWord32 payloadSize,
+           const webrtc::RTPFragmentationHeader& fragmentationHeader,
+           const webrtc::RTPVideoHeader* videoHdr);
 
-    // Register exisitng VCM. Currently - encode and decode with the same vcm module.
-    void RegisterReceiverVCM(webrtc::VideoCodingModule *vcm);
-    // Return sum of encoded data (all frames in the sequence)
-    WebRtc_Word32 EncodedBytes();
-    // return number of encoder-skipped frames
-    WebRtc_UWord32 SkipCnt();;
-    // conversion function for payload type (needed for the callback function)
+  // Register exisitng VCM.
+  // Currently - encode and decode with the same vcm module.
+  void RegisterReceiverVCM(webrtc::VideoCodingModule *vcm);
+  // Return sum of encoded data (all frames in the sequence)
+  WebRtc_Word32 EncodedBytes();
+  // return number of encoder-skipped frames
+  WebRtc_UWord32 SkipCnt();;
+  // conversion function for payload type (needed for the callback function)
 //    RTPVideoVideoCodecTypes ConvertPayloadType(WebRtc_UWord8 payloadType);
 
-private:
-    FILE*                       _encodedFile;
-    WebRtc_UWord32              _encodedBytes;
-    WebRtc_UWord32              _skipCnt;
-    webrtc::VideoCodingModule*  _VCMReceiver;
-    webrtc::FrameType           _frameType;
-    WebRtc_UWord16              _seqNo;
-    NormalTest&                 _test;
+ private:
+  FILE*                       _encodedFile;
+  WebRtc_UWord32              _encodedBytes;
+  WebRtc_UWord32              _skipCnt;
+  webrtc::VideoCodingModule*  _VCMReceiver;
+  webrtc::FrameType           _frameType;
+  WebRtc_UWord16              _seqNo;
+  NormalTest&                 _test;
 }; // end of VCMEncodeCompleteCallback
 
 class VCMNTDecodeCompleCallback: public webrtc::VCMReceiveCallback
@@ -76,9 +80,7 @@ private:
     int               _decodedBytes;
     int               _currentWidth;
     int               _currentHeight;
-
 }; // end of VCMDecodeCompleCallback class
-
 
 class NormalTest
 {
@@ -86,8 +88,8 @@ public:
     NormalTest(webrtc::VideoCodingModule* vcm,
                webrtc::TickTimeBase* clock);
     ~NormalTest();
-    static int RunTest(CmdArgs& args);
-    WebRtc_Word32    Perform(CmdArgs& args);
+    static int RunTest(const CmdArgs& args);
+    WebRtc_Word32    Perform(const CmdArgs& args);
     // option:: turn into private and call from perform
     int   Width() const { return _width; };
     int   Height() const { return _height; };
@@ -96,7 +98,7 @@ public:
 
 protected:
     // test setup - open files, general initializations
-    void            Setup(CmdArgs& args);
+    void            Setup(const CmdArgs& args);
    // close open files, delete used memory
     void            Teardown();
     // print results to std output and to log file

@@ -13,9 +13,10 @@
 
 #include "video_processing.h"
 #include "normal_test.h"
+#include "system_wrappers/interface/data_log.h"
 #include "video_coding_defines.h"
 
-int qualityModeTest();
+int qualityModeTest(const CmdArgs& args);
 
 class QualityModesTest : public NormalTest
 {
@@ -23,11 +24,11 @@ public:
     QualityModesTest(webrtc::VideoCodingModule* vcm,
                      webrtc::TickTimeBase* clock);
     virtual ~QualityModesTest();
-    WebRtc_Word32 Perform();
+    WebRtc_Word32 Perform(const CmdArgs& args);
 
 private:
 
-    void Setup();
+    void Setup(const CmdArgs& args);
     void Print();
     void Teardown();
     void SsimComp();
@@ -43,14 +44,20 @@ private:
 
     WebRtc_UWord32                      _numFramesDroppedVPM;
     bool                                _flagSSIM;
+    std::string                         filename_testvideo_;
+    std::string                         fv_outfilename_;
+
+    std::string                         feature_table_name_;
 
 }; // end of QualityModesTest class
-
 
 class VCMQMDecodeCompleCallback: public webrtc::VCMReceiveCallback
 {
 public:
-    VCMQMDecodeCompleCallback(FILE* decodedFile);
+    VCMQMDecodeCompleCallback(
+        FILE* decodedFile,
+        int frame_rate,
+        std::string feature_table_name);
     virtual ~VCMQMDecodeCompleCallback();
     void SetUserReceiveCallback(webrtc::VCMReceiveCallback* receiveCallback);
     // will write decoded frame into file
@@ -58,6 +65,9 @@ public:
     WebRtc_Word32 DecodedBytes();
     void SetOriginalFrameDimensions(WebRtc_Word32 width, WebRtc_Word32 height);
     WebRtc_Word32 buildInterpolator();
+    // Check if last frame is dropped, if so, repeat the last rendered frame.
+    void WriteEnd(int input_tot_frame_count);
+
 private:
     FILE*                _decodedFile;
     WebRtc_UWord32       _decodedBytes;
@@ -69,6 +79,12 @@ private:
 //    VideoInterpolator* _interpolator;
     WebRtc_UWord8*       _decBuffer;
     WebRtc_UWord32       _frameCnt; // debug
+    webrtc::I420VideoFrame last_frame_;
+    int                  frame_rate_;
+    int                  frames_cnt_since_drop_;
+    std::string          feature_table_name_;
+
+
 
 }; // end of VCMQMDecodeCompleCallback class
 

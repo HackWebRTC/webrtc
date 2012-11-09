@@ -41,7 +41,8 @@ class CmdArgs
                   "/resources/foreman_cif.yuv"),
         outputFile(webrtc::test::OutputPath() +
                    "video_coding_test_output_352x288.yuv"),
-        testNum(11) {}
+        fv_outputfile(webrtc::test::OutputPath() + "features.txt"),
+        testNum(0) {}
      std::string codecName;
      webrtc::VideoCodecType codecType;
      int width;
@@ -54,6 +55,7 @@ class CmdArgs
      int camaEnable;
      std::string inputFile;
      std::string outputFile;
+     std::string fv_outputfile;
      int testNum;
 };
 

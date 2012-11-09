@@ -10,33 +10,33 @@
 
 #include "quality_modes_test.h"
 
+#include <time.h>
 #include <iostream>
 #include <string>
-#include <time.h>
+#include <sstream>
 
-#include "../source/event.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "modules/video_coding/main/source/event.h"
+#include "modules/video_coding/main/source/mock/fake_tick_time.h"
 #include "modules/video_coding/main/source/tick_time_base.h"
-#include "test_callbacks.h"
-#include "test_macros.h"
+#include "modules/video_coding/main/test/test_callbacks.h"
+#include "modules/video_coding/main/test/test_macros.h"
+#include "modules/video_coding/main/test/test_util.h"
+#include "system_wrappers/interface/data_log.h"
+#include "system_wrappers/interface/data_log.h"
 #include "testsupport/metrics/video_metrics.h"
 
 using namespace webrtc;
 
-int qualityModeTest()
+int qualityModeTest(const CmdArgs& args)
 {
-    // Don't run this test with debug events.
-#if defined(EVENT_DEBUG)
-    return -1;
-#endif
-    TickTimeBase clock;
-    VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock);
-    QualityModesTest QMTest(vcm, &clock);
-    QMTest.Perform();
-    VideoCodingModule::Destroy(vcm);
-    return 0;
+  FakeTickTime clock(0);
+  VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock);
+  QualityModesTest QMTest(vcm, &clock);
+  QMTest.Perform(args);
+  VideoCodingModule::Destroy(vcm);
+  return 0;
 }
-
 
 QualityModesTest::QualityModesTest(VideoCodingModule* vcm,
                                    TickTimeBase* clock):
@@ -46,320 +46,377 @@ _vpm()
     //
 }
 
-
 QualityModesTest::~QualityModesTest()
 {
     //
 }
 
 void
-QualityModesTest::Setup()
+QualityModesTest::Setup(const CmdArgs& args)
 {
+  NormalTest::Setup(args);
+  _inname = args.inputFile;
+  _outname = args.outputFile;
+  fv_outfilename_ = args.fv_outputfile;
 
+  filename_testvideo_ =
+      _inname.substr(_inname.find_last_of("\\/") + 1,_inname.length());
 
-    _inname= test::ProjectRootPath() + "resources/crew_30f_4CIF.yuv";
-    _outname = test::OutputPath() + "out_qmtest.yuv";
-    _encodedName = test::OutputPath() + "encoded_qmtest.yuv";
+  _encodedName = test::OutputPath() + "encoded_qmtest.yuv";
 
-    //NATIVE/SOURCE VALUES
-    _nativeWidth = 2*352;
-    _nativeHeight = 2*288;
-    _nativeFrameRate = 30;
+  //NATIVE/SOURCE VALUES
+  _nativeWidth = args.width;
+  _nativeHeight = args.height;
+  _nativeFrameRate =args.frameRate;
 
+  //TARGET/ENCODER VALUES
+  _width = args.width;
+  _height = args.height;
+  _frameRate = args.frameRate;
 
-    //TARGET/ENCODER VALUES
-     _width = 2*352;
-     _height = 2*288;
-    _frameRate = 30;
-    //
-    _bitRate = 400;
+  _bitRate = args.bitRate;
 
-    _flagSSIM = false;
+  _flagSSIM = true;
 
-    _lengthSourceFrame  = 3*_nativeWidth*_nativeHeight/2;
+  _lengthSourceFrame  = 3*_nativeWidth*_nativeHeight/2;
 
-    if ((_sourceFile = fopen(_inname.c_str(), "rb")) == NULL)
-    {
-        printf("Cannot read file %s.\n", _inname.c_str());
-        exit(1);
-    }
-     if ((_encodedFile = fopen(_encodedName.c_str(), "wb")) == NULL)
-    {
-        printf("Cannot write encoded file.\n");
-        exit(1);
-    }
-    if ((_decodedFile = fopen(_outname.c_str(),  "wb")) == NULL)
-    {
-        printf("Cannot write file %s.\n", _outname.c_str());
-        exit(1);
-    }
+  if ((_sourceFile = fopen(_inname.c_str(), "rb")) == NULL)
+  {
+    printf("Cannot read file %s.\n", _inname.c_str());
+    exit(1);
+  }
+  if ((_encodedFile = fopen(_encodedName.c_str(), "wb")) == NULL)
+  {
+    printf("Cannot write encoded file.\n");
+    exit(1);
+  }
+  if ((_decodedFile = fopen(_outname.c_str(),  "wb")) == NULL)
+  {
+    printf("Cannot write file %s.\n", _outname.c_str());
+    exit(1);
+  }
 
-    _log.open((test::OutputPath() + "TestLog.txt").c_str(),
-              std::fstream::out | std::fstream::app);
-    return;
+  DataLog::CreateLog();
+
+  feature_table_name_ = fv_outfilename_;
+
+  DataLog::AddTable(feature_table_name_);
+
+  DataLog::AddColumn(feature_table_name_, "motion magnitude", 1);
+  DataLog::AddColumn(feature_table_name_, "spatial prediction error", 1);
+  DataLog::AddColumn(feature_table_name_, "spatial pred err horizontal", 1);
+  DataLog::AddColumn(feature_table_name_, "spatial pred err vertical", 1);
+  DataLog::AddColumn(feature_table_name_, "width", 1);
+  DataLog::AddColumn(feature_table_name_, "height", 1);
+  DataLog::AddColumn(feature_table_name_, "num pixels", 1);
+  DataLog::AddColumn(feature_table_name_, "frame rate", 1);
+  DataLog::AddColumn(feature_table_name_, "num frames since drop", 1);
+
+  _log.open((test::OutputPath() + "TestLog.txt").c_str(),
+            std::fstream::out | std::fstream::app);
 }
-
 
 void
 QualityModesTest::Print()
 {
-    std::cout << "Quality Modes Test Completed!" << std::endl;
-    (_log) << "Quality Modes Test Completed!" << std::endl;
-    (_log) << "Input file: " << _inname << std::endl;
-    (_log) << "Output file: " << _outname << std::endl;
-    (_log) << "Total run time: " << _testTotalTime << std::endl;
-    printf("Total run time: %f s \n", _testTotalTime);
-    double ActualBitRate =  8.0 *( _sumEncBytes / (_frameCnt / _nativeFrameRate));
-    double actualBitRate = ActualBitRate / 1000.0;
-    double avgEncTime = _totalEncodeTime / _frameCnt;
-    double avgDecTime = _totalDecodeTime / _frameCnt;
-    webrtc::test::QualityMetricsResult psnr,ssim;
-    I420PSNRFromFiles(_inname.c_str(), _outname.c_str(), _nativeWidth,
-                      _nativeHeight, &psnr);
-    printf("Actual bitrate: %f kbps\n", actualBitRate);
-    printf("Target bitrate: %f kbps\n", _bitRate);
-    ( _log) << "Actual bitrate: " << actualBitRate<< " kbps\tTarget: " << _bitRate << " kbps" << std::endl;
-    printf("Average encode time: %f s\n", avgEncTime);
-    ( _log) << "Average encode time: " << avgEncTime << " s" << std::endl;
-    printf("Average decode time: %f s\n", avgDecTime);
-    ( _log) << "Average decode time: " << avgDecTime << " s" << std::endl;
-    printf("PSNR: %f \n", psnr.average);
-    printf("**Number of frames dropped in VPM***%d \n",_numFramesDroppedVPM);
-    ( _log) << "PSNR: " << psnr.average << std::endl;
-    if (_flagSSIM == 1)
-    {
-        printf("***computing SSIM***\n");
-        I420SSIMFromFiles(_inname.c_str(), _outname.c_str(), _nativeWidth,
-                          _nativeHeight, &ssim);
-        printf("SSIM: %f \n", ssim.average);
-    }
-    (_log) << std::endl;
+  std::cout << "Quality Modes Test Completed!" << std::endl;
+  (_log) << "Quality Modes Test Completed!" << std::endl;
+  (_log) << "Input file: " << _inname << std::endl;
+  (_log) << "Output file: " << _outname << std::endl;
+  (_log) << "Total run time: " << _testTotalTime << std::endl;
+  printf("Total run time: %f s \n", _testTotalTime);
+  double ActualBitRate = 8.0*( _sumEncBytes / (_frameCnt / _nativeFrameRate));
+  double actualBitRate = ActualBitRate / 1000.0;
+  double avgEncTime = _totalEncodeTime / _frameCnt;
+  double avgDecTime = _totalDecodeTime / _frameCnt;
+  webrtc::test::QualityMetricsResult psnr,ssim;
+  I420PSNRFromFiles(_inname.c_str(), _outname.c_str(), _nativeWidth,
+                    _nativeHeight, &psnr);
+  printf("Actual bitrate: %f kbps\n", actualBitRate);
+  printf("Target bitrate: %f kbps\n", _bitRate);
+  ( _log) << "Actual bitrate: " << actualBitRate<< " kbps\tTarget: " <<
+      _bitRate << " kbps" << std::endl;
+  printf("Average encode time: %f s\n", avgEncTime);
+  ( _log) << "Average encode time: " << avgEncTime << " s" << std::endl;
+  printf("Average decode time: %f s\n", avgDecTime);
+  ( _log) << "Average decode time: " << avgDecTime << " s" << std::endl;
+  printf("PSNR: %f \n", psnr.average);
+  printf("**Number of frames dropped in VPM***%d \n",_numFramesDroppedVPM);
+  ( _log) << "PSNR: " << psnr.average << std::endl;
+  if (_flagSSIM == 1)
+  {
+      printf("***computing SSIM***\n");
+      I420SSIMFromFiles(_inname.c_str(), _outname.c_str(), _nativeWidth,
+                        _nativeHeight, &ssim);
+      printf("SSIM: %f \n", ssim.average);
+  }
+  (_log) << std::endl;
 
-    printf("\nVCM Qualit Modes Test: \n\n%i tests completed\n", vcmMacrosTests);
-    if (vcmMacrosErrors > 0)
-    {
-        printf("%i FAILED\n\n", vcmMacrosErrors);
-    }
-    else
-    {
-        printf("ALL PASSED\n\n");
-    }
+  printf("\nVCM Quality Modes Test: \n\n%i tests completed\n", vcmMacrosTests);
+  if (vcmMacrosErrors > 0)
+  {
+      printf("%i FAILED\n\n", vcmMacrosErrors);
+  }
+  else
+  {
+      printf("ALL PASSED\n\n");
+  }
 }
 void
 QualityModesTest::Teardown()
 {
-    _log.close();
-    fclose(_sourceFile);
-    fclose(_decodedFile);
-    fclose(_encodedFile);
-    return;
+  _log.close();
+  fclose(_sourceFile);
+  fclose(_decodedFile);
+  fclose(_encodedFile);
+  return;
 }
-
 
 WebRtc_Word32
-QualityModesTest::Perform()
+QualityModesTest::Perform(const CmdArgs& args)
 {
-    Setup();
-    // changing bit/frame rate during the test
-    const float bitRateUpdate[] = {1000};
-    const float frameRateUpdate[] = {30};
-    const int updateFrameNum[] = {10000}; // frame numbers at which an update will occur
+  Setup(args);
+  // changing bit/frame rate during the test
+  const float bitRateUpdate[] = {1000};
+  const float frameRateUpdate[] = {30};
+  // frame num at which an update will occur
+  const int updateFrameNum[] = {10000};
 
-    WebRtc_UWord32 numChanges = sizeof(updateFrameNum)/sizeof(*updateFrameNum);
-    WebRtc_UWord8 change = 0;// change counter
+  WebRtc_UWord32 numChanges = sizeof(updateFrameNum)/sizeof(*updateFrameNum);
+  WebRtc_UWord8 change = 0;// change counter
 
-    _vpm = VideoProcessingModule::Create(1);
-
-    EventWrapper* waitEvent = EventWrapper::Create();
-    VideoCodec codec;//both send and receive
-    _vcm->InitializeReceiver();
-    _vcm->InitializeSender();
-    WebRtc_Word32 NumberOfCodecs = _vcm->NumberOfCodecs();
-    for (int i = 0; i < NumberOfCodecs; i++)
+  _vpm = VideoProcessingModule::Create(1);
+  EventWrapper* waitEvent = EventWrapper::Create();
+  VideoCodec codec;//both send and receive
+  _vcm->InitializeReceiver();
+  _vcm->InitializeSender();
+  WebRtc_Word32 NumberOfCodecs = _vcm->NumberOfCodecs();
+  for (int i = 0; i < NumberOfCodecs; i++)
+  {
+    _vcm->Codec(i, &codec);
+    if(strncmp(codec.plName,"VP8" , 5) == 0)
     {
-        _vcm->Codec(i, &codec);
-        if(strncmp(codec.plName,"VP8" , 5) == 0)
-        {
-             codec.startBitrate = (int)_bitRate;
-             codec.maxFramerate = (WebRtc_UWord8) _frameRate;
-             codec.width = (WebRtc_UWord16)_width;
-             codec.height = (WebRtc_UWord16)_height;
-             TEST(_vcm->RegisterSendCodec(&codec, 2, 1440) == VCM_OK);// will also set and init the desired codec
-             i = NumberOfCodecs;
-        }
+      codec.startBitrate = (int)_bitRate;
+      codec.maxFramerate = (WebRtc_UWord8) _frameRate;
+      codec.width = (WebRtc_UWord16)_width;
+      codec.height = (WebRtc_UWord16)_height;
+      codec.codecSpecific.VP8.frameDroppingOn = false;
+
+      // Will also set and init the desired codec
+      TEST(_vcm->RegisterSendCodec(&codec, 2, 1440) == VCM_OK);
+      i = NumberOfCodecs;
     }
+  }
 
-    // register a decoder (same codec for decoder and encoder )
-    TEST(_vcm->RegisterReceiveCodec(&codec, 2) == VCM_OK);
-    /* Callback Settings */
-    VCMQMDecodeCompleCallback  _decodeCallback(_decodedFile);
-    _vcm->RegisterReceiveCallback(&_decodeCallback);
-    VCMNTEncodeCompleteCallback   _encodeCompleteCallback(_encodedFile, *this);
-    _vcm->RegisterTransportCallback(&_encodeCompleteCallback);
-    // encode and decode with the same vcm
-    _encodeCompleteCallback.RegisterReceiverVCM(_vcm);
+  // register a decoder (same codec for decoder and encoder )
+  TEST(_vcm->RegisterReceiveCodec(&codec, 2) == VCM_OK);
+  /* Callback Settings */
+  VCMQMDecodeCompleCallback  _decodeCallback(
+      _decodedFile, _nativeFrameRate, feature_table_name_);
+  _vcm->RegisterReceiveCallback(&_decodeCallback);
+  VCMNTEncodeCompleteCallback   _encodeCompleteCallback(_encodedFile, *this);
+  _vcm->RegisterTransportCallback(&_encodeCompleteCallback);
+  // encode and decode with the same vcm
+  _encodeCompleteCallback.RegisterReceiverVCM(_vcm);
 
-    //quality modes callback
-    QMTestVideoSettingsCallback QMCallback;
-    QMCallback.RegisterVCM(_vcm);
-    QMCallback.RegisterVPM(_vpm);
-    _vcm->RegisterVideoQMCallback(&QMCallback);
+  //quality modes callback
+  QMTestVideoSettingsCallback QMCallback;
+  QMCallback.RegisterVCM(_vcm);
+  QMCallback.RegisterVPM(_vpm);
+  //_vcm->RegisterVideoQMCallback(&QMCallback);
 
-    ///////////////////////
-    /// Start Test
-    ///////////////////////
-    _vpm->EnableTemporalDecimation(true);
-    _vpm->EnableContentAnalysis(true);
-    _vpm->SetInputFrameResampleMode(kFastRescaling);
+  ///////////////////////
+  /// Start Test
+  ///////////////////////
+  _vpm->EnableTemporalDecimation(true);
+  _vpm->EnableContentAnalysis(true);
+  _vpm->SetInputFrameResampleMode(kFastRescaling);
 
-    // disabling internal VCM frame dropper
-    _vcm->EnableFrameDropper(false);
+  // disabling internal VCM frame dropper
+  _vcm->EnableFrameDropper(false);
 
-    I420VideoFrame sourceFrame;
-    I420VideoFrame *decimatedFrame = NULL;
-    WebRtc_UWord8* tmpBuffer = new WebRtc_UWord8[_lengthSourceFrame];
-    double startTime = clock()/(double)CLOCKS_PER_SEC;
-    _vcm->SetChannelParameters((WebRtc_UWord32)_bitRate, 0, 0);
+  I420VideoFrame sourceFrame;
+  I420VideoFrame *decimatedFrame = NULL;
+  WebRtc_UWord8* tmpBuffer = new WebRtc_UWord8[_lengthSourceFrame];
+  double startTime = clock()/(double)CLOCKS_PER_SEC;
+  _vcm->SetChannelParameters((WebRtc_UWord32)_bitRate, 0, 0);
 
-    SendStatsTest sendStats;
-    sendStats.SetTargetFrameRate(static_cast<WebRtc_UWord32>(_frameRate));
-    _vcm->RegisterSendStatisticsCallback(&sendStats);
+  SendStatsTest sendStats;
+  sendStats.SetTargetFrameRate(static_cast<WebRtc_UWord32>(_frameRate));
+  _vcm->RegisterSendStatisticsCallback(&sendStats);
 
-    VideoContentMetrics* contentMetrics = NULL;
-    // setting user frame rate
-    _vpm->SetMaxFrameRate((WebRtc_UWord32)(_nativeFrameRate+ 0.5f));
-    // for starters: keeping native values:
-    _vpm->SetTargetResolution(_width, _height, (WebRtc_UWord32)(_frameRate+ 0.5f));
-    _decodeCallback.SetOriginalFrameDimensions(_nativeWidth, _nativeHeight);
+  VideoContentMetrics* contentMetrics = NULL;
+  // setting user frame rate
+  _vpm->SetMaxFrameRate((WebRtc_UWord32)(_nativeFrameRate+ 0.5f));
+  // for starters: keeping native values:
+  _vpm->SetTargetResolution(_width, _height,
+                            (WebRtc_UWord32)(_frameRate+ 0.5f));
+  _decodeCallback.SetOriginalFrameDimensions(_nativeWidth, _nativeHeight);
 
-    //tmp  - disabling VPM frame dropping
-    _vpm->EnableTemporalDecimation(false);
+  //tmp  - disabling VPM frame dropping
+  _vpm->EnableTemporalDecimation(false);
+
+  WebRtc_Word32 ret = 0;
+  _numFramesDroppedVPM = 0;
+
+  do {
+    if (fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0) {
+      _frameCnt++;
+      int size_y = _nativeWidth * _nativeHeight;
+      int size_uv = ((_nativeWidth + 1) / 2) * ((_nativeHeight  + 1) / 2);
+      sourceFrame.CreateFrame(size_y, tmpBuffer,
+                              size_uv, tmpBuffer + size_y,
+                              size_uv, tmpBuffer + size_y + size_uv,
+                              _nativeWidth, _nativeHeight,
+                              _nativeWidth, (_nativeWidth + 1) / 2,
+                              (_nativeWidth + 1) / 2);
+
+      _timeStamp +=
+          (WebRtc_UWord32)(9e4 / static_cast<float>(codec.maxFramerate));
+      sourceFrame.set_timestamp(_timeStamp);
+
+      ret = _vpm->PreprocessFrame(sourceFrame, &decimatedFrame);
+      if (ret  == 1)
+      {
+          printf("VD: frame drop %d \n",_frameCnt);
+          _numFramesDroppedVPM += 1;
+          continue; // frame drop
+      }
+      else if (ret < 0)
+      {
+          printf("Error in PreprocessFrame: %d\n", ret);
+          //exit(1);
+      }
+      // Frame was not re-sampled => use original.
+      if (decimatedFrame == NULL)
+      {
+        decimatedFrame = &sourceFrame;
+      }
+      contentMetrics = _vpm->ContentMetrics();
+      if (contentMetrics == NULL)
+      {
+          printf("error: contentMetrics = NULL\n");
+      }
+
+      // counting only encoding time
+      _encodeTimes[int(sourceFrame.timestamp())] =
+          clock()/(double)CLOCKS_PER_SEC;
+
+      WebRtc_Word32 ret = _vcm->AddVideoFrame(*decimatedFrame, contentMetrics);
+
+      _totalEncodeTime += clock()/(double)CLOCKS_PER_SEC -
+          _encodeTimes[int(sourceFrame.timestamp())];
+
+      if (ret < 0)
+      {
+          printf("Error in AddFrame: %d\n", ret);
+          //exit(1);
+      }
+
+      // Same timestamp value for encode and decode
+      _decodeTimes[int(sourceFrame.timestamp())] =
+          clock()/(double)CLOCKS_PER_SEC;
+      ret = _vcm->Decode();
+
+      _totalDecodeTime += clock()/(double)CLOCKS_PER_SEC -
+          _decodeTimes[int(sourceFrame.timestamp())];
+
+      if (ret < 0)
+      {
+          printf("Error in Decode: %d\n", ret);
+          //exit(1);
+      }
+      if (_vcm->TimeUntilNextProcess() <= 0)
+      {
+          _vcm->Process();
+      }
+      // mimicking setTargetRates - update every 1 sec
+      // this will trigger QMSelect
+      if (_frameCnt%((int)_frameRate) == 0)
+      {
+          _vcm->SetChannelParameters((WebRtc_UWord32)_bitRate, 0, 1);
+      }
+
+      // check for bit rate update
+      if (change < numChanges && _frameCnt == updateFrameNum[change])
+      {
+          _bitRate = bitRateUpdate[change];
+          _frameRate = frameRateUpdate[change];
+          codec.startBitrate = (int)_bitRate;
+          codec.maxFramerate = (WebRtc_UWord8) _frameRate;
+          // Will also set and init the desired codec
+          TEST(_vcm->RegisterSendCodec(&codec, 2, 1440) == VCM_OK);
+          change++;
+      }
+
+      DataLog::InsertCell(feature_table_name_, "motion magnitude",
+                          contentMetrics->motion_magnitude);
+      DataLog::InsertCell(feature_table_name_, "spatial prediction error",
+                          contentMetrics->spatial_pred_err);
+      DataLog::InsertCell(feature_table_name_, "spatial pred err horizontal",
+                          contentMetrics->spatial_pred_err_h);
+      DataLog::InsertCell(feature_table_name_, "spatial pred err vertical",
+                          contentMetrics->spatial_pred_err_v);
+
+      DataLog::InsertCell(feature_table_name_, "width", _nativeHeight);
+      DataLog::InsertCell(feature_table_name_, "height", _nativeWidth);
+
+      DataLog::InsertCell(feature_table_name_, "num pixels",
+                          _nativeHeight * _nativeWidth);
+
+      DataLog::InsertCell(feature_table_name_, "frame rate", _nativeFrameRate);
+      DataLog::NextRow(feature_table_name_);
+
+      static_cast<FakeTickTime*>(
+          _clock)->IncrementDebugClock(1000 / _nativeFrameRate);
+  }
+
+  } while (feof(_sourceFile) == 0);
+  _decodeCallback.WriteEnd(_frameCnt);
 
 
-    WebRtc_Word32 ret = 0;
-    _numFramesDroppedVPM = 0;
-    while (feof(_sourceFile)== 0)
-    {
-        TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
-        _frameCnt++;
-        int size_y = _nativeWidth * _nativeHeight;
-        int size_uv = ((_nativeWidth + 1) / 2) * ((_nativeHeight  + 1) / 2);
-        sourceFrame.CreateFrame(size_y, tmpBuffer,
-                                size_uv, tmpBuffer + size_y,
-                                size_uv, tmpBuffer + size_y + size_uv,
-                                _nativeWidth, _nativeHeight,
-                                _nativeWidth, (_nativeWidth + 1) / 2,
-                                (_nativeWidth + 1) / 2);
+  double endTime = clock()/(double)CLOCKS_PER_SEC;
+  _testTotalTime = endTime - startTime;
+  _sumEncBytes = _encodeCompleteCallback.EncodedBytes();
 
-        _timeStamp += (WebRtc_UWord32)(9e4 / static_cast<float>(codec.maxFramerate));
-        sourceFrame.set_timestamp(_timeStamp);
-
-        ret = _vpm->PreprocessFrame(sourceFrame, &decimatedFrame);
-        if (ret  == 1)
-        {
-            printf("VD: frame drop %d \n",_frameCnt);
-            _numFramesDroppedVPM += 1;
-            continue; // frame drop
-        }
-        else if (ret < 0)
-        {
-            printf("Error in PreprocessFrame: %d\n", ret);
-            //exit(1);
-        }
-        contentMetrics = _vpm->ContentMetrics();
-        if (contentMetrics == NULL)
-        {
-            printf("error: contentMetrics = NULL\n");
-        }
-
-        // counting only encoding time
-        _encodeTimes[int(sourceFrame.timestamp())] =
-            clock()/(double)CLOCKS_PER_SEC;
-
-        WebRtc_Word32 ret = _vcm->AddVideoFrame(*decimatedFrame, contentMetrics);
-
-        _totalEncodeTime += clock()/(double)CLOCKS_PER_SEC -
-            _encodeTimes[int(sourceFrame.timestamp())];
-
-        if (ret < 0)
-        {
-            printf("Error in AddFrame: %d\n", ret);
-            //exit(1);
-        }
-        _decodeTimes[int(sourceFrame.timestamp())] = clock() /
-            (double)CLOCKS_PER_SEC - _decodeTimes[int(sourceFrame.timestamp())];
-        ret = _vcm->Decode();
-        _totalDecodeTime += clock()/(double)CLOCKS_PER_SEC -
-            _decodeTimes[int(sourceFrame.timestamp())];
-        if (ret < 0)
-        {
-            printf("Error in Decode: %d\n", ret);
-            //exit(1);
-        }
-        if (_vcm->TimeUntilNextProcess() <= 0)
-        {
-            _vcm->Process();
-        }
-        // mimicking setTargetRates - update every 1 sec
-        // this will trigger QMSelect
-        if (_frameCnt%((int)_frameRate) == 0)
-        {
-            _vcm->SetChannelParameters((WebRtc_UWord32)_bitRate, 0, 1);
-            waitEvent->Wait(33);
-        }
-        waitEvent->Wait(33);
-        // check for bit rate update
-        if (change < numChanges && _frameCnt == updateFrameNum[change])
-        {
-            _bitRate = bitRateUpdate[change];
-            _frameRate = frameRateUpdate[change];
-            codec.startBitrate = (int)_bitRate;
-            codec.maxFramerate = (WebRtc_UWord8) _frameRate;
-            TEST(_vcm->RegisterSendCodec(&codec, 2, 1440) == VCM_OK);
-            change++;
-        }
-    }
-
-    double endTime = clock()/(double)CLOCKS_PER_SEC;
-    _testTotalTime = endTime - startTime;
-    _sumEncBytes = _encodeCompleteCallback.EncodedBytes();
-
-    delete tmpBuffer;
-    delete waitEvent;
-    _vpm->Reset();
-    Teardown();
-    Print();
-    VideoProcessingModule::Destroy(_vpm);
-    return 0;
+  delete tmpBuffer;
+  delete waitEvent;
+  _vpm->Reset();
+  Teardown();
+  Print();
+  VideoProcessingModule::Destroy(_vpm);
+  return 0;
 }
 
+// implementing callback to be called from
+// VCM to update VPM of frame rate and size
 QMTestVideoSettingsCallback::QMTestVideoSettingsCallback():
 _vpm(NULL),
 _vcm(NULL)
 {
-    //
+  //
 }
 
 void
 QMTestVideoSettingsCallback::RegisterVPM(VideoProcessingModule *vpm)
 {
-    _vpm = vpm;
+  _vpm = vpm;
 }
 void
 QMTestVideoSettingsCallback::RegisterVCM(VideoCodingModule *vcm)
 {
-    _vcm = vcm;
+  _vcm = vcm;
 }
 
 bool
 QMTestVideoSettingsCallback::Updated()
 {
-    if (_updated)
-    {
-        _updated = false;
-        return true;
-    }
-    return false;
+  if (_updated)
+  {
+      _updated = false;
+      return true;
+  }
+  return false;
 }
 
 WebRtc_Word32
@@ -367,31 +424,31 @@ QMTestVideoSettingsCallback::SetVideoQMSettings(const WebRtc_UWord32 frameRate,
                                                 const WebRtc_UWord32 width,
                                                 const WebRtc_UWord32 height)
 {
-    WebRtc_Word32 retVal = 0;
-    printf("QM updates: W = %d, H = %d, FR = %d, \n", width, height, frameRate);
-    retVal = _vpm->SetTargetResolution(width, height, frameRate);
-    //Initialize codec with new values - is this the best place to do it?
-    if (!retVal)
-    {
-        // first get current settings
-        VideoCodec currentCodec;
-        _vcm->SendCodec(&currentCodec);
-        // now set new values:
-        currentCodec.height = (WebRtc_UWord16)height;
-        currentCodec.width = (WebRtc_UWord16)width;
-        currentCodec.maxFramerate = (WebRtc_UWord8)frameRate;
+  WebRtc_Word32 retVal = 0;
+  printf("QM updates: W = %d, H = %d, FR = %d, \n", width, height, frameRate);
+  retVal = _vpm->SetTargetResolution(width, height, frameRate);
+  //Initialize codec with new values - is this the best place to do it?
+  if (!retVal)
+  {
+      // first get current settings
+      VideoCodec currentCodec;
+      _vcm->SendCodec(&currentCodec);
+      // now set new values:
+      currentCodec.height = (WebRtc_UWord16)height;
+      currentCodec.width = (WebRtc_UWord16)width;
+      currentCodec.maxFramerate = (WebRtc_UWord8)frameRate;
 
-        // re-register encoder
-        retVal = _vcm->RegisterSendCodec(&currentCodec, 2, 1440);
-        _updated = true;
-    }
+      // re-register encoder
+      retVal = _vcm->RegisterSendCodec(&currentCodec, 2, 1440);
+      _updated = true;
+  }
 
-    return retVal;
+  return retVal;
 }
 
-
-// Decoded Frame Callback Implmentation
-VCMQMDecodeCompleCallback::VCMQMDecodeCompleCallback(FILE* decodedFile):
+// Decoded Frame Callback Implementation
+VCMQMDecodeCompleCallback::VCMQMDecodeCompleCallback(
+    FILE* decodedFile, int frame_rate, std::string feature_table_name):
 _decodedFile(decodedFile),
 _decodedBytes(0),
 //_test(test),
@@ -401,7 +458,10 @@ _decWidth(0),
 _decHeight(0),
 //_interpolator(NULL),
 _decBuffer(NULL),
-_frameCnt(0)
+_frameCnt(0),
+frame_rate_(frame_rate),
+frames_cnt_since_drop_(0),
+feature_table_name_(feature_table_name)
 {
     //
 }
@@ -413,69 +473,106 @@ VCMQMDecodeCompleCallback::~VCMQMDecodeCompleCallback()
 //         deleteInterpolator(_interpolator);
 //         _interpolator = NULL;
 //     }
-     if (_decBuffer != NULL)
-     {
-         delete [] _decBuffer;
-         _decBuffer = NULL;
-     }
+   if (_decBuffer != NULL)
+   {
+       delete [] _decBuffer;
+       _decBuffer = NULL;
+   }
  }
+
 WebRtc_Word32
 VCMQMDecodeCompleCallback::FrameToRender(I420VideoFrame& videoFrame)
 {
-    if ((_origWidth == videoFrame.width()) &&
-        (_origHeight == videoFrame.height()))
-    {
-      if (PrintI420VideoFrame(videoFrame, _decodedFile) < 0) {
-        return -1;
-      }
-      _frameCnt++;
-        // no need for interpolator and decBuffer
-        if (_decBuffer != NULL)
-        {
-            delete [] _decBuffer;
-            _decBuffer = NULL;
-        }
-        _decWidth = 0;
-        _decHeight = 0;
-    }
-    else
-    {
-      // TODO(mikhal): Add support for scaling.
+  ++frames_cnt_since_drop_;
+
+  // When receiving the first coded frame the last_frame variable is not set
+  if (last_frame_.IsZeroSize()) {
+    last_frame_.CopyFrame(videoFrame);
+  }
+
+   // Check if there were frames skipped.
+  int num_frames_skipped = static_cast<int>( 0.5f +
+  (videoFrame.timestamp() - (last_frame_.timestamp() + (9e4 / frame_rate_))) /
+  (9e4 / frame_rate_));
+
+  // If so...put the last frames into the encoded stream to make up for the
+  // skipped frame(s)
+  while (num_frames_skipped > 0) {
+    PrintI420VideoFrame(last_frame_, _decodedFile);
+    _frameCnt++;
+    --num_frames_skipped;
+    frames_cnt_since_drop_ = 1; // Reset counter
+
+  }
+
+  DataLog::InsertCell(
+        feature_table_name_,"num frames since drop",frames_cnt_since_drop_);
+
+  if (_origWidth == videoFrame.width() && _origHeight == videoFrame.height())
+  {
+    if (PrintI420VideoFrame(videoFrame, _decodedFile) < 0) {
       return -1;
     }
-
-    _decodedBytes += CalcBufferSize(kI420, videoFrame.width(),
-                                    videoFrame.height());
-    return VCM_OK;
-}
-
-WebRtc_Word32
-VCMQMDecodeCompleCallback::DecodedBytes()
-{
-    return _decodedBytes;
-}
-
-void
-VCMQMDecodeCompleCallback::SetOriginalFrameDimensions(WebRtc_Word32 width,
-                                                      WebRtc_Word32 height)
-{
-    _origWidth = width;
-    _origHeight = height;
-}
-
-WebRtc_Word32
-VCMQMDecodeCompleCallback::buildInterpolator()
-{
-    WebRtc_UWord32 decFrameLength  = _origWidth*_origHeight*3 >> 1;
+    _frameCnt++;
+    // no need for interpolator and decBuffer
     if (_decBuffer != NULL)
     {
         delete [] _decBuffer;
+        _decBuffer = NULL;
     }
-    _decBuffer = new WebRtc_UWord8[decFrameLength];
-    if (_decBuffer == NULL)
-    {
-        return -1;
-    }
+    _decWidth = 0;
+    _decHeight = 0;
+  }
+  else
+  {
+    // TODO(mikhal): Add support for scaling.
+    return -1;
+  }
 
-    return 0;
+  _decodedBytes += CalcBufferSize(kI420, videoFrame.width(),
+                                  videoFrame.height());
+  videoFrame.SwapFrame(&last_frame_);
+  return VCM_OK;
+}
+
+WebRtc_Word32 VCMQMDecodeCompleCallback::DecodedBytes()
+{
+  return _decodedBytes;
+}
+
+void VCMQMDecodeCompleCallback::SetOriginalFrameDimensions(WebRtc_Word32 width,
+                                                           WebRtc_Word32 height)
+{
+  _origWidth = width;
+  _origHeight = height;
+}
+
+WebRtc_Word32 VCMQMDecodeCompleCallback::buildInterpolator()
+{
+  WebRtc_UWord32 decFrameLength  = _origWidth*_origHeight*3 >> 1;
+  if (_decBuffer != NULL)
+  {
+      delete [] _decBuffer;
+  }
+  _decBuffer = new WebRtc_UWord8[decFrameLength];
+  if (_decBuffer == NULL)
+  {
+      return -1;
+  }
+  return 0;
+}
+
+// This function checks if the total number of frames processed in the encoding
+// process is the same as the number of frames rendered. If not,  the last
+// frame (or several consecutive frames from the end) must have been dropped. If
+// this is the case, the last frame is repeated so that there are as many
+// frames rendered as there are number of frames encoded.
+void VCMQMDecodeCompleCallback::WriteEnd(int input_frame_count)
+{
+  int num_missing_frames = input_frame_count - _frameCnt;
+
+  for (int n = num_missing_frames; n > 0; --n) {
+    PrintI420VideoFrame(last_frame_, _decodedFile);
+    _frameCnt++;
+  }
 }

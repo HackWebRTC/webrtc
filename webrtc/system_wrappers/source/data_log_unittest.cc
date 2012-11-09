@@ -23,7 +23,7 @@ using ::webrtc::DataLog;
 struct ExpectedValues {
  public:
   ExpectedValues()
-    : values(NULL),
+    : values(),
       multi_value_length(1) {
   }
 
