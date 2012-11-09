@@ -32,7 +32,8 @@
         '<(webrtc_root)/test/test.gyp:test_support_main',
       ],
       'sources': [
-        'fix/test/isacfix_unittest.cc',
+        'fix/source/lpc_masking_model_unittest.cc',
+        'fix/source/filterbanks_unittest.cc',
       ],
     },
   ],
