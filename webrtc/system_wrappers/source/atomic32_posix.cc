@@ -18,47 +18,41 @@
 
 namespace webrtc {
 
-Atomic32::Atomic32(WebRtc_Word32 initialValue) : _value(initialValue)
-{
-    assert(Is32bitAligned());
+Atomic32::Atomic32(WebRtc_Word32 initial_value)
+    : value_(initial_value) {
+  assert(Is32bitAligned());
 }
 
-Atomic32::~Atomic32()
-{
+Atomic32::~Atomic32() {
 }
 
-WebRtc_Word32 Atomic32::operator++()
-{
-    return __sync_fetch_and_add(&_value, 1) + 1;
+WebRtc_Word32 Atomic32::operator++() {
+  return __sync_fetch_and_add(&value_, 1) + 1;
 }
 
-WebRtc_Word32 Atomic32::operator--()
-{
-    return __sync_fetch_and_sub(&_value, 1) - 1;
+WebRtc_Word32 Atomic32::operator--() {
+  return __sync_fetch_and_sub(&value_, 1) - 1;
 }
 
-WebRtc_Word32 Atomic32::operator+=(WebRtc_Word32 value)
-{
-    WebRtc_Word32 returnValue = __sync_fetch_and_add(&_value, value);
-    returnValue += value;
-    return returnValue;
+WebRtc_Word32 Atomic32::operator+=(WebRtc_Word32 value) {
+  WebRtc_Word32 return_value = __sync_fetch_and_add(&value_, value);
+  return_value += value;
+  return return_value;
 }
 
-WebRtc_Word32 Atomic32::operator-=(WebRtc_Word32 value)
-{
-    WebRtc_Word32 returnValue = __sync_fetch_and_sub(&_value, value);
-    returnValue -= value;
-    return returnValue;
+WebRtc_Word32 Atomic32::operator-=(WebRtc_Word32 value) {
+  WebRtc_Word32 return_value = __sync_fetch_and_sub(&value_, value);
+  return_value -= value;
+  return return_value;
 }
 
-bool Atomic32::CompareExchange(WebRtc_Word32 newValue,
-                               WebRtc_Word32 compareValue)
-{
-    return __sync_bool_compare_and_swap(&_value, compareValue, newValue);
+bool Atomic32::CompareExchange(WebRtc_Word32 new_value,
+                               WebRtc_Word32 compare_value) {
+  return __sync_bool_compare_and_swap(&value_, compare_value, new_value);
 }
 
-WebRtc_Word32 Atomic32::Value() const
-{
-    return _value;
+WebRtc_Word32 Atomic32::Value() const {
+  return value_;
 }
+
 } // namespace webrtc
