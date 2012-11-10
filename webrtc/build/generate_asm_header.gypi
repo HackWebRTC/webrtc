@@ -47,7 +47,8 @@
       'action': [
         'python',
         '<(gen_header)',
-        '--compiler=$(CC)',  # Specifiy the compiler.
+        '--compiler=<!(/bin/echo -n ${ANDROID_GOMA_WRAPPER} '
+          '<(android_toolchain)/*-gcc)',
         '--options=-I.. -I<@(android_ndk_include) -S',  # Compiler options.
         '--dir=<(out_dir)',
         '<(RULE_INPUT_PATH)',
