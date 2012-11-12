@@ -383,33 +383,46 @@ void VideoRenderOpenGles20::SetupTextures(const I420VideoFrame& frameToRender) {
   _textureHeight = height;
 }
 
+// Uploads a plane of pixel data, accounting for stride != width*bpp.
+static void GlTexSubImage2D(GLsizei width, GLsizei height, int stride,
+                            const uint8_t* plane) {
+  if (stride == width) {
+    // Yay!  We can upload the entire plane in a single GL call.
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_LUMINANCE,
+                    GL_UNSIGNED_BYTE,
+                    static_cast<const GLvoid*>(plane));
+  } else {
+    // Boo!  Since GLES2 doesn't have GL_UNPACK_ROW_LENGTH and Android doesn't
+    // have GL_EXT_unpack_subimage we have to upload a row at a time.  Ick.
+    for (int row = 0; row < height; ++row) {
+      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, row, width, 1, GL_LUMINANCE,
+                      GL_UNSIGNED_BYTE,
+                      static_cast<const GLvoid*>(plane + (row * stride)));
+    }
+  }
+}
+
 void VideoRenderOpenGles20::UpdateTextures(const
                                            I420VideoFrame& frameToRender) {
   const GLsizei width = frameToRender.width();
   const GLsizei height = frameToRender.height();
 
-  GLuint currentTextureId = _textureIds[0]; // Y
-  glActiveTexture( GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, currentTextureId);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_LUMINANCE,
-                  GL_UNSIGNED_BYTE,
-                  (const GLvoid*) frameToRender.buffer(kYPlane));
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, _textureIds[0]);
+  GlTexSubImage2D(width, height, frameToRender.stride(kYPlane),
+                  frameToRender.buffer(kYPlane));
 
-  currentTextureId = _textureIds[1]; // U
-  glActiveTexture( GL_TEXTURE1);
-  glBindTexture(GL_TEXTURE_2D, currentTextureId);
-  const WebRtc_UWord8* uComponent = frameToRender.buffer(kUPlane);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width / 2, height / 2,
-                  GL_LUMINANCE, GL_UNSIGNED_BYTE, (const GLvoid*) uComponent);
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, _textureIds[1]);
+  GlTexSubImage2D(width / 2, height / 2, frameToRender.stride(kUPlane),
+                  frameToRender.buffer(kUPlane));
 
-  currentTextureId = _textureIds[2]; // V
-  glActiveTexture( GL_TEXTURE2);
-  glBindTexture(GL_TEXTURE_2D, currentTextureId);
-  const WebRtc_UWord8* vComponent = frameToRender.buffer(kVPlane);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width / 2, height / 2,
-                  GL_LUMINANCE, GL_UNSIGNED_BYTE, (const GLvoid*) vComponent);
+  glActiveTexture(GL_TEXTURE2);
+  glBindTexture(GL_TEXTURE_2D, _textureIds[2]);
+  GlTexSubImage2D(width / 2, height / 2, frameToRender.stride(kVPlane),
+                  frameToRender.buffer(kVPlane));
+
   checkGlError("UpdateTextures");
-
 }
 
 }  // namespace webrtc
