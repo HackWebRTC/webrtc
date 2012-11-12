@@ -155,10 +155,10 @@ WebRtc_Word32 ViESyncModule::Process() {
   int extra_audio_delay_ms = 0;
   // Calculate the necessary extra audio delay and desired total video
   // delay to get the streams in sync.
-  if (sync_->ComputeDelays(relative_delay_ms,
-                           current_audio_delay_ms,
-                           &extra_audio_delay_ms,
-                           &total_video_delay_target_ms) != 0) {
+  if (!sync_->ComputeDelays(relative_delay_ms,
+                            current_audio_delay_ms,
+                            &extra_audio_delay_ms,
+                            &total_video_delay_target_ms)) {
     return 0;
   }
   if (voe_sync_interface_->SetMinimumPlayoutDelay(
