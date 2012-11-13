@@ -56,7 +56,8 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                  configuration.audio,
                  configuration.clock,
                  configuration.outgoing_transport,
-                 configuration.audio_messages),
+                 configuration.audio_messages,
+                 configuration.paced_sender),
       _rtpReceiver(configuration.id, configuration.audio, configuration.clock,
                    this),
       _rtcpSender(configuration.id, configuration.audio, configuration.clock,
@@ -185,8 +186,6 @@ WebRtc_Word32 ModuleRtpRtcpImpl::TimeUntilNextProcess() {
 WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
   const WebRtc_Word64 now = _clock.GetTimeInMS();
   _lastProcessTime = now;
-
-  _rtpSender.ProcessSendToNetwork();
 
   if (now >= _lastPacketTimeoutProcessTime +
       kRtpRtcpPacketTimeoutProcessTimeMs) {
@@ -818,11 +817,11 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendOutgoingData(
     const RTPFragmentationHeader* fragmentation,
     const RTPVideoHeader* rtpVideoHdr) {
   WEBRTC_TRACE(
-    kTraceStream,
-    kTraceRtpRtcp,
-    _id,
-    "SendOutgoingData(frameType:%d payloadType:%d timeStamp:%u size:%u)",
-    frameType, payloadType, timeStamp, payloadSize);
+      kTraceStream,
+      kTraceRtpRtcp,
+      _id,
+      "SendOutgoingData(frameType:%d payloadType:%d timeStamp:%u size:%u)",
+      frameType, payloadType, timeStamp, payloadSize);
 
   _rtcpSender.SetLastRtpTime(timeStamp, capture_time_ms);
 
@@ -912,6 +911,37 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendOutgoingData(
     }
   }
   return retVal;
+}
+
+void ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
+                                         uint16_t sequence_number,
+                                         int64_t capture_time_ms) {
+  WEBRTC_TRACE(
+      kTraceStream,
+      kTraceRtpRtcp,
+      _id,
+      "TimeToSendPacket(ssrc:0x%x sequence_number:%u capture_time_ms:%ll)",
+      ssrc, sequence_number, capture_time_ms);
+
+  if (_simulcast) {
+    CriticalSectionScoped lock(_criticalSectionModulePtrs.get());
+    std::list<ModuleRtpRtcpImpl*>::iterator it = _childModules.begin();
+    while (it != _childModules.end()) {
+      if ((*it)->SendingMedia() && ssrc == (*it)->_rtpSender.SSRC()) {
+        (*it)->_rtpSender.TimeToSendPacket(sequence_number, capture_time_ms);
+        return;
+      }
+      it++;
+    }
+  } else {
+    bool have_child_modules(_childModules.empty() ? false : true);
+    if (!have_child_modules) {
+      // Don't send from default module.
+      if (SendingMedia() && ssrc == _rtpSender.SSRC()) {
+        _rtpSender.TimeToSendPacket(sequence_number, capture_time_ms);
+      }
+    }
+  }
 }
 
 WebRtc_UWord16 ModuleRtpRtcpImpl::MaxPayloadLength() const {
@@ -1336,14 +1366,6 @@ WebRtc_Word32 ModuleRtpRtcpImpl::RegisterReceiveRtpHeaderExtension(
 WebRtc_Word32 ModuleRtpRtcpImpl::DeregisterReceiveRtpHeaderExtension(
   const RTPExtensionType type) {
   return _rtpReceiver.DeregisterRtpHeaderExtension(type);
-}
-
-void ModuleRtpRtcpImpl::SetTransmissionSmoothingStatus(const bool enable) {
-  _rtpSender.SetTransmissionSmoothingStatus(enable);
-}
-
-bool ModuleRtpRtcpImpl::TransmissionSmoothingStatus() const {
-  return _rtpSender.TransmissionSmoothingStatus();
 }
 
 /*

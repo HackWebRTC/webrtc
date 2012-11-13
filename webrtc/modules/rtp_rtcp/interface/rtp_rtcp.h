@@ -17,7 +17,8 @@
 #include "modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 
 namespace webrtc {
-// forward declaration
+// Forward declarations.
+class PacedSender;
 class RemoteBitrateEstimator;
 class RemoteBitrateObserver;
 class Transport;
@@ -37,7 +38,8 @@ class RtpRtcp : public Module {
           intra_frame_callback(NULL),
           bandwidth_callback(NULL),
           audio_messages(NULL),
-          remote_bitrate_estimator(NULL) {
+          remote_bitrate_estimator(NULL),
+          paced_sender(NULL) {
     }
    /*  id                   - Unique identifier of this RTP/RTCP module object
     *  audio                - True for a audio version of the RTP/RTCP module
@@ -58,6 +60,8 @@ class RtpRtcp : public Module {
     *  audio_messages       - Telehone events.
     *  remote_bitrate_estimator - Estimates the bandwidth available for a set of
     *                             streams from the same client.
+    *  paced_sender             - Spread any bursts of packets into smaller
+    *                             bursts to minimize packet loss.
     */
     int32_t id;
     bool audio;
@@ -71,6 +75,7 @@ class RtpRtcp : public Module {
     RtcpBandwidthObserver* bandwidth_callback;
     RtpAudioFeedback* audio_messages;
     RemoteBitrateEstimator* remote_bitrate_estimator;
+    PacedSender* paced_sender;
   };
   /*
    *   Create a RTP/RTCP module object using the system clock.
@@ -345,13 +350,6 @@ class RtpRtcp : public Module {
     virtual WebRtc_Word32 DeregisterSendRtpHeaderExtension(
         const RTPExtensionType type) = 0;
 
-   /*
-    *   Enable/disable traffic smoothing of sending stream.
-    */
-    virtual void SetTransmissionSmoothingStatus(const bool enable) = 0;
-
-    virtual bool TransmissionSmoothingStatus() const = 0;
-
     /*
     *   get start timestamp
     */
@@ -502,6 +500,9 @@ class RtpRtcp : public Module {
         const WebRtc_UWord32 payloadSize,
         const RTPFragmentationHeader* fragmentation = NULL,
         const RTPVideoHeader* rtpVideoHdr = NULL) = 0;
+
+    virtual void TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
+                                  int64_t capture_time_ms) = 0;
 
     /**************************************************************************
     *

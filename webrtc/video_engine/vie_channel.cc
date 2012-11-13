@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "modules/pacing/include/paced_sender.h"
 #include "modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "modules/udp_transport/interface/udp_transport.h"
 #include "modules/utility/interface/process_thread.h"
@@ -41,6 +42,7 @@ ViEChannel::ViEChannel(WebRtc_Word32 channel_id,
                        RtcpIntraFrameObserver* intra_frame_observer,
                        RtcpBandwidthObserver* bandwidth_observer,
                        RemoteBitrateEstimator* remote_bitrate_estimator,
+                       PacedSender* paced_sender,
                        RtpRtcp* default_rtp_rtcp,
                        bool sender)
     : ViEFrameProviderBase(channel_id, engine_id),
@@ -67,6 +69,7 @@ ViEChannel::ViEChannel(WebRtc_Word32 channel_id,
       rtcp_observer_(NULL),
       networkObserver_(NULL),
       intra_frame_observer_(intra_frame_observer),
+      paced_sender_(paced_sender),
       bandwidth_observer_(bandwidth_observer),
       rtp_packet_timeout_(false),
       send_timestamp_extension_id_(kInvalidRtpExtensionId),
@@ -97,6 +100,7 @@ ViEChannel::ViEChannel(WebRtc_Word32 channel_id,
   configuration.intra_frame_callback = intra_frame_observer;
   configuration.bandwidth_callback = bandwidth_observer;
   configuration.remote_bitrate_estimator = remote_bitrate_estimator;
+  configuration.paced_sender = paced_sender;
 
   rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(configuration));
   vie_receiver_.SetRtpRtcpModule(rtp_rtcp_.get());
@@ -126,7 +130,12 @@ WebRtc_Word32 ViEChannel::Init() {
     WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: RTP::SetRTCPStatus failure", __FUNCTION__);
   }
-
+  if (paced_sender_) {
+    if (rtp_rtcp_->SetStorePacketsStatus(true, kNackHistorySize) != 0) {
+      WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
+                   "%s:SetStorePacketsStatus failure", __FUNCTION__);
+    }
+  }
   // VCM initialization
   if (vcm_.InitializeReceiver() != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo,
@@ -231,7 +240,6 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
     rtp_rtcp_->SetSendingStatus(false);
   }
   NACKMethod nack_method = rtp_rtcp_->NACK();
-  bool transmission_smoothening = rtp_rtcp_->TransmissionSmoothingStatus();
 
   bool fec_enabled = false;
   WebRtc_UWord8 payload_type_red;
@@ -254,6 +262,7 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       configuration.outgoing_transport = &vie_sender_;
       configuration.intra_frame_callback = intra_frame_observer_;
       configuration.bandwidth_callback = bandwidth_observer_.get();
+      configuration.paced_sender = paced_sender_;
 
       RtpRtcp* rtp_rtcp = RtpRtcp::CreateRtpRtcp(configuration);
 
@@ -266,6 +275,8 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       if (nack_method != kNackOff) {
         rtp_rtcp->SetStorePacketsStatus(true, kNackHistorySize);
         rtp_rtcp->SetNACKStatus(nack_method);
+      } else if (paced_sender_) {
+        rtp_rtcp->SetStorePacketsStatus(true, kNackHistorySize);
       }
       if (fec_enabled) {
         rtp_rtcp->SetGenericFECStatus(fec_enabled, payload_type_red,
@@ -301,7 +312,6 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       if (mtu_ != 0) {
         rtp_rtcp->SetMaxTransferUnit(mtu_);
       }
-      rtp_rtcp->SetTransmissionSmoothingStatus(transmission_smoothening);
       if (restart_rtp) {
         rtp_rtcp->SetSendingStatus(true);
       }
@@ -602,8 +612,8 @@ WebRtc_Word32 ViEChannel::ProcessNACKRequest(const bool enable) {
          it != simulcast_rtp_rtcp_.end();
          it++) {
       RtpRtcp* rtp_rtcp = *it;
-      rtp_rtcp->SetStorePacketsStatus(true, kNackHistorySize);
       rtp_rtcp->SetNACKStatus(nackMethod);
+      rtp_rtcp->SetStorePacketsStatus(true, kNackHistorySize);
     }
   } else {
     CriticalSectionScoped cs(rtp_rtcp_cs_.get());
@@ -611,11 +621,15 @@ WebRtc_Word32 ViEChannel::ProcessNACKRequest(const bool enable) {
          it != simulcast_rtp_rtcp_.end();
          it++) {
       RtpRtcp* rtp_rtcp = *it;
-      rtp_rtcp->SetStorePacketsStatus(false);
+      if (paced_sender_ == NULL) {
+        rtp_rtcp->SetStorePacketsStatus(false, 0);
+      }
       rtp_rtcp->SetNACKStatus(kNackOff);
     }
-    rtp_rtcp_->SetStorePacketsStatus(false);
     vcm_.RegisterPacketRequestCallback(NULL);
+    if (paced_sender_ == NULL) {
+      rtp_rtcp_->SetStorePacketsStatus(false, 0);
+    }
     if (rtp_rtcp_->SetNACKStatus(kNackOff) != 0) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                    "%s: Could not turn off NACK", __FUNCTION__);
@@ -738,12 +752,8 @@ int ViEChannel::SetReceiveTimestampOffsetStatus(bool enable, int id) {
 }
 
 void ViEChannel::SetTransmissionSmoothingStatus(bool enable) {
-  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
-  rtp_rtcp_->SetTransmissionSmoothingStatus(enable);
-  for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
-       it != simulcast_rtp_rtcp_.end(); ++it) {
-    (*it)->SetTransmissionSmoothingStatus(enable);
-  }
+  assert(paced_sender_ && "No paced sender registered.");
+  paced_sender_->SetStatus(enable);
 }
 
 WebRtc_Word32 ViEChannel::EnableTMMBR(const bool enable) {

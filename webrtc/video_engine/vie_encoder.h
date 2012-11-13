@@ -28,6 +28,7 @@
 namespace webrtc {
 
 class CriticalSectionWrapper;
+class PacedSender;
 class ProcessThread;
 class QMVideoSettingsCallback;
 class RtpRtcp;
@@ -35,6 +36,7 @@ class VideoCodingModule;
 class ViEBitrateObserver;
 class ViEEffectFilter;
 class ViEEncoderObserver;
+class ViEPacedSenderCallback;
 
 class ViEEncoder
     : public RtcpIntraFrameObserver,
@@ -44,6 +46,7 @@ class ViEEncoder
       public ViEFrameCallback {
  public:
   friend class ViEBitrateObserver;
+  friend class ViEPacedSenderCallback;
 
   ViEEncoder(WebRtc_Word32 engine_id,
              WebRtc_Word32 channel_id,
@@ -75,6 +78,8 @@ class ViEEncoder
   WebRtc_Word32 GetCodecConfigParameters(
     unsigned char config_parameters[kConfigParameterSize],
     unsigned char& config_parameters_size);
+
+  PacedSender* GetPacedSender();
 
   // Scale or crop/pad image.
   WebRtc_Word32 ScaleInputImage(bool enable);
@@ -159,6 +164,10 @@ class ViEEncoder
                         const uint8_t fraction_lost,
                         const uint32_t round_trip_time_ms);
 
+  // Called by PacedSender.
+  void TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
+                        int64_t capture_time_ms);
+
  private:
   WebRtc_Word32 engine_id_;
   const int channel_id_;
@@ -170,6 +179,8 @@ class ViEEncoder
   scoped_ptr<CriticalSectionWrapper> callback_cs_;
   scoped_ptr<CriticalSectionWrapper> data_cs_;
   scoped_ptr<BitrateObserver> bitrate_observer_;
+  scoped_ptr<PacedSender> paced_sender_;
+  scoped_ptr<ViEPacedSenderCallback> pacing_callback_;
 
   BitrateController* bitrate_controller_;
 

@@ -13,6 +13,7 @@
 #include <cassert>
 
 #include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "modules/pacing/include/paced_sender.h"
 #include "modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "modules/utility/interface/process_thread.h"
 #include "modules/video_coding/codecs/interface/video_codec_interface.h"
@@ -26,6 +27,9 @@
 #include "video_engine/vie_defines.h"
 
 namespace webrtc {
+
+// Pace in kbits/s until we receive first estimate.
+const int kInitialPace = 2000;
 
 class QMVideoSettingsCallback : public VCMQMSettingsCallback {
  public:
@@ -51,6 +55,22 @@ class ViEBitrateObserver : public BitrateObserver {
                                 const uint8_t fraction_lost,
                                 const uint32_t rtt) {
     owner_->OnNetworkChanged(bitrate_bps, fraction_lost, rtt);
+  }
+ private:
+  ViEEncoder* owner_;
+};
+
+class ViEPacedSenderCallback : public PacedSender::Callback {
+ public:
+  explicit ViEPacedSenderCallback(ViEEncoder* owner)
+      : owner_(owner) {
+  }
+  virtual void TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
+                                int64_t capture_time_ms) {
+   owner_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms);
+  }
+  virtual void TimeToSendPadding(int /*bytes*/) {
+    // TODO(pwestin): Hook up this.
   }
  private:
   ViEEncoder* owner_;
@@ -97,6 +117,8 @@ ViEEncoder::ViEEncoder(WebRtc_Word32 engine_id,
 
   default_rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(configuration));
   bitrate_observer_.reset(new ViEBitrateObserver(this));
+  pacing_callback_.reset(new ViEPacedSenderCallback(this));
+  paced_sender_.reset(new PacedSender(pacing_callback_.get(), kInitialPace));
 }
 
 bool ViEEncoder::Init() {
@@ -111,19 +133,14 @@ bool ViEEncoder::Init() {
   // Enable/disable content analysis: off by default for now.
   vpm_.EnableContentAnalysis(false);
 
-  if (module_process_thread_.RegisterModule(&vcm_) != 0) {
+  if (module_process_thread_.RegisterModule(&vcm_) != 0 ||
+      module_process_thread_.RegisterModule(default_rtp_rtcp_.get()) != 0 ||
+      module_process_thread_.RegisterModule(paced_sender_.get()) != 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
                  ViEId(engine_id_, channel_id_),
                  "%s RegisterModule failure", __FUNCTION__);
     return false;
   }
-  if (module_process_thread_.RegisterModule(default_rtp_rtcp_.get()) != 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "%s RegisterModule failure", __FUNCTION__);
-    return false;
-  }
-
   if (qm_callback_) {
     delete qm_callback_;
   }
@@ -196,6 +213,7 @@ ViEEncoder::~ViEEncoder() {
   module_process_thread_.DeRegisterModule(&vcm_);
   module_process_thread_.DeRegisterModule(&vpm_);
   module_process_thread_.DeRegisterModule(default_rtp_rtcp_.get());
+  module_process_thread_.DeRegisterModule(paced_sender_.get());
   delete &vcm_;
   delete &vpm_;
   delete qm_callback_;
@@ -413,6 +431,11 @@ WebRtc_Word32 ViEEncoder::ScaleInputImage(bool enable) {
   vpm_.SetInputFrameResampleMode(resampling_mode);
 
   return 0;
+}
+
+void ViEEncoder::TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
+                                  int64_t capture_time_ms) {
+  default_rtp_rtcp_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms);
 }
 
 RtpRtcp* ViEEncoder::SendRtpRtcpModule() {
@@ -878,10 +901,14 @@ void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
                "%s(bitrate_bps: %u, fraction_lost: %u, rtt_ms: %u",
                __FUNCTION__, bitrate_bps, fraction_lost, round_trip_time_ms);
 
-  vcm_.SetChannelParameters(bitrate_bps / 1000, fraction_lost,
-                            round_trip_time_ms);
-
+  int bitrate_kbps = bitrate_bps / 1000;
+  vcm_.SetChannelParameters(bitrate_kbps, fraction_lost, round_trip_time_ms);
+  paced_sender_->UpdateBitrate(bitrate_kbps);
   default_rtp_rtcp_->SetTargetSendBitrate(bitrate_bps);
+}
+
+PacedSender* ViEEncoder::GetPacedSender() {
+  return paced_sender_.get();
 }
 
 WebRtc_Word32 ViEEncoder::RegisterEffectFilter(ViEEffectFilter* effect_filter) {

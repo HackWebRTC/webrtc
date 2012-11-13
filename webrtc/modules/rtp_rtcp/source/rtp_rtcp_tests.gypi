@@ -37,7 +37,6 @@
         'rtp_sender_unittest.cc',
         'rtcp_sender_unittest.cc',
         'rtcp_receiver_unittest.cc',
-        'transmission_bucket_unittest.cc',
         'vp8_partition_aggregator_unittest.cc',
       ],
     },

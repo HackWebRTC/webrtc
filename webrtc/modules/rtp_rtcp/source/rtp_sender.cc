@@ -8,28 +8,30 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
+
 #include <cstdlib> // srand
 
-#include "rtp_sender.h"
-
-#include "critical_section_wrapper.h"
-#include "trace.h"
-
-#include "rtp_packet_history.h"
-#include "rtp_sender_audio.h"
-#include "rtp_sender_video.h"
+#include "webrtc/modules/pacing/include/paced_sender.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_packet_history.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_sender_audio.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 RTPSender::RTPSender(const WebRtc_Word32 id,
                      const bool audio,
                      RtpRtcpClock* clock,
                      Transport* transport,
-                     RtpAudioFeedback* audio_feedback)
+                     RtpAudioFeedback* audio_feedback,
+                     PacedSender* paced_sender)
     : Bitrate(clock),
       _id(id),
       _audioConfigured(audio),
       _audio(NULL),
       _video(NULL),
+      paced_sender_(paced_sender),
       _sendCritsect(CriticalSectionWrapper::CreateCriticalSection()),
       _transport(transport),
       _sendingMedia(true),  // Default to sending media
@@ -44,15 +46,13 @@ RTPSender::RTPSender(const WebRtc_Word32 id,
       _rtpHeaderExtensionMap(),
       _transmissionTimeOffset(0),
 
+      // NACK
       _nackByteCountTimes(),
       _nackByteCount(),
       _nackBitrate(clock),
-
       _packetHistory(new RTPPacketHistory(clock)),
-      _sendBucket(clock),
-      _timeLastSendToNetworkUpdate(clock->GetTimeInMS()),
-      _transmissionSmoothing(false),
 
+      // statistics
       _packetsSent(0),
       _payloadBytesSent(0),
 
@@ -74,7 +74,6 @@ RTPSender::RTPSender(const WebRtc_Word32 id,
   memset(_nackByteCountTimes, 0, sizeof(_nackByteCountTimes));
   memset(_nackByteCount, 0, sizeof(_nackByteCount));
   memset(_CSRC, 0, sizeof(_CSRC));
-
   // We need to seed the random generator.
   srand( (WebRtc_UWord32)_clock.GetTimeInMS() );
   _ssrc = _ssrcDB.CreateSSRC();  // Can't be 0.
@@ -269,16 +268,6 @@ WebRtc_UWord16 RTPSender::MaxPayloadLength() const {
 
 WebRtc_UWord16 RTPSender::PacketOverHead() const {
   return _packetOverHead;
-}
-
-void RTPSender::SetTransmissionSmoothingStatus(const bool enable) {
-  CriticalSectionScoped cs(_sendCritsect);
-  _transmissionSmoothing = enable;
-}
-
-bool RTPSender::TransmissionSmoothingStatus() const {
-  CriticalSectionScoped cs(_sendCritsect);
-  return _transmissionSmoothing;
 }
 
 void RTPSender::SetRTXStatus(const bool enable,
@@ -690,110 +679,91 @@ void RTPSender::UpdateNACKBitRate(const WebRtc_UWord32 bytes,
   }
 }
 
-void RTPSender::ProcessSendToNetwork() {
-  WebRtc_Word64 delta_time_ms;
-  {
-    CriticalSectionScoped cs(_sendCritsect);
+void RTPSender::TimeToSendPacket(uint16_t sequence_number,
+                                 int64_t capture_time_ms) {
+  StorageType type;
+  uint16_t length = IP_PACKET_SIZE;
+  uint8_t data_buffer[IP_PACKET_SIZE];
+  int64_t stored_time_ms;  // TODO(pwestin) can we depricate this?
 
-    if (!_transmissionSmoothing) {
-      return;
-    }
-    WebRtc_Word64 now = _clock.GetTimeInMS();
-    delta_time_ms = now - _timeLastSendToNetworkUpdate;
-    _timeLastSendToNetworkUpdate = now;
+  if (_packetHistory == NULL) {
+    return;
   }
-  _sendBucket.UpdateBytesPerInterval(delta_time_ms, _targetSendBitrate);
+  if (!_packetHistory->GetRTPPacket(sequence_number, 0, data_buffer,
+                                    &length, &stored_time_ms, &type)) {
+    assert(false);
+    return;
+  }
+  assert(length > 0);
 
-  while (!_sendBucket.Empty()) {
-    WebRtc_Word32 seq_num = _sendBucket.GetNextPacket();
-    if (seq_num < 0) {
-      break;
-    }
+  ModuleRTPUtility::RTPHeaderParser rtpParser(data_buffer, length);
+  WebRtcRTPHeader rtp_header;
+  rtpParser.Parse(rtp_header);
 
-    WebRtc_UWord8 data_buffer[IP_PACKET_SIZE];
-    WebRtc_UWord16 length = IP_PACKET_SIZE;
-    int64_t stored_time_ms;
-    StorageType type;
-    bool found = _packetHistory->GetRTPPacket(seq_num, 0, data_buffer, &length,
-        &stored_time_ms, &type);
-    if (!found) {
-      assert(false);
-      return;
-    }
-    assert(length > 0);
-
-    WebRtc_Word64 diff_ms = _clock.GetTimeInMS() - stored_time_ms;
-
-    ModuleRTPUtility::RTPHeaderParser rtpParser(data_buffer, length);
-    WebRtcRTPHeader rtp_header;
-    rtpParser.Parse(rtp_header);
-
-    if (UpdateTransmissionTimeOffset(data_buffer, length, rtp_header,
-                                     diff_ms)) {
-      // Update stored packet in case of receiving a re-transmission request.
-      _packetHistory->ReplaceRTPHeader(data_buffer,
-                                       rtp_header.header.sequenceNumber,
-                                       rtp_header.header.headerLength);
-    }
-
-    // Send packet
-    WebRtc_Word32 bytes_sent = -1;
-    if (_transport) {
-      bytes_sent = _transport->SendPacket(_id, data_buffer, length);
-    }
-
-    // Update send statistics
-    if (bytes_sent > 0) {
-      CriticalSectionScoped cs(_sendCritsect);
-      Bitrate::Update(bytes_sent);
-      _packetsSent++;
-      if (bytes_sent > rtp_header.header.headerLength) {
-        _payloadBytesSent += bytes_sent - rtp_header.header.headerLength;
-      }
-    }
+  int64_t diff_ms = _clock.GetTimeInMS() - capture_time_ms;
+  if (UpdateTransmissionTimeOffset(data_buffer, length, rtp_header, diff_ms)) {
+    // Update stored packet in case of receiving a re-transmission request.
+    _packetHistory->ReplaceRTPHeader(data_buffer,
+                                     rtp_header.header.sequenceNumber,
+                                     rtp_header.header.headerLength);
+  }
+  int bytes_sent = -1;
+  if (_transport) {
+    bytes_sent = _transport->SendPacket(_id, data_buffer, length);
+  }
+  if (bytes_sent <= 0) {
+    return;
+  }
+  // Update send statistics
+  CriticalSectionScoped cs(_sendCritsect);
+  Bitrate::Update(bytes_sent);
+  _packetsSent++;
+  if (bytes_sent > rtp_header.header.headerLength) {
+    _payloadBytesSent += bytes_sent - rtp_header.header.headerLength;
   }
 }
 
-WebRtc_Word32 RTPSender::SendToNetwork(WebRtc_UWord8* buffer,
-                                       WebRtc_UWord16 payload_length,
-                                       WebRtc_UWord16 rtp_header_length,
+// TODO(pwestin): send in the RTPHeaderParser to avoid parsing it again
+WebRtc_Word32 RTPSender::SendToNetwork(uint8_t* buffer,
+                                       int payload_length,
+                                       int rtp_header_length,
                                        int64_t capture_time_ms,
                                        StorageType storage) {
-  // Used for NACK or to spead out the transmission of packets.
-  if (_packetHistory->PutRTPPacket(buffer, rtp_header_length + payload_length,
-      _maxPayloadLength, capture_time_ms, storage) != 0) {
-    return -1;
-  }
-  if (_transmissionSmoothing) {
-    const WebRtc_UWord16 sequenceNumber = (buffer[2] << 8) + buffer[3];
-    const WebRtc_UWord32 timestamp = (buffer[4] << 24) + (buffer[5] << 16) +
-                                     (buffer[6] << 8) + buffer[7];
-    _sendBucket.Fill(sequenceNumber, timestamp,
-        rtp_header_length + payload_length);
-    // Packet will be sent at a later time.
-    return 0;
-  }
+  ModuleRTPUtility::RTPHeaderParser rtpParser(buffer,
+      payload_length + rtp_header_length);
+  WebRtcRTPHeader rtp_header;
+  rtpParser.Parse(rtp_header);
+
   // |capture_time_ms| <= 0 is considered invalid.
   // TODO(holmer): This should be changed all over Video Engine so that negative
   // time is consider invalid, while 0 is considered a valid time.
   if (capture_time_ms > 0) {
-    ModuleRTPUtility::RTPHeaderParser rtpParser(buffer,
-        rtp_header_length + payload_length);
-    WebRtcRTPHeader rtp_header;
-    rtpParser.Parse(rtp_header);
     int64_t time_now = _clock.GetTimeInMS();
-    if (UpdateTransmissionTimeOffset(buffer, rtp_header_length + payload_length,
-                                     rtp_header, time_now - capture_time_ms)) {
-      // Update stored packet in case of receiving a re-transmission request.
-      _packetHistory->ReplaceRTPHeader(buffer, rtp_header.header.sequenceNumber,
-          rtp_header.header.headerLength);
+    UpdateTransmissionTimeOffset(buffer, payload_length + rtp_header_length,
+                                 rtp_header, time_now - capture_time_ms);
+  }
+  // Used for NACK and to spread out the transmission of packets.
+  if (_packetHistory->PutRTPPacket(buffer, rtp_header_length + payload_length,
+      _maxPayloadLength, capture_time_ms, storage) != 0) {
+    return -1;
+  }
+  if (paced_sender_) {
+    if (!paced_sender_ ->SendPacket(PacedSender::kNormalPriority,
+                                    rtp_header.header.ssrc,
+                                    rtp_header.header.sequenceNumber,
+                                    capture_time_ms,
+                                    payload_length + rtp_header_length)) {
+      // We can't send the packet right now.
+      // We will be called when it is time.
+      return payload_length + rtp_header_length;
     }
   }
   // Send packet
   WebRtc_Word32 bytes_sent = -1;
   if (_transport) {
-    bytes_sent = _transport->SendPacket(_id, buffer,
-          payload_length + rtp_header_length);
+    bytes_sent = _transport->SendPacket(_id,
+                                        buffer,
+                                        payload_length + rtp_header_length);
   }
   if (bytes_sent <= 0) {
     return -1;
@@ -915,7 +885,7 @@ WebRtc_UWord16 RTPSender::BuildRTPHeaderExtension(
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     |                        header extension                       |
     |                             ....                              |
-   */
+  */
   const WebRtc_UWord32 kPosLength = 2;
   const WebRtc_UWord32 kHeaderLength = RTP_ONE_BYTE_HEADER_LENGTH_IN_BYTES;
 
@@ -1000,7 +970,6 @@ bool RTPSender::UpdateTransmissionTimeOffset(
                  "Failed to update transmission time offset, not registered.");
     return false;
   }
-
   int block_pos = 12 + rtp_header.header.numCSRCs + transmission_block_pos;
   if (rtp_packet_length < block_pos + 4 ||
       rtp_header.header.headerLength < block_pos + 4) {

@@ -33,6 +33,7 @@ namespace webrtc {
 
 class CriticalSectionWrapper;
 class Encryption;
+class PacedSender;
 class ProcessThread;
 class RtpRtcp;
 class ThreadWrapper;
@@ -63,6 +64,7 @@ class ViEChannel
              RtcpIntraFrameObserver* intra_frame_observer,
              RtcpBandwidthObserver* bandwidth_observer,
              RemoteBitrateEstimator* remote_bitrate_estimator,
+             PacedSender* paced_sender,
              RtpRtcp* default_rtp_rtcp,
              bool sender);
   ~ViEChannel();
@@ -380,6 +382,8 @@ class ViEChannel
   ViERTCPObserver* rtcp_observer_;
   ViENetworkObserver* networkObserver_;
   RtcpIntraFrameObserver* intra_frame_observer_;
+  PacedSender* paced_sender_;
+
   scoped_ptr<RtcpBandwidthObserver> bandwidth_observer_;
   bool rtp_packet_timeout_;
   int send_timestamp_extension_id_;

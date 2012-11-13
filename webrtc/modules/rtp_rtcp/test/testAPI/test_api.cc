@@ -91,12 +91,6 @@ TEST_F(RtpRtcpAPITest, CSRC) {
   EXPECT_EQ(test_CSRC[1], testOfCSRC[1]);
 }
 
-TEST_F(RtpRtcpAPITest, TrafficSmoothing) {
-  EXPECT_FALSE(module->TransmissionSmoothingStatus());
-  module->SetTransmissionSmoothingStatus(true);
-  EXPECT_TRUE(module->TransmissionSmoothingStatus());
-}
-
 TEST_F(RtpRtcpAPITest, RTCP) {
   EXPECT_EQ(kRtcpOff, module->RTCP());
   EXPECT_EQ(0, module->SetRTCPStatus(kRtcpCompound));

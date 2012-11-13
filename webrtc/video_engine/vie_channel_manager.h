@@ -84,7 +84,8 @@ class ViEChannelManager: private ViEManagerBase {
  private:
   // Creates a channel object connected to |vie_encoder|. Assumed to be called
   // protected.
-  bool CreateChannelObject(int channel_id, ViEEncoder* vie_encoder,
+  bool CreateChannelObject(int channel_id,
+                           ViEEncoder* vie_encoder,
                            RtcpBandwidthObserver* bandwidth_observer,
                            RemoteBitrateEstimator* remote_bitrate_estimator,
                            RtcpIntraFrameObserver* intra_frame_observer,

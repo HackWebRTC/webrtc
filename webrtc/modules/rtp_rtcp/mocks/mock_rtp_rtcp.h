@@ -109,10 +109,6 @@ class MockRtpRtcp : public RtpRtcp {
       WebRtc_Word32(const RTPExtensionType type, const WebRtc_UWord8 id));
   MOCK_METHOD1(DeregisterSendRtpHeaderExtension,
       WebRtc_Word32(const RTPExtensionType type));
-  MOCK_METHOD1(SetTransmissionSmoothingStatus,
-      void(const bool enable));
-  MOCK_CONST_METHOD0(TransmissionSmoothingStatus,
-      bool());
   MOCK_CONST_METHOD0(StartTimestamp,
       WebRtc_UWord32());
   MOCK_METHOD1(SetStartTimestamp,
@@ -156,6 +152,8 @@ class MockRtpRtcp : public RtpRtcp {
                     const WebRtc_UWord32 payloadSize,
                     const RTPFragmentationHeader* fragmentation,
                     const RTPVideoHeader* rtpVideoHdr));
+  MOCK_METHOD3(TimeToSendPacket,
+      void(uint32_t ssrc, uint16_t sequence_number, int64_t capture_time_ms));
   MOCK_METHOD3(RegisterRtcpObservers,
       void(RtcpIntraFrameObserver* intraFrameCallback,
            RtcpBandwidthObserver* bandwidthCallback,
