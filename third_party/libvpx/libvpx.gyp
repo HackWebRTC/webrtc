@@ -31,7 +31,7 @@
         'libvpx_arch': 'x86_64',
       }],
 
-      ['os_posix == 1 and OS != "mac"', {
+      ['os_posix == 1 and OS != "mac" and OS != "android"', {
         'OS_CATEGORY%': 'linux',
       }, {
         'OS_CATEGORY%': '<(OS)',
@@ -223,16 +223,20 @@
               ],
             }],
             # Libvpx optimizations for ARMv7 with NEON.
-            ['arm_neon==1', {
+            ['arm_neon==1 or OS == "android"', {
               'includes': [
                 'libvpx_srcs_arm_neon.gypi',
               ],
+              'cflags!': [
+                '-mfpu=vfpv3-d16',
+              ], 
+              'cflags': [
+                '-mfpu=neon',
+              ],
             }],
             ['OS == "android"', {
-              # TODO(andrew): include_dirs block removed here. Should likely be
-              # upstreamed.
-              'defines': [
-                'ANDROID_CPU_ARM_FEATURE_NEON=4',
+              'cflags': [
+                '-I<(android_ndk_root)/sources/android/cpufeatures',
               ],
             }],
             [ 'chromeos == 1', {
