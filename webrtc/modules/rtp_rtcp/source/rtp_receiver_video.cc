@@ -286,6 +286,7 @@ WebRtc_Word32 RTPReceiverVideo::ReceiveVp8Codec(
 
   rtpHeader->type.Video.isFirstPacket = fromHeader->beginningOfPartition
       && (fromHeader->partitionID == 0);
+  toHeader->nonReference = fromHeader->nonReferenceFrame;
   toHeader->pictureId = fromHeader->hasPictureID ? fromHeader->pictureID :
       kNoPictureId;
   toHeader->tl0PicIdx = fromHeader->hasTl0PicIdx ? fromHeader->tl0PicIdx :
