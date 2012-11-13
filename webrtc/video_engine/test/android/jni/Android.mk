@@ -270,6 +270,12 @@ LOCAL_SRC_FILES := \
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
+LOCAL_MODULE := libpaced_sender
+LOCAL_SRC_FILES := \
+    $(MY_LIBS_PATH)/webrtc/modules/libpaced_sender.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
 LOCAL_MODULE_TAGS := tests
 LOCAL_MODULE := libwebrtc-video-demo-jni
 LOCAL_CPP_EXTENSION := .cc
@@ -333,6 +339,7 @@ LOCAL_STATIC_LIBRARIES := \
     libaudioproc_debug_proto \
     libprotobuf_lite \
     libvpx \
+    libpaced_sender \
     $(MY_SUPPLEMENTAL_LIBS)
 
 include $(BUILD_SHARED_LIBRARY)
