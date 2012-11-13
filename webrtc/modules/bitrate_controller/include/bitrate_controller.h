@@ -23,10 +23,12 @@ class BitrateObserver {
  /*
   * Observer class for the encoders, each encoder should implement this class
   * to get the target bitrate. It also get the fraction loss and rtt to
-  * optimize its settings for this type of network.
+  * optimize its settings for this type of network. |target_bitrate| is the
+  * target media/payload bitrate excluding packet headers, measured in bits
+  * per second.
   */
  public:
-  virtual void OnNetworkChanged(const uint32_t targer_bitrate,
+  virtual void OnNetworkChanged(const uint32_t target_bitrate,
                                 const uint8_t fraction_loss,  // 0 - 255.
                                 const uint32_t rtt) = 0;
 
@@ -46,6 +48,8 @@ class BitrateController {
 
   virtual RtcpBandwidthObserver* CreateRtcpBandwidthObserver() = 0;
 
+  // Gets the available payload bandwidth in bits per second. Note that
+  // this bandwidth excludes packet headers.
   virtual bool AvailableBandwidth(uint32_t* bandwidth) const = 0;
 
   /*

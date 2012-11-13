@@ -79,11 +79,11 @@ void RemoteBitrateEstimatorMultiStream::IncomingRtcp(unsigned int ssrc,
 }
 
 void RemoteBitrateEstimatorMultiStream::IncomingPacket(unsigned int ssrc,
-                                                       int packet_size,
+                                                       int payload_size,
                                                        int64_t arrival_time,
                                                        uint32_t rtp_timestamp) {
   CriticalSectionScoped cs(crit_sect_.get());
-  incoming_bitrate_.Update(packet_size, arrival_time);
+  incoming_bitrate_.Update(payload_size, arrival_time);
   StreamMap::iterator stream_it = streams_.find(ssrc);
   if (initial_ssrc_ == 0) {
     initial_ssrc_ = ssrc;
@@ -104,7 +104,7 @@ void RemoteBitrateEstimatorMultiStream::IncomingPacket(unsigned int ssrc,
     synchronization::RtpToNtpMs(rtp_timestamp, stream_it->second,
                                 &timestamp_in_ms);
   }
-  overuse_detector_.Update(packet_size, timestamp_in_ms, rtp_timestamp,
+  overuse_detector_.Update(payload_size, timestamp_in_ms, rtp_timestamp,
                            arrival_time);
   if (prior_state != kBwOverusing &&
       overuse_detector_.State() == kBwOverusing) {

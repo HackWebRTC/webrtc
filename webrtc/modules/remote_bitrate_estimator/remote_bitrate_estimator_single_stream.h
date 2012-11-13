@@ -34,9 +34,12 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
                     uint32_t rtp_timestamp) {}
 
   // Called for each incoming packet. If this is a new SSRC, a new
-  // BitrateControl will be created.
+  // BitrateControl will be created. Updates the incoming payload bitrate
+  // estimate and the over-use detector. If an over-use is detected the
+  // remote bitrate estimate will be updated. Note that |payload_size| is the
+  // packet size excluding headers.
   void IncomingPacket(unsigned int ssrc,
-                      int packet_size,
+                      int payload_size,
                       int64_t arrival_time,
                       uint32_t rtp_timestamp);
 
@@ -51,7 +54,8 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
   void RemoveStream(unsigned int ssrc);
 
   // Returns true if a valid estimate exists for a stream identified by |ssrc|
-  // and sets |bitrate_bps| to the estimated bitrate in bits per second.
+  // and sets |bitrate_bps| to the estimated payload bitrate in bits per
+  // second.
   bool LatestEstimate(unsigned int ssrc, unsigned int* bitrate_bps) const;
 
  private:

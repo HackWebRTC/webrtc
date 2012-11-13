@@ -24,7 +24,7 @@ RemoteBitrateEstimatorSingleStream::RemoteBitrateEstimatorSingleStream(
 
 void RemoteBitrateEstimatorSingleStream::IncomingPacket(
     unsigned int ssrc,
-    int packet_size,
+    int payload_size,
     int64_t arrival_time,
     uint32_t rtp_timestamp) {
   CriticalSectionScoped cs(crit_sect_.get());
@@ -42,9 +42,9 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
     it = insert_result.first;
   }
   OveruseDetector* overuse_detector = &it->second;
-  incoming_bitrate_.Update(packet_size, arrival_time);
+  incoming_bitrate_.Update(payload_size, arrival_time);
   const BandwidthUsage prior_state = overuse_detector->State();
-  overuse_detector->Update(packet_size, -1, rtp_timestamp, arrival_time);
+  overuse_detector->Update(payload_size, -1, rtp_timestamp, arrival_time);
   if (prior_state != overuse_detector->State() &&
       overuse_detector->State() == kBwOverusing) {
     // The first overuse should immediately trigger a new estimate.

@@ -50,11 +50,12 @@ class RemoteBitrateEstimator {
   virtual void IncomingRtcp(unsigned int ssrc, uint32_t ntp_secs,
                             uint32_t ntp_frac, uint32_t rtp_timestamp) = 0;
 
-  // Called for each incoming packet. The first SSRC will immediately be used
-  // for overuse detection. Subsequent SSRCs will only be used when at least
-  // two RTCP SR reports with the same SSRC have been received.
+  // Called for each incoming packet. Updates the incoming payload bitrate
+  // estimate and the over-use detector. If an over-use is detected the
+  // remote bitrate estimate will be updated. Note that |payload_size| is the
+  // packet size excluding headers.
   virtual void IncomingPacket(unsigned int ssrc,
-                              int packet_size,
+                              int payload_size,
                               int64_t arrival_time,
                               uint32_t rtp_timestamp) = 0;
 
@@ -69,7 +70,7 @@ class RemoteBitrateEstimator {
   virtual void RemoveStream(unsigned int ssrc) = 0;
 
   // Returns true if a valid estimate exists and sets |bitrate_bps| to the
-  // estimated bitrate in bits per second.
+  // estimated payload bitrate in bits per second.
   virtual bool LatestEstimate(unsigned int ssrc,
                               unsigned int* bitrate_bps) const = 0;
 };
