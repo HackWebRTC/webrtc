@@ -375,9 +375,9 @@ namespace
 namespace webrtc
 {
   // Max number of supported channels
-  enum { kVoiceEngineMaxNumOfChannels = 2 };
+  enum { kVoiceEngineMaxNumOfChannels = 32 };
   // Max number of channels which can be played out simultaneously
-  enum { kVoiceEngineMaxNumOfActiveChannels = 2 };
+  enum { kVoiceEngineMaxNumOfActiveChannels = 16 };
 } // namespace webrtc
 
 // ----------------------------------------------------------------------------
