@@ -160,7 +160,8 @@ int main(int argc, char **argv)
     printf("Unable to parse input arguments\n");
     printf("args: -n <test #> -w <width> -h <height> -f <fps> -b <bps> "
            "-c <codec>  -i <input file> -o <output file> -p <packet loss> "
-           "-r <round-trip-time> -e <cama enable> -m <protection mode> \n");
+           "-r <round-trip-time> -e <cama enable> -m <protection mode> "
+           "-v <feature vector output file>\n");
     return -1;
   }
 

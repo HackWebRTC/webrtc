@@ -145,21 +145,21 @@ QualityModesTest::Print()
   ( _log) << "PSNR: " << psnr.average << std::endl;
   if (_flagSSIM == 1)
   {
-      printf("***computing SSIM***\n");
-      I420SSIMFromFiles(_inname.c_str(), _outname.c_str(), _nativeWidth,
-                        _nativeHeight, &ssim);
-      printf("SSIM: %f \n", ssim.average);
+    printf("***computing SSIM***\n");
+    I420SSIMFromFiles(_inname.c_str(), _outname.c_str(), _nativeWidth,
+                      _nativeHeight, &ssim);
+    printf("SSIM: %f \n", ssim.average);
   }
   (_log) << std::endl;
 
   printf("\nVCM Quality Modes Test: \n\n%i tests completed\n", vcmMacrosTests);
   if (vcmMacrosErrors > 0)
   {
-      printf("%i FAILED\n\n", vcmMacrosErrors);
+    printf("%i FAILED\n\n", vcmMacrosErrors);
   }
   else
   {
-      printf("ALL PASSED\n\n");
+    printf("ALL PASSED\n\n");
   }
 }
 void
@@ -278,14 +278,14 @@ QualityModesTest::Perform(const CmdArgs& args)
       ret = _vpm->PreprocessFrame(sourceFrame, &decimatedFrame);
       if (ret  == 1)
       {
-          printf("VD: frame drop %d \n",_frameCnt);
-          _numFramesDroppedVPM += 1;
-          continue; // frame drop
+        printf("VD: frame drop %d \n",_frameCnt);
+        _numFramesDroppedVPM += 1;
+        continue; // frame drop
       }
       else if (ret < 0)
       {
-          printf("Error in PreprocessFrame: %d\n", ret);
-          //exit(1);
+        printf("Error in PreprocessFrame: %d\n", ret);
+        //exit(1);
       }
       // Frame was not re-sampled => use original.
       if (decimatedFrame == NULL)
@@ -295,7 +295,7 @@ QualityModesTest::Perform(const CmdArgs& args)
       contentMetrics = _vpm->ContentMetrics();
       if (contentMetrics == NULL)
       {
-          printf("error: contentMetrics = NULL\n");
+        printf("error: contentMetrics = NULL\n");
       }
 
       // counting only encoding time
@@ -309,8 +309,8 @@ QualityModesTest::Perform(const CmdArgs& args)
 
       if (ret < 0)
       {
-          printf("Error in AddFrame: %d\n", ret);
-          //exit(1);
+        printf("Error in AddFrame: %d\n", ret);
+        //exit(1);
       }
 
       // Same timestamp value for encode and decode
@@ -323,30 +323,30 @@ QualityModesTest::Perform(const CmdArgs& args)
 
       if (ret < 0)
       {
-          printf("Error in Decode: %d\n", ret);
-          //exit(1);
+        printf("Error in Decode: %d\n", ret);
+        //exit(1);
       }
       if (_vcm->TimeUntilNextProcess() <= 0)
       {
-          _vcm->Process();
+        _vcm->Process();
       }
       // mimicking setTargetRates - update every 1 sec
       // this will trigger QMSelect
       if (_frameCnt%((int)_frameRate) == 0)
       {
-          _vcm->SetChannelParameters((WebRtc_UWord32)_bitRate, 0, 1);
+        _vcm->SetChannelParameters((WebRtc_UWord32)_bitRate, 0, 1);
       }
 
       // check for bit rate update
       if (change < numChanges && _frameCnt == updateFrameNum[change])
       {
-          _bitRate = bitRateUpdate[change];
-          _frameRate = frameRateUpdate[change];
-          codec.startBitrate = (int)_bitRate;
-          codec.maxFramerate = (WebRtc_UWord8) _frameRate;
-          // Will also set and init the desired codec
-          TEST(_vcm->RegisterSendCodec(&codec, 2, 1440) == VCM_OK);
-          change++;
+        _bitRate = bitRateUpdate[change];
+        _frameRate = frameRateUpdate[change];
+        codec.startBitrate = (int)_bitRate;
+        codec.maxFramerate = (WebRtc_UWord8) _frameRate;
+        // Will also set and init the desired codec
+        TEST(_vcm->RegisterSendCodec(&codec, 2, 1440) == VCM_OK);
+        change++;
       }
 
       DataLog::InsertCell(feature_table_name_, "motion magnitude",
@@ -413,8 +413,8 @@ QMTestVideoSettingsCallback::Updated()
 {
   if (_updated)
   {
-      _updated = false;
-      return true;
+    _updated = false;
+    return true;
   }
   return false;
 }
@@ -430,17 +430,17 @@ QMTestVideoSettingsCallback::SetVideoQMSettings(const WebRtc_UWord32 frameRate,
   //Initialize codec with new values - is this the best place to do it?
   if (!retVal)
   {
-      // first get current settings
-      VideoCodec currentCodec;
-      _vcm->SendCodec(&currentCodec);
-      // now set new values:
-      currentCodec.height = (WebRtc_UWord16)height;
-      currentCodec.width = (WebRtc_UWord16)width;
-      currentCodec.maxFramerate = (WebRtc_UWord8)frameRate;
+    // first get current settings
+    VideoCodec currentCodec;
+    _vcm->SendCodec(&currentCodec);
+    // now set new values:
+    currentCodec.height = (WebRtc_UWord16)height;
+    currentCodec.width = (WebRtc_UWord16)width;
+    currentCodec.maxFramerate = (WebRtc_UWord8)frameRate;
 
-      // re-register encoder
-      retVal = _vcm->RegisterSendCodec(&currentCodec, 2, 1440);
-      _updated = true;
+    // re-register encoder
+    retVal = _vcm->RegisterSendCodec(&currentCodec, 2, 1440);
+    _updated = true;
   }
 
   return retVal;
@@ -475,8 +475,8 @@ VCMQMDecodeCompleCallback::~VCMQMDecodeCompleCallback()
 //     }
    if (_decBuffer != NULL)
    {
-       delete [] _decBuffer;
-       _decBuffer = NULL;
+     delete [] _decBuffer;
+     _decBuffer = NULL;
    }
  }
 
@@ -517,8 +517,8 @@ VCMQMDecodeCompleCallback::FrameToRender(I420VideoFrame& videoFrame)
     // no need for interpolator and decBuffer
     if (_decBuffer != NULL)
     {
-        delete [] _decBuffer;
-        _decBuffer = NULL;
+      delete [] _decBuffer;
+      _decBuffer = NULL;
     }
     _decWidth = 0;
     _decHeight = 0;
@@ -552,12 +552,12 @@ WebRtc_Word32 VCMQMDecodeCompleCallback::buildInterpolator()
   WebRtc_UWord32 decFrameLength  = _origWidth*_origHeight*3 >> 1;
   if (_decBuffer != NULL)
   {
-      delete [] _decBuffer;
+    delete [] _decBuffer;
   }
   _decBuffer = new WebRtc_UWord8[decFrameLength];
   if (_decBuffer == NULL)
   {
-      return -1;
+    return -1;
   }
   return 0;
 }
