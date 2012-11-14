@@ -57,6 +57,7 @@ protected:
 
 enum TraceModule
 {
+    kTraceUndefined          = 0,
     // not a module, triggered from the engine code
     kTraceVoice              = 0x0001,
     // not a module, triggered from the engine code

@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// System independant wrapper for logging runtime information to file.
+// System independent wrapper for logging runtime information to file.
 // Note: All log messages will be written to the same trace file.
-// Note: If to many messages are written to file there will be a build up of
+// Note: If too many messages are written to file there will be a build up of
 //       messages. Apply filtering to avoid that.
 #ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_TRACE_H_
 #define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_TRACE_H_
@@ -35,7 +35,7 @@ public:
 
     // Specifies what type of messages should be written to the trace file. The
     // filter parameter is a bitmask where each message type is enumerated by
-    // the TraceLevel enumerator. TODO (hellner) why is the
+    // the TraceLevel enumerator. TODO(hellner): why is the
     // TraceLevel enumerator not defined in this file?
     static WebRtc_Word32 SetLevelFilter(const WebRtc_UWord32 filter);
 
@@ -59,17 +59,18 @@ public:
     // Adds a trace message for writing to file. The message is put in a queue
     // for writing to file whenever possible for performance reasons. I.e. there
     // is a crash it is possible that the last, vital logs are not logged yet.
-    // level is the the type of message to log. If that type of messages is
+    // level is the type of message to log. If that type of messages is
     // filtered it will not be written to file. module is an identifier for what
-    // part of the code the message is comming.
+    // part of the code the message is coming.
     // id is an identifier that should be unique for that set of classes that
     // are associated (e.g. all instances owned by an engine).
-    // msg and the elipsis are the same as e.g. sprintf.
+    // msg and the ellipsis are the same as e.g. sprintf.
     // TODO (hellner) Why is TraceModule not defined in this file?
     static void Add(const TraceLevel level,
                     const TraceModule module,
                     const WebRtc_Word32 id,
                     const char* msg, ...);
 };
+
 } // namespace webrtc
 #endif // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_TRACE_H_

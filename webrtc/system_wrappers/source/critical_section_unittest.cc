@@ -30,8 +30,6 @@ namespace {
 
 const bool kLogTrace = false;  // Set to true to enable debug logging to stdout.
 
-#define LOG(...) WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1, __VA_ARGS__);
-
 // Cause a process switch. Needed to avoid depending on
 // busy-wait in tests.
 static void SwitchProcess() {
@@ -50,7 +48,6 @@ class ProtectedCount {
   void Increment() {
     CriticalSectionScoped cs(crit_sect_);
     ++count_;
-    LOG("Inc to %d", count_);
   }
 
   int Count() const {
@@ -79,7 +76,6 @@ class CritSectTest : public ::testing::Test {
       ++loop_counter;
       SwitchProcess();
     }
-    LOG("Test looped %d times\n", loop_counter);
     return (count->Count() >= target);
   }
 
@@ -88,11 +84,8 @@ class CritSectTest : public ::testing::Test {
 };
 
 bool LockUnlockThenStopRunFunction(void* obj) {
-  LOG("Wait starting");
   ProtectedCount* the_count = static_cast<ProtectedCount*> (obj);
-  LOG("Wait incrementing");
   the_count->Increment();
-  LOG("Wait returning");
   return false;
 }
 
@@ -119,12 +112,9 @@ TEST_F(CritSectTest, ThreadWakesOnce) {
 }
 
 bool LockUnlockRunFunction(void* obj) {
-  LOG("Wait starting");
   ProtectedCount* the_count = static_cast<ProtectedCount*> (obj);
-  LOG("Wait incrementing");
   the_count->Increment();
   SwitchProcess();
-  LOG("Wait returning");
   return true;
 }
 

@@ -37,6 +37,7 @@
         '../interface/file_wrapper.h',
         '../interface/fix_interlocked_exchange_pointer_win.h',
         '../interface/list_wrapper.h',
+        '../interface/logging.h',
         '../interface/map_wrapper.h',
         '../interface/ref_count.h',
         '../interface/rw_lock_wrapper.h',
@@ -83,6 +84,7 @@
         'file_impl.cc',
         'file_impl.h',
         'list_no_stl.cc',
+        'logging.cc',
         'map.cc',
         'rw_lock.cc',
         'rw_lock_generic.cc',
@@ -111,9 +113,23 @@
       'conditions': [
         ['enable_data_logging==1', {
           'sources!': [ 'data_log_no_op.cc', ],
-        },{
+        }, {
           'sources!': [ 'data_log.cc', ],
         },],
+        ['enable_tracing==1', {
+          'sources!': [
+            'trace_impl_no_op.cc',
+          ],
+        }, {
+          'sources!': [
+            'trace_impl.cc',
+            'trace_impl.h',
+            'trace_posix.cc',
+            'trace_posix.h',
+            'trace_win.cc',
+            'trace_win.h',
+          ],
+        }],
         ['OS=="android"', {
           'dependencies': [ 'cpu_features_android', ],
         }],
@@ -141,19 +157,12 @@
             'cpu_linux.h',
             'cpu_mac.h',
             'cpu_win.h',
-            'trace_impl.cc',
-            'trace_impl.h',
-            'trace_posix.cc',
-            'trace_posix.h',
-            'trace_win.cc',
-            'trace_win.h',
           ],
         }, {
           'sources!': [
             'cpu_no_op.cc',
-            'trace_impl_no_op.cc',
           ],
-        }]
+        }],
       ], # conditions
       'target_conditions': [
         # We need to do this in a target_conditions block to override the
@@ -210,6 +219,7 @@
             'cpu_measurement_harness.cc',
             'critical_section_unittest.cc',
             'list_unittest.cc',
+            'logging_unittest.cc',
             'map_unittest.cc',
             'data_log_unittest.cc',
             'data_log_unittest_disabled.cc',

@@ -24,8 +24,6 @@ const int kLogTrace = false;  // Set to true to enable debug logging to stdout.
 const int kLongWaitMs = 100 * 1000; // A long time in testing terms
 const int kShortWaitMs = 2 * 1000; // Long enough for process switches to happen
 
-#define LOG(...) WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1, __VA_ARGS__);
-
 // A Baton is one possible control structure one can build using
 // conditional variables.
 // A Baton is always held by one and only one active thread - unlike
@@ -53,15 +51,12 @@ class Baton {
   // Only one process can pass at the same time; this property is
   // ensured by the |giver_sect_| lock.
   bool Pass(WebRtc_UWord32 max_msecs) {
-    LOG("Locking giver_sect");
     CriticalSectionScoped cs_giver(giver_sect_);
-    LOG("Locked giver_sect, locking crit_sect");
     CriticalSectionScoped cs(crit_sect_);
     SignalBatonAvailable();
     const bool result = TakeBatonIfStillFree(max_msecs);
     if (result) {
       ++pass_count_;
-      LOG("Pass count is %d", pass_count_);
     }
     return result;
   }
@@ -87,9 +82,7 @@ class Baton {
   // These functions must be called with crit_sect_ held.
   bool WaitUntilBatonOffered(int timeout_ms) {
     while (!being_passed_) {
-      LOG("Wait waiting");
       if (!cond_var_->SleepCS(*crit_sect_, timeout_ms)) {
-        LOG("Wait timeout");
         return false;
       }
     }
@@ -101,7 +94,6 @@ class Baton {
   void SignalBatonAvailable() {
     assert(!being_passed_);
     being_passed_ = true;
-    LOG("Signal waking");
     cond_var_->Wake();
   }
 
@@ -114,7 +106,6 @@ class Baton {
   bool TakeBatonIfStillFree(int timeout_ms) {
     bool not_timeout = true;
     while (being_passed_ && not_timeout) {
-      LOG("Takeback waiting");
       not_timeout = cond_var_->SleepCS(*crit_sect_, timeout_ms);
       // If we're woken up while variable is still held, we may have
       // gotten a wakeup destined for a grabber thread.
@@ -123,7 +114,6 @@ class Baton {
     if (!being_passed_) {
       return true;
     } else {
-      LOG("Takeback grab");
       assert(!not_timeout);
       being_passed_ = false;
       return false;
@@ -145,10 +135,8 @@ class Baton {
 // Function that waits on a Baton, and passes it right back.
 // We expect these calls never to time out.
 bool WaitingRunFunction(void* obj) {
-  Baton* the_baton = static_cast<Baton*>(obj);
-  LOG("Thread waiting");
+  Baton* the_baton = static_cast<Baton*> (obj);
   EXPECT_TRUE(the_baton->Grab(kLongWaitMs));
-  LOG("Thread waking parent");
   EXPECT_TRUE(the_baton->Pass(kLongWaitMs));
   return true;
 }

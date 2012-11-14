@@ -14,6 +14,7 @@
 #include "audio_frame_operations.h"
 #include "audio_processing.h"
 #include "critical_section_wrapper.h"
+#include "logging.h"
 #include "output_mixer.h"
 #include "process_thread.h"
 #include "rtp_dump.h"
@@ -29,11 +30,8 @@
 #include <Qos.h>
 #endif
 
-namespace webrtc
-{
-
-namespace voe
-{
+namespace webrtc {
+namespace voe {
 
 WebRtc_Word32
 Channel::SendData(FrameType frameType,
@@ -6615,36 +6613,21 @@ Channel::RegisterReceiveCodecsToRTPModule()
     }
 }
 
-int
-Channel::ApmProcessRx(AudioFrame& audioFrame)
-{
-    WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::ApmProcessRx()");
-
-    // Register the (possibly new) frame parameters.
-    if (_rxAudioProcessingModulePtr->set_sample_rate_hz(
-            audioFrame.sample_rate_hz_) != 0)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,-1),
-                     "AudioProcessingModule::set_sample_rate_hz(%u) => error",
-                     audioFrame.sample_rate_hz_);
-    }
-    if (_rxAudioProcessingModulePtr->set_num_channels(audioFrame.num_channels_,
-            audioFrame.num_channels_) != 0)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,-1),
-                     "AudioProcessingModule::set_num_channels(%u, %u) => error",
-                     audioFrame.num_channels_, audioFrame.num_channels_);
-    }
-
-    if (_rxAudioProcessingModulePtr->ProcessStream(&audioFrame) != 0)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,-1),
-                     "AudioProcessingModule::ProcessStream() => error");
-    }
-    return 0;
+int Channel::ApmProcessRx(AudioFrame& frame) {
+  AudioProcessing* audioproc = _rxAudioProcessingModulePtr;
+  // Register the (possibly new) frame parameters.
+  if (audioproc->set_sample_rate_hz(frame.sample_rate_hz_) != 0) {
+    LOG_FERR1(WARNING, set_sample_rate_hz, frame.sample_rate_hz_);
+  }
+  if (audioproc->set_num_channels(frame.num_channels_,
+                                  frame.num_channels_) != 0) {
+    LOG_FERR1(WARNING, set_num_channels, frame.num_channels_);
+  }
+  if (audioproc->ProcessStream(&frame) != 0) {
+    LOG_FERR0(WARNING, ProcessStream);
+  }
+  return 0;
 }
 
 } // namespace voe
-
 } // namespace webrtc

@@ -13,18 +13,13 @@
 #include "audio_processing.h"
 #include "channel.h"
 #include "critical_section_wrapper.h"
+#include "logging.h"
 #include "trace.h"
 #include "transmit_mixer.h"
 #include "voe_errors.h"
 #include "voice_engine_impl.h"
 
 // TODO(andrew): move to a common place.
-#define WEBRTC_TRACE_VOICE_API()                                   \
-  do {                                                             \
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice,                       \
-                 VoEId(_shared->instance_id(), -1), __FUNCTION__); \
-  } while (0)
-
 #define WEBRTC_VOICE_INIT_CHECK()                        \
   do {                                                   \
     if (!_shared->statistics().Initialized()) {          \
@@ -40,7 +35,6 @@
       return false;                                      \
     }                                                    \
   } while (0)
-
 
 namespace webrtc {
 
@@ -353,9 +347,7 @@ int VoEAudioProcessingImpl::GetAgcConfig(AgcConfig& config) {
 int VoEAudioProcessingImpl::SetRxNsStatus(int channel,
                                           bool enable,
                                           NsModes mode) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "SetRxNsStatus(channel=%d, enable=%d, mode=%d)",
-               channel, (int)enable, (int)mode);
+  LOG_API3(channel, enable, mode);
 #ifdef WEBRTC_VOICE_ENGINE_NR
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
@@ -514,7 +506,7 @@ bool VoEAudioProcessing::DriftCompensationSupported() {
 }
 
 int VoEAudioProcessingImpl::EnableDriftCompensation(bool enable) {
-  WEBRTC_TRACE_VOICE_API();
+  LOG_API1(enable);
   WEBRTC_VOICE_INIT_CHECK();
 
   if (!DriftCompensationSupported()) {
@@ -533,7 +525,7 @@ int VoEAudioProcessingImpl::EnableDriftCompensation(bool enable) {
 }
 
 bool VoEAudioProcessingImpl::DriftCompensationEnabled() {
-  WEBRTC_TRACE_VOICE_API();
+  LOG_API0();
   WEBRTC_VOICE_INIT_CHECK_BOOL();
 
   EchoCancellation* aec = _shared->audio_processing()->echo_cancellation();
@@ -1139,13 +1131,12 @@ int VoEAudioProcessingImpl::SetTypingDetectionParameters(int timeWindow,
 }
 
 void VoEAudioProcessingImpl::EnableStereoChannelSwapping(bool enable) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-               "EnableStereoChannelSwapping(enable=%d)", enable);
+  LOG_API1(enable);
   _shared->transmit_mixer()->EnableStereoChannelSwapping(enable);
 }
 
 bool VoEAudioProcessingImpl::IsStereoChannelSwappingEnabled() {
-  WEBRTC_TRACE_VOICE_API();
+  LOG_API0();
   return _shared->transmit_mixer()->IsStereoChannelSwappingEnabled();
 }
 
