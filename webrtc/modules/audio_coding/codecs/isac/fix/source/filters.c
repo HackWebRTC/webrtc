@@ -8,19 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * filters.c
- *
- * This file contains function WebRtcIsacfix_AutocorrC,
- * AllpassFilterForDec32, and WebRtcIsacfix_DecimateAllpass32
- *
- */
+#include <assert.h>
 
-#include <string.h>
-
-#include "pitch_estimator.h"
-#include "lpc_masking_model.h"
-#include "codec.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/codec.h"
 
 // Autocorrelation function in fixed point.
 // NOTE! Different from SPLIB-version in how it scales the signal.
@@ -35,6 +25,10 @@ int WebRtcIsacfix_AutocorrC(WebRtc_Word32* __restrict r,
   int32_t sum = 0;
   uint32_t temp = 0;
   int64_t prod = 0;
+
+  // The ARM assembly code assumptoins.
+  assert(N % 4 == 0);
+  assert(N >= 8);
 
   // Calculate r[0].
   for (i = 0; i < N; i++) {

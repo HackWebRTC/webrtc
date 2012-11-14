@@ -21,6 +21,9 @@
 
 #include "structs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int WebRtcIsacfix_EstimateBandwidth(BwEstimatorstr   *bwest_str,
                                     Bitstr_dec       *streamdata,
@@ -175,5 +178,9 @@ typedef void (*FilterMaLoopFix)(int16_t input0,
                                 int32_t* ptr1,
                                 int32_t* ptr2);
 extern FilterMaLoopFix WebRtcIsacfix_FilterMaLoopFix;
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
 #endif /* WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_CODEC_H_ */
