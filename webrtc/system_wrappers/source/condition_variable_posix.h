@@ -11,29 +11,30 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_CONDITION_VARIABLE_POSIX_H_
 #define WEBRTC_SYSTEM_WRAPPERS_SOURCE_CONDITION_VARIABLE_POSIX_H_
 
-#include "condition_variable_wrapper.h"
-
 #include <pthread.h>
 
+#include "condition_variable_wrapper.h"
+
 namespace webrtc {
-class ConditionVariablePosix : public ConditionVariableWrapper
-{
-public:
-    static ConditionVariableWrapper* Create();
-    ~ConditionVariablePosix();
 
-    void SleepCS(CriticalSectionWrapper& critSect);
-    bool SleepCS(CriticalSectionWrapper& critSect, unsigned long maxTimeInMS);
-    void Wake();
-    void WakeAll();
+class ConditionVariablePosix : public ConditionVariableWrapper {
+ public:
+  static ConditionVariableWrapper* Create();
+  ~ConditionVariablePosix();
 
-private:
-    ConditionVariablePosix();
-    int Construct();
+  void SleepCS(CriticalSectionWrapper& crit_sect);
+  bool SleepCS(CriticalSectionWrapper& crit_sect, unsigned long max_time_in_ms);
+  void Wake();
+  void WakeAll();
 
-private:
-    pthread_cond_t _cond;
+ private:
+  ConditionVariablePosix();
+  int Construct();
+
+ private:
+  pthread_cond_t cond_;
 };
+
 } // namespace webrtc
 
-#endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_CONDITION_VARIABLE_POSIX_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_SOURCE_CONDITION_VARIABLE_POSIX_H_

@@ -9,29 +9,25 @@
  */
 
 #if defined(_WIN32)
-   #include <windows.h>
-   #include "condition_variable_wrapper.h"
-   #include "condition_variable_win.h"
-#elif defined(WEBRTC_LINUX)
-   #include <pthread.h>
-   #include "condition_variable_wrapper.h"
-   #include "condition_variable_posix.h"
-#elif defined(WEBRTC_MAC)
-   #include <pthread.h>
-   #include "condition_variable_wrapper.h"
-   #include "condition_variable_posix.h"
+#include <windows.h>
+#include "condition_variable_win.h"
+#include "condition_variable_wrapper.h"
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
+#include <pthread.h>
+#include "condition_variable_posix.h"
+#include "condition_variable_wrapper.h"
 #endif
 
 namespace webrtc {
-ConditionVariableWrapper*
-ConditionVariableWrapper::CreateConditionVariable()
-{
+
+ConditionVariableWrapper* ConditionVariableWrapper::CreateConditionVariable() {
 #if defined(_WIN32)
-    return new ConditionVariableWindows;
+  return new ConditionVariableWindows;
 #elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-    return ConditionVariablePosix::Create();
+  return ConditionVariablePosix::Create();
 #else
-    return NULL;
+  return NULL;
 #endif
 }
+
 } // namespace webrtc

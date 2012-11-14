@@ -19,18 +19,19 @@
 // implementation into two different files
 
 #include "condition_variable_win.h"
-
 #include "critical_section_win.h"
 #include "trace.h"
 
 namespace webrtc {
-bool ConditionVariableWindows::_winSupportConditionVariablesPrimitive = false;
+
+bool ConditionVariableWindows::win_support_condition_variables_primitive_ =
+    false;
 static HMODULE library = NULL;
 
-PInitializeConditionVariable  _PInitializeConditionVariable;
-PSleepConditionVariableCS     _PSleepConditionVariableCS;
-PWakeConditionVariable        _PWakeConditionVariable;
-PWakeAllConditionVariable     _PWakeAllConditionVariable;
+PInitializeConditionVariable  PInitializeConditionVariable_;
+PSleepConditionVariableCS     PSleepConditionVariableCS_;
+PWakeConditionVariable        PWakeConditionVariable_;
+PWakeAllConditionVariable     PWakeAllConditionVariable_;
 
 typedef void (WINAPI *PInitializeConditionVariable)(PCONDITION_VARIABLE);
 typedef BOOL (WINAPI *PSleepConditionVariableCS)(PCONDITION_VARIABLE,
@@ -39,186 +40,159 @@ typedef void (WINAPI *PWakeConditionVariable)(PCONDITION_VARIABLE);
 typedef void (WINAPI *PWakeAllConditionVariable)(PCONDITION_VARIABLE);
 
 ConditionVariableWindows::ConditionVariableWindows()
-    : _eventID(WAKEALL_0)
-{
-    if (!library)
-    {
-        // Use native implementation if supported (i.e Vista+)
-        library = LoadLibrary(TEXT("Kernel32.dll"));
-        if (library)
-        {
-            WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
-                         "Loaded Kernel.dll");
+    : eventID_(WAKEALL_0) {
+  if (!library) {
+    // Use native implementation if supported (i.e Vista+)
+    library = LoadLibrary(TEXT("Kernel32.dll"));
+    if (library) {
+      WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1, "Loaded Kernel.dll");
 
-            _PInitializeConditionVariable =
-                (PInitializeConditionVariable) GetProcAddress(
-                    library,
-                    "InitializeConditionVariable");
-            _PSleepConditionVariableCS =
-                (PSleepConditionVariableCS)GetProcAddress(
-                    library,
-                    "SleepConditionVariableCS");
-            _PWakeConditionVariable =
-                (PWakeConditionVariable)GetProcAddress(
-                    library,
-                     "WakeConditionVariable");
-            _PWakeAllConditionVariable =
-                (PWakeAllConditionVariable)GetProcAddress(
-                    library,
-                    "WakeAllConditionVariable");
+      PInitializeConditionVariable_ =
+          (PInitializeConditionVariable) GetProcAddress(
+              library, "InitializeConditionVariable");
+      PSleepConditionVariableCS_ = (PSleepConditionVariableCS) GetProcAddress(
+          library, "SleepConditionVariableCS");
+      PWakeConditionVariable_ = (PWakeConditionVariable) GetProcAddress(
+          library, "WakeConditionVariable");
+      PWakeAllConditionVariable_ = (PWakeAllConditionVariable) GetProcAddress(
+          library, "WakeAllConditionVariable");
 
-            if(_PInitializeConditionVariable &&
-               _PSleepConditionVariableCS &&
-               _PWakeConditionVariable &&
-               _PWakeAllConditionVariable)
-            {
-                WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
-                             "Loaded native condition variables");
-                _winSupportConditionVariablesPrimitive = true;
-            }
-        }
+      if (PInitializeConditionVariable_ && PSleepConditionVariableCS_
+          && PWakeConditionVariable_ && PWakeAllConditionVariable_) {
+        WEBRTC_TRACE(
+            kTraceStateInfo, kTraceUtility, -1,
+            "Loaded native condition variables");
+        win_support_condition_variables_primitive_ = true;
+      }
     }
+  }
 
-    if (_winSupportConditionVariablesPrimitive)
-    {
-        _PInitializeConditionVariable(&_conditionVariable);
+  if (win_support_condition_variables_primitive_) {
+    PInitializeConditionVariable_(&condition_variable_);
 
-        _events[WAKEALL_0] = NULL;
-        _events[WAKEALL_1] = NULL;
-        _events[WAKE] = NULL;
+    events_[WAKEALL_0] = NULL;
+    events_[WAKEALL_1] = NULL;
+    events_[WAKE] = NULL;
 
-    } else {
-        memset(&_numWaiters[0],0,sizeof(_numWaiters));
+  } else {
+    memset(&num_waiters_[0], 0, sizeof(num_waiters_));
 
-        InitializeCriticalSection(&_numWaitersCritSect);
+    InitializeCriticalSection(&num_waiters_crit_sect_);
 
-        _events[WAKEALL_0] = CreateEvent(NULL,  // no security attributes
-                                         TRUE,  // manual-reset, sticky event
-                                         FALSE, // initial state non-signaled
-                                         NULL); // no name for event
+    events_[WAKEALL_0] = CreateEvent(NULL,  // no security attributes
+                                     TRUE,  // manual-reset, sticky event
+                                     FALSE,  // initial state non-signaled
+                                     NULL);  // no name for event
 
-        _events[WAKEALL_1] = CreateEvent(NULL,  // no security attributes
-                                         TRUE,  // manual-reset, sticky event
-                                         FALSE, // initial state non-signaled
-                                         NULL); // no name for event
+    events_[WAKEALL_1] = CreateEvent(NULL,  // no security attributes
+                                     TRUE,  // manual-reset, sticky event
+                                     FALSE,  // initial state non-signaled
+                                     NULL);  // no name for event
 
-        _events[WAKE] = CreateEvent(NULL,  // no security attributes
-                                    FALSE, // auto-reset, sticky event
-                                    FALSE, // initial state non-signaled
-                                    NULL); // no name for event
-    }
+    events_[WAKE] = CreateEvent(NULL,  // no security attributes
+                                FALSE,  // auto-reset, sticky event
+                                FALSE,  // initial state non-signaled
+                                NULL);  // no name for event
+  }
 }
 
-ConditionVariableWindows::~ConditionVariableWindows()
-{
-    if(!_winSupportConditionVariablesPrimitive)
-    {
-        CloseHandle(_events[WAKE]);
-        CloseHandle(_events[WAKEALL_1]);
-        CloseHandle(_events[WAKEALL_0]);
+ConditionVariableWindows::~ConditionVariableWindows() {
+  if (!win_support_condition_variables_primitive_) {
+    CloseHandle(events_[WAKE]);
+    CloseHandle(events_[WAKEALL_1]);
+    CloseHandle(events_[WAKEALL_0]);
 
-        DeleteCriticalSection(&_numWaitersCritSect);
+    DeleteCriticalSection(&num_waiters_crit_sect_);
+  }
+}
+
+void ConditionVariableWindows::SleepCS(CriticalSectionWrapper& crit_sect) {
+  SleepCS(crit_sect, INFINITE);
+}
+
+bool ConditionVariableWindows::SleepCS(CriticalSectionWrapper& crit_sect,
+                                       unsigned long max_time_in_ms) {
+  CriticalSectionWindows* cs =
+      reinterpret_cast<CriticalSectionWindows*>(&crit_sect);
+
+  if (win_support_condition_variables_primitive_) {
+    BOOL ret_val = PSleepConditionVariableCS_(
+        &condition_variable_, &(cs->crit), max_time_in_ms);
+    return (ret_val == 0) ? false : true;
+  } else {
+    EnterCriticalSection(&num_waiters_crit_sect_);
+
+    // Get the eventID for the event that will be triggered by next
+    // WakeAll() call and start waiting for it.
+    const EventWakeUpType eventID =
+        (WAKEALL_0 == eventID_) ? WAKEALL_1 : WAKEALL_0;
+
+    ++(num_waiters_[eventID]);
+    LeaveCriticalSection(&num_waiters_crit_sect_);
+
+    LeaveCriticalSection(&cs->crit);
+    HANDLE events[2];
+    events[0] = events_[WAKE];
+    events[1] = events_[eventID];
+    const DWORD result = WaitForMultipleObjects(2,  // Wait on 2 events.
+        events, FALSE,  // Wait for either.
+        max_time_in_ms);
+
+    const bool ret_val = (result != WAIT_TIMEOUT);
+
+    EnterCriticalSection(&num_waiters_crit_sect_);
+    --(num_waiters_[eventID]);
+
+    // Last waiter should only be true for WakeAll(). WakeAll() correspond
+    // to position 1 in events[] -> (result == WAIT_OBJECT_0 + 1)
+    const bool last_waiter = (result == WAIT_OBJECT_0 + 1)
+        && (num_waiters_[eventID] == 0);
+    LeaveCriticalSection(&num_waiters_crit_sect_);
+
+    if (last_waiter) {
+      // Reset/unset the WakeAll() event since all threads have been
+      // released.
+      ResetEvent(events_[eventID]);
     }
+
+    EnterCriticalSection(&cs->crit);
+    return ret_val;
+  }
 }
 
-void ConditionVariableWindows::SleepCS(CriticalSectionWrapper& critSect)
-{
-    SleepCS(critSect, INFINITE);
-}
+void ConditionVariableWindows::Wake() {
+  if (win_support_condition_variables_primitive_) {
+    PWakeConditionVariable_(&condition_variable_);
+  } else {
+    EnterCriticalSection(&num_waiters_crit_sect_);
+    const bool have_waiters = (num_waiters_[WAKEALL_0] > 0)
+        || (num_waiters_[WAKEALL_1] > 0);
+    LeaveCriticalSection(&num_waiters_crit_sect_);
 
-bool ConditionVariableWindows::SleepCS(CriticalSectionWrapper& critSect,
-                                       unsigned long maxTimeInMS)
-{
-    CriticalSectionWindows* cs = reinterpret_cast<CriticalSectionWindows*>(
-                                     &critSect);
-
-    if(_winSupportConditionVariablesPrimitive)
-    {
-        BOOL retVal = _PSleepConditionVariableCS(&_conditionVariable,
-                                                 &(cs->crit),maxTimeInMS);
-        return (retVal == 0) ? false : true;
-
-    }else
-    {
-        EnterCriticalSection(&_numWaitersCritSect);
-        // Get the eventID for the event that will be triggered by next
-        // WakeAll() call and start waiting for it.
-        const EventWakeUpType eventID = (WAKEALL_0 == _eventID) ?
-                                            WAKEALL_1 : WAKEALL_0;
-        ++(_numWaiters[eventID]);
-        LeaveCriticalSection(&_numWaitersCritSect);
-
-        LeaveCriticalSection(&cs->crit);
-        HANDLE events[2];
-        events[0] = _events[WAKE];
-        events[1] = _events[eventID];
-        const DWORD result = WaitForMultipleObjects(2, // Wait on 2 events.
-                                                    events,
-                                                    FALSE, // Wait for either.
-                                                    maxTimeInMS);
-
-        const bool retVal = (result != WAIT_TIMEOUT);
-
-        EnterCriticalSection(&_numWaitersCritSect);
-        --(_numWaiters[eventID]);
-        // Last waiter should only be true for WakeAll(). WakeAll() correspond
-        // to position 1 in events[] -> (result == WAIT_OBJECT_0 + 1)
-        const bool lastWaiter = (result == WAIT_OBJECT_0 + 1) &&
-                                (_numWaiters[eventID] == 0);
-        LeaveCriticalSection(&_numWaitersCritSect);
-
-        if (lastWaiter)
-        {
-            // Reset/unset the WakeAll() event since all threads have been
-            // released.
-            ResetEvent(_events[eventID]);
-        }
-
-        EnterCriticalSection(&cs->crit);
-        return retVal;
+    if (have_waiters) {
+      SetEvent(events_[WAKE]);
     }
+  }
 }
 
-void
-ConditionVariableWindows::Wake()
-{
-    if(_winSupportConditionVariablesPrimitive)
-    {
-        _PWakeConditionVariable(&_conditionVariable);
-    }else
-    {
-        EnterCriticalSection(&_numWaitersCritSect);
-        const bool haveWaiters = (_numWaiters[WAKEALL_0] > 0) ||
-                                 (_numWaiters[WAKEALL_1] > 0);
-        LeaveCriticalSection(&_numWaitersCritSect);
+void ConditionVariableWindows::WakeAll() {
+  if (win_support_condition_variables_primitive_) {
+    PWakeAllConditionVariable_(&condition_variable_);
+  } else {
+    EnterCriticalSection(&num_waiters_crit_sect_);
 
-        if (haveWaiters)
-        {
-            SetEvent(_events[WAKE]);
-        }
+    // Update current WakeAll() event
+    eventID_ = (WAKEALL_0 == eventID_) ? WAKEALL_1 : WAKEALL_0;
+
+    // Trigger current event
+    const EventWakeUpType eventID = eventID_;
+    const bool have_waiters = num_waiters_[eventID] > 0;
+    LeaveCriticalSection(&num_waiters_crit_sect_);
+
+    if (have_waiters) {
+      SetEvent(events_[eventID]);
     }
+  }
 }
 
-void
-ConditionVariableWindows::WakeAll()
-{
-    if(_winSupportConditionVariablesPrimitive)
-    {
-        _PWakeAllConditionVariable(&_conditionVariable);
-    }else
-    {
-        EnterCriticalSection(&_numWaitersCritSect);
-        // Update current WakeAll() event
-        _eventID = (WAKEALL_0 == _eventID) ? WAKEALL_1 : WAKEALL_0;
-        // Trigger current event
-        const EventWakeUpType eventID = _eventID;
-        const bool haveWaiters = _numWaiters[eventID] > 0;
-        LeaveCriticalSection(&_numWaitersCritSect);
-
-        if (haveWaiters)
-        {
-            SetEvent(_events[eventID]);
-        }
-    }
-}
 } // namespace webrtc

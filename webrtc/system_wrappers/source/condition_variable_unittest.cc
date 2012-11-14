@@ -21,8 +21,8 @@ namespace webrtc {
 namespace {
 
 const int kLogTrace = false;  // Set to true to enable debug logging to stdout.
-const int kLongWaitMs = 100*1000;  // A long time in testing terms
-const int kShortWaitMs = 2*1000;  // Long enough for process switches to happen
+const int kLongWaitMs = 100 * 1000; // A long time in testing terms
+const int kShortWaitMs = 2 * 1000; // Long enough for process switches to happen
 
 #define LOG(...) WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1, __VA_ARGS__);
 
@@ -145,7 +145,7 @@ class Baton {
 // Function that waits on a Baton, and passes it right back.
 // We expect these calls never to time out.
 bool WaitingRunFunction(void* obj) {
-  Baton* the_baton = static_cast<Baton*> (obj);
+  Baton* the_baton = static_cast<Baton*>(obj);
   LOG("Thread waiting");
   EXPECT_TRUE(the_baton->Grab(kLongWaitMs));
   LOG("Thread waking parent");
@@ -200,7 +200,7 @@ TEST_F(CondVarTest, PassBatonMultipleTimes) {
     ASSERT_TRUE(baton_.Pass(kShortWaitMs));
     ASSERT_TRUE(baton_.Grab(kShortWaitMs));
   }
-  EXPECT_EQ(2*kNumberOfRounds, baton_.PassCount());
+  EXPECT_EQ(2 * kNumberOfRounds, baton_.PassCount());
 }
 
 }  // anonymous namespace

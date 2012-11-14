@@ -8,60 +8,58 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_CONDITION_VARIABLE_WINDOWS_H_
-#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_CONDITION_VARIABLE_WINDOWS_H_
-
-#include "condition_variable_wrapper.h"
+#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_CONDITION_VARIABLE_WIN_H_
+#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_CONDITION_VARIABLE_WIN_H_
 
 #include <windows.h>
 
-namespace webrtc {
-#if !defined CONDITION_VARIABLE_INIT
-    typedef struct _RTL_CONDITION_VARIABLE
-    {
-        void* Ptr;
-    } RTL_CONDITION_VARIABLE, *PRTL_CONDITION_VARIABLE;
+#include "condition_variable_wrapper.h"
 
-    typedef RTL_CONDITION_VARIABLE CONDITION_VARIABLE, *PCONDITION_VARIABLE;
+namespace webrtc {
+
+#if !defined CONDITION_VARIABLE_INIT
+typedef struct RTL_CONDITION_VARIABLE_ {
+  void* Ptr;
+} RTL_CONDITION_VARIABLE, *PRTL_CONDITION_VARIABLE;
+
+typedef RTL_CONDITION_VARIABLE CONDITION_VARIABLE, *PCONDITION_VARIABLE;
 #endif
 
-typedef void (WINAPI *PInitializeConditionVariable)(PCONDITION_VARIABLE);
-typedef BOOL (WINAPI *PSleepConditionVariableCS)(PCONDITION_VARIABLE,
+typedef void (WINAPI* PInitializeConditionVariable)(PCONDITION_VARIABLE);
+typedef BOOL (WINAPI* PSleepConditionVariableCS)(PCONDITION_VARIABLE,
                                                  PCRITICAL_SECTION, DWORD);
-typedef void (WINAPI *PWakeConditionVariable)(PCONDITION_VARIABLE);
-typedef void (WINAPI *PWakeAllConditionVariable)(PCONDITION_VARIABLE);
+typedef void (WINAPI* PWakeConditionVariable)(PCONDITION_VARIABLE);
+typedef void (WINAPI* PWakeAllConditionVariable)(PCONDITION_VARIABLE);
 
+class ConditionVariableWindows : public ConditionVariableWrapper {
+ public:
+  ConditionVariableWindows();
+  ~ConditionVariableWindows();
 
-class ConditionVariableWindows : public ConditionVariableWrapper
-{
-public:
-    ConditionVariableWindows();
-    ~ConditionVariableWindows();
+  void SleepCS(CriticalSectionWrapper& crit_sect);
+  bool SleepCS(CriticalSectionWrapper& crit_sect, unsigned long max_time_inMS);
+  void Wake();
+  void WakeAll();
 
-    void SleepCS(CriticalSectionWrapper& critSect);
-    bool SleepCS(CriticalSectionWrapper& critSect, unsigned long maxTimeInMS);
-    void Wake();
-    void WakeAll();
+ private:
+  enum EventWakeUpType {
+    WAKEALL_0   = 0,
+    WAKEALL_1   = 1,
+    WAKE        = 2,
+    EVENT_COUNT = 3
+  };
 
-private:
-    enum EventWakeUpType
-    {
-        WAKEALL_0   = 0,
-        WAKEALL_1   = 1,
-        WAKE        = 2,
-        EVENT_COUNT = 3
-    };
+ private:
+  // Native support for Windows Vista+
+  static bool              win_support_condition_variables_primitive_;
+  CONDITION_VARIABLE       condition_variable_;
 
-private:
-    // Native support for Windows Vista+
-    static bool              _winSupportConditionVariablesPrimitive;
-    CONDITION_VARIABLE       _conditionVariable;
-
-    unsigned int     _numWaiters[2];
-    EventWakeUpType  _eventID;
-    CRITICAL_SECTION _numWaitersCritSect;
-    HANDLE           _events[EVENT_COUNT];
+  unsigned int     num_waiters_[2];
+  EventWakeUpType  eventID_;
+  CRITICAL_SECTION num_waiters_crit_sect_;
+  HANDLE           events_[EVENT_COUNT];
 };
+
 } // namespace webrtc
 
-#endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_CONDITION_VARIABLE_WINDOWS_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_SOURCE_CONDITION_VARIABLE_WIN_H_
