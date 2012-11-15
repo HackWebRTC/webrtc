@@ -12,7 +12,7 @@
  * The core AEC algorithm, which is presented with time-aligned signals.
  */
 
-#include "aec_core.h"
+#include "webrtc/modules/audio_processing/aec/aec_core.h"
 
 #include <assert.h>
 #include <math.h>
@@ -20,12 +20,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "aec_rdft.h"
-#include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "delay_estimator_wrapper.h"
-#include "ring_buffer.h"
-#include "system_wrappers/interface/cpu_features_wrapper.h"
-#include "typedefs.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_processing/aec/aec_rdft.h"
+#include "webrtc/modules/audio_processing/utility/delay_estimator_wrapper.h"
+#include "webrtc/modules/audio_processing/utility/ring_buffer.h"
+#include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
+#include "webrtc/typedefs.h"
 
 // Buffer size (samples)
 static const size_t kBufSizePartitions = 250;  // 1 second of audio in 16 kHz.

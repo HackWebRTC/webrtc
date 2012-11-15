@@ -50,7 +50,8 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../common_audio/signal_processing/include \
     $(LOCAL_PATH)/../../common_audio/vad/include \
     $(LOCAL_PATH)/../../system_wrappers/interface \
-    external/protobuf/src
+    external/protobuf/src \
+    external/webrtc
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
@@ -83,7 +84,8 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../.. \
     $(LOCAL_PATH)/../../system_wrappers/interface \
-    external/gtest/include
+    external/gtest/include \
+    external/webrtc
 
 LOCAL_STATIC_LIBRARIES := \
     libgtest \
@@ -129,7 +131,8 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../system_wrappers/interface \
     $(LOCAL_PATH)/../../common_audio/signal_processing/include \
     external/gtest/include \
-    external/protobuf/src
+    external/protobuf/src \
+    external/webrtc
 
 LOCAL_STATIC_LIBRARIES := \
     libgtest \

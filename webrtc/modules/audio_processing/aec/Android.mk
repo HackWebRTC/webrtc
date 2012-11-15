@@ -35,7 +35,8 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/include \
     $(LOCAL_PATH)/../utility \
     $(LOCAL_PATH)/../../.. \
-    $(LOCAL_PATH)/../../../common_audio/signal_processing/include
+    $(LOCAL_PATH)/../../../common_audio/signal_processing/include \
+    external/webrtc
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \

@@ -50,7 +50,8 @@ LOCAL_CFLAGS := \
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../.. \
     $(LOCAL_PATH)/../interface \
-    $(LOCAL_PATH)/spreadsortlib
+    $(LOCAL_PATH)/spreadsortlib \
+    external/webrtc
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \

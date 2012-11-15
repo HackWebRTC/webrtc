@@ -33,7 +33,8 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../utility \
     $(LOCAL_PATH)/../../.. \
     $(LOCAL_PATH)/../../../common_audio/signal_processing/include \
-    $(LOCAL_PATH)/../../../system_wrappers/interface
+    $(LOCAL_PATH)/../../../system_wrappers/interface \
+    external/webrtc
 
 LOCAL_STATIC_LIBRARIES += libwebrtc_system_wrappers
 
@@ -82,7 +83,8 @@ LOCAL_C_INCLUDES := \
     $(NS_ASM_HEADER_DIR) \
     $(LOCAL_PATH)/include \
     $(LOCAL_PATH)/../../.. \
-    $(LOCAL_PATH)/../../../common_audio/signal_processing/include
+    $(LOCAL_PATH)/../../../common_audio/signal_processing/include \
+    external/webrtc
 
 LOCAL_INCLUDES := $(LOCAL_C_INCLUDES)
 
