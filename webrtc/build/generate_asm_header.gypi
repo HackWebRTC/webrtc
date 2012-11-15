@@ -30,7 +30,6 @@
 # TODO(kma): port this block from Android into other build systems.
 {
   'variables': {
-    'gen_header': '<(DEPTH)/webrtc/build/generate_asm_header.py',
     'out_dir': '<(SHARED_INTERMEDIATE_DIR)/<(asm_header_dir)',
     'process_outputs_as_sources': 1,
   },
@@ -39,14 +38,14 @@
       'rule_name': 'generate_asm_header',
       'extension': 'c',
       'inputs': [
-        '<(gen_header)',
+        'generate_asm_header.py',
       ],
       'outputs': [
         '<(out_dir)/<(RULE_INPUT_ROOT).h',
       ],
       'action': [
         'python',
-        '<(gen_header)',
+        '<(webrtc_root)/build/generate_asm_header.py',
         '--compiler=<!(/bin/echo -n ${ANDROID_GOMA_WRAPPER} '
           '<(android_toolchain)/*-gcc)',
         '--options=-I.. -I<@(android_ndk_include) -S',  # Compiler options.
