@@ -24,30 +24,11 @@
 #include "gmock/gmock.h"
 #include "modules/udp_transport/source/udp_socket_wrapper.h"
 #include "modules/udp_transport/source/udp_socket_manager_wrapper.h"
-#include "system_wrappers/interface/trace.h"
 
 using ::testing::_;
 using ::testing::Return;
 
 namespace webrtc {
-
-const int kLogTrace = 0;
-
-class TestTraceCallback: public TraceCallback {
- public:
-  void Print(const TraceLevel level,
-             const char *traceString,
-             const int length) {
-    if (traceString) {
-      char* tmp = new char[length+1];
-      memcpy(tmp, traceString, length);
-      tmp[length] = '\0';
-      printf("%s\n", tmp);
-      fflush(stdout);
-      delete[] tmp;
-    }
-  }
-};
 
 class MockSocketManager : public UdpSocketManager {
  public:
@@ -67,20 +48,10 @@ class MockSocketManager : public UdpSocketManager {
 // Creates a socket using the static constructor method and verifies that
 // it's added to the socket manager.
 TEST(UdpSocketWrapper, CreateSocket) {
-  TestTraceCallback trace;
-  if (kLogTrace) {
-    Trace::CreateTrace();
-    Trace::SetLevelFilter(webrtc::kTraceAll);
-    Trace::SetTraceCallback(&trace);
-  }
-
   WebRtc_Word32 id = 42;
   // We can't test deletion of sockets without a socket manager.
   WebRtc_UWord8 threads = 1;
   UdpSocketManager* mgr = UdpSocketManager::Create(id, threads);
-  WEBRTC_TRACE(kTraceMemory, kTraceTransport, 42,
-               "Test trace call");
-
   UdpSocketWrapper* socket
        = UdpSocketWrapper::CreateSocket(id,
                                         mgr,
@@ -90,9 +61,6 @@ TEST(UdpSocketWrapper, CreateSocket) {
                                         false);  // disableGQOS
   socket->CloseBlocking();
   UdpSocketManager::Return();
-  if (kLogTrace) {
-    Trace::ReturnTrace();
-  }
 }
 
 }  // namespace webrtc

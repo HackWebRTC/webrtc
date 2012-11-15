@@ -12,56 +12,10 @@
 
 #include "gtest/gtest.h"
 #include "system_wrappers/interface/scoped_ptr.h"
-#include "system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
-const int kLogTrace = 0;
-
-class TestTraceCallback : public TraceCallback {
- public:
-  virtual void Print(const TraceLevel level,
-                     const char* traceString,
-                     const int length) {
-    if (traceString) {
-      char* cmd_print = new char[length+1];
-      memcpy(cmd_print, traceString, length);
-      cmd_print[length] = '\0';
-      printf("%s\n", cmd_print);
-      fflush(stdout);
-      delete[] cmd_print;
-    }
-  }
-};
-
-class ThreadTest : public ::testing::Test {
- public:
-  ThreadTest() {
-    StartTrace();
-  }
-  ~ThreadTest() {
-    StopTrace();
-  }
-
- private:
-  void StartTrace() {
-    if (kLogTrace) {
-      Trace::CreateTrace();
-      Trace::SetLevelFilter(webrtc::kTraceAll);
-      Trace::SetTraceCallback(&trace_);
-    }
-  }
-
-  void StopTrace() {
-    if (kLogTrace) {
-      Trace::ReturnTrace();
-    }
-  }
-
-  TestTraceCallback trace_;
-};
-
-TEST_F(ThreadTest, NullFunctionPointer) {
+TEST(ThreadTest, NullFunctionPointer) {
   webrtc::scoped_ptr<ThreadWrapper> thread(
       webrtc::ThreadWrapper::CreateThread());
   unsigned int id = 42;
@@ -73,7 +27,7 @@ bool NullRunFunction(void* /* obj */) {
   return true;
 }
 
-TEST_F(ThreadTest, StartStop) {
+TEST(ThreadTest, StartStop) {
   ThreadWrapper* thread = ThreadWrapper::CreateThread(&NullRunFunction);
   unsigned int id = 42;
   ASSERT_TRUE(thread->Start(id));
@@ -88,7 +42,7 @@ bool SetFlagRunFunction(void* obj) {
   return true;
 }
 
-TEST_F(ThreadTest, RunFunctionIsCalled) {
+TEST(ThreadTest, RunFunctionIsCalled) {
   bool flag = false;
   ThreadWrapper* thread = ThreadWrapper::CreateThread(&SetFlagRunFunction,
                                                       &flag);

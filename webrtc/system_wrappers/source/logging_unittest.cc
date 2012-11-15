@@ -24,9 +24,7 @@ const size_t kBoilerplateLength = 71;
 
 class LoggingTest : public ::testing::Test, public TraceCallback {
  public:
-  virtual void Print(const TraceLevel level,
-                     const char* msg,
-                     const int length) {
+  virtual void Print(TraceLevel level, const char* msg, int length) {
     CriticalSectionScoped cs(crit_.get());
     // We test the length here to ensure (with high likelihood) that only our
     // traces will be tested.

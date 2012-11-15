@@ -23,12 +23,10 @@ namespace webrtc {
 
 class TestTraceCallback : public TraceCallback {
  public:
-  virtual void Print(const TraceLevel level,
-                     const char* traceString,
-                     const int length) {
-    if (traceString) {
+  virtual void Print(TraceLevel level, const char* msg, int length) {
+    if (msg) {
       char* cmd_print = new char[length+1];
-      memcpy(cmd_print, traceString, length);
+      memcpy(cmd_print, msg, length);
       cmd_print[length] = '\0';
       printf("%s\n", cmd_print);
       fflush(stdout);

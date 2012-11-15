@@ -103,17 +103,14 @@ enum TraceLevel
 };
 
 // External Trace API
-class TraceCallback
-{
-public:
-    virtual void Print(const TraceLevel level,
-                       const char *traceString,
-                       const int length) = 0;
-protected:
-    virtual ~TraceCallback() {}
-    TraceCallback() {}
-};
+class TraceCallback {
+ public:
+  virtual void Print(TraceLevel level, const char* message, int length) = 0;
 
+ protected:
+  virtual ~TraceCallback() {}
+  TraceCallback() {}
+};
 
 enum FileFormats
 {
