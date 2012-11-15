@@ -123,7 +123,7 @@ def _main(_):
 
   # If --build_dir is provided, prepend that path to the test name to make it a
   # valid path when running on the build slaves using Chromium's runtest.py
-  if options.build_dir and 'cmdline' in options.test and len(args) == 1:
+  if options.build_dir and 'cmdline' in options.test:
     args[0] = os.path.join(options.build_dir, args[0])
 
   # Performs the deferred-argument black magic described in the usage.
