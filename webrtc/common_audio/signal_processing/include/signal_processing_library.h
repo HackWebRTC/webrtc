@@ -377,11 +377,10 @@ void WebRtcSpl_VectorBitShiftW32(WebRtc_Word32* out_vector,
                                  WebRtc_Word16 vector_length,
                                  G_CONST WebRtc_Word32* in_vector,
                                  WebRtc_Word16 right_shifts);
-void WebRtcSpl_VectorBitShiftW32ToW16(WebRtc_Word16* out_vector,
-                                      WebRtc_Word16 vector_length,
-                                      G_CONST WebRtc_Word32* in_vector,
-                                      WebRtc_Word16 right_shifts);
-
+void WebRtcSpl_VectorBitShiftW32ToW16(int16_t* out_vector,
+                                      int vector_length,
+                                      const int32_t* in_vector,
+                                      int right_shifts);
 void WebRtcSpl_ScaleVector(G_CONST WebRtc_Word16* in_vector,
                            WebRtc_Word16* out_vector,
                            WebRtc_Word16 gain,
@@ -1180,7 +1179,8 @@ void WebRtcSpl_SynthesisQMF(const WebRtc_Word16* low_band,
 // WebRtcSpl_VectorBitShiftW32ToW16(...)
 //
 // Bit shifts all the values in a WebRtc_Word32 vector up or downwards and
-// stores the result as a WebRtc_Word16 vector
+// stores the result as an int16_t vector. The function will saturate the
+// signal if needed, before storing in the output vector.
 //
 // Input:
 //      - vector_length : Length of vector

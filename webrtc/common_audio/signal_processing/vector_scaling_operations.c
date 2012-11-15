@@ -66,27 +66,23 @@ void WebRtcSpl_VectorBitShiftW32(WebRtc_Word32 *out_vector,
     }
 }
 
-void WebRtcSpl_VectorBitShiftW32ToW16(WebRtc_Word16 *res,
-                                  WebRtc_Word16 length,
-                                  G_CONST WebRtc_Word32 *in,
-                                  WebRtc_Word16 right_shifts)
-{
-    int i;
+void WebRtcSpl_VectorBitShiftW32ToW16(int16_t* out, int length,
+                                      const int32_t* in, int right_shifts) {
+  int i;
+  int32_t tmp_w32;
 
-    if (right_shifts >= 0)
-    {
-        for (i = length; i > 0; i--)
-        {
-            (*res++) = (WebRtc_Word16)((*in++) >> right_shifts);
-        }
-    } else
-    {
-        WebRtc_Word16 left_shifts = -right_shifts;
-        for (i = length; i > 0; i--)
-        {
-            (*res++) = (WebRtc_Word16)((*in++) << left_shifts);
-        }
+  if (right_shifts >= 0) {
+    for (i = length; i > 0; i--) {
+      tmp_w32 = (*in++) >> right_shifts;
+      (*out++) = WebRtcSpl_SatW32ToW16(tmp_w32);
     }
+  } else {
+    int16_t left_shifts = -right_shifts;
+    for (i = length; i > 0; i--) {
+      tmp_w32 = (*in++) << left_shifts;
+      (*out++) = WebRtcSpl_SatW32ToW16(tmp_w32);
+    }
+  }
 }
 
 void WebRtcSpl_ScaleVector(G_CONST WebRtc_Word16 *in_vector, WebRtc_Word16 *out_vector,

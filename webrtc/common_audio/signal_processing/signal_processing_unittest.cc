@@ -615,3 +615,47 @@ TEST_F(SplTest, FFTTest) {
         //EXPECT_EQ(A[kk], B[kk]);
     }
 }
+
+TEST_F(SplTest, Resample48WithSaturationTest) {
+  // The test resamples 3*kBlockSize number of samples to 2*kBlockSize number
+  // of samples.
+  const int kBlockSize = 16;
+
+  // Saturated input vector of 48 samples.
+  const int32_t kVectorSaturated[3 * kBlockSize + 7] = {
+     -32768, -32768, -32768, -32768, -32768, -32768, -32768, -32768,
+     -32768, -32768, -32768, -32768, -32768, -32768, -32768, -32768,
+     -32768, -32768, -32768, -32768, -32768, -32768, -32768, -32768,
+     32767, 32767, 32767, 32767, 32767, 32767, 32767, 32767,
+     32767, 32767, 32767, 32767, 32767, 32767, 32767, 32767,
+     32767, 32767, 32767, 32767, 32767, 32767, 32767, 32767,
+     32767, 32767, 32767, 32767, 32767, 32767, 32767
+  };
+
+  // All values in |out_vector| should be |kRefValue32kHz|.
+  const int32_t kRefValue32kHz1 = -1077493760;
+  const int32_t kRefValue32kHz2 = 1077493645;
+
+  // After bit shift with saturation, |out_vector_w16| is saturated.
+
+  const int16_t kRefValue16kHz1 = -32768;
+  const int16_t kRefValue16kHz2 = 32767;
+  // Vector for storing output.
+  int32_t out_vector[2 * kBlockSize];
+  int16_t out_vector_w16[2 * kBlockSize];
+
+  WebRtcSpl_Resample48khzTo32khz(kVectorSaturated, out_vector, kBlockSize);
+  WebRtcSpl_VectorBitShiftW32ToW16(out_vector_w16, 2 * kBlockSize, out_vector,
+                                   15);
+
+  // Comparing output values against references. The values at position
+  // 12-15 are skipped to account for the filter lag.
+  for (int i = 0; i < 12; ++i) {
+    EXPECT_EQ(kRefValue32kHz1, out_vector[i]);
+    EXPECT_EQ(kRefValue16kHz1, out_vector_w16[i]);
+  }
+  for (int i = 16; i < 2 * kBlockSize; ++i) {
+    EXPECT_EQ(kRefValue32kHz2, out_vector[i]);
+    EXPECT_EQ(kRefValue16kHz2, out_vector_w16[i]);
+  }
+}
