@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_INTERFACE_AUDIO_PROCESSING_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_INTERFACE_AUDIO_PROCESSING_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
 
-#include <stddef.h> // size_t
+#include <stddef.h>  // size_t
 
-#include "module.h"
-#include "typedefs.h"
+#include "webrtc/modules/interface/module.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
@@ -113,7 +113,7 @@ class AudioProcessing : public Module {
   // for each far-end stream which requires processing. On the server-side,
   // this would typically be one instance for every incoming stream.
   static AudioProcessing* Create(int id);
-  virtual ~AudioProcessing() {};
+  virtual ~AudioProcessing() {}
 
   // TODO(andrew): remove this method. We now allow users to delete instances
   // directly, useful for scoped_ptr.
@@ -251,8 +251,8 @@ class AudioProcessing : public Module {
   };
 
   // Inherited from Module.
-  virtual WebRtc_Word32 TimeUntilNextProcess() { return -1; };
-  virtual WebRtc_Word32 Process() { return -1; };
+  virtual WebRtc_Word32 TimeUntilNextProcess() { return -1; }
+  virtual WebRtc_Word32 Process() { return -1; }
 };
 
 // The acoustic echo cancellation (AEC) component provides better performance
@@ -343,7 +343,7 @@ class EchoCancellation {
   virtual int GetDelayMetrics(int* median, int* std) = 0;
 
  protected:
-  virtual ~EchoCancellation() {};
+  virtual ~EchoCancellation() {}
 };
 
 // The acoustic echo control for mobile (AECM) component is a low complexity
@@ -399,7 +399,7 @@ class EchoControlMobile {
   static size_t echo_path_size_bytes();
 
  protected:
-  virtual ~EchoControlMobile() {};
+  virtual ~EchoControlMobile() {}
 };
 
 // The automatic gain control (AGC) component brings the signal to an
@@ -491,7 +491,7 @@ class GainControl {
   virtual bool stream_is_saturated() const = 0;
 
  protected:
-  virtual ~GainControl() {};
+  virtual ~GainControl() {}
 };
 
 // A filtering component which removes DC offset and low-frequency noise.
@@ -502,7 +502,7 @@ class HighPassFilter {
   virtual bool is_enabled() const = 0;
 
  protected:
-  virtual ~HighPassFilter() {};
+  virtual ~HighPassFilter() {}
 };
 
 // An estimation component used to retrieve level metrics.
@@ -525,7 +525,7 @@ class LevelEstimator {
   virtual int RMS() = 0;
 
  protected:
-  virtual ~LevelEstimator() {};
+  virtual ~LevelEstimator() {}
 };
 
 // The noise suppression (NS) component attempts to remove noise while
@@ -555,7 +555,7 @@ class NoiseSuppression {
   virtual float speech_probability() const = 0;
 
  protected:
-  virtual ~NoiseSuppression() {};
+  virtual ~NoiseSuppression() {}
 };
 
 // The voice activity detection (VAD) component analyzes the stream to
@@ -605,8 +605,8 @@ class VoiceDetection {
   virtual int frame_size_ms() const = 0;
 
  protected:
-  virtual ~VoiceDetection() {};
+  virtual ~VoiceDetection() {}
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_INTERFACE_AUDIO_PROCESSING_H_
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_
