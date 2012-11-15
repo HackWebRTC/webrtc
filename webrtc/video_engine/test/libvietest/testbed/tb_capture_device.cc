@@ -66,7 +66,8 @@ TbCaptureDevice::~TbCaptureDevice(void)
 {
     EXPECT_EQ(0, ViE.capture->StopCapture(captureId));
     EXPECT_EQ(0, ViE.capture->ReleaseCaptureDevice(captureId));
-    vcpm_->Release();
+    if (vcpm_)
+      vcpm_->Release();
 }
 
 void TbCaptureDevice::ConnectTo(int videoChannel)

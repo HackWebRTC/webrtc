@@ -28,7 +28,7 @@ void ViEAutoTest::ViEBaseStandardTest() {
   int video_channel = -1;
   EXPECT_EQ(0, interfaces.base->CreateChannel(video_channel));
 
-  webrtc::VideoCaptureModule* video_capture_module(NULL);
+  webrtc::VideoCaptureModule* video_capture_module = NULL;
   const unsigned int kMaxDeviceNameLength = 128;
   char device_name[kMaxDeviceNameLength];
   memset(device_name, 0, kMaxDeviceNameLength);
@@ -43,6 +43,10 @@ void ViEAutoTest::ViEBaseStandardTest() {
                             kMaxDeviceNameLength,
                             &capture_id,
                             &video_capture_module);
+
+  EXPECT_TRUE(video_capture_module);
+  if (!video_capture_module)
+    return;
 
   EXPECT_EQ(0, capture_interface->ConnectCaptureDevice(capture_id,
                                                        video_channel));

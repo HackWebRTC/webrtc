@@ -36,17 +36,19 @@ void FindCaptureDeviceOnSystem(webrtc::ViECapture* capture,
     *device_video = webrtc::VideoCaptureFactory::Create(4571, unique_id);
     EXPECT_TRUE(*device_video != NULL);
 
-    (*device_video)->AddRef();
+    if (*device_video) {
+      (*device_video)->AddRef();
 
-    int error = capture->AllocateCaptureDevice(**device_video, *device_id);
-    if (error == 0) {
-      ViETest::Log("Using capture device: %s, captureId: %d.",
-                   device_name, *device_id);
-      capture_device_set = true;
-      break;
-    } else {
-      (*device_video)->Release();
-      (*device_video) = NULL;
+      int error = capture->AllocateCaptureDevice(**device_video, *device_id);
+      if (error == 0) {
+        ViETest::Log("Using capture device: %s, captureId: %d.",
+                     device_name, *device_id);
+        capture_device_set = true;
+        break;
+      } else {
+        (*device_video)->Release();
+        (*device_video) = NULL;
+      }
     }
   }
   delete dev_info;
