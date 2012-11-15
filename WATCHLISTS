@@ -15,6 +15,7 @@
       'filepath': '^WATCHLISTS$',
     },
     'all_webrtc': {
+      # NOTE: if you like this you might like webrtc-reviews@webrtc.org!
       'filepath': 'webrtc/.*',
     },
     'root_files': {
@@ -75,9 +76,7 @@
 
   'WATCHLISTS': {
     'this_file': [''],
-    'all_webrtc': ['andrew@webrtc.org',
-                   'fischman@webrtc.org',
-                   'giles@mozilla.com',
+    'all_webrtc': ['giles@mozilla.com',
                    'tterriberry@mozilla.com'],
     'root_files': ['andrew@webrtc.org',
                    'niklas.enbom@webrtc.org'],
