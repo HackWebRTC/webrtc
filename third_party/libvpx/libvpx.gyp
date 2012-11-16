@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 {
   'variables': {
+    'libvpx_src_dir%': 'source/libvpx',
     'conditions': [
       ['os_posix==1', {
         'asm_obj_extension': 'o',
@@ -53,13 +54,13 @@
           'type': 'static_library',
           'include_dirs': [
             'source/config/<(OS)/<(target_arch)',
-            'source/libvpx',
-            'source/libvpx/vp8/common',
-            'source/libvpx/vp8/decoder',
-            'source/libvpx/vp8/encoder',
+            '<(libvpx_src_dir)',
+            '<(libvpx_src_dir)/vp8/common',
+            '<(libvpx_src_dir)/vp8/decoder',
+            '<(libvpx_src_dir)/vp8/encoder',
           ],
           'sources': [
-            'source/libvpx/vp8/encoder/x86/denoising_sse2.c',
+            '<(libvpx_src_dir)/vp8/encoder/x86/denoising_sse2.c',
           ],
           'conditions': [
             ['os_posix==1 and OS!="mac"', {
@@ -87,7 +88,7 @@
             'yasm_flags': [
               '-D', 'CHROMIUM',
               '-I', 'source/config/<(OS_CATEGORY)/<(target_arch)',
-              '-I', 'source/libvpx',
+              '-I', '<(libvpx_src_dir)',
               '-I', '<(shared_generated_dir)', # Generated assembly offsets
             ],
           },
@@ -99,15 +100,15 @@
           ],
           'include_dirs': [
             'source/config/<(OS_CATEGORY)/<(target_arch)',
-            'source/libvpx',
-            'source/libvpx/vp8/common',
-            'source/libvpx/vp8/decoder',
-            'source/libvpx/vp8/encoder',
+            '<(libvpx_src_dir)',
+            '<(libvpx_src_dir)/vp8/common',
+            '<(libvpx_src_dir)/vp8/decoder',
+            '<(libvpx_src_dir)/vp8/encoder',
             '<(shared_generated_dir)', # Provides vpx_rtcd.h.
           ],
           'direct_dependent_settings': {
             'include_dirs': [
-              'source/libvpx',
+              '<(libvpx_src_dir)',
             ],
           },
           # VS2010 does not correctly incrementally link obj files generated
@@ -144,9 +145,9 @@
             [ 'chromeos == 1', {
               # ChromeOS needs these files for animated WebM avatars.
               'sources': [
-                'source/libvpx/libmkv/EbmlIDs.h',
-                'source/libvpx/libmkv/EbmlWriter.c',
-                'source/libvpx/libmkv/EbmlWriter.h',
+                '<(libvpx_src_dir)/libmkv/EbmlIDs.h',
+                '<(libvpx_src_dir)/libmkv/EbmlWriter.c',
+                '<(libvpx_src_dir)/libmkv/EbmlWriter.h',
               ],
             }],
           ],
@@ -197,7 +198,7 @@
           'variables': {
             # Location of the assembly conversion script.
             'ads2gas_script': 'ads2gas.pl',
-            'ads2gas_script_path': 'source/libvpx/build/make/<(ads2gas_script)',
+            'ads2gas_script_path': '<(libvpx_src_dir)/build/make/<(ads2gas_script)',
           },
           'cflags': [
             # We need to explicitly tell the GCC assembler to look for
@@ -208,11 +209,11 @@
           ],
           'include_dirs': [
             'source/config/<(OS_CATEGORY)/<(target_arch_full)',
-            'source/libvpx',
+            '<(libvpx_src_dir)',
           ],
           'direct_dependent_settings': {
             'include_dirs': [
-              'source/libvpx',
+              '<(libvpx_src_dir)',
             ],
           },
           'conditions': [
@@ -242,9 +243,9 @@
             [ 'chromeos == 1', {
               # ChromeOS needs these files for animated WebM avatars.
               'sources': [
-                'source/libvpx/libmkv/EbmlIDs.h',
-                'source/libvpx/libmkv/EbmlWriter.c',
-                'source/libvpx/libmkv/EbmlWriter.h',
+                '<(libvpx_src_dir)/libmkv/EbmlIDs.h',
+                '<(libvpx_src_dir)/libmkv/EbmlWriter.c',
+                '<(libvpx_src_dir)/libmkv/EbmlWriter.h',
               ],
             }],
           ],
@@ -260,10 +261,10 @@
       'toolsets': ['host'],
       'include_dirs': [
         'source/config/<(OS_CATEGORY)/<(target_arch_full)',
-        'source/libvpx',
+        '<(libvpx_src_dir)',
       ],
       'sources': [
-        'source/libvpx/build/make/obj_int_extract.c',
+        '<(libvpx_src_dir)/build/make/obj_int_extract.c',
       ]
     },
     {
@@ -273,7 +274,7 @@
       'hard_dependency': 1,
       'include_dirs': [
         'source/config/<(OS_CATEGORY)/<(target_arch_full)',
-        'source/libvpx',
+        '<(libvpx_src_dir)',
       ],
       'conditions': [
         ['asan==1', {
@@ -286,9 +287,9 @@
       ],
       'sources': [
         '<(shared_generated_dir)/vpx_rtcd.h',
-        'source/libvpx/vp8/common/asm_com_offsets.c',
-        'source/libvpx/vp8/decoder/asm_dec_offsets.c',
-        'source/libvpx/vp8/encoder/asm_enc_offsets.c',
+        '<(libvpx_src_dir)/vp8/common/asm_com_offsets.c',
+        '<(libvpx_src_dir)/vp8/decoder/asm_dec_offsets.c',
+        '<(libvpx_src_dir)/vp8/encoder/asm_enc_offsets.c',
       ],
     },
     {
@@ -306,7 +307,7 @@
       'conditions': [
         ['OS=="win"', {
           'variables': {
-            'ninja_obj_dir': '<(PRODUCT_DIR)/obj/third_party/libvpx/source/libvpx/vp8',
+            'ninja_obj_dir': '<(PRODUCT_DIR)/obj/third_party/libvpx/<(libvpx_src_dir)/vp8',
           },
           'actions': [
             {
@@ -428,7 +429,7 @@
       'copies': [{
         'destination': '<(shared_generated_dir)/simple_encoder',
         'files': [
-          'source/libvpx/examples/gen_example_code.sh',
+          '<(libvpx_src_dir)/examples/gen_example_code.sh',
         ],
       }],
 
@@ -451,7 +452,7 @@
         },
       ],
       'sources': [
-        'source/libvpx/examples/simple_encoder.txt',
+        '<(libvpx_src_dir)/examples/simple_encoder.txt',
       ]
     },
     {
@@ -466,7 +467,7 @@
       'copies': [{
         'destination': '<(shared_generated_dir)/simple_decoder',
         'files': [
-          'source/libvpx/examples/gen_example_code.sh',
+          '<(libvpx_src_dir)/examples/gen_example_code.sh',
         ],
       }],
 
@@ -489,7 +490,7 @@
         },
       ],
       'sources': [
-        'source/libvpx/examples/simple_decoder.txt',
+        '<(libvpx_src_dir)/examples/simple_decoder.txt',
       ]
     },
   ],
