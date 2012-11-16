@@ -15,6 +15,14 @@
 #include "module.h"
 #include "typedefs.h"
 
+/*
+ *  WARNING
+ *  This code is not use in production/testing and might have security issues
+ *  for example: http://code.google.com/p/webrtc/issues/detail?id=1028
+ *
+ */
+
+
 #define SS_MAXSIZE 128
 #define SS_ALIGNSIZE (sizeof (WebRtc_UWord64))
 #define SS_PAD1SIZE  (SS_ALIGNSIZE - sizeof(WebRtc_Word16))
