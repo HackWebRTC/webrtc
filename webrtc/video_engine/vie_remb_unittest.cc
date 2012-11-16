@@ -14,12 +14,12 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "modules/rtp_rtcp/interface/rtp_rtcp.h"
-#include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
-#include "modules/utility/interface/process_thread.h"
-#include "system_wrappers/interface/scoped_ptr.h"
-#include "system_wrappers/interface/sleep.h"
-#include "video_engine/vie_remb.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
+#include "webrtc/modules/utility/interface/process_thread.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/video_engine/vie_remb.h"
 
 using ::testing::_;
 using ::testing::AnyNumber;
@@ -27,8 +27,6 @@ using ::testing::Return;
 
 namespace webrtc {
 
-// TODO(mflodman) Make a trigger function for this class to fake a clock and
-// remove sleeps in the test.
 class TestProcessThread : public ProcessThread {
  public:
   explicit TestProcessThread() {}
@@ -42,6 +40,7 @@ class TestProcessThread : public ProcessThread {
 class ViERembTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
+    TickTime::UseFakeClock(12345);
     process_thread_.reset(new TestProcessThread);
     vie_remb_.reset(new VieRemb(process_thread_.get()));
   }
@@ -61,8 +60,7 @@ TEST_F(ViERembTest, OneModuleTestForSendingRemb) {
   EXPECT_CALL(rtp, RemoteSSRC())
       .WillRepeatedly(Return(ssrc));
 
-  // TODO(mflodman) Add fake clock and remove the lowered bitrate below.
-  SleepMs(1010);
+  TickTime::AdvanceFakeClock(1000);
   EXPECT_CALL(rtp, SetREMBData(bitrate_estimate, 1, _))
       .Times(1);
   vie_remb_->Process();
@@ -89,7 +87,7 @@ TEST_F(ViERembTest, LowerEstimateToSendRemb) {
   EXPECT_CALL(rtp, RemoteSSRC())
       .WillRepeatedly(Return(ssrc));
   // Call process to get a first estimate.
-  SleepMs(1010);
+  TickTime::AdvanceFakeClock(1000);
   EXPECT_CALL(rtp, SetREMBData(bitrate_estimate, 1, _))
         .Times(1);
   vie_remb_->Process();
@@ -124,7 +122,7 @@ TEST_F(ViERembTest, VerifyIncreasingAndDecreasing) {
   // Call process to get a first estimate.
   EXPECT_CALL(rtp_0, SetREMBData(bitrate_estimate[0], 2, _))
         .Times(1);
-  SleepMs(1010);
+  TickTime::AdvanceFakeClock(1000);
   vie_remb_->Process();
 
   vie_remb_->OnReceiveBitrateChanged(bitrate_estimate[1] + 100);
@@ -165,8 +163,7 @@ TEST_F(ViERembTest, NoRembForIncreasedBitrate) {
       .WillRepeatedly(Return(ssrc[1]));
 
   // Trigger a first call to have a running state.
-  // TODO(mflodman) Add fake clock.
-  SleepMs(1010);
+  TickTime::AdvanceFakeClock(1000);
   EXPECT_CALL(rtp_0, SetREMBData(bitrate_estimate, 2, _))
       .Times(1);
   vie_remb_->Process();
@@ -207,7 +204,7 @@ TEST_F(ViERembTest, ChangeSendRtpModule) {
       .WillRepeatedly(Return(ssrc[1]));
 
   // Call process to get a first estimate.
-  SleepMs(1010);
+  TickTime::AdvanceFakeClock(1000);
   EXPECT_CALL(rtp_0, SetREMBData(bitrate_estimate, 2, _))
       .Times(1);
   vie_remb_->Process();
@@ -247,7 +244,7 @@ TEST_F(ViERembTest, OnlyOneRembForDoubleProcess) {
       .WillRepeatedly(Return(ssrc));
 
   // Call process to get a first estimate.
-  SleepMs(1010);
+  TickTime::AdvanceFakeClock(1000);
   EXPECT_CALL(rtp, SetREMBData(_, _, _))
         .Times(1);
   vie_remb_->Process();
@@ -275,7 +272,7 @@ TEST_F(ViERembTest, NoOnReceivedBitrateChangedCall) {
   vie_remb_->AddReceiveChannel(&rtp);
   vie_remb_->AddRembSender(&rtp);
   // TODO(mflodman) Add fake clock.
-  SleepMs(1010);
+  TickTime::AdvanceFakeClock(1000);
   // No bitrate estimate given, no callback expected.
   EXPECT_CALL(rtp, SetREMBData(_, _, _))
       .Times(0);
@@ -299,7 +296,7 @@ TEST_F(ViERembTest, NoSendingRtpModule) {
       .WillRepeatedly(Return(ssrc));
 
   // Call process to get a first estimate.
-  SleepMs(1010);
+  TickTime::AdvanceFakeClock(1000);
   EXPECT_CALL(rtp, SetREMBData(_, _, _))
       .Times(1);
   vie_remb_->Process();
