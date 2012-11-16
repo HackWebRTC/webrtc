@@ -121,10 +121,10 @@ void ViEAutoTest::ViECaptureStandardTest() {
   ASSERT_GT(number_of_capture_devices, 0)
       << "This test requires a capture device (i.e. a webcam)";
 
-  int capture_device_id[10];
-  memset(capture_device_id, 0, sizeof(capture_device_id));
-  webrtc::VideoCaptureModule* vcpms[10];
-  memset(vcpms, 0, sizeof(vcpms));
+#if !defined(WEBRTC_MAC)
+  int capture_device_id[10] = {0};
+  webrtc::VideoCaptureModule* vcpms[10] = {0};
+#endif
 
   // Check capabilities
   for (int device_index = 0; device_index < number_of_capture_devices;
@@ -179,6 +179,9 @@ void ViEAutoTest::ViECaptureStandardTest() {
     webrtc::VideoCaptureModule* vcpm =
         webrtc::VideoCaptureFactory::Create(device_index, device_unique_name);
     EXPECT_TRUE(vcpm != NULL);
+    if (!vcpm)
+      continue;
+
     vcpm->AddRef();
     vcpms[device_index] = vcpm;
 
@@ -249,7 +252,8 @@ void ViEAutoTest::ViECaptureStandardTest() {
     EXPECT_EQ(0, video_engine.capture->ReleaseCaptureDevice(
         capture_device_id[device_index]));
 #endif  // !WEBRTC_ANDROID
-    vcpms[device_index]->Release();
+    if (vcpms[device_index])
+      vcpms[device_index]->Release();
   }
 #endif  // !WEBRTC_MAC
 }
