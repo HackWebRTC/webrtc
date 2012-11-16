@@ -67,6 +67,7 @@
         'include/vie_rtp_rtcp.h',
 
         # headers
+        'call_stats.h',
         'encoder_state_feedback.h',
         'stream_synchronization.h',
         'vie_base_impl.h',
@@ -102,6 +103,7 @@
         'vie_sync_module.h',
 
         # ViE
+        'call_stats.cc',
         'encoder_state_feedback.cc',
         'stream_synchronization.cc',
         'vie_base_impl.cc',
@@ -155,6 +157,7 @@
             '../modules/rtp_rtcp/interface',
           ],
           'sources': [
+            'call_stats_unittest.cc',
             'encoder_state_feedback_unittest.cc',
             'stream_synchronization_unittest.cc',
             'vie_remb_unittest.cc',

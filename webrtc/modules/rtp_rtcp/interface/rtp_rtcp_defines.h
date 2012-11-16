@@ -245,6 +245,13 @@ class RtcpBandwidthObserver {
   virtual ~RtcpBandwidthObserver() {}
 };
 
+class RtcpRttObserver {
+ public:
+  virtual void OnRttUpdate(uint32_t rtt) = 0;
+
+  virtual ~RtcpRttObserver() {};
+};
+
 // A clock interface that allows reading of absolute and relative
 // timestamps in an RTP/RTCP module.
 class RtpRtcpClock {
