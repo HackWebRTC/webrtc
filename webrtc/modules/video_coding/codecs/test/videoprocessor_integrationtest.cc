@@ -671,11 +671,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeFrameRateFrameDrop) {
   SetCodecParameters(&process_settings, 0.0f, -1, 1, true, true, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
-  SetQualityMetrics(&quality_metrics, 31.0, 23.0, 0.80, 0.65);
-  quality_metrics.minimum_avg_psnr = 31;
-  quality_metrics.minimum_min_psnr = 23;
-  quality_metrics.minimum_avg_ssim = 0.8;
-  quality_metrics.minimum_min_ssim = 0.65;
+  SetQualityMetrics(&quality_metrics, 31.0, 22.0, 0.80, 0.65);
   // Metrics for rate control.
   RateControlMetrics rc_metrics[3];
   SetRateControlMetrics(rc_metrics, 0, 40, 20, 75, 15, 60, 0);
