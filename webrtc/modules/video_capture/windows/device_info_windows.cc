@@ -712,7 +712,7 @@ void DeviceInfoWindows::GetProductId(const char* devicePath,
                      "Failed to get the product Id");
         return;
     }
-    // Find the second occurence
+    // Find the second occurrence.
     pos = strchr(pos + 1, '&');
     WebRtc_UWord32 bytesToCopy = (WebRtc_UWord32)(pos - startPos);
     if (pos && (bytesToCopy <= productUniqueIdUTF8Length) && bytesToCopy

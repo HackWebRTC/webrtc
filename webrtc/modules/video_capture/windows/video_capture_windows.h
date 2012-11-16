@@ -29,10 +29,6 @@ class CaptureSinkFilter;
 class VideoCaptureDS: public VideoCaptureImpl
 {
 public:
-
-    static VideoCaptureModule* Create(const WebRtc_Word32 id,
-                                      const WebRtc_UWord8* deviceUniqueIdUTF8);
-
     VideoCaptureDS(const WebRtc_Word32 id);
 
     virtual WebRtc_Word32 Init(const WebRtc_Word32 id,
