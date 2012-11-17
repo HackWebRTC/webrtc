@@ -12,9 +12,9 @@
 @ iSAC codec, optimized for ARM Neon platform. Reference code in
 @ lpc_masking_model.c.
 
-.arch armv7-a
-.fpu neon
-.global WebRtcIsacfix_CalculateResidualEnergyNeon
+#include "webrtc/system_wrappers/interface/asm_defines.h"
+
+GLOBAL_FUNCTION WebRtcIsacfix_CalculateResidualEnergyNeon
 .align  2
 
 @ int32_t WebRtcIsacfix_CalculateResidualEnergyNeon(int lpc_order,
@@ -23,10 +23,7 @@
 @                                                   int16_t* a_polynomial,
 @                                                   int32_t* corr_coeffs,
 @                                                   int* q_val_residual_energy);
-
-WebRtcIsacfix_CalculateResidualEnergyNeon:
-.fnstart
-.save {r4-r11}
+DEFINE_FUNCTION WebRtcIsacfix_CalculateResidualEnergyNeon
   push {r4-r11}
 
   sub r13, r13, #16
@@ -173,5 +170,4 @@ GET_SHIFT_NORM:
   pop {r4-r11}
   bx  r14
 
-.fnend
 

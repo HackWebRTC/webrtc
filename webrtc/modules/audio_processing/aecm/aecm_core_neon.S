@@ -12,19 +12,17 @@
 @ This file contains some functions in AECM, optimized for ARM Neon
 @ platforms. Reference C code is in file aecm_core.c. Bit-exact.
 
-.arch armv7-a
-.fpu neon
-
 #include "aecm_defines.h"
 #include "aecm_core_neon_offsets.h"
+#include "webrtc/system_wrappers/interface/asm_defines.h"
 
 .extern WebRtcAecm_kSqrtHanning
 
-.global WebRtcAecm_WindowAndFFTNeon
-.global WebRtcAecm_InverseFFTAndWindowNeon
-.global WebRtcAecm_CalcLinearEnergiesNeon
-.global WebRtcAecm_StoreAdaptiveChannelNeon
-.global WebRtcAecm_ResetAdaptiveChannelNeon
+GLOBAL_FUNCTION WebRtcAecm_WindowAndFFTNeon
+GLOBAL_FUNCTION WebRtcAecm_InverseFFTAndWindowNeon
+GLOBAL_FUNCTION WebRtcAecm_CalcLinearEnergiesNeon
+GLOBAL_FUNCTION WebRtcAecm_StoreAdaptiveChannelNeon
+GLOBAL_FUNCTION WebRtcAecm_ResetAdaptiveChannelNeon
 
 @ void WebRtcAecm_WindowAndFFTNeon(AecmCore_t* aecm,
 @                                  WebRtc_Word16* fft,
@@ -32,9 +30,7 @@
 @                                  complex16_t* freq_signal,
 @                                  int time_signal_scaling);
 .align  2
-WebRtcAecm_WindowAndFFTNeon:
-.fnstart
-.save {r4, r5, r6, lr}
+DEFINE_FUNCTION WebRtcAecm_WindowAndFFTNeon
   push {r4, r5, r6, lr}
 
   ldr r12, [sp, #16]                         @ time_signal_scaling
@@ -84,7 +80,6 @@ LOOP_PART_LEN2:
   bgt LOOP_PART_LEN2
 
   pop {r4, r5, r6, pc}
-.fnend
 
 @ void WebRtcAecm_InverseFFTAndWindowNeon(AecmCore_t* aecm,
 @                                         WebRtc_Word16* fft,
@@ -92,9 +87,7 @@ LOOP_PART_LEN2:
 @                                         WebRtc_Word16* output,
 @                                         const WebRtc_Word16* nearendClean);
 .align  2
-WebRtcAecm_InverseFFTAndWindowNeon:
-.fnstart
-.save {r4-r8, lr}
+DEFINE_FUNCTION WebRtcAecm_InverseFFTAndWindowNeon
   push {r4-r8, lr}
 
   @ Values of r0, r1, and r3 will change in WebRtcSpl_ComplexIFFT
@@ -158,12 +151,12 @@ LOOP_POST_IFFT:
   vld1.16 d1, [r12, :64]!                    @ kSqrtHanningReversed[i]
   vadd.i32 q8, q10
   vmull.s16 q0, d0, d1
-  vqshrn.s32 d4, q8, #0
+  vqmovn.s32 d16, q8
   vshr.s32 q0, q0, #14
   vst2.16 {d4, d5}, [r4, :128]!              @ &efw[i];
   vshl.s32 q0, q0, q9
   vst1.16 d16, [r7, :64]!                    @ output[i]
-  vqshrn.s32 d0, q0, #0
+  vqmovn.s32 d0, q0
   subs r3, #1
   vst1.16 d0, [r8, :64]!                     @ aecm->outBuf[i]
   bgt LOOP_POST_IFFT
@@ -203,7 +196,6 @@ LOOP_COPY:
 
 END:
   pop {r4-r8, pc}
-.fnend
 
 @ void WebRtcAecm_CalcLinearEnergiesNeon(AecmCore_t* aecm,
 @                                        const WebRtc_UWord16* far_spectrum,
@@ -212,9 +204,7 @@ END:
 @                                        WebRtc_UWord32* echo_energy_adapt,
 @                                        WebRtc_UWord32* echo_energy_stored);
 .align  2
-WebRtcAecm_CalcLinearEnergiesNeon:
-.fnstart
-.save {r4-r7}
+DEFINE_FUNCTION WebRtcAecm_CalcLinearEnergiesNeon
   push {r4-r7}
 
   vmov.i32 q14, #0
@@ -274,14 +264,12 @@ LOOP_CALC_LINEAR_ENERGIES:
 
   pop {r4-r7}
   bx  lr
-.fnend
 
 @ void WebRtcAecm_StoreAdaptiveChannelNeon(AecmCore_t* aecm,
 @                                          const uint16_t* far_spectrum,
 @                                          int32_t* echo_est);
 .align  2
-WebRtcAecm_StoreAdaptiveChannelNeon:
-.fnstart
+DEFINE_FUNCTION WebRtcAecm_StoreAdaptiveChannelNeon
   ldr r3, =offset_aecm_channelAdapt16
   ldr r12, =offset_aecm_channelStored
   ldr r3, [r0, r3]
@@ -305,12 +293,10 @@ LOOP_STORE_ADAPTIVE_CHANNEL:
   str r3, [r2]
 
   bx  lr
-.fnend
 
 @ void WebRtcAecm_ResetAdaptiveChannelNeon(AecmCore_t* aecm);
 .align  2
-WebRtcAecm_ResetAdaptiveChannelNeon:
-.fnstart
+DEFINE_FUNCTION WebRtcAecm_ResetAdaptiveChannelNeon
   ldr r1, =offset_aecm_channelAdapt16
   ldr r2, =offset_aecm_channelAdapt32
   movw r3, #offset_aecm_channelStored
@@ -334,15 +320,14 @@ LOOP_RESET_ADAPTIVE_CHANNEL:
   str r0, [r2]
 
   bx  lr
-.fnend
 
   @ Square root of Hanning window in Q14. Compared to WebRtcAecm_kSqrtHanning,
   @ the order was reversed and one useless element (0) was removed.
 .align  3
 kSqrtHanningReversed:
-  .hword 16384, 16373, 16354, 16325, 16286, 16237, 16179, 16111, 16034, 15947
-  .hword 15851, 15746, 15631, 15506, 15373, 15231, 15079, 14918, 14749, 14571
-  .hword 14384, 14189, 13985, 13773, 13553, 13325, 13089, 12845, 12594, 12335
-  .hword 12068, 11795, 11514, 11227, 10933, 10633, 10326, 10013, 9695, 9370
-  .hword 9040, 8705, 8364, 8019, 7668, 7313, 6954, 6591, 6224, 5853, 5478, 5101
-  .hword 4720, 4337, 3951, 3562, 3172, 2780, 2386, 1990, 1594, 1196, 798, 399
+  .short 16384, 16373, 16354, 16325, 16286, 16237, 16179, 16111, 16034, 15947
+  .short 15851, 15746, 15631, 15506, 15373, 15231, 15079, 14918, 14749, 14571
+  .short 14384, 14189, 13985, 13773, 13553, 13325, 13089, 12845, 12594, 12335
+  .short 12068, 11795, 11514, 11227, 10933, 10633, 10326, 10013, 9695, 9370
+  .short 9040, 8705, 8364, 8019, 7668, 7313, 6954, 6591, 6224, 5853, 5478, 5101
+  .short 4720, 4337, 3951, 3562, 3172, 2780, 2386, 1990, 1594, 1196, 798, 399

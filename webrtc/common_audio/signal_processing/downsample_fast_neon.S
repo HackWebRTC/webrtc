@@ -14,17 +14,11 @@
 @
 @ The reference C code is in file downsample_fast.c. Bit-exact.
 
-.arch armv7-a
-.fpu neon
+#include "webrtc/system_wrappers/interface/asm_defines.h"
 
+GLOBAL_FUNCTION WebRtcSpl_DownsampleFastNeon
 .align  2
-.global WebRtcSpl_DownsampleFastNeon
-
-WebRtcSpl_DownsampleFastNeon:
-
-.fnstart
-
-.save {r4-r11}
+DEFINE_FUNCTION WebRtcSpl_DownsampleFastNeon
   push {r4-r11}
 
   cmp r3, #0                                @ data_out_length <= 0?
@@ -168,14 +162,15 @@ LOOP_COEFF_LENGTH_FACTOR4:
   vmlal.s16 q3, d18, d17
   bge LOOP_COEFF_LENGTH_FACTOR4
 
+  add r11, r5, asl #4                       @ r11 -> &data_in[i + factor * 8]
+  add r9, r5, asl #3                        @ Counter i = delay + factor * 8.
+
   @ Shift, saturate, and store the result.
   vqshrn.s32 d0, q2, #12
   vqshrn.s32 d1, q3, #12
+  cmp r9, r3                                @ i < endpos - factor * 7 ?
   vst1.16 {d0, d1}, [r2]!
 
-  add r11, r5, asl #4                       @ r11 -> &data_in[i + factor * 8]
-  add r9, r5, asl #3                        @ Counter i = delay + factor * 8.
-  cmp r9, r3                                @ i < endpos - factor * 7 ?
   blt LOOP_ENDPOS_FACTOR4
 
 @
@@ -218,5 +213,3 @@ LOOP2_COEFF_LENGTH:
 END:
   pop {r4-r11}
   bx  lr
-
-.fnend

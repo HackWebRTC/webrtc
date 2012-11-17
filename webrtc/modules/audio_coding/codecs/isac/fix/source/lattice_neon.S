@@ -29,19 +29,12 @@
 @ instructions, smulwb, and smull. Speech quality was not degraded by
 @ testing speech and tone vectors.
 
-.arch armv7-a
-.fpu neon
-
+#include "webrtc/system_wrappers/interface/asm_defines.h"
 #include "settings.h"
 
-.global WebRtcIsacfix_FilterMaLoopNeon
-
+GLOBAL_FUNCTION WebRtcIsacfix_FilterMaLoopNeon
 .align  2
-
-WebRtcIsacfix_FilterMaLoopNeon:
-.fnstart
-
-.save {r4-r8}
+DEFINE_FUNCTION WebRtcIsacfix_FilterMaLoopNeon
   push        {r4-r8}
 
   vdup.32     d28, r0             @ Initialize Neon register with input0
@@ -151,5 +144,3 @@ LAST_SAMPLE:
 END:
   pop         {r4-r8}
   bx          lr
-
-.fnend

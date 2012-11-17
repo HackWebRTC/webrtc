@@ -9,9 +9,9 @@
 @
 @ Reference code in filters.c. Output is bit-exact.
 
-#include "settings.h"
+#include "webrtc/system_wrappers/interface/asm_defines.h"
 
-.global WebRtcIsacfix_AutocorrNeon
+GLOBAL_FUNCTION WebRtcIsacfix_AutocorrNeon
 .align  2
 
 @ int WebRtcIsacfix_AutocorrNeon(
@@ -21,7 +21,7 @@
 @     WebRtc_Word16 order,
 @     WebRtc_Word16* __restrict scale);
 
-WebRtcIsacfix_AutocorrNeon:
+DEFINE_FUNCTION WebRtcIsacfix_AutocorrNeon
   push       {r3 - r12}
 
   @ Constant initializations

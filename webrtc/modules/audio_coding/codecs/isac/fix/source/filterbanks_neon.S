@@ -13,9 +13,9 @@
 @ WebRtcIsacfix_AllpassFilter2FixDec16Neon() in filterbanks.c. Prototype
 @ C code is at end of this file.
 
-.arch armv7-a
-.fpu neon
-.global WebRtcIsacfix_AllpassFilter2FixDec16Neon
+#include "webrtc/system_wrappers/interface/asm_defines.h"
+
+GLOBAL_FUNCTION WebRtcIsacfix_AllpassFilter2FixDec16Neon
 .align  2
 
 @void WebRtcIsacfix_AllpassFilter2FixDec16Neon(
@@ -27,7 +27,7 @@
 @    int32_t *filter_state_ch1,  // Filter state for channel 1, in Q16
 @    int32_t *filter_state_ch2); // Filter state for channel 2, in Q16
 
-WebRtcIsacfix_AllpassFilter2FixDec16Neon:
+DEFINE_FUNCTION WebRtcIsacfix_AllpassFilter2FixDec16Neon
   push {r4 - r7}
 
   ldr r5, [sp, #24]           @ filter_state_ch2

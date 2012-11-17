@@ -65,8 +65,8 @@
       'conditions': [
         ['target_arch=="arm"', {
           'sources': [
-            'complex_bit_reverse_arm.s',
-            'spl_sqrt_floor_arm.s',
+            'complex_bit_reverse_arm.S',
+            'spl_sqrt_floor_arm.S',
           ],
           'sources!': [
             'complex_bit_reverse.c',
@@ -76,7 +76,7 @@
             ['armv7==1', {
               'dependencies': ['signal_processing_neon',],
               'sources': [
-                'filter_ar_fast_q12_armv7.s',
+                'filter_ar_fast_q12_armv7.S',
               ],
               'sources!': [
                 'filter_ar_fast_q12.c',
@@ -112,10 +112,10 @@
           'type': '<(library)',
           'includes': ['../../build/arm_neon.gypi',],
           'sources': [
-            'cross_correlation_neon.s',
-            'downsample_fast_neon.s',
-            'min_max_operations_neon.s',
-            'vector_scaling_operations_neon.s',
+            'cross_correlation_neon.S',
+            'downsample_fast_neon.S',
+            'min_max_operations_neon.S',
+            'vector_scaling_operations_neon.S',
           ],
         },
       ],

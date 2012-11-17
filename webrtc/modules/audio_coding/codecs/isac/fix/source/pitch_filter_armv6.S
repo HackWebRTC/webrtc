@@ -13,12 +13,11 @@
 @
 @ Output is bit-exact with the reference C code in pitch_filter.c.
 
+#include "webrtc/system_wrappers/interface/asm_defines.h"
 #include "settings.h"
 
-.arch armv6
+GLOBAL_FUNCTION WebRtcIsacfix_PitchFilterCore
 .align  2
-.global WebRtcIsacfix_PitchFilterCore
-
 
 @ void WebRtcIsacfix_PitchFilterCore(int loopNumber,
 @                                    WebRtc_Word16 gain,
@@ -30,9 +29,7 @@
 @                                    WebRtc_Word16* inputBuf,
 @                                    WebRtc_Word16* outputBuf,
 @                                    int* index2) {
-
-WebRtcIsacfix_PitchFilterCore:
-.fnstart
+DEFINE_FUNCTION WebRtcIsacfix_PitchFilterCore
   push {r4-r11}
   sub sp, #8
 
@@ -140,7 +137,6 @@ LOOP:
   add sp, #8
   pop {r4-r11}
   bx  lr
-.fnend
 
 .align  2
 kDampFilter:

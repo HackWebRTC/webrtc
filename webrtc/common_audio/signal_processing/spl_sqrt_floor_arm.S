@@ -8,10 +8,11 @@
 @ Output:             r0 = INT (SQRT (r0)), precision is 16 bits
 @ Registers touched:  r1, r2
 
-.global WebRtcSpl_SqrtFloor
+#include "webrtc/system_wrappers/interface/asm_defines.h"
 
+GLOBAL_FUNCTION WebRtcSpl_SqrtFloor
 .align  2
-WebRtcSpl_SqrtFloor:
+DEFINE_FUNCTION WebRtcSpl_SqrtFloor
   mov    r1, #3 << 30
   mov    r2, #1 << 30
 

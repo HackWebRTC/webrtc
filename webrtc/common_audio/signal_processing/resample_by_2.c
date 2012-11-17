@@ -31,8 +31,8 @@ static __inline WebRtc_Word32 MUL_ACCUM_1(WebRtc_Word32 tbl_value,
                                           WebRtc_Word32 diff,
                                           WebRtc_Word32 state) {
   WebRtc_Word32 result;
-  __asm__("smlawb %r0, %r1, %r2, %r3": "=r"(result): "r"(diff),
-                                       "r"(tbl_value), "r"(state));
+  __asm __volatile ("smlawb %0, %1, %2, %3": "=r"(result): "r"(diff),
+                                   "r"(tbl_value), "r"(state));
   return result;
 }
 
@@ -47,8 +47,8 @@ static __inline WebRtc_Word32 MUL_ACCUM_2(WebRtc_Word32 tbl_value,
                                           WebRtc_Word32 diff,
                                           WebRtc_Word32 state) {
   WebRtc_Word32 result;
-  __asm__("smmla %r0, %r1, %r2, %r3": "=r"(result): "r"(diff << 1),
-                                      "r"(tbl_value), "r"(state));
+  __asm __volatile ("smmla %0, %1, %2, %3": "=r"(result): "r"(diff << 1),
+                                  "r"(tbl_value), "r"(state));
   return result;
 }
 

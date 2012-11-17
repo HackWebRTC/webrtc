@@ -15,20 +15,18 @@
 @ The reference C code is in file min_max_operations.c. Code here is basically
 @ a loop unrolling by 8 with Neon instructions. Bit-exact.
 
-.arch armv7-a
-.fpu neon
-.global WebRtcSpl_MaxAbsValueW16Neon
-.global WebRtcSpl_MaxAbsValueW32Neon
-.global WebRtcSpl_MaxValueW16Neon
-.global WebRtcSpl_MaxValueW32Neon
-.global WebRtcSpl_MinValueW16Neon
-.global WebRtcSpl_MinValueW32Neon
+#include "webrtc/system_wrappers/interface/asm_defines.h"
+
+GLOBAL_FUNCTION WebRtcSpl_MaxAbsValueW16Neon
+GLOBAL_FUNCTION WebRtcSpl_MaxAbsValueW32Neon
+GLOBAL_FUNCTION WebRtcSpl_MaxValueW16Neon
+GLOBAL_FUNCTION WebRtcSpl_MaxValueW32Neon
+GLOBAL_FUNCTION WebRtcSpl_MinValueW16Neon
+GLOBAL_FUNCTION WebRtcSpl_MinValueW32Neon
+
 .align  2
-
 @ int16_t WebRtcSpl_MaxAbsValueW16Neon(const int16_t* vector, int length);
-WebRtcSpl_MaxAbsValueW16Neon:
-.fnstart
-
+DEFINE_FUNCTION WebRtcSpl_MaxAbsValueW16Neon
   mov r2, #-1                 @ Initialize the return value.
   cmp r0, #0
   beq END_MAX_ABS_VALUE_W16
@@ -50,8 +48,8 @@ LOOP_UNROLLED_BY_8_MAX_ABS_VALUE_W16:
 
   @ Find the maximum value in the Neon registers and move it to r2.
   vmax.u16 d24, d25
-  vpmax.u16 d24, d24
-  vpmax.u16 d24, d24
+  vpmax.u16 d24, d24, d24
+  vpmax.u16 d24, d24, d24
   adds r1, #8
   vmov.u16 r2, d24[0]
   beq END_MAX_ABS_VALUE_W16
@@ -71,12 +69,10 @@ END_MAX_ABS_VALUE_W16:
   mov r0, r2
   bx  lr
 
-.fnend
+
 
 @ int32_t WebRtcSpl_MaxAbsValueW32Neon(const int32_t* vector, int length);
-WebRtcSpl_MaxAbsValueW32Neon:
-.fnstart
-
+DEFINE_FUNCTION WebRtcSpl_MaxAbsValueW32Neon
   cmp r0, #0
   moveq r0, #-1
   beq EXIT                    @ Return -1 for a NULL pointer.
@@ -103,7 +99,7 @@ LOOP_UNROLLED_BY_8_MAX_ABS_VALUE_W32:
   @ Find the maximum value in the Neon registers and move it to r2.
   vmax.u32 q12, q11
   vmax.u32 d24, d25
-  vpmax.u32 d24, d24
+  vpmax.u32 d24, d24, d24
   adds r1, #8
   vmov.u32 r2, d24[0]
   beq END_MAX_ABS_VALUE_W32
@@ -125,12 +121,8 @@ END_MAX_ABS_VALUE_W32:
 EXIT:
   bx  lr
 
-.fnend
-
 @ int16_t WebRtcSpl_MaxValueW16Neon(const int16_t* vector, int length);
-WebRtcSpl_MaxValueW16Neon:
-.fnstart
-
+DEFINE_FUNCTION WebRtcSpl_MaxValueW16Neon
   mov r2, #0x8000             @ Initialize the return value.
   cmp r0, #0
   beq END_MAX_VALUE_W16
@@ -151,8 +143,8 @@ LOOP_UNROLLED_BY_8_MAX_VALUE_W16:
 
   @ Find the maximum value in the Neon registers and move it to r2.
   vmax.s16 d24, d25
-  vpmax.s16 d24, d24
-  vpmax.s16 d24, d24
+  vpmax.s16 d24, d24, d24
+  vpmax.s16 d24, d24, d24
   adds r1, #8
   vmov.u16 r2, d24[0]
   beq END_MAX_VALUE_W16
@@ -168,12 +160,8 @@ END_MAX_VALUE_W16:
   mov r0, r2
   bx  lr
 
-.fnend
-
 @ int32_t WebRtcSpl_MaxValueW32Neon(const int32_t* vector, int length);
-WebRtcSpl_MaxValueW32Neon:
-.fnstart
-
+DEFINE_FUNCTION WebRtcSpl_MaxValueW32Neon
   mov r2, #0x80000000         @ Initialize the return value.
   cmp r0, #0
   beq END_MAX_VALUE_W32
@@ -196,8 +184,8 @@ LOOP_UNROLLED_BY_8_MAX_VALUE_W32:
 
   @ Find the maximum value in the Neon registers and move it to r2.
   vmax.s32 q12, q11
-  vpmax.s32 d24, d25
-  vpmax.s32 d24, d24
+  vpmax.s32 d24, d24, d25
+  vpmax.s32 d24, d24, d24
   adds r1, #8
   vmov.s32 r2, d24[0]
   beq END_MAX_VALUE_W32
@@ -213,12 +201,8 @@ END_MAX_VALUE_W32:
   mov r0, r2
   bx  lr
 
-.fnend
-
 @ int16_t WebRtcSpl_MinValueW16Neon(const int16_t* vector, int length);
-WebRtcSpl_MinValueW16Neon:
-.fnstart
-
+DEFINE_FUNCTION WebRtcSpl_MinValueW16Neon
   movw r2, #0x7FFF            @ Initialize the return value.
   cmp r0, #0
   beq END_MIN_VALUE_W16
@@ -239,8 +223,8 @@ LOOP_UNROLLED_BY_8_MIN_VALUE_W16:
 
   @ Find the maximum value in the Neon registers and move it to r2.
   vmin.s16 d24, d25
-  vpmin.s16 d24, d24
-  vpmin.s16 d24, d24
+  vpmin.s16 d24, d24, d24
+  vpmin.s16 d24, d24, d24
   adds r1, #8
   vmov.s16 r2, d24[0]
   sxth  r2, r2
@@ -257,12 +241,8 @@ END_MIN_VALUE_W16:
   mov r0, r2
   bx  lr
 
-.fnend
-
 @ int32_t WebRtcSpl_MinValueW32Neon(const int32_t* vector, int length);
-WebRtcSpl_MinValueW32Neon:
-.fnstart
-
+DEFINE_FUNCTION WebRtcSpl_MinValueW32Neon
   mov r2, #0x7FFFFFFF         @ Initialize the return value.
   cmp r0, #0
   beq END_MIN_VALUE_W32
@@ -285,8 +265,8 @@ LOOP_UNROLLED_BY_8_MIN_VALUE_W32:
 
   @ Find the maximum value in the Neon registers and move it to r2.
   vmin.s32 q12, q11
-  vpmin.s32 d24, d25
-  vpmin.s32 d24, d24
+  vpmin.s32 d24, d24, d25
+  vpmin.s32 d24, d24, d24
   adds r1, #8
   vmov.s32 r2, d24[0]
   beq END_MIN_VALUE_W32
@@ -301,5 +281,3 @@ LOOP_MIN_VALUE_W32:
 END_MIN_VALUE_W32:
   mov r0, r2
   bx  lr
-
-.fnend

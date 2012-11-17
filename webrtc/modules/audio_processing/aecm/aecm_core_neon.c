@@ -139,7 +139,7 @@ void WebRtcAecm_InverseFFTAndWindowNeon(AecmCore_t* aecm,
       "vneg.s16 d23, d23\n\t"
       "vst2.16 {d22, d23}, [%[p_fft], :128]!\n\t"
       "vrev64.16 q10, q10\n\t"
-      "vst2.16 {q10}, [%[p_fft_offset], %[offset]]\n\t"
+      "vst2.16 {q10}, [%[p_fft_offset]], %[offset]\n\t"
       :[p_efw]"+r"(p_efw),
        [p_fft]"+r"(p_fft),
        [p_fft_offset]"+r"(p_fft_offset)
@@ -181,7 +181,7 @@ void WebRtcAecm_InverseFFTAndWindowNeon(AecmCore_t* aecm,
     __asm __volatile("vld1.16 %P0, [%1, :64]" : "=w"(tmp16x4_0) : "r"(&aecm->outBuf[i]));
     __asm __volatile("vmovl.s16 %q0, %P1" : "=w"(tmp32x4_1) : "w"(tmp16x4_0));
     __asm __volatile("vadd.i32 %q0, %q1" : : "w"(tmp32x4_0), "w"(tmp32x4_1));
-    __asm __volatile("vqshrn.s32 %P0, %q1, #0" : "=w"(tmp16x4_0) : "w"(tmp32x4_0));
+    __asm __volatile("vqmovn.s32 %P0, %q1" : "=w"(tmp16x4_0) : "w"(tmp32x4_0));
     __asm __volatile("vst1.16 %P0, [%1, :64]" : : "w"(tmp16x4_0), "r"(&efw[i].real));
     __asm __volatile("vst1.16 %P0, [%1, :64]" : : "w"(tmp16x4_0), "r"(&output[i]));
 
@@ -196,7 +196,7 @@ void WebRtcAecm_InverseFFTAndWindowNeon(AecmCore_t* aecm,
     __asm __volatile("vshl.s32 %q0, %q1, %q2" : "=w"(tmp32x4_0) : "0"(tmp32x4_0), "w"(tmp32x4_2));
     // aecm->outBuf[i] = (WebRtc_Word16)WEBRTC_SPL_SAT(
     //    WEBRTC_SPL_WORD16_MAX, tmp32no1, WEBRTC_SPL_WORD16_MIN);
-    __asm __volatile("vqshrn.s32 %P0, %q1, #0" : "=w"(tmp16x4_0) : "w"(tmp32x4_0));
+    __asm __volatile("vqmovn.s32 %P0, %q1" : "=w"(tmp16x4_0) : "w"(tmp32x4_0));
     __asm __volatile("vst1.16 %P0, [%1, :64]" : : "w"(tmp16x4_0), "r"(&aecm->outBuf[i]));
   }
 

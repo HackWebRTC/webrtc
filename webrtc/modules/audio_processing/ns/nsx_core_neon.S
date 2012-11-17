@@ -12,18 +12,16 @@
 @ This file contains some functions in NS, optimized for ARM Neon
 @ platforms. Reference C code is in file nsx_core.c. Bit-exact.
 
-.arch armv7-a
-.fpu neon
-
+#include "webrtc/system_wrappers/interface/asm_defines.h"
 #include "nsx_defines.h"
 #include "nsx_core_neon_offsets.h"
 
-.global WebRtcNsx_NoiseEstimationNeon
-.global WebRtcNsx_PrepareSpectrumNeon
-.global WebRtcNsx_SynthesisUpdateNeon
-.global WebRtcNsx_AnalysisUpdateNeon
-.global WebRtcNsx_DenormalizeNeon
-.global WebRtcNsx_CreateComplexBufferNeon
+GLOBAL_FUNCTION WebRtcNsx_NoiseEstimationNeon
+GLOBAL_FUNCTION WebRtcNsx_PrepareSpectrumNeon
+GLOBAL_FUNCTION WebRtcNsx_SynthesisUpdateNeon
+GLOBAL_FUNCTION WebRtcNsx_AnalysisUpdateNeon
+GLOBAL_FUNCTION WebRtcNsx_DenormalizeNeon
+GLOBAL_FUNCTION WebRtcNsx_CreateComplexBufferNeon
 
 @ void NoiseEstimationNeon(NsxInst_t* inst,
 @                          uint16_t* magn,
@@ -42,12 +40,7 @@
 @ r11: countDiv
 @ r12: i, the loop counter for LOOP_NOISEESTIMATION_MAGNLEN_INNER
 
-WebRtcNsx_NoiseEstimationNeon:
-.fnstart
-.save {r4-r11, r14}
-.vsave {d8-d15}
-.pad #(16 + (HALF_ANAL_BLOCKL + 3) / 4 * 8)
-
+DEFINE_FUNCTION WebRtcNsx_NoiseEstimationNeon
   push {r4-r11, r14}
   vpush {d8-d15}
   sub sp, #(16 + (HALF_ANAL_BLOCKL + 3) / 4 * 8)
@@ -312,14 +305,10 @@ UPDATE_Q_NOISE:
   add sp, #(16 + (HALF_ANAL_BLOCKL + 3) / 4 * 8)
   vpop {d8-d15}
   pop {r4-r11, pc}
-.fnend
 
 @ static void UpdateNoiseEstimateNeon(NsxInst_t* inst, int offset);
 @ Neon registers touched: q0-q3, q8-q13.
-UpdateNoiseEstimateNeon:
-.fnstart
-.save {r4, r5, r6, r14}
-
+DEFINE_FUNCTION UpdateNoiseEstimateNeon
   push {r4, r5, r6, r14}
   mov r5, r0
 
@@ -385,13 +374,9 @@ POST_LOOP_MAGNLEN:
   strh r3, [r2]
 
   pop {r4, r5, r6, pc}
-.fnend
 
 @ void PrepareSpectrumNeon(NsxInst_t* inst, int16_t* freq_buf);
-WebRtcNsx_PrepareSpectrumNeon:
-.fnstart
-.save {r4-r8}
-
+DEFINE_FUNCTION WebRtcNsx_PrepareSpectrumNeon
   push {r4-r8}
 
   movw r2, #offset_nsx_real
@@ -478,11 +463,9 @@ LOOP_ANALEN2:
 
   pop {r4-r8}
   bx r14
-.fnend
 
 @ void WebRtcNsx_DenormalizeNeon(NsxInst_t* inst, int16_t* in, int factor);
-WebRtcNsx_DenormalizeNeon:
-.fnstart
+DEFINE_FUNCTION WebRtcNsx_DenormalizeNeon
   movw r12, #offset_nsx_normData
   movw r3, #offset_nsx_real
   ldr r12, [r0, r12]          @ inst->normData
@@ -508,14 +491,11 @@ LOOP_ANALEN:
   blt LOOP_ANALEN
 
   bx r14
-.fnend
 
 @ void SynthesisUpdateNeon(NsxInst_t* inst,
 @                          int16_t* out_frame,
 @                          int16_t gain_factor);
-WebRtcNsx_SynthesisUpdateNeon:
-.fnstart
-.save {r4, r5}
+DEFINE_FUNCTION WebRtcNsx_SynthesisUpdateNeon
   push {r4, r5}
 
   vdup.16 d31, r2
@@ -586,12 +566,8 @@ EXIT_SYNTHESISUPDATE:
   pop {r4, r5}
   bx r14
 
-.fnend
-
 @ void AnalysisUpdateNeon(NsxInst_t* inst, int16_t* out, int16_t* new_speech);
-WebRtcNsx_AnalysisUpdateNeon:
-.fnstart
-.save {r4-r6}
+DEFINE_FUNCTION WebRtcNsx_AnalysisUpdateNeon
   push {r4-r6}
 
   movw r3, #offset_nsx_analysisBuffer
@@ -647,11 +623,9 @@ LOOP_WINDOW_DATA:
 POST_LOOP_WINDOW_DATA:
   pop {r4-r6}
   bx r14
-.fnend
 
 @ void CreateComplexBufferNeon(NsxInst_t* inst, int16_t* in, int16_t* out);
-WebRtcNsx_CreateComplexBufferNeon:
-.fnstart
+DEFINE_FUNCTION WebRtcNsx_CreateComplexBufferNeon
   movw r3, #offset_nsx_anaLen
   movw r12, #offset_nsx_normData
   ldrsh r3, [r0, r3]                  @ inst->anaLen
@@ -678,4 +652,3 @@ LOOP_CREATE_COMPLEX_BUFFER:           @ Unrolled by 16.
   blt LOOP_CREATE_COMPLEX_BUFFER
 
   bx r14
-.fnend

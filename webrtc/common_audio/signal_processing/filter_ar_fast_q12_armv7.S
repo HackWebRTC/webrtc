@@ -35,16 +35,11 @@
 @ r11: Scratch
 @ r12: &coefficients[j]
 
-.arch armv7-a
+#include "webrtc/system_wrappers/interface/asm_defines.h"
 
+GLOBAL_FUNCTION WebRtcSpl_FilterARFastQ12
 .align  2
-.global WebRtcSpl_FilterARFastQ12
-
-WebRtcSpl_FilterARFastQ12:
-
-.fnstart
-
-.save {r4-r11}
+DEFINE_FUNCTION WebRtcSpl_FilterARFastQ12
   push {r4-r11}
 
   ldrsh r12, [sp, #32]         @ data_length
@@ -154,9 +149,6 @@ POST_LOOP2_A_LENGTH:
 END:
   pop {r4-r11}
   bx  lr
-
-.fnend
-
 
 @Reference C code:
 @

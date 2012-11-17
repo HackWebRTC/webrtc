@@ -25,16 +25,12 @@
 @ r12: constant #16384
 @ r6, r7, r8, r10, r11: scratch
 
+#include "webrtc/system_wrappers/interface/asm_defines.h"
 #include "settings.h"
 
-.arch armv7-a
-.global WebRtcIsacfix_FilterArLoop
+GLOBAL_FUNCTION WebRtcIsacfix_FilterArLoop
 .align  2
-
-WebRtcIsacfix_FilterArLoop:
-.fnstart
-
-.save {r4-r11}
+DEFINE_FUNCTION WebRtcIsacfix_FilterArLoop
   push    {r4-r11}
 
   add     r1, #2                 @ &ar_f_Q0[1]
@@ -77,6 +73,3 @@ ORDER_COEF_LOOP:  @ for(k = order_coef - 1 ; k >= 0; k--)
 
   pop     {r4-r11}
   bx      lr
-
-.fnend
-
