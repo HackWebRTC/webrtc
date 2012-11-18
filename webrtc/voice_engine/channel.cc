@@ -332,7 +332,10 @@ Channel::SendRTCPPacket(int channel, const void *data, int len)
     // Packet transmission using external transport transport
     {
         CriticalSectionScoped cs(&_callbackCritSect);
-
+        if (_transportPtr == NULL)
+        {
+            return -1;
+        }
         int n = _transportPtr->SendRTCPPacket(channel,
                                               bufferToSendPtr,
                                               bufferLength);
