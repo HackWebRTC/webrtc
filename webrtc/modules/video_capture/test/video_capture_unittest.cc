@@ -145,7 +145,8 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
       capture_delay_(0),
       last_render_time_ms_(0),
       incoming_frames_(0),
-      timing_warnings_(0) {
+      timing_warnings_(0),
+      rotate_frame_(webrtc::kCameraRotate0){
   }
 
   ~TestVideoCaptureCallback() {
@@ -159,8 +160,14 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
 
     int height = videoFrame.height();
     int width = videoFrame.width();
-    EXPECT_EQ(height, capability_.height);
-    EXPECT_EQ(width, capability_.width);
+    if (rotate_frame_ == webrtc::kCameraRotate90 ||
+        rotate_frame_ == webrtc::kCameraRotate270) {
+      EXPECT_EQ(width, capability_.height);
+      EXPECT_EQ(height, capability_.width);
+    } else {
+      EXPECT_EQ(height, capability_.height);
+      EXPECT_EQ(width, capability_.width);
+    }
     // RenderTimstamp should be the time now.
     EXPECT_TRUE(
         videoFrame.render_time_ms() >= TickTime::MillisecondTimestamp()-30 &&
@@ -227,6 +234,11 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
     return CompareFrames(frame, last_frame_);
   }
 
+  void SetExpectedCaptureRotation(webrtc::VideoCaptureRotation rotation) {
+    CriticalSectionScoped cs(capture_cs_.get());
+    rotate_frame_ = rotation;
+  }
+
  private:
   scoped_ptr<CriticalSectionWrapper> capture_cs_;
   VideoCaptureCapability capability_;
@@ -235,6 +247,7 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
   int incoming_frames_;
   int timing_warnings_;
   webrtc::I420VideoFrame last_frame_;
+  webrtc::VideoCaptureRotation rotate_frame_;
 };
 
 class TestVideoCaptureFeedBack : public VideoCaptureFeedBack {
@@ -603,3 +616,27 @@ TEST_F(VideoCaptureExternalTest , FrameRate) {
   EXPECT_TRUE(capture_feedback_.frame_rate() >= 25 &&
               capture_feedback_.frame_rate() <= 33);
 }
+
+TEST_F(VideoCaptureExternalTest, Rotation) {
+  EXPECT_EQ(0, capture_module_->SetCaptureRotation(webrtc::kCameraRotate0));
+  unsigned int length = webrtc::CalcBufferSize(webrtc::kI420,
+                                               test_frame_.width(),
+                                               test_frame_.height());
+  webrtc::scoped_array<uint8_t> test_buffer(new uint8_t[length]);
+  webrtc::ExtractBuffer(test_frame_, length, test_buffer.get());
+  EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),
+    length, capture_callback_.capability(), 0));
+  EXPECT_EQ(0, capture_module_->SetCaptureRotation(webrtc::kCameraRotate90));
+  capture_callback_.SetExpectedCaptureRotation(webrtc::kCameraRotate90);
+  EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),
+    length, capture_callback_.capability(), 0));
+  EXPECT_EQ(0, capture_module_->SetCaptureRotation(webrtc::kCameraRotate180));
+  capture_callback_.SetExpectedCaptureRotation(webrtc::kCameraRotate180);
+  EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),
+    length, capture_callback_.capability(), 0));
+  EXPECT_EQ(0, capture_module_->SetCaptureRotation(webrtc::kCameraRotate270));
+  capture_callback_.SetExpectedCaptureRotation(webrtc::kCameraRotate270);
+  EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),
+    length, capture_callback_.capability(), 0));
+}
+
