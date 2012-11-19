@@ -168,6 +168,31 @@ int WebRtcNetEQ_PacketBufferFindLowestTimestamp(PacketBuf_t* buffer_inst,
                                                 int16_t* payload_type);
 
 /****************************************************************************
+ * WebRtcNetEQ_PacketBufferGetPacketSize(...)
+ *
+ * Calculate and return an estimate of the data length (in samples) of the
+ * given packet. If no estimate is available (because we do not know how to
+ * compute packet durations for the associated payload type), last_duration
+ * will be returned instead.
+ *
+ * Input:
+ *    - buffer_inst     : Buffer instance
+ *    - buffer_pos      : The index of the buffer of which to estimate the
+ *                        duration
+ *    - codec_database  : Codec database instance
+ *    - codec_pos       : The codec database entry associated with the payload
+ *                        type of the specified buffer.
+ *    - last_duration   : The duration of the previous frame.
+ *
+ * Return value         : The buffer size in samples
+ */
+
+int WebRtcNetEQ_PacketBufferGetPacketSize(const PacketBuf_t* buffer_inst,
+                                          int buffer_pos,
+                                          const CodecDbInst_t* codec_database,
+                                          int codec_pos, int last_duration);
+
+/****************************************************************************
  * WebRtcNetEQ_PacketBufferGetSize(...)
  *
  * Calculate and return an estimate of the total data length (in samples)
@@ -177,12 +202,15 @@ int WebRtcNetEQ_PacketBufferFindLowestTimestamp(PacketBuf_t* buffer_inst,
  * decoded packet.
  *
  * Input:
- *		- bufferInst	: Buffer instance
+ *    - buffer_inst     : Buffer instance
+ *    - codec_database  : Codec database instance
  *
- * Return value			: The buffer size in samples
+ * Return value         : The buffer size in samples
  */
 
-WebRtc_Word32 WebRtcNetEQ_PacketBufferGetSize(const PacketBuf_t *bufferInst);
+WebRtc_Word32 WebRtcNetEQ_PacketBufferGetSize(const PacketBuf_t* buffer_inst,
+                                              const CodecDbInst_t*
+                                              codec_database);
 
 /****************************************************************************
  * WebRtcNetEQ_IncrementWaitingTimes(...)

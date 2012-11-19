@@ -46,6 +46,7 @@ typedef struct
     FuncGetMDinfo funcGetMDinfo[NUM_CODECS];
     FuncGetPitchInfo funcGetPitch[NUM_CODECS];
     FuncUpdBWEst funcUpdBWEst[NUM_CODECS];
+    FuncDurationEst funcDurationEst[NUM_CODECS];
     FuncGetErrorCode funcGetErrorCode[NUM_CODECS];
     void * codec_state[NUM_CODECS];
     WebRtc_UWord16 codec_fs[NUM_CODECS];
@@ -74,8 +75,9 @@ int WebRtcNetEQ_DbAdd(CodecDbInst_t *inst, enum WebRtcNetEQDecoder codec,
                       FuncDecode funcDecodeRCU, FuncDecodePLC funcDecodePLC,
                       FuncDecodeInit funcDecodeInit, FuncAddLatePkt funcAddLatePkt,
                       FuncGetMDinfo funcGetMDinfo, FuncGetPitchInfo funcGetPitch,
-                      FuncUpdBWEst funcUpdBWEst, FuncGetErrorCode funcGetErrorCode,
-                      void* codec_state, WebRtc_UWord16 codec_fs);
+                      FuncUpdBWEst funcUpdBWEst, FuncDurationEst funcDurationEst,
+                      FuncGetErrorCode funcGetErrorCode, void* codec_state,
+                      WebRtc_UWord16 codec_fs);
 
 /*
  * Removes a codec from the database.
@@ -98,7 +100,7 @@ int WebRtcNetEQ_DbGetPayload(CodecDbInst_t *inst, enum WebRtcNetEQDecoder codecI
  * Returns codec identifier given a payload number.
  */
 
-int WebRtcNetEQ_DbGetCodec(CodecDbInst_t *inst, int payloadType);
+int WebRtcNetEQ_DbGetCodec(const CodecDbInst_t *inst, int payloadType);
 
 /*
  * Extracts the Payload Split information of the codec with the specified payloadType.
@@ -115,7 +117,7 @@ int WebRtcNetEQ_DbIsMDCodec(enum WebRtcNetEQDecoder codecID);
 /*
  * Returns 1 if payload type is registered as a CNG codec, 0 otherwise.
  */
-int WebRtcNetEQ_DbIsCNGPayload(CodecDbInst_t *inst, int payloadType);
+int WebRtcNetEQ_DbIsCNGPayload(const CodecDbInst_t *inst, int payloadType);
 
 /*
  * Return the sample rate for the codec with the given payload type, 0 if error.

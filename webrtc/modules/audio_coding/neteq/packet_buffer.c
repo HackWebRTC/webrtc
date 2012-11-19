@@ -491,36 +491,79 @@ int WebRtcNetEQ_PacketBufferFindLowestTimestamp(PacketBuf_t* buffer_inst,
   return 0;
 }
 
-WebRtc_Word32 WebRtcNetEQ_PacketBufferGetSize(const PacketBuf_t *bufferInst)
-{
-    int i, count;
-    WebRtc_Word32 sizeSamples;
+int WebRtcNetEQ_PacketBufferGetPacketSize(const PacketBuf_t* buffer_inst,
+                                          int buffer_pos,
+                                          const CodecDbInst_t* codec_database,
+                                          int codec_pos, int last_duration) {
+  if (codec_database->funcDurationEst[codec_pos] == NULL) {
+    return last_duration;
+  }
+  return (*codec_database->funcDurationEst[codec_pos])(
+    codec_database->codec_state[codec_pos],
+    (const uint8_t *)buffer_inst->payloadLocation[buffer_pos],
+    buffer_inst->payloadLengthBytes[buffer_pos]);
+}
 
-    count = 0;
+WebRtc_Word32 WebRtcNetEQ_PacketBufferGetSize(const PacketBuf_t* buffer_inst,
+                                              const CodecDbInst_t*
+                                              codec_database) {
+  int i, count;
+  int last_duration;
+  int last_codec_pos;
+  int last_payload_type;
+  WebRtc_Word32 size_samples;
 
-    /* Loop through all slots in the buffer */
-    for (i = 0; i < bufferInst->maxInsertPositions; i++)
-    {
-        /* Only count the packets with non-zero size */
-        if (bufferInst->payloadLengthBytes[i] != 0)
-        {
-            count++;
+  count = 0;
+  last_duration = buffer_inst->packSizeSamples;
+  last_codec_pos = -1;
+  last_payload_type = -1;
+  size_samples = 0;
+
+  /* Loop through all slots in the buffer */
+  for (i = 0; i < buffer_inst->maxInsertPositions; i++) {
+    /* Only count the packets with non-zero size */
+    if (buffer_inst->payloadLengthBytes[i] != 0) {
+      int payload_type;
+      int codec_pos;
+      /* Figure out the codec database entry for this payload_type. */
+      payload_type = buffer_inst->payloadType[i];
+      /* Remember the last one, to avoid the database search. */
+      if(payload_type == last_payload_type) {
+        codec_pos = last_codec_pos;
+      }
+      else {
+        codec_pos = WebRtcNetEQ_DbGetCodec(codec_database,
+          payload_type);
+        if (codec_pos >= 0) {
+          codec_pos = codec_database->position[codec_pos];
         }
+      }
+      last_codec_pos = codec_pos;
+      last_payload_type = payload_type;
+      if (codec_pos >= 0) {
+        /*
+         * Right now WebRtcNetEQ_PacketBufferGetPacketSize either always
+         * returns last_duration or always computes the real duration without
+         * looking at last_duration. If an implementation really wanted to use
+         * last_duration to compute a changing duration, we would have to
+         * iterate through the packets in chronological order by timestamp.
+         */
+         last_duration = WebRtcNetEQ_PacketBufferGetPacketSize(
+           buffer_inst, i, codec_database, codec_pos,
+           last_duration);
+      }
+      /* Add in the size of this packet. */
+      size_samples += last_duration;
+      count++;
     }
+  }
 
-    /*
-     * Calculate buffer size as number of packets times packet size
-     * (packet size is that of the latest decoded packet)
-     */
-    sizeSamples = WEBRTC_SPL_MUL_16_16(bufferInst->packSizeSamples, count);
+  /* Sanity check; size cannot be negative */
+  if (size_samples < 0) {
+    size_samples = 0;
+  }
 
-    /* Sanity check; size cannot be negative */
-    if (sizeSamples < 0)
-    {
-        sizeSamples = 0;
-    }
-
-    return sizeSamples;
+  return size_samples;
 }
 
 void WebRtcNetEQ_IncrementWaitingTimes(PacketBuf_t *buffer_inst) {

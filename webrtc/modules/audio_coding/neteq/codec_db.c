@@ -58,8 +58,9 @@ int WebRtcNetEQ_DbAdd(CodecDbInst_t *inst, enum WebRtcNetEQDecoder codec,
                       FuncDecode funcDecodeRCU, FuncDecodePLC funcDecodePLC,
                       FuncDecodeInit funcDecodeInit, FuncAddLatePkt funcAddLatePkt,
                       FuncGetMDinfo funcGetMDinfo, FuncGetPitchInfo funcGetPitch,
-                      FuncUpdBWEst funcUpdBWEst, FuncGetErrorCode funcGetErrorCode,
-                      void* codec_state, WebRtc_UWord16 codec_fs)
+                      FuncUpdBWEst funcUpdBWEst, FuncDurationEst funcDurationEst,
+                      FuncGetErrorCode funcGetErrorCode, void* codec_state,
+                      WebRtc_UWord16 codec_fs)
 {
 
     int temp;
@@ -280,6 +281,7 @@ int WebRtcNetEQ_DbAdd(CodecDbInst_t *inst, enum WebRtcNetEQDecoder codec,
         inst->funcGetMDinfo[temp] = funcGetMDinfo;
         inst->funcGetPitch[temp] = funcGetPitch;
         inst->funcUpdBWEst[temp] = funcUpdBWEst;
+        inst->funcDurationEst[temp] = funcDurationEst;
         inst->funcGetErrorCode[temp] = funcGetErrorCode;
         inst->codec_fs[temp] = codec_fs;
 
@@ -422,7 +424,7 @@ int WebRtcNetEQ_DbGetPayload(CodecDbInst_t *inst, enum WebRtcNetEQDecoder codecI
  * Returns -1 if the payload type does not exist.
  */
 
-int WebRtcNetEQ_DbGetCodec(CodecDbInst_t *inst, int payloadType)
+int WebRtcNetEQ_DbGetCodec(const CodecDbInst_t *inst, int payloadType)
 {
     int i, pos;
 
@@ -694,7 +696,7 @@ int WebRtcNetEQ_DbIsMDCodec(enum WebRtcNetEQDecoder codecID)
 /*
  * Returns 1 if payload type is registered as a CNG codec, 0 otherwise
  */
-int WebRtcNetEQ_DbIsCNGPayload(CodecDbInst_t *inst, int payloadType)
+int WebRtcNetEQ_DbIsCNGPayload(const CodecDbInst_t *inst, int payloadType)
 {
 #ifdef NETEQ_CNG_CODEC
     int i;

@@ -39,6 +39,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=WebRtcG711_DurationEst; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_PCMA_FUNCTIONS(inst) \
@@ -50,6 +51,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=WebRtcG711_DurationEst; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_ILBC_FUNCTIONS(inst) \
@@ -61,6 +63,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_ISAC_FUNCTIONS(inst) \
@@ -72,6 +75,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=(WebRtcNetEQ_FuncUpdBWEst)WebRtcIsac_UpdateBwEstimate; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=(WebRtcNetEQ_FuncGetErrorCode)WebRtcIsac_GetErrorCode;
 
 #define SET_ISACfix_FUNCTIONS(inst) \
@@ -83,6 +87,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=(WebRtcNetEQ_FuncUpdBWEst)WebRtcIsacfix_UpdateBwEstimate; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=(WebRtcNetEQ_FuncGetErrorCode)WebRtcIsacfix_GetErrorCode;
 
 #define SET_ISACSWB_FUNCTIONS(inst) \
@@ -94,6 +99,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=(WebRtcNetEQ_FuncUpdBWEst)WebRtcIsac_UpdateBwEstimate; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=(WebRtcNetEQ_FuncGetErrorCode)WebRtcIsac_GetErrorCode;
 
 #define SET_G729_FUNCTIONS(inst) \
@@ -105,6 +111,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_G729_1_FUNCTIONS(inst) \
@@ -116,6 +123,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=(WebRtcNetEQ_FuncUpdBWEst)WebRtcG7291_DecodeBwe; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_PCM16B_FUNCTIONS(inst) \
@@ -127,6 +135,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_PCM16B_WB_FUNCTIONS(inst) \
@@ -138,6 +147,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_PCM16B_SWB32_FUNCTIONS(inst) \
@@ -149,6 +159,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_PCM16B_SWB48_FUNCTIONS(inst) \
@@ -160,6 +171,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_G722_FUNCTIONS(inst) \
@@ -171,6 +183,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_G722_1_16_FUNCTIONS(inst) \
@@ -182,6 +195,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_G722_1_24_FUNCTIONS(inst) \
@@ -193,6 +207,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_G722_1_32_FUNCTIONS(inst) \
@@ -204,6 +219,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_G722_1C_24_FUNCTIONS(inst) \
@@ -215,6 +231,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_G722_1C_32_FUNCTIONS(inst) \
@@ -226,6 +243,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_G722_1C_48_FUNCTIONS(inst) \
@@ -237,6 +255,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_AMR_FUNCTIONS(inst) \
@@ -248,6 +267,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_AMRWB_FUNCTIONS(inst) \
@@ -259,6 +279,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_GSMFR_FUNCTIONS(inst) \
@@ -270,6 +291,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_G726_16_FUNCTIONS(inst) \
@@ -281,6 +303,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_G726_24_FUNCTIONS(inst) \
@@ -292,6 +315,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_G726_32_FUNCTIONS(inst) \
@@ -303,6 +327,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_G726_40_FUNCTIONS(inst) \
@@ -314,6 +339,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_OPUS_FUNCTIONS(inst) \
@@ -325,6 +351,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_OPUSSLAVE_FUNCTIONS(inst) \
@@ -336,6 +363,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_SPEEX_FUNCTIONS(inst) \
@@ -347,6 +375,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_CELT_FUNCTIONS(inst) \
@@ -358,6 +387,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_CELTSLAVE_FUNCTIONS(inst) \
@@ -369,6 +399,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_RED_FUNCTIONS(inst) \
@@ -380,6 +411,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_AVT_FUNCTIONS(inst) \
@@ -391,6 +423,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_CNG_FUNCTIONS(inst) \
@@ -402,6 +435,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
+                    inst.funcDurationEst=NULL; \
                     inst.funcGetErrorCode=NULL;
 
 #endif /* WEBRTC_NETEQ_HELP_MACROS_H */

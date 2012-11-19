@@ -32,6 +32,27 @@ extern FILE *delay_fid2; /* file pointer to delay log file */
 
 
 /*
+ * Update the frame size, if we can.
+ */
+static int WebRtcNetEQ_UpdatePackSizeSamples(MCUInst_t* inst, int buffer_pos,
+                                             int payload_type,
+                                             int pack_size_samples) {
+  if (buffer_pos >= 0) {
+    int codec_pos;
+    codec_pos = WebRtcNetEQ_DbGetCodec(&inst->codec_DB_inst, payload_type);
+    if (codec_pos >= 0) {
+      codec_pos = inst->codec_DB_inst.position[codec_pos];
+      if (codec_pos >= 0) {
+        return WebRtcNetEQ_PacketBufferGetPacketSize(
+          &inst->PacketBuffer_inst, buffer_pos,
+          &inst->codec_DB_inst, codec_pos, pack_size_samples);
+      }
+    }
+  }
+  return pack_size_samples;
+}
+
+/*
  * Signals the MCU that DSP status data is available.
  */
 int WebRtcNetEQ_SignalMcu(MCUInst_t *inst)
@@ -223,7 +244,8 @@ int WebRtcNetEQ_SignalMcu(MCUInst_t *inst)
     }
 
     /* Check packet buffer */
-    w32_bufsize = WebRtcNetEQ_PacketBufferGetSize(&inst->PacketBuffer_inst);
+    w32_bufsize = WebRtcNetEQ_PacketBufferGetSize(&inst->PacketBuffer_inst,
+        &inst->codec_DB_inst);
 
     if (dspInfo.lastMode == MODE_SUCCESS_ACCELERATE || dspInfo.lastMode
         == MODE_LOWEN_ACCELERATE || dspInfo.lastMode == MODE_SUCCESS_PREEMPTIVE
@@ -254,6 +276,10 @@ int WebRtcNetEQ_SignalMcu(MCUInst_t *inst)
     }
 #endif
 
+    /* Update the frame size, if we can. */
+    inst->PacketBuffer_inst.packSizeSamples =
+        WebRtcNetEQ_UpdatePackSizeSamples(inst, i_bufferpos, payloadType,
+            inst->PacketBuffer_inst.packSizeSamples);
     /* Update statistics and make decision */
     uw16_instr = WebRtcNetEQ_BufstatsDecision(&inst->BufferStat_inst,
         inst->PacketBuffer_inst.packSizeSamples, w32_bufsize, dspInfo.playedOutTS,
@@ -350,7 +376,9 @@ int WebRtcNetEQ_SignalMcu(MCUInst_t *inst)
         }
 
         /* Set the packet size by guessing */
-        inst->PacketBuffer_inst.packSizeSamples = inst->timestampsPerCall * 3;
+        inst->PacketBuffer_inst.packSizeSamples =
+            WebRtcNetEQ_UpdatePackSizeSamples(inst, i_bufferpos, payloadType,
+                inst->timestampsPerCall * 3);
 
         WebRtcNetEQ_ResetAutomode(&(inst->BufferStat_inst.Automode_inst),
                                   inst->PacketBuffer_inst.maxInsertPositions);
@@ -695,7 +723,10 @@ int WebRtcNetEQ_SignalMcu(MCUInst_t *inst)
                 }
                 prevSeqNo = inst->PacketBuffer_inst.seqNumber[i_bufferpos];
             }
-
+            /* Update the frame size, if we can. */
+            inst->PacketBuffer_inst.packSizeSamples =
+                WebRtcNetEQ_UpdatePackSizeSamples(inst, i_bufferpos,
+                    payloadType, inst->PacketBuffer_inst.packSizeSamples);
         }
         while ((totalTS < wantedNoOfTimeStamps) && (nextSeqNoAvail == 1));
     }

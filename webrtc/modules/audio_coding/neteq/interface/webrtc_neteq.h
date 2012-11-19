@@ -127,6 +127,8 @@ typedef WebRtc_Word16 (*WebRtcNetEQ_FuncUpdBWEst)(void* state, const WebRtc_UWor
                                                   WebRtc_UWord16 rtp_seq_number,
                                                   WebRtc_UWord32 send_ts,
                                                   WebRtc_UWord32 arr_ts);
+typedef int (*WebRtcNetEQ_FuncDurationEst)(void* state, const uint8_t* payload,
+                                           int payload_length_bytes);
 typedef WebRtc_Word16 (*WebRtcNetEQ_FuncGetErrorCode)(void* state);
 
 /**********************************************************
@@ -145,6 +147,7 @@ typedef struct
     WebRtcNetEQ_FuncGetMDinfo funcGetMDinfo;
     WebRtcNetEQ_FuncGetPitchInfo funcGetPitch;
     WebRtcNetEQ_FuncUpdBWEst funcUpdBWEst;
+    WebRtcNetEQ_FuncDurationEst funcDurationEst;
     WebRtcNetEQ_FuncGetErrorCode funcGetErrorCode;
     void* codec_state;
     WebRtc_UWord16 codec_fs;

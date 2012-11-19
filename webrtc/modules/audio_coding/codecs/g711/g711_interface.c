@@ -164,6 +164,16 @@ WebRtc_Word16 WebRtcG711_DecodeU(void *state,
     return (len);
 }
 
+int WebRtcG711_DurationEst(void* state,
+                           const uint8_t* payload,
+                           int payload_length_bytes) {
+    (void)state;
+    (void)payload;
+    /* G.711 is one byte per sample, so we can just return the number of
+       bytes. */
+    return payload_length_bytes;
+}
+
 WebRtc_Word16 WebRtcG711_Version(char* version, WebRtc_Word16 lenBytes)
 {
     strncpy(version, "2.0.0", lenBytes);

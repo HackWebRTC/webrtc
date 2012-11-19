@@ -64,6 +64,13 @@ typedef WebRtc_Word16 (*FuncUpdBWEst)(void* state, const WebRtc_UWord16 *encoded
                                       WebRtc_UWord32 arr_ts);
 
 /*
+ *  Pointer to the frame size estimate function.
+ *  Returns the estimated number of samples in the packet.
+ */
+typedef int (*FuncDurationEst)(void* state, const uint8_t* payload,
+                               int payload_length_bytes);
+
+/*
  *  Pointer to error code function
  */
 typedef WebRtc_Word16 (*FuncGetErrorCode)(void* state);
@@ -78,6 +85,7 @@ typedef struct CodecFuncInst_t_
     FuncAddLatePkt funcAddLatePkt;
     FuncGetMDinfo funcGetMDinfo;
     FuncUpdBWEst funcUpdBWEst; /* Currently in use for the ISAC family (without LC) only*/
+    FuncDurationEst funcDurationEst;
     FuncGetErrorCode funcGetErrorCode;
     void * codec_state;
     WebRtc_UWord16 codec_fs;

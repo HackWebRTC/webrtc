@@ -123,6 +123,27 @@ WebRtc_Word16 WebRtcG711_DecodeU(void *state,
                                  WebRtc_Word16 *decoded,
                                  WebRtc_Word16 *speechType);
 
+
+/****************************************************************************
+ * WebRtcG711_DurationEst(...)
+ *
+ * This function estimates the duration of a G711 packet in samples.
+ *
+ * Input:
+ *      - state              : Dummy state to make this codec look more like
+ *                             other codecs
+ *      - payload            : Encoded data
+ *      - payloadLengthBytes : Bytes in encoded vector
+ *
+ * Return value              : The duration of the packet in samples, which is
+ *                             just payload_length_bytes, since G.711 uses one
+ *                             byte per sample.
+ */
+
+int WebRtcG711_DurationEst(void* state,
+                           const uint8_t* payload,
+                           int payload_length_bytes);
+
 /**********************************************************************
 * WebRtcG711_Version(...)
 *
