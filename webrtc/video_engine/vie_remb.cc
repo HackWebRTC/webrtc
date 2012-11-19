@@ -158,7 +158,8 @@ WebRtc_Word32 VieRemb::Process() {
     bitrate_ = 0;
     bitrate_update_time_ms_ = -1;
   }
-  if (bitrate_update_time_ms_ == -1 || ssrcs_.empty()) {
+  if (bitrate_update_time_ms_ == -1 || ssrcs_.empty() ||
+      receive_modules_.empty()) {
     list_crit_->Leave();
     return 0;
   }
@@ -176,12 +177,19 @@ WebRtc_Word32 VieRemb::Process() {
   if (last_send_bitrate_ < kRembMinimumBitrateKbps) {
     last_send_bitrate_ = kRembMinimumBitrateKbps;
   }
+  // Copy SSRCs to avoid race conditions.
+  int ssrcs_length = ssrcs_.size();
+  unsigned int* ssrcs = new unsigned int[ssrcs_length];
+  for (int i = 0; i < ssrcs_length; ++i) {
+    ssrcs[i] = ssrcs_[i];
+  }
   list_crit_->Leave();
 
   if (sender) {
     // TODO(holmer): Change RTP module API to take a vector pointer.
-    sender->SetREMBData(bitrate_, ssrcs_.size(), &ssrcs_[0]);
+    sender->SetREMBData(bitrate_, ssrcs_length, ssrcs);
   }
+  delete [] ssrcs;
   return 0;
 }
 
