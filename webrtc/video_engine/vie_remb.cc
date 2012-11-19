@@ -110,9 +110,11 @@ bool VieRemb::InUse() const {
     return true;
 }
 
-void VieRemb::OnReceiveBitrateChanged(unsigned int bitrate) {
+void VieRemb::OnReceiveBitrateChanged(std::vector<unsigned int>* ssrcs,
+                                      unsigned int bitrate) {
   WEBRTC_TRACE(kTraceStream, kTraceVideo, -1,
                "VieRemb::UpdateBitrateEstimate(bitrate: %u)", bitrate);
+  assert(ssrcs);
   CriticalSectionScoped cs(list_crit_.get());
   // If we already have an estimate, check if the new total estimate is below
   // kSendThresholdPercent of the previous estimate.
@@ -126,6 +128,8 @@ void VieRemb::OnReceiveBitrateChanged(unsigned int bitrate) {
     }
   }
   bitrate_ = bitrate;
+  ssrcs_.resize(ssrcs->size());
+  std::copy(ssrcs->begin(), ssrcs->end(), ssrcs_.begin());
   bitrate_update_time_ms_ = TickTime::MillisecondTimestamp();
 }
 
@@ -154,20 +158,9 @@ WebRtc_Word32 VieRemb::Process() {
     bitrate_ = 0;
     bitrate_update_time_ms_ = -1;
   }
-
-  if (bitrate_update_time_ms_ == -1 || receive_modules_.empty()) {
+  if (bitrate_update_time_ms_ == -1 || ssrcs_.empty()) {
     list_crit_->Leave();
     return 0;
-  }
-
-  // TODO(mflodman) Use std::vector and change RTP module API.
-  unsigned int* ssrcs = new unsigned int[receive_modules_.size()];
-
-  int idx = 0;
-  RtpModules::iterator rtp_it;
-  for (rtp_it = receive_modules_.begin(); rtp_it != receive_modules_.end();
-      ++rtp_it, ++idx) {
-    ssrcs[idx] = (*rtp_it)->RemoteSSRC();
   }
 
   // Send a REMB packet.
@@ -186,9 +179,9 @@ WebRtc_Word32 VieRemb::Process() {
   list_crit_->Leave();
 
   if (sender) {
-    sender->SetREMBData(bitrate_, receive_modules_.size(), ssrcs);
+    // TODO(holmer): Change RTP module API to take a vector pointer.
+    sender->SetREMBData(bitrate_, ssrcs_.size(), &ssrcs_[0]);
   }
-  delete [] ssrcs;
   return 0;
 }
 

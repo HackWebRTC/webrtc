@@ -53,13 +53,16 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
   // Removes all data for |ssrc|.
   void RemoveStream(unsigned int ssrc);
 
-  // Returns true if a valid estimate exists for a stream identified by |ssrc|
-  // and sets |bitrate_bps| to the estimated payload bitrate in bits per
-  // second.
-  bool LatestEstimate(unsigned int ssrc, unsigned int* bitrate_bps) const;
+  // Returns true if a valid estimate exists and sets |bitrate_bps| to the
+  // estimated payload bitrate in bits per second. |ssrcs| is the list of ssrcs
+  // currently being received and of which the bitrate estimate is based upon.
+  bool LatestEstimate(std::vector<unsigned int>* ssrcs,
+                      unsigned int* bitrate_bps) const;
 
  private:
   typedef std::map<unsigned int, OveruseDetector> SsrcOveruseDetectorMap;
+
+  void GetSsrcs(std::vector<unsigned int>* ssrcs) const;
 
   const OverUseDetectorOptions& options_;
   SsrcOveruseDetectorMap overuse_detectors_;

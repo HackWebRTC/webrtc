@@ -13,14 +13,16 @@
 
 #include <gmock/gmock.h>
 
+#include <vector>
+
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 
 namespace webrtc {
 
 class MockRemoteBitrateObserver : public RemoteBitrateObserver {
  public:
-  MOCK_METHOD1(OnReceiveBitrateChanged,
-      void(unsigned int bitrate));
+  MOCK_METHOD2(OnReceiveBitrateChanged,
+      void(std::vector<unsigned int>* ssrcs, unsigned int bitrate));
 };
 
 }  // namespace webrtc

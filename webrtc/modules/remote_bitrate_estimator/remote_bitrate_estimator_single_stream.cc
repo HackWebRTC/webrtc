@@ -66,7 +66,11 @@ void RemoteBitrateEstimatorSingleStream::UpdateEstimate(unsigned int ssrc,
   const RateControlRegion region = remote_rate_.Update(&input, time_now);
   unsigned int target_bitrate = remote_rate_.UpdateBandwidthEstimate(time_now);
   if (remote_rate_.ValidEstimate()) {
-    observer_->OnReceiveBitrateChanged(target_bitrate);
+    std::vector<unsigned int> ssrcs;
+    GetSsrcs(&ssrcs);
+    if (!ssrcs.empty()) {
+      observer_->OnReceiveBitrateChanged(&ssrcs, target_bitrate);
+    }
   }
   overuse_detector->SetRateControlRegion(region);
 }
@@ -83,20 +87,30 @@ void RemoteBitrateEstimatorSingleStream::RemoveStream(unsigned int ssrc) {
 }
 
 bool RemoteBitrateEstimatorSingleStream::LatestEstimate(
-    unsigned int ssrc, unsigned int* bitrate_bps) const {
+    std::vector<unsigned int>* ssrcs,
+    unsigned int* bitrate_bps) const {
   CriticalSectionScoped cs(crit_sect_.get());
-  assert(bitrate_bps != NULL);
+  assert(bitrate_bps);
   if (!remote_rate_.ValidEstimate()) {
     return false;
   }
-  // TODO(holmer): For now we're returning the estimate bandwidth per stream as
-  // it corresponds better to how the ViE API is designed. Will fix this when
-  // the API changes.
-  if (overuse_detectors_.size() > 0)
-    *bitrate_bps = remote_rate_.LatestEstimate() / overuse_detectors_.size();
-  else
+  GetSsrcs(ssrcs);
+  if (ssrcs->empty())
     *bitrate_bps = 0;
+  else
+    *bitrate_bps = remote_rate_.LatestEstimate();
   return true;
+}
+
+void RemoteBitrateEstimatorSingleStream::GetSsrcs(
+    std::vector<unsigned int>* ssrcs) const {
+  assert(ssrcs);
+  ssrcs->resize(overuse_detectors_.size());
+  int i = 0;
+  for (SsrcOveruseDetectorMap::const_iterator it = overuse_detectors_.begin();
+      it != overuse_detectors_.end(); ++it, ++i) {
+    (*ssrcs)[i] = it->first;
+  }
 }
 
 }  // namespace webrtc

@@ -230,8 +230,11 @@ WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
       remote_bitrate_->UpdateEstimate(_rtpReceiver.SSRC(), now);
       if (TMMBR()) {
         unsigned int target_bitrate = 0;
-        if (remote_bitrate_->LatestEstimate(_rtpReceiver.SSRC(),
-                                            &target_bitrate)) {
+        std::vector<unsigned int> ssrcs;
+        if (remote_bitrate_->LatestEstimate(&ssrcs, &target_bitrate)) {
+          if (!ssrcs.empty()) {
+            target_bitrate = target_bitrate / ssrcs.size();
+          }
           _rtcpSender.SetTargetBitrate(target_bitrate);
         }
       }
@@ -1936,9 +1939,12 @@ void ModuleRtpRtcpImpl::BitrateSent(WebRtc_UWord32* totalRate,
 int ModuleRtpRtcpImpl::EstimatedReceiveBandwidth(
     WebRtc_UWord32* available_bandwidth) const {
   if (remote_bitrate_) {
-    if (!remote_bitrate_->LatestEstimate(_rtpReceiver.SSRC(),
-                                         available_bandwidth)) {
+    std::vector<unsigned int> ssrcs;
+    if (!remote_bitrate_->LatestEstimate(&ssrcs, available_bandwidth)) {
       return -1;
+    }
+    if (!ssrcs.empty()) {
+      *available_bandwidth /= ssrcs.size();
     }
     return 0;
   }

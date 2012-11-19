@@ -14,6 +14,7 @@
 #define WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_REMOTE_BITRATE_ESTIMATOR_H_
 
 #include <map>
+#include <vector>
 
 #include "common_types.h"
 #include "typedefs.h"
@@ -26,7 +27,8 @@ class RemoteBitrateObserver {
  public:
   // Called when a receive channel group has a new bitrate estimate for the
   // incoming streams.
-  virtual void OnReceiveBitrateChanged(unsigned int bitrate) = 0;
+  virtual void OnReceiveBitrateChanged(std::vector<unsigned int>* ssrcs,
+                                       unsigned int bitrate) = 0;
 
   virtual ~RemoteBitrateObserver() {}
 };
@@ -70,8 +72,9 @@ class RemoteBitrateEstimator {
   virtual void RemoveStream(unsigned int ssrc) = 0;
 
   // Returns true if a valid estimate exists and sets |bitrate_bps| to the
-  // estimated payload bitrate in bits per second.
-  virtual bool LatestEstimate(unsigned int ssrc,
+  // estimated payload bitrate in bits per second. |ssrcs| is the list of ssrcs
+  // currently being received and of which the bitrate estimate is based upon.
+  virtual bool LatestEstimate(std::vector<unsigned int>* ssrcs,
                               unsigned int* bitrate_bps) const = 0;
 };
 

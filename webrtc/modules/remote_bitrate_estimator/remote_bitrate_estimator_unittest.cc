@@ -13,7 +13,7 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
-#include <list>
+#include <vector>
 
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/remote_bitrate_estimator/remote_bitrate_estimator_unittest_helper.h"
@@ -26,16 +26,19 @@ TEST_F(RemoteBitrateEstimatorTest, TestInitialBehavior) {
   unsigned int bitrate_bps = 0;
   int64_t time_now = 0;
   uint32_t timestamp = 0;
-  EXPECT_FALSE(bitrate_estimator_->LatestEstimate(kDefaultSsrc, &bitrate_bps));
+  std::vector<unsigned int> ssrcs;
+  EXPECT_FALSE(bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate_bps));
+  EXPECT_EQ(0u, ssrcs.size());
   bitrate_estimator_->UpdateEstimate(kDefaultSsrc, time_now);
-  EXPECT_FALSE(bitrate_estimator_->LatestEstimate(kDefaultSsrc, &bitrate_bps));
+  EXPECT_FALSE(bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate_bps));
   EXPECT_FALSE(bitrate_observer_->updated());
   bitrate_observer_->Reset();
   // Inserting a packet. Still no valid estimate. We need to wait 1 second.
   bitrate_estimator_->IncomingPacket(kDefaultSsrc, kMtu, time_now,
                                      timestamp);
   bitrate_estimator_->UpdateEstimate(kDefaultSsrc, time_now);
-  EXPECT_FALSE(bitrate_estimator_->LatestEstimate(kDefaultSsrc, &bitrate_bps));
+  EXPECT_FALSE(bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate_bps));
+  EXPECT_EQ(0u, ssrcs.size());
   EXPECT_FALSE(bitrate_observer_->updated());
   bitrate_observer_->Reset();
   // Waiting more than one second gives us a valid estimate.
@@ -46,7 +49,9 @@ TEST_F(RemoteBitrateEstimatorTest, TestInitialBehavior) {
                                      timestamp);
   time_now += 2;
   bitrate_estimator_->UpdateEstimate(kDefaultSsrc, time_now);
-  EXPECT_TRUE(bitrate_estimator_->LatestEstimate(kDefaultSsrc, &bitrate_bps));
+  EXPECT_TRUE(bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate_bps));
+  EXPECT_EQ(1u, ssrcs.size());
+  EXPECT_EQ(kDefaultSsrc, ssrcs.front());
   EXPECT_EQ(20607u, bitrate_bps);
   EXPECT_TRUE(bitrate_observer_->updated());
   bitrate_observer_->Reset();

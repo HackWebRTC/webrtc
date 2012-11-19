@@ -84,7 +84,10 @@ void RemoteBitrateEstimatorMultiStream::IncomingPacket(unsigned int ssrc,
                                                        uint32_t rtp_timestamp) {
   CriticalSectionScoped cs(crit_sect_.get());
   incoming_bitrate_.Update(payload_size, arrival_time);
-  StreamMap::iterator stream_it = streams_.find(ssrc);
+  // Add this stream to the map of streams if it doesn't already exist.
+  std::pair<StreamMap::iterator, bool> stream_insert_result =
+      streams_.insert(std::make_pair(ssrc, synchronization::RtcpList()));
+  synchronization::RtcpList* rtcp_list = &stream_insert_result.first->second;
   if (initial_ssrc_ == 0) {
     initial_ssrc_ = ssrc;
   }
@@ -94,15 +97,14 @@ void RemoteBitrateEstimatorMultiStream::IncomingPacket(unsigned int ssrc,
       // mode.
       return;
     }
-  } else if (stream_it == streams_.end() || stream_it->second.size() < 2) {
+  } else if (rtcp_list->size() < 2) {
     // We can't use this stream until we have received two RTCP SR reports.
     return;
   }
   const BandwidthUsage prior_state = overuse_detector_.State();
   int64_t timestamp_in_ms = -1;
   if (multi_stream_) {
-    synchronization::RtpToNtpMs(rtp_timestamp, stream_it->second,
-                                &timestamp_in_ms);
+    synchronization::RtpToNtpMs(rtp_timestamp, *rtcp_list, &timestamp_in_ms);
   }
   overuse_detector_.Update(payload_size, timestamp_in_ms, rtp_timestamp,
                            arrival_time);
@@ -122,7 +124,11 @@ void RemoteBitrateEstimatorMultiStream::UpdateEstimate(unsigned int ssrc,
   const RateControlRegion region = remote_rate_.Update(&input, time_now);
   unsigned int target_bitrate = remote_rate_.UpdateBandwidthEstimate(time_now);
   if (remote_rate_.ValidEstimate()) {
-    observer_->OnReceiveBitrateChanged(target_bitrate);
+    std::vector<unsigned int> ssrcs;
+    GetSsrcs(&ssrcs);
+    if (!ssrcs.empty()) {
+      observer_->OnReceiveBitrateChanged(&ssrcs, target_bitrate);
+    }
   }
   overuse_detector_.SetRateControlRegion(region);
 }
@@ -138,21 +144,30 @@ void RemoteBitrateEstimatorMultiStream::RemoveStream(unsigned int ssrc) {
 }
 
 bool RemoteBitrateEstimatorMultiStream::LatestEstimate(
-    unsigned int ssrc,
+    std::vector<unsigned int>* ssrcs,
     unsigned int* bitrate_bps) const {
   CriticalSectionScoped cs(crit_sect_.get());
-  assert(bitrate_bps != NULL);
+  assert(bitrate_bps);
   if (!remote_rate_.ValidEstimate()) {
     return false;
   }
-  // TODO(holmer): For now we're returning the estimate bandwidth per stream as
-  // it corresponds better to how the ViE API is designed. Will fix this when
-  // the API changes.
-  if (streams_.size() > 0)
-    *bitrate_bps = remote_rate_.LatestEstimate() / streams_.size();
+  GetSsrcs(ssrcs);
+  if (ssrcs->empty())
+    *bitrate_bps = 0;
   else
     *bitrate_bps = remote_rate_.LatestEstimate();
   return true;
+}
+
+void RemoteBitrateEstimatorMultiStream::GetSsrcs(
+    std::vector<unsigned int>* ssrcs) const {
+  assert(ssrcs);
+  ssrcs->resize(streams_.size());
+  int i = 0;
+  for (StreamMap::const_iterator it = streams_.begin(); it != streams_.end();
+      ++it, ++i) {
+    (*ssrcs)[i] = it->first;
+  }
 }
 
 }  // namespace webrtc

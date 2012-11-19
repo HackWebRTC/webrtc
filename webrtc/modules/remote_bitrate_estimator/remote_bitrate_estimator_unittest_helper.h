@@ -31,7 +31,8 @@ class TestBitrateObserver : public RemoteBitrateObserver {
  public:
   TestBitrateObserver() : updated_(false), latest_bitrate_(0) {}
 
-  void OnReceiveBitrateChanged(unsigned int bitrate) {
+  void OnReceiveBitrateChanged(std::vector<unsigned int>* ssrcs,
+                               unsigned int bitrate) {
     latest_bitrate_ = bitrate;
     updated_ = true;
   }
@@ -182,7 +183,7 @@ class RemoteBitrateEstimatorTest : public ::testing::Test {
                               unsigned int min_bitrate,
                               unsigned int max_bitrate);
 
-  static const unsigned int kDefaultSsrc = 1;
+  enum { kDefaultSsrc = 1 };
 
   double time_now_;  // Current time at the receiver.
   OverUseDetectorOptions over_use_detector_options_;
