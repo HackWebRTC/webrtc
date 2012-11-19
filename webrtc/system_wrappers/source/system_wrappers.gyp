@@ -192,11 +192,21 @@
           'target_name': 'cpu_features_android',
           'type': '<(library)',
           'sources': [
-            'android/cpu-features.c',
-            'android/cpu-features.h',
             # TODO(leozwang): Ideally we want to audomatically exclude .c files
             # as with .cc files, gyp currently only excludes .cc files.
             'cpu_features_android.c',
+          ],
+          'conditions': [
+            ['build_with_chromium==1', {
+              'dependencies': [
+                '<(android_ndk_root)/android_tools_ndk.gyp:cpu_features',
+              ],
+            }, {
+              'sources': [
+                'android/cpu-features.c',
+                'android/cpu-features.h',
+              ],
+            }],
           ],
         },
       ],
