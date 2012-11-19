@@ -93,6 +93,7 @@
 
         'enable_tracing%': 0,
 
+        'enable_android_opensl%': 0,
       }, {  # Settings for the standalone (not-in-Chromium) build.
         'include_pulse_audio%': 1,
         'include_internal_audio_device%': 1,
