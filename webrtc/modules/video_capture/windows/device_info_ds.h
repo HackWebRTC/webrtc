@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_WINDOWS_DEVICE_INFO_WINDOWS_H_
-#define WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_WINDOWS_DEVICE_INFO_WINDOWS_H_
+#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_WINDOWS_DEVICE_INFO_DS_H_
+#define WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_WINDOWS_DEVICE_INFO_DS_H_
 
 #include "../video_capture_impl.h"
 #include "../device_info_impl.h"
@@ -33,11 +33,14 @@ struct VideoCaptureCapabilityWindows: public VideoCaptureCapability
     }
 
 };
-class DeviceInfoWindows: public DeviceInfoImpl
+class DeviceInfoDS: public DeviceInfoImpl
 {
 public:
-    DeviceInfoWindows(const WebRtc_Word32 id);
-    virtual ~DeviceInfoWindows();
+    // Factory function.
+    static DeviceInfoDS* Create(const WebRtc_Word32 id);
+
+    DeviceInfoDS(const WebRtc_Word32 id);
+    virtual ~DeviceInfoDS();
 
     WebRtc_Word32 Init();
     virtual WebRtc_UWord32 NumberOfDevices();
@@ -81,8 +84,8 @@ public:
     static void GetProductId(const char* devicePath,
                              char* productUniqueIdUTF8,
                              WebRtc_UWord32 productUniqueIdUTF8Length);
-protected:
 
+protected:
     WebRtc_Word32 GetDeviceInfo(WebRtc_UWord32 deviceNumber,
                                 char* deviceNameUTF8,
                                 WebRtc_UWord32 deviceNameLength,
@@ -102,4 +105,4 @@ private:
 };
 } // namespace videocapturemodule
 } // namespace webrtc
-#endif // WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_WINDOWS_DEVICE_INFO_WINDOWS_H_
+#endif // WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_WINDOWS_DEVICE_INFO_DS_H_

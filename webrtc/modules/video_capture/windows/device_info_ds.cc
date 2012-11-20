@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "device_info_windows.h"
+#include "device_info_ds.h"
 
 #include "../video_capture_config.h"
-#include "help_functions_windows.h"
-#include "capture_delay_values_windows.h"
+#include "../video_capture_delay.h"
+#include "help_functions_ds.h"
 #include "ref_count.h"
 #include "trace.h"
 
@@ -23,12 +23,29 @@ namespace webrtc
 {
 namespace videocapturemodule
 {
-VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo(
-                                                        const WebRtc_Word32 id)
-{
-    videocapturemodule::DeviceInfoWindows* dsInfo =
-                        new videocapturemodule::DeviceInfoWindows(id);
+const WebRtc_Word32 NoWindowsCaptureDelays = 1;
+const DelayValues WindowsCaptureDelays[NoWindowsCaptureDelays] = {
+  "Microsoft LifeCam Cinema",
+  "usb#vid_045e&pid_075d",
+  {
+    {640,480,125},
+    {640,360,117},
+    {424,240,111},
+    {352,288,111},
+    {320,240,116},
+    {176,144,101},
+    {160,120,109},
+    {1280,720,166},
+    {960,544,126},
+    {800,448,120},
+    {800,600,127}
+  },
+};
 
+// static
+DeviceInfoDS* DeviceInfoDS::Create(const WebRtc_Word32 id)
+{
+    DeviceInfoDS* dsInfo = new DeviceInfoDS(id);
     if (!dsInfo || dsInfo->Init() != 0)
     {
         delete dsInfo;
@@ -37,7 +54,7 @@ VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo(
     return dsInfo;
 }
 
-DeviceInfoWindows::DeviceInfoWindows(const WebRtc_Word32 id)
+DeviceInfoDS::DeviceInfoDS(const WebRtc_Word32 id)
     : DeviceInfoImpl(id), _dsDevEnum(NULL), _dsMonikerDevEnum(NULL),
       _CoUninitializeIsRequired(true)
 {
@@ -81,7 +98,7 @@ DeviceInfoWindows::DeviceInfoWindows(const WebRtc_Word32 id)
     }
 }
 
-DeviceInfoWindows::~DeviceInfoWindows()
+DeviceInfoDS::~DeviceInfoDS()
 {
     RELEASE_AND_CLEAR(_dsMonikerDevEnum);
     RELEASE_AND_CLEAR(_dsDevEnum);
@@ -91,7 +108,7 @@ DeviceInfoWindows::~DeviceInfoWindows()
     }
 }
 
-WebRtc_Word32 DeviceInfoWindows::Init()
+WebRtc_Word32 DeviceInfoDS::Init()
 {
     HRESULT hr = CoCreateInstance(CLSID_SystemDeviceEnum, NULL, CLSCTX_INPROC,
                                   IID_ICreateDevEnum, (void **) &_dsDevEnum);
@@ -103,13 +120,13 @@ WebRtc_Word32 DeviceInfoWindows::Init()
     }
     return 0;
 }
-WebRtc_UWord32 DeviceInfoWindows::NumberOfDevices()
+WebRtc_UWord32 DeviceInfoDS::NumberOfDevices()
 {
     ReadLockScoped cs(_apiLock);
     return GetDeviceInfo(0, 0, 0, 0, 0, 0, 0);
-
 }
-WebRtc_Word32 DeviceInfoWindows::GetDeviceName(
+
+WebRtc_Word32 DeviceInfoDS::GetDeviceName(
                                        WebRtc_UWord32 deviceNumber,
                                        char* deviceNameUTF8,
                                        WebRtc_UWord32 deviceNameLength,
@@ -128,7 +145,7 @@ WebRtc_Word32 DeviceInfoWindows::GetDeviceName(
     return result > (WebRtc_Word32) deviceNumber ? 0 : -1;
 }
 
-WebRtc_Word32 DeviceInfoWindows::GetDeviceInfo(
+WebRtc_Word32 DeviceInfoDS::GetDeviceInfo(
                                        WebRtc_UWord32 deviceNumber,
                                        char* deviceNameUTF8,
                                        WebRtc_UWord32 deviceNameLength,
@@ -255,7 +272,7 @@ WebRtc_Word32 DeviceInfoWindows::GetDeviceInfo(
     return index;
 }
 
-IBaseFilter * DeviceInfoWindows::GetDeviceFilter(
+IBaseFilter * DeviceInfoDS::GetDeviceFilter(
                                      const char* deviceUniqueIdUTF8,
                                      char* productUniqueIdUTF8,
                                      WebRtc_UWord32 productUniqueIdUTF8Length)
@@ -349,7 +366,7 @@ IBaseFilter * DeviceInfoWindows::GetDeviceFilter(
     return captureFilter;
 }
 
-WebRtc_Word32 DeviceInfoWindows::GetWindowsCapability(
+WebRtc_Word32 DeviceInfoDS::GetWindowsCapability(
                               const WebRtc_Word32 capabilityIndex,
                               VideoCaptureCapabilityWindows& windowsCapability)
 
@@ -369,7 +386,7 @@ WebRtc_Word32 DeviceInfoWindows::GetWindowsCapability(
     return 0;
 }
 
-WebRtc_Word32 DeviceInfoWindows::CreateCapabilityMap(
+WebRtc_Word32 DeviceInfoDS::CreateCapabilityMap(
                                          const char* deviceUniqueIdUTF8)
 
 {
@@ -396,13 +413,13 @@ WebRtc_Word32 DeviceInfoWindows::CreateCapabilityMap(
 
 
     char productId[kVideoCaptureProductIdLength];
-    IBaseFilter* captureDevice = DeviceInfoWindows::GetDeviceFilter(
+    IBaseFilter* captureDevice = DeviceInfoDS::GetDeviceFilter(
                                                deviceUniqueIdUTF8,
                                                productId,
                                                kVideoCaptureProductIdLength);
     if (!captureDevice)
         return -1;
-    IPin* outputCapturePin = GetOutputPin(captureDevice);
+    IPin* outputCapturePin = GetOutputPin(captureDevice, GUID_NULL);
     if (!outputCapturePin)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
@@ -689,7 +706,7 @@ WebRtc_Word32 DeviceInfoWindows::CreateCapabilityMap(
  "\\?\usb#vid_0408&pid_2010&mi_00#7&258e7aaf&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global"
  "\\?\avc#sony&dv-vcr&camcorder&dv#65b2d50301460008#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global"
  */
-void DeviceInfoWindows::GetProductId(const char* devicePath,
+void DeviceInfoDS::GetProductId(const char* devicePath,
                                       char* productUniqueIdUTF8,
                                       WebRtc_UWord32 productUniqueIdUTF8Length)
 {
@@ -729,7 +746,7 @@ void DeviceInfoWindows::GetProductId(const char* devicePath,
     }
 }
 
-WebRtc_Word32 DeviceInfoWindows::DisplayCaptureSettingsDialogBox(
+WebRtc_Word32 DeviceInfoDS::DisplayCaptureSettingsDialogBox(
                                          const char* deviceUniqueIdUTF8,
                                          const char* dialogTitleUTF8,
                                          void* parentWindow,

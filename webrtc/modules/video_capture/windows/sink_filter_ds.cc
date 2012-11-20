@@ -8,15 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sink_filter_windows.h"
+#include "sink_filter_ds.h"
 
 #include "trace.h"
-#include "help_functions_windows.h"
+#include "help_functions_ds.h"
 
 #include <Dvdmedia.h> // VIDEOINFOHEADER2
 #include <initguid.h>
 
 #define DELETE_RESET(p) { delete (p) ; (p) = NULL ;}
+
+DEFINE_GUID(CLSID_SINKFILTER, 0x88cdbbdc, 0xa73b, 0x4afa, 0xac, 0xbf, 0x15, 0xd5,
+            0xe2, 0xce, 0x12, 0xc3);
 
 namespace webrtc
 {
@@ -30,9 +33,6 @@ typedef struct tagTHREADNAME_INFO
    DWORD dwThreadID;    // thread ID (-1=caller thread)
    DWORD dwFlags;       // reserved for future use, must be zero
 } THREADNAME_INFO;
-
-DEFINE_GUID(CLSID_SINKFILTER, 0x88cdbbdc, 0xa73b, 0x4afa, 0xac, 0xbf, 0x15, 0xd5,
-            0xe2, 0xce, 0x12, 0xc3);
 
 CaptureInputPin::CaptureInputPin (WebRtc_Word32 moduleId,
                             IN TCHAR * szName,
