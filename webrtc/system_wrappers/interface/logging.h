@@ -12,6 +12,13 @@
 // It is a thin wrapper around WEBRTC_TRACE, maintaining the libjingle log
 // semantics to ease a transition to that format.
 
+// NOTE: LS_INFO maps to a new trace level which should be reserved for
+// infrequent, non-verbose logs. The other levels below kTraceWarning have been
+// rendered essentially useless due to their verbosity. Carefully consider the
+// impact of adding a new LS_INFO log. If it will be logged at anything
+// approaching a frame or packet frequency, use LS_VERBOSE if necessary, or
+// preferably, do not log at all.
+
 //   LOG(...) an ostream target that can be used to send formatted
 // output to a variety of logging targets, such as debugger console, stderr,
 // file, or any StreamInterface.
@@ -38,7 +45,7 @@
 //
 // LOG_FERR is a shortcut for logging a failed function call. For example:
 //   if (!Foo(bar)) {
-//     LOG_FERR1(WARNING, Foo, bar);
+//     LOG_FERR1(LS_WARNING, Foo, bar);
 //   }
 
 #ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_LOGGING_H_
@@ -60,10 +67,9 @@ namespace webrtc {
 //   in debug builds.
 //  LS_WARNING: Something that may warrant investigation.
 //  LS_ERROR: Something that should not have occurred.
-enum LoggingSeverity { LS_SENSITIVE, LS_VERBOSE, LS_INFO, LS_WARNING, LS_ERROR,
-                       INFO = LS_INFO,
-                       WARNING = LS_WARNING,
-                       LERROR = LS_ERROR };
+enum LoggingSeverity {
+  LS_SENSITIVE, LS_VERBOSE, LS_INFO, LS_WARNING, LS_ERROR
+};
 
 class LogMessage {
  public:
@@ -144,7 +150,7 @@ class LogMessageVoidify {
 
 #endif  // !LOGGING
 
-#define LOG_API0() LOG_F(LS_INFO)
+#define LOG_API0() LOG_F(LS_VERBOSE)
 #define LOG_API1(v1) LOG_API0() << #v1 << "=" << v1
 #define LOG_API2(v1, v2) LOG_API1(v1) \
     << ", " << #v2 << "=" << v2

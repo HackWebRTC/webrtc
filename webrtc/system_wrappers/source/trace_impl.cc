@@ -147,8 +147,14 @@ WebRtc_Word32 TraceImpl::AddThreadId(char* traceMessage) const {
 
 WebRtc_Word32 TraceImpl::AddLevel(char* szMessage, const TraceLevel level) const
 {
+    const int kMessageLength = 12;
     switch (level)
     {
+        case kTraceTerseInfo:
+            // Add the appropriate amount of whitespace.
+            memset(szMessage, ' ', kMessageLength);
+            szMessage[kMessageLength] = '\0';
+            break;
         case kTraceStateInfo:
             sprintf (szMessage, "STATEINFO ; ");
             break;
@@ -187,7 +193,7 @@ WebRtc_Word32 TraceImpl::AddLevel(char* szMessage, const TraceLevel level) const
             return 0;
     }
     // All messages are 12 characters.
-    return 12;
+    return kMessageLength;
 }
 
 WebRtc_Word32 TraceImpl::AddModuleAndId(char* traceMessage,
@@ -210,6 +216,7 @@ WebRtc_Word32 TraceImpl::AddModuleAndId(char* traceMessage,
             case kTraceUndefined:
                 // Add the appropriate amount of whitespace.
                 memset(traceMessage, ' ', kMessageLength);
+                traceMessage[kMessageLength] = '\0';
                 break;
             case kTraceVoice:
                 sprintf(traceMessage, "       VOICE:%5ld %5ld;", idEngine,
@@ -287,6 +294,7 @@ WebRtc_Word32 TraceImpl::AddModuleAndId(char* traceMessage,
             case kTraceUndefined:
                 // Add the appropriate amount of whitespace.
                 memset(traceMessage, ' ', kMessageLength);
+                traceMessage[kMessageLength] = '\0';
                 break;
             case kTraceVoice:
                 sprintf (traceMessage, "       VOICE:%11ld;", idl);

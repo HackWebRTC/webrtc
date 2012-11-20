@@ -72,7 +72,7 @@ TEST_F(LoggingTest, LogStream) {
     level_ = kTraceWarning;
     std::string msg = "Important message";
     expected_log_ << "(logging_unittest.cc:" << __LINE__ + 1 << "): " << msg;
-    LOG(WARNING) << msg;
+    LOG(LS_WARNING) << msg;
     cv_->SleepCS(*crit_.get());
   }
 }

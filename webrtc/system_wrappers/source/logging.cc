@@ -22,8 +22,8 @@ static TraceLevel WebRtcSeverity(LoggingSeverity sev) {
   switch (sev) {
     // TODO(andrew): SENSITIVE doesn't have a corresponding webrtc level.
     case LS_SENSITIVE:  return kTraceInfo;
-    case LS_VERBOSE:    return kTraceDebug;
-    case LS_INFO:       return kTraceInfo;
+    case LS_VERBOSE:    return kTraceInfo;
+    case LS_INFO:       return kTraceTerseInfo;
     case LS_WARNING:    return kTraceWarning;
     case LS_ERROR:      return kTraceError;
     default:            return kTraceNone;

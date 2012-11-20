@@ -99,6 +99,9 @@ enum TraceLevel
     kTraceDebug              = 0x0800,  // debug
     kTraceInfo               = 0x1000,  // debug info
 
+    // Non-verbose level used by LS_INFO of logging.h. Do not use directly.
+    kTraceTerseInfo          = 0x2000,
+
     kTraceAll                = 0xffff
 };
 
