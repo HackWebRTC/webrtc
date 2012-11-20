@@ -266,6 +266,35 @@ TEST_F(TestLibYuv, ConvertTest) {
   ASSERT_EQ(0, fclose(output_file));
 }
 
+TEST_F(TestLibYuv, ConvertAlignedFrame) {
+  // Reading YUV frame - testing on the first frame of the foreman sequence
+  std::string output_file_name = webrtc::test::OutputPath() +
+                                 "LibYuvTest_conversion.yuv";
+  FILE*  output_file = fopen(output_file_name.c_str(), "wb");
+  ASSERT_TRUE(output_file != NULL);
+
+  double psnr = 0.0;
+
+  I420VideoFrame res_i420_frame;
+  int stride_y = 0;
+  int stride_uv = 0;
+  Calc16ByteAlignedStride(width_, &stride_y, &stride_uv);
+  EXPECT_EQ(0,res_i420_frame.CreateEmptyFrame(width_, height_,
+                                              stride_y, stride_uv, stride_uv));
+  scoped_array<uint8_t> out_i420_buffer(new uint8_t[frame_length_]);
+  EXPECT_EQ(0, ConvertFromI420(orig_frame_, kI420, 0,
+                               out_i420_buffer.get()));
+  EXPECT_EQ(0, ConvertToI420(kI420, out_i420_buffer.get(), 0, 0,
+                             width_, height_,
+                             0, kRotateNone, &res_i420_frame));
+
+  if (PrintI420VideoFrame(res_i420_frame, output_file) < 0) {
+    return;
+  }
+  psnr = I420PSNR(&orig_frame_, &res_i420_frame);
+  EXPECT_EQ(48.0, psnr);
+}
+
 
 TEST_F(TestLibYuv, RotateTest) {
   // Use ConvertToI420 for multiple roatations - see that nothing breaks, all
