@@ -9,33 +9,28 @@
  */
 
 #include "ref_count.h"
-#include "video_capture_ds.h"
-#include "video_capture_mf.h"
+#include "video_capture_windows.h"
 
-namespace webrtc {
-namespace videocapturemodule {
+namespace webrtc
+{
+namespace videocapturemodule
+{
+VideoCaptureModule* VideoCaptureImpl::Create(
+    const WebRtc_Word32 id,
+    const char* deviceUniqueIdUTF8)
+{
+    if (deviceUniqueIdUTF8 == NULL)
+        return NULL;
 
-// static
-VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo(
-    const WebRtc_Word32 id) {
-  // TODO(tommi): Use the Media Foundation version on Vista and up.
-  return DeviceInfoDS::Create(id);
+    RefCountImpl<videocapturemodule::VideoCaptureDS>* newCaptureModule =
+        new RefCountImpl<videocapturemodule::VideoCaptureDS>(id);
+
+    if (newCaptureModule->Init(id, deviceUniqueIdUTF8) != 0)
+    {
+        delete newCaptureModule;
+        newCaptureModule = NULL;
+    }
+    return newCaptureModule;
 }
-
-VideoCaptureModule* VideoCaptureImpl::Create(const WebRtc_Word32 id,
-                                             const char* device_id) {
-  if (device_id == NULL)
-    return NULL;
-
-  // TODO(tommi): Use Media Foundation implementation for Vista and up.
-  RefCountImpl<VideoCaptureDS>* capture = new RefCountImpl<VideoCaptureDS>(id);
-  if (capture->Init(id, device_id) != 0) {
-    delete capture;
-    capture = NULL;
-  }
-
-  return capture;
-}
-
-}  // namespace videocapturemodule
-}  // namespace webrtc
+} //namespace videocapturemodule
+} //namespace webrtc

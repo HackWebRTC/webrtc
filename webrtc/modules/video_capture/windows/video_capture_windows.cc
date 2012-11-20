@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_capture_ds.h"
+#include "video_capture_windows.h"
 
 #include "../video_capture_config.h"
 #include "critical_section_wrapper.h"
-#include "help_functions_ds.h"
-#include "sink_filter_ds.h"
+#include "help_functions_windows.h"
+#include "sink_filter_windows.h"
 #include "trace.h"
 
 #include <Dvdmedia.h> // VIDEOINFOHEADER2
@@ -375,7 +375,7 @@ HRESULT VideoCaptureDS::ConnectDVCamera()
                          "Failed to get input pin from DV decoder");
             return -1;
         }
-        _outputDvPin = GetOutputPin(_dvFilter, GUID_NULL);
+        _outputDvPin = GetOutputPin(_dvFilter);
         if (_outputDvPin == NULL)
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
