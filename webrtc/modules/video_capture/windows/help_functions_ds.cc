@@ -8,7 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "help_functions_windows.h"
+#include <initguid.h>  // Must come before the help_functions_ds.h include so
+                       // that DEFINE_GUID() entries will be defined in this
+                       // object file.
+
+#include "help_functions_ds.h"
+
+#include <cguid.h>
 
 namespace webrtc
 {
