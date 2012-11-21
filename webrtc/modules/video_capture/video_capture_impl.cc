@@ -282,8 +282,8 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(
             return -1;
         }
 
-        int stride_y = 0;
-        int stride_uv = 0;
+        int stride_y = width;
+        int stride_uv = (width + 1) / 2;
         int target_width = width;
         int target_height = height;
         // Rotating resolution when for 90/270 degree rotations.
@@ -291,7 +291,8 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(
           target_width = abs(height);
           target_height = width;
         }
-        Calc16ByteAlignedStride(target_width, &stride_y, &stride_uv);
+        // TODO(mikhal): Update correct aligned stride values.
+        //Calc16ByteAlignedStride(target_width, &stride_y, &stride_uv);
         // Setting absolute height (in case it was negative).
         // In Windows, the image starts bottom left, instead of top left.
         // Setting a negative source height, inverts the image (within LibYuv).
