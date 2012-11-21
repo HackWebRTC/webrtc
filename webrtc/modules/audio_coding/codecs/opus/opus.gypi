@@ -28,9 +28,11 @@
         'opus_interface.c',
       ],
     },
-    {
-      'conditions': [
-        ['include_tests==1', {
+  ],
+  'conditions': [
+    ['include_tests==1', {
+      'targets': [
+        {
           'target_name': 'opus_demo',
           'type': 'executable',
           'dependencies': [
@@ -50,9 +52,9 @@
             '<(DEPTH)/third_party/opus/src/celt',
             '<(DEPTH)/third_party/opus/src/include',
             '<(DEPTH)/third_party/opus/src/silk',
-          ]
-        }],
+          ],
+        },
       ],
-    },
+    }],
   ],
 }
