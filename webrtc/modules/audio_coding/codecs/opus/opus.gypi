@@ -28,5 +28,31 @@
         'opus_interface.c',
       ],
     },
+    {
+      'conditions': [
+        ['include_tests==1', {
+          'target_name': 'opus_demo',
+          'type': 'executable',
+          'dependencies': [
+            '<(DEPTH)/third_party/opus/opus.gyp:opus'
+          ],
+          'conditions': [
+            ['OS == "win"', {
+              'defines': [
+                'inline=__inline',
+              ],
+            }],
+          ],
+          'sources': [
+            '<(DEPTH)/third_party/opus/src/src/opus_demo.c',
+          ],
+          'include_dirs': [
+            '<(DEPTH)/third_party/opus/src/celt',
+            '<(DEPTH)/third_party/opus/src/include',
+            '<(DEPTH)/third_party/opus/src/silk',
+          ]
+        }],
+      ],
+    },
   ],
 }
