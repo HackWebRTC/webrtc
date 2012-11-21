@@ -346,7 +346,7 @@ int VP8EncoderImpl::Encode(const I420VideoFrame& input_image,
   // Check for change in frame size.
   if (input_image.width() != codec_.width ||
       input_image.height() != codec_.height) {
-    int ret = UpdateCodecFrameSize(input_image.width(), input_image.height());
+    int ret = UpdateCodecFrameSize(input_image);
     if (ret < 0) {
       return ret;
     }
@@ -356,6 +356,10 @@ int VP8EncoderImpl::Encode(const I420VideoFrame& input_image,
   raw_->planes[PLANE_Y] = const_cast<uint8_t*>(input_image.buffer(kYPlane));
   raw_->planes[PLANE_U] = const_cast<uint8_t*>(input_image.buffer(kUPlane));
   raw_->planes[PLANE_V] = const_cast<uint8_t*>(input_image.buffer(kVPlane));
+  // TODO(mikhal): Stride should be set in initialization.
+  raw_->stride[VPX_PLANE_Y] = input_image.stride(kYPlane);
+  raw_->stride[VPX_PLANE_U] = input_image.stride(kUPlane);
+  raw_->stride[VPX_PLANE_V] = input_image.stride(kVPlane);
 
   int flags = 0;
 #if WEBRTC_LIBVPX_VERSION >= 971
@@ -404,18 +408,17 @@ int VP8EncoderImpl::Encode(const I420VideoFrame& input_image,
 #endif
 }
 
-int VP8EncoderImpl::UpdateCodecFrameSize(WebRtc_UWord32 input_image_width,
-                                         WebRtc_UWord32 input_image_height) {
-  codec_.width = input_image_width;
-  codec_.height = input_image_height;
-
+int VP8EncoderImpl::UpdateCodecFrameSize(const I420VideoFrame& input_image) {
+  codec_.width = input_image.width();
+  codec_.height = input_image.height();
   raw_->w = codec_.width;
   raw_->h = codec_.height;
   raw_->d_w = codec_.width;
   raw_->d_h = codec_.height;
-  raw_->stride[VPX_PLANE_Y] = codec_.width;
-  raw_->stride[VPX_PLANE_U] = codec_.width / 2;
-  raw_->stride[VPX_PLANE_V] = codec_.width / 2;
+
+  raw_->stride[VPX_PLANE_Y] = input_image.stride(kYPlane);
+  raw_->stride[VPX_PLANE_U] = input_image.stride(kUPlane);
+  raw_->stride[VPX_PLANE_V] = input_image.stride(kVPlane);
   vpx_img_set_rect(raw_, 0, 0, codec_.width, codec_.height);
 
   // Update encoder context for new frame size.
@@ -871,9 +874,10 @@ int VP8DecoderImpl::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
     // Decoder OK and NULL image => No show frame
     return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
   }
+  int half_height = (img->d_h + 1) / 2;
   int size_y = img->stride[VPX_PLANE_Y] * img->d_h;
-  int size_u = img->stride[VPX_PLANE_U] * ((img->d_h + 1) / 2);
-  int size_v = img->stride[VPX_PLANE_V] * ((img->d_h + 1) / 2);
+  int size_u = img->stride[VPX_PLANE_U] * half_height;
+  int size_v = img->stride[VPX_PLANE_V] * half_height;
   // TODO(mikhal): This does  a copy - need to SwapBuffers.
   decoded_image_.CreateFrame(size_y, img->planes[VPX_PLANE_Y],
                              size_u, img->planes[VPX_PLANE_U],
