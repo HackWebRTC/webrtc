@@ -270,6 +270,12 @@ LOCAL_SRC_FILES := \
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
+LOCAL_MODULE := libvpx_arm_neon
+LOCAL_SRC_FILES := \
+    $(MY_LIBS_PATH)/third_party/libvpx/libvpx_arm_neon.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
 LOCAL_MODULE := libpaced_sender
 LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/webrtc/modules/libpaced_sender.a
@@ -339,6 +345,7 @@ LOCAL_STATIC_LIBRARIES := \
     libaudioproc_debug_proto \
     libprotobuf_lite \
     libvpx \
+    libvpx_arm_neon \
     libpaced_sender \
     $(MY_SUPPLEMENTAL_LIBS)
 
