@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "cpu_info.h"
+#include "system_wrappers/interface/cpu_info.h"
 
 #if defined(_WIN32)
 #include <Windows.h>
 #elif defined(WEBRTC_MAC)
-#include <sys/types.h>
 #include <sys/sysctl.h>
+#include <sys/types.h>
 #elif defined(WEBRTC_ANDROID)
 // Not implemented yet, might be possible to use Linux implementation
 #else // defined(WEBRTC_LINUX)
@@ -25,46 +25,42 @@
 
 namespace webrtc {
 
-WebRtc_UWord32 CpuInfo::_numberOfCores = 0;
+WebRtc_UWord32 CpuInfo::number_of_cores_ = 0;
 
-WebRtc_UWord32 CpuInfo::DetectNumberOfCores()
-{
-    if (!_numberOfCores)
-    {
+WebRtc_UWord32 CpuInfo::DetectNumberOfCores() {
+  if (!number_of_cores_) {
 #if defined(_WIN32)
-        SYSTEM_INFO si;
-        GetSystemInfo(&si);
-        _numberOfCores = static_cast<WebRtc_UWord32>(si.dwNumberOfProcessors);
-        WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
-                     "Available number of cores:%d", _numberOfCores);
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    number_of_cores_ = static_cast<WebRtc_UWord32>(si.dwNumberOfProcessors);
+    WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
+                 "Available number of cores:%d", number_of_cores_);
 
 #elif defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
-        _numberOfCores = get_nprocs();
-        WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
-                     "Available number of cores:%d", _numberOfCores);
+    number_of_cores_ = get_nprocs();
+    WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
+                 "Available number of cores:%d", number_of_cores_);
 
 #elif defined(WEBRTC_MAC)
-        int name[] = {CTL_HW, HW_AVAILCPU};
-        int ncpu;
-        size_t size = sizeof(ncpu);
-        if(0 == sysctl(name, 2, &ncpu, &size, NULL, 0))
-        {
-            _numberOfCores = static_cast<WebRtc_UWord32>(ncpu);
-            WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
-                         "Available number of cores:%d", _numberOfCores);
-    } else
-    {
-            WEBRTC_TRACE(kTraceError, kTraceUtility, -1,
-                         "Failed to get number of cores");
-            _numberOfCores = 1;
+    int name[] = {CTL_HW, HW_AVAILCPU};
+    int ncpu;
+    size_t size = sizeof(ncpu);
+    if (0 == sysctl(name, 2, &ncpu, &size, NULL, 0)) {
+      number_of_cores_ = static_cast<WebRtc_UWord32>(ncpu);
+      WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
+                   "Available number of cores:%d", number_of_cores_);
+    } else {
+      WEBRTC_TRACE(kTraceError, kTraceUtility, -1,
+                   "Failed to get number of cores");
+      number_of_cores_ = 1;
     }
 #else
-        WEBRTC_TRACE(kTraceWarning, kTraceUtility, -1,
-                     "No function to get number of cores");
-        _numberOfCores = 1;
+    WEBRTC_TRACE(kTraceWarning, kTraceUtility, -1,
+                 "No function to get number of cores");
+    number_of_cores_ = 1;
 #endif
-    }
-    return _numberOfCores;
+  }
+  return number_of_cores_;
 }
 
 } // namespace webrtc

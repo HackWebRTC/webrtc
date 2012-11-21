@@ -8,15 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <stddef.h>
+#include "system_wrappers/interface/cpu_wrapper.h"
 
-#include "cpu_wrapper.h"
+#include <stddef.h>
 
 namespace webrtc {
 
-CpuWrapper* CpuWrapper::CreateCpu()
-{
-    return NULL;
+CpuWrapper* CpuWrapper::CreateCpu() {
+  return NULL;
 }
 
 } // namespace webrtc

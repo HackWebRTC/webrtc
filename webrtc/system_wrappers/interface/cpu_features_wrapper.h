@@ -32,13 +32,15 @@ enum {
 };
 
 typedef int (*WebRtc_CPUInfo)(CPUFeature feature);
-// returns true if the CPU supports the feature.
+
+// Returns true if the CPU supports the feature.
 extern WebRtc_CPUInfo WebRtc_GetCPUInfo;
+
 // No CPU feature is available => straight C path.
 extern WebRtc_CPUInfo WebRtc_GetCPUInfoNoASM;
 
 // Return the features in an ARM device.
-// It detects the features in the hardware platform, and returns supported 
+// It detects the features in the hardware platform, and returns supported
 // values in the above enum definition as a bitmask.
 extern uint64_t WebRtc_GetCPUFeaturesARM(void);
 

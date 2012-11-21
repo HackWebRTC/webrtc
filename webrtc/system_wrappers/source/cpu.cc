@@ -8,29 +8,29 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "cpu_wrapper.h"
+#include "system_wrappers/interface/cpu_wrapper.h"
 
 #if defined(_WIN32)
-    #include "cpu_win.h"
+#include "cpu_win.h"
 #elif defined(WEBRTC_MAC)
-    #include "cpu_mac.h"
+#include "cpu_mac.h"
 #elif defined(WEBRTC_ANDROID)
-    // Not implemented yet, might be possible to use Linux implementation
+// Not implemented yet, might be possible to use Linux implementation
 #else // defined(WEBRTC_LINUX)
-    #include "cpu_linux.h"
+#include "cpu_linux.h"
 #endif
 
 namespace webrtc {
-CpuWrapper* CpuWrapper::CreateCpu()
-{
+CpuWrapper* CpuWrapper::CreateCpu() {
 #if defined(_WIN32)
-   return new CpuWindows();
+  return new CpuWindows();
 #elif defined(WEBRTC_MAC)
-    return new CpuWrapperMac();
+  return new CpuWrapperMac();
 #elif defined(WEBRTC_ANDROID)
-    return 0;
+  return 0;
 #else
-    return new CpuLinux();
+  return new CpuLinux();
 #endif
 }
-} // namespace webrtc
+
+}  // namespace webrtc

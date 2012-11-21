@@ -8,10 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "system_wrappers/interface/cpu_wrapper.h"
-
 #include "gtest/gtest.h"
 #include "system_wrappers/interface/cpu_info.h"
+#include "system_wrappers/interface/cpu_wrapper.h"
 #include "system_wrappers/interface/event_wrapper.h"
 #include "system_wrappers/interface/scoped_ptr.h"
 #include "system_wrappers/interface/trace.h"
@@ -33,7 +32,7 @@ using webrtc::Trace;
 TEST(CpuWrapperTest, MAYBE_Usage) {
   Trace::CreateTrace();
   std::string trace_file = webrtc::test::OutputPath() +
-      "cpu_wrapper_unittest.txt";
+                           "cpu_wrapper_unittest.txt";
   Trace::SetTraceFile(trace_file.c_str());
   Trace::SetLevelFilter(webrtc::kTraceAll);
   printf("Number of cores detected:%u\n", CpuInfo::DetectNumberOfCores());

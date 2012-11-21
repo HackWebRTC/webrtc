@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "cpu_linux.h"
+#include "system_wrappers/source/cpu_linux.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,187 +16,169 @@
 #include <unistd.h>
 
 namespace webrtc {
+
 CpuLinux::CpuLinux()
-    : m_oldBusyTime(0),
-      m_oldIdleTime(0),
-      m_oldBusyTimeMulti(NULL),
-      m_oldIdleTimeMulti(NULL),
-      m_idleArray(NULL),
-      m_busyArray(NULL),
-      m_resultArray(NULL),
-      m_numCores(0) {
-    const int result = GetNumCores();
-    if (result != -1) {
-      m_numCores = result;
-      m_oldBusyTimeMulti = new long long[m_numCores];
-      memset(m_oldBusyTimeMulti, 0, sizeof(long long) * m_numCores);
-      m_oldIdleTimeMulti = new long long[m_numCores];
-      memset(m_oldIdleTimeMulti, 0, sizeof(long long) * m_numCores);
-      m_idleArray = new long long[m_numCores];
-      memset(m_idleArray, 0, sizeof(long long) * m_numCores);
-      m_busyArray = new long long[m_numCores];
-      memset(m_busyArray, 0, sizeof(long long) * m_numCores);
-      m_resultArray = new WebRtc_UWord32[m_numCores];
+    : old_busy_time_(0),
+      old_idle_time_(0),
+      old_busy_time_multi_(NULL),
+      old_idle_time_multi_(NULL),
+      idle_array_(NULL),
+      busy_array_(NULL),
+      result_array_(NULL),
+      num_cores_(0) {
+  const int result = GetNumCores();
+  if (result != -1) {
+    num_cores_ = result;
+    old_busy_time_multi_ = new long long[num_cores_];
+    memset(old_busy_time_multi_, 0, sizeof(long long) * num_cores_);
+    old_idle_time_multi_ = new long long[num_cores_];
+    memset(old_idle_time_multi_, 0, sizeof(long long) * num_cores_);
+    idle_array_ = new long long[num_cores_];
+    memset(idle_array_, 0, sizeof(long long) * num_cores_);
+    busy_array_ = new long long[num_cores_];
+    memset(busy_array_, 0, sizeof(long long) * num_cores_);
+    result_array_ = new WebRtc_UWord32[num_cores_];
 
-      GetData(m_oldBusyTime, m_oldIdleTime, m_busyArray, m_idleArray);
-    }
+    GetData(old_busy_time_, old_idle_time_, busy_array_, idle_array_);
+  }
 }
 
-CpuLinux::~CpuLinux()
-{
-    delete [] m_oldBusyTimeMulti;
-    delete [] m_oldIdleTimeMulti;
-    delete [] m_idleArray;
-    delete [] m_busyArray;
-    delete [] m_resultArray;
+CpuLinux::~CpuLinux() {
+  delete [] old_busy_time_multi_;
+  delete [] old_idle_time_multi_;
+  delete [] idle_array_;
+  delete [] busy_array_;
+  delete [] result_array_;
 }
 
-WebRtc_Word32 CpuLinux::CpuUsage()
-{
-    WebRtc_UWord32 dummy = 0;
-    WebRtc_UWord32* dummyArray = NULL;
-    return CpuUsageMultiCore(dummy, dummyArray);
+WebRtc_Word32 CpuLinux::CpuUsage() {
+  WebRtc_UWord32 dummy = 0;
+  WebRtc_UWord32* dummy_array = NULL;
+  return CpuUsageMultiCore(dummy, dummy_array);
 }
 
-WebRtc_Word32 CpuLinux::CpuUsageMultiCore(WebRtc_UWord32& numCores,
-                                          WebRtc_UWord32*& coreArray)
-{
-    coreArray = m_resultArray;
-    numCores = m_numCores;
-    long long busy = 0;
-    long long idle = 0;
-    if (GetData(busy, idle, m_busyArray, m_idleArray) != 0)
-        return -1;
+WebRtc_Word32 CpuLinux::CpuUsageMultiCore(WebRtc_UWord32& num_cores,
+                                          WebRtc_UWord32*& core_array) {
+  core_array = result_array_;
+  num_cores = num_cores_;
+  long long busy = 0;
+  long long idle = 0;
+  if (GetData(busy, idle, busy_array_, idle_array_) != 0)
+    return -1;
 
-    long long deltaBusy = busy - m_oldBusyTime;
-    long long deltaIdle = idle - m_oldIdleTime;
-    m_oldBusyTime = busy;
-    m_oldIdleTime = idle;
+  long long delta_busy = busy - old_busy_time_;
+  long long delta_idle = idle - old_idle_time_;
+  old_busy_time_ = busy;
+  old_idle_time_ = idle;
 
-    int retVal = -1;
-    if (deltaBusy + deltaIdle == 0)
-    {
-        retVal = 0;
-    }
-    else
-    {
-        retVal = (int)(100 * (deltaBusy) / (deltaBusy + deltaIdle));
-    }
+  int ret_val = -1;
+  if (delta_busy + delta_idle == 0) {
+    ret_val = 0;
+  } else {
+    ret_val = (int)(100 * (delta_busy) / (delta_busy + delta_idle));
+  }
 
-    if (coreArray == NULL)
-    {
-      return retVal;
-    }
+  if (core_array == NULL) {
+    return ret_val;
+  }
 
-    for (WebRtc_UWord32 i = 0; i < m_numCores; i++)
-    {
-        deltaBusy = m_busyArray[i] - m_oldBusyTimeMulti[i];
-        deltaIdle = m_idleArray[i] - m_oldIdleTimeMulti[i];
-        m_oldBusyTimeMulti[i] = m_busyArray[i];
-        m_oldIdleTimeMulti[i] = m_idleArray[i];
-        if(deltaBusy + deltaIdle == 0)
-        {
-            coreArray[i] = 0;
-        }
-        else
-        {
-            coreArray[i] = (int)(100 * (deltaBusy) / (deltaBusy+deltaIdle));
-        }
+  for (WebRtc_UWord32 i = 0; i < num_cores_; ++i) {
+    delta_busy = busy_array_[i] - old_busy_time_multi_[i];
+    delta_idle = idle_array_[i] - old_idle_time_multi_[i];
+    old_busy_time_multi_[i] = busy_array_[i];
+    old_idle_time_multi_[i] = idle_array_[i];
+    if (delta_busy + delta_idle == 0) {
+      core_array[i] = 0;
+    } else {
+      core_array[i] = (int)(100 * (delta_busy) / (delta_busy + delta_idle));
     }
-    return retVal;
+  }
+  return ret_val;
 }
 
+int CpuLinux::GetData(long long& busy, long long& idle, long long*& busy_array,
+                      long long*& idle_array) {
+  FILE* fp = fopen("/proc/stat", "r");
+  if (!fp) {
+    return -1;
+  }
 
-int CpuLinux::GetData(long long& busy, long long& idle, long long*& busyArray,
-                      long long*& idleArray)
-{
-    FILE* fp = fopen("/proc/stat", "r");
-    if (!fp)
-    {
-        return -1;
-    }
+  char line[100];
+  if (fgets(line, 100, fp) == NULL) {
+    fclose(fp);
+    return -1;
+  }
+  char first_word[100];
+  if (sscanf(line, "%s ", first_word) != 1) {
+    fclose(fp);
+    return -1;
+  }
+  if (strncmp(first_word, "cpu", 3) != 0) {
+    fclose(fp);
+    return -1;
+  }
+  char s_user[100];
+  char s_nice[100];
+  char s_system[100];
+  char s_idle[100];
+  if (sscanf(line, "%s %s %s %s %s ",
+             first_word, s_user, s_nice, s_system, s_idle) != 5) {
+    fclose(fp);
+    return -1;
+  }
+  long long luser = atoll(s_user);
+  long long lnice = atoll(s_nice);
+  long long lsystem = atoll(s_system);
+  long long lidle = atoll(s_idle);
 
-    char line[100];
+  busy = luser + lnice + lsystem;
+  idle = lidle;
+  for (WebRtc_UWord32 i = 0; i < num_cores_; ++i) {
     if (fgets(line, 100, fp) == NULL) {
-        fclose(fp);
-        return -1;
+      fclose(fp);
+      return -1;
     }
-    char firstWord[100];
-    if (sscanf(line, "%s ", firstWord) != 1) {
-        fclose(fp);
-        return -1;
+    if (sscanf(line, "%s %s %s %s %s ", first_word, s_user, s_nice, s_system,
+               s_idle) != 5) {
+      fclose(fp);
+      return -1;
     }
-    if (strncmp(firstWord, "cpu", 3) != 0) {
-        fclose(fp);
-        return -1;
-    }
-    char sUser[100];
-    char sNice[100];
-    char sSystem[100];
-    char sIdle[100];
-    if (sscanf(line, "%s %s %s %s %s ",
-               firstWord, sUser, sNice, sSystem, sIdle) != 5) {
-        fclose(fp);
-        return -1;
-    }
-    long long luser = atoll(sUser);
-    long long lnice = atoll(sNice);
-    long long lsystem = atoll(sSystem);
-    long long lidle = atoll (sIdle);
-
-    busy = luser + lnice + lsystem;
-    idle = lidle;
-    for (WebRtc_UWord32 i = 0; i < m_numCores; i++)
-    {
-        if (fgets(line, 100, fp) == NULL) {
-            fclose(fp);
-            return -1;
-        }
-        if (sscanf(line, "%s %s %s %s %s ", firstWord, sUser, sNice, sSystem,
-                   sIdle) != 5) {
-            fclose(fp);
-            return -1;
-        }
-        luser = atoll(sUser);
-        lnice = atoll(sNice);
-        lsystem = atoll(sSystem);
-        lidle = atoll (sIdle);
-        busyArray[i] = luser + lnice + lsystem;
-        idleArray[i] = lidle;
-    }
-    fclose(fp);
-    return 0;
+    luser = atoll(s_user);
+    lnice = atoll(s_nice);
+    lsystem = atoll(s_system);
+    lidle = atoll(s_idle);
+    busy_array[i] = luser + lnice + lsystem;
+    idle_array[i] = lidle;
+  }
+  fclose(fp);
+  return 0;
 }
 
-int CpuLinux::GetNumCores()
-{
-    FILE* fp = fopen("/proc/stat", "r");
-    if (!fp)
-    {
-        return -1;
-    }
-    // Skip first line
-    char line[100];
-    if (!fgets(line, 100, fp))
-    {
-        fclose(fp);
-        return -1;
-    }
-    int numCores = -1;
-    char firstWord[100];
-    do
-    {
-        numCores++;
-        if (fgets(line, 100, fp))
-        {
-            if (sscanf(line, "%s ", firstWord) != 1) {
-                firstWord[0] = '\0';
-            }
-        } else {
-            break;
-        }
-    } while (strncmp(firstWord, "cpu", 3) == 0);
+int CpuLinux::GetNumCores() {
+  FILE* fp = fopen("/proc/stat", "r");
+  if (!fp) {
+    return -1;
+  }
+  // Skip first line
+  char line[100];
+  if (!fgets(line, 100, fp)) {
     fclose(fp);
-    return numCores;
+    return -1;
+  }
+  int num_cores = -1;
+  char first_word[100];
+  do {
+    num_cores++;
+    if (fgets(line, 100, fp)) {
+      if (sscanf(line, "%s ", first_word) != 1) {
+        first_word[0] = '\0';
+      }
+    } else {
+      break;
+    }
+  } while (strncmp(first_word, "cpu", 3) == 0);
+  fclose(fp);
+  return num_cores;
 }
+
 } // namespace webrtc

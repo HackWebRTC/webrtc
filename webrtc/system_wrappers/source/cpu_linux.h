@@ -11,41 +11,50 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_CPU_LINUX_H_
 #define WEBRTC_SYSTEM_WRAPPERS_SOURCE_CPU_LINUX_H_
 
-#include "cpu_wrapper.h"
+#include "system_wrappers/interface/cpu_wrapper.h"
 
 namespace webrtc {
-class CpuLinux : public CpuWrapper
-{
-public:
-    CpuLinux();
-    virtual ~CpuLinux();
 
-    virtual WebRtc_Word32 CpuUsage();
-    virtual WebRtc_Word32 CpuUsage(WebRtc_Word8* /*pProcessName*/,
-                                   WebRtc_UWord32 /*length*/) {return 0;}
-    virtual WebRtc_Word32 CpuUsage(WebRtc_UWord32 /*dwProcessID*/) {return 0;}
+class CpuLinux : public CpuWrapper {
+ public:
+  CpuLinux();
+  virtual ~CpuLinux();
 
-    virtual WebRtc_Word32 CpuUsageMultiCore(WebRtc_UWord32& numCores,
-                                            WebRtc_UWord32*& array);
+  virtual WebRtc_Word32 CpuUsage();
+  virtual WebRtc_Word32 CpuUsage(WebRtc_Word8* process_name,
+                                 WebRtc_UWord32 length) {
+    return 0;
+  }
+  virtual WebRtc_Word32 CpuUsage(WebRtc_UWord32 process_id) {
+    return 0;
+  }
 
-    virtual void Reset() {return;}
-    virtual void Stop() {return;}
-private:
-    int GetData(long long& busy, long long& idle, long long*& busyArray,
-                long long*& idleArray);
-    int GetNumCores();
+  virtual WebRtc_Word32 CpuUsageMultiCore(WebRtc_UWord32& num_cores,
+                                          WebRtc_UWord32*& array);
 
-    long long m_oldBusyTime;
-    long long m_oldIdleTime;
+  virtual void Reset() {
+    return;
+  }
+  virtual void Stop() {
+    return;
+  }
+ private:
+  int GetData(long long& busy, long long& idle, long long*& busy_array,
+              long long*& idle_array);
+  int GetNumCores();
 
-    long long* m_oldBusyTimeMulti;
-    long long* m_oldIdleTimeMulti;
+  long long old_busy_time_;
+  long long old_idle_time_;
 
-    long long* m_idleArray;
-    long long* m_busyArray;
-    WebRtc_UWord32* m_resultArray;
-    WebRtc_UWord32  m_numCores;
+  long long* old_busy_time_multi_;
+  long long* old_idle_time_multi_;
+
+  long long* idle_array_;
+  long long* busy_array_;
+  WebRtc_UWord32* result_array_;
+  WebRtc_UWord32  num_cores_;
 };
+
 } // namespace webrtc
 
-#endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_CPU_LINUX_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_SOURCE_CPU_LINUX_H_

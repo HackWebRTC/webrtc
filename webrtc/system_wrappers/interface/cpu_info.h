@@ -14,14 +14,16 @@
 #include "typedefs.h"
 
 namespace webrtc {
-class CpuInfo
-{
-public:
-    static WebRtc_UWord32 DetectNumberOfCores();
 
-private:
-    CpuInfo() {}
-    static WebRtc_UWord32 _numberOfCores;
+class CpuInfo {
+ public:
+  static WebRtc_UWord32 DetectNumberOfCores();
+
+ private:
+  CpuInfo() {}
+  static WebRtc_UWord32 number_of_cores_;
 };
+
 } // namespace webrtc
+
 #endif // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_CPU_INFO_H_
