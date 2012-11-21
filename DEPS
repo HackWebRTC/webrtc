@@ -95,6 +95,9 @@ deps_os = {
     "third_party/cygwin":
       (Var("googlecode_url") % "webrtc") + "/deps/third_party/cygwin@2672",
 
+    "third_party/winsdk_samples/src":
+      (Var("googlecode_url") % "webrtc") + "/deps/third_party/winsdk_samples_v71@3145",
+
     # Used by libjpeg-turbo.
     "third_party/yasm/binaries":
       From("chromium_deps", "src/third_party/yasm/binaries"),

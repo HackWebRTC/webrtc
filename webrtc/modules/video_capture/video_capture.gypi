@@ -39,7 +39,7 @@
             'external/device_info_external.cc',
             'external/video_capture_external.cc',
           ],
-        },{  # include_internal_video_capture == 1
+        }, {  # include_internal_video_capture == 1
           'conditions': [
             ['OS=="linux"', {
               'include_dirs': [
@@ -80,7 +80,7 @@
             }],  # mac
             ['OS=="win"', {
               'dependencies': [
-                '<(webrtc_root)/modules/video_capture/windows/direct_show_base_classes.gyp:direct_show_base_classes',
+                '<(DEPTH)/third_party/winsdk_samples/winsdk_samples.gyp:directshow_baseclasses',
               ],
               'include_dirs': [
                 'windows',
