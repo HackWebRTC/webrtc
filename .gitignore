@@ -59,6 +59,7 @@
 /third_party/opus
 /third_party/protobuf
 /third_party/valgrind
+/third_party/winsdk_samples/src
 /third_party/yasm
 /tools/clang
 /tools/gyp
