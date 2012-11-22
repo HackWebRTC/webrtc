@@ -8,19 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// 1. Register a RtpRtcp module to include in the REMB packet.
-// 2. When UpdateBitrateEstimate is called for the first time for a SSRC, add it
-//    to the map.
-// 3. Send a new REMB every kRembSendIntervallMs or if a lower bitrate estimate
-//    for a specified SSRC.
-
-
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_REMB_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_REMB_H_
 
 #include <list>
-#include <map>
 #include <utility>
+#include <vector>
 
 #include "modules/interface/module.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"

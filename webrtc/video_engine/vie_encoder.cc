@@ -67,7 +67,7 @@ class ViEPacedSenderCallback : public PacedSender::Callback {
   }
   virtual void TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
                                 int64_t capture_time_ms) {
-   owner_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms);
+    owner_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms);
   }
   virtual void TimeToSendPadding(int /*bytes*/) {
     // TODO(pwestin): Hook up this.
