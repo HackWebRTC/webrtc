@@ -19,6 +19,7 @@
       'include_dirs': [
         'include',
         '../interface',
+        '<(directx_sdk_path)/Include',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
