@@ -154,41 +154,6 @@ TEST_F(ViEVideoVerificationTest, DISABLED_RunsBaseStandardTestWithoutErrors) {
       kVerifyingTestMaxNumAttempts << " attempts.";
 }
 
-TEST_F(ViEVideoVerificationTest, RunsCodecTestWithoutErrors)  {
-  // We compare the local and remote here instead of with the original.
-  // The reason is that it is hard to say when the three consecutive tests
-  // switch over into each other, at which point we would have to restart the
-  // original to get a fair comparison.
-  //
-  // The PSNR and SSIM values are quite low here, and they have to be since
-  // the codec switches will lead to lag in the output. This is considered
-  // acceptable, but it probably shouldn't get worse than this.
-  const double kExpectedMinimumPSNR = 20;
-  const double kExpectedMinimumSSIM = 0.7;
-
-  for (int attempt = 0; attempt < kVerifyingTestMaxNumAttempts; attempt++) {
-    InitializeFileRenderers();
-    ASSERT_TRUE(tests_.TestCodecs(input_file_, kInputWidth, kInputHeight,
-                                  local_file_renderer_,
-                                  remote_file_renderer_));
-    std::string reference_file = local_file_renderer_->GetFullOutputPath();
-    std::string output_file = remote_file_renderer_->GetFullOutputPath();
-    StopRenderers();
-
-    double actual_psnr = 0;
-    double actual_ssim = 0;
-    CompareFiles(reference_file, output_file, &actual_psnr, &actual_ssim);
-
-    TearDownFileRenderers();
-
-    if (actual_psnr >= kExpectedMinimumPSNR &&
-        actual_ssim >= kExpectedMinimumSSIM) {
-      // Test succeeded!
-      return;
-    }
-  }
-}
-
 // Runs a whole stack processing with tracking of which frames are dropped
 // in the encoder. The local and remote file will not be of equal size because
 // of unknown reasons. Tests show that they start at the same frame, which is

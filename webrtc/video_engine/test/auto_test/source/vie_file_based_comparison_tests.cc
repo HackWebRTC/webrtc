@@ -12,7 +12,6 @@
 
 #include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
 #include "video_engine/test/auto_test/primitives/base_primitives.h"
-#include "video_engine/test/auto_test/primitives/codec_primitives.h"
 #include "video_engine/test/auto_test/primitives/framedrop_primitives.h"
 #include "video_engine/test/auto_test/primitives/general_primitives.h"
 #include "video_engine/test/libvietest/include/tb_interfaces.h"
@@ -77,43 +76,6 @@ bool ViEFileBasedComparisonTests::TestCallSetup(
   fake_camera.StopCamera();
 
   EXPECT_EQ(0, interfaces.base->DeleteChannel(video_channel));
-  return true;
-}
-
-bool ViEFileBasedComparisonTests::TestCodecs(
-    const std::string& i420_video_file,
-    int width,
-    int height,
-    ViEToFileRenderer* local_file_renderer,
-    ViEToFileRenderer* remote_file_renderer) {
-
-  TbInterfaces interfaces("TestCodecs");
-
-  ViEFakeCamera fake_camera(interfaces.capture);
-  if (!fake_camera.StartCameraInNewThread(i420_video_file, width, height)) {
-    // No point in continuing if we have no proper video source
-    ADD_FAILURE() << "Could not open input video " << i420_video_file <<
-        ": aborting test...";
-    return false;
-  }
-
-  int video_channel = -1;
-  int capture_id = fake_camera.capture_id();
-
-  EXPECT_EQ(0, interfaces.base->CreateChannel(video_channel));
-  EXPECT_EQ(0, interfaces.capture->ConnectCaptureDevice(
-      capture_id, video_channel));
-
-  ConfigureRtpRtcp(interfaces.rtp_rtcp, video_channel);
-
-  RenderToFile(interfaces.render, capture_id, local_file_renderer);
-  RenderToFile(interfaces.render, video_channel, remote_file_renderer);
-
-  // Force the codec resolution to what our input video is so we can make
-  // comparisons later. Our comparison algorithms wouldn't like scaling.
-  ::TestCodecs(interfaces, capture_id, video_channel, width, height);
-
-  fake_camera.StopCamera();
   return true;
 }
 

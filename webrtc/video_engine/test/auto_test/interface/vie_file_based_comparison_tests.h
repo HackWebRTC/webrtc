@@ -41,16 +41,6 @@ class ViEFileBasedComparisonTests {
       ViEToFileRenderer* local_file_renderer,
       ViEToFileRenderer* remote_file_renderer);
 
-  // Tries testing the I420 and VP8 codecs in turn. Returns false if the
-  // input file could not be opened; reports errors using googletest macros
-  // otherwise.
-  bool TestCodecs(
-      const std::string& i420_video_file,
-      int width,
-      int height,
-      ViEToFileRenderer* local_file_renderer,
-      ViEToFileRenderer* remote_file_renderer);
-
   // Runs a full stack test using the VP8 codec. Tests the full stack and uses
   // RTP timestamps to sync frames between the endpoints.
   void TestFullStack(
