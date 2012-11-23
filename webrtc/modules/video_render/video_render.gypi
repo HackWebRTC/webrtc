@@ -19,7 +19,6 @@
       'include_dirs': [
         'include',
         '../interface',
-        '<(directx_sdk_path)/Include',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
@@ -119,6 +118,11 @@
           'direct_dependent_settings': {
             'include_dirs': ['mac',],
           },
+        }],
+        ['OS=="win"', {
+          'include_dirs': [
+            '<(directx_sdk_path)/Include',
+          ],
         }],
         ['OS!="win" or include_internal_video_render==0', {
           'sources!': [
