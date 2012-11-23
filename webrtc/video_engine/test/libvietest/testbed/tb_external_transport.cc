@@ -327,6 +327,11 @@ unsigned short TbExternalTransport::GetFirstSequenceNumber()
     return _firstSequenceNumber;
 }
 
+bool TbExternalTransport::EmptyQueue() const {
+  webrtc::CriticalSectionScoped cs(&_crit);
+  return _rtpPackets.empty() && _rtcpPackets.empty();
+}
+
 bool TbExternalTransport::ViEExternalTransportRun(void* object)
 {
     return static_cast<TbExternalTransport*>
@@ -338,10 +343,10 @@ bool TbExternalTransport::ViEExternalTransportProcess()
 
     VideoPacket* packet = NULL;
 
+    _crit.Enter();
     while (!_rtpPackets.empty())
     {
         // Take first packet in queue
-        _crit.Enter();
         packet = _rtpPackets.front();
         WebRtc_Word64 timeToReceive = 0;
         if (packet)
@@ -418,11 +423,13 @@ bool TbExternalTransport::ViEExternalTransportProcess()
             delete packet;
             packet = NULL;
         }
+        _crit.Enter();
     }
+    _crit.Leave();
+    _crit.Enter();
     while (!_rtcpPackets.empty())
     {
         // Take first packet in queue
-        _crit.Enter();
         packet = _rtcpPackets.front();
         WebRtc_Word64 timeToReceive = 0;
         if (packet)
@@ -474,7 +481,9 @@ bool TbExternalTransport::ViEExternalTransportProcess()
             delete packet;
             packet = NULL;
         }
+        _crit.Enter();
     }
+    _crit.Leave();
     _event.Wait(waitTime + 1); // Add 1 ms to not call to early...
     return true;
 }

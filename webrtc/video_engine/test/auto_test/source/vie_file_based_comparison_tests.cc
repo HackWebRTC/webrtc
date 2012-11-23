@@ -111,11 +111,10 @@ void ViEFileBasedComparisonTests::TestFullStack(
   EXPECT_EQ(0, interfaces.capture->ConnectCaptureDevice(
       capture_id, video_channel));
   ConfigureRtpRtcp(interfaces.rtp_rtcp, video_channel);
-  RenderToFile(interfaces.render, capture_id, local_file_renderer);
-  RenderToFile(interfaces.render, video_channel, remote_file_renderer);
 
   ::TestFullStack(interfaces, capture_id, video_channel, width, height,
                   bit_rate_kbps, packet_loss_percent, network_delay_ms,
-                  frame_drop_detector);
+                  frame_drop_detector, remote_file_renderer,
+                  local_file_renderer);
   EXPECT_TRUE(fake_camera.StopCamera());
 }

@@ -35,7 +35,9 @@ void TestFullStack(const TbInterfaces& interfaces,
                    int bit_rate_kbps,
                    int packet_loss_percent,
                    int network_delay_ms,
-                   FrameDropDetector* frame_drop_detector);
+                   FrameDropDetector* frame_drop_detector,
+                   ViEToFileRenderer* remote_file_renderer,
+                   ViEToFileRenderer* local_file_renderer);
 
 // A frame in a video file. The four different points in the stack when
 // register the frame state are (in time order): created, transmitted, decoded,

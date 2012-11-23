@@ -24,23 +24,39 @@
 #include "video_engine/test/libvietest/include/tb_external_transport.h"
 #include "video_engine/test/libvietest/include/vie_to_file_renderer.h"
 
-// Tracks which frames are created on the local side and reports them to the
+enum { kWaitTimeForFinalDecodeMs = 100 };
+
+// Writes the frames to be encoded to file and tracks which frames are sent in
+// external transport on the local side and reports them to the
 // FrameDropDetector class.
-class CreatedTimestampEffectFilter : public webrtc::ViEEffectFilter {
+class LocalRendererEffectFilter : public webrtc::ViEEffectFilter {
  public:
-  explicit CreatedTimestampEffectFilter(FrameDropDetector* frame_drop_detector)
-      : frame_drop_detector_(frame_drop_detector) {}
-  virtual ~CreatedTimestampEffectFilter() {}
+  explicit LocalRendererEffectFilter(FrameDropDetector* frame_drop_detector,
+                                     webrtc::ExternalRenderer* renderer)
+      : width_(0), height_(0), frame_drop_detector_(frame_drop_detector),
+        renderer_(renderer) {}
+  virtual ~LocalRendererEffectFilter() {}
   virtual int Transform(int size, unsigned char* frameBuffer,
                         unsigned int timeStamp90KHz, unsigned int width,
                         unsigned int height) {
+    if (width != width_ || height_ != height) {
+      renderer_->FrameSizeChange(width, height, 1);
+      width_ = width;
+      height_ = height;
+    }
     frame_drop_detector_->ReportFrameState(FrameDropDetector::kCreated,
                                            timeStamp90KHz);
-    return 0;
+    return renderer_->DeliverFrame(frameBuffer,
+                                   size,
+                                   timeStamp90KHz,
+                                   webrtc::TickTime::MillisecondTimestamp());
   }
 
  private:
+  unsigned int width_;
+  unsigned int height_;
   FrameDropDetector* frame_drop_detector_;
+  webrtc::ExternalRenderer* renderer_;
 };
 
 // Tracks which frames are sent in external transport on the local side
@@ -102,7 +118,9 @@ void TestFullStack(const TbInterfaces& interfaces,
                    int bit_rate_kbps,
                    int packet_loss_percent,
                    int network_delay_ms,
-                   FrameDropDetector* frame_drop_detector) {
+                   FrameDropDetector* frame_drop_detector,
+                   ViEToFileRenderer* remote_file_renderer,
+                   ViEToFileRenderer* local_file_renderer) {
   webrtc::VideoEngine *video_engine_interface = interfaces.video_engine;
   webrtc::ViEBase *base_interface = interfaces.base;
   webrtc::ViECapture *capture_interface = interfaces.capture;
@@ -137,6 +155,7 @@ void TestFullStack(const TbInterfaces& interfaces,
   external_transport.RegisterReceiveFrameCallback(&frame_received_callback);
   EXPECT_EQ(0, network_interface->RegisterSendTransport(video_channel,
                                                         external_transport));
+  RenderToFile(interfaces.render, video_channel, remote_file_renderer);
   EXPECT_EQ(0, base_interface->StartReceive(video_channel));
 
   // Setup only the VP8 codec, which is what we'll use.
@@ -153,10 +172,13 @@ void TestFullStack(const TbInterfaces& interfaces,
       webrtc::ViEImageProcess::GetInterface(video_engine_interface);
   EXPECT_TRUE(image_process);
 
-  // Setup the effect filters
-  CreatedTimestampEffectFilter create_filter(frame_drop_detector);
+  // Setup the effect filters.
+  // Local rendering at the send-side is done in an effect filter to avoid
+  // synchronization issues with the remote renderer.
+  LocalRendererEffectFilter local_renderer_filter(frame_drop_detector,
+                                                  local_file_renderer);
   EXPECT_EQ(0, image_process->RegisterSendEffectFilter(video_channel,
-                                                       create_filter));
+                                                       local_renderer_filter));
   DecodedTimestampEffectFilter decode_filter(frame_drop_detector);
   EXPECT_EQ(0, image_process->RegisterRenderEffectFilter(video_channel,
                                                          decode_filter));
@@ -164,12 +186,36 @@ void TestFullStack(const TbInterfaces& interfaces,
   EXPECT_EQ(0, base_interface->StartSend(video_channel));
   AutoTestSleep(KAutoTestSleepTimeMs);
 
-  // Cleanup.
-  EXPECT_EQ(0, image_process->DeregisterSendEffectFilter(video_channel));
-  EXPECT_EQ(0, image_process->DeregisterRenderEffectFilter(video_channel));
-  image_process->Release();
   ViETest::Log("Done!");
 
+  // ***************************************************************
+  // Testing finished. Tear down Video Engine
+  // ***************************************************************
+  EXPECT_EQ(0, capture_interface->DisconnectCaptureDevice(video_channel));
+
+  // Wait for the last packet to arrive before we tear down the receiver.
+  AutoTestSleep(2*network_delay_ms);
+  EXPECT_EQ(0, base_interface->StopSend(video_channel));
+  while (!external_transport.EmptyQueue()) {
+    AutoTestSleep(network_delay_ms);
+  }
+  EXPECT_EQ(0, base_interface->StopReceive(video_channel));
+  EXPECT_EQ(0, network_interface->DeregisterSendTransport(video_channel));
+  // Wait for the last frame to be decoded and rendered. There is no guarantee
+  // this wait time will be long enough. Ideally we would wait for at least one
+  // "receive-side delay", which is what the video coding module calculates
+  // based on network statistics etc. We don't have access to that value here.
+  AutoTestSleep(kWaitTimeForFinalDecodeMs);
+  // Must stop the frame drop detectors in the right order to avoid getting
+  // frames which for instance are rendered but not decoded.
+  EXPECT_EQ(0, render_interface->StopRender(video_channel));
+  EXPECT_EQ(0, render_interface->RemoveRenderer(video_channel));
+  EXPECT_EQ(0, image_process->DeregisterRenderEffectFilter(video_channel));
+  EXPECT_EQ(0, image_process->DeregisterSendEffectFilter(video_channel));
+  image_process->Release();
+  EXPECT_EQ(0, base_interface->DeleteChannel(video_channel));
+
+  // Collect transport statistics.
   WebRtc_Word32 num_rtp_packets = 0;
   WebRtc_Word32 num_dropped_packets = 0;
   WebRtc_Word32 num_rtcp_packets = 0;
@@ -178,19 +224,6 @@ void TestFullStack(const TbInterfaces& interfaces,
   ViETest::Log("RTP packets    : %5d", num_rtp_packets);
   ViETest::Log("Dropped packets: %5d", num_dropped_packets);
   ViETest::Log("RTCP packets   : %5d", num_rtcp_packets);
-
-  // ***************************************************************
-  // Testing finished. Tear down Video Engine
-  // ***************************************************************
-  EXPECT_EQ(0, base_interface->StopSend(video_channel));
-  EXPECT_EQ(0, base_interface->StopReceive(video_channel));
-  EXPECT_EQ(0, network_interface->DeregisterSendTransport(video_channel));
-  EXPECT_EQ(0, render_interface->StopRender(capture_id));
-  EXPECT_EQ(0, render_interface->StopRender(video_channel));
-  EXPECT_EQ(0, render_interface->RemoveRenderer(capture_id));
-  EXPECT_EQ(0, render_interface->RemoveRenderer(video_channel));
-  EXPECT_EQ(0, capture_interface->DisconnectCaptureDevice(video_channel));
-  EXPECT_EQ(0, base_interface->DeleteChannel(video_channel));
 }
 
 void FixOutputFileForComparison(const std::string& output_file,
@@ -273,19 +306,19 @@ void FrameDropDetector::CalculateResults() {
   // Iterate over the maps from converted timestamps to the arrival timestamps.
   std::map<unsigned int, int64_t>::const_iterator it;
   for (it = sent_frames_.begin(); it != sent_frames_.end(); ++it) {
-    int created_timestamp = it->first - timestamp_diff_;
+    unsigned int created_timestamp = it->first - timestamp_diff_;
     created_frames_[created_timestamp]->sent_timestamp_in_us_ = it->second;
   }
   for (it = received_frames_.begin(); it != received_frames_.end(); ++it) {
-    int created_timestamp = it->first - timestamp_diff_;
+    unsigned int created_timestamp = it->first - timestamp_diff_;
     created_frames_[created_timestamp]->received_timestamp_in_us_ = it->second;
   }
   for (it = decoded_frames_.begin(); it != decoded_frames_.end(); ++it) {
-    int created_timestamp = it->first - timestamp_diff_;
+    unsigned int created_timestamp = it->first - timestamp_diff_;
     created_frames_[created_timestamp]->decoded_timestamp_in_us_ =it->second;
   }
   for (it = rendered_frames_.begin(); it != rendered_frames_.end(); ++it) {
-    int created_timestamp = it->first - timestamp_diff_;
+    unsigned int created_timestamp = it->first - timestamp_diff_;
     created_frames_[created_timestamp]->rendered_timestamp_in_us_ = it->second;
   }
   // Find out where the frames were not present in the different states.
@@ -435,7 +468,7 @@ void FrameDropDetector::PrintDebugDump() {
       "    Rendered ");
   for (std::vector<Frame*>::const_iterator it = created_frames_vector_.begin();
        it != created_frames_vector_.end(); ++it) {
-    ViETest::Log("%5d %11d %11d %11d %11d %11d %11d",
+    ViETest::Log("%5d %11u %11lld %11lld %11lld %11lld %11lld",
                  (*it)->number_,
                  (*it)->frame_timestamp_,
                  (*it)->created_timestamp_in_us_,
@@ -458,7 +491,7 @@ void FrameDropDetector::PrintDebugDump() {
     for (std::vector<int>::const_iterator it = mismatch_frame_num_list.begin();
          it != mismatch_frame_num_list.end(); ++it) {
       Frame* frame = created_frames_vector_[*it];
-      ViETest::Log("%5d %11d %11d %11d %11d %11d %11d",
+      ViETest::Log("%5d %11u %11lld %11lld %11lld %11lld %11lld",
                  frame->number_,
                  frame->frame_timestamp_,
                  frame->created_timestamp_in_us_,

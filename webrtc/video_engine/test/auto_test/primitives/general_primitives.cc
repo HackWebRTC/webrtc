@@ -89,6 +89,7 @@ void ConfigureRtpRtcp(webrtc::ViERTP_RTCP* rtcp_interface,
   EXPECT_EQ(0, rtcp_interface->SetKeyFrameRequestMethod(
       video_channel, webrtc::kViEKeyFrameRequestPliRtcp));
   EXPECT_EQ(0, rtcp_interface->SetTMMBRStatus(video_channel, true));
+  EXPECT_EQ(0, rtcp_interface->SetNACKStatus(video_channel, true));
 }
 
 bool FindSpecificCodec(webrtc::VideoCodecType of_type,

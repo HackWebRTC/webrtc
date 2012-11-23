@@ -98,6 +98,8 @@ public:
     void EnableSequenceNumberCheck();
     unsigned short GetFirstSequenceNumber();
 
+    bool EmptyQueue() const;
+
 protected:
     static bool ViEExternalTransportRun(void* object);
     bool ViEExternalTransportProcess();
