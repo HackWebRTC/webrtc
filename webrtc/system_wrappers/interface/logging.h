@@ -79,9 +79,6 @@ class LogMessage {
   std::ostream& stream() { return print_stream_; }
 
  private:
-  // These assist in formatting some parts of the debug output.
-  static const char* DescribeFile(const char* file);
-
   // The ostream that buffers the formatted message before output
   std::ostringstream print_stream_;
 
@@ -90,22 +87,11 @@ class LogMessage {
 };
 
 //////////////////////////////////////////////////////////////////////
-// Macros which automatically disable logging when LOGGING == 0
+// Macros which automatically disable logging when WEBRTC_LOGGING == 0
 //////////////////////////////////////////////////////////////////////
 
-// If LOGGING is not explicitly defined, default to enabled in debug mode
-// TODO(andrew): We explictly enable here; handle in gyp instead.
-#define LOGGING 1
-#if !defined(LOGGING)
-#if defined(_DEBUG) && !defined(NDEBUG)
-#define LOGGING 1
-#else
-#define LOGGING 0
-#endif
-#endif  // !defined(LOGGING)
-
 #ifndef LOG
-#if LOGGING
+#if defined(WEBRTC_LOGGING)
 
 // The following non-obvious technique for implementation of a
 // conditional log stream was stolen from google3/base/logging.h.
@@ -137,7 +123,7 @@ class LogMessageVoidify {
 #define LOG_F(sev) LOG(sev) << __FUNCTION__ << ": "
 #endif
 
-#else  // !LOGGING
+#else  // !defined(WEBRTC_LOGGING)
 
 // Hopefully, the compiler will optimize away some of this code.
 // Note: syntax of "1 ? (void)0 : LogMessage" was causing errors in g++,
@@ -148,7 +134,7 @@ class LogMessageVoidify {
   while (false) webrtc::LogMessage(NULL, 0, sev).stream()
 #define LOG_F(sev) LOG(sev) << __FUNCTION__ << ": "
 
-#endif  // !LOGGING
+#endif  // !defined(WEBRTC_LOGGING)
 
 #define LOG_API0() LOG_F(LS_VERBOSE)
 #define LOG_API1(v1) LOG_API0() << #v1 << "=" << v1

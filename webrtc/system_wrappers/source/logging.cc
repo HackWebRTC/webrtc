@@ -11,14 +11,15 @@
 #include "webrtc/system_wrappers/interface/logging.h"
 
 #include <string.h>
-#include <iostream>
+#include <sstream>
 
 #include "webrtc/common_types.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
+namespace {
 
-static TraceLevel WebRtcSeverity(LoggingSeverity sev) {
+TraceLevel WebRtcSeverity(LoggingSeverity sev) {
   switch (sev) {
     // TODO(andrew): SENSITIVE doesn't have a corresponding webrtc level.
     case LS_SENSITIVE:  return kTraceInfo;
@@ -30,6 +31,17 @@ static TraceLevel WebRtcSeverity(LoggingSeverity sev) {
   }
 }
 
+const char* DescribeFile(const char* file) {
+  const char* end1 = ::strrchr(file, '/');
+  const char* end2 = ::strrchr(file, '\\');
+  if (!end1 && !end2)
+    return file;
+  else
+    return (end1 > end2) ? end1 + 1 : end2 + 1;
+}
+
+}  // namespace
+
 LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev)
     : severity_(sev) {
   print_stream_ << "(" << DescribeFile(file) << ":" << line << "): ";
@@ -38,15 +50,6 @@ LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev)
 LogMessage::~LogMessage() {
   const std::string& str = print_stream_.str();
   WEBRTC_TRACE(WebRtcSeverity(severity_), kTraceUndefined, 0, str.c_str());
-}
-
-const char* LogMessage::DescribeFile(const char* file) {
-  const char* end1 = ::strrchr(file, '/');
-  const char* end2 = ::strrchr(file, '\\');
-  if (!end1 && !end2)
-    return file;
-  else
-    return (end1 > end2) ? end1 + 1 : end2 + 1;
 }
 
 }  // namespace webrtc

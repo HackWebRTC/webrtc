@@ -85,6 +85,7 @@
         'file_impl.h',
         'list_no_stl.cc',
         'logging.cc',
+        'logging_no_op.cc',
         'map.cc',
         'rw_lock.cc',
         'rw_lock_generic.cc',
@@ -118,10 +119,12 @@
         },],
         ['enable_tracing==1', {
           'sources!': [
+            'logging_no_op.cc',
             'trace_impl_no_op.cc',
           ],
         }, {
           'sources!': [
+            'logging.cc',
             'trace_impl.cc',
             'trace_impl.h',
             'trace_posix.cc',

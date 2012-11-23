@@ -73,7 +73,7 @@ TEST_F(LoggingTest, LogStream) {
     std::string msg = "Important message";
     expected_log_ << "(logging_unittest.cc:" << __LINE__ + 1 << "): " << msg;
     LOG(LS_WARNING) << msg;
-    cv_->SleepCS(*crit_.get());
+    cv_->SleepCS(*crit_.get(), 2000);
   }
 }
 
@@ -86,7 +86,7 @@ TEST_F(LoggingTest, LogFunctionError) {
     expected_log_ << "(logging_unittest.cc:" << __LINE__ + 2
                   << "): Foo failed: bar=" << bar << ", baz=" << baz;
     LOG_FERR2(LS_ERROR, Foo, bar, baz);
-    cv_->SleepCS(*crit_.get());
+    cv_->SleepCS(*crit_.get(), 2000);
   }
 }
 

@@ -139,6 +139,9 @@
       #'WEBRTC_SVNREVISION="<!(python <(webrtc_root)/build/version.py)"',
     ],
     'conditions': [
+      ['enable_tracing==1', {
+        'defines': ['WEBRTC_LOGGING',],
+      }],
       ['build_with_mozilla==1', {
         'defines': [
           # Changes settings for Mozilla build.
