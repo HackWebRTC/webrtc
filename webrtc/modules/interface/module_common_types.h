@@ -14,16 +14,17 @@
 #include <cstring> // memcpy
 #include <assert.h>
 
-#include "typedefs.h"
-#include "common_types.h"
+#include "webrtc/common_types.h"
+#include "webrtc/system_wrappers/interface/constructor_magic.h"
+#include "webrtc/typedefs.h"
 
 #ifdef _WIN32
     #pragma warning(disable:4351)       // remove warning "new behavior: elements of array
                                         // 'array' will be default initialized"
 #endif
 
-namespace webrtc
-{
+namespace webrtc {
+
 struct RTPHeader
 {
     bool           markerBit;
@@ -144,14 +145,14 @@ public:
         delete [] fragmentationPlType;
     }
 
-    RTPFragmentationHeader& operator=(const RTPFragmentationHeader& header)
+    void CopyFrom(const RTPFragmentationHeader& src)
     {
-        if(this == &header)
+        if(this == &src)
         {
-            return *this;
+            return;
         }
 
-        if(header.fragmentationVectorSize != fragmentationVectorSize)
+        if(src.fragmentationVectorSize != fragmentationVectorSize)
         {
             // new size of vectors
 
@@ -165,59 +166,59 @@ public:
             delete [] fragmentationPlType;
             fragmentationPlType = NULL;
 
-            if(header.fragmentationVectorSize > 0)
+            if(src.fragmentationVectorSize > 0)
             {
                 // allocate new
-                if(header.fragmentationOffset)
+                if(src.fragmentationOffset)
                 {
-                    fragmentationOffset = new WebRtc_UWord32[header.fragmentationVectorSize];
+                    fragmentationOffset = new WebRtc_UWord32[src.fragmentationVectorSize];
                 }
-                if(header.fragmentationLength)
+                if(src.fragmentationLength)
                 {
-                    fragmentationLength = new WebRtc_UWord32[header.fragmentationVectorSize];
+                    fragmentationLength = new WebRtc_UWord32[src.fragmentationVectorSize];
                 }
-                if(header.fragmentationTimeDiff)
+                if(src.fragmentationTimeDiff)
                 {
-                    fragmentationTimeDiff = new WebRtc_UWord16[header.fragmentationVectorSize];
+                    fragmentationTimeDiff = new WebRtc_UWord16[src.fragmentationVectorSize];
                 }
-                if(header.fragmentationPlType)
+                if(src.fragmentationPlType)
                 {
-                    fragmentationPlType = new WebRtc_UWord8[header.fragmentationVectorSize];
+                    fragmentationPlType = new WebRtc_UWord8[src.fragmentationVectorSize];
                 }
             }
             // set new size
-            fragmentationVectorSize =   header.fragmentationVectorSize;
+            fragmentationVectorSize =   src.fragmentationVectorSize;
         }
 
-        if(header.fragmentationVectorSize > 0)
+        if(src.fragmentationVectorSize > 0)
         {
             // copy values
-            if(header.fragmentationOffset)
+            if(src.fragmentationOffset)
             {
-                memcpy(fragmentationOffset, header.fragmentationOffset,
-                        header.fragmentationVectorSize * sizeof(WebRtc_UWord32));
+                memcpy(fragmentationOffset, src.fragmentationOffset,
+                       src.fragmentationVectorSize * sizeof(WebRtc_UWord32));
             }
-            if(header.fragmentationLength)
+            if(src.fragmentationLength)
             {
-                memcpy(fragmentationLength, header.fragmentationLength,
-                        header.fragmentationVectorSize * sizeof(WebRtc_UWord32));
+                memcpy(fragmentationLength, src.fragmentationLength,
+                       src.fragmentationVectorSize * sizeof(WebRtc_UWord32));
             }
-            if(header.fragmentationTimeDiff)
+            if(src.fragmentationTimeDiff)
             {
-                memcpy(fragmentationTimeDiff, header.fragmentationTimeDiff,
-                        header.fragmentationVectorSize * sizeof(WebRtc_UWord16));
+                memcpy(fragmentationTimeDiff, src.fragmentationTimeDiff,
+                       src.fragmentationVectorSize * sizeof(WebRtc_UWord16));
             }
-            if(header.fragmentationPlType)
+            if(src.fragmentationPlType)
             {
-                memcpy(fragmentationPlType, header.fragmentationPlType,
-                        header.fragmentationVectorSize * sizeof(WebRtc_UWord8));
+                memcpy(fragmentationPlType, src.fragmentationPlType,
+                       src.fragmentationVectorSize * sizeof(WebRtc_UWord8));
             }
         }
-        return *this;
     }
-    void VerifyAndAllocateFragmentationHeader( const WebRtc_UWord16 size)
+
+    void VerifyAndAllocateFragmentationHeader(const WebRtc_UWord16 size)
     {
-        if( fragmentationVectorSize < size)
+        if(fragmentationVectorSize < size)
         {
             WebRtc_UWord16 oldVectorSize = fragmentationVectorSize;
             {
@@ -270,6 +271,9 @@ public:
     WebRtc_UWord16*   fragmentationTimeDiff;      // Timestamp difference relative "now" for
                                                   // each fragmentation
     WebRtc_UWord8*    fragmentationPlType;        // Payload type of each fragmentation
+
+private:
+    DISALLOW_COPY_AND_ASSIGN(RTPFragmentationHeader);
 };
 
 struct RTCPVoIPMetric
@@ -344,7 +348,7 @@ public:
         completeFrame       = data.completeFrame;
         missingFrame        = data.missingFrame;
         payloadSize         = data.payloadSize;
-        fragmentationHeader = data.fragmentationHeader;
+        fragmentationHeader.CopyFrom(data.fragmentationHeader);
         frameType           = data.frameType;
         codec               = data.codec;
         if (data.payloadSize > 0)
@@ -378,7 +382,7 @@ public:
         completeFrame       = data.completeFrame;
         missingFrame        = data.missingFrame;
         payloadSize         = data.payloadSize;
-        fragmentationHeader = data.fragmentationHeader;
+        fragmentationHeader.CopyFrom(data.fragmentationHeader);
         frameType           = data.frameType;
         codec               = data.codec;
         if (data.payloadSize > 0)

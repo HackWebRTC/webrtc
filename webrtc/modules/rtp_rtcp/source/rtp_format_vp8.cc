@@ -44,7 +44,7 @@ RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
       num_partitions_(fragmentation.fragmentationVectorSize),
       max_payload_len_(max_payload_len),
       packets_calculated_(false) {
-  part_info_ = fragmentation;
+  part_info_.CopyFrom(fragmentation);
 }
 
 RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,

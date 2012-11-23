@@ -65,8 +65,7 @@ VCMEncodedFrame::VCMEncodedFrame(const VCMEncodedFrame& rhs)
       memcpy(_buffer, rhs._buffer, rhs._length);
       _length = rhs._length;
   }
-  // Deep operator=
-  _fragmentation = rhs._fragmentation;
+  _fragmentation.CopyFrom(rhs._fragmentation);
 }
 
 VCMEncodedFrame::~VCMEncodedFrame()

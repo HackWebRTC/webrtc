@@ -142,7 +142,7 @@ WebRtc_Word32 VideoCoder::SendData(
     _videoEncodedData->frameType = frameType;
     _videoEncodedData->payloadType = payloadType;
     _videoEncodedData->timeStamp = timeStamp;
-    _videoEncodedData->fragmentationHeader = fragmentationHeader;
+    _videoEncodedData->fragmentationHeader.CopyFrom(fragmentationHeader);
     memcpy(_videoEncodedData->payloadData, payloadData,
            sizeof(WebRtc_UWord8) * payloadSize);
     _videoEncodedData->payloadSize = payloadSize;
