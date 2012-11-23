@@ -141,9 +141,7 @@ def SortIncludeHeaders(text, filename):
   project_includes = []
   self_include = ''
   sys_pattern = re.compile('#include <')
-  h_filename = re.sub(r'(\.cc)', r'.h', filename)
-   # Remove a possible webrtc/ from the filename.
-  h_filename = re.sub(r'(webrtc\/)(.+)', r'\2', h_filename)
+  h_filename, _ = os.path.splitext(os.path.basename(filename))
 
   for item in includes:
     if re.search(h_filename, item):
@@ -175,25 +173,40 @@ def SortIncludeHeaders(text, filename):
   return return_text
 
 
-def AddPath(obj):
+def AddPath(match):
   """Helper for adding file path for WebRTC header files, ignoring other."""
-  file_name = obj.group(1) + '.h'
-  # TODO(mflodman) Use current directory and find src.
+  file_to_examine = match.group(1) + '.h'
+  # TODO(mflodman) Use current directory and find webrtc/.
   for path, _, files in os.walk('./webrtc'):
     for filename in files:
-      if fnmatch.fnmatch(filename, file_name):
-        # Remove leading '/webrtc'
-        path_name = os.path.join(path, filename)
-        return re.sub('(.+)(?<=webrtc/)(.+)', r'#include "\2"\n', path_name)
+      if fnmatch.fnmatch(filename, file_to_examine):
+        path_name = os.path.join(path, filename).replace('./', '')
+        return '#include "%s"\n' % path_name
 
   # No path found, return original string.
-  return '#include "'+ file_name + '"\n'
+  return '#include "'+ file_to_examine + '"\n'
 
 
 def AddHeaderPath(text):
-  """Add path to all included header files."""
-  hdr_name = re.compile('#include "(.+).h"\n')
-  return  re.sub(hdr_name, AddPath, text)
+  """Add path to all included header files that have no path yet."""
+  headers = re.compile('#include "(.+).h"\n')
+  return re.sub(headers, AddPath, text)
+
+
+def AddWebrtcToOldSrcRelativePath(match):
+  file_to_examine = match.group(1) + '.h'
+  path, filename = os.path.split(file_to_examine)
+  dirs_in_webrtc = [name for name in os.listdir('./webrtc')
+                    if os.path.isdir(os.path.join('./webrtc', name))]
+  for dir_in_webrtc in dirs_in_webrtc:
+    if path.startswith(dir_in_webrtc):
+      return '#include "%s"\n' % os.path.join('webrtc', path, filename)
+  return '#include "%s"\n' % file_to_examine
+
+def AddWebrtcPrefixToOldSrcRelativePaths(text):
+  """For all paths starting with for instance video_engine, add webrtc/."""
+  headers = re.compile('#include "(.+).h"\n')
+  return re.sub(headers, AddWebrtcToOldSrcRelativePath, text)
 
 
 def IndentLabels(text):
@@ -241,6 +254,7 @@ def main():
     text = MoveUnderScore(text)
     text = CPPComments(text)
     text = AddHeaderPath(text)
+    text = AddWebrtcPrefixToOldSrcRelativePaths(text)
     text = SortIncludeHeaders(text, filename)
     text = RemoveMultipleEmptyLines(text)
     text = TrimLineEndings(text)
