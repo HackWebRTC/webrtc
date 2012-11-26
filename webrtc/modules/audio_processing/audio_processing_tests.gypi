@@ -58,9 +58,8 @@
           'dependencies': [
             'audio_processing',
             'audioproc_debug_proto',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(webrtc_root)/test/test.gyp:test_support',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [ 'test/process_test.cc', ],
         },

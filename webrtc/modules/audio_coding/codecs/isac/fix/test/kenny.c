@@ -8,17 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+/* kenny.c  - Main function for the iSAC coder */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <ctype.h>
 
-#include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
-#include "webrtc/test/testsupport/perf_test.h"
+#include "isacfix.h"
 
-// TODO(kma): Clean up the code and change benchmarking the whole codec to
-// separate encoder and decoder.
 
 /* Defines */
 #define SEED_FILE "randseed.txt"  /* Used when running decoder on garbage data */
@@ -171,7 +170,7 @@ int main(int argc, char* argv[])
            " in adaptive mode.\n\n");
     printf("[-FL num]        :Set (initial) frame length in msec. Valid length"
            " are 30 and 60 msec.\n\n");
-    printf("[-FIXED_FL]      :Frame length to be fixed to initial value.\n\n");
+    printf("[-FIXED_FL]      :Frame length will be fixed to initial value.\n\n");
     printf("[-MAX num]       :Set the limit for the payload size of iSAC"
            " in bytes. \n");
     printf("                  Minimum 100, maximum 400.\n\n");
@@ -375,8 +374,7 @@ int main(int argc, char* argv[])
     sscanf(argv[CodingMode+1], "%s", bottleneck_file);
     f_bn = fopen(bottleneck_file, "rb");
     if (f_bn  == NULL) {
-      printf("No value provided for BottleNeck and cannot read file %s\n",
-             bottleneck_file);
+      printf("No value provided for BottleNeck and cannot read file %s\n", bottleneck_file);
       exit(0);
     } else {
       int aux_var;
@@ -567,8 +565,8 @@ int main(int argc, char* argv[])
                                             shortdata,
                                             (WebRtc_Word16*)streamdata);
 
-          /* If packet is ready, and CE testing, call the different API
-             functions from the internal API. */
+          /* If packet is ready, and CE testing, call the different API functions
+             from the internal API.                       */
           if (stream_len>0) {
             if (testCE == 1) {
               err = WebRtcIsacfix_ReadBwIndex((WebRtc_Word16*)streamdata, &bwe);
@@ -809,10 +807,6 @@ int main(int argc, char* argv[])
   printf("Time to run iSAC:      %.2f s (%.2f %% of realtime)\n\n",
          runtime, (100*runtime/length_file));
   printf("\n\n_______________________________________________\n");
-
-  // Record the results with Perf test tools.
-  webrtc::test::PrintResult("time_per_10ms_frame", "", "isac",
-                            (runtime * 10000) / length_file, "us", false);
 
   fclose(inp);
   fclose(outp);
