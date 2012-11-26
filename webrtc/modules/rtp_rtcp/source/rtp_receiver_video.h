@@ -71,6 +71,7 @@ class RTPReceiverVideo {
       const WebRtc_UWord32 rtpTimeStamp) const  = 0;
 
   virtual WebRtc_Word8 REDPayloadType() const = 0;
+  virtual bool HaveNotReceivedPackets() const = 0;
 
   WebRtc_Word32 SetCodecType(const RtpVideoCodecTypes videoType,
                              WebRtcRTPHeader* rtpHeader) const;

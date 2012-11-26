@@ -157,6 +157,11 @@ RTPReceiver::SetPacketTimeout(const WebRtc_UWord32 timeoutMS)
     return 0;
 }
 
+bool RTPReceiver::HaveNotReceivedPackets() const
+{
+    return _lastReceiveTime == 0;
+}
+
 void RTPReceiver::PacketTimeout()
 {
     bool packetTimeOut = false;
@@ -168,7 +173,7 @@ void RTPReceiver::PacketTimeout()
             return;
         }
 
-        if(_lastReceiveTime == 0)
+        if (HaveNotReceivedPackets())
         {
             // not active
             return;
@@ -937,7 +942,7 @@ bool RTPReceiver::RetransmitOfOldPacket(
 
     // Min maxDelayMs is 1.
     if (maxDelayMs == 0) {
-      maxDelayMs = 1; 
+      maxDelayMs = 1;
     }
   } else {
     maxDelayMs = (minRTT / 3) + 1;

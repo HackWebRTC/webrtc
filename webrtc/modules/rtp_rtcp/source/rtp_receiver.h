@@ -169,6 +169,8 @@ protected:
 
     virtual WebRtc_Word8 REDPayloadType() const;
 
+    bool HaveNotReceivedPackets() const;
+
 private:
     // Is RED configured with payload type payloadType
     bool REDPayloadType(const WebRtc_Word8 payloadType) const;

@@ -40,6 +40,8 @@ class MockRTPReceiverVideo : public RTPReceiverVideo {
            const WebRtc_UWord32 rtpTimeStamp));
   MOCK_CONST_METHOD0(REDPayloadType,
       WebRtc_Word8());
+  MOCK_CONST_METHOD0(HaveNotReceivedPackets,
+        bool());
 };
 
 }  // namespace webrtc

@@ -321,14 +321,17 @@ WebRtc_Word32 RTPReceiverVideo::ReceiveGenericCodec(
     const WebRtc_UWord16 payloadDataLength) {
   rtpHeader->frameType = kVideoFrameKey;
 
-  if(((SequenceNumber() + 1) == rtpHeader->header.sequenceNumber) &&
-      (TimeStamp() != rtpHeader->header.timestamp)) {
+  bool isFirstPacketInFrame =
+      (SequenceNumber() + 1) == rtpHeader->header.sequenceNumber &&
+      TimeStamp() != rtpHeader->header.timestamp;
+
+  if (isFirstPacketInFrame || HaveNotReceivedPackets()) {
     rtpHeader->type.Video.isFirstPacket = true;
   }
   _criticalSectionReceiverVideo->Leave();
 
-  if(CallbackOfReceivedPayloadData(payloadData, payloadDataLength,
-                                   rtpHeader) != 0) {
+  if (CallbackOfReceivedPayloadData(payloadData, payloadDataLength,
+                                    rtpHeader) != 0) {
     return -1;
   }
   return 0;
