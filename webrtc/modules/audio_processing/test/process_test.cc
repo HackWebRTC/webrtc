@@ -19,11 +19,12 @@
 
 #include "gtest/gtest.h"
 
-#include "audio_processing.h"
-#include "cpu_features_wrapper.h"
-#include "module_common_types.h"
-#include "scoped_ptr.h"
-#include "tick_util.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/test/testsupport/perf_test.h"
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_processing/debug.pb.h"
 #else
@@ -1032,6 +1033,9 @@ void void_main(int argc, char* argv[]) {
           (exec_time * 1.0) / primary_count,
           (max_time_us + max_time_reverse_us) / 1000.0,
           (min_time_us + min_time_reverse_us) / 1000.0);
+      // Record the results with Perf test tools.
+      webrtc::test::PrintResult("time_per_10ms_frame", "", "audioproc",
+          (exec_time * 1000) / primary_count, "us", false);
     } else {
       printf("Warning: no capture frames\n");
     }
