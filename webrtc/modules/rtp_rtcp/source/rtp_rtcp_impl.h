@@ -225,6 +225,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
     // Reset RoundTripTime statistics
     virtual WebRtc_Word32 ResetRTT(const WebRtc_UWord32 remoteSSRC);
 
+    virtual void SetRtt(uint32_t rtt);
+
     // Force a send of an RTCP packet
     // normal SR and RR are triggered via the process function
     virtual WebRtc_Word32 SendRTCP(WebRtc_UWord32 rtcpPacketType = kRtcpReport);
@@ -508,6 +510,8 @@ private:
     KeyFrameRequestMethod _keyFrameReqMethod;
 
     RemoteBitrateEstimator* remote_bitrate_;
+
+    RtcpRttObserver* rtt_observer_;
 
 #ifdef MATLAB
     MatlabPlot*           _plot1;

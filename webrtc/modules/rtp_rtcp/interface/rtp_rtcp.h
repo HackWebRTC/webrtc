@@ -37,6 +37,7 @@ class RtpRtcp : public Module {
           rtcp_feedback(NULL),
           intra_frame_callback(NULL),
           bandwidth_callback(NULL),
+          rtt_observer(NULL),
           audio_messages(NULL),
           remote_bitrate_estimator(NULL),
           paced_sender(NULL) {
@@ -53,7 +54,7 @@ class RtpRtcp : public Module {
     *  outgoing_transport   - Transport object that will be called when packets
     *                         are ready to be sent out on the network
     *  rtcp_feedback        - Callback object that will receive the incoming
-    *                         RTP messages.
+    *                         RTCP messages.
     *  intra_frame_callback - Called when the receiver request a intra frame.
     *  bandwidth_callback   - Called when we receive a changed estimate from
     *                         the receiver of out stream.
@@ -73,6 +74,7 @@ class RtpRtcp : public Module {
     RtcpFeedback* rtcp_feedback;
     RtcpIntraFrameObserver* intra_frame_callback;
     RtcpBandwidthObserver* bandwidth_callback;
+    RtcpRttObserver* rtt_observer;
     RtpAudioFeedback* audio_messages;
     RemoteBitrateEstimator* remote_bitrate_estimator;
     PacedSender* paced_sender;
@@ -592,6 +594,12 @@ class RtpRtcp : public Module {
     *   return -1 on failure else 0
     */
     virtual WebRtc_Word32 ResetRTT(const WebRtc_UWord32 remoteSSRC)= 0 ;
+
+    /*
+     * Sets the estimated RTT, to be used for receive only modules without
+     * possibility of calculating its own RTT.
+     */
+    virtual void SetRtt(uint32_t rtt) = 0;
 
     /*
     *   Force a send of a RTCP packet

@@ -16,6 +16,7 @@
 #include "system_wrappers/interface/critical_section_wrapper.h"
 #include "system_wrappers/interface/map_wrapper.h"
 #include "system_wrappers/interface/trace.h"
+#include "video_engine/call_stats.h"
 #include "video_engine/encoder_state_feedback.h"
 #include "video_engine/vie_channel.h"
 #include "video_engine/vie_defines.h"
@@ -105,10 +106,12 @@ int ViEChannelManager::CreateChannel(int* channel_id) {
       group->GetRemoteBitrateEstimator();
   EncoderStateFeedback* encoder_state_feedback =
       group->GetEncoderStateFeedback();
+  RtcpRttObserver* rtcp_rtt_observer =
+      group->GetCallStats()->rtcp_rtt_observer();
 
   if (!(vie_encoder->Init() &&
         CreateChannelObject(new_channel_id, vie_encoder, bandwidth_observer,
-                            remote_bitrate_estimator,
+                            remote_bitrate_estimator, rtcp_rtt_observer,
                             encoder_state_feedback->GetRtcpIntraFrameObserver(),
                             true))) {
     delete vie_encoder;
@@ -126,10 +129,12 @@ int ViEChannelManager::CreateChannel(int* channel_id) {
   std::list<unsigned int> ssrcs;
   ssrcs.push_back(ssrc);
   vie_encoder->SetSsrcs(ssrcs);
-
   *channel_id = new_channel_id;
   group->AddChannel(*channel_id);
   channel_groups_.push_back(group);
+  // Register the channel to receive stats updates.
+  group->GetCallStats()->RegisterStatsObserver(
+      channel_map_[new_channel_id]->GetStatsObserver());
   return 0;
 }
 
@@ -153,6 +158,8 @@ int ViEChannelManager::CreateChannel(int* channel_id,
       channel_group->GetRemoteBitrateEstimator();
   EncoderStateFeedback* encoder_state_feedback =
       channel_group->GetEncoderStateFeedback();
+    RtcpRttObserver* rtcp_rtt_observer =
+        channel_group->GetCallStats()->rtcp_rtt_observer();
 
   ViEEncoder* vie_encoder = NULL;
   if (sender) {
@@ -166,7 +173,9 @@ int ViEChannelManager::CreateChannel(int* channel_id,
             vie_encoder,
             bandwidth_observer,
             remote_bitrate_estimator,
-            encoder_state_feedback->GetRtcpIntraFrameObserver(), sender))) {
+            rtcp_rtt_observer,
+            encoder_state_feedback->GetRtcpIntraFrameObserver(),
+            sender))) {
       delete vie_encoder;
       vie_encoder = NULL;
     }
@@ -183,6 +192,7 @@ int ViEChannelManager::CreateChannel(int* channel_id,
         vie_encoder,
         bandwidth_observer,
         remote_bitrate_estimator,
+        rtcp_rtt_observer,
         encoder_state_feedback->GetRtcpIntraFrameObserver(),
         sender)) {
       vie_encoder = NULL;
@@ -194,6 +204,9 @@ int ViEChannelManager::CreateChannel(int* channel_id,
   }
   *channel_id = new_channel_id;
   channel_group->AddChannel(*channel_id);
+  // Register the channel to receive stats updates.
+  channel_group->GetCallStats()->RegisterStatsObserver(
+      channel_map_[new_channel_id]->GetStatsObserver());
   return 0;
 }
 
@@ -226,6 +239,8 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
     vie_encoder = e_it->second;
 
     group = FindGroup(channel_id);
+    group->GetCallStats()->DeregisterStatsObserver(
+        vie_channel->GetStatsObserver());
     group->SetChannelRembStatus(channel_id, false, false, vie_channel,
                                 vie_encoder);
 
@@ -399,6 +414,7 @@ bool ViEChannelManager::CreateChannelObject(
     ViEEncoder* vie_encoder,
     RtcpBandwidthObserver* bandwidth_observer,
     RemoteBitrateEstimator* remote_bitrate_estimator,
+    RtcpRttObserver* rtcp_rtt_observer,
     RtcpIntraFrameObserver* intra_frame_observer,
     bool sender) {
   PacedSender* paced_sender = vie_encoder->GetPacedSender();
@@ -412,6 +428,7 @@ bool ViEChannelManager::CreateChannelObject(
                                            intra_frame_observer,
                                            bandwidth_observer,
                                            remote_bitrate_estimator,
+                                           rtcp_rtt_observer,
                                            paced_sender,
                                            send_rtp_rtcp_module,
                                            sender);

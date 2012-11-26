@@ -86,7 +86,8 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       _nackLastSeqNumberSent(0),
       _simulcast(false),
       _keyFrameReqMethod(kKeyFrameReqFirRtp),
-      remote_bitrate_(configuration.remote_bitrate_estimator)
+      remote_bitrate_(configuration.remote_bitrate_estimator),
+      rtt_observer_(configuration.rtt_observer)
 #ifdef MATLAB
        , _plot1(NULL)
 #endif
@@ -211,21 +212,23 @@ WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
       for (std::vector<RTCPReportBlock>::iterator it = receive_blocks.begin();
            it != receive_blocks.end(); ++it) {
         WebRtc_UWord16 rtt = 0;
-        _rtcpReceiver.RTT(it->remoteSSRC, &max_rtt, NULL, NULL, NULL);
+        _rtcpReceiver.RTT(it->remoteSSRC, &rtt, NULL, NULL, NULL);
         max_rtt = (rtt > max_rtt) ? rtt : max_rtt;
       }
+      // Report the rtt.
+      if (rtt_observer_ && max_rtt != 0)
+        rtt_observer_->OnRttUpdate(max_rtt);
     } else {
-      // We're only receiving, i.e. this module doesn't have its own RTT
-      // estimate. Use the RTT set by a sending channel using the same default
-      // module.
+      // No valid RTT estimate, probably since this is a receive only channel.
+      // Use an estimate set by a send module.
       max_rtt = _rtcpReceiver.RTT();
     }
     if (max_rtt == 0) {
-      // No valid estimate available, i.e. no sending channel using the same
-      // default module or no RTCP received yet.
+      // No own rtt calculation or set rtt, use default value.
       max_rtt = kDefaultRtt;
     }
     if (remote_bitrate_) {
+      // TODO(mflodman) Remove this and let this be propagated by CallStats.
       remote_bitrate_->SetRtt(max_rtt);
       remote_bitrate_->UpdateEstimate(_rtpReceiver.SSRC(), now);
       if (TMMBR()) {
@@ -1141,6 +1144,11 @@ ModuleRtpRtcpImpl::ResetRTT(const WebRtc_UWord32 remoteSSRC) {
                remoteSSRC);
 
   return _rtcpReceiver.ResetRTT(remoteSSRC);
+}
+
+void ModuleRtpRtcpImpl:: SetRtt(uint32_t rtt) {
+  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id, "SetRtt(rtt: %u)", rtt);
+  _rtcpReceiver.SetRTT(static_cast<WebRtc_UWord16>(rtt));
 }
 
 // Reset RTP statistics

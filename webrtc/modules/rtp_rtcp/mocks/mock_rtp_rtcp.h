@@ -184,6 +184,7 @@ class MockRtpRtcp : public RtpRtcp {
       WebRtc_Word32(const WebRtc_UWord32 remoteSSRC, WebRtc_UWord16* RTT, WebRtc_UWord16* avgRTT, WebRtc_UWord16* minRTT, WebRtc_UWord16* maxRTT));
   MOCK_METHOD1(ResetRTT,
       WebRtc_Word32(const WebRtc_UWord32 remoteSSRC));
+  MOCK_METHOD1(SetRtt, void(uint32_t rtt));
   MOCK_METHOD1(SendRTCP,
       WebRtc_Word32(WebRtc_UWord32 rtcpPacketType));
   MOCK_METHOD1(SendRTCPReferencePictureSelection,

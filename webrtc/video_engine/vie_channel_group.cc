@@ -13,6 +13,8 @@
 #include "modules/bitrate_controller/include/bitrate_controller.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "modules/utility/interface/process_thread.h"
+#include "video_engine/call_stats.h"
 #include "video_engine/encoder_state_feedback.h"
 #include "video_engine/vie_channel.h"
 #include "video_engine/vie_encoder.h"
@@ -25,12 +27,16 @@ ChannelGroup::ChannelGroup(ProcessThread* process_thread,
                            RemoteBitrateEstimator::EstimationMode mode)
     : remb_(new VieRemb(process_thread)),
       bitrate_controller_(BitrateController::CreateBitrateController()),
+      call_stats_(new CallStats()),
       remote_bitrate_estimator_(RemoteBitrateEstimator::Create(remb_.get(),
                                                                options, mode)),
-      encoder_state_feedback_(new EncoderStateFeedback()) {
+      encoder_state_feedback_(new EncoderStateFeedback()),
+      process_thread_(process_thread) {
+  process_thread->RegisterModule(call_stats_.get());
 }
 
 ChannelGroup::~ChannelGroup() {
+  process_thread_->DeRegisterModule(call_stats_.get());
   assert(channels_.empty());
   assert(!remb_->InUse());
 }
@@ -57,6 +63,10 @@ BitrateController* ChannelGroup::GetBitrateController() {
 
 RemoteBitrateEstimator* ChannelGroup::GetRemoteBitrateEstimator() {
   return remote_bitrate_estimator_.get();
+}
+
+CallStats* ChannelGroup::GetCallStats() {
+  return call_stats_.get();
 }
 
 EncoderStateFeedback* ChannelGroup::GetEncoderStateFeedback() {

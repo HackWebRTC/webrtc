@@ -25,6 +25,9 @@
 
 namespace webrtc {
 
+// Use this rtt if no value has been reported.
+static uint32_t kDefaultRtt = 200;
+
 // Predicates used when searching for frames in the frame buffer list
 class FrameSmallerTimestamp {
  public:
@@ -88,7 +91,7 @@ VCMJitterBuffer::VCMJitterBuffer(TickTimeBase* clock,
       num_discarded_packets_(0),
       jitter_estimate_(vcm_id, receiver_id),
       inter_frame_delay_(clock_->MillisecondTimestamp()),
-      rtt_ms_(0),
+      rtt_ms_(kDefaultRtt),
       nack_mode_(kNoNack),
       low_rtt_nack_threshold_ms_(-1),
       high_rtt_nack_threshold_ms_(-1),
@@ -190,7 +193,7 @@ void VCMJitterBuffer::Start() {
   first_packet_ = true;
   nack_seq_nums_length_ = 0;
   waiting_for_key_frame_ = false;
-  rtt_ms_ = 0;
+  rtt_ms_ = kDefaultRtt;
   num_not_decodable_packets_ = 0;
 
   WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
@@ -796,6 +799,11 @@ void VCMJitterBuffer::SetNackMode(VCMNackMode mode,
   assert(low_rtt_nack_threshold_ms > -1 || high_rtt_nack_threshold_ms == -1);
   low_rtt_nack_threshold_ms_ = low_rtt_nack_threshold_ms;
   high_rtt_nack_threshold_ms_ = high_rtt_nack_threshold_ms;
+  // Don't set a high start rtt if high_rtt_nack_threshold_ms_ is used, to not
+  // disable NACK in hybrid mode.
+  if (rtt_ms_ == kDefaultRtt && high_rtt_nack_threshold_ms_ != -1) {
+    rtt_ms_ = 0;
+  }
   if (nack_mode_ == kNoNack) {
     jitter_estimate_.ResetNackCount();
   }

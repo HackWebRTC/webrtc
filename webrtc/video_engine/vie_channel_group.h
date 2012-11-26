@@ -19,6 +19,7 @@
 namespace webrtc {
 
 class BitrateController;
+class CallStats;
 class EncoderStateFeedback;
 struct OverUseDetectorOptions;
 class ProcessThread;
@@ -47,6 +48,7 @@ class ChannelGroup {
                             ViEEncoder* encoder);
 
   BitrateController* GetBitrateController();
+  CallStats* GetCallStats();
   RemoteBitrateEstimator* GetRemoteBitrateEstimator();
   EncoderStateFeedback* GetEncoderStateFeedback();
 
@@ -55,9 +57,13 @@ class ChannelGroup {
 
   scoped_ptr<VieRemb> remb_;
   scoped_ptr<BitrateController> bitrate_controller_;
+  scoped_ptr<CallStats> call_stats_;
   scoped_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
   scoped_ptr<EncoderStateFeedback> encoder_state_feedback_;
   ChannelSet channels_;
+
+  // Regisered at construct time and assumed to outlive this class.
+  ProcessThread* process_thread_;
 };
 
 }  // namespace webrtc
