@@ -244,7 +244,7 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported()
       // want to ensure that MTA is used and therefore return false here.
       return false;
     }
- 
+
     // 3) Check if the MMDevice API is available.
     //
     // The Windows Multimedia Device (MMDevice) API enables audio clients to
@@ -286,17 +286,17 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported()
         const DWORD dwFlags = FORMAT_MESSAGE_FROM_SYSTEM |
                               FORMAT_MESSAGE_IGNORE_INSERTS;
         const DWORD dwLangID = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
-    
+
         // Gets the system's human readable message string for this HRESULT.
         // All error message in English by default.
-        DWORD messageLength = ::FormatMessageW(dwFlags, 
+        DWORD messageLength = ::FormatMessageW(dwFlags,
                                                0,
                                                hr,
                                                dwLangID,
-                                               errorText,  
-                                               MAXERRORLENGTH,  
+                                               errorText,
+                                               MAXERRORLENGTH,
                                                NULL);
-        
+
         assert(messageLength <= MAXERRORLENGTH);
 
         // Trims tailing white space (FormatMessage() leaves a trailing cr-lf.).
@@ -3122,15 +3122,15 @@ WebRtc_Word32 AudioDeviceWindowsCore::StopPlayout()
         CriticalSectionScoped critScoped(&_critSect);
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
             "webrtc_core_audio_render_thread is now closed");
-        
-        // to reset this event manually at each time we finish with it, 
+
+        // to reset this event manually at each time we finish with it,
         // in case that the render thread has exited before StopPlayout(),
         // this event might be caught by the new render thread within same VoE instance.
-        ResetEvent(_hShutdownRenderEvent); 
+        ResetEvent(_hShutdownRenderEvent);
 
         SAFE_RELEASE(_ptrClientOut);
         SAFE_RELEASE(_ptrRenderClient);
-       
+
         _playIsInitialized = false;
         _playing = false;
 
@@ -3471,6 +3471,8 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
 
     _Lock();
 
+    IAudioClock* clock = NULL;
+
     // Get size of rendering buffer (length is expressed as the number of audio frames the buffer can hold).
     // This value is fixed during the rendering session.
     //
@@ -3525,7 +3527,6 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
 
     _writtenSamples += bufferLength;
 
-    IAudioClock* clock = NULL;
     hr = _ptrClientOut->GetService(__uuidof(IAudioClock), (void**)&clock);
     if (FAILED(hr)) {
       WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
@@ -3614,7 +3615,7 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
                     _ptrAudioBuffer->RequestPlayoutData(_playBlockSize);
                     _Lock();
 
-                    if (nSamples == -1) 
+                    if (nSamples == -1)
                     {
                         _UnLock();
                         WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
@@ -3629,7 +3630,7 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
                         WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id, "output state has been modified during unlocked period");
                         goto Exit;
                     }
-                    if (nSamples != _playBlockSize)
+                    if (nSamples != static_cast<WebRtc_Word32>(_playBlockSize))
                     {
                         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id, "nSamples(%d) != _playBlockSize(%d)", nSamples, _playBlockSize);
                     }
@@ -3852,7 +3853,7 @@ DWORD AudioDeviceWindowsCore::DoCaptureThreadPollDMO()
                 // TODO(andrew): verify that this is always satisfied. It might
                 // be that ProcessOutput will try to return more than 10 ms if
                 // we fail to call it frequently enough.
-                assert(kSamplesProduced == _recBlockSize);
+                assert(kSamplesProduced == static_cast<int>(_recBlockSize));
                 assert(sizeof(BYTE) == sizeof(WebRtc_Word8));
                 _ptrAudioBuffer->SetRecordedBuffer(
                     reinterpret_cast<WebRtc_Word8*>(data),
@@ -4904,6 +4905,10 @@ WebRtc_Word32 AudioDeviceWindowsCore::_EnumerateEndpointDevicesAll(EDataFlow dat
 
     HRESULT hr = S_OK;
     IMMDeviceCollection *pCollection = NULL;
+    IMMDevice *pEndpoint = NULL;
+    IPropertyStore *pProps = NULL;
+    IAudioEndpointVolume* pEndpointVolume = NULL;
+    LPWSTR pwszID = NULL;
 
     // Generate a collection of audio endpoint devices in the system.
     // Get states for *all* endpoint devices.
@@ -4917,11 +4922,7 @@ WebRtc_Word32 AudioDeviceWindowsCore::_EnumerateEndpointDevicesAll(EDataFlow dat
 
     // use the IMMDeviceCollection interface...
 
-    UINT count;
-    IMMDevice *pEndpoint = NULL;
-    IPropertyStore *pProps = NULL;
-    IAudioEndpointVolume* pEndpointVolume = NULL;
-    LPWSTR pwszID = NULL;
+    UINT count = 0;
 
     // Retrieve a count of the devices in the device collection.
     hr = pCollection->GetCount(&count);
@@ -5083,15 +5084,15 @@ void AudioDeviceWindowsCore::_TraceCOMError(HRESULT hr) const
     const DWORD dwFlags = FORMAT_MESSAGE_FROM_SYSTEM |
                           FORMAT_MESSAGE_IGNORE_INSERTS;
     const DWORD dwLangID = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
-    
+
     // Gets the system's human readable message string for this HRESULT.
     // All error message in English by default.
-    DWORD messageLength = ::FormatMessageW(dwFlags, 
+    DWORD messageLength = ::FormatMessageW(dwFlags,
                                            0,
                                            hr,
                                            dwLangID,
-                                           errorText,  
-                                           MAXERRORLENGTH,  
+                                           errorText,
+                                           MAXERRORLENGTH,
                                            NULL);
 
     assert(messageLength <= MAXERRORLENGTH);

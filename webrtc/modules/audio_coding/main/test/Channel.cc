@@ -160,7 +160,7 @@ Channel::CalcStatistics(
     _lastPayloadType = rtpInfo.header.payloadType;
 
     bool newPayload = true;
-    ACMTestPayloadStats* currentPayloadStr;
+    ACMTestPayloadStats* currentPayloadStr = NULL;
     for(n = 0; n < MAX_NUM_PAYLOADS; n++)
     {
         if(rtpInfo.header.payloadType == _payloadStats[n].payloadType)

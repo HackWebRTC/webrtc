@@ -76,7 +76,7 @@ DeviceInfoDS::DeviceInfoDS(const WebRtc_Word32 id)
      the code for the object, other than to avoid calls to PeekMessage and SendMessage during processing that must not be interrupted by other method
      invocations or calls to other objects in the same apartment/thread.*/
 
-    ///CoInitializeEx(NULL, COINIT_APARTMENTTHREADED ); //| COINIT_SPEED_OVER_MEMORY 
+    ///CoInitializeEx(NULL, COINIT_APARTMENTTHREADED ); //| COINIT_SPEED_OVER_MEMORY
     HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED); // Use COINIT_MULTITHREADED since Voice Engine uses COINIT_MULTITHREADED
     if (FAILED(hr))
     {
@@ -194,8 +194,8 @@ WebRtc_Word32 DeviceInfoDS::GetDeviceInfo(
                     (_wcsnicmp(varName.bstrVal, (L"Google Camera Adapter"),21)
                         != 0))
                 {
-                    // Found a valid device
-                    if (index == deviceNumber) // This is the device we are interested in.
+                    // Found a valid device.
+                    if (index == static_cast<int>(deviceNumber))
                     {
                         int convResult = 0;
                         if (deviceNameLength > 0)
@@ -336,7 +336,7 @@ IBaseFilter * DeviceInfoDS::GetDeviceFilter(
                                 (const char*) deviceUniqueIdUTF8,
                                 deviceUniqueIdUTF8Length) == 0)
                     {
-                        // We have found the requested device                        
+                        // We have found the requested device
                         deviceFound = true;
                         hr = pM->BindToObject(0, 0, IID_IBaseFilter,
                                               (void**) &captureFilter);
@@ -474,7 +474,7 @@ WebRtc_Word32 DeviceInfoDS::CreateCapabilityMap(
     }
 
     WebRtc_Word32 index = 0; // Index in created _capabilities map
-    // Check if the device support formattype == FORMAT_VideoInfo2 and FORMAT_VideoInfo. 
+    // Check if the device support formattype == FORMAT_VideoInfo2 and FORMAT_VideoInfo.
     // Prefer FORMAT_VideoInfo since some cameras (ZureCam) has been seen having problem with MJPEG and FORMAT_VideoInfo2
     // Interlace flag is only supported in FORMAT_VideoInfo2
     bool supportFORMAT_VideoInfo2 = false;
@@ -570,7 +570,7 @@ WebRtc_Word32 DeviceInfoDS::CreateCapabilityMap(
 
             if (hrVC == S_OK)
             {
-                LONGLONG *maxFps; // array                        
+                LONGLONG *maxFps; // array
                 long listSize;
                 SIZE size;
                 size.cx = capability->width;
@@ -578,7 +578,7 @@ WebRtc_Word32 DeviceInfoDS::CreateCapabilityMap(
 
                 // GetMaxAvailableFrameRate doesn't return max frame rate always
                 // eg: Logitech Notebook. This may be due to a bug in that API
-                // because GetFrameRateList array is reversed in the above camera. So 
+                // because GetFrameRateList array is reversed in the above camera. So
                 // a util method written. Can't assume the first value will return
                 // the max fps.
                 hrVC = videoControlConfig->GetFrameRateList(outputCapturePin,
@@ -687,7 +687,7 @@ WebRtc_Word32 DeviceInfoDS::CreateCapabilityMap(
     RELEASE_AND_CLEAR(videoControlConfig);
     RELEASE_AND_CLEAR(outputCapturePin);
     RELEASE_AND_CLEAR(captureDevice); // Release the capture device
-    
+
     // Store the new used device name
     _lastUsedDeviceNameLength = deviceUniqueIdUTF8Length;
     _lastUsedDeviceName = (char*) realloc(_lastUsedDeviceName,
@@ -700,7 +700,7 @@ WebRtc_Word32 DeviceInfoDS::CreateCapabilityMap(
     return _captureCapabilities.Size();
 }
 
-/* Constructs a product ID from the Windows DevicePath. on a USB device the devicePath contains product id and vendor id. 
+/* Constructs a product ID from the Windows DevicePath. on a USB device the devicePath contains product id and vendor id.
  This seems to work for firewire as well
  /* Example of device path
  "\\?\usb#vid_0408&pid_2010&mi_00#7&258e7aaf&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global"
