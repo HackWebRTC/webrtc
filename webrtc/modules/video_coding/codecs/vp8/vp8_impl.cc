@@ -177,11 +177,11 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   encoded_image_._buffer = new uint8_t[encoded_image_._size];
   encoded_image_._completeFrame = true;
 
-  unsigned int align = 1;
-  if (codec_.width % 32 == 0) {
-    align = 32;
-  }
-  raw_ = vpx_img_alloc(NULL, IMG_FMT_I420, codec_.width, codec_.height, align);
+  // Creating a wrapper to the image - setting image data to NULL. Actual
+  // pointer will be set in encode. Setting align to 1, as it is meaningless
+  // (actual memory is not allocated).
+  raw_ = vpx_img_wrap(NULL, IMG_FMT_I420, codec_.width, codec_.height,
+                      1, NULL);
   // populate encoder configuration with default values
   if (vpx_codec_enc_config_default(vpx_codec_vp8_cx(), config_, 0)) {
     return WEBRTC_VIDEO_CODEC_ERROR;
@@ -970,10 +970,7 @@ VideoDecoder* VP8DecoderImpl::Copy() {
   if (!ref_frame_) {
     ref_frame_ = new vpx_ref_frame_t;
 
-    unsigned int align = 1;
-    if (decoded_image_.width() % 32 == 0) {
-      align = 32;
-    }
+    unsigned int align = 16;
     if (!vpx_img_alloc(&ref_frame_->img,
                        static_cast<vpx_img_fmt_t>(image_format_),
                        decoded_image_.width(), decoded_image_.height(),
