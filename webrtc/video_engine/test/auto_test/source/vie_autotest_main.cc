@@ -12,9 +12,11 @@
 
 #include "gflags/gflags.h"
 #include "gtest/gtest.h"
+
 #include "video_engine/test/auto_test/interface/vie_autotest.h"
 #include "video_engine/test/auto_test/interface/vie_autotest_window_manager_interface.h"
 #include "video_engine/test/auto_test/interface/vie_window_creator.h"
+#include "test/testsupport/fileutils.h"
 
 DEFINE_bool(automated, false, "Run Video engine tests in noninteractive mode.");
 DEFINE_bool(auto_custom_call, false, "Run custom call directly.");
@@ -38,6 +40,8 @@ ViEAutoTestMain::ViEAutoTestMain() {
 int ViEAutoTestMain::RunTests(int argc, char** argv) {
   // Initialize logging.
   ViETest::Init();
+  // Initialize WebRTC testing framework so paths to resources can be resolved.
+  webrtc::test::SetExecutablePath(argv[0]);
   // Initialize the testing framework.
   testing::InitGoogleTest(&argc, argv);
   // Parse remaining flags:

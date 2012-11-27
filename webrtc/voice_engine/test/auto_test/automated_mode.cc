@@ -9,8 +9,11 @@
  */
 
 #include "gtest/gtest.h"
+#include "test/testsupport/fileutils.h"
 
 void InitializeGoogleTest(int* argc, char** argv) {
+  // Initialize WebRTC testing framework so paths to resources can be resolved.
+  webrtc::test::SetExecutablePath(argv[0]);
   testing::InitGoogleTest(argc, argv);
 }
 
