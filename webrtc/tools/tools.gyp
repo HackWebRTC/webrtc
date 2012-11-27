@@ -84,5 +84,45 @@
         'converter/rgba_to_i420_converter.cc',
       ],
     }, # rgba_to_i420_converter
+    {
+      'target_name': 'frame_cutter_lib',
+      'type': '<(library)',
+      'dependencies': [
+        '<(DEPTH)/webrtc/common_video/common_video.gyp:common_video',
+      ],
+      'sources': [
+        'frame_cutter/frame_cutter_lib.cc',
+        'frame_cutter/frame_cutter_lib.h',
+      ],
+    }, # frame_cutter_lib
+    {
+      'target_name': 'frame_cutter',
+      'type': 'executable',
+      'dependencies': [
+        'command_line_parser',
+        'frame_cutter_lib',
+      ],
+      'sources': [
+        'frame_cutter/frame_cutter.cc',
+      ],
+    }, # frame_cutter
   ],
+  'conditions': [
+    ['include_tests==1', {
+      'targets' : [
+        {
+          'target_name': 'tools_unittests',
+          'type': 'executable',
+          'dependencies': [
+            'frame_cutter_lib',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
+          ],
+          'sources': [
+            'frame_cutter/frame_cutter_unittest.cc',
+          ],
+        }, # tools_unittests
+      ], # targets
+    }], # include_tests
+  ], # conditions
 }
