@@ -73,7 +73,7 @@ TEST_F(EncryptionTest, ManualBasicCorrectExternalEncryptionHasNoEffectOnVoice) {
 
   voe_encrypt_->RegisterExternalEncryption(channel_, basic_encryption);
 
-  TEST_LOG("Registered external encryption, should still hear good audio.");
+  TEST_LOG("Registered external encryption, should still hear good audio.\n");
   Sleep(3000);
 
   voe_encrypt_->DeRegisterExternalEncryption(channel_);

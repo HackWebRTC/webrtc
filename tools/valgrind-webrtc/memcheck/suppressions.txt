@@ -292,15 +292,7 @@
 {
    bug_332_9
    Memcheck:Uninitialized
-   fun:linear_to_ulaw
-   fun:WebRtcG711_EncodeU
-   fun:_ZN6webrtc7ACMPCMU14InternalEncodeEPhPs
-   fun:_ZN6webrtc15ACMGenericCodec10EncodeSafeEPhPsPjPNS_21WebRtcACMEncodingTypeE
-   fun:_ZN6webrtc15ACMGenericCodec6EncodeEPhPsPjPNS_21WebRtcACMEncodingTypeE
-   fun:_ZN6webrtc21AudioCodingModuleImpl7ProcessEv
-   fun:_ZN6webrtc3voe7Channel13EncodeAndSendEv
-   fun:_ZN6webrtc3voe13TransmitMixer13EncodeAndSendEv
-   fun:_ZN6webrtc11VoEBaseImpl23RecordedDataIsAvailableEPKvjhhjjijRj
+   ...
    fun:_ZN6webrtc17AudioDeviceBuffer19DeliverRecordedDataEv
    fun:_ZN6webrtc21AudioDeviceLinuxPulse19ProcessRecordedDataEPajj
    fun:_ZN6webrtc21AudioDeviceLinuxPulse16ReadRecordedDataEPKvm
@@ -347,4 +339,15 @@
    ...
 }
 
-
+{
+   ignore_leak_when_alsa_hits_error
+   Memcheck:Leak
+   ...
+   fun:snd_device_name_hint
+   fun:_ZNK6webrtc20AudioDeviceLinuxALSA14GetDevicesInfoEibiPci
+   fun:_ZN6webrtc20AudioDeviceLinuxALSA16SetPlayoutDeviceEt
+   fun:_ZN6webrtc21AudioDeviceModuleImpl16SetPlayoutDeviceEt
+   fun:_ZN6webrtc11VoEBaseImpl4InitEPNS_17AudioDeviceModuleE
+   fun:_ZN11ViEAutoTest19ViEFileStandardTestEv
+   fun:_ZN12_GLOBAL__N_157ViEStandardIntegrationTest_RunsFileTestWithoutErrors_Test8TestBodyEv
+}
