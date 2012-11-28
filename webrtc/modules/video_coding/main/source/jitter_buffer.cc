@@ -933,7 +933,8 @@ uint16_t* VCMJitterBuffer::CreateNackList(uint16_t* nack_list_size,
     // We don't need to check if frame is decoding since low_seq_num is based
     // on the last decoded sequence number.
     VCMFrameBufferStateEnum state = frame_buffers_[i]->GetState();
-    if (kStateFree != state) {
+    if ((kStateFree != state) &&
+        (kStateEmpty != state)) {
       // Reaching thus far means we are going to update the NACK list
       // When in hybrid mode, we use the soft NACKing feature.
       if (nack_mode_ == kNackHybrid) {
@@ -1270,11 +1271,11 @@ FrameList::iterator VCMJitterBuffer::FindOldestCompleteContinuousFrame(
 void VCMJitterBuffer::CleanUpOldFrames() {
   while (frame_list_.size() > 0) {
     VCMFrameBuffer* oldest_frame = frame_list_.front();
-    if (oldest_frame->GetState() == kStateEmpty && frame_list_.size() > 1) {
-      // This frame is empty, mark it as decoded, thereby making it old.
-      last_decoded_state_.UpdateEmptyFrame(oldest_frame);
-    }
-    if (last_decoded_state_.IsOldFrame(oldest_frame)) {
+    bool next_frame_empty =
+        (last_decoded_state_.ContinuousFrame(oldest_frame) &&
+         oldest_frame->GetState() == kStateEmpty);
+    if (last_decoded_state_.IsOldFrame(oldest_frame) ||
+        (next_frame_empty && frame_list_.size() > 1)) {
       ReleaseFrameIfNotDecoding(frame_list_.front());
       frame_list_.erase(frame_list_.begin());
     } else {

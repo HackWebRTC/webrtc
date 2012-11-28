@@ -185,8 +185,7 @@ WebRtc_Word32 VCMGenericDecoder::Decode(const VCMEncodedFrame& frame,
         _callback->Pop(frame.TimeStamp());
     }
     // Update the key frame decoded variable so that we know whether or not we've decoded a key frame since reset.
-    _keyFrameDecoded = (_keyFrameDecoded ||
-        frame.FrameType() == kVideoFrameKey);
+    _keyFrameDecoded = (frame.FrameType() == kVideoFrameKey || frame.FrameType() == kVideoFrameGolden);
     return ret;
 }
 

@@ -357,44 +357,38 @@ int VCMSessionInfo::BuildHardNackList(int* seq_num_list,
   if (NULL == seq_num_list || seq_num_list_length < 1) {
     return -1;
   }
-  if (packets_.empty() && empty_seq_num_low_ == -1) {
+  if (packets_.empty()) {
     return 0;
   }
 
   // Find end point (index of entry equals the sequence number of the first
   // packet).
   int index = 0;
-  int low_seq_num = (packets_.empty()) ? empty_seq_num_low_:
-      packets_.front().seqNum;
   for (; index < seq_num_list_length; ++index) {
-    if (seq_num_list[index] == low_seq_num) {
+    if (seq_num_list[index] == packets_.front().seqNum) {
       seq_num_list[index] = -1;
       ++index;
       break;
     }
   }
 
-  if (!packets_.empty()) {
-    // Zero out between the first entry and the end point.
-    PacketIterator it = packets_.begin();
-    PacketIterator prev_it = it;
-    ++it;
-    while (it != packets_.end() && index < seq_num_list_length) {
-      if (!InSequence(it, prev_it)) {
-        // Found a sequence number gap due to packet loss.
-        index += PacketsMissing(it, prev_it);
-        session_nack_ = true;
-      }
-      seq_num_list[index] = -1;
-      ++index;
-      prev_it = it;
-      ++it;
+  // Zero out between the first entry and the end point.
+  PacketIterator it = packets_.begin();
+  PacketIterator prev_it = it;
+  ++it;
+  while (it != packets_.end() && index < seq_num_list_length) {
+    if (!InSequence(it, prev_it)) {
+      // Found a sequence number gap due to packet loss.
+      index += PacketsMissing(it, prev_it);
+      session_nack_ = true;
     }
-    if (!packets_.front().isFirstPacket)
-        session_nack_ = true;
+    seq_num_list[index] = -1;
+    ++index;
+    prev_it = it;
+    ++it;
   }
-  index = ClearOutEmptyPacketSequenceNumbers(seq_num_list, seq_num_list_length,
-                                             index);
+  if (!packets_.front().isFirstPacket)
+    session_nack_ = true;
   return 0;
 }
 
@@ -491,17 +485,6 @@ int VCMSessionInfo::BuildSoftNackList(int* seq_num_list,
     }
   }
 
-  index = ClearOutEmptyPacketSequenceNumbers(seq_num_list, seq_num_list_length,
-                                             index);
-
-  session_nack_ = allow_nack;
-  return 0;
-}
-
-int VCMSessionInfo::ClearOutEmptyPacketSequenceNumbers(
-    int* seq_num_list,
-    int seq_num_list_length,
-    int index) const {
   // Empty packets follow the data packets, and therefore have a higher
   // sequence number. We do not want to NACK empty packets.
   if ((empty_seq_num_low_ != -1) && (empty_seq_num_high_ != -1) &&
@@ -514,14 +497,15 @@ int VCMSessionInfo::ClearOutEmptyPacketSequenceNumbers(
     }
 
     // Mark empty packets.
-    while (seq_num_list[index] >= 0 &&
-        seq_num_list[index] <= empty_seq_num_high_ &&
+    while (seq_num_list[index] <= empty_seq_num_high_ &&
         index < seq_num_list_length) {
       seq_num_list[index] = -2;
       ++index;
     }
   }
-  return index;
+
+  session_nack_ = allow_nack;
+  return 0;
 }
 
 int VCMSessionInfo::PacketsMissing(const PacketIterator& packet_it,
