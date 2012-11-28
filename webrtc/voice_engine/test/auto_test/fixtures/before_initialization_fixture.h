@@ -39,6 +39,25 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
+// Helper macros for platform disables. These can be chained.
+#ifdef WEBRTC_LINUX
+#define DISABLED_ON_LINUX(test) DISABLED_##test
+#else
+#define DISABLED_ON_LINUX(test) test
+#endif
+
+#ifdef WEBRTC_MAC
+#define DISABLED_ON_MAC(test) DISABLED_##test
+#else
+#define DISABLED_ON_MAC(test) test
+#endif
+
+#ifdef _WIN32
+#define DISABLED_ON_WIN(test) DISABLED_##test
+#else
+#define DISABLED_ON_WIN(test) test
+#endif
+
 // This convenient fixture sets up all voice engine interfaces automatically for
 // use by testing subclasses. It allocates each interface and releases it once
 // which means that if a tests allocates additional interfaces from the voice

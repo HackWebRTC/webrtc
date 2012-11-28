@@ -143,9 +143,11 @@ TEST_F(NetworkTest, DoesNotCallDeRegisteredObserver) {
   Sleep(1500);
 }
 
-TEST_F(NetworkTest, DeadOrAliveObserverSeesAliveMessagesIfEnabled) {
+// TODO(phoglund): flaky on Linux
+TEST_F(NetworkTest,
+       DISABLED_ON_LINUX(DeadOrAliveObserverSeesAliveMessagesIfEnabled)) {
   if (!FLAGS_include_timing_dependent_tests) {
-    TEST_LOG("Skipping test - running in slow execution environment.../n");
+    TEST_LOG("Skipping test - running in slow execution environment...\n");
     return;
   }
 
@@ -165,7 +167,7 @@ TEST_F(NetworkTest, DeadOrAliveObserverSeesAliveMessagesIfEnabled) {
 
 TEST_F(NetworkTest, DeadOrAliveObserverSeesDeadMessagesIfEnabled) {
   if (!FLAGS_include_timing_dependent_tests) {
-    TEST_LOG("Skipping test - running in slow execution environment.../n");
+    TEST_LOG("Skipping test - running in slow execution environment...\n");
     return;
   }
 

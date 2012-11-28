@@ -27,7 +27,7 @@ class FileTest : public AfterStreamingFixture {
 
 TEST_F(FileTest, ManualRecordToFileForThreeSecondsAndPlayback) {
   if (!FLAGS_include_timing_dependent_tests) {
-    TEST_LOG("Skipping test - running in slow execution environment.../n");
+    TEST_LOG("Skipping test - running in slow execution environment...\n");
     return;
   }
 

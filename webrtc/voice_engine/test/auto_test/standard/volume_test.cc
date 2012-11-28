@@ -10,12 +10,6 @@
 
 #include "after_streaming_fixture.h"
 
-#ifdef WEBRTC_LINUX
-#define DISABLED_ON_LINUX(test) DISABLED_##test
-#else
-#define DISABLED_ON_LINUX(test) test
-#endif
-
 class VolumeTest : public AfterStreamingFixture {
 };
 

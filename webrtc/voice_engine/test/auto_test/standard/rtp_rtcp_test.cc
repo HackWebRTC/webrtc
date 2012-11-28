@@ -140,7 +140,7 @@ void RtcpAppHandler::Reset() {
 
 TEST_F(RtpRtcpTest, RemoteRtcpCnameHasPropagatedToRemoteSide) {
   if (!FLAGS_include_timing_dependent_tests) {
-    TEST_LOG("Skipping test - running in slow execution environment.../n");
+    TEST_LOG("Skipping test - running in slow execution environment...\n");
     return;
   }
 
