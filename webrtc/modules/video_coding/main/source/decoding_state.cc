@@ -94,6 +94,13 @@ void VCMDecodingState::SetStateOneBack(const VCMFrameBuffer* frame) {
   init_ = false;
 }
 
+void VCMDecodingState::UpdateEmptyFrame(const VCMFrameBuffer* frame) {
+  if (ContinuousFrame(frame) && frame->GetState() == kStateEmpty) {
+    time_stamp_ = frame->TimeStamp();
+    sequence_num_ = frame->GetHighSeqNum();
+  }
+}
+
 void VCMDecodingState::UpdateOldPacket(const VCMPacket* packet) {
   assert(packet != NULL);
   if (packet->timestamp == time_stamp_) {
