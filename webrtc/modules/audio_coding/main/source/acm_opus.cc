@@ -111,7 +111,7 @@ ACMOpus::ACMOpus(int16_t codecID)
   // Opus has internal DTX, but we dont use it for now.
   _hasInternalDTX = false;
 
-  if ((_codecID != ACMCodecDB::kOpus) && (_codecID != ACMCodecDB::kOpus_2ch)) {
+  if (_codecID != ACMCodecDB::kOpus) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                  "Wrong codec id for Opus.");
     _sampleFreq = -1;
@@ -190,14 +190,16 @@ int16_t ACMOpus::InternalInitEncoder(WebRtcACMCodecParams* codecParams) {
 }
 
 int16_t ACMOpus::InternalInitDecoder(WebRtcACMCodecParams* codecParams) {
-  if (_decoderInstPtr != NULL) {
-    WebRtcOpus_DecoderFree(_decoderInstPtr);
-    _decoderInstPtr = NULL;
+  if(_decoderInstPtr == NULL) {
+    if (WebRtcOpus_DecoderCreate(&_decoderInstPtr,
+                                 codecParams->codecInstant.channels) < 0) {
+      return -1;
+    }
   }
-  if (WebRtcOpus_DecoderCreate(&_decoderInstPtr,
-                               codecParams->codecInstant.channels) < 0) {
-    return -1;
-  }
+
+  // Number of channels in decoder should match the number in |codecParams|.
+  assert(codecParams->codecInstant.channels ==
+      WebRtcOpus_DecoderChannels(_decoderInstPtr));
 
   if (WebRtcOpus_DecoderInit(_decoderInstPtr) < 0) {
     return -1;
@@ -221,13 +223,8 @@ int32_t ACMOpus::CodecDef(WebRtcNetEQ_CodecDef& codecDef,
   // TODO(tlegrand): Decoder is registered in NetEQ as a 32 kHz decoder, which
   // is true until we have a full 48 kHz system, and remove the downsampling
   // in the Opus decoder wrapper.
-  if (codecInst.channels == 1) {
-    SET_CODEC_PAR(codecDef, kDecoderOpus, codecInst.pltype, _decoderInstPtr,
-                  32000);
-  } else {
-    SET_CODEC_PAR(codecDef, kDecoderOpus_2ch, codecInst.pltype,
-                  _decoderInstPtr, 32000);
-  }
+  SET_CODEC_PAR(codecDef, kDecoderOpus, codecInst.pltype,
+                _decoderInstPtr, 32000);
 
   // If this is the master of NetEQ, regular decoder will be added, otherwise
   // the slave decoder will be used.

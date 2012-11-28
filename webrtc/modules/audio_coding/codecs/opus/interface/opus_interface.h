@@ -63,6 +63,13 @@ int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, int channels);
 int16_t WebRtcOpus_DecoderFree(OpusDecInst* inst);
 
 /****************************************************************************
+ * WebRtcOpus_DecoderChannels(...)
+ *
+ * This function returns the number of channels created for Opus decoder.
+ */
+int WebRtcOpus_DecoderChannels(OpusDecInst* inst);
+
+/****************************************************************************
  * WebRtcOpus_DecoderInit(...)
  *
  * This function resets state of the decoder.

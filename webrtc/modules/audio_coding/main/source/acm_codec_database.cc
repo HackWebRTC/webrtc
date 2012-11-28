@@ -190,10 +190,8 @@ const CodecInst ACMCodecDB::database_[] = {
 #endif
 #ifdef WEBRTC_CODEC_OPUS
   // Opus internally supports 48, 24, 16, 12, 8 kHz.
-  // Mono
-  {120, "opus", 48000, 960, 1, 32000},
-  // Stereo
-  {121, "opus", 48000, 960, 2, 32000},
+  // Mono and stereo.
+  {120, "opus", 48000, 960, 2, 32000},
 #endif
 #ifdef WEBRTC_CODEC_SPEEX
   {kDynamicPayloadtypes[count_database++], "speex", 8000, 160, 1, 11000},
@@ -285,9 +283,7 @@ const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
 #ifdef WEBRTC_CODEC_OPUS
   // Opus supports frames shorter than 10ms,
   // but it doesn't help us to use them.
-  // Mono
-  {1, {960}, 0, 2},
-  // Stereo
+  // Mono and stereo.
   {1, {960}, 0, 2},
 #endif
 #ifdef WEBRTC_CODEC_SPEEX
@@ -375,10 +371,8 @@ const WebRtcNetEQDecoder ACMCodecDB::neteq_decoders_[] = {
   kDecoderGSMFR,
 #endif
 #ifdef WEBRTC_CODEC_OPUS
-  // Mono
+  // Mono and stereo.
   kDecoderOpus,
-  // Stereo
-  kDecoderOpus_2ch,
 #endif
 #ifdef WEBRTC_CODEC_SPEEX
   kDecoderSPEEX_8,
@@ -571,7 +565,13 @@ int ACMCodecDB::CodecId(const char* payload_name, int frequency, int channels) {
     // always treated as true, like for RED.
     name_match = (STR_CASE_CMP(database_[id].plname, payload_name) == 0);
     frequency_match = (frequency == database_[id].plfreq) || (frequency == -1);
-    channels_match = (channels == database_[id].channels);
+    // The number of channels must match for all codecs but Opus.
+    if (STR_CASE_CMP(payload_name, "opus") != 0) {
+      channels_match = (channels == database_[id].channels);
+    } else {
+      // For opus we just check that number of channels is valid.
+      channels_match = (channels == 1 || channels == 2);
+    }
 
     if (name_match && frequency_match && channels_match) {
       // We have found a matching codec in the list.
@@ -767,11 +767,7 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst* codec_inst) {
 #endif
   } else if (!STR_CASE_CMP(codec_inst->plname, "opus")) {
 #ifdef WEBRTC_CODEC_OPUS
-    if (codec_inst->channels == 1) {
-      return new ACMOpus(kOpus);
-    } else {
-      return new ACMOpus(kOpus_2ch);
-    }
+    return new ACMOpus(kOpus);
 #endif
   } else if (!STR_CASE_CMP(codec_inst->plname, "speex")) {
 #ifdef WEBRTC_CODEC_SPEEX

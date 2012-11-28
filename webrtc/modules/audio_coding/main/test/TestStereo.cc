@@ -550,11 +550,17 @@ void TestStereo::Perform() {
     printf("Test number: %d\n",test_cntr_ + 1);
     printf("Test type: Mono-to-stereo\n");
   }
+
+  // Keep encode and decode in stereo.
   test_cntr_++;
   channel_a2b_->set_codec_mode(kStereo);
   OpenOutFile(test_cntr_);
   RegisterSendCodec('A', codec_opus, 48000, 64000, 960, codec_channels,
                     opus_pltype_);
+  Run(channel_a2b_, audio_channels, codec_channels);
+
+  // Encode in mono, decode in stereo mode.
+  RegisterSendCodec('A', codec_opus, 48000, 64000, 960, 1, opus_pltype_);
   Run(channel_a2b_, audio_channels, codec_channels);
   out_file_.Close();
 #endif
@@ -661,10 +667,63 @@ void TestStereo::Perform() {
   }
   test_cntr_++;
   OpenOutFile(test_cntr_);
+  // Encode and decode in mono.
   RegisterSendCodec('A', codec_opus, 48000, 32000, 960, codec_channels,
                      opus_pltype_);
+  CodecInst opus_codec_param;
+  for (WebRtc_UWord8 n = 0; n < num_encoders; n++) {
+    EXPECT_EQ(0, acm_b_->Codec(n, opus_codec_param));
+    if (!strcmp(opus_codec_param.plname, "opus")) {
+      opus_codec_param.channels = 1;
+      EXPECT_EQ(0, acm_b_->RegisterReceiveCodec(opus_codec_param));
+      break;
+    }
+  }
+  Run(channel_a2b_, audio_channels, codec_channels);
+
+  // Encode in stereo, decode in mono.
+  RegisterSendCodec('A', codec_opus, 48000, 32000, 960, 2, opus_pltype_);
+  Run(channel_a2b_, audio_channels, codec_channels);
+
+  out_file_.Close();
+
+  // Test switching between decoding mono and stereo for Opus.
+
+  // Decode in mono.
+  test_cntr_++;
+  OpenOutFile(test_cntr_);
+  if (test_mode_ != 0) {
+    // Print out codec and settings
+    printf("Test number: %d\nCodec: Opus Freq: 48000 Rate :32000 PackSize: 960"
+        " Decode: mono\n", test_cntr_);
+  }
   Run(channel_a2b_, audio_channels, codec_channels);
   out_file_.Close();
+  // Decode in stereo.
+  test_cntr_++;
+  OpenOutFile(test_cntr_);
+  if (test_mode_ != 0) {
+    // Print out codec and settings
+    printf("Test number: %d\nCodec: Opus Freq: 48000 Rate :32000 PackSize: 960"
+        " Decode: stereo\n", test_cntr_);
+  }
+  opus_codec_param.channels = 2;
+  EXPECT_EQ(0, acm_b_->RegisterReceiveCodec(opus_codec_param));
+  Run(channel_a2b_, audio_channels, 2);
+  out_file_.Close();
+  // Decode in mono.
+  test_cntr_++;
+  OpenOutFile(test_cntr_);
+  if (test_mode_ != 0) {
+    // Print out codec and settings
+    printf("Test number: %d\nCodec: Opus Freq: 48000 Rate :32000 PackSize: 960"
+        " Decode: mono\n", test_cntr_);
+  }
+  opus_codec_param.channels = 1;
+  EXPECT_EQ(0, acm_b_->RegisterReceiveCodec(opus_codec_param));
+  Run(channel_a2b_, audio_channels, codec_channels);
+  out_file_.Close();
+
 #endif
 
   // Print out which codecs were tested, and which were not, in the run.
@@ -679,6 +738,9 @@ void TestStereo::Perform() {
     printf("   G.711\n");
 #ifdef WEBRTC_CODEC_CELT
     printf("   CELT\n");
+#endif
+#ifdef WEBRTC_CODEC_OPUS
+    printf("   Opus\n");
 #endif
     printf("\nTo complete the test, listen to the %d number of output "
            "files.\n",

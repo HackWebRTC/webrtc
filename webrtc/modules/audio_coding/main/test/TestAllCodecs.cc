@@ -147,6 +147,9 @@ void TestAllCodecs::Perform() {
   CodecInst my_codec_param;
   for (uint8_t n = 0; n < num_encoders; n++) {
     acm_b_->Codec(n, my_codec_param);
+    if (!strcmp(my_codec_param.plname, "opus")) {
+      my_codec_param.channels = 1;
+    }
     acm_b_->RegisterReceiveCodec(my_codec_param);
   }
 
@@ -635,6 +638,7 @@ void TestAllCodecs::Perform() {
   Run(channel_a_to_b_);
   RegisterSendCodec('A', codec_opus, 48000, 500000, 960, -1);
   Run(channel_a_to_b_);
+  outfile_b_.Close();
 #endif
   if (test_mode_ != 0) {
     printf("===============================================================\n");

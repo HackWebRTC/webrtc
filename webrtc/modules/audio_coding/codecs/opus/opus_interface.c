@@ -55,6 +55,7 @@ int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst, int32_t channels) {
 
 int16_t WebRtcOpus_EncoderFree(OpusEncInst* inst) {
   opus_encoder_destroy(inst->encoder);
+  free(inst);
   return 0;
 }
 
@@ -90,23 +91,36 @@ struct WebRtcOpusDecInst {
 };
 
 int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, int channels) {
+  int error_l;
+  int error_r;
   OpusDecInst* state;
+
+  // Create Opus decoder memory.
   state = (OpusDecInst*) calloc(1, sizeof(OpusDecInst));
-  if (state) {
-    int error_l;
-    int error_r;
-    // Always create a 48000 Hz Opus decoder.
-    state->decoder_left = opus_decoder_create(48000, channels, &error_l);
-    state->decoder_right = opus_decoder_create(48000, channels, &error_r);
-    if (error_l == OPUS_OK && error_r == OPUS_OK &&
-        state->decoder_left != NULL && state->decoder_right != NULL) {
-      state->channels = channels;
-      *inst = state;
-      return 0;
-    }
-    free(state);
-    state = NULL;
+  if (state == NULL) {
+    return -1;
   }
+
+  // Create new memory for left and right channel, always at 48000 Hz.
+  state->decoder_left = opus_decoder_create(48000, channels, &error_l);
+  state->decoder_right = opus_decoder_create(48000, channels, &error_r);
+  if (error_l == OPUS_OK && error_r == OPUS_OK && state->decoder_left != NULL
+      && state->decoder_right != NULL) {
+    // Creation of memory all ok.
+    state->channels = channels;
+    *inst = state;
+    return 0;
+  }
+
+  // If memory allocation was unsuccessful, free the entire state.
+  if (state->decoder_left) {
+    opus_decoder_destroy(state->decoder_left);
+  }
+  if (state->decoder_right) {
+    opus_decoder_destroy(state->decoder_right);
+  }
+  free(state);
+  state = NULL;
   return -1;
 }
 
@@ -115,6 +129,10 @@ int16_t WebRtcOpus_DecoderFree(OpusDecInst* inst) {
   opus_decoder_destroy(inst->decoder_right);
   free(inst);
   return 0;
+}
+
+int WebRtcOpus_DecoderChannels(OpusDecInst* inst) {
+  return inst->channels;
 }
 
 int16_t WebRtcOpus_DecoderInit(OpusDecInst* inst) {

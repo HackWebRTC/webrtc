@@ -59,6 +59,10 @@ WebRtc_Word32 AudioCodingModule::Codec(const char* payload_name,
   // Get default codec settings.
   ACMCodecDB::Codec(codec_id, &codec);
 
+  // Keep the number of channels from the function call. For most codecs it
+  // will be the same value as in defaul codec settings, but not for all.
+  codec.channels = channels;
+
   return 0;
 }
 

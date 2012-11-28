@@ -83,6 +83,10 @@ void TestVADDTX::Perform()
         {
             printf("%s\n", myCodecParam.plname);
         }
+        if (!strcmp(myCodecParam.plname, "opus")) {
+          // Use mono decoding for Opus in the VAD/DTX test.
+          myCodecParam.channels = 1;
+        }
         _acmB->RegisterReceiveCodec(myCodecParam);
     }
 
@@ -337,6 +341,8 @@ WebRtc_Word16 TestVADDTX::RegisterSendCodec(char side,
         }
     }
 
+    // We only allow VAD/DTX when sending mono.
+    myCodecParam.channels = 1;
     CHECK_ERROR(myACM->RegisterSendCodec(myCodecParam));
 
     // initialization was succesful

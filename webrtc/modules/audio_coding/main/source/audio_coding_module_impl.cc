@@ -1285,7 +1285,7 @@ WebRtc_Word32 AudioCodingModuleImpl::PlayoutFrequency() const {
   return _netEq.CurrentSampFreqHz();
 }
 
-// Register possible reveive codecs, can be called multiple times,
+// Register possible receive codecs, can be called multiple times,
 // for codecs, CNG (NB, WB and SWB), DTMF, RED.
 WebRtc_Word32 AudioCodingModuleImpl::RegisterReceiveCodec(
     const CodecInst& receive_codec) {
@@ -1394,14 +1394,30 @@ WebRtc_Word32 AudioCodingModuleImpl::RegisterReceiveCodec(
 
     if (!_stereoReceive[codec_id]
         && (_lastRecvAudioCodecPlType == receive_codec.pltype)) {
-      // The last received payload type is the same as the current one, but
-      // was marked as mono. Reset to avoid problems.
+      // The last received payload type is the same as the one we are
+      // registering. Expected number of channels to receive is one (mono),
+      // but we are now registering the receiving codec as stereo (number of
+      // channels is 2).
+      // Set |_lastRecvAudioCodedPlType| to invalid value to trigger a flush in
+      // NetEq, and a reset of expected number of channels next time a packet is
+      // received in AudioCodingModuleImpl::IncomingPacket().
       _lastRecvAudioCodecPlType = -1;
     }
 
     _stereoReceive[codec_id] = true;
     _stereoReceiveRegistered = true;
   } else {
+    if (_lastRecvAudioCodecPlType == receive_codec.pltype &&
+        _expected_channels == 2) {
+      // The last received payload type is the same as the one we are
+      // registering. Expected number of channels to receive is two (stereo),
+      // but we are now registering the receiving codec as mono (number of
+      // channels is 1).
+      // Set |_lastRecvAudioCodedPlType| to invalid value to trigger a flush in
+      // NetEq, and a reset of expected number of channels next time a packet is
+      // received in AudioCodingModuleImpl::IncomingPacket().
+      _lastRecvAudioCodecPlType = -1;
+    }
     _stereoReceive[codec_id] = false;
   }
 
