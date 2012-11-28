@@ -94,7 +94,6 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     private static final int SEND_CODEC_FRAMERATE = 15;
     private static final int INIT_BITRATE = 500;
     private static final String LOOPBACK_IP = "127.0.0.1";
-    private static final String RINGTONE_URL = "content://settings/system/ringtone";
 
     private int volumeLevel = 204;
 
@@ -595,22 +594,8 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         return etRemoteIp.getText().toString();
     }
 
-    private void startPlayingRingtone() {
-        MediaPlayer mMediaPlayer = new MediaPlayer();
-        try {
-            mMediaPlayer.setDataSource(this, Uri.parse(RINGTONE_URL));
-            mMediaPlayer.prepare();
-            mMediaPlayer.seekTo(0);
-            mMediaPlayer.start();
-        } catch (IOException e) {
-            Log.v(TAG, "MediaPlayer Failed: " + e);
-        }
-    }
-
     private void startCall() {
         int ret = 0;
-
-        startPlayingRingtone();
 
         if (enableVoice) {
             startVoiceEngine();
