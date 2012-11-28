@@ -8,16 +8,18 @@
 
 {
   'targets': [{
-      'target_name': 'video_coding_test',
+      'target_name': 'video_coding_integrationtests',
       'type': 'executable',
       'dependencies': [
+         'rtp_rtcp',
+         'video_codecs_test_framework',
+         'video_processing',
+         'webrtc_video_coding',
+         'webrtc_utility',
          '<(DEPTH)/testing/gtest.gyp:gtest',
+         '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
          '<(webrtc_root)/test/test.gyp:test_support',
          '<(webrtc_root)/test/metrics.gyp:metrics',
-         'webrtc_video_coding',
-         'rtp_rtcp',
-         'webrtc_utility',
-         'video_processing',
          '<(webrtc_root)/common_video/common_video.gyp:common_video',
       ],
       'include_dirs': [
@@ -61,12 +63,14 @@
         '../test/video_rtp_play_mt.cc',
         '../test/video_rtp_play.cc',
         '../test/video_source.cc',
-      ], # source
+        '../../codecs/test/videoprocessor_integrationtest.cc',
+      ], # sources
     },
     {
       'target_name': 'video_coding_unittests',
       'type': 'executable',
       'dependencies': [
+        'video_codecs_test_framework',
         'webrtc_video_coding',
         '<(webrtc_root)/test/test.gyp:test_support_main',
         '<(DEPTH)/testing/gtest.gyp:gtest',
@@ -85,6 +89,9 @@
         'video_coding_robustness_unittest.cc',
         'video_coding_impl_unittest.cc',
         'qm_select_unittest.cc',
+        '../../codecs/test/packet_manipulator_unittest.cc',
+        '../../codecs/test/stats_unittest.cc',
+        '../../codecs/test/videoprocessor_unittest.cc',
       ],
     },
   ],

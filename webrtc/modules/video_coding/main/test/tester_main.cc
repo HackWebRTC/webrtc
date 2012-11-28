@@ -8,6 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "google/gflags.h"
+#include "gtest/gtest.h"
+
 #include "receiver_tests.h"
 #include "normal_test.h"
 #include "codec_database_test.h"
@@ -16,6 +19,8 @@
 #include "media_opt_test.h"
 #include "quality_modes_test.h"
 #include "test_util.h"
+#include "webrtc/test/test_suite.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -23,6 +28,26 @@
 #ifdef _WIN32
 //#include "vld.h"
 #endif
+
+DEFINE_string(codec, "VP8", "Codec to use (VP8 or I420).");
+DEFINE_int32(width, 352, "Width in pixels of the frames in the input file.");
+DEFINE_int32(height, 288, "Height in pixels of the frames in the input file.");
+DEFINE_int32(bitrate, 500, "Bit rate in kilobits/second.");
+DEFINE_int32(framerate, 30, "Frame rate of the input file, in FPS "
+             "(frames-per-second). ");
+DEFINE_int32(packet_loss_percent, 0, "Packet loss probability, in percent.");
+DEFINE_int32(rtt, 0, "RTT (round-trip time), in milliseconds.");
+DEFINE_int32(protection_mode, 0, "Protection mode.");
+DEFINE_int32(cama_enable, 0, "Cama enable.");
+DEFINE_string(input_filename, webrtc::test::ProjectRootPath() +
+              "/resources/foreman_cif.yuv", "Input file.");
+DEFINE_string(output_filename, webrtc::test::OutputPath() +
+              "video_coding_test_output_352x288.yuv", "Output file.");
+DEFINE_string(fv_output_filename, webrtc::test::OutputPath() +
+              "features.txt", "FV output file.");
+DEFINE_int32(test_number, 0, "Test number.");
+DEFINE_bool(run_gtest_tests, true, "Run gtest tests too (after legacy tests has"
+            " executed).");
 
 using namespace webrtc;
 
@@ -34,137 +59,47 @@ using namespace webrtc;
 int vcmMacrosTests = 0;
 int vcmMacrosErrors = 0;
 
-int ParseArguments(int argc, char **argv, CmdArgs& args)
-{
-    int i = 1;
-
-    while (i < argc)
-    {
-      if (argv[i+1] == '\0')
-      {
-        printf( "You did not supply a parameter value\n." );
-        return -1;
-      }
-
-      if (argv[i][0] != '-')
-      {
-          return -1;
-      }
-      switch (argv[i][1])
-      {
-      case 'w':
-      {
-          int w = atoi(argv[i+1]);
-          if (w < 1)
-              return -1;
-          args.width = w;
-          break;
-      }
-      case 'h':
-      {
-          int h = atoi(argv[i+1]);
-          if (h < 1)
-              return -1;
-          args.height = h;
-          break;
-      }
-      case 'b':
-      {
-          int b = atoi(argv[i+1]);
-          if (b < 1)
-              return -1;
-          args.bitRate = b;
-          break;
-      }
-      case 'f':
-      {
-          int f = atoi(argv[i+1]);
-          if (f < 1)
-              return -1;
-          args.frameRate = f;
-          break;
-      }
-      case 'c':
-      {
-          // TODO(holmer): This should be replaced with a map if more codecs
-          // are added
-          args.codecName = argv[i+1];
-          if (strncmp(argv[i+1], "VP8", 3) == 0)
-          {
-              args.codecType = kVideoCodecVP8;
-          }
-          else if (strncmp(argv[i+1], "I420", 4) == 0)
-          {
-              args.codecType = kVideoCodecI420;
-          }
-          else
-              return -1;
-
-          break;
-      }
-      case 'i':
-      {
-          args.inputFile = argv[i+1];
-          break;
-      }
-      case 'o':
-          args.outputFile = argv[i+1];
-          break;
-      case 'n':
-      {
-          int n = atoi(argv[i+1]);
-          if (n < 1)
-              return -1;
-          args.testNum = n;
-          break;
-      }
-      case 'p':
-      {
-          args.packetLoss = atoi(argv[i+1]);
-          break;
-      }
-      case 'r':
-      {
-          args.rtt = atoi(argv[i+1]);
-          break;
-      }
-      case 'm':
-      {
-          args.protectionMode = atoi(argv[i+1]);
-          break;
-      }
-      case 'e':
-      {
-          args.camaEnable = atoi(argv[i+1]);
-          break;
-      }
-      case 'v':
-      {
-          args.fv_outputfile = argv[i+1];
-          break;
-      }
-      default:
-          return -1;
-      }
-      i += 2;
-    }
-    return 0;
+int ParseArguments(CmdArgs& args) {
+  args.width = FLAGS_width;
+  args.height = FLAGS_height;
+  args.bitRate = FLAGS_bitrate;
+  args.frameRate = FLAGS_framerate;
+  if (args.width  < 1 || args.height < 1 || args.bitRate < 1 ||
+      args.frameRate < 1) {
+    return -1;
+  }
+  args.codecName = FLAGS_codec;
+  if (args.codecName == "VP8") {
+    args.codecType = kVideoCodecVP8;
+  } else if (args.codecName == "I420") {
+    args.codecType = kVideoCodecI420;
+  } else {
+    printf("Invalid codec: %s\n", args.codecName.c_str());
+    return -1;
+  }
+  args.inputFile = FLAGS_input_filename;
+  args.outputFile = FLAGS_output_filename;
+  args.testNum = FLAGS_test_number;
+  args.packetLoss = FLAGS_packet_loss_percent;
+  args.rtt = FLAGS_rtt;
+  args.protectionMode = FLAGS_protection_mode;
+  args.camaEnable = FLAGS_cama_enable;
+  args.fv_outputfile = FLAGS_fv_output_filename;
+  return 0;
 }
 
-int main(int argc, char **argv)
-{
-  CmdArgs args;
+int main(int argc, char **argv) {
+  // Initialize WebRTC fileutils.h so paths to resources can be resolved.
+  webrtc::test::SetExecutablePath(argv[0]);
+  google::ParseCommandLineFlags(&argc, &argv, true);
 
-  if (ParseArguments(argc, argv, args) != 0)
-  {
+  CmdArgs args;
+  if (ParseArguments(args) != 0) {
     printf("Unable to parse input arguments\n");
-    printf("args: -n <test #> -w <width> -h <height> -f <fps> -b <bps> "
-           "-c <codec>  -i <input file> -o <output file> -p <packet loss> "
-           "-r <round-trip-time> -e <cama enable> -m <protection mode> "
-           "-v <feature vector output file>\n");
     return -1;
   }
 
+  printf("Running legacy video coding tests...\n");
   int ret = 0;
   switch (args.testNum) {
     case 0:
@@ -211,13 +146,14 @@ int main(int argc, char **argv)
       ret = -1;
       break;
   }
-  if (ret != 0)
-  {
-    printf("Test failed!\n");
-    return -1;
+  if (ret != 0) {
+    printf("Legacy Tests failed!\n");
+  } else {
+    if (FLAGS_run_gtest_tests) {
+      printf("Running gtest integration tests...\n");
+      webrtc::test::TestSuite test_suite(argc, argv);
+      ret = test_suite.Run();
+    }
   }
-  return 0;
+  return ret;
 }
-
-
-
