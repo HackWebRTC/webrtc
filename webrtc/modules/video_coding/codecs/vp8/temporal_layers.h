@@ -37,6 +37,9 @@ class TemporalLayers {
 
  private:
   enum TemporalReferences {
+    // For 1 layer case: reference all (last, golden, and alt ref), but only
+    // update last.
+    kTemporalUpdateLastRefAll = 12,
     // First base layer frame for 3 temporal layers, which updates last and
     // golden with alt ref dependency.
     kTemporalUpdateLastAndGoldenRefAltRef = 11,

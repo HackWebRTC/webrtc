@@ -40,7 +40,17 @@ bool TemporalLayers::ConfigureBitrates(int bitrateKbit,
   switch (number_of_temporal_layers_) {
     case 0:
     case 1:
-      // Do nothing.
+      temporal_ids_length_ = 1;
+      temporal_ids_[0] = 0;
+      cfg->ts_number_layers = number_of_temporal_layers_;
+      cfg->ts_periodicity = temporal_ids_length_;
+      cfg->ts_target_bitrate[0] = bitrateKbit;
+      cfg->ts_rate_decimator[0] = 1;
+      memcpy(cfg->ts_layer_id,
+             temporal_ids_,
+             sizeof(unsigned int) * temporal_ids_length_);
+      temporal_pattern_length_ = 1;
+      temporal_pattern_[0] = kTemporalUpdateLastRefAll;
       break;
     case 2:
       temporal_ids_length_ = 2;
@@ -147,10 +157,9 @@ bool TemporalLayers::ConfigureBitrates(int bitrateKbit,
 }
 
 int TemporalLayers::EncodeFlags() {
-  assert(number_of_temporal_layers_ > 1);
+  assert(number_of_temporal_layers_ > 0);
   assert(kMaxTemporalPattern >= temporal_pattern_length_);
   assert(0 < temporal_pattern_length_);
-
   int flags = 0;
   int patternIdx = ++pattern_idx_ % temporal_pattern_length_;
   assert(kMaxTemporalPattern >= patternIdx);
@@ -211,6 +220,10 @@ int TemporalLayers::EncodeFlags() {
       flags |= VP8_EFLAG_NO_UPD_ARF;
       flags |= VP8_EFLAG_NO_REF_GF;
       break;
+    case kTemporalUpdateLastRefAll:
+      flags |= VP8_EFLAG_NO_UPD_ARF;
+      flags |= VP8_EFLAG_NO_UPD_GF;
+      break;
   }
   return flags;
 }
@@ -218,39 +231,47 @@ int TemporalLayers::EncodeFlags() {
 void TemporalLayers::PopulateCodecSpecific(bool base_layer_sync,
                                            CodecSpecificInfoVP8 *vp8_info,
                                            uint32_t timestamp) {
-  assert(number_of_temporal_layers_ > 1);
+  assert(number_of_temporal_layers_ > 0);
   assert(0 < temporal_ids_length_);
 
-  if (base_layer_sync) {
+  if (number_of_temporal_layers_ == 1) {
+    vp8_info->temporalIdx = kNoTemporalIdx;
+    vp8_info->layerSync = false;
+    vp8_info->tl0PicIdx = kNoTl0PicIdx;
+  } else {
+    if (base_layer_sync) {
     vp8_info->temporalIdx = 0;
     vp8_info->layerSync = true;
-  } else {
-    vp8_info->temporalIdx = temporal_ids_[pattern_idx_ % temporal_ids_length_];
-    TemporalReferences temporal_reference =
-        temporal_pattern_[pattern_idx_ % temporal_pattern_length_];
-
-    if (temporal_reference == kTemporalUpdateAltrefWithoutDependency ||
-        temporal_reference == kTemporalUpdateGoldenWithoutDependency ||
-        temporal_reference == kTemporalUpdateGoldenWithoutDependencyRefAltRef ||
-        temporal_reference == kTemporalUpdateNoneNoRefGoldenRefAltRef ||
-        (temporal_reference == kTemporalUpdateNone &&
-        number_of_temporal_layers_ == 4)) {
-      vp8_info->layerSync = true;
     } else {
-      vp8_info->layerSync = false;
+      vp8_info->temporalIdx = temporal_ids_
+          [pattern_idx_ % temporal_ids_length_];
+      TemporalReferences temporal_reference =
+          temporal_pattern_[pattern_idx_ % temporal_pattern_length_];
+
+      if (temporal_reference == kTemporalUpdateAltrefWithoutDependency ||
+          temporal_reference == kTemporalUpdateGoldenWithoutDependency ||
+          temporal_reference ==
+              kTemporalUpdateGoldenWithoutDependencyRefAltRef ||
+          temporal_reference == kTemporalUpdateNoneNoRefGoldenRefAltRef ||
+          (temporal_reference == kTemporalUpdateNone &&
+              number_of_temporal_layers_ == 4)) {
+        vp8_info->layerSync = true;
+      } else {
+        vp8_info->layerSync = false;
+      }
     }
+    if (last_base_layer_sync_ && vp8_info->temporalIdx != 0) {
+      // Regardless of pattern the frame after a base layer sync will always
+      // be a layer sync.
+      vp8_info->layerSync = true;
+    }
+    if (vp8_info->temporalIdx == 0 && timestamp != timestamp_) {
+      timestamp_ = timestamp;
+      tl0_pic_idx_++;
+    }
+    last_base_layer_sync_ = base_layer_sync;
+    vp8_info->tl0PicIdx = tl0_pic_idx_;
   }
-  if (last_base_layer_sync_ && vp8_info->temporalIdx != 0) {
-    // Regardless of pattern the frame after a base layer sync will always
-    // be a layer sync.
-    vp8_info->layerSync = true;
-  }
-  if (vp8_info->temporalIdx == 0 && timestamp != timestamp_) {
-    timestamp_ = timestamp;
-    tl0_pic_idx_++;
-  }
-  last_base_layer_sync_ = base_layer_sync;
-  vp8_info->tl0PicIdx = tl0_pic_idx_;
 }
 }  // namespace webrtc
 
