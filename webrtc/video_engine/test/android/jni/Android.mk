@@ -10,7 +10,10 @@ LOCAL_PATH := $(call my-dir)
 
 include $(call all-makefiles-under, $(LOCAL_PATH))
 
-MY_LIBS_PATH := ../../../../../out/Debug/obj.target
+# Specify BUILDTYPE=Release on the command line for a release build.
+BUILDTYPE ?= Debug
+
+MY_LIBS_PATH := ../../../../../out/$(BUILDTYPE)/obj.target
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libvoice_engine_core
