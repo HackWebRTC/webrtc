@@ -306,7 +306,6 @@ int WebRtcNetEQ_PacketBufferInsert(PacketBuf_t *bufferInst, const RTPPacket_t *R
     bufferInst->seqNumber[bufferInst->insertPosition] = RTPpacket->seqNumber;
     bufferInst->timeStamp[bufferInst->insertPosition] = RTPpacket->timeStamp;
     bufferInst->rcuPlCntr[bufferInst->insertPosition] = RTPpacket->rcuPlCntr;
-    bufferInst->rcuPlCntr[bufferInst->insertPosition] = 0;
     bufferInst->waitingTime[bufferInst->insertPosition] = 0;
     /* Update buffer parameters */
     bufferInst->numPacketsInBuffer++;
