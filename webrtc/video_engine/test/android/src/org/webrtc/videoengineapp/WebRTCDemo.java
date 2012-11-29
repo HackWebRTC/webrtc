@@ -122,8 +122,6 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     private boolean loopbackMode = true;
     private CheckBox cbStats;
     private boolean isStatsOn = true;
-    private CheckBox cbCPULoad;
-    private boolean isCPULoadOn = true;
     private boolean useOpenGLRender = true;
 
     // Video settings
@@ -177,9 +175,6 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     private String[] mVideoCodecsSizeStrings = { "176x144", "320x240",
                                                  "352x288", "640x480" };
     private String[] mVoiceCodecsStrings = null;
-
-    private Thread mBackgroundLoad = null;
-    private boolean mIsBackgroudLoadRunning = false;
 
     private OrientationEventListener orientationListener;
     int currentOrientation = OrientationEventListener.ORIENTATION_UNKNOWN;
@@ -391,8 +386,6 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
 
         if (vieAndroidAPI != null) {
 
-            stopCPULoad();
-
             if (voERunning) {
                 voERunning = false;
                 stopVoiceEngine();
@@ -521,9 +514,6 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         cbStats = (CheckBox) findViewById(R.id.cbStats);
         cbStats.setChecked(isStatsOn);
 
-        cbCPULoad = (CheckBox) findViewById(R.id.cbCPULoad);
-        cbCPULoad.setChecked(isCPULoadOn);
-
         cbVoice = (CheckBox) findViewById(R.id.cbVoice);
         cbVoice.setChecked(enableVoice);
 
@@ -568,7 +558,6 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         etRemoteIp.setOnClickListener(this);
         cbLoopback.setOnClickListener(this);
         cbStats.setOnClickListener(this);
-        cbCPULoad.setOnClickListener(this);
         cbEnableNack.setOnClickListener(this);
         cbEnableSpeaker.setOnClickListener(this);
         cbEnableAECM.setOnClickListener(this);
@@ -675,13 +664,6 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                 addStatusView();
             } else {
                 removeStatusView();
-            }
-
-            isCPULoadOn = cbCPULoad.isChecked();
-            if (isCPULoadOn) {
-                startCPULoad();
-            } else {
-                stopCPULoad();
             }
 
             viERunning = true;
@@ -858,14 +840,6 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                     removeStatusView();
                 }
                 break;
-            case R.id.cbCPULoad:
-                isCPULoadOn = cbCPULoad.isChecked();
-                if (isCPULoadOn) {
-                    startCPULoad();
-                } else {
-                    stopCPULoad();
-                }
-                break;
             case R.id.radio_surface:
                 useOpenGLRender = false;
                 break;
@@ -1036,39 +1010,4 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         statsView = null;
     }
 
-    private void startCPULoad() {
-        if (null == mBackgroundLoad) {
-            mBackgroundLoad = new Thread(new Runnable() {
-                    public void run() {
-                        Log.v(TAG, "Background load started");
-                        mIsBackgroudLoadRunning = true;
-                        try {
-                            while (mIsBackgroudLoadRunning) {
-                                // This while loop simulates cpu load.
-                                // Log.v(TAG, "Runnable!!!");
-                            }
-                        } catch (Throwable t) {
-                            Log.v(TAG, "startCPULoad failed");
-                        }
-                    }
-                });
-            mBackgroundLoad.start();
-        } else {
-            if (mBackgroundLoad.getState() == Thread.State.TERMINATED) {
-                mBackgroundLoad.start();
-            }
-        }
-    }
-
-    private void stopCPULoad() {
-        if (null != mBackgroundLoad) {
-            mIsBackgroudLoadRunning = false;
-            try {
-                mBackgroundLoad.join();
-                mBackgroundLoad = null;
-            } catch (Throwable t) {
-                Log.v(TAG, "stopCPULoad failed");
-            }
-        }
-    }
 }
