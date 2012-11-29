@@ -210,6 +210,9 @@ ViEEncoder::~ViEEncoder() {
   WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo,
                ViEId(engine_id_, channel_id_),
                "ViEEncoder Destructor 0x%p, engine_id: %d", this, engine_id_);
+  if (bitrate_controller_) {
+    bitrate_controller_->RemoveBitrateObserver(bitrate_observer_.get());
+  }
   module_process_thread_.DeRegisterModule(&vcm_);
   module_process_thread_.DeRegisterModule(&vpm_);
   module_process_thread_.DeRegisterModule(default_rtp_rtcp_.get());
