@@ -249,6 +249,7 @@ VCMMediaOptimization::DropFrame()
 {
     // leak appropriate number of bytes
     _frameDropper->Leak((WebRtc_UWord32)(InputFrameRate() + 0.5f));
+
     return _frameDropper->DropFrame();
 }
 

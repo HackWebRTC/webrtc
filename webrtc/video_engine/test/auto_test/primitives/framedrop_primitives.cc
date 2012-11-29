@@ -22,6 +22,7 @@
 #include "video_engine/test/auto_test/primitives/general_primitives.h"
 #include "video_engine/test/libvietest/include/tb_interfaces.h"
 #include "video_engine/test/libvietest/include/tb_external_transport.h"
+#include "video_engine/test/libvietest/include/vie_external_render_filter.h"
 #include "video_engine/test/libvietest/include/vie_to_file_renderer.h"
 
 enum { kWaitTimeForFinalDecodeMs = 100 };
@@ -29,34 +30,22 @@ enum { kWaitTimeForFinalDecodeMs = 100 };
 // Writes the frames to be encoded to file and tracks which frames are sent in
 // external transport on the local side and reports them to the
 // FrameDropDetector class.
-class LocalRendererEffectFilter : public webrtc::ViEEffectFilter {
+class LocalRendererEffectFilter : public webrtc::ExternalRendererEffectFilter {
  public:
-  explicit LocalRendererEffectFilter(FrameDropDetector* frame_drop_detector,
-                                     webrtc::ExternalRenderer* renderer)
-      : width_(0), height_(0), frame_drop_detector_(frame_drop_detector),
-        renderer_(renderer) {}
-  virtual ~LocalRendererEffectFilter() {}
-  virtual int Transform(int size, unsigned char* frameBuffer,
-                        unsigned int timeStamp90KHz, unsigned int width,
-                        unsigned int height) {
-    if (width != width_ || height_ != height) {
-      renderer_->FrameSizeChange(width, height, 1);
-      width_ = width;
-      height_ = height;
-    }
+  LocalRendererEffectFilter(webrtc::ExternalRenderer* renderer,
+                            FrameDropDetector* frame_drop_detector)
+      : ExternalRendererEffectFilter(renderer),
+        frame_drop_detector_(frame_drop_detector) {}
+  int Transform(int size, unsigned char* frameBuffer,
+                unsigned int timeStamp90KHz, unsigned int width,
+                unsigned int height) {
     frame_drop_detector_->ReportFrameState(FrameDropDetector::kCreated,
                                            timeStamp90KHz);
-    return renderer_->DeliverFrame(frameBuffer,
-                                   size,
-                                   timeStamp90KHz,
-                                   webrtc::TickTime::MillisecondTimestamp());
+    return webrtc::ExternalRendererEffectFilter::Transform(
+        size, frameBuffer, timeStamp90KHz, width, height);
   }
-
  private:
-  unsigned int width_;
-  unsigned int height_;
   FrameDropDetector* frame_drop_detector_;
-  webrtc::ExternalRenderer* renderer_;
 };
 
 // Tracks which frames are sent in external transport on the local side
@@ -175,8 +164,8 @@ void TestFullStack(const TbInterfaces& interfaces,
   // Setup the effect filters.
   // Local rendering at the send-side is done in an effect filter to avoid
   // synchronization issues with the remote renderer.
-  LocalRendererEffectFilter local_renderer_filter(frame_drop_detector,
-                                                  local_file_renderer);
+  LocalRendererEffectFilter local_renderer_filter(local_file_renderer,
+                                                  frame_drop_detector);
   EXPECT_EQ(0, image_process->RegisterSendEffectFilter(video_channel,
                                                        local_renderer_filter));
   DecodedTimestampEffectFilter decode_filter(frame_drop_detector);

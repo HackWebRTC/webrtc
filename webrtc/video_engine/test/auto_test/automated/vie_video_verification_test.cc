@@ -25,7 +25,6 @@ namespace {
 // wouldn't like scaling, so this will work when we compare with the original.
 const int kInputWidth = 176;
 const int kInputHeight = 144;
-const int kVerifyingTestMaxNumAttempts = 3;
 
 class ViEVideoVerificationTest : public testing::Test {
  protected:
@@ -72,7 +71,8 @@ class ViEVideoVerificationTest : public testing::Test {
     EXPECT_EQ(0, error) << "SSIM routine failed - output files missing?";
     *ssim_result = ssim.average;
 
-    ViETest::Log("Results: PSNR is %f (dB), SSIM is %f (1 is perfect)",
+    ViETest::Log("Results: PSNR is %f (dB; 48 is max), "
+                 "SSIM is %f (1 is perfect)",
                  psnr.average, ssim.average);
   }
 
@@ -140,41 +140,40 @@ class ParameterizedFullStackTest : public ViEVideoVerificationTest,
   TestParameters parameter_table_[2];
 };
 
-// TODO(phoglund): Needs to be rewritten to use external transport. Currently
-// the new memory-safe decoder is too slow with I420 with the default packet
-// engine. See http://code.google.com/p/webrtc/issues/detail?id=1103.
-TEST_F(ViEVideoVerificationTest, DISABLED_RunsBaseStandardTestWithoutErrors) {
-  // The I420 test should give pretty good values since it's a lossless codec
-  // running on the default bitrate. It should average about 30 dB but there
-  // may be cases where it dips as low as 26 under adverse conditions. That's
-  // why we have a retrying mechanism in place for this test.
-  const double kExpectedMinimumPSNR = 30;
-  const double kExpectedMinimumSSIM = 0.95;
-
-  for (int attempt = 0; attempt < kVerifyingTestMaxNumAttempts; attempt++) {
+TEST_F(ViEVideoVerificationTest, RunsBaseStandardTestWithoutErrors) {
+  // I420 is lossless, so the I420 test should obviously get perfect results -
+  // the local preview and remote output files should be bit-exact. This test
+  // runs on external transport to ensure we do not drop packets.
+  // However, it's hard to make 100% stringent requirements on the video engine
+  // since for instance the jitter buffer has non-deterministic elements. If it
+  // breaks five times in a row though, you probably introduced a bug.
+  const int kNumAttempts = 5;
+  for (int attempt = 0; attempt < kNumAttempts; ++attempt) {
     InitializeFileRenderers();
     ASSERT_TRUE(tests_.TestCallSetup(input_file_, kInputWidth, kInputHeight,
                                      local_file_renderer_,
                                      remote_file_renderer_));
-    std::string output_file = remote_file_renderer_->GetFullOutputPath();
+    std::string remote_file = remote_file_renderer_->GetFullOutputPath();
+    std::string local_preview = local_file_renderer_->GetFullOutputPath();
     StopRenderers();
 
     double actual_psnr = 0;
     double actual_ssim = 0;
-    CompareFiles(input_file_, output_file, &actual_psnr, &actual_ssim);
+    CompareFiles(local_preview, remote_file, &actual_psnr, &actual_ssim);
 
     TearDownFileRenderers();
 
-    if (actual_psnr >= kExpectedMinimumPSNR &&
-        actual_ssim >= kExpectedMinimumSSIM) {
-      // Test succeeded!
+    if (actual_psnr == webrtc::test::kMetricsInfinitePSNR &&
+        actual_ssim == 1.0f) {
+      // Test successful.
       return;
+    } else {
+      ViETest::Log("Retrying; attempt %d of %d.", attempt + 1, kNumAttempts);
     }
   }
 
-  ADD_FAILURE() << "Failed to achieve PSNR " << kExpectedMinimumPSNR <<
-      " and SSIM " << kExpectedMinimumSSIM << " after " <<
-      kVerifyingTestMaxNumAttempts << " attempts.";
+  FAIL() << "Failed to achieve perfect PSNR and SSIM results after " <<
+      kNumAttempts << " attempts.";
 }
 
 // Runs a whole stack processing with tracking of which frames are dropped

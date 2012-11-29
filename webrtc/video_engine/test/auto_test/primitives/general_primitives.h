@@ -55,13 +55,6 @@ void RenderToFile(webrtc::ViERender* renderer_interface,
                   int frame_provider_id,
                   ViEToFileRenderer* to_file_renderer);
 
-// Stops all rendering given the normal case that we have a capture device
-// and a video channel set up for rendering.
-void StopAndRemoveRenderers(webrtc::ViEBase* base_interface,
-                            webrtc::ViERender* render_interface,
-                            int channel_id,
-                            int capture_id);
-
 // Configures RTP-RTCP.
 void ConfigureRtpRtcp(webrtc::ViERTP_RTCP* rtcp_interface,
                       int video_channel);

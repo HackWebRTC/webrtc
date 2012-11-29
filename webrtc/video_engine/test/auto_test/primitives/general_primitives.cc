@@ -73,15 +73,6 @@ void RenderToFile(webrtc::ViERender* renderer_interface,
   EXPECT_EQ(0, renderer_interface->StartRender(frame_provider_id));
 }
 
-void StopAndRemoveRenderers(webrtc::ViEBase* base_interface,
-                            webrtc::ViERender* render_interface,
-                            int channel_id,
-                            int capture_id) {
-  EXPECT_EQ(0, render_interface->StopRender(channel_id));
-  EXPECT_EQ(0, render_interface->RemoveRenderer(channel_id));
-  EXPECT_EQ(0, render_interface->RemoveRenderer(capture_id));
-}
-
 void ConfigureRtpRtcp(webrtc::ViERTP_RTCP* rtcp_interface,
                       int video_channel) {
   EXPECT_EQ(0, rtcp_interface->SetRTCPStatus(video_channel,

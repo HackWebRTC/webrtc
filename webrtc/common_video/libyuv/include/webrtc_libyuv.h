@@ -43,6 +43,9 @@ enum VideoType {
   kBGRA,
 };
 
+// This is the max PSNR value our algorithms can return.
+const double kInfinitePSNR = 48.0f;
+
 // Conversion between the RawVideoType and the LibYuv videoType.
 // TODO(wu): Consolidate types into one type throughout WebRtc.
 VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type);
@@ -163,6 +166,7 @@ int MirrorI420UpDown(const I420VideoFrame* src_frame,
                      I420VideoFrame* dst_frame);
 
 // Compute PSNR for an I420 frame (all planes).
+// Returns the PSNR in decibel, to a maximum of kInfinitePSNR.
 double I420PSNR(const I420VideoFrame* ref_frame,
                 const I420VideoFrame* test_frame);
 // Compute SSIM for an I420 frame (all planes).
@@ -171,6 +175,7 @@ double I420SSIM(const I420VideoFrame* ref_frame,
 
 // TODO(mikhal): Remove these functions and keep only the above functionality.
 // Compute PSNR for an I420 buffer (all planes).
+// Returns the PSNR in decibel, to a maximum of kInfinitePSNR.
 double I420PSNR(const uint8_t* ref_frame,
                 const uint8_t* test_frame,
                 int width, int height);

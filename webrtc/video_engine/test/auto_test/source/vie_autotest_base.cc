@@ -75,8 +75,9 @@ void ViEAutoTest::ViEBaseStandardTest() {
   EXPECT_EQ(0, capture_interface->StopCapture(capture_id));
   EXPECT_EQ(0, base_interface->StopReceive(video_channel));
 
-  StopAndRemoveRenderers(base_interface, render_interface, video_channel,
-                         capture_id);
+  EXPECT_EQ(0, render_interface->StopRender(video_channel));
+  EXPECT_EQ(0, render_interface->RemoveRenderer(video_channel));
+  EXPECT_EQ(0, render_interface->RemoveRenderer(capture_id));
 
   EXPECT_EQ(0, render_interface->DeRegisterVideoRenderModule(*_vrm1));
   EXPECT_EQ(0, render_interface->DeRegisterVideoRenderModule(*_vrm2));
