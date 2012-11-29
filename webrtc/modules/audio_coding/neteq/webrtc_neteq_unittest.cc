@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>  // memset
 
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -103,7 +104,7 @@ void RefFiles::ReadFromFileAndCompare(const T (&test_results)[n],
     T* ref = new T[length];
     ASSERT_EQ(length, fread(ref, sizeof(T), length, input_fp_));
     // Compare
-    EXPECT_EQ(0, memcmp(&test_results, ref, sizeof(T) * length));
+    ASSERT_EQ(0, memcmp(&test_results, ref, sizeof(T) * length));
     delete [] ref;
   }
 }
@@ -295,10 +296,14 @@ void NetEqDecodingTest::DecodeAndCompare(const std::string &rtp_file,
 
   NETEQTEST_RTPpacket rtp;
   ASSERT_GT(rtp.readFromFile(rtp_fp_), 0);
+  int i = 0;
   while (rtp.dataLen() >= 0) {
+    std::ostringstream ss;
+    ss << "Lap number " << i++ << " in DecodeAndCompare while loop";
+    SCOPED_TRACE(ss.str());  // Print out the parameter values on failure.
     int16_t out_len;
-    Process(&rtp, &out_len);
-    ref_files.ProcessReference(out_data_, out_len);
+    ASSERT_NO_FATAL_FAILURE(Process(&rtp, &out_len));
+    ASSERT_NO_FATAL_FAILURE(ref_files.ProcessReference(out_data_, out_len));
   }
 }
 
@@ -370,16 +375,30 @@ void NetEqDecodingTest::PopulateCng(int frame_index,
 TEST_F(NetEqDecodingTest, TestBitExactness) {
   const std::string kInputRtpFile = webrtc::test::ProjectRootPath() +
       "resources/neteq_universal.rtp";
+#if defined(_MSC_VER) && (_MSC_VER >= 1700)
+  // For Visual Studio 2012 and later, we will have to use the generic reference
+  // file, rather than the windows-specific one.
+  const std::string kInputRefFile = webrtc::test::ProjectRootPath() +
+      "resources/neteq_universal_ref.pcm";
+#else
   const std::string kInputRefFile =
       webrtc::test::ResourcePath("neteq_universal_ref", "pcm");
+#endif
   DecodeAndCompare(kInputRtpFile, kInputRefFile);
 }
 
 TEST_F(NetEqDecodingTest, TestNetworkStatistics) {
   const std::string kInputRtpFile = webrtc::test::ProjectRootPath() +
       "resources/neteq_universal.rtp";
+#if defined(_MSC_VER) && (_MSC_VER >= 1700)
+  // For Visual Studio 2012 and later, we will have to use the generic reference
+  // file, rather than the windows-specific one.
+  const std::string kNetworkStatRefFile = webrtc::test::ProjectRootPath() +
+      "resources/neteq_network_stats.dat";
+#else
   const std::string kNetworkStatRefFile =
       webrtc::test::ResourcePath("neteq_network_stats", "dat");
+#endif
   const std::string kRtcpStatRefFile =
       webrtc::test::ResourcePath("neteq_rtcp_stats", "dat");
   DecodeAndCheckStats(kInputRtpFile, kNetworkStatRefFile, kRtcpStatRefFile);
