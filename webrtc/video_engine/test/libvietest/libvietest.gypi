@@ -27,7 +27,7 @@
       ],
       'sources': [
         # Helper classes
-        'include/vie_external_effect_filter.h',
+        'include/vie_external_render_filter.h',
         'include/vie_fake_camera.h',
         'include/vie_file_capture_device.h',
         'include/vie_to_file_renderer.h',
