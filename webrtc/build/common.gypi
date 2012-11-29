@@ -111,7 +111,7 @@
 
         # Switch between Android audio device OpenSL ES implementation
         # and Java Implementation
-        'enable_android_opensl%': 1,
+        'enable_android_opensl%': 0,
       }],
       ['OS=="ios"', {
         'enable_video%': 0,
