@@ -256,9 +256,11 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
         tbChannel.videoChannel, sentTotalBitrate, sentVideoBitrate,
          sentFecBitrate, sentNackBitrate));
 
-    EXPECT_GT(sentTotalBitrate, 0u);
-    EXPECT_GE(sentFecBitrate, 10u);
-    EXPECT_EQ(sentNackBitrate, 0u);
+    if (FLAGS_include_timing_dependent_tests) {
+      EXPECT_GT(sentTotalBitrate, 0u);
+      EXPECT_GE(sentFecBitrate, 10u);
+      EXPECT_EQ(sentNackBitrate, 0u);
+    }
 
     EXPECT_EQ(0, ViE.base->StopSend(tbChannel.videoChannel));
     EXPECT_EQ(0, ViE.rtp_rtcp->SetFECStatus(
