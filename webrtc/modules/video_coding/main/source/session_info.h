@@ -115,6 +115,14 @@ class VCMSessionInfo {
   // would be sent to the decoder.
   void UpdateDecodableSession(int rtt_ms);
 
+  // Clears the sequence numbers in |seq_num_list| of any empty packets received
+  // in this session. |index| is an index in the list at which we start looking
+  // for the sequence numbers. When done this function returns the index of the
+  // next element in the list.
+  int ClearOutEmptyPacketSequenceNumbers(int* seq_num_list,
+                                         int seq_num_list_length,
+                                         int index) const;
+
   // If this session has been NACKed by the jitter buffer.
   bool session_nack_;
   bool complete_;
