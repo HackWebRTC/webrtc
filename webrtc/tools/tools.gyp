@@ -88,7 +88,7 @@
       'target_name': 'frame_cutter_lib',
       'type': '<(library)',
       'dependencies': [
-        '<(DEPTH)/webrtc/common_video/common_video.gyp:common_video',
+        '<(webrtc_root)/common_video/common_video.gyp:common_video',
       ],
       'sources': [
         'frame_cutter/frame_cutter_lib.cc',
