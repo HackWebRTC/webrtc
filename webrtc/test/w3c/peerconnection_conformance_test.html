@@ -22,15 +22,14 @@ access to the webcam.
   var gFirstConnection = null;
   var gSecondConnection = null;
 
-  var getUserMediaFailedCallback = test.step_func(function(error) {
-    assert_unreached('Should not get an error callback');
-  });
-
   function getUserMediaOkCallback(localStream) {
     gFirstConnection = new webkitRTCPeerConnection(null, null);
     gFirstConnection.onicecandidate = onIceCandidateToFirst;
     gFirstConnection.addStream(localStream);
     gFirstConnection.createOffer(onOfferCreated);
+
+    var videoTag = document.getElementById('local-view');
+    videoTag.src = webkitURL.createObjectURL(localStream);
   };
 
   var onOfferCreated = test.step_func(function(offer) {
@@ -41,7 +40,7 @@ access to the webcam.
     receiveCall(offer.sdp);
   });
 
-  var receiveCall = test.step_func(function(offerSdp) {
+  function receiveCall(offerSdp) {
     gSecondConnection = new webkitRTCPeerConnection(null, null);
     gSecondConnection.onicecandidate = onIceCandidateToSecond;
     gSecondConnection.onaddstream = onRemoteStream;
@@ -50,8 +49,9 @@ access to the webcam.
                                                   sdp: offerSdp });
     gSecondConnection.setRemoteDescription(parsedOffer);
 
-    gSecondConnection.createAnswer(onAnswerCreated);
-  });
+    gSecondConnection.createAnswer(onAnswerCreated,
+                                   failed('createAnswer'));
+  };
 
   var onAnswerCreated = test.step_func(function(answer) {
     gSecondConnection.setLocalDescription(answer);
@@ -60,42 +60,60 @@ access to the webcam.
     handleAnswer(answer.sdp);
   });
 
-  var handleAnswer = test.step_func(function(answerSdp) {
+  function handleAnswer(answerSdp) {
     var parsedAnswer = new RTCSessionDescription({ type: 'answer',
                                                    sdp: answerSdp });
     gFirstConnection.setRemoteDescription(parsedAnswer);
-  });
 
-  var onIceCandidateToFirst = test.step_func(function(event) {
+    // Call negotiated: done.
+    test.done();
+  };
+
+  // Note: the ice candidate handlers are special. We can not wrap them in test
+  // steps since that seems to cause some kind of starvation that prevents the
+  // call of being set up. Unfortunately we cannot report errors in here.
+  var onIceCandidateToFirst = function(event) {
     // If event.candidate is null = no more candidates.
     if (event.candidate) {
       var candidate = new RTCIceCandidate(event.candidate);
       gSecondConnection.addIceCandidate(candidate);
     }
-  });
+  };
 
-  var onIceCandidateToSecond = test.step_func(function(event) {
+  var onIceCandidateToSecond = function(event) {
     if (event.candidate) {
       var candidate = new RTCIceCandidate(event.candidate);
       gFirstConnection.addIceCandidate(candidate);
     }
+  };
+
+  var onRemoteStream = test.step_func(function(event) {
+    var videoTag = document.getElementById('remote-view');
+    videoTag.src = webkitURL.createObjectURL(event.stream);
   });
 
-  var onRemoteStream = test.step_func(function(e) {
-    test.done();
-  });
+  // Returns a suitable error callback.
+  function failed(function_name) {
+    return test.step_func(function() {
+      assert_unreached('WebRTC called error callback for ' + function_name);
+    });
+  }
 
+  // This function starts the test.
   test.step(function() {
     navigator.webkitGetUserMedia({ video: true, audio: true },
         getUserMediaOkCallback,
-        getUserMediaFailedCallback)
+        failed('getUserMedia'));
   });
 </script>
 </head>
 
 <body>
-</body>
 
+<div>
+  <video width="320" height="240" id="remote-view" autoplay="autoplay"></video>
+  <video width="320" height="240" id="local-view" autoplay="autoplay"></video>
+</div>
 <div id="log"></div>
 </body>
 </html>
