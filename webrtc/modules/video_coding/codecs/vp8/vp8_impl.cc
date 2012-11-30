@@ -157,10 +157,9 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
 
   codec_ = *inst;
 
+#if WEBRTC_LIBVPX_VERSION >= 971
   int num_temporal_layers = inst->codecSpecific.VP8.numberOfTemporalLayers > 1 ?
       inst->codecSpecific.VP8.numberOfTemporalLayers : 1;
-
-#if WEBRTC_LIBVPX_VERSION >= 971
   assert(temporal_layers_ == NULL);
   temporal_layers_ = new TemporalLayers(num_temporal_layers);
 #endif
