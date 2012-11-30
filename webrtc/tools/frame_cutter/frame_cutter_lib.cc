@@ -29,7 +29,7 @@ int FrameCutter(const string& in_path, int width, int height,
     return -10;
   }
 
-  FILE* in_fid = fopen(in_path.c_str() , "r");
+  FILE* in_fid = fopen(in_path.c_str() , "rb");
   if (!in_fid) {
     fprintf(stderr, "Could not read input file: %s.\n", in_path.c_str());
     return -11;
@@ -40,7 +40,7 @@ int FrameCutter(const string& in_path, int width, int height,
 
   webrtc::scoped_array<uint8_t> temp_buffer(new uint8_t[frame_length]);
 
-  FILE* out_fid = fopen(out_path.c_str(), "w");
+  FILE* out_fid = fopen(out_path.c_str(), "wb");
 
   if (!out_fid) {
     fprintf(stderr, "Could not open output file: %s.\n", out_path.c_str());

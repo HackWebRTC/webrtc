@@ -44,9 +44,9 @@ TEST(FrameCutterUnittest, ValidInPath) {
                            last_frame_to_cut, test_video);
   EXPECT_EQ(0, result);
 
-  FILE* ref_video_fid = fopen(ref_video.c_str(), "r");
+  FILE* ref_video_fid = fopen(ref_video.c_str(), "rb");
   ASSERT_TRUE(ref_video_fid != NULL);
-  FILE* test_video_fid = fopen(test_video.c_str(), "r");
+  FILE* test_video_fid = fopen(test_video.c_str(), "rb");
   ASSERT_TRUE(test_video_fid != NULL);
 
   const int frame_size =CalcBufferSize(kI420, width, height);
@@ -55,30 +55,33 @@ TEST(FrameCutterUnittest, ValidInPath) {
   scoped_array<int> test_buffer(new int[frame_size]);
 
   for (int i = 0; i < first_frame_to_cut; ++i) {
-    num_bytes_read = fread(ref_buffer.get(), frame_size, 1, ref_video_fid);
+    num_bytes_read = fread(ref_buffer.get(), 1, frame_size, ref_video_fid);
     EXPECT_EQ(frame_size, num_bytes_read);
 
-    num_bytes_read = fread(test_buffer.get(), frame_size, 1, test_video_fid);
+    num_bytes_read = fread(test_buffer.get(), 1, frame_size, test_video_fid);
     EXPECT_EQ(frame_size, num_bytes_read);
 
     EXPECT_EQ(0, memcmp(ref_buffer.get(), test_buffer.get(), frame_size));
   }
   // Do not compare the frames that have been cut.
   for (int i = first_frame_to_cut; i <= last_frame_to_cut; ++i) {
-    num_bytes_read = fread(&ref_buffer, frame_size, 1, ref_video_fid);
+    num_bytes_read = fread(ref_buffer.get(), 1, frame_size, ref_video_fid);
     EXPECT_EQ(frame_size, num_bytes_read);
   }
 
-  while (!feof(test_video_fid)) {
-    num_bytes_read = fread(&ref_buffer, frame_size, 1, ref_video_fid);
-    EXPECT_EQ(frame_size, num_bytes_read);
-    num_bytes_read = fread(&test_buffer, frame_size, 1, test_video_fid);
-    EXPECT_EQ(frame_size, num_bytes_read);
-    EXPECT_EQ(0, memcmp(ref_buffer.get(), test_buffer.get(), frame_size));
+  while (!feof(test_video_fid) && !feof(ref_video_fid)) {
+    num_bytes_read = fread(ref_buffer.get(), 1, frame_size, ref_video_fid);
+    if (!feof(ref_video_fid)) {
+      EXPECT_EQ(frame_size, num_bytes_read);
+    }
+    num_bytes_read = fread(test_buffer.get(), 1, frame_size, test_video_fid);
+    if (!feof(test_video_fid)) {
+      EXPECT_EQ(frame_size, num_bytes_read);
+    }
+    if (!feof(test_video_fid) && !feof(test_video_fid)) {
+      EXPECT_EQ(0, memcmp(ref_buffer.get(), test_buffer.get(), frame_size));
+    }
   }
-  bool are_both_files_at_the_end =
-      (feof(test_video_fid) && feof(test_video_fid));
-  EXPECT_TRUE(are_both_files_at_the_end);
 }
 
 TEST(FrameCutterUnittest, EmptySetToCut) {
