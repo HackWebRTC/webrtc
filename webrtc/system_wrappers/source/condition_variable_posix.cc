@@ -72,7 +72,7 @@ ConditionVariablePosix::~ConditionVariablePosix() {
 void ConditionVariablePosix::SleepCS(CriticalSectionWrapper& crit_sect) {
   CriticalSectionPosix* cs = reinterpret_cast<CriticalSectionPosix*>(
       &crit_sect);
-  pthread_cond_wait(&cond_, &cs->_mutex);
+  pthread_cond_wait(&cond_, &cs->mutex_);
 }
 
 bool ConditionVariablePosix::SleepCS(CriticalSectionWrapper& crit_sect,
@@ -113,10 +113,10 @@ bool ConditionVariablePosix::SleepCS(CriticalSectionWrapper& crit_sect,
       ts.tv_sec += ts.tv_nsec / NANOSECONDS_PER_SECOND;
       ts.tv_nsec %= NANOSECONDS_PER_SECOND;
     }
-    const int res = pthread_cond_timedwait(&cond_, &cs->_mutex, &ts);
+    const int res = pthread_cond_timedwait(&cond_, &cs->mutex_, &ts);
     return (res == ETIMEDOUT) ? false : true;
   } else {
-    pthread_cond_wait(&cond_, &cs->_mutex);
+    pthread_cond_wait(&cond_, &cs->mutex_);
     return true;
   }
 }

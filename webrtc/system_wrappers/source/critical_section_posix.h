@@ -11,25 +11,26 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_CRITICAL_SECTION_POSIX_H_
 #define WEBRTC_SYSTEM_WRAPPERS_SOURCE_CRITICAL_SECTION_POSIX_H_
 
-#include "critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 #include <pthread.h>
 
 namespace webrtc {
-class CriticalSectionPosix : public CriticalSectionWrapper
-{
-public:
-    CriticalSectionPosix();
 
-    virtual ~CriticalSectionPosix();
+class CriticalSectionPosix : public CriticalSectionWrapper {
+ public:
+  CriticalSectionPosix();
 
-    virtual void Enter();
-    virtual void Leave();
+  virtual ~CriticalSectionPosix();
 
-private:
-    pthread_mutex_t _mutex;
-    friend class ConditionVariablePosix;
+  virtual void Enter();
+  virtual void Leave();
+
+ private:
+  pthread_mutex_t mutex_;
+  friend class ConditionVariablePosix;
 };
+
 } // namespace webrtc
 
-#endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_CRITICAL_SECTION_POSIX_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_SOURCE_CRITICAL_SECTION_POSIX_H_

@@ -14,33 +14,29 @@
 // no equivalent to DCHECK_EQ in WebRTC code so this is the best we can do here.
 // TODO(henrike): add logging when pthread synchronization APIs are failing.
 
-#include "critical_section_posix.h"
+#include "webrtc/system_wrappers/source/critical_section_posix.h"
 
 namespace webrtc {
 
-CriticalSectionPosix::CriticalSectionPosix()
-{
-    pthread_mutexattr_t attr;
-    (void) pthread_mutexattr_init(&attr);
-    (void) pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-    (void) pthread_mutex_init(&_mutex, &attr);
+CriticalSectionPosix::CriticalSectionPosix() {
+  pthread_mutexattr_t attr;
+  (void) pthread_mutexattr_init(&attr);
+  (void) pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+  (void) pthread_mutex_init(&mutex_, &attr);
 }
 
-CriticalSectionPosix::~CriticalSectionPosix()
-{
-    (void) pthread_mutex_destroy(&_mutex);
-}
-
-void
-CriticalSectionPosix::Enter()
-{
-    (void) pthread_mutex_lock(&_mutex);
+CriticalSectionPosix::~CriticalSectionPosix() {
+  (void) pthread_mutex_destroy(&mutex_);
 }
 
 void
-CriticalSectionPosix::Leave()
-{
-    (void) pthread_mutex_unlock(&_mutex);
+CriticalSectionPosix::Enter() {
+  (void) pthread_mutex_lock(&mutex_);
+}
+
+void
+CriticalSectionPosix::Leave() {
+  (void) pthread_mutex_unlock(&mutex_);
 }
 
 } // namespace webrtc
