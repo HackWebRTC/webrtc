@@ -652,7 +652,8 @@ WebRtc_Word16 ACMISAC::SetBitRateSafe(WebRtc_Word32 bitRate) {
 
     status = ACM_ISAC_CONTROL(
         _codecInstPtr->inst, _isacCurrentBN,
-        (encoderSampFreq == 32000) ? 30 : (_frameLenSmpl / 16));
+        (encoderSampFreq == 32000 || encoderSampFreq == 48000) ? 30 :
+            (_frameLenSmpl / 16));
     if (status < 0) {
       status = -1;
     }
@@ -864,7 +865,8 @@ bool ACMISAC::DecoderParamsSafe(WebRtcACMCodecParams* decParams,
 
 void ACMISAC::SaveDecoderParamSafe(const WebRtcACMCodecParams* codecParams) {
   // set decoder sampling frequency.
-  if (codecParams->codecInstant.plfreq == 32000) {
+  if (codecParams->codecInstant.plfreq == 32000 ||
+      codecParams->codecInstant.plfreq == 48000) {
     memcpy(&_decoderParams32kHz, codecParams, sizeof(WebRtcACMCodecParams));
   } else {
     memcpy(&_decoderParams, codecParams, sizeof(WebRtcACMCodecParams));
