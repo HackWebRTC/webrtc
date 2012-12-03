@@ -106,7 +106,7 @@ def CPPComments(text):
   comment_end = re.compile(r'\*/')
   code_text = re.sub(comment_end, '', code_text)
   # Remove comment lines in the middle of comments, replace with C++ comments.
-  comment_star = re.compile(r'(?<=\n)[ ]*\*[ ]*')
+  comment_star = re.compile(r'(?<=\n)[ ]*(?!\*\w)\*[ ]*')
   code_text = re.sub(comment_star, r'// ', code_text)
   # Remove start of C comment and replace with C++ comment.
   comment_start = re.compile(r'/\*[ ]*\n')
