@@ -8,15 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * This is the pure C wrapper of the DataLog class.
- */
+// This is the pure C wrapper of the DataLog class.
 
-#include "system_wrappers/interface/data_log_c.h"
+#include "webrtc/system_wrappers/interface/data_log_c.h"
 
 #include <string>
 
-#include "system_wrappers/interface/data_log.h"
+#include "webrtc/system_wrappers/interface/data_log.h"
 
 extern "C" int WebRtcDataLog_CreateLog() {
   return webrtc::DataLog::CreateLog();

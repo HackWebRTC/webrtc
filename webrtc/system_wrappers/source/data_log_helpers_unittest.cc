@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/system_wrappers/interface/data_log.h"
+
 #include <string>
 
-#include "data_log.h"
 #include "gtest/gtest.h"
 
 using ::webrtc::DataLog;

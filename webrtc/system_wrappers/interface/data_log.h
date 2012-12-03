@@ -8,34 +8,32 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * This singleton can be used for logging data for offline processing. Data
- * logged with it can conveniently be parsed and processed with e.g. Matlab.
- *
- * Following is an example of the log file format, starting with the header
- * row at line 1, and the data rows following.
- * col1,col2,col3,multi-value-col4[3],,,col5
- * 123,10.2,-243,1,2,3,100
- * 241,12.3,233,1,2,3,200
- * 13,16.4,-13,1,2,3,300
- *
- * As can be seen in the example, a multi-value-column is specified with the
- * name followed the number of elements it contains. This followed by
- * number of elements - 1 empty columns.
- *
- * Without multi-value-columns this format can be natively by Matlab. With
- * multi-value-columns a small Matlab script is needed, available at
- * trunk/tools/matlab/parseLog.m.
- *
- * Table names and column names are case sensitive.
- */
+// This singleton can be used for logging data for offline processing. Data
+// logged with it can conveniently be parsed and processed with e.g. Matlab.
+//
+// Following is an example of the log file format, starting with the header
+// row at line 1, and the data rows following.
+// col1,col2,col3,multi-value-col4[3],,,col5
+// 123,10.2,-243,1,2,3,100
+// 241,12.3,233,1,2,3,200
+// 13,16.4,-13,1,2,3,300
+//
+// As can be seen in the example, a multi-value-column is specified with the
+// name followed the number of elements it contains. This followed by
+// number of elements - 1 empty columns.
+//
+// Without multi-value-columns this format can be natively by Matlab. With
+// multi-value-columns a small Matlab script is needed, available at
+// trunk/tools/matlab/parseLog.m.
+//
+// Table names and column names are case sensitive.
 
 #ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_DATA_LOG_H_
 #define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_DATA_LOG_H_
 
 #include <string>
 
-#include "data_log_impl.h"
+#include "webrtc/system_wrappers/interface/data_log_impl.h"
 
 namespace webrtc {
 

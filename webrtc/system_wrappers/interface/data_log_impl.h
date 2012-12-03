@@ -8,14 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * This file contains the helper classes for the DataLog APIs. See data_log.h
- * for the APIs.
- *
- * These classes are helper classes used for logging data for offline
- * processing. Data logged with these classes can conveniently be parsed and
- * processed with e.g. Matlab.
- */
+// This file contains the helper classes for the DataLog APIs. See data_log.h
+// for the APIs.
+//
+// These classes are helper classes used for logging data for offline
+// processing. Data logged with these classes can conveniently be parsed and
+// processed with e.g. Matlab.
 #ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_DATA_LOG_IMPL_H_
 #define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_DATA_LOG_IMPL_H_
 
@@ -24,8 +22,8 @@
 #include <string>
 #include <vector>
 
-#include "scoped_ptr.h"
-#include "typedefs.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

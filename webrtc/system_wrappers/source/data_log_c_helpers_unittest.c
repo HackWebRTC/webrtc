@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "system_wrappers/source/data_log_c_helpers_unittest.h"
+#include "webrtc/system_wrappers/source/data_log_c_helpers_unittest.h"
 
 #include <assert.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "system_wrappers/interface/data_log_c.h"
+#include "webrtc/system_wrappers/interface/data_log_c.h"
 
 enum { kTestArrayLen = 4 };
 static const char kTableName[] = "c_wrapper_table";
@@ -31,7 +31,7 @@ int WebRtcDataLogCHelper_TestReturnLog() {
 }
 
 int WebRtcDataLogCHelper_TestCombine() {
-  const int kOutLen = strlen(kTableName) + 4;  /* Room for "_17" + '\0' */
+  const int kOutLen = strlen(kTableName) + 4;  // Room for "_17" + '\0'
   char* combined_name = malloc(kOutLen * sizeof(char));
   char* out_ptr = WebRtcDataLog_Combine(combined_name, kOutLen, kTableName, 17);
   int return_code = 0;
