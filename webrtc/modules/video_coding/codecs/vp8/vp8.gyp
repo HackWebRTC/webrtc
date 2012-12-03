@@ -114,7 +114,6 @@
           'type': 'executable',
           'dependencies': [
             'webrtc_vp8',
-            'test_framework',
             '<(DEPTH)/testing/gmock.gyp:gmock',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/test/test.gyp:test_support_main',
@@ -125,7 +124,6 @@
           'sources': [
             'reference_picture_selection_unittest.cc',
             'temporal_layers_unittest.cc',
-            'vp8_impl_unittest.cc',
           ],
           'conditions': [
             ['build_libvpx==1', {
