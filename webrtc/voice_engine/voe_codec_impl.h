@@ -70,6 +70,14 @@ public:
                              VadModes& mode,
                              bool& disabledDTX);
 
+    // Dual-streaming
+    virtual int SetSecondarySendCodec(int channel, const CodecInst& codec,
+                                      int red_payload_type);
+
+    virtual int RemoveSecondarySendCodec(int channel);
+
+    virtual int GetSecondarySendCodec(int channel, CodecInst& codec);
+
 protected:
     VoECodecImpl(voe::SharedData* shared);
     virtual ~VoECodecImpl();

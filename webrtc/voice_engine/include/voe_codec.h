@@ -64,6 +64,23 @@ public:
     // |channel|.
     virtual int GetSendCodec(int channel, CodecInst& codec) = 0;
 
+    // Sets the |codec| as secondary codec for |channel|. Registering a
+    // secondary send codec enables dual-streaming. In dual-streaming mode,
+    // payloads of the primary and the secondary codecs are packed in RED
+    // payloads with |red_payload_type| as payload type. The Secondary codec
+    // MUST have the same sampling rate as the primary codec, otherwise the
+    // codec cannot be registered and -1 is returned. This method fails if a
+    // primary codec is not yet set.
+    virtual int SetSecondarySendCodec(int channel, const CodecInst& codec,
+                                      int red_payload_type) = 0;
+
+    // Removes the secondary codec from |channel|. This will terminate
+    // dual-streaming.
+    virtual int RemoveSecondarySendCodec(int channel) = 0;
+
+    // Gets |codec| which is used as secondary codec in |channel|.
+    virtual int GetSecondarySendCodec(int channel, CodecInst& codec) = 0;
+
     // Gets the currently received |codec| for a specific |channel|.
     virtual int GetRecCodec(int channel, CodecInst& codec) = 0;
 
