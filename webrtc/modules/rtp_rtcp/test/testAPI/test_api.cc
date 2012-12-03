@@ -24,7 +24,7 @@ class RtpRtcpAPITest : public ::testing::Test {
  protected:
   RtpRtcpAPITest() {
     test_CSRC[0] = 1234;
-    test_CSRC[2] = 2345;
+    test_CSRC[1] = 2345;
     test_id = 123;
     test_ssrc = 3456;
     test_timestamp = 4567;

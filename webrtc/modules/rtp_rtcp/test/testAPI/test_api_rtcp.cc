@@ -10,10 +10,10 @@
 
 #include <algorithm>
 #include <vector>
-#include <gtest/gtest.h>
 
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "test_api.h"
-
 #include "common_types.h"
 #include "rtp_rtcp.h"
 #include "rtp_rtcp_defines.h"
@@ -80,7 +80,7 @@ class RtpRtcpRtcpTest : public ::testing::Test {
  protected:
   RtpRtcpRtcpTest() {
     test_CSRC[0] = 1234;
-    test_CSRC[2] = 2345;
+    test_CSRC[1] = 2345;
     test_id = 123;
     test_ssrc = 3456;
     test_timestamp = 4567;
@@ -97,11 +97,12 @@ class RtpRtcpRtcpTest : public ::testing::Test {
 
     RtpRtcp::Configuration configuration;
     configuration.id = test_id;
-    configuration.audio = false;
+    configuration.audio = true;
     configuration.clock = &fake_clock;
     configuration.outgoing_transport = transport1;
     configuration.rtcp_feedback = myRTCPFeedback1;
     configuration.intra_frame_callback = myRTCPFeedback1;
+    configuration.incoming_data = receiver;
 
     module1 = RtpRtcp::CreateRtpRtcp(configuration);
 
@@ -150,6 +151,8 @@ class RtpRtcpRtcpTest : public ::testing::Test {
   virtual void TearDown() {
     delete module1;
     delete module2;
+    delete myRTCPFeedback1;
+    delete myRTCPFeedback2;
     delete transport1;
     delete transport2;
     delete receiver;
@@ -217,6 +220,8 @@ TEST_F(RtpRtcpRtcpTest, RTCP_CNAME) {
 
 TEST_F(RtpRtcpRtcpTest, RTCP) {
   RTCPReportBlock reportBlock;
+  reportBlock.remoteSSRC = 1;
+  reportBlock.sourceSSRC = 2;
   reportBlock.cumulativeLost = 1;
   reportBlock.delaySinceLastSR = 2;
   reportBlock.extendedHighSeqNum = 3;

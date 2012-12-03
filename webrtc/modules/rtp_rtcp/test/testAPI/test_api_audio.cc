@@ -328,5 +328,4 @@ TEST_F(RtpRtcpAudioTest, DTMF) {
     fake_clock.IncrementTime(20);
     module1->Process();
   }
-  delete audioFeedback;
 }

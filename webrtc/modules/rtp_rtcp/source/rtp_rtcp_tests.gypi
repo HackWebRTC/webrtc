@@ -22,6 +22,12 @@
         '../../../',
       ],
       'sources': [
+        '../test/testAPI/test_api.cc',
+        '../test/testAPI/test_api.h',
+        '../test/testAPI/test_api_audio.cc',
+        '../test/testAPI/test_api_nack.cc',
+        '../test/testAPI/test_api_rtcp.cc',
+        '../test/testAPI/test_api_video.cc',
         'fec_test_helper.cc',
         'fec_test_helper.h',
         'producer_fec_unittest.cc',

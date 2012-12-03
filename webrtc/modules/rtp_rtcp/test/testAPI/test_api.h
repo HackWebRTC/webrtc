@@ -77,12 +77,35 @@ class LoopBackTransport : public webrtc::Transport {
 
 class RtpReceiver : public RtpData {
  public:
-   virtual WebRtc_Word32 OnReceivedPayloadData(
-       const WebRtc_UWord8* payloadData,
-       const WebRtc_UWord16 payloadSize,
-       const webrtc::WebRtcRTPHeader* rtpHeader) {
+  enum { kMaxPayloadSize = 1500 };
+
+  virtual WebRtc_Word32 OnReceivedPayloadData(
+      const WebRtc_UWord8* payloadData,
+      const WebRtc_UWord16 payloadSize,
+      const webrtc::WebRtcRTPHeader* rtpHeader) {
+    EXPECT_LE(payloadSize, kMaxPayloadSize);
+    memcpy(_payloadData, payloadData, payloadSize);
+    memcpy(&_rtpHeader, rtpHeader, sizeof(_rtpHeader));
+    _payloadSize = payloadSize;
     return 0;
   }
+
+  const WebRtc_UWord8* payload_data() const {
+    return _payloadData;
+  }
+
+  WebRtc_UWord16 payload_size() const {
+    return _payloadSize;
+  }
+
+  webrtc::WebRtcRTPHeader rtp_header() const {
+    return _rtpHeader;
+  }
+
+ private:
+  WebRtc_UWord8 _payloadData[kMaxPayloadSize];
+  WebRtc_UWord16 _payloadSize;
+  webrtc::WebRtcRTPHeader _rtpHeader;
 };
 
 }  // namespace webrtc

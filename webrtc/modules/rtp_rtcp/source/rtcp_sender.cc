@@ -522,6 +522,12 @@ WebRtc_Word32 RTCPSender::AddReportBlock(const WebRtc_UWord32 SSRC,
                  "%s invalid argument", __FUNCTION__);
     return -1;
   }
+  std::map<WebRtc_UWord32, RTCPReportBlock*>::iterator it =
+      _reportBlocks.find(SSRC);
+  if (it != _reportBlocks.end()) {
+    delete it->second;
+    _reportBlocks.erase(it);
+  }
   RTCPReportBlock* copyReportBlock = new RTCPReportBlock();
   memcpy(copyReportBlock, reportBlock, sizeof(RTCPReportBlock));
   _reportBlocks[SSRC] = copyReportBlock;
