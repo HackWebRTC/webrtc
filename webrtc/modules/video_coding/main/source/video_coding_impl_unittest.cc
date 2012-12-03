@@ -202,7 +202,7 @@ TEST_F(TestVideoCodingModule, PaddingOnlyFramesWithLosses) {
   EXPECT_EQ(0, vcm_->RegisterPacketRequestCallback(&packet_request_callback_));
   const unsigned int kFrameSize = 1200;
   const unsigned int kPaddingSize = 220;
-  const uint8_t payload[kPaddingSize] = {0};
+  const uint8_t payload[kFrameSize] = {0};
   WebRtcRTPHeader header;
   memset(&header, 0, sizeof(header));
   header.frameType = kFrameEmpty;
@@ -245,7 +245,7 @@ TEST_F(TestVideoCodingModule, PaddingOnlyAndVideo) {
   EXPECT_EQ(0, vcm_->RegisterPacketRequestCallback(&packet_request_callback_));
   const unsigned int kFrameSize = 1200;
   const unsigned int kPaddingSize = 220;
-  const uint8_t payload[kPaddingSize] = {0};
+  const uint8_t payload[kFrameSize] = {0};
   WebRtcRTPHeader header;
   memset(&header, 0, sizeof(header));
   header.frameType = kFrameEmpty;
