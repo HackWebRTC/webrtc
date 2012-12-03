@@ -711,20 +711,20 @@ class ACMGenericCodec {
   ///////////////////////////////////////////////////////////////////////////
   // REDPayloadISAC()
   // This is an iSAC-specific function. The function is called to get RED
-  // paylaod from a default-encoder.
+  // payload from a default-encoder.
   //
   // Inputs:
   //   -isacRate           : the target rate of the main payload. A RED
-  //                         paylaod is generated according to the rate of
-  //                         main paylaod. Note that we are not specifying the
+  //                         payload is generated according to the rate of
+  //                         main payload. Note that we are not specifying the
   //                         rate of RED payload, but the main payload.
   //   -isacBwEstimate     : bandwidth information should be inserted in
   //                         RED payload.
   //
   // Output:
-  //   -payload            : pointer to a buffer where the RED paylaod will
+  //   -payload            : pointer to a buffer where the RED payload will
   //                         written to.
-  //   -paylaodLenBytes    : a place-holder to write the length of the RED
+  //   -payloadLenBytes    : a place-holder to write the length of the RED
   //                         payload in Bytes.
   //
   // Return value:
@@ -749,6 +749,13 @@ class ACMGenericCodec {
     return false;
   }
 
+  ///////////////////////////////////////////////////////////////////////////
+  // HasFrameToEncode()
+  // Returns true if there is enough audio buffered for encoding, such that
+  // calling Encode() will return a payload.
+  //
+  bool HasFrameToEncode() const;
+
  protected:
   ///////////////////////////////////////////////////////////////////////////
   // All the functions with FunctionNameSafe(...) contain the actual
@@ -757,15 +764,6 @@ class ACMGenericCodec {
   // Therefore, for the description of functionality, input/output arguments
   // and return value we refer to FunctionName()
   //
-
-  ///////////////////////////////////////////////////////////////////////////
-  // See Encode() for the description of function, input(s)/output(s) and
-  // return value.
-  //
-  WebRtc_Word16 EncodeSafe(WebRtc_UWord8* bitStream,
-                           WebRtc_Word16* bitStreamLenByte,
-                           WebRtc_UWord32* timeStamp,
-                           WebRtcACMEncodingType* encodingType);
 
   ///////////////////////////////////////////////////////////////////////////
   // See Decode() for the description of function, input(s)/output(s) and

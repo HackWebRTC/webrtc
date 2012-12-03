@@ -119,6 +119,10 @@
             '<(webrtc_root)/test/test.gyp:test_support_main',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '<(webrtc_root)/modules/modules.gyp:webrtc_utility',
+          ],
+          'include_dirs': [
+            '<(webrtc_root)/common_audio/resampler/include',
           ],
           'defines': [
             '<@(audio_coding_defines)',
@@ -127,6 +131,7 @@
              '../test/ACMTest.cc',
              '../test/APITest.cc',
              '../test/Channel.cc',
+             '../test/dual_stream_unittest.cc',
              '../test/EncodeDecodeTest.cc',
              '../test/iSACTest.cc',
              '../test/PCMFile.cc',

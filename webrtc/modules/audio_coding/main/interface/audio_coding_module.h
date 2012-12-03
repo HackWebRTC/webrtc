@@ -13,7 +13,9 @@
 
 #include "audio_coding_module_typedefs.h"
 #include "module.h"
+// TODO(turajs): If possible, forward declare and remove the following include.
 #include "module_common_types.h"
+
 
 namespace webrtc {
 
@@ -204,6 +206,10 @@ class AudioCodingModule: public Module {
   // Note: If a stereo codec is registered as send codec, VAD/DTX will
   // automatically be turned off, since it is not supported for stereo sending.
   //
+  // Note: If a secondary encoder is already registered, and the new send-codec
+  // has a sampling rate that does not match the secondary encoder, the
+  // secondary encoder will be unregistered.
+  //
   // Input:
   //   -sendCodec          : Parameters of the codec to be registered, c.f.
   //                         common_types.h for the definition of
@@ -214,6 +220,33 @@ class AudioCodingModule: public Module {
   //    0 if succeeded.
   //
   virtual WebRtc_Word32 RegisterSendCodec(const CodecInst& sendCodec) = 0;
+
+  ///////////////////////////////////////////////////////////////////////////
+  // int RegisterSecondarySendCodec()
+  // Register a secondary encoder to enable dual-streaming. If a secondary
+  // codec is already registered, it will be removed before the new one is
+  // registered.
+  //
+  // Note: The secondary encoder will be unregistered if a primary codec
+  // is set with a sampling rate which does not match that of the existing
+  // secondary codec.
+  //
+  // Input:
+  //   -send_codec         : Parameters of the codec to be registered, c.f.
+  //                         common_types.h for the definition of
+  //                         CodecInst.
+  //
+  // Return value:
+  //   -1 if failed to register,
+  //    0 if succeeded.
+  //
+  virtual int RegisterSecondarySendCodec(const CodecInst& send_codec) = 0;
+
+  ///////////////////////////////////////////////////////////////////////////
+  // void UnregisterSecondarySendCodec()
+  // Unregister the secondary encoder to disable dual-streaming.
+  //
+  virtual void UnregisterSecondarySendCodec() = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 SendCodec()
@@ -227,6 +260,19 @@ class AudioCodingModule: public Module {
   //    0 if succeeded.
   //
   virtual WebRtc_Word32 SendCodec(CodecInst& currentSendCodec) const = 0;
+
+  ///////////////////////////////////////////////////////////////////////////
+  // int SecondarySendCodec()
+  // Get the codec parameters for the current secondary send codec.
+  //
+  // Output:
+  //   -secondary_codec          : parameters of the secondary send codec.
+  //
+  // Return value:
+  //   -1 if failed to get send codec,
+  //    0 if succeeded.
+  //
+  virtual int SecondarySendCodec(CodecInst* secondary_codec) const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 SendFrequency()

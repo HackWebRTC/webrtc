@@ -29,7 +29,7 @@ enum {
 
 // Interval for sending new CNG parameters (SID frames) is 100 msec.
 enum {
-  kAcmSidIntervalMsec = 100
+  kCngSidIntervalMsec = 100
 };
 
 // We set some of the variables to invalid values as a check point
@@ -70,7 +70,6 @@ ACMGenericCodec::ACMGenericCodec()
   for (int i = 0; i < MAX_FRAME_SIZE_10MSEC; i++) {
     _vadLabel[i] = 0;
   }
-
   // Nullify memory for encoder and decoder, and set payload type to an
   // invalid value.
   memset(&_encoderParams, 0, sizeof(WebRtcACMCodecParams));
@@ -143,7 +142,7 @@ int32_t ACMGenericCodec::Add10MsDataSafe(const uint32_t timestamp,
 
   _lastTimestamp = timestamp;
 
-  // If the data exceeds the buffer size, we through away the oldest data and
+  // If the data exceeds the buffer size, we throw away the oldest data and
   // add the newly received 10 msec at the end.
   if ((_inAudioIxWrite + lengthSmpl * audioChannel) > AUDIO_BUFFER_SIZE_W16) {
     // Get the number of samples to be overwritten.
@@ -191,29 +190,27 @@ int32_t ACMGenericCodec::Add10MsDataSafe(const uint32_t timestamp,
   return 0;
 }
 
+bool ACMGenericCodec::HasFrameToEncode() const {
+  ReadLockScoped lockCodec(_codecWrapperLock);
+  if (_inAudioIxWrite < _frameLenSmpl * _noChannels)
+    return false;
+  return true;
+}
+
 int16_t ACMGenericCodec::Encode(uint8_t* bitStream,
                                 int16_t* bitStreamLenByte,
                                 uint32_t* timeStamp,
                                 WebRtcACMEncodingType* encodingType) {
-  WriteLockScoped lockCodec(_codecWrapperLock);
-  ReadLockScoped lockNetEq(*_netEqDecodeLock);
-  return EncodeSafe(bitStream, bitStreamLenByte, timeStamp, encodingType);
-}
-
-int16_t ACMGenericCodec::EncodeSafe(uint8_t* bitStream,
-                                    int16_t* bitStreamLenByte,
-                                    uint32_t* timeStamp,
-                                    WebRtcACMEncodingType* encodingType) {
-  // Only encode if we have enough data to encode. If not wait until we have a
-  // full frame to encode.
-  if (_inAudioIxWrite < _frameLenSmpl * _noChannels) {
-    // There is not enough audio.
+  if (!HasFrameToEncode()) {
+    // There is not enough audio
     *timeStamp = 0;
     *bitStreamLenByte = 0;
-    // Doesn't really matter what this parameter set to.
+    // Doesn't really matter what this parameter set to
     *encodingType = kNoEncoding;
     return 0;
   }
+  WriteLockScoped lockCodec(_codecWrapperLock);
+  ReadLockScoped lockNetEq(*_netEqDecodeLock);
 
   // Not all codecs accept the whole frame to be pushed into encoder at once.
   // Some codecs needs to be feed with a specific number of samples different
@@ -230,7 +227,6 @@ int16_t ACMGenericCodec::EncodeSafe(uint8_t* bitStream,
                  "EncodeSafe: error, basic coding sample block is negative");
     return -1;
   }
-
   // This makes the internal encoder read from the beginning of the buffer.
   _inAudioIxRead = 0;
   *timeStamp = _inTimestamp[0];
@@ -932,7 +928,7 @@ int16_t ACMGenericCodec::EnableDTX() {
     }
     uint16_t freqHz;
     EncoderSampFreq(freqHz);
-    if (WebRtcCng_InitEnc(_ptrDTXInst, freqHz, kAcmSidIntervalMsec,
+    if (WebRtcCng_InitEnc(_ptrDTXInst, freqHz, kCngSidIntervalMsec,
                           _numLPCParams) < 0) {
       // Couldn't initialize, has to return -1, and free the memory.
       WebRtcCng_FreeEnc(_ptrDTXInst);

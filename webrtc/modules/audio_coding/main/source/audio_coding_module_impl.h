@@ -16,6 +16,7 @@
 #include "acm_resampler.h"
 #include "common_types.h"
 #include "engine_configurations.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -58,6 +59,17 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
   // Can be called multiple times for Codec, CNG, RED.
   WebRtc_Word32 RegisterSendCodec(const CodecInst& send_codec);
+
+  // Register Secondary codec for dual-streaming. Dual-streaming is activated
+  // right after the secondary codec is registered.
+  int RegisterSecondarySendCodec(const CodecInst& send_codec);
+
+  // Unregister the secondary codec. Dual-streaming is deactivated right after
+  // deregistering secondary codec.
+  void UnregisterSecondarySendCodec();
+
+  // Get the secondary codec.
+  int SecondarySendCodec(CodecInst* secondary_codec) const;
 
   // Get current send codec.
   WebRtc_Word32 SendCodec(CodecInst& current_codec) const;
@@ -248,6 +260,35 @@ class AudioCodingModuleImpl : public AudioCodingModule {
                                        WebRtc_Word16 mirror_id,
                                        ACMNetEQ::JB jitter_buffer);
 
+  // Set VAD/DTX status. This function does not acquire a lock, and it is
+  // created to be called only from inside a critical section.
+  int SetVADSafe(bool enable_dtx, bool enable_vad, ACMVADMode mode);
+
+  // Process buffered audio when dual-streaming is not enabled (When RED is
+  // enabled still this function is used.)
+  int ProcessSingleStream();
+
+  // Process buffered audio when dual-streaming is enabled, i.e. secondary send
+  // codec is registered.
+  int ProcessDualStream();
+
+  // Preprocessing of input audio, including resampling and down-mixing if
+  // required, before pushing audio into encoder'r buffer.
+  //
+  // in_frame: input audio-frame
+  // out_frame: output audio_frame, the output is valid only if a preprocessing
+  //            is required.
+  //
+  // Return value:
+  //   -1: if encountering an error.
+  //    kPreprocessingSuccessful: if a preprocessing successfully performed.
+  //    kNoPreprocessingRequired: if there was no need for preprocessing. In
+  //                              this case |out_frame| is not updated and
+  //                              |in_frame| has to be used for further
+  //                              operations.
+  int PreprocessToAddData(const AudioFrame& in_frame,
+                          const AudioFrame** ptr_out);
+
  private:
   // Change required states after starting to receive the codec corresponding
   // to |index|.
@@ -261,15 +302,12 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // is a stereo codec, RED or CN.
   bool IsCodecForSlave(int index) const;
 
-  // Returns true if the |codec| is RED.
-  bool IsCodecRED(const CodecInst* codec) const;
-  // ...or if its |index| is RED.
-  bool IsCodecRED(int index) const;
+  int EncodeFragmentation(int fragmentation_index, int payload_type,
+                          uint32_t current_timestamp,
+                          ACMGenericCodec* _secondary_encoder,
+                          uint8_t* stream);
 
-  // Returns true if the |codec| is CN.
-  bool IsCodecCN(int index) const;
-  // ...or if its |index| is CN.
-  bool IsCodecCN(const CodecInst* codec) const;
+  void ResetFragmentation(int vector_size);
 
   AudioPacketizationCallback* _packetizationCallback;
   WebRtc_Word32 _id;
@@ -305,8 +343,15 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // RED/FEC.
   bool _isFirstRED;
   bool _fecEnabled;
+  // TODO(turajs): |_redBuffer| is allocated in constructor, why having them
+  // as pointers and not an array. If concerned about the memory, then make a
+  // set-up function to allocate them only when they are going to be used, i.e.
+  // FEC or Dual-streaming is enabled.
   WebRtc_UWord8* _redBuffer;
-  RTPFragmentationHeader* _fragmentation;
+  // TODO(turajs): we actually don't need |_fragmentation| as a member variable.
+  // It is sufficient to keep the length & payload type of previous payload in
+  // member variables.
+  RTPFragmentationHeader _fragmentation;
   WebRtc_UWord32 _lastFECTimestamp;
   // If no RED is registered as receive codec this
   // will have an invalid value.
@@ -334,7 +379,9 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   CriticalSectionWrapper* _callbackCritSect;
 
   AudioFrame _audioFrame;
-
+  AudioFrame _preprocess_frame;
+  CodecInst _secondarySendCodecInst;
+  scoped_ptr<ACMGenericCodec> _secondaryEncoder;
 #ifdef ACM_QA_TEST
   FILE* _outgoingPL;
   FILE* _incomingPL;
