@@ -30,24 +30,6 @@
       ],
     },
   ], # targets
-  'conditions': [
-    ['include_tests==1', {
-      'targets': [
-        {
-          'target_name': 'cng_unittests',
-          'type': 'executable',
-          'dependencies': [
-            'CNG',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
-          ],
-          'sources': [
-            'cng_unittest.cc',
-          ],
-        }, # CNG_unittests
-      ], # targets
-    }], # include_tests
-  ], # conditions
 }
 
 # Local Variables:

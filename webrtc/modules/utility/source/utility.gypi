@@ -80,7 +80,6 @@
           ],
           'sources': [
             'audio_frame_operations_unittest.cc',
-            'file_player_unittest.cc',
           ],
         }, # webrtc_utility_unittests
       ], # targets

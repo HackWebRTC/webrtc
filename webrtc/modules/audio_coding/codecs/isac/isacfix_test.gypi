@@ -23,20 +23,6 @@
         './fix/test/kenny.c',
       ],
     },
-    {
-      'target_name': 'isacfix_unittests',
-      'type': 'executable',
-      'dependencies': [
-        'iSACFix',
-        '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(webrtc_root)/test/test.gyp:test_support_main',
-      ],
-      'sources': [
-        'fix/source/filters_unittest.cc',
-        'fix/source/filterbanks_unittest.cc',
-        'fix/source/lpc_masking_model_unittest.cc',
-      ],
-    },
   ],
 }
 

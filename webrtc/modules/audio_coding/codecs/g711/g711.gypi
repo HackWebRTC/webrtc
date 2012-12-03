@@ -31,18 +31,6 @@
     ['include_tests==1', {
       'targets': [
         {
-          'target_name': 'g711_unittests',
-          'type': 'executable',
-          'dependencies': [
-            'G711',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
-          ],
-          'sources': [
-            'g711_unittest.cc',
-          ],
-        },
-        {
           'target_name': 'g711_test',
           'type': 'executable',
           'dependencies': [

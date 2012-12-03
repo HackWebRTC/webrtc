@@ -25,24 +25,6 @@
       ],
     },
   ], # targets
-  'conditions': [
-    ['include_tests==1', {
-      'targets': [
-        {
-          'target_name': 'pcm16b_unittests',
-          'type': 'executable',
-          'dependencies': [
-            'PCM16B',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
-          ],
-          'sources': [
-            'pcm16b_unittest.cc',
-          ],
-        }, # PCM16B_unittests
-      ], # targets
-    }], # include_tests
-  ], # conditions
 }
 
 # Local Variables:

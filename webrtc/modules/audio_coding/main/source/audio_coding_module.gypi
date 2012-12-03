@@ -147,6 +147,8 @@
           'type': 'executable',
           'dependencies': [
             'audio_coding_module',
+            'CNG',
+            'iSACFix',
             'NetEq',
             '<(webrtc_root)/common_audio/common_audio.gyp:vad',
             '<(DEPTH)/testing/gtest.gyp:gtest',
@@ -155,6 +157,10 @@
           ],
           'sources': [
              'acm_neteq_unittest.cc',
+             '../../codecs/cng/cng_unittest.cc',
+             '../../codecs/isac/fix/source/filters_unittest.cc',
+             '../../codecs/isac/fix/source/filterbanks_unittest.cc',
+             '../../codecs/isac/fix/source/lpc_masking_model_unittest.cc',
           ],
         }, # audio_coding_unittests
       ],
