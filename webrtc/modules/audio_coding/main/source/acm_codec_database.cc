@@ -191,7 +191,7 @@ const CodecInst ACMCodecDB::database_[] = {
 #ifdef WEBRTC_CODEC_OPUS
   // Opus internally supports 48, 24, 16, 12, 8 kHz.
   // Mono and stereo.
-  {120, "opus", 48000, 960, 2, 32000},
+  {120, "opus", 48000, 960, 2, 64000},
 #endif
 #ifdef WEBRTC_CODEC_SPEEX
   {kDynamicPayloadtypes[count_database++], "speex", 8000, 160, 1, 11000},
