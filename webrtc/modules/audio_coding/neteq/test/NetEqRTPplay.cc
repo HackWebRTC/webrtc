@@ -955,6 +955,12 @@ void parsePtypeFile(FILE *ptypeFile, std::map<WebRtc_UWord8, decoderStruct>* dec
                 tempDecoder.fs = 32000;
             }
 #endif
+#ifdef CODEC_ISAC_FB
+            else if(strcmp(codec, "isacfb") == 0) {
+                tempDecoder.codec = kDecoderISACfb;
+                tempDecoder.fs = 32000;
+            }
+#endif
 #ifdef CODEC_IPCMWB
             else if(strcmp(codec, "ipcmwb") == 0) {
                 tempDecoder.codec = kDecoderIPCMwb;
@@ -1356,6 +1362,11 @@ void createAndInsertDecoders (NETEQTEST_NetEQClass *neteq, std::map<WebRtc_UWord
 #ifdef CODEC_ISAC_SWB
             case kDecoderISACswb:
                 *dec = new decoder_iSACSWB( pt );
+                break;
+#endif
+#ifdef CODEC_ISAC_FB
+            case kDecoderISACfb:
+                *dec = new decoder_iSACFB(pt);
                 break;
 #endif
 #ifdef CODEC_G729

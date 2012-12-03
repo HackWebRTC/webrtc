@@ -82,6 +82,7 @@
 #define LB_TOTAL_DELAY_SAMPLES                 48
 enum ISACBandwidth {isac8kHz = 8, isac12kHz = 12, isac16kHz = 16};
 enum ISACBand {kIsacLowerBand = 0, kIsacUpperBand12 = 1, kIsacUpperBand16 = 2};
+enum IsacSamplingRate {kIsacWideband = 16,  kIsacSuperWideband = 32};
 #define UB_LPC_GAIN_DIM                 SUBFRAMES
 #define FB_STATE_SIZE_WORD32                    6
 
@@ -167,6 +168,7 @@ enum ISACBand {kIsacLowerBand = 0, kIsacUpperBand12 = 1, kIsacUpperBand16 = 2};
 #define RCU_TRANSCODING_SCALE_UB                0.50f
 #define RCU_TRANSCODING_SCALE_UB_INVERSE        2.0f
 
+#define SIZE_RESAMPLER_STATE  6
 
 /* Define Error codes */
 /* 6000 General */

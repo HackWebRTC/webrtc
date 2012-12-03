@@ -465,7 +465,8 @@ WebRtc_Word16 ACMISAC::InternalInitDecoder(WebRtcACMCodecParams* codecParams) {
   }
 
   // set decoder sampling frequency.
-  if (codecParams->codecInstant.plfreq == 32000) {
+  if (codecParams->codecInstant.plfreq == 32000 ||
+      codecParams->codecInstant.plfreq == 48000) {
     UpdateDecoderSampFreq(ACMCodecDB::kISACSWB);
   } else {
     UpdateDecoderSampFreq(ACMCodecDB::kISAC);
@@ -556,9 +557,17 @@ WebRtc_Word32 ACMISAC::CodecDef(WebRtcNetEQ_CodecDef& codecDef,
 #endif
   } else {
 #ifdef WEBRTC_CODEC_ISAC
-    SET_CODEC_PAR((codecDef), kDecoderISACswb, codecInst.pltype,
-        _codecInstPtr->inst, 32000);
-    SET_ISACSWB_FUNCTIONS((codecDef));
+    // Decoder is either @ 16 kHz or 32 kHz. Even if encoder is set @ 48 kHz
+    // decoding is @ 32 kHz.
+    if (codecInst.plfreq == 32000) {
+      SET_CODEC_PAR((codecDef), kDecoderISACswb, codecInst.pltype,
+                    _codecInstPtr->inst, 32000);
+      SET_ISACSWB_FUNCTIONS((codecDef));
+    } else {
+      SET_CODEC_PAR((codecDef), kDecoderISACfb, codecInst.pltype,
+                    _codecInstPtr->inst, 32000);
+      SET_ISACFB_FUNCTIONS((codecDef));
+    }
 #else
     return -1;
 #endif
@@ -659,7 +668,7 @@ WebRtc_Word16 ACMISAC::SetBitRateSafe(WebRtc_Word32 bitRate) {
 WebRtc_Word32 ACMISAC::GetEstimatedBandwidthSafe() {
   WebRtc_Word16 bandwidthIndex = 0;
   WebRtc_Word16 delayIndex = 0;
-  IsacSamplingRate sampRate;
+  int sampRate;
 
   // Get bandwidth information
   ACM_ISAC_GETSENDBWE(_codecInstPtr->inst, &bandwidthIndex, &delayIndex);
@@ -671,7 +680,7 @@ WebRtc_Word32 ACMISAC::GetEstimatedBandwidthSafe() {
 
   // Check sample frequency
   sampRate = ACM_ISAC_GETDECSAMPRATE(_codecInstPtr->inst);
-  if (sampRate == kIsacWideband) {
+  if (sampRate == 16000) {
     return isacRatesWB[bandwidthIndex];
   } else {
     return isacRatesSWB[bandwidthIndex];
@@ -680,13 +689,13 @@ WebRtc_Word32 ACMISAC::GetEstimatedBandwidthSafe() {
 
 WebRtc_Word32 ACMISAC::SetEstimatedBandwidthSafe(
     WebRtc_Word32 estimatedBandwidth) {
-  IsacSamplingRate sampRate;
+  int sampRate;
   WebRtc_Word16 bandwidthIndex;
 
   // Check sample frequency and choose appropriate table
   sampRate = ACM_ISAC_GETENCSAMPRATE(_codecInstPtr->inst);
 
-  if (sampRate == kIsacWideband) {
+  if (sampRate == 16000) {
     // Search through the WB rate table to find the index
     bandwidthIndex = NR_ISAC_BANDWIDTHS / 2 - 1;
     for (int i = 0; i < (NR_ISAC_BANDWIDTHS / 2); i++) {
@@ -738,10 +747,12 @@ WebRtc_Word32 ACMISAC::GetRedPayloadSafe(
 WebRtc_Word16 ACMISAC::UpdateDecoderSampFreq(
 #ifdef WEBRTC_CODEC_ISAC
     WebRtc_Word16 codecId) {
+  // The decoder supports only wideband and super-wideband.
   if (ACMCodecDB::kISAC == codecId) {
-    return WebRtcIsac_SetDecSampRate(_codecInstPtr->inst, kIsacWideband);
-  } else if (ACMCodecDB::kISACSWB == codecId) {
-    return WebRtcIsac_SetDecSampRate(_codecInstPtr->inst, kIsacSuperWideband);
+    return WebRtcIsac_SetDecSampRate(_codecInstPtr->inst, 16000);
+  } else if (ACMCodecDB::kISACSWB == codecId ||
+      ACMCodecDB::kISACFB == codecId) {
+    return WebRtcIsac_SetDecSampRate(_codecInstPtr->inst, 32000);
   } else {
     return -1;
   }
@@ -758,24 +769,18 @@ WebRtc_Word16 ACMISAC::UpdateEncoderSampFreq(
   EncoderSampFreq(currentSampRateHz);
 
   if (currentSampRateHz != encoderSampFreqHz) {
-    if ((encoderSampFreqHz != 16000) && (encoderSampFreqHz != 32000)) {
+    if ((encoderSampFreqHz != 16000) && (encoderSampFreqHz != 32000) &&
+        (encoderSampFreqHz != 48000)) {
       return -1;
     } else {
       _inAudioIxRead = 0;
       _inAudioIxWrite = 0;
       _inTimestampIxWrite = 0;
-      if (encoderSampFreqHz == 16000) {
-        if (WebRtcIsac_SetEncSampRate(_codecInstPtr->inst, kIsacWideband) < 0) {
-          return -1;
-        }
-        _samplesIn10MsAudio = 160;
-      } else {
-        if (WebRtcIsac_SetEncSampRate(_codecInstPtr->inst, kIsacSuperWideband)
-            < 0) {
-          return -1;
-        }
-        _samplesIn10MsAudio = 320;
+      if (WebRtcIsac_SetEncSampRate(_codecInstPtr->inst,
+                                    encoderSampFreqHz) < 0) {
+        return -1;
       }
+      _samplesIn10MsAudio = encoderSampFreqHz / 100;
       _frameLenSmpl = ACM_ISAC_GETNEWFRAMELEN(_codecInstPtr->inst);
       _encoderParams.codecInstant.pacsize = _frameLenSmpl;
       _encoderParams.codecInstant.plfreq = encoderSampFreqHz;
@@ -789,13 +794,7 @@ WebRtc_Word16 ACMISAC::UpdateEncoderSampFreq(
 }
 
 WebRtc_Word16 ACMISAC::EncoderSampFreq(WebRtc_UWord16& sampFreqHz) {
-  IsacSamplingRate sampRate;
-  sampRate = ACM_ISAC_GETENCSAMPRATE(_codecInstPtr->inst);
-  if (sampRate == kIsacSuperWideband) {
-    sampFreqHz = 32000;
-  } else {
-    sampFreqHz = 16000;
-  }
+  sampFreqHz = ACM_ISAC_GETENCSAMPRATE(_codecInstPtr->inst);
   return 0;
 }
 
@@ -809,7 +808,7 @@ WebRtc_Word32 ACMISAC::ConfigISACBandwidthEstimator(
     // TODO(turajs): at 32kHz we hardcode calling with 30ms and enforce
     // the frame-size otherwise we might get error. Revise if
     // control-bwe is changed.
-    if (sampFreqHz == 32000) {
+    if (sampFreqHz == 32000 || sampFreqHz == 48000) {
       status = ACM_ISAC_CONTROL_BWE(_codecInstPtr->inst, initRateBitPerSec, 30,
                                     1);
     } else {

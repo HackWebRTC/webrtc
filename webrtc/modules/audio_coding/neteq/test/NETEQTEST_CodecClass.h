@@ -64,6 +64,14 @@ public:
 };
 
 
+class decoder_iSACFB : public NETEQTEST_Decoder {
+ public:
+  decoder_iSACFB(WebRtc_UWord8 pt = 0);
+  virtual ~decoder_iSACFB();
+  int loadToNetEQ(NETEQTEST_NetEQClass & neteq);
+};
+
+
 class decoder_PCMU : public NETEQTEST_Decoder
 {
 public:

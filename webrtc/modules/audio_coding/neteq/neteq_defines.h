@@ -65,6 +65,10 @@
  *
  * NETEQ_ISAC_SWB_CODEC           Enable iSAC-SWB
  *
+ * Note that the decoder of iSAC full-band operates at 32 kHz, that is the
+ * decoded signal is at 32 kHz.
+ * NETEQ_ISAC_FB_CODEC            Enable iSAC-FB
+ *
  * NETEQ_G722_CODEC               Enable G.722
  *
  * NETEQ_G729_CODEC               Enable G.729
@@ -302,6 +306,7 @@
 
     /* Fullband 48 kHz codecs */
     #define NETEQ_OPUS_CODEC
+    #define NETEQ_ISAC_FB_CODEC
 #endif 
 
 #if (defined(NETEQ_ALL_CODECS))
@@ -339,6 +344,7 @@
     /* Super wideband 48kHz codecs */
     #define NETEQ_48KHZ_WIDEBAND
     #define NETEQ_OPUS_CODEC
+    #define NETEQ_ISAC_FB
 #endif
 
 /* Max output size from decoding one frame */

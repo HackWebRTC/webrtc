@@ -54,6 +54,7 @@ const int kIsacWbDefaultRate = 32000;
 const int kIsacSwbDefaultRate = 56000;
 const int kIsacPacSize480 = 480;
 const int kIsacPacSize960 = 960;
+const int kIsacPacSize1440 = 1440;
 
 // An encoded bit-stream is labeled by one of the following enumerators.
 //

@@ -239,6 +239,8 @@ void NetEqDecodingTest::SelectDecoders(WebRtcNetEQDecoder* used_codec) {
   dec_.push_back(new decoder_iSAC(103));
   *used_codec++ = kDecoderISACswb;
   dec_.push_back(new decoder_iSACSWB(104));
+  *used_codec++ = kDecoderISACfb;
+  dec_.push_back(new decoder_iSACFB(105));
   *used_codec++ = kDecoderPCM16B;
   dec_.push_back(new decoder_PCM16B_NB(93));
   *used_codec++ = kDecoderPCM16Bwb;

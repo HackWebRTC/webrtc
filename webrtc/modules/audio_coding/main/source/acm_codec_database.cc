@@ -107,10 +107,10 @@ namespace webrtc {
 // codecs. Note! There are a limited number of payload types. If more codecs
 // are defined they will receive reserved fixed payload types (values 69-95).
 const int kDynamicPayloadtypes[ACMCodecDB::kMaxNumCodecs] = {
-  105, 107, 108, 109, 111, 112, 113, 114, 115, 116, 117, 92,
+  107, 108, 109, 111, 112, 113, 114, 115, 116, 117, 92,
    91,  90,  89,  88,  87,  86,  85,  84,  83,  82,  81, 80,
    79,  78,  77,  76,  75,  74,  73,  72,  71,  70,  69, 68,
-   67, 66
+   67, 66, 65
 };
 
 // Creates database with all supported codecs at compile time.
@@ -129,6 +129,7 @@ const CodecInst ACMCodecDB::database_[] = {
   {103, "ISAC", 16000, kIsacPacSize480, 1, kIsacWbDefaultRate},
 # if (defined(WEBRTC_CODEC_ISAC))
   {104, "ISAC", 32000, kIsacPacSize960, 1, kIsacSwbDefaultRate},
+  {105, "ISAC", 48000, kIsacPacSize1440, 1, kIsacSwbDefaultRate},
 # endif
 #endif
 #ifdef WEBRTC_CODEC_PCM16
@@ -221,6 +222,7 @@ const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
   {2, {kIsacPacSize480, kIsacPacSize960}, 0, 1},
 # if (defined(WEBRTC_CODEC_ISAC))
   {1, {kIsacPacSize960}, 0, 1},
+  {1, {kIsacPacSize1440}, 0, 1},
 # endif
 #endif
 #ifdef WEBRTC_CODEC_PCM16
@@ -311,6 +313,7 @@ const WebRtcNetEQDecoder ACMCodecDB::neteq_decoders_[] = {
   kDecoderISAC,
 # if (defined(WEBRTC_CODEC_ISAC))
   kDecoderISACswb,
+  kDecoderISACfb,
 # endif
 #endif
 #ifdef WEBRTC_CODEC_PCM16

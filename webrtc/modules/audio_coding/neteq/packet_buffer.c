@@ -615,7 +615,8 @@ int WebRtcNetEQ_GetDefaultCodecSettings(const enum WebRtcNetEQDecoder *codecID,
             codecBytes = 960; /* 240ms @ 32kbps (60ms frames) */
             codecBuffers = 8;
         }
-        else if (codecID[i] == kDecoderISACswb)
+        else if ((codecID[i] == kDecoderISACswb) ||
+            (codecID[i] == kDecoderISACfb))
         {
             codecBytes = 1560; /* 240ms @ 52kbps (30ms frames) */
             codecBuffers = 8;

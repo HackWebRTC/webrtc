@@ -68,6 +68,7 @@ WebRtcIsac_EstimateBandwidth(
     diffArrivalTime = (WebRtc_UWord32)diffArrivalTime >> 1;
     diffSendTime = (WebRtc_UWord32)diffSendTime >> 1;
   }
+
   // arrival timestamp in 16 kHz
   arrivalTimestampIn16kHz = (WebRtc_UWord32)((WebRtc_UWord32)
                                              bwest_str->prev_rec_arr_ts + (WebRtc_UWord32)diffArrivalTime);

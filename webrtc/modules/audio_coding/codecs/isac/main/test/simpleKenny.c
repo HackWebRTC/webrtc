@@ -254,8 +254,9 @@ valid values are 8 and 16.\n", sampFreqKHz);
     /* Initialize the ISAC and BN structs */
     err = WebRtcIsac_Create(&ISAC_main_inst);
 
-    WebRtcIsac_SetEncSampRate(ISAC_main_inst, (sampFreqKHz == 16)? kIsacWideband: kIsacSuperWideband);
-    WebRtcIsac_SetDecSampRate(ISAC_main_inst, (sampFreqKHz == 16)? kIsacWideband: kIsacSuperWideband);
+    WebRtcIsac_SetEncSampRate(ISAC_main_inst, sampFreqKHz * 1000);
+    WebRtcIsac_SetDecSampRate(ISAC_main_inst, sampFreqKHz >= 32 ? 32000 :
+        16000);
     /* Error check */
     if (err < 0) {
         fprintf(stderr,"\n\n Error in create.\n\n");

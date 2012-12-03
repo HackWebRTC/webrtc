@@ -249,6 +249,7 @@ WebRtc_Word16 WebRtcIsac_Assign(ISACStruct** ISAC_main_inst,
     instISAC->encoderSamplingRateKHz = kIsacWideband;
     instISAC->decoderSamplingRateKHz = kIsacWideband;
     instISAC->bandwidthKHz           = isac8kHz;
+    instISAC->in_sample_rate_hz = 16000;
     return 0;
   } else {
     return -1;
@@ -280,6 +281,7 @@ WebRtc_Word16 WebRtcIsac_Create(ISACStruct** ISAC_main_inst) {
     instISAC->bandwidthKHz = isac8kHz;
     instISAC->encoderSamplingRateKHz = kIsacWideband;
     instISAC->decoderSamplingRateKHz = kIsacWideband;
+    instISAC->in_sample_rate_hz = 16000;
     return 0;
   } else {
     return -1;
@@ -458,6 +460,7 @@ WebRtc_Word16 WebRtcIsac_EncoderInit(ISACStruct* ISAC_main_inst,
       return -1;
     }
   }
+  memset(instISAC->state_in_resampler, 0, sizeof(instISAC->state_in_resampler));
   /* Initialization is successful, set the flag. */
   instISAC->initFlag |= BIT_MASK_ENC_INIT;
   return 0;
@@ -505,6 +508,8 @@ WebRtc_Word16 WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
   ISACMainStruct* instISAC = (ISACMainStruct*)ISAC_main_inst;
   ISACLBStruct* instLB = &(instISAC->instLB);
   ISACUBStruct* instUB = &(instISAC->instUB);
+  const int16_t* speech_in_ptr = speechIn;
+  int16_t resampled_buff[FRAMESAMPLES_10ms * 2];
 
   /* Check if encoder initiated. */
   if ((instISAC->initFlag & BIT_MASK_ENC_INIT) !=
@@ -513,8 +518,37 @@ WebRtc_Word16 WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
     return -1;
   }
 
+  if (instISAC->in_sample_rate_hz == 48000) {
+    /* Samples in 10 ms @ 48 kHz. */
+    const int kNumInputSamples = FRAMESAMPLES_10ms * 3;
+    /* Samples 10 ms @ 32 kHz. */
+    const int kNumOutputSamples = FRAMESAMPLES_10ms * 2;
+    /* Resampler divide the input into blocks of 3 samples, i.e.
+     * kNumInputSamples / 3. */
+    const int kNumResamplerBlocks = FRAMESAMPLES_10ms;
+    int32_t buffer32[FRAMESAMPLES_10ms * 3 + SIZE_RESAMPLER_STATE];
+
+    /* Restore last samples from the past to the beginning of the buffer
+     * and store the last samples of current frame for the next resampling. */
+    for (k = 0; k < SIZE_RESAMPLER_STATE; k++) {
+      buffer32[k] = instISAC->state_in_resampler[k];
+      instISAC->state_in_resampler[k] = speechIn[kNumInputSamples -
+                                                 SIZE_RESAMPLER_STATE + k];
+    }
+    for (k = 0; k < kNumInputSamples; k++) {
+      buffer32[SIZE_RESAMPLER_STATE + k] = speechIn[k];
+    }
+    /* Resampling 3 samples to 2. Function divides the input in
+     * |kNumResamplerBlocks| number of 3-sample groups, and output is
+     * |kNumResamplerBlocks| number of 2-sample groups. */
+    WebRtcSpl_Resample48khzTo32khz(buffer32, buffer32, kNumResamplerBlocks);
+    WebRtcSpl_VectorBitShiftW32ToW16(resampled_buff, kNumOutputSamples,
+                                     buffer32, 15);
+    speech_in_ptr = resampled_buff;
+  }
+
   if (instISAC->encoderSamplingRateKHz == kIsacSuperWideband) {
-    WebRtcSpl_AnalysisQMF(speechIn, speechInLB, speechInUB,
+    WebRtcSpl_AnalysisQMF(speech_in_ptr, speechInLB, speechInUB,
                           instISAC->analysisFBState1,
                           instISAC->analysisFBState2);
 
@@ -728,7 +762,7 @@ WebRtc_Word16 WebRtcIsac_Encode(ISACStruct* ISAC_main_inst,
  * even for 60 msec frames.
  *
  * NOTE 1! This function does not write in the ISACStruct, it is not allowed.
- * NOTE 3! Rates larger than the bottleneck of the codec will be limited
+ * NOTE 2! Rates larger than the bottleneck of the codec will be limited
  *         to the current bottleneck.
  *
  * Input:
@@ -945,6 +979,11 @@ WebRtc_Word16 WebRtcIsac_DecoderInit(ISACStruct* ISAC_main_inst) {
  * WebRtcIsac_UpdateBwEstimate(...)
  *
  * This function updates the estimate of the bandwidth.
+ *
+ * NOTE:
+ * The estimates of bandwidth is not valid if the sample rate of the far-end
+ * encoder is set to 48 kHz and send timestamps are increamented according to
+ * 48 kHz sampling rate.
  *
  * Input:
  *        - ISAC_main_inst    : ISAC instance.
@@ -1731,7 +1770,8 @@ WebRtc_Word16 WebRtcIsac_ReadBwIndex(const WebRtc_Word16* encoded,
 /****************************************************************************
  * WebRtcIsac_ReadFrameLen(...)
  *
- * This function returns the length of the frame represented in the packet.
+ * This function returns the number of samples the decoder will generate if
+ * the given payload is decoded.
  *
  * Input:
  *        - encoded           : Encoded bitstream
@@ -1798,11 +1838,12 @@ WebRtc_Word16 WebRtcIsac_GetNewFrameLen(ISACStruct* ISAC_main_inst) {
   ISACMainStruct* instISAC = (ISACMainStruct*)ISAC_main_inst;
 
   /* Return new frame length. */
-  if (instISAC->encoderSamplingRateKHz == kIsacWideband) {
+  if (instISAC->in_sample_rate_hz == 16000)
     return (instISAC->instLB.ISACencLB_obj.new_framelength);
-  } else {
-    return ((instISAC->instLB.ISACencLB_obj.new_framelength) << 1);
-  }
+  else if (instISAC->in_sample_rate_hz == 32000)
+    return ((instISAC->instLB.ISACencLB_obj.new_framelength) * 2);
+  else
+    return ((instISAC->instLB.ISACencLB_obj.new_framelength) * 3);
 }
 
 
@@ -2015,7 +2056,7 @@ WebRtc_Word16 WebRtcIsac_SetMaxRate(ISACStruct* ISAC_main_inst,
   } else {
     if (maxRateInBytesPer30Ms < 120) {
       /* 'maxRate' is out of valid range
-       * Sset to the acceptable value and return -1. */
+       * Set to the acceptable value and return -1. */
       maxRateInBytesPer30Ms = 120;
       status = -1;
     }
@@ -2153,31 +2194,45 @@ void WebRtcIsac_version(char* version) {
  * and the bottleneck remain unchanged by this call, however, the maximum rate
  * and maximum payload-size will be reset to their default values.
  *
+ * NOTE:
+ * The maximum internal sampling rate is 32 kHz. If the encoder sample rate is
+ * set to 48 kHz the input is expected to be at 48 kHz but will be resampled to
+ * 32 kHz before any further processing.
+ * This mode is created for compatibility with full-band codecs if iSAC is used
+ * in dual-streaming. See SetDecSampleRate() for sampling rates at the decoder.
+ *
  * Input:
  *        - ISAC_main_inst    : iSAC instance
- *        - sampRate          : enumerator specifying the sampling rate.
+ *        - sample_rate_hz    : sampling rate in Hertz, valid values are 16000,
+ *                              32000 and 48000.
  *
  * Return value               : 0 if successful
  *                             -1 if failed.
  */
 WebRtc_Word16 WebRtcIsac_SetEncSampRate(ISACStruct* ISAC_main_inst,
-                                        enum IsacSamplingRate sampRate) {
+                                        WebRtc_UWord16 sample_rate_hz) {
   ISACMainStruct* instISAC = (ISACMainStruct*)ISAC_main_inst;
+  enum IsacSamplingRate encoder_operational_rate;
 
-  if ((sampRate != kIsacWideband) &&
-      (sampRate != kIsacSuperWideband)) {
+  if ((sample_rate_hz != 16000) && (sample_rate_hz != 32000) &&
+      (sample_rate_hz != 48000)) {
     /* Sampling Frequency is not supported. */
     instISAC->errorCode = ISAC_UNSUPPORTED_SAMPLING_FREQUENCY;
     return -1;
-  } else if ((instISAC->initFlag & BIT_MASK_ENC_INIT) !=
-             BIT_MASK_ENC_INIT) {
-    if (sampRate == kIsacWideband) {
+  }
+  if (sample_rate_hz == 16000) {
+    encoder_operational_rate = kIsacWideband;
+  } else {
+    encoder_operational_rate = kIsacSuperWideband;
+  }
+
+  if ((instISAC->initFlag & BIT_MASK_ENC_INIT) !=
+      BIT_MASK_ENC_INIT) {
+    if (encoder_operational_rate == kIsacWideband) {
       instISAC->bandwidthKHz = isac8kHz;
     } else {
       instISAC->bandwidthKHz = isac16kHz;
     }
-    instISAC->encoderSamplingRateKHz = sampRate;
-    return 0;
   } else {
     ISACUBStruct* instUB = &(instISAC->instUB);
     ISACLBStruct* instLB = &(instISAC->instLB);
@@ -2188,7 +2243,7 @@ WebRtc_Word16 WebRtcIsac_SetEncSampRate(ISACStruct* ISAC_main_inst,
     WebRtc_Word16 frameSizeMs = instLB->ISACencLB_obj.new_framelength /
         (FS / 1000);
 
-    if ((sampRate == kIsacWideband) &&
+    if ((encoder_operational_rate == kIsacWideband) &&
         (instISAC->encoderSamplingRateKHz == kIsacSuperWideband)) {
       /* Changing from super-wideband to wideband.
        * we don't need to re-initialize the encoder of the lower-band. */
@@ -2199,7 +2254,7 @@ WebRtc_Word16 WebRtcIsac_SetEncSampRate(ISACStruct* ISAC_main_inst,
       }
       instISAC->maxPayloadSizeBytes = STREAM_SIZE_MAX_60;
       instISAC->maxRateBytesPer30Ms = STREAM_SIZE_MAX_30;
-    } else if ((sampRate == kIsacSuperWideband) &&
+    } else if ((encoder_operational_rate == kIsacSuperWideband) &&
                (instISAC->encoderSamplingRateKHz == kIsacWideband)) {
       if (codingMode == 1) {
         WebRtcIsac_RateAllocation(bottleneck, &bottleneckLB, &bottleneckUB,
@@ -2210,7 +2265,7 @@ WebRtc_Word16 WebRtcIsac_SetEncSampRate(ISACStruct* ISAC_main_inst,
       instISAC->maxPayloadSizeBytes = STREAM_SIZE_MAX;
       instISAC->maxRateBytesPer30Ms = STREAM_SIZE_MAX;
 
-      EncoderInitLb(instLB, codingMode, sampRate);
+      EncoderInitLb(instLB, codingMode, encoder_operational_rate);
       EncoderInitUb(instUB, instISAC->bandwidthKHz);
 
       memset(instISAC->analysisFBState1, 0,
@@ -2230,9 +2285,10 @@ WebRtc_Word16 WebRtcIsac_SetEncSampRate(ISACStruct* ISAC_main_inst,
         instLB->ISACencLB_obj.new_framelength = FRAMESAMPLES;
       }
     }
-    instISAC->encoderSamplingRateKHz = sampRate;
-    return 0;
   }
+  instISAC->encoderSamplingRateKHz = encoder_operational_rate;
+  instISAC->in_sample_rate_hz = sample_rate_hz;
+  return 0;
 }
 
 
@@ -2244,23 +2300,29 @@ WebRtc_Word16 WebRtcIsac_SetEncSampRate(ISACStruct* ISAC_main_inst,
  *
  * Input:
  *        - ISAC_main_inst    : iSAC instance
- *        - sampRate          : enumerator specifying the sampling rate.
+ *        - sample_rate_hz    : sampling rate in Hertz, valid values are 16000
+ *                              and 32000.
  *
  * Return value               : 0 if successful
  *                             -1 if failed.
  */
 WebRtc_Word16 WebRtcIsac_SetDecSampRate(ISACStruct* ISAC_main_inst,
-                                        enum IsacSamplingRate sampRate) {
+                                        WebRtc_UWord16 sample_rate_hz) {
   ISACMainStruct* instISAC = (ISACMainStruct*)ISAC_main_inst;
+  enum IsacSamplingRate decoder_operational_rate;
 
-  if ((sampRate != kIsacWideband) &&
-      (sampRate != kIsacSuperWideband)) {
+  if (sample_rate_hz == 16000) {
+    decoder_operational_rate = kIsacWideband;
+  } else if (sample_rate_hz == 32000) {
+    decoder_operational_rate = kIsacSuperWideband;
+  } else {
     /* Sampling Frequency is not supported. */
     instISAC->errorCode = ISAC_UNSUPPORTED_SAMPLING_FREQUENCY;
     return -1;
-  } else {
-    if ((instISAC->decoderSamplingRateKHz == kIsacWideband) &&
-        (sampRate == kIsacSuperWideband)) {
+  }
+
+  if ((instISAC->decoderSamplingRateKHz == kIsacWideband) &&
+        (decoder_operational_rate == kIsacSuperWideband)) {
       /* Switching from wideband to super-wideband at the decoder
        * we need to reset the filter-bank and initialize upper-band decoder. */
       memset(instISAC->synthesisFBState1, 0,
@@ -2271,10 +2333,9 @@ WebRtc_Word16 WebRtcIsac_SetDecSampRate(ISACStruct* ISAC_main_inst,
       if (DecoderInitUb(&(instISAC->instUB)) < 0) {
         return -1;
       }
-    }
-    instISAC->decoderSamplingRateKHz = sampRate;
-    return 0;
   }
+  instISAC->decoderSamplingRateKHz = decoder_operational_rate;
+  return 0;
 }
 
 
@@ -2284,14 +2345,13 @@ WebRtc_Word16 WebRtcIsac_SetDecSampRate(ISACStruct* ISAC_main_inst,
  * Input:
  *        - ISAC_main_inst    : iSAC instance
  *
- * Return value               : enumerator representing sampling frequency
- *                              associated with the encoder, the input audio
- *                              is expected to be sampled at this rate.
+ * Return value               : sampling rate in Hertz. The input to encoder
+ *                              is expected to be sampled in this rate.
  *
  */
-enum IsacSamplingRate WebRtcIsac_EncSampRate(ISACStruct* ISAC_main_inst) {
+WebRtc_UWord16 WebRtcIsac_EncSampRate(ISACStruct* ISAC_main_inst) {
   ISACMainStruct* instISAC = (ISACMainStruct*)ISAC_main_inst;
-  return instISAC->encoderSamplingRateKHz;
+  return instISAC->in_sample_rate_hz;
 }
 
 
@@ -2302,12 +2362,11 @@ enum IsacSamplingRate WebRtcIsac_EncSampRate(ISACStruct* ISAC_main_inst) {
  * Input:
  *        - ISAC_main_inst    : iSAC instance
  *
- * Return value               : enumerator representing sampling frequency
- *                              associated with the decoder, i.e. the
- *                              sampling rate of the decoded audio.
+ * Return value               : sampling rate in Hertz. Decoder output is
+ *                              sampled at this rate.
  *
  */
-enum IsacSamplingRate WebRtcIsac_DecSampRate(ISACStruct* ISAC_main_inst) {
+WebRtc_UWord16 WebRtcIsac_DecSampRate(ISACStruct* ISAC_main_inst) {
   ISACMainStruct* instISAC = (ISACMainStruct*)ISAC_main_inst;
-  return instISAC->decoderSamplingRateKHz;
+  return instISAC->decoderSamplingRateKHz == kIsacWideband ? 16000 : 32000;
 }

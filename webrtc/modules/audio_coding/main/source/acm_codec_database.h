@@ -33,6 +33,7 @@ class ACMCodecDB {
     , kISAC
 # if (defined(WEBRTC_CODEC_ISAC))
     , kISACSWB
+    , kISACFB
 # endif
 #endif
 #ifdef WEBRTC_CODEC_PCM16
@@ -115,6 +116,7 @@ class ACMCodecDB {
   // Set unsupported codecs to -1
 #ifndef WEBRTC_CODEC_ISAC
   enum {kISACSWB = -1};
+  enum {kISACFB = -1};
 # ifndef WEBRTC_CODEC_ISACFX
   enum {kISAC = -1};
 # endif

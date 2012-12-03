@@ -110,7 +110,7 @@ void stereoInterleave(unsigned char* data, int dataLen, int stride);
 #ifdef CODEC_ILBC
 	#include "ilbc.h"
 #endif
-#if (defined CODEC_ISAC || defined CODEC_ISAC_SWB) 
+#if (defined CODEC_ISAC || defined CODEC_ISAC_SWB || defined CODEC_ISAC_FB)
 	#include "isac.h"
 #endif
 #ifdef NETEQ_ISACFIX_CODEC
@@ -216,6 +216,9 @@ WebRtcVadInst *VAD_inst[2];
 #endif
 #ifdef CODEC_ISAC_SWB
 	ISACStruct *ISACSWB_inst[2];
+#endif
+#ifdef CODEC_ISAC_FB
+  ISACStruct *ISACFB_inst[2];
 #endif
 #ifdef CODEC_GSMFR
 	GSMFR_encinst_t *GSMFRenc_inst[2];
@@ -362,6 +365,9 @@ int main(int argc, char* argv[])
 #ifdef CODEC_ISAC_SWB
 		printf("             : isacswb       iSAC SWB (32kHz and 32.0-52.0 kbps). To set rate specify a rate parameter as last parameter\n");
 #endif
+#ifdef CODEC_ISAC_FB
+    printf("             : isacfb       iSAC FB (48kHz encoder 32kHz decoder and 32.0-52.0 kbps). To set rate specify a rate parameter as last parameter\n");
+#endif
 #ifdef CODEC_GSMFR
 		printf("             : gsmfr        GSM FR codec (8kHz and 13kbps)\n");
 #endif
@@ -482,7 +488,8 @@ int main(int argc, char* argv[])
         }
     }
 
-	if ((usedCodec == kDecoderISAC) || (usedCodec == kDecoderISACswb))
+    if ((usedCodec == kDecoderISAC) || (usedCodec == kDecoderISACswb) ||
+        (usedCodec == kDecoderISACfb))
     {
         if (argc != 7)
         {
@@ -492,7 +499,7 @@ int main(int argc, char* argv[])
                 printf(
                     "Running iSAC at default bitrate of 32000 bps (to specify explicitly add the bps as last parameter)\n");
             }
-            else // (usedCodec==kDecoderISACswb)
+            else // usedCodec == kDecoderISACswb || usedCodec == kDecoderISACfb
             {
                 bitrate = 56000;
                 printf(
@@ -513,12 +520,12 @@ int main(int argc, char* argv[])
                 }
                 printf("Running iSAC at bitrate of %i bps\n", bitrate);
             }
-            else // (usedCodec==kDecoderISACswb)
+            else // usedCodec == kDecoderISACswb || usedCodec == kDecoderISACfb
             {
                 if ((bitrate < 32000) || (bitrate > 56000))
                 {
                     printf(
-                        "Error: iSAC SWB bitrate must be between 32000 and 56000 bps (%i is invalid)\n",
+                        "Error: iSAC SWB/FB bitrate must be between 32000 and 56000 bps (%i is invalid)\n",
                         bitrate);
                     exit(0);
                 }
@@ -970,11 +977,16 @@ void NetEQTest_GetCodec_and_PT(char * name, enum WebRtcNetEQDecoder *codec, int 
 		*codec=kDecoderISAC;
 		*PT=NETEQ_CODEC_ISAC_PT;
 	}
-    else if(!strcmp(name,"isacswb")){
-		*fs=32000;
-		*codec=kDecoderISACswb;
-		*PT=NETEQ_CODEC_ISACSWB_PT;
+  else if(!strcmp(name,"isacswb")){
+    *fs=32000;
+    *codec=kDecoderISACswb;
+    *PT=NETEQ_CODEC_ISACSWB_PT;
 	}
+  else if(!strcmp(name,"isacfb")){
+    *fs=48000;
+    *codec=kDecoderISACfb;
+    *PT=NETEQ_CODEC_ISACFB_PT;
+  }
 	else if(!strcmp(name,"g729")){
 		*fs=8000;
 		*codec=kDecoderG729;
@@ -1481,7 +1493,7 @@ int NetEQTest_init_coders(enum WebRtcNetEQDecoder coder, int enc_frameSize, int 
                 printf("\nError - iSAC SWB only supports frameSize 30 ms\n");
                 exit(0);
             }
-            ok = WebRtcIsac_SetEncSampRate(ISACSWB_inst[k], kIsacSuperWideband);
+            ok = WebRtcIsac_SetEncSampRate(ISACSWB_inst[k], 32000);
             if (ok!=0) {
                 printf("Error: Couldn't set sample rate for iSAC SWB instance\n");
                 exit(0);
@@ -1494,6 +1506,38 @@ int NetEQTest_init_coders(enum WebRtcNetEQDecoder coder, int enc_frameSize, int 
             WebRtcIsac_Control(ISACSWB_inst[k], bitrate, enc_frameSize>>5);
         } else {
             printf("\nError - iSAC SWB only supports 960 enc_frameSize (30 ms)\n");
+            exit(0);
+        }
+        break;
+#endif
+#ifdef CODEC_ISAC_FB
+    case kDecoderISACfb:
+        if (sampfreq == 48000) {
+            ok = WebRtcIsac_Create(&ISACFB_inst[k]);
+            if (ok != 0) {
+                printf("Error: Couldn't allocate memory for iSAC FB "
+                    "instance\n");
+                exit(0);
+            }
+            if (enc_frameSize != 1440) {
+                printf("\nError - iSAC FB only supports frameSize 30 ms\n");
+                exit(0);
+            }
+            ok = WebRtcIsac_SetEncSampRate(ISACFB_inst[k], 48000);
+            if (ok != 0) {
+                printf("Error: Couldn't set sample rate for iSAC FB "
+                    "instance\n");
+                exit(0);
+            }
+            WebRtcIsac_EncoderInit(ISACFB_inst[k], 1);
+            if ((bitrate < 32000) || (bitrate > 56000)) {
+                printf("\nError - iSAC FB bitrate has to be between 32000 and"
+                    "56000 bps (not %i)\n", bitrate);
+                exit(0);
+            }
+            WebRtcIsac_Control(ISACFB_inst[k], bitrate, 30);
+        } else {
+            printf("\nError - iSAC FB only support 48 kHz sampling rate.\n");
             exit(0);
         }
         break;
@@ -1655,6 +1699,11 @@ int NetEQTest_free_coders(enum WebRtcNetEQDecoder coder, int numChannels) {
 #ifdef CODEC_ISAC_SWB
         case kDecoderISACswb:
             WebRtcIsac_Free(ISACSWB_inst[k]);
+            break;
+#endif
+#ifdef CODEC_ISAC_FB
+        case kDecoderISACfb:
+            WebRtcIsac_Free(ISACFB_inst[k]);
             break;
 #endif
 #ifdef CODEC_GSMFR
@@ -1855,6 +1904,18 @@ int NetEQTest_encode(int coder, WebRtc_Word16 *indata, int frameLen, unsigned ch
             cdlen=0;
             while (cdlen<=0) {
                 cdlen=WebRtcIsac_Encode(ISACSWB_inst[k],&indata[noOfCalls*320],(WebRtc_Word16*)encoded);
+                noOfCalls++;
+            }
+        }
+#endif
+#ifdef CODEC_ISAC_FB
+        else if (coder == kDecoderISACfb) { /* iSAC FB */
+            int noOfCalls = 0;
+            cdlen = 0;
+            while (cdlen <= 0) {
+                cdlen = WebRtcIsac_Encode(ISACFB_inst[k],
+                                          &indata[noOfCalls * 480],
+                                          (WebRtc_Word16*)encoded);
                 noOfCalls++;
             }
         }

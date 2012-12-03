@@ -53,7 +53,7 @@ NETEQTEST_Decoder(kDecoderISAC, 16000, "iSAC", pt)
     }
 
     WebRtcIsac_EncoderInit((ISACStruct *) _decoder, 0);
-    WebRtcIsac_SetDecSampRate((ISACStruct *) _decoder, kIsacWideband);
+    WebRtcIsac_SetDecSampRate((ISACStruct *) _decoder, 16000);
 }
 
 
@@ -90,7 +90,7 @@ NETEQTEST_Decoder(kDecoderISACswb, 32000, "iSAC swb", pt)
     }
 
     WebRtcIsac_EncoderInit((ISACStruct *) _decoder, 0);
-    WebRtcIsac_SetDecSampRate((ISACStruct *) _decoder, kIsacSuperWideband);
+    WebRtcIsac_SetDecSampRate((ISACStruct *) _decoder, 32000);
 }
 
 decoder_iSACSWB::~decoder_iSACSWB()
@@ -110,6 +110,32 @@ int decoder_iSACSWB::loadToNetEQ(NETEQTEST_NetEQClass & neteq)
 
     return(NETEQTEST_Decoder::loadToNetEQ(neteq, codecInst));
 
+}
+#endif
+
+#ifdef CODEC_ISAC_FB
+decoder_iSACFB::decoder_iSACFB(WebRtc_UWord8 pt)
+    : NETEQTEST_Decoder(kDecoderISACfb, 32000, "iSAC fb", pt) {
+  WebRtc_Word16 err = WebRtcIsac_Create((ISACStruct **) &_decoder);
+  if (err) {
+    exit(EXIT_FAILURE);
+  }
+
+  WebRtcIsac_EncoderInit((ISACStruct *) _decoder, 0);
+  WebRtcIsac_SetDecSampRate((ISACStruct *) _decoder, 32000);
+}
+
+decoder_iSACFB::~decoder_iSACFB() {
+  if (_decoder) {
+    WebRtcIsac_Free((ISACStruct *) _decoder);
+    _decoder = NULL;
+  }
+}
+
+int decoder_iSACFB::loadToNetEQ(NETEQTEST_NetEQClass & neteq){
+  WebRtcNetEQ_CodecDef codecInst;
+  SET_ISACFB_FUNCTIONS(codecInst);
+  return(NETEQTEST_Decoder::loadToNetEQ(neteq, codecInst));
 }
 #endif
 

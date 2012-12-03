@@ -18,9 +18,6 @@
 
 typedef struct WebRtcISACStruct    ISACStruct;
 
-enum IsacSamplingRate {kIsacWideband = 16,  kIsacSuperWideband = 32};
-
-
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -478,14 +475,11 @@ extern "C" {
    * Input:
    *        - ISAC_main_inst    : iSAC instance
    *
-   * Return value               : enumerator representing sampling frequency
-   *                              associated with the decoder, i.e. the
-   *                              sampling rate of the decoded audio.
+   * Return value               : sampling frequency in Hertz.
    *
    */
 
-  enum IsacSamplingRate WebRtcIsac_DecSampRate(
-      ISACStruct*                ISAC_main_inst);
+  WebRtc_UWord16 WebRtcIsac_DecSampRate(ISACStruct* ISAC_main_inst);
 
 
   /******************************************************************************
@@ -494,14 +488,11 @@ extern "C" {
    * Input:
    *        - ISAC_main_inst    : iSAC instance
    *
-   * Return value               : enumerator representing sampling frequency
-   *                              associated with the encoder, the input audio
-   *                              is expected to be sampled at this rate.
+   * Return value               : sampling rate in Hertz.
    *
    */
 
-  enum IsacSamplingRate WebRtcIsac_EncSampRate(
-      ISACStruct*                ISAC_main_inst);
+  WebRtc_UWord16 WebRtcIsac_EncSampRate(ISACStruct* ISAC_main_inst);
 
 
   /******************************************************************************
@@ -512,15 +503,14 @@ extern "C" {
    *
    * Input:
    *        - ISAC_main_inst    : iSAC instance
-   *        - sampRate          : enumerator specifying the sampling rate.
+   *        - sampRate          : sampling rate in Hertz.
    *
    * Return value               : 0 if successful
    *                             -1 if failed.
    */
 
-  WebRtc_Word16 WebRtcIsac_SetDecSampRate(
-      ISACStruct*           ISAC_main_inst,
-      enum IsacSamplingRate sampRate);
+  WebRtc_Word16 WebRtcIsac_SetDecSampRate(ISACStruct* ISAC_main_inst,
+                                          WebRtc_UWord16 samp_rate_hz);
 
 
   /******************************************************************************
@@ -533,15 +523,14 @@ extern "C" {
    *
    * Input:
    *        - ISAC_main_inst    : iSAC instance
-   *        - sampRate          : enumerator specifying the sampling rate.
+   *        - sampRate          : sampling rate in Hertz.
    *
    * Return value               : 0 if successful
    *                             -1 if failed.
    */
 
-  WebRtc_Word16 WebRtcIsac_SetEncSampRate(
-      ISACStruct*           ISAC_main_inst,
-      enum IsacSamplingRate sampRate);
+  WebRtc_Word16 WebRtcIsac_SetEncSampRate(ISACStruct* ISAC_main_inst,
+                                          WebRtc_UWord16 sample_rate_hz);
 
 
 

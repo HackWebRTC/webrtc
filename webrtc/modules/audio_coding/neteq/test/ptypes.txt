@@ -7,6 +7,7 @@ cn 13
 ilbc 102
 isac 103
 isacswb 104
+isacfb 124
 avt 106
 red 117
 cn_wb 98

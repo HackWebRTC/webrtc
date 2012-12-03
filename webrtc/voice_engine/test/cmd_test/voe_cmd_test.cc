@@ -340,8 +340,10 @@ void RunTest(std::string out_path) {
     if (strncmp(cinst.plname, "ISAC", 4) == 0 && cinst.plfreq == 32000) {
       printf("%i. ISAC-swb pltype:%i plfreq:%i channels:%i\n", i, cinst.pltype,
              cinst.plfreq, cinst.channels);
-    }
-    else {
+    } else if (strncmp(cinst.plname, "ISAC", 4) == 0 && cinst.plfreq == 48000) {
+      printf("%i. ISAC-fb pltype:%i plfreq:%i channels:%i\n", i, cinst.pltype,
+                   cinst.plfreq, cinst.channels);
+    } else {
       printf("%i. %s pltype:%i plfreq:%i channels:%i\n", i, cinst.plname,
              cinst.pltype, cinst.plfreq, cinst.channels);
     }

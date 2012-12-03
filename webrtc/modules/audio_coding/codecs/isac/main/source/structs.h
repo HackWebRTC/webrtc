@@ -472,6 +472,12 @@ typedef struct {
   WebRtc_Word16               maxRateBytesPer30Ms;
   // Maximum allowed payload-size, measured in Bytes.
   WebRtc_Word16               maxPayloadSizeBytes;
+  /* The expected sampling rate of the input signal. Valid values are 16000,
+   * 32000 and 48000. This is not the operation sampling rate of the codec.
+   * Input signals at 48 kHz are resampled to 32 kHz, then encoded. */
+  WebRtc_UWord16 in_sample_rate_hz;
+  /* State for the input-resampler. It is only used for 48 kHz input signals. */
+  int16_t state_in_resampler[SIZE_RESAMPLER_STATE];
 } ISACMainStruct;
 
 #endif /* WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_STRUCTS_H_ */

@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
   ISACStruct* codecInstance[MAX_NUM_CLIENTS];
   WebRtc_Word32 resamplerState[MAX_NUM_CLIENTS][8];
 
-  enum IsacSamplingRate encoderSampRate[MAX_NUM_CLIENTS];
+  int encoderSampRate[MAX_NUM_CLIENTS];
 
   int minBn = 16000;
   int maxBn = 56000;
@@ -86,11 +86,11 @@ int main(int argc, char* argv[])
   }
 
   // THE FIRST CLIENT STARTS IN WIDEBAND
-  encoderSampRate[0] = kIsacWideband;
+  encoderSampRate[0] = 16000;
   OPEN_FILE_RB(inFile[0], fileNameWB);
 
   // THE SECOND CLIENT STARTS IN SUPER-WIDEBAND
-  encoderSampRate[1] = kIsacSuperWideband;
+  encoderSampRate[1] = 32000;
   OPEN_FILE_RB(inFile[1], fileNameSWB);
 
   strcpy(myFlag, "-I");
@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
     printf("Client %d\n", clientCntr + 1);
     printf("---------\n");
     printf("Starting %s",
-           (encoderSampRate[clientCntr] == kIsacWideband)
+           (encoderSampRate[clientCntr] == 16000)
            ? "wideband":"super-wideband");
 
     // Open output File Name
@@ -242,17 +242,17 @@ int main(int argc, char* argv[])
         printf("Changing Encoder Sampling frequency in client %d to ", senderIdx+1);
         fclose(inFile[senderIdx]);
         numSampFreqChanged++;
-        if(encoderSampRate[senderIdx] == kIsacWideband)
+        if(encoderSampRate[senderIdx] == 16000)
         {
           printf("super-wideband.\n");
           OPEN_FILE_RB(inFile[senderIdx], fileNameSWB);
-          encoderSampRate[senderIdx] = kIsacSuperWideband;
+          encoderSampRate[senderIdx] = 32000;
         }
         else
         {
           printf("wideband.\n");
           OPEN_FILE_RB(inFile[senderIdx], fileNameWB);
-          encoderSampRate[senderIdx] = kIsacWideband;
+          encoderSampRate[senderIdx] = 16000;
         }
         WebRtcIsac_SetEncSampRate(codecInstance[senderIdx], encoderSampRate[senderIdx]);
         WebRtcIsac_SetDecSampRate(codecInstance[receiverIdx], encoderSampRate[senderIdx]);
@@ -264,7 +264,7 @@ int main(int argc, char* argv[])
         if(numSamplesRead != samplesIn10ms[senderIdx])
         {
           printf(" File %s for client %d has not enough audio\n",
-                 (encoderSampRate[senderIdx]==kIsacWideband)? "wideband":"super-wideband",
+                 (encoderSampRate[senderIdx]==16000)? "wideband":"super-wideband",
                  senderIdx + 1);
           return -1;
         }
@@ -428,7 +428,7 @@ int main(int argc, char* argv[])
         }
 
 
-        if(encoderSampRate[senderIdx] == kIsacWideband)
+        if(encoderSampRate[senderIdx] == 16000)
         {
           WebRtcSpl_UpsampleBy2(audioBuff60ms, lenDecodedAudio, resampledAudio60ms,
                                 resamplerState[receiverIdx]);
