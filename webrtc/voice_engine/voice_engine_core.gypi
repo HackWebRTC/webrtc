@@ -146,7 +146,6 @@
             'output_mixer_unittest.cc',
             'transmit_mixer_unittest.cc',
             'voe_audio_processing_unittest.cc',
-            'voe_codec_unittest.cc',
           ],
         },
       ], # targets

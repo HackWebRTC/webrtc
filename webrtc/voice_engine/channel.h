@@ -150,11 +150,6 @@ public:
     WebRtc_Word32 SetISACMaxRate(int rateBps);
     WebRtc_Word32 SetISACMaxPayloadSize(int sizeBytes);
 
-    // VoE dual-streaming.
-    int SetSecondarySendCodec(const CodecInst& codec, int red_payload_type);
-    void RemoveSecondarySendCodec();
-    int GetSecondarySendCodec(CodecInst* codec);
-
     // VoENetwork
     WebRtc_Word32 RegisterExternalTransport(Transport& transport);
     WebRtc_Word32 DeRegisterExternalTransport();
@@ -537,7 +532,6 @@ private:
     void RegisterReceiveCodecsToRTPModule();
     int ApmProcessRx(AudioFrame& audioFrame);
 
-    int SetRedPayloadType(int red_payload_type);
 private:
     CriticalSectionWrapper& _fileCritSect;
     CriticalSectionWrapper& _callbackCritSect;
