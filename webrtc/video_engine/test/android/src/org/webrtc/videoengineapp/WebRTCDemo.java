@@ -28,6 +28,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
@@ -94,6 +95,15 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     private static final int SEND_CODEC_FRAMERATE = 15;
     private static final int INIT_BITRATE = 500;
     private static final String LOOPBACK_IP = "127.0.0.1";
+    // Zero means don't automatically start/stop calls.
+    private static final long AUTO_CALL_RESTART_DELAY_MS = 0;
+
+    private Handler handler = new Handler();
+    private Runnable startOrStopCallback = new Runnable() {
+            public void run() {
+                startOrStop();
+            }
+        };
 
     private int volumeLevel = 204;
 
@@ -167,6 +177,7 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     private int packetLoss;
     private int frameRateO;
     private int bitRateO;
+    private int numCalls = 0;
 
     // Variable for storing variables
     private String webrtcName = "/webrtc";
@@ -310,15 +321,18 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         }
 
         startMain();
-        return;
+
+        if (AUTO_CALL_RESTART_DELAY_MS > 0)
+            startOrStop();
     }
 
     // Called before the activity is destroyed.
     @Override
     public void onDestroy() {
         Log.d(TAG, "onDestroy");
-        super.onDestroy();
+        handler.removeCallbacks(startOrStopCallback);
         unregisterReceiver(receiver);
+        super.onDestroy();
     }
 
     private class StatsView extends View{
@@ -329,16 +343,18 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         @Override protected void onDraw(Canvas canvas) {
             super.onDraw(canvas);
 
-            Paint mLoadPaint = new Paint();
-            mLoadPaint.setAntiAlias(true);
-            mLoadPaint.setTextSize(16);
-            mLoadPaint.setARGB(255, 255, 255, 255);
+            Paint loadPaint = new Paint();
+            loadPaint.setAntiAlias(true);
+            loadPaint.setTextSize(16);
+            loadPaint.setARGB(255, 255, 255, 255);
 
-            String mLoadText;
-            mLoadText = "> " + frameRateI + " fps/" + bitRateI + "k bps/ " + packetLoss;
-            canvas.drawText(mLoadText, 4, 172, mLoadPaint);
-            mLoadText = "< " + frameRateO + " fps/ " + bitRateO + "k bps";
-            canvas.drawText(mLoadText, 4, 192, mLoadPaint);
+            canvas.drawText("#calls " + numCalls, 4, 152, loadPaint);
+
+            String loadText;
+            loadText = "> " + frameRateI + " fps/" + bitRateI + "k bps/ " + packetLoss;
+            canvas.drawText(loadText, 4, 172, loadPaint);
+            loadText = "< " + frameRateO + " fps/ " + bitRateO + "k bps";
+            canvas.drawText(loadText, 4, 192, loadPaint);
 
             updateDisplay();
         }
@@ -484,7 +500,7 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         spCodecSize.setAdapter(new SpinnerAdapter(this,
                         R.layout.row,
                         mVideoCodecsSizeStrings));
-        spCodecSize.setSelection(0);
+        spCodecSize.setSelection(mVideoCodecsSizeStrings.length - 1);
 
         // Voice codec
         mVoiceCodecsStrings = vieAndroidAPI.VoE_GetCodecs();
@@ -793,6 +809,24 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         }
     }
 
+    private void startOrStop() {
+        readSettings();
+        if (viERunning || voERunning) {
+            stopAll();
+            startMain();
+            wakeLock.release(); // release the wake lock
+            btStartStopCall.setText(R.string.startCall);
+        } else if (enableVoice || enableVideo){
+            ++numCalls;
+            startCall();
+            wakeLock.acquire(); // screen stay on during the call
+            btStartStopCall.setText(R.string.stopCall);
+        }
+        if (AUTO_CALL_RESTART_DELAY_MS > 0) {
+            handler.postDelayed(startOrStopCallback, AUTO_CALL_RESTART_DELAY_MS);
+        }
+    }
+
     public void onClick(View arg0) {
         switch (arg0.getId()) {
             case R.id.btSwitchCamera:
@@ -816,18 +850,8 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                 }
                 break;
             case R.id.btStartStopCall:
-                readSettings();
-                if (viERunning || voERunning) {
-                    stopAll();
-                    startMain();
-                    wakeLock.release(); // release the wake lock
-                    btStartStopCall.setText(R.string.startCall);
-                } else if (enableVoice || enableVideo){
-                    startCall();
-                    wakeLock.acquire(); // screen stay on during the call
-                    btStartStopCall.setText(R.string.stopCall);
-                }
-                break;
+              startOrStop();
+              break;
             case R.id.btExit:
                 stopAll();
                 finish();
