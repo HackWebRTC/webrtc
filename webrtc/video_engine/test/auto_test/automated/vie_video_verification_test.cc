@@ -116,25 +116,28 @@ class ParameterizedFullStackTest : public ViEVideoVerificationTest,
  protected:
   struct TestParameters {
     int packet_loss_rate;
-    int round_trip_time;
+    int one_way_delay;
     int bitrate;
     double avg_psnr_threshold;
     double avg_ssim_threshold;
+    std::string test_label;
   };
 
   void SetUp() {
     int i = 0;
     parameter_table_[i].packet_loss_rate = 0;
-    parameter_table_[i].round_trip_time = 0;
+    parameter_table_[i].one_way_delay = 0;
     parameter_table_[i].bitrate = 300;
     parameter_table_[i].avg_psnr_threshold = 35;
     parameter_table_[i].avg_ssim_threshold = 0.96;
+    parameter_table_[i].test_label = "net delay 0, plr 0";
     ++i;
     parameter_table_[i].packet_loss_rate = 5;
-    parameter_table_[i].round_trip_time = 50;
+    parameter_table_[i].one_way_delay = 50;
     parameter_table_[i].bitrate = 300;
     parameter_table_[i].avg_psnr_threshold = 35;
     parameter_table_[i].avg_ssim_threshold = 0.96;
+    parameter_table_[i].test_label = "net delay 50, plr 5";
   }
 
   TestParameters parameter_table_[2];
@@ -193,7 +196,7 @@ TEST_P(ParameterizedFullStackTest, RunsFullStackWithoutErrors)  {
   // frames every now and then.
   const int kBitRateKbps = parameter_table_[GetParam()].bitrate;
   const int kPacketLossPercent = parameter_table_[GetParam()].packet_loss_rate;
-  const int kNetworkDelayMs = parameter_table_[GetParam()].round_trip_time;
+  const int kNetworkDelayMs = parameter_table_[GetParam()].one_way_delay;
   int width = 352;
   int height = 288;
   ViETest::Log("Bit rate     : %5d kbps", kBitRateKbps);
@@ -207,7 +210,7 @@ TEST_P(ParameterizedFullStackTest, RunsFullStackWithoutErrors)  {
   StopRenderers();
 
   detector.CalculateResults();
-  detector.PrintReport();
+  detector.PrintReport(parameter_table_[GetParam()].test_label);
 
   if (detector.GetNumberOfFramesDroppedAt(FrameDropDetector::kRendered) >
       detector.GetNumberOfFramesDroppedAt(FrameDropDetector::kDecoded)) {

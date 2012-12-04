@@ -167,9 +167,11 @@ class FrameDropDetector {
   const std::vector<Frame*>& GetAllFrames();
 
   // Prints a detailed report about all the different frame states and which
-  // ones are detected as dropped, using ViETest::Log.
+  // ones are detected as dropped, using ViETest::Log. Also prints
+  // perf-formatted output and adds |test_label| as a modifier to the perf
+  // output.
   // CalculateResults() must be called before calling this method.
-  void PrintReport();
+  void PrintReport(const std::string& test_label);
 
   // Prints all the timestamp maps. Mainly used for debugging purposes to find
   // missing timestamps.

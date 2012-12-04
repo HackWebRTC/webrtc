@@ -9,6 +9,8 @@
  */
 
 #include <cassert>
+#include <cmath>
+#include <sstream>
 #include <string>
 
 #include "webrtc/modules/video_capture/include/video_capture_factory.h"
@@ -16,6 +18,7 @@
 #include "testsupport/fileutils.h"
 #include "testsupport/frame_reader.h"
 #include "testsupport/frame_writer.h"
+#include "testsupport/perf_test.h"
 #include "video_engine/test/auto_test/interface/vie_autotest.h"
 #include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
 #include "video_engine/test/auto_test/primitives/framedrop_primitives.h"
@@ -97,6 +100,41 @@ class DecodedTimestampEffectFilter : public webrtc::ViEEffectFilter {
 
  private:
   FrameDropDetector* frame_drop_detector_;
+};
+
+class Statistics {
+ public:
+  Statistics() : sum_(0.0f), sum_squared_(0.0f), count_(0) {};
+
+  void AddSample(float sample) {
+    sum_ += sample;
+    sum_squared_ += sample * sample;
+    ++count_;
+  }
+
+  float Mean() {
+    if (count_ == 0)
+      return -1.0f;
+    return sum_ / count_;
+  }
+
+  float Variance() {
+    if (count_ == 0)
+      return -1.0f;
+    return  sum_squared_ / count_ - Mean() * Mean();
+  }
+
+  std::string AsString() {
+    std::stringstream ss;
+    ss << (Mean() >= 0 ? Mean() : -1) << ", " <<
+        (Variance() >= 0 ? sqrt(Variance()) : -1);
+    return ss.str();
+  }
+
+ private:
+  float sum_;
+  float sum_squared_;
+  int count_;
 };
 
 void TestFullStack(const TbInterfaces& interfaces,
@@ -338,7 +376,7 @@ void FrameDropDetector::CalculateResults() {
   dirty_ = false;
 }
 
-void FrameDropDetector::PrintReport() {
+void FrameDropDetector::PrintReport(const std::string& test_label) {
   assert(!dirty_);
   ViETest::Log("Frame Drop Detector report:");
   ViETest::Log("  Created  frames: %ld", created_frames_.size());
@@ -413,6 +451,8 @@ void FrameDropDetector::PrintReport() {
       "  latency");
   ViETest::Log("                                               (incl network)"
       "(excl network)");
+  Statistics latency_incl_network_stats;
+  Statistics latency_excl_network_stats;
   for (std::vector<Frame*>::const_iterator it = created_frames_vector_.begin();
        it != created_frames_vector_.end(); ++it) {
     int created_to_sent = (*it)->dropped_at_send ? -1 :
@@ -433,6 +473,12 @@ void FrameDropDetector::PrintReport() {
     int total_latency_excl_network = (*it)->dropped_at_render ? -1 :
         static_cast<int>((*it)->rendered_timestamp_in_us_ -
                          (*it)->created_timestamp_in_us_ - sent_to_received);
+    if (total_latency_incl_network >= 0)
+      latency_incl_network_stats.AddSample(total_latency_incl_network /
+                                           1000.0f);
+    if (total_latency_excl_network >= 0)
+      latency_excl_network_stats.AddSample(total_latency_excl_network /
+                                           1000.0f);
     ViETest::Log("%5d %9d %9d %9d %9d %12d %12d",
                  (*it)->number_,
                  created_to_sent,
@@ -442,6 +488,15 @@ void FrameDropDetector::PrintReport() {
                  total_latency_incl_network,
                  total_latency_excl_network);
   }
+
+  // Print dashboard data.
+  webrtc::test::PrintResultMeanAndError(
+      "total delay (excl. network)", " " + test_label, "",
+      latency_excl_network_stats.AsString(), "ms", false);
+  webrtc::test::PrintResultMeanAndError(
+      "total delay (incl. network)", " " + test_label, "",
+      latency_incl_network_stats.AsString(), "ms", false);
+
   // Find and print the dropped frames.
   ViETest::Log("\nTotal # dropped frames at:");
   ViETest::Log("  Send   : %d", dropped_frames_at_send_);
