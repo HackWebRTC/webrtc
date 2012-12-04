@@ -72,6 +72,10 @@ public class ViEAndroidJavaAPI {
     public native int GetCameraOrientation(int cameraNum);
     public native int SetRotation(int cameraId,int degrees);
 
+    // External Codec
+    public native int SetExternalMediaCodecDecoderRenderer(
+            int channel, Object glSurface);
+
     // NACK
     public native int EnableNACK(int channel, boolean enable);
 

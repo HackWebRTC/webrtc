@@ -81,6 +81,13 @@
                           android:layout_height="wrap_content"
                           android:text="@string/surfaceview"
                           android:textColor="#fff" />
+                 <RadioButton
+                          android:id="@+id/radio_mediacodec"
+                          android:onClick="onClick"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="@string/mediacodec"
+                          android:textColor="#fff" />
         </RadioGroup>
 	</LinearLayout>
 

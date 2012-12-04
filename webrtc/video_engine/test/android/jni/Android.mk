@@ -288,7 +288,9 @@ include $(CLEAR_VARS)
 LOCAL_MODULE_TAGS := tests
 LOCAL_MODULE := libwebrtc-video-demo-jni
 LOCAL_CPP_EXTENSION := .cc
-LOCAL_SRC_FILES := vie_android_java_api.cc
+LOCAL_SRC_FILES := \
+    vie_android_java_api.cc \
+    android_media_codec_decoder.cc
 LOCAL_CFLAGS := \
     '-DWEBRTC_TARGET_PC' \
     '-DWEBRTC_ANDROID'
@@ -296,6 +298,7 @@ LOCAL_CFLAGS := \
 LOCAL_C_INCLUDES := \
     external/gtest/include \
     $(LOCAL_PATH)/../../../.. \
+    $(LOCAL_PATH)/../../../../.. \
     $(LOCAL_PATH)/../../../include \
     $(LOCAL_PATH)/../../../../voice_engine/include
 

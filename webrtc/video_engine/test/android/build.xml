@@ -221,7 +221,7 @@ Notice for all the files in this folder.
     <property name="sdk.dir" location="${env.ANDROID_SDK_ROOT}"/>
     <property name="sdk.version" value="${env.ANDROID_SDK_VERSION}"/>
 
-    <property name="target" value="android-10"/>
+    <property name="target" value="android-16"/>
 
     <!-- ******************************************************* -->
     <!-- **************** Overridable Properties *************** -->

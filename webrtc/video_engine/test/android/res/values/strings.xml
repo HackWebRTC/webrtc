@@ -36,5 +36,6 @@
 <string name="debugrecording">APMRecord</string>
 <string name="rtpdump">rtpdump</string>
 <string name="surfaceview">SurfaceView</string>
+<string name="mediacodec">MediaCodec Decoder/Renderer</string>
 <string name="opengl">OpenGL</string>
 </resources>

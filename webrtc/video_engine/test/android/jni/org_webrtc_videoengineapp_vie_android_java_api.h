@@ -17,7 +17,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
  * Method:    NativeInit
@@ -109,19 +108,18 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetLocal
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
  * Method:    SetSendDestination
- * Signature: (IILjava/lang/String)I
+ * Signature: (IILjava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetSendDestination
   (JNIEnv *, jobject, jint, jint, jstring);
 
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    GetCodecs(
- * Signature: ()I
+ * Method:    GetCodecs
+ * Signature: ()[Ljava/lang/String;
  */
-JNIEXPORT jobjectArray JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_GetCodecs(
-    JNIEnv *env,
-    jobject);
+JNIEXPORT jobjectArray JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_GetCodecs
+  (JNIEnv *, jobject);
 
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
@@ -197,6 +195,14 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetRotat
 
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+ * Method:    SetExternalMediaCodecDecoderRenderer
+ * Signature: (ILjava/lang/Object;)I
+ */
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetExternalMediaCodecDecoderRenderer
+  (JNIEnv *, jobject, jint, jobject);
+
+/*
+ * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
  * Method:    EnableNACK
  * Signature: (IZ)I
  */
@@ -238,7 +244,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopInco
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
  * Method:    VoE_Create
- * Signature: (Landroid/content/Context)Z
+ * Signature: (Landroid/content/Context;)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Create
   (JNIEnv *, jobject, jobject);
@@ -355,8 +361,6 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Sto
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1SetSpeakerVolume
   (JNIEnv *, jobject, jint);
 
-
-
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
  * Method:    VoE_SetLoudspeakerStatus
@@ -407,8 +411,8 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Num
 
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
- * Method:    VoE_NumOfCodecs
- * Signature: ()Z
+ * Method:    VoE_GetCodecs
+ * Signature: ()[Ljava/lang/String;
  */
 JNIEXPORT jobjectArray JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1GetCodecs
   (JNIEnv *, jobject);
@@ -440,7 +444,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Set
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
  * Method:    VoE_SetNSStatus
- * Signature: (ZI)I
+ * Signature: (Z)I
  */
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1SetNSStatus
   (JNIEnv *, jobject, jboolean);
@@ -448,7 +452,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Set
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
  * Method:    VoE_StartDebugRecording
- * Signature: (Ljava/lang/String)I
+ * Signature: (Ljava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StartDebugRecording
   (JNIEnv *, jobject, jstring);
@@ -467,7 +471,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Sto
  * Signature: (ILjava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StartIncomingRTPDump
-   (JNIEnv *, jobject, jint, jstring);
+  (JNIEnv *, jobject, jint, jstring);
 
 /*
  * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
@@ -475,7 +479,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Sta
  * Signature: (I)I
  */
 JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1StopIncomingRTPDump
-   (JNIEnv *, jobject, jint);
+  (JNIEnv *, jobject, jint);
 
 #ifdef __cplusplus
 }

@@ -122,7 +122,12 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     private boolean loopbackMode = true;
     private CheckBox cbStats;
     private boolean isStatsOn = true;
-    private boolean useOpenGLRender = true;
+    public enum RenderType {
+        OPENGL,
+        SURFACE,
+        MEDIACODEC
+    }
+    RenderType renderType = RenderType.OPENGL;
 
     // Video settings
     private Spinner spCodecType;
@@ -499,10 +504,12 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
 
         RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radio_group1);
         radioGroup.clearCheck();
-        if (useOpenGLRender == true) {
+        if (renderType == RenderType.OPENGL) {
             radioGroup.check(R.id.radio_opengl);
-        } else {
+        } else if (renderType == RenderType.SURFACE) {
             radioGroup.check(R.id.radio_surface);
+        } else if (renderType == RenderType.MEDIACODEC) {
+            radioGroup.check(R.id.radio_mediacodec);
         }
 
         etRemoteIp = (EditText) findViewById(R.id.etRemoteIp);
@@ -604,13 +611,25 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                                                    getRemoteIPString());
 
             if (enableVideoReceive) {
-                if (useOpenGLRender) {
+                if (renderType == RenderType.OPENGL) {
                     Log.v(TAG, "Create OpenGL Render");
                     remoteSurfaceView = ViERenderer.CreateRenderer(this, true);
-                    ret = vieAndroidAPI.AddRemoteRenderer(channel, remoteSurfaceView);
-                } else {
+                } else if (renderType == RenderType.SURFACE) {
                     Log.v(TAG, "Create SurfaceView Render");
                     remoteSurfaceView = ViERenderer.CreateRenderer(this, false);
+                } else if (renderType == RenderType.MEDIACODEC) {
+                    Log.v(TAG, "Create MediaCodec Decoder/Renderer");
+                    remoteSurfaceView = new SurfaceView(this);
+                }
+
+                if (mLlRemoteSurface != null) {
+                    mLlRemoteSurface.addView(remoteSurfaceView);
+                }
+
+                if (renderType == RenderType.MEDIACODEC) {
+                    ret = vieAndroidAPI.SetExternalMediaCodecDecoderRenderer(
+                            channel, remoteSurfaceView);
+                } else {
                     ret = vieAndroidAPI.AddRemoteRenderer(channel, remoteSurfaceView);
                 }
 
@@ -650,12 +669,6 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
             if (enableVideoSend) {
                 if (mLlLocalSurface != null) {
                     mLlLocalSurface.addView(svLocal);
-                }
-            }
-
-            if (enableVideoReceive) {
-                if (mLlRemoteSurface != null) {
-                    mLlRemoteSurface.addView(remoteSurfaceView);
                 }
             }
 
@@ -841,10 +854,13 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                 }
                 break;
             case R.id.radio_surface:
-                useOpenGLRender = false;
+                renderType = RenderType.SURFACE;
                 break;
             case R.id.radio_opengl:
-                useOpenGLRender = true;
+                renderType = RenderType.OPENGL;
+                break;
+            case R.id.radio_mediacodec:
+                renderType = RenderType.MEDIACODEC;
                 break;
             case R.id.cbNack:
                 enableNack  = cbEnableNack.isChecked();
