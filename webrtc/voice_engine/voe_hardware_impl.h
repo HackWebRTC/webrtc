@@ -65,6 +65,11 @@ public:
     virtual int EnableBuiltInAEC(bool enable);
     virtual bool BuiltInAECIsEnabled() const;
 
+    virtual int SetRecordingSampleRate(unsigned int samples_per_sec);
+    virtual int RecordingSampleRate(unsigned int* samples_per_sec) const;
+    virtual int SetPlayoutSampleRate(unsigned int samples_per_sec);
+    virtual int PlayoutSampleRate(unsigned int* samples_per_sec) const;
+
 protected:
     VoEHardwareImpl(voe::SharedData* shared);
     virtual ~VoEHardwareImpl();

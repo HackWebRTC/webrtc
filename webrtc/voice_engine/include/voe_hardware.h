@@ -113,6 +113,12 @@ public:
     // Not supported
     virtual int GetLoudspeakerStatus(bool& enabled) = 0;
 
+    // Native sample rate controls (samples/sec)
+    virtual int SetRecordingSampleRate(unsigned int samples_per_sec) = 0;
+    virtual int RecordingSampleRate(unsigned int* samples_per_sec) const = 0;
+    virtual int SetPlayoutSampleRate(unsigned int samples_per_sec) = 0;
+    virtual int PlayoutSampleRate(unsigned int* samples_per_sec) const = 0;
+
     // *Experimental - not recommended for use.*
     // Enables the Windows Core Audio built-in AEC. Fails on other platforms.
     //

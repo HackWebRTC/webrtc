@@ -818,6 +818,46 @@ bool VoEHardwareImpl::BuiltInAECIsEnabled() const
     return _shared->audio_device()->BuiltInAECIsEnabled();
 }
 
+int VoEHardwareImpl::SetRecordingSampleRate(unsigned int samples_per_sec) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "%s", __FUNCTION__);
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return false;
+  }
+  return _shared->audio_device()->SetRecordingSampleRate(samples_per_sec);
+}
+
+int VoEHardwareImpl::RecordingSampleRate(unsigned int* samples_per_sec) const {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "%s", __FUNCTION__);
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return false;
+  }
+  return _shared->audio_device()->RecordingSampleRate(samples_per_sec);
+}
+
+int VoEHardwareImpl::SetPlayoutSampleRate(unsigned int samples_per_sec) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "%s", __FUNCTION__);
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return false;
+  }
+  return _shared->audio_device()->SetPlayoutSampleRate(samples_per_sec);
+}
+
+int VoEHardwareImpl::PlayoutSampleRate(unsigned int* samples_per_sec) const {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "%s", __FUNCTION__);
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return false;
+  }
+  return _shared->audio_device()->PlayoutSampleRate(samples_per_sec);
+}
+
 #endif  // WEBRTC_VOICE_ENGINE_HARDWARE_API
 
 } // namespace webrtc
