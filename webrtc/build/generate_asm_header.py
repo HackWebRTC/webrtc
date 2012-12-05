@@ -25,7 +25,7 @@ from optparse import OptionParser
 
 def main(argv):
   parser = OptionParser()
-  usage = 'Usage: %prog [options] input_file'
+  usage = 'Usage: %prog [options] input_filename'
   parser.set_usage(usage)
   parser.add_option('--compiler', default = 'gcc', help = 'compiler name')
   parser.add_option('--options', default = '-S', help = 'compiler options')
@@ -35,31 +35,32 @@ def main(argv):
   (options, args) = parser.parse_args()
 
   # Generate complete intermediate and header file names.
-  input_file_name = os.path.basename(args[0])
-  file_base_name = os.path.splitext(input_file_name)[0]
-  interim_file = options.dir + "/" + file_base_name + '.s'
-  out_file = interim_file.replace('.s', '.h')
+  input_filename = args[0]
+  output_root = (options.dir + '/' +
+      os.path.splitext(os.path.basename(input_filename))[0])
+  interim_filename = output_root + '.s'
+  out_filename = output_root + '.h'
 
   # Set the shell command with the compiler and options inputs.
-  compiler_command = (options.compiler + " " + options.options + " " + args[0]
-      + " -o " + interim_file)
+  compiler_command = (options.compiler + " " + options.options + " " +
+      input_filename + " -o " + interim_filename)
   # Run the shell command and generate the intermediate file.
   subprocess.check_call(compiler_command, shell=True)
 
-  infile = open(interim_file)  # The intermediate file.
-  outfile = open(out_file, 'w')  # The output header file.
+  interim_file = open(interim_filename)  # The intermediate file.
+  out_file = open(out_filename, 'w')  # The output header file.
 
   # Generate the output header file.
-  for line in infile:  # Iterate though all the lines in the input file.
+  for line in interim_file:  # Iterate though all the lines in the input file.
     if line.startswith(options.pattern):
-      outfile.write('#define ')
-      outfile.write(line.split(':')[0])  # Write the constant name.
-      outfile.write(' ')
+      out_file.write('#define ')
+      out_file.write(line.split(':')[0])  # Write the constant name.
+      out_file.write(' ')
     if line.find('.word') >= 0:
-      outfile.write(line.split('.word')[1])  # Write the constant value.
+      out_file.write(line.split('.word')[1])  # Write the constant value.
 
-  infile.close()
-  outfile.close()
+  interim_file.close()
+  out_file.close()
 
 if __name__ == "__main__":
   main(sys.argv[1:])
