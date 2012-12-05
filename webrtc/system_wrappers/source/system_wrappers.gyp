@@ -209,8 +209,16 @@
           ],
           'conditions': [
             ['build_with_chromium==1', {
-              'dependencies': [
-                '<(android_ndk_root)/android_tools_ndk.gyp:cpu_features',
+              'conditions': [
+                ['android_build_type != 0', {
+                  'libraries': [
+                    'cpufeatures.a'
+                  ],
+                }, {
+                  'dependencies': [
+                    '<(android_ndk_root)/android_tools_ndk.gyp:cpu_features',
+                  ],
+                }],
               ],
             }, {
               'sources': [
