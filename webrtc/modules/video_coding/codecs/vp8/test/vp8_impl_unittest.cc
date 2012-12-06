@@ -9,7 +9,7 @@
  */
 
 #include "gtest/gtest.h"
-#include "webrtc/modules/video_coding/codecs/vp8/vp8_impl.h"
+#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/test_framework/video_source.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
@@ -95,8 +95,8 @@ int Vp8UnitTestDecodeCompleteCallback::Decoded(I420VideoFrame& image) {
 class TestVp8Impl : public ::testing::Test {
  protected:
   virtual void SetUp() {
-    encoder_.reset(new VP8EncoderImpl());
-    decoder_.reset(new VP8DecoderImpl());
+    encoder_.reset(VP8Encoder::Create());
+    decoder_.reset(VP8Decoder::Create());
     memset(&codec_inst_, 0, sizeof(codec_inst_));
     encode_complete_callback_.reset(new
         Vp8UnitTestEncodeCompleteCallback(&encoded_video_frame_, 0, NULL));
