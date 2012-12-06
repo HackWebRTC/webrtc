@@ -107,6 +107,7 @@
             'test/rps_test.cc',
             'test/tester.cc',
             'test/vp8_unittest.cc',
+            'test/vp8_impl_unittest.cc',
           ],
         },
         {
@@ -125,7 +126,6 @@
           'sources': [
             'reference_picture_selection_unittest.cc',
             'temporal_layers_unittest.cc',
-            'vp8_unittest.cc',
           ],
           'conditions': [
             ['build_libvpx==1', {
