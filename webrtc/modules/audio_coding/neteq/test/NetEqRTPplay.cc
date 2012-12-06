@@ -381,7 +381,7 @@ int main(int argc, char* argv[])
             strncpy(ptypesfile, argv[0], path_len);
             ptypesfile[path_len] = '\0';
             strcat(ptypesfile,
-                   "src/modules/audio_coding/NetEQ/main/test/ptypes.txt");
+                   "webrtc/modules/audio_coding/neteq/test/ptypes.txt");
             ptypeFile = fopen(ptypesfile,"rt");
         }
     }
