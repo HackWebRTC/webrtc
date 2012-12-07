@@ -1566,7 +1566,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_
   jobjectArray ret;
   int i;
   int num = voeData.codec->NumOfCodecs();
-  char info[32];
+  char info[256];
 
   ret = (jobjectArray)env->NewObjectArray(
       num,
@@ -1576,10 +1576,14 @@ JNIEXPORT jobjectArray JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_
   for(i = 0; i < num; i++) {
     webrtc::CodecInst codecToList;
     voeData.codec->GetCodec(i, codecToList);
+    int written = snprintf(info, sizeof(info),
+                           "%s type:%d freq:%d pac:%d ch:%d rate:%d",
+                           codecToList.plname, codecToList.pltype,
+                           codecToList.plfreq, codecToList.pacsize,
+                           codecToList.channels, codecToList.rate);
+    assert(written >= 0 && written < sizeof(info));
     __android_log_print(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG,
-                        "VoiceEgnine Codec[%d] %s, pltype=%d\n",
-                        i, codecToList.plname, codecToList.pltype);
-    sprintf(info, "%s pltype:%d", codecToList.plname, codecToList.pltype);
+                        "VoiceEgnine Codec[%d] %s", i, info);
     env->SetObjectArrayElement(ret, i, env->NewStringUTF( info ));
   }
 
