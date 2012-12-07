@@ -14,13 +14,14 @@
       'type': 'executable',
       'dependencies': [
         'iSACFix',
+        '<(webrtc_root)/test/test.gyp:test_support',
       ],
       'include_dirs': [
         './fix/test',
         './fix/interface',
       ],
       'sources': [
-        './fix/test/kenny.c',
+        './fix/test/kenny.cc',
       ],
     },
   ],
