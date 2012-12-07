@@ -350,8 +350,8 @@ WebRtc_Word32 AudioConferenceMixerImpl::Process()
         if(mixedAudio->samples_per_channel_ == 0)
         {
             // Nothing was mixed, set the audio samples to silence.
-            memset(mixedAudio->data_, 0, _sampleSize);
             mixedAudio->samples_per_channel_ = _sampleSize;
+            mixedAudio->Mute();
         }
         else
         {
