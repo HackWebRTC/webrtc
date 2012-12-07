@@ -4915,7 +4915,7 @@ WebRtc_Word32 AudioDeviceWindowsCore::_EnumerateEndpointDevicesAll(EDataFlow dat
     // Output: IMMDeviceCollection interface.
     hr = _ptrEnumerator->EnumAudioEndpoints(
                                  dataFlow,            // data-flow direction (input parameter)
-                                 DEVICE_STATE_ACTIVE | DEVICE_STATE_DISABLED | DEVICE_STATE_NOTPRESENT | DEVICE_STATE_UNPLUGGED,
+                                 DEVICE_STATE_ACTIVE | DEVICE_STATE_DISABLED | DEVICE_STATE_UNPLUGGED,
                                  &pCollection);        // release interface when done
 
     EXIT_ON_ERROR(hr);
