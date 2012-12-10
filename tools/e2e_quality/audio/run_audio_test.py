@@ -26,6 +26,8 @@ import sys
 import threading
 import time
 
+import perf.perf_utils
+
 def main(argv):
   parser = optparse.OptionParser()
   usage = 'Usage: %prog [options]'
@@ -117,7 +119,12 @@ def main(argv):
       return proc.returncode
 
     # The list should only contain one item.
-    print ''.join(re.findall(options.regexp, output))
+    value = ''.join(re.findall(options.regexp, output))
+
+    perf.perf_utils.PrintPerfResult(graph_name='audio_e2e_score',
+                                    series_name='e2e score',
+                                    data_point=value,
+                                    units='MOS')  # Assuming we run PESQ.
 
   return 0
 
