@@ -250,11 +250,6 @@ WebRtc_Word16 ACMISAC::REDPayloadISAC(const WebRtc_Word32 /* isacRate */,
 
 #ifdef WEBRTC_CODEC_ISACFX
 
-enum IsacSamplingRate {
-  kIsacWideband = 16,
-  kIsacSuperWideband = 32
-};
-
 static float ACMISACFixTranscodingScale(WebRtc_UWord16 rate) {
   // find the scale for transcoding, the scale is rounded
   // downward
@@ -315,12 +310,15 @@ static WebRtc_Word16 ACMISACFixControl(ACM_ISAC_STRUCT* inst,
   return WebRtcIsacfix_Control(inst, (WebRtc_Word16) rateBPS, frameSizeMs);
 }
 
-static IsacSamplingRate ACMISACFixGetEncSampRate(ACM_ISAC_STRUCT* /* inst */) {
-  return kIsacWideband;
+// The following two function should have the same signature as their counter
+// part in iSAC floating-point, i.e. WebRtcIsac_EncSampRate &
+// WebRtcIsac_DecSampRate.
+static WebRtc_UWord16 ACMISACFixGetEncSampRate(ACM_ISAC_STRUCT* /* inst */) {
+  return 16000;
 }
 
-static IsacSamplingRate ACMISACFixGetDecSampRate(ACM_ISAC_STRUCT* /* inst */) {
-  return kIsacWideband;
+static WebRtc_UWord16 ACMISACFixGetDecSampRate(ACM_ISAC_STRUCT* /* inst */) {
+  return 16000;
 }
 
 #endif
