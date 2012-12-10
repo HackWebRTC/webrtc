@@ -11,56 +11,55 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_EVENT_POSIX_H_
 #define WEBRTC_SYSTEM_WRAPPERS_SOURCE_EVENT_POSIX_H_
 
-#include "event_wrapper.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
 
 #include <pthread.h>
 #include <time.h>
 
-#include "thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
 namespace webrtc {
-enum State
-{
-    kUp = 1,
-    kDown = 2
+
+enum State {
+  kUp = 1,
+  kDown = 2
 };
 
-class EventPosix : public EventWrapper
-{
-public:
-    static EventWrapper* Create();
+class EventPosix : public EventWrapper {
+ public:
+  static EventWrapper* Create();
 
-    virtual ~EventPosix();
+  virtual ~EventPosix();
 
-    virtual EventTypeWrapper Wait(unsigned long maxTime);
-    virtual bool Set();
-    virtual bool Reset();
+  virtual EventTypeWrapper Wait(unsigned long max_time);
+  virtual bool Set();
+  virtual bool Reset();
 
-    virtual bool StartTimer(bool periodic, unsigned long time);
-    virtual bool StopTimer();
+  virtual bool StartTimer(bool periodic, unsigned long time);
+  virtual bool StopTimer();
 
-private:
-    EventPosix();
-    int Construct();
+ private:
+  EventPosix();
+  int Construct();
 
-    static bool Run(ThreadObj obj);
-    bool Process();
-    EventTypeWrapper Wait(timespec& tPulse);
+  static bool Run(ThreadObj obj);
+  bool Process();
+  EventTypeWrapper Wait(timespec& wake_at);
 
+ private:
+  pthread_cond_t  cond_;
+  pthread_mutex_t mutex_;
 
-private:
-    pthread_cond_t  cond;
-    pthread_mutex_t mutex;
+  ThreadWrapper* timer_thread_;
+  EventPosix*    timer_event_;
+  timespec       created_at_;
 
-    ThreadWrapper* _timerThread;
-    EventPosix*    _timerEvent;
-    timespec       _tCreate;
-
-    bool          _periodic;
-    unsigned long _time;  // In ms
-    unsigned long _count;
-    State         _state;
+  bool          periodic_;
+  unsigned long time_;  // In ms
+  unsigned long count_;
+  State         state_;
 };
-} // namespace webrtc
 
-#endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_EVENT_POSIX_H_
+}  // namespace webrtc
+
+#endif  // WEBRTC_SYSTEM_WRAPPERS_SOURCE_EVENT_POSIX_H_
