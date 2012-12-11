@@ -335,7 +335,6 @@ LOCAL_STATIC_LIBRARIES := \
     libsignal_processing \
     libsignal_processing_neon \
     libcommon_video \
-    libsystem_wrappers \
     libcpu_features_android \
     libaudio_device \
     libremote_bitrate_estimator \
@@ -347,6 +346,7 @@ LOCAL_STATIC_LIBRARIES := \
     libyuv \
     libwebrtc_i420 \
     libwebrtc_vp8 \
+    libsystem_wrappers \
     libjpeg_turbo \
     libaudioproc_debug_proto \
     libprotobuf_lite \

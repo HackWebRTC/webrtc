@@ -27,6 +27,7 @@
 #include "modules/video_coding/codecs/vp8/reference_picture_selection.h"
 #include "modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "system_wrappers/interface/tick_util.h"
+#include "system_wrappers/interface/trace_event.h"
 
 enum { kVp8ErrorPropagationTh = 30 };
 
@@ -383,6 +384,9 @@ int VP8EncoderImpl::Encode(const I420VideoFrame& input_image,
     flags = rps_->EncodeFlags(picture_id_, sendRefresh,
                               input_image.timestamp());
   }
+
+  TRACE_EVENT1("video_coding", "VP8EncoderImpl::Encode",
+               "input_image_timestamp", input_image.timestamp());
 
   // TODO(holmer): Ideally the duration should be the timestamp diff of this
   // frame and the next frame to be encoded, which we don't have. Instead we
