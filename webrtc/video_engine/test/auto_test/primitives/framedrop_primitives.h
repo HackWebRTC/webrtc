@@ -20,6 +20,7 @@
 #include "video_engine/test/libvietest/include/vie_to_file_renderer.h"
 
 class FrameDropDetector;
+struct NetworkParameters;
 class TbInterfaces;
 
 // Initializes the Video engine and its components, runs video playback using
@@ -33,8 +34,7 @@ void TestFullStack(const TbInterfaces& interfaces,
                    int width,
                    int height,
                    int bit_rate_kbps,
-                   int packet_loss_percent,
-                   int network_delay_ms,
+                   const NetworkParameters& network,
                    FrameDropDetector* frame_drop_detector,
                    ViEToFileRenderer* remote_file_renderer,
                    ViEToFileRenderer* local_file_renderer);

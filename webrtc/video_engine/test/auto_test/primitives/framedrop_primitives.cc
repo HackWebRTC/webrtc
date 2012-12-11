@@ -143,8 +143,7 @@ void TestFullStack(const TbInterfaces& interfaces,
                    int width,
                    int height,
                    int bit_rate_kbps,
-                   int packet_loss_percent,
-                   int network_delay_ms,
+                   const NetworkParameters& network,
                    FrameDropDetector* frame_drop_detector,
                    ViEToFileRenderer* remote_file_renderer,
                    ViEToFileRenderer* local_file_renderer) {
@@ -173,8 +172,7 @@ void TestFullStack(const TbInterfaces& interfaces,
   // Configure External transport to simulate network interference:
   TbExternalTransport external_transport(*interfaces.network, video_channel,
                                          NULL);
-  external_transport.SetPacketLoss(packet_loss_percent);
-  external_transport.SetNetworkDelay(network_delay_ms);
+  external_transport.SetNetworkParameters(network);
 
   FrameSentCallback frame_sent_callback(frame_drop_detector);
   FrameReceivedCallback frame_received_callback(frame_drop_detector);
@@ -220,11 +218,14 @@ void TestFullStack(const TbInterfaces& interfaces,
   // ***************************************************************
   EXPECT_EQ(0, capture_interface->DisconnectCaptureDevice(video_channel));
 
+  const int one_way_delay_99_percentile = network.mean_one_way_delay  +
+        3 * network.std_dev_one_way_delay;
+
   // Wait for the last packet to arrive before we tear down the receiver.
-  AutoTestSleep(2*network_delay_ms);
+  AutoTestSleep(2 * one_way_delay_99_percentile);
   EXPECT_EQ(0, base_interface->StopSend(video_channel));
   while (!external_transport.EmptyQueue()) {
-    AutoTestSleep(network_delay_ms);
+    AutoTestSleep(one_way_delay_99_percentile);
   }
   EXPECT_EQ(0, base_interface->StopReceive(video_channel));
   EXPECT_EQ(0, network_interface->DeregisterSendTransport(video_channel));

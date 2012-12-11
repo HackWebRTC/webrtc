@@ -14,6 +14,7 @@
 #include "video_engine/test/auto_test/primitives/base_primitives.h"
 #include "video_engine/test/auto_test/primitives/framedrop_primitives.h"
 #include "video_engine/test/auto_test/primitives/general_primitives.h"
+#include "video_engine/test/libvietest/include/tb_external_transport.h"
 #include "video_engine/test/libvietest/include/tb_interfaces.h"
 #include "video_engine/test/libvietest/include/vie_external_render_filter.h"
 #include "video_engine/test/libvietest/include/vie_fake_camera.h"
@@ -89,8 +90,7 @@ void ViEFileBasedComparisonTests::TestFullStack(
     int width,
     int height,
     int bit_rate_kbps,
-    int packet_loss_percent,
-    int network_delay_ms,
+    const NetworkParameters& network,
     ViEToFileRenderer* local_file_renderer,
     ViEToFileRenderer* remote_file_renderer,
     FrameDropDetector* frame_drop_detector) {
@@ -118,8 +118,7 @@ void ViEFileBasedComparisonTests::TestFullStack(
   ConfigureRtpRtcp(interfaces.rtp_rtcp, video_channel);
 
   ::TestFullStack(interfaces, capture_id, video_channel, width, height,
-                  bit_rate_kbps, packet_loss_percent, network_delay_ms,
-                  frame_drop_detector, remote_file_renderer,
-                  local_file_renderer);
+                  bit_rate_kbps, network, frame_drop_detector,
+                  remote_file_renderer, local_file_renderer);
   EXPECT_TRUE(fake_camera.StopCamera());
 }

@@ -164,8 +164,9 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(0, ViE.base->StopSend(tbChannel.videoChannel));
 
     myTransport.ClearStats();
-    int rate = 20;
-    myTransport.SetPacketLoss(rate);
+    const int kPacketLossRate = 20;
+    NetworkParameters network = {kPacketLossRate, 0, 0};  // 20% packet loss.
+    myTransport.SetNetworkParameters(network);
 
     // Start send to verify sending stats
 
@@ -243,7 +244,8 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     //
 
     myTransport.ClearStats();
-    myTransport.SetPacketLoss(rate);
+    network.packet_loss_rate = kPacketLossRate;
+    myTransport.SetNetworkParameters(network);
 
     EXPECT_EQ(0, ViE.rtp_rtcp->SetFECStatus(
         tbChannel.videoChannel, true, 96, 97));
@@ -287,7 +289,8 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
 
 
     // Test to set SSRC
-    myTransport.SetPacketLoss(0);
+    network.packet_loss_rate = 0;
+    myTransport.SetNetworkParameters(network);
     myTransport.ClearStats();
 
     unsigned int setSSRC = 0x01234567;

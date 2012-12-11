@@ -10,6 +10,7 @@
 
 #include "video_engine/test/libvietest/include/tb_external_transport.h"
 
+#include <math.h>
 #include <stdio.h> // printf
 #include <stdlib.h> // rand
 #include <cassert>
@@ -48,8 +49,7 @@ TbExternalTransport::TbExternalTransport(
       _event(*webrtc::EventWrapper::Create()),
       _crit(*webrtc::CriticalSectionWrapper::CreateCriticalSection()),
       _statCrit(*webrtc::CriticalSectionWrapper::CreateCriticalSection()),
-      _lossRate(0),
-      _networkDelayMs(0),
+      network_parameters_(),
       _rtpCount(0),
       _rtcpCount(0),
       _dropCount(0),
@@ -72,10 +72,12 @@ TbExternalTransport::TbExternalTransport(
       _firstSequenceNumber(0),
       _firstRTPTimestamp(0),
       _lastSendRTPTimestamp(0),
-      _lastReceiveRTPTimestamp(0)
+      _lastReceiveRTPTimestamp(0),
+      last_receive_time_(-1)
 {
     srand((int) webrtc::TickTime::MicrosecondTimestamp());
     unsigned int tId = 0;
+    memset(&network_parameters_, 0, sizeof(NetworkParameters));
     _thread.Start(tId);
 }
 
@@ -191,7 +193,8 @@ int TbExternalTransport::SendPacket(int channel, const void *data, int len)
     // Packet loss. Never drop packets from the first RTP timestamp, i.e. the
     // first frame being transmitted.
     int dropThis = rand() % 100;
-    if (dropThis < _lossRate && _firstRTPTimestamp != rtp_timestamp)
+    if (dropThis < network_parameters_.packet_loss_rate &&
+        _firstRTPTimestamp != rtp_timestamp)
     {
         _statCrit.Enter();
         _dropCount++;
@@ -223,7 +226,15 @@ int TbExternalTransport::SendPacket(int channel, const void *data, int len)
     newPacket->channel = channel;
 
     _crit.Enter();
-    newPacket->receiveTime = NowMs() + _networkDelayMs;
+    // Add jitter and make sure receiveTime isn't lower than receive time of
+    // last frame.
+    int network_delay_ms = GaussianRandom(
+        network_parameters_.mean_one_way_delay,
+        network_parameters_.std_dev_one_way_delay);
+    newPacket->receiveTime = NowMs() + network_delay_ms;
+    if (newPacket->receiveTime < last_receive_time_) {
+      newPacket->receiveTime = last_receive_time_;
+    }
     _rtpPackets.push_back(newPacket);
     _event.Set();
     _crit.Leave();
@@ -258,24 +269,21 @@ int TbExternalTransport::SendRTCPPacket(int channel, const void *data, int len)
     newPacket->channel = channel;
 
     _crit.Enter();
-    newPacket->receiveTime = NowMs() + _networkDelayMs;
+    int network_delay_ms = GaussianRandom(
+            network_parameters_.mean_one_way_delay,
+            network_parameters_.std_dev_one_way_delay);
+    newPacket->receiveTime = NowMs() + network_delay_ms;
     _rtcpPackets.push_back(newPacket);
     _event.Set();
     _crit.Leave();
     return len;
 }
 
-WebRtc_Word32 TbExternalTransport::SetPacketLoss(WebRtc_Word32 lossRate)
-{
-    webrtc::CriticalSectionScoped cs(&_statCrit);
-    _lossRate = lossRate;
-    return 0;
-}
-
-void TbExternalTransport::SetNetworkDelay(WebRtc_Word64 delayMs)
+void TbExternalTransport::SetNetworkParameters(
+    const NetworkParameters& network_parameters)
 {
     webrtc::CriticalSectionScoped cs(&_crit);
-    _networkDelayMs = delayMs;
+    network_parameters_ = network_parameters;
 }
 
 void TbExternalTransport::SetSSRCFilter(WebRtc_UWord32 ssrc)
@@ -491,4 +499,15 @@ bool TbExternalTransport::ViEExternalTransportProcess()
 WebRtc_Word64 TbExternalTransport::NowMs()
 {
     return webrtc::TickTime::MillisecondTimestamp();
+}
+
+#define PI  3.14159265
+int TbExternalTransport::GaussianRandom(int mean_ms,
+                                        int standard_deviation_ms) {
+  // Creating a Normal distribution variable from two independent uniform
+  // variables based on the Box-Muller transform.
+  double uniform1 = (rand() + 1.0) / (RAND_MAX + 1.0);
+  double uniform2 = (rand() + 1.0) / (RAND_MAX + 1.0);
+  return static_cast<int>(mean_ms + standard_deviation_ms *
+      sqrt(-2 * log(uniform1)) * cos(2 * PI * uniform2));
 }

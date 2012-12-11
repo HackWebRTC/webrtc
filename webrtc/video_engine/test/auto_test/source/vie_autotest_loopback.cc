@@ -492,13 +492,13 @@ int VideoEngineSampleCode(void* window1, void* window2)
             return -1;
         }
 
+        NetworkParameters network = {0, 0, 0};
         // Set up packet loss value
         std::cout << "Enter Packet Loss Percentage" << std::endl;
         std::string rate_str;
         std::getline(std::cin, rate_str);
-        int rate = atoi(rate_str.c_str());
-        extTransport.SetPacketLoss(rate);
-        if (rate) {
+        network.packet_loss_rate = atoi(rate_str.c_str());
+        if (network.packet_loss_rate > 0) {
           temporalToggling = false;
         }
 
@@ -506,9 +506,8 @@ int VideoEngineSampleCode(void* window1, void* window2)
         std::cout << "Enter network delay value [mS]" << std::endl;
         std::string delay_str;
         std::getline(std::cin, delay_str);
-        int delayMs = atoi(delay_str.c_str());
-        extTransport.SetNetworkDelay(delayMs);
-
+        network.mean_one_way_delay = atoi(delay_str.c_str());
+        extTransport.SetNetworkParameters(network);
         if (numTemporalLayers > 1 && temporalToggling) {
           extTransport.SetTemporalToggle(numTemporalLayers);
         } else {
