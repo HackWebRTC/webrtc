@@ -5579,60 +5579,24 @@ Channel::GetRTPStatistics(CallStatistics& stats)
     return 0;
 }
 
-int
-Channel::SetFECStatus(bool enable, int redPayloadtype)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-                 "Channel::SetFECStatus()");
+int Channel::SetFECStatus(bool enable, int redPayloadtype) {
+  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
+               "Channel::SetFECStatus()");
 
-    CodecInst codec;
+  if (SetRedPayloadType(redPayloadtype) < 0) {
+    _engineStatisticsPtr->SetLastError(
+        VE_CODEC_ERROR, kTraceError,
+        "SetSecondarySendCodec() Failed to register RED ACM");
+    return -1;
+  }
 
-    // Get default RED settings from the ACM database
-    bool foundRED(false);
-    const WebRtc_UWord8 nSupportedCodecs = AudioCodingModule::NumberOfCodecs();
-    for (int idx = 0; (!foundRED && idx < nSupportedCodecs); idx++)
-    {
-        _audioCodingModule.Codec(idx, codec);
-        if (!STR_CASE_CMP(codec.plname, "RED"))
-        {
-            foundRED = true;
-        }
-    }
-    if (!foundRED)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_CODEC_ERROR, kTraceError,
-            "SetFECStatus() RED is not supported");
-        return -1;
-    }
-
-    if (redPayloadtype != -1)
-    {
-        codec.pltype = redPayloadtype;
-    }
-
-    if (_audioCodingModule.RegisterSendCodec(codec) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-            "SetFECStatus() RED registration in ACM module failed");
-        return -1;
-    }
-    if (_rtpRtcpModule->SetSendREDPayloadType(codec.pltype) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-            "SetFECStatus() RED registration in RTP/RTCP module failed");
-        return -1;
-    }
-    if (_audioCodingModule.SetFECStatus(enable) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-            "SetFECStatus() failed to set FEC state in the ACM");
-        return -1;
-    }
-    return 0;
+  if (_audioCodingModule.SetFECStatus(enable) != 0) {
+    _engineStatisticsPtr->SetLastError(
+        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
+        "SetFECStatus() failed to set FEC state in the ACM");
+    return -1;
+  }
+  return 0;
 }
 
 int
@@ -6628,6 +6592,84 @@ int Channel::ApmProcessRx(AudioFrame& frame) {
   }
   if (audioproc->ProcessStream(&frame) != 0) {
     LOG_FERR0(LS_WARNING, ProcessStream);
+  }
+  return 0;
+}
+
+int Channel::SetSecondarySendCodec(const CodecInst& codec,
+                                   int red_payload_type) {
+  if (SetRedPayloadType(red_payload_type) < 0) {
+    _engineStatisticsPtr->SetLastError(
+        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
+        "SetSecondarySendCodec() Failed to register RED ACM");
+    return -1;
+  }
+  if (_audioCodingModule.RegisterSecondarySendCodec(codec) < 0) {
+    _engineStatisticsPtr->SetLastError(
+        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
+        "SetSecondarySendCodec() Failed to register secondary send codec in "
+        "ACM");
+    return -1;
+  }
+
+  return 0;
+}
+
+void Channel::RemoveSecondarySendCodec() {
+  _audioCodingModule.UnregisterSecondarySendCodec();
+}
+
+int Channel::GetSecondarySendCodec(CodecInst* codec) {
+  if (_audioCodingModule.SecondarySendCodec(codec) < 0) {
+    _engineStatisticsPtr->SetLastError(
+        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
+        "GetSecondarySendCodec() Failed to get secondary sent codec from ACM");
+    return -1;
+  }
+  return 0;
+}
+
+int Channel::SetRedPayloadType(int red_payload_type) {
+  if (red_payload_type < 0) {
+    _engineStatisticsPtr->SetLastError(
+        VE_PLTYPE_ERROR, kTraceError,
+        "SetRedPayloadType() invalid RED paylaod type");
+    return -1;
+  }
+
+  CodecInst codec;
+  bool found_red = false;
+
+  // Get default RED settings from the ACM database
+  const int num_codecs = AudioCodingModule::NumberOfCodecs();
+  for (int idx = 0; idx < num_codecs; idx++) {
+    _audioCodingModule.Codec(idx, codec);
+    if (!STR_CASE_CMP(codec.plname, "RED")) {
+      found_red = true;
+      break;
+    }
+  }
+
+  if (!found_red) {
+    _engineStatisticsPtr->SetLastError(
+        VE_CODEC_ERROR, kTraceError,
+        "SetRedPayloadType() RED is not supported");
+    return -1;
+  }
+
+  codec.pltype = red_payload_type;
+  if (_audioCodingModule.RegisterSendCodec(codec) < 0) {
+    _engineStatisticsPtr->SetLastError(
+        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
+        "SetRedPayloadType() RED registration in ACM module failed");
+    return -1;
+  }
+
+  if (_rtpRtcpModule->SetSendREDPayloadType(red_payload_type) != 0) {
+    _engineStatisticsPtr->SetLastError(
+        VE_RTP_RTCP_MODULE_ERROR, kTraceError,
+        "SetRedPayloadType() RED registration in RTP/RTCP module failed");
+    return -1;
   }
   return 0;
 }

@@ -15,3 +15,22 @@
   ...
   fun:__tz*
 }
+
+{
+  bug_1194
+  ThreadSanitizer:Race
+  fun:webrtc::TracePosix::AddTime
+  fun:webrtc::TraceImpl::AddImpl
+  fun:webrtc::Trace::Add
+  fun:webrtc::VoEBaseImpl::CreateChannel
+  fun:webrtc::voe::::VoECodecTest::SetUp
+  fun:testing::internal::HandleSehExceptionsInMethodIfSupported
+}
+
+{
+  buganizer issue 7313086 TSAN: posix warning with 2 threads
+  ThreadSanitizer:Race
+  fun:arena_thread_freeres
+  fun:__libc_thread_freeres
+  fun:start_thread
+}
