@@ -160,10 +160,3 @@ def CheckChangeOnCommit(input_api, output_api):
       input_api, output_api))
   return results
 
-def GetPreferredTrySlaves(project, change):
-  files = change.LocalPaths()
-  if not files:
-    return []
-  # Default trybots to run jobs at (if --bot is not specified).
-  return ['win', 'win_rel', 'mac', 'mac_rel', 'linux', 'linux_rel',
-          'android', 'android_ndk']
