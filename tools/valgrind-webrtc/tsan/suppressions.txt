@@ -22,11 +22,16 @@
   fun:webrtc::TracePosix::AddTime
   fun:webrtc::TraceImpl::AddImpl
   fun:webrtc::Trace::Add
-  fun:webrtc::VoEBaseImpl::CreateChannel
-  fun:webrtc::voe::::VoECodecTest::SetUp
+  ...
+}
+{
+  bug_300
+  ThreadSanitizer:Race
+  fun:webrtc::TraceImpl::SetTraceCallbackImpl
+  fun:webrtc::Trace::SetTraceCallback
+  fun:webrtc::::LoggingTest::SetUp
   fun:testing::internal::HandleSehExceptionsInMethodIfSupported
 }
-
 {
   buganizer issue 7313086 TSAN: posix warning with 2 threads
   ThreadSanitizer:Race
