@@ -8,7 +8,6 @@
 
 #include <string>
 
-#include "webrtc/system_wrappers/interface/atomicops.h"
 #include "webrtc/system_wrappers/interface/event_tracer.h"
 
 #if defined(TRACE_EVENT0)
@@ -595,21 +594,11 @@
     INTERNAL_TRACE_EVENT_UID2(name_prefix, __LINE__)
 
 // Implementation detail: internal macro to create static category.
-// No barriers are needed, because this code is designed to operate safely
-// even when the unsigned char* points to garbage data (which may be the case
-// on processors without cache coherency).
 #define INTERNAL_TRACE_EVENT_GET_CATEGORY_INFO(category) \
-    static webrtc::subtle::AtomicWord INTERNAL_TRACE_EVENT_UID(atomic) = 0; \
-    const uint8_t* INTERNAL_TRACE_EVENT_UID(catstatic) = \
-        reinterpret_cast<const uint8_t*>( \
-            webrtc::subtle::NoBarrier_Load( \
-                &INTERNAL_TRACE_EVENT_UID(atomic))); \
+    static const unsigned char* INTERNAL_TRACE_EVENT_UID(catstatic) = 0; \
     if (!INTERNAL_TRACE_EVENT_UID(catstatic)) { \
       INTERNAL_TRACE_EVENT_UID(catstatic) = \
           TRACE_EVENT_API_GET_CATEGORY_ENABLED(category); \
-      webrtc::subtle::NoBarrier_Store(&INTERNAL_TRACE_EVENT_UID(atomic), \
-          reinterpret_cast<webrtc::subtle::AtomicWord>( \
-              INTERNAL_TRACE_EVENT_UID(catstatic))); \
     }
 
 // Implementation detail: internal macro to create static category and add
