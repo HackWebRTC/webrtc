@@ -44,7 +44,7 @@ enum VideoType {
 };
 
 // This is the max PSNR value our algorithms can return.
-const double kPerfectPSNR = 48.0f;
+const double kInfinitePSNR = 48.0f;
 
 // Conversion between the RawVideoType and the LibYuv videoType.
 // TODO(wu): Consolidate types into one type throughout WebRtc.
