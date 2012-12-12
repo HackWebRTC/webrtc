@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "system_wrappers/source/file_impl.h"
+#include "webrtc/system_wrappers/source/file_impl.h"
 
 #include <assert.h>
 
@@ -19,269 +19,233 @@
 #include <string.h>
 #endif
 
-#include "system_wrappers/interface/rw_lock_wrapper.h"
+#include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 
 namespace webrtc {
 
-FileWrapper* FileWrapper::Create()
-{
-    return new FileWrapperImpl();
+FileWrapper* FileWrapper::Create() {
+  return new FileWrapperImpl();
 }
 
 FileWrapperImpl::FileWrapperImpl()
-    : _rwLock(RWLockWrapper::CreateRWLock()),
-      _id(NULL),
-      _open(false),
-      _looping(false),
-      _readOnly(false),
-      _maxSizeInBytes(0),
-      _sizeInBytes(0)
-{
-    memset(_fileNameUTF8, 0, kMaxFileNameSize);
+    : rw_lock_(RWLockWrapper::CreateRWLock()),
+      id_(NULL),
+      open_(false),
+      looping_(false),
+      read_only_(false),
+      max_size_in_bytes_(0),
+      size_in_bytes_(0) {
+  memset(file_name_utf8_, 0, kMaxFileNameSize);
 }
 
-FileWrapperImpl::~FileWrapperImpl()
-{
-    if (_id != NULL)
-    {
-        fclose(_id);
+FileWrapperImpl::~FileWrapperImpl() {
+  if (id_ != NULL) {
+    fclose(id_);
+  }
+}
+
+int FileWrapperImpl::CloseFile() {
+  WriteLockScoped write(*rw_lock_);
+  return CloseFileImpl();
+}
+
+int FileWrapperImpl::Rewind() {
+  WriteLockScoped write(*rw_lock_);
+  if (looping_ || !read_only_) {
+    if (id_ != NULL) {
+      size_in_bytes_ = 0;
+      return fseek(id_, 0, SEEK_SET);
     }
+  }
+  return -1;
 }
 
-int FileWrapperImpl::CloseFile()
-{
-    WriteLockScoped write(*_rwLock);
-    return CloseFileImpl();
+int FileWrapperImpl::SetMaxFileSize(size_t bytes) {
+  WriteLockScoped write(*rw_lock_);
+  max_size_in_bytes_ = bytes;
+  return 0;
 }
 
-int FileWrapperImpl::Rewind()
-{
-    WriteLockScoped write(*_rwLock);
-    if(_looping || !_readOnly)
-    {
-        if (_id != NULL)
-        {
-            _sizeInBytes = 0;
-            return fseek(_id, 0, SEEK_SET);
-        }
-    }
+int FileWrapperImpl::Flush() {
+  WriteLockScoped write(*rw_lock_);
+  return FlushImpl();
+}
+
+int FileWrapperImpl::FileName(char* file_name_utf8,
+                              size_t size) const {
+  ReadLockScoped read(*rw_lock_);
+  size_t length = strlen(file_name_utf8_);
+  if (length > kMaxFileNameSize) {
+    assert(false);
     return -1;
+  }
+  if (length < 1) {
+    return -1;
+  }
+
+  // Make sure to NULL terminate
+  if (size < length) {
+    length = size - 1;
+  }
+  memcpy(file_name_utf8, file_name_utf8_, length);
+  file_name_utf8[length] = 0;
+  return 0;
 }
 
-int FileWrapperImpl::SetMaxFileSize(size_t bytes)
-{
-    WriteLockScoped write(*_rwLock);
-    _maxSizeInBytes = bytes;
-    return 0;
+bool FileWrapperImpl::Open() const {
+  ReadLockScoped read(*rw_lock_);
+  return open_;
 }
 
-int FileWrapperImpl::Flush()
-{
-    WriteLockScoped write(*_rwLock);
-    return FlushImpl();
-}
+int FileWrapperImpl::OpenFile(const char* file_name_utf8, bool read_only,
+                              bool loop, bool text) {
+  WriteLockScoped write(*rw_lock_);
+  size_t length = strlen(file_name_utf8);
+  if (length > kMaxFileNameSize - 1) {
+    return -1;
+  }
 
-int FileWrapperImpl::FileName(char* fileNameUTF8,
-                              size_t size) const
-{
-    ReadLockScoped read(*_rwLock);
-    size_t length = strlen(_fileNameUTF8);
-    if(length > kMaxFileNameSize)
-    {
-        assert(false);
-        return -1;
-    }
-    if(length < 1)
-    {
-        return -1;
-    }
+  read_only_ = read_only;
 
-    // Make sure to NULL terminate
-    if(size < length)
-    {
-        length = size - 1;
-    }
-    memcpy(fileNameUTF8, _fileNameUTF8, length);
-    fileNameUTF8[length] = 0;
-    return 0;
-}
-
-bool FileWrapperImpl::Open() const
-{
-    ReadLockScoped read(*_rwLock);
-    return _open;
-}
-
-int FileWrapperImpl::OpenFile(const char *fileNameUTF8, bool readOnly,
-                              bool loop, bool text)
-{
-    WriteLockScoped write(*_rwLock);
-    size_t length = strlen(fileNameUTF8);
-    if (length > kMaxFileNameSize - 1)
-    {
-        return -1;
-    }
-
-    _readOnly = readOnly;
-
-    FILE *tmpId = NULL;
+  FILE* tmp_id = NULL;
 #if defined _WIN32
-    wchar_t wideFileName[kMaxFileNameSize];
-    wideFileName[0] = 0;
+  wchar_t wide_file_name[kMaxFileNameSize];
+  wide_file_name[0] = 0;
 
-    MultiByteToWideChar(CP_UTF8,
-                        0 /*UTF8 flag*/,
-                        fileNameUTF8,
-                        -1 /*Null terminated string*/,
-                        wideFileName,
-                        kMaxFileNameSize);
-    if(text)
-    {
-        if(readOnly)
-        {
-            tmpId = _wfopen(wideFileName, L"rt");
-        } else {
-            tmpId = _wfopen(wideFileName, L"wt");
-        }
+  MultiByteToWideChar(CP_UTF8,
+                      0,  // UTF8 flag
+                      file_name_utf8,
+                      -1,  // Null terminated string
+                      wide_file_name,
+                      kMaxFileNameSize);
+  if (text) {
+    if (read_only) {
+      tmp_id = _wfopen(wide_file_name, L"rt");
     } else {
-        if(readOnly)
-        {
-            tmpId = _wfopen(wideFileName, L"rb");
-        } else {
-            tmpId = _wfopen(wideFileName, L"wb");
-        }
+      tmp_id = _wfopen(wide_file_name, L"wt");
     }
+  } else {
+    if (read_only) {
+      tmp_id = _wfopen(wide_file_name, L"rb");
+    } else {
+      tmp_id = _wfopen(wide_file_name, L"wb");
+    }
+  }
 #else
-    if(text)
-    {
-        if(readOnly)
-        {
-            tmpId = fopen(fileNameUTF8, "rt");
-        } else {
-            tmpId = fopen(fileNameUTF8, "wt");
-        }
+  if (text) {
+    if (read_only) {
+      tmp_id = fopen(file_name_utf8, "rt");
     } else {
-        if(readOnly)
-        {
-            tmpId = fopen(fileNameUTF8, "rb");
-        } else {
-            tmpId = fopen(fileNameUTF8, "wb");
-        }
+      tmp_id = fopen(file_name_utf8, "wt");
     }
+  } else {
+    if (read_only) {
+      tmp_id = fopen(file_name_utf8, "rb");
+    } else {
+      tmp_id = fopen(file_name_utf8, "wb");
+    }
+  }
 #endif
 
-    if (tmpId != NULL)
-    {
-        // +1 comes from copying the NULL termination character.
-        memcpy(_fileNameUTF8, fileNameUTF8, length + 1);
-        if (_id != NULL)
-        {
-            fclose(_id);
-        }
-        _id = tmpId;
-        _looping = loop;
-        _open = true;
-        return 0;
+  if (tmp_id != NULL) {
+    // +1 comes from copying the NULL termination character.
+    memcpy(file_name_utf8_, file_name_utf8, length + 1);
+    if (id_ != NULL) {
+      fclose(id_);
     }
+    id_ = tmp_id;
+    looping_ = loop;
+    open_ = true;
+    return 0;
+  }
+  return -1;
+}
+
+int FileWrapperImpl::Read(void* buf, int length) {
+  WriteLockScoped write(*rw_lock_);
+  if (length < 0)
     return -1;
-}
 
-int FileWrapperImpl::Read(void* buf, int length)
-{
-    WriteLockScoped write(*_rwLock);
-    if (length < 0)
-        return -1;
+  if (id_ == NULL)
+    return -1;
 
-    if (_id == NULL)
-        return -1;
-
-    int bytes_read = static_cast<int>(fread(buf, 1, length, _id));
-    if (bytes_read != length && !_looping)
-    {
-        CloseFileImpl();
-    }
-    return bytes_read;
-}
-
-int FileWrapperImpl::WriteText(const char* format, ...)
-{
-    WriteLockScoped write(*_rwLock);
-    if (format == NULL)
-        return -1;
-
-    if (_readOnly)
-        return -1;
-
-    if (_id == NULL)
-        return -1;
-
-    va_list args;
-    va_start(args, format);
-    int num_chars = vfprintf(_id, format, args);
-    va_end(args);
-
-    if (num_chars >= 0)
-    {
-        return num_chars;
-    }
-    else
-    {
-        CloseFileImpl();
-        return -1;
-    }
-}
-
-bool FileWrapperImpl::Write(const void* buf, int length)
-{
-    WriteLockScoped write(*_rwLock);
-    if (buf == NULL)
-        return false;
-
-    if (length < 0)
-        return false;
-
-    if (_readOnly)
-        return false;
-
-    if (_id == NULL)
-        return false;
-
-    // Check if it's time to stop writing.
-    if (_maxSizeInBytes > 0 && (_sizeInBytes + length) > _maxSizeInBytes)
-    {
-        FlushImpl();
-        return false;
-    }
-
-    size_t num_bytes = fwrite(buf, 1, length, _id);
-    if (num_bytes > 0)
-    {
-        _sizeInBytes += num_bytes;
-        return true;
-    }
-
+  int bytes_read = static_cast<int>(fread(buf, 1, length, id_));
+  if (bytes_read != length && !looping_) {
     CloseFileImpl();
+  }
+  return bytes_read;
+}
+
+int FileWrapperImpl::WriteText(const char* format, ...) {
+  WriteLockScoped write(*rw_lock_);
+  if (format == NULL)
+    return -1;
+
+  if (read_only_)
+    return -1;
+
+  if (id_ == NULL)
+    return -1;
+
+  va_list args;
+  va_start(args, format);
+  int num_chars = vfprintf(id_, format, args);
+  va_end(args);
+
+  if (num_chars >= 0) {
+    return num_chars;
+  } else {
+    CloseFileImpl();
+    return -1;
+  }
+}
+
+bool FileWrapperImpl::Write(const void* buf, int length) {
+  WriteLockScoped write(*rw_lock_);
+  if (buf == NULL)
     return false;
+
+  if (length < 0)
+    return false;
+
+  if (read_only_)
+    return false;
+
+  if (id_ == NULL)
+    return false;
+
+  // Check if it's time to stop writing.
+  if (max_size_in_bytes_ > 0 &&
+      (size_in_bytes_ + length) > max_size_in_bytes_) {
+    FlushImpl();
+    return false;
+  }
+
+  size_t num_bytes = fwrite(buf, 1, length, id_);
+  if (num_bytes > 0) {
+    size_in_bytes_ += num_bytes;
+    return true;
+  }
+
+  CloseFileImpl();
+  return false;
 }
 
 int FileWrapperImpl::CloseFileImpl() {
-    if (_id != NULL)
-    {
-        fclose(_id);
-        _id = NULL;
-    }
-    memset(_fileNameUTF8, 0, kMaxFileNameSize);
-    _open = false;
-    return 0;
+  if (id_ != NULL) {
+    fclose(id_);
+    id_ = NULL;
+  }
+  memset(file_name_utf8_, 0, kMaxFileNameSize);
+  open_ = false;
+  return 0;
 }
 
 int FileWrapperImpl::FlushImpl() {
-    if (_id != NULL)
-    {
-        return fflush(_id);
-    }
-    return -1;
+  if (id_ != NULL) {
+    return fflush(id_);
+  }
+  return -1;
 }
-
 
 } // namespace webrtc
