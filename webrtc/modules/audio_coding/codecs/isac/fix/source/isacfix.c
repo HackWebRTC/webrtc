@@ -182,6 +182,7 @@ WebRtc_Word16 WebRtcIsacfix_FreeInternal(ISACFIX_MainStruct *ISAC_main_inst)
 static void WebRtcIsacfix_InitNeon(void) {
   WebRtcIsacfix_AutocorrFix = WebRtcIsacfix_AutocorrNeon;
   WebRtcIsacfix_FilterMaLoopFix = WebRtcIsacfix_FilterMaLoopNeon;
+  WebRtcIsacfix_Spec2Time = WebRtcIsacfix_Spec2TimeNeon;
   WebRtcIsacfix_CalculateResidualEnergy =
       WebRtcIsacfix_CalculateResidualEnergyNeon;
   WebRtcIsacfix_AllpassFilter2FixDec16 =
@@ -274,6 +275,8 @@ WebRtc_Word16 WebRtcIsacfix_EncoderInit(ISACFIX_MainStruct *ISAC_main_inst,
       WebRtcIsacfix_CalculateResidualEnergyC;
   WebRtcIsacfix_AllpassFilter2FixDec16 =
       WebRtcIsacfix_AllpassFilter2FixDec16C;
+  WebRtcIsacfix_Spec2Time =
+      WebRtcIsacfix_Spec2TimeC;
 
 #ifdef WEBRTC_DETECT_ARM_NEON
   if ((WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) != 0) {

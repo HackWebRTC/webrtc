@@ -101,6 +101,7 @@
             'filters_neon.S',
             'lattice_neon.S',
             'lpc_masking_model_neon.S',
+            'transform_neon.S',
           ],
         },
       ],

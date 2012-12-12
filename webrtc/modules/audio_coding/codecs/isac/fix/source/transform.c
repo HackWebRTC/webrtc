@@ -15,13 +15,14 @@
  *
  */
 
-#include "fft.h"
-#include "codec.h"
-#include "settings.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/transform.h"
 
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/codec.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/fft.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/source/settings.h"
 
 /* Cosine table 1 in Q14 */
-static const WebRtc_Word16 kCosTab1[FRAMESAMPLES/2] = {
+const WebRtc_Word16 kCosTab1[FRAMESAMPLES/2] = {
   16384,  16383,  16378,  16371,  16362,  16349,  16333,  16315,  16294,  16270,
   16244,  16214,  16182,  16147,  16110,  16069,  16026,  15980,  15931,  15880,
   15826,  15769,  15709,  15647,  15582,  15515,  15444,  15371,  15296,  15218,
@@ -50,7 +51,7 @@ static const WebRtc_Word16 kCosTab1[FRAMESAMPLES/2] = {
 
 
 /* Sine table 1 in Q14 */
-static const WebRtc_Word16 kSinTab1[FRAMESAMPLES/2] = {
+const WebRtc_Word16 kSinTab1[FRAMESAMPLES/2] = {
   0,   214,   429,   643,   857,  1072,  1285,  1499,  1713,  1926,
   2139,  2351,  2563,  2775,  2986,  3196,  3406,  3616,  3825,  4033,
   4240,  4447,  4653,  4859,  5063,  5266,  5469,  5671,  5872,  6071,
@@ -79,7 +80,7 @@ static const WebRtc_Word16 kSinTab1[FRAMESAMPLES/2] = {
 
 
 /* Cosine table 2 in Q14 */
-static const WebRtc_Word16 kCosTab2[FRAMESAMPLES/4] = {
+const WebRtc_Word16 kCosTab2[FRAMESAMPLES/4] = {
   107,   -322,   536,   -750,   965,  -1179,  1392,  -1606,  1819,  -2032,
   2245,  -2457,  2669,  -2880,  3091,  -3301,  3511,  -3720,  3929,  -4137,
   4344,  -4550,  4756,  -4961,  5165,  -5368,  5570,  -5771,  5971,  -6171,
@@ -96,7 +97,7 @@ static const WebRtc_Word16 kCosTab2[FRAMESAMPLES/4] = {
 
 
 /* Sine table 2 in Q14 */
-static const WebRtc_Word16 kSinTab2[FRAMESAMPLES/4] = {
+const WebRtc_Word16 kSinTab2[FRAMESAMPLES/4] = {
   16384, -16381, 16375, -16367, 16356, -16342, 16325, -16305, 16283, -16257,
   16229, -16199, 16165, -16129, 16090, -16048, 16003, -15956, 15906, -15853,
   15798, -15739, 15679, -15615, 15549, -15480, 15408, -15334, 15257, -15178,
@@ -111,7 +112,8 @@ static const WebRtc_Word16 kSinTab2[FRAMESAMPLES/4] = {
   2032,  -1819,  1606,  -1392,  1179,   -965,   750,   -536,   322,   -107
 };
 
-
+// Declare a function pointer.
+Spec2Time WebRtcIsacfix_Spec2Time;
 
 void WebRtcIsacfix_Time2Spec(WebRtc_Word16 *inre1Q9,
                              WebRtc_Word16 *inre2Q9,
@@ -200,7 +202,7 @@ void WebRtcIsacfix_Time2Spec(WebRtc_Word16 *inre1Q9,
 }
 
 
-void WebRtcIsacfix_Spec2Time(WebRtc_Word16 *inreQ7, WebRtc_Word16 *inimQ7, WebRtc_Word32 *outre1Q16, WebRtc_Word32 *outre2Q16)
+void WebRtcIsacfix_Spec2TimeC(WebRtc_Word16 *inreQ7, WebRtc_Word16 *inimQ7, WebRtc_Word32 *outre1Q16, WebRtc_Word32 *outre2Q16)
 {
 
   int k;

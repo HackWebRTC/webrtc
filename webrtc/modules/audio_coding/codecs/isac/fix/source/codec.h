@@ -75,12 +75,23 @@ void WebRtcIsacfix_Time2Spec(WebRtc_Word16 *inre1Q9,
                              WebRtc_Word16 *outre,
                              WebRtc_Word16 *outim);
 
+typedef void (*Spec2Time)(WebRtc_Word16* inreQ7,
+                          WebRtc_Word16* inimQ7,
+                          WebRtc_Word32* outre1Q16,
+                          WebRtc_Word32* outre2Q16);
+extern Spec2Time WebRtcIsacfix_Spec2Time;
 
+void WebRtcIsacfix_Spec2TimeC(WebRtc_Word16* inreQ7,
+                              WebRtc_Word16* inimQ7,
+                              WebRtc_Word32* outre1Q16,
+                              WebRtc_Word32* outre2Q16);
 
-void WebRtcIsacfix_Spec2Time(WebRtc_Word16 *inreQ7,
-                             WebRtc_Word16 *inimQ7,
-                             WebRtc_Word32 *outre1Q16,
-                             WebRtc_Word32 *outre2Q16);
+#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
+void WebRtcIsacfix_Spec2TimeNeon(WebRtc_Word16* inreQ7,
+                                 WebRtc_Word16* inimQ7,
+                                 WebRtc_Word32* outre1Q16,
+                                 WebRtc_Word32* outre2Q16);
+#endif
 
 
 

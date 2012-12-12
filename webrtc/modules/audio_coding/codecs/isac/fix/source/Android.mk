@@ -90,7 +90,8 @@ LOCAL_SRC_FILES := \
     filterbanks_neon.S \
     filters_neon.S \
     lattice_neon.S \
-    lpc_masking_model_neon.S
+    lpc_masking_model_neon.S \
+    transform_neon.S
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
