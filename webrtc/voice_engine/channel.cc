@@ -1133,6 +1133,7 @@ Channel::Channel(const WebRtc_Word32 channelId,
     _rtcpObserverPtr(NULL),
     _outputIsOnHold(false),
     _externalPlayout(false),
+    _externalMixing(false),
     _inputIsOnHold(false),
     _playing(false),
     _sending(false),
@@ -1601,13 +1602,16 @@ Channel::StartPlayout()
     {
         return 0;
     }
-    // Add participant as candidates for mixing.
-    if (_outputMixerPtr->SetMixabilityStatus(*this, true) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
-            "StartPlayout() failed to add participant to mixer");
-        return -1;
+
+    if (!_externalMixing) {
+        // Add participant as candidates for mixing.
+        if (_outputMixerPtr->SetMixabilityStatus(*this, true) != 0)
+        {
+            _engineStatisticsPtr->SetLastError(
+                VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
+                "StartPlayout() failed to add participant to mixer");
+            return -1;
+        }
     }
 
     _playing = true;
@@ -1627,13 +1631,16 @@ Channel::StopPlayout()
     {
         return 0;
     }
-    // Remove participant as candidates for mixing
-    if (_outputMixerPtr->SetMixabilityStatus(*this, false) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
-            "StartPlayout() failed to remove participant from mixer");
-        return -1;
+
+    if (!_externalMixing) {
+        // Remove participant as candidates for mixing
+        if (_outputMixerPtr->SetMixabilityStatus(*this, false) != 0)
+        {
+            _engineStatisticsPtr->SetLastError(
+                VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
+                "StopPlayout() failed to remove participant from mixer");
+            return -1;
+        }
     }
 
     _playing = false;
@@ -5977,6 +5984,24 @@ int Channel::DeRegisterExternalMediaProcessing(ProcessingTypes type)
         _inputExternalMedia = false;
         _inputExternalMediaCallbackPtr = NULL;
     }
+
+    return 0;
+}
+
+int Channel::SetExternalMixing(bool enabled) {
+    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
+                 "Channel::SetExternalMixing(enabled=%d)", enabled);
+
+    if (_playing)
+    {
+        _engineStatisticsPtr->SetLastError(
+            VE_INVALID_OPERATION, kTraceError,
+            "Channel::SetExternalMixing() "
+            "external mixing cannot be changed while playing.");
+        return -1;
+    }
+
+    _externalMixing = enabled;
 
     return 0;
 }

@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/interface/module_common_types.h"
 #include "voice_engine/include/voe_external_media.h"
 #include "voice_engine/test/auto_test/fakes/fake_media_process.h"
 #include "voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"
@@ -81,4 +82,81 @@ TEST_F(ExternalMediaTest,
   SwitchToManualMicrophone();
   TEST_LOG("Speak and verify your voice is distorted.\n");
   TestRegisterExternalMedia(-1, webrtc::kRecordingAllChannelsMixed);
+}
+
+TEST_F(ExternalMediaTest,
+       ExternalMixingCannotBeChangedDuringPlayback) {
+  EXPECT_EQ(-1, voe_xmedia_->SetExternalMixing(channel_, true));
+  EXPECT_EQ(-1, voe_xmedia_->SetExternalMixing(channel_, false));
+}
+
+TEST_F(ExternalMediaTest,
+       ExternalMixingIsRequiredForGetAudioFrame) {
+  webrtc::AudioFrame frame;
+  EXPECT_EQ(-1, voe_xmedia_->GetAudioFrame(channel_, 0, &frame));
+}
+
+TEST_F(ExternalMediaTest,
+       ExternalMixingPreventsAndRestoresRegularPlayback) {
+  PausePlaying();
+  ASSERT_EQ(0, voe_xmedia_->SetExternalMixing(channel_, true));
+  TEST_LOG("Verify that no sound is played out.\n");
+  ResumePlaying();
+  Sleep(1000);
+  PausePlaying();
+  ASSERT_EQ(0, voe_xmedia_->SetExternalMixing(channel_, false));
+  ResumePlaying();
+  TEST_LOG("Verify that sound is played out.\n");
+  ResumePlaying();
+  Sleep(1000);
+}
+
+TEST_F(ExternalMediaTest,
+       ExternalMixingWorks) {
+  webrtc::AudioFrame frame;
+  PausePlaying();
+  EXPECT_EQ(0, voe_xmedia_->SetExternalMixing(channel_, true));
+  ResumePlaying();
+  EXPECT_EQ(0, voe_xmedia_->GetAudioFrame(channel_, 0, &frame));
+  EXPECT_LT(0, frame.sample_rate_hz_);
+  EXPECT_LT(0, frame.samples_per_channel_);
+  PausePlaying();
+  EXPECT_EQ(0, voe_xmedia_->SetExternalMixing(channel_, false));
+  ResumePlaying();
+}
+
+TEST_F(ExternalMediaTest,
+       ExternalMixingResamplesToDesiredFrequency) {
+  const int kValidFrequencies[] = {8000, 16000, 22000, 32000, 48000};
+  webrtc::AudioFrame frame;
+  PausePlaying();
+  EXPECT_EQ(0, voe_xmedia_->SetExternalMixing(channel_, true));
+  ResumePlaying();
+  for (size_t i = 0; i < sizeof(kValidFrequencies) / sizeof(int); i++) {
+    int f = kValidFrequencies[i];
+    EXPECT_EQ(0, voe_xmedia_->GetAudioFrame(channel_, f, &frame))
+       << "Resampling succeeds for freq=" << f;
+    EXPECT_EQ(f, frame.sample_rate_hz_);
+    EXPECT_EQ(f / 100, frame.samples_per_channel_);
+  }
+  PausePlaying();
+  EXPECT_EQ(0, voe_xmedia_->SetExternalMixing(channel_, false));
+  ResumePlaying();
+}
+
+TEST_F(ExternalMediaTest,
+       ExternalMixingResamplingToInvalidFrequenciesFails) {
+  const int kInvalidFrequencies[] = {-8000, -1, 1, 1000, 8001, 16001};
+  webrtc::AudioFrame frame;
+  PausePlaying();
+  EXPECT_EQ(0, voe_xmedia_->SetExternalMixing(channel_, true));
+  ResumePlaying();
+  for (size_t i = 0; i < sizeof(kInvalidFrequencies) / sizeof(int); i++) {
+    int f = kInvalidFrequencies[i];
+    EXPECT_EQ(-1, voe_xmedia_->GetAudioFrame(channel_, f, &frame))
+        << "Resampling fails for freq=" << f;
+  }
+  PausePlaying();
+  EXPECT_EQ(0, voe_xmedia_->SetExternalMixing(channel_, false));
+  ResumePlaying();
 }

@@ -231,6 +231,7 @@ public:
     int RegisterExternalMediaProcessing(ProcessingTypes type,
                                         VoEMediaProcess& processObject);
     int DeRegisterExternalMediaProcessing(ProcessingTypes type);
+    int SetExternalMixing(bool enabled);
 
     // VoEVolumeControl
     int GetSpeechOutputLevel(WebRtc_UWord32& level) const;
@@ -494,6 +495,10 @@ public:
     {
         return _externalTransport;
     }
+    bool ExternalMixing() const
+    {
+        return _externalMixing;
+    }
     bool OutputIsOnHold() const
     {
         return _outputIsOnHold;
@@ -611,6 +616,7 @@ private:
     // VoEBase
     bool _outputIsOnHold;
     bool _externalPlayout;
+    bool _externalMixing;
     bool _inputIsOnHold;
     bool _playing;
     bool _sending;

@@ -37,6 +37,7 @@
 namespace webrtc {
 
 class VoiceEngine;
+class AudioFrame;
 
 class WEBRTC_DLLEXPORT VoEMediaProcess
 {
@@ -103,6 +104,16 @@ public:
     virtual int ExternalPlayoutGetData(
         WebRtc_Word16 speechData10ms[], int samplingFreqHz,
         int current_delay_ms, int& lengthSamples) = 0;
+
+    // Pulls an audio frame from the specified |channel| for external mixing.
+    // If the |desired_sample_rate_hz| is 0, the signal will be returned with
+    // its native frequency, otherwise it will be resampled. Valid frequencies
+    // are 16, 22, 32, 44 or 48 kHz.
+    virtual int GetAudioFrame(int channel, int desired_sample_rate_hz,
+                              AudioFrame* frame) = 0;
+
+    // Sets the state of external mixing. Cannot be changed during playback.
+    virtual int SetExternalMixing(int channel, bool enable) = 0;
 
 protected:
     VoEExternalMedia() {}

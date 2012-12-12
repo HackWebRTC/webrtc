@@ -346,6 +346,66 @@ int VoEExternalMediaImpl::ExternalPlayoutGetData(
 #endif
 }
 
+int VoEExternalMediaImpl::GetAudioFrame(int channel, int desired_sample_rate_hz,
+                                        AudioFrame* frame) {
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice,
+                 VoEId(shared_->instance_id(), channel),
+                 "GetAudioFrame(channel=%d, desired_sample_rate_hz=%d)",
+                 channel, desired_sample_rate_hz);
+    if (!shared_->statistics().Initialized())
+    {
+        shared_->SetLastError(VE_NOT_INITED, kTraceError);
+        return -1;
+    }
+    voe::ScopedChannel sc(shared_->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
+    if (channelPtr == NULL)
+    {
+        shared_->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+            "GetAudioFrame() failed to locate channel");
+        return -1;
+    }
+    if (!channelPtr->ExternalMixing()) {
+        shared_->SetLastError(VE_INVALID_OPERATION, kTraceError,
+            "GetAudioFrame() was called on channel that is not"
+            " externally mixed.");
+        return -1;
+    }
+    if (!channelPtr->Playing()) {
+        shared_->SetLastError(VE_INVALID_OPERATION, kTraceError,
+            "GetAudioFrame() was called on channel that is not playing.");
+        return -1;
+    }
+    if (desired_sample_rate_hz == -1) {
+          shared_->SetLastError(VE_BAD_ARGUMENT, kTraceError,
+              "GetAudioFrame() was called with bad sample rate.");
+          return -1;
+    }
+    frame->sample_rate_hz_ = desired_sample_rate_hz == 0 ? -1 :
+                             desired_sample_rate_hz;
+    return channelPtr->GetAudioFrame(channel, *frame);
+}
+
+int VoEExternalMediaImpl::SetExternalMixing(int channel, bool enable) {
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice,
+                 VoEId(shared_->instance_id(), channel),
+                 "SetExternalMixing(channel=%d, enable=%d)", channel, enable);
+    if (!shared_->statistics().Initialized())
+    {
+        shared_->SetLastError(VE_NOT_INITED, kTraceError);
+        return -1;
+    }
+    voe::ScopedChannel sc(shared_->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
+    if (channelPtr == NULL)
+    {
+        shared_->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+            "SetExternalMixing() failed to locate channel");
+        return -1;
+    }
+    return channelPtr->SetExternalMixing(enable);
+}
+
 #endif  // WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
 
 }  // namespace webrtc

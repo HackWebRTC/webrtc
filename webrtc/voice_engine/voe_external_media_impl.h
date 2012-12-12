@@ -44,6 +44,11 @@ public:
                                        int current_delay_ms,
                                        int& lengthSamples);
 
+    virtual int GetAudioFrame(int channel, int desired_sample_rate_hz,
+                              AudioFrame* frame);
+
+    virtual int SetExternalMixing(int channel, bool enable);
+
 protected:
     VoEExternalMediaImpl(voe::SharedData* shared);
     virtual ~VoEExternalMediaImpl();
