@@ -430,6 +430,9 @@ enum NetEqModes             // NetEQ playout configurations
     // Optimzed for decodability of fax signals rather than for perceived audio
     // quality.
     kNetEqFax = 2,
+    // Minimal buffer management. Inserts zeros for lost packets and during
+    // buffer increases.
+    kNetEqOff = 3,
 };
 
 enum NetEqBgnModes          // NetEQ Background Noise (BGN) configurations

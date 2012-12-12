@@ -2096,6 +2096,9 @@ Channel::SetNetEQPlayoutMode(NetEqModes mode)
         case kNetEqFax:
             playoutMode = fax;
             break;
+        case kNetEqOff:
+            playoutMode = off;
+            break;
     }
     if (_audioCodingModule.SetPlayoutMode(playoutMode) != 0)
     {
@@ -2122,6 +2125,8 @@ Channel::GetNetEQPlayoutMode(NetEqModes& mode)
         case fax:
             mode = kNetEqFax;
             break;
+        case off:
+            mode = kNetEqOff;
     }
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                  VoEId(_instanceId,_channelId),

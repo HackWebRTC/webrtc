@@ -34,11 +34,14 @@ namespace webrtc {
 //                conference participant, a webinar, or a streaming application,
 //                this mode can be used to improve the jitter robustness at
 //                the cost of increased delay.
+// -off         : Turns off most of NetEQ's features. Stuffs zeros for lost
+//                packets and during buffer increases.
 //
 enum AudioPlayoutMode {
   voice = 0,
   fax = 1,
-  streaming = 2
+  streaming = 2,
+  off = 3,
 };
 
 ///////////////////////////////////////////////////////////////////////////

@@ -324,6 +324,9 @@ WebRtc_Word32 ACMNetEQ::SetPlayoutMode(const AudioPlayoutMode mode) {
         case streaming:
           playoutMode = kPlayoutStreaming;
           break;
+        case off:
+          playoutMode = kPlayoutOff;
+          break;
       }
       if (WebRtcNetEQ_SetPlayoutMode(_inst[idx], playoutMode) < 0) {
         LogError("SetPlayoutMode", idx);
@@ -983,6 +986,9 @@ WebRtc_Word16 ACMNetEQ::AddSlave(const WebRtcNetEQDecoder* usedCodecs,
         break;
       case streaming:
         playoutMode = kPlayoutStreaming;
+        break;
+      case off:
+        playoutMode = kPlayoutOff;
         break;
     }
     if (WebRtcNetEQ_SetPlayoutMode(_inst[slaveIdx], playoutMode) < 0) {

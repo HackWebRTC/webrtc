@@ -2226,7 +2226,8 @@ WebRtc_Word32 AudioCodingModuleImpl::DecoderEstimatedBandwidth() const {
 // Set playout mode for: voice, fax, or streaming.
 WebRtc_Word32 AudioCodingModuleImpl::SetPlayoutMode(
     const AudioPlayoutMode mode) {
-  if ((mode != voice) && (mode != fax) && (mode != streaming)) {
+  if ((mode != voice) && (mode != fax) && (mode != streaming) &&
+      (mode != off)) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
                  "Invalid playout mode.");
     return -1;
