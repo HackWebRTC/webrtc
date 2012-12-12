@@ -245,6 +245,10 @@ public:
         int channel, unsigned char payloadType, bool markerBit,
         const char* payloadData, unsigned short payloadSize) = 0;
 
+    // Gets the timestamp of the last RTP packet received by |channel|.
+    virtual int GetLastRemoteTimeStamp(int channel,
+                                       uint32_t* lastRemoteTimeStamp) = 0;
+
 protected:
     VoERTP_RTCP() {}
     virtual ~VoERTP_RTCP() {}

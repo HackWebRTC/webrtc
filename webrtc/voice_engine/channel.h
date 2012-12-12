@@ -359,6 +359,7 @@ public:
     int InsertExtraRTPPacket(unsigned char payloadType, bool markerBit,
                              const char* payloadData,
                              unsigned short payloadSize);
+    uint32_t LastRemoteTimeStamp() { return _lastRemoteTimeStamp; }
 
 public:
     // From AudioPacketizationCallback in the ACM
@@ -635,6 +636,7 @@ private:
     bool _insertExtraRTPPacket;
     bool _extraMarkerBit;
     WebRtc_UWord32 _lastLocalTimeStamp;
+    uint32_t _lastRemoteTimeStamp;
     WebRtc_Word8 _lastPayloadType;
     bool _includeAudioLevelIndication;
     // VoENetwork

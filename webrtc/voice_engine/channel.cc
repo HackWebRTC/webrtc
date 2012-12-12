@@ -799,6 +799,8 @@ Channel::OnReceivedPayloadData(const WebRtc_UWord8* payloadData,
                  rtpHeader->header.payloadType,
                  rtpHeader->type.Audio.channel);
 
+    _lastRemoteTimeStamp = rtpHeader->header.timestamp;
+
     if (!_playing)
     {
         // Avoid inserting into NetEQ when we are not playing. Count the
@@ -1152,6 +1154,7 @@ Channel::Channel(const WebRtc_Word32 channelId,
     _insertExtraRTPPacket(false),
     _extraMarkerBit(false),
     _lastLocalTimeStamp(0),
+    _lastRemoteTimeStamp(0),
     _lastPayloadType(0),
     _includeAudioLevelIndication(false),
     _rtpPacketTimedOut(false),

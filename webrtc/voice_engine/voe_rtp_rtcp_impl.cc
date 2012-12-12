@@ -662,6 +662,27 @@ int VoERTP_RTCPImpl::InsertExtraRTPPacket(int channel,
                                             payloadSize);
 }
 
+int VoERTP_RTCPImpl::GetLastRemoteTimeStamp(int channel,
+                                            uint32_t* timestamp) {
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+                 "GetLastRemoteTimeStamp(channel=%d, timestamp=?)", channel);
+    if (!_shared->statistics().Initialized())
+    {
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
+        return -1;
+    }
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
+    if (channelPtr == NULL)
+    {
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+            "GetLastRemoteTimeStamp() failed to locate channel");
+        return -1;
+    }
+    *timestamp = channelPtr->LastRemoteTimeStamp();
+    return 0;
+}
+
 #endif  // #ifdef WEBRTC_VOICE_ENGINE_RTP_RTCP_API
 
 }  // namespace webrtc
