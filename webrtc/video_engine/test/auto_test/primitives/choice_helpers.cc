@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <algorithm>
+#include <sstream>
 
 namespace webrtc {
 
@@ -53,9 +54,9 @@ std::string ChoiceBuilder::MakeHumanReadableOptions() {
   std::string result = "";
   Choices::const_iterator iterator = choices_.begin();
   for (int number = 1; iterator != choices_.end(); ++iterator, ++number) {
-    char buffer[128];
-    sprintf(buffer, "\n  %d. %s", number, (*iterator).c_str());
-    result += buffer;
+    std::ostringstream os;
+    os << "\n  " << number << ". " << (*iterator).c_str();
+    result += os.str();
   }
   return result;
 }
