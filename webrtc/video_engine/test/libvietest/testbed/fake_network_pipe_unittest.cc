@@ -63,15 +63,11 @@ void DeleteMemory(uint8_t* data, int length) { delete [] data; }
 
 // Test the capacity link and verify we get as many packets as we expect.
 TEST_F(FakeNetworkPipeTest, CapacityTest) {
-  const int kQueueLength = 20;
-  const int kNetworkDelayMs = 0;
-  const int kLinkCapacityKbps = 80;
-  const int kLossPercent = 0;
-  scoped_ptr<FakeNetworkPipe> pipe(new FakeNetworkPipe(receiver_.get(),
-                                                       kQueueLength,
-                                                       kNetworkDelayMs,
-                                                       kLinkCapacityKbps,
-                                                       kLossPercent));
+  FakeNetworkPipe::Configuration config;
+  config.packet_receiver = receiver_.get();
+  config.queue_length = 20;
+  config.link_capacity_kbps = 80;
+  scoped_ptr<FakeNetworkPipe> pipe(new FakeNetworkPipe(config));
 
   // Add 10 packets of 1000 bytes, = 80 kb, and verify it takes one second to
   // get through the pipe.
@@ -80,7 +76,8 @@ TEST_F(FakeNetworkPipeTest, CapacityTest) {
   SendPackets(pipe.get(), kNumPackets , kPacketSize);
 
   // Time to get one packet through the link.
-  const int kPacketTimeMs = PacketTimeMs(kLinkCapacityKbps, kPacketSize);
+  const int kPacketTimeMs = PacketTimeMs(config.link_capacity_kbps,
+                                         kPacketSize);
 
   // Time haven't increased yet, so we souldn't get any packets.
   EXPECT_CALL(*receiver_, IncomingData(_, _))
@@ -108,22 +105,20 @@ TEST_F(FakeNetworkPipeTest, CapacityTest) {
 
 // Test the extra network delay.
 TEST_F(FakeNetworkPipeTest, ExtraDelayTest) {
-  const int kQueueLength = 20;
-  const int kNetworkDelayMs = 100;
-  const int kLinkCapacityKbps = 80;
-  const int kLossPercent = 0;
-  scoped_ptr<FakeNetworkPipe> pipe(new FakeNetworkPipe(receiver_.get(),
-                                                       kQueueLength,
-                                                       kNetworkDelayMs,
-                                                       kLinkCapacityKbps,
-                                                       kLossPercent));
+  FakeNetworkPipe::Configuration config;
+  config.packet_receiver = receiver_.get();
+  config.queue_length = 20;
+  config.queue_delay_ms = 100;
+  config.link_capacity_kbps = 80;
+  scoped_ptr<FakeNetworkPipe> pipe(new FakeNetworkPipe(config));
 
   const int kNumPackets = 2;
   const int kPacketSize = 1000;
   SendPackets(pipe.get(), kNumPackets , kPacketSize);
 
   // Time to get one packet through the link.
-  const int kPacketTimeMs = PacketTimeMs(kLinkCapacityKbps, kPacketSize);
+  const int kPacketTimeMs = PacketTimeMs(config.link_capacity_kbps,
+                                         kPacketSize);
 
   // Increase more than kPacketTimeMs, but not more than the extra delay.
   TickTime::AdvanceFakeClock(kPacketTimeMs);
@@ -132,7 +127,7 @@ TEST_F(FakeNetworkPipeTest, ExtraDelayTest) {
   pipe->NetworkProcess();
 
   // Advance the network delay to get the first packet.
-  TickTime::AdvanceFakeClock(kNetworkDelayMs);
+  TickTime::AdvanceFakeClock(config.queue_delay_ms);
   EXPECT_CALL(*receiver_, IncomingData(_, _))
       .Times(1);
   pipe->NetworkProcess();
@@ -147,18 +142,15 @@ TEST_F(FakeNetworkPipeTest, ExtraDelayTest) {
 // Test the number of buffers and packets are dropped when sending too many
 // packets too quickly.
 TEST_F(FakeNetworkPipeTest, QueueLengthTest) {
-  const int kQueueLength = 2;
-  const int kNetworkDelayMs = 0;
-  const int kLinkCapacityKbps = 80;
-  const int kLossPercent = 0;
-  scoped_ptr<FakeNetworkPipe> pipe(new FakeNetworkPipe(receiver_.get(),
-                                                       kQueueLength,
-                                                       kNetworkDelayMs,
-                                                       kLinkCapacityKbps,
-                                                       kLossPercent));
+  FakeNetworkPipe::Configuration config;
+  config.packet_receiver = receiver_.get();
+  config.queue_length = 2;
+  config.link_capacity_kbps = 80;
+  scoped_ptr<FakeNetworkPipe> pipe(new FakeNetworkPipe(config));
 
   const int kPacketSize = 1000;
-  const int kPacketTimeMs = PacketTimeMs(kLinkCapacityKbps, kPacketSize);
+  const int kPacketTimeMs = PacketTimeMs(config.link_capacity_kbps,
+                                         kPacketSize);
 
   // Send three packets and verify only 2 are delivered.
   SendPackets(pipe.get(), 3, kPacketSize);
@@ -173,29 +165,27 @@ TEST_F(FakeNetworkPipeTest, QueueLengthTest) {
 
 // Test we get statistics as expected.
 TEST_F(FakeNetworkPipeTest, StatisticsTest) {
-  const int kQueueLength = 2;
-  const int kNetworkDelayMs = 20;
-  const int kLinkCapacityKbps = 80;
-  const int kLossPercent = 0;
-  scoped_ptr<FakeNetworkPipe> pipe(new FakeNetworkPipe(receiver_.get(),
-                                                       kQueueLength,
-                                                       kNetworkDelayMs,
-                                                       kLinkCapacityKbps,
-                                                       kLossPercent));
+  FakeNetworkPipe::Configuration config;
+  config.packet_receiver = receiver_.get();
+  config.queue_length = 2;
+  config.queue_delay_ms = 20;
+  config.link_capacity_kbps = 80;
+  scoped_ptr<FakeNetworkPipe> pipe(new FakeNetworkPipe(config));
 
   const int kPacketSize = 1000;
-  const int kPacketTimeMs = PacketTimeMs(kLinkCapacityKbps, kPacketSize);
+  const int kPacketTimeMs = PacketTimeMs(config.link_capacity_kbps,
+                                         kPacketSize);
 
   // Send three packets and verify only 2 are delivered.
   SendPackets(pipe.get(), 3, kPacketSize);
-  TickTime::AdvanceFakeClock(3 * kPacketTimeMs + kNetworkDelayMs);
+  TickTime::AdvanceFakeClock(3 * kPacketTimeMs + config.queue_delay_ms);
 
   EXPECT_CALL(*receiver_, IncomingData(_, _))
       .Times(2);
   pipe->NetworkProcess();
 
-  // Packet 1: kPacketTimeMs + kNetworkDelayMs, packet 2: 2 * kPacketTimeMs +
-  // kNetworkDelayMs => 170 ms average.
+  // Packet 1: kPacketTimeMs + config.queue_delay_ms,
+  // packet 2: 2 * kPacketTimeMs + config.queue_delay_ms => 170 ms average.
   EXPECT_EQ(pipe->AverageDelay(), 170);
   EXPECT_EQ(pipe->sent_packets(), 2);
   EXPECT_EQ(pipe->dropped_packets(), 1);

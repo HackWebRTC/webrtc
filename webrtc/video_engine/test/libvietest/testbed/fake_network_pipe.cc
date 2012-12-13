@@ -11,6 +11,7 @@
 #include "webrtc/video_engine/test/libvietest/include/fake_network_pipe.h"
 
 #include <assert.h>
+#include <math.h>
 #include <string.h>
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -19,6 +20,16 @@
 namespace webrtc {
 
 const int kNetworkProcessMaxWaitTime = 10;
+const double kPi = 3.14159265;
+
+static int GaussianRandom(int mean_delay_ms, int standard_deviation_ms) {
+  // Creating a Normal distribution variable from two independent uniform
+  // variables based on the Box-Muller transform.
+  double uniform1 = (rand() + 1.0) / (RAND_MAX + 1.0);  // NOLINT
+  double uniform2 = (rand() + 1.0) / (RAND_MAX + 1.0);  // NOLINT
+  return static_cast<int>(mean_delay_ms + standard_deviation_ms *
+                          sqrt(-2 * log(uniform1)) * cos(2 * kPi * uniform2));
+}
 
 class NetworkPacket {
  public:
@@ -55,19 +66,20 @@ class NetworkPacket {
   int64_t arrival_time_;
 };
 
-FakeNetworkPipe::FakeNetworkPipe(PacketReceiver* packet_receiver,
-                                 size_t queue_length, int queue_delay_ms,
-                                 int link_capacity_kbps, int loss_percent)
-    : packet_receiver_(packet_receiver),
+FakeNetworkPipe::FakeNetworkPipe(
+    const FakeNetworkPipe::Configuration& configuration)
+    : packet_receiver_(configuration.packet_receiver),
       link_cs_(CriticalSectionWrapper::CreateCriticalSection()),
-      queue_length_(queue_length),
-      queue_delay_ms_(queue_delay_ms),
-      link_capacity_bytes_ms_(link_capacity_kbps / 8),
-      loss_percent_(loss_percent),
+      queue_length_(configuration.queue_length),
+      queue_delay_ms_(configuration.queue_delay_ms),
+      queue_delay_deviation_ms_(configuration.delay_standard_deviation_ms),
+      link_capacity_bytes_ms_(configuration.link_capacity_kbps / 8),
+      loss_percent_(configuration.loss_percent),
       dropped_packets_(0),
       sent_packets_(0),
       total_packet_delay_(0) {
   assert(link_capacity_bytes_ms_ > 0);
+  assert(packet_receiver_ != NULL);
 }
 
 FakeNetworkPipe::~FakeNetworkPipe() {
@@ -129,8 +141,16 @@ void FakeNetworkPipe::NetworkProcess() {
     NetworkPacket* packet = capacity_link_.front();
     capacity_link_.pop();
 
-    // Add the packet to the extra delay queue.
-    packet->IncrementArrivalTime(queue_delay_ms_);
+    // Add extra delay and jitter, but make sure the arrival time is not earlier
+    // than the last packet in the queue.
+    int extra_delay = GaussianRandom(queue_delay_ms_,
+                                     queue_delay_deviation_ms_);
+    if (delay_link_.size() > 0 &&
+        packet->arrival_time() + extra_delay <
+        delay_link_.back()->arrival_time()) {
+      extra_delay = delay_link_.back()->arrival_time() - packet->arrival_time();
+    }
+    packet->IncrementArrivalTime(extra_delay);
     delay_link_.push(packet);
   }
 

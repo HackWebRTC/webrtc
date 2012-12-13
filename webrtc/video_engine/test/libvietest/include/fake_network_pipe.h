@@ -37,11 +37,30 @@ class PacketReceiver {
 // TODO(mflodman) Add random and bursty packet loss.
 class FakeNetworkPipe {
  public:
-  FakeNetworkPipe(PacketReceiver* packet_receiver,
-                  size_t queue_length,
-                  int queue_delay_ms,
-                  int link_capacity_kbps,
-                  int loss_percent);
+  struct Configuration {
+    Configuration()
+        : packet_receiver(NULL),
+          queue_length(0),
+          queue_delay_ms(0),
+          delay_standard_deviation_ms(0),
+          link_capacity_kbps(0),
+          loss_percent(0) {
+    }
+    // Callback to deliver received packets.
+    PacketReceiver* packet_receiver;
+    // Queue lenght in number of packets.
+    size_t queue_length;
+    // Delay in addition to capacity induced delay.
+    int queue_delay_ms;
+    // Standard deviation of the extra delay.
+    int delay_standard_deviation_ms;
+    // Link capacity in kbps.
+    int link_capacity_kbps;
+    // Random packet loss. Not implemented.
+    int loss_percent;
+  };
+
+  explicit FakeNetworkPipe(const FakeNetworkPipe::Configuration& configuration);
   ~FakeNetworkPipe();
 
   // Sends a new packet to the link.
@@ -66,6 +85,7 @@ class FakeNetworkPipe {
   // Link configuration.
   const size_t queue_length_;
   const int queue_delay_ms_;
+  const int queue_delay_deviation_ms_;
   const int link_capacity_bytes_ms_;  // In bytes per ms.
 
   const int loss_percent_;
