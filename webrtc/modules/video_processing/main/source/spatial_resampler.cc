@@ -65,12 +65,13 @@ WebRtc_Word32
 VPMSimpleSpatialResampler::ResampleFrame(const I420VideoFrame& inFrame,
                                          I420VideoFrame* outFrame)
 {
+  // Don't copy if frame remains as is.
   if (_resamplingMode == kNoRescaling)
-     return outFrame->CopyFrame(inFrame);
+     return VPM_OK;
   // Check if re-sampling is needed
-  if ((inFrame.width() == _targetWidth) &&
+  else if ((inFrame.width() == _targetWidth) &&
     (inFrame.height() == _targetHeight))  {
-    return outFrame->CopyFrame(inFrame);
+    return VPM_OK;
   }
 
   // Setting scaler

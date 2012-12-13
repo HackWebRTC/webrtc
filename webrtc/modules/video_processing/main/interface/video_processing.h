@@ -266,7 +266,8 @@ public:
     virtual WebRtc_UWord32 DecimatedHeight() const = 0 ;
 
     /**
-    Set the spatial resampling settings of the VPM: The resampler may either be disabled or one of the following:
+    Set the spatial resampling settings of the VPM: The resampler may either be
+    disabled or one of the following:
     scaling to a close to target dimension followed by crop/pad
 
     \param[in] resamplingMode
@@ -279,8 +280,8 @@ public:
     Get Processed (decimated) frame
 	  
     \param[in] frame pointer to the video frame.
-	  
-	  \param[in] processedFrame pointer (double) to the processed frame
+    \param[in] processedFrame pointer (double) to the processed frame. If no
+               processing is required, processedFrame will be NULL.
     
     \return VPM_OK on success, a negative value on error (see error codes)
     */
