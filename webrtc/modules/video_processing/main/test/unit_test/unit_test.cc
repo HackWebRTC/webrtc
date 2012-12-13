@@ -213,13 +213,11 @@ TEST_F(VideoProcessingModuleTest, FrameStats)
 
 TEST_F(VideoProcessingModuleTest, PreprocessorLogic)
 {
-  // Disable temporal sampling.
-  int resolution = 100;
+  // Disable temporal sampling (frame dropping).
   _vpm->EnableTemporalDecimation(false);
+  int resolution = 100;
   EXPECT_EQ(VPM_OK, _vpm->SetMaxFrameRate(30));
   EXPECT_EQ(VPM_OK, _vpm->SetTargetResolution(resolution, resolution, 15));
-  // Revert
-  _vpm->EnableTemporalDecimation(true);
   EXPECT_EQ(VPM_OK, _vpm->SetTargetResolution(resolution, resolution, 30));
   // Disable spatial sampling.
   _vpm->SetInputFrameResampleMode(kNoRescaling);
