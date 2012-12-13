@@ -29,13 +29,14 @@ class RtpRtcpFeedback;
 class ModuleRtpRtcpImpl;
 class Trace;
 
-class RTPReceiver : public RTPReceiverAudio, public RTPReceiverVideo, public Bitrate
+class RTPReceiver : public RTPReceiverVideo, public Bitrate
 {
 public:
     RTPReceiver(const WebRtc_Word32 id,
                 const bool audio,
                 RtpRtcpClock* clock,
-                ModuleRtpRtcpImpl* owner);
+                ModuleRtpRtcpImpl* owner,
+                RtpAudioFeedback* incomingMessagesCallback);
 
     virtual ~RTPReceiver();
 
@@ -154,10 +155,13 @@ public:
 
     void RTXStatus(bool* enable, WebRtc_UWord32* SSRC) const;
 
+    RTPReceiverAudio* GetAudioReceiver() const { return _rtpReceiverAudio; }
+
+    virtual WebRtc_Word32 CallbackOfReceivedPayloadData(
+        const WebRtc_UWord8* payloadData,
+        const WebRtc_UWord16 payloadSize,
+        const WebRtcRTPHeader* rtpHeader);
 protected:
-    virtual WebRtc_Word32 CallbackOfReceivedPayloadData(const WebRtc_UWord8* payloadData,
-                                                        const WebRtc_UWord16 payloadSize,
-                                                        const WebRtcRTPHeader* rtpHeader);
 
     virtual bool RetransmitOfOldPacket(const WebRtc_UWord16 sequenceNumber,
                                        const WebRtc_UWord32 rtpTimeStamp) const;
@@ -189,6 +193,8 @@ private:
     bool ProcessNACKBitRate(WebRtc_UWord32 now);
 
 private:
+    RTPReceiverAudio*       _rtpReceiverAudio;
+
     WebRtc_Word32           _id;
     const bool              _audio;
     ModuleRtpRtcpImpl&      _rtpRtcp;
