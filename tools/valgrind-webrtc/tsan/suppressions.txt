@@ -29,8 +29,7 @@
   ThreadSanitizer:Race
   fun:webrtc::TraceImpl::SetTraceCallbackImpl
   fun:webrtc::Trace::SetTraceCallback
-  fun:webrtc::::LoggingTest::SetUp
-  fun:testing::internal::HandleSehExceptionsInMethodIfSupported
+  ...
 }
 {
   buganizer issue 7313086 TSAN: posix warning with 2 threads
