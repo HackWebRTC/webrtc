@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_ISAC_MACROS_H_
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_ISAC_MACROS_H_
 
-#include "engine_configurations.h"
+#include "webrtc/engine_configurations.h"
 
 namespace webrtc {
 

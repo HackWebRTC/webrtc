@@ -11,18 +11,20 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_INTERFACE_AUDIO_CODING_MODULE_H
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_INTERFACE_AUDIO_CODING_MODULE_H
 
-#include "audio_coding_module_typedefs.h"
-#include "module.h"
-// TODO(turajs): If possible, forward declare and remove the following include.
-#include "module_common_types.h"
-
+#include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
+#include "webrtc/modules/interface/module.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 // forward declarations
 struct CodecInst;
+struct WebRtcRTPHeader;
+class AudioFrame;
+class RTPFragmentationHeader;
 
-#define WEBRTC_10MS_PCM_AUDIO 960 // 16 bits super wideband 48 Khz
+#define WEBRTC_10MS_PCM_AUDIO 960 // 16 bits super wideband 48 kHz
 
 // Callback class used for sending data ready to be packetized
 class AudioPacketizationCallback {
@@ -30,8 +32,11 @@ class AudioPacketizationCallback {
   virtual ~AudioPacketizationCallback() {}
 
   virtual WebRtc_Word32 SendData(
-      FrameType frameType, WebRtc_UWord8 payloadType, WebRtc_UWord32 timeStamp,
-      const WebRtc_UWord8* payloadData, WebRtc_UWord16 payloadSize,
+      FrameType frame_type,
+      WebRtc_UWord8 payload_type,
+      WebRtc_UWord32 timestamp,
+      const WebRtc_UWord8* payload_data,
+      WebRtc_UWord16 payload_len_bytes,
       const RTPFragmentationHeader* fragmentation) = 0;
 };
 
@@ -40,7 +45,7 @@ class AudioCodingFeedback {
  public:
   virtual ~AudioCodingFeedback() {}
 
-  virtual WebRtc_Word32 IncomingDtmf(const WebRtc_UWord8 digitDtmf,
+  virtual WebRtc_Word32 IncomingDtmf(const WebRtc_UWord8 digit_dtmf,
                                      const bool end) = 0;
 };
 
@@ -96,17 +101,17 @@ class AudioCodingModule: public Module {
   // Get supported codec with list number.
   //
   // Input:
-  //   -listId             : list number.
+  //   -list_id             : list number.
   //
   // Output:
   //   -codec              : a structure where the parameters of the codec,
   //                         given by list number is written to.
   //
   // Return value:
-  //   -1 if the list number (listId) is invalid.
+  //   -1 if the list number (list_id) is invalid.
   //    0 if succeeded.
   //
-  static WebRtc_Word32 Codec(const WebRtc_UWord8 listId, CodecInst& codec);
+  static WebRtc_Word32 Codec(const WebRtc_UWord8 list_id, CodecInst& codec);
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 Codec()
@@ -124,7 +129,7 @@ class AudioCodingModule: public Module {
   //                         default parameters of the codec.
   //
   // Return value:
-  //   -1 if the list number (listId) is invalid.
+  //   -1 if no codec matches the given parameters.
   //    0 if succeeded.
   //
   static WebRtc_Word32 Codec(const char* payload_name, CodecInst& codec,
@@ -154,10 +159,10 @@ class AudioCodingModule: public Module {
   // Checks the validity of the parameters of the given codec.
   //
   // Input:
-  //   -codec              : the structur which keeps the parameters of the
+  //   -codec              : the structure which keeps the parameters of the
   //                         codec.
   //
-  // Reurn value:
+  // Return value:
   //   true if the parameters are valid,
   //   false if any parameter is not valid.
   //
@@ -194,7 +199,7 @@ class AudioCodingModule: public Module {
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 RegisterSendCodec()
-  // Registers a codec, specified by "sendCodec," as sending codec.
+  // Registers a codec, specified by |send_codec|, as sending codec.
   // This API can be called multiple of times to register Codec. The last codec
   // registered overwrites the previous ones.
   // The API can also be used to change payload type for CNG and RED, which are
@@ -211,7 +216,7 @@ class AudioCodingModule: public Module {
   // secondary encoder will be unregistered.
   //
   // Input:
-  //   -sendCodec          : Parameters of the codec to be registered, c.f.
+  //   -send_codec         : Parameters of the codec to be registered, c.f.
   //                         common_types.h for the definition of
   //                         CodecInst.
   //
@@ -219,7 +224,7 @@ class AudioCodingModule: public Module {
   //   -1 if failed to initialize,
   //    0 if succeeded.
   //
-  virtual WebRtc_Word32 RegisterSendCodec(const CodecInst& sendCodec) = 0;
+  virtual WebRtc_Word32 RegisterSendCodec(const CodecInst& send_codec) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int RegisterSecondarySendCodec()
@@ -253,13 +258,13 @@ class AudioCodingModule: public Module {
   // Get parameters for the codec currently registered as send codec.
   //
   // Output:
-  //   -currentSendCodec          : parameters of the send codec.
+  //   -current_send_codec          : parameters of the send codec.
   //
   // Return value:
   //   -1 if failed to get send codec,
   //    0 if succeeded.
   //
-  virtual WebRtc_Word32 SendCodec(CodecInst& currentSendCodec) const = 0;
+  virtual WebRtc_Word32 SendCodec(CodecInst& current_send_codec) const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int SecondarySendCodec()
@@ -336,7 +341,7 @@ class AudioCodingModule: public Module {
   // current encoder ACM will resample the audio.
   //
   // Input:
-  //   -audioFrame         : the input audio frame, containing raw audio
+  //   -audio_frame        : the input audio frame, containing raw audio
   //                         sampling frequency etc.,
   //                         c.f. module_common_types.h for definition of
   //                         AudioFrame.
@@ -347,7 +352,7 @@ class AudioCodingModule: public Module {
   //   < -1   to add the frame to the buffer n samples had to be
   //          overwritten, -n is the return value in this case.
   //
-  virtual WebRtc_Word32 Add10MsData(const AudioFrame& audioFrame) = 0;
+  virtual WebRtc_Word32 Add10MsData(const AudioFrame& audio_frame) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // (FEC) Forward Error Correction
@@ -368,14 +373,14 @@ class AudioCodingModule: public Module {
   // This means that FEC is actually a RED scheme.
   //
   // Input:
-  //   -enableFEC          : if true FEC is enabled, otherwise FEC is
+  //   -enable_fec         : if true FEC is enabled, otherwise FEC is
   //                         disabled.
   //
   // Return value:
   //   -1 if failed to set FEC status,
   //    0 if succeeded.
   //
-  virtual WebRtc_Word32 SetFECStatus(const bool enableFEC) = 0;
+  virtual WebRtc_Word32 SetFECStatus(const bool enable_fec) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // bool FECStatus()
@@ -394,7 +399,7 @@ class AudioCodingModule: public Module {
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 SetVAD()
   // If DTX is enabled & the codec does not have internal DTX/VAD
-  // WebRtc VAD will be automatically enabled and 'enableVAD' is ignored.
+  // WebRtc VAD will be automatically enabled and |enable_vad| is ignored.
   //
   // If DTX is disabled but VAD is enabled no DTX packets are send,
   // regardless of whether the codec has internal DTX/VAD or not. In this
@@ -403,11 +408,11 @@ class AudioCodingModule: public Module {
   // NOTE! VAD/DTX is not supported when sending stereo.
   //
   // Inputs:
-  //   -enableDTX          : if true DTX is enabled,
+  //   -enable_dtx         : if true DTX is enabled,
   //                         otherwise DTX is disabled.
-  //   -enableVAD          : if true VAD is enabled,
+  //   -enable_vad         : if true VAD is enabled,
   //                         otherwise VAD is disabled.
-  //   -vadMode            : determines the aggressiveness of VAD. A more
+  //   -vad_mode           : determines the aggressiveness of VAD. A more
   //                         aggressive mode results in more frames labeled
   //                         as in-active, c.f. definition of
   //                         ACMVADMode in audio_coding_module_typedefs.h
@@ -417,27 +422,27 @@ class AudioCodingModule: public Module {
   //   -1 if failed to set up VAD/DTX,
   //    0 if succeeded.
   //
-  virtual WebRtc_Word32 SetVAD(const bool enableDTX = true,
-                               const bool enableVAD = false,
-                               const ACMVADMode vadMode = VADNormal) = 0;
+  virtual WebRtc_Word32 SetVAD(const bool enable_dtx = true,
+                               const bool enable_vad = false,
+                               const ACMVADMode vad_mode = VADNormal) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 VAD()
   // Get VAD status.
   //
   // Outputs:
-  //   -dtxEnabled         : is set to true if DTX is enabled, otherwise
+  //   -dtx_enabled        : is set to true if DTX is enabled, otherwise
   //                         is set to false.
-  //   -vadEnabled         : is set to true if VAD is enabled, otherwise
+  //   -vad_enabled        : is set to true if VAD is enabled, otherwise
   //                         is set to false.
-  //   -vadMode            : is set to the current aggressiveness of VAD.
+  //   -vad_mode            : is set to the current aggressiveness of VAD.
   //
   // Return value:
   //   -1 if fails to retrieve the setting of DTX/VAD,
-  //    0 if succeeeded.
+  //    0 if succeeded.
   //
-  virtual WebRtc_Word32 VAD(bool& dtxEnabled, bool& vadEnabled,
-                            ACMVADMode& vadMode) const = 0;
+  virtual WebRtc_Word32 VAD(bool& dtx_enabled, bool& vad_enabled,
+                            ACMVADMode& vad_mode) const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 ReplaceInternalDTXWithWebRtc()
@@ -445,7 +450,7 @@ class AudioCodingModule: public Module {
   // supported for G729, where this call replaces AnnexB with WebRtc DTX.
   //
   // Input:
-  //   -useWebRtcDTX         : if false (default) the codec built-in DTX/VAD
+  //   -use_webrtc_dtx     : if false (default) the codec built-in DTX/VAD
   //                         scheme is used, otherwise the internal DTX is
   //                         replaced with WebRtc DTX/VAD.
   //
@@ -454,7 +459,7 @@ class AudioCodingModule: public Module {
   //    0 if succeeded.
   //
   virtual WebRtc_Word32 ReplaceInternalDTXWithWebRtc(
-      const bool useWebRtcDTX = false) = 0;
+      const bool use_webrtc_dtx = false) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 IsInternalDTXReplacedWithWebRtc()
@@ -462,7 +467,7 @@ class AudioCodingModule: public Module {
   // WebRtc DTX. This is only supported for G729.
   //
   // Output:
-  //   -usesWebRtcDTX        : is set to true if the codec internal DTX is
+  //   -uses_webrtc_dtx    : is set to true if the codec internal DTX is
   //                         replaced with WebRtc DTX/VAD, otherwise it is set
   //                         to false.
   //
@@ -471,7 +476,7 @@ class AudioCodingModule: public Module {
   //    0 if succeeded.
   //
   virtual WebRtc_Word32 IsInternalDTXReplacedWithWebRtc(
-      bool& usesWebRtcDTX) = 0;
+      bool& uses_webrtc_dtx) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 RegisterVADCallback()
@@ -481,13 +486,13 @@ class AudioCodingModule: public Module {
   // VAD is employed to identify a frame as active/inactive.
   //
   // Input:
-  //   -vadCallback        : pointer to a callback function.
+  //   -vad_callback        : pointer to a callback function.
   //
   // Return value:
   //   -1 if failed to register the callback function.
   //    0 if the callback function is registered successfully.
   //
-  virtual WebRtc_Word32 RegisterVADCallback(ACMVADCallback* vadCallback) = 0;
+  virtual WebRtc_Word32 RegisterVADCallback(ACMVADCallback* vad_callback) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   //   Receiver
@@ -544,7 +549,7 @@ class AudioCodingModule: public Module {
   // codecs, CNG-NB, CNG-WB, CNG-SWB, AVT and RED.
   //
   // Input:
-  //   -receiveCodec       : parameters of the codec to be registered, c.f.
+  //   -receive_codec      : parameters of the codec to be registered, c.f.
   //                         common_types.h for the definition of
   //                         CodecInst.
   //
@@ -552,7 +557,8 @@ class AudioCodingModule: public Module {
   //   -1 if failed to register the codec
   //    0 if the codec registered successfully.
   //
-  virtual WebRtc_Word32 RegisterReceiveCodec(const CodecInst& receiveCodec) = 0;
+  virtual WebRtc_Word32 RegisterReceiveCodec(
+      const CodecInst& receive_codec) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 UnregisterReceiveCodec()
@@ -560,22 +566,22 @@ class AudioCodingModule: public Module {
   // from the list of possible receive codecs.
   //
   // Input:
-  //   -payloadType        : The number representing the payload type to
+  //   -payload_type        : The number representing the payload type to
   //                         unregister.
   //
   // Output:
-  //   -1 if the unregistration fails.
+  //   -1 if fails to unregister.
   //    0 if the given codec is successfully unregistered.
   //
   virtual WebRtc_Word32 UnregisterReceiveCodec(
-      const WebRtc_Word16 receiveCodec) = 0;
+      const WebRtc_Word16 payload_type) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 ReceiveCodec()
   // Get the codec associated with last received payload.
   //
   // Output:
-  //   -currRcvCodec       : parameters of the codec associated with the last
+  //   -curr_receive_codec : parameters of the codec associated with the last
   //                         received payload, c.f. common_types.h for
   //                         the definition of CodecInst.
   //
@@ -583,25 +589,25 @@ class AudioCodingModule: public Module {
   //   -1 if failed to retrieve the codec,
   //    0 if the codec is successfully retrieved.
   //
-  virtual WebRtc_Word32 ReceiveCodec(CodecInst& currRcvCodec) const = 0;
+  virtual WebRtc_Word32 ReceiveCodec(CodecInst& curr_receive_codec) const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 IncomingPacket()
   // Call this function to insert a parsed RTP packet into ACM.
   //
   // Inputs:
-  //   -incomingPayload    : received payload.
-  //   -payloadLengthByte  : the length of payload in bytes.
-  //   -rtpInfo            : the relevant information retrieved from RTP
+  //   -incoming_payload   : received payload.
+  //   -payload_len_bytes  : the length of payload in bytes.
+  //   -rtp_info           : the relevant information retrieved from RTP
   //                         header.
   //
   // Return value:
   //   -1 if failed to push in the payload
   //    0 if payload is successfully pushed in.
   //
-  virtual WebRtc_Word32 IncomingPacket(const WebRtc_UWord8* incomingPayload,
-                                       const WebRtc_Word32 payloadLengthByte,
-                                       const WebRtcRTPHeader& rtpInfo) = 0;
+  virtual WebRtc_Word32 IncomingPacket(const WebRtc_UWord8* incoming_payload,
+                                       const WebRtc_Word32 payload_len_bytes,
+                                       const WebRtcRTPHeader& rtp_info) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 IncomingPayload()
@@ -610,9 +616,9 @@ class AudioCodingModule: public Module {
   // pre-encoded files are pushed in ACM
   //
   // Inputs:
-  //   -incomingPayload    : received payload.
-  //   -payloadLenghtByte  : the length, in bytes, of the received payload.
-  //   -payloadType        : the payload-type. This specifies which codec has
+  //   -incoming_payload   : received payload.
+  //   -payload_len_byte   : the length, in bytes, of the received payload.
+  //   -payload_type       : the payload-type. This specifies which codec has
   //                         to be used to decode the payload.
   //   -timestamp          : send timestamp of the payload. ACM starts with
   //                         a random value and increment it by the
@@ -627,9 +633,9 @@ class AudioCodingModule: public Module {
   //   -1 if failed to push in the payload
   //    0 if payload is successfully pushed in.
   //
-  virtual WebRtc_Word32 IncomingPayload(const WebRtc_UWord8* incomingPayload,
-                                        const WebRtc_Word32 payloadLengthByte,
-                                        const WebRtc_UWord8 payloadType,
+  virtual WebRtc_Word32 IncomingPayload(const WebRtc_UWord8* incoming_payload,
+                                        const WebRtc_Word32 payload_len_byte,
+                                        const WebRtc_UWord8 payload_type,
                                         const WebRtc_UWord32 timestamp = 0) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
@@ -637,22 +643,22 @@ class AudioCodingModule: public Module {
   // Set Minimum playout delay, used for lip-sync.
   //
   // Input:
-  //   -timeMs             : minimum delay in milliseconds.
+  //   -time_ms            : minimum delay in milliseconds.
   //
   // Return value:
   //   -1 if failed to set the delay,
   //    0 if the minimum delay is set.
   //
-  virtual WebRtc_Word32 SetMinimumPlayoutDelay(const WebRtc_Word32 timeMs) = 0;
+  virtual WebRtc_Word32 SetMinimumPlayoutDelay(const WebRtc_Word32 time_ms) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 RegisterIncomingMessagesCallback()
   // Used by the module to deliver messages to the codec module/application
-  // when a Dtmf tone is detected, as well as when it stopped.
+  // when a DTMF tone is detected, as well as when it stopped.
   //
   // Inputs:
-  //   -inMsgCallback      : pointer to callback function which will be called
-  //                         if Dtmf is detected.
+  //   -in_message_callback: pointer to callback function which will be called
+  //                         if DTMF is detected.
   //   -cpt                : enables CPT (Call Progress Tone) detection for the
   //                         specified country. c.f. definition of ACMCountries
   //                         in audio_coding_module_typedefs.h for valid
@@ -665,20 +671,20 @@ class AudioCodingModule: public Module {
   //
   virtual WebRtc_Word32
       RegisterIncomingMessagesCallback(
-          AudioCodingFeedback* inMsgCallback,
+          AudioCodingFeedback* in_message_callback,
           const ACMCountries cpt = ACMDisableCountryDetection) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 SetDtmfPlayoutStatus()
-  // Configure Dtmf playout, i.e. whether out-of-band
-  // Dtmf tones are played or not.
+  // Configure DTMF playout, i.e. whether out-of-band
+  // DTMF tones are played or not.
   //
   // Input:
-  //   -enable             : if true to enable playout out-of-band Dtmf tones,
+  //   -enable             : if true to enable playout out-of-band DTMF tones,
   //                         false to disable.
   //
   // Return value:
-  //   -1 if the method fails, e.g. Dtmf playout is not supported.
+  //   -1 if the method fails, e.g. DTMF playout is not supported.
   //    0 if the status is set successfully.
   //
   virtual WebRtc_Word32 SetDtmfPlayoutStatus(const bool enable) = 0;
@@ -696,7 +702,7 @@ class AudioCodingModule: public Module {
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 SetBackgroundNoiseMode()
   // Sets the mode of the background noise playout in an event of long
-  // packetloss burst. For the valid modes see the declaration of
+  // packet loss burst. For the valid modes see the declaration of
   // ACMBackgroundNoiseMode in audio_coding_module_typedefs.h.
   //
   // Input:
@@ -712,7 +718,7 @@ class AudioCodingModule: public Module {
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 BackgroundNoiseMode()
   // Call this method to get the mode of the background noise playout.
-  // Playout of background noise is a result of a long packetloss burst.
+  // Playout of background noise is a result of a long packet loss burst.
   // See ACMBackgroundNoiseMode in audio_coding_module_typedefs.h for
   // possible modes.
   //
@@ -746,7 +752,7 @@ class AudioCodingModule: public Module {
   // Get the estimate of the Bandwidth, in bits/second, based on the incoming
   // stream. This API is useful in one-way communication scenarios, where
   // the bandwidth information is sent in an out-of-band fashion.
-  // Currently only supported if iSAC is registered as a reciever.
+  // Currently only supported if iSAC is registered as a receiver.
   //
   // Return value:
   //   >0 bandwidth in bits/second.
@@ -762,7 +768,7 @@ class AudioCodingModule: public Module {
   // delay. In FAX mode, NetEQ is optimized to have few delay changes as
   // possible and maintain a constant delay, perhaps large relative to voice
   // mode, to avoid PLC. In streaming mode, we tolerate a little more delay
-  // to acheive better jitter robustness.
+  // to achieve better jitter robustness.
   //
   // Input:
   //   -mode               : playout mode. Possible inputs are:
@@ -786,7 +792,7 @@ class AudioCodingModule: public Module {
   //   fax:         a mode that is optimized for receiving FAX signals.
   //                In this mode NetEq tries to maintain a constant high
   //                delay to avoid PLC if possible.
-  //   streaming:   a mode that is suitable for streaminq. In this mode we
+  //   streaming:   a mode that is suitable for streaming. In this mode we
   //                accept longer delay to improve jitter robustness.
   //
   virtual AudioPlayoutMode PlayoutMode() const = 0;
@@ -797,12 +803,12 @@ class AudioCodingModule: public Module {
   // frequency. ACM will perform a resampling if required.
   //
   // Input:
-  //   -desiredFreqHz      : the desired sampling frequency, in Hertz, of the
+  //   -desired_freq_hz    : the desired sampling frequency, in Hertz, of the
   //                         output audio. If set to -1, the function returns the
   //                         audio at the current sampling frequency.
   //
   // Output:
-  //   -audioFrame         : output audio frame which contains raw audio data
+  //   -audio_frame        : output audio frame which contains raw audio data
   //                         and other relevant parameters, c.f.
   //                         module_common_types.h for the definition of
   //                         AudioFrame.
@@ -812,8 +818,8 @@ class AudioCodingModule: public Module {
   //    0 if the function succeeds.
   //
   virtual WebRtc_Word32
-      PlayoutData10Ms(const WebRtc_Word32 desiredFreqHz,
-                      AudioFrame &audioFrame) = 0;
+      PlayoutData10Ms(const WebRtc_Word32 desired_freq_hz,
+                      AudioFrame &audio_frame) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   //   (CNG) Comfort Noise Generation
@@ -855,43 +861,43 @@ class AudioCodingModule: public Module {
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 SetISACMaxRate()
   // Set the maximum instantaneous rate of iSAC. For a payload of B bits
-  // with a frame-size of T sec the instantaneous rate is B/T bist per
-  // second. Therefore, (B/T < maxRateBitPerSec) and
-  // (B < maxPayloadLenBytes * 8) are always satisfied for iSAC payloads,
+  // with a frame-size of T sec the instantaneous rate is B/T bits per
+  // second. Therefore, (B/T < |max_rate_bps|) and
+  // (B < |max_payload_len_bytes| * 8) are always satisfied for iSAC payloads,
   // c.f SetISACMaxPayloadSize().
   //
   // Input:
-  //   -maxRateBitPerSec   : maximum instantaneous bit-rate given in bits/sec.
+  //   -max_rate_bps       : maximum instantaneous bit-rate given in bits/sec.
   //
   // Return value:
   //   -1 if failed to set the maximum rate.
   //    0 if the maximum rate is set successfully.
   //
   virtual WebRtc_Word32 SetISACMaxRate(
-      const WebRtc_UWord32 maxRateBitPerSec) = 0;
+      const WebRtc_UWord32 max_rate_bps) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 SetISACMaxPayloadSize()
   // Set the maximum payload size of iSAC packets. No iSAC payload,
   // regardless of its frame-size, may exceed the given limit. For
-  // an iSAC payload of size B bits and frame-size T sec we have;
-  // (B < maxPayloadLenBytes * 8) and (B/T < maxRateBitPerSec), c.f.
+  // an iSAC payload of size B bits and frame-size T seconds we have;
+  // (B < |max_payload_len_bytes| * 8) and (B/T < |max_rate_bps|), c.f.
   // SetISACMaxRate().
   //
   // Input:
-  //   -maxPayloadLenBytes : maximum payload size in bytes.
+  //   -max_payload_len_bytes : maximum payload size in bytes.
   //
   // Return value:
-  //   -1 if failed to set the maximm  payload-size.
-  //    0 if the given linit is seet successfully.
+  //   -1 if failed to set the maximum  payload-size.
+  //    0 if the given length is set successfully.
   //
   virtual WebRtc_Word32 SetISACMaxPayloadSize(
-      const WebRtc_UWord16 maxPayloadLenBytes) = 0;
+      const WebRtc_UWord16 max_payload_len_bytes) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 ConfigISACBandwidthEstimator()
   // Call this function to configure the bandwidth estimator of ISAC.
-  // During the adaptation of bit-rate, iSAC atomatically adjusts the
+  // During the adaptation of bit-rate, iSAC automatically adjusts the
   // frame-size (either 30 or 60 ms) to save on RTP header. The initial
   // frame-size can be specified by the first argument. The configuration also
   // regards the initial estimate of bandwidths. The estimator starts from
@@ -900,22 +906,22 @@ class AudioCodingModule: public Module {
   // adaptation of frame-size. This is specified by the last parameter.
   //
   // Input:
-  //   -initFrameSizeMsec  : initial frame-size in milisecods. For iSAC-wb
+  //   -init_frame_size_ms : initial frame-size in milliseconds. For iSAC-wb
   //                         30 ms and 60 ms (default) are acceptable values,
   //                         and for iSAC-swb 30 ms is the only acceptable
-  //                         value. Zero indiates default value.
-  //   -initRateBitPerSec  : initial estimate of the bandwidth. Values
+  //                         value. Zero indicates default value.
+  //   -init_rate_bps      : initial estimate of the bandwidth. Values
   //                         between 10000 and 58000 are acceptable.
-  //   -enforceFrameSize   : if true, the frame-size will not be adapted.
+  //   -enforce_srame_size : if true, the frame-size will not be adapted.
   //
   // Return value:
   //   -1 if failed to configure the bandwidth estimator,
   //    0 if the configuration was successfully applied.
   //
   virtual WebRtc_Word32 ConfigISACBandwidthEstimator(
-      const WebRtc_UWord8 initFrameSizeMsec,
-      const WebRtc_UWord16 initRateBitPerSec,
-      const bool enforceFrameSize = false) = 0;
+      const WebRtc_UWord8 init_frame_size_ms,
+      const WebRtc_UWord16 init_rate_bps,
+      const bool enforce_frame_size = false) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   //   statistics
@@ -926,14 +932,14 @@ class AudioCodingModule: public Module {
   // Get network statistics.
   //
   // Input:
-  //   -networkStatistics  : a structure that contains network statistics.
+  //   -network_statistics : a structure that contains network statistics.
   //
   // Return value:
   //   -1 if failed to set the network statistics,
   //    0 if statistics are set successfully.
   //
   virtual WebRtc_Word32 NetworkStatistics(
-      ACMNetworkStatistics& networkStatistics) const = 0;
+      ACMNetworkStatistics& network_statistics) const = 0;
 };
 
 }  // namespace webrtc

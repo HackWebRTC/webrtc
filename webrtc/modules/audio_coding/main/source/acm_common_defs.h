@@ -13,10 +13,10 @@
 
 #include <string.h>
 
-#include "audio_coding_module_typedefs.h"
-#include "common_types.h"
-#include "engine_configurations.h"
-#include "typedefs.h"
+#include "webrtc/common_types.h"
+#include "webrtc/engine_configurations.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
+#include "webrtc/typedefs.h"
 
 // Checks for enabled codecs, we prevent enabling codecs which are not
 // compatible.
@@ -26,10 +26,10 @@
 
 #ifdef WIN32
 // OS-dependent case-insensitive string comparison
-#define STR_CASE_CMP(x,y) ::_stricmp(x,y)
+#define STR_CASE_CMP(x, y) ::_stricmp(x, y)
 #else
 // OS-dependent case-insensitive string comparison
-#define STR_CASE_CMP(x,y) ::strcasecmp(x,y)
+#define STR_CASE_CMP(x, y) ::strcasecmp(x, y)
 #endif
 
 namespace webrtc {
@@ -78,40 +78,40 @@ enum WebRtcACMEncodingType {
 // A structure which contains codec parameters. For instance, used when
 // initializing encoder and decoder.
 //
-//   codecInstant            : c.f. common_types.h
-//   enableDTX               : set true to enable DTX. If codec does not have
-//                             internal DTX, this will enable VAD.
-//   enableVAD               : set true to enable VAD.
-//   vadMode                 : VAD mode, c.f. audio_coding_module_typedefs.h
-//                             for possible values.
+//   codec_inst: c.f. common_types.h
+//   enable_dtx: set true to enable DTX. If codec does not have
+//               internal DTX, this will enable VAD.
+//   enable_vad: set true to enable VAD.
+//   vad_mode: VAD mode, c.f. audio_coding_module_typedefs.h
+//             for possible values.
 struct WebRtcACMCodecParams {
-  CodecInst codecInstant;
-  bool enableDTX;
-  bool enableVAD;
-  ACMVADMode vadMode;
+  CodecInst codec_inst;
+  bool enable_dtx;
+  bool enable_vad;
+  ACMVADMode vad_mode;
 };
 
 // A structure that encapsulates audio buffer and related parameters
 // used for synchronization of audio of two ACMs.
 //
-//   inAudio                 : same as ACMGenericCodec::_inAudio
-//   inAudioIxRead           : same as ACMGenericCodec::_inAudioIxRead
-//   inAudioIxWrite          : same as ACMGenericCodec::_inAudioIxWrite
-//   inTimestamp             : same as ACMGenericCodec::_inTimestamp
-//   inTimestampIxWrite      : same as ACMGenericCodec::_inTImestampIxWrite
-//   lastTimestamp           : same as ACMGenericCodec::_lastTimestamp
-//   lastInTimestamp         : same as AudioCodingModuleImpl::_lastInTimestamp
+//   in_audio: same as ACMGenericCodec::in_audio_
+//   in_audio_ix_read: same as ACMGenericCodec::in_audio_ix_read_
+//   in_audio_ix_write: same as ACMGenericCodec::in_audio_ix_write_
+//   in_timestamp: same as ACMGenericCodec::in_timestamp_
+//   in_timestamp_ix_write: same as ACMGenericCodec::in_timestamp_ix_write_
+//   last_timestamp: same as ACMGenericCodec::last_timestamp_
+//   last_in_timestamp: same as AudioCodingModuleImpl::last_in_timestamp_
 //
 struct WebRtcACMAudioBuff {
-  WebRtc_Word16 inAudio[AUDIO_BUFFER_SIZE_W16];
-  WebRtc_Word16 inAudioIxRead;
-  WebRtc_Word16 inAudioIxWrite;
-  WebRtc_UWord32 inTimestamp[TIMESTAMP_BUFFER_SIZE_W32];
-  WebRtc_Word16 inTimestampIxWrite;
-  WebRtc_UWord32 lastTimestamp;
-  WebRtc_UWord32 lastInTimestamp;
+  WebRtc_Word16 in_audio[AUDIO_BUFFER_SIZE_W16];
+  WebRtc_Word16 in_audio_ix_read;
+  WebRtc_Word16 in_audio_ix_write;
+  WebRtc_UWord32 in_timestamp[TIMESTAMP_BUFFER_SIZE_W32];
+  WebRtc_Word16 in_timestamp_ix_write;
+  WebRtc_UWord32 last_timestamp;
+  WebRtc_UWord32 last_in_timestamp;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_COMMON_DEFS_H_

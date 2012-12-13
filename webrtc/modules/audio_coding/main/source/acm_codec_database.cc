@@ -15,90 +15,90 @@
 
 // TODO(tlegrand): Change constant input pointers in all functions to constant
 // references, where appropriate.
-#include "acm_codec_database.h"
+#include "webrtc/modules/audio_coding/main/source/acm_codec_database.h"
 
 #include <stdio.h>
 
-#include "acm_common_defs.h"
-#include "trace.h"
+#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 // Includes needed to create the codecs.
 // G.711, PCM mu-law and A-law.
-#include "acm_pcma.h"
-#include "acm_pcmu.h"
-#include "g711_interface.h"
+#include "webrtc/modules/audio_coding/codecs/g711/include/g711_interface.h"
+#include "webrtc/modules/audio_coding/main/source/acm_pcma.h"
+#include "webrtc/modules/audio_coding/main/source/acm_pcmu.h"
 // CNG.
-#include "acm_cng.h"
-#include "webrtc_cng.h"
+#include "webrtc/modules/audio_coding/codecs/cng/include/webrtc_cng.h"
+#include "webrtc/modules/audio_coding/main/source/acm_cng.h"
 // NetEQ.
-#include "webrtc_neteq.h"
+#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq.h"
 #ifdef WEBRTC_CODEC_ISAC
-    #include "acm_isac.h"
-    #include "acm_isac_macros.h"
-    #include "isac.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
+#include "webrtc/modules/audio_coding/main/source/acm_isac.h"
+#include "webrtc/modules/audio_coding/main/source/acm_isac_macros.h"
 #endif
 #ifdef WEBRTC_CODEC_ISACFX
-    #include "acm_isac.h"
-    #include "acm_isac_macros.h"
-    #include "isacfix.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
+#include "webrtc/modules/audio_coding/main/source/acm_isac.h"
+#include "webrtc/modules/audio_coding/main/source/acm_isac_macros.h"
 #endif
 #ifdef WEBRTC_CODEC_PCM16
-    #include "pcm16b.h"
-    #include "acm_pcm16b.h"
+#include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
+#include "webrtc/modules/audio_coding/main/source/acm_pcm16b.h"
 #endif
 #ifdef WEBRTC_CODEC_ILBC
-    #include "acm_ilbc.h"
-    #include "ilbc.h"
+#include "webrtc/modules/audio_coding/codecs/ilbc/interface/ilbc.h"
+#include "webrtc/modules/audio_coding/main/source/acm_ilbc.h"
 #endif
 #ifdef WEBRTC_CODEC_AMR
-    #include "acm_amr.h"
-    #include "amr_interface.h"
+#include "amr_interface.h"
+#include "webrtc/modules/audio_coding/main/source/acm_amr.h"
 #endif
 #ifdef WEBRTC_CODEC_AMRWB
-    #include "acm_amrwb.h"
-    #include "amrwb_interface.h"
+#include "amrwb_interface.h"
+#include "webrtc/modules/audio_coding/main/source/acm_amrwb.h"
 #endif
 #ifdef WEBRTC_CODEC_CELT
-    #include "acm_celt.h"
-    #include "celt_interface.h"
+#include "celt_interface.h"
+#include "webrtc/modules/audio_coding/main/source/acm_celt.h"
 #endif
 #ifdef WEBRTC_CODEC_G722
-    #include "acm_g722.h"
-    #include "g722_interface.h"
+#include "webrtc/modules/audio_coding/codecs/g722/include/g722_interface.h"
+#include "webrtc/modules/audio_coding/main/source/acm_g722.h"
 #endif
 #ifdef WEBRTC_CODEC_G722_1
-    #include "acm_g7221.h"
-    #include "g7221_interface.h"
+#include "g7221_interface.h"
+#include "webrtc/modules/audio_coding/main/source/acm_g7221.h"
 #endif
 #ifdef WEBRTC_CODEC_G722_1C
-    #include "acm_g7221c.h"
-    #include "g7221c_interface.h"
+#include "g7221c_interface.h"
+#include "webrtc/modules/audio_coding/main/source/acm_g7221c.h"
 #endif
 #ifdef WEBRTC_CODEC_G729
-    #include "acm_g729.h"
-    #include "g729_interface.h"
+#include "g729_interface.h"
+#include "webrtc/modules/audio_coding/main/source/acm_g729.h"
 #endif
 #ifdef WEBRTC_CODEC_G729_1
-    #include "acm_g7291.h"
-    #include "g7291_interface.h"
+#include "g7291_interface.h"
+#include "webrtc/modules/audio_coding/main/source/acm_g7291.h"
 #endif
 #ifdef WEBRTC_CODEC_GSMFR
-    #include "acm_gsmfr.h"
-    #include "gsmfr_interface.h"
+#include "gsmfr_interface.h"
+#include "webrtc/modules/audio_coding/main/source/acm_gsmfr.h"
 #endif
 #ifdef WEBRTC_CODEC_OPUS
-    #include "acm_opus.h"
-    #include "modules/audio_coding/codecs/opus/interface/opus_interface.h"
+#include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
+#include "webrtc/modules/audio_coding/main/source/acm_opus.h"
 #endif
 #ifdef WEBRTC_CODEC_SPEEX
-    #include "acm_speex.h"
-    #include "speex_interface.h"
+#include "speex_interface.h"
+#include "webrtc/modules/audio_coding/main/source/acm_speex.h"
 #endif
 #ifdef WEBRTC_CODEC_AVT
-    #include "acm_dtmf_playout.h"
+#include "webrtc/modules/audio_coding/main/source/acm_dtmf_playout.h"
 #endif
 #ifdef WEBRTC_CODEC_RED
-    #include "acm_red.h"
+#include "webrtc/modules/audio_coding/main/source/acm_red.h"
 #endif
 
 namespace webrtc {
@@ -108,19 +108,19 @@ namespace webrtc {
 // are defined they will receive reserved fixed payload types (values 69-95).
 const int kDynamicPayloadtypes[ACMCodecDB::kMaxNumCodecs] = {
   107, 108, 109, 111, 112, 113, 114, 115, 116, 117, 92,
-   91,  90,  89,  88,  87,  86,  85,  84,  83,  82,  81, 80,
-   79,  78,  77,  76,  75,  74,  73,  72,  71,  70,  69, 68,
-   67, 66, 65
+  91,  90,  89,  88,  87,  86,  85,  84,  83,  82,  81, 80,
+  79,  78,  77,  76,  75,  74,  73,  72,  71,  70,  69, 68,
+  67, 66, 65
 };
 
 // Creates database with all supported codecs at compile time.
 // Each entry needs the following parameters in the given order:
 // payload type, name, sampling frequency, packet size in samples,
 // number of channels, and default rate.
-#if (defined(WEBRTC_CODEC_AMR) || defined(WEBRTC_CODEC_AMRWB) \
-  || defined(WEBRTC_CODEC_CELT) || defined(WEBRTC_CODEC_G722_1) \
-  || defined(WEBRTC_CODEC_G722_1C) || defined(WEBRTC_CODEC_G729_1) \
-  || defined(WEBRTC_CODEC_PCM16) || defined(WEBRTC_CODEC_SPEEX))
+#if (defined(WEBRTC_CODEC_AMR) || defined(WEBRTC_CODEC_AMRWB) || \
+    defined(WEBRTC_CODEC_CELT) || defined(WEBRTC_CODEC_G722_1) || \
+    defined(WEBRTC_CODEC_G722_1C) || defined(WEBRTC_CODEC_G729_1) || \
+    defined(WEBRTC_CODEC_PCM16) || defined(WEBRTC_CODEC_SPEEX))
 static int count_database = 0;
 #endif
 
@@ -219,180 +219,180 @@ const CodecInst ACMCodecDB::database_[] = {
 // Basic block samples, max number of channels that are supported.
 const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-  {2, {kIsacPacSize480, kIsacPacSize960}, 0, 1},
+    {2, {kIsacPacSize480, kIsacPacSize960}, 0, 1},
 # if (defined(WEBRTC_CODEC_ISAC))
-  {1, {kIsacPacSize960}, 0, 1},
-  {1, {kIsacPacSize1440}, 0, 1},
+    {1, {kIsacPacSize960}, 0, 1},
+    {1, {kIsacPacSize1440}, 0, 1},
 # endif
 #endif
 #ifdef WEBRTC_CODEC_PCM16
-  // Mono
-  {4, {80, 160, 240, 320}, 0, 2},
-  {4, {160, 320, 480, 640}, 0, 2},
-  {2, {320, 640}, 0, 2},
-  // Stereo
-  {4, {80, 160, 240, 320}, 0, 2},
-  {4, {160, 320, 480, 640}, 0, 2},
-  {2, {320, 640}, 0, 2},
+    // Mono
+    {4, {80, 160, 240, 320}, 0, 2},
+    {4, {160, 320, 480, 640}, 0, 2},
+    {2, {320, 640}, 0, 2},
+    // Stereo
+    {4, {80, 160, 240, 320}, 0, 2},
+    {4, {160, 320, 480, 640}, 0, 2},
+    {2, {320, 640}, 0, 2},
 #endif
-  // G.711, PCM mu-law and A-law.
-  // Mono
-  {6, {80, 160, 240, 320, 400, 480}, 0, 2},
-  {6, {80, 160, 240, 320, 400, 480}, 0, 2},
-  // Stereo
-  {6, {80, 160, 240, 320, 400, 480}, 0, 2},
-  {6, {80, 160, 240, 320, 400, 480}, 0, 2},
+    // G.711, PCM mu-law and A-law.
+    // Mono
+    {6, {80, 160, 240, 320, 400, 480}, 0, 2},
+    {6, {80, 160, 240, 320, 400, 480}, 0, 2},
+    // Stereo
+    {6, {80, 160, 240, 320, 400, 480}, 0, 2},
+    {6, {80, 160, 240, 320, 400, 480}, 0, 2},
 #ifdef WEBRTC_CODEC_ILBC
-  {4, {160, 240, 320, 480}, 0, 1},
+    {4, {160, 240, 320, 480}, 0, 1},
 #endif
 #ifdef WEBRTC_CODEC_AMR
-  {3, {160, 320, 480}, 0, 1},
+    {3, {160, 320, 480}, 0, 1},
 #endif
 #ifdef WEBRTC_CODEC_AMRWB
-  {3, {320, 640, 960}, 0, 1},
+    {3, {320, 640, 960}, 0, 1},
 #endif
 #ifdef WEBRTC_CODEC_CELT
-  // Mono
-  {1, {640}, 0, 2},
-  // Stereo
-  {1, {640}, 0, 2},
+    // Mono
+    {1, {640}, 0, 2},
+    // Stereo
+    {1, {640}, 0, 2},
 #endif
 #ifdef WEBRTC_CODEC_G722
-  // Mono
-  {6, {160, 320, 480, 640, 800, 960}, 0, 2},
-  // Stereo
-  {6, {160, 320, 480, 640, 800, 960}, 0, 2},
+    // Mono
+    {6, {160, 320, 480, 640, 800, 960}, 0, 2},
+    // Stereo
+    {6, {160, 320, 480, 640, 800, 960}, 0, 2},
 #endif
 #ifdef WEBRTC_CODEC_G722_1
-  {1, {320}, 320, 1},
-  {1, {320}, 320, 1},
-  {1, {320}, 320, 1},
+    {1, {320}, 320, 1},
+    {1, {320}, 320, 1},
+    {1, {320}, 320, 1},
 #endif
 #ifdef WEBRTC_CODEC_G722_1C
-  {1, {640}, 640, 1},
-  {1, {640}, 640, 1},
-  {1, {640}, 640, 1},
+    {1, {640}, 640, 1},
+    {1, {640}, 640, 1},
+    {1, {640}, 640, 1},
 #endif
 #ifdef WEBRTC_CODEC_G729
-  {6, {80, 160, 240, 320, 400, 480}, 0, 1},
+    {6, {80, 160, 240, 320, 400, 480}, 0, 1},
 #endif
 #ifdef WEBRTC_CODEC_G729_1
-  {3, {320, 640, 960}, 0, 1},
+    {3, {320, 640, 960}, 0, 1},
 #endif
 #ifdef WEBRTC_CODEC_GSMFR
-  {3, {160, 320, 480}, 160, 1},
+    {3, {160, 320, 480}, 160, 1},
 #endif
 #ifdef WEBRTC_CODEC_OPUS
-  // Opus supports frames shorter than 10ms,
-  // but it doesn't help us to use them.
-  // Mono and stereo.
-  {1, {960}, 0, 2},
+    // Opus supports frames shorter than 10ms,
+    // but it doesn't help us to use them.
+    // Mono and stereo.
+    {1, {960}, 0, 2},
 #endif
 #ifdef WEBRTC_CODEC_SPEEX
-  {3, {160, 320, 480}, 0, 1},
-  {3, {320, 640, 960}, 0, 1},
+    {3, {160, 320, 480}, 0, 1},
+    {3, {320, 640, 960}, 0, 1},
 #endif
-  // Comfort noise for three different sampling frequencies.
-  {1, {240}, 240, 1},
-  {1, {480}, 480, 1},
-  {1, {960}, 960, 1},
-  {1, {1440}, 1440, 1},
+    // Comfort noise for three different sampling frequencies.
+    {1, {240}, 240, 1},
+    {1, {480}, 480, 1},
+    {1, {960}, 960, 1},
+    {1, {1440}, 1440, 1},
 #ifdef WEBRTC_CODEC_AVT
-  {1, {240}, 240, 1},
+    {1, {240}, 240, 1},
 #endif
 #ifdef WEBRTC_CODEC_RED
-  {1, {0}, 0, 1},
+    {1, {0}, 0, 1},
 #endif
-  // To prevent compile errors due to trailing commas.
-  {-1, {-1}, -1, -1}
+    // To prevent compile errors due to trailing commas.
+    {-1, {-1}, -1, -1}
 };
 
 // Create a database of all NetEQ decoders at compile time.
 const WebRtcNetEQDecoder ACMCodecDB::neteq_decoders_[] = {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-  kDecoderISAC,
+    kDecoderISAC,
 # if (defined(WEBRTC_CODEC_ISAC))
-  kDecoderISACswb,
-  kDecoderISACfb,
+    kDecoderISACswb,
+    kDecoderISACfb,
 # endif
 #endif
 #ifdef WEBRTC_CODEC_PCM16
-  // Mono
-  kDecoderPCM16B,
-  kDecoderPCM16Bwb,
-  kDecoderPCM16Bswb32kHz,
-  // Stereo
-  kDecoderPCM16B_2ch,
-  kDecoderPCM16Bwb_2ch,
-  kDecoderPCM16Bswb32kHz_2ch,
+    // Mono
+    kDecoderPCM16B,
+    kDecoderPCM16Bwb,
+    kDecoderPCM16Bswb32kHz,
+    // Stereo
+    kDecoderPCM16B_2ch,
+    kDecoderPCM16Bwb_2ch,
+    kDecoderPCM16Bswb32kHz_2ch,
 #endif
-  // G.711, PCM mu-las and A-law.
-  // Mono
-  kDecoderPCMu,
-  kDecoderPCMa,
-  // Stereo
-  kDecoderPCMu_2ch,
-  kDecoderPCMa_2ch,
+    // G.711, PCM mu-las and A-law.
+    // Mono
+    kDecoderPCMu,
+    kDecoderPCMa,
+    // Stereo
+    kDecoderPCMu_2ch,
+    kDecoderPCMa_2ch,
 #ifdef WEBRTC_CODEC_ILBC
-  kDecoderILBC,
+    kDecoderILBC,
 #endif
 #ifdef WEBRTC_CODEC_AMR
-  kDecoderAMR,
+    kDecoderAMR,
 #endif
 #ifdef WEBRTC_CODEC_AMRWB
-  kDecoderAMRWB,
+    kDecoderAMRWB,
 #endif
 #ifdef WEBRTC_CODEC_CELT
-  // Mono
-  kDecoderCELT_32,
-  // Stereo
-  kDecoderCELT_32_2ch,
+    // Mono
+    kDecoderCELT_32,
+    // Stereo
+    kDecoderCELT_32_2ch,
 #endif
 #ifdef WEBRTC_CODEC_G722
-  // Mono
-  kDecoderG722,
-  // Stereo
-  kDecoderG722_2ch,
+    // Mono
+    kDecoderG722,
+    // Stereo
+    kDecoderG722_2ch,
 #endif
 #ifdef WEBRTC_CODEC_G722_1
-  kDecoderG722_1_32,
-  kDecoderG722_1_24,
-  kDecoderG722_1_16,
+    kDecoderG722_1_32,
+    kDecoderG722_1_24,
+    kDecoderG722_1_16,
 #endif
 #ifdef WEBRTC_CODEC_G722_1C
-  kDecoderG722_1C_48,
-  kDecoderG722_1C_32,
-  kDecoderG722_1C_24,
+    kDecoderG722_1C_48,
+    kDecoderG722_1C_32,
+    kDecoderG722_1C_24,
 #endif
 #ifdef WEBRTC_CODEC_G729
-  kDecoderG729,
+    kDecoderG729,
 #endif
 #ifdef WEBRTC_CODEC_G729_1
-  kDecoderG729_1,
+    kDecoderG729_1,
 #endif
 #ifdef WEBRTC_CODEC_GSMFR
-  kDecoderGSMFR,
+    kDecoderGSMFR,
 #endif
 #ifdef WEBRTC_CODEC_OPUS
-  // Mono and stereo.
-  kDecoderOpus,
+    // Mono and stereo.
+    kDecoderOpus,
 #endif
 #ifdef WEBRTC_CODEC_SPEEX
-  kDecoderSPEEX_8,
-  kDecoderSPEEX_16,
+    kDecoderSPEEX_8,
+    kDecoderSPEEX_16,
 #endif
-  // Comfort noise for three different sampling frequencies.
-  kDecoderCNG,
-  kDecoderCNG,
-  kDecoderCNG,
-  kDecoderCNG,
+    // Comfort noise for three different sampling frequencies.
+    kDecoderCNG,
+    kDecoderCNG,
+    kDecoderCNG,
+    kDecoderCNG,
 #ifdef WEBRTC_CODEC_AVT
-  kDecoderAVT,
+    kDecoderAVT,
 #endif
 #ifdef WEBRTC_CODEC_RED
-  kDecoderRED,
+    kDecoderRED,
 #endif
-  kDecoderReservedEnd
+    kDecoderReservedEnd
 };
 
 // Get codec information from database.
@@ -587,7 +587,7 @@ int ACMCodecDB::CodecId(const char* payload_name, int frequency, int channels) {
 }
 // Gets codec id number, and mirror id, from database for the receiver.
 int ACMCodecDB::ReceiverCodecNumber(const CodecInst* codec_inst,
-    int* mirror_id) {
+                                    int* mirror_id) {
   // Look for a matching codec in the database.
   int codec_id = CodecId(codec_inst);
 
@@ -618,7 +618,7 @@ int ACMCodecDB::CodecFreq(int codec_id) {
 int ACMCodecDB::BasicCodingBlock(int codec_id) {
   // Error check to see that codec_id is not out of bounds.
   if (codec_id < 0 || codec_id >= kNumCodecs) {
-      return -1;
+    return -1;
   }
 
   return codec_settings_[codec_id].basic_block_samples;

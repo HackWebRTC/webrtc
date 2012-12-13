@@ -8,64 +8,63 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "acm_g722.h"
-#include "acm_codec_database.h"
-#include "acm_common_defs.h"
-#include "acm_neteq.h"
-#include "trace.h"
-#include "webrtc_neteq.h"
-#include "webrtc_neteq_help_macros.h"
-#include "g722_interface.h"
+#include "webrtc/modules/audio_coding/main/source/acm_g722.h"
+
+#include "webrtc/modules/audio_coding/codecs/g722/include/g722_interface.h"
+#include "webrtc/modules/audio_coding/main/source/acm_codec_database.h"
+#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/main/source/acm_neteq.h"
+#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq.h"
+#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq_help_macros.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
 #ifndef WEBRTC_CODEC_G722
 
-ACMG722::ACMG722(WebRtc_Word16 /* codecID */)
-    : _ptrEncStr(NULL),
-      _ptrDecStr(NULL),
-      _encoderInstPtr(NULL),
-      _encoderInstPtrRight(NULL),
-      _decoderInstPtr(NULL) {
-  return;
-}
+ACMG722::ACMG722(WebRtc_Word16 /* codec_id */)
+    : ptr_enc_str_(NULL),
+      ptr_dec_str_(NULL),
+      encoder_inst_ptr_(NULL),
+      encoder_inst_ptr_right_(NULL),
+      decoder_inst_ptr_(NULL) {}
 
-ACMG722::~ACMG722() {
-  return;
-}
+ACMG722::~ACMG722() {}
 
-WebRtc_Word32 ACMG722::Add10MsDataSafe(const WebRtc_UWord32 /* timestamp */,
-                                       const WebRtc_Word16* /* data */,
-                                       const WebRtc_UWord16 /* lengthSmpl */,
-                                       const WebRtc_UWord8 /* audioChannel */) {
+WebRtc_Word32 ACMG722::Add10MsDataSafe(
+    const WebRtc_UWord32 /* timestamp */,
+    const WebRtc_Word16* /* data */,
+    const WebRtc_UWord16 /* length_smpl */,
+    const WebRtc_UWord8 /* audio_channel */) {
   return -1;
 }
 
-WebRtc_Word16 ACMG722::InternalEncode(WebRtc_UWord8* /* bitStream */,
-                                      WebRtc_Word16* /* bitStreamLenByte */) {
+WebRtc_Word16 ACMG722::InternalEncode(
+    WebRtc_UWord8* /* bitstream */,
+    WebRtc_Word16* /* bitstream_len_byte */) {
   return -1;
 }
 
-WebRtc_Word16 ACMG722::DecodeSafe(WebRtc_UWord8* /* bitStream */,
-                                  WebRtc_Word16 /* bitStreamLenByte */,
+WebRtc_Word16 ACMG722::DecodeSafe(WebRtc_UWord8* /* bitstream */,
+                                  WebRtc_Word16 /* bitstream_len_byte */,
                                   WebRtc_Word16* /* audio */,
-                                  WebRtc_Word16* /* audioSamples */,
-                                  WebRtc_Word8* /* speechType */) {
+                                  WebRtc_Word16* /* audio_samples */,
+                                  WebRtc_Word8* /* speech_type */) {
   return -1;
 }
 
 WebRtc_Word16 ACMG722::InternalInitEncoder(
-    WebRtcACMCodecParams* /* codecParams */) {
+    WebRtcACMCodecParams* /* codec_params */) {
   return -1;
 }
 
 WebRtc_Word16 ACMG722::InternalInitDecoder(
-    WebRtcACMCodecParams* /* codecParams */) {
+    WebRtcACMCodecParams* /* codec_params */) {
   return -1;
 }
 
-WebRtc_Word32 ACMG722::CodecDef(WebRtcNetEQ_CodecDef& /* codecDef */,
-                                const CodecInst& /* codecInst */) {
+WebRtc_Word32 ACMG722::CodecDef(WebRtcNetEQ_CodecDef& /* codec_def */,
+                                const CodecInst& /* codec_inst */) {
   return -1;
 }
 
@@ -89,7 +88,7 @@ void ACMG722::DestructDecoderSafe() {
   return;
 }
 
-void ACMG722::InternalDestructEncoderInst(void* /* ptrInst */) {
+void ACMG722::InternalDestructEncoderInst(void* /* ptr_inst */) {
   return;
 }
 
@@ -100,158 +99,160 @@ void ACMG722::SplitStereoPacket(uint8_t* /*payload*/,
 
 // Encoder and decoder memory
 struct ACMG722EncStr {
-  G722EncInst* inst; // instance for left channel in case of stereo
-  G722EncInst* instRight; // instance for right channel in case of stereo
+  G722EncInst* inst;  // instance for left channel in case of stereo
+  G722EncInst* inst_right;  // instance for right channel in case of stereo
 };
 struct ACMG722DecStr {
-  G722DecInst* inst; // instance for left channel in case of stereo
-  G722DecInst* instRight; // instance for right channel in case of stereo
+  G722DecInst* inst;  // instance for left channel in case of stereo
+  G722DecInst* inst_right;  // instance for right channel in case of stereo
 };
 
-ACMG722::ACMG722(WebRtc_Word16 codecID)
-    : _encoderInstPtr(NULL),
-      _encoderInstPtrRight(NULL),
-      _decoderInstPtr(NULL) {
+ACMG722::ACMG722(WebRtc_Word16 codec_id)
+    : encoder_inst_ptr_(NULL),
+      encoder_inst_ptr_right_(NULL),
+      decoder_inst_ptr_(NULL) {
   // Encoder
-  _ptrEncStr = new ACMG722EncStr;
-  if (_ptrEncStr != NULL) {
-    _ptrEncStr->inst = NULL;
-    _ptrEncStr->instRight = NULL;
+  ptr_enc_str_ = new ACMG722EncStr;
+  if (ptr_enc_str_ != NULL) {
+    ptr_enc_str_->inst = NULL;
+    ptr_enc_str_->inst_right = NULL;
   }
   // Decoder
-  _ptrDecStr = new ACMG722DecStr;
-  if (_ptrDecStr != NULL) {
-    _ptrDecStr->inst = NULL;
-    _ptrDecStr->instRight = NULL; // Not used
+  ptr_dec_str_ = new ACMG722DecStr;
+  if (ptr_dec_str_ != NULL) {
+    ptr_dec_str_->inst = NULL;
+    ptr_dec_str_->inst_right = NULL;  // Not used
   }
-  _codecID = codecID;
+  codec_id_ = codec_id;
   return;
 }
 
 ACMG722::~ACMG722() {
   // Encoder
-  if (_ptrEncStr != NULL) {
-    if (_ptrEncStr->inst != NULL) {
-      WebRtcG722_FreeEncoder(_ptrEncStr->inst);
-      _ptrEncStr->inst = NULL;
+  if (ptr_enc_str_ != NULL) {
+    if (ptr_enc_str_->inst != NULL) {
+      WebRtcG722_FreeEncoder(ptr_enc_str_->inst);
+      ptr_enc_str_->inst = NULL;
     }
-    if (_ptrEncStr->instRight != NULL) {
-      WebRtcG722_FreeEncoder(_ptrEncStr->instRight);
-      _ptrEncStr->instRight = NULL;
+    if (ptr_enc_str_->inst_right != NULL) {
+      WebRtcG722_FreeEncoder(ptr_enc_str_->inst_right);
+      ptr_enc_str_->inst_right = NULL;
     }
-    delete _ptrEncStr;
-    _ptrEncStr = NULL;
+    delete ptr_enc_str_;
+    ptr_enc_str_ = NULL;
   }
   // Decoder
-  if (_ptrDecStr != NULL) {
-    if (_ptrDecStr->inst != NULL) {
-      WebRtcG722_FreeDecoder(_ptrDecStr->inst);
-      _ptrDecStr->inst = NULL;
+  if (ptr_dec_str_ != NULL) {
+    if (ptr_dec_str_->inst != NULL) {
+      WebRtcG722_FreeDecoder(ptr_dec_str_->inst);
+      ptr_dec_str_->inst = NULL;
     }
-    if (_ptrDecStr->instRight != NULL) {
-      WebRtcG722_FreeDecoder(_ptrDecStr->instRight);
-      _ptrDecStr->instRight = NULL;
+    if (ptr_dec_str_->inst_right != NULL) {
+      WebRtcG722_FreeDecoder(ptr_dec_str_->inst_right);
+      ptr_dec_str_->inst_right = NULL;
     }
-    delete _ptrDecStr;
-    _ptrDecStr = NULL;
+    delete ptr_dec_str_;
+    ptr_dec_str_ = NULL;
   }
   return;
 }
 
 WebRtc_Word32 ACMG722::Add10MsDataSafe(const WebRtc_UWord32 timestamp,
                                        const WebRtc_Word16* data,
-                                       const WebRtc_UWord16 lengthSmpl,
-                                       const WebRtc_UWord8 audioChannel) {
-  return ACMGenericCodec::Add10MsDataSafe((timestamp >> 1), data, lengthSmpl,
-                                          audioChannel);
+                                       const WebRtc_UWord16 length_smpl,
+                                       const WebRtc_UWord8 audio_channel) {
+  return ACMGenericCodec::Add10MsDataSafe((timestamp >> 1), data, length_smpl,
+                                          audio_channel);
 }
 
-WebRtc_Word16 ACMG722::InternalEncode(WebRtc_UWord8* bitStream,
-                                      WebRtc_Word16* bitStreamLenByte) {
+WebRtc_Word16 ACMG722::InternalEncode(WebRtc_UWord8* bitstream,
+                                      WebRtc_Word16* bitstream_len_byte) {
   // If stereo, split input signal in left and right channel before encoding
-  if (_noChannels == 2) {
-    WebRtc_Word16 leftChannel[960];
-    WebRtc_Word16 rightChannel[960];
-    WebRtc_UWord8 outLeft[480];
-    WebRtc_UWord8 outRight[480];
-    WebRtc_Word16 lenInBytes;
-    for (int i = 0, j = 0; i < _frameLenSmpl * 2; i += 2, j++) {
-      leftChannel[j] = _inAudio[_inAudioIxRead + i];
-      rightChannel[j] = _inAudio[_inAudioIxRead + i + 1];
+  if (num_channels_ == 2) {
+    WebRtc_Word16 left_channel[960];
+    WebRtc_Word16 right_channel[960];
+    WebRtc_UWord8 out_left[480];
+    WebRtc_UWord8 out_right[480];
+    WebRtc_Word16 len_in_bytes;
+    for (int i = 0, j = 0; i < frame_len_smpl_ * 2; i += 2, j++) {
+      left_channel[j] = in_audio_[in_audio_ix_read_ + i];
+      right_channel[j] = in_audio_[in_audio_ix_read_ + i + 1];
     }
-    lenInBytes = WebRtcG722_Encode(_encoderInstPtr, leftChannel, _frameLenSmpl,
-                                   (WebRtc_Word16*) outLeft);
-    lenInBytes += WebRtcG722_Encode(_encoderInstPtrRight, rightChannel,
-                                    _frameLenSmpl, (WebRtc_Word16*) outRight);
-    *bitStreamLenByte = lenInBytes;
+    len_in_bytes = WebRtcG722_Encode(encoder_inst_ptr_, left_channel,
+                                     frame_len_smpl_,
+                                     (WebRtc_Word16*)out_left);
+    len_in_bytes += WebRtcG722_Encode(encoder_inst_ptr_right_, right_channel,
+                                      frame_len_smpl_,
+                                      (WebRtc_Word16*)out_right);
+    *bitstream_len_byte = len_in_bytes;
 
     // Interleave the 4 bits per sample from left and right channel
-    for (int i = 0, j = 0; i < lenInBytes; i += 2, j++) {
-      bitStream[i] = (outLeft[j] & 0xF0) + (outRight[j] >> 4);
-      bitStream[i + 1] = ((outLeft[j] & 0x0F) << 4) + (outRight[j] & 0x0F);
+    for (int i = 0, j = 0; i < len_in_bytes; i += 2, j++) {
+      bitstream[i] = (out_left[j] & 0xF0) + (out_right[j] >> 4);
+      bitstream[i + 1] = ((out_left[j] & 0x0F) << 4) + (out_right[j] & 0x0F);
     }
   } else {
-    *bitStreamLenByte = WebRtcG722_Encode(_encoderInstPtr,
-                                          &_inAudio[_inAudioIxRead],
-                                          _frameLenSmpl,
-                                          (WebRtc_Word16*) bitStream);
+    *bitstream_len_byte = WebRtcG722_Encode(encoder_inst_ptr_,
+                                            &in_audio_[in_audio_ix_read_],
+                                            frame_len_smpl_,
+                                            (WebRtc_Word16*)bitstream);
   }
 
   // increment the read index this tell the caller how far
   // we have gone forward in reading the audio buffer
-  _inAudioIxRead += _frameLenSmpl * _noChannels;
-  return *bitStreamLenByte;
+  in_audio_ix_read_ += frame_len_smpl_ * num_channels_;
+  return *bitstream_len_byte;
 }
 
-WebRtc_Word16 ACMG722::DecodeSafe(WebRtc_UWord8* /* bitStream */,
-                                  WebRtc_Word16 /* bitStreamLenByte */,
+WebRtc_Word16 ACMG722::DecodeSafe(WebRtc_UWord8* /* bitstream */,
+                                  WebRtc_Word16 /* bitstream_len_byte */,
                                   WebRtc_Word16* /* audio */,
-                                  WebRtc_Word16* /* audioSamples */,
-                                  WebRtc_Word8* /* speechType */) {
+                                  WebRtc_Word16* /* audio_samples */,
+                                  WebRtc_Word8* /* speech_type */) {
   return 0;
 }
 
-WebRtc_Word16 ACMG722::InternalInitEncoder(WebRtcACMCodecParams* codecParams) {
-  if (codecParams->codecInstant.channels == 2) {
+WebRtc_Word16 ACMG722::InternalInitEncoder(WebRtcACMCodecParams* codec_params) {
+  if (codec_params->codec_inst.channels == 2) {
     // Create codec struct for right channel
-    if (_ptrEncStr->instRight == NULL) {
-      WebRtcG722_CreateEncoder(&_ptrEncStr->instRight);
-      if (_ptrEncStr->instRight == NULL) {
+    if (ptr_enc_str_->inst_right == NULL) {
+      WebRtcG722_CreateEncoder(&ptr_enc_str_->inst_right);
+      if (ptr_enc_str_->inst_right == NULL) {
         return -1;
       }
     }
-    _encoderInstPtrRight = _ptrEncStr->instRight;
-    if (WebRtcG722_EncoderInit(_encoderInstPtrRight) < 0) {
+    encoder_inst_ptr_right_ = ptr_enc_str_->inst_right;
+    if (WebRtcG722_EncoderInit(encoder_inst_ptr_right_) < 0) {
       return -1;
     }
   }
 
-  return WebRtcG722_EncoderInit(_encoderInstPtr);
+  return WebRtcG722_EncoderInit(encoder_inst_ptr_);
 }
 
 WebRtc_Word16 ACMG722::InternalInitDecoder(
-    WebRtcACMCodecParams* /* codecParams */) {
-  return WebRtcG722_DecoderInit(_decoderInstPtr);
+    WebRtcACMCodecParams* /* codec_params */) {
+  return WebRtcG722_DecoderInit(decoder_inst_ptr_);
 }
 
-WebRtc_Word32 ACMG722::CodecDef(WebRtcNetEQ_CodecDef& codecDef,
-                                const CodecInst& codecInst) {
-  if (!_decoderInitialized) {
-    // TODO: log error
+WebRtc_Word32 ACMG722::CodecDef(WebRtcNetEQ_CodecDef& codec_def,
+                                const CodecInst& codec_inst) {
+  if (!decoder_initialized_) {
+    // TODO(turajs): log error
     return -1;
   }
   // Fill up the structure by calling
   // "SET_CODEC_PAR" & "SET_G722_FUNCTION."
   // Then call NetEQ to add the codec to it's
   // database.
-  if (codecInst.channels == 1) {
-    SET_CODEC_PAR(codecDef, kDecoderG722, codecInst.pltype, _decoderInstPtr,
+  if (codec_inst.channels == 1) {
+    SET_CODEC_PAR(codec_def, kDecoderG722, codec_inst.pltype, decoder_inst_ptr_,
                   16000);
   } else {
-    SET_CODEC_PAR(codecDef, kDecoderG722_2ch, codecInst.pltype,
-                  _decoderInstPtr, 16000);
+    SET_CODEC_PAR(codec_def, kDecoderG722_2ch, codec_inst.pltype,
+                  decoder_inst_ptr_, 16000);
   }
-  SET_G722_FUNCTIONS(codecDef);
+  SET_G722_FUNCTIONS(codec_def);
   return 0;
 }
 
@@ -260,61 +261,61 @@ ACMGenericCodec* ACMG722::CreateInstance(void) {
 }
 
 WebRtc_Word16 ACMG722::InternalCreateEncoder() {
-  if (_ptrEncStr == NULL) {
+  if (ptr_enc_str_ == NULL) {
     // this structure must be created at the costructor
     // if it is still NULL then there is a probelm and
     // we dont continue
     return -1;
   }
-  WebRtcG722_CreateEncoder(&_ptrEncStr->inst);
-  if (_ptrEncStr->inst == NULL) {
+  WebRtcG722_CreateEncoder(&ptr_enc_str_->inst);
+  if (ptr_enc_str_->inst == NULL) {
     return -1;
   }
-  _encoderInstPtr = _ptrEncStr->inst;
+  encoder_inst_ptr_ = ptr_enc_str_->inst;
   return 0;
 }
 
 void ACMG722::DestructEncoderSafe() {
-  if (_ptrEncStr != NULL) {
-    if (_ptrEncStr->inst != NULL) {
-      WebRtcG722_FreeEncoder(_ptrEncStr->inst);
-      _ptrEncStr->inst = NULL;
+  if (ptr_enc_str_ != NULL) {
+    if (ptr_enc_str_->inst != NULL) {
+      WebRtcG722_FreeEncoder(ptr_enc_str_->inst);
+      ptr_enc_str_->inst = NULL;
     }
   }
-  _encoderExist = false;
-  _encoderInitialized = false;
+  encoder_exist_ = false;
+  encoder_initialized_ = false;
 }
 
 WebRtc_Word16 ACMG722::InternalCreateDecoder() {
-  if (_ptrDecStr == NULL) {
+  if (ptr_dec_str_ == NULL) {
     // this structure must be created at the costructor
     // if it is still NULL then there is a probelm and
     // we dont continue
     return -1;
   }
 
-  WebRtcG722_CreateDecoder(&_ptrDecStr->inst);
-  if (_ptrDecStr->inst == NULL) {
+  WebRtcG722_CreateDecoder(&ptr_dec_str_->inst);
+  if (ptr_dec_str_->inst == NULL) {
     return -1;
   }
-  _decoderInstPtr = _ptrDecStr->inst;
+  decoder_inst_ptr_ = ptr_dec_str_->inst;
   return 0;
 }
 
 void ACMG722::DestructDecoderSafe() {
-  _decoderExist = false;
-  _decoderInitialized = false;
-  if (_ptrDecStr != NULL) {
-    if (_ptrDecStr->inst != NULL) {
-      WebRtcG722_FreeDecoder(_ptrDecStr->inst);
-      _ptrDecStr->inst = NULL;
+  decoder_exist_ = false;
+  decoder_initialized_ = false;
+  if (ptr_dec_str_ != NULL) {
+    if (ptr_dec_str_->inst != NULL) {
+      WebRtcG722_FreeDecoder(ptr_dec_str_->inst);
+      ptr_dec_str_->inst = NULL;
     }
   }
 }
 
-void ACMG722::InternalDestructEncoderInst(void* ptrInst) {
-  if (ptrInst != NULL) {
-    WebRtcG722_FreeEncoder(static_cast<G722EncInst*>(ptrInst));
+void ACMG722::InternalDestructEncoderInst(void* ptr_inst) {
+  if (ptr_inst != NULL) {
+    WebRtcG722_FreeEncoder(static_cast<G722EncInst*>(ptr_inst));
   }
   return;
 }
@@ -350,4 +351,4 @@ void ACMG722::SplitStereoPacket(uint8_t* payload, int32_t* payload_length) {
 
 #endif
 
-} // namespace webrtc
+}  // namespace webrtc

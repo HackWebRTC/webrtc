@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_ILBC_H_
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_ILBC_H_
 
-#include "acm_generic_codec.h"
+#include "webrtc/modules/audio_coding/main/source/acm_generic_codec.h"
 
 // forward declaration
 struct iLBC_encinst_t_;
@@ -21,27 +21,28 @@ namespace webrtc {
 
 class ACMILBC : public ACMGenericCodec {
  public:
-  ACMILBC(WebRtc_Word16 codecID);
+  explicit ACMILBC(WebRtc_Word16 codec_id);
   ~ACMILBC();
+
   // for FEC
   ACMGenericCodec* CreateInstance(void);
 
   WebRtc_Word16 InternalEncode(WebRtc_UWord8* bitstream,
-                               WebRtc_Word16* bitStreamLenByte);
+                               WebRtc_Word16* bitstream_len_byte);
 
-  WebRtc_Word16 InternalInitEncoder(WebRtcACMCodecParams *codecParams);
+  WebRtc_Word16 InternalInitEncoder(WebRtcACMCodecParams *codec_params);
 
-  WebRtc_Word16 InternalInitDecoder(WebRtcACMCodecParams *codecParams);
+  WebRtc_Word16 InternalInitDecoder(WebRtcACMCodecParams *codec_params);
 
  protected:
-  WebRtc_Word16 DecodeSafe(WebRtc_UWord8* bitStream,
-                           WebRtc_Word16 bitStreamLenByte,
+  WebRtc_Word16 DecodeSafe(WebRtc_UWord8* bitstream,
+                           WebRtc_Word16 bitstream_len_byte,
                            WebRtc_Word16* audio,
-                           WebRtc_Word16* audioSamples,
-                           WebRtc_Word8* speechType);
+                           WebRtc_Word16* audio_samples,
+                           WebRtc_Word8* speech_type);
 
-  WebRtc_Word32 CodecDef(WebRtcNetEQ_CodecDef& codecDef,
-                         const CodecInst& codecInst);
+  WebRtc_Word32 CodecDef(WebRtcNetEQ_CodecDef& codec_def,
+                         const CodecInst& codec_inst);
 
   WebRtc_Word16 SetBitRateSafe(const WebRtc_Word32 rate);
 
@@ -53,10 +54,10 @@ class ACMILBC : public ACMGenericCodec {
 
   WebRtc_Word16 InternalCreateDecoder();
 
-  void InternalDestructEncoderInst(void* ptrInst);
+  void InternalDestructEncoderInst(void* ptr_inst);
 
-  iLBC_encinst_t_* _encoderInstPtr;
-  iLBC_decinst_t_* _decoderInstPtr;
+  iLBC_encinst_t_* encoder_inst_ptr_;
+  iLBC_decinst_t_* decoder_inst_ptr_;
 };
 
 }  // namespace webrtc

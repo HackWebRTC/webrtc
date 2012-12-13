@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "acm_speex.h"
-#include "acm_codec_database.h"
-#include "acm_common_defs.h"
-#include "acm_neteq.h"
-#include "trace.h"
-#include "webrtc_neteq.h"
-#include "webrtc_neteq_help_macros.h"
+#include "webrtc/modules/audio_coding/main/source/acm_speex.h"
+
+#include "webrtc/modules/audio_coding/main/source/acm_codec_database.h"
+#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/main/source/acm_neteq.h"
+#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq.h"
+#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq_help_macros.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 #ifdef WEBRTC_CODEC_SPEEX
 // NOTE! Speex is not included in the open-source package. Modify this file or
@@ -25,14 +26,14 @@
 namespace webrtc {
 
 #ifndef WEBRTC_CODEC_SPEEX
-ACMSPEEX::ACMSPEEX(WebRtc_Word16 /* codecID */)
-    : _encoderInstPtr(NULL),
-      _decoderInstPtr(NULL),
-      _complMode(0),
-      _vbrEnabled(false),
-      _encodingRate(-1),
-      _samplingFrequency(-1),
-      _samplesIn20MsAudio(-1) {
+ACMSPEEX::ACMSPEEX(WebRtc_Word16 /* codec_id */)
+    : encoder_inst_ptr_(NULL),
+      decoder_inst_ptr_(NULL),
+      compl_mode_(0),
+      vbr_enabled_(false),
+      encoding_rate_(-1),
+      sampling_frequency_(-1),
+      samples_in_20ms_audio_(-1) {
   return;
 }
 
@@ -40,16 +41,17 @@ ACMSPEEX::~ACMSPEEX() {
   return;
 }
 
-WebRtc_Word16 ACMSPEEX::InternalEncode(WebRtc_UWord8* /* bitStream */,
-                                       WebRtc_Word16* /* bitStreamLenByte */) {
+WebRtc_Word16 ACMSPEEX::InternalEncode(
+    WebRtc_UWord8* /* bitstream */,
+    WebRtc_Word16* /* bitstream_len_byte */) {
   return -1;
 }
 
-WebRtc_Word16 ACMSPEEX::DecodeSafe(WebRtc_UWord8* /* bitStream */,
-                                   WebRtc_Word16 /* bitStreamLenByte */,
+WebRtc_Word16 ACMSPEEX::DecodeSafe(WebRtc_UWord8* /* bitstream */,
+                                   WebRtc_Word16 /* bitstream_len_byte */,
                                    WebRtc_Word16* /* audio */,
-                                   WebRtc_Word16* /* audioSamples */,
-                                   WebRtc_Word8* /* speechType */) {
+                                   WebRtc_Word16* /* audio_samples */,
+                                   WebRtc_Word8* /* speech_type */) {
   return -1;
 }
 
@@ -62,17 +64,17 @@ WebRtc_Word16 ACMSPEEX::DisableDTX() {
 }
 
 WebRtc_Word16 ACMSPEEX::InternalInitEncoder(
-    WebRtcACMCodecParams* /* codecParams */) {
+    WebRtcACMCodecParams* /* codec_params */) {
   return -1;
 }
 
 WebRtc_Word16 ACMSPEEX::InternalInitDecoder(
-    WebRtcACMCodecParams* /* codecParams */) {
+    WebRtcACMCodecParams* /* codec_params */) {
   return -1;
 }
 
-WebRtc_Word32 ACMSPEEX::CodecDef(WebRtcNetEQ_CodecDef& /* codecDef */,
-                                 const CodecInst& /* codecInst */) {
+WebRtc_Word32 ACMSPEEX::CodecDef(WebRtcNetEQ_CodecDef& /* codec_def */,
+                                 const CodecInst& /* codec_inst */) {
   return -1;
 }
 
@@ -100,7 +102,7 @@ WebRtc_Word16 ACMSPEEX::SetBitRateSafe(const WebRtc_Word32 /* rate */) {
   return -1;
 }
 
-void ACMSPEEX::InternalDestructEncoderInst(void* /* ptrInst */) {
+void ACMSPEEX::InternalDestructEncoderInst(void* /* ptr_inst */) {
   return;
 }
 
@@ -120,111 +122,110 @@ WebRtc_Word16 ACMSPEEX::SetComplMode(WebRtc_Word16 mode) {
 
 #else  //===================== Actual Implementation =======================
 
-ACMSPEEX::ACMSPEEX(WebRtc_Word16 codecID)
-    : _encoderInstPtr(NULL),
-      _decoderInstPtr(NULL) {
-  _codecID = codecID;
+ACMSPEEX::ACMSPEEX(WebRtc_Word16 codec_id)
+    : encoder_inst_ptr_(NULL),
+      decoder_inst_ptr_(NULL) {
+  codec_id_ = codec_id;
 
   // Set sampling frequency, frame size and rate Speex
-  if (_codecID == ACMCodecDB::kSPEEX8) {
-    _samplingFrequency = 8000;
-    _samplesIn20MsAudio = 160;
-    _encodingRate = 11000;
-  } else if (_codecID == ACMCodecDB::kSPEEX16) {
-    _samplingFrequency = 16000;
-    _samplesIn20MsAudio = 320;
-    _encodingRate = 22000;
+  if (codec_id_ == ACMCodecDB::kSPEEX8) {
+    sampling_frequency_ = 8000;
+    samples_in_20ms_audio_ = 160;
+    encoding_rate_ = 11000;
+  } else if (codec_id_ == ACMCodecDB::kSPEEX16) {
+    sampling_frequency_ = 16000;
+    samples_in_20ms_audio_ = 320;
+    encoding_rate_ = 22000;
   } else {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                  "Wrong codec id for Speex.");
 
-    _samplingFrequency = -1;
-    _samplesIn20MsAudio = -1;
-    _encodingRate = -1;
+    sampling_frequency_ = -1;
+    samples_in_20ms_audio_ = -1;
+    encoding_rate_ = -1;
   }
 
-  _hasInternalDTX = true;
-  _dtxEnabled = false;
-  _vbrEnabled = false;
-  _complMode = 3;  // default complexity value
+  has_internal_dtx_ = true;
+  dtx_enabled_ = false;
+  vbr_enabled_ = false;
+  compl_mode_ = 3;  // default complexity value
 
   return;
 }
 
 ACMSPEEX::~ACMSPEEX() {
-  if (_encoderInstPtr != NULL) {
-    WebRtcSpeex_FreeEnc(_encoderInstPtr);
-    _encoderInstPtr = NULL;
+  if (encoder_inst_ptr_ != NULL) {
+    WebRtcSpeex_FreeEnc(encoder_inst_ptr_);
+    encoder_inst_ptr_ = NULL;
   }
-  if (_decoderInstPtr != NULL) {
-    WebRtcSpeex_FreeDec(_decoderInstPtr);
-    _decoderInstPtr = NULL;
+  if (decoder_inst_ptr_ != NULL) {
+    WebRtcSpeex_FreeDec(decoder_inst_ptr_);
+    decoder_inst_ptr_ = NULL;
   }
   return;
 }
 
-WebRtc_Word16 ACMSPEEX::InternalEncode(WebRtc_UWord8* bitStream,
-                                       WebRtc_Word16* bitStreamLenByte) {
+WebRtc_Word16 ACMSPEEX::InternalEncode(WebRtc_UWord8* bitstream,
+                                       WebRtc_Word16* bitstream_len_byte) {
   WebRtc_Word16 status;
-  WebRtc_Word16 numEncodedSamples = 0;
+  WebRtc_Word16 num_encoded_samples = 0;
   WebRtc_Word16 n = 0;
 
-  while (numEncodedSamples < _frameLenSmpl) {
-    status = WebRtcSpeex_Encode(_encoderInstPtr, &_inAudio[_inAudioIxRead],
-                                _encodingRate);
+  while (num_encoded_samples < frame_len_smpl_) {
+    status = WebRtcSpeex_Encode(encoder_inst_ptr_,
+                                &in_audio_[in_audio_ix_read_], encoding_rate_);
 
     // increment the read index this tell the caller that how far
     // we have gone forward in reading the audio buffer
-    _inAudioIxRead += _samplesIn20MsAudio;
-    numEncodedSamples += _samplesIn20MsAudio;
+    in_audio_ix_read_ += samples_in_20ms_audio_;
+    num_encoded_samples += samples_in_20ms_audio_;
 
     if (status < 0) {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                    "Error in Speex encoder");
       return status;
     }
 
     // Update VAD, if internal DTX is used
-    if (_hasInternalDTX && _dtxEnabled) {
-      _vadLabel[n++] = status;
-      _vadLabel[n++] = status;
+    if (has_internal_dtx_ && dtx_enabled_) {
+      vad_label_[n++] = status;
+      vad_label_[n++] = status;
     }
 
     if (status == 0) {
       // This frame is detected as inactive. We need send whatever
       // encoded so far.
-      *bitStreamLenByte = WebRtcSpeex_GetBitstream(_encoderInstPtr,
-                                                   (WebRtc_Word16*) bitStream);
-
-      return *bitStreamLenByte;
+      *bitstream_len_byte = WebRtcSpeex_GetBitstream(encoder_inst_ptr_,
+                                                     (WebRtc_Word16*)bitstream);
+      return *bitstream_len_byte;
     }
   }
 
-  *bitStreamLenByte = WebRtcSpeex_GetBitstream(_encoderInstPtr,
-                                               (WebRtc_Word16*) bitStream);
-  return *bitStreamLenByte;
+  *bitstream_len_byte = WebRtcSpeex_GetBitstream(encoder_inst_ptr_,
+                                                 (WebRtc_Word16*)bitstream);
+  return *bitstream_len_byte;
 }
 
-WebRtc_Word16 ACMSPEEX::DecodeSafe(WebRtc_UWord8* /* bitStream */,
-                                   WebRtc_Word16 /* bitStreamLenByte */,
+WebRtc_Word16 ACMSPEEX::DecodeSafe(WebRtc_UWord8* /* bitstream */,
+                                   WebRtc_Word16 /* bitstream_len_byte */,
                                    WebRtc_Word16* /* audio */,
-                                   WebRtc_Word16* /* audioSamples */,
-                                   WebRtc_Word8* /* speechType */) {
+                                   WebRtc_Word16* /* audio_samples */,
+                                   WebRtc_Word8* /* speech_type */) {
   return 0;
 }
 
 WebRtc_Word16 ACMSPEEX::EnableDTX() {
-  if (_dtxEnabled) {
+  if (dtx_enabled_) {
     return 0;
-  } else if (_encoderExist) {  // check if encoder exist
+  } else if (encoder_exist_) {  // check if encoder exist
     // enable DTX
-    if (WebRtcSpeex_EncoderInit(_encoderInstPtr, (_vbrEnabled ? 1 : 0),
-                                _complMode, 1) < 0) {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+    if (WebRtcSpeex_EncoderInit(encoder_inst_ptr_, (vbr_enabled_ ? 1 : 0),
+                                compl_mode_, 1) < 0) {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                    "Cannot enable DTX for Speex");
       return -1;
     }
-    _dtxEnabled = true;
+    dtx_enabled_ = true;
     return 0;
   } else {
     return -1;
@@ -234,17 +235,17 @@ WebRtc_Word16 ACMSPEEX::EnableDTX() {
 }
 
 WebRtc_Word16 ACMSPEEX::DisableDTX() {
-  if (!_dtxEnabled) {
+  if (!dtx_enabled_) {
     return 0;
-  } else if (_encoderExist) {  // check if encoder exist
+  } else if (encoder_exist_) {  // check if encoder exist
     // disable DTX
-    if (WebRtcSpeex_EncoderInit(_encoderInstPtr, (_vbrEnabled ? 1 : 0),
-                                _complMode, 0) < 0) {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+    if (WebRtcSpeex_EncoderInit(encoder_inst_ptr_, (vbr_enabled_ ? 1 : 0),
+                                compl_mode_, 0) < 0) {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                    "Cannot disable DTX for Speex");
       return -1;
     }
-    _dtxEnabled = false;
+    dtx_enabled_ = false;
     return 0;
   } else {
     // encoder doesn't exists, therefore disabling is harmless
@@ -254,54 +255,55 @@ WebRtc_Word16 ACMSPEEX::DisableDTX() {
   return 0;
 }
 
-WebRtc_Word16 ACMSPEEX::InternalInitEncoder(WebRtcACMCodecParams* codecParams) {
+WebRtc_Word16 ACMSPEEX::InternalInitEncoder(
+    WebRtcACMCodecParams* codec_params) {
   // sanity check
-  if (_encoderInstPtr == NULL) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+  if (encoder_inst_ptr_ == NULL) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                  "Cannot initialize Speex encoder, instance does not exist");
     return -1;
   }
 
-  WebRtc_Word16 status = SetBitRateSafe((codecParams->codecInstant).rate);
+  WebRtc_Word16 status = SetBitRateSafe((codec_params->codecInstant).rate);
   status +=
-      (WebRtcSpeex_EncoderInit(_encoderInstPtr, _vbrEnabled, _complMode,
-                               ((codecParams->enableDTX) ? 1 : 0)) < 0) ?
-          -1 : 0;
+      (WebRtcSpeex_EncoderInit(encoder_inst_ptr_, vbr_enabled_, compl_mode_,
+                               ((codec_params->enable_dtx) ? 1 : 0)) < 0) ?
+                                   -1 : 0;
 
   if (status >= 0) {
     return 0;
   } else {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                  "Error in initialization of Speex encoder");
     return -1;
   }
 }
 
 WebRtc_Word16 ACMSPEEX::InternalInitDecoder(
-    WebRtcACMCodecParams* /* codecParams */) {
+    WebRtcACMCodecParams* /* codec_params */) {
   WebRtc_Word16 status;
 
   // sanity check
-  if (_decoderInstPtr == NULL) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+  if (decoder_inst_ptr_ == NULL) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                  "Cannot initialize Speex decoder, instance does not exist");
     return -1;
   }
-  status = ((WebRtcSpeex_DecoderInit(_decoderInstPtr) < 0) ? -1 : 0);
+  status = ((WebRtcSpeex_DecoderInit(decoder_inst_ptr_) < 0) ? -1 : 0);
 
   if (status >= 0) {
     return 0;
   } else {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                  "Error in initialization of Speex decoder");
     return -1;
   }
 }
 
-WebRtc_Word32 ACMSPEEX::CodecDef(WebRtcNetEQ_CodecDef& codecDef,
-                                 const CodecInst& codecInst) {
-  if (!_decoderInitialized) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+WebRtc_Word32 ACMSPEEX::CodecDef(WebRtcNetEQ_CodecDef& codec_def,
+                                 const CodecInst& codec_inst) {
+  if (!decoder_initialized_) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                  "Error, Speex decoder is not initialized");
     return -1;
   }
@@ -311,26 +313,26 @@ WebRtc_Word32 ACMSPEEX::CodecDef(WebRtcNetEQ_CodecDef& codecDef,
   // Then call NetEQ to add the codec to its
   // database.
 
-  switch (_samplingFrequency) {
+  switch (sampling_frequency_) {
     case 8000: {
-      SET_CODEC_PAR((codecDef), kDecoderSPEEX_8, codecInst.pltype,
-                    _decoderInstPtr, 8000);
+      SET_CODEC_PAR((codec_def), kDecoderSPEEX_8, codec_inst.pltype,
+                    decoder_inst_ptr_, 8000);
       break;
     }
     case 16000: {
-      SET_CODEC_PAR((codecDef), kDecoderSPEEX_16, codecInst.pltype,
-                    _decoderInstPtr, 16000);
+      SET_CODEC_PAR((codec_def), kDecoderSPEEX_16, codec_inst.pltype,
+                    decoder_inst_ptr_, 16000);
       break;
     }
     default: {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                    "Unsupported sampling frequency for Speex");
 
       return -1;
     }
   }
 
-  SET_SPEEX_FUNCTIONS((codecDef));
+  SET_SPEEX_FUNCTIONS((codec_def));
   return 0;
 }
 
@@ -339,43 +341,43 @@ ACMGenericCodec* ACMSPEEX::CreateInstance(void) {
 }
 
 WebRtc_Word16 ACMSPEEX::InternalCreateEncoder() {
-  return WebRtcSpeex_CreateEnc(&_encoderInstPtr, _samplingFrequency);
+  return WebRtcSpeex_CreateEnc(&encoder_inst_ptr_, sampling_frequency_);
 }
 
 void ACMSPEEX::DestructEncoderSafe() {
-  if (_encoderInstPtr != NULL) {
-    WebRtcSpeex_FreeEnc(_encoderInstPtr);
-    _encoderInstPtr = NULL;
+  if (encoder_inst_ptr_ != NULL) {
+    WebRtcSpeex_FreeEnc(encoder_inst_ptr_);
+    encoder_inst_ptr_ = NULL;
   }
   // there is no encoder set the following
-  _encoderExist = false;
-  _encoderInitialized = false;
-  _encodingRate = 0;
+  encoder_exist_ = false;
+  encoder_initialized_ = false;
+  encoding_rate_ = 0;
 }
 
 WebRtc_Word16 ACMSPEEX::InternalCreateDecoder() {
-  return WebRtcSpeex_CreateDec(&_decoderInstPtr, _samplingFrequency, 1);
+  return WebRtcSpeex_CreateDec(&decoder_inst_ptr_, sampling_frequency_, 1);
 }
 
 void ACMSPEEX::DestructDecoderSafe() {
-  if (_decoderInstPtr != NULL) {
-    WebRtcSpeex_FreeDec(_decoderInstPtr);
-    _decoderInstPtr = NULL;
+  if (decoder_inst_ptr_ != NULL) {
+    WebRtcSpeex_FreeDec(decoder_inst_ptr_);
+    decoder_inst_ptr_ = NULL;
   }
   // there is no encoder instance set the followings
-  _decoderExist = false;
-  _decoderInitialized = false;
+  decoder_exist_ = false;
+  decoder_initialized_ = false;
 }
 
 WebRtc_Word16 ACMSPEEX::SetBitRateSafe(const WebRtc_Word32 rate) {
   // Check if changed rate
-  if (rate == _encodingRate) {
+  if (rate == encoding_rate_) {
     return 0;
   } else if (rate > 2000) {
-    _encodingRate = rate;
-    _encoderParams.codecInstant.rate = rate;
+    encoding_rate_ = rate;
+    encoder_params_.codecInstant.rate = rate;
   } else {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                  "Unsupported encoding rate for Speex");
 
     return -1;
@@ -384,31 +386,30 @@ WebRtc_Word16 ACMSPEEX::SetBitRateSafe(const WebRtc_Word32 rate) {
   return 0;
 }
 
-void ACMSPEEX::InternalDestructEncoderInst(void* ptrInst) {
-  if (ptrInst != NULL) {
-    WebRtcSpeex_FreeEnc((SPEEX_encinst_t_*) ptrInst);
+void ACMSPEEX::InternalDestructEncoderInst(void* ptr_inst) {
+  if (ptr_inst != NULL) {
+    WebRtcSpeex_FreeEnc((SPEEX_encinst_t_*) ptr_inst);
   }
   return;
 }
 
 #ifdef UNUSEDSPEEX
 
-// This API is currently not in use. If requested to be able to enable/disable VBR
-// an ACM API need to be added.
+// This API is currently not in use. If requested to be able to enable/disable
+// VBR an ACM API need to be added.
 WebRtc_Word16 ACMSPEEX::EnableVBR() {
-  if (_vbrEnabled) {
+  if (vbr_enabled_) {
     return 0;
-  } else if (_encoderExist)  // check if encoder exist
-  {
+  } else if (encoder_exist_) {  // check if encoder exist
     // enable Variable Bit Rate (VBR)
-    if (WebRtcSpeex_EncoderInit(_encoderInstPtr, 1, _complMode,
-                                (_dtxEnabled ? 1 : 0)) < 0) {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+    if (WebRtcSpeex_EncoderInit(encoder_inst_ptr_, 1, compl_mode_,
+                                (dtx_enabled_ ? 1 : 0)) < 0) {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                    "Cannot enable VBR mode for Speex");
 
       return -1;
     }
-    _vbrEnabled = true;
+    vbr_enabled_ = true;
     return 0;
   } else {
     return -1;
@@ -418,18 +419,18 @@ WebRtc_Word16 ACMSPEEX::EnableVBR() {
 // This API is currently not in use. If requested to be able to enable/disable
 // VBR an ACM API need to be added.
 WebRtc_Word16 ACMSPEEX::DisableVBR() {
-  if (!_vbrEnabled) {
+  if (!vbr_enabled_) {
     return 0;
-  } else if (_encoderExist) {  // check if encoder exist
+  } else if (encoder_exist_) {  // check if encoder exist
     // disable DTX
-    if (WebRtcSpeex_EncoderInit(_encoderInstPtr, 0, _complMode,
-                                (_dtxEnabled ? 1 : 0)) < 0) {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+    if (WebRtcSpeex_EncoderInit(encoder_inst_ptr_, 0, compl_mode_,
+                                (dtx_enabled_ ? 1 : 0)) < 0) {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                    "Cannot disable DTX for Speex");
 
       return -1;
     }
-    _vbrEnabled = false;
+    vbr_enabled_ = false;
     return 0;
   } else {
     // encoder doesn't exists, therefore disabling is harmless
@@ -441,17 +442,17 @@ WebRtc_Word16 ACMSPEEX::DisableVBR() {
 // an ACM API need to be added.
 WebRtc_Word16 ACMSPEEX::SetComplMode(WebRtc_Word16 mode) {
   // Check if new mode
-  if (mode == _complMode) {
+  if (mode == compl_mode_) {
     return 0;
-  } else if (_encoderExist) {  // check if encoder exist
+  } else if (encoder_exist_) {  // check if encoder exist
     // Set new mode
-    if (WebRtcSpeex_EncoderInit(_encoderInstPtr, 0, mode, (_dtxEnabled ? 1 : 0))
-        < 0) {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+    if (WebRtcSpeex_EncoderInit(encoder_inst_ptr_, 0, mode,
+                                (dtx_enabled_ ? 1 : 0)) < 0) {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                    "Error in complexity mode for Speex");
       return -1;
     }
-    _complMode = mode;
+    compl_mode_ = mode;
     return 0;
   } else {
     // encoder doesn't exists, therefore disabling is harmless

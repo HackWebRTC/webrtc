@@ -8,30 +8,30 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "acm_g7291.h"
-#include "acm_common_defs.h"
-#include "acm_neteq.h"
-#include "trace.h"
-#include "webrtc_neteq.h"
-#include "webrtc_neteq_help_macros.h"
+#include "webrtc/modules/audio_coding/main/source/acm_g7291.h"
 
+#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/main/source/acm_neteq.h"
+#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq.h"
+#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq_help_macros.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 #ifdef WEBRTC_CODEC_G729_1
 // NOTE! G.729.1 is not included in the open-source package. Modify this file
 // or your codec API to match the function calls and names of used G.729.1 API
 // file.
-    #include "g7291_interface.h"
+#include "g7291_interface.h"
 #endif
 
 namespace webrtc {
 
 #ifndef WEBRTC_CODEC_G729_1
 
-ACMG729_1::ACMG729_1(WebRtc_Word16 /* codecID */)
-    : _encoderInstPtr(NULL),
-      _decoderInstPtr(NULL),
-      _myRate(32000),
-      _flag8kHz(0),
-      _flagG729mode(0) {
+ACMG729_1::ACMG729_1(WebRtc_Word16 /* codec_id */)
+    : encoder_inst_ptr_(NULL),
+      decoder_inst_ptr_(NULL),
+      my_rate_(32000),
+      flag_8khz_(0),
+      flag_g729_mode_(0) {
   return;
 }
 
@@ -39,31 +39,32 @@ ACMG729_1::~ACMG729_1() {
   return;
 }
 
-WebRtc_Word16 ACMG729_1::InternalEncode(WebRtc_UWord8* /* bitStream */,
-                                        WebRtc_Word16* /* bitStreamLenByte */) {
+WebRtc_Word16 ACMG729_1::InternalEncode(
+    WebRtc_UWord8* /* bitstream */,
+    WebRtc_Word16* /* bitstream_len_byte */) {
   return -1;
 }
 
-WebRtc_Word16 ACMG729_1::DecodeSafe(WebRtc_UWord8* /* bitStream */,
-                                    WebRtc_Word16 /* bitStreamLenByte */,
+WebRtc_Word16 ACMG729_1::DecodeSafe(WebRtc_UWord8* /* bitstream */,
+                                    WebRtc_Word16 /* bitstream_len_byte */,
                                     WebRtc_Word16* /* audio */,
-                                    WebRtc_Word16* /* audioSamples */,
-                                    WebRtc_Word8* /* speechType */) {
+                                    WebRtc_Word16* /* audio_samples */,
+                                    WebRtc_Word8* /* speech_type */) {
   return -1;
 }
 
 WebRtc_Word16 ACMG729_1::InternalInitEncoder(
-    WebRtcACMCodecParams* /* codecParams */) {
+    WebRtcACMCodecParams* /* codec_params */) {
   return -1;
 }
 
 WebRtc_Word16 ACMG729_1::InternalInitDecoder(
-    WebRtcACMCodecParams* /* codecParams */) {
+    WebRtcACMCodecParams* /* codec_params */) {
   return -1;
 }
 
-WebRtc_Word32 ACMG729_1::CodecDef(WebRtcNetEQ_CodecDef& /* codecDef */,
-                                  const CodecInst& /* codecInst */) {
+WebRtc_Word32 ACMG729_1::CodecDef(WebRtcNetEQ_CodecDef& /* codec_def */,
+                                  const CodecInst& /* codec_inst */) {
   return -1;
 }
 
@@ -87,7 +88,7 @@ void ACMG729_1::DestructDecoderSafe() {
   return;
 }
 
-void ACMG729_1::InternalDestructEncoderInst(void* /* ptrInst */) {
+void ACMG729_1::InternalDestructEncoderInst(void* /* ptr_inst */) {
   return;
 }
 
@@ -99,113 +100,114 @@ WebRtc_Word16 ACMG729_1::SetBitRateSafe(const WebRtc_Word32 /*rate*/) {
 
 struct G729_1_inst_t_;
 
-ACMG729_1::ACMG729_1(WebRtc_Word16 codecID)
-    : _encoderInstPtr(NULL),
-      _decoderInstPtr(NULL),
-      _myRate(32000),  // Default rate.
-      _flag8kHz(0),
-      _flagG729mode(0) {
-  // TODO(tlegrand): We should add codecID as a input variable to the
+ACMG729_1::ACMG729_1(WebRtc_Word16 codec_id)
+    : encoder_inst_ptr_(NULL),
+      decoder_inst_ptr_(NULL),
+      my_rate_(32000),  // Default rate.
+      flag_8khz_(0),
+      flag_g729_mode_(0) {
+  // TODO(tlegrand): We should add codec_id as a input variable to the
   // constructor of ACMGenericCodec.
-  _codecID = codecID;
+  codec_id_ = codec_id;
   return;
 }
 
 ACMG729_1::~ACMG729_1() {
-  if (_encoderInstPtr != NULL) {
-    WebRtcG7291_Free(_encoderInstPtr);
-    _encoderInstPtr = NULL;
+  if (encoder_inst_ptr_ != NULL) {
+    WebRtcG7291_Free(encoder_inst_ptr_);
+    encoder_inst_ptr_ = NULL;
   }
-  if (_decoderInstPtr != NULL) {
-    WebRtcG7291_Free(_decoderInstPtr);
-    _decoderInstPtr = NULL;
+  if (decoder_inst_ptr_ != NULL) {
+    WebRtcG7291_Free(decoder_inst_ptr_);
+    decoder_inst_ptr_ = NULL;
   }
   return;
 }
 
-WebRtc_Word16 ACMG729_1::InternalEncode(WebRtc_UWord8* bitStream,
-                                        WebRtc_Word16* bitStreamLenByte) {
+WebRtc_Word16 ACMG729_1::InternalEncode(WebRtc_UWord8* bitstream,
+                                        WebRtc_Word16* bitstream_len_byte) {
 
   // Initialize before entering the loop
-  WebRtc_Word16 noEncodedSamples = 0;
-  *bitStreamLenByte = 0;
+  WebRtc_Word16 num_encoded_samples = 0;
+  *bitstream_len_byte = 0;
 
-  WebRtc_Word16 byteLengthFrame = 0;
+  WebRtc_Word16 byte_length_frame = 0;
 
   // Derive number of 20ms frames per encoded packet.
   // [1,2,3] <=> [20,40,60]ms <=> [320,640,960] samples
-  WebRtc_Word16 n20msFrames = (_frameLenSmpl / 320);
+  WebRtc_Word16 num_20ms_frames = (frame_len_smpl_ / 320);
   // Byte length for the frame. +1 is for rate information.
-  byteLengthFrame = _myRate / (8 * 50) * n20msFrames + (1 - _flagG729mode);
+  byte_length_frame = my_rate_ / (8 * 50) * num_20ms_frames + (1 -
+      flag_g729_mode_);
 
   // The following might be revised if we have G729.1 Annex C (support for DTX);
   do {
-    *bitStreamLenByte = WebRtcG7291_Encode(_encoderInstPtr,
-                                           &_inAudio[_inAudioIxRead],
-                                           (WebRtc_Word16*) bitStream, _myRate,
-                                           n20msFrames);
+    *bitstream_len_byte = WebRtcG7291_Encode(encoder_inst_ptr_,
+                                             &in_audio_[in_audio_ix_read_],
+                                             (WebRtc_Word16*) bitstream,
+                                             my_rate_, num_20ms_frames);
 
     // increment the read index this tell the caller that how far
     // we have gone forward in reading the audio buffer
-    _inAudioIxRead += 160;
+    in_audio_ix_read_ += 160;
 
     // sanity check
-    if (*bitStreamLenByte < 0) {
+    if (*bitstream_len_byte < 0) {
       // error has happened
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                    "InternalEncode: Encode error for G729_1");
-      *bitStreamLenByte = 0;
+      *bitstream_len_byte = 0;
       return -1;
     }
 
-    noEncodedSamples += 160;
-  } while (*bitStreamLenByte == 0);
+    num_encoded_samples += 160;
+  } while (*bitstream_len_byte == 0);
 
   // This criteria will change if we have Annex C.
-  if (*bitStreamLenByte != byteLengthFrame) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+  if (*bitstream_len_byte != byte_length_frame) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                  "InternalEncode: Encode error for G729_1");
-    *bitStreamLenByte = 0;
+    *bitstream_len_byte = 0;
     return -1;
   }
 
-  if (noEncodedSamples != _frameLenSmpl) {
-    *bitStreamLenByte = 0;
+  if (num_encoded_samples != frame_len_smpl_) {
+    *bitstream_len_byte = 0;
     return -1;
   }
 
-  return *bitStreamLenByte;
+  return *bitstream_len_byte;
 }
 
-WebRtc_Word16 ACMG729_1::DecodeSafe(WebRtc_UWord8* /* bitStream */,
-                                    WebRtc_Word16 /* bitStreamLenByte */,
+WebRtc_Word16 ACMG729_1::DecodeSafe(WebRtc_UWord8* /* bitstream */,
+                                    WebRtc_Word16 /* bitstream_len_byte */,
                                     WebRtc_Word16* /* audio */,
-                                    WebRtc_Word16* /* audioSamples */,
-                                    WebRtc_Word8* /* speechType */) {
+                                    WebRtc_Word16* /* audio_samples */,
+                                    WebRtc_Word8* /* speech_type */) {
   return 0;
 }
 
 WebRtc_Word16 ACMG729_1::InternalInitEncoder(
-    WebRtcACMCodecParams* codecParams) {
+    WebRtcACMCodecParams* codec_params) {
   //set the bit rate and initialize
-  _myRate = codecParams->codecInstant.rate;
-  return SetBitRateSafe((WebRtc_UWord32) _myRate);
+  my_rate_ = codec_params->codec_inst.rate;
+  return SetBitRateSafe((WebRtc_UWord32) my_rate_);
 }
 
 WebRtc_Word16 ACMG729_1::InternalInitDecoder(
-    WebRtcACMCodecParams* /* codecParams */) {
-  if (WebRtcG7291_DecoderInit(_decoderInstPtr) < 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+    WebRtcACMCodecParams* /* codec_params */) {
+  if (WebRtcG7291_DecoderInit(decoder_inst_ptr_) < 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                  "InternalInitDecoder: init decoder failed for G729_1");
     return -1;
   }
   return 0;
 }
 
-WebRtc_Word32 ACMG729_1::CodecDef(WebRtcNetEQ_CodecDef& codecDef,
-                                  const CodecInst& codecInst) {
-  if (!_decoderInitialized) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+WebRtc_Word32 ACMG729_1::CodecDef(WebRtcNetEQ_CodecDef& codec_def,
+                                  const CodecInst& codec_inst) {
+  if (!decoder_initialized_) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                  "CodeDef: Decoder uninitialized for G729_1");
     return -1;
   }
@@ -214,9 +216,9 @@ WebRtc_Word32 ACMG729_1::CodecDef(WebRtcNetEQ_CodecDef& codecDef,
   // "SET_CODEC_PAR" & "SET_G729_FUNCTION."
   // Then call NetEQ to add the codec to it's
   // database.
-  SET_CODEC_PAR((codecDef), kDecoderG729_1, codecInst.pltype, _decoderInstPtr,
-                16000);
-  SET_G729_1_FUNCTIONS((codecDef));
+  SET_CODEC_PAR((codec_def), kDecoderG729_1, codec_inst.pltype,
+                decoder_inst_ptr_, 16000);
+  SET_G729_1_FUNCTIONS((codec_def));
   return 0;
 }
 
@@ -225,8 +227,8 @@ ACMGenericCodec* ACMG729_1::CreateInstance(void) {
 }
 
 WebRtc_Word16 ACMG729_1::InternalCreateEncoder() {
-  if (WebRtcG7291_Create(&_encoderInstPtr) < 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+  if (WebRtcG7291_Create(&encoder_inst_ptr_) < 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                  "InternalCreateEncoder: create encoder failed for G729_1");
     return -1;
   }
@@ -234,17 +236,17 @@ WebRtc_Word16 ACMG729_1::InternalCreateEncoder() {
 }
 
 void ACMG729_1::DestructEncoderSafe() {
-  _encoderExist = false;
-  _encoderInitialized = false;
-  if (_encoderInstPtr != NULL) {
-    WebRtcG7291_Free(_encoderInstPtr);
-    _encoderInstPtr = NULL;
+  encoder_exist_ = false;
+  encoder_initialized_ = false;
+  if (encoder_inst_ptr_ != NULL) {
+    WebRtcG7291_Free(encoder_inst_ptr_);
+    encoder_inst_ptr_ = NULL;
   }
 }
 
 WebRtc_Word16 ACMG729_1::InternalCreateDecoder() {
-  if (WebRtcG7291_Create(&_decoderInstPtr) < 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+  if (WebRtcG7291_Create(&decoder_inst_ptr_) < 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                  "InternalCreateDecoder: create decoder failed for G729_1");
     return -1;
   }
@@ -252,86 +254,86 @@ WebRtc_Word16 ACMG729_1::InternalCreateDecoder() {
 }
 
 void ACMG729_1::DestructDecoderSafe() {
-  _decoderExist = false;
-  _decoderInitialized = false;
-  if (_decoderInstPtr != NULL) {
-    WebRtcG7291_Free(_decoderInstPtr);
-    _decoderInstPtr = NULL;
+  decoder_exist_ = false;
+  decoder_initialized_ = false;
+  if (decoder_inst_ptr_ != NULL) {
+    WebRtcG7291_Free(decoder_inst_ptr_);
+    decoder_inst_ptr_ = NULL;
   }
 }
 
-void ACMG729_1::InternalDestructEncoderInst(void* ptrInst) {
-  if (ptrInst != NULL) {
-    //WebRtcG7291_Free((G729_1_inst_t*)ptrInst);
+void ACMG729_1::InternalDestructEncoderInst(void* ptr_inst) {
+  if (ptr_inst != NULL) {
+    // WebRtcG7291_Free((G729_1_inst_t*)ptrInst);
   }
   return;
 }
 
 WebRtc_Word16 ACMG729_1::SetBitRateSafe(const WebRtc_Word32 rate) {
-  //allowed rates: { 8000, 12000, 14000, 16000, 18000, 20000,
+  // allowed rates: { 8000, 12000, 14000, 16000, 18000, 20000,
   //                22000, 24000, 26000, 28000, 30000, 32000};
   // TODO(tlegrand): This check exists in one other place two. Should be
   // possible to reuse code.
   switch (rate) {
     case 8000: {
-      _myRate = 8000;
+      my_rate_ = 8000;
       break;
     }
     case 12000: {
-      _myRate = 12000;
+      my_rate_ = 12000;
       break;
     }
     case 14000: {
-      _myRate = 14000;
+      my_rate_ = 14000;
       break;
     }
     case 16000: {
-      _myRate = 16000;
+      my_rate_ = 16000;
       break;
     }
     case 18000: {
-      _myRate = 18000;
+      my_rate_ = 18000;
       break;
     }
     case 20000: {
-      _myRate = 20000;
+      my_rate_ = 20000;
       break;
     }
     case 22000: {
-      _myRate = 22000;
+      my_rate_ = 22000;
       break;
     }
     case 24000: {
-      _myRate = 24000;
+      my_rate_ = 24000;
       break;
     }
     case 26000: {
-      _myRate = 26000;
+      my_rate_ = 26000;
       break;
     }
     case 28000: {
-      _myRate = 28000;
+      my_rate_ = 28000;
       break;
     }
     case 30000: {
-      _myRate = 30000;
+      my_rate_ = 30000;
       break;
     }
     case 32000: {
-      _myRate = 32000;
+      my_rate_ = 32000;
       break;
     }
     default: {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, unique_id_,
                    "SetBitRateSafe: Invalid rate G729_1");
       return -1;
     }
   }
 
   // Re-init with new rate
-  if (WebRtcG7291_EncoderInit(_encoderInstPtr, _myRate, _flag8kHz,
-                              _flagG729mode) >= 0) {
-    _encoderParams.codecInstant.rate = _myRate;
+  if (WebRtcG7291_EncoderInit(encoder_inst_ptr_, my_rate_, flag_8khz_,
+                              flag_g729_mode_) >= 0) {
+    encoder_params_.codec_inst.rate = my_rate_;
     return 0;
   } else {
     return -1;

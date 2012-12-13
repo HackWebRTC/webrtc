@@ -11,11 +11,11 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_AUDIO_CODING_MODULE_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_AUDIO_CODING_MODULE_IMPL_H_
 
-#include "acm_codec_database.h"
-#include "acm_neteq.h"
-#include "acm_resampler.h"
-#include "common_types.h"
-#include "engine_configurations.h"
+#include "webrtc/common_types.h"
+#include "webrtc/engine_configurations.h"
+#include "webrtc/modules/audio_coding/main/source/acm_codec_database.h"
+#include "webrtc/modules/audio_coding/main/source/acm_neteq.h"
+#include "webrtc/modules/audio_coding/main/source/acm_resampler.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
@@ -25,14 +25,10 @@ class ACMGenericCodec;
 class CriticalSectionWrapper;
 class RWLockWrapper;
 
-#ifdef ACM_QA_TEST
-#   include <stdio.h>
-#endif
-
 class AudioCodingModuleImpl : public AudioCodingModule {
  public:
   // Constructor
-  AudioCodingModuleImpl(const WebRtc_Word32 id);
+  explicit AudioCodingModuleImpl(const WebRtc_Word32 id);
 
   // Destructor
   ~AudioCodingModuleImpl();
@@ -77,9 +73,9 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // Get current send frequency.
   WebRtc_Word32 SendFrequency() const;
 
-  // Get encode bitrate.
+  // Get encode bit-rate.
   // Adaptive rate codecs return their current encode target rate, while other
-  // codecs return there longterm avarage or their fixed rate.
+  // codecs return there long-term average or their fixed rate.
   WebRtc_Word32 SendBitrate() const;
 
   // Set available bandwidth, inform the encoder about the
@@ -96,7 +92,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   WebRtc_Word32 RegisterIncomingMessagesCallback(
       AudioCodingFeedback* incoming_message, const ACMCountries cpt);
 
-  // Add 10MS of raw (PCM) audio data to the encoder.
+  // Add 10 ms of raw (PCM) audio data to the encoder.
   WebRtc_Word32 Add10MsData(const AudioFrame& audio_frame);
 
   // Set background noise mode for NetEQ, on, off or fade.
@@ -128,7 +124,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   WebRtc_Word32 VAD(bool& dtx_enabled, bool& vad_enabled,
                     ACMVADMode& mode) const;
 
-  WebRtc_Word32 RegisterVADCallback(ACMVADCallback* vadCallback);
+  WebRtc_Word32 RegisterVADCallback(ACMVADCallback* vad_callback);
 
   // Get VAD aggressiveness on the incoming stream.
   ACMVADMode ReceiveVADMode() const;
@@ -152,7 +148,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // Get current playout frequency.
   WebRtc_Word32 PlayoutFrequency() const;
 
-  // Register possible reveive codecs, can be called multiple times,
+  // Register possible receive codecs, can be called multiple times,
   // for codecs, CNG, DTMF, RED.
   WebRtc_Word32 RegisterReceiveCodec(const CodecInst& receive_codec);
 
@@ -171,7 +167,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
                                 const WebRtc_UWord8 payload_type,
                                 const WebRtc_UWord32 timestamp = 0);
 
-  // Minimum playout dealy (used for lip-sync).
+  // Minimum playout delay (used for lip-sync).
   WebRtc_Word32 SetMinimumPlayoutDelay(const WebRtc_Word32 time_ms);
 
   // Configure Dtmf playout status i.e on/off playout the incoming outband Dtmf
@@ -258,7 +254,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   WebRtc_Word32 RegisterRecCodecMSSafe(const CodecInst& receive_codec,
                                        WebRtc_Word16 codec_id,
                                        WebRtc_Word16 mirror_id,
-                                       ACMNetEQ::JB jitter_buffer);
+                                       ACMNetEQ::JitterBuffer jitter_buffer);
 
   // Set VAD/DTX status. This function does not acquire a lock, and it is
   // created to be called only from inside a critical section.
@@ -273,19 +269,16 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   int ProcessDualStream();
 
   // Preprocessing of input audio, including resampling and down-mixing if
-  // required, before pushing audio into encoder'r buffer.
+  // required, before pushing audio into encoder's buffer.
   //
   // in_frame: input audio-frame
-  // out_frame: output audio_frame, the output is valid only if a preprocessing
-  //            is required.
+  // ptr_out: pointer to output audio_frame. If no preprocessing is required
+  //          |ptr_out| will be pointing to |in_frame|, otherwise pointing to
+  //          |preprocess_frame_|.
   //
   // Return value:
   //   -1: if encountering an error.
-  //    kPreprocessingSuccessful: if a preprocessing successfully performed.
-  //    kNoPreprocessingRequired: if there was no need for preprocessing. In
-  //                              this case |out_frame| is not updated and
-  //                              |in_frame| has to be used for further
-  //                              operations.
+  //    0: otherwise.
   int PreprocessToAddData(const AudioFrame& in_frame,
                           const AudioFrame** ptr_out);
 
@@ -304,89 +297,84 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
   int EncodeFragmentation(int fragmentation_index, int payload_type,
                           uint32_t current_timestamp,
-                          ACMGenericCodec* _secondary_encoder,
+                          ACMGenericCodec* encoder,
                           uint8_t* stream);
 
   void ResetFragmentation(int vector_size);
 
-  AudioPacketizationCallback* _packetizationCallback;
-  WebRtc_Word32 _id;
-  WebRtc_UWord32 _lastTimestamp;
-  WebRtc_UWord32 _lastInTimestamp;
-  CodecInst _sendCodecInst;
-  uint8_t _cng_nb_pltype;
-  uint8_t _cng_wb_pltype;
-  uint8_t _cng_swb_pltype;
-  uint8_t _cng_fb_pltype;
-  uint8_t _red_pltype;
-  bool _vadEnabled;
-  bool _dtxEnabled;
-  ACMVADMode _vadMode;
-  ACMGenericCodec* _codecs[ACMCodecDB::kMaxNumCodecs];
-  ACMGenericCodec* _slaveCodecs[ACMCodecDB::kMaxNumCodecs];
-  WebRtc_Word16 _mirrorCodecIdx[ACMCodecDB::kMaxNumCodecs];
-  bool _stereoReceive[ACMCodecDB::kMaxNumCodecs];
-  bool _stereoReceiveRegistered;
-  bool _stereoSend;
-  int _prev_received_channel;
-  int _expected_channels;
-  WebRtc_Word32 _currentSendCodecIdx;
-  int _current_receive_codec_idx;
-  bool _sendCodecRegistered;
-  ACMResampler _inputResampler;
-  ACMResampler _outputResampler;
-  ACMNetEQ _netEq;
-  CriticalSectionWrapper* _acmCritSect;
-  ACMVADCallback* _vadCallback;
-  WebRtc_UWord8 _lastRecvAudioCodecPlType;
+  AudioPacketizationCallback* packetization_callback_;
+  WebRtc_Word32 id_;
+  WebRtc_UWord32 last_timestamp_;
+  WebRtc_UWord32 last_in_timestamp_;
+  CodecInst send_codec_inst_;
+  uint8_t cng_nb_pltype_;
+  uint8_t cng_wb_pltype_;
+  uint8_t cng_swb_pltype_;
+  uint8_t cng_fb_pltype_;
+  uint8_t red_pltype_;
+  bool vad_enabled_;
+  bool dtx_enabled_;
+  ACMVADMode vad_mode_;
+  ACMGenericCodec* codecs_[ACMCodecDB::kMaxNumCodecs];
+  ACMGenericCodec* slave_codecs_[ACMCodecDB::kMaxNumCodecs];
+  WebRtc_Word16 mirror_codec_idx_[ACMCodecDB::kMaxNumCodecs];
+  bool stereo_receive_[ACMCodecDB::kMaxNumCodecs];
+  bool stereo_receive_registered_;
+  bool stereo_send_;
+  int prev_received_channel_;
+  int expected_channels_;
+  WebRtc_Word32 current_send_codec_idx_;
+  int current_receive_codec_idx_;
+  bool send_codec_registered_;
+  ACMResampler input_resampler_;
+  ACMResampler output_resampler_;
+  ACMNetEQ neteq_;
+  CriticalSectionWrapper* acm_crit_sect_;
+  ACMVADCallback* vad_callback_;
+  WebRtc_UWord8 last_recv_audio_codec_pltype_;
 
   // RED/FEC.
-  bool _isFirstRED;
-  bool _fecEnabled;
-  // TODO(turajs): |_redBuffer| is allocated in constructor, why having them
+  bool is_first_red_;
+  bool fec_enabled_;
+  // TODO(turajs): |red_buffer_| is allocated in constructor, why having them
   // as pointers and not an array. If concerned about the memory, then make a
   // set-up function to allocate them only when they are going to be used, i.e.
   // FEC or Dual-streaming is enabled.
-  WebRtc_UWord8* _redBuffer;
-  // TODO(turajs): we actually don't need |_fragmentation| as a member variable.
+  WebRtc_UWord8* red_buffer_;
+  // TODO(turajs): we actually don't need |fragmentation_| as a member variable.
   // It is sufficient to keep the length & payload type of previous payload in
   // member variables.
-  RTPFragmentationHeader _fragmentation;
-  WebRtc_UWord32 _lastFECTimestamp;
+  RTPFragmentationHeader fragmentation_;
+  WebRtc_UWord32 last_fec_timestamp_;
   // If no RED is registered as receive codec this
   // will have an invalid value.
-  WebRtc_UWord8 _receiveREDPayloadType;
+  WebRtc_UWord8 receive_red_pltype_;
 
   // This is to keep track of CN instances where we can send DTMFs.
-  WebRtc_UWord8 _previousPayloadType;
+  WebRtc_UWord8 previous_pltype_;
 
-  // This keeps track of payload types associated with _codecs[].
+  // This keeps track of payload types associated with codecs_[].
   // We define it as signed variable and initialize with -1 to indicate
   // unused elements.
-  WebRtc_Word16 _registeredPlTypes[ACMCodecDB::kMaxNumCodecs];
+  WebRtc_Word16 registered_pltypes_[ACMCodecDB::kMaxNumCodecs];
 
   // Used when payloads are pushed into ACM without any RTP info
   // One example is when pre-encoded bit-stream is pushed from
   // a file.
-  WebRtcRTPHeader* _dummyRTPHeader;
-  WebRtc_UWord16 _recvPlFrameSizeSmpls;
+  WebRtcRTPHeader* dummy_rtp_header_;
+  WebRtc_UWord16 recv_pl_frame_size_smpls_;
 
-  bool _receiverInitialized;
-  ACMDTMFDetection* _dtmfDetector;
+  bool receiver_initialized_;
+  ACMDTMFDetection* dtmf_detector_;
 
-  AudioCodingFeedback* _dtmfCallback;
-  WebRtc_Word16 _lastDetectedTone;
-  CriticalSectionWrapper* _callbackCritSect;
+  AudioCodingFeedback* dtmf_callback_;
+  WebRtc_Word16 last_detected_tone_;
+  CriticalSectionWrapper* callback_crit_sect_;
 
-  AudioFrame _audioFrame;
-  AudioFrame _preprocess_frame;
-  CodecInst _secondarySendCodecInst;
-  scoped_ptr<ACMGenericCodec> _secondaryEncoder;
-#ifdef ACM_QA_TEST
-  FILE* _outgoingPL;
-  FILE* _incomingPL;
-#endif
-
+  AudioFrame audio_frame_;
+  AudioFrame preprocess_frame_;
+  CodecInst secondary_send_codec_inst_;
+  scoped_ptr<ACMGenericCodec> secondary_encoder_;
 };
 
 }  // namespace webrtc

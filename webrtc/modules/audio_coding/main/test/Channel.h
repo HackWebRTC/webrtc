@@ -16,6 +16,7 @@
 #include "audio_coding_module.h"
 #include "critical_section_wrapper.h"
 #include "rw_lock_wrapper.h"
+#include "webrtc/modules/interface/module_common_types.h"
 
 namespace webrtc {
 

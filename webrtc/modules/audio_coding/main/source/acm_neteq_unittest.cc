@@ -10,16 +10,17 @@
 
 // This file contains unit tests for ACM's NetEQ wrapper (class ACMNetEQ).
 
+#include "webrtc/modules/audio_coding/main/source/acm_neteq.h"
+
 #include <stdlib.h>
 
 #include "gtest/gtest.h"
-#include "modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
-#include "modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
-#include "modules/audio_coding/main/source/acm_codec_database.h"
-#include "modules/audio_coding/main/source/acm_neteq.h"
-#include "modules/audio_coding/neteq/interface/webrtc_neteq_help_macros.h"
-#include "modules/interface/module_common_types.h"
-#include "typedefs.h"  // NOLINT(build/include)
+#include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
+#include "webrtc/modules/audio_coding/main/source/acm_codec_database.h"
+#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq_help_macros.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

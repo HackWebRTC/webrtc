@@ -8,71 +8,71 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "acm_pcma.h"
+#include "webrtc/modules/audio_coding/main/source/acm_pcma.h"
 
-#include "acm_common_defs.h"
-#include "acm_neteq.h"
-#include "trace.h"
-#include "webrtc_neteq.h"
-#include "webrtc_neteq_help_macros.h"
+#include "webrtc/modules/audio_coding/codecs/g711/include/g711_interface.h"
+#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/main/source/acm_neteq.h"
+#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq.h"
+#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq_help_macros.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 // Codec interface
-#include "g711_interface.h"
 
 namespace webrtc {
 
-ACMPCMA::ACMPCMA(WebRtc_Word16 codecID) {
-  _codecID = codecID;
+ACMPCMA::ACMPCMA(WebRtc_Word16 codec_id) {
+  codec_id_ = codec_id;
 }
 
 ACMPCMA::~ACMPCMA() {
   return;
 }
 
-WebRtc_Word16 ACMPCMA::InternalEncode(WebRtc_UWord8* bitStream,
-                                      WebRtc_Word16* bitStreamLenByte) {
-  *bitStreamLenByte = WebRtcG711_EncodeA(NULL, &_inAudio[_inAudioIxRead],
-                                         _frameLenSmpl * _noChannels,
-                                         (WebRtc_Word16*) bitStream);
+WebRtc_Word16 ACMPCMA::InternalEncode(WebRtc_UWord8* bitstream,
+                                      WebRtc_Word16* bitstream_len_byte) {
+  *bitstream_len_byte = WebRtcG711_EncodeA(NULL, &in_audio_[in_audio_ix_read_],
+                                           frame_len_smpl_ * num_channels_,
+                                           (WebRtc_Word16*) bitstream);
   // Increment the read index this tell the caller that how far
   // we have gone forward in reading the audio buffer.
-  _inAudioIxRead += _frameLenSmpl * _noChannels;
-  return *bitStreamLenByte;
+  in_audio_ix_read_ += frame_len_smpl_ * num_channels_;
+  return *bitstream_len_byte;
 }
 
-WebRtc_Word16 ACMPCMA::DecodeSafe(WebRtc_UWord8* /* bitStream */,
-                                  WebRtc_Word16 /* bitStreamLenByte */,
+WebRtc_Word16 ACMPCMA::DecodeSafe(WebRtc_UWord8* /* bitstream */,
+                                  WebRtc_Word16 /* bitstream_len_byte */,
                                   WebRtc_Word16* /* audio */,
-                                  WebRtc_Word16* /* audioSamples */,
-                                  WebRtc_Word8* /* speechType */) {
+                                  WebRtc_Word16* /* audio_samples */,
+                                  WebRtc_Word8* /* speech_type */) {
   return 0;
 }
 
 WebRtc_Word16 ACMPCMA::InternalInitEncoder(
-    WebRtcACMCodecParams* /* codecParams */) {
+    WebRtcACMCodecParams* /* codec_params */) {
   // This codec does not need initialization, PCM has no instance.
   return 0;
 }
 
 WebRtc_Word16 ACMPCMA::InternalInitDecoder(
-    WebRtcACMCodecParams* /* codecParams */) {
+    WebRtcACMCodecParams* /* codec_params */) {
   // This codec does not need initialization, PCM has no instance.
   return 0;
 }
 
-WebRtc_Word32 ACMPCMA::CodecDef(WebRtcNetEQ_CodecDef& codecDef,
-                                const CodecInst& codecInst) {
+WebRtc_Word32 ACMPCMA::CodecDef(WebRtcNetEQ_CodecDef& codec_def,
+                                const CodecInst& codec_inst) {
   // Fill up the structure by calling
   // "SET_CODEC_PAR" & "SET_PCMA_FUNCTION."
   // Then call NetEQ to add the codec to it's database.
-  if (codecInst.channels == 1) {
+  if (codec_inst.channels == 1) {
     // Mono mode.
-    SET_CODEC_PAR(codecDef, kDecoderPCMa, codecInst.pltype, NULL, 8000);
+    SET_CODEC_PAR(codec_def, kDecoderPCMa, codec_inst.pltype, NULL, 8000);
   } else {
     // Stereo mode.
-    SET_CODEC_PAR(codecDef, kDecoderPCMa_2ch, codecInst.pltype, NULL, 8000);
+    SET_CODEC_PAR(codec_def, kDecoderPCMa_2ch, codec_inst.pltype, NULL, 8000);
   }
-  SET_PCMA_FUNCTIONS(codecDef);
+  SET_PCMA_FUNCTIONS(codec_def);
   return 0;
 }
 
@@ -90,7 +90,7 @@ WebRtc_Word16 ACMPCMA::InternalCreateDecoder() {
   return 0;
 }
 
-void ACMPCMA::InternalDestructEncoderInst(void* /* ptrInst */) {
+void ACMPCMA::InternalDestructEncoderInst(void* /* ptr_inst */) {
   // PCM has no instance.
   return;
 }
@@ -102,8 +102,8 @@ void ACMPCMA::DestructEncoderSafe() {
 
 void ACMPCMA::DestructDecoderSafe() {
   // PCM has no instance.
-  _decoderInitialized = false;
-  _decoderExist = false;
+  decoder_initialized_ = false;
+  decoder_exist_ = false;
   return;
 }
 

@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_CELT_H_
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_CELT_H_
 
-#include "acm_generic_codec.h"
+#include "webrtc/modules/audio_coding/main/source/acm_generic_codec.h"
 
 // forward declaration
 struct CELT_encinst_t_;
@@ -21,29 +21,29 @@ namespace webrtc {
 
 class ACMCELT : public ACMGenericCodec {
  public:
-  ACMCELT(int16_t codecID);
+  explicit ACMCELT(int16_t codec_id);
   ~ACMCELT();
 
   ACMGenericCodec* CreateInstance(void);
 
-  int16_t InternalEncode(uint8_t* bitstream, int16_t* bitStreamLenByte);
+  int16_t InternalEncode(uint8_t* bitstream, int16_t* bitstream_len_byte);
 
-  int16_t InternalInitEncoder(WebRtcACMCodecParams *codecParams);
+  int16_t InternalInitEncoder(WebRtcACMCodecParams *codec_params);
 
-  int16_t InternalInitDecoder(WebRtcACMCodecParams *codecParams);
+  int16_t InternalInitDecoder(WebRtcACMCodecParams *codec_params);
 
  protected:
-
   WebRtc_Word16 DecodeSafe(
-      uint8_t* /* bitStream */,
-      int16_t /* bitStreamLenByte */,
+      uint8_t* /* bitstream */,
+      int16_t /* bitstream_len_byte */,
       int16_t* /* audio */,
-      int16_t* /* audioSamples */,
+      int16_t* /* audio_samples */,
       // TODO(leozwang): use int8_t here when WebRtc_Word8 is properly typed.
       // http://code.google.com/p/webrtc/issues/detail?id=311
-      WebRtc_Word8* /* speechType */);
+      WebRtc_Word8* /* speech_type */);
 
-  int32_t CodecDef(WebRtcNetEQ_CodecDef& codecDef, const CodecInst& codecInst);
+  int32_t CodecDef(WebRtcNetEQ_CodecDef& codec_def,
+                   const CodecInst& codec_inst);
 
   void DestructEncoderSafe();
 
@@ -53,7 +53,7 @@ class ACMCELT : public ACMGenericCodec {
 
   int16_t InternalCreateDecoder();
 
-  void InternalDestructEncoderInst(void* ptrInst);
+  void InternalDestructEncoderInst(void* ptr_inst);
 
   bool IsTrueStereoCodec();
 
@@ -69,6 +69,6 @@ class ACMCELT : public ACMGenericCodec {
   uint16_t dec_channels_;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_CELT_H_
