@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
   WebRtc_Word16 lostFrame;
   float scale = (float)0.7;
   /* only one structure used for ISAC encoder */
-  ISACFIX_MainStruct *ISAC_main_inst;
+  ISACFIX_MainStruct *ISAC_main_inst = NULL;
 
   /* For fault test 10, garbage data */
   FILE *seedfile;
