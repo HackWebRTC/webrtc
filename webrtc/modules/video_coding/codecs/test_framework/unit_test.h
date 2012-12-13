@@ -33,6 +33,7 @@ class UnitTest : public CodecTest
 public:
     UnitTest();
     virtual ~UnitTest();
+    virtual void Setup();
     virtual void Perform();
     virtual void Print();
 
@@ -41,7 +42,6 @@ protected:
     virtual WebRtc_UWord32 CodecSpecific_SetBitrate(
         WebRtc_UWord32 bitRate,
         WebRtc_UWord32 /* frameRate */);
-    virtual void Setup();
     virtual void Teardown();
     virtual void RateControlTests();
     virtual int Decode();

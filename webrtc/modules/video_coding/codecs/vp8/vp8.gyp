@@ -91,22 +91,7 @@
             '<(DEPTH)/testing/gtest.gyp:gtest',
           ],
          'sources': [
-            # header files
-            'test/benchmark.h',
-            'test/dual_decoder_test.h',
-            'test/normal_async_test.h',
-            'test/packet_loss_test.h',
-            'test/rps_test.h',
-            'test/vp8_unittest.h',
-
            # source files
-            'test/benchmark.cc',
-            'test/dual_decoder_test.cc',
-            'test/normal_async_test.cc',
-            'test/packet_loss_test.cc',
-            'test/rps_test.cc',
-            'test/tester.cc',
-            'test/vp8_unittest.cc',
             'test/vp8_impl_unittest.cc',
           ],
         },

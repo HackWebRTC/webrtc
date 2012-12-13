@@ -11,6 +11,7 @@
 #include "gtest/gtest.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/test_framework/video_source.h"
+#include "webrtc/modules/video_coding/codecs/test_framework/unit_test.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -148,6 +149,43 @@ class TestVp8Impl : public ::testing::Test {
   unsigned int length_source_frame_;
   VideoCodec codec_inst_;
 };
+
+TEST_F(TestVp8Impl, BaseUnitTest) {
+  // TODO(mikhal): Remove dependency. Move all test code here.
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
+  UnitTest unittest;
+  unittest.SetEncoder(encoder_.get());
+  unittest.SetDecoder(decoder_.get());
+  unittest.Setup();
+  unittest.Perform();
+  unittest.Print();
+}
+
+TEST_F(TestVp8Impl, EncoderParameterTest) {
+  strncpy(codec_inst_.plName, "VP8", 31);
+  codec_inst_.plType = 126;
+  codec_inst_.maxBitrate = 0;
+  codec_inst_.minBitrate = 0;
+  codec_inst_.width = 1440;
+  codec_inst_.height = 1080;
+  codec_inst_.maxFramerate = 30;
+  codec_inst_.startBitrate = 300;
+  codec_inst_.codecSpecific.VP8.complexity = kComplexityNormal;
+  codec_inst_.codecSpecific.VP8.numberOfTemporalLayers = 1;
+  // Calls before InitEncode().
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
+  int bit_rate = 300;
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_UNINITIALIZED,
+            encoder_->SetRates(bit_rate, codec_inst_.maxFramerate));
+
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_inst_, 1, 1440));
+
+  // Decoder parameter tests.
+  // Calls before InitDecode().
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Release());
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->InitDecode(&codec_inst_, 1));
+}
 
 TEST_F(TestVp8Impl, AlignedStrideEncodeDecode) {
   // Using a QCIF image (aligned stride (u,v planse) > width).
