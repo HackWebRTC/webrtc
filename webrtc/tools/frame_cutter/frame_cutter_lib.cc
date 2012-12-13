@@ -21,9 +21,10 @@ using std::string;
 
 namespace webrtc {
 
-int FrameCutter(const string& in_path, int width, int height,
-                int first_frame_to_cut, int last_frame_to_cut,
-                const string& out_path) {
+int CutFrames(const string& in_path, int width, int height,
+              int first_frame_to_cut, int interval, int last_frame_to_cut,
+              const string& out_path) {
+
   if (last_frame_to_cut < first_frame_to_cut) {
     fprintf(stderr, "The set of frames to cut is empty! (l < f)\n");
     return -10;
@@ -44,20 +45,25 @@ int FrameCutter(const string& in_path, int width, int height,
 
   if (!out_fid) {
     fprintf(stderr, "Could not open output file: %s.\n", out_path.c_str());
+    fclose(in_fid);
     return -12;
   }
 
   int num_frames_read = 0;
+  int num_frames_read_between = 0;
   int num_bytes_read;
 
   while ((num_bytes_read = fread(temp_buffer.get(), 1, frame_length, in_fid))
       == frame_length) {
+    num_frames_read++;
     if ((num_frames_read < first_frame_to_cut) ||
         (last_frame_to_cut < num_frames_read)) {
       fwrite(temp_buffer.get(), 1, frame_length, out_fid);
-      num_frames_read++;
     } else {
-      num_frames_read++;
+      num_frames_read_between++;
+      if (num_frames_read_between % interval != 0) {
+        fwrite(temp_buffer.get(), 1, frame_length, out_fid);
+      }
     }
   }
   if (num_bytes_read > 0 && num_bytes_read < frame_length) {

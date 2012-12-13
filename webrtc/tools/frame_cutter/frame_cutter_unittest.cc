@@ -19,7 +19,7 @@
 #include "webrtc/tools/frame_cutter/frame_cutter_lib.h"
 
 using webrtc::CalcBufferSize;
-using webrtc::FrameCutter;
+using webrtc::CutFrames;
 using webrtc::kI420;
 using webrtc::scoped_array;
 using webrtc::test::OutputPath;
@@ -28,80 +28,126 @@ using webrtc::test::ResourcePath;
 namespace webrtc {
 namespace test {
 
-const int width = 352;
-const int height = 288;
+const int kWidth = 352;
+const int kHeight = 288;
 
-const std::string ref_video = ResourcePath("foreman_cif", "yuv");
-const std::string test_video = OutputPath() + "testvideo.yuv";
+const std::string kRefVideo = ResourcePath("foreman_cif", "yuv");
+const std::string kTestVideo = OutputPath() + "testvideo.yuv";
 
 int num_bytes_read;
 
-TEST(FrameCutterUnittest, ValidInPath) {
-  const int first_frame_to_cut = 160;
-  const int last_frame_to_cut = 240;
+TEST(CutFramesUnittest, ValidInPath) {
+  const int kFirstFrameToCut = 160;
+  const int kInterval = 1;
+  const int kLastFrameToCut = 240;
 
-  int result = FrameCutter(ref_video, width, height, first_frame_to_cut,
-                           last_frame_to_cut, test_video);
+  int result = CutFrames(kRefVideo, kWidth, kHeight, kFirstFrameToCut,
+                           kInterval, kLastFrameToCut, kTestVideo);
   EXPECT_EQ(0, result);
 
-  FILE* ref_video_fid = fopen(ref_video.c_str(), "rb");
+  FILE* ref_video_fid = fopen(kRefVideo.c_str(), "rb");
   ASSERT_TRUE(ref_video_fid != NULL);
-  FILE* test_video_fid = fopen(test_video.c_str(), "rb");
+  FILE* test_video_fid = fopen(kTestVideo.c_str(), "rb");
   ASSERT_TRUE(test_video_fid != NULL);
 
-  const int frame_size =CalcBufferSize(kI420, width, height);
+  const int kFrameSize = CalcBufferSize(kI420, kWidth, kHeight);
 
-  scoped_array<int> ref_buffer(new int[frame_size]);
-  scoped_array<int> test_buffer(new int[frame_size]);
+  scoped_array<int> ref_buffer(new int[kFrameSize]);
+  scoped_array<int> test_buffer(new int[kFrameSize]);
 
-  for (int i = 0; i < first_frame_to_cut; ++i) {
-    num_bytes_read = fread(ref_buffer.get(), 1, frame_size, ref_video_fid);
-    EXPECT_EQ(frame_size, num_bytes_read);
+  for (int i = 1; i < kFirstFrameToCut; ++i) {
+    num_bytes_read = fread(ref_buffer.get(), 1, kFrameSize, ref_video_fid);
+    EXPECT_EQ(kFrameSize, num_bytes_read);
 
-    num_bytes_read = fread(test_buffer.get(), 1, frame_size, test_video_fid);
-    EXPECT_EQ(frame_size, num_bytes_read);
+    num_bytes_read = fread(test_buffer.get(), 1, kFrameSize, test_video_fid);
+    EXPECT_EQ(kFrameSize, num_bytes_read);
 
-    EXPECT_EQ(0, memcmp(ref_buffer.get(), test_buffer.get(), frame_size));
+    EXPECT_EQ(0, memcmp(ref_buffer.get(), test_buffer.get(), kFrameSize));
   }
   // Do not compare the frames that have been cut.
-  for (int i = first_frame_to_cut; i <= last_frame_to_cut; ++i) {
-    num_bytes_read = fread(ref_buffer.get(), 1, frame_size, ref_video_fid);
-    EXPECT_EQ(frame_size, num_bytes_read);
+  for (int i = kFirstFrameToCut; i <= kLastFrameToCut; ++i) {
+    num_bytes_read = fread(ref_buffer.get(), 1, kFrameSize, ref_video_fid);
+    EXPECT_EQ(kFrameSize, num_bytes_read);
   }
 
   while (!feof(test_video_fid) && !feof(ref_video_fid)) {
-    num_bytes_read = fread(ref_buffer.get(), 1, frame_size, ref_video_fid);
+    num_bytes_read = fread(ref_buffer.get(), 1, kFrameSize, ref_video_fid);
     if (!feof(ref_video_fid)) {
-      EXPECT_EQ(frame_size, num_bytes_read);
+      EXPECT_EQ(kFrameSize, num_bytes_read);
     }
-    num_bytes_read = fread(test_buffer.get(), 1, frame_size, test_video_fid);
+    num_bytes_read = fread(test_buffer.get(), 1, kFrameSize, test_video_fid);
     if (!feof(test_video_fid)) {
-      EXPECT_EQ(frame_size, num_bytes_read);
+      EXPECT_EQ(kFrameSize, num_bytes_read);
     }
     if (!feof(test_video_fid) && !feof(test_video_fid)) {
-      EXPECT_EQ(0, memcmp(ref_buffer.get(), test_buffer.get(), frame_size));
+      EXPECT_EQ(0, memcmp(ref_buffer.get(), test_buffer.get(), kFrameSize));
     }
   }
+  fclose(ref_video_fid);
+  fclose(test_video_fid);
 }
 
-TEST(FrameCutterUnittest, EmptySetToCut) {
-  int first_frame_to_cut = 2;
-  int last_frame_to_cut = 1;
+TEST(CutFramesUnittest, EmptySetToCut) {
+  const int kFirstFrameToCut = 2;
+  const int kInterval = 1;
+  const int kLastFrameToCut = 1;
 
-  int result = FrameCutter(ref_video, width, height, first_frame_to_cut,
-                           last_frame_to_cut, test_video);
+  int result = CutFrames(kRefVideo, kWidth, kHeight, kFirstFrameToCut,
+                           kInterval, kLastFrameToCut, kTestVideo);
   EXPECT_EQ(-10, result);
 }
 
-TEST(FrameCutterUnittest, InValidInPath) {
-  const std::string ref_video = "PATH/THAT/DOES/NOT/EXIST";
+TEST(CutFramesUnittest, InValidInPath) {
+  const std::string kRefVideo = "PATH/THAT/DOES/NOT/EXIST";
 
-  int first_frame_to_cut = 30;
-  int last_frame_to_cut = 120;
+  const int kFirstFrameToCut = 30;
+  const int kInterval = 1;
+  const int kLastFrameToCut = 120;
 
-  int result = FrameCutter(ref_video, width, height, first_frame_to_cut,
-                           last_frame_to_cut, test_video);
+  int result = CutFrames(kRefVideo, kWidth, kHeight, kFirstFrameToCut,
+                           kInterval, kLastFrameToCut, kTestVideo);
   EXPECT_EQ(-11, result);
+}
+
+TEST(CutFramesUnitTest, DeletingEverySecondFrame) {
+  const int kFirstFrameToCut = 1;
+  const int kInterval = 2;
+  const int kLastFrameToCut = 10000;
+  // Set kLastFrameToCut to a large value so that all frame are processed.
+  int result = CutFrames(kRefVideo, kWidth, kHeight, kFirstFrameToCut,
+                           kInterval, kLastFrameToCut, kTestVideo);
+  EXPECT_EQ(0, result);
+
+  FILE* original_fid = fopen(kRefVideo.c_str(), "rb");
+  ASSERT_TRUE(original_fid != NULL);
+  FILE* edited_fid = fopen(kTestVideo.c_str(), "rb");
+  ASSERT_TRUE(edited_fid != NULL);
+
+  const int kFrameSize = CalcBufferSize(kI420, kWidth, kHeight);
+
+  scoped_array<int> original_buffer(new int[kFrameSize]);
+  scoped_array<int> edited_buffer(new int[kFrameSize]);
+
+  int num_frames_read = 0;
+
+  while (!feof(original_fid) && !feof(edited_fid)) {
+    num_bytes_read =
+        fread(original_buffer.get(), 1, kFrameSize, original_fid);
+    if (!feof(original_fid)) {
+      EXPECT_EQ(kFrameSize, num_bytes_read);
+      num_frames_read++;
+    }
+    if (num_frames_read % kInterval != 0) {
+      num_bytes_read = fread(edited_buffer.get(), 1, kFrameSize, edited_fid);
+      if (!feof(edited_fid)) {
+        EXPECT_EQ(kFrameSize, num_bytes_read);
+      }
+      if (!feof(original_fid) && !feof(edited_fid)) {
+        EXPECT_EQ(0, memcmp(original_buffer.get(),
+                            edited_buffer.get(), kFrameSize));
+      }
+    }
+  }
 }
 }
 }

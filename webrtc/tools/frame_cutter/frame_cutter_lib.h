@@ -17,11 +17,15 @@ namespace webrtc {
 
 // Frame numbering starts at 1. The set of frames to be cut includes the frame
 // with the number: first_frame_to_cut and last_frame_to_cut. I.e if one clip
-// has 10 frames (1 to 10), and you specify first_frame_to_cut = 4 and
-// last_frame_to_cut = 7, then you will get a clip that contains frame 1, 2, 3,
-// 8, 9 and 10.
-int FrameCutter(const std::string& in_path, int width, int height,
-                int first_frame_to_cut, int last_frame_to_cut,
+// has 10 frames (1 to 10), and you specify first_frame_to_cut = 4,
+// last_frame_to_cut = 7 and interval = 1, then you will get a clip that
+// contains frame 1, 2, 3, 8, 9 and 10.
+// Interval specifies with what interval frames should be cut. I.e if one clip
+// has 10 frames (1 to 10), and you specify first_frame_to_cut = 1,
+// last_frame_to_cut = 10 and interval = 3, then you will get a clip that
+// contains frame 1, 2, 4, 5, 7, 8, 10.
+int CutFrames(const std::string& in_path, int width, int height,
+                int first_frame_to_cut, int interval, int last_frame_to_cut,
                 const std::string& out_path);
 }
 

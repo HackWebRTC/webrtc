@@ -19,22 +19,31 @@
 // A command-line tool to edit a YUV-video (I420 sub-sampled).
 int main(int argc, char** argv) {
   std::string program_name = argv[0];
-  std::string usage = "Deletes a series of frames in a yuv file. "
-    "Only I420 is supported!\n"
+  std::string usage = "Deletes a series of frames in a yuv file."
+    " Only I420 is supported!\n"
     "Example usage:\n" + program_name +
-    " --in_path=input.yuv --width=320 --height=240 --f=60 --l=120 "
-    "--out_path=edited_clip.yuv\n"
+    " --in_path=input.yuv --width=320 --height=240 --f=60 --interval=1 --l=120"
+    " --out_path=edited_clip.yuv\n"
     "Command line flags:\n"
-    " --in_path(string): Path and filename to the input file\n"
-    "  -- width(int): Width in pixels of the frames in the input file."
+    "--in_path(string): Path and filename to the input file\n"
+    "--width(int): Width in pixels of the frames in the input file."
     " Default: -1\n"
-    "  -- height(int): Height in pixels of the frames in the input file."
+    "--height(int): Height in pixels of the frames in the input file."
     " Default: -1\n"
-    "  -- f(int): First frame to cut.\n"
-        " Default: -1\n"
-    "  -- l(int): Last frame to cut.\n"
-            " Default: -1\n"
-    "  -- out_path(string): The output file to which frames are written."
+    "--f(int): First frame to cut.\n"
+    " Default: -1\n"
+    "--interval(int): Set to 1 if every frame between f and l should be "
+    "deleted. Set it to 2 if every second frame should be deleted, "
+    "and so on...Frame numbering between the limits start with 1 and frames "
+    "read between and including the limits with number n where "
+    "n % interval != 0 will be kept.\n"
+    "Example: If the clip have frames with the numbers 1 to 10, and you set f=2"
+    " , l=7 and interval=2, then the output clip will contain the frames with "
+    " number 1, 2, 4, 6, 8, 9, 10."
+    " Default: 1\n"
+    "--l(int): Last frame to cut."
+    " Default: -1\n"
+    " --out_path(string): The output file to which frames are written."
     " Default: output.yuv\n";
 
   webrtc::test::CommandLineParser parser;
@@ -47,6 +56,7 @@ int main(int argc, char** argv) {
   parser.SetFlag("width", "-1");
   parser.SetFlag("height", "-1");
   parser.SetFlag("f", "-1");
+  parser.SetFlag("interval", "1");
   parser.SetFlag("l", "-1");
   parser.SetFlag("out_path", "edited_output.yuv");
   parser.SetFlag("help", "false");
@@ -61,6 +71,7 @@ int main(int argc, char** argv) {
   int width = strtol((parser.GetFlag("width")).c_str(), NULL, 10);
   int height = strtol((parser.GetFlag("height")).c_str(), NULL, 10);
   int first_frame_to_cut = strtol((parser.GetFlag("f")).c_str(), NULL, 10);
+  int interval = strtol((parser.GetFlag("interval")).c_str(), NULL, 10);
   int last_frame_to_cut = strtol((parser.GetFlag("l")).c_str(), NULL, 10);
 
   const char* out_path = parser.GetFlag("out_path").c_str();
@@ -80,7 +91,7 @@ int main(int argc, char** argv) {
     return -3;
   }
 
-  return webrtc::FrameCutter(in_path, width, height, first_frame_to_cut,
-                             last_frame_to_cut, out_path);
+  return webrtc::CutFrames(in_path, width, height, first_frame_to_cut,
+                             interval, last_frame_to_cut, out_path);
 }
 
