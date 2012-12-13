@@ -18,7 +18,7 @@ namespace webrtc {
 namespace test {
 
 // The highest PSNR value our algorithms will return.
-extern double kMetricsInfinitePSNR;
+extern double kMetricsPerfectPSNR;
 
 // Contains video quality metrics result for a single frame.
 struct FrameResult {

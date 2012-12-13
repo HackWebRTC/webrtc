@@ -354,7 +354,7 @@ double I420PSNR(const I420VideoFrame* ref_frame,
                                  test_frame->width(), test_frame->height());
   // LibYuv sets the max psnr value to 128, we restrict it here.
   // In case of 0 mse in one frame, 128 can skew the results significantly.
-  return (psnr > kInfinitePSNR) ? kInfinitePSNR : psnr;
+  return (psnr > kPerfectPSNR) ? kPerfectPSNR : psnr;
 }
 
 // Compute SSIM for an I420 frame (all planes)
@@ -409,7 +409,7 @@ double I420PSNR(const uint8_t* ref_frame,
                                  width, height);
   // LibYuv sets the max psnr value to 128, we restrict it here.
   // In case of 0 mse in one frame, 128 can skew the results significantly.
-  return (psnr > kInfinitePSNR) ? kInfinitePSNR : psnr;
+  return (psnr > kPerfectPSNR) ? kPerfectPSNR : psnr;
 }
 // Compute SSIM for an I420 frame (all planes)
 double I420SSIM(const uint8_t* ref_frame,

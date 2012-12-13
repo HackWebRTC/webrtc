@@ -21,7 +21,7 @@ namespace webrtc {
 namespace test {
 
 // Copy here so our callers won't need to include libyuv for this constant.
-double kMetricsInfinitePSNR = kInfinitePSNR;
+double kMetricsPerfectPSNR = kPerfectPSNR;
 
 // Used for calculating min and max values.
 static bool LessForFrameResultValue (const FrameResult& s1,

@@ -160,6 +160,8 @@ TEST_F(ViEVideoVerificationTest, RunsBaseStandardTestWithoutErrors) {
   // However, it's hard to make 100% stringent requirements on the video engine
   // since for instance the jitter buffer has non-deterministic elements. If it
   // breaks five times in a row though, you probably introduced a bug.
+  const double kReasonablePsnr = webrtc::test::kMetricsPerfectPSNR - 2.0f;
+  const double kReasonableSsim = 0.99f;
   const int kNumAttempts = 5;
   for (int attempt = 0; attempt < kNumAttempts; ++attempt) {
     InitializeFileRenderers();
@@ -176,8 +178,7 @@ TEST_F(ViEVideoVerificationTest, RunsBaseStandardTestWithoutErrors) {
 
     TearDownFileRenderers();
 
-    if (actual_psnr == webrtc::test::kMetricsInfinitePSNR &&
-        actual_ssim == 1.0f) {
+    if (actual_psnr > kReasonablePsnr && actual_ssim > kReasonableSsim) {
       // Test successful.
       return;
     } else {
@@ -185,7 +186,7 @@ TEST_F(ViEVideoVerificationTest, RunsBaseStandardTestWithoutErrors) {
     }
   }
 
-  FAIL() << "Failed to achieve perfect PSNR and SSIM results after " <<
+  FAIL() << "Failed to achieve near-perfect PSNR and SSIM results after " <<
       kNumAttempts << " attempts.";
 }
 
