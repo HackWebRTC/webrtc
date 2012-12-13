@@ -61,7 +61,7 @@ void ViEAutoTest::ViEImageProcessStandardTest()
 
     ViETest::Log("Capture device is renderered in Window 1");
     ViETest::Log("Remote stream is renderered in Window 2");
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
 
     //***************************************************************
     //	Engine ready. Begin testing class
@@ -73,7 +73,7 @@ void ViEAutoTest::ViEImageProcessStandardTest()
 
     ViETest::Log("Black and white filter registered for capture device, "
                  "affects both windows");
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
 
     EXPECT_EQ(0, ViE.image_process->DeregisterCaptureEffectFilter(
         tbCapture.captureId));
@@ -84,7 +84,7 @@ void ViEAutoTest::ViEImageProcessStandardTest()
     ViETest::Log("Remove capture effect filter, adding filter for incoming "
                  "stream");
     ViETest::Log("Only Window 2 should be black and white");
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
 
     EXPECT_EQ(0, ViE.render->StopRender(tbCapture.captureId));
     EXPECT_EQ(0, ViE.render->RemoveRenderer(tbCapture.captureId));
@@ -111,7 +111,7 @@ void ViEAutoTest::ViEImageProcessStandardTest()
 
     ViETest::Log("Black and white filter registered for capture device, "
                  "affects both windows");
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
 
     EXPECT_EQ(0, ViE.image_process->DeregisterCaptureEffectFilter(
         tbCapture.captureId));
@@ -122,7 +122,7 @@ void ViEAutoTest::ViEImageProcessStandardTest()
     ViETest::Log("Capture filter removed.");
     ViETest::Log("Black and white filter registered for one channel, Window2 "
                  "should be black and white");
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
 
     EXPECT_EQ(0, ViE.image_process->DeregisterSendEffectFilter(
         tbChannel.videoChannel));

@@ -59,7 +59,7 @@ void TestI420CallSetup(webrtc::ViECodec* codec_interface,
 
   // Let the call run for a while.
   ViETest::Log("Call started");
-  AutoTestSleep(KAutoTestSleepTimeMs);
+  AutoTestSleep(kAutoTestSleepTimeMs);
 
   // Stop the call.
   ViETest::Log("Stopping call.");

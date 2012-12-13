@@ -148,7 +148,8 @@ class FrameDropDetector {
         timestamp_diff_(0) {}
 
   // Reports a frame has reached a state in the frame life cycle.
-  void ReportFrameState(State state, unsigned int timestamp);
+  void ReportFrameState(State state, unsigned int timestamp,
+                        int64_t report_time_us);
 
   // Uses all the gathered timestamp information to calculate which frames have
   // been dropped during the test and where they were dropped. Not until

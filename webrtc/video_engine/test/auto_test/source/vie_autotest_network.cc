@@ -72,7 +72,7 @@ void ViEAutoTest::ViENetworkStandardTest()
 
         ViETest::Log("Call started using external transport, video should "
             "see video in both windows\n");
-        AutoTestSleep(KAutoTestSleepTimeMs);
+        AutoTestSleep(kAutoTestSleepTimeMs);
 
         EXPECT_EQ(0, ViE.base->StopReceive(tbChannel.videoChannel));
         EXPECT_EQ(0, ViE.base->StopSend(tbChannel.videoChannel));
@@ -93,7 +93,7 @@ void ViEAutoTest::ViENetworkStandardTest()
 
         ViETest::Log("Changed to WebRTC SocketTransport, you should still see "
                      "video in both windows\n");
-        AutoTestSleep(KAutoTestSleepTimeMs);
+        AutoTestSleep(kAutoTestSleepTimeMs);
 
         EXPECT_EQ(0, ViE.network->SetSourceFilter(
             tbChannel.videoChannel, rtpPort + 10, rtpPort + 11, myIpAddress));
@@ -109,7 +109,7 @@ void ViEAutoTest::ViENetworkStandardTest()
             tbChannel.videoChannel, rtpPort, rtpPort + 1, myIpAddress));
         ViETest::Log("Added IP filter for this computer, you should see video "
                      "in Window2 again\n");
-        AutoTestSleep(KAutoTestSleepTimeMs);
+        AutoTestSleep(kAutoTestSleepTimeMs);
 
         tbCapture.Disconnect(tbChannel.videoChannel);
     }

@@ -123,7 +123,7 @@ void ViEAutoTest::ViEEncryptionStandardTest()
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthNull, 0, 0, webrtc::kEncryption, srtpKey1));
     ViETest::Log("SRTP encryption only");
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
     EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
     EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
@@ -136,7 +136,7 @@ void ViEAutoTest::ViEEncryptionStandardTest()
         20, 4, webrtc::kAuthentication, srtpKey1));
 
     ViETest::Log("SRTP authentication only");
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
     EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
     EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
@@ -151,7 +151,7 @@ void ViEAutoTest::ViEEncryptionStandardTest()
         srtpKey1));
 
     ViETest::Log("SRTP full protection");
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
     EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
     EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 #endif  // WEBRTC_SRTP
@@ -166,7 +166,7 @@ void ViEAutoTest::ViEEncryptionStandardTest()
         tbChannel.videoChannel, testEncryption));
     ViETest::Log(
         "External encryption/decryption added, you should still see video");
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
     EXPECT_EQ(0, ViE.encryption->DeregisterExternalEncryption(
         tbChannel.videoChannel));
 
@@ -219,7 +219,7 @@ void ViEAutoTest::ViEEncryptionExtendedTest()
         webrtc::kNoProtection, srtpKey1));
 
     ViETest::Log("SRTP NULL encryption/authentication");
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
     EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
     EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
@@ -232,7 +232,7 @@ void ViEAutoTest::ViEEncryptionExtendedTest()
         webrtc::kAuthNull, 0, 0, webrtc::kEncryption, srtpKey1));
 
     ViETest::Log("SRTP encryption only");
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
     EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
     EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
@@ -245,7 +245,7 @@ void ViEAutoTest::ViEEncryptionExtendedTest()
         20, 4, webrtc::kAuthentication, srtpKey1));
 
     ViETest::Log("SRTP authentication only");
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
     EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
     EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
@@ -260,7 +260,7 @@ void ViEAutoTest::ViEEncryptionExtendedTest()
         srtpKey1));
 
     ViETest::Log("SRTP full protection");
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
     EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
     EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
@@ -277,7 +277,7 @@ void ViEAutoTest::ViEEncryptionExtendedTest()
 
     ViETest::Log(
         "\nSRTP receive key changed, you should not see any remote images");
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
 
     // Change send key too
     EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
@@ -288,12 +288,12 @@ void ViEAutoTest::ViEEncryptionExtendedTest()
 
     ViETest::Log("\nSRTP send key changed too, you should see remote video "
                  "again with some decoding artefacts at start");
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
     EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
 
     // Disable receive, keep send
     ViETest::Log("SRTP receive disabled , you shouldn't see any video");
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
     EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
 #endif //WEBRTC_SRTP
@@ -305,7 +305,7 @@ void ViEAutoTest::ViEEncryptionExtendedTest()
         tbChannel.videoChannel, testEncryption));
     ViETest::Log(
         "External encryption/decryption added, you should still see video");
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
     EXPECT_EQ(0, ViE.encryption->DeregisterExternalEncryption(
         tbChannel.videoChannel));
 

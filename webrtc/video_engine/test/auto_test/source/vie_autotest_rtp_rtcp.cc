@@ -175,7 +175,7 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(0, ViE.base->StartSend(tbChannel.videoChannel));
     EXPECT_EQ(0, ViE.base->StartReceive(tbChannel.videoChannel));
 
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
 
     unsigned short sentFractionsLost = 0;
     unsigned int sentCumulativeLost = 0;
@@ -252,7 +252,7 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(0, ViE.base->StartReceive(tbChannel.videoChannel));
     EXPECT_EQ(0, ViE.base->StartSend(tbChannel.videoChannel));
 
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
 
     EXPECT_EQ(0, ViE.rtp_rtcp->GetBandwidthUsage(
         tbChannel.videoChannel, sentTotalBitrate, sentVideoBitrate,
@@ -270,7 +270,7 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(0, ViE.rtp_rtcp->SetNACKStatus(tbChannel.videoChannel, true));
     EXPECT_EQ(0, ViE.base->StartSend(tbChannel.videoChannel));
 
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
 
     EXPECT_EQ(0, ViE.rtp_rtcp->GetBandwidthUsage(
         tbChannel.videoChannel, sentTotalBitrate, sentVideoBitrate,
@@ -334,7 +334,7 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
 
     EXPECT_EQ(0, ViE.base->StartSend(tbChannel.videoChannel));
 
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
 
     EXPECT_EQ(0, ViE.base->StopSend(tbChannel.videoChannel));
 
@@ -416,7 +416,7 @@ void ViEAutoTest::ViERtpRtcpExtendedTest()
         tbChannel.videoChannel, subType, name, data, numBytes));
 
     ViETest::Log("Sending RTCP application data...\n");
-    AutoTestSleep(KAutoTestSleepTimeMs);
+    AutoTestSleep(kAutoTestSleepTimeMs);
 
     EXPECT_EQ(subType, rtcpObserver._subType);
     EXPECT_STRCASEEQ(data, rtcpObserver._data);
