@@ -34,7 +34,6 @@ RTPReceiver::RTPReceiver(const WebRtc_Word32 id,
                          RtpRtcpClock* clock,
                          ModuleRtpRtcpImpl* owner,
                          RtpAudioFeedback* incomingMessagesCallback) :
-    RTPReceiverVideo(id, owner),
     Bitrate(clock),
     _id(id),
     _audio(audio),
@@ -97,6 +96,7 @@ RTPReceiver::RTPReceiver(const WebRtc_Word32 id,
     _RTX(false),
     _ssrcRTX(0) {
   _rtpReceiverAudio = new RTPReceiverAudio(id, this, incomingMessagesCallback);
+  _rtpReceiverVideo = new RTPReceiverVideo(id, this, owner);
 
   memset(_currentRemoteCSRC, 0, sizeof(_currentRemoteCSRC));
   memset(_currentRemoteEnergy, 0, sizeof(_currentRemoteEnergy));
@@ -123,6 +123,7 @@ RTPReceiver::~RTPReceiver() {
     delete it->second;
     _payloadTypeMap.erase(it);
   }
+  delete _rtpReceiverVideo;
   delete _rtpReceiverAudio;
   WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, _id, "%s deleted", __FUNCTION__);
 }
@@ -398,7 +399,8 @@ WebRtc_Word32 RTPReceiver::RegisterReceivePayload(
       payload = _rtpReceiverAudio->RegisterReceiveAudioPayload(
           payloadName, payloadType, frequency, channels, rate);
     } else {
-      payload = RegisterReceiveVideoPayload(payloadName, payloadType, rate);
+      payload = _rtpReceiverVideo->RegisterReceiveVideoPayload(
+          payloadName, payloadType, rate);
     }
   }
   if (payload == NULL) {
@@ -755,20 +757,13 @@ WebRtc_Word32 RTPReceiver::IncomingRTPPacket(
 
   WebRtc_Word32 retVal = 0;
   if(_audio) {
-    retVal = _rtpReceiverAudio->ParseAudioCodecSpecific(rtp_header,
-                                                        payload_data,
-                                                        payload_data_length,
-                                                        audio_specific,
-                                                        is_red);
+    retVal = _rtpReceiverAudio->ParseAudioCodecSpecific(
+        rtp_header, payload_data, payload_data_length, audio_specific, is_red);
   } else {
-    retVal = ParseVideoCodecSpecific(rtp_header,
-                                     payload_data,
-                                     payload_data_length,
-                                     video_specific.videoCodecType,
-                                     is_red,
-                                     packet,
-                                     packet_length,
-                                     _clock.GetTimeInMS());
+    retVal = _rtpReceiverVideo->ParseVideoCodecSpecific(
+        rtp_header, payload_data, payload_data_length,
+        video_specific.videoCodecType, is_red, packet, packet_length,
+        _clock.GetTimeInMS());
   }
   if(retVal < 0) {
     return retVal;
