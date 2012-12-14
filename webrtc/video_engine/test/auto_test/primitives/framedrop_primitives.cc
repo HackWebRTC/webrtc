@@ -406,6 +406,7 @@ void FrameDropDetector::PrintReport(const std::string& test_label) {
       "Dropped at  Dropped at  Dropped at  Dropped at");
   ViETest::Log(" nbr    delta     delta    delta    delta   delta   "
       " Send?       Receive?    Decode?     Render?");
+  Statistics rendering_stats;
   for (std::vector<Frame*>::const_iterator it = created_frames_vector_.begin();
        it != created_frames_vector_.end(); ++it) {
     int created_delta =
@@ -450,6 +451,7 @@ void FrameDropDetector::PrintReport(const std::string& test_label) {
     }
     if (!(*it)->dropped_at_render) {
       last_rendered = (*it)->rendered_timestamp_in_us_;
+      rendering_stats.AddSample(rendered_delta / 1000.0f);
     }
   }
   ViETest::Log("\nLatency between states (-1 means N/A because of drop):");
@@ -461,7 +463,6 @@ void FrameDropDetector::PrintReport(const std::string& test_label) {
   ViETest::Log("                                               (incl network)"
       "(excl network)");
   Statistics latency_incl_network_stats;
-  Statistics latency_excl_network_stats;
   for (std::vector<Frame*>::const_iterator it = created_frames_vector_.begin();
        it != created_frames_vector_.end(); ++it) {
     int created_to_sent = (*it)->dropped_at_send ? -1 :
@@ -485,9 +486,6 @@ void FrameDropDetector::PrintReport(const std::string& test_label) {
     if (total_latency_incl_network >= 0)
       latency_incl_network_stats.AddSample(total_latency_incl_network /
                                            1000.0f);
-    if (total_latency_excl_network >= 0)
-      latency_excl_network_stats.AddSample(total_latency_excl_network /
-                                           1000.0f);
     ViETest::Log("%5d %9d %9d %9d %9d %12d %12d",
                  (*it)->number_,
                  created_to_sent,
@@ -500,11 +498,12 @@ void FrameDropDetector::PrintReport(const std::string& test_label) {
 
   // Print dashboard data.
   webrtc::test::PrintResultMeanAndError(
-      "total delay (excl. network)", " " + test_label, "",
-      latency_excl_network_stats.AsString(), "ms", false);
-  webrtc::test::PrintResultMeanAndError(
       "total delay (incl. network)", " " + test_label, "",
       latency_incl_network_stats.AsString(), "ms", false);
+  webrtc::test::PrintResultMeanAndError(
+      "time between rendered frames", " " + test_label, "",
+      rendering_stats.AsString(), "ms", false);
+
 
   // Find and print the dropped frames.
   ViETest::Log("\nTotal # dropped frames at:");
