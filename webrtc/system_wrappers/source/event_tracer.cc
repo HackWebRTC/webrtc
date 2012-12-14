@@ -35,31 +35,26 @@ const unsigned char* EventTracer::GetCategoryEnabled(const char* name) {
 }
 
 // static
-int EventTracer::AddTraceEvent(char phase,
-                               const unsigned char* category_enabled,
-                               const char* name,
-                               unsigned long long id,
-                               int num_args,
-                               const char** arg_names,
-                               const unsigned char* arg_types,
-                               const unsigned long long* arg_values,
-                               int threshold_begin_id,
-                               long long threshold,
-                               unsigned char flags) {
+void EventTracer::AddTraceEvent(char phase,
+                                const unsigned char* category_enabled,
+                                const char* name,
+                                unsigned long long id,
+                                int num_args,
+                                const char** arg_names,
+                                const unsigned char* arg_types,
+                                const unsigned long long* arg_values,
+                                unsigned char flags) {
   if (g_add_trace_event_ptr) {
-    return g_add_trace_event_ptr(phase,
-                                 category_enabled,
-                                 name,
-                                 id,
-                                 num_args,
-                                 arg_names,
-                                 arg_types,
-                                 arg_values,
-                                 threshold_begin_id,
-                                 threshold,
-                                 flags);
+    g_add_trace_event_ptr(phase,
+                          category_enabled,
+                          name,
+                          id,
+                          num_args,
+                          arg_names,
+                          arg_types,
+                          arg_values,
+                          flags);
   }
-  return -1;
 }
 
 }  // namespace webrtc

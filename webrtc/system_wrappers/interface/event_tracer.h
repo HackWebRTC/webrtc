@@ -31,17 +31,15 @@
 namespace webrtc {
 
 typedef const unsigned char* (*GetCategoryEnabledPtr)(const char* name);
-typedef int (*AddTraceEventPtr)(char phase,
-                                const unsigned char* category_enabled,
-                                const char* name,
-                                unsigned long long id,
-                                int num_args,
-                                const char** arg_names,
-                                const unsigned char* arg_types,
-                                const unsigned long long* arg_values,
-                                int threshold_begin_id,
-                                long long threshold,
-                                unsigned char flags);
+typedef void (*AddTraceEventPtr)(char phase,
+                                 const unsigned char* category_enabled,
+                                 const char* name,
+                                 unsigned long long id,
+                                 int num_args,
+                                 const char** arg_names,
+                                 const unsigned char* arg_types,
+                                 const unsigned long long* arg_values,
+                                 unsigned char flags);
 
 // User of WebRTC can call this method to setup event tracing.
 //
@@ -58,7 +56,7 @@ class EventTracer {
   static const unsigned char* GetCategoryEnabled(
       const char* name);
 
-  static int AddTraceEvent(
+  static void AddTraceEvent(
       char phase,
       const unsigned char* category_enabled,
       const char* name,
@@ -67,8 +65,6 @@ class EventTracer {
       const char** arg_names,
       const unsigned char* arg_types,
       const unsigned long long* arg_values,
-      int threshold_begin_id,
-      long long threshold,
       unsigned char flags);
 };
 
