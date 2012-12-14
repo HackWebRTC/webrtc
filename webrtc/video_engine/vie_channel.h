@@ -96,6 +96,9 @@ class ViEChannel
                                        WebRtc_UWord32* num_delta_frames);
   WebRtc_UWord32 DiscardedPackets() const;
 
+  // Returns the estimated delay in milliseconds.
+  int ReceiveDelay() const;
+
   // Only affects calls to SetReceiveCodec done after this call.
   WebRtc_Word32 WaitForKeyFrame(bool wait);
 

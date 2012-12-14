@@ -124,6 +124,11 @@ class WEBRTC_DLLEXPORT ViECodec {
                                          unsigned int& key_frames,
                                          unsigned int& delta_frames) const = 0;
 
+  // Estimate of the min required buffer time from the expected arrival time
+  // until rendering to get smooth playback.
+  virtual int GetReceiveSideDelay(const int video_channel,
+                                  int* delay_ms) const = 0;
+
   // Gets the bitrate targeted by the video codec rate control in kbit/s.
   virtual int GetCodecTargetBitrate(const int video_channel,
                                     unsigned int* bitrate) const = 0;

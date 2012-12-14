@@ -49,6 +49,8 @@ class ViECodecImpl
   virtual int GetReceiveCodecStastistics(const int video_channel,
                                          unsigned int& key_frames,
                                          unsigned int& delta_frames) const;
+  virtual int GetReceiveSideDelay(const int video_channel,
+                                  int* delay_ms) const;
   virtual int GetCodecTargetBitrate(const int video_channel,
                                     unsigned int* bitrate) const;
   virtual unsigned int GetDiscardedPackets(const int video_channel) const;

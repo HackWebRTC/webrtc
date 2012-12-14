@@ -522,6 +522,10 @@ WebRtc_UWord32 ViEChannel::DiscardedPackets() const {
   return vcm_.DiscardedPackets();
 }
 
+int ViEChannel::ReceiveDelay() const {
+  return vcm_.Delay();
+}
+
 WebRtc_Word32 ViEChannel::WaitForKeyFrame(bool wait) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s(wait: %d)", __FUNCTION__, wait);
