@@ -1171,6 +1171,8 @@ int WebRtcNetEQ_GetNetworkStatistics(void *inst, WebRtcNetEQ_NetworkStatistics *
     /* Instance sanity */
     if (NetEqMainInst == NULL) return (-1);
 
+    stats->addedSamples = NetEqMainInst->DSPinst.statInst.addedSamples;
+
     /*******************/
     /* Get buffer size */
     /*******************/

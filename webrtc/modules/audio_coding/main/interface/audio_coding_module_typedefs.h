@@ -165,6 +165,7 @@ enum ACMAMRPackingFormat {
 // -medianWaitingTimeMs    : median packet waiting time in the buffer
 // -minWaitingTimeMs       : min packet waiting time in the buffer
 // -maxWaitingTimeMs       : max packet waiting time in the buffer
+// -addedSamples           : samples inserted because of packet loss in off mode
 typedef struct {
   WebRtc_UWord16 currentBufferSize;
   WebRtc_UWord16 preferredBufferSize;
@@ -179,6 +180,7 @@ typedef struct {
   int medianWaitingTimeMs;
   int minWaitingTimeMs;
   int maxWaitingTimeMs;
+  int addedSamples;
 } ACMNetworkStatistics;
 
 ///////////////////////////////////////////////////////////////////////////

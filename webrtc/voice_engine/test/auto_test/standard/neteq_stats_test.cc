@@ -49,4 +49,7 @@ TEST_F(NetEQStatsTest, ManualPrintStatisticsAfterRunningAWhile) {
       network_statistics.minWaitingTimeMs);
   TEST_LOG("    maxWaitingTimeMs          = %i \n",
       network_statistics.maxWaitingTimeMs);
+
+  // This is only set to a non-zero value in off-mode.
+  EXPECT_EQ(0, network_statistics.addedSamples);
 }

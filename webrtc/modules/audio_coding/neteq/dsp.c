@@ -365,12 +365,11 @@ int WebRtcNetEQ_AddressInit(DSPInst_t *inst, const void *data2McuAddress,
 
 int WebRtcNetEQ_ClearInCallStats(DSPInst_t *inst)
 {
-
     /* Reset statistics counters */
     inst->statInst.accelerateLength = 0;
     inst->statInst.expandLength = 0;
     inst->statInst.preemptiveLength = 0;
-
+    inst->statInst.addedSamples = 0;
     return (0);
 }
 
@@ -394,7 +393,6 @@ int WebRtcNetEQ_ClearPostCallStats(DSPInst_t *inst)
     /* Reset statistics counters */
     inst->statInst.expandedVoiceSamples = 0;
     inst->statInst.expandedNoiseSamples = 0;
-
     return (0);
 }
 

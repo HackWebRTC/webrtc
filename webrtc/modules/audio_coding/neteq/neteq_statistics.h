@@ -28,6 +28,7 @@ typedef struct
     WebRtc_UWord32 preemptiveLength; /* number of samples produced through pre-emptive
      expand */
     WebRtc_UWord32 accelerateLength; /* number of samples removed through accelerate */
+    int addedSamples; /* number of samples inserted in off mode */
 
     /* variables for post-call statistics; queried through WebRtcNetEQ_GetJitterStatistics */
     WebRtc_UWord32 expandedVoiceSamples; /* number of voice samples produced through expand */

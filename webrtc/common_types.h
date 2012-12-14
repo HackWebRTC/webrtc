@@ -314,6 +314,8 @@ struct NetworkStatistics           // NETEQ statistics
     int minWaitingTimeMs;
     // max packet waiting time in the jitter buffer (ms)
     int maxWaitingTimeMs;
+    // added samples in off mode due to packet loss
+    int addedSamples;
 };
 
 typedef struct

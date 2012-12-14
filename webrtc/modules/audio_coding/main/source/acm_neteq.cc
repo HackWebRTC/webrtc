@@ -366,6 +366,7 @@ WebRtc_Word32 ACMNetEQ::NetworkStatistics(
     statistics->currentPreemptiveRate = stats.currentPreemptiveRate;
     statistics->preferredBufferSize = stats.preferredBufferSize;
     statistics->clockDriftPPM = stats.clockDriftPPM;
+    statistics->addedSamples = stats.addedSamples;
   } else {
     LogError("getNetworkStatistics", 0);
     return -1;

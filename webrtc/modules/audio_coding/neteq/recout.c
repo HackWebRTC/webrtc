@@ -1090,6 +1090,8 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
                 len = inst->timestampsPerCall;
                 /* ZeroStuffing... */
                 WebRtcSpl_MemSetW16(pw16_NetEqAlgorithm_buffer, 0, len);
+                /* By not advancing the timestamp, NetEq inserts samples. */
+                inst->statInst.addedSamples += len;
             }
             inst->ExpandInst.w16_consecExp = 0;
             break;
