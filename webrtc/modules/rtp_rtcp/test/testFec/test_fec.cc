@@ -68,7 +68,7 @@ int main() {
   ForwardErrorCorrection::RecoveredPacketList recoveredPacketList;
   std::list<WebRtc_UWord8*> fecMaskList;
 
-  ForwardErrorCorrection::Packet* mediaPacket;
+  ForwardErrorCorrection::Packet* mediaPacket = NULL;
   // Running over only one loss rate to limit execution time.
   const float lossRate[] = {0.5f};
   const WebRtc_UWord32 lossRateSize = sizeof(lossRate)/sizeof(*lossRate);

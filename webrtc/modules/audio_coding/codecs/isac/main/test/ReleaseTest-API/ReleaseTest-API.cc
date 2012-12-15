@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 {
 
     char inname[100], outname[100], bottleneck_file[100], vadfile[100];
-	FILE *inp, *outp, *f_bn=NULL, *vadp, *bandwidthp;
+	FILE *inp, *outp, *f_bn = NULL, *vadp = NULL, *bandwidthp;
 	int framecnt, endfile;
 
 	int i, errtype, VADusage = 0, packetLossPercent = 0;
@@ -100,8 +100,8 @@ int main(int argc, char* argv[])
     WebRtc_UWord32 numTransCodingBytes = 0;
 
 	/* only one structure used for ISAC encoder */
-	ISACStruct* ISAC_main_inst;
-    ISACStruct* decoderTransCoding;
+	ISACStruct* ISAC_main_inst = NULL;
+    ISACStruct* decoderTransCoding = NULL;
 
 	BottleNeckModel       BN_data;
 
