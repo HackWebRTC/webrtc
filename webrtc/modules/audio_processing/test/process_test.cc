@@ -24,6 +24,7 @@
 #include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/perf_test.h"
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_processing/debug.pb.h"
@@ -435,14 +436,15 @@ void void_main(int argc, char* argv[]) {
     printf("Reverse channels: %d \n", num_render_channels);
   }
 
+  const std::string out_path = webrtc::test::OutputPath();
   const char far_file_default[] = "apm_far.pcm";
   const char near_file_default[] = "apm_near.pcm";
-  const char out_file_default[] = "out.pcm";
+  const std::string out_file_default = out_path + "out.pcm";
   const char event_filename[] = "apm_event.dat";
   const char delay_filename[] = "apm_delay.dat";
   const char drift_filename[] = "apm_drift.dat";
-  const char vad_file_default[] = "vad_out.dat";
-  const char ns_prob_file_default[] = "ns_prob.dat";
+  const std::string vad_file_default = out_path + "vad_out.dat";
+  const std::string ns_prob_file_default = out_path + "ns_prob.dat";
 
   if (!simulating) {
     far_filename = far_file_default;
@@ -450,15 +452,15 @@ void void_main(int argc, char* argv[]) {
   }
 
   if (!out_filename) {
-    out_filename = out_file_default;
+    out_filename = out_file_default.c_str();
   }
 
   if (!vad_out_filename) {
-    vad_out_filename = vad_file_default;
+    vad_out_filename = vad_file_default.c_str();
   }
 
   if (!ns_prob_filename) {
-    ns_prob_filename = ns_prob_file_default;
+    ns_prob_filename = ns_prob_file_default.c_str();
   }
 
   FILE* pb_file = NULL;
