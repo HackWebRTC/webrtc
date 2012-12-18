@@ -125,7 +125,10 @@ class ParameterizedFullStackTest : public ViEVideoVerificationTest,
 
   void SetUp() {
     int i = 0;
+    // Uniform loss => Setting burst length to -1.
+    parameter_table_[i].network.loss_model = kUniformLoss;
     parameter_table_[i].network.packet_loss_rate = 0;
+    parameter_table_[i].network.burst_length = -1;
     parameter_table_[i].network.mean_one_way_delay = 0;
     parameter_table_[i].network.std_dev_one_way_delay = 0;
     parameter_table_[i].bitrate = 300;
@@ -133,7 +136,9 @@ class ParameterizedFullStackTest : public ViEVideoVerificationTest,
     parameter_table_[i].avg_ssim_threshold = 0.96;
     parameter_table_[i].test_label = "net delay (0, 0), plr 0";
     ++i;
+    parameter_table_[i].network.loss_model = kUniformLoss;
     parameter_table_[i].network.packet_loss_rate = 5;
+    parameter_table_[i].network.burst_length = -1;
     parameter_table_[i].network.mean_one_way_delay = 50;
     parameter_table_[i].network.std_dev_one_way_delay = 5;
     parameter_table_[i].bitrate = 300;
@@ -141,7 +146,19 @@ class ParameterizedFullStackTest : public ViEVideoVerificationTest,
     parameter_table_[i].avg_ssim_threshold = 0.96;
     parameter_table_[i].test_label = "net delay (50, 5), plr 5";
     ++i;
+    parameter_table_[i].network.loss_model = kUniformLoss;
     parameter_table_[i].network.packet_loss_rate = 0;
+    parameter_table_[i].network.burst_length = -1;
+    parameter_table_[i].network.mean_one_way_delay = 100;
+    parameter_table_[i].network.std_dev_one_way_delay = 10;
+    parameter_table_[i].bitrate = 300;
+    parameter_table_[i].avg_psnr_threshold = 35;
+    parameter_table_[i].avg_ssim_threshold = 0.96;
+    parameter_table_[i].test_label = "net delay (100, 10), plr 0";
+    ++i;
+    parameter_table_[i].network.loss_model = kGilbertElliotLoss;
+    parameter_table_[i].network.packet_loss_rate = 5;
+    parameter_table_[i].network.burst_length = 3;
     parameter_table_[i].network.mean_one_way_delay = 100;
     parameter_table_[i].network.std_dev_one_way_delay = 10;
     parameter_table_[i].bitrate = 300;
@@ -150,7 +167,7 @@ class ParameterizedFullStackTest : public ViEVideoVerificationTest,
     parameter_table_[i].test_label = "net delay (100, 10), plr 0";
   }
 
-  TestParameters parameter_table_[3];
+  TestParameters parameter_table_[4];
 };
 
 TEST_F(ViEVideoVerificationTest, RunsBaseStandardTestWithoutErrors) {
@@ -207,6 +224,7 @@ TEST_P(ParameterizedFullStackTest, RunsFullStackWithoutErrors)  {
   // frames every now and then.
   const int kBitRateKbps = parameter_table_[GetParam()].bitrate;
   const NetworkParameters network = parameter_table_[GetParam()].network;
+  // TODO(mikhal): Resolution and file name should be in the parameter list.
   int width = 352;
   int height = 288;
   ViETest::Log("Bit rate     : %5d kbps", kBitRateKbps);

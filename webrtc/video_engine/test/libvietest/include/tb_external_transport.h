@@ -28,10 +28,17 @@ class ThreadWrapper;
 class ViENetwork;
 }
 
+enum RandomLossModel {
+  kNoLoss,
+  kUniformLoss,
+  kGilbertElliotLoss
+};
 struct NetworkParameters {
   int packet_loss_rate;
+  int burst_length;  // Only applicable for kGilbertElliotLoss.
   int mean_one_way_delay;
   int std_dev_one_way_delay;
+  RandomLossModel loss_model;
 };
 
 // Allows to subscribe for callback when a frame is started being sent.
@@ -109,7 +116,10 @@ protected:
     static bool ViEExternalTransportRun(void* object);
     bool ViEExternalTransportProcess();
 private:
+    // TODO(mikhal): Break these out to classes.
     static int GaussianRandom(int mean_ms, int standard_deviation_ms);
+    bool UniformLoss(int loss_rate);
+    bool GilbertElliotLoss(int loss_rate, int burst_length);
     WebRtc_Word64 NowMs();
 
     enum
@@ -169,6 +179,7 @@ private:
     WebRtc_UWord32 _lastSendRTPTimestamp;
     WebRtc_UWord32 _lastReceiveRTPTimestamp;
     int64_t last_receive_time_;
+    bool previous_drop_;
 };
 
 #endif  // WEBRTC_VIDEO_ENGINE_TEST_AUTOTEST_INTERFACE_TB_EXTERNAL_TRANSPORT_H_

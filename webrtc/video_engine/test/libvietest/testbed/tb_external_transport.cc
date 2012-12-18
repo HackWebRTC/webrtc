@@ -73,7 +73,8 @@ TbExternalTransport::TbExternalTransport(
       _firstRTPTimestamp(0),
       _lastSendRTPTimestamp(0),
       _lastReceiveRTPTimestamp(0),
-      last_receive_time_(-1)
+      last_receive_time_(-1),
+      previous_drop_(false)
 {
     srand((int) webrtc::TickTime::MicrosecondTimestamp());
     unsigned int tId = 0;
@@ -190,11 +191,24 @@ int TbExternalTransport::SendPacket(int channel, const void *data, int len)
     _rtpCount++;
     _statCrit.Leave();
 
-    // Packet loss. Never drop packets from the first RTP timestamp, i.e. the
-    // first frame being transmitted.
-    int dropThis = rand() % 100;
-    if (dropThis < network_parameters_.packet_loss_rate &&
-        _firstRTPTimestamp != rtp_timestamp)
+    // Packet loss.
+    switch (network_parameters_.loss_model)
+    {
+        case (kNoLoss):
+            previous_drop_ = false;
+            break;
+        case (kUniformLoss):
+            previous_drop_ = UniformLoss(network_parameters_.packet_loss_rate);
+            break;
+        case (kGilbertElliotLoss):
+            previous_drop_ = GilbertElliotLoss(
+                network_parameters_.packet_loss_rate,
+                network_parameters_.burst_length);
+            break;
+    }
+    // Never drop packets from the first RTP timestamp (first frame)
+    // transmitted.
+    if (previous_drop_ && _firstRTPTimestamp != rtp_timestamp)
     {
         _statCrit.Enter();
         _dropCount++;
@@ -499,6 +513,42 @@ bool TbExternalTransport::ViEExternalTransportProcess()
 WebRtc_Word64 TbExternalTransport::NowMs()
 {
     return webrtc::TickTime::MillisecondTimestamp();
+}
+
+bool TbExternalTransport::UniformLoss(int loss_rate) {
+  int dropThis = rand() % 100;
+  return (dropThis < loss_rate);
+}
+
+bool TbExternalTransport::GilbertElliotLoss(int loss_rate, int burst_length) {
+  // Simulate bursty channel (Gilbert model)
+  // (1st order) Markov chain model with memory of the previous/last
+  // packet state (loss or received)
+
+  // 0 = received state
+  // 1 = loss state
+
+  // probTrans10: if previous packet is lost, prob. to -> received state
+  // probTrans11: if previous packet is lost, prob. to -> loss state
+
+  // probTrans01: if previous packet is received, prob. to -> loss state
+  // probTrans00: if previous packet is received, prob. to -> received
+
+  // Map the two channel parameters (average loss rate and burst length)
+  // to the transition probabilities:
+  double probTrans10 = 100 * (1.0 / burst_length);
+  double probTrans11 = (100.0 - probTrans10);
+  double probTrans01 = (probTrans10 * ( loss_rate / (100.0 - loss_rate)));
+
+  // Note: Random loss (Bernoulli) model is a special case where:
+  // burstLength = 100.0 / (100.0 - _lossPct) (i.e., p10 + p01 = 100)
+
+  if (previous_drop_) {
+    // Previous packet was not received.
+    return UniformLoss(probTrans11);
+  } else {
+    return UniformLoss(probTrans01);
+  }
 }
 
 #define PI  3.14159265
