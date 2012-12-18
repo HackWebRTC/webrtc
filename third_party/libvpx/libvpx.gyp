@@ -426,8 +426,18 @@
             {
               # Take archived .a file and unpack it unto .o files.
               'action_name': 'unpack_lib_posix',
+              'variables': {
+                'conditions': [
+                  ['OS=="mac"', {
+                    'libvpx_asm_offset_a': '<(LIB_DIR)/libvpx_asm_offsets.a',
+                  }, {
+                    'libvpx_asm_offset_a': '<(LIB_DIR)/third_party/libvpx/libvpx_asm_offsets.a',
+                  }],
+                ],
+              },
               'inputs': [
                 'unpack_lib_posix.sh',
+                '<(libvpx_asm_offset_a)',
               ],
               'outputs': [
                 '<(INTERMEDIATE_DIR)/asm_com_offsets.o',
@@ -437,8 +447,7 @@
               'action': [
                 '<(DEPTH)/third_party/libvpx/unpack_lib_posix.sh',
                 '-d', '<(INTERMEDIATE_DIR)',
-                '-a', '<(LIB_DIR)/libvpx_asm_offsets.a',
-                '-a', '<(LIB_DIR)/third_party/libvpx/libvpx_asm_offsets.a',
+                '-a', '<(libvpx_asm_offset_a)',
                 '-f', 'asm_com_offsets.o',
                 '-f', 'asm_dec_offsets.o',
                 '-f', 'asm_enc_offsets.o',
