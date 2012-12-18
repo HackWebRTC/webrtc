@@ -14,28 +14,29 @@ import sys
 
 def run_ant_build_command(path_to_ant_build_file):
   """Tries to build the passed build file with ant."""
-  ant_suffix = '.bat' if 'win32' in sys.platform else ''
-  cmd = ['ant%s' % ant_suffix, '-buildfile', path_to_ant_build_file]
-  try:
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate()
-    if process.returncode != 0:
-      print >> sys.stderr, 'Failed to execute: %s\nError: %s' % (' '.join(cmd),
-                                                                 stderr)
+  ant_executable = 'ant'
+  if sys.platform == 'win32':
+    if os.getenv('ANT_HOME'):
+      ant_executable = os.path.join(os.getenv('ANT_HOME'), 'bin', 'ant.bat')
     else:
-      print stdout
+      ant_executable = 'ant.bat'
+  cmd = [ant_executable, '-buildfile', path_to_ant_build_file]
+  try:
+    process = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr)
+    process.wait()
+    if process.returncode != 0:
+      print >> sys.stderr, 'Failed to execute: %s' % ' '.join(cmd)
+    return process.returncode
   except Exception as e:
-    print >> sys.stderr, 'Failed to execute: %s\nError: %s' % (' '.join(cmd), e)
-
+    print >> sys.stderr, 'Failed to execute: %s' % ' '.join(cmd)
+    return -1
 
 def _main():
   core_build = os.path.join('third_party', 'zxing', 'core', 'build.xml')
   run_ant_build_command(core_build)
 
   javase_build = os.path.join('third_party', 'zxing', 'javase', 'build.xml')
-  run_ant_build_command(javase_build)
-  return 0
+  return run_ant_build_command(javase_build)
 
 
 if __name__ == '__main__':

@@ -35,7 +35,14 @@ def convert_yuv_to_png_files(yuv_file_name, yuv_frame_width, yuv_frame_height,
   """
   size_string = str(yuv_frame_width) + 'x' + str(yuv_frame_height)
   output_files_pattern = os.path.join(output_directory, 'frame_%04d.png')
-  command = ['ffmpeg', '-s', '%s' % size_string, '-i', '%s'
+  ffmpeg_executable = 'ffmpeg'
+  if sys.platform == 'win32':
+    if os.getenv('FFMPEG_HOME'):
+      ffmpeg_executable = os.path.join(os.getenv('FFMPEG_HOME'), 'bin',
+                                       'ffmpeg.exe')
+    else:
+      ffmpeg_executable = 'ffmpeg.exe'
+  command = [ffmpeg_executable, '-s', '%s' % size_string, '-i', '%s'
              % yuv_file_name, '-f', 'image2', '-vcodec', 'png',
              '%s' % output_files_pattern]
   try:
@@ -92,7 +99,14 @@ def _decode_barcode_in_file(file_name, barcode_width, barcode_height, jars,
   Return:
     (bool): True upon success, False otherwise.
   """
-  command = ['java', '-Djava.awt.headless=true', '-cp', '%s' % jars,
+  java_executable = 'java'
+  if sys.platform == 'win32':
+    if os.getenv('JAVA_HOME'):
+      java_executable = os.path.join(os.getenv('JAVA_HOME'), 'bin',
+                                     'java.exe')
+    else:
+      java_executable = 'java.exe'
+  command = [java_executable, '-Djava.awt.headless=true', '-cp', '%s' % jars,
              '%s' % command_line_decoder, '--products_only',
              '--dump_results', '--brief', '--crop=%d,%d,%d,%d' %
              (0, 0, barcode_width, barcode_height),
@@ -257,6 +271,10 @@ def _main():
   --yuv_file=<path_and_name_of_overlaid_yuv_video>
   --yuv_frame_width=352 --yuv_frame_height=288 --barcode_height=32
   --stats_file=<path_and_name_to_stats_file>
+
+  NOTE: On Windows, if you don't have ffmpeg and Java in your PATH, you can
+  set the JAVA_HOME and FFMPEG_HOME environment variables to help the script
+  find the executables to use.
   """
   options = _parse_args()
 
