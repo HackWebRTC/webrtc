@@ -16,6 +16,7 @@
 
 #include "critical_section_wrapper.h"
 #include "rtp_receiver.h"
+#include "trace.h"
 
 namespace webrtc {
 RTPReceiverAudio::RTPReceiverAudio(const WebRtc_Word32 id,
@@ -39,6 +40,7 @@ RTPReceiverAudio::RTPReceiverAudio(const WebRtc_Word32 id,
     _lastReceivedG722(false),
     _cbAudioFeedback(incomingMessagesCallback)
 {
+  last_payload_.Audio.channels = 1;
 }
 
 WebRtc_UWord32
@@ -182,7 +184,7 @@ RTPReceiverAudio::CNGPayloadType(const WebRtc_Word8 payloadType,
    G7221     frame         N/A
 */
 
-ModuleRTPUtility::Payload* RTPReceiverAudio::RegisterReceiveAudioPayload(
+ModuleRTPUtility::Payload* RTPReceiverAudio::CreatePayloadType(
     const char payloadName[RTP_PAYLOAD_NAME_SIZE],
     const WebRtc_Word8 payloadType,
     const WebRtc_UWord32 frequency,
@@ -246,6 +248,142 @@ void RTPReceiverAudio::SendTelephoneEvents(
             }
         }
     }
+}
+
+WebRtc_Word32 RTPReceiverAudio::ParseRtpPacket(
+    WebRtcRTPHeader* rtpHeader,
+    const ModuleRTPUtility::PayloadUnion& specificPayload,
+    const bool isRed,
+    const WebRtc_UWord8* packet,
+    const WebRtc_UWord16 packetLength,
+    const WebRtc_Word64 timestampMs) {
+
+    const WebRtc_UWord8* payloadData =
+        ModuleRTPUtility::GetPayloadData(rtpHeader, packet);
+    const WebRtc_UWord16 payloadDataLength =
+        ModuleRTPUtility::GetPayloadDataLength(rtpHeader, packetLength);
+
+    return ParseAudioCodecSpecific(rtpHeader, payloadData, payloadDataLength,
+                                   specificPayload.Audio, isRed);
+}
+
+WebRtc_Word32 RTPReceiverAudio::GetFrequencyHz() const {
+  return AudioFrequency();
+}
+
+RTPAliveType RTPReceiverAudio::ProcessDeadOrAlive(
+    WebRtc_UWord16 lastPayloadLength) const {
+
+    // Our CNG is 9 bytes; if it's a likely CNG the receiver needs to check
+    // kRtpNoRtp against NetEq speechType kOutputPLCtoCNG.
+    if(lastPayloadLength < 10)  // our CNG is 9 bytes
+    {
+        return kRtpNoRtp;
+    } else
+    {
+        return kRtpDead;
+    }
+}
+
+bool RTPReceiverAudio::PayloadIsCompatible(
+    const ModuleRTPUtility::Payload& payload,
+    const WebRtc_UWord32 frequency,
+    const WebRtc_UWord8 channels,
+    const WebRtc_UWord32 rate) const {
+  return
+      payload.audio &&
+      payload.typeSpecific.Audio.frequency == frequency &&
+      payload.typeSpecific.Audio.channels == channels &&
+      (payload.typeSpecific.Audio.rate == rate ||
+          payload.typeSpecific.Audio.rate == 0 || rate == 0);
+}
+
+void RTPReceiverAudio::UpdatePayloadRate(
+    ModuleRTPUtility::Payload* payload,
+    const WebRtc_UWord32 rate) const {
+  payload->typeSpecific.Audio.rate = rate;
+}
+
+void RTPReceiverAudio::PossiblyRemoveExistingPayloadType(
+    ModuleRTPUtility::PayloadTypeMap* payloadTypeMap,
+    const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+    const size_t payloadNameLength,
+    const WebRtc_UWord32 frequency,
+    const WebRtc_UWord8 channels,
+    const WebRtc_UWord32 rate) const {
+  ModuleRTPUtility::PayloadTypeMap::iterator audio_it = payloadTypeMap->begin();
+  while (audio_it != payloadTypeMap->end()) {
+    ModuleRTPUtility::Payload* payload = audio_it->second;
+    size_t nameLength = strlen(payload->name);
+
+    if (payloadNameLength == nameLength &&
+        ModuleRTPUtility::StringCompare(payload->name,
+                                        payloadName, payloadNameLength)) {
+      // we found the payload name in the list
+      // if audio check frequency and rate
+      if (payload->audio) {
+        if (payload->typeSpecific.Audio.frequency == frequency &&
+            (payload->typeSpecific.Audio.rate == rate ||
+                payload->typeSpecific.Audio.rate == 0 || rate == 0) &&
+                payload->typeSpecific.Audio.channels == channels) {
+          // remove old setting
+          delete payload;
+          payloadTypeMap->erase(audio_it);
+          break;
+        }
+      } else if(ModuleRTPUtility::StringCompare(payloadName,"red",3)) {
+        delete payload;
+        payloadTypeMap->erase(audio_it);
+        break;
+      }
+    }
+    audio_it++;
+  }
+}
+
+void RTPReceiverAudio::CheckPayloadChanged(
+    const WebRtc_Word8 payloadType,
+    ModuleRTPUtility::PayloadUnion* specificPayload,
+    bool* shouldResetStatistics,
+    bool* shouldDiscardChanges) {
+  *shouldDiscardChanges = false;
+  *shouldResetStatistics = false;
+
+  if (TelephoneEventPayloadType(payloadType)) {
+    // Don't do callbacks for DTMF packets.
+    *shouldDiscardChanges = true;
+    return;
+  }
+  // frequency is updated for CNG
+  bool cngPayloadTypeHasChanged = false;
+  bool isCngPayloadType = CNGPayloadType(
+      payloadType, &specificPayload->Audio.frequency,
+      &cngPayloadTypeHasChanged);
+
+  *shouldResetStatistics = cngPayloadTypeHasChanged;
+
+  if (isCngPayloadType) {
+    // Don't do callbacks for DTMF packets.
+    *shouldDiscardChanges = true;
+    return;
+  }
+}
+
+WebRtc_Word32 RTPReceiverAudio::InvokeOnInitializeDecoder(
+      RtpFeedback* callback,
+      const WebRtc_Word32 id,
+      const WebRtc_Word8 payloadType,
+      const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+      const ModuleRTPUtility::PayloadUnion& specificPayload) const {
+  if (-1 == callback->OnInitializeDecoder(
+      id, payloadType, payloadName, specificPayload.Audio.frequency,
+      specificPayload.Audio.channels, specificPayload.Audio.rate)) {
+    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id,
+                 "Failed to create video decoder for payload type:%d",
+                 payloadType);
+    return -1;
+  }
+  return 0;
 }
 
 // we are not allowed to have any critsects when calling CallbackOfReceivedPayloadData

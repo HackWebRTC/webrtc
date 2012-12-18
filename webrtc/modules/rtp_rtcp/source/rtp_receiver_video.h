@@ -11,21 +11,20 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_VIDEO_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_VIDEO_H_
 
+#include "Bitrate.h"
+#include "rtp_receiver.h"
+#include "rtp_receiver_strategy.h"
 #include "rtp_rtcp_defines.h"
 #include "rtp_utility.h"
-
-#include "typedefs.h"
-
-#include "Bitrate.h"
 #include "scoped_ptr.h"
+#include "typedefs.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;
 class ModuleRtpRtcpImpl;
 class ReceiverFEC;
-class RTPReceiver;
 
-class RTPReceiverVideo {
+class RTPReceiverVideo : public RTPReceiverStrategy {
  public:
   RTPReceiverVideo(const WebRtc_Word32 id,
                    RTPReceiver* parent,
@@ -33,20 +32,41 @@ class RTPReceiverVideo {
 
   virtual ~RTPReceiverVideo();
 
-  ModuleRTPUtility::Payload* RegisterReceiveVideoPayload(
+  WebRtc_Word32 ParseRtpPacket(
+      WebRtcRTPHeader* rtp_header,
+      const ModuleRTPUtility::PayloadUnion& specificPayload,
+      const bool is_red,
+      const WebRtc_UWord8* packet,
+      const WebRtc_UWord16 packet_length,
+      const WebRtc_Word64 timestamp);
+
+  WebRtc_Word32 GetFrequencyHz() const;
+
+  RTPAliveType ProcessDeadOrAlive(WebRtc_UWord16 lastPayloadLength) const;
+
+  bool PayloadIsCompatible(
+      const ModuleRTPUtility::Payload& payload,
+      const WebRtc_UWord32 frequency,
+      const WebRtc_UWord8 channels,
+      const WebRtc_UWord32 rate) const;
+
+  void UpdatePayloadRate(
+      ModuleRTPUtility::Payload* payload,
+      const WebRtc_UWord32 rate) const;
+
+  ModuleRTPUtility::Payload* CreatePayloadType(
       const char payloadName[RTP_PAYLOAD_NAME_SIZE],
       const WebRtc_Word8 payloadType,
-      const WebRtc_UWord32 maxRate);
+      const WebRtc_UWord32 frequency,
+      const WebRtc_UWord8 channels,
+      const WebRtc_UWord32 rate);
 
-  WebRtc_Word32 ParseVideoCodecSpecific(
-      WebRtcRTPHeader* rtpHeader,
-      const WebRtc_UWord8* payloadData,
-      const WebRtc_UWord16 payloadDataLength,
-      const RtpVideoCodecTypes videoType,
-      const bool isRED,
-      const WebRtc_UWord8* incomingRtpPacket,
-      const WebRtc_UWord16 incomingRtpPacketSize,
-      const WebRtc_Word64 nowMS);
+  WebRtc_Word32 InvokeOnInitializeDecoder(
+      RtpFeedback* callback,
+      const WebRtc_Word32 id,
+      const WebRtc_Word8 payloadType,
+      const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+      const ModuleRTPUtility::PayloadUnion& specificPayload) const;
 
   virtual WebRtc_Word32 ReceiveRecoveredPacketCallback(
       WebRtcRTPHeader* rtpHeader,
@@ -77,6 +97,16 @@ class RTPReceiverVideo {
                                WebRtc_UWord8* dataBuffer) const;
 
  private:
+  WebRtc_Word32 ParseVideoCodecSpecific(
+      WebRtcRTPHeader* rtpHeader,
+      const WebRtc_UWord8* payloadData,
+      const WebRtc_UWord16 payloadDataLength,
+      const RtpVideoCodecTypes videoType,
+      const bool isRED,
+      const WebRtc_UWord8* incomingRtpPacket,
+      const WebRtc_UWord16 incomingRtpPacketSize,
+      const WebRtc_Word64 nowMS);
+
   WebRtc_Word32             _id;
   RTPReceiver*              _parent;
 

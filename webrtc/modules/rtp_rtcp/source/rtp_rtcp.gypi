@@ -73,6 +73,8 @@
         'producer_fec.h',
         'rtp_packet_history.cc',
         'rtp_packet_history.h',
+        'rtp_receiver_strategy.cc',
+        'rtp_receiver_stragegy.h',
         'rtp_receiver_video.cc',
         'rtp_receiver_video.h',
         'rtp_sender_video.cc',

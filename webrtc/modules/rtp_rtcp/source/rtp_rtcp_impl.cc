@@ -8,9 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "common_types.h"
 #include "rtp_rtcp_impl.h"
-#include "trace.h"
 
 #ifdef MATLAB
 #include "../test/BWEStandAlone/MatlabPlot.h"
@@ -19,6 +17,11 @@ extern MatlabEngine eng; // global variable defined elsewhere
 
 #include <string.h> //memcpy
 #include <cassert> //assert
+
+#include "common_types.h"
+#include "rtp_receiver_audio.h"
+#include "rtp_receiver_video.h"
+#include "trace.h"
 
 // local for this file
 namespace {

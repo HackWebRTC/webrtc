@@ -313,6 +313,18 @@ bool OldTimestamp(uint32_t newTimestamp,
  * Misc utility routines
  */
 
+const WebRtc_UWord8* GetPayloadData(const WebRtcRTPHeader* rtp_header,
+                                    const WebRtc_UWord8* packet) {
+  return packet + rtp_header->header.headerLength;
+}
+
+WebRtc_UWord16 GetPayloadDataLength(const WebRtcRTPHeader* rtp_header,
+                                    const WebRtc_UWord16 packet_length) {
+  WebRtc_UWord16 length = packet_length - rtp_header->header.paddingLength -
+      rtp_header->header.headerLength;
+  return static_cast<WebRtc_UWord16>(length);
+}
+
 #if defined(_WIN32)
 bool StringCompare(const char* str1, const char* str2,
                    const WebRtc_UWord32 length) {

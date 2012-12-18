@@ -59,6 +59,8 @@ namespace ModuleRTPUtility
         PayloadUnion typeSpecific;
     };
 
+    typedef std::map<WebRtc_Word8, Payload*> PayloadTypeMap;
+
     // Return a clock that reads the time as reported by the operating
     // system. The returned instances are guaranteed to read the same
     // times; in particular, they return relative times relative to
@@ -84,6 +86,14 @@ namespace ModuleRTPUtility
                                       WebRtc_UWord32 NTPfrac);
 
     WebRtc_UWord32 pow2(WebRtc_UWord8 exp);
+
+    // Returns a pointer to the payload data given a packet.
+    const WebRtc_UWord8* GetPayloadData(const WebRtcRTPHeader* rtp_header,
+                                        const WebRtc_UWord8* packet);
+
+    // Returns payload length given a packet.
+    WebRtc_UWord16 GetPayloadDataLength(const WebRtcRTPHeader* rtp_header,
+                                        const WebRtc_UWord16 packet_length);
 
     // Returns true if |newTimestamp| is older than |existingTimestamp|.
     // |wrapped| will be set to true if there has been a wraparound between the
@@ -170,7 +180,7 @@ namespace ModuleRTPUtility
         int                  frameWidth;
         int                  frameHeight;
 
-        const WebRtc_UWord8*   data; 
+        const WebRtc_UWord8*   data;
         WebRtc_UWord16         dataLength;
     };
 

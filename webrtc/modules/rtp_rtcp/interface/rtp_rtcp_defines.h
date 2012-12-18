@@ -24,6 +24,7 @@
 #define TIMEOUT_SEI_MESSAGES_MS 30000   // in milliseconds
 
 namespace webrtc{
+
 enum RTCPMethod
 {
     kRtcpOff          = 0,
