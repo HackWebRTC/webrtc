@@ -165,7 +165,9 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
 
     myTransport.ClearStats();
     const int kPacketLossRate = 20;
-    NetworkParameters network = {kPacketLossRate, 0, 0};  // 20% packet loss.
+    NetworkParameters network;
+    network.packet_loss_rate = kPacketLossRate;
+    network.loss_model = kUniformLoss;
     myTransport.SetNetworkParameters(network);
 
     // Start send to verify sending stats

@@ -492,7 +492,9 @@ int VideoEngineSampleCode(void* window1, void* window2)
             return -1;
         }
 
-        NetworkParameters network = {0, 0, 0};
+        // Setting uniform loss. Actual values will be set by user.
+        NetworkParameters network;
+        network.loss_model = kUniformLoss;
         // Set up packet loss value
         std::cout << "Enter Packet Loss Percentage" << std::endl;
         std::string rate_str;

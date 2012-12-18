@@ -39,6 +39,9 @@ struct NetworkParameters {
   int mean_one_way_delay;
   int std_dev_one_way_delay;
   RandomLossModel loss_model;
+  NetworkParameters():
+    packet_loss_rate(0), burst_length(0), mean_one_way_delay(0),
+        std_dev_one_way_delay(0), loss_model(kNoLoss) {}
 };
 
 // Allows to subscribe for callback when a frame is started being sent.
