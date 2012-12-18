@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "system_wrappers/source/rw_lock_generic.h"
+#include "webrtc/system_wrappers/source/rw_lock_generic.h"
 
-#include "system_wrappers/interface/condition_variable_wrapper.h"
-#include "system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/condition_variable_wrapper.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 namespace webrtc {
 

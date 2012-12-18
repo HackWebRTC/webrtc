@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "system_wrappers/source/rw_lock_posix.h"
+#include "webrtc/system_wrappers/source/rw_lock_posix.h"
 
 namespace webrtc {
 
-RWLockPosix::RWLockPosix() : _lock() {
+RWLockPosix::RWLockPosix() : lock_() {
 }
 
 RWLockPosix::~RWLockPosix() {
-  pthread_rwlock_destroy(&_lock);
+  pthread_rwlock_destroy(&lock_);
 }
 
 RWLockPosix* RWLockPosix::Create() {
@@ -29,23 +29,23 @@ RWLockPosix* RWLockPosix::Create() {
 }
 
 bool RWLockPosix::Init() {
-  return pthread_rwlock_init(&_lock, 0) == 0;
+  return pthread_rwlock_init(&lock_, 0) == 0;
 }
 
 void RWLockPosix::AcquireLockExclusive() {
-  pthread_rwlock_wrlock(&_lock);
+  pthread_rwlock_wrlock(&lock_);
 }
 
 void RWLockPosix::ReleaseLockExclusive() {
-  pthread_rwlock_unlock(&_lock);
+  pthread_rwlock_unlock(&lock_);
 }
 
 void RWLockPosix::AcquireLockShared() {
-  pthread_rwlock_rdlock(&_lock);
+  pthread_rwlock_rdlock(&lock_);
 }
 
 void RWLockPosix::ReleaseLockShared() {
-  pthread_rwlock_unlock(&_lock);
+  pthread_rwlock_unlock(&lock_);
 }
 
 }  // namespace webrtc
