@@ -363,7 +363,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
-                    inst.funcDurationEst=NULL; \
+                    inst.funcDurationEst=(WebRtcNetEQ_FuncDurationEst)WebRtcOpus_DurationEst; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_OPUSSLAVE_FUNCTIONS(inst) \
@@ -375,7 +375,7 @@
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \
                     inst.funcUpdBWEst=NULL; \
-                    inst.funcDurationEst=NULL; \
+                    inst.funcDurationEst=(WebRtcNetEQ_FuncDurationEst)WebRtcOpus_DurationEst; \
                     inst.funcGetErrorCode=NULL;
 
 #define SET_SPEEX_FUNCTIONS(inst) \

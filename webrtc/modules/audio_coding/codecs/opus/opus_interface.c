@@ -280,3 +280,21 @@ int16_t WebRtcOpus_DecodePlc(OpusDecInst* inst, int16_t* decoded,
    * number_of_lost_frames corresponds to. */
   return -1;
 }
+
+int WebRtcOpus_DurationEst(OpusDecInst* inst,
+                           const uint8_t* payload,
+                           int payload_length_bytes)
+{
+  int frames, samples;
+  frames = opus_packet_get_nb_frames(payload, payload_length_bytes);
+  if (frames < 0) {
+    /* Invalid payload data. */
+    return 0;
+  }
+  samples = frames * opus_packet_get_samples_per_frame(payload, 48000);
+  if (samples < 120 || samples > 5760) {
+    /* Invalid payload duration. */
+    return 0;
+  }
+  return samples;
+}

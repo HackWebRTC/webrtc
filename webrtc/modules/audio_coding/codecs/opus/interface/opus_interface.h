@@ -126,6 +126,21 @@ int16_t WebRtcOpus_DecodeSlave(OpusDecInst* inst, int16_t* encoded,
 int16_t WebRtcOpus_DecodePlc(OpusDecInst* inst, int16_t* decoded,
                              int16_t number_of_lost_frames);
 
+/****************************************************************************
+ * WebRtcOpus_DurationEst(...)
+ *
+ * This function calculates the duration of an opus packet.
+ * Input:
+ *        - inst                 : Decoder context
+ *        - payload              : Encoded data pointer
+ *        - payload_length_bytes : Bytes of encoded data
+ *
+ * Return value                  : The duration of the packet, in samples.
+ */
+int WebRtcOpus_DurationEst(OpusDecInst* inst,
+                           const uint8_t* payload,
+                           int payload_length_bytes);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
