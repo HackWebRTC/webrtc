@@ -16,9 +16,8 @@
 #include "webrtc/system_wrappers/interface/constructor_magic.h"
 
 namespace webrtc {
-class MapItem {
-  friend class MapWrapper;
 
+class MapItem {
  public:
   MapItem(int id, void* ptr);
   virtual ~MapItem();
@@ -28,6 +27,8 @@ class MapItem {
   void SetItem(void* ptr);
 
  private:
+  friend class MapWrapper;
+
   int   item_id_;
   void* item_pointer_;
 };
