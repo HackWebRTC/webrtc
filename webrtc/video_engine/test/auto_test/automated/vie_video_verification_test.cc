@@ -114,17 +114,31 @@ class ViEVideoVerificationTest : public testing::Test {
 
 class ParameterizedFullStackTest : public ViEVideoVerificationTest,
                                    public ::testing::WithParamInterface<int> {
+ public:
+  static const int kNumFullStackInstances = 4;
+
  protected:
   struct TestParameters {
     NetworkParameters network;
+    std::string file_name;
+    int width;
+    int height;
     int bitrate;
     double avg_psnr_threshold;
     double avg_ssim_threshold;
+    ProtectionMethod protection_method;
     std::string test_label;
   };
 
   void SetUp() {
+    for (int i = 0; i < kNumFullStackInstances; ++i) {
+      parameter_table_[i].file_name = webrtc::test::ResourcePath("foreman_cif",
+                                                                 "yuv");
+      parameter_table_[i].width = 352;
+      parameter_table_[i].height = 288;
+    }
     int i = 0;
+    parameter_table_[i].protection_method = kNack;
     // Uniform loss => Setting burst length to -1.
     parameter_table_[i].network.loss_model = kUniformLoss;
     parameter_table_[i].network.packet_loss_rate = 0;
@@ -136,6 +150,7 @@ class ParameterizedFullStackTest : public ViEVideoVerificationTest,
     parameter_table_[i].avg_ssim_threshold = 0.96;
     parameter_table_[i].test_label = "net delay (0, 0), plr 0";
     ++i;
+    parameter_table_[i].protection_method = kNack;
     parameter_table_[i].network.loss_model = kUniformLoss;
     parameter_table_[i].network.packet_loss_rate = 5;
     parameter_table_[i].network.burst_length = -1;
@@ -146,6 +161,7 @@ class ParameterizedFullStackTest : public ViEVideoVerificationTest,
     parameter_table_[i].avg_ssim_threshold = 0.96;
     parameter_table_[i].test_label = "net delay (50, 5), plr 5";
     ++i;
+    parameter_table_[i].protection_method = kNack;
     parameter_table_[i].network.loss_model = kUniformLoss;
     parameter_table_[i].network.packet_loss_rate = 0;
     parameter_table_[i].network.burst_length = -1;
@@ -156,6 +172,7 @@ class ParameterizedFullStackTest : public ViEVideoVerificationTest,
     parameter_table_[i].avg_ssim_threshold = 0.96;
     parameter_table_[i].test_label = "net delay (100, 10), plr 0";
     ++i;
+    parameter_table_[i].protection_method = kNack;
     parameter_table_[i].network.loss_model = kGilbertElliotLoss;
     parameter_table_[i].network.packet_loss_rate = 5;
     parameter_table_[i].network.burst_length = 3;
@@ -165,9 +182,11 @@ class ParameterizedFullStackTest : public ViEVideoVerificationTest,
     parameter_table_[i].avg_psnr_threshold = 35;
     parameter_table_[i].avg_ssim_threshold = 0.96;
     parameter_table_[i].test_label = "net delay (100, 10), plr 0";
+
+    ASSERT_EQ(kNumFullStackInstances - 1, i);
   }
 
-  TestParameters parameter_table_[4];
+  TestParameters parameter_table_[kNumFullStackInstances];
 };
 
 TEST_F(ViEVideoVerificationTest, RunsBaseStandardTestWithoutErrors) {
@@ -213,7 +232,7 @@ TEST_F(ViEVideoVerificationTest, RunsBaseStandardTestWithoutErrors) {
 TEST_P(ParameterizedFullStackTest, RunsFullStackWithoutErrors)  {
   // Using CIF here since it's a more common resolution than QCIF, and higher
   // resolutions shouldn't be a problem for a test using VP8.
-  input_file_ = webrtc::test::ResourcePath("foreman_cif", "yuv");
+  input_file_ = parameter_table_[GetParam()].file_name;
   FrameDropDetector detector;
   local_file_renderer_ = new ViEToFileRenderer();
   remote_file_renderer_ = new FrameDropMonitoringRemoteFileRenderer(&detector);
@@ -224,15 +243,17 @@ TEST_P(ParameterizedFullStackTest, RunsFullStackWithoutErrors)  {
   // frames every now and then.
   const int kBitRateKbps = parameter_table_[GetParam()].bitrate;
   const NetworkParameters network = parameter_table_[GetParam()].network;
-  // TODO(mikhal): Resolution and file name should be in the parameter list.
-  int width = 352;
-  int height = 288;
+  int width = parameter_table_[GetParam()].width;
+  int height = parameter_table_[GetParam()].height;
+  ProtectionMethod protection_method =
+      parameter_table_[GetParam()].protection_method;
   ViETest::Log("Bit rate     : %5d kbps", kBitRateKbps);
   ViETest::Log("Packet loss  : %5d %%", network.packet_loss_rate);
   ViETest::Log("Network delay: mean=%dms std dev=%d ms",
                network.mean_one_way_delay, network.std_dev_one_way_delay);
-  tests_.TestFullStack(input_file_, width, height, kBitRateKbps, network,
-                       local_file_renderer_, remote_file_renderer_, &detector);
+  tests_.TestFullStack(input_file_, width, height, kBitRateKbps,
+                       protection_method, network, local_file_renderer_,
+                       remote_file_renderer_, &detector);
   const std::string reference_file = local_file_renderer_->GetFullOutputPath();
   const std::string output_file = remote_file_renderer_->GetFullOutputPath();
   StopRenderers();
@@ -286,6 +307,6 @@ TEST_P(ParameterizedFullStackTest, RunsFullStackWithoutErrors)  {
 }
 
 INSTANTIATE_TEST_CASE_P(FullStackTests, ParameterizedFullStackTest,
-                        ::testing::Values(0, 1, 2));
+    ::testing::Range(0, ParameterizedFullStackTest::kNumFullStackInstances));
 
 }  // namespace

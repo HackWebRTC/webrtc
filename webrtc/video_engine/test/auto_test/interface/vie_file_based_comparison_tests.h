@@ -13,6 +13,8 @@
 
 #include <string>
 
+#include "webrtc/video_engine/test/auto_test/primitives/general_primitives.h"
+
 class FrameDropDetector;
 struct NetworkParameters;
 class ViEToFileRenderer;
@@ -49,6 +51,7 @@ class ViEFileBasedComparisonTests {
       int width,
       int height,
       int bit_rate_kbps,
+      ProtectionMethod protection_method,
       const NetworkParameters& network,
       ViEToFileRenderer* local_file_renderer,
       ViEToFileRenderer* remote_file_renderer,

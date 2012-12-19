@@ -74,13 +74,26 @@ void RenderToFile(webrtc::ViERender* renderer_interface,
 }
 
 void ConfigureRtpRtcp(webrtc::ViERTP_RTCP* rtcp_interface,
+                      ProtectionMethod protection_method,
                       int video_channel) {
   EXPECT_EQ(0, rtcp_interface->SetRTCPStatus(video_channel,
                                              webrtc::kRtcpCompound_RFC4585));
   EXPECT_EQ(0, rtcp_interface->SetKeyFrameRequestMethod(
       video_channel, webrtc::kViEKeyFrameRequestPliRtcp));
   EXPECT_EQ(0, rtcp_interface->SetTMMBRStatus(video_channel, true));
-  EXPECT_EQ(0, rtcp_interface->SetNACKStatus(video_channel, true));
+  switch (protection_method) {
+    case kNack:
+      EXPECT_EQ(0, rtcp_interface->SetNACKStatus(video_channel, true));
+      break;
+    case kHybridNackFec:
+      const int kRedPayloadType = 96;
+      const int kUlpFecPayloadType = 97;
+      EXPECT_EQ(0, rtcp_interface->SetHybridNACKFECStatus(video_channel,
+                                                          true,
+                                                          kRedPayloadType,
+                                                          kUlpFecPayloadType));
+      break;
+  }
 }
 
 bool FindSpecificCodec(webrtc::VideoCodecType of_type,

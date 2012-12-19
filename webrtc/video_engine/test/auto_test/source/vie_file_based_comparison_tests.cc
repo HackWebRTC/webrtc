@@ -48,7 +48,7 @@ bool ViEFileBasedComparisonTests::TestCallSetup(
   EXPECT_EQ(0, interfaces.capture->ConnectCaptureDevice(
       capture_id, video_channel));
 
-  ConfigureRtpRtcp(interfaces.rtp_rtcp, video_channel);
+  ConfigureRtpRtcp(interfaces.rtp_rtcp, kNack, video_channel);
 
   webrtc::ViERender* render_interface = interfaces.render;
   webrtc::ViEImageProcess* image_process = interfaces.image_process;
@@ -90,6 +90,7 @@ void ViEFileBasedComparisonTests::TestFullStack(
     int width,
     int height,
     int bit_rate_kbps,
+    ProtectionMethod protection_method,
     const NetworkParameters& network,
     ViEToFileRenderer* local_file_renderer,
     ViEToFileRenderer* remote_file_renderer,
@@ -115,7 +116,7 @@ void ViEFileBasedComparisonTests::TestFullStack(
 
   EXPECT_EQ(0, interfaces.capture->ConnectCaptureDevice(
       capture_id, video_channel));
-  ConfigureRtpRtcp(interfaces.rtp_rtcp, video_channel);
+  ConfigureRtpRtcp(interfaces.rtp_rtcp, protection_method, video_channel);
 
   ::TestFullStack(interfaces, capture_id, video_channel, width, height,
                   bit_rate_kbps, network, frame_drop_detector,

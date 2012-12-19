@@ -52,7 +52,7 @@ void ViEAutoTest::ViEBaseStandardTest() {
                                                        video_channel));
   EXPECT_EQ(0, capture_interface->StartCapture(capture_id));
 
-  ConfigureRtpRtcp(interfaces.rtp_rtcp, video_channel);
+  ConfigureRtpRtcp(interfaces.rtp_rtcp, kNack, video_channel);
 
   EXPECT_EQ(0, render_interface->RegisterVideoRenderModule(*_vrm1));
   EXPECT_EQ(0, render_interface->RegisterVideoRenderModule(*_vrm2));
