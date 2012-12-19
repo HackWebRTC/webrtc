@@ -28,7 +28,8 @@
 
 namespace webrtc
 {
-
+// TODO(leozwang): Refactor jni and the following global variables, a
+// good example is jni_helper in Chromium.
 JavaVM* AudioDeviceAndroidJni::globalJvm = NULL;
 JNIEnv* AudioDeviceAndroidJni::globalJNIEnv = NULL;
 jobject AudioDeviceAndroidJni::globalContext = NULL;
@@ -94,6 +95,11 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetAndroidAudioDeviceObjects(
     }
 
     globalJNIEnv->DeleteGlobalRef(globalScClass);
+    globalScClass = reinterpret_cast<jclass>(NULL);
+
+    globalJNIEnv->DeleteGlobalRef(globalContext);
+    globalContext = reinterpret_cast<jobject>(NULL);
+
     globalJNIEnv = reinterpret_cast<JNIEnv*>(NULL);
   }
 
@@ -139,7 +145,7 @@ AudioDeviceAndroidJni::AudioDeviceAndroidJni(const WebRtc_Word32 id) :
             _maxSpeakerVolume(0),
             _loudSpeakerOn(false),
             _recAudioSource(1), // 1 is AudioSource.MIC which is our default
-            _javaVM(NULL), _javaContext(NULL), _jniEnvPlay(NULL),
+            _javaVM(NULL), _jniEnvPlay(NULL),
             _jniEnvRec(NULL), _javaScClass(0), _javaScObj(0),
             _javaPlayBuffer(0), _javaRecBuffer(0), _javaDirectPlayBuffer(NULL),
             _javaDirectRecBuffer(NULL), _javaMidPlayAudio(0),
@@ -424,9 +430,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::Terminate()
     _javaDirectPlayBuffer = NULL;
     _javaDirectRecBuffer = NULL;
 
-    env->DeleteGlobalRef(_javaContext);
-    _javaContext = NULL;
-
     // Delete the references to the java buffers, this allows the
     // garbage collector to delete them
     env->DeleteGlobalRef(_javaPlayBuffer);
@@ -596,7 +599,7 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetSpeakerVolume(WebRtc_UWord32 volume)
                      "  Speaker not initialized");
         return -1;
     }
-    if (!_javaContext)
+    if (!globalContext)
     {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
                      "  Context is not set");
@@ -661,7 +664,7 @@ WebRtc_Word32 AudioDeviceAndroidJni::SpeakerVolume(WebRtc_UWord32& volume) const
                      "  Speaker not initialized");
         return -1;
     }
-    if (!_javaContext)
+    if (!globalContext)
     {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
                      "  Context is not set");
@@ -2081,7 +2084,7 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetPlayoutSampleRate(
 WebRtc_Word32 AudioDeviceAndroidJni::SetLoudspeakerStatus(bool enable)
 {
 
-    if (!_javaContext)
+    if (!globalContext)
     {
         WEBRTC_TRACE(kTraceError, kTraceUtility, -1,
                      "  Context is not set");
@@ -2165,7 +2168,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::InitJavaResources()
 {
     // todo: Check if we already have created the java object
     _javaVM = globalJvm;
-    _javaContext = globalContext;
     _javaScClass = globalScClass;
 
     // use the jvm that has been set
@@ -2238,7 +2240,7 @@ WebRtc_Word32 AudioDeviceAndroidJni::InitJavaResources()
     // AUDIO MANAGEMENT
 
     // This is not mandatory functionality
-    if (_javaContext) {
+    if (globalContext) {
       jfieldID context_id = env->GetFieldID(globalScClass,
                                             "_context",
                                             "Landroid/content/Context;");
