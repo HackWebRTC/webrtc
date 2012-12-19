@@ -11,9 +11,11 @@
 #include <math.h>
 #include <string.h>
 
-#include "common_video/interface/i420_video_frame.h"
 #include "gtest/gtest.h"
-#include "system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/common_video/interface/i420_video_frame.h"
+#include "webrtc/system_wrappers/interface/ref_count.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/scoped_refptr.h"
 
 namespace webrtc {
 
@@ -211,6 +213,17 @@ TEST(TestI420VideoFrame, FrameSwap) {
   EXPECT_TRUE(EqualFrames(frame2_copy, frame1));
 }
 
+TEST(TestI420VideoFrame, RefCountedInstantiation) {
+  // Refcounted instantiation - ref_count should correspond to the number of
+  // instances.
+  scoped_refptr<I420VideoFrame> ref_count_frame(
+      new RefCountImpl<I420VideoFrame>());
+  EXPECT_EQ(2, ref_count_frame->AddRef());
+  EXPECT_EQ(3, ref_count_frame->AddRef());
+  EXPECT_EQ(2, ref_count_frame->Release());
+  EXPECT_EQ(1, ref_count_frame->Release());
+}
+
 bool EqualFrames(const I420VideoFrame& frame1,
                  const I420VideoFrame& frame2) {
   if (!EqualFramesExceptSize(frame1, frame2))
@@ -252,9 +265,9 @@ bool EqualFramesExceptSize(const I420VideoFrame& frame1,
 }
 
 int ExpectedSize(int plane_stride, int image_height, PlaneType type) {
-  if (type == kYPlane)
+  if (type == kYPlane) {
     return (plane_stride * image_height);
-  else {
+  } else {
     int half_height = (image_height + 1) / 2;
     return (plane_stride * half_height);
   }

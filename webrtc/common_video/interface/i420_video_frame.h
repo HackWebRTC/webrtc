@@ -15,8 +15,12 @@
 //
 // Storing and handling of YUV (I420) video frames.
 
-#include "common_video/plane.h"
-#include "typedefs.h"  //NOLINT
+#include "webrtc/common_video/plane.h"
+#include "webrtc/typedefs.h"
+
+/*
+ *  I420VideoFrame includes support for a reference counted impl.
+ */
 
 namespace webrtc {
 
@@ -30,7 +34,15 @@ enum PlaneType {
 class I420VideoFrame {
  public:
   I420VideoFrame();
-  ~I420VideoFrame();
+  virtual ~I420VideoFrame();
+  // Infrastructure for refCount implementation.
+  // Implements dummy functions for reference counting so that non reference
+  // counted instantiation can be done. These functions should not be called
+  // when creating the frame with new I420VideoFrame().
+  // Note: do not pass a I420VideoFrame created with new I420VideoFrame() or
+  // equivalent to a scoped_refptr or memory leak will occur.
+  virtual int32_t AddRef() {assert(false); return -1;}
+  virtual int32_t Release() {assert(false); return -1;}
 
   // CreateEmptyFrame: Sets frame dimensions and allocates buffers based
   // on set dimensions - height and plane stride.
