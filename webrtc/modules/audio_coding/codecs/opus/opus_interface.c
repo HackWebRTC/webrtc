@@ -42,8 +42,11 @@ int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst, int32_t channels) {
   state = (OpusEncInst*) calloc(1, sizeof(OpusEncInst));
   if (state) {
     int error;
-    state->encoder = opus_encoder_create(48000, channels, OPUS_APPLICATION_VOIP,
-                                         &error);
+    // Default to VoIP application for mono, and AUDIO for stereo.
+    int application = (channels == 1) ?
+        OPUS_APPLICATION_VOIP : OPUS_APPLICATION_AUDIO;
+
+    state->encoder = opus_encoder_create(48000, channels, application, &error);
     if (error == OPUS_OK || state->encoder != NULL ) {
       *inst = state;
       return 0;
