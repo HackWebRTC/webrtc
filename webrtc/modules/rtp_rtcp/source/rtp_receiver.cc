@@ -673,7 +673,7 @@ WebRtc_Word32 RTPReceiver::IncomingRTPPacket(
   CheckSSRCChanged(rtp_header);
 
   bool is_red = false;
-  ModuleRTPUtility::PayloadUnion specificPayload;
+  ModuleRTPUtility::PayloadUnion specificPayload = {};
 
   if (CheckPayloadChanged(rtp_header,
                           first_payload_byte,
