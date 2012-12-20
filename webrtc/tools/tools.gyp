@@ -85,27 +85,27 @@
       ],
     }, # rgba_to_i420_converter
     {
-      'target_name': 'frame_cutter_lib',
+      'target_name': 'frame_editing_lib',
       'type': '<(library)',
       'dependencies': [
         '<(webrtc_root)/common_video/common_video.gyp:common_video',
       ],
       'sources': [
-        'frame_cutter/frame_cutter_lib.cc',
-        'frame_cutter/frame_cutter_lib.h',
+        'frame_editing/frame_editing_lib.cc',
+        'frame_editing/frame_editing_lib.h',
       ],
-    }, # frame_cutter_lib
+    }, # frame_editing_lib
     {
-      'target_name': 'frame_cutter',
+      'target_name': 'frame_editor',
       'type': 'executable',
       'dependencies': [
         'command_line_parser',
-        'frame_cutter_lib',
+        'frame_editing_lib',
       ],
       'sources': [
-        'frame_cutter/frame_cutter.cc',
+        'frame_editing/frame_editing.cc',
       ],
-    }, # frame_cutter
+    }, # frame_editing
   ],
   'conditions': [
     ['include_tests==1', {
@@ -114,12 +114,12 @@
           'target_name': 'tools_unittests',
           'type': 'executable',
           'dependencies': [
-            'frame_cutter_lib',
+            'frame_editing_lib',
             '<(webrtc_root)/test/test.gyp:test_support_main',
             '<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [
-            'frame_cutter/frame_cutter_unittest.cc',
+            'frame_editing/frame_editing_unittest.cc',
           ],
         }, # tools_unittests
       ], # targets
