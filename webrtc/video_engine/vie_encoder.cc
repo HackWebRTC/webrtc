@@ -20,6 +20,7 @@
 #include "modules/video_coding/main/interface/video_coding.h"
 #include "modules/video_coding/main/interface/video_coding_defines.h"
 #include "system_wrappers/interface/critical_section_wrapper.h"
+#include "system_wrappers/interface/logging.h"
 #include "system_wrappers/interface/tick_util.h"
 #include "system_wrappers/interface/trace.h"
 #include "video_engine/include/vie_codec.h"
@@ -830,7 +831,8 @@ void ViEEncoder::OnReceivedIntraFrameRequest(uint32_t ssrc) {
     CriticalSectionScoped cs(data_cs_.get());
     std::map<unsigned int, int>::iterator stream_it = ssrc_streams_.find(ssrc);
     if (stream_it == ssrc_streams_.end()) {
-      assert(false);
+      LOG_F(LS_WARNING) << "ssrc not found: " << ssrc << ", map size "
+                        << ssrc_streams_.size();
       return;
     }
     std::map<unsigned int, WebRtc_Word64>::iterator time_it =
