@@ -1495,6 +1495,8 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendNACK(const WebRtc_UWord16* nackList,
   }
   const WebRtc_Word64 now = _clock.GetTimeInMS();
   const WebRtc_Word64 timeLimit = now - waitTime;
+  WebRtc_UWord16 nackLength = size;
+  WebRtc_UWord16 startId = 0;
 
   if (_nackLastTimeSent < timeLimit) {
     // send list
@@ -1504,7 +1506,17 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendNACK(const WebRtc_UWord16* nackList,
       // last seq num is the same don't send list
       return 0;
     } else {
-      // send list
+      //
+      // send NACK's only for new sequence numbers to avoid re-sending
+      // of NACK's for sequences we have already sent
+      //
+      for (int i = 0; i < size; i++)  {
+        if (_nackLastSeqNumberSent == nackList[i]) {
+          startId = i+1;
+          break;
+        }
+      }
+      nackLength = size-startId;
     }
   }
   _nackLastTimeSent =  now;
@@ -1512,7 +1524,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendNACK(const WebRtc_UWord16* nackList,
 
   switch (_nackMethod) {
     case kNackRtcp:
-      return _rtcpSender.SendRTCP(kRtcpNack, size, nackList);
+      return _rtcpSender.SendRTCP(kRtcpNack, nackLength, &nackList[startId]);
     case kNackOff:
       return -1;
   };
