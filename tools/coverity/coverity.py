@@ -192,7 +192,7 @@ def run_coverity(options, args):
       options.target)
   elif sys.platform == 'win32':
     cmd = ('%s\\cov-build.exe --dir %s devenv.com %s\\%s /build %s '
-           '/project All.vcproj') % (
+           '/project All.vcxproj') % (
       options.coverity_bin_dir, options.coverity_intermediate_dir,
       options.source_dir, options.solution_file, options.target)
   elif sys.platform == 'darwin':
