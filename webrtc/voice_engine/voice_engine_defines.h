@@ -271,10 +271,7 @@ enum { kVoiceEngineMaxNumOfActiveChannels = 16 };
 // ----------------------------------------------------------------------------
 
   #include <windows.h>
-  #include <mmsystem.h> // timeGetTime
 
-  #define GET_TIME_IN_MS() ::timeGetTime()
-  #define SLEEP(x) ::Sleep(x)
   // Comparison of two strings without regard to case
   #define STR_CASE_CMP(x,y) ::_stricmp(x,y)
   // Compares characters of two strings without regard to case
@@ -337,31 +334,6 @@ enum { kVoiceEngineMaxNumOfActiveChannels = 16 };
 #define FAR
 #define __cdecl
 #define LPSOCKADDR struct sockaddr *
-
-namespace
-{
-    void Sleep(unsigned long x)
-    {
-        timespec t;
-        t.tv_sec = x/1000;
-        t.tv_nsec = (x-(x/1000)*1000)*1000000;
-        nanosleep(&t,NULL);
-    }
-
-    DWORD timeGetTime()
-    {
-        struct timeval tv;
-        struct timezone tz;
-        unsigned long val;
-
-        gettimeofday(&tv, &tz);
-        val= tv.tv_sec*1000+ tv.tv_usec/1000;
-        return(val);
-    }
-}
-
-#define SLEEP(x) ::Sleep(x)
-#define GET_TIME_IN_MS timeGetTime
 
 // Default device for Linux and Android
 #define WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE 0
@@ -487,31 +459,6 @@ namespace webrtc
 #define LPSOCKADDR struct sockaddr *
 #define LPCSTR const char*
 #define ULONG unsigned long
-
-namespace
-{
-    void Sleep(unsigned long x)
-    {
-        timespec t;
-        t.tv_sec = x/1000;
-        t.tv_nsec = (x-(x/1000)*1000)*1000000;
-        nanosleep(&t,NULL);
-    }
-
-    DWORD WebRtcTimeGetTime()
-    {
-        struct timeval tv;
-        struct timezone tz;
-        unsigned long val;
-
-        gettimeofday(&tv, &tz);
-        val= tv.tv_sec*1000+ tv.tv_usec/1000;
-        return(val);
-    }
-}
-
-#define SLEEP(x) ::Sleep(x)
-#define GET_TIME_IN_MS WebRtcTimeGetTime
 
 // Default device for Mac and iPhone
 #define WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE 0

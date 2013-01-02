@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "voe_unit_test.h"
+#include "webrtc/voice_engine/test/auto_test/voe_unit_test.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -18,10 +18,11 @@
 #include <conio.h>
 #endif
 
-#include "system_wrappers/interface/thread_wrapper.h"
-#include "testsupport/fileutils.h"
-#include "voice_engine/voice_engine_defines.h"
-#include "voice_engine/test/auto_test/fakes/fake_media_process.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/sleep.h"
+#include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/voice_engine/voice_engine_defines.h"
+#include "webrtc/voice_engine/test/auto_test/fakes/fake_media_process.h"
 
 using namespace webrtc;
 
@@ -320,7 +321,7 @@ void VoEUnitTest::Sleep(unsigned int timeMillisec, bool addMarker) {
     printf("[dT=%.1f]", dtSec);
     fflush(NULL);
   }
-  ::Sleep(timeMillisec);
+  webrtc::SleepMs(timeMillisec);
 }
 
 void VoEUnitTest::Wait() {

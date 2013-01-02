@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "before_initialization_fixture.h"
+#include "webrtc/voice_engine/test/auto_test/fixtures/before_initialization_fixture.h"
 
-#include "voice_engine_defines.h"
+#include "webrtc/system_wrappers/interface/sleep.h"
 
 BeforeInitializationFixture::BeforeInitializationFixture()
     : voice_engine_(webrtc::VoiceEngine::Create()) {
@@ -52,7 +52,5 @@ BeforeInitializationFixture::~BeforeInitializationFixture() {
 }
 
 void BeforeInitializationFixture::Sleep(long milliseconds) {
-  // Implementation note: This method is used to reduce usage of the macro and
-  // avoid ugly errors in Eclipse (its parser can't deal with the sleep macro).
-  SLEEP(milliseconds);
+  webrtc::SleepMs(milliseconds);
 }

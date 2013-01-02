@@ -22,11 +22,12 @@
 #include <conio.h>
 #endif
 
-#include "voe_stress_test.h"
-#include "voe_standard_test.h"
+#include "webrtc/voice_engine/test/auto_test/voe_stress_test.h"
+#include "webrtc/voice_engine/test/auto_test/voe_standard_test.h"
 
-#include "voice_engine/voice_engine_defines.h"  // defines build macros
-#include "thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/sleep.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/voice_engine/voice_engine_defines.h"  // defines build macros
 
 using namespace webrtc;
 
@@ -44,7 +45,7 @@ namespace voetest {
 #define PAUSE_OR_SLEEP(x) PAUSE;
 #else
 // Sleep a bit instead if pause not supported
-#define PAUSE_OR_SLEEP(x) SLEEP(x);
+#define PAUSE_OR_SLEEP(x) SleepMs(x);
 #endif
 
 const char* VoEStressTest::_key = "====YUtFWRAAAAADBtIHgAAAAAEAAAAcAAAAAQBHU0ds"
@@ -154,7 +155,7 @@ int VoEStressTest::StartStopTest() {
     VALIDATE_STRESS(base->StartSend(0));
     if (!(i % markInterval))
       MARK();
-    SLEEP(loopSleep);
+    SleepMs(loopSleep);
     VALIDATE_STRESS(base->StopSend(0));
     VALIDATE_STRESS(base->StopPlayout(0));
     VALIDATE_STRESS(base->StopReceive(0));
@@ -277,7 +278,7 @@ int VoEStressTest::CreateDeleteChannelsTest() {
 
     if (!(i % markInterval))
       MARK();
-    SLEEP(loopSleep);
+    SleepMs(loopSleep);
   }
   ANL();
 
@@ -360,7 +361,7 @@ int VoEStressTest::MultipleThreadsTest() {
 
     if (!(i % markInterval))
       MARK();
-    SLEEP(loopSleep);
+    SleepMs(loopSleep);
   }
   ANL();
 

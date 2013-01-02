@@ -9,9 +9,9 @@
  */
 
 #include "gtest/gtest.h"
-#include "modules/media_file/interface/media_file.h"
-#include "testsupport/fileutils.h"
-#include "voice_engine/voice_engine_defines.h" // defines SLEEP
+#include "webrtc/modules/media_file/interface/media_file.h"
+#include "webrtc/system_wrappers/interface/sleep.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 class MediaFileTest : public testing::Test {
  protected:
@@ -40,7 +40,7 @@ TEST_F(MediaFileTest, StartPlayingAudioFileWithoutError) {
 
   ASSERT_EQ(true, media_file_->IsPlaying());
 
-  SLEEP(1);
+  webrtc::SleepMs(1);
 
   ASSERT_EQ(0, media_file_->StopPlaying());
 }
