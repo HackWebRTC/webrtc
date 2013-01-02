@@ -8,22 +8,22 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
 #include "gtest/gtest.h"
-#include "system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
 TEST(ThreadTest, NullFunctionPointer) {
   webrtc::scoped_ptr<ThreadWrapper> thread(
-      webrtc::ThreadWrapper::CreateThread());
+    webrtc::ThreadWrapper::CreateThread());
   unsigned int id = 42;
   EXPECT_FALSE(thread->Start(id));
 }
 
 // Function that does nothing, and reports success.
-bool NullRunFunction(void* /* obj */) {
+bool NullRunFunction(void* obj) {
   return true;
 }
 
@@ -37,7 +37,7 @@ TEST(ThreadTest, StartStop) {
 
 // Function that sets a boolean.
 bool SetFlagRunFunction(void* obj) {
-  bool* obj_as_bool = static_cast<bool*> (obj);
+  bool* obj_as_bool = static_cast<bool*>(obj);
   *obj_as_bool = true;
   return true;
 }
@@ -48,8 +48,10 @@ TEST(ThreadTest, RunFunctionIsCalled) {
                                                       &flag);
   unsigned int id = 42;
   ASSERT_TRUE(thread->Start(id));
+
   // At this point, the flag may be either true or false.
   EXPECT_TRUE(thread->Stop());
+
   // We expect the thread to have run at least once.
   EXPECT_TRUE(flag);
   delete thread;

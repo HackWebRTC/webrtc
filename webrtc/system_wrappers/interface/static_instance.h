@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_STATICINSTANCETEMPLATE_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_STATICINSTANCETEMPLATE_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_STATIC_INSTANCE_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_STATIC_INSTANCE_H_
 
 #include <assert.h>
 
-#include "critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #ifdef _WIN32
-#include "fix_interlocked_exchange_pointer_win.h"
+#include "webrtc/system_wrappers/interface/fix_interlocked_exchange_pointer_win.h"
 #endif
 
 namespace webrtc {
@@ -46,7 +46,7 @@ static T* GetStaticInstance(CountOperation count_operation) {
   // reclaimed by the OS and memory leak tools will not recognize memory
   // reachable from statics leaked so no noise is added by doing this.
   static CriticalSectionWrapper* crit_sect(
-      CriticalSectionWrapper::CreateCriticalSection());
+    CriticalSectionWrapper::CreateCriticalSection());
   CriticalSectionScoped lock(crit_sect);
 
   if (count_operation ==
@@ -116,8 +116,8 @@ static T* GetStaticInstance(CountOperation count_operation) {
       }
     }
   } else {
-    int newValue = InterlockedDecrement(&instance_count);
-    if (newValue == 0) {
+    int new_value = InterlockedDecrement(&instance_count);
+    if (new_value == 0) {
       state = kDestroy;
     }
   }
@@ -128,7 +128,7 @@ static T* GetStaticInstance(CountOperation count_operation) {
     // local copy.
     T* new_instance = T::CreateInstance();
     if (1 == InterlockedIncrement(&instance_count)) {
-      InterlockedExchangePointer(reinterpret_cast<void* volatile*>(&instance),
+      InterlockedExchangePointer(reinterpret_cast<void * volatile*>(&instance),
                                  new_instance);
     } else {
       InterlockedDecrement(&instance_count);
@@ -137,8 +137,8 @@ static T* GetStaticInstance(CountOperation count_operation) {
       }
     }
   } else if (state == kDestroy) {
-    T* old_value = static_cast<T*> (InterlockedExchangePointer(
-        reinterpret_cast<void* volatile*>(&instance), NULL));
+    T* old_value = static_cast<T*>(InterlockedExchangePointer(
+        reinterpret_cast<void * volatile*>(&instance), NULL));
     if (old_value) {
       delete static_cast<T*>(old_value);
     }
@@ -150,4 +150,4 @@ static T* GetStaticInstance(CountOperation count_operation) {
 
 }  // namspace webrtc
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_STATICINSTANCETEMPLATE_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_STATIC_INSTANCE_H_

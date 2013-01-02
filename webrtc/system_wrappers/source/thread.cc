@@ -8,23 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
 #if defined(_WIN32)
-    #include "thread_win.h"
+#include "webrtc/system_wrappers/source/thread_win.h"
 #else
-    #include "thread_posix.h"
+#include "webrtc/system_wrappers/source/thread_posix.h"
 #endif
 
 namespace webrtc {
+
 ThreadWrapper* ThreadWrapper::CreateThread(ThreadRunFunction func,
                                            ThreadObj obj, ThreadPriority prio,
-                                           const char* threadName)
-{
+                                           const char* thread_name) {
 #if defined(_WIN32)
-    return new ThreadWindows(func, obj, prio, threadName);
+  return new ThreadWindows(func, obj, prio, thread_name);
 #else
-    return ThreadPosix::Create(func, obj, prio, threadName);
+  return ThreadPosix::Create(func, obj, prio, thread_name);
 #endif
 }
+
 } // namespace webrtc

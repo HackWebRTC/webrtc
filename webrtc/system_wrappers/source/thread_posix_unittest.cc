@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "system_wrappers/source/thread_posix.h"
+#include "webrtc/system_wrappers/source/thread_posix.h"
 
 #include "gtest/gtest.h"
 
 TEST(ThreadTestPosix, PrioritySettings) {
-  // API assumes that maxPrio - minPrio > 2. Test the extreme case.
+  // API assumes that max_prio - min_prio > 2. Test the extreme case.
   const int kMinPrio = -1;
   const int kMaxPrio = 2;
 
