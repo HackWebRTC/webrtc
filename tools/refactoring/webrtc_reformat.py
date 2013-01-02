@@ -58,12 +58,13 @@ import sys
 
 def LowerWord(obj):
   """Helper for DeCamelCase."""
-  return obj.group(1) + '_' + obj.group(2).lower() + obj.group(3)
+  optional_last_letters = obj.group(3) or ''
+  return obj.group(1) + '_' + obj.group(2).lower() + optional_last_letters
 
 
 def DeCamelCase(text):
   """De-camelize variable names."""
-  pattern = re.compile(r'(?<=[ _*\(\&\!])([a-z]+)(?<!k)([A-Z]+)([a-z])')
+  pattern = re.compile(r'(?<=[ _*\(\&\!])([a-z]+)(?<!k)([A-Z]+)([a-z])?')
   while re.search(pattern, text):
     text = re.sub(pattern, LowerWord, text)
   return text
@@ -80,8 +81,14 @@ def MoveUnderScore(text):
   # TODO(mflodman) Replace \1 with ?-expression.
   # We don't want to change macros and #defines though, so don't do anything
   # if the first character is uppercase (normal variables shouldn't have that).
-  pattern = r'([ \*\!\&\(])_(?!_)(?![A-Z])(\w+)'
+  pattern = r'([ \*\!\&\(\[\]])_(?!_)(?![A-Z])(\w+)'
   return re.sub(pattern, r'\1\2_', text)
+
+
+def PostfixToPrefixInForLoops(text):
+  """Converts x++ to ++x in the increment part of a for loop."""
+  pattern = r'(for \(.*;.*;) (\w+)\+\+\)'
+  return re.sub(pattern, r'\1++\2)', text)
 
 
 def RemoveMultipleEmptyLines(text):
@@ -159,9 +166,8 @@ def SortIncludeHeaders(text, filename):
   # Replace existing headers with the sorted string.
   text_no_hdrs = re.sub(include_pattern, r'???', text)
 
-  # Insert sorted headers unless we detect #ifdefs.
-  if re.search(r'(#ifdef|#ifndef|#if).*\?{3,}.*#endif',
-               text_no_hdrs, re.DOTALL):
+  # Insert sorted headers unless we detect #ifdefs right next to the headers.
+  if re.search(r'(#ifdef|#ifndef|#if).*\s*\?{3,}\s*#endif', text_no_hdrs):
     print 'WARNING: Include headers not sorted in ' + filename
     return text
 
@@ -252,6 +258,7 @@ def main():
 
     text = DeCamelCase(text)
     text = MoveUnderScore(text)
+    text = PostfixToPrefixInForLoops(text)
     text = CPPComments(text)
     text = AddHeaderPath(text)
     text = AddWebrtcPrefixToOldSrcRelativePaths(text)
