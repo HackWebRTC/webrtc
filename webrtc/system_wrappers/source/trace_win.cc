@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "trace_win.h"
+#include "webrtc/system_wrappers/source/trace_win.h"
 
 #include <cassert>
 #include <stdarg.h>
@@ -16,13 +16,13 @@
 #include "Mmsystem.h"
 
 #if defined(_DEBUG)
-    #define BUILDMODE "d"
+#define BUILDMODE "d"
 #elif defined(DEBUG)
-    #define BUILDMODE "d"
+#define BUILDMODE "d"
 #elif defined(NDEBUG)
-    #define BUILDMODE "r"
+#define BUILDMODE "r"
 #else
-    #define BUILDMODE "?"
+#define BUILDMODE "?"
 #endif
 #define BUILDTIME __TIME__
 #define BUILDDATE __DATE__
@@ -31,101 +31,89 @@
 
 namespace webrtc {
 TraceWindows::TraceWindows()
-    : _prevAPITickCount(0),
-      _prevTickCount(0)
-{
+    : prev_api_tick_count_(0),
+      prev_tick_count_(0) {
 }
 
-TraceWindows::~TraceWindows()
-{
-    StopThread();
+TraceWindows::~TraceWindows() {
+  StopThread();
 }
 
-WebRtc_Word32 TraceWindows::AddTime(char* traceMessage,
-                                    const TraceLevel level) const
-{
-    WebRtc_UWord32 dwCurrentTime = timeGetTime();
-    SYSTEMTIME systemTime;
-    GetSystemTime(&systemTime);
+WebRtc_Word32 TraceWindows::AddTime(char* trace_message,
+                                    const TraceLevel level) const {
+  WebRtc_UWord32 dw_current_time = timeGetTime();
+  SYSTEMTIME system_time;
+  GetSystemTime(&system_time);
 
-    if(level == kTraceApiCall)
-    {
-        WebRtc_UWord32 dwDeltaTime = dwCurrentTime- _prevTickCount;
-        _prevTickCount = dwCurrentTime;
+  if (level == kTraceApiCall) {
+    WebRtc_UWord32 dw_delta_time = dw_current_time - prev_tick_count_;
+    prev_tick_count_ = dw_current_time;
 
-        if(_prevTickCount == 0)
-        {
-            dwDeltaTime = 0;
-        }
-        if(dwDeltaTime > 0x0fffffff)
-        {
-            // Either wraparound or data race.
-            dwDeltaTime = 0;
-        }
-        if(dwDeltaTime > 99999)
-        {
-            dwDeltaTime = 99999;
-        }
-
-        sprintf (traceMessage, "(%2u:%2u:%2u:%3u |%5lu) ", systemTime.wHour,
-                 systemTime.wMinute, systemTime.wSecond,
-                 systemTime.wMilliseconds, dwDeltaTime);
-    } else {
-        WebRtc_UWord32 dwDeltaTime = dwCurrentTime - _prevAPITickCount;
-        _prevAPITickCount = dwCurrentTime;
-
-        if(_prevAPITickCount == 0)
-        {
-            dwDeltaTime = 0;
-        }
-        if(dwDeltaTime > 0x0fffffff)
-        {
-            // Either wraparound or data race.
-            dwDeltaTime = 0;
-        }
-        if(dwDeltaTime > 99999)
-        {
-            dwDeltaTime = 99999;
-        }
-        sprintf (traceMessage, "(%2u:%2u:%2u:%3u |%5lu) ", systemTime.wHour,
-                 systemTime.wMinute, systemTime.wSecond,
-                 systemTime.wMilliseconds, dwDeltaTime);
+    if (prev_tick_count_ == 0) {
+      dw_delta_time = 0;
     }
-    // Messages is 12 characters.
-    return 22;
+    if (dw_delta_time > 0x0fffffff) {
+      // Either wrap-around or data race.
+      dw_delta_time = 0;
+    }
+    if (dw_delta_time > 99999) {
+      dw_delta_time = 99999;
+    }
+
+    sprintf(trace_message, "(%2u:%2u:%2u:%3u |%5lu) ", system_time.wHour,
+            system_time.wMinute, system_time.wSecond,
+            system_time.wMilliseconds, dw_delta_time);
+  } else {
+    WebRtc_UWord32 dw_delta_time = dw_current_time - prev_api_tick_count_;
+    prev_api_tick_count_ = dw_current_time;
+
+    if (prev_api_tick_count_ == 0) {
+      dw_delta_time = 0;
+    }
+    if (dw_delta_time > 0x0fffffff) {
+      // Either wraparound or data race.
+      dw_delta_time = 0;
+    }
+    if (dw_delta_time > 99999) {
+      dw_delta_time = 99999;
+    }
+    sprintf(trace_message, "(%2u:%2u:%2u:%3u |%5lu) ", system_time.wHour,
+            system_time.wMinute, system_time.wSecond,
+            system_time.wMilliseconds, dw_delta_time);
+  }
+  return 22;
 }
 
-WebRtc_Word32 TraceWindows::AddBuildInfo(char* traceMessage) const
-{
-    // write data and time to text file
-    sprintf(traceMessage, "Build info: %s", BUILDINFO);
-    // Include NULL termination (hence + 1).
-    return static_cast<WebRtc_Word32>(strlen(traceMessage)+1);
+WebRtc_Word32 TraceWindows::AddBuildInfo(char* trace_message) const {
+  // write data and time to text file
+  sprintf(trace_message, "Build info: %s", BUILDINFO);
+  // Include NULL termination (hence + 1).
+  return static_cast<WebRtc_Word32>(strlen(trace_message) + 1);
 }
 
-WebRtc_Word32 TraceWindows::AddDateTimeInfo(char* traceMessage) const
-{
-    _prevAPITickCount = timeGetTime();
-    _prevTickCount = _prevAPITickCount;
+WebRtc_Word32 TraceWindows::AddDateTimeInfo(char* trace_message) const {
+  prev_api_tick_count_ = timeGetTime();
+  prev_tick_count_ = prev_api_tick_count_;
 
-    SYSTEMTIME sysTime;
-    GetLocalTime (&sysTime);
+  SYSTEMTIME sys_time;
+  GetLocalTime(&sys_time);
 
-    TCHAR szDateStr[20];
-    TCHAR szTimeStr[20];
+  TCHAR sz_date_str[20];
+  TCHAR sz_time_str[20];
 
-    // Create date string (e.g. Apr 04 2002)
-    GetDateFormat(LOCALE_SYSTEM_DEFAULT, 0, &sysTime, TEXT("MMM dd yyyy"),
-                  szDateStr, 20);
+  // Create date string (e.g. Apr 04 2002)
+  GetDateFormat(LOCALE_SYSTEM_DEFAULT, 0, &sys_time, TEXT("MMM dd yyyy"),
+                sz_date_str, 20);
 
-    // Create time string (e.g. 15:32:08)
-    GetTimeFormat(LOCALE_SYSTEM_DEFAULT, 0, &sysTime, TEXT("HH':'mm':'ss"),
-                  szTimeStr, 20);
+  // Create time string (e.g. 15:32:08)
+  GetTimeFormat(LOCALE_SYSTEM_DEFAULT, 0, &sys_time, TEXT("HH':'mm':'ss"),
+                sz_time_str, 20);
 
-    sprintf(traceMessage, "Local Date: %s Local Time: %s", szDateStr,
-            szTimeStr);
+  sprintf(trace_message, "Local Date: %s Local Time: %s", sz_date_str,
+          sz_time_str);
 
-    // Include NULL termination (hence + 1).
-    return static_cast<WebRtc_Word32>(strlen(traceMessage)+ 1);
+  // Include NULL termination (hence + 1).
+  return static_cast<WebRtc_Word32>(strlen(trace_message) + 1);
 }
-} // namespace webrtc
+
+}  // namespace webrtc

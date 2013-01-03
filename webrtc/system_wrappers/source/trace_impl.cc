@@ -8,836 +8,751 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "trace_impl.h"
+#include "webrtc/system_wrappers/source/trace_impl.h"
 
 #include <cassert>
-#include <string.h> // memset
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
 #ifdef _WIN32
-#include "trace_win.h"
+#include "webrtc/system_wrappers/source/trace_win.h"
 #else
-#include <stdio.h>
-#include <stdarg.h>
-#include "trace_posix.h"
-#endif // _WIN32
+#include "webrtc/system_wrappers/source/trace_posix.h"
+#endif  // _WIN32
 
-#include "system_wrappers/interface/sleep.h"
+#include "webrtc/system_wrappers/interface/sleep.h"
 
 #define KEY_LEN_CHARS 31
 
 #ifdef _WIN32
 #pragma warning(disable:4355)
-#endif // _WIN32
+#endif  // _WIN32
 
 namespace webrtc {
-static WebRtc_UWord32 levelFilter = kTraceDefault;
+
+static WebRtc_UWord32 level_filter = kTraceDefault;
 
 // Construct On First Use idiom. Avoids "static initialization order fiasco".
 TraceImpl* TraceImpl::StaticInstance(CountOperation count_operation,
-                                     const TraceLevel level)
-{
-    // Sanities to avoid taking lock unless absolutely necessary (for
-    // performance reasons).
-    // count_operation == kAddRefNoCreate implies that a message will be
-    // written to file.
-    if((level != kTraceAll) && (count_operation == kAddRefNoCreate))
-    {
-        if(!(level & levelFilter))
-        {
-            return NULL;
-        }
+                                     const TraceLevel level) {
+  // Sanities to avoid taking lock unless absolutely necessary (for
+  // performance reasons). count_operation == kAddRefNoCreate implies that a
+  // message will be written to file.
+  if ((level != kTraceAll) && (count_operation == kAddRefNoCreate)) {
+    if (!(level & level_filter)) {
+      return NULL;
     }
-    TraceImpl* impl =
-        GetStaticInstance<TraceImpl>(count_operation);
-    return impl;
+  }
+  TraceImpl* impl =
+    GetStaticInstance<TraceImpl>(count_operation);
+  return impl;
 }
 
-TraceImpl* TraceImpl::GetTrace(const TraceLevel level)
-{
-    return StaticInstance(kAddRefNoCreate, level);
+TraceImpl* TraceImpl::GetTrace(const TraceLevel level) {
+  return StaticInstance(kAddRefNoCreate, level);
 }
 
-TraceImpl* TraceImpl::CreateInstance()
-{
+TraceImpl* TraceImpl::CreateInstance() {
 #if defined(_WIN32)
-    return new TraceWindows();
+  return new TraceWindows();
 #else
-    return new TracePosix();
+  return new TracePosix();
 #endif
 }
 
 TraceImpl::TraceImpl()
-    : _critsectInterface(CriticalSectionWrapper::CreateCriticalSection()),
-      _callback(NULL),
-      _rowCountText(0),
-      _fileCountText(0),
-      _traceFile(*FileWrapper::Create()),
-      _thread(*ThreadWrapper::CreateThread(TraceImpl::Run, this,
+    : critsect_interface_(CriticalSectionWrapper::CreateCriticalSection()),
+      callback_(NULL),
+      row_count_text_(0),
+      file_count_text_(0),
+      trace_file_(*FileWrapper::Create()),
+      thread_(*ThreadWrapper::CreateThread(TraceImpl::Run, this,
                                            kHighestPriority, "Trace")),
-      _event(*EventWrapper::Create()),
-      _critsectArray(CriticalSectionWrapper::CreateCriticalSection()),
-      _nextFreeIdx(),
-      _level(),
-      _length(),
-      _messageQueue(),
-      _activeQueue(0)
-{
-    _nextFreeIdx[0] = 0;
-    _nextFreeIdx[1] = 0;
+      event_(*EventWrapper::Create()),
+      critsect_array_(CriticalSectionWrapper::CreateCriticalSection()),
+      next_free_idx_(),
+      level_(),
+      length_(),
+      message_queue_(),
+      active_queue_(0) {
+  next_free_idx_[0] = 0;
+  next_free_idx_[1] = 0;
 
-    unsigned int tid = 0;
-    _thread.Start(tid);
+  unsigned int tid = 0;
+  thread_.Start(tid);
 
-    for(int m = 0; m < WEBRTC_TRACE_NUM_ARRAY; m++)
-    {
-        for(int n = 0; n < WEBRTC_TRACE_MAX_QUEUE; n++)
-        {
-            _messageQueue[m][n] = new
-                char[WEBRTC_TRACE_MAX_MESSAGE_SIZE];
-        }
+  for (int m = 0; m < WEBRTC_TRACE_NUM_ARRAY; ++m) {
+    for (int n = 0; n < WEBRTC_TRACE_MAX_QUEUE; ++n) {
+      message_queue_[m][n] = new
+      char[WEBRTC_TRACE_MAX_MESSAGE_SIZE];
     }
+  }
 }
 
-bool TraceImpl::StopThread()
-{
-    // Release the worker thread so that it can flush any lingering messages.
-    _event.Set();
+bool TraceImpl::StopThread() {
+  // Release the worker thread so that it can flush any lingering messages.
+  event_.Set();
 
-    // Allow 10 ms for pending messages to be flushed out.
-    // TODO (hellner): why not use condition variables to do this? Or let the
-    //                 worker thread die and let this thread flush remaining
-    //                 messages?
-    SleepMs(10);
+  // Allow 10 ms for pending messages to be flushed out.
+  // TODO(hellner): why not use condition variables to do this? Or let the
+  //                worker thread die and let this thread flush remaining
+  //                messages?
+  SleepMs(10);
 
-    _thread.SetNotAlive();
-    // Make sure the thread finishes as quickly as possible (instead of having
-    // to wait for the timeout).
-    _event.Set();
-    bool stopped = _thread.Stop();
+  thread_.SetNotAlive();
+  // Make sure the thread finishes as quickly as possible (instead of having
+  // to wait for the timeout).
+  event_.Set();
+  bool stopped = thread_.Stop();
 
-    CriticalSectionScoped lock(_critsectInterface);
-    _traceFile.Flush();
-    _traceFile.CloseFile();
-    return stopped;
+  CriticalSectionScoped lock(critsect_interface_);
+  trace_file_.Flush();
+  trace_file_.CloseFile();
+  return stopped;
 }
 
-TraceImpl::~TraceImpl()
-{
-    StopThread();
-    delete &_event;
-    delete &_traceFile;
-    delete &_thread;
-    delete _critsectInterface;
-    delete _critsectArray;
+TraceImpl::~TraceImpl() {
+  StopThread();
+  delete &event_;
+  delete &trace_file_;
+  delete &thread_;
+  delete critsect_interface_;
+  delete critsect_array_;
 
-    for(int m = 0; m < WEBRTC_TRACE_NUM_ARRAY; m++)
-    {
-        for(int n = 0; n < WEBRTC_TRACE_MAX_QUEUE; n++)
-        {
-            delete [] _messageQueue[m][n];
-        }
+  for (int m = 0; m < WEBRTC_TRACE_NUM_ARRAY; ++m) {
+    for (int n = 0; n < WEBRTC_TRACE_MAX_QUEUE; ++n) {
+      delete [] message_queue_[m][n];
     }
+  }
 }
 
-WebRtc_Word32 TraceImpl::AddThreadId(char* traceMessage) const {
-  WebRtc_UWord32 threadId = ThreadWrapper::GetThreadId();
+WebRtc_Word32 TraceImpl::AddThreadId(char* trace_message) const {
+  WebRtc_UWord32 thread_id = ThreadWrapper::GetThreadId();
   // Messages is 12 characters.
-  return sprintf(traceMessage, "%10u; ", threadId);
+  return sprintf(trace_message, "%10u; ", thread_id);
 }
 
-WebRtc_Word32 TraceImpl::AddLevel(char* szMessage, const TraceLevel level) const
-{
-    const int kMessageLength = 12;
-    switch (level)
-    {
-        case kTraceTerseInfo:
-            // Add the appropriate amount of whitespace.
-            memset(szMessage, ' ', kMessageLength);
-            szMessage[kMessageLength] = '\0';
-            break;
-        case kTraceStateInfo:
-            sprintf (szMessage, "STATEINFO ; ");
-            break;
-        case kTraceWarning:
-            sprintf (szMessage, "WARNING   ; ");
-            break;
-        case kTraceError:
-            sprintf (szMessage, "ERROR     ; ");
-            break;
-        case kTraceCritical:
-            sprintf (szMessage, "CRITICAL  ; ");
-            break;
-        case kTraceInfo:
-            sprintf (szMessage, "DEBUGINFO ; ");
-            break;
-        case kTraceModuleCall:
-            sprintf (szMessage, "MODULECALL; ");
-            break;
-        case kTraceMemory:
-            sprintf (szMessage, "MEMORY    ; ");
-            break;
-        case kTraceTimer:
-            sprintf (szMessage, "TIMER     ; ");
-            break;
-        case kTraceStream:
-            sprintf (szMessage, "STREAM    ; ");
-            break;
-        case kTraceApiCall:
-            sprintf (szMessage, "APICALL   ; ");
-            break;
-        case kTraceDebug:
-            sprintf (szMessage, "DEBUG     ; ");
-            break;
-        default:
-            assert(false);
-            return 0;
-    }
-    // All messages are 12 characters.
-    return kMessageLength;
+WebRtc_Word32 TraceImpl::AddLevel(char* sz_message,
+                                  const TraceLevel level) const {
+  const int kMessageLength = 12;
+  switch (level) {
+    case kTraceTerseInfo:
+      // Add the appropriate amount of whitespace.
+      memset(sz_message, ' ', kMessageLength);
+      sz_message[kMessageLength] = '\0';
+      break;
+    case kTraceStateInfo:
+      sprintf(sz_message, "STATEINFO ; ");
+      break;
+    case kTraceWarning:
+      sprintf(sz_message, "WARNING   ; ");
+      break;
+    case kTraceError:
+      sprintf(sz_message, "ERROR     ; ");
+      break;
+    case kTraceCritical:
+      sprintf(sz_message, "CRITICAL  ; ");
+      break;
+    case kTraceInfo:
+      sprintf(sz_message, "DEBUGINFO ; ");
+      break;
+    case kTraceModuleCall:
+      sprintf(sz_message, "MODULECALL; ");
+      break;
+    case kTraceMemory:
+      sprintf(sz_message, "MEMORY    ; ");
+      break;
+    case kTraceTimer:
+      sprintf(sz_message, "TIMER     ; ");
+      break;
+    case kTraceStream:
+      sprintf(sz_message, "STREAM    ; ");
+      break;
+    case kTraceApiCall:
+      sprintf(sz_message, "APICALL   ; ");
+      break;
+    case kTraceDebug:
+      sprintf(sz_message, "DEBUG     ; ");
+      break;
+    default:
+      assert(false);
+      return 0;
+  }
+  // All messages are 12 characters.
+  return kMessageLength;
 }
 
-WebRtc_Word32 TraceImpl::AddModuleAndId(char* traceMessage,
+WebRtc_Word32 TraceImpl::AddModuleAndId(char* trace_message,
                                         const TraceModule module,
-                                        const WebRtc_Word32 id) const
-{
-    // Use long int to prevent problems with different definitions of
-    // WebRtc_Word32.
-    // TODO (hellner): is this actually a problem? If so, it should be better to
-    //                 clean up WebRtc_Word32
-    const long int idl = id;
-    const int kMessageLength = 25;
-    if(idl != -1)
-    {
-        const unsigned long int idEngine = id>>16;
-        const unsigned long int idChannel = id & 0xffff;
+                                        const WebRtc_Word32 id) const {
+  // Use long int to prevent problems with different definitions of
+  // WebRtc_Word32.
+  // TODO(hellner): is this actually a problem? If so, it should be better to
+  //                clean up WebRtc_Word32
+  const long int idl = id;
+  const int kMessageLength = 25;
+  if (idl != -1) {
+    const unsigned long int id_engine = id >> 16;
+    const unsigned long int id_channel = id & 0xffff;
 
-        switch (module)
-        {
-            case kTraceUndefined:
-                // Add the appropriate amount of whitespace.
-                memset(traceMessage, ' ', kMessageLength);
-                traceMessage[kMessageLength] = '\0';
-                break;
-            case kTraceVoice:
-                sprintf(traceMessage, "       VOICE:%5ld %5ld;", idEngine,
-                        idChannel);
-                break;
-            case kTraceVideo:
-                sprintf(traceMessage, "       VIDEO:%5ld %5ld;", idEngine,
-                        idChannel);
-                break;
-            case kTraceUtility:
-                sprintf(traceMessage, "     UTILITY:%5ld %5ld;", idEngine,
-                        idChannel);
-                break;
-            case kTraceRtpRtcp:
-                sprintf(traceMessage, "    RTP/RTCP:%5ld %5ld;", idEngine,
-                        idChannel);
-                break;
-            case kTraceTransport:
-                sprintf(traceMessage, "   TRANSPORT:%5ld %5ld;", idEngine,
-                        idChannel);
-                break;
-            case kTraceAudioCoding:
-                sprintf(traceMessage, "AUDIO CODING:%5ld %5ld;", idEngine,
-                        idChannel);
-                break;
-            case kTraceSrtp:
-                sprintf(traceMessage, "        SRTP:%5ld %5ld;", idEngine,
-                        idChannel);
-                break;
-            case kTraceAudioMixerServer:
-                sprintf(traceMessage, " AUDIO MIX/S:%5ld %5ld;", idEngine,
-                        idChannel);
-                break;
-            case kTraceAudioMixerClient:
-                sprintf(traceMessage, " AUDIO MIX/C:%5ld %5ld;", idEngine,
-                        idChannel);
-                break;
-            case kTraceVideoCoding:
-                sprintf(traceMessage, "VIDEO CODING:%5ld %5ld;", idEngine,
-                        idChannel);
-                break;
-            case kTraceVideoMixer:
-                // Print sleep time and API call
-                sprintf(traceMessage, "   VIDEO MIX:%5ld %5ld;", idEngine,
-                        idChannel);
-                break;
-            case kTraceFile:
-                sprintf(traceMessage, "        FILE:%5ld %5ld;", idEngine,
-                        idChannel);
-                break;
-            case kTraceAudioProcessing:
-                sprintf(traceMessage, "  AUDIO PROC:%5ld %5ld;", idEngine,
-                        idChannel);
-                break;
-            case kTraceAudioDevice:
-                sprintf(traceMessage, "AUDIO DEVICE:%5ld %5ld;", idEngine,
-                        idChannel);
-                break;
-            case kTraceVideoRenderer:
-                sprintf(traceMessage, "VIDEO RENDER:%5ld %5ld;", idEngine,
-                        idChannel);
-                break;
-            case kTraceVideoCapture:
-                sprintf(traceMessage, "VIDEO CAPTUR:%5ld %5ld;", idEngine,
-                        idChannel);
-                break;
-            case kTraceVideoPreocessing:
-                sprintf(traceMessage, "  VIDEO PROC:%5ld %5ld;", idEngine,
-                        idChannel);
-                break;
-        }
-    } else {
-        switch (module)
-        {
-            case kTraceUndefined:
-                // Add the appropriate amount of whitespace.
-                memset(traceMessage, ' ', kMessageLength);
-                traceMessage[kMessageLength] = '\0';
-                break;
-            case kTraceVoice:
-                sprintf (traceMessage, "       VOICE:%11ld;", idl);
-                break;
-            case kTraceVideo:
-                sprintf (traceMessage, "       VIDEO:%11ld;", idl);
-                break;
-            case kTraceUtility:
-                sprintf (traceMessage, "     UTILITY:%11ld;", idl);
-                break;
-            case kTraceRtpRtcp:
-                sprintf (traceMessage, "    RTP/RTCP:%11ld;", idl);
-                break;
-            case kTraceTransport:
-                sprintf (traceMessage, "   TRANSPORT:%11ld;", idl);
-                break;
-            case kTraceAudioCoding:
-                sprintf (traceMessage, "AUDIO CODING:%11ld;", idl);
-                break;
-            case kTraceSrtp:
-                sprintf (traceMessage, "        SRTP:%11ld;", idl);
-                break;
-            case kTraceAudioMixerServer:
-                sprintf (traceMessage, " AUDIO MIX/S:%11ld;", idl);
-                break;
-            case kTraceAudioMixerClient:
-                sprintf (traceMessage, " AUDIO MIX/C:%11ld;", idl);
-                break;
-            case kTraceVideoCoding:
-                sprintf (traceMessage, "VIDEO CODING:%11ld;", idl);
-                break;
-            case kTraceVideoMixer:
-                sprintf (traceMessage, "   VIDEO MIX:%11ld;", idl);
-                break;
-            case kTraceFile:
-                sprintf (traceMessage, "        FILE:%11ld;", idl);
-                break;
-            case kTraceAudioProcessing:
-                sprintf (traceMessage, "  AUDIO PROC:%11ld;", idl);
-                break;
-            case kTraceAudioDevice:
-                sprintf (traceMessage, "AUDIO DEVICE:%11ld;", idl);
-                break;
-            case kTraceVideoRenderer:
-                sprintf (traceMessage, "VIDEO RENDER:%11ld;", idl);
-                break;
-            case kTraceVideoCapture:
-                sprintf (traceMessage, "VIDEO CAPTUR:%11ld;", idl);
-                break;
-            case kTraceVideoPreocessing:
-                sprintf (traceMessage, "  VIDEO PROC:%11ld;", idl);
-                break;
-        }
+    switch (module) {
+      case kTraceUndefined:
+        // Add the appropriate amount of whitespace.
+        memset(trace_message, ' ', kMessageLength);
+        trace_message[kMessageLength] = '\0';
+        break;
+      case kTraceVoice:
+        sprintf(trace_message, "       VOICE:%5ld %5ld;", id_engine,
+                id_channel);
+        break;
+      case kTraceVideo:
+        sprintf(trace_message, "       VIDEO:%5ld %5ld;", id_engine,
+                id_channel);
+        break;
+      case kTraceUtility:
+        sprintf(trace_message, "     UTILITY:%5ld %5ld;", id_engine,
+                id_channel);
+        break;
+      case kTraceRtpRtcp:
+        sprintf(trace_message, "    RTP/RTCP:%5ld %5ld;", id_engine,
+                id_channel);
+        break;
+      case kTraceTransport:
+        sprintf(trace_message, "   TRANSPORT:%5ld %5ld;", id_engine,
+                id_channel);
+        break;
+      case kTraceAudioCoding:
+        sprintf(trace_message, "AUDIO CODING:%5ld %5ld;", id_engine,
+                id_channel);
+        break;
+      case kTraceSrtp:
+        sprintf(trace_message, "        SRTP:%5ld %5ld;", id_engine,
+                id_channel);
+        break;
+      case kTraceAudioMixerServer:
+        sprintf(trace_message, " AUDIO MIX/S:%5ld %5ld;", id_engine,
+                id_channel);
+        break;
+      case kTraceAudioMixerClient:
+        sprintf(trace_message, " AUDIO MIX/C:%5ld %5ld;", id_engine,
+                id_channel);
+        break;
+      case kTraceVideoCoding:
+        sprintf(trace_message, "VIDEO CODING:%5ld %5ld;", id_engine,
+                id_channel);
+        break;
+      case kTraceVideoMixer:
+        // Print sleep time and API call
+        sprintf(trace_message, "   VIDEO MIX:%5ld %5ld;", id_engine,
+                id_channel);
+        break;
+      case kTraceFile:
+        sprintf(trace_message, "        FILE:%5ld %5ld;", id_engine,
+                id_channel);
+        break;
+      case kTraceAudioProcessing:
+        sprintf(trace_message, "  AUDIO PROC:%5ld %5ld;", id_engine,
+                id_channel);
+        break;
+      case kTraceAudioDevice:
+        sprintf(trace_message, "AUDIO DEVICE:%5ld %5ld;", id_engine,
+                id_channel);
+        break;
+      case kTraceVideoRenderer:
+        sprintf(trace_message, "VIDEO RENDER:%5ld %5ld;", id_engine,
+                id_channel);
+        break;
+      case kTraceVideoCapture:
+        sprintf(trace_message, "VIDEO CAPTUR:%5ld %5ld;", id_engine,
+                id_channel);
+        break;
+      case kTraceVideoPreocessing:
+        sprintf(trace_message, "  VIDEO PROC:%5ld %5ld;", id_engine,
+                id_channel);
+        break;
     }
-    return kMessageLength;
+  } else {
+    switch (module) {
+      case kTraceUndefined:
+        // Add the appropriate amount of whitespace.
+        memset(trace_message, ' ', kMessageLength);
+        trace_message[kMessageLength] = '\0';
+        break;
+      case kTraceVoice:
+        sprintf(trace_message, "       VOICE:%11ld;", idl);
+        break;
+      case kTraceVideo:
+        sprintf(trace_message, "       VIDEO:%11ld;", idl);
+        break;
+      case kTraceUtility:
+        sprintf(trace_message, "     UTILITY:%11ld;", idl);
+        break;
+      case kTraceRtpRtcp:
+        sprintf(trace_message, "    RTP/RTCP:%11ld;", idl);
+        break;
+      case kTraceTransport:
+        sprintf(trace_message, "   TRANSPORT:%11ld;", idl);
+        break;
+      case kTraceAudioCoding:
+        sprintf(trace_message, "AUDIO CODING:%11ld;", idl);
+        break;
+      case kTraceSrtp:
+        sprintf(trace_message, "        SRTP:%11ld;", idl);
+        break;
+      case kTraceAudioMixerServer:
+        sprintf(trace_message, " AUDIO MIX/S:%11ld;", idl);
+        break;
+      case kTraceAudioMixerClient:
+        sprintf(trace_message, " AUDIO MIX/C:%11ld;", idl);
+        break;
+      case kTraceVideoCoding:
+        sprintf(trace_message, "VIDEO CODING:%11ld;", idl);
+        break;
+      case kTraceVideoMixer:
+        sprintf(trace_message, "   VIDEO MIX:%11ld;", idl);
+        break;
+      case kTraceFile:
+        sprintf(trace_message, "        FILE:%11ld;", idl);
+        break;
+      case kTraceAudioProcessing:
+        sprintf(trace_message, "  AUDIO PROC:%11ld;", idl);
+        break;
+      case kTraceAudioDevice:
+        sprintf(trace_message, "AUDIO DEVICE:%11ld;", idl);
+        break;
+      case kTraceVideoRenderer:
+        sprintf(trace_message, "VIDEO RENDER:%11ld;", idl);
+        break;
+      case kTraceVideoCapture:
+        sprintf(trace_message, "VIDEO CAPTUR:%11ld;", idl);
+        break;
+      case kTraceVideoPreocessing:
+        sprintf(trace_message, "  VIDEO PROC:%11ld;", idl);
+        break;
+    }
+  }
+  return kMessageLength;
 }
 
-WebRtc_Word32 TraceImpl::SetTraceFileImpl(const char* fileNameUTF8,
-                                          const bool addFileCounter)
-{
-    CriticalSectionScoped lock(_critsectInterface);
+WebRtc_Word32 TraceImpl::SetTraceFileImpl(const char* file_name_utf8,
+                                          const bool add_file_counter) {
+  CriticalSectionScoped lock(critsect_interface_);
 
-    _traceFile.Flush();
-    _traceFile.CloseFile();
+  trace_file_.Flush();
+  trace_file_.CloseFile();
 
-    if(fileNameUTF8)
-    {
-        if(addFileCounter)
-        {
-            _fileCountText = 1;
+  if (file_name_utf8) {
+    if (add_file_counter) {
+      file_count_text_ = 1;
 
-            char fileNameWithCounterUTF8[FileWrapper::kMaxFileNameSize];
-            CreateFileName(fileNameUTF8, fileNameWithCounterUTF8,
-                           _fileCountText);
-            if(_traceFile.OpenFile(fileNameWithCounterUTF8, false, false,
-                                   true) == -1)
-            {
-                return -1;
-            }
-        }else {
-            _fileCountText = 0;
-            if(_traceFile.OpenFile(fileNameUTF8, false, false, true) == -1)
-            {
-                return -1;
-            }
-        }
+      char file_name_with_counter_utf8[FileWrapper::kMaxFileNameSize];
+      CreateFileName(file_name_utf8, file_name_with_counter_utf8,
+                     file_count_text_);
+      if (trace_file_.OpenFile(file_name_with_counter_utf8, false, false,
+                               true) == -1) {
+        return -1;
+      }
+    } else {
+      file_count_text_ = 0;
+      if (trace_file_.OpenFile(file_name_utf8, false, false, true) == -1) {
+        return -1;
+      }
     }
-    _rowCountText = 0;
-    return 0;
+  }
+  row_count_text_ = 0;
+  return 0;
 }
 
 WebRtc_Word32 TraceImpl::TraceFileImpl(
-    char fileNameUTF8[FileWrapper::kMaxFileNameSize])
-{
-    CriticalSectionScoped lock(_critsectInterface);
-    return _traceFile.FileName(fileNameUTF8, FileWrapper::kMaxFileNameSize);
+    char file_name_utf8[FileWrapper::kMaxFileNameSize]) {
+  CriticalSectionScoped lock(critsect_interface_);
+  return trace_file_.FileName(file_name_utf8, FileWrapper::kMaxFileNameSize);
 }
 
-WebRtc_Word32 TraceImpl::SetTraceCallbackImpl(TraceCallback* callback)
-{
-    CriticalSectionScoped lock(_critsectInterface);
-    _callback = callback;
-    return 0;
+WebRtc_Word32 TraceImpl::SetTraceCallbackImpl(TraceCallback* callback) {
+  CriticalSectionScoped lock(critsect_interface_);
+  callback_ = callback;
+  return 0;
 }
 
 WebRtc_Word32 TraceImpl::AddMessage(
-    char* traceMessage,
+    char* trace_message,
     const char msg[WEBRTC_TRACE_MAX_MESSAGE_SIZE],
-    const WebRtc_UWord16 writtenSoFar) const
-
-{
-    int length = 0;
-    if(writtenSoFar >= WEBRTC_TRACE_MAX_MESSAGE_SIZE)
-    {
-        return -1;
-    }
-    // - 2 to leave room for newline and NULL termination
+    const WebRtc_UWord16 written_so_far) const {
+  int length = 0;
+  if (written_so_far >= WEBRTC_TRACE_MAX_MESSAGE_SIZE) {
+    return -1;
+  }
+  // - 2 to leave room for newline and NULL termination.
 #ifdef _WIN32
-    length = _snprintf(traceMessage,
-                       WEBRTC_TRACE_MAX_MESSAGE_SIZE - writtenSoFar - 2,
-                       "%s",msg);
-    if(length < 0)
-    {
-        length = WEBRTC_TRACE_MAX_MESSAGE_SIZE - writtenSoFar - 2;
-        traceMessage[length] = 0;
-    }
+  length = _snprintf(trace_message,
+                     WEBRTC_TRACE_MAX_MESSAGE_SIZE - written_so_far - 2,
+                     "%s", msg);
+  if (length < 0) {
+    length = WEBRTC_TRACE_MAX_MESSAGE_SIZE - written_so_far - 2;
+    trace_message[length] = 0;
+  }
 #else
-    length = snprintf(traceMessage,
-                      WEBRTC_TRACE_MAX_MESSAGE_SIZE-writtenSoFar-2, "%s",msg);
-    if(length < 0 || length > WEBRTC_TRACE_MAX_MESSAGE_SIZE-writtenSoFar - 2)
-    {
-        length = WEBRTC_TRACE_MAX_MESSAGE_SIZE - writtenSoFar - 2;
-        traceMessage[length] = 0;
-    }
+  length = snprintf(trace_message,
+                    WEBRTC_TRACE_MAX_MESSAGE_SIZE - written_so_far - 2,
+                    "%s", msg);
+  if (length < 0 ||
+      length > WEBRTC_TRACE_MAX_MESSAGE_SIZE - written_so_far - 2) {
+    length = WEBRTC_TRACE_MAX_MESSAGE_SIZE - written_so_far - 2;
+    trace_message[length] = 0;
+  }
 #endif
-    // Length with NULL termination.
-    return length+1;
+  // Length with NULL termination.
+  return length + 1;
 }
 
 void TraceImpl::AddMessageToList(
-    const char traceMessage[WEBRTC_TRACE_MAX_MESSAGE_SIZE],
-    const WebRtc_UWord16 length,
-    const TraceLevel level) {
+  const char trace_message[WEBRTC_TRACE_MAX_MESSAGE_SIZE],
+  const WebRtc_UWord16 length,
+  const TraceLevel level) {
 #ifdef WEBRTC_DIRECT_TRACE
-    if (_callback) {
-      _callback->Print(level, traceMessage, length);
-    }
-    return;
+  if (callback_) {
+    callback_->Print(level, trace_message, length);
+  }
+  return;
 #endif
 
-    CriticalSectionScoped lock(_critsectArray);
+  CriticalSectionScoped lock(critsect_array_);
 
-    if(_nextFreeIdx[_activeQueue] >= WEBRTC_TRACE_MAX_QUEUE)
-    {
-        if( ! _traceFile.Open() &&
-            !_callback)
-        {
-            // Keep at least the last 1/4 of old messages when not logging.
-            // TODO (hellner): isn't this redundant. The user will make it known
-            //                 when to start logging. Why keep messages before
-            //                 that?
-            for(int n = 0; n < WEBRTC_TRACE_MAX_QUEUE/4; n++)
-            {
-                const int lastQuarterOffset = (3*WEBRTC_TRACE_MAX_QUEUE/4);
-                memcpy(_messageQueue[_activeQueue][n],
-                       _messageQueue[_activeQueue][n + lastQuarterOffset],
-                       WEBRTC_TRACE_MAX_MESSAGE_SIZE);
-            }
-            _nextFreeIdx[_activeQueue] = WEBRTC_TRACE_MAX_QUEUE/4;
-        } else {
-            // More messages are being written than there is room for in the
-            // buffer. Drop any new messages.
-            // TODO (hellner): its probably better to drop old messages instead
-            //                 of new ones. One step further: if this happens
-            //                 it's due to writing faster than what can be
-            //                 processed. Maybe modify the filter at this point.
-            //                 E.g. turn of STREAM.
-            return;
-        }
-    }
-
-    WebRtc_UWord16 idx = _nextFreeIdx[_activeQueue];
-    _nextFreeIdx[_activeQueue]++;
-
-    _level[_activeQueue][idx] = level;
-    _length[_activeQueue][idx] = length;
-    memcpy(_messageQueue[_activeQueue][idx], traceMessage, length);
-
-    if(_nextFreeIdx[_activeQueue] == WEBRTC_TRACE_MAX_QUEUE - 1)
-    {
-        // Logging more messages than can be worked off. Log a warning.
-        const char warning_msg[] = "WARNING MISSING TRACE MESSAGES\n";
-        _level[_activeQueue][_nextFreeIdx[_activeQueue]] = kTraceWarning;
-        _length[_activeQueue][_nextFreeIdx[_activeQueue]] = strlen(warning_msg);
-        memcpy(_messageQueue[_activeQueue][_nextFreeIdx[_activeQueue]],
-               warning_msg, strlen(warning_msg));
-        _nextFreeIdx[_activeQueue]++;
-    }
-}
-
-bool TraceImpl::Run(void* obj)
-{
-    return static_cast<TraceImpl*>(obj)->Process();
-}
-
-bool TraceImpl::Process()
-{
-    if(_event.Wait(1000) == kEventSignaled)
-    {
-        if(_traceFile.Open() || _callback)
-        {
-            // File mode (not calback mode).
-            WriteToFile();
-        }
+  if (next_free_idx_[active_queue_] >= WEBRTC_TRACE_MAX_QUEUE) {
+    if (!trace_file_.Open() && !callback_) {
+      // Keep at least the last 1/4 of old messages when not logging.
+      // TODO(hellner): isn't this redundant. The user will make it known
+      //                when to start logging. Why keep messages before
+      //                that?
+      for (int n = 0; n < WEBRTC_TRACE_MAX_QUEUE / 4; ++n) {
+        const int last_quarter_offset = (3 * WEBRTC_TRACE_MAX_QUEUE / 4);
+        memcpy(message_queue_[active_queue_][n],
+               message_queue_[active_queue_][n + last_quarter_offset],
+               WEBRTC_TRACE_MAX_MESSAGE_SIZE);
+      }
+      next_free_idx_[active_queue_] = WEBRTC_TRACE_MAX_QUEUE / 4;
     } else {
-        _traceFile.Flush();
+      // More messages are being written than there is room for in the
+      // buffer. Drop any new messages.
+      // TODO(hellner): its probably better to drop old messages instead
+      //                of new ones. One step further: if this happens
+      //                it's due to writing faster than what can be
+      //                processed. Maybe modify the filter at this point.
+      //                E.g. turn of STREAM.
+      return;
     }
-    return true;
+  }
+
+  WebRtc_UWord16 idx = next_free_idx_[active_queue_];
+  next_free_idx_[active_queue_]++;
+
+  level_[active_queue_][idx] = level;
+  length_[active_queue_][idx] = length;
+  memcpy(message_queue_[active_queue_][idx], trace_message, length);
+
+  if (next_free_idx_[active_queue_] == WEBRTC_TRACE_MAX_QUEUE - 1) {
+    // Logging more messages than can be worked off. Log a warning.
+    const char warning_msg[] = "WARNING MISSING TRACE MESSAGES\n";
+    level_[active_queue_][next_free_idx_[active_queue_]] = kTraceWarning;
+    length_[active_queue_][next_free_idx_[active_queue_]] = strlen(warning_msg);
+    memcpy(message_queue_[active_queue_][next_free_idx_[active_queue_]],
+           warning_msg, strlen(warning_msg));
+    next_free_idx_[active_queue_]++;
+  }
 }
 
-void TraceImpl::WriteToFile()
-{
-    WebRtc_UWord8 localQueueActive = 0;
-    WebRtc_UWord16 localNextFreeIdx = 0;
+bool TraceImpl::Run(void* obj) {
+  return static_cast<TraceImpl*>(obj)->Process();
+}
 
-    // There are two buffer. One for reading (for writing to file) and one for
-    // writing (for storing new messages). Let new messages be posted to the
-    // unused buffer so that the current buffer can be flushed safely.
-    {
-        CriticalSectionScoped lock(_critsectArray);
-        localNextFreeIdx = _nextFreeIdx[_activeQueue];
-        _nextFreeIdx[_activeQueue] = 0;
-        localQueueActive = _activeQueue;
-        if(_activeQueue == 0)
-        {
-            _activeQueue = 1;
-        } else
-        {
-            _activeQueue = 0;
-        }
+bool TraceImpl::Process() {
+  if (event_.Wait(1000) == kEventSignaled) {
+    if (trace_file_.Open() || callback_) {
+      // File mode (not callback mode).
+      WriteToFile();
     }
-    if(localNextFreeIdx == 0)
-    {
-        return;
+  } else {
+    trace_file_.Flush();
+  }
+  return true;
+}
+
+void TraceImpl::WriteToFile() {
+  WebRtc_UWord8 local_queue_active = 0;
+  WebRtc_UWord16 local_next_free_idx = 0;
+
+  // There are two buffers. One for reading (for writing to file) and one for
+  // writing (for storing new messages). Let new messages be posted to the
+  // unused buffer so that the current buffer can be flushed safely.
+  {
+    CriticalSectionScoped lock(critsect_array_);
+    local_next_free_idx = next_free_idx_[active_queue_];
+    next_free_idx_[active_queue_] = 0;
+    local_queue_active = active_queue_;
+    if (active_queue_ == 0) {
+      active_queue_ = 1;
+    } else {
+      active_queue_ = 0;
     }
+  }
+  if (local_next_free_idx == 0) {
+    return;
+  }
 
-    CriticalSectionScoped lock(_critsectInterface);
+  CriticalSectionScoped lock(critsect_interface_);
 
-    for(WebRtc_UWord16 idx = 0; idx <localNextFreeIdx; idx++)
-    {
-        TraceLevel localLevel = _level[localQueueActive][idx];
-        if(_callback)
-        {
-            _callback->Print(localLevel, _messageQueue[localQueueActive][idx],
-                             _length[localQueueActive][idx]);
-        }
-        if(_traceFile.Open())
-        {
-            if(_rowCountText > WEBRTC_TRACE_MAX_FILE_SIZE)
-            {
-                // wrap file
-                _rowCountText = 0;
-                _traceFile.Flush();
-
-                if(_fileCountText == 0)
-                {
-                    _traceFile.Rewind();
-                } else
-                {
-                    char oldFileName[FileWrapper::kMaxFileNameSize];
-                    char newFileName[FileWrapper::kMaxFileNameSize];
-
-                    // get current name
-                    _traceFile.FileName(oldFileName,
-                                        FileWrapper::kMaxFileNameSize);
-                    _traceFile.CloseFile();
-
-                    _fileCountText++;
-
-                    UpdateFileName(oldFileName, newFileName, _fileCountText);
-
-                    if(_traceFile.OpenFile(newFileName, false, false,
-                                           true) == -1)
-                    {
-                        return;
-                    }
-                }
-            }
-            if(_rowCountText ==  0)
-            {
-                char message[WEBRTC_TRACE_MAX_MESSAGE_SIZE + 1];
-                WebRtc_Word32 length = AddDateTimeInfo(message);
-                if(length != -1)
-                {
-                    message[length] = 0;
-                    message[length-1] = '\n';
-                    _traceFile.Write(message, length);
-                    _rowCountText++;
-                }
-                length = AddBuildInfo(message);
-                if(length != -1)
-                {
-                    message[length+1] = 0;
-                    message[length] = '\n';
-                    message[length-1] = '\n';
-                    _traceFile.Write(message, length+1);
-                    _rowCountText++;
-                    _rowCountText++;
-                }
-            }
-            WebRtc_UWord16 length = _length[localQueueActive][idx];
-            _messageQueue[localQueueActive][idx][length] = 0;
-            _messageQueue[localQueueActive][idx][length-1] = '\n';
-            _traceFile.Write(_messageQueue[localQueueActive][idx], length);
-            _rowCountText++;
-        }
+  for (WebRtc_UWord16 idx = 0; idx < local_next_free_idx; ++idx) {
+    TraceLevel local_level = level_[local_queue_active][idx];
+    if (callback_) {
+      callback_->Print(local_level, message_queue_[local_queue_active][idx],
+                       length_[local_queue_active][idx]);
     }
+    if (trace_file_.Open()) {
+      if (row_count_text_ > WEBRTC_TRACE_MAX_FILE_SIZE) {
+        // wrap file
+        row_count_text_ = 0;
+        trace_file_.Flush();
+
+        if (file_count_text_ == 0) {
+          trace_file_.Rewind();
+        } else {
+          char old_file_name[FileWrapper::kMaxFileNameSize];
+          char new_file_name[FileWrapper::kMaxFileNameSize];
+
+          // get current name
+          trace_file_.FileName(old_file_name,
+                               FileWrapper::kMaxFileNameSize);
+          trace_file_.CloseFile();
+
+          file_count_text_++;
+
+          UpdateFileName(old_file_name, new_file_name, file_count_text_);
+
+          if (trace_file_.OpenFile(new_file_name, false, false,
+                                   true) == -1) {
+            return;
+          }
+        }
+      }
+      if (row_count_text_ ==  0) {
+        char message[WEBRTC_TRACE_MAX_MESSAGE_SIZE + 1];
+        WebRtc_Word32 length = AddDateTimeInfo(message);
+        if (length != -1) {
+          message[length] = 0;
+          message[length - 1] = '\n';
+          trace_file_.Write(message, length);
+          row_count_text_++;
+        }
+        length = AddBuildInfo(message);
+        if (length != -1) {
+          message[length + 1] = 0;
+          message[length] = '\n';
+          message[length - 1] = '\n';
+          trace_file_.Write(message, length + 1);
+          row_count_text_++;
+          row_count_text_++;
+        }
+      }
+      WebRtc_UWord16 length = length_[local_queue_active][idx];
+      message_queue_[local_queue_active][idx][length] = 0;
+      message_queue_[local_queue_active][idx][length - 1] = '\n';
+      trace_file_.Write(message_queue_[local_queue_active][idx], length);
+      row_count_text_++;
+    }
+  }
 }
 
 void TraceImpl::AddImpl(const TraceLevel level, const TraceModule module,
                         const WebRtc_Word32 id,
-                        const char msg[WEBRTC_TRACE_MAX_MESSAGE_SIZE])
-{
-    if (TraceCheck(level))
-    {
-        char traceMessage[WEBRTC_TRACE_MAX_MESSAGE_SIZE];
-        char* messagePtr = traceMessage;
+                        const char msg[WEBRTC_TRACE_MAX_MESSAGE_SIZE]) {
+  if (TraceCheck(level)) {
+    char trace_message[WEBRTC_TRACE_MAX_MESSAGE_SIZE];
+    char* message_ptr = trace_message;
 
-        WebRtc_Word32 len = 0;
-        WebRtc_Word32 ackLen = 0;
+    WebRtc_Word32 len = 0;
+    WebRtc_Word32 ack_len = 0;
 
-        len = AddLevel(messagePtr, level);
-        if(len == -1)
-        {
-            return;
-        }
-        messagePtr += len;
-        ackLen += len;
-
-        len = AddTime(messagePtr, level);
-        if(len == -1)
-        {
-            return;
-        }
-        messagePtr += len;
-        ackLen += len;
-
-        len = AddModuleAndId(messagePtr, module, id);
-        if(len == -1)
-        {
-            return;
-        }
-        messagePtr += len;
-        ackLen += len;
-
-        len = AddThreadId(messagePtr);
-        if(len < 0)
-        {
-            return;
-        }
-        messagePtr += len;
-        ackLen += len;
-
-        len = AddMessage(messagePtr, msg, (WebRtc_UWord16)ackLen);
-        if(len == -1)
-        {
-            return;
-        }
-        ackLen += len;
-        AddMessageToList(traceMessage,(WebRtc_UWord16)ackLen, level);
-
-        // Make sure that messages are written as soon as possible.
-        _event.Set();
+    len = AddLevel(message_ptr, level);
+    if (len == -1) {
+      return;
     }
+    message_ptr += len;
+    ack_len += len;
+
+    len = AddTime(message_ptr, level);
+    if (len == -1) {
+      return;
+    }
+    message_ptr += len;
+    ack_len += len;
+
+    len = AddModuleAndId(message_ptr, module, id);
+    if (len == -1) {
+      return;
+    }
+    message_ptr += len;
+    ack_len += len;
+
+    len = AddThreadId(message_ptr);
+    if (len < 0) {
+      return;
+    }
+    message_ptr += len;
+    ack_len += len;
+
+    len = AddMessage(message_ptr, msg, (WebRtc_UWord16)ack_len);
+    if (len == -1) {
+      return;
+    }
+    ack_len += len;
+    AddMessageToList(trace_message, (WebRtc_UWord16)ack_len, level);
+
+    // Make sure that messages are written as soon as possible.
+    event_.Set();
+  }
 }
 
-bool TraceImpl::TraceCheck(const TraceLevel level) const
-{
-    return (level & levelFilter)? true:false;
+bool TraceImpl::TraceCheck(const TraceLevel level) const {
+  return (level & level_filter) ? true : false;
 }
 
 bool TraceImpl::UpdateFileName(
-    const char fileNameUTF8[FileWrapper::kMaxFileNameSize],
-    char fileNameWithCounterUTF8[FileWrapper::kMaxFileNameSize],
-    const WebRtc_UWord32 newCount) const
-{
-    WebRtc_Word32 length = (WebRtc_Word32)strlen(fileNameUTF8);
-    if(length < 0)
-    {
-        return false;
-    }
+    const char file_name_utf8[FileWrapper::kMaxFileNameSize],
+    char file_name_with_counter_utf8[FileWrapper::kMaxFileNameSize],
+    const WebRtc_UWord32 new_count) const {
+  WebRtc_Word32 length = (WebRtc_Word32)strlen(file_name_utf8);
+  if (length < 0) {
+    return false;
+  }
 
-    WebRtc_Word32 lengthWithoutFileEnding = length-1;
-    while(lengthWithoutFileEnding > 0)
-    {
-        if(fileNameUTF8[lengthWithoutFileEnding] == '.')
-        {
-            break;
-        } else {
-            lengthWithoutFileEnding--;
-        }
+  WebRtc_Word32 length_without_file_ending = length - 1;
+  while (length_without_file_ending > 0) {
+    if (file_name_utf8[length_without_file_ending] == '.') {
+      break;
+    } else {
+      length_without_file_ending--;
     }
-    if(lengthWithoutFileEnding == 0)
-    {
-        lengthWithoutFileEnding = length;
+  }
+  if (length_without_file_ending == 0) {
+    length_without_file_ending = length;
+  }
+  WebRtc_Word32 length_to_ = length_without_file_ending - 1;
+  while (length_to_ > 0) {
+    if (file_name_utf8[length_to_] == '_') {
+      break;
+    } else {
+      length_to_--;
     }
-    WebRtc_Word32 lengthTo_ = lengthWithoutFileEnding - 1;
-    while(lengthTo_ > 0)
-    {
-        if(fileNameUTF8[lengthTo_] == '_')
-        {
-            break;
-        } else {
-            lengthTo_--;
-        }
-    }
+  }
 
-    memcpy(fileNameWithCounterUTF8, fileNameUTF8, lengthTo_);
-    sprintf(fileNameWithCounterUTF8+lengthTo_, "_%lu%s",
-            static_cast<long unsigned int> (newCount),
-            fileNameUTF8+lengthWithoutFileEnding);
-    return true;
+  memcpy(file_name_with_counter_utf8, file_name_utf8, length_to_);
+  sprintf(file_name_with_counter_utf8 + length_to_, "_%lu%s",
+          static_cast<long unsigned int>(new_count),
+          file_name_utf8 + length_without_file_ending);
+  return true;
 }
 
 bool TraceImpl::CreateFileName(
-    const char fileNameUTF8[FileWrapper::kMaxFileNameSize],
-    char fileNameWithCounterUTF8[FileWrapper::kMaxFileNameSize],
-    const WebRtc_UWord32 newCount) const
-{
-    WebRtc_Word32 length = (WebRtc_Word32)strlen(fileNameUTF8);
-    if(length < 0)
-    {
-        return false;
+    const char file_name_utf8[FileWrapper::kMaxFileNameSize],
+    char file_name_with_counter_utf8[FileWrapper::kMaxFileNameSize],
+    const WebRtc_UWord32 new_count) const {
+  WebRtc_Word32 length = (WebRtc_Word32)strlen(file_name_utf8);
+  if (length < 0) {
+    return false;
+  }
+
+  WebRtc_Word32 length_without_file_ending = length - 1;
+  while (length_without_file_ending > 0) {
+    if (file_name_utf8[length_without_file_ending] == '.') {
+      break;
+    } else {
+      length_without_file_ending--;
     }
-
-    WebRtc_Word32 lengthWithoutFileEnding = length-1;
-    while(lengthWithoutFileEnding > 0)
-    {
-        if(fileNameUTF8[lengthWithoutFileEnding] == '.')
-        {
-            break;
-        }else
-        {
-            lengthWithoutFileEnding--;
-        }
-    }
-    if(lengthWithoutFileEnding == 0)
-    {
-        lengthWithoutFileEnding = length;
-    }
-    memcpy(fileNameWithCounterUTF8, fileNameUTF8, lengthWithoutFileEnding);
-    sprintf(fileNameWithCounterUTF8+lengthWithoutFileEnding, "_%lu%s",
-            static_cast<long unsigned int> (newCount),
-            fileNameUTF8+lengthWithoutFileEnding);
-    return true;
+  }
+  if (length_without_file_ending == 0) {
+    length_without_file_ending = length;
+  }
+  memcpy(file_name_with_counter_utf8, file_name_utf8,
+         length_without_file_ending);
+  sprintf(file_name_with_counter_utf8 + length_without_file_ending, "_%lu%s",
+          static_cast<long unsigned int>(new_count),
+          file_name_utf8 + length_without_file_ending);
+  return true;
 }
 
-void Trace::CreateTrace()
-{
-    TraceImpl::StaticInstance(kAddRef);
+void Trace::CreateTrace() {
+  TraceImpl::StaticInstance(kAddRef);
 }
 
-void Trace::ReturnTrace()
-{
-    TraceImpl::StaticInstance(kRelease);
+void Trace::ReturnTrace() {
+  TraceImpl::StaticInstance(kRelease);
 }
 
-WebRtc_Word32 Trace::SetLevelFilter(WebRtc_UWord32 filter)
-{
-    levelFilter = filter;
-    return 0;
+WebRtc_Word32 Trace::SetLevelFilter(WebRtc_UWord32 filter) {
+  level_filter = filter;
+  return 0;
 }
 
-WebRtc_Word32 Trace::LevelFilter(WebRtc_UWord32& filter)
-{
-    filter = levelFilter;
-    return 0;
+WebRtc_Word32 Trace::LevelFilter(WebRtc_UWord32& filter) {
+  filter = level_filter;
+  return 0;
 }
 
-WebRtc_Word32 Trace::TraceFile(char fileName[FileWrapper::kMaxFileNameSize])
-{
-    TraceImpl* trace = TraceImpl::GetTrace();
-    if(trace)
-    {
-        int retVal = trace->TraceFileImpl(fileName);
-        ReturnTrace();
-        return retVal;
-    }
-    return -1;
+WebRtc_Word32 Trace::TraceFile(char file_name[FileWrapper::kMaxFileNameSize]) {
+  TraceImpl* trace = TraceImpl::GetTrace();
+  if (trace) {
+    int ret_val = trace->TraceFileImpl(file_name);
+    ReturnTrace();
+    return ret_val;
+  }
+  return -1;
 }
 
-WebRtc_Word32 Trace::SetTraceFile(const char* fileName,
-                                  const bool addFileCounter)
-{
-    TraceImpl* trace = TraceImpl::GetTrace();
-    if(trace)
-    {
-        int retVal = trace->SetTraceFileImpl(fileName, addFileCounter);
-        ReturnTrace();
-        return retVal;
-    }
-    return -1;
+WebRtc_Word32 Trace::SetTraceFile(const char* file_name,
+                                  const bool add_file_counter) {
+  TraceImpl* trace = TraceImpl::GetTrace();
+  if (trace) {
+    int ret_val = trace->SetTraceFileImpl(file_name, add_file_counter);
+    ReturnTrace();
+    return ret_val;
+  }
+  return -1;
 }
 
-WebRtc_Word32 Trace::SetTraceCallback(TraceCallback* callback)
-{
-    TraceImpl* trace = TraceImpl::GetTrace();
-    if(trace)
-    {
-        int retVal = trace->SetTraceCallbackImpl(callback);
-        ReturnTrace();
-        return retVal;
-    }
-    return -1;
+WebRtc_Word32 Trace::SetTraceCallback(TraceCallback* callback) {
+  TraceImpl* trace = TraceImpl::GetTrace();
+  if (trace) {
+    int ret_val = trace->SetTraceCallbackImpl(callback);
+    ReturnTrace();
+    return ret_val;
+  }
+  return -1;
 }
 
 void Trace::Add(const TraceLevel level, const TraceModule module,
-                const WebRtc_Word32 id, const char* msg, ...)
-
-{
-    TraceImpl* trace = TraceImpl::GetTrace(level);
-    if(trace)
-    {
-        if(trace->TraceCheck(level))
-        {
-            char tempBuff[WEBRTC_TRACE_MAX_MESSAGE_SIZE];
-            char* buff = 0;
-            if(msg)
-            {
-                va_list args;
-                va_start(args, msg);
+                const WebRtc_Word32 id, const char* msg, ...) {
+  TraceImpl* trace = TraceImpl::GetTrace(level);
+  if (trace) {
+    if (trace->TraceCheck(level)) {
+      char temp_buff[WEBRTC_TRACE_MAX_MESSAGE_SIZE];
+      char* buff = 0;
+      if (msg) {
+        va_list args;
+        va_start(args, msg);
 #ifdef _WIN32
-                _vsnprintf(tempBuff,WEBRTC_TRACE_MAX_MESSAGE_SIZE-1,msg,args);
+        _vsnprintf(temp_buff, WEBRTC_TRACE_MAX_MESSAGE_SIZE - 1, msg, args);
 #else
-                vsnprintf(tempBuff,WEBRTC_TRACE_MAX_MESSAGE_SIZE-1,msg,args);
+        vsnprintf(temp_buff, WEBRTC_TRACE_MAX_MESSAGE_SIZE - 1, msg, args);
 #endif
-                va_end(args);
-                buff = tempBuff;
-            }
-            trace->AddImpl(level, module, id, buff);
-        }
-        ReturnTrace();
+        va_end(args);
+        buff = temp_buff;
+      }
+      trace->AddImpl(level, module, id, buff);
     }
+    ReturnTrace();
+  }
 }
 
-} // namespace webrtc
+}  // namespace webrtc

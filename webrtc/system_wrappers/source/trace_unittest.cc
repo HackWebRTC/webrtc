@@ -8,11 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "system_wrappers/interface/trace.h"
-
 #include "gtest/gtest.h"
-#include "system_wrappers/source/cpu_measurement_harness.h"
-#include "testsupport/fileutils.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/source/cpu_measurement_harness.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 using webrtc::CpuMeasurementHarness;
 using webrtc::Trace;
@@ -23,8 +22,7 @@ class Logger : public webrtc::CpuTarget {
  public:
   Logger() {
     Trace::CreateTrace();
-    std::string trace_file = webrtc::test::OutputPath() +
-        "trace_unittest.txt";
+    std::string trace_file = webrtc::test::OutputPath() + "trace_unittest.txt";
     Trace::SetTraceFile(trace_file.c_str());
     Trace::SetLevelFilter(webrtc::kTraceAll);
   }
@@ -49,8 +47,8 @@ TEST(TraceTest, DISABLED_CpuUsage) {
   const int iterations_per_period = 10;
   const int duration_ms = 1000;
   CpuMeasurementHarness* cpu_harness =
-      CpuMeasurementHarness::Create(&logger, periodicity_ms,
-                                    iterations_per_period, duration_ms);
+    CpuMeasurementHarness::Create(&logger, periodicity_ms,
+                                  iterations_per_period, duration_ms);
   cpu_harness->Run();
   const int average_cpu = cpu_harness->AverageCpu();
   EXPECT_GE(5, average_cpu);
