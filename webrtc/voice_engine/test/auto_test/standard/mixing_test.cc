@@ -189,14 +189,13 @@ class MixingTest : public AfterInitializationFixture {
 };
 
 // These tests assume a maximum of three mixed participants. We typically allow
-// a +/- 15% range around the expected output level to account for distortion
+// a +/- 10% range around the expected output level to account for distortion
 // from coding and processing in the loopback chain.
 TEST_F(MixingTest, FourChannelsWithOnlyThreeMixed) {
   const int16_t kInputValue = 1000;
   const int16_t kExpectedOutput = kInputValue * 3;
-  RunMixingTest(4, 0, 4, kInputValue,
-                static_cast<int16_t>(1.15 * kExpectedOutput),
-                static_cast<int16_t>(0.85 * kExpectedOutput));
+  RunMixingTest(4, 0, 4, kInputValue, 1.1 * kExpectedOutput,
+                0.9 * kExpectedOutput);
 }
 
 // Ensure the mixing saturation protection is working. We can do this because
@@ -208,9 +207,8 @@ TEST_F(MixingTest, VerifySaturationProtection) {
   // If this isn't satisfied, we're not testing anything.
   ASSERT_GT(kInputValue * 3, kInt16Max);
   ASSERT_LT(1.1 * kExpectedOutput, kInt16Max);
-  RunMixingTest(3, 0, 3, kInputValue,
-                static_cast<int16_t>(1.15 * kExpectedOutput),
-                static_cast<int16_t>(0.85 * kExpectedOutput));
+  RunMixingTest(3, 0, 3, kInputValue, 1.1 * kExpectedOutput,
+               0.9 * kExpectedOutput);
 }
 
 TEST_F(MixingTest, SaturationProtectionHasNoEffectOnOneChannel) {
@@ -220,31 +218,28 @@ TEST_F(MixingTest, SaturationProtectionHasNoEffectOnOneChannel) {
   ASSERT_GT(0.95 * kExpectedOutput, kLimiterHeadroom);
   // Tighter constraints are required here to properly test this.
   RunMixingTest(1, 0, 1, kInputValue, kExpectedOutput,
-                static_cast<int16_t>(0.95 * kExpectedOutput));
+                0.95 * kExpectedOutput);
 }
 
 TEST_F(MixingTest, VerifyAnonymousAndNormalParticipantMixing) {
   const int16_t kInputValue = 1000;
   const int16_t kExpectedOutput = kInputValue * 2;
-  RunMixingTest(1, 1, 1, kInputValue,
-                static_cast<int16_t>(1.15 * kExpectedOutput),
-                static_cast<int16_t>(0.85 * kExpectedOutput));
+  RunMixingTest(1, 1, 1, kInputValue, 1.1 * kExpectedOutput,
+                0.9 * kExpectedOutput);
 }
 
 TEST_F(MixingTest, AnonymousParticipantsAreAlwaysMixed) {
   const int16_t kInputValue = 1000;
   const int16_t kExpectedOutput = kInputValue * 4;
-  RunMixingTest(3, 1, 3, kInputValue,
-                static_cast<int16_t>(1.15 * kExpectedOutput),
-                static_cast<int16_t>(0.85 * kExpectedOutput));
+  RunMixingTest(3, 1, 3, kInputValue, 1.1 * kExpectedOutput,
+                0.9 * kExpectedOutput);
 }
 
 TEST_F(MixingTest, VerifyStereoAndMonoMixing) {
   const int16_t kInputValue = 1000;
   const int16_t kExpectedOutput = kInputValue * 2;
-  RunMixingTest(2, 0, 1, kInputValue,
-                static_cast<int16_t>(1.15 * kExpectedOutput),
-                static_cast<int16_t>(0.85 * kExpectedOutput));
+  RunMixingTest(2, 0, 1, kInputValue, 1.1 * kExpectedOutput,
+                0.9 * kExpectedOutput);
 }
 
 }  // namespace webrtc
