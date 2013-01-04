@@ -423,10 +423,12 @@ LOOP_MAGNLEN:
   strh r7, [r2]
   strh r8, [r4]
 
-  ldr r5, [r0, #offset_nsx_anaLen2]            @ inst->anaLen2
+  ldr r5, [r0, #offset_nsx_anaLen2]           @ inst->anaLen2
   ldr r7, [r0, #offset_nsx_anaLen]            @ inst->anaLen
-  add r5, r3, r5, lsl #1      @ &inst->real[inst->anaLen2]
+  lsr r5, #3                  @ inst->anaLen2 / 8
+  sub r5, #1                  @ Loop counter.
 
+@ Process and write the first 2 samples into freq_buf[].
   ldrh r2, [r3], #2           @ inst->real[0]
   ldrh r0, [r9]               @ inst->imag[0]
   strh r2, [r1], #2           @ Store to freq_buf[0]
@@ -438,28 +440,52 @@ LOOP_MAGNLEN:
 
   mvn r12, #0x1F              @ -32
 
-@ At the last iteration, &freq_buf[inst->anaLen + 1] will be written to by both
-@ the vst1 instructions. Only the 2nd vst1 instruction has the correct value
-@ (-inst->imag[inst->anaLen2]), so the order of the two vst1's is important.
+@ Process and write (inst->anaLen2 * 4 - 32) samples into freq_buf[].
 LOOP_ANALEN2:
-  vld1.16 {d0, d1}, [r3]!     @ inst->real[], starting from inst->real[1]
-  vld1.16 {d2, d3}, [r6]!     @ inst->imag[], starting from inst->imag[1]
-  vmov.s16 d4, d0
+  vld1.16 d3, [r3]!     @ inst->real[], starting from inst->real[1]
+  vld1.16 d1, [r3]!
+  vmov.s16 d4, d3
+  vld1.16 d2, [r6]!     @ inst->imag[], starting from inst->imag[1]
   vmov.s16 d6, d1
   vneg.s16 d5, d2
-  vneg.s16 d7, d3
-  vzip.16 d0, d2
-  vzip.16 d1, d3
+  vld1.16 d0, [r6]!
+  vneg.s16 d7, d0
+  vzip.16 d1, d0
+  vzip.16 d3, d2
   vzip.16 d4, d5
+  vrev64.32 q8, q0
+  vrev64.32 q9, q1
   vzip.16 d6, d7
-  vrev64.32 d16, d3
-  vrev64.32 d17, d1
-  vrev64.32 d18, d2
-  vrev64.32 d19, d0
-  cmp r3, r5
+  subs r5, #1
   vst1.16 {d16, d17, d18, d19}, [r2], r12
   vst1.16 {d4, d5, d6, d7}, [r1]!
-  bls LOOP_ANALEN2
+  bgt LOOP_ANALEN2
+
+@ Process and write 32 samples into freq_buf[]. We need to adjust the pointers
+@ to overwrite the 2 starting samples in the back half of the buffer.
+  sub r0, r3, #2
+  sub r4, r6, #2
+  add r2, #4
+  vld1.16 d3, [r3]!     @ inst->real[], starting from inst->real[1]
+  vld1.16 d1, [r3]!
+  vmov.s16 d4, d3
+  vld1.16 d2, [r6]!     @ inst->imag[], starting from inst->imag[1]
+  vmov.s16 d6, d1
+  vld1.16 d0, [r6]!
+  vneg.s16 d5, d2
+  vld1.16 d23, [r0]!     @ inst->real[], starting from inst->real[1]
+  vneg.s16 d7, d0
+  vld1.16 d21, [r0]
+  vzip.16 d4, d5
+  vld1.16 d22, [r4]!     @ inst->imag[], starting from inst->imag[1]
+  vld1.16 d20, [r4]
+  vzip.16 d23, d22
+  vzip.16 d21, d20
+  vzip.16 d6, d7
+  vrev64.32 q8, q10
+  vrev64.32 q9, q11
+  vst1.16 {d4, d5, d6, d7}, [r1]
+  vst1.16 {d16, d17, d18, d19}, [r2]
 
   pop {r4-r8}
   bx r14
