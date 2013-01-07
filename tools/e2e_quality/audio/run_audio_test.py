@@ -122,7 +122,7 @@ def main(argv):
     value = ''.join(re.findall(options.regexp, output))
 
     perf.perf_utils.PrintPerfResult(graph_name='audio_e2e_score',
-                                    series_name='e2e score',
+                                    series_name='e2e_score',
                                     data_point=value,
                                     units='MOS')  # Assuming we run PESQ.
 

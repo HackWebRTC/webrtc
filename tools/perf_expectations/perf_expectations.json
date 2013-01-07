@@ -1,0 +1,3 @@
+{"linux-large-tests/audio_e2e_test/audio_e2e_score/e2e_score": {"reva": 3268, "revb": 3329, "type": "absolute", "better": "higher", "improve": 4.6557, "regress": 3.83895, "sha1": "c10a1507"},
+ "load": true
+}
