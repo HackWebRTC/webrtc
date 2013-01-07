@@ -15,12 +15,10 @@
   ...
   fun:__tz*
 }
-
 {
   bug_1194
   ThreadSanitizer:Race
-  fun:webrtc::TracePosix::AddTime
-  fun:webrtc::TraceImpl::AddImpl
+  ...
   fun:webrtc::Trace::Add
   ...
 }
