@@ -54,8 +54,8 @@ _receiveCritSect(CriticalSectionWrapper::CreateCriticalSection()),
 _receiverInited(false),
 _timing(clock_, id, 1),
 _dualTiming(clock_, id, 2, &_timing),
-_receiver(_timing, clock_, id, 1),
-_dualReceiver(_dualTiming, clock_, id, 2, false),
+_receiver(&_timing, clock_, id, 1),
+_dualReceiver(&_dualTiming, clock_, id, 2, false),
 _decodedFrameCallback(_timing, clock_),
 _dualDecodedFrameCallback(_dualTiming, clock_),
 _frameTypeCallback(NULL),
@@ -144,16 +144,8 @@ VideoCodingModuleImpl::Process()
         {
             WebRtc_UWord32 bitRate;
             WebRtc_UWord32 frameRate;
-            const WebRtc_Word32 ret = _receiver.ReceiveStatistics(bitRate,
-                                                                  frameRate);
-            if (ret == 0)
-            {
-                _receiveStatsCallback->ReceiveStatistics(bitRate, frameRate);
-            }
-            else if (returnValue == VCM_OK)
-            {
-                returnValue = ret;
-            }
+            _receiver.ReceiveStatistics(&bitRate, &frameRate);
+            _receiveStatsCallback->ReceiveStatistics(bitRate, frameRate);
         }
     }
 
@@ -1255,11 +1247,11 @@ VideoCodingModuleImpl::NackList(WebRtc_UWord16* nackList, WebRtc_UWord16& size)
     // the dual receiver if the dual receiver is receiving.
     if (_receiver.NackMode() != kNoNack)
     {
-        nackStatus = _receiver.NackList(nackList, size);
+        nackStatus = _receiver.NackList(nackList, &size);
     }
     else if (_dualReceiver.State() != kPassive)
     {
-        nackStatus = _dualReceiver.NackList(nackList, size);
+        nackStatus = _dualReceiver.NackList(nackList, &size);
     }
     else
     {
@@ -1294,7 +1286,8 @@ VideoCodingModuleImpl::NackList(WebRtc_UWord16* nackList, WebRtc_UWord16& size)
 WebRtc_Word32
 VideoCodingModuleImpl::ReceivedFrameCount(VCMFrameCount& frameCount) const
 {
-    return _receiver.ReceivedFrameCount(frameCount);
+    _receiver.ReceivedFrameCount(&frameCount);
+    return VCM_OK;
 }
 
 WebRtc_UWord32 VideoCodingModuleImpl::DiscardedPackets() const {

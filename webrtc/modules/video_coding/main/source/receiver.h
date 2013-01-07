@@ -8,94 +8,90 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_RECEIVER_H_
-#define WEBRTC_MODULES_VIDEO_CODING_RECEIVER_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_RECEIVER_H_
+#define WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_RECEIVER_H_
 
-#include "critical_section_wrapper.h"
-#include "jitter_buffer.h"
-#include "modules/video_coding/main/source/tick_time_base.h"
-#include "timing.h"
-#include "packet.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/modules/video_coding/main/source/jitter_buffer.h"
+#include "webrtc/modules/video_coding/main/source/packet.h"
+#include "webrtc/modules/video_coding/main/source/tick_time_base.h"
+#include "webrtc/modules/video_coding/main/source/timing.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
 class VCMEncodedFrame;
 
-enum VCMNackStatus
-{
-    kNackOk,
-    kNackNeedMoreMemory,
-    kNackKeyFrameRequest
+enum VCMNackStatus {
+  kNackOk,
+  kNackNeedMoreMemory,
+  kNackKeyFrameRequest
 };
 
-
-enum VCMReceiverState
-{
-    kReceiving,
-    kPassive,
-    kWaitForPrimaryDecode
+enum VCMReceiverState {
+  kReceiving,
+  kPassive,
+  kWaitForPrimaryDecode
 };
 
-class VCMReceiver
-{
-public:
-    VCMReceiver(VCMTiming& timing,
-                TickTimeBase* clock,
-                WebRtc_Word32 vcmId = -1,
-                WebRtc_Word32 receiverId = -1,
-                bool master = true);
-    ~VCMReceiver();
+class VCMReceiver {
+ public:
+  VCMReceiver(VCMTiming* timing,
+              TickTimeBase* clock,
+              int32_t vcm_id = -1,
+              int32_t receiver_id = -1,
+              bool master = true);
+  ~VCMReceiver();
 
-    void Reset();
-    WebRtc_Word32 Initialize();
-    void UpdateRtt(WebRtc_UWord32 rtt);
-    WebRtc_Word32 InsertPacket(const VCMPacket& packet,
-                               WebRtc_UWord16 frameWidth,
-                               WebRtc_UWord16 frameHeight);
-    VCMEncodedFrame* FrameForDecoding(WebRtc_UWord16 maxWaitTimeMs,
-                                      WebRtc_Word64& nextRenderTimeMs,
-                                      bool renderTiming = true,
-                                      VCMReceiver* dualReceiver = NULL);
-    void ReleaseFrame(VCMEncodedFrame* frame);
-    WebRtc_Word32 ReceiveStatistics(WebRtc_UWord32& bitRate, WebRtc_UWord32& frameRate);
-    WebRtc_Word32 ReceivedFrameCount(VCMFrameCount& frameCount) const;
-    WebRtc_UWord32 DiscardedPackets() const;
+  void Reset();
+  int32_t Initialize();
+  void UpdateRtt(uint32_t rtt);
+  int32_t InsertPacket(const VCMPacket& packet,
+                       uint16_t frame_width,
+                       uint16_t frame_height);
+  VCMEncodedFrame* FrameForDecoding(uint16_t max_wait_time_ms,
+                                    int64_t& next_render_time_ms,
+                                    bool render_timing = true,
+                                    VCMReceiver* dual_receiver = NULL);
+  void ReleaseFrame(VCMEncodedFrame* frame);
+  void ReceiveStatistics(uint32_t* bitrate, uint32_t* framerate);
+  void ReceivedFrameCount(VCMFrameCount* frame_count) const;
+  uint32_t DiscardedPackets() const;
 
-    // NACK
-    void SetNackMode(VCMNackMode nackMode);
-    VCMNackMode NackMode() const;
-    VCMNackStatus NackList(WebRtc_UWord16* nackList, WebRtc_UWord16& size);
+  // NACK.
+  void SetNackMode(VCMNackMode nackMode);
+  VCMNackMode NackMode() const;
+  VCMNackStatus NackList(uint16_t* nackList, uint16_t* size);
 
-    // Dual decoder
-    bool DualDecoderCaughtUp(VCMEncodedFrame* dualFrame, VCMReceiver& dualReceiver) const;
-    VCMReceiverState State() const;
+  // Dual decoder.
+  bool DualDecoderCaughtUp(VCMEncodedFrame* dual_frame,
+                           VCMReceiver& dual_receiver) const;
+  VCMReceiverState State() const;
 
-private:
-    VCMEncodedFrame* FrameForDecoding(WebRtc_UWord16 maxWaitTimeMs,
-                                      WebRtc_Word64 nextrenderTimeMs,
-                                      VCMReceiver* dualReceiver);
-    VCMEncodedFrame* FrameForRendering(WebRtc_UWord16 maxWaitTimeMs,
-                                       WebRtc_Word64 nextrenderTimeMs,
-                                       VCMReceiver* dualReceiver);
-    void CopyJitterBufferStateFromReceiver(const VCMReceiver& receiver);
-    void UpdateState(VCMReceiverState newState);
-    void UpdateState(VCMEncodedFrame& frame);
-    static WebRtc_Word32 GenerateReceiverId();
+ private:
+  VCMEncodedFrame* FrameForDecoding(uint16_t max_wait_time_ms,
+                                    int64_t nextrender_time_ms,
+                                    VCMReceiver* dual_receiver);
+  VCMEncodedFrame* FrameForRendering(uint16_t max_wait_time_ms,
+                                     int64_t nextrender_time_ms,
+                                     VCMReceiver* dual_receiver);
+  void CopyJitterBufferStateFromReceiver(const VCMReceiver& receiver);
+  void UpdateState(VCMReceiverState new_state);
+  void UpdateState(const VCMEncodedFrame& frame);
+  static int32_t GenerateReceiverId();
 
-    CriticalSectionWrapper* _critSect;
-    WebRtc_Word32           _vcmId;
-    TickTimeBase*           _clock;
-    WebRtc_Word32           _receiverId;
-    bool                    _master;
-    VCMJitterBuffer         _jitterBuffer;
-    VCMTiming&              _timing;
-    VCMEvent&               _renderWaitEvent;
-    VCMReceiverState        _state;
+  CriticalSectionWrapper* crit_sect_;
+  int32_t vcm_id_;
+  TickTimeBase* clock_;
+  int32_t receiver_id_;
+  bool master_;
+  VCMJitterBuffer jitter_buffer_;
+  VCMTiming* timing_;
+  VCMEvent render_wait_event_;
+  VCMReceiverState state_;
 
-    static WebRtc_Word32    _receiverIdCounter;
+  static int32_t receiver_id_counter_;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_CODING_RECEIVER_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_RECEIVER_H_
