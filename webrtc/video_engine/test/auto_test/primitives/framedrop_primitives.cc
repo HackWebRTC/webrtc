@@ -496,12 +496,13 @@ void FrameDropDetector::PrintReport(const std::string& test_label) {
                  total_latency_excl_network);
   }
 
-  // Print dashboard data.
+  // Plot all measurements in the same graph since they share the same value
+  // range.
   webrtc::test::PrintResultMeanAndError(
-      "total delay (incl. network)", " " + test_label, "",
+      "total_delay_incl_network", "", test_label,
       latency_incl_network_stats.AsString(), "ms", false);
   webrtc::test::PrintResultMeanAndError(
-      "time between rendered frames", " " + test_label, "",
+      "time_between_rendered_frames", "", test_label,
       rendering_stats.AsString(), "ms", false);
 
 

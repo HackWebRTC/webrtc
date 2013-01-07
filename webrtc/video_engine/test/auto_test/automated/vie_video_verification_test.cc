@@ -148,7 +148,7 @@ class ParameterizedFullStackTest : public ViEVideoVerificationTest,
     parameter_table_[i].bitrate = 300;
     parameter_table_[i].avg_psnr_threshold = 35;
     parameter_table_[i].avg_ssim_threshold = 0.96;
-    parameter_table_[i].test_label = "net delay (0, 0), plr 0";
+    parameter_table_[i].test_label = "net_delay_0_0_plr_0";
     ++i;
     parameter_table_[i].protection_method = kNack;
     parameter_table_[i].network.loss_model = kUniformLoss;
@@ -159,7 +159,7 @@ class ParameterizedFullStackTest : public ViEVideoVerificationTest,
     parameter_table_[i].bitrate = 300;
     parameter_table_[i].avg_psnr_threshold = 35;
     parameter_table_[i].avg_ssim_threshold = 0.96;
-    parameter_table_[i].test_label = "net delay (50, 5), plr 5";
+    parameter_table_[i].test_label = "net_delay_50_5_plr_5";
     ++i;
     parameter_table_[i].protection_method = kNack;
     parameter_table_[i].network.loss_model = kUniformLoss;
@@ -170,7 +170,7 @@ class ParameterizedFullStackTest : public ViEVideoVerificationTest,
     parameter_table_[i].bitrate = 300;
     parameter_table_[i].avg_psnr_threshold = 35;
     parameter_table_[i].avg_ssim_threshold = 0.96;
-    parameter_table_[i].test_label = "net delay (100, 10), plr 0";
+    parameter_table_[i].test_label = "net_delay_100_10_plr_0";
     ++i;
     parameter_table_[i].protection_method = kNack;
     parameter_table_[i].network.loss_model = kGilbertElliotLoss;
@@ -181,7 +181,7 @@ class ParameterizedFullStackTest : public ViEVideoVerificationTest,
     parameter_table_[i].bitrate = 300;
     parameter_table_[i].avg_psnr_threshold = 35;
     parameter_table_[i].avg_ssim_threshold = 0.96;
-    parameter_table_[i].test_label = "net delay (100, 10), plr 0";
+    parameter_table_[i].test_label = "net_delay_100_10_plr_5_gilbert_elliot";
 
     ASSERT_EQ(kNumFullStackInstances - 1, i);
   }
