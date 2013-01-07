@@ -31,7 +31,7 @@
         '../interface/rtp_rtcp.h',
         '../interface/rtp_rtcp_defines.h',
         'bitrate.cc',
-        'Bitrate.h',
+        'bitrate.h',
         'rtp_rtcp_config.h',
         'rtp_rtcp_impl.cc',
         'rtp_rtcp_impl.h',

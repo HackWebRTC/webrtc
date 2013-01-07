@@ -75,14 +75,14 @@ RTPSender::RTPSender(const WebRtc_Word32 id,
   memset(_nackByteCount, 0, sizeof(_nackByteCount));
   memset(_CSRC, 0, sizeof(_CSRC));
   // We need to seed the random generator.
-  srand( (WebRtc_UWord32)_clock.GetTimeInMS() );
+  srand( (WebRtc_UWord32)clock_.GetTimeInMS() );
   _ssrc = _ssrcDB.CreateSSRC();  // Can't be 0.
 
   if (audio) {
-    _audio = new RTPSenderAudio(id, &_clock, this);
+    _audio = new RTPSenderAudio(id, &clock_, this);
     _audio->RegisterAudioCallback(audio_feedback);
   } else {
-    _video = new RTPSenderVideo(id, &_clock, this);
+    _video = new RTPSenderVideo(id, &clock_, this);
   }
   WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, id, "%s created", __FUNCTION__);
 }
@@ -576,7 +576,7 @@ int RTPSender::SetSelectiveRetransmissions(uint8_t settings) {
 void RTPSender::OnReceivedNACK(const WebRtc_UWord16 nackSequenceNumbersLength,
                                const WebRtc_UWord16* nackSequenceNumbers,
                                const WebRtc_UWord16 avgRTT) {
-  const WebRtc_Word64 now = _clock.GetTimeInMS();
+  const WebRtc_Word64 now = clock_.GetTimeInMS();
   WebRtc_UWord32 bytesReSent = 0;
 
   // Enough bandwidth to send NACK?
@@ -700,7 +700,7 @@ void RTPSender::TimeToSendPacket(uint16_t sequence_number,
   WebRtcRTPHeader rtp_header;
   rtpParser.Parse(rtp_header);
 
-  int64_t diff_ms = _clock.GetTimeInMS() - capture_time_ms;
+  int64_t diff_ms = clock_.GetTimeInMS() - capture_time_ms;
   if (UpdateTransmissionTimeOffset(data_buffer, length, rtp_header, diff_ms)) {
     // Update stored packet in case of receiving a re-transmission request.
     _packetHistory->ReplaceRTPHeader(data_buffer,
@@ -738,7 +738,7 @@ WebRtc_Word32 RTPSender::SendToNetwork(uint8_t* buffer,
   // TODO(holmer): This should be changed all over Video Engine so that negative
   // time is consider invalid, while 0 is considered a valid time.
   if (capture_time_ms > 0) {
-    int64_t time_now = _clock.GetTimeInMS();
+    int64_t time_now = clock_.GetTimeInMS();
     UpdateTransmissionTimeOffset(buffer, payload_length + rtp_header_length,
                                  rtp_header, time_now - capture_time_ms);
   }
@@ -1007,7 +1007,7 @@ bool RTPSender::UpdateTransmissionTimeOffset(
 
 void RTPSender::SetSendingStatus(const bool enabled) {
   if (enabled) {
-    WebRtc_UWord32 freq;
+    WebRtc_UWord32 frequency_hz;
     if (_audioConfigured) {
       WebRtc_UWord32 frequency = _audio->AudioFrequency();
 
@@ -1023,11 +1023,12 @@ void RTPSender::SetSendingStatus(const bool enabled) {
           assert(false);
           return;
       }
-      freq = frequency;
+      frequency_hz = frequency;
     } else {
-      freq = 90000; // 90 KHz for all video
+      frequency_hz = kDefaultVideoFrequency;
     }
-    WebRtc_UWord32 RTPtime = ModuleRTPUtility::GetCurrentRTP(&_clock, freq);
+    WebRtc_UWord32 RTPtime = ModuleRTPUtility::GetCurrentRTP(&clock_,
+                                                             frequency_hz);
 
     // will be ignored if it's already configured via API
     SetStartTimestamp(RTPtime, false);

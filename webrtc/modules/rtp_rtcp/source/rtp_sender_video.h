@@ -22,7 +22,7 @@
 
 #include "video_codec_information.h"
 #include "forward_error_correction.h"
-#include "Bitrate.h"
+#include "bitrate.h"
 #include "rtp_sender.h"
 #include "producer_fec.h"
 

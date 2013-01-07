@@ -25,6 +25,8 @@
 
 namespace webrtc{
 
+const WebRtc_Word32 kDefaultVideoFrequency = 90000;
+
 enum RTCPMethod
 {
     kRtcpOff          = 0,

@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_VIDEO_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_VIDEO_H_
 
-#include "Bitrate.h"
+#include "bitrate.h"
 #include "rtp_receiver.h"
 #include "rtp_receiver_strategy.h"
 #include "rtp_rtcp_defines.h"
