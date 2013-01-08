@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_engine/test/libvietest/include/tb_I420_codec.h"
+#include "webrtc/video_engine/test/libvietest/include/tb_I420_codec.h"
 
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
 
-#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 
 TbI420Encoder::TbI420Encoder() :
     _inited(false), _encodedImage(), _encodedCompleteCallback(NULL)
@@ -232,6 +232,9 @@ WebRtc_Word32 TbI420Decoder::InitDecode(const webrtc::VideoCodec* inst,
     }
     _width = inst->width;
     _height = inst->height;
+    int half_width = (_width + 1 ) / 2 ;
+    _decodedImage.CreateEmptyFrame(_width, _height,
+                                   _width, half_width, half_width);
     _inited = true;
     return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -261,15 +264,10 @@ WebRtc_Word32 TbI420Decoder::Decode(
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
     }
 
-    int size_y = _width * _height;
-    int size_uv = ((_width + 1 ) / 2) * ((_height + 1) / 2);
-    int ret = _decodedImage.CreateFrame(size_y, inputImage._buffer,
-                                        size_uv, inputImage._buffer + size_y,
-                                        size_uv, inputImage._buffer + size_y +
-                                        size_uv,
-                                        _width, _height,
-                                        _width, (_width + 1 ) / 2,
-                                        (_width + 1 ) / 2);
+    int ret = ConvertToI420(webrtc::kI420, inputImage._buffer, 0, 0,
+                           _width, _height,
+                           0, webrtc::kRotateNone, &_decodedImage);
+
     if (ret < 0)
       return WEBRTC_VIDEO_CODEC_ERROR;
     _decodedImage.set_timestamp(inputImage._timeStamp);

@@ -185,19 +185,11 @@ I420Decoder::Decode(const EncodedImage& inputImage,
   }
   // Set decoded image parameters.
   int half_width = (_width + 1) / 2;
-  int half_height = (_height + 1) / 2;
-  int size_y = _width * _height;
-  int size_uv = half_width * half_height;
-
-  const uint8_t* buffer_y = inputImage._buffer;
-  const uint8_t* buffer_u = buffer_y + size_y;
-  const uint8_t* buffer_v = buffer_u + size_uv;
-  // TODO(mikhal): Do we need an align stride?
-  int ret = _decodedImage.CreateFrame(size_y, buffer_y,
-                                      size_uv, buffer_u,
-                                      size_uv, buffer_v,
-                                      _width, _height,
-                                      _width, half_width, half_width);
+  _decodedImage.CreateEmptyFrame(_width, _height,
+                                 _width, half_width, half_width);
+   // Converting from buffer to plane representation.
+   int ret = ConvertToI420(kI420, inputImage._buffer, 0, 0, _width, _height,
+                           0, kRotateNone, &_decodedImage);
   if (ret < 0) {
     return WEBRTC_VIDEO_CODEC_MEMORY;
   }

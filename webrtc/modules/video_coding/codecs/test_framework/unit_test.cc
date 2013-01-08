@@ -255,6 +255,9 @@ UnitTest::Setup()
 
     unsigned int frameLength = 0;
     int i=0;
+    _inputVideoBuffer.CreateEmptyFrame(_inst.width, _inst.height, _inst.width,
+                                       (_inst.width + 1) / 2,
+                                       (_inst.width + 1) / 2);
     while (frameLength == 0)
     {
         if (i > 0)
@@ -262,13 +265,8 @@ UnitTest::Setup()
             // Insert yet another frame
             ASSERT_TRUE(fread(_refFrame, 1, _lengthSourceFrame,
                 _sourceFile) == _lengthSourceFrame);
-            _inputVideoBuffer.CreateFrame(size_y, _refFrame,
-                                          size_uv, _refFrame + size_y,
-                                          size_uv, _refFrame + size_y + size_uv,
-                                          _inst.width, _inst.height,
-                                          _inst.width,
-                                          (_inst.width + 1) / 2,
-                                          (_inst.width + 1) / 2);
+            EXPECT_EQ(0, ConvertToI420(kI420, _refFrame, 0, 0, _width, _height,
+                          0, kRotateNone, &_inputVideoBuffer));
             _encoder->Encode(_inputVideoBuffer, NULL, NULL);
             ASSERT_TRUE(WaitForEncodedFrame() > 0);
         }

@@ -113,22 +113,19 @@ int CalculateMetrics(VideoMetricsType video_metrics_type,
   scoped_array<uint8_t> ref_buffer(new uint8_t[frame_length]);
   scoped_array<uint8_t> test_buffer(new uint8_t[frame_length]);
 
-  int size_y = width * height;
-  int size_uv = ((width + 1 ) / 2) * ((height + 1) / 2);
+  // Set decoded image parameters.
+  int half_width = (width + 1) / 2;
+  ref_frame.CreateEmptyFrame(width, height, width, half_width, half_width);
+  test_frame.CreateEmptyFrame(width, height, width, half_width, half_width);
 
   int ref_bytes = fread(ref_buffer.get(), 1, frame_length, ref_fp);
   int test_bytes = fread(test_buffer.get(), 1, frame_length, test_fp);
   while (ref_bytes == frame_length && test_bytes == frame_length) {
-    ref_frame.CreateFrame(size_y, ref_buffer.get(),
-                          size_uv, ref_buffer.get() + size_y,
-                          size_uv, ref_buffer.get() + size_y + size_uv,
-                          width, height,
-                          width, (width + 1) / 2, (width + 1) / 2);
-    test_frame.CreateFrame(size_y, test_buffer.get(),
-                           size_uv, test_buffer.get() + size_y,
-                           size_uv, test_buffer.get() + size_y + size_uv,
-                           width, height,
-                           width, (width + 1) / 2, (width + 1) / 2);
+    // Converting from buffer to plane representation.
+    ConvertToI420(kI420, ref_buffer.get(), 0, 0, width, height, 0,
+                  kRotateNone, &ref_frame);
+    ConvertToI420(kI420, test_buffer.get(), 0, 0, width, height, 0,
+                  kRotateNone, &test_frame);
     switch (video_metrics_type) {
       case kPSNR:
         CalculateFrame(kPSNR, &ref_frame, &test_frame, frame_number,

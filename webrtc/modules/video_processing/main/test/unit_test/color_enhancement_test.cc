@@ -43,12 +43,10 @@ TEST_F(VideoProcessingModuleTest, ColorEnhancement)
     while (fread(video_buffer.get(), 1, _frame_length, _sourceFile) ==
         _frame_length)
     {
-        _videoFrame.CreateFrame(_size_y, video_buffer.get(),
-                                _size_uv, video_buffer.get() + _size_y,
-                                _size_uv, video_buffer.get() + _size_y +
-                                _size_uv,
-                                _width, _height,
-                                _width, _half_width, _half_width);
+        // Using ConvertToI420 to add stride to the image.
+        EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0,
+                                   _width, _height,
+                                   0, kRotateNone, &_videoFrame));
         frameNum++;
         t0 = TickTime::Now();
         ASSERT_EQ(0, VideoProcessingModule::ColorEnhancement(&_videoFrame));
@@ -84,26 +82,23 @@ TEST_F(VideoProcessingModuleTest, ColorEnhancement)
     ASSERT_EQ(refLen, testLen) << "File lengths differ.";
 
     I420VideoFrame refVideoFrame;
+    refVideoFrame.CreateEmptyFrame(_width, _height,
+                                   _width, _half_width, _half_width);
 
     // Compare frame-by-frame.
     scoped_array<uint8_t> ref_buffer(new uint8_t[_frame_length]);
     while (fread(video_buffer.get(), 1, _frame_length, modFile) ==
         _frame_length)
     {
-      _videoFrame.CreateFrame(_size_y, video_buffer.get(),
-                              _size_uv, video_buffer.get() + _size_y,
-                              _size_uv, video_buffer.get() + _size_y +
-                              _size_uv,
-                              _width, _height,
-                              _width, _half_width, _half_width);
-      ASSERT_EQ(_frame_length, fread(ref_buffer.get(), 1, _frame_length,
-                                     refFile));
-      refVideoFrame.CreateFrame(_size_y, ref_buffer.get(),
-                                _size_uv, ref_buffer.get() + _size_y,
-                                _size_uv, ref_buffer.get() + _size_y +
-                                _size_uv,
-                                _width, _height,
-                                _width, _half_width, _half_width);
+        // Using ConvertToI420 to add stride to the image.
+        EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0,
+                                   _width, _height,
+                                   0, kRotateNone, &_videoFrame));
+        ASSERT_EQ(_frame_length, fread(ref_buffer.get(), 1, _frame_length,
+                                       refFile));
+        EXPECT_EQ(0, ConvertToI420(kI420, ref_buffer.get(), 0, 0,
+                                   _width, _height,
+                                    0, kRotateNone, &refVideoFrame));
         EXPECT_EQ(0, memcmp(_videoFrame.buffer(kYPlane),
                             refVideoFrame.buffer(kYPlane),
                             _size_y));
@@ -126,11 +121,11 @@ TEST_F(VideoProcessingModuleTest, ColorEnhancement)
     memset(testFrame.get(), 128, _frame_length);
 
     I420VideoFrame testVideoFrame;
-    testVideoFrame.CreateFrame(_size_y, testFrame.get(),
-                               _size_uv, testFrame.get() + _size_y,
-                               _size_uv, testFrame.get() + _size_y + _size_uv,
-                               _width, _height,
-                               _width, _half_width, _half_width);
+    testVideoFrame.CreateEmptyFrame(_width, _height,
+                                    _width, _half_width, _half_width);
+    EXPECT_EQ(0, ConvertToI420(kI420, testFrame.get(), 0, 0,
+                               _width, _height, 0, kRotateNone,
+                               &testVideoFrame));
 
     ASSERT_EQ(0, VideoProcessingModule::ColorEnhancement(&testVideoFrame));
 

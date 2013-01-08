@@ -13,13 +13,14 @@
 
 #ifdef WEBRTC_VIDEO_ENGINE_FILE_API
 
-#include "video_engine/vie_file_image.h"
+#include "webrtc/video_engine/vie_file_image.h"
 
 #include <stdio.h>  // NOLINT
 
-#include "common_video/interface/video_image.h"
-#include "common_video/jpeg/include/jpeg.h"
-#include "system_wrappers/interface/trace.h"
+#include "webrtc/common_video/interface/video_image.h"
+#include "webrtc/common_video/jpeg/include/jpeg.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
@@ -91,16 +92,11 @@ int ViEFileImage::ConvertPictureToI420VideoFrame(int engine_id,
                                                  const ViEPicture& picture,
                                                  I420VideoFrame* video_frame) {
   int half_width = (picture.width + 1) / 2;
-  int half_height = (picture.height + 1) / 2;
-  int size_uv = half_width * half_height;
-  int size_y = picture.width * picture.height;
-  return video_frame->CreateFrame(size_y, picture.data,
-                                  size_uv, picture.data + size_y,
-                                  size_uv, picture.data + size_y +
-                                  size_uv,
-                                  picture.width, picture.height,
-                                  picture.width, half_width, half_width);
-  return 0;
+  video_frame->CreateEmptyFrame(picture.width, picture.height,
+                                picture.width, half_width, half_width);
+  return ConvertToI420(kI420, picture.data, 0, 0,
+                       picture.width, picture.height,
+                       0, kRotateNone, video_frame);
 }
 
 }  // namespace webrtc

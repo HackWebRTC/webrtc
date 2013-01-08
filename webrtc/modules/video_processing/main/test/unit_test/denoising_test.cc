@@ -52,12 +52,9 @@ TEST_F(VideoProcessingModuleTest, Denoising)
         while (fread(video_buffer.get(), 1, _frame_length, _sourceFile) ==
             _frame_length)
         {
-          _videoFrame.CreateFrame(_size_y, video_buffer.get(),
-                                  _size_uv, video_buffer.get() + _size_y,
-                                  _size_uv,
-                                  video_buffer.get() + _size_y + _size_uv,
-                                  _width, _height,
-                                  _width, _half_width, _half_width);
+            EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0,
+                                       _width, _height,
+                                       0, kRotateNone, &_videoFrame));
             frameNum++;
             WebRtc_UWord8* sourceBuffer = _videoFrame.buffer(kYPlane);
 

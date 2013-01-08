@@ -8,8 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "unit_test.h"
-#include "video_processing.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/video_processing/main/interface/video_processing.h"
+#include "webrtc/modules/video_processing/main/test/unit_test/unit_test.h"
 
 using namespace webrtc;
 
@@ -22,12 +23,9 @@ TEST_F(VideoProcessingModuleTest, BrightnessDetection)
     while (fread(video_buffer.get(), 1, _frame_length, _sourceFile) ==
            _frame_length)
     {
-        _videoFrame.CreateFrame(_size_y, video_buffer.get(),
-                                _size_uv, video_buffer.get() + _size_y,
-                                _size_uv, video_buffer.get() + _size_y +
-                                _size_uv,
-                                _width, _height,
-                                _width, _half_width, _half_width);
+      EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0,
+                                 _width, _height,
+                                 0, kRotateNone, &_videoFrame));
         frameNum++;
         VideoProcessingModule::FrameStats stats;
         ASSERT_EQ(0, _vpm->GetFrameStats(&stats, _videoFrame));
@@ -53,12 +51,9 @@ TEST_F(VideoProcessingModuleTest, BrightnessDetection)
         _frame_length &&
         frameNum < 300)
     {
-        _videoFrame.CreateFrame(_size_y, video_buffer.get(),
-                                _size_uv, video_buffer.get() + _size_y,
-                                _size_uv, video_buffer.get() + _size_y +
-                                _size_uv,
-                                _width, _height,
-                                _width, _half_width, _half_width);
+        EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0,
+                                   _width, _height,
+                                   0, kRotateNone, &_videoFrame));
         frameNum++;
 
         WebRtc_UWord8* frame = _videoFrame.buffer(kYPlane);
@@ -96,12 +91,9 @@ TEST_F(VideoProcessingModuleTest, BrightnessDetection)
     while (fread(video_buffer.get(), 1, _frame_length, _sourceFile) ==
         _frame_length && frameNum < 300)
     {
-        _videoFrame.CreateFrame(_size_y, video_buffer.get(),
-                                _size_uv, video_buffer.get() + _size_y,
-                                _size_uv, video_buffer.get() + _size_y +
-                                _size_uv,
-                                _width, _height,
-                                _width, _half_width, _half_width);
+        EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0,
+                                   _width, _height,
+                                   0, kRotateNone, &_videoFrame));
         frameNum++;
 
         WebRtc_UWord8* y_plane = _videoFrame.buffer(kYPlane);

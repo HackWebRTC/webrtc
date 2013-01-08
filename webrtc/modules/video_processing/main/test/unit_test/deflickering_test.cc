@@ -11,11 +11,11 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "modules/video_processing/main/interface/video_processing.h"
-#include "modules/video_processing/main/test/unit_test/unit_test.h"
-#include "system_wrappers/interface/tick_util.h"
-#include "testsupport/fileutils.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/video_processing/main/interface/video_processing.h"
+#include "webrtc/modules/video_processing/main/test/unit_test/unit_test.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
 
@@ -56,12 +56,9 @@ TEST_F(VideoProcessingModuleTest, Deflickering)
                _frame_length)
         {
             frameNum++;
-            _videoFrame.CreateFrame(_size_y, video_buffer.get(),
-                                   _size_uv, video_buffer.get() + _size_y,
-                                   _size_uv, video_buffer.get() + _size_y +
-                                   _size_uv,
-                                   _width, _height,
-                                   _width, _half_width, _half_width);
+            EXPECT_EQ(0, ConvertToI420(kI420, video_buffer.get(), 0, 0,
+                                       _width, _height,
+                                       0, kRotateNone, &_videoFrame));
             _videoFrame.set_timestamp(timeStamp);
 
             t0 = TickTime::Now();
