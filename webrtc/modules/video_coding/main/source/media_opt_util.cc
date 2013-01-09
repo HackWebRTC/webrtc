@@ -309,8 +309,10 @@ VCMFecMethod::AvgRecoveryFEC(const VCMProtectionParameters* parameters) const
     const float protectionFactor = static_cast<float>(_protectionFactorD) /
                                                       255.0;
 
+    // Round down for estimated #FEC packets/frame, to keep
+    // |fecPacketsPerFrame| <= |sourcePacketsPerFrame|.
     WebRtc_UWord8 fecPacketsPerFrame = static_cast<WebRtc_UWord8>
-                                      (0.5 + protectionFactor * avgTotPackets);
+                                      (protectionFactor * avgTotPackets);
 
     WebRtc_UWord8 sourcePacketsPerFrame = avgTotPackets - fecPacketsPerFrame;
 
