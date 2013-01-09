@@ -8,20 +8,22 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtp_rtcp_impl.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
+
+#include <cassert>
+#include <string.h>
+
+#include "webrtc/common_types.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_receiver_audio.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_receiver_video.h"
+#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 #ifdef MATLAB
-#include "../test/BWEStandAlone/MatlabPlot.h"
+#include "webrtc/modules/rtp_rtcp/test/BWEStandAlone/MatlabPlot.h"
 extern MatlabEngine eng; // global variable defined elsewhere
 #endif
 
-#include <string.h> //memcpy
-#include <cassert> //assert
-
-#include "common_types.h"
-#include "rtp_receiver_audio.h"
-#include "rtp_receiver_video.h"
-#include "trace.h"
 
 // local for this file
 namespace {
@@ -228,6 +230,19 @@ WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
       // No own rtt calculation or set rtt, use default value.
       max_rtt = kDefaultRtt;
     }
+
+    // Verify receiver reports are delivered and the reported sequence number is
+    // increasing.
+    if (_rtcpSender.Sending()) {
+      int64_t rtcp_interval = RtcpReportInterval();
+      if (_rtcpReceiver.RtcpRrTimeout(rtcp_interval)) {
+        LOG_F(LS_WARNING) << "Timeout: No RTCP RR received.";
+      } else if (_rtcpReceiver.RtcpRrSequenceNumberTimeout(rtcp_interval)) {
+        LOG_F(LS_WARNING) <<
+            "Timeout: No increase in RTCP RR extended highest sequence number.";
+      }
+    }
+
     if (remote_bitrate_) {
       // TODO(mflodman) Remove this and let this be propagated by CallStats.
       remote_bitrate_->SetRtt(max_rtt);
@@ -2037,4 +2052,12 @@ WebRtc_Word32 ModuleRtpRtcpImpl::BoundingSet(bool& tmmbrOwner,
                                              TMMBRSet*& boundingSet) {
   return _rtcpReceiver.BoundingSet(tmmbrOwner, boundingSet);
 }
+
+int64_t ModuleRtpRtcpImpl::RtcpReportInterval() {
+  if (_audio)
+    return RTCP_INTERVAL_AUDIO_MS;
+  else
+    return RTCP_INTERVAL_VIDEO_MS;
+}
+
 }  // namespace webrtc

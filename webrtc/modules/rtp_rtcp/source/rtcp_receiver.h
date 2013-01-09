@@ -83,6 +83,16 @@ public:
     WebRtc_Word32 StatisticsReceived(
         std::vector<RTCPReportBlock>* receiveBlocks) const;
 
+    // Returns true if we haven't received an RTCP RR for several RTCP
+    // intervals, but only triggers true once.
+    bool RtcpRrTimeout(int64_t rtcp_interval_ms);
+
+    // Returns true if we haven't received an RTCP RR telling the receive side
+    // has not received RTP packets for too long, i.e. extended highest sequence
+    // number hasn't increased for several RTCP intervals. The function only
+    // returns true once until a new RR is received.
+    bool RtcpRrSequenceNumberTimeout(int64_t rtcp_interval_ms);
+
     // Get TMMBR
     WebRtc_Word32 TMMBRReceived(const WebRtc_UWord32 size,
                                 const WebRtc_UWord32 accNumCandidates,
@@ -217,6 +227,13 @@ protected:
       _receivedCnameMap;
 
   WebRtc_UWord32            _packetTimeOutMS;
+
+  // The last time we received an RTCP RR.
+  int64_t _lastReceivedRrMs;
+
+  // The time we last received an RTCP RR telling we have ssuccessfully
+  // delivered RTP packet to the remote side.
+  int64_t _lastIncreasedSequenceNumberMs;
 
   // Externally set RTT. This value can only be used if there are no valid
   // RTT estimates.

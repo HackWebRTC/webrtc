@@ -483,6 +483,8 @@ protected:
     bool                      _owns_clock;
     RtpRtcpClock&             _clock;
 private:
+    int64_t RtcpReportInterval();
+
     WebRtc_Word32             _id;
     const bool                _audio;
     bool                      _collisionDetected;

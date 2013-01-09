@@ -92,6 +92,18 @@ class PacketBuilder {
     Add32(0);  // Sender's octet count
   }
 
+  void AddRrPacket(WebRtc_UWord32 sender_ssrc, WebRtc_UWord32 rtp_ssrc,
+                   WebRtc_UWord32 extended_max) {
+    AddRtcpHeader(201, 1);
+    Add32(sender_ssrc);
+    Add32(rtp_ssrc);
+    Add32(0);  // No loss.
+    Add32(extended_max);
+    Add32(0);  // Jitter.
+    Add32(0);  // Last SR.
+    Add32(0);  // Delay since last SR.
+  }
+
   const WebRtc_UWord8* packet() {
     PatchLengthField();
     return buffer_;
@@ -253,6 +265,66 @@ TEST_F(RtcpReceiverTest, InjectSrPacket) {
   EXPECT_EQ(kSenderSsrc, rtcp_packet_info_.remoteSSRC);
   EXPECT_EQ(0U,
             kRtcpSr & rtcp_packet_info_.rtcpPacketTypeFlags);
+}
+
+TEST_F(RtcpReceiverTest, ReceiveReportTimeout) {
+  const uint32_t kSenderSsrc = 0x10203;
+  const uint32_t kSourceSsrc = 0x40506;
+  const int64_t kRtcpIntervalMs = 1000;
+
+  rtcp_receiver_->SetSSRC(kSourceSsrc);
+
+  uint32_t sequence_number = 1234;
+  system_clock_->AdvanceClock(3 * kRtcpIntervalMs);
+
+  // No RR received, shouldn't trigger a timeout.
+  EXPECT_FALSE(rtcp_receiver_->RtcpRrTimeout(kRtcpIntervalMs));
+  EXPECT_FALSE(rtcp_receiver_->RtcpRrSequenceNumberTimeout(kRtcpIntervalMs));
+
+  // Add a RR and advance the clock just enough to not trigger a timeout.
+  PacketBuilder p1;
+  p1.AddRrPacket(kSenderSsrc, kSourceSsrc, sequence_number);
+  EXPECT_EQ(0, InjectRtcpPacket(p1.packet(), p1.length()));
+  system_clock_->AdvanceClock(3 * kRtcpIntervalMs - 1);
+  EXPECT_FALSE(rtcp_receiver_->RtcpRrTimeout(kRtcpIntervalMs));
+  EXPECT_FALSE(rtcp_receiver_->RtcpRrSequenceNumberTimeout(kRtcpIntervalMs));
+
+  // Add a RR with the same extended max as the previous RR to trigger a
+  // sequence number timeout, but not a RR timeout.
+  PacketBuilder p2;
+  p2.AddRrPacket(kSenderSsrc, kSourceSsrc, sequence_number);
+  EXPECT_EQ(0, InjectRtcpPacket(p2.packet(), p2.length()));
+  system_clock_->AdvanceClock(2);
+  EXPECT_FALSE(rtcp_receiver_->RtcpRrTimeout(kRtcpIntervalMs));
+  EXPECT_TRUE(rtcp_receiver_->RtcpRrSequenceNumberTimeout(kRtcpIntervalMs));
+
+  // Advance clock enough to trigger an RR timeout too.
+  system_clock_->AdvanceClock(3 * kRtcpIntervalMs);
+  EXPECT_TRUE(rtcp_receiver_->RtcpRrTimeout(kRtcpIntervalMs));
+
+  // We should only get one timeout even though we still haven't received a new
+  // RR.
+  EXPECT_FALSE(rtcp_receiver_->RtcpRrTimeout(kRtcpIntervalMs));
+  EXPECT_FALSE(rtcp_receiver_->RtcpRrSequenceNumberTimeout(kRtcpIntervalMs));
+
+  // Add a new RR with increase sequence number to reset timers.
+  PacketBuilder p3;
+  sequence_number++;
+  p2.AddRrPacket(kSenderSsrc, kSourceSsrc, sequence_number);
+  EXPECT_EQ(0, InjectRtcpPacket(p2.packet(), p2.length()));
+  EXPECT_FALSE(rtcp_receiver_->RtcpRrTimeout(kRtcpIntervalMs));
+  EXPECT_FALSE(rtcp_receiver_->RtcpRrSequenceNumberTimeout(kRtcpIntervalMs));
+
+  // Verify we can get a timeout again once we've received new RR.
+  system_clock_->AdvanceClock(2 * kRtcpIntervalMs);
+  PacketBuilder p4;
+  p4.AddRrPacket(kSenderSsrc, kSourceSsrc, sequence_number);
+  EXPECT_EQ(0, InjectRtcpPacket(p4.packet(), p4.length()));
+  system_clock_->AdvanceClock(kRtcpIntervalMs + 1);
+  EXPECT_FALSE(rtcp_receiver_->RtcpRrTimeout(kRtcpIntervalMs));
+  EXPECT_TRUE(rtcp_receiver_->RtcpRrSequenceNumberTimeout(kRtcpIntervalMs));
+  system_clock_->AdvanceClock(2 * kRtcpIntervalMs);
+  EXPECT_TRUE(rtcp_receiver_->RtcpRrTimeout(kRtcpIntervalMs));
 }
 
 TEST_F(RtcpReceiverTest, TmmbrReceivedWithNoIncomingPacket) {

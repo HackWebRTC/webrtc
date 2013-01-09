@@ -27,6 +27,9 @@ namespace webrtc {
 using namespace RTCPUtility;
 using namespace RTCPHelp;
 
+// The number of RTCP time intervals needed to trigger a timeout.
+const int kRrTimeoutIntervals = 3;
+
 RTCPReceiver::RTCPReceiver(const WebRtc_Word32 id, RtpRtcpClock* clock,
                            ModuleRtpRtcpImpl* owner)
     : TMMBRHelp(),
@@ -49,7 +52,9 @@ RTCPReceiver::RTCPReceiver(const WebRtc_Word32 id, RtpRtcpClock* clock,
     _lastReceivedSRNTPfrac(0),
     _receivedInfoMap(),
     _packetTimeOutMS(0),
-      _rtt(0) {
+    _lastReceivedRrMs(0),
+    _lastIncreasedSequenceNumberMs(0),
+    _rtt(0) {
     memset(&_remoteSenderInfo, 0, sizeof(_remoteSenderInfo));
     WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, id, "%s created", __FUNCTION__);
 }
@@ -460,12 +465,21 @@ RTCPReceiver::HandleReportBlock(const RTCPUtility::RTCPPacket& rtcpPacket,
                  "\tfailed to CreateReportBlockInformation(%u)", remoteSSRC);
     return;
   }
+
+  _lastReceivedRrMs = _clock.GetTimeInMS();
   const RTCPPacketReportBlockItem& rb = rtcpPacket.ReportBlockItem;
   reportBlock->remoteReceiveBlock.remoteSSRC = remoteSSRC;
   reportBlock->remoteReceiveBlock.sourceSSRC = rb.SSRC;
   reportBlock->remoteReceiveBlock.fractionLost = rb.FractionLost;
   reportBlock->remoteReceiveBlock.cumulativeLost =
       rb.CumulativeNumOfPacketsLost;
+  if (rb.ExtendedHighestSequenceNumber >
+      reportBlock->remoteReceiveBlock.extendedHighSeqNum) {
+    // We have successfully delivered new RTP packets to the remote side after
+    // the last RR was sent from the remote side.
+    _lastIncreasedSequenceNumberMs = _lastReceivedRrMs;
+
+  }
   reportBlock->remoteReceiveBlock.extendedHighSeqNum =
       rb.ExtendedHighestSequenceNumber;
   reportBlock->remoteReceiveBlock.jitter = rb.Jitter;
@@ -629,6 +643,34 @@ void RTCPReceiver::UpdateReceiveInformation(
     RTCPReceiveInformation& receiveInformation) {
   // Update that this remote is alive
   receiveInformation.lastTimeReceived = _clock.GetTimeInMS();
+}
+
+bool RTCPReceiver::RtcpRrTimeout(int64_t rtcp_interval_ms) {
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  if (_lastReceivedRrMs == 0)
+    return false;
+
+  int64_t time_out_ms = kRrTimeoutIntervals * rtcp_interval_ms;
+  if (_clock.GetTimeInMS() > _lastReceivedRrMs + time_out_ms) {
+    // Reset the timer to only trigger one log.
+    _lastReceivedRrMs = 0;
+    return true;
+  }
+  return false;
+}
+
+bool RTCPReceiver::RtcpRrSequenceNumberTimeout(int64_t rtcp_interval_ms) {
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  if (_lastIncreasedSequenceNumberMs == 0)
+    return false;
+
+  int64_t time_out_ms = kRrTimeoutIntervals * rtcp_interval_ms;
+  if (_clock.GetTimeInMS() > _lastIncreasedSequenceNumberMs + time_out_ms) {
+    // Reset the timer to only trigger one log.
+    _lastIncreasedSequenceNumberMs = 0;
+    return true;
+  }
+  return false;
 }
 
 bool RTCPReceiver::UpdateRTCPReceiveInformationTimers() {
