@@ -280,7 +280,8 @@ WebRtc_Word32 ViEEncoder::GetCodec(WebRtc_UWord8 list_index,
 }
 
 WebRtc_Word32 ViEEncoder::RegisterExternalEncoder(webrtc::VideoEncoder* encoder,
-                                                  WebRtc_UWord8 pl_type) {
+                                                  WebRtc_UWord8 pl_type,
+                                                  bool internal_source) {
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
                ViEId(engine_id_, channel_id_), "%s: pltype %u", __FUNCTION__,
                pl_type);
@@ -288,7 +289,8 @@ WebRtc_Word32 ViEEncoder::RegisterExternalEncoder(webrtc::VideoEncoder* encoder,
   if (encoder == NULL)
     return -1;
 
-  if (vcm_.RegisterExternalEncoder(encoder, pl_type) != VCM_OK) {
+  if (vcm_.RegisterExternalEncoder(encoder, pl_type, internal_source) !=
+          VCM_OK) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
                  ViEId(engine_id_, channel_id_),
                  "Could not register external encoder");

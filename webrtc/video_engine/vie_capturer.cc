@@ -708,7 +708,7 @@ WebRtc_Word32 ViECapturer::PreEncodeToViEEncoder(const VideoCodec& codec,
     vcm_ = VideoCodingModule::Create(capture_id_);
   }
 
-  if (vie_encoder.RegisterExternalEncoder(this, codec.plType) != 0) {
+  if (vie_encoder.RegisterExternalEncoder(this, codec.plType, false) != 0) {
     return -1;
   }
   if (vie_encoder.SetEncoder(codec) != 0) {

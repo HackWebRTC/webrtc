@@ -542,7 +542,7 @@ void ViEAutoTest::ViECodecExternalCodecTest() {
 
       // Test to register on wrong channel.
       error = vie_external_codec->RegisterExternalSendCodec(
-          channel.videoChannel + 5, codec.plType, &ext_encoder);
+          channel.videoChannel + 5, codec.plType, &ext_encoder, false);
       number_of_errors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -551,7 +551,7 @@ void ViEAutoTest::ViECodecExternalCodecTest() {
           "ERROR: %s at line %d", __FUNCTION__, __LINE__);
 
       error = vie_external_codec->RegisterExternalSendCodec(
-                channel.videoChannel, codec.plType, &ext_encoder);
+                channel.videoChannel, codec.plType, &ext_encoder, false);
       number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
@@ -653,7 +653,7 @@ void ViEAutoTest::ViECodecExternalCodecTest() {
                                              __FUNCTION__, __LINE__);
 
       error = vie_external_codec->RegisterExternalSendCodec(
-                channel.videoChannel, codec.plType, &ext_encoder);
+                channel.videoChannel, codec.plType, &ext_encoder, false);
       number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 

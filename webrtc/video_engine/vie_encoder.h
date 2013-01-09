@@ -70,7 +70,8 @@ class ViEEncoder
   WebRtc_UWord8 NumberOfCodecs();
   WebRtc_Word32 GetCodec(WebRtc_UWord8 list_index, VideoCodec* video_codec);
   WebRtc_Word32 RegisterExternalEncoder(VideoEncoder* encoder,
-                                        WebRtc_UWord8 pl_type);
+                                        WebRtc_UWord8 pl_type,
+                                        bool internal_source);
   WebRtc_Word32 DeRegisterExternalEncoder(WebRtc_UWord8 pl_type);
   WebRtc_Word32 SetEncoder(const VideoCodec& video_codec);
   WebRtc_Word32 GetEncoder(VideoCodec* video_codec);
