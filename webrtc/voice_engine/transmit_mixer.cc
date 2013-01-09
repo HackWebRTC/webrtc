@@ -344,7 +344,7 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::PrepareDemux(nSamples=%u, nChannels=%u,"
-                 "samplesPerSec=%u, totalDelayMS=%u, clockDrift=%u,"
+                 "samplesPerSec=%u, totalDelayMS=%u, clockDrift=%d,"
                  "currentMicLevel=%u)", nSamples, nChannels, samplesPerSec,
                  totalDelayMS, clockDrift, currentMicLevel);
 
