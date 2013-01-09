@@ -11,8 +11,8 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "testsupport/fileutils.h"
-#include "testsupport/metrics/video_metrics.h"
+#include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/metrics/video_metrics.h"
 #include "webrtc/video_engine/test/auto_test/interface/vie_autotest.h"
 #include "webrtc/video_engine/test/auto_test/interface/vie_file_based_comparison_tests.h"
 #include "webrtc/video_engine/test/auto_test/primitives/framedrop_primitives.h"
