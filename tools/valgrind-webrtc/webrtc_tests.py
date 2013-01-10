@@ -105,17 +105,14 @@ def main(_):
     parser.error('--test not specified')
 
   # If --build_dir is provided, prepend it to the test executable if needed.
-  if options.build_dir and not args[0].startswith(options.build_dir):
-    args[0] = os.path.join(options.build_dir, args[0])
+  test_executable = options.test
+  if options.build_dir and not test_executable.startswith(options.build_dir):
+    test_executable = os.path.join(options.build_dir, test_executable)
+  args = [test_executable] + args
 
-  test = WebRTCTest(options, args, options.test)
+  test = WebRTCTest(options, args, 'cmdline')
   return test.Run()
 
 if __name__ == '__main__':
-  # We do this so the user can write -t <binary> instead of -t cmdline <binary>.
-  if '-t' in sys.argv:
-    sys.argv.insert(sys.argv.index('-t') + 1, 'cmdline')
-  elif '--test' in sys.argv:
-    sys.argv.insert(sys.argv.index('--test') + 1, 'cmdline')
   return_code = main(sys.argv)
   sys.exit(return_code)
