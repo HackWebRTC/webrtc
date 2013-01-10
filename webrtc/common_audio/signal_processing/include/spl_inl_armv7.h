@@ -164,11 +164,11 @@ static __inline int WebRtcSpl_NormW16(WebRtc_Word16 a) {
 
 // TODO(kma): add unit test.
 static __inline WebRtc_Word16 WebRtcSpl_SatW32ToW16(WebRtc_Word32 value32) {
-  WebRtc_Word16 out16 = 0;
+  WebRtc_Word32 out = 0;
 
-  __asm __volatile ("ssat %0, #16, %1" : "=r"(out16) : "r"(value32));
+  __asm __volatile ("ssat %0, #16, %1" : "=r"(out) : "r"(value32));
 
-  return out16;
+  return (WebRtc_Word16)out;
 }
 
 #endif  // WEBRTC_SPL_SPL_INL_ARMV7_H_
