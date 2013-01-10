@@ -10,23 +10,25 @@
 # It must exist for the Python wrapper script to work properly.
 
 {
+  bug_300
+  ThreadSanitizer:Race
+  fun:webrtc::TraceImpl::SetTraceCallbackImpl
+  fun:webrtc::Trace::SetTraceCallback
+  ...
+}
+
+# Known bugs we don't care about / problems in third parties
+{
   bug_884 (Wider timezone filter than Chromium's suppressions)
   ThreadSanitizer:Race
   ...
   fun:__tz*
 }
 {
-  bug_1194
+  don't care about issues in trace functions
   ThreadSanitizer:Race
   ...
   fun:webrtc::Trace::Add
-  ...
-}
-{
-  bug_300
-  ThreadSanitizer:Race
-  fun:webrtc::TraceImpl::SetTraceCallbackImpl
-  fun:webrtc::Trace::SetTraceCallback
   ...
 }
 {
