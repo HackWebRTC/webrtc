@@ -179,8 +179,9 @@ class ParameterizedFullStackTest : public ViEVideoVerificationTest,
     parameter_table_[i].network.mean_one_way_delay = 100;
     parameter_table_[i].network.std_dev_one_way_delay = 10;
     parameter_table_[i].bitrate = 300;
-    parameter_table_[i].avg_psnr_threshold = 35;
-    parameter_table_[i].avg_ssim_threshold = 0.96;
+    // Thresholds disabled for now. This is being run mainly to get a graph.
+    parameter_table_[i].avg_psnr_threshold = 0;
+    parameter_table_[i].avg_ssim_threshold = 0.0;
     parameter_table_[i].test_label = "net_delay_100_10_plr_5_gilbert_elliot";
 
     ASSERT_EQ(kNumFullStackInstances - 1, i);
