@@ -136,18 +136,18 @@ void usage() {
   printf("  --debug_file FILE  Dump a debug recording.\n");
 }
 
-static double MicLevel2Gain(int level) {
-  return pow(10.0, ((level - 127.0) / 128.0 * 80.) / 20.);
+static float MicLevel2Gain(int level) {
+  return pow(10.0f, ((level - 127.0f) / 128.0f * 40.0f) / 20.0f);
 }
 
 static void SimulateMic(int mic_level, AudioFrame* frame) {
   mic_level = std::min(std::max(mic_level, 0), 255);
-  double mic_gain = MicLevel2Gain(mic_level);
+  float mic_gain = MicLevel2Gain(mic_level);
   int num_samples = frame->samples_per_channel_ * frame->num_channels_;
-  double v;
+  float v;
   for (int n = 0; n < num_samples; n++) {
     v = floor(frame->data_[n] * mic_gain + 0.5);
-    v = std::max(std::min(32767., v), -32768.);
+    v = std::max(std::min(32767.0f, v), -32768.0f);
     frame->data_[n] = static_cast<int16_t>(v);
   }
 }
@@ -618,6 +618,7 @@ void void_main(int argc, char* argv[]) {
         far_frame.num_channels_ = msg.num_reverse_channels();
         near_frame.sample_rate_hz_ = msg.sample_rate();
         near_frame.samples_per_channel_ = samples_per_channel;
+        near_frame.num_channels_ = msg.num_input_channels();
 
         if (verbose) {
           printf("Init at frame: %d (primary), %d (reverse)\n",
@@ -680,10 +681,6 @@ void void_main(int argc, char* argv[]) {
           fflush(stdout);
         }
 
-        if (apm->gain_control()->mode() == GainControl::kAdaptiveAnalog) {
-          SimulateMic(capture_level, &near_frame);
-        }
-
         if (perf_testing) {
           t0 = TickTime::Now();
         }
@@ -703,8 +700,6 @@ void void_main(int argc, char* argv[]) {
                     err == apm->kBadStreamParameterWarning);
         ASSERT_TRUE(near_frame.num_channels_ == apm->num_output_channels());
 
-        capture_level = apm->gain_control()->stream_analog_level();
-
         stream_has_voice =
             static_cast<int8_t>(apm->voice_detection()->stream_has_voice());
         if (vad_out_file != NULL) {
@@ -720,10 +715,6 @@ void void_main(int argc, char* argv[]) {
                                sizeof(ns_speech_prob),
                                1,
                                ns_prob_file));
-        }
-
-        if (apm->gain_control()->mode() != GainControl::kAdaptiveAnalog) {
-          ASSERT_EQ(msg.level(), capture_level);
         }
 
         if (perf_testing) {
@@ -888,7 +879,8 @@ void void_main(int argc, char* argv[]) {
               fread(&drift_samples, sizeof(drift_samples), 1, drift_file));
         }
 
-        if (apm->gain_control()->mode() == GainControl::kAdaptiveAnalog) {
+        if (apm->gain_control()->is_enabled() &&
+            apm->gain_control()->mode() == GainControl::kAdaptiveAnalog) {
           SimulateMic(capture_level, &near_frame);
         }
 
@@ -896,9 +888,7 @@ void void_main(int argc, char* argv[]) {
           t0 = TickTime::Now();
         }
 
-        // TODO(ajm): fake an analog gain while simulating.
-
-        int capture_level_in = capture_level;
+        const int capture_level_in = capture_level;
         ASSERT_EQ(apm->kNoError,
                   apm->gain_control()->set_stream_analog_level(capture_level));
         ASSERT_EQ(apm->kNoError,
