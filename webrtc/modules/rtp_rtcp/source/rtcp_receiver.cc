@@ -478,7 +478,6 @@ RTCPReceiver::HandleReportBlock(const RTCPUtility::RTCPPacket& rtcpPacket,
     // We have successfully delivered new RTP packets to the remote side after
     // the last RR was sent from the remote side.
     _lastIncreasedSequenceNumberMs = _lastReceivedRrMs;
-
   }
   reportBlock->remoteReceiveBlock.extendedHighSeqNum =
       rb.ExtendedHighestSequenceNumber;
