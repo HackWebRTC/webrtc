@@ -347,11 +347,11 @@
       ],
       'conditions': [
         ['asan==1', {
-          'cflags!': [ '-faddress-sanitizer', ],
+          'cflags!': [ '-fsanitize=address', ],
           'xcode_settings': {
-            'OTHER_CFLAGS!': [ '-faddress-sanitizer', ],
+            'OTHER_CFLAGS!': [ '-fsanitize=address', ],
           },
-          'ldflags!': [ '-faddress-sanitizer', ],
+          'ldflags!': [ '-fsanitize=address', ],
         }],
       ],
       'sources': [
