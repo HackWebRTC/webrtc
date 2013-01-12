@@ -54,7 +54,9 @@ protected:
     virtual ~VoEExternalMediaImpl();
 
 private:
+#ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
     int playout_delay_ms_;
+#endif
     voe::SharedData* shared_;
 };
 

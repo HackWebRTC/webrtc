@@ -38,7 +38,11 @@ VoEExternalMedia* VoEExternalMedia::GetInterface(VoiceEngine* voiceEngine)
 #ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
 
 VoEExternalMediaImpl::VoEExternalMediaImpl(voe::SharedData* shared)
-    : playout_delay_ms_(0), shared_(shared)
+    :
+#ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
+    playout_delay_ms_(0),
+#endif
+    shared_(shared)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(shared_->instance_id(), -1),
                  "VoEExternalMediaImpl() - ctor");
