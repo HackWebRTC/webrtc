@@ -41,6 +41,38 @@ namespace webrtc {
 
 const WebRtc_UWord16 kDefaultRtt = 200;
 
+static RtpData* NullObjectRtpData() {
+  static NullRtpData null_rtp_data;
+  return &null_rtp_data;
+}
+
+static RtpFeedback* NullObjectRtpFeedback() {
+  static NullRtpFeedback null_rtp_feedback;
+  return &null_rtp_feedback;
+}
+
+static RtpAudioFeedback* NullObjectRtpAudioFeedback() {
+  static NullRtpAudioFeedback null_rtp_audio_feedback;
+  return &null_rtp_audio_feedback;
+}
+
+RtpRtcp::Configuration::Configuration()
+    : id(-1),
+      audio(false),
+      clock(NULL),
+      default_module(NULL),
+      incoming_data(NullObjectRtpData()),
+      incoming_messages(NullObjectRtpFeedback()),
+      outgoing_transport(NULL),
+      rtcp_feedback(NULL),
+      intra_frame_callback(NULL),
+      bandwidth_callback(NULL),
+      rtt_observer(NULL),
+      audio_messages(NullObjectRtpAudioFeedback()),
+      remote_bitrate_estimator(NULL),
+      paced_sender(NULL) {
+}
+
 RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
   if (configuration.clock) {
     return new ModuleRtpRtcpImpl(configuration);
@@ -64,7 +96,9 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                  configuration.audio_messages,
                  configuration.paced_sender),
       _rtpReceiver(configuration.id, configuration.audio, configuration.clock,
-                   this, configuration.audio_messages),
+                   this, configuration.audio_messages,
+                   configuration.incoming_data,
+                   configuration.incoming_messages),
       _rtcpSender(configuration.id, configuration.audio, configuration.clock,
                   this),
       _rtcpReceiver(configuration.id, configuration.clock, this),
@@ -103,8 +137,6 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
     _defaultModule->RegisterChildModule(this);
   }
   // TODO(pwestin) move to constructors of each rtp/rtcp sender/receiver object.
-  _rtpReceiver.RegisterIncomingDataCallback(configuration.incoming_data);
-  _rtpReceiver.RegisterIncomingRTPCallback(configuration.incoming_messages);
   _rtcpReceiver.RegisterRtcpObservers(configuration.intra_frame_callback,
                                       configuration.bandwidth_callback,
                                       configuration.rtcp_feedback);

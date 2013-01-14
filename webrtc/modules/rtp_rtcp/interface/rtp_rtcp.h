@@ -26,31 +26,19 @@ class Transport;
 class RtpRtcp : public Module {
  public:
   struct Configuration {
-    Configuration()
-        : id(-1),
-          audio(false),
-          clock(NULL),
-          default_module(NULL),
-          incoming_data(NULL),
-          incoming_messages(NULL),
-          outgoing_transport(NULL),
-          rtcp_feedback(NULL),
-          intra_frame_callback(NULL),
-          bandwidth_callback(NULL),
-          rtt_observer(NULL),
-          audio_messages(NULL),
-          remote_bitrate_estimator(NULL),
-          paced_sender(NULL) {
-    }
+    Configuration();
+
    /*  id                   - Unique identifier of this RTP/RTCP module object
     *  audio                - True for a audio version of the RTP/RTCP module
     *                         object false will create a video version
     *  clock                - The clock to use to read time. If NULL object
     *                         will be using the system clock.
     *  incoming_data        - Callback object that will receive the incoming
-    *                         data
+    *                         data. May not be NULL; default callback will do
+    *                         nothing.
     *  incoming_messages    - Callback object that will receive the incoming
-    *                         RTP messages.
+    *                         RTP messages. May not be NULL; default callback
+    *                         will do nothing.
     *  outgoing_transport   - Transport object that will be called when packets
     *                         are ready to be sent out on the network
     *  rtcp_feedback        - Callback object that will receive the incoming
@@ -58,7 +46,8 @@ class RtpRtcp : public Module {
     *  intra_frame_callback - Called when the receiver request a intra frame.
     *  bandwidth_callback   - Called when we receive a changed estimate from
     *                         the receiver of out stream.
-    *  audio_messages       - Telehone events.
+    *  audio_messages       - Telehone events. May not be NULL; default callback
+    *                         will do nothing.
     *  remote_bitrate_estimator - Estimates the bandwidth available for a set of
     *                             streams from the same client.
     *  paced_sender             - Spread any bursts of packets into smaller

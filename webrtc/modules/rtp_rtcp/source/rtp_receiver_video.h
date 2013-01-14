@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_VIDEO_H_
 
 #include "bitrate.h"
-#include "rtp_receiver.h"
 #include "rtp_receiver_strategy.h"
 #include "rtp_rtcp_defines.h"
 #include "rtp_utility.h"
@@ -23,11 +22,14 @@ namespace webrtc {
 class CriticalSectionWrapper;
 class ModuleRtpRtcpImpl;
 class ReceiverFEC;
+class RTPReceiver;
 
 class RTPReceiverVideo : public RTPReceiverStrategy {
  public:
+  // TODO(phoglund): Get rid of dependency on "parent".
   RTPReceiverVideo(const WebRtc_Word32 id,
                    RTPReceiver* parent,
+                   RtpData* data_callback,
                    ModuleRtpRtcpImpl* owner);
 
   virtual ~RTPReceiverVideo();

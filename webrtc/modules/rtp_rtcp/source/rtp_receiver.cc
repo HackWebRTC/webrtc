@@ -35,13 +35,21 @@ RTPReceiver::RTPReceiver(const WebRtc_Word32 id,
                          const bool audio,
                          RtpRtcpClock* clock,
                          ModuleRtpRtcpImpl* owner,
-                         RtpAudioFeedback* incoming_messages_callback)
+                         RtpAudioFeedback* incoming_audio_messages_callback,
+                         RtpData* incoming_payload_callback,
+                         RtpFeedback* incoming_messages_callback)
     : Bitrate(clock),
+      // TODO(phoglund): Remove hacks requiring direct access to the
+      // audio receiver and only instantiate one of these directly into the
+      // rtp_media_receiver_ field. Right now an audio receiver carries around a
+      // video handler and vice versa, which doesn't make sense.
+      rtp_receiver_audio_(new RTPReceiverAudio(
+          id, incoming_payload_callback, incoming_audio_messages_callback)),
+      rtp_receiver_video_(new RTPReceiverVideo(
+          id, this, incoming_payload_callback, owner)),
       id_(id),
       rtp_rtcp_(*owner),
-      critical_section_cbs_(CriticalSectionWrapper::CreateCriticalSection()),
-      cb_rtp_feedback_(NULL),
-      cb_rtp_data_(NULL),
+      cb_rtp_feedback_(incoming_messages_callback),
 
       critical_section_rtp_receiver_(
         CriticalSectionWrapper::CreateCriticalSection()),
@@ -94,14 +102,9 @@ RTPReceiver::RTPReceiver(const WebRtc_Word32 id,
       nack_method_(kNackOff),
       rtx_(false),
       ssrc_rtx_(0) {
-  // TODO(phoglund): Remove hacks requiring direct access to the audio receiver
-  // and only instantiate one of these directly into the rtp_media_receiver_
-  // field. Right now an audio receiver carries around a video handler and
-  // vice versa, which doesn't make sense.
-  rtp_receiver_audio_ = new RTPReceiverAudio(id, this,
-                                             incoming_messages_callback);
-  rtp_receiver_video_ = new RTPReceiverVideo(id, this, owner);
-
+  assert(incoming_audio_messages_callback &&
+         incoming_messages_callback &&
+         incoming_payload_callback);
   if (audio) {
     rtp_media_receiver_ = rtp_receiver_audio_;
   } else {
@@ -115,13 +118,10 @@ RTPReceiver::RTPReceiver(const WebRtc_Word32 id,
 }
 
 RTPReceiver::~RTPReceiver() {
-  if (cb_rtp_feedback_) {
-    for (int i = 0; i < num_csrcs_; ++i) {
-      cb_rtp_feedback_->OnIncomingCSRCChanged(id_, current_remote_csrc_[i],
-                                              false);
-    }
+  for (int i = 0; i < num_csrcs_; ++i) {
+    cb_rtp_feedback_->OnIncomingCSRCChanged(id_, current_remote_csrc_[i],
+                                            false);
   }
-  delete critical_section_cbs_;
   delete critical_section_rtp_receiver_;
 
   while (!payload_type_map_.empty()) {
@@ -187,18 +187,13 @@ void RTPReceiver::PacketTimeout() {
       last_received_media_payload_type_ = -1;
     }
   }
-  CriticalSectionScoped lock(critical_section_cbs_);
-  if (packet_time_out && cb_rtp_feedback_) {
+  if (packet_time_out) {
     cb_rtp_feedback_->OnPacketTimeout(id_);
   }
 }
 
 void RTPReceiver::ProcessDeadOrAlive(const bool rtcp_alive,
                                      const WebRtc_Word64 now) {
-  if (cb_rtp_feedback_ == NULL) {
-    // No callback.
-    return;
-  }
   RTPAliveType alive = kRtpDead;
 
   if (last_receive_time_ + 1000 > now) {
@@ -214,10 +209,7 @@ void RTPReceiver::ProcessDeadOrAlive(const bool rtcp_alive,
     }
   }
 
-  CriticalSectionScoped lock(critical_section_cbs_);
-  if (cb_rtp_feedback_) {
-    cb_rtp_feedback_->OnPeriodicDeadOrAlive(id_, alive);
-  }
+  cb_rtp_feedback_->OnPeriodicDeadOrAlive(id_, alive);
 }
 
 WebRtc_UWord16 RTPReceiver::PacketOHReceived() const {
@@ -233,20 +225,6 @@ WebRtc_UWord32 RTPReceiver::PacketCountReceived() const {
 WebRtc_UWord32 RTPReceiver::ByteCountReceived() const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
   return received_byte_count_;
-}
-
-WebRtc_Word32 RTPReceiver::RegisterIncomingRTPCallback(
-    RtpFeedback* incoming_messages_callback) {
-  CriticalSectionScoped lock(critical_section_cbs_);
-  cb_rtp_feedback_ = incoming_messages_callback;
-  return 0;
-}
-
-WebRtc_Word32 RTPReceiver::RegisterIncomingDataCallback(
-    RtpData* incoming_data_callback) {
-  CriticalSectionScoped lock(critical_section_cbs_);
-  cb_rtp_data_ = incoming_data_callback;
-  return 0;
 }
 
 WebRtc_Word32 RTPReceiver::RegisterReceivePayload(
@@ -610,14 +588,11 @@ WebRtc_Word32 RTPReceiver::IncomingRTPPacket(
   }
   if (last_receive_time_ == 0) {
     // Trigger only once.
-    CriticalSectionScoped lock(critical_section_cbs_);
-    if (cb_rtp_feedback_) {
-      if (length - rtp_header->header.headerLength == 0) {
-        // Keep-alive packet.
-        cb_rtp_feedback_->OnReceivedPacket(id_, kPacketKeepAlive);
-      } else {
-        cb_rtp_feedback_->OnReceivedPacket(id_, kPacketRtp);
-      }
+    if (length - rtp_header->header.headerLength == 0) {
+      // Keep-alive packet.
+      cb_rtp_feedback_->OnReceivedPacket(id_, kPacketKeepAlive);
+    } else {
+      cb_rtp_feedback_->OnReceivedPacket(id_, kPacketRtp);
     }
   }
   WebRtc_Word8 first_payload_byte = 0;
@@ -684,19 +659,6 @@ WebRtc_Word32 RTPReceiver::IncomingRTPPacket(
       rtp_header->extension.transmissionTimeOffset;
   }
   return ret_val;
-}
-
-// Implementation note: must not hold critsect when called!
-WebRtc_Word32 RTPReceiver::CallbackOfReceivedPayloadData(
-    const WebRtc_UWord8* payload_data,
-    const WebRtc_UWord16 payload_size,
-    const WebRtcRTPHeader* rtp_header) {
-  CriticalSectionScoped lock(critical_section_cbs_);
-  if (cb_rtp_data_) {
-    return cb_rtp_data_->OnReceivedPayloadData(payload_data, payload_size,
-                                               rtp_header);
-  }
-  return -1;
 }
 
 // Implementation note: we expect to have the critical_section_rtp_receiver_
@@ -989,21 +951,16 @@ void RTPReceiver::CheckSSRCChanged(const WebRtcRTPHeader* rtp_header) {
     // We need to get this to our RTCP sender and receiver.
     // We need to do this outside critical section.
     rtp_rtcp_.SetRemoteSSRC(rtp_header->header.ssrc);
+    cb_rtp_feedback_->OnIncomingSSRCChanged(id_, rtp_header->header.ssrc);
   }
-  CriticalSectionScoped lock(critical_section_cbs_);
-  if (cb_rtp_feedback_) {
-    if (new_ssrc) {
-      cb_rtp_feedback_->OnIncomingSSRCChanged(id_, rtp_header->header.ssrc);
-    }
-    if (re_initialize_decoder) {
-      if (-1 == cb_rtp_feedback_->OnInitializeDecoder(
-          id_, rtp_header->header.payloadType, payload_name, frequency,
-          channels, rate)) {
-        // New stream, same codec.
-        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
-                     "Failed to create decoder for payload type:%d",
-                     rtp_header->header.payloadType);
-      }
+  if (re_initialize_decoder) {
+    if (-1 == cb_rtp_feedback_->OnInitializeDecoder(
+        id_, rtp_header->header.payloadType, payload_name, frequency,
+        channels, rate)) {
+      // New stream, same codec.
+      WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
+                   "Failed to create decoder for payload type:%d",
+                   rtp_header->header.payloadType);
     }
   }
 }
@@ -1104,13 +1061,10 @@ WebRtc_Word32 RTPReceiver::CheckPayloadChanged(
   }   // End critsect.
 
   if (re_initialize_decoder) {
-    CriticalSectionScoped lock(critical_section_cbs_);
-    if (cb_rtp_feedback_) {
-      if (-1 == rtp_media_receiver_->InvokeOnInitializeDecoder(
-            cb_rtp_feedback_, id_, payload_type, payload_name,
-            *specific_payload)) {
-        return -1;  // Wrong payload type.
-      }
+    if (-1 == rtp_media_receiver_->InvokeOnInitializeDecoder(
+        cb_rtp_feedback_, id_, payload_type, payload_name,
+        *specific_payload)) {
+      return -1;  // Wrong payload type.
     }
   }
   return 0;
@@ -1159,10 +1113,6 @@ void RTPReceiver::CheckCSRC(const WebRtcRTPHeader* rtp_header) {
     }
   }  // End critsect.
 
-  CriticalSectionScoped lock(critical_section_cbs_);
-  if (cb_rtp_feedback_ == NULL) {
-    return;
-  }
   bool have_called_callback = false;
   // Search for new CSRC in old array.
   for (WebRtc_UWord8 i = 0; i < rtp_header->header.numCSRCs; ++i) {

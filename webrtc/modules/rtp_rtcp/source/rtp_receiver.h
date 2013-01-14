@@ -32,11 +32,15 @@ class RTPReceiverStrategy;
 
 class RTPReceiver : public Bitrate {
  public:
+  // Callbacks passed in here may not be NULL (use Null object callbacks if you
+  // want callbacks to do nothing).
   RTPReceiver(const WebRtc_Word32 id,
               const bool audio,
               RtpRtcpClock* clock,
               ModuleRtpRtcpImpl* owner,
-              RtpAudioFeedback* incoming_messages_callback);
+              RtpAudioFeedback* incoming_audio_messages_callback,
+              RtpData* incoming_payload_callback,
+              RtpFeedback* incoming_messages_callback);
 
   virtual ~RTPReceiver();
 
@@ -49,10 +53,6 @@ class RTPReceiver : public Bitrate {
   void ProcessDeadOrAlive(const bool RTCPalive, const WebRtc_Word64 now);
 
   void ProcessBitrate();
-
-  WebRtc_Word32 RegisterIncomingDataCallback(RtpData* incoming_data_callback);
-  WebRtc_Word32 RegisterIncomingRTPCallback(
-      RtpFeedback* incoming_messages_callback);
 
   WebRtc_Word32 RegisterReceivePayload(
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
@@ -161,11 +161,6 @@ class RTPReceiver : public Bitrate {
     return rtp_receiver_audio_;
   }
 
-  virtual WebRtc_Word32 CallbackOfReceivedPayloadData(
-      const WebRtc_UWord8* payload_data,
-      const WebRtc_UWord16 payload_size,
-      const WebRtcRTPHeader* rtp_header);
-
   virtual WebRtc_Word8 REDPayloadType() const;
 
   bool HaveNotReceivedPackets() const;
@@ -202,9 +197,7 @@ class RTPReceiver : public Bitrate {
   WebRtc_Word32           id_;
   ModuleRtpRtcpImpl&      rtp_rtcp_;
 
-  CriticalSectionWrapper* critical_section_cbs_;
   RtpFeedback*            cb_rtp_feedback_;
-  RtpData*                cb_rtp_data_;
 
   CriticalSectionWrapper* critical_section_rtp_receiver_;
   mutable WebRtc_Word64   last_receive_time_;

@@ -22,14 +22,13 @@
 
 namespace webrtc {
 class CriticalSectionWrapper;
-class RTPReceiver;
 
 // Handles audio RTP packets. This class is thread-safe.
 class RTPReceiverAudio : public RTPReceiverStrategy
 {
 public:
     RTPReceiverAudio(const WebRtc_Word32 id,
-                     RTPReceiver* parent,
+                     RtpData* data_callback,
                      RtpAudioFeedback* incomingMessagesCallback);
 
     WebRtc_UWord32 AudioFrequency() const;
@@ -122,7 +121,6 @@ private:
         const bool isRED);
 
     WebRtc_Word32                      _id;
-    RTPReceiver*                       _parent;
     scoped_ptr<CriticalSectionWrapper> _criticalSectionRtpReceiverAudio;
 
     WebRtc_UWord32                     _lastReceivedFrequency;

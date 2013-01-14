@@ -15,15 +15,14 @@
 #include <math.h>    // pow()
 
 #include "critical_section_wrapper.h"
-#include "rtp_receiver.h"
 #include "trace.h"
 
 namespace webrtc {
 RTPReceiverAudio::RTPReceiverAudio(const WebRtc_Word32 id,
-                                   RTPReceiver* parent,
+                                   RtpData* data_callback,
                                    RtpAudioFeedback* incomingMessagesCallback)
-  : _id(id),
-    _parent(parent),
+  : RTPReceiverStrategy(data_callback),
+    _id(id),
     _criticalSectionRtpReceiverAudio(
         CriticalSectionWrapper::CreateCriticalSection()),
     _lastReceivedFrequency(8000),
@@ -512,13 +511,13 @@ RTPReceiverAudio::ParseAudioCodecSpecific(WebRtcRTPHeader* rtpHeader,
         rtpHeader->header.payloadType = payloadData[0];
 
         // only one frame in the RED strip the one byte to help NetEq
-        return _parent->CallbackOfReceivedPayloadData(payloadData+1,
-                                                      payloadLength-1,
-                                                      rtpHeader);
+        return data_callback_->OnReceivedPayloadData(payloadData+1,
+                                                     payloadLength-1,
+                                                     rtpHeader);
     }
 
     rtpHeader->type.Audio.channel = audioSpecific.channels;
-    return _parent->CallbackOfReceivedPayloadData(
+    return data_callback_->OnReceivedPayloadData(
         payloadData, payloadLength, rtpHeader);
 }
 } // namespace webrtc
