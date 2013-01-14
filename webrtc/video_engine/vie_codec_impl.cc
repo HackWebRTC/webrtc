@@ -748,7 +748,7 @@ bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {
     return false;
   }
 
-  if (video_codec.plType == 0 && video_codec.plType > 127) {
+  if (video_codec.plType == 0 || video_codec.plType > 127) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
                  "Invalid codec payload type: %d", video_codec.plType);
     return false;
