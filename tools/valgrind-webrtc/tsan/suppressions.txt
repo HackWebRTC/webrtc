@@ -31,10 +31,3 @@
   fun:webrtc::Trace::Add
   ...
 }
-{
-  buganizer issue 7313086 TSAN: posix warning with 2 threads
-  ThreadSanitizer:Race
-  fun:arena_thread_freeres
-  fun:__libc_thread_freeres
-  fun:start_thread
-}
