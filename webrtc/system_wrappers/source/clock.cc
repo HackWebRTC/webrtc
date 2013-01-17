@@ -76,7 +76,8 @@ void Synchronize(WindowsHelpTimer* help_timer) {
     ::Sleep(0);
   } while ((ft0.dwHighDateTime == ft1.dwHighDateTime) &&
           (ft0.dwLowDateTime == ft1.dwLowDateTime));
-    help_timer->_ref_point.file_time = ft1;
+  help_timer->_ref_point.file_time = ft1;
+  timeEndPeriod(1);
 }
 
 void get_time(WindowsHelpTimer* help_timer, FILETIME& current_time) {
