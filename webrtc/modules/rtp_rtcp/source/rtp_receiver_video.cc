@@ -16,7 +16,7 @@
 
 #include "critical_section_wrapper.h"
 #include "receiver_fec.h"
-#include "rtp_receiver.h"
+#include "rtp_payload_registry.h"
 #include "rtp_rtcp_impl.h"
 #include "rtp_utility.h"
 #include "trace.h"
@@ -27,13 +27,14 @@ WebRtc_UWord32 BitRateBPS(WebRtc_UWord16 x )
     return (x & 0x3fff) * WebRtc_UWord32(pow(10.0f,(2 + (x >> 14))));
 }
 
-RTPReceiverVideo::RTPReceiverVideo(const WebRtc_Word32 id,
-                                   RTPReceiver* parent,
-                                   RtpData* data_callback,
-                                   ModuleRtpRtcpImpl* owner)
+RTPReceiverVideo::RTPReceiverVideo(
+    const WebRtc_Word32 id,
+    const RTPPayloadRegistry* rtpRtpPayloadRegistry,
+    RtpData* data_callback,
+    ModuleRtpRtcpImpl* owner)
     : RTPReceiverStrategy(data_callback),
       _id(id),
-      _parent(parent),
+      _rtpRtpPayloadRegistry(rtpRtpPayloadRegistry),
       _criticalSectionReceiverVideo(
           CriticalSectionWrapper::CreateCriticalSection()),
       _currentFecFrameDecoded(false),
@@ -82,7 +83,8 @@ WebRtc_Word32 RTPReceiverVideo::ParseRtpPacket(
     const bool isRed,
     const WebRtc_UWord8* packet,
     const WebRtc_UWord16 packetLength,
-    const WebRtc_Word64 timestampMs) {
+    const WebRtc_Word64 timestampMs,
+    const bool isFirstPacket) {
   const WebRtc_UWord8* payloadData =
       ModuleRTPUtility::GetPayloadData(rtpHeader, packet);
   const WebRtc_UWord16 payloadDataLength =
@@ -90,7 +92,7 @@ WebRtc_Word32 RTPReceiverVideo::ParseRtpPacket(
   return ParseVideoCodecSpecific(
       rtpHeader, payloadData, payloadDataLength,
       specificPayload.Video.videoCodecType, isRed, packet, packetLength,
-      timestampMs);
+      timestampMs, isFirstPacket);
 }
 
 WebRtc_Word32 RTPReceiverVideo::GetFrequencyHz() const {
@@ -144,7 +146,8 @@ WebRtc_Word32 RTPReceiverVideo::ParseVideoCodecSpecific(
     const bool isRED,
     const WebRtc_UWord8* incomingRtpPacket,
     const WebRtc_UWord16 incomingRtpPacketSize,
-    const WebRtc_Word64 nowMS) {
+    const WebRtc_Word64 nowMS,
+    const bool isFirstPacket) {
   WebRtc_Word32 retVal = 0;
 
   _criticalSectionReceiverVideo->Enter();
@@ -186,7 +189,8 @@ WebRtc_Word32 RTPReceiverVideo::ParseVideoCodecSpecific(
     retVal = ParseVideoCodecSpecificSwitch(rtpHeader,
                                            payloadData,
                                            payloadDataLength,
-                                           videoType);
+                                           videoType,
+                                           isFirstPacket);
   }
   return retVal;
 }
@@ -237,7 +241,7 @@ WebRtc_Word32 RTPReceiverVideo::ReceiveRecoveredPacketCallback(
   _currentFecFrameDecoded = true;
 
   ModuleRTPUtility::Payload* payload = NULL;
-  if (_parent->PayloadTypeToPayload(
+  if (_rtpRtpPayloadRegistry->PayloadTypeToPayload(
       rtpHeader->header.payloadType, payload) != 0) {
     _criticalSectionReceiverVideo->Leave();
     return -1;
@@ -252,7 +256,7 @@ WebRtc_Word32 RTPReceiverVideo::ReceiveRecoveredPacketCallback(
 
   // replace pltype
   recoveredPacket[1] &= 0x80;  // Reset.
-  recoveredPacket[1] += _parent->REDPayloadType();
+  recoveredPacket[1] += _rtpRtpPayloadRegistry->red_payload_type();
 
   // add RED header
   recoveredPacket[rtpHeaderLength] = rtpHeader->header.payloadType;
@@ -261,11 +265,17 @@ WebRtc_Word32 RTPReceiverVideo::ReceiveRecoveredPacketCallback(
   memcpy(recoveredPacket + rtpHeaderLength + REDForFECHeaderLength, payloadData,
          payloadDataLength);
 
+  // A recovered packet can be the first packet, but we lack the ability to
+  // detect it at the moment since we do not store the history of recently
+  // received packets. Most codecs like VP8 deal with this in other ways.
+  bool isFirstPacket = false;
+
   return ParseVideoCodecSpecificSwitch(
       rtpHeader,
       payloadData,
       payloadDataLength,
-      payload->typeSpecific.Video.videoCodecType);
+      payload->typeSpecific.Video.videoCodecType,
+      isFirstPacket);
 }
 
 WebRtc_Word32 RTPReceiverVideo::SetCodecType(const RtpVideoCodecTypes videoType,
@@ -288,7 +298,8 @@ WebRtc_Word32 RTPReceiverVideo::ParseVideoCodecSpecificSwitch(
     WebRtcRTPHeader* rtpHeader,
     const WebRtc_UWord8* payloadData,
     const WebRtc_UWord16 payloadDataLength,
-    const RtpVideoCodecTypes videoType) {
+    const RtpVideoCodecTypes videoType,
+    const bool isFirstPacket) {
   WebRtc_Word32 retVal = SetCodecType(videoType, rtpHeader);
   if (retVal != 0) {
     _criticalSectionReceiverVideo->Leave();
@@ -301,6 +312,7 @@ WebRtc_Word32 RTPReceiverVideo::ParseVideoCodecSpecificSwitch(
   // returning.
   switch (videoType) {
     case kRtpNoVideo:
+      rtpHeader->type.Video.isFirstPacket = isFirstPacket;
       return ReceiveGenericCodec(rtpHeader, payloadData, payloadDataLength);
     case kRtpVp8Video:
       return ReceiveVp8Codec(rtpHeader, payloadData, payloadDataLength);
@@ -386,13 +398,6 @@ WebRtc_Word32 RTPReceiverVideo::ReceiveGenericCodec(
     const WebRtc_UWord16 payloadDataLength) {
   rtpHeader->frameType = kVideoFrameKey;
 
-  bool isFirstPacketInFrame =
-      (_parent->SequenceNumber() + 1) == rtpHeader->header.sequenceNumber &&
-      (_parent->TimeStamp() != rtpHeader->header.timestamp);
-
-  if (isFirstPacketInFrame || _parent->HaveNotReceivedPackets()) {
-    rtpHeader->type.Video.isFirstPacket = true;
-  }
   _criticalSectionReceiverVideo->Leave();
 
   if (data_callback_->OnReceivedPayloadData(payloadData, payloadDataLength,

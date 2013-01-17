@@ -37,14 +37,16 @@ class RTPReceiverStrategy {
   // Implementations are encouraged to use the provided packet buffer and RTP
   // header as arguments to the callback; implementations are also allowed to
   // make changes in the data as necessary. The specific_payload argument
-  // provides audio or video-specific data.
+  // provides audio or video-specific data. The is_first_packet argument is true
+  // if this packet is either the first packet ever or the first in its frame.
   virtual WebRtc_Word32 ParseRtpPacket(
     WebRtcRTPHeader* rtp_header,
     const ModuleRTPUtility::PayloadUnion& specific_payload,
     const bool is_red,
     const WebRtc_UWord8* packet,
     const WebRtc_UWord16 packet_length,
-    const WebRtc_Word64 timestamp_ms) = 0;
+    const WebRtc_Word64 timestamp_ms,
+    const bool is_first_packet) = 0;
 
   // Retrieves the last known applicable frequency.
   virtual WebRtc_Word32 GetFrequencyHz() const = 0;

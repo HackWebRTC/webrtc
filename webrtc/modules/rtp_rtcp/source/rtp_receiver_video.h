@@ -23,12 +23,12 @@ class CriticalSectionWrapper;
 class ModuleRtpRtcpImpl;
 class ReceiverFEC;
 class RTPReceiver;
+class RTPPayloadRegistry;
 
 class RTPReceiverVideo : public RTPReceiverStrategy {
  public:
-  // TODO(phoglund): Get rid of dependency on "parent".
   RTPReceiverVideo(const WebRtc_Word32 id,
-                   RTPReceiver* parent,
+                   const RTPPayloadRegistry* rtp_payload_registry,
                    RtpData* data_callback,
                    ModuleRtpRtcpImpl* owner);
 
@@ -40,7 +40,8 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
       const bool is_red,
       const WebRtc_UWord8* packet,
       const WebRtc_UWord16 packet_length,
-      const WebRtc_Word64 timestamp);
+      const WebRtc_Word64 timestamp,
+      const bool is_first_packet);
 
   WebRtc_Word32 GetFrequencyHz() const;
 
@@ -85,7 +86,8 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
       WebRtcRTPHeader* rtpHeader,
       const WebRtc_UWord8* payloadData,
       const WebRtc_UWord16 payloadDataLength,
-      const RtpVideoCodecTypes videoType);
+      const RtpVideoCodecTypes videoType,
+      const bool isFirstPacket);
 
   WebRtc_Word32 ReceiveGenericCodec(WebRtcRTPHeader *rtpHeader,
                                     const WebRtc_UWord8* payloadData,
@@ -107,10 +109,11 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
       const bool isRED,
       const WebRtc_UWord8* incomingRtpPacket,
       const WebRtc_UWord16 incomingRtpPacketSize,
-      const WebRtc_Word64 nowMS);
+      const WebRtc_Word64 nowMS,
+      const bool isFirstPacket);
 
   WebRtc_Word32             _id;
-  RTPReceiver*              _parent;
+  const RTPPayloadRegistry* _rtpRtpPayloadRegistry;
 
   CriticalSectionWrapper*   _criticalSectionReceiverVideo;
 

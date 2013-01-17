@@ -18,7 +18,9 @@
 #include "webrtc/modules/rtp_rtcp/source/bitrate.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver_help.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -75,11 +77,6 @@ class RTPReceiver : public Bitrate {
                                WebRtc_UWord32* frequency,
                                WebRtc_UWord8* channels,
                                WebRtc_UWord32* rate) const;
-
-  WebRtc_Word32 RemotePayload(char payload_name[RTP_PAYLOAD_NAME_SIZE],
-                              WebRtc_Word8* payload_type,
-                              WebRtc_UWord32* frequency,
-                              WebRtc_UWord8* channels) const;
 
   WebRtc_Word32 IncomingRTPPacket(
       WebRtcRTPHeader* rtpheader,
@@ -158,7 +155,7 @@ class RTPReceiver : public Bitrate {
   void RTXStatus(bool* enable, WebRtc_UWord32* ssrc) const;
 
   RTPReceiverAudio* GetAudioReceiver() const {
-    return rtp_receiver_audio_;
+    return rtp_receiver_audio_.get();
   }
 
   virtual WebRtc_Word8 REDPayloadType() const;
@@ -190,9 +187,10 @@ class RTPReceiver : public Bitrate {
   bool ProcessNACKBitRate(WebRtc_UWord32 now);
 
  private:
-  RTPReceiverAudio*       rtp_receiver_audio_;
-  RTPReceiverVideo*       rtp_receiver_video_;
-  RTPReceiverStrategy*    rtp_media_receiver_;
+  RTPPayloadRegistry           rtp_payload_registry_;
+  scoped_ptr<RTPReceiverAudio> rtp_receiver_audio_;
+  scoped_ptr<RTPReceiverVideo> rtp_receiver_video_;
+  RTPReceiverStrategy*         rtp_media_receiver_;
 
   WebRtc_Word32           id_;
   ModuleRtpRtcpImpl&      rtp_rtcp_;
@@ -202,14 +200,10 @@ class RTPReceiver : public Bitrate {
   CriticalSectionWrapper* critical_section_rtp_receiver_;
   mutable WebRtc_Word64   last_receive_time_;
   WebRtc_UWord16          last_received_payload_length_;
-  WebRtc_Word8            last_received_payload_type_;
-  WebRtc_Word8            last_received_media_payload_type_;
 
   WebRtc_UWord32          packet_timeout_ms_;
-  WebRtc_Word8            red_payload_type_;
 
-  ModuleRTPUtility::PayloadTypeMap payload_type_map_;
-  RtpHeaderExtensionMap            rtp_header_extension_map_;
+  RtpHeaderExtensionMap   rtp_header_extension_map_;
 
   // SSRCs.
   WebRtc_UWord32            ssrc_;

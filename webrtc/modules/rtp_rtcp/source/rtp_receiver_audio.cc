@@ -255,7 +255,8 @@ WebRtc_Word32 RTPReceiverAudio::ParseRtpPacket(
     const bool isRed,
     const WebRtc_UWord8* packet,
     const WebRtc_UWord16 packetLength,
-    const WebRtc_Word64 timestampMs) {
+    const WebRtc_Word64 timestampMs,
+    const bool isFirstPacket) {
 
     const WebRtc_UWord8* payloadData =
         ModuleRTPUtility::GetPayloadData(rtpHeader, packet);
