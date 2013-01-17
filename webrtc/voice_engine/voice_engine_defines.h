@@ -106,7 +106,7 @@ enum { kVoiceEngineMaxIsacMaxPayloadSizeBytesSwb = 600 };
 // Lowest minimum playout delay
 enum { kVoiceEngineMinMinPlayoutDelayMs = 0 };
 // Highest minimum playout delay
-enum { kVoiceEngineMaxMinPlayoutDelayMs = 1000 };
+enum { kVoiceEngineMaxMinPlayoutDelayMs = 10000 };
 
 // Network
 // Min packet-timeout time for received RTP packets

@@ -6522,14 +6522,14 @@ Channel::UpdatePacketDelay(const WebRtc_UWord32 timestamp,
             timeStampDiffMs = 0;
             return -1;
         }
-        if (timeStampDiffMs > 5000)
+        if (timeStampDiffMs > (2 * kVoiceEngineMaxMinPlayoutDelayMs))
         {
             timeStampDiffMs = 0;
         }
 
         if (_averageDelayMs == 0)
         {
-            _averageDelayMs = timeStampDiffMs;
+            _averageDelayMs = timeStampDiffMs * 10;
         }
         else
         {
