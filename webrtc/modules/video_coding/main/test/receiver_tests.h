@@ -43,7 +43,8 @@ public:
         _outFile(NULL),
         _timingFile(NULL),
         width_(0),
-        height_(0) {}
+        height_(0),
+        count_(0) {}
 
     virtual ~FrameReceiveCallback();
 
@@ -52,14 +53,16 @@ public:
 private:
     static void SplitFilename(std::string filename, std::string* basename,
                               std::string* ending);
-    static std::string AppendWidthAndHeight(std::string basename,
-                                            unsigned int width,
-                                            unsigned int height);
+    static std::string AppendWidthHeightAndCount(std::string basename,
+                                                 unsigned int width,
+                                                 unsigned int height,
+                                                 int count);
     std::string     _outFilename;
     FILE*           _outFile;
     FILE*           _timingFile;
     unsigned int width_;
     unsigned int height_;
+    int count_;
 };
 
 class SharedState

@@ -67,8 +67,9 @@ FrameReceiveCallback::FrameToRender(I420VideoFrame& videoFrame)
         printf("New size: %ux%u\n", videoFrame.width(), videoFrame.height());
         width_ = videoFrame.width();
         height_ = videoFrame.height();
-        std::string filename_with_width_height = AppendWidthAndHeight(
-            _outFilename, width_, height_);
+        std::string filename_with_width_height = AppendWidthHeightAndCount(
+            _outFilename, width_, height_, count_);
+        ++count_;
         _outFile = fopen(filename_with_width_height.c_str(), "wb");
         if (_outFile == NULL)
         {
@@ -98,13 +99,14 @@ void FrameReceiveCallback::SplitFilename(std::string filename,
       *ending = "";
   }
 }
-std::string FrameReceiveCallback::AppendWidthAndHeight(
-    std::string filename, unsigned int width, unsigned int height) {
+std::string FrameReceiveCallback::AppendWidthHeightAndCount(
+    std::string filename, unsigned int width, unsigned int height, int count) {
   std::string basename;
   std::string ending;
   SplitFilename(filename, &basename, &ending);
   std::stringstream ss;
-  ss << basename << "." <<  width << "_" << height << "." << ending;
+  ss << basename << "_" << count << "." <<  width << "_" << height << "." <<
+      ending;
   return ss.str();
 }
 
@@ -220,21 +222,6 @@ int RtpPlay(CmdArgs& args)
         clock.IncrementDebugClock(1);
     }
 
-    switch (ret)
-    {
-    case 1:
-        printf("Success\n");
-        break;
-    case -1:
-        printf("Failed\n");
-        break;
-    case 0:
-        printf("Timeout\n");
-        break;
-    }
-
-    rtpStream.Print();
-
     // Tear down
     while (!payloadTypes.empty())
     {
@@ -243,6 +230,20 @@ int RtpPlay(CmdArgs& args)
     }
     delete vcm;
     vcm = NULL;
+    rtpStream.Print();
     Trace::ReturnTrace();
+
+    switch (ret)
+    {
+    case 1:
+        printf("Success\n");
+        return 0;
+    case -1:
+        printf("Failed\n");
+        return -1;
+    case 0:
+        printf("Timeout\n");
+        return -1;
+    }
     return 0;
 }
