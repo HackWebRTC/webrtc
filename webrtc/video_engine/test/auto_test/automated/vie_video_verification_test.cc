@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <sstream>
+#include <string>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -327,12 +329,18 @@ TEST_P(ParameterizedFullStackTest, RunsFullStackWithoutErrors)  {
 
   EXPECT_GE(actual_psnr, kExpectedMinimumPSNR);
   EXPECT_GE(actual_ssim, kExpectedMinimumSSIM);
+
+  std::stringstream ss;
+  ss << std::setprecision(3) << std::fixed << actual_psnr;
   webrtc::test::PrintResult(
       "psnr", "", parameter_table_[GetParam()].test_label,
-      actual_psnr, "dB", false);
+      ss.str(), "dB", false);
+
+  ss.str("");
+  ss << std::setprecision(3) << std::fixed << actual_ssim;
   webrtc::test::PrintResult(
       "ssim", "", parameter_table_[GetParam()].test_label,
-      actual_ssim, "", false);
+      ss.str(), "", false);
 }
 
 INSTANTIATE_TEST_CASE_P(FullStackTests, ParameterizedFullStackTest,
