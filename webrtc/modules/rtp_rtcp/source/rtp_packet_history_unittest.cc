@@ -18,18 +18,23 @@
 
 namespace webrtc {
 
-class FakeClock : public RtpRtcpClock {
+class FakeClock : public Clock {
  public:
   FakeClock() {
     time_in_ms_ = 123456;
   }
   // Return a timestamp in milliseconds relative to some arbitrary
   // source; the source is fixed for this clock.
-  virtual WebRtc_Word64 GetTimeInMS() {
+  virtual WebRtc_Word64 TimeInMilliseconds() {
     return time_in_ms_;
   }
+
+  virtual WebRtc_Word64 TimeInMicroseconds() {
+    return time_in_ms_ * 1000;
+  }
+
   // Retrieve an NTP absolute timestamp.
-  virtual void CurrentNTP(WebRtc_UWord32& secs, WebRtc_UWord32& frac) {
+  virtual void CurrentNtp(WebRtc_UWord32& secs, WebRtc_UWord32& frac) {
     secs = time_in_ms_ / 1000;
     frac = (time_in_ms_ % 1000) * 4294967;
   }
@@ -87,7 +92,7 @@ TEST_F(RtpPacketHistoryTest, SetStoreStatus) {
 TEST_F(RtpPacketHistoryTest, NoStoreStatus) {
   EXPECT_FALSE(hist_->StorePackets());
   uint16_t len = 0;
-  int64_t capture_time_ms = fake_clock_.GetTimeInMS();
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
   EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
                                    capture_time_ms, kAllowRetransmission));
@@ -101,7 +106,7 @@ TEST_F(RtpPacketHistoryTest, NoStoreStatus) {
 TEST_F(RtpPacketHistoryTest, DontStore) {
   hist_->SetStorePacketsStatus(true, 10);
   uint16_t len = 0;
-  int64_t capture_time_ms = fake_clock_.GetTimeInMS();
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
   EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
                                    capture_time_ms, kDontStore));
@@ -115,7 +120,7 @@ TEST_F(RtpPacketHistoryTest, DontStore) {
 
 TEST_F(RtpPacketHistoryTest, PutRtpPacket_TooLargePacketLength) {
   hist_->SetStorePacketsStatus(true, 10);
-  int64_t capture_time_ms = fake_clock_.GetTimeInMS();
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   EXPECT_EQ(-1, hist_->PutRTPPacket(packet_,
                                     kMaxPacketLength + 1,
                                     kMaxPacketLength,
@@ -126,7 +131,7 @@ TEST_F(RtpPacketHistoryTest, PutRtpPacket_TooLargePacketLength) {
 TEST_F(RtpPacketHistoryTest, GetRtpPacket_TooSmallBuffer) {
   hist_->SetStorePacketsStatus(true, 10);
   uint16_t len = 0;
-  int64_t capture_time_ms = fake_clock_.GetTimeInMS();
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
   EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
                                    capture_time_ms, kAllowRetransmission));
@@ -151,7 +156,7 @@ TEST_F(RtpPacketHistoryTest, PutRtpPacket) {
   CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
 
   EXPECT_FALSE(hist_->HasRTPPacket(kSeqNum));
-  int64_t capture_time_ms = fake_clock_.GetTimeInMS();
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
                                    capture_time_ms, kAllowRetransmission));
   EXPECT_TRUE(hist_->HasRTPPacket(kSeqNum));
@@ -220,7 +225,7 @@ TEST_F(RtpPacketHistoryTest, NoCaptureTime) {
   hist_->SetStorePacketsStatus(true, 10);
   uint16_t len = 0;
   fake_clock_.IncrementTime(1);
-  int64_t capture_time_ms = fake_clock_.GetTimeInMS();
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
   EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
                                    -1, kAllowRetransmission));
@@ -241,7 +246,7 @@ TEST_F(RtpPacketHistoryTest, NoCaptureTime) {
 TEST_F(RtpPacketHistoryTest, DontRetransmit) {
   hist_->SetStorePacketsStatus(true, 10);
   uint16_t len = 0;
-  int64_t capture_time_ms = fake_clock_.GetTimeInMS();
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
   EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
                                    capture_time_ms, kDontRetransmit));
@@ -259,7 +264,7 @@ TEST_F(RtpPacketHistoryTest, DontRetransmit) {
 TEST_F(RtpPacketHistoryTest, MinResendTime) {
   hist_->SetStorePacketsStatus(true, 10);
   uint16_t len = 0;
-  int64_t capture_time_ms = fake_clock_.GetTimeInMS();
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
   EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
                                    capture_time_ms, kAllowRetransmission));

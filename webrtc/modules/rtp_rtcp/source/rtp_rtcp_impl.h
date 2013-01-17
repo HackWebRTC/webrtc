@@ -484,7 +484,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   RTCPReceiver              rtcp_receiver_;
 
   bool                      owns_clock_;
-  RtpRtcpClock&             clock_;
+  Clock&                    clock_;
 
  private:
   int64_t RtcpReportInterval();

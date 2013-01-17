@@ -33,18 +33,23 @@ const int kTimeOffset = 22222;
 const int kMaxPacketLength = 1500;
 }  // namespace
 
-class FakeClockTest : public RtpRtcpClock {
+class FakeClockTest : public Clock {
  public:
   FakeClockTest() {
     time_in_ms_ = 123456;
   }
   // Return a timestamp in milliseconds relative to some arbitrary
   // source; the source is fixed for this clock.
-  virtual WebRtc_Word64 GetTimeInMS() {
+  virtual WebRtc_Word64 TimeInMilliseconds() {
     return time_in_ms_;
   }
+
+  virtual WebRtc_Word64 TimeInMicroseconds() {
+    return time_in_ms_ * 1000;
+  }
+
   // Retrieve an NTP absolute timestamp.
-  virtual void CurrentNTP(WebRtc_UWord32& secs, WebRtc_UWord32& frac) {
+  virtual void CurrentNtp(WebRtc_UWord32& secs, WebRtc_UWord32& frac) {
     secs = time_in_ms_ / 1000;
     frac = (time_in_ms_ % 1000) * 4294967;
   }
@@ -223,7 +228,7 @@ TEST_F(RtpSenderTest, DISABLED_TrafficSmoothing) {
   EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_,
                                           0,
                                           rtp_length,
-                                          fake_clock_.GetTimeInMS(),
+                                          fake_clock_.TimeInMilliseconds(),
                                           kAllowRetransmission));
   EXPECT_EQ(0, transport_.packets_sent_);
   const int kStoredTimeInMs = 100;

@@ -27,7 +27,7 @@ class ModuleRtpRtcpImpl;
 class RTCPReceiver : public TMMBRHelp
 {
 public:
-    RTCPReceiver(const WebRtc_Word32 id, RtpRtcpClock* clock,
+    RTCPReceiver(const WebRtc_Word32 id, Clock* clock,
                  ModuleRtpRtcpImpl* owner);
     virtual ~RTCPReceiver();
 
@@ -198,7 +198,7 @@ protected:
 
  private:
   WebRtc_Word32           _id;
-  RtpRtcpClock&           _clock;
+  Clock&           _clock;
   RTCPMethod              _method;
   WebRtc_Word64           _lastReceived;
   ModuleRtpRtcpImpl&      _rtpRtcp;

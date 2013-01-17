@@ -33,7 +33,7 @@ struct RtpPacket;
 class RTPSenderVideo
 {
 public:
-    RTPSenderVideo(const WebRtc_Word32 id, RtpRtcpClock* clock,
+    RTPSenderVideo(const WebRtc_Word32 id, Clock* clock,
                    RTPSenderInterface* rtpSender);
     virtual ~RTPSenderVideo();
 

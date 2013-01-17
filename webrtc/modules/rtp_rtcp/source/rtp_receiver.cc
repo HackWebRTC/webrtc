@@ -33,7 +33,7 @@ using ModuleRTPUtility::VideoPayload;
 
 RTPReceiver::RTPReceiver(const WebRtc_Word32 id,
                          const bool audio,
-                         RtpRtcpClock* clock,
+                         Clock* clock,
                          ModuleRtpRtcpImpl* owner,
                          RtpAudioFeedback* incoming_audio_messages_callback,
                          RtpData* incoming_payload_callback,
@@ -178,7 +178,7 @@ void RTPReceiver::PacketTimeout() {
       return;
     }
 
-    WebRtc_Word64 now = clock_.GetTimeInMS();
+    WebRtc_Word64 now = clock_.TimeInMilliseconds();
 
     if (now - last_receive_time_ > packet_timeout_ms_) {
       packet_time_out = true;
@@ -628,7 +628,7 @@ WebRtc_Word32 RTPReceiver::IncomingRTPPacket(
 
   WebRtc_Word32 ret_val = rtp_media_receiver_->ParseRtpPacket(
                             rtp_header, specific_payload, is_red, packet,
-                            packet_length, clock_.GetTimeInMS());
+                            packet_length, clock_.TimeInMilliseconds());
 
   if (ret_val < 0) {
     return ret_val;
@@ -646,13 +646,13 @@ WebRtc_Word32 RTPReceiver::IncomingRTPPacket(
 
   // Need to be updated after RetransmitOfOldPacket and
   // RetransmitOfOldPacketUpdateStatistics.
-  last_receive_time_ = clock_.GetTimeInMS();
+  last_receive_time_ = clock_.TimeInMilliseconds();
   last_received_payload_length_ = payload_data_length;
 
   if (!old_packet) {
     if (last_received_timestamp_ != rtp_header->header.timestamp) {
       last_received_timestamp_ = rtp_header->header.timestamp;
-      last_received_frame_time_ms_ = clock_.GetTimeInMS();
+      last_received_frame_time_ms_ = clock_.TimeInMilliseconds();
     }
     last_received_sequence_number_ = rtp_header->header.sequenceNumber;
     last_received_transmission_time_offset_ =
@@ -760,7 +760,7 @@ bool RTPReceiver::RetransmitOfOldPacket(
   }
 
   WebRtc_UWord32 frequency_khz = rtp_media_receiver_->GetFrequencyHz() / 1000;
-  WebRtc_Word64 time_diff_ms = clock_.GetTimeInMS() - last_receive_time_;
+  WebRtc_Word64 time_diff_ms = clock_.TimeInMilliseconds() - last_receive_time_;
 
   // Diff in time stamp since last received in order.
   WebRtc_Word32 rtp_time_stamp_diff_ms =

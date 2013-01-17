@@ -66,7 +66,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
  public:
   RTPSender(const WebRtc_Word32 id,
             const bool audio,
-            RtpRtcpClock* clock,
+            Clock* clock,
             Transport* transport,
             RtpAudioFeedback* audio_feedback,
             PacedSender* paced_sender);

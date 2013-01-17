@@ -80,7 +80,7 @@ RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
     RtpRtcp::Configuration configuration_copy;
     memcpy(&configuration_copy, &configuration,
            sizeof(RtpRtcp::Configuration));
-    configuration_copy.clock = ModuleRTPUtility::GetSystemClock();
+    configuration_copy.clock = Clock::GetRealTimeClock();
     ModuleRtpRtcpImpl* rtp_rtcp_instance =
         new ModuleRtpRtcpImpl(configuration_copy);
     rtp_rtcp_instance->OwnsClock();
@@ -107,9 +107,10 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       id_(configuration.id),
       audio_(configuration.audio),
       collision_detected_(false),
-      last_process_time_(configuration.clock->GetTimeInMS()),
-      last_bitrate_process_time_(configuration.clock->GetTimeInMS()),
-      last_packet_timeout_process_time_(configuration.clock->GetTimeInMS()),
+      last_process_time_(configuration.clock->TimeInMilliseconds()),
+      last_bitrate_process_time_(configuration.clock->TimeInMilliseconds()),
+      last_packet_timeout_process_time_(
+          configuration.clock->TimeInMilliseconds()),
       packet_overhead_(28),  // IPV4 UDP.
       critical_section_module_ptrs_(
         CriticalSectionWrapper::CreateCriticalSection()),
@@ -216,13 +217,13 @@ void ModuleRtpRtcpImpl::DeRegisterChildModule(RtpRtcp* remove_module) {
 // Returns the number of milliseconds until the module want a worker thread
 // to call Process.
 WebRtc_Word32 ModuleRtpRtcpImpl::TimeUntilNextProcess() {
-    const WebRtc_Word64 now = clock_.GetTimeInMS();
+    const WebRtc_Word64 now = clock_.TimeInMilliseconds();
   return kRtpRtcpMaxIdleTimeProcess - (now - last_process_time_);
 }
 
 // Process any pending tasks such as timeouts (non time critical events).
 WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
-    const WebRtc_Word64 now = clock_.GetTimeInMS();
+    const WebRtc_Word64 now = clock_.TimeInMilliseconds();
   last_process_time_ = now;
 
   if (now >=
@@ -304,7 +305,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
 
 void ModuleRtpRtcpImpl::ProcessDeadOrAliveTimer() {
   if (dead_or_alive_active_) {
-    const WebRtc_Word64 now = clock_.GetTimeInMS();
+    const WebRtc_Word64 now = clock_.TimeInMilliseconds();
     if (now > dead_or_alive_timeout_ms_ + dead_or_alive_last_timer_) {
       // RTCP is alive if we have received a report the last 12 seconds.
       dead_or_alive_last_timer_ += dead_or_alive_timeout_ms_;
@@ -339,7 +340,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetPeriodicDeadOrAliveStatus(
   dead_or_alive_active_ = enable;
   dead_or_alive_timeout_ms_ = sample_time_seconds * 1000;
   // Trigger the first after one period.
-  dead_or_alive_last_timer_ = clock_.GetTimeInMS();
+  dead_or_alive_last_timer_ = clock_.TimeInMilliseconds();
   return 0;
 }
 
@@ -1519,7 +1520,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendNACK(const WebRtc_UWord16* nack_list,
   if (wait_time == 5) {
     wait_time = 100;  // During startup we don't have an RTT.
   }
-  const WebRtc_Word64 now = clock_.GetTimeInMS();
+  const WebRtc_Word64 now = clock_.TimeInMilliseconds();
   const WebRtc_Word64 time_limit = now - wait_time;
   WebRtc_UWord16 nackLength = size;
   WebRtc_UWord16 start_id = 0;

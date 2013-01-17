@@ -31,7 +31,7 @@ struct RtpPacket {
 };
 
 RTPSenderVideo::RTPSenderVideo(const WebRtc_Word32 id,
-                               RtpRtcpClock* clock,
+                               Clock* clock,
                                RTPSenderInterface* rtpSender) :
     _id(id),
     _rtpSender(*rtpSender),

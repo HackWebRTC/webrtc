@@ -13,6 +13,7 @@
 
 #include "typedefs.h"
 #include "module_common_types.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 
 #ifndef NULL
     #define NULL    0
@@ -253,20 +254,6 @@ class RtcpRttObserver {
   virtual void OnRttUpdate(uint32_t rtt) = 0;
 
   virtual ~RtcpRttObserver() {};
-};
-
-// A clock interface that allows reading of absolute and relative
-// timestamps in an RTP/RTCP module.
-class RtpRtcpClock {
- public:
-  virtual ~RtpRtcpClock() {}
-
-  // Return a timestamp in milliseconds relative to some arbitrary
-  // source; the source is fixed for this clock.
-  virtual WebRtc_Word64 GetTimeInMS() = 0;
-
-  // Retrieve an NTP absolute timestamp.
-  virtual void CurrentNTP(WebRtc_UWord32& secs, WebRtc_UWord32& frac) = 0;
 };
 
 // Null object version of RtpFeedback.

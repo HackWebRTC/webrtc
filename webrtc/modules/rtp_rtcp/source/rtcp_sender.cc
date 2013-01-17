@@ -25,7 +25,7 @@ using RTCPUtility::RTCPCnameInformation;
 
 RTCPSender::RTCPSender(const WebRtc_Word32 id,
                        const bool audio,
-                       RtpRtcpClock* clock,
+                       Clock* clock,
                        ModuleRtpRtcpImpl* owner) :
     _id(id),
     _audio(audio),
@@ -183,10 +183,12 @@ RTCPSender::SetRTCPStatus(const RTCPMethod method)
     {
         if(_audio)
         {
-            _nextTimeToSendRTCP = _clock.GetTimeInMS() + (RTCP_INTERVAL_AUDIO_MS/2);
+            _nextTimeToSendRTCP = _clock.TimeInMilliseconds() +
+                (RTCP_INTERVAL_AUDIO_MS/2);
         } else
         {
-            _nextTimeToSendRTCP = _clock.GetTimeInMS() + (RTCP_INTERVAL_VIDEO_MS/2);
+            _nextTimeToSendRTCP = _clock.TimeInMilliseconds() +
+                (RTCP_INTERVAL_VIDEO_MS/2);
         }
     }
     _method = method;
@@ -302,7 +304,7 @@ void RTCPSender::SetLastRtpTime(uint32_t rtp_timestamp,
   last_rtp_timestamp_ = rtp_timestamp;
   if (capture_time_ms < 0) {
     // We don't currently get a capture time from VoiceEngine.
-    last_frame_capture_time_ms_ = _clock.GetTimeInMS();
+    last_frame_capture_time_ms_ = _clock.TimeInMilliseconds();
   } else {
     last_frame_capture_time_ms_ = capture_time_ms;
   }
@@ -318,7 +320,7 @@ RTCPSender::SetSSRC( const WebRtc_UWord32 ssrc)
         // not first SetSSRC, probably due to a collision
         // schedule a new RTCP report
         // make sure that we send a RTP packet
-        _nextTimeToSendRTCP = _clock.GetTimeInMS() + 100;
+        _nextTimeToSendRTCP = _clock.TimeInMilliseconds() + 100;
     }
     _SSRC = ssrc;
 }
@@ -449,7 +451,7 @@ From RFC 3550
       a value of the RTCP bandwidth below the intended average
 */
 
-    WebRtc_Word64 now = _clock.GetTimeInMS();
+    WebRtc_Word64 now = _clock.TimeInMilliseconds();
 
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
 
@@ -587,8 +589,9 @@ RTCPSender::BuildSR(WebRtc_UWord8* rtcpbuffer,
     // the frame being captured at this moment. We are calculating that
     // timestamp as the last frame's timestamp + the time since the last frame
     // was captured.
-    RTPtime = start_timestamp_ + last_rtp_timestamp_ + (_clock.GetTimeInMS() -
-        last_frame_capture_time_ms_) * (freqHz / 1000);
+    RTPtime = start_timestamp_ + last_rtp_timestamp_ + (
+        _clock.TimeInMilliseconds() - last_frame_capture_time_ms_) *
+            (freqHz / 1000);
 
     // Add sender data
     // Save  for our length field
@@ -1577,7 +1580,7 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
                                          remoteSR);
 
                 // get our NTP as late as possible to avoid a race
-                _clock.CurrentNTP(NTPsec, NTPfrac);
+                _clock.CurrentNtp(NTPsec, NTPfrac);
 
                 // Delay since last received report
                 WebRtc_UWord32 delaySinceLastReceivedSR = 0;
@@ -1599,7 +1602,7 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
             } else
             {
                 // we need to send our NTP even if we dont have received any reports
-                _clock.CurrentNTP(NTPsec, NTPfrac);
+                _clock.CurrentNtp(NTPsec, NTPfrac);
             }
         }
 
@@ -1694,7 +1697,7 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
                 }
                 timeToNext = (minIntervalMs/2) + (minIntervalMs*random/1000);
             }
-            _nextTimeToSendRTCP = _clock.GetTimeInMS() + timeToNext;
+            _nextTimeToSendRTCP = _clock.TimeInMilliseconds() + timeToNext;
         }
 
         // if the data does not fitt in the packet we fill it as much as possible

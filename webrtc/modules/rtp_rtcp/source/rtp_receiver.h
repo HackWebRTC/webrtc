@@ -36,7 +36,7 @@ class RTPReceiver : public Bitrate {
   // want callbacks to do nothing).
   RTPReceiver(const WebRtc_Word32 id,
               const bool audio,
-              RtpRtcpClock* clock,
+              Clock* clock,
               ModuleRtpRtcpImpl* owner,
               RtpAudioFeedback* incoming_audio_messages_callback,
               RtpData* incoming_payload_callback,

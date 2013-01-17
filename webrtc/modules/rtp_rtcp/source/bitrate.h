@@ -20,11 +20,11 @@
 
 namespace webrtc {
 
-class RtpRtcpClock;
+class Clock;
 
 class Bitrate {
  public:
-  explicit Bitrate(RtpRtcpClock* clock);
+  explicit Bitrate(Clock* clock);
 
   // Calculates rates.
   void Process();
@@ -42,7 +42,7 @@ class Bitrate {
   WebRtc_UWord32 BitrateNow() const;
 
  protected:
-  RtpRtcpClock& clock_;
+  Clock& clock_;
 
  private:
   WebRtc_UWord32 packet_rate_;

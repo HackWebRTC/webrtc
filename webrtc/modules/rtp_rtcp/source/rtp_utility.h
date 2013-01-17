@@ -61,19 +61,9 @@ namespace ModuleRTPUtility
 
     typedef std::map<WebRtc_Word8, Payload*> PayloadTypeMap;
 
-    // Return a clock that reads the time as reported by the operating
-    // system. The returned instances are guaranteed to read the same
-    // times; in particular, they return relative times relative to
-    // the same base.
-    // Note that even though the instances returned by this function
-    // read the same times a new object is created every time this
-    // API is called. The ownership of this object belongs to the
-    // caller.
-    RtpRtcpClock* GetSystemClock();
-
     // Return the current RTP timestamp from the NTP timestamp
     // returned by the specified clock.
-    WebRtc_UWord32 GetCurrentRTP(RtpRtcpClock* clock, WebRtc_UWord32 freq);
+    WebRtc_UWord32 GetCurrentRTP(Clock* clock, WebRtc_UWord32 freq);
 
     // Return the current RTP absolute timestamp.
     WebRtc_UWord32 ConvertNTPTimeToRTP(WebRtc_UWord32 NTPsec,

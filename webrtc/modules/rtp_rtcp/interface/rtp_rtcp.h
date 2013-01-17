@@ -55,7 +55,7 @@ class RtpRtcp : public Module {
     */
     int32_t id;
     bool audio;
-    RtpRtcpClock* clock;
+    Clock* clock;
     RtpRtcp* default_module;
     RtpData* incoming_data;
     RtpFeedback* incoming_messages;

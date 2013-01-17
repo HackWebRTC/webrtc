@@ -105,7 +105,7 @@ class RtcpSenderTest : public ::testing::Test {
                 &remote_bitrate_observer_,
                 over_use_detector_options_,
                 RemoteBitrateEstimator::kMultiStreamEstimation)) {
-    system_clock_ = ModuleRTPUtility::GetSystemClock();
+    system_clock_ = Clock::GetRealTimeClock();
     test_transport_ = new TestTransport();
 
     RtpRtcp::Configuration configuration;
@@ -139,7 +139,7 @@ class RtcpSenderTest : public ::testing::Test {
   }
 
   OverUseDetectorOptions over_use_detector_options_;
-  RtpRtcpClock* system_clock_;
+  Clock* system_clock_;
   ModuleRtpRtcpImpl* rtp_rtcp_impl_;
   RTCPSender* rtcp_sender_;
   RTCPReceiver* rtcp_receiver_;

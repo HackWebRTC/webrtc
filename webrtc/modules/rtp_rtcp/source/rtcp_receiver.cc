@@ -30,7 +30,7 @@ using namespace RTCPHelp;
 // The number of RTCP time intervals needed to trigger a timeout.
 const int kRrTimeoutIntervals = 3;
 
-RTCPReceiver::RTCPReceiver(const WebRtc_Word32 id, RtpRtcpClock* clock,
+RTCPReceiver::RTCPReceiver(const WebRtc_Word32 id, Clock* clock,
                            ModuleRtpRtcpImpl* owner)
     : TMMBRHelp(),
     _id(id),
@@ -285,7 +285,7 @@ RTCPReceiver::IncomingRTCPPacket(RTCPPacketInformation& rtcpPacketInformation,
 {
     CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
-    _lastReceived = _clock.GetTimeInMS();
+    _lastReceived = _clock.TimeInMilliseconds();
 
     RTCPUtility::RTCPPacketTypes pktType = rtcpParser->Begin();
     while (pktType != RTCPUtility::kRtcpNotValidCode)
@@ -406,7 +406,7 @@ RTCPReceiver::HandleSenderReceiverReport(RTCPUtility::RTCPParserV2& rtcpParser,
             _remoteSenderInfo.sendPacketCount = rtcpPacket.SR.SenderPacketCount;
             _remoteSenderInfo.sendOctetCount = rtcpPacket.SR.SenderOctetCount;
 
-            _clock.CurrentNTP(_lastReceivedSRNTPsecs, _lastReceivedSRNTPfrac);
+            _clock.CurrentNtp(_lastReceivedSRNTPsecs, _lastReceivedSRNTPfrac);
         }
         else
         {
@@ -466,7 +466,7 @@ RTCPReceiver::HandleReportBlock(const RTCPUtility::RTCPPacket& rtcpPacket,
     return;
   }
 
-  _lastReceivedRrMs = _clock.GetTimeInMS();
+  _lastReceivedRrMs = _clock.TimeInMilliseconds();
   const RTCPPacketReportBlockItem& rb = rtcpPacket.ReportBlockItem;
   reportBlock->remoteReceiveBlock.remoteSSRC = remoteSSRC;
   reportBlock->remoteReceiveBlock.sourceSSRC = rb.SSRC;
@@ -496,7 +496,7 @@ RTCPReceiver::HandleReportBlock(const RTCPUtility::RTCPPacket& rtcpPacket,
   WebRtc_UWord32 lastReceivedRRNTPsecs = 0;
   WebRtc_UWord32 lastReceivedRRNTPfrac = 0;
 
-  _clock.CurrentNTP(lastReceivedRRNTPsecs, lastReceivedRRNTPfrac);
+  _clock.CurrentNtp(lastReceivedRRNTPsecs, lastReceivedRRNTPfrac);
 
   // time when we received this in MS
   WebRtc_UWord32 receiveTimeMS = ModuleRTPUtility::ConvertNTPTimeToMS(
@@ -641,7 +641,7 @@ RTCPReceiver::GetReceiveInformation(WebRtc_UWord32 remoteSSRC) {
 void RTCPReceiver::UpdateReceiveInformation(
     RTCPReceiveInformation& receiveInformation) {
   // Update that this remote is alive
-  receiveInformation.lastTimeReceived = _clock.GetTimeInMS();
+  receiveInformation.lastTimeReceived = _clock.TimeInMilliseconds();
 }
 
 bool RTCPReceiver::RtcpRrTimeout(int64_t rtcp_interval_ms) {
@@ -650,7 +650,7 @@ bool RTCPReceiver::RtcpRrTimeout(int64_t rtcp_interval_ms) {
     return false;
 
   int64_t time_out_ms = kRrTimeoutIntervals * rtcp_interval_ms;
-  if (_clock.GetTimeInMS() > _lastReceivedRrMs + time_out_ms) {
+  if (_clock.TimeInMilliseconds() > _lastReceivedRrMs + time_out_ms) {
     // Reset the timer to only trigger one log.
     _lastReceivedRrMs = 0;
     return true;
@@ -664,7 +664,8 @@ bool RTCPReceiver::RtcpRrSequenceNumberTimeout(int64_t rtcp_interval_ms) {
     return false;
 
   int64_t time_out_ms = kRrTimeoutIntervals * rtcp_interval_ms;
-  if (_clock.GetTimeInMS() > _lastIncreasedSequenceNumberMs + time_out_ms) {
+  if (_clock.TimeInMilliseconds() > _lastIncreasedSequenceNumberMs +
+      time_out_ms) {
     // Reset the timer to only trigger one log.
     _lastIncreasedSequenceNumberMs = 0;
     return true;
@@ -676,7 +677,7 @@ bool RTCPReceiver::UpdateRTCPReceiveInformationTimers() {
   CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
   bool updateBoundingSet = false;
-  WebRtc_Word64 timeNow = _clock.GetTimeInMS();
+  WebRtc_Word64 timeNow = _clock.TimeInMilliseconds();
 
   std::map<WebRtc_UWord32, RTCPReceiveInformation*>::iterator receiveInfoIt =
       _receivedInfoMap.begin();
@@ -961,7 +962,7 @@ RTCPReceiver::HandleTMMBRItem(RTCPReceiveInformation& receiveInfo,
         rtcpPacket.TMMBRItem.MaxTotalMediaBitRate > 0)
     {
         receiveInfo.InsertTMMBRItem(senderSSRC, rtcpPacket.TMMBRItem,
-                                    _clock.GetTimeInMS());
+                                    _clock.TimeInMilliseconds());
         rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpTmmbr;
     }
 }
@@ -1149,7 +1150,7 @@ void RTCPReceiver::HandleFIRItem(RTCPReceiveInformation* receiveInfo,
     // check if we have reported this FIRSequenceNumber before
     if (rtcpPacket.FIRItem.CommandSequenceNumber !=
         receiveInfo->lastFIRSequenceNumber) {
-      WebRtc_Word64 now = _clock.GetTimeInMS();
+      WebRtc_Word64 now = _clock.TimeInMilliseconds();
       // sanity; don't go crazy with the callbacks
       if ((now - receiveInfo->lastFIRRequest) > RTCP_MIN_FRAME_LENGTH_MS) {
         receiveInfo->lastFIRRequest = now;
@@ -1307,7 +1308,7 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
       if ((rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpSr ||
           rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRr) &&
           rtcpPacketInformation.reportBlock) {
-        WebRtc_Word64 now = _clock.GetTimeInMS();
+        WebRtc_Word64 now = _clock.TimeInMilliseconds();
         _cbRtcpBandwidthObserver->OnReceivedRtcpReceiverReport(
             rtcpPacketInformation.remoteSSRC,
             rtcpPacketInformation.fractionLost,
@@ -1377,7 +1378,7 @@ WebRtc_Word32 RTCPReceiver::TMMBRReceived(const WebRtc_UWord32 size,
       for (WebRtc_UWord32 i = 0;
            (num < size) && (i < receiveInfo->TmmbrSet.lengthOfSet()); i++) {
         if (receiveInfo->GetTMMBRSet(i, num, candidateSet,
-                                     _clock.GetTimeInMS()) == 0) {
+                                     _clock.TimeInMilliseconds()) == 0) {
           num++;
         }
       }
@@ -1424,7 +1425,7 @@ void RTCPReceiver::PacketTimeout()
             return;
         }
 
-        WebRtc_Word64 now = _clock.GetTimeInMS();
+        WebRtc_Word64 now = _clock.TimeInMilliseconds();
         if(now - _lastReceived > _packetTimeOutMS)
         {
             packetTimeOut = true;

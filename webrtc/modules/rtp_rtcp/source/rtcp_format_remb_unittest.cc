@@ -69,7 +69,7 @@ class RtcpFormatRembTest : public ::testing::Test {
   virtual void TearDown();
 
   OverUseDetectorOptions over_use_detector_options_;
-  RtpRtcpClock* system_clock_;
+  Clock* system_clock_;
   ModuleRtpRtcpImpl* dummy_rtp_rtcp_impl_;
   RTCPSender* rtcp_sender_;
   RTCPReceiver* rtcp_receiver_;
@@ -79,7 +79,7 @@ class RtcpFormatRembTest : public ::testing::Test {
 };
 
 void RtcpFormatRembTest::SetUp() {
-  system_clock_ = ModuleRTPUtility::GetSystemClock();
+  system_clock_ = Clock::GetRealTimeClock();
   RtpRtcp::Configuration configuration;
   configuration.id = 0;
   configuration.audio = false;

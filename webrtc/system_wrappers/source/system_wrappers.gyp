@@ -24,6 +24,7 @@
       'sources': [
         '../interface/aligned_malloc.h',
         '../interface/atomic32.h',
+        '../interface/clock.h',
         '../interface/compile_assert.h',
         '../interface/condition_variable_wrapper.h',
         '../interface/cpu_info.h',
@@ -55,6 +56,7 @@
         'atomic32_mac.cc',
         'atomic32_posix.cc',
         'atomic32_win.cc',
+        'clock.cc',
         'condition_variable.cc',
         'condition_variable_posix.cc',
         'condition_variable_posix.h',
