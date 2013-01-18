@@ -248,8 +248,9 @@ int WebRtc_DelayEstimatorProcessFix(void* handle,
                                            near_q,
                                            &(self->near_spectrum_initialized));
 
+  WebRtc_AddBinaryFarSpectrum(self->binary_handle, binary_far_spectrum);
+
   return WebRtc_ProcessBinarySpectrum(self->binary_handle,
-                                      binary_far_spectrum,
                                       binary_near_spectrum);
 }
 
@@ -281,12 +282,13 @@ int WebRtc_DelayEstimatorProcessFloat(void* handle,
   binary_far_spectrum = BinarySpectrumFloat(far_spectrum,
                                             self->mean_far_spectrum,
                                             &(self->far_spectrum_initialized));
-  binary_near_spectrum = BinarySpectrumFloat(near_spectrum,
-                                             self->mean_near_spectrum,
-                                             &(self->near_spectrum_initialized));
+  binary_near_spectrum =
+      BinarySpectrumFloat(near_spectrum, self->mean_near_spectrum,
+                          &(self->near_spectrum_initialized));
+
+  WebRtc_AddBinaryFarSpectrum(self->binary_handle, binary_far_spectrum);
 
   return WebRtc_ProcessBinarySpectrum(self->binary_handle,
-                                      binary_far_spectrum,
                                       binary_near_spectrum);
 }
 

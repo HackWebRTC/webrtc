@@ -291,8 +291,8 @@ TEST_F(DelayEstimatorTest, ExactDelayEstimate) {
   for (int offset = -kLookahead; offset < kMaxDelay; offset++) {
     InitBinary();
     for (int i = kLookahead; i < (sequence_length + kLookahead); i++) {
+      WebRtc_AddBinaryFarSpectrum(binary_handle_, binary_spectrum[i + offset]);
       int delay = WebRtc_ProcessBinarySpectrum(binary_handle_,
-                                               binary_spectrum[i + offset],
                                                binary_spectrum[i]);
 
       // Verify that we WebRtc_binary_last_delay() returns correct delay.

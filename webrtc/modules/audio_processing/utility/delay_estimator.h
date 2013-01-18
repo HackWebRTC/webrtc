@@ -65,12 +65,26 @@ BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(int max_delay,
 //
 void WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator* handle);
 
-// Estimates and returns the delay between the binary far-end and binary near-
-// end spectra. The value will be offset by the lookahead (i.e. the lookahead
-// should be subtracted from the returned value).
+// Adds the binary far-end spectrum to the internal buffer. This spectrum is
+// used as reference when calculating the delay using
+// WebRtc_ProcessBinarySpectrum().
 // Inputs:
 //    - handle                : Pointer to the delay estimation instance.
 //    - binary_far_spectrum   : Far-end binary spectrum.
+//
+// Output:
+//    - handle                : Updated instance.
+//
+void WebRtc_AddBinaryFarSpectrum(BinaryDelayEstimator* handle,
+                                 uint32_t binary_far_spectrum);
+
+// Estimates and returns the delay between the binary far-end and binary near-
+// end spectra. It is assumed the binary far-end spectrum has been added using
+// WebRtc_AddBinaryFarSpectrum() prior to this call. The value will be offset by
+// the lookahead (i.e. the lookahead should be subtracted from the returned
+// value).
+// Inputs:
+//    - handle                : Pointer to the delay estimation instance.
 //    - binary_near_spectrum  : Near-end binary spectrum of the current block.
 //
 // Output:
@@ -82,7 +96,6 @@ void WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator* handle);
 //                              -2    - Insufficient data for estimation.
 //
 int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* handle,
-                                 uint32_t binary_far_spectrum,
                                  uint32_t binary_near_spectrum);
 
 // Returns the last calculated delay updated by the function
