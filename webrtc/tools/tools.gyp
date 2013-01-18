@@ -13,7 +13,7 @@
   'targets': [
     {
       'target_name': 'command_line_parser',
-      'type': '<(library)',
+      'type': 'static_library',
       'include_dirs': [
         '.',
       ],
@@ -29,7 +29,7 @@
     }, # command_line_parser
     {
       'target_name': 'video_quality_analysis',
-      'type': '<(library)',
+      'type': 'static_library',
       'dependencies': [
         '<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',
       ],
@@ -86,7 +86,7 @@
     }, # rgba_to_i420_converter
     {
       'target_name': 'frame_editing_lib',
-      'type': '<(library)',
+      'type': 'static_library',
       'dependencies': [
         '<(webrtc_root)/common_video/common_video.gyp:common_video',
       ],
