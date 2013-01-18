@@ -299,3 +299,13 @@ int WebRtc_last_delay(void* handle) {
 
   return WebRtc_binary_last_delay(self->binary_handle);
 }
+
+int WebRtc_last_delay_quality(void* handle) {
+  DelayEstimator* self = (DelayEstimator*) handle;
+
+  if (self == NULL) {
+    return -1;
+  }
+
+  return WebRtc_binary_last_delay_quality(self->binary_handle);
+}

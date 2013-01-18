@@ -98,6 +98,20 @@ int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* handle,
 //
 int WebRtc_binary_last_delay(BinaryDelayEstimator* handle);
 
+// Returns the estimation quality of the last calculated delay updated by the
+// function WebRtc_ProcessBinarySpectrum(...). The estimation quality is a value
+// in the interval [0, 1] in Q14. The higher the value, the better quality.
+//
+// Input:
+//    - handle                : Pointer to the delay estimation instance.
+//
+// Return value:
+//    - delay_quality         :  >= 0 - Estimation quality (in Q14) of last
+//                                      calculated delay value.
+//                              -2    - Insufficient data for estimation.
+//
+int WebRtc_binary_last_delay_quality(BinaryDelayEstimator* handle);
+
 // Updates the |mean_value| recursively with a step size of 2^-|factor|. This
 // function is used internally in the Binary Delay Estimator as well as the
 // Fixed point wrapper.

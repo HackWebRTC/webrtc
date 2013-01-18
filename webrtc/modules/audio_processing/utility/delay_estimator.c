@@ -157,7 +157,7 @@ int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* handle,
   int i = 0;
   int candidate_delay = -1;
 
-  int32_t value_best_candidate = 16384;  // 32 in Q9, (max |mean_bit_counts|).
+  int32_t value_best_candidate = 32 << 9;  // 32 in Q9, (max |mean_bit_counts|).
   int32_t value_worst_candidate = 0;
 
   assert(handle != NULL);
@@ -267,6 +267,18 @@ int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* handle,
 int WebRtc_binary_last_delay(BinaryDelayEstimator* handle) {
   assert(handle != NULL);
   return handle->last_delay;
+}
+
+int WebRtc_binary_last_delay_quality(BinaryDelayEstimator* handle) {
+  assert(handle != NULL);
+  // |last_delay_probability| is the opposite of quality and states how deep the
+  // minimum of the cost function is. The value states how many non-matching
+  // bits we have between the binary spectra for the corresponding delay
+  // estimate. The range is thus from 0 to 32, since we use 32 bits in the
+  // binary spectra.
+
+  // Return the quality = 1 - |last_delay_probability| / 32 (in Q14).
+  return (32 << 9) - handle->last_delay_probability;
 }
 
 void WebRtc_MeanEstimatorFix(int32_t new_value,

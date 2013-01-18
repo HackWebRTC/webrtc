@@ -77,6 +77,8 @@ void DelayEstimatorTest::Init() {
   // Verify initialization.
   EXPECT_EQ(0, self_->far_spectrum_initialized);
   EXPECT_EQ(0, self_->near_spectrum_initialized);
+  EXPECT_EQ(-2, WebRtc_last_delay(handle_));  // Delay in initial state.
+  EXPECT_EQ(0, WebRtc_last_delay_quality(handle_));  // Zero quality.
 }
 
 void DelayEstimatorTest::InitBinary() {
@@ -150,6 +152,10 @@ TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfWrapper) {
   // WebRtc_last_delay() should return -1 if we have a NULL pointer as |handle|.
   EXPECT_EQ(-1, WebRtc_last_delay(NULL));
 
+  // WebRtc_last_delay_quality() should return -1 if we have a NULL pointer as
+  // |handle|.
+  EXPECT_EQ(-1, WebRtc_last_delay_quality(NULL));
+
   // Free any local memory if needed.
   WebRtc_FreeDelayEstimator(handle);
 }
@@ -189,11 +195,13 @@ TEST_F(DelayEstimatorTest, CorrectLastDelay) {
                                                    spectrum_size_);
     if (last_delay != -2) {
       EXPECT_EQ(last_delay, WebRtc_last_delay(handle_));
+      EXPECT_EQ(7203, WebRtc_last_delay_quality(handle_));
       break;
     }
   }
   // Verify that we have left the initialized state.
   EXPECT_NE(-2, WebRtc_last_delay(handle_));
+  EXPECT_NE(0, WebRtc_last_delay_quality(handle_));
 
   // Fixed point operations.
   Init();
@@ -202,11 +210,13 @@ TEST_F(DelayEstimatorTest, CorrectLastDelay) {
                                                  spectrum_size_, 0, 0);
     if (last_delay != -2) {
       EXPECT_EQ(last_delay, WebRtc_last_delay(handle_));
+      EXPECT_EQ(7203, WebRtc_last_delay_quality(handle_));
       break;
     }
   }
   // Verify that we have left the initialized state.
   EXPECT_NE(-2, WebRtc_last_delay(handle_));
+  EXPECT_NE(0, WebRtc_last_delay_quality(handle_));
 }
 
 TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfBinaryEstimator) {
@@ -296,6 +306,7 @@ TEST_F(DelayEstimatorTest, ExactDelayEstimate) {
     }
     // Verify that we have left the initialized state.
     EXPECT_NE(-2, WebRtc_binary_last_delay(binary_handle_));
+    EXPECT_NE(0, WebRtc_binary_last_delay_quality(binary_handle_));
   }
 }
 

@@ -106,4 +106,20 @@ int WebRtc_DelayEstimatorProcessFloat(void* handle,
 //
 int WebRtc_last_delay(void* handle);
 
+// Returns the estimation quality/probability of the last calculated delay
+// updated by the function WebRtc_DelayEstimatorProcess(...). The estimation
+// quality is a value in the interval [0, 1] in Q9. The higher the value, the
+// better quality.
+//
+// Input:
+//      - handle        : Pointer to the delay estimation instance.
+//
+// Return value:
+//      - delay_quality :  >= 0 - Estimation quality (in Q9) of last calculated
+//                                delay value.
+//                        -1    - Error.
+//                        -2    - Insufficient data for estimation.
+//
+int WebRtc_last_delay_quality(void* handle);
+
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_DELAY_ESTIMATOR_WRAPPER_H_
