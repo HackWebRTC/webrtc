@@ -10,7 +10,7 @@
   'targets': [
     {
       'target_name': 'G711',
-      'type': '<(library)',
+      'type': 'static_library',
       'include_dirs': [
         'include',
       ],

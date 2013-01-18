@@ -10,7 +10,7 @@
   'targets': [
     {
       'target_name': 'vad',
-      'type': '<(library)',
+      'type': 'static_library',
       'dependencies': [
         'signal_processing',
       ],

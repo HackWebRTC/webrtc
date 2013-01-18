@@ -17,7 +17,7 @@
   'targets': [
     {
       'target_name': 'video_engine_core',
-      'type': '<(library)',
+      'type': 'static_library',
       'dependencies': [
 
         # common_video

@@ -10,7 +10,7 @@
   'targets': [
     {
       'target_name': 'NetEq',
-      'type': '<(library)',
+      'type': 'static_library',
       'dependencies': [
         'CNG',
         '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',
@@ -244,7 +244,7 @@
         {
          'target_name': 'NetEqTestTools',
           # Collection of useful functions used in other tests
-          'type': '<(library)',
+          'type': 'static_library',
           'variables': {
             # Expects RTP packets without payloads when enabled.
             'neteq_dummy_rtp%': 0,

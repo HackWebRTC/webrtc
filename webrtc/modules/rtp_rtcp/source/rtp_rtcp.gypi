@@ -10,7 +10,7 @@
   'targets': [
     {
       'target_name': 'rtp_rtcp',
-      'type': '<(library)',
+      'type': 'static_library',
       'dependencies': [
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/modules/modules.gyp:remote_bitrate_estimator',

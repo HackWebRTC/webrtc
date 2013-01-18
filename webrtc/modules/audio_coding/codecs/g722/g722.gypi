@@ -9,7 +9,7 @@
   'targets': [
     {
       'target_name': 'G722',
-      'type': '<(library)',
+      'type': 'static_library',
       'include_dirs': [
         'include',
       ],

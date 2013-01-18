@@ -10,7 +10,7 @@
   'targets': [
     {
       'target_name': 'signal_processing',
-      'type': '<(library)',
+      'type': 'static_library',
       'include_dirs': [
         'include',
       ],
@@ -109,7 +109,7 @@
       'targets': [
         {
           'target_name': 'signal_processing_neon',
-          'type': '<(library)',
+          'type': 'static_library',
           'includes': ['../../build/arm_neon.gypi',],
           'sources': [
             'cross_correlation_neon.S',

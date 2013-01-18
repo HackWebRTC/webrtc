@@ -10,7 +10,7 @@
   'targets': [
     {
       'target_name': 'webrtc_utility',
-      'type': '<(library)',
+      'type': 'static_library',
       'dependencies': [
         'audio_coding_module',
         '<(webrtc_root)/common_audio/common_audio.gyp:resampler',

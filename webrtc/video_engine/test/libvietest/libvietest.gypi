@@ -9,7 +9,7 @@
   'targets': [
     {
       'target_name': 'libvietest',
-      'type': '<(library)',
+      'type': 'static_library',
       'dependencies': [
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '<(DEPTH)/testing/gtest.gyp:gtest',

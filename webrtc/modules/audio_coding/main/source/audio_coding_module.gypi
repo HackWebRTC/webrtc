@@ -33,7 +33,7 @@
   'targets': [
     {
       'target_name': 'audio_coding_module',
-      'type': '<(library)',
+      'type': 'static_library',
       'defines': [
         '<@(audio_coding_defines)',
       ],

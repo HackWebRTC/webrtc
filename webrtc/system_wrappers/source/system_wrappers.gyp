@@ -11,7 +11,7 @@
   'targets': [
     {
       'target_name': 'system_wrappers',
-      'type': '<(library)',
+      'type': 'static_library',
       'include_dirs': [
         'spreadsortlib',
         '../interface',
@@ -198,7 +198,7 @@
             'chromium_code': 0,
           },
           'target_name': 'cpu_features_android',
-          'type': '<(library)',
+          'type': 'static_library',
           'sources': [
             # TODO(leozwang): Ideally we want to audomatically exclude .c files
             # as with .cc files, gyp currently only excludes .cc files.

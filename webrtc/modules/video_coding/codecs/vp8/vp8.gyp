@@ -23,7 +23,7 @@
   'targets': [
     {
       'target_name': 'webrtc_vp8',
-      'type': '<(library)',
+      'type': 'static_library',
       'dependencies': [
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/common_video/common_video.gyp:common_video',

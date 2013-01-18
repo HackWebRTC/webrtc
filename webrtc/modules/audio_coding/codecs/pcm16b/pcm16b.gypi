@@ -10,7 +10,7 @@
   'targets': [
     {
       'target_name': 'PCM16B',
-      'type': '<(library)',
+      'type': 'static_library',
       'include_dirs': [
         'include',
       ],

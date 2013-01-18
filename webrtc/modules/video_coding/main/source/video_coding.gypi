@@ -10,7 +10,7 @@
   'targets': [
     {
       'target_name': 'webrtc_video_coding',
-      'type': '<(library)',
+      'type': 'static_library',
       'dependencies': [
         'webrtc_i420',
         '<(webrtc_root)/common_video/common_video.gyp:common_video',

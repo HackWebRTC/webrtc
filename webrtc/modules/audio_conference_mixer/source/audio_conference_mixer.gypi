@@ -10,7 +10,7 @@
   'targets': [
     {
       'target_name': 'audio_conference_mixer',
-      'type': '<(library)',
+      'type': 'static_library',
       'dependencies': [
         'audio_processing',
         'webrtc_utility',

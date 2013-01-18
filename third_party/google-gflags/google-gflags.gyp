@@ -20,7 +20,7 @@
   'targets': [
     {
       'target_name': 'google-gflags',
-      'type': '<(library)',
+      'type': 'static_library',
       'include_dirs': [
         '<(gflags_gen_arch_root)/include/private',  # For config.h
         '<(gflags_gen_arch_root)/include',  # For configured files.

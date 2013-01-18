@@ -10,7 +10,7 @@
   'targets': [
     {
       'target_name': 'voice_engine_core',
-      'type': '<(library)',
+      'type': 'static_library',
       'dependencies': [
         '<(webrtc_root)/common_audio/common_audio.gyp:resampler',
         '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',

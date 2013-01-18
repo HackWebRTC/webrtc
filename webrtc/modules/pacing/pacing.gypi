@@ -10,7 +10,7 @@
   'targets': [
     {
       'target_name': 'paced_sender',
-      'type': '<(library)',
+      'type': 'static_library',
       'dependencies': [
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],

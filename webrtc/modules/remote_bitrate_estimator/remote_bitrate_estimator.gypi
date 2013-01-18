@@ -10,7 +10,7 @@
   'targets': [
     {
       'target_name': 'remote_bitrate_estimator',
-      'type': '<(library)',
+      'type': 'static_library',
       'dependencies': [
         # system_wrappers
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
