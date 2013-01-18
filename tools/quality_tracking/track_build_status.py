@@ -89,14 +89,6 @@ def _filter_undesired_bots(bot_to_status_mapping, desired_bot_names):
   return result
 
 
-def _filter_chrome_only_builds(bot_to_status_mapping):
-  """Filters chrome-only builds from the system so LKGR doesn't get confused."""
-  return dict((revision_to_bot_name, status)
-              for revision_to_bot_name, status
-              in bot_to_status_mapping.iteritems()
-              if not _is_chrome_only_build(revision_to_bot_name))
-
-
 def _main():
   dashboard = dashboard_connection.DashboardConnection(constants.CONSUMER_KEY)
   dashboard.read_required_files(constants.CONSUMER_SECRET_FILE,
@@ -104,7 +96,6 @@ def _main():
 
   bot_to_status_mapping = _download_and_parse_build_status()
   bot_to_status_mapping = _filter_undesired_bots(bot_to_status_mapping, BOTS)
-  bot_to_status_mapping = _filter_chrome_only_builds(bot_to_status_mapping)
 
   dashboard.send_post_request(constants.ADD_BUILD_STATUS_DATA_URL,
                               bot_to_status_mapping)

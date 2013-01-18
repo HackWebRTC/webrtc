@@ -55,7 +55,6 @@ SAMPLE_FILE = """
 <tr>
  <td class="title"><a href="http://www.chromium.org">WebRTC</a>
 
-
  </td>
    <td valign="middle" style="text-align: center" class="builder idle">
     <a href="builders/Android">Android</a></td>
@@ -443,7 +442,7 @@ MINIMAL_OK = """
 <tr>
 <td valign="bottom" class="sourcestamp">1570  </td>
 <td class="build success">
-<a href="builders/Android/builds/121">OK</a></td>
+<a href="builders/Linux%20Clang%20%5Bstable%5D/builds/121">OK</a></td>
 </tr>
 """
 
@@ -451,7 +450,8 @@ MINIMAL_FAIL = """
 <tr>
 <td valign="bottom" class="sourcestamp">1573  </td>
 <td class="build failure">
-  <a href="builders/LinuxVideoTest/builds/731">failed<br/>voe_auto_test</a>
+  <a href="builders/Linux%20Large%20Tests/builds/731">failed<br/>voe_auto_test
+  </a>
 </td>
 </tr>
 """
@@ -512,7 +512,8 @@ class TGridParserTest(unittest.TestCase):
     self.assertEqual(1, len(result), 'There is only one bot in the sample.')
     first_mapping = result.items()[0]
 
-    self.assertEqual('1570--Android', first_mapping[0])
+    # Note: the parser should unescape % quotations, like %20 for space.
+    self.assertEqual('1570--Linux Clang [stable]', first_mapping[0])
     self.assertEqual('121--OK', first_mapping[1])
 
   def test_parser_finds_failed_bot(self):
@@ -521,7 +522,7 @@ class TGridParserTest(unittest.TestCase):
     self.assertEqual(1, len(result), 'There is only one bot in the sample.')
     first_mapping = result.items()[0]
 
-    self.assertEqual('1573--LinuxVideoTest', first_mapping[0])
+    self.assertEqual('1573--Linux Large Tests', first_mapping[0])
     self.assertEqual('731--failed', first_mapping[1])
 
   def test_parser_finds_building_bot(self):

@@ -16,6 +16,7 @@
 __author__ = 'phoglund@webrtc.org (Patrik Höglund)'
 
 import re
+import urllib
 
 
 # This is here to work around a buggy build bot status message which makes no
@@ -50,7 +51,7 @@ def _parse_builds(revision, html):
                            BB_084_P1_BUGGY_STATUS + ')'
                            '.*?</a>.*?</td>',
                            html, re.DOTALL):
-    revision_and_bot_name = revision + "--" + match.group(1)
+    revision_and_bot_name = revision + "--" + urllib.unquote(match.group(1))
     build_number_and_status = match.group(2) + "--" + _map_status(
                                                           match.group(3))
 
