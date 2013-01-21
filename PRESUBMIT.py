@@ -8,10 +8,6 @@
 
 import os.path
 
-# All folders in LINT_FOLDERS will be scanned by cpplint by the presubmit
-# script. Note that subfolders are not included.
-LINT_FOLDERS = ['src/video_engine']
-
 def _LicenseHeader(input_api):
   """Returns the license header regexp."""
   # Accept any year number from 2011 to the current year
@@ -73,8 +69,7 @@ def _CheckNoFRIEND_TEST(input_api, output_api):
 
 def _IsLintWhitelisted(file_name):
   """ Checks if a file is whitelisted for lint check."""
-  # TODO(mflodman) Include subfolders in the check.
-  return (os.path.dirname(file_name) in LINT_FOLDERS)
+  return True
 
 def _CheckApprovedFilesLintClean(input_api, output_api,
                                  source_file_filter=None):
