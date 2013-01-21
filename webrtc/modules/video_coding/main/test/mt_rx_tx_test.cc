@@ -143,12 +143,12 @@ int MTRxTxTest(CmdArgs& args)
         printf("Cannot read file %s.\n", outname.c_str());
         return -1;
     }
-    TickTimeBase clock;
-    VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock);
+    Clock* clock = Clock::GetRealTimeClock();
+    VideoCodingModule* vcm = VideoCodingModule::Create(1, clock);
     RtpDataCallback dataCallback(vcm);
 
     RTPSendCompleteCallback* outgoingTransport =
-        new RTPSendCompleteCallback(&clock, "dump.rtp");
+        new RTPSendCompleteCallback(clock, "dump.rtp");
 
     RtpRtcp::Configuration configuration;
     configuration.id = 1;

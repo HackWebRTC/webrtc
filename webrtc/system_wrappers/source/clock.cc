@@ -220,15 +220,15 @@ static WindowsHelpTimer global_help_timer = {0, 0, {{ 0, 0}, 0}, 0};
 
 Clock* Clock::GetRealTimeClock() {
 #if defined(_WIN32)
-  return new WindowsRealTimeClock(&global_help_timer);
+  static WindowsRealTimeClock clock(&global_help_timer);
+  return &clock;
 #elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-  return new UnixRealTimeClock();
+  static UnixRealTimeClock clock;
+  return &clock;
 #else
   return NULL;
 #endif
 }
-
-SimulatedClock::SimulatedClock() : time_us_(0) {}
 
 SimulatedClock::SimulatedClock(int64_t initial_time_us)
     : time_us_(initial_time_us) {}
@@ -247,11 +247,11 @@ void SimulatedClock::CurrentNtp(uint32_t& seconds, uint32_t& fractions) {
       kMagicNtpFractionalUnit / 1000);
 }
 
-void SimulatedClock::AdvanceTimeMs(int64_t milliseconds) {
-  AdvanceTimeUs(1000 * milliseconds);
+void SimulatedClock::AdvanceTimeMilliseconds(int64_t milliseconds) {
+  AdvanceTimeMicroseconds(1000 * milliseconds);
 }
 
-void SimulatedClock::AdvanceTimeUs(int64_t microseconds) {
+void SimulatedClock::AdvanceTimeMicroseconds(int64_t microseconds) {
   time_us_ += microseconds;
 }
 

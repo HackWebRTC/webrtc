@@ -47,7 +47,7 @@ class TransportCallback:public RTPSendCompleteCallback
 {
  public:
     // constructor input: (receive side) rtp module to send encoded data to
-    TransportCallback(TickTimeBase* clock, const char* filename = NULL);
+    TransportCallback(Clock* clock, const char* filename = NULL);
     virtual ~TransportCallback();
     // Add packets to list
     // Incorporate network conditions - delay and packet loss

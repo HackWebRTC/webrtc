@@ -17,7 +17,7 @@
 #include "../source/internal_defines.h"
 #include "test_macros.h"
 #include "rtp_player.h"
-#include "modules/video_coding/main/source/mock/fake_tick_time.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -130,7 +130,7 @@ int RtpPlay(CmdArgs& args)
     if (outFile == "")
         outFile = test::OutputPath() + "RtpPlay_decoded.yuv";
     FrameReceiveCallback receiveCallback(outFile);
-    FakeTickTime clock(0);
+    SimulatedClock clock(0);
     VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock);
     RtpDataCallback dataCallback(vcm);
     RTPPlayer rtpStream(args.inputFile.c_str(), &dataCallback, &clock);
@@ -198,9 +198,9 @@ int RtpPlay(CmdArgs& args)
     ret = 0;
 
     // RTP stream main loop
-    while ((ret = rtpStream.NextPacket(clock.MillisecondTimestamp())) == 0)
+    while ((ret = rtpStream.NextPacket(clock.TimeInMilliseconds())) == 0)
     {
-        if (clock.MillisecondTimestamp() % 5 == 0)
+        if (clock.TimeInMilliseconds() % 5 == 0)
         {
             ret = vcm->Decode();
             if (ret < 0)
@@ -214,12 +214,12 @@ int RtpPlay(CmdArgs& args)
         {
             vcm->Process();
         }
-        if (MAX_RUNTIME_MS > -1 && clock.MillisecondTimestamp() >=
+        if (MAX_RUNTIME_MS > -1 && clock.TimeInMilliseconds() >=
             MAX_RUNTIME_MS)
         {
             break;
         }
-        clock.IncrementDebugClock(1);
+        clock.AdvanceTimeMilliseconds(1);
     }
 
     // Tear down

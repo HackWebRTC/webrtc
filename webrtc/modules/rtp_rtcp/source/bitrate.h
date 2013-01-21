@@ -42,7 +42,7 @@ class Bitrate {
   WebRtc_UWord32 BitrateNow() const;
 
  protected:
-  Clock& clock_;
+  Clock* clock_;
 
  private:
   WebRtc_UWord32 packet_rate_;

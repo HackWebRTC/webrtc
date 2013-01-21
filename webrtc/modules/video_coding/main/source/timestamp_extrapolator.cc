@@ -9,13 +9,13 @@
  */
 
 #include "internal_defines.h"
-#include "modules/video_coding/main/source/tick_time_base.h"
 #include "timestamp_extrapolator.h"
 #include "trace.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 
 namespace webrtc {
 
-VCMTimestampExtrapolator::VCMTimestampExtrapolator(TickTimeBase* clock,
+VCMTimestampExtrapolator::VCMTimestampExtrapolator(Clock* clock,
                                                    WebRtc_Word32 vcmId,
                                                    WebRtc_Word32 id)
 :
@@ -38,7 +38,7 @@ _accDrift(6600), // in timestamp ticks, i.e. 15 ms
 _accMaxError(7000),
 _P11(1e10)
 {
-    Reset(_clock->MillisecondTimestamp());
+    Reset(_clock->TimeInMilliseconds());
 }
 
 VCMTimestampExtrapolator::~VCMTimestampExtrapolator()
@@ -56,7 +56,7 @@ VCMTimestampExtrapolator::Reset(const WebRtc_Word64 nowMs /* = -1 */)
     }
     else
     {
-        _startMs = _clock->MillisecondTimestamp();
+        _startMs = _clock->TimeInMilliseconds();
     }
     _prevMs = _startMs;
     _firstTimestamp = 0;

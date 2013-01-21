@@ -19,7 +19,7 @@
 namespace webrtc
 {
 
-class TickTimeBase;
+class Clock;
 class VideoEncoder;
 class VideoDecoder;
 struct CodecSpecificInfo;
@@ -49,7 +49,7 @@ public:
     static VideoCodingModule* Create(const WebRtc_Word32 id);
 
     static VideoCodingModule* Create(const WebRtc_Word32 id,
-                                     TickTimeBase* clock);
+                                     Clock* clock);
 
     static void Destroy(VideoCodingModule* module);
 

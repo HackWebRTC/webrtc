@@ -16,13 +16,13 @@
 #include "webrtc/modules/video_coding/main/source/encoded_frame.h"
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"
 #include "webrtc/modules/video_coding/main/source/media_opt_util.h"
-#include "webrtc/modules/video_coding/main/source/tick_time_base.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
 VCMReceiver::VCMReceiver(VCMTiming* timing,
-                         TickTimeBase* clock,
+                         Clock* clock,
                          int32_t vcm_id,
                          int32_t receiver_id,
                          bool master)
@@ -95,10 +95,10 @@ int32_t VCMReceiver::InsertPacket(const VCMPacket& packet, uint16_t frame_width,
                    VCMId(vcm_id_, receiver_id_),
                    "Packet seq_no %u of frame %u at %u",
                    packet.seqNum, packet.timestamp,
-                   MaskWord64ToUWord32(clock_->MillisecondTimestamp()));
+                   MaskWord64ToUWord32(clock_->TimeInMilliseconds()));
     }
 
-    const int64_t now_ms = clock_->MillisecondTimestamp();
+    const int64_t now_ms = clock_->TimeInMilliseconds();
 
     int64_t render_time_ms = timing_->RenderTimeMs(packet.timestamp, now_ms);
 
@@ -106,7 +106,7 @@ int32_t VCMReceiver::InsertPacket(const VCMPacket& packet, uint16_t frame_width,
       // Render time error. Assume that this is due to some change in the
       // incoming video stream and reset the JB and the timing.
       jitter_buffer_.Flush();
-      timing_->Reset(clock_->MillisecondTimestamp());
+      timing_->Reset(clock_->TimeInMilliseconds());
       return VCM_FLUSH_INDICATOR;
     } else if (render_time_ms < now_ms - kMaxVideoDelayMs) {
       WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCoding,
@@ -115,7 +115,7 @@ int32_t VCMReceiver::InsertPacket(const VCMPacket& packet, uint16_t frame_width,
                    "Flushing jitter buffer and resetting timing.",
                    kMaxVideoDelayMs);
       jitter_buffer_.Flush();
-      timing_->Reset(clock_->MillisecondTimestamp());
+      timing_->Reset(clock_->TimeInMilliseconds());
       return VCM_FLUSH_INDICATOR;
     } else if (timing_->TargetVideoDelay() > kMaxVideoDelayMs) {
       WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCoding,
@@ -123,13 +123,13 @@ int32_t VCMReceiver::InsertPacket(const VCMPacket& packet, uint16_t frame_width,
                    "More than %u ms target delay. Flushing jitter buffer and"
                    "resetting timing.", kMaxVideoDelayMs);
       jitter_buffer_.Flush();
-      timing_->Reset(clock_->MillisecondTimestamp());
+      timing_->Reset(clock_->TimeInMilliseconds());
       return VCM_FLUSH_INDICATOR;
     }
 
     // First packet received belonging to this frame.
     if (buffer->Length() == 0) {
-      const int64_t now_ms = clock_->MillisecondTimestamp();
+      const int64_t now_ms = clock_->TimeInMilliseconds();
       if (master_) {
         // Only trace the primary receiver to make it possible to parse and plot
         // the trace file.
@@ -171,7 +171,7 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
   // is thread-safe.
   FrameType incoming_frame_type = kVideoFrameDelta;
   next_render_time_ms = -1;
-  const int64_t start_time_ms = clock_->MillisecondTimestamp();
+  const int64_t start_time_ms = clock_->TimeInMilliseconds();
   int64_t ret = jitter_buffer_.NextTimestamp(max_wait_time_ms,
                                              &incoming_frame_type,
                                              &next_render_time_ms);
@@ -186,7 +186,7 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
   timing_->UpdateCurrentDelay(time_stamp);
 
   const int32_t temp_wait_time = max_wait_time_ms -
-      static_cast<int32_t>(clock_->MillisecondTimestamp() - start_time_ms);
+      static_cast<int32_t>(clock_->TimeInMilliseconds() - start_time_ms);
   uint16_t new_max_wait_time = static_cast<uint16_t>(VCM_MAX(temp_wait_time,
                                                              0));
 
@@ -223,7 +223,7 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
     VCMReceiver* dual_receiver) {
   // How long can we wait until we must decode the next frame.
   uint32_t wait_time_ms = timing_->MaxWaitingTime(
-      next_render_time_ms, clock_->MillisecondTimestamp());
+      next_render_time_ms, clock_->TimeInMilliseconds());
 
   // Try to get a complete frame from the jitter buffer.
   VCMEncodedFrame* frame = jitter_buffer_.GetCompleteFrameForDecoding(0);
@@ -257,7 +257,7 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
   if (frame == NULL) {
     // Get an incomplete frame.
     if (timing_->MaxWaitingTime(next_render_time_ms,
-                                clock_->MillisecondTimestamp()) > 0) {
+                                clock_->TimeInMilliseconds()) > 0) {
       // Still time to wait for a complete frame.
       return NULL;
     }
@@ -286,7 +286,7 @@ VCMEncodedFrame* VCMReceiver::FrameForRendering(uint16_t max_wait_time_ms,
   // frame to the decoder, which will render the frame as soon as it has been
   // decoded.
   uint32_t wait_time_ms = timing_->MaxWaitingTime(
-      next_render_time_ms, clock_->MillisecondTimestamp());
+      next_render_time_ms, clock_->TimeInMilliseconds());
   if (max_wait_time_ms < wait_time_ms) {
     // If we're not allowed to wait until the frame is supposed to be rendered
     // we will have to return NULL for now.

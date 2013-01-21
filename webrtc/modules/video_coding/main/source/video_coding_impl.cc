@@ -16,7 +16,7 @@
 #include "packet.h"
 #include "trace.h"
 #include "video_codec_interface.h"
-#include "modules/video_coding/main/source/tick_time_base.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 
 namespace webrtc
 {
@@ -34,22 +34,20 @@ VCMProcessTimer::TimeUntilProcess() const
 {
     return static_cast<WebRtc_UWord32>(
         VCM_MAX(static_cast<WebRtc_Word64>(_periodMs) -
-                (_clock->MillisecondTimestamp() - _latestMs), 0));
+                (_clock->TimeInMilliseconds() - _latestMs), 0));
 }
 
 void
 VCMProcessTimer::Processed()
 {
-    _latestMs = _clock->MillisecondTimestamp();
+    _latestMs = _clock->TimeInMilliseconds();
 }
 
 VideoCodingModuleImpl::VideoCodingModuleImpl(const WebRtc_Word32 id,
-                                             TickTimeBase* clock,
-                                             bool delete_clock_on_destroy)
+                                             Clock* clock)
 :
 _id(id),
 clock_(clock),
-delete_clock_on_destroy_(delete_clock_on_destroy),
 _receiveCritSect(CriticalSectionWrapper::CreateCriticalSection()),
 _receiverInited(false),
 _timing(clock_, id, 1),
@@ -99,7 +97,6 @@ VideoCodingModuleImpl::~VideoCodingModuleImpl()
     }
     delete _receiveCritSect;
     delete _sendCritSect;
-    if (delete_clock_on_destroy_) delete clock_;
 #ifdef DEBUG_DECODER_BIT_STREAM
     fclose(_bitStreamBeforeDecoder);
 #endif
@@ -112,14 +109,14 @@ VideoCodingModuleImpl::~VideoCodingModuleImpl()
 VideoCodingModule*
 VideoCodingModule::Create(const WebRtc_Word32 id)
 {
-    return new VideoCodingModuleImpl(id, new TickTimeBase(), true);
+    return new VideoCodingModuleImpl(id, Clock::GetRealTimeClock());
 }
 
 VideoCodingModule*
-VideoCodingModule::Create(const WebRtc_Word32 id, TickTimeBase* clock)
+VideoCodingModule::Create(const WebRtc_Word32 id, Clock* clock)
 {
     assert(clock);
-    return new VideoCodingModuleImpl(id, clock, false);
+    return new VideoCodingModuleImpl(id, clock);
 }
 
 void
@@ -890,7 +887,7 @@ VideoCodingModuleImpl::Decode(WebRtc_UWord16 maxWaitTimeMs)
 
         // If this frame was too late, we should adjust the delay accordingly
         _timing.UpdateCurrentDelay(frame->RenderTimeMs(),
-                                   clock_->MillisecondTimestamp());
+                                   clock_->TimeInMilliseconds());
 
 #ifdef DEBUG_DECODER_BIT_STREAM
         if (_bitStreamBeforeDecoder != NULL)
@@ -1001,7 +998,7 @@ VideoCodingModuleImpl::DecodeDualFrame(WebRtc_UWord16 maxWaitTimeMs)
                      dualFrame->TimeStamp());
         // Decode dualFrame and try to catch up
         WebRtc_Word32 ret = _dualDecoder->Decode(*dualFrame,
-                                                 clock_->MillisecondTimestamp());
+                                                 clock_->TimeInMilliseconds());
         if (ret != WEBRTC_VIDEO_CODEC_OK)
         {
             WEBRTC_TRACE(webrtc::kTraceWarning,
@@ -1049,7 +1046,7 @@ VideoCodingModuleImpl::Decode(const VCMEncodedFrame& frame)
         return VCM_NO_CODEC_REGISTERED;
     }
     // Decode a frame
-    WebRtc_Word32 ret = _decoder->Decode(frame, clock_->MillisecondTimestamp());
+    WebRtc_Word32 ret = _decoder->Decode(frame, clock_->TimeInMilliseconds());
 
     // Check for failed decoding, run frame type request callback if needed.
     if (ret < 0)

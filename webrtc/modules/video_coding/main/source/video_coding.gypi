@@ -62,7 +62,6 @@
         'receiver.h',
         'rtt_filter.h',
         'session_info.h',
-        'tick_time_base.h',
         'timestamp_extrapolator.h',
         'timestamp_map.h',
         'timing.h',

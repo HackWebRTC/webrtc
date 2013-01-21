@@ -17,20 +17,19 @@
 
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/main/source/event.h"
-#include "modules/video_coding/main/source/mock/fake_tick_time.h"
-#include "modules/video_coding/main/source/tick_time_base.h"
 #include "modules/video_coding/main/test/test_callbacks.h"
 #include "modules/video_coding/main/test/test_macros.h"
 #include "modules/video_coding/main/test/test_util.h"
 #include "system_wrappers/interface/data_log.h"
 #include "system_wrappers/interface/data_log.h"
 #include "testsupport/metrics/video_metrics.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 
 using namespace webrtc;
 
 int qualityModeTest(const CmdArgs& args)
 {
-  FakeTickTime clock(0);
+  SimulatedClock clock(0);
   VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock);
   QualityModesTest QMTest(vcm, &clock);
   QMTest.Perform(args);
@@ -39,7 +38,7 @@ int qualityModeTest(const CmdArgs& args)
 }
 
 QualityModesTest::QualityModesTest(VideoCodingModule* vcm,
-                                   TickTimeBase* clock):
+                                   Clock* clock):
 NormalTest(vcm, clock),
 _vpm()
 {
@@ -367,8 +366,8 @@ QualityModesTest::Perform(const CmdArgs& args)
       DataLog::InsertCell(feature_table_name_, "frame rate", _nativeFrameRate);
       DataLog::NextRow(feature_table_name_);
 
-      static_cast<FakeTickTime*>(
-          _clock)->IncrementDebugClock(1000 / _nativeFrameRate);
+      static_cast<SimulatedClock*>(_clock)->AdvanceTimeMilliseconds(
+          1000 / _nativeFrameRate);
   }
 
   } while (feof(_sourceFile) == 0);

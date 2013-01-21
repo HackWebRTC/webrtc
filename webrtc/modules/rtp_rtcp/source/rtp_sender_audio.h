@@ -89,7 +89,7 @@ protected:
 
 private:
     WebRtc_Word32             _id;
-    Clock&                    _clock;
+    Clock*                    _clock;
     RTPSenderInterface*       _rtpSender;
     CriticalSectionWrapper*   _audioFeedbackCritsect;
     RtpAudioFeedback*         _audioFeedback;

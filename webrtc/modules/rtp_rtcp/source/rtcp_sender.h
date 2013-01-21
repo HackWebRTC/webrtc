@@ -186,7 +186,7 @@ private:
 private:
     WebRtc_Word32            _id;
     const bool               _audio;
-    Clock&                   _clock;
+    Clock*                   _clock;
     RTCPMethod               _method;
 
     ModuleRtpRtcpImpl&      _rtpRtcp;

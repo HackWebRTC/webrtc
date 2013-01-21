@@ -34,7 +34,7 @@ struct VCMFrameInformation
 class VCMDecodedFrameCallback : public DecodedImageCallback
 {
 public:
-    VCMDecodedFrameCallback(VCMTiming& timing, TickTimeBase* clock);
+    VCMDecodedFrameCallback(VCMTiming& timing, Clock* clock);
     virtual ~VCMDecodedFrameCallback();
     void SetUserReceiveCallback(VCMReceiveCallback* receiveCallback);
 
@@ -49,7 +49,7 @@ public:
 
 private:
     CriticalSectionWrapper* _critSect;
-    TickTimeBase* _clock;
+    Clock* _clock;
     I420VideoFrame _frame;
     VCMReceiveCallback* _receiveCallback;
     VCMTiming& _timing;

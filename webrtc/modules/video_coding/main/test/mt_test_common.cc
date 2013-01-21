@@ -12,12 +12,12 @@
 
 #include <cmath>
 
-#include "modules/video_coding/main/source/tick_time_base.h"
 #include "rtp_dump.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 
 namespace webrtc {
 
-TransportCallback::TransportCallback(TickTimeBase* clock, const char* filename)
+TransportCallback::TransportCallback(Clock* clock, const char* filename)
     : RTPSendCompleteCallback(clock, filename) {
 }
 
@@ -47,8 +47,8 @@ TransportCallback::SendPacket(int channel, const void *data, int len)
         transmitPacket = PacketLoss();
     }
 
-    TickTimeBase clock;
-    int64_t now = clock.MillisecondTimestamp();
+    Clock* clock = Clock::GetRealTimeClock();
+    int64_t now = clock->TimeInMilliseconds();
     // Insert outgoing packet into list
     if (transmitPacket)
     {
@@ -72,8 +72,8 @@ TransportCallback::TransportPackets()
 {
     // Are we ready to send packets to the receiver?
     RtpPacket* packet = NULL;
-    TickTimeBase clock;
-    int64_t now = clock.MillisecondTimestamp();
+    Clock* clock = Clock::GetRealTimeClock();
+    int64_t now = clock->TimeInMilliseconds();
 
     while (!_rtpPackets.empty())
     {

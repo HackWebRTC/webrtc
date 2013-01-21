@@ -99,7 +99,6 @@ void RtcpFormatRembTest::TearDown() {
   delete rtcp_receiver_;
   delete dummy_rtp_rtcp_impl_;
   delete test_transport_;
-  delete system_clock_;
 }
 
 TEST_F(RtcpFormatRembTest, TestBasicAPI) {

@@ -77,7 +77,7 @@ class RTPPacketHistory {
   bool FindSeqNum(uint16_t sequence_number, int32_t* index) const;
 
  private:
-  Clock& clock_;
+  Clock* clock_;
   CriticalSectionWrapper* critsect_;
   bool store_;
   uint32_t prev_index_;

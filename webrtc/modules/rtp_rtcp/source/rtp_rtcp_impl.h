@@ -454,12 +454,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   void OnRequestSendReport();
 
-  // Following function is only called when constructing the object so no
-  // need to worry about data race.
-  void OwnsClock() {
-    owns_clock_ = true;
-  }
-
  protected:
   void RegisterChildModule(RtpRtcp* module);
 
@@ -483,8 +477,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   RTCPSender                rtcp_sender_;
   RTCPReceiver              rtcp_receiver_;
 
-  bool                      owns_clock_;
-  Clock&                    clock_;
+  Clock*                    clock_;
 
  private:
   int64_t RtcpReportInterval();

@@ -33,33 +33,6 @@ const int kTimeOffset = 22222;
 const int kMaxPacketLength = 1500;
 }  // namespace
 
-class FakeClockTest : public Clock {
- public:
-  FakeClockTest() {
-    time_in_ms_ = 123456;
-  }
-  // Return a timestamp in milliseconds relative to some arbitrary
-  // source; the source is fixed for this clock.
-  virtual WebRtc_Word64 TimeInMilliseconds() {
-    return time_in_ms_;
-  }
-
-  virtual WebRtc_Word64 TimeInMicroseconds() {
-    return time_in_ms_ * 1000;
-  }
-
-  // Retrieve an NTP absolute timestamp.
-  virtual void CurrentNtp(WebRtc_UWord32& secs, WebRtc_UWord32& frac) {
-    secs = time_in_ms_ / 1000;
-    frac = (time_in_ms_ % 1000) * 4294967;
-  }
-  void IncrementTime(WebRtc_UWord32 time_increment_ms) {
-    time_in_ms_ += time_increment_ms;
-  }
- private:
-  WebRtc_Word64 time_in_ms_;
-};
-
 class LoopbackTransportTest : public webrtc::Transport {
  public:
   LoopbackTransportTest()
@@ -83,14 +56,14 @@ class LoopbackTransportTest : public webrtc::Transport {
 class RtpSenderTest : public ::testing::Test {
  protected:
   RtpSenderTest()
-    : fake_clock_(),
+    : fake_clock_(123456),
       rtp_sender_(new RTPSender(0, false, &fake_clock_, &transport_, NULL,
                                 NULL)),
       kMarkerBit(true),
       kType(kRtpExtensionTransmissionTimeOffset) {
     rtp_sender_->SetSequenceNumber(kSeqNum);
   }
-  FakeClockTest fake_clock_;
+  SimulatedClock fake_clock_;
   scoped_ptr<RTPSender> rtp_sender_;
   LoopbackTransportTest transport_;
   const bool kMarkerBit;
@@ -232,7 +205,7 @@ TEST_F(RtpSenderTest, DISABLED_TrafficSmoothing) {
                                           kAllowRetransmission));
   EXPECT_EQ(0, transport_.packets_sent_);
   const int kStoredTimeInMs = 100;
-  fake_clock_.IncrementTime(kStoredTimeInMs);
+  fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
   // Process send bucket. Packet should now be sent.
   EXPECT_EQ(1, transport_.packets_sent_);
   EXPECT_EQ(rtp_length, transport_.last_sent_packet_len_);

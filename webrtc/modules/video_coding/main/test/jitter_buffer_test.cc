@@ -19,10 +19,10 @@
 #include "jitter_estimate_test.h"
 #include "jitter_estimator.h"
 #include "media_opt_util.h"
-#include "modules/video_coding/main/source/tick_time_base.h"
 #include "packet.h"
 #include "test_util.h"
 #include "test_macros.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 
 // TODO(holmer): Get rid of this to conform with style guide.
 using namespace webrtc;
@@ -97,7 +97,7 @@ int JitterBufferTest(CmdArgs& args)
 #if defined(EVENT_DEBUG)
     return -1;
 #endif
-    TickTimeBase clock;
+    Clock* clock = Clock::GetRealTimeClock();
 
     // Start test
     WebRtc_UWord16 seqNum = 1234;
@@ -106,7 +106,7 @@ int JitterBufferTest(CmdArgs& args)
     WebRtc_UWord8 data[1500];
     VCMPacket packet(data, size, seqNum, timeStamp, true);
 
-    VCMJitterBuffer jb(&clock);
+    VCMJitterBuffer jb(clock);
 
     seqNum = 1234;
     timeStamp = 123*90;

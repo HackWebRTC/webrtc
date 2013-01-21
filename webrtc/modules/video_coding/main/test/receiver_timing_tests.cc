@@ -61,8 +61,8 @@ int ReceiverTimingTests(CmdArgs& args)
     // A static random seed
     srand(0);
 
-    TickTimeBase clock;
-    VCMTiming timing(&clock);
+    Clock* clock = Clock::GetRealTimeClock();
+    VCMTiming timing(clock);
     float clockInMs = 0.0;
     WebRtc_UWord32 waitTime = 0;
     WebRtc_UWord32 jitterDelayMs = 0;

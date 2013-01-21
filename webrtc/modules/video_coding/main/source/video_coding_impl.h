@@ -15,16 +15,16 @@
 
 #include <vector>
 
-#include "modules/video_coding/main/source/codec_database.h"
-#include "modules/video_coding/main/source/frame_buffer.h"
-#include "modules/video_coding/main/source/generic_decoder.h"
-#include "modules/video_coding/main/source/generic_encoder.h"
-#include "modules/video_coding/main/source/jitter_buffer.h"
-#include "modules/video_coding/main/source/media_optimization.h"
-#include "modules/video_coding/main/source/receiver.h"
-#include "modules/video_coding/main/source/tick_time_base.h"
-#include "modules/video_coding/main/source/timing.h"
-#include "system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/modules/video_coding/main/source/codec_database.h"
+#include "webrtc/modules/video_coding/main/source/frame_buffer.h"
+#include "webrtc/modules/video_coding/main/source/generic_decoder.h"
+#include "webrtc/modules/video_coding/main/source/generic_encoder.h"
+#include "webrtc/modules/video_coding/main/source/jitter_buffer.h"
+#include "webrtc/modules/video_coding/main/source/media_optimization.h"
+#include "webrtc/modules/video_coding/main/source/receiver.h"
+#include "webrtc/modules/video_coding/main/source/timing.h"
+#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 namespace webrtc
 {
@@ -32,16 +32,16 @@ namespace webrtc
 class VCMProcessTimer
 {
 public:
-    VCMProcessTimer(WebRtc_UWord32 periodMs, TickTimeBase* clock)
+    VCMProcessTimer(WebRtc_UWord32 periodMs, Clock* clock)
         : _clock(clock),
           _periodMs(periodMs),
-          _latestMs(_clock->MillisecondTimestamp()) {}
+          _latestMs(_clock->TimeInMilliseconds()) {}
     WebRtc_UWord32 Period() const;
     WebRtc_UWord32 TimeUntilProcess() const;
     void Processed();
 
 private:
-    TickTimeBase*         _clock;
+    Clock*                _clock;
     WebRtc_UWord32        _periodMs;
     WebRtc_Word64         _latestMs;
 };
@@ -59,8 +59,7 @@ class VideoCodingModuleImpl : public VideoCodingModule
 {
 public:
     VideoCodingModuleImpl(const WebRtc_Word32 id,
-                          TickTimeBase* clock,
-                          bool delete_clock_on_destroy);
+                          Clock* clock);
 
     virtual ~VideoCodingModuleImpl();
 
@@ -275,8 +274,7 @@ protected:
 
 private:
     WebRtc_Word32                       _id;
-    TickTimeBase*                       clock_;
-    bool                                delete_clock_on_destroy_;
+    Clock*                              clock_;
     CriticalSectionWrapper*             _receiveCritSect;
     bool                                _receiverInited;
     VCMTiming                           _timing;

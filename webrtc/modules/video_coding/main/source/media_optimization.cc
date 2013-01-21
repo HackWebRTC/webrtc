@@ -13,12 +13,12 @@
 #include "content_metrics_processing.h"
 #include "frame_dropper.h"
 #include "qm_select.h"
-#include "modules/video_coding/main/source/tick_time_base.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 
 namespace webrtc {
 
 VCMMediaOptimization::VCMMediaOptimization(WebRtc_Word32 id,
-                                           TickTimeBase* clock):
+                                           Clock* clock):
 _id(id),
 _clock(clock),
 _maxBitRate(0),
@@ -46,7 +46,7 @@ _numLayers(0)
     memset(_incomingFrameTimes, -1, sizeof(_incomingFrameTimes));
 
     _frameDropper  = new VCMFrameDropper(_id);
-    _lossProtLogic = new VCMLossProtectionLogic(_clock->MillisecondTimestamp());
+    _lossProtLogic = new VCMLossProtectionLogic(_clock->TimeInMilliseconds());
     _content = new VCMContentMetricsProcessing();
     _qmResolution = new VCMQmResolution();
 }
@@ -66,12 +66,12 @@ VCMMediaOptimization::Reset()
     memset(_incomingFrameTimes, -1, sizeof(_incomingFrameTimes));
     _incomingFrameRate = 0.0;
     _frameDropper->Reset();
-    _lossProtLogic->Reset(_clock->MillisecondTimestamp());
+    _lossProtLogic->Reset(_clock->TimeInMilliseconds());
     _frameDropper->SetRates(0, 0);
     _content->Reset();
     _qmResolution->Reset();
     _lossProtLogic->UpdateFrameRate(_incomingFrameRate);
-    _lossProtLogic->Reset(_clock->MillisecondTimestamp());
+    _lossProtLogic->Reset(_clock->TimeInMilliseconds());
     _sendStatisticsZeroEncode = 0;
     _targetBitRate = 0;
     _codecWidth = 0;
@@ -122,7 +122,7 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
     // Use max window filter for now.
     FilterPacketLossMode filter_mode = kMaxFilter;
     WebRtc_UWord8 packetLossEnc = _lossProtLogic->FilteredLoss(
-        _clock->MillisecondTimestamp(), filter_mode, fractionLost);
+        _clock->TimeInMilliseconds(), filter_mode, fractionLost);
 
     // For now use the filtered loss for computing the robustness settings
     _lossProtLogic->UpdateFilteredLossPr(packetLossEnc);
@@ -274,7 +274,7 @@ VCMMediaOptimization::SetEncodingData(VideoCodecType sendCodecType,
     // has changed. If native dimension values have changed, then either user
     // initiated change, or QM initiated change. Will be able to determine only
     // after the processing of the first frame.
-    _lastChangeTime = _clock->MillisecondTimestamp();
+    _lastChangeTime = _clock->TimeInMilliseconds();
     _content->Reset();
     _content->UpdateFrameRate(frameRate);
 
@@ -359,7 +359,7 @@ VCMMediaOptimization::SentFrameRate()
 float
 VCMMediaOptimization::SentBitRate()
 {
-    UpdateBitRateEstimate(-1, _clock->MillisecondTimestamp());
+    UpdateBitRateEstimate(-1, _clock->TimeInMilliseconds());
     return _avgSentBitRateBps / 1000.0f;
 }
 
@@ -374,7 +374,7 @@ VCMMediaOptimization::UpdateWithEncodedData(WebRtc_Word32 encodedLength,
                                             FrameType encodedFrameType)
 {
     // look into the ViE version - debug mode - needs also number of layers.
-    UpdateBitRateEstimate(encodedLength, _clock->MillisecondTimestamp());
+    UpdateBitRateEstimate(encodedLength, _clock->TimeInMilliseconds());
     if(encodedLength > 0)
     {
         const bool deltaFrame = (encodedFrameType != kVideoFrameKey &&
@@ -388,12 +388,12 @@ VCMMediaOptimization::UpdateWithEncodedData(WebRtc_Word32 encodedLength,
             if (deltaFrame)
             {
                 _lossProtLogic->UpdatePacketsPerFrame(
-                    minPacketsPerFrame, _clock->MillisecondTimestamp());
+                    minPacketsPerFrame, _clock->TimeInMilliseconds());
             }
             else
             {
                 _lossProtLogic->UpdatePacketsPerFrameKey(
-                    minPacketsPerFrame, _clock->MillisecondTimestamp());
+                    minPacketsPerFrame, _clock->TimeInMilliseconds());
             }
 
             if (_enableQm)
@@ -544,7 +544,7 @@ VCMMediaOptimization::SelectQuality()
     _qmResolution->ResetRates();
 
     // Reset counters
-    _lastQMUpdateTime = _clock->MillisecondTimestamp();
+    _lastQMUpdateTime = _clock->TimeInMilliseconds();
 
     // Reset content metrics
     _content->Reset();
@@ -567,7 +567,7 @@ VCMMediaOptimization::checkStatusForQMchange()
     // (to sample the metrics) from the event lastChangeTime
     // lastChangeTime is the time where user changed the size/rate/frame rate
     // (via SetEncodingData)
-    WebRtc_Word64 now = _clock->MillisecondTimestamp();
+    WebRtc_Word64 now = _clock->TimeInMilliseconds();
     if ((now - _lastQMUpdateTime) < kQmMinIntervalMs ||
         (now  - _lastChangeTime) <  kQmMinIntervalMs)
     {
@@ -619,7 +619,7 @@ bool VCMMediaOptimization::QMUpdate(VCMResolutionScale* qm) {
 void
 VCMMediaOptimization::UpdateIncomingFrameRate()
 {
-    WebRtc_Word64 now = _clock->MillisecondTimestamp();
+    WebRtc_Word64 now = _clock->TimeInMilliseconds();
     if (_incomingFrameTimes[0] == 0)
     {
         // first no shift
@@ -667,7 +667,7 @@ VCMMediaOptimization::ProcessIncomingFrameRate(WebRtc_Word64 now)
 WebRtc_UWord32
 VCMMediaOptimization::InputFrameRate()
 {
-    ProcessIncomingFrameRate(_clock->MillisecondTimestamp());
+    ProcessIncomingFrameRate(_clock->TimeInMilliseconds());
     return WebRtc_UWord32 (_incomingFrameRate + 0.5f);
 }
 

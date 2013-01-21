@@ -12,49 +12,24 @@
 
 #include <gtest/gtest.h>
 
+#include "clock.h"
 #include "rtp_packet_history.h"
 #include "rtp_rtcp_defines.h"
 #include "typedefs.h"
 
 namespace webrtc {
 
-class FakeClock : public Clock {
- public:
-  FakeClock() {
-    time_in_ms_ = 123456;
-  }
-  // Return a timestamp in milliseconds relative to some arbitrary
-  // source; the source is fixed for this clock.
-  virtual WebRtc_Word64 TimeInMilliseconds() {
-    return time_in_ms_;
-  }
-
-  virtual WebRtc_Word64 TimeInMicroseconds() {
-    return time_in_ms_ * 1000;
-  }
-
-  // Retrieve an NTP absolute timestamp.
-  virtual void CurrentNtp(WebRtc_UWord32& secs, WebRtc_UWord32& frac) {
-    secs = time_in_ms_ / 1000;
-    frac = (time_in_ms_ % 1000) * 4294967;
-  }
-  void IncrementTime(WebRtc_UWord32 time_increment_ms) {
-    time_in_ms_ += time_increment_ms;
-  }
- private:
-  WebRtc_Word64 time_in_ms_;
-};
-
 class RtpPacketHistoryTest : public ::testing::Test {
  protected:
   RtpPacketHistoryTest()
-     : hist_(new RTPPacketHistory(&fake_clock_)) {
+     : fake_clock_(123456),
+       hist_(new RTPPacketHistory(&fake_clock_)) {
   }
   ~RtpPacketHistoryTest() {
     delete hist_;
   }
   
-  FakeClock fake_clock_;
+  SimulatedClock fake_clock_;
   RTPPacketHistory* hist_;
   enum {kPayload = 127};
   enum {kSsrc = 12345678};
@@ -224,7 +199,7 @@ TEST_F(RtpPacketHistoryTest, ReplaceRtpHeader) {
 TEST_F(RtpPacketHistoryTest, NoCaptureTime) {
   hist_->SetStorePacketsStatus(true, 10);
   uint16_t len = 0;
-  fake_clock_.IncrementTime(1);
+  fake_clock_.AdvanceTimeMilliseconds(1);
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   CreateRtpPacket(kSeqNum, kSsrc, kPayload, kTimestamp, packet_, &len);
   EXPECT_EQ(0, hist_->PutRTPPacket(packet_, len, kMaxPacketLength,
@@ -270,7 +245,7 @@ TEST_F(RtpPacketHistoryTest, MinResendTime) {
                                    capture_time_ms, kAllowRetransmission));
 
   hist_->UpdateResendTime(kSeqNum);
-  fake_clock_.IncrementTime(100);
+  fake_clock_.AdvanceTimeMilliseconds(100);
 
   // Time has elapsed.
   len = kMaxPacketLength;

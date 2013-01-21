@@ -18,12 +18,12 @@
 #include "../source/event.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "common_types.h"
-#include "modules/video_coding/main/source/mock/fake_tick_time.h"
 #include "test_callbacks.h"
 #include "test_macros.h"
 #include "test_util.h"
 #include "trace.h"
 #include "testsupport/metrics/video_metrics.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 
 using namespace webrtc;
 
@@ -31,17 +31,18 @@ int NormalTest::RunTest(const CmdArgs& args)
 {
 #if defined(EVENT_DEBUG)
     printf("SIMULATION TIME\n");
-    FakeTickTime clock(0);
+    SimulatedClock sim_clock;
+    SimulatedClock* clock = &sim_clock;
 #else
     printf("REAL-TIME\n");
-    TickTimeBase clock;
+    Clock* clock = Clock::GetRealTimeClock();
 #endif
     Trace::CreateTrace();
     Trace::SetTraceFile(
         (test::OutputPath() + "VCMNormalTestTrace.txt").c_str());
     Trace::SetLevelFilter(webrtc::kTraceAll);
-    VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock);
-    NormalTest VCMNTest(vcm, &clock);
+    VideoCodingModule* vcm = VideoCodingModule::Create(1, clock);
+    NormalTest VCMNTest(vcm, clock);
     VCMNTest.Perform(args);
     VideoCodingModule::Destroy(vcm);
     Trace::ReturnTrace();
@@ -183,7 +184,7 @@ VCMNTDecodeCompleCallback::DecodedBytes()
 
  //VCM Normal Test Class implementation
 
-NormalTest::NormalTest(VideoCodingModule* vcm, TickTimeBase* clock)
+NormalTest::NormalTest(VideoCodingModule* vcm, Clock* clock)
 :
 _clock(clock),
 _vcm(vcm),
@@ -289,7 +290,7 @@ NormalTest::Perform(const CmdArgs& args)
 
   while (feof(_sourceFile) == 0) {
 #if !defined(EVENT_DEBUG)
-    WebRtc_Word64 processStartTime = _clock->MillisecondTimestamp();
+    WebRtc_Word64 processStartTime = _clock->TimeInMilliseconds();
 #endif
     TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0 ||
          feof(_sourceFile));
@@ -332,10 +333,10 @@ NormalTest::Perform(const CmdArgs& args)
             1000.0f / static_cast<float>(_sendCodec.maxFramerate) + 0.5f);
 
 #if defined(EVENT_DEBUG)
-    static_cast<FakeTickTime*>(_clock)->IncrementDebugClock(framePeriod);
+    static_cast<SimulatedClock*>(_clock)->AdvanceTimeMilliseconds(framePeriod);
 #else
     WebRtc_Word64 timeSpent =
-        _clock->MillisecondTimestamp() - processStartTime;
+        _clock->TimeInMilliseconds() - processStartTime;
     if (timeSpent < framePeriod)
     {
       waitEvent->Wait(framePeriod - timeSpent);

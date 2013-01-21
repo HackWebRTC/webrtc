@@ -35,7 +35,7 @@ enum VCMNackMode {
 typedef std::list<VCMFrameBuffer*> FrameList;
 
 // forward declarations
-class TickTimeBase;
+class Clock;
 class VCMFrameBuffer;
 class VCMPacket;
 class VCMEncodedFrame;
@@ -49,7 +49,7 @@ struct VCMJitterSample {
 
 class VCMJitterBuffer {
  public:
-  VCMJitterBuffer(TickTimeBase* clock, int vcm_id = -1, int receiver_id = -1,
+  VCMJitterBuffer(Clock* clock, int vcm_id = -1, int receiver_id = -1,
                   bool master = true);
   virtual ~VCMJitterBuffer();
 
@@ -206,7 +206,7 @@ class VCMJitterBuffer {
 
   int vcm_id_;
   int receiver_id_;
-  TickTimeBase* clock_;
+  Clock* clock_;
   // If we are running (have started) or not.
   bool running_;
   CriticalSectionWrapper* crit_sect_;

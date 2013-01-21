@@ -12,16 +12,16 @@
 #include <algorithm>
 #include <cassert>
 
-#include "modules/video_coding/main/source/event.h"
-#include "modules/video_coding/main/source/frame_buffer.h"
-#include "modules/video_coding/main/source/inter_frame_delay.h"
-#include "modules/video_coding/main/source/internal_defines.h"
-#include "modules/video_coding/main/source/jitter_buffer_common.h"
-#include "modules/video_coding/main/source/jitter_estimator.h"
-#include "modules/video_coding/main/source/packet.h"
-#include "modules/video_coding/main/source/tick_time_base.h"
-#include "system_wrappers/interface/critical_section_wrapper.h"
-#include "system_wrappers/interface/trace.h"
+#include "webrtc/modules/video_coding/main/source/event.h"
+#include "webrtc/modules/video_coding/main/source/frame_buffer.h"
+#include "webrtc/modules/video_coding/main/source/inter_frame_delay.h"
+#include "webrtc/modules/video_coding/main/source/internal_defines.h"
+#include "webrtc/modules/video_coding/main/source/jitter_buffer_common.h"
+#include "webrtc/modules/video_coding/main/source/jitter_estimator.h"
+#include "webrtc/modules/video_coding/main/source/packet.h"
+#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
@@ -61,7 +61,7 @@ class CompleteDecodableKeyFrameCriteria {
   }
 };
 
-VCMJitterBuffer::VCMJitterBuffer(TickTimeBase* clock,
+VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
                                  int vcm_id,
                                  int receiver_id,
                                  bool master)
@@ -90,7 +90,7 @@ VCMJitterBuffer::VCMJitterBuffer(TickTimeBase* clock,
       num_consecutive_old_packets_(0),
       num_discarded_packets_(0),
       jitter_estimate_(vcm_id, receiver_id),
-      inter_frame_delay_(clock_->MillisecondTimestamp()),
+      inter_frame_delay_(clock_->TimeInMilliseconds()),
       rtt_ms_(kDefaultRtt),
       nack_mode_(kNoNack),
       low_rtt_nack_threshold_ms_(-1),
@@ -177,7 +177,7 @@ void VCMJitterBuffer::Start() {
   incoming_frame_rate_ = 0;
   incoming_bit_count_ = 0;
   incoming_bit_rate_ = 0;
-  time_last_incoming_frame_count_ = clock_->MillisecondTimestamp();
+  time_last_incoming_frame_count_ = clock_->TimeInMilliseconds();
   memset(receive_statistics_, 0, sizeof(receive_statistics_));
 
   num_consecutive_old_frames_ = 0;
@@ -241,7 +241,7 @@ void VCMJitterBuffer::Flush() {
   num_consecutive_old_packets_ = 0;
   // Also reset the jitter and delay estimates
   jitter_estimate_.Reset();
-  inter_frame_delay_.Reset(clock_->MillisecondTimestamp());
+  inter_frame_delay_.Reset(clock_->TimeInMilliseconds());
   waiting_for_completion_.frame_size = 0;
   waiting_for_completion_.timestamp = 0;
   waiting_for_completion_.latest_packet_time = -1;
@@ -278,7 +278,7 @@ void VCMJitterBuffer::IncomingRateStatistics(unsigned int* framerate,
   assert(framerate);
   assert(bitrate);
   CriticalSectionScoped cs(crit_sect_);
-  const int64_t now = clock_->MillisecondTimestamp();
+  const int64_t now = clock_->TimeInMilliseconds();
   int64_t diff = now - time_last_incoming_frame_count_;
   if (diff < 1000 && incoming_frame_rate_ > 0 && incoming_bit_rate_ > 0) {
     // Make sure we report something even though less than
@@ -323,7 +323,7 @@ void VCMJitterBuffer::IncomingRateStatistics(unsigned int* framerate,
 
   } else {
     // No frames since last call
-    time_last_incoming_frame_count_ = clock_->MillisecondTimestamp();
+    time_last_incoming_frame_count_ = clock_->TimeInMilliseconds();
     *framerate = 0;
     bitrate = 0;
     incoming_bit_rate_ = 0;
@@ -437,8 +437,8 @@ VCMEncodedFrame* VCMJitterBuffer::GetCompleteFrameForDecoding(
       crit_sect_->Leave();
       return NULL;
     }
-    const int64_t end_wait_time_ms = clock_->MillisecondTimestamp()
-                                           + max_wait_time_ms;
+    const int64_t end_wait_time_ms = clock_->TimeInMilliseconds() +
+        max_wait_time_ms;
     int64_t wait_time_ms = max_wait_time_ms;
     while (wait_time_ms > 0) {
       crit_sect_->Leave();
@@ -457,8 +457,7 @@ VCMEncodedFrame* VCMJitterBuffer::GetCompleteFrameForDecoding(
         CleanUpOldFrames();
         it = FindOldestCompleteContinuousFrame(false);
         if (it == frame_list_.end()) {
-          wait_time_ms = end_wait_time_ms -
-                         clock_->MillisecondTimestamp();
+          wait_time_ms = end_wait_time_ms - clock_->TimeInMilliseconds();
         } else {
           break;
         }
@@ -663,7 +662,7 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(VCMEncodedFrame* encoded_frame,
                                                  const VCMPacket& packet) {
   assert(encoded_frame);
   CriticalSectionScoped cs(crit_sect_);
-  int64_t now_ms = clock_->MillisecondTimestamp();
+  int64_t now_ms = clock_->TimeInMilliseconds();
   VCMFrameBufferEnum buffer_return = kSizeError;
   VCMFrameBufferEnum ret = kSizeError;
   VCMFrameBuffer* frame = static_cast<VCMFrameBuffer*>(encoded_frame);
@@ -673,7 +672,7 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(VCMEncodedFrame* encoded_frame,
   if (first_packet_) {
     // Now it's time to start estimating jitter
     // reset the delay estimate.
-    inter_frame_delay_.Reset(clock_->MillisecondTimestamp());
+    inter_frame_delay_.Reset(clock_->TimeInMilliseconds());
     first_packet_ = false;
   }
 

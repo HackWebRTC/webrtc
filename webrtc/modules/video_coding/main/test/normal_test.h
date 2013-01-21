@@ -86,7 +86,7 @@ class NormalTest
 {
 public:
     NormalTest(webrtc::VideoCodingModule* vcm,
-               webrtc::TickTimeBase* clock);
+               webrtc::Clock* clock);
     ~NormalTest();
     static int RunTest(const CmdArgs& args);
     WebRtc_Word32    Perform(const CmdArgs& args);
@@ -108,7 +108,7 @@ protected:
     // calculating pipeline delay, and decoding time
     void            FrameDecoded(WebRtc_UWord32 timeStamp);
 
-    webrtc::TickTimeBase*            _clock;
+    webrtc::Clock*                   _clock;
     webrtc::VideoCodingModule*       _vcm;
     webrtc::VideoCodec               _sendCodec;
     webrtc::VideoCodec               _receiveCodec;

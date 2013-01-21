@@ -157,7 +157,7 @@ class RTPSendCompleteCallback: public Transport
 {
 public:
     // Constructor input: (receive side) rtp module to send encoded data to
-    RTPSendCompleteCallback(TickTimeBase* clock,
+    RTPSendCompleteCallback(Clock* clock,
                             const char* filename = NULL);
     virtual ~RTPSendCompleteCallback();
 
@@ -186,7 +186,7 @@ protected:
     // Random uniform loss model
     bool UnifomLoss(double lossPct);
 
-    TickTimeBase*           _clock;
+    Clock*                  _clock;
     WebRtc_UWord32          _sendCount;
     RtpRtcp*                _rtp;
     double                  _lossPct;

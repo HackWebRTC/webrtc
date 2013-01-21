@@ -78,7 +78,7 @@ class RtcpCallback : public RtcpFeedback, public RtcpIntraFrameObserver {
 
 class RtpRtcpRtcpTest : public ::testing::Test {
  protected:
-  RtpRtcpRtcpTest() {
+  RtpRtcpRtcpTest() : fake_clock(123456) {
     test_CSRC[0] = 1234;
     test_CSRC[1] = 2345;
     test_id = 123;
@@ -171,7 +171,7 @@ class RtpRtcpRtcpTest : public ::testing::Test {
   WebRtc_UWord32 test_timestamp;
   WebRtc_UWord16 test_sequence_number;
   WebRtc_UWord32 test_CSRC[webrtc::kRtpCsrcSize];
-  FakeRtpRtcpClock fake_clock;
+  SimulatedClock fake_clock;
 };
 
 TEST_F(RtpRtcpRtcpTest, RTCP_PLI_RPSI) {
@@ -194,9 +194,9 @@ TEST_F(RtpRtcpRtcpTest, RTCP_CNAME) {
   EXPECT_EQ(0, module1->AddMixedCNAME(test_CSRC[1], "jane@192.168.0.2"));
 
   // send RTCP packet, triggered by timer
-  fake_clock.IncrementTime(7500);
+  fake_clock.AdvanceTimeMilliseconds(7500);
   module1->Process();
-  fake_clock.IncrementTime(100);
+  fake_clock.AdvanceTimeMilliseconds(100);
   module2->Process();
 
   char cName[RTCP_CNAME_SIZE];
@@ -251,9 +251,9 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
           300));
 
   // send RTCP packet, triggered by timer
-  fake_clock.IncrementTime(7500);
+  fake_clock.AdvanceTimeMilliseconds(7500);
   module1->Process();
-  fake_clock.IncrementTime(100);
+  fake_clock.AdvanceTimeMilliseconds(100);
   module2->Process();
 
   WebRtc_UWord32 receivedNTPsecs = 0;
@@ -318,7 +318,7 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
   EXPECT_EQ(0, module1->SetSendingStatus(false));
 
   // Send RTCP packet, triggered by timer.
-  fake_clock.IncrementTime(5000);
+  fake_clock.AdvanceTimeMilliseconds(5000);
   module1->Process();
   module2->Process();
 }
@@ -330,9 +330,9 @@ TEST_F(RtpRtcpRtcpTest, RemoteRTCPStatRemote) {
   EXPECT_EQ(0u, report_blocks.size());
 
   // send RTCP packet, triggered by timer
-  fake_clock.IncrementTime(7500);
+  fake_clock.AdvanceTimeMilliseconds(7500);
   module1->Process();
-  fake_clock.IncrementTime(100);
+  fake_clock.AdvanceTimeMilliseconds(100);
   module2->Process();
 
   EXPECT_EQ(0, module1->RemoteRTCPStat(&report_blocks));

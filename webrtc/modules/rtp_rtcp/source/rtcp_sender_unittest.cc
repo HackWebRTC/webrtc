@@ -129,7 +129,6 @@ class RtcpSenderTest : public ::testing::Test {
     delete rtcp_receiver_;
     delete rtp_rtcp_impl_;
     delete test_transport_;
-    delete system_clock_;
   }
 
   // Helper function: Incoming RTCP has a specific packet type.

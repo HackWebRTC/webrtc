@@ -83,7 +83,6 @@ RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
     configuration_copy.clock = Clock::GetRealTimeClock();
     ModuleRtpRtcpImpl* rtp_rtcp_instance =
         new ModuleRtpRtcpImpl(configuration_copy);
-    rtp_rtcp_instance->OwnsClock();
     return rtp_rtcp_instance;
   }
 }
@@ -102,8 +101,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       rtcp_sender_(configuration.id, configuration.audio, configuration.clock,
                    this),
       rtcp_receiver_(configuration.id, configuration.clock, this),
-      owns_clock_(false),
-      clock_(*configuration.clock),
+      clock_(configuration.clock),
       id_(configuration.id),
       audio_(configuration.audio),
       collision_detected_(false),
@@ -168,9 +166,6 @@ ModuleRtpRtcpImpl::~ModuleRtpRtcpImpl() {
     plot1_ = NULL;
   }
 #endif
-  if (owns_clock_) {
-    delete &clock_;
-  }
 }
 
 void ModuleRtpRtcpImpl::RegisterChildModule(RtpRtcp* module) {
@@ -217,13 +212,13 @@ void ModuleRtpRtcpImpl::DeRegisterChildModule(RtpRtcp* remove_module) {
 // Returns the number of milliseconds until the module want a worker thread
 // to call Process.
 WebRtc_Word32 ModuleRtpRtcpImpl::TimeUntilNextProcess() {
-    const WebRtc_Word64 now = clock_.TimeInMilliseconds();
+    const WebRtc_Word64 now = clock_->TimeInMilliseconds();
   return kRtpRtcpMaxIdleTimeProcess - (now - last_process_time_);
 }
 
 // Process any pending tasks such as timeouts (non time critical events).
 WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
-    const WebRtc_Word64 now = clock_.TimeInMilliseconds();
+    const WebRtc_Word64 now = clock_->TimeInMilliseconds();
   last_process_time_ = now;
 
   if (now >=
@@ -305,7 +300,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
 
 void ModuleRtpRtcpImpl::ProcessDeadOrAliveTimer() {
   if (dead_or_alive_active_) {
-    const WebRtc_Word64 now = clock_.TimeInMilliseconds();
+    const WebRtc_Word64 now = clock_->TimeInMilliseconds();
     if (now > dead_or_alive_timeout_ms_ + dead_or_alive_last_timer_) {
       // RTCP is alive if we have received a report the last 12 seconds.
       dead_or_alive_last_timer_ += dead_or_alive_timeout_ms_;
@@ -340,7 +335,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetPeriodicDeadOrAliveStatus(
   dead_or_alive_active_ = enable;
   dead_or_alive_timeout_ms_ = sample_time_seconds * 1000;
   // Trigger the first after one period.
-  dead_or_alive_last_timer_ = clock_.TimeInMilliseconds();
+  dead_or_alive_last_timer_ = clock_->TimeInMilliseconds();
   return 0;
 }
 
@@ -1304,7 +1299,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::ReportBlockStatistics(
 #ifdef MATLAB
   if (plot1_ == NULL) {
     plot1_ = eng.NewPlot(new MatlabPlot());
-    plot1_->AddTimeLine(30, "b", "lost", clock_.GetTimeInMS());
+    plot1_->AddTimeLine(30, "b", "lost", clock_->TimeInMilliseconds());
   }
   plot1_->Append("lost", missing);
   plot1_->Plot();
@@ -1520,7 +1515,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendNACK(const WebRtc_UWord16* nack_list,
   if (wait_time == 5) {
     wait_time = 100;  // During startup we don't have an RTT.
   }
-  const WebRtc_Word64 now = clock_.TimeInMilliseconds();
+  const WebRtc_Word64 now = clock_->TimeInMilliseconds();
   const WebRtc_Word64 time_limit = now - wait_time;
   WebRtc_UWord16 nackLength = size;
   WebRtc_UWord16 start_id = 0;

@@ -15,7 +15,7 @@
 #include "rtp_rtcp.h"
 #include "critical_section_wrapper.h"
 #include "video_coding_defines.h"
-#include "modules/video_coding/main/source/tick_time_base.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 
 #include <stdio.h>
 #include <list>
@@ -78,7 +78,7 @@ class RTPPlayer : public webrtc::VCMPacketRequestCallback
 public:
     RTPPlayer(const char* filename,
               webrtc::RtpData* callback,
-              webrtc::TickTimeBase* clock);
+              webrtc::Clock* clock);
     virtual ~RTPPlayer();
 
     WebRtc_Word32 Initialize(const PayloadTypeList* payloadList);
@@ -93,7 +93,7 @@ private:
     WebRtc_Word32 SendPacket(WebRtc_UWord8* rtpData, WebRtc_UWord16 rtpLen);
     WebRtc_Word32 ReadPacket(WebRtc_Word16* rtpdata, WebRtc_UWord32* offset);
     WebRtc_Word32 ReadHeader();
-    webrtc::TickTimeBase* _clock;
+    webrtc::Clock*     _clock;
     FILE*              _rtpFile;
     webrtc::RtpRtcp*   _rtpModule;
     WebRtc_UWord32     _nextRtpTime;

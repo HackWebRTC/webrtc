@@ -14,11 +14,11 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/modules/video_coding/main/source/jitter_buffer.h"
 #include "webrtc/modules/video_coding/main/source/packet.h"
-#include "webrtc/modules/video_coding/main/source/tick_time_base.h"
 #include "webrtc/modules/video_coding/main/source/timing.h"
 
 namespace webrtc {
 
+class Clock;
 class VCMEncodedFrame;
 
 enum VCMNackStatus {
@@ -36,7 +36,7 @@ enum VCMReceiverState {
 class VCMReceiver {
  public:
   VCMReceiver(VCMTiming* timing,
-              TickTimeBase* clock,
+              Clock* clock,
               int32_t vcm_id = -1,
               int32_t receiver_id = -1,
               bool master = true);
@@ -81,7 +81,7 @@ class VCMReceiver {
 
   CriticalSectionWrapper* crit_sect_;
   int32_t vcm_id_;
-  TickTimeBase* clock_;
+  Clock* clock_;
   int32_t receiver_id_;
   bool master_;
   VCMJitterBuffer jitter_buffer_;

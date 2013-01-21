@@ -12,12 +12,12 @@
 #include "trace.h"
 #include "generic_decoder.h"
 #include "internal_defines.h"
-#include "tick_time_base.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 
 namespace webrtc {
 
 VCMDecodedFrameCallback::VCMDecodedFrameCallback(VCMTiming& timing,
-                                                 TickTimeBase* clock)
+                                                 Clock* clock)
 :
 _critSect(CriticalSectionWrapper::CreateCriticalSection()),
 _clock(clock),
@@ -56,7 +56,7 @@ WebRtc_Word32 VCMDecodedFrameCallback::Decoded(I420VideoFrame& decodedImage)
     _timing.StopDecodeTimer(
         decodedImage.timestamp(),
         frameInfo->decodeStartTimeMs,
-        _clock->MillisecondTimestamp());
+        _clock->TimeInMilliseconds());
 
     if (_receiveCallback != NULL)
     {

@@ -15,7 +15,7 @@
 namespace webrtc {
 
 Bitrate::Bitrate(Clock* clock)
-    : clock_(*clock),
+    : clock_(clock),
       packet_rate_(0),
       bitrate_(0),
       bitrate_next_idx_(0),
@@ -41,7 +41,7 @@ WebRtc_UWord32 Bitrate::BitrateLast() const {
 }
 
 WebRtc_UWord32 Bitrate::BitrateNow() const {
-  WebRtc_Word64 now = clock_.TimeInMilliseconds();
+  WebRtc_Word64 now = clock_->TimeInMilliseconds();
   WebRtc_Word64 diff_ms = now - time_last_rate_update_;
 
   if (diff_ms > 10000) {  // 10 seconds.
@@ -59,7 +59,7 @@ WebRtc_UWord32 Bitrate::BitrateNow() const {
 
 void Bitrate::Process() {
   // Triggered by timer.
-  WebRtc_Word64 now = clock_.TimeInMilliseconds();
+  WebRtc_Word64 now = clock_->TimeInMilliseconds();
   WebRtc_Word64 diff_ms = now - time_last_rate_update_;
 
   if (diff_ms < 100) {

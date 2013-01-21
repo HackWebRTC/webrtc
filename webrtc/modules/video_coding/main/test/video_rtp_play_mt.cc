@@ -8,16 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "receiver_tests.h"
-#include "video_coding.h"
-#include "rtp_rtcp.h"
-#include "trace.h"
-#include "thread_wrapper.h"
-#include "../source/event.h"
-#include "test_macros.h"
-#include "rtp_player.h"
-
 #include <string.h>
+
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/source/event.h"
+#include "webrtc/modules/video_coding/main/test/receiver_tests.h"
+#include "webrtc/modules/video_coding/main/test/rtp_player.h"
+#include "webrtc/modules/video_coding/main/test/test_macros.h"
+#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 using namespace webrtc;
 
@@ -39,8 +40,8 @@ bool RtpReaderThread(void* obj)
     SharedState* state = static_cast<SharedState*>(obj);
     EventWrapper& waitEvent = *EventWrapper::Create();
     // RTP stream main loop
-    TickTimeBase clock;
-    if (state->_rtpPlayer.NextPacket(clock.MillisecondTimestamp()) < 0)
+    Clock* clock = Clock::GetRealTimeClock();
+    if (state->_rtpPlayer.NextPacket(clock->TimeInMilliseconds()) < 0)
     {
         return false;
     }
@@ -82,9 +83,9 @@ int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTe
                 (protection == kProtectionDualDecoder ||
                 protection == kProtectionNack ||
                 kProtectionNackFEC));
-    TickTimeBase clock;
+    Clock* clock = Clock::GetRealTimeClock();
     VideoCodingModule* vcm =
-            VideoCodingModule::Create(1, &clock);
+            VideoCodingModule::Create(1, clock);
     RtpDataCallback dataCallback(vcm);
     std::string rtpFilename;
     rtpFilename = args.inputFile;
@@ -137,7 +138,7 @@ int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTe
         }
         printf("Watch %s to verify that the output is reasonable\n", outFilename.c_str());
     }
-    RTPPlayer rtpStream(rtpFilename.c_str(), &dataCallback, &clock);
+    RTPPlayer rtpStream(rtpFilename.c_str(), &dataCallback, clock);
     PayloadTypeList payloadTypes;
     payloadTypes.push_front(new PayloadCodecTuple(VCM_VP8_PAYLOAD_TYPE, "VP8",
                                                   kVideoCodecVP8));
@@ -164,10 +165,10 @@ int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTe
     }
 
     // Create and start all threads
-    ThreadWrapper* processingThread = ThreadWrapper::CreateThread(ProcessingThread,
-            &mtState, kNormalPriority, "ProcessingThread");
-    ThreadWrapper* rtpReaderThread = ThreadWrapper::CreateThread(RtpReaderThread,
-            &mtState, kNormalPriority, "RtpReaderThread");
+    ThreadWrapper* processingThread = ThreadWrapper::CreateThread(
+        ProcessingThread, &mtState, kNormalPriority, "ProcessingThread");
+    ThreadWrapper* rtpReaderThread = ThreadWrapper::CreateThread(
+        RtpReaderThread, &mtState, kNormalPriority, "RtpReaderThread");
     ThreadWrapper* decodeThread = ThreadWrapper::CreateThread(DecodeThread,
             &mtState, kNormalPriority, "DecodeThread");
 

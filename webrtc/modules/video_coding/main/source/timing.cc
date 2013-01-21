@@ -8,15 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "trace.h"
-#include "internal_defines.h"
-#include "jitter_buffer_common.h"
-#include "timing.h"
-#include "timestamp_extrapolator.h"
+#include "webrtc/modules/video_coding/main/source/timing.h"
+
+#include "webrtc/modules/video_coding/main/source/internal_defines.h"
+#include "webrtc/modules/video_coding/main/source/jitter_buffer_common.h"
+#include "webrtc/modules/video_coding/main/source/timestamp_extrapolator.h"
+#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
-VCMTiming::VCMTiming(TickTimeBase* clock,
+VCMTiming::VCMTiming(Clock* clock,
                      WebRtc_Word32 vcmId,
                      WebRtc_Word32 timingId,
                      VCMTiming* masterTiming)

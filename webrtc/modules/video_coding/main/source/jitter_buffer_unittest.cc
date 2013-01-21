@@ -15,8 +15,8 @@
 #include "gtest/gtest.h"
 #include "modules/video_coding/main/source/jitter_buffer.h"
 #include "modules/video_coding/main/source/media_opt_util.h"
-#include "modules/video_coding/main/source/mock/fake_tick_time.h"
 #include "modules/video_coding/main/source/packet.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 
 namespace webrtc {
 
@@ -145,10 +145,10 @@ class TestRunningJitterBuffer : public ::testing::Test {
   enum { kDefaultFramePeriodMs = 1000 / kDefaultFrameRate };
 
   virtual void SetUp() {
-    clock_ = new FakeTickTime(0);
-    jitter_buffer_ = new VCMJitterBuffer(clock_);
+    clock_.reset(new SimulatedClock(0));
+    jitter_buffer_ = new VCMJitterBuffer(clock_.get());
     stream_generator = new StreamGenerator(0, 0,
-                                           clock_->MillisecondTimestamp());
+                                           clock_->TimeInMilliseconds());
     jitter_buffer_->Start();
     memset(data_buffer_, 0, kDataBufferSize);
   }
@@ -157,7 +157,6 @@ class TestRunningJitterBuffer : public ::testing::Test {
     jitter_buffer_->Stop();
     delete stream_generator;
     delete jitter_buffer_;
-    delete clock_;
   }
 
   VCMFrameBufferEnum InsertPacketAndPop(int index) {
@@ -190,9 +189,9 @@ class TestRunningJitterBuffer : public ::testing::Test {
     stream_generator->GenerateFrame(frame_type,
                                     (frame_type != kFrameEmpty) ? 1 : 0,
                                     (frame_type == kFrameEmpty) ? 1 : 0,
-                                    clock_->MillisecondTimestamp());
+                                    clock_->TimeInMilliseconds());
     EXPECT_EQ(kFirstPacket, InsertPacketAndPop(0));
-    clock_->IncrementDebugClock(kDefaultFramePeriodMs);
+    clock_->AdvanceTimeMilliseconds(kDefaultFramePeriodMs);
   }
 
   void InsertFrames(int num_frames, FrameType frame_type) {
@@ -203,8 +202,8 @@ class TestRunningJitterBuffer : public ::testing::Test {
 
   void DropFrame(int num_packets) {
     stream_generator->GenerateFrame(kVideoFrameDelta, num_packets, 0,
-                                    clock_->MillisecondTimestamp());
-    clock_->IncrementDebugClock(kDefaultFramePeriodMs);
+                                    clock_->TimeInMilliseconds());
+    clock_->AdvanceTimeMilliseconds(kDefaultFramePeriodMs);
   }
 
   bool DecodeCompleteFrame() {
@@ -223,7 +222,7 @@ class TestRunningJitterBuffer : public ::testing::Test {
 
   VCMJitterBuffer* jitter_buffer_;
   StreamGenerator* stream_generator;
-  FakeTickTime* clock_;
+  scoped_ptr<SimulatedClock> clock_;
   uint8_t data_buffer_[kDataBufferSize];
 };
 
@@ -258,7 +257,7 @@ TEST_F(TestRunningJitterBuffer, TestFull) {
 TEST_F(TestRunningJitterBuffer, TestEmptyPackets) {
   // Make sure a frame can get complete even though empty packets are missing.
   stream_generator->GenerateFrame(kVideoFrameKey, 3, 3,
-                                  clock_->MillisecondTimestamp());
+                                  clock_->TimeInMilliseconds());
   EXPECT_EQ(kFirstPacket, InsertPacketAndPop(4));
   EXPECT_EQ(kIncomplete, InsertPacketAndPop(4));
   EXPECT_EQ(kIncomplete, InsertPacketAndPop(0));
@@ -319,8 +318,8 @@ TEST_F(TestJitterBufferNack, TestNormalOperation) {
   // | 1 | 2 | .. | 8 | 9 | x | 11 | 12 | .. | 19 | x | 21 | .. | 100 |
   //  ----------------------------------------------------------------
   stream_generator->GenerateFrame(kVideoFrameKey, 100, 0,
-                                  clock_->MillisecondTimestamp());
-  clock_->IncrementDebugClock(kDefaultFramePeriodMs);
+                                  clock_->TimeInMilliseconds());
+  clock_->AdvanceTimeMilliseconds(kDefaultFramePeriodMs);
   EXPECT_EQ(kFirstPacket, InsertPacketAndPop(0));
   // Verify that the frame is incomplete.
   EXPECT_FALSE(DecodeCompleteFrame());
@@ -348,11 +347,11 @@ TEST_F(TestJitterBufferNack, TestNormalOperationWrap) {
   //  -------   ------------------------------------------------------------
   // | 65532 | | 65533 | 65534 | 65535 | x | 1 | .. | 9 | x | 11 |.....| 96 |
   //  -------   ------------------------------------------------------------
-  stream_generator->Init(65532, 0, clock_->MillisecondTimestamp());
+  stream_generator->Init(65532, 0, clock_->TimeInMilliseconds());
   InsertFrame(kVideoFrameKey);
   EXPECT_TRUE(DecodeCompleteFrame());
   stream_generator->GenerateFrame(kVideoFrameDelta, 100, 0,
-                                  clock_->MillisecondTimestamp());
+                                  clock_->TimeInMilliseconds());
   EXPECT_EQ(kFirstPacket, InsertPacketAndPop(0));
   while (stream_generator->PacketsRemaining() > 1) {
     if (stream_generator->NextSequenceNumber() % 10 != 0)

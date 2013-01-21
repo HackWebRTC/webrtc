@@ -15,7 +15,7 @@
 #include "rtp_rtcp.h"
 #include "common_video/interface/i420_video_frame.h"
 #include "test_macros.h"
-#include "modules/video_coding/main/source/mock/fake_tick_time.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 
 using namespace webrtc;
 
@@ -27,7 +27,7 @@ int GenericCodecTest::RunTest(CmdArgs& args)
     printf("\n\nEnable debug events to run this test!\n\n");
     return -1;
 #endif
-    FakeTickTime clock(0);
+    SimulatedClock clock(0);
     VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock);
     GenericCodecTest* get = new GenericCodecTest(vcm, &clock);
     Trace::CreateTrace();
@@ -41,7 +41,8 @@ int GenericCodecTest::RunTest(CmdArgs& args)
     return 0;
 }
 
-GenericCodecTest::GenericCodecTest(VideoCodingModule* vcm, FakeTickTime* clock):
+GenericCodecTest::GenericCodecTest(VideoCodingModule* vcm,
+                                   SimulatedClock* clock):
 _clock(clock),
 _vcm(vcm),
 _width(0),
@@ -332,10 +333,6 @@ GenericCodecTest::Perform(CmdArgs& args)
                 IncrementDebugClock(_frameRate);
                 // The following should be uncommneted for timing tests. Release tests only include
                 // compliance with full sequence bit rate.
-
-
-                //totalBytes = WaitForEncodedFrame();
-                //currentTime = VCMTickTime::MillisecondTimestamp();//clock()/(double)CLOCKS_PER_SEC;
                 if (_frameCnt == _frameRate)// @ 1sec
                 {
                     totalBytesOneSec =  _encodeCompleteCallback->EncodedBytes();//totalBytes;
@@ -482,8 +479,8 @@ GenericCodecTest::Print()
 float
 GenericCodecTest::WaitForEncodedFrame() const
 {
-    WebRtc_Word64 startTime = _clock->MillisecondTimestamp();
-    while (_clock->MillisecondTimestamp() - startTime < kMaxWaitEncTimeMs*10)
+    WebRtc_Word64 startTime = _clock->TimeInMilliseconds();
+    while (_clock->TimeInMilliseconds() - startTime < kMaxWaitEncTimeMs*10)
     {
         if (_encodeCompleteCallback->EncodeComplete())
         {
@@ -496,7 +493,7 @@ GenericCodecTest::WaitForEncodedFrame() const
 void
 GenericCodecTest::IncrementDebugClock(float frameRate)
 {
-    _clock->IncrementDebugClock(1000/frameRate);
+    _clock->AdvanceTimeMilliseconds(1000/frameRate);
 }
 
 int

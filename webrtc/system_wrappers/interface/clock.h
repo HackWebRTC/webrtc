@@ -43,7 +43,6 @@ class Clock {
 
 class SimulatedClock : public Clock {
  public:
-  SimulatedClock();
   explicit SimulatedClock(int64_t initial_time_us);
 
   virtual ~SimulatedClock() {}
@@ -61,8 +60,8 @@ class SimulatedClock : public Clock {
 
   // Advance the simulated clock with a given number of milliseconds or
   // microseconds.
-  void AdvanceTimeMs(int64_t milliseconds);
-  void AdvanceTimeUs(int64_t microseconds);
+  void AdvanceTimeMilliseconds(int64_t milliseconds);
+  void AdvanceTimeMicroseconds(int64_t microseconds);
 
  private:
   int64_t time_us_;
