@@ -444,7 +444,8 @@ TransmitMixer::DemuxAndMix()
         } else if (channelPtr->Sending())
         {
             // load temporary audioframe with current (mixed) microphone signal
-            AudioFrame tmpAudioFrame = _audioFrame;
+            AudioFrame tmpAudioFrame;
+            tmpAudioFrame.CopyFrom(_audioFrame);
 
             channelPtr->Demultiplex(tmpAudioFrame);
             channelPtr->PrepareEncodeAndSend(_mixingFrequency);

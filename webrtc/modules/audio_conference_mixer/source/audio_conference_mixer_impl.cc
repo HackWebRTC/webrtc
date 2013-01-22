@@ -173,7 +173,7 @@ bool AudioConferenceMixerImpl::Init()
     if (!SetNumLimiterChannels(1))
         return false;
 
-    if(_limiter->gain_control()->set_mode(GainControl::kFixedDigital) != 
+    if(_limiter->gain_control()->set_mode(GainControl::kFixedDigital) !=
         _limiter->kNoError)
         return false;
 
@@ -1125,7 +1125,7 @@ WebRtc_Word32 AudioConferenceMixerImpl::MixFromList(
     {
         // No mixing required here; skip the saturation protection.
         AudioFrame* audioFrame = static_cast<AudioFrame*>(item->GetItem());
-        mixedAudio = *audioFrame;
+        mixedAudio.CopyFrom(*audioFrame);
         SetParticipantStatistics(&_scratchMixedParticipants[position],
                                  *audioFrame);
         return 0;
@@ -1173,7 +1173,7 @@ WebRtc_Word32 AudioConferenceMixerImpl::MixAnonomouslyFromList(
     {
         // No mixing required here; skip the saturation protection.
         AudioFrame* audioFrame = static_cast<AudioFrame*>(item->GetItem());
-        mixedAudio = *audioFrame;
+        mixedAudio.CopyFrom(*audioFrame);
         return 0;
     }
 

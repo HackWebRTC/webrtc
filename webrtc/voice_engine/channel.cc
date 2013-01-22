@@ -660,7 +660,7 @@ Channel::OnInitializeDecoder(
     receiveCodec.channels = channels;
     receiveCodec.rate = rate;
     strncpy(receiveCodec.plname, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
-    
+
     _audioCodingModule.Codec(payloadName, dummyCodec, frequency, channels);
     receiveCodec.pacsize = dummyCodec.pacsize;
 
@@ -3789,7 +3789,7 @@ int Channel::StartPlayingFileAsMicrophone(InStream* stream,
         _inputFilePlayerPtr = NULL;
         return -1;
     }
-    
+
     _inputFilePlayerPtr->RegisterModuleFileCallback(this);
     _inputFilePlaying = true;
 
@@ -4009,7 +4009,7 @@ int Channel::StartRecordingPlayout(OutStream* stream,
         _outputFileRecorderPtr = NULL;
         return -1;
     }
-    
+
     _outputFileRecorderPtr->RegisterModuleFileCallback(this);
     _outputFileRecording = true;
 
@@ -5794,7 +5794,7 @@ Channel::Demultiplex(const AudioFrame& audioFrame)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::Demultiplex()");
-    _audioFrame = audioFrame;
+    _audioFrame.CopyFrom(audioFrame);
     _audioFrame.id_ = _channelId;
     return 0;
 }
@@ -6343,7 +6343,7 @@ Channel::InsertInbandDtmfTone()
             // account.
             _inbandDtmfGenerator.ResetTone();
         }
-        
+
         WebRtc_Word16 toneBuffer[320];
         WebRtc_UWord16 toneSamples(0);
         // Get 10ms tone segment and set time since last tone to zero
@@ -6356,19 +6356,19 @@ Channel::InsertInbandDtmfTone()
         }
 
         // Replace mixed audio with DTMF tone.
-        for (int sample = 0; 
+        for (int sample = 0;
             sample < _audioFrame.samples_per_channel_;
             sample++)
         {
-            for (int channel = 0; 
-                channel < _audioFrame.num_channels_; 
+            for (int channel = 0;
+                channel < _audioFrame.num_channels_;
                 channel++)
             {
-                _audioFrame.data_[sample * _audioFrame.num_channels_ + channel] = 
-                        toneBuffer[sample];
+                const int index = sample * _audioFrame.num_channels_ + channel;
+                _audioFrame.data_[index] = toneBuffer[sample];
             }
         }
-        
+
         assert(_audioFrame.samples_per_channel_ == toneSamples);
     } else
     {

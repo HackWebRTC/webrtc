@@ -32,7 +32,7 @@ OutputMixer::NewMixedAudio(const WebRtc_Word32 id,
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,-1),
                  "OutputMixer::NewMixedAudio(id=%d, size=%u)", id, size);
 
-    _audioFrame = generalAudioFrame;
+    _audioFrame.CopyFrom(generalAudioFrame);
     _audioFrame.id_ = id;
 }
 
@@ -135,7 +135,7 @@ OutputMixer::OutputMixer(const WebRtc_UWord32 instanceId) :
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId,-1),
                  "OutputMixer::OutputMixer() - ctor");
-	
+
     if ((_mixerModule.RegisterMixedStreamCallback(*this) == -1) ||
         (_mixerModule.RegisterMixerStatusCallback(*this, 100) == -1))
     {
@@ -143,7 +143,7 @@ OutputMixer::OutputMixer(const WebRtc_UWord32 instanceId) :
                      "OutputMixer::OutputMixer() failed to register mixer"
                      "callbacks");
     }
-	
+
     _dtmfGenerator.Init();
 }
 
@@ -156,7 +156,7 @@ OutputMixer::Destroy(OutputMixer*& mixer)
         mixer = NULL;
     }
 }
-	
+
 OutputMixer::~OutputMixer()
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId,-1),
@@ -191,7 +191,7 @@ OutputMixer::SetEngineInformation(voe::Statistics& engineStatistics)
     return 0;
 }
 
-WebRtc_Word32 
+WebRtc_Word32
 OutputMixer::SetAudioProcessingModule(
     AudioProcessing* audioProcessingModule)
 {
@@ -368,7 +368,7 @@ int OutputMixer::StartRecordingPlayout(const char* fileName,
     }
 
     CriticalSectionScoped cs(&_fileCritSect);
-    
+
     // Destroy the old instance
     if (_outputFileRecorderPtr)
     {

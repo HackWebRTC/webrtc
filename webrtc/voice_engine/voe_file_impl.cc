@@ -704,17 +704,10 @@ int VoEFileImpl::ConvertPCMToWAV(const char* fileNameInUTF8,
             break;
         }
 
-        res=audioFrame.UpdateFrame(-1, 0, decodedData,
-                                  (WebRtc_UWord16)decLength,
-                                   frequency, AudioFrame::kNormalSpeech,
-                                   AudioFrame::kVadActive);
-        if(res)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceVoice,
-                VoEId(_shared->instance_id(), -1),
-                "ConvertPCMToWAV failed during conversion (audio frame)");
-            break;
-        }
+        audioFrame.UpdateFrame(-1, 0, decodedData,
+                               (WebRtc_UWord16)decLength,
+                               frequency, AudioFrame::kNormalSpeech,
+                               AudioFrame::kVadActive);
 
         res=recObj.RecordAudioToFile(audioFrame);
         if(res)
@@ -794,18 +787,10 @@ int VoEFileImpl::ConvertPCMToWAV(InStream* streamIn, OutStream* streamOut)
             break;
         }
 
-        res=audioFrame.UpdateFrame(-1, 0, decodedData,
-                                  (WebRtc_UWord16)decLength, frequency,
-                                   AudioFrame::kNormalSpeech,
-                                   AudioFrame::kVadActive);
-        if(res)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceVoice,
-                VoEId(_shared->instance_id(), -1),
-                "ConvertPCMToWAV failed during conversion "
-                "(create audio frame)");
-            break;
-        }
+        audioFrame.UpdateFrame(-1, 0, decodedData,
+                               (WebRtc_UWord16)decLength, frequency,
+                               AudioFrame::kNormalSpeech,
+                               AudioFrame::kVadActive);
 
         res=recObj.RecordAudioToFile(audioFrame);
         if(res)
@@ -882,17 +867,10 @@ int VoEFileImpl::ConvertWAVToPCM(const char* fileNameInUTF8,
             break;
         }
 
-        res=audioFrame.UpdateFrame(-1, 0, decodedData,
-                                   (WebRtc_UWord16)decLength,
-                                   frequency, AudioFrame::kNormalSpeech,
-                                   AudioFrame::kVadActive);
-        if(res)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceVoice,
-                VoEId(_shared->instance_id(), -1),
-                "ConvertWAVToPCM failed during conversion (audio frame)");
-            break;
-        }
+        audioFrame.UpdateFrame(-1, 0, decodedData,
+                               (WebRtc_UWord16)decLength,
+                               frequency, AudioFrame::kNormalSpeech,
+                               AudioFrame::kVadActive);
 
         res=recObj.RecordAudioToFile(audioFrame);
         if(res)
@@ -974,17 +952,10 @@ int VoEFileImpl::ConvertWAVToPCM(InStream* streamIn, OutStream* streamOut)
             break;
         }
 
-        res=audioFrame.UpdateFrame(-1, 0, decodedData,
-                                  (WebRtc_UWord16)decLength, frequency,
-                                   AudioFrame::kNormalSpeech,
-                                   AudioFrame::kVadActive);
-        if(res)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceVoice,
-                VoEId(_shared->instance_id(), -1),
-                "ConvertWAVToPCM failed during conversion (audio frame)");
-            break;
-        }
+        audioFrame.UpdateFrame(-1, 0, decodedData,
+                               (WebRtc_UWord16)decLength, frequency,
+                               AudioFrame::kNormalSpeech,
+                               AudioFrame::kVadActive);
 
         res=recObj.RecordAudioToFile(audioFrame);
         if(res)
@@ -1059,18 +1030,10 @@ int VoEFileImpl::ConvertPCMToCompressed(const char* fileNameInUTF8,
             // This is an OK way to end
             break;
         }
-        res=audioFrame.UpdateFrame(-1, 0, decodedData,
-                                  (WebRtc_UWord16)decLength,
-                                  frequency, AudioFrame::kNormalSpeech,
-                                  AudioFrame::kVadActive);
-        if(res)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceVoice,
-                VoEId(_shared->instance_id(), -1),
-                "ConvertPCMToCompressed failed during conversion "
-                "(audio frame)");
-            break;
-        }
+        audioFrame.UpdateFrame(-1, 0, decodedData,
+                               (WebRtc_UWord16)decLength,
+                               frequency, AudioFrame::kNormalSpeech,
+                               AudioFrame::kVadActive);
 
         res=recObj.RecordAudioToFile(audioFrame);
         if(res)
@@ -1151,18 +1114,10 @@ int VoEFileImpl::ConvertPCMToCompressed(InStream* streamIn,
             // This is an OK way to end
             break;
         }
-        res=audioFrame.UpdateFrame(-1, 0, decodedData,
-                                  (WebRtc_UWord16)decLength,
-                                   frequency, AudioFrame::kNormalSpeech,
-                                   AudioFrame::kVadActive);
-        if(res)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceVoice,
-                VoEId(_shared->instance_id(), -1),
-                "ConvertPCMToCompressed failed during conversion "
-                "(audio frame)");
-            break;
-        }
+        audioFrame.UpdateFrame(-1, 0, decodedData,
+                               (WebRtc_UWord16)decLength,
+                               frequency, AudioFrame::kNormalSpeech,
+                               AudioFrame::kVadActive);
 
         res=recObj.RecordAudioToFile(audioFrame);
         if(res)
@@ -1241,19 +1196,11 @@ int VoEFileImpl::ConvertCompressedToPCM(const char* fileNameInUTF8,
             // This is an OK way to end
             break;
         }
-        res=audioFrame.UpdateFrame(-1, 0, decodedData,
-                                  (WebRtc_UWord16)decLength,
-                                   frequency,
-                                   AudioFrame::kNormalSpeech,
-                                   AudioFrame::kVadActive);
-        if(res)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceVoice,
-                VoEId(_shared->instance_id(), -1),
-                "ConvertCompressedToPCM failed during conversion "
-                "(create audio frame)");
-            break;
-        }
+        audioFrame.UpdateFrame(-1, 0, decodedData,
+                               (WebRtc_UWord16)decLength,
+                               frequency,
+                               AudioFrame::kNormalSpeech,
+                               AudioFrame::kVadActive);
 
         res=recObj.RecordAudioToFile(audioFrame);
         if(res)
@@ -1338,19 +1285,11 @@ int VoEFileImpl::ConvertCompressedToPCM(InStream* streamIn,
             // This is an OK way to end
             break;
         }
-        res=audioFrame.UpdateFrame(-1, 0, decodedData,
-                                  (WebRtc_UWord16)decLength,
-                                   frequency,
-                                   AudioFrame::kNormalSpeech,
-                                   AudioFrame::kVadActive);
-        if(res)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceVoice,
-                VoEId(_shared->instance_id(), -1),
-                "ConvertCompressedToPCM failed during conversion "
-                "(audio frame)");
-            break;
-        }
+        audioFrame.UpdateFrame(-1, 0, decodedData,
+                               (WebRtc_UWord16)decLength,
+                               frequency,
+                               AudioFrame::kNormalSpeech,
+                               AudioFrame::kVadActive);
 
         res=recObj.RecordAudioToFile(audioFrame);
         if(res)

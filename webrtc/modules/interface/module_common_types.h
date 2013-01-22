@@ -11,8 +11,10 @@
 #ifndef MODULE_COMMON_TYPES_H
 #define MODULE_COMMON_TYPES_H
 
+#include <cassert>
 #include <cstring> // memcpy
-#include <assert.h>
+
+#include <algorithm>
 
 #include "webrtc/common_types.h"
 #include "webrtc/system_wrappers/interface/constructor_magic.h"
@@ -724,7 +726,8 @@ VideoFrame::Free()
 class AudioFrame
 {
 public:
-    enum { kMaxDataSizeSamples = 3840 };  // stereo, 32 kHz, 60ms (2*32*60)
+    // Stereo, 32 kHz, 60 ms (2 * 32 * 60)
+    static const int kMaxDataSizeSamples = 3840;
 
     enum VADActivity
     {
@@ -744,7 +747,7 @@ public:
     AudioFrame();
     virtual ~AudioFrame();
 
-    int UpdateFrame(
+    void UpdateFrame(
         int id,
         uint32_t timestamp,
         const int16_t* data,
@@ -757,9 +760,10 @@ public:
 
     AudioFrame& Append(const AudioFrame& rhs);
 
+    void CopyFrom(const AudioFrame& src);
+
     void Mute();
 
-    AudioFrame& operator=(const AudioFrame& rhs);
     AudioFrame& operator>>=(const int rhs);
     AudioFrame& operator+=(const AudioFrame& rhs);
     AudioFrame& operator-=(const AudioFrame& rhs);
@@ -773,6 +777,9 @@ public:
     SpeechType speech_type_;
     VADActivity vad_activity_;
     uint32_t energy_;
+
+private:
+    DISALLOW_COPY_AND_ASSIGN(AudioFrame);
 };
 
 inline
@@ -796,7 +803,7 @@ AudioFrame::~AudioFrame()
 }
 
 inline
-int
+void
 AudioFrame::UpdateFrame(
     int id,
     uint32_t timestamp,
@@ -810,30 +817,43 @@ AudioFrame::UpdateFrame(
 {
     id_            = id;
     timestamp_     = timestamp;
+    samples_per_channel_ = samples_per_channel;
     sample_rate_hz_ = sample_rate_hz;
     speech_type_    = speech_type;
     vad_activity_   = vad_activity;
     num_channels_  = num_channels;
     energy_        = energy;
 
-    if((samples_per_channel > kMaxDataSizeSamples) ||
-        (num_channels > 2) || (num_channels < 1))
-    {
-        samples_per_channel_ = 0;
-        return -1;
-    }
-    samples_per_channel_ = samples_per_channel;
+    const int length = samples_per_channel * num_channels;
+    assert(length <= kMaxDataSizeSamples && length >= 0);
     if(data != NULL)
     {
-        memcpy(data_, data, sizeof(int16_t) *
-            samples_per_channel * num_channels_);
+        memcpy(data_, data, sizeof(int16_t) * length);
     }
     else
     {
-        memset(data_,0,sizeof(int16_t) *
-            samples_per_channel * num_channels_);
+        memset(data_, 0, sizeof(int16_t) * length);
     }
-    return 0;
+}
+
+inline void AudioFrame::CopyFrom(const AudioFrame& src)
+{
+    if(this == &src)
+    {
+        return;
+    }
+    id_               = src.id_;
+    timestamp_        = src.timestamp_;
+    samples_per_channel_ = src.samples_per_channel_;
+    sample_rate_hz_    = src.sample_rate_hz_;
+    speech_type_       = src.speech_type_;
+    vad_activity_      = src.vad_activity_;
+    num_channels_     = src.num_channels_;
+    energy_           = src.energy_;
+
+    const int length = samples_per_channel_ * num_channels_;
+    assert(length <= kMaxDataSizeSamples && length >= 0);
+    memcpy(data_, src.data_, sizeof(int16_t) * length);
 }
 
 inline
@@ -841,36 +861,6 @@ void
 AudioFrame::Mute()
 {
   memset(data_, 0, samples_per_channel_ * num_channels_ * sizeof(int16_t));
-}
-
-inline
-AudioFrame&
-AudioFrame::operator=(const AudioFrame& rhs)
-{
-    // Sanity Check
-    if((rhs.samples_per_channel_ > kMaxDataSizeSamples) ||
-        (rhs.num_channels_ > 2) ||
-        (rhs.num_channels_ < 1))
-    {
-        return *this;
-    }
-    if(this == &rhs)
-    {
-        return *this;
-    }
-    id_               = rhs.id_;
-    timestamp_        = rhs.timestamp_;
-    sample_rate_hz_    = rhs.sample_rate_hz_;
-    speech_type_       = rhs.speech_type_;
-    vad_activity_      = rhs.vad_activity_;
-    num_channels_     = rhs.num_channels_;
-    energy_           = rhs.energy_;
-
-    samples_per_channel_ = rhs.samples_per_channel_;
-    memcpy(data_, rhs.data_,
-        sizeof(int16_t) * rhs.samples_per_channel_ * num_channels_);
-
-    return *this;
 }
 
 inline

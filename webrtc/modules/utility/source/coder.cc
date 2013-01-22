@@ -92,7 +92,8 @@ WebRtc_Word32 AudioCoder::Encode(const AudioFrame& audio,
 {
     // Fake a timestamp in case audio doesn't contain a correct timestamp.
     // Make a local copy of the audio frame since audio is const
-    AudioFrame audioFrame = audio;
+    AudioFrame audioFrame;
+    audioFrame.CopyFrom(audio);
     audioFrame.timestamp_ = _encodeTimestamp;
     _encodeTimestamp += audioFrame.samples_per_channel_;
 
