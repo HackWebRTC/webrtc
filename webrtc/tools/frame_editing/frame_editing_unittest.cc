@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 #include <cstdlib>
+#include <fstream>
 
 #include "gtest/gtest.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -32,8 +33,15 @@ class FrameEditingTest : public ::testing::Test {
   virtual void SetUp() {
     original_fid_ = fopen(kRefVideo.c_str(), "rb");
     ASSERT_TRUE(original_fid_ != NULL);
+
+    // Ensure the output file exists on disk.
+    std::ofstream(kTestVideo.c_str(), std::ios::out);
+    // Open the output file for reading.
+    // TODO(holmer): Figure out why this file has to be opened here (test fails
+    // if it's opened after the write operation performed in EditFrames).
     edited_fid_ = fopen(kTestVideo.c_str(), "rb");
     ASSERT_TRUE(edited_fid_ != NULL);
+
     original_buffer_.reset(new int[kFrameSize]);
     edited_buffer_.reset(new int[kFrameSize]);
     num_frames_read_ = 0;
