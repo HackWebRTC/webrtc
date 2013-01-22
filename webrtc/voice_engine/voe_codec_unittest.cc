@@ -433,7 +433,7 @@ TEST_F(VoECodecTest, DualStreamRegisterWithWrongInputsFails) {
   EXPECT_EQ(-1, voe_codec_->SetSecondarySendCodec(channel_, invalid_secondary_,
                                                   red_payload_type_));
 
-  // Wrong paylaod.
+  // Wrong payload.
   EXPECT_EQ(-1, voe_codec_->SetSecondarySendCodec(channel_, valid_secondary_,
                                                   -1));
   // Wrong channel.

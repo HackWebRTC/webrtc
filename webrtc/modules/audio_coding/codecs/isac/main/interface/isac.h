@@ -557,7 +557,7 @@ extern "C" {
    *                              i.e. 10000 to 56000.
    *        - isRCU                       : if the new bit-stream is an RCU stream.
    *                              Note that the rate parameter always indicates
-   *                              the target rate of the main paylaod, regardless
+   *                              the target rate of the main payload, regardless
    *                              of 'isRCU' value.
    *
    * Output:

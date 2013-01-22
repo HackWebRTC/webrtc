@@ -6666,7 +6666,7 @@ int Channel::SetRedPayloadType(int red_payload_type) {
   if (red_payload_type < 0) {
     _engineStatisticsPtr->SetLastError(
         VE_PLTYPE_ERROR, kTraceError,
-        "SetRedPayloadType() invalid RED paylaod type");
+        "SetRedPayloadType() invalid RED payload type");
     return -1;
   }
 

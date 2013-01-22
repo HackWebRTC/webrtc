@@ -345,7 +345,7 @@ typedef struct {
 
   /*-----
     This records the BWE index the encoder injected into the bit-stream.
-    It will be used in RCU. The same BWE index of main paylaod will be in
+    It will be used in RCU. The same BWE index of main payload will be in
     the redundant payload. We can not retrive it from BWE because it is
     a recursive procedure (WebRtcIsac_GetDownlinkBwJitIndexImpl) and has to be
     called only once per each encode.
