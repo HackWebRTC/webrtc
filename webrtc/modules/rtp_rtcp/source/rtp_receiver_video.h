@@ -29,8 +29,7 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
  public:
   RTPReceiverVideo(const WebRtc_Word32 id,
                    const RTPPayloadRegistry* rtp_payload_registry,
-                   RtpData* data_callback,
-                   ModuleRtpRtcpImpl* owner);
+                   RtpData* data_callback);
 
   virtual ~RTPReceiverVideo();
 
@@ -56,6 +55,8 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
   void UpdatePayloadRate(
       ModuleRTPUtility::Payload* payload,
       const WebRtc_UWord32 rate) const;
+
+  bool ShouldReportCsrcChanges(WebRtc_UWord8 payload_type) const;
 
   ModuleRTPUtility::Payload* CreatePayloadType(
       const char payloadName[RTP_PAYLOAD_NAME_SIZE],

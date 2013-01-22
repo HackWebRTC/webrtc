@@ -34,15 +34,17 @@ class RTPReceiverStrategy;
 
 class RTPReceiver : public Bitrate {
  public:
-  // Callbacks passed in here may not be NULL (use Null object callbacks if you
-  // want callbacks to do nothing).
+  // Callbacks passed in here may not be NULL (use Null Object callbacks if you
+  // want callbacks to do nothing). This class takes ownership of the media
+  // receiver but nothing else.
   RTPReceiver(const WebRtc_Word32 id,
-              const bool audio,
               Clock* clock,
               ModuleRtpRtcpImpl* owner,
               RtpAudioFeedback* incoming_audio_messages_callback,
               RtpData* incoming_payload_callback,
-              RtpFeedback* incoming_messages_callback);
+              RtpFeedback* incoming_messages_callback,
+              RTPReceiverStrategy* rtp_media_receiver,
+              RTPPayloadRegistry* rtp_payload_registry);
 
   virtual ~RTPReceiver();
 
@@ -154,10 +156,6 @@ class RTPReceiver : public Bitrate {
 
   void RTXStatus(bool* enable, WebRtc_UWord32* ssrc) const;
 
-  RTPReceiverAudio* GetAudioReceiver() const {
-    return rtp_receiver_audio_.get();
-  }
-
   virtual WebRtc_Word8 REDPayloadType() const;
 
   bool HaveNotReceivedPackets() const;
@@ -187,10 +185,8 @@ class RTPReceiver : public Bitrate {
   bool ProcessNACKBitRate(WebRtc_UWord32 now);
 
  private:
-  RTPPayloadRegistry           rtp_payload_registry_;
-  scoped_ptr<RTPReceiverAudio> rtp_receiver_audio_;
-  scoped_ptr<RTPReceiverVideo> rtp_receiver_video_;
-  RTPReceiverStrategy*         rtp_media_receiver_;
+  RTPPayloadRegistry*             rtp_payload_registry_;
+  scoped_ptr<RTPReceiverStrategy> rtp_media_receiver_;
 
   WebRtc_Word32           id_;
   ModuleRtpRtcpImpl&      rtp_rtcp_;

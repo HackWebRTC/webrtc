@@ -76,6 +76,8 @@ public:
         ModuleRTPUtility::Payload* payload,
         const WebRtc_UWord32 rate) const;
 
+    bool ShouldReportCsrcChanges(WebRtc_UWord8 payload_type) const;
+
     ModuleRTPUtility::Payload* CreatePayloadType(
           const char payloadName[RTP_PAYLOAD_NAME_SIZE],
           const WebRtc_Word8 payloadType,

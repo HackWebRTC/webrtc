@@ -32,22 +32,16 @@ using ModuleRTPUtility::StringCompare;
 using ModuleRTPUtility::VideoPayload;
 
 RTPReceiver::RTPReceiver(const WebRtc_Word32 id,
-                         const bool audio,
                          Clock* clock,
                          ModuleRtpRtcpImpl* owner,
                          RtpAudioFeedback* incoming_audio_messages_callback,
                          RtpData* incoming_payload_callback,
-                         RtpFeedback* incoming_messages_callback)
+                         RtpFeedback* incoming_messages_callback,
+                         RTPReceiverStrategy* rtp_media_receiver,
+                         RTPPayloadRegistry* rtp_payload_registry)
     : Bitrate(clock),
-      rtp_payload_registry_(id),
-      // TODO(phoglund): Remove hacks requiring direct access to the
-      // audio receiver and only instantiate one of these directly into the
-      // rtp_media_receiver_ field. Right now an audio receiver carries around a
-      // video handler and vice versa, which doesn't make sense.
-      rtp_receiver_audio_(new RTPReceiverAudio(
-          id, incoming_payload_callback, incoming_audio_messages_callback)),
-      rtp_receiver_video_(new RTPReceiverVideo(
-         id, &rtp_payload_registry_, incoming_payload_callback, owner)),
+      rtp_payload_registry_(rtp_payload_registry),
+      rtp_media_receiver_(rtp_media_receiver),
       id_(id),
       rtp_rtcp_(*owner),
       cb_rtp_feedback_(incoming_messages_callback),
@@ -103,15 +97,6 @@ RTPReceiver::RTPReceiver(const WebRtc_Word32 id,
          incoming_messages_callback &&
          incoming_payload_callback);
 
-  if (audio) {
-    rtp_media_receiver_ = rtp_receiver_audio_.get();
-  } else {
-    rtp_media_receiver_ = rtp_receiver_video_.get();
-  }
-  // TODO(phoglund): Get rid of this silly circular dependency between the
-  // payload manager and the video RTP receiver.
-  rtp_payload_registry_.set_rtp_media_receiver(rtp_media_receiver_);
-
   memset(current_remote_csrc_, 0, sizeof(current_remote_csrc_));
   memset(current_remote_energy_, 0, sizeof(current_remote_energy_));
 
@@ -140,11 +125,11 @@ WebRtc_UWord32 RTPReceiver::MaxConfiguredBitrate() const {
 }
 
 bool RTPReceiver::REDPayloadType(const WebRtc_Word8 payload_type) const {
-  return rtp_payload_registry_.red_payload_type() == payload_type;
+  return rtp_payload_registry_->red_payload_type() == payload_type;
 }
 
 WebRtc_Word8 RTPReceiver::REDPayloadType() const {
-  return rtp_payload_registry_.red_payload_type();
+  return rtp_payload_registry_->red_payload_type();
 }
 
 WebRtc_Word32 RTPReceiver::SetPacketTimeout(const WebRtc_UWord32 timeout_ms) {
@@ -176,7 +161,7 @@ void RTPReceiver::PacketTimeout() {
     if (now - last_receive_time_ > packet_timeout_ms_) {
       packet_time_out = true;
       last_receive_time_ = 0;            // Only one callback.
-      rtp_payload_registry_.ResetLastReceivedPayloadTypes();
+      rtp_payload_registry_->ResetLastReceivedPayloadTypes();
     }
   }
   if (packet_time_out) {
@@ -226,14 +211,14 @@ WebRtc_Word32 RTPReceiver::RegisterReceivePayload(
     const WebRtc_UWord8 channels,
     const WebRtc_UWord32 rate) {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
-  return rtp_payload_registry_.RegisterReceivePayload(
+  return rtp_payload_registry_->RegisterReceivePayload(
       payload_name, payload_type, frequency, channels, rate);
 }
 
 WebRtc_Word32 RTPReceiver::DeRegisterReceivePayload(
     const WebRtc_Word8 payload_type) {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
-  return rtp_payload_registry_.DeRegisterReceivePayload(payload_type);
+  return rtp_payload_registry_->DeRegisterReceivePayload(payload_type);
 }
 
 WebRtc_Word32 RTPReceiver::ReceivePayloadType(
@@ -243,7 +228,7 @@ WebRtc_Word32 RTPReceiver::ReceivePayloadType(
     const WebRtc_UWord32 rate,
     WebRtc_Word8* payload_type) const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
-  return rtp_payload_registry_.ReceivePayloadType(
+  return rtp_payload_registry_->ReceivePayloadType(
       payload_name, frequency, channels, rate, payload_type);
 }
 
@@ -254,7 +239,7 @@ WebRtc_Word32 RTPReceiver::ReceivePayload(
     WebRtc_UWord8* channels,
     WebRtc_UWord32* rate) const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
-  return rtp_payload_registry_.ReceivePayload(
+  return rtp_payload_registry_->ReceivePayload(
       payload_type, payload_name, frequency, channels, rate);
 }
 
@@ -627,7 +612,7 @@ WebRtc_UWord32 RTPReceiver::PayloadTypeToPayload(
     const WebRtc_UWord8 payload_type,
     Payload*& payload) const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
-  return rtp_payload_registry_.PayloadTypeToPayload(payload_type, payload);
+  return rtp_payload_registry_->PayloadTypeToPayload(payload_type, payload);
 }
 
 // Compute time stamp of the last incoming packet that is the first packet of
@@ -689,7 +674,7 @@ void RTPReceiver::CheckSSRCChanged(const WebRtcRTPHeader* rtp_header) {
     CriticalSectionScoped lock(critical_section_rtp_receiver_);
 
     WebRtc_Word8 last_received_payload_type =
-        rtp_payload_registry_.last_received_payload_type();
+        rtp_payload_registry_->last_received_payload_type();
     if (ssrc_ != rtp_header->header.ssrc ||
         (last_received_payload_type == -1 && ssrc_ == 0)) {
       // We need the payload_type_ to make the call if the remote SSRC is 0.
@@ -709,7 +694,7 @@ void RTPReceiver::CheckSSRCChanged(const WebRtcRTPHeader* rtp_header) {
           re_initialize_decoder = true;
 
           Payload* payload;
-          if (rtp_payload_registry_.PayloadTypeToPayload(
+          if (rtp_payload_registry_->PayloadTypeToPayload(
               rtp_header->header.payloadType, payload) != 0) {
             return;
           }
@@ -767,7 +752,7 @@ WebRtc_Word32 RTPReceiver::CheckPayloadChanged(
     CriticalSectionScoped lock(critical_section_rtp_receiver_);
 
     WebRtc_Word8 last_received_payload_type =
-        rtp_payload_registry_.last_received_payload_type();
+        rtp_payload_registry_->last_received_payload_type();
     if (payload_type != last_received_payload_type) {
       if (REDPayloadType(payload_type)) {
         // Get the real codec payload type.
@@ -803,7 +788,7 @@ WebRtc_Word32 RTPReceiver::CheckPayloadChanged(
       }
 
       Payload* payload;
-      if (rtp_payload_registry_.PayloadTypeToPayload(payload_type,
+      if (rtp_payload_registry_->PayloadTypeToPayload(payload_type,
                                                       payload) != 0) {
         // Not a registered payload type.
         return -1;
@@ -812,7 +797,7 @@ WebRtc_Word32 RTPReceiver::CheckPayloadChanged(
       payload_name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
       strncpy(payload_name, payload->name, RTP_PAYLOAD_NAME_SIZE - 1);
 
-      rtp_payload_registry_.set_last_received_payload_type(payload_type);
+      rtp_payload_registry_->set_last_received_payload_type(payload_type);
 
       re_initialize_decoder = true;
 
@@ -825,7 +810,7 @@ WebRtc_Word32 RTPReceiver::CheckPayloadChanged(
           re_initialize_decoder = false;
         } else {
           bool media_type_unchanged =
-              rtp_payload_registry_.ReportMediaPayloadType(payload_type);
+              rtp_payload_registry_->ReportMediaPayloadType(payload_type);
           if (media_type_unchanged) {
             // Only reset the decoder if the media codec type has changed.
             re_initialize_decoder = false;
@@ -860,9 +845,8 @@ void RTPReceiver::CheckCSRC(const WebRtcRTPHeader* rtp_header) {
   {
     CriticalSectionScoped lock(critical_section_rtp_receiver_);
 
-    if (rtp_receiver_audio_->TelephoneEventPayloadType(
-          rtp_header->header.payloadType)) {
-      // Don't do this for DTMF packets.
+    if (!rtp_media_receiver_->ShouldReportCsrcChanges(
+        rtp_header->header.payloadType)) {
       return;
     }
     num_energy_ = rtp_header->type.Audio.numEnergy;

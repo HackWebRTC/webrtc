@@ -68,6 +68,10 @@ class RTPReceiverStrategy {
     ModuleRTPUtility::Payload* payload,
     const WebRtc_UWord32 rate) const = 0;
 
+  // Returns true if we should report CSRC changes for this payload type.
+  // TODO(phoglund): should move out of here along with other payload stuff.
+  virtual bool ShouldReportCsrcChanges(WebRtc_UWord8 payload_type) const = 0;
+
   // Creates a media-specific payload instance from the provided parameters.
   virtual ModuleRTPUtility::Payload* CreatePayloadType(
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],

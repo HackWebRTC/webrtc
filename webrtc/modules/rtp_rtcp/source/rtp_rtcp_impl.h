@@ -17,6 +17,7 @@
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
@@ -471,8 +472,10 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Only for internal testing.
   WebRtc_UWord32 LastSendReport(WebRtc_UWord32& last_rtcptime);
 
+  RTPPayloadRegistry        rtp_payload_registry_;
+
   RTPSender                 rtp_sender_;
-  RTPReceiver               rtp_receiver_;
+  scoped_ptr<RTPReceiver>   rtp_receiver_;
 
   RTCPSender                rtcp_sender_;
   RTCPReceiver              rtcp_receiver_;
@@ -481,6 +484,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
  private:
   int64_t RtcpReportInterval();
+
+  RTPReceiverAudio*         rtp_telephone_event_handler_;
 
   WebRtc_Word32             id_;
   const bool                audio_;

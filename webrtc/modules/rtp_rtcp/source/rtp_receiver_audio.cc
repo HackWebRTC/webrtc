@@ -148,6 +148,12 @@ RTPReceiverAudio::CNGPayloadType(const WebRtc_Word8 payloadType,
     return false;
 }
 
+bool RTPReceiverAudio::ShouldReportCsrcChanges(
+    WebRtc_UWord8 payload_type) const {
+  // Don't do this for DTMF packets, otherwise it's fine.
+  return !TelephoneEventPayloadType(payload_type);
+}
+
 /*
    Sample based or frame based codecs based on RFC 3551
 
@@ -182,7 +188,6 @@ RTPReceiverAudio::CNGPayloadType(const WebRtc_Word8 payloadType,
 
    G7221     frame         N/A
 */
-
 ModuleRTPUtility::Payload* RTPReceiverAudio::CreatePayloadType(
     const char payloadName[RTP_PAYLOAD_NAME_SIZE],
     const WebRtc_Word8 payloadType,

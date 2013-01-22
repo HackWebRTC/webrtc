@@ -17,7 +17,7 @@ namespace webrtc {
 
 class MockRTPReceiverVideo : public RTPReceiverVideo {
  public:
-  MockRTPReceiverVideo() : RTPReceiverVideo(0, NULL, NULL, NULL) {}
+  MockRTPReceiverVideo() : RTPReceiverVideo(0, NULL, NULL) {}
   MOCK_METHOD1(ChangeUniqueId,
       void(const WebRtc_Word32 id));
   MOCK_METHOD3(ReceiveRecoveredPacketCallback,

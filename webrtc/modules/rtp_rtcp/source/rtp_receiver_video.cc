@@ -30,8 +30,7 @@ WebRtc_UWord32 BitRateBPS(WebRtc_UWord16 x )
 RTPReceiverVideo::RTPReceiverVideo(
     const WebRtc_Word32 id,
     const RTPPayloadRegistry* rtpRtpPayloadRegistry,
-    RtpData* data_callback,
-    ModuleRtpRtcpImpl* owner)
+    RtpData* data_callback)
     : RTPReceiverStrategy(data_callback),
       _id(id),
       _rtpRtpPayloadRegistry(rtpRtpPayloadRegistry),
@@ -44,6 +43,12 @@ RTPReceiverVideo::RTPReceiverVideo(
 RTPReceiverVideo::~RTPReceiverVideo() {
     delete _criticalSectionReceiverVideo;
     delete _receiveFEC;
+}
+
+bool RTPReceiverVideo::ShouldReportCsrcChanges(
+    WebRtc_UWord8 payload_type) const {
+  // Always do this for video packets.
+  return true;
 }
 
 ModuleRTPUtility::Payload* RTPReceiverVideo::CreatePayloadType(
