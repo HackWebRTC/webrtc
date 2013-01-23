@@ -217,7 +217,9 @@ int16_t WebRtcOpus_Decode(OpusDecInst* inst, int16_t* encoded,
     buffer32[7 + i] = buffer16[i];
   }
   /* Resampling 3 samples to 2. Function divides the input in |blocks| number
-   * of 3-sample groups, and output is |blocks| number of 2-sample groups. */
+   * of 3-sample groups, and output is |blocks| number of 2-sample groups.
+   * When this is removed, the compensation in WebRtcOpus_DurationEst should be
+   * removed too. */
   blocks = decoded_samples / 3;
   WebRtcSpl_Resample48khzTo32khz(buffer32, buffer32, blocks);
   output_samples = (int16_t) (blocks * 2);
@@ -299,5 +301,9 @@ int WebRtcOpus_DurationEst(OpusDecInst* inst,
     /* Invalid payload duration. */
     return 0;
   }
+  /* Compensate for the down-sampling from 48 kHz to 32 kHz.
+   * This should be removed when the resampling in WebRtcOpus_Decode is
+   * removed. */
+  samples = samples * 2 / 3;
   return samples;
 }
