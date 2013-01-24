@@ -84,6 +84,9 @@ void WebRtcIsacfix_FilterMaLoopC(int16_t input0,  // Filter coefficient
   }
 }
 
+// Declare a function pointer.
+FilterMaLoopFix WebRtcIsacfix_FilterMaLoopFix;
+
 /* filter the signal using normalized lattice filter */
 /* MA filter */
 void WebRtcIsacfix_NormLatticeFilterMa(WebRtc_Word16 orderCoef,
