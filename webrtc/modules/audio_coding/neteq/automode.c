@@ -216,7 +216,7 @@ int WebRtcNetEQ_UpdateIatStatistics(AutomodeInst_t *inst, int maxBufLen,
             streamingMode);
         if (tempvar > 0)
         {
-            inst->optBufLevel = (WebRtc_UWord16) tempvar;
+            inst->optBufLevel = tempvar;
 
             if (streamingMode != 0)
             {
@@ -575,7 +575,7 @@ int WebRtcNetEQ_BufferLevelFilter(WebRtc_Word32 curSizeMs8, AutomodeInst_t *inst
          *
          * levelFiltFact is in Q8
          */
-        inst->buffLevelFilt = (WebRtc_UWord16) (WEBRTC_SPL_RSHIFT_W32(
+        inst->buffLevelFilt = (WEBRTC_SPL_RSHIFT_W32(
             WEBRTC_SPL_MUL_16_U16(inst->levelFiltFact, inst->buffLevelFilt), 8)
             + WEBRTC_SPL_MUL_16_16(256 - inst->levelFiltFact, curSizeFrames));
     }
@@ -589,7 +589,7 @@ int WebRtcNetEQ_BufferLevelFilter(WebRtc_Word32 curSizeMs8, AutomodeInst_t *inst
          * from samples to packets in Q8. Make sure that the filtered value is
          * non-negative.
          */
-        inst->buffLevelFilt = (WebRtc_UWord16) WEBRTC_SPL_MAX( inst->buffLevelFilt -
+        inst->buffLevelFilt = WEBRTC_SPL_MAX( inst->buffLevelFilt -
             WebRtcSpl_DivW32W16(
                 WEBRTC_SPL_LSHIFT_W32(inst->sampleMemory, 8), /* sampleMemory in Q8 */
                 inst->packetSpeechLenSamp ), /* divide by packetSpeechLenSamp */

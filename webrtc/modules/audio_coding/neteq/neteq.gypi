@@ -93,6 +93,7 @@
           'dependencies': [
             'NetEq',
             'NetEqTestTools',
+            'neteq_unittest_tools',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
@@ -100,6 +101,31 @@
             'webrtc_neteq_unittest.cc',
           ],
         }, # neteq_unittests
+
+        {
+          'target_name': 'neteq_unittest_tools',
+          'type': 'static_library',
+          'dependencies': [
+            '<(DEPTH)/testing/gmock.gyp:gmock',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
+          ],
+          'direct_dependent_settings': {
+            'include_dirs': [
+              'tools',
+            ],
+          },
+          'include_dirs': [
+            'tools',
+          ],
+          'sources': [
+            'tools/input_audio_file.cc',
+            'tools/input_audio_file.h',
+            'tools/rtp_generator.cc',
+            'tools/rtp_generator.h',
+          ],
+        }, # neteq_unittest_tools
+
         {
           'target_name': 'NetEqRTPplay',
           'type': 'executable',
