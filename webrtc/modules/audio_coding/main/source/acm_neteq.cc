@@ -223,7 +223,7 @@ WebRtc_Word16 ACMNetEQ::AllocatePacketBufferByIdxSafe(
   }
   if (WebRtcNetEQ_GetRecommendedBufferSize(inst_[idx], used_codecs,
                                            num_codecs,
-                                           kTCPXLargeJitter,
+                                           kTCPLargeJitter,
                                            &max_num_packets,
                                            &buffer_size_in_bytes) != 0) {
     LogError("GetRecommendedBufferSize", idx);

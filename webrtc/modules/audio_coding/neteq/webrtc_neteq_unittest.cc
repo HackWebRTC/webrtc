@@ -27,7 +27,6 @@
 #include "modules/audio_coding/neteq/test/NETEQTEST_CodecClass.h"
 #include "modules/audio_coding/neteq/test/NETEQTEST_NetEQClass.h"
 #include "modules/audio_coding/neteq/test/NETEQTEST_RTPpacket.h"
-#include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "testsupport/fileutils.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
@@ -213,7 +212,7 @@ void NetEqDecodingTest::SetUp() {
 
   SelectDecoders(usedCodec);
   neteq_inst_ = new NETEQTEST_NetEQClass(usedCodec, dec_.size(), 8000,
-                                         kTCPXLargeJitter);
+                                         kTCPLargeJitter);
   ASSERT_TRUE(neteq_inst_);
   LoadDecoders();
 }
@@ -650,46 +649,6 @@ TEST_F(NetEqDecodingTest, NoInputDataStereo) {
   delete dec;
   delete slave_inst;
   free(ms_info);
-}
-
-TEST_F(NetEqDecodingTest, TestExtraDelay) {
-  static const int kNumFrames = 120000;  // Needed for convergence.
-  int frame_index = 0;
-  static const int kFrameSizeSamples = 30 * 16;
-  static const int kPayloadBytes = kFrameSizeSamples * 2;
-  test::InputAudioFile input_file(
-      webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm"));
-  int16_t input[kFrameSizeSamples];
-  static const int kExtraDelayMs = 5000;
-  ASSERT_EQ(0, WebRtcNetEQ_SetExtraDelay(neteq_inst_->instance(),
-                                         kExtraDelayMs));
-  for (int i = 0; i < kNumFrames; ++i) {
-    ASSERT_TRUE(input_file.Read(kFrameSizeSamples, input));
-    WebRtcNetEQ_RTPInfo rtp_info;
-    PopulateRtpInfo(frame_index, frame_index * kFrameSizeSamples, &rtp_info);
-    uint8_t* payload = reinterpret_cast<uint8_t*>(input);
-    ASSERT_EQ(0,
-              WebRtcNetEQ_RecInRTPStruct(neteq_inst_->instance(),
-                                         &rtp_info,
-                                         payload,
-                                         kPayloadBytes, 0));
-    ++frame_index;
-    // Pull out data.
-    for (int j = 0; j < 3; ++j) {
-      ASSERT_TRUE(kBlockSize16kHz == neteq_inst_->recOut(out_data_));
-    }
-    if (i % 100 == 0) {
-      WebRtcNetEQ_NetworkStatistics network_stats;
-      ASSERT_EQ(0, WebRtcNetEQ_GetNetworkStatistics(neteq_inst_->instance(),
-                                                    &network_stats));
-      const int expected_lower_limit =
-          std::min(i * 0.083 - 210, 0.9 * network_stats.preferredBufferSize);
-      EXPECT_GE(network_stats.currentBufferSize, expected_lower_limit);
-      const int expected_upper_limit =
-          std::min(i * 0.083 + 255, 1.2 * network_stats.preferredBufferSize);
-      EXPECT_LE(network_stats.currentBufferSize, expected_upper_limit);
-    }
-  }
 }
 
 }  // namespace

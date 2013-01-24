@@ -339,7 +339,7 @@ int WebRtcNetEQ_GetRecommendedBufferSize(void *inst, const enum WebRtcNetEQDecod
     }
     else if (nwType == kTCPXLargeJitter)
     {
-        multiplier = 12;
+        multiplier = 20;
     }
     else
     {
@@ -514,7 +514,7 @@ int WebRtcNetEQ_SetExtraDelay(void *inst, int DelayInMs)
 {
     MainInst_t *NetEqMainInst = (MainInst_t*) inst;
     if (NetEqMainInst == NULL) return (-1);
-    if ((DelayInMs < 0) || (DelayInMs > 10000))
+    if ((DelayInMs < 0) || (DelayInMs > 1000))
     {
         NetEqMainInst->ErrorCode = -FAULTY_DELAYVALUE;
         return (-1);

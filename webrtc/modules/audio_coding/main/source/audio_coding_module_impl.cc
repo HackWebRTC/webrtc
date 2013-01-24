@@ -2084,9 +2084,9 @@ int AudioCodingModuleImpl::InitStereoSlave() {
 // Minimum playout delay (Used for lip-sync).
 WebRtc_Word32 AudioCodingModuleImpl::SetMinimumPlayoutDelay(
     const WebRtc_Word32 time_ms) {
-  if ((time_ms < 0) || (time_ms > 10000)) {
+  if ((time_ms < 0) || (time_ms > 1000)) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
-                 "Delay must be in the range of 0-10000 milliseconds.");
+                 "Delay must be in the range of 0-1000 milliseconds.");
     return -1;
   }
   return neteq_.SetExtraDelay(time_ms);
