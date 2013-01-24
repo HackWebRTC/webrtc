@@ -24,12 +24,18 @@
 .macro DEFINE_FUNCTION name
 _\name:
 .endm
+.macro CALL_FUNCTION name
+bl _\name
+.endm
 #else
 .macro GLOBAL_FUNCTION name
 .global \name
 .endm
 .macro DEFINE_FUNCTION name
 \name:
+.endm
+.macro CALL_FUNCTION name
+bl \name
 .endm
 #endif
 
