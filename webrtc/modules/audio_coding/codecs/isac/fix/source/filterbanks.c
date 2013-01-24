@@ -26,9 +26,6 @@
 #include "filterbank_tables.h"
 #include "settings.h"
 
-// Declare a function pointer.
-AllpassFilter2FixDec16 WebRtcIsacfix_AllpassFilter2FixDec16;
-
 void WebRtcIsacfix_AllpassFilter2FixDec16C(
     int16_t *data_ch1,  // Input and output in channel 1, in Q0
     int16_t *data_ch2,  // Input and output in channel 2, in Q0

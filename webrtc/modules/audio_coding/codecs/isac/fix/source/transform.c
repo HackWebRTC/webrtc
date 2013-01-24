@@ -95,10 +95,6 @@ const WebRtc_Word16 kSinTab2[FRAMESAMPLES/4] = {
   2032,  -1819,  1606,  -1392,  1179,   -965,   750,   -536,   322,   -107
 };
 
-// Declare function pointers.
-Spec2Time WebRtcIsacfix_Spec2Time;
-Time2Spec WebRtcIsacfix_Time2Spec;
-
 void WebRtcIsacfix_Time2SpecC(WebRtc_Word16 *inre1Q9,
                              WebRtc_Word16 *inre2Q9,
                              WebRtc_Word16 *outreQ7,

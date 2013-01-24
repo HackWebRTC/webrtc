@@ -27,6 +27,13 @@
 #include "modules/audio_coding/codecs/isac/fix/source/structs.h"
 #include "system_wrappers/interface/cpu_features_wrapper.h"
 
+// Declare function pointers.
+AllpassFilter2FixDec16 WebRtcIsacfix_AllpassFilter2FixDec16;
+AutocorrFix WebRtcIsacfix_AutocorrFix;
+CalculateResidualEnergy WebRtcIsacfix_CalculateResidualEnergy;
+FilterMaLoopFix WebRtcIsacfix_FilterMaLoopFix;
+Spec2Time WebRtcIsacfix_Spec2Time;
+Time2Spec WebRtcIsacfix_Time2Spec;
 
 /**************************************************************************
  * WebRtcIsacfix_AssignSize(...)

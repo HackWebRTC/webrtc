@@ -463,11 +463,6 @@ static __inline WebRtc_Word16  exp2_Q10_T(WebRtc_Word16 x) { // Both in and out 
 
 }
 
-
-// Declare function pointers.
-AutocorrFix WebRtcIsacfix_AutocorrFix;
-CalculateResidualEnergy WebRtcIsacfix_CalculateResidualEnergy;
-
 /* This routine calculates the residual energy for LPC.
  * Formula as shown in comments inside.
  */
