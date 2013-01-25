@@ -515,11 +515,11 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   RemoteBitrateEstimator* remote_bitrate_;
 
-  RtcpRttObserver* rtt_observer_;
-
 #ifdef MATLAB
   MatlabPlot*           plot1_;
 #endif
+
+  RtcpRttObserver* rtt_observer_;
 };
 
 }  // namespace webrtc

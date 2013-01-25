@@ -123,11 +123,10 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       simulcast_(false),
       key_frame_req_method_(kKeyFrameReqFirRtp),
       remote_bitrate_(configuration.remote_bitrate_estimator),
-      rtt_observer_(configuration.rtt_observer)
 #ifdef MATLAB
-      , plot1_(NULL)
+      , plot1_(NULL),
 #endif
-{
+      rtt_observer_(configuration.rtt_observer) {
   RTPReceiverStrategy* rtp_receiver_strategy;
   if (configuration.audio) {
     // If audio, we need to be able to handle telephone events too, so stash
@@ -1645,7 +1644,7 @@ bool ModuleRtpRtcpImpl::SendTelephoneEventActive(
                id_,
                "SendTelephoneEventActive()");
 
-  return rtp_sender_.SendTelephoneEventActive(telephone_event);
+  return rtp_sender_.SendTelephoneEventActive(&telephone_event);
 }
 
 // Set audio packet size, used to determine when it's time to send a DTMF
@@ -1689,7 +1688,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::GetRTPAudioLevelIndicationStatus(
                kTraceRtpRtcp,
                id_,
                "GetRTPAudioLevelIndicationStatus()");
-  return rtp_sender_.AudioLevelIndicationStatus(enable, id);
+  return rtp_sender_.AudioLevelIndicationStatus(&enable, &id);
 }
 
 WebRtc_Word32 ModuleRtpRtcpImpl::SetAudioLevel(
@@ -1719,7 +1718,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendREDPayloadType(
     WebRtc_Word8& payload_type) const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "SendREDPayloadType()");
 
-  return rtp_sender_.RED(payload_type);
+  return rtp_sender_.RED(&payload_type);
 }
 
 RtpVideoCodecTypes ModuleRtpRtcpImpl::ReceivedVideoCodec() const {
@@ -1882,9 +1881,9 @@ WebRtc_Word32 ModuleRtpRtcpImpl::GenericFECStatus(
       it++;
     }
   }
-  WebRtc_Word32 ret_val = rtp_sender_.GenericFECStatus(enable,
-                                                       payload_type_red,
-                                                       payload_type_fec);
+  WebRtc_Word32 ret_val = rtp_sender_.GenericFECStatus(&enable,
+                                                       &payload_type_red,
+                                                       &payload_type_fec);
   if (child_enabled) {
     // Returns true if enabled for any child module.
     enable = child_enabled;
@@ -2083,5 +2082,4 @@ int64_t ModuleRtpRtcpImpl::RtcpReportInterval() {
   else
     return RTCP_INTERVAL_VIDEO_MS;
 }
-
 }  // Namespace webrtc
