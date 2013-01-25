@@ -121,26 +121,26 @@ void WebRtc_AddBinaryFarSpectrum(BinaryDelayEstimatorFarend* handle,
   handle->far_bit_counts[0] = BitCount(binary_far_spectrum);
 }
 
-void WebRtc_FreeBinaryDelayEstimator(BinaryDelayEstimator* handle) {
+void WebRtc_FreeBinaryDelayEstimator(BinaryDelayEstimator* self) {
 
-  if (handle == NULL) {
+  if (self == NULL) {
     return;
   }
 
-  free(handle->mean_bit_counts);
-  handle->mean_bit_counts = NULL;
+  free(self->mean_bit_counts);
+  self->mean_bit_counts = NULL;
 
-  free(handle->bit_counts);
-  handle->bit_counts = NULL;
+  free(self->bit_counts);
+  self->bit_counts = NULL;
 
-  free(handle->binary_near_history);
-  handle->binary_near_history = NULL;
+  free(self->binary_near_history);
+  self->binary_near_history = NULL;
 
   // BinaryDelayEstimator does not have ownership of |farend|, hence we do not
   // free the memory here. That should be handled separately by the user.
-  handle->farend = NULL;
+  self->farend = NULL;
 
-  free(handle);
+  free(self);
 }
 
 BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(
@@ -178,24 +178,24 @@ BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(
   return self;
 }
 
-void WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator* handle) {
+void WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator* self) {
   int i = 0;
-  assert(handle != NULL);
+  assert(self != NULL);
 
-  memset(handle->bit_counts, 0, sizeof(int32_t) * handle->farend->history_size);
-  memset(handle->binary_near_history, 0,
-         sizeof(uint32_t) * handle->near_history_size);
-  for (i = 0; i < handle->farend->history_size; ++i) {
-    handle->mean_bit_counts[i] = (20 << 9);  // 20 in Q9.
+  memset(self->bit_counts, 0, sizeof(int32_t) * self->farend->history_size);
+  memset(self->binary_near_history, 0,
+         sizeof(uint32_t) * self->near_history_size);
+  for (i = 0; i < self->farend->history_size; ++i) {
+    self->mean_bit_counts[i] = (20 << 9);  // 20 in Q9.
   }
-  handle->minimum_probability = (32 << 9);  // 32 in Q9.
-  handle->last_delay_probability = (32 << 9);  // 32 in Q9.
+  self->minimum_probability = (32 << 9);  // 32 in Q9.
+  self->last_delay_probability = (32 << 9);  // 32 in Q9.
 
   // Default return value if we're unable to estimate. -1 is used for errors.
-  handle->last_delay = -2;
+  self->last_delay = -2;
 }
 
-int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* handle,
+int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* self,
                                  uint32_t binary_near_spectrum) {
   int i = 0;
   int candidate_delay = -1;
@@ -203,50 +203,47 @@ int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* handle,
   int32_t value_best_candidate = 32 << 9;  // 32 in Q9, (max |mean_bit_counts|).
   int32_t value_worst_candidate = 0;
 
-  assert(handle != NULL);
-  if (handle->near_history_size > 1) {
+  assert(self != NULL);
+  if (self->near_history_size > 1) {
     // If we apply lookahead, shift near-end binary spectrum history. Insert
     // current |binary_near_spectrum| and pull out the delayed one.
-    memmove(&(handle->binary_near_history[1]),
-            &(handle->binary_near_history[0]),
-            (handle->near_history_size - 1) * sizeof(uint32_t));
-    handle->binary_near_history[0] = binary_near_spectrum;
+    memmove(&(self->binary_near_history[1]), &(self->binary_near_history[0]),
+            (self->near_history_size - 1) * sizeof(uint32_t));
+    self->binary_near_history[0] = binary_near_spectrum;
     binary_near_spectrum =
-        handle->binary_near_history[handle->near_history_size - 1];
+        self->binary_near_history[self->near_history_size - 1];
   }
 
   // Compare with delayed spectra and store the |bit_counts| for each delay.
-  BitCountComparison(binary_near_spectrum,
-                     handle->farend->binary_far_history,
-                     handle->farend->history_size,
-                     handle->bit_counts);
+  BitCountComparison(binary_near_spectrum, self->farend->binary_far_history,
+                     self->farend->history_size, self->bit_counts);
 
   // Update |mean_bit_counts|, which is the smoothed version of |bit_counts|.
-  for (i = 0; i < handle->farend->history_size; i++) {
+  for (i = 0; i < self->farend->history_size; i++) {
     // |bit_counts| is constrained to [0, 32], meaning we can smooth with a
     // factor up to 2^26. We use Q9.
-    int32_t bit_count = (handle->bit_counts[i] << 9);  // Q9.
+    int32_t bit_count = (self->bit_counts[i] << 9);  // Q9.
 
     // Update |mean_bit_counts| only when far-end signal has something to
     // contribute. If |far_bit_counts| is zero the far-end signal is weak and
     // we likely have a poor echo condition, hence don't update.
-    if (handle->farend->far_bit_counts[i] > 0) {
+    if (self->farend->far_bit_counts[i] > 0) {
       // Make number of right shifts piecewise linear w.r.t. |far_bit_counts|.
       int shifts = kShiftsAtZero;
-      shifts -= (kShiftsLinearSlope * handle->farend->far_bit_counts[i]) >> 4;
-      WebRtc_MeanEstimatorFix(bit_count, shifts, &(handle->mean_bit_counts[i]));
+      shifts -= (kShiftsLinearSlope * self->farend->far_bit_counts[i]) >> 4;
+      WebRtc_MeanEstimatorFix(bit_count, shifts, &(self->mean_bit_counts[i]));
     }
   }
 
   // Find |candidate_delay|, |value_best_candidate| and |value_worst_candidate|
   // of |mean_bit_counts|.
-  for (i = 0; i < handle->farend->history_size; i++) {
-    if (handle->mean_bit_counts[i] < value_best_candidate) {
-      value_best_candidate = handle->mean_bit_counts[i];
+  for (i = 0; i < self->farend->history_size; i++) {
+    if (self->mean_bit_counts[i] < value_best_candidate) {
+      value_best_candidate = self->mean_bit_counts[i];
       candidate_delay = i;
     }
-    if (handle->mean_bit_counts[i] > value_worst_candidate) {
-      value_worst_candidate = handle->mean_bit_counts[i];
+    if (self->mean_bit_counts[i] > value_worst_candidate) {
+      value_worst_candidate = self->mean_bit_counts[i];
     }
   }
 
@@ -264,7 +261,7 @@ int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* handle,
   //        this time instant.
 
   // Update |minimum_probability|.
-  if ((handle->minimum_probability > kProbabilityLowerLimit) &&
+  if ((self->minimum_probability > kProbabilityLowerLimit) &&
       (value_worst_candidate - value_best_candidate > kProbabilityMinSpread)) {
     // The "hard" threshold can't be lower than 17 (in Q9).
     // The valley in the curve also has to be distinct, i.e., the
@@ -274,35 +271,35 @@ int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* handle,
     if (threshold < kProbabilityLowerLimit) {
       threshold = kProbabilityLowerLimit;
     }
-    if (handle->minimum_probability > threshold) {
-      handle->minimum_probability = threshold;
+    if (self->minimum_probability > threshold) {
+      self->minimum_probability = threshold;
     }
   }
   // Update |last_delay_probability|.
   // We use a Markov type model, i.e., a slowly increasing level over time.
-  handle->last_delay_probability++;
+  self->last_delay_probability++;
   if (value_worst_candidate > value_best_candidate + kProbabilityOffset) {
     // Reliable delay value for usage.
-    if (value_best_candidate < handle->minimum_probability) {
-      handle->last_delay = candidate_delay;
+    if (value_best_candidate < self->minimum_probability) {
+      self->last_delay = candidate_delay;
     }
-    if (value_best_candidate < handle->last_delay_probability) {
-      handle->last_delay = candidate_delay;
+    if (value_best_candidate < self->last_delay_probability) {
+      self->last_delay = candidate_delay;
       // Reset |last_delay_probability|.
-      handle->last_delay_probability = value_best_candidate;
+      self->last_delay_probability = value_best_candidate;
     }
   }
 
-  return handle->last_delay;
+  return self->last_delay;
 }
 
-int WebRtc_binary_last_delay(BinaryDelayEstimator* handle) {
-  assert(handle != NULL);
-  return handle->last_delay;
+int WebRtc_binary_last_delay(BinaryDelayEstimator* self) {
+  assert(self != NULL);
+  return self->last_delay;
 }
 
-int WebRtc_binary_last_delay_quality(BinaryDelayEstimator* handle) {
-  assert(handle != NULL);
+int WebRtc_binary_last_delay_quality(BinaryDelayEstimator* self) {
+  assert(self != NULL);
   // |last_delay_probability| is the opposite of quality and states how deep the
   // minimum of the cost function is. The value states how many non-matching
   // bits we have between the binary spectra for the corresponding delay
@@ -310,7 +307,7 @@ int WebRtc_binary_last_delay_quality(BinaryDelayEstimator* handle) {
   // binary spectra.
 
   // Return the quality = 1 - |last_delay_probability| / 32 (in Q14).
-  return (32 << 9) - handle->last_delay_probability;
+  return (32 << 9) - self->last_delay_probability;
 }
 
 void WebRtc_MeanEstimatorFix(int32_t new_value,
