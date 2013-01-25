@@ -151,11 +151,10 @@ void ViEAutoTest::ViEFileStandardTest()
         const int TEST_SPACING = 1000;
         const int VIDEO_LENGTH = 5000;
 
-        const std::string root = webrtc::test::ProjectRootPath() +
-            "webrtc/video_engine/test/auto_test/media/";
-        const std::string renderStartImage = root + "renderStartImage.jpg";
-        const std::string captureDeviceImage = root + "captureDeviceImage.jpg";
-        const std::string renderTimeoutFile = root + "renderTimeoutImage.jpg";
+        const std::string renderStartImage = webrtc::test::ResourcePath(
+            "video_engine/renderStartImage", "jpg");
+        const std::string renderTimeoutFile = webrtc::test::ResourcePath(
+            "video_engine/renderTimeoutImage", "jpg");
 
         const std::string output = webrtc::test::OutputPath();
         const std::string snapshotCaptureDeviceFileName =
