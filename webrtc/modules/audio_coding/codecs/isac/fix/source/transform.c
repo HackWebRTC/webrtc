@@ -103,10 +103,6 @@ static const WebRtc_Word16 WebRtcIsacfix_kSinTab2[FRAMESAMPLES/4] = {
 };
 #endif  // WEBRTC_DETECT_ARM_NEON || WEBRTC_ARCH_ARM_NEON
 
-// Declare function pointers.
-Spec2Time WebRtcIsacfix_Spec2Time;
-Time2Spec WebRtcIsacfix_Time2Spec;
-
 void WebRtcIsacfix_Time2SpecC(WebRtc_Word16 *inre1Q9,
                              WebRtc_Word16 *inre2Q9,
                              WebRtc_Word16 *outreQ7,
