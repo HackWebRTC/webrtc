@@ -18,15 +18,21 @@
 
 typedef struct {
   // Pointer to bit counts.
-  int32_t* mean_bit_counts;
   int* far_bit_counts;
+  // Binary history variables.
+  uint32_t* binary_far_history;
+  // Buffer size.
+  int history_size;
+} BinaryDelayEstimatorFarend;
 
+typedef struct {
+  // Pointer to bit counts.
+  int32_t* mean_bit_counts;
   // Array only used locally in ProcessBinarySpectrum() but whose size is
   // determined at run-time.
   int32_t* bit_counts;
 
   // Binary history variables.
-  uint32_t* binary_far_history;
   uint32_t* binary_near_history;
 
   // Delay estimation variables.
@@ -36,14 +42,69 @@ typedef struct {
   // Delay memory.
   int last_delay;
 
-  // Buffer size.
-  int history_size;
-
   // Near-end buffer size.
   int near_history_size;
+  // Far-end binary spectrum history buffer etc.
+  BinaryDelayEstimatorFarend* farend;
 } BinaryDelayEstimator;
 
+// Releases the memory allocated by
+// WebRtc_CreateBinaryDelayEstimatorFarend(...).
+// Input:
+//    - self              : Pointer to the binary delay estimation far-end
+//                          instance which is the return value of
+//                          WebRtc_CreateBinaryDelayEstimatorFarend().
+//
+void WebRtc_FreeBinaryDelayEstimatorFarend(BinaryDelayEstimatorFarend* self);
+
+// Allocates the memory needed by the far-end part of the binary delay
+// estimation. The memory needs to be initialized separately through
+// WebRtc_InitBinaryDelayEstimatorFarend(...).
+//
+// Inputs:
+//      - history_size    : Size of the far-end binary spectrum history.
+//
+// Return value:
+//      - BinaryDelayEstimatorFarend*
+//                        : Created |handle|. If the memory can't be allocated
+//                          or if any of the input parameters are invalid NULL
+//                          is returned.
+//
+BinaryDelayEstimatorFarend* WebRtc_CreateBinaryDelayEstimatorFarend(
+    int history_size);
+
+// Initializes the delay estimation far-end instance created with
+// WebRtc_CreateBinaryDelayEstimatorFarend(...).
+//
+// Input:
+//    - self              : Pointer to the delay estimation far-end instance.
+//
+// Output:
+//    - self              : Initialized far-end instance.
+//
+void WebRtc_InitBinaryDelayEstimatorFarend(BinaryDelayEstimatorFarend* self);
+
+// Adds the binary far-end spectrum to the internal far-end history buffer. This
+// spectrum is used as reference when calculating the delay using
+// WebRtc_ProcessBinarySpectrum().
+//
+// Inputs:
+//    - handle                : Pointer to the delay estimation far-end
+//                              instance.
+//    - binary_far_spectrum   : Far-end binary spectrum.
+//
+// Output:
+//    - handle                : Updated far-end instance.
+//
+void WebRtc_AddBinaryFarSpectrum(BinaryDelayEstimatorFarend* handle,
+                                 uint32_t binary_far_spectrum);
+
 // Releases the memory allocated by WebRtc_CreateBinaryDelayEstimator(...).
+//
+// Note that BinaryDelayEstimator utilizes BinaryDelayEstimatorFarend, but does
+// not take ownership of it, hence the BinaryDelayEstimator has to be torn down
+// before the far-end.
+//
 // Input:
 //    - handle            : Pointer to the binary delay estimation instance
 //                          which is the return value of
@@ -51,12 +112,45 @@ typedef struct {
 //
 void WebRtc_FreeBinaryDelayEstimator(BinaryDelayEstimator* handle);
 
-// Refer to WebRtc_CreateDelayEstimator() in delay_estimator_wrapper.h.
-BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(int max_delay,
-                                                        int lookahead);
+// Allocates the memory needed by the binary delay estimation. The memory needs
+// to be initialized separately through WebRtc_InitBinaryDelayEstimator(...).
+//
+// Inputs:
+//      - farend        : Pointer to the far-end part of the Binary Delay
+//                        Estimator. This memory has to be created separately
+//                        prior to this call using
+//                        WebRtc_CreateBinaryDelayEstimatorFarend().
+//
+//                        Note that BinaryDelayEstimator does not take
+//                        ownership of |farend|.
+//
+//      - lookahead     : Amount of non-causal lookahead to use. This can
+//                        detect cases in which a near-end signal occurs before
+//                        the corresponding far-end signal. It will delay the
+//                        estimate for the current block by an equal amount,
+//                        and the returned values will be offset by it.
+//
+//                        A value of zero is the typical no-lookahead case.
+//                        This also represents the minimum delay which can be
+//                        estimated.
+//
+//                        Note that the effective range of delay estimates is
+//                        [-|lookahead|,... ,|history_size|-|lookahead|)
+//                        where |history_size| was set upon creating the far-end
+//                        history buffer size.
+//
+// Return value:
+//      - BinaryDelayEstimator*
+//                        : Created |handle|. If the memory can't be allocated
+//                          or if any of the input parameters are invalid NULL
+//                          is returned.
+//
+BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(
+    BinaryDelayEstimatorFarend* farend, int lookahead);
 
 // Initializes the delay estimation instance created with
 // WebRtc_CreateBinaryDelayEstimator(...).
+//
 // Input:
 //    - handle            : Pointer to the delay estimation instance.
 //
@@ -65,24 +159,12 @@ BinaryDelayEstimator* WebRtc_CreateBinaryDelayEstimator(int max_delay,
 //
 void WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator* handle);
 
-// Adds the binary far-end spectrum to the internal buffer. This spectrum is
-// used as reference when calculating the delay using
-// WebRtc_ProcessBinarySpectrum().
-// Inputs:
-//    - handle                : Pointer to the delay estimation instance.
-//    - binary_far_spectrum   : Far-end binary spectrum.
-//
-// Output:
-//    - handle                : Updated instance.
-//
-void WebRtc_AddBinaryFarSpectrum(BinaryDelayEstimator* handle,
-                                 uint32_t binary_far_spectrum);
-
 // Estimates and returns the delay between the binary far-end and binary near-
 // end spectra. It is assumed the binary far-end spectrum has been added using
 // WebRtc_AddBinaryFarSpectrum() prior to this call. The value will be offset by
 // the lookahead (i.e. the lookahead should be subtracted from the returned
 // value).
+//
 // Inputs:
 //    - handle                : Pointer to the delay estimation instance.
 //    - binary_near_spectrum  : Near-end binary spectrum of the current block.
@@ -92,7 +174,6 @@ void WebRtc_AddBinaryFarSpectrum(BinaryDelayEstimator* handle,
 //
 // Return value:
 //    - delay                 :  >= 0 - Calculated delay value.
-//                              -1    - Error.
 //                              -2    - Insufficient data for estimation.
 //
 int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* handle,
@@ -106,7 +187,6 @@ int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator* handle,
 //
 // Return value:
 //    - delay                 :  >= 0 - Last calculated delay value
-//                              -1    - Error
 //                              -2    - Insufficient data for estimation.
 //
 int WebRtc_binary_last_delay(BinaryDelayEstimator* handle);

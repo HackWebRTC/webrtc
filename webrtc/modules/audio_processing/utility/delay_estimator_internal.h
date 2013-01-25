@@ -33,6 +33,9 @@ typedef struct {
 
   // Binary spectrum based delay estimator
   BinaryDelayEstimator* binary_handle;
+  // TODO(bjornv): This is an intermediate member variable. To be removed when
+  // we complete full support.
+  BinaryDelayEstimatorFarend* binary_farend;
 } DelayEstimator;
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_DELAY_ESTIMATOR_INTERNAL_H_

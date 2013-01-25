@@ -23,6 +23,8 @@ enum { kSpectrumSize = 65 };
 // Delay history sizes.
 enum { kMaxDelay = 100 };
 enum { kLookahead = 10 };
+// Length of binary spectrum sequence.
+enum { kSequenceLength = 400 };
 
 class DelayEstimatorTest : public ::testing::Test {
  protected:
@@ -31,12 +33,12 @@ class DelayEstimatorTest : public ::testing::Test {
   virtual void TearDown();
 
   void Init();
-
   void InitBinary();
 
   void* handle_;
   DelayEstimator* self_;
   BinaryDelayEstimator* binary_handle_;
+  BinaryDelayEstimatorFarend* binary_farend_handle_;
   int spectrum_size_;
   // Dummy input spectra.
   float far_f_[kSpectrumSize];
@@ -49,6 +51,7 @@ DelayEstimatorTest::DelayEstimatorTest()
     : handle_(NULL),
       self_(NULL),
       binary_handle_(NULL),
+      binary_farend_handle_(NULL),
       spectrum_size_(kSpectrumSize) {
   // Dummy input data are set with more or less arbitrary non-zero values.
   memset(far_f_, 1, sizeof(far_f_));
@@ -61,14 +64,22 @@ void DelayEstimatorTest::SetUp() {
   handle_ = WebRtc_CreateDelayEstimator(kSpectrumSize, kMaxDelay, kLookahead);
   ASSERT_TRUE(handle_ != NULL);
   self_ = reinterpret_cast<DelayEstimator*>(handle_);
-  binary_handle_ = self_->binary_handle;
+  binary_farend_handle_ = WebRtc_CreateBinaryDelayEstimatorFarend(kMaxDelay +
+                                                                  kLookahead);
+  ASSERT_TRUE(binary_farend_handle_ != NULL);
+  binary_handle_ = WebRtc_CreateBinaryDelayEstimator(binary_farend_handle_,
+                                                     kLookahead);
+  ASSERT_TRUE(binary_handle_ != NULL);
 }
 
 void DelayEstimatorTest::TearDown() {
   WebRtc_FreeDelayEstimator(handle_);
   handle_ = NULL;
   self_ = NULL;
+  WebRtc_FreeBinaryDelayEstimator(binary_handle_);
   binary_handle_ = NULL;
+  WebRtc_FreeBinaryDelayEstimatorFarend(binary_farend_handle_);
+  binary_farend_handle_ = NULL;
 }
 
 void DelayEstimatorTest::Init() {
@@ -82,6 +93,8 @@ void DelayEstimatorTest::Init() {
 }
 
 void DelayEstimatorTest::InitBinary() {
+  // Initialize Binary Delay Estimator (far-end part).
+  WebRtc_InitBinaryDelayEstimatorFarend(binary_farend_handle_);
   // Initialize Binary Delay Estimator
   WebRtc_InitBinaryDelayEstimator(binary_handle_);
   // Verify initialization. This does not guarantee a complete check, since
@@ -98,9 +111,6 @@ TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfWrapper) {
   // create failure.
   void* handle = handle_;
   handle = WebRtc_CreateDelayEstimator(33, kMaxDelay, kLookahead);
-  EXPECT_TRUE(handle == NULL);
-  handle = handle_;
-  handle = WebRtc_CreateDelayEstimator(kSpectrumSize, -1, kLookahead);
   EXPECT_TRUE(handle == NULL);
   handle = handle_;
   handle = WebRtc_CreateDelayEstimator(kSpectrumSize, kMaxDelay, -1);
@@ -229,29 +239,19 @@ TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfBinaryEstimator) {
   // |binary_handle| should be NULL.
   // Make sure we have a non-NULL value at start, so we can detect NULL after
   // create failure.
-  binary_handle = WebRtc_CreateBinaryDelayEstimator(-1, kLookahead);
+  binary_handle = WebRtc_CreateBinaryDelayEstimator(NULL, kLookahead);
   EXPECT_TRUE(binary_handle == NULL);
   binary_handle = binary_handle_;
-  binary_handle = WebRtc_CreateBinaryDelayEstimator(kMaxDelay, -1);
+  binary_handle = WebRtc_CreateBinaryDelayEstimator(binary_farend_handle_, -1);
   EXPECT_TRUE(binary_handle == NULL);
   binary_handle = binary_handle_;
   binary_handle = WebRtc_CreateBinaryDelayEstimator(0, 0);
   EXPECT_TRUE(binary_handle == NULL);
-
-  // TODO(bjornv): It is not feasible to force an error of
-  // WebRtc_ProcessBinarySpectrum(). This can only happen if we have more than
-  // 32 bits in our binary spectrum comparison, which by definition can't
-  // happen.
-  // We should therefore remove that option from the code.
-
-  // WebRtc_binary_last_delay() can't return -1 either.
 }
 
 TEST_F(DelayEstimatorTest, MeanEstimatorFix) {
   // In this test we verify that we update the mean value in correct direction
   // only. With "direction" we mean increase or decrease.
-
-  InitBinary();
 
   int32_t mean_value = 4000;
   int32_t mean_value_before = mean_value;
@@ -275,12 +275,11 @@ TEST_F(DelayEstimatorTest, ExactDelayEstimate) {
   // the signal accordingly. We verify both causal and non-causal delays.
 
   // Construct a sequence of binary spectra used to verify delay estimate. The
-  // |sequence_length| has to be long enough for the delay estimation to leave
+  // |kSequenceLength| has to be long enough for the delay estimation to leave
   // the initialized state.
-  const int sequence_length = 400;
-  uint32_t binary_spectrum[sequence_length + kMaxDelay + kLookahead];
+  uint32_t binary_spectrum[kSequenceLength + kMaxDelay + kLookahead];
   binary_spectrum[0] = 1;
-  for (int i = 1; i < (sequence_length + kMaxDelay + kLookahead); i++) {
+  for (int i = 1; i < (kSequenceLength + kMaxDelay + kLookahead); i++) {
     binary_spectrum[i] = 3 * binary_spectrum[i - 1];
   }
 
@@ -290,8 +289,9 @@ TEST_F(DelayEstimatorTest, ExactDelayEstimate) {
   // the far-end sequence.
   for (int offset = -kLookahead; offset < kMaxDelay; offset++) {
     InitBinary();
-    for (int i = kLookahead; i < (sequence_length + kLookahead); i++) {
-      WebRtc_AddBinaryFarSpectrum(binary_handle_, binary_spectrum[i + offset]);
+    for (int i = kLookahead; i < (kSequenceLength + kLookahead); i++) {
+      WebRtc_AddBinaryFarSpectrum(binary_farend_handle_,
+                                  binary_spectrum[i + offset]);
       int delay = WebRtc_ProcessBinarySpectrum(binary_handle_,
                                                binary_spectrum[i]);
 

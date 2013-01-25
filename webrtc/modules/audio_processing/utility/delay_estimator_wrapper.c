@@ -138,19 +138,23 @@ void WebRtc_FreeDelayEstimator(void* handle) {
   WebRtc_FreeBinaryDelayEstimator(self->binary_handle);
   self->binary_handle = NULL;
 
+  WebRtc_FreeBinaryDelayEstimatorFarend(self->binary_farend);
+  self->binary_farend = NULL;
+
   free(self);
 }
 
 void* WebRtc_CreateDelayEstimator(int spectrum_size, int max_delay,
                                   int lookahead) {
   DelayEstimator* self = NULL;
+  const int history_size = max_delay + lookahead;  // For buffer shifting: > 1
 
   // TODO(bjornv): Make this a static assert.
   // Check if the sub band used in the delay estimation is small enough to fit
   // the binary spectra in a uint32_t.
   assert(kBandLast - kBandFirst < 32);
 
-  if (spectrum_size >= kBandLast) {
+  if ((spectrum_size >= kBandLast) && (history_size > 1)) {
     self = malloc(sizeof(DelayEstimator));
   }
 
@@ -159,8 +163,12 @@ void* WebRtc_CreateDelayEstimator(int spectrum_size, int max_delay,
 
     self->mean_far_spectrum = NULL;
     self->mean_near_spectrum = NULL;
+    self->binary_farend = NULL;
 
-    self->binary_handle = WebRtc_CreateBinaryDelayEstimator(max_delay,
+    // Allocate memory for the farend spectrum handling.
+    self->binary_farend = WebRtc_CreateBinaryDelayEstimatorFarend(history_size);
+
+    self->binary_handle = WebRtc_CreateBinaryDelayEstimator(self->binary_farend,
                                                             lookahead);
     memory_fail |= (self->binary_handle == NULL);
 
@@ -189,6 +197,8 @@ int WebRtc_InitDelayEstimator(void* handle) {
     return -1;
   }
 
+  // Initialize far-end part of binary delay estimator.
+  WebRtc_InitBinaryDelayEstimatorFarend(self->binary_farend);
   // Initialize binary delay estimator.
   WebRtc_InitBinaryDelayEstimator(self->binary_handle);
 
@@ -248,7 +258,7 @@ int WebRtc_DelayEstimatorProcessFix(void* handle,
                                            near_q,
                                            &(self->near_spectrum_initialized));
 
-  WebRtc_AddBinaryFarSpectrum(self->binary_handle, binary_far_spectrum);
+  WebRtc_AddBinaryFarSpectrum(self->binary_handle->farend, binary_far_spectrum);
 
   return WebRtc_ProcessBinarySpectrum(self->binary_handle,
                                       binary_near_spectrum);
@@ -286,7 +296,7 @@ int WebRtc_DelayEstimatorProcessFloat(void* handle,
       BinarySpectrumFloat(near_spectrum, self->mean_near_spectrum,
                           &(self->near_spectrum_initialized));
 
-  WebRtc_AddBinaryFarSpectrum(self->binary_handle, binary_far_spectrum);
+  WebRtc_AddBinaryFarSpectrum(self->binary_handle->farend, binary_far_spectrum);
 
   return WebRtc_ProcessBinarySpectrum(self->binary_handle,
                                       binary_near_spectrum);
