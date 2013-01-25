@@ -96,5 +96,25 @@
         'testsupport/perf_test_unittest.cc',
       ],
     },
+    {
+      'target_name': 'buildbot_tests_scripts',
+      'type': 'none',
+      'copies': [
+        {
+          'destination': '<(PRODUCT_DIR)',
+          'files': [
+            'buildbot_tests.py',
+            '<(DEPTH)/tools/e2e_quality/audio/run_audio_test.py',
+          ],
+        },
+        {
+          'destination': '<(PRODUCT_DIR)/perf',
+          'files': [
+            '<(DEPTH)/tools/e2e_quality/audio/perf/__init__.py',
+            '<(DEPTH)/tools/e2e_quality/audio/perf/perf_utils.py',
+          ],
+        },
+      ],
+    },  # target buildbot_tests_scripts
   ],
 }
