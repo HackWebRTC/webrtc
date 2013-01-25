@@ -110,8 +110,8 @@
         {
           'destination': '<(PRODUCT_DIR)/perf',
           'files': [
-            '<(DEPTH)/tools/e2e_quality/audio/perf/__init__.py',
-            '<(DEPTH)/tools/e2e_quality/audio/perf/perf_utils.py',
+            '<(DEPTH)/tools/perf/__init__.py',
+            '<(DEPTH)/tools/perf/perf_utils.py',
           ],
         },
       ],
