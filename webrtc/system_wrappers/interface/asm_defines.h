@@ -27,6 +27,9 @@ _\name:
 .macro CALL_FUNCTION name
 bl _\name
 .endm
+.macro GLOBAL_LABEL name
+.global _\name
+.endm
 #else
 .macro GLOBAL_FUNCTION name
 .global \name
@@ -36,6 +39,9 @@ bl _\name
 .endm
 .macro CALL_FUNCTION name
 bl \name
+.endm
+.macro GLOBAL_LABEL name
+.global \name
 .endm
 #endif
 

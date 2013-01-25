@@ -227,10 +227,6 @@ void WebRtcNsx_DenormalizeNeon(NsxInst_t* inst, int16_t* in, int factor);
 void WebRtcNsx_PrepareSpectrumNeon(NsxInst_t* inst, int16_t* freq_buff);
 #endif
 
-extern const WebRtc_Word16 WebRtcNsx_kLogTable[9];
-extern const WebRtc_Word16 WebRtcNsx_kLogTableFrac[256];
-extern const WebRtc_Word16 WebRtcNsx_kCounterDiv[201];
-
 #ifdef __cplusplus
 }
 #endif

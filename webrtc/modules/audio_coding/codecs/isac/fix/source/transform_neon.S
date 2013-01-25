@@ -16,6 +16,9 @@
 
 GLOBAL_FUNCTION WebRtcIsacfix_Spec2TimeNeon
 GLOBAL_FUNCTION WebRtcIsacfix_Time2SpecNeon
+GLOBAL_LABEL WebRtcIsacfix_kSinTab1
+GLOBAL_LABEL WebRtcIsacfix_kCosTab1
+GLOBAL_LABEL WebRtcIsacfix_kSinTab2
 
 @ void WebRtcIsacfix_Time2SpecNeon(WebRtc_Word16* inre1Q9,
 @                                  WebRtc_Word16* inre2Q9,
@@ -39,9 +42,9 @@ DEFINE_FUNCTION WebRtcIsacfix_Time2SpecNeon
   add r4, sp, #16             @ tmpreQ16;
   add r5, sp, #(16 + FRAMESAMPLES * 2)  @ tmpimQ16;
 
-  adr r9, kCosTab1
-  mov r6, #(kSinTab1 - kCosTab1)
-  add r10, r9, r6             @ kSinTab1
+  adr r9, WebRtcIsacfix_kCosTab1
+  mov r6, #(WebRtcIsacfix_kSinTab1 - WebRtcIsacfix_kCosTab1)
+  add r10, r9, r6             @ WebRtcIsacfix_kSinTab1
 
   vmov.u32 q6, #0             @ Initialize the maximum values for tmpInIm.
   vmov.u32 q7, #0             @ Initialize the maximum values for tmpInRe.
@@ -55,18 +58,18 @@ Time2Spec_TransformAndFindMax:
 
   subs r8, #8
 
-  vld1.16 {q0}, [r9:64]!      @ kCosTab1[]
+  vld1.16 {q0}, [r9, :64]!    @ WebRtcIsacfix_kCosTab1[]
   vld1.16 {q2}, [r0]!         @ inre1Q9[]
-  vmull.s16 q8, d0, d4        @ kCosTab1[k] * inre1Q9[k]
-  vld1.16 {q1}, [r10:64]!     @ kSinTab1[]
-  vmull.s16 q9, d1, d5        @ kCosTab1[k] * inre1Q9[k]
+  vmull.s16 q8, d0, d4        @ WebRtcIsacfix_kCosTab1[k] * inre1Q9[k]
+  vld1.16 {q1}, [r10, :64]!   @ WebRtcIsacfix_kSinTab1[]
+  vmull.s16 q9, d1, d5        @ WebRtcIsacfix_kCosTab1[k] * inre1Q9[k]
   vld1.16 {q3}, [r1]!         @ inre2Q9[]
-  vmlal.s16 q8, d2, d6        @ kSinTab1[k] * inre2Q9[k]
-  vmlal.s16 q9, d3, d7        @ kSinTab1[k] * inre2Q9[k]
-  vmull.s16 q12, d0, d6       @ kCosTab1[k] * inre2Q9[k]
-  vmull.s16 q13, d1, d7       @ kCosTab1[k] * inre2Q9[k]
-  vmlsl.s16 q12, d2, d4       @ kSinTab1[k] * inre1Q9[k]
-  vmlsl.s16 q13, d3, d5       @ kSinTab1[k] * inre1Q9[k]
+  vmlal.s16 q8, d2, d6        @ WebRtcIsacfix_kSinTab1[k] * inre2Q9[k]
+  vmlal.s16 q9, d3, d7        @ WebRtcIsacfix_kSinTab1[k] * inre2Q9[k]
+  vmull.s16 q12, d0, d6       @ WebRtcIsacfix_kCosTab1[k] * inre2Q9[k]
+  vmull.s16 q13, d1, d7       @ WebRtcIsacfix_kCosTab1[k] * inre2Q9[k]
+  vmlsl.s16 q12, d2, d4       @ WebRtcIsacfix_kSinTab1[k] * inre1Q9[k]
+  vmlsl.s16 q13, d3, d5       @ WebRtcIsacfix_kSinTab1[k] * inre1Q9[k]
 
   vqdmulh.s32 q0, q8, q4      @ xrQ16 * factQ19
   vqdmulh.s32 q1, q9, q4      @ xrQ16 * factQ19
@@ -153,9 +156,9 @@ Time2Spec_PreFftShift:
   ldr r7, [sp, #4]            @ inre2Q9
   add r4, r6, r8              @ &inre1Q9[FRAMESAMPLES / 2 - 4]
   add r5, r7, r8              @ &inre2Q9[FRAMESAMPLES / 2 - 4]
-  adr r10, kSinTab2
+  adr r10, WebRtcIsacfix_kSinTab2
 
-  add r9, r10, #(120*2 - 8)   @ &kSinTab2[119 - 4]
+  add r9, r10, #(120*2 - 8)   @ &WebRtcIsacfix_kSinTab2[119 - 4]
 
 
   mov r8, #(FRAMESAMPLES / 4) @ loop counter
@@ -170,9 +173,9 @@ Time2Spec_PostFftTransform:
 @ By vshl, we effectively did "<< (-sh - 23)", instead of "<< (-sh)",
 @ ">> 14" and then ">> 9" as in the C code.
 
-  vld1.16 {d6}, [r9:64]       @ kCosTab2[]
+  vld1.16 {d6}, [r9, :64]     @ kCosTab2[]
   vneg.s16 d6, d6
-  vld1.16 {d7}, [r10:64]!     @ kSinTab2[]
+  vld1.16 {d7}, [r10, :64]!   @ WebRtcIsacfix_kSinTab2[]
   vrev64.16 q1, q1            @ Reverse samples in 2nd half of xrQ16[].
   vqadd.s16 d4, d0, d2        @ xrQ16
   vqsub.s16 d5, d1, d3        @ xiQ16
@@ -187,12 +190,12 @@ Time2Spec_PostFftTransform:
   vqsub.s16 d0, d2, d0        @ yiQ16
 
   vmull.s16 q12, d6, d4       @ kCosTab2[k] * xrQ16
-  vmlsl.s16 q12, d7, d5       @ kSinTab2[k] * xiQ16
-  vmull.s16 q13, d7, d4       @ kSinTab2[k] * xrQ16
+  vmlsl.s16 q12, d7, d5       @ WebRtcIsacfix_kSinTab2[k] * xiQ16
+  vmull.s16 q13, d7, d4       @ WebRtcIsacfix_kSinTab2[k] * xrQ16
   vmlal.s16 q13, d6, d5       @ kCosTab2[k] * xiQ16
-  vmull.s16 q6, d7, d1        @ kSinTab2[k] * yrQ16
+  vmull.s16 q6, d7, d1        @ WebRtcIsacfix_kSinTab2[k] * yrQ16
   vmlal.s16 q6, d6, d0        @ kCosTab2[k] * yiQ16
-  vmull.s16 q7, d7, d0        @ kSinTab2[k] * yiQ16
+  vmull.s16 q7, d7, d0        @ WebRtcIsacfix_kSinTab2[k] * yiQ16
   vmlsl.s16 q7, d6, d1        @ kCosTab2[k] * yrQ16
 
   vshl.s32 q12, q12, q15
@@ -225,7 +228,7 @@ Time2Spec_PostFftTransform:
 
 .align  8
 @ Cosine table 1 in Q14
-kCosTab1:
+WebRtcIsacfix_kCosTab1:
   .short 16384, 16383, 16378, 16371, 16362, 16349, 16333, 16315
   .short 16294, 16270, 16244, 16214, 16182, 16147, 16110, 16069
   .short 16026, 15980, 15931, 15880, 15826, 15769, 15709, 15647
@@ -259,7 +262,7 @@ kCosTab1:
 
 .align  8
 @ Sine table 2 in Q14
-kSinTab2:
+WebRtcIsacfix_kSinTab2:
   .short 16384, -16381, 16375, -16367, 16356, -16342, 16325, -16305
   .short 16283, -16257, 16229, -16199, 16165, -16129, 16090, -16048
   .short 16003, -15956, 15906, -15853, 15798, -15739, 15679, -15615
@@ -280,7 +283,7 @@ kSinTab2:
 
 .align  8
 @ Sine table 1 in Q14
-kSinTab1:
+WebRtcIsacfix_kSinTab1:
   .short 0, 214, 429, 643, 857, 1072, 1285, 1499
   .short 1713, 1926, 2139, 2351, 2563, 2775, 2986, 3196
   .short 3406, 3616, 3825, 4033, 4240, 4447, 4653, 4859
@@ -334,8 +337,8 @@ DEFINE_FUNCTION WebRtcIsacfix_Spec2TimeNeon
   add r6, r3, r8, lsl #1      @ &outRe2Q16[FRAMESAMPLES / 2 - 8]
 
   mov r8, #(FRAMESAMPLES / 2) @ loop counter
-  adr r10, kSinTab2
-  add r9, r10, #(120*2 - 16)  @ &kSinTab2[119 - 8]
+  adr r10, WebRtcIsacfix_kSinTab2
+  add r9, r10, #(120*2 - 16)  @ &WebRtcIsacfix_kSinTab2[119 - 8]
 
 
   mov r5, #-32
@@ -349,24 +352,24 @@ TransformAndFindMax:
 
   subs r8, #16
 
-  vld1.16 {q0}, [r9:64]       @ kCosTab2[]
+  vld1.16 {q0}, [r9, :64]     @ kCosTab2[]
   sub r9, #16
   vld1.16 {q2}, [r0]!         @ inreQ7[]
   vneg.s16 q0, q0
   vld1.16 {q3}, [r1]!         @ inimQ7[]
   vrev64.16 d0, d0
   vrev64.16 d1, d1
-  vld1.16 {q1}, [r10:64]!     @ kSinTab2[]
+  vld1.16 {q1}, [r10, :64]!   @ WebRtcIsacfix_kSinTab2[]
   vswp d0, d1
 
-  vmull.s16 q8, d2, d6        @ kSinTab2[k] * inimQ7[k]
-  vmull.s16 q9, d3, d7        @ kSinTab2[k] * inimQ7[k]
+  vmull.s16 q8, d2, d6        @ WebRtcIsacfix_kSinTab2[k] * inimQ7[k]
+  vmull.s16 q9, d3, d7        @ WebRtcIsacfix_kSinTab2[k] * inimQ7[k]
   vmlal.s16 q8, d0, d4        @ kCosTab2[k] * inreQ7[k]
   vmlal.s16 q9, d1, d5        @ kCosTab2[k] * inreQ7[k]
   vmull.s16 q12, d0, d6       @ kCosTab2[k] * inimQ7[k]
   vmull.s16 q13, d1, d7       @ kCosTab2[k] * inimQ7[k]
-  vmlsl.s16 q12, d2, d4       @ kSinTab2[k] * inreQ7[k]
-  vmlsl.s16 q13, d3, d5       @ kSinTab2[k] * inreQ7[k]
+  vmlsl.s16 q12, d2, d4       @ WebRtcIsacfix_kSinTab2[k] * inreQ7[k]
+  vmlsl.s16 q13, d3, d5       @ WebRtcIsacfix_kSinTab2[k] * inreQ7[k]
 
   vld1.16 {q2}, [r11], r7     @ inimQ7[FRAMESAMPLES / 2 - 8 + i]
   vld1.16 {q3}, [r12], r7     @ inreQ7[FRAMESAMPLES / 2 - 8 + i]
@@ -374,15 +377,15 @@ TransformAndFindMax:
   vrev64.16 q2, q2            @ Reverse the order of the samples
   vrev64.16 q3, q3            @ Reverse the order of the samples
 
-  vmull.s16 q14, d2, d5       @ kSinTab2[k] * inimQ7[k]
-  vmull.s16 q15, d3, d4       @ kSinTab2[k] * inimQ7[k]
-  vmlsl.s16 q14, d0, d7       @ kSinTab2[k] * inimQ7[k] - kCosTab2[k] *inreQ7[k]
-  vmlsl.s16 q15, d1, d6       @ kSinTab2[k] * inimQ7[k] - kCosTab2[k] *inreQ7[k]
+  vmull.s16 q14, d2, d5       @ WebRtcIsacfix_kSinTab2[k] * inimQ7[k]
+  vmull.s16 q15, d3, d4       @ WebRtcIsacfix_kSinTab2[k] * inimQ7[k]
+  vmlsl.s16 q14, d0, d7       @ q14 -= kCosTab2[k] * inreQ7[k]
+  vmlsl.s16 q15, d1, d6       @ q15 -= kCosTab2[k] * inreQ7[k]
 
   vmull.s16 q10, d0, d5       @ kCosTab2[k] * inimQ7[]
   vmull.s16 q11, d1, d4       @ kCosTab2[k] * inimQ7[]
-  vmlal.s16 q10, d2, d7       @ kCosTab2[k] * inimQ7[] + kSinTab2[k] * inreQ7[]
-  vmlal.s16 q11, d3, d6       @ kCosTab2[k] * inimQ7[] + kSinTab2[k] * inreQ7[]
+  vmlal.s16 q10, d2, d7       @ q10 += WebRtcIsacfix_kSinTab2[k] * inreQ7[]
+  vmlal.s16 q11, d3, d6       @ q11 += WebRtcIsacfix_kSinTab2[k] * inreQ7[]
 
   vshr.s32 q8, q8, #5         @ xrQ16
   vshr.s32 q9, q9, #5         @ xrQ16
@@ -448,9 +451,9 @@ TransformAndFindMax:
 
   bgt TransformAndFindMax
 
-  adr r10, kSinTab1
-  mov r2, #(kSinTab1 - kCosTab1)
-  sub r9, r10, r2             @ kCosTab1
+  adr r10, WebRtcIsacfix_kSinTab1
+  mov r2, #(WebRtcIsacfix_kSinTab1 - WebRtcIsacfix_kCosTab1)
+  sub r9, r10, r2             @ WebRtcIsacfix_kCosTab1
 
   @ Find the maximum value in the Neon registers
   vmax.u32 d12, d13
@@ -565,39 +568,39 @@ PostFftShiftDivide:
 DemodulateAndSeparate:
   subs r8, #8
 
-  vld1.16 {q0}, [r9:64]!      @ kCosTab1[]
-  vmovl.s16 q6, d0            @ kCosTab1[]
-  vld1.16 {q1}, [r10:64]!     @ kSinTab1[]
-  vmovl.s16 q7, d1            @ kCosTab1[]
+  vld1.16 {q0}, [r9, :64]!    @ WebRtcIsacfix_kCosTab1[]
+  vmovl.s16 q6, d0            @ WebRtcIsacfix_kCosTab1[]
+  vld1.16 {q1}, [r10, :64]!   @ WebRtcIsacfix_kSinTab1[]
+  vmovl.s16 q7, d1            @ WebRtcIsacfix_kCosTab1[]
   vld1.32 {q2, q3}, [r2]      @ outre1Q16
-  vmovl.s16 q8, d2            @ kSinTab1[]
+  vmovl.s16 q8, d2            @ WebRtcIsacfix_kSinTab1[]
   vld1.32 {q4, q5}, [r3]      @ outre2Q16
-  vmovl.s16 q9, d3            @ kSinTab1[]
+  vmovl.s16 q9, d3            @ WebRtcIsacfix_kSinTab1[]
 
-  vmull.s32 q10, d12, d4      @ kCosTab1[k] * outre1Q16[k]
-  vmull.s32 q11, d13, d5      @ kCosTab1[k] * outre1Q16[k]
-  vmull.s32 q12, d14, d6      @ kCosTab1[k] * outre1Q16[k]
-  vmull.s32 q13, d15, d7      @ kCosTab1[k] * outre1Q16[k]
+  vmull.s32 q10, d12, d4      @ WebRtcIsacfix_kCosTab1[k] * outre1Q16[k]
+  vmull.s32 q11, d13, d5      @ WebRtcIsacfix_kCosTab1[k] * outre1Q16[k]
+  vmull.s32 q12, d14, d6      @ WebRtcIsacfix_kCosTab1[k] * outre1Q16[k]
+  vmull.s32 q13, d15, d7      @ WebRtcIsacfix_kCosTab1[k] * outre1Q16[k]
 
-  vmlsl.s32 q10, d16, d8      @ += kSinTab1[k] * outre2Q16[k]
-  vmlsl.s32 q11, d17, d9      @ += kSinTab1[k] * outre2Q16[k]
-  vmlsl.s32 q12, d18, d10     @ += kSinTab1[k] * outre2Q16[k]
-  vmlsl.s32 q13, d19, d11     @ += kSinTab1[k] * outre2Q16[k]
+  vmlsl.s32 q10, d16, d8      @ += WebRtcIsacfix_kSinTab1[k] * outre2Q16[k]
+  vmlsl.s32 q11, d17, d9      @ += WebRtcIsacfix_kSinTab1[k] * outre2Q16[k]
+  vmlsl.s32 q12, d18, d10     @ += WebRtcIsacfix_kSinTab1[k] * outre2Q16[k]
+  vmlsl.s32 q13, d19, d11     @ += WebRtcIsacfix_kSinTab1[k] * outre2Q16[k]
 
   vrshrn.s64 d20, q10, #10    @ xrQ16
   vrshrn.s64 d21, q11, #10    @ xrQ16
   vrshrn.s64 d22, q12, #10    @ xrQ16
   vrshrn.s64 d23, q13, #10    @ xrQ16
 
-  vmull.s32 q12, d12, d8      @ kCosTab1[k] * outre2Q16[k]
-  vmull.s32 q13, d13, d9      @ kCosTab1[k] * outre2Q16[k]
-  vmull.s32 q14, d14, d10     @ kCosTab1[k] * outre2Q16[k]
-  vmull.s32 q15, d15, d11     @ kCosTab1[k] * outre2Q16[k]
+  vmull.s32 q12, d12, d8      @ WebRtcIsacfix_kCosTab1[k] * outre2Q16[k]
+  vmull.s32 q13, d13, d9      @ WebRtcIsacfix_kCosTab1[k] * outre2Q16[k]
+  vmull.s32 q14, d14, d10     @ WebRtcIsacfix_kCosTab1[k] * outre2Q16[k]
+  vmull.s32 q15, d15, d11     @ WebRtcIsacfix_kCosTab1[k] * outre2Q16[k]
 
-  vmlal.s32 q12, d16, d4      @ += kSinTab1[k] * outre1Q16[k]
-  vmlal.s32 q13, d17, d5      @ += kSinTab1[k] * outre1Q16[k]
-  vmlal.s32 q14, d18, d6      @ += kSinTab1[k] * outre1Q16[k]
-  vmlal.s32 q15, d19, d7      @ += kSinTab1[k] * outre1Q16[k]
+  vmlal.s32 q12, d16, d4      @ += WebRtcIsacfix_kSinTab1[k] * outre1Q16[k]
+  vmlal.s32 q13, d17, d5      @ += WebRtcIsacfix_kSinTab1[k] * outre1Q16[k]
+  vmlal.s32 q14, d18, d6      @ += WebRtcIsacfix_kSinTab1[k] * outre1Q16[k]
+  vmlal.s32 q15, d19, d7      @ += WebRtcIsacfix_kSinTab1[k] * outre1Q16[k]
 
   vdup.s32 q4, r0             @ generic -> Neon doesn't cost extra cycles.
 
@@ -622,4 +625,3 @@ DemodulateAndSeparate:
   add sp, sp, #16
   vpop {q4-q7}
   pop {r4-r11,pc}
-

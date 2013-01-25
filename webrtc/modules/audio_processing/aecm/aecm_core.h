@@ -25,8 +25,6 @@
 #define ALIGN8_END __attribute__((aligned(8)))
 #endif
 
-extern const WebRtc_Word16 WebRtcAecm_kSqrtHanning[] ALIGN8_END;
-
 typedef struct {
     WebRtc_Word16 real;
     WebRtc_Word16 imag;

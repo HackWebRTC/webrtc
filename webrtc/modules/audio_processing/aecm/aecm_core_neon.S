@@ -16,8 +16,7 @@
 #include "aecm_core_neon_offsets.h"
 #include "webrtc/system_wrappers/interface/asm_defines.h"
 
-.extern WebRtcAecm_kSqrtHanning
-
+GLOBAL_LABEL WebRtcAecm_kSqrtHanning
 GLOBAL_FUNCTION WebRtcAecm_WindowAndFFTNeon
 GLOBAL_FUNCTION WebRtcAecm_InverseFFTAndWindowNeon
 GLOBAL_FUNCTION WebRtcAecm_CalcLinearEnergiesNeon
@@ -38,7 +37,7 @@ DEFINE_FUNCTION WebRtcAecm_WindowAndFFTNeon
 
   vmov.i16 d21, #0                           @ For imaginary parts of |fft|.
   vmov.i16 d27, #0                           @ For imaginary parts of |fft|.
-  ldr r5, =WebRtcAecm_kSqrtHanning
+  adr r5, WebRtcAecm_kSqrtHanning
   adr lr, kSqrtHanningReversed
   add r4, r1, #(PART_LEN2 * 2)               @ &fft[PART_LEN2]
   add r12, r2, #(PART_LEN * 2)               @ time_signal[PART_LEN]
@@ -133,7 +132,7 @@ LOOP_PRE_IFFT:
   ldrsh r2, [r5, r12]                        @ &aecm->dfaCleanQDomain[0]
 
   adr r12, kSqrtHanningReversed
-  ldr r6, =WebRtcAecm_kSqrtHanning
+  adr r6, WebRtcAecm_kSqrtHanning
   rsb r0, r2, r0                             @ outCFFT - aecm->dfaCleanQDomain
   vdup.32 q9, r0
   add r0, r4, #(PART_LEN * 4)                @ &efw[PART_LEN]
@@ -321,8 +320,21 @@ LOOP_RESET_ADAPTIVE_CHANNEL:
 
   bx  lr
 
-  @ Square root of Hanning window in Q14. Compared to WebRtcAecm_kSqrtHanning,
-  @ the order was reversed and one useless element (0) was removed.
+@ Square root of Hanning window in Q14.
+.align 3
+WebRtcAecm_kSqrtHanning:
+  .short 0
+  .short 399, 798, 1196, 1594, 1990, 2386, 2780, 3172
+  .short 3562, 3951, 4337, 4720, 5101, 5478, 5853, 6224
+  .short 6591, 6954, 7313, 7668, 8019, 8364, 8705, 9040
+  .short 9370, 9695, 10013, 10326, 10633, 10933, 11227, 11514
+  .short 11795, 12068, 12335, 12594, 12845, 13089, 13325, 13553
+  .short 13773, 13985, 14189, 14384, 14571, 14749, 14918, 15079
+  .short 15231, 15373, 15506, 15631, 15746, 15851, 15947, 16034
+  .short 16111, 16179, 16237, 16286, 16325, 16354, 16373, 16384
+
+@ Square root of Hanning window in Q14. Compared to WebRtcAecm_kSqrtHanning,
+@ the order was reversed and one element (0) was removed.
 .align  3
 kSqrtHanningReversed:
   .short 16384, 16373, 16354, 16325, 16286, 16237, 16179, 16111, 16034, 15947
