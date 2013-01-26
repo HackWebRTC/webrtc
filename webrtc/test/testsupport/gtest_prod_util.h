@@ -12,7 +12,7 @@
 #define WEBRTC_TEST_TESTSUPPORT_GTEST_PROD_UTIL_H_
 #pragma once
 
-#include "gtest/gtest_prod.h"
+#include "testing/gtest/include/gtest/gtest_prod.h"
 
 // This file is a plain copy of Chromium's base/gtest_prod_util.h.
 //

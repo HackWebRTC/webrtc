@@ -80,7 +80,7 @@ int Vp8SequenceCoderDecodeCallback::Decoded(webrtc::I420VideoFrame& image) {
   return 0;
 }
 
-int SequenceCoder(webrtc::test::CommandLineParser parser) {
+int SequenceCoder(webrtc::test::CommandLineParser& parser) {
   int width = strtol((parser.GetFlag("w")).c_str(), NULL, 10);
   int height = strtol((parser.GetFlag("h")).c_str(), NULL, 10);
   int framerate = strtol((parser.GetFlag("f")).c_str(), NULL, 10);

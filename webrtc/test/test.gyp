@@ -16,19 +16,16 @@
       'target_name': 'test_support',
       'type': 'static_library',
       'include_dirs': [
+        # TODO(kjellander): Remove this by making all includes use full paths.
         '.',
       ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          '.', # Some includes are hierarchical
-        ],
-      },
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/testing/gmock.gyp:gmock',
       ],
       'all_dependent_settings': {
         'include_dirs': [
+          # TODO(kjellander): Remove this by making all includes use full paths.
           '.',
         ],
       },

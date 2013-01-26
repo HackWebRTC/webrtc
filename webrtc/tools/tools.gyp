@@ -14,14 +14,6 @@
     {
       'target_name': 'command_line_parser',
       'type': 'static_library',
-      'include_dirs': [
-        '.',
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          '.',
-        ],
-      },
       'sources': [
         'simple_command_line_parser.h',
         'simple_command_line_parser.cc',
@@ -114,11 +106,13 @@
           'target_name': 'tools_unittests',
           'type': 'executable',
           'dependencies': [
+            'command_line_parser',
             'frame_editing_lib',
             '<(webrtc_root)/test/test.gyp:test_support_main',
             '<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [
+            'simple_command_line_parser_unittest.cc',
             'frame_editing/frame_editing_unittest.cc',
           ],
         }, # tools_unittests
