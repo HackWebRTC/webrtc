@@ -926,24 +926,25 @@ uint16_t* VCMJitterBuffer::CreateNackList(uint16_t* nack_list_size,
     nack_seq_nums_internal_[i] = seq_number_iterator;
     seq_number_iterator++;
   }
-  // Now we have a list of all sequence numbers that could have been sent.
-  // Zero out the ones we have received.
-  for (i = 0; i < max_number_of_frames_; i++) {
-    // We don't need to check if frame is decoding since low_seq_num is based
-    // on the last decoded sequence number.
-    VCMFrameBufferStateEnum state = frame_buffers_[i]->GetState();
-    if (kStateFree != state) {
+  if (number_of_seq_num > 0) {
+    // Now we have a list of all sequence numbers that could have been sent.
+    // Zero out the ones we have received.
+    int nack_seq_nums_index = 0;
+    for (FrameList::iterator it = frame_list_.begin(); it != frame_list_.end();
+        ++it) {
       // Reaching thus far means we are going to update the NACK list
       // When in hybrid mode, we use the soft NACKing feature.
       if (nack_mode_ == kNackHybrid) {
-        frame_buffers_[i]->BuildSoftNackList(nack_seq_nums_internal_,
-                                             number_of_seq_num,
-                                             rtt_ms_);
+        nack_seq_nums_index = (*it)->BuildSoftNackList(nack_seq_nums_internal_,
+                                                       number_of_seq_num,
+                                                       nack_seq_nums_index,
+                                                       rtt_ms_);
       } else {
         // Used when the frame is being processed by the decoding thread
         // don't need to use that info in this loop.
-        frame_buffers_[i]->BuildHardNackList(nack_seq_nums_internal_,
-                                             number_of_seq_num);
+        nack_seq_nums_index = (*it)->BuildHardNackList(nack_seq_nums_internal_,
+                                                       number_of_seq_num,
+                                                       nack_seq_nums_index);
       }
     }
   }
@@ -980,7 +981,6 @@ uint16_t* VCMJitterBuffer::CreateNackList(uint16_t* nack_list_size,
     // Larger list: NACK list was extended since the last call.
     *list_extended = true;
   }
-
   for (unsigned int j = 0; j < *nack_list_size; j++) {
     // Check if the list has been extended since it was last created, i.e,
     // new items have been added.

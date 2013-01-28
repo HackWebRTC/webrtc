@@ -353,23 +353,22 @@ int VCMSessionInfo::MakeDecodable() {
 }
 
 int VCMSessionInfo::BuildHardNackList(int* seq_num_list,
-                                      int seq_num_list_length) {
-  if (NULL == seq_num_list || seq_num_list_length < 1) {
-    return -1;
-  }
+                                      int seq_num_list_length,
+                                      int nack_seq_nums_index) {
+  assert(seq_num_list && seq_num_list_length > 0);
+
   if (packets_.empty() && empty_seq_num_low_ == -1) {
-    return 0;
+    return nack_seq_nums_index;
   }
 
   // Find end point (index of entry equals the sequence number of the first
   // packet).
-  int index = 0;
   int low_seq_num = (packets_.empty()) ? empty_seq_num_low_:
       packets_.front().seqNum;
-  for (; index < seq_num_list_length; ++index) {
-    if (seq_num_list[index] == low_seq_num) {
-      seq_num_list[index] = -1;
-      ++index;
+  for (; nack_seq_nums_index < seq_num_list_length; ++nack_seq_nums_index) {
+    if (seq_num_list[nack_seq_nums_index] == low_seq_num) {
+      seq_num_list[nack_seq_nums_index] = -1;
+      ++nack_seq_nums_index;
       break;
     }
   }
@@ -379,43 +378,43 @@ int VCMSessionInfo::BuildHardNackList(int* seq_num_list,
     PacketIterator it = packets_.begin();
     PacketIterator prev_it = it;
     ++it;
-    while (it != packets_.end() && index < seq_num_list_length) {
+    while (it != packets_.end() && nack_seq_nums_index < seq_num_list_length) {
       if (!InSequence(it, prev_it)) {
         // Found a sequence number gap due to packet loss.
-        index += PacketsMissing(it, prev_it);
+        nack_seq_nums_index += PacketsMissing(it, prev_it);
         session_nack_ = true;
       }
-      seq_num_list[index] = -1;
-      ++index;
+      seq_num_list[nack_seq_nums_index] = -1;
+      ++nack_seq_nums_index;
       prev_it = it;
       ++it;
     }
     if (!packets_.front().isFirstPacket)
         session_nack_ = true;
   }
-  index = ClearOutEmptyPacketSequenceNumbers(seq_num_list, seq_num_list_length,
-                                             index);
-  return 0;
+  nack_seq_nums_index = ClearOutEmptyPacketSequenceNumbers(seq_num_list,
+                                                           seq_num_list_length,
+                                                           nack_seq_nums_index);
+  return nack_seq_nums_index;
 }
 
 int VCMSessionInfo::BuildSoftNackList(int* seq_num_list,
                                       int seq_num_list_length,
+                                      int nack_seq_nums_index,
                                       int rtt_ms) {
-  if (NULL == seq_num_list || seq_num_list_length < 1) {
-    return -1;
-  }
+  assert(seq_num_list && seq_num_list_length > 0);
+
   if (packets_.empty() && empty_seq_num_low_ == -1) {
-    return 0;
+    return nack_seq_nums_index;
   }
 
-  int index = 0;
   int low_seq_num = (packets_.empty()) ? empty_seq_num_low_:
       packets_.front().seqNum;
-  // Find entrance point (index of entry equals the sequence number of the
-  // first packet).
-  for (; index < seq_num_list_length; ++index) {
-    if (seq_num_list[index] == low_seq_num) {
-      seq_num_list[index] = -1;
+  // Find entrance point (nack_seq_nums_index of entry equals the sequence
+  // number of the first packet).
+  for (; nack_seq_nums_index < seq_num_list_length; ++nack_seq_nums_index) {
+    if (seq_num_list[nack_seq_nums_index] == low_seq_num) {
+      seq_num_list[nack_seq_nums_index] = -1;
       break;
     }
   }
@@ -423,9 +422,10 @@ int VCMSessionInfo::BuildSoftNackList(int* seq_num_list,
   // TODO(mikhal): 1. Update score based on RTT value 2. Add partition data.
   // Use the previous available.
   bool base_available = false;
-  if ((index > 0) && (seq_num_list[index] == -1)) {
+  if ((nack_seq_nums_index > 0) && (seq_num_list[nack_seq_nums_index] == -1)) {
     // Found first packet, for now let's go only one back.
-    if ((seq_num_list[index - 1] == -1) || (seq_num_list[index - 1] == -2)) {
+    if ((seq_num_list[nack_seq_nums_index - 1] == -1) ||
+        (seq_num_list[nack_seq_nums_index - 1] == -2)) {
       // This is indeed the first packet, as previous packet was populated.
       base_available = true;
     }
@@ -460,10 +460,10 @@ int VCMSessionInfo::BuildSoftNackList(int* seq_num_list,
   if (!packets_.empty()) {
     PacketIterator it = packets_.begin();
     PacketIterator prev_it = it;
-    ++index;
+    ++nack_seq_nums_index;
     ++it;
     // TODO(holmer): Rewrite this in a way which better makes use of the list.
-    while (it != packets_.end() && index < seq_num_list_length) {
+    while (it != packets_.end() && nack_seq_nums_index < seq_num_list_length) {
     // Only process media packet sequence numbers.
       if (LatestSequenceNumber((*it).seqNum, media_high_seq_num, NULL) ==
         (*it).seqNum && (*it).seqNum != media_high_seq_num)
@@ -479,23 +479,24 @@ int VCMSessionInfo::BuildSoftNackList(int* seq_num_list,
           if (score > nack_score_threshold) {
             allow_nack = true;
           } else {
-            seq_num_list[index] = -1;
+            seq_num_list[nack_seq_nums_index] = -1;
           }
-          ++index;
+          ++nack_seq_nums_index;
         }
       }
-      seq_num_list[index] = -1;
-      ++index;
+      seq_num_list[nack_seq_nums_index] = -1;
+      ++nack_seq_nums_index;
       prev_it = it;
       ++it;
     }
   }
 
-  index = ClearOutEmptyPacketSequenceNumbers(seq_num_list, seq_num_list_length,
-                                             index);
+  nack_seq_nums_index = ClearOutEmptyPacketSequenceNumbers(seq_num_list,
+                                                           seq_num_list_length,
+                                                           nack_seq_nums_index);
 
   session_nack_ = allow_nack;
-  return 0;
+  return nack_seq_nums_index;
 }
 
 int VCMSessionInfo::ClearOutEmptyPacketSequenceNumbers(
@@ -527,12 +528,8 @@ int VCMSessionInfo::PacketsMissing(const PacketIterator& packet_it,
                                    const PacketIterator& prev_packet_it) {
   if (packet_it == prev_packet_it)
     return 0;
-  if ((*prev_packet_it).seqNum > (*packet_it).seqNum)  // Wrap.
-    return static_cast<WebRtc_UWord16>(
-        static_cast<WebRtc_UWord32>((*packet_it).seqNum + 0x10000) -
-        (*prev_packet_it).seqNum) - 1;
-  else
-    return (*packet_it).seqNum - (*prev_packet_it).seqNum - 1;
+  return static_cast<uint16_t>((*packet_it).seqNum -
+                               (*prev_packet_it).seqNum - 1);
 }
 
 bool

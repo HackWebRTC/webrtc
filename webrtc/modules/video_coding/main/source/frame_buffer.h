@@ -67,10 +67,11 @@ public:
     // NACK - Building the NACK lists.
     // Build hard NACK list: Zero out all entries in list up to and including
     // _lowSeqNum.
-    int BuildHardNackList(int* list, int num);
+    int BuildHardNackList(int* list, int num, int nack_seq_nums_index);
     // Build soft NACK list: Zero out only a subset of the packets, discard
     // empty packets.
-    int BuildSoftNackList(int* list, int num, int rttMs);
+    int BuildSoftNackList(int* list, int num, int nack_seq_nums_index,
+                          int rttMs);
     void IncrementNackCount();
     WebRtc_Word16 GetNackCount() const;
 

@@ -29,12 +29,14 @@ class VCMSessionInfo {
   // Build hard NACK list: Zero out all entries in list up to and including
   // _lowSeqNum.
   int BuildHardNackList(int* seq_num_list,
-                        int seq_num_list_length);
+                        int seq_num_list_length,
+                        int nack_seq_nums_index);
 
   // Build soft NACK list:  Zero out only a subset of the packets, discard
   // empty packets.
   int BuildSoftNackList(int* seq_num_list,
                         int seq_num_list_length,
+                        int nack_seq_nums_index,
                         int rtt_ms);
   void Reset();
   int InsertPacket(const VCMPacket& packet,
