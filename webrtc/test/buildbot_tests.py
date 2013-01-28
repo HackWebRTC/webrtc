@@ -49,7 +49,7 @@ _LINUX_TESTS = {
                       '--gtest_filter=-RtpFuzzTest.*'],
     'audio_e2e_test': ['python',
                        'run_audio_test.py',
-                       '--input=e2e_audio_in.pcm',
+                       '--input=../../resources/e2e_audio_in.pcm',
                        '--output=/tmp/e2e_audio_out.pcm',
                        '--codec=L16',
                        '--compare="~/bin/compare-audio +16000 +wb"',
@@ -96,6 +96,11 @@ def main():
     if test not in test_dict:
       parser.error('Test "%s" is not supported (use --list to view supported '
                    'tests).')
+
+  # Change current working directory to the script's dir to make the relative
+  # paths always work.
+  os.chdir(_CURRENT_DIR)
+  print 'Changed working directory to: %s' % _CURRENT_DIR
 
   print 'Running WebRTC Buildbot tests: %s' % options.test
   for test in options.test:
