@@ -130,7 +130,12 @@
     'include_dirs': [
       # TODO(andrew): Remove '..' when we've added webrtc/ to include paths.
       '..',
+      # Allow includes to be prefixed with webrtc/ in case it is not an
+      # immediate subdirectory of <(DEPTH).
       '../..',
+      # To include the top-level directory when building in Chrome, so we can
+      # use full paths (e.g. headers inside testing/ or third_party/).
+      '<(DEPTH)',
     ],
     'defines': [
       # TODO(leozwang): Run this as a gclient hook rather than at build-time:
