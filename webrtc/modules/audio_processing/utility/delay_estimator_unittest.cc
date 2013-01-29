@@ -11,11 +11,11 @@
 #include "gtest/gtest.h"
 
 extern "C" {
-#include "webrtc/modules/audio_processing/utility/delay_estimator.h"
-#include "webrtc/modules/audio_processing/utility/delay_estimator_internal.h"
-#include "webrtc/modules/audio_processing/utility/delay_estimator_wrapper.h"
+#include "modules/audio_processing/utility/delay_estimator.h"
+#include "modules/audio_processing/utility/delay_estimator_internal.h"
+#include "modules/audio_processing/utility/delay_estimator_wrapper.h"
 }
-#include "webrtc/typedefs.h"
+#include "typedefs.h"
 
 namespace {
 
@@ -42,8 +42,6 @@ class DelayEstimatorTest : public ::testing::Test {
 
   void* handle_;
   DelayEstimator* self_;
-  void* farend_handle_;
-  DelayEstimatorFarend* farend_self_;
   BinaryDelayEstimator* binary_;
   BinaryDelayEstimatorFarend* binary_farend_;
   int spectrum_size_;
@@ -58,8 +56,6 @@ class DelayEstimatorTest : public ::testing::Test {
 DelayEstimatorTest::DelayEstimatorTest()
     : handle_(NULL),
       self_(NULL),
-      farend_handle_(NULL),
-      farend_self_(NULL),
       binary_(NULL),
       binary_farend_(NULL),
       spectrum_size_(kSpectrumSize) {
@@ -78,11 +74,7 @@ DelayEstimatorTest::DelayEstimatorTest()
 }
 
 void DelayEstimatorTest::SetUp() {
-  farend_handle_ = WebRtc_CreateDelayEstimatorFarend(kSpectrumSize,
-                                                     kMaxDelay + kLookahead);
-  ASSERT_TRUE(farend_handle_ != NULL);
-  farend_self_ = reinterpret_cast<DelayEstimatorFarend*>(farend_handle_);
-  handle_ = WebRtc_CreateDelayEstimator(farend_handle_, kLookahead);
+  handle_ = WebRtc_CreateDelayEstimator(kSpectrumSize, kMaxDelay, kLookahead);
   ASSERT_TRUE(handle_ != NULL);
   self_ = reinterpret_cast<DelayEstimator*>(handle_);
   binary_farend_ = WebRtc_CreateBinaryDelayEstimatorFarend(kMaxDelay +
@@ -96,9 +88,6 @@ void DelayEstimatorTest::TearDown() {
   WebRtc_FreeDelayEstimator(handle_);
   handle_ = NULL;
   self_ = NULL;
-  WebRtc_FreeDelayEstimatorFarend(farend_handle_);
-  farend_handle_ = NULL;
-  farend_self_ = NULL;
   WebRtc_FreeBinaryDelayEstimator(binary_);
   binary_ = NULL;
   WebRtc_FreeBinaryDelayEstimatorFarend(binary_farend_);
@@ -107,10 +96,9 @@ void DelayEstimatorTest::TearDown() {
 
 void DelayEstimatorTest::Init() {
   // Initialize Delay Estimator
-  EXPECT_EQ(0, WebRtc_InitDelayEstimatorFarend(farend_handle_));
   EXPECT_EQ(0, WebRtc_InitDelayEstimator(handle_));
   // Verify initialization.
-  EXPECT_EQ(0, farend_self_->far_spectrum_initialized);
+  EXPECT_EQ(0, self_->far_spectrum_initialized);
   EXPECT_EQ(0, self_->near_spectrum_initialized);
   EXPECT_EQ(-2, WebRtc_last_delay(handle_));  // Delay in initial state.
   EXPECT_EQ(0, WebRtc_last_delay_quality(handle_));  // Zero quality.
@@ -199,78 +187,59 @@ void DelayEstimatorTest::RunBinarySpectraTest(int near_offset,
 TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfWrapper) {
   // In this test we verify correct error returns on invalid API calls.
 
-  // WebRtc_CreateDelayEstimatorFarend() and WebRtc_CreateDelayEstimator()
-  // should return a NULL pointer on invalid input values.
+  // WebRtc_CreateDelayEstimator() should return a NULL pointer on invalid input
+  // values.
   // Make sure we have a non-NULL value at start, so we can detect NULL after
   // create failure.
-  void* handle = farend_handle_;
-  handle = WebRtc_CreateDelayEstimatorFarend(33, kMaxDelay + kLookahead);
-  EXPECT_TRUE(handle == NULL);
-  handle = farend_handle_;
-  handle = WebRtc_CreateDelayEstimatorFarend(kSpectrumSize, 1);
-  EXPECT_TRUE(handle == NULL);
-
-  handle = handle_;
-  handle = WebRtc_CreateDelayEstimator(NULL, kLookahead);
+  void* handle = handle_;
+  handle = WebRtc_CreateDelayEstimator(33, kMaxDelay, kLookahead);
   EXPECT_TRUE(handle == NULL);
   handle = handle_;
-  handle = WebRtc_CreateDelayEstimator(farend_handle_, -1);
+  handle = WebRtc_CreateDelayEstimator(kSpectrumSize, kMaxDelay, -1);
+  EXPECT_TRUE(handle == NULL);
+  handle = handle_;
+  handle = WebRtc_CreateDelayEstimator(kSpectrumSize, 0, 0);
   EXPECT_TRUE(handle == NULL);
 
-  // WebRtc_InitDelayEstimatorFarend() and WebRtc_InitDelayEstimator() should
-  // return -1 if we have a NULL pointer as |handle|.
-  EXPECT_EQ(-1, WebRtc_InitDelayEstimatorFarend(NULL));
+  // WebRtc_InitDelayEstimator() should return -1 if we have a NULL pointer as
+  // |handle|.
   EXPECT_EQ(-1, WebRtc_InitDelayEstimator(NULL));
-
-  // WebRtc_AddFarSpectrumFloat() should return -1 if we have:
-  // 1) NULL pointer as |handle|.
-  // 2) NULL pointer as far-end spectrum.
-  // 3) Incorrect spectrum size.
-  EXPECT_EQ(-1, WebRtc_AddFarSpectrumFloat(NULL, far_f_, spectrum_size_));
-  // Use |farend_handle_| which is properly created at SetUp().
-  EXPECT_EQ(-1, WebRtc_AddFarSpectrumFloat(farend_handle_, NULL,
-                                           spectrum_size_));
-  EXPECT_EQ(-1, WebRtc_AddFarSpectrumFloat(farend_handle_, far_f_,
-                                           spectrum_size_ + 1));
-
-  // WebRtc_AddFarSpectrumFix() should return -1 if we have:
-  // 1) NULL pointer as |handle|.
-  // 2) NULL pointer as far-end spectrum.
-  // 3) Incorrect spectrum size.
-  // 4) Too high precision in far-end spectrum (Q-domain > 15).
-  EXPECT_EQ(-1, WebRtc_AddFarSpectrumFix(NULL, far_u16_, spectrum_size_, 0));
-  EXPECT_EQ(-1, WebRtc_AddFarSpectrumFix(farend_handle_, NULL, spectrum_size_,
-                                         0));
-  EXPECT_EQ(-1, WebRtc_AddFarSpectrumFix(farend_handle_, far_u16_,
-                                         spectrum_size_ + 1, 0));
-  EXPECT_EQ(-1, WebRtc_AddFarSpectrumFix(farend_handle_, far_u16_,
-                                         spectrum_size_, 16));
 
   // WebRtc_DelayEstimatorProcessFloat() should return -1 if we have:
   // 1) NULL pointer as |handle|.
-  // 2) NULL pointer as near-end spectrum.
-  // 3) Incorrect spectrum size.
-  EXPECT_EQ(-1, WebRtc_DelayEstimatorProcessFloat(NULL, near_f_,
+  // 2) NULL pointer as far-end spectrum.
+  // 3) NULL pointer as near-end spectrum.
+  // 4) Incorrect spectrum size.
+  EXPECT_EQ(-1, WebRtc_DelayEstimatorProcessFloat(NULL, far_f_, near_f_,
                                                   spectrum_size_));
   // Use |handle_| which is properly created at SetUp().
-  EXPECT_EQ(-1, WebRtc_DelayEstimatorProcessFloat(handle_, NULL,
+  EXPECT_EQ(-1, WebRtc_DelayEstimatorProcessFloat(handle_, NULL, near_f_,
                                                   spectrum_size_));
-  EXPECT_EQ(-1, WebRtc_DelayEstimatorProcessFloat(handle_, near_f_,
+  EXPECT_EQ(-1, WebRtc_DelayEstimatorProcessFloat(handle_, far_f_, NULL,
+                                                  spectrum_size_));
+  EXPECT_EQ(-1, WebRtc_DelayEstimatorProcessFloat(handle_, far_f_, near_f_,
                                                   spectrum_size_ + 1));
 
   // WebRtc_DelayEstimatorProcessFix() should return -1 if we have:
   // 1) NULL pointer as |handle|.
+  // 2) NULL pointer as far-end spectrum.
   // 3) NULL pointer as near-end spectrum.
   // 4) Incorrect spectrum size.
+  // 5) Too high precision in far-end spectrum (Q-domain > 15).
   // 6) Too high precision in near-end spectrum (Q-domain > 15).
-  EXPECT_EQ(-1, WebRtc_DelayEstimatorProcessFix(NULL, near_u16_, spectrum_size_,
-                                                0));
-  EXPECT_EQ(-1, WebRtc_DelayEstimatorProcessFix(handle_, NULL, spectrum_size_,
-                                                0));
-  EXPECT_EQ(-1, WebRtc_DelayEstimatorProcessFix(handle_, near_u16_,
-                                                spectrum_size_ + 1, 0));
-  EXPECT_EQ(-1, WebRtc_DelayEstimatorProcessFix(handle_, near_u16_,
-                                                spectrum_size_, 16));
+  EXPECT_EQ(-1, WebRtc_DelayEstimatorProcessFix(NULL, far_u16_, near_u16_,
+                                                spectrum_size_, 0, 0));
+  // Use |handle_| which is properly created at SetUp().
+  EXPECT_EQ(-1, WebRtc_DelayEstimatorProcessFix(handle_, NULL, near_u16_,
+                                                spectrum_size_, 0, 0));
+  EXPECT_EQ(-1, WebRtc_DelayEstimatorProcessFix(handle_, far_u16_, NULL,
+                                                spectrum_size_, 0, 0));
+  EXPECT_EQ(-1, WebRtc_DelayEstimatorProcessFix(handle_, far_u16_, near_u16_,
+                                                spectrum_size_ + 1, 0, 0));
+  EXPECT_EQ(-1, WebRtc_DelayEstimatorProcessFix(handle_, far_u16_, near_u16_,
+                                                spectrum_size_, 16, 0));
+  EXPECT_EQ(-1, WebRtc_DelayEstimatorProcessFix(handle_, far_u16_, near_u16_,
+                                                spectrum_size_, 0, 16));
 
   // WebRtc_last_delay() should return -1 if we have a NULL pointer as |handle|.
   EXPECT_EQ(-1, WebRtc_last_delay(NULL));
@@ -285,26 +254,22 @@ TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfWrapper) {
 
 TEST_F(DelayEstimatorTest, InitializedSpectrumAfterProcess) {
   // In this test we verify that the mean spectra are initialized after first
-  // time we call WebRtc_AddFarSpectrum() and Process() respectively.
+  // time we call Process().
 
   // For floating point operations, process one frame and verify initialization
   // flag.
   Init();
-  EXPECT_EQ(0, WebRtc_AddFarSpectrumFloat(farend_handle_, far_f_,
-                                           spectrum_size_));
-  EXPECT_EQ(1, farend_self_->far_spectrum_initialized);
-  EXPECT_EQ(-2, WebRtc_DelayEstimatorProcessFloat(handle_, near_f_,
+  EXPECT_EQ(-2, WebRtc_DelayEstimatorProcessFloat(handle_, far_f_, near_f_,
                                                   spectrum_size_));
+  EXPECT_EQ(1, self_->far_spectrum_initialized);
   EXPECT_EQ(1, self_->near_spectrum_initialized);
 
   // For fixed point operations, process one frame and verify initialization
   // flag.
   Init();
-  EXPECT_EQ(0, WebRtc_AddFarSpectrumFix(farend_handle_, far_u16_,
-                                         spectrum_size_, 0));
-  EXPECT_EQ(1, farend_self_->far_spectrum_initialized);
-  EXPECT_EQ(-2, WebRtc_DelayEstimatorProcessFix(handle_, near_u16_,
-                                                spectrum_size_, 0));
+  EXPECT_EQ(-2, WebRtc_DelayEstimatorProcessFix(handle_, far_u16_, near_u16_,
+                                                spectrum_size_, 0, 0));
+  EXPECT_EQ(1, self_->far_spectrum_initialized);
   EXPECT_EQ(1, self_->near_spectrum_initialized);
 }
 
@@ -318,9 +283,7 @@ TEST_F(DelayEstimatorTest, CorrectLastDelay) {
   // Floating point operations.
   Init();
   for (int i = 0; i < 200; i++) {
-    EXPECT_EQ(0, WebRtc_AddFarSpectrumFloat(farend_handle_, far_f_,
-                                            spectrum_size_));
-    last_delay = WebRtc_DelayEstimatorProcessFloat(handle_, near_f_,
+    last_delay = WebRtc_DelayEstimatorProcessFloat(handle_, far_f_, near_f_,
                                                    spectrum_size_);
     if (last_delay != -2) {
       EXPECT_EQ(last_delay, WebRtc_last_delay(handle_));
@@ -335,10 +298,8 @@ TEST_F(DelayEstimatorTest, CorrectLastDelay) {
   // Fixed point operations.
   Init();
   for (int i = 0; i < 200; i++) {
-    EXPECT_EQ(0, WebRtc_AddFarSpectrumFix(farend_handle_, far_u16_,
-                                          spectrum_size_, 0));
-    last_delay = WebRtc_DelayEstimatorProcessFix(handle_, near_u16_,
-                                                 spectrum_size_, 0);
+    last_delay = WebRtc_DelayEstimatorProcessFix(handle_, far_u16_, near_u16_,
+                                                 spectrum_size_, 0, 0);
     if (last_delay != -2) {
       EXPECT_EQ(last_delay, WebRtc_last_delay(handle_));
       EXPECT_EQ(7203, WebRtc_last_delay_quality(handle_));
@@ -348,20 +309,6 @@ TEST_F(DelayEstimatorTest, CorrectLastDelay) {
   // Verify that we have left the initialized state.
   EXPECT_NE(-2, WebRtc_last_delay(handle_));
   EXPECT_NE(0, WebRtc_last_delay_quality(handle_));
-}
-
-TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfBinaryEstimatorFarend) {
-  // In this test we verify correct output on invalid API calls to the Binary
-  // Delay Estimator (far-end part).
-
-  BinaryDelayEstimatorFarend* binary = binary_farend_;
-  // WebRtc_CreateBinaryDelayEstimatorFarend() should return -1 if the input
-  // history size is less than 2. This is to make sure the buffer shifting
-  // applies properly.
-  // Make sure we have a non-NULL value at start, so we can detect NULL after
-  // create failure.
-  binary = WebRtc_CreateBinaryDelayEstimatorFarend(1);
-  EXPECT_TRUE(binary == NULL);
 }
 
 TEST_F(DelayEstimatorTest, CorrectErrorReturnsOfBinaryEstimator) {

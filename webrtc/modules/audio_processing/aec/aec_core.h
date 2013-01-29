@@ -19,12 +19,12 @@
 #include <stdio.h>
 #endif
 
-#include "webrtc/typedefs.h"
+#include "typedefs.h"
 
 #define FRAME_LEN 80
-#define PART_LEN 64  // Length of partition
-#define PART_LEN1 (PART_LEN + 1)  // Unique fft coefficients
-#define PART_LEN2 (PART_LEN * 2)  // Length of partition * 2
+#define PART_LEN 64 // Length of partition
+#define PART_LEN1 (PART_LEN + 1) // Unique fft coefficients
+#define PART_LEN2 (PART_LEN * 2) // Length of partition * 2
 #define NR_PART 12  // Number of partitions in filter.
 #define PREF_BAND_SIZE 24
 
@@ -79,10 +79,10 @@ typedef struct {
     void *nearFrBufH;
     void *outFrBufH;
 
-    float dBuf[PART_LEN2];  // nearend
-    float eBuf[PART_LEN2];  // error
+    float dBuf[PART_LEN2]; // nearend
+    float eBuf[PART_LEN2]; // error
 
-    float dBufH[PART_LEN2];  // nearend
+    float dBufH[PART_LEN2]; // nearend
 
     float xPow[PART_LEN1];
     float dPow[PART_LEN1];
@@ -90,13 +90,13 @@ typedef struct {
     float dInitMinPow[PART_LEN1];
     float *noisePow;
 
-    float xfBuf[2][NR_PART * PART_LEN1];  // farend fft buffer
-    float wfBuf[2][NR_PART * PART_LEN1];  // filter fft
-    complex_t sde[PART_LEN1];  // cross-psd of nearend and error
-    complex_t sxd[PART_LEN1];  // cross-psd of farend and nearend
-    complex_t xfwBuf[NR_PART * PART_LEN1];  // farend windowed fft buffer
+    float xfBuf[2][NR_PART * PART_LEN1]; // farend fft buffer
+    float wfBuf[2][NR_PART * PART_LEN1]; // filter fft
+    complex_t sde[PART_LEN1]; // cross-psd of nearend and error
+    complex_t sxd[PART_LEN1]; // cross-psd of farend and nearend
+    complex_t xfwBuf[NR_PART * PART_LEN1]; // farend windowed fft buffer
 
-    float sx[PART_LEN1], sd[PART_LEN1], se[PART_LEN1];  // far, near, error psd
+    float sx[PART_LEN1], sd[PART_LEN1], se[PART_LEN1]; // far, near and error psd
     float hNs[PART_LEN1];
     float hNlFbMin, hNlFbLocalMin;
     float hNlXdAvgMin;
@@ -119,8 +119,8 @@ typedef struct {
     int sampFreq;
     WebRtc_UWord32 seed;
 
-    float mu;  // stepsize
-    float errThresh;  // error threshold
+    float mu; // stepsize
+    float errThresh; // error threshold
 
     int noiseEstCtr;
 
@@ -137,13 +137,12 @@ typedef struct {
     stats_t rerl;
 
     // Quantities to control H band scaling for SWB input
-    int freq_avg_ic;  // initial bin for averaging nlp gain
-    int flag_Hband_cn;  // for comfort noise
-    float cn_scale_Hband;  // scale for comfort noise in H band
+    int freq_avg_ic;         //initial bin for averaging nlp gain
+    int flag_Hband_cn;      //for comfort noise
+    float cn_scale_Hband;   //scale for comfort noise in H band
 
     int delay_histogram[kHistorySizeBlocks];
     int delay_logging_enabled;
-    void* delay_estimator_farend;
     void* delay_estimator;
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
