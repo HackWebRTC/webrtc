@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "delay_estimator.h"
+#include "webrtc/modules/audio_processing/utility/delay_estimator.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -76,9 +76,12 @@ void WebRtc_FreeBinaryDelayEstimatorFarend(BinaryDelayEstimatorFarend* self) {
 
 BinaryDelayEstimatorFarend* WebRtc_CreateBinaryDelayEstimatorFarend(
     int history_size) {
-  BinaryDelayEstimatorFarend* self = malloc(sizeof(BinaryDelayEstimatorFarend));
+  BinaryDelayEstimatorFarend* self = NULL;
 
-  assert(history_size > 1);
+  if (history_size > 1) {
+    // Sanity conditions fulfilled.
+    self = malloc(sizeof(BinaryDelayEstimatorFarend));
+  }
   if (self != NULL) {
     int malloc_fail = 0;
 

@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "aecm_core.h"
+#include "webrtc/modules/audio_processing/aecm/aecm_core.h"
 
 #include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "common_audio/signal_processing/include/real_fft.h"
-#include "cpu_features_wrapper.h"
-#include "delay_estimator_wrapper.h"
-#include "echo_control_mobile.h"
-#include "ring_buffer.h"
-#include "system_wrappers/interface/compile_assert.h"
-#include "typedefs.h"
+#include "webrtc/common_audio/signal_processing/include/real_fft.h"
+#include "webrtc/modules/audio_processing/utility/delay_estimator_wrapper.h"
+#include "webrtc/modules/audio_processing/aecm/include/echo_control_mobile.h"
+#include "webrtc/modules/audio_processing/utility/ring_buffer.h"
+#include "webrtc/system_wrappers/interface/compile_assert.h"
+#include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
+#include "webrtc/typedefs.h"
 
 #ifdef AEC_DEBUG
 FILE *dfile;
@@ -288,8 +288,15 @@ int WebRtcAecm_CreateCore(AecmCore_t **aecmInst)
         return -1;
     }
 
-    aecm->delay_estimator = WebRtc_CreateDelayEstimator(PART_LEN1, MAX_DELAY,
-                                                        0);
+    aecm->delay_estimator_farend = WebRtc_CreateDelayEstimatorFarend(PART_LEN1,
+                                                                     MAX_DELAY);
+    if (aecm->delay_estimator_farend == NULL) {
+      WebRtcAecm_FreeCore(aecm);
+      aecm = NULL;
+      return -1;
+    }
+    aecm->delay_estimator =
+        WebRtc_CreateDelayEstimator(aecm->delay_estimator_farend, 0);
     if (aecm->delay_estimator == NULL) {
       WebRtcAecm_FreeCore(aecm);
       aecm = NULL;
@@ -565,6 +572,9 @@ int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
     aecm->seed = 666;
     aecm->totCount = 0;
 
+    if (WebRtc_InitDelayEstimatorFarend(aecm->delay_estimator_farend) != 0) {
+      return -1;
+    }
     if (WebRtc_InitDelayEstimator(aecm->delay_estimator) != 0) {
       return -1;
     }
@@ -682,6 +692,7 @@ int WebRtcAecm_FreeCore(AecmCore_t *aecm)
     WebRtc_FreeBuffer(aecm->outFrameBuf);
 
     WebRtc_FreeDelayEstimator(aecm->delay_estimator);
+    WebRtc_FreeDelayEstimatorFarend(aecm->delay_estimator_farend);
     WebRtcSpl_FreeRealFFT(aecm->real_fft);
 
     free(aecm);
@@ -1592,11 +1603,13 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
     // Get the delay
     // Save far-end history and estimate delay
     UpdateFarHistory(aecm, xfa, far_q);
+    if (WebRtc_AddFarSpectrumFix(aecm->delay_estimator_farend, xfa, PART_LEN1,
+                                 far_q) == -1) {
+      return -1;
+    }
     delay = WebRtc_DelayEstimatorProcessFix(aecm->delay_estimator,
-                                            xfa,
                                             dfaNoisy,
                                             PART_LEN1,
-                                            far_q,
                                             zerosDBufNoisy);
     if (delay == -1)
     {

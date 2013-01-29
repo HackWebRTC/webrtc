@@ -14,14 +14,13 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_DELAY_ESTIMATOR_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_DELAY_ESTIMATOR_H_
 
-#include "typedefs.h"
+#include "webrtc/typedefs.h"
 
 typedef struct {
   // Pointer to bit counts.
   int* far_bit_counts;
   // Binary history variables.
   uint32_t* binary_far_history;
-  // Buffer size.
   int history_size;
 } BinaryDelayEstimatorFarend;
 
@@ -34,6 +33,7 @@ typedef struct {
 
   // Binary history variables.
   uint32_t* binary_near_history;
+  int near_history_size;
 
   // Delay estimation variables.
   int32_t minimum_probability;
@@ -42,8 +42,6 @@ typedef struct {
   // Delay memory.
   int last_delay;
 
-  // Near-end buffer size.
-  int near_history_size;
   // Far-end binary spectrum history buffer etc.
   BinaryDelayEstimatorFarend* farend;
 } BinaryDelayEstimator;
@@ -94,7 +92,7 @@ void WebRtc_InitBinaryDelayEstimatorFarend(BinaryDelayEstimatorFarend* self);
 //    - binary_far_spectrum   : Far-end binary spectrum.
 //
 // Output:
-//    - handle                : Updated far-end instance.
+//    - self                  : Updated far-end instance.
 //
 void WebRtc_AddBinaryFarSpectrum(BinaryDelayEstimatorFarend* self,
                                  uint32_t binary_far_spectrum);
