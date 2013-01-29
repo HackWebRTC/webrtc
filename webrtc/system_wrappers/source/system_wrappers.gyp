@@ -187,6 +187,8 @@
           ],
         }],
       ],
+      # Ignore warning on shift operator promotion.
+      'msvs_disabled_warnings': [ 4334, ],
     },
   ], # targets
   'conditions': [

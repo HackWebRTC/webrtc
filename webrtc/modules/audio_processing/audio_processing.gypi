@@ -122,6 +122,8 @@
           'dependencies': ['audio_processing_neon',],
         }],
       ],
+      # TODO(jschuh): Bug 1348: fix size_t to int truncations.
+      'msvs_disabled_warnings': [ 4267, ],
     },
   ],
   'conditions': [

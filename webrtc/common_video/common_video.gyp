@@ -66,6 +66,8 @@
         'plane.h',
         'plane.cc',
       ],
+      # Silence jpeg struct padding warnings.
+      'msvs_disabled_warnings': [ 4324, ],
     },
   ],  # targets
   'conditions': [
