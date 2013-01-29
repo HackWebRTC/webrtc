@@ -18,6 +18,7 @@
     'audio_coding/codecs/pcm16b/pcm16b.gypi',
     'audio_coding/main/source/audio_coding_module.gypi',
     'audio_coding/neteq/neteq.gypi',
+    'audio_coding/neteq4/neteq.gypi',
     'audio_conference_mixer/source/audio_conference_mixer.gypi',
     'audio_device/audio_device.gypi',
     'audio_processing/audio_processing.gypi',
