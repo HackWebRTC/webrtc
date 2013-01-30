@@ -24,6 +24,9 @@ import os
 import subprocess
 import sys
 
+_CURRENT_DIR = os.path.abspath(os.path.dirname(__file__))
+_HOME = os.environ.get('HOME', '')
+
 _VIE_AUTO_TEST_CMD_LIST = [
     'vie_auto_test',
     '--automated',
@@ -52,8 +55,9 @@ _LINUX_TESTS = {
                        '--input=../../resources/e2e_audio_in.pcm',
                        '--output=/tmp/e2e_audio_out.pcm',
                        '--codec=L16',
-                       '--compare="~/bin/compare-audio +16000 +wb"',
-                       r'--regexp="(\d\.\d{3})"'],
+                       '--harness=%s/audio_e2e_harness' % _CURRENT_DIR,
+                       '--compare=%s/bin/compare-audio +16000 +wb' % _HOME,
+                       '--regexp=(\d\.\d{3})'],
     'audioproc_perf': ['audioproc',
                        '-aecm', '-ns', '-agc', '--fixed_digital', '--perf',
                        '-pb', '../../resources/audioproc.aecdump'],
@@ -61,7 +65,6 @@ _LINUX_TESTS = {
                         '32000', '../../resources/speech_and_misc_wb.pcm',
                         'isac_speech_and_misc_wb.pcm'],
 }
-_CURRENT_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 def main():
