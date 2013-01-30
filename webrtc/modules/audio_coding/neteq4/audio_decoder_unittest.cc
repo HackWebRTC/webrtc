@@ -549,7 +549,7 @@ TEST_F(AudioDecoderIsacSwbTest, EncodeDecode) {
   DecodePlcTest();
 }
 
-TEST_F(AudioDecoderIsacFixTest, EncodeDecode) {
+TEST_F(AudioDecoderIsacFixTest, DISABLED_EncodeDecode) {
   int tolerance = 11034;
   double mse = 3.46e6;
   int delay = 54;  // Delay from input to output.
