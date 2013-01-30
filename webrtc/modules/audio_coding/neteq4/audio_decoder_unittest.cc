@@ -260,7 +260,7 @@ class AudioDecoderIlbcTest : public AudioDecoderTest {
     data_length_ = 10 * frame_size_;
     decoder_ = new AudioDecoderIlbc;
     assert(decoder_);
-    assert(WebRtcIlbcfix_EncoderCreate(&encoder_) == 0);
+    WebRtcIlbcfix_EncoderCreate(&encoder_);
   }
 
   ~AudioDecoderIlbcTest() {
@@ -305,8 +305,8 @@ class AudioDecoderIsacFloatTest : public AudioDecoderTest {
     data_length_ = 10 * frame_size_;
     decoder_ = new AudioDecoderIsac;
     assert(decoder_);
-    assert(WebRtcIsac_Create(&encoder_) == 0);
-    assert(WebRtcIsac_SetEncSampRate(encoder_, 16000) == 0);
+    WebRtcIsac_Create(&encoder_);
+    WebRtcIsac_SetEncSampRate(encoder_, 16000);
   }
 
   ~AudioDecoderIsacFloatTest() {
@@ -345,8 +345,8 @@ class AudioDecoderIsacSwbTest : public AudioDecoderTest {
     data_length_ = 10 * frame_size_;
     decoder_ = new AudioDecoderIsacSwb;
     assert(decoder_);
-    assert(WebRtcIsac_Create(&encoder_) == 0);
-    assert(WebRtcIsac_SetEncSampRate(encoder_, 32000) == 0);
+    WebRtcIsac_Create(&encoder_);
+    WebRtcIsac_SetEncSampRate(encoder_, 32000);
   }
 
   ~AudioDecoderIsacSwbTest() {
@@ -385,7 +385,7 @@ class AudioDecoderIsacFixTest : public AudioDecoderTest {
     data_length_ = 10 * frame_size_;
     decoder_ = new AudioDecoderIsacFix;
     assert(decoder_);
-    assert(WebRtcIsacfix_Create(&encoder_) == 0);
+    WebRtcIsacfix_Create(&encoder_);
   }
 
   ~AudioDecoderIsacFixTest() {
@@ -424,7 +424,7 @@ class AudioDecoderG722Test : public AudioDecoderTest {
     data_length_ = 10 * frame_size_;
     decoder_ = new AudioDecoderG722;
     assert(decoder_);
-    assert(WebRtcG722_CreateEncoder(&encoder_) == 0);
+    WebRtcG722_CreateEncoder(&encoder_);
   }
 
   ~AudioDecoderG722Test() {
@@ -455,7 +455,7 @@ class AudioDecoderOpusTest : public AudioDecoderTest {
     data_length_ = 10 * frame_size_;
     decoder_ = new AudioDecoderOpus(kDecoderOpus);
     assert(decoder_);
-    assert(WebRtcOpus_EncoderCreate(&encoder_, 1) == 0);
+    WebRtcOpus_EncoderCreate(&encoder_, 1);
   }
 
   ~AudioDecoderOpusTest() {
