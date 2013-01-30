@@ -61,7 +61,7 @@ TEST(DelayPeakDetector, TriggerPeakMode) {
   int time = 0;
   int next = 1;  // Start with the second packet to get a proper IAT.
   while (next < kNumPackets) {
-    while (arrival_times_ms[next] <= time) {
+    while (next < kNumPackets && arrival_times_ms[next] <= time) {
       int iat_packets = (arrival_times_ms[next] - arrival_times_ms[next - 1]) /
           kPacketSizeMs;
       const int kTargetBufferLevel = 1;  // Define peaks to be iat > 2.
@@ -107,7 +107,7 @@ TEST(DelayPeakDetector, DoNotTriggerPeakMode) {
   int time = 0;
   int next = 1;  // Start with the second packet to get a proper IAT.
   while (next < kNumPackets) {
-    while (arrival_times_ms[next] <= time) {
+    while (next < kNumPackets && arrival_times_ms[next] <= time) {
       int iat_packets = (arrival_times_ms[next] - arrival_times_ms[next - 1]) /
           kPacketSizeMs;
       const int kTargetBufferLevel = 2;  // Define peaks to be iat > 4.

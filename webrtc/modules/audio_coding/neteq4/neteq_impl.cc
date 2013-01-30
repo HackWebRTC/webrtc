@@ -1101,6 +1101,7 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
     assert(*operation == kNormal || *operation == kAccelerate ||
            *operation == kMerge || *operation == kPreemptiveExpand);
     packet_list->pop_front();
+    int payload_length = packet->payload_length;
     int16_t decode_length;
     if (!packet->primary) {
       // This is a redundant payload; call the special decoder method.
@@ -1136,7 +1137,7 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
           " samples per channel)";
     } else if (decode_length < 0) {
       // Error.
-      LOG_FERR2(LS_WARNING, Decode, decode_length, packet->payload_length);
+      LOG_FERR2(LS_WARNING, Decode, decode_length, payload_length);
       *decoded_length = -1;
       PacketBuffer::DeleteAllPackets(packet_list);
       break;

@@ -38,7 +38,7 @@ namespace webrtc {
 // PCMu
 int AudioDecoderPcmU::Decode(const uint8_t* encoded, size_t encoded_len,
                               int16_t* decoded, SpeechType* speech_type) {
-  int16_t temp_type;
+  int16_t temp_type = 1;  // Default is speech.
   int16_t ret = WebRtcG711_DecodeU(
       state_, reinterpret_cast<int16_t*>(const_cast<uint8_t*>(encoded)),
       static_cast<int16_t>(encoded_len), decoded, &temp_type);
@@ -54,7 +54,7 @@ int AudioDecoderPcmU::PacketDuration(const uint8_t* encoded,
 // PCMa
 int AudioDecoderPcmA::Decode(const uint8_t* encoded, size_t encoded_len,
                               int16_t* decoded, SpeechType* speech_type) {
-  int16_t temp_type;
+  int16_t temp_type = 1;  // Default is speech.
   int16_t ret = WebRtcG711_DecodeA(
       state_, reinterpret_cast<int16_t*>(const_cast<uint8_t*>(encoded)),
       static_cast<int16_t>(encoded_len), decoded, &temp_type);
@@ -79,7 +79,7 @@ AudioDecoderPcm16B::AudioDecoderPcm16B(enum NetEqDecoder type)
 
 int AudioDecoderPcm16B::Decode(const uint8_t* encoded, size_t encoded_len,
                                int16_t* decoded, SpeechType* speech_type) {
-  int16_t temp_type;
+  int16_t temp_type = 1;  // Default is speech.
   int16_t ret = WebRtcPcm16b_DecodeW16(
       state_, reinterpret_cast<int16_t*>(const_cast<uint8_t*>(encoded)),
       static_cast<int16_t>(encoded_len), decoded, &temp_type);
@@ -125,7 +125,7 @@ AudioDecoderIlbc::~AudioDecoderIlbc() {
 
 int AudioDecoderIlbc::Decode(const uint8_t* encoded, size_t encoded_len,
                              int16_t* decoded, SpeechType* speech_type) {
-  int16_t temp_type;
+  int16_t temp_type = 1;  // Default is speech.
   int16_t ret = WebRtcIlbcfix_Decode(static_cast<iLBC_decinst_t*>(state_),
                                      reinterpret_cast<const int16_t*>(encoded),
                                      static_cast<int16_t>(encoded_len), decoded,
@@ -157,7 +157,7 @@ AudioDecoderIsac::~AudioDecoderIsac() {
 
 int AudioDecoderIsac::Decode(const uint8_t* encoded, size_t encoded_len,
                              int16_t* decoded, SpeechType* speech_type) {
-  int16_t temp_type;
+  int16_t temp_type = 1;  // Default is speech.
   int16_t ret = WebRtcIsac_Decode(static_cast<ISACStruct*>(state_),
                                   reinterpret_cast<const uint16_t*>(encoded),
                                   static_cast<int16_t>(encoded_len), decoded,
@@ -169,7 +169,7 @@ int AudioDecoderIsac::Decode(const uint8_t* encoded, size_t encoded_len,
 int AudioDecoderIsac::DecodeRedundant(const uint8_t* encoded,
                                       size_t encoded_len, int16_t* decoded,
                                       SpeechType* speech_type) {
-  int16_t temp_type;
+  int16_t temp_type = 1;  // Default is speech.
   int16_t ret = WebRtcIsac_DecodeRcu(static_cast<ISACStruct*>(state_),
                                      reinterpret_cast<const uint16_t*>(encoded),
                                      static_cast<int16_t>(encoded_len), decoded,
@@ -223,7 +223,7 @@ AudioDecoderIsacFix::~AudioDecoderIsacFix() {
 
 int AudioDecoderIsacFix::Decode(const uint8_t* encoded, size_t encoded_len,
                                 int16_t* decoded, SpeechType* speech_type) {
-  int16_t temp_type;
+  int16_t temp_type = 1;  // Default is speech.
   int16_t ret = WebRtcIsacfix_Decode(static_cast<ISACFIX_MainStruct*>(state_),
                                      reinterpret_cast<const uint16_t*>(encoded),
                                      static_cast<int16_t>(encoded_len), decoded,
@@ -264,7 +264,7 @@ AudioDecoderG722::~AudioDecoderG722() {
 
 int AudioDecoderG722::Decode(const uint8_t* encoded, size_t encoded_len,
                              int16_t* decoded, SpeechType* speech_type) {
-  int16_t temp_type;
+  int16_t temp_type = 1;  // Default is speech.
   int16_t ret = WebRtcG722_Decode(
       static_cast<G722DecInst*>(state_),
       const_cast<int16_t*>(reinterpret_cast<const int16_t*>(encoded)),
@@ -302,7 +302,7 @@ AudioDecoderOpus::~AudioDecoderOpus() {
 
 int AudioDecoderOpus::Decode(const uint8_t* encoded, size_t encoded_len,
                              int16_t* decoded, SpeechType* speech_type) {
-  int16_t temp_type;
+  int16_t temp_type = 1;  // Default is speech.
   assert(channels_ == 1);
   // TODO(hlundin): Allow 2 channels when WebRtcOpus_Decode provides both
   // channels interleaved.

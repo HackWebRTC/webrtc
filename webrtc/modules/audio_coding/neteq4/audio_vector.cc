@@ -153,7 +153,9 @@ void AudioVector<T>::CrossFade(const AudioVector<T>& append_this,
   }
   assert(alpha >= 0);  // Verify that the slope was correct.
   // Append what is left of |append_this|.
-  PushBack(&append_this[fade_length], append_this.Size() - fade_length);
+  size_t samples_to_push_back = append_this.Size() - fade_length;
+  if (samples_to_push_back > 0)
+    PushBack(&append_this[fade_length], samples_to_push_back);
 }
 
 // Template specialization for double. The only difference is in the calculation
@@ -181,7 +183,9 @@ void AudioVector<double>::CrossFade(const AudioVector<double>& append_this,
   }
   assert(alpha >= 0);  // Verify that the slope was correct.
   // Append what is left of |append_this|.
-  PushBack(&append_this[fade_length], append_this.Size() - fade_length);
+  size_t samples_to_push_back = append_this.Size() - fade_length;
+  if (samples_to_push_back > 0)
+    PushBack(&append_this[fade_length], samples_to_push_back);
 }
 
 template<typename T>
