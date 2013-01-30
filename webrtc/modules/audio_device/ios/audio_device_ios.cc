@@ -23,7 +23,7 @@ AudioDeviceIPhone::AudioDeviceIPhone(const WebRtc_Word32 id)
     _captureWorkerThread(NULL),
     _captureWorkerThreadId(0),
     _id(id),
-    _auRemoteIO(NULL),
+    _auVoiceProcessing(NULL),
     _initialized(false),
     _isShutDown(false),
     _recording(false),
@@ -127,17 +127,6 @@ WebRtc_Word32 AudioDeviceIPhone::Init() {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice,
                      _id, "Thread already created");
     }
-
-    // Set preferred hardware sample rate to 16 kHz
-    Float64 sampleRate(16000.0);
-    OSStatus result = AudioSessionSetProperty(
-        kAudioSessionProperty_PreferredHardwareSampleRate,
-        sizeof(sampleRate), &sampleRate);
-    if (0 != result) {
-        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                     "Could not set preferred sample rate (result=%d)", result);
-    }
-
     _playWarning = 0;
     _playError = 0;
     _recWarning = 0;
@@ -168,7 +157,7 @@ WebRtc_Word32 AudioDeviceIPhone::Terminate() {
         _captureWorkerThread = NULL;
     }
 
-    // Shut down AU Remote IO
+    // Shut down Audio Unit
     ShutdownPlayOrRecord();
 
     _isShutDown = true;
@@ -941,13 +930,13 @@ WebRtc_Word32 AudioDeviceIPhone::StartRecording() {
     _recError = 0;
 
     if (!_playing) {
-        // Start AU Remote IO
+        // Start Audio Unit
         WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
-                     "  Starting AU Remote IO");
-        OSStatus result = AudioOutputUnitStart(_auRemoteIO);
+                     "  Starting Audio Unit");
+        OSStatus result = AudioOutputUnitStart(_auVoiceProcessing);
         if (0 != result) {
             WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                         "  Error starting AU Remote IO (result=%d)", result);
+                         "  Error starting Audio Unit (result=%d)", result);
             return -1;
         }
     }
@@ -991,7 +980,7 @@ WebRtc_Word32 AudioDeviceIPhone::StartPlayout() {
 
     // This lock is (among other things) needed to avoid concurrency issues
     // with capture thread
-    // shutting down AU Remote IO
+    // shutting down Audio Unit
     CriticalSectionScoped lock(&_critSect);
 
     if (!_playIsInitialized) {
@@ -1016,13 +1005,13 @@ WebRtc_Word32 AudioDeviceIPhone::StartPlayout() {
     _playError = 0;
 
     if (!_recording) {
-        // Start AU Remote IO
+        // Start Audio Unit
         WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
-                     "  Starting AU Remote IO");
-        OSStatus result = AudioOutputUnitStart(_auRemoteIO);
+                     "  Starting Audio Unit");
+        OSStatus result = AudioOutputUnitStart(_auVoiceProcessing);
         if (0 != result) {
             WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                         "  Error starting AU Remote IO (result=%d)", result);
+                         "  Error starting Audio Unit (result=%d)", result);
             return -1;
         }
     }
@@ -1196,7 +1185,7 @@ WebRtc_Word32 AudioDeviceIPhone::InitPlayOrRecord() {
     OSStatus result = -1;
 
     // Check if already initialized
-    if (NULL != _auRemoteIO) {
+    if (NULL != _auVoiceProcessing) {
         // We already have initialized before and created any of the audio unit,
         // check that all exist
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
@@ -1205,12 +1194,12 @@ WebRtc_Word32 AudioDeviceIPhone::InitPlayOrRecord() {
         return 0;
     }
 
-    // Create AU Remote IO
+    // Create Voice Processing Audio Unit
     AudioComponentDescription desc;
     AudioComponent comp;
 
     desc.componentType = kAudioUnitType_Output;
-    desc.componentSubType = kAudioUnitSubType_RemoteIO;
+    desc.componentSubType = kAudioUnitSubType_VoiceProcessingIO;
     desc.componentManufacturer = kAudioUnitManufacturer_Apple;
     desc.componentFlags = 0;
     desc.componentFlagsMask = 0;
@@ -1218,23 +1207,38 @@ WebRtc_Word32 AudioDeviceIPhone::InitPlayOrRecord() {
     comp = AudioComponentFindNext(NULL, &desc);
     if (NULL == comp) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "  Could not find audio component for AU Remote IO");
+                     "  Could not find audio component for Audio Unit");
         return -1;
     }
 
-    result = AudioComponentInstanceNew(comp, &_auRemoteIO);
+    result = AudioComponentInstanceNew(comp, &_auVoiceProcessing);
     if (0 != result) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "  Could not create AU Remote IO instance (result=%d)",
+                     "  Could not create Audio Unit instance (result=%d)",
                      result);
         return -1;
     }
 
-    //////////////////////
-    // Setup AU remote IO
+    // Set preferred hardware sample rate to 16 kHz
+    Float64 sampleRate(16000.0);
+    result = AudioSessionSetProperty(
+                         kAudioSessionProperty_PreferredHardwareSampleRate,
+                         sizeof(sampleRate), &sampleRate);
+    if (0 != result) {
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                     "Could not set preferred sample rate (result=%d)", result);
+    }
 
-    // Note: For AU Remote IO element 0 is output bus, element 1 is input bus
-    //       for global scope element is irrelevant (always use element 0)
+    WebRtc_UWord32 voiceChat = kAudioSessionMode_VoiceChat;
+    AudioSessionSetProperty(kAudioSessionProperty_Mode,
+                            sizeof(voiceChat), &voiceChat);
+
+    //////////////////////
+    // Setup Voice Processing Audio Unit
+
+    // Note: For Signal Processing AU element 0 is output bus, element 1 is
+    //       input bus for global scope element is irrelevant (always use
+    //       element 0)
 
     // Enable IO on both elements
 
@@ -1243,7 +1247,7 @@ WebRtc_Word32 AudioDeviceIPhone::InitPlayOrRecord() {
     // todo: Log info about setup.
 
     UInt32 enableIO = 1;
-    result = AudioUnitSetProperty(_auRemoteIO,
+    result = AudioUnitSetProperty(_auVoiceProcessing,
                                   kAudioOutputUnitProperty_EnableIO,
                                   kAudioUnitScope_Input,
                                   1,  // input bus
@@ -1254,7 +1258,7 @@ WebRtc_Word32 AudioDeviceIPhone::InitPlayOrRecord() {
                      "  Could not enable IO on input (result=%d)", result);
     }
 
-    result = AudioUnitSetProperty(_auRemoteIO,
+    result = AudioUnitSetProperty(_auVoiceProcessing,
                                   kAudioOutputUnitProperty_EnableIO,
                                   kAudioUnitScope_Output,
                                   0,   // output bus
@@ -1268,7 +1272,7 @@ WebRtc_Word32 AudioDeviceIPhone::InitPlayOrRecord() {
     // Disable AU buffer allocation for the recorder, we allocate our own
     UInt32 flag = 0;
     result = AudioUnitSetProperty(
-        _auRemoteIO, kAudioUnitProperty_ShouldAllocateBuffer,
+        _auVoiceProcessing, kAudioUnitProperty_ShouldAllocateBuffer,
         kAudioUnitScope_Output,  1, &flag, sizeof(flag));
     if (0 != result) {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
@@ -1277,27 +1281,52 @@ WebRtc_Word32 AudioDeviceIPhone::InitPlayOrRecord() {
         // Should work anyway
     }
 
-    // Initialize here already to be able to get/set stream properties.
-    result = AudioUnitInitialize(_auRemoteIO);
+    // Set recording callback
+    AURenderCallbackStruct auCbS;
+    memset(&auCbS, 0, sizeof(auCbS));
+    auCbS.inputProc = RecordProcess;
+    auCbS.inputProcRefCon = this;
+    result = AudioUnitSetProperty(_auVoiceProcessing,
+                                  kAudioOutputUnitProperty_SetInputCallback,
+                                  kAudioUnitScope_Global, 1,
+                                  &auCbS, sizeof(auCbS));
     if (0 != result) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "  Could not init AU Remote IO (result=%d)", result);
+            "  Could not set record callback for Audio Unit (result=%d)",
+            result);
+    }
+
+    // Set playout callback
+    memset(&auCbS, 0, sizeof(auCbS));
+    auCbS.inputProc = PlayoutProcess;
+    auCbS.inputProcRefCon = this;
+    result = AudioUnitSetProperty(_auVoiceProcessing,
+                                  kAudioUnitProperty_SetRenderCallback,
+                                  kAudioUnitScope_Global, 0,
+                                  &auCbS, sizeof(auCbS));
+    if (0 != result) {
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+            "  Could not set play callback for Audio Unit (result=%d)",
+            result);
     }
 
     // Get stream format for out/0
     AudioStreamBasicDescription playoutDesc;
     UInt32 size = sizeof(playoutDesc);
-    result = AudioUnitGetProperty(_auRemoteIO, kAudioUnitProperty_StreamFormat,
+    result = AudioUnitGetProperty(_auVoiceProcessing,
+                                  kAudioUnitProperty_StreamFormat,
                                   kAudioUnitScope_Output, 0, &playoutDesc,
                                   &size);
     if (0 != result) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-            "  Could not get stream format AU Remote IO out/0 (result=%d)",
+            "  Could not get stream format Audio Unit out/0 (result=%d)",
             result);
     }
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 "  AU Remote IO playout opened in sampling rate %f",
+                 "  Audio Unit playout opened in sampling rate %f",
                  playoutDesc.mSampleRate);
+
+    playoutDesc.mSampleRate = sampleRate;
 
     // Store the sampling frequency to use towards the Audio Device Buffer
     // todo: Add 48 kHz (increase buffer sizes). Other fs?
@@ -1313,7 +1342,7 @@ WebRtc_Word32 AudioDeviceIPhone::InitPlayOrRecord() {
     } else {
         _adbSampFreq = 0;
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-            "  AU Remote IO out/0 opened in unknown sampling rate (%f)",
+            "  Audio Unit out/0 opened in unknown sampling rate (%f)",
             playoutDesc.mSampleRate);
         // todo: We should bail out here.
     }
@@ -1341,37 +1370,32 @@ WebRtc_Word32 AudioDeviceIPhone::InitPlayOrRecord() {
     playoutDesc.mBytesPerFrame = 2;
     playoutDesc.mChannelsPerFrame = 1;
     playoutDesc.mBitsPerChannel = 16;
-    result = AudioUnitSetProperty(_auRemoteIO, kAudioUnitProperty_StreamFormat,
+    result = AudioUnitSetProperty(_auVoiceProcessing,
+                                  kAudioUnitProperty_StreamFormat,
                                   kAudioUnitScope_Input, 0, &playoutDesc, size);
     if (0 != result) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-            "  Could not set stream format AU Remote IO in/0 (result=%d)",
+            "  Could not set stream format Audio Unit in/0 (result=%d)",
             result);
     }
 
     // Get stream format for in/1
     AudioStreamBasicDescription recordingDesc;
     size = sizeof(recordingDesc);
-    result = AudioUnitGetProperty(_auRemoteIO, kAudioUnitProperty_StreamFormat,
+    result = AudioUnitGetProperty(_auVoiceProcessing,
+                                  kAudioUnitProperty_StreamFormat,
                                   kAudioUnitScope_Input, 1, &recordingDesc,
                                   &size);
     if (0 != result) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-            "  Could not get stream format AU Remote IO in/1 (result=%d)",
+            "  Could not get stream format Audio Unit in/1 (result=%d)",
             result);
     }
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 "  AU Remote IO recording opened in sampling rate %f",
+                 "  Audio Unit recording opened in sampling rate %f",
                  recordingDesc.mSampleRate);
 
-    if (static_cast<int>(playoutDesc.mSampleRate)
-        != static_cast<int>(recordingDesc.mSampleRate)) {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-            "  AU Remote IO recording and playout opened " \
-                     "in different sampling rates");
-        // todo: Bail out if rec and play sampling rates are not the same?
-        //       Add handling of different sampling rates?
-    }
+    recordingDesc.mSampleRate = sampleRate;
 
     // Set stream format for out/1 (use same sampling frequency as for in/1)
     recordingDesc.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger
@@ -1383,54 +1407,36 @@ WebRtc_Word32 AudioDeviceIPhone::InitPlayOrRecord() {
     recordingDesc.mBytesPerFrame = 2;
     recordingDesc.mChannelsPerFrame = 1;
     recordingDesc.mBitsPerChannel = 16;
-    result = AudioUnitSetProperty(_auRemoteIO, kAudioUnitProperty_StreamFormat,
+    result = AudioUnitSetProperty(_auVoiceProcessing,
+                                  kAudioUnitProperty_StreamFormat,
                                   kAudioUnitScope_Output, 1, &recordingDesc,
                                   size);
     if (0 != result) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-            "  Could not set stream format AU Remote IO out/1 (result=%d)",
+            "  Could not set stream format Audio Unit out/1 (result=%d)",
             result);
     }
 
-    // Set recording callback
-    AURenderCallbackStruct auCbS;
-    memset(&auCbS, 0, sizeof(auCbS));
-    auCbS.inputProc = RecordProcess;
-    auCbS.inputProcRefCon = this;
-    result = AudioUnitSetProperty(_auRemoteIO,
-        kAudioOutputUnitProperty_SetInputCallback, kAudioUnitScope_Global, 1,
-        &auCbS, sizeof(auCbS));
+    // Initialize here already to be able to get/set stream properties.
+    result = AudioUnitInitialize(_auVoiceProcessing);
     if (0 != result) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-            "  Could not set record callback for AU Remote IO (result=%d)",
-            result);
-    }
-
-    // Set playout callback
-    memset(&auCbS, 0, sizeof(auCbS));
-    auCbS.inputProc = PlayoutProcess;
-    auCbS.inputProcRefCon = this;
-    result = AudioUnitSetProperty(_auRemoteIO,
-        kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Global, 0,
-        &auCbS, sizeof(auCbS));
-    if (0 != result) {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-            "  Could not set play callback for AU Remote IO (result=%d)",
-            result);
+                     "  Could not init Audio Unit (result=%d)", result);
     }
 
     // Get hardware sample rate for logging (see if we get what we asked for)
-    Float64 sampleRate(0.0);
-    size = sizeof(sampleRate);
+    Float64 hardwareSampleRate = 0.0;
+    size = sizeof(hardwareSampleRate);
     result = AudioSessionGetProperty(
-        kAudioSessionProperty_CurrentHardwareSampleRate, &size, &sampleRate);
+        kAudioSessionProperty_CurrentHardwareSampleRate, &size,
+        &hardwareSampleRate);
     if (0 != result) {
         WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
             "  Could not get current HW sample rate (result=%d)", result);
     }
     WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
                  "  Current HW sample rate is %f, ADB sample rate is %d",
-             sampleRate, _adbSampFreq);
+             hardwareSampleRate, _adbSampFreq);
 
     return 0;
 }
@@ -1440,23 +1446,18 @@ WebRtc_Word32 AudioDeviceIPhone::ShutdownPlayOrRecord() {
 
     // Close and delete AU
     OSStatus result = -1;
-    if (NULL != _auRemoteIO) {
-        result = AudioOutputUnitStop(_auRemoteIO);
+    if (NULL != _auVoiceProcessing) {
+        result = AudioOutputUnitStop(_auVoiceProcessing);
         if (0 != result) {
             WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                "  Error stopping AU Remote IO (result=%d)", result);
+                "  Error stopping Audio Unit (result=%d)", result);
         }
-        result = AudioUnitUninitialize(_auRemoteIO);
+        result = AudioComponentInstanceDispose(_auVoiceProcessing);
         if (0 != result) {
             WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                "  Error uninitializing AU Remote IO (result=%d)", result);
+                "  Error disposing Audio Unit (result=%d)", result);
         }
-        result = AudioComponentInstanceDispose(_auRemoteIO);
-        if (0 != result) {
-            WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                "  Error disposing AU Remote IO (result=%d)", result);
-        }
-        _auRemoteIO = NULL;
+        _auVoiceProcessing = NULL;
     }
 
     return 0;
@@ -1502,7 +1503,8 @@ OSStatus
     abList.mBuffers[0].mNumberChannels = 1;
 
     // Get data from mic
-    OSStatus res = AudioUnitRender(_auRemoteIO, ioActionFlags, inTimeStamp,
+    OSStatus res = AudioUnitRender(_auVoiceProcessing,
+                                   ioActionFlags, inTimeStamp,
                                    inBusNumber, inNumberFrames, &abList);
     if (res != 0) {
         WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
@@ -1740,7 +1742,7 @@ void AudioDeviceIPhone::UpdatePlayoutDelay() {
         // AU latency
         Float64 f64(0);
         size = sizeof(f64);
-        result = AudioUnitGetProperty(_auRemoteIO,
+        result = AudioUnitGetProperty(_auVoiceProcessing,
             kAudioUnitProperty_Latency, kAudioUnitScope_Global, 0, &f64, &size);
         if (0 != result) {
             WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
@@ -1790,7 +1792,8 @@ void AudioDeviceIPhone::UpdateRecordingDelay() {
         // AU latency
         Float64 f64(0);
         size = sizeof(f64);
-        result = AudioUnitGetProperty(_auRemoteIO, kAudioUnitProperty_Latency,
+        result = AudioUnitGetProperty(_auVoiceProcessing,
+                                      kAudioUnitProperty_Latency,
                                       kAudioUnitScope_Global, 0, &f64, &size);
         if (0 != result) {
             WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
