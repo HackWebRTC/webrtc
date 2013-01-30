@@ -370,7 +370,7 @@ void NetEqDecodingTest::PopulateCng(int frame_index,
   *payload_len = 1;  // Only noise level, no spectral parameters.
 }
 
-TEST_F(NetEqDecodingTest, DISABLED_TestBitExactness) {
+TEST_F(NetEqDecodingTest, TestBitExactness) {
   const std::string kInputRtpFile = webrtc::test::ProjectRootPath() +
       "resources/neteq_universal.rtp";
   const std::string kInputRefFile =
@@ -378,7 +378,7 @@ TEST_F(NetEqDecodingTest, DISABLED_TestBitExactness) {
   DecodeAndCompare(kInputRtpFile, kInputRefFile);
 }
 
-TEST_F(NetEqDecodingTest, DISABLED_TestNetworkStatistics) {
+TEST_F(NetEqDecodingTest, TestNetworkStatistics) {
   const std::string kInputRtpFile = webrtc::test::ProjectRootPath() +
       "resources/neteq_universal.rtp";
   const std::string kNetworkStatRefFile =
