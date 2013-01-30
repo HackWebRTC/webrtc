@@ -17,10 +17,10 @@
 #include "modules/audio_processing/aecm/aecm_defines.h"
 #include "typedefs.h"
 
-#ifdef _MSC_VER // visual c++
+#ifdef _MSC_VER  // visual c++
 #define ALIGN8_BEG __declspec(align(8))
 #define ALIGN8_END
-#else // gcc or icc
+#else  // gcc or icc
 #define ALIGN8_BEG
 #define ALIGN8_END __attribute__((aligned(8)))
 #endif
@@ -30,13 +30,12 @@ typedef struct {
     WebRtc_Word16 imag;
 } complex16_t;
 
-typedef struct
-{
+typedef struct {
     int farBufWritePos;
     int farBufReadPos;
     int knownDelay;
     int lastKnownDelay;
-    int firstVAD; // Parameter to control poorly initialized channels
+    int firstVAD;  // Parameter to control poorly initialized channels
 
     void *farFrameBuf;
     void *nearNoisyFrameBuf;
@@ -49,6 +48,7 @@ typedef struct
     WebRtc_UWord32 seed;
 
     // Delay estimation variables
+    void* delay_estimator_farend;
     void* delay_estimator;
     WebRtc_UWord16 currentDelay;
     // Far end history variables
@@ -72,15 +72,16 @@ typedef struct
     WebRtc_Word16 echoAdaptLogEnergy[MAX_BUF_LEN];
     WebRtc_Word16 echoStoredLogEnergy[MAX_BUF_LEN];
 
-    // The extra 16 or 32 bytes in the following buffers are for alignment based Neon code.
-    // It's designed this way since the current GCC compiler can't align a buffer in 16 or 32
-    // byte boundaries properly.
+    // The extra 16 or 32 bytes in the following buffers are for alignment based
+    // Neon code.
+    // It's designed this way since the current GCC compiler can't align a
+    // buffer in 16 or 32 byte boundaries properly.
     WebRtc_Word16 channelStored_buf[PART_LEN1 + 8];
     WebRtc_Word16 channelAdapt16_buf[PART_LEN1 + 8];
     WebRtc_Word32 channelAdapt32_buf[PART_LEN1 + 8];
-    WebRtc_Word16 xBuf_buf[PART_LEN2 + 16]; // farend
-    WebRtc_Word16 dBufClean_buf[PART_LEN2 + 16]; // nearend
-    WebRtc_Word16 dBufNoisy_buf[PART_LEN2 + 16]; // nearend
+    WebRtc_Word16 xBuf_buf[PART_LEN2 + 16];  // farend
+    WebRtc_Word16 dBufClean_buf[PART_LEN2 + 16];  // nearend
+    WebRtc_Word16 dBufNoisy_buf[PART_LEN2 + 16];  // nearend
     WebRtc_Word16 outBuf_buf[PART_LEN + 8];
 
     // Pointers to the above buffers
@@ -131,7 +132,7 @@ typedef struct
 #endif
 } AecmCore_t;
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // WebRtcAecm_CreateCore(...)
 //
 // Allocates the memory needed by the AECM. The memory needs to be
@@ -148,10 +149,11 @@ typedef struct
 //
 int WebRtcAecm_CreateCore(AecmCore_t **aecm);
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // WebRtcAecm_InitCore(...)
 //
-// This function initializes the AECM instant created with WebRtcAecm_CreateCore(...)
+// This function initializes the AECM instant created with
+// WebRtcAecm_CreateCore(...)
 // Input:
 //      - aecm          : Pointer to the AECM instance
 //      - samplingFreq  : Sampling Frequency
@@ -164,7 +166,7 @@ int WebRtcAecm_CreateCore(AecmCore_t **aecm);
 //
 int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq);
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // WebRtcAecm_FreeCore(...)
 //
 // This function releases the memory allocated by WebRtcAecm_CreateCore()
@@ -179,29 +181,34 @@ int WebRtcAecm_FreeCore(AecmCore_t *aecm);
 
 int WebRtcAecm_Control(AecmCore_t *aecm, int delay, int nlpFlag);
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // WebRtcAecm_InitEchoPathCore(...)
 //
 // This function resets the echo channel adaptation with the specified channel.
 // Input:
 //      - aecm          : Pointer to the AECM instance
-//      - echo_path     : Pointer to the data that should initialize the echo path
+//      - echo_path     : Pointer to the data that should initialize the echo
+//                        path
 //
 // Output:
 //      - aecm          : Initialized instance
 //
-void WebRtcAecm_InitEchoPathCore(AecmCore_t* aecm, const WebRtc_Word16* echo_path);
+void WebRtcAecm_InitEchoPathCore(AecmCore_t* aecm,
+                                 const WebRtc_Word16* echo_path);
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // WebRtcAecm_ProcessFrame(...)
 //
-// This function processes frames and sends blocks to WebRtcAecm_ProcessBlock(...)
+// This function processes frames and sends blocks to
+// WebRtcAecm_ProcessBlock(...)
 //
 // Inputs:
 //      - aecm          : Pointer to the AECM instance
 //      - farend        : In buffer containing one frame of echo signal
-//      - nearendNoisy  : In buffer containing one frame of nearend+echo signal without NS
-//      - nearendClean  : In buffer containing one frame of nearend+echo signal with NS
+//      - nearendNoisy  : In buffer containing one frame of nearend+echo signal
+//                        without NS
+//      - nearendClean  : In buffer containing one frame of nearend+echo signal
+//                        with NS
 //
 // Output:
 //      - out           : Out buffer, one frame of nearend signal          :
@@ -212,7 +219,7 @@ int WebRtcAecm_ProcessFrame(AecmCore_t * aecm, const WebRtc_Word16 * farend,
                             const WebRtc_Word16 * nearendClean,
                             WebRtc_Word16 * out);
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // WebRtcAecm_ProcessBlock(...)
 //
 // This function is called for every block within one frame
@@ -221,8 +228,10 @@ int WebRtcAecm_ProcessFrame(AecmCore_t * aecm, const WebRtc_Word16 * farend,
 // Inputs:
 //      - aecm          : Pointer to the AECM instance
 //      - farend        : In buffer containing one block of echo signal
-//      - nearendNoisy  : In buffer containing one frame of nearend+echo signal without NS
-//      - nearendClean  : In buffer containing one frame of nearend+echo signal with NS
+//      - nearendNoisy  : In buffer containing one frame of nearend+echo signal
+//                        without NS
+//      - nearendClean  : In buffer containing one frame of nearend+echo signal
+//                        with NS
 //
 // Output:
 //      - out           : Out buffer, one block of nearend signal          :
@@ -233,7 +242,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm, const WebRtc_Word16 * farend,
                             const WebRtc_Word16 * noisyClean,
                             WebRtc_Word16 * out);
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // WebRtcAecm_BufferFarFrame()
 //
 // Inserts a frame of data into farend buffer.
@@ -243,10 +252,11 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm, const WebRtc_Word16 * farend,
 //      - farend        : In buffer containing one frame of farend signal
 //      - farLen        : Length of frame
 //
-void WebRtcAecm_BufferFarFrame(AecmCore_t * const aecm, const WebRtc_Word16 * const farend,
+void WebRtcAecm_BufferFarFrame(AecmCore_t * const aecm,
+                               const WebRtc_Word16 * const farend,
                                const int farLen);
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // WebRtcAecm_FetchFarFrame()
 //
 // Read the farend buffer to account for known delay
@@ -257,11 +267,12 @@ void WebRtcAecm_BufferFarFrame(AecmCore_t * const aecm, const WebRtc_Word16 * co
 //      - farLen        : Length of frame
 //      - knownDelay    : known delay
 //
-void WebRtcAecm_FetchFarFrame(AecmCore_t * const aecm, WebRtc_Word16 * const farend,
+void WebRtcAecm_FetchFarFrame(AecmCore_t * const aecm,
+                              WebRtc_Word16 * const farend,
                               const int farLen, const int knownDelay);
 
 ///////////////////////////////////////////////////////////////////////////////
-// Some function pointers, for internal functions shared by ARM NEON and 
+// Some function pointers, for internal functions shared by ARM NEON and
 // generic C code.
 //
 typedef void (*CalcLinearEnergies)(

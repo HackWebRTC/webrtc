@@ -206,9 +206,16 @@ int WebRtcAec_CreateAec(aec_t **aecInst)
         return -1;
     }
 #endif
-    aec->delay_estimator = WebRtc_CreateDelayEstimator(PART_LEN1,
-                                                       kMaxDelayBlocks,
-                                                       kLookaheadBlocks);
+    aec->delay_estimator_farend =
+        WebRtc_CreateDelayEstimatorFarend(PART_LEN1, kHistorySizeBlocks);
+    if (aec->delay_estimator_farend == NULL) {
+      WebRtcAec_FreeAec(aec);
+      aec = NULL;
+      return -1;
+    }
+    aec->delay_estimator =
+        WebRtc_CreateDelayEstimator(aec->delay_estimator_farend,
+                                    kLookaheadBlocks);
     if (aec->delay_estimator == NULL) {
       WebRtcAec_FreeAec(aec);
       aec = NULL;
@@ -236,6 +243,7 @@ int WebRtcAec_FreeAec(aec_t *aec)
     WebRtc_FreeBuffer(aec->far_time_buf);
 #endif
     WebRtc_FreeDelayEstimator(aec->delay_estimator);
+    WebRtc_FreeDelayEstimatorFarend(aec->delay_estimator_farend);
 
     free(aec);
     return 0;
@@ -428,6 +436,9 @@ int WebRtcAec_InitAec(aec_t *aec, int sampFreq)
 #endif
     aec->system_delay = 0;
 
+    if (WebRtc_InitDelayEstimatorFarend(aec->delay_estimator_farend) != 0) {
+      return -1;
+    }
     if (WebRtc_InitDelayEstimator(aec->delay_estimator) != 0) {
       return -1;
     }
@@ -748,14 +759,15 @@ static void ProcessBlock(aec_t* aec) {
     // Block wise delay estimation used for logging
     if (aec->delay_logging_enabled) {
       int delay_estimate = 0;
-      // Estimate the delay
-      delay_estimate = WebRtc_DelayEstimatorProcessFloat(aec->delay_estimator,
-                                                         abs_far_spectrum,
-                                                         abs_near_spectrum,
-                                                         PART_LEN1);
-      if (delay_estimate >= 0) {
-        // Update delay estimate buffer.
-        aec->delay_histogram[delay_estimate]++;
+      if (WebRtc_AddFarSpectrumFloat(aec->delay_estimator_farend,
+                                     abs_far_spectrum, PART_LEN1) == 0) {
+        delay_estimate = WebRtc_DelayEstimatorProcessFloat(aec->delay_estimator,
+                                                           abs_near_spectrum,
+                                                           PART_LEN1);
+        if (delay_estimate >= 0) {
+          // Update delay estimate buffer.
+          aec->delay_histogram[delay_estimate]++;
+        }
       }
     }
 
