@@ -270,7 +270,7 @@ void NetEqDecodingTest::Process(NETEQTEST_RTPpacket* rtp, int* out_len) {
     ASSERT_NE(-1, rtp->readFromFile(rtp_fp_));
   }
 
-  // RecOut
+  // Get audio from NetEq.
   NetEqOutputType type;
   int num_channels;
   ASSERT_EQ(0, neteq_->GetAudio(kMaxBlockSize, out_data_, out_len,

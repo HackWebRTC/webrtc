@@ -179,8 +179,12 @@ class NetEqImpl : public webrtc::NetEq {
                            uint32_t receive_timestamp);
 
 
-  // Delivers 10 ms of audio to |output|. The number of samples produced is
-  // written to |output_length|. Returns 0 on success, or an error code.
+  // Delivers 10 ms of audio data. The data is written to |output|, which can
+  // hold (at least) |max_length| elements. The number of channels that were
+  // written to the output is provided in the output variable |num_channels|,
+  // and each channel contains |samples_per_channel| elements. If more than one
+  // channel is written, the samples are interleaved.
+  // Returns 0 on success, otherwise an error code.
   int GetAudioInternal(size_t max_length, int16_t* output,
                        int* samples_per_channel, int* num_channels);
 

@@ -359,11 +359,11 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
   PacketList packet_list;
   RTPHeader main_header;
   {
-    // Convert to webrtc::Packet.
+    // Convert to Packet.
     // Create |packet| within this separate scope, since it should not be used
     // directly once it's been inserted in the packet list. This way, |packet|
     // is not defined outside of this block.
-    webrtc::Packet* packet = new webrtc::Packet;
+    Packet* packet = new Packet;
     packet->header.markerBit = false;
     packet->header.payloadType = rtp_header.header.payloadType;
     packet->header.sequenceNumber = rtp_header.header.sequenceNumber;
@@ -1581,7 +1581,7 @@ int NetEqImpl::ExtractPackets(int required_samples, PacketList* packet_list) {
   uint16_t prev_sequence_number = 0;
   bool next_packet_available = false;
 
-  const webrtc::RTPHeader* header = packet_buffer_->NextRtpHeader();
+  const RTPHeader* header = packet_buffer_->NextRtpHeader();
   assert(header);
   if (!header) {
     return -1;
@@ -1593,7 +1593,7 @@ int NetEqImpl::ExtractPackets(int required_samples, PacketList* packet_list) {
   do {
     timestamp_ = header->timestamp;
     int discard_count = 0;
-    webrtc::Packet* packet = packet_buffer_->GetNextPacket(&discard_count);
+    Packet* packet = packet_buffer_->GetNextPacket(&discard_count);
     // |header| may be invalid after the |packet_buffer_| operation.
     header = NULL;
     if (!packet) {
@@ -1737,10 +1737,8 @@ NetEqOutputType NetEqImpl::LastOutputType() {
   } else if (last_mode_ == kModeExpand && expand_->MuteFactor(0) == 0) {
     // Expand mode has faded down to background noise only (very long expand).
     return kOutputPLCtoCNG;
-
   } else if (last_mode_ == kModeExpand) {
     return kOutputPLC;
-
   } else {
     return kOutputNormal;
   }
