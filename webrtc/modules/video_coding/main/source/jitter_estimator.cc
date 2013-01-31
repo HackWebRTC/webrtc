@@ -20,6 +20,8 @@
 
 namespace webrtc {
 
+enum { kInitialMaxJitterEstimate = 0 };
+
 VCMJitterEstimator::VCMJitterEstimator(WebRtc_Word32 vcmId, WebRtc_Word32 receiverId) :
 _vcmId(vcmId),
 _receiverId(receiverId),
@@ -33,7 +35,9 @@ _numStdDevFrameSizeOutlier(3),
 _noiseStdDevs(2.33), // ~Less than 1% chance
                      // (look up in normal distribution table)...
 _noiseStdDevOffset(30.0), // ...of getting 30 ms freezes
-_rttFilter(vcmId, receiverId)
+_rttFilter(vcmId, receiverId),
+_jitterEstimateMode(kLastEstimate),
+_maxJitterEstimateMs(kInitialMaxJitterEstimate)
 {
     Reset();
 }
@@ -62,6 +66,8 @@ VCMJitterEstimator::operator=(const VCMJitterEstimator& rhs)
         _startupCount = rhs._startupCount;
         _latestNackTimestamp = rhs._latestNackTimestamp;
         _nackCount = rhs._nackCount;
+        _jitterEstimateMode = rhs._jitterEstimateMode;
+        _maxJitterEstimateMs = rhs._maxJitterEstimateMs;
         _rttFilter = rhs._rttFilter;
     }
     return *this;
@@ -95,6 +101,8 @@ VCMJitterEstimator::Reset()
     _fsSum = 0;
     _fsCount = 0;
     _startupCount = 0;
+    _jitterEstimateMode = kLastEstimate;
+    _maxJitterEstimateMs = kInitialMaxJitterEstimate;
     _rttFilter.Reset();
 }
 
@@ -401,21 +409,39 @@ VCMJitterEstimator::UpdateMaxFrameSize(WebRtc_UWord32 frameSizeBytes)
     }
 }
 
+void VCMJitterEstimator::EnableMaxJitterEstimate(bool enable,
+                                              uint32_t initial_delay_ms)
+{
+    if (enable) {
+        _maxJitterEstimateMs = initial_delay_ms;
+        _jitterEstimateMode = kMaxEstimate;
+    } else {
+        _maxJitterEstimateMs = kInitialMaxJitterEstimate;
+        _jitterEstimateMode = kLastEstimate;
+    }
+}
+
 // Returns the current filtered estimate if available,
 // otherwise tries to calculate an estimate.
-double
+int
 VCMJitterEstimator::GetJitterEstimate(double rttMultiplier)
 {
-    double jitterMS = CalculateEstimate();
+    double jitterMS = CalculateEstimate() + OPERATING_SYSTEM_JITTER;
     if (_filterJitterEstimate > jitterMS)
     {
         jitterMS = _filterJitterEstimate;
     }
     if (_nackCount >= _nackLimit)
     {
-        return jitterMS + _rttFilter.RttMs() * rttMultiplier;
+        jitterMS += _rttFilter.RttMs() * rttMultiplier;
     }
-    return jitterMS;
+    int jitterMsInt = static_cast<uint32_t>(jitterMS + 0.5);
+    if (_jitterEstimateMode == kLastEstimate) {
+        return jitterMsInt;
+    } else {
+        _maxJitterEstimateMs = VCM_MAX(_maxJitterEstimateMs, jitterMsInt);
+        return _maxJitterEstimateMs;
+    }
 }
 
 }

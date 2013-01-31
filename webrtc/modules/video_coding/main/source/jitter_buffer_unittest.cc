@@ -265,6 +265,33 @@ TEST_F(TestRunningJitterBuffer, TestEmptyPackets) {
   EXPECT_EQ(kCompleteSession, InsertPacketAndPop(0));
 }
 
+TEST_F(TestRunningJitterBuffer, JitterEstimateMode) {
+  // Default value (should be in kLastEstimate mode).
+  InsertFrame(kVideoFrameKey);
+  InsertFrame(kVideoFrameDelta);
+  EXPECT_GT(20u, jitter_buffer_->EstimatedJitterMs());
+  // Set kMaxEstimate with a 2 seconds initial delay.
+  jitter_buffer_->EnableMaxJitterEstimate(true, 2000u);
+  EXPECT_EQ(2000u, jitter_buffer_->EstimatedJitterMs());
+  InsertFrame(kVideoFrameDelta);
+  EXPECT_EQ(2000u, jitter_buffer_->EstimatedJitterMs());
+  // Set kMaxEstimate with a 0S initial delay.
+  jitter_buffer_->EnableMaxJitterEstimate(true, 0u);
+  EXPECT_GT(20u, jitter_buffer_->EstimatedJitterMs());
+  // Jitter cannot decrease.
+  InsertFrames(2, kVideoFrameDelta);
+  uint32_t je1 = jitter_buffer_->EstimatedJitterMs();
+  InsertFrames(2, kVideoFrameDelta);
+  EXPECT_GE(je1, jitter_buffer_->EstimatedJitterMs());
+
+  // Set kLastEstimate mode (initial delay is arbitrary in this case and will
+  // be ignored).
+  jitter_buffer_->EnableMaxJitterEstimate(false, 2000u);
+  EXPECT_GT(20u, jitter_buffer_->EstimatedJitterMs());
+  InsertFrames(10, kVideoFrameDelta);
+  EXPECT_GT(20u, jitter_buffer_->EstimatedJitterMs());
+}
+
 TEST_F(TestJitterBufferNack, TestEmptyPackets) {
   // Make sure empty packets doesn't clog the jitter buffer.
   jitter_buffer_->SetNackMode(kNackHybrid, kLowRttNackMs, -1);

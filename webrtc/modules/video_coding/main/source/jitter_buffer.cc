@@ -764,21 +764,23 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(VCMEncodedFrame* encoded_frame,
   return ret;
 }
 
+void VCMJitterBuffer::EnableMaxJitterEstimate(bool enable,
+                                              uint32_t initial_delay_ms) {
+  CriticalSectionScoped cs(crit_sect_);
+  jitter_estimate_.EnableMaxJitterEstimate(enable, initial_delay_ms);
+}
+
 uint32_t VCMJitterBuffer::EstimatedJitterMs() {
   CriticalSectionScoped cs(crit_sect_);
-  uint32_t estimate = VCMJitterEstimator::OPERATING_SYSTEM_JITTER;
-
-  // Compute RTT multiplier for estimation
+  // Compute RTT multiplier for estimation.
   // low_rtt_nackThresholdMs_ == -1 means no FEC.
   double rtt_mult = 1.0f;
   if (nack_mode_ == kNackHybrid && (low_rtt_nack_threshold_ms_ >= 0 &&
       static_cast<int>(rtt_ms_) > low_rtt_nack_threshold_ms_)) {
-    // from here we count on FEC
+    // From here we count on FEC.
     rtt_mult = 0.0f;
   }
-  estimate += static_cast<uint32_t>
-              (jitter_estimate_.GetJitterEstimate(rtt_mult) + 0.5);
-  return estimate;
+  return jitter_estimate_.GetJitterEstimate(rtt_mult);
 }
 
 void VCMJitterBuffer::UpdateRtt(uint32_t rtt_ms) {

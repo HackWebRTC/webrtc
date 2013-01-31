@@ -17,6 +17,12 @@
 namespace webrtc
 {
 
+enum VCMJitterEstimateMode
+{
+    kMaxEstimate,
+    kLastEstimate,
+};
+
 class VCMJitterEstimator
 {
 public:
@@ -45,7 +51,7 @@ public:
     //          - rttMultiplier  : RTT param multiplier (when applicable).
     //
     // Return value                   : Jitter estimate in milliseconds
-    double GetJitterEstimate(double rttMultiplier);
+    int GetJitterEstimate(double rttMultiplier);
 
     // Updates the nack counter.
     void FrameNacked();
@@ -57,6 +63,11 @@ public:
     void UpdateRtt(WebRtc_UWord32 rttMs);
 
     void UpdateMaxFrameSize(WebRtc_UWord32 frameSizeBytes);
+
+    // Enable a max filter on the jitter estimate, and setting of the initial
+    // delay (only when in max mode). When disabled (default), the last jitter
+    // estimate will be used.
+    void EnableMaxJitterEstimate(bool enable, uint32_t initial_delay_ms);
 
     // A constant describing the delay from the jitter buffer
     // to the delay on the receiving side which is not accounted
@@ -144,6 +155,8 @@ private:
     WebRtc_UWord32        _nackCount;            // Keeps track of the number of nacks received,
                                                  // but never goes above _nackLimit
     VCMRttFilter          _rttFilter;
+    VCMJitterEstimateMode _jitterEstimateMode;
+    int                   _maxJitterEstimateMs;
 
     enum { kStartupDelaySamples = 30 };
     enum { kFsAccuStartupSamples = 5 };

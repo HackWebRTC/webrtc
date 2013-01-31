@@ -13,16 +13,16 @@
 
 #include <list>
 
-#include "modules/interface/module_common_types.h"
-#include "modules/video_coding/main/interface/video_coding_defines.h"
-#include "modules/video_coding/main/source/decoding_state.h"
-#include "modules/video_coding/main/source/event.h"
-#include "modules/video_coding/main/source/inter_frame_delay.h"
-#include "modules/video_coding/main/source/jitter_buffer_common.h"
-#include "modules/video_coding/main/source/jitter_estimator.h"
-#include "system_wrappers/interface/constructor_magic.h"
-#include "system_wrappers/interface/critical_section_wrapper.h"
-#include "typedefs.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
+#include "webrtc/modules/video_coding/main/source/decoding_state.h"
+#include "webrtc/modules/video_coding/main/source/event.h"
+#include "webrtc/modules/video_coding/main/source/inter_frame_delay.h"
+#include "webrtc/modules/video_coding/main/source/jitter_buffer_common.h"
+#include "webrtc/modules/video_coding/main/source/jitter_estimator.h"
+#include "webrtc/system_wrappers/interface/constructor_magic.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
@@ -123,6 +123,11 @@ class VCMJitterBuffer {
   // Inserts a packet into a frame returned from GetFrame().
   VCMFrameBufferEnum InsertPacket(VCMEncodedFrame* frame,
                                   const VCMPacket& packet);
+
+  // Enable a max filter on the jitter estimate, and setting of the initial
+  // delay (only when in max mode). When disabled (default), the last jitter
+  // estimate will be used.
+  void EnableMaxJitterEstimate(bool enable, uint32_t initial_delay_ms);
 
   // Returns the estimated jitter in milliseconds.
   uint32_t EstimatedJitterMs();
