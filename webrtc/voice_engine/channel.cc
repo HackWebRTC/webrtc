@@ -5598,11 +5598,20 @@ int Channel::SetFECStatus(bool enable, int redPayloadtype) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetFECStatus()");
 
-  if (SetRedPayloadType(redPayloadtype) < 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_CODEC_ERROR, kTraceError,
-        "SetSecondarySendCodec() Failed to register RED ACM");
-    return -1;
+  if (enable) {
+    if (redPayloadtype < 0 || redPayloadtype > 127) {
+      _engineStatisticsPtr->SetLastError(
+          VE_PLTYPE_ERROR, kTraceError,
+          "SetFECStatus() invalid RED payload type");
+      return -1;
+    }
+
+    if (SetRedPayloadType(redPayloadtype) < 0) {
+      _engineStatisticsPtr->SetLastError(
+          VE_CODEC_ERROR, kTraceError,
+          "SetSecondarySendCodec() Failed to register RED ACM");
+      return -1;
+    }
   }
 
   if (_audioCodingModule.SetFECStatus(enable) != 0) {
@@ -6631,6 +6640,14 @@ int Channel::ApmProcessRx(AudioFrame& frame) {
 
 int Channel::SetSecondarySendCodec(const CodecInst& codec,
                                    int red_payload_type) {
+  // Sanity check for payload type.
+  if (red_payload_type < 0 || red_payload_type > 127) {
+    _engineStatisticsPtr->SetLastError(
+        VE_PLTYPE_ERROR, kTraceError,
+        "SetRedPayloadType() invalid RED payload type");
+    return -1;
+  }
+
   if (SetRedPayloadType(red_payload_type) < 0) {
     _engineStatisticsPtr->SetLastError(
         VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
@@ -6662,14 +6679,8 @@ int Channel::GetSecondarySendCodec(CodecInst* codec) {
   return 0;
 }
 
+// Assuming this method is called with valid payload type.
 int Channel::SetRedPayloadType(int red_payload_type) {
-  if (red_payload_type < 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_PLTYPE_ERROR, kTraceError,
-        "SetRedPayloadType() invalid RED payload type");
-    return -1;
-  }
-
   CodecInst codec;
   bool found_red = false;
 
@@ -6690,7 +6701,6 @@ int Channel::SetRedPayloadType(int red_payload_type) {
     return -1;
   }
 
-  codec.pltype = red_payload_type;
   if (_audioCodingModule.RegisterSendCodec(codec) < 0) {
     _engineStatisticsPtr->SetLastError(
         VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
