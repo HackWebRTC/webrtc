@@ -375,16 +375,30 @@ void NetEqDecodingTest::PopulateCng(int frame_index,
 TEST_F(NetEqDecodingTest, TestBitExactness) {
   const std::string kInputRtpFile = webrtc::test::ProjectRootPath() +
       "resources/audio_coding/neteq_universal_new.rtp";
+#if defined(_MSC_VER) && (_MSC_VER >= 1700)
+  // For Visual Studio 2012 and later, we will have to use the generic reference
+  // file, rather than the windows-specific one.
+  const std::string kInputRefFile = webrtc::test::ProjectRootPath() +
+      "resources/audio_coding/neteq_universal_ref.pcm";
+#else
   const std::string kInputRefFile =
       webrtc::test::ResourcePath("audio_coding/neteq_universal_ref", "pcm");
+#endif
   DecodeAndCompare(kInputRtpFile, kInputRefFile);
 }
 
 TEST_F(NetEqDecodingTest, TestNetworkStatistics) {
   const std::string kInputRtpFile = webrtc::test::ProjectRootPath() +
       "resources/audio_coding/neteq_universal_new.rtp";
+#if defined(_MSC_VER) && (_MSC_VER >= 1700)
+  // For Visual Studio 2012 and later, we will have to use the generic reference
+  // file, rather than the windows-specific one.
+  const std::string kNetworkStatRefFile = webrtc::test::ProjectRootPath() +
+      "resources/audio_coding/neteq_network_stats.dat";
+#else
   const std::string kNetworkStatRefFile =
       webrtc::test::ResourcePath("audio_coding/neteq_network_stats", "dat");
+#endif
   const std::string kRtcpStatRefFile =
       webrtc::test::ResourcePath("audio_coding/neteq_rtcp_stats", "dat");
   DecodeAndCheckStats(kInputRtpFile, kNetworkStatRefFile, kRtcpStatRefFile);
