@@ -11,13 +11,13 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_NS_MAIN_SOURCE_NSX_CORE_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_NS_MAIN_SOURCE_NSX_CORE_H_
 
-#include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "modules/audio_processing/ns/nsx_defines.h"
-#include "typedefs.h"
-
 #ifdef NS_FILEDEBUG
 #include <stdio.h>
 #endif
+
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_processing/ns/nsx_defines.h"
+#include "webrtc/typedefs.h"
 
 typedef struct NsxInst_t_ {
   WebRtc_UWord32          fs;
@@ -44,7 +44,8 @@ typedef struct NsxInst_t_ {
 
   WebRtc_Word32           maxLrt;
   WebRtc_Word32           minLrt;
-  WebRtc_Word32           logLrtTimeAvgW32[HALF_ANAL_BLOCKL]; //log lrt factor with time-smoothing in Q8
+  // Log LRT factor with time-smoothing in Q8.
+  WebRtc_Word32           logLrtTimeAvgW32[HALF_ANAL_BLOCKL];
   WebRtc_Word32           featureLogLrt;
   WebRtc_Word32           thresholdLogLrt;
   WebRtc_Word16           weightLogLrt;
@@ -57,35 +58,42 @@ typedef struct NsxInst_t_ {
   WebRtc_UWord32          thresholdSpecFlat;
   WebRtc_Word16           weightSpecFlat;
 
-  WebRtc_Word32           avgMagnPause[HALF_ANAL_BLOCKL]; //conservative estimate of noise spectrum
+  // Conservative estimate of noise spectrum.
+  WebRtc_Word32           avgMagnPause[HALF_ANAL_BLOCKL];
   WebRtc_UWord32          magnEnergy;
   WebRtc_UWord32          sumMagn;
   WebRtc_UWord32          curAvgMagnEnergy;
   WebRtc_UWord32          timeAvgMagnEnergy;
   WebRtc_UWord32          timeAvgMagnEnergyTmp;
 
-  WebRtc_UWord32          whiteNoiseLevel;              //initial noise estimate
-  WebRtc_UWord32          initMagnEst[HALF_ANAL_BLOCKL];//initial magnitude spectrum estimate
-  WebRtc_Word32           pinkNoiseNumerator;           //pink noise parameter: numerator
-  WebRtc_Word32           pinkNoiseExp;                 //pink noise parameter: power of freq
-  int                     minNorm;                      //smallest normalization factor
-  int                     zeroInputSignal;              //zero input signal flag
+  WebRtc_UWord32          whiteNoiseLevel;  // Initial noise estimate.
+  // Initial magnitude spectrum estimate.
+  WebRtc_UWord32          initMagnEst[HALF_ANAL_BLOCKL];
+  // Pink noise parameters:
+  WebRtc_Word32           pinkNoiseNumerator;  // Numerator.
+  WebRtc_Word32           pinkNoiseExp;  // Power of freq.
+  int                     minNorm;  // Smallest normalization factor.
+  int                     zeroInputSignal;  // Zero input signal flag.
 
-  WebRtc_UWord32          prevNoiseU32[HALF_ANAL_BLOCKL]; //noise spectrum from previous frame
-  WebRtc_UWord16          prevMagnU16[HALF_ANAL_BLOCKL]; //magnitude spectrum from previous frame
-  WebRtc_Word16           priorNonSpeechProb; //prior speech/noise probability // Q14
+  // Noise spectrum from previous frame.
+  WebRtc_UWord32          prevNoiseU32[HALF_ANAL_BLOCKL];
+  // Magnitude spectrum from previous frame.
+  WebRtc_UWord16          prevMagnU16[HALF_ANAL_BLOCKL];
+  // Prior speech/noise probability in Q14.
+  WebRtc_Word16           priorNonSpeechProb;
 
-  int                     blockIndex; //frame index counter
-  int                     modelUpdate; //parameter for updating or estimating thresholds/weights for prior model
+  int                     blockIndex;  // Frame index counter.
+  // Parameter for updating or estimating thresholds/weights for prior model.
+  int                     modelUpdate;
   int                     cntThresUpdate;
 
-  //histograms for parameter estimation
+  // Histograms for parameter estimation.
   WebRtc_Word16           histLrt[HIST_PAR_EST];
   WebRtc_Word16           histSpecFlat[HIST_PAR_EST];
   WebRtc_Word16           histSpecDiff[HIST_PAR_EST];
 
-  //quantities for high band estimate
-  WebRtc_Word16           dataBufHBFX[ANAL_BLOCKL_MAX]; /* Q0 */
+  // Quantities for high band estimate.
+  WebRtc_Word16           dataBufHBFX[ANAL_BLOCKL_MAX];  // Q0
 
   int                     qNoise;
   int                     prevQNoise;

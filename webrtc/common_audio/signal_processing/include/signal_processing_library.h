@@ -19,7 +19,7 @@
 #define WEBRTC_SPL_SIGNAL_PROCESSING_LIBRARY_H_
 
 #include <string.h>
-#include "typedefs.h"
+#include "webrtc/typedefs.h"
 
 // Macros specific for the fixed point implementation
 #define WEBRTC_SPL_WORD16_MAX       32767
@@ -28,8 +28,8 @@
 #define WEBRTC_SPL_WORD32_MIN       (WebRtc_Word32)0x80000000
 #define WEBRTC_SPL_MAX_LPC_ORDER    14
 #define WEBRTC_SPL_MAX_SEED_USED    0x80000000L
-#define WEBRTC_SPL_MIN(A, B)        (A < B ? A : B) // Get min value
-#define WEBRTC_SPL_MAX(A, B)        (A > B ? A : B) // Get max value
+#define WEBRTC_SPL_MIN(A, B)        (A < B ? A : B)  // Get min value
+#define WEBRTC_SPL_MAX(A, B)        (A > B ? A : B)  // Get max value
 // TODO(kma/bjorn): For the next two macros, investigate how to correct the code
 // for inputs of a = WEBRTC_SPL_WORD16_MIN or WEBRTC_SPL_WORD32_MIN.
 #define WEBRTC_SPL_ABS_W16(a) \
@@ -152,15 +152,15 @@ extern "C"
 #endif
 
 #define WEBRTC_SPL_MEMCPY_W8(v1, v2, length) \
-   memcpy(v1, v2, (length) * sizeof(char))
+  memcpy(v1, v2, (length) * sizeof(char))
 #define WEBRTC_SPL_MEMCPY_W16(v1, v2, length) \
-   memcpy(v1, v2, (length) * sizeof(WebRtc_Word16))
+  memcpy(v1, v2, (length) * sizeof(WebRtc_Word16))
 
 #define WEBRTC_SPL_MEMMOVE_W16(v1, v2, length) \
-   memmove(v1, v2, (length) * sizeof(WebRtc_Word16))
+  memmove(v1, v2, (length) * sizeof(WebRtc_Word16))
 
 // inline functions:
-#include "spl_inl.h"
+#include "webrtc/common_audio/signal_processing/include/spl_inl.h"
 
 // Initialize SPL. Currently it contains only function pointer initialization.
 // If the underlying platform is known to be ARM-Neon (WEBRTC_ARCH_ARM_NEON
@@ -636,8 +636,8 @@ void WebRtcSpl_SqrtOfOneMinusXSquared(WebRtc_Word16* in_vector,
                                       WebRtc_Word16* out_vector);
 // End: Signal processing operations.
 
-// Randomization functions. Implementations collected in randomization_functions.c and
-// descriptions at bottom of this file.
+// Randomization functions. Implementations collected in
+// randomization_functions.c and descriptions at bottom of this file.
 WebRtc_UWord32 WebRtcSpl_IncreaseSeed(WebRtc_UWord32* seed);
 WebRtc_Word16 WebRtcSpl_RandU(WebRtc_UWord32* seed);
 WebRtc_Word16 WebRtcSpl_RandN(WebRtc_UWord32* seed);
@@ -681,12 +681,17 @@ int32_t WebRtcSpl_DotProductWithScale(const int16_t* vector1,
                                       int scaling);
 
 // Filter operations.
-int WebRtcSpl_FilterAR(G_CONST WebRtc_Word16* ar_coef, int ar_coef_length,
-                       G_CONST WebRtc_Word16* in_vector, int in_vector_length,
-                       WebRtc_Word16* filter_state, int filter_state_length,
+int WebRtcSpl_FilterAR(G_CONST WebRtc_Word16* ar_coef,
+                       int ar_coef_length,
+                       G_CONST WebRtc_Word16* in_vector,
+                       int in_vector_length,
+                       WebRtc_Word16* filter_state,
+                       int filter_state_length,
                        WebRtc_Word16* filter_state_low,
-                       int filter_state_low_length, WebRtc_Word16* out_vector,
-                       WebRtc_Word16* out_vector_low, int out_vector_low_length);
+                       int filter_state_low_length,
+                       WebRtc_Word16* out_vector,
+                       WebRtc_Word16* out_vector_low,
+                       int out_vector_low_length);
 
 void WebRtcSpl_FilterMAFastQ12(WebRtc_Word16* in_vector,
                                WebRtc_Word16* out_vector,
@@ -797,11 +802,10 @@ void WebRtcSpl_ComplexBitReverse(int16_t* __restrict complex_data, int stages);
  ******************************************************************/
 
 // state structure for 22 -> 16 resampler
-typedef struct
-{
-    WebRtc_Word32 S_22_44[8];
-    WebRtc_Word32 S_44_32[8];
-    WebRtc_Word32 S_32_16[8];
+typedef struct {
+  WebRtc_Word32 S_22_44[8];
+  WebRtc_Word32 S_44_32[8];
+  WebRtc_Word32 S_32_16[8];
 } WebRtcSpl_State22khzTo16khz;
 
 void WebRtcSpl_Resample22khzTo16khz(const WebRtc_Word16* in,
@@ -812,10 +816,9 @@ void WebRtcSpl_Resample22khzTo16khz(const WebRtc_Word16* in,
 void WebRtcSpl_ResetResample22khzTo16khz(WebRtcSpl_State22khzTo16khz* state);
 
 // state structure for 16 -> 22 resampler
-typedef struct
-{
-    WebRtc_Word32 S_16_32[8];
-    WebRtc_Word32 S_32_22[8];
+typedef struct {
+  WebRtc_Word32 S_16_32[8];
+  WebRtc_Word32 S_32_22[8];
 } WebRtcSpl_State16khzTo22khz;
 
 void WebRtcSpl_Resample16khzTo22khz(const WebRtc_Word16* in,
@@ -826,11 +829,10 @@ void WebRtcSpl_Resample16khzTo22khz(const WebRtc_Word16* in,
 void WebRtcSpl_ResetResample16khzTo22khz(WebRtcSpl_State16khzTo22khz* state);
 
 // state structure for 22 -> 8 resampler
-typedef struct
-{
-    WebRtc_Word32 S_22_22[16];
-    WebRtc_Word32 S_22_16[8];
-    WebRtc_Word32 S_16_8[8];
+typedef struct {
+  WebRtc_Word32 S_22_22[16];
+  WebRtc_Word32 S_22_16[8];
+  WebRtc_Word32 S_16_8[8];
 } WebRtcSpl_State22khzTo8khz;
 
 void WebRtcSpl_Resample22khzTo8khz(const WebRtc_Word16* in, WebRtc_Word16* out,
@@ -840,11 +842,10 @@ void WebRtcSpl_Resample22khzTo8khz(const WebRtc_Word16* in, WebRtc_Word16* out,
 void WebRtcSpl_ResetResample22khzTo8khz(WebRtcSpl_State22khzTo8khz* state);
 
 // state structure for 8 -> 22 resampler
-typedef struct
-{
-    WebRtc_Word32 S_8_16[8];
-    WebRtc_Word32 S_16_11[8];
-    WebRtc_Word32 S_11_22[8];
+typedef struct {
+  WebRtc_Word32 S_8_16[8];
+  WebRtc_Word32 S_16_11[8];
+  WebRtc_Word32 S_11_22[8];
 } WebRtcSpl_State8khzTo22khz;
 
 void WebRtcSpl_Resample8khzTo22khz(const WebRtc_Word16* in, WebRtc_Word16* out,
@@ -884,11 +885,10 @@ void WebRtcSpl_Resample44khzTo32khz(const WebRtc_Word32* In, WebRtc_Word32* Out,
  *
  ******************************************************************/
 
-typedef struct
-{
-    WebRtc_Word32 S_48_48[16];
-    WebRtc_Word32 S_48_32[8];
-    WebRtc_Word32 S_32_16[8];
+typedef struct {
+  WebRtc_Word32 S_48_48[16];
+  WebRtc_Word32 S_48_32[8];
+  WebRtc_Word32 S_32_16[8];
 } WebRtcSpl_State48khzTo16khz;
 
 void WebRtcSpl_Resample48khzTo16khz(const WebRtc_Word16* in, WebRtc_Word16* out,
@@ -897,11 +897,10 @@ void WebRtcSpl_Resample48khzTo16khz(const WebRtc_Word16* in, WebRtc_Word16* out,
 
 void WebRtcSpl_ResetResample48khzTo16khz(WebRtcSpl_State48khzTo16khz* state);
 
-typedef struct
-{
-    WebRtc_Word32 S_16_32[8];
-    WebRtc_Word32 S_32_24[8];
-    WebRtc_Word32 S_24_48[8];
+typedef struct {
+  WebRtc_Word32 S_16_32[8];
+  WebRtc_Word32 S_32_24[8];
+  WebRtc_Word32 S_24_48[8];
 } WebRtcSpl_State16khzTo48khz;
 
 void WebRtcSpl_Resample16khzTo48khz(const WebRtc_Word16* in, WebRtc_Word16* out,
@@ -910,12 +909,11 @@ void WebRtcSpl_Resample16khzTo48khz(const WebRtc_Word16* in, WebRtc_Word16* out,
 
 void WebRtcSpl_ResetResample16khzTo48khz(WebRtcSpl_State16khzTo48khz* state);
 
-typedef struct
-{
-    WebRtc_Word32 S_48_24[8];
-    WebRtc_Word32 S_24_24[16];
-    WebRtc_Word32 S_24_16[8];
-    WebRtc_Word32 S_16_8[8];
+typedef struct {
+  WebRtc_Word32 S_48_24[8];
+  WebRtc_Word32 S_24_24[16];
+  WebRtc_Word32 S_24_16[8];
+  WebRtc_Word32 S_16_8[8];
 } WebRtcSpl_State48khzTo8khz;
 
 void WebRtcSpl_Resample48khzTo8khz(const WebRtc_Word16* in, WebRtc_Word16* out,
@@ -924,12 +922,11 @@ void WebRtcSpl_Resample48khzTo8khz(const WebRtc_Word16* in, WebRtc_Word16* out,
 
 void WebRtcSpl_ResetResample48khzTo8khz(WebRtcSpl_State48khzTo8khz* state);
 
-typedef struct
-{
-    WebRtc_Word32 S_8_16[8];
-    WebRtc_Word32 S_16_12[8];
-    WebRtc_Word32 S_12_24[8];
-    WebRtc_Word32 S_24_48[8];
+typedef struct {
+  WebRtc_Word32 S_8_16[8];
+  WebRtc_Word32 S_16_12[8];
+  WebRtc_Word32 S_12_24[8];
+  WebRtc_Word32 S_24_48[8];
 } WebRtcSpl_State8khzTo48khz;
 
 void WebRtcSpl_Resample8khzTo48khz(const WebRtc_Word16* in, WebRtc_Word16* out,
@@ -948,8 +945,8 @@ void WebRtcSpl_ResetResample8khzTo48khz(WebRtcSpl_State8khzTo48khz* state);
 void WebRtcSpl_DownsampleBy2(const WebRtc_Word16* in, const WebRtc_Word16 len,
                              WebRtc_Word16* out, WebRtc_Word32* filtState);
 
-void WebRtcSpl_UpsampleBy2(const WebRtc_Word16* in, WebRtc_Word16 len, WebRtc_Word16* out,
-                           WebRtc_Word32* filtState);
+void WebRtcSpl_UpsampleBy2(const WebRtc_Word16* in, WebRtc_Word16 len,
+                           WebRtc_Word16* out, WebRtc_Word32* filtState);
 
 /************************************************************
  * END OF RESAMPLING FUNCTIONS
@@ -967,8 +964,8 @@ void WebRtcSpl_SynthesisQMF(const WebRtc_Word16* low_band,
 
 #ifdef __cplusplus
 }
-#endif // __cplusplus
-#endif // WEBRTC_SPL_SIGNAL_PROCESSING_LIBRARY_H_
+#endif  // __cplusplus
+#endif  // WEBRTC_SPL_SIGNAL_PROCESSING_LIBRARY_H_
 
 //
 // WebRtcSpl_AddSatW16(...)
@@ -1729,9 +1726,10 @@ void WebRtcSpl_SynthesisQMF(const WebRtc_Word16* low_band,
 // This function gives the version string of the Signal Processing Library.
 //
 // Input:
-//      - length_in_bytes   : The size of Allocated space (in Bytes) where
-//                            the version number is written to (in string format).
+//      - length_in_bytes : The size of Allocated space (in Bytes) where
+//                          the version number is written to (in string format).
 //
 // Output:
-//      - version           : Pointer to a buffer where the version number is written to.
+//      - version         : Pointer to a buffer where the version number is
+//                          written to.
 //

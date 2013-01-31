@@ -48,7 +48,8 @@
         '<(webrtc_root)/build/generate_asm_header.py',
         '--compiler=<!(/bin/echo -n ${ANDROID_GOMA_WRAPPER} '
           '<(android_toolchain)/*-gcc)',
-        '--options=-I.. -I<@(android_ndk_include) -S',  # Compiler options.
+        # Compiler options.
+        '--options=-I<(webrtc_root)/.. -I<@(android_ndk_include) -S',
         '--dir=<(out_dir)',
         '<(RULE_INPUT_PATH)',
       ],

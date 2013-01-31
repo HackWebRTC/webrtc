@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// Performs echo control (suppression) with fft routines in fixed-point
+// Performs echo control (suppression) with fft routines in fixed-point.
 
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AECM_AECM_CORE_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AECM_AECM_CORE_H_
 
-#include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "modules/audio_processing/aecm/aecm_defines.h"
-#include "typedefs.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_processing/aecm/aecm_defines.h"
+#include "webrtc/typedefs.h"
 
 #ifdef _MSC_VER  // visual c++
 #define ALIGN8_BEG __declspec(align(8))
