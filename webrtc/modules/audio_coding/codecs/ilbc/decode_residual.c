@@ -26,7 +26,6 @@
 #include "xcorr_coef.h"
 #include "lsf_check.h"
 
-
 /*----------------------------------------------------------------*
  *  frame residual decoder function (subrutine to iLBC_decode)
  *---------------------------------------------------------------*/
@@ -80,11 +79,6 @@ void WebRtcIlbcfix_DecodeResidual(
 
   }
   else {/* put adaptive part in the beginning */
-
-    /* create reversed vectors for prediction */
-
-    WebRtcSpl_MemCpyReversedOrder(reverseDecresidual+diff,
-                                  &decresidual[(iLBC_encbits->startIdx+1)*SUBL-1-STATE_LEN], diff);
 
     /* setup memory */
 
