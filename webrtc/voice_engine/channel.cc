@@ -6701,6 +6701,7 @@ int Channel::SetRedPayloadType(int red_payload_type) {
     return -1;
   }
 
+  codec.pltype = red_payload_type;
   if (_audioCodingModule.RegisterSendCodec(codec) < 0) {
     _engineStatisticsPtr->SetLastError(
         VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
