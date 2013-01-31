@@ -209,6 +209,11 @@ AudioDecoderIsacSwb::AudioDecoderIsacSwb() : AudioDecoderIsac() {
   codec_type_ = kDecoderISACswb;
   WebRtcIsac_SetDecSampRate(static_cast<ISACStruct*>(state_), 32000);
 }
+
+// iSAC FB
+AudioDecoderIsacFb::AudioDecoderIsacFb() : AudioDecoderIsacSwb() {
+  codec_type_ = kDecoderISACfb;
+}
 #endif
 
 // iSAC fix

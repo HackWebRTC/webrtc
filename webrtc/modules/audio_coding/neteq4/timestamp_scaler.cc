@@ -49,6 +49,7 @@ uint32_t TimestampScaler::ToInternal(uint32_t external_timestamp,
     }
     case kDecoderOpus:
     case kDecoderOpus_2ch:
+    case kDecoderISACfb:
     case kDecoderCNGswb48kHz: {
       // Use timestamp scaling with factor 2/3 (32 kHz sample rate, but RTP
       // timestamps run on 48 kHz).

@@ -143,6 +143,14 @@ class AudioDecoderIsacSwb : public AudioDecoderIsac {
  private:
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderIsacSwb);
 };
+
+class AudioDecoderIsacFb : public AudioDecoderIsacSwb {
+ public:
+  AudioDecoderIsacFb();
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(AudioDecoderIsacFb);
+};
 #endif
 
 #ifdef WEBRTC_CODEC_ISACFX

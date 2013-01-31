@@ -235,6 +235,8 @@ void NetEqDecodingTest::LoadDecoders() {
   ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderISAC, 103));
   // Load iSAC SWB.
   ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderISACswb, 104));
+  // Load iSAC FB.
+  ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderISACfb, 105));
   // Load PCM16B nb.
   ASSERT_EQ(0, neteq_->RegisterPayloadType(kDecoderPCM16B, 93));
   // Load PCM16B wb.

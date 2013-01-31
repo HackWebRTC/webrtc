@@ -377,6 +377,19 @@ class AudioDecoderIsacSwbTest : public AudioDecoderTest {
   int input_size_;
 };
 
+// This test is identical to AudioDecoderIsacSwbTest, except that it creates
+// an AudioDecoderIsacFb decoder object.
+class AudioDecoderIsacFbTest : public AudioDecoderIsacSwbTest {
+ protected:
+  AudioDecoderIsacFbTest() : AudioDecoderIsacSwbTest() {
+    // Delete the |decoder_| that was created by AudioDecoderIsacSwbTest and
+    // create an AudioDecoderIsacFb object instead.
+    delete decoder_;
+    decoder_ = new AudioDecoderIsacFb;
+    assert(decoder_);
+  }
+};
+
 class AudioDecoderIsacFixTest : public AudioDecoderTest {
  protected:
   AudioDecoderIsacFixTest() : AudioDecoderTest() {
@@ -549,6 +562,17 @@ TEST_F(AudioDecoderIsacSwbTest, EncodeDecode) {
   DecodePlcTest();
 }
 
+TEST_F(AudioDecoderIsacFbTest, EncodeDecode) {
+  int tolerance = 19757;
+  double mse = 8.18e6;
+  int delay = 160;  // Delay from input to output.
+  EXPECT_TRUE(AudioDecoder::CodecSupported(kDecoderISACswb));
+  EncodeDecodeTest(853, tolerance, mse, delay);
+  ReInitTest();
+  EXPECT_TRUE(decoder_->HasDecodePlc());
+  DecodePlcTest();
+}
+
 TEST_F(AudioDecoderIsacFixTest, DISABLED_EncodeDecode) {
   int tolerance = 11034;
   double mse = 3.46e6;
@@ -587,6 +611,7 @@ TEST(AudioDecoder, CodecSampleRateHz) {
   EXPECT_EQ(8000, AudioDecoder::CodecSampleRateHz(kDecoderILBC));
   EXPECT_EQ(16000, AudioDecoder::CodecSampleRateHz(kDecoderISAC));
   EXPECT_EQ(32000, AudioDecoder::CodecSampleRateHz(kDecoderISACswb));
+  EXPECT_EQ(32000, AudioDecoder::CodecSampleRateHz(kDecoderISACfb));
   EXPECT_EQ(8000, AudioDecoder::CodecSampleRateHz(kDecoderPCM16B));
   EXPECT_EQ(16000, AudioDecoder::CodecSampleRateHz(kDecoderPCM16Bwb));
   EXPECT_EQ(32000, AudioDecoder::CodecSampleRateHz(kDecoderPCM16Bswb32kHz));
@@ -620,6 +645,7 @@ TEST(AudioDecoder, CodecSupported) {
   EXPECT_TRUE(AudioDecoder::CodecSupported(kDecoderILBC));
   EXPECT_TRUE(AudioDecoder::CodecSupported(kDecoderISAC));
   EXPECT_TRUE(AudioDecoder::CodecSupported(kDecoderISACswb));
+  EXPECT_TRUE(AudioDecoder::CodecSupported(kDecoderISACfb));
   EXPECT_TRUE(AudioDecoder::CodecSupported(kDecoderPCM16B));
   EXPECT_TRUE(AudioDecoder::CodecSupported(kDecoderPCM16Bwb));
   EXPECT_TRUE(AudioDecoder::CodecSupported(kDecoderPCM16Bswb32kHz));
