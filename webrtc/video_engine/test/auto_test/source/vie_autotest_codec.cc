@@ -453,6 +453,7 @@ void ViEAutoTest::ViECodecAPITest() {
     if (video_codec.codecType == webrtc::kVideoCodecVP8) {
       video_codec.codecSpecific.VP8.automaticResizeOn = true;
       video_codec.codecSpecific.VP8.frameDroppingOn = true;
+      video_codec.codecSpecific.VP8.keyFrameInterval = 300;
       EXPECT_EQ(0, codec->SetSendCodec(video_channel, video_codec));
       break;
     }
@@ -462,12 +463,11 @@ void ViEAutoTest::ViECodecAPITest() {
   EXPECT_EQ(webrtc::kVideoCodecVP8, video_codec.codecType);
   EXPECT_TRUE(video_codec.codecSpecific.VP8.automaticResizeOn);
   EXPECT_TRUE(video_codec.codecSpecific.VP8.frameDroppingOn);
+  EXPECT_EQ(300, video_codec.codecSpecific.VP8.keyFrameInterval);
 
   for (int i = 0; i < number_of_codecs; i++) {
     EXPECT_EQ(0, codec->GetCodec(i, video_codec));
     if (video_codec.codecType == webrtc::kVideoCodecI420) {
-      video_codec.codecSpecific.VP8.automaticResizeOn = false;
-      video_codec.codecSpecific.VP8.frameDroppingOn = false;
       EXPECT_EQ(0, codec->SetSendCodec(video_channel, video_codec));
       break;
     }
@@ -475,8 +475,6 @@ void ViEAutoTest::ViECodecAPITest() {
   memset(&video_codec, 0, sizeof(video_codec));
   EXPECT_EQ(0, codec->GetSendCodec(video_channel, video_codec));
   EXPECT_EQ(webrtc::kVideoCodecI420, video_codec.codecType);
-  EXPECT_FALSE(video_codec.codecSpecific.VP8.automaticResizeOn);
-  EXPECT_FALSE(video_codec.codecSpecific.VP8.frameDroppingOn);
 
   EXPECT_EQ(0, base->DeleteChannel(video_channel));
 

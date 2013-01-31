@@ -530,6 +530,7 @@ struct VideoCodecVP8
     bool                 errorConcealmentOn;
     bool                 automaticResizeOn;
     bool                 frameDroppingOn;
+    int                  keyFrameInterval;
 };
 
 // Unknown specific

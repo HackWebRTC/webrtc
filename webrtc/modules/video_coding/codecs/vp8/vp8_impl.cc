@@ -11,23 +11,24 @@
  *
  */
 
-#include "modules/video_coding/codecs/vp8/vp8_impl.h"
+#include "webrtc/modules/video_coding/codecs/vp8/vp8_impl.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <vector>
 
 #include "vpx/vpx_encoder.h"
 #include "vpx/vpx_decoder.h"
 #include "vpx/vp8cx.h"
 #include "vpx/vp8dx.h"
 
-#include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "module_common_types.h"
-#include "modules/video_coding/codecs/vp8/reference_picture_selection.h"
-#include "modules/video_coding/codecs/vp8/temporal_layers.h"
-#include "system_wrappers/interface/tick_util.h"
-#include "system_wrappers/interface/trace_event.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/video_coding/codecs/vp8/reference_picture_selection.h"
+#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 
 enum { kVp8ErrorPropagationTh = 30 };
 
@@ -251,9 +252,11 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
     // Disable periodic key frames if we get feedback from the decoder
     // through SLI and RPSI.
     config_->kf_mode = VPX_KF_DISABLED;
-  } else {
+  } else if (inst->codecSpecific.VP8.keyFrameInterval  > 0) {
     config_->kf_mode = VPX_KF_AUTO;
-    config_->kf_max_dist = 3000;
+    config_->kf_max_dist = inst->codecSpecific.VP8.keyFrameInterval;
+  } else {
+    config_->kf_mode = VPX_KF_DISABLED;
   }
   switch (inst->codecSpecific.VP8.complexity) {
     case kComplexityHigh:

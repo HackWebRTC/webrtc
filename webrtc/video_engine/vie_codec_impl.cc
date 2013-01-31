@@ -124,12 +124,14 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
     WEBRTC_TRACE(kTraceInfo, kTraceVideo,
                  ViEId(shared_data_->instance_id(), video_channel),
                  "pictureLossIndicationOn: %d, feedbackModeOn: %d, "
-                 "complexity: %d, resilience: %d, numberOfTemporalLayers: %u",
+                 "complexity: %d, resilience: %d, numberOfTemporalLayers: %u"
+                 "keyFrameInterval %d",
                  video_codec.codecSpecific.VP8.pictureLossIndicationOn,
                  video_codec.codecSpecific.VP8.feedbackModeOn,
                  video_codec.codecSpecific.VP8.complexity,
                  video_codec.codecSpecific.VP8.resilience,
-                 video_codec.codecSpecific.VP8.numberOfTemporalLayers);
+                 video_codec.codecSpecific.VP8.numberOfTemporalLayers,
+                 video_codec.codecSpecific.VP8.keyFrameInterval);
   }
   if (!CodecValid(video_codec)) {
     // Error logged.
