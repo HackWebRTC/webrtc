@@ -333,6 +333,7 @@ int WebRtcNetEQ_DbRemove(CodecDbInst_t *inst, enum WebRtcNetEQDecoder codec)
             inst->funcDecodePLC[i] = inst->funcDecodePLC[i + 1];
             inst->funcGetMDinfo[i] = inst->funcGetMDinfo[i + 1];
             inst->funcGetPitch[i] = inst->funcGetPitch[i + 1];
+            inst->funcDurationEst[i] = inst->funcDurationEst[i + 1];
             inst->funcUpdBWEst[i] = inst->funcUpdBWEst[i + 1];
             inst->funcGetErrorCode[i] = inst->funcGetErrorCode[i + 1];
             inst->codec_fs[i] = inst->codec_fs[i + 1];
@@ -346,6 +347,7 @@ int WebRtcNetEQ_DbRemove(CodecDbInst_t *inst, enum WebRtcNetEQDecoder codec)
         inst->funcDecodePLC[i] = NULL;
         inst->funcGetMDinfo[i] = NULL;
         inst->funcGetPitch[i] = NULL;
+        inst->funcDurationEst[i] = NULL;
         inst->funcUpdBWEst[i] = NULL;
         inst->funcGetErrorCode[i] = NULL;
         inst->codec_fs[i] = 0;
