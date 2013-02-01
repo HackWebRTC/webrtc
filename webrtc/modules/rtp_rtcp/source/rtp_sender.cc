@@ -514,8 +514,7 @@ int RTPSender::SetSelectiveRetransmissions(uint8_t settings) {
 }
 
 void RTPSender::OnReceivedNACK(
-    const WebRtc_UWord16 nack_sequence_numbers_length,
-    const WebRtc_UWord16 *nack_sequence_numbers,
+    const std::list<uint16_t>& nack_sequence_numbers,
     const WebRtc_UWord16 avg_rtt) {
   const WebRtc_Word64 now = clock_->TimeInMilliseconds();
   WebRtc_UWord32 bytes_re_sent = 0;
@@ -528,9 +527,9 @@ void RTPSender::OnReceivedNACK(
     return;
   }
 
-  for (WebRtc_UWord16 i = 0; i < nack_sequence_numbers_length; ++i) {
-    const WebRtc_Word32 bytes_sent = ReSendPacket(nack_sequence_numbers[i],
-                                                  5 + avg_rtt);
+  for (std::list<uint16_t>::const_iterator it = nack_sequence_numbers.begin();
+      it != nack_sequence_numbers.end(); ++it) {
+    const WebRtc_Word32 bytes_sent = ReSendPacket(*it, 5 + avg_rtt);
     if (bytes_sent > 0) {
       bytes_re_sent += bytes_sent;
     } else if (bytes_sent == 0) {
@@ -541,7 +540,7 @@ void RTPSender::OnReceivedNACK(
       // Failed to send one Sequence number. Give up the rest in this nack.
       WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, id_,
                    "Failed resending RTP packet %d, Discard rest of packets",
-                   nack_sequence_numbers[i]);
+                   *it);
       break;
     }
     // Delay bandwidth estimate (RTT * BW).

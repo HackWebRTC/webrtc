@@ -116,8 +116,8 @@ class RtpRtcpNackTest : public ::testing::Test {
 
     EXPECT_EQ(0, video_module_->SetRTCPStatus(kRtcpCompound));
     EXPECT_EQ(0, video_module_->SetSSRC(kTestSsrc));
-    EXPECT_EQ(0, video_module_->SetNACKStatus(kNackRtcp));
-    EXPECT_EQ(0, video_module_->SetStorePacketsStatus(true));
+    EXPECT_EQ(0, video_module_->SetNACKStatus(kNackRtcp, 450));
+    EXPECT_EQ(0, video_module_->SetStorePacketsStatus(true, 600));
     EXPECT_EQ(0, video_module_->SetSendingStatus(true));
     EXPECT_EQ(0, video_module_->SetSequenceNumber(kTestSequenceNumber));
     EXPECT_EQ(0, video_module_->SetStartTimestamp(111111));

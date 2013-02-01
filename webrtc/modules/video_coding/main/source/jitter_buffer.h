@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_JITTER_BUFFER_H_
 
 #include <list>
+#include <vector>
 
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
@@ -49,8 +50,10 @@ struct VCMJitterSample {
 
 class VCMJitterBuffer {
  public:
-  VCMJitterBuffer(Clock* clock, int vcm_id = -1, int receiver_id = -1,
-                  bool master = true);
+  VCMJitterBuffer(Clock* clock,
+                  int vcm_id,
+                  int receiver_id,
+                  bool master);
   virtual ~VCMJitterBuffer();
 
   // Makes |this| a deep copy of |rhs|.
@@ -143,6 +146,9 @@ class VCMJitterBuffer {
   // wait for retransmissions.
   void SetNackMode(VCMNackMode mode, int low_rtt_nack_threshold_ms,
                    int high_rtt_nack_threshold_ms);
+
+  void SetNackSettings(size_t max_nack_list_size,
+                       int max_packet_age_to_nack);
 
   // Returns the current NACK mode.
   VCMNackMode nack_mode() const;
@@ -259,9 +265,11 @@ class VCMJitterBuffer {
   int low_rtt_nack_threshold_ms_;
   int high_rtt_nack_threshold_ms_;
   // Holds the internal NACK list (the missing sequence numbers).
-  int32_t nack_seq_nums_internal_[kNackHistoryLength];
-  uint16_t nack_seq_nums_[kNackHistoryLength];
+  std::vector<int> nack_seq_nums_internal_;
+  std::vector<uint16_t> nack_seq_nums_;
   unsigned int nack_seq_nums_length_;
+  size_t max_nack_list_size_;
+  int max_packet_age_to_nack_;  // Measured in sequence numbers.
   bool waiting_for_key_frame_;
 
   DISALLOW_COPY_AND_ASSIGN(VCMJitterBuffer);

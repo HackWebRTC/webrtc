@@ -41,10 +41,6 @@ namespace webrtc {
 #define VCM_VP8_PAYLOAD_TYPE       120
 #define VCM_I420_PAYLOAD_TYPE      124
 
-enum VCMNackProperties {
-  kNackHistoryLength = 450
-};
-
 enum VCMVideoProtection {
   kProtectionNack,                // Both send-side and receive-side
   kProtectionNackSender,          // Send-side only

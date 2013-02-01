@@ -1477,14 +1477,15 @@ NACKMethod ModuleRtpRtcpImpl::NACK() const {
 }
 
 // Turn negative acknowledgment requests on/off.
-WebRtc_Word32 ModuleRtpRtcpImpl::SetNACKStatus(NACKMethod method) {
+WebRtc_Word32 ModuleRtpRtcpImpl::SetNACKStatus(
+    NACKMethod method, int max_reordering_threshold) {
   WEBRTC_TRACE(kTraceModuleCall,
                kTraceRtpRtcp,
                id_,
                "SetNACKStatus(%u)", method);
 
   nack_method_ = method;
-  rtp_receiver_->SetNACKStatus(method);
+  rtp_receiver_->SetNACKStatus(method, max_reordering_threshold);
   return 0;
 }
 
@@ -1516,10 +1517,6 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendNACK(const WebRtc_UWord16* nack_list,
                id_,
                "SendNACK(size:%u)", size);
 
-  if (size > NACK_PACKETS_MAX_SIZE) {
-    RequestKeyFrame();
-    return -1;
-  }
   WebRtc_UWord16 avg_rtt = 0;
   rtcp_receiver_.RTT(rtp_receiver_->SSRC(), NULL, &avg_rtt, NULL, NULL);
 
@@ -2006,18 +2003,14 @@ WebRtc_UWord32 ModuleRtpRtcpImpl::SendTimeOfSendReport(
 }
 
 void ModuleRtpRtcpImpl::OnReceivedNACK(
-    const WebRtc_UWord16 nack_sequence_numbers_length,
-    const WebRtc_UWord16* nack_sequence_numbers) {
+    const std::list<uint16_t>& nack_sequence_numbers) {
   if (!rtp_sender_.StorePackets() ||
-      nack_sequence_numbers == NULL ||
-      nack_sequence_numbers_length == 0) {
+      nack_sequence_numbers.size() == 0) {
     return;
   }
   WebRtc_UWord16 avg_rtt = 0;
   rtcp_receiver_.RTT(rtp_receiver_->SSRC(), NULL, &avg_rtt, NULL, NULL);
-  rtp_sender_.OnReceivedNACK(nack_sequence_numbers_length,
-                             nack_sequence_numbers,
-                             avg_rtt);
+  rtp_sender_.OnReceivedNACK(nack_sequence_numbers, avg_rtt);
 }
 
 WebRtc_Word32 ModuleRtpRtcpImpl::LastReceivedNTP(

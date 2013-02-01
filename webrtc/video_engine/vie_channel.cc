@@ -123,6 +123,7 @@ ViEChannel::ViEChannel(WebRtc_Word32 channel_id,
 
   rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(configuration));
   vie_receiver_.SetRtpRtcpModule(rtp_rtcp_.get());
+  vcm_.SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack);
 }
 
 WebRtc_Word32 ViEChannel::Init() {
@@ -150,7 +151,8 @@ WebRtc_Word32 ViEChannel::Init() {
                  "%s: RTP::SetRTCPStatus failure", __FUNCTION__);
   }
   if (paced_sender_) {
-    if (rtp_rtcp_->SetStorePacketsStatus(true, kNackHistorySize) != 0) {
+    if (rtp_rtcp_->SetStorePacketsStatus(true, kSendSidePacketHistorySize) !=
+        0) {
       WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
                    "%s:SetStorePacketsStatus failure", __FUNCTION__);
     }
@@ -293,10 +295,10 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
                      "%s: RTP::SetRTCPStatus failure", __FUNCTION__);
       }
       if (nack_method != kNackOff) {
-        rtp_rtcp->SetStorePacketsStatus(true, kNackHistorySize);
-        rtp_rtcp->SetNACKStatus(nack_method);
+        rtp_rtcp->SetStorePacketsStatus(true, kSendSidePacketHistorySize);
+        rtp_rtcp->SetNACKStatus(nack_method, kMaxPacketAgeToNack);
       } else if (paced_sender_) {
-        rtp_rtcp->SetStorePacketsStatus(true, kNackHistorySize);
+        rtp_rtcp->SetStorePacketsStatus(true, kSendSidePacketHistorySize);
       }
       if (fec_enabled) {
         rtp_rtcp->SetGenericFECStatus(fec_enabled, payload_type_red,
@@ -618,7 +620,7 @@ WebRtc_Word32 ViEChannel::ProcessNACKRequest(const bool enable) {
                    "%s: Could not enable NACK, RTPC not on ", __FUNCTION__);
       return -1;
     }
-    if (rtp_rtcp_->SetNACKStatus(nackMethod) != 0) {
+    if (rtp_rtcp_->SetNACKStatus(nackMethod, kMaxPacketAgeToNack) != 0) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                    "%s: Could not set NACK method %d", __FUNCTION__,
                    nackMethod);
@@ -626,7 +628,7 @@ WebRtc_Word32 ViEChannel::ProcessNACKRequest(const bool enable) {
     }
     WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: Using NACK method %d", __FUNCTION__, nackMethod);
-    rtp_rtcp_->SetStorePacketsStatus(true, kNackHistorySize);
+    rtp_rtcp_->SetStorePacketsStatus(true, kSendSidePacketHistorySize);
 
     vcm_.RegisterPacketRequestCallback(this);
 
@@ -636,8 +638,8 @@ WebRtc_Word32 ViEChannel::ProcessNACKRequest(const bool enable) {
          it != simulcast_rtp_rtcp_.end();
          it++) {
       RtpRtcp* rtp_rtcp = *it;
-      rtp_rtcp->SetNACKStatus(nackMethod);
-      rtp_rtcp->SetStorePacketsStatus(true, kNackHistorySize);
+      rtp_rtcp->SetNACKStatus(nackMethod, kMaxPacketAgeToNack);
+      rtp_rtcp->SetStorePacketsStatus(true, kSendSidePacketHistorySize);
     }
   } else {
     CriticalSectionScoped cs(rtp_rtcp_cs_.get());
@@ -648,13 +650,13 @@ WebRtc_Word32 ViEChannel::ProcessNACKRequest(const bool enable) {
       if (paced_sender_ == NULL) {
         rtp_rtcp->SetStorePacketsStatus(false, 0);
       }
-      rtp_rtcp->SetNACKStatus(kNackOff);
+      rtp_rtcp->SetNACKStatus(kNackOff, kMaxPacketAgeToNack);
     }
     vcm_.RegisterPacketRequestCallback(NULL);
     if (paced_sender_ == NULL) {
       rtp_rtcp_->SetStorePacketsStatus(false, 0);
     }
-    if (rtp_rtcp_->SetNACKStatus(kNackOff) != 0) {
+    if (rtp_rtcp_->SetNACKStatus(kNackOff, kMaxPacketAgeToNack) != 0) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                    "%s: Could not turn off NACK", __FUNCTION__);
       return -1;

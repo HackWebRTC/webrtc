@@ -106,7 +106,7 @@ int JitterBufferTest(CmdArgs& args)
     WebRtc_UWord8 data[1500];
     VCMPacket packet(data, size, seqNum, timeStamp, true);
 
-    VCMJitterBuffer jb(clock);
+    VCMJitterBuffer jb(clock, -1, -1, true);
 
     seqNum = 1234;
     timeStamp = 123*90;

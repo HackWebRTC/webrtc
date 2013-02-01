@@ -11,12 +11,14 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_HELP_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_HELP_H_
 
-#include <vector>
+#include <list>
 
-#include "modules/rtp_rtcp/interface/rtp_rtcp_defines.h"  // RTCPReportBlock
-#include "modules/rtp_rtcp/source/rtcp_utility.h"
-#include "modules/rtp_rtcp/source/tmmbr_help.h"
-#include "typedefs.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"  // RTCPReportBlock
+#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
+#include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
+#include "webrtc/system_wrappers/interface/constructor_magic.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 namespace RTCPHelp
@@ -44,8 +46,7 @@ public:
     WebRtc_UWord32  rtcpPacketTypeFlags; // RTCPPacketTypeFlags bit field
     WebRtc_UWord32  remoteSSRC;
 
-    WebRtc_UWord16* nackSequenceNumbers;
-    WebRtc_UWord16  nackSequenceNumbersLength;
+    std::list<uint16_t> nackSequenceNumbers;
 
     WebRtc_UWord8   applicationSubType;
     WebRtc_UWord32  applicationName;
@@ -69,6 +70,9 @@ public:
     uint32_t rtp_timestamp;
 
     RTCPVoIPMetric*  VoIPMetric;
+
+private:
+    DISALLOW_COPY_AND_ASSIGN(RTCPPacketInformation);
 };
 
 

@@ -109,6 +109,6 @@ TEST_F(RtpRtcpAPITest, RTCP) {
   EXPECT_FALSE(module->TMMBR());
 
   EXPECT_EQ(kNackOff, module->NACK());
-  EXPECT_EQ(0, module->SetNACKStatus(kNackRtcp));
+  EXPECT_EQ(0, module->SetNACKStatus(kNackRtcp, 450));
   EXPECT_EQ(kNackRtcp, module->NACK());
 }

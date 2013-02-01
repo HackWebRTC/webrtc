@@ -68,6 +68,7 @@ _bitStreamBeforeDecoder(NULL),
 _frameFromFile(),
 _keyRequestMode(kKeyOnError),
 _scheduleKeyRequest(false),
+max_nack_list_size_(0),
 
 _sendCritSect(CriticalSectionWrapper::CreateCriticalSection()),
 _encoder(),
@@ -166,21 +167,27 @@ VideoCodingModuleImpl::Process()
     }
 
     // Packet retransmission requests
+    // TODO(holmer): Add API for changing Process interval and make sure it's
+    // disabled when NACK is off.
     if (_retransmissionTimer.TimeUntilProcess() == 0)
     {
         _retransmissionTimer.Processed();
         if (_packetRequestCallback != NULL)
         {
-            WebRtc_UWord16 nackList[kNackHistoryLength];
-            WebRtc_UWord16 length = kNackHistoryLength;
-            const WebRtc_Word32 ret = NackList(nackList, length);
+            WebRtc_UWord16 length;
+            {
+                CriticalSectionScoped cs(_receiveCritSect);
+                length = max_nack_list_size_;
+            }
+            std::vector<uint16_t> nackList(length);
+            const WebRtc_Word32 ret = NackList(&nackList[0], length);
             if (ret != VCM_OK && returnValue == VCM_OK)
             {
                 returnValue = ret;
             }
             if (length > 0)
             {
-                _packetRequestCallback->ResendPackets(nackList, length);
+                _packetRequestCallback->ResendPackets(&nackList[0], length);
             }
         }
     }
@@ -517,7 +524,6 @@ WebRtc_Word32
 VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection,
                                           bool enable)
 {
-
     switch (videoProtection)
     {
 
@@ -1370,6 +1376,17 @@ int VideoCodingModuleImpl::SetReceiverRobustnessMode(
       break;
   }
   return VCM_OK;
+}
+
+void VideoCodingModuleImpl::SetNackSettings(
+    size_t max_nack_list_size, int max_packet_age_to_nack) {
+  if (max_nack_list_size != 0) {
+    CriticalSectionScoped cs(_receiveCritSect);
+    max_nack_list_size_ = max_nack_list_size;
+  }
+  _receiver.SetNackSettings(max_nack_list_size, max_packet_age_to_nack);
+  _dualReceiver.SetNackSettings(max_nack_list_size,
+                                max_packet_age_to_nack);
 }
 
 int VideoCodingModuleImpl::StartDebugRecording(const char* file_name_utf8) {

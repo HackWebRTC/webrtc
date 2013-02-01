@@ -91,6 +91,7 @@ RTPReceiver::RTPReceiver(const WebRtc_Word32 id,
       last_report_jitter_transmission_time_offset_(0),
 
       nack_method_(kNackOff),
+      max_reordering_threshold_(kDefaultMaxReorderingThreshold),
       rtx_(false),
       ssrc_rtx_(0) {
   assert(incoming_audio_messages_callback &&
@@ -267,8 +268,16 @@ NACKMethod RTPReceiver::NACK() const {
 }
 
 // Turn negative acknowledgment requests on/off.
-WebRtc_Word32 RTPReceiver::SetNACKStatus(const NACKMethod method) {
+WebRtc_Word32 RTPReceiver::SetNACKStatus(const NACKMethod method,
+                                         int max_reordering_threshold) {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
+  if (max_reordering_threshold < 0) {
+    return -1;
+  } else if (method == kNackRtcp) {
+    max_reordering_threshold_ = max_reordering_threshold;
+  } else {
+    max_reordering_threshold_ = kDefaultMaxReorderingThreshold;
+  }
   nack_method_ = method;
   return 0;
 }
@@ -572,7 +581,7 @@ bool RTPReceiver::InOrderPacket(const WebRtc_UWord16 sequence_number) const {
   if (received_seq_max_ >= sequence_number) {
     // Detect wrap-around.
     if (!(received_seq_max_ > 0xff00 && sequence_number < 0x0ff)) {
-      if (received_seq_max_ - NACK_PACKETS_MAX_SIZE > sequence_number) {
+      if (received_seq_max_ - max_reordering_threshold_ > sequence_number) {
         // We have a restart of the remote side.
       } else {
         // we received a retransmit of a packet we already have.
@@ -582,7 +591,7 @@ bool RTPReceiver::InOrderPacket(const WebRtc_UWord16 sequence_number) const {
   } else {
     // Detect wrap-around.
     if (sequence_number > 0xff00 && received_seq_max_ < 0x0ff) {
-      if (received_seq_max_ - NACK_PACKETS_MAX_SIZE > sequence_number) {
+      if (received_seq_max_ - max_reordering_threshold_ > sequence_number) {
         // We have a restart of the remote side
       } else {
         // We received a retransmit of a packet we already have

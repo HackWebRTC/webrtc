@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtcp_receiver_help.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_receiver_help.h"
 
 #include <string.h>  // memset
 #include <cassert>  // assert
 
-#include "modules/rtp_rtcp/source/rtp_utility.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
 namespace webrtc {
 using namespace RTCPHelp;
@@ -21,8 +21,7 @@ using namespace RTCPHelp;
 RTCPPacketInformation::RTCPPacketInformation()
     : rtcpPacketTypeFlags(0),
       remoteSSRC(0),
-      nackSequenceNumbers(0),
-      nackSequenceNumbersLength(0),
+      nackSequenceNumbers(),
       applicationSubType(0),
       applicationName(0),
       applicationData(),
@@ -44,7 +43,6 @@ RTCPPacketInformation::RTCPPacketInformation()
 
 RTCPPacketInformation::~RTCPPacketInformation()
 {
-    delete [] nackSequenceNumbers;
     delete [] applicationData;
     delete VoIPMetric;
 }
@@ -84,23 +82,16 @@ void RTCPPacketInformation::AddApplicationData(const WebRtc_UWord8* data,
 void
 RTCPPacketInformation::ResetNACKPacketIdArray()
 {
-    if (NULL == nackSequenceNumbers)
-    {
-        nackSequenceNumbers = new WebRtc_UWord16[NACK_PACKETS_MAX_SIZE];
-    }
-    nackSequenceNumbersLength = 0;
+  nackSequenceNumbers.clear();
 }
 
 void
 RTCPPacketInformation::AddNACKPacket(const WebRtc_UWord16 packetID)
 {
-    assert(nackSequenceNumbers);
-
-    WebRtc_UWord16& idx = nackSequenceNumbersLength;
-    if (idx < NACK_PACKETS_MAX_SIZE)
-    {
-        nackSequenceNumbers[idx++] = packetID;
-    }
+  if (nackSequenceNumbers.size() >= kSendSideNackListSizeSanity) {
+    return;
+  }
+  nackSequenceNumbers.push_back(packetID);
 }
 
 void

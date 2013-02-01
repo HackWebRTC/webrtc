@@ -194,6 +194,7 @@ int RtpPlay(CmdArgs& args)
     vcm->SetVideoProtection(protectionMethod, protectionEnabled);
     vcm->SetRenderDelay(renderDelayMs);
     vcm->SetMinimumPlayoutDelay(minPlayoutDelayMs);
+    vcm->SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack);
 
     ret = 0;
 

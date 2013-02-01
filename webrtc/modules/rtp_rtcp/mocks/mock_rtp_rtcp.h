@@ -233,8 +233,8 @@ class MockRtpRtcp : public RtpRtcp {
       void(WebRtc_UWord16 bandWidthKbit));
   MOCK_CONST_METHOD0(NACK,
       NACKMethod());
-  MOCK_METHOD1(SetNACKStatus,
-      WebRtc_Word32(const NACKMethod method));
+  MOCK_METHOD2(SetNACKStatus,
+      WebRtc_Word32(const NACKMethod method, int oldestSequenceNumberToNack));
   MOCK_CONST_METHOD0(SelectiveRetransmissions,
       int());
   MOCK_METHOD1(SetSelectiveRetransmissions,

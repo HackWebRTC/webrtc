@@ -88,7 +88,8 @@ class RTPReceiver : public Bitrate {
   NACKMethod NACK() const ;
 
   // Turn negative acknowledgement requests on/off.
-  WebRtc_Word32 SetNACKStatus(const NACKMethod method);
+  WebRtc_Word32 SetNACKStatus(const NACKMethod method,
+                              int max_reordering_threshold);
 
   // Returns the last received timestamp.
   virtual WebRtc_UWord32 TimeStamp() const;
@@ -159,7 +160,6 @@ class RTPReceiver : public Bitrate {
   virtual WebRtc_Word8 REDPayloadType() const;
 
   bool HaveNotReceivedPackets() const;
- protected:
 
   virtual bool RetransmitOfOldPacket(const WebRtc_UWord16 sequence_number,
                                      const WebRtc_UWord32 rtp_time_stamp) const;
@@ -184,7 +184,6 @@ class RTPReceiver : public Bitrate {
   void UpdateNACKBitRate(WebRtc_Word32 bytes, WebRtc_UWord32 now);
   bool ProcessNACKBitRate(WebRtc_UWord32 now);
 
- private:
   RTPPayloadRegistry*             rtp_payload_registry_;
   scoped_ptr<RTPReceiverStrategy> rtp_media_receiver_;
 
@@ -243,6 +242,7 @@ class RTPReceiver : public Bitrate {
   mutable WebRtc_UWord32    last_report_jitter_transmission_time_offset_;
 
   NACKMethod nack_method_;
+  int max_reordering_threshold_;
 
   bool rtx_;
   WebRtc_UWord32 ssrc_rtx_;

@@ -75,7 +75,11 @@ enum { kViEMinRenderTimeoutTimeMs = 33 };
 enum { kViEDefaultRenderDelayMs = 10 };
 
 // ViERTP_RTCP
-enum { kNackHistorySize = 400 };
+enum { kSendSidePacketHistorySize = 600 };
+
+// NACK
+enum { kMaxPacketAgeToNack = 450 };  // In sequence numbers.
+enum { kMaxNackListSize = 250 };
 
 // Id definitions
 enum {

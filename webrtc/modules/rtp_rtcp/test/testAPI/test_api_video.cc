@@ -47,8 +47,8 @@ class RtpRtcpVideoTest : public ::testing::Test {
 
     EXPECT_EQ(0, video_module_->SetRTCPStatus(kRtcpCompound));
     EXPECT_EQ(0, video_module_->SetSSRC(test_ssrc_));
-    EXPECT_EQ(0, video_module_->SetNACKStatus(kNackRtcp));
-    EXPECT_EQ(0, video_module_->SetStorePacketsStatus(true));
+    EXPECT_EQ(0, video_module_->SetNACKStatus(kNackRtcp, 450));
+    EXPECT_EQ(0, video_module_->SetStorePacketsStatus(true, 600));
     EXPECT_EQ(0, video_module_->SetSendingStatus(true));
 
     transport_->SetSendModule(video_module_);

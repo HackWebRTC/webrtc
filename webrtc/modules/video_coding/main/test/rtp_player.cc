@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtp_player.h"
+#include "webrtc/modules/video_coding/main/test/rtp_player.h"
 
 #include <cstdlib>
 #ifdef WIN32
@@ -18,9 +18,10 @@
 #include <arpa/inet.h>
 #endif
 
-#include "../source/internal_defines.h"
 #include "gtest/gtest.h"
-#include "rtp_rtcp.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/video_coding/main/source/internal_defines.h"
+#include "webrtc/modules/video_coding/main/test/test_util.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 
 using namespace webrtc;
@@ -191,7 +192,8 @@ WebRtc_Word32 RTPPlayer::Initialize(const PayloadTypeList* payloadList)
         _randVec[i] = rand();
     }
     _randVecPos = 0;
-    WebRtc_Word32 ret = _rtpModule->SetNACKStatus(kNackOff);
+    WebRtc_Word32 ret = _rtpModule->SetNACKStatus(kNackOff,
+                                                  kMaxPacketAgeToNack);
     if (ret < 0)
     {
         return -1;

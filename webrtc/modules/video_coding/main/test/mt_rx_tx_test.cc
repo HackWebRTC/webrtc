@@ -239,7 +239,7 @@ int MTRxTxTest(CmdArgs& args)
     FecProtectionParams delta_params = protectionCallback.DeltaFecParameters();
     FecProtectionParams key_params = protectionCallback.KeyFecParameters();
     rtp->SetFecParameters(&delta_params, &key_params);
-    rtp->SetNACKStatus(nackEnabled ? kNackRtcp : kNackOff);
+    rtp->SetNACKStatus(nackEnabled ? kNackRtcp : kNackOff, kMaxPacketAgeToNack);
 
     vcm->SetChannelParameters((WebRtc_UWord32) bitRate,
                               (WebRtc_UWord8) lossRate, rttMS);

@@ -84,8 +84,7 @@ int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTe
                 protection == kProtectionNack ||
                 kProtectionNackFEC));
     Clock* clock = Clock::GetRealTimeClock();
-    VideoCodingModule* vcm =
-            VideoCodingModule::Create(1, clock);
+    VideoCodingModule* vcm = VideoCodingModule::Create(1, clock);
     RtpDataCallback dataCallback(vcm);
     std::string rtpFilename;
     rtpFilename = args.inputFile;
@@ -227,6 +226,7 @@ int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTe
     vcm->SetVideoProtection(protection, protectionEnabled);
     vcm->SetRenderDelay(renderDelayMs);
     vcm->SetMinimumPlayoutDelay(minPlayoutDelayMs);
+    vcm->SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack);
 
     EventWrapper& waitEvent = *EventWrapper::Create();
 

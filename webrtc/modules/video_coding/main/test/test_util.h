@@ -22,6 +22,9 @@
 #include "module_common_types.h"
 #include "testsupport/fileutils.h"
 
+enum { kMaxNackListSize = 250 };
+enum { kMaxPacketAgeToNack = 450 };
+
 // Class used for passing command line arguments to tests
 class CmdArgs
 {

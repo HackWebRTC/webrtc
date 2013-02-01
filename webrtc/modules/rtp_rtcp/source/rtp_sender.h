@@ -159,8 +159,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   // NACK.
   int SelectiveRetransmissions() const;
   int SetSelectiveRetransmissions(uint8_t settings);
-  void OnReceivedNACK(const WebRtc_UWord16 nack_sequence_numbers_length,
-                      const WebRtc_UWord16 *nack_sequence_numbers,
+  void OnReceivedNACK(const std::list<uint16_t>& nack_sequence_numbers,
                       const WebRtc_UWord16 avg_rtt);
 
   void SetStorePacketsStatus(const bool enable,

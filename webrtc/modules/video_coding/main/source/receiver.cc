@@ -345,6 +345,12 @@ void VCMReceiver::SetNackMode(VCMNackMode nackMode) {
   }
 }
 
+void VCMReceiver::SetNackSettings(size_t max_nack_list_size,
+                                  int max_packet_age_to_nack) {
+  jitter_buffer_.SetNackSettings(max_nack_list_size,
+                                 max_packet_age_to_nack);
+}
+
 VCMNackMode VCMReceiver::NackMode() const {
   CriticalSectionScoped cs(crit_sect_);
   return jitter_buffer_.nack_mode();

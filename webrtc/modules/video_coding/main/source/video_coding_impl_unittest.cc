@@ -46,6 +46,9 @@ class TestVideoCodingModule : public ::testing::Test {
                                                false));
     EXPECT_EQ(0, vcm_->RegisterExternalDecoder(&decoder_, kUnusedPayloadType,
                                                true));
+    const size_t kMaxNackListSize = 250;
+    const int kMaxPacketAgeToNack = 450;
+    vcm_->SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack);
     memset(&settings_, 0, sizeof(settings_));
     EXPECT_EQ(0, vcm_->Codec(kVideoCodecVP8, &settings_));
     settings_.numberOfSimulcastStreams = kNumberOfStreams;

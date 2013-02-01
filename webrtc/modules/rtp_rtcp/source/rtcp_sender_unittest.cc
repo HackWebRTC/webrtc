@@ -80,8 +80,28 @@ class TestTransport : public Transport,
     EXPECT_TRUE(rtcpParser.IsValid());
     RTCPHelp::RTCPPacketInformation rtcpPacketInformation;
     EXPECT_EQ(0, rtcp_receiver_->IncomingRTCPPacket(rtcpPacketInformation,
-                                                   &rtcpParser));
-    rtcp_packet_info_ = rtcpPacketInformation;
+                                                    &rtcpParser));
+    rtcp_packet_info_.rtcpPacketTypeFlags =
+        rtcpPacketInformation.rtcpPacketTypeFlags;
+    rtcp_packet_info_.remoteSSRC = rtcpPacketInformation.remoteSSRC;
+    rtcp_packet_info_.applicationSubType =
+        rtcpPacketInformation.applicationSubType;
+    rtcp_packet_info_.applicationName = rtcpPacketInformation.applicationName;
+    rtcp_packet_info_.reportBlock = rtcpPacketInformation.reportBlock;
+    rtcp_packet_info_.fractionLost = rtcpPacketInformation.fractionLost;
+    rtcp_packet_info_.roundTripTime = rtcpPacketInformation.roundTripTime;
+    rtcp_packet_info_.lastReceivedExtendedHighSeqNum =
+        rtcpPacketInformation.lastReceivedExtendedHighSeqNum;
+    rtcp_packet_info_.jitter = rtcpPacketInformation.jitter;
+    rtcp_packet_info_.interArrivalJitter =
+        rtcpPacketInformation.interArrivalJitter;
+    rtcp_packet_info_.sliPictureId = rtcpPacketInformation.sliPictureId;
+    rtcp_packet_info_.rpsiPictureId = rtcpPacketInformation.rpsiPictureId;
+    rtcp_packet_info_.receiverEstimatedMaxBitrate =
+        rtcpPacketInformation.receiverEstimatedMaxBitrate;
+    rtcp_packet_info_.ntp_secs = rtcpPacketInformation.ntp_secs;
+    rtcp_packet_info_.ntp_frac = rtcpPacketInformation.ntp_frac;
+    rtcp_packet_info_.rtp_timestamp = rtcpPacketInformation.rtp_timestamp;
 
     return packet_len;
   }

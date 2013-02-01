@@ -546,6 +546,13 @@ public:
     virtual int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode,
                                           DecodeErrors errorMode) = 0;
 
+    // Sets the maximum number of sequence numbers that we are allowed to NACK
+    // and the oldest sequence number that we will consider to NACK. If a
+    // sequence number older than |max_packet_age_to_nack| is missing
+    // a key frame will be requested.
+    virtual void SetNackSettings(size_t max_nack_list_size,
+                                 int max_packet_age_to_nack) = 0;
+
     // Enables recording of debugging information.
     virtual int StartDebugRecording(const char* file_name_utf8) = 0;
 

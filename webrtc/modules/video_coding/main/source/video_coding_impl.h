@@ -58,8 +58,7 @@ enum VCMKeyRequestMode
 class VideoCodingModuleImpl : public VideoCodingModule
 {
 public:
-    VideoCodingModuleImpl(const WebRtc_Word32 id,
-                          Clock* clock);
+    VideoCodingModuleImpl(const WebRtc_Word32 id, Clock* clock);
 
     virtual ~VideoCodingModuleImpl();
 
@@ -259,6 +258,10 @@ public:
     // Set the receiver robustness mode.
     virtual int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode,
                                           DecodeErrors errorMode);
+
+    virtual void SetNackSettings(size_t max_nack_list_size,
+                                 int max_packet_age_to_nack);
+
     // Enables recording of debugging information.
     virtual int StartDebugRecording(const char* file_name_utf8);
 
@@ -295,6 +298,7 @@ private:
     VCMFrameBuffer                      _frameFromFile;
     VCMKeyRequestMode                   _keyRequestMode;
     bool                                _scheduleKeyRequest;
+    size_t                              max_nack_list_size_;
 
     CriticalSectionWrapper*             _sendCritSect; // Critical section for send side
     VCMGenericEncoder*                  _encoder;

@@ -59,6 +59,8 @@ class VCMReceiver {
 
   // NACK.
   void SetNackMode(VCMNackMode nackMode);
+  void SetNackSettings(size_t max_nack_list_size,
+                       int max_packet_age_to_nack);
   VCMNackMode NackMode() const;
   VCMNackStatus NackList(uint16_t* nackList, uint16_t* size);
 

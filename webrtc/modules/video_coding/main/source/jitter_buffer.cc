@@ -95,12 +95,14 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
       nack_mode_(kNoNack),
       low_rtt_nack_threshold_ms_(-1),
       high_rtt_nack_threshold_ms_(-1),
+      nack_seq_nums_internal_(),
       nack_seq_nums_(),
       nack_seq_nums_length_(0),
+      max_nack_list_size_(0),
+      max_packet_age_to_nack_(0),
       waiting_for_key_frame_(false) {
   memset(frame_buffers_, 0, sizeof(frame_buffers_));
   memset(receive_statistics_, 0, sizeof(receive_statistics_));
-  memset(nack_seq_nums_internal_, -1, sizeof(nack_seq_nums_internal_));
 
   for (int i = 0; i < kStartNumberOfFrames; i++) {
     frame_buffers_[i] = new VCMFrameBuffer();
@@ -144,11 +146,17 @@ void VCMJitterBuffer::CopyFrom(const VCMJitterBuffer& rhs) {
     first_packet_ = rhs.first_packet_;
     last_decoded_state_ =  rhs.last_decoded_state_;
     num_not_decodable_packets_ = rhs.num_not_decodable_packets_;
+    assert(max_nack_list_size_ == rhs.max_nack_list_size_);
+    assert(max_packet_age_to_nack_ == rhs.max_packet_age_to_nack_);
     memcpy(receive_statistics_, rhs.receive_statistics_,
            sizeof(receive_statistics_));
-    memcpy(nack_seq_nums_internal_, rhs.nack_seq_nums_internal_,
-           sizeof(nack_seq_nums_internal_));
-    memcpy(nack_seq_nums_, rhs.nack_seq_nums_, sizeof(nack_seq_nums_));
+    nack_seq_nums_internal_.resize(rhs.nack_seq_nums_internal_.size());
+    std::copy(rhs.nack_seq_nums_internal_.begin(),
+              rhs.nack_seq_nums_internal_.end(),
+              nack_seq_nums_internal_.begin());
+    nack_seq_nums_.resize(rhs.nack_seq_nums_.size());
+    std::copy(rhs.nack_seq_nums_.begin(), rhs.nack_seq_nums_.end(),
+              nack_seq_nums_.begin());
     for (int i = 0; i < kMaxNumberOfFrames; i++) {
       if (frame_buffers_[i] != NULL) {
         delete frame_buffers_[i];
@@ -810,6 +818,20 @@ void VCMJitterBuffer::SetNackMode(VCMNackMode mode,
   }
 }
 
+void VCMJitterBuffer::SetNackSettings(size_t max_nack_list_size,
+                                      int max_packet_age_to_nack) {
+  CriticalSectionScoped cs(crit_sect_);
+  assert(max_packet_age_to_nack >= 0);
+  if (max_packet_age_to_nack <= 0) {
+    return;
+  }
+  max_nack_list_size_ = max_nack_list_size;
+  max_packet_age_to_nack_ = max_packet_age_to_nack;
+  nack_seq_nums_internal_.resize(max_packet_age_to_nack_);
+  std::fill(nack_seq_nums_internal_.begin(), nack_seq_nums_internal_.end(), -1);
+  nack_seq_nums_.resize(max_nack_list_size_);
+}
+
 VCMNackMode VCMJitterBuffer::nack_mode() const {
   CriticalSectionScoped cs(crit_sect_);
   return nack_mode_;
@@ -861,8 +883,8 @@ uint16_t* VCMJitterBuffer::CreateNackList(uint16_t* nack_list_size,
     number_of_seq_num = high_seq_num - low_seq_num;
   }
 
-  if (number_of_seq_num > kNackHistoryLength) {
-    // NACK list has grown too big, flush and try to restart.
+  if (number_of_seq_num > max_packet_age_to_nack_) {
+    // Some of the missing packets are too old.
     WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCoding,
                  VCMId(vcm_id_, receiver_id_),
                  "Nack list too large, try to find a key frame and restart "
@@ -872,14 +894,14 @@ uint16_t* VCMJitterBuffer::CreateNackList(uint16_t* nack_list_size,
     // This NACK size will trigger a key frame request.
     bool found_key_frame = false;
 
-    while (number_of_seq_num > kNackHistoryLength) {
+    while (number_of_seq_num > max_packet_age_to_nack_) {
       found_key_frame = RecycleFramesUntilKeyFrame();
 
       if (!found_key_frame) {
         break;
       }
 
-      // Check if we still have too many packets in the jitter buffer.
+      // Check if we are still missing too old sequence numbers.
       low_seq_num = -1;
       high_seq_num = -1;
       GetLowHighSequenceNumbers(&low_seq_num, &high_seq_num);
@@ -937,16 +959,15 @@ uint16_t* VCMJitterBuffer::CreateNackList(uint16_t* nack_list_size,
       // Reaching thus far means we are going to update the NACK list
       // When in hybrid mode, we use the soft NACKing feature.
       if (nack_mode_ == kNackHybrid) {
-        nack_seq_nums_index = (*it)->BuildSoftNackList(nack_seq_nums_internal_,
-                                                       number_of_seq_num,
-                                                       nack_seq_nums_index,
-                                                       rtt_ms_);
+        nack_seq_nums_index = (*it)->BuildSoftNackList(
+            &nack_seq_nums_internal_[0], number_of_seq_num,
+            nack_seq_nums_index, rtt_ms_);
       } else {
         // Used when the frame is being processed by the decoding thread
         // don't need to use that info in this loop.
-        nack_seq_nums_index = (*it)->BuildHardNackList(nack_seq_nums_internal_,
-                                                       number_of_seq_num,
-                                                       nack_seq_nums_index);
+        nack_seq_nums_index = (*it)->BuildHardNackList(
+            &nack_seq_nums_internal_[0], number_of_seq_num,
+            nack_seq_nums_index);
       }
     }
   }
@@ -979,6 +1000,26 @@ uint16_t* VCMJitterBuffer::CreateNackList(uint16_t* nack_list_size,
     *nack_list_size = empty_index;
   }
 
+  if (*nack_list_size > max_nack_list_size_) {
+    // Too many packets missing. Better to skip ahead to the next key frame or
+    // to request one.
+    bool found_key_frame = RecycleFramesUntilKeyFrame();
+    if (!found_key_frame) {
+      // Set the last decoded sequence number to current high.
+      // This is to not get a large nack list again right away.
+      last_decoded_state_.SetSeqNum(static_cast<uint16_t>(high_seq_num));
+      // Set to trigger key frame signal.
+      *nack_list_size = 0xffff;
+      *list_extended = true;
+      WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, -1,
+                   "\tNo key frame found, request one. nack_list_size: "
+                   "%u", *nack_list_size);
+    } else {
+      *nack_list_size = 0;
+    }
+    return NULL;
+  }
+
   if (*nack_list_size > nack_seq_nums_length_) {
     // Larger list: NACK list was extended since the last call.
     *list_extended = true;
@@ -1006,7 +1047,7 @@ uint16_t* VCMJitterBuffer::CreateNackList(uint16_t* nack_list_size,
 
   nack_seq_nums_length_ = *nack_list_size;
 
-  return nack_seq_nums_;
+  return &nack_seq_nums_[0];
 }
 
 int64_t VCMJitterBuffer::LastDecodedTimestamp() const {

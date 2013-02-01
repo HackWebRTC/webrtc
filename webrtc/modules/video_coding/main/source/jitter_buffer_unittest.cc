@@ -146,10 +146,14 @@ class TestRunningJitterBuffer : public ::testing::Test {
 
   virtual void SetUp() {
     clock_.reset(new SimulatedClock(0));
-    jitter_buffer_ = new VCMJitterBuffer(clock_.get());
+    max_nack_list_size_ = 250;
+    oldest_packet_to_nack_ = 450;
+    jitter_buffer_ = new VCMJitterBuffer(clock_.get(), -1, -1, true);
     stream_generator = new StreamGenerator(0, 0,
                                            clock_->TimeInMilliseconds());
     jitter_buffer_->Start();
+    jitter_buffer_->SetNackSettings(max_nack_list_size_,
+                                    oldest_packet_to_nack_);
     memset(data_buffer_, 0, kDataBufferSize);
   }
 
@@ -223,6 +227,8 @@ class TestRunningJitterBuffer : public ::testing::Test {
   VCMJitterBuffer* jitter_buffer_;
   StreamGenerator* stream_generator;
   scoped_ptr<SimulatedClock> clock_;
+  size_t max_nack_list_size_;
+  int oldest_packet_to_nack_;
   uint8_t data_buffer_[kDataBufferSize];
 };
 
@@ -300,18 +306,19 @@ TEST_F(TestJitterBufferNack, TestEmptyPackets) {
   EXPECT_TRUE(DecodeCompleteFrame());
 }
 
-TEST_F(TestJitterBufferNack, TestNackListFull) {
+TEST_F(TestJitterBufferNack, TestNackTooOldPackets) {
   // Insert a key frame and decode it.
   InsertFrame(kVideoFrameKey);
   EXPECT_TRUE(DecodeCompleteFrame());
 
-  // Generate and drop |kNackHistoryLength| packets to fill the NACK list.
-  DropFrame(kNackHistoryLength);
+  // Drop one frame and insert |kNackHistoryLength| to trigger NACKing a too
+  // old packet.
+  DropFrame(1);
   // Insert a frame which should trigger a recycle until the next key frame.
-  InsertFrame(kVideoFrameDelta);
+  InsertFrames(oldest_packet_to_nack_, kVideoFrameDelta);
   EXPECT_FALSE(DecodeCompleteFrame());
 
-  uint16_t nack_list_length = kNackHistoryLength;
+  uint16_t nack_list_length = max_nack_list_size_;
   bool extended;
   uint16_t* nack_list = jitter_buffer_->CreateNackList(&nack_list_length,
                                                        &extended);
@@ -319,8 +326,47 @@ TEST_F(TestJitterBufferNack, TestNackListFull) {
   EXPECT_TRUE(nack_list_length == 0xffff && nack_list == NULL);
 
   InsertFrame(kVideoFrameDelta);
+  // Waiting for a key frame.
   EXPECT_FALSE(DecodeCompleteFrame());
   EXPECT_FALSE(DecodeFrame());
+
+  InsertFrame(kVideoFrameKey);
+  // The next complete continuous frame isn't a key frame, but we're waiting
+  // for one.
+  EXPECT_FALSE(DecodeCompleteFrame());
+  // Skipping ahead to the key frame.
+  EXPECT_TRUE(DecodeFrame());
+}
+
+TEST_F(TestJitterBufferNack, TestNackListFull) {
+  // Insert a key frame and decode it.
+  InsertFrame(kVideoFrameKey);
+  EXPECT_TRUE(DecodeCompleteFrame());
+
+  // Generate and drop |kNackHistoryLength| packets to fill the NACK list.
+  DropFrame(max_nack_list_size_);
+  // Insert a frame which should trigger a recycle until the next key frame.
+  InsertFrame(kVideoFrameDelta);
+  EXPECT_FALSE(DecodeCompleteFrame());
+
+  uint16_t nack_list_length = max_nack_list_size_;
+  bool extended;
+  uint16_t* nack_list = jitter_buffer_->CreateNackList(&nack_list_length,
+                                                       &extended);
+  // Verify that the jitter buffer requests a key frame.
+  EXPECT_TRUE(nack_list_length == 0xffff && nack_list == NULL);
+
+  InsertFrame(kVideoFrameDelta);
+  // Waiting for a key frame.
+  EXPECT_FALSE(DecodeCompleteFrame());
+  EXPECT_FALSE(DecodeFrame());
+
+  InsertFrame(kVideoFrameKey);
+  // The next complete continuous frame isn't a key frame, but we're waiting
+  // for one.
+  EXPECT_FALSE(DecodeCompleteFrame());
+  // Skipping ahead to the key frame.
+  EXPECT_TRUE(DecodeFrame());
 }
 
 TEST_F(TestJitterBufferNack, TestNackBeforeDecode) {

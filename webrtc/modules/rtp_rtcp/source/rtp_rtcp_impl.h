@@ -312,7 +312,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   virtual NACKMethod NACK() const;
 
   // Turn negative acknowledgment requests on/off.
-  virtual WebRtc_Word32 SetNACKStatus(const NACKMethod method);
+  virtual WebRtc_Word32 SetNACKStatus(const NACKMethod method,
+                                      int max_reordering_threshold);
 
   virtual int SelectiveRetransmissions() const;
 
@@ -325,7 +326,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Store the sent packets, needed to answer to a negative acknowledgment
   // requests.
   virtual WebRtc_Word32 SetStorePacketsStatus(
-      const bool enable, const WebRtc_UWord16 number_to_store = 200);
+      const bool enable, const WebRtc_UWord16 number_to_store);
 
   // (APP) Application specific data.
   virtual WebRtc_Word32 SetRTCPApplicationSpecificData(
@@ -447,8 +448,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   void OnReceivedReferencePictureSelectionIndication(
       const WebRtc_UWord64 picture_id);
 
-  void OnReceivedNACK(const WebRtc_UWord16 nack_sequence_numbers_length,
-                      const WebRtc_UWord16* nack_sequence_numbers);
+  void OnReceivedNACK(const std::list<uint16_t>& nack_sequence_numbers);
 
   void OnRequestSendReport();
 

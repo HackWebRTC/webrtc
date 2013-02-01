@@ -37,6 +37,9 @@ class VCMRobustnessTest : public ::testing::Test {
     vcm_ = VideoCodingModule::Create(0, clock_.get());
     ASSERT_TRUE(vcm_ != NULL);
     ASSERT_EQ(0, vcm_->InitializeReceiver());
+    const size_t kMaxNackListSize = 250;
+    const int kMaxPacketAgeToNack = 450;
+    vcm_->SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack);
     ASSERT_EQ(0, vcm_->RegisterFrameTypeCallback(&frame_type_callback_));
     ASSERT_EQ(0, vcm_->RegisterPacketRequestCallback(&request_callback_));
     ASSERT_EQ(VCM_OK, vcm_->Codec(kVideoCodecVP8, &video_codec_));
