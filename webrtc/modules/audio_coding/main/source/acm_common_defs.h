@@ -36,8 +36,8 @@ namespace webrtc {
 
 // 60 ms is the maximum block size we support. An extra 20 ms is considered
 // for safety if process() method is not called when it should be, i.e. we
-// accept 20 ms of jitter. 80 ms @ 32 kHz (super wide-band) is 2560 samples.
-#define AUDIO_BUFFER_SIZE_W16  2560
+// accept 20 ms of jitter. 80 ms @ 48 kHz (full-band) stereo is 7680 samples.
+#define AUDIO_BUFFER_SIZE_W16  7680
 
 // There is one timestamp per each 10 ms of audio
 // the audio buffer, at max, may contain 32 blocks of 10ms

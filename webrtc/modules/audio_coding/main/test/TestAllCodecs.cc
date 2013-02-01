@@ -624,19 +624,19 @@ void TestAllCodecs::Perform() {
   test_count_++;
   OpenOutFile(test_count_);
   char codec_opus[] = "OPUS";
-  RegisterSendCodec('A', codec_opus, 48000, 6000, 960, -1);
+  RegisterSendCodec('A', codec_opus, 48000, 6000, 480, -1);
   Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_opus, 48000, 20000, 960, -1);
+  RegisterSendCodec('A', codec_opus, 48000, 20000, 480*2, -1);
   Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_opus, 48000, 32000, 960, -1);
+  RegisterSendCodec('A', codec_opus, 48000, 32000, 480*4, -1);
   Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_opus, 48000, 48000, 960, -1);
+  RegisterSendCodec('A', codec_opus, 48000, 48000, 480, -1);
   Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_opus, 48000, 64000, 960, -1);
+  RegisterSendCodec('A', codec_opus, 48000, 64000, 480*4, -1);
   Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_opus, 48000, 96000, 960, -1);
+  RegisterSendCodec('A', codec_opus, 48000, 96000, 480*6, -1);
   Run(channel_a_to_b_);
-  RegisterSendCodec('A', codec_opus, 48000, 500000, 960, -1);
+  RegisterSendCodec('A', codec_opus, 48000, 500000, 480*2, -1);
   Run(channel_a_to_b_);
   outfile_b_.Close();
 #endif

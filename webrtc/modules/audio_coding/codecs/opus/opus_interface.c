@@ -19,8 +19,8 @@
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 
 enum {
-  /* We always produce 20ms frames. */
-  kWebRtcOpusMaxEncodeFrameSizeMs = 20,
+  /* Maximum supported frame size in WebRTC is 60 ms. */
+  kWebRtcOpusMaxEncodeFrameSizeMs = 60,
 
   /* The format allows up to 120ms frames. Since we
    * don't control the other side, we must allow
