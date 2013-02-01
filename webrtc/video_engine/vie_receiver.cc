@@ -284,4 +284,18 @@ int ViEReceiver::StopRTPDump() {
   return 0;
 }
 
+// TODO(holmer): To be moved to ViEChannelGroup.
+bool ViEReceiver::EstimatedReceiveBandwidth(
+    unsigned int* available_bandwidth) const {
+  std::vector<unsigned int> ssrcs;
+  if (!remote_bitrate_estimator_->LatestEstimate(&ssrcs,
+                                                 available_bandwidth)) {
+    return false;
+  }
+  if (!ssrcs.empty()) {
+    *available_bandwidth /= ssrcs.size();
+  }
+  return true;
+}
+
 }  // namespace webrtc

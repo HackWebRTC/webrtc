@@ -99,13 +99,14 @@ class RtcpSenderTest : public ::testing::Test {
  protected:
   RtcpSenderTest()
       : over_use_detector_options_(),
+        system_clock_(Clock::GetRealTimeClock()),
         remote_bitrate_observer_(),
         remote_bitrate_estimator_(
             RemoteBitrateEstimator::Create(
-                &remote_bitrate_observer_,
                 over_use_detector_options_,
-                RemoteBitrateEstimator::kMultiStreamEstimation)) {
-    system_clock_ = Clock::GetRealTimeClock();
+                RemoteBitrateEstimator::kMultiStreamEstimation,
+                &remote_bitrate_observer_,
+                system_clock_)) {
     test_transport_ = new TestTransport();
 
     RtpRtcp::Configuration configuration;

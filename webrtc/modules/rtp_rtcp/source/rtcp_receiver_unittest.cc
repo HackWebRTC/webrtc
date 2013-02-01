@@ -172,9 +172,10 @@ class RtcpReceiverTest : public ::testing::Test {
         remote_bitrate_observer_(),
         remote_bitrate_estimator_(
             RemoteBitrateEstimator::Create(
-                &remote_bitrate_observer_,
                 over_use_detector_options_,
-                RemoteBitrateEstimator::kMultiStreamEstimation)) {
+                RemoteBitrateEstimator::kMultiStreamEstimation,
+                &remote_bitrate_observer_,
+                &system_clock_)) {
     test_transport_ = new TestTransport();
 
     RtpRtcp::Configuration configuration;

@@ -60,11 +60,13 @@ class RtcpFormatRembTest : public ::testing::Test {
  protected:
   RtcpFormatRembTest()
       : over_use_detector_options_(),
+        system_clock_(Clock::GetRealTimeClock()),
         remote_bitrate_observer_(),
         remote_bitrate_estimator_(RemoteBitrateEstimator::Create(
-            &remote_bitrate_observer_,
             over_use_detector_options_,
-            RemoteBitrateEstimator::kMultiStreamEstimation)) {}
+            RemoteBitrateEstimator::kMultiStreamEstimation,
+            &remote_bitrate_observer_,
+            system_clock_)) {}
   virtual void SetUp();
   virtual void TearDown();
 
@@ -79,7 +81,6 @@ class RtcpFormatRembTest : public ::testing::Test {
 };
 
 void RtcpFormatRembTest::SetUp() {
-  system_clock_ = Clock::GetRealTimeClock();
   RtpRtcp::Configuration configuration;
   configuration.id = 0;
   configuration.audio = false;

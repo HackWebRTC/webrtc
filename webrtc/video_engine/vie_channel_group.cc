@@ -25,18 +25,22 @@ namespace webrtc {
 ChannelGroup::ChannelGroup(ProcessThread* process_thread,
                            const OverUseDetectorOptions& options,
                            RemoteBitrateEstimator::EstimationMode mode)
-    : remb_(new VieRemb(process_thread)),
+    : remb_(new VieRemb()),
       bitrate_controller_(BitrateController::CreateBitrateController()),
       call_stats_(new CallStats()),
-      remote_bitrate_estimator_(RemoteBitrateEstimator::Create(remb_.get(),
-                                                               options, mode)),
+      remote_bitrate_estimator_(RemoteBitrateEstimator::Create(
+          options, mode, remb_.get(), Clock::GetRealTimeClock())),
       encoder_state_feedback_(new EncoderStateFeedback()),
       process_thread_(process_thread) {
+  call_stats_->RegisterStatsObserver(remote_bitrate_estimator_.get());
   process_thread->RegisterModule(call_stats_.get());
+  process_thread->RegisterModule(remote_bitrate_estimator_.get());
 }
 
 ChannelGroup::~ChannelGroup() {
+  call_stats_->DeregisterStatsObserver(remote_bitrate_estimator_.get());
   process_thread_->DeRegisterModule(call_stats_.get());
+  process_thread_->DeRegisterModule(remote_bitrate_estimator_.get());
   assert(channels_.empty());
   assert(!remb_->InUse());
 }

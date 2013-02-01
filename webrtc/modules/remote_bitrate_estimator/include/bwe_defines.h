@@ -19,9 +19,9 @@
 namespace webrtc {
 enum BandwidthUsage
 {
-    kBwNormal,
-    kBwOverusing,
-    kBwUnderusing
+    kBwNormal = 0,
+    kBwUnderusing = 1,
+    kBwOverusing = 2,
 };
 
 enum RateControlState

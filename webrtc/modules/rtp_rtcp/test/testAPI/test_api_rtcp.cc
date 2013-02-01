@@ -271,7 +271,7 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
   std::vector<RTCPReportBlock> report_blocks;
   EXPECT_EQ(-1, module1->RemoteRTCPStat(NULL));
   EXPECT_EQ(0, module1->RemoteRTCPStat(&report_blocks));
-  EXPECT_EQ(1u, report_blocks.size());
+  ASSERT_EQ(1u, report_blocks.size());
   const RTCPReportBlock& reportBlockReceived = report_blocks[0];
 
   float secSinceLastReport =

@@ -113,6 +113,19 @@ RTCPReceiver::LastReceived()
     return _lastReceived;
 }
 
+WebRtc_Word64
+RTCPReceiver::LastReceivedReceiverReport() const {
+    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+    WebRtc_Word64 last_received_rr = -1;
+    for (ReceivedInfoMap::const_iterator it = _receivedInfoMap.begin();
+         it != _receivedInfoMap.end(); ++it) {
+      if (it->second->lastTimeReceived > last_received_rr) {
+        last_received_rr = it->second->lastTimeReceived;
+      }
+    }
+    return last_received_rr;
+}
+
 WebRtc_Word32
 RTCPReceiver::SetRemoteSSRC( const WebRtc_UWord32 ssrc)
 {

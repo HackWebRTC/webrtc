@@ -21,15 +21,7 @@ namespace webrtc {
 
 class CriticalSectionWrapper;
 class RtcpRttObserver;
-
-// Interface used to distribute call statistics. Callbacks will be triggered as
-// soon as the class has been registered using RegisterStatsObserver.
-class StatsObserver {
- public:
-  virtual void OnRttUpdate(uint32_t rtt) = 0;
-
-  virtual ~StatsObserver() {}
-};
+class StatsObserver;
 
 // CallStats keeps track of statistics for a call.
 class CallStats : public Module {

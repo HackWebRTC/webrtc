@@ -37,6 +37,7 @@ public:
     WebRtc_Word32 SetRTCPStatus(const RTCPMethod method);
 
     WebRtc_Word64 LastReceived();
+    WebRtc_Word64 LastReceivedReceiverReport() const;
 
     void SetSSRC( const WebRtc_UWord32 ssrc);
     void SetRelaySSRC( const WebRtc_UWord32 ssrc);
@@ -197,6 +198,8 @@ protected:
                        RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
 
  private:
+  typedef std::map<WebRtc_UWord32, RTCPHelp::RTCPReceiveInformation*>
+      ReceivedInfoMap;
   WebRtc_Word32           _id;
   Clock*                  _clock;
   RTCPMethod              _method;
@@ -221,8 +224,7 @@ protected:
   // Received report blocks.
   std::map<WebRtc_UWord32, RTCPHelp::RTCPReportBlockInformation*>
       _receivedReportBlockMap;
-  std::map<WebRtc_UWord32, RTCPHelp::RTCPReceiveInformation*>
-      _receivedInfoMap;
+  ReceivedInfoMap _receivedInfoMap;
   std::map<WebRtc_UWord32, RTCPUtility::RTCPCnameInformation*>
       _receivedCnameMap;
 

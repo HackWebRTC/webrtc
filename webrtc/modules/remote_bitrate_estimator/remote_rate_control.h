@@ -36,6 +36,12 @@ public:
     // Returns true if there is a valid estimate of the incoming bitrate, false
     // otherwise.
     bool ValidEstimate() const;
+    // Returns true if the bitrate estimate hasn't been changed for more than
+    // an RTT, or if the incoming_bitrate is more than 5% above the current
+    // estimate. Should be used to decide if we should reduce the rate further
+    // when over-using.
+    bool TimeToReduceFurther(int64_t time_now,
+                             unsigned int incoming_bitrate) const;
 
 private:
     WebRtc_UWord32 ChangeBitRate(WebRtc_UWord32 currentBitRate,

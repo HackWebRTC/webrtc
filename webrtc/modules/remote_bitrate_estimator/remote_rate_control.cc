@@ -24,6 +24,9 @@ extern MatlabEngine eng; // global variable defined elsewhere
 #endif
 
 namespace webrtc {
+
+const unsigned int kDefaultRttMs = 200;
+
 RemoteRateControl::RemoteRateControl()
 :
 _minConfiguredBitRate(30000),
@@ -43,7 +46,7 @@ _initializedBitRate(false),
 _avgChangePeriod(1000.0f),
 _lastChangeMs(-1),
 _beta(0.9f),
-_rtt(0)
+_rtt(kDefaultRttMs)
 #ifdef MATLAB
 ,_plot1(NULL),
 _plot2(NULL)
@@ -84,6 +87,20 @@ void RemoteRateControl::Reset()
 
 bool RemoteRateControl::ValidEstimate() const {
   return _initializedBitRate;
+}
+
+bool RemoteRateControl::TimeToReduceFurther(
+    int64_t time_now, unsigned int incoming_bitrate) const {
+  const int bitrate_reduction_interval = BWE_MAX(BWE_MIN(_rtt, 200), 10);
+  if (time_now - _lastBitRateChange >= bitrate_reduction_interval) {
+    return true;
+  }
+  if (ValidEstimate()) {
+    const int threshold = static_cast<int>(1.05 * incoming_bitrate);
+    const int bitrate_difference = LatestEstimate() - incoming_bitrate;
+    return bitrate_difference > threshold;
+  }
+  return false;
 }
 
 WebRtc_Word32 RemoteRateControl::SetConfiguredBitRates(

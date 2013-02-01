@@ -320,6 +320,16 @@ struct FecProtectionParams {
   FecMaskType fec_mask_type;
 };
 
+// Interface used by the CallStats class to distribute call statistics.
+// Callbacks will be triggered as soon as the class has been registered to a
+// CallStats object using RegisterStatsObserver.
+class StatsObserver {
+ public:
+  virtual void OnRttUpdate(uint32_t rtt_ms) = 0;
+
+  virtual ~StatsObserver() {}
+};
+
 // class describing a complete, or parts of an encoded frame.
 class EncodedVideoData
 {

@@ -11,7 +11,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 
 #include <string.h>
-
 #include <cassert>
 
 #include "webrtc/common_types.h"
@@ -38,8 +37,6 @@ const float kFracMs = 4.294967296E6f;
 #endif
 
 namespace webrtc {
-
-const WebRtc_UWord16 kDefaultRtt = 200;
 
 static RtpData* NullObjectRtpData() {
   static NullRtpData null_rtp_data;
@@ -107,6 +104,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       last_bitrate_process_time_(configuration.clock->TimeInMilliseconds()),
       last_packet_timeout_process_time_(
           configuration.clock->TimeInMilliseconds()),
+      last_rtt_process_time_(configuration.clock->TimeInMilliseconds()),
       packet_overhead_(28),  // IPV4 UDP.
       critical_section_module_ptrs_(
           CriticalSectionWrapper::CreateCriticalSection()),
@@ -258,33 +256,30 @@ WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
   ProcessDeadOrAliveTimer();
 
   const bool default_instance(child_modules_.empty() ? false : true);
-  if (!default_instance && rtcp_sender_.TimeToSendRTCPReport()) {
-    WebRtc_UWord16 max_rtt = 0;
+  if (!default_instance) {
     if (rtcp_sender_.Sending()) {
-      std::vector<RTCPReportBlock> receive_blocks;
-      rtcp_receiver_.StatisticsReceived(&receive_blocks);
-      for (std::vector<RTCPReportBlock>::iterator it = receive_blocks.begin();
-           it != receive_blocks.end(); ++it) {
-        WebRtc_UWord16 rtt = 0;
-        rtcp_receiver_.RTT(it->remoteSSRC, &rtt, NULL, NULL, NULL);
-        max_rtt = (rtt > max_rtt) ? rtt : max_rtt;
+      // Process RTT if we have received a receiver report and we haven't
+      // processed RTT for at least |kRtpRtcpRttProcessTimeMs| milliseconds.
+      if (rtcp_receiver_.LastReceivedReceiverReport() >
+          last_rtt_process_time_ && now >= last_rtt_process_time_ +
+          kRtpRtcpRttProcessTimeMs) {
+        last_rtt_process_time_ = now;
+        std::vector<RTCPReportBlock> receive_blocks;
+        rtcp_receiver_.StatisticsReceived(&receive_blocks);
+        uint16_t max_rtt = 0;
+        for (std::vector<RTCPReportBlock>::iterator it = receive_blocks.begin();
+             it != receive_blocks.end(); ++it) {
+          uint16_t rtt = 0;
+          rtcp_receiver_.RTT(it->remoteSSRC, &rtt, NULL, NULL, NULL);
+          max_rtt = (rtt > max_rtt) ? rtt : max_rtt;
+        }
+        // Report the rtt.
+        if (rtt_observer_ && max_rtt != 0)
+          rtt_observer_->OnRttUpdate(max_rtt);
       }
-      // Report the rtt.
-      if (rtt_observer_ && max_rtt != 0)
-        rtt_observer_->OnRttUpdate(max_rtt);
-    } else {
-      // No valid RTT estimate, probably since this is a receive only channel.
-      // Use an estimate set by a send module.
-      max_rtt = rtcp_receiver_.RTT();
-    }
-    if (max_rtt == 0) {
-      // No own rtt calculation or set rtt, use default value.
-      max_rtt = kDefaultRtt;
-    }
 
-    // Verify receiver reports are delivered and the reported sequence number is
-    // increasing.
-    if (rtcp_sender_.Sending()) {
+      // Verify receiver reports are delivered and the reported sequence number
+      // is increasing.
       int64_t rtcp_interval = RtcpReportInterval();
       if (rtcp_receiver_.RtcpRrTimeout(rtcp_interval)) {
         LOG_F(LS_WARNING) << "Timeout: No RTCP RR received.";
@@ -292,13 +287,8 @@ WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
         LOG_F(LS_WARNING) <<
             "Timeout: No increase in RTCP RR extended highest sequence number.";
       }
-    }
 
-    if (remote_bitrate_) {
-      // TODO(mflodman) Remove this and let this be propagated by CallStats.
-      remote_bitrate_->SetRtt(max_rtt);
-      remote_bitrate_->UpdateEstimate(rtp_receiver_->SSRC(), now);
-      if (TMMBR()) {
+      if (remote_bitrate_ && TMMBR()) {
         unsigned int target_bitrate = 0;
         std::vector<unsigned int> ssrcs;
         if (remote_bitrate_->LatestEstimate(&ssrcs, &target_bitrate)) {
@@ -309,7 +299,8 @@ WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
         }
       }
     }
-    rtcp_sender_.SendRTCP(kRtcpReport);
+    if (rtcp_sender_.TimeToSendRTCPReport())
+      rtcp_sender_.SendRTCP(kRtcpReport);
   }
 
   if (UpdateRTCPReceiveInformationTimers()) {
@@ -1993,22 +1984,6 @@ void ModuleRtpRtcpImpl::BitrateSent(WebRtc_UWord32* total_rate,
     *fec_rate = rtp_sender_.FecOverheadRate();
   if (nack_rate != NULL)
     *nack_rate = rtp_sender_.NackOverheadRate();
-}
-
-int ModuleRtpRtcpImpl::EstimatedReceiveBandwidth(
-    WebRtc_UWord32* available_bandwidth) const {
-  if (remote_bitrate_) {
-    std::vector<unsigned int> ssrcs;
-    if (!remote_bitrate_->LatestEstimate(&ssrcs, available_bandwidth)) {
-      return -1;
-    }
-    if (!ssrcs.empty()) {
-      *available_bandwidth /= ssrcs.size();
-    }
-    return 0;
-  }
-  // No bandwidth receive-side bandwidth estimation is connected to this module.
-  return -1;
 }
 
 // Bad state of RTP receiver request a keyframe.
