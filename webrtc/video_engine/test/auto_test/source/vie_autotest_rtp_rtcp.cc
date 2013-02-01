@@ -687,6 +687,21 @@ void ViEAutoTest::ViERtpRtcpAPITest()
     EXPECT_EQ(0, ViE.rtp_rtcp->SetTransmissionSmoothingStatus(
         tbChannel.videoChannel, false));
 
+    // Streaming Mode.
+    EXPECT_EQ(-1, ViE.rtp_rtcp->EnableSenderStreamingMode(
+        invalid_channel_id, 0));
+    int invalid_delay = -1;
+    EXPECT_EQ(-1, ViE.rtp_rtcp->EnableSenderStreamingMode(
+        tbChannel.videoChannel, invalid_delay));
+    invalid_delay = 15000;
+    EXPECT_EQ(-1, ViE.rtp_rtcp->EnableSenderStreamingMode(
+        tbChannel.videoChannel, invalid_delay));
+    EXPECT_EQ(0, ViE.rtp_rtcp->EnableSenderStreamingMode(
+        tbChannel.videoChannel, 5000));
+    // Real-time mode.
+    EXPECT_EQ(0, ViE.rtp_rtcp->EnableSenderStreamingMode(
+        tbChannel.videoChannel, 0));
+
     //***************************************************************
     //  Testing finished. Tear down Video Engine
     //***************************************************************

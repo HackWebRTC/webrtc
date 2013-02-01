@@ -64,6 +64,8 @@ class ViERTP_RTCPImpl
   virtual int SetHybridNACKFECStatus(const int video_channel, const bool enable,
                                      const unsigned char payload_typeRED,
                                      const unsigned char payload_typeFEC);
+  virtual int EnableSenderStreamingMode(int video_channel,
+                                        int target_delay_ms);
   virtual int SetKeyFrameRequestMethod(const int video_channel,
                                        const ViEKeyFrameRequestMethod method);
   virtual int SetTMMBRStatus(const int video_channel, const bool enable);
