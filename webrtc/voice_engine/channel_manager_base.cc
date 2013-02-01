@@ -24,7 +24,7 @@ ChannelManagerBase::ChannelManagerBase() :
     _itemsCritSectPtr(CriticalSectionWrapper::CreateCriticalSection()),
     _itemsRWLockPtr(RWLockWrapper::CreateRWLock())
 {
-    for (int i = 0; i < KMaxNumberOfItems; i++)
+    for (int i = 0; i < kVoiceEngineMaxNumChannels; i++)
     {
         _freeItemIds[i] = true;
     }
@@ -48,7 +48,7 @@ bool ChannelManagerBase::GetFreeItemId(WebRtc_Word32& itemId)
 {
     CriticalSectionScoped cs(_itemsCritSectPtr);
     WebRtc_Word32 i(0);
-    while (i < KMaxNumberOfItems)
+    while (i < kVoiceEngineMaxNumChannels)
     {
         if (_freeItemIds[i])
         {
@@ -63,13 +63,13 @@ bool ChannelManagerBase::GetFreeItemId(WebRtc_Word32& itemId)
 
 void ChannelManagerBase::AddFreeItemId(WebRtc_Word32 itemId)
 {
-    assert(itemId < KMaxNumberOfItems);
+    assert(itemId < kVoiceEngineMaxNumChannels);
     _freeItemIds[itemId] = true;
 }
 
 void ChannelManagerBase::RemoveFreeItemIds()
 {
-    for (int i = 0; i < KMaxNumberOfItems; i++)
+    for (int i = 0; i < kVoiceEngineMaxNumChannels; i++)
     {
         _freeItemIds[i] = false;
     }
@@ -142,7 +142,7 @@ WebRtc_Word32 ChannelManagerBase::NumOfItems() const
 
 WebRtc_Word32 ChannelManagerBase::MaxNumOfItems() const
 {
-    return static_cast<WebRtc_Word32> (KMaxNumberOfItems);
+    return static_cast<WebRtc_Word32> (kVoiceEngineMaxNumChannels);
 }
 
 void*

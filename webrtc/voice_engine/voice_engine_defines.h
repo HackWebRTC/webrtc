@@ -23,8 +23,10 @@
 //  Enumerators
 // ----------------------------------------------------------------------------
 
-namespace webrtc
-{
+namespace webrtc {
+
+// TODO(ajm): There's not really a reason for this limitation. Remove it.
+enum { kVoiceEngineMaxNumChannels = 100 };
 
 // VolumeControl
 enum { kMinVolumeLevel = 0 };
@@ -255,18 +257,6 @@ inline int VoEChannelId(const int moduleId)
   #endif
 
 // ----------------------------------------------------------------------------
-//  Enumerators
-// ----------------------------------------------------------------------------
-
-namespace webrtc
-{
-// Max number of supported channels
-enum { kVoiceEngineMaxNumOfChannels = 32 };
-// Max number of channels which can be played out simultaneously
-enum { kVoiceEngineMaxNumOfActiveChannels = 16 };
-} // namespace webrtc
-
-// ----------------------------------------------------------------------------
 //  Defines
 // ----------------------------------------------------------------------------
 
@@ -341,18 +331,6 @@ enum { kVoiceEngineMaxNumOfActiveChannels = 16 };
 #ifdef ANDROID
 
 // ----------------------------------------------------------------------------
-//  Enumerators
-// ----------------------------------------------------------------------------
-
-namespace webrtc
-{
-  // Max number of supported channels
-  enum { kVoiceEngineMaxNumOfChannels = 32 };
-  // Max number of channels which can be played out simultaneously
-  enum { kVoiceEngineMaxNumOfActiveChannels = 16 };
-} // namespace webrtc
-
-// ----------------------------------------------------------------------------
 //  Defines
 // ----------------------------------------------------------------------------
 
@@ -384,17 +362,6 @@ namespace webrtc
       return -1;
 
 #else // LINUX PC
-// ----------------------------------------------------------------------------
-//  Enumerators
-// ----------------------------------------------------------------------------
-
-namespace webrtc
-{
-  // Max number of supported channels
-  enum { kVoiceEngineMaxNumOfChannels = 32 };
-  // Max number of channels which can be played out simultaneously
-  enum { kVoiceEngineMaxNumOfActiveChannels = 16 };
-} // namespace webrtc
 
 // ----------------------------------------------------------------------------
 //  Defines
@@ -467,18 +434,6 @@ namespace webrtc
 #if defined(WEBRTC_IOS)
 
 // ----------------------------------------------------------------------------
-//  Enumerators
-// ----------------------------------------------------------------------------
-
-namespace webrtc
-{
-  // Max number of supported channels
-  enum { kVoiceEngineMaxNumOfChannels = 2 };
-  // Max number of channels which can be played out simultaneously
-  enum { kVoiceEngineMaxNumOfActiveChannels = 2 };
-} // namespace webrtc
-
-// ----------------------------------------------------------------------------
 //  Defines
 // ----------------------------------------------------------------------------
 
@@ -511,14 +466,6 @@ namespace webrtc
 //  Enumerators
 // ----------------------------------------------------------------------------
 
-namespace webrtc
-{
-  // Max number of supported channels
-  enum { kVoiceEngineMaxNumOfChannels = 32 };
-  // Max number of channels which can be played out simultaneously
-  enum { kVoiceEngineMaxNumOfActiveChannels = 16 };
-} // namespace webrtc
-
 // ----------------------------------------------------------------------------
 //  Defines
 // ----------------------------------------------------------------------------
@@ -529,7 +476,5 @@ namespace webrtc
 #else
 #define IPHONE_NOT_SUPPORTED(stat)
 #endif  // #ifdef WEBRTC_MAC
-
-
 
 #endif // WEBRTC_VOICE_ENGINE_VOICE_ENGINE_DEFINES_H

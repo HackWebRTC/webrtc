@@ -981,19 +981,17 @@ int VoEExtendedTest::TestBase() {
   voe_base_->DeleteChannel(ch);
 
   // Multi-channel tests
-  const int MaxNumberOfPlayingChannels(kVoiceEngineMaxNumOfActiveChannels);
-
-  for (i = 0; i < MaxNumberOfPlayingChannels; i++) {
+  for (i = 0; i < kVoiceEngineMaxNumChannels; i++) {
     ch = voe_base_->CreateChannel();
     TEST_MUSTPASS(voe_base_->StartPlayout(ch));
     MARK();
   }
-  for (i = 0; i < MaxNumberOfPlayingChannels; i++) {
+  for (i = 0; i < kVoiceEngineMaxNumChannels; i++) {
     TEST_MUSTPASS(voe_base_->StopPlayout(i));
     MARK();
     voe_base_->DeleteChannel(i);
   }
-  for (i = 0; i < MaxNumberOfPlayingChannels; i++) {
+  for (i = 0; i < kVoiceEngineMaxNumChannels; i++) {
     ch = voe_base_->CreateChannel();
     TEST_MUSTPASS(voe_base_->StartPlayout(ch));
     MARK();

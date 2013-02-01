@@ -28,9 +28,6 @@ class Channel;
 
 class ChannelManagerBase
 {
-public:
-    enum {KMaxNumberOfItems = kVoiceEngineMaxNumOfChannels};
-
 protected:
     bool CreateItem(WebRtc_Word32& itemId);
 
@@ -77,7 +74,7 @@ private:
 
     MapWrapper _items;
 
-    bool _freeItemIds[KMaxNumberOfItems];
+    bool _freeItemIds[kVoiceEngineMaxNumChannels];
 
     // Protects channels from being destroyed while being used
     RWLockWrapper* _itemsRWLockPtr;
