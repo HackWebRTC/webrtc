@@ -203,7 +203,10 @@ WebRtc_Word32 ViEExternalRendererImpl::RenderFrame(
     case kVideoARGB4444:
     case kVideoARGB1555 :
       {
-        ConvertFromI420(video_frame, type, 0, converted_frame_->Buffer());
+        if (ConvertFromI420(video_frame, type, 0,
+                            converted_frame_->Buffer()) < 0)
+          return -1;
+        converted_frame_->SetLength(buffer_size);
       }
       break;
     case kVideoIYUV:
