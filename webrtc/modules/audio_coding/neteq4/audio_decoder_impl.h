@@ -187,6 +187,29 @@ class AudioDecoderG722 : public AudioDecoder {
  private:
   DISALLOW_COPY_AND_ASSIGN(AudioDecoderG722);
 };
+
+class AudioDecoderG722Stereo : public AudioDecoderG722 {
+ public:
+  AudioDecoderG722Stereo();
+  virtual ~AudioDecoderG722Stereo();
+  virtual int Decode(const uint8_t* encoded, size_t encoded_len,
+                     int16_t* decoded, SpeechType* speech_type);
+  virtual int Init();
+
+ private:
+  // Splits the stereo-interleaved payload in |encoded| into separate payloads
+  // for left and right channels. The separated payloads are written to
+  // |encoded_deinterleaved|, which must hold at least |encoded_len| samples.
+  // The left channel starts at offset 0, while the right channel starts at
+  // offset encoded_len / 2 into |encoded_deinterleaved|.
+  void SplitStereoPacket(const uint8_t* encoded, size_t encoded_len,
+                         uint8_t* encoded_deinterleaved);
+
+  void* const state_left_;
+  void* state_right_;
+
+  DISALLOW_COPY_AND_ASSIGN(AudioDecoderG722Stereo);
+};
 #endif
 
 #ifdef WEBRTC_CODEC_OPUS

@@ -45,6 +45,7 @@ bool AudioDecoder::CodecSupported(NetEqDecoder codec_type) {
 #endif
 #ifdef WEBRTC_CODEC_G722
     case kDecoderG722:
+    case kDecoderG722_2ch:
 #endif
 #ifdef WEBRTC_CODEC_OPUS
     case kDecoderOpus:
@@ -91,6 +92,7 @@ int AudioDecoder::CodecSampleRateHz(NetEqDecoder codec_type) {
 #endif
 #ifdef WEBRTC_CODEC_G722
     case kDecoderG722:
+    case kDecoderG722_2ch:
 #endif
     case kDecoderCNGwb: {
       return 16000;
