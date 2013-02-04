@@ -29,11 +29,11 @@
  "win-large-tests/vie_auto_test/ssim/net_delay_0_0_plr_0": {"reva": 3381, "revb": 3389, "type": "absolute", "better": "higher", "improve": 0.9933, "regress": 0.92435, "sha1": "e6dbdfb6"},
  "win-large-tests/vie_auto_test/ssim/net_delay_100_10_plr_0": {"reva": 3381, "revb": 3389, "type": "absolute", "better": "higher", "improve": 1.01955, "regress": 0.9234, "sha1": "e5b7a3d8"},
  "win-large-tests/vie_auto_test/ssim/net_delay_50_5_plr_5": {"reva": 3381, "revb": 3389, "type": "absolute", "better": "higher", "improve": 1.01745, "regress": 0.9215, "sha1": "318e79ed"},
- "win-large-tests/vie_auto_test/time_between_rendered_frames/net_delay_0_0_plr_0": {"reva": 3337, "revb": 3389, "type": "absolute", "improve": 31.1638, "regress": 43.303785, "sha1": "43fe2480"},
+ "win-large-tests/vie_auto_test/time_between_rendered_frames/net_delay_0_0_plr_0": {"reva": 3455, "revb": 3463, "type": "absolute", "improve": 31.142425, "regress": 53.839275, "sha1": "b5dcfcf6"},
  "win-large-tests/vie_auto_test/time_between_rendered_frames/net_delay_100_10_plr_0": {"reva": 3337, "revb": 3389, "type": "absolute", "improve": 31.1125, "regress": 35.68572, "sha1": "d21f281f"},
  "win-large-tests/vie_auto_test/time_between_rendered_frames/net_delay_50_5_plr_5": {"reva": 3337, "revb": 3389, "type": "absolute", "improve": 31.616, "regress": 36.275295, "sha1": "51c950b1"},
- "win-large-tests/vie_auto_test/total_delay_incl_network/net_delay_0_0_plr_0": {"reva": 3337, "revb": 3389, "type": "absolute", "improve": 30.198885, "regress": 43.784265, "sha1": "72f7d2b2"},
+ "win-large-tests/vie_auto_test/total_delay_incl_network/net_delay_0_0_plr_0": {"reva": 3455, "revb": 3463, "type": "absolute", "improve": 30.089635, "regress": 59.560725, "sha1": "6d606c4a"},
  "win-large-tests/vie_auto_test/total_delay_incl_network/net_delay_100_10_plr_0": {"reva": 3337, "revb": 3389, "type": "absolute", "improve": 131.1684, "regress": 164.02155, "sha1": "37814bad"},
- "win-large-tests/vie_auto_test/total_delay_incl_network/net_delay_50_5_plr_5": {"reva": 3337, "revb": 3389, "type": "absolute", "improve": 103.626, "regress": 125.8635, "sha1": "8a7503d6"},
+ "win-large-tests/vie_auto_test/total_delay_incl_network/net_delay_50_5_plr_5": {"reva": 3455, "revb": 3463, "type": "absolute", "improve": 111.055, "regress": 168.88935, "sha1": "7d00d6f2"},
  "load": true
 }
