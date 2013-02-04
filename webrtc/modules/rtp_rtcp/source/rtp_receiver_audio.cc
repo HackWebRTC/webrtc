@@ -188,12 +188,10 @@ bool RTPReceiverAudio::ShouldReportCsrcChanges(
 
    G7221     frame         N/A
 */
-ModuleRTPUtility::Payload* RTPReceiverAudio::CreatePayloadType(
+WebRtc_Word32 RTPReceiverAudio::OnNewPayloadTypeCreated(
     const char payloadName[RTP_PAYLOAD_NAME_SIZE],
     const WebRtc_Word8 payloadType,
-    const WebRtc_UWord32 frequency,
-    const WebRtc_UWord8 channels,
-    const WebRtc_UWord32 rate) {
+    const WebRtc_UWord32 frequency) {
   CriticalSectionScoped lock(_criticalSectionRtpReceiverAudio.get());
 
   if (ModuleRTPUtility::StringCompare(payloadName, "telephone-event", 15)) {
@@ -211,18 +209,10 @@ ModuleRTPUtility::Payload* RTPReceiverAudio::CreatePayloadType(
       _cngFBPayloadType = payloadType;
     } else {
       assert(false);
-      return NULL;
+      return -1;
     }
   }
-
-  ModuleRTPUtility::Payload* payload = new ModuleRTPUtility::Payload;
-  payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
-  strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
-  payload->typeSpecific.Audio.frequency = frequency;
-  payload->typeSpecific.Audio.channels = channels;
-  payload->typeSpecific.Audio.rate = rate;
-  payload->audio = true;
-  return payload;
+  return 0;
 }
 
 void RTPReceiverAudio::SendTelephoneEvents(
@@ -288,62 +278,6 @@ RTPAliveType RTPReceiverAudio::ProcessDeadOrAlive(
     {
         return kRtpDead;
     }
-}
-
-bool RTPReceiverAudio::PayloadIsCompatible(
-    const ModuleRTPUtility::Payload& payload,
-    const WebRtc_UWord32 frequency,
-    const WebRtc_UWord8 channels,
-    const WebRtc_UWord32 rate) const {
-  return
-      payload.audio &&
-      payload.typeSpecific.Audio.frequency == frequency &&
-      payload.typeSpecific.Audio.channels == channels &&
-      (payload.typeSpecific.Audio.rate == rate ||
-          payload.typeSpecific.Audio.rate == 0 || rate == 0);
-}
-
-void RTPReceiverAudio::UpdatePayloadRate(
-    ModuleRTPUtility::Payload* payload,
-    const WebRtc_UWord32 rate) const {
-  payload->typeSpecific.Audio.rate = rate;
-}
-
-void RTPReceiverAudio::PossiblyRemoveExistingPayloadType(
-    ModuleRTPUtility::PayloadTypeMap* payloadTypeMap,
-    const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-    const size_t payloadNameLength,
-    const WebRtc_UWord32 frequency,
-    const WebRtc_UWord8 channels,
-    const WebRtc_UWord32 rate) const {
-  ModuleRTPUtility::PayloadTypeMap::iterator audio_it = payloadTypeMap->begin();
-  while (audio_it != payloadTypeMap->end()) {
-    ModuleRTPUtility::Payload* payload = audio_it->second;
-    size_t nameLength = strlen(payload->name);
-
-    if (payloadNameLength == nameLength &&
-        ModuleRTPUtility::StringCompare(payload->name,
-                                        payloadName, payloadNameLength)) {
-      // we found the payload name in the list
-      // if audio check frequency and rate
-      if (payload->audio) {
-        if (payload->typeSpecific.Audio.frequency == frequency &&
-            (payload->typeSpecific.Audio.rate == rate ||
-                payload->typeSpecific.Audio.rate == 0 || rate == 0) &&
-                payload->typeSpecific.Audio.channels == channels) {
-          // remove old setting
-          delete payload;
-          payloadTypeMap->erase(audio_it);
-          break;
-        }
-      } else if(ModuleRTPUtility::StringCompare(payloadName,"red",3)) {
-        delete payload;
-        payloadTypeMap->erase(audio_it);
-        break;
-      }
-    }
-    audio_it++;
-  }
 }
 
 void RTPReceiverAudio::CheckPayloadChanged(

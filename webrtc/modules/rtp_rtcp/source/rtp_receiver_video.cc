@@ -51,35 +51,18 @@ bool RTPReceiverVideo::ShouldReportCsrcChanges(
   return true;
 }
 
-ModuleRTPUtility::Payload* RTPReceiverVideo::CreatePayloadType(
+WebRtc_Word32 RTPReceiverVideo::OnNewPayloadTypeCreated(
     const char payloadName[RTP_PAYLOAD_NAME_SIZE],
     const WebRtc_Word8 payloadType,
-    const WebRtc_UWord32 frequency,
-    const WebRtc_UWord8 channels,
-    const WebRtc_UWord32 rate) {
-  RtpVideoCodecTypes videoType = kRtpNoVideo;
-  if (ModuleRTPUtility::StringCompare(payloadName, "VP8", 3)) {
-    videoType = kRtpVp8Video;
-  } else if (ModuleRTPUtility::StringCompare(payloadName, "I420", 4)) {
-    videoType = kRtpNoVideo;
-  } else if (ModuleRTPUtility::StringCompare(payloadName, "ULPFEC", 6)) {
-    // store this
+    const WebRtc_UWord32 frequency) {
+  if (ModuleRTPUtility::StringCompare(payloadName, "ULPFEC", 6)) {
+    // Enable FEC if not enabled.
     if (_receiveFEC == NULL) {
       _receiveFEC = new ReceiverFEC(_id, this);
     }
     _receiveFEC->SetPayloadTypeFEC(payloadType);
-    videoType = kRtpFecVideo;
-  } else {
-    return NULL;
   }
-  ModuleRTPUtility::Payload* payload =  new ModuleRTPUtility::Payload;
-
-  payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
-  strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
-  payload->typeSpecific.Video.videoCodecType = videoType;
-  payload->typeSpecific.Video.maxRate = rate;
-  payload->audio = false;
-  return payload;
+  return 0;
 }
 
 WebRtc_Word32 RTPReceiverVideo::ParseRtpPacket(
@@ -107,20 +90,6 @@ WebRtc_Word32 RTPReceiverVideo::GetFrequencyHz() const {
 RTPAliveType RTPReceiverVideo::ProcessDeadOrAlive(
       WebRtc_UWord16 lastPayloadLength) const {
   return kRtpDead;
-}
-
-bool RTPReceiverVideo::PayloadIsCompatible(
-    const ModuleRTPUtility::Payload& payload,
-    const WebRtc_UWord32 frequency,
-    const WebRtc_UWord8 channels,
-    const WebRtc_UWord32 rate) const {
-  return !payload.audio;
-}
-
-void RTPReceiverVideo::UpdatePayloadRate(
-    ModuleRTPUtility::Payload* payload,
-    const WebRtc_UWord32 rate) const {
-  payload->typeSpecific.Video.maxRate = rate;
 }
 
 WebRtc_Word32 RTPReceiverVideo::InvokeOnInitializeDecoder(

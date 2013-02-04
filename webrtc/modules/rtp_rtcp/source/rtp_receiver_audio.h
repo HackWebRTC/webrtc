@@ -66,24 +66,12 @@ public:
 
     RTPAliveType ProcessDeadOrAlive(WebRtc_UWord16 lastPayloadLength) const;
 
-    bool PayloadIsCompatible(
-        const ModuleRTPUtility::Payload& payload,
-        const WebRtc_UWord32 frequency,
-        const WebRtc_UWord8 channels,
-        const WebRtc_UWord32 rate) const;
-
-    void UpdatePayloadRate(
-        ModuleRTPUtility::Payload* payload,
-        const WebRtc_UWord32 rate) const;
-
     bool ShouldReportCsrcChanges(WebRtc_UWord8 payload_type) const;
 
-    ModuleRTPUtility::Payload* CreatePayloadType(
-          const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-          const WebRtc_Word8 payloadType,
-          const WebRtc_UWord32 frequency,
-          const WebRtc_UWord8 channels,
-          const WebRtc_UWord32 rate);
+    WebRtc_Word32 OnNewPayloadTypeCreated(
+        const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+        const WebRtc_Word8 payloadType,
+        const WebRtc_UWord32 frequency);
 
     WebRtc_Word32 InvokeOnInitializeDecoder(
           RtpFeedback* callback,

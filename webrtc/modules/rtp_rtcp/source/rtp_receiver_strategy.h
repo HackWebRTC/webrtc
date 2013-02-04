@@ -55,30 +55,16 @@ class RTPReceiverStrategy {
   virtual RTPAliveType ProcessDeadOrAlive(
     WebRtc_UWord16 last_payload_length) const = 0;
 
-  // Checks if the provided payload can be handled by this strategy and if
-  // it is compatible with the provided parameters.
-  virtual bool PayloadIsCompatible(
-    const ModuleRTPUtility::Payload& payload,
-    const WebRtc_UWord32 frequency,
-    const WebRtc_UWord8 channels,
-    const WebRtc_UWord32 rate) const = 0;
-
-  // Updates the rate in the payload in a media-specific way.
-  virtual void UpdatePayloadRate(
-    ModuleRTPUtility::Payload* payload,
-    const WebRtc_UWord32 rate) const = 0;
-
   // Returns true if we should report CSRC changes for this payload type.
   // TODO(phoglund): should move out of here along with other payload stuff.
   virtual bool ShouldReportCsrcChanges(WebRtc_UWord8 payload_type) const = 0;
 
-  // Creates a media-specific payload instance from the provided parameters.
-  virtual ModuleRTPUtility::Payload* CreatePayloadType(
-    const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-    const WebRtc_Word8 payload_type,
-    const WebRtc_UWord32 frequency,
-    const WebRtc_UWord8 channels,
-    const WebRtc_UWord32 rate) = 0;
+  // Notifies the strategy that we have created a new non-RED payload type in
+  // the payload registry.
+  virtual WebRtc_Word32 OnNewPayloadTypeCreated(
+      const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+      const WebRtc_Word8 payloadType,
+      const WebRtc_UWord32 frequency) = 0;
 
   // Invokes the OnInitializeDecoder callback in a media-specific way.
   virtual WebRtc_Word32 InvokeOnInitializeDecoder(
@@ -87,19 +73,6 @@ class RTPReceiverStrategy {
     const WebRtc_Word8 payload_type,
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     const ModuleRTPUtility::PayloadUnion& specific_payload) const = 0;
-
-  // Prunes the payload type map of the specific payload type, if it exists.
-  // TODO(phoglund): Move this responsibility into some payload management
-  // class along with rtp_receiver's payload management.
-  virtual void PossiblyRemoveExistingPayloadType(
-    ModuleRTPUtility::PayloadTypeMap* payload_type_map,
-    const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-    const size_t payload_name_length,
-    const WebRtc_UWord32 frequency,
-    const WebRtc_UWord8 channels,
-    const WebRtc_UWord32 rate) const {
-    // Default: do nothing.
-  }
 
   // Checks if the payload type has changed, and returns whether we should
   // reset statistics and/or discard this packet.

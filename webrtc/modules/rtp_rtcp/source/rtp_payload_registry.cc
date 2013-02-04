@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -15,9 +15,10 @@
 namespace webrtc {
 
 RTPPayloadRegistry::RTPPayloadRegistry(
-    const WebRtc_Word32 id)
+    const WebRtc_Word32 id,
+    RTPPayloadStrategy* rtp_payload_strategy)
     : id_(id),
-      rtp_media_receiver_(NULL),
+      rtp_payload_strategy_(rtp_payload_strategy),
       red_payload_type_(-1),
       last_received_payload_type_(-1),
       last_received_media_payload_type_(-1) {
@@ -36,9 +37,10 @@ WebRtc_Word32 RTPPayloadRegistry::RegisterReceivePayload(
     const WebRtc_Word8 payload_type,
     const WebRtc_UWord32 frequency,
     const WebRtc_UWord8 channels,
-    const WebRtc_UWord32 rate) {
-  assert(rtp_media_receiver_);
+    const WebRtc_UWord32 rate,
+    bool* created_new_payload) {
   assert(payload_name);
+  *created_new_payload = false;
 
   // Sanity check.
   switch (payload_type) {
@@ -67,6 +69,7 @@ WebRtc_Word32 RTPPayloadRegistry::RegisterReceivePayload(
   if (it != payload_type_map_.end()) {
     // We already use this payload type.
     ModuleRTPUtility::Payload* payload = it->second;
+
     assert(payload);
 
     size_t name_length = strlen(payload->name);
@@ -76,9 +79,9 @@ WebRtc_Word32 RTPPayloadRegistry::RegisterReceivePayload(
     if (payload_name_length == name_length &&
         ModuleRTPUtility::StringCompare(
             payload->name, payload_name, payload_name_length)) {
-      if (rtp_media_receiver_->PayloadIsCompatible(*payload, frequency,
-                                                   channels, rate)) {
-        rtp_media_receiver_->UpdatePayloadRate(payload, rate);
+      if (rtp_payload_strategy_->PayloadIsCompatible(*payload, frequency,
+                                                     channels, rate)) {
+        rtp_payload_strategy_->UpdatePayloadRate(payload, rate);
         return 0;
       }
     }
@@ -88,9 +91,10 @@ WebRtc_Word32 RTPPayloadRegistry::RegisterReceivePayload(
     return -1;
   }
 
-  rtp_media_receiver_->PossiblyRemoveExistingPayloadType(
-    &payload_type_map_, payload_name, payload_name_length, frequency, channels,
-    rate);
+  if (rtp_payload_strategy_->CodecsMustBeUnique()) {
+    DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
+        payload_name, payload_name_length, frequency, channels, rate);
+  }
 
   ModuleRTPUtility::Payload* payload = NULL;
 
@@ -102,14 +106,9 @@ WebRtc_Word32 RTPPayloadRegistry::RegisterReceivePayload(
     payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
     strncpy(payload->name, payload_name, RTP_PAYLOAD_NAME_SIZE - 1);
   } else {
-    payload = rtp_media_receiver_->CreatePayloadType(
+    *created_new_payload = true;
+    payload = rtp_payload_strategy_->CreatePayloadType(
         payload_name, payload_type, frequency, channels, rate);
-  }
-  if (payload == NULL) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
-                 "%s failed to register payload",
-                 __FUNCTION__);
-    return -1;
   }
   payload_type_map_[payload_type] = payload;
 
@@ -122,7 +121,6 @@ WebRtc_Word32 RTPPayloadRegistry::RegisterReceivePayload(
 
 WebRtc_Word32 RTPPayloadRegistry::DeRegisterReceivePayload(
     const WebRtc_Word8 payload_type) {
-  assert(rtp_media_receiver_);
   ModuleRTPUtility::PayloadTypeMap::iterator it =
     payload_type_map_.find(payload_type);
 
@@ -135,6 +133,42 @@ WebRtc_Word32 RTPPayloadRegistry::DeRegisterReceivePayload(
   delete it->second;
   payload_type_map_.erase(it);
   return 0;
+}
+
+// There can't be several codecs with the same rate, frequency and channels
+// for audio codecs, but there can for video.
+void RTPPayloadRegistry::DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
+    const char payload_name[RTP_PAYLOAD_NAME_SIZE],
+    const size_t payload_name_length,
+    const WebRtc_UWord32 frequency,
+    const WebRtc_UWord8 channels,
+    const WebRtc_UWord32 rate) {
+  ModuleRTPUtility::PayloadTypeMap::iterator iterator =
+      payload_type_map_.begin();
+  for (; iterator != payload_type_map_.end(); ++iterator) {
+    ModuleRTPUtility::Payload* payload = iterator->second;
+    size_t name_length = strlen(payload->name);
+
+    if (payload_name_length == name_length
+        && ModuleRTPUtility::StringCompare(payload->name, payload_name,
+                                           payload_name_length)) {
+      // We found the payload name in the list.
+      // If audio, check frequency and rate.
+      if (payload->audio) {
+        if (rtp_payload_strategy_->PayloadIsCompatible(*payload, frequency,
+                                                       channels, rate)) {
+          // Remove old setting.
+          delete payload;
+          payload_type_map_.erase(iterator);
+          break;
+        }
+      } else if (ModuleRTPUtility::StringCompare(payload_name, "red", 3)) {
+        delete payload;
+        payload_type_map_.erase(iterator);
+        break;
+      }
+    }
+  }
 }
 
 WebRtc_Word32 RTPPayloadRegistry::ReceivePayloadType(
@@ -153,7 +187,7 @@ WebRtc_Word32 RTPPayloadRegistry::ReceivePayloadType(
   ModuleRTPUtility::PayloadTypeMap::const_iterator it =
       payload_type_map_.begin();
 
-  while (it != payload_type_map_.end()) {
+  for (; it != payload_type_map_.end(); ++it) {
     ModuleRTPUtility::Payload* payload = it->second;
     assert(payload);
 
@@ -186,60 +220,13 @@ WebRtc_Word32 RTPPayloadRegistry::ReceivePayloadType(
         return 0;
       }
     }
-    it++;
   }
   return -1;
 }
 
-WebRtc_Word32 RTPPayloadRegistry::ReceivePayload(
-    const WebRtc_Word8 payload_type,
-    char payload_name[RTP_PAYLOAD_NAME_SIZE],
-    WebRtc_UWord32* frequency,
-    WebRtc_UWord8* channels,
-    WebRtc_UWord32* rate) const {
-  assert(rtp_media_receiver_);
-  ModuleRTPUtility::PayloadTypeMap::const_iterator it =
-    payload_type_map_.find(payload_type);
-
-  if (it == payload_type_map_.end()) {
-    return -1;
-  }
-  ModuleRTPUtility::Payload* payload = it->second;
-  assert(payload);
-
-  if (frequency) {
-    if (payload->audio) {
-      *frequency = payload->typeSpecific.Audio.frequency;
-    } else {
-      *frequency = kDefaultVideoFrequency;
-    }
-  }
-  if (channels) {
-    if (payload->audio) {
-      *channels = payload->typeSpecific.Audio.channels;
-    } else {
-      *channels = 1;
-    }
-  }
-  if (rate) {
-    if (payload->audio) {
-      *rate = payload->typeSpecific.Audio.rate;
-    } else {
-      assert(false);
-      *rate = 0;
-    }
-  }
-  if (payload_name) {
-    payload_name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
-    strncpy(payload_name, payload->name, RTP_PAYLOAD_NAME_SIZE - 1);
-  }
-  return 0;
-}
-
-WebRtc_UWord32 RTPPayloadRegistry::PayloadTypeToPayload(
+WebRtc_Word32 RTPPayloadRegistry::PayloadTypeToPayload(
   const WebRtc_UWord8 payload_type,
   ModuleRTPUtility::Payload*& payload) const {
-  assert(rtp_media_receiver_);
 
   ModuleRTPUtility::PayloadTypeMap::const_iterator it =
     payload_type_map_.find(payload_type);
@@ -260,6 +247,101 @@ bool RTPPayloadRegistry::ReportMediaPayloadType(
   }
   last_received_media_payload_type_ = media_payload_type;
   return false;
+}
+
+class RTPPayloadAudioStrategy : public RTPPayloadStrategy {
+ public:
+  bool CodecsMustBeUnique() const { return true; }
+
+  bool PayloadIsCompatible(
+       const ModuleRTPUtility::Payload& payload,
+       const WebRtc_UWord32 frequency,
+       const WebRtc_UWord8 channels,
+       const WebRtc_UWord32 rate) const {
+    return
+        payload.audio &&
+        payload.typeSpecific.Audio.frequency == frequency &&
+        payload.typeSpecific.Audio.channels == channels &&
+        (payload.typeSpecific.Audio.rate == rate ||
+            payload.typeSpecific.Audio.rate == 0 || rate == 0);
+  }
+
+  void UpdatePayloadRate(
+      ModuleRTPUtility::Payload* payload,
+      const WebRtc_UWord32 rate) const {
+    payload->typeSpecific.Audio.rate = rate;
+  }
+
+  ModuleRTPUtility::Payload* CreatePayloadType(
+      const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+      const WebRtc_Word8 payloadType,
+      const WebRtc_UWord32 frequency,
+      const WebRtc_UWord8 channels,
+      const WebRtc_UWord32 rate) const {
+    ModuleRTPUtility::Payload* payload = new ModuleRTPUtility::Payload;
+    payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
+    strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
+    payload->typeSpecific.Audio.frequency = frequency;
+    payload->typeSpecific.Audio.channels = channels;
+    payload->typeSpecific.Audio.rate = rate;
+    payload->audio = true;
+    return payload;
+  }
+};
+
+class RTPPayloadVideoStrategy : public RTPPayloadStrategy {
+ public:
+  bool CodecsMustBeUnique() const { return false; }
+
+  bool PayloadIsCompatible(
+      const ModuleRTPUtility::Payload& payload,
+      const WebRtc_UWord32 frequency,
+      const WebRtc_UWord8 channels,
+      const WebRtc_UWord32 rate) const {
+    return !payload.audio;
+  }
+
+  void UpdatePayloadRate(
+      ModuleRTPUtility::Payload* payload,
+      const WebRtc_UWord32 rate) const {
+    payload->typeSpecific.Video.maxRate = rate;
+  }
+
+  ModuleRTPUtility::Payload* CreatePayloadType(
+      const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+      const WebRtc_Word8 payloadType,
+      const WebRtc_UWord32 frequency,
+      const WebRtc_UWord8 channels,
+      const WebRtc_UWord32 rate) const {
+    RtpVideoCodecTypes videoType = kRtpNoVideo;
+    if (ModuleRTPUtility::StringCompare(payloadName, "VP8", 3)) {
+      videoType = kRtpVp8Video;
+    } else if (ModuleRTPUtility::StringCompare(payloadName, "I420", 4)) {
+      videoType = kRtpNoVideo;
+    } else if (ModuleRTPUtility::StringCompare(payloadName, "ULPFEC", 6)) {
+      videoType = kRtpFecVideo;
+    } else {
+      assert(false);
+      return NULL;
+    }
+    ModuleRTPUtility::Payload* payload = new ModuleRTPUtility::Payload;
+
+    payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
+    strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
+    payload->typeSpecific.Video.videoCodecType = videoType;
+    payload->typeSpecific.Video.maxRate = rate;
+    payload->audio = false;
+    return payload;
+  }
+};
+
+RTPPayloadStrategy* RTPPayloadStrategy::CreateStrategy(
+    const bool handling_audio) {
+  if (handling_audio) {
+    return new RTPPayloadAudioStrategy();
+  } else {
+    return new RTPPayloadVideoStrategy();
+  }
 }
 
 }  // namespace webrtc

@@ -85,7 +85,9 @@ RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
 }
 
 ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
-    : rtp_payload_registry_(configuration.id),
+    : rtp_payload_registry_(
+          configuration.id,
+          RTPPayloadStrategy::CreateStrategy(configuration.audio)),
       rtp_sender_(configuration.id,
                   configuration.audio,
                   configuration.clock,
@@ -138,10 +140,6 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
         new RTPReceiverVideo(configuration.id, &rtp_payload_registry_,
                              configuration.incoming_data);
   }
-  // TODO(phoglund): Get rid of this silly circular dependency between the
-  // payload manager and the video RTP receiver.
-  rtp_payload_registry_.set_rtp_media_receiver(rtp_receiver_strategy);
-
   rtp_receiver_.reset(new RTPReceiver(
       configuration.id, configuration.clock, this,
       configuration.audio_messages, configuration.incoming_data,

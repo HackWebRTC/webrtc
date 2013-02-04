@@ -74,12 +74,6 @@ class RTPReceiver : public Bitrate {
       const WebRtc_UWord32 rate,
       WebRtc_Word8* payload_type) const;
 
-  WebRtc_Word32 ReceivePayload(const WebRtc_Word8 payload_type,
-                               char payload_name[RTP_PAYLOAD_NAME_SIZE],
-                               WebRtc_UWord32* frequency,
-                               WebRtc_UWord8* channels,
-                               WebRtc_UWord32* rate) const;
-
   WebRtc_Word32 IncomingRTPPacket(
       WebRtcRTPHeader* rtpheader,
       const WebRtc_UWord8* incoming_rtp_packet,
@@ -147,10 +141,6 @@ class RTPReceiver : public Bitrate {
   WebRtc_Word32 DeregisterRtpHeaderExtension(const RTPExtensionType type);
 
   void GetHeaderExtensionMapCopy(RtpHeaderExtensionMap* map) const;
-
-  virtual WebRtc_UWord32 PayloadTypeToPayload(
-      const WebRtc_UWord8 payload_type,
-      ModuleRTPUtility::Payload*& payload) const;
 
   // RTX.
   void SetRTXStatus(const bool enable, const WebRtc_UWord32 ssrc);
