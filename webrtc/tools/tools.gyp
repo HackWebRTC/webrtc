@@ -86,6 +86,10 @@
         'frame_editing/frame_editing_lib.cc',
         'frame_editing/frame_editing_lib.h',
       ],
+      # Disable warnings to enable Win64 build, issue 1323.
+      'msvs_disabled_warnings': [
+        4267,  # size_t to int truncation.
+      ],
     }, # frame_editing_lib
     {
       'target_name': 'frame_editor',
@@ -114,6 +118,10 @@
           'sources': [
             'simple_command_line_parser_unittest.cc',
             'frame_editing/frame_editing_unittest.cc',
+          ],
+          # Disable warnings to enable Win64 build, issue 1323.
+          'msvs_disabled_warnings': [
+            4267,  # size_t to int truncation.
           ],
         }, # tools_unittests
       ], # targets

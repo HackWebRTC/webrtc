@@ -221,12 +221,12 @@
           'WEBRTC_WIN',
         ],
         # TODO(andrew): enable all warnings when possible.
-        # 4389: Signed/unsigned mismatch.
-        # 4373: MSVC legacy warning for ignoring const / volatile in
-        # signatures. TODO(phoglund): get rid of 4373 supression when
+        # TODO(phoglund): get rid of 4373 supression when
         # http://code.google.com/p/webrtc/issues/detail?id=261 is solved.
-        'msvs_disabled_warnings': [4389, 4373],
-
+        'msvs_disabled_warnings': [
+          4373,  # legacy warning for ignoring const / volatile in signatures.
+          4389,  # Signed/unsigned mismatch.
+        ],
         # Re-enable some warnings that Chromium disables.
         'msvs_disabled_warnings!': [4189,],
       }],

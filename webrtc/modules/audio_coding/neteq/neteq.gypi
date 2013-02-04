@@ -99,6 +99,10 @@
           'sources': [
             'webrtc_neteq_unittest.cc',
           ],
+          # Disable warnings to enable Win64 build, issue 1323.
+          'msvs_disabled_warnings': [
+            4267,  # size_t to int truncation.
+          ],
         }, # neteq_unittests
         {
           'target_name': 'NetEqRTPplay',
@@ -136,6 +140,10 @@
           ],
           'sources': [
             'test/NetEqRTPplay.cc',
+          ],
+          # Disable warnings to enable Win64 build, issue 1323.
+          'msvs_disabled_warnings': [
+            4267,  # size_t to int truncation.
           ],
         },
 
@@ -192,6 +200,10 @@
             'test/NETEQTEST_NetEQClass.h',
             'test/NETEQTEST_RTPpacket.cc',
             'test/NETEQTEST_RTPpacket.h',
+          ],
+          # Disable warnings to enable Win64 build, issue 1323.
+          'msvs_disabled_warnings': [
+            4267,  # size_t to int truncation.
           ],
         },
       ], # targets

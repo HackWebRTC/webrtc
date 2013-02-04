@@ -20,7 +20,7 @@ const std::string kInputFilename = "temp_inputfile.tmp";
 const std::string kInputFileContents = "baz";
 // Setting the kFrameLength value to a value much larger than the
 // file to test causes the ReadFrame test to fail on Windows.
-const int kFrameLength = 1000;
+const size_t kFrameLength = 1000;
 
 class FrameReaderTest: public testing::Test {
  protected:

@@ -30,7 +30,7 @@ FrameReaderImpl::~FrameReaderImpl() {
 
 bool FrameReaderImpl::Init() {
   if (frame_length_in_bytes_ <= 0) {
-    fprintf(stderr, "Frame length must be >0, was %d\n",
+    fprintf(stderr, "Frame length must be >0, was %zu\n",
             frame_length_in_bytes_);
     return false;
   }
@@ -46,7 +46,8 @@ bool FrameReaderImpl::Init() {
     fprintf(stderr, "Found empty file: %s\n", input_filename_.c_str());
     return false;
   }
-  number_of_frames_ = source_file_size / frame_length_in_bytes_;
+  number_of_frames_ = static_cast<int>(source_file_size /
+                                       frame_length_in_bytes_);
   return true;
 }
 

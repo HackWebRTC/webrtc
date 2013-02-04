@@ -211,6 +211,10 @@
              '../../neteq4/mock/mock_packet_buffer.h',
              '../../neteq4/mock/mock_payload_splitter.h',
           ],
+          # Disable warnings to enable Win64 build, issue 1323.
+          'msvs_disabled_warnings': [
+            4267,  # size_t to int truncation.
+          ],
         }, # audio_coding_unittests
       ],
     }],

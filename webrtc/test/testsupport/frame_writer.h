@@ -38,7 +38,7 @@ class FrameWriter {
   virtual void Close() = 0;
 
   // Frame length in bytes of a single frame image.
-  virtual int FrameLength() = 0;
+  virtual size_t FrameLength() = 0;
 };
 
 class FrameWriterImpl : public FrameWriter {
@@ -55,11 +55,11 @@ class FrameWriterImpl : public FrameWriter {
   bool Init();
   bool WriteFrame(WebRtc_UWord8* frame_buffer);
   void Close();
-  int FrameLength() { return frame_length_in_bytes_; }
+  size_t FrameLength() { return frame_length_in_bytes_; }
 
  private:
   std::string output_filename_;
-  int frame_length_in_bytes_;
+  size_t frame_length_in_bytes_;
   FILE* output_file_;
 };
 

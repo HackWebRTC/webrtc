@@ -42,6 +42,7 @@
 /testing
 /third_party/asan
 /third_party/cygwin
+/third_party/directxsdk
 /third_party/expat
 /third_party/gaeunit
 /third_party/gold

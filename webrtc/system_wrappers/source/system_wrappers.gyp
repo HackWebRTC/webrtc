@@ -187,8 +187,11 @@
           ],
         }],
       ],
-      # Ignore warning on shift operator promotion.
-      'msvs_disabled_warnings': [ 4334, ],
+      # Disable warnings to enable Win64 build, issue 1323.
+      'msvs_disabled_warnings': [
+        4267,  # size_t to int truncation.
+        4334,  # Ignore warning on shift operator promotion.
+      ],
     },
   ], # targets
   'conditions': [
@@ -269,6 +272,10 @@
             ['os_posix==0', {
               'sources!': [ 'thread_posix_unittest.cc', ],
             }],
+          ],
+          # Disable warnings to enable Win64 build, issue 1323.
+          'msvs_disabled_warnings': [
+            4267,  # size_t to int truncation.
           ],
         },
       ], # targets

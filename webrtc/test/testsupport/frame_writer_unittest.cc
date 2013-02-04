@@ -17,7 +17,7 @@ namespace webrtc {
 namespace test {
 
 const std::string kOutputFilename = "temp_outputfile.tmp";
-const int kFrameLength = 1000;
+const size_t kFrameLength = 1000;
 
 class FrameWriterTest: public testing::Test {
  protected:
@@ -50,8 +50,7 @@ TEST_F(FrameWriterTest, WriteFrame) {
   ASSERT_TRUE(result);  // success
   // Close the file and verify the size.
   frame_writer_->Close();
-  ASSERT_EQ(kFrameLength,
-            static_cast<int>(GetFileSize(kOutputFilename)));
+  ASSERT_EQ(kFrameLength, GetFileSize(kOutputFilename));
 }
 
 TEST_F(FrameWriterTest, WriteFrameUninitialized) {

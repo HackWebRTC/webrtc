@@ -93,6 +93,10 @@
         '../../codecs/test/stats_unittest.cc',
         '../../codecs/test/videoprocessor_unittest.cc',
       ],
+      # Disable warnings to enable Win64 build, issue 1323.
+      'msvs_disabled_warnings': [
+        4267,  # size_t to int truncation.
+      ],
     },
   ],
 }
