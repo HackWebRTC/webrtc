@@ -16,8 +16,9 @@
 #ifndef WEBRTC_VOICE_ENGINE_VOICE_ENGINE_DEFINES_H
 #define WEBRTC_VOICE_ENGINE_VOICE_ENGINE_DEFINES_H
 
-#include "common_types.h"
-#include "engine_configurations.h"
+#include "webrtc/common_types.h"
+#include "webrtc/engine_configurations.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 // ----------------------------------------------------------------------------
 //  Enumerators
@@ -188,6 +189,11 @@ enum { kVoiceEngineMaxRtpExtensionId = 14 };
 //  Macros
 // ----------------------------------------------------------------------------
 
+#define NOT_SUPPORTED(stat)                  \
+  LOG_F(LS_ERROR) << "not supported";        \
+  stat.SetLastError(VE_FUNC_NOT_SUPPORTED);  \
+  return -1;
+
 #if (defined(_DEBUG) && defined(_WIN32) && (_MSC_VER >= 1400))
   #include <windows.h>
   #include <stdio.h>
@@ -356,10 +362,7 @@ inline int VoEChannelId(const int moduleId)
   #define WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE \
       GainControl::kAdaptiveDigital
 
-  #define ANDROID_NOT_SUPPORTED(stat)                         \
-      stat.SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,   \
-                        "API call not supported");            \
-      return -1;
+  #define ANDROID_NOT_SUPPORTED(stat) NOT_SUPPORTED(stat)
 
 #else // LINUX PC
 
@@ -455,10 +458,7 @@ inline int VoEChannelId(const int moduleId)
   #define WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE \
       GainControl::kAdaptiveDigital
 
-  #define IPHONE_NOT_SUPPORTED(stat) \
-    stat.SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError, \
-                      "API call not supported"); \
-    return -1;
+  #define IPHONE_NOT_SUPPORTED(stat) NOT_SUPPORTED(stat)
 
 #else // Non-iPhone
 
