@@ -138,15 +138,13 @@ Time2Spec_PreFftShift:
 
   bgt Time2Spec_PreFftShift
 
+  vmov.s32 r10, d16[0]        @ Store value of sh.
   ldr r0, [sp]                @ inre1Q9
   ldr r1, [sp, #4]            @ inre2Q9
   mov r2, #-1
   CALL_FUNCTION WebRtcIsacfix_FftRadix16Fastest
 
-  vneg.s32 q15, q8            @ -sh
-  vmov.i32 q0, #23
-  vsub.s32 q15, q15, q0       @ -sh - 23
-
+  vdup.s32 q8, r10            @ sh
   mov r8, #(FRAMESAMPLES - 8)
   ldr r2, [sp, #8]            @ outreQ7
   ldr r3, [sp, #12]           @ outimQ7
@@ -160,6 +158,9 @@ Time2Spec_PreFftShift:
 
   add r9, r10, #(120*2 - 8)   @ &WebRtcIsacfix_kSinTab2[119 - 4]
 
+  vneg.s32 q15, q8            @ -sh
+  vmov.i32 q0, #23
+  vsub.s32 q15, q15, q0       @ -sh - 23
 
   mov r8, #(FRAMESAMPLES / 4) @ loop counter
 
@@ -229,6 +230,7 @@ Time2Spec_PostFftTransform:
 .align  8
 @ Cosine table 1 in Q14
 WebRtcIsacfix_kCosTab1:
+_WebRtcIsacfix_kCosTab1:  @ Label for iOS
   .short 16384, 16383, 16378, 16371, 16362, 16349, 16333, 16315
   .short 16294, 16270, 16244, 16214, 16182, 16147, 16110, 16069
   .short 16026, 15980, 15931, 15880, 15826, 15769, 15709, 15647
@@ -263,6 +265,7 @@ WebRtcIsacfix_kCosTab1:
 .align  8
 @ Sine table 2 in Q14
 WebRtcIsacfix_kSinTab2:
+_WebRtcIsacfix_kSinTab2:  @ Label for iOS
   .short 16384, -16381, 16375, -16367, 16356, -16342, 16325, -16305
   .short 16283, -16257, 16229, -16199, 16165, -16129, 16090, -16048
   .short 16003, -15956, 15906, -15853, 15798, -15739, 15679, -15615
@@ -284,6 +287,7 @@ WebRtcIsacfix_kSinTab2:
 .align  8
 @ Sine table 1 in Q14
 WebRtcIsacfix_kSinTab1:
+_WebRtcIsacfix_kSinTab1:  @ Label for iOS
   .short 0, 214, 429, 643, 857, 1072, 1285, 1499
   .short 1713, 1926, 2139, 2351, 2563, 2775, 2986, 3196
   .short 3406, 3616, 3825, 4033, 4240, 4447, 4653, 4859
@@ -453,7 +457,7 @@ TransformAndFindMax:
 
   adr r10, WebRtcIsacfix_kSinTab1
   mov r2, #(WebRtcIsacfix_kSinTab1 - WebRtcIsacfix_kCosTab1)
-  sub r9, r10, r2             @ WebRtcIsacfix_kCosTab1
+  sub r11, r10, r2            @ WebRtcIsacfix_kCosTab1
 
   @ Find the maximum value in the Neon registers
   vmax.u32 d12, d13
@@ -502,11 +506,14 @@ PreFftShift:
 
   bgt PreFftShift
 
+  vmov.s32 r8, d16[0]         @ Store value of sh.
   ldr r0, [sp]                @ inreQ7
   ldr r1, [sp, #4]            @ inimQ7
   mov r2, #1
   CALL_FUNCTION WebRtcIsacfix_FftRadix16Fastest
 
+  vdup.s32 q8, r8             @ sh
+  mov r9, r11                 @ WebRtcIsacfix_kCosTab1
   ldr r4, [sp]                @ inreQ7
   ldr r5, [sp, #4]            @ inimQ7
   ldr r6, [sp, #8]            @ outre1Q16
