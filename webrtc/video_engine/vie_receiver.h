@@ -74,7 +74,7 @@ class ViEReceiver : public UdpTransportData, public RtpData {
                             uint32_t ntp_frac,
                             uint32_t timestamp);
 
-  bool EstimatedReceiveBandwidth(unsigned int* available_bandwidth) const;
+  void EstimatedReceiveBandwidth(unsigned int* available_bandwidth) const;
 
  private:
   int InsertRTPPacket(const WebRtc_Word8* rtp_packet, int rtp_packet_length);

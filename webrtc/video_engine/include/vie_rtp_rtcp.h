@@ -281,8 +281,8 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
       unsigned int* estimated_bandwidth) const = 0;
 
   // This function gets the receive-side estimated bandwidth available for
-  // video, including overhead, in bits/s.
-  // Returns -1 when no valid estimate is available.
+  // video, including overhead, in bits/s. |estimated_bandwidth| is 0 if there
+  // is no valid estimate.
   virtual int GetEstimatedReceiveBandwidth(
       const int video_channel,
       unsigned int* estimated_bandwidth) const = 0;

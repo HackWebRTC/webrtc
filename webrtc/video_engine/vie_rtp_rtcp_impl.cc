@@ -860,8 +860,9 @@ int ViERTP_RTCPImpl::GetEstimatedReceiveBandwidth(
     shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
     return -1;
   }
-  return vie_channel->GetEstimatedReceiveBandwidth(
+  vie_channel->GetEstimatedReceiveBandwidth(
       static_cast<WebRtc_UWord32*>(estimated_bandwidth));
+  return 0;
 }
 
 int ViERTP_RTCPImpl::SetOverUseDetectorOptions(

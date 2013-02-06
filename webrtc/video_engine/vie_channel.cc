@@ -1199,11 +1199,9 @@ void ViEChannel::GetBandwidthUsage(uint32_t* total_bitrate_sent,
   }
 }
 
-int ViEChannel::GetEstimatedReceiveBandwidth(
+void ViEChannel::GetEstimatedReceiveBandwidth(
     uint32_t* estimated_bandwidth) const {
-  if (!vie_receiver_.EstimatedReceiveBandwidth(estimated_bandwidth))
-    return -1;
-  return 0;
+  vie_receiver_.EstimatedReceiveBandwidth(estimated_bandwidth);
 }
 
 WebRtc_Word32 ViEChannel::StartRTPDump(const char file_nameUTF8[1024],

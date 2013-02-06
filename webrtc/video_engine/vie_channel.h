@@ -181,7 +181,7 @@ class ViEChannel
                          uint32_t* video_bitrate_sent,
                          uint32_t* fec_bitrate_sent,
                          uint32_t* nackBitrateSent) const;
-  int GetEstimatedReceiveBandwidth(uint32_t* estimated_bandwidth) const;
+  void GetEstimatedReceiveBandwidth(uint32_t* estimated_bandwidth) const;
 
   WebRtc_Word32 StartRTPDump(const char file_nameUTF8[1024],
                              RTPDirections direction);

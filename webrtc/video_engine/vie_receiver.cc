@@ -10,6 +10,8 @@
 
 #include "video_engine/vie_receiver.h"
 
+#include <vector>
+
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "modules/utility/interface/rtp_dump.h"
@@ -285,17 +287,18 @@ int ViEReceiver::StopRTPDump() {
 }
 
 // TODO(holmer): To be moved to ViEChannelGroup.
-bool ViEReceiver::EstimatedReceiveBandwidth(
+void ViEReceiver::EstimatedReceiveBandwidth(
     unsigned int* available_bandwidth) const {
   std::vector<unsigned int> ssrcs;
-  if (!remote_bitrate_estimator_->LatestEstimate(&ssrcs,
-                                                 available_bandwidth)) {
-    return false;
-  }
+
+  // LatestEstimate returns an error if there is no valid bitrate estimate, but
+  // ViEReceiver instead returns a zero estimate.
+  remote_bitrate_estimator_->LatestEstimate(&ssrcs, available_bandwidth);
   if (!ssrcs.empty()) {
     *available_bandwidth /= ssrcs.size();
+  } else {
+    *available_bandwidth = 0;
   }
-  return true;
 }
 
 }  // namespace webrtc
