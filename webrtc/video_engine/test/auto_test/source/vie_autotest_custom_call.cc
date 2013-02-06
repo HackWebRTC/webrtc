@@ -524,8 +524,12 @@ int ViEAutoTest::ViECustomCall() {
     int selection = FromChoices(
         "And now?",
         "Stop the call\n"
-        "Modify the call\n").Choose();
-
+        "Modify the call\n"
+        "Keep the call running indefinitely\n")
+            .WithDefault("Keep the call running indefinitely").Choose();
+    if (selection == 3) {
+        AutoTestSleep(std::numeric_limits<long>::max());
+    }
     int file_selection = 0;
 
     while (selection == 2) {
