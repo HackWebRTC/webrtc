@@ -94,6 +94,8 @@
         'timing.cc',
         'video_coding_impl.cc',
       ], # source
+      # TODO(jschuh): Bug 1348: fix size_t to int truncations.
+      'msvs_disabled_warnings': [ 4267, ],
     },
   ],
 }
