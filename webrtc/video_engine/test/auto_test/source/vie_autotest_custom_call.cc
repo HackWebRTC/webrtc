@@ -14,10 +14,13 @@
 
 #include <algorithm>
 
+#include "gflags/gflags.h"
 #include "video_engine/test/auto_test/interface/vie_autotest.h"
 #include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
 #include "video_engine/test/auto_test/primitives/choice_helpers.h"
+#include "video_engine/test/auto_test/primitives/general_primitives.h"
 #include "video_engine/test/auto_test/primitives/input_helpers.h"
+#include "video_engine/test/libvietest/include/vie_to_file_renderer.h"
 
 #define VCM_RED_PAYLOAD_TYPE                            96
 #define VCM_ULPFEC_PAYLOAD_TYPE                         97
@@ -36,6 +39,10 @@
 #define DEFAULT_VIDEO_CODEC_MAX_FRAMERATE               "30"
 #define DEFAULT_VIDEO_PROTECTION_METHOD                 "None"
 #define DEFAULT_TEMPORAL_LAYER                          "0"
+
+DEFINE_string(render_custom_call_remote_to, "", "Specify to render the remote "
+    "stream of a custom call to the provided filename instead of showing it in "
+    "window 2. The file will end up in the default output directory (out/).");
 
 enum StatisticsType {
   kSendStatistic,
@@ -442,11 +449,23 @@ int ViEAutoTest::ViECustomCall() {
                                            "ERROR: %s at line %d",
                                            __FUNCTION__, __LINE__);
 
-    error = vie_renderer->AddRenderer(video_channel, _window2, 1, 0.0, 0.0, 1.0,
-                                      1.0);
-    number_of_errors += ViETest::TestError(error == 0,
-                                           "ERROR: %s at line %d",
-                                           __FUNCTION__, __LINE__);
+
+    ViEToFileRenderer file_renderer;
+    if (FLAGS_render_custom_call_remote_to == "") {
+      error = vie_renderer->AddRenderer(video_channel, _window2, 1, 0.0, 0.0,
+                                        1.0, 1.0);
+      number_of_errors += ViETest::TestError(error == 0,
+                                             "ERROR: %s at line %d",
+                                             __FUNCTION__, __LINE__);
+    } else {
+      std::string output_path = ViETest::GetResultOutputPath();
+      std::string filename = FLAGS_render_custom_call_remote_to;
+      ViETest::Log("Rendering remote stream to %s: you will not see any output "
+          "in the second window.", (output_path + filename).c_str());
+
+      file_renderer.PrepareForRendering(output_path, filename);
+      RenderToFile(vie_renderer, video_channel, &file_renderer);
+    }
     error = vie_network->SetSendDestination(video_channel, ip_address.c_str(),
                                                 video_tx_port);
     number_of_errors += ViETest::TestError(error == 0,
@@ -655,6 +674,11 @@ int ViEAutoTest::ViECustomCall() {
           number_of_errors += ViETest::TestError(error == 0,
                                                  "ERROR: %s at line %d",
                                                  __FUNCTION__, __LINE__);
+
+          assert(FLAGS_render_custom_call_remote_to == "" &&
+                 "Not implemented to change video capture device when "
+                 "rendering to file!");
+
           error = vie_capture->StartCapture(capture_id);
           number_of_errors += ViETest::TestError(error == 0,
                                                  "ERROR: %s at line %d",
@@ -849,6 +873,9 @@ int ViEAutoTest::ViECustomCall() {
           break;
       }
     }
+
+    if (FLAGS_render_custom_call_remote_to != "")
+      file_renderer.StopRendering();
 
     // Testing finished. Tear down Voice and Video Engine.
     // Tear down the VoE first.
