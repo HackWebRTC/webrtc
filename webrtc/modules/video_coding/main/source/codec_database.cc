@@ -92,6 +92,7 @@ bool VCMCodecDataBase::Codec(int list_id,
       settings->width = VCM_DEFAULT_CODEC_WIDTH;
       settings->height = VCM_DEFAULT_CODEC_HEIGHT;
       settings->numberOfSimulcastStreams = 0;
+      settings->qpMax = 56;
       settings->codecSpecific.VP8.resilience = kResilientStream;
       settings->codecSpecific.VP8.numberOfTemporalLayers = 1;
       settings->codecSpecific.VP8.denoisingOn = true;

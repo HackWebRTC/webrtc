@@ -733,19 +733,15 @@ int ViEChannel::EnableSenderStreamingMode(int target_delay_ms) {
   if (target_delay_ms == 0) {
     // Real-time mode.
     nack_history_size_sender_ = kSendSidePacketHistorySize;
-    vcm_.EnableFrameDropper(true);
   } else {
     // The max size of the nack list should be large enough to accommodate the
     // the number of packets(frames) resulting from the increased delay.
-    // Roughly estimating for ~15 packets per frame @ 30fps.
-    nack_history_size_sender_ = target_delay_ms * 15 * 30 / 1000;
+    // Roughly estimating for ~20 packets per frame @ 30fps.
+    nack_history_size_sender_ = target_delay_ms * 20 * 30 / 1000;
     // Don't allow a number lower than the default value.
     if (nack_history_size_sender_ < kSendSidePacketHistorySize) {
       nack_history_size_sender_ = kSendSidePacketHistorySize;
     }
-    // Disable external VCM frame-dropper. In streaming mode, we are more
-    // flexible with rate control constraints.
-    vcm_.EnableFrameDropper(false);
   }
   // Setting nack_history_size_.
   // First disabling (forcing free) and then resetting to desired value.

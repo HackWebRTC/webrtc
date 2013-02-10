@@ -702,6 +702,18 @@ WebRtc_Word32 ViEEncoder::UpdateProtectionMethod() {
   return 0;
 }
 
+void ViEEncoder::EnableSenderStreamingMode(int target_delay_ms) {
+  if (target_delay_ms > 0) {
+    // Disable external frame-droppers.
+     vcm_.EnableFrameDropper(false);
+     vpm_.EnableTemporalDecimation(false);
+  } else {
+    // Real-time mode - enabling frame droppers.
+    vpm_.EnableTemporalDecimation(true);
+    vcm_.EnableFrameDropper(true);
+  }
+}
+
 WebRtc_Word32 ViEEncoder::SendData(
     const FrameType frame_type,
     const WebRtc_UWord8 payload_type,

@@ -239,7 +239,7 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   config_->rc_resize_allowed = inst->codecSpecific.VP8.automaticResizeOn ?
       1 : 0;
   config_->rc_min_quantizer = 2;
-  config_->rc_max_quantizer = 56;
+  config_->rc_max_quantizer = inst->qpMax;
   config_->rc_undershoot_pct = 100;
   config_->rc_overshoot_pct = 15;
   config_->rc_buf_initial_sz = 500;

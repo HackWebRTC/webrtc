@@ -568,6 +568,15 @@ int ViERTP_RTCPImpl::EnableSenderStreamingMode(int video_channel,
     shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
     return -1;
   }
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  if (!vie_encoder) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), video_channel),
+                 "%s: Could not get encoder for channel %d", __FUNCTION__,
+                 video_channel);
+    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
+    return -1;
+  }
 
   // Update the channel's streaming mode settings.
   if (vie_channel->EnableSenderStreamingMode(target_delay_ms) != 0) {
@@ -577,6 +586,9 @@ int ViERTP_RTCPImpl::EnableSenderStreamingMode(int video_channel,
     shared_data_->SetLastError(kViERtpRtcpUnknownError);
     return -1;
   }
+
+  // Update the encoder's streaming mode settings.
+  vie_encoder->EnableSenderStreamingMode(target_delay_ms);
   return 0;
 }
 
