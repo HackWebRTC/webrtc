@@ -1026,7 +1026,7 @@ void void_main(int argc, char* argv[]) {
           (max_time_us + max_time_reverse_us) / 1000.0,
           (min_time_us + min_time_reverse_us) / 1000.0);
       // Record the results with Perf test tools.
-      webrtc::test::PrintResult("time_per_10ms_frame", "", "audioproc",
+      webrtc::test::PrintResult("audioproc", "", "time_per_10ms_frame",
           (exec_time * 1000) / primary_count, "us", false);
     } else {
       printf("Warning: no capture frames\n");
