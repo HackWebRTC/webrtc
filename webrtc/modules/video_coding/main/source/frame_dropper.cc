@@ -20,7 +20,8 @@ VCMFrameDropper::VCMFrameDropper(WebRtc_Word32 vcmId)
 _vcmId(vcmId),
 _keyFrameSizeAvgKbits(0.9f),
 _keyFrameRatio(0.99f),
-_dropRatio(0.9f, 0.96f)
+_dropRatio(0.9f, 0.96f),
+_enabled(true)
 {
     Reset();
 }
@@ -43,7 +44,6 @@ VCMFrameDropper::Reset()
     _dropCount = 0;
     _windowSize = 0.5f;
     _wasBelowMax = true;
-    _enabled = true;
     _fastMode = false; // start with normal (non-aggressive) mode
     // Cap for the encoder buffer level/accumulator, in secs.
     _cap_buffer_size = 3.0f;
