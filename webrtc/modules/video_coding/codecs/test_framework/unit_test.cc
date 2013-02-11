@@ -220,6 +220,7 @@ UnitTest::Setup()
     _inst.maxBitrate = 4000;
     _inst.width = _source->GetWidth();
     _inst.height = _source->GetHeight();
+    _inst.qpMax = 56;
     _inst.codecSpecific.VP8.denoisingOn = true;
 
     // Get input frame.
