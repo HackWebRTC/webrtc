@@ -64,7 +64,7 @@ class RtcpFormatRembTest : public ::testing::Test {
         remote_bitrate_observer_(),
         remote_bitrate_estimator_(RemoteBitrateEstimator::Create(
             over_use_detector_options_,
-            RemoteBitrateEstimator::kMultiStreamEstimation,
+            RemoteBitrateEstimator::kSingleStreamEstimation,
             &remote_bitrate_observer_,
             system_clock_)) {}
   virtual void SetUp();
