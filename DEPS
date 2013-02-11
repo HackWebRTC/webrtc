@@ -106,6 +106,16 @@ deps_os = {
     "third_party/gold":
       From("chromium_deps", "src/third_party/gold"),
   },
+  "android": {
+    "third_party/android_tools":
+      From("chromium_deps", "src/third_party/android_tools"),
+
+    "third_party/android_testrunner":
+      Var("chromium_trunk") + "/src/third_party/android_testrunner@" + Var("chromium_revision"),
+
+    "third_party/WebKit/Tools/Scripts":
+      From("chromium_deps", "src/third_party/WebKit/Tools/Scripts"),
+  },
 }
 
 hooks = [

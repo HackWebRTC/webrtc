@@ -40,6 +40,8 @@
 /out
 /resources
 /testing
+/third_party/android_testrunner
+/third_party/android_tools
 /third_party/asan
 /third_party/cygwin
 /third_party/directxsdk
@@ -62,13 +64,16 @@
 /third_party/valgrind
 /third_party/winsdk_samples/src
 /third_party/yasm
+/third_party/WebKit/Tools/Scripts
 /tools/clang
 /tools/gyp
 /tools/python
 /tools/valgrind
 /tools/win
 /webrtc/supplement.gypi
-/webrtc/video_engine/main/test/android_test/bin
-/webrtc/video_engine/main/test/android_test/gen
+/webrtc/video_engine/test/android/bin
+/webrtc/video_engine/test/android/gen
+/webrtc/video_engine/test/android/libs
+/webrtc/video_engine/test/android/obj
 /x86-generic_out/
 /xcodebuild
