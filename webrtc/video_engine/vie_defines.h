@@ -46,8 +46,8 @@ enum { kViECaptureDefaultFramerate = 30 };
 enum { kViECaptureMaxSnapshotWaitTimeMs = 500 };
 
 // ViECodec
-enum { kViEMaxCodecWidth = 4048 };
-enum { kViEMaxCodecHeight = 3040 };
+enum { kViEMaxCodecWidth = 4096 };
+enum { kViEMaxCodecHeight = 3072 };
 enum { kViEMaxCodecFramerate = 60 };
 enum { kViEMinCodecBitrate = 30 };
 
