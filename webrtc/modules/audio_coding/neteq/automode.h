@@ -65,14 +65,14 @@ typedef struct
 
     /* Filtered current buffer level */
     WebRtc_UWord16 levelFiltFact; /* filter forgetting factor in Q8 */
-    WebRtc_UWord16 buffLevelFilt; /* filtered buffer level in Q8 */
+    int buffLevelFilt; /* filtered buffer level in Q8 */
 
     /* Inter-arrival time (iat) statistics */
     WebRtc_Word32 iatProb[MAX_IAT + 1]; /* iat probabilities in Q30 */
     WebRtc_Word16 iatProbFact; /* iat forgetting factor in Q15 */
     WebRtc_UWord32 packetIatCountSamp; /* time (in timestamps) elapsed since last
      packet arrival, based on RecOut calls */
-    WebRtc_UWord16 optBufLevel; /* current optimal buffer level in Q8 */
+    int optBufLevel; /* current optimal buffer level in Q8 */
 
     /* Packet related information */
     WebRtc_Word16 packetSpeechLenSamp; /* speech samples per incoming packet */

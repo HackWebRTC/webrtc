@@ -45,7 +45,10 @@ ACMNetEQ::ACMNetEQ()
       master_slave_info_(NULL),
       previous_audio_activity_(AudioFrame::kVadUnknown),
       extra_delay_(0),
-      callback_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {
+      callback_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
+      min_of_max_num_packets_(0),
+      min_of_buffer_size_bytes_(0),
+      per_packet_overhead_bytes_(0) {
   for (int n = 0; n < MAX_NUM_SLAVE_NETEQ + 1; n++) {
     is_initialized_[n] = false;
     ptr_vadinst_[n] = NULL;
@@ -215,6 +218,7 @@ WebRtc_Word16 ACMNetEQ::AllocatePacketBufferByIdxSafe(
     const WebRtc_Word16 idx) {
   int max_num_packets;
   int buffer_size_in_bytes;
+  int per_packet_overhead_bytes;
 
   if (!is_initialized_[idx]) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
@@ -223,11 +227,22 @@ WebRtc_Word16 ACMNetEQ::AllocatePacketBufferByIdxSafe(
   }
   if (WebRtcNetEQ_GetRecommendedBufferSize(inst_[idx], used_codecs,
                                            num_codecs,
-                                           kTCPLargeJitter,
+                                           kTCPXLargeJitter,
                                            &max_num_packets,
-                                           &buffer_size_in_bytes) != 0) {
+                                           &buffer_size_in_bytes,
+                                           &per_packet_overhead_bytes) != 0) {
     LogError("GetRecommendedBufferSize", idx);
     return -1;
+  }
+  if (idx == 0) {
+    min_of_buffer_size_bytes_ = buffer_size_in_bytes;
+    min_of_max_num_packets_ = max_num_packets;
+    per_packet_overhead_bytes_ = per_packet_overhead_bytes;
+  } else {
+    min_of_buffer_size_bytes_ = std::min(min_of_buffer_size_bytes_,
+                                        buffer_size_in_bytes);
+    min_of_max_num_packets_ = std::min(min_of_max_num_packets_,
+                                       max_num_packets);
   }
   if (neteq_packet_buffer_[idx] != NULL) {
     free(neteq_packet_buffer_[idx]);

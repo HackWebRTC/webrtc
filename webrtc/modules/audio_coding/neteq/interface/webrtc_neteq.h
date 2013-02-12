@@ -177,7 +177,8 @@ int WebRtcNetEQ_AssignSize(int *sizeinbytes);
 int WebRtcNetEQ_Assign(void **inst, void *NETEQ_inst_Addr);
 int WebRtcNetEQ_GetRecommendedBufferSize(void *inst, const enum WebRtcNetEQDecoder *codec,
                                          int noOfCodecs, enum WebRtcNetEQNetworkType nwType,
-                                         int *MaxNoOfPackets, int *sizeinbytes);
+                                         int *MaxNoOfPackets, int *sizeinbytes,
+                                         int* per_packet_overhead_bytes);
 int WebRtcNetEQ_AssignBuffer(void *inst, int MaxNoOfPackets, void *NETEQ_Buffer_Addr,
                              int sizeinbytes);
 

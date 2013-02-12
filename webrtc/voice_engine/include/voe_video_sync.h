@@ -33,7 +33,7 @@
 #ifndef WEBRTC_VOICE_ENGINE_VOE_VIDEO_SYNC_H
 #define WEBRTC_VOICE_ENGINE_VOE_VIDEO_SYNC_H
 
-#include "common_types.h"
+#include "webrtc/common_types.h"
 
 namespace webrtc {
 
@@ -59,6 +59,10 @@ public:
 
     // Sets an additional delay for the playout jitter buffer.
     virtual int SetMinimumPlayoutDelay(int channel, int delayMs) = 0;
+
+    // Sets an initial delay for the playout jitter buffer. The playout of the
+    // audio is delayed by |delay_ms| in millisecond.
+    virtual int SetInitialPlayoutDelay(int channel, int delay_ms) = 0;
 
     // Gets the sum of the algorithmic delay, jitter buffer delay, and the
     // playout buffer delay for a specified |channel|.

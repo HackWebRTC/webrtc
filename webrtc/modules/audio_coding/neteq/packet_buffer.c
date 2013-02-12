@@ -577,7 +577,9 @@ void WebRtcNetEQ_IncrementWaitingTimes(PacketBuf_t *buffer_inst) {
 }
 
 int WebRtcNetEQ_GetDefaultCodecSettings(const enum WebRtcNetEQDecoder *codecID,
-                                        int noOfCodecs, int *maxBytes, int *maxSlots)
+                                        int noOfCodecs, int *maxBytes,
+                                        int *maxSlots,
+                                        int* per_slot_overhead_bytes)
 {
     int i;
     int ok = 0;
@@ -794,5 +796,6 @@ int WebRtcNetEQ_GetDefaultCodecSettings(const enum WebRtcNetEQDecoder *codecID,
     /* Add the extra size per slot to the memory count */
     *maxBytes += w16_tmp * (*maxSlots);
 
+    *per_slot_overhead_bytes = w16_tmp;
     return ok;
 }

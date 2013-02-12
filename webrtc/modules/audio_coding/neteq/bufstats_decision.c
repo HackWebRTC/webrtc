@@ -38,11 +38,11 @@ WebRtc_UWord16 WebRtcNetEQ_BufstatsDecision(BufstatsInst_t *inst, WebRtc_Word16 
 
     int currentDelayMs;
     WebRtc_Word32 currSizeSamples = cur_size;
-    WebRtc_Word16 extraDelayPacketsQ8 = 0;
+    int extraDelayPacketsQ8 = 0;
 
     /* Avoid overflow if the buffer size should be really large (cur_size is limited 256ms) */
     WebRtc_Word32 curr_sizeQ7 = WEBRTC_SPL_LSHIFT_W32(cur_size, 4);
-    WebRtc_UWord16 level_limit_hi, level_limit_lo;
+    int level_limit_hi, level_limit_lo;
 
     inst->Automode_inst.prevTimeScale &= (prevPlayMode == MODE_SUCCESS_ACCELERATE
         || prevPlayMode == MODE_LOWEN_ACCELERATE || prevPlayMode == MODE_SUCCESS_PREEMPTIVE
@@ -167,10 +167,11 @@ WebRtc_UWord16 WebRtcNetEQ_BufstatsDecision(BufstatsInst_t *inst, WebRtc_Word16 
         if (inst->Automode_inst.extraDelayMs > 0 && inst->Automode_inst.packetSpeechLenSamp
             > 0)
         {
-            extraDelayPacketsQ8 = WebRtcSpl_DivW32W16ResW16(
-                (WEBRTC_SPL_MUL(inst->Automode_inst.extraDelayMs, 8 * fs_mult) << 8),
-                inst->Automode_inst.packetSpeechLenSamp);
+
             /* (extra delay in samples in Q8) */
+            extraDelayPacketsQ8 =
+                ((inst->Automode_inst.extraDelayMs * 8 * fs_mult) << 8) /
+                inst->Automode_inst.packetSpeechLenSamp;
         }
 
         /* Check if needed packet is available */
@@ -256,10 +257,10 @@ WebRtc_UWord16 WebRtcNetEQ_BufstatsDecision(BufstatsInst_t *inst, WebRtc_Word16 
                  * higher than 4 times the optimal level.
                  */
                 WebRtc_Word32 diffTS = (inst->uw32_CNGplayedTS + targetTS) - availableTS;
-                if (diffTS >= 0
-                    || (WEBRTC_SPL_MUL_16_16_RSFT( inst->Automode_inst.optBufLevel
-                        + extraDelayPacketsQ8,
-                        inst->Automode_inst.packetSpeechLenSamp, 6) < currSizeSamples))
+                int val = ((inst->Automode_inst.optBufLevel +
+                    extraDelayPacketsQ8) *
+                    inst->Automode_inst.packetSpeechLenSamp) >> 6;
+                if (diffTS >= 0 || val < currSizeSamples)
                 {
                     /* it is time to play this new packet */
                     return BUFSTATS_DO_NORMAL;

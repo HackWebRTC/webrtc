@@ -127,7 +127,7 @@ int NETEQTEST_NetEQClass::init(WebRtc_UWord16 fs)
 
 int NETEQTEST_NetEQClass::assignBuffer(enum WebRtcNetEQDecoder *usedCodec, int noOfCodecs, WebRtcNetEQNetworkType nwType)
 {
-    int numPackets, memSize, ret;
+    int numPackets, memSize, ret, overhead_bytes;
 
     if (!_inst)
     {
@@ -149,7 +149,9 @@ int NETEQTEST_NetEQClass::assignBuffer(enum WebRtcNetEQDecoder *usedCodec, int n
         }
     }
 
-    ret = WebRtcNetEQ_GetRecommendedBufferSize(_inst, usedCodec, noOfCodecs, nwType, &numPackets, &memSize);
+    ret = WebRtcNetEQ_GetRecommendedBufferSize(_inst, usedCodec, noOfCodecs,
+                                               nwType, &numPackets, &memSize,
+                                               &overhead_bytes);
 
     if (ret != 0)
     {

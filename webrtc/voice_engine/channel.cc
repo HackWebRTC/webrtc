@@ -8,23 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "channel.h"
+#include "webrtc/voice_engine/channel.h"
 
-#include "audio_device.h"
-#include "audio_frame_operations.h"
-#include "audio_processing.h"
-#include "critical_section_wrapper.h"
-#include "logging.h"
-#include "output_mixer.h"
-#include "process_thread.h"
-#include "rtp_dump.h"
-#include "statistics.h"
-#include "trace.h"
-#include "transmit_mixer.h"
-#include "utility.h"
-#include "voe_base.h"
-#include "voe_external_media.h"
-#include "voe_rtp_rtcp.h"
+#include "webrtc/modules/audio_device/include/audio_device.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/modules/utility/interface/audio_frame_operations.h"
+#include "webrtc/modules/utility/interface/process_thread.h"
+#include "webrtc/modules/utility/interface/rtp_dump.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/voice_engine/include/voe_base.h"
+#include "webrtc/voice_engine/include/voe_external_media.h"
+#include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
+#include "webrtc/voice_engine/output_mixer.h"
+#include "webrtc/voice_engine/statistics.h"
+#include "webrtc/voice_engine/transmit_mixer.h"
+#include "webrtc/voice_engine/utility.h"
 
 #if defined(_WIN32)
 #include <Qos.h>
@@ -6094,6 +6094,29 @@ Channel::GetDelayEstimate(int& delayMs) const
     delayMs = (_averageDelayMs + 5) / 10 + _recPacketDelayMs;
     return 0;
 }
+
+int Channel::SetInitialPlayoutDelay(int delay_ms)
+{
+  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
+               "Channel::SetInitialPlayoutDelay()");
+  if ((delay_ms < kVoiceEngineMinMinPlayoutDelayMs) ||
+      (delay_ms > kVoiceEngineMaxMinPlayoutDelayMs))
+  {
+    _engineStatisticsPtr->SetLastError(
+        VE_INVALID_ARGUMENT, kTraceError,
+        "SetInitialPlayoutDelay() invalid min delay");
+    return -1;
+  }
+  if (_audioCodingModule.SetInitialPlayoutDelay(delay_ms) != 0)
+  {
+    _engineStatisticsPtr->SetLastError(
+        VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
+        "SetInitialPlayoutDelay() failed to set min playout delay");
+    return -1;
+  }
+  return 0;
+}
+
 
 int
 Channel::SetMinimumPlayoutDelay(int delayMs)

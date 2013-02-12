@@ -940,6 +940,22 @@ class AudioCodingModule: public Module {
   //
   virtual WebRtc_Word32 NetworkStatistics(
       ACMNetworkStatistics& network_statistics) const = 0;
+
+  //
+  // Set an initial delay for playout.
+  // An initial delay yields ACM playout silence until equivalent of |delay_ms|
+  // audio payload is accumulated in NetEq jitter. Thereafter, ACM pulls audio
+  // from NetEq in its regular fashion, and the given delay is maintained as
+  // "minimum playout delay."
+  //
+  // Input:
+  //   -delay_ms           : delay in milliseconds.
+  //
+  // Return values:
+  //   -1 if failed to set the delay.
+  //    0 if delay is set successfully.
+  //
+  virtual int SetInitialPlayoutDelay(int delay_ms) = 0;
 };
 
 }  // namespace webrtc

@@ -93,6 +93,7 @@
           'dependencies': [
             'NetEq',
             'NetEqTestTools',
+            'neteq_unittest_tools',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/test/test.gyp:test_support_main',
           ],

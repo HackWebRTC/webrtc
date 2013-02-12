@@ -145,8 +145,25 @@
              '../test/TimedTrace.cc',
              '../test/TwoWayCommunication.cc',
              '../test/utility.cc',
+             '../test/initial_delay_unittest.cc',
           ],
         },
+        {
+          'target_name': 'delay_test',
+          'type': 'executable',
+          'dependencies': [
+            'audio_coding_module',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
+            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+          ],
+          'sources': [
+             '../test/delay_test.cc',
+             '../test/Channel.cc',
+             '../test/PCMFile.cc',
+           ],
+        }, # delay_test
         {
           'target_name': 'audio_coding_unittests',
           'type': 'executable',

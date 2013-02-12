@@ -237,12 +237,15 @@ void WebRtcNetEQ_IncrementWaitingTimes(PacketBuf_t *buffer_inst);
  * Output:
  *		- maxBytes	    : Recommended buffer memory size in bytes
  *      - maxSlots      : Recommended number of slots in buffer
+ *      - per_slot_overhead_bytes : overhead in bytes for each slot in buffer.
  *
  * Return value			:  0 - Ok
  *						  <0 - Error
  */
 
 int WebRtcNetEQ_GetDefaultCodecSettings(const enum WebRtcNetEQDecoder *codecID,
-                                        int noOfCodecs, int *maxBytes, int *maxSlots);
+                                        int noOfCodecs, int *maxBytes,
+                                        int *maxSlots,
+                                        int* per_slot_overhead_bytes);
 
 #endif /* PACKET_BUFFER_H */

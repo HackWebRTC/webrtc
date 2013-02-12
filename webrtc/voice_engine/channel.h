@@ -11,24 +11,24 @@
 #ifndef WEBRTC_VOICE_ENGINE_CHANNEL_H
 #define WEBRTC_VOICE_ENGINE_CHANNEL_H
 
-#include "audio_coding_module.h"
-#include "audio_conference_mixer_defines.h"
-#include "common_types.h"
-#include "dtmf_inband.h"
-#include "dtmf_inband_queue.h"
-#include "file_player.h"
-#include "file_recorder.h"
-#include "level_indicator.h"
-#include "resampler.h"
-#include "rtp_rtcp.h"
-#include "scoped_ptr.h"
-#include "shared_data.h"
-#include "voe_audio_processing.h"
-#include "voe_network.h"
-#include "voice_engine_defines.h"
+#include "webrtc/common_audio/resampler/include/resampler.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
+#include "webrtc/modules/audio_conference_mixer/interface/audio_conference_mixer_defines.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/utility/interface/file_player.h"
+#include "webrtc/modules/utility/interface/file_recorder.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/voice_engine/dtmf_inband.h"
+#include "webrtc/voice_engine/dtmf_inband_queue.h"
+#include "webrtc/voice_engine/include/voe_audio_processing.h"
+#include "webrtc/voice_engine/include/voe_network.h"
+#include "webrtc/voice_engine/level_indicator.h"
+#include "webrtc/voice_engine/shared_data.h"
+#include "webrtc/voice_engine/voice_engine_defines.h"
 
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
-#include "udp_transport.h"
+#include "webrtc/modules/udp_transport/interface/udp_transport.h"
 #endif
 #ifdef WEBRTC_SRTP
 #include "SrtpModule.h"
@@ -254,6 +254,7 @@ public:
 
     // VoEVideoSync
     int GetDelayEstimate(int& delayMs) const;
+    int SetInitialPlayoutDelay(int delay_ms);
     int SetMinimumPlayoutDelay(int delayMs);
     int GetPlayoutTimestamp(unsigned int& timestamp);
     int SetInitTimestamp(unsigned int timestamp);

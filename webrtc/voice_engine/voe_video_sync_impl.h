@@ -11,9 +11,9 @@
 #ifndef WEBRTC_VOICE_ENGINE_VOE_VIDEO_SYNC_IMPL_H
 #define WEBRTC_VOICE_ENGINE_VOE_VIDEO_SYNC_IMPL_H
 
-#include "voe_video_sync.h"
+#include "webrtc/voice_engine/include/voe_video_sync.h"
 
-#include "shared_data.h"
+#include "webrtc/voice_engine/shared_data.h"
 
 namespace webrtc {
 
@@ -23,6 +23,8 @@ public:
     virtual int GetPlayoutBufferSize(int& bufferMs);
 
     virtual int SetMinimumPlayoutDelay(int channel, int delayMs);
+
+    virtual int SetInitialPlayoutDelay(int channel, int delay_ms);
 
     virtual int GetDelayEstimate(int channel, int& delayMs);
 

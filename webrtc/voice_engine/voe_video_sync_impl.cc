@@ -10,11 +10,11 @@
 
 #include "voe_video_sync_impl.h"
 
-#include "channel.h"
-#include "critical_section_wrapper.h"
-#include "trace.h"
-#include "voe_errors.h"
-#include "voice_engine_impl.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/voice_engine/channel.h"
+#include "webrtc/voice_engine/include/voe_errors.h"
+#include "webrtc/voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
 
@@ -142,6 +142,30 @@ int VoEVideoSyncImpl::SetMinimumPlayoutDelay(int channel,int delayMs)
         return -1;
     }
     return channelPtr->SetMinimumPlayoutDelay(delayMs);
+}
+
+int VoEVideoSyncImpl::SetInitialPlayoutDelay(int channel, int delay_ms)
+{
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+                 "SetInitialPlayoutDelay(channel=%d, delay_ms=%d)",
+                 channel, delay_ms);
+    ANDROID_NOT_SUPPORTED(_shared->statistics());
+    IPHONE_NOT_SUPPORTED(_shared->statistics());
+
+    if (!_shared->statistics().Initialized())
+    {
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
+        return -1;
+    }
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
+    voe::Channel* channel_ptr = sc.ChannelPtr();
+    if (channel_ptr == NULL)
+    {
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+            "SetInitialPlayoutDelay() failed to locate channel");
+        return -1;
+    }
+    return channel_ptr->SetInitialPlayoutDelay(delay_ms);
 }
 
 int VoEVideoSyncImpl::GetDelayEstimate(int channel, int& delayMs)

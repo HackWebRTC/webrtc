@@ -138,7 +138,15 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(const WebRtc_Word32 id)
       last_detected_tone_(kACMToneEnd),
       callback_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       secondary_send_codec_inst_(),
-      secondary_encoder_(NULL) {
+      secondary_encoder_(NULL),
+      initial_delay_ms_(0),
+      num_packets_accumulated_(0),
+      num_bytes_accumulated_(0),
+      accumulated_audio_ms_(0),
+      first_payload_received_(false),
+      last_incoming_send_timestamp_(0),
+      track_neteq_buffer_(false),
+      playout_ts_(0) {
 
   // Nullify send codec memory, set payload type and set codec name to
   // invalid values.
@@ -1612,6 +1620,14 @@ WebRtc_Word32 AudioCodingModuleImpl::InitializeReceiver() {
 
 // Initialize receiver, resets codec database etc.
 WebRtc_Word32 AudioCodingModuleImpl::InitializeReceiverSafe() {
+  initial_delay_ms_ = 0;
+  num_packets_accumulated_ = 0;
+  num_bytes_accumulated_ = 0;
+  accumulated_audio_ms_ = 0;
+  first_payload_received_ = 0;;
+  last_incoming_send_timestamp_ = 0;
+  track_neteq_buffer_ = false;
+  playout_ts_ = 0;
   // If the receiver is already initialized then we want to destroy any
   // existing decoders. After a call to this function, we should have a clean
   // start-up.
@@ -1953,10 +1969,12 @@ WebRtc_Word32 AudioCodingModuleImpl::IncomingPacket(
                  "IncomingPacket() Error, payload-length cannot be negative");
     return -1;
   }
+
   {
     // Store the payload Type. This will be used to retrieve "received codec"
     // and "received frequency."
     CriticalSectionScoped lock(acm_crit_sect_);
+
     WebRtc_UWord8 my_payload_type;
 
     // Check if this is an RED payload.
@@ -1984,8 +2002,31 @@ WebRtc_Word32 AudioCodingModuleImpl::IncomingPacket(
             break;
           }
         }
+        // Codec is changed, there might be a jump in timestamp, therefore,
+        // we have to reset some variables that track NetEq buffer.
+        if (track_neteq_buffer_) {
+          last_incoming_send_timestamp_ = rtp_info.header.timestamp;
+        }
       }
       last_recv_audio_codec_pltype_ = my_payload_type;
+    }
+
+    if (track_neteq_buffer_) {
+      const int in_sample_rate_khz =
+          (ACMCodecDB::database_[current_receive_codec_idx_].plfreq / 1000);
+      if (first_payload_received_) {
+        if (rtp_info.header.timestamp > last_incoming_send_timestamp_) {
+          accumulated_audio_ms_ += (rtp_info.header.timestamp -
+              last_incoming_send_timestamp_) / in_sample_rate_khz;
+        }
+      } else {
+        first_payload_received_ = true;
+      }
+      num_packets_accumulated_++;
+      last_incoming_send_timestamp_ = rtp_info.header.timestamp;
+      playout_ts_ = static_cast<uint32_t>(
+          rtp_info.header.timestamp - static_cast<uint32_t>(
+              initial_delay_ms_ * in_sample_rate_khz));
     }
   }
 
@@ -2000,6 +2041,9 @@ WebRtc_Word32 AudioCodingModuleImpl::IncomingPacket(
       memcpy(payload, incoming_payload, payload_length);
       codecs_[current_receive_codec_idx_]->SplitStereoPacket(payload, &length);
       rtp_header.type.Audio.channel = 2;
+      if (track_neteq_buffer_)
+        num_bytes_accumulated_ += length / 2;  // Per neteq, half is inserted
+                                               // into master and half to slave.
       // Insert packet into NetEQ.
       return neteq_.RecIn(payload, length, rtp_header);
     } else {
@@ -2008,6 +2052,8 @@ WebRtc_Word32 AudioCodingModuleImpl::IncomingPacket(
       return 0;
     }
   } else {
+    if (track_neteq_buffer_)
+      num_bytes_accumulated_ += payload_length;
     return neteq_.RecIn(incoming_payload, payload_length, rtp_header);
   }
 }
@@ -2084,11 +2130,14 @@ int AudioCodingModuleImpl::InitStereoSlave() {
 // Minimum playout delay (Used for lip-sync).
 WebRtc_Word32 AudioCodingModuleImpl::SetMinimumPlayoutDelay(
     const WebRtc_Word32 time_ms) {
-  if ((time_ms < 0) || (time_ms > 1000)) {
+  if ((time_ms < 0) || (time_ms > 10000)) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
-                 "Delay must be in the range of 0-1000 milliseconds.");
+                 "Delay must be in the range of 0-10000 milliseconds.");
     return -1;
   }
+  // Don't let the extra delay modified while accumulating buffers in NetEq.
+  if (track_neteq_buffer_ && first_payload_received_)
+    return 0;
   return neteq_.SetExtraDelay(time_ms);
 }
 
@@ -2176,6 +2225,9 @@ AudioPlayoutMode AudioCodingModuleImpl::PlayoutMode() const {
 WebRtc_Word32 AudioCodingModuleImpl::PlayoutData10Ms(
     const WebRtc_Word32 desired_freq_hz, AudioFrame& audio_frame) {
   bool stereo_mode;
+
+  if (GetSilence(desired_freq_hz, &audio_frame))
+     return 0;  // Silence is generated, return.
 
   // RecOut always returns 10 ms.
   if (neteq_.RecOut(audio_frame_) != 0) {
@@ -2612,7 +2664,12 @@ WebRtc_Word32 AudioCodingModuleImpl::PlayoutTimestamp(
     WebRtc_UWord32& timestamp) {
   WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, id_,
                "PlayoutTimestamp()");
-  return neteq_.PlayoutTimestamp(timestamp);
+  if (track_neteq_buffer_) {
+    timestamp = playout_ts_;
+    return 0;
+  } else {
+    return neteq_.PlayoutTimestamp(timestamp);
+  }
 }
 
 bool AudioCodingModuleImpl::HaveValidEncoder(const char* caller_name) const {
@@ -2755,6 +2812,76 @@ void AudioCodingModuleImpl::ResetFragmentation(int vector_size) {
          sizeof(fragmentation_.fragmentationPlType[0]));
   fragmentation_.fragmentationVectorSize =
       static_cast<WebRtc_UWord16>(vector_size);
+}
+
+int AudioCodingModuleImpl::SetInitialPlayoutDelay(int delay_ms) {
+  if (delay_ms < 0 || delay_ms > 10000) {
+    return -1;
+  }
+
+  CriticalSectionScoped lock(acm_crit_sect_);
+
+  // Receiver should be initialized before this call processed.
+  if (!receiver_initialized_) {
+    InitializeReceiverSafe();
+  }
+
+  if (first_payload_received_) {
+    // Too late for this API. Only works before a call is started.
+    return -1;
+  }
+  initial_delay_ms_ = delay_ms;
+  track_neteq_buffer_ = true;
+  return neteq_.SetExtraDelay(delay_ms);
+}
+
+bool AudioCodingModuleImpl::GetSilence(int desired_sample_rate_hz,
+                                       AudioFrame* frame) {
+  CriticalSectionScoped lock(acm_crit_sect_);
+  if (initial_delay_ms_ == 0 || accumulated_audio_ms_ >= initial_delay_ms_) {
+    track_neteq_buffer_ = false;
+    return false;
+  }
+
+  // We stop accumulating packets, if the number of packets or the total size
+  // exceeds a threshold.
+  int max_num_packets;
+  int buffer_size_bytes;
+  int per_payload_overhead_bytes;
+  neteq_.BufferSpec(max_num_packets, buffer_size_bytes,
+                     per_payload_overhead_bytes);
+  int total_bytes_accumulated = num_bytes_accumulated_ +
+      num_packets_accumulated_ * per_payload_overhead_bytes;
+  if (num_packets_accumulated_ > max_num_packets * 0.9 ||
+      total_bytes_accumulated > buffer_size_bytes * 0.9) {
+    WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, id_,
+                 "GetSilence: Initial delay couldn't be achieved."
+                 " num_packets_accumulated=%d, total_bytes_accumulated=%d",
+                 num_packets_accumulated_, num_bytes_accumulated_);
+    track_neteq_buffer_ = false;
+    return false;
+  }
+
+  if (desired_sample_rate_hz > 0) {
+    frame->sample_rate_hz_ = desired_sample_rate_hz;
+  } else {
+    frame->sample_rate_hz_ = 0;
+    if (current_receive_codec_idx_ >= 0) {
+      frame->sample_rate_hz_ =
+          ACMCodecDB::database_[current_receive_codec_idx_].plfreq;
+    } else {
+      // No payload received yet, use the default sampling rate of NetEq.
+      frame->sample_rate_hz_ = neteq_.CurrentSampFreqHz();
+    }
+  }
+  frame->num_channels_ = expected_channels_;
+  frame->samples_per_channel_ = frame->sample_rate_hz_ / 100;  // Always 10 ms.
+  frame->speech_type_ = AudioFrame::kCNG;
+  frame->vad_activity_ = AudioFrame::kVadPassive;
+  frame->energy_ = 0;
+  int samples = frame->samples_per_channel_ * frame->num_channels_;
+  memset(frame->data_, 0, samples * sizeof(int16_t));
+  return true;
 }
 
 }  // namespace webrtc

@@ -1611,6 +1611,7 @@ int doAPItest() {
     WebRtc_UWord32 timestamp;
     int memorySize;
     int ok;
+    int overhead_bytes;
 
     printf("API-test:\n\n");
 
@@ -1623,7 +1624,7 @@ int doAPItest() {
     CHECK_MINUS_ONE(WebRtcNetEQ_Assign(&inst, NULL))
 //  printf("WARNING: Test of WebRtcNetEQ_Assign() is disabled due to a bug.\n");
     usedCodec=kDecoderPCMu;
-    CHECK_MINUS_ONE(WebRtcNetEQ_GetRecommendedBufferSize(inst, &usedCodec, 1, kTCPLargeJitter,  &NetEqBufferMaxPackets, &BufferSizeInBytes))
+    CHECK_MINUS_ONE(WebRtcNetEQ_GetRecommendedBufferSize(inst, &usedCodec, 1, kTCPLargeJitter,  &NetEqBufferMaxPackets, &BufferSizeInBytes, &overhead_bytes))
     CHECK_MINUS_ONE(WebRtcNetEQ_AssignBuffer(inst, NetEqBufferMaxPackets, NetEqPacketBuffer, BufferSizeInBytes))
 
     CHECK_MINUS_ONE(WebRtcNetEQ_Init(inst, 8000))
@@ -1661,7 +1662,7 @@ int doAPItest() {
 
     /* GetRecommendedBufferSize with wrong codec */
     usedCodec=kDecoderReservedStart;
-    ok = WebRtcNetEQ_GetRecommendedBufferSize(inst, &usedCodec, 1, kTCPLargeJitter , &NetEqBufferMaxPackets, &BufferSizeInBytes);
+    ok = WebRtcNetEQ_GetRecommendedBufferSize(inst, &usedCodec, 1, kTCPLargeJitter , &NetEqBufferMaxPackets, &BufferSizeInBytes, &overhead_bytes);
     if((ok!=-1) || ((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-CODEC_DB_UNKNOWN_CODEC))){
         printf("WebRtcNetEQ_GetRecommendedBufferSize() did not return proper error code for wrong codec.\n");
         printf("return value = %d; error code = %d\n", ok, WebRtcNetEQ_GetErrorCode(inst));
@@ -1670,13 +1671,13 @@ int doAPItest() {
 
     /* GetRecommendedBufferSize with wrong network type */
     usedCodec = kDecoderPCMu;
-    ok=WebRtcNetEQ_GetRecommendedBufferSize(inst, &usedCodec, 1, (enum WebRtcNetEQNetworkType) 4711 , &NetEqBufferMaxPackets, &BufferSizeInBytes);
+    ok=WebRtcNetEQ_GetRecommendedBufferSize(inst, &usedCodec, 1, (enum WebRtcNetEQNetworkType) 4711 , &NetEqBufferMaxPackets, &BufferSizeInBytes, &overhead_bytes);
     if ((ok!=-1) || ((ok==-1)&&(WebRtcNetEQ_GetErrorCode(inst)!=-FAULTY_NETWORK_TYPE))) {
         printf("WebRtcNetEQ_GetRecommendedBufferSize() did not return proper error code for wrong network type.\n");
         printf("return value = %d; error code = %d\n", ok, WebRtcNetEQ_GetErrorCode(inst));
         //RESET_ERROR(inst)
     }
-    CHECK_ZERO(WebRtcNetEQ_GetRecommendedBufferSize(inst, &usedCodec, 1, kTCPLargeJitter , &NetEqBufferMaxPackets, &BufferSizeInBytes))
+    CHECK_ZERO(WebRtcNetEQ_GetRecommendedBufferSize(inst, &usedCodec, 1, kTCPLargeJitter , &NetEqBufferMaxPackets, &BufferSizeInBytes, &overhead_bytes))
 
     /* try to do RecIn before assigning the packet buffer */
 /*  makeRTPheader(rtp_data, NETEQ_CODEC_AVT_PT, 17,4711, 1235412312);

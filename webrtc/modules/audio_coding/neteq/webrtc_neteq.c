@@ -307,7 +307,8 @@ int WebRtcNetEQ_Assign(void **inst, void *NETEQ_inst_Addr)
 
 int WebRtcNetEQ_GetRecommendedBufferSize(void *inst, const enum WebRtcNetEQDecoder *codec,
                                          int noOfCodecs, enum WebRtcNetEQNetworkType nwType,
-                                         int *MaxNoOfPackets, int *sizeinbytes)
+                                         int *MaxNoOfPackets, int *sizeinbytes,
+                                         int* per_packet_overhead_bytes)
 {
     int ok = 0;
     int multiplier;
@@ -315,7 +316,9 @@ int WebRtcNetEQ_GetRecommendedBufferSize(void *inst, const enum WebRtcNetEQDecod
     if (NetEqMainInst == NULL) return (-1);
     *MaxNoOfPackets = 0;
     *sizeinbytes = 0;
-    ok = WebRtcNetEQ_GetDefaultCodecSettings(codec, noOfCodecs, sizeinbytes, MaxNoOfPackets);
+    ok = WebRtcNetEQ_GetDefaultCodecSettings(codec, noOfCodecs, sizeinbytes,
+                                             MaxNoOfPackets,
+                                             per_packet_overhead_bytes);
     if (ok != 0)
     {
         NetEqMainInst->ErrorCode = -ok;
@@ -339,7 +342,7 @@ int WebRtcNetEQ_GetRecommendedBufferSize(void *inst, const enum WebRtcNetEQDecod
     }
     else if (nwType == kTCPXLargeJitter)
     {
-        multiplier = 20;
+        multiplier = 12;
     }
     else
     {
@@ -514,7 +517,7 @@ int WebRtcNetEQ_SetExtraDelay(void *inst, int DelayInMs)
 {
     MainInst_t *NetEqMainInst = (MainInst_t*) inst;
     if (NetEqMainInst == NULL) return (-1);
-    if ((DelayInMs < 0) || (DelayInMs > 1000))
+    if ((DelayInMs < 0) || (DelayInMs > 10000))
     {
         NetEqMainInst->ErrorCode = -FAULTY_DELAYVALUE;
         return (-1);

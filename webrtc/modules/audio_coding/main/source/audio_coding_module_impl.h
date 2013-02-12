@@ -282,6 +282,14 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   int PreprocessToAddData(const AudioFrame& in_frame,
                           const AudioFrame** ptr_out);
 
+  // Set initial playout delay.
+  //  -delay_ms: delay in millisecond.
+  //
+  // Return value:
+  //  -1: if cannot set the delay.
+  //   0: if delay set successfully.
+  int SetInitialPlayoutDelay(int delay_ms);
+
  private:
   // Change required states after starting to receive the codec corresponding
   // to |index|.
@@ -301,6 +309,8 @@ class AudioCodingModuleImpl : public AudioCodingModule {
                           uint8_t* stream);
 
   void ResetFragmentation(int vector_size);
+
+  bool GetSilence(int desired_sample_rate_hz, AudioFrame* frame);
 
   AudioPacketizationCallback* packetization_callback_;
   WebRtc_Word32 id_;
@@ -375,6 +385,16 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   AudioFrame preprocess_frame_;
   CodecInst secondary_send_codec_inst_;
   scoped_ptr<ACMGenericCodec> secondary_encoder_;
+
+  // Initial delay.
+  int initial_delay_ms_;
+  int num_packets_accumulated_;
+  int num_bytes_accumulated_;
+  int accumulated_audio_ms_;
+  int first_payload_received_;
+  uint32_t last_incoming_send_timestamp_;
+  bool track_neteq_buffer_;
+  uint32_t playout_ts_;
 };
 
 }  // namespace webrtc

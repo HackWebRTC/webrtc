@@ -272,6 +272,12 @@ class ACMNetEQ {
   WebRtc_Word16 AddSlave(const WebRtcNetEQDecoder* used_codecs,
                          WebRtc_Word16 num_codecs);
 
+  void BufferSpec(int& num_packets, int& size_bytes, int& overhead_bytes) {
+    num_packets = min_of_max_num_packets_;
+    size_bytes = min_of_buffer_size_bytes_;
+    overhead_bytes = per_packet_overhead_bytes_;
+  }
+
  private:
   //
   // RTPPack()
@@ -339,6 +345,11 @@ class ACMNetEQ {
   WebRtc_Word32 extra_delay_;
 
   CriticalSectionWrapper* callback_crit_sect_;
+  // Minimum of "max number of packets," among all NetEq instances.
+  int min_of_max_num_packets_;
+  // Minimum of buffer-size among all NetEq instances.
+  int min_of_buffer_size_bytes_;
+  int per_packet_overhead_bytes_;
 };
 
 }  // namespace webrtc
