@@ -272,11 +272,13 @@ LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/libvpx.a
 include $(PREBUILT_STATIC_LIBRARY)
 
-include $(CLEAR_VARS)
-LOCAL_MODULE := libvpx_arm_neon
-LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/libvpx_arm_neon.a
-include $(PREBUILT_STATIC_LIBRARY)
+# TODO(leozwang): Upstream required Android changes to libvpx.gyp to enable
+# this optimization.
+#include $(CLEAR_VARS)
+#LOCAL_MODULE := libvpx_arm_neon
+#LOCAL_SRC_FILES := \
+#    $(MY_LIBS_PATH)/libvpx_arm_neon.a
+#include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libpaced_sender
