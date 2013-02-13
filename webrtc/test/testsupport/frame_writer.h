@@ -14,7 +14,7 @@
 #include <cstdio>
 #include <string>
 
-#include "typedefs.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 namespace test {
@@ -50,7 +50,7 @@ class FrameWriterImpl : public FrameWriter {
   //                           existing.
   //   frame_length_in_bytes   The size of each frame.
   //                           For YUV: 3*width*height/2
-  FrameWriterImpl(std::string output_filename, int frame_length_in_bytes);
+  FrameWriterImpl(std::string output_filename, size_t frame_length_in_bytes);
   virtual ~FrameWriterImpl();
   bool Init();
   bool WriteFrame(WebRtc_UWord8* frame_buffer);

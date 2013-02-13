@@ -12,13 +12,13 @@
 
 #include <cassert>
 
-#include "testsupport/fileutils.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
 namespace test {
 
 FrameReaderImpl::FrameReaderImpl(std::string input_filename,
-                                 int frame_length_in_bytes)
+                                 size_t frame_length_in_bytes)
     : input_filename_(input_filename),
       frame_length_in_bytes_(frame_length_in_bytes),
       input_file_(NULL) {

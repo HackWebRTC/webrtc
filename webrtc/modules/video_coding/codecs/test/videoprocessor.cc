@@ -13,6 +13,7 @@
 #include <cassert>
 #include <cstring>
 #include <limits>
+#include <vector>
 
 #include "system_wrappers/interface/cpu_info.h"
 
@@ -59,7 +60,7 @@ bool VideoProcessorImpl::Init() {
   bit_rate_factor_ = config_.codec_settings->maxFramerate * 0.001 * 8;  // bits
 
   // Initialize data structures used by the encoder/decoder APIs
-  int frame_length_in_bytes = frame_reader_->FrameLength();
+  size_t frame_length_in_bytes = frame_reader_->FrameLength();
   source_buffer_ = new WebRtc_UWord8[frame_length_in_bytes];
   last_successful_frame_buffer_ = new WebRtc_UWord8[frame_length_in_bytes];
   // Set fixed properties common for all frames.
@@ -325,7 +326,7 @@ void VideoProcessorImpl::FrameDecoded(const I420VideoFrame& image) {
   } else {  // No resize.
     // Update our copy of the last successful frame:
     // TODO(mikhal): Add as a member function, so won't be allocated per frame.
-    int length = CalcBufferSize(kI420,image.width(), image.height());
+    int length = CalcBufferSize(kI420, image.width(), image.height());
     scoped_array<uint8_t> image_buffer(new uint8_t[length]);
     length = ExtractBuffer(image, length, image_buffer.get());
     assert(length > 0);

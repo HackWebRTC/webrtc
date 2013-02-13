@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "testsupport/frame_writer.h"
+#include "webrtc/test/testsupport/frame_writer.h"
 
 #include <cassert>
 
@@ -16,7 +16,7 @@ namespace webrtc {
 namespace test {
 
 FrameWriterImpl::FrameWriterImpl(std::string output_filename,
-                                 int frame_length_in_bytes)
+                                 size_t frame_length_in_bytes)
     : output_filename_(output_filename),
       frame_length_in_bytes_(frame_length_in_bytes),
       output_file_(NULL) {

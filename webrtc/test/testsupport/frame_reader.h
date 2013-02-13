@@ -14,7 +14,7 @@
 #include <cstdio>
 #include <string>
 
-#include "typedefs.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 namespace test {
@@ -52,7 +52,7 @@ class FrameReaderImpl : public FrameReader {
   //   input_filename          The file to read from.
   //   frame_length_in_bytes   The size of each frame.
   //                           For YUV this is 3 * width * height / 2
-  FrameReaderImpl(std::string input_filename, int frame_length_in_bytes);
+  FrameReaderImpl(std::string input_filename, size_t frame_length_in_bytes);
   virtual ~FrameReaderImpl();
   bool Init();
   bool ReadFrame(WebRtc_UWord8* source_buffer);
