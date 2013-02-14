@@ -8,21 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "audio_processing.h"
-
 #include <stdio.h>
 
 #include <algorithm>
+#include <queue>
 
 #include "gtest/gtest.h"
 
-#include "event_wrapper.h"
-#include "module_common_types.h"
-#include "scoped_ptr.h"
-#include "signal_processing_library.h"
-#include "test/testsupport/fileutils.h"
-#include "thread_wrapper.h"
-#include "trace.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/test/testsupport/fileutils.h"
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_processing/test/unittest.pb.h"
 #else
@@ -67,14 +67,18 @@ const int kProcessSampleRates[] = {8000, 16000, 32000};
 const size_t kProcessSampleRatesSize = sizeof(kProcessSampleRates) /
     sizeof(*kProcessSampleRates);
 
+int TruncateToMultipleOf10(int value) {
+  return (value / 10) * 10;
+}
+
 // TODO(andrew): Use the MonoToStereo routine from AudioFrameOperations.
 void MixStereoToMono(const int16_t* stereo,
                      int16_t* mono,
                      int samples_per_channel) {
   for (int i = 0; i < samples_per_channel; i++) {
-    int32_t int32 = (static_cast<int32_t>(stereo[i * 2]) +
-                     static_cast<int32_t>(stereo[i * 2 + 1])) >> 1;
-    mono[i] = static_cast<int16_t>(int32);
+    int32_t mono_s32 = (static_cast<int32_t>(stereo[i * 2]) +
+        static_cast<int32_t>(stereo[i * 2 + 1])) >> 1;
+    mono[i] = static_cast<int16_t>(mono_s32);
   }
 }
 
@@ -231,6 +235,8 @@ class ApmTest : public ::testing::Test {
   template <typename F>
   void ChangeTriggersInit(F f, AudioProcessing* ap, int initial_value,
                           int changed_value);
+  void ProcessDelayVerificationTest(int delay_ms, int system_delay_ms,
+                                    int delay_min, int delay_max);
 
   const std::string output_path_;
   const std::string ref_path_;
@@ -489,6 +495,93 @@ void ApmTest::ChangeTriggersInit(F f, AudioProcessing* ap, int initial_value,
   EXPECT_TRUE(FrameDataAreEqual(*frame_, frame_copy));
 }
 
+void ApmTest::ProcessDelayVerificationTest(int delay_ms, int system_delay_ms,
+                                           int delay_min, int delay_max) {
+  // The |revframe_| and |frame_| should include the proper frame information,
+  // hence can be used for extracting information.
+  webrtc::AudioFrame tmp_frame;
+  std::queue<webrtc::AudioFrame*> frame_queue;
+  bool causal = true;
+
+  tmp_frame.CopyFrom(*revframe_);
+  SetFrameTo(&tmp_frame, 0);
+
+  EXPECT_EQ(apm_->kNoError, apm_->Initialize());
+  // Initialize the |frame_queue| with empty frames.
+  int frame_delay = delay_ms / 10;
+  while (frame_delay < 0) {
+    webrtc::AudioFrame* frame = new AudioFrame();
+    frame->CopyFrom(tmp_frame);
+    frame_queue.push(frame);
+    frame_delay++;
+    causal = false;
+  }
+  while (frame_delay > 0) {
+    webrtc::AudioFrame* frame = new AudioFrame();
+    frame->CopyFrom(tmp_frame);
+    frame_queue.push(frame);
+    frame_delay--;
+  }
+  // Run for 4.5 seconds, skipping statistics from the first second. We need
+  // enough frames with audio to have reliable estimates, but as few as possible
+  // to keep processing time down. 4.5 seconds seemed to be a good compromise
+  // for this recording.
+  for (int frame_count = 0; frame_count < 450; ++frame_count) {
+    webrtc::AudioFrame* frame = new AudioFrame();
+    frame->CopyFrom(tmp_frame);
+    // Use the near end recording, since that has more speech in it.
+    ASSERT_TRUE(ReadFrame(near_file_, frame));
+    frame_queue.push(frame);
+    webrtc::AudioFrame* reverse_frame = frame;
+    webrtc::AudioFrame* process_frame = frame_queue.front();
+    if (!causal) {
+      reverse_frame = frame_queue.front();
+      // When we call ProcessStream() the frame is modified, so we can't use the
+      // pointer directly when things are non-causal. Use an intermediate frame
+      // and copy the data.
+      process_frame = &tmp_frame;
+      process_frame->CopyFrom(*frame);
+    }
+    EXPECT_EQ(apm_->kNoError, apm_->AnalyzeReverseStream(reverse_frame));
+    EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(system_delay_ms));
+    EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(process_frame));
+    frame = frame_queue.front();
+    frame_queue.pop();
+    delete frame;
+
+    if (frame_count == 100) {
+      int median;
+      int std;
+      // Discard the first delay metrics to avoid convergence effects.
+      EXPECT_EQ(apm_->kNoError,
+                apm_->echo_cancellation()->GetDelayMetrics(&median, &std));
+    }
+  }
+
+  rewind(near_file_);
+  while (!frame_queue.empty()) {
+    webrtc::AudioFrame* frame = frame_queue.front();
+    frame_queue.pop();
+    delete frame;
+  }
+  // Calculate expected delay estimate and acceptable regions. Further,
+  // limit them w.r.t. AEC delay estimation support.
+  const int samples_per_ms = std::min(16, frame_->samples_per_channel_ / 10);
+  int expected_median = std::min(std::max(delay_ms - system_delay_ms,
+                                          delay_min), delay_max);
+  int expected_median_high = std::min(std::max(
+      expected_median + 96 / samples_per_ms, delay_min), delay_max);
+  int expected_median_low = std::min(std::max(
+      expected_median - 96 / samples_per_ms, delay_min), delay_max);
+  // Verify delay metrics.
+  int median;
+  int std;
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_cancellation()->GetDelayMetrics(&median, &std));
+  EXPECT_GE(expected_median_high, median);
+  EXPECT_LE(expected_median_low, median);
+}
+
 TEST_F(ApmTest, StreamParameters) {
   // No errors when the components are disabled.
   EXPECT_EQ(apm_->kNoError,
@@ -719,10 +812,79 @@ TEST_F(ApmTest, EchoCancellation) {
   EXPECT_FALSE(apm_->echo_cancellation()->is_enabled());
 }
 
+TEST_F(ApmTest, EchoCancellationReportsCorrectDelays) {
+  // Enable AEC only.
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_cancellation()->enable_drift_compensation(false));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_cancellation()->enable_metrics(false));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_cancellation()->enable_delay_logging(true));
+  EXPECT_EQ(apm_->kNoError, apm_->echo_cancellation()->Enable(true));
+
+  // Internally in the AEC the amount of lookahead the delay estimation can
+  // handle is 15 blocks and the maximum delay is set to 60 blocks.
+  const int kLookaheadBlocks = 15;
+  const int kMaxDelayBlocks = 60;
+  // The AEC has a startup time before it actually starts to process. This
+  // procedure can flush the internal far-end buffer, which of course affects
+  // the delay estimation. Therefore, we set a system_delay high enough to
+  // avoid that. The smallest system_delay you can report without flushing the
+  // buffer is 66 ms in 8 kHz.
+  //
+  // It is known that for 16 kHz (and 32 kHz) sampling frequency there is an
+  // additional stuffing of 8 ms on the fly, but it seems to have no impact on
+  // delay estimation. This should be noted though. In case of test failure,
+  // this could be the cause.
+  const int kSystemDelayMs = 66;
+  // Test a couple of corner cases and verify that the estimated delay is
+  // within a valid region (set to +-1.5 blocks). Note that these cases are
+  // sampling frequency dependent.
+  for (size_t i = 0; i < kProcessSampleRatesSize; i++) {
+    Init(kProcessSampleRates[i], 2, 2, 2, false);
+    // Sampling frequency dependent variables.
+    const int num_ms_per_block = std::max(4,
+                                           640 / frame_->samples_per_channel_);
+    const int delay_min_ms = -kLookaheadBlocks * num_ms_per_block;
+    const int delay_max_ms = (kMaxDelayBlocks - 1) * num_ms_per_block;
+
+    // 1) Verify correct delay estimate at lookahead boundary.
+    int delay_ms = TruncateToMultipleOf10(kSystemDelayMs + delay_min_ms);
+    ProcessDelayVerificationTest(delay_ms, kSystemDelayMs, delay_min_ms,
+                                 delay_max_ms);
+    // 2) A delay less than maximum lookahead should give an delay estimate at
+    //    the boundary (= -kLookaheadBlocks * num_ms_per_block).
+    delay_ms -= 20;
+    ProcessDelayVerificationTest(delay_ms, kSystemDelayMs, delay_min_ms,
+                                 delay_max_ms);
+    // 3) Three values around zero delay. Note that we need to compensate for
+    //    the fake system_delay.
+    delay_ms = TruncateToMultipleOf10(kSystemDelayMs - 10);
+    ProcessDelayVerificationTest(delay_ms, kSystemDelayMs, delay_min_ms,
+                                 delay_max_ms);
+    delay_ms = TruncateToMultipleOf10(kSystemDelayMs);
+    ProcessDelayVerificationTest(delay_ms, kSystemDelayMs, delay_min_ms,
+                                 delay_max_ms);
+    delay_ms = TruncateToMultipleOf10(kSystemDelayMs + 10);
+    ProcessDelayVerificationTest(delay_ms, kSystemDelayMs, delay_min_ms,
+                                 delay_max_ms);
+    // 4) Verify correct delay estimate at maximum delay boundary.
+    delay_ms = TruncateToMultipleOf10(kSystemDelayMs + delay_max_ms);
+    ProcessDelayVerificationTest(delay_ms, kSystemDelayMs, delay_min_ms,
+                                 delay_max_ms);
+    // 5) A delay above the maximum delay should give an estimate at the
+    //    boundary (= (kMaxDelayBlocks - 1) * num_ms_per_block).
+    delay_ms += 20;
+    ProcessDelayVerificationTest(delay_ms, kSystemDelayMs, delay_min_ms,
+                                 delay_max_ms);
+  }
+}
+
 TEST_F(ApmTest, EchoControlMobile) {
   // AECM won't use super-wideband.
   EXPECT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(32000));
-  EXPECT_EQ(apm_->kBadSampleRateError, apm_->echo_control_mobile()->Enable(true));
+  EXPECT_EQ(apm_->kBadSampleRateError,
+            apm_->echo_control_mobile()->Enable(true));
   // Turn AECM on (and AEC off)
   Init(16000, 2, 2, 2, false);
   EXPECT_EQ(apm_->kNoError, apm_->echo_control_mobile()->Enable(true));
@@ -965,7 +1127,7 @@ TEST_F(ApmTest, LevelEstimator) {
 
   // Min value if energy_ == 0.
   SetFrameTo(frame_, 10000);
-  uint32_t energy = frame_->energy_; // Save default to restore below.
+  uint32_t energy = frame_->energy_;  // Save default to restore below.
   frame_->energy_ = 0;
   EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
   EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
@@ -1095,6 +1257,8 @@ TEST_F(ApmTest, IdenticalInputChannelsResultInIdenticalOutputChannels) {
   for (size_t i = 0; i < kProcessSampleRatesSize; i++) {
     Init(kProcessSampleRates[i], 2, 2, 2, false);
     int analog_level = 127;
+    EXPECT_EQ(0, feof(far_file_));
+    EXPECT_EQ(0, feof(near_file_));
     while (1) {
       if (!ReadFrame(far_file_, revframe_)) break;
       CopyLeftToRightChannel(revframe_->data_, revframe_->samples_per_channel_);
@@ -1115,6 +1279,8 @@ TEST_F(ApmTest, IdenticalInputChannelsResultInIdenticalOutputChannels) {
 
       VerifyChannelsAreEqual(frame_->data_, frame_->samples_per_channel_);
     }
+    rewind(far_file_);
+    rewind(near_file_);
   }
 }
 
