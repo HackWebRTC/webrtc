@@ -403,6 +403,9 @@ void ViEChannelManager::UpdateSsrcs(int channel_id,
 
   EncoderStateFeedback* encoder_state_feedback =
       channel_group->GetEncoderStateFeedback();
+  // Remove a possible previous setting for this encoder before adding the new
+  // setting.
+  encoder_state_feedback->RemoveEncoder(encoder);
   for (std::list<unsigned int>::const_iterator it = ssrcs.begin();
        it != ssrcs.end(); ++it) {
     encoder_state_feedback->AddEncoder(*it, encoder);
