@@ -270,7 +270,7 @@ void ACMOpus::DestructDecoderSafe() {
 
 void ACMOpus::InternalDestructEncoderInst(void* ptr_inst) {
   if (ptr_inst != NULL) {
-    WebRtcOpus_EncoderFree((OpusEncInst*) ptr_inst);
+    WebRtcOpus_EncoderFree(reinterpret_cast<OpusEncInst*>(ptr_inst));
   }
   return;
 }

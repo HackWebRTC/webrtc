@@ -274,7 +274,7 @@ WebRtc_Word32 AudioCodingModuleImpl::ChangeUniqueId(const WebRtc_Word32 id) {
     CriticalSectionScoped lock(acm_crit_sect_);
     id_ = id;
 
-   for (int i = 0; i < ACMCodecDB::kMaxNumCodecs; i++) {
+    for (int i = 0; i < ACMCodecDB::kMaxNumCodecs; i++) {
       if (codecs_[i] != NULL) {
         codecs_[i]->SetUniqueID(id);
       }
@@ -802,12 +802,10 @@ static int IsValidSendCodec(const CodecInst& send_codec,
     return -1;
   }
 
-  char error_message[500];
-  int codec_id = ACMCodecDB::CodecNumber(&send_codec, mirror_id, error_message,
-                                         sizeof(error_message));
+  int codec_id = ACMCodecDB::CodecNumber(&send_codec, mirror_id);
   if (codec_id < 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, acm_id,
-                 error_message);
+                 "Invalid settings for the send codec.");
     return -1;
   }
 
@@ -1471,7 +1469,8 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
       timestamp_diff = in_frame.timestamp_ - last_in_timestamp_;
     }
     preprocess_frame_.timestamp_ = last_timestamp_ +
-        (WebRtc_UWord32)(timestamp_diff * ((double) send_codec_inst_.plfreq /
+        static_cast<uint32_t>(timestamp_diff *
+            (static_cast<double>(send_codec_inst_.plfreq) /
             static_cast<double>(in_frame.sample_rate_hz_)));
 
     preprocess_frame_.samples_per_channel_ = input_resampler_.Resample10Msec(
@@ -1546,7 +1545,7 @@ int AudioCodingModuleImpl::SetVADSafe(bool enable_dtx,
       && (mode != VADAggr) && (mode != VADVeryAggr)) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                  "Invalid VAD Mode %d, no change is made to VAD/DTX status",
-                 (int) mode);
+                 static_cast<int>(mode));
     return -1;
   }
 

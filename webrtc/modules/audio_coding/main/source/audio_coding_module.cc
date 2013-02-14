@@ -78,12 +78,12 @@ WebRtc_Word32 AudioCodingModule::Codec(const char* payload_name,
 // Checks the validity of the parameters of the given codec
 bool AudioCodingModule::IsCodecValid(const CodecInst& codec) {
   int mirror_id;
-  char err_msg[500];
 
-  int codec_number = ACMCodecDB::CodecNumber(&codec, &mirror_id, err_msg, 500);
+  int codec_number = ACMCodecDB::CodecNumber(&codec, &mirror_id);
 
   if (codec_number < 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, -1, err_msg);
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, -1,
+                 "Invalid codec settings.");
     return false;
   } else {
     return true;

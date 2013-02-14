@@ -17,8 +17,6 @@
 // references, where appropriate.
 #include "webrtc/modules/audio_coding/main/source/acm_codec_database.h"
 
-#include <stdio.h>
-
 #include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
@@ -34,11 +32,11 @@
 #include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq.h"
 #ifdef WEBRTC_CODEC_ISAC
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
-#include "webrtc/modules/audio_coding/main/source/acm_isac.h"
-#include "webrtc/modules/audio_coding/main/source/acm_isac_macros.h"
 #endif
 #ifdef WEBRTC_CODEC_ISACFX
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
+#endif
+#if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
 #include "webrtc/modules/audio_coding/main/source/acm_isac.h"
 #include "webrtc/modules/audio_coding/main/source/acm_isac_macros.h"
 #endif
@@ -51,15 +49,15 @@
 #include "webrtc/modules/audio_coding/main/source/acm_ilbc.h"
 #endif
 #ifdef WEBRTC_CODEC_AMR
-#include "amr_interface.h"
+#include "webrtc/modules/audio_coding/codecs/amr/include/amr_interface.h"
 #include "webrtc/modules/audio_coding/main/source/acm_amr.h"
 #endif
 #ifdef WEBRTC_CODEC_AMRWB
-#include "amrwb_interface.h"
+#include "webrtc/modules/audio_coding/codecs/amrwb/include/amrwb_interface.h"
 #include "webrtc/modules/audio_coding/main/source/acm_amrwb.h"
 #endif
 #ifdef WEBRTC_CODEC_CELT
-#include "celt_interface.h"
+#include "webrtc/modules/audio_coding/codecs/celt/include/celt_interface.h"
 #include "webrtc/modules/audio_coding/main/source/acm_celt.h"
 #endif
 #ifdef WEBRTC_CODEC_G722
@@ -67,23 +65,23 @@
 #include "webrtc/modules/audio_coding/main/source/acm_g722.h"
 #endif
 #ifdef WEBRTC_CODEC_G722_1
-#include "g7221_interface.h"
+#include "webrtc/modules/audio_coding/codecs/g7221/include/g7221_interface.h"
 #include "webrtc/modules/audio_coding/main/source/acm_g7221.h"
 #endif
 #ifdef WEBRTC_CODEC_G722_1C
-#include "g7221c_interface.h"
+#include "webrtc/modules/audio_coding/codecs/g7221c/include/g7221c_interface.h"
 #include "webrtc/modules/audio_coding/main/source/acm_g7221c.h"
 #endif
 #ifdef WEBRTC_CODEC_G729
-#include "g729_interface.h"
+#include "webrtc/modules/audio_coding/codecs/g729/include/g729_interface.h"
 #include "webrtc/modules/audio_coding/main/source/acm_g729.h"
 #endif
 #ifdef WEBRTC_CODEC_G729_1
-#include "g7291_interface.h"
+#include "webrtc/modules/audio_coding/codecs/g7291/include/g7291_interface.h"
 #include "webrtc/modules/audio_coding/main/source/acm_g7291.h"
 #endif
 #ifdef WEBRTC_CODEC_GSMFR
-#include "gsmfr_interface.h"
+#include "webrtc/modules/audio_coding/codecs/gsmfr/include/gsmfr_interface.h"
 #include "webrtc/modules/audio_coding/main/source/acm_gsmfr.h"
 #endif
 #ifdef WEBRTC_CODEC_OPUS
@@ -91,7 +89,7 @@
 #include "webrtc/modules/audio_coding/main/source/acm_opus.h"
 #endif
 #ifdef WEBRTC_CODEC_SPEEX
-#include "speex_interface.h"
+#include "webrtc/modules/audio_coding/codecs/speex/include/speex_interface.h"
 #include "webrtc/modules/audio_coding/main/source/acm_speex.h"
 #endif
 #ifdef WEBRTC_CODEC_AVT
@@ -416,45 +414,6 @@ enum {
   kInvalidPacketSize = -40,
   kInvalidRate = -50
 };
-
-// Gets the codec id number from the database. If there is some mismatch in
-// the codec settings, an error message will be recorded in the error string.
-// NOTE! Only the first mismatch found will be recorded in the error string.
-int ACMCodecDB::CodecNumber(const CodecInst* codec_inst, int* mirror_id,
-                            char* err_message, int max_message_len_byte) {
-  int codec_id = ACMCodecDB::CodecNumber(codec_inst, mirror_id);
-
-  // Write error message if ACMCodecDB::CodecNumber() returned error.
-  if ((codec_id < 0) && (err_message != NULL)) {
-    char my_err_msg[1000];
-
-    if (codec_id == kInvalidCodec) {
-      sprintf(my_err_msg, "Call to ACMCodecDB::CodecNumber failed, Codec not "
-              "found");
-    } else if (codec_id == kInvalidPayloadtype) {
-      sprintf(my_err_msg, "Call to ACMCodecDB::CodecNumber failed, payload "
-              "number %d is out of range for %s", codec_inst->pltype,
-              codec_inst->plname);
-    } else if (codec_id == kInvalidPacketSize) {
-      sprintf(my_err_msg, "Call to ACMCodecDB::CodecNumber failed, Packet "
-              "size is out of range for %s", codec_inst->plname);
-    } else if (codec_id == kInvalidRate) {
-      sprintf(my_err_msg, "Call to ACMCodecDB::CodecNumber failed, rate=%d "
-              "is not a valid rate for %s", codec_inst->rate,
-              codec_inst->plname);
-    } else {
-      // Other error
-      sprintf(my_err_msg, "invalid codec parameters to be registered, "
-              "ACMCodecDB::CodecNumber failed");
-    }
-
-    strncpy(err_message, my_err_msg, max_message_len_byte - 1);
-    // make sure that the message is null-terminated.
-    err_message[max_message_len_byte - 1] = '\0';
-  }
-
-  return codec_id;
-}
 
 // Gets the codec id number from the database. If there is some mismatch in
 // the codec settings, the function will return an error code.
