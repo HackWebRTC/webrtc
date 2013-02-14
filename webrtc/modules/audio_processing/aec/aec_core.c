@@ -105,6 +105,10 @@ const float WebRtcAec_overDriveCurve[65] = {
     1.9682f, 1.9763f, 1.9843f, 1.9922f, 2.0000f
 };
 
+#ifdef WEBRTC_AEC_DEBUG_DUMP
+extern int webrtc_aec_instance_count;
+#endif
+
 // "Private" function prototypes.
 static void ProcessBlock(aec_t* aec);
 
@@ -205,6 +209,17 @@ int WebRtcAec_CreateAec(aec_t **aecInst)
         aec = NULL;
         return -1;
     }
+    {
+        char filename[64];
+        sprintf(filename, "aec_far%d.pcm", webrtc_aec_instance_count);
+        aec->farFile = fopen(filename, "wb");
+        sprintf(filename, "aec_near%d.pcm", webrtc_aec_instance_count);
+        aec->nearFile = fopen(filename, "wb");
+        sprintf(filename, "aec_out%d.pcm", webrtc_aec_instance_count);
+        aec->outFile = fopen(filename, "wb");
+        sprintf(filename, "aec_out_linear%d.pcm", webrtc_aec_instance_count);
+        aec->outLinearFile = fopen(filename, "wb");
+    }
 #endif
     aec->delay_estimator_farend =
         WebRtc_CreateDelayEstimatorFarend(PART_LEN1, kHistorySizeBlocks);
@@ -241,6 +256,10 @@ int WebRtcAec_FreeAec(aec_t *aec)
     WebRtc_FreeBuffer(aec->far_buf_windowed);
 #ifdef WEBRTC_AEC_DEBUG_DUMP
     WebRtc_FreeBuffer(aec->far_time_buf);
+    fclose(aec->farFile);
+    fclose(aec->nearFile);
+    fclose(aec->outFile);
+    fclose(aec->outLinearFile);
 #endif
     WebRtc_FreeDelayEstimator(aec->delay_estimator);
     WebRtc_FreeDelayEstimatorFarend(aec->delay_estimator_farend);

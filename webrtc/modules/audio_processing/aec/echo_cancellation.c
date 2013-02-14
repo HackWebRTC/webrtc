@@ -42,7 +42,7 @@ static const float minOverDrive[3] = {1.0f, 2.0f, 5.0f};
 static const int initCheck = 42;
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
-static int instance_count = 0;
+int webrtc_aec_instance_count = 0;
 #endif
 
 // Estimates delay to set the position of the far-end buffer read pointer
@@ -97,21 +97,13 @@ WebRtc_Word32 WebRtcAec_Create(void **aecInst)
     }
     {
       char filename[64];
-      sprintf(filename, "aec_far%d.pcm", instance_count);
-      aecpc->aec->farFile = fopen(filename, "wb");
-      sprintf(filename, "aec_near%d.pcm", instance_count);
-      aecpc->aec->nearFile = fopen(filename, "wb");
-      sprintf(filename, "aec_out%d.pcm", instance_count);
-      aecpc->aec->outFile = fopen(filename, "wb");
-      sprintf(filename, "aec_out_linear%d.pcm", instance_count);
-      aecpc->aec->outLinearFile = fopen(filename, "wb");
-      sprintf(filename, "aec_buf%d.dat", instance_count);
+      sprintf(filename, "aec_buf%d.dat", webrtc_aec_instance_count);
       aecpc->bufFile = fopen(filename, "wb");
-      sprintf(filename, "aec_skew%d.dat", instance_count);
+      sprintf(filename, "aec_skew%d.dat", webrtc_aec_instance_count);
       aecpc->skewFile = fopen(filename, "wb");
-      sprintf(filename, "aec_delay%d.dat", instance_count);
+      sprintf(filename, "aec_delay%d.dat", webrtc_aec_instance_count);
       aecpc->delayFile = fopen(filename, "wb");
-      instance_count++;
+      webrtc_aec_instance_count++;
     }
 #endif
 
@@ -130,10 +122,6 @@ WebRtc_Word32 WebRtcAec_Free(void *aecInst)
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
     WebRtc_FreeBuffer(aecpc->far_pre_buf_s16);
-    fclose(aecpc->aec->farFile);
-    fclose(aecpc->aec->nearFile);
-    fclose(aecpc->aec->outFile);
-    fclose(aecpc->aec->outLinearFile);
     fclose(aecpc->bufFile);
     fclose(aecpc->skewFile);
     fclose(aecpc->delayFile);
