@@ -1,4 +1,6 @@
 {"linux-large-tests/audio_e2e_test/audio_e2e_score/e2e_score": {"reva": 3380, "revb": 3451, "type": "absolute", "better": "higher", "improve": 4.6977, "regress": 3.77055, "sha1": "b76f22a2"},
+ "linux-large-tests/audioproc_perf/audioproc/time_per_10ms_frame": {"reva": 3435, "revb": 3510, "type": "absolute", "improve": 64, "regress": 75, "sha1": "b9b3d6a3"},
+ "linux-large-tests/isac_fixed_perf/isac/time_per_10ms_frame": {"reva": 3435, "revb": 3510, "type": "absolute", "improve": 102, "regress": 120, "sha1": "0922ca06"},
  "linux-large-tests/vie_auto_test/psnr/net_delay_0_0_plr_0": {"reva": 3361, "revb": 3389, "type": "absolute", "better": "higher", "improve": 36.75, "regress": 34.47265, "sha1": "75dc797e"},
  "linux-large-tests/vie_auto_test/psnr/net_delay_100_10_plr_0": {"reva": 3361, "revb": 3389, "type": "absolute", "better": "higher", "improve": 36.75, "regress": 34.4907, "sha1": "82050834"},
  "linux-large-tests/vie_auto_test/psnr/net_delay_50_5_plr_5": {"reva": 3361, "revb": 3389, "type": "absolute", "better": "higher", "improve": 36.75, "regress": 34.4128, "sha1": "93ca8ea5"},
