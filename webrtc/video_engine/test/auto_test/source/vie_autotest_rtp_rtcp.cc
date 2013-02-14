@@ -448,8 +448,6 @@ void ViEAutoTest::ViERtpRtcpAPITest()
     // is valid to call before creating channels.
     EXPECT_EQ(0, ViE.rtp_rtcp->SetBandwidthEstimationMode(
         webrtc::kViESingleStreamEstimation));
-    EXPECT_EQ(0, ViE.rtp_rtcp->SetBandwidthEstimationMode(
-        webrtc::kViEMultiStreamEstimation));
 
     // Create a video channel
     TbVideoChannel tbChannel(ViE, webrtc::kVideoCodecVP8);
