@@ -11,7 +11,7 @@
 /*
  * Contains the API functions for the AEC.
  */
-#include "echo_cancellation.h"
+#include "webrtc/modules/audio_processing/aec/include/echo_cancellation.h"
 
 #include <math.h>
 #ifdef WEBRTC_AEC_DEBUG_DUMP
@@ -20,12 +20,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "aec_core.h"
-#include "aec_resampler.h"
-#include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "modules/audio_processing/aec/echo_cancellation_internal.h"
-#include "ring_buffer.h"
-#include "typedefs.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_processing/aec/aec_core.h"
+#include "webrtc/modules/audio_processing/aec/aec_resampler.h"
+#include "webrtc/modules/audio_processing/aec/echo_cancellation_internal.h"
+#include "webrtc/modules/audio_processing/utility/ring_buffer.h"
+#include "webrtc/typedefs.h"
 
 // Maximum length of resampled signal. Must be an integer multiple of frames
 // (ceil(1/(1 + MIN_SKEW)*2) + 1)*FRAME_LEN
@@ -203,6 +203,9 @@ WebRtc_Word32 WebRtcAec_Init(void *aecInst, WebRtc_Word32 sampFreq, WebRtc_Word3
     aecpc->resample = kAecFalse;
     aecpc->highSkewCtr = 0;
     aecpc->sampFactor = (aecpc->scSampFreq * 1.0f) / aecpc->splitSampFreq;
+
+    // Sampling frequency multiplier (SWB is processed as 160 frame size).
+    aecpc->rate_factor = aecpc->splitSampFreq / 8000;
 
     // Default settings.
     aecConfig.nlpMode = kAecNlpModerate;
@@ -395,7 +398,7 @@ WebRtc_Word32 WebRtcAec_Process(void *aecInst, const WebRtc_Word16 *nearend,
     }
 
     nFrames = nrOfSamples / FRAME_LEN;
-    nBlocks10ms = nFrames / aecpc->aec->mult;
+    nBlocks10ms = nFrames / aecpc->rate_factor;
 
     if (aecpc->ECstartup) {
         if (nearend != out) {
@@ -433,7 +436,7 @@ WebRtc_Word32 WebRtcAec_Process(void *aecInst, const WebRtc_Word16 *nearend,
                 // PART_LEN samples. Use 75% of the average value of the system
                 // delay as buffer size to start with.
                 aecpc->bufSizeStart = WEBRTC_SPL_MIN((3 * aecpc->sum *
-                  aecpc->aec->mult * 8) / (4 * aecpc->counter * PART_LEN),
+                  aecpc->rate_factor * 8) / (4 * aecpc->counter * PART_LEN),
                   kMaxBufSizeStart);
                 // Buffer size has now been determined.
                 aecpc->checkBuffSize = 0;
@@ -443,7 +446,7 @@ WebRtc_Word32 WebRtcAec_Process(void *aecInst, const WebRtc_Word16 *nearend,
                 // For really bad systems, don't disable the echo canceller for
                 // more than 0.5 sec.
                 aecpc->bufSizeStart = WEBRTC_SPL_MIN((aecpc->msInSndCardBuf *
-                    aecpc->aec->mult * 3) / 40, kMaxBufSizeStart);
+                    aecpc->rate_factor * 3) / 40, kMaxBufSizeStart);
                 aecpc->checkBuffSize = 0;
             }
         }
@@ -521,7 +524,7 @@ WebRtc_Word32 WebRtcAec_Process(void *aecInst, const WebRtc_Word16 *nearend,
 #ifdef WEBRTC_AEC_DEBUG_DUMP
     {
         int16_t far_buf_size_ms = (int16_t)(aecpc->aec->system_delay /
-            (sampMsNb * aecpc->aec->mult));
+            (sampMsNb * aecpc->rate_factor));
         (void)fwrite(&far_buf_size_ms, 2, 1, aecpc->bufFile);
         (void)fwrite(&aecpc->knownDelay, sizeof(aecpc->knownDelay), 1,
                      aecpc->delayFile);
@@ -808,7 +811,7 @@ WebRtc_Word32 WebRtcAec_get_error_code(void *aecInst)
 }
 
 static int EstBufDelay(aecpc_t* aecpc) {
-  int nSampSndCard = aecpc->msInSndCardBuf * sampMsNb * aecpc->aec->mult;
+  int nSampSndCard = aecpc->msInSndCardBuf * sampMsNb * aecpc->rate_factor;
   int current_delay = nSampSndCard - aecpc->aec->system_delay;
   int delay_difference = 0;
 
@@ -819,7 +822,7 @@ static int EstBufDelay(aecpc_t* aecpc) {
   //    be negative.
 
   // 1) Compensating for the frame(s) that will be read/processed.
-  current_delay += FRAME_LEN * aecpc->aec->mult;
+  current_delay += FRAME_LEN * aecpc->rate_factor;
 
   // 2) Account for resampling frame delay.
   if (aecpc->skewMode == kAecTrue && aecpc->resample == kAecTrue) {
