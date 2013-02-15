@@ -182,5 +182,8 @@ void WebRtcAec_ProcessFrame(aec_t* aec,
 // Returns the number of elements moved, and adjusts |system_delay| by the
 // corresponding amount in ms.
 int WebRtcAec_MoveFarReadPtr(aec_t* aec, int elements);
+// Calculates the median and standard deviation among the delay estimates
+// collected since the last call to this function.
+int WebRtcAec_GetDelayMetricsCore(aec_t* self, int* median, int* std);
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_CORE_H_

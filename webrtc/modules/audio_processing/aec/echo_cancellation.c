@@ -734,12 +734,6 @@ WebRtc_Word32 WebRtcAec_GetMetrics(void *aecInst, AecMetrics *metrics)
 
 int WebRtcAec_GetDelayMetrics(void* handle, int* median, int* std) {
   aecpc_t* self = handle;
-  int i = 0;
-  int delay_values = 0;
-  int num_delay_values = 0;
-  int my_median = 0;
-  const int kMsPerBlock = (PART_LEN * 1000) / self->splitSampFreq;
-  float l1_norm = 0;
 
   if (handle == NULL) {
     return -1;
@@ -756,45 +750,11 @@ int WebRtcAec_GetDelayMetrics(void* handle, int* median, int* std) {
     self->lastError = AEC_UNINITIALIZED_ERROR;
     return -1;
   }
-  if (self->aec->delay_logging_enabled == 0) {
-    // Logging disabled
+  if (WebRtcAec_GetDelayMetricsCore(self->aec, median, std) == -1) {
+    // Logging disabled.
     self->lastError = AEC_UNSUPPORTED_FUNCTION_ERROR;
     return -1;
   }
-
-  // Get number of delay values since last update
-  for (i = 0; i < kHistorySizeBlocks; i++) {
-    num_delay_values += self->aec->delay_histogram[i];
-  }
-  if (num_delay_values == 0) {
-    // We have no new delay value data. Even though -1 is a valid estimate, it
-    // will practically never be used since multiples of |kMsPerBlock| will
-    // always be returned.
-    *median = -1;
-    *std = -1;
-    return 0;
-  }
-
-  delay_values = num_delay_values >> 1; // Start value for median count down
-  // Get median of delay values since last update
-  for (i = 0; i < kHistorySizeBlocks; i++) {
-    delay_values -= self->aec->delay_histogram[i];
-    if (delay_values < 0) {
-      my_median = i;
-      break;
-    }
-  }
-  // Account for lookahead.
-  *median = (my_median - kLookaheadBlocks) * kMsPerBlock;
-
-  // Calculate the L1 norm, with median value as central moment
-  for (i = 0; i < kHistorySizeBlocks; i++) {
-    l1_norm += (float) (fabs(i - my_median) * self->aec->delay_histogram[i]);
-  }
-  *std = (int) (l1_norm / (float) num_delay_values + 0.5f) * kMsPerBlock;
-
-  // Reset histogram
-  memset(self->aec->delay_histogram, 0, sizeof(self->aec->delay_histogram));
 
   return 0;
 }
