@@ -104,7 +104,8 @@ ViEChannel::ViEChannel(WebRtc_Word32 channel_id,
       file_recorder_(channel_id),
       mtu_(0),
       sender_(sender),
-      nack_history_size_sender_(kSendSidePacketHistorySize) {
+      nack_history_size_sender_(kSendSidePacketHistorySize),
+      max_nack_reordering_threshold_(kMaxPacketAgeToNack) {
   WEBRTC_TRACE(kTraceMemory, kTraceVideo, ViEId(engine_id, channel_id),
                "ViEChannel::ViEChannel(channel_id: %d, engine_id: %d)",
                channel_id, engine_id);
@@ -125,7 +126,7 @@ ViEChannel::ViEChannel(WebRtc_Word32 channel_id,
 
   rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(configuration));
   vie_receiver_.SetRtpRtcpModule(rtp_rtcp_.get());
-  vcm_.SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack);
+  vcm_.SetNackSettings(kMaxNackListSize, max_nack_reordering_threshold_);
 }
 
 WebRtc_Word32 ViEChannel::Init() {
@@ -298,7 +299,7 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       }
       if (nack_method != kNackOff) {
         rtp_rtcp->SetStorePacketsStatus(true, nack_history_size_sender_);
-        rtp_rtcp->SetNACKStatus(nack_method, kMaxPacketAgeToNack);
+        rtp_rtcp->SetNACKStatus(nack_method, max_nack_reordering_threshold_);
       } else if (paced_sender_) {
         rtp_rtcp->SetStorePacketsStatus(true, nack_history_size_sender_);
       }
@@ -622,7 +623,8 @@ WebRtc_Word32 ViEChannel::ProcessNACKRequest(const bool enable) {
                    "%s: Could not enable NACK, RTPC not on ", __FUNCTION__);
       return -1;
     }
-    if (rtp_rtcp_->SetNACKStatus(nackMethod, kMaxPacketAgeToNack) != 0) {
+    if (rtp_rtcp_->SetNACKStatus(nackMethod,
+                                 max_nack_reordering_threshold_) != 0) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                    "%s: Could not set NACK method %d", __FUNCTION__,
                    nackMethod);
@@ -640,7 +642,7 @@ WebRtc_Word32 ViEChannel::ProcessNACKRequest(const bool enable) {
          it != simulcast_rtp_rtcp_.end();
          it++) {
       RtpRtcp* rtp_rtcp = *it;
-      rtp_rtcp->SetNACKStatus(nackMethod, kMaxPacketAgeToNack);
+      rtp_rtcp->SetNACKStatus(nackMethod, max_nack_reordering_threshold_);
       rtp_rtcp->SetStorePacketsStatus(true, nack_history_size_sender_);
     }
   } else {
@@ -652,13 +654,14 @@ WebRtc_Word32 ViEChannel::ProcessNACKRequest(const bool enable) {
       if (paced_sender_ == NULL) {
         rtp_rtcp->SetStorePacketsStatus(false, 0);
       }
-      rtp_rtcp->SetNACKStatus(kNackOff, kMaxPacketAgeToNack);
+      rtp_rtcp->SetNACKStatus(kNackOff, max_nack_reordering_threshold_);
     }
     vcm_.RegisterPacketRequestCallback(NULL);
     if (paced_sender_ == NULL) {
       rtp_rtcp_->SetStorePacketsStatus(false, 0);
     }
-    if (rtp_rtcp_->SetNACKStatus(kNackOff, kMaxPacketAgeToNack) != 0) {
+    if (rtp_rtcp_->SetNACKStatus(kNackOff,
+                                 max_nack_reordering_threshold_) != 0) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                    "%s: Could not turn off NACK", __FUNCTION__);
       return -1;
@@ -723,21 +726,18 @@ WebRtc_Word32 ViEChannel::SetHybridNACKFECStatus(
   return ProcessFECRequest(enable, payload_typeRED, payload_typeFEC);
 }
 
-int ViEChannel::EnableSenderStreamingMode(int target_delay_ms) {
+int ViEChannel::SetSenderBufferingMode(int target_delay_ms) {
   if ((target_delay_ms < 0) || (target_delay_ms > kMaxTargetDelayMs)) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
-                 "%s: Target streaming delay out of bounds: %d", __FUNCTION__,
-                 target_delay_ms);
+                 "%s: Target sender buffering delay out of bounds: %d",
+                 __FUNCTION__, target_delay_ms);
     return -1;
   }
   if (target_delay_ms == 0) {
     // Real-time mode.
     nack_history_size_sender_ = kSendSidePacketHistorySize;
   } else {
-    // The max size of the nack list should be large enough to accommodate the
-    // the number of packets(frames) resulting from the increased delay.
-    // Roughly estimating for ~20 packets per frame @ 30fps.
-    nack_history_size_sender_ = target_delay_ms * 20 * 30 / 1000;
+    nack_history_size_sender_ = GetRequiredNackListSize(target_delay_ms);
     // Don't allow a number lower than the default value.
     if (nack_history_size_sender_ < kSendSidePacketHistorySize) {
       nack_history_size_sender_ = kSendSidePacketHistorySize;
@@ -756,6 +756,35 @@ int ViEChannel::EnableSenderStreamingMode(int target_delay_ms) {
     return -1;
   }
   return 0;
+}
+
+int ViEChannel::SetReceiverBufferingMode(int target_delay_ms) {
+  if ((target_delay_ms < 0) || (target_delay_ms > kMaxTargetDelayMs)) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
+                 "%s: Target receiver buffering delay out of bounds: %d",
+                 __FUNCTION__, target_delay_ms);
+    return -1;
+  }
+  int max_nack_list_size;
+  if (target_delay_ms == 0) {
+    // Real-time mode - restore default settings.
+    max_nack_reordering_threshold_ = kMaxPacketAgeToNack;
+    max_nack_list_size = kMaxNackListSize;
+  } else {
+    max_nack_list_size =  3 / 4 * GetRequiredNackListSize(target_delay_ms);
+    max_nack_reordering_threshold_ = max_nack_list_size;
+  }
+  vcm_.SetNackSettings(max_nack_list_size, max_nack_reordering_threshold_);
+  vcm_.SetMinReceiverDelay(target_delay_ms);
+  vie_sync_.SetTargetBufferingDelay(target_delay_ms);
+  return 0;
+}
+
+int ViEChannel::GetRequiredNackListSize(int target_delay_ms) {
+  // The max size of the nack list should be large enough to accommodate the
+  // the number of packets (frames) resulting from the increased delay.
+  // Roughly estimating for ~20 packets per frame @ 30fps.
+  return target_delay_ms * 20 * 30 / 1000;
 }
 
 WebRtc_Word32 ViEChannel::SetKeyFrameRequestMethod(

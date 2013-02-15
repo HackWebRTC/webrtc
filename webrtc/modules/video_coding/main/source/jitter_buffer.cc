@@ -772,10 +772,9 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(VCMEncodedFrame* encoded_frame,
   return ret;
 }
 
-void VCMJitterBuffer::EnableMaxJitterEstimate(bool enable,
-                                              uint32_t initial_delay_ms) {
+void VCMJitterBuffer::SetMaxJitterEstimate(uint32_t initial_delay_ms) {
   CriticalSectionScoped cs(crit_sect_);
-  jitter_estimate_.EnableMaxJitterEstimate(enable, initial_delay_ms);
+  jitter_estimate_.SetMaxJitterEstimate(initial_delay_ms);
 }
 
 uint32_t VCMJitterBuffer::EstimatedJitterMs() {

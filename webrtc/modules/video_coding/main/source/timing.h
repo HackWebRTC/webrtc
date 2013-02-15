@@ -82,6 +82,9 @@ public:
     // certain amount of processing time.
     bool EnoughTimeToDecode(WebRtc_UWord32 availableProcessingTimeMs) const;
 
+    // Set the max allowed video delay.
+    void SetMaxVideoDelay(int maxVideoDelayMs);
+
     enum { kDefaultRenderDelayMs = 10 };
     enum { kDelayMaxChangeMsPerS = 100 };
 
@@ -104,6 +107,7 @@ private:
     WebRtc_UWord32                _requiredDelayMs;
     WebRtc_UWord32                _currentDelayMs;
     WebRtc_UWord32                _prevFrameTimestamp;
+    int                           _maxVideoDelayMs;
 };
 
 } // namespace webrtc

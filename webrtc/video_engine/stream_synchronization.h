@@ -43,11 +43,15 @@ class StreamSynchronization {
   static bool ComputeRelativeDelay(const Measurements& audio_measurement,
                                    const Measurements& video_measurement,
                                    int* relative_delay_ms);
+  // Set target buffering delay - All audio and video will be delayed by at
+  // least target_delay_ms.
+  void SetTargetBufferingDelay(int target_delay_ms);
 
  private:
   ViESyncDelay* channel_delay_;
   int audio_channel_id_;
   int video_channel_id_;
+  int base_target_delay_ms_;
 };
 }  // namespace webrtc
 

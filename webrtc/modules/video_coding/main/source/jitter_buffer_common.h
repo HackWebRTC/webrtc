@@ -15,7 +15,7 @@
 
 namespace webrtc {
 
-enum { kMaxNumberOfFrames     = 100 };
+enum { kMaxNumberOfFrames     = 300 };
 enum { kStartNumberOfFrames   = 6 };
 enum { kMaxVideoDelayMs       = 2000 };
 

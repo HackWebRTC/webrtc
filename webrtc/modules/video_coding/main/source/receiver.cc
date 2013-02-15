@@ -21,6 +21,8 @@
 
 namespace webrtc {
 
+enum { kMaxReceiverDelayMs = 10000 };
+
 VCMReceiver::VCMReceiver(VCMTiming* timing,
                          Clock* clock,
                          int32_t vcm_id,
@@ -34,7 +36,8 @@ VCMReceiver::VCMReceiver(VCMTiming* timing,
       jitter_buffer_(clock_, vcm_id, receiver_id, master),
       timing_(timing),
       render_wait_event_(),
-      state_(kPassive) {}
+      state_(kPassive),
+      max_video_delay_ms_(kMaxVideoDelayMs) {}
 
 VCMReceiver::~VCMReceiver() {
   render_wait_event_.Set();
@@ -108,20 +111,21 @@ int32_t VCMReceiver::InsertPacket(const VCMPacket& packet, uint16_t frame_width,
       jitter_buffer_.Flush();
       timing_->Reset(clock_->TimeInMilliseconds());
       return VCM_FLUSH_INDICATOR;
-    } else if (render_time_ms < now_ms - kMaxVideoDelayMs) {
+    } else if (render_time_ms < now_ms - max_video_delay_ms_) {
       WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCoding,
                    VCMId(vcm_id_, receiver_id_),
                    "This frame should have been rendered more than %u ms ago."
                    "Flushing jitter buffer and resetting timing.",
-                   kMaxVideoDelayMs);
+                   max_video_delay_ms_);
       jitter_buffer_.Flush();
       timing_->Reset(clock_->TimeInMilliseconds());
       return VCM_FLUSH_INDICATOR;
-    } else if (timing_->TargetVideoDelay() > kMaxVideoDelayMs) {
+    } else if (static_cast<int>(timing_->TargetVideoDelay()) >
+               max_video_delay_ms_) {
       WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCoding,
                    VCMId(vcm_id_, receiver_id_),
                    "More than %u ms target delay. Flushing jitter buffer and"
-                   "resetting timing.", kMaxVideoDelayMs);
+                   "resetting timing.", max_video_delay_ms_);
       jitter_buffer_.Flush();
       timing_->Reset(clock_->TimeInMilliseconds());
       return VCM_FLUSH_INDICATOR;
@@ -400,6 +404,17 @@ void VCMReceiver::CopyJitterBufferStateFromReceiver(
 VCMReceiverState VCMReceiver::State() const {
   CriticalSectionScoped cs(crit_sect_);
   return state_;
+}
+
+int VCMReceiver::SetMinReceiverDelay(int desired_delay_ms) {
+  CriticalSectionScoped cs(crit_sect_);
+  if (desired_delay_ms < 0 || desired_delay_ms > kMaxReceiverDelayMs) {
+    return -1;
+  }
+  jitter_buffer_.SetMaxJitterEstimate(desired_delay_ms);
+  max_video_delay_ms_ = desired_delay_ms + kMaxVideoDelayMs;
+  timing_->SetMaxVideoDelay(max_video_delay_ms_);
+  return 0;
 }
 
 void VCMReceiver::UpdateState(VCMReceiverState new_state) {

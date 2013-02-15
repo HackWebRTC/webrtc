@@ -39,6 +39,7 @@
 #define DEFAULT_VIDEO_CODEC_MAX_FRAMERATE               "30"
 #define DEFAULT_VIDEO_PROTECTION_METHOD                 "None"
 #define DEFAULT_TEMPORAL_LAYER                          "0"
+#define DEFAULT_BUFFERING_DELAY_MS                      "0"
 
 DEFINE_string(render_custom_call_remote_to, "", "Specify to render the remote "
     "stream of a custom call to the provided filename instead of showing it in "
@@ -153,6 +154,7 @@ bool SetVideoProtection(webrtc::ViECodec* vie_codec,
                         int video_channel,
                         VideoProtectionMethod protection_method);
 bool GetBitrateSignaling();
+int GetBufferingDelay();
 
 // The following are audio helper functions.
 bool GetAudioDevices(webrtc::VoEBase* voe_base,
@@ -265,6 +267,7 @@ int ViEAutoTest::ViECustomCall() {
   webrtc::CodecInst audio_codec;
   int audio_channel = -1;
   VideoProtectionMethod protection_method = kProtectionMethodNone;
+  int buffer_delay_ms = 0;
   bool is_image_scale_enabled = false;
   bool remb = true;
 
@@ -296,6 +299,9 @@ int ViEAutoTest::ViECustomCall() {
 
     // Get the video protection method for the call.
     protection_method = GetVideoProtection();
+
+    // Get the call mode (Real-Time/Buffered).
+    buffer_delay_ms = GetBufferingDelay();
 
     // Get the audio device for the call.
     memset(audio_capture_device_name, 0, KMaxUniqueIdLength);
@@ -485,6 +491,16 @@ int ViEAutoTest::ViECustomCall() {
     error = vie_codec->SetReceiveCodec(video_channel, video_send_codec);
     number_of_errors += ViETest::TestError(error == 0,
                                            "ERROR: %s at line %d",
+                                           __FUNCTION__, __LINE__);
+
+    // Set the call mode (conferencing/buffering)
+    error = vie_rtp_rtcp->SetSenderBufferingMode(video_channel,
+                                                    buffer_delay_ms);
+    number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                           __FUNCTION__, __LINE__);
+    error = vie_rtp_rtcp->SetReceiverBufferingMode(video_channel,
+                                                      buffer_delay_ms);
+    number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                            __FUNCTION__, __LINE__);
     // Set the Video Protection before start send and receive.
     SetVideoProtection(vie_codec, vie_rtp_rtcp,
@@ -1553,6 +1569,15 @@ bool GetBitrateSignaling() {
           .WithDefault("REMB")
           .Choose();
   return choice == 1;
+}
+
+int GetBufferingDelay() {
+  std::string input = TypedInput("Choose buffering delay (mS).")
+      .WithDefault(DEFAULT_BUFFERING_DELAY_MS)
+      .WithInputValidator(new webrtc::IntegerWithinRangeValidator(0, 10000))
+      .AskForInput();
+  std::string delay_ms = input;
+  return atoi(delay_ms.c_str());
 }
 
 void PrintRTCCPStatistics(webrtc::ViERTP_RTCP* vie_rtp_rtcp,

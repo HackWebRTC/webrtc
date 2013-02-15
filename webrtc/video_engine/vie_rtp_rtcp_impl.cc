@@ -553,11 +553,11 @@ int ViERTP_RTCPImpl::SetHybridNACKFECStatus(
   return 0;
 }
 
-int ViERTP_RTCPImpl::EnableSenderStreamingMode(int video_channel,
+int ViERTP_RTCPImpl::SetSenderBufferingMode(int video_channel,
                                                int target_delay_ms) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
                ViEId(shared_data_->instance_id(), video_channel),
-               "%s(channel: %d, target_delay: %d)",
+               "%s(channel: %d, sender target_delay: %d)",
                __FUNCTION__, video_channel, target_delay_ms);
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
@@ -578,8 +578,8 @@ int ViERTP_RTCPImpl::EnableSenderStreamingMode(int video_channel,
     return -1;
   }
 
-  // Update the channel's streaming mode settings.
-  if (vie_channel->EnableSenderStreamingMode(target_delay_ms) != 0) {
+  // Update the channel with buffering mode settings.
+  if (vie_channel->SetSenderBufferingMode(target_delay_ms) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo,
                  ViEId(shared_data_->instance_id(), video_channel),
                  "%s: failed for channel %d", __FUNCTION__, video_channel);
@@ -587,8 +587,35 @@ int ViERTP_RTCPImpl::EnableSenderStreamingMode(int video_channel,
     return -1;
   }
 
-  // Update the encoder's streaming mode settings.
-  vie_encoder->EnableSenderStreamingMode(target_delay_ms);
+  // Update the encoder's buffering mode settings.
+  vie_encoder->SetSenderBufferingMode(target_delay_ms);
+  return 0;
+}
+
+int ViERTP_RTCPImpl::SetReceiverBufferingMode(int video_channel,
+                                                 int target_delay_ms) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
+               ViEId(shared_data_->instance_id(), video_channel),
+               "%s(channel: %d, receiver target_delay: %d)",
+               __FUNCTION__, video_channel, target_delay_ms);
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), video_channel),
+                 "%s: Channel %d doesn't exist", __FUNCTION__, video_channel);
+    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
+    return -1;
+  }
+
+  // Update the channel with buffering mode settings.
+  if (vie_channel->SetReceiverBufferingMode(target_delay_ms) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), video_channel),
+                 "%s: failed for channel %d", __FUNCTION__, video_channel);
+    shared_data_->SetLastError(kViERtpRtcpUnknownError);
+    return -1;
+  }
   return 0;
 }
 

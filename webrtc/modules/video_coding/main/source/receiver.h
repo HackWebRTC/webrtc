@@ -69,6 +69,9 @@ class VCMReceiver {
                            VCMReceiver& dual_receiver) const;
   VCMReceiverState State() const;
 
+  // Receiver video delay.
+  int SetMinReceiverDelay(int desired_delay_ms);
+
  private:
   VCMEncodedFrame* FrameForDecoding(uint16_t max_wait_time_ms,
                                     int64_t nextrender_time_ms,
@@ -90,6 +93,7 @@ class VCMReceiver {
   VCMTiming* timing_;
   VCMEvent render_wait_event_;
   VCMReceiverState state_;
+  int max_video_delay_ms_;
 
   static int32_t receiver_id_counter_;
 };

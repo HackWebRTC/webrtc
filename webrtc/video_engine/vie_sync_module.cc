@@ -172,4 +172,14 @@ WebRtc_Word32 ViESyncModule::Process() {
   return 0;
 }
 
+void ViESyncModule::SetTargetBufferingDelay(int target_delay_ms) {
+  CriticalSectionScoped cs(data_cs_.get());
+  sync_->SetTargetBufferingDelay(target_delay_ms);
+  // Setting initial playout delay to voice engine (video engine is updated via
+  // the VCM interface).
+  assert(voe_sync_interface_ != NULL);
+  voe_sync_interface_->SetInitialPlayoutDelay(voe_channel_id_,
+                                              target_delay_ms);
+}
+
 }  // namespace webrtc

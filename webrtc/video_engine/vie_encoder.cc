@@ -702,13 +702,13 @@ WebRtc_Word32 ViEEncoder::UpdateProtectionMethod() {
   return 0;
 }
 
-void ViEEncoder::EnableSenderStreamingMode(int target_delay_ms) {
+void ViEEncoder::SetSenderBufferingMode(int target_delay_ms) {
   if (target_delay_ms > 0) {
-    // Disable external frame-droppers.
+     // Disable external frame-droppers.
      vcm_.EnableFrameDropper(false);
      vpm_.EnableTemporalDecimation(false);
   } else {
-    // Real-time mode - enabling frame droppers.
+    // Real-time mode - enable frame droppers.
     vpm_.EnableTemporalDecimation(true);
     vcm_.EnableFrameDropper(true);
   }

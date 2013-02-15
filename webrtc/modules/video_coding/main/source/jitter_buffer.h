@@ -127,10 +127,10 @@ class VCMJitterBuffer {
   VCMFrameBufferEnum InsertPacket(VCMEncodedFrame* frame,
                                   const VCMPacket& packet);
 
-  // Enable a max filter on the jitter estimate, and setting of the initial
-  // delay (only when in max mode). When disabled (default), the last jitter
+  // Enable a max filter on the jitter estimate by setting an initial
+  // non-zero delay. When set to zero (default), the last jitter
   // estimate will be used.
-  void EnableMaxJitterEstimate(bool enable, uint32_t initial_delay_ms);
+  void SetMaxJitterEstimate(uint32_t initial_delay_ms);
 
   // Returns the estimated jitter in milliseconds.
   uint32_t EstimatedJitterMs();

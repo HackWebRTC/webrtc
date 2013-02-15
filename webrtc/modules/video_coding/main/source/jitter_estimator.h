@@ -64,10 +64,10 @@ public:
 
     void UpdateMaxFrameSize(WebRtc_UWord32 frameSizeBytes);
 
-    // Enable a max filter on the jitter estimate, and setting of the initial
-    // delay (only when in max mode). When disabled (default), the last jitter
+    // Set a max filter on the jitter estimate by setting an initial
+    // non-zero delay. When set to zero (default), the last jitter
     // estimate will be used.
-    void EnableMaxJitterEstimate(bool enable, uint32_t initial_delay_ms);
+    void SetMaxJitterEstimate(uint32_t initial_delay_ms);
 
     // A constant describing the delay from the jitter buffer
     // to the delay on the receiving side which is not accounted

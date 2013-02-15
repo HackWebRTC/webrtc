@@ -287,4 +287,11 @@ TEST_F(TestVideoCodingModule, PaddingOnlyAndVideo) {
   }
 }
 
+TEST_F(TestVideoCodingModule, ReceiverDelay) {
+  EXPECT_EQ(0, vcm_->SetMinReceiverDelay(0));
+  EXPECT_EQ(0, vcm_->SetMinReceiverDelay(5000));
+  EXPECT_EQ(-1, vcm_->SetMinReceiverDelay(-100));
+  EXPECT_EQ(-1, vcm_->SetMinReceiverDelay(10010));
+}
+
 }  // namespace webrtc

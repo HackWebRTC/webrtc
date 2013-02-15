@@ -113,8 +113,8 @@ class ViEEncoder
   // Loss protection.
   WebRtc_Word32 UpdateProtectionMethod();
 
-  // Streaming mode.
-  void EnableSenderStreamingMode(int target_delay_ms);
+  // Buffering mode.
+  void SetSenderBufferingMode(int target_delay_ms);
 
   // Implements VCMPacketizationCallback.
   virtual WebRtc_Word32 SendData(

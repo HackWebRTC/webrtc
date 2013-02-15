@@ -553,6 +553,10 @@ public:
     virtual void SetNackSettings(size_t max_nack_list_size,
                                  int max_packet_age_to_nack) = 0;
 
+    // Setting a desired delay to the VCM receiver. Video rendering will be
+    // delayed by at least desired_delay_ms.
+    virtual int SetMinReceiverDelay(int desired_delay_ms) = 0;
+
     // Enables recording of debugging information.
     virtual int StartDebugRecording(const char* file_name_utf8) = 0;
 

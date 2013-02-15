@@ -409,10 +409,9 @@ VCMJitterEstimator::UpdateMaxFrameSize(WebRtc_UWord32 frameSizeBytes)
     }
 }
 
-void VCMJitterEstimator::EnableMaxJitterEstimate(bool enable,
-                                              uint32_t initial_delay_ms)
+void VCMJitterEstimator::SetMaxJitterEstimate(uint32_t initial_delay_ms)
 {
-    if (enable) {
+    if (initial_delay_ms > 0) {
         _maxJitterEstimateMs = initial_delay_ms;
         _jitterEstimateMode = kMaxEstimate;
     } else {

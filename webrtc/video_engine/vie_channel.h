@@ -116,7 +116,8 @@ class ViEChannel
   WebRtc_Word32 SetHybridNACKFECStatus(const bool enable,
                                        const unsigned char payload_typeRED,
                                        const unsigned char payload_typeFEC);
-  int EnableSenderStreamingMode(int target_delay_ms);
+  int SetSenderBufferingMode(int target_delay_ms);
+  int SetReceiverBufferingMode(int target_delay_ms);
   WebRtc_Word32 SetKeyFrameRequestMethod(const KeyFrameRequestMethod method);
   bool EnableRemb(bool enable);
   int SetSendTimestampOffsetStatus(bool enable, int id);
@@ -365,6 +366,8 @@ class ViEChannel
   WebRtc_Word32 ProcessFECRequest(const bool enable,
                                   const unsigned char payload_typeRED,
                                   const unsigned char payload_typeFEC);
+  // Compute NACK list parameters for the buffering mode.
+  int GetRequiredNackListSize(int target_delay_ms);
 
   WebRtc_Word32 channel_id_;
   WebRtc_Word32 engine_id_;
@@ -425,6 +428,7 @@ class ViEChannel
   const bool sender_;
 
   int nack_history_size_sender_;
+  int max_nack_reordering_threshold_;
 };
 
 }  // namespace webrtc

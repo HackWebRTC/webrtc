@@ -1389,6 +1389,10 @@ void VideoCodingModuleImpl::SetNackSettings(
                                 max_packet_age_to_nack);
 }
 
+int VideoCodingModuleImpl::SetMinReceiverDelay(int desired_delay_ms) {
+  return _receiver.SetMinReceiverDelay(desired_delay_ms);
+}
+
 int VideoCodingModuleImpl::StartDebugRecording(const char* file_name_utf8) {
   CriticalSectionScoped cs(_sendCritSect);
   _encoderInputFile = fopen(file_name_utf8, "wb");
