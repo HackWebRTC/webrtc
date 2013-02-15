@@ -1,7 +1,16 @@
-// Copyright (c) 2012 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-//
+/*
+ *  Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
+
+// Modified from the Chromium original:
+// src/media/base/sinc_resampler.cc
+
 // Input buffer layout, dividing the total buffer into regions (r0_ - r5_):
 //
 // |----------------|-----------------------------------------|----------------|
@@ -34,23 +43,24 @@
 // MSVC++ requires this to be set before any other includes to get M_PI.
 #define _USE_MATH_DEFINES
 
-#include "media/base/sinc_resampler.h"
+#include "webrtc/common_audio/resampler/sinc_resampler.h"
+#include "webrtc/system_wrappers/interface/compile_assert.h"
+#include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
+#include "webrtc/typedefs.h"
 
 #include <cmath>
+#include <cstring>
 
-#include "base/cpu.h"
-#include "base/logging.h"
-#include "build/build_config.h"
-
-#if defined(ARCH_CPU_X86_FAMILY) && defined(__SSE__)
+#if defined(WEBRTC_USE_SSE2)
 #include <xmmintrin.h>
 #endif
 
-#if defined(ARCH_CPU_ARM_FAMILY) && defined(USE_NEON)
-#include <arm_neon.h>
-#endif
+// TODO(ajm): See note below in Convolve_NEON.
+//#if defined(WEBRTC_ARCH_ARM_NEON) || defined(WEBRTC_DETECT_ARM_NEON)
+//#include <arm_neon.h>
+//#endif
 
-namespace media {
+namespace webrtc {
 
 namespace {
 
@@ -63,7 +73,7 @@ enum {
   // The number of destination frames generated per processing pass.  Affects
   // how often and for how much SincResampler calls back for input.  Must be
   // greater than kKernelSize.
-  kBlockSize = 512,
+  kDefaultBlockSize = 512,
 
   // The kernel offset count is used for interpolation and is the number of
   // sub-sample kernel shifts.  Can be adjusted for quality (higher is better)
@@ -72,58 +82,86 @@ enum {
   kKernelStorageSize = kKernelSize * (kKernelOffsetCount + 1),
 
   // The size (in samples) of the internal buffer used by the resampler.
-  kBufferSize = kBlockSize + kKernelSize
+  kDefaultBufferSize = kDefaultBlockSize + kKernelSize
 };
 
 }  // namespace
 
-const int SincResampler::kMaximumLookAheadSize = kBufferSize;
-
-SincResampler::SincResampler(double io_sample_rate_ratio, const ReadCB& read_cb)
+SincResampler::SincResampler(double io_sample_rate_ratio,
+                             SincResamplerCallback* read_cb,
+                             int block_size)
     : io_sample_rate_ratio_(io_sample_rate_ratio),
       virtual_source_idx_(0),
       buffer_primed_(false),
       read_cb_(read_cb),
+      block_size_(block_size),
+      buffer_size_(block_size_ + kKernelSize),
       // Create input buffers with a 16-byte alignment for SSE optimizations.
       kernel_storage_(static_cast<float*>(
-          base::AlignedAlloc(sizeof(float) * kKernelStorageSize, 16))),
+          AlignedMalloc(sizeof(float) * kKernelStorageSize, 16))),
       input_buffer_(static_cast<float*>(
-          base::AlignedAlloc(sizeof(float) * kBufferSize, 16))),
+          AlignedMalloc(sizeof(float) * buffer_size_, 16))),
       // Setup various region pointers in the buffer (see diagram above).
       r0_(input_buffer_.get() + kKernelSize / 2),
       r1_(input_buffer_.get()),
       r2_(r0_),
-      r3_(r0_ + kBlockSize - kKernelSize / 2),
-      r4_(r0_ + kBlockSize),
+      r3_(r0_ + block_size_ - kKernelSize / 2),
+      r4_(r0_ + block_size_),
       r5_(r0_ + kKernelSize / 2) {
-  // Ensure kKernelSize is a multiple of 32 for easy SSE optimizations; causes
-  // r0_ and r5_ (used for input) to always be 16-byte aligned by virtue of
-  // input_buffer_ being 16-byte aligned.
-  DCHECK_EQ(kKernelSize % 32, 0) << "kKernelSize must be a multiple of 32!";
-  DCHECK_GT(kBlockSize, kKernelSize)
-      << "kBlockSize must be greater than kKernelSize!";
-  // Basic sanity checks to ensure buffer regions are laid out correctly:
-  // r0_ and r2_ should always be the same position.
-  DCHECK_EQ(r0_, r2_);
-  // r1_ at the beginning of the buffer.
-  DCHECK_EQ(r1_, input_buffer_.get());
-  // r1_ left of r2_, r2_ left of r5_ and r1_, r2_ size correct.
-  DCHECK_EQ(r2_ - r1_, r5_ - r2_);
-  // r3_ left of r4_, r5_ left of r0_ and r3_ size correct.
-  DCHECK_EQ(r4_ - r3_, r5_ - r0_);
-  // r3_, r4_ size correct and r4_ at the end of the buffer.
-  DCHECK_EQ(r4_ + (r4_ - r3_), r1_ + kBufferSize);
-  // r5_ size correct and at the end of the buffer.
-  DCHECK_EQ(r5_ + kBlockSize, r1_ + kBufferSize);
+  Initialize();
+  InitializeKernel();
+}
 
-  memset(kernel_storage_.get(), 0,
-         sizeof(*kernel_storage_.get()) * kKernelStorageSize);
-  memset(input_buffer_.get(), 0, sizeof(*input_buffer_.get()) * kBufferSize);
-
+SincResampler::SincResampler(double io_sample_rate_ratio,
+                             SincResamplerCallback* read_cb)
+    : io_sample_rate_ratio_(io_sample_rate_ratio),
+      virtual_source_idx_(0),
+      buffer_primed_(false),
+      read_cb_(read_cb),
+      block_size_(kDefaultBlockSize),
+      buffer_size_(kDefaultBufferSize),
+      // Create input buffers with a 16-byte alignment for SSE optimizations.
+      kernel_storage_(static_cast<float*>(
+          AlignedMalloc(sizeof(float) * kKernelStorageSize, 16))),
+      input_buffer_(static_cast<float*>(
+          AlignedMalloc(sizeof(float) * buffer_size_, 16))),
+      // Setup various region pointers in the buffer (see diagram above).
+      r0_(input_buffer_.get() + kKernelSize / 2),
+      r1_(input_buffer_.get()),
+      r2_(r0_),
+      r3_(r0_ + block_size_ - kKernelSize / 2),
+      r4_(r0_ + block_size_),
+      r5_(r0_ + kKernelSize / 2) {
+  Initialize();
   InitializeKernel();
 }
 
 SincResampler::~SincResampler() {}
+
+void SincResampler::Initialize() {
+  // Ensure kKernelSize is a multiple of 32 for easy SSE optimizations; causes
+  // r0_ and r5_ (used for input) to always be 16-byte aligned by virtue of
+  // input_buffer_ being 16-byte aligned.
+  COMPILE_ASSERT(kKernelSize % 32 == 0);
+  assert(block_size_ > kKernelSize);
+  // Basic sanity checks to ensure buffer regions are laid out correctly:
+  // r0_ and r2_ should always be the same position.
+  assert(r0_ == r2_);
+  // r1_ at the beginning of the buffer.
+  assert(r1_ == input_buffer_.get());
+  // r1_ left of r2_, r2_ left of r5_ and r1_, r2_ size correct.
+  assert(r2_ - r1_ == r5_ - r2_);
+  // r3_ left of r4_, r5_ left of r0_ and r3_ size correct.
+  assert(r4_ - r3_ == r5_ - r0_);
+  // r3_, r4_ size correct and r4_ at the end of the buffer.
+  assert(r4_ + (r4_ - r3_) == r1_ + buffer_size_);
+  // r5_ size correct and at the end of the buffer.
+  assert(r5_ + block_size_ == r1_ + buffer_size_);
+
+  memset(kernel_storage_.get(), 0,
+         sizeof(*kernel_storage_.get()) * kKernelStorageSize);
+  memset(input_buffer_.get(), 0, sizeof(*input_buffer_.get()) * buffer_size_);
+}
 
 void SincResampler::InitializeKernel() {
   // Blackman window parameters.
@@ -173,13 +211,13 @@ void SincResampler::Resample(float* destination, int frames) {
 
   // Step (1) -- Prime the input buffer at the start of the input stream.
   if (!buffer_primed_) {
-    read_cb_.Run(r0_, kBlockSize + kKernelSize / 2);
+    read_cb_->Run(r0_, block_size_ + kKernelSize / 2);
     buffer_primed_ = true;
   }
 
   // Step (2) -- Resample!
   while (remaining_frames) {
-    while (virtual_source_idx_ < kBlockSize) {
+    while (virtual_source_idx_ < block_size_) {
       // |virtual_source_idx_| lies in between two kernel offsets so figure out
       // what they are.
       int source_idx = static_cast<int>(virtual_source_idx_);
@@ -209,7 +247,7 @@ void SincResampler::Resample(float* destination, int frames) {
     }
 
     // Wrap back around to the start.
-    virtual_source_idx_ -= kBlockSize;
+    virtual_source_idx_ -= block_size_;
 
     // Step (3) Copy r3_ to r1_ and r4_ to r2_.
     // This wraps the last input frames back to the start of the buffer.
@@ -218,18 +256,18 @@ void SincResampler::Resample(float* destination, int frames) {
 
     // Step (4)
     // Refresh the buffer with more input.
-    read_cb_.Run(r5_, kBlockSize);
+    read_cb_->Run(r5_, block_size_);
   }
 }
 
 int SincResampler::ChunkSize() {
-  return kBlockSize / io_sample_rate_ratio_;
+  return block_size_ / io_sample_rate_ratio_;
 }
 
 void SincResampler::Flush() {
   virtual_source_idx_ = 0;
   buffer_primed_ = false;
-  memset(input_buffer_.get(), 0, sizeof(*input_buffer_.get()) * kBufferSize);
+  memset(input_buffer_.get(), 0, sizeof(*input_buffer_.get()) * buffer_size_);
 }
 
 float SincResampler::Convolve(const float* input_ptr, const float* k1,
@@ -240,11 +278,15 @@ float SincResampler::Convolve(const float* input_ptr, const float* k1,
   typedef float (*ConvolveProc)(const float* src, const float* k1,
                                 const float* k2,
                                 double kernel_interpolation_factor);
-#if defined(ARCH_CPU_X86_FAMILY) && defined(__SSE__)
+#if defined(WEBRTC_USE_SSE2)
   static const ConvolveProc kConvolveProc =
-      base::CPU().has_sse() ? Convolve_SSE : Convolve_C;
-#elif defined(ARCH_CPU_ARM_FAMILY) && defined(USE_NEON)
+      WebRtc_GetCPUInfo(kSSE2) ? Convolve_SSE : Convolve_C;
+#elif defined(WEBRTC_ARCH_ARM_NEON)
   static const ConvolveProc kConvolveProc = Convolve_NEON;
+#elif defined(WEBRTC_DETECT_ARM_NEON)
+  static const ConvolveProc kConvolveProc =
+      WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON ? Convolve_NEON :
+                                                     Convolve_C;
 #else
   static const ConvolveProc kConvolveProc = Convolve_C;
 #endif
@@ -271,14 +313,14 @@ float SincResampler::Convolve_C(const float* input_ptr, const float* k1,
       + kernel_interpolation_factor * sum2;
 }
 
-#if defined(ARCH_CPU_X86_FAMILY) && defined(__SSE__)
+#if defined(WEBRTC_USE_SSE2)
 float SincResampler::Convolve_SSE(const float* input_ptr, const float* k1,
                                   const float* k2,
                                   double kernel_interpolation_factor) {
   // Ensure |k1|, |k2| are 16-byte aligned for SSE usage.  Should always be true
   // so long as kKernelSize is a multiple of 16.
-  DCHECK_EQ(0u, reinterpret_cast<uintptr_t>(k1) & 0x0F);
-  DCHECK_EQ(0u, reinterpret_cast<uintptr_t>(k2) & 0x0F);
+  assert(0u == (reinterpret_cast<uintptr_t>(k1) & 0x0F));
+  assert(0u == (reinterpret_cast<uintptr_t>(k2) & 0x0F));
 
   __m128 m_input;
   __m128 m_sums1 = _mm_setzero_ps();
@@ -315,33 +357,36 @@ float SincResampler::Convolve_SSE(const float* input_ptr, const float* k1,
 }
 #endif
 
-#if defined(ARCH_CPU_ARM_FAMILY) && defined(USE_NEON)
+#if defined(WEBRTC_ARCH_ARM_NEON) || defined(WEBRTC_DETECT_ARM_NEON)
 float SincResampler::Convolve_NEON(const float* input_ptr, const float* k1,
                                    const float* k2,
                                    double kernel_interpolation_factor) {
-  float32x4_t m_input;
-  float32x4_t m_sums1 = vmovq_n_f32(0);
-  float32x4_t m_sums2 = vmovq_n_f32(0);
+  // TODO(ajm): The AndroidNDK bot is giving compile errors in this function.
+  // Fallback to the plain C version until it's resolved.
+  return Convolve_C(input_ptr, k1, k2, kernel_interpolation_factor);
+  //float32x4_t m_input;
+  //float32x4_t m_sums1 = vmovq_n_f32(0);
+  //float32x4_t m_sums2 = vmovq_n_f32(0);
 
-  const float* upper = input_ptr + kKernelSize;
-  for (; input_ptr < upper; ) {
-    m_input = vld1q_f32(input_ptr);
-    input_ptr += 4;
-    m_sums1 = vmlaq_f32(m_sums1, m_input, vld1q_f32(k1));
-    k1 += 4;
-    m_sums2 = vmlaq_f32(m_sums2, m_input, vld1q_f32(k2));
-    k2 += 4;
-  }
+  //const float* upper = input_ptr + kKernelSize;
+  //for (; input_ptr < upper; ) {
+  //  m_input = vld1q_f32(input_ptr);
+  //  input_ptr += 4;
+  //  m_sums1 = vmlaq_f32(m_sums1, m_input, vld1q_f32(k1));
+  //  k1 += 4;
+  //  m_sums2 = vmlaq_f32(m_sums2, m_input, vld1q_f32(k2));
+  //  k2 += 4;
+  //}
 
   // Linearly interpolate the two "convolutions".
-  m_sums1 = vmlaq_f32(
-      vmulq_f32(m_sums1, vmovq_n_f32(1.0 - kernel_interpolation_factor)),
-      m_sums2, vmovq_n_f32(kernel_interpolation_factor));
+  //m_sums1 = vmlaq_f32(
+  //    vmulq_f32(m_sums1, vmovq_n_f32(1.0 - kernel_interpolation_factor)),
+  //    m_sums2, vmovq_n_f32(kernel_interpolation_factor));
 
   // Sum components together.
-  float32x2_t m_half = vadd_f32(vget_high_f32(m_sums1), vget_low_f32(m_sums1));
-  return vget_lane_f32(vpadd_f32(m_half, m_half), 0);
+  //float32x2_t m_half = vadd_f32(vget_high_f32(m_sums1), vget_low_f32(m_sums1));
+  //return vget_lane_f32(vpadd_f32(m_half, m_half), 0);
 }
 #endif
 
-}  // namespace media
+}  // namespace webrtc

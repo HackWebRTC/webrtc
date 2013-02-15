@@ -1,38 +1,40 @@
-// Copyright (c) 2012 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+/*
+ *  Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
+
+// Modified from the Chromium original:
+// src/media/base/sinc_resampler_unittest.cc
 
 // MSVC++ requires this to be set before any other includes to get M_PI.
 #define _USE_MATH_DEFINES
 
 #include <cmath>
 
-#include "base/bind.h"
-#include "base/bind_helpers.h"
-#include "base/command_line.h"
-#include "base/logging.h"
-#include "base/string_number_conversions.h"
-#include "base/strings/stringize_macros.h"
-#include "base/time.h"
-#include "build/build_config.h"
-#include "media/base/sinc_resampler.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/common_audio/resampler/sinc_resampler.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/stringize_macros.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/test/test_suite.h"
 
 using testing::_;
 
-namespace media {
+namespace webrtc {
 
 static const double kSampleRateRatio = 192000.0 / 44100.0;
 static const double kKernelInterpolationFactor = 0.5;
 
-// Command line switch for runtime adjustment of ConvolveBenchmark iterations.
-static const char kConvolveIterations[] = "convolve-iterations";
-
 // Helper class to ensure ChunkedResample() functions properly.
-class MockSource {
+class MockSource : public SincResamplerCallback {
  public:
-  MOCK_METHOD2(ProvideInput, void(float* destination, int frames));
+  MOCK_METHOD2(Run, void(float* destination, int frames));
 };
 
 ACTION(ClearBuffer) {
@@ -53,22 +55,20 @@ TEST(SincResamplerTest, ChunkedResample) {
 
   // Choose a high ratio of input to output samples which will result in quick
   // exhaustion of SincResampler's internal buffers.
-  SincResampler resampler(
-      kSampleRateRatio,
-      base::Bind(&MockSource::ProvideInput, base::Unretained(&mock_source)));
+  SincResampler resampler(kSampleRateRatio, &mock_source);
 
   static const int kChunks = 2;
   int max_chunk_size = resampler.ChunkSize() * kChunks;
   scoped_array<float> resampled_destination(new float[max_chunk_size]);
 
   // Verify requesting ChunkSize() frames causes a single callback.
-  EXPECT_CALL(mock_source, ProvideInput(_, _))
+  EXPECT_CALL(mock_source, Run(_, _))
       .Times(1).WillOnce(ClearBuffer());
   resampler.Resample(resampled_destination.get(), resampler.ChunkSize());
 
   // Verify requesting kChunks * ChunkSize() frames causes kChunks callbacks.
   testing::Mock::VerifyAndClear(&mock_source);
-  EXPECT_CALL(mock_source, ProvideInput(_, _))
+  EXPECT_CALL(mock_source, Run(_, _))
       .Times(kChunks).WillRepeatedly(ClearBuffer());
   resampler.Resample(resampled_destination.get(), max_chunk_size);
 }
@@ -76,13 +76,11 @@ TEST(SincResamplerTest, ChunkedResample) {
 // Test flush resets the internal state properly.
 TEST(SincResamplerTest, Flush) {
   MockSource mock_source;
-  SincResampler resampler(
-      kSampleRateRatio,
-      base::Bind(&MockSource::ProvideInput, base::Unretained(&mock_source)));
+  SincResampler resampler(kSampleRateRatio, &mock_source);
   scoped_array<float> resampled_destination(new float[resampler.ChunkSize()]);
 
   // Fill the resampler with junk data.
-  EXPECT_CALL(mock_source, ProvideInput(_, _))
+  EXPECT_CALL(mock_source, Run(_, _))
       .Times(1).WillOnce(FillBuffer());
   resampler.Resample(resampled_destination.get(), resampler.ChunkSize() / 2);
   ASSERT_NE(resampled_destination[0], 0);
@@ -90,7 +88,7 @@ TEST(SincResamplerTest, Flush) {
   // Flush and request more data, which should all be zeros now.
   resampler.Flush();
   testing::Mock::VerifyAndClear(&mock_source);
-  EXPECT_CALL(mock_source, ProvideInput(_, _))
+  EXPECT_CALL(mock_source, Run(_, _))
       .Times(1).WillOnce(ClearBuffer());
   resampler.Resample(resampled_destination.get(), resampler.ChunkSize() / 2);
   for (int i = 0; i < resampler.ChunkSize() / 2; ++i)
@@ -98,9 +96,9 @@ TEST(SincResamplerTest, Flush) {
 }
 
 // Define platform independent function name for Convolve* tests.
-#if defined(ARCH_CPU_X86_FAMILY) && defined(__SSE__)
+#if defined(WEBRTC_USE_SSE2) && defined(__SSE__)
 #define CONVOLVE_FUNC Convolve_SSE
-#elif defined(ARCH_CPU_ARM_FAMILY) && defined(USE_NEON)
+#elif defined(WEBRTC_ARCH_ARM_NEON) || defined(WEBRTC_DETECT_ARM_NEON)
 #define CONVOLVE_FUNC Convolve_NEON
 #endif
 
@@ -111,9 +109,7 @@ TEST(SincResamplerTest, Flush) {
 TEST(SincResamplerTest, Convolve) {
   // Initialize a dummy resampler.
   MockSource mock_source;
-  SincResampler resampler(
-      kSampleRateRatio,
-      base::Bind(&MockSource::ProvideInput, base::Unretained(&mock_source)));
+  SincResampler resampler(kSampleRateRatio, &mock_source);
 
   // The optimized Convolve methods are slightly more precise than Convolve_C(),
   // so comparison must be done using an epsilon.
@@ -146,59 +142,53 @@ TEST(SincResamplerTest, Convolve) {
 TEST(SincResamplerTest, ConvolveBenchmark) {
   // Initialize a dummy resampler.
   MockSource mock_source;
-  SincResampler resampler(
-      kSampleRateRatio,
-      base::Bind(&MockSource::ProvideInput, base::Unretained(&mock_source)));
+  SincResampler resampler(kSampleRateRatio, &mock_source);
 
   // Retrieve benchmark iterations from command line.
-  int convolve_iterations = 10;
-  std::string iterations(CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
-      kConvolveIterations));
-  if (!iterations.empty())
-    base::StringToInt(iterations, &convolve_iterations);
+  // TODO(ajm): Reintroduce this as a command line option.
+  const int kConvolveIterations = 1000000;
 
-  printf("Benchmarking %d iterations:\n", convolve_iterations);
+  printf("Benchmarking %d iterations:\n", kConvolveIterations);
 
   // Benchmark Convolve_C().
-  base::TimeTicks start = base::TimeTicks::HighResNow();
-  for (int i = 0; i < convolve_iterations; ++i) {
+  TickTime start = TickTime::Now();
+  for (int i = 0; i < kConvolveIterations; ++i) {
     resampler.Convolve_C(
         resampler.kernel_storage_.get(), resampler.kernel_storage_.get(),
         resampler.kernel_storage_.get(), kKernelInterpolationFactor);
   }
-  double total_time_c_ms =
-      (base::TimeTicks::HighResNow() - start).InMillisecondsF();
-  printf("Convolve_C took %.2fms.\n", total_time_c_ms);
+  double total_time_c_us = (TickTime::Now() - start).Microseconds();
+  printf("Convolve_C took %.2fms.\n", total_time_c_us / 1000);
 
 #if defined(CONVOLVE_FUNC)
   // Benchmark with unaligned input pointer.
-  start = base::TimeTicks::HighResNow();
-  for (int j = 0; j < convolve_iterations; ++j) {
+  start = TickTime::Now();
+  for (int j = 0; j < kConvolveIterations; ++j) {
     resampler.CONVOLVE_FUNC(
         resampler.kernel_storage_.get() + 1, resampler.kernel_storage_.get(),
         resampler.kernel_storage_.get(), kKernelInterpolationFactor);
   }
-  double total_time_optimized_unaligned_ms =
-      (base::TimeTicks::HighResNow() - start).InMillisecondsF();
+  double total_time_optimized_unaligned_us =
+      (TickTime::Now() - start).Microseconds();
   printf(STRINGIZE(CONVOLVE_FUNC) "(unaligned) took %.2fms; which is %.2fx "
-         "faster than Convolve_C.\n", total_time_optimized_unaligned_ms,
-         total_time_c_ms / total_time_optimized_unaligned_ms);
+         "faster than Convolve_C.\n", total_time_optimized_unaligned_us / 1000,
+         total_time_c_us / total_time_optimized_unaligned_us);
 
   // Benchmark with aligned input pointer.
-  start = base::TimeTicks::HighResNow();
-  for (int j = 0; j < convolve_iterations; ++j) {
+  start = TickTime::Now();
+  for (int j = 0; j < kConvolveIterations; ++j) {
     resampler.CONVOLVE_FUNC(
         resampler.kernel_storage_.get(), resampler.kernel_storage_.get(),
         resampler.kernel_storage_.get(), kKernelInterpolationFactor);
   }
-  double total_time_optimized_aligned_ms =
-      (base::TimeTicks::HighResNow() - start).InMillisecondsF();
+  double total_time_optimized_aligned_us =
+      (TickTime::Now() - start).Microseconds();
   printf(STRINGIZE(CONVOLVE_FUNC) " (aligned) took %.2fms; which is %.2fx "
          "faster than Convolve_C and %.2fx faster than "
          STRINGIZE(CONVOLVE_FUNC) " (unaligned).\n",
-         total_time_optimized_aligned_ms,
-         total_time_c_ms / total_time_optimized_aligned_ms,
-         total_time_optimized_unaligned_ms / total_time_optimized_aligned_ms);
+         total_time_optimized_aligned_us / 1000,
+         total_time_c_us / total_time_optimized_aligned_us,
+         total_time_optimized_unaligned_us / total_time_optimized_aligned_us);
 #endif
 }
 
@@ -207,7 +197,7 @@ TEST(SincResamplerTest, ConvolveBenchmark) {
 // Fake audio source for testing the resampler.  Generates a sinusoidal linear
 // chirp (http://en.wikipedia.org/wiki/Chirp) which can be tuned to stress the
 // resampler for the specific sample rate conversion being used.
-class SinusoidalLinearChirpSource {
+class SinusoidalLinearChirpSource : public SincResamplerCallback {
  public:
   SinusoidalLinearChirpSource(int sample_rate, int samples,
                               double max_frequency)
@@ -222,7 +212,7 @@ class SinusoidalLinearChirpSource {
 
   virtual ~SinusoidalLinearChirpSource() {}
 
-  void ProvideInput(float* destination, int frames) {
+  virtual void Run(float* destination, int frames) {
     for (int i = 0; i < frames; ++i, ++current_index_) {
       // Filter out frequencies higher than Nyquist.
       if (Frequency(current_index_) > 0.5 * sample_rate_) {
@@ -292,8 +282,7 @@ TEST_P(SincResamplerTest, Resample) {
 
   SincResampler resampler(
       input_rate_ / static_cast<double>(output_rate_),
-      base::Bind(&SinusoidalLinearChirpSource::ProvideInput,
-                 base::Unretained(&resampler_source)));
+      &resampler_source);
 
   // TODO(dalecurtis): If we switch to AVX/SSE optimization, we'll need to
   // allocate these on 32-byte boundaries and ensure they're sized % 32 bytes.
@@ -306,7 +295,7 @@ TEST_P(SincResamplerTest, Resample) {
   // Generate pure signal.
   SinusoidalLinearChirpSource pure_source(
       output_rate_, output_samples, input_nyquist_freq);
-  pure_source.ProvideInput(pure_destination.get(), output_samples);
+  pure_source.Run(pure_destination.get(), output_samples);
 
   // Range of the Nyquist frequency (0.5 * min(input rate, output_rate)) which
   // we refer to as low and high.
@@ -402,4 +391,5 @@ INSTANTIATE_TEST_CASE_P(
         std::tr1::make_tuple(96000, 192000, kResamplingRMSError, -73.52),
         std::tr1::make_tuple(192000, 192000, kResamplingRMSError, -73.52)));
 
-}  // namespace media
+}  // namespace webrtc
+

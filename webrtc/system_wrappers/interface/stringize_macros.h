@@ -1,15 +1,22 @@
-// Copyright (c) 2010 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-//
+/*
+ *  Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
+
+// Modified from the Chromium original:
+// src/base/strings/stringize_macros.h
+
 // This file defines preprocessor macros for stringizing preprocessor
 // symbols (or their output) and manipulating preprocessor symbols
 // that define strings.
 
-#ifndef BASE_STRINGS_STRINGIZE_MACROS_H_
-#define BASE_STRINGS_STRINGIZE_MACROS_H_
-
-#include "build/build_config.h"
+#ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_STRINGIZE_MACROS_H_
+#define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_STRINGIZE_MACROS_H_
 
 // This is not very useful as it does not expand defined symbols if
 // called directly. Use its counterpart without the _NO_EXPANSION
@@ -28,4 +35,4 @@
 //   STRINGIZE(B(y)) produces "myobj->FunctionCall(y)"
 #define STRINGIZE(x) STRINGIZE_NO_EXPANSION(x)
 
-#endif  // BASE_STRINGS_STRINGIZE_MACROS_H_
+#endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_STRINGIZE_MACROS_H_
