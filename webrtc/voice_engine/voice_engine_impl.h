@@ -59,6 +59,7 @@ namespace webrtc
 {
 
 class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
+                        public VoiceEngine,
 #ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
                         public VoEAudioProcessingImpl,
 #endif

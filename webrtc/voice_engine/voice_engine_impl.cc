@@ -31,13 +31,12 @@ WEBRTC_DLLEXPORT VoiceEngine* GetVoiceEngine();
 VoiceEngine* GetVoiceEngine()
 {
     VoiceEngineImpl* self = new VoiceEngineImpl();
-    VoiceEngine* ve = reinterpret_cast<VoiceEngine*>(self);
-    if (ve != NULL)
+    if (self != NULL)
     {
         self->AddRef();  // First reference.  Released in VoiceEngine::Delete.
         gVoiceEngineInstanceCounter++;
     }
-    return ve;
+    return self;
 }
 } // extern "C"
 
@@ -128,7 +127,7 @@ bool VoiceEngine::Delete(VoiceEngine*& voiceEngine)
     if (voiceEngine == NULL)
         return false;
 
-    VoiceEngineImpl* s = reinterpret_cast<VoiceEngineImpl*>(voiceEngine);
+    VoiceEngineImpl* s = static_cast<VoiceEngineImpl*>(voiceEngine);
     // Release the reference that was added in GetVoiceEngine.
     int ref = s->Release();
     voiceEngine = NULL;

@@ -86,7 +86,7 @@ public:
 
 protected:
     VoiceEngine() {}
-    virtual ~VoiceEngine() {}
+    ~VoiceEngine() {}
 };
 
 // VoEBase
