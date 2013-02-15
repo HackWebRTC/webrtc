@@ -122,7 +122,7 @@ static void ComfortNoise(aec_t *aec, float efw[2][PART_LEN1],
                                   const float *noisePow, const float *lambda);
 
 static void WebRtcAec_InitLevel(power_level_t *level);
-static void WebRtcAec_InitStats(stats_t *stats);
+static void WebRtcAec_InitStats(stats* stats);
 static void UpdateLevel(power_level_t* level, float in[2][PART_LEN1]);
 static void UpdateMetrics(aec_t *aec);
 // Convert from time domain to frequency domain. Note that |time_data| are
@@ -719,6 +719,17 @@ int WebRtcAec_GetDelayMetricsCore(aec_t* self, int* median, int* std) {
 int WebRtcAec_echo_state(aec_t* self) {
   assert(self != NULL);
   return self->echoState;
+}
+
+void WebRtcAec_GetEchoStats(aec_t* self, stats* erl, stats* erle,
+                            stats* a_nlp) {
+  assert(self != NULL);
+  assert(erl != NULL);
+  assert(erle != NULL);
+  assert(a_nlp != NULL);
+  *erl = self->erl;
+  *erle = self->erle;
+  *a_nlp = self->aNlp;
 }
 
 static void ProcessBlock(aec_t* aec) {
@@ -1391,7 +1402,7 @@ static void WebRtcAec_InitLevel(power_level_t *level)
     level->sfrcounter = 0;
 }
 
-static void WebRtcAec_InitStats(stats_t *stats)
+static void WebRtcAec_InitStats(stats* stats)
 {
     stats->instant = offsetLevel;
     stats->average = offsetLevel;

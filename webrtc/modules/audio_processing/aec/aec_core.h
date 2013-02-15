@@ -56,16 +56,16 @@ typedef struct {
 } power_level_t;
 
 typedef struct {
-    float instant;
-    float average;
-    float min;
-    float max;
-    float sum;
-    float hisum;
-    float himean;
-    int counter;
-    int hicounter;
-} stats_t;
+  float instant;
+  float average;
+  float min;
+  float max;
+  float sum;
+  float hisum;
+  float himean;
+  int counter;
+  int hicounter;
+} stats;
 
 typedef struct {
     int farBufWritePos, farBufReadPos;
@@ -131,10 +131,10 @@ typedef struct {
 
     int metricsMode;
     int stateCounter;
-    stats_t erl;
-    stats_t erle;
-    stats_t aNlp;
-    stats_t rerl;
+    stats erl;
+    stats erle;
+    stats aNlp;
+    stats rerl;
 
     // Quantities to control H band scaling for SWB input
     int freq_avg_ic;  // initial bin for averaging nlp gain
@@ -187,5 +187,7 @@ int WebRtcAec_MoveFarReadPtr(aec_t* aec, int elements);
 int WebRtcAec_GetDelayMetricsCore(aec_t* self, int* median, int* std);
 // Returns the echo state (1: echo, 0: no echo).
 int WebRtcAec_echo_state(aec_t* self);
+// Gets statistics of the echo metrics ERL, ERLE, A_NLP.
+void WebRtcAec_GetEchoStats(aec_t* self, stats* erl, stats* erle, stats* a_nlp);
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_CORE_H_

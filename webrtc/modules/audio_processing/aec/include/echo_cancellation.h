@@ -43,10 +43,10 @@ typedef struct {
 } AecConfig;
 
 typedef struct {
-    WebRtc_Word16 instant;
-    WebRtc_Word16 average;
-    WebRtc_Word16 max;
-    WebRtc_Word16 min;
+  int instant;
+  int average;
+  int max;
+  int min;
 } AecLevel;
 
 typedef struct {
@@ -215,16 +215,16 @@ int WebRtcAec_get_echo_status(void* handle, int* status);
  *
  * Inputs                       Description
  * -------------------------------------------------------------------
- * void           *aecInst      Pointer to the AEC instance
+ * void           *handle       Pointer to the AEC instance
  *
  * Outputs                      Description
  * -------------------------------------------------------------------
  * AecMetrics     *metrics      Struct which will be filled out with the
  *                              current echo metrics.
- * WebRtc_Word32  return         0: OK
+ * int            return         0: OK
  *                              -1: error
  */
-WebRtc_Word32 WebRtcAec_GetMetrics(void *aecInst, AecMetrics *metrics);
+int WebRtcAec_GetMetrics(void* handle, AecMetrics* metrics);
 
 /*
  * Gets the current delay metrics for the session.

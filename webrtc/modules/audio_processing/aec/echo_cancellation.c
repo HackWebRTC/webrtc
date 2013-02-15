@@ -629,104 +629,101 @@ int WebRtcAec_get_echo_status(void* handle, int* status) {
   return 0;
 }
 
-WebRtc_Word32 WebRtcAec_GetMetrics(void *aecInst, AecMetrics *metrics)
-{
-    const float upweight = 0.7f;
-    float dtmp;
-    short stmp;
-    aecpc_t *aecpc = aecInst;
+int WebRtcAec_GetMetrics(void* handle, AecMetrics* metrics) {
+  const float kUpWeight = 0.7f;
+  float dtmp;
+  int stmp;
+  aecpc_t* self = (aecpc_t*)handle;
+  stats erl;
+  stats erle;
+  stats a_nlp;
 
-    if (aecpc == NULL) {
-        return -1;
-    }
+  if (handle == NULL ) {
+    return -1;
+  }
+  if (metrics == NULL ) {
+    self->lastError = AEC_NULL_POINTER_ERROR;
+    return -1;
+  }
+  if (self->initFlag != initCheck) {
+    self->lastError = AEC_UNINITIALIZED_ERROR;
+    return -1;
+  }
 
-    if (metrics == NULL) {
-        aecpc->lastError = AEC_NULL_POINTER_ERROR;
-        return -1;
-    }
+  WebRtcAec_GetEchoStats(self->aec, &erl, &erle, &a_nlp);
 
-    if (aecpc->initFlag != initCheck) {
-        aecpc->lastError = AEC_UNINITIALIZED_ERROR;
-        return -1;
-    }
+  // ERL
+  metrics->erl.instant = (int) erl.instant;
 
-    // ERL
-    metrics->erl.instant = (short) aecpc->aec->erl.instant;
+  if ((erl.himean > offsetLevel) && (erl.average > offsetLevel)) {
+    // Use a mix between regular average and upper part average.
+    dtmp = kUpWeight * erl.himean + (1 - kUpWeight) * erl.average;
+    metrics->erl.average = (int) dtmp;
+  } else {
+    metrics->erl.average = offsetLevel;
+  }
 
-    if ((aecpc->aec->erl.himean > offsetLevel) && (aecpc->aec->erl.average > offsetLevel)) {
-    // Use a mix between regular average and upper part average
-        dtmp = upweight * aecpc->aec->erl.himean + (1 - upweight) * aecpc->aec->erl.average;
-        metrics->erl.average = (short) dtmp;
-    }
-    else {
-        metrics->erl.average = offsetLevel;
-    }
+  metrics->erl.max = (int) erl.max;
 
-    metrics->erl.max = (short) aecpc->aec->erl.max;
+  if (erl.min < (offsetLevel * (-1))) {
+    metrics->erl.min = (int) erl.min;
+  } else {
+    metrics->erl.min = offsetLevel;
+  }
 
-    if (aecpc->aec->erl.min < (offsetLevel * (-1))) {
-        metrics->erl.min = (short) aecpc->aec->erl.min;
-    }
-    else {
-        metrics->erl.min = offsetLevel;
-    }
+  // ERLE
+  metrics->erle.instant = (int) erle.instant;
 
-    // ERLE
-    metrics->erle.instant = (short) aecpc->aec->erle.instant;
+  if ((erle.himean > offsetLevel) && (erle.average > offsetLevel)) {
+    // Use a mix between regular average and upper part average.
+    dtmp = kUpWeight * erle.himean + (1 - kUpWeight) * erle.average;
+    metrics->erle.average = (int) dtmp;
+  } else {
+    metrics->erle.average = offsetLevel;
+  }
 
-    if ((aecpc->aec->erle.himean > offsetLevel) && (aecpc->aec->erle.average > offsetLevel)) {
-        // Use a mix between regular average and upper part average
-        dtmp =  upweight * aecpc->aec->erle.himean + (1 - upweight) * aecpc->aec->erle.average;
-        metrics->erle.average = (short) dtmp;
-    }
-    else {
-        metrics->erle.average = offsetLevel;
-    }
+  metrics->erle.max = (int) erle.max;
 
-    metrics->erle.max = (short) aecpc->aec->erle.max;
+  if (erle.min < (offsetLevel * (-1))) {
+    metrics->erle.min = (int) erle.min;
+  } else {
+    metrics->erle.min = offsetLevel;
+  }
 
-    if (aecpc->aec->erle.min < (offsetLevel * (-1))) {
-        metrics->erle.min = (short) aecpc->aec->erle.min;
-    } else {
-        metrics->erle.min = offsetLevel;
-    }
+  // RERL
+  if ((metrics->erl.average > offsetLevel)
+      && (metrics->erle.average > offsetLevel)) {
+    stmp = metrics->erl.average + metrics->erle.average;
+  } else {
+    stmp = offsetLevel;
+  }
+  metrics->rerl.average = stmp;
 
-    // RERL
-    if ((metrics->erl.average > offsetLevel) && (metrics->erle.average > offsetLevel)) {
-        stmp = metrics->erl.average + metrics->erle.average;
-    }
-    else {
-        stmp = offsetLevel;
-    }
-    metrics->rerl.average = stmp;
+  // No other statistics needed, but returned for completeness.
+  metrics->rerl.instant = stmp;
+  metrics->rerl.max = stmp;
+  metrics->rerl.min = stmp;
 
-    // No other statistics needed, but returned for completeness
-    metrics->rerl.instant = stmp;
-    metrics->rerl.max = stmp;
-    metrics->rerl.min = stmp;
+  // A_NLP
+  metrics->aNlp.instant = (int) a_nlp.instant;
 
-    // A_NLP
-    metrics->aNlp.instant = (short) aecpc->aec->aNlp.instant;
+  if ((a_nlp.himean > offsetLevel) && (a_nlp.average > offsetLevel)) {
+    // Use a mix between regular average and upper part average.
+    dtmp = kUpWeight * a_nlp.himean + (1 - kUpWeight) * a_nlp.average;
+    metrics->aNlp.average = (int) dtmp;
+  } else {
+    metrics->aNlp.average = offsetLevel;
+  }
 
-    if ((aecpc->aec->aNlp.himean > offsetLevel) && (aecpc->aec->aNlp.average > offsetLevel)) {
-        // Use a mix between regular average and upper part average
-        dtmp =  upweight * aecpc->aec->aNlp.himean + (1 - upweight) * aecpc->aec->aNlp.average;
-        metrics->aNlp.average = (short) dtmp;
-    }
-    else {
-        metrics->aNlp.average = offsetLevel;
-    }
+  metrics->aNlp.max = (int) a_nlp.max;
 
-    metrics->aNlp.max = (short) aecpc->aec->aNlp.max;
+  if (a_nlp.min < (offsetLevel * (-1))) {
+    metrics->aNlp.min = (int) a_nlp.min;
+  } else {
+    metrics->aNlp.min = offsetLevel;
+  }
 
-    if (aecpc->aec->aNlp.min < (offsetLevel * (-1))) {
-        metrics->aNlp.min = (short) aecpc->aec->aNlp.min;
-    }
-    else {
-        metrics->aNlp.min = offsetLevel;
-    }
-
-    return 0;
+  return 0;
 }
 
 int WebRtcAec_GetDelayMetrics(void* handle, int* median, int* std) {
