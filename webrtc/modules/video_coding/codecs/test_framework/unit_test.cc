@@ -778,7 +778,7 @@ UnitTest::RateControlTests()
         printf("Target bitrate: %d kbps, actual bitrate: %d kbps\n", _bitRate,
             actualBitrate);
         // Test for close match over reasonable range.
-        if (_bitRate >= 100 && _bitRate <= 2500)
+        if (_bitRate >= 105 && _bitRate <= 2500)
         {
             EXPECT_TRUE(abs(WebRtc_Word32(actualBitrate - _bitRate)) <
                 0.12 * _bitRate); // for VP8
