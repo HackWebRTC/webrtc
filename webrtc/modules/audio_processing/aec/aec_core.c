@@ -716,6 +716,11 @@ int WebRtcAec_GetDelayMetricsCore(aec_t* self, int* median, int* std) {
   return 0;
 }
 
+int WebRtcAec_echo_state(aec_t* self) {
+  assert(self != NULL);
+  return self->echoState;
+}
+
 static void ProcessBlock(aec_t* aec) {
     int i;
     float d[PART_LEN], y[PART_LEN], e[PART_LEN], dH[PART_LEN];

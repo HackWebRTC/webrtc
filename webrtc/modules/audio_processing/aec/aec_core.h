@@ -185,5 +185,7 @@ int WebRtcAec_MoveFarReadPtr(aec_t* aec, int elements);
 // Calculates the median and standard deviation among the delay estimates
 // collected since the last call to this function.
 int WebRtcAec_GetDelayMetricsCore(aec_t* self, int* median, int* std);
+// Returns the echo state (1: echo, 0: no echo).
+int WebRtcAec_echo_state(aec_t* self);
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_CORE_H_

@@ -609,27 +609,24 @@ WebRtc_Word32 WebRtcAec_get_config(void *aecInst, AecConfig *config)
     return 0;
 }
 
-WebRtc_Word32 WebRtcAec_get_echo_status(void *aecInst, WebRtc_Word16 *status)
-{
-    aecpc_t *aecpc = aecInst;
+int WebRtcAec_get_echo_status(void* handle, int* status) {
+  aecpc_t* self = (aecpc_t*)handle;
 
-    if (aecpc == NULL) {
-        return -1;
-    }
+  if (handle == NULL ) {
+    return -1;
+  }
+  if (status == NULL ) {
+    self->lastError = AEC_NULL_POINTER_ERROR;
+    return -1;
+  }
+  if (self->initFlag != initCheck) {
+    self->lastError = AEC_UNINITIALIZED_ERROR;
+    return -1;
+  }
 
-    if (status == NULL) {
-        aecpc->lastError = AEC_NULL_POINTER_ERROR;
-        return -1;
-    }
+  *status = WebRtcAec_echo_state(self->aec);
 
-    if (aecpc->initFlag != initCheck) {
-        aecpc->lastError = AEC_UNINITIALIZED_ERROR;
-        return -1;
-    }
-
-    *status = aecpc->aec->echoState;
-
-    return 0;
+  return 0;
 }
 
 WebRtc_Word32 WebRtcAec_GetMetrics(void *aecInst, AecMetrics *metrics)

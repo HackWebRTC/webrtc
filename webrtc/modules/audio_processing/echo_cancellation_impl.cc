@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "echo_cancellation_impl.h"
+#include "webrtc/modules/audio_processing/echo_cancellation_impl.h"
 
-#include <cassert>
+#include <assert.h>
 #include <string.h>
 
-#include "critical_section_wrapper.h"
-#include "echo_cancellation.h"
+#include "webrtc/modules/audio_processing/audio_buffer.h"
+#include "webrtc/modules/audio_processing/audio_processing_impl.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
-#include "audio_processing_impl.h"
-#include "audio_buffer.h"
+#include "webrtc/modules/audio_processing/aec/include/echo_cancellation.h"
 
 namespace webrtc {
 
@@ -141,7 +141,7 @@ int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio) {
         }
       }
 
-      WebRtc_Word16 status = 0;
+      int status = 0;
       err = WebRtcAec_get_echo_status(my_handle, &status);
       if (err != apm_->kNoError) {
         return GetHandleError(my_handle);

@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC_INCLUDE_ECHO_CANCELLATION_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_INCLUDE_ECHO_CANCELLATION_H_
 
-#include "typedefs.h"
+#include "webrtc/typedefs.h"
 
 // Errors
 #define AEC_UNSPECIFIED_ERROR           12000
@@ -199,16 +199,16 @@ WebRtc_Word32 WebRtcAec_get_config(void *aecInst, AecConfig *config);
  *
  * Inputs                       Description
  * -------------------------------------------------------------------
- * void           *aecInst      Pointer to the AEC instance
+ * void           *handle       Pointer to the AEC instance
  *
  * Outputs                      Description
  * -------------------------------------------------------------------
- * WebRtc_Word16  *status       0: Almost certainly nearend single-talk
+ * int            *status       0: Almost certainly nearend single-talk
  *                              1: Might not be neared single-talk
- * WebRtc_Word32  return         0: OK
+ * int            return         0: OK
  *                              -1: error
  */
-WebRtc_Word32 WebRtcAec_get_echo_status(void *aecInst, WebRtc_Word16 *status);
+int WebRtcAec_get_echo_status(void* handle, int* status);
 
 /*
  * Gets the current echo metrics for the session.
