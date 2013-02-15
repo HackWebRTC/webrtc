@@ -10,42 +10,9 @@
 """WebRTC reformat script.
 
 This script is used to reformat WebRTC code from the old code style to Google
-C++ code style.
-
-You need to have astyle (http://astyle.sourceforge.net/) in your path. You also
-need to put the following contents into ~/.astylerc:
-
-# =======================COPY==============================================
-# Google C++ style guide settings.
-indent=spaces=2 # Indentation uses two spaces.
-style=attach # Attach braces.
-
-indent-switches
-indent-preprocessor # Indent preprocessor continuation lines.
-min-conditional-indent=0 # Align conditional continuation with "(".
-                         # e.g. if (foo &&
-                         #          bar
-max-instatement-indent=80 # Try not to mess with current alignment.
-
-pad-oper # Padding around operators.
-pad-header # Padding after if, for etc.
-unpad-paren # No padding around parentheses.
-align-pointer=type # e.g. int* foo
-
-convert-tabs # Convert non-indentation tabs as well.
-
-# The following are available in the unreleased svn repo.
-# Behvaiour isn't quite what we'd like; more testing needed.
-#max-code-length=80
-#break-after-logical
-
-lineend=linux
-# =========================================================================
+C++ code style. This script does not indent code; use clang-reformat-chrome.py
+as described in go/webrtc/engineering/reformatting-gips---google.
 """
-
-# TODO(mflodman)
-# x s/type *var/type* var/g
-# x : list indention -> 4 spaces.
 
 __author__ = 'mflodman@webrtc.org (Magnus Flodman)'
 
@@ -70,12 +37,6 @@ def DeCamelCase(text):
   return text
 
 
-def TrimLineEndings(text):
-  """Removes trailing white spaces."""
-  pattern = re.compile(r'[ ]+(\n)')
-  return re.sub(pattern, r'\1', text)
-
-
 def MoveUnderScore(text):
   """Moves the underscore from beginning of variable name to the end."""
   # TODO(mflodman) Replace \1 with ?-expression.
@@ -89,12 +50,6 @@ def PostfixToPrefixInForLoops(text):
   """Converts x++ to ++x in the increment part of a for loop."""
   pattern = r'(for \(.*;.*;) (\w+)\+\+\)'
   return re.sub(pattern, r'\1++\2)', text)
-
-
-def RemoveMultipleEmptyLines(text):
-  """Remove all multiple blank lines."""
-  pattern = r'[\n]{3,}'
-  return re.sub(pattern, '\n\n', text)
 
 
 def CPPComments(text):
@@ -215,12 +170,6 @@ def AddWebrtcPrefixToOldSrcRelativePaths(text):
   return re.sub(headers, AddWebrtcToOldSrcRelativePath, text)
 
 
-def IndentLabels(text):
-  """Indent public, protected and private one step (astyle doesn't)."""
-  pattern = re.compile('(?<=\n)(public:|protected:|private:)')
-  return re.sub(pattern, r' \1', text)
-
-
 def FixIncludeGuards(text, file_name):
   """Change include guard according to the stantard."""
   # Remove a possible webrtc/ from  the path.
@@ -263,23 +212,14 @@ def main():
     text = AddHeaderPath(text)
     text = AddWebrtcPrefixToOldSrcRelativePaths(text)
     text = SortIncludeHeaders(text, filename)
-    text = RemoveMultipleEmptyLines(text)
-    text = TrimLineEndings(text)
 
     # Remove the original file and re-create it with the reformatted content.
     SaveFile(filename, text)
-
-    # Fix tabs, indentation and '{' using astyle.
-    astyle_cmd = 'astyle'
-    if sys.platform == 'win32':
-      astyle_cmd += '.exe'
-    subprocess.call([astyle_cmd, '-n', '-q', filename])
 
     if filename.endswith('.h'):
       f = open(filename)
       text = f.read()
       f.close()
-      text = IndentLabels(text)
       text = FixIncludeGuards(text, filename)
       SaveFile(filename, text)
 
