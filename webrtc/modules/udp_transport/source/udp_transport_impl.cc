@@ -1398,7 +1398,7 @@ UdpTransportImpl::ErrorCode UdpTransportImpl::BindLocalRTPSocket()
     {
         SocketAddress stLclName;
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
-        stLclName.sin_lenght = 0;
+        stLclName.sin_length = 0;
         stLclName.sin_family = PF_INET6;
 #else
         stLclName._sockaddr_storage.sin_family = PF_INET6;
@@ -2561,7 +2561,7 @@ WebRtc_Word32 UdpTransport::LocalHostAddressIPV6(char n_localIP[16])
     req.r.ifa_family = AF_INET6;
 
     // Fill up all the attributes for the rtnetlink header.
-    // The lenght is very important. 16 signifies the ipv6 address.
+    // The length is very important. 16 signifies the ipv6 address.
     rta = (struct rtattr*)(((char*)&req) + NLMSG_ALIGN(req.n.nlmsg_len));
     rta->rta_len = RTA_LENGTH(16);
 
