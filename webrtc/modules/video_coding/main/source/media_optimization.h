@@ -24,8 +24,8 @@ enum { kBitrateMaxFrameSamples = 60 };
 enum { kBitrateAverageWinMs    = 1000 };
 
 class Clock;
+class FrameDropper;
 class VCMContentMetricsProcessing;
-class VCMFrameDropper;
 
 struct VCMEncodedFrameSample
 {
@@ -170,7 +170,7 @@ private:
     WebRtc_UWord16                    _codecHeight;
     float                             _userFrameRate;
 
-    VCMFrameDropper*                  _frameDropper;
+    FrameDropper*                     _frameDropper;
     VCMLossProtectionLogic*           _lossProtLogic;
     WebRtc_UWord8                     _fractionLost;
 

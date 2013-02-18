@@ -249,6 +249,12 @@ LOCAL_SRC_FILES := \
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
+LOCAL_MODULE := libvideo_coding_utility
+LOCAL_SRC_FILES := \
+    $(MY_LIBS_PATH)/libvideo_coding_utility.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
 LOCAL_MODULE := libjpeg_turbo
 LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/libjpeg_turbo.a
@@ -348,6 +354,7 @@ LOCAL_STATIC_LIBRARIES := \
     libyuv \
     libwebrtc_i420 \
     libwebrtc_vp8 \
+    libvideo_coding_utility \
     libsystem_wrappers \
     libjpeg_turbo \
     libaudioproc_debug_proto \

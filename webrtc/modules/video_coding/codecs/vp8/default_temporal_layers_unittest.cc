@@ -10,8 +10,8 @@
 
 
 #include "gtest/gtest.h"
-#include "temporal_layers.h"
-#include "video_codec_interface.h"
+#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/codecs/vp8/default_temporal_layers.h"
 
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
@@ -63,10 +63,10 @@ enum {
 };
 
 TEST(TemporalLayersTest, 2Layers) {
-  TemporalLayers tl(2);
+  DefaultTemporalLayers tl(2, 0);
   vpx_codec_enc_cfg_t cfg;
   CodecSpecificInfoVP8 vp8_info;
-  tl.ConfigureBitrates(500, &cfg);
+  tl.ConfigureBitrates(500, 30, &cfg);
 
   int expected_flags[16] = { kTemporalUpdateLastAndGoldenRefAltRef,
                              kTemporalUpdateGoldenWithoutDependencyRefAltRef,
@@ -92,19 +92,21 @@ TEST(TemporalLayersTest, 2Layers) {
       { false, true, false, false, false, false, false, false,
         false, true, false, false, false, false, false, false };
 
+  uint32_t timestamp = 0;
   for (int i = 0; i < 16; ++i) {
-    EXPECT_EQ(expected_flags[i], tl.EncodeFlags());
+    EXPECT_EQ(expected_flags[i], tl.EncodeFlags(timestamp));
     tl.PopulateCodecSpecific(false, &vp8_info, 0);
     EXPECT_EQ(expected_temporal_idx[i], vp8_info.temporalIdx);
     EXPECT_EQ(expected_layer_sync[i], vp8_info.layerSync);
+    timestamp += 3000;
   }
 }
 
 TEST(TemporalLayersTest, 3Layers) {
-  TemporalLayers tl(3);
+  DefaultTemporalLayers tl(3, 0);
   vpx_codec_enc_cfg_t cfg;
   CodecSpecificInfoVP8 vp8_info;
-  tl.ConfigureBitrates(500, &cfg);
+  tl.ConfigureBitrates(500, 30, &cfg);
 
   int expected_flags[16] = { kTemporalUpdateLastAndGoldenRefAltRef,
                              kTemporalUpdateNoneNoRefGolden,
@@ -130,19 +132,21 @@ TEST(TemporalLayersTest, 3Layers) {
       { false, true, true, false, false, false, false, false,
         false, true, true, false, false, false, false, false };
 
+  unsigned int timestamp = 0;
   for (int i = 0; i < 16; ++i) {
-    EXPECT_EQ(expected_flags[i], tl.EncodeFlags());
+    EXPECT_EQ(expected_flags[i], tl.EncodeFlags(timestamp));
     tl.PopulateCodecSpecific(false, &vp8_info, 0);
     EXPECT_EQ(expected_temporal_idx[i], vp8_info.temporalIdx);
     EXPECT_EQ(expected_layer_sync[i], vp8_info.layerSync);
+    timestamp += 3000;
   }
 }
 
 TEST(TemporalLayersTest, 4Layers) {
-  TemporalLayers tl(4);
+  DefaultTemporalLayers tl(4, 0);
   vpx_codec_enc_cfg_t cfg;
   CodecSpecificInfoVP8 vp8_info;
-  tl.ConfigureBitrates(500, &cfg);
+  tl.ConfigureBitrates(500, 30, &cfg);
   int expected_flags[16] = {
       kTemporalUpdateLast,
       kTemporalUpdateNone,
@@ -168,19 +172,21 @@ TEST(TemporalLayersTest, 4Layers) {
       { false, true, true, true, true, true, false, true,
         false, true, false, true, false, true, false, true };
 
+  uint32_t timestamp = 0;
   for (int i = 0; i < 16; ++i) {
-    EXPECT_EQ(expected_flags[i], tl.EncodeFlags());
+    EXPECT_EQ(expected_flags[i], tl.EncodeFlags(timestamp));
     tl.PopulateCodecSpecific(false, &vp8_info, 0);
     EXPECT_EQ(expected_temporal_idx[i], vp8_info.temporalIdx);
     EXPECT_EQ(expected_layer_sync[i], vp8_info.layerSync);
+    timestamp += 3000;
   }
 }
 
 TEST(TemporalLayersTest, KeyFrame) {
-  TemporalLayers tl(3);
+  DefaultTemporalLayers tl(3, 0);
   vpx_codec_enc_cfg_t cfg;
   CodecSpecificInfoVP8 vp8_info;
-  tl.ConfigureBitrates(500, &cfg);
+  tl.ConfigureBitrates(500, 30, &cfg);
 
   int expected_flags[8] = {
       kTemporalUpdateLastAndGoldenRefAltRef,
@@ -195,13 +201,15 @@ TEST(TemporalLayersTest, KeyFrame) {
   int expected_temporal_idx[8] =
       { 0, 0, 0, 0, 0, 0, 0, 2};
 
+  uint32_t timestamp = 0;
   for (int i = 0; i < 7; ++i) {
-    EXPECT_EQ(expected_flags[i], tl.EncodeFlags());
+    EXPECT_EQ(expected_flags[i], tl.EncodeFlags(timestamp));
     tl.PopulateCodecSpecific(true, &vp8_info, 0);
     EXPECT_EQ(expected_temporal_idx[i], vp8_info.temporalIdx);
     EXPECT_EQ(true, vp8_info.layerSync);
+    timestamp += 3000;
   }
-  EXPECT_EQ(expected_flags[7], tl.EncodeFlags());
+  EXPECT_EQ(expected_flags[7], tl.EncodeFlags(timestamp));
   tl.PopulateCodecSpecific(false, &vp8_info, 0);
   EXPECT_EQ(expected_temporal_idx[7], vp8_info.temporalIdx);
   EXPECT_EQ(true, vp8_info.layerSync);

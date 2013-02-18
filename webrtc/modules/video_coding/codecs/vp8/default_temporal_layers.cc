@@ -1,4 +1,4 @@
-/* Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+/* Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
 *
 *  Use of this source code is governed by a BSD-style license
 *  that can be found in the LICENSE file in the root of the source
@@ -7,26 +7,27 @@
 *  be found in the AUTHORS file in the root of the source tree.
 */
 
-#include "temporal_layers.h"
+#include "webrtc/modules/video_coding/codecs/vp8/default_temporal_layers.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <cassert>
 
-#include "modules/interface/module_common_types.h"
-#include "modules/video_coding/codecs/interface/video_codec_interface.h"
-#include "modules/video_coding/codecs/vp8/include/vp8_common_types.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
 
 namespace webrtc {
 
-TemporalLayers::TemporalLayers(int numberOfTemporalLayers)
+DefaultTemporalLayers::DefaultTemporalLayers(int numberOfTemporalLayers,
+                                             uint8_t initial_tl0_pic_idx)
     : number_of_temporal_layers_(numberOfTemporalLayers),
       temporal_ids_length_(0),
       temporal_pattern_length_(0),
-      tl0_pic_idx_(rand()),
+      tl0_pic_idx_(initial_tl0_pic_idx),
       pattern_idx_(255),
       timestamp_(0),
       last_base_layer_sync_(false) {
@@ -35,8 +36,9 @@ TemporalLayers::TemporalLayers(int numberOfTemporalLayers)
   memset(temporal_pattern_, 0, sizeof(temporal_pattern_));
 }
 
-bool TemporalLayers::ConfigureBitrates(int bitrateKbit,
-                                       vpx_codec_enc_cfg_t* cfg) {
+bool DefaultTemporalLayers::ConfigureBitrates(int bitrateKbit,
+                                              int framerate,
+                                              vpx_codec_enc_cfg_t* cfg) {
   switch (number_of_temporal_layers_) {
     case 0:
     case 1:
@@ -156,7 +158,7 @@ bool TemporalLayers::ConfigureBitrates(int bitrateKbit,
   return true;
 }
 
-int TemporalLayers::EncodeFlags() {
+int DefaultTemporalLayers::EncodeFlags(uint32_t timestamp) {
   assert(number_of_temporal_layers_ > 0);
   assert(kMaxTemporalPattern >= temporal_pattern_length_);
   assert(0 < temporal_pattern_length_);
@@ -228,9 +230,10 @@ int TemporalLayers::EncodeFlags() {
   return flags;
 }
 
-void TemporalLayers::PopulateCodecSpecific(bool base_layer_sync,
-                                           CodecSpecificInfoVP8 *vp8_info,
-                                           uint32_t timestamp) {
+void DefaultTemporalLayers::PopulateCodecSpecific(
+    bool base_layer_sync,
+    CodecSpecificInfoVP8 *vp8_info,
+    uint32_t timestamp) {
   assert(number_of_temporal_layers_ > 0);
   assert(0 < temporal_ids_length_);
 

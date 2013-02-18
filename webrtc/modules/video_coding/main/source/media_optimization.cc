@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media_optimization.h"
+#include "webrtc/modules/video_coding/main/source/media_optimization.h"
 
-#include "content_metrics_processing.h"
-#include "frame_dropper.h"
-#include "qm_select.h"
+#include "webrtc/modules/video_coding/utility/include/frame_dropper.h"
+#include "webrtc/modules/video_coding/main/source/content_metrics_processing.h"
+#include "webrtc/modules/video_coding/main/source/qm_select.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 
 namespace webrtc {
@@ -45,7 +45,7 @@ _numLayers(0)
     memset(_sendStatistics, 0, sizeof(_sendStatistics));
     memset(_incomingFrameTimes, -1, sizeof(_incomingFrameTimes));
 
-    _frameDropper  = new VCMFrameDropper(_id);
+    _frameDropper  = new FrameDropper;
     _lossProtLogic = new VCMLossProtectionLogic(_clock->TimeInMilliseconds());
     _content = new VCMContentMetricsProcessing();
     _qmResolution = new VCMQmResolution();

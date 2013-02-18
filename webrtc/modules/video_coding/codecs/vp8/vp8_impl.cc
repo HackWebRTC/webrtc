@@ -25,8 +25,8 @@
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/video_coding/codecs/vp8/default_temporal_layers.h"
 #include "webrtc/modules/video_coding/codecs/vp8/reference_picture_selection.h"
-#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 
@@ -113,7 +113,7 @@ int VP8EncoderImpl::SetRates(uint32_t new_bitrate_kbit,
   config_->rc_target_bitrate = new_bitrate_kbit;  // in kbit/s
 
 #if WEBRTC_LIBVPX_VERSION >= 971
-  temporal_layers_->ConfigureBitrates(new_bitrate_kbit, config_);
+  temporal_layers_->ConfigureBitrates(new_bitrate_kbit, new_framerate, config_);
 #endif
   codec_.maxFramerate = new_framerate;
 
@@ -163,7 +163,7 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   int num_temporal_layers = inst->codecSpecific.VP8.numberOfTemporalLayers > 1 ?
       inst->codecSpecific.VP8.numberOfTemporalLayers : 1;
   assert(temporal_layers_ == NULL);
-  temporal_layers_ = new TemporalLayers(num_temporal_layers);
+  temporal_layers_ = new DefaultTemporalLayers(num_temporal_layers, rand());
 #endif
   // random start 16 bits is enough.
   picture_id_ = static_cast<uint16_t>(rand()) & 0x7FFF;
@@ -190,7 +190,8 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   config_->rc_target_bitrate = inst->startBitrate;  // in kbit/s
 
 #if WEBRTC_LIBVPX_VERSION >= 971
-  temporal_layers_->ConfigureBitrates(inst->startBitrate, config_);
+  temporal_layers_->ConfigureBitrates(inst->startBitrate, inst->maxFramerate,
+                                      config_);
 #endif
   // setting the time base of the codec
   config_->g_timebase.num = 1;
@@ -365,7 +366,7 @@ int VP8EncoderImpl::Encode(const I420VideoFrame& input_image,
 
   int flags = 0;
 #if WEBRTC_LIBVPX_VERSION >= 971
-  flags |= temporal_layers_->EncodeFlags();
+  flags |= temporal_layers_->EncodeFlags(input_image.timestamp());
 #endif
   bool send_keyframe = (frame_type == kKeyFrame);
   if (send_keyframe) {

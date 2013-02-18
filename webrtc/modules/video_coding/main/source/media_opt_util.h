@@ -11,15 +11,14 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_MEDIA_OPT_UTIL_H_
 #define WEBRTC_MODULES_VIDEO_CODING_MEDIA_OPT_UTIL_H_
 
-#include "typedefs.h"
-#include "trace.h"
-#include "exp_filter.h"
-#include "internal_defines.h"
-#include "qm_select.h"
-
 #include <cmath>
 #include <cstdlib>
 
+#include "webrtc/modules/video_coding/utility/include/exp_filter.h"
+#include "webrtc/modules/video_coding/main/source/internal_defines.h"
+#include "webrtc/modules/video_coding/main/source/qm_select.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc
 {

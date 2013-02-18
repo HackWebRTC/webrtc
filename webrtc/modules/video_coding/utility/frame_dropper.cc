@@ -8,16 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "frame_dropper.h"
-#include "internal_defines.h"
-#include "trace.h"
+#include "webrtc/modules/video_coding/utility/include/frame_dropper.h"
+
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc
 {
 
-VCMFrameDropper::VCMFrameDropper(WebRtc_Word32 vcmId)
+FrameDropper::FrameDropper()
 :
-_vcmId(vcmId),
 _keyFrameSizeAvgKbits(0.9f),
 _keyFrameRatio(0.99f),
 _dropRatio(0.9f, 0.96f),
@@ -27,7 +26,7 @@ _enabled(true)
 }
 
 void
-VCMFrameDropper::Reset()
+FrameDropper::Reset()
 {
     _keyFrameRatio.Reset(0.99f);
     _keyFrameRatio.Apply(1.0f, 1.0f/300.0f); // 1 key frame every 10th second in 30 fps
@@ -52,13 +51,13 @@ VCMFrameDropper::Reset()
 }
 
 void
-VCMFrameDropper::Enable(bool enable)
+FrameDropper::Enable(bool enable)
 {
     _enabled = enable;
 }
 
 void
-VCMFrameDropper::Fill(WebRtc_UWord32 frameSizeBytes, bool deltaFrame)
+FrameDropper::Fill(WebRtc_UWord32 frameSizeBytes, bool deltaFrame)
 {
     if (!_enabled)
     {
@@ -106,7 +105,7 @@ VCMFrameDropper::Fill(WebRtc_UWord32 frameSizeBytes, bool deltaFrame)
 }
 
 void
-VCMFrameDropper::Leak(WebRtc_UWord32 inputFrameRate)
+FrameDropper::Leak(WebRtc_UWord32 inputFrameRate)
 {
     if (!_enabled)
     {
@@ -143,7 +142,7 @@ VCMFrameDropper::Leak(WebRtc_UWord32 inputFrameRate)
 }
 
 void
-VCMFrameDropper::UpdateNack(WebRtc_UWord32 nackBytes)
+FrameDropper::UpdateNack(WebRtc_UWord32 nackBytes)
 {
     if (!_enabled)
     {
@@ -153,13 +152,13 @@ VCMFrameDropper::UpdateNack(WebRtc_UWord32 nackBytes)
 }
 
 void
-VCMFrameDropper::FillBucket(float inKbits, float outKbits)
+FrameDropper::FillBucket(float inKbits, float outKbits)
 {
     _accumulator += (inKbits - outKbits);
 }
 
 void
-VCMFrameDropper::UpdateRatio()
+FrameDropper::UpdateRatio()
 {
     if (_accumulator > 1.3f * _accumulatorMax)
     {
@@ -198,13 +197,12 @@ VCMFrameDropper::UpdateRatio()
         _accumulator = 0.0f;
     }
     _wasBelowMax = _accumulator < _accumulatorMax;
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId),  "FrameDropper: dropRatio = %f accumulator = %f, accumulatorMax = %f", _dropRatio.Value(), _accumulator, _accumulatorMax);
 }
 
 // This function signals when to drop frames to the caller. It makes use of the dropRatio
 // to smooth out the drops over time.
 bool
-VCMFrameDropper::DropFrame()
+FrameDropper::DropFrame()
 {
     if (!_enabled)
     {
@@ -313,7 +311,7 @@ VCMFrameDropper::DropFrame()
 }
 
 void
-VCMFrameDropper::SetRates(float bitRate, float incoming_frame_rate)
+FrameDropper::SetRates(float bitRate, float incoming_frame_rate)
 {
     // Bit rate of -1 means infinite bandwidth.
     _accumulatorMax = bitRate * _windowSize; // bitRate * windowSize (in seconds)
@@ -328,7 +326,7 @@ VCMFrameDropper::SetRates(float bitRate, float incoming_frame_rate)
 }
 
 float
-VCMFrameDropper::ActualFrameRate(WebRtc_UWord32 inputFrameRate) const
+FrameDropper::ActualFrameRate(WebRtc_UWord32 inputFrameRate) const
 {
     if (!_enabled)
     {
@@ -340,7 +338,7 @@ VCMFrameDropper::ActualFrameRate(WebRtc_UWord32 inputFrameRate) const
 // Put a cap on the accumulator, i.e., don't let it grow beyond some level.
 // This is a temporary fix for screencasting where very large frames from
 // encoder will cause very slow response (too many frame drops).
-void VCMFrameDropper::CapAccumulator() {
+void FrameDropper::CapAccumulator() {
   float max_accumulator = _targetBitRate * _cap_buffer_size;
   if (_accumulator > max_accumulator) {
     _accumulator = max_accumulator;

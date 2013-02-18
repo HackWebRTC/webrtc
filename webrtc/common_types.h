@@ -566,6 +566,11 @@ struct SimulcastStream
     unsigned int        qpMax; // minimum quality
 };
 
+enum VideoCodecMode {
+  kRealtimeVideo,
+  kScreensharing
+};
+
 // Common video codec properties
 struct VideoCodec
 {
@@ -586,6 +591,8 @@ struct VideoCodec
     unsigned int        qpMax;
     unsigned char       numberOfSimulcastStreams;
     SimulcastStream     simulcastStream[kMaxSimulcastStreams];
+
+    VideoCodecMode      mode;
 };
 
 // Bandwidth over-use detector options.  These are used to drive

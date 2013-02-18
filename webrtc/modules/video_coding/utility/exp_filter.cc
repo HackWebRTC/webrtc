@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "exp_filter.h"
+#include "webrtc/modules/video_coding/utility/include/exp_filter.h"
 
 #include <math.h>
 

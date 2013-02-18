@@ -25,8 +25,9 @@
       'target_name': 'webrtc_vp8',
       'type': 'static_library',
       'dependencies': [
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/common_video/common_video.gyp:common_video',
+        '<(webrtc_root)/modules/video_coding/utility/video_coding_utility.gyp:video_coding_utility',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
         'include',
@@ -54,8 +55,9 @@
         }],
         ['use_temporal_layers==1', {
           'sources': [
+            'default_temporal_layers.cc',
+            'default_temporal_layers.h',
             'temporal_layers.h',
-            'temporal_layers.cc',
           ],
         }],
       ],
@@ -113,8 +115,8 @@
             '<(DEPTH)/third_party/libvpx/source/libvpx',
           ],
           'sources': [
+            'default_temporal_layers_unittest.cc',
             'reference_picture_selection_unittest.cc',
-            'temporal_layers_unittest.cc',
           ],
           'conditions': [
             ['build_libvpx==1', {
