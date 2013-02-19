@@ -105,6 +105,11 @@ const float WebRtcAec_overDriveCurve[65] = {
     1.9682f, 1.9763f, 1.9843f, 1.9922f, 2.0000f
 };
 
+// Target suppression levels for nlp modes.
+// log{0.001, 0.00001, 0.00000001}
+static const float kTargetSupp[3] = { -6.9f, -11.5f, -18.4f };
+static const float kMinOverDrive[3] = { 1.0f, 2.0f, 5.0f };
+
 #ifdef WEBRTC_AEC_DEBUG_DUMP
 extern int webrtc_aec_instance_count;
 #endif
@@ -464,9 +469,8 @@ int WebRtcAec_InitAec(aec_t *aec, int sampFreq)
     aec->delay_logging_enabled = 0;
     memset(aec->delay_histogram, 0, sizeof(aec->delay_histogram));
 
-    // Default target suppression level
-    aec->targetSupp = -11.5;
-    aec->minOverDrive = 2.0;
+    // Default target suppression mode.
+    aec->nlp_mode = 1;
 
     // Sampling frequency multiplier
     // SWB is processed as 160 frame size
@@ -1139,7 +1143,7 @@ static void NonLinearProcessing(aec_t *aec, short *output, short *outputH)
 
     if (aec->hNlXdAvgMin == 1) {
         aec->echoState = 0;
-        aec->overDrive = aec->minOverDrive;
+        aec->overDrive = kMinOverDrive[aec->nlp_mode];
 
         if (aec->stNearState == 1) {
             memcpy(hNl, cohde, sizeof(hNl));
@@ -1193,8 +1197,9 @@ static void NonLinearProcessing(aec_t *aec, short *output, short *outputH)
     if (aec->hNlMinCtr == 2) {
         aec->hNlNewMin = 0;
         aec->hNlMinCtr = 0;
-        aec->overDrive = WEBRTC_SPL_MAX(aec->targetSupp /
-            ((float)log(aec->hNlFbMin + 1e-10f) + 1e-10f), aec->minOverDrive);
+        aec->overDrive = WEBRTC_SPL_MAX(kTargetSupp[aec->nlp_mode] /
+            ((float)log(aec->hNlFbMin + 1e-10f) + 1e-10f),
+            kMinOverDrive[aec->nlp_mode]);
     }
 
     // Smooth the overdrive.

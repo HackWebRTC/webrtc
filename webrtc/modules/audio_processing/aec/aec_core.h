@@ -102,7 +102,7 @@ typedef struct {
     float hNlXdAvgMin;
     int hNlNewMin, hNlMinCtr;
     float overDrive, overDriveSm;
-    float targetSupp, minOverDrive;
+    int nlp_mode;
     float outBuf[PART_LEN];
     int delayIdx;
 

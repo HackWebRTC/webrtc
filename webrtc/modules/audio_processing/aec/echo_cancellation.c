@@ -35,10 +35,6 @@
 
 static const int kMaxBufSizeStart = 62;  // In partitions
 static const int sampMsNb = 8; // samples per ms in nb
-// Target suppression levels for nlp modes
-// log{0.001, 0.00001, 0.00000001}
-static const float targetSupp[3] = {-6.9f, -11.5f, -18.4f};
-static const float minOverDrive[3] = {1.0f, 2.0f, 5.0f};
 static const int initCheck = 42;
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
@@ -558,9 +554,7 @@ WebRtc_Word32 WebRtcAec_set_config(void *aecInst, AecConfig config)
         aecpc->lastError = AEC_BAD_PARAMETER_ERROR;
         return -1;
     }
-    aecpc->nlpMode = config.nlpMode;
-    aecpc->aec->targetSupp = targetSupp[aecpc->nlpMode];
-    aecpc->aec->minOverDrive = minOverDrive[aecpc->nlpMode];
+    aecpc->aec->nlp_mode = config.nlpMode;
 
     if (config.metricsMode != kAecFalse && config.metricsMode != kAecTrue) {
         aecpc->lastError = AEC_BAD_PARAMETER_ERROR;
@@ -601,7 +595,7 @@ WebRtc_Word32 WebRtcAec_get_config(void *aecInst, AecConfig *config)
         return -1;
     }
 
-    config->nlpMode = aecpc->nlpMode;
+    config->nlpMode = aecpc->aec->nlp_mode;
     config->skewMode = aecpc->skewMode;
     config->metricsMode = aecpc->aec->metricsMode;
     config->delay_logging = aecpc->aec->delay_logging_enabled;

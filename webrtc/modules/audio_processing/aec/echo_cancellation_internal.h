@@ -19,7 +19,6 @@ typedef struct {
   int splitSampFreq;
   int scSampFreq;
   float sampFactor;  // scSampRate / sampFreq
-  short nlpMode;
   short autoOnOff;
   short activity;
   short skewMode;
