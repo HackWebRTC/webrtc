@@ -771,7 +771,7 @@ int ViEChannel::SetReceiverBufferingMode(int target_delay_ms) {
     max_nack_reordering_threshold_ = kMaxPacketAgeToNack;
     max_nack_list_size = kMaxNackListSize;
   } else {
-    max_nack_list_size =  3 / 4 * GetRequiredNackListSize(target_delay_ms);
+    max_nack_list_size =  3 * GetRequiredNackListSize(target_delay_ms) / 4;
     max_nack_reordering_threshold_ = max_nack_list_size;
   }
   vcm_.SetNackSettings(max_nack_list_size, max_nack_reordering_threshold_);
