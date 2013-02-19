@@ -121,6 +121,10 @@ def _CommonChecks(input_api, output_api):
   """Checks common to both upload and commit."""
   # TODO(kjellander): Use presubmit_canned_checks.PanProjectChecks too.
   results = []
+  results.extend(input_api.canned_checks.RunPylint(input_api, output_api,
+      black_list=(r'^tools/.*\.py$',
+                  r'^third_party/.*\.py$',
+                  r'^testing/.*\.py$',)))
   results.extend(input_api.canned_checks.CheckLongLines(
       input_api, output_api))
   results.extend(input_api.canned_checks.CheckChangeHasNoTabs(
