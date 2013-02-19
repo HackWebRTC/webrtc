@@ -42,6 +42,9 @@
     'common_audio': {
       'filepath': 'webrtc/common_audio/.*',
     },
+    'common_video': {
+      'filepath': 'webrtc/common_video/.*',
+    },
     'video_capture': {
       'filepath': 'webrtc/modules/video_capture/.*',
     },
@@ -66,6 +69,9 @@
     'video_coding': {
       'filepath': 'webrtc/modules/video_coding/.*',
     },
+    'video_processing': {
+      'filepath': 'webrtc/modules/video_processing/.*',
+    },
     'rtp_rtcp': {
       'filepath': 'webrtc/modules/rtp_rtcp/.*'
     },
@@ -86,6 +92,7 @@
     'java_files': ['leozwang@webrtc.org'],
     'common_audio': ['bjornv@webrtc.org',
                      'andrew@webrtc.org'],
+    'common_video': ['mikhal@webrtc.org'],
     'video_engine': ['mflodman@webrtc.org',
                      'perkj@webrtc.org'],
     'voice_engine': ['henrika@webrtc.org'],
@@ -104,7 +111,9 @@
                          'leozwang@webrtc.org'],
     'video_codecs': ['henrik.lundin@webrtc.org',
                      'pwestin@webrtc.org'],
-    'video_coding': ['stefan@webrtc.org'],
+    'video_coding': ['stefan@webrtc.org',
+                     'mikhal@webrtc.org'],
+    'video_processing': ['mikhal@webrtc.org'],
     'rtp_rtcp': ['mflodman@webrtc.org',
                  'pwestin@webrtc.org'],
     'system_wrappers': ['mflodman@webrtc.org',
