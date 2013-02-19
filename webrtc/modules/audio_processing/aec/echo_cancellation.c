@@ -294,7 +294,8 @@ WebRtc_Word32 WebRtcAec_BufferFarend(void *aecInst, const WebRtc_Word16 *farend,
 #ifdef WEBRTC_AEC_DEBUG_DUMP
       WebRtc_ReadBuffer(aecpc->far_pre_buf_s16, (void**) &farend_ptr, newFarend,
                         PART_LEN2);
-      WebRtc_WriteBuffer(aecpc->aec->far_time_buf, &farend_ptr[PART_LEN], 1);
+      WebRtc_WriteBuffer(WebRtcAec_far_time_buf(aecpc->aec),
+                         &farend_ptr[PART_LEN], 1);
       WebRtc_MoveReadPtr(aecpc->far_pre_buf_s16, -PART_LEN);
 #endif
     }

@@ -735,6 +735,12 @@ void WebRtcAec_GetEchoStats(aec_t* self, Stats* erl, Stats* erle,
   *erle = self->erle;
   *a_nlp = self->aNlp;
 }
+#ifdef WEBRTC_AEC_DEBUG_DUMP
+void* WebRtcAec_far_time_buf(aec_t* self) {
+  assert(self != NULL);
+  return self->far_time_buf;
+}
+#endif
 
 static void ProcessBlock(aec_t* aec) {
     int i;

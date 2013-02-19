@@ -189,5 +189,8 @@ int WebRtcAec_GetDelayMetricsCore(aec_t* self, int* median, int* std);
 int WebRtcAec_echo_state(aec_t* self);
 // Gets statistics of the echo metrics ERL, ERLE, A_NLP.
 void WebRtcAec_GetEchoStats(aec_t* self, Stats* erl, Stats* erle, Stats* a_nlp);
+#ifdef WEBRTC_AEC_DEBUG_DUMP
+void* WebRtcAec_far_time_buf(aec_t* self);
+#endif
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_CORE_H_
