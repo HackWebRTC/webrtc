@@ -38,7 +38,7 @@ const int kInvalidRtpExtensionId = 0;
 static const int kMaxTargetDelayMs = 10000;
 
 // Helper class receiving statistics callbacks.
-class ChannelStatsObserver : public StatsObserver {
+class ChannelStatsObserver : public CallStatsObserver {
  public:
   explicit ChannelStatsObserver(ViEChannel* owner) : owner_(owner) {}
   virtual ~ChannelStatsObserver() {}
@@ -2170,7 +2170,7 @@ RtpRtcp* ViEChannel::rtp_rtcp() {
   return rtp_rtcp_.get();
 }
 
-StatsObserver* ViEChannel::GetStatsObserver() {
+CallStatsObserver* ViEChannel::GetStatsObserver() {
   return stats_observer_.get();
 }
 

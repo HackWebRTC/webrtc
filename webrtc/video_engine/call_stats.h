@@ -21,7 +21,7 @@ namespace webrtc {
 
 class CriticalSectionWrapper;
 class RtcpRttObserver;
-class StatsObserver;
+class CallStatsObserver;
 
 // CallStats keeps track of statistics for a call.
 class CallStats : public Module {
@@ -40,8 +40,8 @@ class CallStats : public Module {
   RtcpRttObserver* rtcp_rtt_observer() const;
 
   // Registers/deregisters a new observer to receive statistics updates.
-  void RegisterStatsObserver(StatsObserver* observer);
-  void DeregisterStatsObserver(StatsObserver* observer);
+  void RegisterStatsObserver(CallStatsObserver* observer);
+  void DeregisterStatsObserver(CallStatsObserver* observer);
 
  protected:
   void OnRttUpdate(uint32_t rtt);
@@ -66,7 +66,7 @@ class CallStats : public Module {
   std::list<RttTime> reports_;
 
   // Observers getting stats reports.
-  std::list<StatsObserver*> observers_;
+  std::list<CallStatsObserver*> observers_;
 
   DISALLOW_COPY_AND_ASSIGN(CallStats);
 };

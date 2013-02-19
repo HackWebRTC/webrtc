@@ -31,6 +31,7 @@
 
 namespace webrtc {
 
+class CallStatsObserver;
 class ChannelStatsObserver;
 class CriticalSectionWrapper;
 class Encryption;
@@ -38,7 +39,6 @@ class PacedSender;
 class ProcessThread;
 class RtpRtcp;
 class RtcpRttObserver;
-class StatsObserver;
 class ThreadWrapper;
 class VideoCodingModule;
 class VideoDecoder;
@@ -308,7 +308,7 @@ class ViEChannel
   // Gets the modules used by the channel.
   RtpRtcp* rtp_rtcp();
 
-  StatsObserver* GetStatsObserver();
+  CallStatsObserver* GetStatsObserver();
 
   // Implements VCMReceiveCallback.
   virtual WebRtc_Word32 FrameToRender(I420VideoFrame& video_frame);  // NOLINT

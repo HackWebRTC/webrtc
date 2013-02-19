@@ -37,7 +37,7 @@ class RemoteBitrateObserver {
   virtual ~RemoteBitrateObserver() {}
 };
 
-class RemoteBitrateEstimator : public StatsObserver, public Module {
+class RemoteBitrateEstimator : public CallStatsObserver, public Module {
  public:
   enum EstimationMode {
     kMultiStreamEstimation,
