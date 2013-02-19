@@ -634,9 +634,9 @@ int WebRtcAec_GetMetrics(void* handle, AecMetrics* metrics) {
   float dtmp;
   int stmp;
   aecpc_t* self = (aecpc_t*)handle;
-  stats erl;
-  stats erle;
-  stats a_nlp;
+  Stats erl;
+  Stats erle;
+  Stats a_nlp;
 
   if (handle == NULL ) {
     return -1;

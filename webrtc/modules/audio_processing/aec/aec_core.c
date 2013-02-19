@@ -122,7 +122,7 @@ static void ComfortNoise(aec_t *aec, float efw[2][PART_LEN1],
                                   const float *noisePow, const float *lambda);
 
 static void WebRtcAec_InitLevel(power_level_t *level);
-static void WebRtcAec_InitStats(stats* stats);
+static void InitStats(Stats* stats);
 static void UpdateLevel(power_level_t* level, float in[2][PART_LEN1]);
 static void UpdateMetrics(aec_t *aec);
 // Convert from time domain to frequency domain. Note that |time_data| are
@@ -567,10 +567,10 @@ void WebRtcAec_InitMetrics(aec_t *aec)
     WebRtcAec_InitLevel(&aec->linoutlevel);
     WebRtcAec_InitLevel(&aec->nlpoutlevel);
 
-    WebRtcAec_InitStats(&aec->erl);
-    WebRtcAec_InitStats(&aec->erle);
-    WebRtcAec_InitStats(&aec->aNlp);
-    WebRtcAec_InitStats(&aec->rerl);
+    InitStats(&aec->erl);
+    InitStats(&aec->erle);
+    InitStats(&aec->aNlp);
+    InitStats(&aec->rerl);
 }
 
 void WebRtcAec_BufferFarendPartition(aec_t *aec, const float* farend) {
@@ -721,8 +721,8 @@ int WebRtcAec_echo_state(aec_t* self) {
   return self->echoState;
 }
 
-void WebRtcAec_GetEchoStats(aec_t* self, stats* erl, stats* erle,
-                            stats* a_nlp) {
+void WebRtcAec_GetEchoStats(aec_t* self, Stats* erl, Stats* erle,
+                            Stats* a_nlp) {
   assert(self != NULL);
   assert(erl != NULL);
   assert(erle != NULL);
@@ -1402,17 +1402,16 @@ static void WebRtcAec_InitLevel(power_level_t *level)
     level->sfrcounter = 0;
 }
 
-static void WebRtcAec_InitStats(stats* stats)
-{
-    stats->instant = offsetLevel;
-    stats->average = offsetLevel;
-    stats->max = offsetLevel;
-    stats->min = offsetLevel * (-1);
-    stats->sum = 0;
-    stats->hisum = 0;
-    stats->himean = offsetLevel;
-    stats->counter = 0;
-    stats->hicounter = 0;
+static void InitStats(Stats* stats) {
+  stats->instant = offsetLevel;
+  stats->average = offsetLevel;
+  stats->max = offsetLevel;
+  stats->min = offsetLevel * (-1);
+  stats->sum = 0;
+  stats->hisum = 0;
+  stats->himean = offsetLevel;
+  stats->counter = 0;
+  stats->hicounter = 0;
 }
 
 static void UpdateLevel(power_level_t* level, float in[2][PART_LEN1]) {
