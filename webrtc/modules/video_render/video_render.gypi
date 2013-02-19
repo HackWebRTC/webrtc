@@ -139,21 +139,6 @@
           'include_dirs': [
             '<(directx_sdk_path)/Include',
           ],
-
-          'VCLinkerTool': {
-            'conditions': [
-              ['target_arch=="x86"', {
-                'AdditionalLibraryDirectories': [
-                  '<(directx_sdk_path)/Lib/x86',
-                ],
-              }],
-              ['target_arch=="x64"', {
-                'AdditionalLibraryDirectories': [
-                  '<(directx_sdk_path)/Lib/x64',
-                ],
-              }],
-            ],  # conditions
-          },  # VCLinkerTool
         }],
         ['OS!="win" or include_internal_video_render==0', {
           'sources!': [

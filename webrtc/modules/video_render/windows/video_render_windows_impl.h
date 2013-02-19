@@ -22,8 +22,6 @@ class CriticalSectionWrapper;
 
 #define EXPAND(x)            x, sizeof(x)/sizeof(TCHAR)
 
-#pragma comment(lib, "dxguid.lib")
-
 enum VideoRenderWinMethod {
   kVideoRenderWinD3D9 = 0,
 };
