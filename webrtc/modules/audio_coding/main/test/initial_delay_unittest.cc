@@ -80,7 +80,7 @@ class InitialPlayoutDelayTest  : public ::testing::Test {
     const int kChannels[2] = {1, 2};
     for (int n = 0; n < 3; ++n) {
       for (int k = 0; k < 2; ++k) {
-        AudioCodingModule::Codec("L16", &codec, kFsHz[n], kChannels[k]);
+        AudioCodingModule::Codec("L16", codec, kFsHz[n], kChannels[k]);
         acm_b_->RegisterReceiveCodec(codec);
       }
     }
@@ -114,7 +114,7 @@ class InitialPlayoutDelayTest  : public ::testing::Test {
       timestamp += in_audio_frame.samples_per_channel_;
       ASSERT_EQ(0, acm_a_->Add10MsData(in_audio_frame));
       ASSERT_LE(0, acm_a_->Process());
-      ASSERT_EQ(0, acm_b_->PlayoutData10Ms(codec.plfreq, &out_audio_frame));
+      ASSERT_EQ(0, acm_b_->PlayoutData10Ms(codec.plfreq, out_audio_frame));
       rms = FrameRms(out_audio_frame);
       ++num_frames;
     }
@@ -131,38 +131,38 @@ class InitialPlayoutDelayTest  : public ::testing::Test {
 
 TEST_F( InitialPlayoutDelayTest, NbMono) {
   CodecInst codec;
-  AudioCodingModule::Codec("L16", &codec, 8000, 1);
+  AudioCodingModule::Codec("L16", codec, 8000, 1);
   Run(codec, 3000);
 }
 
 TEST_F( InitialPlayoutDelayTest, WbMono) {
   CodecInst codec;
-  AudioCodingModule::Codec("L16", &codec, 16000, 1);
+  AudioCodingModule::Codec("L16", codec, 16000, 1);
   Run(codec, 3000);
 }
 
 TEST_F( InitialPlayoutDelayTest, SwbMono) {
   CodecInst codec;
-  AudioCodingModule::Codec("L16", &codec, 32000, 1);
+  AudioCodingModule::Codec("L16", codec, 32000, 1);
   Run(codec, 2000);  // NetEq buffer is not sufficiently large for 3 sec of
                      // PCM16 super-wideband.
 }
 
 TEST_F( InitialPlayoutDelayTest, NbStereo) {
   CodecInst codec;
-  AudioCodingModule::Codec("L16", &codec, 8000, 2);
+  AudioCodingModule::Codec("L16", codec, 8000, 2);
   Run(codec, 3000);
 }
 
 TEST_F( InitialPlayoutDelayTest, WbStereo) {
   CodecInst codec;
-  AudioCodingModule::Codec("L16", &codec, 16000, 2);
+  AudioCodingModule::Codec("L16", codec, 16000, 2);
   Run(codec, 3000);
 }
 
 TEST_F( InitialPlayoutDelayTest, SwbStereo) {
   CodecInst codec;
-  AudioCodingModule::Codec("L16", &codec, 32000, 2);
+  AudioCodingModule::Codec("L16", codec, 32000, 2);
   Run(codec, 2000);  // NetEq buffer is not sufficiently large for 3 sec of
                      // PCM16 super-wideband.
 }

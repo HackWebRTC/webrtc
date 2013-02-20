@@ -78,7 +78,7 @@ TwoWayCommunication::ChooseCodec(WebRtc_UWord8* codecID_A,
     printf("========================\n");
     for(WebRtc_UWord8 codecCntr = 0; codecCntr < noCodec; codecCntr++)
     {
-        tmpACM->Codec(codecCntr, &codecInst);
+        tmpACM->Codec(codecCntr, codecInst);
         printf("%d- %s\n", codecCntr, codecInst.plname);
     }
     printf("\nChoose a send codec for side A [0]: ");
@@ -110,10 +110,10 @@ WebRtc_Word16 TwoWayCommunication::SetUp()
     CodecInst codecInst_A;
     CodecInst codecInst_B;
     CodecInst dummyCodec;
-    _acmA->Codec(codecID_A, &codecInst_A);
-    _acmB->Codec(codecID_B, &codecInst_B);
+    _acmA->Codec(codecID_A, codecInst_A);
+    _acmB->Codec(codecID_B, codecInst_B);
 
-    _acmA->Codec(6, &dummyCodec);
+    _acmA->Codec(6, dummyCodec);
 
     //--- Set A codecs
     CHECK_ERROR(_acmA->RegisterSendCodec(codecInst_A));
@@ -214,9 +214,9 @@ WebRtc_Word16 TwoWayCommunication::SetUpAutotest()
     CodecInst codecInst_B;
     CodecInst dummyCodec;
 
-    _acmA->Codec("ISAC", &codecInst_A, 16000, 1);
-    _acmB->Codec("L16", &codecInst_B, 8000, 1);
-    _acmA->Codec(6, &dummyCodec);
+    _acmA->Codec("ISAC", codecInst_A, 16000, 1);
+    _acmB->Codec("L16", codecInst_B, 8000, 1);
+    _acmA->Codec(6, dummyCodec);
 
     //--- Set A codecs
     CHECK_ERROR(_acmA->RegisterSendCodec(codecInst_A));
@@ -320,7 +320,7 @@ TwoWayCommunication::Perform()
     CodecInst codecInst_B;
     CodecInst dummy;
 
-    _acmB->SendCodec(&codecInst_B);
+    _acmB->SendCodec(codecInst_B);
 
     if(_testMode != 0)
     {
@@ -345,16 +345,16 @@ TwoWayCommunication::Perform()
         _acmRefA->Process();
         _acmRefB->Process();
 
-        _acmA->PlayoutData10Ms(outFreqHzA, &audioFrame);
+        _acmA->PlayoutData10Ms(outFreqHzA, audioFrame);
         _outFileA.Write10MsData(audioFrame);
 
-        _acmRefA->PlayoutData10Ms(outFreqHzA, &audioFrame);
+        _acmRefA->PlayoutData10Ms(outFreqHzA, audioFrame);
         _outFileRefA.Write10MsData(audioFrame);
 
-        _acmB->PlayoutData10Ms(outFreqHzB, &audioFrame);
+        _acmB->PlayoutData10Ms(outFreqHzB, audioFrame);
         _outFileB.Write10MsData(audioFrame);
 
-        _acmRefB->PlayoutData10Ms(outFreqHzB, &audioFrame);
+        _acmRefB->PlayoutData10Ms(outFreqHzB, audioFrame);
         _outFileRefB.Write10MsData(audioFrame);
 
         msecPassed += 10;
@@ -398,7 +398,7 @@ TwoWayCommunication::Perform()
                 printf("Register Send Codec (audio back in side A)\n");
             }
             CHECK_ERROR(_acmB->RegisterSendCodec(codecInst_B));
-            CHECK_ERROR(_acmB->SendCodec(&dummy));
+            CHECK_ERROR(_acmB->SendCodec(dummy));
         }
         if(((secPassed%7) == 6) && (msecPassed == 0))
         {

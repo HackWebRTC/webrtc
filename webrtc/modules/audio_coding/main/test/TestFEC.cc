@@ -79,7 +79,7 @@ void TestFEC::Perform()
     }
     for(WebRtc_UWord8 n = 0; n < numEncoders; n++)
     {
-        _acmB->Codec(n, &myCodecParam);
+        _acmB->Codec(n, myCodecParam);
         if(_testMode != 0)
         {
             printf("%s\n", myCodecParam.plname);
@@ -553,7 +553,7 @@ WebRtc_Word16 TestFEC::RegisterSendCodec(char side, char* codecName, WebRtc_Word
     }
     CodecInst myCodecParam;
 
-    CHECK_ERROR(AudioCodingModule::Codec(codecName, &myCodecParam,
+    CHECK_ERROR(AudioCodingModule::Codec(codecName, myCodecParam,
                                          samplingFreqHz, 1));
 
     CHECK_ERROR(myACM->RegisterSendCodec(myCodecParam));
@@ -575,7 +575,7 @@ void TestFEC::Run()
         _inFileA.Read10MsData(audioFrame);
         CHECK_ERROR(_acmA->Add10MsData(audioFrame));
         CHECK_ERROR(_acmA->Process());
-        CHECK_ERROR(_acmB->PlayoutData10Ms(outFreqHzB, &audioFrame));
+        CHECK_ERROR(_acmB->PlayoutData10Ms(outFreqHzB, audioFrame));
         _outFileB.Write10MsData(audioFrame.data_, audioFrame.samples_per_channel_);
         msecPassed += 10;
         if(msecPassed >= 1000)
@@ -616,9 +616,9 @@ void TestFEC::OpenOutFile(WebRtc_Word16 test_number) {
 void TestFEC::DisplaySendReceiveCodec()
 {
     CodecInst myCodecParam;
-    _acmA->SendCodec(&myCodecParam);
+    _acmA->SendCodec(myCodecParam);
     printf("%s -> ", myCodecParam.plname);
-    _acmB->ReceiveCodec(&myCodecParam);
+    _acmB->ReceiveCodec(myCodecParam);
     printf("%s\n", myCodecParam.plname);
 }
 

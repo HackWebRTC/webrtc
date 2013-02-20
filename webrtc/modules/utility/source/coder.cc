@@ -76,13 +76,14 @@ WebRtc_Word32 AudioCoder::Decode(AudioFrame& decodedAudio,
             return -1;
         }
     }
-    return _acm->PlayoutData10Ms((WebRtc_UWord16)sampFreqHz, &decodedAudio);
+    return _acm->PlayoutData10Ms((WebRtc_UWord16)sampFreqHz,
+				 (AudioFrame&)decodedAudio);
 }
 
 WebRtc_Word32 AudioCoder::PlayoutData(AudioFrame& decodedAudio,
 				      WebRtc_UWord16& sampFreqHz)
 {
-    return _acm->PlayoutData10Ms(sampFreqHz, &decodedAudio);
+    return _acm->PlayoutData10Ms(sampFreqHz, (AudioFrame&)decodedAudio);
 }
 
 WebRtc_Word32 AudioCoder::Encode(const AudioFrame& audio,

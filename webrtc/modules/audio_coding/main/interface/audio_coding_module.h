@@ -111,7 +111,7 @@ class AudioCodingModule: public Module {
   //   -1 if the list number (list_id) is invalid.
   //    0 if succeeded.
   //
-  static WebRtc_Word32 Codec(WebRtc_UWord8 list_id, CodecInst* codec);
+  static WebRtc_Word32 Codec(const WebRtc_UWord8 list_id, CodecInst& codec);
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 Codec()
@@ -132,7 +132,7 @@ class AudioCodingModule: public Module {
   //   -1 if no codec matches the given parameters.
   //    0 if succeeded.
   //
-  static WebRtc_Word32 Codec(const char* payload_name, CodecInst* codec,
+  static WebRtc_Word32 Codec(const char* payload_name, CodecInst& codec,
                              int sampling_freq_hz, int channels);
 
   ///////////////////////////////////////////////////////////////////////////
@@ -264,7 +264,7 @@ class AudioCodingModule: public Module {
   //   -1 if failed to get send codec,
   //    0 if succeeded.
   //
-  virtual WebRtc_Word32 SendCodec(CodecInst* current_send_codec) const = 0;
+  virtual WebRtc_Word32 SendCodec(CodecInst& current_send_codec) const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int SecondarySendCodec()
@@ -441,8 +441,8 @@ class AudioCodingModule: public Module {
   //   -1 if fails to retrieve the setting of DTX/VAD,
   //    0 if succeeded.
   //
-  virtual WebRtc_Word32 VAD(bool* dtx_enabled, bool* vad_enabled,
-                            ACMVADMode* vad_mode) const = 0;
+  virtual WebRtc_Word32 VAD(bool& dtx_enabled, bool& vad_enabled,
+                            ACMVADMode& vad_mode) const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 ReplaceInternalDTXWithWebRtc()
@@ -476,7 +476,7 @@ class AudioCodingModule: public Module {
   //    0 if succeeded.
   //
   virtual WebRtc_Word32 IsInternalDTXReplacedWithWebRtc(
-      bool* uses_webrtc_dtx) = 0;
+      bool& uses_webrtc_dtx) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 RegisterVADCallback()
@@ -589,7 +589,7 @@ class AudioCodingModule: public Module {
   //   -1 if failed to retrieve the codec,
   //    0 if the codec is successfully retrieved.
   //
-  virtual WebRtc_Word32 ReceiveCodec(CodecInst* curr_receive_codec) const = 0;
+  virtual WebRtc_Word32 ReceiveCodec(CodecInst& curr_receive_codec) const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 IncomingPacket()
@@ -729,8 +729,7 @@ class AudioCodingModule: public Module {
   //    0 if the output is a valid mode.
   //   -1 if ACM failed to output a valid mode.
   //
-  // TODO(tlegrand): Change function to return the mode.
-  virtual WebRtc_Word32 BackgroundNoiseMode(ACMBackgroundNoiseMode* mode) = 0;
+  virtual WebRtc_Word32 BackgroundNoiseMode(ACMBackgroundNoiseMode& mode) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 PlayoutTimestamp()
@@ -745,8 +744,8 @@ class AudioCodingModule: public Module {
   //    0 if the output is a correct timestamp.
   //   -1 if failed to output the correct timestamp.
   //
-  // TODO(tlegrand): Change function to return the timestamp.
-  virtual WebRtc_Word32 PlayoutTimestamp(WebRtc_UWord32* timestamp) = 0;
+  //
+  virtual WebRtc_Word32 PlayoutTimestamp(WebRtc_UWord32& timestamp) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 DecoderEstimatedBandwidth()
@@ -818,8 +817,9 @@ class AudioCodingModule: public Module {
   //   -1 if the function fails,
   //    0 if the function succeeds.
   //
-  virtual WebRtc_Word32 PlayoutData10Ms(WebRtc_Word32 desired_freq_hz,
-                                        AudioFrame* audio_frame) = 0;
+  virtual WebRtc_Word32
+      PlayoutData10Ms(const WebRtc_Word32 desired_freq_hz,
+                      AudioFrame &audio_frame) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   //   (CNG) Comfort Noise Generation
@@ -939,7 +939,7 @@ class AudioCodingModule: public Module {
   //    0 if statistics are set successfully.
   //
   virtual WebRtc_Word32 NetworkStatistics(
-      ACMNetworkStatistics* network_statistics) const = 0;
+      ACMNetworkStatistics& network_statistics) const = 0;
 
   //
   // Set an initial delay for playout.

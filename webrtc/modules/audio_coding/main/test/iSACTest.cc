@@ -55,7 +55,7 @@ WebRtc_Word16 SetISAConfig(
         (isacConfig.currentFrameSizeMsec != 0))
     {
         CodecInst sendCodec;
-        acm->SendCodec(&sendCodec);
+        acm->SendCodec(sendCodec);
         if(isacConfig.currentRateBitPerSec < 0)
         {
             sendCodec.rate = -1;
@@ -155,7 +155,7 @@ ISACTest::Setup()
 
     for(codecCntr = 0; codecCntr < AudioCodingModule::NumberOfCodecs(); codecCntr++)
     {
-        AudioCodingModule::Codec(codecCntr, &codecParam);
+        AudioCodingModule::Codec(codecCntr, codecParam);
         if(!STR_CASE_CMP(codecParam.plname, "ISAC") && codecParam.plfreq == 16000)
         {
             memcpy(&_paramISAC16kHz, &codecParam, sizeof(CodecInst));
@@ -210,14 +210,14 @@ ISACTest::Setup()
         Run10ms();
     }
     CodecInst receiveCodec;
-    CHECK_ERROR(_acmA->ReceiveCodec(&receiveCodec));
+    CHECK_ERROR(_acmA->ReceiveCodec(receiveCodec));
     if(_testMode != 0)
     {
         printf("Side A Receive Codec\n");
         printf("%s %d\n", receiveCodec.plname, receiveCodec.plfreq);
     }
 
-    CHECK_ERROR(_acmB->ReceiveCodec(&receiveCodec));
+    CHECK_ERROR(_acmB->ReceiveCodec(receiveCodec));
     if(_testMode != 0)
     {
         printf("Side B Receive Codec\n");
@@ -357,10 +357,10 @@ ISACTest::Run10ms()
     CHECK_ERROR(_acmA->Process());
     CHECK_ERROR(_acmB->Process());
 
-    CHECK_ERROR(_acmA->PlayoutData10Ms(32000, &audioFrame));
+    CHECK_ERROR(_acmA->PlayoutData10Ms(32000, audioFrame));
     _outFileA.Write10MsData(audioFrame);
 
-    CHECK_ERROR(_acmB->PlayoutData10Ms(32000, &audioFrame));
+    CHECK_ERROR(_acmB->PlayoutData10Ms(32000, audioFrame));
     _outFileB.Write10MsData(audioFrame);
 }
 
@@ -444,9 +444,9 @@ ISACTest::EncodeDecode(
         {
             myEvent->Wait(5000);
 
-            _acmA->SendCodec(&sendCodec);
+            _acmA->SendCodec(sendCodec);
             if(_testMode == 2) printf("[%d]  ", sendCodec.rate);
-            _acmB->SendCodec(&sendCodec);
+            _acmB->SendCodec(sendCodec);
             if(_testMode == 2) printf("[%d]  ", sendCodec.rate);
         }
     }

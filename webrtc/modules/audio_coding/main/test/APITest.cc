@@ -182,7 +182,7 @@ APITest::SetUp()
     WebRtc_Word16 numCodecs = _acmA->NumberOfCodecs();
     for(WebRtc_UWord8 n = 0; n < numCodecs; n++)
     {
-        AudioCodingModule::Codec(n, &dummyCodec);
+        AudioCodingModule::Codec(n, dummyCodec);
         if((STR_CASE_CMP(dummyCodec.plname, "CN") == 0) &&
             (dummyCodec.plfreq == 32000))
         {
@@ -205,7 +205,7 @@ APITest::SetUp()
             // test if re-registration works;
             CodecInst nextCodec;
             int currentPayloadType = dummyCodec.pltype;
-            AudioCodingModule::Codec(n + 1, &nextCodec);
+            AudioCodingModule::Codec(n + 1, nextCodec);
             dummyCodec.pltype = nextCodec.pltype;
             if(!FixedPayloadTypeCodec(nextCodec.plname))
             {
@@ -218,7 +218,7 @@ APITest::SetUp()
         {
             // test if un-registration works;
             CodecInst nextCodec;
-            AudioCodingModule::Codec(n + 1, &nextCodec);
+            AudioCodingModule::Codec(n + 1, nextCodec);
             nextCodec.pltype = dummyCodec.pltype;
             if(!FixedPayloadTypeCodec(nextCodec.plname))
             {
@@ -248,11 +248,11 @@ APITest::SetUp()
     _thereIsDecoderB = true;
 
     // Register Send Codec
-    AudioCodingModule::Codec((WebRtc_UWord8)_codecCntrA, &dummyCodec);
+    AudioCodingModule::Codec((WebRtc_UWord8)_codecCntrA, dummyCodec);
     CHECK_ERROR_MT(_acmA->RegisterSendCodec(dummyCodec));
     _thereIsEncoderA = true;
     //
-    AudioCodingModule::Codec((WebRtc_UWord8)_codecCntrB, &dummyCodec);
+    AudioCodingModule::Codec((WebRtc_UWord8)_codecCntrB, dummyCodec);
     CHECK_ERROR_MT(_acmB->RegisterSendCodec(dummyCodec));
     _thereIsEncoderB = true;
 
@@ -410,7 +410,7 @@ APITest::PullAudioRunA()
 {
     _pullEventA->Wait(100);
     AudioFrame audioFrame;
-    if(_acmA->PlayoutData10Ms(_outFreqHzA, &audioFrame) < 0)
+    if(_acmA->PlayoutData10Ms(_outFreqHzA, audioFrame) < 0)
     {
         bool thereIsDecoder;
         {
@@ -438,7 +438,7 @@ APITest::PullAudioRunB()
 {
     _pullEventB->Wait(100);
     AudioFrame audioFrame;
-    if(_acmB->PlayoutData10Ms(_outFreqHzB, &audioFrame) < 0)
+    if(_acmB->PlayoutData10Ms(_outFreqHzB, audioFrame) < 0)
     {
         bool thereIsDecoder;
         {
@@ -794,7 +794,7 @@ APITest::CheckVADStatus(char side)
 
     if(side == 'A')
     {
-        _acmA->VAD(&dtxEnabled, &vadEnabled, &vadMode);
+        _acmA->VAD(dtxEnabled, vadEnabled, vadMode);
         _acmA->RegisterVADCallback(NULL);
         _vadCallbackA->Reset();
         _acmA->RegisterVADCallback(_vadCallbackA);
@@ -838,7 +838,7 @@ APITest::CheckVADStatus(char side)
     }
     else
     {
-        _acmB->VAD(&dtxEnabled, &vadEnabled, &vadMode);
+        _acmB->VAD(dtxEnabled, vadEnabled, vadMode);
 
         _acmB->RegisterVADCallback(NULL);
         _vadCallbackB->Reset();
@@ -920,7 +920,7 @@ APITest::TestDelay(char side)
 
 
     inTimestamp = myChannel->LastInTimestamp();
-    CHECK_ERROR_MT(myACM->PlayoutTimestamp(&outTimestamp));
+    CHECK_ERROR_MT(myACM->PlayoutTimestamp(outTimestamp));
 
     if(!_randomTest)
     {
@@ -932,7 +932,7 @@ APITest::TestDelay(char side)
             myEvent->Wait(1000);
 
             inTimestamp = myChannel->LastInTimestamp();
-            CHECK_ERROR_MT(myACM->PlayoutTimestamp(&outTimestamp));
+            CHECK_ERROR_MT(myACM->PlayoutTimestamp(outTimestamp));
 
             //std::cout << outTimestamp << std::endl << std::flush;
             estimDelay = (double)((WebRtc_UWord32)(inTimestamp - outTimestamp)) /
@@ -968,7 +968,7 @@ APITest::TestDelay(char side)
     *myMinDelay = (rand() % 1000) + 1;
 
     ACMNetworkStatistics networkStat;
-    CHECK_ERROR_MT(myACM->NetworkStatistics(&networkStat));
+    CHECK_ERROR_MT(myACM->NetworkStatistics(networkStat));
 
     if(!_randomTest)
     {
@@ -1039,9 +1039,9 @@ APITest::TestRegisteration(char sendSide)
     }
 
     CodecInst myCodec;
-    if(sendACM->SendCodec(&myCodec) < 0)
+    if(sendACM->SendCodec(myCodec) < 0)
     {
-        AudioCodingModule::Codec(_codecCntrA, &myCodec);
+        AudioCodingModule::Codec(_codecCntrA, myCodec);
     }
 
     if(!_randomTest)
@@ -1332,7 +1332,7 @@ APITest::TestSendVAD(char side)
 
     if(side == 'A')
     {
-        AudioCodingModule::Codec(_codecCntrA, &myCodec);
+        AudioCodingModule::Codec(_codecCntrA, myCodec);
         vad = &_sendVADA;
         dtx = &_sendDTXA;
         mode = &_sendVADModeA;
@@ -1341,7 +1341,7 @@ APITest::TestSendVAD(char side)
     }
     else
     {
-        AudioCodingModule::Codec(_codecCntrB, &myCodec);
+        AudioCodingModule::Codec(_codecCntrB, myCodec);
         vad = &_sendVADB;
         dtx = &_sendDTXB;
         mode = &_sendVADModeB;
@@ -1408,11 +1408,11 @@ APITest::CurrentCodec(char side)
     CodecInst myCodec;
     if(side == 'A')
     {
-        _acmA->SendCodec(&myCodec);
+        _acmA->SendCodec(myCodec);
     }
     else
     {
-        _acmB->SendCodec(&myCodec);
+        _acmB->SendCodec(myCodec);
     }
 
     if(!_randomTest)
@@ -1493,11 +1493,11 @@ APITest::ChangeCodec(char side)
             Wait(1000);
 
             // After Initialization CN is lost, re-register them
-            if(AudioCodingModule::Codec("CN", &myCodec, 8000, 1) >= 0)
+            if(AudioCodingModule::Codec("CN", myCodec, 8000, 1) >= 0)
             {
                 CHECK_ERROR_MT(myACM->RegisterSendCodec(myCodec));
             }
-            if(AudioCodingModule::Codec("CN", &myCodec, 16000, 1) >= 0)
+            if(AudioCodingModule::Codec("CN", myCodec, 16000, 1) >= 0)
             {
                 CHECK_ERROR_MT(myACM->RegisterSendCodec(myCodec));
             }
@@ -1507,7 +1507,7 @@ APITest::ChangeCodec(char side)
             _writeToFile = false;
         }
 
-        AudioCodingModule::Codec(*codecCntr, &myCodec);
+        AudioCodingModule::Codec(*codecCntr, myCodec);
     } while(!STR_CASE_CMP(myCodec.plname, "CN")          ||
         !STR_CASE_CMP(myCodec.plname, "telephone-event") ||
         !STR_CASE_CMP(myCodec.plname, "RED"));

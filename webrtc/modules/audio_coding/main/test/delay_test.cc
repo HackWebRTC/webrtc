@@ -108,7 +108,7 @@ class DelayTest {
     WebRtc_UWord8 num_encoders = acm_a_->NumberOfCodecs();
     CodecInst my_codec_param;
     for(int n = 0; n < num_encoders; n++) {
-      acm_b_->Codec(n, &my_codec_param);
+      acm_b_->Codec(n, my_codec_param);
       if (STR_CASE_CMP(my_codec_param.plname, "opus") == 0)
         my_codec_param.channels = 1;
       else if  (my_codec_param.channels > 1)
@@ -155,7 +155,7 @@ class DelayTest {
 
   void SendCodec(const CodecConfig& config) {
     CodecInst my_codec_param;
-    ASSERT_EQ(0, AudioCodingModule::Codec(config.name, &my_codec_param,
+    ASSERT_EQ(0, AudioCodingModule::Codec(config.name, my_codec_param,
                                           config.sample_rate_hz,
                                           config.num_channels));
     encoding_sample_rate_hz_ = my_codec_param.plfreq;
@@ -201,7 +201,7 @@ class DelayTest {
       // Print delay information every 16 frame
       if ((num_frames & 0x3F) == 0x3F) {
         ACMNetworkStatistics statistics;
-        acm_b_->NetworkStatistics(&statistics);
+        acm_b_->NetworkStatistics(statistics);
         fprintf(stdout, "delay: min=%3d  max=%3d  mean=%3d  median=%3d"
                 " ts-based average = %6.3f, "
                 "curr buff-lev = %4u opt buff-lev = %4u \n",
@@ -218,11 +218,11 @@ class DelayTest {
       in_file_a_.Read10MsData(audio_frame);
       ASSERT_EQ(0, acm_a_->Add10MsData(audio_frame));
       ASSERT_LE(0, acm_a_->Process());
-      ASSERT_EQ(0, acm_b_->PlayoutData10Ms(out_freq_hz_b, &audio_frame));
+      ASSERT_EQ(0, acm_b_->PlayoutData10Ms(out_freq_hz_b, audio_frame));
       out_file_b_.Write10MsData(audio_frame.data_,
                                 audio_frame.samples_per_channel_ *
                                 audio_frame.num_channels_);
-      acm_b_->PlayoutTimestamp(&playout_ts);
+      acm_b_->PlayoutTimestamp(playout_ts);
       received_ts = channel_a2b_->LastInTimestamp();
       inst_delay_sec = static_cast<uint32_t>(received_ts - playout_ts) /
           static_cast<double>(encoding_sample_rate_hz_);
