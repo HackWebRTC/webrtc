@@ -126,10 +126,10 @@ static void ComfortNoise(aec_t *aec, float efw[2][PART_LEN1],
                                   complex_t *comfortNoiseHband,
                                   const float *noisePow, const float *lambda);
 
-static void InitLevel(power_level_t *level);
+static void InitLevel(PowerLevel* level);
 static void InitStats(Stats* stats);
 static void InitMetrics(aec_t *aec);
-static void UpdateLevel(power_level_t* level, float in[2][PART_LEN1]);
+static void UpdateLevel(PowerLevel* level, float in[2][PART_LEN1]);
 static void UpdateMetrics(aec_t *aec);
 // Convert from time domain to frequency domain. Note that |time_data| are
 // overwritten.
@@ -1440,27 +1440,26 @@ static void ComfortNoise(aec_t *aec, float efw[2][PART_LEN1],
     }
 }
 
-static void InitLevel(power_level_t *level)
-{
-    const float bigFloat = 1E17f;
+static void InitLevel(PowerLevel* level) {
+  const float kBigFloat = 1E17f;
 
-    level->averagelevel = 0;
-    level->framelevel = 0;
-    level->minlevel = bigFloat;
-    level->frsum = 0;
-    level->sfrsum = 0;
-    level->frcounter = 0;
-    level->sfrcounter = 0;
+  level->averagelevel = 0;
+  level->framelevel = 0;
+  level->minlevel = kBigFloat;
+  level->frsum = 0;
+  level->sfrsum = 0;
+  level->frcounter = 0;
+  level->sfrcounter = 0;
 }
 
 static void InitStats(Stats* stats) {
-  stats->instant = offsetLevel;
-  stats->average = offsetLevel;
-  stats->max = offsetLevel;
-  stats->min = offsetLevel * (-1);
+  stats->instant = kOffsetLevel;
+  stats->average = kOffsetLevel;
+  stats->max = kOffsetLevel;
+  stats->min = kOffsetLevel * (-1);
   stats->sum = 0;
   stats->hisum = 0;
-  stats->himean = offsetLevel;
+  stats->himean = kOffsetLevel;
   stats->counter = 0;
   stats->hicounter = 0;
 }
@@ -1479,7 +1478,7 @@ static void InitMetrics(aec_t* self) {
   InitStats(&self->rerl);
 }
 
-static void UpdateLevel(power_level_t* level, float in[2][PART_LEN1]) {
+static void UpdateLevel(PowerLevel* level, float in[2][PART_LEN1]) {
   // Do the energy calculation in the frequency domain. The FFT is performed on
   // a segment of PART_LEN2 samples due to overlap, but we only want the energy
   // of half that data (the last PART_LEN samples). Parseval's relation states

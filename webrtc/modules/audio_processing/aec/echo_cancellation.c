@@ -591,47 +591,47 @@ int WebRtcAec_GetMetrics(void* handle, AecMetrics* metrics) {
   // ERL
   metrics->erl.instant = (int) erl.instant;
 
-  if ((erl.himean > offsetLevel) && (erl.average > offsetLevel)) {
+  if ((erl.himean > kOffsetLevel) && (erl.average > kOffsetLevel)) {
     // Use a mix between regular average and upper part average.
     dtmp = kUpWeight * erl.himean + (1 - kUpWeight) * erl.average;
     metrics->erl.average = (int) dtmp;
   } else {
-    metrics->erl.average = offsetLevel;
+    metrics->erl.average = kOffsetLevel;
   }
 
   metrics->erl.max = (int) erl.max;
 
-  if (erl.min < (offsetLevel * (-1))) {
+  if (erl.min < (kOffsetLevel * (-1))) {
     metrics->erl.min = (int) erl.min;
   } else {
-    metrics->erl.min = offsetLevel;
+    metrics->erl.min = kOffsetLevel;
   }
 
   // ERLE
   metrics->erle.instant = (int) erle.instant;
 
-  if ((erle.himean > offsetLevel) && (erle.average > offsetLevel)) {
+  if ((erle.himean > kOffsetLevel) && (erle.average > kOffsetLevel)) {
     // Use a mix between regular average and upper part average.
     dtmp = kUpWeight * erle.himean + (1 - kUpWeight) * erle.average;
     metrics->erle.average = (int) dtmp;
   } else {
-    metrics->erle.average = offsetLevel;
+    metrics->erle.average = kOffsetLevel;
   }
 
   metrics->erle.max = (int) erle.max;
 
-  if (erle.min < (offsetLevel * (-1))) {
+  if (erle.min < (kOffsetLevel * (-1))) {
     metrics->erle.min = (int) erle.min;
   } else {
-    metrics->erle.min = offsetLevel;
+    metrics->erle.min = kOffsetLevel;
   }
 
   // RERL
-  if ((metrics->erl.average > offsetLevel)
-      && (metrics->erle.average > offsetLevel)) {
+  if ((metrics->erl.average > kOffsetLevel)
+      && (metrics->erle.average > kOffsetLevel)) {
     stmp = metrics->erl.average + metrics->erle.average;
   } else {
-    stmp = offsetLevel;
+    stmp = kOffsetLevel;
   }
   metrics->rerl.average = stmp;
 
@@ -643,20 +643,20 @@ int WebRtcAec_GetMetrics(void* handle, AecMetrics* metrics) {
   // A_NLP
   metrics->aNlp.instant = (int) a_nlp.instant;
 
-  if ((a_nlp.himean > offsetLevel) && (a_nlp.average > offsetLevel)) {
+  if ((a_nlp.himean > kOffsetLevel) && (a_nlp.average > kOffsetLevel)) {
     // Use a mix between regular average and upper part average.
     dtmp = kUpWeight * a_nlp.himean + (1 - kUpWeight) * a_nlp.average;
     metrics->aNlp.average = (int) dtmp;
   } else {
-    metrics->aNlp.average = offsetLevel;
+    metrics->aNlp.average = kOffsetLevel;
   }
 
   metrics->aNlp.max = (int) a_nlp.max;
 
-  if (a_nlp.min < (offsetLevel * (-1))) {
+  if (a_nlp.min < (kOffsetLevel * (-1))) {
     metrics->aNlp.min = (int) a_nlp.min;
   } else {
-    metrics->aNlp.min = offsetLevel;
+    metrics->aNlp.min = kOffsetLevel;
   }
 
   return 0;

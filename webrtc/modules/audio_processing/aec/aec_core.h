@@ -43,17 +43,17 @@ typedef float complex_t[2];
 // compile time.
 
 // Metrics
-enum {offsetLevel = -100};
+enum { kOffsetLevel = -100 };
 
-typedef struct {
-    float sfrsum;
-    int sfrcounter;
-    float framelevel;
-    float frsum;
-    int frcounter;
-    float minlevel;
-    float averagelevel;
-} power_level_t;
+typedef struct PowerLevel {
+  float sfrsum;
+  int sfrcounter;
+  float framelevel;
+  float frsum;
+  int frcounter;
+  float minlevel;
+  float averagelevel;
+} PowerLevel;
 
 typedef struct Stats {
   float instant;
@@ -124,10 +124,10 @@ typedef struct {
 
     int noiseEstCtr;
 
-    power_level_t farlevel;
-    power_level_t nearlevel;
-    power_level_t linoutlevel;
-    power_level_t nlpoutlevel;
+    PowerLevel farlevel;
+    PowerLevel nearlevel;
+    PowerLevel linoutlevel;
+    PowerLevel nlpoutlevel;
 
     int metricsMode;
     int stateCounter;
