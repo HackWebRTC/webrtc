@@ -17,11 +17,13 @@
           # This will be set to zero in the supplement.gypi triggered by a
           # gclient hook in the standalone build.
           'build_with_chromium%': 1,
+          'build_with_libjingle%': 0,
         },
         'build_with_chromium%': '<(build_with_chromium)',
+        'build_with_libjingle%': '<(build_with_libjingle)',
 
         'conditions': [
-          ['build_with_chromium==1', {
+          ['build_with_chromium==1 or build_with_libjingle==1', {
             'webrtc_root%': '<(DEPTH)/third_party/webrtc',
           }, {
             'webrtc_root%': '<(DEPTH)/webrtc',
@@ -29,12 +31,14 @@
         ],
       },
       'build_with_chromium%': '<(build_with_chromium)',
+      'build_with_libjingle%': '<(build_with_libjingle)',
       'webrtc_root%': '<(webrtc_root)',
 
       'webrtc_vp8_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp8',
       'include_opus%': 1,
     },
     'build_with_chromium%': '<(build_with_chromium)',
+    'build_with_libjingle%': '<(build_with_libjingle)',
     'webrtc_root%': '<(webrtc_root)',
     'webrtc_vp8_dir%': '<(webrtc_vp8_dir)',
     'include_opus%': '<(include_opus)',
@@ -119,6 +123,9 @@
         'build_libjpeg%': 0,
         'build_libyuv%': 0,
         'build_libvpx%': 0,
+        'include_tests%': 0,
+      }],
+      ['build_with_libjingle==1', {
         'include_tests%': 0,
       }],
       ['target_arch=="arm"', {

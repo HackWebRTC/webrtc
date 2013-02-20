@@ -112,9 +112,20 @@ WebRtc_Word32 VideoCaptureAndroid::SetAndroidObjects(void* javaVM,
       return -1;
     }
 
+    jclass capabilityClassLocal = env->FindClass(
+        "org/webrtc/videoengine/CaptureCapabilityAndroid");
+    if (!capabilityClassLocal) {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, -1,
+                   "%s: could not find java class", __FUNCTION__);
+      return -1;
+    }
+    jclass capabilityClassGlobal = reinterpret_cast<jclass>(env->NewGlobalRef(
+        capabilityClassLocal));
+    DeviceInfoAndroid::SetAndroidCaptureClasses(capabilityClassGlobal);
+
     // get java capture class type (note path to class packet)
     jclass javaCmDevInfoClassLocal = env->FindClass(
-        AndroidJavaCaptureDeviceInfoClass);
+        "org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid");
     if (!javaCmDevInfoClassLocal) {
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, -1,
                    "%s: could not find java class", __FUNCTION__);

@@ -22,6 +22,13 @@ namespace webrtc
 namespace videocapturemodule
 {
 
+static jclass g_capabilityClass = NULL;
+
+// static
+void DeviceInfoAndroid::SetAndroidCaptureClasses(jclass capabilityClass) {
+  g_capabilityClass = capabilityClass;
+}
+
 VideoCaptureModule::DeviceInfo*
 VideoCaptureImpl::CreateDeviceInfo (const WebRtc_Word32 id) {
   videocapturemodule::DeviceInfoAndroid *deviceInfo =
@@ -172,23 +179,20 @@ WebRtc_Word32 DeviceInfoAndroid::CreateCapabilityMap(
     return -1;
 
   // Find the capability class
-  jclass javaCapClassLocal = env->FindClass(AndroidJavaCaptureCapabilityClass);
-  if (javaCapClassLocal == NULL) {
+  jclass javaCapClass = g_capabilityClass;
+  if (javaCapClass == NULL) {
     VideoCaptureAndroid::ReleaseAndroidDeviceInfoObjects(attached);
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-                 "%s: Can't find java class VideoCaptureCapabilityAndroid.",
+                 "%s: SetAndroidCaptureClasses must be called first!",
                  __FUNCTION__);
     return -1;
   }
 
   // get the method ID for the Android Java GetCapabilityArray .
-  char signature[256];
-  sprintf(signature,
-          "(Ljava/lang/String;)[L%s;",
-          AndroidJavaCaptureCapabilityClass);
-  jmethodID cid = env->GetMethodID(javaCmDevInfoClass,
-                                   "GetCapabilityArray",
-                                   signature);
+  jmethodID cid = env->GetMethodID(
+      javaCmDevInfoClass,
+      "GetCapabilityArray",
+      "(Ljava/lang/String;)[Lorg/webrtc/videoengine/CaptureCapabilityAndroid;");
   if (cid == NULL) {
     VideoCaptureAndroid::ReleaseAndroidDeviceInfoObjects(attached);
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
@@ -216,9 +220,9 @@ WebRtc_Word32 DeviceInfoAndroid::CreateCapabilityMap(
     return -1;
   }
 
-  jfieldID widthField = env->GetFieldID(javaCapClassLocal, "width", "I");
-  jfieldID heigtField = env->GetFieldID(javaCapClassLocal, "height", "I");
-  jfieldID maxFpsField = env->GetFieldID(javaCapClassLocal, "maxFPS", "I");
+  jfieldID widthField = env->GetFieldID(javaCapClass, "width", "I");
+  jfieldID heigtField = env->GetFieldID(javaCapClass, "height", "I");
+  jfieldID maxFpsField = env->GetFieldID(javaCapClass, "maxFPS", "I");
   if (widthField == NULL || heigtField == NULL || maxFpsField == NULL) {
     VideoCaptureAndroid::ReleaseAndroidDeviceInfoObjects(attached);
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
@@ -240,7 +244,7 @@ WebRtc_Word32 DeviceInfoAndroid::CreateCapabilityMap(
     cap->expectedCaptureDelay = _expectedCaptureDelay;
     cap->rawType = kVideoNV21;
     cap->maxFPS = env->GetIntField(capabilityElement, maxFpsField);
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
                  "%s: Cap width %d, height %d, fps %d", __FUNCTION__,
                  cap->width, cap->height, cap->maxFPS);
     _captureCapabilities.Insert(i, cap);

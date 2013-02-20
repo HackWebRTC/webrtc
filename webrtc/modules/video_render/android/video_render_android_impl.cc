@@ -15,7 +15,7 @@
 #include "thread_wrapper.h"
 #include "tick_util.h"
 
-#ifdef ANDROID_LOG
+#ifdef ANDROID
 #include <stdio.h>
 #include <android/log.h>
 
