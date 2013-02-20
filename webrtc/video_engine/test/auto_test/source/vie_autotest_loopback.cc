@@ -58,7 +58,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
     error = ptrViE->SetTraceFilter(webrtc::kTraceAll);
     if (error == -1)
     {
-        printf("ERROR in VideoEngine::SetTraceLevel\n");
+        printf("ERROR in VideoEngine::SetTraceFilter\n");
         return -1;
     }
 
