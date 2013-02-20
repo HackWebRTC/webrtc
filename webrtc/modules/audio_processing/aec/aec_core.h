@@ -12,8 +12,8 @@
  * Specifies the interface for the AEC core.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_CORE_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_CORE_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_H_
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
 #include <stdio.h>
@@ -196,5 +196,12 @@ void* WebRtcAec_far_time_buf(aec_t* self);
 // Sets local configuration modes.
 void WebRtcAec_SetConfigCore(aec_t* self, int nlp_mode, int metrics_mode,
                              int delay_logging);
+// Returns the current |system_delay|, i.e., the buffered difference between
+// far-end and near-end.
+int WebRtcAec_system_delay(aec_t* self);
+// Sets the |system_delay| to |value|.  Note that if the value is changed
+// improperly, there can be a performance regression.  So it should be used with
+// care.
+void WebRtcAec_SetSystemDelay(aec_t* self, int delay);
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_CORE_H_
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_H_

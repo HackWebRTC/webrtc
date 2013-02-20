@@ -268,7 +268,8 @@ WebRtc_Word32 WebRtcAec_BufferFarend(void *aecInst, const WebRtc_Word16 *farend,
         farend_ptr = (const int16_t*) newFarend;
     }
 
-    aecpc->aec->system_delay += newNrOfSamples;
+    WebRtcAec_SetSystemDelay(aecpc->aec, WebRtcAec_system_delay(aecpc->aec) +
+                             newNrOfSamples);
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
     WebRtc_WriteBuffer(aecpc->far_pre_buf_s16, farend_ptr,
@@ -454,7 +455,8 @@ WebRtc_Word32 WebRtcAec_Process(void *aecInst, const WebRtc_Word16 *nearend,
             // for too long). When the far-end buffer is filled with
             // approximately the same amount of data as reported by the system
             // we end the startup phase.
-            int overhead_elements = aecpc->aec->system_delay / PART_LEN -
+            int overhead_elements =
+                WebRtcAec_system_delay(aecpc->aec) / PART_LEN -
                 aecpc->bufSizeStart;
             if (overhead_elements == 0) {
                 // Enable the AEC
@@ -493,7 +495,7 @@ WebRtc_Word32 WebRtcAec_Process(void *aecInst, const WebRtc_Word16 *nearend,
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
     {
-        int16_t far_buf_size_ms = (int16_t)(aecpc->aec->system_delay /
+        int16_t far_buf_size_ms = (int16_t)(WebRtcAec_system_delay(aecpc->aec) /
             (sampMsNb * aecpc->rate_factor));
         (void)fwrite(&far_buf_size_ms, 2, 1, aecpc->bufFile);
         (void)fwrite(&aecpc->knownDelay, sizeof(aecpc->knownDelay), 1,
@@ -700,7 +702,7 @@ WebRtc_Word32 WebRtcAec_get_error_code(void *aecInst)
 
 static int EstBufDelay(aecpc_t* aecpc) {
   int nSampSndCard = aecpc->msInSndCardBuf * sampMsNb * aecpc->rate_factor;
-  int current_delay = nSampSndCard - aecpc->aec->system_delay;
+  int current_delay = nSampSndCard - WebRtcAec_system_delay(aecpc->aec);
   int delay_difference = 0;
 
   // Before we proceed with the delay estimate filtering we:

@@ -748,6 +748,7 @@ void WebRtcAec_GetEchoStats(aec_t* self, Stats* erl, Stats* erle,
   *erle = self->erle;
   *a_nlp = self->aNlp;
 }
+
 #ifdef WEBRTC_AEC_DEBUG_DUMP
 void* WebRtcAec_far_time_buf(aec_t* self) {
   assert(self != NULL);
@@ -768,6 +769,17 @@ void WebRtcAec_SetConfigCore(aec_t* self, int nlp_mode, int metrics_mode,
   if (self->delay_logging_enabled) {
     memset(self->delay_histogram, 0, sizeof(self->delay_histogram));
   }
+}
+
+int WebRtcAec_system_delay(aec_t* self) {
+  assert(self != NULL);
+  return self->system_delay;
+}
+
+void WebRtcAec_SetSystemDelay(aec_t* self, int delay) {
+  assert(self != NULL);
+  assert(delay >= 0);
+  self->system_delay = delay;
 }
 
 static void ProcessBlock(aec_t* aec) {
