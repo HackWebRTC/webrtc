@@ -383,6 +383,7 @@ class ViEChannel
   // Owned modules/classes.
   scoped_ptr<RtpRtcp> rtp_rtcp_;
   std::list<RtpRtcp*> simulcast_rtp_rtcp_;
+  std::list<RtpRtcp*> removed_rtp_rtcp_;
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
   UdpTransport& socket_transport_;
 #endif

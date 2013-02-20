@@ -939,29 +939,30 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendOutgoingData(
 
     std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
     if (it != child_modules_.end()) {
-      ret_val = (*it)->SendOutgoingData(frame_type,
-                                        payload_type,
-                                        time_stamp,
-                                        capture_time_ms,
-                                        payload_data,
-                                        payload_size,
-                                        fragmentation,
-                                        rtp_video_hdr);
-
+      if ((*it)->SendingMedia()) {
+        ret_val = (*it)->SendOutgoingData(frame_type,
+                                          payload_type,
+                                          time_stamp,
+                                          capture_time_ms,
+                                          payload_data,
+                                          payload_size,
+                                          fragmentation,
+                                          rtp_video_hdr);
+      }
       it++;
     }
-
     // Send to all remaining "child" modules
     while (it != child_modules_.end()) {
-      ret_val = (*it)->SendOutgoingData(frame_type,
-                                        payload_type,
-                                        time_stamp,
-                                        capture_time_ms,
-                                        payload_data,
-                                        payload_size,
-                                        fragmentation,
-                                        rtp_video_hdr);
-
+      if ((*it)->SendingMedia()) {
+        ret_val = (*it)->SendOutgoingData(frame_type,
+                                          payload_type,
+                                          time_stamp,
+                                          capture_time_ms,
+                                          payload_data,
+                                          payload_size,
+                                          fragmentation,
+                                          rtp_video_hdr);
+      }
       it++;
     }
   }

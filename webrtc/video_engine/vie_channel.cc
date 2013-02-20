@@ -225,6 +225,11 @@ ViEChannel::~ViEChannel() {
     delete rtp_rtcp;
     simulcast_rtp_rtcp_.erase(it);
   }
+  while (removed_rtp_rtcp_.size() > 0) {
+    std::list<RtpRtcp*>::iterator it = removed_rtp_rtcp_.begin();
+    delete *it;
+    removed_rtp_rtcp_.erase(it);
+  }
   if (decode_thread_) {
     StopDecodeThread();
   }
@@ -262,6 +267,11 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   if (rtp_rtcp_->Sending() && new_stream) {
     restart_rtp = true;
     rtp_rtcp_->SetSendingStatus(false);
+    for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
+         it != simulcast_rtp_rtcp_.end(); ++it) {
+      (*it)->SetSendingStatus(false);
+      (*it)->SetSendingMediaStatus(false);
+    }
   }
   NACKMethod nack_method = rtp_rtcp_->NACK();
 
@@ -275,10 +285,23 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   if (video_codec.numberOfSimulcastStreams > 0) {
     // Set correct bitrate to base layer.
     // Create our simulcast RTP modules.
+    int num_modules_to_add = video_codec.numberOfSimulcastStreams -
+        simulcast_rtp_rtcp_.size() - 1;
+    if (num_modules_to_add < 0) {
+      num_modules_to_add = 0;
+    }
 
-    for (int i = simulcast_rtp_rtcp_.size();
-         i < video_codec.numberOfSimulcastStreams - 1;
-         i++) {
+    while (removed_rtp_rtcp_.size() > 0 && num_modules_to_add > 0) {
+      RtpRtcp* rtp_rtcp = removed_rtp_rtcp_.front();
+      removed_rtp_rtcp_.pop_front();
+      simulcast_rtp_rtcp_.push_back(rtp_rtcp);
+      rtp_rtcp->SetSendingStatus(rtp_rtcp_->Sending());
+      rtp_rtcp->SetSendingMediaStatus(rtp_rtcp_->SendingMedia());
+      module_process_thread_.RegisterModule(rtp_rtcp);
+      --num_modules_to_add;
+    }
+
+    for (int i = 0; i < num_modules_to_add; ++i) {
       RtpRtcp::Configuration configuration;
       configuration.id = ViEModuleId(engine_id_, channel_id_);
       configuration.audio = false;  // Video.
@@ -311,15 +334,15 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       simulcast_rtp_rtcp_.push_back(rtp_rtcp);
     }
     // Remove last in list if we have too many.
-    std::list<RtpRtcp*> modules_to_delete;
     for (int j = simulcast_rtp_rtcp_.size();
          j > (video_codec.numberOfSimulcastStreams - 1);
          j--) {
       RtpRtcp* rtp_rtcp = simulcast_rtp_rtcp_.back();
       module_process_thread_.DeRegisterModule(rtp_rtcp);
+      rtp_rtcp->SetSendingStatus(false);
+      rtp_rtcp->SetSendingMediaStatus(false);
       simulcast_rtp_rtcp_.pop_back();
-      // We need to deregister the module before deleting.
-      modules_to_delete.push_back(rtp_rtcp);
+      removed_rtp_rtcp_.push_front(rtp_rtcp);
     }
     WebRtc_UWord8 idx = 0;
     // Configure all simulcast modules.
@@ -339,6 +362,7 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       }
       if (restart_rtp) {
         rtp_rtcp->SetSendingStatus(true);
+        rtp_rtcp->SetSendingMediaStatus(true);
       }
       if (send_timestamp_extension_id_ != kInvalidRtpExtensionId) {
         // Deregister in case the extension was previously enabled.
@@ -359,20 +383,14 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
     // |RegisterSimulcastRtpRtcpModules| resets all old weak pointers and old
     // modules can be deleted after this step.
     vie_receiver_.RegisterSimulcastRtpRtcpModules(simulcast_rtp_rtcp_);
-    for (std::list<RtpRtcp*>::iterator it = modules_to_delete.begin();
-         it != modules_to_delete.end(); ++it) {
-      delete *it;
-    }
-    modules_to_delete.clear();
   } else {
-    if (!simulcast_rtp_rtcp_.empty()) {
-      // Delete all simulcast rtp modules.
-      while (!simulcast_rtp_rtcp_.empty()) {
-        RtpRtcp* rtp_rtcp = simulcast_rtp_rtcp_.back();
-        module_process_thread_.DeRegisterModule(rtp_rtcp);
-        delete rtp_rtcp;
-        simulcast_rtp_rtcp_.pop_back();
-      }
+    while (!simulcast_rtp_rtcp_.empty()) {
+      RtpRtcp* rtp_rtcp = simulcast_rtp_rtcp_.back();
+      module_process_thread_.DeRegisterModule(rtp_rtcp);
+      rtp_rtcp->SetSendingStatus(false);
+      rtp_rtcp->SetSendingMediaStatus(false);
+      simulcast_rtp_rtcp_.pop_back();
+      removed_rtp_rtcp_.push_front(rtp_rtcp);
     }
     // Clear any previous modules.
     vie_receiver_.RegisterSimulcastRtpRtcpModules(simulcast_rtp_rtcp_);
@@ -400,6 +418,11 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   }
   if (restart_rtp) {
     rtp_rtcp_->SetSendingStatus(true);
+    for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
+         it != simulcast_rtp_rtcp_.end(); ++it) {
+      (*it)->SetSendingStatus(true);
+      (*it)->SetSendingMediaStatus(true);
+    }
   }
   return 0;
 }
