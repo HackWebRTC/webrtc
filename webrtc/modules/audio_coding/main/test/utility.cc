@@ -138,7 +138,7 @@ ChooseCodec(
         }
     } while(outOfRange);
 
-    CHECK_ERROR(AudioCodingModule::Codec((WebRtc_UWord8)codecID, codecInst));
+    CHECK_ERROR(AudioCodingModule::Codec((WebRtc_UWord8)codecID, &codecInst));
     return 0;
 }
 
@@ -151,7 +151,7 @@ PrintCodecs()
     printf("No  Name                [Hz]    [bps]\n");     
     for(WebRtc_UWord8 codecCntr = 0; codecCntr < noCodec; codecCntr++)
     {
-        AudioCodingModule::Codec(codecCntr, codecInst);
+        AudioCodingModule::Codec(codecCntr, &codecInst);
         printf("%2d- %-18s %5d   %6d\n", 
             codecCntr, codecInst.plname, codecInst.plfreq, codecInst.rate);
     }

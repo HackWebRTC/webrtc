@@ -661,7 +661,7 @@ Channel::OnInitializeDecoder(
     receiveCodec.rate = rate;
     strncpy(receiveCodec.plname, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
 
-    _audioCodingModule.Codec(payloadName, dummyCodec, frequency, channels);
+    _audioCodingModule.Codec(payloadName, &dummyCodec, frequency, channels);
     receiveCodec.pacsize = dummyCodec.pacsize;
 
     // Register the new codec to the ACM
@@ -839,7 +839,7 @@ WebRtc_Word32 Channel::GetAudioFrame(const WebRtc_Word32 id,
 
     // Get 10ms raw PCM data from the ACM (mixer limits output frequency)
     if (_audioCodingModule.PlayoutData10Ms(audioFrame.sample_rate_hz_,
-                                           audioFrame) == -1)
+                                           &audioFrame) == -1)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
@@ -1413,7 +1413,7 @@ Channel::Init()
     for (int idx = 0; idx < nSupportedCodecs; idx++)
     {
         // Open up the RTP/RTCP receiver for all supported codecs
-        if ((_audioCodingModule.Codec(idx, codec) == -1) ||
+        if ((_audioCodingModule.Codec(idx, &codec) == -1) ||
             (_rtpRtcpModule->RegisterReceivePayload(codec) == -1))
         {
             WEBRTC_TRACE(kTraceWarning, kTraceVoice,
@@ -2254,7 +2254,7 @@ WebRtc_Word32
 Channel::GetNetEQBGNMode(NetEqBgnModes& mode)
 {
   ACMBackgroundNoiseMode noiseMode(On);
-    _audioCodingModule.BackgroundNoiseMode(noiseMode);
+    _audioCodingModule.BackgroundNoiseMode(&noiseMode);
     switch (noiseMode)
     {
         case On:
@@ -2275,13 +2275,13 @@ Channel::GetNetEQBGNMode(NetEqBgnModes& mode)
 WebRtc_Word32
 Channel::GetSendCodec(CodecInst& codec)
 {
-    return (_audioCodingModule.SendCodec(codec));
+    return (_audioCodingModule.SendCodec(&codec));
 }
 
 WebRtc_Word32
 Channel::GetRecCodec(CodecInst& codec)
 {
-    return (_audioCodingModule.ReceiveCodec(codec));
+    return (_audioCodingModule.ReceiveCodec(&codec));
 }
 
 WebRtc_Word32
@@ -2342,7 +2342,7 @@ Channel::GetVADStatus(bool& enabledVAD, ACMVADMode& mode, bool& disabledDTX)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetVADStatus");
-    if (_audioCodingModule.VAD(disabledDTX, enabledVAD, mode) != 0)
+    if (_audioCodingModule.VAD(&disabledDTX, &enabledVAD, &mode) != 0)
     {
         _engineStatisticsPtr->SetLastError(
             VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
@@ -2504,7 +2504,7 @@ Channel::SetSendCNPayloadType(int type, PayloadFrequencies frequency)
     else if (frequency == kFreq16000Hz)
         samplingFreqHz = 16000;
 
-    if (_audioCodingModule.Codec("CN", codec, samplingFreqHz, kMono) == -1)
+    if (_audioCodingModule.Codec("CN", &codec, samplingFreqHz, kMono) == -1)
     {
         _engineStatisticsPtr->SetLastError(
             VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
@@ -2546,7 +2546,7 @@ Channel::SetISACInitTargetRate(int rateBps, bool useFixedFrameSize)
                  "Channel::SetISACInitTargetRate()");
 
     CodecInst sendCodec;
-    if (_audioCodingModule.SendCodec(sendCodec) == -1)
+    if (_audioCodingModule.SendCodec(&sendCodec) == -1)
     {
         _engineStatisticsPtr->SetLastError(
             VE_CODEC_ERROR, kTraceError,
@@ -2614,7 +2614,7 @@ Channel::SetISACMaxRate(int rateBps)
                  "Channel::SetISACMaxRate()");
 
     CodecInst sendCodec;
-    if (_audioCodingModule.SendCodec(sendCodec) == -1)
+    if (_audioCodingModule.SendCodec(&sendCodec) == -1)
     {
         _engineStatisticsPtr->SetLastError(
             VE_CODEC_ERROR, kTraceError,
@@ -2678,7 +2678,7 @@ Channel::SetISACMaxPayloadSize(int sizeBytes)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetISACMaxPayloadSize()");
     CodecInst sendCodec;
-    if (_audioCodingModule.SendCodec(sendCodec) == -1)
+    if (_audioCodingModule.SendCodec(&sendCodec) == -1)
     {
         _engineStatisticsPtr->SetLastError(
             VE_CODEC_ERROR, kTraceError,
@@ -6082,8 +6082,12 @@ Channel::GetNetworkStatistics(NetworkStatistics& stats)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetNetworkStatistics()");
-    return _audioCodingModule.NetworkStatistics(
-        (ACMNetworkStatistics &)stats);
+    ACMNetworkStatistics acm_stats;
+    int return_value = _audioCodingModule.NetworkStatistics(&acm_stats);
+    if (return_value > 0) {
+      memcpy(&stats, &acm_stats, sizeof(NetworkStatistics));
+    }
+    return return_value;
 }
 
 int
@@ -6416,7 +6420,7 @@ Channel::GetPlayoutTimeStamp(WebRtc_UWord32& playoutTimestamp)
     WebRtc_UWord32 timestamp(0);
     CodecInst currRecCodec;
 
-    if (_audioCodingModule.PlayoutTimestamp(timestamp) == -1)
+    if (_audioCodingModule.PlayoutTimestamp(&timestamp) == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,_channelId),
                      "Channel::GetPlayoutTimeStamp() failed to read playout"
@@ -6434,7 +6438,7 @@ Channel::GetPlayoutTimeStamp(WebRtc_UWord32& playoutTimestamp)
     }
 
     WebRtc_Word32 playoutFrequency = _audioCodingModule.PlayoutFrequency();
-    if (_audioCodingModule.ReceiveCodec(currRecCodec) == 0) {
+    if (_audioCodingModule.ReceiveCodec(&currRecCodec) == 0) {
       if (STR_CASE_CMP("G722", currRecCodec.plname) == 0) {
         playoutFrequency = 8000;
       } else if (STR_CASE_CMP("opus", currRecCodec.plname) == 0) {
@@ -6513,7 +6517,7 @@ Channel::UpdatePacketDelay(const WebRtc_UWord32 timestamp,
     rtpReceiveFrequency = _audioCodingModule.ReceiveFrequency();
 
     CodecInst currRecCodec;
-    if (_audioCodingModule.ReceiveCodec(currRecCodec) == 0) {
+    if (_audioCodingModule.ReceiveCodec(&currRecCodec) == 0) {
       if (STR_CASE_CMP("G722", currRecCodec.plname) == 0) {
         // Even though the actual sampling rate for G.722 audio is
         // 16,000 Hz, the RTP clock rate for the G722 payload format is
@@ -6618,7 +6622,7 @@ Channel::RegisterReceiveCodecsToRTPModule()
     for (int idx = 0; idx < nSupportedCodecs; idx++)
     {
         // Open up the RTP/RTCP receiver for all supported codecs
-        if ((_audioCodingModule.Codec(idx, codec) == -1) ||
+        if ((_audioCodingModule.Codec(idx, &codec) == -1) ||
             (_rtpRtcpModule->RegisterReceivePayload(codec) == -1))
         {
             WEBRTC_TRACE(
@@ -6710,7 +6714,7 @@ int Channel::SetRedPayloadType(int red_payload_type) {
   // Get default RED settings from the ACM database
   const int num_codecs = AudioCodingModule::NumberOfCodecs();
   for (int idx = 0; idx < num_codecs; idx++) {
-    _audioCodingModule.Codec(idx, codec);
+    _audioCodingModule.Codec(idx, &codec);
     if (!STR_CASE_CMP(codec.plname, "RED")) {
       found_red = true;
       break;

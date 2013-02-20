@@ -111,7 +111,7 @@ void DualStreamTest::PopulateCodecInstances(int frame_size_primary_ms,
   red_encoder_.pltype = -1;
 
   for (int n = 0; n < AudioCodingModule::NumberOfCodecs(); n++) {
-    AudioCodingModule::Codec(n, my_codec);
+    AudioCodingModule::Codec(n, &my_codec);
     if (strcmp(my_codec.plname, "ISAC") == 0 &&
         my_codec.plfreq == sampling_rate) {
       my_codec.rate = 32000;
@@ -480,7 +480,7 @@ TEST_F(DualStreamTest, Api) {
   bool vad_status;
   bool dtx_status;
   ACMVADMode vad_mode;
-  EXPECT_EQ(0, acm_dual_stream_->VAD(vad_status, dtx_status, vad_mode));
+  EXPECT_EQ(0, acm_dual_stream_->VAD(&vad_status, &dtx_status, &vad_mode));
   EXPECT_TRUE(vad_status);
   EXPECT_TRUE(dtx_status);
   EXPECT_EQ(VADNormal, vad_mode);
@@ -492,7 +492,7 @@ TEST_F(DualStreamTest, Api) {
   ASSERT_EQ(0, memcmp(&my_codec, &secondary_encoder_, sizeof(my_codec)));
 
   // Test if VAD get disabled after registering secondary codec.
-  EXPECT_EQ(0, acm_dual_stream_->VAD(vad_status, dtx_status, vad_mode));
+  EXPECT_EQ(0, acm_dual_stream_->VAD(&vad_status, &dtx_status, &vad_mode));
   EXPECT_FALSE(vad_status);
   EXPECT_FALSE(dtx_status);
 
@@ -506,7 +506,7 @@ TEST_F(DualStreamTest, Api) {
 
   ASSERT_EQ(0, acm_dual_stream_->SetVAD(true, true, VADVeryAggr));
   // Make sure VAD is activated.
-  EXPECT_EQ(0, acm_dual_stream_->VAD(vad_status, dtx_status, vad_mode));
+  EXPECT_EQ(0, acm_dual_stream_->VAD(&vad_status, &dtx_status, &vad_mode));
   EXPECT_TRUE(vad_status);
   EXPECT_TRUE(dtx_status);
   EXPECT_EQ(VADVeryAggr, vad_mode);
