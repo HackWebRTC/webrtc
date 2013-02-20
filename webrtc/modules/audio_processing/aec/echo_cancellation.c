@@ -578,32 +578,6 @@ WebRtc_Word32 WebRtcAec_set_config(void *aecInst, AecConfig config)
     return 0;
 }
 
-WebRtc_Word32 WebRtcAec_get_config(void *aecInst, AecConfig *config)
-{
-    aecpc_t *aecpc = aecInst;
-
-    if (aecpc == NULL) {
-        return -1;
-    }
-
-    if (config == NULL) {
-        aecpc->lastError = AEC_NULL_POINTER_ERROR;
-        return -1;
-    }
-
-    if (aecpc->initFlag != initCheck) {
-        aecpc->lastError = AEC_UNINITIALIZED_ERROR;
-        return -1;
-    }
-
-    config->nlpMode = aecpc->aec->nlp_mode;
-    config->skewMode = aecpc->skewMode;
-    config->metricsMode = aecpc->aec->metricsMode;
-    config->delay_logging = aecpc->aec->delay_logging_enabled;
-
-    return 0;
-}
-
 int WebRtcAec_get_echo_status(void* handle, int* status) {
   aecpc_t* self = (aecpc_t*)handle;
 
