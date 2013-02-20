@@ -606,22 +606,29 @@ int WebRtcAec_MoveFarReadPtr(aec_t *aec, int elements) {
   return elements_moved;
 }
 
-void WebRtcAec_ProcessFrame(aec_t *aec,
-                            const short *nearend,
-                            const short *nearendH,
-                            int knownDelay)
-{
+void WebRtcAec_ProcessFrame(aec_t* aec,
+                            const short* nearend,
+                            const short* nearendH,
+                            int knownDelay,
+                            int16_t* out,
+                            int16_t* outH) {
+    int out_elements = 0;
+    int16_t* out_ptr = NULL;
+    int16_t out_tmp[FRAME_LEN];
+
     // For each frame the process is as follows:
     // 1) If the system_delay indicates on being too small for processing a
     //    frame we stuff the buffer with enough data for 10 ms.
     // 2) Adjust the buffer to the system delay, by moving the read pointer.
-    // 3) If we can't move read pointer due to buffer size limitations we
+    // 3) TODO(bjornv): Investigate if we need to add this:
+    //    If we can't move read pointer due to buffer size limitations we
     //    flush/stuff the buffer.
     // 4) Process as many partitions as possible.
     // 5) Update the |system_delay| with respect to a full frame of FRAME_LEN
     //    samples. Even though we will have data left to process (we work with
     //    partitions) we consider updating a whole frame, since that's the
     //    amount of data we input and output in audio_processing.
+    // 6) Update the outputs.
 
     // TODO(bjornv): Investigate how we should round the delay difference; right
     // now we know that incoming |knownDelay| is underestimated when it's less
@@ -664,6 +671,25 @@ void WebRtcAec_ProcessFrame(aec_t *aec,
 
     // 5) Update system delay with respect to the entire frame.
     aec->system_delay -= FRAME_LEN;
+
+    // 6) Update output frame.
+    // Stuff the out buffer if we have less than a frame to output.
+    // This should only happen for the first frame.
+    out_elements = (int) WebRtc_available_read(aec->outFrBuf);
+    if (out_elements < FRAME_LEN) {
+      WebRtc_MoveReadPtr(aec->outFrBuf, out_elements - FRAME_LEN);
+      if (aec->sampFreq == 32000) {
+        WebRtc_MoveReadPtr(aec->outFrBufH, out_elements - FRAME_LEN);
+      }
+    }
+    // Obtain an output frame.
+    WebRtc_ReadBuffer(aec->outFrBuf, (void**) &out_ptr, out_tmp, FRAME_LEN);
+    memcpy(out, out_ptr, sizeof(int16_t) * FRAME_LEN);
+    // For H band.
+    if (aec->sampFreq == 32000) {
+      WebRtc_ReadBuffer(aec->outFrBufH, (void**) &out_ptr, out_tmp, FRAME_LEN);
+      memcpy(outH, out_ptr, sizeof(int16_t) * FRAME_LEN);
+    }
 }
 
 int WebRtcAec_GetDelayMetricsCore(aec_t* self, int* median, int* std) {

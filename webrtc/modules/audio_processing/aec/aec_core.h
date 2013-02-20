@@ -174,9 +174,11 @@ void WebRtcAec_InitAec_SSE2(void);
 void WebRtcAec_InitMetrics(aec_t *aec);
 void WebRtcAec_BufferFarendPartition(aec_t *aec, const float* farend);
 void WebRtcAec_ProcessFrame(aec_t* aec,
-                            const short *nearend,
-                            const short *nearendH,
-                            int knownDelay);
+                            const short* nearend,
+                            const short* nearendH,
+                            int knownDelay,
+                            int16_t* out,
+                            int16_t* outH);
 
 // A helper function to call WebRtc_MoveReadPtr() for all far-end buffers.
 // Returns the number of elements moved, and adjusts |system_delay| by the

@@ -474,47 +474,20 @@ WebRtc_Word32 WebRtcAec_Process(void *aecInst, const WebRtc_Word16 *nearend,
     } else {
         // AEC is enabled.
 
-        int out_elements = 0;
-
         EstBufDelay(aecpc);
 
         // Note that 1 frame is supported for NB and 2 frames for WB.
         for (i = 0; i < nFrames; i++) {
-            int16_t* out_ptr = NULL;
-            int16_t out_tmp[FRAME_LEN];
-
             // Call the AEC.
             WebRtcAec_ProcessFrame(aecpc->aec,
                                    &nearend[FRAME_LEN * i],
                                    &nearendH[FRAME_LEN * i],
-                                   aecpc->knownDelay);
+                                   aecpc->knownDelay,
+                                   &out[FRAME_LEN * i],
+                                   &outH[FRAME_LEN * i]);
             // TODO(bjornv): Re-structure such that we don't have to pass
             // |aecpc->knownDelay| as input. Change name to something like
             // |system_buffer_diff|.
-
-            // Stuff the out buffer if we have less than a frame to output.
-            // This should only happen for the first frame.
-            out_elements = (int) WebRtc_available_read(aecpc->aec->outFrBuf);
-            if (out_elements < FRAME_LEN) {
-                WebRtc_MoveReadPtr(aecpc->aec->outFrBuf,
-                                   out_elements - FRAME_LEN);
-                if (aecpc->sampFreq == 32000) {
-                    WebRtc_MoveReadPtr(aecpc->aec->outFrBufH,
-                                       out_elements - FRAME_LEN);
-                }
-            }
-
-            // Obtain an output frame.
-            WebRtc_ReadBuffer(aecpc->aec->outFrBuf, (void**) &out_ptr,
-                              out_tmp, FRAME_LEN);
-            memcpy(&out[FRAME_LEN * i], out_ptr, sizeof(int16_t) * FRAME_LEN);
-            // For H band
-            if (aecpc->sampFreq == 32000) {
-                WebRtc_ReadBuffer(aecpc->aec->outFrBufH, (void**) &out_ptr,
-                                  out_tmp, FRAME_LEN);
-                memcpy(&outH[FRAME_LEN * i], out_ptr,
-                       sizeof(int16_t) * FRAME_LEN);
-            }
         }
     }
 
