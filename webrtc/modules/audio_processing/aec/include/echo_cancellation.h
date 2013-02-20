@@ -167,16 +167,16 @@ WebRtc_Word32 WebRtcAec_Process(void *aecInst,
  *
  * Inputs                       Description
  * -------------------------------------------------------------------
- * void           *aecInst      Pointer to the AEC instance
+ * void           *handle       Pointer to the AEC instance
  * AecConfig      config        Config instance that contains all
  *                              properties to be set
  *
  * Outputs                      Description
  * -------------------------------------------------------------------
- * WebRtc_Word32  return         0: OK
+ * int            return         0: OK
  *                              -1: error
  */
-WebRtc_Word32 WebRtcAec_set_config(void *aecInst, AecConfig config);
+int WebRtcAec_set_config(void* handle, AecConfig config);
 
 /*
  * Gets the current echo status of the nearend signal.

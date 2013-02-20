@@ -126,8 +126,9 @@ static void ComfortNoise(aec_t *aec, float efw[2][PART_LEN1],
                                   complex_t *comfortNoiseHband,
                                   const float *noisePow, const float *lambda);
 
-static void WebRtcAec_InitLevel(power_level_t *level);
+static void InitLevel(power_level_t *level);
 static void InitStats(Stats* stats);
+static void InitMetrics(aec_t *aec);
 static void UpdateLevel(power_level_t* level, float in[2][PART_LEN1]);
 static void UpdateMetrics(aec_t *aec);
 // Convert from time domain to frequency domain. Note that |time_data| are
@@ -544,7 +545,7 @@ int WebRtcAec_InitAec(aec_t *aec, int sampFreq)
 
     // Metrics disabled by default
     aec->metricsMode = 0;
-    WebRtcAec_InitMetrics(aec);
+    InitMetrics(aec);
 
     // Assembly optimization
     WebRtcAec_FilterFar = FilterFar;
@@ -561,20 +562,6 @@ int WebRtcAec_InitAec(aec_t *aec, int sampFreq)
     aec_rdft_init();
 
     return 0;
-}
-
-void WebRtcAec_InitMetrics(aec_t *aec)
-{
-    aec->stateCounter = 0;
-    WebRtcAec_InitLevel(&aec->farlevel);
-    WebRtcAec_InitLevel(&aec->nearlevel);
-    WebRtcAec_InitLevel(&aec->linoutlevel);
-    WebRtcAec_InitLevel(&aec->nlpoutlevel);
-
-    InitStats(&aec->erl);
-    InitStats(&aec->erle);
-    InitStats(&aec->aNlp);
-    InitStats(&aec->rerl);
 }
 
 void WebRtcAec_BufferFarendPartition(aec_t *aec, const float* farend) {
@@ -767,6 +754,21 @@ void* WebRtcAec_far_time_buf(aec_t* self) {
   return self->far_time_buf;
 }
 #endif
+
+void WebRtcAec_SetConfigCore(aec_t* self, int nlp_mode, int metrics_mode,
+                             int delay_logging) {
+  assert(self != NULL);
+  assert(nlp_mode >= 0 && nlp_mode < 3);
+  self->nlp_mode = nlp_mode;
+  self->metricsMode = metrics_mode;
+  if (self->metricsMode) {
+    InitMetrics(self);
+  }
+  self->delay_logging_enabled = delay_logging;
+  if (self->delay_logging_enabled) {
+    memset(self->delay_histogram, 0, sizeof(self->delay_histogram));
+  }
+}
 
 static void ProcessBlock(aec_t* aec) {
     int i;
@@ -1426,7 +1428,7 @@ static void ComfortNoise(aec_t *aec, float efw[2][PART_LEN1],
     }
 }
 
-static void WebRtcAec_InitLevel(power_level_t *level)
+static void InitLevel(power_level_t *level)
 {
     const float bigFloat = 1E17f;
 
@@ -1449,6 +1451,20 @@ static void InitStats(Stats* stats) {
   stats->himean = offsetLevel;
   stats->counter = 0;
   stats->hicounter = 0;
+}
+
+static void InitMetrics(aec_t* self) {
+  assert(self != NULL);
+  self->stateCounter = 0;
+  InitLevel(&self->farlevel);
+  InitLevel(&self->nearlevel);
+  InitLevel(&self->linoutlevel);
+  InitLevel(&self->nlpoutlevel);
+
+  InitStats(&self->erl);
+  InitStats(&self->erle);
+  InitStats(&self->aNlp);
+  InitStats(&self->rerl);
 }
 
 static void UpdateLevel(power_level_t* level, float in[2][PART_LEN1]) {

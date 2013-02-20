@@ -504,51 +504,43 @@ WebRtc_Word32 WebRtcAec_Process(void *aecInst, const WebRtc_Word16 *nearend,
     return retVal;
 }
 
-WebRtc_Word32 WebRtcAec_set_config(void *aecInst, AecConfig config)
-{
-    aecpc_t *aecpc = aecInst;
+int WebRtcAec_set_config(void* handle, AecConfig config) {
+  aecpc_t* self = (aecpc_t*)handle;
 
-    if (aecpc == NULL) {
-        return -1;
-    }
-
-    if (aecpc->initFlag != initCheck) {
-        aecpc->lastError = AEC_UNINITIALIZED_ERROR;
-        return -1;
-    }
-
-    if (config.skewMode != kAecFalse && config.skewMode != kAecTrue) {
-        aecpc->lastError = AEC_BAD_PARAMETER_ERROR;
-        return -1;
-    }
-    aecpc->skewMode = config.skewMode;
-
-    if (config.nlpMode != kAecNlpConservative && config.nlpMode !=
-            kAecNlpModerate && config.nlpMode != kAecNlpAggressive) {
-        aecpc->lastError = AEC_BAD_PARAMETER_ERROR;
-        return -1;
-    }
-    aecpc->aec->nlp_mode = config.nlpMode;
-
-    if (config.metricsMode != kAecFalse && config.metricsMode != kAecTrue) {
-        aecpc->lastError = AEC_BAD_PARAMETER_ERROR;
-        return -1;
-    }
-    aecpc->aec->metricsMode = config.metricsMode;
-    if (aecpc->aec->metricsMode == kAecTrue) {
-        WebRtcAec_InitMetrics(aecpc->aec);
-    }
-
-  if (config.delay_logging != kAecFalse && config.delay_logging != kAecTrue) {
-    aecpc->lastError = AEC_BAD_PARAMETER_ERROR;
+  if (handle == NULL ) {
     return -1;
   }
-  aecpc->aec->delay_logging_enabled = config.delay_logging;
-  if (aecpc->aec->delay_logging_enabled == kAecTrue) {
-    memset(aecpc->aec->delay_histogram, 0, sizeof(aecpc->aec->delay_histogram));
+
+  if (self->initFlag != initCheck) {
+    self->lastError = AEC_UNINITIALIZED_ERROR;
+    return -1;
   }
 
-    return 0;
+  if (config.skewMode != kAecFalse && config.skewMode != kAecTrue) {
+    self->lastError = AEC_BAD_PARAMETER_ERROR;
+    return -1;
+  }
+  self->skewMode = config.skewMode;
+
+  if (config.nlpMode != kAecNlpConservative && config.nlpMode != kAecNlpModerate
+      && config.nlpMode != kAecNlpAggressive) {
+    self->lastError = AEC_BAD_PARAMETER_ERROR;
+    return -1;
+  }
+
+  if (config.metricsMode != kAecFalse && config.metricsMode != kAecTrue) {
+    self->lastError = AEC_BAD_PARAMETER_ERROR;
+    return -1;
+  }
+
+  if (config.delay_logging != kAecFalse && config.delay_logging != kAecTrue) {
+    self->lastError = AEC_BAD_PARAMETER_ERROR;
+    return -1;
+  }
+
+  WebRtcAec_SetConfigCore(self->aec, config.nlpMode, config.metricsMode,
+                          config.delay_logging);
+  return 0;
 }
 
 int WebRtcAec_get_echo_status(void* handle, int* status) {

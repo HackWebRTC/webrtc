@@ -171,7 +171,6 @@ int WebRtcAec_FreeAec(aec_t *aec);
 int WebRtcAec_InitAec(aec_t *aec, int sampFreq);
 void WebRtcAec_InitAec_SSE2(void);
 
-void WebRtcAec_InitMetrics(aec_t *aec);
 void WebRtcAec_BufferFarendPartition(aec_t *aec, const float* farend);
 void WebRtcAec_ProcessFrame(aec_t* aec,
                             const short* nearend,
@@ -194,5 +193,8 @@ void WebRtcAec_GetEchoStats(aec_t* self, Stats* erl, Stats* erle, Stats* a_nlp);
 #ifdef WEBRTC_AEC_DEBUG_DUMP
 void* WebRtcAec_far_time_buf(aec_t* self);
 #endif
+// Sets local configuration modes.
+void WebRtcAec_SetConfigCore(aec_t* self, int nlp_mode, int metrics_mode,
+                             int delay_logging);
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_CORE_H_
