@@ -61,7 +61,7 @@ typedef struct {
 
   int lastError;
 
-  aec_t* aec;
+  AecCore* aec;
 } aecpc_t;
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_ECHO_CANCELLATION_INTERNAL_H_

@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/modules/audio_processing/aec/aec_core_internal.h"
 #include "webrtc/modules/audio_processing/aec/aec_rdft.h"
 #include "webrtc/modules/audio_processing/utility/delay_estimator_wrapper.h"
 #include "webrtc/modules/audio_processing/utility/ring_buffer.h"
@@ -115,22 +116,22 @@ extern int webrtc_aec_instance_count;
 #endif
 
 // "Private" function prototypes.
-static void ProcessBlock(aec_t* aec);
+static void ProcessBlock(AecCore* aec);
 
-static void NonLinearProcessing(aec_t *aec, short *output, short *outputH);
+static void NonLinearProcessing(AecCore* aec, short *output, short *outputH);
 
 static void GetHighbandGain(const float *lambda, float *nlpGainHband);
 
 // Comfort_noise also computes noise for H band returned in comfortNoiseHband
-static void ComfortNoise(aec_t *aec, float efw[2][PART_LEN1],
+static void ComfortNoise(AecCore* aec, float efw[2][PART_LEN1],
                                   complex_t *comfortNoiseHband,
                                   const float *noisePow, const float *lambda);
 
 static void InitLevel(PowerLevel* level);
 static void InitStats(Stats* stats);
-static void InitMetrics(aec_t *aec);
+static void InitMetrics(AecCore* aec);
 static void UpdateLevel(PowerLevel* level, float in[2][PART_LEN1]);
-static void UpdateMetrics(aec_t *aec);
+static void UpdateMetrics(AecCore* aec);
 // Convert from time domain to frequency domain. Note that |time_data| are
 // overwritten.
 static void TimeToFrequency(float time_data[PART_LEN2],
@@ -155,9 +156,9 @@ static int CmpFloat(const void *a, const void *b)
     return (*da > *db) - (*da < *db);
 }
 
-int WebRtcAec_CreateAec(aec_t **aecInst)
+int WebRtcAec_CreateAec(AecCore** aecInst)
 {
-    aec_t *aec = malloc(sizeof(aec_t));
+    AecCore* aec = malloc(sizeof(AecCore));
     *aecInst = aec;
     if (aec == NULL) {
         return -1;
@@ -246,7 +247,7 @@ int WebRtcAec_CreateAec(aec_t **aecInst)
     return 0;
 }
 
-int WebRtcAec_FreeAec(aec_t *aec)
+int WebRtcAec_FreeAec(AecCore* aec)
 {
     if (aec == NULL) {
         return -1;
@@ -274,7 +275,7 @@ int WebRtcAec_FreeAec(aec_t *aec)
     return 0;
 }
 
-static void FilterFar(aec_t *aec, float yf[2][PART_LEN1])
+static void FilterFar(AecCore* aec, float yf[2][PART_LEN1])
 {
   int i;
   for (i = 0; i < NR_PART; i++) {
@@ -295,7 +296,7 @@ static void FilterFar(aec_t *aec, float yf[2][PART_LEN1])
   }
 }
 
-static void ScaleErrorSignal(aec_t *aec, float ef[2][PART_LEN1])
+static void ScaleErrorSignal(AecCore* aec, float ef[2][PART_LEN1])
 {
   int i;
   float absEf;
@@ -318,7 +319,7 @@ static void ScaleErrorSignal(aec_t *aec, float ef[2][PART_LEN1])
 
 // Time-unconstrined filter adaptation.
 // TODO(andrew): consider for a low-complexity mode.
-//static void FilterAdaptationUnconstrained(aec_t *aec, float *fft,
+//static void FilterAdaptationUnconstrained(AecCore* aec, float *fft,
 //                                          float ef[2][PART_LEN1]) {
 //  int i, j;
 //  for (i = 0; i < NR_PART; i++) {
@@ -342,7 +343,7 @@ static void ScaleErrorSignal(aec_t *aec, float ef[2][PART_LEN1])
 //  }
 //}
 
-static void FilterAdaptation(aec_t *aec, float *fft, float ef[2][PART_LEN1]) {
+static void FilterAdaptation(AecCore* aec, float *fft, float ef[2][PART_LEN1]) {
   int i, j;
   for (i = 0; i < NR_PART; i++) {
     int xPos = (i + aec->xfBufBlockPos)*(PART_LEN1);
@@ -389,7 +390,7 @@ static void FilterAdaptation(aec_t *aec, float *fft, float ef[2][PART_LEN1]) {
   }
 }
 
-static void OverdriveAndSuppress(aec_t *aec, float hNl[PART_LEN1],
+static void OverdriveAndSuppress(AecCore* aec, float hNl[PART_LEN1],
                                  const float hNlFb,
                                  float efw[2][PART_LEN1]) {
   int i;
@@ -416,7 +417,7 @@ WebRtcAec_ScaleErrorSignal_t WebRtcAec_ScaleErrorSignal;
 WebRtcAec_FilterAdaptation_t WebRtcAec_FilterAdaptation;
 WebRtcAec_OverdriveAndSuppress_t WebRtcAec_OverdriveAndSuppress;
 
-int WebRtcAec_InitAec(aec_t *aec, int sampFreq)
+int WebRtcAec_InitAec(AecCore* aec, int sampFreq)
 {
     int i;
 
@@ -564,7 +565,7 @@ int WebRtcAec_InitAec(aec_t *aec, int sampFreq)
     return 0;
 }
 
-void WebRtcAec_BufferFarendPartition(aec_t *aec, const float* farend) {
+void WebRtcAec_BufferFarendPartition(AecCore* aec, const float* farend) {
   float fft[PART_LEN2];
   float xf[2][PART_LEN1];
 
@@ -583,7 +584,7 @@ void WebRtcAec_BufferFarendPartition(aec_t *aec, const float* farend) {
   WebRtc_WriteBuffer(aec->far_buf_windowed, &xf[0][0], 1);
 }
 
-int WebRtcAec_MoveFarReadPtr(aec_t *aec, int elements) {
+int WebRtcAec_MoveFarReadPtr(AecCore* aec, int elements) {
   int elements_moved = WebRtc_MoveReadPtr(aec->far_buf_windowed, elements);
   WebRtc_MoveReadPtr(aec->far_buf, elements);
 #ifdef WEBRTC_AEC_DEBUG_DUMP
@@ -593,7 +594,7 @@ int WebRtcAec_MoveFarReadPtr(aec_t *aec, int elements) {
   return elements_moved;
 }
 
-void WebRtcAec_ProcessFrame(aec_t* aec,
+void WebRtcAec_ProcessFrame(AecCore* aec,
                             const short* nearend,
                             const short* nearendH,
                             int knownDelay,
@@ -679,7 +680,7 @@ void WebRtcAec_ProcessFrame(aec_t* aec,
     }
 }
 
-int WebRtcAec_GetDelayMetricsCore(aec_t* self, int* median, int* std) {
+int WebRtcAec_GetDelayMetricsCore(AecCore* self, int* median, int* std) {
   int i = 0;
   int delay_values = 0;
   int num_delay_values = 0;
@@ -733,12 +734,12 @@ int WebRtcAec_GetDelayMetricsCore(aec_t* self, int* median, int* std) {
   return 0;
 }
 
-int WebRtcAec_echo_state(aec_t* self) {
+int WebRtcAec_echo_state(AecCore* self) {
   assert(self != NULL);
   return self->echoState;
 }
 
-void WebRtcAec_GetEchoStats(aec_t* self, Stats* erl, Stats* erle,
+void WebRtcAec_GetEchoStats(AecCore* self, Stats* erl, Stats* erle,
                             Stats* a_nlp) {
   assert(self != NULL);
   assert(erl != NULL);
@@ -750,13 +751,13 @@ void WebRtcAec_GetEchoStats(aec_t* self, Stats* erl, Stats* erle,
 }
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
-void* WebRtcAec_far_time_buf(aec_t* self) {
+void* WebRtcAec_far_time_buf(AecCore* self) {
   assert(self != NULL);
   return self->far_time_buf;
 }
 #endif
 
-void WebRtcAec_SetConfigCore(aec_t* self, int nlp_mode, int metrics_mode,
+void WebRtcAec_SetConfigCore(AecCore* self, int nlp_mode, int metrics_mode,
                              int delay_logging) {
   assert(self != NULL);
   assert(nlp_mode >= 0 && nlp_mode < 3);
@@ -771,18 +772,18 @@ void WebRtcAec_SetConfigCore(aec_t* self, int nlp_mode, int metrics_mode,
   }
 }
 
-int WebRtcAec_system_delay(aec_t* self) {
+int WebRtcAec_system_delay(AecCore* self) {
   assert(self != NULL);
   return self->system_delay;
 }
 
-void WebRtcAec_SetSystemDelay(aec_t* self, int delay) {
+void WebRtcAec_SetSystemDelay(AecCore* self, int delay) {
   assert(self != NULL);
   assert(delay >= 0);
   self->system_delay = delay;
 }
 
-static void ProcessBlock(aec_t* aec) {
+static void ProcessBlock(AecCore* aec) {
     int i;
     float d[PART_LEN], y[PART_LEN], e[PART_LEN], dH[PART_LEN];
     float scale;
@@ -1001,7 +1002,7 @@ static void ProcessBlock(aec_t* aec) {
 #endif
 }
 
-static void NonLinearProcessing(aec_t *aec, short *output, short *outputH)
+static void NonLinearProcessing(AecCore* aec, short *output, short *outputH)
 {
     float efw[2][PART_LEN1], dfw[2][PART_LEN1], xfw[2][PART_LEN1];
     complex_t comfortNoiseHband[PART_LEN1];
@@ -1355,7 +1356,7 @@ static void GetHighbandGain(const float *lambda, float *nlpGainHband)
     nlpGainHband[0] /= (float)(PART_LEN1 - 1 - freqAvgIc);
 }
 
-static void ComfortNoise(aec_t *aec, float efw[2][PART_LEN1],
+static void ComfortNoise(AecCore* aec, float efw[2][PART_LEN1],
     complex_t *comfortNoiseHband, const float *noisePow, const float *lambda)
 {
     int i, num;
@@ -1464,7 +1465,7 @@ static void InitStats(Stats* stats) {
   stats->hicounter = 0;
 }
 
-static void InitMetrics(aec_t* self) {
+static void InitMetrics(AecCore* self) {
   assert(self != NULL);
   self->stateCounter = 0;
   InitLevel(&self->farlevel);
@@ -1537,7 +1538,7 @@ static void UpdateLevel(PowerLevel* level, float in[2][PART_LEN1]) {
   }
 }
 
-static void UpdateMetrics(aec_t *aec)
+static void UpdateMetrics(AecCore* aec)
 {
     float dtmp, dtmp2;
 
