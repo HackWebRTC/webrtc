@@ -571,7 +571,7 @@ WebRtc_Word32 DeviceInfoDS::CreateCapabilityMap(
             if (hrVC == S_OK)
             {
                 LONGLONG *frameDurationList;
-                LONGLONG maxFps; 
+                LONGLONG maxFPS; 
                 long listSize;
                 SIZE size;
                 size.cx = capability->width;
