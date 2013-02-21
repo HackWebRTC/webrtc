@@ -570,7 +570,8 @@ WebRtc_Word32 DeviceInfoDS::CreateCapabilityMap(
 
             if (hrVC == S_OK)
             {
-                LONGLONG *maxFps; // array
+                LONGLONG *frameDurationList;
+                LONGLONG maxFps; 
                 long listSize;
                 SIZE size;
                 size.cx = capability->width;
@@ -584,11 +585,14 @@ WebRtc_Word32 DeviceInfoDS::CreateCapabilityMap(
                 hrVC = videoControlConfig->GetFrameRateList(outputCapturePin,
                                                             tmp, size,
                                                             &listSize,
-                                                            &maxFps);
+                                                            &frameDurationList);
 
-                if (hrVC == S_OK && listSize > 0)
+                // On some odd cameras, you may get a 0 for duration.
+                // GetMaxOfFrameArray returns the lowest duration (highest FPS)
+                if (hrVC == S_OK && listSize > 0 &&
+                    0 != (maxFPS = GetMaxOfFrameArray(frameDurationList, 
+                                                      listSize)))
                 {
-                    LONGLONG maxFPS = GetMaxOfFrameArray(maxFps, listSize);
                     capability->maxFPS = static_cast<int> (10000000
                                                            / maxFPS);
                     capability->supportFrameRateControl = true;
