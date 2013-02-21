@@ -55,15 +55,6 @@ typedef struct Stats {
 
 typedef struct AecCore AecCore;
 
-typedef void (*WebRtcAec_FilterFar_t)(AecCore* aec, float yf[2][PART_LEN1]);
-typedef void (*WebRtcAec_ScaleErrorSignal_t)
-    (AecCore* aec, float ef[2][PART_LEN1]);
-typedef void (*WebRtcAec_FilterAdaptation_t)
-    (AecCore* aec, float *fft, float ef[2][PART_LEN1]);
-typedef void (*WebRtcAec_OverdriveAndSuppress_t)
-    (AecCore* aec, float hNl[PART_LEN1], const float hNlFb,
-        float efw[2][PART_LEN1]);
-
 int WebRtcAec_CreateAec(AecCore** aec);
 int WebRtcAec_FreeAec(AecCore* aec);
 int WebRtcAec_InitAec(AecCore* aec, int sampFreq);

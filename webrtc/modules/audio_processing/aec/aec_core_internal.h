@@ -117,9 +117,17 @@ struct AecCore {
 #endif
 };
 
+typedef void (*WebRtcAec_FilterFar_t)(AecCore* aec, float yf[2][PART_LEN1]);
 extern WebRtcAec_FilterFar_t WebRtcAec_FilterFar;
+typedef void (*WebRtcAec_ScaleErrorSignal_t)
+    (AecCore* aec, float ef[2][PART_LEN1]);
 extern WebRtcAec_ScaleErrorSignal_t WebRtcAec_ScaleErrorSignal;
+typedef void (*WebRtcAec_FilterAdaptation_t)
+    (AecCore* aec, float *fft, float ef[2][PART_LEN1]);
 extern WebRtcAec_FilterAdaptation_t WebRtcAec_FilterAdaptation;
+typedef void (*WebRtcAec_OverdriveAndSuppress_t)
+    (AecCore* aec, float hNl[PART_LEN1], const float hNlFb,
+        float efw[2][PART_LEN1]);
 extern WebRtcAec_OverdriveAndSuppress_t WebRtcAec_OverdriveAndSuppress;
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_INTERNAL_H_
