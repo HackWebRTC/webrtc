@@ -145,7 +145,7 @@ void TestAllCodecs::Perform() {
   uint8_t num_encoders = acm_a_->NumberOfCodecs();
   CodecInst my_codec_param;
   for (uint8_t n = 0; n < num_encoders; n++) {
-    acm_b_->Codec(n, my_codec_param);
+    acm_b_->Codec(n, &my_codec_param);
     if (!strcmp(my_codec_param.plname, "opus")) {
       my_codec_param.channels = 1;
     }
@@ -752,7 +752,7 @@ void TestAllCodecs::RegisterSendCodec(char side, char* codec_name,
 
   // Get all codec parameters before registering
   CodecInst my_codec_param;
-  CHECK_ERROR(AudioCodingModule::Codec(codec_name, my_codec_param,
+  CHECK_ERROR(AudioCodingModule::Codec(codec_name, &my_codec_param,
                                        sampling_freq_hz, 1));
   my_codec_param.rate = rate;
   my_codec_param.pacsize = packet_size;
@@ -795,7 +795,7 @@ void TestAllCodecs::Run(TestPack* channel) {
     }
 
     // Run received side of ACM.
-    CHECK_ERROR(acm_b_->PlayoutData10Ms(out_freq_hz, audio_frame));
+    CHECK_ERROR(acm_b_->PlayoutData10Ms(out_freq_hz, &audio_frame));
 
     // Write output speech to file.
     outfile_b_.Write10MsData(audio_frame.data_,
@@ -824,9 +824,9 @@ void TestAllCodecs::OpenOutFile(int test_number) {
 
 void TestAllCodecs::DisplaySendReceiveCodec() {
   CodecInst my_codec_param;
-  acm_a_->SendCodec(my_codec_param);
+  acm_a_->SendCodec(&my_codec_param);
   printf("%s -> ", my_codec_param.plname);
-  acm_b_->ReceiveCodec(my_codec_param);
+  acm_b_->ReceiveCodec(&my_codec_param);
   printf("%s\n", my_codec_param.plname);
 }
 

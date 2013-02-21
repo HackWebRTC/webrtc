@@ -182,19 +182,19 @@ void TestStereo::Perform() {
   WebRtc_UWord8 num_encoders = acm_a_->NumberOfCodecs();
   CodecInst my_codec_param;
   for (WebRtc_UWord8 n = 0; n < num_encoders; n++) {
-    EXPECT_EQ(0, acm_b_->Codec(n, my_codec_param));
+    EXPECT_EQ(0, acm_b_->Codec(n, &my_codec_param));
     EXPECT_EQ(0, acm_b_->RegisterReceiveCodec(my_codec_param));
   }
 
   // Test that unregister all receive codecs works.
   for (WebRtc_UWord8 n = 0; n < num_encoders; n++) {
-    EXPECT_EQ(0, acm_b_->Codec(n, my_codec_param));
+    EXPECT_EQ(0, acm_b_->Codec(n, &my_codec_param));
     EXPECT_EQ(0, acm_b_->UnregisterReceiveCodec(my_codec_param.pltype));
   }
 
   // Register all available codes as receiving codecs once more.
   for (WebRtc_UWord8 n = 0; n < num_encoders; n++) {
-    EXPECT_EQ(0, acm_b_->Codec(n, my_codec_param));
+    EXPECT_EQ(0, acm_b_->Codec(n, &my_codec_param));
     EXPECT_EQ(0, acm_b_->RegisterReceiveCodec(my_codec_param));
   }
 
@@ -222,12 +222,12 @@ void TestStereo::Perform() {
   // Continue with setting a stereo codec as send codec and verify that
   // VAD/DTX gets turned off.
   EXPECT_EQ(0, acm_a_->SetVAD(true, true, VADNormal));
-  EXPECT_EQ(0, acm_a_->VAD(dtx, vad, vad_mode));
+  EXPECT_EQ(0, acm_a_->VAD(&dtx, &vad, &vad_mode));
   EXPECT_TRUE(dtx);
   EXPECT_TRUE(vad);
   char codec_pcma_temp[] = "PCMA";
   RegisterSendCodec('A', codec_pcma_temp, 8000, 64000, 80, 2, pcma_pltype_);
-  EXPECT_EQ(0, acm_a_->VAD(dtx, vad, vad_mode));
+  EXPECT_EQ(0, acm_a_->VAD(&dtx, &vad, &vad_mode));
   EXPECT_FALSE(dtx);
   EXPECT_FALSE(vad);
   if (test_mode_ != 0) {
@@ -366,19 +366,19 @@ void TestStereo::Perform() {
 
   // Test that VAD/DTX cannot be turned on while sending stereo.
   EXPECT_EQ(-1, acm_a_->SetVAD(true, true, VADNormal));
-  EXPECT_EQ(0, acm_a_->VAD(dtx, vad, vad_mode));
+  EXPECT_EQ(0, acm_a_->VAD(&dtx, &vad, &vad_mode));
   EXPECT_FALSE(dtx);
   EXPECT_FALSE(vad);
   EXPECT_EQ(-1, acm_a_->SetVAD(true, false, VADNormal));
-  EXPECT_EQ(0, acm_a_->VAD(dtx, vad, vad_mode));
+  EXPECT_EQ(0, acm_a_->VAD(&dtx, &vad, &vad_mode));
   EXPECT_FALSE(dtx);
   EXPECT_FALSE(vad);
   EXPECT_EQ(-1, acm_a_->SetVAD(false, true, VADNormal));
-  EXPECT_EQ(0, acm_a_->VAD(dtx, vad, vad_mode));
+  EXPECT_EQ(0, acm_a_->VAD(&dtx, &vad, &vad_mode));
   EXPECT_FALSE(dtx);
   EXPECT_FALSE(vad);
   EXPECT_EQ(0, acm_a_->SetVAD(false, false, VADNormal));
-  EXPECT_EQ(0, acm_a_->VAD(dtx, vad, vad_mode));
+  EXPECT_EQ(0, acm_a_->VAD(&dtx, &vad, &vad_mode));
   EXPECT_FALSE(dtx);
   EXPECT_FALSE(vad);
 
@@ -603,7 +603,7 @@ void TestStereo::Perform() {
   // Make sure it is possible to set VAD/CNG, now that we are sending mono
   // again.
   EXPECT_EQ(0, acm_a_->SetVAD(true, true, VADNormal));
-  EXPECT_EQ(0, acm_a_->VAD(dtx, vad, vad_mode));
+  EXPECT_EQ(0, acm_a_->VAD(&dtx, &vad, &vad_mode));
   EXPECT_TRUE(dtx);
   EXPECT_TRUE(vad);
   EXPECT_EQ(0, acm_a_->SetVAD(false, false, VADNormal));
@@ -687,7 +687,7 @@ void TestStereo::Perform() {
                      opus_pltype_);
   CodecInst opus_codec_param;
   for (WebRtc_UWord8 n = 0; n < num_encoders; n++) {
-    EXPECT_EQ(0, acm_b_->Codec(n, opus_codec_param));
+    EXPECT_EQ(0, acm_b_->Codec(n, &opus_codec_param));
     if (!strcmp(opus_codec_param.plname, "opus")) {
       opus_codec_param.channels = 1;
       EXPECT_EQ(0, acm_b_->RegisterReceiveCodec(opus_codec_param));
@@ -821,7 +821,7 @@ void TestStereo::RegisterSendCodec(char side, char* codec_name,
 
   CodecInst my_codec_param;
   // Get all codec parameters before registering
-  CHECK_ERROR(AudioCodingModule::Codec(codec_name, my_codec_param,
+  CHECK_ERROR(AudioCodingModule::Codec(codec_name, &my_codec_param,
                                        sampling_freq_hz, channels));
   my_codec_param.rate = rate;
   my_codec_param.pacsize = pack_size;
@@ -888,7 +888,7 @@ void TestStereo::Run(TestPackStereo* channel, int in_channels, int out_channels,
     }
 
     // Run received side of ACM
-    CHECK_ERROR(acm_b_->PlayoutData10Ms(out_freq_hz_b, audio_frame));
+    CHECK_ERROR(acm_b_->PlayoutData10Ms(out_freq_hz_b, &audio_frame));
 
     // Write output speech to file
     out_file_.Write10MsData(
@@ -919,11 +919,11 @@ void TestStereo::OpenOutFile(WebRtc_Word16 test_number) {
 
 void TestStereo::DisplaySendReceiveCodec() {
   CodecInst my_codec_param;
-  acm_a_->SendCodec(my_codec_param);
+  acm_a_->SendCodec(&my_codec_param);
   if (test_mode_ != 0) {
     printf("%s -> ", my_codec_param.plname);
   }
-  acm_b_->ReceiveCodec(my_codec_param);
+  acm_b_->ReceiveCodec(&my_codec_param);
   if (test_mode_ != 0) {
     printf("%s\n", my_codec_param.plname);
   }
