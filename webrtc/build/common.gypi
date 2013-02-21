@@ -73,6 +73,12 @@
 
     'libyuv_dir%': '<(DEPTH)/third_party/libyuv',
 
+    # Define MIPS architecture variant, MIPS DSP variant and MIPS FPU
+    # This may be subject to change in accordance to Chromium's MIPS flags
+    'mips_arch_variant%': 'mips32r1',
+    'mips_dsp_rev%': 0,
+    'mips_fpu%' : 1,
+
     'conditions': [
       ['build_with_chromium==1', {
         # Exclude pulse audio on Chromium since its prerequisites don't require
@@ -195,6 +201,59 @@
               }, {
                 'defines': ['WEBRTC_DETECT_ARM_NEON',],
               }],
+            ],
+          }],
+        ],
+      }],
+      ['target_arch=="mipsel"', {
+        'defines': [
+          'MIPS32_LE',
+        ],
+        'conditions': [
+          ['mips_fpu==1', {
+            'defines': [
+              'MIPS_FPU_LE',
+            ],
+            'cflags': [
+              '-mhard-float',
+            ],
+          }, {
+            'cflags': [
+              '-msoft-float',
+            ],
+          }],
+          ['mips_arch_variant=="mips32r2"', {
+            'defines': [
+              'MIPS32_R2_LE',
+            ],
+            'cflags': [
+              '-mips32r2',
+            ],
+            'cflags_cc': [
+              '-mips32r2',
+            ],
+          }],
+          ['mips_dsp_rev==1', {
+            'defines': [
+              'MIPS_DSP_R1_LE',
+            ],
+            'cflags': [
+              '-mdsp',
+            ],
+            'cflags_cc': [
+              '-mdsp',
+            ],
+          }],
+          ['mips_dsp_rev==2', {
+            'defines': [
+              'MIPS_DSP_R1_LE',
+              'MIPS_DSP_R2_LE',
+            ],
+            'cflags': [
+              '-mdspr2',
+            ],
+            'cflags_cc': [
+              '-mdspr2',
             ],
           }],
         ],

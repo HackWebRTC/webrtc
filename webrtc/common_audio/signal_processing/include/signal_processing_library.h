@@ -147,8 +147,7 @@
     ((WebRtc_Word16)(WEBRTC_SPL_MUL_16_16_RSFT((a), 18816, 7) & 0x00007fff))
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #define WEBRTC_SPL_MEMCPY_W8(v1, v2, length) \
@@ -223,6 +222,9 @@ int16_t WebRtcSpl_MaxAbsValueW16C(const int16_t* vector, int length);
 #if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
 int16_t WebRtcSpl_MaxAbsValueW16Neon(const int16_t* vector, int length);
 #endif
+#if defined(MIPS32_LE)
+int16_t WebRtcSpl_MaxAbsValueW16_mips(const int16_t* vector, int length);
+#endif
 
 // Returns the largest absolute value in a signed 32-bit vector.
 //
@@ -237,6 +239,9 @@ extern MaxAbsValueW32 WebRtcSpl_MaxAbsValueW32;
 int32_t WebRtcSpl_MaxAbsValueW32C(const int32_t* vector, int length);
 #if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
 int32_t WebRtcSpl_MaxAbsValueW32Neon(const int32_t* vector, int length);
+#endif
+#if defined(MIPS_DSP_R1_LE)
+int32_t WebRtcSpl_MaxAbsValueW32_mips(const int32_t* vector, int length);
 #endif
 
 // Returns the maximum value of a 16-bit vector.
@@ -255,6 +260,9 @@ int16_t WebRtcSpl_MaxValueW16C(const int16_t* vector, int length);
 #if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
 int16_t WebRtcSpl_MaxValueW16Neon(const int16_t* vector, int length);
 #endif
+#if defined(MIPS32_LE)
+int16_t WebRtcSpl_MaxValueW16_mips(const int16_t* vector, int length);
+#endif
 
 // Returns the maximum value of a 32-bit vector.
 //
@@ -271,6 +279,9 @@ extern MaxValueW32 WebRtcSpl_MaxValueW32;
 int32_t WebRtcSpl_MaxValueW32C(const int32_t* vector, int length);
 #if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
 int32_t WebRtcSpl_MaxValueW32Neon(const int32_t* vector, int length);
+#endif
+#if defined(MIPS32_LE)
+int32_t WebRtcSpl_MaxValueW32_mips(const int32_t* vector, int length);
 #endif
 
 // Returns the minimum value of a 16-bit vector.
@@ -289,6 +300,9 @@ int16_t WebRtcSpl_MinValueW16C(const int16_t* vector, int length);
 #if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
 int16_t WebRtcSpl_MinValueW16Neon(const int16_t* vector, int length);
 #endif
+#if defined(MIPS32_LE)
+int16_t WebRtcSpl_MinValueW16_mips(const int16_t* vector, int length);
+#endif
 
 // Returns the minimum value of a 32-bit vector.
 //
@@ -305,6 +319,9 @@ extern MinValueW32 WebRtcSpl_MinValueW32;
 int32_t WebRtcSpl_MinValueW32C(const int32_t* vector, int length);
 #if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
 int32_t WebRtcSpl_MinValueW32Neon(const int32_t* vector, int length);
+#endif
+#if defined(MIPS32_LE)
+int32_t WebRtcSpl_MinValueW32_mips(const int32_t* vector, int length);
 #endif
 
 // Returns the vector index to the largest absolute value of a 16-bit vector.

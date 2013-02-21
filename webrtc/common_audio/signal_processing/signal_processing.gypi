@@ -84,6 +84,12 @@
             }],
           ],
         }],
+        ['target_arch=="mipsel"', {
+          'sources': [
+            'min_max_operations_mips.c',
+            'resample_by_2_mips.c',
+          ],
+        }],
       ],
       # Ignore warning on shift operator promotion.
       'msvs_disabled_warnings': [ 4334, ],

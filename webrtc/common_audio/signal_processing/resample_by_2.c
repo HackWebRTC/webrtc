@@ -66,6 +66,7 @@ static const WebRtc_UWord16 kResampleAllpass2[3] = {12199, 37471, 60255};
 
 
 // decimator
+#if !defined(MIPS32_LE)
 void WebRtcSpl_DownsampleBy2(const WebRtc_Word16* in, const WebRtc_Word16 len,
                              WebRtc_Word16* out, WebRtc_Word32* filtState) {
   WebRtc_Word32 tmp1, tmp2, diff, in32, out32;
@@ -121,6 +122,7 @@ void WebRtcSpl_DownsampleBy2(const WebRtc_Word16* in, const WebRtc_Word16 len,
   filtState[6] = state6;
   filtState[7] = state7;
 }
+#endif  // #if defined(MIPS32_LE)
 
 
 void WebRtcSpl_UpsampleBy2(const WebRtc_Word16* in, WebRtc_Word16 len,
