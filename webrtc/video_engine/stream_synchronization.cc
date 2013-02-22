@@ -249,13 +249,15 @@ bool StreamSynchronization::ComputeDelays(int relative_delay_ms,
 }
 
 void StreamSynchronization::SetTargetBufferingDelay(int target_delay_ms) {
+  // Initial extra delay for audio (accounting for existing extra delay).
+  channel_delay_->extra_audio_delay_ms +=
+      target_delay_ms - base_target_delay_ms_;
+  // The video delay is compared to the last value (and how much we can update
+  // is limited by that as well).
+  channel_delay_->last_video_delay_ms +=
+      target_delay_ms - base_target_delay_ms_;
   // Video is already delayed by the desired amount.
   base_target_delay_ms_ = target_delay_ms;
-  // Setting initial extra delay for audio.
-  channel_delay_->extra_audio_delay_ms += target_delay_ms;
-  // The video delay is compared to the last value (and how much we can updated
-  // is limited by that as well).
-  channel_delay_->last_video_delay_ms += target_delay_ms;
 }
 
 }  // namespace webrtc

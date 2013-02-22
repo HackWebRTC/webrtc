@@ -490,6 +490,27 @@ TEST_F(StreamSynchronizationTest, BaseDelay) {
                              &extra_audio_delay_ms, &total_video_delay_ms));
   EXPECT_EQ(base_target_delay_ms, extra_audio_delay_ms);
   EXPECT_EQ(base_target_delay_ms, total_video_delay_ms);
+  // Triggering another call with the same values. Delay should not be modified.
+  base_target_delay_ms = 2000;
+  current_audio_delay_ms = base_target_delay_ms;
+  total_video_delay_ms = base_target_delay_ms;
+  sync_->SetTargetBufferingDelay(base_target_delay_ms);
+  EXPECT_TRUE(DelayedStreams(base_target_delay_ms, base_target_delay_ms,
+                             current_audio_delay_ms,
+                             &extra_audio_delay_ms, &total_video_delay_ms));
+  EXPECT_EQ(base_target_delay_ms, extra_audio_delay_ms);
+  EXPECT_EQ(base_target_delay_ms, total_video_delay_ms);
+  // Changing delay value - intended to test this module only. In practice it
+  // would take VoE time to adapt.
+  base_target_delay_ms = 5000;
+  current_audio_delay_ms = base_target_delay_ms;
+  total_video_delay_ms = base_target_delay_ms;
+  sync_->SetTargetBufferingDelay(base_target_delay_ms);
+  EXPECT_TRUE(DelayedStreams(base_target_delay_ms, base_target_delay_ms,
+                             current_audio_delay_ms,
+                             &extra_audio_delay_ms, &total_video_delay_ms));
+  EXPECT_EQ(base_target_delay_ms, extra_audio_delay_ms);
+  EXPECT_EQ(base_target_delay_ms, total_video_delay_ms);
 }
 
 TEST_F(StreamSynchronizationTest, BothDelayedAudioLaterWithBaseDelay) {
