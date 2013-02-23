@@ -28,7 +28,7 @@ GLOBAL_FUNCTION WebRtcAecm_ResetAdaptiveChannelNeon
 @                                  const WebRtc_Word16* time_signal,
 @                                  complex16_t* freq_signal,
 @                                  int time_signal_scaling);
-.align  2
+.align 2
 DEFINE_FUNCTION WebRtcAecm_WindowAndFFTNeon
   push {r4, r5, r6, lr}
 
@@ -60,12 +60,12 @@ LOOP_PART_LEN:
   bgt LOOP_PART_LEN
 
   @ WebRtcSpl_RealForwardFFT(aecm->real_fft, fft, (int16_t*)freq_signal);
-  ldr r12, =offset_aecm_real_fft
+  movw r12, #offset_aecm_real_fft
   sub r1, #(PART_LEN * 4)                    @ Get r1 back to &fft[0].
   mov r2, r3                                 @ freq_signal
   mov r4, r3
   ldr r0, [r0, r12]                          @ aecm->real_fft
-  bl  WebRtcSpl_RealForwardFFTNeon
+  CALL_FUNCTION WebRtcSpl_RealForwardFFTNeon
 
   mov r12, #(PART_LEN * 2 / 16)              @ Loop counter, unrolled by 16.
 
@@ -85,7 +85,7 @@ LOOP_PART_LEN2:
 @                                         complex16_t* efw,
 @                                         WebRtc_Word16* output,
 @                                         const WebRtc_Word16* nearendClean);
-.align  2
+.align 2
 DEFINE_FUNCTION WebRtcAecm_InverseFFTAndWindowNeon
   push {r4-r8, lr}
 
@@ -119,15 +119,15 @@ LOOP_PRE_IFFT:
   str r8, [r4, r3]
 
   @ outCFFT = WebRtcSpl_RealInverseFFT(aecm->real_fft, fft, (int16_t*)efw);
-  ldr r12, =offset_aecm_real_fft
+  movw r12, #offset_aecm_real_fft
   sub r1, #(PART_LEN * 4)                    @ Get r1 back to &fft[0].
   sub r2, #(PART_LEN * 4)                    @ Get r2 back to &efw[0].
   mov r4, r2                                 @ Keep efw in r4.
   ldr r0, [r0, r12]                          @ aecm->real_fft
-  bl  WebRtcSpl_RealInverseFFTNeon
+  CALL_FUNCTION WebRtcSpl_RealInverseFFTNeon
 
-  ldr r6, =offset_aecm_outBuf
-  ldr r12, =offset_aecm_dfaCleanQDomain
+  movw r6, #offset_aecm_outBuf
+  movw r12, #offset_aecm_dfaCleanQDomain
   ldr r8, [r5, r6]                           @ &aecm->outBuf[0]
   ldrsh r2, [r5, r12]                        @ &aecm->dfaCleanQDomain[0]
 
@@ -160,8 +160,8 @@ LOOP_POST_IFFT:
   vst1.16 d0, [r8, :64]!                     @ aecm->outBuf[i]
   bgt LOOP_POST_IFFT
 
-  ldr r3, =offset_aecm_xBuf
-  ldr r12, =offset_aecm_dBufNoisy
+  movw r3, #offset_aecm_xBuf
+  movw r12, #offset_aecm_dBufNoisy
   ldr r3, [r5, r3]                           @ &aecm->xBuf[0]
   ldr r1, [r5, r12]                          @ &aecm->dBufNoisy[0]
   add r2, r3, #(PART_LEN * 2)                @ &aecm->xBuf[PART_LEN]
@@ -180,7 +180,7 @@ LOOP_COPY:
   cmp r2, #0                                  @ Check if (nearendClean != NULL).
   beq END
 
-  ldr r4, =offset_aecm_dBufClean
+  movw r4, #offset_aecm_dBufClean
   ldr r1, [r5, r4]                            @ &aecm->dBufClean[0]
   add r0, r1, #(PART_LEN * 2)                 @ &aecm->dBufClean[PART_LEN]
 
@@ -202,7 +202,7 @@ END:
 @                                        WebRtc_UWord32* far_energy,
 @                                        WebRtc_UWord32* echo_energy_adapt,
 @                                        WebRtc_UWord32* echo_energy_stored);
-.align  2
+.align 2
 DEFINE_FUNCTION WebRtcAecm_CalcLinearEnergiesNeon
   push {r4-r7}
 
@@ -210,8 +210,8 @@ DEFINE_FUNCTION WebRtcAecm_CalcLinearEnergiesNeon
   vmov.i32 q8,  #0
   vmov.i32 q9,  #0
 
-  ldr r7, =offset_aecm_channelStored
-  ldr r5, =offset_aecm_channelAdapt16
+  movw r7, #offset_aecm_channelStored
+  movw r5, #offset_aecm_channelAdapt16
 
   mov r4, r2
   mov r12, #(PART_LEN / 8)                   @  Loop counter, unrolled by 8.
@@ -267,10 +267,10 @@ LOOP_CALC_LINEAR_ENERGIES:
 @ void WebRtcAecm_StoreAdaptiveChannelNeon(AecmCore_t* aecm,
 @                                          const uint16_t* far_spectrum,
 @                                          int32_t* echo_est);
-.align  2
+.align 2
 DEFINE_FUNCTION WebRtcAecm_StoreAdaptiveChannelNeon
-  ldr r3, =offset_aecm_channelAdapt16
-  ldr r12, =offset_aecm_channelStored
+  movw r3, #offset_aecm_channelAdapt16
+  movw r12, #offset_aecm_channelStored
   ldr r3, [r0, r3]
   ldr r0, [r0, r12]
   mov r12, #(PART_LEN / 8)                   @ Loop counter, unrolled by 8.
@@ -294,10 +294,10 @@ LOOP_STORE_ADAPTIVE_CHANNEL:
   bx  lr
 
 @ void WebRtcAecm_ResetAdaptiveChannelNeon(AecmCore_t* aecm);
-.align  2
+.align 2
 DEFINE_FUNCTION WebRtcAecm_ResetAdaptiveChannelNeon
-  ldr r1, =offset_aecm_channelAdapt16
-  ldr r2, =offset_aecm_channelAdapt32
+  movw r1, #offset_aecm_channelAdapt16
+  movw r2, #offset_aecm_channelAdapt32
   movw r3, #offset_aecm_channelStored
   ldr r1, [r0, r1]                           @ &aecm->channelAdapt16[0]
   ldr r2, [r0, r2]                           @ &aecm->channelAdapt32[0]
@@ -321,8 +321,9 @@ LOOP_RESET_ADAPTIVE_CHANNEL:
   bx  lr
 
 @ Square root of Hanning window in Q14.
-.align 3
+.align 4
 WebRtcAecm_kSqrtHanning:
+_WebRtcAecm_kSqrtHanning:
   .short 0
   .short 399, 798, 1196, 1594, 1990, 2386, 2780, 3172
   .short 3562, 3951, 4337, 4720, 5101, 5478, 5853, 6224
@@ -335,7 +336,7 @@ WebRtcAecm_kSqrtHanning:
 
 @ Square root of Hanning window in Q14. Compared to WebRtcAecm_kSqrtHanning,
 @ the order was reversed and one element (0) was removed.
-.align  3
+.align 4
 kSqrtHanningReversed:
   .short 16384, 16373, 16354, 16325, 16286, 16237, 16179, 16111, 16034, 15947
   .short 15851, 15746, 15631, 15506, 15373, 15231, 15079, 14918, 14749, 14571
