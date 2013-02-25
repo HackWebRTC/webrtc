@@ -112,7 +112,7 @@
             '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'include_dirs': [
-            '<(DEPTH)/third_party/<(libvpx_source)/libvpx',
+            '<(DEPTH)/third_party/libvpx/source/libvpx',
           ],
           'sources': [
             'default_temporal_layers_unittest.cc',
