@@ -19,7 +19,6 @@
         'use_temporal_layers%': 1,
       }],
     ],
-    'libvpx_source%': 'libvpx/source',
   },
   'targets': [
     {
@@ -111,9 +110,6 @@
             '<(DEPTH)/testing/gmock.gyp:gmock',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/test/test.gyp:test_support_main',
-          ],
-          'include_dirs': [
-            '<(DEPTH)/third_party/<(libvpx_source)/libvpx',
           ],
           'sources': [
             'default_temporal_layers_unittest.cc',
