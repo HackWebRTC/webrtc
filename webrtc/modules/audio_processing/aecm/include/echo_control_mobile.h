@@ -11,7 +11,9 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AECM_INCLUDE_ECHO_CONTROL_MOBILE_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AECM_INCLUDE_ECHO_CONTROL_MOBILE_H_
 
-#include "typedefs.h"
+#include <stdlib.h>
+
+#include "webrtc/typedefs.h"
 
 enum {
     AecmFalse = 0,

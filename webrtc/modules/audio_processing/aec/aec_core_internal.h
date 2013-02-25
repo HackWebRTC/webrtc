@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_AEC_CORE_INTERNAL_H_
 
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
+#include "webrtc/modules/audio_processing/utility/ring_buffer.h"
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
 #include <stdio.h>
@@ -36,10 +37,11 @@ struct AecCore {
   int inSamples, outSamples;
   int delayEstCtr;
 
-  void *nearFrBuf, *outFrBuf;
+  RingBuffer* nearFrBuf;
+  RingBuffer* outFrBuf;
 
-  void *nearFrBufH;
-  void *outFrBufH;
+  RingBuffer* nearFrBufH;
+  RingBuffer* outFrBufH;
 
   float dBuf[PART_LEN2];  // nearend
   float eBuf[PART_LEN2];  // error
@@ -73,8 +75,8 @@ struct AecCore {
 
   int xfBufBlockPos;
 
-  void* far_buf;
-  void* far_buf_windowed;
+  RingBuffer* far_buf;
+  RingBuffer* far_buf_windowed;
   int system_delay;  // Current system delay buffered in AEC.
 
   int mult;  // sampling frequency multiple
@@ -109,7 +111,7 @@ struct AecCore {
   void* delay_estimator;
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
-  void* far_time_buf;
+  RingBuffer* far_time_buf;
   FILE *farFile;
   FILE *nearFile;
   FILE *outFile;

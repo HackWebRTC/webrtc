@@ -15,6 +15,7 @@
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_processing/aecm/aecm_defines.h"
+#include "webrtc/modules/audio_processing/utility/ring_buffer.h"
 #include "webrtc/typedefs.h"
 
 #ifdef _MSC_VER  // visual c++
@@ -37,10 +38,10 @@ typedef struct {
     int lastKnownDelay;
     int firstVAD;  // Parameter to control poorly initialized channels
 
-    void *farFrameBuf;
-    void *nearNoisyFrameBuf;
-    void *nearCleanFrameBuf;
-    void *outFrameBuf;
+    RingBuffer* farFrameBuf;
+    RingBuffer* nearNoisyFrameBuf;
+    RingBuffer* nearCleanFrameBuf;
+    RingBuffer* outFrameBuf;
 
     WebRtc_Word16 farBuf[FAR_BUF_LEN];
 

@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_ECHO_CANCELLATION_INTERNAL_H_
 
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
+#include "webrtc/modules/audio_processing/utility/ring_buffer.h"
 
 typedef struct {
   int delayCtr;
@@ -43,7 +44,7 @@ typedef struct {
   short lastDelayDiff;
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
-  void* far_pre_buf_s16;  // Time domain far-end pre-buffer in int16_t.
+  RingBuffer* far_pre_buf_s16;  // Time domain far-end pre-buffer in int16_t.
   FILE* bufFile;
   FILE* delayFile;
   FILE* skewFile;
@@ -57,7 +58,7 @@ typedef struct {
   int highSkewCtr;
   float skew;
 
-  void* far_pre_buf;  // Time domain far-end pre-buffer.
+  RingBuffer* far_pre_buf;  // Time domain far-end pre-buffer.
 
   int lastError;
 
