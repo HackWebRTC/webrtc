@@ -601,8 +601,6 @@ void WebRtcAec_ProcessFrame(AecCore* aec,
                             int16_t* out,
                             int16_t* outH) {
     int out_elements = 0;
-    int16_t* out_ptr = NULL;
-    int16_t out_tmp[FRAME_LEN];
 
     // For each frame the process is as follows:
     // 1) If the system_delay indicates on being too small for processing a
@@ -671,12 +669,10 @@ void WebRtcAec_ProcessFrame(AecCore* aec,
       }
     }
     // Obtain an output frame.
-    WebRtc_ReadBuffer(aec->outFrBuf, (void**) &out_ptr, out_tmp, FRAME_LEN);
-    memcpy(out, out_ptr, sizeof(int16_t) * FRAME_LEN);
+    WebRtc_ReadBuffer(aec->outFrBuf, NULL, out, FRAME_LEN);
     // For H band.
     if (aec->sampFreq == 32000) {
-      WebRtc_ReadBuffer(aec->outFrBufH, (void**) &out_ptr, out_tmp, FRAME_LEN);
-      memcpy(outH, out_ptr, sizeof(int16_t) * FRAME_LEN);
+      WebRtc_ReadBuffer(aec->outFrBufH, NULL, outH, FRAME_LEN);
     }
 }
 
