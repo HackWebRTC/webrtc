@@ -1529,7 +1529,9 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendNACK(const WebRtc_UWord16* nack_list,
   WebRtc_UWord16 start_id = 0;
 
   if (nack_last_time_sent_ < time_limit) {
-    // Send list.
+    // Send list. Set the timer to make sure we only send a full NACK list once
+    // within every time_limit.
+    nack_last_time_sent_ =  now;
   } else {
     // Only send if extended list.
     if (nack_last_seq_number_sent_ == nack_list[size - 1]) {
@@ -1547,7 +1549,6 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendNACK(const WebRtc_UWord16* nack_list,
       nackLength = size - start_id;
     }
   }
-  nack_last_time_sent_ =  now;
   nack_last_seq_number_sent_ = nack_list[size - 1];
 
   switch (nack_method_) {
