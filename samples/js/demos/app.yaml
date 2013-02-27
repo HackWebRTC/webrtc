@@ -1,0 +1,30 @@
+application: webrtc-demos
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: yes
+
+handlers:
+- url: /favicon\.ico
+  static_files: favicon.ico
+  upload: favicon\.ico
+
+- url: /html
+  static_dir: html
+  secure: always
+
+- url: /images
+  static_dir: images
+  secure: always
+
+- url: /js
+  static_dir: js
+  secure: always
+
+- url: .*
+  script: main.app
+  secure: always
+
+libraries:
+- name: webapp2
+  version: "2.5.1"
