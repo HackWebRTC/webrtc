@@ -18,9 +18,8 @@
 
 typedef struct RingBuffer RingBuffer;
 
-int WebRtc_CreateBuffer(RingBuffer** handle,
-                        size_t element_count,
-                        size_t element_size);
+// Returns NULL on failure.
+RingBuffer* WebRtc_CreateBuffer(size_t element_count, size_t element_size);
 int WebRtc_InitBuffer(RingBuffer* handle);
 void WebRtc_FreeBuffer(void* handle);
 

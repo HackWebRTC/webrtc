@@ -58,9 +58,8 @@ static void RandomStressTest(int** data_ptr) {
     const int buffer_size = std::max(rand() % kMaxBufferSize, 1);
     scoped_array<int> write_data(new int[buffer_size]);
     scoped_array<int> read_data(new int[buffer_size]);
-    scoped_ring_buffer buffer;
-    ASSERT_EQ(0, WebRtc_CreateBuffer(buffer.accept(), buffer_size,
-                                     sizeof(int)));
+    scoped_ring_buffer buffer(WebRtc_CreateBuffer(buffer_size, sizeof(int)));
+    ASSERT_TRUE(buffer.get() != NULL);
     ASSERT_EQ(0, WebRtc_InitBuffer(buffer.get()));
     int buffer_consumed = 0;
     int write_element = 0;
@@ -112,13 +111,13 @@ TEST(RingBufferTest, RandomStressTestWithNullPtr) {
 }
 
 TEST(RingBufferTest, PassingNulltoReadBufferForcesMemcpy) {
-  scoped_ring_buffer buffer;
   const size_t kDataSize = 2;
   int write_data[kDataSize];
   int read_data[kDataSize];
   int* data_ptr;
 
-  ASSERT_EQ(0, WebRtc_CreateBuffer(buffer.accept(), kDataSize, sizeof(int)));
+  scoped_ring_buffer buffer(WebRtc_CreateBuffer(kDataSize, sizeof(int)));
+  ASSERT_TRUE(buffer.get() != NULL);
   ASSERT_EQ(0, WebRtc_InitBuffer(buffer.get()));
 
   SetIncrementingData(write_data, kDataSize, 0);
@@ -135,6 +134,14 @@ TEST(RingBufferTest, PassingNulltoReadBufferForcesMemcpy) {
                                          kDataSize));
   // Passing NULL forces a memcpy, so |read_data| is now updated.
   CheckIncrementingData(read_data, kDataSize, 0);
+}
+
+TEST(RingBufferTest, CreateHandlesErrors) {
+  EXPECT_TRUE(WebRtc_CreateBuffer(0, 1) == NULL);
+  EXPECT_TRUE(WebRtc_CreateBuffer(1, 0) == NULL);
+  RingBuffer* buffer = WebRtc_CreateBuffer(1, 1);
+  EXPECT_TRUE(buffer != NULL);
+  WebRtc_FreeBuffer(buffer);
 }
 
 }  // namespace webrtc

@@ -256,32 +256,36 @@ int WebRtcAecm_CreateCore(AecmCore_t **aecmInst)
         return -1;
     }
 
-    if (WebRtc_CreateBuffer(&aecm->farFrameBuf, FRAME_LEN + PART_LEN,
-                            sizeof(int16_t)) == -1)
+    aecm->farFrameBuf = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN,
+                                            sizeof(int16_t));
+    if (!aecm->farFrameBuf)
     {
         WebRtcAecm_FreeCore(aecm);
         aecm = NULL;
         return -1;
     }
 
-    if (WebRtc_CreateBuffer(&aecm->nearNoisyFrameBuf, FRAME_LEN + PART_LEN,
-                            sizeof(int16_t)) == -1)
+    aecm->nearNoisyFrameBuf = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN,
+                                                  sizeof(int16_t));
+    if (!aecm->nearNoisyFrameBuf)
     {
         WebRtcAecm_FreeCore(aecm);
         aecm = NULL;
         return -1;
     }
 
-    if (WebRtc_CreateBuffer(&aecm->nearCleanFrameBuf, FRAME_LEN + PART_LEN,
-                            sizeof(int16_t)) == -1)
+    aecm->nearCleanFrameBuf = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN,
+                                                  sizeof(int16_t));
+    if (!aecm->nearCleanFrameBuf)
     {
         WebRtcAecm_FreeCore(aecm);
         aecm = NULL;
         return -1;
     }
 
-    if (WebRtc_CreateBuffer(&aecm->outFrameBuf, FRAME_LEN + PART_LEN,
-                            sizeof(int16_t)) == -1)
+    aecm->outFrameBuf = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN,
+                                            sizeof(int16_t));
+    if (!aecm->outFrameBuf)
     {
         WebRtcAecm_FreeCore(aecm);
         aecm = NULL;

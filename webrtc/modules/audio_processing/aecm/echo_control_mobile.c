@@ -102,8 +102,9 @@ WebRtc_Word32 WebRtcAecm_Create(void **aecmInst)
         return -1;
     }
 
-    if (WebRtc_CreateBuffer(&aecm->farendBuf, kBufSizeSamp,
-                            sizeof(int16_t)) == -1)
+    aecm->farendBuf = WebRtc_CreateBuffer(kBufSizeSamp,
+                                          sizeof(int16_t));
+    if (!aecm->farendBuf)
     {
         WebRtcAecm_Free(aecm);
         aecm = NULL;

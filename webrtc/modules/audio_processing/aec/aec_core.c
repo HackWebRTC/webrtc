@@ -164,54 +164,57 @@ int WebRtcAec_CreateAec(AecCore** aecInst)
         return -1;
     }
 
-    if (WebRtc_CreateBuffer(&aec->nearFrBuf,
-                            FRAME_LEN + PART_LEN,
-                            sizeof(int16_t)) == -1) {
+    aec->nearFrBuf = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN,
+                                         sizeof(int16_t));
+    if (!aec->nearFrBuf) {
         WebRtcAec_FreeAec(aec);
         aec = NULL;
         return -1;
     }
 
-    if (WebRtc_CreateBuffer(&aec->outFrBuf,
-                            FRAME_LEN + PART_LEN,
-                            sizeof(int16_t)) == -1) {
+    aec->outFrBuf = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN,
+                                        sizeof(int16_t));
+    if (!aec->outFrBuf) {
         WebRtcAec_FreeAec(aec);
         aec = NULL;
         return -1;
     }
 
-    if (WebRtc_CreateBuffer(&aec->nearFrBufH,
-                            FRAME_LEN + PART_LEN,
-                            sizeof(int16_t)) == -1) {
+    aec->nearFrBufH = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN,
+                                          sizeof(int16_t));
+    if (!aec->nearFrBufH) {
         WebRtcAec_FreeAec(aec);
         aec = NULL;
         return -1;
     }
 
-    if (WebRtc_CreateBuffer(&aec->outFrBufH,
-                            FRAME_LEN + PART_LEN,
-                            sizeof(int16_t)) == -1) {
+    aec->outFrBufH = WebRtc_CreateBuffer(FRAME_LEN + PART_LEN,
+                                         sizeof(int16_t));
+    if (!aec->outFrBufH) {
         WebRtcAec_FreeAec(aec);
         aec = NULL;
         return -1;
     }
 
     // Create far-end buffers.
-    if (WebRtc_CreateBuffer(&aec->far_buf, kBufSizePartitions,
-                            sizeof(float) * 2 * PART_LEN1) == -1) {
+    aec->far_buf = WebRtc_CreateBuffer(kBufSizePartitions,
+                                       sizeof(float) * 2 * PART_LEN1);
+    if (!aec->far_buf) {
         WebRtcAec_FreeAec(aec);
         aec = NULL;
         return -1;
     }
-    if (WebRtc_CreateBuffer(&aec->far_buf_windowed, kBufSizePartitions,
-                            sizeof(float) * 2 * PART_LEN1) == -1) {
+    aec->far_buf_windowed = WebRtc_CreateBuffer(kBufSizePartitions,
+                                                sizeof(float) * 2 * PART_LEN1);
+    if (!aec->far_buf_windowed) {
         WebRtcAec_FreeAec(aec);
         aec = NULL;
         return -1;
     }
 #ifdef WEBRTC_AEC_DEBUG_DUMP
-    if (WebRtc_CreateBuffer(&aec->far_time_buf, kBufSizePartitions,
-                            sizeof(int16_t) * PART_LEN) == -1) {
+    aec->far_time_buf = WebRtc_CreateBuffer(kBufSizePartitions,
+                                            sizeof(int16_t) * PART_LEN);
+    if (!aec->far_time_buf) {
         WebRtcAec_FreeAec(aec);
         aec = NULL;
         return -1;

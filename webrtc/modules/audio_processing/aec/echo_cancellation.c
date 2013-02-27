@@ -72,9 +72,9 @@ WebRtc_Word32 WebRtcAec_Create(void **aecInst)
     // Create far-end pre-buffer. The buffer size has to be large enough for
     // largest possible drift compensation (kResamplerBufferSize) + "almost" an
     // FFT buffer (PART_LEN2 - 1).
-    if (WebRtc_CreateBuffer(&aecpc->far_pre_buf,
-                            PART_LEN2 + kResamplerBufferSize,
-                            sizeof(float)) == -1) {
+    aecpc->far_pre_buf = WebRtc_CreateBuffer(PART_LEN2 + kResamplerBufferSize,
+                                             sizeof(float));
+    if (!aecpc->far_pre_buf) {
         WebRtcAec_Free(aecpc);
         aecpc = NULL;
         return -1;
@@ -84,9 +84,9 @@ WebRtc_Word32 WebRtcAec_Create(void **aecInst)
     aecpc->lastError = 0;
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
-    if (WebRtc_CreateBuffer(&aecpc->far_pre_buf_s16,
-                            PART_LEN2 + kResamplerBufferSize,
-                            sizeof(int16_t)) == -1) {
+    aecpc->far_pre_buf_s16 = WebRtc_CreateBuffer(
+        PART_LEN2 + kResamplerBufferSize, sizeof(float));
+    if (!aecpc->far_pre_buf_s16) {
         WebRtcAec_Free(aecpc);
         aecpc = NULL;
         return -1;
