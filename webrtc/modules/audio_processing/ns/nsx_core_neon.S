@@ -90,7 +90,7 @@ _WebRtcNsx_kLogTable:
 
 .align 2
 DEFINE_FUNCTION WebRtcNsx_NoiseEstimationNeon
-  push {r4-r11, r14}
+  push {r4-r12, r14}          @ Make sure 8-byte stack alignment.
   vpush {d8-d15}
   sub sp, #(16 + (HALF_ANAL_BLOCKL + 3) / 4 * 8)
 
@@ -354,7 +354,7 @@ UPDATE_Q_NOISE:
 
   add sp, #(16 + (HALF_ANAL_BLOCKL + 3) / 4 * 8)
   vpop {d8-d15}
-  pop {r4-r11, pc}
+  pop {r4-r12, pc}
 
 @ static void UpdateNoiseEstimateNeon(NsxInst_t* inst, int offset);
 @ Neon registers touched: q0-q3, q8-q13.
@@ -429,7 +429,7 @@ POST_LOOP_MAGNLEN:
 @ void PrepareSpectrumNeon(NsxInst_t* inst, int16_t* freq_buf);
 .align 2
 DEFINE_FUNCTION WebRtcNsx_PrepareSpectrumNeon
-  push {r4-r8}
+  push {r4-r9}
 
   movw r2, #offset_nsx_real
   movw r12, #offset_nsx_noiseSupFilter
@@ -539,7 +539,7 @@ LOOP_ANALEN2:
   vst1.16 {d4, d5, d6, d7}, [r1]
   vst1.16 {d16, d17, d18, d19}, [r2]
 
-  pop {r4-r8}
+  pop {r4-r9}
   bx r14
 
 @ void WebRtcNsx_DenormalizeNeon(NsxInst_t* inst, int16_t* in, int factor);
