@@ -700,6 +700,13 @@ WebRtc_Word32 WebRtcAec_get_error_code(void *aecInst)
     return aecpc->lastError;
 }
 
+AecCore* WebRtcAec_aec_core(void* handle) {
+  if (!handle) {
+    return NULL;
+  }
+  return ((aecpc_t*) handle)->aec;
+}
+
 static int EstBufDelay(aecpc_t* aecpc) {
   int nSampSndCard = aecpc->msInSndCardBuf * sampMsNb * aecpc->rate_factor;
   int current_delay = nSampSndCard - WebRtcAec_system_delay(aecpc->aec);

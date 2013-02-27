@@ -56,6 +56,8 @@ typedef struct {
     AecLevel aNlp;
 } AecMetrics;
 
+struct AecCore;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -239,6 +241,16 @@ int WebRtcAec_GetDelayMetrics(void* handle, int* median, int* std);
  * WebRtc_Word32  return        11000-11100: error code
  */
 WebRtc_Word32 WebRtcAec_get_error_code(void *aecInst);
+
+// Returns a pointer to the low level AEC handle.
+//
+// Input:
+//  - handle                    : Pointer to the AEC instance.
+//
+// Return value:
+//  - AecCore pointer           : NULL for error.
+//
+struct AecCore* WebRtcAec_aec_core(void* handle);
 
 #ifdef __cplusplus
 }
