@@ -347,7 +347,7 @@ CodecDataBaseTest::Perform(CmdArgs& args)
                 waitEvent->Wait(33); // was 100
 
                 int ret =_vcm->Decode();
-                TEST(ret == 0);
+                TEST(ret >= 0);
                 if (ret < 0)
                 {
                     printf("Error #%d in frame number %d \n",ret, frameCnt);

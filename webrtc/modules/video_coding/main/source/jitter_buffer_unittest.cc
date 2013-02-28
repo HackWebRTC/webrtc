@@ -20,6 +20,13 @@
 
 namespace webrtc {
 
+enum { kDefaultFrameRate = 25u };
+enum { kDefaultFramePeriodMs = 1000u / kDefaultFrameRate };
+const unsigned int kDefaultBitrateKbps = 1000;
+const unsigned int kFrameSize = (kDefaultBitrateKbps + kDefaultFrameRate * 4) /
+    (kDefaultFrameRate * 8);
+const unsigned int kMaxPacketSize = 1500;
+
 class StreamGenerator {
  public:
   StreamGenerator(uint16_t start_seq_num, uint32_t start_timestamp,
@@ -35,6 +42,7 @@ class StreamGenerator {
     sequence_number_ = start_seq_num;
     timestamp_ = start_timestamp;
     start_time_ = current_time;
+    memset(&packet_buffer, 0, sizeof(packet_buffer));
   }
 
   void GenerateFrame(FrameType type, int num_media_packets,
@@ -45,8 +53,11 @@ class StreamGenerator {
     sequence_number_ += packets_.size();
     packets_.clear();
     for (int i = 0; i < num_media_packets; ++i) {
+      const int packet_size = (kFrameSize + num_media_packets / 2) /
+          num_media_packets;
       packets_.push_back(GeneratePacket(sequence_number_,
                                         timestamp_,
+                                        packet_size,
                                         (i == 0),
                                         (i == num_media_packets - 1),
                                         type));
@@ -55,6 +66,7 @@ class StreamGenerator {
     for (int i = 0; i < num_empty_packets; ++i) {
       packets_.push_back(GeneratePacket(sequence_number_,
                                         timestamp_,
+                                        0,
                                         false,
                                         false,
                                         kFrameEmpty));
@@ -62,17 +74,21 @@ class StreamGenerator {
     }
   }
 
-  static VCMPacket GeneratePacket(uint16_t sequence_number,
-                                  uint32_t timestamp,
-                                  bool first_packet,
-                                  bool marker_bit,
-                                  FrameType type) {
+  VCMPacket GeneratePacket(uint16_t sequence_number,
+                           uint32_t timestamp,
+                           unsigned int size,
+                           bool first_packet,
+                           bool marker_bit,
+                           FrameType type) {
+    EXPECT_LT(size, kMaxPacketSize);
     VCMPacket packet;
     packet.seqNum = sequence_number;
     packet.timestamp = timestamp;
     packet.frameType = type;
     packet.isFirstPacket = first_packet;
     packet.markerBit = marker_bit;
+    packet.sizeBytes = size;
+    packet.dataPtr = packet_buffer;
     if (packet.isFirstPacket)
       packet.completeNALU = kNaluStart;
     else if (packet.markerBit)
@@ -134,6 +150,7 @@ class StreamGenerator {
   uint16_t sequence_number_;
   uint32_t timestamp_;
   int64_t start_time_;
+  uint8_t packet_buffer[kMaxPacketSize];
 
   DISALLOW_COPY_AND_ASSIGN(StreamGenerator);
 };
@@ -141,16 +158,13 @@ class StreamGenerator {
 class TestRunningJitterBuffer : public ::testing::Test {
  protected:
   enum { kDataBufferSize = 10 };
-  enum { kDefaultFrameRate = 25 };
-  enum { kDefaultFramePeriodMs = 1000 / kDefaultFrameRate };
 
   virtual void SetUp() {
     clock_.reset(new SimulatedClock(0));
     max_nack_list_size_ = 250;
     oldest_packet_to_nack_ = 450;
     jitter_buffer_ = new VCMJitterBuffer(clock_.get(), -1, -1, true);
-    stream_generator = new StreamGenerator(0, 0,
-                                           clock_->TimeInMilliseconds());
+    stream_generator = new StreamGenerator(0, 0, clock_->TimeInMilliseconds());
     jitter_buffer_->Start();
     jitter_buffer_->SetNackSettings(max_nack_list_size_,
                                     oldest_packet_to_nack_);
@@ -286,6 +300,54 @@ TEST_F(TestRunningJitterBuffer, JitterEstimateMode) {
   uint32_t je1 = jitter_buffer_->EstimatedJitterMs();
   InsertFrames(2, kVideoFrameDelta);
   EXPECT_GE(je1, jitter_buffer_->EstimatedJitterMs());
+}
+
+TEST_F(TestRunningJitterBuffer, StatisticsTest) {
+  uint32_t num_delta_frames = 0;
+  uint32_t num_key_frames = 0;
+  jitter_buffer_->FrameStatistics(&num_delta_frames, &num_key_frames);
+  EXPECT_EQ(0u, num_delta_frames);
+  EXPECT_EQ(0u, num_key_frames);
+
+  uint32_t framerate = 0;
+  uint32_t bitrate = 0;
+  jitter_buffer_->IncomingRateStatistics(&framerate, &bitrate);
+  EXPECT_EQ(0u, framerate);
+  EXPECT_EQ(0u, bitrate);
+
+  // Insert a couple of key and delta frames.
+  InsertFrame(kVideoFrameKey);
+  InsertFrame(kVideoFrameDelta);
+  InsertFrame(kVideoFrameDelta);
+  InsertFrame(kVideoFrameKey);
+  InsertFrame(kVideoFrameDelta);
+  // Decode some of them to make sure the statistics doesn't depend on if frames
+  // are decoded or not.
+  EXPECT_TRUE(DecodeCompleteFrame());
+  EXPECT_TRUE(DecodeCompleteFrame());
+  jitter_buffer_->FrameStatistics(&num_delta_frames, &num_key_frames);
+  EXPECT_EQ(3u, num_delta_frames);
+  EXPECT_EQ(2u, num_key_frames);
+
+  // Insert 20 more frames to get estimates of bitrate and framerate over
+  // 1 second.
+  for (int i = 0; i < 20; ++i) {
+    InsertFrame(kVideoFrameDelta);
+  }
+  jitter_buffer_->IncomingRateStatistics(&framerate, &bitrate);
+  // TODO(holmer): The current implementation returns the average of the last
+  // two framerate calculations, which is why it takes two calls to reach the
+  // actual framerate. This should be fixed.
+  EXPECT_EQ(kDefaultFrameRate / 2u, framerate);
+  EXPECT_EQ(kDefaultBitrateKbps, bitrate);
+  // Insert 25 more frames to get estimates of bitrate and framerate over
+  // 2 seconds.
+  for (int i = 0; i < 25; ++i) {
+    InsertFrame(kVideoFrameDelta);
+  }
+  jitter_buffer_->IncomingRateStatistics(&framerate, &bitrate);
+  EXPECT_EQ(kDefaultFrameRate, framerate);
+  EXPECT_EQ(kDefaultBitrateKbps, bitrate);
 }
 
 TEST_F(TestJitterBufferNack, TestEmptyPackets) {

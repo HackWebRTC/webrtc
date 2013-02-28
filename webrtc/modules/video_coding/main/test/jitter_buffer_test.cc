@@ -719,24 +719,6 @@ int JitterBufferTest(CmdArgs& args)
     packet.insertStartCode = false;
     //printf("DONE H.264 insert start code test 2 packets\n");
 
-    //
-    // TEST statistics
-    //
-    WebRtc_UWord32 numDeltaFrames = 0;
-    WebRtc_UWord32 numKeyFrames = 0;
-    jb.FrameStatistics(&numDeltaFrames, &numKeyFrames);
-
-    TEST(numDeltaFrames == 8);
-    TEST(numKeyFrames == 1);
-
-    WebRtc_UWord32 frameRate;
-    WebRtc_UWord32 bitRate;
-    jb.IncomingRateStatistics(&frameRate, &bitRate);
-
-    // these depend on CPU speed works on a T61
-    TEST(frameRate > 30);
-    TEST(bitRate > 10000000);
-
 
     jb.Flush();
 
