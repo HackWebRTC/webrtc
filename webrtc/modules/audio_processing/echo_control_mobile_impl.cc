@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "echo_control_mobile_impl.h"
+#include "webrtc/modules/audio_processing/echo_control_mobile_impl.h"
 
 #include <cassert>
 #include <cstring>
 
-#include "critical_section_wrapper.h"
-#include "echo_control_mobile.h"
-
-#include "audio_processing_impl.h"
-#include "audio_buffer.h"
+#include "webrtc/modules/audio_processing/aecm/include/echo_control_mobile.h"
+#include "webrtc/modules/audio_processing/audio_processing_impl.h"
+#include "webrtc/modules/audio_processing/audio_buffer.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 namespace webrtc {
 
@@ -241,7 +241,7 @@ int EchoControlMobileImpl::Initialize() {
   }
 
   if (apm_->sample_rate_hz() == apm_->kSampleRate32kHz) {
-    // AECM doesn't support super-wideband.
+    LOG(LS_ERROR) << "AECM only supports 16 kHz or lower sample rates";
     return apm_->kBadSampleRateError;
   }
 

@@ -885,6 +885,11 @@ TEST_F(ApmTest, EchoControlMobile) {
   EXPECT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(32000));
   EXPECT_EQ(apm_->kBadSampleRateError,
             apm_->echo_control_mobile()->Enable(true));
+  EXPECT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(16000));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_control_mobile()->Enable(true));
+  EXPECT_EQ(apm_->kUnsupportedComponentError, apm_->set_sample_rate_hz(32000));
+
   // Turn AECM on (and AEC off)
   Init(16000, 2, 2, 2, false);
   EXPECT_EQ(apm_->kNoError, apm_->echo_control_mobile()->Enable(true));
