@@ -218,8 +218,8 @@ ViEEncoder::~ViEEncoder() {
   module_process_thread_.DeRegisterModule(&vpm_);
   module_process_thread_.DeRegisterModule(default_rtp_rtcp_.get());
   module_process_thread_.DeRegisterModule(paced_sender_.get());
-  delete &vcm_;
-  delete &vpm_;
+  VideoCodingModule::Destroy(&vcm_);
+  VideoProcessingModule::Destroy(&vpm_);
   delete qm_callback_;
 }
 
