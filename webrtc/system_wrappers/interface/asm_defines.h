@@ -45,10 +45,10 @@ bl \name
 .endm
 #endif
 
-// With llvm and clang compilers, for instructions ldrb, strh, etc.,
+// With Apple's clang compiler, for instructions ldrb, strh, etc.,
 // the condition code is after the width specifier. Here we define
 // only the ones that are actually used in the assembly files.
-#ifdef __llvm__
+#if (defined __llvm__) && (defined __APPLE__)
 .macro streqh reg1, reg2, num
 strheq \reg1, \reg2, \num
 .endm
