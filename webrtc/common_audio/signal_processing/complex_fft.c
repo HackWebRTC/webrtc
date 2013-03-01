@@ -234,9 +234,9 @@ int WebRtcSpl_ComplexFFT(WebRtc_Word16 frfi[], int stages, int mode)
                 wi = -kSinTable1024[j];
 
 #ifdef WEBRTC_ARCH_ARM_V7
-                WebRtc_Word32 wri;
-                WebRtc_Word32 frfi_r;
-                __asm__("pkhbt %0, %1, %2, lsl #16" : "=r"(wri) :
+                WebRtc_Word32 wri = 0;
+                WebRtc_Word32 frfi_r = 0;
+                __asm __volatile("pkhbt %0, %1, %2, lsl #16" : "=r"(wri) :
                     "r"((WebRtc_Word32)wr), "r"((WebRtc_Word32)wi));
 #endif
 
@@ -245,12 +245,18 @@ int WebRtcSpl_ComplexFFT(WebRtc_Word16 frfi[], int stages, int mode)
                     j = i + l;
 
 #ifdef WEBRTC_ARCH_ARM_V7
-                    __asm__("pkhbt %0, %1, %2, lsl #16" : "=r"(frfi_r) :
-                        "r"((WebRtc_Word32)frfi[2*j]), "r"((WebRtc_Word32)frfi[2*j +1]));
-                    __asm__("smlsd %0, %1, %2, %3" : "=r"(tr32) :
-                        "r"(wri), "r"(frfi_r), "r"(CFFTRND));
-                    __asm__("smladx %0, %1, %2, %3" : "=r"(ti32) :
-                        "r"(wri), "r"(frfi_r), "r"(CFFTRND));
+                    __asm __volatile(
+                      "pkhbt %[frfi_r], %[frfi_even], %[frfi_odd], lsl #16\n\t"
+                      "smlsd %[tr32], %[wri], %[frfi_r], %[cfftrnd]\n\t"
+                      "smladx %[ti32], %[wri], %[frfi_r], %[cfftrnd]\n\t"
+                      :[frfi_r]"+r"(frfi_r),
+                       [tr32]"=r"(tr32),
+                       [ti32]"=r"(ti32)
+                      :[frfi_even]"r"((WebRtc_Word32)frfi[2*j]),
+                       [frfi_odd]"r"((WebRtc_Word32)frfi[2*j +1]),
+                       [wri]"r"(wri),
+                       [cfftrnd]"r"(CFFTRND)
+                    );
     
 #else
                     tr32 = WEBRTC_SPL_MUL_16_16(wr, frfi[2 * j])
@@ -375,9 +381,9 @@ int WebRtcSpl_ComplexIFFT(WebRtc_Word16 frfi[], int stages, int mode)
                 wi = kSinTable1024[j];
 
 #ifdef WEBRTC_ARCH_ARM_V7
-                WebRtc_Word32 wri;
-                WebRtc_Word32 frfi_r;
-                __asm__("pkhbt %0, %1, %2, lsl #16" : "=r"(wri) :
+                WebRtc_Word32 wri = 0;
+                WebRtc_Word32 frfi_r = 0;
+                __asm __volatile("pkhbt %0, %1, %2, lsl #16" : "=r"(wri) :
                     "r"((WebRtc_Word32)wr), "r"((WebRtc_Word32)wi));
 #endif
 
@@ -386,12 +392,18 @@ int WebRtcSpl_ComplexIFFT(WebRtc_Word16 frfi[], int stages, int mode)
                     j = i + l;
 
 #ifdef WEBRTC_ARCH_ARM_V7
-                    __asm__("pkhbt %0, %1, %2, lsl #16" : "=r"(frfi_r) :
-                        "r"((WebRtc_Word32)frfi[2*j]), "r"((WebRtc_Word32)frfi[2*j +1]));
-                    __asm__("smlsd %0, %1, %2, %3" : "=r"(tr32) :
-                        "r"(wri), "r"(frfi_r), "r"(CIFFTRND));
-                    __asm__("smladx %0, %1, %2, %3" : "=r"(ti32) :
-                        "r"(wri), "r"(frfi_r), "r"(CIFFTRND));
+                    __asm __volatile(
+                      "pkhbt %[frfi_r], %[frfi_even], %[frfi_odd], lsl #16\n\t"
+                      "smlsd %[tr32], %[wri], %[frfi_r], %[cifftrnd]\n\t"
+                      "smladx %[ti32], %[wri], %[frfi_r], %[cifftrnd]\n\t"
+                      :[frfi_r]"+r"(frfi_r),
+                       [tr32]"=r"(tr32),
+                       [ti32]"=r"(ti32)
+                      :[frfi_even]"r"((WebRtc_Word32)frfi[2*j]),
+                       [frfi_odd]"r"((WebRtc_Word32)frfi[2*j +1]),
+                       [wri]"r"(wri),
+                       [cifftrnd]"r"(CIFFTRND)
+                    );
 #else
 
                     tr32 = WEBRTC_SPL_MUL_16_16(wr, frfi[2 * j])
