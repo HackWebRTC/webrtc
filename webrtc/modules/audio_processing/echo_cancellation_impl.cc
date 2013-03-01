@@ -212,10 +212,9 @@ int EchoCancellationImpl::device_sample_rate_hz() const {
   return device_sample_rate_hz_;
 }
 
-int EchoCancellationImpl::set_stream_drift_samples(int drift) {
+void EchoCancellationImpl::set_stream_drift_samples(int drift) {
   was_stream_drift_set_ = true;
   stream_drift_samples_ = drift;
-  return apm_->kNoError;
 }
 
 int EchoCancellationImpl::stream_drift_samples() const {

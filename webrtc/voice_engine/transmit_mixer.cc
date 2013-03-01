@@ -20,6 +20,7 @@
 #include "utility.h"
 #include "voe_base_impl.h"
 #include "voe_external_media.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 
 #define WEBRTC_ABS(a) (((a) < 0) ? -(a) : (a))
 
@@ -28,10 +29,11 @@ namespace webrtc {
 namespace voe {
 
 // Used for downmixing before resampling.
-// TODO(andrew): audio_device should advertise the maximum sample rate it can
-//               provide.
+// TODO(ajm): audio_device should advertise the maximum sample rate it can
+//            provide.
 static const int kMaxMonoDeviceDataSizeSamples = 960;  // 10 ms, 96 kHz, mono.
 
+// TODO(ajm): The thread safety of this is dubious...
 void
 TransmitMixer::OnPeriodicProcess()
 {
@@ -39,7 +41,7 @@ TransmitMixer::OnPeriodicProcess()
                  "TransmitMixer::OnPeriodicProcess()");
 
 #if defined(WEBRTC_VOICE_ENGINE_TYPING_DETECTION)
-    if (_typingNoiseWarning > 0)
+    if (_typingNoiseWarning)
     {
         CriticalSectionScoped cs(&_callbackCritSect);
         if (_voiceEngineObserverPtr)
@@ -50,11 +52,11 @@ TransmitMixer::OnPeriodicProcess()
             _voiceEngineObserverPtr->CallbackOnError(-1,
                                                      VE_TYPING_NOISE_WARNING);
         }
-        _typingNoiseWarning = 0;
+        _typingNoiseWarning = false;
     }
 #endif
 
-    if (_saturationWarning > 0)
+    if (_saturationWarning)
     {
         CriticalSectionScoped cs(&_callbackCritSect);
         if (_voiceEngineObserverPtr)
@@ -63,21 +65,8 @@ TransmitMixer::OnPeriodicProcess()
                          "TransmitMixer::OnPeriodicProcess() =>"
                          " CallbackOnError(VE_SATURATION_WARNING)");
             _voiceEngineObserverPtr->CallbackOnError(-1, VE_SATURATION_WARNING);
-       }
-        _saturationWarning = 0;
-    }
-
-    if (_noiseWarning > 0)
-    {
-        CriticalSectionScoped cs(&_callbackCritSect);
-        if (_voiceEngineObserverPtr)
-        {
-            WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
-                         "TransmitMixer::OnPeriodicProcess() =>"
-                         "CallbackOnError(VE_NOISE_WARNING)");
-            _voiceEngineObserverPtr->CallbackOnError(-1, VE_NOISE_WARNING);
         }
-        _noiseWarning = 0;
+        _saturationWarning = false;
     }
 }
 
@@ -169,7 +158,7 @@ TransmitMixer::Destroy(TransmitMixer*& mixer)
 TransmitMixer::TransmitMixer(const WebRtc_UWord32 instanceId) :
     _engineStatisticsPtr(NULL),
     _channelManagerPtr(NULL),
-    _audioProcessingModulePtr(NULL),
+    audioproc_(NULL),
     _voiceEngineObserverPtr(NULL),
     _processThreadPtr(NULL),
     _filePlayerPtr(NULL),
@@ -190,15 +179,14 @@ TransmitMixer::TransmitMixer(const WebRtc_UWord32 instanceId) :
     _timeActive(0),
     _timeSinceLastTyping(0),
     _penaltyCounter(0),
-    _typingNoiseWarning(0),
+    _typingNoiseWarning(false),
     _timeWindow(10), // 10ms slots accepted to count as a hit
     _costPerTyping(100), // Penalty added for a typing + activity coincide
     _reportingThreshold(300), // Threshold for _penaltyCounter
     _penaltyDecay(1), // how much we reduce _penaltyCounter every 10 ms.
     _typeEventDelay(2), // how "old" event we check for
 #endif
-    _saturationWarning(0),
-    _noiseWarning(0),
+    _saturationWarning(false),
     _instanceId(instanceId),
     _mixFileWithMicrophone(false),
     _captureLevel(0),
@@ -303,7 +291,7 @@ TransmitMixer::SetAudioProcessingModule(AudioProcessing* audioProcessingModule)
                  "TransmitMixer::SetAudioProcessingModule("
                  "audioProcessingModule=0x%x)",
                  audioProcessingModule);
-    _audioProcessingModulePtr = audioProcessingModule;
+    audioproc_ = audioProcessingModule;
     return 0;
 }
 
@@ -370,8 +358,8 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
       }
     }
 
-    // --- Near-end Voice Quality Enhancement (APM) processing
-    APMProcessStream(totalDelayMS, clockDrift, currentMicLevel);
+    // --- Near-end audio processing.
+    ProcessAudio(totalDelayMS, clockDrift, currentMicLevel);
 
     if (swap_stereo_channels_ && stereo_codec_)
       // Only bother swapping if we're using a stereo codec.
@@ -1293,94 +1281,43 @@ WebRtc_Word32 TransmitMixer::MixOrReplaceAudioWithFile(
     return 0;
 }
 
-WebRtc_Word32 TransmitMixer::APMProcessStream(
-    const WebRtc_UWord16 totalDelayMS,
-    const WebRtc_Word32 clockDrift,
-    const WebRtc_UWord16 currentMicLevel)
-{
-    WebRtc_UWord16 captureLevel(currentMicLevel);
+void TransmitMixer::ProcessAudio(int delay_ms, int clock_drift,
+                                 int current_mic_level) {
+  if (audioproc_->set_num_channels(_audioFrame.num_channels_,
+                                   _audioFrame.num_channels_) != 0) {
+    LOG_FERR2(LS_ERROR, set_num_channels, _audioFrame.num_channels_,
+              _audioFrame.num_channels_);
+  }
 
-    // Check if the number of incoming channels has changed. This has taken
-    // both the capture device and send codecs into account.
-    if (_audioFrame.num_channels_ !=
-        _audioProcessingModulePtr->num_input_channels())
-    {
-        if (_audioProcessingModulePtr->set_num_channels(
-                _audioFrame.num_channels_,
-                _audioFrame.num_channels_))
-        {
-            WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                         "AudioProcessing::set_num_channels(%d, %d) => error",
-                         _audioFrame.num_channels_,
-                         _audioProcessingModulePtr->num_output_channels());
-        }
-    }
+  if (audioproc_->set_sample_rate_hz(_audioFrame.sample_rate_hz_) != 0) {
+    LOG_FERR1(LS_ERROR, set_sample_rate_hz, _audioFrame.sample_rate_hz_);
+  }
 
-    // If the frequency has changed we need to change APM settings
-    // Sending side is "master"
-    if (_audioProcessingModulePtr->sample_rate_hz() !=
-        _audioFrame.sample_rate_hz_)
-    {
-        if (_audioProcessingModulePtr->set_sample_rate_hz(
-                _audioFrame.sample_rate_hz_))
-        {
-            WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                         "AudioProcessing::set_sample_rate_hz(%u) => error",
-                         _audioFrame.sample_rate_hz_);
-        }
-    }
+  if (audioproc_->set_stream_delay_ms(delay_ms) != 0) {
+    // Report as a warning; we can occasionally run into very large delays.
+    LOG_FERR1(LS_WARNING, set_stream_delay_ms, delay_ms);
+  }
 
-    if (_audioProcessingModulePtr->set_stream_delay_ms(totalDelayMS) == -1)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                     "AudioProcessing::set_stream_delay_ms(%u) => error",
-                     totalDelayMS);
-    }
-    if (_audioProcessingModulePtr->gain_control()->set_stream_analog_level(
-            captureLevel) == -1)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                     "AudioProcessing::set_stream_analog_level(%u) => error",
-                     captureLevel);
-    }
-    if (_audioProcessingModulePtr->echo_cancellation()->
-            is_drift_compensation_enabled())
-    {
-        if (_audioProcessingModulePtr->echo_cancellation()->
-                set_stream_drift_samples(clockDrift) == -1)
-        {
-            WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                "AudioProcessing::set_stream_drift_samples(%u) => error",
-                clockDrift);
-        }
-    }
-    if (_audioProcessingModulePtr->ProcessStream(&_audioFrame) == -1)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                     "AudioProcessing::ProcessStream() => error");
-    }
-    captureLevel =
-        _audioProcessingModulePtr->gain_control()->stream_analog_level();
+  GainControl* agc = audioproc_->gain_control();
+  if (agc->set_stream_analog_level(current_mic_level) != 0) {
+    LOG_FERR1(LS_ERROR, set_stream_analog_level, current_mic_level);
+  }
 
-    // Store new capture level (only updated when analog AGC is enabled)
-    _captureLevel = captureLevel;
+  EchoCancellation* aec = audioproc_->echo_cancellation();
+  if (aec->is_drift_compensation_enabled()) {
+    aec->set_stream_drift_samples(clock_drift);
+  }
 
-    // Log notifications
-    if (_audioProcessingModulePtr->gain_control()->stream_is_saturated())
-    {
-        if (_saturationWarning == 1)
-        {
-            WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                       "TransmitMixer::APMProcessStream() pending "
-                       "saturation warning exists");
-        }
-        _saturationWarning = 1; // triggers callback from moduleprocess thread
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                   "TransmitMixer::APMProcessStream() VE_SATURATION_WARNING "
-                   "message has been posted for callback");
-    }
+  int err = audioproc_->ProcessStream(&_audioFrame);
+  if (err != 0) {
+    LOG(LS_ERROR) << "ProcessStream() error: " << err;
+  }
 
-    return 0;
+  // Store new capture level. Only updated when analog AGC is enabled.
+  _captureLevel = agc->stream_analog_level();
+
+  // Triggers a callback in OnPeriodicProcess().
+  _saturationWarning |= agc->stream_is_saturated();
 }
 
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
@@ -1422,19 +1359,8 @@ int TransmitMixer::TypingDetection()
         _penaltyCounter += _costPerTyping;
         if (_penaltyCounter > _reportingThreshold)
         {
-            if (_typingNoiseWarning == 1)
-            {
-                WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-                           VoEId(_instanceId, -1),
-                           "TransmitMixer::TypingDetection() pending "
-                               "noise-saturation warning exists");
-            }
-            // triggers callback from the module process thread
-            _typingNoiseWarning = 1;
-            WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                       "TransmitMixer::TypingDetection() "
-                       "VE_TYPING_NOISE_WARNING message has been posted for"
-                       "callback");
+            // Triggers a callback in OnPeriodicProcess().
+            _typingNoiseWarning = true;
         }
     }
 

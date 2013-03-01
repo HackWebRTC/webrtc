@@ -175,9 +175,7 @@ private:
     WebRtc_Word32 MixOrReplaceAudioWithFile(
         const int mixingFrequency);
 
-    WebRtc_Word32 APMProcessStream(const WebRtc_UWord16 totalDelayMS,
-                                   const WebRtc_Word32 clockDrift,
-                                   const WebRtc_UWord16 currentMicLevel);
+    void ProcessAudio(int delay_ms, int clock_drift, int current_mic_level);
 
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     int TypingDetection();
@@ -186,7 +184,7 @@ private:
     // uses
     Statistics* _engineStatisticsPtr;
     ChannelManager* _channelManagerPtr;
-    AudioProcessing* _audioProcessingModulePtr;
+    AudioProcessing* audioproc_;
     VoiceEngineObserver* _voiceEngineObserverPtr;
     ProcessThread* _processThreadPtr;
 
@@ -212,7 +210,7 @@ private:
     WebRtc_Word32 _timeActive;
     WebRtc_Word32 _timeSinceLastTyping;
     WebRtc_Word32 _penaltyCounter;
-    WebRtc_UWord32 _typingNoiseWarning;
+    bool _typingNoiseWarning;
 
     // Tunable treshold values
     int _timeWindow; // nr of10ms slots accepted to count as a hit.
@@ -222,8 +220,7 @@ private:
     int _typeEventDelay; // How old typing events we allow
 
 #endif
-    WebRtc_UWord32 _saturationWarning;
-    WebRtc_UWord32 _noiseWarning;
+    bool _saturationWarning;
 
     int _instanceId;
     bool _mixFileWithMicrophone;

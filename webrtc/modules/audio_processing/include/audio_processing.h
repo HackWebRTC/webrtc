@@ -285,8 +285,8 @@ class EchoCancellation {
 
   // Sets the difference between the number of samples rendered and captured by
   // the audio devices since the last call to |ProcessStream()|. Must be called
-  // if and only if drift compensation is enabled, prior to |ProcessStream()|.
-  virtual int set_stream_drift_samples(int drift) = 0;
+  // if drift compensation is enabled, prior to |ProcessStream()|.
+  virtual void set_stream_drift_samples(int drift) = 0;
   virtual int stream_drift_samples() const = 0;
 
   enum SuppressionLevel {

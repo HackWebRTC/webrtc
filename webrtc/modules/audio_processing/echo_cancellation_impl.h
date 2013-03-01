@@ -41,7 +41,7 @@ class EchoCancellationImpl : public EchoCancellation,
   virtual int enable_drift_compensation(bool enable);
   virtual bool is_drift_compensation_enabled() const;
   virtual int set_device_sample_rate_hz(int rate);
-  virtual int set_stream_drift_samples(int drift);
+  virtual void set_stream_drift_samples(int drift);
   virtual int set_suppression_level(SuppressionLevel level);
   virtual SuppressionLevel suppression_level() const;
   virtual int enable_metrics(bool enable);

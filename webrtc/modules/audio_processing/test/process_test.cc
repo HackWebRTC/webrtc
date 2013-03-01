@@ -689,8 +689,7 @@ void void_main(int argc, char* argv[]) {
                   apm->gain_control()->set_stream_analog_level(msg.level()));
         ASSERT_EQ(apm->kNoError,
                   apm->set_stream_delay_ms(msg.delay() + extra_delay_ms));
-        ASSERT_EQ(apm->kNoError,
-            apm->echo_cancellation()->set_stream_drift_samples(msg.drift()));
+        apm->echo_cancellation()->set_stream_drift_samples(msg.drift());
 
         int err = apm->ProcessStream(&near_frame);
         if (err == apm->kBadStreamParameterWarning) {
@@ -893,8 +892,7 @@ void void_main(int argc, char* argv[]) {
                   apm->gain_control()->set_stream_analog_level(capture_level));
         ASSERT_EQ(apm->kNoError,
                   apm->set_stream_delay_ms(delay_ms + extra_delay_ms));
-        ASSERT_EQ(apm->kNoError,
-            apm->echo_cancellation()->set_stream_drift_samples(drift_samples));
+        apm->echo_cancellation()->set_stream_drift_samples(drift_samples);
 
         int err = apm->ProcessStream(&near_frame);
         if (err == apm->kBadStreamParameterWarning) {
