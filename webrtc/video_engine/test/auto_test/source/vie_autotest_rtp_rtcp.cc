@@ -661,7 +661,7 @@ void ViEAutoTest::ViERtpRtcpAPITest()
         tbChannel.videoChannel, true, 15));
     EXPECT_EQ(0, ViE.rtp_rtcp->SetReceiveTimestampOffsetStatus(
         tbChannel.videoChannel, true, 3));
-    EXPECT_EQ(-1, ViE.rtp_rtcp->SetReceiveTimestampOffsetStatus(
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetReceiveTimestampOffsetStatus(
         tbChannel.videoChannel, true, 3));
     EXPECT_EQ(0, ViE.rtp_rtcp->SetReceiveTimestampOffsetStatus(
             tbChannel.videoChannel, false, 3));
