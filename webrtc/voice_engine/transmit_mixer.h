@@ -164,7 +164,9 @@ public:
 private:
     TransmitMixer(const WebRtc_UWord32 instanceId);
 
-    void CheckForSendCodecChanges();
+    // Gets the maximum sample rate and number of channels over all currently
+    // sending codecs.
+    void GetSendCodecInfo(int* max_sample_rate, int* max_channels);
 
     int GenerateAudioFrame(const int16_t audioSamples[],
                            int nSamples,
@@ -229,7 +231,6 @@ private:
     VoEMediaProcess* external_preproc_ptr_;
     bool _mute;
     WebRtc_Word32 _remainingMuteMicTimeMs;
-    int _mixingFrequency;
     bool stereo_codec_;
     bool swap_stereo_channels_;
 };

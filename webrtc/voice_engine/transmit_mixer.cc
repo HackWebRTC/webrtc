@@ -194,7 +194,6 @@ TransmitMixer::TransmitMixer(const WebRtc_UWord32 instanceId) :
     external_preproc_ptr_(NULL),
     _mute(false),
     _remainingMuteMicTimeMs(0),
-    _mixingFrequency(0),
     stereo_codec_(false),
     swap_stereo_channels_(false)
 {
@@ -295,27 +294,22 @@ TransmitMixer::SetAudioProcessingModule(AudioProcessing* audioProcessingModule)
     return 0;
 }
 
-void TransmitMixer::CheckForSendCodecChanges() {
+void TransmitMixer::GetSendCodecInfo(int* max_sample_rate, int* max_channels) {
   ScopedChannel sc(*_channelManagerPtr);
   void* iterator = NULL;
   Channel* channel = sc.GetFirstChannel(iterator);
-  _mixingFrequency = 8000;
-  stereo_codec_ = false;
+
+  *max_sample_rate = 8000;
+  *max_channels = 1;
   while (channel != NULL) {
     if (channel->Sending()) {
       CodecInst codec;
       channel->GetSendCodec(codec);
-
-      if (codec.channels == 2)
-        stereo_codec_ = true;
-
-      // TODO(tlegrand): Remove once we have full 48 kHz support in
-      // Audio Coding Module.
-      if (codec.plfreq > 32000) {
-        _mixingFrequency = 32000;
-      } else if (codec.plfreq > _mixingFrequency) {
-        _mixingFrequency = codec.plfreq;
-      }
+      // TODO(tlegrand): Remove the 32 kHz restriction once we have full 48 kHz
+      // support in Audio Coding Module.
+      *max_sample_rate = std::min(32000,
+                                  std::max(*max_sample_rate, codec.plfreq));
+      *max_channels = std::max(*max_channels, codec.channels);
     }
     channel = sc.GetNextChannel(iterator);
   }
@@ -335,8 +329,6 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
                  "samplesPerSec=%u, totalDelayMS=%u, clockDrift=%d,"
                  "currentMicLevel=%u)", nSamples, nChannels, samplesPerSec,
                  totalDelayMS, clockDrift, currentMicLevel);
-
-    CheckForSendCodecChanges();
 
     // --- Resample input audio and create/store the initial audio frame
     if (GenerateAudioFrame(static_cast<const WebRtc_Word16*>(audioSamples),
@@ -390,13 +382,13 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
     // --- Mix with file (does not affect the mixing frequency)
     if (_filePlaying)
     {
-        MixOrReplaceAudioWithFile(_mixingFrequency);
+        MixOrReplaceAudioWithFile(_audioFrame.sample_rate_hz_);
     }
 
     // --- Record to file
     if (_fileRecording)
     {
-        RecordAudioToFile(_mixingFrequency);
+        RecordAudioToFile(_audioFrame.sample_rate_hz_);
     }
 
     {
@@ -431,12 +423,9 @@ TransmitMixer::DemuxAndMix()
             channelPtr->UpdateLocalTimeStamp();
         } else if (channelPtr->Sending())
         {
-            // load temporary audioframe with current (mixed) microphone signal
-            AudioFrame tmpAudioFrame;
-            tmpAudioFrame.CopyFrom(_audioFrame);
-
-            channelPtr->Demultiplex(tmpAudioFrame);
-            channelPtr->PrepareEncodeAndSend(_mixingFrequency);
+            // Demultiplex makes a copy of its input.
+            channelPtr->Demultiplex(_audioFrame);
+            channelPtr->PrepareEncodeAndSend(_audioFrame.sample_rate_hz_);
         }
         channelPtr = sc.GetNextChannel(iterator);
     }
@@ -1157,6 +1146,15 @@ int TransmitMixer::GenerateAudioFrame(const int16_t audio[],
                                       int num_channels,
                                       int sample_rate_hz)
 {
+    int destination_rate;
+    int num_codec_channels;
+    GetSendCodecInfo(&destination_rate, &num_codec_channels);
+
+    // Never upsample the capture signal here. This should be done at the
+    // end of the send chain.
+    destination_rate = std::min(destination_rate, sample_rate_hz);
+    stereo_codec_ = num_codec_channels == 2;
+
     const int16_t* audio_ptr = audio;
     int16_t mono_audio[kMaxMonoDeviceDataSizeSamples];
     assert(samples_per_channel <= kMaxMonoDeviceDataSizeSamples);
@@ -1173,7 +1171,7 @@ int TransmitMixer::GenerateAudioFrame(const int16_t audio[],
             kResamplerSynchronous : kResamplerSynchronousStereo;
 
     if (_audioResampler.ResetIfNeeded(sample_rate_hz,
-                                      _mixingFrequency,
+                                      destination_rate,
                                       resampler_type) != 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, -1),
@@ -1194,7 +1192,7 @@ int TransmitMixer::GenerateAudioFrame(const int16_t audio[],
     _audioFrame.samples_per_channel_ /= num_channels;
     _audioFrame.id_ = _instanceId;
     _audioFrame.timestamp_ = -1;
-    _audioFrame.sample_rate_hz_ = _mixingFrequency;
+    _audioFrame.sample_rate_hz_ = destination_rate;
     _audioFrame.speech_type_ = AudioFrame::kNormalSpeech;
     _audioFrame.vad_activity_ = AudioFrame::kVadUnknown;
     _audioFrame.num_channels_ = num_channels;
@@ -1373,8 +1371,8 @@ int TransmitMixer::TypingDetection()
 
 int TransmitMixer::GetMixingFrequency()
 {
-    assert(_mixingFrequency!=0);
-    return (_mixingFrequency);
+    assert(_audioFrame.sample_rate_hz_ != 0);
+    return _audioFrame.sample_rate_hz_;
 }
 
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
