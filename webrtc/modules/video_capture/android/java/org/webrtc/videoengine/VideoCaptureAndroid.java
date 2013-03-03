@@ -20,6 +20,7 @@ import org.webrtc.videoengine.VideoCaptureDeviceInfoAndroid.AndroidVideoCaptureD
 import android.graphics.ImageFormat;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
+import android.graphics.SurfaceTexture;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
@@ -50,6 +51,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     // C++ callback context variable.
     private long context = 0;
     private SurfaceHolder localPreview = null;
+    private SurfaceTexture dummySurfaceTexture = null;
     // True if this class owns the preview video buffers.
     private boolean ownsBuffers = false;
 
@@ -137,6 +139,19 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
                 surfaceCreated(localPreview);
             }
             localPreview.addCallback(this);
+        } else {
+          // No local renderer.  Camera won't capture without
+          // setPreview{Texture,Display}, so we create a dummy SurfaceTexture
+          // and hand it over to Camera, but never listen for frame-ready
+          // callbacks, and never call updateTexImage on it.
+          captureLock.lock();
+          try {
+            dummySurfaceTexture = new SurfaceTexture(42);
+            camera.setPreviewTexture(dummySurfaceTexture);
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+          captureLock.unlock();
         }
 
         captureLock.lock();
