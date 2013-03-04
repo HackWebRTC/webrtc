@@ -316,8 +316,8 @@ WebRtc_Word32 RTPReceiverAudio::ParseAudioCodecSpecific(
     const WebRtc_UWord16 payload_length,
     const ModuleRTPUtility::AudioPayload& audio_specific,
     const bool is_red) {
-  WebRtc_UWord8 new_events[MAX_NUMBER_OF_PARALLEL_TELEPHONE_EVENTS];
-  WebRtc_UWord8 removed_events[MAX_NUMBER_OF_PARALLEL_TELEPHONE_EVENTS];
+  WebRtc_UWord8 new_events[MAX_NUMBER_OF_PARALLEL_TELEPHONE_EVENTS] = {};
+  WebRtc_UWord8 removed_events[MAX_NUMBER_OF_PARALLEL_TELEPHONE_EVENTS] = {};
   WebRtc_UWord8 number_of_new_events = 0;
   WebRtc_UWord8 number_of_removed_events = 0;
 
