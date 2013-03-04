@@ -18,10 +18,20 @@ import webapp2
 import os
 from google.appengine.ext.webapp import template
 
-class MainHandler(webapp2.RequestHandler):
-  def get(self):
-    path = os.path.join(os.path.dirname(__file__), 'index.html')
-    self.response.out.write(template.render(path, {}))
+class PageHandler(webapp2.RequestHandler):
+ def get(self):
+   base_url = self.request.path
+   if self.request.path == '/':
+     self.redirect("http://webrtc.googlecode.com/svn/trunk/" 
+                    + "samples/js/demos/index.html"
+                    , permanent=True)
+   else:
+     self.redirect("http://webrtc.googlecode.com/svn/trunk/" 
+                    + "samples/js/demos"
+                    + base_url, 
+                    permanent=True)
 
-app = webapp2.WSGIApplication([('/', MainHandler)],
-                              debug=True)
+app = webapp2.WSGIApplication([
+  (r'/*.*', PageHandler),
+ ], debug=True)
+
