@@ -372,7 +372,7 @@ int ViEBaseImpl::GetVersion(char version[1024]) {
 
   // Add WebRTC Version.
   std::stringstream version_stream;
-  version_stream << "VideoEngine 3.24.0" << std::endl;
+  version_stream << "VideoEngine 3.25.0" << std::endl;
 
   // Add build info.
   version_stream << "Build: svn:" << WEBRTC_SVNREVISION << " " << BUILDINFO
