@@ -13,8 +13,8 @@
 #include "webrtc/modules/video_coding/codecs/interface/mock/mock_video_codec_interface.h"
 #include "webrtc/modules/video_coding/main/interface/mock/mock_vcm_callbacks.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
 
 #include "gtest/gtest.h"
 
@@ -38,8 +38,8 @@ class TestVideoCodingModule : public ::testing::Test {
   static const int kUnusedPayloadType = 10;
 
   virtual void SetUp() {
-    TickTime::UseFakeClock(0);
-    vcm_ = VideoCodingModule::Create(0);
+    clock_.reset(new SimulatedClock(0));
+    vcm_ = VideoCodingModule::Create(0, clock_.get());
     EXPECT_EQ(0, vcm_->InitializeReceiver());
     EXPECT_EQ(0, vcm_->InitializeSender());
     EXPECT_EQ(0, vcm_->RegisterExternalEncoder(&encoder_, kUnusedPayloadType,
@@ -104,8 +104,6 @@ class TestVideoCodingModule : public ::testing::Test {
       EXPECT_EQ(0, vcm_->IncomingPacket(payload, 0, *header));
       ++header->header.sequenceNumber;
     }
-    EXPECT_CALL(packet_request_callback_, ResendPackets(_, _))
-        .Times(0);
     EXPECT_EQ(0, vcm_->Process());
     EXPECT_CALL(decoder_, Decode(_, _, _, _, _))
         .Times(0);
@@ -126,6 +124,7 @@ class TestVideoCodingModule : public ::testing::Test {
   }
 
   VideoCodingModule* vcm_;
+  scoped_ptr<SimulatedClock> clock_;
   NiceMock<MockVideoDecoder> decoder_;
   NiceMock<MockVideoEncoder> encoder_;
   I420VideoFrame input_frame_;
@@ -194,8 +193,10 @@ TEST_F(TestVideoCodingModule, PaddingOnlyFrames) {
   header.header.headerLength = 12;
   header.type.Video.codec = kRTPVideoVP8;
   for (int i = 0; i < 10; ++i) {
+    EXPECT_CALL(packet_request_callback_, ResendPackets(_, _))
+        .Times(0);
     InsertAndVerifyPaddingFrame(payload, 0, &header);
-    TickTime::AdvanceFakeClock(33);
+    clock_->AdvanceTimeMilliseconds(33);
     header.header.timestamp += 3000;
   }
 }
@@ -220,7 +221,7 @@ TEST_F(TestVideoCodingModule, PaddingOnlyFramesWithLosses) {
   header.type.Video.isFirstPacket = true;
   header.header.markerBit = true;
   InsertAndVerifyDecodableFrame(payload, kFrameSize, &header);
-  TickTime::AdvanceFakeClock(33);
+  clock_->AdvanceTimeMilliseconds(33);
   header.header.timestamp += 3000;
 
   header.frameType = kFrameEmpty;
@@ -228,17 +229,27 @@ TEST_F(TestVideoCodingModule, PaddingOnlyFramesWithLosses) {
   header.header.markerBit = false;
   // Insert padding frames.
   for (int i = 0; i < 10; ++i) {
-    // Lose the 4th frame.
-    if (i == 3) {
-      header.header.sequenceNumber += 5;
-      ++i;
-    }
     // Lose one packet from the 6th frame.
     if (i == 5) {
       ++header.header.sequenceNumber;
     }
-    InsertAndVerifyPaddingFrame(payload, 0, &header);
-    TickTime::AdvanceFakeClock(33);
+    // Lose the 4th frame.
+    if (i == 3) {
+      header.header.sequenceNumber += 5;
+    } else {
+      if (i > 3 && i < 5) {
+        EXPECT_CALL(packet_request_callback_, ResendPackets(_, 5))
+            .Times(1);
+      } else if (i >= 5) {
+        EXPECT_CALL(packet_request_callback_, ResendPackets(_, 6))
+            .Times(1);
+      } else {
+        EXPECT_CALL(packet_request_callback_, ResendPackets(_, _))
+            .Times(0);
+      }
+      InsertAndVerifyPaddingFrame(payload, 0, &header);
+    }
+    clock_->AdvanceTimeMilliseconds(33);
     header.header.timestamp += 3000;
   }
 }
@@ -271,7 +282,7 @@ TEST_F(TestVideoCodingModule, PaddingOnlyAndVideo) {
       header.type.Video.isFirstPacket = true;
       header.header.markerBit = true;
       InsertAndVerifyDecodableFrame(payload, kFrameSize, &header);
-      TickTime::AdvanceFakeClock(33);
+      clock_->AdvanceTimeMilliseconds(33);
       header.header.timestamp += 3000;
     }
 
@@ -281,7 +292,7 @@ TEST_F(TestVideoCodingModule, PaddingOnlyAndVideo) {
     header.header.markerBit = false;
     for (int j = 0; j < 2; ++j) {
       InsertAndVerifyPaddingFrame(payload, 0, &header);
-      TickTime::AdvanceFakeClock(33);
+      clock_->AdvanceTimeMilliseconds(33);
       header.header.timestamp += 3000;
     }
   }

@@ -63,7 +63,7 @@ int32_t VCMReceiver::Initialize() {
   CriticalSectionScoped cs(crit_sect_);
   Reset();
   if (!master_) {
-    SetNackMode(kNoNack);
+    SetNackMode(kNoNack, -1, -1);
   }
   return VCM_OK;
 }
@@ -72,7 +72,8 @@ void VCMReceiver::UpdateRtt(uint32_t rtt) {
   jitter_buffer_.UpdateRtt(rtt);
 }
 
-int32_t VCMReceiver::InsertPacket(const VCMPacket& packet, uint16_t frame_width,
+int32_t VCMReceiver::InsertPacket(const VCMPacket& packet,
+                                  uint16_t frame_width,
                                   uint16_t frame_height) {
   // Find an empty frame.
   VCMEncodedFrame* buffer = NULL;
@@ -243,7 +244,7 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
     // No time to wait for a complete frame, check if we have an incomplete.
     const bool dual_receiver_enabled_and_passive = (dual_receiver != NULL &&
         dual_receiver->State() == kPassive &&
-        dual_receiver->NackMode() == kNackInfinite);
+        dual_receiver->NackMode() == kNack);
     if (dual_receiver_enabled_and_passive &&
         !jitter_buffer_.CompleteSequenceWithNextFrame()) {
       // Jitter buffer state might get corrupt with this frame.
@@ -269,7 +270,7 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
     // No time left to wait, we must decode this frame now.
     const bool dual_receiver_enabled_and_passive = (dual_receiver != NULL &&
         dual_receiver->State() == kPassive &&
-        dual_receiver->NackMode() == kNackInfinite);
+        dual_receiver->NackMode() == kNack);
     if (dual_receiver_enabled_and_passive &&
         !jitter_buffer_.CompleteSequenceWithNextFrame()) {
       // Jitter buffer state might get corrupt with this frame.
@@ -306,7 +307,7 @@ VCMEncodedFrame* VCMReceiver::FrameForRendering(uint16_t max_wait_time_ms,
     // Get an incomplete frame.
     const bool dual_receiver_enabled_and_passive = (dual_receiver != NULL &&
         dual_receiver->State() == kPassive &&
-        dual_receiver->NackMode() == kNackInfinite);
+        dual_receiver->NackMode() == kNack);
     if (dual_receiver_enabled_and_passive &&
         !jitter_buffer_.CompleteSequenceWithNextFrame()) {
       // Jitter buffer state might get corrupt with this frame.
@@ -340,10 +341,13 @@ uint32_t VCMReceiver::DiscardedPackets() const {
   return jitter_buffer_.num_discarded_packets();
 }
 
-void VCMReceiver::SetNackMode(VCMNackMode nackMode) {
+void VCMReceiver::SetNackMode(VCMNackMode nackMode,
+                              int low_rtt_nack_threshold_ms,
+                              int high_rtt_nack_threshold_ms) {
   CriticalSectionScoped cs(crit_sect_);
   // Default to always having NACK enabled in hybrid mode.
-  jitter_buffer_.SetNackMode(nackMode, kLowRttNackMs, -1);
+  jitter_buffer_.SetNackMode(nackMode, low_rtt_nack_threshold_ms,
+                             high_rtt_nack_threshold_ms);
   if (!master_) {
     state_ = kPassive;  // The dual decoder defaults to passive.
   }
@@ -361,24 +365,21 @@ VCMNackMode VCMReceiver::NackMode() const {
 }
 
 VCMNackStatus VCMReceiver::NackList(uint16_t* nack_list,
-                                    uint16_t* size) {
-  bool extended = false;
-  uint16_t nack_list_size = 0;
-  uint16_t* internal_nack_list = jitter_buffer_.CreateNackList(&nack_list_size,
-                                                               &extended);
-  if (internal_nack_list == NULL && nack_list_size == 0xffff) {
+                                    uint16_t size,
+                                    uint16_t* nack_list_length) {
+  bool request_key_frame = false;
+  uint16_t* internal_nack_list = jitter_buffer_.GetNackList(
+      nack_list_length, &request_key_frame);
+  if (request_key_frame) {
     // This combination is used to trigger key frame requests.
-    *size = 0;
     return kNackKeyFrameRequest;
   }
-  if (nack_list_size > *size) {
-    *size = nack_list_size;
+  if (*nack_list_length > size) {
     return kNackNeedMoreMemory;
   }
-  if (internal_nack_list != NULL && nack_list_size > 0) {
-    memcpy(nack_list, internal_nack_list, nack_list_size * sizeof(uint16_t));
+  if (internal_nack_list != NULL && *nack_list_length > 0) {
+    memcpy(nack_list, internal_nack_list, *nack_list_length * sizeof(uint16_t));
   }
-  *size = nack_list_size;
   return kNackOk;
 }
 

@@ -17,15 +17,16 @@
 #include "media_opt_util.h"
 #include "qm_select.h"
 
-namespace webrtc
-{
-
-enum { kBitrateMaxFrameSamples = 60 };
-enum { kBitrateAverageWinMs    = 1000 };
+namespace webrtc {
 
 class Clock;
 class FrameDropper;
 class VCMContentMetricsProcessing;
+
+namespace media_optimization {
+
+enum { kBitrateMaxFrameSamples = 60 };
+enum { kBitrateAverageWinMs    = 1000 };
 
 struct VCMEncodedFrameSample
 {
@@ -204,6 +205,7 @@ private:
 
 }; // end of VCMMediaOptimization class definition
 
-} // namespace webrtc
+}  // namespace media_optimization
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_VIDEO_CODING_MEDIA_OPTIMIZATION_H_

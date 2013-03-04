@@ -58,11 +58,14 @@ class VCMReceiver {
   uint32_t DiscardedPackets() const;
 
   // NACK.
-  void SetNackMode(VCMNackMode nackMode);
+  void SetNackMode(VCMNackMode nackMode,
+                   int low_rtt_nack_threshold_ms,
+                   int high_rtt_nack_threshold_ms);
   void SetNackSettings(size_t max_nack_list_size,
                        int max_packet_age_to_nack);
   VCMNackMode NackMode() const;
-  VCMNackStatus NackList(uint16_t* nackList, uint16_t* size);
+  VCMNackStatus NackList(uint16_t* nackList, uint16_t size,
+                         uint16_t* nack_list_length);
 
   // Dual decoder.
   bool DualDecoderCaughtUp(VCMEncodedFrame* dual_frame,

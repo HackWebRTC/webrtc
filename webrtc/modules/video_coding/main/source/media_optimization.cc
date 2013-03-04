@@ -16,6 +16,7 @@
 #include "webrtc/system_wrappers/interface/clock.h"
 
 namespace webrtc {
+namespace media_optimization {
 
 VCMMediaOptimization::VCMMediaOptimization(WebRtc_Word32 id,
                                            Clock* clock):
@@ -671,4 +672,5 @@ VCMMediaOptimization::InputFrameRate()
     return WebRtc_UWord32 (_incomingFrameRate + 0.5f);
 }
 
-}
+}  // namespace media_optimization
+}  // namespace webrtc

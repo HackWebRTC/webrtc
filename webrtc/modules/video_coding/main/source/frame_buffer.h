@@ -64,15 +64,11 @@ public:
     void SetCountedFrame(bool frameCounted);
     bool GetCountedFrame() const;
 
-    // NACK - Building the NACK lists.
-    // Build hard NACK list: Zero out all entries in list up to and including
-    // _lowSeqNum.
-    int BuildHardNackList(int* list, int num, int nack_seq_nums_index);
-    // Build soft NACK list: Zero out only a subset of the packets, discard
-    // empty packets.
-    int BuildSoftNackList(int* list, int num, int nack_seq_nums_index,
-                          int rttMs);
+    // Increments a counter to keep track of the number of packets of this frame
+    // which were NACKed before they arrived.
     void IncrementNackCount();
+    // Returns the number of packets of this frame which were NACKed before they
+    // arrived.
     WebRtc_Word16 GetNackCount() const;
 
     WebRtc_Word64 LatestPacketTimeMs() const;

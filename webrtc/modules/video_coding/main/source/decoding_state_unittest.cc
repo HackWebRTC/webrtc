@@ -23,7 +23,7 @@ namespace webrtc {
 TEST(TestDecodingState, Sanity) {
   VCMDecodingState dec_state;
   dec_state.Reset();
-  EXPECT_TRUE(dec_state.init());
+  EXPECT_TRUE(dec_state.in_initial_state());
   EXPECT_TRUE(dec_state.full_sync());
 }
 

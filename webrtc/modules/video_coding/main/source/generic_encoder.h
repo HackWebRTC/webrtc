@@ -18,7 +18,9 @@
 namespace webrtc
 {
 
+namespace media_optimization {
 class VCMMediaOptimization;
+}  // namespace media_optimization
 
 /*************************************/
 /* VCMEncodeFrameCallback class     */
@@ -47,7 +49,7 @@ public:
     /**
     * Set media Optimization
     */
-    void SetMediaOpt (VCMMediaOptimization* mediaOpt);
+    void SetMediaOpt (media_optimization::VCMMediaOptimization* mediaOpt);
 
     void SetPayloadType(WebRtc_UWord8 payloadType) { _payloadType = payloadType; };
     void SetCodecType(VideoCodecType codecType) {_codecType = codecType;};
@@ -62,13 +64,13 @@ private:
                                   RTPVideoHeader** rtp);
 
     VCMPacketizationCallback* _sendCallback;
-    VCMMediaOptimization*     _mediaOpt;
-    WebRtc_UWord32            _encodedBytes;
-    WebRtc_UWord8             _payloadType;
-    VideoCodecType            _codecType;
-    bool                      _internalSource;
+    media_optimization::VCMMediaOptimization* _mediaOpt;
+    WebRtc_UWord32 _encodedBytes;
+    WebRtc_UWord8 _payloadType;
+    VideoCodecType _codecType;
+    bool _internalSource;
 #ifdef DEBUG_ENCODER_BIT_STREAM
-    FILE*                     _bitStreamAfterEncoder;
+    FILE* _bitStreamAfterEncoder;
 #endif
 };// end of VCMEncodeFrameCallback class
 

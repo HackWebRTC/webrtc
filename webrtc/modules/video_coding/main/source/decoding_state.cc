@@ -24,7 +24,7 @@ VCMDecodingState::VCMDecodingState()
       temporal_id_(kNoTemporalIdx),
       tl0_pic_id_(kNoTl0PicIdx),
       full_sync_(true),
-      init_(true) {}
+      in_initial_state_(true) {}
 
 VCMDecodingState::~VCMDecodingState() {}
 
@@ -36,7 +36,7 @@ void VCMDecodingState::Reset() {
   temporal_id_ = kNoTemporalIdx;
   tl0_pic_id_ = kNoTl0PicIdx;
   full_sync_ = true;
-  init_ = true;
+  in_initial_state_ = true;
 }
 
 uint32_t VCMDecodingState::time_stamp() const {
@@ -49,7 +49,7 @@ uint16_t VCMDecodingState::sequence_num() const {
 
 bool VCMDecodingState::IsOldFrame(const VCMFrameBuffer* frame) const {
   assert(frame != NULL);
-  if (init_)
+  if (in_initial_state_)
     return false;
   return (LatestTimestamp(time_stamp_, frame->TimeStamp(), NULL)
           == time_stamp_);
@@ -57,7 +57,7 @@ bool VCMDecodingState::IsOldFrame(const VCMFrameBuffer* frame) const {
 
 bool VCMDecodingState::IsOldPacket(const VCMPacket* packet) const {
   assert(packet != NULL);
-  if (init_)
+  if (in_initial_state_)
     return false;
   return (LatestTimestamp(time_stamp_, packet->timestamp, NULL)
            == time_stamp_);
@@ -71,7 +71,7 @@ void VCMDecodingState::SetState(const VCMFrameBuffer* frame) {
   picture_id_ = frame->PictureId();
   temporal_id_ = frame->TemporalId();
   tl0_pic_id_ = frame->Tl0PicId();
-  init_ = false;
+  in_initial_state_ = false;
 }
 
 void VCMDecodingState::SetStateOneBack(const VCMFrameBuffer* frame) {
@@ -91,11 +91,11 @@ void VCMDecodingState::SetStateOneBack(const VCMFrameBuffer* frame) {
     else
       tl0_pic_id_ = frame->Tl0PicId() - 1;
   }
-  init_ = false;
+  in_initial_state_ = false;
 }
 
 void VCMDecodingState::UpdateEmptyFrame(const VCMFrameBuffer* frame) {
-  if (ContinuousFrame(frame) && frame->GetState() == kStateEmpty) {
+  if (ContinuousFrame(frame)) {
     time_stamp_ = frame->TimeStamp();
     sequence_num_ = frame->GetHighSeqNum();
   }
@@ -114,8 +114,8 @@ void VCMDecodingState::SetSeqNum(uint16_t new_seq_num) {
   sequence_num_ = new_seq_num;
 }
 
-bool VCMDecodingState::init() const {
-  return init_;
+bool VCMDecodingState::in_initial_state() const {
+  return in_initial_state_;
 }
 
 bool VCMDecodingState::full_sync() const {
@@ -123,7 +123,7 @@ bool VCMDecodingState::full_sync() const {
 }
 
 void VCMDecodingState::UpdateSyncState(const VCMFrameBuffer* frame) {
-  if (init_)
+  if (in_initial_state_)
     return;
   if (frame->TemporalId() == kNoTemporalIdx ||
       frame->Tl0PicId() == kNoTl0PicIdx) {
@@ -151,7 +151,7 @@ bool VCMDecodingState::ContinuousFrame(const VCMFrameBuffer* frame) const {
   // Return true when in initial state.
   // Note that when a method is not applicable it will return false.
   assert(frame != NULL);
-  if (init_)
+  if (in_initial_state_)
     return true;
 
   if (!ContinuousLayer(frame->TemporalId(), frame->Tl0PicId())) {

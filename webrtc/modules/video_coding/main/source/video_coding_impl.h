@@ -307,7 +307,7 @@ private:
     VCMGenericEncoder*                  _encoder;
     VCMEncodedFrameCallback             _encodedFrameCallback;
     std::vector<FrameType>              _nextFrameTypes;
-    VCMMediaOptimization                _mediaOpt;
+    media_optimization::VCMMediaOptimization _mediaOpt;
     VideoCodecType                      _sendCodecType;
     VCMSendStatisticsCallback*          _sendStatsCallback;
     FILE*                               _encoderInputFile;

@@ -23,6 +23,7 @@
 #include "modules/video_coding/main/source/nack_fec_tables.h"
 
 namespace webrtc {
+namespace media_optimization {
 
 VCMProtectionMethod::VCMProtectionMethod():
 _effectivePacketLoss(0),
@@ -952,4 +953,5 @@ VCMLossProtectionLogic::Release()
     _selectedMethod = NULL;
 }
 
-}
+}  // namespace media_optimization
+}  // namespace webrtc

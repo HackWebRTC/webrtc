@@ -237,7 +237,8 @@ VCMEncodedFrameCallback::EncodedBytes()
 }
 
 void
-VCMEncodedFrameCallback::SetMediaOpt(VCMMediaOptimization *mediaOpt)
+VCMEncodedFrameCallback::SetMediaOpt(
+    media_optimization::VCMMediaOptimization *mediaOpt)
 {
     _mediaOpt = mediaOpt;
 }

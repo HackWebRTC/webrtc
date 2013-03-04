@@ -101,8 +101,6 @@ class VCMSessionInfo {
   PacketIterator FindPartitionEnd(PacketIterator it) const;
   static bool InSequence(const PacketIterator& it,
                          const PacketIterator& prev_it);
-  static int PacketsMissing(const PacketIterator& packet_it,
-                            const PacketIterator& prev_packet_it);
   int InsertBuffer(uint8_t* frame_buffer,
                    PacketIterator packetIterator);
   void ShiftSubsequentPackets(PacketIterator it, int steps_to_shift);
@@ -116,14 +114,6 @@ class VCMSessionInfo {
   // When enabled, determine if session is decodable, i.e. incomplete but
   // would be sent to the decoder.
   void UpdateDecodableSession(int rtt_ms);
-
-  // Clears the sequence numbers in |seq_num_list| of any empty packets received
-  // in this session. |index| is an index in the list at which we start looking
-  // for the sequence numbers. When done this function returns the index of the
-  // next element in the list.
-  int ClearOutEmptyPacketSequenceNumbers(int* seq_num_list,
-                                         int seq_num_list_length,
-                                         int index) const;
 
   // If this session has been NACKed by the jitter buffer.
   bool session_nack_;

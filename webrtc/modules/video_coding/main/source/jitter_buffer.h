@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_JITTER_BUFFER_H_
 
 #include <list>
+#include <set>
 #include <vector>
 
 #include "webrtc/modules/interface/module_common_types.h"
@@ -28,7 +29,9 @@
 namespace webrtc {
 
 enum VCMNackMode {
-  kNackInfinite,
+  kNack,
+  // TODO(holmer): There is no longer a hybrid NACK mode. We should remove this
+  // and replace it with a jitter buffer API for setting allowing decode errors.
   kNackHybrid,
   kNoNack
 };
@@ -153,12 +156,40 @@ class VCMJitterBuffer {
   // Returns the current NACK mode.
   VCMNackMode nack_mode() const;
 
-  // Creates a list of missing sequence numbers.
-  uint16_t* CreateNackList(uint16_t* nack_list_size, bool* list_extended);
+  // Returns a list of the sequence numbers currently missing.
+  uint16_t* GetNackList(uint16_t* nack_list_size, bool* request_key_frame);
 
   int64_t LastDecodedTimestamp() const;
 
  private:
+  class SequenceNumberLessThan {
+   public:
+    bool operator() (const uint16_t& sequence_number1,
+                     const uint16_t& sequence_number2) const {
+      if (sequence_number1 == sequence_number2)
+        return false;
+      return LatestSequenceNumber(sequence_number1, sequence_number2, NULL) ==
+          sequence_number2;
+    }
+  };
+  typedef std::set<uint16_t, SequenceNumberLessThan> SequenceNumberSet;
+
+  // Returns true if the NACK list was updated to cover sequence numbers up to
+  // |sequence_number|. If false a key frame is needed to get into a state where
+  // we can continue decoding.
+  bool UpdateNackList(uint16_t sequence_number);
+  bool TooLargeNackList() const;
+  // Returns true if the NACK list was reduced without problem. If false a key
+  // frame is needed to get into a state where we can continue decoding.
+  bool HandleTooLargeNackList();
+  bool MissingTooOldPacket(uint16_t latest_sequence_number) const;
+  // Returns true if the too old packets was successfully removed from the NACK
+  // list. If false, a key frame is needed to get into a state where we can
+  // continue decoding.
+  bool HandleTooOldPackets(uint16_t latest_sequence_number);
+  // Drops all packets in the NACK list up until |last_decoded_sequence_number|.
+  void DropPacketsFromNackList(uint16_t last_decoded_sequence_number);
+
   // In NACK-only mode this function doesn't return or release non-complete
   // frames unless we have a complete key frame. In hybrid mode, we may release
   // "decodable", incomplete frames.
@@ -183,7 +214,7 @@ class VCMJitterBuffer {
   // Can return a decodable, incomplete frame if |enable_decodable| is true.
   FrameList::iterator FindOldestCompleteContinuousFrame(bool enable_decodable);
 
-  void CleanUpOldFrames();
+  void CleanUpOldOrEmptyFrames();
 
   // Sets the "decodable" and "frame loss" flags of a frame depending on which
   // packets have been received and which are missing.
@@ -205,12 +236,6 @@ class VCMJitterBuffer {
                             uint32_t timestamp,
                             unsigned int frame_size,
                             bool incomplete_frame);
-
-  // Returns the lowest and highest known sequence numbers, where the lowest is
-  // the last decoded sequence number if a frame has been decoded.
-  // -1 is returned if a sequence number cannot be determined.
-  void GetLowHighSequenceNumbers(int32_t* low_seq_num,
-                                 int32_t* high_seq_num) const;
 
   // Returns true if we should wait for retransmissions, false otherwise.
   bool WaitForRetransmissions();
@@ -265,9 +290,9 @@ class VCMJitterBuffer {
   int low_rtt_nack_threshold_ms_;
   int high_rtt_nack_threshold_ms_;
   // Holds the internal NACK list (the missing sequence numbers).
-  std::vector<int> nack_seq_nums_internal_;
+  SequenceNumberSet missing_sequence_numbers_;
+  uint16_t latest_received_sequence_number_;
   std::vector<uint16_t> nack_seq_nums_;
-  unsigned int nack_seq_nums_length_;
   size_t max_nack_list_size_;
   int max_packet_age_to_nack_;  // Measured in sequence numbers.
   bool waiting_for_key_frame_;
