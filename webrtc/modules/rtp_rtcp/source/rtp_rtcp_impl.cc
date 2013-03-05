@@ -118,7 +118,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       dead_or_alive_timeout_ms_(0),
       dead_or_alive_last_timer_(0),
       nack_method_(kNackOff),
-      nack_last_time_sent_(0),
+      nack_last_time_sent_full_(0),
       nack_last_seq_number_sent_(0),
       simulcast_(false),
       key_frame_req_method_(kKeyFrameReqFirRtp),
@@ -1528,10 +1528,10 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendNACK(const WebRtc_UWord16* nack_list,
   WebRtc_UWord16 nackLength = size;
   WebRtc_UWord16 start_id = 0;
 
-  if (nack_last_time_sent_ < time_limit) {
+  if (nack_last_time_sent_full_ < time_limit) {
     // Send list. Set the timer to make sure we only send a full NACK list once
     // within every time_limit.
-    nack_last_time_sent_ =  now;
+    nack_last_time_sent_full_ = now;
   } else {
     // Only send if extended list.
     if (nack_last_seq_number_sent_ == nack_list[size - 1]) {
@@ -1549,7 +1549,12 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendNACK(const WebRtc_UWord16* nack_list,
       nackLength = size - start_id;
     }
   }
-  nack_last_seq_number_sent_ = nack_list[size - 1];
+  // Our RTCP NACK implementation is limited to kRtcpMaxNackFields sequence
+  // numbers per RTCP packet.
+  if (nackLength > kRtcpMaxNackFields) {
+    nackLength = kRtcpMaxNackFields;
+  }
+  nack_last_seq_number_sent_ = nack_list[start_id + nackLength - 1];
 
   switch (nack_method_) {
     case kNackRtcp:

@@ -1324,7 +1324,7 @@ RTCPSender::BuildNACK(WebRtc_UWord8* rtcpbuffer,
     // add the list
     int i = 0;
     int numOfNackFields = 0;
-    while(nackSize > i && numOfNackFields < 253)
+    while (nackSize > i && numOfNackFields < kRtcpMaxNackFields)
     {
         WebRtc_UWord16 nack = nackList[i];
         // put dow our sequence number

@@ -504,7 +504,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   WebRtc_Word64         dead_or_alive_last_timer_;
   // Send side
   NACKMethod            nack_method_;
-  WebRtc_UWord32        nack_last_time_sent_;
+  WebRtc_UWord32        nack_last_time_sent_full_;
   WebRtc_UWord16        nack_last_seq_number_sent_;
 
   bool                  simulcast_;
