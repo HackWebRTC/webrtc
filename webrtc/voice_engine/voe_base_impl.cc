@@ -553,7 +553,8 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
     if (_shared->audio_device()->SetAGC(agc_enabled) != 0) {
       LOG_FERR1(LS_ERROR, audio_device()->SetAGC, agc_enabled);
       _shared->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR);
-      return -1;
+      // TODO(ajm): No error return here due to
+      // https://code.google.com/p/webrtc/issues/detail?id=1464
     }
 #endif
 
