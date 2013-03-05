@@ -40,10 +40,10 @@ class VerifyingNackReceiver : public RtpData
       const webrtc::WebRtcRTPHeader* rtp_header) {
 
     EXPECT_EQ(kTestSsrc, rtp_header->header.ssrc);
-    EXPECT_EQ(std::find(sequence_numbers_.begin(),
-                    sequence_numbers_.end(),
-                    rtp_header->header.sequenceNumber),
-              sequence_numbers_.end());
+    bool already_received = std::find(
+        sequence_numbers_.begin(), sequence_numbers_.end(),
+        rtp_header->header.sequenceNumber) != sequence_numbers_.end();
+    EXPECT_FALSE(already_received);
     sequence_numbers_.push_back(rtp_header->header.sequenceNumber);
     return 0;
   }
