@@ -18,6 +18,7 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 
 // ----------------------------------------------------------------------------
@@ -77,7 +78,19 @@ enum { kVoiceEngineMaxSrtpTagAuthNullLength = 12 };
 enum { kVoiceEngineMaxSrtpKeyAuthNullLength = 256 };
 
 // Audio processing
-enum { kVoiceEngineAudioProcessingDeviceSampleRateHz = 48000 };
+const NoiseSuppression::Level kDefaultNsMode = NoiseSuppression::kModerate;
+const GainControl::Mode kDefaultAgcMode =
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+  GainControl::kAdaptiveDigital;
+#else
+  GainControl::kAdaptiveAnalog;
+#endif
+const bool kDefaultAgcState =
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+  false;
+#else
+  true;
+#endif
 
 // Codec
 // Min init target rate for iSAC-wb
@@ -129,31 +142,15 @@ enum { kVoiceEngineMaxRtpExtensionId = 14 };
 
 } // namespace webrtc
 
-// TODO(andrew): we shouldn't be using the precompiler for this.
+// TODO(ajm): we shouldn't be using the precompiler for this.
 // Use enums or bools as appropriate.
-#define WEBRTC_AUDIO_PROCESSING_OFF false
-
-#define WEBRTC_VOICE_ENGINE_HP_DEFAULT_STATE true
-    // AudioProcessing HP is ON
-#define WEBRTC_VOICE_ENGINE_NS_DEFAULT_STATE  WEBRTC_AUDIO_PROCESSING_OFF
-    // AudioProcessing NS off
-#define WEBRTC_VOICE_ENGINE_AGC_DEFAULT_STATE true
-    // AudioProcessing AGC on
-#define WEBRTC_VOICE_ENGINE_EC_DEFAULT_STATE  WEBRTC_AUDIO_PROCESSING_OFF
-    // AudioProcessing EC off
-#define WEBRTC_VOICE_ENGINE_VAD_DEFAULT_STATE WEBRTC_AUDIO_PROCESSING_OFF
-    // AudioProcessing off
-#define WEBRTC_VOICE_ENGINE_RX_AGC_DEFAULT_STATE WEBRTC_AUDIO_PROCESSING_OFF
+#define WEBRTC_VOICE_ENGINE_RX_AGC_DEFAULT_STATE false
     // AudioProcessing RX AGC off
-#define WEBRTC_VOICE_ENGINE_RX_NS_DEFAULT_STATE WEBRTC_AUDIO_PROCESSING_OFF
+#define WEBRTC_VOICE_ENGINE_RX_NS_DEFAULT_STATE false
     // AudioProcessing RX NS off
-#define WEBRTC_VOICE_ENGINE_RX_HP_DEFAULT_STATE WEBRTC_AUDIO_PROCESSING_OFF
+#define WEBRTC_VOICE_ENGINE_RX_HP_DEFAULT_STATE false
     // AudioProcessing RX High Pass Filter off
 
-#define WEBRTC_VOICE_ENGINE_NS_DEFAULT_MODE NoiseSuppression::kModerate
-    // AudioProcessing NS moderate suppression
-#define WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE GainControl::kAdaptiveAnalog
-    // AudioProcessing AGC analog digital combined
 #define WEBRTC_VOICE_ENGINE_RX_AGC_DEFAULT_MODE GainControl::kAdaptiveDigital
     // AudioProcessing AGC mode
 #define WEBRTC_VOICE_ENGINE_RX_NS_DEFAULT_MODE NoiseSuppression::kModerate
@@ -346,22 +343,6 @@ inline int VoEChannelId(const int moduleId)
   #undef WEBRTC_CONFERENCING
   #undef WEBRTC_TYPING_DETECTION
 
-  // Default audio processing states
-  #undef  WEBRTC_VOICE_ENGINE_NS_DEFAULT_STATE
-  #undef  WEBRTC_VOICE_ENGINE_AGC_DEFAULT_STATE
-  #undef  WEBRTC_VOICE_ENGINE_EC_DEFAULT_STATE
-  #define WEBRTC_VOICE_ENGINE_NS_DEFAULT_STATE  WEBRTC_AUDIO_PROCESSING_OFF
-  #define WEBRTC_VOICE_ENGINE_AGC_DEFAULT_STATE WEBRTC_AUDIO_PROCESSING_OFF
-  #define WEBRTC_VOICE_ENGINE_EC_DEFAULT_STATE  WEBRTC_AUDIO_PROCESSING_OFF
-
-  // Default audio processing modes
-  #undef  WEBRTC_VOICE_ENGINE_NS_DEFAULT_MODE
-  #undef  WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE
-  #define WEBRTC_VOICE_ENGINE_NS_DEFAULT_MODE  \
-      NoiseSuppression::kModerate
-  #define WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE \
-      GainControl::kAdaptiveDigital
-
   #define ANDROID_NOT_SUPPORTED(stat) NOT_SUPPORTED(stat)
 
 #else // LINUX PC
@@ -443,20 +424,6 @@ inline int VoEChannelId(const int moduleId)
   // Always excluded for iPhone builds
   #undef WEBRTC_CODEC_ISAC
   #undef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
-
-  #undef  WEBRTC_VOICE_ENGINE_NS_DEFAULT_STATE
-  #undef  WEBRTC_VOICE_ENGINE_AGC_DEFAULT_STATE
-  #undef  WEBRTC_VOICE_ENGINE_EC_DEFAULT_STATE
-  #define WEBRTC_VOICE_ENGINE_NS_DEFAULT_STATE  WEBRTC_AUDIO_PROCESSING_OFF
-  #define WEBRTC_VOICE_ENGINE_AGC_DEFAULT_STATE WEBRTC_AUDIO_PROCESSING_OFF
-  #define WEBRTC_VOICE_ENGINE_EC_DEFAULT_STATE  WEBRTC_AUDIO_PROCESSING_OFF
-
-  #undef  WEBRTC_VOICE_ENGINE_NS_DEFAULT_MODE
-  #undef  WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE
-  #define WEBRTC_VOICE_ENGINE_NS_DEFAULT_MODE \
-      NoiseSuppression::kModerate
-  #define WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE \
-      GainControl::kAdaptiveDigital
 
   #define IPHONE_NOT_SUPPORTED(stat) NOT_SUPPORTED(stat)
 

@@ -330,7 +330,8 @@ int VoEBaseImpl::DeRegisterVoiceEngineObserver()
     return 0;
 }
 
-int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
+int VoEBaseImpl::Init(AudioDeviceModule* external_adm,
+                      AudioProcessing* audioproc)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
         "Init(external_adm=0x%p)", external_adm);
@@ -486,146 +487,73 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
             "Init() failed to set mono/stereo recording mode");
     }
 
-    // APM initialization done after sound card since we need
-    // to know if we support stereo recording or not.
+    if (!audioproc) {
+      audioproc = AudioProcessing::Create(VoEId(_shared->instance_id(), -1));
+      if (!audioproc) {
+        LOG(LS_ERROR) << "Failed to create AudioProcessing.";
+        _shared->SetLastError(VE_NO_MEMORY);
+        return -1;
+      }
+    }
+    _shared->set_audio_processing(audioproc);
 
-    // Create the AudioProcessing Module if it does not exist.
-
-    if (_shared->audio_processing() == NULL)
-    {
-        _shared->set_audio_processing(AudioProcessing::Create(
-                VoEId(_shared->instance_id(), -1)));
-        if (_shared->audio_processing() == NULL)
-        {
-            _shared->SetLastError(VE_NO_MEMORY, kTraceCritical,
-                "Init() failed to create the AP module");
-            return -1;
-        }
-        // Ensure that mixers in both directions has access to the created APM
-        _shared->transmit_mixer()->SetAudioProcessingModule(
-            _shared->audio_processing());
-        _shared->output_mixer()->SetAudioProcessingModule(
-            _shared->audio_processing());
-
-        if (_shared->audio_processing()->echo_cancellation()->
-                set_device_sample_rate_hz(
-                        kVoiceEngineAudioProcessingDeviceSampleRateHz))
-        {
-            _shared->SetLastError(VE_APM_ERROR, kTraceError,
-                "Init() failed to set the device sample rate to 48K for AP "
-                " module");
-            return -1;
-        }
-        // Using 8 kHz as inital Fs. Might be changed already at first call.
-        if (_shared->audio_processing()->set_sample_rate_hz(8000))
-        {
-            _shared->SetLastError(VE_APM_ERROR, kTraceError,
-                "Init() failed to set the sample rate to 8K for AP module");
-            return -1;
-        }
-
-        // Assume mono until the audio frames are received from the capture
-        // device, at which point this can be updated.
-        if (_shared->audio_processing()->set_num_channels(1, 1) != 0)
-        {
-            _shared->SetLastError(VE_SOUNDCARD_ERROR, kTraceError,
-                "Init() failed to set channels for the primary audio stream");
-            return -1;
-        }
-
-        if (_shared->audio_processing()->set_num_reverse_channels(1) != 0)
-        {
-            _shared->SetLastError(VE_SOUNDCARD_ERROR, kTraceError,
-                "Init() failed to set channels for the primary audio stream");
-            return -1;
-        }
-        // high-pass filter
-        if (_shared->audio_processing()->high_pass_filter()->Enable(
-                WEBRTC_VOICE_ENGINE_HP_DEFAULT_STATE) != 0)
-        {
-            _shared->SetLastError(VE_APM_ERROR, kTraceError,
-                "Init() failed to set the high-pass filter for AP module");
-            return -1;
-        }
-        // Echo Cancellation
-        if (_shared->audio_processing()->echo_cancellation()->
-                enable_drift_compensation(false) != 0)
-        {
-            _shared->SetLastError(VE_APM_ERROR, kTraceError,
-                "Init() failed to set drift compensation for AP module");
-            return -1;
-        }
-        if (_shared->audio_processing()->echo_cancellation()->Enable(
-                WEBRTC_VOICE_ENGINE_EC_DEFAULT_STATE))
-        {
-            _shared->SetLastError(VE_APM_ERROR, kTraceError,
-                "Init() failed to set echo cancellation state for AP module");
-            return -1;
-        }
-        // Noise Reduction
-        if (_shared->audio_processing()->noise_suppression()->set_level(
-                (NoiseSuppression::Level) WEBRTC_VOICE_ENGINE_NS_DEFAULT_MODE)
-                != 0)
-        {
-            _shared->SetLastError(VE_APM_ERROR, kTraceError,
-                "Init() failed to set noise reduction level for AP module");
-            return -1;
-        }
-        if (_shared->audio_processing()->noise_suppression()->Enable(
-                WEBRTC_VOICE_ENGINE_NS_DEFAULT_STATE) != 0)
-        {
-            _shared->SetLastError(VE_APM_ERROR, kTraceError,
-                "Init() failed to set noise reduction state for AP module");
-            return -1;
-        }
-        // Automatic Gain control
-        if (_shared->audio_processing()->gain_control()->
-                set_analog_level_limits(kMinVolumeLevel,kMaxVolumeLevel) != 0)
-        {
-            _shared->SetLastError(VE_APM_ERROR, kTraceError,
-                "Init() failed to set AGC analog level for AP module");
-            return -1;
-        }
-        if (_shared->audio_processing()->gain_control()->set_mode(
-                (GainControl::Mode) WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE)
-                != 0)
-        {
-            _shared->SetLastError(VE_APM_ERROR, kTraceError,
-                "Init() failed to set AGC mode for AP module");
-            return -1;
-        }
-        if (_shared->audio_processing()->gain_control()->Enable(
-                WEBRTC_VOICE_ENGINE_AGC_DEFAULT_STATE)
-                != 0)
-        {
-            _shared->SetLastError(VE_APM_ERROR, kTraceError,
-                "Init() failed to set AGC state for AP module");
-            return -1;
-        }
-        // VAD
-        if (_shared->audio_processing()->voice_detection()->Enable(
-                WEBRTC_VOICE_ENGINE_VAD_DEFAULT_STATE)
-                != 0)
-        {
-            _shared->SetLastError(VE_APM_ERROR, kTraceError,
-                "Init() failed to set VAD state for AP module");
-            return -1;
-        }
+    // Set the error state for any failures in this block.
+    _shared->SetLastError(VE_APM_ERROR);
+    if (audioproc->echo_cancellation()->set_device_sample_rate_hz(48000)) {
+      LOG_FERR1(LS_ERROR, set_device_sample_rate_hz, 48000);
+      return -1;
+    }
+    // Assume 16 kHz mono until the audio frames are received from the capture
+    // device, at which point this can be updated.
+    if (audioproc->set_sample_rate_hz(16000)) {
+      LOG_FERR1(LS_ERROR, set_sample_rate_hz, 16000);
+      return -1;
+    }
+    if (audioproc->set_num_channels(1, 1) != 0) {
+      LOG_FERR2(LS_ERROR, set_num_channels, 1, 1);
+      return -1;
+    }
+    if (audioproc->set_num_reverse_channels(1) != 0) {
+      LOG_FERR1(LS_ERROR, set_num_reverse_channels, 1);
+      return -1;
     }
 
-  // Set default AGC mode for the ADM
+    // Configure AudioProcessing components. All are disabled by default.
+    if (audioproc->high_pass_filter()->Enable(true) != 0) {
+      LOG_FERR1(LS_ERROR, high_pass_filter()->Enable, true);
+      return -1;
+    }
+    if (audioproc->echo_cancellation()->enable_drift_compensation(false) != 0) {
+      LOG_FERR1(LS_ERROR, enable_drift_compensation, false);
+      return -1;
+    }
+    if (audioproc->noise_suppression()->set_level(kDefaultNsMode) != 0) {
+      LOG_FERR1(LS_ERROR, noise_suppression()->set_level, kDefaultNsMode);
+      return -1;
+    }
+    GainControl* agc = audioproc->gain_control();
+    if (agc->set_analog_level_limits(kMinVolumeLevel, kMaxVolumeLevel) != 0) {
+      LOG_FERR2(LS_ERROR, agc->set_analog_level_limits, kMinVolumeLevel,
+                kMaxVolumeLevel);
+      return -1;
+    }
+    if (agc->set_mode(kDefaultAgcMode) != 0) {
+      LOG_FERR1(LS_ERROR, agc->set_mode, kDefaultAgcMode);
+      return -1;
+    }
+    if (agc->Enable(kDefaultAgcState) != 0) {
+      LOG_FERR1(LS_ERROR, agc->Enable, kDefaultAgcState);
+      return -1;
+    }
+    _shared->SetLastError(0);  // Clear error state.
+
 #ifdef WEBRTC_VOICE_ENGINE_AGC
-    bool enable(false);
-    if (_shared->audio_processing()->gain_control()->mode()
-            != GainControl::kFixedDigital)
-    {
-        enable = _shared->audio_processing()->gain_control()->is_enabled();
-        // Only set the AGC mode for the ADM when Adaptive AGC mode is selected
-        if (_shared->audio_device()->SetAGC(enable) != 0)
-        {
-            _shared->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR,
-                kTraceError, "Init() failed to set default AGC mode in ADM 0");
-        }
+    bool agc_enabled = agc->mode() == GainControl::kAdaptiveAnalog &&
+                       agc->is_enabled();
+    if (_shared->audio_device()->SetAGC(agc_enabled) != 0) {
+      LOG_FERR1(LS_ERROR, audio_device()->SetAGC, agc_enabled);
+      _shared->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR);
+      return -1;
     }
 #endif
 
@@ -1578,9 +1506,7 @@ WebRtc_Word32 VoEBaseImpl::TerminateInternal()
         }
     }
 
-    // Audio Device Module
-
-    if (_shared->audio_device() != NULL)
+    if (_shared->audio_device())
     {
         if (_shared->audio_device()->StopPlayout() != 0)
         {
@@ -1607,15 +1533,10 @@ WebRtc_Word32 VoEBaseImpl::TerminateInternal()
             _shared->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR, kTraceError,
                 "TerminateInternal() failed to terminate the ADM");
         }
-       
         _shared->set_audio_device(NULL);
     }
 
-    // AP module
-
-    if (_shared->audio_processing() != NULL)
-    {
-        _shared->transmit_mixer()->SetAudioProcessingModule(NULL);
+    if (_shared->audio_processing()) {
         _shared->set_audio_processing(NULL);
     }
 

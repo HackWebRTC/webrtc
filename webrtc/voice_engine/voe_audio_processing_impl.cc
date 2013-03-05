@@ -79,11 +79,10 @@ int VoEAudioProcessingImpl::SetNsStatus(bool enable, NsModes mode) {
     return -1;
   }
 
-  NoiseSuppression::Level nsLevel(
-      (NoiseSuppression::Level)WEBRTC_VOICE_ENGINE_NS_DEFAULT_MODE);
+  NoiseSuppression::Level nsLevel = kDefaultNsMode;
   switch (mode) {
     case kNsDefault:
-      nsLevel = (NoiseSuppression::Level)WEBRTC_VOICE_ENGINE_NS_DEFAULT_MODE;
+      nsLevel = kDefaultNsMode;
       break;
     case kNsUnchanged:
       nsLevel = _shared->audio_processing()->noise_suppression()->level();
@@ -134,14 +133,9 @@ int VoEAudioProcessingImpl::GetNsStatus(bool& enabled, NsModes& mode) {
     return -1;
   }
 
-  bool enable(false);
-  NoiseSuppression::Level nsLevel(
-      (NoiseSuppression::Level)WEBRTC_VOICE_ENGINE_NS_DEFAULT_MODE);
-
-  enable = _shared->audio_processing()->noise_suppression()->is_enabled();
-  nsLevel = _shared->audio_processing()->noise_suppression()->level();
-
-  enabled = enable;
+  enabled = _shared->audio_processing()->noise_suppression()->is_enabled();
+  NoiseSuppression::Level nsLevel =
+      _shared->audio_processing()->noise_suppression()->level();
 
   switch (nsLevel) {
     case NoiseSuppression::kLow:
@@ -185,14 +179,13 @@ int VoEAudioProcessingImpl::SetAgcStatus(bool enable, AgcModes mode) {
   }
 #endif
 
-  GainControl::Mode agcMode(
-     (GainControl::Mode)WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE);
+  GainControl::Mode agcMode = kDefaultAgcMode;
   switch (mode) {
     case kAgcDefault:
-      agcMode = (GainControl::Mode)WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE;
+      agcMode = kDefaultAgcMode;
       break;
     case kAgcUnchanged:
-      agcMode = _shared->audio_processing()->gain_control()->mode();;
+      agcMode = _shared->audio_processing()->gain_control()->mode();
       break;
     case kAgcFixedDigital:
       agcMode = GainControl::kFixedDigital;
@@ -244,14 +237,8 @@ int VoEAudioProcessingImpl::GetAgcStatus(bool& enabled, AgcModes& mode) {
     return -1;
   }
 
-  bool enable(false);
-  GainControl::Mode agcMode(
-    (GainControl::Mode)WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE);
-
-  enable = _shared->audio_processing()->gain_control()->is_enabled();
-  agcMode = _shared->audio_processing()->gain_control()->mode();
-
-  enabled = enable;
+  enabled = _shared->audio_processing()->gain_control()->is_enabled();
+  GainControl::Mode agcMode = _shared->audio_processing()->gain_control()->mode();
 
   switch (agcMode) {
     case GainControl::kFixedDigital:

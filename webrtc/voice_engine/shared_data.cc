@@ -29,7 +29,7 @@ SharedData::SharedData() :
     _channelManager(_gInstanceCounter),
     _engineStatistics(_gInstanceCounter),
     _audioDevicePtr(NULL),
-    _audioProcessingModulePtr(NULL),
+    audioproc_(NULL),
     _moduleProcessThreadPtr(ProcessThread::CreateProcessThread()),
     _externalRecording(false),
     _externalPlayout(false)
@@ -56,7 +56,6 @@ SharedData::~SharedData()
     if (_audioDevicePtr) {
         _audioDevicePtr->Release();
     }
-    AudioProcessing::Destroy(_audioProcessingModulePtr);
     delete _apiCritPtr;
     ProcessThread::DestroyProcessThread(_moduleProcessThreadPtr);
     Trace::ReturnTrace();
@@ -72,10 +71,10 @@ void SharedData::set_audio_device(AudioDeviceModule* audio_device)
     _audioDevicePtr = audio_device;
 }
 
-void SharedData::set_audio_processing(AudioProcessing* audio_processing) {
-    if (_audioProcessingModulePtr)
-      AudioProcessing::Destroy(_audioProcessingModulePtr);
-    _audioProcessingModulePtr = audio_processing;
+void SharedData::set_audio_processing(AudioProcessing* audioproc) {
+  audioproc_.reset(audioproc);
+  _transmitMixerPtr->SetAudioProcessingModule(audioproc);
+  _outputMixerPtr->SetAudioProcessingModule(audioproc);
 }
 
 WebRtc_UWord16 SharedData::NumOfSendingChannels()
