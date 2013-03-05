@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_ECHO_CANCELLATION_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_ECHO_CANCELLATION_IMPL_H_
 
-#include "audio_processing.h"
-#include "processing_component.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/modules/audio_processing/processing_component.h"
 
 namespace webrtc {
 class AudioProcessingImpl;
@@ -51,6 +51,7 @@ class EchoCancellationImpl : public EchoCancellation,
   virtual int enable_delay_logging(bool enable);
   virtual bool is_delay_logging_enabled() const;
   virtual int GetDelayMetrics(int* median, int* std);
+  virtual struct AecCore* aec_core() const;
 
   // ProcessingComponent implementation.
   virtual void* CreateHandle() const;

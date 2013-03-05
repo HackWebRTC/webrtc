@@ -313,6 +313,15 @@ int EchoCancellationImpl::GetDelayMetrics(int* median, int* std) {
   return apm_->kNoError;
 }
 
+struct AecCore* EchoCancellationImpl::aec_core() const {
+  CriticalSectionScoped crit_scoped(apm_->crit());
+  if (!is_component_enabled()) {
+    return NULL;
+  }
+  Handle* my_handle = static_cast<Handle*>(handle(0));
+  return WebRtcAec_aec_core(my_handle);
+}
+
 int EchoCancellationImpl::Initialize() {
   int err = ProcessingComponent::Initialize();
   if (err != apm_->kNoError || !is_component_enabled()) {

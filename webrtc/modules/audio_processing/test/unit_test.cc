@@ -805,6 +805,13 @@ TEST_F(ApmTest, EchoCancellation) {
   EXPECT_TRUE(apm_->echo_cancellation()->is_enabled());
   EXPECT_EQ(apm_->kNoError, apm_->echo_cancellation()->Enable(false));
   EXPECT_FALSE(apm_->echo_cancellation()->is_enabled());
+
+  EXPECT_EQ(apm_->kNoError, apm_->echo_cancellation()->Enable(true));
+  EXPECT_TRUE(apm_->echo_cancellation()->is_enabled());
+  EXPECT_TRUE(apm_->echo_cancellation()->aec_core() != NULL);
+  EXPECT_EQ(apm_->kNoError, apm_->echo_cancellation()->Enable(false));
+  EXPECT_FALSE(apm_->echo_cancellation()->is_enabled());
+  EXPECT_FALSE(apm_->echo_cancellation()->aec_core() != NULL);
 }
 
 TEST_F(ApmTest, EchoCancellationReportsCorrectDelays) {
