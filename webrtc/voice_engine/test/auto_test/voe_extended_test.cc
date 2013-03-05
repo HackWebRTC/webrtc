@@ -1159,64 +1159,6 @@ int VoEExtendedTest::TestBase() {
   ANL();
   ANL();
 
-  //////////////////////////////
-  // SetNetEQBGNMode
-  // GetNetEQBGNMode
-  TEST(SetNetEQBGNMode);
-  ANL();
-  TEST(GetNetEQBGNMode);
-  ANL();
-
-  NetEqBgnModes bgnMode;
-
-  ch = voe_base_->CreateChannel();
-
-  // invalid function calls (should fail)
-  TEST_MUSTPASS(!voe_base_->GetNetEQBGNMode(ch+1, bgnMode));
-  MARK();
-  TEST_MUSTPASS(!voe_base_->SetNetEQBGNMode(ch+1, kBgnOn));
-  MARK();
-
-  // verify default mode (should be kBgnOn)
-  TEST_MUSTPASS(voe_base_->GetNetEQBGNMode(ch, bgnMode));
-  MARK();
-  TEST_MUSTPASS(bgnMode != kBgnOn);
-  voe_base_->DeleteChannel(ch);
-
-  // ensure that default mode is set as soon as new channel is created
-  ch = voe_base_->CreateChannel();
-  TEST_MUSTPASS(voe_base_->GetNetEQBGNMode(ch, bgnMode));
-  MARK();
-  TEST_MUSTPASS(bgnMode != kBgnOn);
-  voe_base_->DeleteChannel(ch);
-
-  // verify Set/Get for all supported modes and max number of channels
-  for (i = 0; i < voe_base_->MaxNumOfChannels(); i++) {
-    ch = voe_base_->CreateChannel();
-
-    // verify Set/Get for all supported modes
-    TEST_MUSTPASS(voe_base_->SetNetEQBGNMode(i, kBgnOn));
-    MARK();
-    TEST_MUSTPASS(voe_base_->GetNetEQBGNMode(i, bgnMode));
-    MARK();
-    TEST_MUSTPASS(bgnMode != kBgnOn);
-    TEST_MUSTPASS(voe_base_->SetNetEQBGNMode(i, kBgnFade));
-    MARK();
-    TEST_MUSTPASS(voe_base_->GetNetEQBGNMode(i, bgnMode));
-    MARK();
-    TEST_MUSTPASS(bgnMode != kBgnFade);
-    TEST_MUSTPASS(voe_base_->SetNetEQBGNMode(i, kBgnOff));
-    MARK();
-    TEST_MUSTPASS(voe_base_->GetNetEQBGNMode(i, bgnMode));
-    MARK();
-    TEST_MUSTPASS(bgnMode != kBgnOff);
-    SleepMs(50);
-  }
-
-  for (i = 0; i < voe_base_->MaxNumOfChannels(); i++) {
-    voe_base_->DeleteChannel(i);
-  }
-
   // Verify real-time performance for all playout modes in full duplex
 
   ch = voe_base_->CreateChannel();

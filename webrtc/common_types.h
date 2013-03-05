@@ -437,18 +437,6 @@ enum NetEqModes             // NetEQ playout configurations
     kNetEqOff = 3,
 };
 
-enum NetEqBgnModes          // NetEQ Background Noise (BGN) configurations
-{
-    // BGN is always on and will be generated when the incoming RTP stream
-    // stops (default).
-    kBgnOn = 0,
-    // The BGN is faded to zero (complete silence) after a few seconds.
-    kBgnFade = 1,
-    // BGN is not used at all. Silence is produced after speech extrapolation
-    // has faded.
-    kBgnOff = 2,
-};
-
 enum OnHoldModes            // On Hold direction
 {
     kHoldSendAndPlay = 0,    // Put both sending and playing in on-hold state.

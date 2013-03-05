@@ -124,8 +124,6 @@ public:
 #endif
     WebRtc_Word32 SetNetEQPlayoutMode(NetEqModes mode);
     WebRtc_Word32 GetNetEQPlayoutMode(NetEqModes& mode);
-    WebRtc_Word32 SetNetEQBGNMode(NetEqBgnModes mode);
-    WebRtc_Word32 GetNetEQBGNMode(NetEqBgnModes& mode);
     WebRtc_Word32 SetOnHoldStatus(bool enable, OnHoldModes mode);
     WebRtc_Word32 GetOnHoldStatus(bool& enabled, OnHoldModes& mode);
     WebRtc_Word32 RegisterVoiceEngineObserver(VoiceEngineObserver& observer);

@@ -2142,34 +2142,6 @@ Channel::GetNetEQPlayoutMode(NetEqModes& mode)
 }
 
 WebRtc_Word32
-Channel::SetNetEQBGNMode(NetEqBgnModes mode)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::SetNetEQPlayoutMode()");
-    ACMBackgroundNoiseMode noiseMode(On);
-    switch (mode)
-    {
-        case kBgnOn:
-            noiseMode = On;
-            break;
-        case kBgnFade:
-            noiseMode = Fade;
-            break;
-        case kBgnOff:
-            noiseMode = Off;
-            break;
-    }
-    if (_audioCodingModule.SetBackgroundNoiseMode(noiseMode) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-            "SetBackgroundNoiseMode() failed to set noise mode");
-        return -1;
-    }
-    return 0;
-}
-
-WebRtc_Word32
 Channel::SetOnHoldStatus(bool enable, OnHoldModes mode)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -2247,28 +2219,6 @@ Channel::DeRegisterVoiceEngineObserver()
         return 0;
     }
     _voiceEngineObserverPtr = NULL;
-    return 0;
-}
-
-WebRtc_Word32
-Channel::GetNetEQBGNMode(NetEqBgnModes& mode)
-{
-  ACMBackgroundNoiseMode noiseMode(On);
-    _audioCodingModule.BackgroundNoiseMode(&noiseMode);
-    switch (noiseMode)
-    {
-        case On:
-            mode = kBgnOn;
-            break;
-        case Fade:
-            mode = kBgnFade;
-            break;
-        case Off:
-            mode = kBgnOff;
-            break;
-    }
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::GetNetEQBGNMode() => mode=%u", mode);
     return 0;
 }
 

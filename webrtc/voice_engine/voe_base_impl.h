@@ -79,10 +79,6 @@ public:
 
     virtual int GetNetEQPlayoutMode(int channel, NetEqModes& mode);
 
-    virtual int SetNetEQBGNMode(int channel, NetEqBgnModes mode);
-
-    virtual int GetNetEQBGNMode(int channel, NetEqBgnModes& mode);
-
     virtual int SetOnHoldStatus(int channel,
                                 bool enable,
                                 OnHoldModes mode = kHoldSendAndPlay);
