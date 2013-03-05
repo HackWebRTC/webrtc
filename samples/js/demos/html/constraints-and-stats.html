@@ -1,6 +1,9 @@
 <html>
 <head>
 <title>Constraints and Statistics</title>
+<!-- Load the polyfill to switch-hit between Chrome and Firefox -->
+<script src="../../base/adapter.js"></script>
+
 <script>
 var mystream;
 var pc1;
@@ -112,7 +115,7 @@ var statCollector = setInterval(function() {
   }
 
   display("No stream");
-  if (pc2 && pc2.remoteStreams[0]) {
+  if (pc2 && pc2.getRemoteStreams()[0]) {
     if (pc2.getStats) {
       display('No stats callback');
       pc2.getStats(function(stats) {
