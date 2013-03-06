@@ -41,7 +41,7 @@ class ViESyncModule : public Module {
   int VoiceChannel();
 
   // Set target delay for buffering mode (0 = real-time mode).
-  void SetTargetBufferingDelay(int target_delay_ms);
+  int SetTargetBufferingDelay(int target_delay_ms);
 
   // Implements Module.
   virtual WebRtc_Word32 TimeUntilNextProcess();

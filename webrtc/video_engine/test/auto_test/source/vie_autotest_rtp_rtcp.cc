@@ -686,6 +686,24 @@ void ViEAutoTest::ViERtpRtcpAPITest()
         tbChannel.videoChannel, false));
 
     // Buffering mode - sender side.
+    EXPECT_EQ(-1, ViE.rtp_rtcp->SetSenderBufferingMode(
+        invalid_channel_id, 0));
+    int invalid_delay = -1;
+    EXPECT_EQ(-1, ViE.rtp_rtcp->SetSenderBufferingMode(
+        tbChannel.videoChannel, invalid_delay));
+    invalid_delay = 15000;
+    EXPECT_EQ(-1, ViE.rtp_rtcp->SetSenderBufferingMode(
+        tbChannel.videoChannel, invalid_delay));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetSenderBufferingMode(
+        tbChannel.videoChannel, 5000));
+
+    // Buffering mode - receiver side.
+    // Run without VoE to verify it that does not crash, but return an error.
+    EXPECT_EQ(-1, ViE.rtp_rtcp->SetReceiverBufferingMode(
+        tbChannel.videoChannel, 0));
+    EXPECT_EQ(-1, ViE.rtp_rtcp->SetReceiverBufferingMode(
+        tbChannel.videoChannel, 2000));
+
     // Set VoE (required to set up stream-sync).
     webrtc::VoiceEngine* voice_engine = webrtc::VoiceEngine::Create();
     EXPECT_TRUE(NULL != voice_engine);
@@ -698,17 +716,6 @@ void ViEAutoTest::ViERtpRtcpAPITest()
     EXPECT_EQ(0, ViE.base->ConnectAudioChannel(tbChannel.videoChannel,
                                                audio_channel));
 
-    EXPECT_EQ(-1, ViE.rtp_rtcp->SetSenderBufferingMode(
-        invalid_channel_id, 0));
-    int invalid_delay = -1;
-    EXPECT_EQ(-1, ViE.rtp_rtcp->SetSenderBufferingMode(
-        tbChannel.videoChannel, invalid_delay));
-    invalid_delay = 15000;
-    EXPECT_EQ(-1, ViE.rtp_rtcp->SetSenderBufferingMode(
-        tbChannel.videoChannel, invalid_delay));
-    EXPECT_EQ(0, ViE.rtp_rtcp->SetSenderBufferingMode(
-        tbChannel.videoChannel, 5000));
-    // Buffering mode - receiver side.
     EXPECT_EQ(-1, ViE.rtp_rtcp->SetReceiverBufferingMode(
         invalid_channel_id, 0));
     EXPECT_EQ(-1, ViE.rtp_rtcp->SetReceiverBufferingMode(
@@ -718,6 +725,7 @@ void ViEAutoTest::ViERtpRtcpAPITest()
         tbChannel.videoChannel, invalid_delay));
     EXPECT_EQ(0, ViE.rtp_rtcp->SetReceiverBufferingMode(
         tbChannel.videoChannel, 5000));
+
     // Real-time mode - sender side.
     EXPECT_EQ(0, ViE.rtp_rtcp->SetSenderBufferingMode(
         tbChannel.videoChannel, 0));

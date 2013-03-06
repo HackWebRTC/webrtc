@@ -799,7 +799,8 @@ int ViEChannel::SetReceiverBufferingMode(int target_delay_ms) {
   }
   vcm_.SetNackSettings(max_nack_list_size, max_nack_reordering_threshold_);
   vcm_.SetMinReceiverDelay(target_delay_ms);
-  vie_sync_.SetTargetBufferingDelay(target_delay_ms);
+  if (vie_sync_.SetTargetBufferingDelay(target_delay_ms) < 0)
+    return -1;
   return 0;
 }
 
