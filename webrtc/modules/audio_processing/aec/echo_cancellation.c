@@ -85,7 +85,7 @@ WebRtc_Word32 WebRtcAec_Create(void **aecInst)
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
     aecpc->far_pre_buf_s16 = WebRtc_CreateBuffer(
-        PART_LEN2 + kResamplerBufferSize, sizeof(float));
+        PART_LEN2 + kResamplerBufferSize, sizeof(int16_t));
     if (!aecpc->far_pre_buf_s16) {
         WebRtcAec_Free(aecpc);
         aecpc = NULL;
