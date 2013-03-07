@@ -1380,8 +1380,8 @@ static int TimeToFrequencyDomain(AecmCore_t* aecm,
     int i = 0;
     int time_signal_scaling = 0;
 
-    WebRtc_Word32 tmp32no1;
-    WebRtc_Word32 tmp32no2;
+    WebRtc_Word32 tmp32no1 = 0;
+    WebRtc_Word32 tmp32no2 = 0;
 
     // In fft_buf, +16 for 32-byte alignment.
     WebRtc_Word16 fft_buf[PART_LEN4 + 16];
@@ -1476,7 +1476,7 @@ static int TimeToFrequencyDomain(AecmCore_t* aecm,
             __asm __volatile(
               "smulbb %[tmp32no1], %[real], %[real]\n\t"
               "smlabb %[tmp32no2], %[imag], %[imag], %[tmp32no1]\n\t"
-              :[tmp32no1]"=r"(tmp32no1),
+              :[tmp32no1]"+r"(tmp32no1),
                [tmp32no2]"=r"(tmp32no2)
               :[real]"r"(freq_signal[i].real),
                [imag]"r"(freq_signal[i].imag)
