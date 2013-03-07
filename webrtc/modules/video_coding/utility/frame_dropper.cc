@@ -15,12 +15,30 @@
 namespace webrtc
 {
 
+const float kDefaultKeyFrameSizeAvgKBits = 0.9f;
+const float kDefaultKeyFrameRatio = 0.99f;
+const float kDefaultDropRatioAlpha = 0.9f;
+const float kDefaultDropRatioMax = 0.96f;
+const float kDefaultMaxTimeToDropFrames = 4.0f;  // In seconds.
+
 FrameDropper::FrameDropper()
 :
-_keyFrameSizeAvgKbits(0.9f),
-_keyFrameRatio(0.99f),
-_dropRatio(0.9f, 0.96f),
-_enabled(true)
+_keyFrameSizeAvgKbits(kDefaultKeyFrameSizeAvgKBits),
+_keyFrameRatio(kDefaultKeyFrameRatio),
+_dropRatio(kDefaultDropRatioAlpha, kDefaultDropRatioMax),
+_enabled(true),
+_max_time_drops(kDefaultMaxTimeToDropFrames)
+{
+    Reset();
+}
+
+FrameDropper::FrameDropper(float max_time_drops)
+:
+_keyFrameSizeAvgKbits(kDefaultKeyFrameSizeAvgKBits),
+_keyFrameRatio(kDefaultKeyFrameRatio),
+_dropRatio(kDefaultDropRatioAlpha, kDefaultDropRatioMax),
+_enabled(true),
+_max_time_drops(max_time_drops)
 {
     Reset();
 }
@@ -138,6 +156,10 @@ FrameDropper::Leak(WebRtc_UWord32 inputFrameRate)
         _keyFrameCount--;
     }
     _accumulator -= T;
+    if (_accumulator < 0.0f)
+    {
+        _accumulator = 0.0f;
+    }
     UpdateRatio();
 }
 
@@ -191,10 +213,6 @@ FrameDropper::UpdateRatio()
     else
     {
         _dropRatio.Apply(1.0f, 0.0f);
-    }
-    if (_accumulator < 0.0f)
-    {
-        _accumulator = 0.0f;
     }
     _wasBelowMax = _accumulator < _accumulatorMax;
 }

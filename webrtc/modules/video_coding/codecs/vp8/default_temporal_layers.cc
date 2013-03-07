@@ -37,6 +37,7 @@ DefaultTemporalLayers::DefaultTemporalLayers(int numberOfTemporalLayers,
 }
 
 bool DefaultTemporalLayers::ConfigureBitrates(int bitrateKbit,
+                                              int max_bitrate_kbit,
                                               int framerate,
                                               vpx_codec_enc_cfg_t* cfg) {
   switch (number_of_temporal_layers_) {

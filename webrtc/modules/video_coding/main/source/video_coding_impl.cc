@@ -330,6 +330,10 @@ VideoCodingModuleImpl::RegisterSendCodec(const VideoCodec* sendCodec,
     _sendCodecType = sendCodec->codecType;
     int numLayers = (_sendCodecType != kVideoCodecVP8) ? 1 :
                         sendCodec->codecSpecific.VP8.numberOfTemporalLayers;
+    // Disable frame dropper if screensharing if we have layers.
+    bool disable_frame_dropper =
+        numLayers > 1 && sendCodec->mode == kScreensharing;
+    _mediaOpt.EnableFrameDropper(!disable_frame_dropper);
     _nextFrameTypes.clear();
     _nextFrameTypes.resize(VCM_MAX(sendCodec->numberOfSimulcastStreams, 1),
                            kVideoFrameDelta);

@@ -24,6 +24,7 @@ class FrameDropper
 {
 public:
     FrameDropper();
+    explicit FrameDropper(float max_time_drops);
     virtual ~FrameDropper() {}
 
     // Resets the FrameDropper to its initial state.
@@ -65,7 +66,6 @@ public:
     //                    if the DropFrame() function is used as
     //                    instruction of when to drop frames.
     virtual float ActualFrameRate(WebRtc_UWord32 inputFrameRate) const;
-
 
 private:
     void FillBucket(float inKbits, float outKbits);

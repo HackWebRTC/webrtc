@@ -113,7 +113,8 @@ int VP8EncoderImpl::SetRates(uint32_t new_bitrate_kbit,
   config_->rc_target_bitrate = new_bitrate_kbit;  // in kbit/s
 
 #if WEBRTC_LIBVPX_VERSION >= 971
-  temporal_layers_->ConfigureBitrates(new_bitrate_kbit, new_framerate, config_);
+  temporal_layers_->ConfigureBitrates(new_bitrate_kbit, codec_.maxBitrate,
+                                      new_framerate, config_);
 #endif
   codec_.maxFramerate = new_framerate;
 
@@ -190,8 +191,8 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   config_->rc_target_bitrate = inst->startBitrate;  // in kbit/s
 
 #if WEBRTC_LIBVPX_VERSION >= 971
-  temporal_layers_->ConfigureBitrates(inst->startBitrate, inst->maxFramerate,
-                                      config_);
+  temporal_layers_->ConfigureBitrates(inst->startBitrate, inst->maxBitrate,
+                                      inst->maxFramerate, config_);
 #endif
   // setting the time base of the codec
   config_->g_timebase.num = 1;

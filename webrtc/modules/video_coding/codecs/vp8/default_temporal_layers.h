@@ -27,6 +27,7 @@ class DefaultTemporalLayers : public TemporalLayers {
   virtual int EncodeFlags(uint32_t timestamp);
 
   virtual bool ConfigureBitrates(int bitrate_kbit,
+                                 int max_bitrate_kbit,
                                  int framerate,
                                  vpx_codec_enc_cfg_t* cfg);
 
