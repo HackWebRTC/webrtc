@@ -19,13 +19,14 @@ button {
 <div id="dialingPad"></div>
 <br><br>
 duration:
-<input type="text" id="dtmf-tones-duration" size="10" value="100"/>
+<input type="text" id="dtmf-tones-duration" size="10" value="500"/>
 <br><br>
 tone-gap:
 <input type="text" id="dtmf-tones-gap" size="10" value="50"/>
 <br><br>
 tones:
-<input type="text" id="dtmf-tones" size="10" value="123,abc"/>
+<input type="text" id="dtmf-tones" size="10"
+  value="1199##9,6633221,9966332,9966332,1199##9,6633221"/>
 <button id="sendTones" 
   onclick="sendTone(document.getElementById('dtmf-tones').value)">Send tones
   </button>
