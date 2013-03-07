@@ -23,7 +23,6 @@ import re
 import shlex
 import subprocess
 import sys
-import threading
 import time
 
 import perf.perf_utils
@@ -49,7 +48,7 @@ def main(argv):
                     help='command-line arguments for comparison tool')
   parser.add_option('--regexp',
                     help='regular expression to extract the comparison metric')
-  (options, args) = parser.parse_args(argv[1:])
+  options, _ = parser.parse_args(argv[1:])
 
   # Get the initial default capture device, to restore later.
   command = ['pacmd', 'list-sources']

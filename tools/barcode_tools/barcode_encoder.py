@@ -9,7 +9,6 @@
 
 import optparse
 import os
-import subprocess
 import sys
 
 import helper_functions
@@ -41,7 +40,7 @@ def generate_upca_barcodes(number_of_barcodes, barcode_width, barcode_height,
   """
   base_file_name = os.path.join(output_directory, "barcode_")
   jars = helper_functions.form_jars_string(path_to_zxing)
-  command_line_encoder ='com.google.zxing.client.j2se.CommandLineEncoder'
+  command_line_encoder = 'com.google.zxing.client.j2se.CommandLineEncoder'
   barcode_width = str(barcode_width)
   barcode_height = str(barcode_height)
 
@@ -109,7 +108,7 @@ def _convert_to_yuv_and_delete(output_directory, file_name, pattern):
   try:
     helper_functions.run_shell_command(
         command, msg=('Error during PNG to YUV conversion of %s' %
-                       file_name));
+                      file_name))
     os.remove(file_name)
   except helper_functions.HelperError, err:
     print >> sys.stderr, err
@@ -154,7 +153,7 @@ def _add_to_file_and_delete(output_file, file_name):
   input_file.close()
   try:
     os.remove(file_name)
-  except Exception as e:
+  except Exception:
     sys.stderr.write('Error in deleting file %s' % file_name)
     return False
   return True

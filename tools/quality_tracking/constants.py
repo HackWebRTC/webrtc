@@ -10,8 +10,6 @@
 
 """Contains tweakable constants for quality dashboard utility scripts."""
 
-__author__ = 'phoglund@webrtc.org (Patrik Höglund)'
-
 # This identifies our application using the information we got when we
 # registered the application on Google appengine.
 DASHBOARD_SERVER = 'webrtc-dashboard.appspot.com'

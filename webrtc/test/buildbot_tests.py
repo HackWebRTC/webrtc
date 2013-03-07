@@ -74,7 +74,7 @@ def main():
                     help='Lists all currently supported tests.')
   parser.add_option('-t', '--test', action='append', default=[],
                     help='Which test to run. May be specified multiple times.')
-  options, unused_args = parser.parse_args()
+  options, _ = parser.parse_args()
 
   if sys.platform.startswith('win'):
     test_dict = _WIN_TESTS

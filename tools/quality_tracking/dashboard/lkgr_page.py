@@ -10,8 +10,6 @@
 
 """Implements the LKGR page."""
 
-__author__ = 'phoglund@webrtc.org (Patrik Höglund)'
-
 import webapp2
 
 import load_build_status

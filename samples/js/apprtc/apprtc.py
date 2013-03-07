@@ -2,15 +2,12 @@
 #
 # Copyright 2011 Google Inc. All Rights Reserved.
 
-# pylint: disable-msg=C6310
-
 """WebRTC Demo
 
 This module demonstrates the WebRTC API by implementing a simple video chat app.
 """
 
 import cgi
-import datetime
 import logging
 import os
 import random
@@ -26,13 +23,13 @@ jinja_environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 
 # Lock for syncing DB operation in concurrent requests handling.
-# TODO(brave): keeping working on improving performance with thread syncing. 
+# TODO(brave): keeping working on improving performance with thread syncing.
 # One possible method for near future is to reduce the message caching.
 LOCK = threading.RLock()
 
-def generate_random(len):
+def generate_random(length):
   word = ''
-  for i in range(len):
+  for _ in range(length):
     word += random.choice('0123456789')
   return word
 
@@ -66,18 +63,19 @@ def make_loopback_answer(message):
 def maybe_add_fake_crypto(message):
   if message.find("a=crypto") == -1:
     index = len(message)
-    crypto_line = "a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:BAADBAADBAADBAADBAADBAADBAADBAADBAADBAAD\\r\\n"
+    crypto_line = ("a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:"
+                   "BAADBAADBAADBAADBAADBAADBAADBAADBAADBAAD\\r\\n")
     # reverse find for multiple find and insert operations.
-    index = message.rfind("c=IN", 0, index) 
-    while (index != -1):          
+    index = message.rfind("c=IN", 0, index)
+    while (index != -1):
       message = message[:index] + crypto_line + message[index:]
-      index = message.rfind("c=IN", 0, index) 
+      index = message.rfind("c=IN", 0, index)
   return message
 
 def handle_message(room, user, message):
   message_obj = json.loads(message)
   other_user = room.get_other_user(user)
-  room_key = room.key().id_or_name();
+  room_key = room.key().id_or_name()
   if message_obj['type'] == 'bye':
     # This would remove the other_user in loopback test too.
     # So check its availability before forwarding Bye message.
@@ -89,7 +87,7 @@ def handle_message(room, user, message):
       # Special case the loopback scenario.
       if other_user == user:
         message = make_loopback_answer(message)
-      # Workaround Chrome bug. 
+      # Workaround Chrome bug.
       # Insert a=crypto line into offer from FireFox.
       # TODO(juberti): Remove this call.
       message = maybe_add_fake_crypto(message)
@@ -108,14 +106,14 @@ def send_saved_messages(client_id):
   messages = get_saved_messages(client_id)
   for message in messages:
     channel.send_message(client_id, message.msg)
-    logging.info('Delivered saved message to ' + client_id);
+    logging.info('Delivered saved message to ' + client_id)
     message.delete()
 
 def on_message(room, user, message):
   client_id = make_client_id(room, user)
   if room.is_connected(user):
     channel.send_message(client_id, message)
-    logging.info('Delivered message to user ' + user);
+    logging.info('Delivered message to user ' + user)
   else:
     new_message = Message(client_id = client_id, msg = message)
     new_message.put()
@@ -128,7 +126,7 @@ def make_media_constraints(hd_video):
     # Demo with WHD by setting size with 1280x720.
     constraints['mandatory']['minHeight'] = 720
     constraints['mandatory']['minWidth'] = 1280
-    # Disabled for now due to weird stretching behavior on Mac. 
+    # Disabled for now due to weird stretching behavior on Mac.
     #else:
     # Demo with WVGA by setting Aspect Ration;
     #constraints['mandatory']['maxAspectRatio'] = 1.778
@@ -172,13 +170,13 @@ class Room(db.Model):
   user2_connected = db.BooleanProperty(default=False)
 
   def __str__(self):
-    str = '['
+    result = '['
     if self.user1:
-      str += "%s-%r" % (self.user1, self.user1_connected)
+      result += "%s-%r" % (self.user1, self.user1_connected)
     if self.user2:
-      str += ", %s-%r" % (self.user2, self.user2_connected)
-    str += ']'
-    return str
+      result += ", %s-%r" % (self.user2, self.user2_connected)
+    result += ']'
+    return result
 
   def get_occupancy(self):
     occupancy = 0
@@ -269,7 +267,8 @@ class DisconnectPage(webapp2.RequestHandler):
         logging.info('User ' + user + ' removed from room ' + room_key)
         logging.info('Room ' + room_key + ' has state ' + str(room))
         if other_user and other_user != user:
-          channel.send_message(make_client_id(room, other_user), '{"type":"bye"}')
+          channel.send_message(make_client_id(room, other_user),
+                               '{"type":"bye"}')
           logging.info('Sent BYE to ' + other_user)
     logging.warning('User ' + user + ' disconnected from room ' + room_key)
 
@@ -288,7 +287,6 @@ class MessagePage(webapp2.RequestHandler):
 
 class MainPage(webapp2.RequestHandler):
   """The main UI page, renders the 'index.html' template."""
-
   def get(self):
     """Renders the main page. When this page is shown, we create a new
     channel to push asynchronous updates to the client."""
@@ -353,7 +351,7 @@ class MainPage(webapp2.RequestHandler):
         self.response.out.write(template.render({ 'room_key': room_key }))
         logging.info('Room ' + room_key + ' is full')
         return
-    
+
     room_link = base_url + '/?r=' + room_key
     room_link = append_url_arguments(self.request, room_link)
     token = create_channel(room, user, token_timeout)

@@ -24,12 +24,9 @@
    /home/<build bot user>/www.
 """
 
-__author__ = 'phoglund@webrtc.org (Patrik Höglund)'
-
 import os
 import re
 import sys
-import time
 
 import constants
 import dashboard_connection
@@ -154,7 +151,7 @@ def _parse_args():
 
 
 if __name__ == '__main__':
-  report_category, directory_prefix = _parse_args()
-  if report_category:
-    _main(report_category, directory_prefix)
+  category, dir_prefix = _parse_args()
+  if category:
+    _main(category, dir_prefix)
 

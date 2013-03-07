@@ -17,17 +17,17 @@ class DataHelper(object):
 
   def __init__(self, data_list, table_description, names_list, messages):
     """ Initializes the DataHelper with data.
-    
+
     Args:
-      data_list: List of one or more data lists in the format that the 
+      data_list: List of one or more data lists in the format that the
         Google Visualization Python API expects (list of dictionaries, one
-        per row of data). See the gviz_api.DataTable documentation for more 
+        per row of data). See the gviz_api.DataTable documentation for more
         info.
       table_description: dictionary describing the data types of all
         columns in the data lists, as defined in the gviz_api.DataTable
         documentation.
       names_list: List of strings of what we're going to name the data
-        columns after. Usually different runs of data collection. 
+        columns after. Usually different runs of data collection.
       messages: List of strings we might append error messages to.
     """
     self.data_list = data_list
@@ -36,29 +36,29 @@ class DataHelper(object):
     self.messages = messages
     self.number_of_datasets = len(data_list)
     self.number_of_frames = len(data_list[0])
-    
+
   def CreateData(self, field_name, start_frame=0, end_frame=0):
     """ Creates a data structure for a specified data field.
-    
-    Creates a data structure (data type description dictionary and a list 
-    of data dictionaries) to be used with the Google Visualization Python 
+
+    Creates a data structure (data type description dictionary and a list
+    of data dictionaries) to be used with the Google Visualization Python
     API. The frame_number column is always present and one column per data
-    set is added and its field name is suffixed by _N where N is the number 
+    set is added and its field name is suffixed by _N where N is the number
     of the data set (0, 1, 2...)
-    
+
     Args:
       field_name: String name of the field, must be present in the data
         structure this DataHelper was created with.
       start_frame: Frame number to start at (zero indexed). Default: 0.
-      end_frame: Frame number to be the last frame. If zero all frames 
+      end_frame: Frame number to be the last frame. If zero all frames
         will be included. Default: 0.
-        
+
     Returns:
       A tuple containing:
       - a dictionary describing the columns in the data result_data_table below.
-        This description uses the name for each data set specified by 
-        names_list.  
-        
+        This description uses the name for each data set specified by
+        names_list.
+
         Example with two data sets named 'Foreman' and 'Crew':
         {
          'frame_number': ('number', 'Frame number'),
@@ -66,36 +66,36 @@ class DataHelper(object):
          'ssim_1': ('number', 'Crew'),
          }
       - a list containing dictionaries (one per row) with the frame_number
-        column and one column of the specified field_name column per data 
-        set. 
-        
+        column and one column of the specified field_name column per data
+        set.
+
         Example with two data sets named 'Foreman' and 'Crew':
         [
          {'frame_number': 0, 'ssim_0': 0.98, 'ssim_1': 0.77 },
          {'frame_number': 1, 'ssim_0': 0.81, 'ssim_1': 0.53 },
         ]
     """
-    
+
     # Build dictionary that describes the data types
-    result_table_description = {'frame_number': ('string', 'Frame number')} 
+    result_table_description = {'frame_number': ('string', 'Frame number')}
     for dataset_index in range(self.number_of_datasets):
       column_name = '%s_%s' % (field_name, dataset_index)
       column_type = self.table_description[field_name][0]
       column_description = self.names_list[dataset_index]
       result_table_description[column_name] = (column_type, column_description)
 
-    # Build data table of all the data        
+    # Build data table of all the data
     result_data_table = []
-    # We're going to have one dictionary per row. 
+    # We're going to have one dictionary per row.
     # Create that and copy frame_number values from the first data set
     for source_row in self.data_list[0]:
       row_dict = { 'frame_number': source_row['frame_number'] }
       result_data_table.append(row_dict)
-    
+
     # Pick target field data points from the all data tables
     if end_frame == 0:  # Default to all frames
       end_frame = self.number_of_frames
-      
+
     for dataset_index in range(self.number_of_datasets):
       for row_number in range(start_frame, end_frame):
         column_name = '%s_%s' % (field_name, dataset_index)
@@ -105,14 +105,14 @@ class DataHelper(object):
           self.data_list[dataset_index][row_number][field_name]
         except IndexError:
           self.messages.append("Couldn't find frame data for row %d "
-          "for %s" % (row_number, self.names_list[dataset_index])) 
+          "for %s" % (row_number, self.names_list[dataset_index]))
           break
     return result_table_description, result_data_table
 
-  def GetOrdering(self, table_description):
+  def GetOrdering(self, table_description):  # pylint: disable=R0201
     """ Creates a list of column names, ordered alphabetically except for the
       frame_number column which always will be the first column.
-     
+
       Args:
         table_description: A dictionary of column definitions as defined by the
           gviz_api.DataTable documentation.
@@ -121,9 +121,9 @@ class DataHelper(object):
         remaining columns are sorted alphabetically.
     """
     # The JSON data representation generated from gviz_api.DataTable.ToJSon()
-    # must have frame_number as its first column in order for the chart to 
+    # must have frame_number as its first column in order for the chart to
     # use it as it's X-axis value series.
-    # gviz_api.DataTable orders the columns by name by default, which will 
+    # gviz_api.DataTable orders the columns by name by default, which will
     # be incorrect if we have column names that are sorted before frame_number
     # in our data table.
     columns_ordering = ['frame_number']
@@ -132,8 +132,8 @@ class DataHelper(object):
       if column != 'frame_number':
         columns_ordering.append(column)
     return columns_ordering
-  
-  def CreateConfigurationTable(self, configurations):
+
+  def CreateConfigurationTable(self, configurations):  # pylint: disable=R0201
     """ Combines multiple test data configurations for display.
 
     Args:
@@ -175,9 +175,9 @@ class DataHelper(object):
     for configuration in configurations:
       data = {}
       result_data.append(data)
-      for dict in configuration:
-        name = dict['name']
-        value = dict['value']
+      for values in configuration:
+        name = values['name']
+        value = values['value']
         result_description[name] = 'string'
         data[name] = value
     return result_description, result_data

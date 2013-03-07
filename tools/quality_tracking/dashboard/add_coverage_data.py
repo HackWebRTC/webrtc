@@ -10,8 +10,6 @@
 
 """Implements a handler for adding coverage data."""
 
-__author__ = 'phoglund@webrtc.org (Patrik Höglund)'
-
 from datetime import datetime
 import logging
 
@@ -24,7 +22,6 @@ REPORT_CATEGORIES = ('small_medium_tests', 'large_tests')
 
 class CoverageData(db.Model):
   """This represents one coverage report from the build bot."""
-
   # The date the report was made.
   date = db.DateTimeProperty(required=True)
 
@@ -52,7 +49,6 @@ class AddCoverageData(oauth_post_request_handler.OAuthPostRequestHandler):
      function_coverage: Function coverage percentage.
      branch_coverage: Branch coverage percentage.
   """
-
   def _parse_and_store_data(self):
     try:
       request_posix_timestamp = float(self.request.get('oauth_timestamp'))
@@ -77,7 +73,8 @@ class AddCoverageData(oauth_post_request_handler.OAuthPostRequestHandler):
 
   def _parse_percentage(self, key):
     """Parses out a percentage value from the request."""
-    percentage = float(self.request.get(key))
+    string_value = self.request.get(key)
+    percentage = float(string_value)
     if percentage < 0.0 or percentage > 100.0:
       raise ValueError('%s is not a valid percentage.' % string_value)
     return percentage

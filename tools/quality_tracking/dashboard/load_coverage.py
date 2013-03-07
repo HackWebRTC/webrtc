@@ -10,18 +10,14 @@
 
 """Loads coverage data from the database."""
 
-__author__ = 'phoglund@webrtc.org (Patrik Höglund)'
-
-import logging
-
 from google.appengine.ext import db
 import gviz_api
 
 
 class CoverageDataLoader:
   """ Loads coverage data from the database."""
-
-  def load_coverage_json_data(self, report_category):
+  @staticmethod
+  def load_coverage_json_data(report_category):
     coverage_entries = db.GqlQuery('SELECT * '
                                    'FROM CoverageData '
                                    'WHERE report_category = :1 '

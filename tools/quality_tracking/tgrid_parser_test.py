@@ -13,8 +13,6 @@
    Compatible with build bot 0.8.4 P1.
 """
 
-__author__ = 'phoglund@webrtc.org (Patrik Höglund)'
-
 import unittest
 
 import tgrid_parser
@@ -504,7 +502,7 @@ MINIMAL_IN_TRUNK_SOURCESTAMP = """
 class TGridParserTest(unittest.TestCase):
   def test_parser_throws_exception_on_empty_html(self):
     self.assertRaises(tgrid_parser.FailedToParseBuildStatus,
-                      tgrid_parser.parse_tgrid_page, '');
+                      tgrid_parser.parse_tgrid_page, '')
 
   def test_parser_finds_successful_bot(self):
     result = tgrid_parser.parse_tgrid_page(MINIMAL_OK)
@@ -557,17 +555,6 @@ class TGridParserTest(unittest.TestCase):
     # the build was successful AND the slave was lost. In this case the build
     # is not actually successful, so treat it as such.
     result = tgrid_parser.parse_tgrid_page(MINIMAL_EXCEPTION_SLAVE_LOST)
-
-    self.assertEqual(1, len(result), 'There is only one bot in the sample.')
-    first_mapping = result.items()[0]
-
-    self.assertEqual('1576--LinuxValgrind', first_mapping[0])
-    self.assertEqual('324--failed', first_mapping[1])
-
-  def test_parser_finds_exception_slave_lost_and_maps_to_failed(self):
-    # Sometimes the transposed grid says "in trunk" in the source stamp, so
-    # make sure we deal with that.
-    result = tgrid_parser.parse_tgrid_page(MINIMAL_IN_TRUNK_SOURCESTAMP)
 
     self.assertEqual(1, len(result), 'There is only one bot in the sample.')
     first_mapping = result.items()[0]

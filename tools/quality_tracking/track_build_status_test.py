@@ -29,6 +29,7 @@ class TrackBuildStatusTest(unittest.TestCase):
   def test_get_desired_bots(self):
     bot_to_status_mapping = copy.deepcopy(NORMAL_BOT_TO_STATUS_MAPPING)
     desired_bot_names = ['Linux32 Debug']
+    # pylint: disable=W0212
     result = track_build_status._filter_undesired_bots(bot_to_status_mapping,
                                                        desired_bot_names)
     self.assertEquals(1, len(result))

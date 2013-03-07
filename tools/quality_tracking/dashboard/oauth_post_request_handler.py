@@ -10,8 +10,6 @@
 
 """Provides a OAuth request handler base class."""
 
-__author__ = 'phoglund@webrtc.org (Patrik Höglund)'
-
 from google.appengine.api import oauth
 import logging
 import webapp2
@@ -34,6 +32,8 @@ class OAuthPostRequestHandler(webapp2.RequestHandler):
      The handler will accept an OAuth request if it is correctly formed and
      the consumer is acting on behalf of an administrator for the dashboard.
   """
+  def __init__(self):
+    pass
 
   def post(self):
     try:
@@ -50,7 +50,8 @@ class OAuthPostRequestHandler(webapp2.RequestHandler):
     """Reads data from POST request and responds accordingly."""
     raise NotImplementedError('You must override this method!')
 
-  def _authenticate_user(self):
+  @staticmethod
+  def _authenticate_user():
     try:
       if oauth.is_current_user_admin():
         # The user on whose behalf we are acting is indeed an administrator

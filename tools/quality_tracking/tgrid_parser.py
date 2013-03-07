@@ -13,8 +13,6 @@
    Compatible with build bot 0.8.4 P1.
 """
 
-__author__ = 'phoglund@webrtc.org (Patrik Höglund)'
-
 import re
 import urllib
 

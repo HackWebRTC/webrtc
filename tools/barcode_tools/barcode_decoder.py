@@ -77,7 +77,7 @@ def decode_frames(barcode_width, barcode_height, input_directory='.',
     (bool): True if the decoding went without errors.
   """
   jars = helper_functions.form_jars_string(path_to_zxing)
-  command_line_decoder ='com.google.zxing.client.j2se.CommandLineRunner'
+  command_line_decoder = 'com.google.zxing.client.j2se.CommandLineRunner'
   return helper_functions.perform_action_on_all_files(
       directory=input_directory, file_pattern='frame_',
       file_extension='png', start_number=1, action=_decode_barcode_in_file,

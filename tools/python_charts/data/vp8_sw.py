@@ -1,6 +1,7 @@
 # Sample output from the video_quality_measurment program, included only for
 # reference. Geneate your own by running with the --python flag and then change
 # the filenames in main.py
+
 test_configuration = [{'name': 'name',                      'value': 'VP8 software test'},
 {'name': 'description',               'value': ''},
 {'name': 'test_number',               'value': '0'},

@@ -80,7 +80,8 @@ class NetworkEmulator(object):
                                                   'any', self._port_range)
     logging.debug('Created outgoing rule: %s', outgoing_rule_id)
 
-  def check_permissions(self):
+  @staticmethod
+  def check_permissions():
     """Checks if permissions are available to run Dummynet commands.
 
     Raises:
@@ -88,19 +89,20 @@ class NetworkEmulator(object):
       available.
     """
     if os.geteuid() != 0:
-      self._run_shell_command(
+      _run_shell_command(
           ['sudo', '-n', 'ipfw', '-h'],
           msg=('Cannot run \'ipfw\' command. This script must be run as '
                'root or have password-less sudo access to this command.'))
 
-  def cleanup(self):
+  @staticmethod
+  def cleanup():
     """Stops the network emulation by flushing all Dummynet rules.
 
     Notice that this will flush any rules that may have been created previously
     before starting the emulation.
     """
-    self._run_shell_command(['sudo', 'ipfw', '-f', 'flush'],
-                            'Failed to flush Dummynet rules!')
+    _run_shell_command(['sudo', 'ipfw', '-f', 'flush'],
+                        'Failed to flush Dummynet rules!')
 
   def _create_dummynet_rule(self, pipe_id, from_address, to_address,
                             port_range):
@@ -121,10 +123,10 @@ class NetworkEmulator(object):
     self._rule_counter += 100
     add_part = ['sudo', 'ipfw', 'add', self._rule_counter, 'pipe', pipe_id,
                 'ip', 'from', from_address, 'to', to_address]
-    self._run_shell_command(add_part + ['src-port', '%s-%s' % port_range],
-                            'Failed to add Dummynet src-port rule.')
-    self._run_shell_command(add_part + ['dst-port', '%s-%s' % port_range],
-                            'Failed to add Dummynet dst-port rule.')
+    _run_shell_command(add_part + ['src-port', '%s-%s' % port_range],
+                       'Failed to add Dummynet src-port rule.')
+    _run_shell_command(add_part + ['dst-port', '%s-%s' % port_range],
+                       'Failed to add Dummynet dst-port rule.')
     return self._rule_counter
 
   def _create_dummynet_pipe(self, bandwidth_kbps, delay_ms, packet_loss_percent,
@@ -149,30 +151,31 @@ class NetworkEmulator(object):
     if sys.platform.startswith('linux'):
       error_message += ('Make sure you have loaded the ipfw_mod.ko module to '
                         'your kernel (sudo insmod /path/to/ipfw_mod.ko)')
-    self._run_shell_command(cmd, error_message)
+    _run_shell_command(cmd, error_message)
     return self._pipe_counter
 
-  def _run_shell_command(self, command, msg=None):
-    """Executes a command.
 
-    Args:
-      command: Command list to execute.
-      msg: Message describing the error in case the command fails.
+def _run_shell_command(command, msg=None):
+  """Executes a command.
 
-    Returns:
-      The standard output from running the command.
+  Args:
+    command: Command list to execute.
+    msg: Message describing the error in case the command fails.
 
-    Raises:
-      NetworkEmulatorError: If command fails. Message is set by the msg
-        parameter.
-    """
-    cmd_list = [str(x) for x in command]
-    cmd = ' '.join(cmd_list)
-    logging.debug('Running command: %s', cmd)
+  Returns:
+    The standard output from running the command.
 
-    process = subprocess.Popen(cmd_list, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
-    output, error = process.communicate()
-    if process.returncode != 0:
-      raise NetworkEmulatorError(msg, cmd, process.returncode, output, error)
-    return output.strip()
+  Raises:
+    NetworkEmulatorError: If command fails. Message is set by the msg
+      parameter.
+  """
+  cmd_list = [str(x) for x in command]
+  cmd = ' '.join(cmd_list)
+  logging.debug('Running command: %s', cmd)
+
+  process = subprocess.Popen(cmd_list, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+  output, error = process.communicate()
+  if process.returncode != 0:
+    raise NetworkEmulatorError(msg, cmd, process.returncode, output, error)
+  return output.strip()

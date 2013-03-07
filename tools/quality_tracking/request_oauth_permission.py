@@ -30,8 +30,6 @@
    will be 'access_token' and 'consumer_secret', respectively.
 """
 
-__author__ = 'phoglund@webrtc.org (Patrik Höglund)'
-
 import shelve
 import sys
 import urlparse

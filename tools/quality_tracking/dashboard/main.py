@@ -10,8 +10,6 @@
 
 """Connects all URLs with their respective handlers."""
 
-__author__ = 'phoglund@webrtc.org (Patrik Höglund)'
-
 from google.appengine.ext.webapp import template
 import webapp2
 

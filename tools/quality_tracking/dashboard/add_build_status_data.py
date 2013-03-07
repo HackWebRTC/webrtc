@@ -10,8 +10,6 @@
 
 """Implements a handler for adding build status data."""
 
-__author__ = 'phoglund@webrtc.org (Patrik Höglund)'
-
 import datetime
 import logging
 
@@ -126,7 +124,6 @@ class AddBuildStatusData(oauth_post_request_handler.OAuthPostRequestHandler):
     undesirable since we don't want multiple statuses for one bot-revision
     combination. Now we will effectively update the bot's status instead.
   """
-
   def _parse_and_store_data(self):
     build_status_root = _ensure_build_status_root_exists()
     build_status_data = _filter_oauth_parameters(self.request.arguments())

@@ -10,8 +10,6 @@
 
 """Loads build status data for the dashboard."""
 
-__author__ = 'phoglund@webrtc.org (Patrik Höglund)'
-
 from google.appengine.ext import db
 
 
@@ -32,8 +30,11 @@ def _get_first_entry(iterable):
 
 class BuildStatusLoader:
   """ Loads various build status data from the database."""
+  def __init__(self):
+    pass
 
-  def load_build_status_data(self):
+  @staticmethod
+  def load_build_status_data():
     """Returns the latest conclusive build status for each bot.
 
        The statuses OK, failed and warnings are considered to be conclusive.
@@ -76,7 +77,8 @@ class BuildStatusLoader:
 
     return bots_to_latest_conclusive_entry.values()
 
-  def load_last_modified_at(self):
+  @staticmethod
+  def load_last_modified_at():
     build_status_root = db.GqlQuery('SELECT * '
                                     'FROM BuildStatusRoot').get()
     if not build_status_root:
@@ -85,7 +87,8 @@ class BuildStatusLoader:
 
     return build_status_root.last_updated_at
 
-  def compute_lkgr(self):
+  @staticmethod
+  def compute_lkgr():
     """ Finds the most recent revision for which all bots are green.
 
         Returns:
