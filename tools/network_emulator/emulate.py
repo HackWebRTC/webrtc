@@ -9,14 +9,15 @@
 
 """Script for constraining traffic on the local machine."""
 
+
 import logging
 import optparse
-import os
 import socket
 import sys
 
 import config
 import network_emulator
+
 
 _DEFAULT_LOG_LEVEL = logging.INFO
 
@@ -68,7 +69,7 @@ def _parse_args():
       'ID Name                       Receive     Send    Queue  Delay   loss \n'
       '-- ----                      ---------   -------- ----- ------- ------\n'
       '%s\n' % presets_string))
-  parser.add_option('-p', '--preset', type='int', default=2,
+  parser.add_option('-p', '--preset', type='int', default=_DEFAULT_PRESET_ID,
                     help=('ConnectionConfig configuration, specified by ID. '
                           'Default: %default'))
   parser.add_option('-r', '--receive-bw', type='int',
@@ -98,11 +99,11 @@ def _parse_args():
 
   options = parser.parse_args()[0]
 
-  # Find preset by ID, if specified:
+  # Find preset by ID, if specified.
   if options.preset and not _PRESETS_DICT.has_key(options.preset):
     parser.error('Invalid preset: %s' % options.preset)
 
-  # Simple validation of the IP address, if supplied:
+  # Simple validation of the IP address, if supplied.
   if options.target_ip:
     try:
       socket.inet_aton(options.target_ip)
@@ -133,27 +134,21 @@ def _set_logger(verbose):
 
 
 def _main():
-  """Checks arguments, permissions and runs a network emulation."""
-  if os.name != 'posix':
-    print >> sys.stderr, 'This script is only supported on Linux and Mac.'
-    return 1
-
   options = _parse_args()
 
   # Build a configuration object. Override any preset configuration settings if
   # a value of a setting was also given as a flag.
   connection_config = _PRESETS_DICT[options.preset]
-  if options.receive_bw:
+  if options.receive_bw is not _DEFAULT_PRESET.receive_bw_kbps:
     connection_config.receive_bw_kbps = options.receive_bw
-  if options.send_bw:
+  if options.send_bw is not _DEFAULT_PRESET.send_bw_kbps:
     connection_config.send_bw_kbps = options.send_bw
-  if options.delay:
+  if options.delay is not _DEFAULT_PRESET.delay_ms:
     connection_config.delay_ms = options.delay
-  if options.packet_loss:
+  if options.packet_loss is not _DEFAULT_PRESET.packet_loss_percent:
     connection_config.packet_loss_percent = options.packet_loss
-  if options.queue:
+  if options.queue is not _DEFAULT_PRESET.queue_slots:
     connection_config.queue_slots = options.queue
-
   emulator = network_emulator.NetworkEmulator(connection_config,
                                               options.port_range)
   try:
