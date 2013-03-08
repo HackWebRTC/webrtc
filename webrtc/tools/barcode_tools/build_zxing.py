@@ -27,8 +27,9 @@ def run_ant_build_command(path_to_ant_build_file):
     if process.returncode != 0:
       print >> sys.stderr, 'Failed to execute: %s' % ' '.join(cmd)
     return process.returncode
-  except Exception:
-    print >> sys.stderr, 'Failed to execute: %s' % ' '.join(cmd)
+  except subprocess.CalledProcessError as e:
+    print >> sys.stderr, 'Failed to execute: %s.\nCause: %s' % (' '.join(cmd),
+                                                                e)
     return -1
 
 def _main():

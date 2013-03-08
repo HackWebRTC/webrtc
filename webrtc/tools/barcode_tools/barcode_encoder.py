@@ -39,7 +39,7 @@ def generate_upca_barcodes(number_of_barcodes, barcode_width, barcode_height,
     (bool): True if the conversion is successful.
   """
   base_file_name = os.path.join(output_directory, "barcode_")
-  jars = helper_functions.form_jars_string(path_to_zxing)
+  jars = _form_jars_string(path_to_zxing)
   command_line_encoder = 'com.google.zxing.client.j2se.CommandLineEncoder'
   barcode_width = str(barcode_width)
   barcode_height = str(barcode_height)
@@ -57,8 +57,8 @@ def generate_upca_barcodes(number_of_barcodes, barcode_width, barcode_height,
                "--output=%s" % (output_file_name), "%s" % (content)]
     try:
       helper_functions.run_shell_command(
-          command, msg=('Error during barcode %s generation' % content))
-    except helper_functions.HelperError, err:
+          command, fail_msg=('Error during barcode %s generation' % content))
+    except helper_functions.HelperError as err:
       print >> sys.stderr, err
       errors = True
   return not errors
@@ -107,10 +107,10 @@ def _convert_to_yuv_and_delete(output_directory, file_name, pattern):
              '%s' % (yuv_file_name)]
   try:
     helper_functions.run_shell_command(
-        command, msg=('Error during PNG to YUV conversion of %s' %
-                      file_name))
+        command, fail_msg=('Error during PNG to YUV conversion of %s' %
+                           file_name))
     os.remove(file_name)
-  except helper_functions.HelperError, err:
+  except helper_functions.HelperError as err:
     print >> sys.stderr, err
     return False
   return True
@@ -153,8 +153,8 @@ def _add_to_file_and_delete(output_file, file_name):
   input_file.close()
   try:
     os.remove(file_name)
-  except Exception:
-    sys.stderr.write('Error in deleting file %s' % file_name)
+  except OSError as e:
+    print >> sys.stderr, 'Error deleting file %s.\nError: %s' % (file_name, e)
     return False
   return True
 
@@ -257,6 +257,21 @@ def calculate_frames_number_from_yuv(yuv_width, yuv_height, file_name):
   frame_size = y_plane_size + (2 * u_plane_size)
   return int(file_size/frame_size)  # Should be int anyway
 
+
+def _form_jars_string(path_to_zxing):
+  """Forms the the Zxing core and javase jars argument.
+
+  Args:
+    path_to_zxing(string): The path to the Zxing checkout folder.
+  Return:
+    (string): The newly formed jars argument.
+  """
+  javase_jar = os.path.join(path_to_zxing, "javase", "javase.jar")
+  core_jar = os.path.join(path_to_zxing, "core", "core.jar")
+  delimiter = ':'
+  if os.name != 'posix':
+    delimiter = ';'
+  return javase_jar + delimiter + core_jar
 
 def _parse_args():
   """Registers the command-line options."""

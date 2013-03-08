@@ -13,11 +13,9 @@ import sys
 
 import helper_functions
 
-_DEFAULT_BARCODE_WIDTH = 352
-
 
 def convert_yuv_to_png_files(yuv_file_name, yuv_frame_width, yuv_frame_height,
-                             output_directory = '.'):
+                             output_directory, ffmpeg_dir=None):
   """Converts a YUV video file into PNG frames.
 
   The function uses ffmpeg to convert the YUV file. The output of ffmpeg is in
@@ -29,25 +27,25 @@ def convert_yuv_to_png_files(yuv_file_name, yuv_frame_width, yuv_frame_height,
     yuv_frame_height(int): The height of one YUV frame.
     output_directory(string): The output directory where the PNG frames will be
       stored.
+    ffmpeg_dir(string): The directory containing the ffmpeg executable. If
+      omitted, the PATH will be searched for it.
 
   Return:
     (bool): True if the conversion was OK.
   """
   size_string = str(yuv_frame_width) + 'x' + str(yuv_frame_height)
   output_files_pattern = os.path.join(output_directory, 'frame_%04d.png')
-  ffmpeg_executable = 'ffmpeg'
-  if sys.platform == 'win32':
-    if os.getenv('FFMPEG_HOME'):
-      ffmpeg_executable = os.path.join(os.getenv('FFMPEG_HOME'), 'bin',
-                                       'ffmpeg.exe')
-    else:
-      ffmpeg_executable = 'ffmpeg.exe'
+  ffmpeg_executable = 'ffmpeg.exe' if sys.platform == 'win32' else 'ffmpeg'
+  if ffmpeg_dir:
+    ffmpeg_executable = os.path.join(ffmpeg_dir, ffmpeg_executable)
   command = [ffmpeg_executable, '-s', '%s' % size_string, '-i', '%s'
              % yuv_file_name, '-f', 'image2', '-vcodec', 'png',
              '%s' % output_files_pattern]
   try:
+    print 'Converting YUV file to PNG images (may take a while)...'
+    print ' '.join(command)
     helper_functions.run_shell_command(
-        command, msg='Error during YUV to PNG conversion')
+        command, fail_msg='Error during YUV to PNG conversion')
   except helper_functions.HelperError, err:
     print >> sys.stderr, 'Error executing command: %s. Error: %s' % (command,
                                                                      err)
@@ -55,69 +53,55 @@ def convert_yuv_to_png_files(yuv_file_name, yuv_frame_width, yuv_frame_height,
   return True
 
 
-def decode_frames(barcode_width, barcode_height, input_directory='.',
-                  path_to_zxing='zxing-read-only'):
+def decode_frames(input_directory, zxing_dir=None):
   """Decodes the barcodes overlaid in each frame.
 
-  The function uses the example Java command-line tool from the Zxing
-  distribution to decode the barcode in every PNG frame from the input
-  directory. The frames should be named frame_xxxx.png, where xxxx is the frame
-  number. The frame numbers should be consecutive and should start from 0001.
+  The function uses the Zxing command-line tool from the Zxing C++ distribution
+  to decode the barcode in every PNG frame from the input directory. The frames
+  should be named frame_xxxx.png, where xxxx is the frame number. The frame
+  numbers should be consecutive and should start from 0001.
   The decoding results in a frame_xxxx.txt file for every successfully decoded
   barcode. This file contains the decoded barcode as 12-digit string (UPC-A
   format: 11 digits content + one check digit).
 
   Args:
-    barcode_width(int): Width of the barcode.
-    barcode_height(int): Height of the barcode.
     input_directory(string): The input directory from where the PNG frames are
       read.
-    path_to_zxing(string): The path to Zxing.
+    zxing_dir(string): The directory containing the zxing executable. If
+      omitted, the PATH will be searched for it.
   Return:
     (bool): True if the decoding went without errors.
   """
-  jars = helper_functions.form_jars_string(path_to_zxing)
-  command_line_decoder = 'com.google.zxing.client.j2se.CommandLineRunner'
+  zxing_executable = 'zxing.exe' if sys.platform == 'win32' else 'zxing'
+  if zxing_dir:
+    zxing_executable = os.path.join(zxing_dir, zxing_executable)
+  print 'Decoding barcodes from PNG files with %s...' % zxing_executable
   return helper_functions.perform_action_on_all_files(
       directory=input_directory, file_pattern='frame_',
       file_extension='png', start_number=1, action=_decode_barcode_in_file,
-      barcode_width=barcode_width, barcode_height=barcode_height, jars=jars,
-      command_line_decoder=command_line_decoder)
+      command_line_decoder=zxing_executable)
 
 
-def _decode_barcode_in_file(file_name, barcode_width, barcode_height, jars,
-                            command_line_decoder):
+def _decode_barcode_in_file(file_name, command_line_decoder):
   """Decodes the barcode in the upper left corner of a PNG file.
 
   Args:
     file_name(string): File name of the PNG file.
-    barcode_width(int): Width of the barcode (in pixels).
-    barcode_height(int): Height of the barcode (in pixels)
-    jars(string): The Zxing core and javase string.
     command_line_decoder(string): The ZXing command-line decoding tool.
 
   Return:
     (bool): True upon success, False otherwise.
   """
-  java_executable = 'java'
-  if sys.platform == 'win32':
-    if os.getenv('JAVA_HOME'):
-      java_executable = os.path.join(os.getenv('JAVA_HOME'), 'bin',
-                                     'java.exe')
-    else:
-      java_executable = 'java.exe'
-  command = [java_executable, '-Djava.awt.headless=true', '-cp', '%s' % jars,
-             '%s' % command_line_decoder, '--products_only',
-             '--dump_results', '--brief', '--crop=%d,%d,%d,%d' %
-             (0, 0, barcode_width, barcode_height),
-             '%s' % file_name]
+  command = [command_line_decoder, '--try-harder', '--dump-raw', file_name]
   try:
     out = helper_functions.run_shell_command(
-        command, msg='Error during decoding of %s' % file_name)
-    if not 'Success' in out:
-      print >> sys.stderr, 'Barcode in %s cannot be decoded\n' % file_name
-      return False
+        command, fail_msg='Error during decoding of %s' % file_name)
+    print 'Image %s : decoded barcode: %s' % (file_name, out)
+    text_file = open('%s.txt' % file_name[:-4], 'w')
+    text_file.write(out)
+    text_file.close()
   except helper_functions.HelperError, err:
+    print >> sys.stderr, 'Barcode in %s cannot be decoded.' % file_name
     print >> sys.stderr, err
     return False
   return True
@@ -134,6 +118,7 @@ def _generate_stats_file(stats_file_name, input_directory='.'):
   file_prefix = os.path.join(input_directory, 'frame_')
   stats_file = open(stats_file_name, 'w')
 
+  print 'Generating stats file: %s' % stats_file_name
   for i in range(1, _count_frames_in(input_directory=input_directory) + 1):
     frame_number = helper_functions.zero_pad(i)
     barcode_file_name = file_prefix + frame_number + '.txt'
@@ -236,30 +221,29 @@ def _parse_args():
   usage = "usage: %prog [options]"
   parser = optparse.OptionParser(usage=usage)
 
-  parser.add_option('--yuv_frame_width', type='int', default=352,
-                    help=('Width of the YUV file\'s frames. '
-                          'Default: %default'))
-  parser.add_option('--yuv_frame_height', type='int', default=288,
-                    help=('Height of the YUV file\'s frames. '
-                          'Default: %default'))
-  parser.add_option('--barcode_width', type='int',
-                    default=_DEFAULT_BARCODE_WIDTH,
-                    help=('Width of the barcodes. Default: %default'))
-  parser.add_option('--barcode_height', type='int', default=32,
-                    help=('Height of the barcodes. Default: %default'))
+  parser.add_option('--zxing_dir', type='string',
+                    help=('The path to the directory where the zxing executable'
+                          'is located. If omitted, it will be assumed to be '
+                          'present in the PATH.'))
+  parser.add_option('--ffmpeg_dir', type='string', default=None,
+                    help=('The path to the directory where the ffmpeg '
+                          'executable is located. If omitted, it will be '
+                          'assumed to be present in the PATH.'))
+  parser.add_option('--yuv_frame_width', type='int', default=640,
+                    help='Width of the YUV file\'s frames. Default: %default')
+  parser.add_option('--yuv_frame_height', type='int', default=480,
+                    help='Height of the YUV file\'s frames. Default: %default')
   parser.add_option('--yuv_file', type='string', default='output.yuv',
-                    help=('The YUV file to be decoded. Default: %default'))
+                    help='The YUV file to be decoded. Default: %default')
   parser.add_option('--stats_file', type='string', default='stats.txt',
-                    help=('The output stats file. Default: %default'))
-  parser.add_option('--png_output_dir', type='string', default='.',
-                    help=('The output directory for the generated PNG files. '
-                          'Default: %default'))
-  parser.add_option('--png_input_dir', type='string', default='.',
-                    help=('The input directory for the generated PNG files. '
-                          'Default: %default'))
-  parser.add_option('--path_to_zxing', type='string', default='zxing',
-                    help=('The path to Zxing. Default: %default'))
-  options = parser.parse_args()[0]
+                    help='The output stats file. Default: %default')
+  parser.add_option('--png_working_dir', type='string', default='.',
+                    help=('The directory for temporary PNG images to be stored '
+                          'in when decoding from YUV before they\'re barcode '
+                          'decoded. If using Windows and a Cygwin-compiled '
+                          'zxing.exe, you should keep the default value to '
+                          'avoid problems. Default: %default'))
+  options, _args = parser.parse_args()
   return options
 
 
@@ -269,41 +253,30 @@ def _main():
   A simple invocation is:
   ./tools/barcode_tolls/barcode_decoder.py
   --yuv_file=<path_and_name_of_overlaid_yuv_video>
-  --yuv_frame_width=352 --yuv_frame_height=288 --barcode_height=32
+  --yuv_frame_width=640 --yuv_frame_height=480
   --stats_file=<path_and_name_to_stats_file>
-
-  NOTE: On Windows, if you don't have ffmpeg and Java in your PATH, you can
-  set the JAVA_HOME and FFMPEG_HOME environment variables to help the script
-  find the executables to use.
   """
   options = _parse_args()
-
-  # The barcodes with will be different than the base frame width only if
-  # explicitly specified at the command line.
-  if options.barcode_width == _DEFAULT_BARCODE_WIDTH:
-    options.barcode_width = options.yuv_frame_width
-
-  script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-  zxing_dir = os.path.join(script_dir, 'third_party', 'zxing')
 
   # Convert the overlaid YUV video into a set of PNG frames.
   if not convert_yuv_to_png_files(options.yuv_file, options.yuv_frame_width,
                                   options.yuv_frame_height,
-                                  output_directory=options.png_output_dir):
+                                  output_directory=options.png_working_dir,
+                                  ffmpeg_dir=options.ffmpeg_dir):
     print >> sys.stderr, 'An error occurred converting from YUV to PNG frames.'
     return -1
 
   # Decode the barcodes from the PNG frames.
-  if not decode_frames(options.barcode_width, options.barcode_height,
-                       input_directory=options.png_input_dir,
-                       path_to_zxing=zxing_dir):
+  if not decode_frames(input_directory=options.png_working_dir,
+                       zxing_dir=options.zxing_dir):
     print >> sys.stderr, ('An error occurred decoding barcodes from PNG frames.'
-                          'Have you built the zxing library JAR files?')
+                          ' Have you built the zxing C++ executable?')
     return -2
 
   # Generate statistics file.
   _generate_stats_file(options.stats_file,
-                       input_directory=options.png_input_dir)
+                       input_directory=options.png_working_dir)
+  print 'Completed barcode decoding.'
   return 0
 
 if __name__ == '__main__':

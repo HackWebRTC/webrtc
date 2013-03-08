@@ -34,12 +34,12 @@ def zero_pad(number, padding=_DEFAULT_PADDING):
   return str(number).zfill(padding)
 
 
-def run_shell_command(command, msg=None):
+def run_shell_command(cmd_list, fail_msg=None):
   """Executes a command.
 
   Args:
-    command(list): Command list to execute.
-    msg(string): Message describing the error in case the command fails.
+    cmd_list(list): Command list to execute.
+    fail_msg(string): Message describing the error in case the command fails.
 
   Return:
     (string): The standard output from running the command.
@@ -47,34 +47,16 @@ def run_shell_command(command, msg=None):
   Raise:
     HelperError: If command fails.
   """
-  cmd_list = [str(x) for x in command]
-  cmd = ' '.join(cmd_list)
-
   process = subprocess.Popen(cmd_list, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
   output, error = process.communicate()
   if process.returncode != 0:
-    if msg:
-      print >> sys.stderr, msg
+    if fail_msg:
+      print >> sys.stderr, fail_msg
     raise HelperError('Failed to run %s: command returned %d and printed '
-                      '%s and %s' % (cmd, process.returncode, output, error))
+                      '%s and %s' % (' '.join(cmd_list), process.returncode,
+                                     output, error))
   return output.strip()
-
-
-def form_jars_string(path_to_zxing):
-  """Forms the the Zxing core and javase jars argument.
-
-  Args:
-    path_to_zxing(string): The path to the Zxing checkout folder.
-  Return:
-    (string): The newly formed jars argument.
-  """
-  javase_jar = os.path.join(path_to_zxing, "javase", "javase.jar")
-  core_jar = os.path.join(path_to_zxing, "core", "core.jar")
-  delimiter = ':'
-  if os.name != 'posix':
-    delimiter = ';'
-  return javase_jar + delimiter + core_jar
 
 
 def perform_action_on_all_files(directory, file_pattern, file_extension,
@@ -112,5 +94,3 @@ def perform_action_on_all_files(directory, file_pattern, file_extension,
     else:
       file_exists = False
   return not errors
-
-
