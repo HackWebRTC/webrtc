@@ -9,7 +9,6 @@
  */
 
 #include "google/gflags.h"
-#include "gtest/gtest.h"
 
 #include "receiver_tests.h"
 #include "normal_test.h"
@@ -19,7 +18,6 @@
 #include "media_opt_test.h"
 #include "quality_modes_test.h"
 #include "test_util.h"
-#include "webrtc/test/test_suite.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 #include <stdlib.h>
@@ -46,8 +44,6 @@ DEFINE_string(output_filename, webrtc::test::OutputPath() +
 DEFINE_string(fv_output_filename, webrtc::test::OutputPath() +
               "features.txt", "FV output file.");
 DEFINE_int32(test_number, 0, "Test number.");
-DEFINE_bool(run_gtest_tests, true, "Run gtest tests too (after legacy tests has"
-            " executed).");
 
 using namespace webrtc;
 
@@ -99,7 +95,7 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  printf("Running legacy video coding tests...\n");
+  printf("Running video coding tests...\n");
   int ret = 0;
   switch (args.testNum) {
     case 0:
@@ -145,15 +141,6 @@ int main(int argc, char **argv) {
     default:
       ret = -1;
       break;
-  }
-  if (ret != 0) {
-    printf("Legacy Tests failed!\n");
-  } else {
-    if (FLAGS_run_gtest_tests) {
-      printf("Running gtest integration tests...\n");
-      webrtc::test::TestSuite test_suite(argc, argv);
-      ret = test_suite.Run();
-    }
   }
   return ret;
 }

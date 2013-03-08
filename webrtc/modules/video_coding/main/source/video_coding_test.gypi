@@ -7,12 +7,12 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'targets': [{
-      'target_name': 'video_coding_integrationtests',
+  'targets': [
+    {
+      'target_name': 'video_coding_test',
       'type': 'executable',
       'dependencies': [
          'rtp_rtcp',
-         'video_codecs_test_framework',
          'video_processing',
          'webrtc_video_coding',
          'webrtc_utility',
@@ -63,8 +63,21 @@
         '../test/video_rtp_play_mt.cc',
         '../test/video_rtp_play.cc',
         '../test/video_source.cc',
-        '../../codecs/test/videoprocessor_integrationtest.cc',
       ], # sources
+    },
+    {
+      'target_name': 'video_coding_integrationtests',
+      'type': 'executable',
+      'dependencies': [
+         'video_codecs_test_framework',
+         'webrtc_video_coding',
+         '<(DEPTH)/testing/gtest.gyp:gtest',
+         '<(webrtc_root)/test/test.gyp:test_support_main',
+         '<(webrtc_root)/test/metrics.gyp:metrics',
+      ],
+      'sources': [
+        '../../codecs/test/videoprocessor_integrationtest.cc',
+      ],
     },
     {
       'target_name': 'video_coding_unittests',
