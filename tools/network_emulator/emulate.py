@@ -182,7 +182,7 @@ def _main():
                  options.port_range[0], options.port_range[1])
     raw_input('Press Enter to abort Network Emulation...')
     logging.info('Flushing all Dummynet rules...')
-    emulator.cleanup()
+    network_emulator.cleanup()
     logging.info('Completed Network Emulation.')
     return 0
   except network_emulator.NetworkEmulatorError as e:
