@@ -111,6 +111,7 @@ class ViEInputManager : private ViEManagerBase {
 
   int engine_id_;
   scoped_ptr<CriticalSectionWrapper> map_cs_;
+  scoped_ptr<CriticalSectionWrapper> device_info_cs_;
   MapWrapper vie_frame_provider_map_;
 
   // Capture devices.
