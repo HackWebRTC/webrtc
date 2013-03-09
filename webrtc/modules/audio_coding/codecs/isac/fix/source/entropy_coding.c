@@ -27,6 +27,40 @@
 #include "settings.h"
 #include "signal_processing_library.h"
 
+/*
+ * Eenumerations for arguments to functions WebRtcIsacfix_MatrixProduct1()
+ * and WebRtcIsacfix_MatrixProduct2().
+*/
+
+enum matrix_index_factor {
+  kTIndexFactor1 = 1,
+  kTIndexFactor2 = 2,
+  kTIndexFactor3 = SUBFRAMES,
+  kTIndexFactor4 = LPC_SHAPE_ORDER
+};
+
+enum matrix_index_step {
+  kTIndexStep1 = 1,
+  kTIndexStep2 = SUBFRAMES,
+  kTIndexStep3 = LPC_SHAPE_ORDER
+};
+
+enum matrixprod_loop_count {
+  kTLoopCount1 = SUBFRAMES,
+  kTLoopCount2 = 2,
+  kTLoopCount3 = LPC_SHAPE_ORDER
+};
+
+enum matrix1_shift_value {
+  kTMatrix1_shift0 = 0,
+  kTMatrix1_shift1 = 1,
+  kTMatrix1_shift5 = 5
+};
+
+enum matrixprod_init_case {
+  kTInitCase0 = 0,
+  kTInitCase1 = 1
+};
 
 /*
   This function implements the fix-point correspondant function to lrint.
@@ -775,6 +809,115 @@ static void Lar2polyFix(WebRtc_Word32 *larsQ17,
   }
 }
 
+/*
+Function WebRtcIsacfix_MatrixProduct1C() does one form of matrix multiplication.
+It first shifts input data of one matrix, determines the right indexes for the
+two matrixes, multiply them, and write the results into an output buffer.
+
+Note that two factors (or, multipliers) determine the initialization values of
+the variable |matrix1_index| in the code. The relationship is
+|matrix1_index| = |matrix1_index_factor1| * |matrix1_index_factor2|, where
+|matrix1_index_factor1| is given by the argument while |matrix1_index_factor2|
+is determined by the value of argument |matrix1_index_init_case|;
+|matrix1_index_factor2| is the value of the outmost loop counter j (when
+|matrix1_index_init_case| is 0), or the value of the middle loop counter k (when
+|matrix1_index_init_case| is non-zero).
+
+|matrix0_index| is determined the same way.
+
+Arguments:
+  matrix0[]:                 matrix0 data in Q15 domain.
+  matrix1[]:                 matrix1 data.
+  matrix_product[]:          output data (matrix product).
+  matrix1_index_factor1:     The first of two factors determining the
+                             initialization value of matrix1_index.
+  matrix0_index_factor1:     The first of two factors determining the
+                             initialization value of matrix0_index.
+  matrix1_index_init_case:   Case number for selecting the second of two
+                             factors determining the initialization value
+                             of matrix1_index and matrix0_index.
+  matrix1_index_step:        Incremental step for matrix1_index.
+  matrix0_index_step:        Incremental step for matrix0_index.
+  inner_loop_count:          Maximum count of the inner loop.
+  mid_loop_count:            Maximum count of the intermediate loop.
+  shift:                     Left shift value for matrix1.
+*/
+void WebRtcIsacfix_MatrixProduct1C(const int16_t matrix0[],
+                                   const int32_t matrix1[],
+                                   int32_t matrix_product[],
+                                   const int matrix1_index_factor1,
+                                   const int matrix0_index_factor1,
+                                   const int matrix1_index_init_case,
+                                   const int matrix1_index_step,
+                                   const int matrix0_index_step,
+                                   const int inner_loop_count,
+                                   const int mid_loop_count,
+                                   const int shift) {
+  int j = 0, k = 0, n = 0;
+  int matrix0_index = 0, matrix1_index = 0, matrix_prod_index = 0;
+  int* matrix0_index_factor2 = &k;
+  int* matrix1_index_factor2 = &j;
+  if (matrix1_index_init_case != 0) {
+    matrix0_index_factor2 = &j;
+    matrix1_index_factor2 = &k;
+  }
+
+  for (j = 0; j < SUBFRAMES; j++) {
+    matrix_prod_index = mid_loop_count * j;
+    for (k = 0; k < mid_loop_count; k++) {
+      int32_t sum32 = 0;
+      matrix0_index = matrix0_index_factor1 * (*matrix0_index_factor2);
+      matrix1_index = matrix1_index_factor1 * (*matrix1_index_factor2);
+      for (n = 0; n < inner_loop_count; n++) {
+        sum32 += (WEBRTC_SPL_MUL_16_32_RSFT16(matrix0[matrix0_index],
+                                              matrix1[matrix1_index] << shift));
+        matrix0_index += matrix0_index_step;
+        matrix1_index += matrix1_index_step;
+      }
+      matrix_product[matrix_prod_index] = sum32;
+      matrix_prod_index++;
+    }
+  }
+}
+
+/*
+Function WebRtcIsacfix_MatrixProduct2C() returns the product of two matrixes,
+one of which has two columns. It first has to determine the correct index of
+the first matrix before doing the actual element multiplication.
+
+Arguments:
+  matrix0[]:                 A matrix in Q15 domain.
+  matrix1[]:                 A matrix in Q21 domain.
+  matrix_product[]:          Output data in Q17 domain.
+  matrix0_index_factor:      A factor determining the initialization value
+                             of matrix0_index.
+  matrix0_index_step:        Incremental step for matrix0_index.
+*/
+void WebRtcIsacfix_MatrixProduct2C(const int16_t matrix0[],
+                                   const int32_t matrix1[],
+                                   int32_t matrix_product[],
+                                   const int matrix0_index_factor,
+                                   const int matrix0_index_step) {
+  int j = 0, n = 0;
+  int matrix1_index = 0, matrix0_index = 0, matrix_prod_index = 0;
+  for (j = 0; j < SUBFRAMES; j++) {
+    int32_t sum32 = 0, sum32_2 = 0;
+    matrix1_index = 0;
+    matrix0_index = matrix0_index_factor * j;
+    for (n = SUBFRAMES; n > 0; n--) {
+      sum32 += (WEBRTC_SPL_MUL_16_32_RSFT16(matrix0[matrix0_index],
+                                            matrix1[matrix1_index]));
+      sum32_2 += (WEBRTC_SPL_MUL_16_32_RSFT16(matrix0[matrix0_index],
+                                            matrix1[matrix1_index + 1]));
+      matrix1_index += 2;
+      matrix0_index += matrix0_index_step;
+    }
+    matrix_product[matrix_prod_index] = sum32 >> 3;
+    matrix_product[matrix_prod_index + 1] = sum32_2 >> 3;
+    matrix_prod_index += 2;
+  }
+}
+
 int WebRtcIsacfix_DecodeLpc(WebRtc_Word32 *gain_lo_hiQ17,
                             WebRtc_Word16 *LPCCoef_loQ15,
                             WebRtc_Word16 *LPCCoef_hiQ15,
@@ -801,7 +944,7 @@ int WebRtcIsacfix_DecodeLpcCoef(Bitstr_dec *streamdata,
 {
   int j, k, n;
   int err;
-  WebRtc_Word16 pos, pos2, posg, poss, offsg, offss, offs2;
+  WebRtc_Word16 pos, pos2, posg, poss;
   WebRtc_Word16 gainpos;
   WebRtc_Word16 model;
   WebRtc_Word16 index_QQ[KLT_ORDER_SHAPE];
@@ -842,31 +985,17 @@ int WebRtcIsacfix_DecodeLpcCoef(Bitstr_dec *streamdata,
   /* inverse KLT  */
 
   /* left transform */  // Transpose matrix!
-  offsg = 0;
-  offss = 0;
-  posg = 0;
+  WebRtcIsacfix_MatrixProduct1(WebRtcIsacfix_kT1GainQ15[model], tmpcoeffs_gQ17,
+                               tmpcoeffs2_gQ21, kTIndexFactor2, kTIndexFactor2,
+                               kTInitCase0, kTIndexStep1, kTIndexStep1,
+                               kTLoopCount2, kTLoopCount2, kTMatrix1_shift5);
+
   poss = 0;
   for (j=0; j<SUBFRAMES; j++) {
-    offs2 = 0;
-    for (k=0; k<2; k++) {
-      sumQQ = 0;
-      pos = offsg;
-      pos2 = offs2;
-      for (n=0; n<2; n++) {
-        sumQQ += (WEBRTC_SPL_MUL_16_32_RSFT16(WebRtcIsacfix_kT1GainQ15[model][pos2], tmpcoeffs_gQ17[pos]<<5)); // (Q15*Q17)>>(16-5) = Q21
-        pos++;
-        pos2++;
-      }
-      tmpcoeffs2_gQ21[posg] = sumQQ; //Q21
-      posg++;
-      offs2 += 2;
-    }
-    offs2 = 0;
-
     for (k=0; k<LPC_SHAPE_ORDER; k++) {
       sumQQ = 0;
-      pos = offss;
-      pos2 = offs2;
+      pos = LPC_SHAPE_ORDER * j;
+      pos2 = LPC_SHAPE_ORDER * k;
       for (n=0; n<LPC_SHAPE_ORDER; n++) {
         sumQQ += WEBRTC_SPL_MUL_16_16_RSFT(tmpcoeffs_sQ10[pos], WebRtcIsacfix_kT1ShapeQ15[model][pos2], 7); // (Q10*Q15)>>7 = Q18
         pos++;
@@ -874,48 +1003,16 @@ int WebRtcIsacfix_DecodeLpcCoef(Bitstr_dec *streamdata,
       }
       tmpcoeffs2_sQ18[poss] = sumQQ; //Q18
       poss++;
-      offs2 += LPC_SHAPE_ORDER;
     }
-    offsg += 2;
-    offss += LPC_SHAPE_ORDER;
   }
 
   /* right transform */ // Transpose matrix
-  offsg = 0;
-  offss = 0;
-  posg = 0;
-  poss = 0;
-  for (j=0; j<SUBFRAMES; j++) {
-    posg = offsg;
-    for (k=0; k<2; k++) {
-      sumQQ = 0;
-      pos = k;
-      pos2 = j;
-      for (n=0; n<SUBFRAMES; n++) {
-        sumQQ += WEBRTC_SPL_LSHIFT_W32(WEBRTC_SPL_MUL_16_32_RSFT16(WebRtcIsacfix_kT2GainQ15[model][pos2], tmpcoeffs2_gQ21[pos]), 1); // (Q15*Q21)>>(16-1) = Q21
-        pos += 2;
-        pos2 += SUBFRAMES;
-
-      }
-      tmpcoeffs_gQ17[posg] = WEBRTC_SPL_RSHIFT_W32(sumQQ, 4);
-      posg++;
-    }
-    poss = offss;
-    for (k=0; k<LPC_SHAPE_ORDER; k++) {
-      sumQQ = 0;
-      pos = k;
-      pos2 = j;
-      for (n=0; n<SUBFRAMES; n++) {
-        sumQQ += (WEBRTC_SPL_MUL_16_32_RSFT16(WebRtcIsacfix_kT2ShapeQ15[model][pos2], tmpcoeffs2_sQ18[pos])); // (Q15*Q18)>>16 = Q17
-        pos += LPC_SHAPE_ORDER;
-        pos2 += SUBFRAMES;
-      }
-      tmpcoeffs_sQ17[poss] = sumQQ;
-      poss++;
-    }
-    offsg += 2;
-    offss += LPC_SHAPE_ORDER;
-  }
+  WebRtcIsacfix_MatrixProduct2(WebRtcIsacfix_kT2GainQ15[0], tmpcoeffs2_gQ21,
+                               tmpcoeffs_gQ17, kTIndexFactor1, kTIndexStep2);
+  WebRtcIsacfix_MatrixProduct1(WebRtcIsacfix_kT2ShapeQ15[model],
+      tmpcoeffs2_sQ18, tmpcoeffs_sQ17, kTIndexFactor1, kTIndexFactor1,
+      kTInitCase1, kTIndexStep3, kTIndexStep2, kTLoopCount1, kTLoopCount3,
+      kTMatrix1_shift0);
 
   /* scaling, mean addition, and gain restoration */
   gainpos = 0;
@@ -968,7 +1065,7 @@ static int EstCodeLpcCoef(WebRtc_Word32 *LPCCoefQ17,
                           transcode_obj *transcodingParam) {
   int j, k, n;
   WebRtc_Word16 posQQ, pos2QQ, gainpos;
-  WebRtc_Word16  pos, pos2, poss, posg, offsg, offss, offs2;
+  WebRtc_Word16  pos, poss, posg, offsg;
   WebRtc_Word16 index_gQQ[KLT_ORDER_GAIN], index_sQQ[KLT_ORDER_SHAPE];
   WebRtc_Word16 index_ovr_gQQ[KLT_ORDER_GAIN], index_ovr_sQQ[KLT_ORDER_SHAPE];
   WebRtc_Word32 BitsQQ;
@@ -1034,73 +1131,38 @@ static int EstCodeLpcCoef(WebRtc_Word32 *LPCCoefQ17,
 
   /* left transform */
   offsg = 0;
-  offss = 0;
+  posg = 0;
   for (j=0; j<SUBFRAMES; j++) {
-    posg = offsg;
-    for (k=0; k<2; k++) {
-      sumQQ = 0;
-      pos = offsg;
-      pos2 = k;
-      for (n=0; n<2; n++) {
-        sumQQ += WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[pos], WebRtcIsacfix_kT1GainQ15[0][pos2]); //Q21 = Q6*Q15
-        pos++;
-        pos2 += 2;
-      }
-      tmpcoeffs2_gQ21[posg] = sumQQ;
-      posg++;
-    }
-    poss = offss;
-    for (k=0; k<LPC_SHAPE_ORDER; k++) {
-      sumQQ = 0;
-      pos = offss;
-      pos2 = k;
-      for (n=0; n<LPC_SHAPE_ORDER; n++) {
-        sumQQ += (WEBRTC_SPL_MUL_16_32_RSFT16(WebRtcIsacfix_kT1ShapeQ15[0][pos2], tmpcoeffs_sQ17[pos]<<1)); // (Q15*Q17)>>(16-1) = Q17
-        pos++;
-        pos2 += LPC_SHAPE_ORDER;
-      }
-      tmpcoeffs2_sQ17[poss] = sumQQ; //Q17
-      poss++;
-    }
+    // Q21 = Q6 * Q15
+    sumQQ = WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[offsg],
+        WebRtcIsacfix_kT1GainQ15[0][0]);
+    sumQQ += WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[offsg + 1],
+        WebRtcIsacfix_kT1GainQ15[0][2]);
+    tmpcoeffs2_gQ21[posg] = sumQQ;
+    posg++;
+
+    // Q21 = Q6 * Q15
+    sumQQ = WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[offsg],
+        WebRtcIsacfix_kT1GainQ15[0][1]);
+    sumQQ += WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[offsg + 1],
+        WebRtcIsacfix_kT1GainQ15[0][3]);
+    tmpcoeffs2_gQ21[posg] = sumQQ;
+    posg++;
+
     offsg += 2;
-    offss += LPC_SHAPE_ORDER;
   }
 
+  WebRtcIsacfix_MatrixProduct1(WebRtcIsacfix_kT1ShapeQ15[0], tmpcoeffs_sQ17,
+      tmpcoeffs2_sQ17, kTIndexFactor4, kTIndexFactor1, kTInitCase0,
+      kTIndexStep1, kTIndexStep3, kTLoopCount3, kTLoopCount3, kTMatrix1_shift1);
+
   /* right transform */
-  offsg = 0;
-  offss = 0;
-  offs2 = 0;
-  for (j=0; j<SUBFRAMES; j++) {
-    posg = offsg;
-    for (k=0; k<2; k++) {
-      sumQQ = 0;
-      pos = k;
-      pos2 = offs2;
-      for (n=0; n<SUBFRAMES; n++) {
-        sumQQ += WEBRTC_SPL_LSHIFT_W32(WEBRTC_SPL_MUL_16_32_RSFT16(WebRtcIsacfix_kT2GainQ15[0][pos2], tmpcoeffs2_gQ21[pos]), 1); // (Q15*Q21)>>(16-1) = Q21
-        pos += 2;
-        pos2++;
-      }
-      tmpcoeffs_gQ17[posg] = WEBRTC_SPL_RSHIFT_W32(sumQQ, 4);
-      posg++;
-    }
-    poss = offss;
-    for (k=0; k<LPC_SHAPE_ORDER; k++) {
-      sumQQ = 0;
-      pos = k;
-      pos2 = offs2;
-      for (n=0; n<SUBFRAMES; n++) {
-        sumQQ += (WEBRTC_SPL_MUL_16_32_RSFT16(WebRtcIsacfix_kT2ShapeQ15[0][pos2], tmpcoeffs2_sQ17[pos]<<1)); // (Q15*Q17)>>(16-1) = Q17
-        pos += LPC_SHAPE_ORDER;
-        pos2++;
-      }
-      tmpcoeffs_sQ17[poss] = sumQQ;
-      poss++;
-    }
-    offs2 += SUBFRAMES;
-    offsg += 2;
-    offss += LPC_SHAPE_ORDER;
-  }
+  WebRtcIsacfix_MatrixProduct2(WebRtcIsacfix_kT2GainQ15[0], tmpcoeffs2_gQ21,
+                               tmpcoeffs_gQ17, kTIndexFactor3, kTIndexStep1);
+
+  WebRtcIsacfix_MatrixProduct1(WebRtcIsacfix_kT2ShapeQ15[0], tmpcoeffs2_sQ17,
+      tmpcoeffs_sQ17, kTIndexFactor1, kTIndexFactor3, kTInitCase1, kTIndexStep3,
+      kTIndexStep1, kTLoopCount1, kTLoopCount3, kTMatrix1_shift1);
 
   /* quantize coefficients */
 
@@ -1191,47 +1253,14 @@ static int EstCodeLpcCoef(WebRtc_Word32 *LPCCoefQ17,
   /* inverse KLT  */
 
   /* left transform */  // Transpose matrix!
-  offss = 0;
-  poss = 0;
-  for (j=0; j<SUBFRAMES; j++) {
-    offs2 = 0;
-    for (k=0; k<LPC_SHAPE_ORDER; k++) {
-      sumQQ = 0;
-      pos = offss;
-      pos2 = offs2;
-      for (n=0; n<LPC_SHAPE_ORDER; n++) {
-        sumQQ += (WEBRTC_SPL_MUL_16_32_RSFT16(WebRtcIsacfix_kT1ShapeQ15[0][pos2], tmpcoeffs_sQ17[pos]<<1)); // (Q15*Q17)>>(16-1) = Q17
-        pos++;
-        pos2++;
-      }
-      tmpcoeffs2_sQ17[poss] = sumQQ;
-
-      poss++;
-      offs2 += LPC_SHAPE_ORDER;
-    }
-    offss += LPC_SHAPE_ORDER;
-  }
-
+  WebRtcIsacfix_MatrixProduct1(WebRtcIsacfix_kT1ShapeQ15[0], tmpcoeffs_sQ17,
+      tmpcoeffs2_sQ17, kTIndexFactor4, kTIndexFactor4, kTInitCase0,
+      kTIndexStep1, kTIndexStep1, kTLoopCount3, kTLoopCount3, kTMatrix1_shift1);
 
   /* right transform */ // Transpose matrix
-  offss = 0;
-  poss = 0;
-  for (j=0; j<SUBFRAMES; j++) {
-    poss = offss;
-    for (k=0; k<LPC_SHAPE_ORDER; k++) {
-      sumQQ = 0;
-      pos = k;
-      pos2 = j;
-      for (n=0; n<SUBFRAMES; n++) {
-        sumQQ += (WEBRTC_SPL_MUL_16_32_RSFT16(WebRtcIsacfix_kT2ShapeQ15[0][pos2], tmpcoeffs2_sQ17[pos]<<1)); // (Q15*Q17)>>(16-1) = Q17
-        pos += LPC_SHAPE_ORDER;
-        pos2 += SUBFRAMES;
-      }
-      tmpcoeffs_sQ17[poss] = sumQQ;
-      poss++;
-    }
-    offss += LPC_SHAPE_ORDER;
-  }
+  WebRtcIsacfix_MatrixProduct1(WebRtcIsacfix_kT2ShapeQ15[0], tmpcoeffs2_sQ17,
+      tmpcoeffs_sQ17, kTIndexFactor1, kTIndexFactor1, kTInitCase1, kTIndexStep3,
+      kTIndexStep2, kTLoopCount1, kTLoopCount3, kTMatrix1_shift1);
 
   /* scaling, mean addition, and gain restoration */
   poss = 0;pos=0;
@@ -1266,42 +1295,26 @@ static int EstCodeLpcCoef(WebRtc_Word32 *LPCCoefQ17,
   offsg = 0;
   posg = 0;
   for (j=0; j<SUBFRAMES; j++) {
-    offs2 = 0;
-    for (k=0; k<2; k++) {
-      sumQQ = 0;
-      pos = offsg;
-      pos2 = offs2;
-      for (n=0; n<2; n++) {
-        sumQQ += (WEBRTC_SPL_MUL_16_32_RSFT16(WebRtcIsacfix_kT1GainQ15[0][pos2], tmpcoeffs_gQ17[pos])<<1); // (Q15*Q17)>>(16-1) = Q17
-        pos++;
-        pos2++;
-      }
-      tmpcoeffs2_gQ21[posg] = WEBRTC_SPL_LSHIFT_W32(sumQQ, 4); //Q17<<4 = Q21
-      posg++;
-      offs2 += 2;
-    }
+    // (Q15 * Q17) >> (16 - 1) = Q17; Q17 << 4 = Q21.
+    sumQQ = (WEBRTC_SPL_MUL_16_32_RSFT16(WebRtcIsacfix_kT1GainQ15[0][0],
+                                         tmpcoeffs_gQ17[offsg]) << 1);
+    sumQQ += (WEBRTC_SPL_MUL_16_32_RSFT16(WebRtcIsacfix_kT1GainQ15[0][1],
+                                          tmpcoeffs_gQ17[offsg + 1]) << 1);
+    tmpcoeffs2_gQ21[posg] = WEBRTC_SPL_LSHIFT_W32(sumQQ, 4);
+    posg++;
+
+    sumQQ = (WEBRTC_SPL_MUL_16_32_RSFT16(WebRtcIsacfix_kT1GainQ15[0][2],
+                                         tmpcoeffs_gQ17[offsg]) << 1);
+    sumQQ += (WEBRTC_SPL_MUL_16_32_RSFT16(WebRtcIsacfix_kT1GainQ15[0][3],
+                                          tmpcoeffs_gQ17[offsg + 1]) << 1);
+    tmpcoeffs2_gQ21[posg] = WEBRTC_SPL_LSHIFT_W32(sumQQ, 4);
+    posg++;
     offsg += 2;
   }
 
   /* right transform */ // Transpose matrix
-  offsg = 0;
-  posg = 0;
-  for (j=0; j<SUBFRAMES; j++) {
-    posg = offsg;
-    for (k=0; k<2; k++) {
-      sumQQ = 0;
-      pos = k;
-      pos2 = j;
-      for (n=0; n<SUBFRAMES; n++) {
-        sumQQ += WEBRTC_SPL_LSHIFT_W32(WEBRTC_SPL_MUL_16_32_RSFT16(WebRtcIsacfix_kT2GainQ15[0][pos2], tmpcoeffs2_gQ21[pos]), 1); // (Q15*Q21)>>(16-1) = Q21
-        pos += 2;
-        pos2 += SUBFRAMES;
-      }
-      tmpcoeffs_gQ17[posg] = WEBRTC_SPL_RSHIFT_W32(sumQQ, 4);
-      posg++;
-    }
-    offsg += 2;
-  }
+  WebRtcIsacfix_MatrixProduct2(WebRtcIsacfix_kT2GainQ15[0], tmpcoeffs2_gQ21,
+                               tmpcoeffs_gQ17, kTIndexFactor1, kTIndexStep2);
 
   /* scaling, mean addition, and gain restoration */
   posg = 0;
@@ -1323,9 +1336,9 @@ static int EstCodeLpcCoef(WebRtc_Word32 *LPCCoefQ17,
 int WebRtcIsacfix_EstCodeLpcGain(WebRtc_Word32 *gain_lo_hiQ17,
                                  Bitstr_enc *streamdata,
                                  ISAC_SaveEncData_t* encData) {
-  int j, k, n;
+  int j, k;
   WebRtc_Word16 posQQ, pos2QQ, gainpos;
-  WebRtc_Word16  pos, pos2, posg, offsg, offs2;
+  WebRtc_Word16 posg;
   WebRtc_Word16 index_gQQ[KLT_ORDER_GAIN];
 
   WebRtc_Word16 tmpcoeffs_gQ6[KLT_ORDER_GAIN];
@@ -1343,7 +1356,7 @@ int WebRtcIsacfix_EstCodeLpcGain(WebRtc_Word32 *gain_lo_hiQ17,
   }
 
   /* log gains, mean removal and scaling */
-  posg = 0; pos = 0; gainpos = 0;
+  posg = 0; gainpos = 0;
 
   for (k=0; k<SUBFRAMES; k++) {
     /* log gains */
@@ -1369,44 +1382,27 @@ int WebRtcIsacfix_EstCodeLpcGain(WebRtc_Word32 *gain_lo_hiQ17,
   /* KLT  */
 
   /* left transform */
-  offsg = 0;
+  posg = 0;
   for (j=0; j<SUBFRAMES; j++) {
-    posg = offsg;
-    for (k=0; k<2; k++) {
-      sumQQ = 0;
-      pos = offsg;
-      pos2 = k;
-      for (n=0; n<2; n++) {
-        sumQQ += WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[pos], WebRtcIsacfix_kT1GainQ15[0][pos2]); //Q21 = Q6*Q15
-        pos++;
-        pos2 += 2;
-      }
+      // Q21 = Q6 * Q15
+      sumQQ = WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[j * 2],
+                                   WebRtcIsacfix_kT1GainQ15[0][0]);
+      sumQQ += WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[j * 2 + 1],
+                                    WebRtcIsacfix_kT1GainQ15[0][2]);
       tmpcoeffs2_gQ21[posg] = sumQQ;
       posg++;
-    }
-    offsg += 2;
+
+      sumQQ = WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[j * 2],
+                                   WebRtcIsacfix_kT1GainQ15[0][1]);
+      sumQQ += WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[j * 2 + 1],
+                                    WebRtcIsacfix_kT1GainQ15[0][3]);
+      tmpcoeffs2_gQ21[posg] = sumQQ;
+      posg++;
   }
 
   /* right transform */
-  offsg = 0;
-  offs2 = 0;
-  for (j=0; j<SUBFRAMES; j++) {
-    posg = offsg;
-    for (k=0; k<2; k++) {
-      sumQQ = 0;
-      pos = k;
-      pos2 = offs2;
-      for (n=0; n<SUBFRAMES; n++) {
-        sumQQ += WEBRTC_SPL_LSHIFT_W32(WEBRTC_SPL_MUL_16_32_RSFT16(WebRtcIsacfix_kT2GainQ15[0][pos2], tmpcoeffs2_gQ21[pos]), 1); // (Q15*Q21)>>(16-1) = Q21
-        pos += 2;
-        pos2++;
-      }
-      tmpcoeffs_gQ17[posg] = WEBRTC_SPL_RSHIFT_W32(sumQQ, 4);
-      posg++;
-    }
-    offsg += 2;
-    offs2 += SUBFRAMES;
-  }
+  WebRtcIsacfix_MatrixProduct2(WebRtcIsacfix_kT2GainQ15[0], tmpcoeffs2_gQ21,
+                               tmpcoeffs_gQ17, kTIndexFactor3, kTIndexStep1);
 
   /* quantize coefficients */
 
@@ -1454,7 +1450,8 @@ int WebRtcIsacfix_EncodeLpc(WebRtc_Word32 *gain_lo_hiQ17,
 
   Poly2LarFix(LPCCoef_loQ15, ORDERLO, LPCCoef_hiQ15, ORDERHI, SUBFRAMES, larsQ17);
 
-  status = EstCodeLpcCoef(larsQ17, gain_lo_hiQ17, model, sizeQ11, streamdata, encData, transcodeParam);
+  status = EstCodeLpcCoef(larsQ17, gain_lo_hiQ17, model, sizeQ11,
+                          streamdata, encData, transcodeParam);
   if (status < 0) {
     return (status);
   }
@@ -1978,9 +1975,9 @@ int WebRtcIsacfix_EncodeReceiveBandwidth(WebRtc_Word16 *BWno, Bitstr_enc *stream
 /* estimate codel length of LPC Coef */
 void WebRtcIsacfix_TranscodeLpcCoef(WebRtc_Word32 *gain_lo_hiQ17,
                                     WebRtc_Word16 *index_gQQ) {
-  int j, k, n;
+  int j, k;
   WebRtc_Word16 posQQ, pos2QQ;
-  WebRtc_Word16  pos, pos2, posg, offsg, offs2, gainpos;
+  WebRtc_Word16 posg, offsg, gainpos;
   WebRtc_Word32 tmpcoeffs_gQ6[KLT_ORDER_GAIN];
   WebRtc_Word32 tmpcoeffs_gQ17[KLT_ORDER_GAIN];
   WebRtc_Word32 tmpcoeffs2_gQ21[KLT_ORDER_GAIN];
@@ -1988,7 +1985,7 @@ void WebRtcIsacfix_TranscodeLpcCoef(WebRtc_Word32 *gain_lo_hiQ17,
 
 
   /* log gains, mean removal and scaling */
-  posg = 0;pos=0; gainpos=0;
+  posg = 0; gainpos=0;
 
   for (k=0; k<SUBFRAMES; k++) {
     /* log gains */
@@ -2017,43 +2014,26 @@ void WebRtcIsacfix_TranscodeLpcCoef(WebRtc_Word32 *gain_lo_hiQ17,
   /* left transform */
   offsg = 0;
   for (j=0; j<SUBFRAMES; j++) {
-    posg = offsg;
-    for (k=0; k<2; k++) {
-      sumQQ = 0;
-      pos = offsg;
-      pos2 = k;
-      for (n=0; n<2; n++) {
-        sumQQ += WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[pos], WebRtcIsacfix_kT1GainQ15[0][pos2]); //Q21 = Q6*Q15
-        pos++;
-        pos2 += 2;
-      }
+      // Q21 = Q6 * Q15
+      sumQQ = WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[offsg],
+                                   WebRtcIsacfix_kT1GainQ15[0][0]);
+      sumQQ += WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[offsg + 1],
+                                    WebRtcIsacfix_kT1GainQ15[0][2]);
       tmpcoeffs2_gQ21[posg] = sumQQ;
       posg++;
-    }
 
-    offsg += 2;
+      // Q21 = Q6 * Q15
+      sumQQ = WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[offsg],
+                                   WebRtcIsacfix_kT1GainQ15[0][1]);
+      sumQQ += WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[offsg + 1],
+                                    WebRtcIsacfix_kT1GainQ15[0][3]);
+      tmpcoeffs2_gQ21[posg] = sumQQ;
+      posg++;
   }
 
   /* right transform */
-  offsg = 0;
-  offs2 = 0;
-  for (j=0; j<SUBFRAMES; j++) {
-    posg = offsg;
-    for (k=0; k<2; k++) {
-      sumQQ = 0;
-      pos = k;
-      pos2 = offs2;
-      for (n=0; n<SUBFRAMES; n++) {
-        sumQQ += WEBRTC_SPL_LSHIFT_W32(WEBRTC_SPL_MUL_16_32_RSFT16(WebRtcIsacfix_kT2GainQ15[0][pos2], tmpcoeffs2_gQ21[pos]), 1); // (Q15*Q21)>>(16-1) = Q21
-        pos += 2;
-        pos2++;
-      }
-      tmpcoeffs_gQ17[posg] = WEBRTC_SPL_RSHIFT_W32(sumQQ, 4);
-      posg++;
-    }
-    offsg += 2;
-    offs2 += SUBFRAMES;
-  }
+  WebRtcIsacfix_MatrixProduct2(WebRtcIsacfix_kT2GainQ15[0], tmpcoeffs2_gQ21,
+                               tmpcoeffs_gQ17, kTIndexFactor3, kTIndexStep1);
 
   /* quantize coefficients */
   for (k=0; k<KLT_ORDER_GAIN; k++) //ATTN: ok?

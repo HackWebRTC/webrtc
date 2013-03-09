@@ -108,4 +108,62 @@ int WebRtcIsacfix_EncodeReceiveBandwidth(WebRtc_Word16 *BWno,
 void WebRtcIsacfix_TranscodeLpcCoef(WebRtc_Word32 *tmpcoeffs_gQ6,
                                     WebRtc_Word16 *index_gQQ);
 
-#endif /* WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_ENTROPY_CODING_H_ */
+// Pointer functions for LPC transforms.
+
+typedef void (*MatrixProduct1)(const int16_t matrix0[],
+                               const int32_t matrix1[],
+                               int32_t matrix_product[],
+                               const int matrix1_index_factor1,
+                               const int matrix0_index_factor1,
+                               const int matrix1_index_init_case,
+                               const int matrix1_index_step,
+                               const int matrix0_index_step,
+                               const int inner_loop_count,
+                               const int mid_loop_count,
+                               const int shift);
+typedef void (*MatrixProduct2)(const int16_t matrix0[],
+                               const int32_t matrix1[],
+                               int32_t matrix_product[],
+                               const int matrix0_index_factor,
+                               const int matrix0_index_step);
+
+extern MatrixProduct1 WebRtcIsacfix_MatrixProduct1;
+extern MatrixProduct2 WebRtcIsacfix_MatrixProduct2;
+
+void WebRtcIsacfix_MatrixProduct1C(const int16_t matrix0[],
+                                   const int32_t matrix1[],
+                                   int32_t matrix_product[],
+                                   const int matrix1_index_factor1,
+                                   const int matrix0_index_factor1,
+                                   const int matrix1_index_init_case,
+                                   const int matrix1_index_step,
+                                   const int matrix0_index_step,
+                                   const int inner_loop_count,
+                                   const int mid_loop_count,
+                                   const int shift);
+void WebRtcIsacfix_MatrixProduct2C(const int16_t matrix0[],
+                                   const int32_t matrix1[],
+                                   int32_t matrix_product[],
+                                   const int matrix0_index_factor,
+                                   const int matrix0_index_step);
+
+#if (defined WEBRTC_DETECT_ARM_NEON) || (defined WEBRTC_ARCH_ARM_NEON)
+void WebRtcIsacfix_MatrixProduct1Neon(const int16_t matrix0[],
+                                      const int32_t matrix1[],
+                                      int32_t matrix_product[],
+                                      const int matrix1_index_factor1,
+                                      const int matrix0_index_factor1,
+                                      const int matrix1_index_init_case,
+                                      const int matrix1_index_step,
+                                      const int matrix0_index_step,
+                                      const int inner_loop_count,
+                                      const int mid_loop_count,
+                                      const int shift);
+void WebRtcIsacfix_MatrixProduct2Neon(const int16_t matrix0[],
+                                      const int32_t matrix1[],
+                                      int32_t matrix_product[],
+                                      const int matrix0_index_factor,
+                                      const int matrix0_index_step);
+#endif
+
+#endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_ENTROPY_CODING_H_

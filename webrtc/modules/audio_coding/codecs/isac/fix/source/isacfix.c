@@ -31,6 +31,8 @@
 FilterMaLoopFix WebRtcIsacfix_FilterMaLoopFix;
 Spec2Time WebRtcIsacfix_Spec2Time;
 Time2Spec WebRtcIsacfix_Time2Spec;
+MatrixProduct1 WebRtcIsacfix_MatrixProduct1;
+MatrixProduct2 WebRtcIsacfix_MatrixProduct2;
 
 /**************************************************************************
  * WebRtcIsacfix_AssignSize(...)
@@ -192,6 +194,8 @@ static void WebRtcIsacfix_InitNeon(void) {
       WebRtcIsacfix_CalculateResidualEnergyNeon;
   WebRtcIsacfix_AllpassFilter2FixDec16 =
       WebRtcIsacfix_AllpassFilter2FixDec16Neon;
+  WebRtcIsacfix_MatrixProduct1 = WebRtcIsacfix_MatrixProduct1Neon;
+  WebRtcIsacfix_MatrixProduct2 = WebRtcIsacfix_MatrixProduct2Neon;
 }
 #endif
 
@@ -281,6 +285,8 @@ WebRtc_Word16 WebRtcIsacfix_EncoderInit(ISACFIX_MainStruct *ISAC_main_inst,
   WebRtcIsacfix_AllpassFilter2FixDec16 = WebRtcIsacfix_AllpassFilter2FixDec16C;
   WebRtcIsacfix_Time2Spec = WebRtcIsacfix_Time2SpecC;
   WebRtcIsacfix_Spec2Time = WebRtcIsacfix_Spec2TimeC;
+  WebRtcIsacfix_MatrixProduct1 = WebRtcIsacfix_MatrixProduct1C;
+  WebRtcIsacfix_MatrixProduct2 = WebRtcIsacfix_MatrixProduct2C ;
 
 #ifdef WEBRTC_DETECT_ARM_NEON
   if ((WebRtc_GetCPUFeaturesARM() & kCPUFeatureNEON) != 0) {
