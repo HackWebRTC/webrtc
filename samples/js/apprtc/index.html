@@ -130,6 +130,8 @@
     miniVideo = document.getElementById("miniVideo");
     remoteVideo = document.getElementById("remoteVideo");
     resetStatus();
+    // NOTE: AppRTCClient.java searches & parses this line; update there when
+    // changing here.
     openChannel('{{ token }}');
     doGetUserMedia();
   }
@@ -250,6 +252,8 @@
   function sendMessage(message) {
     var msgString = JSON.stringify(message);
     console.log('C->S: ' + msgString);
+    // NOTE: AppRTCClient.java searches & parses this line; update there when
+    // changing here.
     path = '/message?r={{ room_key }}' + '&u={{ me }}';
     var xhr = new XMLHttpRequest();
     xhr.open('POST', path, true);
