@@ -154,7 +154,7 @@ def _main():
   try:
     emulator.check_permissions()
   except network_emulator.NetworkEmulatorError as e:
-    logging.error('Error: %s\n\nCause: %s', e.msg, e.error)
+    logging.error('Error: %s\n\nCause: %s', e.fail_msg, e.error)
     return -1
 
   if not options.target_ip:
@@ -186,7 +186,7 @@ def _main():
     logging.info('Completed Network Emulation.')
     return 0
   except network_emulator.NetworkEmulatorError as e:
-    logging.error('Error: %s\n\nCause: %s', e.msg, e.error)
+    logging.error('Error: %s\n\nCause: %s', e.fail_msg, e.error)
     return -2
 
 if __name__ == '__main__':

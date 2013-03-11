@@ -97,7 +97,7 @@ class NetworkEmulator(object):
     # AttributeError will be raised on Windows.
       if ctypes.windll.shell32.IsUserAnAdmin() == 0:
         raise NetworkEmulatorError('You must run this script with administrator'
-                                   'privileges.')
+                                   ' privileges.')
 
   def _create_dummynet_rule(self, pipe_id, from_address, to_address,
                             port_range):
@@ -169,7 +169,7 @@ def _run_ipfw_command(command, fail_msg=None):
     fail_msg: Message describing the error in case the command fails.
 
   Raises:
-    NetworkEmulatorError: If command fails. Message is set by the fail_msg
+    NetworkEmulatorError: If command fails a message is set by the fail_msg
     parameter.
   """
   if sys.platform == 'win32':
