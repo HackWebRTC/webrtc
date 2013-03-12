@@ -43,6 +43,8 @@ void WebRtcIsacfix_MatrixProduct1Neon(const int16_t matrix0[],
   }
   int32x4_t shift32x4 = vdupq_n_s32(shift);
   int32x2_t shift32x2 = vdup_n_s32(shift);
+  int32x4_t sum_32x4 =  vdupq_n_s32(0);
+  int32x2_t sum_32x2 =  vdup_n_s32(0);
 
   assert(inner_loop_count % 2 == 0);
   assert(mid_loop_count % 2 == 0);
@@ -51,8 +53,7 @@ void WebRtcIsacfix_MatrixProduct1Neon(const int16_t matrix0[],
     for (j = 0; j < SUBFRAMES; j++) {
       matrix_prod_index = mid_loop_count * j;
       for (k = 0; k < (mid_loop_count >> 2) << 2; k += 4) {
-        // Initialize sum_32x4 to zeros.
-        int32x4_t sum_32x4 = veorq_s32(sum_32x4, sum_32x4);
+        sum_32x4 = veorq_s32(sum_32x4, sum_32x4);  // Initialize to zeros.
         matrix1_index = k;
         matrix0_index = matrix0_index_factor1 * j;
         for (n = 0; n < inner_loop_count; n++) {
@@ -69,8 +70,7 @@ void WebRtcIsacfix_MatrixProduct1Neon(const int16_t matrix0[],
         matrix_prod_index += 4;
       }
       if (mid_loop_count % 4 > 1) {
-        // Initialize sum_32x2 to zeros.
-        int32x2_t sum_32x2 = veor_s32(sum_32x2, sum_32x2);
+        sum_32x2 = veor_s32(sum_32x2, sum_32x2);  // Initialize to zeros.
         matrix1_index = k;
         k += 2;
         matrix0_index = matrix0_index_factor1 * j;
@@ -90,11 +90,12 @@ void WebRtcIsacfix_MatrixProduct1Neon(const int16_t matrix0[],
     }
   }
   else if (matrix1_index_init_case == 0 && matrix0_index_factor1 == 1) {
+    int32x2_t multi_32x2 = vdup_n_s32(0);
+    int32x2_t matrix0_32x2 = vdup_n_s32(0);
     for (j = 0; j < SUBFRAMES; j++) {
       matrix_prod_index = mid_loop_count * j;
       for (k = 0; k < (mid_loop_count >> 2) << 2; k += 4) {
-        // Initialize sum_32x4 to zeros.
-        int32x4_t sum_32x4 = veorq_s32(sum_32x4, sum_32x4);
+        sum_32x4 = veorq_s32(sum_32x4, sum_32x4);  // Initialize to zeros.
         matrix1_index = matrix1_index_factor1 * j;
         matrix0_index = k;
         for (n = 0; n < inner_loop_count; n++) {
@@ -110,14 +111,12 @@ void WebRtcIsacfix_MatrixProduct1Neon(const int16_t matrix0[],
         matrix_prod_index += 4;
       }
       if (mid_loop_count % 4 > 1) {
-        // Initialize sum_32x2 to zeros.
-        int32x2_t sum_32x2 = veor_s32(sum_32x2, sum_32x2);
+        sum_32x2 = veor_s32(sum_32x2, sum_32x2);  // Initialize to zeros.
         matrix1_index = matrix1_index_factor1 * j;
         matrix0_index = k;
         for (n = 0; n < inner_loop_count; n++) {
-          int32x2_t multi_32x2;
           int32x2_t matrix1_32x2 = vdup_n_s32(matrix1[matrix1_index] << shift);
-          int32x2_t matrix0_32x2 =
+          matrix0_32x2 =
               vset_lane_s32((int32_t)matrix0[matrix0_index], matrix0_32x2, 0);
           matrix0_32x2 = vset_lane_s32((int32_t)matrix0[matrix0_index + 1],
                                      matrix0_32x2, 1);
@@ -135,12 +134,12 @@ void WebRtcIsacfix_MatrixProduct1Neon(const int16_t matrix0[],
   else if (matrix1_index_init_case == 0 &&
            matrix1_index_step == 1 &&
            matrix0_index_step == 1) {
+    int32x2_t multi_32x2 = vdup_n_s32(0);
+    int32x2_t matrix0_32x2 = vdup_n_s32(0);
     for (j = 0; j < SUBFRAMES; j++) {
       matrix_prod_index = mid_loop_count * j;
       for (k = 0; k < mid_loop_count; k++) {
-        int32x2_t sum_32x2;
-        // Initialize sum_32x4 to zeros.
-        int32x4_t sum_32x4 = veorq_s32(sum_32x4, sum_32x4);
+        sum_32x4 = veorq_s32(sum_32x4, sum_32x4);  // Initialize to zeros.
         matrix1_index = matrix1_index_factor1 * j;
         matrix0_index = matrix0_index_factor1 * k;
         for (n = 0; n < (inner_loop_count >> 2) << 2; n += 4) {
@@ -155,10 +154,9 @@ void WebRtcIsacfix_MatrixProduct1Neon(const int16_t matrix0[],
         }
         sum_32x2 = vqadd_s32(vget_low_s32(sum_32x4), vget_high_s32(sum_32x4));
         if (inner_loop_count % 4 > 1) {
-          int32x2_t multi_32x2;
           int32x2_t matrix1_32x2 =
               vshl_s32(vld1_s32(&matrix1[matrix1_index]), shift32x2);
-          int32x2_t matrix0_32x2 =
+          matrix0_32x2 =
               vset_lane_s32((int32_t)matrix0[matrix0_index], matrix0_32x2, 0);
           matrix0_32x2 = vset_lane_s32((int32_t)matrix0[matrix0_index + 1],
                                      matrix0_32x2, 1);
@@ -199,9 +197,9 @@ void WebRtcIsacfix_MatrixProduct2Neon(const int16_t matrix0[],
                                       const int matrix0_index_step) {
   int j = 0, n = 0;
   int matrix1_index = 0, matrix0_index = 0, matrix_prod_index = 0;
+  int32x2_t sum_32x2 = vdup_n_s32(0);
   for (j = 0; j < SUBFRAMES; j++) {
-    // Initialize sum_32x2 to zeros.
-    int32x2_t sum_32x2 = veor_s32(sum_32x2, sum_32x2);
+    sum_32x2 = veor_s32(sum_32x2, sum_32x2);  // Initialize to zeros.
     matrix1_index = 0;
     matrix0_index = matrix0_index_factor * j;
     for (n = SUBFRAMES; n > 0; n--) {
