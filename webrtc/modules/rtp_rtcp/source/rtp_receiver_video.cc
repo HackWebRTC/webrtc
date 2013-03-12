@@ -359,8 +359,8 @@ WebRtc_Word32 RTPReceiverVideo::ReceiveVp8Codec(
   }
   to_header->keyIdx = from_header->hasKeyIdx ? from_header->keyIdx : kNoKeyIdx;
 
-  to_header->frameWidth = from_header->frameWidth;
-  to_header->frameHeight = from_header->frameHeight;
+  rtp_header->type.Video.width = from_header->frameWidth;
+  rtp_header->type.Video.height = from_header->frameHeight;
 
   to_header->partitionId = from_header->partitionID;
   to_header->beginningOfPartition = from_header->beginningOfPartition;

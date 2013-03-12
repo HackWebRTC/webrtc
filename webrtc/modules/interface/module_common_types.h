@@ -71,8 +71,6 @@ struct RTPVideoHeaderVP8
         keyIdx = kNoKeyIdx;
         partitionId = 0;
         beginningOfPartition = false;
-        frameWidth = 0;
-        frameHeight = 0;
     }
 
     bool           nonReference;   // Frame is discardable.
@@ -87,8 +85,6 @@ struct RTPVideoHeaderVP8
     int            partitionId;    // VP8 partition ID
     bool           beginningOfPartition;  // True if this packet is the first
                                           // in a VP8 partition. Otherwise false
-    int            frameWidth;     // Exists for key frames.
-    int            frameHeight;    // Exists for key frames.
 };
 union RTPVideoTypeHeader
 {
