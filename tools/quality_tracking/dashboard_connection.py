@@ -118,17 +118,17 @@ class DashboardConnection:
   def _read_consumer_secret(self, filename):
     return self._read_shelve(filename, 'consumer_secret')
 
+  @staticmethod
+  def _read_shelve(filename, key):
+    input_file = shelve.open(filename)
 
-def _read_shelve(filename, key):
-  input_file = shelve.open(filename)
+    if not input_file.has_key(key):
+      raise FailedToReadRequiredInputFile('Missing correct %s file in current '
+                                          'directory. You may have to run '
+                                          'request_oauth_permission.py.' %
+                                          filename)
 
-  if not input_file.has_key(key):
-    raise FailedToReadRequiredInputFile('Missing correct %s file in current '
-                                        'directory. You may have to run '
-                                        'request_oauth_permission.py.' %
-                                        filename)
+    result = input_file[key]
+    input_file.close()
 
-  result = input_file[key]
-  input_file.close()
-
-  return result
+    return result
