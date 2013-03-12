@@ -27,9 +27,7 @@ RTPReceiverAudio::RTPReceiverAudio(const WebRtc_Word32 id,
       critical_section_rtp_receiver_audio_(
           CriticalSectionWrapper::CreateCriticalSection()),
       last_received_frequency_(8000),
-      telephone_event_(false),
       telephone_event_forward_to_decoder_(false),
-      telephone_event_detect_end_of_tone_(false),
       telephone_event_payload_type_(-1),
       cng_nb_payload_type_(-1),
       cng_wb_payload_type_(-1),
@@ -51,21 +49,11 @@ WebRtc_UWord32 RTPReceiverAudio::AudioFrequency() const {
 }
 
 // Outband TelephoneEvent(DTMF) detection
-WebRtc_Word32 RTPReceiverAudio::SetTelephoneEventStatus(
-    const bool enable,
-    const bool forward_to_decoder,
-    const bool detect_end_of_tone) {
+int RTPReceiverAudio::SetTelephoneEventForwardToDecoder(
+    bool forward_to_decoder) {
   CriticalSectionScoped lock(critical_section_rtp_receiver_audio_.get());
-  telephone_event_ = enable;
-  telephone_event_detect_end_of_tone_ = detect_end_of_tone;
   telephone_event_forward_to_decoder_ = forward_to_decoder;
   return 0;
-}
-
-// Is outband TelephoneEvent(DTMF) turned on/off?
-bool RTPReceiverAudio::TelephoneEvent() const {
-  CriticalSectionScoped lock(critical_section_rtp_receiver_audio_.get());
-  return telephone_event_;
 }
 
 // Is forwarding of outband telephone events turned on/off?
@@ -194,34 +182,6 @@ WebRtc_Word32 RTPReceiverAudio::OnNewPayloadTypeCreated(
   return 0;
 }
 
-void RTPReceiverAudio::SendTelephoneEvents(
-    WebRtc_UWord8 number_of_new_events,
-    WebRtc_UWord8 new_events[MAX_NUMBER_OF_PARALLEL_TELEPHONE_EVENTS],
-    WebRtc_UWord8 number_of_removed_events,
-    WebRtc_UWord8 removed_events[MAX_NUMBER_OF_PARALLEL_TELEPHONE_EVENTS]) {
-
-  // Copy these variables since we can't hold the critsect when we call the
-  // callback. cb_audio_feedback_ and id_ are immutable though.
-  bool telephone_event;
-  bool telephone_event_detect_end_of_tone;
-  {
-    CriticalSectionScoped lock(critical_section_rtp_receiver_audio_.get());
-    telephone_event = telephone_event_;
-    telephone_event_detect_end_of_tone = telephone_event_detect_end_of_tone_;
-  }
-  if (telephone_event) {
-    for (int n = 0; n < number_of_new_events; ++n) {
-      cb_audio_feedback_->OnReceivedTelephoneEvent(id_, new_events[n], false);
-    }
-    if (telephone_event_detect_end_of_tone) {
-      for (int n = 0; n < number_of_removed_events; ++n) {
-        cb_audio_feedback_->OnReceivedTelephoneEvent(
-            id_, removed_events[n], true);
-      }
-    }
-  }
-}
-
 WebRtc_Word32 RTPReceiverAudio::ParseRtpPacket(
     WebRtcRTPHeader* rtp_header,
     const ModuleRTPUtility::PayloadUnion& specific_payload,
@@ -316,10 +276,6 @@ WebRtc_Word32 RTPReceiverAudio::ParseAudioCodecSpecific(
     const WebRtc_UWord16 payload_length,
     const ModuleRTPUtility::AudioPayload& audio_specific,
     const bool is_red) {
-  WebRtc_UWord8 new_events[MAX_NUMBER_OF_PARALLEL_TELEPHONE_EVENTS] = {};
-  WebRtc_UWord8 removed_events[MAX_NUMBER_OF_PARALLEL_TELEPHONE_EVENTS] = {};
-  WebRtc_UWord8 number_of_new_events = 0;
-  WebRtc_UWord8 number_of_removed_events = 0;
 
   if (payload_length == 0) {
     return 0;
@@ -355,16 +311,12 @@ WebRtc_Word32 RTPReceiverAudio::ParseAudioCodecSpecific(
       if (event != telephone_event_reported_.end()) {
         // we have already seen this event
         if (end) {
-          removed_events[number_of_removed_events] = payload_data[4 * n];
-          number_of_removed_events++;
           telephone_event_reported_.erase(payload_data[4 * n]);
         }
       } else {
         if (end) {
           // don't add if it's a end of a tone
         } else {
-          new_events[number_of_new_events] = payload_data[4 * n];
-          number_of_new_events++;
           telephone_event_reported_.insert(payload_data[4 * n]);
         }
       }
@@ -375,12 +327,6 @@ WebRtc_Word32 RTPReceiverAudio::ParseAudioCodecSpecific(
 
     // RFC 4733 See 2.5.1.5. & 2.5.2.4.  Multiple Events in a Packet
   }
-
-  // This needs to be called without locks held.
-  SendTelephoneEvents(number_of_new_events,
-                      new_events,
-                      number_of_removed_events,
-                      removed_events);
 
   {
     CriticalSectionScoped lock(critical_section_rtp_receiver_audio_.get());

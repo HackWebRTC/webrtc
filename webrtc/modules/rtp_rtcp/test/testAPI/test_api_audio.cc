@@ -190,11 +190,8 @@ TEST_F(RtpRtcpAudioTest, Basic) {
   EXPECT_EQ(0, module1->SetSSRC(test_ssrc));
   EXPECT_EQ(0, module1->SetStartTimestamp(test_timestamp));
 
-  EXPECT_FALSE(module1->TelephoneEvent());
-
   // Test detection at the end of a DTMF tone.
-  EXPECT_EQ(0, module2->SetTelephoneEventStatus(true, true, true));
-  EXPECT_EQ(true, module2->TelephoneEvent());
+  EXPECT_EQ(0, module2->SetTelephoneEventForwardToDecoder(true));
 
   EXPECT_EQ(0, module1->SetSendingStatus(true));
 

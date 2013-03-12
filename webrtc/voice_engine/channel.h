@@ -73,9 +73,6 @@ class Channel:
     public RtpAudioFeedback,
     public AudioPacketizationCallback, // receive encoded packets from the ACM
     public ACMVADCallback, // receive voice activity from the ACM
-#ifdef WEBRTC_DTMF_DETECTION
-    public AudioCodingFeedback, // inband Dtmf detection in the ACM
-#endif
     public MixerParticipant // supplies output mixer with audio frames
 {
 public:
@@ -296,15 +293,6 @@ public:
     bool DtmfPlayoutStatus() const;
     int SetSendTelephoneEventPayloadType(unsigned char type);
     int GetSendTelephoneEventPayloadType(unsigned char& type);
-#ifdef WEBRTC_DTMF_DETECTION
-    int RegisterTelephoneEventDetection(
-            TelephoneEventDetectionMethods detectionMethod,
-            VoETelephoneEventObserver& observer);
-    int DeRegisterTelephoneEventDetection();
-    int GetTelephoneEventDetectionStatus(
-            bool& enabled,
-            TelephoneEventDetectionMethods& detectionMethod);
-#endif
 
     // VoEAudioProcessingImpl
     int UpdateRxVadDetection(AudioFrame& audioFrame);
@@ -371,11 +359,6 @@ public:
                            const RTPFragmentationHeader* fragmentation);
     // From ACMVADCallback in the ACM
     WebRtc_Word32 InFrameType(WebRtc_Word16 frameType);
-
-#ifdef WEBRTC_DTMF_DETECTION
-public: // From AudioCodingFeedback in the ACM
-    int IncomingDtmf(const WebRtc_UWord8 digitDtmf, const bool end);
-#endif
 
 public:
     WebRtc_Word32 OnRxVadDetected(const int vadDecision);
@@ -603,9 +586,6 @@ private:
     Encryption* _encryptionPtr; // WebRtc SRTP or external encryption
     scoped_ptr<AudioProcessing> _rtpAudioProc;
     AudioProcessing* _rxAudioProcessingModulePtr; // far end AudioProcessing
-#ifdef WEBRTC_DTMF_DETECTION
-    VoETelephoneEventObserver* _telephoneEventDetectionPtr;
-#endif
     VoERxVadCallback* _rxVadObserverPtr;
     WebRtc_Word32 _oldVadDecision;
     WebRtc_Word32 _sendFrameType; // Send data is voice, 1-voice, 0-otherwise
@@ -634,8 +614,6 @@ private:
     // VoEDtmf
     bool _playOutbandDtmfEvent;
     bool _playInbandDtmfEvent;
-    bool _inbandTelephoneEventDetection;
-    bool _outOfBandTelephoneEventDetecion;
     // VoeRTP_RTCP
     WebRtc_UWord8 _extraPayloadType;
     bool _insertExtraRTPPacket;

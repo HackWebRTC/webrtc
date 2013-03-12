@@ -247,10 +247,7 @@ class MockRtpRtcp : public RtpRtcp {
       WebRtc_Word32(RtpAudioFeedback* messagesCallback));
   MOCK_METHOD1(SetAudioPacketSize,
       WebRtc_Word32(const WebRtc_UWord16 packetSizeSamples));
-  MOCK_METHOD3(SetTelephoneEventStatus,
-      WebRtc_Word32(const bool enable, const bool forwardToDecoder, const bool detectEndOfTone));
-  MOCK_CONST_METHOD0(TelephoneEvent,
-      bool());
+  MOCK_METHOD1(SetTelephoneEventForwardToDecoder, int(bool forwardToDecoder));
   MOCK_CONST_METHOD0(TelephoneEventForwardToDecoder,
       bool());
   MOCK_CONST_METHOD1(SendTelephoneEventActive,

@@ -33,13 +33,8 @@ class RTPReceiverAudio : public RTPReceiverStrategy {
 
   WebRtc_UWord32 AudioFrequency() const;
 
-  // Outband TelephoneEvent (DTMF) detection
-  WebRtc_Word32 SetTelephoneEventStatus(const bool enable,
-                                        const bool forward_to_decoder,
-                                        const bool detect_end_of_tone);
-
-  // Is outband DTMF(AVT) turned on/off?
-  bool TelephoneEvent() const;
+  // Forward DTMFs to decoder for playout.
+  int SetTelephoneEventForwardToDecoder(bool forward_to_decoder);
 
   // Is forwarding of outband telephone events turned on/off?
   bool TelephoneEventForwardToDecoder() const;
@@ -98,11 +93,6 @@ class RTPReceiverAudio : public RTPReceiverStrategy {
                            bool* should_discard_changes);
 
  private:
-  void SendTelephoneEvents(
-      WebRtc_UWord8 number_of_new_events,
-      WebRtc_UWord8 new_events[MAX_NUMBER_OF_PARALLEL_TELEPHONE_EVENTS],
-      WebRtc_UWord8 number_of_removed_events,
-      WebRtc_UWord8 removed_events[MAX_NUMBER_OF_PARALLEL_TELEPHONE_EVENTS]);
 
   WebRtc_Word32 ParseAudioCodecSpecific(
       WebRtcRTPHeader* rtp_header,
@@ -116,9 +106,7 @@ class RTPReceiverAudio : public RTPReceiverStrategy {
 
   WebRtc_UWord32 last_received_frequency_;
 
-  bool telephone_event_;
   bool telephone_event_forward_to_decoder_;
-  bool telephone_event_detect_end_of_tone_;
   WebRtc_Word8 telephone_event_payload_type_;
   std::set<WebRtc_UWord8> telephone_event_reported_;
 

@@ -93,28 +93,6 @@ Channel::InFrameType(WebRtc_Word16 frameType)
     return 0;
 }
 
-#ifdef WEBRTC_DTMF_DETECTION
-int
-Channel::IncomingDtmf(const WebRtc_UWord8 digitDtmf, const bool end)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-               "Channel::IncomingDtmf(digitDtmf=%u, end=%d)",
-               digitDtmf, end);
-
-    if (digitDtmf != 999)
-    {
-        CriticalSectionScoped cs(&_callbackCritSect);
-        if (_telephoneEventDetectionPtr)
-        {
-            _telephoneEventDetectionPtr->OnReceivedTelephoneEventInband(
-                _channelId, digitDtmf, end);
-        }
-    }
-
-    return 0;
-}
-#endif
-
 WebRtc_Word32
 Channel::OnRxVadDetected(const int vadDecision)
 {
@@ -508,29 +486,6 @@ Channel::IncomingRTCPPacket(const WebRtc_Word8* incomingRtcpPacket,
             "Channel::IncomingRTPPacket() RTCP packet is invalid");
         return;
     }
-}
-
-void
-Channel::OnReceivedTelephoneEvent(const WebRtc_Word32 id,
-                                  const WebRtc_UWord8 event,
-                                  const bool endOfEvent)
-{
-    WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::OnReceivedTelephoneEvent(id=%d, event=%u,"
-                 " endOfEvent=%d)", id, event, endOfEvent);
-
-#ifdef WEBRTC_DTMF_DETECTION
-    if (_outOfBandTelephoneEventDetecion)
-    {
-        CriticalSectionScoped cs(&_callbackCritSect);
-
-        if (_telephoneEventDetectionPtr)
-        {
-            _telephoneEventDetectionPtr->OnReceivedTelephoneEventOutOfBand(
-                _channelId, event, endOfEvent);
-        }
-    }
-#endif
 }
 
 void
@@ -1123,9 +1078,6 @@ Channel::Channel(const WebRtc_Word32 channelId,
     _encryptionPtr(NULL),
     _rtpAudioProc(NULL),
     _rxAudioProcessingModulePtr(NULL),
-#ifdef WEBRTC_DTMF_DETECTION
-    _telephoneEventDetectionPtr(NULL),
-#endif
     _rxVadObserverPtr(NULL),
     _oldVadDecision(-1),
     _sendFrameType(0),
@@ -1149,8 +1101,6 @@ Channel::Channel(const WebRtc_Word32 channelId,
     _decrypting(false),
     _playOutbandDtmfEvent(false),
     _playInbandDtmfEvent(false),
-    _inbandTelephoneEventDetection(false),
-    _outOfBandTelephoneEventDetecion(false),
     _extraPayloadType(0),
     _insertExtraRTPPacket(false),
     _extraMarkerBit(false),
@@ -1268,15 +1218,6 @@ Channel::~Channel()
                      "~Channel() failed to de-register VAD callback"
                      " (Audio coding module)");
     }
-#ifdef WEBRTC_DTMF_DETECTION
-    if (_audioCodingModule.RegisterIncomingMessagesCallback(NULL) == -1)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-                     VoEId(_instanceId,_channelId),
-                     "~Channel() failed to de-register incoming messages "
-                     "callback (Audio coding module)");
-    }
-#endif
     // De-register modules in process thread
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
     if (_moduleProcessThreadPtr->DeRegisterModule(&_socketTransportModule)
@@ -1380,7 +1321,7 @@ Channel::Init()
     // be transmitted since the Transport object will then be invalid.
 
     const bool rtpRtcpFail =
-        ((_rtpRtcpModule->SetTelephoneEventStatus(false, true, true) == -1) ||
+        ((_rtpRtcpModule->SetTelephoneEventForwardToDecoder(true) == -1) ||
         // RTCP is enabled by default
         (_rtpRtcpModule->SetRTCPStatus(kRtcpCompound) == -1));
     if (rtpRtcpFail)
@@ -1768,10 +1709,8 @@ Channel::StopReceiving()
         }
     }
 #endif
-    bool dtmfDetection = _rtpRtcpModule->TelephoneEvent();
     // Recover DTMF detection status.
-    WebRtc_Word32 ret = _rtpRtcpModule->SetTelephoneEventStatus(dtmfDetection,
-                                                               true, true);
+    WebRtc_Word32 ret = _rtpRtcpModule->SetTelephoneEventForwardToDecoder(true);
     if (ret != 0) {
         _engineStatisticsPtr->SetLastError(
             VE_INVALID_OPERATION, kTraceWarning,
@@ -4454,144 +4393,6 @@ Channel::GetSendTelephoneEventPayloadType(unsigned char& type)
                "GetSendTelephoneEventPayloadType() => type=%u", type);
     return 0;
 }
-
-#ifdef WEBRTC_DTMF_DETECTION
-
-WebRtc_Word32
-Channel::RegisterTelephoneEventDetection(
-    TelephoneEventDetectionMethods detectionMethod,
-    VoETelephoneEventObserver& observer)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::RegisterTelephoneEventDetection()");
-    CriticalSectionScoped cs(&_callbackCritSect);
-
-    if (_telephoneEventDetectionPtr)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_OPERATION, kTraceError,
-            "RegisterTelephoneEventDetection() detection already enabled");
-        return -1;
-    }
-
-    _telephoneEventDetectionPtr = &observer;
-
-    switch (detectionMethod)
-    {
-        case kInBand:
-            _inbandTelephoneEventDetection = true;
-            _outOfBandTelephoneEventDetecion = false;
-            break;
-        case kOutOfBand:
-            _inbandTelephoneEventDetection = false;
-            _outOfBandTelephoneEventDetecion = true;
-            break;
-        case kInAndOutOfBand:
-            _inbandTelephoneEventDetection = true;
-            _outOfBandTelephoneEventDetecion = true;
-            break;
-        default:
-            _engineStatisticsPtr->SetLastError(
-                VE_INVALID_ARGUMENT, kTraceError,
-                "RegisterTelephoneEventDetection() invalid detection method");
-            return -1;
-    }
-
-    if (_inbandTelephoneEventDetection)
-    {
-        // Enable in-band Dtmf detectin in the ACM.
-        if (_audioCodingModule.RegisterIncomingMessagesCallback(this) != 0)
-        {
-            _engineStatisticsPtr->SetLastError(
-                VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-                "RegisterTelephoneEventDetection() failed to enable Dtmf "
-                "detection");
-        }
-    }
-
-    // Enable/disable out-of-band detection of received telephone-events.
-    // When enabled, RtpAudioFeedback::OnReceivedTelephoneEvent() will be
-    // called two times by the RTP/RTCP module (start & end).
-    const bool forwardToDecoder =
-        _rtpRtcpModule->TelephoneEventForwardToDecoder();
-    const bool detectEndOfTone = true;
-    _rtpRtcpModule->SetTelephoneEventStatus(_outOfBandTelephoneEventDetecion,
-                                           forwardToDecoder,
-                                           detectEndOfTone);
-
-    return 0;
-}
-
-int
-Channel::DeRegisterTelephoneEventDetection()
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-                 "Channel::DeRegisterTelephoneEventDetection()");
-
-    CriticalSectionScoped cs(&_callbackCritSect);
-
-    if (!_telephoneEventDetectionPtr)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_INVALID_OPERATION,
-            kTraceWarning,
-            "DeRegisterTelephoneEventDetection() detection already disabled");
-        return 0;
-    }
-
-    // Disable out-of-band event detection
-    const bool forwardToDecoder =
-        _rtpRtcpModule->TelephoneEventForwardToDecoder();
-    _rtpRtcpModule->SetTelephoneEventStatus(false, forwardToDecoder);
-
-    // Disable in-band Dtmf detection
-    _audioCodingModule.RegisterIncomingMessagesCallback(NULL);
-
-    _inbandTelephoneEventDetection = false;
-    _outOfBandTelephoneEventDetecion = false;
-    _telephoneEventDetectionPtr = NULL;
-
-    return 0;
-}
-
-int
-Channel::GetTelephoneEventDetectionStatus(
-    bool& enabled,
-    TelephoneEventDetectionMethods& detectionMethod)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-                 "Channel::GetTelephoneEventDetectionStatus()");
-
-    {
-        CriticalSectionScoped cs(&_callbackCritSect);
-        enabled = (_telephoneEventDetectionPtr != NULL);
-    }
-
-    if (enabled)
-    {
-        if (_inbandTelephoneEventDetection && !_outOfBandTelephoneEventDetecion)
-            detectionMethod = kInBand;
-        else if (!_inbandTelephoneEventDetection
-            && _outOfBandTelephoneEventDetecion)
-            detectionMethod = kOutOfBand;
-        else if (_inbandTelephoneEventDetection
-            && _outOfBandTelephoneEventDetecion)
-            detectionMethod = kInAndOutOfBand;
-        else
-        {
-            assert(false);
-            return -1;
-        }
-    }
-
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-               VoEId(_instanceId, _channelId),
-               "GetTelephoneEventDetectionStatus() => enabled=%d,"
-               "detectionMethod=%d", enabled, detectionMethod);
-    return 0;
-}
-
-#endif  // #ifdef WEBRTC_DTMF_DETECTION
 
 int
 Channel::UpdateRxVadDetection(AudioFrame& audioFrame)

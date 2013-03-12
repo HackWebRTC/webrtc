@@ -345,14 +345,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   virtual WebRtc_Word32 SetAudioPacketSize(
       const WebRtc_UWord16 packet_size_samples);
 
-  // Outband DTMF detection.
-  virtual WebRtc_Word32 SetTelephoneEventStatus(
-      const bool enable,
-      const bool forward_to_decoder,
-      const bool detect_end_of_tone = false);
-
-  // Is outband DTMF turned on/off?
-  virtual bool TelephoneEvent() const;
+  // Forward DTMFs to decoder for playout.
+  virtual int SetTelephoneEventForwardToDecoder(bool forward_to_decoder);
 
   // Is forwarding of outband telephone events turned on/off?
   virtual bool TelephoneEventForwardToDecoder() const;

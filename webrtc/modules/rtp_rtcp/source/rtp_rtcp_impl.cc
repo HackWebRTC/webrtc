@@ -1582,29 +1582,17 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetStorePacketsStatus(
   return 0;  // TODO(pwestin): change to void.
 }
 
-// Out-band TelephoneEvent detection.
-WebRtc_Word32 ModuleRtpRtcpImpl::SetTelephoneEventStatus(
-    const bool enable,
-    const bool forward_to_decoder,
-    const bool detect_end_of_tone) {
+// Forward DTMFs to decoder for playout.
+int ModuleRtpRtcpImpl::SetTelephoneEventForwardToDecoder(
+    bool forward_to_decoder) {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_,
-               "SetTelephoneEventStatus(enable:%d forward_to_decoder:%d"
-               " detect_end_of_tone:%d)", enable, forward_to_decoder,
-               detect_end_of_tone);
+               "SetTelephoneEventForwardToDecoder(forward_to_decoder:%d)",
+               forward_to_decoder);
 
   assert(audio_);
   assert(rtp_telephone_event_handler_);
-  return rtp_telephone_event_handler_->SetTelephoneEventStatus(
-           enable, forward_to_decoder, detect_end_of_tone);
-}
-
-// Is out-band TelephoneEvent turned on/off?
-bool ModuleRtpRtcpImpl::TelephoneEvent() const {
-  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "TelephoneEvent()");
-
-  assert(audio_);
-  assert(rtp_telephone_event_handler_);
-  return rtp_telephone_event_handler_->TelephoneEvent();
+  return rtp_telephone_event_handler_->SetTelephoneEventForwardToDecoder(
+      forward_to_decoder);
 }
 
 // Is forwarding of out-band telephone events turned on/off?

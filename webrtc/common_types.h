@@ -342,13 +342,6 @@ typedef struct        // All levels are reported in dB
     StatVal a_nlp;
 } EchoStatistics;
 
-enum TelephoneEventDetectionMethods
-{
-    kInBand = 0,
-    kOutOfBand = 1,
-    kInAndOutOfBand = 2
-};
-
 enum NsModes    // type of Noise Suppression
 {
     kNsUnchanged = 0,   // previously set mode
