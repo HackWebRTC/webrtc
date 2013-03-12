@@ -380,10 +380,6 @@ bool CpuWindows::Initialize()
     {
         return false;
     }
-    if (FAILED(hr))
-    {
-        return false;
-    }
 
     if (!CreateWmiConnection())
     {
