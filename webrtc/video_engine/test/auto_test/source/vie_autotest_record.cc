@@ -359,8 +359,8 @@ int VideoEngineSampleRecordCode(void* window1, void* window2) {
     printf("ERROR in ViENetwork::GetInterface\n");
     return -1;
   }
-  webrtc::scoped_ptr<webrtc::VideoChannelTransport> video_channel_transport(
-      new webrtc::VideoChannelTransport(ptrViENetwork, videoChannel));
+  webrtc::VideoChannelTransport* video_channel_transport =
+      new webrtc::VideoChannelTransport(ptrViENetwork, videoChannel);
 
   error = video_channel_transport->SetSendDestination(ipAddress, rtpPort);
   if (error == -1) {
@@ -526,6 +526,7 @@ int VideoEngineSampleRecordCode(void* window1, void* window2) {
     printf("ERROR in ViEBase::DeleteChannel\n");
     return -1;
   }
+  delete video_channel_transport;
 
   int remainingInterfaces = 0;
   remainingInterfaces = ptrViECodec->Release();

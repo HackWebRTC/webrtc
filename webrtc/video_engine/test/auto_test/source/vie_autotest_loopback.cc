@@ -474,8 +474,8 @@ int VideoEngineSampleCode(void* window1, void* window2)
     // Setting External transport
     TbExternalTransport extTransport(*(ptrViENetwork), videoChannel, NULL);
 
-    webrtc::scoped_ptr<webrtc::VideoChannelTransport> video_channel_transport(
-        new webrtc::VideoChannelTransport(ptrViENetwork, videoChannel));
+    webrtc::VideoChannelTransport* video_channel_transport =
+        new webrtc::VideoChannelTransport(ptrViENetwork, videoChannel);
     
     int testMode = 0;
     std::cout << std::endl;
@@ -642,7 +642,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
         printf("ERROR in ViEBase::DeleteChannel\n");
         return -1;
     }
-
+    delete video_channel_transport;
     int remainingInterfaces = 0;
     remainingInterfaces = ptrViECodec->Release();
     remainingInterfaces += ptrViECapture->Release();

@@ -931,6 +931,9 @@ int ViEAutoTest::ViECustomCall() {
     // Now tear down the ViE engine.
     error = vie_base->DisconnectAudioChannel(video_channel);
 
+    voice_channel_transport.reset(NULL);
+    video_channel_transport.reset(NULL);
+
     // If Encoder/Decoder Observer is running, delete them.
     if (codec_encoder_observer) {
       error = vie_codec->DeregisterEncoderObserver(video_channel);

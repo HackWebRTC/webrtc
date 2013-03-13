@@ -161,17 +161,17 @@ void ViEAutoTest::ViEBaseAPITest() {
   EXPECT_EQ(0, vie_rtp->SetLocalSSRC(video_channel, 2));
   EXPECT_EQ(0, vie_rtp->SetLocalSSRC(video_channel, 3));
   
-  webrtc::scoped_ptr<webrtc::VideoChannelTransport> video_channel_transport_1(
-      new webrtc::VideoChannelTransport(vie_network, video_channel));
+  webrtc::VideoChannelTransport* video_channel_transport_1 =
+      new webrtc::VideoChannelTransport(vie_network, video_channel);
 
   ASSERT_EQ(0, video_channel_transport_1->SetSendDestination(ip_address,
                                                              send_port));
 
-  webrtc::scoped_ptr<webrtc::VideoChannelTransport> video_channel_transport_2(
-      new webrtc::VideoChannelTransport(vie_network, video_channel2));
+  webrtc::VideoChannelTransport* video_channel_transport_2 =
+      new webrtc::VideoChannelTransport(vie_network, video_channel2);
 
-  webrtc::scoped_ptr<webrtc::VideoChannelTransport> video_channel_transport_3(
-      new webrtc::VideoChannelTransport(vie_network, video_channel3));
+  webrtc::VideoChannelTransport* video_channel_transport_3 =
+      new webrtc::VideoChannelTransport(vie_network, video_channel3);
 
   ASSERT_EQ(0, video_channel_transport_3->SetSendDestination(ip_address,
                                                              send_port + 4));
@@ -231,6 +231,9 @@ void ViEAutoTest::ViEBaseAPITest() {
   EXPECT_FALSE(webrtc::VideoEngine::Delete(video_engine)) <<
       "Should fail since there are interfaces left.";
 
+  delete video_channel_transport_1;
+  delete video_channel_transport_2;
+  delete video_channel_transport_3;
   EXPECT_EQ(0, vie_base->Release());
   EXPECT_TRUE(webrtc::VideoEngine::Delete(video_engine));
 }
