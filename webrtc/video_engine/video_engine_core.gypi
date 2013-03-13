@@ -26,6 +26,7 @@
         # ModulesShared
         '<(webrtc_root)/modules/modules.gyp:media_file',
         '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
+        '<(webrtc_root)/modules/modules.gyp:udp_transport',
         '<(webrtc_root)/modules/modules.gyp:webrtc_utility',
 
         # ModulesVideo

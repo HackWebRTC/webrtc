@@ -14,7 +14,7 @@
 
 #ifdef _WIN32
 #include "fix_interlocked_exchange_pointer_win.h"
-#include "udp_socket2_manager_win.h"
+#include "udp_socket2_manager_windows.h"
 #else
 #include "udp_socket_manager_posix.h"
 #endif

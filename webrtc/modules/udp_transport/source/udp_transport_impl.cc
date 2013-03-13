@@ -179,6 +179,44 @@ UdpTransportImpl::~UdpTransportImpl()
                  __FUNCTION__);
 }
 
+WebRtc_Word32 UdpTransportImpl::ChangeUniqueId(const WebRtc_Word32 id)
+{
+
+    CriticalSectionScoped cs(_crit);
+    _id = id;
+    if(_mgr)
+    {
+        _mgr->ChangeUniqueId(id);
+    }
+    if(_ptrRtpSocket)
+    {
+        _ptrRtpSocket->ChangeUniqueId(id);
+    }
+    if(_ptrRtcpSocket)
+    {
+        _ptrRtcpSocket->ChangeUniqueId(id);
+    }
+    if(_ptrSendRtpSocket)
+    {
+        _ptrSendRtpSocket->ChangeUniqueId(id);
+    }
+    if(_ptrSendRtcpSocket)
+    {
+        _ptrSendRtcpSocket->ChangeUniqueId(id);
+    }
+    return 0;
+}
+
+WebRtc_Word32 UdpTransportImpl::TimeUntilNextProcess()
+{
+    return 100;
+}
+
+WebRtc_Word32 UdpTransportImpl::Process()
+{
+    return 0;
+}
+
 UdpTransport::ErrorCode UdpTransportImpl::LastError() const
 {
     return _lastError;
@@ -1360,7 +1398,7 @@ UdpTransportImpl::ErrorCode UdpTransportImpl::BindLocalRTPSocket()
     {
         SocketAddress stLclName;
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
-        stLclName.sin_lenght = 0;
+        stLclName.sin_length = 0;
         stLclName.sin_family = PF_INET6;
 #else
         stLclName._sockaddr_storage.sin_family = PF_INET6;
@@ -2523,7 +2561,7 @@ WebRtc_Word32 UdpTransport::LocalHostAddressIPV6(char n_localIP[16])
     req.r.ifa_family = AF_INET6;
 
     // Fill up all the attributes for the rtnetlink header.
-    // The lenght is very important. 16 signifies the ipv6 address.
+    // The length is very important. 16 signifies the ipv6 address.
     rta = (struct rtattr*)(((char*)&req) + NLMSG_ALIGN(req.n.nlmsg_len));
     rta->rta_len = RTA_LENGTH(16);
 

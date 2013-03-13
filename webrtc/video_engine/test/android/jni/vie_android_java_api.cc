@@ -34,9 +34,6 @@
 #include "common_types.h"
 #include "android_media_codec_decoder.h"
 
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/test/udp_transport/include/channel_transport.h"
-
 #define WEBRTC_LOG_TAG "*WEBRTCN*"
 #define VALIDATE_BASE_POINTER                                           \
   if (!voeData.base)                                                    \
@@ -110,8 +107,6 @@ typedef struct
   VoEHardware* hardware;
   VoERTP_RTCP* rtp;
   JavaVM* jvm;
-  scoped_ptr<VoiceChannelTransport> transport;
-  // TODO
 } VoiceEngineData;
 
 class AndroidVideoRenderCallback;
@@ -127,7 +122,6 @@ typedef struct
   ViECapture* capture;
   ViEExternalCodec* externalCodec;
   VideoCallbackAndroid* callback;
-  scoped_ptr<VideoChannelTransport> transport;
 
 } VideoEngineData;
 
@@ -595,7 +589,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_CreateCh
     if (voiceChannel >= 0) {
       vieData.base->ConnectAudioChannel(channel, voiceChannel);
     }
-    vieData.transport.reset(new VideoChannelTransport(vieData.netw, channel));
+
     return channel;
   }
   else {
@@ -616,10 +610,13 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetLocal
 {
   __android_log_write(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG, "SetLocalReceiver");
 
-  if (vieData.transport.get()) {
-    return vieData.transport->SetLocalReceiver(port);
+  if (vieData.vie) {
+    int ret = vieData.netw->SetLocalReceiver(channel, port);
+    return ret;
   }
-  return -1;
+  else {
+    return -1;
+  }
 }
 
 /*
@@ -649,10 +646,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetSendD
                       "SetSendDestination: channel=%d, port=%d, ip=%s\n",
                       channel, port, ip);
 
-  if (vieData.transport.get()) {
-    return vieData.transport->SetSendDestination(ip, port);
-  }
-  return -1;
+  return vieData.netw->SetSendDestination(channel, ip, port);
 }
 
 
@@ -1270,7 +1264,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Cre
   }
 
   jint channel = voeData.base->CreateChannel();
-  voeData.transport.reset(new VoiceChannelTransport(voeData.netw, channel));
+
   return channel;
 }
 
@@ -1301,10 +1295,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Set
 {
   __android_log_write(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG, "SetLocalReceiver");
   VALIDATE_BASE_POINTER;
-  if (voeData.transport.get()) {
-    return voeData.transport->SetLocalReceiver(port);
-  }
-  return -1;
+  return voeData.base->SetLocalReceiver(channel, port);
 }
 
 /*
@@ -1328,13 +1319,9 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Set
                         "Could not get UTF string");
     return -1;
   }
-  if (voeData.transport.get()) {
-    jint retVal = voeData.transport->SetSendDestination(ipaddrNative, port);
-    env->ReleaseStringUTFChars(ipaddr, ipaddrNative);
-    return retVal;
-  }
+  jint retVal = voeData.base->SetSendDestination(channel, port, ipaddrNative);
   env->ReleaseStringUTFChars(ipaddr, ipaddrNative);
-  return -1;
+  return retVal;
 }
 
 /*

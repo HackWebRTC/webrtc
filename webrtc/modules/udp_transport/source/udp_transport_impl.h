@@ -42,6 +42,11 @@ public:
                      UdpSocketManager* socket_manager);
     virtual ~UdpTransportImpl();
 
+    // Module functions
+    virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
+    virtual WebRtc_Word32 TimeUntilNextProcess();
+    virtual WebRtc_Word32 Process();
+
     // UdpTransport functions
     virtual WebRtc_Word32 InitializeSendSockets(
         const char* ipAddr,

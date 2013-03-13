@@ -22,8 +22,8 @@
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "webrtc/test/udp_transport/udp_socket_wrapper.h"
-#include "webrtc/test/udp_transport/udp_socket_manager_wrapper.h"
+#include "modules/udp_transport/source/udp_socket_wrapper.h"
+#include "modules/udp_transport/source/udp_socket_manager_wrapper.h"
 
 using ::testing::_;
 using ::testing::Return;

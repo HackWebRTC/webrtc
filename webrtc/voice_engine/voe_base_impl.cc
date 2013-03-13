@@ -683,7 +683,263 @@ int VoEBaseImpl::DeleteChannel(int channel)
     {
         return -1;
     }
+
     return 0;
+}
+
+int VoEBaseImpl::SetLocalReceiver(int channel, int port, int RTCPport,
+                                  const char ipAddr[64],
+                                  const char multiCastAddr[64])
+{
+    //  Inititialize local receive sockets (RTP and RTCP).
+    //
+    //  The sockets are always first closed and then created again by this
+    //  function call. The created sockets are by default also used for
+    // transmission (unless source port is set in SetSendDestination).
+    //
+    //  Note that, sockets can also be created automatically if a user calls
+    //  SetSendDestination and StartSend without having called SetLocalReceiver
+    // first. The sockets are then created at the first packet transmission.
+
+    CriticalSectionScoped cs(_shared->crit_sec());
+    if (ipAddr == NULL && multiCastAddr == NULL)
+    {
+        WEBRTC_TRACE(kTraceApiCall, kTraceVoice,
+            VoEId(_shared->instance_id(), -1),
+            "SetLocalReceiver(channel=%d, port=%d, RTCPport=%d)",
+            channel, port, RTCPport);
+    }
+    else if (ipAddr != NULL && multiCastAddr == NULL)
+    {
+        WEBRTC_TRACE(kTraceApiCall, kTraceVoice,
+          VoEId(_shared->instance_id(), -1),
+          "SetLocalReceiver(channel=%d, port=%d, RTCPport=%d, ipAddr=%s)",
+          channel, port, RTCPport, ipAddr);
+    }
+    else if (ipAddr == NULL && multiCastAddr != NULL)
+    {
+        WEBRTC_TRACE(kTraceApiCall, kTraceVoice,
+            VoEId(_shared->instance_id(), -1),
+            "SetLocalReceiver(channel=%d, port=%d, RTCPport=%d, "
+            "multiCastAddr=%s)", channel, port, RTCPport, multiCastAddr);
+    }
+    else
+    {
+        WEBRTC_TRACE(kTraceApiCall, kTraceVoice,
+            VoEId(_shared->instance_id(), -1),
+            "SetLocalReceiver(channel=%d, port=%d, RTCPport=%d, "
+            "ipAddr=%s, multiCastAddr=%s)", channel, port, RTCPport, ipAddr,
+            multiCastAddr);
+    }
+#ifndef WEBRTC_EXTERNAL_TRANSPORT
+    if (!_shared->statistics().Initialized())
+    {
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
+        return -1;
+    }
+    if ((port < 0) || (port > 65535))
+    {
+        _shared->SetLastError(VE_INVALID_PORT_NMBR, kTraceError,
+            "SetLocalReceiver() invalid RTP port");
+        return -1;
+    }
+    if (((RTCPport != kVoEDefault) && (RTCPport < 0)) || ((RTCPport
+            != kVoEDefault) && (RTCPport > 65535)))
+    {
+        _shared->SetLastError(VE_INVALID_PORT_NMBR, kTraceError,
+            "SetLocalReceiver() invalid RTCP port");
+        return -1;
+    }
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
+    if (channelPtr == NULL)
+    {
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+            "SetLocalReceiver() failed to locate channel");
+        return -1;
+    }
+
+    // Cast RTCP port. In the RTP module 0 corresponds to RTP port + 1 in
+    // the module, which is the default.
+    WebRtc_UWord16 rtcpPortUW16(0);
+    if (RTCPport != kVoEDefault)
+    {
+        rtcpPortUW16 = static_cast<WebRtc_UWord16> (RTCPport);
+    }
+
+    return channelPtr->SetLocalReceiver(port, rtcpPortUW16, ipAddr,
+                                        multiCastAddr);
+#else
+    _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED,
+        kTraceWarning, "SetLocalReceiver() VoE is built for external "
+        "transport");
+    return -1;
+#endif
+}
+
+int VoEBaseImpl::GetLocalReceiver(int channel, int& port, int& RTCPport,
+                                  char ipAddr[64])
+{
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+                 "GetLocalReceiver(channel=%d, ipAddr[]=?)", channel);
+#ifndef WEBRTC_EXTERNAL_TRANSPORT
+    if (!_shared->statistics().Initialized())
+    {
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
+        return -1;
+    }
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
+    if (channelPtr == NULL)
+    {
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+            "SetLocalReceiver() failed to locate channel");
+        return -1;
+    }
+    WebRtc_Word32 ret = channelPtr->GetLocalReceiver(port, RTCPport, ipAddr);
+    if (ipAddr != NULL)
+    {
+        WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
+            VoEId(_shared->instance_id(), -1),
+            "GetLocalReceiver() => port=%d, RTCPport=%d, ipAddr=%s",
+            port, RTCPport, ipAddr);
+    }
+    else
+    {
+        WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
+          VoEId(_shared->instance_id(), -1),
+          "GetLocalReceiver() => port=%d, RTCPport=%d", port, RTCPport);
+    }
+    return ret;
+#else
+    _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
+        "SetLocalReceiver() VoE is built for external transport");
+    return -1;
+#endif
+}
+
+int VoEBaseImpl::SetSendDestination(int channel, int port, const char* ipaddr,
+                                    int sourcePort, int RTCPport)
+{
+    WEBRTC_TRACE(
+                 kTraceApiCall,
+                 kTraceVoice,
+                 VoEId(_shared->instance_id(), -1),
+                 "SetSendDestination(channel=%d, port=%d, ipaddr=%s,"
+                 "sourcePort=%d, RTCPport=%d)",
+                 channel, port, ipaddr, sourcePort, RTCPport);
+    CriticalSectionScoped cs(_shared->crit_sec());
+#ifndef WEBRTC_EXTERNAL_TRANSPORT
+    if (!_shared->statistics().Initialized())
+    {
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
+        return -1;
+    }
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
+    if (channelPtr == NULL)
+    {
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+            "SetSendDestination() failed to locate channel");
+        return -1;
+    }
+    if ((port < 0) || (port > 65535))
+    {
+        _shared->SetLastError(VE_INVALID_PORT_NMBR, kTraceError,
+            "SetSendDestination() invalid RTP port");
+        return -1;
+    }
+    if (((RTCPport != kVoEDefault) && (RTCPport < 0)) || ((RTCPport
+            != kVoEDefault) && (RTCPport > 65535)))
+    {
+        _shared->SetLastError(VE_INVALID_PORT_NMBR, kTraceError,
+            "SetSendDestination() invalid RTCP port");
+        return -1;
+    }
+    if (((sourcePort != kVoEDefault) && (sourcePort < 0)) || ((sourcePort
+            != kVoEDefault) && (sourcePort > 65535)))
+    {
+        _shared->SetLastError(VE_INVALID_PORT_NMBR, kTraceError,
+            "SetSendDestination() invalid source port");
+        return -1;
+    }
+
+    // Cast RTCP port. In the RTP module 0 corresponds to RTP port + 1 in the
+    // module, which is the default.
+    WebRtc_UWord16 rtcpPortUW16(0);
+    if (RTCPport != kVoEDefault)
+    {
+        rtcpPortUW16 = static_cast<WebRtc_UWord16> (RTCPport);
+        WEBRTC_TRACE(
+                     kTraceInfo,
+                     kTraceVoice,
+                     VoEId(_shared->instance_id(), channel),
+                     "SetSendDestination() non default RTCP port %u will be "
+                     "utilized",
+                     rtcpPortUW16);
+    }
+
+    return channelPtr->SetSendDestination(port, ipaddr, sourcePort,
+                                          rtcpPortUW16);
+#else
+    _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
+        "SetSendDestination() VoE is built for external transport");
+    return -1;
+#endif
+}
+
+int VoEBaseImpl::GetSendDestination(int channel, int& port, char ipAddr[64],
+                                    int& sourcePort, int& RTCPport)
+{
+    WEBRTC_TRACE(
+                 kTraceApiCall,
+                 kTraceVoice,
+                 VoEId(_shared->instance_id(), -1),
+                 "GetSendDestination(channel=%d, ipAddr[]=?, sourcePort=?,"
+                 "RTCPport=?)",
+                 channel);
+#ifndef WEBRTC_EXTERNAL_TRANSPORT
+    if (!_shared->statistics().Initialized())
+    {
+        _shared->SetLastError(VE_NOT_INITED, kTraceError);
+        return -1;
+    }
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
+    if (channelPtr == NULL)
+    {
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+            "GetSendDestination() failed to locate channel");
+        return -1;
+    }
+    WebRtc_Word32 ret = channelPtr->GetSendDestination(port, ipAddr,
+                                                       sourcePort, RTCPport);
+    if (ipAddr != NULL)
+    {
+        WEBRTC_TRACE(
+                     kTraceStateInfo,
+                     kTraceVoice,
+                     VoEId(_shared->instance_id(), -1),
+                     "GetSendDestination() => port=%d, RTCPport=%d, ipAddr=%s, "
+                     "sourcePort=%d, RTCPport=%d",
+                     port, RTCPport, ipAddr, sourcePort, RTCPport);
+    }
+    else
+    {
+        WEBRTC_TRACE(
+                     kTraceStateInfo,
+                     kTraceVoice,
+                     VoEId(_shared->instance_id(), -1),
+                     "GetSendDestination() => port=%d, RTCPport=%d, "
+                     "sourcePort=%d, RTCPport=%d",
+                     port, RTCPport, sourcePort, RTCPport);
+    }
+    return ret;
+#else
+    _shared->SetLastError(VE_EXTERNAL_TRANSPORT_ENABLED, kTraceWarning,
+        "GetSendDestination() VoE is built for external transport");
+    return -1;
+#endif
 }
 
 int VoEBaseImpl::StartReceive(int channel)
@@ -808,6 +1064,15 @@ int VoEBaseImpl::StartSend(int channel)
     {
         return 0;
     }
+#ifndef WEBRTC_EXTERNAL_TRANSPORT
+    if (!channelPtr->ExternalTransport()
+            && !channelPtr->SendSocketsInitialized())
+    {
+        _shared->SetLastError(VE_DESTINATION_NOT_INITED, kTraceError,
+            "StartSend() must set send destination first");
+        return -1;
+    }
+#endif
     if (StartSend() != 0)
     {
         _shared->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR, kTraceError,
@@ -880,6 +1145,16 @@ int VoEBaseImpl::GetVersion(char version[1024])
     accLen += len;
     assert(accLen < kVoiceEngineVersionMaxMessageSize);
 
+#ifdef WEBRTC_EXTERNAL_TRANSPORT
+    len = AddExternalTransportBuild(versionPtr);
+    if (len == -1)
+    {
+         return -1;
+    }
+    versionPtr += len;
+    accLen += len;
+    assert(accLen < kVoiceEngineVersionMaxMessageSize);
+#endif
 #ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
     len = AddExternalRecAndPlayoutBuild(versionPtr);
     if (len == -1)
@@ -931,6 +1206,13 @@ WebRtc_Word32 VoEBaseImpl::AddVoEVersion(char* str) const
 {
     return sprintf(str, "VoiceEngine 4.1.0\n");
 }
+
+#ifdef WEBRTC_EXTERNAL_TRANSPORT
+WebRtc_Word32 VoEBaseImpl::AddExternalTransportBuild(char* str) const
+{
+    return sprintf(str, "External transport build\n");
+}
+#endif
 
 #ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
 WebRtc_Word32 VoEBaseImpl::AddExternalRecAndPlayoutBuild(char* str) const

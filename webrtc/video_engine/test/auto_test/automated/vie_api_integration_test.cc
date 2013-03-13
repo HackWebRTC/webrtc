@@ -48,6 +48,10 @@ TEST_F(DISABLED_ON_MAC(ViEApiIntegrationTest),
   tests_->ViEImageProcessAPITest();
 }
 
+TEST_F(DISABLED_ON_MAC(ViEApiIntegrationTest), RunsNetworkTestWithoutErrors) {
+  tests_->ViENetworkAPITest();
+}
+
 TEST_F(DISABLED_ON_MAC(ViEApiIntegrationTest), RunsRenderTestWithoutErrors) {
   tests_->ViERenderAPITest();
 }

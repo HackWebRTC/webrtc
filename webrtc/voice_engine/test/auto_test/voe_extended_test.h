@@ -12,14 +12,7 @@
 #define WEBRTC_VOICE_ENGINE_VOE_EXTENDED_TEST_H
 
 #include "voe_standard_test.h"
-#include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/ref_count.h"
-#include "webrtc/system_wrappers/interface/sleep.h"
-#include "webrtc/system_wrappers/interface/thread_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/test/udp_transport/include/channel_transport.h"
+#include "modules/audio_device/include/audio_device.h"
 
 namespace voetest {
 
@@ -432,22 +425,20 @@ class VoEExtendedTest : public VoiceEngineObserver,
   int TestRTP_RTCP();
   int TestVideoSync();
   int TestVolumeControl();
-
+ public:
   int ErrorCode() const {
     return _errCode;
   }
   void ClearErrorCode() {
     _errCode = 0;
   }
-
  protected:
   // from VoiceEngineObserver
   void CallbackOnError(const int errCode, const int channel);
   void CallbackOnTrace(const TraceLevel level, const char* message, const int length);
-
+ protected:
   // from VoEConnectionObserver
   void OnPeriodicDeadOrAlive(const int channel, const bool alive);
-
  private:
   void Play(int channel, unsigned int timeMillisec, bool addFileAsMicrophone = false,
             bool addTimeMarker = false);
@@ -457,12 +448,12 @@ class VoEExtendedTest : public VoiceEngineObserver,
   int RunMixingTest(int num_remote_channels, int num_local_channels,
                     int16_t input_value, int16_t max_output_value,
                     int16_t min_output_value);
-
+ private:
   VoETestManager& _mgr;
+ private:
   int _errCode;
   bool _alive;
   bool _listening[32];
-  scoped_ptr<webrtc::VoiceChannelTransport> voice_channel_transports_[32];
   bool _playing[32];
   bool _sending[32];
 };

@@ -31,7 +31,6 @@
           'dependencies': [
             'webrtc/test/metrics.gyp:*',
             'webrtc/test/test.gyp:*',
-            'webrtc/test/udp_transport.gyp:*',
             'webrtc/tools/tools.gyp:*',
             'tools/e2e_quality/e2e_quality.gyp:*',
           ],

@@ -10,14 +10,14 @@
 
 #include <vector>
 
+#include "udp_transport.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "webrtc/test/udp_transport/udp_transport.h"
 // We include the implementation header file to get at the dependency-injecting
 // constructor.
-#include "webrtc/test/udp_transport/udp_transport_impl.h"
+#include "udp_transport_impl.h"
 // We must mock the socket manager, for which we need its definition.
-#include "webrtc/test/udp_transport/udp_socket_manager_wrapper.h"
+#include "udp_socket_manager_wrapper.h"
 
 using ::testing::_;
 using ::testing::Return;

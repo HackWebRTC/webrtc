@@ -27,6 +27,7 @@
     'pacing/pacing.gypi',
     'remote_bitrate_estimator/remote_bitrate_estimator.gypi',
     'rtp_rtcp/source/rtp_rtcp.gypi',
+    'udp_transport/source/udp_transport.gypi',
     'utility/source/utility.gypi',
     'video_coding/codecs/i420/main/source/i420.gypi',
     'video_coding/main/source/video_coding.gypi',

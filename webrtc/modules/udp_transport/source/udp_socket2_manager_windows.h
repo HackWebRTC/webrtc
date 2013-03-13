@@ -22,7 +22,7 @@
 #include "event_wrapper.h"
 #include "list_wrapper.h"
 #include "thread_wrapper.h"
-#include "udp_socket2_win.h"
+#include "udp_socket2_windows.h"
 #include "udp_socket_manager_wrapper.h"
 
 #define MAX_IO_BUFF_SIZE 1600

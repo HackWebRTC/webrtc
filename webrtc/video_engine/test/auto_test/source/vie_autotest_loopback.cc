@@ -32,8 +32,6 @@
 #include "vie_network.h"
 #include "vie_render.h"
 #include "vie_rtp_rtcp.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/test/udp_transport/include/channel_transport.h"
 
 #define VCM_RED_PAYLOAD_TYPE        96
 #define VCM_ULPFEC_PAYLOAD_TYPE     97
@@ -474,9 +472,6 @@ int VideoEngineSampleCode(void* window1, void* window2)
     // Setting External transport
     TbExternalTransport extTransport(*(ptrViENetwork), videoChannel, NULL);
 
-    webrtc::VideoChannelTransport* video_channel_transport =
-        new webrtc::VideoChannelTransport(ptrViENetwork, videoChannel);
-    
     int testMode = 0;
     std::cout << std::endl;
     std::cout << "Enter 1 for testing packet loss and delay with "
@@ -529,17 +524,17 @@ int VideoEngineSampleCode(void* window1, void* window2)
         std::cout << std::endl;
         std::cout << "Using rtp port: " << rtpPort << std::endl;
         std::cout << std::endl;
-        
-        error = video_channel_transport->SetLocalReceiver(rtpPort);
+        error = ptrViENetwork->SetLocalReceiver(videoChannel, rtpPort);
         if (error == -1)
         {
-            printf("ERROR in SetLocalReceiver\n");
+            printf("ERROR in ViENetwork::SetLocalReceiver\n");
             return -1;
         }
-        error = video_channel_transport->SetSendDestination(ipAddress, rtpPort);
+        error = ptrViENetwork->SetSendDestination(videoChannel,
+                                                  ipAddress, rtpPort);
         if (error == -1)
         {
-            printf("ERROR in SetSendDestination\n");
+            printf("ERROR in ViENetwork::SetSendDestination\n");
             return -1;
         }
     }
@@ -642,7 +637,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
         printf("ERROR in ViEBase::DeleteChannel\n");
         return -1;
     }
-    delete video_channel_transport;
+
     int remainingInterfaces = 0;
     remainingInterfaces = ptrViECodec->Release();
     remainingInterfaces += ptrViECapture->Release();
