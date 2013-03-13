@@ -8,13 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "generic_codec_test.h"
+#include "webrtc/modules/video_coding/main/test/generic_codec_test.h"
+
 #include <cmath>
 #include <stdio.h>
-#include "../source/event.h"
-#include "rtp_rtcp.h"
-#include "common_video/interface/i420_video_frame.h"
-#include "test_macros.h"
+
+#include "webrtc/common_video/interface/i420_video_frame.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/test/test_macros.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 
 using namespace webrtc;
@@ -23,12 +25,10 @@ enum { kMaxWaitEncTimeMs = 100 };
 
 int GenericCodecTest::RunTest(CmdArgs& args)
 {
-#if !defined(EVENT_DEBUG)
-    printf("\n\nEnable debug events to run this test!\n\n");
-    return -1;
-#endif
     SimulatedClock clock(0);
-    VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock);
+    NullEventFactory event_factory;
+    VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock,
+                                                       &event_factory);
     GenericCodecTest* get = new GenericCodecTest(vcm, &clock);
     Trace::CreateTrace();
     Trace::SetTraceFile(

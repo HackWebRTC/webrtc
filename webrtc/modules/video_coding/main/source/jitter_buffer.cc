@@ -7,12 +7,12 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "modules/video_coding/main/source/jitter_buffer.h"
+#include "webrtc/modules/video_coding/main/source/jitter_buffer.h"
 
 #include <algorithm>
 #include <cassert>
 
-#include "webrtc/modules/video_coding/main/source/event.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/source/frame_buffer.h"
 #include "webrtc/modules/video_coding/main/source/inter_frame_delay.h"
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"
@@ -21,6 +21,7 @@
 #include "webrtc/modules/video_coding/main/source/packet.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
@@ -67,6 +68,7 @@ bool HasNonEmptyState(VCMFrameBuffer* frame) {
 }
 
 VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
+                                 EventFactory* event_factory,
                                  int vcm_id,
                                  int receiver_id,
                                  bool master)
@@ -76,8 +78,8 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
       running_(false),
       crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       master_(master),
-      frame_event_(),
-      packet_event_(),
+      frame_event_(event_factory->CreateEvent()),
+      packet_event_(event_factory->CreateEvent()),
       max_number_of_frames_(kStartNumberOfFrames),
       frame_buffers_(),
       frame_list_(),
@@ -192,8 +194,8 @@ void VCMJitterBuffer::Start() {
   num_discarded_packets_ = 0;
 
   // Start in a non-signaled state.
-  frame_event_.Reset();
-  packet_event_.Reset();
+  frame_event_->Reset();
+  packet_event_->Reset();
   waiting_for_completion_.frame_size = 0;
   waiting_for_completion_.timestamp = 0;
   waiting_for_completion_.latest_packet_time = -1;
@@ -220,8 +222,8 @@ void VCMJitterBuffer::Stop() {
 
   crit_sect_->Leave();
   // Make sure we wake up any threads waiting on these events.
-  frame_event_.Set();
-  packet_event_.Set();
+  frame_event_->Set();
+  packet_event_->Set();
   WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
                VCMId(vcm_id_, receiver_id_), "JB(0x%x): Jitter buffer: stop",
                this);
@@ -241,8 +243,8 @@ void VCMJitterBuffer::Flush() {
   }
   last_decoded_state_.Reset();  // TODO(mikhal): sync reset.
   num_not_decodable_packets_ = 0;
-  frame_event_.Reset();
-  packet_event_.Reset();
+  frame_event_->Reset();
+  packet_event_->Reset();
   num_consecutive_old_frames_ = 0;
   num_consecutive_old_packets_ = 0;
   // Also reset the jitter and delay estimates
@@ -354,10 +356,10 @@ int64_t VCMJitterBuffer::NextTimestamp(uint32_t max_wait_time_ms,
   FrameList::iterator it = frame_list_.begin();
 
   if (it == frame_list_.end()) {
-    packet_event_.Reset();
+    packet_event_->Reset();
     crit_sect_->Leave();
 
-    if (packet_event_.Wait(max_wait_time_ms) == kEventSignaled) {
+    if (packet_event_->Wait(max_wait_time_ms) == kEventSignaled) {
       // are we closing down the Jitter buffer
       if (!running_) {
         return -1;
@@ -449,7 +451,7 @@ VCMEncodedFrame* VCMJitterBuffer::GetCompleteFrameForDecoding(
     while (wait_time_ms > 0) {
       crit_sect_->Leave();
       const EventTypeWrapper ret =
-        frame_event_.Wait(static_cast<uint32_t>(wait_time_ms));
+        frame_event_->Wait(static_cast<uint32_t>(wait_time_ms));
       crit_sect_->Enter();
       if (ret == kEventSignaled) {
         // are we closing down the Jitter buffer
@@ -475,7 +477,7 @@ VCMEncodedFrame* VCMJitterBuffer::GetCompleteFrameForDecoding(
     // Inside |crit_sect_|.
   } else {
     // We already have a frame reset the event.
-    frame_event_.Reset();
+    frame_event_->Reset();
   }
 
   if (it == frame_list_.end()) {
@@ -763,13 +765,13 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(VCMEncodedFrame* encoded_frame,
       if (UpdateFrameState(frame) == kFlushIndicator)
         ret = kFlushIndicator;
       // Signal that we have a received packet.
-      packet_event_.Set();
+      packet_event_->Set();
       break;
     }
     case kDecodableSession:
     case kIncomplete: {
       // Signal that we have a received packet.
-      packet_event_.Set();
+      packet_event_->Set();
       break;
     }
     case kNoError:
@@ -1178,7 +1180,7 @@ VCMFrameBufferEnum VCMJitterBuffer::UpdateFrameState(VCMFrameBuffer* frame) {
   // Only signal if this is the oldest frame.
   // Not necessarily the case due to packet reordering or NACK.
   if (!WaitForRetransmissions() || (old_frame != NULL && old_frame == frame)) {
-    frame_event_.Set();
+    frame_event_->Set();
   }
   return kNoError;
 }

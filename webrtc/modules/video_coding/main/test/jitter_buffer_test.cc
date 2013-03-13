@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <math.h>
-#include <stdio.h>
+#include "webrtc/modules/video_coding/main/test/jitter_estimate_test.h"
 
-#include "common_types.h"
-#include "../source/event.h"
-#include "frame_buffer.h"
-#include "inter_frame_delay.h"
-#include "jitter_buffer.h"
-#include "jitter_estimate_test.h"
-#include "jitter_estimator.h"
-#include "media_opt_util.h"
-#include "packet.h"
-#include "test_util.h"
-#include "test_macros.h"
+#include <math.h>
+
+#include "webrtc/common_types.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/source/frame_buffer.h"
+#include "webrtc/modules/video_coding/main/source/inter_frame_delay.h"
+#include "webrtc/modules/video_coding/main/source/jitter_buffer.h"
+#include "webrtc/modules/video_coding/main/source/jitter_estimator.h"
+#include "webrtc/modules/video_coding/main/source/media_opt_util.h"
+#include "webrtc/modules/video_coding/main/source/packet.h"
+#include "webrtc/modules/video_coding/main/test/test_util.h"
+#include "webrtc/modules/video_coding/main/test/test_macros.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 
 // TODO(holmer): Get rid of this to conform with style guide.
@@ -93,10 +93,6 @@ int CheckOutFrame(VCMEncodedFrame* frameOut, unsigned int size, bool startCode)
 
 int JitterBufferTest(CmdArgs& args)
 {
-    // Don't run these tests with debug event.
-#if defined(EVENT_DEBUG)
-    return -1;
-#endif
     Clock* clock = Clock::GetRealTimeClock();
 
     // Start test
@@ -106,7 +102,8 @@ int JitterBufferTest(CmdArgs& args)
     WebRtc_UWord8 data[1500];
     VCMPacket packet(data, size, seqNum, timeStamp, true);
 
-    VCMJitterBuffer jb(clock, -1, -1, true);
+    NullEventFactory event_factory;
+    VCMJitterBuffer jb(clock, &event_factory, -1, -1, true);
 
     seqNum = 1234;
     timeStamp = 123*90;

@@ -8,20 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "receiver_tests.h"
-#include "video_coding.h"
-#include "rtp_rtcp.h"
-#include "trace.h"
-#include "../source/event.h"
-#include "../source/internal_defines.h"
-#include "test_macros.h"
-#include "rtp_player.h"
-#include "webrtc/system_wrappers/interface/clock.h"
-
 #include <stdio.h>
 #include <string.h>
 #include <sstream>
+
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/source/internal_defines.h"
+#include "webrtc/modules/video_coding/main/test/receiver_tests.h"
+#include "webrtc/modules/video_coding/main/test/test_macros.h"
+#include "webrtc/modules/video_coding/main/test/rtp_player.h"
+#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 using namespace webrtc;
 
@@ -112,12 +111,7 @@ std::string FrameReceiveCallback::AppendWidthHeightAndCount(
 
 int RtpPlay(CmdArgs& args)
 {
-    // Make sure this test isn't executed without simulated events.
-#if !defined(EVENT_DEBUG)
-    return -1;
-#endif
     // BEGIN Settings
-
     bool protectionEnabled = true;
     VCMVideoProtection protectionMethod = kProtectionNack;
     WebRtc_UWord32 rttMS = 0;
@@ -131,7 +125,9 @@ int RtpPlay(CmdArgs& args)
         outFile = test::OutputPath() + "RtpPlay_decoded.yuv";
     FrameReceiveCallback receiveCallback(outFile);
     SimulatedClock clock(0);
-    VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock);
+    NullEventFactory event_factory;
+    VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock,
+                                                       &event_factory);
     RtpDataCallback dataCallback(vcm);
     RTPPlayer rtpStream(args.inputFile.c_str(), &dataCallback, &clock);
 

@@ -8,18 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "receiver_tests.h"
-#include "video_coding.h"
-#include "trace.h"
-#include "../source/event.h"
-#include "../source/internal_defines.h"
-#include "timing.h"
-#include "test_macros.h"
-#include "test_util.h"
-
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
+
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/source/internal_defines.h"
+#include "webrtc/modules/video_coding/main/source/timing.h"
+#include "webrtc/modules/video_coding/main/test/receiver_tests.h"
+#include "webrtc/modules/video_coding/main/test/test_macros.h"
+#include "webrtc/modules/video_coding/main/test/test_util.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 using namespace webrtc;
 
@@ -48,11 +47,6 @@ public:
 
 int ReceiverTimingTests(CmdArgs& args)
 {
-    // Make sure this test is never executed with simulated events.
-#if defined(EVENT_DEBUG)
-    return -1;
-#endif
-
     // Set up trace
     Trace::CreateTrace();
     Trace::SetTraceFile((test::OutputPath() + "receiverTestTrace.txt").c_str());

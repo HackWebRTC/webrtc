@@ -37,9 +37,10 @@ class VCMReceiver {
  public:
   VCMReceiver(VCMTiming* timing,
               Clock* clock,
-              int32_t vcm_id = -1,
-              int32_t receiver_id = -1,
-              bool master = true);
+              EventFactory* event_factory,
+              int32_t vcm_id,
+              int32_t receiver_id,
+              bool master);
   ~VCMReceiver();
 
   void Reset();
@@ -94,7 +95,7 @@ class VCMReceiver {
   bool master_;
   VCMJitterBuffer jitter_buffer_;
   VCMTiming* timing_;
-  VCMEvent render_wait_event_;
+  scoped_ptr<EventWrapper> render_wait_event_;
   VCMReceiverState state_;
   int max_video_delay_ms_;
 

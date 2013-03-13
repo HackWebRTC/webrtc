@@ -18,7 +18,6 @@
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/modules/video_coding/main/source/decoding_state.h"
-#include "webrtc/modules/video_coding/main/source/event.h"
 #include "webrtc/modules/video_coding/main/source/inter_frame_delay.h"
 #include "webrtc/modules/video_coding/main/source/jitter_buffer_common.h"
 #include "webrtc/modules/video_coding/main/source/jitter_estimator.h"
@@ -40,6 +39,8 @@ typedef std::list<VCMFrameBuffer*> FrameList;
 
 // forward declarations
 class Clock;
+class EventFactory;
+class EventWrapper;
 class VCMFrameBuffer;
 class VCMPacket;
 class VCMEncodedFrame;
@@ -54,6 +55,7 @@ struct VCMJitterSample {
 class VCMJitterBuffer {
  public:
   VCMJitterBuffer(Clock* clock,
+                  EventFactory* event_factory,
                   int vcm_id,
                   int receiver_id,
                   bool master);
@@ -248,9 +250,9 @@ class VCMJitterBuffer {
   CriticalSectionWrapper* crit_sect_;
   bool master_;
   // Event to signal when we have a frame ready for decoder.
-  VCMEvent frame_event_;
+  scoped_ptr<EventWrapper> frame_event_;
   // Event to signal when we have received a packet.
-  VCMEvent packet_event_;
+  scoped_ptr<EventWrapper> packet_event_;
   // Number of allocated frames.
   int max_number_of_frames_;
   // Array of pointers to the frames in jitter buffer.

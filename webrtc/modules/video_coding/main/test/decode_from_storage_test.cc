@@ -8,13 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "receiver_tests.h"
-#include "video_coding.h"
-#include "rtp_rtcp.h"
-#include "trace.h"
-#include "../source/event.h"
-#include "rtp_player.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/test/receiver_tests.h"
+#include "webrtc/modules/video_coding/main/test/rtp_player.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 using namespace webrtc;
 
@@ -35,12 +34,7 @@ private:
 
 int DecodeFromStorageTest(CmdArgs& args)
 {
-    // Make sure this test isn't executed without simulated events.
-#if !defined(EVENT_DEBUG)
-    return -1;
-#endif
     // BEGIN Settings
-
     bool protectionEnabled = false;
     VCMVideoProtection protectionMethod = kProtectionNack;
     WebRtc_UWord32 rttMS = 100;
@@ -65,9 +59,12 @@ int DecodeFromStorageTest(CmdArgs& args)
 
 
     SimulatedClock clock(0);
+    NullEventFactory event_factory;
     // TODO(hlundin): This test was not verified after changing to FakeTickTime.
-    VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock);
-    VideoCodingModule* vcmPlayback = VideoCodingModule::Create(2, &clock);
+    VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock,
+                                                       &event_factory);
+    VideoCodingModule* vcmPlayback = VideoCodingModule::Create(2, &clock,
+                                                               &event_factory);
     FrameStorageCallback storageCallback(vcmPlayback);
     RtpDataCallback dataCallback(vcm);
     WebRtc_Word32 ret = vcm->InitializeReceiver();

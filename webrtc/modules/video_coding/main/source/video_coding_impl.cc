@@ -44,7 +44,9 @@ VCMProcessTimer::Processed()
 }
 
 VideoCodingModuleImpl::VideoCodingModuleImpl(const WebRtc_Word32 id,
-                                             Clock* clock)
+                                             Clock* clock,
+                                             EventFactory* event_factory,
+                                             bool owns_event_factory)
 :
 _id(id),
 clock_(clock),
@@ -52,8 +54,8 @@ _receiveCritSect(CriticalSectionWrapper::CreateCriticalSection()),
 _receiverInited(false),
 _timing(clock_, id, 1),
 _dualTiming(clock_, id, 2, &_timing),
-_receiver(&_timing, clock_, id, 1),
-_dualReceiver(&_dualTiming, clock_, id, 2, false),
+_receiver(&_timing, clock_, event_factory, id, 1, true),
+_dualReceiver(&_dualTiming, clock_, event_factory, id, 2, false),
 _decodedFrameCallback(_timing, clock_),
 _dualDecodedFrameCallback(_dualTiming, clock_),
 _frameTypeCallback(NULL),
@@ -82,7 +84,9 @@ _codecDataBase(id),
 _receiveStatsTimer(1000, clock_),
 _sendStatsTimer(1000, clock_),
 _retransmissionTimer(10, clock_),
-_keyRequestTimer(500, clock_)
+_keyRequestTimer(500, clock_),
+event_factory_(event_factory),
+owns_event_factory_(owns_event_factory)
 {
     assert(clock_);
 #ifdef DEBUG_DECODER_BIT_STREAM
@@ -98,6 +102,9 @@ VideoCodingModuleImpl::~VideoCodingModuleImpl()
     }
     delete _receiveCritSect;
     delete _sendCritSect;
+    if (owns_event_factory_) {
+      delete event_factory_;
+    }
 #ifdef DEBUG_DECODER_BIT_STREAM
     fclose(_bitStreamBeforeDecoder);
 #endif
@@ -110,14 +117,17 @@ VideoCodingModuleImpl::~VideoCodingModuleImpl()
 VideoCodingModule*
 VideoCodingModule::Create(const WebRtc_Word32 id)
 {
-    return new VideoCodingModuleImpl(id, Clock::GetRealTimeClock());
+    return new VideoCodingModuleImpl(id, Clock::GetRealTimeClock(),
+                                     new EventFactoryImpl, true);
 }
 
 VideoCodingModule*
-VideoCodingModule::Create(const WebRtc_Word32 id, Clock* clock)
+VideoCodingModule::Create(const WebRtc_Word32 id, Clock* clock,
+                          EventFactory* event_factory)
 {
     assert(clock);
-    return new VideoCodingModuleImpl(id, clock);
+    assert(event_factory);
+    return new VideoCodingModuleImpl(id, clock, event_factory, false);
 }
 
 void

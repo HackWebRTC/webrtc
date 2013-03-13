@@ -10,13 +10,13 @@
 
 #include <vector>
 
+#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/video_coding/codecs/interface/mock/mock_video_codec_interface.h"
 #include "webrtc/modules/video_coding/main/interface/mock/mock_vcm_callbacks.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/test/test_util.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
-
-#include "gtest/gtest.h"
 
 using ::testing::_;
 using ::testing::AllOf;
@@ -39,7 +39,7 @@ class TestVideoCodingModule : public ::testing::Test {
 
   virtual void SetUp() {
     clock_.reset(new SimulatedClock(0));
-    vcm_ = VideoCodingModule::Create(0, clock_.get());
+    vcm_ = VideoCodingModule::Create(0, clock_.get(), &event_factory_);
     EXPECT_EQ(0, vcm_->InitializeReceiver());
     EXPECT_EQ(0, vcm_->InitializeSender());
     EXPECT_EQ(0, vcm_->RegisterExternalEncoder(&encoder_, kUnusedPayloadType,
@@ -125,6 +125,7 @@ class TestVideoCodingModule : public ::testing::Test {
 
   VideoCodingModule* vcm_;
   scoped_ptr<SimulatedClock> clock_;
+  NullEventFactory event_factory_;
   NiceMock<MockVideoDecoder> decoder_;
   NiceMock<MockVideoEncoder> encoder_;
   I420VideoFrame input_frame_;

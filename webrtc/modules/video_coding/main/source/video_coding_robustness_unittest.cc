@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include "modules/video_coding/codecs/interface/mock/mock_video_codec_interface.h"
-#include "modules/video_coding/main/interface/video_coding.h"
-#include "modules/video_coding/main/interface/mock/mock_vcm_callbacks.h"
+#include "testing/gmock/include/gmock/gmock.h"
+#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/modules/video_coding/codecs/interface/mock/mock_video_codec_interface.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/interface/mock/mock_vcm_callbacks.h"
+#include "webrtc/modules/video_coding/main/test/test_util.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 
 namespace webrtc {
@@ -34,7 +35,7 @@ class VCMRobustnessTest : public ::testing::Test {
   virtual void SetUp() {
     clock_.reset(new SimulatedClock(0));
     ASSERT_TRUE(clock_.get() != NULL);
-    vcm_ = VideoCodingModule::Create(0, clock_.get());
+    vcm_ = VideoCodingModule::Create(0, clock_.get(), &event_factory_);
     ASSERT_TRUE(vcm_ != NULL);
     ASSERT_EQ(0, vcm_->InitializeReceiver());
     const size_t kMaxNackListSize = 250;
@@ -80,6 +81,7 @@ class VCMRobustnessTest : public ::testing::Test {
   NiceMock<MockVideoDecoder> decoder_;
   NiceMock<MockVideoDecoder> decoderCopy_;
   scoped_ptr<SimulatedClock> clock_;
+  NullEventFactory event_factory_;
 };
 
 TEST_F(VCMRobustnessTest, TestHardNack) {

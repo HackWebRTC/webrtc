@@ -11,10 +11,11 @@
 #ifndef WEBRTC_MODULES_INTERFACE_VIDEO_CODING_H_
 #define WEBRTC_MODULES_INTERFACE_VIDEO_CODING_H_
 
-#include "common_video/interface/i420_video_frame.h"
-#include "modules/interface/module.h"
-#include "modules/interface/module_common_types.h"
-#include "modules/video_coding/main/interface/video_coding_defines.h"
+#include "webrtc/common_video/interface/i420_video_frame.h"
+#include "webrtc/modules/interface/module.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
 
 namespace webrtc
 {
@@ -23,6 +24,22 @@ class Clock;
 class VideoEncoder;
 class VideoDecoder;
 struct CodecSpecificInfo;
+
+class EventFactory {
+ public:
+  virtual ~EventFactory() {}
+
+  virtual EventWrapper* CreateEvent() = 0;
+};
+
+class EventFactoryImpl : public EventFactory {
+ public:
+  virtual ~EventFactoryImpl() {}
+
+  virtual EventWrapper* CreateEvent() {
+    return EventWrapper::Create();
+  }
+};
 
 class VideoCodingModule : public Module
 {
@@ -49,7 +66,8 @@ public:
     static VideoCodingModule* Create(const WebRtc_Word32 id);
 
     static VideoCodingModule* Create(const WebRtc_Word32 id,
-                                     Clock* clock);
+                                     Clock* clock,
+                                     EventFactory* event_factory);
 
     static void Destroy(VideoCodingModule* module);
 

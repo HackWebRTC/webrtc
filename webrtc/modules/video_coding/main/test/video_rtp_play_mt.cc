@@ -12,11 +12,11 @@
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
-#include "webrtc/modules/video_coding/main/source/event.h"
 #include "webrtc/modules/video_coding/main/test/receiver_tests.h"
 #include "webrtc/modules/video_coding/main/test/rtp_player.h"
 #include "webrtc/modules/video_coding/main/test/test_macros.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
@@ -61,13 +61,7 @@ bool DecodeThread(void* obj)
 
 int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTestVideoType)
 {
-    // Don't run these tests with debug events.
-#if defined(EVENT_DEBUG)
-    return -1;
-#endif
-
     // BEGIN Settings
-
     bool protectionEnabled = true;
     VCMVideoProtection protection = kProtectionDualDecoder;
     WebRtc_UWord8 rttMS = 50;
@@ -83,8 +77,7 @@ int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTe
                 (protection == kProtectionDualDecoder ||
                 protection == kProtectionNack ||
                 kProtectionNackFEC));
-    Clock* clock = Clock::GetRealTimeClock();
-    VideoCodingModule* vcm = VideoCodingModule::Create(1, clock);
+    VideoCodingModule* vcm = VideoCodingModule::Create(1);
     RtpDataCallback dataCallback(vcm);
     std::string rtpFilename;
     rtpFilename = args.inputFile;
@@ -137,7 +130,8 @@ int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTe
         }
         printf("Watch %s to verify that the output is reasonable\n", outFilename.c_str());
     }
-    RTPPlayer rtpStream(rtpFilename.c_str(), &dataCallback, clock);
+    RTPPlayer rtpStream(rtpFilename.c_str(), &dataCallback,
+                        Clock::GetRealTimeClock());
     PayloadTypeList payloadTypes;
     payloadTypes.push_front(new PayloadCodecTuple(VCM_VP8_PAYLOAD_TYPE, "VP8",
                                                   kVideoCodecVP8));

@@ -8,40 +8,36 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "normal_test.h"
+#include "webrtc/modules/video_coding/main/test/normal_test.h"
 
 #include <assert.h>
 #include <iostream>
 #include <sstream>
 #include <time.h>
 
-#include "../source/event.h"
-#include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "common_types.h"
-#include "test_callbacks.h"
-#include "test_macros.h"
-#include "test_util.h"
-#include "trace.h"
-#include "testsupport/metrics/video_metrics.h"
+#include "webrtc/common_types.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/test/test_callbacks.h"
+#include "webrtc/modules/video_coding/main/test/test_macros.h"
+#include "webrtc/modules/video_coding/main/test/test_util.h"
+#include "webrtc/test/testsupport/metrics/video_metrics.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 using namespace webrtc;
 
 int NormalTest::RunTest(const CmdArgs& args)
 {
-#if defined(EVENT_DEBUG)
-    printf("SIMULATION TIME\n");
-    SimulatedClock sim_clock;
+    SimulatedClock sim_clock(0);
     SimulatedClock* clock = &sim_clock;
-#else
-    printf("REAL-TIME\n");
-    Clock* clock = Clock::GetRealTimeClock();
-#endif
+    NullEventFactory event_factory;
     Trace::CreateTrace();
     Trace::SetTraceFile(
         (test::OutputPath() + "VCMNormalTestTrace.txt").c_str());
     Trace::SetLevelFilter(webrtc::kTraceAll);
-    VideoCodingModule* vcm = VideoCodingModule::Create(1, clock);
+    VideoCodingModule* vcm = VideoCodingModule::Create(1, clock,
+                                                       &event_factory);
     NormalTest VCMNTest(vcm, clock);
     VCMNTest.Perform(args);
     VideoCodingModule::Destroy(vcm);
@@ -289,9 +285,6 @@ NormalTest::Perform(const CmdArgs& args)
   _vcm->RegisterSendStatisticsCallback(&sendStats);
 
   while (feof(_sourceFile) == 0) {
-#if !defined(EVENT_DEBUG)
-    WebRtc_Word64 processStartTime = _clock->TimeInMilliseconds();
-#endif
     TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0 ||
          feof(_sourceFile));
     _frameCnt++;
@@ -331,17 +324,7 @@ NormalTest::Perform(const CmdArgs& args)
     WebRtc_UWord32 framePeriod =
         static_cast<WebRtc_UWord32>(
             1000.0f / static_cast<float>(_sendCodec.maxFramerate) + 0.5f);
-
-#if defined(EVENT_DEBUG)
     static_cast<SimulatedClock*>(_clock)->AdvanceTimeMilliseconds(framePeriod);
-#else
-    WebRtc_Word64 timeSpent =
-        _clock->TimeInMilliseconds() - processStartTime;
-    if (timeSpent < framePeriod)
-    {
-      waitEvent->Wait(framePeriod - timeSpent);
-    }
-#endif
   }
   double endTime = clock()/(double)CLOCKS_PER_SEC;
   _testTotalTime = endTime - startTime;

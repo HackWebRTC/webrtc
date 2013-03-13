@@ -16,15 +16,14 @@
 
 #include <string.h>
 
-#include "../source/event.h"
-#include "media_opt_test.h"
-#include "mt_test_common.h"
-#include "receiver_tests.h" // shared RTP state and receive side threads
-#include "rtp_rtcp.h"
-#include "test_macros.h"
-#include "test_util.h" // send side callback
-#include "thread_wrapper.h"
-#include "video_coding.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/test/media_opt_test.h"
+#include "webrtc/modules/video_coding/main/test/mt_test_common.h"
+#include "webrtc/modules/video_coding/main/test/receiver_tests.h"
+#include "webrtc/modules/video_coding/main/test/test_macros.h"
+#include "webrtc/modules/video_coding/main/test/test_util.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 
 using namespace webrtc;
 
@@ -143,12 +142,11 @@ int MTRxTxTest(CmdArgs& args)
         printf("Cannot read file %s.\n", outname.c_str());
         return -1;
     }
-    Clock* clock = Clock::GetRealTimeClock();
-    VideoCodingModule* vcm = VideoCodingModule::Create(1, clock);
+    VideoCodingModule* vcm = VideoCodingModule::Create(1);
     RtpDataCallback dataCallback(vcm);
 
     RTPSendCompleteCallback* outgoingTransport =
-        new RTPSendCompleteCallback(clock, "dump.rtp");
+        new RTPSendCompleteCallback(Clock::GetRealTimeClock(), "dump.rtp");
 
     RtpRtcp::Configuration configuration;
     configuration.id = 1;

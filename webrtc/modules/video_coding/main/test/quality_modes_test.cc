@@ -8,29 +8,30 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "quality_modes_test.h"
+#include "webrtc/modules/video_coding/main/test/quality_modes_test.h"
 
 #include <time.h>
 #include <iostream>
 #include <string>
 #include <sstream>
 
-#include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "modules/video_coding/main/source/event.h"
-#include "modules/video_coding/main/test/test_callbacks.h"
-#include "modules/video_coding/main/test/test_macros.h"
-#include "modules/video_coding/main/test/test_util.h"
-#include "system_wrappers/interface/data_log.h"
-#include "system_wrappers/interface/data_log.h"
-#include "testsupport/metrics/video_metrics.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/test/test_callbacks.h"
+#include "webrtc/modules/video_coding/main/test/test_macros.h"
+#include "webrtc/modules/video_coding/main/test/test_util.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/data_log.h"
+#include "webrtc/system_wrappers/interface/data_log.h"
+#include "webrtc/test/testsupport/metrics/video_metrics.h"
 
 using namespace webrtc;
 
 int qualityModeTest(const CmdArgs& args)
 {
   SimulatedClock clock(0);
-  VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock);
+  NullEventFactory event_factory;
+  VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock, &event_factory);
   QualityModesTest QMTest(vcm, &clock);
   QMTest.Perform(args);
   VideoCodingModule::Destroy(vcm);

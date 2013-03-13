@@ -25,6 +25,7 @@ enum { kMaxReceiverDelayMs = 10000 };
 
 VCMReceiver::VCMReceiver(VCMTiming* timing,
                          Clock* clock,
+                         EventFactory* event_factory,
                          int32_t vcm_id,
                          int32_t receiver_id,
                          bool master)
@@ -33,14 +34,14 @@ VCMReceiver::VCMReceiver(VCMTiming* timing,
       clock_(clock),
       receiver_id_(receiver_id),
       master_(master),
-      jitter_buffer_(clock_, vcm_id, receiver_id, master),
+      jitter_buffer_(clock_, event_factory, vcm_id, receiver_id, master),
       timing_(timing),
-      render_wait_event_(),
+      render_wait_event_(event_factory->CreateEvent()),
       state_(kPassive),
       max_video_delay_ms_(kMaxVideoDelayMs) {}
 
 VCMReceiver::~VCMReceiver() {
-  render_wait_event_.Set();
+  render_wait_event_->Set();
   delete crit_sect_;
 }
 
@@ -51,7 +52,7 @@ void VCMReceiver::Reset() {
   } else {
     jitter_buffer_.Flush();
   }
-  render_wait_event_.Reset();
+  render_wait_event_->Reset();
   if (master_) {
     state_ = kReceiving;
   } else {
@@ -298,7 +299,7 @@ VCMEncodedFrame* VCMReceiver::FrameForRendering(uint16_t max_wait_time_ms,
     return NULL;
   }
   // Wait until it's time to render.
-  render_wait_event_.Wait(wait_time_ms);
+  render_wait_event_->Wait(wait_time_ms);
 
   // Get a complete frame if possible.
   VCMEncodedFrame* frame = jitter_buffer_.GetCompleteFrameForDecoding(0);

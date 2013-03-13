@@ -42,7 +42,6 @@
         'decoding_state.h',
         'encoded_frame.h',
         'er_tables_xor.h',
-        'event.h',
         'fec_tables_xor.h',
         'frame_buffer.h',
         'generic_decoder.h',

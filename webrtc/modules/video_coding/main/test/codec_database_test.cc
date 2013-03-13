@@ -11,20 +11,19 @@
 // Implementation of codec data base test
 // testing is done via the VCM module, no specific CodecDataBase module functionality.
 
-#include "codec_database_test.h"
+#include "webrtc/modules/video_coding/main/test/codec_database_test.h"
 
 #include <assert.h>
 #include <stdio.h>
 
-#include "../../../../engine_configurations.h"
-#include "../source/event.h"
-#include "test_callbacks.h"
-#include "test_macros.h"
-#include "test_util.h"
-#include "testsupport/fileutils.h"
-#include "testsupport/metrics/video_metrics.h"
-#include "vp8.h" // for external codecs test
-
+#include "webrtc/engine_configurations.h"
+#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/test/test_callbacks.h"
+#include "webrtc/modules/video_coding/main/test/test_macros.h"
+#include "webrtc/modules/video_coding/main/test/test_util.h"
+#include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/metrics/video_metrics.h"
 
 using namespace webrtc;
 

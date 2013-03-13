@@ -58,7 +58,8 @@ enum VCMKeyRequestMode
 class VideoCodingModuleImpl : public VideoCodingModule
 {
 public:
-    VideoCodingModuleImpl(const WebRtc_Word32 id, Clock* clock);
+    VideoCodingModuleImpl(const WebRtc_Word32 id, Clock* clock,
+                          EventFactory* event_factory, bool owns_event_factory);
 
     virtual ~VideoCodingModuleImpl();
 
@@ -316,6 +317,8 @@ private:
     VCMProcessTimer                     _sendStatsTimer;
     VCMProcessTimer                     _retransmissionTimer;
     VCMProcessTimer                     _keyRequestTimer;
+    EventFactory*                       event_factory_;
+    bool                                owns_event_factory_;
 };
 } // namespace webrtc
 #endif // WEBRTC_MODULES_VIDEO_CODING_VIDEO_CODING_IMPL_H_

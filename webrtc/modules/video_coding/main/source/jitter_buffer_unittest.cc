@@ -12,10 +12,11 @@
 
 #include <list>
 
-#include "gtest/gtest.h"
-#include "modules/video_coding/main/source/jitter_buffer.h"
-#include "modules/video_coding/main/source/media_opt_util.h"
-#include "modules/video_coding/main/source/packet.h"
+#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/modules/video_coding/main/source/jitter_buffer.h"
+#include "webrtc/modules/video_coding/main/source/media_opt_util.h"
+#include "webrtc/modules/video_coding/main/source/packet.h"
+#include "webrtc/modules/video_coding/main/test/test_util.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 
 namespace webrtc {
@@ -163,7 +164,8 @@ class TestRunningJitterBuffer : public ::testing::Test {
     clock_.reset(new SimulatedClock(0));
     max_nack_list_size_ = 150;
     oldest_packet_to_nack_ = 250;
-    jitter_buffer_ = new VCMJitterBuffer(clock_.get(), -1, -1, true);
+    jitter_buffer_ = new VCMJitterBuffer(clock_.get(), &event_factory_, -1, -1,
+                                         true);
     stream_generator = new StreamGenerator(0, 0, clock_->TimeInMilliseconds());
     jitter_buffer_->Start();
     jitter_buffer_->SetNackSettings(max_nack_list_size_,
@@ -249,6 +251,7 @@ class TestRunningJitterBuffer : public ::testing::Test {
   VCMJitterBuffer* jitter_buffer_;
   StreamGenerator* stream_generator;
   scoped_ptr<SimulatedClock> clock_;
+  NullEventFactory event_factory_;
   size_t max_nack_list_size_;
   int oldest_packet_to_nack_;
   uint8_t data_buffer_[kDataBufferSize];

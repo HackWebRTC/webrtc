@@ -19,8 +19,10 @@
 #include <fstream>
 #include <cstdlib>
 
-#include "module_common_types.h"
-#include "testsupport/fileutils.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 enum { kMaxNackListSize = 250 };
 enum { kMaxPacketAgeToNack = 450 };
@@ -72,6 +74,31 @@ struct RtpPacket {
   WebRtc_Word64 receiveTime;
 };
 
+class NullEvent : public webrtc::EventWrapper {
+ public:
+  virtual ~NullEvent() {}
+
+  virtual bool Set() { return true; }
+
+  virtual bool Reset() { return true; }
+
+  virtual webrtc::EventTypeWrapper Wait(unsigned long max_time) {
+    return webrtc::kEventTimeout;
+  }
+
+  virtual bool StartTimer(bool periodic, unsigned long time) { return true; }
+
+  virtual bool StopTimer() { return true; }
+};
+
+class NullEventFactory : public webrtc::EventFactory {
+ public:
+  virtual ~NullEventFactory() {}
+
+  virtual webrtc::EventWrapper* CreateEvent() {
+    return new NullEvent;
+  }
+};
 
 // Codec type conversion
 webrtc::RTPVideoCodecTypes
