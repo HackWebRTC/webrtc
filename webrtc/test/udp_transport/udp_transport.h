@@ -8,12 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_UDP_TRANSPORT_INTERFACE_UDP_TRANSPORT_H_
-#define WEBRTC_MODULES_UDP_TRANSPORT_INTERFACE_UDP_TRANSPORT_H_
+#ifndef WEBRTC_TEST_UDP_TRANSPORT_INTERFACE_UDP_TRANSPORT_H_
+#define WEBRTC_TEST_UDP_TRANSPORT_INTERFACE_UDP_TRANSPORT_H_
 
-#include "common_types.h"
-#include "module.h"
-#include "typedefs.h"
+#include "webrtc/common_types.h"
+#include "webrtc/typedefs.h"
 
 /*
  *  WARNING
@@ -21,7 +20,6 @@
  *  for example: http://code.google.com/p/webrtc/issues/detail?id=1028
  *
  */
-
 
 #define SS_MAXSIZE 128
 #define SS_ALIGNSIZE (sizeof (WebRtc_UWord64))
@@ -31,94 +29,84 @@
 
 // BSD requires use of HAVE_STRUCT_SOCKADDR_SA_LEN
 namespace webrtc {
-struct SocketAddressIn
-{
-    // sin_family should be either AF_INET (IPv4) or AF_INET6 (IPv6)
+struct SocketAddressIn {
+  // sin_family should be either AF_INET (IPv4) or AF_INET6 (IPv6)
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
-    WebRtc_Word8      sin_length;
-    WebRtc_Word8      sin_family;
+  WebRtc_Word8      sin_length;
+  WebRtc_Word8      sin_family;
 #else
-    WebRtc_Word16     sin_family;
+  WebRtc_Word16     sin_family;
 #endif
-    WebRtc_UWord16    sin_port;
-    WebRtc_UWord32    sin_addr;
-    WebRtc_Word8      sin_zero[8];
+  WebRtc_UWord16    sin_port;
+  WebRtc_UWord32    sin_addr;
+  WebRtc_Word8      sin_zero[8];
 };
 
-struct Version6InAddress
-{
-    union
-    {
-        WebRtc_UWord8     _s6_u8[16];
-        WebRtc_UWord32    _s6_u32[4];
-        WebRtc_UWord64    _s6_u64[2];
-    } Version6AddressUnion;
+struct Version6InAddress {
+  union {
+    WebRtc_UWord8     _s6_u8[16];
+    WebRtc_UWord32    _s6_u32[4];
+    WebRtc_UWord64    _s6_u64[2];
+  } Version6AddressUnion;
 };
 
-struct SocketAddressInVersion6
-{
-    // sin_family should be either AF_INET (IPv4) or AF_INET6 (IPv6)
+struct SocketAddressInVersion6 {
+  // sin_family should be either AF_INET (IPv4) or AF_INET6 (IPv6)
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
-    WebRtc_Word8      sin_length;
-    WebRtc_Word8      sin_family;
+  WebRtc_Word8      sin_length;
+  WebRtc_Word8      sin_family;
 #else
-    WebRtc_Word16     sin_family;
+  WebRtc_Word16     sin_family;
 #endif
-    // Transport layer port number.
-    WebRtc_UWord16 sin6_port;
-    // IPv6 traffic class and flow info or ip4 address.
-    WebRtc_UWord32 sin6_flowinfo;
-    // IPv6 address
-    struct Version6InAddress sin6_addr;
-    // Set of interfaces for a scope.
-    WebRtc_UWord32 sin6_scope_id;
+  // Transport layer port number.
+  WebRtc_UWord16 sin6_port;
+  // IPv6 traffic class and flow info or ip4 address.
+  WebRtc_UWord32 sin6_flowinfo;
+  // IPv6 address
+  struct Version6InAddress sin6_addr;
+  // Set of interfaces for a scope.
+  WebRtc_UWord32 sin6_scope_id;
 };
 
-struct SocketAddressStorage
-{
-    // sin_family should be either AF_INET (IPv4) or AF_INET6 (IPv6)
+struct SocketAddressStorage {
+  // sin_family should be either AF_INET (IPv4) or AF_INET6 (IPv6)
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
-    WebRtc_Word8   sin_length;
-    WebRtc_Word8   sin_family;
+  WebRtc_Word8   sin_length;
+  WebRtc_Word8   sin_family;
 #else
-    WebRtc_Word16  sin_family;
+  WebRtc_Word16  sin_family;
 #endif
-    WebRtc_Word8   __ss_pad1[SS_PAD1SIZE];
-    WebRtc_UWord64 __ss_align;
-    WebRtc_Word8   __ss_pad2[SS_PAD2SIZE];
+  WebRtc_Word8   __ss_pad1[SS_PAD1SIZE];
+  WebRtc_UWord64 __ss_align;
+  WebRtc_Word8   __ss_pad2[SS_PAD2SIZE];
 };
 
-struct SocketAddress
-{
-    union
-    {
-        struct SocketAddressIn _sockaddr_in;
-        struct SocketAddressInVersion6 _sockaddr_in6;
-        struct SocketAddressStorage _sockaddr_storage;
-    };
+struct SocketAddress {
+  union {
+    struct SocketAddressIn _sockaddr_in;
+    struct SocketAddressInVersion6 _sockaddr_in6;
+    struct SocketAddressStorage _sockaddr_storage;
+  };
 };
 
 // Callback class that receives packets from UdpTransport.
-class UdpTransportData
-{
-public:
-    virtual ~UdpTransportData()  {};
+class UdpTransportData {
+ public:
+  virtual ~UdpTransportData()  {};
 
-    virtual void IncomingRTPPacket(const WebRtc_Word8* incomingRtpPacket,
-                                   const WebRtc_Word32 rtpPacketLength,
-                                   const char* fromIP,
-                                   const WebRtc_UWord16 fromPort) = 0;
+  virtual void IncomingRTPPacket(const WebRtc_Word8* incomingRtpPacket,
+                                 const WebRtc_Word32 rtpPacketLength,
+                                 const char* fromIP,
+                                 const WebRtc_UWord16 fromPort) = 0;
 
-    virtual void IncomingRTCPPacket(const WebRtc_Word8* incomingRtcpPacket,
-                                    const WebRtc_Word32 rtcpPacketLength,
-                                    const char* fromIP,
-                                    const WebRtc_UWord16 fromPort) = 0;
+  virtual void IncomingRTCPPacket(const WebRtc_Word8* incomingRtcpPacket,
+                                  const WebRtc_Word32 rtcpPacketLength,
+                                  const char* fromIP,
+                                  const WebRtc_UWord16 fromPort) = 0;
 };
 
-
-class UdpTransport : public Module, public Transport
-{
-public:
+class UdpTransport : public Transport {
+ public:
     enum
     {
         kIpAddressVersion6Length = 64,
@@ -389,6 +377,7 @@ public:
     // is interptreted as IPv6.
     static bool IsIpAddressValid(const char* ipaddr, const bool ipV6);
 };
+
 } // namespace webrtc
 
-#endif // WEBRTC_MODULES_UDP_TRANSPORT_INTERFACE_UDP_TRANSPORT_H_
+#endif // WEBRTC_TEST_UDP_TRANSPORT_INTERFACE_UDP_TRANSPORT_H_

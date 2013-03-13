@@ -44,25 +44,6 @@ public:
 
     virtual int DeleteChannel(int channel);
 
-    virtual int SetLocalReceiver(int channel, int port,
-                                 int RTCPport = kVoEDefault,
-                                 const char ipAddr[64] = NULL,
-                                 const char multiCastAddr[64] = NULL);
-
-    virtual int GetLocalReceiver(int channel, int& port, int& RTCPport,
-                                 char ipAddr[64]);
-
-    virtual int SetSendDestination(int channel, int port,
-                                   const char ipAddr[64],
-                                   int sourcePort = kVoEDefault,
-                                   int RTCPport = kVoEDefault);
-
-    virtual int GetSendDestination(int channel,
-                                   int& port,
-                                   char ipAddr[64],
-                                   int& sourcePort,
-                                   int& RTCPport);
-
     virtual int StartReceive(int channel);
 
     virtual int StartPlayout(int channel);
@@ -125,9 +106,6 @@ private:
 
     WebRtc_Word32 AddBuildInfo(char* str) const;
     WebRtc_Word32 AddVoEVersion(char* str) const;
-#ifdef WEBRTC_EXTERNAL_TRANSPORT
-    WebRtc_Word32 AddExternalTransportBuild(char* str) const;
-#endif
 #ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
     WebRtc_Word32 AddExternalRecAndPlayoutBuild(char* str) const;
 #endif
@@ -139,7 +117,6 @@ private:
     WebRtc_UWord32 _oldMicLevel;
     AudioFrame _audioFrame;
     voe::SharedData* _shared;
-
 };
 
 } // namespace webrtc

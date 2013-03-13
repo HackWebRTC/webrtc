@@ -15,16 +15,20 @@
 #include "gflags/gflags.h"
 #include "gtest/gtest.h"
 
-#include "voice_engine/include/voe_audio_processing.h"
-#include "voice_engine/include/voe_base.h"
-#include "voice_engine/include/voe_codec.h"
-#include "voice_engine/include/voe_hardware.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/test/udp_transport/include/channel_transport.h"
+#include "webrtc/voice_engine/include/voe_audio_processing.h"
+#include "webrtc/voice_engine/include/voe_base.h"
+#include "webrtc/voice_engine/include/voe_codec.h"
+#include "webrtc/voice_engine/include/voe_hardware.h"
+#include "webrtc/voice_engine/include/voe_network.h"
 
 DEFINE_string(render, "render", "render device name");
 DEFINE_string(codec, "ISAC", "codec name");
 DEFINE_int32(rate, 16000, "codec sample rate in Hz");
 
 namespace webrtc {
+
 namespace {
 
 void RunHarness() {
@@ -38,12 +42,18 @@ void RunHarness() {
   ASSERT_TRUE(codec != NULL);
   VoEHardware* hardware = VoEHardware::GetInterface(voe);
   ASSERT_TRUE(hardware != NULL);
+  VoENetwork* network = VoENetwork::GetInterface(voe);
+  ASSERT_TRUE(network != NULL);
 
   ASSERT_EQ(0, base->Init());
   int channel = base->CreateChannel();
   ASSERT_NE(-1, channel);
-  ASSERT_EQ(0, base->SetSendDestination(channel, 1234, "127.0.0.1"));
-  ASSERT_EQ(0, base->SetLocalReceiver(channel, 1234));
+
+  scoped_ptr<VoiceChannelTransport> voice_channel_transport(
+      new VoiceChannelTransport(network, channel));
+
+  ASSERT_EQ(0, voice_channel_transport->SetSendDestination("127.0.0.1", 1234));
+  ASSERT_EQ(0, voice_channel_transport->SetLocalReceiver(1234));
 
   CodecInst codec_params = {0};
   bool codec_found = false;

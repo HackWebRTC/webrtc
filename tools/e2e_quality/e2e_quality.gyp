@@ -13,6 +13,7 @@
       'target_name': 'audio_e2e_harness',
       'type': 'executable',
       'dependencies': [
+        '<(webrtc_root)/test/udp_transport.gyp:udp_transport',
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine_core',
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',

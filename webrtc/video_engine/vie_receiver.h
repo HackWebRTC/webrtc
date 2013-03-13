@@ -15,7 +15,6 @@
 
 #include "engine_configurations.h"  // NOLINT
 #include "modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
-#include "modules/udp_transport/interface/udp_transport.h"
 #include "system_wrappers/interface/scoped_ptr.h"
 #include "typedefs.h"  // NOLINT
 #include "video_engine/vie_defines.h"
@@ -29,7 +28,7 @@ class RtpDump;
 class RtpRtcp;
 class VideoCodingModule;
 
-class ViEReceiver : public UdpTransportData, public RtpData {
+class ViEReceiver : public RtpData {
  public:
   ViEReceiver(const int32_t channel_id, VideoCodingModule* module_vcm,
               RemoteBitrateEstimator* remote_bitrate_estimator);
@@ -47,16 +46,6 @@ class ViEReceiver : public UdpTransportData, public RtpData {
 
   int StartRTPDump(const char file_nameUTF8[1024]);
   int StopRTPDump();
-
-  // Implements UdpTransportData.
-  virtual void IncomingRTPPacket(const WebRtc_Word8* rtp_packet,
-                                 const WebRtc_Word32 rtp_packet_length,
-                                 const char* from_ip,
-                                 const WebRtc_UWord16 from_port);
-  virtual void IncomingRTCPPacket(const WebRtc_Word8* rtcp_packet,
-                                  const WebRtc_Word32 rtcp_packet_length,
-                                  const char* from_ip,
-                                  const WebRtc_UWord16 from_port);
 
   // Receives packets from external transport.
   int ReceivedRTPPacket(const void* rtp_packet, int rtp_packet_length);

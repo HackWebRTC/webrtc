@@ -54,10 +54,6 @@ TEST_F(ViEStandardIntegrationTest, RunsImageProcessTestWithoutErrors)  {
   tests_->ViEImageProcessStandardTest();
 }
 
-TEST_F(ViEStandardIntegrationTest, RunsNetworkTestWithoutErrors)  {
-  tests_->ViENetworkStandardTest();
-}
-
 TEST_F(ViEStandardIntegrationTest, RunsRenderTestWithoutErrors)  {
   tests_->ViERenderStandardTest();
 }

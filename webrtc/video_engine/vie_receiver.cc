@@ -87,20 +87,6 @@ void ViEReceiver::RegisterSimulcastRtpRtcpModules(
   }
 }
 
-void ViEReceiver::IncomingRTPPacket(const WebRtc_Word8* rtp_packet,
-                                    const WebRtc_Word32 rtp_packet_length,
-                                    const char* from_ip,
-                                    const WebRtc_UWord16 from_port) {
-  InsertRTPPacket(rtp_packet, rtp_packet_length);
-}
-
-void ViEReceiver::IncomingRTCPPacket(const WebRtc_Word8* rtcp_packet,
-                                     const WebRtc_Word32 rtcp_packet_length,
-                                     const char* from_ip,
-                                     const WebRtc_UWord16 from_port) {
-  InsertRTCPPacket(rtcp_packet, rtcp_packet_length);
-}
-
 int ViEReceiver::ReceivedRTPPacket(const void* rtp_packet,
                                    int rtp_packet_length) {
   if (!receiving_) {

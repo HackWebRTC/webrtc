@@ -8,21 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "common_types.h"  // NOLINT
-#include "engine_configurations.h"  // NOLINT
-#include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
-#include "video_engine/test/auto_test/interface/vie_autotest.h"
-#include "video_engine/test/libvietest/include/tb_capture_device.h"
-#include "video_engine/test/libvietest/include/tb_I420_codec.h"
-#include "video_engine/test/libvietest/include/tb_interfaces.h"
-#include "video_engine/test/libvietest/include/tb_video_channel.h"
-#include "video_engine/include/vie_base.h"
-#include "video_engine/include/vie_capture.h"
-#include "video_engine/include/vie_codec.h"
-#include "video_engine/include/vie_network.h"
-#include "video_engine/include/vie_render.h"
-#include "video_engine/include/vie_rtp_rtcp.h"
-#include "voice_engine/include/voe_base.h"
+#include "webrtc/common_types.h"
+#include "webrtc/engine_configurations.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/test/udp_transport/include/channel_transport.h"
+#include "webrtc/video_engine/test/auto_test/interface/vie_autotest_defines.h"
+#include "webrtc/video_engine/test/auto_test/interface/vie_autotest.h"
+#include "webrtc/video_engine/test/libvietest/include/tb_capture_device.h"
+#include "webrtc/video_engine/test/libvietest/include/tb_I420_codec.h"
+#include "webrtc/video_engine/test/libvietest/include/tb_interfaces.h"
+#include "webrtc/video_engine/test/libvietest/include/tb_video_channel.h"
+#include "webrtc/video_engine/include/vie_base.h"
+#include "webrtc/video_engine/include/vie_capture.h"
+#include "webrtc/video_engine/include/vie_codec.h"
+#include "webrtc/video_engine/include/vie_external_codec.h"
+#include "webrtc/video_engine/include/vie_network.h"
+#include "webrtc/video_engine/include/vie_render.h"
+#include "webrtc/video_engine/include/vie_rtp_rtcp.h"
+#include "webrtc/voice_engine/include/voe_base.h"
 
 class TestCodecObserver
     : public webrtc::ViEEncoderObserver,
@@ -164,13 +167,16 @@ void ViEAutoTest::ViECodecStandardTest() {
       break;
     }
   }
-
   const char* ip_address = "127.0.0.1";
   const uint16_t rtp_port = 6000;
-  EXPECT_EQ(0, network->SetLocalReceiver(video_channel, rtp_port));
-  EXPECT_EQ(0, base->StartReceive(video_channel));
-  EXPECT_EQ(0, network->SetSendDestination(
-      video_channel, ip_address, rtp_port));
+
+  webrtc::scoped_ptr<webrtc::VideoChannelTransport> video_channel_transport(
+      new webrtc::VideoChannelTransport(network, video_channel));
+
+  ASSERT_EQ(0, video_channel_transport->SetSendDestination(ip_address,
+                                                           rtp_port));
+  ASSERT_EQ(0, video_channel_transport->SetLocalReceiver(rtp_port));
+
   EXPECT_EQ(0, base->StartSend(video_channel));
 
   // Make sure all codecs runs
@@ -300,10 +306,14 @@ void ViEAutoTest::ViECodecExtendedTest() {
 
     const char* ip_address = "127.0.0.1";
     const uint16_t rtp_port = 6000;
-    EXPECT_EQ(0, network->SetLocalReceiver(video_channel, rtp_port));
-    EXPECT_EQ(0, base->StartReceive(video_channel));
-    EXPECT_EQ(0, network->SetSendDestination(
-        video_channel, ip_address, rtp_port));
+    
+    webrtc::scoped_ptr<webrtc::VideoChannelTransport> video_channel_transport(
+        new webrtc::VideoChannelTransport(network, video_channel));
+
+    ASSERT_EQ(0, video_channel_transport->SetSendDestination(ip_address,
+                                                             rtp_port));
+    ASSERT_EQ(0, video_channel_transport->SetLocalReceiver(rtp_port));
+    
     EXPECT_EQ(0, base->StartSend(video_channel));
 
     // Codec specific tests
@@ -329,6 +339,7 @@ void ViEAutoTest::ViECodecExtendedTest() {
     // the received streams.
     TbInterfaces video_engine("ViECodecExtendedTest2");
     TbCaptureDevice tb_capture(video_engine);
+    webrtc::ViENetwork* network = video_engine.network;
 
     // Create channel 1.
     int video_channel_1 = -1;
@@ -341,17 +352,25 @@ void ViEAutoTest::ViECodecExtendedTest() {
     EXPECT_NE(video_channel_1, video_channel_2)
         << "Channel 2 should be unique.";
 
+    const char* ip_address = "127.0.0.1";
     uint16_t rtp_port_1 = 12000;
     uint16_t rtp_port_2 = 13000;
-    EXPECT_EQ(0, video_engine.network->SetLocalReceiver(
-        video_channel_1, rtp_port_1));
-    EXPECT_EQ(0, video_engine.network->SetSendDestination(
-        video_channel_1, "127.0.0.1", rtp_port_1));
+    
+    webrtc::scoped_ptr<webrtc::VideoChannelTransport> video_channel_transport_1(
+        new webrtc::VideoChannelTransport(network, video_channel_1));
+
+    ASSERT_EQ(0, video_channel_transport_1->SetSendDestination(ip_address,
+                                                               rtp_port_1));
+    ASSERT_EQ(0, video_channel_transport_1->SetLocalReceiver(rtp_port_1));
+
+    webrtc::scoped_ptr<webrtc::VideoChannelTransport> video_channel_transport_2(
+        new webrtc::VideoChannelTransport(network, video_channel_2));
+
+    ASSERT_EQ(0, video_channel_transport_2->SetSendDestination(ip_address,
+                                                               rtp_port_2));
+    ASSERT_EQ(0, video_channel_transport_2->SetLocalReceiver(rtp_port_2));
+
     EXPECT_EQ(0, video_engine.rtp_rtcp->SetLocalSSRC(video_channel_1, 1));
-    EXPECT_EQ(0, video_engine.network->SetLocalReceiver(
-        video_channel_2, rtp_port_2));
-    EXPECT_EQ(0, video_engine.network->SetSendDestination(
-        video_channel_2, "127.0.0.1", rtp_port_2));
     EXPECT_EQ(0, video_engine.rtp_rtcp->SetLocalSSRC(video_channel_2, 2));
     tb_capture.ConnectTo(video_channel_1);
     tb_capture.ConnectTo(video_channel_2);
@@ -483,9 +502,6 @@ void ViEAutoTest::ViECodecAPITest() {
   EXPECT_TRUE(webrtc::VideoEngine::Delete(video_engine));
 }
 
-#ifdef WEBRTC_VIDEO_ENGINE_EXTERNAL_CODEC_API
-#include "video_engine/include/vie_external_codec.h"
-#endif
 void ViEAutoTest::ViECodecExternalCodecTest() {
   ViETest::Log(" ");
   ViETest::Log("========================================");

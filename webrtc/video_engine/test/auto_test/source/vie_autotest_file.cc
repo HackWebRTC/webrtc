@@ -18,6 +18,9 @@
 
 #include "voe_codec.h"
 
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/test/udp_transport/include/channel_transport.h"
+
 class ViEAutotestFileObserver: public webrtc::ViEFileObserver
 {
 public:
@@ -103,14 +106,18 @@ void ViEAutoTest::ViEFileStandardTest()
                 break;
             }
         }
-
-
         const char* ipAddress = "127.0.0.1";
         const unsigned short rtpPort = 6000;
-        EXPECT_EQ(0, ptrViENetwork->SetLocalReceiver(videoChannel, rtpPort));
+
+        webrtc::scoped_ptr<webrtc::VideoChannelTransport>
+            video_channel_transport(
+                new webrtc::VideoChannelTransport(ptrViENetwork, videoChannel));
+
+        EXPECT_EQ(0, video_channel_transport->SetSendDestination(ipAddress,
+                                                                 rtpPort));
+        EXPECT_EQ(0, video_channel_transport->SetLocalReceiver(rtpPort));
+
         EXPECT_EQ(0, ptrViEBase->StartReceive(videoChannel));
-        EXPECT_EQ(0, ptrViENetwork->SetSendDestination(
-            videoChannel, ipAddress, rtpPort));
         EXPECT_EQ(0, ptrViEBase->StartSend(videoChannel));
         webrtc::ViEFile* ptrViEFile = webrtc::ViEFile::GetInterface(ptrViE);
         EXPECT_TRUE(ptrViEFile != NULL);

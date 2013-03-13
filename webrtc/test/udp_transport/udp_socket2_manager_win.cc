@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "udp_socket2_manager_windows.h"
+#include "udp_socket2_manager_win.h"
 
 #include <assert.h>
 #include <stdio.h>
 
 #include "aligned_malloc.h"
-#include "udp_socket2_windows.h"
+#include "udp_socket2_win.h"
 
 namespace webrtc {
 WebRtc_UWord32 UdpSocket2ManagerWindows::_numOfActiveManagers = 0;

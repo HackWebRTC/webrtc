@@ -27,7 +27,7 @@
 #include "rw_lock_wrapper.h"
 #include "trace.h"
 #include "udp_socket_wrapper.h"
-#include "udp_socket2_manager_windows.h"
+#include "udp_socket2_manager_win.h"
 
 namespace webrtc {
 class UdpSocket2ManagerWindows;

@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "udp_socket2_windows.h"
+#include "udp_socket2_win.h"
 
 #include <assert.h>
 #include <stdlib.h>
 #include <winsock2.h>
 
-#include "traffic_control_windows.h"
-#include "udp_socket2_manager_windows.h"
+#include "traffic_control_win.h"
+#include "udp_socket2_manager_win.h"
 
 #pragma warning(disable : 4311)
 
