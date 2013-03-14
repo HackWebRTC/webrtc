@@ -34,17 +34,6 @@
       console.log('gotStream({audio:true, video:false})');
       console.log('Using audio device: ' + audioTracks[0].label);
       attachMediaStream(audioElement, stream);
-      
-      // The audio will be muted by default from start.
-      // Unmute and set volume to max level so we can listen to audio in
-      // loopback. We restore the volume in a 'play' event to ensure that
-      // loading has been done (auto-mute is performed during load).
-      audioElement.addEventListener('play', function() {
-        audioElement.muted = false;
-        audioElement.volume = 1;
-        console.log('Unmuting and setting volume to max level');
-      }, false);
-      
       stream.onended = function() {
         console.log('stream.onended');
         buttonStart.disabled = false;
