@@ -34,7 +34,7 @@ typedef struct NsxInst_t_ {
   WebRtc_Word16           noiseEstCounter[SIMULT];
   WebRtc_Word16           noiseEstQuantile[HALF_ANAL_BLOCKL];
 
-  WebRtc_Word16           anaLen;
+  int                     anaLen;
   int                     anaLen2;
   int                     magnLen;
   int                     aggrMode;
