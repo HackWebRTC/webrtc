@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef ACM_TEST_UTILITY_H
-#define ACM_TEST_UTILITY_H
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_TEST_UTILITY_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_TEST_UTILITY_H_
 
-#include "audio_coding_module.h"
-#include "gtest/gtest.h"
+#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 
 namespace webrtc {
 
@@ -54,17 +54,6 @@ namespace webrtc {
         }                                                                                   \
     }while(0)
 
-
-
-#ifdef WIN32
-    /* Exclude rarely-used stuff from Windows headers */
-    //#define WIN32_LEAN_AND_MEAN 
-    /* OS-dependent case-insensitive string comparison */
-    #define STR_CASE_CMP(x,y) ::_stricmp(x,y)
-#else
-    /* OS-dependent case-insensitive string comparison */
-    #define STR_CASE_CMP(x,y) ::strcasecmp(x,y)
-#endif
 
 #define DESTROY_ACM(acm)                                                                    \
     do {                                                                                    \
@@ -190,6 +179,6 @@ private:
     WebRtc_UWord32 _numFrameTypes[6];
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
-#endif // ACM_TEST_UTILITY_H
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_TEST_UTILITY_H_

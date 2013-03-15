@@ -14,9 +14,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "audio_coding_module.h"
-#include "common_types.h"
-#include "gtest/gtest.h"
+#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
+#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
 
 #define NUM_CODECS_WITH_FIXED_PAYLOAD_TYPE 13
 

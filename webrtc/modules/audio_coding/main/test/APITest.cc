@@ -8,25 +8,27 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/modules/audio_coding/main/test/APITest.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <cctype>
 #include <iostream>
 #include <ostream>
 #include <string>
 
-#include "gtest/gtest.h"
-
-#include "APITest.h"
-#include "common_types.h"
-#include "engine_configurations.h"
-#include "event_wrapper.h"
-#include "thread_wrapper.h"
-#include "testsupport/fileutils.h"
-#include "tick_util.h"
-#include "trace.h"
-#include "utility.h"
+#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/common_types.h"
+#include "webrtc/engine_configurations.h"
+#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/main/test/utility.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
 

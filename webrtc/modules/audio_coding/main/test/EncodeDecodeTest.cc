@@ -8,21 +8,22 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "EncodeDecodeTest.h"
+#include "webrtc/modules/audio_coding/main/test/EncodeDecodeTest.h"
 
-#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <sstream>
 #include <string>
 
-#include "gtest/gtest.h"
-
-#include "audio_coding_module.h"
-#include "common_types.h"
-#include "testsupport/fileutils.h"
-#include "trace.h"
-#include "utility.h"
+#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
+#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/main/test/utility.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
 

@@ -134,6 +134,7 @@
              '../test/dual_stream_unittest.cc',
              '../test/EncodeDecodeTest.cc',
              '../test/iSACTest.cc',
+             '../test/opus_test.cc',
              '../test/PCMFile.cc',
              '../test/RTPFile.cc',
              '../test/SpatialAudio.cc',

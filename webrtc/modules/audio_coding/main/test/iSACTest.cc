@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/modules/audio_coding/main/test/iSACTest.h"
+
 #include <cctype>
 #include <stdio.h>
 #include <string.h>
@@ -21,12 +23,12 @@
 #include <time.h>
 #endif 
 
-#include "event_wrapper.h"
-#include "iSACTest.h"
-#include "utility.h"
-#include "trace.h"
-#include "testsupport/fileutils.h"
-#include "tick_util.h"
+#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/main/test/utility.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
 
