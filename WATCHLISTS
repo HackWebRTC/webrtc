@@ -60,6 +60,9 @@
     'neteq': {
       'filepath': 'webrtc/modules/audio_coding/neteq/.*',
     },
+    'neteq4': {
+      'filepath': 'webrtc/modules/audio_coding/neteq4/.*',
+    },
     'audio_processing': {
       'filepath': 'webrtc/modules/audio_processing/.*',
     },
@@ -71,6 +74,12 @@
     },
     'video_processing': {
       'filepath': 'webrtc/modules/video_processing/.*',
+    },
+    'bitrate_controller': {
+      'filepath': 'webrtc/modules/bitrate_controller/.*'
+    },
+    'remote_bitrate_estimator': {
+      'filepath': 'webrtc/modules/remote_bitrate_estimator/.*'
     },
     'rtp_rtcp': {
       'filepath': 'webrtc/modules/rtp_rtcp/.*'
@@ -94,7 +103,8 @@
                      'andrew@webrtc.org'],
     'common_video': ['mikhal@webrtc.org'],
     'video_engine': ['mflodman@webrtc.org',
-                     'perkj@webrtc.org'],
+                     'perkj@webrtc.org',
+                     'stefan@webrtc.org'],
     'voice_engine': ['henrika@webrtc.org'],
     'video_capture': ['mflodman@webrtc.org',
                       'perkj@webrtc.org',
@@ -106,6 +116,7 @@
                      'leozwang@webrtc.org'],
     'audio_coding': ['tina.legrand@webrtc.org'],
     'neteq': ['henrik.lundin@webrtc.org'],
+    'neteq4': ['henrik.lundin@webrtc.org'],
     'audio_processing': ['andrew@webrtc.org',
                          'bjornv@webrtc.org',
                          'leozwang@webrtc.org'],
@@ -113,9 +124,13 @@
                      'pwestin@webrtc.org'],
     'video_coding': ['stefan@webrtc.org',
                      'mikhal@webrtc.org'],
-    'video_processing': ['mikhal@webrtc.org'],
+    'video_processing': ['mikhal@webrtc.org',
+                         'stefan@webrtc.org'],
+    'bitrate_controller': ['stefan@webrtc.org'],
+    'remote_bitrate_estimator': ['stefan@webrtc.org'],
     'rtp_rtcp': ['mflodman@webrtc.org',
-                 'pwestin@webrtc.org'],
+                 'pwestin@webrtc.org',
+                 'stefan@webrtc.org'],
     'system_wrappers': ['mflodman@webrtc.org',
                         'henrika@webrtc.org',
                         'andrew@webrtc.org',
