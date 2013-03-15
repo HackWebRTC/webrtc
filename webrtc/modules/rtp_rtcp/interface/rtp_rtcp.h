@@ -416,14 +416,14 @@ class RtpRtcp : public Module {
     /*
     * Turn on/off sending RTX (RFC 4588) on a specific SSRC.
     */
-    virtual WebRtc_Word32 SetRTXSendStatus(const bool enable,
+    virtual WebRtc_Word32 SetRTXSendStatus(const RtxMode mode,
                                            const bool setSSRC,
                                            const WebRtc_UWord32 SSRC) = 0;
 
     /*
     * Get status of sending RTX (RFC 4588) on a specific SSRC.
     */
-    virtual WebRtc_Word32 RTXSendStatus(bool* enable,
+    virtual WebRtc_Word32 RTXSendStatus(RtxMode* mode,
                                         WebRtc_UWord32* SSRC) const = 0;
 
     /*

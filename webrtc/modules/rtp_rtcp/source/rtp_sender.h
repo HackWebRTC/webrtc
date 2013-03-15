@@ -176,10 +176,10 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   bool ProcessNACKBitRate(const WebRtc_UWord32 now);
 
   // RTX.
-  void SetRTXStatus(const bool enable, const bool set_ssrc,
+  void SetRTXStatus(const RtxMode mode, const bool set_ssrc,
                     const WebRtc_UWord32 SSRC);
 
-  void RTXStatus(bool *enable, WebRtc_UWord32 *SSRC) const;
+  void RTXStatus(RtxMode* mode, WebRtc_UWord32 *SSRC) const;
 
   // Functions wrapping RTPSenderInterface.
   virtual WebRtc_Word32 BuildRTPheader(
@@ -263,6 +263,9 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
                                               WebRtc_UWord32 capture_timestamp,
                                               int64_t capture_time_ms);
 
+  void BuildRtxPacket(WebRtc_UWord8* buffer, WebRtc_UWord16* length,
+                      WebRtc_UWord8* buffer_rtx);
+
   WebRtc_Word32 id_;
   const bool audio_configured_;
   RTPSenderAudio *audio_;
@@ -309,7 +312,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   WebRtc_UWord8 csrcs_;
   WebRtc_UWord32 csrc_[kRtpCsrcSize];
   bool include_csrcs_;
-  bool rtx_;
+  RtxMode rtx_;
   WebRtc_UWord32 ssrc_rtx_;
 };
 

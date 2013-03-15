@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "common_types.h"
-#include "rtp_rtcp.h"
-#include "rtp_rtcp_defines.h"
+#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 
 namespace webrtc {
 
@@ -87,4 +88,3 @@ class RtpReceiver : public RtpData {
 };
 
 }  // namespace webrtc
- 

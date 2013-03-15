@@ -128,9 +128,10 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(SetCSRCStatus,
       WebRtc_Word32(const bool include));
   MOCK_METHOD3(SetRTXSendStatus,
-      WebRtc_Word32(const bool enable, const bool setSSRC, const WebRtc_UWord32 SSRC));
+      WebRtc_Word32(const RtxMode mode, const bool setSSRC,
+                    const WebRtc_UWord32 SSRC));
  MOCK_CONST_METHOD2(RTXSendStatus,
-      WebRtc_Word32(bool* enable, WebRtc_UWord32* SSRC));
+      WebRtc_Word32(RtxMode* mode, WebRtc_UWord32* SSRC));
   MOCK_METHOD1(SetSendingStatus,
       WebRtc_Word32(const bool sending));
   MOCK_CONST_METHOD0(Sending,

@@ -157,11 +157,11 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   virtual WebRtc_UWord32 ByteCountSent() const;
 
-  virtual WebRtc_Word32 SetRTXSendStatus(const bool enable,
+  virtual WebRtc_Word32 SetRTXSendStatus(const RtxMode mode,
                                          const bool set_ssrc,
                                          const WebRtc_UWord32 ssrc);
 
-  virtual WebRtc_Word32 RTXSendStatus(bool* enable,
+  virtual WebRtc_Word32 RTXSendStatus(RtxMode* mode,
                                       WebRtc_UWord32* ssrc) const;
 
   // Sends kRtcpByeCode when going from true to false.

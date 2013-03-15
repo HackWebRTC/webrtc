@@ -915,7 +915,7 @@ WebRtc_Word32 ViEChannel::SetSSRC(const WebRtc_UWord32 SSRC,
   }
   RtpRtcp* rtp_rtcp = *it;
   if (usage == kViEStreamTypeRtx) {
-    return rtp_rtcp->SetRTXSendStatus(true, true, SSRC);
+    return rtp_rtcp->SetRTXSendStatus(kRtxRetransmitted, true, SSRC);
   }
   return rtp_rtcp->SetSSRC(SSRC);
 }

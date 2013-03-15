@@ -519,16 +519,16 @@ WebRtc_Word32 ModuleRtpRtcpImpl::RemoteCSRCs(
 }
 
 WebRtc_Word32 ModuleRtpRtcpImpl::SetRTXSendStatus(
-    const bool enable,
+    const RtxMode mode,
     const bool set_ssrc,
     const WebRtc_UWord32 ssrc) {
-  rtp_sender_.SetRTXStatus(enable, set_ssrc, ssrc);
+  rtp_sender_.SetRTXStatus(mode, set_ssrc, ssrc);
   return 0;
 }
 
-WebRtc_Word32 ModuleRtpRtcpImpl::RTXSendStatus(bool* enable,
+WebRtc_Word32 ModuleRtpRtcpImpl::RTXSendStatus(RtxMode* mode,
                                                WebRtc_UWord32* ssrc) const {
-  rtp_sender_.RTXStatus(enable, ssrc);
+  rtp_sender_.RTXStatus(mode, ssrc);
   return 0;
 }
 
