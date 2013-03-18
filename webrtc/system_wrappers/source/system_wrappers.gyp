@@ -213,7 +213,7 @@
           'conditions': [
             ['build_with_chromium==1', {
               'conditions': [
-                ['android_build_type != 0', {
+                ['android_webview_build == 1', {
                   'libraries': [
                     'cpufeatures.a'
                   ],
