@@ -24,6 +24,7 @@
 *_proto_cpp.xml
 *~
 .*.sw?
+.sw?
 .DS_Store
 .cproject
 .gdb_history
