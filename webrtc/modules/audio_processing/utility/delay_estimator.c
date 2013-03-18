@@ -302,6 +302,7 @@ int WebRtc_binary_last_delay(BinaryDelayEstimator* self) {
 }
 
 int WebRtc_binary_last_delay_quality(BinaryDelayEstimator* self) {
+  int delay_quality = 0;
   assert(self != NULL);
   // |last_delay_probability| is the opposite of quality and states how deep the
   // minimum of the cost function is. The value states how many non-matching
@@ -309,8 +310,12 @@ int WebRtc_binary_last_delay_quality(BinaryDelayEstimator* self) {
   // estimate. The range is thus from 0 to 32, since we use 32 bits in the
   // binary spectra.
 
-  // Return the quality = 1 - |last_delay_probability| / 32 (in Q14).
-  return (32 << 9) - self->last_delay_probability;
+  // Return the |delay_quality| = 1 - |last_delay_probability| / 32 (in Q14).
+  delay_quality = (32 << 9) - self->last_delay_probability;
+  if (delay_quality < 0) {
+    delay_quality = 0;
+  }
+  return delay_quality;
 }
 
 void WebRtc_MeanEstimatorFix(int32_t new_value,
