@@ -93,12 +93,13 @@ VCMMediaOptimization::Reset()
 }
 
 WebRtc_UWord32
-VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
+VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 target_bitrate,
                                      WebRtc_UWord8 &fractionLost,
                                      WebRtc_UWord32 roundTripTimeMs)
 {
     VCMProtectionMethod *selectedMethod = _lossProtLogic->SelectedMethod();
-    _lossProtLogic->UpdateBitRate(static_cast<float>(bitRate));
+    float target_bitrate_kbps = static_cast<float>(target_bitrate) / 1000.0f;
+    _lossProtLogic->UpdateBitRate(target_bitrate_kbps);
     _lossProtLogic->UpdateRtt(roundTripTimeMs);
     _lossProtLogic->UpdateResidualPacketLoss(static_cast<float>(fractionLost));
 
@@ -129,10 +130,10 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
     _lossProtLogic->UpdateFilteredLossPr(packetLossEnc);
 
     // Rate cost of the protection methods
-    uint32_t protection_overhead_kbps = 0;
+    uint32_t protection_overhead_bps = 0;
 
     // Update protection settings, when applicable
-    float sent_video_rate = 0.0f;
+    float sent_video_rate_kbps = 0.0f;
     if (selectedMethod)
     {
         // Update protection method with content metrics
@@ -159,32 +160,32 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
         // Estimate the overhead costs of the next second as staying the same
         // wrt the source bitrate.
         if (sent_total_rate_bps > 0) {
-          protection_overhead_kbps = static_cast<uint32_t>(bitRate *
+          protection_overhead_bps = static_cast<uint32_t>(target_bitrate *
               static_cast<double>(sent_nack_rate_bps + sent_fec_rate_bps) /
               sent_total_rate_bps + 0.5);
         }
         // Cap the overhead estimate to 50%.
-        if (protection_overhead_kbps > bitRate / 2)
-          protection_overhead_kbps = bitRate / 2;
+        if (protection_overhead_bps > target_bitrate / 2)
+          protection_overhead_bps = target_bitrate / 2;
 
         // Get the effective packet loss for encoder ER
         // when applicable, should be passed to encoder via fractionLost
         packetLossEnc = selectedMethod->RequiredPacketLossER();
-        sent_video_rate =  static_cast<float>(sent_video_rate_bps / 1000.0);
+        sent_video_rate_kbps =
+            static_cast<float>(sent_video_rate_bps) / 1000.0f;
     }
 
     // Source coding rate: total rate - protection overhead
-    _targetBitRate = bitRate - protection_overhead_kbps;
+    _targetBitRate = target_bitrate - protection_overhead_bps;
 
     // Update encoding rates following protection settings
-    _frameDropper->SetRates(static_cast<float>(_targetBitRate),
-                                               _incomingFrameRate);
+    _frameDropper->SetRates(target_bitrate_kbps, _incomingFrameRate);
 
     if (_enableQm)
     {
         // Update QM with rates
-        _qmResolution->UpdateRates((float)_targetBitRate, sent_video_rate,
-                                  _incomingFrameRate, _fractionLost);
+        _qmResolution->UpdateRates(target_bitrate_kbps, sent_video_rate_kbps,
+                                   _incomingFrameRate, _fractionLost);
         // Check for QM selection
         bool selectQM = checkStatusForQMchange();
         if (selectQM)
@@ -266,7 +267,7 @@ WebRtc_Word32
 VCMMediaOptimization::SetEncodingData(VideoCodecType sendCodecType,
                                       WebRtc_Word32 maxBitRate,
                                       WebRtc_UWord32 frameRate,
-                                      WebRtc_UWord32 bitRate,
+                                      WebRtc_UWord32 target_bitrate,
                                       WebRtc_UWord16 width,
                                       WebRtc_UWord16 height,
                                       int numLayers)
@@ -281,20 +282,20 @@ VCMMediaOptimization::SetEncodingData(VideoCodecType sendCodecType,
 
     _maxBitRate = maxBitRate;
     _sendCodecType = sendCodecType;
-    _targetBitRate = bitRate;
-    _lossProtLogic->UpdateBitRate(static_cast<float>(bitRate));
+    _targetBitRate = target_bitrate;
+    float target_bitrate_kbps = static_cast<float>(target_bitrate) / 1000.0f;
+    _lossProtLogic->UpdateBitRate(target_bitrate_kbps);
     _lossProtLogic->UpdateFrameRate(static_cast<float>(frameRate));
     _lossProtLogic->UpdateFrameSize(width, height);
     _lossProtLogic->UpdateNumLayers(numLayers);
     _frameDropper->Reset();
-    _frameDropper->SetRates(static_cast<float>(bitRate),
-                            static_cast<float>(frameRate));
+    _frameDropper->SetRates(target_bitrate_kbps, static_cast<float>(frameRate));
     _userFrameRate = static_cast<float>(frameRate);
     _codecWidth = width;
     _codecHeight = height;
     _numLayers = (numLayers <= 1) ? 1 : numLayers;  // Can also be zero.
     WebRtc_Word32 ret = VCM_OK;
-    ret = _qmResolution->Initialize((float)_targetBitRate, _userFrameRate,
+    ret = _qmResolution->Initialize(target_bitrate_kbps, _userFrameRate,
                                     _codecWidth, _codecHeight, _numLayers);
     return ret;
 }
@@ -361,7 +362,7 @@ float
 VCMMediaOptimization::SentBitRate()
 {
     UpdateBitRateEstimate(-1, _clock->TimeInMilliseconds());
-    return _avgSentBitRateBps / 1000.0f;
+    return _avgSentBitRateBps;
 }
 
 WebRtc_Word32

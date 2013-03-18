@@ -920,8 +920,8 @@ void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
                "%s(bitrate_bps: %u, fraction_lost: %u, rtt_ms: %u",
                __FUNCTION__, bitrate_bps, fraction_lost, round_trip_time_ms);
 
+  vcm_.SetChannelParameters(bitrate_bps, fraction_lost, round_trip_time_ms);
   int bitrate_kbps = bitrate_bps / 1000;
-  vcm_.SetChannelParameters(bitrate_kbps, fraction_lost, round_trip_time_ms);
   paced_sender_->UpdateBitrate(bitrate_kbps);
   default_rtp_rtcp_->SetTargetSendBitrate(bitrate_bps);
 }

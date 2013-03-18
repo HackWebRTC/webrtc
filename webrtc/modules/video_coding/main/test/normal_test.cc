@@ -278,7 +278,7 @@ NormalTest::Perform(const CmdArgs& args)
                                _width, half_width, half_width);
   WebRtc_UWord8* tmpBuffer = new WebRtc_UWord8[_lengthSourceFrame];
   double startTime = clock()/(double)CLOCKS_PER_SEC;
-  _vcm->SetChannelParameters((WebRtc_UWord32)_bitRate, 0, 0);
+  _vcm->SetChannelParameters(static_cast<uint32_t>(1000 * _bitRate), 0, 0);
 
   SendStatsTest sendStats;
   sendStats.SetTargetFrameRate(static_cast<WebRtc_UWord32>(_frameRate));

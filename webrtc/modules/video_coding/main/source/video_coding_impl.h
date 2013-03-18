@@ -109,7 +109,7 @@ public:
 
     // Set channel parameters
     virtual WebRtc_Word32 SetChannelParameters(
-        WebRtc_UWord32 availableBandWidth,
+        WebRtc_UWord32 target_bitrate,  // bits/s.
         WebRtc_UWord8 lossRate,
         WebRtc_UWord32 rtt);
 

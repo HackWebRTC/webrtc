@@ -105,10 +105,11 @@ public:
                          const CodecSpecificInfo* codecSpecificInfo,
                          const std::vector<FrameType>& frameTypes);
     /**
-    *	Set new target bit rate and frame rate
-    * Return Value: new bit rate if OK, otherwise <0s
+    * Set new target bitrate (bits/s) and framerate.
+    * Return Value: new bit rate if OK, otherwise <0s.
     */
-    WebRtc_Word32 SetRates(WebRtc_UWord32 newBitRate, WebRtc_UWord32 frameRate);
+    WebRtc_Word32 SetRates(WebRtc_UWord32 target_bitrate,
+                           WebRtc_UWord32 frameRate);
     /**
     * Set a new packet loss rate and a new round-trip time in milliseconds.
     */

@@ -349,9 +349,9 @@ VideoCodingModuleImpl::RegisterSendCodec(const VideoCodec* sendCodec,
                            kVideoFrameDelta);
 
     _mediaOpt.SetEncodingData(_sendCodecType,
-                              sendCodec->maxBitrate,
-                              sendCodec->maxFramerate,
-                              sendCodec->startBitrate,
+                              sendCodec->maxBitrate * 1000,
+                              sendCodec->maxFramerate * 1000,
+                              sendCodec->startBitrate * 1000,
                               sendCodec->width,
                               sendCodec->height,
                               numLayers);
@@ -447,14 +447,14 @@ int VideoCodingModuleImpl::FrameRate(unsigned int* framerate) const
 
 // Set channel parameters
 WebRtc_Word32
-VideoCodingModuleImpl::SetChannelParameters(WebRtc_UWord32 availableBandWidth,
+VideoCodingModuleImpl::SetChannelParameters(WebRtc_UWord32 target_bitrate,
                                             WebRtc_UWord8 lossRate,
                                             WebRtc_UWord32 rtt)
 {
     WebRtc_Word32 ret = 0;
     {
         CriticalSectionScoped sendCs(_sendCritSect);
-        WebRtc_UWord32 targetRate = _mediaOpt.SetTargetRates(availableBandWidth,
+        WebRtc_UWord32 targetRate = _mediaOpt.SetTargetRates(target_bitrate,
                                                              lossRate,
                                                              rtt);
         if (_encoder != NULL)

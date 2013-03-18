@@ -290,7 +290,8 @@ MediaOptTest::Perform()
     // START TEST
     I420VideoFrame sourceFrame;
     WebRtc_UWord8* tmpBuffer = new WebRtc_UWord8[_lengthSourceFrame];
-    _vcm->SetChannelParameters((WebRtc_UWord32)_bitRate, (WebRtc_UWord8)_lossRate, _rttMS);
+    _vcm->SetChannelParameters(static_cast<uint32_t>(1000 * _bitRate),
+                               (WebRtc_UWord8)_lossRate, _rttMS);
     _vcm->RegisterReceiveCallback(&receiveCallback);
 
     _frameCnt  = 0;

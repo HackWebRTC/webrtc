@@ -182,14 +182,14 @@ public:
     // encoder. Bit rate used by NACK should already be compensated for by the user.
     //
     // Input:
-    //      - availableBandWidth    : Band width available for the VCM in kbit/s.
+    //      - target_bitrate        : The target bitrate for VCM in bits/s.
     //      - lossRate              : Fractions of lost packets the past second.
     //                                (loss rate in percent = 100 * packetLoss / 255)
     //      - rtt                   : Current round-trip time in ms.
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
-    virtual WebRtc_Word32 SetChannelParameters(WebRtc_UWord32 availableBandWidth,
+    virtual WebRtc_Word32 SetChannelParameters(WebRtc_UWord32 target_bitrate,
                                                WebRtc_UWord8 lossRate,
                                                WebRtc_UWord32 rtt) = 0;
 

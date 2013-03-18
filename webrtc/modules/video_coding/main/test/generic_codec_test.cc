@@ -138,7 +138,8 @@ GenericCodecTest::Perform(CmdArgs& args)
     TEST(_vcm->RegisterSendCodec(&sendCodec, 1, 1440) < 0); // bad bit rate
     _vcm->Codec(kVideoCodecVP8, &sendCodec);
     _vcm->InitializeSender();
-    TEST(_vcm->SetChannelParameters(100, 0, 0) < 0);// setting rate when encoder uninitialized
+    // Setting rate when encoder uninitialized.
+    TEST(_vcm->SetChannelParameters(100000, 0, 0) < 0);
     // register all availbale decoders -- need to have more for this test
     for (i=0; i< NumberOfCodecs; i++)
     {
@@ -159,7 +160,8 @@ GenericCodecTest::Perform(CmdArgs& args)
     sourceFrame.set_timestamp(_timeStamp++);
     TEST(_vcm->AddVideoFrame(sourceFrame) < 0 ); // encoder uninitialized
     _vcm->InitializeReceiver();
-    TEST(_vcm->SetChannelParameters(100, 0, 0) < 0);// setting rtt when receiver uninitialized
+    // Setting rtt when receiver uninitialized.
+    TEST(_vcm->SetChannelParameters(100000, 0, 0) < 0);
 
       /**************************************/
      /* encoder/decoder individuality test */
@@ -310,7 +312,8 @@ GenericCodecTest::Perform(CmdArgs& args)
             _vcm->RegisterSendCodec(&_sendCodec, 1, 1440);
             _vcm->RegisterTransportCallback(_encodeCompleteCallback);
             // up to here
-            _vcm->SetChannelParameters((WebRtc_UWord32)_bitRate, 0, 20);
+            _vcm->SetChannelParameters(static_cast<uint32_t>(1000 * _bitRate),
+                                       0, 20);
             _frameCnt = 0;
             totalBytes = 0;
             _encodeCompleteCallback->Initialize();
@@ -428,10 +431,10 @@ GenericCodecTest::Perform(CmdArgs& args)
     _vcm->InitializeSender();
     _sendCodec.maxFramerate = static_cast<WebRtc_UWord8>(_frameRate / 2.0 + 0.5f);
     _vcm->RegisterSendCodec(&_sendCodec, 4, 1440);
-    _vcm->SetChannelParameters(2000, 0, 0);
+    _vcm->SetChannelParameters(2000000, 0, 0);
     _vcm->RegisterTransportCallback(_encodeCompleteCallback);
     // up to here
-    _vcm->SetChannelParameters((WebRtc_UWord32)_bitRate, 0, 20);
+    _vcm->SetChannelParameters(static_cast<uint32_t>(1000 * _bitRate), 0, 20);
     _encodeCompleteCallback->Initialize();
     sendStats.SetTargetFrameRate(static_cast<WebRtc_UWord32>(_frameRate));
     _vcm->RegisterSendStatisticsCallback(&sendStats);

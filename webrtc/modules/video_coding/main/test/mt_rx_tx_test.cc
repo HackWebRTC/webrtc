@@ -89,7 +89,7 @@ bool
 IntSenderThread(void* obj)
 {
     SendSharedState* state = static_cast<SendSharedState*>(obj);
-    state->_vcm.SetChannelParameters(1000,30,0);
+    state->_vcm.SetChannelParameters(1000000,30,0);
 
     return true;
 }
@@ -239,7 +239,7 @@ int MTRxTxTest(CmdArgs& args)
     rtp->SetFecParameters(&delta_params, &key_params);
     rtp->SetNACKStatus(nackEnabled ? kNackRtcp : kNackOff, kMaxPacketAgeToNack);
 
-    vcm->SetChannelParameters((WebRtc_UWord32) bitRate,
+    vcm->SetChannelParameters(static_cast<uint32_t>(1000 * bitRate),
                               (WebRtc_UWord8) lossRate, rttMS);
 
     SharedRTPState mtState(*vcm, *rtp); // receive side

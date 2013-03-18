@@ -47,14 +47,13 @@ public:
     WebRtc_Word32 Reset();
     /**
     * Set target Rates for the encoder given the channel parameters
-    * Inputs:       bitRate - target bitRate, in the conference case this is the rate
-    *                         between the sending client and the server
+    * Inputs:       target bitrate - the encoder target bitrate in bits/s.
     *               fractionLost - packet loss in % in the network
-    *               roundTripTimeMs - round trip time in miliseconds
+    *               roundTripTimeMs - round trip time in milliseconds
     *               minBitRate - the bit rate of the end-point with lowest rate
     *               maxBitRate - the bit rate of the end-point with highest rate
     */
-    WebRtc_UWord32 SetTargetRates(WebRtc_UWord32 bitRate,
+    WebRtc_UWord32 SetTargetRates(WebRtc_UWord32 target_bitrate,
                                   WebRtc_UWord8 &fractionLost,
                                   WebRtc_UWord32 roundTripTimeMs);
 
