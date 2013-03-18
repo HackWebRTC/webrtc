@@ -25,6 +25,7 @@
         '../test/testAPI/test_api.cc',
         '../test/testAPI/test_api.h',
         '../test/testAPI/test_api_audio.cc',
+        '../test/testAPI/test_api_nack.cc',
         '../test/testAPI/test_api_rtcp.cc',
         '../test/testAPI/test_api_video.cc',
         'mock/mock_rtp_payload_strategy.h',

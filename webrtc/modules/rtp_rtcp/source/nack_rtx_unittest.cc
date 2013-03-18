@@ -84,15 +84,15 @@ class RtxLoopBackTransport : public webrtc::Transport {
   RtpRtcp* module_;
 };
 
-class RtpRtcpNackTest : public ::testing::Test {
+class RtpRtcpRtxNackTest : public ::testing::Test {
  protected:
-  RtpRtcpNackTest()
+  RtpRtcpRtxNackTest()
       : rtp_rtcp_module_(NULL),
         transport_(kTestSsrc + 1),
         receiver_(),
         payload_data_length(sizeof(payload_data)),
         fake_clock(123456) {}
-  ~RtpRtcpNackTest() {}
+  ~RtpRtcpRtxNackTest() {}
 
   virtual void SetUp() {
     RtpRtcp::Configuration configuration;
@@ -138,7 +138,7 @@ class RtpRtcpNackTest : public ::testing::Test {
   SimulatedClock fake_clock;
 };
 
-TEST_F(RtpRtcpNackTest, RTCP) {
+TEST_F(RtpRtcpRtxNackTest, RTCP) {
   WebRtc_UWord32 timestamp = 3000;
   WebRtc_UWord16 nack_list[kVideoNackListSize];
   transport_.DropEveryNthPacket(10);
@@ -191,7 +191,7 @@ TEST_F(RtpRtcpNackTest, RTCP) {
   EXPECT_EQ(0, transport_.count_rtx_ssrc_);
 }
 
-TEST_F(RtpRtcpNackTest, RTXNack) {
+TEST_F(RtpRtcpRtxNackTest, RTXNack) {
   EXPECT_EQ(0, rtp_rtcp_module_->SetRTXReceiveStatus(true, kTestSsrc + 1));
   EXPECT_EQ(0, rtp_rtcp_module_->SetRTXSendStatus(kRtxRetransmitted,
                                                   true, kTestSsrc + 1));
@@ -249,7 +249,7 @@ TEST_F(RtpRtcpNackTest, RTXNack) {
   EXPECT_EQ(kTestNumberOfRtxPackets, transport_.count_rtx_ssrc_);
 }
 
-TEST_F(RtpRtcpNackTest, RTXAllNoLoss) {
+TEST_F(RtpRtcpRtxNackTest, RTXAllNoLoss) {
   EXPECT_EQ(0, rtp_rtcp_module_->SetRTXReceiveStatus(true, kTestSsrc + 1));
   EXPECT_EQ(0, rtp_rtcp_module_->SetRTXSendStatus(kRtxAll,
                                                   true, kTestSsrc + 1));
@@ -283,7 +283,7 @@ TEST_F(RtpRtcpNackTest, RTXAllNoLoss) {
       transport_.count_rtx_ssrc_);
 }
 
-TEST_F(RtpRtcpNackTest, RTXAllWithLoss) {
+TEST_F(RtpRtcpRtxNackTest, RTXAllWithLoss) {
   EXPECT_EQ(0, rtp_rtcp_module_->SetRTXReceiveStatus(true, kTestSsrc + 1));
   EXPECT_EQ(0, rtp_rtcp_module_->SetRTXSendStatus(kRtxAll,
                                                   true,
