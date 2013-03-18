@@ -197,7 +197,7 @@ void RTPPayload::SetType(RtpVideoCodecTypes videoType) {
   type = videoType;
 
   switch (type) {
-    case kRtpNoVideo:
+    case kRtpGenericVideo:
       break;
     case kRtpVp8Video: {
       info.VP8.nonReferenceFrame = false;
@@ -520,7 +520,7 @@ bool RTPPayloadParser::Parse(RTPPayload& parsedPacket) const {
   parsedPacket.SetType(_videoType);
 
   switch (_videoType) {
-    case kRtpNoVideo:
+    case kRtpGenericVideo:
       return ParseGeneric(parsedPacket);
     case kRtpVp8Video:
       return ParseVP8(parsedPacket);

@@ -312,7 +312,7 @@ WebRtc_Word32 RTPSender::SendOutgoingData(
       return 0;
     }
   }
-  RtpVideoCodecTypes video_type = kRtpNoVideo;
+  RtpVideoCodecTypes video_type = kRtpGenericVideo;
   if (CheckPayloadType(payload_type, &video_type) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
                  "%s invalid argument failed to find payload_type:%d",
@@ -1133,9 +1133,7 @@ VideoCodecInformation *RTPSender::CodecInformationVideo() {
 }
 
 RtpVideoCodecTypes RTPSender::VideoCodecType() const {
-  if (audio_configured_) {
-    return kRtpNoVideo;
-  }
+  assert(!audio_configured_ && "Sender is an audio stream!");
   return video_->VideoCodecType();
 }
 

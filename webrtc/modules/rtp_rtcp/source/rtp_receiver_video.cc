@@ -16,6 +16,7 @@
 #include <cstring>  // memcpy()
 
 #include "webrtc/modules/rtp_rtcp/source/receiver_fec.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
@@ -261,7 +262,7 @@ WebRtc_Word32 RTPReceiverVideo::SetCodecType(
     const RtpVideoCodecTypes video_type,
     WebRtcRTPHeader* rtp_header) const {
   switch (video_type) {
-    case kRtpNoVideo:
+    case kRtpGenericVideo:
       rtp_header->type.Video.codec = kRTPVideoGeneric;
       break;
     case kRtpVp8Video:
@@ -295,7 +296,7 @@ WebRtc_Word32 RTPReceiverVideo::ParseVideoCodecSpecificSwitch(
   // All receive functions release critical_section_receiver_video_ before
   // returning.
   switch (video_type) {
-    case kRtpNoVideo:
+    case kRtpGenericVideo:
       rtp_header->type.Video.isFirstPacket = is_first_packet;
       return ReceiveGenericCodec(rtp_header, payload_data, payload_data_length);
     case kRtpVp8Video:
@@ -376,8 +377,15 @@ WebRtc_Word32 RTPReceiverVideo::ReceiveVp8Codec(
 WebRtc_Word32 RTPReceiverVideo::ReceiveGenericCodec(
     WebRtcRTPHeader* rtp_header,
     const WebRtc_UWord8* payload_data,
-    const WebRtc_UWord16 payload_data_length) {
-  rtp_header->frameType = kVideoFrameKey;
+    WebRtc_UWord16 payload_data_length) {
+  uint8_t generic_header = *payload_data++;
+  --payload_data_length;
+
+  rtp_header->frameType =
+      ((generic_header & RtpFormatVideoGeneric::kKeyFrameBit) != 0) ?
+      kVideoFrameKey : kVideoFrameDelta;
+  rtp_header->type.Video.isFirstPacket =
+      (generic_header & RtpFormatVideoGeneric::kFirstPacketBit) != 0;
 
   critical_section_receiver_video_->Leave();
 

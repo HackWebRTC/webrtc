@@ -86,6 +86,7 @@
         'video_codec_information.h',
         'rtp_format_vp8.cc',
         'rtp_format_vp8.h',
+        'rtp_format_video_generic.h',
         'vp8_partition_aggregator.cc',
         'vp8_partition_aggregator.h',
         # Mocks

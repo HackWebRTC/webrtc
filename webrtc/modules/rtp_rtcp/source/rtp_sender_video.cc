@@ -21,6 +21,7 @@
 
 #include "producer_fec.h"
 #include "rtp_format_vp8.h"
+#include "rtp_format_video_generic.h"
 
 namespace webrtc {
 enum { REDForFECHeaderLength = 1 };
@@ -37,7 +38,7 @@ RTPSenderVideo::RTPSenderVideo(const WebRtc_Word32 id,
     _rtpSender(*rtpSender),
     _sendVideoCritsect(CriticalSectionWrapper::CreateCriticalSection()),
 
-    _videoType(kRtpNoVideo),
+    _videoType(kRtpGenericVideo),
     _videoCodecInformation(NULL),
     _maxBitrate(0),
     _retransmissionSettings(kRetransmitBaseLayer),
@@ -89,11 +90,13 @@ WebRtc_Word32 RTPSenderVideo::RegisterVideoPayload(
     ModuleRTPUtility::Payload*& payload) {
   CriticalSectionScoped cs(_sendVideoCritsect);
 
-  RtpVideoCodecTypes videoType = kRtpNoVideo;
+  RtpVideoCodecTypes videoType = kRtpGenericVideo;
   if (ModuleRTPUtility::StringCompare(payloadName, "VP8",3)) {
     videoType = kRtpVp8Video;
   } else if (ModuleRTPUtility::StringCompare(payloadName, "I420", 4)) {
-    videoType = kRtpNoVideo;
+    videoType = kRtpGenericVideo;
+  } else if (ModuleRTPUtility::StringCompare(payloadName, "GENERIC", 7)) {
+    videoType = kRtpGenericVideo;
   } else {
     return -1;
   }
@@ -285,9 +288,9 @@ RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
     WebRtc_Word32 retVal = -1;
     switch(videoType)
     {
-    case kRtpNoVideo:
-        retVal = SendGeneric(payloadType, captureTimeStamp, capture_time_ms,
-                             payloadData, payloadSize);
+    case kRtpGenericVideo:
+        retVal = SendGeneric(frameType, payloadType, captureTimeStamp,
+                             capture_time_ms, payloadData, payloadSize);
         break;
     case kRtpVp8Video:
         retVal = SendVP8(frameType,
@@ -312,67 +315,59 @@ RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
     return 0;
 }
 
-WebRtc_Word32
-RTPSenderVideo::SendGeneric(const WebRtc_Word8 payloadType,
-                            const uint32_t captureTimeStamp,
-                            int64_t capture_time_ms,
-                            const WebRtc_UWord8* payloadData,
-                            const WebRtc_UWord32 payloadSize)
-{
-    WebRtc_UWord16 payloadBytesInPacket = 0;
-    WebRtc_UWord32 bytesSent = 0;
-    WebRtc_Word32 payloadBytesToSend = payloadSize;
+int32_t RTPSenderVideo::SendGeneric(const FrameType frame_type,
+                                    const int8_t payload_type,
+                                    const uint32_t capture_timestamp,
+                                    int64_t capture_time_ms,
+                                    const uint8_t* payload,
+                                    uint32_t size) {
+  assert(frame_type == kVideoFrameKey || frame_type == kVideoFrameDelta);
+  uint16_t rtp_header_length = _rtpSender.RTPHeaderLength();
+  uint16_t max_length = _rtpSender.MaxPayloadLength() - FECPacketOverhead() -
+                        rtp_header_length - (1 /* generic header length */);
 
-    const WebRtc_UWord8* data = payloadData;
-    WebRtc_UWord16 rtpHeaderLength = _rtpSender.RTPHeaderLength();
-    WebRtc_UWord16 maxLength = _rtpSender.MaxPayloadLength() -
-        FECPacketOverhead() - rtpHeaderLength;
-    WebRtc_UWord8 dataBuffer[IP_PACKET_SIZE];
+  // Fragment packets more evenly by splitting the payload up evenly.
+  uint32_t num_packets = (size + max_length - 1) / max_length;
+  uint32_t payload_length = (size + num_packets - 1) / num_packets;
+  assert(payload_length <= max_length);
 
-    // Fragment packet into packets of max MaxPayloadLength bytes payload.
-    while (payloadBytesToSend > 0)
-    {
-        if (payloadBytesToSend > maxLength)
-        {
-            payloadBytesInPacket = maxLength;
-            payloadBytesToSend -= payloadBytesInPacket;
-            // MarkerBit is 0
-            if(_rtpSender.BuildRTPheader(dataBuffer,
-                                         payloadType,
-                                         false,
-                                         captureTimeStamp) != rtpHeaderLength)
-            {
-                return -1;
-           }
-        }
-        else
-        {
-            payloadBytesInPacket = (WebRtc_UWord16)payloadBytesToSend;
-            payloadBytesToSend = 0;
-            // MarkerBit is 1
-            if(_rtpSender.BuildRTPheader(dataBuffer, payloadType, true,
-                                         captureTimeStamp) != rtpHeaderLength)
-            {
-                return -1;
-            }
-        }
+  // Fragment packet into packets of max MaxPayloadLength bytes payload.
+  uint8_t buffer[IP_PACKET_SIZE];
 
-        // Put payload in packet
-        memcpy(&dataBuffer[rtpHeaderLength], &data[bytesSent],
-               payloadBytesInPacket);
-        bytesSent += payloadBytesInPacket;
+  uint8_t generic_header = RtpFormatVideoGeneric::kFirstPacketBit;
+  if (frame_type == kVideoFrameKey) {
+    generic_header |= RtpFormatVideoGeneric::kKeyFrameBit;
+  }
 
-        if(-1 == SendVideoPacket(dataBuffer,
-                                 payloadBytesInPacket,
-                                 rtpHeaderLength,
-                                 capture_time_ms,
-                                 kAllowRetransmission,
-                                 true))
-        {
-            return -1;
-        }
+  while (size > 0) {
+    if (size < payload_length) {
+      payload_length = size;
     }
-    return 0;
+    size -= payload_length;
+
+    // MarkerBit is 1 on final packet (bytes_to_send == 0)
+    if (_rtpSender.BuildRTPheader(buffer, payload_type, size == 0,
+                                  capture_timestamp) != rtp_header_length) {
+      return -1;
+    }
+
+    uint8_t* out_ptr = &buffer[rtp_header_length];
+
+    // Put generic header in packet
+    *out_ptr++ = generic_header;
+    // Remove first-packet bit, following packets are intermediate
+    generic_header &= ~RtpFormatVideoGeneric::kFirstPacketBit;
+
+    // Put payload in packet
+    memcpy(out_ptr, payload, payload_length);
+    payload += payload_length;
+
+    if (SendVideoPacket(buffer, payload_length + 1, rtp_header_length,
+                        capture_time_ms, kAllowRetransmission, true)) {
+      return -1;
+    }
+  }
+  return 0;
 }
 
 VideoCodecInformation*

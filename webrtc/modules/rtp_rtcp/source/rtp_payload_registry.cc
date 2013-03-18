@@ -313,11 +313,13 @@ class RTPPayloadVideoStrategy : public RTPPayloadStrategy {
       const WebRtc_UWord32 frequency,
       const WebRtc_UWord8 channels,
       const WebRtc_UWord32 rate) const {
-    RtpVideoCodecTypes videoType = kRtpNoVideo;
+    RtpVideoCodecTypes videoType = kRtpGenericVideo;
     if (ModuleRTPUtility::StringCompare(payloadName, "VP8", 3)) {
       videoType = kRtpVp8Video;
     } else if (ModuleRTPUtility::StringCompare(payloadName, "I420", 4)) {
-      videoType = kRtpNoVideo;
+      videoType = kRtpGenericVideo;
+    } else if (ModuleRTPUtility::StringCompare(payloadName, "GENERIC", 7)) {
+      videoType = kRtpGenericVideo;
     } else if (ModuleRTPUtility::StringCompare(payloadName, "ULPFEC", 6)) {
       videoType = kRtpFecVideo;
     } else {

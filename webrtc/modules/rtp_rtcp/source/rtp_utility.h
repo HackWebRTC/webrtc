@@ -21,7 +21,7 @@
 namespace webrtc {
 enum RtpVideoCodecTypes
 {
-    kRtpNoVideo       = 0,
+    kRtpGenericVideo  = 0,
     kRtpFecVideo      = 10,
     kRtpVp8Video      = 11
 };

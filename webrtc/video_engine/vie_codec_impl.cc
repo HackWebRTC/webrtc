@@ -158,7 +158,6 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
     shared_data_->SetLastError(kViECodecReceiveOnlyChannel);
     return -1;
   }
-
   // Set a max_bitrate if the user hasn't set one.
   VideoCodec video_codec_internal;
   memcpy(&video_codec_internal, &video_codec, sizeof(VideoCodec));
@@ -740,9 +739,11 @@ bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {
                  "Codec type doesn't match pl_name", video_codec.plType);
     return false;
   } else if ((video_codec.codecType == kVideoCodecVP8 &&
-                  strncmp(video_codec.plName, "VP8", 4) == 0) ||
-              (video_codec.codecType == kVideoCodecI420 &&
-                  strncmp(video_codec.plName, "I420", 4) == 0)) {
+              strncmp(video_codec.plName, "VP8", 4) == 0) ||
+             (video_codec.codecType == kVideoCodecI420 &&
+              strncmp(video_codec.plName, "I420", 4) == 0) ||
+             (video_codec.codecType == kVideoCodecGeneric &&
+              strncmp(video_codec.plName, "GENERIC", 7) == 0)) {
     // OK.
   } else {
     WEBRTC_TRACE(kTraceError, kTraceVideo, -1,

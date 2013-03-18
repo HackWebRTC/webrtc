@@ -21,17 +21,19 @@
 
 #include <iostream>
 
-#include "common_types.h"
-#include "tb_external_transport.h"
-#include "voe_base.h"
-#include "vie_autotest_defines.h"
-#include "vie_autotest.h"
-#include "vie_base.h"
-#include "vie_capture.h"
-#include "vie_codec.h"
-#include "vie_network.h"
-#include "vie_render.h"
-#include "vie_rtp_rtcp.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
+#include "webrtc/video_engine/include/vie_base.h"
+#include "webrtc/video_engine/include/vie_capture.h"
+#include "webrtc/video_engine/include/vie_codec.h"
+#include "webrtc/video_engine/include/vie_external_codec.h"
+#include "webrtc/video_engine/include/vie_network.h"
+#include "webrtc/video_engine/include/vie_render.h"
+#include "webrtc/video_engine/include/vie_rtp_rtcp.h"
+#include "webrtc/video_engine/test/auto_test/interface/vie_autotest.h"
+#include "webrtc/video_engine/test/auto_test/interface/vie_autotest_defines.h"
+#include "webrtc/video_engine/test/libvietest/include/tb_external_transport.h"
+#include "webrtc/voice_engine/include/voe_base.h"
 
 #define VCM_RED_PAYLOAD_TYPE        96
 #define VCM_ULPFEC_PAYLOAD_TYPE     97
@@ -323,6 +325,8 @@ int VideoEngineSampleCode(void* window1, void* window2)
             printf("\t %d. %s\n", codecIdx + 1, videoCodec.plName);
         }
     }
+    printf("%d. VP8 over Generic.\n", ptrViECodec->NumberOfCodecs() + 1);
+
     printf("Choose codec: ");
 #ifdef WEBRTC_ANDROID
     codecIdx = 0;
@@ -336,12 +340,33 @@ int VideoEngineSampleCode(void* window1, void* window2)
     getchar();
     codecIdx = codecIdx - 1; // Compensate for idx start at 1.
 #endif
-
-    error = ptrViECodec->GetCodec(codecIdx, videoCodec);
-    if (error == -1)
-    {
+    if (codecIdx == ptrViECodec->NumberOfCodecs()) {
+      for (codecIdx = 0; codecIdx < ptrViECodec->NumberOfCodecs(); ++codecIdx) {
+        error = ptrViECodec->GetCodec(codecIdx, videoCodec);
+        assert(error != -1);
+        if (videoCodec.codecType == webrtc::kVideoCodecVP8)
+          break;
+      }
+      assert(videoCodec.codecType == webrtc::kVideoCodecVP8);
+      videoCodec.codecType = webrtc::kVideoCodecGeneric;
+      strcpy(videoCodec.plName, "GENERIC");
+      uint8_t pl_type = 127;
+      videoCodec.plType = pl_type;
+      webrtc::ViEExternalCodec* external_codec = webrtc::ViEExternalCodec
+          ::GetInterface(ptrViE);
+      assert(external_codec != NULL);
+      error = external_codec->RegisterExternalSendCodec(videoChannel, pl_type,
+          webrtc::VP8Encoder::Create(), false);
+      assert(error != -1);
+      error = external_codec->RegisterExternalReceiveCodec(videoChannel,
+          pl_type, webrtc::VP8Decoder::Create(), false);
+      assert(error != -1);
+    } else {
+      error = ptrViECodec->GetCodec(codecIdx, videoCodec);
+      if (error == -1) {
         printf("ERROR in ViECodec::GetCodec\n");
         return -1;
+      }
     }
 
     // Set spatial resolution option
@@ -352,13 +377,9 @@ int VideoEngineSampleCode(void* window1, void* window2)
     std::cout << "3. VGA  (640X480) " << std::endl;
     std::cout << "4. 4CIF (704X576) " << std::endl;
     std::cout << "5. WHD  (1280X720) " << std::endl;
+    std::cout << "6. FHD  (1920X1080) " << std::endl;
     std::getline(std::cin, str);
     int resolnOption = atoi(str.c_str());
-    // Try to keep the test frame size small when I420
-    if (videoCodec.codecType == webrtc::kVideoCodecI420)
-    {
-       resolnOption = 1;
-    }
     switch (resolnOption)
     {
         case 1:
@@ -380,6 +401,10 @@ int VideoEngineSampleCode(void* window1, void* window2)
         case 5:
             videoCodec.width = 1280;
             videoCodec.height = 720;
+            break;
+        case 6:
+            videoCodec.width = 1920;
+            videoCodec.height = 1080;
             break;
     }
 
@@ -405,11 +430,9 @@ int VideoEngineSampleCode(void* window1, void* window2)
     }
 
     error = ptrViECodec->SetSendCodec(videoChannel, videoCodec);
-    if (error == -1)
-    {
-        printf("ERROR in ViECodec::SetSendCodec\n");
-        return -1;
-    }
+    assert(error != -1);
+    error = ptrViECodec->SetReceiveCodec(videoChannel, videoCodec);
+    assert(error != -1);
 
     //
     // Choose Protection Mode

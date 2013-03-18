@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
@@ -220,4 +221,63 @@ TEST_F(RtpSenderTest, DISABLED_TrafficSmoothing) {
   // Verify transmission time offset.
   EXPECT_EQ(kStoredTimeInMs * 90, rtp_header.extension.transmissionTimeOffset);
 }
+
+TEST_F(RtpSenderTest, SendGenericVideo) {
+  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
+  const uint8_t payload_type = 127;
+  ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 90000,
+                                            0, 1500));
+  uint8_t payload[] = {47, 11, 32, 93, 89};
+
+  // Send keyframe
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kVideoFrameKey, payload_type, 1234,
+                                             4321, payload, sizeof(payload),
+                                             NULL));
+
+  ModuleRTPUtility::RTPHeaderParser rtp_parser(transport_.last_sent_packet_,
+      transport_.last_sent_packet_len_);
+  webrtc::WebRtcRTPHeader rtp_header;
+  ASSERT_TRUE(rtp_parser.Parse(rtp_header));
+
+  const uint8_t* payload_data = ModuleRTPUtility::GetPayloadData(&rtp_header,
+      transport_.last_sent_packet_);
+  uint8_t generic_header = *payload_data++;
+
+  ASSERT_EQ(sizeof(payload) + sizeof(generic_header),
+            ModuleRTPUtility::GetPayloadDataLength(&rtp_header,
+            transport_.last_sent_packet_len_));
+
+  EXPECT_TRUE(generic_header & RtpFormatVideoGeneric::kKeyFrameBit);
+  EXPECT_TRUE(generic_header & RtpFormatVideoGeneric::kFirstPacketBit);
+
+  EXPECT_EQ(0, memcmp(payload, payload_data, sizeof(payload)));
+
+  // Send delta frame
+  payload[0] = 13;
+  payload[1] = 42;
+  payload[4] = 13;
+
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kVideoFrameDelta, payload_type,
+                                             1234, 4321, payload,
+                                             sizeof(payload), NULL));
+
+  ModuleRTPUtility::RTPHeaderParser rtp_parser2(transport_.last_sent_packet_,
+      transport_.last_sent_packet_len_);
+  ASSERT_TRUE(rtp_parser.Parse(rtp_header));
+
+  payload_data = ModuleRTPUtility::GetPayloadData(&rtp_header,
+      transport_.last_sent_packet_);
+  generic_header = *payload_data++;
+
+  EXPECT_FALSE(generic_header & RtpFormatVideoGeneric::kKeyFrameBit);
+  EXPECT_TRUE(generic_header & RtpFormatVideoGeneric::kFirstPacketBit);
+
+  ASSERT_EQ(sizeof(payload) + sizeof(generic_header),
+            ModuleRTPUtility::GetPayloadDataLength(&rtp_header,
+      transport_.last_sent_packet_len_));
+
+  EXPECT_EQ(0, memcmp(payload, payload_data, sizeof(payload)));
+}
+
 }  // namespace webrtc
+
