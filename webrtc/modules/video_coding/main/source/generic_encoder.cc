@@ -221,7 +221,8 @@ VCMEncodedFrameCallback::Encoded(
     }
     _encodedBytes = encodedBytes;
     if (_mediaOpt != NULL) {
-      _mediaOpt->UpdateWithEncodedData(_encodedBytes, frameType);
+      _mediaOpt->UpdateWithEncodedData(_encodedBytes, encodedImage._timeStamp,
+                                       frameType);
       if (_internalSource)
       {
           return _mediaOpt->DropFrame(); // Signal to encoder to drop next frame

@@ -36,7 +36,8 @@ _enableQm(false),
 _videoProtectionCallback(NULL),
 _videoQMSettingsCallback(NULL),
 _encodedFrameSamples(),
-_avgSentBitRateBps(0.0f),
+_avgSentBitRateBps(0),
+_avgSentFramerate(0),
 _keyFrameCnt(0),
 _deltaFrameCnt(0),
 _lastQMUpdateTime(0),
@@ -82,12 +83,8 @@ VCMMediaOptimization::Reset()
     _deltaFrameCnt = 0;
     _lastQMUpdateTime = 0;
     _lastChangeTime = 0;
-    for (WebRtc_Word32 i = 0; i < kBitrateMaxFrameSamples; i++)
-    {
-        _encodedFrameSamples[i]._sizeBytes = -1;
-        _encodedFrameSamples[i]._timeCompleteMs = -1;
-    }
-    _avgSentBitRateBps = 0.0f;
+    _encodedFrameSamples.clear();
+    _avgSentBitRateBps = 0;
     _numLayers = 1;
     return VCM_OK;
 }
@@ -187,7 +184,7 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 target_bitrate,
         _qmResolution->UpdateRates(target_bitrate_kbps, sent_video_rate_kbps,
                                    _incomingFrameRate, _fractionLost);
         // Check for QM selection
-        bool selectQM = checkStatusForQMchange();
+        bool selectQM = CheckStatusForQMchange();
         if (selectQM)
         {
             SelectQuality();
@@ -346,22 +343,20 @@ VCMMediaOptimization::SetMtu(WebRtc_Word32 mtu)
     _maxPayloadSize = mtu;
 }
 
-float
+uint32_t
 VCMMediaOptimization::SentFrameRate()
 {
-    if (_frameDropper)
-    {
-        return _frameDropper->ActualFrameRate((WebRtc_UWord32)(InputFrameRate()
-                                                               + 0.5f));
-    }
-
-    return VCM_CODEC_ERROR;
+  PurgeOldFrameSamples(_clock->TimeInMilliseconds());
+  UpdateSentFramerate();
+  return _avgSentFramerate;
 }
 
-float
+uint32_t
 VCMMediaOptimization::SentBitRate()
 {
-    UpdateBitRateEstimate(-1, _clock->TimeInMilliseconds());
+    const int64_t now_ms = _clock->TimeInMilliseconds();
+    PurgeOldFrameSamples(now_ms);
+    UpdateSentBitrate(now_ms);
     return _avgSentBitRateBps;
 }
 
@@ -372,11 +367,16 @@ VCMMediaOptimization::MaxBitRate()
 }
 
 WebRtc_Word32
-VCMMediaOptimization::UpdateWithEncodedData(WebRtc_Word32 encodedLength,
+VCMMediaOptimization::UpdateWithEncodedData(int encodedLength,
+                                            uint32_t timestamp,
                                             FrameType encodedFrameType)
 {
-    // look into the ViE version - debug mode - needs also number of layers.
-    UpdateBitRateEstimate(encodedLength, _clock->TimeInMilliseconds());
+    const int64_t now_ms = _clock->TimeInMilliseconds();
+    PurgeOldFrameSamples(now_ms);
+    _encodedFrameSamples.push_back(VCMEncodedFrameSample(
+        encodedLength, timestamp, now_ms));
+    UpdateSentBitrate(now_ms);
+    UpdateSentFramerate();
     if(encodedLength > 0)
     {
         const bool deltaFrame = (encodedFrameType != kVideoFrameKey &&
@@ -426,67 +426,51 @@ VCMMediaOptimization::UpdateWithEncodedData(WebRtc_Word32 encodedLength,
 
 }
 
-void VCMMediaOptimization::UpdateBitRateEstimate(WebRtc_Word64 encodedLength,
-                                                 WebRtc_Word64 nowMs)
-{
-    int i = kBitrateMaxFrameSamples - 1;
-    WebRtc_UWord32 frameSizeSum = 0;
-    WebRtc_Word64 timeOldest = -1;
-    // Find an empty slot for storing the new sample and at the same time
-    // accumulate the history.
-    for (; i >= 0; i--)
-    {
-        if (_encodedFrameSamples[i]._sizeBytes == -1)
-        {
-            // Found empty slot
-            break;
-        }
-        if (nowMs - _encodedFrameSamples[i]._timeCompleteMs <
-            kBitrateAverageWinMs)
-        {
-            frameSizeSum += static_cast<WebRtc_UWord32>
-                            (_encodedFrameSamples[i]._sizeBytes);
-            if (timeOldest == -1)
-            {
-                timeOldest = _encodedFrameSamples[i]._timeCompleteMs;
-            }
-        }
+void VCMMediaOptimization::PurgeOldFrameSamples(int64_t now_ms) {
+  while (!_encodedFrameSamples.empty()) {
+    if (now_ms - _encodedFrameSamples.front().time_complete_ms >
+        kBitrateAverageWinMs) {
+      _encodedFrameSamples.pop_front();
+    } else {
+      break;
     }
-    if (encodedLength > 0)
-    {
-        if (i < 0)
-        {
-            // No empty slot, shift
-            for (i = kBitrateMaxFrameSamples - 2; i >= 0; i--)
-            {
-                _encodedFrameSamples[i + 1] = _encodedFrameSamples[i];
-            }
-            i++;
-        }
-        // Insert new sample
-        _encodedFrameSamples[i]._sizeBytes = encodedLength;
-        _encodedFrameSamples[i]._timeCompleteMs = nowMs;
-    }
-    if (timeOldest > -1)
-    {
-        // Update average bit rate
-        float denom = static_cast<float>(nowMs - timeOldest);
-        if (denom < 1.0)
-        {
-            denom = 1.0;
-        }
-        _avgSentBitRateBps = (frameSizeSum + encodedLength) * 8 * 1000 / denom;
-    }
-    else if (encodedLength > 0)
-    {
-        _avgSentBitRateBps = static_cast<float>(encodedLength * 8);
-    }
-    else
-    {
-        _avgSentBitRateBps = 0;
-    }
+  }
 }
 
+void VCMMediaOptimization::UpdateSentBitrate(int64_t now_ms) {
+  if (_encodedFrameSamples.empty()) {
+    _avgSentBitRateBps = 0;
+    return;
+  }
+  int framesize_sum = 0;
+  for (FrameSampleList::iterator it = _encodedFrameSamples.begin();
+       it != _encodedFrameSamples.end(); ++it) {
+    framesize_sum += it->size_bytes;
+  }
+  float denom = static_cast<float>(
+      now_ms - _encodedFrameSamples.back().time_complete_ms);
+  if (denom >= 1.0f) {
+    _avgSentBitRateBps = static_cast<uint32_t>(framesize_sum * 8 * 1000 /
+                                               denom + 0.5f);
+  } else {
+    _avgSentBitRateBps = framesize_sum * 8;
+  }
+}
+
+void VCMMediaOptimization::UpdateSentFramerate() {
+  if (_encodedFrameSamples.size() <= 1) {
+    _avgSentFramerate = _encodedFrameSamples.size();
+    return;
+  }
+  int denom = _encodedFrameSamples.back().timestamp -
+      _encodedFrameSamples.front().timestamp;
+  if (denom > 0) {
+    _avgSentFramerate = (90000 * (_encodedFrameSamples.size() - 1) + denom / 2)
+        / denom;
+  } else {
+    _avgSentFramerate = _encodedFrameSamples.size();
+  }
+}
 
 WebRtc_Word32
 VCMMediaOptimization::RegisterVideoQMCallback(VCMQMSettingsCallback*
@@ -506,7 +490,7 @@ VCMMediaOptimization::RegisterVideoQMCallback(VCMQMSettingsCallback*
 }
 
 void
-VCMMediaOptimization::updateContentData(const VideoContentMetrics*
+VCMMediaOptimization::UpdateContentData(const VideoContentMetrics*
                                         contentMetrics)
 {
     // Updating content metrics
@@ -560,7 +544,7 @@ VCMMediaOptimization::SelectQuality()
 // (2) target bit rate
 
 bool
-VCMMediaOptimization::checkStatusForQMchange()
+VCMMediaOptimization::CheckStatusForQMchange()
 {
 
     bool status  = true;

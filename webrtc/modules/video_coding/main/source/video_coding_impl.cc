@@ -167,10 +167,8 @@ VideoCodingModuleImpl::Process()
             WebRtc_UWord32 frameRate;
             {
                 CriticalSectionScoped cs(_sendCritSect);
-                bitRate = static_cast<WebRtc_UWord32>(
-                    _mediaOpt.SentBitRate() + 0.5f);
-                frameRate = static_cast<WebRtc_UWord32>(
-                    _mediaOpt.SentFrameRate() + 0.5f);
+                bitRate = _mediaOpt.SentBitRate();
+                frameRate = _mediaOpt.SentFrameRate();
             }
             _sendStatsCallback->SendStatistics(bitRate, frameRate);
         }
@@ -700,7 +698,7 @@ VideoCodingModuleImpl::AddVideoFrame(const I420VideoFrame& videoFrame,
     }
     else
     {
-        _mediaOpt.updateContentData(contentMetrics);
+        _mediaOpt.UpdateContentData(contentMetrics);
         WebRtc_Word32 ret = _encoder->Encode(videoFrame,
                                              codecSpecificInfo,
                                              _nextFrameTypes);
