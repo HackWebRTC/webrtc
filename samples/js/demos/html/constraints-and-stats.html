@@ -125,17 +125,21 @@ var statCollector = setInterval(function() {
         log('Raw results ' + results);
         for (var i = 0; i < results.length; ++i) {
           var res = results[i];
-          log(i + ': ' + JSON.stringify(res));
           statsString += '<h3>Report ';
           statsString += i;
           statsString += '</h3>';
-          if (res.local) {
-            statsString += "<p>Local ";
-            statsString += dumpStats(res.local);
-          }
-          if (res.remote) {
-            statsString += "<p>Remote ";
-            statsString += dumpStats(res.remote);
+          if (!res.local || res.local === res) {
+            statsString += dumpStats(res);
+          } else {
+            // Pre-227.0.1445 (188719) browser
+            if (res.local) {
+              statsString += "<p>Local ";
+              statsString += dumpStats(res.local);
+            }
+            if (res.remote) {
+              statsString += "<p>Remote ";
+              statsString += dumpStats(res.remote);
+            }
           }
         }
         $('stats').innerHTML = statsString;
