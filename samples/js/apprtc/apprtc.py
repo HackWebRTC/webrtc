@@ -119,18 +119,24 @@ def on_message(room, user, message):
     new_message.put()
     logging.info('Saved message for user ' + user)
 
-def make_media_constraints(hd_video):
+def make_media_constraints_by_resolution(min_re, max_re):
   constraints = { 'optional': [], 'mandatory': {} }
-  # Demo 16:9 video with media constraints.
-  if hd_video.lower() == 'true':
-    # Demo with WHD by setting size with 1280x720.
-    constraints['mandatory']['minHeight'] = 720
-    constraints['mandatory']['minWidth'] = 1280
-    # Disabled for now due to weird stretching behavior on Mac.
-    #else:
-    # Demo with WVGA by setting Aspect Ration;
-    #constraints['mandatory']['maxAspectRatio'] = 1.778
-    #constraints['mandatory']['minAspectRatio'] = 1.777
+  if min_re:
+    min_sizes = min_re.split('x')
+    if len(min_sizes) == 2:
+      constraints['mandatory']['minWidth'] = min_sizes[0]
+      constraints['mandatory']['minHeight'] = min_sizes[1]
+    else:
+      logging.info('Ignored invalid min_re: ' + min_re);
+
+  if max_re:
+    max_sizes = max_re.split('x')
+    if len(max_sizes) == 2:
+      constraints['mandatory']['maxWidth'] = max_sizes[0]
+      constraints['mandatory']['maxHeight'] = max_sizes[1]
+    else:
+      logging.info('Ignored invalid max_re: ' + max_re);
+
   return constraints
 
 def make_pc_constraints(compat):
@@ -297,7 +303,11 @@ class MainPage(webapp2.RequestHandler):
     unittest = self.request.get('unittest')
     stun_server = self.request.get('ss')
     turn_server = self.request.get('ts')
+    min_re = self.request.get('minre')
+    max_re = self.request.get('maxre')
     hd_video = self.request.get('hd')
+    if hd_video.lower() == 'true':
+      min_re = '1280x720'
     ts_pwd = self.request.get('tp')
     # set compat to true by default.
     compat = 'true'
@@ -358,7 +368,7 @@ class MainPage(webapp2.RequestHandler):
     pc_config = make_pc_config(stun_server, turn_server, ts_pwd)
     pc_constraints = make_pc_constraints(compat)
     offer_constraints = make_offer_constraints(compat)
-    media_constraints = make_media_constraints(hd_video)
+    media_constraints = make_media_constraints_by_resolution(min_re, max_re)
     template_values = {'token': token,
                        'me': user,
                        'room_key': room_key,
