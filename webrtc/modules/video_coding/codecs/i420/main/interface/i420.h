@@ -18,6 +18,8 @@
 
 namespace webrtc {
 
+enum { kI420HeaderSize = 4 };
+
 class I420Encoder : public VideoEncoder {
  public:
   I420Encoder();
