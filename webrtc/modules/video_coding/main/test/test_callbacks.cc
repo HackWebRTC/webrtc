@@ -408,8 +408,8 @@ WebRtc_Word32
 SendStatsTest::SendStatistics(const WebRtc_UWord32 bitRate,
                               const WebRtc_UWord32 frameRate)
 {
-    TEST(frameRate <= _frameRate);
-    TEST(bitRate > 0 && bitRate < 100000);
+    TEST(frameRate <= _framerate);
+    TEST(bitRate > _bitrate / 2 && bitRate < 3 * _bitrate / 2);
     printf("VCM 1 sec: Bit rate: %u\tFrame rate: %u\n", bitRate, frameRate);
     return 0;
 }

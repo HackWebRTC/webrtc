@@ -306,11 +306,13 @@ WebRtc_Word32 ViEEncoder::DeRegisterExternalEncoder(WebRtc_UWord8 pl_type) {
 
   webrtc::VideoCodec current_send_codec;
   if (vcm_.SendCodec(&current_send_codec) == VCM_OK) {
-    if (vcm_.Bitrate(&current_send_codec.startBitrate) != 0) {
+    uint32_t current_bitrate_bps = 0;
+    if (vcm_.Bitrate(&current_bitrate_bps) != 0) {
       WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo,
                    ViEId(engine_id_, channel_id_),
                    "Failed to get the current encoder target bitrate.");
     }
+    current_send_codec.startBitrate = (current_bitrate_bps + 500) / 1000;
   }
 
   if (vcm_.RegisterExternalEncoder(NULL, pl_type) != VCM_OK) {
@@ -681,11 +683,14 @@ WebRtc_Word32 ViEEncoder::UpdateProtectionMethod() {
     webrtc::VideoCodec codec;
     if (vcm_.SendCodec(&codec) == 0) {
       WebRtc_UWord16 max_pay_load = default_rtp_rtcp_->MaxDataPayloadLength();
-      if (vcm_.Bitrate(&codec.startBitrate) != 0) {
+      uint32_t current_bitrate_bps = 0;
+      if (vcm_.Bitrate(&current_bitrate_bps) != 0) {
         WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo,
                      ViEId(engine_id_, channel_id_),
                      "Failed to get the current encoder target bitrate.");
       }
+      // Convert to start bitrate in kbps.
+      codec.startBitrate = (current_bitrate_bps + 500) / 1000;
       if (vcm_.RegisterSendCodec(&codec, number_of_cores_, max_pay_load) != 0) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
                      ViEId(engine_id_, channel_id_),

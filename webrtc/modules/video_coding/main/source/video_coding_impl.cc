@@ -676,7 +676,6 @@ VideoCodingModuleImpl::AddVideoFrame(const I420VideoFrame& videoFrame,
                                      const CodecSpecificInfo* codecSpecificInfo)
 {
     CriticalSectionScoped cs(_sendCritSect);
-
     if (_encoder == NULL)
     {
         return VCM_UNINITIALIZED;

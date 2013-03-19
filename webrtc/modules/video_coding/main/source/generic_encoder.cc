@@ -75,7 +75,8 @@ VCMGenericEncoder::SetChannelParameters(WebRtc_Word32 packetLoss, int rtt)
 WebRtc_Word32
 VCMGenericEncoder::SetRates(WebRtc_UWord32 newBitRate, WebRtc_UWord32 frameRate)
 {
-    WebRtc_Word32 ret = _encoder.SetRates(newBitRate, frameRate);
+    uint32_t target_bitrate_kbps = (newBitRate + 500) / 1000;
+    WebRtc_Word32 ret = _encoder.SetRates(target_bitrate_kbps, frameRate);
     if (ret < 0)
     {
         return ret;

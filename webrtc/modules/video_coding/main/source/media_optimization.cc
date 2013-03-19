@@ -176,13 +176,16 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 target_bitrate,
     _targetBitRate = target_bitrate - protection_overhead_bps;
 
     // Update encoding rates following protection settings
-    _frameDropper->SetRates(target_bitrate_kbps, _incomingFrameRate);
+    float target_video_bitrate_kbps =
+        static_cast<float>(_targetBitRate) / 1000.0f;
+    _frameDropper->SetRates(target_video_bitrate_kbps, _incomingFrameRate);
 
     if (_enableQm)
     {
         // Update QM with rates
-        _qmResolution->UpdateRates(target_bitrate_kbps, sent_video_rate_kbps,
-                                   _incomingFrameRate, _fractionLost);
+        _qmResolution->UpdateRates(target_video_bitrate_kbps,
+                                   sent_video_rate_kbps, _incomingFrameRate,
+                                   _fractionLost);
         // Check for QM selection
         bool selectQM = CheckStatusForQMchange();
         if (selectQM)

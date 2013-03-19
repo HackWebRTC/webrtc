@@ -242,7 +242,8 @@ QualityModesTest::Perform(const CmdArgs& args)
   _vcm->SetChannelParameters(static_cast<uint32_t>(1000 * _bitRate), 0, 0);
 
   SendStatsTest sendStats;
-  sendStats.SetTargetFrameRate(static_cast<WebRtc_UWord32>(_frameRate));
+  sendStats.set_framerate(static_cast<WebRtc_UWord32>(_frameRate));
+  sendStats.set_bitrate(1000 * _bitRate);
   _vcm->RegisterSendStatisticsCallback(&sendStats);
 
   VideoContentMetrics* contentMetrics = NULL;

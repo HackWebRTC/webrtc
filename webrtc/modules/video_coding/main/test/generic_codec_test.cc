@@ -317,7 +317,8 @@ GenericCodecTest::Perform(CmdArgs& args)
             _frameCnt = 0;
             totalBytes = 0;
             _encodeCompleteCallback->Initialize();
-            sendStats.SetTargetFrameRate(static_cast<WebRtc_UWord32>(_frameRate));
+            sendStats.set_framerate(static_cast<WebRtc_UWord32>(_frameRate));
+            sendStats.set_bitrate(1000 * _bitRate);
             _vcm->RegisterSendStatisticsCallback(&sendStats);
             while (fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) ==
                 _lengthSourceFrame)
@@ -436,7 +437,8 @@ GenericCodecTest::Perform(CmdArgs& args)
     // up to here
     _vcm->SetChannelParameters(static_cast<uint32_t>(1000 * _bitRate), 0, 20);
     _encodeCompleteCallback->Initialize();
-    sendStats.SetTargetFrameRate(static_cast<WebRtc_UWord32>(_frameRate));
+    sendStats.set_framerate(static_cast<WebRtc_UWord32>(_frameRate));
+    sendStats.set_bitrate(1000 * _bitRate);
     _vcm->RegisterSendStatisticsCallback(&sendStats);
     rewind(_sourceFile);
     while (fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) ==
