@@ -160,7 +160,7 @@
     // Call into getUserMedia via the polyfill (adapter.js).
     var constraints = {{ media_constraints|safe }}; 
     try {
-      getUserMedia({'audio':true, 'video':constraints}, onUserMediaSuccess,
+      getUserMedia(constraints, onUserMediaSuccess,
                    onUserMediaError);
       console.log("Requested access to local media with mediaConstraints:\n" +
                   "  \"" + JSON.stringify(constraints) + "\"");
