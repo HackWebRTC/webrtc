@@ -311,7 +311,7 @@ WebRtc_Word32 VideoCaptureModuleV4L2::StopCapture()
             // Couldn't stop the thread, leak instead of crash.
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, -1,
                          "%s: could not stop capture thread", __FUNCTION__);
-            assert(!"could not stop capture thread");
+            assert(false);
         }
     }
 
