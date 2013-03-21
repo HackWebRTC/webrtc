@@ -929,7 +929,6 @@ bool VCMJitterBuffer::HandleTooLargeNackList() {
   while (missing_sequence_numbers_.size() > max_nack_list_size_) {
     key_frame_found = RecycleFramesUntilKeyFrame();
   }
-  assert(!key_frame_found || missing_sequence_numbers_.empty());
   return key_frame_found;
 }
 
@@ -954,7 +953,6 @@ bool VCMJitterBuffer::HandleTooOldPackets(uint16_t latest_sequence_number) {
   while (MissingTooOldPacket(latest_sequence_number)) {
     key_frame_found = RecycleFramesUntilKeyFrame();
   }
-  assert(!key_frame_found || missing_sequence_numbers_.empty());
   return key_frame_found;
 }
 
