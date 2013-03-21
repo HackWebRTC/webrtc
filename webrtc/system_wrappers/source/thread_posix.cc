@@ -49,7 +49,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <string.h>  // strncpy
-#include <time.h>    // nanosleep
 #include <unistd.h>
 #ifdef WEBRTC_LINUX
 #include <sys/types.h>
@@ -61,6 +60,7 @@
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
@@ -292,10 +292,7 @@ bool ThreadPosix::Stop() {
   // TODO(hellner) why not use an event here?
   // Wait up to 10 seconds for the thread to terminate
   for (int i = 0; i < 1000 && !dead; ++i) {
-    timespec t;
-    t.tv_sec = 0;
-    t.tv_nsec = 10 * 1000 * 1000;
-    nanosleep(&t, NULL);
+    SleepMs(10);
     {
       CriticalSectionScoped cs(crit_state_);
       dead = dead_;
