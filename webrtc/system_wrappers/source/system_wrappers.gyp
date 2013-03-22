@@ -233,60 +233,6 @@
         },
       ],
     }],
-    ['include_tests==1', {
-      'targets': [
-        {
-          'target_name': 'system_wrappers_unittests',
-          'type': 'executable',
-          'dependencies': [
-            'system_wrappers',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
-          ],
-          'sources': [
-            'aligned_malloc_unittest.cc',
-            'condition_variable_unittest.cc',
-            'cpu_wrapper_unittest.cc',
-            'cpu_measurement_harness.h',
-            'cpu_measurement_harness.cc',
-            'critical_section_unittest.cc',
-            'event_tracer_unittest.cc',
-            'list_unittest.cc',
-            'logging_unittest.cc',
-            'map_unittest.cc',
-            'data_log_unittest.cc',
-            'data_log_unittest_disabled.cc',
-            'data_log_helpers_unittest.cc',
-            'data_log_c_helpers_unittest.c',
-            'data_log_c_helpers_unittest.h',
-            'stringize_macros_unittest.cc',
-            'thread_unittest.cc',
-            'thread_posix_unittest.cc',
-            'trace_unittest.cc',
-            'unittest_utilities_unittest.cc',
-          ],
-          'conditions': [
-            ['enable_data_logging==1', {
-              'sources!': [ 'data_log_unittest_disabled.cc', ],
-            }, {
-              'sources!': [ 'data_log_unittest.cc', ],
-            }],
-            ['os_posix==0', {
-              'sources!': [ 'thread_posix_unittest.cc', ],
-            }],
-          ],
-          # Disable warnings to enable Win64 build, issue 1323.
-          'msvs_disabled_warnings': [
-            4267,  # size_t to int truncation.
-          ],
-        },
-      ], # targets
-    }], # include_tests
   ], # conditions
 }
 
-# Local Variables:
-# tab-width:2
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=2 shiftwidth=2:

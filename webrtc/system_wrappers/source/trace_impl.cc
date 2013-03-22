@@ -31,6 +31,10 @@
 
 namespace webrtc {
 
+const int Trace::kBoilerplateLength = 71;
+const int Trace::kTimestampPosition = 13;
+const int Trace::kTimestampLength = 12;
+
 static WebRtc_UWord32 level_filter = kTraceDefault;
 
 // Construct On First Use idiom. Avoids "static initialization order fiasco".
@@ -408,16 +412,9 @@ WebRtc_Word32 TraceImpl::AddMessage(
 }
 
 void TraceImpl::AddMessageToList(
-  const char trace_message[WEBRTC_TRACE_MAX_MESSAGE_SIZE],
-  const WebRtc_UWord16 length,
-  const TraceLevel level) {
-#ifdef WEBRTC_DIRECT_TRACE
-  if (callback_) {
-    callback_->Print(level, trace_message, length);
-  }
-  return;
-#endif
-
+    const char trace_message[WEBRTC_TRACE_MAX_MESSAGE_SIZE],
+    const WebRtc_UWord16 length,
+    const TraceLevel level) {
   CriticalSectionScoped lock(critsect_array_);
 
   if (next_free_idx_[active_queue_] >= WEBRTC_TRACE_MAX_QUEUE) {
@@ -469,11 +466,16 @@ bool TraceImpl::Run(void* obj) {
 
 bool TraceImpl::Process() {
   if (event_.Wait(1000) == kEventSignaled) {
-    if (trace_file_.Open() || callback_) {
-      // File mode (not callback mode).
+    // This slightly odd construction is to avoid locking |critsect_interface_|
+    // while calling WriteToFile() since it's locked inside the function.
+    critsect_interface_->Enter();
+    bool write_to_file = trace_file_.Open() || callback_;
+    critsect_interface_->Leave();
+    if (write_to_file) {
       WriteToFile();
     }
   } else {
+    CriticalSectionScoped lock(critsect_interface_);
     trace_file_.Flush();
   }
   return true;

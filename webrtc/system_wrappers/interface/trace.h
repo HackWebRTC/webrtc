@@ -29,6 +29,13 @@ namespace webrtc {
 
 class Trace {
  public:
+  // The length of the trace text preceeding the log message.
+  static const int kBoilerplateLength;
+  // The position of the timestamp text within a trace.
+  static const int kTimestampPosition;
+  // The length of the timestamp (without "delta" field).
+  static const int kTimestampLength;
+
   // Increments the reference count to the trace.
   static void CreateTrace();
   // Decrements the reference count to the trace.
