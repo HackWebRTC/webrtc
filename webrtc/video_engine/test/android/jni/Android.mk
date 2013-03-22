@@ -219,6 +219,12 @@ LOCAL_SRC_FILES := \
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
+LOCAL_MODULE := libchannel_transport
+LOCAL_SRC_FILES := \
+    $(MY_LIBS_PATH)/libchannel_transport.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
 LOCAL_MODULE := libwebrtc_utility
 LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/libwebrtc_utility.a
@@ -349,6 +355,7 @@ LOCAL_STATIC_LIBRARIES := \
     librtp_rtcp \
     libmedia_file \
     libudp_transport \
+    libchannel_transport \
     libwebrtc_utility \
     libaudio_conference_mixer \
     libyuv \

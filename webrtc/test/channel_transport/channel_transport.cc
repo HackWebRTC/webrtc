@@ -12,7 +12,9 @@
 
 #include <stdio.h>
 
+#ifndef WEBRTC_ANDROID
 #include "gtest/gtest.h"
+#endif
 #include "webrtc/test/channel_transport/udp_transport.h"
 #include "webrtc/video_engine/include/vie_network.h"
 #include "webrtc/voice_engine/include/voe_network.h"
@@ -27,8 +29,12 @@ VoiceChannelTransport::VoiceChannelTransport(VoENetwork* voe_network,
       voe_network_(voe_network) {
   WebRtc_UWord8 socket_threads = 1;
   socket_transport_ = UdpTransport::Create(channel, socket_threads);
+#ifndef WEBRTC_ANDROID
   EXPECT_EQ(0, voe_network_->RegisterExternalTransport(channel,
                                                        *socket_transport_));
+#else
+  voe_network_->RegisterExternalTransport(channel, *socket_transport_);
+#endif
 }
 
 VoiceChannelTransport::~VoiceChannelTransport() {
@@ -69,8 +75,12 @@ VideoChannelTransport::VideoChannelTransport(ViENetwork* vie_network,
       vie_network_(vie_network) {
   WebRtc_UWord8 socket_threads = 1;
   socket_transport_ = UdpTransport::Create(channel, socket_threads);
+#ifndef WEBRTC_ANDROID
   EXPECT_EQ(0, vie_network_->RegisterSendTransport(channel,
                                                    *socket_transport_));
+#else
+  vie_network_->RegisterSendTransport(channel, *socket_transport_);
+#endif
 }
   
 VideoChannelTransport::~VideoChannelTransport() {

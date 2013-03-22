@@ -15,12 +15,15 @@
 #include <algorithm>
 
 #include "gflags/gflags.h"
-#include "video_engine/test/auto_test/interface/vie_autotest.h"
-#include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
-#include "video_engine/test/auto_test/primitives/choice_helpers.h"
-#include "video_engine/test/auto_test/primitives/general_primitives.h"
-#include "video_engine/test/auto_test/primitives/input_helpers.h"
-#include "video_engine/test/libvietest/include/vie_to_file_renderer.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/test/channel_transport/include/channel_transport.h"
+#include "webrtc/video_engine/test/auto_test/interface/vie_autotest.h"
+#include "webrtc/video_engine/test/auto_test/interface/vie_autotest_defines.h"
+#include "webrtc/video_engine/test/auto_test/primitives/choice_helpers.h"
+#include "webrtc/video_engine/test/auto_test/primitives/general_primitives.h"
+#include "webrtc/video_engine/test/auto_test/primitives/input_helpers.h"
+#include "webrtc/video_engine/test/libvietest/include/vie_to_file_renderer.h"
+#include "webrtc/voice_engine/include/voe_network.h"
 
 #define VCM_RED_PAYLOAD_TYPE                            96
 #define VCM_ULPFEC_PAYLOAD_TYPE                         97
@@ -202,6 +205,12 @@ int ViEAutoTest::ViECustomCall() {
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
+  webrtc::VoENetwork* voe_network=
+      webrtc::VoENetwork::GetInterface(voe);
+  number_of_errors += ViETest::TestError(voe_network != NULL,
+                                         "ERROR: %s at line %d", __FUNCTION__,
+                                         __LINE__);
+
   webrtc::VoEAudioProcessing* voe_apm =
       webrtc::VoEAudioProcessing::GetInterface(voe);
   number_of_errors += ViETest::TestError(voe_apm != NULL,
@@ -270,6 +279,10 @@ int ViEAutoTest::ViECustomCall() {
   int buffer_delay_ms = 0;
   bool is_image_scale_enabled = false;
   bool remb = true;
+  webrtc::scoped_ptr<webrtc::test::VideoChannelTransport>
+      video_channel_transport;
+  webrtc::scoped_ptr<webrtc::test::VoiceChannelTransport>
+      voice_channel_transport;
 
   while (!start_call) {
     // Get the IP address to use from call.
@@ -340,13 +353,17 @@ int ViEAutoTest::ViECustomCall() {
   if (start_call == true) {
     // Configure audio channel first.
     audio_channel = voe_base->CreateChannel();
-    error = voe_base->SetSendDestination(audio_channel, audio_tx_port,
-                                         ip_address.c_str());
+
+    voice_channel_transport.reset(
+        new webrtc::test::VoiceChannelTransport(voe_network, audio_channel));
+
+    error = voice_channel_transport->SetSendDestination(ip_address.c_str(),
+                                                        audio_tx_port);
     number_of_errors += ViETest::TestError(error == 0,
                                            "ERROR: %s at line %d",
                                            __FUNCTION__, __LINE__);
 
-    error = voe_base->SetLocalReceiver(audio_channel, audio_rx_port);
+    error = voice_channel_transport->SetLocalReceiver(audio_rx_port);
     number_of_errors += ViETest::TestError(error == 0,
                                            "ERROR: %s at line %d",
                                            __FUNCTION__, __LINE__);
@@ -472,13 +489,17 @@ int ViEAutoTest::ViECustomCall() {
       file_renderer.PrepareForRendering(output_path, filename);
       RenderToFile(vie_renderer, video_channel, &file_renderer);
     }
-    error = vie_network->SetSendDestination(video_channel, ip_address.c_str(),
-                                                video_tx_port);
+
+    video_channel_transport.reset(
+        new webrtc::test::VideoChannelTransport(vie_network, video_channel));
+
+    error = video_channel_transport->SetSendDestination(ip_address.c_str(),
+                                                        video_tx_port);
     number_of_errors += ViETest::TestError(error == 0,
                                            "ERROR: %s at line %d",
                                            __FUNCTION__, __LINE__);
 
-    error = vie_network->SetLocalReceiver(video_channel, video_rx_port);
+    error = video_channel_transport->SetLocalReceiver(video_rx_port);
     number_of_errors += ViETest::TestError(error == 0,
                                            "ERROR: %s at line %d",
                                            __FUNCTION__, __LINE__);
@@ -911,6 +932,9 @@ int ViEAutoTest::ViECustomCall() {
                                            __FUNCTION__, __LINE__);
     // Now tear down the ViE engine.
     error = vie_base->DisconnectAudioChannel(video_channel);
+
+    voice_channel_transport.reset(NULL);
+    video_channel_transport.reset(NULL);
 
     // If Encoder/Decoder Observer is running, delete them.
     if (codec_encoder_observer) {

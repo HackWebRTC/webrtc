@@ -51,11 +51,6 @@ TEST_F(DISABLED_ON_MAC(ViEExtendedIntegrationTest),
 }
 
 TEST_F(DISABLED_ON_MAC(ViEExtendedIntegrationTest),
-       RunsNetworkTestWithoutErrors) {
-  tests_->ViENetworkExtendedTest();
-}
-
-TEST_F(DISABLED_ON_MAC(ViEExtendedIntegrationTest),
        RunsRenderTestWithoutErrors) {
   tests_->ViERenderExtendedTest();
 }
