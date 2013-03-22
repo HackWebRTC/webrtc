@@ -20,7 +20,8 @@
         '<(DEPTH)/testing/gmock.gyp:gmock',
         '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
         '<(webrtc_root)/test/libtest/libtest.gyp:libtest',
-      ],
+        '<(webrtc_root)/test/channel_transport.gyp:channel_transport',
+       ],
       'include_dirs': [
         'auto_test',
         'auto_test/fixtures',
@@ -102,6 +103,7 @@
         '<(DEPTH)/testing/gtest.gyp:gtest',
         'voice_engine_core',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/test/channel_transport.gyp:channel_transport',
       ],
       'sources': [
         'cmd_test/voe_cmd_test.cc',
