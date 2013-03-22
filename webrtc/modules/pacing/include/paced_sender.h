@@ -28,6 +28,9 @@ class PacedSender : public Module {
     kNormalPriority = 2,  // Put in back of the line.
     kLowPriority = 3,  // Put in back of the low priority line.
   };
+  // Low priority packets are mixed with the normal priority packets
+  // while we are paused.
+
   class Callback {
    public:
     // Note: packets sent as a result of a callback should not pass by this
@@ -46,6 +49,12 @@ class PacedSender : public Module {
 
   // Enable/disable pacing.
   void SetStatus(bool enable);
+
+  // Temporarily pause all sending.
+  void Pause();
+
+  // Resume sending packets.
+  void Resume();
 
   // Current total estimated bitrate.
   void UpdateBitrate(int target_bitrate_kbps);
@@ -80,6 +89,10 @@ class PacedSender : public Module {
   bool GetNextPacket(uint32_t* ssrc, uint16_t* sequence_number,
                      int64_t* capture_time_ms);
 
+  // Local helper function to GetNextPacket.
+  void GetNextPacketFromList(std::list<Packet>* list,
+      uint32_t* ssrc, uint16_t* sequence_number, int64_t* capture_time_ms);
+
   // Updates the number of bytes that can be sent for the next time interval.
   void UpdateBytesPerInterval(uint32_t delta_time_in_ms);
 
@@ -88,6 +101,7 @@ class PacedSender : public Module {
 
   Callback* callback_;
   bool enable_;
+  bool paused_;
   scoped_ptr<CriticalSectionWrapper> critsect_;
   int target_bitrate_kbytes_per_s_;
   int bytes_remaining_interval_;
@@ -95,6 +109,7 @@ class PacedSender : public Module {
   TickTime time_last_update_;
   TickTime time_last_send_;
 
+  std::list<Packet> high_priority_packets_;
   std::list<Packet> normal_priority_packets_;
   std::list<Packet> low_priority_packets_;
 };

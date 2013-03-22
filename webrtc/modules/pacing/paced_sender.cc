@@ -39,6 +39,7 @@ namespace webrtc {
 PacedSender::PacedSender(Callback* callback, int target_bitrate_kbps)
     : callback_(callback),
       enable_(false),
+      paused_(false),
       critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       target_bitrate_kbytes_per_s_(target_bitrate_kbps >> 3),  // Divide by 8.
       bytes_remaining_interval_(0),
@@ -48,8 +49,19 @@ PacedSender::PacedSender(Callback* callback, int target_bitrate_kbps)
 }
 
 PacedSender::~PacedSender() {
+  high_priority_packets_.clear();
   normal_priority_packets_.clear();
   low_priority_packets_.clear();
+}
+
+void PacedSender::Pause() {
+  CriticalSectionScoped cs(critsect_.get());
+  paused_ = true;
+}
+
+void PacedSender::Resume() {
+  CriticalSectionScoped cs(critsect_.get());
+  paused_ = false;
 }
 
 void PacedSender::SetStatus(bool enable) {
@@ -70,12 +82,38 @@ bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
     UpdateState(bytes);
     return true;  // We can send now.
   }
+  if (paused_) {
+    // Queue all packets when we are paused.
+    switch (priority) {
+      case kHighPriority:
+        high_priority_packets_.push_back(
+            Packet(ssrc, sequence_number, capture_time_ms, bytes));
+        break;
+      case kNormalPriority:
+      case kLowPriority:
+        // Queue the low priority packets in the normal priority queue when we
+        // are paused to avoid starvation.
+        normal_priority_packets_.push_back(
+            Packet(ssrc, sequence_number, capture_time_ms, bytes));
+        break;
+    }
+    return false;
+  }
+
   switch (priority) {
     case kHighPriority:
-      UpdateState(bytes);
-      return true;  // We can send now.
+      if (high_priority_packets_.empty() &&
+          bytes_remaining_interval_ > 0) {
+        UpdateState(bytes);
+        return true;  // We can send now.
+      }
+      high_priority_packets_.push_back(
+          Packet(ssrc, sequence_number, capture_time_ms, bytes));
+      return false;
     case kNormalPriority:
-      if (normal_priority_packets_.empty() && bytes_remaining_interval_ > 0) {
+      if (high_priority_packets_.empty() &&
+          normal_priority_packets_.empty() &&
+          bytes_remaining_interval_ > 0) {
         UpdateState(bytes);
         return true;  // We can send now.
       }
@@ -83,7 +121,8 @@ bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
           Packet(ssrc, sequence_number, capture_time_ms, bytes));
       return false;
     case kLowPriority:
-      if (normal_priority_packets_.empty() &&
+      if (high_priority_packets_.empty() &&
+          normal_priority_packets_.empty() &&
           low_priority_packets_.empty() &&
           bytes_remaining_interval_ > 0) {
         UpdateState(bytes);
@@ -114,7 +153,7 @@ int32_t PacedSender::Process() {
   CriticalSectionScoped cs(critsect_.get());
   int elapsed_time_ms = (now - time_last_update_).Milliseconds();
   time_last_update_ = now;
-  if (elapsed_time_ms > 0) {
+  if (!paused_ && elapsed_time_ms > 0) {
     uint32_t delta_time_ms = std::min(kMaxIntervalTimeMs, elapsed_time_ms);
     UpdateBytesPerInterval(delta_time_ms);
     uint32_t ssrc;
@@ -125,7 +164,8 @@ int32_t PacedSender::Process() {
       callback_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms);
       critsect_->Enter();
     }
-    if (normal_priority_packets_.empty() &&
+    if (high_priority_packets_.empty() &&
+        normal_priority_packets_.empty() &&
         low_priority_packets_.empty() &&
         padding_bytes_remaining_interval_ > 0) {
       critsect_->Leave();
@@ -164,39 +204,47 @@ bool PacedSender::GetNextPacket(uint32_t* ssrc, uint16_t* sequence_number,
   if (bytes_remaining_interval_ <= 0) {
     // All bytes consumed for this interval.
     // Check if we have not sent in a too long time.
-    if (!normal_priority_packets_.empty()) {
-      if ((TickTime::Now() - time_last_send_).Milliseconds() >
-          kMaxQueueTimeWithoutSendingMs) {
-        Packet packet = normal_priority_packets_.front();
-        UpdateState(packet.bytes_);
-        *sequence_number = packet.sequence_number_;
-        *ssrc = packet.ssrc_;
-        *capture_time_ms = packet.capture_time_ms_;
-        normal_priority_packets_.pop_front();
+    if ((TickTime::Now() - time_last_send_).Milliseconds() >
+        kMaxQueueTimeWithoutSendingMs) {
+      if (!high_priority_packets_.empty()) {
+        GetNextPacketFromList(&high_priority_packets_, ssrc, sequence_number,
+                              capture_time_ms);
+        return true;
+      }
+      if (!normal_priority_packets_.empty()) {
+        GetNextPacketFromList(&normal_priority_packets_, ssrc, sequence_number,
+                              capture_time_ms);
         return true;
       }
     }
     return false;
   }
+  if (!high_priority_packets_.empty()) {
+    GetNextPacketFromList(&high_priority_packets_, ssrc, sequence_number,
+                          capture_time_ms);
+    return true;
+  }
   if (!normal_priority_packets_.empty()) {
-    Packet packet = normal_priority_packets_.front();
-    UpdateState(packet.bytes_);
-    *sequence_number = packet.sequence_number_;
-    *ssrc = packet.ssrc_;
-    *capture_time_ms = packet.capture_time_ms_;
-    normal_priority_packets_.pop_front();
+    GetNextPacketFromList(&normal_priority_packets_, ssrc, sequence_number,
+                          capture_time_ms);
     return true;
   }
   if (!low_priority_packets_.empty()) {
-    Packet packet = low_priority_packets_.front();
-    UpdateState(packet.bytes_);
-    *sequence_number = packet.sequence_number_;
-    *ssrc = packet.ssrc_;
-    *capture_time_ms = packet.capture_time_ms_;
-    low_priority_packets_.pop_front();
+    GetNextPacketFromList(&low_priority_packets_, ssrc, sequence_number,
+                          capture_time_ms);
     return true;
   }
   return false;
+}
+
+void PacedSender::GetNextPacketFromList(std::list<Packet>* list,
+    uint32_t* ssrc, uint16_t* sequence_number, int64_t* capture_time_ms) {
+  Packet packet = list->front();
+  UpdateState(packet.bytes_);
+  *sequence_number = packet.sequence_number_;
+  *ssrc = packet.ssrc_;
+  *capture_time_ms = packet.capture_time_ms_;
+  list->pop_front();
 }
 
 // MUST have critsect_ when calling.
