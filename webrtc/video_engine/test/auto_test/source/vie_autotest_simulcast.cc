@@ -48,18 +48,24 @@ void SetSimulcastSettings(webrtc::VideoCodec* video_codec) {
   video_codec->simulcastStream[0].height = 180;
   video_codec->simulcastStream[0].numberOfTemporalLayers = 0;
   video_codec->simulcastStream[0].maxBitrate = 100;
+  video_codec->simulcastStream[0].targetBitrate = 100;
+  video_codec->simulcastStream[0].minBitrate = 0;
   video_codec->simulcastStream[0].qpMax = video_codec->qpMax;
 
   video_codec->simulcastStream[1].width = 640;
   video_codec->simulcastStream[1].height = 360;
   video_codec->simulcastStream[1].numberOfTemporalLayers = 0;
   video_codec->simulcastStream[1].maxBitrate = 500;
+  video_codec->simulcastStream[1].targetBitrate = 500;
+  video_codec->simulcastStream[1].minBitrate = 200;
   video_codec->simulcastStream[1].qpMax = video_codec->qpMax;
 
   video_codec->simulcastStream[2].width = 1280;
   video_codec->simulcastStream[2].height = 720;
   video_codec->simulcastStream[2].numberOfTemporalLayers = 0;
   video_codec->simulcastStream[2].maxBitrate = 1200;
+  video_codec->simulcastStream[2].targetBitrate = 1200;
+  video_codec->simulcastStream[2].minBitrate = 900;
   video_codec->simulcastStream[2].qpMax = video_codec->qpMax;
 }
 
@@ -69,8 +75,14 @@ void RuntimeSingleStreamSettings(webrtc::VideoCodec* video_codec) {
   video_codec->height = 800;
   video_codec->numberOfSimulcastStreams = kNumStreams;
   video_codec->simulcastStream[0].maxBitrate = 0;
+  video_codec->simulcastStream[0].targetBitrate = 0;
+  video_codec->simulcastStream[0].minBitrate = 0;
   video_codec->simulcastStream[1].maxBitrate = 0;
+  video_codec->simulcastStream[1].targetBitrate = 0;
+  video_codec->simulcastStream[1].minBitrate = 0;
   video_codec->simulcastStream[2].maxBitrate = 0;
+  video_codec->simulcastStream[2].targetBitrate = 0;
+  video_codec->simulcastStream[2].minBitrate = 0;
 }
 
 int VideoEngineSimulcastTest(void* window1, void* window2) {
