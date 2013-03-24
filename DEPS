@@ -55,7 +55,7 @@ deps = {
     Var("chromium_trunk") + "/deps/third_party/libvpx@186754",
 
   "third_party/libyuv":
-    (Var("googlecode_url") % "libyuv") + "/trunk@590",
+    (Var("googlecode_url") % "libyuv") + "/trunk@618",
 
   "third_party/opus":
     Var("chromium_trunk") + "/src/third_party/opus@185405",
