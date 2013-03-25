@@ -47,6 +47,8 @@
         'testsupport/packet_reader.h',
         'testsupport/perf_test.cc',
         'testsupport/perf_test.h',
+        'testsupport/trace_to_stderr.cc',
+        'testsupport/trace_to_stderr.h',
       ],
     },
     {
