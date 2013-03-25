@@ -238,7 +238,8 @@ int VoEAudioProcessingImpl::GetAgcStatus(bool& enabled, AgcModes& mode) {
   }
 
   enabled = _shared->audio_processing()->gain_control()->is_enabled();
-  GainControl::Mode agcMode = _shared->audio_processing()->gain_control()->mode();
+  GainControl::Mode agcMode =
+    _shared->audio_processing()->gain_control()->mode();
 
   switch (agcMode) {
     case GainControl::kFixedDigital:
@@ -767,7 +768,6 @@ int VoEAudioProcessingImpl::RegisterRxVadObserver(
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "RegisterRxVadObserver()");
   ANDROID_NOT_SUPPORTED(_shared->statistics());
-  IPHONE_NOT_SUPPORTED(_shared->statistics());
 
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
@@ -787,7 +787,6 @@ int VoEAudioProcessingImpl::DeRegisterRxVadObserver(int channel) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "DeRegisterRxVadObserver()");
   ANDROID_NOT_SUPPORTED(_shared->statistics());
-  IPHONE_NOT_SUPPORTED(_shared->statistics());
 
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
@@ -829,7 +828,6 @@ int VoEAudioProcessingImpl::SetEcMetricsStatus(bool enable) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetEcMetricsStatus(enable=%d)", enable);
   ANDROID_NOT_SUPPORTED(_shared->statistics());
-  IPHONE_NOT_SUPPORTED(_shared->statistics());
 
 #ifdef WEBRTC_VOICE_ENGINE_ECHO
   if (!_shared->statistics().Initialized()) {
@@ -857,7 +855,6 @@ int VoEAudioProcessingImpl::GetEcMetricsStatus(bool& enabled) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "GetEcMetricsStatus(enabled=?)");
   ANDROID_NOT_SUPPORTED(_shared->statistics());
-  IPHONE_NOT_SUPPORTED(_shared->statistics());
 
 #ifdef WEBRTC_VOICE_ENGINE_ECHO
   if (!_shared->statistics().Initialized()) {
@@ -895,7 +892,6 @@ int VoEAudioProcessingImpl::GetEchoMetrics(int& ERL,
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "GetEchoMetrics(ERL=?, ERLE=?, RERL=?, A_NLP=?)");
   ANDROID_NOT_SUPPORTED(_shared->statistics());
-  IPHONE_NOT_SUPPORTED(_shared->statistics());
 
 #ifdef WEBRTC_VOICE_ENGINE_ECHO
   if (!_shared->statistics().Initialized()) {
@@ -939,7 +935,6 @@ int VoEAudioProcessingImpl::GetEcDelayMetrics(int& delay_median,
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "GetEcDelayMetrics(median=?, std=?)");
   ANDROID_NOT_SUPPORTED(_shared->statistics());
-  IPHONE_NOT_SUPPORTED(_shared->statistics());
 
 #ifdef WEBRTC_VOICE_ENGINE_ECHO
   if (!_shared->statistics().Initialized()) {
@@ -987,7 +982,6 @@ int VoEAudioProcessingImpl::StartDebugRecording(const char* fileNameUTF8) {
   }
 
   return _shared->audio_processing()->StartDebugRecording(fileNameUTF8);
-
 }
 
 int VoEAudioProcessingImpl::StopDebugRecording() {
@@ -1114,7 +1108,6 @@ int VoEAudioProcessingImpl::SetTypingDetectionParameters(int timeWindow,
       "SetTypingDetectionParameters is not supported");
   return -1;
 #endif
-
 }
 
 void VoEAudioProcessingImpl::EnableStereoChannelSwapping(bool enable) {
