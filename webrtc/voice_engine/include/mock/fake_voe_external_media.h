@@ -13,8 +13,8 @@
 
 #include <map>
 
-#include "webrtc/test/fake_common.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/test/fake_common.h"
 #include "webrtc/voice_engine/include/voe_external_media.h"
 
 namespace webrtc {
