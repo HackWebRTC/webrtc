@@ -35,7 +35,6 @@ SharedData::SharedData() :
     _externalPlayout(false)
 {
     Trace::CreateTrace();
-    Trace::SetLevelFilter(WEBRTC_VOICE_ENGINE_DEFAULT_TRACE_FILTER);
     if (OutputMixer::Create(_outputMixerPtr, _gInstanceCounter) == 0)
     {
         _outputMixerPtr->SetEngineInformation(_engineStatistics);
