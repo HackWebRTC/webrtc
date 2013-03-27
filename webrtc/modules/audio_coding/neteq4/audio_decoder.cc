@@ -176,6 +176,8 @@ AudioDecoder* AudioDecoder::CreateAudioDecoder(NetEqDecoder codec_type) {
 #ifdef WEBRTC_CODEC_G722
     case kDecoderG722:
       return new AudioDecoderG722;
+    case kDecoderG722_2ch:
+      return new AudioDecoderG722Stereo;
 #endif
 #ifdef WEBRTC_CODEC_OPUS
     case kDecoderOpus:
