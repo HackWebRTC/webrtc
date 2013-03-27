@@ -60,6 +60,32 @@ int ViENetworkImpl::Release() {
   return ref_count;
 }
 
+void ViENetworkImpl::SetNetworkTransmissionState(const int video_channel,
+                                                 const bool is_transmitting) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
+               ViEId(shared_data_->instance_id(), video_channel),
+               "%s(event: Network %s)", __FUNCTION__,
+               is_transmitting ? "transmitting" : "not transmitting");
+  if (!shared_data_->Initialized()) {
+    shared_data_->SetLastError(kViENotInitialized);
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(shared_data_->instance_id()),
+                 "%s - ViE instance %d not initialized", __FUNCTION__,
+                 shared_data_->instance_id());
+    return;
+  }
+
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  if (!vie_encoder) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), video_channel),
+                 "An encoder doesn't exist for this channel");
+    shared_data_->SetLastError(kViENetworkInvalidChannelId);
+    return;
+  }
+  vie_encoder->SetNetworkTransmissionState(is_transmitting);
+}
+
 ViENetworkImpl::ViENetworkImpl(ViESharedData* shared_data)
     : shared_data_(shared_data) {
   WEBRTC_TRACE(kTraceMemory, kTraceVideo, shared_data_->instance_id(),

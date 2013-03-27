@@ -205,7 +205,7 @@ RTPSenderVideo::SendRTPIntraRequest()
 
     ModuleRTPUtility::AssignUWord32ToBuffer(data+4, _rtpSender.SSRC());
 
-    return _rtpSender.SendToNetwork(data, 0, length, -1, kAllowRetransmission);
+    return _rtpSender.SendToNetwork(data, 0, length, -1, kDontStore);
 }
 
 WebRtc_Word32

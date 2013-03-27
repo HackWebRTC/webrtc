@@ -673,7 +673,7 @@ WebRtc_Word32 RTPSender::SendToNetwork(
     }
   }
 
-  if (paced_sender_) {
+  if (paced_sender_ && storage != kDontStore) {
     if (!paced_sender_->SendPacket(
         PacedSender::kNormalPriority, rtp_header.header.ssrc,
         rtp_header.header.sequenceNumber, capture_time_ms,

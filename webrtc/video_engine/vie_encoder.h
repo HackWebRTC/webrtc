@@ -57,6 +57,8 @@ class ViEEncoder
 
   bool Init();
 
+  void SetNetworkTransmissionState(bool is_transmitting);
+
   // Returns the id of the owning channel.
   int Owner() const;
 
@@ -173,6 +175,8 @@ class ViEEncoder
                         int64_t capture_time_ms);
 
  private:
+  bool EncoderPaused() const;
+
   WebRtc_Word32 engine_id_;
   const int channel_id_;
   const WebRtc_UWord32 number_of_cores_;
@@ -188,7 +192,9 @@ class ViEEncoder
 
   BitrateController* bitrate_controller_;
 
-  bool paused_;
+  int target_delay_ms_;
+  bool network_is_transmitting_;
+  bool encoder_paused_;
   std::map<unsigned int, int64_t> time_last_intra_request_ms_;
   WebRtc_Word32 channels_dropping_delta_frames_;
   bool drop_next_frame_;

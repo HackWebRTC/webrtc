@@ -94,6 +94,12 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 target_bitrate,
                                      WebRtc_UWord8 &fractionLost,
                                      WebRtc_UWord32 roundTripTimeMs)
 {
+    // TODO(holmer): Consider putting this threshold only on the video bitrate,
+    // and not on protection.
+    if (_maxBitRate > 0 &&
+        target_bitrate > static_cast<uint32_t>(_maxBitRate)) {
+      target_bitrate = _maxBitRate;
+    }
     VCMProtectionMethod *selectedMethod = _lossProtLogic->SelectedMethod();
     float target_bitrate_kbps = static_cast<float>(target_bitrate) / 1000.0f;
     _lossProtLogic->UpdateBitRate(target_bitrate_kbps);

@@ -185,8 +185,11 @@ TEST_F(PacedSenderTest, Pause) {
   uint32_t ssrc_low_priority = 12345;
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
-  int64_t capture_time_ms = 56789;
-  int64_t second_capture_time_ms = 67890;
+  int64_t capture_time_ms = TickTime::MillisecondTimestamp();
+  TickTime::AdvanceFakeClock(10000);
+  int64_t second_capture_time_ms = TickTime::MillisecondTimestamp();
+
+  EXPECT_EQ(0, send_bucket_->QueueInMs());
 
   // Due to the multiplicative factor we can send 3 packets not 2 packets.
   EXPECT_TRUE(send_bucket_->SendPacket(PacedSender::kLowPriority,
@@ -207,6 +210,9 @@ TEST_F(PacedSenderTest, Pause) {
       ssrc, sequence_number++, second_capture_time_ms, 250));
   EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kHighPriority,
       ssrc, sequence_number++, capture_time_ms, 250));
+
+  EXPECT_EQ(TickTime::MillisecondTimestamp() - capture_time_ms,
+            send_bucket_->QueueInMs());
 
   // Expect no packet to come out while paused.
   EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
@@ -235,6 +241,7 @@ TEST_F(PacedSenderTest, Pause) {
   TickTime::AdvanceFakeClock(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   EXPECT_EQ(0, send_bucket_->Process());
+  EXPECT_EQ(0, send_bucket_->QueueInMs());
 }
 
 }  // namespace test

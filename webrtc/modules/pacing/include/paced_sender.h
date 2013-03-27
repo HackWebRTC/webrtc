@@ -64,6 +64,9 @@ class PacedSender : public Module {
   bool SendPacket(Priority priority, uint32_t ssrc, uint16_t sequence_number,
                   int64_t capture_time_ms, int bytes);
 
+  // Returns the time since the oldest queued packet was captured.
+  int QueueInMs() const;
+
   // Returns the number of milliseconds until the module want a worker thread
   // to call Process.
   virtual int32_t TimeUntilNextProcess();
@@ -85,6 +88,9 @@ class PacedSender : public Module {
     int64_t capture_time_ms_;
     int bytes_;
   };
+
+  typedef std::list<Packet> PacketList;
+
   // Checks if next packet in line can be transmitted. Returns true on success.
   bool GetNextPacket(uint32_t* ssrc, uint16_t* sequence_number,
                      int64_t* capture_time_ms);
@@ -109,9 +115,9 @@ class PacedSender : public Module {
   TickTime time_last_update_;
   TickTime time_last_send_;
 
-  std::list<Packet> high_priority_packets_;
-  std::list<Packet> normal_priority_packets_;
-  std::list<Packet> low_priority_packets_;
+  PacketList high_priority_packets_;
+  PacketList normal_priority_packets_;
+  PacketList low_priority_packets_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_PACED_SENDER_H_

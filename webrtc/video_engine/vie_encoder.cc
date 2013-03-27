@@ -30,7 +30,12 @@
 namespace webrtc {
 
 // Pace in kbits/s until we receive first estimate.
-const int kInitialPace = 2000;
+static const int kInitialPace = 2000;
+// Allow packets to be transmitted in up to 2 times max video bitrate if the
+// bandwidth estimate allows it.
+// TODO(holmer): Expose transmission start, min and max bitrates in the
+// VideoEngine API and remove the kTransmissionMaxBitrateMultiplier.
+static const int kTransmissionMaxBitrateMultiplier = 2;
 
 class QMVideoSettingsCallback : public VCMQMSettingsCallback {
  public:
@@ -93,7 +98,9 @@ ViEEncoder::ViEEncoder(WebRtc_Word32 engine_id,
     callback_cs_(CriticalSectionWrapper::CreateCriticalSection()),
     data_cs_(CriticalSectionWrapper::CreateCriticalSection()),
     bitrate_controller_(bitrate_controller),
-    paused_(false),
+    target_delay_ms_(0),
+    network_is_transmitting_(true),
+    encoder_paused_(false),
     channels_dropping_delta_frames_(0),
     drop_next_frame_(false),
     fec_enabled_(false),
@@ -227,12 +234,28 @@ int ViEEncoder::Owner() const {
   return channel_id_;
 }
 
+void ViEEncoder::SetNetworkTransmissionState(bool is_transmitting) {
+  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
+               ViEId(engine_id_, channel_id_),
+               "%s(%s)", __FUNCTION__,
+               is_transmitting ? "transmitting" : "not transmitting");
+  {
+    CriticalSectionScoped cs(data_cs_.get());
+    network_is_transmitting_ = is_transmitting;
+  }
+  if (is_transmitting) {
+    paced_sender_->Resume();
+  } else {
+    paced_sender_->Pause();
+  }
+}
+
 void ViEEncoder::Pause() {
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
                ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
   CriticalSectionScoped cs(data_cs_.get());
-  paused_ = true;
+  encoder_paused_ = true;
 }
 
 void ViEEncoder::Restart() {
@@ -240,7 +263,7 @@ void ViEEncoder::Restart() {
                ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
   CriticalSectionScoped cs(data_cs_.get());
-  paused_ = false;
+  encoder_paused_ = false;
 }
 
 WebRtc_Word32 ViEEncoder::DropDeltaAfterKey(bool enable) {
@@ -386,6 +409,7 @@ WebRtc_Word32 ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
   bitrate_controller_->SetBitrateObserver(bitrate_observer_.get(),
                                           video_codec.startBitrate * 1000,
                                           video_codec.minBitrate * 1000,
+                                          kTransmissionMaxBitrateMultiplier *
                                           video_codec.maxBitrate * 1000);
 
   return 0;
@@ -446,6 +470,15 @@ void ViEEncoder::TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
   default_rtp_rtcp_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms);
 }
 
+bool ViEEncoder::EncoderPaused() const {
+  // Pause video if paused by caller or as long as the network is down and the
+  // pacer queue has grown too large.
+  const bool max_send_buffer_reached =
+      paced_sender_->QueueInMs() >= target_delay_ms_;
+  return encoder_paused_ ||
+      (!network_is_transmitting_ && max_send_buffer_reached);
+}
+
 RtpRtcp* ViEEncoder::SendRtpRtcpModule() {
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
                ViEId(engine_id_, channel_id_), "%s", __FUNCTION__);
@@ -464,7 +497,7 @@ void ViEEncoder::DeliverFrame(int id,
                video_frame->timestamp());
   {
     CriticalSectionScoped cs(data_cs_.get());
-    if (paused_ || default_rtp_rtcp_->SendingMedia() == false) {
+    if (EncoderPaused() || default_rtp_rtcp_->SendingMedia() == false) {
       // We've paused or we have no channels attached, don't encode.
       return;
     }
@@ -708,10 +741,14 @@ WebRtc_Word32 ViEEncoder::UpdateProtectionMethod() {
 }
 
 void ViEEncoder::SetSenderBufferingMode(int target_delay_ms) {
+  {
+    CriticalSectionScoped cs(data_cs_.get());
+    target_delay_ms_ = target_delay_ms;
+  }
   if (target_delay_ms > 0) {
-     // Disable external frame-droppers.
-     vcm_.EnableFrameDropper(false);
-     vpm_.EnableTemporalDecimation(false);
+    // Disable external frame-droppers.
+    vcm_.EnableFrameDropper(false);
+    vpm_.EnableTemporalDecimation(false);
   } else {
     // Real-time mode - enable frame droppers.
     vpm_.EnableTemporalDecimation(true);
@@ -730,7 +767,7 @@ WebRtc_Word32 ViEEncoder::SendData(
     const RTPVideoHeader* rtp_video_hdr) {
   {
     CriticalSectionScoped cs(data_cs_.get());
-    if (paused_) {
+    if (EncoderPaused()) {
       // Paused, don't send this packet.
       return 0;
     }

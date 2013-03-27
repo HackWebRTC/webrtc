@@ -19,7 +19,7 @@
 //  - Packet timeout notification.
 //  - Dead‐or‐Alive connection observations.
 
-#include "common_types.h"
+#include "webrtc/common_types.h"
 
 namespace webrtc {
 
@@ -64,6 +64,11 @@ class WEBRTC_DLLEXPORT ViENetwork {
   // counter.Returns the new reference count. This value should be zero
   // for all sub-API:s before the VideoEngine object can be safely deleted.
   virtual int Release() = 0;
+
+  // Inform the engine about if the network adapter is currently transmitting
+  // packets or not.
+  virtual void SetNetworkTransmissionState(const int video_channel,
+                                           const bool is_transmitting) = 0;
 
   // Specifies the ports to receive RTP packets on. It is also possible to set
   // port for RTCP and local IP address.

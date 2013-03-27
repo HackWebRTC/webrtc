@@ -82,6 +82,9 @@ bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
     UpdateState(bytes);
     return true;  // We can send now.
   }
+  if (capture_time_ms < 0) {
+    capture_time_ms = TickTime::MillisecondTimestamp();
+  }
   if (paused_) {
     // Queue all packets when we are paused.
     switch (priority) {
@@ -133,6 +136,28 @@ bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
       return false;
   }
   return false;
+}
+
+int PacedSender::QueueInMs() const {
+  CriticalSectionScoped cs(critsect_.get());
+  int64_t now_ms = TickTime::MillisecondTimestamp();
+  int64_t oldest_packet_capture_time = now_ms;
+  if (!high_priority_packets_.empty()) {
+    oldest_packet_capture_time = std::min(
+        oldest_packet_capture_time,
+        high_priority_packets_.front().capture_time_ms_);
+  }
+  if (!normal_priority_packets_.empty()) {
+    oldest_packet_capture_time = std::min(
+        oldest_packet_capture_time,
+        normal_priority_packets_.front().capture_time_ms_);
+  }
+  if (!low_priority_packets_.empty()) {
+    oldest_packet_capture_time = std::min(
+        oldest_packet_capture_time,
+        low_priority_packets_.front().capture_time_ms_);
+  }
+  return now_ms - oldest_packet_capture_time;
 }
 
 int32_t PacedSender::TimeUntilNextProcess() {
