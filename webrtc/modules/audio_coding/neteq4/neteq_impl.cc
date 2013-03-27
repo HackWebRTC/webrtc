@@ -397,6 +397,9 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     // Store new SSRC.
     ssrc_ = main_header.ssrc;
 
+    // Update audio buffer timestamp.
+    sync_buffer_->IncreaseEndTimestamp(main_header.timestamp - timestamp_);
+
     // Update codecs.
     timestamp_ = main_header.timestamp;
     current_rtp_payload_type_ = main_header.payloadType;
@@ -830,36 +833,40 @@ int NetEqImpl::GetDecision(Operations* operation,
   if (new_codec_ || *operation == kUndefined) {
     // The only valid reason to get kUndefined is that new_codec_ is set.
     assert(new_codec_);
-    assert(header);
-    if (!header) {
-      LOG_F(LS_ERROR) << "Packet missing where it shouldn't.";
-      return -1;
+    if (*play_dtmf && !header) {
+      timestamp_ = dtmf_event->timestamp;
+    } else {
+      assert(header);
+      if (!header) {
+        LOG_F(LS_ERROR) << "Packet missing where it shouldn't.";
+        return -1;
+      }
+      timestamp_ = header->timestamp;
+      if (*operation == kRfc3389CngNoPacket
+#ifndef LEGACY_BITEXACT
+          // Without this check, it can happen that a non-CNG packet is sent to
+          // the CNG decoder as if it was a SID frame. This is clearly a bug,
+          // but is kept for now to maintain bit-exactness with the test
+          // vectors.
+          && decoder_database_->IsComfortNoise(header->payloadType)
+#endif
+      ) {
+        // Change decision to CNG packet, since we do have a CNG packet, but it
+        // was considered too early to use. Now, use it anyway.
+        *operation = kRfc3389Cng;
+      } else if (*operation != kRfc3389Cng) {
+        *operation = kNormal;
+      }
     }
-    timestamp_ = header->timestamp;
     // Adjust |sync_buffer_| timestamp before setting |end_timestamp| to the
     // new value.
     sync_buffer_->IncreaseEndTimestamp(timestamp_ - end_timestamp);
-    end_timestamp = header->timestamp;
+    end_timestamp = timestamp_;
     new_codec_ = false;
     decision_logic_->SoftReset();
     buffer_level_filter_->Reset();
     delay_manager_->Reset();
     stats_.ResetMcu();
-
-    if (*operation == kRfc3389CngNoPacket
-#ifndef LEGACY_BITEXACT
-        // Without this check, it can happen that a non-CNG packet is sent to
-        // the CNG decoder as if it was a SID frame. This is clearly a bug,
-        // but is kept for now to maintain bit-exactness with the test vectors.
-        && decoder_database_->IsComfortNoise(header->payloadType)
-#endif
-        ) {
-      // Change decision to CNG packet, since we do have a CNG packet, but it
-      // was considered too early to use. Now, use it anyway.
-      *operation = kRfc3389Cng;
-    } else if (*operation != kRfc3389Cng) {
-      *operation = kNormal;
-    }
   }
 
   int required_samples = output_size_samples_;
@@ -1481,13 +1488,22 @@ void NetEqImpl::DoCodecInternalCng(
 
 int NetEqImpl::DoDtmf(const DtmfEvent& dtmf_event, bool* play_dtmf,
                       AudioMultiVector<int16_t>* algorithm_buffer) {
-  bool dtmf_switch = false;
-  if ((last_mode_ != kModeDtmf) && !dtmf_tone_generator_->initialized()) {
-    // Special case; see below.
-    // We must catch this before calling Generate, since |initialized| is
-    // modified in that call.
-    dtmf_switch = true;
-  }
+  // This block of the code and the block further down, handling |dtmf_switch|
+  // are commented out. Otherwise playing out-of-band DTMF would fail in VoE
+  // test, DtmfTest.ManualSuccessfullySendsOutOfBandTelephoneEvents. This is
+  // equivalent to |dtmf_switch| always be false.
+  //
+  // See http://webrtc-codereview.appspot.com/1195004/ for discussion
+  // On this issue. This change might cause some glitches at the point of
+  // switch from audio to DTMF. Issue 1545 is filed to track this.
+  //
+  //  bool dtmf_switch = false;
+  //  if ((last_mode_ != kModeDtmf) && dtmf_tone_generator_->initialized()) {
+  //    // Special case; see below.
+  //    // We must catch this before calling Generate, since |initialized| is
+  //    // modified in that call.
+  //    dtmf_switch = true;
+  //  }
 
   int dtmf_return_value = 0;
   if (!dtmf_tone_generator_->initialized()) {
@@ -1495,47 +1511,51 @@ int NetEqImpl::DoDtmf(const DtmfEvent& dtmf_event, bool* play_dtmf,
     dtmf_return_value = dtmf_tone_generator_->Init(fs_hz_, dtmf_event.event_no,
                                                    dtmf_event.volume);
   }
+
   if (dtmf_return_value == 0) {
     // Generate DTMF signal.
     dtmf_return_value = dtmf_tone_generator_->Generate(output_size_samples_,
                                                        algorithm_buffer);
   }
+
   if (dtmf_return_value < 0) {
     algorithm_buffer->Zeros(output_size_samples_);
     return dtmf_return_value;
   }
 
-  if (dtmf_switch) {
-    // This is the special case where the previous operation was DTMF overdub,
-    // but the current instruction is "regular" DTMF. We must make sure that the
-    // DTMF does not have any discontinuities. The first DTMF sample that we
-    // generate now must be played out immediately, wherefore it must be copied
-    // to the speech buffer.
-    // TODO(hlundin): This code seems incorrect. (Legacy.) Write test and
-    // verify correct operation.
-    assert(false);
-    // Must generate enough data to replace all of the |sync_buffer_| "future".
-    int required_length = sync_buffer_->FutureLength();
-    assert(dtmf_tone_generator_->initialized());
-    dtmf_return_value = dtmf_tone_generator_->Generate(required_length,
-                                                       algorithm_buffer);
-    assert((size_t) required_length == algorithm_buffer->Size());
-    if (dtmf_return_value < 0) {
-      algorithm_buffer->Zeros(output_size_samples_);
-      return dtmf_return_value;
-    }
-
-    // Overwrite the "future" part of the speech buffer with the new DTMF data.
-    // TODO(hlundin): It seems that this overwriting has gone lost.
-    // Not adapted for multi-channel yet.
-    assert(algorithm_buffer->Channels() == 1);
-    if (algorithm_buffer->Channels() != 1) {
-      LOG(LS_WARNING) << "DTMF not supported for more than one channel";
-      return kStereoNotSupported;
-    }
-    // Shuffle the remaining data to the beginning of algorithm buffer.
-    algorithm_buffer->PopFront(sync_buffer_->FutureLength());
-  }
+  //  if (dtmf_switch) {
+  //    // This is the special case where the previous operation was DTMF
+  //    // overdub, but the current instruction is "regular" DTMF. We must make
+  //    // sure that the DTMF does not have any discontinuities. The first DTMF
+  //    // sample that we generate now must be played out immediately, therefore
+  //    // it must be copied to the speech buffer.
+  //    // TODO(hlundin): This code seems incorrect. (Legacy.) Write test and
+  //    // verify correct operation.
+  //    assert(false);
+  //    // Must generate enough data to replace all of the |sync_buffer_|
+  //    // "future".
+  //    int required_length = sync_buffer_->FutureLength();
+  //    assert(dtmf_tone_generator_->initialized());
+  //    dtmf_return_value = dtmf_tone_generator_->Generate(required_length,
+  //                                                       algorithm_buffer);
+  //    assert((size_t) required_length == algorithm_buffer->Size());
+  //    if (dtmf_return_value < 0) {
+  //      algorithm_buffer->Zeros(output_size_samples_);
+  //      return dtmf_return_value;
+  //    }
+  //
+  //    // Overwrite the "future" part of the speech buffer with the new DTMF
+  //    // data.
+  //    // TODO(hlundin): It seems that this overwriting has gone lost.
+  //    // Not adapted for multi-channel yet.
+  //    assert(algorithm_buffer->Channels() == 1);
+  //    if (algorithm_buffer->Channels() != 1) {
+  //      LOG(LS_WARNING) << "DTMF not supported for more than one channel";
+  //      return kStereoNotSupported;
+  //    }
+  //    // Shuffle the remaining data to the beginning of algorithm buffer.
+  //    algorithm_buffer->PopFront(sync_buffer_->FutureLength());
+  //  }
 
   sync_buffer_->IncreaseEndTimestamp(output_size_samples_);
   expand_->Reset();
