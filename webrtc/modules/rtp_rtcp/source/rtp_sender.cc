@@ -603,7 +603,6 @@ void RTPSender::TimeToSendPacket(uint16_t sequence_number,
   }
   if (!packet_history_->GetRTPPacket(sequence_number, 0, data_buffer, &length,
                                      &stored_time_ms, &type)) {
-    assert(false);
     return;
   }
   assert(length > 0);

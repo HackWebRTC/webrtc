@@ -380,7 +380,9 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(0, ViE.rtp_rtcp->GetBandwidthUsage(
         tbChannel.videoChannel, sentTotalBitrate, sentVideoBitrate,
         sentFecBitrate, sentNackBitrate));
-    EXPECT_GT(sentTotalBitrate, 0u);
+    if (FLAGS_include_timing_dependent_tests) {
+      EXPECT_GT(sentTotalBitrate, 0u);
+    }
     // Simulate lost reception and verify that nothing is sent during that time.
     ViE.network->SetNetworkTransmissionState(tbChannel.videoChannel, false);
     ViETest::Log("Network Down...\n");
@@ -388,7 +390,9 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(0, ViE.rtp_rtcp->GetBandwidthUsage(
         tbChannel.videoChannel, sentTotalBitrate, sentVideoBitrate,
         sentFecBitrate, sentNackBitrate));
-    EXPECT_EQ(sentTotalBitrate, 0u);
+    if (FLAGS_include_timing_dependent_tests) {
+      EXPECT_EQ(sentTotalBitrate, 0u);
+    }
 
     // Network reception back. Video should now be sent.
     ViE.network->SetNetworkTransmissionState(tbChannel.videoChannel, true);
@@ -397,7 +401,9 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(0, ViE.rtp_rtcp->GetBandwidthUsage(
         tbChannel.videoChannel, sentTotalBitrate, sentVideoBitrate,
         sentFecBitrate, sentNackBitrate));
-    EXPECT_GT(sentTotalBitrate, 0u);
+    if (FLAGS_include_timing_dependent_tests) {
+      EXPECT_GT(sentTotalBitrate, 0u);
+    }
 
     // Buffering mode.
     EXPECT_EQ(0, ViE.base->StopSend(tbChannel.videoChannel));
@@ -415,7 +421,9 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(0, ViE.rtp_rtcp->GetBandwidthUsage(
         tbChannel.videoChannel, sentTotalBitrate, sentVideoBitrate,
         sentFecBitrate, sentNackBitrate));
-    EXPECT_GT(sentTotalBitrate, 0u);
+    if (FLAGS_include_timing_dependent_tests) {
+      EXPECT_GT(sentTotalBitrate, 0u);
+    }
     // Simulate lost reception and verify that nothing is sent during that time.
     ViETest::Log("Network Down...\n");
     ViE.network->SetNetworkTransmissionState(tbChannel.videoChannel, false);
@@ -423,7 +431,9 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(0, ViE.rtp_rtcp->GetBandwidthUsage(
         tbChannel.videoChannel, sentTotalBitrate, sentVideoBitrate,
         sentFecBitrate, sentNackBitrate));
-    EXPECT_EQ(sentTotalBitrate, 0u);
+    if (FLAGS_include_timing_dependent_tests) {
+      EXPECT_EQ(sentTotalBitrate, 0u);
+    }
     // Network reception back. Video should now be sent.
     ViETest::Log("Network Up...\n");
     ViE.network->SetNetworkTransmissionState(tbChannel.videoChannel, true);
@@ -431,7 +441,9 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(0, ViE.rtp_rtcp->GetBandwidthUsage(
         tbChannel.videoChannel, sentTotalBitrate, sentVideoBitrate,
         sentFecBitrate, sentNackBitrate));
-    EXPECT_GT(sentTotalBitrate, 0u);
+    if (FLAGS_include_timing_dependent_tests) {
+      EXPECT_GT(sentTotalBitrate, 0u);
+    }
     // TODO(holmer): Verify that the decoded framerate doesn't decrease on an
     // outage when in buffering mode. This isn't currently possible because we
     // don't have an API to get decoded framerate.
