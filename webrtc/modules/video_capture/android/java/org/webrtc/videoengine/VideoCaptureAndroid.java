@@ -125,7 +125,6 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
         isCaptureRunning = true;
         previewBufferLock.unlock();
 
-        isCaptureRunning = true;
         return 0;
     }
 
@@ -135,7 +134,8 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
         // Get the local preview SurfaceHolder from the static render class
         localPreview = ViERenderer.GetLocalRenderer();
         if (localPreview != null) {
-            if (localPreview.getSurface() != null) {
+            if (localPreview.getSurface() != null &&
+                localPreview.getSurface().isValid()) {
                 surfaceCreated(localPreview);
             }
             localPreview.addCallback(this);
@@ -210,39 +210,23 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     public void SetPreviewRotation(int rotation) {
         Log.v(TAG, "SetPreviewRotation:" + rotation);
 
-        if (camera != null) {
-            previewBufferLock.lock();
-            int width = 0;
-            int height = 0;
-            int framerate = 0;
-            boolean wasCaptureRunning = isCaptureRunning;
-
-            if (isCaptureRunning) {
-                width = mCaptureWidth;
-                height = mCaptureHeight;
-                framerate = mCaptureFPS;
-                StopCapture();
-            }
-
-            int resultRotation = 0;
-            if (currentDevice.frontCameraType ==
-                    VideoCaptureDeviceInfoAndroid.FrontFacingCameraType.Android23) {
-                // this is a 2.3 or later front facing camera.
-                // SetDisplayOrientation will flip the image horizontally
-                // before doing the rotation.
-                resultRotation=(360-rotation) % 360; // compensate the mirror
-            }
-            else {
-                // Back facing or 2.2 or previous front camera
-                resultRotation=rotation;
-            }
-            camera.setDisplayOrientation(resultRotation);
-
-            if (wasCaptureRunning) {
-                StartCapture(width, height, framerate);
-            }
-            previewBufferLock.unlock();
+        if (camera == null) {
+            return;
         }
+
+        int resultRotation = 0;
+        if (currentDevice.frontCameraType ==
+            VideoCaptureDeviceInfoAndroid.FrontFacingCameraType.Android23) {
+            // this is a 2.3 or later front facing camera.
+            // SetDisplayOrientation will flip the image horizontally
+            // before doing the rotation.
+            resultRotation = ( 360 - rotation ) % 360; // compensate the mirror
+        }
+        else {
+            // Back facing or 2.2 or previous front camera
+            resultRotation = rotation;
+        }
+        camera.setDisplayOrientation(resultRotation);
     }
 
     public void surfaceChanged(SurfaceHolder holder,

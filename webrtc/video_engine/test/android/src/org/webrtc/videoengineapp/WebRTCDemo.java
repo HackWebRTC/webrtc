@@ -739,7 +739,7 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
 
         // Create channel
         voiceChannel = vieAndroidAPI.VoE_CreateChannel();
-        if (0 != voiceChannel) {
+        if (0 > voiceChannel) {
             Log.d(TAG, "VoE create channel failed");
             return -1;
         }
