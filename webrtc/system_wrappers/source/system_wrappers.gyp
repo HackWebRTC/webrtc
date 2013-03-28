@@ -28,7 +28,6 @@
         '../interface/compile_assert.h',
         '../interface/condition_variable_wrapper.h',
         '../interface/cpu_info.h',
-        '../interface/cpu_wrapper.h',
         '../interface/cpu_features_wrapper.h',
         '../interface/critical_section_wrapper.h',
         '../interface/data_log.h',
@@ -65,15 +64,7 @@
         'condition_variable_event_win.h',
         'condition_variable_native_win.cc',
         'condition_variable_native_win.h',
-        'cpu.cc',
-        'cpu_no_op.cc',
         'cpu_info.cc',
-        'cpu_linux.cc',
-        'cpu_linux.h',
-        'cpu_mac.cc',
-        'cpu_mac.h',
-        'cpu_win.cc',
-        'cpu_win.h',
         'cpu_features.cc',
         'critical_section.cc',
         'critical_section_posix.cc',
@@ -162,18 +153,6 @@
             'libraries': [ '-lwinmm.lib', ],
           },
         }],
-        ['build_with_chromium==1', {
-          'sources!': [
-            'cpu.cc',
-            'cpu_linux.h',
-            'cpu_mac.h',
-            'cpu_win.h',
-          ],
-        }, {
-          'sources!': [
-            'cpu_no_op.cc',
-          ],
-        }],
       ], # conditions
       'target_conditions': [
         # We need to do this in a target_conditions block to override the
@@ -183,7 +162,6 @@
           # by file name rules).
           'sources/': [
             ['include', '^atomic32_mac\\.'],
-            ['include', '^cpu_mac\\.'],
           ],
           'sources!': [
             'atomic32_posix.cc',

@@ -15,7 +15,6 @@
 #include "trace.h"
 
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
-    #include "cpu_wrapper.h"
     #include "critical_section_wrapper.h"
     #include "frame_scaler.h"
     #include "video_coder.h"
