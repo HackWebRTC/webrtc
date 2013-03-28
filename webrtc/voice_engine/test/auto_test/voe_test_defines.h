@@ -103,7 +103,6 @@
 // Some parts can cause problems while running Insure
 #ifdef __INSURE__
 #define _INSTRUMENTATION_TESTING_
-#undef WEBRTC_SRTP
 #endif
 
 // Time in ms to test each packet size for each codec

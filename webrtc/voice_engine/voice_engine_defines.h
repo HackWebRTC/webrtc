@@ -60,23 +60,6 @@ enum { kVoiceEngineMaxModuleVersionSize = 960 };
 // Base
 enum { kVoiceEngineVersionMaxMessageSize = 1024 };
 
-// Encryption
-// SRTP uses 30 bytes key length
-enum { kVoiceEngineMaxSrtpKeyLength = 30 };
-// SRTP minimum key/tag length for encryption level
-enum { kVoiceEngineMinSrtpEncryptLength = 16 };
-// SRTP maximum key/tag length for encryption level
-enum { kVoiceEngineMaxSrtpEncryptLength = 256 };
-// SRTP maximum key/tag length for authentication level,
-// HMAC SHA1 authentication type
-enum { kVoiceEngineMaxSrtpAuthSha1Length = 20 };
-// SRTP maximum tag length for authentication level,
-// null authentication type
-enum { kVoiceEngineMaxSrtpTagAuthNullLength = 12 };
-// SRTP maximum key length for authentication level,
-// null authentication type
-enum { kVoiceEngineMaxSrtpKeyAuthNullLength = 256 };
-
 // Audio processing
 const NoiseSuppression::Level kDefaultNsMode = NoiseSuppression::kModerate;
 const GainControl::Mode kDefaultAgcMode =

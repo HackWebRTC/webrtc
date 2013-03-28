@@ -136,27 +136,6 @@ enum ProcessingTypes
     kRecordingPreprocessing
 };
 
-// Encryption enums
-enum CipherTypes
-{
-    kCipherNull               = 0,
-    kCipherAes128CounterMode  = 1
-};
-
-enum AuthenticationTypes
-{
-    kAuthNull       = 0,
-    kAuthHmacSha1   = 3
-};
-
-enum SecurityLevels
-{
-    kNoProtection                    = 0,
-    kEncryption                      = 1,
-    kAuthentication                  = 2,
-    kEncryptionAndAuthentication     = 3
-};
-
 // Interface for encrypting and decrypting regular data and rtp/rtcp packets.
 // Implement this interface if you wish to provide an encryption scheme to
 // the voice or video engines.
