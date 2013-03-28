@@ -35,7 +35,6 @@ LOCAL_SRC_FILES := \
     thread.cc \
     trace_impl.cc \
     condition_variable_posix.cc \
-    cpu_linux.cc \
     critical_section_posix.cc \
     event_posix.cc \
     sleep.cc \
