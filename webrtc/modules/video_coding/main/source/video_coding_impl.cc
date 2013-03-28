@@ -84,7 +84,8 @@ VideoCodingModuleImpl::VideoCodingModuleImpl(const WebRtc_Word32 id,
       _retransmissionTimer(10, clock_),
       _keyRequestTimer(500, clock_),
       event_factory_(event_factory),
-      owns_event_factory_(owns_event_factory) {
+      owns_event_factory_(owns_event_factory),
+      frame_dropper_enabled_(true) {
   assert(clock_);
 #ifdef DEBUG_DECODER_BIT_STREAM
   _bitStreamBeforeDecoder = fopen("decoderBitStream.bit", "wb");
@@ -335,10 +336,14 @@ VideoCodingModuleImpl::RegisterSendCodec(const VideoCodec* sendCodec,
     _sendCodecType = sendCodec->codecType;
     int numLayers = (_sendCodecType != kVideoCodecVP8) ? 1 :
                         sendCodec->codecSpecific.VP8.numberOfTemporalLayers;
-    // Disable frame dropper if screensharing if we have layers.
+    // If we have screensharing and we have layers, we disable frame dropper.
     bool disable_frame_dropper =
         numLayers > 1 && sendCodec->mode == kScreensharing;
-    _mediaOpt.EnableFrameDropper(!disable_frame_dropper);
+    if (disable_frame_dropper) {
+      _mediaOpt.EnableFrameDropper(false);
+    } else if (frame_dropper_enabled_) {
+      _mediaOpt.EnableFrameDropper(true);
+    }
     _nextFrameTypes.clear();
     _nextFrameTypes.resize(VCM_MAX(sendCodec->numberOfSimulcastStreams, 1),
                            kVideoFrameDelta);
@@ -742,6 +747,7 @@ WebRtc_Word32
 VideoCodingModuleImpl::EnableFrameDropper(bool enable)
 {
     CriticalSectionScoped cs(_sendCritSect);
+    frame_dropper_enabled_ = enable;
     _mediaOpt.EnableFrameDropper(enable);
     return VCM_OK;
 }
