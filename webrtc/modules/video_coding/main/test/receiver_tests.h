@@ -28,8 +28,8 @@ public:
     RtpDataCallback(webrtc::VideoCodingModule* vcm)
         : _vcm(vcm) {};
 
-    virtual WebRtc_Word32 OnReceivedPayloadData(const WebRtc_UWord8* payloadData,
-                                              const WebRtc_UWord16 payloadSize,
+    virtual int32_t OnReceivedPayloadData(const uint8_t* payloadData,
+                                              const uint16_t payloadSize,
                                               const webrtc::WebRtcRTPHeader* rtpHeader);
 private:
     webrtc::VideoCodingModule* _vcm;
@@ -48,7 +48,7 @@ public:
 
     virtual ~FrameReceiveCallback();
 
-    WebRtc_Word32 FrameToRender(webrtc::I420VideoFrame& videoFrame);
+    int32_t FrameToRender(webrtc::I420VideoFrame& videoFrame);
 
 private:
     static void SplitFilename(std::string filename, std::string* basename,

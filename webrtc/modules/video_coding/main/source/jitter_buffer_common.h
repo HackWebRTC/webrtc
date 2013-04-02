@@ -62,15 +62,15 @@ enum VCMNaluCompleteness {
 
 // Returns the latest of the two timestamps, compensating for wrap arounds.
 // This function assumes that the two timestamps are close in time.
-WebRtc_UWord32 LatestTimestamp(WebRtc_UWord32 timestamp1,
-                               WebRtc_UWord32 timestamp2,
+uint32_t LatestTimestamp(uint32_t timestamp1,
+                               uint32_t timestamp2,
                                bool* has_wrapped);
 
 // Returns the latest of the two sequence numbers, compensating for wrap
 // arounds. This function assumes that the two sequence numbers are close in
 // time.
-WebRtc_Word32 LatestSequenceNumber(WebRtc_Word32 seq_num1,
-                                   WebRtc_Word32 seq_num2,
+int32_t LatestSequenceNumber(int32_t seq_num1,
+                                   int32_t seq_num2,
                                    bool* has_wrapped);
 }  // namespace webrtc
 

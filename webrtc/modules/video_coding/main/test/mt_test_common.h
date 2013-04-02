@@ -38,8 +38,8 @@ public:
     webrtc::RtpRtcp&            _rtp;
     CmdArgs                     _args;
     FILE*                       _sourceFile;
-    WebRtc_Word32               _frameCnt;
-    WebRtc_Word32               _timestamp;
+    int32_t               _frameCnt;
+    int32_t               _timestamp;
 };
 
 // MT implementation of the RTPSendCompleteCallback (Transport)

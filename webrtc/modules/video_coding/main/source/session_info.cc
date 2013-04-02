@@ -141,7 +141,7 @@ void VCMSessionInfo::ShiftSubsequentPackets(PacketIterator it,
   ++it;
   if (it == packets_.end())
     return;
-  uint8_t* first_packet_ptr = const_cast<WebRtc_UWord8*>((*it).dataPtr);
+  uint8_t* first_packet_ptr = const_cast<uint8_t*>((*it).dataPtr);
   int shift_length = 0;
   // Calculate the total move length and move the data pointers in advance.
   for (; it != packets_.end(); ++it) {
@@ -236,7 +236,7 @@ int VCMSessionInfo::BuildVP8FragmentationHeader(
   fragmentation->VerifyAndAllocateFragmentationHeader(kMaxVP8Partitions);
   fragmentation->fragmentationVectorSize = 0;
   memset(fragmentation->fragmentationLength, 0,
-         kMaxVP8Partitions * sizeof(WebRtc_UWord32));
+         kMaxVP8Partitions * sizeof(uint32_t));
   if (packets_.empty())
       return new_length;
   PacketIterator it = FindNextPartitionBeginning(packets_.begin(),
@@ -248,11 +248,11 @@ int VCMSessionInfo::BuildVP8FragmentationHeader(
     fragmentation->fragmentationOffset[partition_id] =
         (*it).dataPtr - frame_buffer;
     assert(fragmentation->fragmentationOffset[partition_id] <
-           static_cast<WebRtc_UWord32>(frame_buffer_length));
+           static_cast<uint32_t>(frame_buffer_length));
     fragmentation->fragmentationLength[partition_id] =
         (*partition_end).dataPtr + (*partition_end).sizeBytes - (*it).dataPtr;
     assert(fragmentation->fragmentationLength[partition_id] <=
-           static_cast<WebRtc_UWord32>(frame_buffer_length));
+           static_cast<uint32_t>(frame_buffer_length));
     new_length += fragmentation->fragmentationLength[partition_id];
     ++partition_end;
     it = FindNextPartitionBeginning(partition_end, &packets_not_decodable_);
@@ -319,7 +319,7 @@ bool VCMSessionInfo::InSequence(const PacketIterator& packet_it,
   // If the two iterators are pointing to the same packet they are considered
   // to be in sequence.
   return (packet_it == prev_packet_it ||
-      (static_cast<WebRtc_UWord16>((*prev_packet_it).seqNum + 1) ==
+      (static_cast<uint16_t>((*prev_packet_it).seqNum + 1) ==
           (*packet_it).seqNum));
 }
 

@@ -64,11 +64,11 @@ int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTe
     // BEGIN Settings
     bool protectionEnabled = true;
     VCMVideoProtection protection = kProtectionDualDecoder;
-    WebRtc_UWord8 rttMS = 50;
+    uint8_t rttMS = 50;
     float lossRate = 0.05f;
-    WebRtc_UWord32 renderDelayMs = 0;
-    WebRtc_UWord32 minPlayoutDelayMs = 0;
-    const WebRtc_Word64 MAX_RUNTIME_MS = 10000;
+    uint32_t renderDelayMs = 0;
+    uint32_t minPlayoutDelayMs = 0;
+    const int64_t MAX_RUNTIME_MS = 10000;
     std::string outFilename = args.outputFile;
     if (outFilename == "")
         outFilename = test::OutputPath() + "RtpPlayMT_decoded.yuv";
@@ -151,7 +151,7 @@ int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTe
     }
     rtpStream.SimulatePacketLoss(lossRate, nackEnabled, rttMS);
 
-    WebRtc_Word32 ret = vcm->InitializeReceiver();
+    int32_t ret = vcm->InitializeReceiver();
     if (ret < 0)
     {
         return -1;

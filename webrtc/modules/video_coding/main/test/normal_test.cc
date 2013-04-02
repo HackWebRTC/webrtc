@@ -69,14 +69,14 @@ void VCMNTEncodeCompleteCallback::RegisterTransportCallback(
 {
 }
 
-WebRtc_Word32
+int32_t
 VCMNTEncodeCompleteCallback::SendData(
         const FrameType frameType,
-        const WebRtc_UWord8  payloadType,
-        const WebRtc_UWord32 timeStamp,
+        const uint8_t  payloadType,
+        const uint32_t timeStamp,
         int64_t capture_time_ms,
-        const WebRtc_UWord8* payloadData,
-        const WebRtc_UWord32 payloadSize,
+        const uint8_t* payloadData,
+        const uint32_t payloadSize,
         const RTPFragmentationHeader& /*fragmentationHeader*/,
         const webrtc::RTPVideoHeader* videoHdr)
 
@@ -131,13 +131,13 @@ VCMNTEncodeCompleteCallback::RegisterReceiverVCM(VideoCodingModule *vcm)
   _VCMReceiver = vcm;
   return;
 }
- WebRtc_Word32
+ int32_t
 VCMNTEncodeCompleteCallback::EncodedBytes()
 {
   return _encodedBytes;
 }
 
-WebRtc_UWord32
+uint32_t
 VCMNTEncodeCompleteCallback::SkipCnt()
 {
   return _skipCnt;
@@ -149,7 +149,7 @@ VCMNTDecodeCompleCallback::~VCMNTDecodeCompleCallback()
   if (_decodedFile)
   fclose(_decodedFile);
 }
- WebRtc_Word32
+ int32_t
 VCMNTDecodeCompleCallback::FrameToRender(webrtc::I420VideoFrame& videoFrame)
 {
     if (videoFrame.width() != _currentWidth ||
@@ -172,7 +172,7 @@ VCMNTDecodeCompleCallback::FrameToRender(webrtc::I420VideoFrame& videoFrame)
     return VCM_OK;
 }
 
- WebRtc_Word32
+ int32_t
 VCMNTDecodeCompleCallback::DecodedBytes()
 {
   return _decodedBytes;
@@ -241,7 +241,7 @@ NormalTest::Setup(const CmdArgs& args)
             std::fstream::out | std::fstream::app);
 }
 
-WebRtc_Word32
+int32_t
 NormalTest::Perform(const CmdArgs& args)
 {
   Setup(args);
@@ -252,8 +252,8 @@ NormalTest::Perform(const CmdArgs& args)
   TEST(VideoCodingModule::Codec(_videoType, &_sendCodec) == VCM_OK);
   // should be later on changed via the API
   _sendCodec.startBitrate = (int)_bitRate;
-  _sendCodec.width = static_cast<WebRtc_UWord16>(_width);
-  _sendCodec.height = static_cast<WebRtc_UWord16>(_height);
+  _sendCodec.width = static_cast<uint16_t>(_width);
+  _sendCodec.height = static_cast<uint16_t>(_height);
   _sendCodec.maxFramerate = _frameRate;
   // will also set and init the desired codec
   TEST(_vcm->RegisterSendCodec(&_sendCodec, 4, 1400) == VCM_OK);
@@ -276,12 +276,12 @@ NormalTest::Perform(const CmdArgs& args)
   int size_uv = half_width * half_height;
   sourceFrame.CreateEmptyFrame(_width, _height,
                                _width, half_width, half_width);
-  WebRtc_UWord8* tmpBuffer = new WebRtc_UWord8[_lengthSourceFrame];
+  uint8_t* tmpBuffer = new uint8_t[_lengthSourceFrame];
   double startTime = clock()/(double)CLOCKS_PER_SEC;
   _vcm->SetChannelParameters(static_cast<uint32_t>(1000 * _bitRate), 0, 0);
 
   SendStatsTest sendStats;
-  sendStats.set_framerate(static_cast<WebRtc_UWord32>(_frameRate));
+  sendStats.set_framerate(static_cast<uint32_t>(_frameRate));
   sendStats.set_bitrate(1000 * _bitRate);
   _vcm->RegisterSendStatisticsCallback(&sendStats);
 
@@ -295,11 +295,11 @@ NormalTest::Perform(const CmdArgs& args)
                             _width, _height,
                             _width, half_width, half_width);
     _timeStamp +=
-        (WebRtc_UWord32)(9e4 / static_cast<float>(_sendCodec.maxFramerate));
+        (uint32_t)(9e4 / static_cast<float>(_sendCodec.maxFramerate));
     sourceFrame.set_timestamp(_timeStamp);
     _encodeTimes[int(sourceFrame.timestamp())] =
         clock()/(double)CLOCKS_PER_SEC;
-    WebRtc_Word32 ret = _vcm->AddVideoFrame(sourceFrame);
+    int32_t ret = _vcm->AddVideoFrame(sourceFrame);
     double encodeTime = clock()/(double)CLOCKS_PER_SEC -
                         _encodeTimes[int(sourceFrame.timestamp())];
     _totalEncodeTime += encodeTime;
@@ -322,8 +322,8 @@ NormalTest::Perform(const CmdArgs& args)
     {
         _vcm->Process();
     }
-    WebRtc_UWord32 framePeriod =
-        static_cast<WebRtc_UWord32>(
+    uint32_t framePeriod =
+        static_cast<uint32_t>(
             1000.0f / static_cast<float>(_sendCodec.maxFramerate) + 0.5f);
     static_cast<SimulatedClock*>(_clock)->AdvanceTimeMilliseconds(framePeriod);
   }
@@ -339,7 +339,7 @@ NormalTest::Perform(const CmdArgs& args)
 }
 
 void
-NormalTest::FrameEncoded(WebRtc_UWord32 timeStamp)
+NormalTest::FrameEncoded(uint32_t timeStamp)
 {
   _encodeCompleteTime = clock()/(double)CLOCKS_PER_SEC;
   _encFrameCnt++;
@@ -348,7 +348,7 @@ NormalTest::FrameEncoded(WebRtc_UWord32 timeStamp)
 }
 
 void
-NormalTest::FrameDecoded(WebRtc_UWord32 timeStamp)
+NormalTest::FrameDecoded(uint32_t timeStamp)
 {
   _decodeCompleteTime = clock()/(double)CLOCKS_PER_SEC;
   _decFrameCnt++;

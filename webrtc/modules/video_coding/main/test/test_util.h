@@ -69,9 +69,9 @@ int MTRxTxTest(CmdArgs& args);
 double NormalDist(double mean, double stdDev);
 
 struct RtpPacket {
-  WebRtc_Word8 data[1650]; // max packet size
-  WebRtc_Word32 length;
-  WebRtc_Word64 receiveTime;
+  int8_t data[1650]; // max packet size
+  int32_t length;
+  int64_t receiveTime;
 };
 
 class NullEvent : public webrtc::EventWrapper {

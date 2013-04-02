@@ -18,7 +18,7 @@
 namespace webrtc {
 namespace media_optimization {
 
-VCMMediaOptimization::VCMMediaOptimization(WebRtc_Word32 id,
+VCMMediaOptimization::VCMMediaOptimization(int32_t id,
                                            Clock* clock):
 _id(id),
 _clock(clock),
@@ -62,7 +62,7 @@ VCMMediaOptimization::~VCMMediaOptimization(void)
     delete _qmResolution;
 }
 
-WebRtc_Word32
+int32_t
 VCMMediaOptimization::Reset()
 {
     memset(_incomingFrameTimes, -1, sizeof(_incomingFrameTimes));
@@ -89,10 +89,10 @@ VCMMediaOptimization::Reset()
     return VCM_OK;
 }
 
-WebRtc_UWord32
-VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 target_bitrate,
-                                     WebRtc_UWord8 &fractionLost,
-                                     WebRtc_UWord32 roundTripTimeMs)
+uint32_t
+VCMMediaOptimization::SetTargetRates(uint32_t target_bitrate,
+                                     uint8_t &fractionLost,
+                                     uint32_t roundTripTimeMs)
 {
     // TODO(holmer): Consider putting this threshold only on the video bitrate,
     // and not on protection.
@@ -126,7 +126,7 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 target_bitrate,
     // filtered value (average or max window filter).
     // Use max window filter for now.
     FilterPacketLossMode filter_mode = kMaxFilter;
-    WebRtc_UWord8 packetLossEnc = _lossProtLogic->FilteredLoss(
+    uint8_t packetLossEnc = _lossProtLogic->FilteredLoss(
         _clock->TimeInMilliseconds(), filter_mode, fractionLost);
 
     // For now use the filtered loss for computing the robustness settings
@@ -256,12 +256,12 @@ bool
 VCMMediaOptimization::DropFrame()
 {
     // leak appropriate number of bytes
-    _frameDropper->Leak((WebRtc_UWord32)(InputFrameRate() + 0.5f));
+    _frameDropper->Leak((uint32_t)(InputFrameRate() + 0.5f));
 
     return _frameDropper->DropFrame();
 }
 
-WebRtc_Word32
+int32_t
 VCMMediaOptimization::SentFrameCount(VCMFrameCount &frameCount) const
 {
     frameCount.numDeltaFrames = _deltaFrameCnt;
@@ -269,13 +269,13 @@ VCMMediaOptimization::SentFrameCount(VCMFrameCount &frameCount) const
     return VCM_OK;
 }
 
-WebRtc_Word32
+int32_t
 VCMMediaOptimization::SetEncodingData(VideoCodecType sendCodecType,
-                                      WebRtc_Word32 maxBitRate,
-                                      WebRtc_UWord32 frameRate,
-                                      WebRtc_UWord32 target_bitrate,
-                                      WebRtc_UWord16 width,
-                                      WebRtc_UWord16 height,
+                                      int32_t maxBitRate,
+                                      uint32_t frameRate,
+                                      uint32_t target_bitrate,
+                                      uint16_t width,
+                                      uint16_t height,
                                       int numLayers)
 {
     // Everything codec specific should be reset here since this means the codec
@@ -300,13 +300,13 @@ VCMMediaOptimization::SetEncodingData(VideoCodecType sendCodecType,
     _codecWidth = width;
     _codecHeight = height;
     _numLayers = (numLayers <= 1) ? 1 : numLayers;  // Can also be zero.
-    WebRtc_Word32 ret = VCM_OK;
+    int32_t ret = VCM_OK;
     ret = _qmResolution->Initialize(target_bitrate_kbps, _userFrameRate,
                                     _codecWidth, _codecHeight, _numLayers);
     return ret;
 }
 
-WebRtc_Word32
+int32_t
 VCMMediaOptimization::RegisterProtectionCallback(VCMProtectionCallback*
                                                  protectionCallback)
 {
@@ -347,7 +347,7 @@ VCMMediaOptimization::IsProtectionMethodEnabled(VCMProtectionMethodEnum method)
 }
 
 void
-VCMMediaOptimization::SetMtu(WebRtc_Word32 mtu)
+VCMMediaOptimization::SetMtu(int32_t mtu)
 {
     _maxPayloadSize = mtu;
 }
@@ -369,13 +369,13 @@ VCMMediaOptimization::SentBitRate()
     return _avgSentBitRateBps;
 }
 
-WebRtc_Word32
+int32_t
 VCMMediaOptimization::MaxBitRate()
 {
     return _maxBitRate;
 }
 
-WebRtc_Word32
+int32_t
 VCMMediaOptimization::UpdateWithEncodedData(int encodedLength,
                                             uint32_t timestamp,
                                             FrameType encodedFrameType)
@@ -481,7 +481,7 @@ void VCMMediaOptimization::UpdateSentFramerate() {
   }
 }
 
-WebRtc_Word32
+int32_t
 VCMMediaOptimization::RegisterVideoQMCallback(VCMQMSettingsCallback*
                                               videoQMSettings)
 {
@@ -515,7 +515,7 @@ VCMMediaOptimization::UpdateContentData(const VideoContentMetrics*
     }
 }
 
-WebRtc_Word32
+int32_t
 VCMMediaOptimization::SelectQuality()
 {
     // Reset quantities for QM select
@@ -526,7 +526,7 @@ VCMMediaOptimization::SelectQuality()
 
     // Select quality mode
     VCMResolutionScale* qm = NULL;
-    WebRtc_Word32 ret = _qmResolution->SelectResolution(&qm);
+    int32_t ret = _qmResolution->SelectResolution(&qm);
     if (ret < 0)
     {
         return ret;
@@ -562,7 +562,7 @@ VCMMediaOptimization::CheckStatusForQMchange()
     // (to sample the metrics) from the event lastChangeTime
     // lastChangeTime is the time where user changed the size/rate/frame rate
     // (via SetEncodingData)
-    WebRtc_Word64 now = _clock->TimeInMilliseconds();
+    int64_t now = _clock->TimeInMilliseconds();
     if ((now - _lastQMUpdateTime) < kQmMinIntervalMs ||
         (now  - _lastChangeTime) <  kQmMinIntervalMs)
     {
@@ -614,14 +614,14 @@ bool VCMMediaOptimization::QMUpdate(VCMResolutionScale* qm) {
 void
 VCMMediaOptimization::UpdateIncomingFrameRate()
 {
-    WebRtc_Word64 now = _clock->TimeInMilliseconds();
+    int64_t now = _clock->TimeInMilliseconds();
     if (_incomingFrameTimes[0] == 0)
     {
         // first no shift
     } else
     {
         // shift
-        for(WebRtc_Word32 i = (kFrameCountHistorySize - 2); i >= 0 ; i--)
+        for(int32_t i = (kFrameCountHistorySize - 2); i >= 0 ; i--)
         {
             _incomingFrameTimes[i+1] = _incomingFrameTimes[i];
         }
@@ -632,10 +632,10 @@ VCMMediaOptimization::UpdateIncomingFrameRate()
 
 // allowing VCM to keep track of incoming frame rate
 void
-VCMMediaOptimization::ProcessIncomingFrameRate(WebRtc_Word64 now)
+VCMMediaOptimization::ProcessIncomingFrameRate(int64_t now)
 {
-    WebRtc_Word32 num = 0;
-    WebRtc_Word32 nrOfFrames = 0;
+    int32_t num = 0;
+    int32_t nrOfFrames = 0;
     for (num = 1; num < (kFrameCountHistorySize - 1); num++)
     {
         if (_incomingFrameTimes[num] <= 0 ||
@@ -650,7 +650,7 @@ VCMMediaOptimization::ProcessIncomingFrameRate(WebRtc_Word64 now)
     }
     if (num > 1)
     {
-        const WebRtc_Word64 diff = now - _incomingFrameTimes[num-1];
+        const int64_t diff = now - _incomingFrameTimes[num-1];
         _incomingFrameRate = 1.0;
         if(diff >0)
         {
@@ -659,11 +659,11 @@ VCMMediaOptimization::ProcessIncomingFrameRate(WebRtc_Word64 now)
     }
 }
 
-WebRtc_UWord32
+uint32_t
 VCMMediaOptimization::InputFrameRate()
 {
     ProcessIncomingFrameRate(_clock->TimeInMilliseconds());
-    return WebRtc_UWord32 (_incomingFrameRate + 0.5f);
+    return uint32_t (_incomingFrameRate + 0.5f);
 }
 
 }  // namespace media_optimization

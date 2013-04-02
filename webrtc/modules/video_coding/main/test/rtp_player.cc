@@ -178,7 +178,7 @@ RTPPlayer::~RTPPlayer()
     }
 }
 
-WebRtc_Word32 RTPPlayer::Initialize(const PayloadTypeList* payloadList)
+int32_t RTPPlayer::Initialize(const PayloadTypeList* payloadList)
 {
     RtpRtcp::Configuration configuration;
     configuration.id = 1;
@@ -192,7 +192,7 @@ WebRtc_Word32 RTPPlayer::Initialize(const PayloadTypeList* payloadList)
         _randVec[i] = rand();
     }
     _randVecPos = 0;
-    WebRtc_Word32 ret = _rtpModule->SetNACKStatus(kNackOff,
+    int32_t ret = _rtpModule->SetNACKStatus(kNackOff,
                                                   kMaxPacketAgeToNack);
     if (ret < 0)
     {
@@ -229,7 +229,7 @@ WebRtc_Word32 RTPPlayer::Initialize(const PayloadTypeList* payloadList)
     return 0;
 }
 
-WebRtc_Word32 RTPPlayer::ReadHeader()
+int32_t RTPPlayer::ReadHeader()
 {
     char firstline[FIRSTLINELEN];
     if (_rtpFile == NULL)
@@ -254,11 +254,11 @@ WebRtc_Word32 RTPPlayer::ReadHeader()
         return -1;
     }
 
-    WebRtc_UWord32 start_sec;
-    WebRtc_UWord32 start_usec;
-    WebRtc_UWord32 source;
-    WebRtc_UWord16 port;
-    WebRtc_UWord16 padding;
+    uint32_t start_sec;
+    uint32_t start_usec;
+    uint32_t source;
+    uint16_t port;
+    uint16_t padding;
 
     EXPECT_GT(fread(&start_sec, 4, 1, _rtpFile), 0u);
     start_sec=ntohl(start_sec);
@@ -273,18 +273,18 @@ WebRtc_Word32 RTPPlayer::ReadHeader()
     return 0;
 }
 
-WebRtc_UWord32 RTPPlayer::TimeUntilNextPacket() const
+uint32_t RTPPlayer::TimeUntilNextPacket() const
 {
-    WebRtc_Word64 timeLeft = (_nextRtpTime - _firstPacketRtpTime) -
+    int64_t timeLeft = (_nextRtpTime - _firstPacketRtpTime) -
         (_clock->TimeInMilliseconds() - _firstPacketTimeMs);
     if (timeLeft < 0)
     {
         return 0;
     }
-    return static_cast<WebRtc_UWord32>(timeLeft);
+    return static_cast<uint32_t>(timeLeft);
 }
 
-WebRtc_Word32 RTPPlayer::NextPacket(const WebRtc_Word64 timeNow)
+int32_t RTPPlayer::NextPacket(const int64_t timeNow)
 {
     // Send any packets ready to be resent,
     RawRtpPacket* resend_packet = _lostPackets.NextPacketToResend(timeNow);
@@ -309,15 +309,15 @@ WebRtc_Word32 RTPPlayer::NextPacket(const WebRtc_Word64 timeNow)
         _rtpModule->Process();
         if (_firstPacket)
         {
-            _firstPacketRtpTime = static_cast<WebRtc_Word64>(_nextRtpTime);
+            _firstPacketRtpTime = static_cast<int64_t>(_nextRtpTime);
             _firstPacketTimeMs = _clock->TimeInMilliseconds();
         }
         if (_reordering && _reorderBuffer == NULL)
         {
-            _reorderBuffer = new RawRtpPacket(reinterpret_cast<WebRtc_UWord8*>(_nextPacket), static_cast<WebRtc_UWord16>(_nextPacketLength));
+            _reorderBuffer = new RawRtpPacket(reinterpret_cast<uint8_t*>(_nextPacket), static_cast<uint16_t>(_nextPacketLength));
             return 0;
         }
-        WebRtc_Word32 ret = SendPacket(reinterpret_cast<WebRtc_UWord8*>(_nextPacket), static_cast<WebRtc_UWord16>(_nextPacketLength));
+        int32_t ret = SendPacket(reinterpret_cast<uint8_t*>(_nextPacket), static_cast<uint16_t>(_nextPacketLength));
         if (_reordering && _reorderBuffer != NULL)
         {
             RawRtpPacket* rtpPacket = _reorderBuffer;
@@ -348,14 +348,14 @@ WebRtc_Word32 RTPPlayer::NextPacket(const WebRtc_Word64 timeNow)
     return 0;
 }
 
-WebRtc_Word32 RTPPlayer::SendPacket(WebRtc_UWord8* rtpData, WebRtc_UWord16 rtpLen)
+int32_t RTPPlayer::SendPacket(uint8_t* rtpData, uint16_t rtpLen)
 {
     if ((_randVec[(_randVecPos++) % RAND_VEC_LENGTH] + 1.0)/(RAND_MAX + 1.0) < _lossRate &&
         _noLossStartup < 0)
     {
         if (_nackEnabled)
         {
-            const WebRtc_UWord16 seqNo = (rtpData[2] << 8) + rtpData[3];
+            const uint16_t seqNo = (rtpData[2] << 8) + rtpData[3];
             printf("Throw: %u\n", seqNo);
             _lostPackets.AddPacket(new RawRtpPacket(rtpData, rtpLen));
             return 0;
@@ -363,7 +363,7 @@ WebRtc_Word32 RTPPlayer::SendPacket(WebRtc_UWord8* rtpData, WebRtc_UWord16 rtpLe
     }
     else if (rtpLen > 0)
     {
-        WebRtc_Word32 ret = _rtpModule->IncomingPacket(rtpData, rtpLen);
+        int32_t ret = _rtpModule->IncomingPacket(rtpData, rtpLen);
         if (ret < 0)
         {
             return -1;
@@ -376,9 +376,9 @@ WebRtc_Word32 RTPPlayer::SendPacket(WebRtc_UWord8* rtpData, WebRtc_UWord16 rtpLe
     return 1;
 }
 
-WebRtc_Word32 RTPPlayer::ReadPacket(WebRtc_Word16* rtpdata, WebRtc_UWord32* offset)
+int32_t RTPPlayer::ReadPacket(int16_t* rtpdata, uint32_t* offset)
 {
-    WebRtc_UWord16 length, plen;
+    uint16_t length, plen;
 
     if (fread(&length,2,1,_rtpFile)==0)
         return(-1);
@@ -393,7 +393,7 @@ WebRtc_Word32 RTPPlayer::ReadPacket(WebRtc_Word16* rtpdata, WebRtc_UWord32* offs
     *offset=ntohl(*offset);
 
     // Use length here because a plen of 0 specifies rtcp
-    length = (WebRtc_UWord16) (length - HDR_SIZE);
+    length = (uint16_t) (length - HDR_SIZE);
     if (fread((unsigned short *) rtpdata,1,length,_rtpFile) != length)
         return(-1);
 
@@ -408,7 +408,7 @@ WebRtc_Word32 RTPPlayer::ReadPacket(WebRtc_Word16* rtpdata, WebRtc_UWord32* offs
     return plen;
 }
 
-WebRtc_Word32 RTPPlayer::SimulatePacketLoss(float lossRate, bool enableNack, WebRtc_UWord32 rttMs)
+int32_t RTPPlayer::SimulatePacketLoss(float lossRate, bool enableNack, uint32_t rttMs)
 {
     _nackEnabled = enableNack;
     _lossRate = lossRate;
@@ -416,13 +416,13 @@ WebRtc_Word32 RTPPlayer::SimulatePacketLoss(float lossRate, bool enableNack, Web
     return 0;
 }
 
-WebRtc_Word32 RTPPlayer::SetReordering(bool enabled)
+int32_t RTPPlayer::SetReordering(bool enabled)
 {
     _reordering = enabled;
     return 0;
 }
 
-WebRtc_Word32 RTPPlayer::ResendPackets(const WebRtc_UWord16* sequenceNumbers, WebRtc_UWord16 length)
+int32_t RTPPlayer::ResendPackets(const uint16_t* sequenceNumbers, uint16_t length)
 {
     if (sequenceNumbers == NULL)
     {

@@ -22,7 +22,7 @@ class FrameStorageCallback : public VCMFrameStorageCallback
 public:
     FrameStorageCallback(VideoCodingModule* vcm) : _vcm(vcm) {}
 
-    WebRtc_Word32 StoreReceivedFrame(const EncodedVideoData& frameToStore)
+    int32_t StoreReceivedFrame(const EncodedVideoData& frameToStore)
     {
         _vcm->DecodeFromStorage(frameToStore);
         return VCM_OK;
@@ -37,12 +37,12 @@ int DecodeFromStorageTest(CmdArgs& args)
     // BEGIN Settings
     bool protectionEnabled = false;
     VCMVideoProtection protectionMethod = kProtectionNack;
-    WebRtc_UWord32 rttMS = 100;
+    uint32_t rttMS = 100;
     float lossRate = 0.00f;
     bool reordering = false;
-    WebRtc_UWord32 renderDelayMs = 0;
-    WebRtc_UWord32 minPlayoutDelayMs = 0;
-    const WebRtc_Word64 MAX_RUNTIME_MS = -1;
+    uint32_t renderDelayMs = 0;
+    uint32_t minPlayoutDelayMs = 0;
+    const int64_t MAX_RUNTIME_MS = -1;
     std::string rtpFilename = args.inputFile;
     std::string outFilename = args.outputFile;
     if (outFilename == "")
@@ -67,7 +67,7 @@ int DecodeFromStorageTest(CmdArgs& args)
                                                                &event_factory);
     FrameStorageCallback storageCallback(vcmPlayback);
     RtpDataCallback dataCallback(vcm);
-    WebRtc_Word32 ret = vcm->InitializeReceiver();
+    int32_t ret = vcm->InitializeReceiver();
     if (ret < 0)
     {
         return -1;

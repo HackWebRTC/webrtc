@@ -30,7 +30,7 @@ struct PayloadCodecTuple;
 struct RawRtpPacket
 {
 public:
-    RawRtpPacket(WebRtc_UWord8* rtp_data, WebRtc_UWord16 rtp_length);
+    RawRtpPacket(uint8_t* rtp_data, uint16_t rtp_length);
     ~RawRtpPacket();
 
     uint8_t* data;
@@ -66,10 +66,10 @@ class LostPackets {
 
 struct PayloadCodecTuple
 {
-    PayloadCodecTuple(WebRtc_UWord8 plType, std::string codecName, webrtc::VideoCodecType type) :
+    PayloadCodecTuple(uint8_t plType, std::string codecName, webrtc::VideoCodecType type) :
         name(codecName), payloadType(plType), codecType(type) {};
     const std::string name;
-    const WebRtc_UWord8 payloadType;
+    const uint8_t payloadType;
     const webrtc::VideoCodecType codecType;
 };
 
@@ -81,37 +81,37 @@ public:
               webrtc::Clock* clock);
     virtual ~RTPPlayer();
 
-    WebRtc_Word32 Initialize(const PayloadTypeList* payloadList);
-    WebRtc_Word32 NextPacket(const WebRtc_Word64 timeNow);
-    WebRtc_UWord32 TimeUntilNextPacket() const;
-    WebRtc_Word32 SimulatePacketLoss(float lossRate, bool enableNack = false, WebRtc_UWord32 rttMs = 0);
-    WebRtc_Word32 SetReordering(bool enabled);
-    WebRtc_Word32 ResendPackets(const WebRtc_UWord16* sequenceNumbers, WebRtc_UWord16 length);
+    int32_t Initialize(const PayloadTypeList* payloadList);
+    int32_t NextPacket(const int64_t timeNow);
+    uint32_t TimeUntilNextPacket() const;
+    int32_t SimulatePacketLoss(float lossRate, bool enableNack = false, uint32_t rttMs = 0);
+    int32_t SetReordering(bool enabled);
+    int32_t ResendPackets(const uint16_t* sequenceNumbers, uint16_t length);
     void Print() const;
 
 private:
-    WebRtc_Word32 SendPacket(WebRtc_UWord8* rtpData, WebRtc_UWord16 rtpLen);
-    WebRtc_Word32 ReadPacket(WebRtc_Word16* rtpdata, WebRtc_UWord32* offset);
-    WebRtc_Word32 ReadHeader();
+    int32_t SendPacket(uint8_t* rtpData, uint16_t rtpLen);
+    int32_t ReadPacket(int16_t* rtpdata, uint32_t* offset);
+    int32_t ReadHeader();
     webrtc::Clock*     _clock;
     FILE*              _rtpFile;
     webrtc::RtpRtcp*   _rtpModule;
-    WebRtc_UWord32     _nextRtpTime;
+    uint32_t     _nextRtpTime;
     webrtc::RtpData*   _dataCallback;
     bool               _firstPacket;
     float              _lossRate;
     bool               _nackEnabled;
     LostPackets        _lostPackets;
-    WebRtc_UWord32     _resendPacketCount;
-    WebRtc_Word32      _noLossStartup;
+    uint32_t     _resendPacketCount;
+    int32_t      _noLossStartup;
     bool               _endOfFile;
-    WebRtc_UWord32     _rttMs;
-    WebRtc_Word64      _firstPacketRtpTime;
-    WebRtc_Word64      _firstPacketTimeMs;
+    uint32_t     _rttMs;
+    int64_t      _firstPacketRtpTime;
+    int64_t      _firstPacketTimeMs;
     RawRtpPacket*      _reorderBuffer;
     bool               _reordering;
-    WebRtc_Word16      _nextPacket[8000];
-    WebRtc_Word32      _nextPacketLength;
+    int16_t      _nextPacket[8000];
+    int32_t      _nextPacketLength;
     int                _randVec[RAND_VEC_LENGTH];
     int                _randVecPos;
 };

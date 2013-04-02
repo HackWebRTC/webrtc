@@ -22,7 +22,7 @@ namespace webrtc {
 
 enum { kInitialMaxJitterEstimate = 0 };
 
-VCMJitterEstimator::VCMJitterEstimator(WebRtc_Word32 vcmId, WebRtc_Word32 receiverId) :
+VCMJitterEstimator::VCMJitterEstimator(int32_t vcmId, int32_t receiverId) :
 _vcmId(vcmId),
 _receiverId(receiverId),
 _phi(0.97),
@@ -114,7 +114,7 @@ VCMJitterEstimator::ResetNackCount()
 
 // Updates the estimates with the new measurements
 void
-VCMJitterEstimator::UpdateEstimate(WebRtc_Word64 frameDelayMS, WebRtc_UWord32 frameSizeBytes,
+VCMJitterEstimator::UpdateEstimate(int64_t frameDelayMS, uint32_t frameSizeBytes,
                                             bool incompleteFrame /* = false */)
 {
     WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
@@ -235,8 +235,8 @@ VCMJitterEstimator::FrameNacked()
 // Updates Kalman estimate of the channel
 // The caller is expected to sanity check the inputs.
 void
-VCMJitterEstimator::KalmanEstimateChannel(WebRtc_Word64 frameDelayMS,
-                                          WebRtc_Word32 deltaFSBytes)
+VCMJitterEstimator::KalmanEstimateChannel(int64_t frameDelayMS,
+                                          int32_t deltaFSBytes)
 {
     double Mh[2];
     double hMh_sigma;
@@ -313,8 +313,8 @@ VCMJitterEstimator::KalmanEstimateChannel(WebRtc_Word64 frameDelayMS,
 // Calculate difference in delay between a sample and the
 // expected delay estimated by the Kalman filter
 double
-VCMJitterEstimator::DeviationFromExpectedDelay(WebRtc_Word64 frameDelayMS,
-                                               WebRtc_Word32 deltaFSBytes) const
+VCMJitterEstimator::DeviationFromExpectedDelay(int64_t frameDelayMS,
+                                               int32_t deltaFSBytes) const
 {
     return frameDelayMS - (_theta[0] * deltaFSBytes + _theta[1]);
 }
@@ -395,13 +395,13 @@ VCMJitterEstimator::PostProcessEstimate()
 }
 
 void
-VCMJitterEstimator::UpdateRtt(WebRtc_UWord32 rttMs)
+VCMJitterEstimator::UpdateRtt(uint32_t rttMs)
 {
     _rttFilter.Update(rttMs);
 }
 
 void
-VCMJitterEstimator::UpdateMaxFrameSize(WebRtc_UWord32 frameSizeBytes)
+VCMJitterEstimator::UpdateMaxFrameSize(uint32_t frameSizeBytes)
 {
     if (_maxFrameSize < frameSizeBytes)
     {

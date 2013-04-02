@@ -34,11 +34,11 @@ MainSenderThread(void* obj)
     EventWrapper& waitEvent = *EventWrapper::Create();
     // preparing a frame for encoding
     I420VideoFrame sourceFrame;
-    WebRtc_Word32 width = state->_args.width;
-    WebRtc_Word32 height = state->_args.height;
+    int32_t width = state->_args.width;
+    int32_t height = state->_args.height;
     float frameRate = state->_args.frameRate;
-    WebRtc_Word32 lengthSourceFrame  = 3*width*height/2;
-    WebRtc_UWord8* tmpBuffer = new WebRtc_UWord8[lengthSourceFrame];
+    int32_t lengthSourceFrame  = 3*width*height/2;
+    uint8_t* tmpBuffer = new uint8_t[lengthSourceFrame];
 
     if (state->_sourceFile == NULL)
     {
@@ -65,10 +65,10 @@ MainSenderThread(void* obj)
                                 size_uv, tmpBuffer + size_y + size_uv,
                                 width, height,
                                 width, half_width, half_width);
-        state->_timestamp += (WebRtc_UWord32)(9e4 / frameRate);
+        state->_timestamp += (uint32_t)(9e4 / frameRate);
         sourceFrame.set_timestamp(state->_timestamp);
 
-        WebRtc_Word32 ret = state->_vcm.AddVideoFrame(sourceFrame);
+        int32_t ret = state->_vcm.AddVideoFrame(sourceFrame);
         if (ret < 0)
         {
             printf("Add Frame error: %d\n", ret);
@@ -105,21 +105,21 @@ int MTRxTxTest(CmdArgs& args)
     else
         outname = args.outputFile;
 
-    WebRtc_UWord16  width = args.width;
-    WebRtc_UWord16  height = args.height;
+    uint16_t  width = args.width;
+    uint16_t  height = args.height;
 
     float         frameRate = args.frameRate;
     float         bitRate = args.bitRate;
-    WebRtc_Word32   numberOfCores = 1;
+    int32_t   numberOfCores = 1;
 
     // error resilience/network
     // Nack support is currently not implemented in this test.
     bool          nackEnabled = false;
     bool          fecEnabled = false;
-    WebRtc_UWord8   rttMS = 20;
+    uint8_t   rttMS = 20;
     float         lossRate = 0.0*255; // no packet loss
-    WebRtc_UWord32  renderDelayMs = 0;
-    WebRtc_UWord32  minPlayoutDelayMs = 0;
+    uint32_t  renderDelayMs = 0;
+    uint32_t  minPlayoutDelayMs = 0;
 
     /* TEST SET-UP */
 
@@ -187,7 +187,7 @@ int MTRxTxTest(CmdArgs& args)
     // registering codecs for the VCM module
     VideoCodec sendCodec;
     vcm->InitializeSender();
-    WebRtc_Word32 numberOfCodecs = vcm->NumberOfCodecs();
+    int32_t numberOfCodecs = vcm->NumberOfCodecs();
     if (numberOfCodecs < 1)
     {
         return -1;
@@ -203,7 +203,7 @@ int MTRxTxTest(CmdArgs& args)
     sendCodec.startBitrate = (int) bitRate;
     sendCodec.height = height;
     sendCodec.width = width;
-    sendCodec.maxFramerate = (WebRtc_UWord8)frameRate;
+    sendCodec.maxFramerate = (uint8_t)frameRate;
     vcm->RegisterSendCodec(&sendCodec, numberOfCores, 1440);
     vcm->RegisterReceiveCodec(&sendCodec, numberOfCores); // same settings for encode and decode
 
@@ -240,7 +240,7 @@ int MTRxTxTest(CmdArgs& args)
     rtp->SetNACKStatus(nackEnabled ? kNackRtcp : kNackOff, kMaxPacketAgeToNack);
 
     vcm->SetChannelParameters(static_cast<uint32_t>(1000 * bitRate),
-                              (WebRtc_UWord8) lossRate, rttMS);
+                              (uint8_t) lossRate, rttMS);
 
     SharedRTPState mtState(*vcm, *rtp); // receive side
     SendSharedState mtSendState(*vcm, *rtp, args); // send side

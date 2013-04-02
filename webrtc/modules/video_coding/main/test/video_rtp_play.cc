@@ -24,9 +24,9 @@
 
 using namespace webrtc;
 
-WebRtc_Word32
-RtpDataCallback::OnReceivedPayloadData(const WebRtc_UWord8* payloadData,
-                                          const WebRtc_UWord16 payloadSize,
+int32_t
+RtpDataCallback::OnReceivedPayloadData(const uint8_t* payloadData,
+                                          const uint16_t payloadSize,
                                           const WebRtcRTPHeader* rtpHeader)
 {
     return _vcm->IncomingPacket(payloadData, payloadSize, *rtpHeader);
@@ -44,7 +44,7 @@ FrameReceiveCallback::~FrameReceiveCallback()
     }
 }
 
-WebRtc_Word32
+int32_t
 FrameReceiveCallback::FrameToRender(I420VideoFrame& videoFrame)
 {
     if (_timingFile == NULL)
@@ -114,12 +114,12 @@ int RtpPlay(CmdArgs& args)
     // BEGIN Settings
     bool protectionEnabled = true;
     VCMVideoProtection protectionMethod = kProtectionNack;
-    WebRtc_UWord32 rttMS = 0;
+    uint32_t rttMS = 0;
     float lossRate = 0.0f;
     bool reordering = false;
-    WebRtc_UWord32 renderDelayMs = 0;
-    WebRtc_UWord32 minPlayoutDelayMs = 0;
-    const WebRtc_Word64 MAX_RUNTIME_MS = -1;
+    uint32_t renderDelayMs = 0;
+    uint32_t minPlayoutDelayMs = 0;
+    const int64_t MAX_RUNTIME_MS = -1;
     std::string outFile = args.outputFile;
     if (outFile == "")
         outFile = test::OutputPath() + "RtpPlay_decoded.yuv";
@@ -147,7 +147,7 @@ int RtpPlay(CmdArgs& args)
 
     // Set up
 
-    WebRtc_Word32 ret = vcm->InitializeReceiver();
+    int32_t ret = vcm->InitializeReceiver();
     if (ret < 0)
     {
         return -1;

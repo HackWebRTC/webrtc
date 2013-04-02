@@ -34,7 +34,7 @@ TransportCallback::SendPacket(int channel, const void *data, int len)
 
     if (_rtpDump != NULL)
     {
-        if (_rtpDump->DumpPacket((const WebRtc_UWord8*)data, len) != 0)
+        if (_rtpDump->DumpPacket((const uint8_t*)data, len) != 0)
         {
             return -1;
         }
@@ -58,8 +58,8 @@ TransportCallback::SendPacket(int channel, const void *data, int len)
         // Simulate receive time = network delay + packet jitter
         // simulated as a Normal distribution random variable with
         // mean = networkDelay and variance = jitterVar
-        WebRtc_Word32
-        simulatedDelay = (WebRtc_Word32)NormalDist(_networkDelayMs,
+        int32_t
+        simulatedDelay = (int32_t)NormalDist(_networkDelayMs,
                                                    sqrt(_jitterVar));
         newPacket->receiveTime = now + simulatedDelay;
         _rtpPackets.push_back(newPacket);
@@ -79,7 +79,7 @@ TransportCallback::TransportPackets()
     {
         // Take first packet in list
         packet = _rtpPackets.front();
-        WebRtc_Word64 timeToReceive = packet->receiveTime - now;
+        int64_t timeToReceive = packet->receiveTime - now;
         if (timeToReceive > 0)
         {
             // No available packets to send
@@ -88,7 +88,7 @@ TransportCallback::TransportPackets()
 
         _rtpPackets.pop_front();
         // Send to receive side
-        if (_rtp->IncomingPacket((const WebRtc_UWord8*)packet->data,
+        if (_rtp->IncomingPacket((const uint8_t*)packet->data,
                                      packet->length) < 0)
         {
             delete packet;

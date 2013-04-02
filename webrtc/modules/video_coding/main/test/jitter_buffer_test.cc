@@ -36,7 +36,7 @@ int CheckOutFrame(VCMEncodedFrame* frameOut, unsigned int size, bool startCode)
         return -1;
     }
 
-    const WebRtc_UWord8* outData = frameOut->Buffer();
+    const uint8_t* outData = frameOut->Buffer();
 
     unsigned int i = 0;
 
@@ -96,10 +96,10 @@ int JitterBufferTest(CmdArgs& args)
     Clock* clock = Clock::GetRealTimeClock();
 
     // Start test
-    WebRtc_UWord16 seqNum = 1234;
-    WebRtc_UWord32 timeStamp = 0;
+    uint16_t seqNum = 1234;
+    uint32_t timeStamp = 0;
     int size = 1400;
-    WebRtc_UWord8 data[1500];
+    uint8_t data[1500];
     VCMPacket packet(data, size, seqNum, timeStamp, true);
 
     NullEventFactory event_factory;
@@ -109,7 +109,7 @@ int JitterBufferTest(CmdArgs& args)
     timeStamp = 123*90;
     FrameType incomingFrameType(kVideoFrameKey);
     VCMEncodedFrame* frameOut=NULL;
-    WebRtc_Word64 renderTimeMs = 0;
+    int64_t renderTimeMs = 0;
     packet.timestamp = timeStamp;
     packet.seqNum = seqNum;
 
@@ -1568,8 +1568,8 @@ int JitterBufferTest(CmdArgs& args)
 
     loop = 0;
     seqNum = 65485;
-    WebRtc_UWord32 timeStampStart = timeStamp +  33*90;
-    WebRtc_UWord32 timeStampFirstKey = 0;
+    uint32_t timeStampStart = timeStamp +  33*90;
+    uint32_t timeStampFirstKey = 0;
     VCMEncodedFrame* ptrLastDeltaFrame = NULL;
     VCMEncodedFrame* ptrFirstKeyFrame = NULL;
     // insert MAX_NUMBER_OF_FRAMES frames

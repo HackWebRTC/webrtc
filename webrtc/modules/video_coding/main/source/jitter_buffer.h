@@ -285,7 +285,7 @@ class VCMJitterBuffer {
   // Calculates network delays used for jitter calculations.
   VCMInterFrameDelay inter_frame_delay_;
   VCMJitterSample waiting_for_completion_;
-  WebRtc_UWord32 rtt_ms_;
+  uint32_t rtt_ms_;
 
   // NACK and retransmissions.
   VCMNackMode nack_mode_;
