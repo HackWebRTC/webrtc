@@ -127,14 +127,12 @@ bool VideoEngine::Delete(VideoEngine*& video_engine) {
     return false;
   }
 #endif
-#ifdef WEBRTC_VIDEO_ENGINE_NETWORK_API
   ViENetworkImpl* vie_network = vie_impl;
   if (vie_network->GetCount() > 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, g_vie_active_instance_counter,
                  "ViENetwork ref count: %d", vie_network->GetCount());
     return false;
   }
-#endif
 #ifdef WEBRTC_VIDEO_ENGINE_RENDER_API
   ViERenderImpl* vie_render = vie_impl;
   if (vie_render->GetCount() > 0) {

@@ -13,21 +13,20 @@
 
 #include <list>
 
-#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
-#include "modules/udp_transport/interface/udp_transport.h"
-#include "modules/video_coding/main/interface/video_coding_defines.h"
-#include "system_wrappers/interface/scoped_ptr.h"
-#include "system_wrappers/interface/tick_util.h"
-#include "typedefs.h"  // NOLINT
-#include "video_engine/include/vie_network.h"
-#include "video_engine/include/vie_rtp_rtcp.h"
-#include "video_engine/vie_defines.h"
-#include "video_engine/vie_file_recorder.h"
-#include "video_engine/vie_frame_provider_base.h"
-#include "video_engine/vie_receiver.h"
-#include "video_engine/vie_sender.h"
-#include "video_engine/vie_sync_module.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/typedefs.h"
+#include "webrtc/video_engine/include/vie_network.h"
+#include "webrtc/video_engine/include/vie_rtp_rtcp.h"
+#include "webrtc/video_engine/vie_defines.h"
+#include "webrtc/video_engine/vie_file_recorder.h"
+#include "webrtc/video_engine/vie_frame_provider_base.h"
+#include "webrtc/video_engine/vie_receiver.h"
+#include "webrtc/video_engine/vie_sender.h"
+#include "webrtc/video_engine/vie_sync_module.h"
 
 namespace webrtc {
 
@@ -248,7 +247,6 @@ class ViEChannel
   bool Sending();
   WebRtc_Word32 StartReceive();
   WebRtc_Word32 StopReceive();
-  bool Receiving();
 
   WebRtc_Word32 RegisterSendTransport(Transport* transport);
   WebRtc_Word32 DeregisterSendTransport();
@@ -260,25 +258,6 @@ class ViEChannel
   // Incoming packet from external transport.
   WebRtc_Word32 ReceivedRTCPPacket(const void* rtcp_packet,
                                    const WebRtc_Word32 rtcp_packet_length);
-
-  WebRtc_Word32 EnableIPv6();
-  bool IsIPv6Enabled();
-  WebRtc_Word32 SetSourceFilter(const WebRtc_UWord16 rtp_port,
-                                const WebRtc_UWord16 rtcp_port,
-                                const char* ip_address);
-  WebRtc_Word32 GetSourceFilter(WebRtc_UWord16* rtp_port,
-                                WebRtc_UWord16* rtcp_port,
-                                char* ip_address) const;
-
-  WebRtc_Word32 SetToS(const WebRtc_Word32 DSCP, const bool use_set_sockOpt);
-  WebRtc_Word32 GetToS(WebRtc_Word32* DSCP, bool* use_set_sockOpt) const;
-  WebRtc_Word32 SetSendGQoS(const bool enable,
-                            const WebRtc_Word32 service_type,
-                            const WebRtc_UWord32 max_bitrate,
-                            const WebRtc_Word32 overrideDSCP);
-  WebRtc_Word32 GetSendGQoS(bool* enabled,
-                            WebRtc_Word32* service_type,
-                            WebRtc_Word32* overrideDSCP) const;
 
   // Sets the maximum transfer unit size for the network link, i.e. including
   // IP, UDP and RTP headers.
@@ -297,11 +276,6 @@ class ViEChannel
   bool NetworkObserverRegistered();
   WebRtc_Word32 SetPeriodicDeadOrAliveStatus(
       const bool enable, const WebRtc_UWord32 sample_time_seconds);
-
-  WebRtc_Word32 SendUDPPacket(const WebRtc_Word8* data,
-                              const WebRtc_UWord32 length,
-                              WebRtc_Word32& transmitted_bytes,
-                              bool use_rtcp_socket);
 
   WebRtc_Word32 EnableColorEnhancement(bool enable);
 
@@ -384,9 +358,6 @@ class ViEChannel
   scoped_ptr<RtpRtcp> rtp_rtcp_;
   std::list<RtpRtcp*> simulcast_rtp_rtcp_;
   std::list<RtpRtcp*> removed_rtp_rtcp_;
-#ifndef WEBRTC_EXTERNAL_TRANSPORT
-  UdpTransport& socket_transport_;
-#endif
   VideoCodingModule& vcm_;
   ViEReceiver vie_receiver_;
   ViESender vie_sender_;

@@ -325,14 +325,6 @@ int ViEBaseImpl::StartReceive(const int video_channel) {
     shared_data_.SetLastError(kViEBaseInvalidChannelId);
     return -1;
   }
-  if (vie_channel->Receiving()) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_.instance_id(), video_channel),
-                 "%s: Channel %d already receive.", __FUNCTION__,
-                 video_channel);
-    shared_data_.SetLastError(kViEBaseAlreadyReceiving);
-    return -1;
-  }
   if (vie_channel->StartReceive() != 0) {
     shared_data_.SetLastError(kViEBaseUnknownError);
     return -1;
