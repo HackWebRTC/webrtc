@@ -164,6 +164,7 @@ bool ProcessThreadImpl::Process()
         {
             return true;
         }
+        CriticalSectionScoped lock(_critSectModules);
         if(!_thread)
         {
             return false;
