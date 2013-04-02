@@ -8,14 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "udp_socket2_windows.h"
+#include "modules/udp_transport/source/udp_socket2_windows.h"
 
 #include <assert.h>
 #include <stdlib.h>
 #include <winsock2.h>
 
-#include "traffic_control_windows.h"
-#include "udp_socket2_manager_windows.h"
+#include "modules/udp_transport/source/traffic_control_windows.h"
+#include "modules/udp_transport/source/udp_socket2_manager_windows.h"
+#include "system_wrappers/interface/sleep.h"
 
 #pragma warning(disable : 4311)
 
@@ -627,7 +628,7 @@ WebRtc_Word32 UdpSocket2Windows::PostRecv(PerIoContext* pIoContext)
                     tries);
                 // Tell the OS that this is a good place to context switch if
                 // it wants to.
-                Sleep(0);
+                SleepMs(0);
             }
         }
         if((rxError == ERROR_IO_PENDING) || (nRet == 0))
