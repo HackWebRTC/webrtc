@@ -33,6 +33,7 @@ AudioLevel::AudioLevel() :
 }
 
 AudioLevel::~AudioLevel() {
+    delete &_critSect;
 }
 
 void AudioLevel::Clear()
