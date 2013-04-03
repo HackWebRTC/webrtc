@@ -60,7 +60,6 @@
         'auto_test/standard/mixing_test.cc',
         'auto_test/standard/neteq_stats_test.cc',
         'auto_test/standard/neteq_test.cc',
-        'auto_test/standard/network_before_streaming_test.cc',
         'auto_test/standard/network_test.cc',
         'auto_test/standard/rtp_rtcp_before_streaming_test.cc',
         'auto_test/standard/rtp_rtcp_test.cc',

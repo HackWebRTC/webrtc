@@ -27,9 +27,6 @@
 #include "webrtc/voice_engine/shared_data.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
 
-#ifndef WEBRTC_EXTERNAL_TRANSPORT
-#include "webrtc/modules/udp_transport/interface/udp_transport.h"
-#endif
 #ifdef WEBRTC_DTMF_DETECTION
 #include "voe_dtmf.h" // TelephoneEventDetectionMethods, TelephoneEventObserver
 #endif
@@ -62,9 +59,6 @@ class Channel:
     public RtpData,
     public RtpFeedback,
     public RtcpFeedback,
-#ifndef WEBRTC_EXTERNAL_TRANSPORT
-    public UdpTransportData, // receiving packet from sockets
-#endif
     public FileCallback, // receiving notification from file player & recorder
     public Transport,
     public RtpAudioFeedback,
@@ -103,19 +97,6 @@ public:
     WebRtc_Word32 StartReceiving();
     WebRtc_Word32 StopReceiving();
 
-#ifndef WEBRTC_EXTERNAL_TRANSPORT
-    WebRtc_Word32 SetLocalReceiver(const WebRtc_UWord16 rtpPort,
-                                   const WebRtc_UWord16 rtcpPort,
-                                   const char ipAddr[64],
-                                   const char multicastIpAddr[64]);
-    WebRtc_Word32 GetLocalReceiver(int& port, int& RTCPport, char ipAddr[]);
-    WebRtc_Word32 SetSendDestination(const WebRtc_UWord16 rtpPort,
-                                     const char ipAddr[64],
-                                     const int sourcePort,
-                                     const WebRtc_UWord16 rtcpPort);
-    WebRtc_Word32 GetSendDestination(int& port, char ipAddr[64],
-                                     int& sourcePort, int& RTCPport);
-#endif
     WebRtc_Word32 SetNetEQPlayoutMode(NetEqModes mode);
     WebRtc_Word32 GetNetEQPlayoutMode(NetEqModes& mode);
     WebRtc_Word32 SetOnHoldStatus(bool enable, OnHoldModes mode);
@@ -154,21 +135,6 @@ public:
                                     WebRtc_Word32 length);
     WebRtc_Word32 ReceivedRTCPPacket(const WebRtc_Word8* data,
                                      WebRtc_Word32 length);
-#ifndef WEBRTC_EXTERNAL_TRANSPORT
-    WebRtc_Word32 GetSourceInfo(int& rtpPort, int& rtcpPort, char ipAddr[64]);
-    WebRtc_Word32 EnableIPv6();
-    bool IPv6IsEnabled() const;
-    WebRtc_Word32 SetSourceFilter(int rtpPort, int rtcpPort,
-                                  const char ipAddr[64]);
-    WebRtc_Word32 GetSourceFilter(int& rtpPort, int& rtcpPort, char ipAddr[64]);
-    WebRtc_Word32 SetSendTOS(int DSCP, int priority, bool useSetSockopt);
-    WebRtc_Word32 GetSendTOS(int &DSCP, int& priority, bool &useSetSockopt);
-#if defined(_WIN32)
-    WebRtc_Word32 SetSendGQoS(bool enable, int serviceType, int overrideDSCP);
-    WebRtc_Word32 GetSendGQoS(bool &enabled, int &serviceType,
-                              int &overrideDSCP);
-#endif
-#endif
     WebRtc_Word32 SetPacketTimeoutNotification(bool enable, int timeoutSeconds);
     WebRtc_Word32 GetPacketTimeoutNotification(bool& enabled,
                                                int& timeoutSeconds);
@@ -178,8 +144,6 @@ public:
                                                int sampleTimeSeconds);
     WebRtc_Word32 GetPeriodicDeadOrAliveStatus(bool& enabled,
                                                int& sampleTimeSeconds);
-    WebRtc_Word32 SendUDPPacket(const void* data, unsigned int length,
-                                int& transmittedBytes, bool useRtcpSocket);
 
     // VoEFile
     int StartPlayingFileLocally(const char* fileName, const bool loop,
@@ -388,18 +352,6 @@ public:
                               const WebRtc_UWord8 volume);
 
 public:
-    // From UdpTransportData in the Socket Transport module
-    void IncomingRTPPacket(const WebRtc_Word8* incomingRtpPacket,
-                           const WebRtc_Word32 rtpPacketLength,
-                           const char* fromIP,
-                           const WebRtc_UWord16 fromPort);
-
-    void IncomingRTCPPacket(const WebRtc_Word8* incomingRtcpPacket,
-                            const WebRtc_Word32 rtcpPacketLength,
-                            const char* fromIP,
-                            const WebRtc_UWord16 fromPort);
-
-public:
     // From Transport (called by the RTP/RTCP module)
     int SendPacket(int /*channel*/, const void *data, int len);
     int SendRTCPPacket(int /*channel*/, const void *data, int len);
@@ -472,16 +424,6 @@ public:
     {
         return _outputAudioLevel.Level();
     }
-#ifndef WEBRTC_EXTERNAL_TRANSPORT
-    bool SendSocketsInitialized() const
-    {
-        return _socketTransportModule.SendSocketsInitialized();
-    }
-    bool ReceiveSocketsInitialized() const
-    {
-        return _socketTransportModule.ReceiveSocketsInitialized();
-    }
-#endif
     WebRtc_UWord32 Demultiplex(const AudioFrame& audioFrame);
     WebRtc_UWord32 PrepareEncodeAndSend(int mixingFrequency);
     WebRtc_UWord32 EncodeAndSend();
@@ -510,10 +452,6 @@ private:
 private:
     scoped_ptr<RtpRtcp> _rtpRtcpModule;
     AudioCodingModule& _audioCodingModule;
-#ifndef WEBRTC_EXTERNAL_TRANSPORT
-    WebRtc_UWord8 _numSocketThreads;
-    UdpTransport& _socketTransportModule;
-#endif
     RtpDump& _rtpDumpIn;
     RtpDump& _rtpDumpOut;
 private:

@@ -32,6 +32,12 @@ class MixingTest : public AfterInitializationFixture {
     : input_filename_(test::OutputPath() + "mixing_test_input.pcm"),
       output_filename_(test::OutputPath() + "mixing_test_output.pcm") {
   }
+  void SetUp() {
+    transport_ = new LoopBackTransport(voe_network_);
+  }
+  void TearDown() {
+    delete transport_;
+  }
 
   // Creates and mixes |num_remote_streams| which play a file "as microphone"
   // with |num_local_streams| which play a file "locally", using a constant
@@ -165,8 +171,7 @@ class MixingTest : public AfterInitializationFixture {
   // Start up a single remote stream.
   void StartRemoteStream(int stream, const CodecInst& codec_inst, int port) {
     EXPECT_EQ(0, voe_codec_->SetRecPayloadType(stream, codec_inst));
-    EXPECT_EQ(0, voe_base_->SetLocalReceiver(stream, port));
-    EXPECT_EQ(0, voe_base_->SetSendDestination(stream, port, "127.0.0.1"));
+    EXPECT_EQ(0, voe_network_->RegisterExternalTransport(stream, *transport_));
     EXPECT_EQ(0, voe_base_->StartReceive(stream));
     EXPECT_EQ(0, voe_base_->StartPlayout(stream));
     EXPECT_EQ(0, voe_codec_->SetSendCodec(stream, codec_inst));
@@ -180,12 +185,14 @@ class MixingTest : public AfterInitializationFixture {
       EXPECT_EQ(0, voe_base_->StopSend(streams[i]));
       EXPECT_EQ(0, voe_base_->StopPlayout(streams[i]));
       EXPECT_EQ(0, voe_base_->StopReceive(streams[i]));
+      EXPECT_EQ(0, voe_network_->DeRegisterExternalTransport(streams[i]));
       EXPECT_EQ(0, voe_base_->DeleteChannel(streams[i]));
     }
   }
 
   const std::string input_filename_;
   const std::string output_filename_;
+  LoopBackTransport* transport_;
 };
 
 // These tests assume a maximum of three mixed participants. We typically allow

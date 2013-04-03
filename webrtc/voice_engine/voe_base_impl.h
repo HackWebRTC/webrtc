@@ -44,25 +44,6 @@ public:
 
     virtual int DeleteChannel(int channel);
 
-    virtual int SetLocalReceiver(int channel, int port,
-                                 int RTCPport = kVoEDefault,
-                                 const char ipAddr[64] = NULL,
-                                 const char multiCastAddr[64] = NULL);
-
-    virtual int GetLocalReceiver(int channel, int& port, int& RTCPport,
-                                 char ipAddr[64]);
-
-    virtual int SetSendDestination(int channel, int port,
-                                   const char ipAddr[64],
-                                   int sourcePort = kVoEDefault,
-                                   int RTCPport = kVoEDefault);
-
-    virtual int GetSendDestination(int channel,
-                                   int& port,
-                                   char ipAddr[64],
-                                   int& sourcePort,
-                                   int& RTCPport);
-
     virtual int StartReceive(int channel);
 
     virtual int StartPlayout(int channel);
