@@ -17,6 +17,7 @@
 namespace webrtc {
 
 class AudioFrame;
+class CriticalSectionWrapper;
 namespace voe {
 
 class AudioLevel
@@ -25,16 +26,21 @@ public:
     AudioLevel();
     virtual ~AudioLevel();
 
-    void ComputeLevel(const AudioFrame& audioFrame);
-
+    // Called on "API thread(s)" from APIs like VoEBase::CreateChannel(),
+    // VoEBase::StopSend(), VoEVolumeControl::GetSpeechOutputLevel().
     WebRtc_Word8 Level() const;
-
     WebRtc_Word16 LevelFullRange() const;
-
     void Clear();
+
+    // Called on a native capture audio thread (platform dependent) from the
+    // AudioTransport::RecordedDataIsAvailable() callback.
+    // In Chrome, this method is called on the AudioInputDevice thread.
+    void ComputeLevel(const AudioFrame& audioFrame);
 
 private:
     enum { kUpdateFrequency = 10};
+
+    CriticalSectionWrapper& _critSect;
 
     WebRtc_Word16 _absMax;
     WebRtc_Word16 _count;

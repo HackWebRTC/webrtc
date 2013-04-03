@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "critical_section_wrapper.h"
 #include "level_indicator.h"
 #include "module_common_types.h"
 #include "signal_processing_library.h"
@@ -15,7 +16,6 @@
 namespace webrtc {
 
 namespace voe {
-
 
 // Number of bars on the indicator.
 // Note that the number of elements is specified because we are indexing it
@@ -25,28 +25,26 @@ const WebRtc_Word8 permutation[33] =
 
 
 AudioLevel::AudioLevel() :
+    _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _absMax(0),
     _count(0),
     _currentLevel(0),
-    _currentLevelFullRange(0)
-{
+    _currentLevelFullRange(0) {
 }
 
-AudioLevel::~AudioLevel()
-{
+AudioLevel::~AudioLevel() {
 }
 
-void
-AudioLevel::Clear()
+void AudioLevel::Clear()
 {
+    CriticalSectionScoped cs(&_critSect);
     _absMax = 0;
     _count = 0;
     _currentLevel = 0;
     _currentLevelFullRange = 0;
 }
 
-void
-AudioLevel::ComputeLevel(const AudioFrame& audioFrame)
+void AudioLevel::ComputeLevel(const AudioFrame& audioFrame)
 {
     WebRtc_Word16 absValue(0);
 
@@ -54,6 +52,11 @@ AudioLevel::ComputeLevel(const AudioFrame& audioFrame)
     absValue = WebRtcSpl_MaxAbsValueW16(
         audioFrame.data_,
         audioFrame.samples_per_channel_*audioFrame.num_channels_);
+
+    // Protect member access using a lock since this method is called on a
+    // dedicated audio thread in the RecordedDataIsAvailable() callback.
+    CriticalSectionScoped cs(&_critSect);
+
     if (absValue > _absMax)
     _absMax = absValue;
 
@@ -82,15 +85,15 @@ AudioLevel::ComputeLevel(const AudioFrame& audioFrame)
     }
 }
 
-WebRtc_Word8
-AudioLevel::Level() const
+WebRtc_Word8 AudioLevel::Level() const
 {
+    CriticalSectionScoped cs(&_critSect);
     return _currentLevel;
 }
 
-WebRtc_Word16
-AudioLevel::LevelFullRange() const
+WebRtc_Word16 AudioLevel::LevelFullRange() const
 {
+    CriticalSectionScoped cs(&_critSect);
     return _currentLevelFullRange;
 }
 
