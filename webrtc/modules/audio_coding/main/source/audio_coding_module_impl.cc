@@ -2053,8 +2053,11 @@ WebRtc_Word32 AudioCodingModuleImpl::IncomingPacket(
       return 0;
     }
   } else {
-    if (track_neteq_buffer_)
-      num_bytes_accumulated_ += payload_length;
+    {
+      CriticalSectionScoped lock(acm_crit_sect_);
+      if (track_neteq_buffer_)
+        num_bytes_accumulated_ += payload_length;
+    }
     return neteq_.RecIn(incoming_payload, payload_length, rtp_header);
   }
 }
@@ -2136,9 +2139,12 @@ WebRtc_Word32 AudioCodingModuleImpl::SetMinimumPlayoutDelay(
                  "Delay must be in the range of 0-10000 milliseconds.");
     return -1;
   }
-  // Don't let the extra delay modified while accumulating buffers in NetEq.
-  if (track_neteq_buffer_ && first_payload_received_)
-    return 0;
+  {
+    CriticalSectionScoped lock(acm_crit_sect_);
+    // Don't let the extra delay modified while accumulating buffers in NetEq.
+    if (track_neteq_buffer_ && first_payload_received_)
+      return 0;
+  }
   return neteq_.SetExtraDelay(time_ms);
 }
 
@@ -2665,12 +2671,14 @@ WebRtc_Word32 AudioCodingModuleImpl::PlayoutTimestamp(
     WebRtc_UWord32* timestamp) {
   WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, id_,
                "PlayoutTimestamp()");
-  if (track_neteq_buffer_) {
-    *timestamp = playout_ts_;
-    return 0;
-  } else {
-    return neteq_.PlayoutTimestamp(*timestamp);
+  {
+    CriticalSectionScoped lock(acm_crit_sect_);
+    if (track_neteq_buffer_) {
+      *timestamp = playout_ts_;
+      return 0;
+    }
   }
+  return neteq_.PlayoutTimestamp(*timestamp);
 }
 
 bool AudioCodingModuleImpl::HaveValidEncoder(const char* caller_name) const {

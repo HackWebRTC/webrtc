@@ -56,7 +56,18 @@ TransmitMixer::OnPeriodicProcess()
     }
 #endif
 
-    if (_saturationWarning)
+    bool saturationWarning = false;
+    {
+      // Modify |_saturationWarning| under lock to avoid conflict with write op
+      // in ProcessAudio and also ensure that we don't hold the lock during the
+      // callback.
+      CriticalSectionScoped cs(&_critSect);
+      saturationWarning = _saturationWarning;
+      if (_saturationWarning)
+        _saturationWarning = false;
+    }
+
+    if (saturationWarning)
     {
         CriticalSectionScoped cs(&_callbackCritSect);
         if (_voiceEngineObserverPtr)
@@ -66,7 +77,6 @@ TransmitMixer::OnPeriodicProcess()
                          " CallbackOnError(VE_SATURATION_WARNING)");
             _voiceEngineObserverPtr->CallbackOnError(-1, VE_SATURATION_WARNING);
         }
-        _saturationWarning = false;
     }
 }
 
@@ -454,6 +464,7 @@ TransmitMixer::EncodeAndSend()
 
 WebRtc_UWord32 TransmitMixer::CaptureLevel() const
 {
+    CriticalSectionScoped cs(&_critSect);
     return _captureLevel;
 }
 
@@ -1310,6 +1321,8 @@ void TransmitMixer::ProcessAudio(int delay_ms, int clock_drift,
   if (err != 0) {
     LOG(LS_ERROR) << "ProcessStream() error: " << err;
   }
+
+  CriticalSectionScoped cs(&_critSect);
 
   // Store new capture level. Only updated when analog AGC is enabled.
   _captureLevel = agc->stream_analog_level();
