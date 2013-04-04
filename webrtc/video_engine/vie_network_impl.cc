@@ -28,7 +28,6 @@
 namespace webrtc {
 
 ViENetwork* ViENetwork::GetInterface(VideoEngine* video_engine) {
-#ifdef WEBRTC_VIDEO_ENGINE_NETWORK_API
   if (!video_engine) {
     return NULL;
   }
@@ -37,9 +36,6 @@ ViENetwork* ViENetwork::GetInterface(VideoEngine* video_engine) {
   // Increase ref count.
   (*vie_networkImpl)++;
   return vie_networkImpl;
-#else
-  return NULL;
-#endif
 }
 
 int ViENetworkImpl::Release() {

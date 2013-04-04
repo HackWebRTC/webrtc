@@ -21,9 +21,6 @@ namespace webrtc
 
 VoENetwork* VoENetwork::GetInterface(VoiceEngine* voiceEngine)
 {
-#ifndef WEBRTC_VOICE_ENGINE_NETWORK_API
-    return NULL;
-#else
     if (NULL == voiceEngine)
     {
         return NULL;
@@ -31,10 +28,7 @@ VoENetwork* VoENetwork::GetInterface(VoiceEngine* voiceEngine)
     VoiceEngineImpl* s = static_cast<VoiceEngineImpl*>(voiceEngine);
     s->AddRef();
     return s;
-#endif
 }
-
-#ifdef WEBRTC_VOICE_ENGINE_NETWORK_API
 
 VoENetworkImpl::VoENetworkImpl(voe::SharedData* shared) : _shared(shared)
 {
@@ -322,7 +316,5 @@ int VoENetworkImpl::GetPeriodicDeadOrAliveStatus(int channel,
     return channelPtr->GetPeriodicDeadOrAliveStatus(enabled,
                                                     sampleTimeSeconds);
 }
-
-#endif  // WEBRTC_VOICE_ENGINE_NETWORK_API
 
 } // namespace webrtc

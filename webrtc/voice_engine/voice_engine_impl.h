@@ -42,9 +42,7 @@
 #ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
 #include "voe_neteq_stats_impl.h"
 #endif
-#ifdef WEBRTC_VOICE_ENGINE_NETWORK_API
 #include "voe_network_impl.h"
-#endif
 #ifdef WEBRTC_VOICE_ENGINE_RTP_RTCP_API
 #include "voe_rtp_rtcp_impl.h"
 #endif
@@ -87,9 +85,7 @@ class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
 #ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
                         public VoENetEqStatsImpl,
 #endif
-#ifdef WEBRTC_VOICE_ENGINE_NETWORK_API
                         public VoENetworkImpl,
-#endif
 #ifdef WEBRTC_VOICE_ENGINE_RTP_RTCP_API
                         public VoERTP_RTCPImpl,
 #endif
@@ -130,9 +126,7 @@ public:
 #ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
         VoENetEqStatsImpl(this),
 #endif
-#ifdef WEBRTC_VOICE_ENGINE_NETWORK_API
         VoENetworkImpl(this),
-#endif
 #ifdef WEBRTC_VOICE_ENGINE_RTP_RTCP_API
         VoERTP_RTCPImpl(this),
 #endif
