@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <winsock2.h>
 
+#include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/test/channel_transport/traffic_control_win.h"
 #include "webrtc/test/channel_transport/udp_socket2_manager_win.h"
 
@@ -629,7 +630,7 @@ WebRtc_Word32 UdpSocket2Windows::PostRecv(PerIoContext* pIoContext)
                     tries);
                 // Tell the OS that this is a good place to context switch if
                 // it wants to.
-                Sleep(0);
+                SleepMs(0);
             }
         }
         if((rxError == ERROR_IO_PENDING) || (nRet == 0))

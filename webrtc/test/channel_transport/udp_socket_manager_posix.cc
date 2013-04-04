@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/test/channel_transport/udp_socket_posix.h"
 
@@ -286,19 +287,13 @@ bool UdpSocketManagerPosixImpl::Process()
         if (num == SOCKET_ERROR)
         {
             // Timeout = 10 ms.
-            timespec t;
-            t.tv_sec = 0;
-            t.tv_nsec = 10000*1000;
-            nanosleep(&t, NULL);
+            SleepMs(10);
             return true;
         }
     }else
     {
         // Timeout = 10 ms.
-        timespec t;
-        t.tv_sec = 0;
-        t.tv_nsec = 10000*1000;
-        nanosleep(&t, NULL);
+        SleepMs(10);
         return true;
     }
 
