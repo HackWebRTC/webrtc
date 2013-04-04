@@ -325,14 +325,13 @@ void RunTest(std::string out_path) {
 #endif
   int channel_index = 0;
   std::vector<int> channels(kMaxNumChannels);
-  std::vector<scoped_ptr<VoiceChannelTransport> > voice_channel_transports;
+  std::vector<VoiceChannelTransport*> voice_channel_transports(kMaxNumChannels);
 
   for (i = 0; i < kMaxNumChannels; ++i) {
     channels[i] = base1->CreateChannel();
     int port = rPort + (i + 1) * 2;
 
-    voice_channel_transports[i].reset(
-        new VoiceChannelTransport(netw, channels[i]));
+    voice_channel_transports[i] = new VoiceChannelTransport(netw, channels[i]);
 
     printf("Set Send IP \n");
     res = voice_channel_transports[i]->SetSendDestination(ip, port);
@@ -878,6 +877,10 @@ void RunTest(std::string out_path) {
     ASSERT_EQ(1, scanf("%i", &i));
     newcall = (1 == i);
     // Call loop
+  }
+  for (i = 0; i < kMaxNumChannels; ++i) {
+    delete voice_channel_transports[i];
+    voice_channel_transports[i] = NULL;
   }
 
   printf("Delete channels \n");

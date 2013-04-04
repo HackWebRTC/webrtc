@@ -60,7 +60,12 @@ void VoiceChannelTransport::IncomingRTCPPacket(
 }
 
 int VoiceChannelTransport::SetLocalReceiver(WebRtc_UWord16 rtp_port) {
-  return socket_transport_->InitializeReceiveSockets(this, rtp_port);
+  int return_value = socket_transport_->InitializeReceiveSockets(this,
+                                                                 rtp_port);
+  if (return_value == 0) {
+    return socket_transport_->StartReceiving(kViENumReceiveSocketBuffers);
+  }
+  return return_value;
 }
 
 int VoiceChannelTransport::SetSendDestination(const char* ip_address,
