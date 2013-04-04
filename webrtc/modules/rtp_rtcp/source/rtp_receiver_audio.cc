@@ -17,6 +17,7 @@
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
 RTPReceiverAudio::RTPReceiverAudio(const WebRtc_Word32 id,
@@ -190,6 +191,9 @@ WebRtc_Word32 RTPReceiverAudio::ParseRtpPacket(
     const WebRtc_UWord16 packet_length,
     const WebRtc_Word64 timestamp_ms,
     const bool is_first_packet) {
+  TRACE_EVENT_INSTANT2("webrtc_rtp", "RTPReceiverAudio::ParseRtpPacket",
+                       "seqnum", rtp_header->header.sequenceNumber,
+                       "timestamp", rtp_header->header.timestamp);
 
   const WebRtc_UWord8* payload_data =
       ModuleRTPUtility::GetPayloadData(rtp_header, packet);

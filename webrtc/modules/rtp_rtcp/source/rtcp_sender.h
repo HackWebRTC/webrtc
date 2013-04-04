@@ -12,6 +12,8 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_SENDER_H_
 
 #include <map>
+#include <sstream>
+#include <string>
 
 #include "typedefs.h"
 #include "rtcp_utility.h"
@@ -25,6 +27,20 @@
 namespace webrtc {
 
 class ModuleRtpRtcpImpl; 
+
+class NACKStringBuilder
+{
+public:
+    NACKStringBuilder();
+    void PushNACK(WebRtc_UWord16 nack);
+    std::string GetResult();
+
+private:
+    std::ostringstream _stream;
+    int _count;
+    WebRtc_UWord16 _prevNack;
+    bool _consecutive;
+};
 
 class RTCPSender
 {
@@ -181,7 +197,8 @@ private:
     WebRtc_Word32 BuildNACK(WebRtc_UWord8* rtcpbuffer,
                           WebRtc_UWord32& pos,
                           const WebRtc_Word32 nackSize,
-                          const WebRtc_UWord16* nackList);
+                          const WebRtc_UWord16* nackList,
+                          std::string* nackString);
 
 private:
     WebRtc_Word32            _id;
@@ -249,6 +266,11 @@ private:
     // XR VoIP metric
     bool                _xrSendVoIPMetric;
     RTCPVoIPMetric      _xrVoIPMetric;
+
+    // Counters
+    WebRtc_UWord32      _nackCount;
+    WebRtc_UWord32      _pliCount;
+    WebRtc_UWord32      _fullIntraRequestCount;
 };
 } // namespace webrtc
 

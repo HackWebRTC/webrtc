@@ -14,6 +14,7 @@
 #include "modules/video_coding/main/interface/video_coding.h"
 #include "system_wrappers/interface/critical_section_wrapper.h"
 #include "system_wrappers/interface/trace.h"
+#include "system_wrappers/interface/trace_event.h"
 #include "video_engine/stream_synchronization.h"
 #include "video_engine/vie_channel.h"
 #include "voice_engine/include/voe_video_sync.h"
@@ -152,6 +153,10 @@ WebRtc_Word32 ViESyncModule::Process() {
     return 0;
   }
 
+  TRACE_COUNTER1("webrtc_sync", "CurrentVideoDelay",
+                 total_video_delay_target_ms);
+  TRACE_COUNTER1("webrtc_sync", "CurrentAudioDelay", current_audio_delay_ms);
+  TRACE_COUNTER1("webrtc_sync", "RelativeDelay", relative_delay_ms);
   int extra_audio_delay_ms = 0;
   // Calculate the necessary extra audio delay and desired total video
   // delay to get the streams in sync.
@@ -161,6 +166,10 @@ WebRtc_Word32 ViESyncModule::Process() {
                             &total_video_delay_target_ms)) {
     return 0;
   }
+
+  TRACE_COUNTER1("webrtc_sync", "ExtraAudioDelayTarget", extra_audio_delay_ms);
+  TRACE_COUNTER1("webrtc_sync", "TotalVideoDelayTarget",
+                 total_video_delay_target_ms);
   if (voe_sync_interface_->SetMinimumPlayoutDelay(
       voe_channel_id_, extra_audio_delay_ms) == -1) {
     WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideo, vie_channel_->Id(),

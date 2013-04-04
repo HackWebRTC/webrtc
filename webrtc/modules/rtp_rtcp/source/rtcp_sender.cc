@@ -18,10 +18,48 @@
 #include "modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 #include "system_wrappers/interface/critical_section_wrapper.h"
 #include "system_wrappers/interface/trace.h"
+#include "system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
 
 using RTCPUtility::RTCPCnameInformation;
+
+NACKStringBuilder::NACKStringBuilder() :
+    _stream(""), _count(0), _consecutive(false)
+{
+    // Empty.
+}
+
+void NACKStringBuilder::PushNACK(WebRtc_UWord16 nack)
+{
+    if (_count == 0)
+    {
+        _stream << nack;
+    } else if (nack == _prevNack + 1)
+    {
+        _consecutive = true;
+    } else
+    {
+        if (_consecutive)
+        {
+            _stream << "-" << _prevNack;
+            _consecutive = false;
+        }
+        _stream << "," << nack;
+    }
+    _count++;
+    _prevNack = nack;
+}
+
+std::string NACKStringBuilder::GetResult()
+{
+    if (_consecutive)
+    {
+        _stream << "-" << _prevNack;
+        _consecutive = false;
+    }
+    return _stream.str();
+}
 
 RTCPSender::RTCPSender(const WebRtc_Word32 id,
                        const bool audio,
@@ -79,7 +117,10 @@ RTCPSender::RTCPSender(const WebRtc_Word32 id,
     _appData(NULL),
     _appLength(0),
     _xrSendVoIPMetric(false),
-    _xrVoIPMetric()
+    _xrVoIPMetric(),
+    _nackCount(0),
+    _pliCount(0),
+    _fullIntraRequestCount(0)
 {
     memset(_CNAME, 0, sizeof(_CNAME));
     memset(_lastSendReport, 0, sizeof(_lastSendReport));
@@ -151,6 +192,11 @@ RTCPSender::Init()
     memset(_CNAME, 0, sizeof(_CNAME));
     memset(_lastSendReport, 0, sizeof(_lastSendReport));
     memset(_lastRTCPTime, 0, sizeof(_lastRTCPTime));
+
+    _nackCount = 0;
+    _pliCount = 0;
+    _fullIntraRequestCount = 0;
+
     return 0;
 }
 
@@ -1065,6 +1111,7 @@ RTCPSender::BuildREMB(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
         ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _rembSSRC[i]);
         pos += 4;
     }
+    TRACE_COUNTER1("webrtc_rtcp", "Remb", _rembBitrate);
     return 0;
 }
 
@@ -1294,7 +1341,8 @@ WebRtc_Word32
 RTCPSender::BuildNACK(WebRtc_UWord8* rtcpbuffer,
                       WebRtc_UWord32& pos,
                       const WebRtc_Word32 nackSize,
-                      const WebRtc_UWord16* nackList)
+                      const WebRtc_UWord16* nackList,
+                      std::string* nackString)
 {
     // sanity
     if(pos + 16 >= IP_PACKET_SIZE)
@@ -1324,12 +1372,14 @@ RTCPSender::BuildNACK(WebRtc_UWord8* rtcpbuffer,
     // add the list
     int i = 0;
     int numOfNackFields = 0;
+    NACKStringBuilder stringBuilder;
     while (nackSize > i && numOfNackFields < kRtcpMaxNackFields)
     {
         WebRtc_UWord16 nack = nackList[i];
         // put dow our sequence number
         ModuleRTPUtility::AssignUWord16ToBuffer(rtcpbuffer+pos, nack);
         pos += 2;
+        stringBuilder.PushNACK(nack);
 
         i++;
         numOfNackFields++;
@@ -1372,6 +1422,7 @@ RTCPSender::BuildNACK(WebRtc_UWord8* rtcpbuffer,
                     assert(!(shift > 15) && !(shift < 0));
 
                     bitmask += (1<< shift);
+                    stringBuilder.PushNACK(nackList[i]);
                     i++;
                     if(nackSize > i)
                     {
@@ -1403,6 +1454,7 @@ RTCPSender::BuildNACK(WebRtc_UWord8* rtcpbuffer,
         }
     }
     rtcpbuffer[nackSizePos]=(WebRtc_UWord8)(2+numOfNackFields);
+    *nackString = stringBuilder.GetResult();
     return 0;
 }
 
@@ -1784,6 +1836,9 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
             {
                 break;  // out of buffer
             }
+            TRACE_EVENT_INSTANT1("webrtc_rtcp", "SendRTCP", "type", "pli");
+            _pliCount++;
+            TRACE_COUNTER1("webrtc_rtcp", "PLI Count", _pliCount);
         }
         if(rtcpPacketTypeFlags & kRtcpFir)
         {
@@ -1796,6 +1851,9 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
             {
                 break;  // out of buffer
             }
+            TRACE_EVENT_INSTANT1("webrtc_rtcp", "SendRTCP", "type", "fir");
+            _fullIntraRequestCount++;
+            TRACE_COUNTER1("webrtc_rtcp", "FIR Count", _fullIntraRequestCount);
         }
         if(rtcpPacketTypeFlags & kRtcpSli)
         {
@@ -1837,6 +1895,8 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
             {
                 break;  // out of buffer
             }
+            TRACE_EVENT_INSTANT2("webrtc_rtcp", "SendRTCP", "type", "remb",
+                                 "bitrate", _rembBitrate);
         }
         if(rtcpPacketTypeFlags & kRtcpBye)
         {
@@ -1888,7 +1948,9 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
         }
         if(rtcpPacketTypeFlags & kRtcpNack)
         {
-            buildVal = BuildNACK(rtcpbuffer, pos, nackSize, nackList);
+            std::string nackString;
+            buildVal = BuildNACK(rtcpbuffer, pos, nackSize, nackList,
+                                 &nackString);
             if(buildVal == -1)
             {
                 return -1; // error
@@ -1897,6 +1959,10 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
             {
                 break;  // out of buffer
             }
+            TRACE_EVENT_INSTANT2("webrtc_rtcp", "SendRTCP", "type", "nack",
+                                 "list", TRACE_STR_COPY(nackString.c_str()));
+            _nackCount++;
+            TRACE_COUNTER1("webrtc_rtcp", "Nacks", _nackCount);
         }
         if(rtcpPacketTypeFlags & kRtcpXrVoipMetric)
         {

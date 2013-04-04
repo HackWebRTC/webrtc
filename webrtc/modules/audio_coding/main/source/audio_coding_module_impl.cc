@@ -22,6 +22,7 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
 
@@ -2231,6 +2232,8 @@ AudioPlayoutMode AudioCodingModuleImpl::PlayoutMode() const {
 // Automatic resample to the requested frequency.
 WebRtc_Word32 AudioCodingModuleImpl::PlayoutData10Ms(
     WebRtc_Word32 desired_freq_hz, AudioFrame* audio_frame) {
+  TRACE_EVENT0("webrtc_voe", "ACM::PlayoutData10Ms");
+
   bool stereo_mode;
 
   if (GetSilence(desired_freq_hz, audio_frame))
