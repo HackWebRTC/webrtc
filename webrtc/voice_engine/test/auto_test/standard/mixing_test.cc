@@ -198,7 +198,7 @@ class MixingTest : public AfterInitializationFixture {
 // These tests assume a maximum of three mixed participants. We typically allow
 // a +/- 10% range around the expected output level to account for distortion
 // from coding and processing in the loopback chain.
-TEST_F(MixingTest, FourChannelsWithOnlyThreeMixed) {
+TEST_F(MixingTest, DISABLED_FourChannelsWithOnlyThreeMixed) {
   const int16_t kInputValue = 1000;
   const int16_t kExpectedOutput = kInputValue * 3;
   RunMixingTest(4, 0, 4, kInputValue, 1.1 * kExpectedOutput,
@@ -208,7 +208,7 @@ TEST_F(MixingTest, FourChannelsWithOnlyThreeMixed) {
 // Ensure the mixing saturation protection is working. We can do this because
 // the mixing limiter is given some headroom, so the expected output is less
 // than full scale.
-TEST_F(MixingTest, VerifySaturationProtection) {
+TEST_F(MixingTest, DISABLED_VerifySaturationProtection) {
   const int16_t kInputValue = 20000;
   const int16_t kExpectedOutput = kLimiterHeadroom;
   // If this isn't satisfied, we're not testing anything.
@@ -218,7 +218,7 @@ TEST_F(MixingTest, VerifySaturationProtection) {
                0.9 * kExpectedOutput);
 }
 
-TEST_F(MixingTest, SaturationProtectionHasNoEffectOnOneChannel) {
+TEST_F(MixingTest, DISABLED_SaturationProtectionHasNoEffectOnOneChannel) {
   const int16_t kInputValue = kInt16Max;
   const int16_t kExpectedOutput = kInt16Max;
   // If this isn't satisfied, we're not testing anything.
@@ -228,21 +228,21 @@ TEST_F(MixingTest, SaturationProtectionHasNoEffectOnOneChannel) {
                 0.95 * kExpectedOutput);
 }
 
-TEST_F(MixingTest, VerifyAnonymousAndNormalParticipantMixing) {
+TEST_F(MixingTest, DISABLED_VerifyAnonymousAndNormalParticipantMixing) {
   const int16_t kInputValue = 1000;
   const int16_t kExpectedOutput = kInputValue * 2;
   RunMixingTest(1, 1, 1, kInputValue, 1.1 * kExpectedOutput,
                 0.9 * kExpectedOutput);
 }
 
-TEST_F(MixingTest, AnonymousParticipantsAreAlwaysMixed) {
+TEST_F(MixingTest, DISABLED_AnonymousParticipantsAreAlwaysMixed) {
   const int16_t kInputValue = 1000;
   const int16_t kExpectedOutput = kInputValue * 4;
   RunMixingTest(3, 1, 3, kInputValue, 1.1 * kExpectedOutput,
                 0.9 * kExpectedOutput);
 }
 
-TEST_F(MixingTest, VerifyStereoAndMonoMixing) {
+TEST_F(MixingTest, DISABLED_VerifyStereoAndMonoMixing) {
   const int16_t kInputValue = 1000;
   const int16_t kExpectedOutput = kInputValue * 2;
   RunMixingTest(2, 0, 1, kInputValue, 1.1 * kExpectedOutput,
