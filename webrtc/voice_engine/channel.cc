@@ -542,8 +542,11 @@ Channel::OnPeriodicDeadOrAlive(const WebRtc_Word32 id,
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnPeriodicDeadOrAlive(id=%d, alive=%d)", id, alive);
 
-    if (!_connectionObserver)
-        return;
+    {
+        CriticalSectionScoped cs(&_callbackCritSect);
+        if (!_connectionObserver)
+            return;
+    }
 
     WebRtc_Word32 channel = VoEChannelId(id);
     assert(channel == _channelId);

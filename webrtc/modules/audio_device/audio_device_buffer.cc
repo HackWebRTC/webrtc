@@ -524,20 +524,29 @@ WebRtc_Word32 AudioDeviceBuffer::DeliverRecordedData()
 
 WebRtc_Word32 AudioDeviceBuffer::RequestPlayoutData(WebRtc_UWord32 nSamples)
 {
+    WebRtc_UWord32 playSampleRate = 0;
+    WebRtc_UWord8 playBytesPerSample = 0;
+    WebRtc_UWord8 playChannels = 0;
     {
         CriticalSectionScoped lock(&_critSect);
 
+        // Store copies under lock and use copies hereafter to avoid race with
+        // setter methods.
+        playSampleRate = _playSampleRate;
+        playBytesPerSample = _playBytesPerSample;
+        playChannels = _playChannels;
+
         // Ensure that user has initialized all essential members
-        if ((_playBytesPerSample == 0) ||
-            (_playChannels == 0)       ||
-            (_playSampleRate == 0))
+        if ((playBytesPerSample == 0) ||
+            (playChannels == 0)       ||
+            (playSampleRate == 0))
         {
             assert(false);
             return -1;
         }
 
         _playSamples = nSamples;
-        _playSize = _playBytesPerSample * nSamples;  // {2,4}*nSamples
+        _playSize = playBytesPerSample * nSamples;  // {2,4}*nSamples
         if (_playSize > kMaxBufferSizeBytes)
         {
             assert(false);
@@ -566,9 +575,9 @@ WebRtc_Word32 AudioDeviceBuffer::RequestPlayoutData(WebRtc_UWord32 nSamples)
         WebRtc_UWord32 res(0);
 
         res = _ptrCbAudioTransport->NeedMorePlayData(_playSamples,
-                                                     _playBytesPerSample,
-                                                     _playChannels,
-                                                     _playSampleRate,
+                                                     playBytesPerSample,
+                                                     playChannels,
+                                                     playSampleRate,
                                                      &_playBuffer[0],
                                                      nSamplesOut);
         if (res != 0)

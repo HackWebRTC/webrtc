@@ -38,13 +38,15 @@
 
 namespace webrtc {
 
-TracePosix::TracePosix() {
+TracePosix::TracePosix()
+    : crit_sect_(*CriticalSectionWrapper::CreateCriticalSection()) {
   struct timeval system_time_high_res;
   gettimeofday(&system_time_high_res, 0);
   prev_api_tick_count_ = prev_tick_count_ = system_time_high_res.tv_sec;
 }
 
 TracePosix::~TracePosix() {
+  delete &crit_sect_;
   StopThread();
 }
 
@@ -60,13 +62,17 @@ WebRtc_Word32 TracePosix::AddTime(char* trace_message,
 
   const WebRtc_UWord32 ms_time = system_time_high_res.tv_usec / 1000;
   WebRtc_UWord32 prev_tickCount = 0;
-  if (level == kTraceApiCall) {
-    prev_tickCount = prev_tick_count_;
-    prev_tick_count_ = ms_time;
-  } else {
-    prev_tickCount = prev_api_tick_count_;
-    prev_api_tick_count_ = ms_time;
+  {
+    CriticalSectionScoped lock(&crit_sect_);
+    if (level == kTraceApiCall) {
+      prev_tickCount = prev_tick_count_;
+      prev_tick_count_ = ms_time;
+    } else {
+      prev_tickCount = prev_api_tick_count_;
+      prev_api_tick_count_ = ms_time;
+    }
   }
+
   WebRtc_UWord32 dw_delta_time = ms_time - prev_tickCount;
   if (prev_tickCount == 0) {
     dw_delta_time = 0;

@@ -21,6 +21,8 @@ class TracePosix : public TraceImpl {
   TracePosix();
   virtual ~TracePosix();
 
+  // This method can be called on several different threads different from
+  // the creating thread.
   virtual WebRtc_Word32 AddTime(char* trace_message,
                                 const TraceLevel level) const;
 
@@ -30,6 +32,8 @@ class TracePosix : public TraceImpl {
  private:
   volatile mutable WebRtc_UWord32  prev_api_tick_count_;
   volatile mutable WebRtc_UWord32  prev_tick_count_;
+
+  CriticalSectionWrapper& crit_sect_;
 };
 
 }  // namespace webrtc

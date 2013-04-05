@@ -209,6 +209,7 @@ int AudioProcessingImpl::set_sample_rate_hz(int rate) {
 }
 
 int AudioProcessingImpl::sample_rate_hz() const {
+  CriticalSectionScoped crit_scoped(crit_);
   return sample_rate_hz_;
 }
 

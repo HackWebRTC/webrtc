@@ -347,6 +347,7 @@ void RTCPSender::SetStartTimestamp(uint32_t start_timestamp) {
 
 void RTCPSender::SetLastRtpTime(uint32_t rtp_timestamp,
                                 int64_t capture_time_ms) {
+  CriticalSectionScoped lock(_criticalSectionRTCPSender);
   last_rtp_timestamp_ = rtp_timestamp;
   if (capture_time_ms < 0) {
     // We don't currently get a capture time from VoiceEngine.
@@ -631,13 +632,18 @@ RTCPSender::BuildSR(WebRtc_UWord8* rtcpbuffer,
     if(_audio) {
       freqHz =  _rtpRtcp.CurrentSendFrequencyHz();
     }
+
     // The timestamp of this RTCP packet should be estimated as the timestamp of
     // the frame being captured at this moment. We are calculating that
     // timestamp as the last frame's timestamp + the time since the last frame
     // was captured.
-    RTPtime = start_timestamp_ + last_rtp_timestamp_ + (
-        _clock->TimeInMilliseconds() - last_frame_capture_time_ms_) *
-            (freqHz / 1000);
+    {
+      // Needs protection since this method is called on the process thread.
+      CriticalSectionScoped lock(_criticalSectionRTCPSender);
+      RTPtime = start_timestamp_ + last_rtp_timestamp_ + (
+          _clock->TimeInMilliseconds() - last_frame_capture_time_ms_) *
+          (freqHz / 1000);
+    }
 
     // Add sender data
     // Save  for our length field

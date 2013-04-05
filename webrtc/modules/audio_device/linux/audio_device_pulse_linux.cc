@@ -1512,21 +1512,27 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StartRecording()
     _timeEventRec.Set();
     if (kEventTimeout == _recStartEvent.Wait(10000))
     {
-        _startRec = false;
+        {
+            CriticalSectionScoped lock(&_critSect);
+            _startRec = false;
+        }
         StopRecording();
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
                      "  failed to activate recording");
         return -1;
     }
 
-    if (_recording)
     {
-        // the recording state is set by the audio thread after recording has started
-    } else
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "  failed to activate recording");
-        return -1;
+        CriticalSectionScoped lock(&_critSect);
+        if (_recording)
+        {
+            // the recording state is set by the audio thread after recording has started
+        } else
+        {
+            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                         "  failed to activate recording");
+            return -1;
+        }
     }
 
     return 0;
@@ -1602,6 +1608,7 @@ bool AudioDeviceLinuxPulse::RecordingIsInitialized() const
 
 bool AudioDeviceLinuxPulse::Recording() const
 {
+    CriticalSectionScoped lock(&_critSect);
     return (_recording);
 }
 
@@ -1612,7 +1619,6 @@ bool AudioDeviceLinuxPulse::PlayoutIsInitialized() const
 
 WebRtc_Word32 AudioDeviceLinuxPulse::StartPlayout()
 {
-
     if (!_playIsInitialized)
     {
         return -1;
@@ -1626,25 +1632,34 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StartPlayout()
     // set state to ensure that playout starts from the audio thread
     _startPlay = true;
 
+    // Both |_startPlay| and |_playing| needs protction since they are also
+    // accessed on the playout thread.
+
     // the audio thread will signal when playout has started
     _timeEventPlay.Set();
     if (kEventTimeout == _playStartEvent.Wait(10000))
     {
-        _startPlay = false;
+        {
+            CriticalSectionScoped lock(&_critSect);
+            _startPlay = false;
+        }
         StopPlayout();
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
                      "  failed to activate playout");
         return -1;
     }
 
-    if (_playing)
     {
-        // the playing state is set by the audio thread after playout has started
-    } else
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "  failed to activate playing");
-        return -1;
+        CriticalSectionScoped lock(&_critSect);
+        if (_playing)
+        {
+            // the playing state is set by the audio thread after playout has started
+        } else
+        {
+            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                         "  failed to activate playing");
+            return -1;
+        }
     }
 
     return 0;
@@ -1717,18 +1732,21 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StopPlayout()
 
 WebRtc_Word32 AudioDeviceLinuxPulse::PlayoutDelay(WebRtc_UWord16& delayMS) const
 {
+    CriticalSectionScoped lock(&_critSect);
     delayMS = (WebRtc_UWord16) _sndCardPlayDelay;
     return 0;
 }
 
 WebRtc_Word32 AudioDeviceLinuxPulse::RecordingDelay(WebRtc_UWord16& delayMS) const
 {
+    CriticalSectionScoped lock(&_critSect);
     delayMS = (WebRtc_UWord16) _sndCardRecDelay;
     return 0;
 }
 
 bool AudioDeviceLinuxPulse::Playing() const
 {
+    CriticalSectionScoped lock(&_critSect);
     return (_playing);
 }
 

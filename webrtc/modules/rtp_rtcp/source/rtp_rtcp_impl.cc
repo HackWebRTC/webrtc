@@ -309,19 +309,31 @@ WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
 }
 
 void ModuleRtpRtcpImpl::ProcessDeadOrAliveTimer() {
-  if (dead_or_alive_active_) {
-    const WebRtc_Word64 now = clock_->TimeInMilliseconds();
-    if (now > dead_or_alive_timeout_ms_ + dead_or_alive_last_timer_) {
-      // RTCP is alive if we have received a report the last 12 seconds.
-      dead_or_alive_last_timer_ += dead_or_alive_timeout_ms_;
 
-      bool RTCPalive = false;
-      if (rtcp_receiver_.LastReceived() + 12000 > now) {
-        RTCPalive = true;
+  bool RTCPalive = false;
+  WebRtc_Word64 now = 0;
+  bool do_callback = false;
+
+  // Do operations on members under lock but avoid making the
+  // ProcessDeadOrAlive() callback under the same lock. 
+  {
+    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
+    if (dead_or_alive_active_) {
+      now = clock_->TimeInMilliseconds();
+      if (now > dead_or_alive_timeout_ms_ + dead_or_alive_last_timer_) {
+        // RTCP is alive if we have received a report the last 12 seconds.
+        dead_or_alive_last_timer_ += dead_or_alive_timeout_ms_;
+
+        if (rtcp_receiver_.LastReceived() + 12000 > now)
+          RTCPalive = true;
+        
+        do_callback = true;
       }
-      rtp_receiver_->ProcessDeadOrAlive(RTCPalive, now);
     }
   }
+
+  if (do_callback)
+    rtp_receiver_->ProcessDeadOrAlive(RTCPalive, now);
 }
 
 WebRtc_Word32 ModuleRtpRtcpImpl::SetPeriodicDeadOrAliveStatus(
@@ -342,10 +354,13 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetPeriodicDeadOrAliveStatus(
   if (sample_time_seconds == 0) {
     return -1;
   }
-  dead_or_alive_active_ = enable;
-  dead_or_alive_timeout_ms_ = sample_time_seconds * 1000;
-  // Trigger the first after one period.
-  dead_or_alive_last_timer_ = clock_->TimeInMilliseconds();
+  {
+    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
+    dead_or_alive_active_ = enable;
+    dead_or_alive_timeout_ms_ = sample_time_seconds * 1000;
+    // Trigger the first after one period.
+    dead_or_alive_last_timer_ = clock_->TimeInMilliseconds();
+  }
   return 0;
 }
 
