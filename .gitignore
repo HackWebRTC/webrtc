@@ -67,6 +67,8 @@
 /third_party/yasm
 /third_party/WebKit/Tools/Scripts
 /tools/clang
+/tools/grit
+/tools/gritsettings
 /tools/gyp
 /tools/python
 /tools/valgrind
