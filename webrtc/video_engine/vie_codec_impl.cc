@@ -741,11 +741,9 @@ bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {
   } else if ((video_codec.codecType == kVideoCodecVP8 &&
               strncmp(video_codec.plName, "VP8", 4) == 0) ||
              (video_codec.codecType == kVideoCodecI420 &&
-              strncmp(video_codec.plName, "I420", 4) == 0) ||
-             (video_codec.codecType == kVideoCodecGeneric &&
-              strncmp(video_codec.plName, "GENERIC", 7) == 0)) {
+              strncmp(video_codec.plName, "I420", 4) == 0)) {
     // OK.
-  } else {
+  } else if (video_codec.codecType != kVideoCodecGeneric) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
                  "Codec type doesn't match pl_name", video_codec.plType);
     return false;

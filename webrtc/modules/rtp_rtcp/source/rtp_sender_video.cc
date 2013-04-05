@@ -95,10 +95,8 @@ WebRtc_Word32 RTPSenderVideo::RegisterVideoPayload(
     videoType = kRtpVp8Video;
   } else if (ModuleRTPUtility::StringCompare(payloadName, "I420", 4)) {
     videoType = kRtpGenericVideo;
-  } else if (ModuleRTPUtility::StringCompare(payloadName, "GENERIC", 7)) {
-    videoType = kRtpGenericVideo;
   } else {
-    return -1;
+    videoType = kRtpGenericVideo;
   }
   payload = new ModuleRTPUtility::Payload;
   payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;

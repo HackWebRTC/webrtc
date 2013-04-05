@@ -39,6 +39,7 @@ WebRtc_Word32 RTPPayloadRegistry::RegisterReceivePayload(
     const WebRtc_UWord8 channels,
     const WebRtc_UWord32 rate,
     bool* created_new_payload) {
+  assert(payload_type >= 0);
   assert(payload_name);
   *created_new_payload = false;
 
@@ -61,6 +62,7 @@ WebRtc_Word32 RTPPayloadRegistry::RegisterReceivePayload(
     default:
       break;
   }
+
   size_t payload_name_length = strlen(payload_name);
 
   ModuleRTPUtility::PayloadTypeMap::iterator it =
@@ -318,13 +320,10 @@ class RTPPayloadVideoStrategy : public RTPPayloadStrategy {
       videoType = kRtpVp8Video;
     } else if (ModuleRTPUtility::StringCompare(payloadName, "I420", 4)) {
       videoType = kRtpGenericVideo;
-    } else if (ModuleRTPUtility::StringCompare(payloadName, "GENERIC", 7)) {
-      videoType = kRtpGenericVideo;
     } else if (ModuleRTPUtility::StringCompare(payloadName, "ULPFEC", 6)) {
       videoType = kRtpFecVideo;
     } else {
-      assert(false);
-      return NULL;
+      videoType = kRtpGenericVideo;
     }
     ModuleRTPUtility::Payload* payload = new ModuleRTPUtility::Payload;
 

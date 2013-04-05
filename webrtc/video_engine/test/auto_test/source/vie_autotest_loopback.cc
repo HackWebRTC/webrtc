@@ -342,6 +342,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
     getchar();
     codecIdx = codecIdx - 1; // Compensate for idx start at 1.
 #endif
+    // VP8 over generic transport gets this special one.
     if (codecIdx == ptrViECodec->NumberOfCodecs()) {
       for (codecIdx = 0; codecIdx < ptrViECodec->NumberOfCodecs(); ++codecIdx) {
         error = ptrViECodec->GetCodec(codecIdx, videoCodec);
@@ -351,7 +352,9 @@ int VideoEngineSampleCode(void* window1, void* window2)
       }
       assert(videoCodec.codecType == webrtc::kVideoCodecVP8);
       videoCodec.codecType = webrtc::kVideoCodecGeneric;
-      strcpy(videoCodec.plName, "GENERIC");
+
+      // Any plName should work with generic
+      strcpy(videoCodec.plName, "VP8-GENERIC");
       uint8_t pl_type = 127;
       videoCodec.plType = pl_type;
       webrtc::ViEExternalCodec* external_codec = webrtc::ViEExternalCodec
