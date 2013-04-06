@@ -112,10 +112,13 @@
   var remoteStream;
   var channel;
   var channelReady = false;
+  var turnReady = false;
   var pc;
   var socket;
   var initiator = {{ initiator }};
   var started = false;
+  var pc_config = {{ pc_config|safe }};
+  var pc_constraints = {{ pc_constraints|safe }};
   // Set up audio and video regardless of what devices are present.
   var sdpConstraints = {'mandatory': {
                           'OfferToReceiveAudio':true, 
@@ -133,6 +136,7 @@
     // NOTE: AppRTCClient.java searches & parses this line; update there when
     // changing here.
     openChannel('{{ token }}');
+    requestTurn('{{ turn_url }}');
     doGetUserMedia();
   }
 
@@ -146,6 +150,35 @@
       'onclose': onChannelClosed
     };
     socket = channel.open(handler);
+  }
+
+  function requestTurn(turn_url) {
+    var turnExists = false;
+    for (var i in pc_config.iceServers) {
+      if (pc_config.iceServers[i].url.substr(0, 5) == 'turn:') {
+        turnExists = true;
+        turnReady = true;
+        break;
+      }
+    }
+    if (!turnExists) {
+      // No turn server. Get one from computeengineondemand.appspot.com:
+      xmlhttp = new XMLHttpRequest();
+      xmlhttp.onreadystatechange = onTurnResult;
+      xmlhttp.open("GET", turn_url, true);
+      xmlhttp.send();
+    }
+  }
+
+  function onTurnResult() {
+    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+      var turnServer = JSON.parse(xmlhttp.responseText);
+      pc_config.iceServers.push({
+        "url": "turn:" + turnServer.username + "@" + turnServer.turn,
+        "credential": turnServer.password
+      });
+      turnReady = true;
+    }
   }
 
   function resetStatus() {
@@ -170,13 +203,11 @@
     }
   }
 
-  function createPeerConnection() {
-    var pc_config = {{ pc_config|safe }};
-    var pc_constraints = {{ pc_constraints|safe }};
+  function createPeerConnection() {    
     // Force the use of a number IP STUN server for Firefox.
     if (webrtcDetectedBrowser == "firefox") {
       pc_config = {"iceServers":[{"url":"stun:23.21.150.121"}]};
-    }    
+    }
     try {
       // Create an RTCPeerConnection via the polyfill (adapter.js).
       pc = new RTCPeerConnection(pc_config, pc_constraints);
@@ -189,13 +220,12 @@
       alert("Cannot create RTCPeerConnection object; WebRTC is not supported by this browser.");
         return;
     }
-
     pc.onaddstream = onRemoteStreamAdded;
     pc.onremovestream = onRemoteStreamRemoved;
   }
 
   function maybeStart() {
-    if (!started && localStream && channelReady) {
+    if (!started && localStream && channelReady && turnReady) {
       setStatus("Connecting...");
       console.log("Creating PeerConnection.");
       createPeerConnection();

@@ -315,6 +315,7 @@ class MainPage(webapp2.RequestHandler):
     min_re = self.request.get('minre')
     max_re = self.request.get('maxre')
     hd_video = self.request.get('hd')
+    turn_url = 'https://computeengineondemand.appspot.com/'
     if hd_video.lower() == 'true':
       min_re = '1280x720'
     ts_pwd = self.request.get('tp')
@@ -374,6 +375,7 @@ class MainPage(webapp2.RequestHandler):
 
     room_link = base_url + '?r=' + room_key
     room_link = append_url_arguments(self.request, room_link)
+    turn_url = turn_url + 'turn?' + 'username=' + user + '&key=4080218913'
     token = create_channel(room, user, token_timeout)
     pc_config = make_pc_config(stun_server, turn_server, ts_pwd)
     pc_constraints = make_pc_constraints(compat)
@@ -387,7 +389,8 @@ class MainPage(webapp2.RequestHandler):
                        'pc_config': json.dumps(pc_config),
                        'pc_constraints': json.dumps(pc_constraints),
                        'offer_constraints': json.dumps(offer_constraints),
-                       'media_constraints': json.dumps(media_constraints)
+                       'media_constraints': json.dumps(media_constraints),
+                       'turn_url': turn_url
                       }
     if unittest:
       target_page = 'test/test_' + unittest + '.html'
