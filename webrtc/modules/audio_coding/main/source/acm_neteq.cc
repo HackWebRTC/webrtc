@@ -323,38 +323,51 @@ WebRtc_Word32 ACMNetEQ::CurrentSampFreqHz() const {
 
 WebRtc_Word32 ACMNetEQ::SetPlayoutMode(const AudioPlayoutMode mode) {
   CriticalSectionScoped lock(neteq_crit_sect_);
-  if (playout_mode_ != mode) {
-    for (WebRtc_Word16 idx = 0; idx < num_slaves_ + 1; idx++) {
-      if (!is_initialized_[idx]) {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
-                     "SetPlayoutMode: NetEq is not initialized.");
-        return -1;
-      }
+  if (playout_mode_ == mode)
+    return 0;
 
-      enum WebRtcNetEQPlayoutMode playout_mode = kPlayoutOff;
-      switch (mode) {
-        case voice:
-          playout_mode = kPlayoutOn;
-          break;
-        case fax:
-          playout_mode = kPlayoutFax;
-          break;
-        case streaming:
-          playout_mode = kPlayoutStreaming;
-          break;
-        case off:
-          playout_mode = kPlayoutOff;
-          break;
-      }
-      if (WebRtcNetEQ_SetPlayoutMode(inst_[idx], playout_mode) < 0) {
-        LogError("SetPlayoutMode", idx);
-        return -1;
-      }
-    }
-    playout_mode_ = mode;
+  enum WebRtcNetEQPlayoutMode playout_mode = kPlayoutOff;
+  enum WebRtcNetEQBGNMode background_noise_mode = kBGNOn;
+  switch (mode) {
+    case voice:
+      playout_mode = kPlayoutOn;
+      background_noise_mode = kBGNOn;
+      break;
+    case fax:
+      playout_mode = kPlayoutFax;
+      WebRtcNetEQ_GetBGNMode(inst_[0], &background_noise_mode);  // No change.
+      break;
+    case streaming:
+      playout_mode = kPlayoutStreaming;
+      background_noise_mode = kBGNOff;
+      break;
+    case off:
+      playout_mode = kPlayoutOff;
+      background_noise_mode = kBGNOff;
+      break;
   }
 
-  return 0;
+  int err = 0;
+  for (WebRtc_Word16 idx = 0; idx < num_slaves_ + 1; idx++) {
+    if (!is_initialized_[idx]) {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
+                   "SetPlayoutMode: NetEq is not initialized.");
+      return -1;
+    }
+
+    if (WebRtcNetEQ_SetPlayoutMode(inst_[idx], playout_mode) < 0) {
+      LogError("SetPlayoutMode", idx);
+      err = -1;
+    }
+
+    if (WebRtcNetEQ_SetBGNMode(inst_[idx], kBGNOff) < 0) {
+      LogError("SetPlayoutMode::SetBGNMode", idx);
+      err = -1;
+    }
+  }
+  if (err == 0)
+    playout_mode_ = mode;
+  return err;
 }
 
 AudioPlayoutMode ACMNetEQ::playout_mode() const {
