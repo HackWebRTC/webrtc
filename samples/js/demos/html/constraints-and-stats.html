@@ -4,6 +4,10 @@
 <!-- Load the polyfill to switch-hit between Chrome and Firefox -->
 <script src="../../base/adapter.js"></script>
 
+<style type="text/css">
+td { vertical-align: top; }
+</style>
+
 <script>
 var mystream;
 var pc1;
@@ -156,8 +160,22 @@ var statCollector = setInterval(function() {
             }
           }
         }
-        $('stats').innerHTML = statsString;
+        $('receiverstats').innerHTML = statsString;
         display(bitrateText);
+      });
+      pc1.getStats(function(stats) {
+        var statsString = '';
+        var results = stats.result();
+        for (var i = 0; i < results.length; ++i) {
+          var res = results[i];
+          statsString += '<h3>Report ';
+          statsString += i;
+          statsString += '</h3>';
+          if (!res.local || res.local === res) {
+            statsString += dumpStats(res);
+          }
+        }
+        $('senderstats').innerHTML = statsString;
       });
     } else {
       display('No stats function. Use at least Chrome 24.0.1285');
@@ -184,7 +202,7 @@ function dumpStats(obj) {
   var statsString = 'Timestamp:';
   statsString += obj.timestamp;
   if (obj.id) {
-     statsString += " id ";
+     statsString += "<br>id ";
      statsString += obj.id;
   }
   if (obj.type) {
@@ -284,6 +302,12 @@ Maximum bitrate
 <td><pre><span id="addStreamConstraints"></span></pre>
 </table>
 <h2>Statistics report display</h2>
-<div id="stats">Stats will appear here.</div>
+<table>
+<tr>
+<th>Sender side<th>Receiver side
+<tr>
+<td align="top"><div id="senderstats">Stats will appear here.</div>
+<td align="top"><div id="receiverstats">Stats will appear here.</div>
+</table>
 </body>
 </html>
