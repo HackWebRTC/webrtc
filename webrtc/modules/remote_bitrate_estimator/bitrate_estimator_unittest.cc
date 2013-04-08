@@ -30,7 +30,7 @@ protected:
 
 TEST_F(BitRateStatsTest, TestStrictMode)
 {
-    WebRtc_Word64 nowMs = 0;
+    int64_t nowMs = 0;
     // Should be initialized to 0.
     EXPECT_EQ(0u, bitRate.BitRate(nowMs));
     bitRate.Update(1500, nowMs);

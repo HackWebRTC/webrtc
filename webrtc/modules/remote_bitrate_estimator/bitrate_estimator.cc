@@ -38,7 +38,7 @@ void BitRateStats::Init()
     }
 }
 
-void BitRateStats::Update(WebRtc_UWord32 packetSizeBytes, WebRtc_Word64 nowMs)
+void BitRateStats::Update(uint32_t packetSizeBytes, int64_t nowMs)
 {
     // Find an empty slot for storing the new sample and at the same time
     // accumulate the history.
@@ -47,7 +47,7 @@ void BitRateStats::Update(WebRtc_UWord32 packetSizeBytes, WebRtc_Word64 nowMs)
     EraseOld(nowMs);
 }
 
-void BitRateStats::EraseOld(WebRtc_Word64 nowMs)
+void BitRateStats::EraseOld(int64_t nowMs)
 {
     while (_dataSamples.size() > 0)
     {
@@ -66,12 +66,12 @@ void BitRateStats::EraseOld(WebRtc_Word64 nowMs)
     }
 }
 
-WebRtc_UWord32 BitRateStats::BitRate(WebRtc_Word64 nowMs)
+uint32_t BitRateStats::BitRate(int64_t nowMs)
 {
     // Calculate the average bit rate the past BITRATE_AVERAGE_WINDOW ms.
     // Removes any old samples from the list.
     EraseOld(nowMs);
-    return static_cast<WebRtc_UWord32>(_accumulatedBytes * 8.0f * 1000.0f /
+    return static_cast<uint32_t>(_accumulatedBytes * 8.0f * 1000.0f /
                                        kBitrateAverageWindow + 0.5f);
 }
 

@@ -24,8 +24,8 @@ public:
     ~BitRateStats();
 
     void Init();
-    void Update(WebRtc_UWord32 packetSizeBytes, WebRtc_Word64 nowMs);
-    WebRtc_UWord32 BitRate(WebRtc_Word64 nowMs);
+    void Update(uint32_t packetSizeBytes, int64_t nowMs);
+    uint32_t BitRate(int64_t nowMs);
 
 private:
     struct DataTimeSizeTuple
@@ -35,14 +35,14 @@ private:
               _sizeBytes(sizeBytes),
               _timeCompleteMs(timeCompleteMs) {}
 
-        WebRtc_UWord32    _sizeBytes;
-        WebRtc_Word64     _timeCompleteMs;
+        uint32_t    _sizeBytes;
+        int64_t     _timeCompleteMs;
     };
 
-    void EraseOld(WebRtc_Word64 nowMs);
+    void EraseOld(int64_t nowMs);
 
     std::list<DataTimeSizeTuple*> _dataSamples;
-    WebRtc_UWord32 _accumulatedBytes;
+    uint32_t _accumulatedBytes;
 };
 
 }  // namespace webrtc

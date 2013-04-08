@@ -42,14 +42,14 @@ class RateControlInput
 {
 public:
     RateControlInput(BandwidthUsage bwState,
-                     WebRtc_UWord32 incomingBitRate,
+                     uint32_t incomingBitRate,
                      double noiseVar)
         : _bwState(bwState),
           _incomingBitRate(incomingBitRate),
           _noiseVar(noiseVar) {}
 
     BandwidthUsage  _bwState;
-    WebRtc_UWord32      _incomingBitRate;
+    uint32_t      _incomingBitRate;
     double              _noiseVar;
 };
 } //namespace webrtc
