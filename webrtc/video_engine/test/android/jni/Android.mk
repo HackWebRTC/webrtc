@@ -213,12 +213,6 @@ LOCAL_SRC_FILES := \
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := libudp_transport
-LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/libudp_transport.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
 LOCAL_MODULE := libchannel_transport
 LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/libchannel_transport.a
