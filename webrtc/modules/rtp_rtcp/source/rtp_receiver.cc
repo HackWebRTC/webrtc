@@ -32,7 +32,7 @@ using ModuleRTPUtility::RTPPayloadParser;
 using ModuleRTPUtility::StringCompare;
 using ModuleRTPUtility::VideoPayload;
 
-RTPReceiver::RTPReceiver(const WebRtc_Word32 id,
+RTPReceiver::RTPReceiver(const int32_t id,
                          Clock* clock,
                          ModuleRtpRtcpImpl* owner,
                          RtpAudioFeedback* incoming_audio_messages_callback,
@@ -120,21 +120,21 @@ RtpVideoCodecTypes RTPReceiver::VideoCodecType() const {
   return media_specific.Video.videoCodecType;
 }
 
-WebRtc_UWord32 RTPReceiver::MaxConfiguredBitrate() const {
+uint32_t RTPReceiver::MaxConfiguredBitrate() const {
   ModuleRTPUtility::PayloadUnion media_specific;
   rtp_media_receiver_->GetLastMediaSpecificPayload(&media_specific);
   return media_specific.Video.maxRate;
 }
 
-bool RTPReceiver::REDPayloadType(const WebRtc_Word8 payload_type) const {
+bool RTPReceiver::REDPayloadType(const int8_t payload_type) const {
   return rtp_payload_registry_->red_payload_type() == payload_type;
 }
 
-WebRtc_Word8 RTPReceiver::REDPayloadType() const {
+int8_t RTPReceiver::REDPayloadType() const {
   return rtp_payload_registry_->red_payload_type();
 }
 
-WebRtc_Word32 RTPReceiver::SetPacketTimeout(const WebRtc_UWord32 timeout_ms) {
+int32_t RTPReceiver::SetPacketTimeout(const uint32_t timeout_ms) {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
   packet_timeout_ms_ = timeout_ms;
   return 0;
@@ -158,7 +158,7 @@ void RTPReceiver::PacketTimeout() {
       return;
     }
 
-    WebRtc_Word64 now = clock_->TimeInMilliseconds();
+    int64_t now = clock_->TimeInMilliseconds();
 
     if (now - last_receive_time_ > packet_timeout_ms_) {
       packet_time_out = true;
@@ -172,7 +172,7 @@ void RTPReceiver::PacketTimeout() {
 }
 
 void RTPReceiver::ProcessDeadOrAlive(const bool rtcp_alive,
-                                     const WebRtc_Word64 now) {
+                                     const int64_t now) {
   RTPAliveType alive = kRtpDead;
 
   if (last_receive_time_ + 1000 > now) {
@@ -191,34 +191,34 @@ void RTPReceiver::ProcessDeadOrAlive(const bool rtcp_alive,
   cb_rtp_feedback_->OnPeriodicDeadOrAlive(id_, alive);
 }
 
-WebRtc_UWord16 RTPReceiver::PacketOHReceived() const {
+uint16_t RTPReceiver::PacketOHReceived() const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
   return received_packet_oh_;
 }
 
-WebRtc_UWord32 RTPReceiver::PacketCountReceived() const {
+uint32_t RTPReceiver::PacketCountReceived() const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
   return received_inorder_packet_count_;
 }
 
-WebRtc_UWord32 RTPReceiver::ByteCountReceived() const {
+uint32_t RTPReceiver::ByteCountReceived() const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
   return received_byte_count_;
 }
 
-WebRtc_Word32 RTPReceiver::RegisterReceivePayload(
+int32_t RTPReceiver::RegisterReceivePayload(
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-    const WebRtc_Word8 payload_type,
-    const WebRtc_UWord32 frequency,
-    const WebRtc_UWord8 channels,
-    const WebRtc_UWord32 rate) {
+    const int8_t payload_type,
+    const uint32_t frequency,
+    const uint8_t channels,
+    const uint32_t rate) {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
 
   // TODO(phoglund): Try to streamline handling of the RED codec and some other
   // cases which makes it necessary to keep track of whether we created a
   // payload or not.
   bool created_new_payload = false;
-  WebRtc_Word32 result = rtp_payload_registry_->RegisterReceivePayload(
+  int32_t result = rtp_payload_registry_->RegisterReceivePayload(
       payload_name, payload_type, frequency, channels, rate,
       &created_new_payload);
   if (created_new_payload) {
@@ -233,31 +233,31 @@ WebRtc_Word32 RTPReceiver::RegisterReceivePayload(
   return result;
 }
 
-WebRtc_Word32 RTPReceiver::DeRegisterReceivePayload(
-    const WebRtc_Word8 payload_type) {
+int32_t RTPReceiver::DeRegisterReceivePayload(
+    const int8_t payload_type) {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
   return rtp_payload_registry_->DeRegisterReceivePayload(payload_type);
 }
 
-WebRtc_Word32 RTPReceiver::ReceivePayloadType(
+int32_t RTPReceiver::ReceivePayloadType(
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-    const WebRtc_UWord32 frequency,
-    const WebRtc_UWord8 channels,
-    const WebRtc_UWord32 rate,
-    WebRtc_Word8* payload_type) const {
+    const uint32_t frequency,
+    const uint8_t channels,
+    const uint32_t rate,
+    int8_t* payload_type) const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
   return rtp_payload_registry_->ReceivePayloadType(
       payload_name, frequency, channels, rate, payload_type);
 }
 
-WebRtc_Word32 RTPReceiver::RegisterRtpHeaderExtension(
+int32_t RTPReceiver::RegisterRtpHeaderExtension(
     const RTPExtensionType type,
-    const WebRtc_UWord8 id) {
+    const uint8_t id) {
   CriticalSectionScoped cs(critical_section_rtp_receiver_);
   return rtp_header_extension_map_.Register(type, id);
 }
 
-WebRtc_Word32 RTPReceiver::DeregisterRtpHeaderExtension(
+int32_t RTPReceiver::DeregisterRtpHeaderExtension(
     const RTPExtensionType type) {
   CriticalSectionScoped cs(critical_section_rtp_receiver_);
   return rtp_header_extension_map_.Deregister(type);
@@ -274,8 +274,8 @@ NACKMethod RTPReceiver::NACK() const {
 }
 
 // Turn negative acknowledgment requests on/off.
-WebRtc_Word32 RTPReceiver::SetNACKStatus(const NACKMethod method,
-                                         int max_reordering_threshold) {
+int32_t RTPReceiver::SetNACKStatus(const NACKMethod method,
+                                   int max_reordering_threshold) {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
   if (max_reordering_threshold < 0) {
     return -1;
@@ -289,54 +289,54 @@ WebRtc_Word32 RTPReceiver::SetNACKStatus(const NACKMethod method,
 }
 
 void RTPReceiver::SetRTXStatus(const bool enable,
-                               const WebRtc_UWord32 ssrc) {
+                               const uint32_t ssrc) {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
   rtx_ = enable;
   ssrc_rtx_ = ssrc;
 }
 
-void RTPReceiver::RTXStatus(bool* enable, WebRtc_UWord32* ssrc) const {
+void RTPReceiver::RTXStatus(bool* enable, uint32_t* ssrc) const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
   *enable = rtx_;
   *ssrc = ssrc_rtx_;
 }
 
-WebRtc_UWord32 RTPReceiver::SSRC() const {
+uint32_t RTPReceiver::SSRC() const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
   return ssrc_;
 }
 
 // Get remote CSRC.
-WebRtc_Word32 RTPReceiver::CSRCs(
-    WebRtc_UWord32 array_of_csrcs[kRtpCsrcSize]) const {
+int32_t RTPReceiver::CSRCs(
+    uint32_t array_of_csrcs[kRtpCsrcSize]) const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
 
   assert(num_csrcs_ <= kRtpCsrcSize);
 
   if (num_csrcs_ > 0) {
     memcpy(array_of_csrcs, current_remote_csrc_,
-           sizeof(WebRtc_UWord32)*num_csrcs_);
+           sizeof(uint32_t)*num_csrcs_);
   }
   return num_csrcs_;
 }
 
-WebRtc_Word32 RTPReceiver::Energy(
-    WebRtc_UWord8 array_of_energy[kRtpCsrcSize]) const {
+int32_t RTPReceiver::Energy(
+    uint8_t array_of_energy[kRtpCsrcSize]) const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
 
   assert(num_energy_ <= kRtpCsrcSize);
 
   if (num_energy_ > 0) {
     memcpy(array_of_energy, current_remote_energy_,
-           sizeof(WebRtc_UWord8)*num_csrcs_);
+           sizeof(uint8_t)*num_csrcs_);
   }
   return num_energy_;
 }
 
-WebRtc_Word32 RTPReceiver::IncomingRTPPacket(
+int32_t RTPReceiver::IncomingRTPPacket(
   WebRtcRTPHeader* rtp_header,
-  const WebRtc_UWord8* packet,
-  const WebRtc_UWord16 packet_length) {
+  const uint8_t* packet,
+  const uint16_t packet_length) {
   // The rtp_header argument contains the parsed RTP header.
   int length = packet_length - rtp_header->header.paddingLength;
 
@@ -378,7 +378,7 @@ WebRtc_Word32 RTPReceiver::IncomingRTPPacket(
       cb_rtp_feedback_->OnReceivedPacket(id_, kPacketRtp);
     }
   }
-  WebRtc_Word8 first_payload_byte = 0;
+  int8_t first_payload_byte = 0;
   if (length > 0) {
     first_payload_byte = packet[rtp_header->header.headerLength];
   }
@@ -406,7 +406,7 @@ WebRtc_Word32 RTPReceiver::IncomingRTPPacket(
   }
   CheckCSRC(rtp_header);
 
-  WebRtc_UWord16 payload_data_length =
+  uint16_t payload_data_length =
     ModuleRTPUtility::GetPayloadDataLength(rtp_header, packet_length);
 
   bool is_first_packet_in_frame =
@@ -414,7 +414,7 @@ WebRtc_Word32 RTPReceiver::IncomingRTPPacket(
       TimeStamp() != rtp_header->header.timestamp;
   bool is_first_packet = is_first_packet_in_frame || HaveNotReceivedPackets();
 
-  WebRtc_Word32 ret_val = rtp_media_receiver_->ParseRtpPacket(
+  int32_t ret_val = rtp_media_receiver_->ParseRtpPacket(
       rtp_header, specific_payload, is_red, packet, packet_length,
       clock_->TimeInMilliseconds(), is_first_packet);
 
@@ -452,9 +452,9 @@ WebRtc_Word32 RTPReceiver::IncomingRTPPacket(
 // Implementation note: we expect to have the critical_section_rtp_receiver_
 // critsect when we call this.
 void RTPReceiver::UpdateStatistics(const WebRtcRTPHeader* rtp_header,
-                                   const WebRtc_UWord16 bytes,
+                                   const uint16_t bytes,
                                    const bool old_packet) {
-  WebRtc_UWord32 frequency_hz = rtp_media_receiver_->GetFrequencyHz();
+  uint32_t frequency_hz = rtp_media_receiver_->GetFrequencyHz();
 
   Bitrate::Update(bytes);
 
@@ -472,12 +472,12 @@ void RTPReceiver::UpdateStatistics(const WebRtcRTPHeader* rtp_header,
 
   // Count only the new packets received.
   if (InOrderPacket(rtp_header->header.sequenceNumber)) {
-    const WebRtc_UWord32 RTPtime =
+    const uint32_t RTPtime =
       GetCurrentRTP(clock_, frequency_hz);  // Time in samples.
     received_inorder_packet_count_++;
 
     // Wrong if we use RetransmitOfOldPacket.
-    WebRtc_Word32 seq_diff =
+    int32_t seq_diff =
         rtp_header->header.sequenceNumber - received_seq_max_;
     if (seq_diff < 0) {
       // Wrap around detected.
@@ -488,7 +488,7 @@ void RTPReceiver::UpdateStatistics(const WebRtcRTPHeader* rtp_header,
 
     if (rtp_header->header.timestamp != last_received_timestamp_ &&
         received_inorder_packet_count_ > 1) {
-      WebRtc_Word32 time_diff_samples =
+      int32_t time_diff_samples =
           (RTPtime - local_time_last_received_timestamp_) -
           (rtp_header->header.timestamp - last_received_timestamp_);
 
@@ -499,13 +499,13 @@ void RTPReceiver::UpdateStatistics(const WebRtcRTPHeader* rtp_header,
       // as the treshold.
       if (time_diff_samples < 450000) {
         // Note we calculate in Q4 to avoid using float.
-        WebRtc_Word32 jitter_diff_q4 = (time_diff_samples << 4) - jitter_q4_;
+        int32_t jitter_diff_q4 = (time_diff_samples << 4) - jitter_q4_;
         jitter_q4_ += ((jitter_diff_q4 + 8) >> 4);
       }
 
       // Extended jitter report, RFC 5450.
       // Actual network jitter, excluding the source-introduced jitter.
-      WebRtc_Word32 time_diff_samples_ext =
+      int32_t time_diff_samples_ext =
         (RTPtime - local_time_last_received_timestamp_) -
         ((rtp_header->header.timestamp +
           rtp_header->extension.transmissionTimeOffset) -
@@ -515,7 +515,7 @@ void RTPReceiver::UpdateStatistics(const WebRtcRTPHeader* rtp_header,
       time_diff_samples_ext = abs(time_diff_samples_ext);
 
       if (time_diff_samples_ext < 450000) {
-        WebRtc_Word32 jitter_diffQ4TransmissionTimeOffset =
+        int32_t jitter_diffQ4TransmissionTimeOffset =
           (time_diff_samples_ext << 4) - jitter_q4_transmission_time_offset_;
         jitter_q4_transmission_time_offset_ +=
           ((jitter_diffQ4TransmissionTimeOffset + 8) >> 4);
@@ -530,7 +530,7 @@ void RTPReceiver::UpdateStatistics(const WebRtcRTPHeader* rtp_header,
     }
   }
 
-  WebRtc_UWord16 packet_oh =
+  uint16_t packet_oh =
       rtp_header->header.headerLength + rtp_header->header.paddingLength;
 
   // Our measured overhead. Filter from RFC 5104 4.2.1.2:
@@ -541,23 +541,23 @@ void RTPReceiver::UpdateStatistics(const WebRtcRTPHeader* rtp_header,
 // Implementation note: we expect to have the critical_section_rtp_receiver_
 // critsect when we call this.
 bool RTPReceiver::RetransmitOfOldPacket(
-    const WebRtc_UWord16 sequence_number,
-    const WebRtc_UWord32 rtp_time_stamp) const {
+    const uint16_t sequence_number,
+    const uint32_t rtp_time_stamp) const {
   if (InOrderPacket(sequence_number)) {
     return false;
   }
 
-  WebRtc_UWord32 frequency_khz = rtp_media_receiver_->GetFrequencyHz() / 1000;
-  WebRtc_Word64 time_diff_ms = clock_->TimeInMilliseconds() -
+  uint32_t frequency_khz = rtp_media_receiver_->GetFrequencyHz() / 1000;
+  int64_t time_diff_ms = clock_->TimeInMilliseconds() -
       last_receive_time_;
 
   // Diff in time stamp since last received in order.
-  WebRtc_Word32 rtp_time_stamp_diff_ms =
-      static_cast<WebRtc_Word32>(rtp_time_stamp - last_received_timestamp_) /
+  int32_t rtp_time_stamp_diff_ms =
+      static_cast<int32_t>(rtp_time_stamp - last_received_timestamp_) /
       frequency_khz;
 
-  WebRtc_UWord16 min_rtt = 0;
-  WebRtc_Word32 max_delay_ms = 0;
+  uint16_t min_rtt = 0;
+  int32_t max_delay_ms = 0;
   rtp_rtcp_.RTT(ssrc_, NULL, NULL, &min_rtt, NULL);
   if (min_rtt == 0) {
     // Jitter variance in samples.
@@ -568,7 +568,7 @@ bool RTPReceiver::RetransmitOfOldPacket(
 
     // 2 times the standard deviation => 95% confidence.
     // And transform to milliseconds by dividing by the frequency in kHz.
-    max_delay_ms = static_cast<WebRtc_Word32>((2 * jitter_std) / frequency_khz);
+    max_delay_ms = static_cast<int32_t>((2 * jitter_std) / frequency_khz);
 
     // Min max_delay_ms is 1.
     if (max_delay_ms == 0) {
@@ -583,7 +583,7 @@ bool RTPReceiver::RetransmitOfOldPacket(
   return false;
 }
 
-bool RTPReceiver::InOrderPacket(const WebRtc_UWord16 sequence_number) const {
+bool RTPReceiver::InOrderPacket(const uint16_t sequence_number) const {
   if (received_seq_max_ >= sequence_number) {
     // Detect wrap-around.
     if (!(received_seq_max_ > 0xff00 && sequence_number < 0x0ff)) {
@@ -608,12 +608,12 @@ bool RTPReceiver::InOrderPacket(const WebRtc_UWord16 sequence_number) const {
   return true;
 }
 
-WebRtc_UWord16 RTPReceiver::SequenceNumber() const {
+uint16_t RTPReceiver::SequenceNumber() const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
   return last_received_sequence_number_;
 }
 
-WebRtc_UWord32 RTPReceiver::TimeStamp() const {
+uint32_t RTPReceiver::TimeStamp() const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
   return last_received_timestamp_;
 }
@@ -625,10 +625,10 @@ int32_t RTPReceiver::LastReceivedTimeMs() const {
 
 // Compute time stamp of the last incoming packet that is the first packet of
 // its frame.
-WebRtc_Word32 RTPReceiver::EstimatedRemoteTimeStamp(
-    WebRtc_UWord32& timestamp) const {
+int32_t RTPReceiver::EstimatedRemoteTimeStamp(
+    uint32_t& timestamp) const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
-  WebRtc_UWord32 frequency_hz = rtp_media_receiver_->GetFrequencyHz();
+  uint32_t frequency_hz = rtp_media_receiver_->GetFrequencyHz();
 
   if (local_time_last_received_timestamp_ == 0) {
     WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, id_,
@@ -636,7 +636,7 @@ WebRtc_Word32 RTPReceiver::EstimatedRemoteTimeStamp(
     return -1;
   }
   // Time in samples.
-  WebRtc_UWord32 diff = GetCurrentRTP(clock_, frequency_hz) -
+  uint32_t diff = GetCurrentRTP(clock_, frequency_hz) -
                         local_time_last_received_timestamp_;
 
   timestamp = last_received_timestamp_ + diff;
@@ -644,7 +644,7 @@ WebRtc_Word32 RTPReceiver::EstimatedRemoteTimeStamp(
 }
 
 // Get the currently configured SSRC filter.
-WebRtc_Word32 RTPReceiver::SSRCFilter(WebRtc_UWord32& allowed_ssrc) const {
+int32_t RTPReceiver::SSRCFilter(uint32_t& allowed_ssrc) const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
   if (use_ssrc_filter_) {
     allowed_ssrc = ssrc_filter_;
@@ -656,8 +656,8 @@ WebRtc_Word32 RTPReceiver::SSRCFilter(WebRtc_UWord32& allowed_ssrc) const {
 }
 
 // Set a SSRC to be used as a filter for incoming RTP streams.
-WebRtc_Word32 RTPReceiver::SetSSRCFilter(
-    const bool enable, const WebRtc_UWord32 allowed_ssrc) {
+int32_t RTPReceiver::SetSSRCFilter(
+    const bool enable, const uint32_t allowed_ssrc) {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
 
   use_ssrc_filter_ = enable;
@@ -674,14 +674,14 @@ void RTPReceiver::CheckSSRCChanged(const WebRtcRTPHeader* rtp_header) {
   bool new_ssrc = false;
   bool re_initialize_decoder = false;
   char payload_name[RTP_PAYLOAD_NAME_SIZE];
-  WebRtc_UWord32 frequency = kDefaultVideoFrequency;
-  WebRtc_UWord8 channels = 1;
-  WebRtc_UWord32 rate = 0;
+  uint32_t frequency = kDefaultVideoFrequency;
+  uint8_t channels = 1;
+  uint32_t rate = 0;
 
   {
     CriticalSectionScoped lock(critical_section_rtp_receiver_);
 
-    WebRtc_Word8 last_received_payload_type =
+    int8_t last_received_payload_type =
         rtp_payload_registry_->last_received_payload_type();
     if (ssrc_ != rtp_header->header.ssrc ||
         (last_received_payload_type == -1 && ssrc_ == 0)) {
@@ -746,20 +746,20 @@ void RTPReceiver::CheckSSRCChanged(const WebRtcRTPHeader* rtp_header) {
 // this code path moves we can get rid of some of the rtp_receiver ->
 // media_specific interface (such as CheckPayloadChange, possibly get/set
 // last known payload).
-WebRtc_Word32 RTPReceiver::CheckPayloadChanged(
+int32_t RTPReceiver::CheckPayloadChanged(
   const WebRtcRTPHeader* rtp_header,
-  const WebRtc_Word8 first_payload_byte,
+  const int8_t first_payload_byte,
   bool& is_red,
   ModuleRTPUtility::PayloadUnion* specific_payload) {
   bool re_initialize_decoder = false;
 
   char payload_name[RTP_PAYLOAD_NAME_SIZE];
-  WebRtc_Word8 payload_type = rtp_header->header.payloadType;
+  int8_t payload_type = rtp_header->header.payloadType;
 
   {
     CriticalSectionScoped lock(critical_section_rtp_receiver_);
 
-    WebRtc_Word8 last_received_payload_type =
+    int8_t last_received_payload_type =
         rtp_payload_registry_->last_received_payload_type();
     if (payload_type != last_received_payload_type) {
       if (REDPayloadType(payload_type)) {
@@ -846,9 +846,9 @@ WebRtc_Word32 RTPReceiver::CheckPayloadChanged(
 
 // Implementation note: must not hold critsect when called.
 void RTPReceiver::CheckCSRC(const WebRtcRTPHeader* rtp_header) {
-  WebRtc_Word32 num_csrcs_diff = 0;
-  WebRtc_UWord32 old_remote_csrc[kRtpCsrcSize];
-  WebRtc_UWord8 old_num_csrcs = 0;
+  int32_t num_csrcs_diff = 0;
+  uint32_t old_remote_csrc[kRtpCsrcSize];
+  uint8_t old_num_csrcs = 0;
 
   {
     CriticalSectionScoped lock(critical_section_rtp_receiver_);
@@ -868,14 +868,14 @@ void RTPReceiver::CheckCSRC(const WebRtcRTPHeader* rtp_header) {
     if (old_num_csrcs > 0) {
       // Make a copy of old.
       memcpy(old_remote_csrc, current_remote_csrc_,
-             num_csrcs_ * sizeof(WebRtc_UWord32));
+             num_csrcs_ * sizeof(uint32_t));
     }
-    const WebRtc_UWord8 num_csrcs = rtp_header->header.numCSRCs;
+    const uint8_t num_csrcs = rtp_header->header.numCSRCs;
     if ((num_csrcs > 0) && (num_csrcs <= kRtpCsrcSize)) {
       // Copy new.
       memcpy(current_remote_csrc_,
              rtp_header->header.arrOfCSRCs,
-             num_csrcs * sizeof(WebRtc_UWord32));
+             num_csrcs * sizeof(uint32_t));
     }
     if (num_csrcs > 0 || old_num_csrcs > 0) {
       num_csrcs_diff = num_csrcs - old_num_csrcs;
@@ -888,11 +888,11 @@ void RTPReceiver::CheckCSRC(const WebRtcRTPHeader* rtp_header) {
 
   bool have_called_callback = false;
   // Search for new CSRC in old array.
-  for (WebRtc_UWord8 i = 0; i < rtp_header->header.numCSRCs; ++i) {
-    const WebRtc_UWord32 csrc = rtp_header->header.arrOfCSRCs[i];
+  for (uint8_t i = 0; i < rtp_header->header.numCSRCs; ++i) {
+    const uint32_t csrc = rtp_header->header.arrOfCSRCs[i];
 
     bool found_match = false;
-    for (WebRtc_UWord8 j = 0; j < old_num_csrcs; ++j) {
+    for (uint8_t j = 0; j < old_num_csrcs; ++j) {
       if (csrc == old_remote_csrc[j]) {  // old list
         found_match = true;
         break;
@@ -905,11 +905,11 @@ void RTPReceiver::CheckCSRC(const WebRtcRTPHeader* rtp_header) {
     }
   }
   // Search for old CSRC in new array.
-  for (WebRtc_UWord8 i = 0; i < old_num_csrcs; ++i) {
-    const WebRtc_UWord32 csrc = old_remote_csrc[i];
+  for (uint8_t i = 0; i < old_num_csrcs; ++i) {
+    const uint32_t csrc = old_remote_csrc[i];
 
     bool found_match = false;
-    for (WebRtc_UWord8 j = 0; j < rtp_header->header.numCSRCs; ++j) {
+    for (uint8_t j = 0; j < rtp_header->header.numCSRCs; ++j) {
       if (csrc == rtp_header->header.arrOfCSRCs[j]) {
         found_match = true;
         break;
@@ -933,7 +933,7 @@ void RTPReceiver::CheckCSRC(const WebRtcRTPHeader* rtp_header) {
   }
 }
 
-WebRtc_Word32 RTPReceiver::ResetStatistics() {
+int32_t RTPReceiver::ResetStatistics() {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
 
   last_report_inorder_packets_ = 0;
@@ -957,7 +957,7 @@ WebRtc_Word32 RTPReceiver::ResetStatistics() {
   return 0;
 }
 
-WebRtc_Word32 RTPReceiver::ResetDataCounters() {
+int32_t RTPReceiver::ResetDataCounters() {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
 
   received_byte_count_ = 0;
@@ -968,15 +968,15 @@ WebRtc_Word32 RTPReceiver::ResetDataCounters() {
   return 0;
 }
 
-WebRtc_Word32 RTPReceiver::Statistics(
-    WebRtc_UWord8*  fraction_lost,
-    WebRtc_UWord32* cum_lost,
-    WebRtc_UWord32* ext_max,
-    WebRtc_UWord32* jitter,
-    WebRtc_UWord32* max_jitter,
-    WebRtc_UWord32* jitter_transmission_time_offset,
+int32_t RTPReceiver::Statistics(
+    uint8_t*  fraction_lost,
+    uint32_t* cum_lost,
+    uint32_t* ext_max,
+    uint32_t* jitter,
+    uint32_t* max_jitter,
+    uint32_t* jitter_transmission_time_offset,
     bool reset) const {
-  WebRtc_Word32 missing;
+  int32_t missing;
   return Statistics(fraction_lost,
                     cum_lost,
                     ext_max,
@@ -987,14 +987,14 @@ WebRtc_Word32 RTPReceiver::Statistics(
                     reset);
 }
 
-WebRtc_Word32 RTPReceiver::Statistics(
-    WebRtc_UWord8*  fraction_lost,
-    WebRtc_UWord32* cum_lost,
-    WebRtc_UWord32* ext_max,
-    WebRtc_UWord32* jitter,
-    WebRtc_UWord32* max_jitter,
-    WebRtc_UWord32* jitter_transmission_time_offset,
-    WebRtc_Word32*  missing,
+int32_t RTPReceiver::Statistics(
+    uint8_t*  fraction_lost,
+    uint32_t* cum_lost,
+    uint32_t* ext_max,
+    uint32_t* jitter,
+    uint32_t* max_jitter,
+    uint32_t* jitter_transmission_time_offset,
+    int32_t*  missing,
     bool reset) const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
 
@@ -1039,7 +1039,7 @@ WebRtc_Word32 RTPReceiver::Statistics(
     last_report_seq_max_ = received_seq_first_ - 1;
   }
   // Calculate fraction lost.
-  WebRtc_UWord16 exp_since_last = (received_seq_max_ - last_report_seq_max_);
+  uint16_t exp_since_last = (received_seq_max_ - last_report_seq_max_);
 
   if (last_report_seq_max_ > received_seq_max_) {
     // Can we assume that the seq_num can't go decrease over a full RTCP period?
@@ -1048,12 +1048,12 @@ WebRtc_Word32 RTPReceiver::Statistics(
 
   // Number of received RTP packets since last report, counts all packets but
   // not re-transmissions.
-  WebRtc_UWord32 rec_since_last =
+  uint32_t rec_since_last =
       received_inorder_packet_count_ - last_report_inorder_packets_;
 
   if (nack_method_ == kNackOff) {
     // This is needed for re-ordered packets.
-    WebRtc_UWord32 old_packets =
+    uint32_t old_packets =
         received_old_packet_count_ - last_report_old_packets_;
     rec_since_last += old_packets;
   } else {
@@ -1072,10 +1072,10 @@ WebRtc_Word32 RTPReceiver::Statistics(
   if (exp_since_last > rec_since_last) {
     *missing = (exp_since_last - rec_since_last);
   }
-  WebRtc_UWord8 local_fraction_lost = 0;
+  uint8_t local_fraction_lost = 0;
   if (exp_since_last) {
     // Scale 0 to 255, where 255 is 100% loss.
-    local_fraction_lost = (WebRtc_UWord8)((255 * (*missing)) / exp_since_last);
+    local_fraction_lost = (uint8_t)((255 * (*missing)) / exp_since_last);
   }
   if (fraction_lost) {
     *fraction_lost = local_fraction_lost;
@@ -1122,9 +1122,9 @@ WebRtc_Word32 RTPReceiver::Statistics(
   return 0;
 }
 
-WebRtc_Word32 RTPReceiver::DataCounters(
-    WebRtc_UWord32* bytes_received,
-    WebRtc_UWord32* packets_received) const {
+int32_t RTPReceiver::DataCounters(
+    uint32_t* bytes_received,
+    uint32_t* packets_received) const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
 
   if (bytes_received) {

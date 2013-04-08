@@ -24,9 +24,9 @@ using namespace webrtc;
 
 const int kVideoNackListSize = 10;
 const int kTestId = 123;
-const WebRtc_UWord32 kTestSsrc = 3456;
-const WebRtc_UWord16 kTestSequenceNumber = 2345;
-const WebRtc_UWord32 kTestNumberOfPackets = 450;
+const uint32_t kTestSsrc = 3456;
+const uint16_t kTestSequenceNumber = 2345;
+const uint32_t kTestNumberOfPackets = 450;
 const int kTestNumberOfRtxPackets = 49;
 
 class VerifyingNackReceiver : public RtpData
@@ -34,9 +34,9 @@ class VerifyingNackReceiver : public RtpData
  public:
   VerifyingNackReceiver() {}
 
-  virtual WebRtc_Word32 OnReceivedPayloadData(
-      const WebRtc_UWord8* data,
-      const WebRtc_UWord16 size,
+  virtual int32_t OnReceivedPayloadData(
+      const uint8_t* data,
+      const uint16_t size,
       const webrtc::WebRtcRTPHeader* rtp_header) {
 
     EXPECT_EQ(kTestSsrc, rtp_header->header.ssrc);
@@ -91,13 +91,13 @@ class NackLoopBackTransport : public webrtc::Transport {
         count_ < consecutive_drop_end_) {
       return len;
     }
-    if (module_->IncomingPacket((const WebRtc_UWord8*)data, len) == 0) {
+    if (module_->IncomingPacket((const uint8_t*)data, len) == 0) {
       return len;
     }
     return -1;
   }
   virtual int SendRTCPPacket(int channel, const void *data, int len) {
-    if (module_->IncomingPacket((const WebRtc_UWord8*)data, len) == 0) {
+    if (module_->IncomingPacket((const uint8_t*)data, len) == 0) {
       return len;
     }
     return -1;
@@ -171,12 +171,12 @@ class RtpRtcpNackTest : public ::testing::Test {
         nack_receiver_->sequence_numbers_.begin();
 
     while (it != nack_receiver_->sequence_numbers_.end()) {
-      WebRtc_UWord16 sequence_number_1 = *it;
+      uint16_t sequence_number_1 = *it;
       ++it;
       if (it != nack_receiver_->sequence_numbers_.end()) {
-        WebRtc_UWord16 sequence_number_2 = *it;
+        uint16_t sequence_number_2 = *it;
         // Add all missing sequence numbers to list
-        for (WebRtc_UWord16 i = sequence_number_1 + 1; i < sequence_number_2;
+        for (uint16_t i = sequence_number_1 + 1; i < sequence_number_2;
             ++i) {
           missing_sequence_numbers.push_back(i);
         }
@@ -203,13 +203,13 @@ class RtpRtcpNackTest : public ::testing::Test {
   RtpRtcp* video_module_;
   NackLoopBackTransport* transport_;
   VerifyingNackReceiver* nack_receiver_;
-  WebRtc_UWord8  payload_data[65000];
+  uint8_t  payload_data[65000];
   int payload_data_length;
   SimulatedClock fake_clock;
 };
 
 TEST_F(RtpRtcpNackTest, RTCP) {
-  WebRtc_UWord32 timestamp = 3000;
+  uint32_t timestamp = 3000;
   uint16_t nack_list[kVideoNackListSize];
   transport_->DropEveryNthPacket(10);
 
@@ -240,7 +240,7 @@ TEST_F(RtpRtcpNackTest, LongNackList) {
   const int kNumPacketsToDrop = 900;
   const int kNumFrames = 30;
   const int kNumRequiredRtcp = 4;
-  WebRtc_UWord32 timestamp = 3000;
+  uint32_t timestamp = 3000;
   uint16_t nack_list[kNumPacketsToDrop];
   // Disable StorePackets to be able to set a larger packet history.
   EXPECT_EQ(0, video_module_->SetStorePacketsStatus(false, 0));

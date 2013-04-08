@@ -36,8 +36,8 @@ class TestTransport : public Transport {
   virtual int SendRTCPPacket(int /*channel*/,
                              const void *packet,
                              int packetLength) {
-    RTCPUtility::RTCPParserV2 rtcpParser((WebRtc_UWord8*)packet,
-                                         (WebRtc_Word32)packetLength,
+    RTCPUtility::RTCPParserV2 rtcpParser((uint8_t*)packet,
+                                         (int32_t)packetLength,
                                          true); // Allow non-compound RTCP
 
     EXPECT_TRUE(rtcpParser.IsValid());
@@ -45,9 +45,9 @@ class TestTransport : public Transport {
     EXPECT_EQ(0, rtcp_receiver_->IncomingRTCPPacket(rtcpPacketInformation,
                                                     &rtcpParser));
 
-    EXPECT_EQ((WebRtc_UWord32)kRtcpRemb,
+    EXPECT_EQ((uint32_t)kRtcpRemb,
               rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRemb);
-    EXPECT_EQ((WebRtc_UWord32)1234,
+    EXPECT_EQ((uint32_t)1234,
               rtcpPacketInformation.receiverEstimatedMaxBitrate);
     return packetLength;
   }
@@ -113,14 +113,14 @@ TEST_F(RtcpFormatRembTest, TestBasicAPI) {
 }
 
 TEST_F(RtcpFormatRembTest, TestNonCompund) {
-  WebRtc_UWord32 SSRC = 456789;
+  uint32_t SSRC = 456789;
   EXPECT_EQ(0, rtcp_sender_->SetRTCPStatus(kRtcpNonCompound));
   EXPECT_EQ(0, rtcp_sender_->SetREMBData(1234, 1, &SSRC));
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(kRtcpRemb));
 }
 
 TEST_F(RtcpFormatRembTest, TestCompund) {
-  WebRtc_UWord32 SSRCs[2] = {456789, 98765};
+  uint32_t SSRCs[2] = {456789, 98765};
   EXPECT_EQ(0, rtcp_sender_->SetRTCPStatus(kRtcpCompound));
   EXPECT_EQ(0, rtcp_sender_->SetREMBData(1234, 2, SSRCs));
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(kRtcpRemb));

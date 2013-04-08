@@ -89,9 +89,9 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetPacketTimeout(
-        const WebRtc_UWord32 RTPtimeoutMS,
-        const WebRtc_UWord32 RTCPtimeoutMS) = 0;
+    virtual int32_t SetPacketTimeout(
+        const uint32_t RTPtimeoutMS,
+        const uint32_t RTCPtimeoutMS) = 0;
 
     /*
     *   Set periodic dead or alive notification
@@ -102,9 +102,9 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetPeriodicDeadOrAliveStatus(
+    virtual int32_t SetPeriodicDeadOrAliveStatus(
         const bool enable,
-        const WebRtc_UWord8 sampleTimeSeconds) = 0;
+        const uint8_t sampleTimeSeconds) = 0;
 
     /*
     *   Get periodic dead or alive notification status
@@ -115,16 +115,16 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 PeriodicDeadOrAliveStatus(
+    virtual int32_t PeriodicDeadOrAliveStatus(
         bool& enable,
-        WebRtc_UWord8& sampleTimeSeconds) = 0;
+        uint8_t& sampleTimeSeconds) = 0;
 
     /*
     *   set voice codec name and payload type
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RegisterReceivePayload(
+    virtual int32_t RegisterReceivePayload(
         const CodecInst& voiceCodec) = 0;
 
     /*
@@ -132,7 +132,7 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RegisterReceivePayload(
+    virtual int32_t RegisterReceivePayload(
         const VideoCodec& videoCodec) = 0;
 
     /*
@@ -140,18 +140,18 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 ReceivePayloadType(
+    virtual int32_t ReceivePayloadType(
         const CodecInst& voiceCodec,
-        WebRtc_Word8* plType) = 0;
+        int8_t* plType) = 0;
 
     /*
     *   get payload type for a video codec
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 ReceivePayloadType(
+    virtual int32_t ReceivePayloadType(
         const VideoCodec& videoCodec,
-        WebRtc_Word8* plType) = 0;
+        int8_t* plType) = 0;
 
     /*
     *   Remove a registered payload type from list of accepted payloads
@@ -160,25 +160,25 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 DeRegisterReceivePayload(
-        const WebRtc_Word8 payloadType) = 0;
+    virtual int32_t DeRegisterReceivePayload(
+        const int8_t payloadType) = 0;
 
    /*
     *   (De)register RTP header extension type and id.
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RegisterReceiveRtpHeaderExtension(
+    virtual int32_t RegisterReceiveRtpHeaderExtension(
         const RTPExtensionType type,
-        const WebRtc_UWord8 id) = 0;
+        const uint8_t id) = 0;
 
-    virtual WebRtc_Word32 DeregisterReceiveRtpHeaderExtension(
+    virtual int32_t DeregisterReceiveRtpHeaderExtension(
         const RTPExtensionType type) = 0;
 
     /*
     *   Get last received remote timestamp
     */
-    virtual WebRtc_UWord32 RemoteTimestamp() const = 0;
+    virtual uint32_t RemoteTimestamp() const = 0;
 
     /*
     *   Get the local time of the last received remote timestamp
@@ -192,13 +192,13 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 EstimatedRemoteTimeStamp(
-        WebRtc_UWord32& timestamp) const = 0;
+    virtual int32_t EstimatedRemoteTimeStamp(
+        uint32_t& timestamp) const = 0;
 
     /*
     *   Get incoming SSRC
     */
-    virtual WebRtc_UWord32 RemoteSSRC() const = 0;
+    virtual uint32_t RemoteSSRC() const = 0;
 
     /*
     *   Get remote CSRC
@@ -207,8 +207,8 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else the number of valid entries in the list
     */
-    virtual WebRtc_Word32 RemoteCSRCs(
-        WebRtc_UWord32 arrOfCSRC[kRtpCsrcSize]) const  = 0;
+    virtual int32_t RemoteCSRCs(
+        uint32_t arrOfCSRC[kRtpCsrcSize]) const  = 0;
 
     /*
     *   get the currently configured SSRC filter
@@ -217,7 +217,7 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SSRCFilter(WebRtc_UWord32& allowedSSRC) const = 0;
+    virtual int32_t SSRCFilter(uint32_t& allowedSSRC) const = 0;
 
     /*
     *   set a SSRC to be used as a filter for incoming RTP streams
@@ -226,20 +226,20 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetSSRCFilter(const bool enable,
-                                        const WebRtc_UWord32 allowedSSRC) = 0;
+    virtual int32_t SetSSRCFilter(const bool enable,
+                                  const uint32_t allowedSSRC) = 0;
 
     /*
     * Turn on/off receiving RTX (RFC 4588) on a specific SSRC.
     */
-    virtual WebRtc_Word32 SetRTXReceiveStatus(const bool enable,
-                                              const WebRtc_UWord32 SSRC) = 0;
+    virtual int32_t SetRTXReceiveStatus(const bool enable,
+                                        const uint32_t SSRC) = 0;
 
     /*
     * Get status of receiving RTX (RFC 4588) on a specific SSRC.
     */
-    virtual WebRtc_Word32 RTXReceiveStatus(bool* enable,
-                                           WebRtc_UWord32* SSRC) const = 0;
+    virtual int32_t RTXReceiveStatus(bool* enable,
+                                     uint32_t* SSRC) const = 0;
 
     /*
     *   called by the network module when we receive a packet
@@ -249,8 +249,8 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 IncomingPacket(const WebRtc_UWord8* incomingPacket,
-                                         const WebRtc_UWord16 packetLength) = 0;
+    virtual int32_t IncomingPacket(const uint8_t* incomingPacket,
+                                   const uint16_t packetLength) = 0;
 
     /**************************************************************************
     *
@@ -265,7 +265,7 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetMaxTransferUnit(const WebRtc_UWord16 size) = 0;
+    virtual int32_t SetMaxTransferUnit(const uint16_t size) = 0;
 
     /*
     *   set transtport overhead
@@ -278,10 +278,10 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetTransportOverhead(
+    virtual int32_t SetTransportOverhead(
         const bool TCP,
         const bool IPV6,
-        const WebRtc_UWord8 authenticationOverhead = 0) = 0;
+        const uint8_t authenticationOverhead = 0) = 0;
 
     /*
     *   Get max payload length
@@ -291,7 +291,7 @@ class RtpRtcp : public Module {
     *   Does not account FEC/ULP/RED overhead if FEC is enabled.
     *   Does not account for RTP headers
     */
-    virtual WebRtc_UWord16 MaxPayloadLength() const = 0;
+    virtual uint16_t MaxPayloadLength() const = 0;
 
     /*
     *   Get max data payload length
@@ -301,14 +301,14 @@ class RtpRtcp : public Module {
     *   Takes into account FEC/ULP/RED overhead if FEC is enabled.
     *   Takes into account RTP headers
     */
-    virtual WebRtc_UWord16 MaxDataPayloadLength() const = 0;
+    virtual uint16_t MaxDataPayloadLength() const = 0;
 
     /*
     *   set codec name and payload type
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RegisterSendPayload(
+    virtual int32_t RegisterSendPayload(
         const CodecInst& voiceCodec) = 0;
 
     /*
@@ -316,7 +316,7 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RegisterSendPayload(
+    virtual int32_t RegisterSendPayload(
         const VideoCodec& videoCodec) = 0;
 
     /*
@@ -326,25 +326,25 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 DeRegisterSendPayload(
-        const WebRtc_Word8 payloadType) = 0;
+    virtual int32_t DeRegisterSendPayload(
+        const int8_t payloadType) = 0;
 
    /*
     *   (De)register RTP header extension type and id.
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RegisterSendRtpHeaderExtension(
+    virtual int32_t RegisterSendRtpHeaderExtension(
         const RTPExtensionType type,
-        const WebRtc_UWord8 id) = 0;
+        const uint8_t id) = 0;
 
-    virtual WebRtc_Word32 DeregisterSendRtpHeaderExtension(
+    virtual int32_t DeregisterSendRtpHeaderExtension(
         const RTPExtensionType type) = 0;
 
     /*
     *   get start timestamp
     */
-    virtual WebRtc_UWord32 StartTimestamp() const = 0;
+    virtual uint32_t StartTimestamp() const = 0;
 
     /*
     *   configure start timestamp, default is a random number
@@ -353,32 +353,32 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetStartTimestamp(
-        const WebRtc_UWord32 timestamp) = 0;
+    virtual int32_t SetStartTimestamp(
+        const uint32_t timestamp) = 0;
 
     /*
     *   Get SequenceNumber
     */
-    virtual WebRtc_UWord16 SequenceNumber() const = 0;
+    virtual uint16_t SequenceNumber() const = 0;
 
     /*
     *   Set SequenceNumber, default is a random number
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetSequenceNumber(const WebRtc_UWord16 seq) = 0;
+    virtual int32_t SetSequenceNumber(const uint16_t seq) = 0;
 
     /*
     *   Get SSRC
     */
-    virtual WebRtc_UWord32 SSRC() const = 0;
+    virtual uint32_t SSRC() const = 0;
 
     /*
     *   configure SSRC, default is a random number
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetSSRC(const WebRtc_UWord32 ssrc) = 0;
+    virtual int32_t SetSSRC(const uint32_t ssrc) = 0;
 
     /*
     *   Get CSRC
@@ -387,8 +387,8 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else number of valid entries in the array
     */
-    virtual WebRtc_Word32 CSRCs(
-        WebRtc_UWord32 arrOfCSRC[kRtpCsrcSize]) const = 0;
+    virtual int32_t CSRCs(
+        uint32_t arrOfCSRC[kRtpCsrcSize]) const = 0;
 
     /*
     *   Set CSRC
@@ -398,9 +398,9 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetCSRCs(
-        const WebRtc_UWord32 arrOfCSRC[kRtpCsrcSize],
-        const WebRtc_UWord8 arrLength) = 0;
+    virtual int32_t SetCSRCs(
+        const uint32_t arrOfCSRC[kRtpCsrcSize],
+        const uint8_t arrLength) = 0;
 
     /*
     *   includes CSRCs in RTP header if enabled
@@ -411,20 +411,20 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetCSRCStatus(const bool include) = 0;
+    virtual int32_t SetCSRCStatus(const bool include) = 0;
 
     /*
     * Turn on/off sending RTX (RFC 4588) on a specific SSRC.
     */
-    virtual WebRtc_Word32 SetRTXSendStatus(const RtxMode mode,
-                                           const bool setSSRC,
-                                           const WebRtc_UWord32 SSRC) = 0;
+    virtual int32_t SetRTXSendStatus(const RtxMode mode,
+                                     const bool setSSRC,
+                                     const uint32_t SSRC) = 0;
 
     /*
     * Get status of sending RTX (RFC 4588) on a specific SSRC.
     */
-    virtual WebRtc_Word32 RTXSendStatus(RtxMode* mode,
-                                        WebRtc_UWord32* SSRC) const = 0;
+    virtual int32_t RTXSendStatus(RtxMode* mode,
+                                  uint32_t* SSRC) const = 0;
 
     /*
     *   sends kRtcpByeCode when going from true to false
@@ -433,7 +433,7 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetSendingStatus(const bool sending) = 0;
+    virtual int32_t SetSendingStatus(const bool sending) = 0;
 
     /*
     *   get send status
@@ -447,7 +447,7 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetSendingMediaStatus(const bool sending) = 0;
+    virtual int32_t SetSendingMediaStatus(const bool sending) = 0;
 
     /*
     *   get send status
@@ -457,10 +457,10 @@ class RtpRtcp : public Module {
     /*
     *   get sent bitrate in Kbit/s
     */
-    virtual void BitrateSent(WebRtc_UWord32* totalRate,
-                             WebRtc_UWord32* videoRate,
-                             WebRtc_UWord32* fecRate,
-                             WebRtc_UWord32* nackRate) const = 0;
+    virtual void BitrateSent(uint32_t* totalRate,
+                             uint32_t* videoRate,
+                             uint32_t* fecRate,
+                             uint32_t* nackRate) const = 0;
 
     /*
     *   Used by the codec module to deliver a video or audio frame for
@@ -476,13 +476,13 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SendOutgoingData(
+    virtual int32_t SendOutgoingData(
         const FrameType frameType,
-        const WebRtc_Word8 payloadType,
-        const WebRtc_UWord32 timeStamp,
+        const int8_t payloadType,
+        const uint32_t timeStamp,
         int64_t capture_time_ms,
-        const WebRtc_UWord8* payloadData,
-        const WebRtc_UWord32 payloadSize,
+        const uint8_t* payloadData,
+        const uint32_t payloadSize,
         const RTPFragmentationHeader* fragmentation = NULL,
         const RTPVideoHeader* rtpVideoHdr = NULL) = 0;
 
@@ -507,29 +507,29 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetRTCPStatus(const RTCPMethod method) = 0;
+    virtual int32_t SetRTCPStatus(const RTCPMethod method) = 0;
 
     /*
     *   Set RTCP CName (i.e unique identifier)
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetCNAME(const char cName[RTCP_CNAME_SIZE]) = 0;
+    virtual int32_t SetCNAME(const char cName[RTCP_CNAME_SIZE]) = 0;
 
     /*
     *   Get RTCP CName (i.e unique identifier)
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 CNAME(char cName[RTCP_CNAME_SIZE]) = 0;
+    virtual int32_t CNAME(char cName[RTCP_CNAME_SIZE]) = 0;
 
     /*
     *   Get remote CName
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RemoteCNAME(
-        const WebRtc_UWord32 remoteSSRC,
+    virtual int32_t RemoteCNAME(
+        const uint32_t remoteSSRC,
         char cName[RTCP_CNAME_SIZE]) const = 0;
 
     /*
@@ -537,20 +537,20 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RemoteNTP(
-        WebRtc_UWord32 *ReceivedNTPsecs,
-        WebRtc_UWord32 *ReceivedNTPfrac,
-        WebRtc_UWord32 *RTCPArrivalTimeSecs,
-        WebRtc_UWord32 *RTCPArrivalTimeFrac,
-        WebRtc_UWord32 *rtcp_timestamp) const  = 0;
+    virtual int32_t RemoteNTP(
+        uint32_t *ReceivedNTPsecs,
+        uint32_t *ReceivedNTPfrac,
+        uint32_t *RTCPArrivalTimeSecs,
+        uint32_t *RTCPArrivalTimeFrac,
+        uint32_t *rtcp_timestamp) const  = 0;
 
     /*
     *   AddMixedCNAME
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 AddMixedCNAME(
-        const WebRtc_UWord32 SSRC,
+    virtual int32_t AddMixedCNAME(
+        const uint32_t SSRC,
         const char cName[RTCP_CNAME_SIZE]) = 0;
 
     /*
@@ -558,25 +558,25 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RemoveMixedCNAME(const WebRtc_UWord32 SSRC) = 0;
+    virtual int32_t RemoveMixedCNAME(const uint32_t SSRC) = 0;
 
     /*
     *   Get RoundTripTime
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RTT(const WebRtc_UWord32 remoteSSRC,
-                              WebRtc_UWord16* RTT,
-                              WebRtc_UWord16* avgRTT,
-                              WebRtc_UWord16* minRTT,
-                              WebRtc_UWord16* maxRTT) const = 0 ;
+    virtual int32_t RTT(const uint32_t remoteSSRC,
+                        uint16_t* RTT,
+                        uint16_t* avgRTT,
+                        uint16_t* minRTT,
+                        uint16_t* maxRTT) const = 0 ;
 
     /*
     *   Reset RoundTripTime statistics
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 ResetRTT(const WebRtc_UWord32 remoteSSRC)= 0 ;
+    virtual int32_t ResetRTT(const uint32_t remoteSSRC)= 0 ;
 
     /*
      * Sets the estimated RTT, to be used for receive only modules without
@@ -590,86 +590,86 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SendRTCP(
-        WebRtc_UWord32 rtcpPacketType = kRtcpReport) = 0;
+    virtual int32_t SendRTCP(
+        uint32_t rtcpPacketType = kRtcpReport) = 0;
 
     /*
     *    Good state of RTP receiver inform sender
     */
-    virtual WebRtc_Word32 SendRTCPReferencePictureSelection(
-        const WebRtc_UWord64 pictureID) = 0;
+    virtual int32_t SendRTCPReferencePictureSelection(
+        const uint64_t pictureID) = 0;
 
     /*
     *    Send a RTCP Slice Loss Indication (SLI)
     *    6 least significant bits of pictureID
     */
-    virtual WebRtc_Word32 SendRTCPSliceLossIndication(
-        const WebRtc_UWord8 pictureID) = 0;
+    virtual int32_t SendRTCPSliceLossIndication(
+        const uint8_t pictureID) = 0;
 
     /*
     *   Reset RTP statistics
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 ResetStatisticsRTP() = 0;
+    virtual int32_t ResetStatisticsRTP() = 0;
 
     /*
     *   statistics of our localy created statistics of the received RTP stream
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 StatisticsRTP(
-        WebRtc_UWord8* fraction_lost,  // scale 0 to 255
-        WebRtc_UWord32* cum_lost,      // number of lost packets
-        WebRtc_UWord32* ext_max,       // highest sequence number received
-        WebRtc_UWord32* jitter,
-        WebRtc_UWord32* max_jitter = NULL) const = 0;
+    virtual int32_t StatisticsRTP(
+        uint8_t* fraction_lost,  // scale 0 to 255
+        uint32_t* cum_lost,      // number of lost packets
+        uint32_t* ext_max,       // highest sequence number received
+        uint32_t* jitter,
+        uint32_t* max_jitter = NULL) const = 0;
 
     /*
     *   Reset RTP data counters for the receiving side
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 ResetReceiveDataCountersRTP() = 0;
+    virtual int32_t ResetReceiveDataCountersRTP() = 0;
 
     /*
     *   Reset RTP data counters for the sending side
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 ResetSendDataCountersRTP() = 0;
+    virtual int32_t ResetSendDataCountersRTP() = 0;
 
     /*
     *   statistics of the amount of data sent and received
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 DataCountersRTP(
-        WebRtc_UWord32* bytesSent,
-        WebRtc_UWord32* packetsSent,
-        WebRtc_UWord32* bytesReceived,
-        WebRtc_UWord32* packetsReceived) const = 0;
+    virtual int32_t DataCountersRTP(
+        uint32_t* bytesSent,
+        uint32_t* packetsSent,
+        uint32_t* bytesReceived,
+        uint32_t* packetsReceived) const = 0;
     /*
     *   Get received RTCP sender info
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RemoteRTCPStat(RTCPSenderInfo* senderInfo) = 0;
+    virtual int32_t RemoteRTCPStat(RTCPSenderInfo* senderInfo) = 0;
 
     /*
     *   Get received RTCP report block
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RemoteRTCPStat(
+    virtual int32_t RemoteRTCPStat(
         std::vector<RTCPReportBlock>* receiveBlocks) const = 0;
     /*
     *   Set received RTCP report block
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 AddRTCPReportBlock(
-        const WebRtc_UWord32 SSRC,
+    virtual int32_t AddRTCPReportBlock(
+        const uint32_t SSRC,
         const RTCPReportBlock* receiveBlock) = 0;
 
     /*
@@ -677,24 +677,24 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RemoveRTCPReportBlock(const WebRtc_UWord32 SSRC) = 0;
+    virtual int32_t RemoveRTCPReportBlock(const uint32_t SSRC) = 0;
 
     /*
     *   (APP) Application specific data
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetRTCPApplicationSpecificData(
-        const WebRtc_UWord8 subType,
-        const WebRtc_UWord32 name,
-        const WebRtc_UWord8* data,
-        const WebRtc_UWord16 length) = 0;
+    virtual int32_t SetRTCPApplicationSpecificData(
+        const uint8_t subType,
+        const uint32_t name,
+        const uint8_t* data,
+        const uint16_t length) = 0;
     /*
     *   (XR) VOIP metric
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetRTCPVoIPMetrics(
+    virtual int32_t SetRTCPVoIPMetrics(
         const RTCPVoIPMetric* VoIPMetric) = 0;
 
     /*
@@ -702,18 +702,18 @@ class RtpRtcp : public Module {
     */
     virtual bool REMB() const = 0;
 
-    virtual WebRtc_Word32 SetREMBStatus(const bool enable) = 0;
+    virtual int32_t SetREMBStatus(const bool enable) = 0;
 
-    virtual WebRtc_Word32 SetREMBData(const WebRtc_UWord32 bitrate,
-                                      const WebRtc_UWord8 numberOfSSRC,
-                                      const WebRtc_UWord32* SSRC) = 0;
+    virtual int32_t SetREMBData(const uint32_t bitrate,
+                                const uint8_t numberOfSSRC,
+                                const uint32_t* SSRC) = 0;
 
     /*
     *   (IJ) Extended jitter report.
     */
     virtual bool IJ() const = 0;
 
-    virtual WebRtc_Word32 SetIJStatus(const bool enable) = 0;
+    virtual int32_t SetIJStatus(const bool enable) = 0;
 
     /*
     *   (TMMBR) Temporary Max Media Bit Rate
@@ -724,7 +724,7 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetTMMBRStatus(const bool enable) = 0;
+    virtual int32_t SetTMMBRStatus(const bool enable) = 0;
 
     /*
     *   (NACK)
@@ -739,8 +739,8 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetNACKStatus(const NACKMethod method,
-                                        int max_reordering_threshold) = 0;
+    virtual int32_t SetNACKStatus(const NACKMethod method,
+                                  int max_reordering_threshold) = 0;
 
     /*
      *  TODO(holmer): Propagate this API to VideoEngine.
@@ -767,8 +767,8 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SendNACK(const WebRtc_UWord16* nackList,
-                                   const WebRtc_UWord16 size) = 0;
+    virtual int32_t SendNACK(const uint16_t* nackList,
+                             const uint16_t size) = 0;
 
     /*
     *   Store the sent packets, needed to answer to a Negative acknowledgement
@@ -776,9 +776,9 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetStorePacketsStatus(
+    virtual int32_t SetStorePacketsStatus(
         const bool enable,
-        const WebRtc_UWord16 numberToStore) = 0;
+        const uint16_t numberToStore) = 0;
 
     /**************************************************************************
     *
@@ -792,8 +792,8 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetAudioPacketSize(
-        const WebRtc_UWord16 packetSizeSamples) = 0;
+    virtual int32_t SetAudioPacketSize(
+        const uint16_t packetSizeSamples) = 0;
 
     /*
     *   Forward DTMF to decoder for playout.
@@ -816,33 +816,33 @@ class RtpRtcp : public Module {
     *   by the microphone and send inband just after the tone has ended.
     */
     virtual bool SendTelephoneEventActive(
-        WebRtc_Word8& telephoneEvent) const = 0;
+        int8_t& telephoneEvent) const = 0;
 
     /*
     *   Send a TelephoneEvent tone using RFC 2833 (4733)
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SendTelephoneEventOutband(
-        const WebRtc_UWord8 key,
-        const WebRtc_UWord16 time_ms,
-        const WebRtc_UWord8 level) = 0;
+    virtual int32_t SendTelephoneEventOutband(
+        const uint8_t key,
+        const uint16_t time_ms,
+        const uint8_t level) = 0;
 
     /*
     *   Set payload type for Redundant Audio Data RFC 2198
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetSendREDPayloadType(
-        const WebRtc_Word8 payloadType) = 0;
+    virtual int32_t SetSendREDPayloadType(
+        const int8_t payloadType) = 0;
 
     /*
     *   Get payload type for Redundant Audio Data RFC 2198
     *
     *   return -1 on failure else 0
     */
-     virtual WebRtc_Word32 SendREDPayloadType(
-         WebRtc_Word8& payloadType) const = 0;
+     virtual int32_t SendREDPayloadType(
+         int8_t& payloadType) const = 0;
 
      /*
      * Set status and ID for header-extension-for-audio-level-indication.
@@ -850,18 +850,18 @@ class RtpRtcp : public Module {
      *
      * return -1 on failure else 0
      */
-     virtual WebRtc_Word32 SetRTPAudioLevelIndicationStatus(
+     virtual int32_t SetRTPAudioLevelIndicationStatus(
          const bool enable,
-         const WebRtc_UWord8 ID) = 0;
+         const uint8_t ID) = 0;
 
      /*
      * Get status and ID for header-extension-for-audio-level-indication.
      *
      * return -1 on failure else 0
      */
-     virtual WebRtc_Word32 GetRTPAudioLevelIndicationStatus(
+     virtual int32_t GetRTPAudioLevelIndicationStatus(
          bool& enable,
-         WebRtc_UWord8& ID) const = 0;
+         uint8_t& ID) const = 0;
 
      /*
      * Store the audio level in dBov for header-extension-for-audio-level-
@@ -871,7 +871,7 @@ class RtpRtcp : public Module {
      *
      * return -1 on failure else 0.
      */
-     virtual WebRtc_Word32 SetAudioLevel(const WebRtc_UWord8 level_dBov) = 0;
+     virtual int32_t SetAudioLevel(const uint8_t level_dBov) = 0;
 
     /**************************************************************************
     *
@@ -884,34 +884,34 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetCameraDelay(const WebRtc_Word32 delayMS) = 0;
+    virtual int32_t SetCameraDelay(const int32_t delayMS) = 0;
 
     /*
     *   Set the target send bitrate
     */
-    virtual void SetTargetSendBitrate(const WebRtc_UWord32 bitrate) = 0;
+    virtual void SetTargetSendBitrate(const uint32_t bitrate) = 0;
 
     /*
     *   Turn on/off generic FEC
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetGenericFECStatus(
+    virtual int32_t SetGenericFECStatus(
         const bool enable,
-        const WebRtc_UWord8 payloadTypeRED,
-        const WebRtc_UWord8 payloadTypeFEC) = 0;
+        const uint8_t payloadTypeRED,
+        const uint8_t payloadTypeFEC) = 0;
 
     /*
     *   Get generic FEC setting
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 GenericFECStatus(bool& enable,
-                                           WebRtc_UWord8& payloadTypeRED,
-                                           WebRtc_UWord8& payloadTypeFEC) = 0;
+    virtual int32_t GenericFECStatus(bool& enable,
+                                     uint8_t& payloadTypeRED,
+                                     uint8_t& payloadTypeFEC) = 0;
 
 
-    virtual WebRtc_Word32 SetFecParameters(
+    virtual int32_t SetFecParameters(
         const FecProtectionParams* delta_params,
         const FecProtectionParams* key_params) = 0;
 
@@ -920,7 +920,7 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetKeyFrameRequestMethod(
+    virtual int32_t SetKeyFrameRequestMethod(
         const KeyFrameRequestMethod method) = 0;
 
     /*
@@ -928,7 +928,7 @@ class RtpRtcp : public Module {
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RequestKeyFrame() = 0;
+    virtual int32_t RequestKeyFrame() = 0;
 };
 } // namespace webrtc
 #endif // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_H_

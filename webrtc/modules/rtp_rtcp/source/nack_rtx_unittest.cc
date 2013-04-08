@@ -19,18 +19,18 @@
 namespace webrtc {
 const int kVideoNackListSize = 10;
 const int kTestId = 123;
-const WebRtc_UWord32 kTestSsrc = 3456;
-const WebRtc_UWord16 kTestSequenceNumber = 2345;
-const WebRtc_UWord32 kTestNumberOfPackets = 450;
+const uint32_t kTestSsrc = 3456;
+const uint16_t kTestSequenceNumber = 2345;
+const uint32_t kTestNumberOfPackets = 450;
 const int kTestNumberOfRtxPackets = 49;
 
 class VerifyingRtxReceiver : public RtpData {
  public:
   VerifyingRtxReceiver() {}
 
-  virtual WebRtc_Word32 OnReceivedPayloadData(
-      const WebRtc_UWord8* data,
-      const WebRtc_UWord16 size,
+  virtual int32_t OnReceivedPayloadData(
+      const uint8_t* data,
+      const uint16_t size,
       const webrtc::WebRtcRTPHeader* rtp_header) {
     if (!sequence_numbers_.empty()) {
       EXPECT_EQ(kTestSsrc, rtp_header->header.ssrc);
@@ -38,7 +38,7 @@ class VerifyingRtxReceiver : public RtpData {
     sequence_numbers_.push_back(rtp_header->header.sequenceNumber);
     return 0;
   }
-  std::vector<WebRtc_UWord16 > sequence_numbers_;
+  std::vector<uint16_t > sequence_numbers_;
 };
 
 class RtxLoopBackTransport : public webrtc::Transport {
@@ -66,13 +66,13 @@ class RtxLoopBackTransport : public webrtc::Transport {
         return len;
       }
     }
-    if (module_->IncomingPacket((const WebRtc_UWord8*)data, len) == 0) {
+    if (module_->IncomingPacket((const uint8_t*)data, len) == 0) {
       return len;
     }
     return -1;
   }
   virtual int SendRTCPPacket(int channel, const void *data, int len) {
-    if (module_->IncomingPacket((const WebRtc_UWord8*)data, len) == 0) {
+    if (module_->IncomingPacket((const uint8_t*)data, len) == 0) {
       return len;
     }
     return -1;
@@ -133,14 +133,14 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
   RtpRtcp* rtp_rtcp_module_;
   RtxLoopBackTransport transport_;
   VerifyingRtxReceiver receiver_;
-  WebRtc_UWord8  payload_data[65000];
+  uint8_t  payload_data[65000];
   int payload_data_length;
   SimulatedClock fake_clock;
 };
 
 TEST_F(RtpRtcpRtxNackTest, RTCP) {
-  WebRtc_UWord32 timestamp = 3000;
-  WebRtc_UWord16 nack_list[kVideoNackListSize];
+  uint32_t timestamp = 3000;
+  uint16_t nack_list[kVideoNackListSize];
   transport_.DropEveryNthPacket(10);
 
   for (int frame = 0; frame < 10; ++frame) {
@@ -154,17 +154,17 @@ TEST_F(RtpRtcpRtxNackTest, RTCP) {
     std::sort(receiver_.sequence_numbers_.begin(),
               receiver_.sequence_numbers_.end());
 
-    std::vector<WebRtc_UWord16> missing_sequence_numbers;
-    std::vector<WebRtc_UWord16>::iterator it =
+    std::vector<uint16_t> missing_sequence_numbers;
+    std::vector<uint16_t>::iterator it =
         receiver_.sequence_numbers_.begin();
 
     while (it != receiver_.sequence_numbers_.end()) {
-      WebRtc_UWord16 sequence_number_1 = *it;
+      uint16_t sequence_number_1 = *it;
       ++it;
       if (it != receiver_.sequence_numbers_.end()) {
-        WebRtc_UWord16 sequence_number_2 = *it;
+        uint16_t sequence_number_2 = *it;
         // Add all missing sequence numbers to list.
-        for (WebRtc_UWord16 i = sequence_number_1 + 1; i < sequence_number_2;
+        for (uint16_t i = sequence_number_1 + 1; i < sequence_number_2;
             ++i) {
           missing_sequence_numbers.push_back(i);
         }
@@ -198,8 +198,8 @@ TEST_F(RtpRtcpRtxNackTest, RTXNack) {
 
   transport_.DropEveryNthPacket(10);
 
-  WebRtc_UWord32 timestamp = 3000;
-  WebRtc_UWord16 nack_list[kVideoNackListSize];
+  uint32_t timestamp = 3000;
+  uint16_t nack_list[kVideoNackListSize];
 
   for (int frame = 0; frame < 10; ++frame) {
     EXPECT_EQ(0, rtp_rtcp_module_->SendOutgoingData(webrtc::kVideoFrameDelta,
@@ -212,10 +212,10 @@ TEST_F(RtpRtcpRtxNackTest, RTXNack) {
     std::sort(receiver_.sequence_numbers_.begin(),
               receiver_.sequence_numbers_.end());
 
-    std::vector<WebRtc_UWord16> missing_sequence_numbers;
+    std::vector<uint16_t> missing_sequence_numbers;
 
 
-    std::vector<WebRtc_UWord16>::iterator it =
+    std::vector<uint16_t>::iterator it =
         receiver_.sequence_numbers_.begin();
     while (it != receiver_.sequence_numbers_.end()) {
       int sequence_number_1 = *it;
@@ -255,7 +255,7 @@ TEST_F(RtpRtcpRtxNackTest, RTXAllNoLoss) {
                                                   true, kTestSsrc + 1));
   transport_.DropEveryNthPacket(0);
 
-  WebRtc_UWord32 timestamp = 3000;
+  uint32_t timestamp = 3000;
 
   for (int frame = 0; frame < 10; ++frame) {
     EXPECT_EQ(0, rtp_rtcp_module_->SendOutgoingData(webrtc::kVideoFrameDelta,
@@ -292,8 +292,8 @@ TEST_F(RtpRtcpRtxNackTest, RTXAllWithLoss) {
   int loss = 10;
   transport_.DropEveryNthPacket(loss);
 
-  WebRtc_UWord32 timestamp = 3000;
-  WebRtc_UWord16 nack_list[kVideoNackListSize];
+  uint32_t timestamp = 3000;
+  uint16_t nack_list[kVideoNackListSize];
 
   for (int frame = 0; frame < 10; ++frame) {
     EXPECT_EQ(0, rtp_rtcp_module_->SendOutgoingData(webrtc::kVideoFrameDelta,
@@ -304,9 +304,9 @@ TEST_F(RtpRtcpRtxNackTest, RTXAllWithLoss) {
                                                     payload_data_length));
     std::sort(receiver_.sequence_numbers_.begin(),
               receiver_.sequence_numbers_.end());
-    std::vector<WebRtc_UWord16> missing_sequence_numbers;
+    std::vector<uint16_t> missing_sequence_numbers;
 
-    std::vector<WebRtc_UWord16>::iterator it =
+    std::vector<uint16_t>::iterator it =
         receiver_.sequence_numbers_.begin();
     while (it != receiver_.sequence_numbers_.end()) {
       int sequence_number_1 = *it;

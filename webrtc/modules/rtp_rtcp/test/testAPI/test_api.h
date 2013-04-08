@@ -37,13 +37,13 @@ class LoopBackTransport : public webrtc::Transport {
         return len;
       }
     }
-    if (_rtpRtcpModule->IncomingPacket((const WebRtc_UWord8*)data, len) == 0) {
+    if (_rtpRtcpModule->IncomingPacket((const uint8_t*)data, len) == 0) {
       return len;
     }
     return -1;
   }
   virtual int SendRTCPPacket(int channel, const void *data, int len) {
-    if (_rtpRtcpModule->IncomingPacket((const WebRtc_UWord8*)data, len) == 0) {
+    if (_rtpRtcpModule->IncomingPacket((const uint8_t*)data, len) == 0) {
       return len;
     }
     return -1;
@@ -58,9 +58,9 @@ class RtpReceiver : public RtpData {
  public:
   enum { kMaxPayloadSize = 1500 };
 
-  virtual WebRtc_Word32 OnReceivedPayloadData(
-      const WebRtc_UWord8* payloadData,
-      const WebRtc_UWord16 payloadSize,
+  virtual int32_t OnReceivedPayloadData(
+      const uint8_t* payloadData,
+      const uint16_t payloadSize,
       const webrtc::WebRtcRTPHeader* rtpHeader) {
     EXPECT_LE(payloadSize, kMaxPayloadSize);
     memcpy(_payloadData, payloadData, payloadSize);
@@ -69,11 +69,11 @@ class RtpReceiver : public RtpData {
     return 0;
   }
 
-  const WebRtc_UWord8* payload_data() const {
+  const uint8_t* payload_data() const {
     return _payloadData;
   }
 
-  WebRtc_UWord16 payload_size() const {
+  uint16_t payload_size() const {
     return _payloadSize;
   }
 
@@ -82,8 +82,8 @@ class RtpReceiver : public RtpData {
   }
 
  private:
-  WebRtc_UWord8 _payloadData[kMaxPayloadSize];
-  WebRtc_UWord16 _payloadSize;
+  uint8_t _payloadData[kMaxPayloadSize];
+  uint16_t _payloadSize;
   webrtc::WebRtcRTPHeader _rtpHeader;
 };
 

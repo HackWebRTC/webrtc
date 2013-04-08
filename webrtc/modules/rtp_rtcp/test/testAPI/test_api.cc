@@ -41,10 +41,10 @@ class RtpRtcpAPITest : public ::testing::Test {
 
   int test_id;
   RtpRtcp* module;
-  WebRtc_UWord32 test_ssrc;
-  WebRtc_UWord32 test_timestamp;
-  WebRtc_UWord16 test_sequence_number;
-  WebRtc_UWord32 test_CSRC[webrtc::kRtpCsrcSize];
+  uint32_t test_ssrc;
+  uint32_t test_timestamp;
+  uint16_t test_sequence_number;
+  uint32_t test_CSRC[webrtc::kRtpCsrcSize];
   SimulatedClock fake_clock;
 };
 
@@ -80,7 +80,7 @@ TEST_F(RtpRtcpAPITest, SSRC) {
 
 TEST_F(RtpRtcpAPITest, CSRC) {
   EXPECT_EQ(0, module->SetCSRCs(test_CSRC, 2));
-  WebRtc_UWord32 testOfCSRC[webrtc::kRtpCsrcSize];
+  uint32_t testOfCSRC[webrtc::kRtpCsrcSize];
   EXPECT_EQ(2, module->CSRCs(testOfCSRC));
   EXPECT_EQ(test_CSRC[0], testOfCSRC[0]);
   EXPECT_EQ(test_CSRC[1], testOfCSRC[1]);

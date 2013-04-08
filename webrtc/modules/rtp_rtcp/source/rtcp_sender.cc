@@ -30,7 +30,7 @@ NACKStringBuilder::NACKStringBuilder() :
     // Empty.
 }
 
-void NACKStringBuilder::PushNACK(WebRtc_UWord16 nack)
+void NACKStringBuilder::PushNACK(uint16_t nack)
 {
     if (_count == 0)
     {
@@ -61,7 +61,7 @@ std::string NACKStringBuilder::GetResult()
     return _stream.str();
 }
 
-RTCPSender::RTCPSender(const WebRtc_Word32 id,
+RTCPSender::RTCPSender(const int32_t id,
                        const bool audio,
                        Clock* clock,
                        ModuleRtpRtcpImpl* owner) :
@@ -134,13 +134,13 @@ RTCPSender::~RTCPSender() {
   delete [] _appData;
 
   while (!_reportBlocks.empty()) {
-    std::map<WebRtc_UWord32, RTCPReportBlock*>::iterator it =
+    std::map<uint32_t, RTCPReportBlock*>::iterator it =
         _reportBlocks.begin();
     delete it->second;
     _reportBlocks.erase(it);
   }
   while (!_csrcCNAMEs.empty()) {
-    std::map<WebRtc_UWord32, RTCPCnameInformation*>::iterator it =
+    std::map<uint32_t, RTCPCnameInformation*>::iterator it =
         _csrcCNAMEs.begin();
     delete it->second;
     _csrcCNAMEs.erase(it);
@@ -151,7 +151,7 @@ RTCPSender::~RTCPSender() {
   WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, _id, "%s deleted", __FUNCTION__);
 }
 
-WebRtc_Word32
+int32_t
 RTCPSender::Init()
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
@@ -201,12 +201,12 @@ RTCPSender::Init()
 }
 
 void
-RTCPSender::ChangeUniqueId(const WebRtc_Word32 id)
+RTCPSender::ChangeUniqueId(const int32_t id)
 {
     _id = id;
 }
 
-WebRtc_Word32
+int32_t
 RTCPSender::RegisterSendTransport(Transport* outgoingTransport)
 {
     CriticalSectionScoped lock(_criticalSectionTransport);
@@ -221,7 +221,7 @@ RTCPSender::Status() const
     return _method;
 }
 
-WebRtc_Word32
+int32_t
 RTCPSender::SetRTCPStatus(const RTCPMethod method)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
@@ -248,7 +248,7 @@ RTCPSender::Sending() const
     return _sending;
 }
 
-WebRtc_Word32
+int32_t
 RTCPSender::SetSendingStatus(const bool sending)
 {
     bool sendRTCPBye = false;
@@ -279,7 +279,7 @@ RTCPSender::REMB() const
     return _REMB;
 }
 
-WebRtc_Word32
+int32_t
 RTCPSender::SetREMBStatus(const bool enable)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
@@ -287,10 +287,10 @@ RTCPSender::SetREMBStatus(const bool enable)
     return 0;
 }
 
-WebRtc_Word32
-RTCPSender::SetREMBData(const WebRtc_UWord32 bitrate,
-                        const WebRtc_UWord8 numberOfSSRC,
-                        const WebRtc_UWord32* SSRC)
+int32_t
+RTCPSender::SetREMBData(const uint32_t bitrate,
+                        const uint8_t numberOfSSRC,
+                        const uint32_t* SSRC)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
     _rembBitrate = bitrate;
@@ -298,7 +298,7 @@ RTCPSender::SetREMBData(const WebRtc_UWord32 bitrate,
     if(_sizeRembSSRC < numberOfSSRC)
     {
         delete [] _rembSSRC;
-        _rembSSRC = new WebRtc_UWord32[numberOfSSRC];
+        _rembSSRC = new uint32_t[numberOfSSRC];
         _sizeRembSSRC = numberOfSSRC;
     } 
 
@@ -318,7 +318,7 @@ RTCPSender::TMMBR() const
     return _TMMBR;
 }
 
-WebRtc_Word32
+int32_t
 RTCPSender::SetTMMBRStatus(const bool enable)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
@@ -333,7 +333,7 @@ RTCPSender::IJ() const
     return _IJ;
 }
 
-WebRtc_Word32
+int32_t
 RTCPSender::SetIJStatus(const bool enable)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
@@ -358,7 +358,7 @@ void RTCPSender::SetLastRtpTime(uint32_t rtp_timestamp,
 }
 
 void
-RTCPSender::SetSSRC( const WebRtc_UWord32 ssrc)
+RTCPSender::SetSSRC( const uint32_t ssrc)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
 
@@ -372,16 +372,16 @@ RTCPSender::SetSSRC( const WebRtc_UWord32 ssrc)
     _SSRC = ssrc;
 }
 
-WebRtc_Word32
-RTCPSender::SetRemoteSSRC( const WebRtc_UWord32 ssrc)
+int32_t
+RTCPSender::SetRemoteSSRC( const uint32_t ssrc)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
     _remoteSSRC = ssrc;
     return 0;
 }
 
-WebRtc_Word32
-RTCPSender::SetCameraDelay(const WebRtc_Word32 delayMS)
+int32_t
+RTCPSender::SetCameraDelay(const int32_t delayMS)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
     if(delayMS > 1000 || delayMS < -1000)
@@ -393,7 +393,7 @@ RTCPSender::SetCameraDelay(const WebRtc_Word32 delayMS)
     return 0;
 }
 
-WebRtc_Word32 RTCPSender::CNAME(char cName[RTCP_CNAME_SIZE]) {
+int32_t RTCPSender::CNAME(char cName[RTCP_CNAME_SIZE]) {
   assert(cName);
   CriticalSectionScoped lock(_criticalSectionRTCPSender);
   cName[RTCP_CNAME_SIZE - 1] = 0;
@@ -401,7 +401,7 @@ WebRtc_Word32 RTCPSender::CNAME(char cName[RTCP_CNAME_SIZE]) {
   return 0;
 }
 
-WebRtc_Word32 RTCPSender::SetCNAME(const char cName[RTCP_CNAME_SIZE]) {
+int32_t RTCPSender::SetCNAME(const char cName[RTCP_CNAME_SIZE]) {
   if (!cName)
     return -1;
 
@@ -411,8 +411,8 @@ WebRtc_Word32 RTCPSender::SetCNAME(const char cName[RTCP_CNAME_SIZE]) {
   return 0;
 }
 
-WebRtc_Word32 RTCPSender::AddMixedCNAME(const WebRtc_UWord32 SSRC,
-                                        const char cName[RTCP_CNAME_SIZE]) {
+int32_t RTCPSender::AddMixedCNAME(const uint32_t SSRC,
+                                  const char cName[RTCP_CNAME_SIZE]) {
   assert(cName);
   CriticalSectionScoped lock(_criticalSectionRTCPSender);
   if (_csrcCNAMEs.size() >= kRtpCsrcSize) {
@@ -425,9 +425,9 @@ WebRtc_Word32 RTCPSender::AddMixedCNAME(const WebRtc_UWord32 SSRC,
   return 0;
 }
 
-WebRtc_Word32 RTCPSender::RemoveMixedCNAME(const WebRtc_UWord32 SSRC) {
+int32_t RTCPSender::RemoveMixedCNAME(const uint32_t SSRC) {
   CriticalSectionScoped lock(_criticalSectionRTCPSender);
-  std::map<WebRtc_UWord32, RTCPCnameInformation*>::iterator it =
+  std::map<uint32_t, RTCPCnameInformation*>::iterator it =
       _csrcCNAMEs.find(SSRC);
 
   if (it == _csrcCNAMEs.end()) {
@@ -498,7 +498,7 @@ From RFC 3550
       a value of the RTCP bandwidth below the intended average
 */
 
-    WebRtc_Word64 now = _clock->TimeInMilliseconds();
+    int64_t now = _clock->TimeInMilliseconds();
 
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
 
@@ -526,8 +526,8 @@ From RFC 3550
     return false;
 }
 
-WebRtc_UWord32
-RTCPSender::LastSendReport( WebRtc_UWord32& lastRTCPTime)
+uint32_t
+RTCPSender::LastSendReport( uint32_t& lastRTCPTime)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
 
@@ -535,8 +535,8 @@ RTCPSender::LastSendReport( WebRtc_UWord32& lastRTCPTime)
     return _lastSendReport[0];
 }
 
-WebRtc_UWord32
-RTCPSender::SendTimeOfSendReport(const WebRtc_UWord32 sendReport)
+uint32_t
+RTCPSender::SendTimeOfSendReport(const uint32_t sendReport)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
 
@@ -557,8 +557,8 @@ RTCPSender::SendTimeOfSendReport(const WebRtc_UWord32 sendReport)
     return 0;
 }
 
-WebRtc_Word32 RTCPSender::AddReportBlock(const WebRtc_UWord32 SSRC,
-                                         const RTCPReportBlock* reportBlock) {
+int32_t RTCPSender::AddReportBlock(const uint32_t SSRC,
+                                   const RTCPReportBlock* reportBlock) {
   if (reportBlock == NULL) {
     WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
                  "%s invalid argument", __FUNCTION__);
@@ -571,7 +571,7 @@ WebRtc_Word32 RTCPSender::AddReportBlock(const WebRtc_UWord32 SSRC,
                  "%s invalid argument", __FUNCTION__);
     return -1;
   }
-  std::map<WebRtc_UWord32, RTCPReportBlock*>::iterator it =
+  std::map<uint32_t, RTCPReportBlock*>::iterator it =
       _reportBlocks.find(SSRC);
   if (it != _reportBlocks.end()) {
     delete it->second;
@@ -583,10 +583,10 @@ WebRtc_Word32 RTCPSender::AddReportBlock(const WebRtc_UWord32 SSRC,
   return 0;
 }
 
-WebRtc_Word32 RTCPSender::RemoveReportBlock(const WebRtc_UWord32 SSRC) {
+int32_t RTCPSender::RemoveReportBlock(const uint32_t SSRC) {
   CriticalSectionScoped lock(_criticalSectionRTCPSender);
 
-  std::map<WebRtc_UWord32, RTCPReportBlock*>::iterator it =
+  std::map<uint32_t, RTCPReportBlock*>::iterator it =
       _reportBlocks.find(SSRC);
 
   if (it == _reportBlocks.end()) {
@@ -597,11 +597,11 @@ WebRtc_Word32 RTCPSender::RemoveReportBlock(const WebRtc_UWord32 SSRC) {
   return 0;
 }
 
-WebRtc_Word32
-RTCPSender::BuildSR(WebRtc_UWord8* rtcpbuffer,
-                    WebRtc_UWord32& pos,
-                    const WebRtc_UWord32 NTPsec,
-                    const WebRtc_UWord32 NTPfrac,
+int32_t
+RTCPSender::BuildSR(uint8_t* rtcpbuffer,
+                    uint32_t& pos,
+                    const uint32_t NTPsec,
+                    const uint32_t NTPfrac,
                     const RTCPReportBlock* received)
 {
     // sanity
@@ -610,13 +610,13 @@ RTCPSender::BuildSR(WebRtc_UWord8* rtcpbuffer,
         WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument", __FUNCTION__);
         return -2;
     }
-    WebRtc_UWord32 RTPtime;
+    uint32_t RTPtime;
 
-    WebRtc_UWord32 posNumberOfReportBlocks = pos;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0x80;
+    uint32_t posNumberOfReportBlocks = pos;
+    rtcpbuffer[pos++]=(uint8_t)0x80;
 
     // Sender report
-    rtcpbuffer[pos++]=(WebRtc_UWord8)200;
+    rtcpbuffer[pos++]=(uint8_t)200;
 
     for(int i = (RTCP_NUMBER_OF_SR-2); i >= 0; i--)
     {
@@ -628,7 +628,7 @@ RTCPSender::BuildSR(WebRtc_UWord8* rtcpbuffer,
     _lastRTCPTime[0] = ModuleRTPUtility::ConvertNTPTimeToMS(NTPsec, NTPfrac);
     _lastSendReport[0] = (NTPsec << 16) + (NTPfrac >> 16);
 
-    WebRtc_UWord32 freqHz = 90000; // For video
+    uint32_t freqHz = 90000; // For video
     if(_audio) {
       freqHz =  _rtpRtcp.CurrentSendFrequencyHz();
     }
@@ -669,8 +669,8 @@ RTCPSender::BuildSR(WebRtc_UWord8* rtcpbuffer,
     ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _rtpRtcp.ByteCountSent());
     pos += 4;
 
-    WebRtc_UWord8 numberOfReportBlocks = 0;
-    WebRtc_Word32 retVal = AddReportBlocks(rtcpbuffer, pos, numberOfReportBlocks, received, NTPsec, NTPfrac);
+    uint8_t numberOfReportBlocks = 0;
+    int32_t retVal = AddReportBlocks(rtcpbuffer, pos, numberOfReportBlocks, received, NTPsec, NTPfrac);
     if(retVal < 0)
     {
         //
@@ -678,14 +678,14 @@ RTCPSender::BuildSR(WebRtc_UWord8* rtcpbuffer,
     }
     rtcpbuffer[posNumberOfReportBlocks] += numberOfReportBlocks;
 
-    WebRtc_UWord16 len = WebRtc_UWord16((pos/4) -1);
+    uint16_t len = uint16_t((pos/4) -1);
     ModuleRTPUtility::AssignUWord16ToBuffer(rtcpbuffer+2, len);
     return 0;
 }
 
 
-WebRtc_Word32 RTCPSender::BuildSDEC(WebRtc_UWord8* rtcpbuffer,
-                                    WebRtc_UWord32& pos) {
+int32_t RTCPSender::BuildSDEC(uint8_t* rtcpbuffer,
+                              uint32_t& pos) {
   size_t lengthCname = strlen(_CNAME);
   assert(lengthCname < RTCP_CNAME_SIZE);
 
@@ -698,11 +698,11 @@ WebRtc_Word32 RTCPSender::BuildSDEC(WebRtc_UWord8* rtcpbuffer,
   // SDEC Source Description
 
   // We always need to add SDES CNAME
-  rtcpbuffer[pos++] = static_cast<WebRtc_UWord8>(0x80 + 1 + _csrcCNAMEs.size());
-  rtcpbuffer[pos++] = static_cast<WebRtc_UWord8>(202);
+  rtcpbuffer[pos++] = static_cast<uint8_t>(0x80 + 1 + _csrcCNAMEs.size());
+  rtcpbuffer[pos++] = static_cast<uint8_t>(202);
 
   // handle SDES length later on
-  WebRtc_UWord32 SDESLengthPos = pos;
+  uint32_t SDESLengthPos = pos;
   pos++;
   pos++;
 
@@ -711,18 +711,18 @@ WebRtc_Word32 RTCPSender::BuildSDEC(WebRtc_UWord8* rtcpbuffer,
   pos += 4;
 
   // CNAME = 1
-  rtcpbuffer[pos++] = static_cast<WebRtc_UWord8>(1);
+  rtcpbuffer[pos++] = static_cast<uint8_t>(1);
 
   //
-  rtcpbuffer[pos++] = static_cast<WebRtc_UWord8>(lengthCname);
+  rtcpbuffer[pos++] = static_cast<uint8_t>(lengthCname);
 
-  WebRtc_UWord16 SDESLength = 10;
+  uint16_t SDESLength = 10;
 
   memcpy(&rtcpbuffer[pos], _CNAME, lengthCname);
   pos += lengthCname;
-  SDESLength += (WebRtc_UWord16)lengthCname;
+  SDESLength += (uint16_t)lengthCname;
 
-  WebRtc_UWord16 padding = 0;
+  uint16_t padding = 0;
   // We must have a zero field even if we have an even multiple of 4 bytes
   if ((pos % 4) == 0) {
     padding++;
@@ -734,31 +734,31 @@ WebRtc_Word32 RTCPSender::BuildSDEC(WebRtc_UWord8* rtcpbuffer,
   }
   SDESLength += padding;
 
-  std::map<WebRtc_UWord32, RTCPUtility::RTCPCnameInformation*>::iterator it =
+  std::map<uint32_t, RTCPUtility::RTCPCnameInformation*>::iterator it =
       _csrcCNAMEs.begin();
 
   for(; it != _csrcCNAMEs.end(); it++) {
     RTCPCnameInformation* cname = it->second;
-    WebRtc_UWord32 SSRC = it->first;
+    uint32_t SSRC = it->first;
 
     // Add SSRC
     ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, SSRC);
     pos += 4;
 
     // CNAME = 1
-    rtcpbuffer[pos++] = static_cast<WebRtc_UWord8>(1);
+    rtcpbuffer[pos++] = static_cast<uint8_t>(1);
 
     size_t length = strlen(cname->name);
     assert(length < RTCP_CNAME_SIZE);
 
-    rtcpbuffer[pos++]= static_cast<WebRtc_UWord8>(length);
+    rtcpbuffer[pos++]= static_cast<uint8_t>(length);
     SDESLength += 6;
 
     memcpy(&rtcpbuffer[pos],cname->name, length);
 
     pos += length;
     SDESLength += length;
-    WebRtc_UWord16 padding = 0;
+    uint16_t padding = 0;
 
     // We must have a zero field even if we have an even multiple of 4 bytes
     if((pos % 4) == 0){
@@ -772,17 +772,17 @@ WebRtc_Word32 RTCPSender::BuildSDEC(WebRtc_UWord8* rtcpbuffer,
     SDESLength += padding;
   }
   // in 32-bit words minus one and we don't count the header
-  WebRtc_UWord16 buffer_length = (SDESLength / 4) - 1;
+  uint16_t buffer_length = (SDESLength / 4) - 1;
   ModuleRTPUtility::AssignUWord16ToBuffer(rtcpbuffer + SDESLengthPos,
                                           buffer_length);
   return 0;
 }
 
-WebRtc_Word32
-RTCPSender::BuildRR(WebRtc_UWord8* rtcpbuffer,
-                    WebRtc_UWord32& pos,
-                    const WebRtc_UWord32 NTPsec,
-                    const WebRtc_UWord32 NTPfrac,
+int32_t
+RTCPSender::BuildRR(uint8_t* rtcpbuffer,
+                    uint32_t& pos,
+                    const uint32_t NTPsec,
+                    const uint32_t NTPfrac,
                     const RTCPReportBlock* received)
 {
     // sanity one block
@@ -790,10 +790,10 @@ RTCPSender::BuildRR(WebRtc_UWord8* rtcpbuffer,
     {
         return -2;
     }
-    WebRtc_UWord32 posNumberOfReportBlocks = pos;
+    uint32_t posNumberOfReportBlocks = pos;
 
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0x80;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)201;
+    rtcpbuffer[pos++]=(uint8_t)0x80;
+    rtcpbuffer[pos++]=(uint8_t)201;
 
     // Save  for our length field
     pos++;
@@ -803,15 +803,15 @@ RTCPSender::BuildRR(WebRtc_UWord8* rtcpbuffer,
     ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _SSRC);
     pos += 4;
 
-    WebRtc_UWord8 numberOfReportBlocks = 0;
-    WebRtc_Word32 retVal = AddReportBlocks(rtcpbuffer, pos, numberOfReportBlocks, received, NTPsec, NTPfrac);
+    uint8_t numberOfReportBlocks = 0;
+    int32_t retVal = AddReportBlocks(rtcpbuffer, pos, numberOfReportBlocks, received, NTPsec, NTPfrac);
     if(retVal < 0)
     {
         return retVal;
     }
     rtcpbuffer[posNumberOfReportBlocks] += numberOfReportBlocks;
 
-    WebRtc_UWord16 len = WebRtc_UWord16((pos)/4 -1);
+    uint16_t len = uint16_t((pos)/4 -1);
     ModuleRTPUtility::AssignUWord16ToBuffer(rtcpbuffer+2, len);
     return 0;
 }
@@ -834,11 +834,11 @@ RTCPSender::BuildRR(WebRtc_UWord8* rtcpbuffer,
 //  (inside a compound RTCP packet), and MUST have the same value for RC
 //  (reception report count) as the receiver report.
 
-WebRtc_Word32
+int32_t
 RTCPSender::BuildExtendedJitterReport(
-    WebRtc_UWord8* rtcpbuffer,
-    WebRtc_UWord32& pos,
-    const WebRtc_UWord32 jitterTransmissionTimeOffset)
+    uint8_t* rtcpbuffer,
+    uint32_t& pos,
+    const uint32_t jitterTransmissionTimeOffset)
 {
     if (_reportBlocks.size() > 0)
     {
@@ -852,13 +852,13 @@ RTCPSender::BuildExtendedJitterReport(
         return -2;
     }
     // add picture loss indicator
-    WebRtc_UWord8 RC = 1;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0x80 + RC;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)195;
+    uint8_t RC = 1;
+    rtcpbuffer[pos++]=(uint8_t)0x80 + RC;
+    rtcpbuffer[pos++]=(uint8_t)195;
 
     // Used fixed length of 2
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)(1);
+    rtcpbuffer[pos++]=(uint8_t)0;
+    rtcpbuffer[pos++]=(uint8_t)(1);
 
     // Add inter-arrival jitter
     ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer + pos,
@@ -867,8 +867,8 @@ RTCPSender::BuildExtendedJitterReport(
     return 0;
 }
 
-WebRtc_Word32
-RTCPSender::BuildPLI(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
+int32_t
+RTCPSender::BuildPLI(uint8_t* rtcpbuffer, uint32_t& pos)
 {
     // sanity
     if(pos + 12 >= IP_PACKET_SIZE)
@@ -876,13 +876,13 @@ RTCPSender::BuildPLI(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
         return -2;
     }
     // add picture loss indicator
-    WebRtc_UWord8 FMT = 1;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0x80 + FMT;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)206;
+    uint8_t FMT = 1;
+    rtcpbuffer[pos++]=(uint8_t)0x80 + FMT;
+    rtcpbuffer[pos++]=(uint8_t)206;
 
     //Used fixed length of 2
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)(2);
+    rtcpbuffer[pos++]=(uint8_t)0;
+    rtcpbuffer[pos++]=(uint8_t)(2);
 
     // Add our own SSRC
     ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _SSRC);
@@ -894,9 +894,9 @@ RTCPSender::BuildPLI(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
     return 0;
 }
 
-WebRtc_Word32 RTCPSender::BuildFIR(WebRtc_UWord8* rtcpbuffer,
-                                   WebRtc_UWord32& pos,
-                                   bool repeat) {
+int32_t RTCPSender::BuildFIR(uint8_t* rtcpbuffer,
+                             uint32_t& pos,
+                             bool repeat) {
   // sanity
   if(pos + 20 >= IP_PACKET_SIZE)  {
     return -2;
@@ -906,13 +906,13 @@ WebRtc_Word32 RTCPSender::BuildFIR(WebRtc_UWord8* rtcpbuffer,
   }
 
   // add full intra request indicator
-  WebRtc_UWord8 FMT = 4;
-  rtcpbuffer[pos++] = (WebRtc_UWord8)0x80 + FMT;
-  rtcpbuffer[pos++] = (WebRtc_UWord8)206;
+  uint8_t FMT = 4;
+  rtcpbuffer[pos++] = (uint8_t)0x80 + FMT;
+  rtcpbuffer[pos++] = (uint8_t)206;
 
   //Length of 4
-  rtcpbuffer[pos++] = (WebRtc_UWord8)0;
-  rtcpbuffer[pos++] = (WebRtc_UWord8)(4);
+  rtcpbuffer[pos++] = (uint8_t)0;
+  rtcpbuffer[pos++] = (uint8_t)(4);
 
   // Add our own SSRC
   ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
@@ -920,19 +920,19 @@ WebRtc_Word32 RTCPSender::BuildFIR(WebRtc_UWord8* rtcpbuffer,
 
   // RFC 5104     4.3.1.2.  Semantics
   // SSRC of media source
-  rtcpbuffer[pos++] = (WebRtc_UWord8)0;
-  rtcpbuffer[pos++] = (WebRtc_UWord8)0;
-  rtcpbuffer[pos++] = (WebRtc_UWord8)0;
-  rtcpbuffer[pos++] = (WebRtc_UWord8)0;
+  rtcpbuffer[pos++] = (uint8_t)0;
+  rtcpbuffer[pos++] = (uint8_t)0;
+  rtcpbuffer[pos++] = (uint8_t)0;
+  rtcpbuffer[pos++] = (uint8_t)0;
 
   // Additional Feedback Control Information (FCI)
   ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _remoteSSRC);
   pos += 4;
 
-  rtcpbuffer[pos++] = (WebRtc_UWord8)(_sequenceNumberFIR);
-  rtcpbuffer[pos++] = (WebRtc_UWord8)0;
-  rtcpbuffer[pos++] = (WebRtc_UWord8)0;
-  rtcpbuffer[pos++] = (WebRtc_UWord8)0;
+  rtcpbuffer[pos++] = (uint8_t)(_sequenceNumberFIR);
+  rtcpbuffer[pos++] = (uint8_t)0;
+  rtcpbuffer[pos++] = (uint8_t)0;
+  rtcpbuffer[pos++] = (uint8_t)0;
   return 0;
 }
 
@@ -943,8 +943,8 @@ WebRtc_Word32 RTCPSender::BuildFIR(WebRtc_UWord8* rtcpbuffer,
    |            First        |        Number           | PictureID |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 */
-WebRtc_Word32
-RTCPSender::BuildSLI(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos, const WebRtc_UWord8 pictureID)
+int32_t
+RTCPSender::BuildSLI(uint8_t* rtcpbuffer, uint32_t& pos, const uint8_t pictureID)
 {
     // sanity
     if(pos + 16 >= IP_PACKET_SIZE)
@@ -952,13 +952,13 @@ RTCPSender::BuildSLI(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos, const WebRt
         return -2;
     }
     // add slice loss indicator
-    WebRtc_UWord8 FMT = 2;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0x80 + FMT;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)206;
+    uint8_t FMT = 2;
+    rtcpbuffer[pos++]=(uint8_t)0x80 + FMT;
+    rtcpbuffer[pos++]=(uint8_t)206;
 
     //Used fixed length of 3
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)(3);
+    rtcpbuffer[pos++]=(uint8_t)0;
+    rtcpbuffer[pos++]=(uint8_t)(3);
 
     // Add our own SSRC
     ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _SSRC);
@@ -971,7 +971,7 @@ RTCPSender::BuildSLI(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos, const WebRt
     // Add first, number & picture ID 6 bits
     // first  = 0, 13 - bits
     // number = 0x1fff, 13 - bits only ones for now
-    WebRtc_UWord32 sliField = (0x1fff << 6)+ (0x3f & pictureID);
+    uint32_t sliField = (0x1fff << 6)+ (0x3f & pictureID);
     ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, sliField);
     pos += 4;
     return 0;
@@ -989,11 +989,11 @@ RTCPSender::BuildSLI(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos, const WebRt
 /*
 *    Note: not generic made for VP8
 */
-WebRtc_Word32
-RTCPSender::BuildRPSI(WebRtc_UWord8* rtcpbuffer,
-                     WebRtc_UWord32& pos,
-                     const WebRtc_UWord64 pictureID,
-                     const WebRtc_UWord8 payloadType)
+int32_t
+RTCPSender::BuildRPSI(uint8_t* rtcpbuffer,
+                     uint32_t& pos,
+                     const uint64_t pictureID,
+                     const uint8_t payloadType)
 {
     // sanity
     if(pos + 24 >= IP_PACKET_SIZE)
@@ -1001,20 +1001,20 @@ RTCPSender::BuildRPSI(WebRtc_UWord8* rtcpbuffer,
         return -2;
     }
     // add Reference Picture Selection Indication
-    WebRtc_UWord8 FMT = 3;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0x80 + FMT;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)206;
+    uint8_t FMT = 3;
+    rtcpbuffer[pos++]=(uint8_t)0x80 + FMT;
+    rtcpbuffer[pos++]=(uint8_t)206;
 
     // calc length
-    WebRtc_UWord32 bitsRequired = 7;
-    WebRtc_UWord8 bytesRequired = 1;
+    uint32_t bitsRequired = 7;
+    uint8_t bytesRequired = 1;
     while((pictureID>>bitsRequired) > 0)
     {
         bitsRequired += 7;
         bytesRequired++;
     }
 
-    WebRtc_UWord8 size = 3;
+    uint8_t size = 3;
     if(bytesRequired > 6)
     {
         size = 5;
@@ -1022,7 +1022,7 @@ RTCPSender::BuildRPSI(WebRtc_UWord8* rtcpbuffer,
     {
         size = 4;
     }
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0;
+    rtcpbuffer[pos++]=(uint8_t)0;
     rtcpbuffer[pos++]=size;
 
     // Add our own SSRC
@@ -1034,7 +1034,7 @@ RTCPSender::BuildRPSI(WebRtc_UWord8* rtcpbuffer,
     pos += 4;
 
     // calc padding length
-    WebRtc_UWord8 paddingBytes = 4-((2+bytesRequired)%4);
+    uint8_t paddingBytes = 4-((2+bytesRequired)%4);
     if(paddingBytes == 4)
     {
         paddingBytes = 0;
@@ -1050,11 +1050,11 @@ RTCPSender::BuildRPSI(WebRtc_UWord8* rtcpbuffer,
     // add picture ID
     for(int i = bytesRequired-1; i > 0; i--)
     {
-        rtcpbuffer[pos] = 0x80 | WebRtc_UWord8(pictureID >> (i*7));
+        rtcpbuffer[pos] = 0x80 | uint8_t(pictureID >> (i*7));
         pos++;
     }
     // add last byte of picture ID
-    rtcpbuffer[pos] = WebRtc_UWord8(pictureID & 0x7f);
+    rtcpbuffer[pos] = uint8_t(pictureID & 0x7f);
     pos++;
 
     // add padding
@@ -1066,8 +1066,8 @@ RTCPSender::BuildRPSI(WebRtc_UWord8* rtcpbuffer,
     return 0;
 }
 
-WebRtc_Word32
-RTCPSender::BuildREMB(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
+int32_t
+RTCPSender::BuildREMB(uint8_t* rtcpbuffer, uint32_t& pos)
 {
     // sanity
     if(pos + 20 + 4 * _lengthRembSSRC >= IP_PACKET_SIZE)
@@ -1075,11 +1075,11 @@ RTCPSender::BuildREMB(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
         return -2;
     }
     // add application layer feedback
-    WebRtc_UWord8 FMT = 15;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0x80 + FMT;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)206;
+    uint8_t FMT = 15;
+    rtcpbuffer[pos++]=(uint8_t)0x80 + FMT;
+    rtcpbuffer[pos++]=(uint8_t)206;
 
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0;
+    rtcpbuffer[pos++]=(uint8_t)0;
     rtcpbuffer[pos++]=_lengthRembSSRC + 4;
 
     // Add our own SSRC
@@ -1098,19 +1098,19 @@ RTCPSender::BuildREMB(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
     rtcpbuffer[pos++] = _lengthRembSSRC;
     // 6 bit Exp
     // 18 bit mantissa
-    WebRtc_UWord8 brExp = 0;
-    for(WebRtc_UWord32 i=0; i<64; i++)
+    uint8_t brExp = 0;
+    for(uint32_t i=0; i<64; i++)
     {
-        if(_rembBitrate <= ((WebRtc_UWord32)262143 << i))
+        if(_rembBitrate <= ((uint32_t)262143 << i))
         {
             brExp = i;
             break;
         }
     }
-    const WebRtc_UWord32 brMantissa = (_rembBitrate >> brExp);
-    rtcpbuffer[pos++]=(WebRtc_UWord8)((brExp << 2) + ((brMantissa >> 16) & 0x03));
-    rtcpbuffer[pos++]=(WebRtc_UWord8)(brMantissa >> 8);
-    rtcpbuffer[pos++]=(WebRtc_UWord8)(brMantissa);
+    const uint32_t brMantissa = (_rembBitrate >> brExp);
+    rtcpbuffer[pos++]=(uint8_t)((brExp << 2) + ((brMantissa >> 16) & 0x03));
+    rtcpbuffer[pos++]=(uint8_t)(brMantissa >> 8);
+    rtcpbuffer[pos++]=(uint8_t)(brMantissa);
 
     for (int i = 0; i < _lengthRembSSRC; i++) 
     { 
@@ -1128,8 +1128,8 @@ RTCPSender::SetTargetBitrate(unsigned int target_bitrate)
     _tmmbr_Send = target_bitrate / 1000;
 }
 
-WebRtc_Word32
-RTCPSender::BuildTMMBR(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
+int32_t
+RTCPSender::BuildTMMBR(uint8_t* rtcpbuffer, uint32_t& pos)
 {
     // Before sending the TMMBR check the received TMMBN, only an owner is allowed to raise the bitrate
     // If the sender is an owner of the TMMBN -> send TMMBR
@@ -1143,12 +1143,12 @@ RTCPSender::BuildTMMBR(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
     // holding _criticalSectionRTCPSender while calling RTCPreceiver which
     // will accuire _criticalSectionRTCPReceiver is a potental deadlock but
     // since RTCPreceiver is not doing the reverse we should be fine
-    WebRtc_Word32 lengthOfBoundingSet
+    int32_t lengthOfBoundingSet
         = _rtpRtcp.BoundingSet(tmmbrOwner, candidateSet);
 
     if(lengthOfBoundingSet > 0)
     {
-        for (WebRtc_Word32 i = 0; i < lengthOfBoundingSet; i++)
+        for (int32_t i = 0; i < lengthOfBoundingSet; i++)
         {
             if( candidateSet->Tmmbr(i) == _tmmbr_Send &&
                 candidateSet->PacketOH(i) == _packetOH_Send)
@@ -1190,13 +1190,13 @@ RTCPSender::BuildTMMBR(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
             return -2;
         }
         // add TMMBR indicator
-        WebRtc_UWord8 FMT = 3;
-        rtcpbuffer[pos++]=(WebRtc_UWord8)0x80 + FMT;
-        rtcpbuffer[pos++]=(WebRtc_UWord8)205;
+        uint8_t FMT = 3;
+        rtcpbuffer[pos++]=(uint8_t)0x80 + FMT;
+        rtcpbuffer[pos++]=(uint8_t)205;
 
         //Length of 4
-        rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-        rtcpbuffer[pos++]=(WebRtc_UWord8)(4);
+        rtcpbuffer[pos++]=(uint8_t)0;
+        rtcpbuffer[pos++]=(uint8_t)(4);
 
         // Add our own SSRC
         ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _SSRC);
@@ -1205,37 +1205,37 @@ RTCPSender::BuildTMMBR(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
         // RFC 5104     4.2.1.2.  Semantics
 
         // SSRC of media source
-        rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-        rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-        rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-        rtcpbuffer[pos++]=(WebRtc_UWord8)0;
+        rtcpbuffer[pos++]=(uint8_t)0;
+        rtcpbuffer[pos++]=(uint8_t)0;
+        rtcpbuffer[pos++]=(uint8_t)0;
+        rtcpbuffer[pos++]=(uint8_t)0;
 
         // Additional Feedback Control Information (FCI)
         ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _remoteSSRC);
         pos += 4;
 
-        WebRtc_UWord32 bitRate = _tmmbr_Send*1000;
-        WebRtc_UWord32 mmbrExp = 0;
-        for(WebRtc_UWord32 i=0;i<64;i++)
+        uint32_t bitRate = _tmmbr_Send*1000;
+        uint32_t mmbrExp = 0;
+        for(uint32_t i=0;i<64;i++)
         {
-            if(bitRate <= ((WebRtc_UWord32)131071 << i))
+            if(bitRate <= ((uint32_t)131071 << i))
             {
                 mmbrExp = i;
                 break;
             }
         }
-        WebRtc_UWord32 mmbrMantissa = (bitRate >> mmbrExp);
+        uint32_t mmbrMantissa = (bitRate >> mmbrExp);
 
-        rtcpbuffer[pos++]=(WebRtc_UWord8)((mmbrExp << 2) + ((mmbrMantissa >> 15) & 0x03));
-        rtcpbuffer[pos++]=(WebRtc_UWord8)(mmbrMantissa >> 7);
-        rtcpbuffer[pos++]=(WebRtc_UWord8)((mmbrMantissa << 1) + ((_packetOH_Send >> 8)& 0x01));
-        rtcpbuffer[pos++]=(WebRtc_UWord8)(_packetOH_Send);
+        rtcpbuffer[pos++]=(uint8_t)((mmbrExp << 2) + ((mmbrMantissa >> 15) & 0x03));
+        rtcpbuffer[pos++]=(uint8_t)(mmbrMantissa >> 7);
+        rtcpbuffer[pos++]=(uint8_t)((mmbrMantissa << 1) + ((_packetOH_Send >> 8)& 0x01));
+        rtcpbuffer[pos++]=(uint8_t)(_packetOH_Send);
     }
     return 0;
 }
 
-WebRtc_Word32
-RTCPSender::BuildTMMBN(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
+int32_t
+RTCPSender::BuildTMMBN(uint8_t* rtcpbuffer, uint32_t& pos)
 {
     TMMBRSet* boundingSet = _tmmbrHelp.BoundingSetToSend();
     if(boundingSet == NULL)
@@ -1248,10 +1248,10 @@ RTCPSender::BuildTMMBN(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
         WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument", __FUNCTION__);
         return -2;
     }
-    WebRtc_UWord8 FMT = 4;
+    uint8_t FMT = 4;
     // add TMMBN indicator
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0x80 + FMT;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)205;
+    rtcpbuffer[pos++]=(uint8_t)0x80 + FMT;
+    rtcpbuffer[pos++]=(uint8_t)205;
 
     //Add length later
     int posLength = pos;
@@ -1265,49 +1265,49 @@ RTCPSender::BuildTMMBN(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
     // RFC 5104     4.2.2.2.  Semantics
 
     // SSRC of media source
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0;
+    rtcpbuffer[pos++]=(uint8_t)0;
+    rtcpbuffer[pos++]=(uint8_t)0;
+    rtcpbuffer[pos++]=(uint8_t)0;
+    rtcpbuffer[pos++]=(uint8_t)0;
 
     // Additional Feedback Control Information (FCI)
     int numBoundingSet = 0;
-    for(WebRtc_UWord32 n=0; n< boundingSet->lengthOfSet(); n++)
+    for(uint32_t n=0; n< boundingSet->lengthOfSet(); n++)
     {
         if (boundingSet->Tmmbr(n) > 0)
         {
-            WebRtc_UWord32 tmmbrSSRC = boundingSet->Ssrc(n);
+            uint32_t tmmbrSSRC = boundingSet->Ssrc(n);
             ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, tmmbrSSRC);
             pos += 4;
 
-            WebRtc_UWord32 bitRate = boundingSet->Tmmbr(n) * 1000;
-            WebRtc_UWord32 mmbrExp = 0;
+            uint32_t bitRate = boundingSet->Tmmbr(n) * 1000;
+            uint32_t mmbrExp = 0;
             for(int i=0; i<64; i++)
             {
-                if(bitRate <=  ((WebRtc_UWord32)131071 << i))
+                if(bitRate <=  ((uint32_t)131071 << i))
                 {
                     mmbrExp = i;
                     break;
                 }
             }
-            WebRtc_UWord32 mmbrMantissa = (bitRate >> mmbrExp);
-            WebRtc_UWord32 measuredOH = boundingSet->PacketOH(n);
+            uint32_t mmbrMantissa = (bitRate >> mmbrExp);
+            uint32_t measuredOH = boundingSet->PacketOH(n);
 
-            rtcpbuffer[pos++]=(WebRtc_UWord8)((mmbrExp << 2) + ((mmbrMantissa >> 15) & 0x03));
-            rtcpbuffer[pos++]=(WebRtc_UWord8)(mmbrMantissa >> 7);
-            rtcpbuffer[pos++]=(WebRtc_UWord8)((mmbrMantissa << 1) + ((measuredOH >> 8)& 0x01));
-            rtcpbuffer[pos++]=(WebRtc_UWord8)(measuredOH);
+            rtcpbuffer[pos++]=(uint8_t)((mmbrExp << 2) + ((mmbrMantissa >> 15) & 0x03));
+            rtcpbuffer[pos++]=(uint8_t)(mmbrMantissa >> 7);
+            rtcpbuffer[pos++]=(uint8_t)((mmbrMantissa << 1) + ((measuredOH >> 8)& 0x01));
+            rtcpbuffer[pos++]=(uint8_t)(measuredOH);
             numBoundingSet++;
         }
     }
-    WebRtc_UWord16 length= (WebRtc_UWord16)(2+2*numBoundingSet);
-    rtcpbuffer[posLength++]=(WebRtc_UWord8)(length>>8);
-    rtcpbuffer[posLength]=(WebRtc_UWord8)(length);
+    uint16_t length= (uint16_t)(2+2*numBoundingSet);
+    rtcpbuffer[posLength++]=(uint8_t)(length>>8);
+    rtcpbuffer[posLength]=(uint8_t)(length);
     return 0;
 }
 
-WebRtc_Word32
-RTCPSender::BuildAPP(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
+int32_t
+RTCPSender::BuildAPP(uint8_t* rtcpbuffer, uint32_t& pos)
 {
     // sanity
     if(_appData == NULL)
@@ -1320,14 +1320,14 @@ RTCPSender::BuildAPP(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
         WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument", __FUNCTION__);
         return -2;
     }
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0x80 + _appSubType;
+    rtcpbuffer[pos++]=(uint8_t)0x80 + _appSubType;
 
     // Add APP ID
-    rtcpbuffer[pos++]=(WebRtc_UWord8)204;
+    rtcpbuffer[pos++]=(uint8_t)204;
 
-    WebRtc_UWord16 length = (_appLength>>2) + 2; // include SSRC and name
-    rtcpbuffer[pos++]=(WebRtc_UWord8)(length>>8);
-    rtcpbuffer[pos++]=(WebRtc_UWord8)(length);
+    uint16_t length = (_appLength>>2) + 2; // include SSRC and name
+    rtcpbuffer[pos++]=(uint8_t)(length>>8);
+    rtcpbuffer[pos++]=(uint8_t)(length);
 
     // Add our own SSRC
     ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _SSRC);
@@ -1343,11 +1343,11 @@ RTCPSender::BuildAPP(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
     return 0;
 }
 
-WebRtc_Word32
-RTCPSender::BuildNACK(WebRtc_UWord8* rtcpbuffer,
-                      WebRtc_UWord32& pos,
-                      const WebRtc_Word32 nackSize,
-                      const WebRtc_UWord16* nackList,
+int32_t
+RTCPSender::BuildNACK(uint8_t* rtcpbuffer,
+                      uint32_t& pos,
+                      const int32_t nackSize,
+                      const uint16_t* nackList,
                       std::string* nackString)
 {
     // sanity
@@ -1357,15 +1357,15 @@ RTCPSender::BuildNACK(WebRtc_UWord8* rtcpbuffer,
         return -2;
     }
 
-    // int size, WebRtc_UWord16* nackList
+    // int size, uint16_t* nackList
     // add nack list
-    WebRtc_UWord8 FMT = 1;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0x80 + FMT;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)205;
+    uint8_t FMT = 1;
+    rtcpbuffer[pos++]=(uint8_t)0x80 + FMT;
+    rtcpbuffer[pos++]=(uint8_t)205;
 
-    rtcpbuffer[pos++]=(WebRtc_UWord8) 0;
+    rtcpbuffer[pos++]=(uint8_t) 0;
     int nackSizePos = pos;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)(3); //setting it to one kNACK signal as default
+    rtcpbuffer[pos++]=(uint8_t)(3); //setting it to one kNACK signal as default
 
     // Add our own SSRC
     ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _SSRC);
@@ -1381,7 +1381,7 @@ RTCPSender::BuildNACK(WebRtc_UWord8* rtcpbuffer,
     NACKStringBuilder stringBuilder;
     while (nackSize > i && numOfNackFields < kRtcpMaxNackFields)
     {
-        WebRtc_UWord16 nack = nackList[i];
+        uint16_t nack = nackList[i];
         // put dow our sequence number
         ModuleRTPUtility::AssignUWord16ToBuffer(rtcpbuffer+pos, nack);
         pos += 2;
@@ -1391,11 +1391,11 @@ RTCPSender::BuildNACK(WebRtc_UWord8* rtcpbuffer,
         numOfNackFields++;
         if(nackSize > i)
         {
-            bool moreThan16Away = (WebRtc_UWord16(nack+16) < nackList[i])?true: false;
+            bool moreThan16Away = (uint16_t(nack+16) < nackList[i])?true: false;
             if(!moreThan16Away)
             {
                 // check for a wrap
-                if(WebRtc_UWord16(nack+16) > 0xff00 && nackList[i] < 0x0fff)
+                if(uint16_t(nack+16) > 0xff00 && nackList[i] < 0x0fff)
                 {
                     // wrap
                     moreThan16Away = true;
@@ -1404,18 +1404,18 @@ RTCPSender::BuildNACK(WebRtc_UWord8* rtcpbuffer,
             if(moreThan16Away)
             {
                 // next is more than 16 away
-                rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-                rtcpbuffer[pos++]=(WebRtc_UWord8)0;
+                rtcpbuffer[pos++]=(uint8_t)0;
+                rtcpbuffer[pos++]=(uint8_t)0;
             } else
             {
                 // build our bitmask
-                WebRtc_UWord16 bitmask = 0;
+                uint16_t bitmask = 0;
 
-                bool within16Away = (WebRtc_UWord16(nack+16) > nackList[i])?true: false;
+                bool within16Away = (uint16_t(nack+16) > nackList[i])?true: false;
                 if(within16Away)
                 {
                    // check for a wrap
-                    if(WebRtc_UWord16(nack+16) > 0xff00 && nackList[i] < 0x0fff)
+                    if(uint16_t(nack+16) > 0xff00 && nackList[i] < 0x0fff)
                     {
                         // wrap
                         within16Away = false;
@@ -1424,7 +1424,7 @@ RTCPSender::BuildNACK(WebRtc_UWord8* rtcpbuffer,
 
                 while( nackSize > i && within16Away)
                 {
-                    WebRtc_Word16 shift = (nackList[i]-nack)-1;
+                    int16_t shift = (nackList[i]-nack)-1;
                     assert(!(shift > 15) && !(shift < 0));
 
                     bitmask += (1<< shift);
@@ -1432,11 +1432,11 @@ RTCPSender::BuildNACK(WebRtc_UWord8* rtcpbuffer,
                     i++;
                     if(nackSize > i)
                     {
-                        within16Away = (WebRtc_UWord16(nack+16) > nackList[i])?true: false;
+                        within16Away = (uint16_t(nack+16) > nackList[i])?true: false;
                         if(within16Away)
                         {
                             // check for a wrap
-                            if(WebRtc_UWord16(nack+16) > 0xff00 && nackList[i] < 0x0fff)
+                            if(uint16_t(nack+16) > 0xff00 && nackList[i] < 0x0fff)
                             {
                                 // wrap
                                 within16Away = false;
@@ -1455,17 +1455,17 @@ RTCPSender::BuildNACK(WebRtc_UWord8* rtcpbuffer,
         } else
         {
             // no more in the list
-            rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-            rtcpbuffer[pos++]=(WebRtc_UWord8)0;
+            rtcpbuffer[pos++]=(uint8_t)0;
+            rtcpbuffer[pos++]=(uint8_t)0;
         }
     }
-    rtcpbuffer[nackSizePos]=(WebRtc_UWord8)(2+numOfNackFields);
+    rtcpbuffer[nackSizePos]=(uint8_t)(2+numOfNackFields);
     *nackString = stringBuilder.GetResult();
     return 0;
 }
 
-WebRtc_Word32
-RTCPSender::BuildBYE(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
+int32_t
+RTCPSender::BuildBYE(uint8_t* rtcpbuffer, uint32_t& pos)
 {
     // sanity
     if(pos + 8 >= IP_PACKET_SIZE)
@@ -1475,12 +1475,12 @@ RTCPSender::BuildBYE(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
     if(_includeCSRCs)
     {
         // Add a bye packet
-        rtcpbuffer[pos++]=(WebRtc_UWord8)0x80 + 1 + _CSRCs;  // number of SSRC+CSRCs
-        rtcpbuffer[pos++]=(WebRtc_UWord8)203;
+        rtcpbuffer[pos++]=(uint8_t)0x80 + 1 + _CSRCs;  // number of SSRC+CSRCs
+        rtcpbuffer[pos++]=(uint8_t)203;
 
         // length
-        rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-        rtcpbuffer[pos++]=(WebRtc_UWord8)(1 + _CSRCs);
+        rtcpbuffer[pos++]=(uint8_t)0;
+        rtcpbuffer[pos++]=(uint8_t)(1 + _CSRCs);
 
         // Add our own SSRC
         ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _SSRC);
@@ -1495,12 +1495,12 @@ RTCPSender::BuildBYE(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
     } else
     {
         // Add a bye packet
-        rtcpbuffer[pos++]=(WebRtc_UWord8)0x80 + 1;  // number of SSRC+CSRCs
-        rtcpbuffer[pos++]=(WebRtc_UWord8)203;
+        rtcpbuffer[pos++]=(uint8_t)0x80 + 1;  // number of SSRC+CSRCs
+        rtcpbuffer[pos++]=(uint8_t)203;
 
         // length
-        rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-        rtcpbuffer[pos++]=(WebRtc_UWord8)1;
+        rtcpbuffer[pos++]=(uint8_t)0;
+        rtcpbuffer[pos++]=(uint8_t)1;
 
         // Add our own SSRC
         ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _SSRC);
@@ -1509,8 +1509,8 @@ RTCPSender::BuildBYE(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
     return 0;
 }
 
-WebRtc_Word32
-RTCPSender::BuildVoIPMetric(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
+int32_t
+RTCPSender::BuildVoIPMetric(uint8_t* rtcpbuffer, uint32_t& pos)
 {
     // sanity
     if(pos + 44 >= IP_PACKET_SIZE)
@@ -1519,10 +1519,10 @@ RTCPSender::BuildVoIPMetric(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
     }
 
     // Add XR header
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0x80;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)207;
+    rtcpbuffer[pos++]=(uint8_t)0x80;
+    rtcpbuffer[pos++]=(uint8_t)207;
 
-    WebRtc_UWord32 XRLengthPos = pos;
+    uint32_t XRLengthPos = pos;
 
     // handle length later on
     pos++;
@@ -1547,15 +1547,15 @@ RTCPSender::BuildVoIPMetric(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
     rtcpbuffer[pos++] = _xrVoIPMetric.burstDensity;
     rtcpbuffer[pos++] = _xrVoIPMetric.gapDensity;
 
-    rtcpbuffer[pos++] = (WebRtc_UWord8)(_xrVoIPMetric.burstDuration >> 8);
-    rtcpbuffer[pos++] = (WebRtc_UWord8)(_xrVoIPMetric.burstDuration);
-    rtcpbuffer[pos++] = (WebRtc_UWord8)(_xrVoIPMetric.gapDuration >> 8);
-    rtcpbuffer[pos++] = (WebRtc_UWord8)(_xrVoIPMetric.gapDuration);
+    rtcpbuffer[pos++] = (uint8_t)(_xrVoIPMetric.burstDuration >> 8);
+    rtcpbuffer[pos++] = (uint8_t)(_xrVoIPMetric.burstDuration);
+    rtcpbuffer[pos++] = (uint8_t)(_xrVoIPMetric.gapDuration >> 8);
+    rtcpbuffer[pos++] = (uint8_t)(_xrVoIPMetric.gapDuration);
 
-    rtcpbuffer[pos++] = (WebRtc_UWord8)(_xrVoIPMetric.roundTripDelay >> 8);
-    rtcpbuffer[pos++] = (WebRtc_UWord8)(_xrVoIPMetric.roundTripDelay);
-    rtcpbuffer[pos++] = (WebRtc_UWord8)(_xrVoIPMetric.endSystemDelay >> 8);
-    rtcpbuffer[pos++] = (WebRtc_UWord8)(_xrVoIPMetric.endSystemDelay);
+    rtcpbuffer[pos++] = (uint8_t)(_xrVoIPMetric.roundTripDelay >> 8);
+    rtcpbuffer[pos++] = (uint8_t)(_xrVoIPMetric.roundTripDelay);
+    rtcpbuffer[pos++] = (uint8_t)(_xrVoIPMetric.endSystemDelay >> 8);
+    rtcpbuffer[pos++] = (uint8_t)(_xrVoIPMetric.endSystemDelay);
 
     rtcpbuffer[pos++] = _xrVoIPMetric.signalLevel;
     rtcpbuffer[pos++] = _xrVoIPMetric.noiseLevel;
@@ -1569,39 +1569,39 @@ RTCPSender::BuildVoIPMetric(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
 
     rtcpbuffer[pos++] = _xrVoIPMetric.RXconfig;
     rtcpbuffer[pos++] = 0; // reserved
-    rtcpbuffer[pos++] = (WebRtc_UWord8)(_xrVoIPMetric.JBnominal >> 8);
-    rtcpbuffer[pos++] = (WebRtc_UWord8)(_xrVoIPMetric.JBnominal);
+    rtcpbuffer[pos++] = (uint8_t)(_xrVoIPMetric.JBnominal >> 8);
+    rtcpbuffer[pos++] = (uint8_t)(_xrVoIPMetric.JBnominal);
 
-    rtcpbuffer[pos++] = (WebRtc_UWord8)(_xrVoIPMetric.JBmax >> 8);
-    rtcpbuffer[pos++] = (WebRtc_UWord8)(_xrVoIPMetric.JBmax);
-    rtcpbuffer[pos++] = (WebRtc_UWord8)(_xrVoIPMetric.JBabsMax >> 8);
-    rtcpbuffer[pos++] = (WebRtc_UWord8)(_xrVoIPMetric.JBabsMax);
+    rtcpbuffer[pos++] = (uint8_t)(_xrVoIPMetric.JBmax >> 8);
+    rtcpbuffer[pos++] = (uint8_t)(_xrVoIPMetric.JBmax);
+    rtcpbuffer[pos++] = (uint8_t)(_xrVoIPMetric.JBabsMax >> 8);
+    rtcpbuffer[pos++] = (uint8_t)(_xrVoIPMetric.JBabsMax);
 
-    rtcpbuffer[XRLengthPos]=(WebRtc_UWord8)(0);
-    rtcpbuffer[XRLengthPos+1]=(WebRtc_UWord8)(10);
+    rtcpbuffer[XRLengthPos]=(uint8_t)(0);
+    rtcpbuffer[XRLengthPos+1]=(uint8_t)(10);
     return 0;
 }
 
-WebRtc_Word32
-RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
-                     const WebRtc_Word32 nackSize,       // NACK
-                     const WebRtc_UWord16* nackList,     // NACK
+int32_t
+RTCPSender::SendRTCP(const uint32_t packetTypeFlags,
+                     const int32_t nackSize,       // NACK
+                     const uint16_t* nackList,     // NACK
                      const bool repeat,                  // FIR
-                     const WebRtc_UWord64 pictureID)     // SLI & RPSI
+                     const uint64_t pictureID)     // SLI & RPSI
 {
-    WebRtc_UWord32 rtcpPacketTypeFlags = packetTypeFlags;
-    WebRtc_UWord32 pos = 0;
-    WebRtc_UWord8 rtcpbuffer[IP_PACKET_SIZE];
+    uint32_t rtcpPacketTypeFlags = packetTypeFlags;
+    uint32_t pos = 0;
+    uint8_t rtcpbuffer[IP_PACKET_SIZE];
 
     do  // only to be able to use break :) (and the critsect must be inside its own scope)
     {
         // collect the received information
         RTCPReportBlock received;
         bool hasReceived = false;
-        WebRtc_UWord32 NTPsec = 0;
-        WebRtc_UWord32 NTPfrac = 0;
+        uint32_t NTPsec = 0;
+        uint32_t NTPfrac = 0;
         bool rtcpCompound = false;
-        WebRtc_UWord32 jitterTransmissionOffset = 0;
+        uint32_t jitterTransmissionOffset = 0;
 
         {
           CriticalSectionScoped lock(_criticalSectionRTCPSender);
@@ -1628,9 +1628,9 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
             {
                 hasReceived = true;
 
-                WebRtc_UWord32 lastReceivedRRNTPsecs = 0;
-                WebRtc_UWord32 lastReceivedRRNTPfrac = 0;
-                WebRtc_UWord32 remoteSR = 0;
+                uint32_t lastReceivedRRNTPsecs = 0;
+                uint32_t lastReceivedRRNTPfrac = 0;
+                uint32_t remoteSR = 0;
 
                 // ok even if we have not received a SR, we will send 0 in that case
                 _rtpRtcp.LastReceivedNTP(lastReceivedRRNTPsecs,
@@ -1641,15 +1641,15 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
                 _clock->CurrentNtp(NTPsec, NTPfrac);
 
                 // Delay since last received report
-                WebRtc_UWord32 delaySinceLastReceivedSR = 0;
+                uint32_t delaySinceLastReceivedSR = 0;
                 if((lastReceivedRRNTPsecs !=0) || (lastReceivedRRNTPfrac !=0))
                 {
                     // get the 16 lowest bits of seconds and the 16 higest bits of fractions
-                    WebRtc_UWord32 now=NTPsec&0x0000FFFF;
+                    uint32_t now=NTPsec&0x0000FFFF;
                     now <<=16;
                     now += (NTPfrac&0xffff0000)>>16;
 
-                    WebRtc_UWord32 receiveTime = lastReceivedRRNTPsecs&0x0000FFFF;
+                    uint32_t receiveTime = lastReceivedRRNTPsecs&0x0000FFFF;
                     receiveTime <<=16;
                     receiveTime += (lastReceivedRRNTPfrac&0xffff0000)>>16;
 
@@ -1723,22 +1723,22 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
         {
             // generate next time to send a RTCP report
             // seeded from RTP constructor
-            WebRtc_Word32 random = rand() % 1000;
-            WebRtc_Word32 timeToNext = RTCP_INTERVAL_AUDIO_MS;
+            int32_t random = rand() % 1000;
+            int32_t timeToNext = RTCP_INTERVAL_AUDIO_MS;
 
             if(_audio)
             {
                 timeToNext = (RTCP_INTERVAL_AUDIO_MS/2) + (RTCP_INTERVAL_AUDIO_MS*random/1000);
             }else
             {
-                WebRtc_UWord32 minIntervalMs = RTCP_INTERVAL_AUDIO_MS;
+                uint32_t minIntervalMs = RTCP_INTERVAL_AUDIO_MS;
                 if(_sending)
                 {
                     // calc bw for video 360/sendBW in kbit/s
-                    WebRtc_UWord32 sendBitrateKbit = 0;
-                    WebRtc_UWord32 videoRate = 0;
-                    WebRtc_UWord32 fecRate = 0;
-                    WebRtc_UWord32 nackRate = 0;
+                    uint32_t sendBitrateKbit = 0;
+                    uint32_t videoRate = 0;
+                    uint32_t fecRate = 0;
+                    uint32_t nackRate = 0;
                     _rtpRtcp.BitrateSent(&sendBitrateKbit,
                                          &videoRate,
                                          &fecRate,
@@ -1759,7 +1759,7 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
         }
 
         // if the data does not fitt in the packet we fill it as much as possible
-        WebRtc_Word32 buildVal = 0;
+        int32_t buildVal = 0;
 
         if(rtcpPacketTypeFlags & kRtcpSr)
         {
@@ -1863,7 +1863,7 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
         }
         if(rtcpPacketTypeFlags & kRtcpSli)
         {
-            buildVal = BuildSLI(rtcpbuffer, pos, (WebRtc_UWord8)pictureID);
+            buildVal = BuildSLI(rtcpbuffer, pos, (uint8_t)pictureID);
             if(buildVal == -1)
             {
                 return -1; // error
@@ -1875,12 +1875,12 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
         }
         if(rtcpPacketTypeFlags & kRtcpRpsi)
         {
-            const WebRtc_Word8 payloadType = _rtpRtcp.SendPayloadType();
+            const int8_t payloadType = _rtpRtcp.SendPayloadType();
             if(payloadType == -1)
             {
                 return -1;
             }
-            buildVal = BuildRPSI(rtcpbuffer, pos, pictureID, (WebRtc_UWord8)payloadType);
+            buildVal = BuildRPSI(rtcpbuffer, pos, pictureID, (uint8_t)payloadType);
             if(buildVal == -1)
             {
                 return -1; // error
@@ -1988,12 +1988,12 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
     {
         return -1;
     }
-    return SendToNetwork(rtcpbuffer, (WebRtc_UWord16)pos);
+    return SendToNetwork(rtcpbuffer, (uint16_t)pos);
 }
 
-WebRtc_Word32
-RTCPSender::SendToNetwork(const WebRtc_UWord8* dataBuffer,
-                          const WebRtc_UWord16 length)
+int32_t
+RTCPSender::SendToNetwork(const uint8_t* dataBuffer,
+                          const uint16_t length)
 {
     CriticalSectionScoped lock(_criticalSectionTransport);
     if(_cbTransport)
@@ -2006,16 +2006,16 @@ RTCPSender::SendToNetwork(const WebRtc_UWord8* dataBuffer,
     return -1;
 }
 
-WebRtc_Word32
+int32_t
 RTCPSender::SetCSRCStatus(const bool include)
 {
     _includeCSRCs = include;
     return 0;
 }
 
-WebRtc_Word32
-RTCPSender::SetCSRCs(const WebRtc_UWord32 arrOfCSRC[kRtpCsrcSize],
-                    const WebRtc_UWord8 arrLength)
+int32_t
+RTCPSender::SetCSRCs(const uint32_t arrOfCSRC[kRtpCsrcSize],
+                    const uint8_t arrLength)
 {
     if(arrLength > kRtpCsrcSize)
     {
@@ -2034,11 +2034,11 @@ RTCPSender::SetCSRCs(const WebRtc_UWord32 arrOfCSRC[kRtpCsrcSize],
     return 0;
 }
 
-WebRtc_Word32
-RTCPSender::SetApplicationSpecificData(const WebRtc_UWord8 subType,
-                                       const WebRtc_UWord32 name,
-                                       const WebRtc_UWord8* data,
-                                       const WebRtc_UWord16 length)
+int32_t
+RTCPSender::SetApplicationSpecificData(const uint8_t subType,
+                                       const uint32_t name,
+                                       const uint8_t* data,
+                                       const uint16_t length)
 {
     if(length %4 != 0)
     {
@@ -2055,13 +2055,13 @@ RTCPSender::SetApplicationSpecificData(const WebRtc_UWord8 subType,
     _appSend = true;
     _appSubType = subType;
     _appName = name;
-    _appData = new WebRtc_UWord8[length];
+    _appData = new uint8_t[length];
     _appLength = length;
     memcpy(_appData, data, length);
     return 0;
 }
 
-WebRtc_Word32
+int32_t
 RTCPSender::SetRTCPVoIPMetrics(const RTCPVoIPMetric* VoIPMetric)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
@@ -2072,12 +2072,12 @@ RTCPSender::SetRTCPVoIPMetrics(const RTCPVoIPMetric* VoIPMetric)
 }
 
 // called under critsect _criticalSectionRTCPSender
-WebRtc_Word32 RTCPSender::AddReportBlocks(WebRtc_UWord8* rtcpbuffer,
-                                          WebRtc_UWord32& pos,
-                                          WebRtc_UWord8& numberOfReportBlocks,
-                                          const RTCPReportBlock* received,
-                                          const WebRtc_UWord32 NTPsec,
-                                          const WebRtc_UWord32 NTPfrac) {
+int32_t RTCPSender::AddReportBlocks(uint8_t* rtcpbuffer,
+                                    uint32_t& pos,
+                                    uint8_t& numberOfReportBlocks,
+                                    const RTCPReportBlock* received,
+                                    const uint32_t NTPsec,
+                                    const uint32_t NTPfrac) {
   // sanity one block
   if(pos + 24 >= IP_PACKET_SIZE) {
     WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
@@ -2129,12 +2129,12 @@ WebRtc_Word32 RTCPSender::AddReportBlocks(WebRtc_UWord8* rtcpbuffer,
                  "%s invalid argument", __FUNCTION__);
     return -1;
   }
-  std::map<WebRtc_UWord32, RTCPReportBlock*>::iterator it =
+  std::map<uint32_t, RTCPReportBlock*>::iterator it =
       _reportBlocks.begin();
 
   for (; it != _reportBlocks.end(); it++) {
     // we can have multiple report block in a conference
-    WebRtc_UWord32 remoteSSRC = it->first;
+    uint32_t remoteSSRC = it->first;
     RTCPReportBlock* reportBlock = it->second;
     if (reportBlock) {
       // Remote SSRC
@@ -2172,9 +2172,9 @@ WebRtc_Word32 RTCPSender::AddReportBlocks(WebRtc_UWord8* rtcpbuffer,
 }
 
 // no callbacks allowed inside this function
-WebRtc_Word32
+int32_t
 RTCPSender::SetTMMBN(const TMMBRSet* boundingSet,
-                     const WebRtc_UWord32 maxBitrateKbit)
+                     const uint32_t maxBitrateKbit)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
 

@@ -39,25 +39,25 @@ class PacketBuilder {
   }
 
 
-  void Add8(WebRtc_UWord8 byte) {
+  void Add8(uint8_t byte) {
     EXPECT_LT(pos_, kMaxPacketSize - 1);
     buffer_[pos_] = byte;
     ++ pos_;
   }
 
-  void Add16(WebRtc_UWord16 word) {
+  void Add16(uint16_t word) {
     Add8(word >> 8);
     Add8(word & 0xFF);
   }
 
-  void Add32(WebRtc_UWord32 word) {
+  void Add32(uint32_t word) {
     Add8(word >> 24);
     Add8((word >> 16) & 0xFF);
     Add8((word >> 8) & 0xFF);
     Add8(word & 0xFF);
   }
 
-  void Add64(WebRtc_UWord32 upper_half, WebRtc_UWord32 lower_half) {
+  void Add64(uint32_t upper_half, uint32_t lower_half) {
     Add32(upper_half);
     Add32(lower_half);
   }
@@ -76,14 +76,14 @@ class PacketBuilder {
 
   void AddTmmbrBandwidth(int mantissa, int exponent, int overhead) {
     // 6 bits exponent, 17 bits mantissa, 9 bits overhead.
-    WebRtc_UWord32 word = 0;
+    uint32_t word = 0;
     word |= (exponent << 26);
     word |= ((mantissa & 0x1FFFF) << 9);
     word |= (overhead & 0x1FF);
     Add32(word);
   }
 
-  void AddSrPacket(WebRtc_UWord32 sender_ssrc) {
+  void AddSrPacket(uint32_t sender_ssrc) {
     AddRtcpHeader(200, 0);
     Add32(sender_ssrc);
     Add64(0x10203, 0x4050607);  // NTP timestamp
@@ -92,8 +92,8 @@ class PacketBuilder {
     Add32(0);  // Sender's octet count
   }
 
-  void AddRrPacket(WebRtc_UWord32 sender_ssrc, WebRtc_UWord32 rtp_ssrc,
-                   WebRtc_UWord32 extended_max) {
+  void AddRrPacket(uint32_t sender_ssrc, uint32_t rtp_ssrc,
+                   uint32_t extended_max) {
     AddRtcpHeader(201, 1);
     Add32(sender_ssrc);
     Add32(rtp_ssrc);
@@ -104,7 +104,7 @@ class PacketBuilder {
     Add32(0);  // Delay since last SR.
   }
 
-  const WebRtc_UWord8* packet() {
+  const uint8_t* packet() {
     PatchLengthField();
     return buffer_;
   }
@@ -131,7 +131,7 @@ class PacketBuilder {
   // Where the length field of the current packet is.
   // Note that 0 is not a legal value, so is used for "uninitialized".
   int pos_of_len_;
-  WebRtc_UWord8 buffer_[kMaxPacketSize];
+  uint8_t buffer_[kMaxPacketSize];
 };
 
 // This test transport verifies that no functions get called.
@@ -155,8 +155,8 @@ class TestTransport : public Transport,
     return 0;
   }
 
-  virtual int OnReceivedPayloadData(const WebRtc_UWord8* payloadData,
-                                    const WebRtc_UWord16 payloadSize,
+  virtual int OnReceivedPayloadData(const uint8_t* payloadData,
+                                    const uint16_t payloadSize,
                                     const WebRtcRTPHeader* rtpHeader) {
     ADD_FAILURE();
     return 0;
@@ -196,8 +196,8 @@ class RtcpReceiverTest : public ::testing::Test {
 
   // Injects an RTCP packet into the receiver.
   // Returns 0 for OK, non-0 for failure.
-  int InjectRtcpPacket(const WebRtc_UWord8* packet,
-                        WebRtc_UWord16 packet_len) {
+  int InjectRtcpPacket(const uint8_t* packet,
+                        uint16_t packet_len) {
     RTCPUtility::RTCPParserV2 rtcpParser(packet,
                                          packet_len,
                                          true);  // Allow non-compound RTCP
@@ -243,13 +243,13 @@ class RtcpReceiverTest : public ::testing::Test {
 
 
 TEST_F(RtcpReceiverTest, BrokenPacketIsIgnored) {
-  const WebRtc_UWord8 bad_packet[] = {0, 0, 0, 0};
+  const uint8_t bad_packet[] = {0, 0, 0, 0};
   EXPECT_EQ(0, InjectRtcpPacket(bad_packet, sizeof(bad_packet)));
   EXPECT_EQ(0U, rtcp_packet_info_.rtcpPacketTypeFlags);
 }
 
 TEST_F(RtcpReceiverTest, InjectSrPacket) {
-  const WebRtc_UWord32 kSenderSsrc = 0x10203;
+  const uint32_t kSenderSsrc = 0x10203;
   PacketBuilder p;
   p.AddSrPacket(kSenderSsrc);
   EXPECT_EQ(0, InjectRtcpPacket(p.packet(), p.length()));
@@ -326,9 +326,9 @@ TEST_F(RtcpReceiverTest, TmmbrReceivedWithNoIncomingPacket) {
 }
 
 TEST_F(RtcpReceiverTest, TmmbrPacketAccepted) {
-  const WebRtc_UWord32 kMediaFlowSsrc = 0x2040608;
-  const WebRtc_UWord32 kSenderSsrc = 0x10203;
-  const WebRtc_UWord32 kMediaRecipientSsrc = 0x101;
+  const uint32_t kMediaFlowSsrc = 0x2040608;
+  const uint32_t kSenderSsrc = 0x10203;
+  const uint32_t kMediaRecipientSsrc = 0x101;
   rtcp_receiver_->SetSSRC(kMediaFlowSsrc);  // Matches "media source" above.
 
   PacketBuilder p;
@@ -350,10 +350,10 @@ TEST_F(RtcpReceiverTest, TmmbrPacketAccepted) {
 }
 
 TEST_F(RtcpReceiverTest, TmmbrPacketNotForUsIgnored) {
-  const WebRtc_UWord32 kMediaFlowSsrc = 0x2040608;
-  const WebRtc_UWord32 kSenderSsrc = 0x10203;
-  const WebRtc_UWord32 kMediaRecipientSsrc = 0x101;
-  const WebRtc_UWord32 kOtherMediaFlowSsrc = 0x9999;
+  const uint32_t kMediaFlowSsrc = 0x2040608;
+  const uint32_t kSenderSsrc = 0x10203;
+  const uint32_t kMediaRecipientSsrc = 0x101;
+  const uint32_t kOtherMediaFlowSsrc = 0x9999;
 
   PacketBuilder p;
   p.AddSrPacket(kSenderSsrc);
@@ -370,9 +370,9 @@ TEST_F(RtcpReceiverTest, TmmbrPacketNotForUsIgnored) {
 }
 
 TEST_F(RtcpReceiverTest, TmmbrPacketZeroRateIgnored) {
-  const WebRtc_UWord32 kMediaFlowSsrc = 0x2040608;
-  const WebRtc_UWord32 kSenderSsrc = 0x10203;
-  const WebRtc_UWord32 kMediaRecipientSsrc = 0x101;
+  const uint32_t kMediaFlowSsrc = 0x2040608;
+  const uint32_t kSenderSsrc = 0x10203;
+  const uint32_t kMediaRecipientSsrc = 0x101;
   rtcp_receiver_->SetSSRC(kMediaFlowSsrc);  // Matches "media source" above.
 
   PacketBuilder p;
@@ -389,14 +389,14 @@ TEST_F(RtcpReceiverTest, TmmbrPacketZeroRateIgnored) {
 }
 
 TEST_F(RtcpReceiverTest, TmmbrThreeConstraintsTimeOut) {
-  const WebRtc_UWord32 kMediaFlowSsrc = 0x2040608;
-  const WebRtc_UWord32 kSenderSsrc = 0x10203;
-  const WebRtc_UWord32 kMediaRecipientSsrc = 0x101;
+  const uint32_t kMediaFlowSsrc = 0x2040608;
+  const uint32_t kSenderSsrc = 0x10203;
+  const uint32_t kMediaRecipientSsrc = 0x101;
   rtcp_receiver_->SetSSRC(kMediaFlowSsrc);  // Matches "media source" above.
 
   // Inject 3 packets "from" kMediaRecipientSsrc, Ssrc+1, Ssrc+2.
   // The times of arrival are starttime + 0, starttime + 5 and starttime + 10.
-  for (WebRtc_UWord32 ssrc = kMediaRecipientSsrc;
+  for (uint32_t ssrc = kMediaRecipientSsrc;
        ssrc < kMediaRecipientSsrc+3; ++ssrc) {
     PacketBuilder p;
     p.AddSrPacket(kSenderSsrc);

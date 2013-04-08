@@ -39,45 +39,45 @@ class RTPReceiverStrategy {
   // make changes in the data as necessary. The specific_payload argument
   // provides audio or video-specific data. The is_first_packet argument is true
   // if this packet is either the first packet ever or the first in its frame.
-  virtual WebRtc_Word32 ParseRtpPacket(
+  virtual int32_t ParseRtpPacket(
     WebRtcRTPHeader* rtp_header,
     const ModuleRTPUtility::PayloadUnion& specific_payload,
     const bool is_red,
-    const WebRtc_UWord8* packet,
-    const WebRtc_UWord16 packet_length,
-    const WebRtc_Word64 timestamp_ms,
+    const uint8_t* packet,
+    const uint16_t packet_length,
+    const int64_t timestamp_ms,
     const bool is_first_packet) = 0;
 
   // Retrieves the last known applicable frequency.
-  virtual WebRtc_Word32 GetFrequencyHz() const = 0;
+  virtual int32_t GetFrequencyHz() const = 0;
 
   // Computes the current dead-or-alive state.
   virtual RTPAliveType ProcessDeadOrAlive(
-    WebRtc_UWord16 last_payload_length) const = 0;
+    uint16_t last_payload_length) const = 0;
 
   // Returns true if we should report CSRC changes for this payload type.
   // TODO(phoglund): should move out of here along with other payload stuff.
-  virtual bool ShouldReportCsrcChanges(WebRtc_UWord8 payload_type) const = 0;
+  virtual bool ShouldReportCsrcChanges(uint8_t payload_type) const = 0;
 
   // Notifies the strategy that we have created a new non-RED payload type in
   // the payload registry.
-  virtual WebRtc_Word32 OnNewPayloadTypeCreated(
+  virtual int32_t OnNewPayloadTypeCreated(
       const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-      const WebRtc_Word8 payloadType,
-      const WebRtc_UWord32 frequency) = 0;
+      const int8_t payloadType,
+      const uint32_t frequency) = 0;
 
   // Invokes the OnInitializeDecoder callback in a media-specific way.
-  virtual WebRtc_Word32 InvokeOnInitializeDecoder(
+  virtual int32_t InvokeOnInitializeDecoder(
     RtpFeedback* callback,
-    const WebRtc_Word32 id,
-    const WebRtc_Word8 payload_type,
+    const int32_t id,
+    const int8_t payload_type,
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     const ModuleRTPUtility::PayloadUnion& specific_payload) const = 0;
 
   // Checks if the payload type has changed, and returns whether we should
   // reset statistics and/or discard this packet.
   virtual void CheckPayloadChanged(
-    const WebRtc_Word8 payload_type,
+    const int8_t payload_type,
     ModuleRTPUtility::PayloadUnion* specific_payload,
     bool* should_reset_statistics,
     bool* should_discard_changes) {

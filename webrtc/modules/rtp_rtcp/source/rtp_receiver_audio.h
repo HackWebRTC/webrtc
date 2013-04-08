@@ -27,11 +27,11 @@ class CriticalSectionWrapper;
 // Handles audio RTP packets. This class is thread-safe.
 class RTPReceiverAudio : public RTPReceiverStrategy {
  public:
-  RTPReceiverAudio(const WebRtc_Word32 id,
+  RTPReceiverAudio(const int32_t id,
                    RtpData* data_callback,
                    RtpAudioFeedback* incoming_messages_callback);
 
-  WebRtc_UWord32 AudioFrequency() const;
+  uint32_t AudioFrequency() const;
 
   // Forward DTMFs to decoder for playout.
   int SetTelephoneEventForwardToDecoder(bool forward_to_decoder);
@@ -40,38 +40,38 @@ class RTPReceiverAudio : public RTPReceiverStrategy {
   bool TelephoneEventForwardToDecoder() const;
 
   // Is TelephoneEvent configured with payload type payload_type
-  bool TelephoneEventPayloadType(const WebRtc_Word8 payload_type) const;
+  bool TelephoneEventPayloadType(const int8_t payload_type) const;
 
   // Returns true if CNG is configured with payload type payload_type. If so,
   // the frequency and cng_payload_type_has_changed are filled in.
-  bool CNGPayloadType(const WebRtc_Word8 payload_type,
-                      WebRtc_UWord32* frequency,
+  bool CNGPayloadType(const int8_t payload_type,
+                      uint32_t* frequency,
                       bool* cng_payload_type_has_changed);
 
-  WebRtc_Word32 ParseRtpPacket(
+  int32_t ParseRtpPacket(
       WebRtcRTPHeader* rtp_header,
       const ModuleRTPUtility::PayloadUnion& specific_payload,
       const bool is_red,
-      const WebRtc_UWord8* packet,
-      const WebRtc_UWord16 packet_length,
-      const WebRtc_Word64 timestamp_ms,
+      const uint8_t* packet,
+      const uint16_t packet_length,
+      const int64_t timestamp_ms,
       const bool is_first_packet);
 
-  WebRtc_Word32 GetFrequencyHz() const;
+  int32_t GetFrequencyHz() const;
 
-  RTPAliveType ProcessDeadOrAlive(WebRtc_UWord16 last_payload_length) const;
+  RTPAliveType ProcessDeadOrAlive(uint16_t last_payload_length) const;
 
-  bool ShouldReportCsrcChanges(WebRtc_UWord8 payload_type) const;
+  bool ShouldReportCsrcChanges(uint8_t payload_type) const;
 
-  WebRtc_Word32 OnNewPayloadTypeCreated(
+  int32_t OnNewPayloadTypeCreated(
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-      const WebRtc_Word8 payload_type,
-      const WebRtc_UWord32 frequency);
+      const int8_t payload_type,
+      const uint32_t frequency);
 
-  WebRtc_Word32 InvokeOnInitializeDecoder(
+  int32_t InvokeOnInitializeDecoder(
       RtpFeedback* callback,
-      const WebRtc_Word32 id,
-      const WebRtc_Word8 payload_type,
+      const int32_t id,
+      const int8_t payload_type,
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
       const ModuleRTPUtility::PayloadUnion& specific_payload) const;
 
@@ -81,44 +81,44 @@ class RTPReceiverAudio : public RTPReceiverStrategy {
       ModuleRTPUtility::PayloadTypeMap* payload_type_map,
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
       const size_t payload_name_length,
-      const WebRtc_UWord32 frequency,
-      const WebRtc_UWord8 channels,
-      const WebRtc_UWord32 rate) const;
+      const uint32_t frequency,
+      const uint8_t channels,
+      const uint32_t rate) const;
 
   // We need to look out for special payload types here and sometimes reset
   // statistics. In addition we sometimes need to tweak the frequency.
-  void CheckPayloadChanged(const WebRtc_Word8 payload_type,
+  void CheckPayloadChanged(const int8_t payload_type,
                            ModuleRTPUtility::PayloadUnion* specific_payload,
                            bool* should_reset_statistics,
                            bool* should_discard_changes);
 
  private:
 
-  WebRtc_Word32 ParseAudioCodecSpecific(
+  int32_t ParseAudioCodecSpecific(
       WebRtcRTPHeader* rtp_header,
-      const WebRtc_UWord8* payload_data,
-      const WebRtc_UWord16 payload_length,
+      const uint8_t* payload_data,
+      const uint16_t payload_length,
       const ModuleRTPUtility::AudioPayload& audio_specific,
       const bool is_red);
 
-  WebRtc_Word32 id_;
+  int32_t id_;
   scoped_ptr<CriticalSectionWrapper> critical_section_rtp_receiver_audio_;
 
-  WebRtc_UWord32 last_received_frequency_;
+  uint32_t last_received_frequency_;
 
   bool telephone_event_forward_to_decoder_;
-  WebRtc_Word8 telephone_event_payload_type_;
-  std::set<WebRtc_UWord8> telephone_event_reported_;
+  int8_t telephone_event_payload_type_;
+  std::set<uint8_t> telephone_event_reported_;
 
-  WebRtc_Word8 cng_nb_payload_type_;
-  WebRtc_Word8 cng_wb_payload_type_;
-  WebRtc_Word8 cng_swb_payload_type_;
-  WebRtc_Word8 cng_fb_payload_type_;
-  WebRtc_Word8 cng_payload_type_;
+  int8_t cng_nb_payload_type_;
+  int8_t cng_wb_payload_type_;
+  int8_t cng_swb_payload_type_;
+  int8_t cng_fb_payload_type_;
+  int8_t cng_payload_type_;
 
   // G722 is special since it use the wrong number of RTP samples in timestamp
   // VS. number of samples in the frame
-  WebRtc_Word8 g722_payload_type_;
+  int8_t g722_payload_type_;
   bool last_received_g722_;
 
   RtpAudioFeedback* cb_audio_feedback_;

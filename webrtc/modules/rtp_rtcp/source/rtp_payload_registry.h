@@ -27,20 +27,20 @@ class RTPPayloadStrategy {
 
   virtual bool PayloadIsCompatible(
       const ModuleRTPUtility::Payload& payload,
-      const WebRtc_UWord32 frequency,
-      const WebRtc_UWord8 channels,
-      const WebRtc_UWord32 rate) const = 0;
+      const uint32_t frequency,
+      const uint8_t channels,
+      const uint32_t rate) const = 0;
 
   virtual void UpdatePayloadRate(
       ModuleRTPUtility::Payload* payload,
-      const WebRtc_UWord32 rate) const = 0;
+      const uint32_t rate) const = 0;
 
   virtual ModuleRTPUtility::Payload* CreatePayloadType(
       const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-      const WebRtc_Word8 payloadType,
-      const WebRtc_UWord32 frequency,
-      const WebRtc_UWord8 channels,
-      const WebRtc_UWord32 rate) const = 0;
+      const int8_t payloadType,
+      const uint32_t frequency,
+      const uint8_t channels,
+      const uint32_t rate) const = 0;
 
   static RTPPayloadStrategy* CreateStrategy(const bool handling_audio);
 
@@ -51,30 +51,30 @@ class RTPPayloadStrategy {
 class RTPPayloadRegistry {
  public:
   // The registry takes ownership of the strategy.
-  RTPPayloadRegistry(const WebRtc_Word32 id,
+  RTPPayloadRegistry(const int32_t id,
                      RTPPayloadStrategy* rtp_payload_strategy);
   ~RTPPayloadRegistry();
 
-  WebRtc_Word32 RegisterReceivePayload(
+  int32_t RegisterReceivePayload(
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-      const WebRtc_Word8 payload_type,
-      const WebRtc_UWord32 frequency,
-      const WebRtc_UWord8 channels,
-      const WebRtc_UWord32 rate,
+      const int8_t payload_type,
+      const uint32_t frequency,
+      const uint8_t channels,
+      const uint32_t rate,
       bool* created_new_payload_type);
 
-  WebRtc_Word32 DeRegisterReceivePayload(
-      const WebRtc_Word8 payload_type);
+  int32_t DeRegisterReceivePayload(
+      const int8_t payload_type);
 
-  WebRtc_Word32 ReceivePayloadType(
+  int32_t ReceivePayloadType(
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-      const WebRtc_UWord32 frequency,
-      const WebRtc_UWord8 channels,
-      const WebRtc_UWord32 rate,
-      WebRtc_Word8* payload_type) const;
+      const uint32_t frequency,
+      const uint8_t channels,
+      const uint32_t rate,
+      int8_t* payload_type) const;
 
-  WebRtc_Word32 PayloadTypeToPayload(
-    const WebRtc_UWord8 payload_type,
+  int32_t PayloadTypeToPayload(
+    const uint8_t payload_type,
     ModuleRTPUtility::Payload*& payload) const;
 
   void ResetLastReceivedPayloadTypes() {
@@ -83,13 +83,13 @@ class RTPPayloadRegistry {
   }
 
   // Returns true if the new media payload type has not changed.
-  bool ReportMediaPayloadType(WebRtc_UWord8 media_payload_type);
+  bool ReportMediaPayloadType(uint8_t media_payload_type);
 
-  WebRtc_Word8 red_payload_type() const { return red_payload_type_; }
-  WebRtc_Word8 last_received_payload_type() const {
+  int8_t red_payload_type() const { return red_payload_type_; }
+  int8_t last_received_payload_type() const {
     return last_received_payload_type_;
   }
-  void set_last_received_payload_type(WebRtc_Word8 last_received_payload_type) {
+  void set_last_received_payload_type(int8_t last_received_payload_type) {
     last_received_payload_type_ = last_received_payload_type;
   }
 
@@ -98,16 +98,16 @@ class RTPPayloadRegistry {
   void DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
       const size_t payload_name_length,
-      const WebRtc_UWord32 frequency,
-      const WebRtc_UWord8 channels,
-      const WebRtc_UWord32 rate);
+      const uint32_t frequency,
+      const uint8_t channels,
+      const uint32_t rate);
 
   ModuleRTPUtility::PayloadTypeMap payload_type_map_;
-  WebRtc_Word32 id_;
+  int32_t id_;
   scoped_ptr<RTPPayloadStrategy> rtp_payload_strategy_;
-  WebRtc_Word8  red_payload_type_;
-  WebRtc_Word8  last_received_payload_type_;
-  WebRtc_Word8  last_received_media_payload_type_;
+  int8_t  red_payload_type_;
+  int8_t  last_received_payload_type_;
+  int8_t  last_received_media_payload_type_;
 };
 
 }  // namespace webrtc

@@ -181,10 +181,10 @@ TEST(NACKStringBuilderTest, TestCase13) {
   EXPECT_EQ(std::string("5-6,9"), builder.GetResult());
 }
 
-void CreateRtpPacket(const bool marker_bit, const WebRtc_UWord8 payload,
-    const WebRtc_UWord16 seq_num, const WebRtc_UWord32 timestamp,
-    const WebRtc_UWord32 ssrc, WebRtc_UWord8* array,
-    WebRtc_UWord16* cur_pos) {
+void CreateRtpPacket(const bool marker_bit, const uint8_t payload,
+    const uint16_t seq_num, const uint32_t timestamp,
+    const uint32_t ssrc, uint8_t* array,
+    uint16_t* cur_pos) {
   ASSERT_TRUE(payload <= 127);
   array[(*cur_pos)++] = 0x80;
   array[(*cur_pos)++] = payload | (marker_bit ? 0x80 : 0);
@@ -228,8 +228,8 @@ class TestTransport : public Transport,
   }
 
   virtual int SendRTCPPacket(int /*ch*/, const void *packet, int packet_len) {
-    RTCPUtility::RTCPParserV2 rtcpParser((WebRtc_UWord8*)packet,
-                                         (WebRtc_Word32)packet_len,
+    RTCPUtility::RTCPParserV2 rtcpParser((uint8_t*)packet,
+                                         (int32_t)packet_len,
                                          true); // Allow non-compound RTCP
 
     EXPECT_TRUE(rtcpParser.IsValid());
@@ -261,8 +261,8 @@ class TestTransport : public Transport,
     return packet_len;
   }
 
-  virtual int OnReceivedPayloadData(const WebRtc_UWord8* payloadData,
-                                    const WebRtc_UWord16 payloadSize,
+  virtual int OnReceivedPayloadData(const uint8_t* payloadData,
+                                    const uint16_t payloadSize,
                                     const WebRtcRTPHeader* rtpHeader) {
     return 0;
   }
@@ -339,11 +339,11 @@ TEST_F(RtcpSenderTest, IJStatus) {
 
 TEST_F(RtcpSenderTest, TestCompound) {
   const bool marker_bit = false;
-  const WebRtc_UWord8 payload = 100;
-  const WebRtc_UWord16 seq_num = 11111;
-  const WebRtc_UWord32 timestamp = 1234567;
-  const WebRtc_UWord32 ssrc = 0x11111111;
-  WebRtc_UWord16 packet_length = 0;
+  const uint8_t payload = 100;
+  const uint16_t seq_num = 11111;
+  const uint32_t timestamp = 1234567;
+  const uint32_t ssrc = 0x11111111;
+  uint16_t packet_length = 0;
   CreateRtpPacket(marker_bit, payload, seq_num, timestamp, ssrc, packet_,
       &packet_length);
   EXPECT_EQ(25, packet_length);
@@ -404,7 +404,7 @@ TEST_F(RtcpSenderTest, SendsTmmbnIfSetAndValid) {
   EXPECT_EQ(0, rtcp_sender_->SetRTCPStatus(kRtcpCompound));
   TMMBRSet bounding_set;
   bounding_set.VerifyAndAllocateSet(1);
-  const WebRtc_UWord32 kSourceSsrc = 12345;
+  const uint32_t kSourceSsrc = 12345;
   bounding_set.AddEntry(32768, 0, kSourceSsrc);
 
   EXPECT_EQ(0, rtcp_sender_->SetTMMBN(&bounding_set, 3));

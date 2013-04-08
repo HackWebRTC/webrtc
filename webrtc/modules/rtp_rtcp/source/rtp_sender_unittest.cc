@@ -92,10 +92,10 @@ TEST_F(RtpSenderTest, RegisterRtpHeaderExtension) {
 }
 
 TEST_F(RtpSenderTest, BuildRTPPacket) {
-  WebRtc_Word32 length = rtp_sender_->BuildRTPheader(packet_,
-                                                     kPayload,
-                                                     kMarkerBit,
-                                                     kTimestamp);
+  int32_t length = rtp_sender_->BuildRTPheader(packet_,
+                                               kPayload,
+                                               kMarkerBit,
+                                               kTimestamp);
   EXPECT_EQ(12, length);
 
   // Verify
@@ -117,10 +117,10 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithTransmissionOffsetExtension) {
   EXPECT_EQ(0, rtp_sender_->SetTransmissionTimeOffset(kTimeOffset));
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kType, kId));
 
-  WebRtc_Word32 length = rtp_sender_->BuildRTPheader(packet_,
-                                                     kPayload,
-                                                     kMarkerBit,
-                                                     kTimestamp);
+  int32_t length = rtp_sender_->BuildRTPheader(packet_,
+                                               kPayload,
+                                               kMarkerBit,
+                                               kTimestamp);
   EXPECT_EQ(12 + rtp_sender_->RtpHeaderExtensionTotalLength(), length);
 
   // Verify
@@ -152,10 +152,10 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithNegativeTransmissionOffsetExtension) {
   EXPECT_EQ(0, rtp_sender_->SetTransmissionTimeOffset(kNegTimeOffset));
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kType, kId));
 
-  WebRtc_Word32 length = rtp_sender_->BuildRTPheader(packet_,
-                                                     kPayload,
-                                                     kMarkerBit,
-                                                     kTimestamp);
+  int32_t length = rtp_sender_->BuildRTPheader(packet_,
+                                               kPayload,
+                                               kMarkerBit,
+                                               kTimestamp);
   EXPECT_EQ(12 + rtp_sender_->RtpHeaderExtensionTotalLength(), length);
 
   // Verify
@@ -174,10 +174,10 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithNegativeTransmissionOffsetExtension) {
 }
 
 TEST_F(RtpSenderTest, NoTrafficSmoothing) {
-  WebRtc_Word32 rtp_length = rtp_sender_->BuildRTPheader(packet_,
-                                                         kPayload,
-                                                         kMarkerBit,
-                                                         kTimestamp);
+  int32_t rtp_length = rtp_sender_->BuildRTPheader(packet_,
+                                                   kPayload,
+                                                   kMarkerBit,
+                                                   kTimestamp);
 
   // Packet should be sent immediately.
   EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_,
@@ -194,10 +194,10 @@ TEST_F(RtpSenderTest, DISABLED_TrafficSmoothing) {
   rtp_sender_->SetStorePacketsStatus(true, 10);
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kType, kId));
   rtp_sender_->SetTargetSendBitrate(300000);
-  WebRtc_Word32 rtp_length = rtp_sender_->BuildRTPheader(packet_,
-                                                         kPayload,
-                                                         kMarkerBit,
-                                                         kTimestamp);
+  int32_t rtp_length = rtp_sender_->BuildRTPheader(packet_,
+                                                   kPayload,
+                                                   kMarkerBit,
+                                                   kTimestamp);
   // Packet should be stored in a send bucket.
   EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_,
                                           0,

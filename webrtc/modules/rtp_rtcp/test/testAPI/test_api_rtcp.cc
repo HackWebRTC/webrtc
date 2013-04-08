@@ -27,20 +27,20 @@ class RtcpCallback : public RtcpFeedback, public RtcpIntraFrameObserver {
   void SetModule(RtpRtcp* module) {
     _rtpRtcpModule = module;
   };
-  virtual void OnRTCPPacketTimeout(const WebRtc_Word32 id) {
+  virtual void OnRTCPPacketTimeout(const int32_t id) {
   }
-  virtual void OnLipSyncUpdate(const WebRtc_Word32 id,
-                               const WebRtc_Word32 audioVideoOffset) {
+  virtual void OnLipSyncUpdate(const int32_t id,
+                               const int32_t audioVideoOffset) {
   };
   virtual void OnXRVoIPMetricReceived(
-      const WebRtc_Word32 id,
+      const int32_t id,
       const RTCPVoIPMetric* metric) {
   };
-  virtual void OnApplicationDataReceived(const WebRtc_Word32 id,
-                                         const WebRtc_UWord8 subType,
-                                         const WebRtc_UWord32 name,
-                                         const WebRtc_UWord16 length,
-                                         const WebRtc_UWord8* data) {
+  virtual void OnApplicationDataReceived(const int32_t id,
+                                         const uint8_t subType,
+                                         const uint32_t name,
+                                         const uint16_t length,
+                                         const uint8_t* data) {
     char print_name[5];
     print_name[0] = static_cast<char>(name >> 24);
     print_name[1] = static_cast<char>(name >> 16);
@@ -50,16 +50,16 @@ class RtcpCallback : public RtcpFeedback, public RtcpIntraFrameObserver {
 
     EXPECT_STRCASEEQ("test", print_name);
   };
-  virtual void OnSendReportReceived(const WebRtc_Word32 id,
-                                    const WebRtc_UWord32 senderSSRC,
+  virtual void OnSendReportReceived(const int32_t id,
+                                    const uint32_t senderSSRC,
                                     uint32_t ntp_secs,
                                     uint32_t ntp_frac,
                                     uint32_t timestamp) {
     RTCPSenderInfo senderInfo;
     EXPECT_EQ(0, _rtpRtcpModule->RemoteRTCPStat(&senderInfo));
   };
-  virtual void OnReceiveReportReceived(const WebRtc_Word32 id,
-                                       const WebRtc_UWord32 senderSSRC) {
+  virtual void OnReceiveReportReceived(const int32_t id,
+                                       const uint32_t senderSSRC) {
   };
   virtual void OnReceivedIntraFrameRequest(uint32_t ssrc) {
   };
@@ -143,7 +143,7 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     // We need to send one RTP packet to get the RTCP packet to be accepted by
     // the receiving module.
     // send RTP packet with the data "testtest"
-    const WebRtc_UWord8 test[9] = "testtest";
+    const uint8_t test[9] = "testtest";
     EXPECT_EQ(0, module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96,
                                            0, -1, test, 8));
   }
@@ -167,10 +167,10 @@ class RtpRtcpRtcpTest : public ::testing::Test {
   RtcpCallback* myRTCPFeedback1;
   RtcpCallback* myRTCPFeedback2;
 
-  WebRtc_UWord32 test_ssrc;
-  WebRtc_UWord32 test_timestamp;
-  WebRtc_UWord16 test_sequence_number;
-  WebRtc_UWord32 test_CSRC[webrtc::kRtpCsrcSize];
+  uint32_t test_ssrc;
+  uint32_t test_timestamp;
+  uint16_t test_sequence_number;
+  uint32_t test_CSRC[webrtc::kRtpCsrcSize];
   SimulatedClock fake_clock;
 };
 
@@ -180,7 +180,7 @@ TEST_F(RtpRtcpRtcpTest, RTCP_PLI_RPSI) {
 }
 
 TEST_F(RtpRtcpRtcpTest, RTCP_CNAME) {
-  WebRtc_UWord32 testOfCSRC[webrtc::kRtpCsrcSize];
+  uint32_t testOfCSRC[webrtc::kRtpCsrcSize];
   EXPECT_EQ(2, module2->RemoteCSRCs(testOfCSRC));
   EXPECT_EQ(test_CSRC[0], testOfCSRC[0]);
   EXPECT_EQ(test_CSRC[1], testOfCSRC[1]);
@@ -236,14 +236,14 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
   reportBlock.lastSR= 7;
   EXPECT_EQ(0, module1->AddRTCPReportBlock(test_CSRC[1], &reportBlock));
 
-  WebRtc_UWord32 name = 't' << 24;
+  uint32_t name = 't' << 24;
   name += 'e' << 16;
   name += 's' << 8;
   name += 't';
   EXPECT_EQ(0, module1->SetRTCPApplicationSpecificData(
       3,
       name,
-      (const WebRtc_UWord8 *)"test test test test test test test test test"\
+      (const uint8_t *)"test test test test test test test test test"\
           " test test test test test test test test test test test test test"\
           " test test test test test test test test test test test test test"\
           " test test test test test test test test test test test test test"\
@@ -256,10 +256,10 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
   fake_clock.AdvanceTimeMilliseconds(100);
   module2->Process();
 
-  WebRtc_UWord32 receivedNTPsecs = 0;
-  WebRtc_UWord32 receivedNTPfrac = 0;
-  WebRtc_UWord32 RTCPArrivalTimeSecs = 0;
-  WebRtc_UWord32 RTCPArrivalTimeFrac = 0;
+  uint32_t receivedNTPsecs = 0;
+  uint32_t receivedNTPfrac = 0;
+  uint32_t RTCPArrivalTimeSecs = 0;
+  uint32_t RTCPArrivalTimeFrac = 0;
   EXPECT_EQ(0, module2->RemoteNTP(&receivedNTPsecs,
                                   &receivedNTPfrac,
                                   &RTCPArrivalTimeSecs,
@@ -281,28 +281,28 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
   EXPECT_EQ(test_sequence_number, reportBlockReceived.extendedHighSeqNum);
   EXPECT_EQ(0, reportBlockReceived.fractionLost);
 
-  EXPECT_EQ(static_cast<WebRtc_UWord32>(0),
+  EXPECT_EQ(static_cast<uint32_t>(0),
             reportBlockReceived.cumulativeLost);
 
-  WebRtc_UWord8  fraction_lost = 0;  // scale 0 to 255
-  WebRtc_UWord32 cum_lost = 0;       // number of lost packets
-  WebRtc_UWord32 ext_max = 0;        // highest sequence number received
-  WebRtc_UWord32 jitter = 0;
-  WebRtc_UWord32 max_jitter = 0;
+  uint8_t  fraction_lost = 0;  // scale 0 to 255
+  uint32_t cum_lost = 0;       // number of lost packets
+  uint32_t ext_max = 0;        // highest sequence number received
+  uint32_t jitter = 0;
+  uint32_t max_jitter = 0;
   EXPECT_EQ(0, module2->StatisticsRTP(&fraction_lost,
                                       &cum_lost,
                                       &ext_max,
                                       &jitter,
                                       &max_jitter));
   EXPECT_EQ(0, fraction_lost);
-  EXPECT_EQ((WebRtc_UWord32)0, cum_lost);
+  EXPECT_EQ((uint32_t)0, cum_lost);
   EXPECT_EQ(test_sequence_number, ext_max);
   EXPECT_EQ(reportBlockReceived.jitter, jitter);
 
-  WebRtc_UWord16 RTT;
-  WebRtc_UWord16 avgRTT;
-  WebRtc_UWord16 minRTT;
-  WebRtc_UWord16 maxRTT;
+  uint16_t RTT;
+  uint16_t avgRTT;
+  uint16_t minRTT;
+  uint16_t maxRTT;
 
   // Get RoundTripTime.
   EXPECT_EQ(0, module1->RTT(test_ssrc + 1, &RTT, &avgRTT, &minRTT, &maxRTT));
