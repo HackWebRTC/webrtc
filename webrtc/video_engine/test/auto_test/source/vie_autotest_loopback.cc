@@ -497,11 +497,9 @@ int VideoEngineSampleCode(void* window1, void* window2)
         return -1;
     }
 
-    // Setting External transport
-    TbExternalTransport extTransport(*(ptrViENetwork), videoChannel, NULL);
-
-    webrtc::test::VideoChannelTransport* video_channel_transport =
-        new webrtc::test::VideoChannelTransport(ptrViENetwork, videoChannel);
+    // Setup transport.
+    TbExternalTransport* extTransport = NULL;
+    webrtc::test::VideoChannelTransport* video_channel_transport = NULL;
 
     int testMode = 0;
     std::cout << std::endl;
@@ -515,8 +513,11 @@ int VideoEngineSampleCode(void* window1, void* window2)
         // Avoid changing SSRC due to collision.
         error = ptrViERtpRtcp->SetLocalSSRC(videoChannel, 1);
 
+        extTransport = new TbExternalTransport(*ptrViENetwork, videoChannel,
+                                               NULL);
+
         error = ptrViENetwork->RegisterSendTransport(videoChannel,
-                                                     extTransport);
+                                                     *extTransport);
         if (error == -1)
         {
             printf("ERROR in ViECodec::RegisterSendTransport \n");
@@ -540,16 +541,19 @@ int VideoEngineSampleCode(void* window1, void* window2)
         std::string delay_str;
         std::getline(std::cin, delay_str);
         network.mean_one_way_delay = atoi(delay_str.c_str());
-        extTransport.SetNetworkParameters(network);
+        extTransport->SetNetworkParameters(network);
         if (numTemporalLayers > 1 && temporalToggling) {
-          extTransport.SetTemporalToggle(numTemporalLayers);
+          extTransport->SetTemporalToggle(numTemporalLayers);
         } else {
           // Disabled
-          extTransport.SetTemporalToggle(0);
+          extTransport->SetTemporalToggle(0);
         }
     }
     else
     {
+        video_channel_transport = new webrtc::test::VideoChannelTransport(
+            ptrViENetwork, videoChannel);
+
         const char* ipAddress = "127.0.0.1";
         const unsigned short rtpPort = 6000;
         std::cout << std::endl;
@@ -668,7 +672,10 @@ int VideoEngineSampleCode(void* window1, void* window2)
         printf("ERROR in ViEBase::DeleteChannel\n");
         return -1;
     }
+
     delete video_channel_transport;
+    delete extTransport;
+
     int remainingInterfaces = 0;
     remainingInterfaces = ptrViECodec->Release();
     remainingInterfaces += ptrViECapture->Release();

@@ -91,6 +91,16 @@ TbExternalTransport::~TbExternalTransport()
         delete &_thread;
         delete &_event;
     }
+    for (std::list<VideoPacket*>::iterator it = _rtpPackets.begin();
+         it != _rtpPackets.end(); ++it) {
+        delete *it;
+    }
+    _rtpPackets.clear();
+    for (std::list<VideoPacket*>::iterator it = _rtcpPackets.begin();
+         it != _rtcpPackets.end(); ++it) {
+        delete *it;
+    }
+    _rtcpPackets.clear();
     delete &_crit;
     delete &_statCrit;
 }
