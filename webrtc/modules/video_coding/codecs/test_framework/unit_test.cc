@@ -728,7 +728,7 @@ UnitTest::RateControlTests()
     EXPECT_TRUE(_decoder->Reset() == WEBRTC_VIDEO_CODEC_OK);
     EXPECT_TRUE(_decoder->InitDecode(&_inst, 1) == WEBRTC_VIDEO_CODEC_OK);
     // add: should also be 0, and 1
-    const int bitRate[] = {50, 100, 500, 1000, 2000};
+    const int bitRate[] = {100, 500};
     const int nBitrates = sizeof(bitRate)/sizeof(*bitRate);
 
     printf("\nRate control test\n");
