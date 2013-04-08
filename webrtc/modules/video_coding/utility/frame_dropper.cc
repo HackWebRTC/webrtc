@@ -75,7 +75,7 @@ FrameDropper::Enable(bool enable)
 }
 
 void
-FrameDropper::Fill(WebRtc_UWord32 frameSizeBytes, bool deltaFrame)
+FrameDropper::Fill(uint32_t frameSizeBytes, bool deltaFrame)
 {
     if (!_enabled)
     {
@@ -104,12 +104,12 @@ FrameDropper::Fill(WebRtc_UWord32 frameSizeBytes, bool deltaFrame)
             // how much we allow the key frame compensation to be spread
             // out in time. Therefor we must use the key frame ratio rather
             // than keyFrameSpreadFrames.
-            _keyFrameCount = static_cast<WebRtc_Word32>(1 / _keyFrameRatio.Value() + 0.5);
+            _keyFrameCount = static_cast<int32_t>(1 / _keyFrameRatio.Value() + 0.5);
         }
         else
         {
             // Compensate for the key frame the following frames
-            _keyFrameCount = static_cast<WebRtc_Word32>(_keyFrameSpreadFrames + 0.5);
+            _keyFrameCount = static_cast<int32_t>(_keyFrameSpreadFrames + 0.5);
         }
     }
     else
@@ -123,7 +123,7 @@ FrameDropper::Fill(WebRtc_UWord32 frameSizeBytes, bool deltaFrame)
 }
 
 void
-FrameDropper::Leak(WebRtc_UWord32 inputFrameRate)
+FrameDropper::Leak(uint32_t inputFrameRate)
 {
     if (!_enabled)
     {
@@ -164,7 +164,7 @@ FrameDropper::Leak(WebRtc_UWord32 inputFrameRate)
 }
 
 void
-FrameDropper::UpdateNack(WebRtc_UWord32 nackBytes)
+FrameDropper::UpdateNack(uint32_t nackBytes)
 {
     if (!_enabled)
     {
@@ -241,7 +241,7 @@ FrameDropper::DropFrame()
         {
             denom = (float)1e-5;
         }
-        WebRtc_Word32 limit = static_cast<WebRtc_Word32>(1.0f / denom - 1.0f + 0.5f);
+        int32_t limit = static_cast<int32_t>(1.0f / denom - 1.0f + 0.5f);
         // Put a bound on the max amount of dropped frames between each kept
         // frame, in terms of frame rate and window size (secs).
         int max_limit = static_cast<int>(_incoming_frame_rate *
@@ -284,7 +284,7 @@ FrameDropper::DropFrame()
         {
             denom = (float)1e-5;
         }
-        WebRtc_Word32 limit = -static_cast<WebRtc_Word32>(1.0f / denom - 1.0f + 0.5f);
+        int32_t limit = -static_cast<int32_t>(1.0f / denom - 1.0f + 0.5f);
         if (_dropCount > 0)
         {
             // Reset the _dropCount since we have a positive
@@ -344,7 +344,7 @@ FrameDropper::SetRates(float bitRate, float incoming_frame_rate)
 }
 
 float
-FrameDropper::ActualFrameRate(WebRtc_UWord32 inputFrameRate) const
+FrameDropper::ActualFrameRate(uint32_t inputFrameRate) const
 {
     if (!_enabled)
     {

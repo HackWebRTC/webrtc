@@ -89,7 +89,7 @@ UnitTest::~UnitTest()
     }
 }
 
-WebRtc_Word32
+int32_t
 UnitTestEncodeCompleteCallback::Encoded(EncodedImage& encodedImage,
                                         const webrtc::CodecSpecificInfo* codecSpecificInfo,
                                         const webrtc::RTPFragmentationHeader*
@@ -101,16 +101,16 @@ UnitTestEncodeCompleteCallback::Encoded(EncodedImage& encodedImage,
     // TODO(mikhal): Update frame type API.
     // _encodedVideoBuffer->SetFrameType(encodedImage._frameType);
     _encodedVideoBuffer->SetWidth(
-        (WebRtc_UWord16)encodedImage._encodedWidth);
+        (uint16_t)encodedImage._encodedWidth);
     _encodedVideoBuffer->SetHeight(
-        (WebRtc_UWord16)encodedImage._encodedHeight);
+        (uint16_t)encodedImage._encodedHeight);
     _encodedVideoBuffer->SetTimeStamp(encodedImage._timeStamp);
     _encodeComplete = true;
     _encodedFrameType = encodedImage._frameType;
     return 0;
 }
 
-WebRtc_Word32 UnitTestDecodeCompleteCallback::Decoded(I420VideoFrame& image)
+int32_t UnitTestDecodeCompleteCallback::Decoded(I420VideoFrame& image)
 {
     _decodedVideoBuffer->CopyFrame(image);
     _decodeComplete = true;
@@ -145,10 +145,10 @@ UnitTestDecodeCompleteCallback::DecodeComplete()
     return false;
 }
 
-WebRtc_UWord32
+uint32_t
 UnitTest::WaitForEncodedFrame() const
 {
-    WebRtc_Word64 startTime = TickTime::MillisecondTimestamp();
+    int64_t startTime = TickTime::MillisecondTimestamp();
     while (TickTime::MillisecondTimestamp() - startTime < kMaxWaitEncTimeMs)
     {
         if (_encodeCompleteCallback->EncodeComplete())
@@ -159,10 +159,10 @@ UnitTest::WaitForEncodedFrame() const
     return 0;
 }
 
-WebRtc_UWord32
+uint32_t
 UnitTest::WaitForDecodedFrame() const
 {
-    WebRtc_Word64 startTime = TickTime::MillisecondTimestamp();
+    int64_t startTime = TickTime::MillisecondTimestamp();
     while (TickTime::MillisecondTimestamp() - startTime < kMaxWaitDecTimeMs)
     {
         if (_decodeCompleteCallback->DecodeComplete())
@@ -174,9 +174,9 @@ UnitTest::WaitForDecodedFrame() const
     return 0;
 }
 
-WebRtc_UWord32
-UnitTest::CodecSpecific_SetBitrate(WebRtc_UWord32 bitRate,
-                                   WebRtc_UWord32 /* frameRate */)
+uint32_t
+UnitTest::CodecSpecific_SetBitrate(uint32_t bitRate,
+                                   uint32_t /* frameRate */)
 {
     return _encoder->SetRates(bitRate, _inst.maxFramerate);
 }
@@ -365,8 +365,8 @@ UnitTest::Perform()
     EXPECT_TRUE(_encoder->InitEncode(NULL, 1, 1440) ==
         WEBRTC_VIDEO_CODEC_ERR_PARAMETER);
     // bit rate exceeds max bit rate
-    WebRtc_Word32 tmpBitRate = _inst.startBitrate;
-    WebRtc_Word32 tmpMaxBitRate = _inst.maxBitrate;
+    int32_t tmpBitRate = _inst.startBitrate;
+    int32_t tmpMaxBitRate = _inst.maxBitrate;
     _inst.startBitrate = 4000;
     _inst.maxBitrate = 3000;
     EXPECT_TRUE(_encoder->InitEncode(&_inst, 1, 1440)  ==
@@ -716,7 +716,7 @@ UnitTest::RateControlTests()
 {
     int frames = 0;
     VideoFrame inputImage;
-    WebRtc_UWord32 frameLength;
+    uint32_t frameLength;
 
     // Do not specify maxBitRate (as in ViE).
     _inst.maxBitrate = 0;
@@ -765,7 +765,7 @@ UnitTest::RateControlTests()
                                            size_uv,
                                            width, height,
                                            width, half_width, half_width);
-            _inputVideoBuffer.set_timestamp(static_cast<WebRtc_UWord32>(9e4 /
+            _inputVideoBuffer.set_timestamp(static_cast<uint32_t>(9e4 /
                     static_cast<float>(_inst.maxFramerate)));
             ASSERT_EQ(_encoder->Encode(_inputVideoBuffer, NULL, NULL),
                       WEBRTC_VIDEO_CODEC_OK);
@@ -776,12 +776,12 @@ UnitTest::RateControlTests()
 
             _encodedVideoBuffer.SetLength(0);
         }
-        WebRtc_UWord32 actualBitrate =
+        uint32_t actualBitrate =
             (totalBytes  / frames * _inst.maxFramerate * 8)/1000;
         printf("Target bitrate: %d kbps, actual bitrate: %d kbps\n", _bitRate,
             actualBitrate);
         // Test for close match over reasonable range.
-          EXPECT_TRUE(abs(WebRtc_Word32(actualBitrate - _bitRate)) <
+          EXPECT_TRUE(abs(int32_t(actualBitrate - _bitRate)) <
                       0.12 * _bitRate);
         ASSERT_TRUE(feof(_sourceFile) != 0);
         rewind(_sourceFile);

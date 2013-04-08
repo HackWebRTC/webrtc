@@ -49,11 +49,11 @@ public:
     //                                returned from the encoder.
     //          - deltaFrame        : True if the encoder returned
     //                                a key frame.
-    virtual void Fill(WebRtc_UWord32 frameSizeBytes, bool deltaFrame);
+    virtual void Fill(uint32_t frameSizeBytes, bool deltaFrame);
 
-    virtual void Leak(WebRtc_UWord32 inputFrameRate);
+    virtual void Leak(uint32_t inputFrameRate);
 
-    void UpdateNack(WebRtc_UWord32 nackBytes);
+    void UpdateNack(uint32_t nackBytes);
 
     // Sets the target bit rate and the frame rate produced by
     // the camera.
@@ -65,7 +65,7 @@ public:
     // Return value     : The current average frame rate produced
     //                    if the DropFrame() function is used as
     //                    instruction of when to drop frames.
-    virtual float ActualFrameRate(WebRtc_UWord32 inputFrameRate) const;
+    virtual float ActualFrameRate(uint32_t inputFrameRate) const;
 
 private:
     void FillBucket(float inKbits, float outKbits);
@@ -75,13 +75,13 @@ private:
     VCMExpFilter       _keyFrameSizeAvgKbits;
     VCMExpFilter       _keyFrameRatio;
     float           _keyFrameSpreadFrames;
-    WebRtc_Word32     _keyFrameCount;
+    int32_t     _keyFrameCount;
     float           _accumulator;
     float           _accumulatorMax;
     float           _targetBitRate;
     bool            _dropNext;
     VCMExpFilter       _dropRatio;
-    WebRtc_Word32     _dropCount;
+    int32_t     _dropCount;
     float           _windowSize;
     float           _incoming_frame_rate;
     bool            _wasBelowMax;

@@ -27,13 +27,13 @@ class MockFrameDropper : public FrameDropper {
   MOCK_METHOD0(DropFrame,
       bool());
   MOCK_METHOD2(Fill,
-      void(WebRtc_UWord32 frameSizeBytes, bool deltaFrame));
+      void(uint32_t frameSizeBytes, bool deltaFrame));
   MOCK_METHOD1(Leak,
-      void(WebRtc_UWord32 inputFrameRate));
+      void(uint32_t inputFrameRate));
   MOCK_METHOD2(SetRates,
       void(float bitRate, float incoming_frame_rate));
   MOCK_CONST_METHOD1(ActualFrameRate,
-      float(WebRtc_UWord32 inputFrameRate));
+      float(uint32_t inputFrameRate));
 };
 
 }  // namespace webrtc
