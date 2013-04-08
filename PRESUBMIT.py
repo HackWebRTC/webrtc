@@ -137,7 +137,7 @@ def _CommonChecks(input_api, output_api):
                          'W0232',  # Class has no __init__ method
                         ]))
   results.extend(input_api.canned_checks.CheckLongLines(
-      input_api, output_api))
+      input_api, output_api, maxlen=80))
   results.extend(input_api.canned_checks.CheckChangeHasNoTabs(
       input_api, output_api))
   results.extend(input_api.canned_checks.CheckChangeHasNoStrayWhitespace(
