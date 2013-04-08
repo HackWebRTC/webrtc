@@ -2012,7 +2012,7 @@ void WebRtcIsacfix_TranscodeLpcCoef(WebRtc_Word32 *gain_lo_hiQ17,
   /* KLT  */
 
   /* left transform */
-  for (j = 0, offsg = 0; j < SUBFRAMES; j++, offsg += SUBFRAMES) {
+  for (j = 0, offsg = 0; j < SUBFRAMES; j++, offsg += 2) {
     // Q21 = Q6 * Q15
     sumQQ = WEBRTC_SPL_MUL_16_16(tmpcoeffs_gQ6[offsg],
                                  WebRtcIsacfix_kT1GainQ15[0][0]);
