@@ -136,14 +136,14 @@ def make_media_constraints(media, min_re, max_re):
         video_constraints['mandatory']['minWidth'] = min_sizes[0]
         video_constraints['mandatory']['minHeight'] = min_sizes[1]
       else:
-        logging.info('Ignored invalid min_re: ' + min_re);
+        logging.info('Ignored invalid min_re: ' + min_re)
     if max_re:
       max_sizes = max_re.split('x')
       if len(max_sizes) == 2:
         video_constraints['mandatory']['maxWidth'] = max_sizes[0]
         video_constraints['mandatory']['maxHeight'] = max_sizes[1]
       else:
-        logging.info('Ignored invalid max_re: ' + max_re);
+        logging.info('Ignored invalid max_re: ' + max_re)
     media_constraints['video'] = video_constraints
 
   return media_constraints
