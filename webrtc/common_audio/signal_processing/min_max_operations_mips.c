@@ -20,15 +20,15 @@
 
 // Maximum absolute value of word16 vector.
 int16_t WebRtcSpl_MaxAbsValueW16_mips(const int16_t* vector, int length) {
-  WebRtc_Word32 totMax = 0;
-  WebRtc_Word32 tmp32_0, tmp32_1, tmp32_2, tmp32_3;
+  int32_t totMax = 0;
+  int32_t tmp32_0, tmp32_1, tmp32_2, tmp32_3;
   int i, loop_size;
 
   if (vector == NULL || length <= 0) {
     return -1;
   }
 #if defined(MIPS_DSP_R1)
-  const WebRtc_Word32* tmpvec32 = (WebRtc_Word32*)vector;
+  const int32_t* tmpvec32 = (int32_t*)vector;
   loop_size = length >> 4;
 
   for (i = 0; i < loop_size; i++) {
@@ -104,9 +104,9 @@ int16_t WebRtcSpl_MaxAbsValueW16_mips(const int16_t* vector, int length) {
     );
   }
 #else  // #if defined(MIPS_DSP_R1)
-  WebRtc_Word32 v16MaxMax = WEBRTC_SPL_WORD16_MAX;
-  WebRtc_Word32 r, r1, r2, r3;
-  const WebRtc_Word16* tmpvector = vector;
+  int32_t v16MaxMax = WEBRTC_SPL_WORD16_MAX;
+  int32_t r, r1, r2, r3;
+  const int16_t* tmpvector = vector;
   loop_size = length >> 4;
   for (i = 0; i < loop_size; i++) {
     __asm__ volatile (

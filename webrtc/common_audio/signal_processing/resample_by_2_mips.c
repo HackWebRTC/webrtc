@@ -20,32 +20,32 @@
 #include "signal_processing_library.h"
 
 // allpass filter coefficients.
-static const WebRtc_UWord16 kResampleAllpass1[3] = {3284, 24441, 49528};
-static const WebRtc_UWord16 kResampleAllpass2[3] = {12199, 37471, 60255};
+static const uint16_t kResampleAllpass1[3] = {3284, 24441, 49528};
+static const uint16_t kResampleAllpass2[3] = {12199, 37471, 60255};
 
 // Multiply a 32-bit value with a 16-bit value and accumulate to another input:
 #define MUL_ACCUM_1(a, b, c) WEBRTC_SPL_SCALEDIFF32(a, b, c)
 #define MUL_ACCUM_2(a, b, c) WEBRTC_SPL_SCALEDIFF32(a, b, c)
 
 // decimator
-void WebRtcSpl_DownsampleBy2(const WebRtc_Word16* in,
-                             const WebRtc_Word16 len,
-                             WebRtc_Word16* out,
-                             WebRtc_Word32* filtState) {
-  WebRtc_Word32 out32;
-  WebRtc_Word16 i, len1;
+void WebRtcSpl_DownsampleBy2(const int16_t* in,
+                             const int16_t len,
+                             int16_t* out,
+                             int32_t* filtState) {
+  int32_t out32;
+  int16_t i, len1;
 
-  register WebRtc_Word32 state0 = filtState[0];
-  register WebRtc_Word32 state1 = filtState[1];
-  register WebRtc_Word32 state2 = filtState[2];
-  register WebRtc_Word32 state3 = filtState[3];
-  register WebRtc_Word32 state4 = filtState[4];
-  register WebRtc_Word32 state5 = filtState[5];
-  register WebRtc_Word32 state6 = filtState[6];
-  register WebRtc_Word32 state7 = filtState[7];
+  register int32_t state0 = filtState[0];
+  register int32_t state1 = filtState[1];
+  register int32_t state2 = filtState[2];
+  register int32_t state3 = filtState[3];
+  register int32_t state4 = filtState[4];
+  register int32_t state5 = filtState[5];
+  register int32_t state6 = filtState[6];
+  register int32_t state7 = filtState[7];
 
 #if defined(MIPS_DSP_R2_LE)
-  WebRtc_Word32 k1Res0, k1Res1, k1Res2, k2Res0, k2Res1, k2Res2;
+  int32_t k1Res0, k1Res1, k1Res2, k2Res0, k2Res1, k2Res2;
 
   k1Res0= 3284;
   k1Res1= 24441;
@@ -55,10 +55,10 @@ void WebRtcSpl_DownsampleBy2(const WebRtc_Word16* in,
   k2Res2= 60255;
   len1 = (len >> 1);
 
-  const WebRtc_Word32* inw = (WebRtc_Word32*)in;
-  WebRtc_Word32 tmp11, tmp12, tmp21, tmp22;
-  WebRtc_Word32 in322, in321;
-  WebRtc_Word32 diff1, diff2;
+  const int32_t* inw = (int32_t*)in;
+  int32_t tmp11, tmp12, tmp21, tmp22;
+  int32_t in322, in321;
+  int32_t diff1, diff2;
   for (i = len1; i > 0; i--) {
     __asm__ volatile (
       "lh         %[in321],    0(%[inw])                  \n\t"
@@ -148,12 +148,12 @@ void WebRtcSpl_DownsampleBy2(const WebRtc_Word16* in,
     *out++ = WebRtcSpl_SatW32ToW16(out32);
   }
 #else  // #if defined(MIPS_DSP_R2_LE)
-  WebRtc_Word32 tmp1, tmp2, diff;
-  WebRtc_Word32 in32;
+  int32_t tmp1, tmp2, diff;
+  int32_t in32;
   len1 = (len >> 1)/4;
   for (i = len1; i > 0; i--) {
     // lower allpass filter
-    in32 = (WebRtc_Word32)(*in++) << 10;
+    in32 = (int32_t)(*in++) << 10;
     diff = in32 - state1;
     tmp1 = MUL_ACCUM_1(kResampleAllpass2[0], diff, state0);
     state0 = in32;
@@ -165,7 +165,7 @@ void WebRtcSpl_DownsampleBy2(const WebRtc_Word16* in,
     state2 = tmp2;
 
     // upper allpass filter
-    in32 = (WebRtc_Word32)(*in++) << 10;
+    in32 = (int32_t)(*in++) << 10;
     diff = in32 - state5;
     tmp1 = MUL_ACCUM_1(kResampleAllpass1[0], diff, state4);
     state4 = in32;
@@ -182,7 +182,7 @@ void WebRtcSpl_DownsampleBy2(const WebRtc_Word16* in,
     // limit amplitude to prevent wrap-around, and write to output array
     *out++ = WebRtcSpl_SatW32ToW16(out32);
     // lower allpass filter
-    in32 = (WebRtc_Word32)(*in++) << 10;
+    in32 = (int32_t)(*in++) << 10;
     diff = in32 - state1;
     tmp1 = MUL_ACCUM_1(kResampleAllpass2[0], diff, state0);
     state0 = in32;
@@ -194,7 +194,7 @@ void WebRtcSpl_DownsampleBy2(const WebRtc_Word16* in,
     state2 = tmp2;
 
     // upper allpass filter
-    in32 = (WebRtc_Word32)(*in++) << 10;
+    in32 = (int32_t)(*in++) << 10;
     diff = in32 - state5;
     tmp1 = MUL_ACCUM_1(kResampleAllpass1[0], diff, state4);
     state4 = in32;
@@ -211,7 +211,7 @@ void WebRtcSpl_DownsampleBy2(const WebRtc_Word16* in,
     // limit amplitude to prevent wrap-around, and write to output array
     *out++ = WebRtcSpl_SatW32ToW16(out32);
     // lower allpass filter
-    in32 = (WebRtc_Word32)(*in++) << 10;
+    in32 = (int32_t)(*in++) << 10;
     diff = in32 - state1;
     tmp1 = MUL_ACCUM_1(kResampleAllpass2[0], diff, state0);
     state0 = in32;
@@ -223,7 +223,7 @@ void WebRtcSpl_DownsampleBy2(const WebRtc_Word16* in,
     state2 = tmp2;
 
     // upper allpass filter
-    in32 = (WebRtc_Word32)(*in++) << 10;
+    in32 = (int32_t)(*in++) << 10;
     diff = in32 - state5;
     tmp1 = MUL_ACCUM_1(kResampleAllpass1[0], diff, state4);
     state4 = in32;
@@ -240,7 +240,7 @@ void WebRtcSpl_DownsampleBy2(const WebRtc_Word16* in,
     // limit amplitude to prevent wrap-around, and write to output array
     *out++ = WebRtcSpl_SatW32ToW16(out32);
     // lower allpass filter
-    in32 = (WebRtc_Word32)(*in++) << 10;
+    in32 = (int32_t)(*in++) << 10;
     diff = in32 - state1;
     tmp1 = MUL_ACCUM_1(kResampleAllpass2[0], diff, state0);
     state0 = in32;
@@ -252,7 +252,7 @@ void WebRtcSpl_DownsampleBy2(const WebRtc_Word16* in,
     state2 = tmp2;
 
     // upper allpass filter
-    in32 = (WebRtc_Word32)(*in++) << 10;
+    in32 = (int32_t)(*in++) << 10;
     diff = in32 - state5;
     tmp1 = MUL_ACCUM_1(kResampleAllpass1[0], diff, state4);
     state4 = in32;
