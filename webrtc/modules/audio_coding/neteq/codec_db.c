@@ -28,8 +28,8 @@ int WebRtcNetEQ_DbReset(CodecDbInst_t *inst)
 {
     int i;
 
-    WebRtcSpl_MemSetW16((WebRtc_Word16*) inst, 0,
-        sizeof(CodecDbInst_t) / sizeof(WebRtc_Word16));
+    WebRtcSpl_MemSetW16((int16_t*) inst, 0,
+        sizeof(CodecDbInst_t) / sizeof(int16_t));
 
     for (i = 0; i < NUM_TOTAL_CODECS; i++)
     {
@@ -54,13 +54,13 @@ int WebRtcNetEQ_DbReset(CodecDbInst_t *inst)
  */
 
 int WebRtcNetEQ_DbAdd(CodecDbInst_t *inst, enum WebRtcNetEQDecoder codec,
-                      WebRtc_Word16 payloadType, FuncDecode funcDecode,
+                      int16_t payloadType, FuncDecode funcDecode,
                       FuncDecode funcDecodeRCU, FuncDecodePLC funcDecodePLC,
                       FuncDecodeInit funcDecodeInit, FuncAddLatePkt funcAddLatePkt,
                       FuncGetMDinfo funcGetMDinfo, FuncGetPitchInfo funcGetPitch,
                       FuncUpdBWEst funcUpdBWEst, FuncDurationEst funcDurationEst,
                       FuncGetErrorCode funcGetErrorCode, void* codec_state,
-                      WebRtc_UWord16 codec_fs)
+                      uint16_t codec_fs)
 {
 
     int temp;
@@ -404,8 +404,8 @@ int WebRtcNetEQ_DbGetPtrs(CodecDbInst_t *inst, enum WebRtcNetEQDecoder codec,
     }
     else
     {
-        WebRtcSpl_MemSetW16((WebRtc_Word16*) ptr_inst, 0,
-            sizeof(CodecFuncInst_t) / sizeof(WebRtc_Word16));
+        WebRtcSpl_MemSetW16((int16_t*) ptr_inst, 0,
+            sizeof(CodecFuncInst_t) / sizeof(int16_t));
         return CODEC_DB_NOT_EXIST1;
     }
 }
@@ -723,7 +723,7 @@ int WebRtcNetEQ_DbIsCNGPayload(const CodecDbInst_t *inst, int payloadType)
 /*
  * Return the sample rate for the codec with the given payload type, 0 if error
  */
-WebRtc_UWord16 WebRtcNetEQ_DbGetSampleRate(CodecDbInst_t *inst, int payloadType)
+uint16_t WebRtcNetEQ_DbGetSampleRate(CodecDbInst_t *inst, int payloadType)
 {
     int i;
     CodecFuncInst_t codecInst;

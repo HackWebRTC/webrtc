@@ -63,9 +63,9 @@ int main(int argc, char* argv[])
 	}
 
     // get new start TS and start SeqNo from arguments
-	WebRtc_UWord32 TSdiff = atoi(argv[3]) - packet.timeStamp();
-	WebRtc_UWord16 SNdiff = 0;
-	WebRtc_UWord32 ATdiff = 0;
+	uint32_t TSdiff = atoi(argv[3]) - packet.timeStamp();
+	uint16_t SNdiff = 0;
+	uint32_t ATdiff = 0;
     if (argc > 4)
     {
         if (argv[4] >= 0)

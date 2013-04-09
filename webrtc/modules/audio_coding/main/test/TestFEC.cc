@@ -71,13 +71,13 @@ void TestFEC::Perform()
     _acmA->InitializeReceiver();
     _acmB->InitializeReceiver();
 
-    WebRtc_UWord8 numEncoders = _acmA->NumberOfCodecs();
+    uint8_t numEncoders = _acmA->NumberOfCodecs();
     CodecInst myCodecParam;
     if(_testMode != 0)
     {
         printf("Registering codecs at receiver... \n");
     }
-    for(WebRtc_UWord8 n = 0; n < numEncoders; n++)
+    for(uint8_t n = 0; n < numEncoders; n++)
     {
         _acmB->Codec(n, &myCodecParam);
         if(_testMode != 0)
@@ -503,19 +503,19 @@ void TestFEC::Perform()
     }
 }
 
-WebRtc_Word32 TestFEC::SetVAD(bool enableDTX, bool enableVAD, ACMVADMode vadMode)
+int32_t TestFEC::SetVAD(bool enableDTX, bool enableVAD, ACMVADMode vadMode)
 {
     if(_testMode != 0)
     {
         printf("DTX %s; VAD %s; VAD-Mode %d\n", 
             enableDTX? "ON":"OFF", 
             enableVAD? "ON":"OFF", 
-            (WebRtc_Word16)vadMode);
+            (int16_t)vadMode);
     }
     return _acmA->SetVAD(enableDTX, enableVAD, vadMode);
 }
 
-WebRtc_Word16 TestFEC::RegisterSendCodec(char side, char* codecName, WebRtc_Word32 samplingFreqHz)
+int16_t TestFEC::RegisterSendCodec(char side, char* codecName, int32_t samplingFreqHz)
 {
     if(_testMode != 0)
     {
@@ -566,9 +566,9 @@ void TestFEC::Run()
 {
     AudioFrame audioFrame;
 
-    WebRtc_UWord16 msecPassed = 0;
-    WebRtc_UWord32 secPassed  = 0;
-    WebRtc_Word32 outFreqHzB = _outFileB.SamplingFrequency();
+    uint16_t msecPassed = 0;
+    uint32_t secPassed  = 0;
+    int32_t outFreqHzB = _outFileB.SamplingFrequency();
 
     while(!_inFileA.EndOfFile())
     {
@@ -599,7 +599,7 @@ void TestFEC::Run()
     _inFileA.Rewind();
 }
 
-void TestFEC::OpenOutFile(WebRtc_Word16 test_number) {
+void TestFEC::OpenOutFile(int16_t test_number) {
   std::string file_name;
   std::stringstream file_stream;
   file_stream << webrtc::test::OutputPath();

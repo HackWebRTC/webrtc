@@ -31,10 +31,10 @@ typedef struct
 {
 
     /* Variables common to the entire buffer */
-    WebRtc_UWord16 packSizeSamples; /* packet size in samples of last decoded packet */
-    WebRtc_Word16 *startPayloadMemory; /* pointer to the payload memory */
-    int memorySizeW16; /* the size (in WebRtc_Word16) of the payload memory */
-    WebRtc_Word16 *currentMemoryPos; /* The memory position to insert next payload */
+    uint16_t packSizeSamples; /* packet size in samples of last decoded packet */
+    int16_t *startPayloadMemory; /* pointer to the payload memory */
+    int memorySizeW16; /* the size (in int16_t) of the payload memory */
+    int16_t *currentMemoryPos; /* The memory position to insert next payload */
     int numPacketsInBuffer; /* The number of packets in the buffer */
     int insertPosition; /* The position to insert next packet */
     int maxInsertPositions; /* Maximum number of packets allowed */
@@ -42,18 +42,18 @@ typedef struct
     /* Arrays with one entry per packet slot */
     /* NOTE: If these are changed, the changes must be accounted for at the end of
      the function WebRtcNetEQ_GetDefaultCodecSettings(). */
-    WebRtc_UWord32 *timeStamp; /* Timestamp in slot n */
-    WebRtc_Word16 **payloadLocation; /* Memory location of payload in slot n */
-    WebRtc_UWord16 *seqNumber; /* Sequence number in slot n */
-    WebRtc_Word16 *payloadType; /* Payload type of packet in slot n */
-    WebRtc_Word16 *payloadLengthBytes; /* Payload length of packet in slot n */
-    WebRtc_Word16 *rcuPlCntr; /* zero for non-RCU payload, 1 for main payload
+    uint32_t *timeStamp; /* Timestamp in slot n */
+    int16_t **payloadLocation; /* Memory location of payload in slot n */
+    uint16_t *seqNumber; /* Sequence number in slot n */
+    int16_t *payloadType; /* Payload type of packet in slot n */
+    int16_t *payloadLengthBytes; /* Payload length of packet in slot n */
+    int16_t *rcuPlCntr; /* zero for non-RCU payload, 1 for main payload
      2 for redundant payload */
     int *waitingTime;
 
 
     /* Statistics counter */
-    WebRtc_UWord16 discardedPackets; /* Number of discarded packets */
+    uint16_t discardedPackets; /* Number of discarded packets */
 
 } PacketBuf_t;
 
@@ -70,7 +70,7 @@ typedef struct
  *		- bufferInst	: Buffer instance to be initialized
  *		- noOfPackets	: Maximum number of packets that buffer should hold
  *		- memory		: Pointer to the storage memory for the payloads
- *		- memorySize	: The size of the payload memory (in WebRtc_Word16)
+ *		- memorySize	: The size of the payload memory (in int16_t)
  *
  * Output:
  *      - bufferInst    : Updated buffer instance
@@ -80,7 +80,7 @@ typedef struct
  */
 
 int WebRtcNetEQ_PacketBufferInit(PacketBuf_t *bufferInst, int maxNoOfPackets,
-                                 WebRtc_Word16 *pw16_memory, int memorySize);
+                                 int16_t *pw16_memory, int memorySize);
 
 /****************************************************************************
  * WebRtcNetEQ_PacketBufferFlush(...)
@@ -117,7 +117,7 @@ int WebRtcNetEQ_PacketBufferFlush(PacketBuf_t *bufferInst);
  */
 
 int WebRtcNetEQ_PacketBufferInsert(PacketBuf_t *bufferInst, const RTPPacket_t *RTPpacket,
-                                   WebRtc_Word16 *flushed);
+                                   int16_t *flushed);
 
 /****************************************************************************
  * WebRtcNetEQ_PacketBufferExtract(...)
@@ -208,9 +208,8 @@ int WebRtcNetEQ_PacketBufferGetPacketSize(const PacketBuf_t* buffer_inst,
  * Return value         : The buffer size in samples
  */
 
-WebRtc_Word32 WebRtcNetEQ_PacketBufferGetSize(const PacketBuf_t* buffer_inst,
-                                              const CodecDbInst_t*
-                                              codec_database);
+int32_t WebRtcNetEQ_PacketBufferGetSize(const PacketBuf_t* buffer_inst,
+                                        const CodecDbInst_t* codec_database);
 
 /****************************************************************************
  * WebRtcNetEQ_IncrementWaitingTimes(...)

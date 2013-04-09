@@ -24,11 +24,11 @@ extern "C"
 
 typedef struct
 {
-    WebRtc_UWord8 payloadType;
-    WebRtc_UWord16 sequenceNumber;
-    WebRtc_UWord32 timeStamp;
-    WebRtc_UWord32 SSRC;
-    WebRtc_UWord8 markerBit;
+    uint8_t payloadType;
+    uint16_t sequenceNumber;
+    uint32_t timeStamp;
+    uint32_t SSRC;
+    uint8_t markerBit;
 } WebRtcNetEQ_RTPInfo;
 
 /****************************************************************************
@@ -48,8 +48,8 @@ typedef struct
  *                            -1 - Error
  */
 int WebRtcNetEQ_RecInRTPStruct(void *inst, WebRtcNetEQ_RTPInfo *rtpInfo,
-                               const WebRtc_UWord8 *payloadPtr, WebRtc_Word16 payloadLenBytes,
-                               WebRtc_UWord32 timeRec);
+                               const uint8_t *payloadPtr, int16_t payloadLenBytes,
+                               uint32_t timeRec);
 
 /****************************************************************************
  * WebRtcNetEQ_GetMasterSlaveInfoSize(...)
@@ -86,9 +86,9 @@ int WebRtcNetEQ_GetMasterSlaveInfoSize();
  *						  -1 - Error
  */
 
-int WebRtcNetEQ_RecOutMasterSlave(void *inst, WebRtc_Word16 *pw16_outData,
-                                  WebRtc_Word16 *pw16_len, void *msInfo,
-                                  WebRtc_Word16 isMaster);
+int WebRtcNetEQ_RecOutMasterSlave(void *inst, int16_t *pw16_outData,
+                                  int16_t *pw16_len, void *msInfo,
+                                  int16_t isMaster);
 
 typedef struct
 {
@@ -143,7 +143,7 @@ int WebRtcNetEQ_GetRawFrameWaitingTimes(void *inst,
 typedef int (*WebRtcNetEQ_VADInitFunction)(void *VAD_inst);
 typedef int (*WebRtcNetEQ_VADSetmodeFunction)(void *VAD_inst, int mode);
 typedef int (*WebRtcNetEQ_VADFunction)(void *VAD_inst, int fs,
-    WebRtc_Word16 *frame, int frameLen);
+    int16_t *frame, int frameLen);
 
 /****************************************************************************
  * WebRtcNetEQ_SetVADInstance(...)
@@ -210,8 +210,8 @@ int WebRtcNetEQ_SetVADMode(void *NetEQ_inst, int mode);
  *						  -1 - Error
  */
 
-int WebRtcNetEQ_RecOutNoDecode(void *inst, WebRtc_Word16 *pw16_outData,
-                               WebRtc_Word16 *pw16_len);
+int WebRtcNetEQ_RecOutNoDecode(void *inst, int16_t *pw16_outData,
+                               int16_t *pw16_len);
 
 /****************************************************************************
  * WebRtcNetEQ_FlushBuffers(...)

@@ -26,11 +26,11 @@ public ::testing::Test  {
   DualStreamTest();
   ~DualStreamTest();
 
-  WebRtc_Word32 SendData(FrameType frameType, WebRtc_UWord8 payload_type,
-                         WebRtc_UWord32 timestamp,
-                         const WebRtc_UWord8* payload_data,
-                         WebRtc_UWord16 payload_size,
-                         const RTPFragmentationHeader* fragmentation);
+  int32_t SendData(FrameType frameType, uint8_t payload_type,
+                   uint32_t timestamp,
+                   const uint8_t* payload_data,
+                   uint16_t payload_size,
+                   const RTPFragmentationHeader* fragmentation);
 
   void Perform(bool start_in_sync, int num_channels_input);
 
@@ -282,9 +282,9 @@ void DualStreamTest::Validate(bool start_in_sync, int tolerance) {
   }
 }
 
-WebRtc_Word32 DualStreamTest::SendData(
-    FrameType frameType, WebRtc_UWord8 payload_type, WebRtc_UWord32 timestamp,
-    const WebRtc_UWord8* payload_data, WebRtc_UWord16 payload_size,
+int32_t DualStreamTest::SendData(
+    FrameType frameType, uint8_t payload_type, uint32_t timestamp,
+    const uint8_t* payload_data, uint16_t payload_size,
     const RTPFragmentationHeader* fragmentation) {
   int position;
   int stream_index;

@@ -50,7 +50,7 @@ namespace webrtc {
 
 
 void
-APITest::Wait(WebRtc_UWord32 waitLengthMs)
+APITest::Wait(uint32_t waitLengthMs)
 {
     if(_randomTest)
     {
@@ -160,19 +160,19 @@ APITest::~APITest()
 
 
 
-//WebRtc_Word16
-//APITest::SetInFile(char* fileName, WebRtc_UWord16 frequencyHz)
+//int16_t
+//APITest::SetInFile(char* fileName, uint16_t frequencyHz)
 //{
 //    return _inFile.Open(fileName, frequencyHz, "rb");
 //}
 //
-//WebRtc_Word16
-//APITest::SetOutFile(char* fileName, WebRtc_UWord16 frequencyHz)
+//int16_t
+//APITest::SetOutFile(char* fileName, uint16_t frequencyHz)
 //{
 //    return _outFile.Open(fileName, frequencyHz, "wb");
 //}
 
-WebRtc_Word16
+int16_t
 APITest::SetUp()
 {
     _acmA = AudioCodingModule::Create(1);
@@ -181,8 +181,8 @@ APITest::SetUp()
     CodecInst dummyCodec;
     int lastPayloadType = 0;
 
-    WebRtc_Word16 numCodecs = _acmA->NumberOfCodecs();
-    for(WebRtc_UWord8 n = 0; n < numCodecs; n++)
+    int16_t numCodecs = _acmA->NumberOfCodecs();
+    for(uint8_t n = 0; n < numCodecs; n++)
     {
         AudioCodingModule::Codec(n, &dummyCodec);
         if((STR_CASE_CMP(dummyCodec.plname, "CN") == 0) &&
@@ -250,15 +250,15 @@ APITest::SetUp()
     _thereIsDecoderB = true;
 
     // Register Send Codec
-    AudioCodingModule::Codec((WebRtc_UWord8)_codecCntrA, &dummyCodec);
+    AudioCodingModule::Codec((uint8_t)_codecCntrA, &dummyCodec);
     CHECK_ERROR_MT(_acmA->RegisterSendCodec(dummyCodec));
     _thereIsEncoderA = true;
     //
-    AudioCodingModule::Codec((WebRtc_UWord8)_codecCntrB, &dummyCodec);
+    AudioCodingModule::Codec((uint8_t)_codecCntrB, &dummyCodec);
     CHECK_ERROR_MT(_acmB->RegisterSendCodec(dummyCodec));
     _thereIsEncoderB = true;
 
-    WebRtc_UWord16 frequencyHz;
+    uint16_t frequencyHz;
 
     printf("\n\nAPI Test\n");
     printf("========\n");
@@ -747,8 +747,8 @@ APITest::Perform()
     // Keep main thread waiting for sender/receiver
     // threads to complete
     EventWrapper* completeEvent = EventWrapper::Create();
-    WebRtc_UWord64 startTime = TickTime::MillisecondTimestamp();
-    WebRtc_UWord64 currentTime;
+    uint64_t startTime = TickTime::MillisecondTimestamp();
+    uint64_t currentTime;
     do
     {
         {
@@ -891,11 +891,11 @@ APITest::TestDelay(char side)
 {
     AudioCodingModule* myACM;
     Channel* myChannel;
-    WebRtc_Word32* myMinDelay;
+    int32_t* myMinDelay;
     EventWrapper* myEvent = EventWrapper::Create();
 
-    WebRtc_UWord32 inTimestamp = 0;
-    WebRtc_UWord32 outTimestamp = 0;
+    uint32_t inTimestamp = 0;
+    uint32_t outTimestamp = 0;
     double estimDelay = 0;
 
     double averageEstimDelay = 0;
@@ -937,7 +937,7 @@ APITest::TestDelay(char side)
             CHECK_ERROR_MT(myACM->PlayoutTimestamp(&outTimestamp));
 
             //std::cout << outTimestamp << std::endl << std::flush;
-            estimDelay = (double)((WebRtc_UWord32)(inTimestamp - outTimestamp)) /
+            estimDelay = (double)((uint32_t)(inTimestamp - outTimestamp)) /
                 ((double)myACM->ReceiveFrequency() / 1000.0);
 
             estimDelayCB.Update(estimDelay);
@@ -1063,7 +1063,7 @@ APITest::TestRegisteration(char sendSide)
 
     if(!FixedPayloadTypeCodec(myCodec.plname))
     {
-        WebRtc_Word32 i;
+        int32_t i;
         for(i = 0; i < 32; i++)
         {
             if(!_payloadUsed[i])
@@ -1172,8 +1172,8 @@ APITest::TestPlayout(char receiveSide)
             receiveACM = _acmA;
     }
 
-    WebRtc_Word32 receiveFreqHz = receiveACM->ReceiveFrequency();
-    WebRtc_Word32 playoutFreqHz = receiveACM->PlayoutFrequency();
+    int32_t receiveFreqHz = receiveACM->ReceiveFrequency();
+    int32_t playoutFreqHz = receiveACM->PlayoutFrequency();
 
     CHECK_ERROR_MT(receiveFreqHz);
     CHECK_ERROR_MT(playoutFreqHz);
@@ -1437,7 +1437,7 @@ APITest::ChangeCodec(char side)
 {
     CodecInst myCodec;
     AudioCodingModule* myACM;
-    WebRtc_UWord8* codecCntr;
+    uint8_t* codecCntr;
     bool* thereIsEncoder;
     bool* vad;
     bool* dtx;

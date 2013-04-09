@@ -103,13 +103,13 @@ struct WebRtcACMCodecParams {
 //   last_in_timestamp: same as AudioCodingModuleImpl::last_in_timestamp_
 //
 struct WebRtcACMAudioBuff {
-  WebRtc_Word16 in_audio[AUDIO_BUFFER_SIZE_W16];
-  WebRtc_Word16 in_audio_ix_read;
-  WebRtc_Word16 in_audio_ix_write;
-  WebRtc_UWord32 in_timestamp[TIMESTAMP_BUFFER_SIZE_W32];
-  WebRtc_Word16 in_timestamp_ix_write;
-  WebRtc_UWord32 last_timestamp;
-  WebRtc_UWord32 last_in_timestamp;
+  int16_t in_audio[AUDIO_BUFFER_SIZE_W16];
+  int16_t in_audio_ix_read;
+  int16_t in_audio_ix_write;
+  uint32_t in_timestamp[TIMESTAMP_BUFFER_SIZE_W32];
+  int16_t in_timestamp_ix_write;
+  uint32_t last_timestamp;
+  uint32_t last_in_timestamp;
 };
 
 }  // namespace webrtc

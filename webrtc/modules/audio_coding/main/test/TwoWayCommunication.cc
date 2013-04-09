@@ -67,16 +67,16 @@ TwoWayCommunication::~TwoWayCommunication()
 }
 
 
-WebRtc_UWord8
-TwoWayCommunication::ChooseCodec(WebRtc_UWord8* codecID_A,
-                                 WebRtc_UWord8* codecID_B)
+uint8_t
+TwoWayCommunication::ChooseCodec(uint8_t* codecID_A,
+                                 uint8_t* codecID_B)
 {
     AudioCodingModule* tmpACM = AudioCodingModule::Create(0);
-    WebRtc_UWord8 noCodec = tmpACM->NumberOfCodecs();
+    uint8_t noCodec = tmpACM->NumberOfCodecs();
     CodecInst codecInst;
     printf("List of Supported Codecs\n");
     printf("========================\n");
-    for(WebRtc_UWord8 codecCntr = 0; codecCntr < noCodec; codecCntr++)
+    for(uint8_t codecCntr = 0; codecCntr < noCodec; codecCntr++)
     {
         tmpACM->Codec(codecCntr, &codecInst);
         printf("%d- %s\n", codecCntr, codecInst.plname);
@@ -84,18 +84,18 @@ TwoWayCommunication::ChooseCodec(WebRtc_UWord8* codecID_A,
     printf("\nChoose a send codec for side A [0]: ");
     char myStr[15] = "";
     EXPECT_TRUE(fgets(myStr, 10, stdin) != NULL);
-    *codecID_A = (WebRtc_UWord8)atoi(myStr);
+    *codecID_A = (uint8_t)atoi(myStr);
 
     printf("\nChoose a send codec for side B [0]: ");
     EXPECT_TRUE(fgets(myStr, 10, stdin) != NULL);
-    *codecID_B = (WebRtc_UWord8)atoi(myStr);
+    *codecID_B = (uint8_t)atoi(myStr);
 
     AudioCodingModule::Destroy(tmpACM);
     printf("\n");
     return 0;
 }
 
-WebRtc_Word16 TwoWayCommunication::SetUp()
+int16_t TwoWayCommunication::SetUp()
 {
     _acmA = AudioCodingModule::Create(1);
     _acmB = AudioCodingModule::Create(2);
@@ -103,8 +103,8 @@ WebRtc_Word16 TwoWayCommunication::SetUp()
     _acmRefA = AudioCodingModule::Create(3);
     _acmRefB = AudioCodingModule::Create(4);
 
-    WebRtc_UWord8 codecID_A;
-    WebRtc_UWord8 codecID_B;
+    uint8_t codecID_A;
+    uint8_t codecID_B;
 
     ChooseCodec(&codecID_A, &codecID_B);
     CodecInst codecInst_A;
@@ -140,8 +140,8 @@ WebRtc_Word16 TwoWayCommunication::SetUp()
     CHECK_ERROR(_acmRefB->RegisterSendCodec(codecInst_B));
     CHECK_ERROR(_acmRefB->RegisterReceiveCodec(codecInst_A));
 
-    WebRtc_UWord16 frequencyHz;
-    
+    uint16_t frequencyHz;
+
     //--- Input A
     std::string in_file_name =
         webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
@@ -202,7 +202,7 @@ WebRtc_Word16 TwoWayCommunication::SetUp()
     return 0;
 }
 
-WebRtc_Word16 TwoWayCommunication::SetUpAutotest()
+int16_t TwoWayCommunication::SetUpAutotest()
 {
     _acmA = AudioCodingModule::Create(1);
     _acmB = AudioCodingModule::Create(2);
@@ -244,7 +244,7 @@ WebRtc_Word16 TwoWayCommunication::SetUpAutotest()
     CHECK_ERROR(_acmRefB->RegisterSendCodec(codecInst_B));
     CHECK_ERROR(_acmRefB->RegisterReceiveCodec(codecInst_A));
 
-    WebRtc_UWord16 frequencyHz;
+    uint16_t frequencyHz;
 
     //--- Input A and B
     std::string in_file_name =
@@ -312,8 +312,8 @@ TwoWayCommunication::Perform()
     unsigned int msecPassed = 0;
     unsigned int secPassed  = 0;
 
-    WebRtc_Word32 outFreqHzA = _outFileA.SamplingFrequency();
-    WebRtc_Word32 outFreqHzB = _outFileB.SamplingFrequency();
+    int32_t outFreqHzA = _outFileA.SamplingFrequency();
+    int32_t outFreqHzB = _outFileB.SamplingFrequency();
 
     AudioFrame audioFrame;
 

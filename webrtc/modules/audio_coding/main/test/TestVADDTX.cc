@@ -71,13 +71,13 @@ void TestVADDTX::Perform()
     _acmA->InitializeReceiver();
     _acmB->InitializeReceiver();
 
-    WebRtc_UWord8 numEncoders = _acmA->NumberOfCodecs();
+    uint8_t numEncoders = _acmA->NumberOfCodecs();
     CodecInst myCodecParam;
     if(_testMode != 0)
     {
         printf("Registering codecs at receiver... \n");
     }
-    for(WebRtc_UWord8 n = 0; n < numEncoders; n++)
+    for(uint8_t n = 0; n < numEncoders; n++)
     {
         _acmB->Codec(n, &myCodecParam);
         if(_testMode != 0)
@@ -99,8 +99,8 @@ void TestVADDTX::Perform()
     _acmA->RegisterVADCallback(&_monitor);
 
 
-    WebRtc_Word16 testCntr = 1;
-    WebRtc_Word16 testResults = 0;
+    int16_t testCntr = 1;
+    int16_t testResults = 0;
 
 #ifdef WEBRTC_CODEC_ISAC
     // Open outputfile
@@ -232,7 +232,7 @@ void TestVADDTX::runTestInternalDTX()
     _testResults += VerifyTest();
 }
 
-void TestVADDTX::SetVAD(bool statusDTX, bool statusVAD, WebRtc_Word16 vadMode)
+void TestVADDTX::SetVAD(bool statusDTX, bool statusVAD, int16_t vadMode)
 {
     bool dtxEnabled, vadEnabled;
     ACMVADMode vadModeSet;
@@ -261,7 +261,7 @@ void TestVADDTX::SetVAD(bool statusDTX, bool statusVAD, WebRtc_Word16 vadMode)
         if(vadModeSet != vadMode)
         {
             printf("VAD mode: %d not the same as requested: %d\n",
-            (WebRtc_Word16)vadModeSet, (WebRtc_Word16)vadMode);
+            (int16_t)vadModeSet, (int16_t)vadMode);
         }
     }
 
@@ -293,10 +293,10 @@ VADDTXstruct TestVADDTX::GetVAD()
     return retStruct;
 }
 
-WebRtc_Word16 TestVADDTX::RegisterSendCodec(char side,
-                                          char* codecName,
-                                          WebRtc_Word32 samplingFreqHz,
-                                          WebRtc_Word32 rateKbps)
+int16_t TestVADDTX::RegisterSendCodec(char side,
+                                      char* codecName,
+                                      int32_t samplingFreqHz,
+                                      int32_t rateKbps)
 {
     if(_testMode != 0)
     {
@@ -326,10 +326,10 @@ WebRtc_Word16 TestVADDTX::RegisterSendCodec(char side,
     }
 
     CodecInst myCodecParam;
-    for(WebRtc_Word16 codecCntr = 0; codecCntr < myACM->NumberOfCodecs();
+    for(int16_t codecCntr = 0; codecCntr < myACM->NumberOfCodecs();
         codecCntr++)
     {
-        CHECK_ERROR(myACM->Codec((WebRtc_UWord8)codecCntr, &myCodecParam));
+        CHECK_ERROR(myACM->Codec((uint8_t)codecCntr, &myCodecParam));
         if(!STR_CASE_CMP(myCodecParam.plname, codecName))
         {
             if((samplingFreqHz == -1) || (myCodecParam.plfreq == samplingFreqHz))
@@ -354,9 +354,9 @@ void TestVADDTX::Run()
 {
     AudioFrame audioFrame;
 
-    WebRtc_UWord16 SamplesIn10MsecA = _inFileA.PayloadLength10Ms();
-    WebRtc_UWord32 timestampA = 1;
-    WebRtc_Word32 outFreqHzB = _outFileB.SamplingFrequency();
+    uint16_t SamplesIn10MsecA = _inFileA.PayloadLength10Ms();
+    uint32_t timestampA = 1;
+    int32_t outFreqHzB = _outFileB.SamplingFrequency();
 
     while(!_inFileA.EndOfFile())
     {
@@ -378,7 +378,7 @@ void TestVADDTX::Run()
     _monitor.ResetStatistics();
 }
 
-void TestVADDTX::OpenOutFile(WebRtc_Word16 test_number) {
+void TestVADDTX::OpenOutFile(int16_t test_number) {
   std::string file_name;
   std::stringstream file_stream;
   file_stream << webrtc::test::OutputPath();
@@ -393,12 +393,12 @@ void TestVADDTX::OpenOutFile(WebRtc_Word16 test_number) {
 }
 
 
-WebRtc_Word16 TestVADDTX::VerifyTest()
+int16_t TestVADDTX::VerifyTest()
 {
     // Verify empty frame result
-    WebRtc_UWord8 statusEF = 0;
-    WebRtc_UWord8 vadPattern = 0;
-    WebRtc_UWord8 emptyFramePattern[6];
+    uint8_t statusEF = 0;
+    uint8_t vadPattern = 0;
+    uint8_t emptyFramePattern[6];
     CodecInst myCodecParam;
     _acmA->SendCodec(&myCodecParam);
     bool dtxInUse = true;
@@ -493,7 +493,7 @@ ActivityMonitor::~ActivityMonitor()
 {
 }
 
-WebRtc_Word32 ActivityMonitor::InFrameType(WebRtc_Word16 frameType)
+int32_t ActivityMonitor::InFrameType(int16_t frameType)
 {
     _counter[frameType]++;
     return 0;
@@ -522,7 +522,7 @@ void ActivityMonitor::ResetStatistics()
     _counter[0] = _counter[1] = _counter[2] = _counter[3] = _counter[4] = _counter[5] = 0;
 }
 
-void ActivityMonitor::GetStatistics(WebRtc_UWord32* getCounter)
+void ActivityMonitor::GetStatistics(uint32_t* getCounter)
 {
     for (int ii = 0; ii < 6; ii++)
     {

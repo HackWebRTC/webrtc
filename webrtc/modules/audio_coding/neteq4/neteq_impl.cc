@@ -548,7 +548,7 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     }
 
     // Update statistics.
-    if ((WebRtc_Word32) (main_header.timestamp - timestamp_) >= 0 &&
+    if ((int32_t) (main_header.timestamp - timestamp_) >= 0 &&
         !new_codec_) {
       // Only update statistics if incoming packet is not older than last played
       // out packet, and if new codec flag is not set.

@@ -53,7 +53,7 @@ void PreemptiveExpand::SetParametersForPassiveSpeech(int len,
 }
 
 PreemptiveExpand::ReturnCodes PreemptiveExpand::CheckCriteriaAndStretch(
-    const WebRtc_Word16 *input, int input_length, size_t peak_index,
+    const int16_t *input, int input_length, size_t peak_index,
     int16_t best_correlation, bool active_speech,
     AudioMultiVector<int16_t>* output) const {
   // Pre-calculate common multiplication with |fs_mult_|.

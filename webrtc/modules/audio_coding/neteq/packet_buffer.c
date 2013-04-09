@@ -26,12 +26,12 @@
 #include <stdio.h>
 
 extern FILE *delay_fid2; /* file pointer to delay log file */
-extern WebRtc_UWord32 tot_received_packets;
+extern uint32_t tot_received_packets;
 #endif /* NETEQ_DELAY_LOGGING */
 
 
 int WebRtcNetEQ_PacketBufferInit(PacketBuf_t *bufferInst, int maxNoOfPackets,
-                                 WebRtc_Word16 *pw16_memory, int memorySize)
+                                 int16_t *pw16_memory, int memorySize)
 {
     int i;
     int pos = 0;
@@ -45,11 +45,11 @@ int WebRtcNetEQ_PacketBufferInit(PacketBuf_t *bufferInst, int maxNoOfPackets,
     }
 
     /* Clear the buffer instance */
-    WebRtcSpl_MemSetW16((WebRtc_Word16*) bufferInst, 0,
-        sizeof(PacketBuf_t) / sizeof(WebRtc_Word16));
+    WebRtcSpl_MemSetW16((int16_t*) bufferInst, 0,
+        sizeof(PacketBuf_t) / sizeof(int16_t));
 
     /* Clear the buffer memory */
-    WebRtcSpl_MemSetW16((WebRtc_Word16*) pw16_memory, 0, memorySize);
+    WebRtcSpl_MemSetW16((int16_t*) pw16_memory, 0, memorySize);
 
     /* Set maximum number of packets */
     bufferInst->maxInsertPositions = maxNoOfPackets;
@@ -57,26 +57,26 @@ int WebRtcNetEQ_PacketBufferInit(PacketBuf_t *bufferInst, int maxNoOfPackets,
     /* Initialize array pointers */
     /* After each pointer has been set, the index pos is advanced to point immediately
      * after the the recently allocated vector. Note that one step for the pos index
-     * corresponds to a WebRtc_Word16.
+     * corresponds to a int16_t.
      */
 
-    bufferInst->timeStamp = (WebRtc_UWord32*) &pw16_memory[pos];
-    pos += maxNoOfPackets << 1; /* advance maxNoOfPackets * WebRtc_UWord32 */
+    bufferInst->timeStamp = (uint32_t*) &pw16_memory[pos];
+    pos += maxNoOfPackets << 1; /* advance maxNoOfPackets * uint32_t */
 
-    bufferInst->payloadLocation = (WebRtc_Word16**) &pw16_memory[pos];
-    pos += maxNoOfPackets * (sizeof(WebRtc_Word16*) / sizeof(WebRtc_Word16)); /* advance */
+    bufferInst->payloadLocation = (int16_t**) &pw16_memory[pos];
+    pos += maxNoOfPackets * (sizeof(int16_t*) / sizeof(int16_t)); /* advance */
 
-    bufferInst->seqNumber = (WebRtc_UWord16*) &pw16_memory[pos];
-    pos += maxNoOfPackets; /* advance maxNoOfPackets * WebRtc_UWord16 */
+    bufferInst->seqNumber = (uint16_t*) &pw16_memory[pos];
+    pos += maxNoOfPackets; /* advance maxNoOfPackets * uint16_t */
 
     bufferInst->payloadType = &pw16_memory[pos];
-    pos += maxNoOfPackets; /* advance maxNoOfPackets * WebRtc_Word16 */
+    pos += maxNoOfPackets; /* advance maxNoOfPackets * int16_t */
 
     bufferInst->payloadLengthBytes = &pw16_memory[pos];
-    pos += maxNoOfPackets; /* advance maxNoOfPackets * WebRtc_Word16 */
+    pos += maxNoOfPackets; /* advance maxNoOfPackets * int16_t */
 
     bufferInst->rcuPlCntr = &pw16_memory[pos];
-    pos += maxNoOfPackets; /* advance maxNoOfPackets * WebRtc_Word16 */
+    pos += maxNoOfPackets; /* advance maxNoOfPackets * int16_t */
 
     bufferInst->waitingTime = (int*) (&pw16_memory[pos]);
     /* Advance maxNoOfPackets * sizeof(waitingTime element). */
@@ -140,7 +140,7 @@ int WebRtcNetEQ_PacketBufferFlush(PacketBuf_t *bufferInst)
 
 
 int WebRtcNetEQ_PacketBufferInsert(PacketBuf_t *bufferInst, const RTPPacket_t *RTPpacket,
-                                   WebRtc_Word16 *flushed)
+                                   int16_t *flushed)
 {
     int nextPos;
     int i;
@@ -161,7 +161,7 @@ int WebRtcNetEQ_PacketBufferInsert(PacketBuf_t *bufferInst, const RTPPacket_t *R
     }
 
     /* Sanity check for payload length
-     (payloadLen in bytes and memory size in WebRtc_Word16) */
+     (payloadLen in bytes and memory size in int16_t) */
     if ((RTPpacket->payloadLen > (bufferInst->memorySizeW16 << 1)) || (RTPpacket->payloadLen
         <= 0))
     {
@@ -184,7 +184,7 @@ int WebRtcNetEQ_PacketBufferInsert(PacketBuf_t *bufferInst, const RTPPacket_t *R
         if (bufferInst->currentMemoryPos + ((RTPpacket->payloadLen + 1) >> 1)
             >= &bufferInst->startPayloadMemory[bufferInst->memorySizeW16])
         {
-            WebRtc_Word16 *tempMemAddress;
+            int16_t *tempMemAddress;
 
             /*
              * Payload does not fit at the end of the memory, put it in the beginning
@@ -323,13 +323,13 @@ int WebRtcNetEQ_PacketBufferInsert(PacketBuf_t *bufferInst, const RTPPacket_t *R
     temp_var = NETEQ_DELAY_LOGGING_SIGNAL_RECIN;
     if ((fwrite(&temp_var, sizeof(int),
                 1, delay_fid2) != 1) ||
-        (fwrite(&RTPpacket->timeStamp, sizeof(WebRtc_UWord32),
+        (fwrite(&RTPpacket->timeStamp, sizeof(uint32_t),
                 1, delay_fid2) != 1) ||
-        (fwrite(&RTPpacket->seqNumber, sizeof(WebRtc_UWord16),
+        (fwrite(&RTPpacket->seqNumber, sizeof(uint16_t),
                 1, delay_fid2) != 1) ||
         (fwrite(&RTPpacket->payloadType, sizeof(int),
                 1, delay_fid2) != 1) ||
-        (fwrite(&RTPpacket->payloadLen, sizeof(WebRtc_Word16),
+        (fwrite(&RTPpacket->payloadLen, sizeof(int16_t),
                 1, delay_fid2) != 1)) {
       return -1;
     }
@@ -369,9 +369,9 @@ int WebRtcNetEQ_PacketBufferExtract(PacketBuf_t *bufferInst, RTPPacket_t *RTPpac
 
     /* Copy the actual data payload to RTP packet struct */
 
-    WEBRTC_SPL_MEMCPY_W16((WebRtc_Word16*) RTPpacket->payload,
+    WEBRTC_SPL_MEMCPY_W16((int16_t*) RTPpacket->payload,
         bufferInst->payloadLocation[bufferPosition],
-        (bufferInst->payloadLengthBytes[bufferPosition] + 1) >> 1); /*length in WebRtc_Word16*/
+        (bufferInst->payloadLengthBytes[bufferPosition] + 1) >> 1); /*length in int16_t*/
 
     /* Copy payload parameters */
     RTPpacket->payloadLen = bufferInst->payloadLengthBytes[bufferPosition];
@@ -503,14 +503,13 @@ int WebRtcNetEQ_PacketBufferGetPacketSize(const PacketBuf_t* buffer_inst,
     buffer_inst->payloadLengthBytes[buffer_pos]);
 }
 
-WebRtc_Word32 WebRtcNetEQ_PacketBufferGetSize(const PacketBuf_t* buffer_inst,
-                                              const CodecDbInst_t*
-                                              codec_database) {
+int32_t WebRtcNetEQ_PacketBufferGetSize(const PacketBuf_t* buffer_inst,
+                                        const CodecDbInst_t* codec_database) {
   int i, count;
   int last_duration;
   int last_codec_pos;
   int last_payload_type;
-  WebRtc_Word32 size_samples;
+  int32_t size_samples;
 
   count = 0;
   last_duration = buffer_inst->packSizeSamples;
@@ -583,9 +582,9 @@ int WebRtcNetEQ_GetDefaultCodecSettings(const enum WebRtcNetEQDecoder *codecID,
 {
     int i;
     int ok = 0;
-    WebRtc_Word16 w16_tmp;
-    WebRtc_Word16 codecBytes;
-    WebRtc_Word16 codecBuffers;
+    int16_t w16_tmp;
+    int16_t codecBytes;
+    int16_t codecBuffers;
 
     /* Initialize return variables to zero */
     *maxBytes = 0;
@@ -786,12 +785,12 @@ int WebRtcNetEQ_GetDefaultCodecSettings(const enum WebRtcNetEQDecoder *codecID,
      * Add size needed by the additional pointers for each slot inside struct,
      * as indicated on each line below.
      */
-    w16_tmp = (sizeof(WebRtc_UWord32) /* timeStamp */
-    + sizeof(WebRtc_Word16*) /* payloadLocation */
-    + sizeof(WebRtc_UWord16) /* seqNumber */
-    + sizeof(WebRtc_Word16)  /* payloadType */
-    + sizeof(WebRtc_Word16)  /* payloadLengthBytes */
-    + sizeof(WebRtc_Word16)  /* rcuPlCntr   */
+    w16_tmp = (sizeof(uint32_t) /* timeStamp */
+    + sizeof(int16_t*) /* payloadLocation */
+    + sizeof(uint16_t) /* seqNumber */
+    + sizeof(int16_t)  /* payloadType */
+    + sizeof(int16_t)  /* payloadLengthBytes */
+    + sizeof(int16_t)  /* rcuPlCntr   */
     + sizeof(int));          /* waitingTime */
     /* Add the extra size per slot to the memory count */
     *maxBytes += w16_tmp * (*maxSlots);

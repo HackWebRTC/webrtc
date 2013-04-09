@@ -43,7 +43,7 @@ class PreemptiveExpand : public TimeStretch {
   // |output|. The number of samples added through time-stretching is
   // is provided in the output |length_change_samples|. The method returns
   // the outcome of the operation as an enumerator value.
-  ReturnCodes Process(const WebRtc_Word16 *pw16_decoded,
+  ReturnCodes Process(const int16_t *pw16_decoded,
                       int len,
                       int oldDataLen,
                       AudioMultiVector<int16_t>* output,
@@ -59,7 +59,7 @@ class PreemptiveExpand : public TimeStretch {
   // Checks the criteria for performing the time-stretching operation and,
   // if possible, performs the time-stretching.
   virtual ReturnCodes CheckCriteriaAndStretch(
-      const WebRtc_Word16 *pw16_decoded, int len, size_t w16_bestIndex,
+      const int16_t *pw16_decoded, int len, size_t w16_bestIndex,
       int16_t w16_bestCorr, bool w16_VAD,
       AudioMultiVector<int16_t>* output) const;
 

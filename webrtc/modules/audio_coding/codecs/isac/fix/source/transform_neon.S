@@ -20,10 +20,10 @@ GLOBAL_LABEL WebRtcIsacfix_kSinTab1
 GLOBAL_LABEL WebRtcIsacfix_kCosTab1
 GLOBAL_LABEL WebRtcIsacfix_kSinTab2
 
-@ void WebRtcIsacfix_Time2SpecNeon(WebRtc_Word16* inre1Q9,
-@                                  WebRtc_Word16* inre2Q9,
-@                                  WebRtc_Word16* outreQ7,
-@                                  WebRtc_Word16* outimQ7);
+@ void WebRtcIsacfix_Time2SpecNeon(int16_t* inre1Q9,
+@                                  int16_t* inre2Q9,
+@                                  int16_t* outreQ7,
+@                                  int16_t* outimQ7);
 
 DEFINE_FUNCTION WebRtcIsacfix_Time2SpecNeon
 .align  2
@@ -317,10 +317,10 @@ _WebRtcIsacfix_kSinTab1:  @ Label for iOS
   .short 3406, 3196, 2986, 2775, 2563, 2351, 2139, 1926
   .short 1713, 1499, 1285, 1072, 857, 643, 429, 214
 
-@ void WebRtcIsacfix_Spec2TimeNeon(WebRtc_Word16 *inreQ7,
-@                                  WebRtc_Word16 *inimQ7,
-@                                  WebRtc_Word32 *outre1Q16,
-@                                  WebRtc_Word32 *outre2Q16);
+@ void WebRtcIsacfix_Spec2TimeNeon(int16_t *inreQ7,
+@                                  int16_t *inimQ7,
+@                                  int32_t *outre1Q16,
+@                                  int32_t *outre2Q16);
 
 DEFINE_FUNCTION WebRtcIsacfix_Spec2TimeNeon
 .align  2

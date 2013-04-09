@@ -68,7 +68,7 @@ void AcmNetEqTest::InsertZeroPacket(uint16_t sequence_number,
   rtp_header.header.payloadType = payload_type;
   rtp_header.header.markerBit = marker_bit;
   rtp_header.type.Audio.channel = 1;
-  ASSERT_EQ(0, neteq_.RecIn(reinterpret_cast<WebRtc_UWord8*>(payload),
+  ASSERT_EQ(0, neteq_.RecIn(reinterpret_cast<uint8_t*>(payload),
                             len_payload_bytes, rtp_header));
 }
 

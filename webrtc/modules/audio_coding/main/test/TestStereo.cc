@@ -42,15 +42,15 @@ void TestPackStereo::RegisterReceiverACM(AudioCodingModule* acm) {
   return;
 }
 
-WebRtc_Word32 TestPackStereo::SendData(
+int32_t TestPackStereo::SendData(
     const FrameType frame_type,
-    const WebRtc_UWord8 payload_type,
-    const WebRtc_UWord32 timestamp,
-    const WebRtc_UWord8* payload_data,
-    const WebRtc_UWord16 payload_size,
+    const uint8_t payload_type,
+    const uint32_t timestamp,
+    const uint8_t* payload_data,
+    const uint16_t payload_size,
     const RTPFragmentationHeader* fragmentation) {
   WebRtcRTPHeader rtp_info;
-  WebRtc_Word32 status = 0;
+  int32_t status = 0;
 
   rtp_info.header.markerBit = false;
   rtp_info.header.ssrc = 0;
@@ -86,11 +86,11 @@ WebRtc_Word32 TestPackStereo::SendData(
   return status;
 }
 
-WebRtc_UWord16 TestPackStereo::payload_size() {
+uint16_t TestPackStereo::payload_size() {
   return payload_size_;
 }
 
-WebRtc_UWord32 TestPackStereo::timestamp_diff() {
+uint32_t TestPackStereo::timestamp_diff() {
   return timestamp_diff_;
 }
 
@@ -145,7 +145,7 @@ TestStereo::~TestStereo() {
 }
 
 void TestStereo::Perform() {
-  WebRtc_UWord16 frequency_hz;
+  uint16_t frequency_hz;
   int audio_channels;
   int codec_channels;
   bool dtx;
@@ -179,21 +179,21 @@ void TestStereo::Perform() {
   EXPECT_EQ(0, acm_b_->InitializeReceiver());
 
   // Register all available codes as receiving codecs.
-  WebRtc_UWord8 num_encoders = acm_a_->NumberOfCodecs();
+  uint8_t num_encoders = acm_a_->NumberOfCodecs();
   CodecInst my_codec_param;
-  for (WebRtc_UWord8 n = 0; n < num_encoders; n++) {
+  for (uint8_t n = 0; n < num_encoders; n++) {
     EXPECT_EQ(0, acm_b_->Codec(n, &my_codec_param));
     EXPECT_EQ(0, acm_b_->RegisterReceiveCodec(my_codec_param));
   }
 
   // Test that unregister all receive codecs works.
-  for (WebRtc_UWord8 n = 0; n < num_encoders; n++) {
+  for (uint8_t n = 0; n < num_encoders; n++) {
     EXPECT_EQ(0, acm_b_->Codec(n, &my_codec_param));
     EXPECT_EQ(0, acm_b_->UnregisterReceiveCodec(my_codec_param.pltype));
   }
 
   // Register all available codes as receiving codecs once more.
-  for (WebRtc_UWord8 n = 0; n < num_encoders; n++) {
+  for (uint8_t n = 0; n < num_encoders; n++) {
     EXPECT_EQ(0, acm_b_->Codec(n, &my_codec_param));
     EXPECT_EQ(0, acm_b_->RegisterReceiveCodec(my_codec_param));
   }
@@ -686,7 +686,7 @@ void TestStereo::Perform() {
   RegisterSendCodec('A', codec_opus, 48000, 32000, 960, codec_channels,
                      opus_pltype_);
   CodecInst opus_codec_param;
-  for (WebRtc_UWord8 n = 0; n < num_encoders; n++) {
+  for (uint8_t n = 0; n < num_encoders; n++) {
     EXPECT_EQ(0, acm_b_->Codec(n, &opus_codec_param));
     if (!strcmp(opus_codec_param.plname, "opus")) {
       opus_codec_param.channels = 1;
@@ -777,7 +777,7 @@ void TestStereo::Perform() {
 //          channels         - number of channels; 1 for mono, 2 for stereo
 //          payload_type     - payload type for the codec
 void TestStereo::RegisterSendCodec(char side, char* codec_name,
-                                   WebRtc_Word32 sampling_freq_hz, int rate,
+                                   int32_t sampling_freq_hz, int rate,
                                    int pack_size, int channels,
                                    int payload_type) {
   if (test_mode_ != 0) {
@@ -793,12 +793,12 @@ void TestStereo::RegisterSendCodec(char side, char* codec_name,
   // packet. Add 0.875 to always round up to a whole byte.
   // For Celt the packet size in bytes is already counting the stereo part.
   if (!strcmp(codec_name, "CELT")) {
-    pack_size_bytes_ = (WebRtc_UWord16)(
+    pack_size_bytes_ = (uint16_t)(
         static_cast<float>(pack_size * rate) /
         static_cast<float>(sampling_freq_hz * 8) + 0.875)
         / channels;
   } else {
-    pack_size_bytes_ = (WebRtc_UWord16)(
+    pack_size_bytes_ = (uint16_t)(
         static_cast<float>(pack_size * rate) /
         static_cast<float>(sampling_freq_hz * 8) + 0.875);
   }
@@ -834,9 +834,9 @@ void TestStereo::Run(TestPackStereo* channel, int in_channels, int out_channels,
                      int percent_loss) {
   AudioFrame audio_frame;
 
-  WebRtc_Word32 out_freq_hz_b = out_file_.SamplingFrequency();
-  WebRtc_UWord16 rec_size;
-  WebRtc_UWord32 time_stamp_diff;
+  int32_t out_freq_hz_b = out_file_.SamplingFrequency();
+  uint16_t rec_size;
+  uint32_t time_stamp_diff;
   channel->reset_payload_size();
   int error_count = 0;
 
@@ -908,7 +908,7 @@ void TestStereo::Run(TestPackStereo* channel, int in_channels, int out_channels,
   channel->set_lost_packet(false);
 }
 
-void TestStereo::OpenOutFile(WebRtc_Word16 test_number) {
+void TestStereo::OpenOutFile(int16_t test_number) {
   std::string file_name;
   std::stringstream file_stream;
   file_stream << webrtc::test::OutputPath() << "teststereo_out_"

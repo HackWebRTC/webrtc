@@ -29,7 +29,7 @@ int WebRtcNetEQ_DSPinit(MainInst_t *inst)
 }
 
 /* The DSP side will call this function to interrupt the MCU side */
-int WebRtcNetEQ_DSP2MCUinterrupt(MainInst_t *inst, WebRtc_Word16 *pw16_shared_mem)
+int WebRtcNetEQ_DSP2MCUinterrupt(MainInst_t *inst, int16_t *pw16_shared_mem)
 {
     inst->MCUinst.pw16_readAddress = pw16_shared_mem;
     inst->MCUinst.pw16_writeAddress = pw16_shared_mem;

@@ -47,7 +47,7 @@ void SetISACConfigDefault(
 }
 
 
-WebRtc_Word16 SetISAConfig(
+int16_t SetISAConfig(
     ACMTestISACConfig& isacConfig,
     AudioCodingModule* acm,
     int testMode)
@@ -112,8 +112,8 @@ WebRtc_Word16 SetISAConfig(
         (isacConfig.initRateBitPerSec != 0))
     {
         CHECK_ERROR(acm->ConfigISACBandwidthEstimator(
-            (WebRtc_UWord8)isacConfig.initFrameSizeInMsec,
-            (WebRtc_UWord16)isacConfig.initRateBitPerSec, 
+            (uint8_t)isacConfig.initFrameSizeInMsec,
+            (uint16_t)isacConfig.initRateBitPerSec, 
             isacConfig.enforceFrameSize));
         if((isacConfig.initFrameSizeInMsec != 0) && (testMode != 0))
         {
@@ -146,7 +146,7 @@ ISACTest::~ISACTest()
 }
 
 
-WebRtc_Word16
+int16_t
 ISACTest::Setup()
 {
     int codecCntr;
@@ -245,7 +245,7 @@ ISACTest::Perform()
 
     Setup();
 
-    WebRtc_Word16 testNr = 0;
+    int16_t testNr = 0;
     ACMTestISACConfig wbISACConfig;
     ACMTestISACConfig swbISACConfig;
 
@@ -290,21 +290,21 @@ ISACTest::Perform()
     SetISACConfigDefault(swbISACConfig);
     testNr++;
     EncodeDecode(testNr, wbISACConfig, swbISACConfig);
-    
+
     int user_input;
     if((_testMode == 0) || (_testMode == 1))
     {
-        swbISACConfig.maxPayloadSizeByte = (WebRtc_UWord16)200;
-        wbISACConfig.maxPayloadSizeByte = (WebRtc_UWord16)200;
+        swbISACConfig.maxPayloadSizeByte = (uint16_t)200;
+        wbISACConfig.maxPayloadSizeByte = (uint16_t)200;
     }
     else
     {
         printf("Enter the max payload-size for side A: ");
         CHECK_ERROR(scanf("%d", &user_input));
-        swbISACConfig.maxPayloadSizeByte = (WebRtc_UWord16)user_input;
+        swbISACConfig.maxPayloadSizeByte = (uint16_t)user_input;
         printf("Enter the max payload-size for side B: ");
         CHECK_ERROR(scanf("%d", &user_input));
-        wbISACConfig.maxPayloadSizeByte = (WebRtc_UWord16)user_input;
+        wbISACConfig.maxPayloadSizeByte = (uint16_t)user_input;
     }
     testNr++;
     EncodeDecode(testNr, wbISACConfig, swbISACConfig);
@@ -316,17 +316,17 @@ ISACTest::Perform()
 
     if((_testMode == 0) || (_testMode == 1))
     {
-        swbISACConfig.maxRateBitPerSec = (WebRtc_UWord32)48000;
-        wbISACConfig.maxRateBitPerSec = (WebRtc_UWord32)48000;
+        swbISACConfig.maxRateBitPerSec = (uint32_t)48000;
+        wbISACConfig.maxRateBitPerSec = (uint32_t)48000;
     }
     else
     {
         printf("Enter the max rate for side A: ");
         CHECK_ERROR(scanf("%d", &user_input));
-        swbISACConfig.maxRateBitPerSec = (WebRtc_UWord32)user_input;
+        swbISACConfig.maxRateBitPerSec = (uint32_t)user_input;
         printf("Enter the max rate for side B: ");
         CHECK_ERROR(scanf("%d", &user_input));
-        wbISACConfig.maxRateBitPerSec = (WebRtc_UWord32)user_input;
+        wbISACConfig.maxRateBitPerSec = (uint32_t)user_input;
     }
  
     testNr++;

@@ -75,12 +75,12 @@ void NetEQTest_GetCodec_and_PT(char * name, webrtc::NetEqDecoder *codec, int *PT
 int NetEQTest_init_coders(webrtc::NetEqDecoder coder, int enc_frameSize, int bitrate, int sampfreq , int vad, int numChannels);
 void defineCodecs(webrtc::NetEqDecoder *usedCodec, int *noOfCodecs );
 int NetEQTest_free_coders(webrtc::NetEqDecoder coder, int numChannels);
-int NetEQTest_encode(int coder, WebRtc_Word16 *indata, int frameLen, unsigned char * encoded,int sampleRate , int * vad, int useVAD, int bitrate, int numChannels);
-void makeRTPheader(unsigned char* rtp_data, int payloadType, int seqNo, WebRtc_UWord32 timestamp, WebRtc_UWord32 ssrc);
-int makeRedundantHeader(unsigned char* rtp_data, int *payloadType, int numPayloads, WebRtc_UWord32 *timestamp, WebRtc_UWord16 *blockLen,
-                        int seqNo, WebRtc_UWord32 ssrc);
+int NetEQTest_encode(int coder, int16_t *indata, int frameLen, unsigned char * encoded,int sampleRate , int * vad, int useVAD, int bitrate, int numChannels);
+void makeRTPheader(unsigned char* rtp_data, int payloadType, int seqNo, uint32_t timestamp, uint32_t ssrc);
+int makeRedundantHeader(unsigned char* rtp_data, int *payloadType, int numPayloads, uint32_t *timestamp, uint16_t *blockLen,
+                        int seqNo, uint32_t ssrc);
 int makeDTMFpayload(unsigned char* payload_data, int Event, int End, int Volume, int Duration);
-void stereoDeInterleave(WebRtc_Word16* audioSamples, int numSamples);
+void stereoDeInterleave(int16_t* audioSamples, int numSamples);
 void stereoInterleave(unsigned char* data, int dataLen, int stride);
 
 /*********************/
@@ -201,11 +201,11 @@ WebRtcVadInst *VAD_inst[2];
 #endif
 #ifdef CODEC_AMR
 	AMR_encinst_t *AMRenc_inst[2];
-	WebRtc_Word16		  AMR_bitrate;
+	int16_t		  AMR_bitrate;
 #endif
 #ifdef CODEC_AMRWB
 	AMRWB_encinst_t *AMRWBenc_inst[2];
-	WebRtc_Word16		  AMRWB_bitrate;
+	int16_t		  AMRWB_bitrate;
 #endif
 #ifdef CODEC_ILBC
 	iLBC_encinst_t *iLBCenc_inst[2];
@@ -249,21 +249,21 @@ int main(int argc, char* argv[])
 	int useVAD, vad;
     int useRed=0;
 	int len, enc_len;
-	WebRtc_Word16 org_data[4000];
+	int16_t org_data[4000];
 	unsigned char rtp_data[8000];
-	WebRtc_Word16 seqNo=0xFFF;
-	WebRtc_UWord32 ssrc=1235412312;
-	WebRtc_UWord32 timestamp=0xAC1245;
-        WebRtc_UWord16 length, plen;
-	WebRtc_UWord32 offset;
+	int16_t seqNo=0xFFF;
+	uint32_t ssrc=1235412312;
+	uint32_t timestamp=0xAC1245;
+        uint16_t length, plen;
+	uint32_t offset;
 	double sendtime = 0;
     int red_PT[2] = {0};
-    WebRtc_UWord32 red_TS[2] = {0};
-    WebRtc_UWord16 red_len[2] = {0};
+    uint32_t red_TS[2] = {0};
+    uint16_t red_len[2] = {0};
     int RTPheaderLen=12;
 	unsigned char red_data[8000];
 #ifdef INSERT_OLD_PACKETS
-	WebRtc_UWord16 old_length, old_plen;
+	uint16_t old_length, old_plen;
 	int old_enc_len;
 	int first_old_packet=1;
 	unsigned char old_rtp_data[8000];
@@ -272,7 +272,7 @@ int main(int argc, char* argv[])
 #ifdef INSERT_DTMF_PACKETS
 	int NTone = 1;
 	int DTMFfirst = 1;
-	WebRtc_UWord32 DTMFtimestamp;
+	uint32_t DTMFtimestamp;
     bool dtmfSent = false;
 #endif
     bool usingStereo = false;
@@ -530,7 +530,7 @@ int main(int argc, char* argv[])
 	/* write file header */
 	//fprintf(out_file, "#!RTPencode%s\n", "1.0");
 	fprintf(out_file, "#!rtpplay%s \n", "1.0"); // this is the string that rtpplay needs
-	WebRtc_UWord32 dummy_variable = 0; // should be converted to network endian format, but does not matter when 0
+	uint32_t dummy_variable = 0; // should be converted to network endian format, but does not matter when 0
         if (fwrite(&dummy_variable, 4, 1, out_file) != 1) {
           return -1;
         }
@@ -592,7 +592,7 @@ int main(int argc, char* argv[])
             /* write RTP packet to file */
             length = htons(12 + enc_len + 8);
             plen = htons(12 + enc_len);
-            offset = (WebRtc_UWord32) sendtime; //(timestamp/(fs/1000));
+            offset = (uint32_t) sendtime; //(timestamp/(fs/1000));
             offset = htonl(offset);
             if (fwrite(&length, 2, 1, out_file) != 1) {
               return -1;
@@ -687,7 +687,7 @@ int main(int argc, char* argv[])
 			/* write RTP packet to file */
                           length = htons(12 + enc_len + 8);
                           plen = htons(12 + enc_len);
-                          offset = (WebRtc_UWord32) sendtime;
+                          offset = (uint32_t) sendtime;
                           //(timestamp/(fs/1000));
                           offset = htonl(offset);
                           if (fwrite(&length, 2, 1, out_file) != 1) {
@@ -755,7 +755,7 @@ int main(int argc, char* argv[])
                 if(usedCodec==webrtc::kDecoderISAC)
                 {
                     assert(!usingStereo); // Cannot handle stereo yet
-                    red_len[0] = WebRtcIsac_GetRedPayload(ISAC_inst[0], (WebRtc_Word16*)red_data);
+                    red_len[0] = WebRtcIsac_GetRedPayload(ISAC_inst[0], (int16_t*)red_data);
                 }
                 else
                 {
@@ -1532,13 +1532,13 @@ int NetEQTest_free_coders(webrtc::NetEqDecoder coder, int numChannels) {
 
 
 
-int NetEQTest_encode(int coder, WebRtc_Word16 *indata, int frameLen, unsigned char * encoded,int sampleRate , 
+int NetEQTest_encode(int coder, int16_t *indata, int frameLen, unsigned char * encoded,int sampleRate , 
 						  int * vad, int useVAD, int bitrate, int numChannels){
 
 	short cdlen = 0;
-	WebRtc_Word16 *tempdata;
+	int16_t *tempdata;
 	static int first_cng=1;
-	WebRtc_Word16 tempLen;
+	int16_t tempLen;
 
 	*vad =1;
 
@@ -1601,29 +1601,29 @@ int NetEQTest_encode(int coder, WebRtc_Word16 *indata, int frameLen, unsigned ch
         /* Encode with the selected coder type */
         if (coder==webrtc::kDecoderPCMu) { /*g711 u-law */
 #ifdef CODEC_G711
-            cdlen = WebRtcG711_EncodeU(G711state[k], indata, frameLen, (WebRtc_Word16*) encoded);
+            cdlen = WebRtcG711_EncodeU(G711state[k], indata, frameLen, (int16_t*) encoded);
 #endif
         }  
         else if (coder==webrtc::kDecoderPCMa) { /*g711 A-law */
 #ifdef CODEC_G711
-            cdlen = WebRtcG711_EncodeA(G711state[k], indata, frameLen, (WebRtc_Word16*) encoded);
+            cdlen = WebRtcG711_EncodeA(G711state[k], indata, frameLen, (int16_t*) encoded);
         }
 #endif
 #ifdef CODEC_PCM16B
         else if ((coder==webrtc::kDecoderPCM16B)||(coder==webrtc::kDecoderPCM16Bwb)||
             (coder==webrtc::kDecoderPCM16Bswb32kHz)||(coder==webrtc::kDecoderPCM16Bswb48kHz)) { /*pcm16b (8kHz, 16kHz, 32kHz or 48kHz) */
-                cdlen = WebRtcPcm16b_EncodeW16(indata, frameLen, (WebRtc_Word16*) encoded);
+                cdlen = WebRtcPcm16b_EncodeW16(indata, frameLen, (int16_t*) encoded);
             }
 #endif
 #ifdef CODEC_G722
         else if (coder==webrtc::kDecoderG722) { /*g722 */
-            cdlen=WebRtcG722_Encode(g722EncState[k], indata, frameLen, (WebRtc_Word16*)encoded);
+            cdlen=WebRtcG722_Encode(g722EncState[k], indata, frameLen, (int16_t*)encoded);
             cdlen=frameLen>>1;
         }
 #endif
 #ifdef CODEC_ILBC
         else if (coder==webrtc::kDecoderILBC) { /*iLBC */
-            cdlen=WebRtcIlbcfix_Encode(iLBCenc_inst[k], indata,frameLen,(WebRtc_Word16*)encoded);
+            cdlen=WebRtcIlbcfix_Encode(iLBCenc_inst[k], indata,frameLen,(int16_t*)encoded);
         }
 #endif
 #if (defined(CODEC_ISAC) || defined(NETEQ_ISACFIX_CODEC)) // TODO(hlundin): remove all NETEQ_ISACFIX_CODEC
@@ -1632,9 +1632,9 @@ int NetEQTest_encode(int coder, WebRtc_Word16 *indata, int frameLen, unsigned ch
             cdlen=0;
             while (cdlen<=0) {
 #ifdef CODEC_ISAC /* floating point */
-                cdlen=WebRtcIsac_Encode(ISAC_inst[k],&indata[noOfCalls*160],(WebRtc_Word16*)encoded);
+                cdlen=WebRtcIsac_Encode(ISAC_inst[k],&indata[noOfCalls*160],(int16_t*)encoded);
 #else /* fixed point */
-                cdlen=WebRtcIsacfix_Encode(ISAC_inst[k],&indata[noOfCalls*160],(WebRtc_Word16*)encoded);
+                cdlen=WebRtcIsacfix_Encode(ISAC_inst[k],&indata[noOfCalls*160],(int16_t*)encoded);
 #endif
                 noOfCalls++;
             }
@@ -1645,7 +1645,7 @@ int NetEQTest_encode(int coder, WebRtc_Word16 *indata, int frameLen, unsigned ch
             int noOfCalls=0;
             cdlen=0;
             while (cdlen<=0) {
-                cdlen=WebRtcIsac_Encode(ISACSWB_inst[k],&indata[noOfCalls*320],(WebRtc_Word16*)encoded);
+                cdlen=WebRtcIsac_Encode(ISACSWB_inst[k],&indata[noOfCalls*320],(int16_t*)encoded);
                 noOfCalls++;
             }
         }
@@ -1677,7 +1677,7 @@ int NetEQTest_encode(int coder, WebRtc_Word16 *indata, int frameLen, unsigned ch
 
 
 
-void makeRTPheader(unsigned char* rtp_data, int payloadType, int seqNo, WebRtc_UWord32 timestamp, WebRtc_UWord32 ssrc){
+void makeRTPheader(unsigned char* rtp_data, int payloadType, int seqNo, uint32_t timestamp, uint32_t ssrc){
 			
 			rtp_data[0]=(unsigned char)0x80;
 			rtp_data[1]=(unsigned char)(payloadType & 0xFF);
@@ -1697,13 +1697,13 @@ void makeRTPheader(unsigned char* rtp_data, int payloadType, int seqNo, WebRtc_U
 }
 
 
-int makeRedundantHeader(unsigned char* rtp_data, int *payloadType, int numPayloads, WebRtc_UWord32 *timestamp, WebRtc_UWord16 *blockLen,
-                        int seqNo, WebRtc_UWord32 ssrc)
+int makeRedundantHeader(unsigned char* rtp_data, int *payloadType, int numPayloads, uint32_t *timestamp, uint16_t *blockLen,
+                        int seqNo, uint32_t ssrc)
 {
 
     int i;
     unsigned char *rtpPointer;
-    WebRtc_UWord16 offset;
+    uint16_t offset;
 
     /* first create "standard" RTP header */
     makeRTPheader(rtp_data, NETEQ_CODEC_RED_PT, seqNo, timestamp[numPayloads-1], ssrc);
@@ -1713,7 +1713,7 @@ int makeRedundantHeader(unsigned char* rtp_data, int *payloadType, int numPayloa
     /* add one sub-header for each redundant payload (not the primary) */
     for(i=0; i<numPayloads-1; i++) {                                            /* |0 1 2 3 4 5 6 7| */
         if(blockLen[i] > 0) {
-            offset = (WebRtc_UWord16) (timestamp[numPayloads-1] - timestamp[i]);
+            offset = (uint16_t) (timestamp[numPayloads-1] - timestamp[i]);
 
             rtpPointer[0] = (unsigned char) ( 0x80 | (0x7F & payloadType[i]) ); /* |F|   block PT  | */
             rtpPointer[1] = (unsigned char) ((offset >> 6) & 0xFF);             /* |  timestamp-   | */
@@ -1751,22 +1751,22 @@ int makeDTMFpayload(unsigned char* payload_data, int Event, int End, int Volume,
 	return(4);
 }
 
-void stereoDeInterleave(WebRtc_Word16* audioSamples, int numSamples)
+void stereoDeInterleave(int16_t* audioSamples, int numSamples)
 {
 
-    WebRtc_Word16 *tempVec;
-    WebRtc_Word16 *readPtr, *writeL, *writeR;
+    int16_t *tempVec;
+    int16_t *readPtr, *writeL, *writeR;
 
     if (numSamples <= 0)
         return;
 
-    tempVec = (WebRtc_Word16 *) malloc(sizeof(WebRtc_Word16) * numSamples);
+    tempVec = (int16_t *) malloc(sizeof(int16_t) * numSamples);
     if (tempVec == NULL) {
         printf("Error allocating memory\n");
         exit(0);
     }
 
-    memcpy(tempVec, audioSamples, numSamples*sizeof(WebRtc_Word16));
+    memcpy(tempVec, audioSamples, numSamples*sizeof(int16_t));
 
     writeL = audioSamples;
     writeR = &audioSamples[numSamples/2];

@@ -106,7 +106,7 @@ class DelayTest {
       ASSERT_EQ(0, acm_b_->SetMinimumPlayoutDelay(FLAGS_delay));
     }
 
-    WebRtc_UWord8 num_encoders = acm_a_->NumberOfCodecs();
+    uint8_t num_encoders = acm_a_->NumberOfCodecs();
     CodecInst my_codec_param;
     for(int n = 0; n < num_encoders; n++) {
       acm_b_->Codec(n, &my_codec_param);

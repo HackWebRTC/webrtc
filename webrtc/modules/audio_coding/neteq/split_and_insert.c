@@ -21,15 +21,15 @@
 #include "neteq_error_codes.h"
 
 int WebRtcNetEQ_SplitAndInsertPayload(RTPPacket_t *packet, PacketBuf_t *Buffer_inst,
-                                      SplitInfo_t *split_inst, WebRtc_Word16 *flushed)
+                                      SplitInfo_t *split_inst, int16_t *flushed)
 {
 
     int i_ok;
     int len;
     int i;
     RTPPacket_t temp_packet;
-    WebRtc_Word16 localFlushed = 0;
-    const WebRtc_Word16 *pw16_startPayload;
+    int16_t localFlushed = 0;
+    const int16_t *pw16_startPayload;
     *flushed = 0;
 
     len = packet->payloadLen;

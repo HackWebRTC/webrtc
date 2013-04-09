@@ -26,22 +26,22 @@
 
 #define NETEQ_BUFSTAT_20MS_Q7 2560 /* = 20 ms in Q7  */
 
-WebRtc_UWord16 WebRtcNetEQ_BufstatsDecision(BufstatsInst_t *inst, WebRtc_Word16 frameSize,
-                                            WebRtc_Word32 cur_size, WebRtc_UWord32 targetTS,
-                                            WebRtc_UWord32 availableTS, int noPacket,
-                                            int cngPacket, int prevPlayMode,
-                                            enum WebRtcNetEQPlayoutMode playoutMode,
-                                            int timestampsPerCall, int NoOfExpandCalls,
-                                            WebRtc_Word16 fs_mult,
-                                            WebRtc_Word16 lastModeBGNonly, int playDtmf)
+uint16_t WebRtcNetEQ_BufstatsDecision(BufstatsInst_t *inst, int16_t frameSize,
+                                      int32_t cur_size, uint32_t targetTS,
+                                      uint32_t availableTS, int noPacket,
+                                      int cngPacket, int prevPlayMode,
+                                      enum WebRtcNetEQPlayoutMode playoutMode,
+                                      int timestampsPerCall, int NoOfExpandCalls,
+                                      int16_t fs_mult,
+                                      int16_t lastModeBGNonly, int playDtmf)
 {
 
     int currentDelayMs;
-    WebRtc_Word32 currSizeSamples = cur_size;
+    int32_t currSizeSamples = cur_size;
     int extraDelayPacketsQ8 = 0;
 
     /* Avoid overflow if the buffer size should be really large (cur_size is limited 256ms) */
-    WebRtc_Word32 curr_sizeQ7 = WEBRTC_SPL_LSHIFT_W32(cur_size, 4);
+    int32_t curr_sizeQ7 = WEBRTC_SPL_LSHIFT_W32(cur_size, 4);
     int level_limit_hi, level_limit_lo;
 
     inst->Automode_inst.prevTimeScale &= (prevPlayMode == MODE_SUCCESS_ACCELERATE
@@ -68,7 +68,7 @@ WebRtc_UWord16 WebRtcNetEQ_BufstatsDecision(BufstatsInst_t *inst, WebRtc_Word16 
 
     /* Calculate VQmon related variables */
     /* avgDelay = avgDelay*(511/512) + currentDelay*(1/512) (sample ms delay in Q8) */
-    inst->avgDelayMsQ8 = (WebRtc_Word16) (WEBRTC_SPL_MUL_16_16_RSFT(inst->avgDelayMsQ8,511,9)
+    inst->avgDelayMsQ8 = (int16_t) (WEBRTC_SPL_MUL_16_16_RSFT(inst->avgDelayMsQ8,511,9)
         + (cur_size >> 9));
 
     /* Update maximum delay if needed */
@@ -106,7 +106,7 @@ WebRtc_UWord16 WebRtcNetEQ_BufstatsDecision(BufstatsInst_t *inst, WebRtc_Word16 
         if (cngPacket)
         {
             /* signed difference between wanted and available TS */
-            WebRtc_Word32 diffTS = (inst->uw32_CNGplayedTS + targetTS) - availableTS;
+            int32_t diffTS = (inst->uw32_CNGplayedTS + targetTS) - availableTS;
             int32_t optimal_level_samp = (inst->Automode_inst.optBufLevel *
                 inst->Automode_inst.packetSpeechLenSamp) >> 8;
             int32_t excess_waiting_time_samp = -diffTS - optimal_level_samp;
@@ -225,13 +225,13 @@ WebRtc_UWord16 WebRtcNetEQ_BufstatsDecision(BufstatsInst_t *inst, WebRtc_Word16 
             /* Check that we do not play a packet "too early" */
             if ((prevPlayMode == MODE_EXPAND)
                 && (availableTS - targetTS
-                    < (WebRtc_UWord32) WEBRTC_SPL_MUL_16_16((WebRtc_Word16)timestampsPerCall,
-                        (WebRtc_Word16)REINIT_AFTER_EXPANDS))
+                    < (uint32_t) WEBRTC_SPL_MUL_16_16((int16_t)timestampsPerCall,
+                        (int16_t)REINIT_AFTER_EXPANDS))
                 && (NoOfExpandCalls < MAX_WAIT_FOR_PACKET)
                 && (availableTS
                     > targetTS
-                        + WEBRTC_SPL_MUL_16_16((WebRtc_Word16)timestampsPerCall,
-                            (WebRtc_Word16)NoOfExpandCalls))
+                        + WEBRTC_SPL_MUL_16_16((int16_t)timestampsPerCall,
+                            (int16_t)NoOfExpandCalls))
                 && (inst->Automode_inst.buffLevelFilt <= inst->Automode_inst.optBufLevel
                     + extraDelayPacketsQ8))
             {
@@ -256,7 +256,7 @@ WebRtc_UWord16 WebRtcNetEQ_BufstatsDecision(BufstatsInst_t *inst, WebRtc_Word16 
                  * precaution), but make sure that the number of samples in buffer is no
                  * higher than 4 times the optimal level.
                  */
-                WebRtc_Word32 diffTS = (inst->uw32_CNGplayedTS + targetTS) - availableTS;
+                int32_t diffTS = (inst->uw32_CNGplayedTS + targetTS) - availableTS;
                 int val = ((inst->Automode_inst.optBufLevel +
                     extraDelayPacketsQ8) *
                     inst->Automode_inst.packetSpeechLenSamp) >> 6;
@@ -310,7 +310,7 @@ WebRtc_UWord16 WebRtcNetEQ_BufstatsDecision(BufstatsInst_t *inst, WebRtc_Word16 
     { /* kPlayoutOff or kPlayoutFax */
         if (cngPacket)
         {
-            if (((WebRtc_Word32) ((inst->uw32_CNGplayedTS + targetTS) - availableTS)) >= 0)
+            if (((int32_t) ((inst->uw32_CNGplayedTS + targetTS) - availableTS)) >= 0)
             {
                 /* time to play this packet now */
                 return BUFSTATS_DO_RFC3389CNG_PACKET;
@@ -363,7 +363,7 @@ WebRtc_UWord16 WebRtcNetEQ_BufstatsDecision(BufstatsInst_t *inst, WebRtc_Word16 
         }
         else
         {
-            if (((WebRtc_Word32) ((inst->uw32_CNGplayedTS + targetTS) - availableTS)) >= 0)
+            if (((int32_t) ((inst->uw32_CNGplayedTS + targetTS) - availableTS)) >= 0)
             {
                 return BUFSTATS_DO_NORMAL;
             }

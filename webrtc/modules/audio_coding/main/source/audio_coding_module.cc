@@ -19,7 +19,7 @@
 namespace webrtc {
 
 // Create module
-AudioCodingModule* AudioCodingModule::Create(const WebRtc_Word32 id) {
+AudioCodingModule* AudioCodingModule::Create(const int32_t id) {
   return new AudioCodingModuleImpl(id);
 }
 
@@ -29,21 +29,21 @@ void AudioCodingModule::Destroy(AudioCodingModule* module) {
 }
 
 // Get number of supported codecs
-WebRtc_UWord8 AudioCodingModule::NumberOfCodecs() {
-  return static_cast<WebRtc_UWord8>(ACMCodecDB::kNumCodecs);
+uint8_t AudioCodingModule::NumberOfCodecs() {
+  return static_cast<uint8_t>(ACMCodecDB::kNumCodecs);
 }
 
 // Get supported codec param with id
-WebRtc_Word32 AudioCodingModule::Codec(WebRtc_UWord8 list_id,
-                                       CodecInst* codec) {
+int32_t AudioCodingModule::Codec(uint8_t list_id,
+                                 CodecInst* codec) {
   // Get the codec settings for the codec with the given list ID
   return ACMCodecDB::Codec(list_id, codec);
 }
 
 // Get supported codec Param with name, frequency and number of channels.
-WebRtc_Word32 AudioCodingModule::Codec(const char* payload_name,
-                                       CodecInst* codec, int sampling_freq_hz,
-                                       int channels) {
+int32_t AudioCodingModule::Codec(const char* payload_name,
+                                 CodecInst* codec, int sampling_freq_hz,
+                                 int channels) {
   int codec_id;
 
   // Get the id of the codec from the database.
@@ -70,8 +70,8 @@ WebRtc_Word32 AudioCodingModule::Codec(const char* payload_name,
 }
 
 // Get supported codec Index with name, frequency and number of channels.
-WebRtc_Word32 AudioCodingModule::Codec(const char* payload_name,
-                                       int sampling_freq_hz, int channels) {
+int32_t AudioCodingModule::Codec(const char* payload_name,
+                                 int sampling_freq_hz, int channels) {
   return ACMCodecDB::CodecId(payload_name, sampling_freq_hz, channels);
 }
 
