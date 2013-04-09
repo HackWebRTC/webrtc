@@ -390,8 +390,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Send a request for a keyframe.
   virtual int32_t RequestKeyFrame();
 
-  virtual int32_t SetCameraDelay(const int32_t delay_ms);
-
   virtual void SetTargetSendBitrate(const uint32_t bitrate);
 
   virtual int32_t SetGenericFECStatus(

@@ -91,8 +91,6 @@ RTCPSender::RTCPSender(const int32_t id,
     _reportBlocks(),
     _csrcCNAMEs(),
 
-    _cameraDelayMS(0),
-
     _lastSendReport(),
     _lastRTCPTime(),
 
@@ -170,7 +168,6 @@ RTCPSender::Init()
     start_timestamp_ = -1;
     _SSRC = 0;
     _remoteSSRC = 0;
-    _cameraDelayMS = 0;
     _sequenceNumberFIR = 0;
     _tmmbr_Send = 0;
     _packetOH_Send = 0;
@@ -351,7 +348,7 @@ void RTCPSender::SetLastRtpTime(uint32_t rtp_timestamp,
   last_rtp_timestamp_ = rtp_timestamp;
   if (capture_time_ms < 0) {
     // We don't currently get a capture time from VoiceEngine.
-    last_frame_capture_time_ms_ = _clock->TimeInMilliseconds();
+    last_frame_capture_time_ms_ = _clock->CurrentNtpInMilliseconds();
   } else {
     last_frame_capture_time_ms_ = capture_time_ms;
   }
@@ -377,19 +374,6 @@ RTCPSender::SetRemoteSSRC( const uint32_t ssrc)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
     _remoteSSRC = ssrc;
-    return 0;
-}
-
-int32_t
-RTCPSender::SetCameraDelay(const int32_t delayMS)
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPSender);
-    if(delayMS > 1000 || delayMS < -1000)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument, delay can't be larger than 1 sec", __FUNCTION__);
-        return -1;
-    }
-    _cameraDelayMS = delayMS;
     return 0;
 }
 
@@ -625,25 +609,13 @@ RTCPSender::BuildSR(uint8_t* rtcpbuffer,
         _lastRTCPTime[i+1] =_lastRTCPTime[i];
     }
 
-    _lastRTCPTime[0] = ModuleRTPUtility::ConvertNTPTimeToMS(NTPsec, NTPfrac);
+    _lastRTCPTime[0] = Clock::NtpToMs(NTPsec, NTPfrac);
     _lastSendReport[0] = (NTPsec << 16) + (NTPfrac >> 16);
 
-    uint32_t freqHz = 90000; // For video
-    if(_audio) {
-      freqHz =  _rtpRtcp.CurrentSendFrequencyHz();
+    if (!RtpTimestampNow(NTPsec, NTPfrac, &RTPtime)) {
+      RTPtime = 0;
     }
 
-    // The timestamp of this RTCP packet should be estimated as the timestamp of
-    // the frame being captured at this moment. We are calculating that
-    // timestamp as the last frame's timestamp + the time since the last frame
-    // was captured.
-    {
-      // Needs protection since this method is called on the process thread.
-      CriticalSectionScoped lock(_criticalSectionRTCPSender);
-      RTPtime = start_timestamp_ + last_rtp_timestamp_ + (
-          _clock->TimeInMilliseconds() - last_frame_capture_time_ms_) *
-          (freqHz / 1000);
-    }
 
     // Add sender data
     // Save  for our length field
@@ -683,6 +655,24 @@ RTCPSender::BuildSR(uint8_t* rtcpbuffer,
     return 0;
 }
 
+bool RTCPSender::RtpTimestampNow(uint32_t ntp_secs_now, uint32_t ntp_fracs_now,
+                                 uint32_t* timestamp_now) const {
+  if (last_frame_capture_time_ms_ < 0) {
+    return false;
+  }
+  uint32_t freq_khz = 90;  // Default for video.
+  if(_audio) {
+    freq_khz =  _rtpRtcp.CurrentSendFrequencyHz() / 1000;
+  }
+  // The timestamp of this RTCP packet should be estimated as the timestamp of
+  // the frame being captured at this moment. We are calculating that
+  // timestamp as the last frame's timestamp + the time since the last frame
+  // was captured.
+  *timestamp_now = start_timestamp_ + last_rtp_timestamp_ +
+      (Clock::NtpToMs(ntp_secs_now, ntp_fracs_now) -
+          last_frame_capture_time_ms_) * freq_khz;
+  return true;
+}
 
 int32_t RTCPSender::BuildSDEC(uint8_t* rtcpbuffer,
                               uint32_t& pos) {
@@ -2091,7 +2081,7 @@ int32_t RTCPSender::AddReportBlocks(uint8_t* rtcpbuffer,
   }
   if (received) {
     // answer to the one that sends to me
-    _lastRTCPTime[0] = ModuleRTPUtility::ConvertNTPTimeToMS(NTPsec, NTPfrac);
+    _lastRTCPTime[0] = Clock::NtpToMs(NTPsec, NTPfrac);
 
     // Remote SSRC
     ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _remoteSSRC);

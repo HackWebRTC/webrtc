@@ -512,8 +512,8 @@ RTCPReceiver::HandleReportBlock(const RTCPUtility::RTCPPacket& rtcpPacket,
   _clock->CurrentNtp(lastReceivedRRNTPsecs, lastReceivedRRNTPfrac);
 
   // time when we received this in MS
-  uint32_t receiveTimeMS = ModuleRTPUtility::ConvertNTPTimeToMS(
-      lastReceivedRRNTPsecs, lastReceivedRRNTPfrac);
+  uint32_t receiveTimeMS = Clock::NtpToMs(lastReceivedRRNTPsecs,
+                                          lastReceivedRRNTPfrac);
 
   // Estimate RTT
   uint32_t d = (delaySinceLastSendReport & 0x0000ffff) * 1000;

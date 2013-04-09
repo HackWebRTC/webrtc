@@ -609,7 +609,6 @@ void ViEEncoder::DelayChanged(int id, int frame_delay) {
                ViEId(engine_id_, channel_id_), "%s: %u", __FUNCTION__,
                frame_delay);
 
-  default_rtp_rtcp_->SetCameraDelay(frame_delay);
   file_recorder_.SetFrameDelay(frame_delay);
 }
 
