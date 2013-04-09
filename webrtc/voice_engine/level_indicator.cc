@@ -20,7 +20,7 @@ namespace voe {
 // Number of bars on the indicator.
 // Note that the number of elements is specified because we are indexing it
 // in the range of 0-32
-const WebRtc_Word8 permutation[33] =
+const int8_t permutation[33] =
     {0,1,2,3,4,4,5,5,5,5,6,6,6,6,6,7,7,7,7,8,8,8,9,9,9,9,9,9,9,9,9,9,9};
 
 
@@ -47,7 +47,7 @@ void AudioLevel::Clear()
 
 void AudioLevel::ComputeLevel(const AudioFrame& audioFrame)
 {
-    WebRtc_Word16 absValue(0);
+    int16_t absValue(0);
 
     // Check speech level (works for 2 channels as well)
     absValue = WebRtcSpl_MaxAbsValueW16(
@@ -68,10 +68,10 @@ void AudioLevel::ComputeLevel(const AudioFrame& audioFrame)
 
         _count = 0;
 
-        // Highest value for a WebRtc_Word16 is 0x7fff = 32767
+        // Highest value for a int16_t is 0x7fff = 32767
         // Divide with 1000 to get in the range of 0-32 which is the range of
         // the permutation vector
-        WebRtc_Word32 position = _absMax/1000;
+        int32_t position = _absMax/1000;
 
         // Make it less likely that the bar stays at position 0. I.e. only if
         // its in the range 0-250 (instead of 0-1000)
@@ -86,13 +86,13 @@ void AudioLevel::ComputeLevel(const AudioFrame& audioFrame)
     }
 }
 
-WebRtc_Word8 AudioLevel::Level() const
+int8_t AudioLevel::Level() const
 {
     CriticalSectionScoped cs(&_critSect);
     return _currentLevel;
 }
 
-WebRtc_Word16 AudioLevel::LevelFullRange() const
+int16_t AudioLevel::LevelFullRange() const
 {
     CriticalSectionScoped cs(&_critSect);
     return _currentLevelFullRange;

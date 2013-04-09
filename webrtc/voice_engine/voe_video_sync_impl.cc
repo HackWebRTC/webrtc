@@ -199,7 +199,7 @@ int VoEVideoSyncImpl::GetPlayoutBufferSize(int& bufferMs)
     }
     AudioDeviceModule::BufferType type
         (AudioDeviceModule::kFixedBufferSize);
-    WebRtc_UWord16 sizeMS(0);
+    uint16_t sizeMS(0);
     if (_shared->audio_device()->PlayoutBuffer(&type, &sizeMS) != 0)
     {
         _shared->SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR, kTraceError,

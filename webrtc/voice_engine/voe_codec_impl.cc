@@ -55,7 +55,7 @@ int VoECodecImpl::NumOfCodecs()
                  "NumOfCodecs()");
 
     // Number of supported codecs in the ACM
-    WebRtc_UWord8 nSupportedCodecs = AudioCodingModule::NumberOfCodecs();
+    uint8_t nSupportedCodecs = AudioCodingModule::NumberOfCodecs();
 
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
         VoEId(_shared->instance_id(), -1),

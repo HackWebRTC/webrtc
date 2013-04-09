@@ -71,12 +71,12 @@ public:
     enum {KNumberOfSocketBuffers = 8};
 public:
     virtual ~Channel();
-    static WebRtc_Word32 CreateChannel(Channel*& channel,
-                                       const WebRtc_Word32 channelId,
-                                       const WebRtc_UWord32 instanceId);
-    Channel(const WebRtc_Word32 channelId, const WebRtc_UWord32 instanceId);
-    WebRtc_Word32 Init();
-    WebRtc_Word32 SetEngineInformation(
+    static int32_t CreateChannel(Channel*& channel,
+                                 const int32_t channelId,
+                                 const uint32_t instanceId);
+    Channel(const int32_t channelId, const uint32_t instanceId);
+    int32_t Init();
+    int32_t SetEngineInformation(
         Statistics& engineStatistics,
         OutputMixer& outputMixer,
         TransmitMixer& transmitMixer,
@@ -84,44 +84,42 @@ public:
         AudioDeviceModule& audioDeviceModule,
         VoiceEngineObserver* voiceEngineObserver,
         CriticalSectionWrapper* callbackCritSect);
-    WebRtc_Word32 UpdateLocalTimeStamp();
+    int32_t UpdateLocalTimeStamp();
 
 public:
     // API methods
 
     // VoEBase
-    WebRtc_Word32 StartPlayout();
-    WebRtc_Word32 StopPlayout();
-    WebRtc_Word32 StartSend();
-    WebRtc_Word32 StopSend();
-    WebRtc_Word32 StartReceiving();
-    WebRtc_Word32 StopReceiving();
+    int32_t StartPlayout();
+    int32_t StopPlayout();
+    int32_t StartSend();
+    int32_t StopSend();
+    int32_t StartReceiving();
+    int32_t StopReceiving();
 
-    WebRtc_Word32 SetNetEQPlayoutMode(NetEqModes mode);
-    WebRtc_Word32 GetNetEQPlayoutMode(NetEqModes& mode);
-    WebRtc_Word32 SetOnHoldStatus(bool enable, OnHoldModes mode);
-    WebRtc_Word32 GetOnHoldStatus(bool& enabled, OnHoldModes& mode);
-    WebRtc_Word32 RegisterVoiceEngineObserver(VoiceEngineObserver& observer);
-    WebRtc_Word32 DeRegisterVoiceEngineObserver();
+    int32_t SetNetEQPlayoutMode(NetEqModes mode);
+    int32_t GetNetEQPlayoutMode(NetEqModes& mode);
+    int32_t SetOnHoldStatus(bool enable, OnHoldModes mode);
+    int32_t GetOnHoldStatus(bool& enabled, OnHoldModes& mode);
+    int32_t RegisterVoiceEngineObserver(VoiceEngineObserver& observer);
+    int32_t DeRegisterVoiceEngineObserver();
 
     // VoECodec
-    WebRtc_Word32 GetSendCodec(CodecInst& codec);
-    WebRtc_Word32 GetRecCodec(CodecInst& codec);
-    WebRtc_Word32 SetSendCodec(const CodecInst& codec);
-    WebRtc_Word32 SetVADStatus(bool enableVAD, ACMVADMode mode,
-                               bool disableDTX);
-    WebRtc_Word32 GetVADStatus(bool& enabledVAD, ACMVADMode& mode,
-                               bool& disabledDTX);
-    WebRtc_Word32 SetRecPayloadType(const CodecInst& codec);
-    WebRtc_Word32 GetRecPayloadType(CodecInst& codec);
-    WebRtc_Word32 SetAMREncFormat(AmrMode mode);
-    WebRtc_Word32 SetAMRDecFormat(AmrMode mode);
-    WebRtc_Word32 SetAMRWbEncFormat(AmrMode mode);
-    WebRtc_Word32 SetAMRWbDecFormat(AmrMode mode);
-    WebRtc_Word32 SetSendCNPayloadType(int type, PayloadFrequencies frequency);
-    WebRtc_Word32 SetISACInitTargetRate(int rateBps, bool useFixedFrameSize);
-    WebRtc_Word32 SetISACMaxRate(int rateBps);
-    WebRtc_Word32 SetISACMaxPayloadSize(int sizeBytes);
+    int32_t GetSendCodec(CodecInst& codec);
+    int32_t GetRecCodec(CodecInst& codec);
+    int32_t SetSendCodec(const CodecInst& codec);
+    int32_t SetVADStatus(bool enableVAD, ACMVADMode mode, bool disableDTX);
+    int32_t GetVADStatus(bool& enabledVAD, ACMVADMode& mode, bool& disabledDTX);
+    int32_t SetRecPayloadType(const CodecInst& codec);
+    int32_t GetRecPayloadType(CodecInst& codec);
+    int32_t SetAMREncFormat(AmrMode mode);
+    int32_t SetAMRDecFormat(AmrMode mode);
+    int32_t SetAMRWbEncFormat(AmrMode mode);
+    int32_t SetAMRWbDecFormat(AmrMode mode);
+    int32_t SetSendCNPayloadType(int type, PayloadFrequencies frequency);
+    int32_t SetISACInitTargetRate(int rateBps, bool useFixedFrameSize);
+    int32_t SetISACMaxRate(int rateBps);
+    int32_t SetISACMaxPayloadSize(int sizeBytes);
 
     // VoE dual-streaming.
     int SetSecondarySendCodec(const CodecInst& codec, int red_payload_type);
@@ -129,21 +127,16 @@ public:
     int GetSecondarySendCodec(CodecInst* codec);
 
     // VoENetwork
-    WebRtc_Word32 RegisterExternalTransport(Transport& transport);
-    WebRtc_Word32 DeRegisterExternalTransport();
-    WebRtc_Word32 ReceivedRTPPacket(const WebRtc_Word8* data,
-                                    WebRtc_Word32 length);
-    WebRtc_Word32 ReceivedRTCPPacket(const WebRtc_Word8* data,
-                                     WebRtc_Word32 length);
-    WebRtc_Word32 SetPacketTimeoutNotification(bool enable, int timeoutSeconds);
-    WebRtc_Word32 GetPacketTimeoutNotification(bool& enabled,
-                                               int& timeoutSeconds);
-    WebRtc_Word32 RegisterDeadOrAliveObserver(VoEConnectionObserver& observer);
-    WebRtc_Word32 DeRegisterDeadOrAliveObserver();
-    WebRtc_Word32 SetPeriodicDeadOrAliveStatus(bool enable,
-                                               int sampleTimeSeconds);
-    WebRtc_Word32 GetPeriodicDeadOrAliveStatus(bool& enabled,
-                                               int& sampleTimeSeconds);
+    int32_t RegisterExternalTransport(Transport& transport);
+    int32_t DeRegisterExternalTransport();
+    int32_t ReceivedRTPPacket(const int8_t* data, int32_t length);
+    int32_t ReceivedRTCPPacket(const int8_t* data, int32_t length);
+    int32_t SetPacketTimeoutNotification(bool enable, int timeoutSeconds);
+    int32_t GetPacketTimeoutNotification(bool& enabled, int& timeoutSeconds);
+    int32_t RegisterDeadOrAliveObserver(VoEConnectionObserver& observer);
+    int32_t DeRegisterDeadOrAliveObserver();
+    int32_t SetPeriodicDeadOrAliveStatus(bool enable, int sampleTimeSeconds);
+    int32_t GetPeriodicDeadOrAliveStatus(bool& enabled, int& sampleTimeSeconds);
 
     // VoEFile
     int StartPlayingFileLocally(const char* fileName, const bool loop,
@@ -190,8 +183,8 @@ public:
     int SetExternalMixing(bool enabled);
 
     // VoEVolumeControl
-    int GetSpeechOutputLevel(WebRtc_UWord32& level) const;
-    int GetSpeechOutputLevelFullRange(WebRtc_UWord32& level) const;
+    int GetSpeechOutputLevel(uint32_t& level) const;
+    int GetSpeechOutputLevelFullRange(uint32_t& level) const;
     int SetMute(const bool enable);
     bool Mute() const;
     int SetOutputVolumePan(float left, float right);
@@ -290,66 +283,65 @@ public:
 
 public:
     // From AudioPacketizationCallback in the ACM
-    WebRtc_Word32 SendData(FrameType frameType,
-                           WebRtc_UWord8 payloadType,
-                           WebRtc_UWord32 timeStamp,
-                           const WebRtc_UWord8* payloadData,
-                           WebRtc_UWord16 payloadSize,
-                           const RTPFragmentationHeader* fragmentation);
+    int32_t SendData(FrameType frameType,
+                     uint8_t payloadType,
+                     uint32_t timeStamp,
+                     const uint8_t* payloadData,
+                     uint16_t payloadSize,
+                     const RTPFragmentationHeader* fragmentation);
     // From ACMVADCallback in the ACM
-    WebRtc_Word32 InFrameType(WebRtc_Word16 frameType);
+    int32_t InFrameType(int16_t frameType);
 
 public:
-    WebRtc_Word32 OnRxVadDetected(const int vadDecision);
+    int32_t OnRxVadDetected(const int vadDecision);
 
 public:
     // From RtpData in the RTP/RTCP module
-    WebRtc_Word32 OnReceivedPayloadData(const WebRtc_UWord8* payloadData,
-                                        const WebRtc_UWord16 payloadSize,
-                                        const WebRtcRTPHeader* rtpHeader);
+    int32_t OnReceivedPayloadData(const uint8_t* payloadData,
+                                  const uint16_t payloadSize,
+                                  const WebRtcRTPHeader* rtpHeader);
 
 public:
     // From RtpFeedback in the RTP/RTCP module
-    WebRtc_Word32 OnInitializeDecoder(
-            const WebRtc_Word32 id,
-            const WebRtc_Word8 payloadType,
+    int32_t OnInitializeDecoder(
+            const int32_t id,
+            const int8_t payloadType,
             const char payloadName[RTP_PAYLOAD_NAME_SIZE],
             const int frequency,
-            const WebRtc_UWord8 channels,
-            const WebRtc_UWord32 rate);
+            const uint8_t channels,
+            const uint32_t rate);
 
-    void OnPacketTimeout(const WebRtc_Word32 id);
+    void OnPacketTimeout(const int32_t id);
 
-    void OnReceivedPacket(const WebRtc_Word32 id,
-                          const RtpRtcpPacketType packetType);
+    void OnReceivedPacket(const int32_t id, const RtpRtcpPacketType packetType);
 
-    void OnPeriodicDeadOrAlive(const WebRtc_Word32 id,
+    void OnPeriodicDeadOrAlive(const int32_t id,
                                const RTPAliveType alive);
 
-    void OnIncomingSSRCChanged(const WebRtc_Word32 id,
-                               const WebRtc_UWord32 SSRC);
+    void OnIncomingSSRCChanged(const int32_t id,
+                               const uint32_t SSRC);
 
-    void OnIncomingCSRCChanged(const WebRtc_Word32 id,
-                               const WebRtc_UWord32 CSRC, const bool added);
+    void OnIncomingCSRCChanged(const int32_t id,
+                               const uint32_t CSRC, const bool added);
 
 public:
     // From RtcpFeedback in the RTP/RTCP module
-    void OnApplicationDataReceived(const WebRtc_Word32 id,
-                                   const WebRtc_UWord8 subType,
-                                   const WebRtc_UWord32 name,
-                                   const WebRtc_UWord16 length,
-                                   const WebRtc_UWord8* data);
+    void OnApplicationDataReceived(const int32_t id,
+                                   const uint8_t subType,
+                                   const uint32_t name,
+                                   const uint16_t length,
+                                   const uint8_t* data);
 
 public:
     // From RtpAudioFeedback in the RTP/RTCP module
-    void OnReceivedTelephoneEvent(const WebRtc_Word32 id,
-                                  const WebRtc_UWord8 event,
+    void OnReceivedTelephoneEvent(const int32_t id,
+                                  const uint8_t event,
                                   const bool endOfEvent);
 
-    void OnPlayTelephoneEvent(const WebRtc_Word32 id,
-                              const WebRtc_UWord8 event,
-                              const WebRtc_UWord16 lengthMs,
-                              const WebRtc_UWord8 volume);
+    void OnPlayTelephoneEvent(const int32_t id,
+                              const uint8_t event,
+                              const uint16_t lengthMs,
+                              const uint8_t volume);
 
 public:
     // From Transport (called by the RTP/RTCP module)
@@ -358,9 +350,8 @@ public:
 
 public:
     // From MixerParticipant
-    WebRtc_Word32 GetAudioFrame(const WebRtc_Word32 id,
-                                AudioFrame& audioFrame);
-    WebRtc_Word32 NeededFrequency(const WebRtc_Word32 id);
+    int32_t GetAudioFrame(const int32_t id, AudioFrame& audioFrame);
+    int32_t NeededFrequency(const int32_t id);
 
 public:
     // From MonitorObserver
@@ -368,19 +359,19 @@ public:
 
 public:
     // From FileCallback
-    void PlayNotification(const WebRtc_Word32 id,
-                          const WebRtc_UWord32 durationMs);
-    void RecordNotification(const WebRtc_Word32 id,
-                            const WebRtc_UWord32 durationMs);
-    void PlayFileEnded(const WebRtc_Word32 id);
-    void RecordFileEnded(const WebRtc_Word32 id);
+    void PlayNotification(const int32_t id,
+                          const uint32_t durationMs);
+    void RecordNotification(const int32_t id,
+                            const uint32_t durationMs);
+    void PlayFileEnded(const int32_t id);
+    void RecordFileEnded(const int32_t id);
 
 public:
-    WebRtc_UWord32 InstanceId() const
+    uint32_t InstanceId() const
     {
         return _instanceId;
     }
-    WebRtc_Word32 ChannelId() const
+    int32_t ChannelId() const
     {
         return _channelId;
     }
@@ -420,25 +411,24 @@ public:
     {
         return _rtpRtcpModule.get();
     }
-    WebRtc_Word8 OutputEnergyLevel() const
+    int8_t OutputEnergyLevel() const
     {
         return _outputAudioLevel.Level();
     }
-    WebRtc_UWord32 Demultiplex(const AudioFrame& audioFrame);
-    WebRtc_UWord32 PrepareEncodeAndSend(int mixingFrequency);
-    WebRtc_UWord32 EncodeAndSend();
+    uint32_t Demultiplex(const AudioFrame& audioFrame);
+    uint32_t PrepareEncodeAndSend(int mixingFrequency);
+    uint32_t EncodeAndSend();
 
 private:
     int InsertInbandDtmfTone();
-    WebRtc_Word32
+    int32_t
             MixOrReplaceAudioWithFile(const int mixingFrequency);
-    WebRtc_Word32 MixAudioWithFile(AudioFrame& audioFrame,
-                                   const int mixingFrequency);
-    WebRtc_Word32 GetPlayoutTimeStamp(WebRtc_UWord32& playoutTimestamp);
+    int32_t MixAudioWithFile(AudioFrame& audioFrame, const int mixingFrequency);
+    int32_t GetPlayoutTimeStamp(uint32_t& playoutTimestamp);
     void UpdateDeadOrAliveCounters(bool alive);
-    WebRtc_Word32 SendPacketRaw(const void *data, int len, bool RTCP);
-    WebRtc_Word32 UpdatePacketDelay(const WebRtc_UWord32 timestamp,
-                                    const WebRtc_UWord16 sequenceNumber);
+    int32_t SendPacketRaw(const void *data, int len, bool RTCP);
+    int32_t UpdatePacketDelay(const uint32_t timestamp,
+                              const uint16_t sequenceNumber);
     void RegisterReceiveCodecsToRTPModule();
     int ApmProcessRx(AudioFrame& audioFrame);
 
@@ -446,8 +436,8 @@ private:
 private:
     CriticalSectionWrapper& _fileCritSect;
     CriticalSectionWrapper& _callbackCritSect;
-    WebRtc_UWord32 _instanceId;
-    WebRtc_Word32 _channelId;
+    uint32_t _instanceId;
+    int32_t _channelId;
 
 private:
     scoped_ptr<RtpRtcp> _rtpRtcpModule;
@@ -458,7 +448,7 @@ private:
     AudioLevel _outputAudioLevel;
     bool _externalTransport;
     AudioFrame _audioFrame;
-    WebRtc_UWord8 _audioLevel_dBov;
+    uint8_t _audioLevel_dBov;
     FilePlayer* _inputFilePlayerPtr;
     FilePlayer* _outputFilePlayerPtr;
     FileRecorder* _outputFileRecorderPtr;
@@ -474,15 +464,15 @@ private:
     bool _outputExternalMedia;
     VoEMediaProcess* _inputExternalMediaCallbackPtr;
     VoEMediaProcess* _outputExternalMediaCallbackPtr;
-    WebRtc_UWord8* _encryptionRTPBufferPtr;
-    WebRtc_UWord8* _decryptionRTPBufferPtr;
-    WebRtc_UWord8* _encryptionRTCPBufferPtr;
-    WebRtc_UWord8* _decryptionRTCPBufferPtr;
-    WebRtc_UWord32 _timeStamp;
-    WebRtc_UWord8 _sendTelephoneEventPayloadType;
-    WebRtc_UWord32 _playoutTimeStampRTP;
-    WebRtc_UWord32 _playoutTimeStampRTCP;
-    WebRtc_UWord32 _numberOfDiscardedPackets;
+    uint8_t* _encryptionRTPBufferPtr;
+    uint8_t* _decryptionRTPBufferPtr;
+    uint8_t* _encryptionRTCPBufferPtr;
+    uint8_t* _decryptionRTCPBufferPtr;
+    uint32_t _timeStamp;
+    uint8_t _sendTelephoneEventPayloadType;
+    uint32_t _playoutTimeStampRTP;
+    uint32_t _playoutTimeStampRTCP;
+    uint32_t _numberOfDiscardedPackets;
 private:
     // uses
     Statistics* _engineStatisticsPtr;
@@ -497,8 +487,8 @@ private:
     scoped_ptr<AudioProcessing> _rtpAudioProc;
     AudioProcessing* _rxAudioProcessingModulePtr; // far end AudioProcessing
     VoERxVadCallback* _rxVadObserverPtr;
-    WebRtc_Word32 _oldVadDecision;
-    WebRtc_Word32 _sendFrameType; // Send data is voice, 1-voice, 0-otherwise
+    int32_t _oldVadDecision;
+    int32_t _sendFrameType; // Send data is voice, 1-voice, 0-otherwise
     VoERTPObserver* _rtpObserverPtr;
     VoERTCPObserver* _rtcpObserverPtr;
 private:
@@ -525,27 +515,27 @@ private:
     bool _playOutbandDtmfEvent;
     bool _playInbandDtmfEvent;
     // VoeRTP_RTCP
-    WebRtc_UWord8 _extraPayloadType;
+    uint8_t _extraPayloadType;
     bool _insertExtraRTPPacket;
     bool _extraMarkerBit;
-    WebRtc_UWord32 _lastLocalTimeStamp;
+    uint32_t _lastLocalTimeStamp;
     uint32_t _lastRemoteTimeStamp;
-    WebRtc_Word8 _lastPayloadType;
+    int8_t _lastPayloadType;
     bool _includeAudioLevelIndication;
     // VoENetwork
     bool _rtpPacketTimedOut;
     bool _rtpPacketTimeOutIsEnabled;
-    WebRtc_UWord32 _rtpTimeOutSeconds;
+    uint32_t _rtpTimeOutSeconds;
     bool _connectionObserver;
     VoEConnectionObserver* _connectionObserverPtr;
-    WebRtc_UWord32 _countAliveDetections;
-    WebRtc_UWord32 _countDeadDetections;
+    uint32_t _countAliveDetections;
+    uint32_t _countDeadDetections;
     AudioFrame::SpeechType _outputSpeechType;
     // VoEVideoSync
-    WebRtc_UWord32 _averageDelayMs;
-    WebRtc_UWord16 _previousSequenceNumber;
-    WebRtc_UWord32 _previousTimestamp;
-    WebRtc_UWord16 _recPacketDelayMs;
+    uint32_t _averageDelayMs;
+    uint16_t _previousSequenceNumber;
+    uint32_t _previousTimestamp;
+    uint16_t _recPacketDelayMs;
     // VoEAudioProcessing
     bool _RxVadDetection;
     bool _rxApmIsEnabled;

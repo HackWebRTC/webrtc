@@ -122,7 +122,7 @@ int VoENetworkImpl::ReceivedRTPPacket(int channel,
             "ReceivedRTPPacket() external transport is not enabled");
         return -1;
     }
-    return channelPtr->ReceivedRTPPacket((const WebRtc_Word8*) data, length);
+    return channelPtr->ReceivedRTPPacket((const int8_t*) data, length);
 }
 
 int VoENetworkImpl::ReceivedRTCPPacket(int channel, const void* data,
@@ -161,7 +161,7 @@ int VoENetworkImpl::ReceivedRTCPPacket(int channel, const void* data,
             "ReceivedRTCPPacket() external transport is not enabled");
         return -1;
     }
-    return channelPtr->ReceivedRTCPPacket((const WebRtc_Word8*) data, length);
+    return channelPtr->ReceivedRTCPPacket((const int8_t*) data, length);
 }
 
 int VoENetworkImpl::SetPacketTimeoutNotification(int channel,

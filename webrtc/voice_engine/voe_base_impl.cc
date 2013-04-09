@@ -124,16 +124,16 @@ void VoEBaseImpl::OnWarningIsReported(const WarningCode warning)
     }
 }
 
-WebRtc_Word32 VoEBaseImpl::RecordedDataIsAvailable(
+int32_t VoEBaseImpl::RecordedDataIsAvailable(
         const void* audioSamples,
-        const WebRtc_UWord32 nSamples,
-        const WebRtc_UWord8 nBytesPerSample,
-        const WebRtc_UWord8 nChannels,
-        const WebRtc_UWord32 samplesPerSec,
-        const WebRtc_UWord32 totalDelayMS,
-        const WebRtc_Word32 clockDrift,
-        const WebRtc_UWord32 currentMicLevel,
-        WebRtc_UWord32& newMicLevel)
+        const uint32_t nSamples,
+        const uint8_t nBytesPerSample,
+        const uint8_t nChannels,
+        const uint32_t samplesPerSec,
+        const uint32_t totalDelayMS,
+        const int32_t clockDrift,
+        const uint32_t currentMicLevel,
+        uint32_t& newMicLevel)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoEBaseImpl::RecordedDataIsAvailable(nSamples=%u, "
@@ -146,9 +146,9 @@ WebRtc_Word32 VoEBaseImpl::RecordedDataIsAvailable(
     assert(_shared->audio_device() != NULL);
 
     bool isAnalogAGC(false);
-    WebRtc_UWord32 maxVolume(0);
-    WebRtc_UWord16 currentVoEMicLevel(0);
-    WebRtc_UWord32 newVoEMicLevel(0);
+    uint32_t maxVolume(0);
+    uint16_t currentVoEMicLevel(0);
+    uint32_t newVoEMicLevel(0);
 
     if (_shared->audio_processing() &&
         (_shared->audio_processing()->gain_control()->mode()
@@ -165,7 +165,7 @@ WebRtc_Word32 VoEBaseImpl::RecordedDataIsAvailable(
         {
             if (0 != maxVolume)
             {
-                currentVoEMicLevel = (WebRtc_UWord16) ((currentMicLevel
+                currentVoEMicLevel = (uint16_t) ((currentMicLevel
                         * kMaxVolumeLevel + (int) (maxVolume / 2))
                         / (maxVolume));
             }
@@ -188,13 +188,13 @@ WebRtc_Word32 VoEBaseImpl::RecordedDataIsAvailable(
     // issues with truncation introduced by the scaling.
     if (_oldMicLevel == currentMicLevel)
     {
-        currentVoEMicLevel = (WebRtc_UWord16) _oldVoEMicLevel;
+        currentVoEMicLevel = (uint16_t) _oldVoEMicLevel;
     }
 
     // Perform channel-independent operations
     // (APM, mix with file, record to file, mute, etc.)
     _shared->transmit_mixer()->PrepareDemux(audioSamples, nSamples, nChannels,
-        samplesPerSec, static_cast<WebRtc_UWord16>(totalDelayMS), clockDrift,
+        samplesPerSec, static_cast<uint16_t>(totalDelayMS), clockDrift,
         currentVoEMicLevel);
 
     // Copy the audio frame to each sending channel and perform
@@ -213,7 +213,7 @@ WebRtc_Word32 VoEBaseImpl::RecordedDataIsAvailable(
         if (newVoEMicLevel != currentVoEMicLevel)
         {
             // Add (kMaxVolumeLevel/2) to round the value
-            newMicLevel = (WebRtc_UWord32) ((newVoEMicLevel * maxVolume
+            newMicLevel = (uint32_t) ((newVoEMicLevel * maxVolume
                     + (int) (kMaxVolumeLevel / 2)) / (kMaxVolumeLevel));
         }
         else
@@ -230,13 +230,13 @@ WebRtc_Word32 VoEBaseImpl::RecordedDataIsAvailable(
     return 0;
 }
 
-WebRtc_Word32 VoEBaseImpl::NeedMorePlayData(
-        const WebRtc_UWord32 nSamples,
-        const WebRtc_UWord8 nBytesPerSample,
-        const WebRtc_UWord8 nChannels,
-        const WebRtc_UWord32 samplesPerSec,
+int32_t VoEBaseImpl::NeedMorePlayData(
+        const uint32_t nSamples,
+        const uint8_t nBytesPerSample,
+        const uint8_t nChannels,
+        const uint32_t samplesPerSec,
         void* audioSamples,
-        WebRtc_UWord32& nSamplesOut)
+        uint32_t& nSamplesOut)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoEBaseImpl::NeedMorePlayData(nSamples=%u, "
@@ -259,13 +259,13 @@ WebRtc_Word32 VoEBaseImpl::NeedMorePlayData(
 
     assert(static_cast<int>(nSamples) == _audioFrame.samples_per_channel_);
     assert(samplesPerSec ==
-        static_cast<WebRtc_UWord32>(_audioFrame.sample_rate_hz_));
+        static_cast<uint32_t>(_audioFrame.sample_rate_hz_));
 
     // Deliver audio (PCM) samples to the ADM
     memcpy(
-           (WebRtc_Word16*) audioSamples,
-           (const WebRtc_Word16*) _audioFrame.data_,
-           sizeof(WebRtc_Word16) * (_audioFrame.samples_per_channel_
+           (int16_t*) audioSamples,
+           (const int16_t*) _audioFrame.data_,
+           sizeof(int16_t) * (_audioFrame.samples_per_channel_
                    * _audioFrame.num_channels_));
 
     nSamplesOut = _audioFrame.samples_per_channel_;
@@ -573,7 +573,7 @@ int VoEBaseImpl::MaxNumOfChannels()
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "MaxNumOfChannels()");
-    WebRtc_Word32 maxNumOfChannels =
+    int32_t maxNumOfChannels =
         _shared->channel_manager().MaxNumOfChannels();
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
         VoEId(_shared->instance_id(), -1),
@@ -593,7 +593,7 @@ int VoEBaseImpl::CreateChannel()
         return -1;
     }
 
-    WebRtc_Word32 channelId = -1;
+    int32_t channelId = -1;
 
     if (!_shared->channel_manager().CreateChannel(channelId))
     {
@@ -860,8 +860,8 @@ int VoEBaseImpl::GetVersion(char version[1024])
     char versionBuf[kVoiceEngineVersionMaxMessageSize];
     char* versionPtr = versionBuf;
 
-    WebRtc_Word32 len = 0;
-    WebRtc_Word32 accLen = 0;
+    int32_t len = 0;
+    int32_t accLen = 0;
 
     len = AddVoEVersion(versionPtr);
     if (len == -1)
@@ -933,25 +933,25 @@ int VoEBaseImpl::GetVersion(char version[1024])
     return 0;
 }
 
-WebRtc_Word32 VoEBaseImpl::AddBuildInfo(char* str) const
+int32_t VoEBaseImpl::AddBuildInfo(char* str) const
 {
     return sprintf(str, "Build: svn:%s %s\n", WEBRTC_SVNREVISION, BUILDINFO);
 }
 
-WebRtc_Word32 VoEBaseImpl::AddVoEVersion(char* str) const
+int32_t VoEBaseImpl::AddVoEVersion(char* str) const
 {
     return sprintf(str, "VoiceEngine 4.1.0\n");
 }
 
 #ifdef WEBRTC_EXTERNAL_TRANSPORT
-WebRtc_Word32 VoEBaseImpl::AddExternalTransportBuild(char* str) const
+int32_t VoEBaseImpl::AddExternalTransportBuild(char* str) const
 {
     return sprintf(str, "External transport build\n");
 }
 #endif
 
 #ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
-WebRtc_Word32 VoEBaseImpl::AddExternalRecAndPlayoutBuild(char* str) const
+int32_t VoEBaseImpl::AddExternalRecAndPlayoutBuild(char* str) const
 {
     return sprintf(str, "External recording and playout build\n");
 }
@@ -1046,7 +1046,7 @@ int VoEBaseImpl::GetOnHoldStatus(int channel, bool& enabled, OnHoldModes& mode)
     return channelPtr->GetOnHoldStatus(enabled, mode);
 }
 
-WebRtc_Word32 VoEBaseImpl::StartPlayout()
+int32_t VoEBaseImpl::StartPlayout()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoEBaseImpl::StartPlayout()");
@@ -1074,19 +1074,19 @@ WebRtc_Word32 VoEBaseImpl::StartPlayout()
     return 0;
 }
 
-WebRtc_Word32 VoEBaseImpl::StopPlayout()
+int32_t VoEBaseImpl::StopPlayout()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoEBaseImpl::StopPlayout()");
 
-    WebRtc_Word32 numOfChannels = _shared->channel_manager().NumOfChannels();
+    int32_t numOfChannels = _shared->channel_manager().NumOfChannels();
     if (numOfChannels <= 0)
     {
         return 0;
     }
 
-    WebRtc_UWord16 nChannelsPlaying(0);
-    WebRtc_Word32* channelsArray = new WebRtc_Word32[numOfChannels];
+    uint16_t nChannelsPlaying(0);
+    int32_t* channelsArray = new int32_t[numOfChannels];
 
     // Get number of playing channels
     _shared->channel_manager().GetChannelIds(channelsArray, numOfChannels);
@@ -1117,7 +1117,7 @@ WebRtc_Word32 VoEBaseImpl::StopPlayout()
     return 0;
 }
 
-WebRtc_Word32 VoEBaseImpl::StartSend()
+int32_t VoEBaseImpl::StartSend()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoEBaseImpl::StartSend()");
@@ -1146,7 +1146,7 @@ WebRtc_Word32 VoEBaseImpl::StartSend()
     return 0;
 }
 
-WebRtc_Word32 VoEBaseImpl::StopSend()
+int32_t VoEBaseImpl::StopSend()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoEBaseImpl::StopSend()");
@@ -1167,16 +1167,16 @@ WebRtc_Word32 VoEBaseImpl::StopSend()
     return 0;
 }
 
-WebRtc_Word32 VoEBaseImpl::TerminateInternal()
+int32_t VoEBaseImpl::TerminateInternal()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "VoEBaseImpl::TerminateInternal()");
 
     // Delete any remaining channel objects
-    WebRtc_Word32 numOfChannels = _shared->channel_manager().NumOfChannels();
+    int32_t numOfChannels = _shared->channel_manager().NumOfChannels();
     if (numOfChannels > 0)
     {
-        WebRtc_Word32* channelsArray = new WebRtc_Word32[numOfChannels];
+        int32_t* channelsArray = new int32_t[numOfChannels];
         _shared->channel_manager().GetChannelIds(channelsArray, numOfChannels);
         for (int i = 0; i < numOfChannels; i++)
         {

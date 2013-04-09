@@ -33,7 +33,7 @@ class SharedData
 {
 public:
     // Public accessors.
-    WebRtc_UWord32 instance_id() const { return _instanceId; }
+    uint32_t instance_id() const { return _instanceId; }
     Statistics& statistics() { return _engineStatistics; }
     ChannelManager& channel_manager() { return _channelManager; }
     AudioDeviceModule* audio_device() { return _audioDevicePtr; }
@@ -55,16 +55,16 @@ public:
       _audioDeviceLayer = layer;
     }
 
-    WebRtc_UWord16 NumOfSendingChannels();
+    uint16_t NumOfSendingChannels();
 
     // Convenience methods for calling statistics().SetLastError().
-    void SetLastError(const WebRtc_Word32 error) const;
-    void SetLastError(const WebRtc_Word32 error, const TraceLevel level) const;
-    void SetLastError(const WebRtc_Word32 error, const TraceLevel level,
+    void SetLastError(const int32_t error) const;
+    void SetLastError(const int32_t error, const TraceLevel level) const;
+    void SetLastError(const int32_t error, const TraceLevel level,
                       const char* msg) const;
 
 protected:
-    const WebRtc_UWord32 _instanceId;
+    const uint32_t _instanceId;
     CriticalSectionWrapper* _apiCritPtr;
     ChannelManager _channelManager;
     Statistics _engineStatistics;

@@ -2986,7 +2986,7 @@ int VoEExtendedTest::TestExternalMedia() {
   TEST_MUSTPASS(voe_base_->StartSend(0));
 
   int getLen = 0;
-  WebRtc_Word16 vector[32000];
+  int16_t vector[32000];
   memset(vector, 0, 32000 * sizeof(short));
 
 #ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT

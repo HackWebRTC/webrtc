@@ -28,8 +28,8 @@ public:
 
     // Called on "API thread(s)" from APIs like VoEBase::CreateChannel(),
     // VoEBase::StopSend(), VoEVolumeControl::GetSpeechOutputLevel().
-    WebRtc_Word8 Level() const;
-    WebRtc_Word16 LevelFullRange() const;
+    int8_t Level() const;
+    int16_t LevelFullRange() const;
     void Clear();
 
     // Called on a native capture audio thread (platform dependent) from the
@@ -42,10 +42,10 @@ private:
 
     CriticalSectionWrapper& _critSect;
 
-    WebRtc_Word16 _absMax;
-    WebRtc_Word16 _count;
-    WebRtc_Word8 _currentLevel;
-    WebRtc_Word16 _currentLevelFullRange;
+    int16_t _absMax;
+    int16_t _count;
+    int8_t _currentLevel;
+    int16_t _currentLevelFullRange;
 };
 
 }  // namespace voe

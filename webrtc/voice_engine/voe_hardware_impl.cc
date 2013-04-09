@@ -211,7 +211,7 @@ int VoEHardwareImpl::GetRecordingDeviceName(int index,
     // Note that strGuidUTF8 is allowed to be NULL
 
     // Init len variable to length of supplied vectors
-    const WebRtc_UWord16 strLen = 128;
+    const uint16_t strLen = 128;
 
     // Check if length has been changed in module
     assert(strLen == kAdmMaxDeviceNameSize);
@@ -269,7 +269,7 @@ int VoEHardwareImpl::GetPlayoutDeviceName(int index,
     // Note that strGuidUTF8 is allowed to be NULL
 
     // Init len variable to length of supplied vectors
-    const WebRtc_UWord16 strLen = 128;
+    const uint16_t strLen = 128;
 
     // Check if length has been changed in module
     assert(strLen == kAdmMaxDeviceNameSize);
@@ -361,9 +361,9 @@ int VoEHardwareImpl::SetRecordingDevice(int index,
     }
 
     // Map indices to unsigned since underlying functions need that
-    WebRtc_UWord16 indexU = static_cast<WebRtc_UWord16> (index);
+    uint16_t indexU = static_cast<uint16_t> (index);
 
-    WebRtc_Word32 res(0);
+    int32_t res(0);
 
     if (index == -1)
     {
@@ -470,9 +470,9 @@ int VoEHardwareImpl::SetPlayoutDevice(int index)
     // We let the module do the index sanity
 
     // Map indices to unsigned since underlying functions need that
-    WebRtc_UWord16 indexU = static_cast<WebRtc_UWord16> (index);
+    uint16_t indexU = static_cast<uint16_t> (index);
 
-    WebRtc_Word32 res(0);
+    int32_t res(0);
 
     if (index == -1)
     {
@@ -722,7 +722,7 @@ int VoEHardwareImpl::GetCPULoad(int& loadPercent)
     }
 
     // Get CPU load from ADM
-    WebRtc_UWord16 load(0);
+    uint16_t load(0);
     if (_shared->audio_device()->CPULoad(&load) != 0)
     {
         _shared->SetLastError(VE_CPU_INFO_ERROR, kTraceError,

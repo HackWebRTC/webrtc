@@ -186,7 +186,7 @@ public:
     MediaProcessImpl();
     virtual void Process(const int channel,
                          const ProcessingTypes type,
-                         WebRtc_Word16 audio_10ms[],
+                         int16_t audio_10ms[],
                          const int length,
                          const int samplingFreqHz,
                          const bool stereo);
@@ -198,7 +198,7 @@ MediaProcessImpl::MediaProcessImpl()
 
 void MediaProcessImpl::Process(const int channel,
                                const ProcessingTypes type,
-                               WebRtc_Word16 audio_10ms[],
+                               int16_t audio_10ms[],
                                const int length,
                                const int samplingFreqHz,
                                const bool stereo)

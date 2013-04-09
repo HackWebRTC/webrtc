@@ -22,7 +22,7 @@ namespace webrtc
 // methods. It is not the nicest solution, especially not since we already
 // have a counter in VoEBaseImpl. In other words, there is room for
 // improvement here.
-static WebRtc_Word32 gVoiceEngineInstanceCounter = 0;
+static int32_t gVoiceEngineInstanceCounter = 0;
 
 extern "C"
 {
@@ -87,11 +87,11 @@ int VoiceEngine::SetTraceFilter(const unsigned int filter)
                  "SetTraceFilter(filter=0x%x)", filter);
 
     // Remember old filter
-    WebRtc_UWord32 oldFilter = 0;
+    uint32_t oldFilter = 0;
     Trace::LevelFilter(oldFilter);
 
     // Set new filter
-    WebRtc_Word32 ret = Trace::SetLevelFilter(filter);
+    int32_t ret = Trace::SetLevelFilter(filter);
 
     // If previous log was ignored, log again after changing filter
     if (kTraceNone == oldFilter)
