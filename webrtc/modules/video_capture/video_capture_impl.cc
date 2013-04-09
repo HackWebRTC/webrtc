@@ -10,7 +10,6 @@
 
 #include "video_capture_impl.h"
 
-#include "clock.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "critical_section_wrapper.h"
 #include "module_common_types.h"
@@ -197,8 +196,7 @@ WebRtc_Word32 VideoCaptureImpl::DeliverCapturedFrame(I420VideoFrame&
       captureFrame.set_render_time_ms(capture_time);
   }
   else {
-      captureFrame.set_render_time_ms(
-          Clock::GetRealTimeClock()->CurrentNtpInMilliseconds());
+      captureFrame.set_render_time_ms(TickTime::MillisecondTimestamp());
   }
 
   if (captureFrame.render_time_ms() == last_capture_time_) {

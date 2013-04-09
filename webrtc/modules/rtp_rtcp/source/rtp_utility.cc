@@ -74,6 +74,14 @@ uint32_t ConvertNTPTimeToRTP(uint32_t NTPsec, uint32_t NTPfrac, uint32_t freq) {
   return NTPsec * freq + tmp;
 }
 
+uint32_t ConvertNTPTimeToMS(uint32_t NTPsec, uint32_t NTPfrac) {
+  int freq = 1000;
+  float ftemp = (float)NTPfrac / (float)NTP_FRAC;
+  uint32_t tmp = (uint32_t)(ftemp * freq);
+  uint32_t MStime = NTPsec * freq + tmp;
+  return MStime;
+}
+
 bool OldTimestamp(uint32_t newTimestamp,
                   uint32_t existingTimestamp,
                   bool* wrapped) {

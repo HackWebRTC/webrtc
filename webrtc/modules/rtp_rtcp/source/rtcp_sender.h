@@ -72,6 +72,8 @@ public:
 
     int32_t SetRemoteSSRC( const uint32_t ssrc);
 
+    int32_t SetCameraDelay(const int32_t delayMS);
+
     int32_t CNAME(char cName[RTCP_CNAME_SIZE]);
     int32_t SetCNAME(const char cName[RTCP_CNAME_SIZE]);
 
@@ -195,9 +197,6 @@ private:
                       const uint16_t* nackList,
                           std::string* nackString);
 
-    bool RtpTimestampNow(uint32_t ntp_secs_now, uint32_t ntp_fracs_now,
-                         uint32_t* timestamp_now) const;
-
 private:
     int32_t            _id;
     const bool               _audio;
@@ -229,6 +228,8 @@ private:
 
     std::map<uint32_t, RTCPReportBlock*> _reportBlocks;
     std::map<uint32_t, RTCPUtility::RTCPCnameInformation*> _csrcCNAMEs;
+
+    int32_t         _cameraDelayMS;
 
     // Sent
     uint32_t        _lastSendReport[RTCP_NUMBER_OF_SR];  // allow packet loss and RTT above 1 sec

@@ -34,14 +34,8 @@ class Clock {
   // source is fixed for this clock.
   virtual int64_t TimeInMicroseconds() = 0;
 
-  // Retrieve an NTP absolute timestamp in seconds and fractions of a second.
+  // Retrieve an NTP absolute timestamp.
   virtual void CurrentNtp(uint32_t& seconds, uint32_t& fractions) = 0;
-
-  // Retrieve an NTP absolute timestamp in milliseconds.
-  virtual int64_t CurrentNtpInMilliseconds() = 0;
-
-  // Converts an NTP timestamp to a millisecond timestamp.
-  static int64_t NtpToMs(uint32_t seconds, uint32_t fractions);
 
   // Returns an instance of the real-time system clock implementation.
   static Clock* GetRealTimeClock();
@@ -61,11 +55,8 @@ class SimulatedClock : public Clock {
   // source is fixed for this clock.
   virtual int64_t TimeInMicroseconds();
 
-  // Retrieve an NTP absolute timestamp in milliseconds.
+  // Retrieve an NTP absolute timestamp.
   virtual void CurrentNtp(uint32_t& seconds, uint32_t& fractions);
-
-  // Converts an NTP timestamp to a millisecond timestamp.
-  virtual int64_t CurrentNtpInMilliseconds();
 
   // Advance the simulated clock with a given number of milliseconds or
   // microseconds.

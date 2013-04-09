@@ -609,7 +609,7 @@ void RTPSender::TimeToSendPacket(uint16_t sequence_number,
   WebRtcRTPHeader rtp_header;
   rtp_parser.Parse(rtp_header);
 
-  int64_t diff_ms = clock_->CurrentNtpInMilliseconds() - capture_time_ms;
+  int64_t diff_ms = clock_->TimeInMilliseconds() - capture_time_ms;
   if (UpdateTransmissionTimeOffset(data_buffer, length, rtp_header, diff_ms)) {
     // Update stored packet in case of receiving a re-transmission request.
     packet_history_->ReplaceRTPHeader(data_buffer,
@@ -645,9 +645,9 @@ int32_t RTPSender::SendToNetwork(
   // TODO(holmer): This should be changed all over Video Engine so that negative
   // time is consider invalid, while 0 is considered a valid time.
   if (capture_time_ms > 0) {
-    int64_t diff_ms = clock_->CurrentNtpInMilliseconds() - capture_time_ms;
+    int64_t time_now = clock_->TimeInMilliseconds();
     UpdateTransmissionTimeOffset(buffer, payload_length + rtp_header_length,
-                                 rtp_header, diff_ms);
+                                 rtp_header, time_now - capture_time_ms);
   }
   // Used for NACK and to spread out the transmission of packets.
   if (packet_history_->PutRTPPacket(buffer, rtp_header_length + payload_length,

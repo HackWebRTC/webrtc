@@ -70,6 +70,11 @@ namespace ModuleRTPUtility
                                  uint32_t NTPfrac,
                                  uint32_t freq);
 
+    // Return the time in milliseconds corresponding to the specified
+    // NTP timestamp.
+    uint32_t ConvertNTPTimeToMS(uint32_t NTPsec,
+                                uint32_t NTPfrac);
+
     uint32_t pow2(uint8_t exp);
 
     // Returns a pointer to the payload data given a packet.

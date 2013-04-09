@@ -880,6 +880,13 @@ class RtpRtcp : public Module {
     ***************************************************************************/
 
     /*
+    *   Set the estimated camera delay in MS
+    *
+    *   return -1 on failure else 0
+    */
+    virtual int32_t SetCameraDelay(const int32_t delayMS) = 0;
+
+    /*
     *   Set the target send bitrate
     */
     virtual void SetTargetSendBitrate(const uint32_t bitrate) = 0;

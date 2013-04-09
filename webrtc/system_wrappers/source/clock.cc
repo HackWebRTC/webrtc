@@ -23,14 +23,6 @@
 
 namespace webrtc {
 
-const double kNtpFracPerMs = 4.294967296E6;
-
-int64_t Clock::NtpToMs(uint32_t ntp_secs, uint32_t ntp_frac) {
-  const double ntp_frac_ms = static_cast<double>(ntp_frac) / kNtpFracPerMs;
-  return 1000 * static_cast<int64_t>(ntp_secs) +
-      static_cast<int64_t>(ntp_frac_ms + 0.5);
-}
-
 #if defined(_WIN32)
 
 struct reference_point {
@@ -136,42 +128,6 @@ class RealTimeClock : public Clock {
   virtual int64_t TimeInMicroseconds() {
     return TickTime::MicrosecondTimestamp();
   }
-
-  // Retrieve an NTP absolute timestamp in seconds and fractions of a second.
-  virtual void CurrentNtp(uint32_t& seconds, uint32_t& fractions) {
-    timeval tv = CurrentTimeVal();
-    double microseconds_in_seconds;
-    Adjust(tv, &seconds, &microseconds_in_seconds);
-    fractions = static_cast<uint32_t>(
-        microseconds_in_seconds * kMagicNtpFractionalUnit + 0.5);
-  }
-
-  // Retrieve an NTP absolute timestamp in milliseconds.
-  virtual int64_t CurrentNtpInMilliseconds() {
-    timeval tv = CurrentTimeVal();
-    uint32_t seconds;
-    double microseconds_in_seconds;
-    Adjust(tv, &seconds, &microseconds_in_seconds);
-    return 1000 * static_cast<int64_t>(seconds) +
-        static_cast<int64_t>(1000.0 * microseconds_in_seconds + 0.5);
-  }
-
- protected:
-  virtual timeval CurrentTimeVal() const = 0;
-
-  static void Adjust(const timeval& tv, uint32_t* adjusted_s,
-                     double* adjusted_us_in_s) {
-    *adjusted_s = tv.tv_sec + kNtpJan1970;
-    *adjusted_us_in_s = tv.tv_usec / 1e6;
-
-    if (*adjusted_us_in_s >= 1) {
-      *adjusted_us_in_s -= 1;
-      ++*adjusted_s;
-    } else if (*adjusted_us_in_s < -1) {
-      *adjusted_us_in_s += 1;
-      --*adjusted_s;
-    }
-  }
 };
 
 #if defined(_WIN32)
@@ -182,8 +138,8 @@ class WindowsRealTimeClock : public RealTimeClock {
 
   virtual ~WindowsRealTimeClock() {}
 
- protected:
-  timeval CurrentTimeVal() const {
+  // Retrieve an NTP absolute timestamp.
+  virtual void CurrentNtp(uint32_t& seconds, uint32_t& fractions) {
     const uint64_t FILETIME_1970 = 0x019db1ded53e8000;
 
     FILETIME StartTime;
@@ -191,20 +147,35 @@ class WindowsRealTimeClock : public RealTimeClock {
     struct timeval tv;
 
     // We can't use query performance counter since they can change depending on
-    // speed stepping.
+    // speed steping
     get_time(_helpTimer, StartTime);
 
     Time = (((uint64_t) StartTime.dwHighDateTime) << 32) +
            (uint64_t) StartTime.dwLowDateTime;
 
-    // Convert the hecto-nano second time to tv format.
+    // Convert the hecto-nano second time to tv format
     Time -= FILETIME_1970;
 
     tv.tv_sec = (uint32_t)(Time / (uint64_t)10000000);
     tv.tv_usec = (uint32_t)((Time % (uint64_t)10000000) / 10);
-    return tv;
+
+    double dtemp;
+
+    seconds = tv.tv_sec + kNtpJan1970;
+    dtemp = tv.tv_usec / 1e6;
+
+    if (dtemp >= 1) {
+      dtemp -= 1;
+      seconds++;
+    } else if (dtemp < -1) {
+      dtemp += 1;
+      seconds--;
+    }
+    dtemp *= kMagicNtpFractionalUnit;
+    fractions = (uint32_t)dtemp;
   }
 
+ private:
   WindowsHelpTimer* _helpTimer;
 };
 
@@ -215,14 +186,26 @@ class UnixRealTimeClock : public RealTimeClock {
 
   virtual ~UnixRealTimeClock() {}
 
- protected:
-  timeval CurrentTimeVal() const {
+  // Retrieve an NTP absolute timestamp.
+  virtual void CurrentNtp(uint32_t& seconds, uint32_t& fractions) {
+    double dtemp;
     struct timeval tv;
     struct timezone tz;
-    tz.tz_minuteswest = 0;
+    tz.tz_minuteswest  = 0;
     tz.tz_dsttime = 0;
     gettimeofday(&tv, &tz);
-    return tv;
+
+    seconds = tv.tv_sec + kNtpJan1970;
+    dtemp = tv.tv_usec / 1e6;
+    if (dtemp >= 1) {
+      dtemp -= 1;
+      seconds++;
+    } else if (dtemp < -1) {
+      dtemp += 1;
+      seconds--;
+    }
+    dtemp *= kMagicNtpFractionalUnit;
+    fractions = (uint32_t)dtemp;
   }
 };
 #endif
@@ -262,10 +245,6 @@ void SimulatedClock::CurrentNtp(uint32_t& seconds, uint32_t& fractions) {
   seconds = (TimeInMilliseconds() / 1000) + kNtpJan1970;
   fractions = (uint32_t)((TimeInMilliseconds() % 1000) *
       kMagicNtpFractionalUnit / 1000);
-}
-
-int64_t SimulatedClock::CurrentNtpInMilliseconds() {
-  return TimeInMilliseconds() + 1000 * static_cast<int64_t>(kNtpJan1970);
 }
 
 void SimulatedClock::AdvanceTimeMilliseconds(int64_t milliseconds) {

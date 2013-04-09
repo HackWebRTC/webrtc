@@ -19,7 +19,6 @@
       ],
       'sources': [
         'aligned_malloc_unittest.cc',
-        'clock_unittest.cc',
         'condition_variable_unittest.cc',
         'critical_section_unittest.cc',
         'event_tracer_unittest.cc',
