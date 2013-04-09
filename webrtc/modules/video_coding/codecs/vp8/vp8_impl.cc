@@ -225,12 +225,12 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   }
   config_->g_lag_in_frames = 0;  // 0- no frame lagging
 
-  // Determining number of threads based on the image size
-  if (codec_.width * codec_.height > 704 * 576 && number_of_cores > 1) {
-    // 2 threads when larger than 4CIF
-    config_->g_threads = 2;
+  if (codec_.width * codec_.height > 640 * 480 && number_of_cores >= 4) {
+    config_->g_threads = 4;  // 4 threads for qHD/HD.
+  } else if (codec_.width * codec_.height > 320 * 240 && number_of_cores >= 2) {
+    config_->g_threads = 2;  // 2 threads for HVGA/VGA.
   } else {
-    config_->g_threads = 1;
+    config_->g_threads = 1;  // 1 thread for QVGA.
   }
 
   // rate control settings
