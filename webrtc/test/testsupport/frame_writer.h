@@ -31,7 +31,7 @@ class FrameWriter {
 
   // Writes a frame of the configured frame length to the output file.
   // Returns true if the write was successful, false otherwise.
-  virtual bool WriteFrame(WebRtc_UWord8* frame_buffer) = 0;
+  virtual bool WriteFrame(uint8_t* frame_buffer) = 0;
 
   // Closes the output file if open. Essentially makes this class impossible
   // to use anymore. Will also be invoked by the destructor.
@@ -53,7 +53,7 @@ class FrameWriterImpl : public FrameWriter {
   FrameWriterImpl(std::string output_filename, size_t frame_length_in_bytes);
   virtual ~FrameWriterImpl();
   bool Init();
-  bool WriteFrame(WebRtc_UWord8* frame_buffer);
+  bool WriteFrame(uint8_t* frame_buffer);
   void Close();
   size_t FrameLength() { return frame_length_in_bytes_; }
 

@@ -46,10 +46,10 @@ class TrafficControlWindows
 {
  public:
     // Factory method. Constructor disabled.
-    static TrafficControlWindows* GetInstance(const WebRtc_Word32 id);
+    static TrafficControlWindows* GetInstance(const int32_t id);
     static void Release(TrafficControlWindows* gtc);
 
-    WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
+    int32_t ChangeUniqueId(const int32_t id);
 
     ULONG TcRegisterClient(ULONG TciVersion, HANDLE ClRegCtx,
                            PTCI_CLIENT_FUNC_LIST ClientHandlerList,
@@ -74,8 +74,8 @@ class TrafficControlWindows
     ULONG TcDeleteFlow(HANDLE FlowHandle);
     ULONG TcDeleteFilter(HANDLE FilterHandle);
 private:
-    TrafficControlWindows(const WebRtc_Word32 id);
-    WebRtc_Word32 _id;
+    TrafficControlWindows(const int32_t id);
+    int32_t _id;
     TCI_CLIENT_FUNC_LIST QoSFunctions;
 
     static TrafficControlWindows* instance;
@@ -93,7 +93,7 @@ private:
     filterAddFn tcAddFilter;
     filterDeleteFn tcDeleteFilter;
 
-    static WebRtc_UWord32 refCounter;
+    static uint32_t refCounter;
 };
 
 }  // namespace test

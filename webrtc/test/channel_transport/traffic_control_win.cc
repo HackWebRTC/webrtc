@@ -18,14 +18,14 @@ namespace webrtc {
 namespace test {
 
 TrafficControlWindows* TrafficControlWindows::instance = NULL;
-WebRtc_UWord32 TrafficControlWindows::refCounter = 0;
+uint32_t TrafficControlWindows::refCounter = 0;
 
-TrafficControlWindows::TrafficControlWindows(const WebRtc_Word32 id) : _id(id)
+TrafficControlWindows::TrafficControlWindows(const int32_t id) : _id(id)
 {
 }
 
 TrafficControlWindows* TrafficControlWindows::GetInstance(
-    const WebRtc_Word32 id)
+    const int32_t id)
 {
     if(instance != NULL)
     {
@@ -165,7 +165,7 @@ void TrafficControlWindows::Release(TrafficControlWindows* gtc)
         instance = NULL;
     }
 }
-WebRtc_Word32 TrafficControlWindows::ChangeUniqueId(const WebRtc_Word32 id)
+int32_t TrafficControlWindows::ChangeUniqueId(const int32_t id)
 {
     _id = id;
     return 0;

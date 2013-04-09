@@ -39,48 +39,47 @@ struct PerIoContext;
 class UdpSocket2Windows : public UdpSocketWrapper
 {
 public:
-    UdpSocket2Windows(const WebRtc_Word32 id, UdpSocketManager* mgr,
+    UdpSocket2Windows(const int32_t id, UdpSocketManager* mgr,
                       bool ipV6Enable = false, bool disableGQOS = false);
     virtual ~UdpSocket2Windows();
 
-    virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
+    virtual int32_t ChangeUniqueId(const int32_t id);
 
     virtual bool ValidHandle();
 
     virtual bool SetCallback(CallbackObj, IncomingSocketCallback);
 
     virtual bool Bind(const SocketAddress& name);
-    virtual bool SetSockopt(WebRtc_Word32 level, WebRtc_Word32 optname,
-                            const WebRtc_Word8* optval, WebRtc_Word32 optlen);
+    virtual bool SetSockopt(int32_t level, int32_t optname,
+                            const int8_t* optval, int32_t optlen);
 
-    virtual bool StartReceiving(const WebRtc_UWord32 receiveBuffers);
+    virtual bool StartReceiving(const uint32_t receiveBuffers);
     virtual inline bool StartReceiving() {return StartReceiving(8);}
     virtual bool StopReceiving();
 
-    virtual WebRtc_Word32 SendTo(const WebRtc_Word8* buf, WebRtc_Word32 len,
-                                 const SocketAddress& to);
+    virtual int32_t SendTo(const int8_t* buf, int32_t len,
+                           const SocketAddress& to);
 
     virtual void CloseBlocking();
 
     virtual SOCKET GetFd() { return _socket;}
-    virtual bool SetQos(WebRtc_Word32 serviceType, WebRtc_Word32 tokenRate,
-                        WebRtc_Word32 bucketSize, WebRtc_Word32 peekBandwith,
-                        WebRtc_Word32 minPolicedSize, WebRtc_Word32 maxSduSize,
+    virtual bool SetQos(int32_t serviceType, int32_t tokenRate,
+                        int32_t bucketSize, int32_t peekBandwith,
+                        int32_t minPolicedSize, int32_t maxSduSize,
                         const SocketAddress &stRemName,
-                        WebRtc_Word32 overrideDSCP = 0);
+                        int32_t overrideDSCP = 0);
 
-    virtual WebRtc_Word32 SetTOS(const WebRtc_Word32 serviceType);
-    virtual WebRtc_Word32 SetPCP(const WebRtc_Word32 pcp);
+    virtual int32_t SetTOS(const int32_t serviceType);
+    virtual int32_t SetPCP(const int32_t pcp);
 
-    virtual WebRtc_UWord32 ReceiveBuffers(){return _receiveBuffers.Value();}
+    virtual uint32_t ReceiveBuffers(){return _receiveBuffers.Value();}
 
 protected:
-    void IOCompleted(PerIoContext* pIOContext, WebRtc_UWord32 ioSize,
-                     WebRtc_UWord32 error);
+    void IOCompleted(PerIoContext* pIOContext, uint32_t ioSize, uint32_t error);
 
-    WebRtc_Word32 PostRecv();
+    int32_t PostRecv();
     // Use pIoContext to post a new WSARecvFrom(..).
-    WebRtc_Word32 PostRecv(PerIoContext* pIoContext);
+    int32_t PostRecv(PerIoContext* pIoContext);
 
 private:
     friend class UdpSocket2WorkerWindows;
@@ -108,18 +107,18 @@ private:
     // If dscp is 0 and pcp is 0-7 (1), (2) and (3) will be created.
     // Note: input parameter values are assumed to be in valid range, checks
     // must be done by caller.
-    WebRtc_Word32 SetTrafficControl(WebRtc_Word32 dscp, WebRtc_Word32 pcp,
-                                    const struct sockaddr_in* name,
-                                    FLOWSPEC* send = NULL,
-                                    FLOWSPEC* recv = NULL);
-    WebRtc_Word32 CreateFlowSpec(WebRtc_Word32 serviceType,
-                                 WebRtc_Word32 tokenRate,
-                                 WebRtc_Word32 bucketSize,
-                                 WebRtc_Word32 peekBandwith,
-                                 WebRtc_Word32 minPolicedSize,
-                                 WebRtc_Word32 maxSduSize, FLOWSPEC *f);
+    int32_t SetTrafficControl(int32_t dscp, int32_t pcp,
+                              const struct sockaddr_in* name,
+                              FLOWSPEC* send = NULL,
+                              FLOWSPEC* recv = NULL);
+    int32_t CreateFlowSpec(int32_t serviceType,
+                           int32_t tokenRate,
+                           int32_t bucketSize,
+                           int32_t peekBandwith,
+                           int32_t minPolicedSize,
+                           int32_t maxSduSize, FLOWSPEC *f);
 
-    WebRtc_Word32 _id;
+    int32_t _id;
     RWLockWrapper* _ptrCbRWLock;
     IncomingSocketCallback _incomingCb;
     CallbackObj _obj;
@@ -127,7 +126,7 @@ private:
 
     SocketAddress _remoteAddr;
     SOCKET _socket;
-    WebRtc_Word32 _iProtocol;
+    int32_t _iProtocol;
     UdpSocket2ManagerWindows* _mgr;
 
     CriticalSectionWrapper* _pCrit;

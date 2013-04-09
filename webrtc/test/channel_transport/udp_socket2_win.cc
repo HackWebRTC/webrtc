@@ -39,7 +39,7 @@ typedef const QOS_DESTADDR* LPCQOS_DESTADDR;
 #define QOS_GENERAL_ID_BASE 2000
 #define QOS_OBJECT_DESTADDR (0x00000004 + QOS_GENERAL_ID_BASE)
 
-UdpSocket2Windows::UdpSocket2Windows(const WebRtc_Word32 id,
+UdpSocket2Windows::UdpSocket2Windows(const int32_t id,
                                      UdpSocketManager* mgr, bool ipV6Enable,
                                      bool disableGQOS)
     : _id(id),
@@ -85,7 +85,7 @@ UdpSocket2Windows::UdpSocket2Windows(const WebRtc_Word32 id,
         DWORD dwBufLen = 0;
         // Set dwBufLen to the size needed to retreive all the requested
         // information from WSAEnumProtocols.
-        WebRtc_Word32 nRet = WSAEnumProtocols(NULL, lpProtocolBuf, &dwBufLen);
+        int32_t nRet = WSAEnumProtocols(NULL, lpProtocolBuf, &dwBufLen);
         lpProtocolBuf = (WSAPROTOCOL_INFO*)malloc(dwBufLen);
         nRet = WSAEnumProtocols(NULL, lpProtocolBuf, &dwBufLen);
 
@@ -96,7 +96,7 @@ UdpSocket2Windows::UdpSocket2Windows(const WebRtc_Word32 id,
             _iProtocol=AF_INET;
         }
 
-        for (WebRtc_Word32 i=0; i<nRet; i++)
+        for (int32_t i=0; i<nRet; i++)
         {
             if (_iProtocol == lpProtocolBuf[i].iAddressFamily &&
                 IPPROTO_UDP == lpProtocolBuf[i].iProtocol)
@@ -164,9 +164,9 @@ UdpSocket2Windows::UdpSocket2Windows(const WebRtc_Word32 id,
 
     // Disable send buffering on the socket to improve CPU usage.
     // This is done by setting SO_SNDBUF to 0.
-    WebRtc_Word32 nZero = 0;
-    WebRtc_Word32 nRet = setsockopt(_socket, SOL_SOCKET, SO_SNDBUF,
-                                    (char*)&nZero, sizeof(nZero));
+    int32_t nZero = 0;
+    int32_t nRet = setsockopt(_socket, SOL_SOCKET, SO_SNDBUF,
+                              (char*)&nZero, sizeof(nZero));
     if( nRet == SOCKET_ERROR )
     {
         WEBRTC_TRACE(
@@ -215,7 +215,7 @@ UdpSocket2Windows::~UdpSocket2Windows()
     }
 }
 
-WebRtc_Word32 UdpSocket2Windows::ChangeUniqueId(const WebRtc_Word32 id)
+int32_t UdpSocket2Windows::ChangeUniqueId(const int32_t id)
 {
     _id = id;
     if (_gtc)
@@ -238,12 +238,12 @@ bool UdpSocket2Windows::SetCallback(CallbackObj obj, IncomingSocketCallback cb)
     _ptrCbRWLock->ReleaseLockExclusive();
 
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                 "UdpSocket2Windows(%d)::SetCallback ",(WebRtc_Word32)this);
+                 "UdpSocket2Windows(%d)::SetCallback ",(int32_t)this);
     if(_addedToMgr)
     {
         WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
                      "UdpSocket2Windows(%d)::SetCallback alreadey added",
-                     (WebRtc_Word32) this);
+                     (int32_t) this);
         return false;
 
     }
@@ -252,20 +252,19 @@ bool UdpSocket2Windows::SetCallback(CallbackObj obj, IncomingSocketCallback cb)
         WEBRTC_TRACE(
             kTraceDebug, kTraceTransport, _id,
             "UdpSocket2Windows(%d)::SetCallback socket added to manager",
-            (WebRtc_Word32)this);
+            (int32_t)this);
         _addedToMgr = true;
         return true;
     }
 
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
                  "UdpSocket2Windows(%d)::SetCallback error adding me to mgr",
-                 (WebRtc_Word32) this);
+                 (int32_t) this);
     return false;
 }
 
-bool UdpSocket2Windows::SetSockopt(WebRtc_Word32 level, WebRtc_Word32 optname,
-                                   const WebRtc_Word8* optval,
-                                   WebRtc_Word32 optlen)
+bool UdpSocket2Windows::SetSockopt(int32_t level, int32_t optname,
+                                   const int8_t* optval, int32_t optlen)
 {
     bool returnValue = true;
     if(!AquireSocket())
@@ -284,21 +283,21 @@ bool UdpSocket2Windows::SetSockopt(WebRtc_Word32 level, WebRtc_Word32 optname,
     return returnValue;
 }
 
-bool UdpSocket2Windows::StartReceiving(WebRtc_UWord32 receiveBuffers)
+bool UdpSocket2Windows::StartReceiving(uint32_t receiveBuffers)
 {
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                 "UdpSocket2Windows(%d)::StartReceiving(%d)",
-                 (WebRtc_Word32)this, receiveBuffers);
+                 "UdpSocket2Windows(%d)::StartReceiving(%d)", (int32_t)this,
+                 receiveBuffers);
 
     _wantsIncoming = true;
 
-    WebRtc_Word32 numberOfReceiveBuffersToCreate =
+    int32_t numberOfReceiveBuffersToCreate =
         receiveBuffers - _receiveBuffers.Value();
     numberOfReceiveBuffersToCreate = (numberOfReceiveBuffersToCreate < 0) ?
         0 : numberOfReceiveBuffersToCreate;
 
-    WebRtc_Word32 error = 0;
-    for(WebRtc_Word32 i = 0;
+    int32_t error = 0;
+    for(int32_t i = 0;
         i < numberOfReceiveBuffersToCreate;
         i++)
     {
@@ -350,17 +349,16 @@ bool UdpSocket2Windows::Bind(const SocketAddress& name)
     return returnValue;
 }
 
-WebRtc_Word32 UdpSocket2Windows::SendTo(const WebRtc_Word8* buf,
-                                        WebRtc_Word32 len,
-                                        const SocketAddress& to)
+int32_t UdpSocket2Windows::SendTo(const int8_t* buf, int32_t len,
+                                  const SocketAddress& to)
 {
-    WebRtc_Word32 retVal = 0;
-    WebRtc_Word32 error = 0;
+    int32_t retVal = 0;
+    int32_t error = 0;
     if(len < 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
                      "UdpSocket2Windows(%d)::SendTo(), len= %d < 0",
-                     (WebRtc_Word32)this, len);
+                     (int32_t)this, len);
         return -1;
     }
 
@@ -369,19 +367,19 @@ WebRtc_Word32 UdpSocket2Windows::SendTo(const WebRtc_Word8* buf,
     {
         WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
                      "UdpSocket2Windows(%d)::SendTo(), pIoContext==0",
-                     (WebRtc_Word32) this);
+                     (int32_t) this);
         return -1;
     }
     // sizeof(pIoContext->buffer) is smaller than the highest number that
-    // can be represented by a WebRtc_Word32.
-    if(len >= (WebRtc_Word32) sizeof(pIoContext->buffer))
+    // can be represented by a int32_t.
+    if(len >= (int32_t) sizeof(pIoContext->buffer))
     {
         WEBRTC_TRACE(
             kTraceError,
             kTraceTransport,
             _id,
             "UdpSocket2Windows(%d)::SendTo(), len= %d > buffer_size = %d",
-            (WebRtc_Word32) this,
+            (int32_t) this,
             len,sizeof(pIoContext->buffer));
         len = sizeof(pIoContext->buffer);
     }
@@ -435,7 +433,7 @@ WebRtc_Word32 UdpSocket2Windows::SendTo(const WebRtc_Word8* buf,
             kTraceTransport,
             _id,
             "UdpSocket2Windows(%d)::SendTo(), error:%d pushing ioContext",
-            (WebRtc_Word32)this, error);
+            (int32_t)this, error);
     }
 
     // Roll back.
@@ -444,7 +442,7 @@ WebRtc_Word32 UdpSocket2Windows::SendTo(const WebRtc_Word8* buf,
 }
 
 void UdpSocket2Windows::IOCompleted(PerIoContext* pIOContext,
-                                    WebRtc_UWord32 ioSize, WebRtc_UWord32 error)
+                                    uint32_t ioSize, uint32_t error)
 {
     if(pIOContext == NULL || error == ERROR_OPERATION_ABORTED)
     {
@@ -477,10 +475,10 @@ void UdpSocket2Windows::IOCompleted(PerIoContext* pIOContext,
                     kTraceTransport,
                     _id,
                     "UdpSocket2Windows::IOCompleted(%d,%d,%d), %d",
-                    (WebRtc_Word32)pIOContext,
+                    (int32_t)pIOContext,
                     ioSize,
                     error,
-                    pIOContext ? (WebRtc_Word32)pIOContext->ioOperation : -1);
+                    pIOContext ? (int32_t)pIOContext->ioOperation : -1);
             } else {
                 WEBRTC_TRACE(
                     kTraceDebug,
@@ -490,12 +488,12 @@ void UdpSocket2Windows::IOCompleted(PerIoContext* pIOContext,
             }
             if(pIOContext)
             {
-                WebRtc_Word32 remainingReceiveBuffers = --_receiveBuffers;
+                int32_t remainingReceiveBuffers = --_receiveBuffers;
                 if(remainingReceiveBuffers < 0)
                 {
                     assert(false);
                 }
-                WebRtc_Word32 err = 0;
+                int32_t err = 0;
                 if((err = _mgr->PushIoContext(pIOContext)))
                 {
                     WEBRTC_TRACE(
@@ -524,14 +522,14 @@ void UdpSocket2Windows::IOCompleted(PerIoContext* pIOContext,
             if(_wantsIncoming && _incomingCb)
             {
                 _incomingCb(_obj,
-                            reinterpret_cast<const WebRtc_Word8*>(
+                            reinterpret_cast<const int8_t*>(
                                 pIOContext->wsabuf.buf),
                             ioSize,
                             &pIOContext->from);
             }
             _ptrCbRWLock->ReleaseLockShared();
         }
-        WebRtc_Word32 err = PostRecv(pIOContext);
+        int32_t err = PostRecv(pIOContext);
         if(err == 0)
         {
             // The PerIoContext was posted by a thread controlled by the socket
@@ -551,14 +549,14 @@ void UdpSocket2Windows::IOCompleted(PerIoContext* pIOContext,
     // may be deleted at this point.
 }
 
-WebRtc_Word32 UdpSocket2Windows::PostRecv()
+int32_t UdpSocket2Windows::PostRecv()
 {
     PerIoContext* pIoContext=_mgr->PopIoContext();
     if(pIoContext == 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
                      "UdpSocket2Windows(%d)::PostRecv(), pIoContext == 0",
-                     (WebRtc_Word32)this);
+                     (int32_t)this);
         return -1;
     }
     // This function may have been called by thread not controlled by the socket
@@ -567,13 +565,13 @@ WebRtc_Word32 UdpSocket2Windows::PostRecv()
     return PostRecv(pIoContext);
 }
 
-WebRtc_Word32 UdpSocket2Windows::PostRecv(PerIoContext* pIoContext)
+int32_t UdpSocket2Windows::PostRecv(PerIoContext* pIoContext)
 {
     if(pIoContext==0)
     {
         WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
                      "UdpSocket2Windows(%d)::PostRecv(?), pIoContext==0",
-                     (WebRtc_Word32)this);
+                     (int32_t)this);
         return -1;
     }
 
@@ -583,9 +581,9 @@ WebRtc_Word32 UdpSocket2Windows::PostRecv(PerIoContext* pIoContext)
     pIoContext->wsabuf.len = sizeof(pIoContext->buffer);
     pIoContext->fromLen = sizeof(SocketAddress);
     pIoContext->ioOperation = OP_READ;
-    WebRtc_Word32 rxError = 0;
-    WebRtc_Word32 nRet = 0;
-    WebRtc_Word32 postingSucessfull = false;
+    int32_t rxError = 0;
+    int32_t nRet = 0;
+    int32_t postingSucessfull = false;
 
     if(!AquireSocket())
     {
@@ -601,7 +599,7 @@ WebRtc_Word32 UdpSocket2Windows::PostRecv(PerIoContext* pIoContext)
         ReleaseSocket();
         return -1;
     }
-    for(WebRtc_Word32 tries = 0; tries < 10; tries++)
+    for(int32_t tries = 0; tries < 10; tries++)
     {
         nRet = WSARecvFrom(
             _socket,
@@ -625,7 +623,7 @@ WebRtc_Word32 UdpSocket2Windows::PostRecv(PerIoContext* pIoContext)
                     _id,
                     "UdpSocket2Windows(%d)::PostRecv(?), WSAerror:%d when\
  posting new recieve,trie:%d",
-                    (WebRtc_Word32)this,
+                    (int32_t)this,
                     rxError,
                     tries);
                 // Tell the OS that this is a good place to context switch if
@@ -645,12 +643,12 @@ WebRtc_Word32 UdpSocket2Windows::PostRecv(PerIoContext* pIoContext)
     {
         return 0;
     }
-    WebRtc_Word32 remainingReceiveBuffers = --_receiveBuffers;
+    int32_t remainingReceiveBuffers = --_receiveBuffers;
     if(remainingReceiveBuffers < 0)
     {
         assert(false);
     }
-    WebRtc_Word32 error = 0;
+    int32_t error = 0;
     if((error = _mgr->PushIoContext(pIoContext)))
     {
         WEBRTC_TRACE(
@@ -658,7 +656,7 @@ WebRtc_Word32 UdpSocket2Windows::PostRecv(PerIoContext* pIoContext)
             kTraceTransport,
             _id,
             "UdpSocket2Windows(%d)::PostRecv(?), error:%d when PushIoContext",
-            (WebRtc_Word32)this,
+            (int32_t)this,
             error);
     }
     // Roll back.
@@ -688,14 +686,14 @@ void UdpSocket2Windows::CloseBlocking()
     delete this;
 }
 
-bool UdpSocket2Windows::SetQos(WebRtc_Word32 serviceType,
-                               WebRtc_Word32 tokenRate,
-                               WebRtc_Word32 bucketSize,
-                               WebRtc_Word32 peekBandwith,
-                               WebRtc_Word32 minPolicedSize,
-                               WebRtc_Word32 maxSduSize,
+bool UdpSocket2Windows::SetQos(int32_t serviceType,
+                               int32_t tokenRate,
+                               int32_t bucketSize,
+                               int32_t peekBandwith,
+                               int32_t minPolicedSize,
+                               int32_t maxSduSize,
                                const SocketAddress &stRemName,
-                               WebRtc_Word32 overrideDSCP)
+                               int32_t overrideDSCP)
 {
     if(_qos == false)
     {
@@ -706,9 +704,9 @@ bool UdpSocket2Windows::SetQos(WebRtc_Word32 serviceType,
     if(overrideDSCP != 0)
     {
         FLOWSPEC f;
-        WebRtc_Word32 err = CreateFlowSpec(serviceType, tokenRate, bucketSize,
-                                           peekBandwith, minPolicedSize,
-                                           maxSduSize, &f);
+        int32_t err = CreateFlowSpec(serviceType, tokenRate, bucketSize,
+                                     peekBandwith, minPolicedSize,
+                                     maxSduSize, &f);
         if(err == -1)
         {
             return false;
@@ -761,7 +759,7 @@ bool UdpSocket2Windows::SetQos(WebRtc_Word32 serviceType,
 
     Qos.ProviderSpecific.buf = NULL;
 
-    ZeroMemory((WebRtc_Word8 *)&QosDestaddr, sizeof(QosDestaddr));
+    ZeroMemory((int8_t *)&QosDestaddr, sizeof(QosDestaddr));
 
     OSVERSIONINFOEX osvie;
     osvie.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
@@ -809,7 +807,7 @@ bool UdpSocket2Windows::SetQos(WebRtc_Word32 serviceType,
     }
     // To set QoS with SIO_SET_QOS the socket must be locally bound first
     // or the call will fail with error code 10022.
-    WebRtc_Word32 result = WSAIoctl(GetFd(), SIO_SET_QOS, &Qos, sizeof(QOS),
+    int32_t result = WSAIoctl(GetFd(), SIO_SET_QOS, &Qos, sizeof(QOS),
                                     NULL, 0, &BytesRet, NULL,NULL);
     ReleaseSocket();
     if (result == SOCKET_ERROR)
@@ -822,7 +820,7 @@ bool UdpSocket2Windows::SetQos(WebRtc_Word32 serviceType,
     return true;
 }
 
-WebRtc_Word32 UdpSocket2Windows::SetTOS(WebRtc_Word32 serviceType)
+int32_t UdpSocket2Windows::SetTOS(int32_t serviceType)
 {
     SocketAddress socketName;
 
@@ -835,7 +833,7 @@ WebRtc_Word32 UdpSocket2Windows::SetTOS(WebRtc_Word32 serviceType)
         ReleaseSocket();
     }
 
-    WebRtc_Word32 res = SetTrafficControl(serviceType, -1, name);
+    int32_t res = SetTrafficControl(serviceType, -1, name);
     if (res == -1)
     {
         OSVERSIONINFO OsVersion;
@@ -845,7 +843,7 @@ WebRtc_Word32 UdpSocket2Windows::SetTOS(WebRtc_Word32 serviceType)
         if ((OsVersion.dwMajorVersion == 4)) // NT 4.0
         {
             if(SetSockopt(IPPROTO_IP,IP_TOS ,
-                          (WebRtc_Word8*)&serviceType, 4) != 0)
+                          (int8_t*)&serviceType, 4) != 0)
             {
                 return -1;
             }
@@ -854,7 +852,7 @@ WebRtc_Word32 UdpSocket2Windows::SetTOS(WebRtc_Word32 serviceType)
     return res;
 }
 
-WebRtc_Word32 UdpSocket2Windows::SetPCP(WebRtc_Word32 pcp)
+int32_t UdpSocket2Windows::SetPCP(int32_t pcp)
 {
     SocketAddress socketName;
     struct sockaddr_in* name =
@@ -868,9 +866,9 @@ WebRtc_Word32 UdpSocket2Windows::SetPCP(WebRtc_Word32 pcp)
     return SetTrafficControl(-1, pcp, name);
 }
 
-WebRtc_Word32 UdpSocket2Windows::SetTrafficControl(
-    WebRtc_Word32 dscp,
-    WebRtc_Word32 pcp,
+int32_t UdpSocket2Windows::SetTrafficControl(
+    int32_t dscp,
+    int32_t pcp,
     const struct sockaddr_in* name,
     FLOWSPEC* send, FLOWSPEC* recv)
 {
@@ -988,9 +986,9 @@ WebRtc_Word32 UdpSocket2Windows::SetTrafficControl(
     // Find the interface corresponding to the local address.
     for(oneinterface = pInterfaceBuffer;
         oneinterface != (PTC_IFC_DESCRIPTOR)
-            (((WebRtc_Word8*)pInterfaceBuffer) + BufferSize);
+            (((int8_t*)pInterfaceBuffer) + BufferSize);
         oneinterface = (PTC_IFC_DESCRIPTOR)
-            ((WebRtc_Word8 *)oneinterface + oneinterface->Length))
+            ((int8_t *)oneinterface + oneinterface->Length))
     {
 
         char interfaceName[500];
@@ -1201,8 +1199,8 @@ WebRtc_Word32 UdpSocket2Windows::SetTrafficControl(
 
     IP_PATTERN filterPattern, mask;
 
-    ZeroMemory((WebRtc_Word8*)&filterPattern, sizeof(IP_PATTERN));
-    ZeroMemory((WebRtc_Word8*)&mask, sizeof(IP_PATTERN));
+    ZeroMemory((int8_t*)&filterPattern, sizeof(IP_PATTERN));
+    ZeroMemory((int8_t*)&mask, sizeof(IP_PATTERN));
 
     filterPattern.ProtocolId = IPPROTO_UDP;
     // "name" fields already in network order.
@@ -1247,13 +1245,13 @@ WebRtc_Word32 UdpSocket2Windows::SetTrafficControl(
     return 0;
 }
 
-WebRtc_Word32 UdpSocket2Windows::CreateFlowSpec(WebRtc_Word32 serviceType,
-                                                WebRtc_Word32 tokenRate,
-                                                WebRtc_Word32 bucketSize,
-                                                WebRtc_Word32 peekBandwith,
-                                                WebRtc_Word32 minPolicedSize,
-                                                WebRtc_Word32 maxSduSize,
-                                                FLOWSPEC* f)
+int32_t UdpSocket2Windows::CreateFlowSpec(int32_t serviceType,
+                                          int32_t tokenRate,
+                                          int32_t bucketSize,
+                                          int32_t peekBandwith,
+                                          int32_t minPolicedSize,
+                                          int32_t maxSduSize,
+                                          FLOWSPEC* f)
 {
     if (!f)
     {
@@ -1380,7 +1378,7 @@ bool UdpSocket2Windows::InvalidateSocket()
     {
         WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
                      "UdpSocket2Windows(%d)::InvalidateSocket() WSAerror: %d",
-                     (WebRtc_Word32)this, WSAGetLastError());
+                     (int32_t)this, WSAGetLastError());
     }
     _socket = INVALID_SOCKET;
     _ptrSocketRWLock->ReleaseLockExclusive();

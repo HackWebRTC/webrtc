@@ -33,7 +33,7 @@ class FrameReader {
   // for the frame size.
   // Returns true if there are more frames to read, false if we've already
   // read the last frame (in the previous call).
-  virtual bool ReadFrame(WebRtc_UWord8* source_buffer) = 0;
+  virtual bool ReadFrame(uint8_t* source_buffer) = 0;
 
   // Closes the input file if open. Essentially makes this class impossible
   // to use anymore. Will also be invoked by the destructor.
@@ -55,7 +55,7 @@ class FrameReaderImpl : public FrameReader {
   FrameReaderImpl(std::string input_filename, size_t frame_length_in_bytes);
   virtual ~FrameReaderImpl();
   bool Init();
-  bool ReadFrame(WebRtc_UWord8* source_buffer);
+  bool ReadFrame(uint8_t* source_buffer);
   void Close();
   size_t FrameLength() { return frame_length_in_bytes_; }
   int NumberOfFrames() { return number_of_frames_; }

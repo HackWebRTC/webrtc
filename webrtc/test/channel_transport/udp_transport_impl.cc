@@ -68,7 +68,7 @@ namespace test {
 
 class SocketFactory : public UdpTransportImpl::SocketFactoryInterface {
  public:
-  UdpSocketWrapper* CreateSocket(const WebRtc_Word32 id,
+  UdpSocketWrapper* CreateSocket(const int32_t id,
                                  UdpSocketManager* mgr,
                                  CallbackObj obj,
                                  IncomingSocketCallback cb,
@@ -82,8 +82,8 @@ class SocketFactory : public UdpTransportImpl::SocketFactoryInterface {
 // Creates an UdpTransport using the definition of SocketFactory above,
 // and passes (creating if needed) a pointer to the static singleton
 // UdpSocketManager.
-UdpTransport* UdpTransport::Create(const WebRtc_Word32 id,
-                                   WebRtc_UWord8& numSocketThreads)
+UdpTransport* UdpTransport::Create(const int32_t id,
+                                   uint8_t& numSocketThreads)
 {
   return new UdpTransportImpl(id,
                               new SocketFactory(),
@@ -102,7 +102,7 @@ void UdpTransport::Destroy(UdpTransport* module)
     }
 }
 
-UdpTransportImpl::UdpTransportImpl(const WebRtc_Word32 id,
+UdpTransportImpl::UdpTransportImpl(const int32_t id,
                                    SocketFactoryInterface* maker,
                                    UdpSocketManager* socket_manager)
     : _id(id),
@@ -191,22 +191,22 @@ bool SameAddress(const SocketAddress& address1, const SocketAddress& address2)
 }
 
 void UdpTransportImpl::GetCachedAddress(char* ip,
-                                        WebRtc_UWord32& ipSize,
-                                        WebRtc_UWord16& sourcePort)
+                                        uint32_t& ipSize,
+                                        uint16_t& sourcePort)
 {
-    const WebRtc_UWord32 originalIPSize = ipSize;
+    const uint32_t originalIPSize = ipSize;
     // If the incoming string is too small, fill it as much as there is room
     // for. Make sure that there is room for the '\0' character.
     ipSize = (ipSize - 1 < _previousIPSize) ? ipSize - 1 : _previousIPSize;
-    memcpy(ip,_previousIP,sizeof(WebRtc_Word8)*(ipSize + 1));
+    memcpy(ip,_previousIP,sizeof(int8_t)*(ipSize + 1));
     ip[originalIPSize - 1] = '\0';
     sourcePort = _previousSourcePort;
 }
 
-WebRtc_Word32 UdpTransportImpl::IPAddressCached(const SocketAddress& address,
-                                                char* ip,
-                                                WebRtc_UWord32& ipSize,
-                                                WebRtc_UWord16& sourcePort)
+int32_t UdpTransportImpl::IPAddressCached(const SocketAddress& address,
+                                          char* ip,
+                                          uint32_t& ipSize,
+                                          uint16_t& sourcePort)
 {
     {
         ReadLockScoped rl(*_cachLock);
@@ -231,12 +231,12 @@ WebRtc_Word32 UdpTransportImpl::IPAddressCached(const SocketAddress& address,
     return 0;
 }
 
-WebRtc_Word32 UdpTransportImpl::InitializeReceiveSockets(
+int32_t UdpTransportImpl::InitializeReceiveSockets(
     UdpTransportData* const packetCallback,
-    const WebRtc_UWord16 portnr,
+    const uint16_t portnr,
     const char* ip,
     const char* multicastIpAddr,
-    const WebRtc_UWord16 rtcpPort)
+    const uint16_t rtcpPort)
 {
     {
         CriticalSectionScoped cs(_critPacketCallback);
@@ -359,10 +359,10 @@ WebRtc_Word32 UdpTransportImpl::InitializeReceiveSockets(
     return 0;
 }
 
-WebRtc_Word32 UdpTransportImpl::ReceiveSocketInformation(
+int32_t UdpTransportImpl::ReceiveSocketInformation(
     char ipAddr[kIpAddressVersion6Length],
-    WebRtc_UWord16& rtpPort,
-    WebRtc_UWord16& rtcpPort,
+    uint16_t& rtpPort,
+    uint16_t& rtcpPort,
     char multicastIpAddr[kIpAddressVersion6Length]) const
 {
     CriticalSectionScoped cs(_crit);
@@ -383,10 +383,10 @@ WebRtc_Word32 UdpTransportImpl::ReceiveSocketInformation(
     return 0;
 }
 
-WebRtc_Word32 UdpTransportImpl::SendSocketInformation(
+int32_t UdpTransportImpl::SendSocketInformation(
     char ipAddr[kIpAddressVersion6Length],
-    WebRtc_UWord16& rtpPort,
-    WebRtc_UWord16& rtcpPort) const
+    uint16_t& rtpPort,
+    uint16_t& rtcpPort) const
 {
     CriticalSectionScoped cs(_crit);
     rtpPort = _destPort;
@@ -397,10 +397,10 @@ WebRtc_Word32 UdpTransportImpl::SendSocketInformation(
     return 0;
 }
 
-WebRtc_Word32 UdpTransportImpl::RemoteSocketInformation(
+int32_t UdpTransportImpl::RemoteSocketInformation(
     char ipAddr[kIpAddressVersion6Length],
-    WebRtc_UWord16& rtpPort,
-    WebRtc_UWord16& rtcpPort) const
+    uint16_t& rtpPort,
+    uint16_t& rtcpPort) const
 {
     CriticalSectionScoped cs(_crit);
     rtpPort = _fromPort;
@@ -414,9 +414,9 @@ WebRtc_Word32 UdpTransportImpl::RemoteSocketInformation(
     return 0;
 }
 
-WebRtc_Word32 UdpTransportImpl::FilterPorts(
-    WebRtc_UWord16& rtpFilterPort,
-    WebRtc_UWord16& rtcpFilterPort) const
+int32_t UdpTransportImpl::FilterPorts(
+    uint16_t& rtpFilterPort,
+    uint16_t& rtcpFilterPort) const
 {
     CriticalSectionScoped cs(_critFilter);
     rtpFilterPort = _rtpFilterPort;
@@ -424,9 +424,9 @@ WebRtc_Word32 UdpTransportImpl::FilterPorts(
     return 0;
 }
 
-WebRtc_Word32 UdpTransportImpl::SetQoS(bool QoS, WebRtc_Word32 serviceType,
-                                       WebRtc_UWord32 maxBitrate,
-                                       WebRtc_Word32 overrideDSCP, bool audio)
+int32_t UdpTransportImpl::SetQoS(bool QoS, int32_t serviceType,
+                                 uint32_t maxBitrate,
+                                 int32_t overrideDSCP, bool audio)
 {
     if(QoS)
     {
@@ -437,9 +437,9 @@ WebRtc_Word32 UdpTransportImpl::SetQoS(bool QoS, WebRtc_Word32 serviceType,
     }
 }
 
-WebRtc_Word32 UdpTransportImpl::EnableQoS(WebRtc_Word32 serviceType,
-                                          bool audio, WebRtc_UWord32 maxBitrate,
-                                          WebRtc_Word32 overrideDSCP)
+int32_t UdpTransportImpl::EnableQoS(int32_t serviceType,
+                                    bool audio, uint32_t maxBitrate,
+                                    int32_t overrideDSCP)
 {
     if (_ipV6Enabled)
     {
@@ -524,10 +524,10 @@ WebRtc_Word32 UdpTransportImpl::EnableQoS(WebRtc_Word32 serviceType,
 
     // Minimum packet size in bytes for which the requested quality of service
     // will be provided. The smallest RTP header is 12 byte.
-    const WebRtc_Word32 min_policed_size = 12;
+    const int32_t min_policed_size = 12;
     // Max SDU, maximum packet size permitted or used in the traffic flow, in
     // bytes.
-    const WebRtc_Word32 max_sdu_size = 1500;
+    const int32_t max_sdu_size = 1500;
 
     // Enable QoS for RTP sockets.
     if(maxBitrate)
@@ -544,13 +544,13 @@ WebRtc_Word32 UdpTransportImpl::EnableQoS(WebRtc_Word32 serviceType,
                          "Enable QOS for audio with max bitrate:%d",
                          maxBitrate);
 
-            const WebRtc_Word32 token_rate = maxBitrate*125;
+            const int32_t token_rate = maxBitrate*125;
             // The largest audio packets are 60ms frames. This is a fraction
             // more than 16 packets/second. These 16 frames are sent, at max,
             // at a bitrate of maxBitrate*125 -> 1 frame is maxBitrate*125/16 ~
             // maxBitrate * 8.
-            const WebRtc_Word32 bucket_size = maxBitrate * 8;
-            const WebRtc_Word32 peek_bandwith =  maxBitrate * 125;
+            const int32_t bucket_size = maxBitrate * 8;
+            const int32_t peek_bandwith =  maxBitrate * 125;
             if (!rtpSock->SetQos(serviceType, token_rate, bucket_size,
                                  peek_bandwith, min_policed_size,
                                  max_sdu_size, _remoteRTPAddr, overrideDSCP))
@@ -568,14 +568,14 @@ WebRtc_Word32 UdpTransportImpl::EnableQoS(WebRtc_Word32 serviceType,
 
             // Allow for a token rate that is twice that of the maximum bitrate
             // (in bytes).
-            const WebRtc_Word32 token_rate = maxBitrate*250;
+            const int32_t token_rate = maxBitrate*250;
             // largest average frame size (key frame size). Assuming that a
             // keyframe is 25% of the bitrate during the second its sent
             // Assume that a key frame is 25% of the bitrate the second that it
             // is sent. The largest frame size is then maxBitrate* 125 * 0.25 ~
             // 31.
-            const WebRtc_Word32 bucket_size = maxBitrate*31;
-            const WebRtc_Word32 peek_bandwith = maxBitrate*125;
+            const int32_t bucket_size = maxBitrate*31;
+            const int32_t peek_bandwith = maxBitrate*125;
             if (!rtpSock->SetQos(serviceType, token_rate, bucket_size,
                                 peek_bandwith, min_policed_size, max_sdu_size,
                                 _remoteRTPAddr, overrideDSCP))
@@ -593,9 +593,9 @@ WebRtc_Word32 UdpTransportImpl::EnableQoS(WebRtc_Word32 serviceType,
                      "Enable QOS for audio with default max bitrate");
 
         // Let max bitrate be 240kbit/s.
-        const WebRtc_Word32 token_rate = 30000;
-        const WebRtc_Word32 bucket_size = 2000;
-        const WebRtc_Word32 peek_bandwith = 30000;
+        const int32_t token_rate = 30000;
+        const int32_t bucket_size = 2000;
+        const int32_t peek_bandwith = 30000;
         if (!rtpSock->SetQos(serviceType, token_rate, bucket_size,
                              peek_bandwith, min_policed_size, max_sdu_size,
                              _remoteRTPAddr, overrideDSCP))
@@ -612,9 +612,9 @@ WebRtc_Word32 UdpTransportImpl::EnableQoS(WebRtc_Word32 serviceType,
                      "Enable QOS for video with default max bitrate");
 
         // Let max bitrate be 10mbit/s.
-        const WebRtc_Word32 token_rate = 128000*10;
-        const WebRtc_Word32 bucket_size = 32000;
-        const WebRtc_Word32 peek_bandwith = 256000;
+        const int32_t token_rate = 128000*10;
+        const int32_t bucket_size = 32000;
+        const int32_t peek_bandwith = 256000;
         if (!rtpSock->SetQos(serviceType, token_rate, bucket_size,
                              peek_bandwith, min_policed_size, max_sdu_size,
                              _remoteRTPAddr, overrideDSCP))
@@ -630,9 +630,9 @@ WebRtc_Word32 UdpTransportImpl::EnableQoS(WebRtc_Word32 serviceType,
     // TODO (hellner): shouldn't RTCP be based on 5% of the maximum bandwidth?
     if(audio)
     {
-        const WebRtc_Word32 token_rate = 200;
-        const WebRtc_Word32 bucket_size = 200;
-        const WebRtc_Word32 peek_bandwith = 400;
+        const int32_t token_rate = 200;
+        const int32_t bucket_size = 200;
+        const int32_t peek_bandwith = 400;
         if (!rtcpSock->SetQos(serviceType, token_rate, bucket_size,
                               peek_bandwith, min_policed_size, max_sdu_size,
                               _remoteRTCPAddr, overrideDSCP))
@@ -643,9 +643,9 @@ WebRtc_Word32 UdpTransportImpl::EnableQoS(WebRtc_Word32 serviceType,
         }
     }else
     {
-        const WebRtc_Word32 token_rate = 5000;
-        const WebRtc_Word32 bucket_size = 100;
-        const WebRtc_Word32 peek_bandwith = 10000;
+        const int32_t token_rate = 5000;
+        const int32_t bucket_size = 100;
+        const int32_t peek_bandwith = 10000;
         if (!rtcpSock->SetQos(serviceType, token_rate, bucket_size,
                               peek_bandwith, min_policed_size, max_sdu_size,
                             _remoteRTCPAddr, _overrideDSCP))
@@ -662,7 +662,7 @@ WebRtc_Word32 UdpTransportImpl::EnableQoS(WebRtc_Word32 serviceType,
     return 0;
 }
 
-WebRtc_Word32 UdpTransportImpl::DisableQoS()
+int32_t UdpTransportImpl::DisableQoS()
 {
     if(_qos == false)
     {
@@ -695,8 +695,8 @@ WebRtc_Word32 UdpTransportImpl::DisableQoS()
         return -1;
     }
 
-    const WebRtc_Word32 service_type = 0;   // = SERVICETYPE_NOTRAFFIC
-    const WebRtc_Word32 not_specified = -1;
+    const int32_t service_type = 0;   // = SERVICETYPE_NOTRAFFIC
+    const int32_t not_specified = -1;
     if (!rtpSock->SetQos(service_type, not_specified, not_specified,
                          not_specified, not_specified, not_specified,
                          _remoteRTPAddr, _overrideDSCP))
@@ -714,8 +714,8 @@ WebRtc_Word32 UdpTransportImpl::DisableQoS()
     return 0;
 }
 
-WebRtc_Word32 UdpTransportImpl::QoS(bool& QoS, WebRtc_Word32& serviceType,
-                                    WebRtc_Word32& overrideDSCP) const
+int32_t UdpTransportImpl::QoS(bool& QoS, int32_t& serviceType,
+                              int32_t& overrideDSCP) const
 {
     CriticalSectionScoped cs(_crit);
     QoS = _qos;
@@ -724,7 +724,7 @@ WebRtc_Word32 UdpTransportImpl::QoS(bool& QoS, WebRtc_Word32& serviceType,
     return 0;
 }
 
-WebRtc_Word32 UdpTransportImpl::SetToS(WebRtc_Word32 DSCP, bool useSetSockOpt)
+int32_t UdpTransportImpl::SetToS(int32_t DSCP, bool useSetSockOpt)
 {
     if (_qos)
     {
@@ -835,7 +835,7 @@ WebRtc_Word32 UdpTransportImpl::SetToS(WebRtc_Word32 DSCP, bool useSetSockOpt)
                 else
                 {
                     bool receiving=_receiving;
-                    WebRtc_UWord32 noOfReceiveBuffers = 0;
+                    uint32_t noOfReceiveBuffers = 0;
                     if(receiving)
                     {
                         noOfReceiveBuffers=_ptrRtpSocket->ReceiveBuffers();
@@ -879,9 +879,9 @@ WebRtc_Word32 UdpTransportImpl::SetToS(WebRtc_Word32 DSCP, bool useSetSockOpt)
 #endif // #ifdef _WIN32
         WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
                      "Setting TOS using SetSockopt");
-        WebRtc_Word32 TOSShifted = DSCP << 2;
+        int32_t TOSShifted = DSCP << 2;
         if (!rtpSock->SetSockopt(IPPROTO_IP, IP_TOS,
-                                 (WebRtc_Word8*) &TOSShifted, 4))
+                                 (int8_t*) &TOSShifted, 4))
         {
             WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
                          "Could not SetSockopt tos value on RTP socket");
@@ -889,7 +889,7 @@ WebRtc_Word32 UdpTransportImpl::SetToS(WebRtc_Word32 DSCP, bool useSetSockOpt)
             return -1;
         }
         if (!rtcpSock->SetSockopt(IPPROTO_IP, IP_TOS,
-                                  (WebRtc_Word8*) &TOSShifted, 4))
+                                  (int8_t*) &TOSShifted, 4))
         {
             WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
                          "Could not sSetSockopt tos value on RTCP socket");
@@ -920,8 +920,8 @@ WebRtc_Word32 UdpTransportImpl::SetToS(WebRtc_Word32 DSCP, bool useSetSockOpt)
     return 0;
 }
 
-WebRtc_Word32 UdpTransportImpl::ToS(WebRtc_Word32& DSCP,
-                                    bool& useSetSockOpt) const
+int32_t UdpTransportImpl::ToS(int32_t& DSCP,
+                              bool& useSetSockOpt) const
 {
     CriticalSectionScoped cs(_crit);
     DSCP = _tos;
@@ -929,7 +929,7 @@ WebRtc_Word32 UdpTransportImpl::ToS(WebRtc_Word32& DSCP,
     return 0;
 }
 
-WebRtc_Word32 UdpTransportImpl::SetPCP(WebRtc_Word32 PCP)
+int32_t UdpTransportImpl::SetPCP(int32_t PCP)
 {
 
     if (_qos)
@@ -1000,7 +1000,7 @@ WebRtc_Word32 UdpTransportImpl::SetPCP(WebRtc_Word32 PCP)
     }
 
 #elif defined(WEBRTC_LINUX)
-    if (!rtpSock->SetSockopt(SOL_SOCKET, SO_PRIORITY, (WebRtc_Word8*) &PCP,
+    if (!rtpSock->SetSockopt(SOL_SOCKET, SO_PRIORITY, (int8_t*) &PCP,
                              sizeof(PCP)))
     {
         WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
@@ -1008,7 +1008,7 @@ WebRtc_Word32 UdpTransportImpl::SetPCP(WebRtc_Word32 PCP)
         _lastError = kPcpError;
         return -1;
     }
-    if (!rtcpSock->SetSockopt(SOL_SOCKET, SO_PRIORITY, (WebRtc_Word8*) &PCP,
+    if (!rtcpSock->SetSockopt(SOL_SOCKET, SO_PRIORITY, (int8_t*) &PCP,
                               sizeof(PCP)))
     {
         WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
@@ -1025,7 +1025,7 @@ WebRtc_Word32 UdpTransportImpl::SetPCP(WebRtc_Word32 PCP)
     return 0;
 }
 
-WebRtc_Word32 UdpTransportImpl::PCP(WebRtc_Word32& PCP) const
+int32_t UdpTransportImpl::PCP(int32_t& PCP) const
 {
     CriticalSectionScoped cs(_crit);
     PCP = _pcp;
@@ -1037,7 +1037,7 @@ bool UdpTransportImpl::SetSockOptUsed()
     return _useSetSockOpt;
 }
 
-WebRtc_Word32 UdpTransportImpl::EnableIpV6() {
+int32_t UdpTransportImpl::EnableIpV6() {
 
   CriticalSectionScoped cs(_crit);
   const bool initialized = (_ptrSendRtpSocket || _ptrRtpSocket);
@@ -1053,7 +1053,7 @@ WebRtc_Word32 UdpTransportImpl::EnableIpV6() {
   return 0;
 }
 
-WebRtc_Word32 UdpTransportImpl::FilterIP(
+int32_t UdpTransportImpl::FilterIP(
     char filterIPAddress[kIpAddressVersion6Length]) const
 {
 
@@ -1069,12 +1069,12 @@ WebRtc_Word32 UdpTransportImpl::FilterIP(
         return -1;
     }
     CriticalSectionScoped cs(_critFilter);
-    WebRtc_UWord32 ipSize = kIpAddressVersion6Length;
-    WebRtc_UWord16 sourcePort;
+    uint32_t ipSize = kIpAddressVersion6Length;
+    uint16_t sourcePort;
     return IPAddress(_filterIPAddress, filterIPAddress, ipSize, sourcePort);
 }
 
-WebRtc_Word32 UdpTransportImpl::SetFilterIP(
+int32_t UdpTransportImpl::SetFilterIP(
     const char filterIPAddress[kIpAddressVersion6Length])
 {
     if(filterIPAddress == NULL)
@@ -1118,8 +1118,8 @@ WebRtc_Word32 UdpTransportImpl::SetFilterIP(
     return 0;
 }
 
-WebRtc_Word32 UdpTransportImpl::SetFilterPorts(WebRtc_UWord16 rtpFilterPort,
-                                               WebRtc_UWord16 rtcpFilterPort)
+int32_t UdpTransportImpl::SetFilterPorts(uint16_t rtpFilterPort,
+                                         uint16_t rtcpFilterPort)
 {
     CriticalSectionScoped cs(_critFilter);
     _rtpFilterPort = rtpFilterPort;
@@ -1388,7 +1388,7 @@ UdpTransportImpl::ErrorCode UdpTransportImpl::BindLocalRTPSocket()
         mreq.imr_interface.s_addr = INADDR_ANY;
 
         if (!_ptrRtpSocket->SetSockopt(IPPROTO_IP,IP_ADD_MEMBERSHIP,
-                                       (WebRtc_Word8*)&mreq,sizeof (mreq)))
+                                       (int8_t*)&mreq,sizeof (mreq)))
         {
            WEBRTC_TRACE(
                 kTraceError,
@@ -1460,7 +1460,7 @@ UdpTransportImpl::ErrorCode UdpTransportImpl::BindLocalRTCPSocket()
         mreq.imr_interface.s_addr = INADDR_ANY;
 
         if (!_ptrRtcpSocket->SetSockopt(IPPROTO_IP,IP_ADD_MEMBERSHIP,
-                                        (WebRtc_Word8*)&mreq,sizeof (mreq)))
+                                        (int8_t*)&mreq,sizeof (mreq)))
         {
             WEBRTC_TRACE(
                 kTraceError,
@@ -1476,8 +1476,8 @@ UdpTransportImpl::ErrorCode UdpTransportImpl::BindLocalRTCPSocket()
     return kNoSocketError;
 }
 
-WebRtc_Word32 UdpTransportImpl::InitializeSourcePorts(WebRtc_UWord16 rtpPort,
-                                                      WebRtc_UWord16 rtcpPort)
+int32_t UdpTransportImpl::InitializeSourcePorts(uint16_t rtpPort,
+                                                uint16_t rtcpPort)
 {
 
     if(rtpPort == 0)
@@ -1529,8 +1529,8 @@ WebRtc_Word32 UdpTransportImpl::InitializeSourcePorts(WebRtc_UWord16 rtpPort,
     return 0;
 }
 
-WebRtc_Word32 UdpTransportImpl::SourcePorts(WebRtc_UWord16& rtpPort,
-                                            WebRtc_UWord16& rtcpPort) const
+int32_t UdpTransportImpl::SourcePorts(uint16_t& rtpPort,
+                                      uint16_t& rtcpPort) const
 {
     CriticalSectionScoped cs(_crit);
 
@@ -1541,11 +1541,9 @@ WebRtc_Word32 UdpTransportImpl::SourcePorts(WebRtc_UWord16& rtpPort,
 
 
 #ifdef _WIN32
-WebRtc_Word32 UdpTransportImpl::StartReceiving(
-    WebRtc_UWord32 numberOfSocketBuffers)
+int32_t UdpTransportImpl::StartReceiving(uint32_t numberOfSocketBuffers)
 #else
-WebRtc_Word32 UdpTransportImpl::StartReceiving(
-    WebRtc_UWord32 /*numberOfSocketBuffers*/)
+int32_t UdpTransportImpl::StartReceiving(uint32_t /*numberOfSocketBuffers*/)
 #endif
 {
     CriticalSectionScoped cs(_crit);
@@ -1594,7 +1592,7 @@ bool UdpTransportImpl::Receiving() const
    return _receiving;
 }
 
-WebRtc_Word32 UdpTransportImpl::StopReceiving()
+int32_t UdpTransportImpl::StopReceiving()
 {
 
     CriticalSectionScoped cs(_crit);
@@ -1624,10 +1622,10 @@ WebRtc_Word32 UdpTransportImpl::StopReceiving()
     return 0;
 }
 
-WebRtc_Word32 UdpTransportImpl::InitializeSendSockets(
+int32_t UdpTransportImpl::InitializeSendSockets(
     const char* ipaddr,
-    const WebRtc_UWord16 rtpPort,
-    const WebRtc_UWord16 rtcpPort)
+    const uint16_t rtpPort,
+    const uint16_t rtcpPort)
 {
     {
         CriticalSectionScoped cs(_crit);
@@ -1684,7 +1682,7 @@ WebRtc_Word32 UdpTransportImpl::InitializeSendSockets(
         // TODO (grunell): Multicast support is experimantal.
 
         // Put the first digit of the remote address in val.
-        WebRtc_Word32 val = ntohl(_remoteRTPAddr._sockaddr_in.sin_addr)>> 24;
+        int32_t val = ntohl(_remoteRTPAddr._sockaddr_in.sin_addr)>> 24;
 
         if((val > 223) && (val < 240))
         {
@@ -1707,10 +1705,10 @@ WebRtc_Word32 UdpTransportImpl::InitializeSendSockets(
             }
 
             // Set Time To Live to same region
-            WebRtc_Word32 iOptVal = 64;
+            int32_t iOptVal = 64;
             if (!rtpSock->SetSockopt(IPPROTO_IP, IP_MULTICAST_TTL,
-                                     (WebRtc_Word8*)&iOptVal,
-                                     sizeof (WebRtc_Word32)))
+                                     (int8_t*)&iOptVal,
+                                     sizeof (int32_t)))
             {
                 WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
                              "setsockopt for multicast error on RTP socket");
@@ -1720,8 +1718,8 @@ WebRtc_Word32 UdpTransportImpl::InitializeSendSockets(
                 return -1;
             }
             if (!rtcpSock->SetSockopt(IPPROTO_IP, IP_MULTICAST_TTL,
-                                      (WebRtc_Word8*)&iOptVal,
-                                      sizeof (WebRtc_Word32)))
+                                      (int8_t*)&iOptVal,
+                                      sizeof (int32_t)))
             {
                 WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
                              "setsockopt for multicast error on RTCP socket");
@@ -1735,7 +1733,7 @@ WebRtc_Word32 UdpTransportImpl::InitializeSendSockets(
     return 0;
 }
 
-void UdpTransportImpl::BuildSockaddrIn(WebRtc_UWord16 portnr,
+void UdpTransportImpl::BuildSockaddrIn(uint16_t portnr,
                                        const char* ip,
                                        SocketAddress& remoteAddr) const
 {
@@ -1766,11 +1764,11 @@ void UdpTransportImpl::BuildSockaddrIn(WebRtc_UWord16 portnr,
     }
 }
 
-WebRtc_Word32 UdpTransportImpl::SendRaw(const WebRtc_Word8 *data,
-                                        WebRtc_UWord32 length,
-                                        WebRtc_Word32 isRTCP,
-                                        WebRtc_UWord16 portnr,
-                                        const char* ip)
+int32_t UdpTransportImpl::SendRaw(const int8_t *data,
+                                  uint32_t length,
+                                  int32_t isRTCP,
+                                  uint16_t portnr,
+                                  const char* ip)
 {
     CriticalSectionScoped cs(_crit);
     if(isRTCP)
@@ -1842,9 +1840,9 @@ WebRtc_Word32 UdpTransportImpl::SendRaw(const WebRtc_Word8 *data,
     }
 }
 
-WebRtc_Word32 UdpTransportImpl::SendRTPPacketTo(const WebRtc_Word8* data,
-                                                WebRtc_UWord32 length,
-                                                const SocketAddress& to)
+int32_t UdpTransportImpl::SendRTPPacketTo(const int8_t* data,
+                                          uint32_t length,
+                                          const SocketAddress& to)
 {
     CriticalSectionScoped cs(_crit);
     if(_ptrSendRtpSocket)
@@ -1858,9 +1856,9 @@ WebRtc_Word32 UdpTransportImpl::SendRTPPacketTo(const WebRtc_Word8* data,
     return -1;
 }
 
-WebRtc_Word32 UdpTransportImpl::SendRTCPPacketTo(const WebRtc_Word8* data,
-                                                 WebRtc_UWord32 length,
-                                                 const SocketAddress& to)
+int32_t UdpTransportImpl::SendRTCPPacketTo(const int8_t* data,
+                                           uint32_t length,
+                                           const SocketAddress& to)
 {
 
     CriticalSectionScoped cs(_crit);
@@ -1876,9 +1874,9 @@ WebRtc_Word32 UdpTransportImpl::SendRTCPPacketTo(const WebRtc_Word8* data,
     return -1;
 }
 
-WebRtc_Word32 UdpTransportImpl::SendRTPPacketTo(const WebRtc_Word8* data,
-                                                WebRtc_UWord32 length,
-                                                const WebRtc_UWord16 rtpPort)
+int32_t UdpTransportImpl::SendRTPPacketTo(const int8_t* data,
+                                          uint32_t length,
+                                          const uint16_t rtpPort)
 {
     CriticalSectionScoped cs(_crit);
     // Use the current SocketAdress but update it with rtpPort.
@@ -1904,9 +1902,9 @@ WebRtc_Word32 UdpTransportImpl::SendRTPPacketTo(const WebRtc_Word8* data,
     return -1;
 }
 
-WebRtc_Word32 UdpTransportImpl::SendRTCPPacketTo(const WebRtc_Word8* data,
-                                                 WebRtc_UWord32 length,
-                                                 const WebRtc_UWord16 rtcpPort)
+int32_t UdpTransportImpl::SendRTCPPacketTo(const int8_t* data,
+                                           uint32_t length,
+                                           const uint16_t rtcpPort)
 {
     CriticalSectionScoped cs(_crit);
 
@@ -1989,12 +1987,12 @@ int UdpTransportImpl::SendPacket(int /*channel*/, const void* data, int length)
 
     if(_ptrSendRtpSocket)
     {
-        return _ptrSendRtpSocket->SendTo((const WebRtc_Word8*)data, length,
+        return _ptrSendRtpSocket->SendTo((const int8_t*)data, length,
                                          _remoteRTPAddr);
 
     } else if(_ptrRtpSocket)
     {
-        return _ptrRtpSocket->SendTo((const WebRtc_Word8*)data, length,
+        return _ptrRtpSocket->SendTo((const int8_t*)data, length,
                                      _remoteRTPAddr);
     }
     return -1;
@@ -2055,17 +2053,17 @@ int UdpTransportImpl::SendRTCPPacket(int /*channel*/, const void* data,
 
     if(_ptrSendRtcpSocket)
     {
-        return _ptrSendRtcpSocket->SendTo((const WebRtc_Word8*)data, length,
+        return _ptrSendRtcpSocket->SendTo((const int8_t*)data, length,
                                           _remoteRTCPAddr);
     } else if(_ptrRtcpSocket)
     {
-        return _ptrRtcpSocket->SendTo((const WebRtc_Word8*)data, length,
+        return _ptrRtcpSocket->SendTo((const int8_t*)data, length,
                                       _remoteRTCPAddr);
     }
     return -1;
 }
 
-WebRtc_Word32 UdpTransportImpl::SetSendIP(const char* ipaddr)
+int32_t UdpTransportImpl::SetSendIP(const char* ipaddr)
 {
     if(!IsIpAddressValid(ipaddr,IpV6Enabled()))
     {
@@ -2078,8 +2076,7 @@ WebRtc_Word32 UdpTransportImpl::SetSendIP(const char* ipaddr)
     return 0;
 }
 
-WebRtc_Word32 UdpTransportImpl::SetSendPorts(WebRtc_UWord16 rtpPort,
-                                             WebRtc_UWord16 rtcpPort)
+int32_t UdpTransportImpl::SetSendPorts(uint16_t rtpPort, uint16_t rtcpPort)
 {
     CriticalSectionScoped cs(_crit);
     _destPort = rtpPort;
@@ -2096,8 +2093,8 @@ WebRtc_Word32 UdpTransportImpl::SetSendPorts(WebRtc_UWord16 rtpPort,
 }
 
 void UdpTransportImpl::IncomingRTPCallback(CallbackObj obj,
-                                           const WebRtc_Word8* rtpPacket,
-                                           WebRtc_Word32 rtpPacketLength,
+                                           const int8_t* rtpPacket,
+                                           int32_t rtpPacketLength,
                                            const SocketAddress* from)
 {
     if (rtpPacket && rtpPacketLength > 0)
@@ -2108,8 +2105,8 @@ void UdpTransportImpl::IncomingRTPCallback(CallbackObj obj,
 }
 
 void UdpTransportImpl::IncomingRTCPCallback(CallbackObj obj,
-                                            const WebRtc_Word8* rtcpPacket,
-                                            WebRtc_Word32 rtcpPacketLength,
+                                            const int8_t* rtcpPacket,
+                                            int32_t rtcpPacketLength,
                                             const SocketAddress* from)
 {
     if (rtcpPacket && rtcpPacketLength > 0)
@@ -2120,13 +2117,13 @@ void UdpTransportImpl::IncomingRTCPCallback(CallbackObj obj,
     }
 }
 
-void UdpTransportImpl::IncomingRTPFunction(const WebRtc_Word8* rtpPacket,
-                                           WebRtc_Word32 rtpPacketLength,
+void UdpTransportImpl::IncomingRTPFunction(const int8_t* rtpPacket,
+                                           int32_t rtpPacketLength,
                                            const SocketAddress* fromSocket)
 {
     char ipAddress[kIpAddressVersion6Length];
-    WebRtc_UWord32 ipAddressLength = kIpAddressVersion6Length;
-    WebRtc_UWord16 portNr = 0;
+    uint32_t ipAddressLength = kIpAddressVersion6Length;
+    uint16_t portNr = 0;
 
     {
         CriticalSectionScoped cs(_critFilter);
@@ -2183,13 +2180,13 @@ void UdpTransportImpl::IncomingRTPFunction(const WebRtc_Word8* rtpPacket,
     }
 }
 
-void UdpTransportImpl::IncomingRTCPFunction(const WebRtc_Word8* rtcpPacket,
-                                            WebRtc_Word32 rtcpPacketLength,
+void UdpTransportImpl::IncomingRTCPFunction(const int8_t* rtcpPacket,
+                                            int32_t rtcpPacketLength,
                                             const SocketAddress* fromSocket)
 {
     char ipAddress[kIpAddressVersion6Length];
-    WebRtc_UWord32 ipAddressLength = kIpAddressVersion6Length;
-    WebRtc_UWord16 portNr = 0;
+    uint32_t ipAddressLength = kIpAddressVersion6Length;
+    uint16_t portNr = 0;
 
     {
         CriticalSectionScoped cs(_critFilter);
@@ -2263,7 +2260,7 @@ bool UdpTransportImpl::FilterIPAddress(const SocketAddress* fromAddress)
         if (_filterIPAddress._sockaddr_storage.sin_family == AF_INET6)
         {
             // IP is stored in sin_6addr.
-            for (WebRtc_Word32 i = 0; i < 4; i++)
+            for (int32_t i = 0; i < 4; i++)
             {
                 if (_filterIPAddress._sockaddr_in6.sin6_addr.Version6AddressUnion._s6_u32[i] != 0 &&
                     _filterIPAddress._sockaddr_in6.sin6_addr.Version6AddressUnion._s6_u32[i] != fromAddress->_sockaddr_in6.sin6_addr.Version6AddressUnion._s6_u32[i])
@@ -2314,27 +2311,27 @@ void UdpTransportImpl::CloseSendSockets()
     }
 }
 
-WebRtc_UWord16 UdpTransport::Htons(const WebRtc_UWord16 port)
+uint16_t UdpTransport::Htons(const uint16_t port)
 {
     return htons(port);
 }
 
-WebRtc_UWord32 UdpTransport::Htonl(const WebRtc_UWord32 a)
+uint32_t UdpTransport::Htonl(const uint32_t a)
 {
     return htonl(a);
 }
 
-WebRtc_UWord32 UdpTransport::InetAddrIPV4(const char* ip)
+uint32_t UdpTransport::InetAddrIPV4(const char* ip)
 {
     return ::inet_addr(ip);
 }
 
-WebRtc_Word32 UdpTransport::InetPresentationToNumeric(WebRtc_Word32 af,
-                                                      const char* src,
-                                                      void* dst)
+int32_t UdpTransport::InetPresentationToNumeric(int32_t af,
+                                                const char* src,
+                                                void* dst)
 {
 #if defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-    const WebRtc_Word32 result = inet_pton(af, src, dst);
+    const int32_t result = inet_pton(af, src, dst);
     return result > 0 ? 0 : -1;
 
 #elif defined(_WIN32)
@@ -2343,7 +2340,7 @@ WebRtc_Word32 UdpTransport::InetPresentationToNumeric(WebRtc_Word32 af,
 
     if(af == AF_INET)
     {
-        WebRtc_Word32 result = WSAStringToAddressA(
+        int32_t result = WSAStringToAddressA(
             (const LPSTR)src,
             af,
             0,
@@ -2359,7 +2356,7 @@ WebRtc_Word32 UdpTransport::InetPresentationToNumeric(WebRtc_Word32 af,
     }
     else if(af == AF_INET6)
     {
-        WebRtc_Word32 result = WSAStringToAddressA(
+        int32_t result = WSAStringToAddressA(
             (const LPSTR)src,
             af,
             0,
@@ -2382,7 +2379,7 @@ WebRtc_Word32 UdpTransport::InetPresentationToNumeric(WebRtc_Word32 af,
 #endif
 }
 
-WebRtc_Word32 UdpTransport::LocalHostAddressIPV6(char n_localIP[16])
+int32_t UdpTransport::LocalHostAddressIPV6(char n_localIP[16])
 {
 
 #if defined(_WIN32)
@@ -2620,7 +2617,7 @@ WebRtc_Word32 UdpTransport::LocalHostAddressIPV6(char n_localIP[16])
 #endif
 }
 
-WebRtc_Word32 UdpTransport::LocalHostAddress(WebRtc_UWord32& localIP)
+int32_t UdpTransport::LocalHostAddress(uint32_t& localIP)
 {
  #if defined(_WIN32)
     hostent* localHost;
@@ -2642,7 +2639,7 @@ WebRtc_Word32 UdpTransport::LocalHostAddress(WebRtc_UWord32& localIP)
     }
     else
     {
-        WebRtc_Word32 error = WSAGetLastError();
+        int32_t error = WSAGetLastError();
         WEBRTC_TRACE(kTraceWarning, kTraceTransport, -1,
                      "gethostbyname failed, error:%d", error);
         return -1;
@@ -2730,14 +2727,14 @@ WebRtc_Word32 UdpTransport::LocalHostAddress(WebRtc_UWord32& localIP)
 #endif
 }
 
-WebRtc_Word32 UdpTransport::IPAddress(const SocketAddress& address,
-                                      char* ip,
-                                      WebRtc_UWord32& ipSize,
-                                      WebRtc_UWord16& sourcePort)
+int32_t UdpTransport::IPAddress(const SocketAddress& address,
+                                char* ip,
+                                uint32_t& ipSize,
+                                uint16_t& sourcePort)
 {
  #if defined(_WIN32)
     DWORD dwIPSize = ipSize;
-    WebRtc_Word32 returnvalue = WSAAddressToStringA((LPSOCKADDR)(&address),
+    int32_t returnvalue = WSAAddressToStringA((LPSOCKADDR)(&address),
                                          sizeof(SocketAddress),
                                          NULL,
                                          ip,
@@ -2747,7 +2744,7 @@ WebRtc_Word32 UdpTransport::IPAddress(const SocketAddress& address,
         return -1;
     }
 
-    WebRtc_UWord16 source_port = 0;
+    uint16_t source_port = 0;
     if(address._sockaddr_storage.sin_family == AF_INET)
     {
         // Parse IP assuming format "a.b.c.d:port".
@@ -2756,7 +2753,7 @@ WebRtc_Word32 UdpTransport::IPAddress(const SocketAddress& address,
         {
             *ipEnd = '\0';
         }
-        ipSize = (WebRtc_Word32)strlen(ip);
+        ipSize = (int32_t)strlen(ip);
         if(ipSize == 0)
         {
             return -1;
@@ -2770,11 +2767,11 @@ WebRtc_Word32 UdpTransport::IPAddress(const SocketAddress& address,
         if(ipEnd != NULL)
         {
           // Calculate length
-            WebRtc_Word32 adrSize = WebRtc_Word32(ipEnd - ip) - 1;
+            int32_t adrSize = int32_t(ipEnd - ip) - 1;
             memmove(ip, &ip[1], adrSize);   // Remove '['
             *(ipEnd - 1) = '\0';
         }
-        ipSize = (WebRtc_Word32)strlen(ip);
+        ipSize = (int32_t)strlen(ip);
         if(ipSize == 0)
         {
             return -1;
@@ -2787,7 +2784,7 @@ WebRtc_Word32 UdpTransport::IPAddress(const SocketAddress& address,
     return 0;
 
  #elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-    WebRtc_Word32 ipFamily = address._sockaddr_storage.sin_family;
+    int32_t ipFamily = address._sockaddr_storage.sin_family;
     const void* ptrNumericIP = NULL;
 
     if(ipFamily == AF_INET)
@@ -2806,7 +2803,7 @@ WebRtc_Word32 UdpTransport::IPAddress(const SocketAddress& address,
     {
         return -1;
     }
-    WebRtc_UWord16 source_port;
+    uint16_t source_port;
     if(ipFamily == AF_INET)
     {
         source_port = address._sockaddr_in.sin_port;
@@ -2826,19 +2823,19 @@ bool UdpTransport::IsIpAddressValid(const char* ipadr, const bool ipV6)
 {
     if(ipV6)
     {
-        WebRtc_Word32 len = (WebRtc_Word32)strlen(ipadr);
+        int32_t len = (int32_t)strlen(ipadr);
         if( len>39 || len == 0)
         {
             return false;
         }
 
-        WebRtc_Word32 i;
-        WebRtc_Word32 colonPos[7] = {0,0,0,0,0,0,0};
-        WebRtc_Word32 lastColonPos = -2;
-        WebRtc_Word32 nColons = 0;
-        WebRtc_Word32 nDubbleColons = 0;
-        WebRtc_Word32 nDots = 0;
-        WebRtc_Word32 error = 0;
+        int32_t i;
+        int32_t colonPos[7] = {0,0,0,0,0,0,0};
+        int32_t lastColonPos = -2;
+        int32_t nColons = 0;
+        int32_t nDubbleColons = 0;
+        int32_t nDots = 0;
+        int32_t error = 0;
         char c;
         for(i = 0; i < len ; i++)
         {
@@ -2885,7 +2882,7 @@ bool UdpTransport::IsIpAddressValid(const char* ipadr, const bool ipV6)
             return false;
         }
         lastColonPos = -1;
-        WebRtc_Word32 charsBeforeColon = 0;
+        int32_t charsBeforeColon = 0;
         for(i = 0; i < nColons; i++)
         {
             charsBeforeColon=colonPos[i]-lastColonPos-1;
@@ -2895,7 +2892,7 @@ bool UdpTransport::IsIpAddressValid(const char* ipadr, const bool ipV6)
             }
             lastColonPos=colonPos[i];
         }
-        WebRtc_Word32 lengthAfterLastColon = len - lastColonPos - 1;
+        int32_t lengthAfterLastColon = len - lastColonPos - 1;
         if(nDots == 0)
         {
             if(lengthAfterLastColon > 4)
@@ -2909,16 +2906,16 @@ bool UdpTransport::IsIpAddressValid(const char* ipadr, const bool ipV6)
     }
     else
     {
-        WebRtc_Word32 len = (WebRtc_Word32)strlen(ipadr);
+        int32_t len = (int32_t)strlen(ipadr);
         if((len>15)||(len==0))
         {
             return false;
         }
 
         // IPv4 should be [0-255].[0-255].[0-255].[0-255]
-        WebRtc_Word32 i;
-        WebRtc_Word32 nDots = 0;
-        WebRtc_Word32 iDotPos[4] = {0,0,0,0};
+        int32_t i;
+        int32_t nDots = 0;
+        int32_t iDotPos[4] = {0,0,0,0};
 
         for (i = 0; (i < len) && (nDots < 4); i++)
         {
@@ -2946,7 +2943,7 @@ bool UdpTransport::IsIpAddressValid(const char* ipadr, const bool ipV6)
                 char nr[4];
                 memset(nr,0,4);
                 strncpy(nr,&ipadr[0],iDotPos[0]);
-                WebRtc_Word32 num = atoi(nr);
+                int32_t num = atoi(nr);
                 if (num > 255)
                 {
                     break;
@@ -2960,7 +2957,7 @@ bool UdpTransport::IsIpAddressValid(const char* ipadr, const bool ipV6)
                 char nr[4];
                 memset(nr,0,4);
                 strncpy(nr,&ipadr[iDotPos[0]+1], iDotPos[1] - iDotPos[0] - 1);
-                WebRtc_Word32 num = atoi(nr);
+                int32_t num = atoi(nr);
                 if (num > 255)
                     break;
             } else {
@@ -2972,7 +2969,7 @@ bool UdpTransport::IsIpAddressValid(const char* ipadr, const bool ipV6)
                 char nr[4];
                 memset(nr,0,4);
                 strncpy(nr,&ipadr[iDotPos[1]+1], iDotPos[1] - iDotPos[0] - 1);
-                WebRtc_Word32 num = atoi(nr);
+                int32_t num = atoi(nr);
                 if (num > 255)
                     break;
 

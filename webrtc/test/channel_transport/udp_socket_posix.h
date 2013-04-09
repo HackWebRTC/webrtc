@@ -28,42 +28,42 @@ namespace test {
 class UdpSocketPosix : public UdpSocketWrapper
 {
 public:
-    UdpSocketPosix(const WebRtc_Word32 id, UdpSocketManager* mgr,
+    UdpSocketPosix(const int32_t id, UdpSocketManager* mgr,
                    bool ipV6Enable = false);
 
     virtual ~UdpSocketPosix();
 
-    virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
+    virtual int32_t ChangeUniqueId(const int32_t id);
 
     virtual bool SetCallback(CallbackObj obj, IncomingSocketCallback cb);
 
     virtual bool Bind(const SocketAddress& name);
 
-    virtual bool SetSockopt(WebRtc_Word32 level, WebRtc_Word32 optname,
-                            const WebRtc_Word8* optval, WebRtc_Word32 optlen);
+    virtual bool SetSockopt(int32_t level, int32_t optname,
+                            const int8_t* optval, int32_t optlen);
 
-    virtual WebRtc_Word32 SetTOS(const WebRtc_Word32 serviceType);
+    virtual int32_t SetTOS(const int32_t serviceType);
 
-    virtual WebRtc_Word32 SendTo(const WebRtc_Word8* buf, WebRtc_Word32 len,
-                                 const SocketAddress& to);
+    virtual int32_t SendTo(const int8_t* buf, int32_t len,
+                           const SocketAddress& to);
 
     // Deletes socket in addition to closing it.
     // TODO (hellner): make destructor protected.
     virtual void CloseBlocking();
 
     virtual SOCKET GetFd() {return _socket;}
-    virtual WebRtc_Word32 GetError() {return _error;}
+    virtual int32_t GetError() {return _error;}
 
     virtual bool ValidHandle();
 
-    virtual bool SetQos(WebRtc_Word32 /*serviceType*/,
-                        WebRtc_Word32 /*tokenRate*/,
-                        WebRtc_Word32 /*bucketSize*/,
-                        WebRtc_Word32 /*peekBandwith*/,
-                        WebRtc_Word32 /*minPolicedSize*/,
-                        WebRtc_Word32 /*maxSduSize*/,
+    virtual bool SetQos(int32_t /*serviceType*/,
+                        int32_t /*tokenRate*/,
+                        int32_t /*bucketSize*/,
+                        int32_t /*peekBandwith*/,
+                        int32_t /*minPolicedSize*/,
+                        int32_t /*maxSduSize*/,
                         const SocketAddress& /*stRemName*/,
-                        WebRtc_Word32 /*overrideDSCP*/) {return false;}
+                        int32_t /*overrideDSCP*/) {return false;}
 
     bool CleanUp();
     void HasIncoming();
@@ -72,10 +72,10 @@ public:
 private:
     friend class UdpSocketManagerPosix;
 
-    WebRtc_Word32 _id;
+    int32_t _id;
     IncomingSocketCallback _incomingCb;
     CallbackObj _obj;
-    WebRtc_Word32 _error;
+    int32_t _error;
 
     SOCKET _socket;
     UdpSocketManager* _mgr;

@@ -75,13 +75,13 @@ class IoContextPool
 public:
     IoContextPool();
     virtual ~IoContextPool();
-    virtual WebRtc_Word32 Init(WebRtc_UWord32 increaseSize = 128);
+    virtual int32_t Init(uint32_t increaseSize = 128);
     // Re-use an old unused IO context or create a new one.
     virtual PerIoContext* PopIoContext();
-    virtual WebRtc_Word32 PushIoContext(PerIoContext* pIoContext);
-    virtual inline WebRtc_Word32 GetSize(WebRtc_UWord32* inUse = 0)
+    virtual int32_t PushIoContext(PerIoContext* pIoContext);
+    virtual inline int32_t GetSize(uint32_t* inUse = 0)
     {return _size.Value();}
-    virtual WebRtc_Word32 Free();
+    virtual int32_t Free();
 private:
     // Sample code for use of msfts single linked atomic list can be found here:
     // http://msdn.microsoft.com/en-us/library/ms686962(VS.85).aspx
@@ -101,8 +101,8 @@ public:
     UdpSocket2ManagerWindows();
     virtual ~UdpSocket2ManagerWindows();
 
-    virtual bool Init(WebRtc_Word32 id, WebRtc_UWord8& numOfWorkThreads);
-    virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
+    virtual bool Init(int32_t id, uint8_t& numOfWorkThreads);
+    virtual int32_t ChangeUniqueId(const int32_t id);
 
     virtual bool Start();
     virtual bool Stop();
@@ -115,7 +115,7 @@ public:
      return false;}
 
     PerIoContext* PopIoContext(void);
-    WebRtc_Word32 PushIoContext(PerIoContext* pIoContext);
+    int32_t PushIoContext(PerIoContext* pIoContext);
 
 private:
     bool StopWorkerThreads();
@@ -123,15 +123,15 @@ private:
     bool AddSocketPrv(UdpSocket2Windows* s);
     bool RemoveSocketPrv(UdpSocket2Windows* s);
 
-    static WebRtc_UWord32 _numOfActiveManagers;
+    static uint32_t _numOfActiveManagers;
     static bool _wsaInit;
 
-    WebRtc_Word32 _id;
+    int32_t _id;
     CriticalSectionWrapper* _pCrit;
-    WebRtc_Word32 _managerNumber;
+    int32_t _managerNumber;
     volatile bool _stopped;
     bool _init;
-    WebRtc_Word32 _numActiveSockets;
+    int32_t _numActiveSockets;
     ListWrapper _workerThreadsList;
     EventWrapper* _event;
 
@@ -147,7 +147,7 @@ public:
 
     virtual bool Start();
     virtual bool Stop();
-    virtual WebRtc_Word32 Init();
+    virtual int32_t Init();
     virtual void SetNotAlive();
 protected:
     static bool Run(ThreadObj obj);
@@ -155,8 +155,8 @@ protected:
 private:
     HANDLE _ioCompletionHandle;
     ThreadWrapper*_pThread;
-    static WebRtc_Word32 _numOfWorkers;
-    WebRtc_Word32 _workerNumber;
+    static int32_t _numOfWorkers;
+    int32_t _workerNumber;
     volatile bool _stop;
     bool _init;
 };

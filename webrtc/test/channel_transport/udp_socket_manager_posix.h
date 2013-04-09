@@ -36,10 +36,9 @@ public:
     UdpSocketManagerPosix();
     virtual ~UdpSocketManagerPosix();
 
-    virtual bool Init(WebRtc_Word32 id,
-                      WebRtc_UWord8& numOfWorkThreads);
+    virtual bool Init(int32_t id, uint8_t& numOfWorkThreads);
 
-    virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
+    virtual int32_t ChangeUniqueId(const int32_t id);
 
     virtual bool Start();
     virtual bool Stop();
@@ -47,11 +46,11 @@ public:
     virtual bool AddSocket(UdpSocketWrapper* s);
     virtual bool RemoveSocket(UdpSocketWrapper* s);
 private:
-    WebRtc_Word32 _id;
+    int32_t _id;
     CriticalSectionWrapper* _critSect;
-    WebRtc_UWord8 _numberOfSocketMgr;
-    WebRtc_UWord8 _incSocketMgrNextTime;
-    WebRtc_UWord8 _nextSocketMgrToAssign;
+    uint8_t _numberOfSocketMgr;
+    uint8_t _incSocketMgrNextTime;
+    uint8_t _nextSocketMgrToAssign;
     UdpSocketManagerPosixImpl* _socketMgr[MAX_NUMBER_OF_SOCKET_MANAGERS_LINUX];
 };
 

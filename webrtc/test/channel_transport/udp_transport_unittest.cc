@@ -28,21 +28,20 @@ namespace test {
 class MockUdpSocketWrapper : public UdpSocketWrapper {
  public:
   // The following methods have to be mocked because they are pure.
-  MOCK_METHOD1(ChangeUniqueId, WebRtc_Word32(WebRtc_Word32));
+  MOCK_METHOD1(ChangeUniqueId, int32_t(int32_t));
   MOCK_METHOD2(SetCallback, bool(CallbackObj, IncomingSocketCallback));
   MOCK_METHOD1(Bind, bool(const SocketAddress&));
   MOCK_METHOD0(ValidHandle, bool());
-  MOCK_METHOD4(SetSockopt, bool(WebRtc_Word32, WebRtc_Word32,
-                                const WebRtc_Word8*,
-                                WebRtc_Word32));
-  MOCK_METHOD1(SetTOS, WebRtc_Word32(WebRtc_Word32));
-  MOCK_METHOD3(SendTo, WebRtc_Word32(const WebRtc_Word8*, WebRtc_Word32,
-                                     const SocketAddress&));
-  MOCK_METHOD8(SetQos, bool(WebRtc_Word32, WebRtc_Word32,
-                            WebRtc_Word32, WebRtc_Word32,
-                            WebRtc_Word32, WebRtc_Word32,
+  MOCK_METHOD4(SetSockopt, bool(int32_t, int32_t,
+                                const int8_t*,
+                                int32_t));
+  MOCK_METHOD1(SetTOS, int32_t(int32_t));
+  MOCK_METHOD3(SendTo, int32_t(const int8_t*, int32_t, const SocketAddress&));
+  MOCK_METHOD8(SetQos, bool(int32_t, int32_t,
+                            int32_t, int32_t,
+                            int32_t, int32_t,
                             const SocketAddress &,
-                            WebRtc_Word32));
+                            int32_t));
 };
 
 class MockUdpSocketManager : public UdpSocketManager {
@@ -51,8 +50,8 @@ class MockUdpSocketManager : public UdpSocketManager {
   void Destroy() {
     delete this;
   }
-  MOCK_METHOD2(Init, bool(WebRtc_Word32, WebRtc_UWord8&));
-  MOCK_METHOD1(ChangeUniqueId, WebRtc_Word32(const WebRtc_Word32));
+  MOCK_METHOD2(Init, bool(int32_t, uint8_t&));
+  MOCK_METHOD1(ChangeUniqueId, int32_t(const int32_t));
   MOCK_METHOD0(Start, bool());
   MOCK_METHOD0(Stop, bool());
   MOCK_METHOD1(AddSocket, bool(UdpSocketWrapper*));
@@ -65,7 +64,7 @@ class MockSocketFactory :
   MockSocketFactory(std::vector<MockUdpSocketWrapper*>* socket_counter)
       : socket_counter_(socket_counter) {
   }
-  UdpSocketWrapper* CreateSocket(const WebRtc_Word32 id,
+  UdpSocketWrapper* CreateSocket(const int32_t id,
                                  UdpSocketManager* mgr,
                                  CallbackObj obj,
                                  IncomingSocketCallback cb,
@@ -110,15 +109,15 @@ private:
 };
 
 TEST_F(UDPTransportTest, CreateTransport) {
-  WebRtc_Word32 id = 0;
-  WebRtc_UWord8 threads = 1;
+  int32_t id = 0;
+  uint8_t threads = 1;
   UdpTransport* transport = UdpTransport::Create(id, threads);
   UdpTransport::Destroy(transport);
 }
 
 // This test verifies that the mock_socket is not called from the constructor.
 TEST_F(UDPTransportTest, ConstructorDoesNotCreateSocket) {
-  WebRtc_Word32 id = 0;
+  int32_t id = 0;
   UdpTransportImpl::SocketFactoryInterface* null_maker = NULL;
   UdpSocketManager* null_manager = NULL;
   UdpTransport* transport = new UdpTransportImpl(id,
@@ -128,7 +127,7 @@ TEST_F(UDPTransportTest, ConstructorDoesNotCreateSocket) {
 }
 
 TEST_F(UDPTransportTest, InitializeSourcePorts) {
-  WebRtc_Word32 id = 0;
+  int32_t id = 0;
   UdpTransportImpl::SocketFactoryInterface* mock_maker
       = new MockSocketFactory(sockets_created());
   MockUdpSocketManager* mock_manager = new MockUdpSocketManager();

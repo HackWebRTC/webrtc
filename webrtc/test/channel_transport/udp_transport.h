@@ -22,9 +22,9 @@
  */
 
 #define SS_MAXSIZE 128
-#define SS_ALIGNSIZE (sizeof (WebRtc_UWord64))
-#define SS_PAD1SIZE  (SS_ALIGNSIZE - sizeof(WebRtc_Word16))
-#define SS_PAD2SIZE  (SS_MAXSIZE - (sizeof(WebRtc_Word16) + SS_PAD1SIZE +\
+#define SS_ALIGNSIZE (sizeof (uint64_t))
+#define SS_PAD1SIZE  (SS_ALIGNSIZE - sizeof(int16_t))
+#define SS_PAD2SIZE  (SS_MAXSIZE - (sizeof(int16_t) + SS_PAD1SIZE +\
                                     SS_ALIGNSIZE))
 
 // BSD requires use of HAVE_STRUCT_SOCKADDR_SA_LEN
@@ -34,53 +34,53 @@ namespace test {
 struct SocketAddressIn {
   // sin_family should be either AF_INET (IPv4) or AF_INET6 (IPv6)
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
-  WebRtc_Word8      sin_length;
-  WebRtc_Word8      sin_family;
+  int8_t      sin_length;
+  int8_t      sin_family;
 #else
-  WebRtc_Word16     sin_family;
+  int16_t     sin_family;
 #endif
-  WebRtc_UWord16    sin_port;
-  WebRtc_UWord32    sin_addr;
-  WebRtc_Word8      sin_zero[8];
+  uint16_t    sin_port;
+  uint32_t    sin_addr;
+  int8_t      sin_zero[8];
 };
 
 struct Version6InAddress {
   union {
-    WebRtc_UWord8     _s6_u8[16];
-    WebRtc_UWord32    _s6_u32[4];
-    WebRtc_UWord64    _s6_u64[2];
+    uint8_t     _s6_u8[16];
+    uint32_t    _s6_u32[4];
+    uint64_t    _s6_u64[2];
   } Version6AddressUnion;
 };
 
 struct SocketAddressInVersion6 {
   // sin_family should be either AF_INET (IPv4) or AF_INET6 (IPv6)
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
-  WebRtc_Word8      sin_length;
-  WebRtc_Word8      sin_family;
+  int8_t      sin_length;
+  int8_t      sin_family;
 #else
-  WebRtc_Word16     sin_family;
+  int16_t     sin_family;
 #endif
   // Transport layer port number.
-  WebRtc_UWord16 sin6_port;
+  uint16_t sin6_port;
   // IPv6 traffic class and flow info or ip4 address.
-  WebRtc_UWord32 sin6_flowinfo;
+  uint32_t sin6_flowinfo;
   // IPv6 address
   struct Version6InAddress sin6_addr;
   // Set of interfaces for a scope.
-  WebRtc_UWord32 sin6_scope_id;
+  uint32_t sin6_scope_id;
 };
 
 struct SocketAddressStorage {
   // sin_family should be either AF_INET (IPv4) or AF_INET6 (IPv6)
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
-  WebRtc_Word8   sin_length;
-  WebRtc_Word8   sin_family;
+  int8_t   sin_length;
+  int8_t   sin_family;
 #else
-  WebRtc_Word16  sin_family;
+  int16_t  sin_family;
 #endif
-  WebRtc_Word8   __ss_pad1[SS_PAD1SIZE];
-  WebRtc_UWord64 __ss_align;
-  WebRtc_Word8   __ss_pad2[SS_PAD2SIZE];
+  int8_t   __ss_pad1[SS_PAD1SIZE];
+  uint64_t __ss_align;
+  int8_t   __ss_pad2[SS_PAD2SIZE];
 };
 
 struct SocketAddress {
@@ -96,15 +96,15 @@ class UdpTransportData {
  public:
   virtual ~UdpTransportData()  {};
 
-  virtual void IncomingRTPPacket(const WebRtc_Word8* incomingRtpPacket,
-                                 const WebRtc_Word32 rtpPacketLength,
+  virtual void IncomingRTPPacket(const int8_t* incomingRtpPacket,
+                                 const int32_t rtpPacketLength,
                                  const char* fromIP,
-                                 const WebRtc_UWord16 fromPort) = 0;
+                                 const uint16_t fromPort) = 0;
 
-  virtual void IncomingRTCPPacket(const WebRtc_Word8* incomingRtcpPacket,
-                                  const WebRtc_Word32 rtcpPacketLength,
+  virtual void IncomingRTCPPacket(const int8_t* incomingRtcpPacket,
+                                  const int32_t rtcpPacketLength,
                                   const char* fromIP,
-                                  const WebRtc_UWord16 fromPort) = 0;
+                                  const uint16_t fromPort) = 0;
 };
 
 class UdpTransport : public Transport {
@@ -137,140 +137,134 @@ class UdpTransport : public Transport {
     };
 
     // Factory method. Constructor disabled.
-    static UdpTransport* Create(const WebRtc_Word32 id,
-                                WebRtc_UWord8& numSocketThreads);
+    static UdpTransport* Create(const int32_t id, uint8_t& numSocketThreads);
     static void Destroy(UdpTransport* module);
 
     // Prepares the class for sending RTP packets to ipAddr:rtpPort and RTCP
     // packets to ipAddr:rtpPort+1 if rtcpPort is zero. Otherwise to
     // ipAddr:rtcpPort.
-    virtual WebRtc_Word32 InitializeSendSockets(
-        const char* ipAddr,
-        const WebRtc_UWord16 rtpPort,
-        const WebRtc_UWord16 rtcpPort = 0) = 0;
+    virtual int32_t InitializeSendSockets(const char* ipAddr,
+                                          const uint16_t rtpPort,
+                                          const uint16_t rtcpPort = 0) = 0;
 
     // Register packetCallback for receiving incoming packets. Set the local
     // RTP port to rtpPort. Bind local IP address to ipAddr. If ipAddr is NULL
     // bind to local IP ANY. Set the local rtcp port to rtcpPort or rtpPort + 1
     // if rtcpPort is 0.
-    virtual WebRtc_Word32 InitializeReceiveSockets(
+    virtual int32_t InitializeReceiveSockets(
         UdpTransportData* const packetCallback,
-        const WebRtc_UWord16 rtpPort,
+        const uint16_t rtpPort,
         const char* ipAddr = NULL,
         const char* multicastIpAddr = NULL,
-        const WebRtc_UWord16 rtcpPort = 0) = 0;
+        const uint16_t rtcpPort = 0) = 0;
 
     // Set local RTP port to rtpPort and RTCP port to rtcpPort or rtpPort + 1 if
     // rtcpPort is 0. These ports will be used for sending instead of the local
     // ports set by InitializeReceiveSockets(..).
-    virtual WebRtc_Word32 InitializeSourcePorts(
-        const WebRtc_UWord16 rtpPort,
-        const WebRtc_UWord16 rtcpPort = 0) = 0;
+    virtual int32_t InitializeSourcePorts(const uint16_t rtpPort,
+                                          const uint16_t rtcpPort = 0) = 0;
 
     // Retrieve local ports used for sending if other than the ports specified
     // by InitializeReceiveSockets(..). rtpPort is set to the RTP port.
     // rtcpPort is set to the RTCP port.
-    virtual WebRtc_Word32 SourcePorts(WebRtc_UWord16& rtpPort,
-                                      WebRtc_UWord16& rtcpPort) const = 0;
+    virtual int32_t SourcePorts(uint16_t& rtpPort,
+                                uint16_t& rtcpPort) const = 0;
 
     // Set ipAddr to the IP address that is currently being listened on. rtpPort
     // to the RTP port listened to. rtcpPort to the RTCP port listened on.
     // multicastIpAddr to the multicast IP address group joined (the address
     // is NULL terminated).
-    virtual WebRtc_Word32 ReceiveSocketInformation(
+    virtual int32_t ReceiveSocketInformation(
         char ipAddr[kIpAddressVersion6Length],
-        WebRtc_UWord16& rtpPort,
-        WebRtc_UWord16& rtcpPort,
+        uint16_t& rtpPort,
+        uint16_t& rtcpPort,
         char multicastIpAddr[kIpAddressVersion6Length]) const = 0;
 
     // Set ipAddr to the IP address being sent from. rtpPort to the local RTP
     // port used for sending and rtcpPort to the local RTCP port used for
     // sending.
-    virtual WebRtc_Word32 SendSocketInformation(
-        char ipAddr[kIpAddressVersion6Length],
-        WebRtc_UWord16& rtpPort,
-        WebRtc_UWord16& rtcpPort) const = 0;
+    virtual int32_t SendSocketInformation(char ipAddr[kIpAddressVersion6Length],
+                                          uint16_t& rtpPort,
+                                          uint16_t& rtcpPort) const = 0;
 
     // Put the IP address, RTP port and RTCP port from the last received packet
     // into ipAddr, rtpPort and rtcpPort respectively.
-    virtual WebRtc_Word32 RemoteSocketInformation(
+    virtual int32_t RemoteSocketInformation(
         char ipAddr[kIpAddressVersion6Length],
-        WebRtc_UWord16& rtpPort,
-        WebRtc_UWord16& rtcpPort) const = 0;
+        uint16_t& rtpPort,
+        uint16_t& rtcpPort) const = 0;
 
     // Enable/disable quality of service if QoS is true or false respectively.
     // Set the type of service to serviceType, max bitrate in kbit/s to
     // maxBitrate and override DSCP if overrideDSCP is not 0.
     // Note: Must be called both InitializeSendSockets() and
     // InitializeReceiveSockets() has been called.
-    virtual WebRtc_Word32 SetQoS(const bool QoS,
-                                 const WebRtc_Word32 serviceType,
-                                 const WebRtc_UWord32 maxBitrate = 0,
-                                 const WebRtc_Word32 overrideDSCP = 0,
-                                 const bool audio = false) = 0;
+    virtual int32_t SetQoS(const bool QoS,
+                           const int32_t serviceType,
+                           const uint32_t maxBitrate = 0,
+                           const int32_t overrideDSCP = 0,
+                           const bool audio = false) = 0;
 
     // Set QoS to true if quality of service has been turned on. If QoS is true,
     // also set serviceType to type of service and overrideDSCP to override
     // DSCP.
-    virtual WebRtc_Word32 QoS(bool& QoS,
-                              WebRtc_Word32& serviceType,
-                              WebRtc_Word32& overrideDSCP) const = 0;
+    virtual int32_t QoS(bool& QoS,
+                        int32_t& serviceType,
+                        int32_t& overrideDSCP) const = 0;
 
     // Set type of service.
-    virtual WebRtc_Word32 SetToS(const WebRtc_Word32 DSCP,
-                                 const bool useSetSockOpt = false) = 0;
+    virtual int32_t SetToS(const int32_t DSCP,
+                           const bool useSetSockOpt = false) = 0;
 
     // Get type of service configuration.
-    virtual WebRtc_Word32 ToS(WebRtc_Word32& DSCP,
-                              bool& useSetSockOpt) const = 0;
+    virtual int32_t ToS(int32_t& DSCP,
+                        bool& useSetSockOpt) const = 0;
 
     // Set Priority Code Point (IEEE 802.1Q)
     // Note: for Linux this function will set the priority for the socket,
     // which then can be mapped to a PCP value with vconfig.
-    virtual WebRtc_Word32 SetPCP(const WebRtc_Word32 PCP) = 0;
+    virtual int32_t SetPCP(const int32_t PCP) = 0;
 
     // Get Priority Code Point
-    virtual WebRtc_Word32 PCP(WebRtc_Word32& PCP) const = 0;
+    virtual int32_t PCP(int32_t& PCP) const = 0;
 
     // Enable IPv6.
     // Note: this API must be called before any call to
     // InitializeReceiveSockets() or InitializeSendSockets(). It is not
     // possible to go back to IPv4 (default) after this call.
-    virtual WebRtc_Word32 EnableIpV6() = 0;
+    virtual int32_t EnableIpV6() = 0;
 
     // Return true if IPv6 has been enabled.
     virtual bool IpV6Enabled() const = 0;
 
     // Only allow packets received from filterIPAddress to be processed.
     // Note: must be called after EnableIPv6(), if IPv6 is used.
-    virtual WebRtc_Word32 SetFilterIP(
+    virtual int32_t SetFilterIP(
         const char filterIPAddress[kIpAddressVersion6Length]) = 0;
 
     // Write the filter IP address (if any) to filterIPAddress.
-    virtual WebRtc_Word32 FilterIP(
+    virtual int32_t FilterIP(
         char filterIPAddress[kIpAddressVersion6Length]) const = 0;
 
     // Only allow RTP packets from rtpFilterPort and RTCP packets from
     // rtcpFilterPort be processed.
     // Note: must be called after EnableIPv6(), if IPv6 is used.
-    virtual WebRtc_Word32 SetFilterPorts(
-        const WebRtc_UWord16 rtpFilterPort,
-        const WebRtc_UWord16 rtcpFilterPort) = 0;
+    virtual int32_t SetFilterPorts(const uint16_t rtpFilterPort,
+                                   const uint16_t rtcpFilterPort) = 0;
 
     // Set rtpFilterPort to the filter RTP port and rtcpFilterPort to the
     // filter RTCP port (if filtering based on port is enabled).
-    virtual WebRtc_Word32 FilterPorts(WebRtc_UWord16& rtpFilterPort,
-                                      WebRtc_UWord16& rtcpFilterPort) const = 0;
+    virtual int32_t FilterPorts(uint16_t& rtpFilterPort,
+                                uint16_t& rtcpFilterPort) const = 0;
 
     // Set the number of buffers that the socket implementation may use for
     // receiving packets to numberOfSocketBuffers. I.e. the number of packets
     // that can be received in parallell.
     // Note: this API only has effect on Windows.
-    virtual WebRtc_Word32 StartReceiving(
-        const WebRtc_UWord32 numberOfSocketBuffers) = 0;
+    virtual int32_t StartReceiving(const uint32_t numberOfSocketBuffers) = 0;
 
     // Stop receive incoming packets.
-    virtual WebRtc_Word32 StopReceiving() = 0;
+    virtual int32_t StopReceiving() = 0;
 
     // Return true incoming packets are received.
     virtual bool Receiving() const = 0;
@@ -288,79 +282,79 @@ class UdpTransport : public Transport {
     // with InitializeSendSockets(..) is used if portnr is 0. The same IP
     // address as set with InitializeSendSockets(..) is used if ip is NULL.
     // If isRTCP is true the port used will be the RTCP port.
-    virtual WebRtc_Word32 SendRaw(const WebRtc_Word8* data,
-                                  WebRtc_UWord32 length,
-                                  WebRtc_Word32 isRTCP,
-                                  WebRtc_UWord16 portnr = 0,
-                                  const char* ip = NULL) = 0;
+    virtual int32_t SendRaw(const int8_t* data,
+                            uint32_t length,
+                            int32_t isRTCP,
+                            uint16_t portnr = 0,
+                            const char* ip = NULL) = 0;
 
     // Send RTP data with size length to the address specified by to.
-    virtual WebRtc_Word32 SendRTPPacketTo(const WebRtc_Word8* data,
-                                          WebRtc_UWord32 length,
-                                          const SocketAddress& to) = 0;
+    virtual int32_t SendRTPPacketTo(const int8_t* data,
+                                    uint32_t length,
+                                    const SocketAddress& to) = 0;
 
 
     // Send RTCP data with size length to the address specified by to.
-    virtual WebRtc_Word32 SendRTCPPacketTo(const WebRtc_Word8* data,
-                                           WebRtc_UWord32 length,
-                                           const SocketAddress& to) = 0;
+    virtual int32_t SendRTCPPacketTo(const int8_t* data,
+                                     uint32_t length,
+                                     const SocketAddress& to) = 0;
 
     // Send RTP data with size length to ip:rtpPort where ip is the ip set by
     // the InitializeSendSockets(..) call.
-    virtual WebRtc_Word32 SendRTPPacketTo(const WebRtc_Word8* data,
-                                          WebRtc_UWord32 length,
-                                          WebRtc_UWord16 rtpPort) = 0;
+    virtual int32_t SendRTPPacketTo(const int8_t* data,
+                                    uint32_t length,
+                                    uint16_t rtpPort) = 0;
 
 
     // Send RTCP data with size length to ip:rtcpPort where ip is the ip set by
     // the InitializeSendSockets(..) call.
-    virtual WebRtc_Word32 SendRTCPPacketTo(const WebRtc_Word8* data,
-                                           WebRtc_UWord32 length,
-                                           WebRtc_UWord16 rtcpPort) = 0;
+    virtual int32_t SendRTCPPacketTo(const int8_t* data,
+                                     uint32_t length,
+                                     uint16_t rtcpPort) = 0;
 
     // Set the IP address to which packets are sent to ipaddr.
-    virtual WebRtc_Word32 SetSendIP(
+    virtual int32_t SetSendIP(
         const char ipaddr[kIpAddressVersion6Length]) = 0;
 
     // Set the send RTP and RTCP port to rtpPort and rtcpPort respectively.
-    virtual WebRtc_Word32 SetSendPorts(const WebRtc_UWord16 rtpPort,
-                                       const WebRtc_UWord16 rtcpPort = 0) = 0;
+    virtual int32_t SetSendPorts(const uint16_t rtpPort,
+                                 const uint16_t rtcpPort = 0) = 0;
 
     // Retreive the last registered error code.
     virtual ErrorCode LastError() const = 0;
 
     // Put the local IPv4 address in localIP.
     // Note: this API is for IPv4 only.
-    static WebRtc_Word32 LocalHostAddress(WebRtc_UWord32& localIP);
+    static int32_t LocalHostAddress(uint32_t& localIP);
 
     // Put the local IP6 address in localIP.
     // Note: this API is for IPv6 only.
-    static WebRtc_Word32 LocalHostAddressIPV6(char localIP[16]);
+    static int32_t LocalHostAddressIPV6(char localIP[16]);
 
     // Return a copy of hostOrder (host order) in network order.
-    static WebRtc_UWord16 Htons(WebRtc_UWord16 hostOrder);
+    static uint16_t Htons(uint16_t hostOrder);
 
     // Return a copy of hostOrder (host order) in network order.
-    static WebRtc_UWord32 Htonl(WebRtc_UWord32 hostOrder);
+    static uint32_t Htonl(uint32_t hostOrder);
 
     // Return IPv4 address in ip as 32 bit integer.
-    static WebRtc_UWord32 InetAddrIPV4(const char* ip);
+    static uint32_t InetAddrIPV4(const char* ip);
 
     // Convert the character string src into a network address structure in
     // the af address family and put it in dst.
     // Note: same functionality as inet_pton(..)
-    static WebRtc_Word32 InetPresentationToNumeric(WebRtc_Word32 af,
-                                                   const char* src,
-                                                   void* dst);
+    static int32_t InetPresentationToNumeric(int32_t af,
+                                             const char* src,
+                                             void* dst);
 
     // Set ip and sourcePort according to address. As input parameter ipSize
     // is the length of ip. As output parameter it's the number of characters
     // written to ip (not counting the '\0' character).
     // Note: this API is only implemented on Windows and Linux.
-    static WebRtc_Word32 IPAddress(const SocketAddress& address,
-                                   char* ip,
-                                   WebRtc_UWord32& ipSize,
-                                   WebRtc_UWord16& sourcePort);
+    static int32_t IPAddress(const SocketAddress& address,
+                             char* ip,
+                             uint32_t& ipSize,
+                             uint16_t& sourcePort);
 
     // Set ip and sourcePort according to address. As input parameter ipSize
     // is the length of ip. As output parameter it's the number of characters
@@ -369,10 +363,10 @@ class UdpTransport : public Transport {
     // Additional note: this API caches the address of the last call to it. If
     // address is likley to be the same for multiple calls it may be beneficial
     // to call this API instead of IPAddress().
-    virtual WebRtc_Word32 IPAddressCached(const SocketAddress& address,
-                                          char* ip,
-                                          WebRtc_UWord32& ipSize,
-                                          WebRtc_UWord16& sourcePort) = 0;
+    virtual int32_t IPAddressCached(const SocketAddress& address,
+                                    char* ip,
+                                    uint32_t& ipSize,
+                                    uint16_t& sourcePort) = 0;
 
     // Return true if ipaddr is a valid IP address.
     // If ipV6 is false ipaddr is interpreted as an IPv4 address otherwise it

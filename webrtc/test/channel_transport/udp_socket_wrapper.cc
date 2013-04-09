@@ -59,7 +59,7 @@ void UdpSocketWrapper::SetEventToNull()
     }
 }
 
-UdpSocketWrapper* UdpSocketWrapper::CreateSocket(const WebRtc_Word32 id,
+UdpSocketWrapper* UdpSocketWrapper::CreateSocket(const int32_t id,
                                                  UdpSocketManager* mgr,
                                                  CallbackObj obj,
                                                  IncomingSocketCallback cb,
@@ -77,7 +77,7 @@ UdpSocketWrapper* UdpSocketWrapper::CreateSocket(const WebRtc_Word32 id,
     {
         WSADATA wsaData;
         WORD wVersionRequested = MAKEWORD( 2, 2 );
-        WebRtc_Word32 err = WSAStartup( wVersionRequested, &wsaData);
+        int32_t err = WSAStartup( wVersionRequested, &wsaData);
         if (err != 0)
         {
             WEBRTC_TRACE(

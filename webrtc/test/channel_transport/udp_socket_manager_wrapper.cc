@@ -33,8 +33,8 @@ UdpSocketManager* UdpSocketManager::CreateInstance()
 
 UdpSocketManager* UdpSocketManager::StaticInstance(
     CountOperation count_operation,
-    const WebRtc_Word32 id,
-    WebRtc_UWord8& numOfWorkThreads)
+    const int32_t id,
+    uint8_t& numOfWorkThreads)
 {
     UdpSocketManager* impl =
         GetStaticInstance<UdpSocketManager>(count_operation);
@@ -46,15 +46,15 @@ UdpSocketManager* UdpSocketManager::StaticInstance(
     return impl;
 }
 
-UdpSocketManager* UdpSocketManager::Create(const WebRtc_Word32 id,
-                                           WebRtc_UWord8& numOfWorkThreads)
+UdpSocketManager* UdpSocketManager::Create(const int32_t id,
+                                           uint8_t& numOfWorkThreads)
 {
     return UdpSocketManager::StaticInstance(kAddRef, id, numOfWorkThreads);
 }
 
 void UdpSocketManager::Return()
 {
-    WebRtc_UWord8 numOfWorkThreads = 0;
+    uint8_t numOfWorkThreads = 0;
     UdpSocketManager::StaticInstance(kRelease, -1,
                                      numOfWorkThreads);
 }
@@ -63,7 +63,7 @@ UdpSocketManager::UdpSocketManager() : _numOfWorkThreads(0)
 {
 }
 
-WebRtc_UWord8 UdpSocketManager::WorkThreads() const
+uint8_t UdpSocketManager::WorkThreads() const
 {
     return _numOfWorkThreads;
 }

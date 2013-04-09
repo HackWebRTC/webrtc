@@ -44,7 +44,7 @@ TEST_F(FrameWriterTest, InitSuccess) {
 }
 
 TEST_F(FrameWriterTest, WriteFrame) {
-  WebRtc_UWord8 buffer[kFrameLength];
+  uint8_t buffer[kFrameLength];
   memset(buffer, 9, kFrameLength);  // Write lots of 9s to the buffer
   bool result = frame_writer_->WriteFrame(buffer);
   ASSERT_TRUE(result);  // success
@@ -54,7 +54,7 @@ TEST_F(FrameWriterTest, WriteFrame) {
 }
 
 TEST_F(FrameWriterTest, WriteFrameUninitialized) {
-  WebRtc_UWord8 buffer[3];
+  uint8_t buffer[3];
   FrameWriterImpl frame_writer(kOutputFilename, kFrameLength);
   ASSERT_FALSE(frame_writer.WriteFrame(buffer));
 }

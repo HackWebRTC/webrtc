@@ -35,8 +35,7 @@ UdpSocketManagerPosix::UdpSocketManagerPosix()
 {
 }
 
-bool UdpSocketManagerPosix::Init(WebRtc_Word32 id,
-                                 WebRtc_UWord8& numOfWorkThreads) {
+bool UdpSocketManagerPosix::Init(int32_t id, uint8_t& numOfWorkThreads) {
     CriticalSectionScoped cs(_critSect);
     if ((_id != -1) || (_numOfWorkThreads != 0)) {
         assert(_id != -1);
@@ -74,7 +73,7 @@ UdpSocketManagerPosix::~UdpSocketManagerPosix()
     delete _critSect;
 }
 
-WebRtc_Word32 UdpSocketManagerPosix::ChangeUniqueId(const WebRtc_Word32 id)
+int32_t UdpSocketManagerPosix::ChangeUniqueId(const int32_t id)
 {
     _id = id;
     return 0;

@@ -22,16 +22,15 @@ class UdpSocketWrapper;
 class UdpSocketManager
 {
 public:
-    static UdpSocketManager* Create(const WebRtc_Word32 id,
-                                    WebRtc_UWord8& numOfWorkThreads);
+    static UdpSocketManager* Create(const int32_t id,
+                                    uint8_t& numOfWorkThreads);
     static void Return();
 
     // Initializes the socket manager. Returns true if the manager wasn't
     // already initialized.
-    virtual bool Init(WebRtc_Word32 id,
-                      WebRtc_UWord8& numOfWorkThreads) = 0;
+    virtual bool Init(int32_t id, uint8_t& numOfWorkThreads) = 0;
 
-    virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id) = 0;
+    virtual int32_t ChangeUniqueId(const int32_t id) = 0;
 
     // Start listening to sockets that have been registered via the
     // AddSocket(..) API.
@@ -39,7 +38,7 @@ public:
     // Stop listening to sockets.
     virtual bool Stop() = 0;
 
-    virtual WebRtc_UWord8 WorkThreads() const;
+    virtual uint8_t WorkThreads() const;
 
     // Register a socket with the socket manager.
     virtual bool AddSocket(UdpSocketWrapper* s) = 0;
@@ -50,7 +49,7 @@ protected:
     UdpSocketManager();
     virtual ~UdpSocketManager() {}
 
-    WebRtc_UWord8 _numOfWorkThreads;
+    uint8_t _numOfWorkThreads;
 
     // Factory method.
     static UdpSocketManager* CreateInstance();
@@ -63,8 +62,8 @@ private:
 
     static UdpSocketManager* StaticInstance(
         CountOperation count_operation,
-        const WebRtc_Word32 id,
-        WebRtc_UWord8& numOfWorkThreads);
+        const int32_t id,
+        uint8_t& numOfWorkThreads);
 };
 
 }  // namespace test

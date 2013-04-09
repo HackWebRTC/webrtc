@@ -38,8 +38,8 @@ class MockSocketManager : public UdpSocketManager {
   void Destroy() {
     delete this;
   }
-  MOCK_METHOD2(Init, bool(WebRtc_Word32, WebRtc_UWord8&));
-  MOCK_METHOD1(ChangeUniqueId, WebRtc_Word32(const WebRtc_Word32));
+  MOCK_METHOD2(Init, bool(int32_t, uint8_t&));
+  MOCK_METHOD1(ChangeUniqueId, int32_t(const int32_t));
   MOCK_METHOD0(Start, bool());
   MOCK_METHOD0(Stop, bool());
   MOCK_METHOD1(AddSocket, bool(UdpSocketWrapper*));
@@ -49,9 +49,9 @@ class MockSocketManager : public UdpSocketManager {
 // Creates a socket using the static constructor method and verifies that
 // it's added to the socket manager.
 TEST(UdpSocketWrapper, CreateSocket) {
-  WebRtc_Word32 id = 42;
+  int32_t id = 42;
   // We can't test deletion of sockets without a socket manager.
-  WebRtc_UWord8 threads = 1;
+  uint8_t threads = 1;
   UdpSocketManager* mgr = UdpSocketManager::Create(id, threads);
   UdpSocketWrapper* socket =
       UdpSocketWrapper::CreateSocket(id,

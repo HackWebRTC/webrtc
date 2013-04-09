@@ -28,22 +28,22 @@ class VoiceChannelTransport : public UdpTransportData {
   virtual ~VoiceChannelTransport();
 
   // Start implementation of UdpTransportData.
-  void IncomingRTPPacket(const WebRtc_Word8* incoming_rtp_packet,
-                         const WebRtc_Word32 packet_length,
+  void IncomingRTPPacket(const int8_t* incoming_rtp_packet,
+                         const int32_t packet_length,
                          const char* /*from_ip*/,
-                         const WebRtc_UWord16 /*from_port*/);
+                         const uint16_t /*from_port*/);
 
-  void IncomingRTCPPacket(const WebRtc_Word8* incoming_rtcp_packet,
-                          const WebRtc_Word32 packet_length,
+  void IncomingRTCPPacket(const int8_t* incoming_rtcp_packet,
+                          const int32_t packet_length,
                           const char* /*from_ip*/,
-                          const WebRtc_UWord16 /*from_port*/);
+                          const uint16_t /*from_port*/);
   // End implementation of UdpTransportData.
 
   // Specifies the ports to receive RTP packets on.
-  int SetLocalReceiver(WebRtc_UWord16 rtp_port);
+  int SetLocalReceiver(uint16_t rtp_port);
 
   // Specifies the destination port and IP address for a specified channel.  
-  int SetSendDestination(const char* ip_address, WebRtc_UWord16 rtp_port);
+  int SetSendDestination(const char* ip_address, uint16_t rtp_port);
 
  private:
   int channel_;
@@ -59,22 +59,22 @@ class VideoChannelTransport : public UdpTransportData {
   virtual  ~VideoChannelTransport();
 
   // Start implementation of UdpTransportData.
-  void IncomingRTPPacket(const WebRtc_Word8* incoming_rtp_packet,
-                         const WebRtc_Word32 packet_length,
+  void IncomingRTPPacket(const int8_t* incoming_rtp_packet,
+                         const int32_t packet_length,
                          const char* /*from_ip*/,
-                         const WebRtc_UWord16 /*from_port*/);
+                         const uint16_t /*from_port*/);
 
-  void IncomingRTCPPacket(const WebRtc_Word8* incoming_rtcp_packet,
-                          const WebRtc_Word32 packet_length,
+  void IncomingRTCPPacket(const int8_t* incoming_rtcp_packet,
+                          const int32_t packet_length,
                           const char* /*from_ip*/,
-                          const WebRtc_UWord16 /*from_port*/);
+                          const uint16_t /*from_port*/);
   // End implementation of UdpTransportData.
 
   // Specifies the ports to receive RTP packets on.
-  int SetLocalReceiver(WebRtc_UWord16 rtp_port);
+  int SetLocalReceiver(uint16_t rtp_port);
 
   // Specifies the destination port and IP address for a specified channel.  
-  int SetSendDestination(const char* ip_address, WebRtc_UWord16 rtp_port);
+  int SetSendDestination(const char* ip_address, uint16_t rtp_port);
 
  private:
   int channel_;

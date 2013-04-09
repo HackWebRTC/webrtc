@@ -26,7 +26,7 @@
 
 namespace webrtc {
 namespace test {
-UdpSocketPosix::UdpSocketPosix(const WebRtc_Word32 id, UdpSocketManager* mgr,
+UdpSocketPosix::UdpSocketPosix(const int32_t id, UdpSocketManager* mgr,
                                bool ipV6Enable)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceTransport, id,
@@ -93,7 +93,7 @@ UdpSocketPosix::~UdpSocketPosix()
     }
 }
 
-WebRtc_Word32 UdpSocketPosix::ChangeUniqueId(const WebRtc_Word32 id)
+int32_t UdpSocketPosix::ChangeUniqueId(const int32_t id)
 {
     _id = id;
     return 0;
@@ -121,8 +121,8 @@ bool UdpSocketPosix::SetCallback(CallbackObj obj, IncomingSocketCallback cb)
     return false;
 }
 
-bool UdpSocketPosix::SetSockopt(WebRtc_Word32 level, WebRtc_Word32 optname,
-                            const WebRtc_Word8* optval, WebRtc_Word32 optlen)
+bool UdpSocketPosix::SetSockopt(int32_t level, int32_t optname,
+                                const int8_t* optval, int32_t optlen)
 {
    if(0 == setsockopt(_socket, level, optname, optval, optlen ))
    {
@@ -135,9 +135,9 @@ bool UdpSocketPosix::SetSockopt(WebRtc_Word32 level, WebRtc_Word32 optname,
    return false;
 }
 
-WebRtc_Word32 UdpSocketPosix::SetTOS(WebRtc_Word32 serviceType)
+int32_t UdpSocketPosix::SetTOS(int32_t serviceType)
 {
-    if (SetSockopt(IPPROTO_IP, IP_TOS ,(WebRtc_Word8*)&serviceType ,4) != 0)
+    if (SetSockopt(IPPROTO_IP, IP_TOS ,(int8_t*)&serviceType ,4) != 0)
     {
         return -1;
     }
@@ -157,8 +157,8 @@ bool UdpSocketPosix::Bind(const SocketAddress& name)
     return false;
 }
 
-WebRtc_Word32 UdpSocketPosix::SendTo(const WebRtc_Word8* buf, WebRtc_Word32 len,
-                                     const SocketAddress& to)
+int32_t UdpSocketPosix::SendTo(const int8_t* buf, int32_t len,
+                               const SocketAddress& to)
 {
     int size = sizeof(sockaddr);
     int retVal = sendto(_socket,buf, len, 0,
@@ -182,7 +182,7 @@ void UdpSocketPosix::HasIncoming()
 {
     // replace 2048 with a mcro define and figure out
     // where 2048 comes from
-    WebRtc_Word8 buf[2048];
+    int8_t buf[2048];
     int retval;
     SocketAddress from;
 #if defined(WEBRTC_MAC)

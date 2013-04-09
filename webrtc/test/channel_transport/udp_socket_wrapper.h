@@ -37,14 +37,13 @@ typedef int SOCKET;
 #endif
 
 typedef void* CallbackObj;
-typedef void(*IncomingSocketCallback)(CallbackObj obj, const WebRtc_Word8* buf,
-                                      WebRtc_Word32 len,
-                                      const SocketAddress* from);
+typedef void(*IncomingSocketCallback)(CallbackObj obj, const int8_t* buf,
+                                      int32_t len, const SocketAddress* from);
 
 class UdpSocketWrapper
 {
 public:
-    static UdpSocketWrapper* CreateSocket(const WebRtc_Word32 id,
+    static UdpSocketWrapper* CreateSocket(const int32_t id,
                                           UdpSocketManager* mgr,
                                           CallbackObj obj,
                                           IncomingSocketCallback cb,
@@ -52,7 +51,7 @@ public:
                                           bool disableGQOS = false);
 
     // Set the unique identifier of this class to id.
-    virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id) = 0;
+    virtual int32_t ChangeUniqueId(const int32_t id) = 0;
 
     // Register cb for receiving callbacks when there are incoming packets.
     // Register obj so that it will be passed in calls to cb.
@@ -63,7 +62,7 @@ public:
 
     // Start receiving UDP data.
     virtual bool StartReceiving();
-    virtual inline bool StartReceiving(const WebRtc_UWord32 /*receiveBuffers*/)
+    virtual inline bool StartReceiving(const uint32_t /*receiveBuffers*/)
     {return StartReceiving();}
     // Stop receiving UDP data.
     virtual bool StopReceiving();
@@ -71,19 +70,18 @@ public:
     virtual bool ValidHandle() = 0;
 
     // Set socket options.
-    virtual bool SetSockopt(WebRtc_Word32 level, WebRtc_Word32 optname,
-                            const WebRtc_Word8* optval,
-                            WebRtc_Word32 optlen) = 0;
+    virtual bool SetSockopt(int32_t level, int32_t optname,
+                            const int8_t* optval, int32_t optlen) = 0;
 
     // Set TOS for outgoing packets.
-    virtual WebRtc_Word32 SetTOS(const WebRtc_Word32 serviceType) = 0;
+    virtual int32_t SetTOS(const int32_t serviceType) = 0;
 
     // Set 802.1Q PCP field (802.1p) for outgoing VLAN traffic.
-    virtual WebRtc_Word32 SetPCP(const WebRtc_Word32 /*pcp*/) {return -1;}
+    virtual int32_t SetPCP(const int32_t /*pcp*/) {return -1;}
 
     // Send buf of length len to the address specified by to.
-    virtual WebRtc_Word32 SendTo(const WebRtc_Word8* buf, WebRtc_Word32 len,
-                                 const SocketAddress& to) = 0;
+    virtual int32_t SendTo(const int8_t* buf, int32_t len,
+                           const SocketAddress& to) = 0;
 
     virtual void SetEventToNull();
 
@@ -91,13 +89,13 @@ public:
     virtual void CloseBlocking() {}
 
     // tokenRate is in bit/s. peakBandwidt is in byte/s
-    virtual bool SetQos(WebRtc_Word32 serviceType, WebRtc_Word32 tokenRate,
-                        WebRtc_Word32 bucketSize, WebRtc_Word32 peekBandwith,
-                        WebRtc_Word32 minPolicedSize, WebRtc_Word32 maxSduSize,
+    virtual bool SetQos(int32_t serviceType, int32_t tokenRate,
+                        int32_t bucketSize, int32_t peekBandwith,
+                        int32_t minPolicedSize, int32_t maxSduSize,
                         const SocketAddress &stRemName,
-                        WebRtc_Word32 overrideDSCP = 0) = 0;
+                        int32_t overrideDSCP = 0) = 0;
 
-    virtual WebRtc_UWord32 ReceiveBuffers() {return 0;};
+    virtual uint32_t ReceiveBuffers() {return 0;};
 
 protected:
     // Creating the socket is done via CreateSocket().

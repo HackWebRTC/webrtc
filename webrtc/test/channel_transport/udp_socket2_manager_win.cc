@@ -19,7 +19,7 @@
 namespace webrtc {
 namespace test {
 
-WebRtc_UWord32 UdpSocket2ManagerWindows::_numOfActiveManagers = 0;
+uint32_t UdpSocket2ManagerWindows::_numOfActiveManagers = 0;
 bool UdpSocket2ManagerWindows::_wsaInit = false;
 
 UdpSocket2ManagerWindows::UdpSocket2ManagerWindows()
@@ -98,8 +98,8 @@ UdpSocket2ManagerWindows::~UdpSocket2ManagerWindows()
     }
 }
 
-bool UdpSocket2ManagerWindows::Init(WebRtc_Word32 id,
-                                    WebRtc_UWord8& numOfWorkThreads) {
+bool UdpSocket2ManagerWindows::Init(int32_t id,
+                                    uint8_t& numOfWorkThreads) {
   CriticalSectionScoped cs(_pCrit);
   if ((_id != -1) || (_numOfWorkThreads != 0)) {
       assert(_id != -1);
@@ -111,7 +111,7 @@ bool UdpSocket2ManagerWindows::Init(WebRtc_Word32 id,
   return true;
 }
 
-WebRtc_Word32 UdpSocket2ManagerWindows::ChangeUniqueId(const WebRtc_Word32 id)
+int32_t UdpSocket2ManagerWindows::ChangeUniqueId(const int32_t id)
 {
     _id = id;
     return 0;
@@ -133,7 +133,7 @@ bool UdpSocket2ManagerWindows::Start()
     _pCrit->Enter();
     // Start worker threads.
     _stopped = false;
-    WebRtc_Word32 error = 0;
+    int32_t error = 0;
     ListItem* pItem = _workerThreadsList.First();
     UdpSocket2WorkerWindows* pWorker;
     while(pItem != NULL && !error)
@@ -169,7 +169,7 @@ bool UdpSocket2ManagerWindows::StartWorkerThreads()
                                                      0, 0);
         if(_ioCompletionHandle == NULL)
         {
-            WebRtc_Word32 error = GetLastError();
+            int32_t error = GetLastError();
             WEBRTC_TRACE(
                 kTraceError,
                 kTraceTransport,
@@ -182,7 +182,7 @@ bool UdpSocket2ManagerWindows::StartWorkerThreads()
         }
 
         // Create worker threads.
-        WebRtc_UWord32 i = 0;
+        uint32_t i = 0;
         bool error = false;
         while(i < _numOfWorkThreads && !error)
         {
@@ -272,7 +272,7 @@ bool UdpSocket2ManagerWindows::Stop()
 
 bool UdpSocket2ManagerWindows::StopWorkerThreads()
 {
-    WebRtc_Word32 error = 0;
+    int32_t error = 0;
     WEBRTC_TRACE(
         kTraceDebug,
         kTraceTransport,
@@ -295,7 +295,7 @@ bool UdpSocket2ManagerWindows::StopWorkerThreads()
     // Release all threads waiting for GetQueuedCompletionStatus(..).
     if(_ioCompletionHandle)
     {
-        WebRtc_UWord32 i = 0;
+        uint32_t i = 0;
         for(i = 0; i < _workerThreadsList.GetSize(); i++)
         {
             PostQueuedCompletionStatus(_ioCompletionHandle, 0 ,0 , NULL);
@@ -365,7 +365,7 @@ bool UdpSocket2ManagerWindows::AddSocketPrv(UdpSocket2Windows* s)
             "UdpSocket2ManagerWindows(%d)::AddSocketPrv() socket->GetFd() ==\
  %d",
             _managerNumber,
-            (WebRtc_Word32)s->GetFd());
+            (int32_t)s->GetFd());
         _pCrit->Leave();
         return false;
 
@@ -375,7 +375,7 @@ bool UdpSocket2ManagerWindows::AddSocketPrv(UdpSocket2Windows* s)
                                                  (ULONG_PTR)(s), 0);
     if(_ioCompletionHandle == NULL)
     {
-        WebRtc_Word32 error = GetLastError();
+        int32_t error = GetLastError();
         WEBRTC_TRACE(
             kTraceError,
             kTraceTransport,
@@ -430,7 +430,7 @@ PerIoContext* UdpSocket2ManagerWindows::PopIoContext()
     return pIoC;
 }
 
-WebRtc_Word32 UdpSocket2ManagerWindows::PushIoContext(PerIoContext* pIoContext)
+int32_t UdpSocket2ManagerWindows::PushIoContext(PerIoContext* pIoContext)
 {
     return _ioContextPool.PushIoContext(pIoContext);
 }
@@ -450,7 +450,7 @@ IoContextPool::~IoContextPool()
     AlignedFree(_pListHead);
 }
 
-WebRtc_Word32 IoContextPool::Init(WebRtc_UWord32 /*increaseSize*/)
+int32_t IoContextPool::Init(uint32_t /*increaseSize*/)
 {
     if(_init)
     {
@@ -495,7 +495,7 @@ PerIoContext* IoContextPool::PopIoContext()
     return &((IoContextPoolItem*)pListEntry)->payload.ioContext;
 }
 
-WebRtc_Word32 IoContextPool::PushIoContext(PerIoContext* pIoContext)
+int32_t IoContextPool::PushIoContext(PerIoContext* pIoContext)
 {
     // TODO (hellner): Overlapped IO should be completed at this point. Perhaps
     //                 add an assert?
@@ -504,9 +504,9 @@ WebRtc_Word32 IoContextPool::PushIoContext(PerIoContext* pIoContext)
 
     IoContextPoolItem* item = ((IoContextPoolItemPayload*)pIoContext)->base;
 
-    const WebRtc_Word32 usedItems = --_inUse;
-    const WebRtc_Word32 totalItems = _size.Value();
-    const WebRtc_Word32 freeItems = totalItems - usedItems;
+    const int32_t usedItems = --_inUse;
+    const int32_t totalItems = _size.Value();
+    const int32_t freeItems = totalItems - usedItems;
     if(freeItems < 0)
     {
         assert(false);
@@ -524,14 +524,14 @@ WebRtc_Word32 IoContextPool::PushIoContext(PerIoContext* pIoContext)
     return 0;
 }
 
-WebRtc_Word32 IoContextPool::Free()
+int32_t IoContextPool::Free()
 {
     if(!_init)
     {
         return 0;
     }
 
-    WebRtc_Word32 itemsFreed = 0;
+    int32_t itemsFreed = 0;
     PSLIST_ENTRY pListEntry = InterlockedPopEntrySList(_pListHead);
     while(pListEntry != NULL)
     {
@@ -544,7 +544,7 @@ WebRtc_Word32 IoContextPool::Free()
     return itemsFreed;
 }
 
-WebRtc_Word32 UdpSocket2WorkerWindows::_numOfWorkers = 0;
+int32_t UdpSocket2WorkerWindows::_numOfWorkers = 0;
 
 UdpSocket2WorkerWindows::UdpSocket2WorkerWindows(HANDLE ioCompletionHandle)
     : _ioCompletionHandle(ioCompletionHandle),
@@ -588,7 +588,7 @@ void UdpSocket2WorkerWindows::SetNotAlive()
     _pThread->SetNotAlive();
 }
 
-WebRtc_Word32 UdpSocket2WorkerWindows::Init()
+int32_t UdpSocket2WorkerWindows::Init()
 {
     if(!_init)
     {
@@ -621,7 +621,7 @@ bool UdpSocket2WorkerWindows::Run(ThreadObj obj)
 // the UdpSocket2ManagerWindows::StopWorkerThreads() function.
 bool UdpSocket2WorkerWindows::Process()
 {
-    WebRtc_Word32 success = 0;
+    int32_t success = 0;
     DWORD ioSize = 0;
     UdpSocket2Windows* pSocket = NULL;
     PerIoContext* pIOContext = 0;
@@ -630,7 +630,7 @@ bool UdpSocket2WorkerWindows::Process()
                                         &ioSize,
                                        (ULONG_PTR*)&pSocket, &pOverlapped, 200);
 
-    WebRtc_UWord32 error = 0;
+    uint32_t error = 0;
     if(!success)
     {
         error = GetLastError();
