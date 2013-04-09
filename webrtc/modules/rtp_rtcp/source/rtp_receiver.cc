@@ -337,6 +337,7 @@ int32_t RTPReceiver::IncomingRTPPacket(
   WebRtcRTPHeader* rtp_header,
   const uint8_t* packet,
   const uint16_t packet_length) {
+  TRACE_EVENT0("webrtc_rtp", "RTPRecv::Packet");
   // The rtp_header argument contains the parsed RTP header.
   int length = packet_length - rtp_header->header.paddingLength;
 
@@ -1141,8 +1142,10 @@ void RTPReceiver::ProcessBitrate() {
   CriticalSectionScoped cs(critical_section_rtp_receiver_);
 
   Bitrate::Process();
-  TRACE_COUNTER1("webrtc_rtp", "Received Bitrate", BitrateLast());
-  TRACE_COUNTER1("webrtc_rtp", "Received Packet Rate", PacketRate());
+  TRACE_COUNTER_ID1("webrtc_rtp",
+                    "RTPReceiverBitrate", ssrc_, BitrateLast());
+  TRACE_COUNTER_ID1("webrtc_rtp",
+                    "RTPReceiverPacketRate", ssrc_, PacketRate());
 }
 
 } // namespace webrtc

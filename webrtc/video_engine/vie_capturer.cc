@@ -20,6 +20,7 @@
 #include "system_wrappers/interface/event_wrapper.h"
 #include "system_wrappers/interface/thread_wrapper.h"
 #include "system_wrappers/interface/trace.h"
+#include "system_wrappers/interface/trace_event.h"
 #include "video_engine/include/vie_image_process.h"
 #include "video_engine/vie_defines.h"
 #include "video_engine/vie_encoder.h"
@@ -353,6 +354,10 @@ void ViECapturer::OnIncomingCapturedFrame(const int32_t capture_id,
   // is slightly off since it's being set when the frame has been received from
   // the camera, and not when the camera actually captured the frame.
   video_frame.set_render_time_ms(video_frame.render_time_ms() - FrameDelay());
+
+  TRACE_EVENT_INSTANT1("webrtc", "VC::OnIncomingCapturedFrame",
+                       "render_time", video_frame.render_time_ms());
+
   captured_frame_.SwapFrame(&video_frame);
   capture_event_.Set();
   return;
@@ -368,6 +373,10 @@ void ViECapturer::OnIncomingCapturedEncodedFrame(const int32_t capture_id,
   // is slightly off since it's being set when the frame has been received from
   // the camera, and not when the camera actually captured the frame.
   video_frame.SetRenderTime(video_frame.RenderTimeMs() - FrameDelay());
+
+  TRACE_EVENT_INSTANT1("webrtc", "VC::OnIncomingCapturedEncodedFrame",
+                       "render_time", video_frame.RenderTimeMs());
+
   assert(codec_type != kVideoCodecUnknown);
   if (encoded_frame_.Length() != 0) {
     // The last encoded frame has not been sent yet. Need to wait.

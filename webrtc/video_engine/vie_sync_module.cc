@@ -153,10 +153,9 @@ int32_t ViESyncModule::Process() {
     return 0;
   }
 
-  TRACE_COUNTER1("webrtc_sync", "CurrentVideoDelay",
-                 total_video_delay_target_ms);
-  TRACE_COUNTER1("webrtc_sync", "CurrentAudioDelay", current_audio_delay_ms);
-  TRACE_COUNTER1("webrtc_sync", "RelativeDelay", relative_delay_ms);
+  TRACE_COUNTER1("webrtc", "SyncCurrentVideoDelay", total_video_delay_target_ms);
+  TRACE_COUNTER1("webrtc", "SyncCurrentAudioDelay", current_audio_delay_ms);
+  TRACE_COUNTER1("webrtc", "SyncRelativeDelay", relative_delay_ms);
   int extra_audio_delay_ms = 0;
   // Calculate the necessary extra audio delay and desired total video
   // delay to get the streams in sync.
@@ -167,8 +166,8 @@ int32_t ViESyncModule::Process() {
     return 0;
   }
 
-  TRACE_COUNTER1("webrtc_sync", "ExtraAudioDelayTarget", extra_audio_delay_ms);
-  TRACE_COUNTER1("webrtc_sync", "TotalVideoDelayTarget",
+  TRACE_COUNTER1("webrtc", "SyncExtraAudioDelayTarget", extra_audio_delay_ms);
+  TRACE_COUNTER1("webrtc", "SyncTotalVideoDelayTarget",
                  total_video_delay_target_ms);
   if (voe_sync_interface_->SetMinimumPlayoutDelay(
       voe_channel_id_, extra_audio_delay_ms) == -1) {

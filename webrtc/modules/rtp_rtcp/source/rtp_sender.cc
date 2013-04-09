@@ -18,8 +18,26 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
+
+namespace {
+
+const char* FrameTypeToString(const FrameType frame_type) {
+  switch (frame_type) {
+    case kFrameEmpty: return "empty";
+    case kAudioFrameSpeech: return "audio_speech";
+    case kAudioFrameCN: return "audio_cn";
+    case kVideoFrameKey: return "video_key";
+    case kVideoFrameDelta: return "video_delta";
+    case kVideoFrameGolden: return "video_golden";
+    case kVideoFrameAltRef: return "video_altref";
+  }
+  return "";
+}
+
+}  // namespace
 
 RTPSender::RTPSender(const int32_t id, const bool audio, Clock *clock,
                      Transport *transport, RtpAudioFeedback *audio_feedback,
@@ -305,6 +323,9 @@ int32_t RTPSender::SendOutgoingData(
     const uint8_t *payload_data, const uint32_t payload_size,
     const RTPFragmentationHeader *fragmentation,
     VideoCodecInformation *codec_info, const RTPVideoTypeHeader *rtp_type_hdr) {
+  TRACE_EVENT2("webrtc_rtp", "RTPSender::SendOutgoingData",
+               "timestsamp", capture_timestamp,
+               "frame_type", FrameTypeToString(frame_type));
   {
     // Drop this packet if we're not sending media packets.
     CriticalSectionScoped cs(send_critsect_);
@@ -448,6 +469,12 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
   }
 
   int32_t bytes_sent = ReSendToNetwork(buffer_to_send_ptr, length);
+  ModuleRTPUtility::RTPHeaderParser rtp_parser(data_buffer, length);
+  WebRtcRTPHeader rtp_header;
+  rtp_parser.Parse(rtp_header);
+  TRACE_EVENT_INSTANT2("webrtc_rtp", "RTPSender::ReSendPacket",
+                       "timestamp", rtp_header.header.timestamp,
+                       "seqnum", rtp_header.header.sequenceNumber);
   if (bytes_sent <= 0) {
     WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, id_,
                  "Transport failed to resend packet_id %u", packet_id);
@@ -490,6 +517,8 @@ int RTPSender::SetSelectiveRetransmissions(uint8_t settings) {
 void RTPSender::OnReceivedNACK(
     const std::list<uint16_t>& nack_sequence_numbers,
     const uint16_t avg_rtt) {
+  TRACE_EVENT2("webrtc_rtp", "RTPSender::OnReceivedNACK",
+               "num_seqnum", nack_sequence_numbers.size(), "avg_rtt", avg_rtt);
   const int64_t now = clock_->TimeInMilliseconds();
   uint32_t bytes_re_sent = 0;
 
@@ -608,6 +637,9 @@ void RTPSender::TimeToSendPacket(uint16_t sequence_number,
   ModuleRTPUtility::RTPHeaderParser rtp_parser(data_buffer, length);
   WebRtcRTPHeader rtp_header;
   rtp_parser.Parse(rtp_header);
+  TRACE_EVENT_INSTANT2("webrtc_rtp", "RTPSender::TimeToSendPacket",
+                       "timestamp", rtp_header.header.timestamp,
+                       "seqnum", sequence_number);
 
   int64_t diff_ms = clock_->TimeInMilliseconds() - capture_time_ms;
   if (UpdateTransmissionTimeOffset(data_buffer, length, rtp_header, diff_ms)) {

@@ -17,6 +17,7 @@
 #include "trace.h"
 #include "video_codec_interface.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc
 {
@@ -863,6 +864,7 @@ VideoCodingModuleImpl::RegisterPacketRequestCallback(
 int32_t
 VideoCodingModuleImpl::Decode(uint16_t maxWaitTimeMs)
 {
+    TRACE_EVENT1("webrtc", "VCM::Decode", "max_wait", maxWaitTimeMs);
     int64_t nextRenderTimeMs;
     {
         CriticalSectionScoped cs(_receiveCritSect);
@@ -954,6 +956,7 @@ int32_t
 VideoCodingModuleImpl::RequestSliceLossIndication(
     const uint64_t pictureID) const
 {
+    TRACE_EVENT1("webrtc", "RequestSLI", "picture_id", pictureID);
     if (_frameTypeCallback != NULL)
     {
         const int32_t ret =
@@ -980,6 +983,7 @@ VideoCodingModuleImpl::RequestSliceLossIndication(
 int32_t
 VideoCodingModuleImpl::RequestKeyFrame()
 {
+    TRACE_EVENT0("webrtc", "RequestKeyFrame");
     if (_frameTypeCallback != NULL)
     {
         const int32_t ret = _frameTypeCallback->RequestKeyFrame();
@@ -1062,6 +1066,9 @@ VideoCodingModuleImpl::DecodeDualFrame(uint16_t maxWaitTimeMs)
 int32_t
 VideoCodingModuleImpl::Decode(const VCMEncodedFrame& frame)
 {
+    TRACE_EVENT2("webrtc", "Decode",
+                 "timestamp", frame.TimeStamp(),
+                 "type", frame.FrameType());
     // Change decoder if payload type has changed
     const bool renderTimingBefore = _codecDataBase.SupportsRenderScheduling();
     _decoder = _codecDataBase.GetDecoder(frame.PayloadType(),
@@ -1208,6 +1215,9 @@ VideoCodingModuleImpl::IncomingPacket(const uint8_t* incomingPayload,
                                     uint32_t payloadLength,
                                     const WebRtcRTPHeader& rtpInfo)
 {
+    TRACE_EVENT2("webrtc", "VCM::Packet",
+                 "seqnum", rtpInfo.header.sequenceNumber,
+                 "type", rtpInfo.frameType);
     if (incomingPayload == NULL) {
       // The jitter buffer doesn't handle non-zero payload lengths for packets
       // without payload.

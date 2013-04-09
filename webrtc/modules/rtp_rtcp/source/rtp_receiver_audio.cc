@@ -191,10 +191,9 @@ int32_t RTPReceiverAudio::ParseRtpPacket(
     const uint16_t packet_length,
     const int64_t timestamp_ms,
     const bool is_first_packet) {
-  TRACE_EVENT_INSTANT2("webrtc_rtp", "RTPReceiverAudio::ParseRtpPacket",
-                       "seqnum", rtp_header->header.sequenceNumber,
-                       "timestamp", rtp_header->header.timestamp);
-
+  TRACE_EVENT2("webrtc_rtp", "Audio::ParseRtp",
+               "seqnum", rtp_header->header.sequenceNumber,
+               "timestamp", rtp_header->header.timestamp);
   const uint8_t* payload_data =
       ModuleRTPUtility::GetPayloadData(rtp_header, packet);
   const uint16_t payload_data_length =

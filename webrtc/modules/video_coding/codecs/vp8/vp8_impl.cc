@@ -331,6 +331,8 @@ uint32_t VP8EncoderImpl::MaxIntraTarget(uint32_t optimalBuffersize) {
 int VP8EncoderImpl::Encode(const I420VideoFrame& input_image,
                            const CodecSpecificInfo* codec_specific_info,
                            const std::vector<VideoFrameType>* frame_types) {
+  TRACE_EVENT1("webrtc", "VP8::Encode", "timestamp", input_image.timestamp());
+
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
@@ -389,9 +391,6 @@ int VP8EncoderImpl::Encode(const I420VideoFrame& input_image,
     flags = rps_->EncodeFlags(picture_id_, sendRefresh,
                               input_image.timestamp());
   }
-
-  TRACE_EVENT1("video_coding", "VP8EncoderImpl::Encode",
-               "input_image_timestamp", input_image.timestamp());
 
   // TODO(holmer): Ideally the duration should be the timestamp diff of this
   // frame and the next frame to be encoded, which we don't have. Instead we

@@ -1304,6 +1304,10 @@ int32_t AudioCodingModuleImpl::RegisterIncomingMessagesCallback(
 // Add 10MS of raw (PCM) audio data to the encoder.
 int32_t AudioCodingModuleImpl::Add10MsData(
     const AudioFrame& audio_frame) {
+  TRACE_EVENT2("webrtc", "ACM::Add10MsData",
+               "timestamp", audio_frame.timestamp_,
+               "samples_per_channel", audio_frame.samples_per_channel_);
+
   if (audio_frame.samples_per_channel_ <= 0) {
     assert(false);
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
@@ -2232,11 +2236,14 @@ AudioPlayoutMode AudioCodingModuleImpl::PlayoutMode() const {
 // Automatic resample to the requested frequency.
 int32_t AudioCodingModuleImpl::PlayoutData10Ms(
     int32_t desired_freq_hz, AudioFrame* audio_frame) {
-  TRACE_EVENT0("webrtc_voe", "ACM::PlayoutData10Ms");
+  TRACE_EVENT_ASYNC_BEGIN0("webrtc", "ACM::PlayoutData10Ms", 0);
   bool stereo_mode;
 
-  if (GetSilence(desired_freq_hz, audio_frame))
+  if (GetSilence(desired_freq_hz, audio_frame)) {
+     TRACE_EVENT_ASYNC_END1("webrtc", "ACM::PlayoutData10Ms", 0,
+                            "silence", true);
      return 0;  // Silence is generated, return.
+  }
 
   // RecOut always returns 10 ms.
   if (neteq_.RecOut(audio_frame_) != 0) {
@@ -2264,6 +2271,8 @@ int32_t AudioCodingModuleImpl::PlayoutData10Ms(
     CriticalSectionScoped lock(acm_crit_sect_);
 
     if ((receive_freq != desired_freq_hz) && (desired_freq_hz != -1)) {
+      TRACE_EVENT_ASYNC_END2("webrtc", "ACM::PlayoutData10Ms", 0,
+                             "stereo", stereo_mode, "resample", true);
       // Resample payload_data.
       int16_t temp_len = output_resampler_.Resample10Msec(
           audio_frame_.data_, receive_freq, audio_frame->data_,
@@ -2280,6 +2289,8 @@ int32_t AudioCodingModuleImpl::PlayoutData10Ms(
       // Set the sampling frequency.
       audio_frame->sample_rate_hz_ = desired_freq_hz;
     } else {
+      TRACE_EVENT_ASYNC_END2("webrtc", "ACM::PlayoutData10Ms", 0,
+                             "stereo", stereo_mode, "resample", false);
       memcpy(audio_frame->data_, audio_frame_.data_,
              audio_frame_.samples_per_channel_ * audio_frame->num_channels_
              * sizeof(int16_t));

@@ -12,6 +12,7 @@
 #include "generic_encoder.h"
 #include "media_optimization.h"
 #include "../../../../engine_configurations.h"
+#include "trace_event.h"
 
 namespace webrtc {
 
@@ -177,6 +178,8 @@ VCMEncodedFrameCallback::Encoded(
     const CodecSpecificInfo* codecSpecificInfo,
     const RTPFragmentationHeader* fragmentationHeader)
 {
+    TRACE_EVENT2("webrtc", "VCM::Encoded", "timestamp", encodedImage._timeStamp,
+                 "length", encodedImage._length);
     FrameType frameType = VCMEncodedFrame::ConvertFrameType(encodedImage._frameType);
 
     uint32_t encodedBytes = 0;

@@ -18,6 +18,7 @@
 #include "webrtc/modules/video_coding/main/source/media_opt_util.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
 
@@ -173,6 +174,7 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
     int64_t& next_render_time_ms,
     bool render_timing,
     VCMReceiver* dual_receiver) {
+  TRACE_EVENT0("webrtc", "Recv::FrameForDecoding");
   // No need to enter the critical section here since the jitter buffer
   // is thread-safe.
   FrameType incoming_frame_type = kVideoFrameDelta;
@@ -227,6 +229,8 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
     uint16_t max_wait_time_ms,
     int64_t next_render_time_ms,
     VCMReceiver* dual_receiver) {
+  TRACE_EVENT1("webrtc", "FrameForDecoding",
+               "max_wait", max_wait_time_ms);
   // How long can we wait until we must decode the next frame.
   uint32_t wait_time_ms = timing_->MaxWaitingTime(
       next_render_time_ms, clock_->TimeInMilliseconds());
@@ -286,6 +290,7 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
 VCMEncodedFrame* VCMReceiver::FrameForRendering(uint16_t max_wait_time_ms,
                                                 int64_t next_render_time_ms,
                                                 VCMReceiver* dual_receiver) {
+  TRACE_EVENT0("webrtc", "FrameForRendering");
   // How long MUST we wait until we must decode the next frame. This is
   // different for the case where we have a renderer which can render at a
   // specified time. Here we must wait as long as possible before giving the

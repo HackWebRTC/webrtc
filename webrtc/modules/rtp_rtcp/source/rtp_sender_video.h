@@ -92,6 +92,7 @@ protected:
     virtual int32_t SendVideoPacket(uint8_t* dataBuffer,
                                     const uint16_t payloadLength,
                                     const uint16_t rtpHeaderLength,
+                                    const uint32_t capture_timestamp,
                                     int64_t capture_time_ms,
                                     StorageType storage,
                                     bool protect);

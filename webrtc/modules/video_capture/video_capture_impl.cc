@@ -16,6 +16,7 @@
 #include "ref_count.h"
 #include "tick_util.h"
 #include "trace.h"
+#include "trace_event.h"
 #include "video_capture_config.h"
 
 #include <stdlib.h>
@@ -199,6 +200,9 @@ WebRtc_Word32 VideoCaptureImpl::DeliverCapturedFrame(I420VideoFrame&
       captureFrame.set_render_time_ms(TickTime::MillisecondTimestamp());
   }
 
+  TRACE_EVENT1("webrtc", "VC::DeliverCapturedFrame",
+               "capture_time", capture_time);
+
   if (captureFrame.render_time_ms() == last_capture_time_) {
     // We don't allow the same capture time for two frames, drop this one.
     return -1;
@@ -266,6 +270,8 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(
 
     const WebRtc_Word32 width = frameInfo.width;
     const WebRtc_Word32 height = frameInfo.height;
+
+    TRACE_EVENT1("webrtc", "VC::IncomingFrame", "capture_time", captureTime);
 
     if (frameInfo.codecType == kVideoCodecUnknown)
     {
