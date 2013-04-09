@@ -26,14 +26,14 @@
 
 namespace webrtc {
 
-WebRtc_UWord32 CpuInfo::number_of_cores_ = 0;
+uint32_t CpuInfo::number_of_cores_ = 0;
 
-WebRtc_UWord32 CpuInfo::DetectNumberOfCores() {
+uint32_t CpuInfo::DetectNumberOfCores() {
   if (!number_of_cores_) {
 #if defined(_WIN32)
     SYSTEM_INFO si;
     GetSystemInfo(&si);
-    number_of_cores_ = static_cast<WebRtc_UWord32>(si.dwNumberOfProcessors);
+    number_of_cores_ = static_cast<uint32_t>(si.dwNumberOfProcessors);
     WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
                  "Available number of cores:%d", number_of_cores_);
 
@@ -47,7 +47,7 @@ WebRtc_UWord32 CpuInfo::DetectNumberOfCores() {
     int ncpu;
     size_t size = sizeof(ncpu);
     if (0 == sysctl(name, 2, &ncpu, &size, NULL, 0)) {
-      number_of_cores_ = static_cast<WebRtc_UWord32>(ncpu);
+      number_of_cores_ = static_cast<uint32_t>(ncpu);
       WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
                    "Available number of cores:%d", number_of_cores_);
     } else {

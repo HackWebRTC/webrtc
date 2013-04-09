@@ -140,24 +140,24 @@ class WindowsRealTimeClock : public RealTimeClock {
 
   // Retrieve an NTP absolute timestamp.
   virtual void CurrentNtp(uint32_t& seconds, uint32_t& fractions) {
-    const WebRtc_UWord64 FILETIME_1970 = 0x019db1ded53e8000;
+    const uint64_t FILETIME_1970 = 0x019db1ded53e8000;
 
     FILETIME StartTime;
-    WebRtc_UWord64 Time;
+    uint64_t Time;
     struct timeval tv;
 
     // We can't use query performance counter since they can change depending on
     // speed steping
     get_time(_helpTimer, StartTime);
 
-    Time = (((WebRtc_UWord64) StartTime.dwHighDateTime) << 32) +
-           (WebRtc_UWord64) StartTime.dwLowDateTime;
+    Time = (((uint64_t) StartTime.dwHighDateTime) << 32) +
+           (uint64_t) StartTime.dwLowDateTime;
 
     // Convert the hecto-nano second time to tv format
     Time -= FILETIME_1970;
 
-    tv.tv_sec = (WebRtc_UWord32)(Time / (WebRtc_UWord64)10000000);
-    tv.tv_usec = (WebRtc_UWord32)((Time % (WebRtc_UWord64)10000000) / 10);
+    tv.tv_sec = (uint32_t)(Time / (uint64_t)10000000);
+    tv.tv_usec = (uint32_t)((Time % (uint64_t)10000000) / 10);
 
     double dtemp;
 
@@ -172,7 +172,7 @@ class WindowsRealTimeClock : public RealTimeClock {
       seconds--;
     }
     dtemp *= kMagicNtpFractionalUnit;
-    fractions = (WebRtc_UWord32)dtemp;
+    fractions = (uint32_t)dtemp;
   }
 
  private:
@@ -205,7 +205,7 @@ class UnixRealTimeClock : public RealTimeClock {
       seconds--;
     }
     dtemp *= kMagicNtpFractionalUnit;
-    fractions = (WebRtc_UWord32)dtemp;
+    fractions = (uint32_t)dtemp;
   }
 };
 #endif
