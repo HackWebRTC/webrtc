@@ -16,9 +16,9 @@ using namespace webrtc;
 
 TEST_F(VideoProcessingModuleTest, BrightnessDetection)
 {
-    WebRtc_UWord32 frameNum = 0;
-    WebRtc_Word32 brightnessWarning = 0;
-    WebRtc_UWord32 warningCount = 0;
+    uint32_t frameNum = 0;
+    int32_t brightnessWarning = 0;
+    uint32_t warningCount = 0;
     scoped_array<uint8_t> video_buffer(new uint8_t[_frame_length]);
     while (fread(video_buffer.get(), 1, _frame_length, _sourceFile) ==
            _frame_length)
@@ -56,8 +56,8 @@ TEST_F(VideoProcessingModuleTest, BrightnessDetection)
                                    0, kRotateNone, &_videoFrame));
         frameNum++;
 
-        WebRtc_UWord8* frame = _videoFrame.buffer(kYPlane);
-        WebRtc_UWord32 yTmp = 0;
+        uint8_t* frame = _videoFrame.buffer(kYPlane);
+        uint32_t yTmp = 0;
         for (int yIdx = 0; yIdx < _width * _height; yIdx++)
         {
             yTmp = frame[yIdx] << 1;
@@ -65,7 +65,7 @@ TEST_F(VideoProcessingModuleTest, BrightnessDetection)
             {
                 yTmp = 255;
             }
-            frame[yIdx] = static_cast<WebRtc_UWord8>(yTmp);
+            frame[yIdx] = static_cast<uint8_t>(yTmp);
         }
 
         VideoProcessingModule::FrameStats stats;
@@ -96,12 +96,12 @@ TEST_F(VideoProcessingModuleTest, BrightnessDetection)
                                    0, kRotateNone, &_videoFrame));
         frameNum++;
 
-        WebRtc_UWord8* y_plane = _videoFrame.buffer(kYPlane);
-        WebRtc_Word32 yTmp = 0;
+        uint8_t* y_plane = _videoFrame.buffer(kYPlane);
+        int32_t yTmp = 0;
         for (int yIdx = 0; yIdx < _width * _height; yIdx++)
         {
             yTmp = y_plane[yIdx] >> 1;
-            y_plane[yIdx] = static_cast<WebRtc_UWord8>(yTmp);
+            y_plane[yIdx] = static_cast<uint8_t>(yTmp);
         }
 
         VideoProcessingModule::FrameStats stats;

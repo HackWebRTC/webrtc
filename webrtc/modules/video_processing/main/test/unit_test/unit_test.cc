@@ -233,8 +233,8 @@ TEST_F(VideoProcessingModuleTest, Resampler)
 {
   enum { NumRuns = 1 };
 
-  WebRtc_Word64 minRuntime = 0;
-  WebRtc_Word64 avgRuntime = 0;
+  int64_t minRuntime = 0;
+  int64_t avgRuntime = 0;
 
   TickTime t0;
   TickTime t1;
@@ -258,7 +258,7 @@ TEST_F(VideoProcessingModuleTest, Resampler)
                              _width, _height,
                              0, kRotateNone, &_videoFrame));
 
-  for (WebRtc_UWord32 runIdx = 0; runIdx < NumRuns; runIdx++)
+  for (uint32_t runIdx = 0; runIdx < NumRuns; runIdx++)
   {
     // initiate test timer
     t0 = TickTime::Now();
