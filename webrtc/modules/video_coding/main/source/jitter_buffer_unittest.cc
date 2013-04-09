@@ -269,7 +269,7 @@ class TestJitterBufferNack : public TestRunningJitterBuffer {
   }
 };
 
-TEST_F(TestRunningJitterBuffer, TestFull) {
+TEST_F(TestRunningJitterBuffer, Full) {
   // Insert a key frame and decode it.
   EXPECT_GE(InsertFrame(kVideoFrameKey), kNoError);
   EXPECT_TRUE(DecodeCompleteFrame());
@@ -285,7 +285,7 @@ TEST_F(TestRunningJitterBuffer, TestFull) {
   EXPECT_FALSE(DecodeCompleteFrame());
 }
 
-TEST_F(TestRunningJitterBuffer, TestEmptyPackets) {
+TEST_F(TestRunningJitterBuffer, EmptyPackets) {
   // Make sure a frame can get complete even though empty packets are missing.
   stream_generator->GenerateFrame(kVideoFrameKey, 3, 3,
                                   clock_->TimeInMilliseconds());
@@ -373,7 +373,7 @@ TEST_F(TestRunningJitterBuffer, StatisticsTest) {
   EXPECT_EQ(kDefaultBitrateKbps, bitrate);
 }
 
-TEST_F(TestJitterBufferNack, TestEmptyPackets) {
+TEST_F(TestJitterBufferNack, EmptyPackets) {
   // Make sure empty packets doesn't clog the jitter buffer.
   jitter_buffer_->SetNackMode(kNackHybrid, media_optimization::kLowRttNackMs,
                               -1);
@@ -382,7 +382,7 @@ TEST_F(TestJitterBufferNack, TestEmptyPackets) {
   EXPECT_TRUE(DecodeCompleteFrame());
 }
 
-TEST_F(TestJitterBufferNack, TestNackTooOldPackets) {
+TEST_F(TestJitterBufferNack, NackTooOldPackets) {
   // Insert a key frame and decode it.
   EXPECT_GE(InsertFrame(kVideoFrameKey), kNoError);
   EXPECT_TRUE(DecodeCompleteFrame());
@@ -417,7 +417,7 @@ TEST_F(TestJitterBufferNack, TestNackTooOldPackets) {
   EXPECT_TRUE(DecodeFrame());
 }
 
-TEST_F(TestJitterBufferNack, TestNackLargeJitterBuffer) {
+TEST_F(TestJitterBufferNack, NackLargeJitterBuffer) {
   // Insert a key frame and decode it.
   EXPECT_GE(InsertFrame(kVideoFrameKey), kNoError);
   EXPECT_TRUE(DecodeCompleteFrame());
@@ -436,7 +436,7 @@ TEST_F(TestJitterBufferNack, TestNackLargeJitterBuffer) {
   EXPECT_TRUE(DecodeCompleteFrame());
 }
 
-TEST_F(TestJitterBufferNack, TestNackListFull) {
+TEST_F(TestJitterBufferNack, NackListFull) {
   // Insert a key frame and decode it.
   EXPECT_GE(InsertFrame(kVideoFrameKey), kNoError);
   EXPECT_TRUE(DecodeCompleteFrame());
@@ -466,7 +466,7 @@ TEST_F(TestJitterBufferNack, TestNackListFull) {
   EXPECT_TRUE(DecodeFrame());
 }
 
-TEST_F(TestJitterBufferNack, TestNackBeforeDecode) {
+TEST_F(TestJitterBufferNack, NoNackListReturnedBeforeFirstDecode) {
   DropFrame(10);
   // Insert a frame and try to generate a NACK list. Shouldn't get one.
   EXPECT_GE(InsertFrame(kVideoFrameDelta), kNoError);
@@ -480,7 +480,22 @@ TEST_F(TestJitterBufferNack, TestNackBeforeDecode) {
   EXPECT_TRUE(request_key_frame);
 }
 
-TEST_F(TestJitterBufferNack, TestNormalOperation) {
+TEST_F(TestJitterBufferNack, NackListBuiltBeforeFirstDecode) {
+  stream_generator->Init(0, 0, clock_->TimeInMilliseconds());
+  InsertFrame(kVideoFrameKey);
+  stream_generator->GenerateFrame(kVideoFrameDelta, 2, 0,
+                                  clock_->TimeInMilliseconds());
+  stream_generator->NextPacket(NULL);  // Drop packet.
+  EXPECT_EQ(kFirstPacket, InsertPacketAndPop(0));
+  EXPECT_TRUE(DecodeCompleteFrame());
+  uint16_t nack_list_size = 0;
+  bool extended = false;
+  uint16_t* list = jitter_buffer_->GetNackList(&nack_list_size, &extended);
+  EXPECT_EQ(1, nack_list_size);
+  EXPECT_TRUE(list != NULL);
+}
+
+TEST_F(TestJitterBufferNack, NormalOperation) {
   EXPECT_EQ(kNack, jitter_buffer_->nack_mode());
 
   EXPECT_GE(InsertFrame(kVideoFrameKey), kNoError);
@@ -517,7 +532,7 @@ TEST_F(TestJitterBufferNack, TestNormalOperation) {
     EXPECT_EQ((1 + i) * 10, list[i]);
 }
 
-TEST_F(TestJitterBufferNack, TestNormalOperationWrap) {
+TEST_F(TestJitterBufferNack, NormalOperationWrap) {
   bool request_key_frame = false;
   //  -------   ------------------------------------------------------------
   // | 65532 | | 65533 | 65534 | 65535 | x | 1 | .. | 9 | x | 11 |.....| 96 |
@@ -534,7 +549,7 @@ TEST_F(TestJitterBufferNack, TestNormalOperationWrap) {
       EXPECT_EQ(kIncomplete, InsertPacketAndPop(0));
       EXPECT_FALSE(request_key_frame);
     } else {
-      stream_generator->NextPacket(NULL);  // Drop packet
+      stream_generator->NextPacket(NULL);  // Drop packet.
     }
   }
   EXPECT_EQ(kIncomplete, InsertPacketAndPop(0));

@@ -911,33 +911,30 @@ bool VCMJitterBuffer::UpdateNackList(uint16_t sequence_number) {
   if (nack_mode_ == kNoNack) {
     return true;
   }
-  // We won't build a NACK list until we have decoded a frame since we probably
-  // won't be able to decode them until we've received a complete key frame.
+  // Make sure we don't add packets which are already too old to be decoded.
   if (!last_decoded_state_.in_initial_state()) {
-    // We have decoded at least one frame.
-    // Make sure we don't add packets which are already too old to be decoded.
     latest_received_sequence_number_ = LatestSequenceNumber(
         latest_received_sequence_number_,
         last_decoded_state_.sequence_num(),
         NULL);
-    bool in_order = LatestSequenceNumber(sequence_number,
-        latest_received_sequence_number_, NULL) == sequence_number;
-    if (in_order) {
-      // Push any missing sequence numbers to the NACK list.
-      for (uint16_t i = latest_received_sequence_number_ + 1;
-          i < sequence_number; ++i) {
-        missing_sequence_numbers_.insert(missing_sequence_numbers_.end(), i);
-      }
-      if (TooLargeNackList() && !HandleTooLargeNackList()) {
-        return false;
-      }
-      if (MissingTooOldPacket(sequence_number) &&
-          !HandleTooOldPackets(sequence_number)) {
-        return false;
-      }
-    } else {
-      missing_sequence_numbers_.erase(sequence_number);
+  }
+  bool in_order = LatestSequenceNumber(sequence_number,
+      latest_received_sequence_number_, NULL) == sequence_number;
+  if (in_order) {
+    // Push any missing sequence numbers to the NACK list.
+    for (uint16_t i = latest_received_sequence_number_ + 1;
+        i < sequence_number; ++i) {
+      missing_sequence_numbers_.insert(missing_sequence_numbers_.end(), i);
     }
+    if (TooLargeNackList() && !HandleTooLargeNackList()) {
+      return false;
+    }
+    if (MissingTooOldPacket(sequence_number) &&
+        !HandleTooOldPackets(sequence_number)) {
+      return false;
+    }
+  } else {
+    missing_sequence_numbers_.erase(sequence_number);
   }
   return true;
 }
@@ -952,7 +949,7 @@ bool VCMJitterBuffer::HandleTooLargeNackList() {
   LOG_F(LS_INFO) << "NACK list has grown too large: " <<
       missing_sequence_numbers_.size() << " > " << max_nack_list_size_;
   bool key_frame_found = false;
-  while (missing_sequence_numbers_.size() > max_nack_list_size_) {
+  while (TooLargeNackList()) {
     key_frame_found = RecycleFramesUntilKeyFrame();
   }
   return key_frame_found;
@@ -998,7 +995,7 @@ int64_t VCMJitterBuffer::LastDecodedTimestamp() const {
 
 VCMEncodedFrame* VCMJitterBuffer::GetFrameForDecodingNACK() {
   CleanUpOldOrEmptyFrames();
-  // First look for a complete continuous__ frame.
+  // First look for a complete continuous frame.
   // When waiting for nack, wait for a key frame, if a continuous frame cannot
   // be determined (i.e. initial decoding state).
   if (last_decoded_state_.in_initial_state()) {
@@ -1279,7 +1276,7 @@ FrameList::iterator VCMJitterBuffer::FindOldestCompleteContinuousFrame(
     // No complete frame no point to continue.
     return frame_list_.end();
   } else if (waiting_for_key_frame_ &&
-              oldest_frame->FrameType() != kVideoFrameKey) {
+      oldest_frame->FrameType() != kVideoFrameKey) {
     // We are waiting for a key frame.
     return frame_list_.end();
   }
