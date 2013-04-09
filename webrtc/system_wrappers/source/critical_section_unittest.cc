@@ -138,7 +138,7 @@ TEST_F(CritSectTest, ThreadWakesTwice) {
 
   thread->SetNotAlive();  // Tell thread to exit once run function finishes.
   SwitchProcess();
-  EXPECT_LT(count_before, count.Count());
+  EXPECT_TRUE(WaitForCount(count_before + 1, &count));
   EXPECT_TRUE(thread->Stop());
   delete thread;
   delete crit_sect;
