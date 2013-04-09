@@ -83,12 +83,13 @@ class ViEChannel
   WebRtc_Word32 SetReceiveCodec(const VideoCodec& video_codec);
   WebRtc_Word32 GetReceiveCodec(VideoCodec* video_codec);
   WebRtc_Word32 RegisterCodecObserver(ViEDecoderObserver* observer);
-  // Registers an external decoder. |decoder_render| is set to true if the
-  // decoder will do the rendering. If |decoder_render| is set,|render_delay|
-  // indicates the time needed to decode and render a frame.
+  // Registers an external decoder. |buffered_rendering| means that the decoder
+  // will render frames after decoding according to the render timestamp
+  // provided by the video coding module. |render_delay| indicates the time
+  // needed to decode and render a frame.
   WebRtc_Word32 RegisterExternalDecoder(const WebRtc_UWord8 pl_type,
                                         VideoDecoder* decoder,
-                                        bool decoder_render,
+                                        bool buffered_rendering,
                                         WebRtc_Word32 render_delay);
   WebRtc_Word32 DeRegisterExternalDecoder(const WebRtc_UWord8 pl_type);
   WebRtc_Word32 ReceiveCodecStatistics(WebRtc_UWord32* num_key_frames,

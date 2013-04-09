@@ -483,19 +483,20 @@ WebRtc_Word32 ViEChannel::RegisterCodecObserver(ViEDecoderObserver* observer) {
 
 WebRtc_Word32 ViEChannel::RegisterExternalDecoder(const WebRtc_UWord8 pl_type,
                                                   VideoDecoder* decoder,
-                                                  bool decoder_render,
+                                                  bool buffered_rendering,
                                                   WebRtc_Word32 render_delay) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
 
-  WebRtc_Word32 result = 0;
-  result = vcm_.RegisterExternalDecoder(decoder, pl_type, decoder_render);
-  if (decoder_render && result == 0) {
-    // Let VCM know how long before the actual render time the decoder needs
-    // to get a frame for decoding.
-    result = vcm_.SetRenderDelay(render_delay);
+  WebRtc_Word32 result;
+  result = vcm_.RegisterExternalDecoder(decoder, pl_type, buffered_rendering);
+  if (result != VCM_OK) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
+                 "%s: Could not register external decoder with VCM.",
+                 __FUNCTION__);
+    return result;
   }
-  return result;
+  return vcm_.SetRenderDelay(render_delay);
 }
 
 WebRtc_Word32 ViEChannel::DeRegisterExternalDecoder(
