@@ -59,8 +59,8 @@ int ViEFileImage::ConvertJPEGToVideoFrame(int engine_id,
                  file_nameUTF8);
     return -1;
   }
-  image_buffer._buffer = new WebRtc_UWord8[ image_buffer._size + 1];
-  if (image_buffer._size != fread(image_buffer._buffer, sizeof(WebRtc_UWord8),
+  image_buffer._buffer = new uint8_t[ image_buffer._size + 1];
+  if (image_buffer._size != fread(image_buffer._buffer, sizeof(uint8_t),
                                   image_buffer._size, image_file)) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, engine_id,
                  "%s could not read file %s", __FUNCTION__, file_nameUTF8);

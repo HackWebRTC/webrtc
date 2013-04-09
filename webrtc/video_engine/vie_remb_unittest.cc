@@ -33,10 +33,10 @@ class TestProcessThread : public ProcessThread {
  public:
   explicit TestProcessThread() {}
   ~TestProcessThread() {}
-  virtual WebRtc_Word32 Start() { return 0; }
-  virtual WebRtc_Word32 Stop() { return 0; }
-  virtual WebRtc_Word32 RegisterModule(const Module* module) { return 0; }
-  virtual WebRtc_Word32 DeRegisterModule(const Module* module) { return 0; }
+  virtual int32_t Start() { return 0; }
+  virtual int32_t Stop() { return 0; }
+  virtual int32_t RegisterModule(const Module* module) { return 0; }
+  virtual int32_t DeRegisterModule(const Module* module) { return 0; }
 };
 
 class ViERembTest : public ::testing::Test {

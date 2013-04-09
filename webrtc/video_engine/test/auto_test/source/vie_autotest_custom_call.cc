@@ -68,7 +68,7 @@ class ViEAutotestFileObserver : public webrtc::ViEFileObserver {
   ViEAutotestFileObserver() {}
   ~ViEAutotestFileObserver() {}
 
-  void PlayFileEnded(const WebRtc_Word32 file_id) {
+  void PlayFileEnded(const int32_t file_id) {
     ViETest::Log("PlayFile ended");
   }
 };

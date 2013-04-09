@@ -52,13 +52,13 @@ class ViEReceiver : public RtpData {
   int ReceivedRTCPPacket(const void* rtcp_packet, int rtcp_packet_length);
 
   // Implements RtpData.
-  virtual WebRtc_Word32 OnReceivedPayloadData(
-      const WebRtc_UWord8* payload_data,
-      const WebRtc_UWord16 payload_size,
+  virtual int32_t OnReceivedPayloadData(
+      const uint8_t* payload_data,
+      const uint16_t payload_size,
       const WebRtcRTPHeader* rtp_header);
 
-  void OnSendReportReceived(const WebRtc_Word32 id,
-                            const WebRtc_UWord32 senderSSRC,
+  void OnSendReportReceived(const int32_t id,
+                            const uint32_t senderSSRC,
                             uint32_t ntp_secs,
                             uint32_t ntp_frac,
                             uint32_t timestamp);
@@ -66,8 +66,8 @@ class ViEReceiver : public RtpData {
   void EstimatedReceiveBandwidth(unsigned int* available_bandwidth) const;
 
  private:
-  int InsertRTPPacket(const WebRtc_Word8* rtp_packet, int rtp_packet_length);
-  int InsertRTCPPacket(const WebRtc_Word8* rtcp_packet, int rtcp_packet_length);
+  int InsertRTPPacket(const int8_t* rtp_packet, int rtp_packet_length);
+  int InsertRTCPPacket(const int8_t* rtcp_packet, int rtcp_packet_length);
 
   scoped_ptr<CriticalSectionWrapper> receive_cs_;
   const int32_t channel_id_;
@@ -77,7 +77,7 @@ class ViEReceiver : public RtpData {
   RemoteBitrateEstimator* remote_bitrate_estimator_;
 
   Encryption* external_decryption_;
-  WebRtc_UWord8* decryption_buffer_;
+  uint8_t* decryption_buffer_;
   RtpDump* rtp_dump_;
   bool receiving_;
 };

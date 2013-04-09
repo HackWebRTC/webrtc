@@ -51,9 +51,9 @@ class ChannelStatsObserver : public CallStatsObserver {
   ViEChannel* owner_;
 };
 
-ViEChannel::ViEChannel(WebRtc_Word32 channel_id,
-                       WebRtc_Word32 engine_id,
-                       WebRtc_UWord32 number_of_cores,
+ViEChannel::ViEChannel(int32_t channel_id,
+                       int32_t engine_id,
+                       uint32_t number_of_cores,
                        ProcessThread& module_process_thread,
                        RtcpIntraFrameObserver* intra_frame_observer,
                        RtcpBandwidthObserver* bandwidth_observer,
@@ -124,7 +124,7 @@ ViEChannel::ViEChannel(WebRtc_Word32 channel_id,
   vcm_.SetNackSettings(kMaxNackListSize, max_nack_reordering_threshold_);
 }
 
-WebRtc_Word32 ViEChannel::Init() {
+int32_t ViEChannel::Init() {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s: channel_id: %d, engine_id: %d)", __FUNCTION__, channel_id_,
                engine_id_);
@@ -229,8 +229,8 @@ ViEChannel::~ViEChannel() {
   VideoCodingModule::Destroy(&vcm_);
 }
 
-WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
-                                       bool new_stream) {
+int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
+                                 bool new_stream) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s: codec_type: %d", __FUNCTION__, video_codec.codecType);
 
@@ -265,8 +265,8 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   NACKMethod nack_method = rtp_rtcp_->NACK();
 
   bool fec_enabled = false;
-  WebRtc_UWord8 payload_type_red;
-  WebRtc_UWord8 payload_type_fec;
+  uint8_t payload_type_red;
+  uint8_t payload_type_fec;
   rtp_rtcp_->GenericFECStatus(fec_enabled, payload_type_red, payload_type_fec);
 
   CriticalSectionScoped cs(rtp_rtcp_cs_.get());
@@ -333,7 +333,7 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       simulcast_rtp_rtcp_.pop_back();
       removed_rtp_rtcp_.push_front(rtp_rtcp);
     }
-    WebRtc_UWord8 idx = 0;
+    uint8_t idx = 0;
     // Configure all simulcast modules.
     for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
          it != simulcast_rtp_rtcp_.end();
@@ -416,12 +416,12 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::SetReceiveCodec(const VideoCodec& video_codec) {
+int32_t ViEChannel::SetReceiveCodec(const VideoCodec& video_codec) {
   // We will not receive simulcast streams, so no need to handle that use case.
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
 
-  WebRtc_Word8 old_pltype = -1;
+  int8_t old_pltype = -1;
   if (rtp_rtcp_->ReceivePayloadType(video_codec, &old_pltype) != -1) {
     rtp_rtcp_->DeRegisterReceivePayload(old_pltype);
   }
@@ -445,7 +445,7 @@ WebRtc_Word32 ViEChannel::SetReceiveCodec(const VideoCodec& video_codec) {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::GetReceiveCodec(VideoCodec* video_codec) {
+int32_t ViEChannel::GetReceiveCodec(VideoCodec* video_codec) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
 
@@ -457,7 +457,7 @@ WebRtc_Word32 ViEChannel::GetReceiveCodec(VideoCodec* video_codec) {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::RegisterCodecObserver(ViEDecoderObserver* observer) {
+int32_t ViEChannel::RegisterCodecObserver(ViEDecoderObserver* observer) {
   CriticalSectionScoped cs(callback_cs_.get());
   if (observer) {
     if (codec_observer_) {
@@ -481,14 +481,14 @@ WebRtc_Word32 ViEChannel::RegisterCodecObserver(ViEDecoderObserver* observer) {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::RegisterExternalDecoder(const WebRtc_UWord8 pl_type,
-                                                  VideoDecoder* decoder,
-                                                  bool buffered_rendering,
-                                                  WebRtc_Word32 render_delay) {
+int32_t ViEChannel::RegisterExternalDecoder(const uint8_t pl_type,
+                                            VideoDecoder* decoder,
+                                            bool buffered_rendering,
+                                            int32_t render_delay) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
 
-  WebRtc_Word32 result;
+  int32_t result;
   result = vcm_.RegisterExternalDecoder(decoder, pl_type, buffered_rendering);
   if (result != VCM_OK) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
@@ -499,13 +499,13 @@ WebRtc_Word32 ViEChannel::RegisterExternalDecoder(const WebRtc_UWord8 pl_type,
   return vcm_.SetRenderDelay(render_delay);
 }
 
-WebRtc_Word32 ViEChannel::DeRegisterExternalDecoder(
-    const WebRtc_UWord8 pl_type) {
+int32_t ViEChannel::DeRegisterExternalDecoder(
+    const uint8_t pl_type) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s pl_type", __FUNCTION__, pl_type);
 
   VideoCodec current_receive_codec;
-  WebRtc_Word32 result = 0;
+  int32_t result = 0;
   result = vcm_.ReceiveCodec(&current_receive_codec);
   if (vcm_.RegisterExternalDecoder(NULL, pl_type, false) != VCM_OK) {
     return -1;
@@ -518,8 +518,8 @@ WebRtc_Word32 ViEChannel::DeRegisterExternalDecoder(
   return result;
 }
 
-WebRtc_Word32 ViEChannel::ReceiveCodecStatistics(
-    WebRtc_UWord32* num_key_frames, WebRtc_UWord32* num_delta_frames) {
+int32_t ViEChannel::ReceiveCodecStatistics(
+    uint32_t* num_key_frames, uint32_t* num_delta_frames) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
 
@@ -534,7 +534,7 @@ WebRtc_Word32 ViEChannel::ReceiveCodecStatistics(
   return 0;
 }
 
-WebRtc_UWord32 ViEChannel::DiscardedPackets() const {
+uint32_t ViEChannel::DiscardedPackets() const {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
   return vcm_.DiscardedPackets();
@@ -544,14 +544,14 @@ int ViEChannel::ReceiveDelay() const {
   return vcm_.Delay();
 }
 
-WebRtc_Word32 ViEChannel::WaitForKeyFrame(bool wait) {
+int32_t ViEChannel::WaitForKeyFrame(bool wait) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s(wait: %d)", __FUNCTION__, wait);
   wait_for_key_frame_ = wait;
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::SetSignalPacketLossStatus(bool enable,
+int32_t ViEChannel::SetSignalPacketLossStatus(bool enable,
                                                     bool only_key_frames) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s(enable: %d)", __FUNCTION__, enable);
@@ -578,7 +578,7 @@ WebRtc_Word32 ViEChannel::SetSignalPacketLossStatus(bool enable,
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::SetRTCPMode(const RTCPMethod rtcp_mode) {
+int32_t ViEChannel::SetRTCPMode(const RTCPMethod rtcp_mode) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s: %d", __FUNCTION__, rtcp_mode);
 
@@ -592,14 +592,14 @@ WebRtc_Word32 ViEChannel::SetRTCPMode(const RTCPMethod rtcp_mode) {
   return rtp_rtcp_->SetRTCPStatus(rtcp_mode);
 }
 
-WebRtc_Word32 ViEChannel::GetRTCPMode(RTCPMethod* rtcp_mode) {
+int32_t ViEChannel::GetRTCPMode(RTCPMethod* rtcp_mode) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
   *rtcp_mode = rtp_rtcp_->RTCP();
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::SetNACKStatus(const bool enable) {
+int32_t ViEChannel::SetNACKStatus(const bool enable) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s(enable: %d)", __FUNCTION__, enable);
 
@@ -624,7 +624,7 @@ WebRtc_Word32 ViEChannel::SetNACKStatus(const bool enable) {
   return ProcessNACKRequest(enable);
 }
 
-WebRtc_Word32 ViEChannel::ProcessNACKRequest(const bool enable) {
+int32_t ViEChannel::ProcessNACKRequest(const bool enable) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s(enable: %d)", __FUNCTION__, enable);
 
@@ -683,7 +683,7 @@ WebRtc_Word32 ViEChannel::ProcessNACKRequest(const bool enable) {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::SetFECStatus(const bool enable,
+int32_t ViEChannel::SetFECStatus(const bool enable,
                                        const unsigned char payload_typeRED,
                                        const unsigned char payload_typeFEC) {
   // Disable possible NACK.
@@ -694,7 +694,7 @@ WebRtc_Word32 ViEChannel::SetFECStatus(const bool enable,
   return ProcessFECRequest(enable, payload_typeRED, payload_typeFEC);
 }
 
-WebRtc_Word32 ViEChannel::ProcessFECRequest(
+int32_t ViEChannel::ProcessFECRequest(
     const bool enable,
     const unsigned char payload_typeRED,
     const unsigned char payload_typeFEC) {
@@ -719,7 +719,7 @@ WebRtc_Word32 ViEChannel::ProcessFECRequest(
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::SetHybridNACKFECStatus(
+int32_t ViEChannel::SetHybridNACKFECStatus(
     const bool enable,
     const unsigned char payload_typeRED,
     const unsigned char payload_typeFEC) {
@@ -731,7 +731,7 @@ WebRtc_Word32 ViEChannel::SetHybridNACKFECStatus(
     return -1;
   }
 
-  WebRtc_Word32 ret_val = 0;
+  int32_t ret_val = 0;
   ret_val = ProcessNACKRequest(enable);
   if (ret_val < 0) {
     return ret_val;
@@ -801,7 +801,7 @@ int ViEChannel::GetRequiredNackListSize(int target_delay_ms) {
   return target_delay_ms * 40 * 30 / 1000;
 }
 
-WebRtc_Word32 ViEChannel::SetKeyFrameRequestMethod(
+int32_t ViEChannel::SetKeyFrameRequestMethod(
     const KeyFrameRequestMethod method) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s: %d", __FUNCTION__, method);
@@ -862,13 +862,13 @@ void ViEChannel::SetTransmissionSmoothingStatus(bool enable) {
   paced_sender_->SetStatus(enable);
 }
 
-WebRtc_Word32 ViEChannel::EnableTMMBR(const bool enable) {
+int32_t ViEChannel::EnableTMMBR(const bool enable) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s: %d", __FUNCTION__, enable);
   return rtp_rtcp_->SetTMMBRStatus(enable);
 }
 
-WebRtc_Word32 ViEChannel::EnableKeyFrameRequestCallback(const bool enable) {
+int32_t ViEChannel::EnableKeyFrameRequestCallback(const bool enable) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s: %d", __FUNCTION__, enable);
 
@@ -882,7 +882,7 @@ WebRtc_Word32 ViEChannel::EnableKeyFrameRequestCallback(const bool enable) {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::SetSSRC(const WebRtc_UWord32 SSRC,
+int32_t ViEChannel::SetSSRC(const uint32_t SSRC,
                                   const StreamType usage,
                                   const uint8_t simulcast_idx) {
   WEBRTC_TRACE(webrtc::kTraceInfo,
@@ -910,7 +910,7 @@ WebRtc_Word32 ViEChannel::SetSSRC(const WebRtc_UWord32 SSRC,
   return rtp_rtcp->SetSSRC(SSRC);
 }
 
-WebRtc_Word32 ViEChannel::SetRemoteSSRCType(const StreamType usage,
+int32_t ViEChannel::SetRemoteSSRCType(const StreamType usage,
                                             const uint32_t SSRC) const {
   WEBRTC_TRACE(webrtc::kTraceInfo,
                webrtc::kTraceVideo,
@@ -922,7 +922,7 @@ WebRtc_Word32 ViEChannel::SetRemoteSSRCType(const StreamType usage,
 }
 
 // TODO(mflodman) Add kViEStreamTypeRtx.
-WebRtc_Word32 ViEChannel::GetLocalSSRC(uint8_t idx, unsigned int* ssrc) {
+int32_t ViEChannel::GetLocalSSRC(uint8_t idx, unsigned int* ssrc) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
 
@@ -944,7 +944,7 @@ WebRtc_Word32 ViEChannel::GetLocalSSRC(uint8_t idx, unsigned int* ssrc) {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::GetRemoteSSRC(uint32_t* ssrc) {
+int32_t ViEChannel::GetRemoteSSRC(uint32_t* ssrc) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
@@ -952,7 +952,7 @@ WebRtc_Word32 ViEChannel::GetRemoteSSRC(uint32_t* ssrc) {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::GetRemoteCSRC(uint32_t CSRCs[kRtpCsrcSize]) {
+int32_t ViEChannel::GetRemoteCSRC(uint32_t CSRCs[kRtpCsrcSize]) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
@@ -961,7 +961,7 @@ WebRtc_Word32 ViEChannel::GetRemoteCSRC(uint32_t CSRCs[kRtpCsrcSize]) {
 
   int num_csrcs = rtp_rtcp_->RemoteCSRCs(arrayCSRC);
   if (num_csrcs > 0) {
-    memcpy(CSRCs, arrayCSRC, num_csrcs * sizeof(WebRtc_UWord32));
+    memcpy(CSRCs, arrayCSRC, num_csrcs * sizeof(uint32_t));
     for (int idx = 0; idx < num_csrcs; idx++) {
       WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                    "\tCSRC[%d] = %lu", idx, CSRCs[idx]);
@@ -973,8 +973,8 @@ WebRtc_Word32 ViEChannel::GetRemoteCSRC(uint32_t CSRCs[kRtpCsrcSize]) {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::SetStartSequenceNumber(
-    WebRtc_UWord16 sequence_number) {
+int32_t ViEChannel::SetStartSequenceNumber(
+    uint16_t sequence_number) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
@@ -986,7 +986,7 @@ WebRtc_Word32 ViEChannel::SetStartSequenceNumber(
   return rtp_rtcp_->SetSequenceNumber(sequence_number);
 }
 
-WebRtc_Word32 ViEChannel::SetRTCPCName(const char rtcp_cname[]) {
+int32_t ViEChannel::SetRTCPCName(const char rtcp_cname[]) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
   if (rtp_rtcp_->Sending()) {
@@ -997,21 +997,21 @@ WebRtc_Word32 ViEChannel::SetRTCPCName(const char rtcp_cname[]) {
   return rtp_rtcp_->SetCNAME(rtcp_cname);
 }
 
-WebRtc_Word32 ViEChannel::GetRTCPCName(char rtcp_cname[]) {
+int32_t ViEChannel::GetRTCPCName(char rtcp_cname[]) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
   return rtp_rtcp_->CNAME(rtcp_cname);
 }
 
-WebRtc_Word32 ViEChannel::GetRemoteRTCPCName(char rtcp_cname[]) {
+int32_t ViEChannel::GetRemoteRTCPCName(char rtcp_cname[]) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
-  WebRtc_UWord32 remoteSSRC = rtp_rtcp_->RemoteSSRC();
+  uint32_t remoteSSRC = rtp_rtcp_->RemoteSSRC();
   return rtp_rtcp_->RemoteCNAME(remoteSSRC, rtcp_cname);
 }
 
-WebRtc_Word32 ViEChannel::RegisterRtpObserver(ViERTPObserver* observer) {
+int32_t ViEChannel::RegisterRtpObserver(ViERTPObserver* observer) {
   CriticalSectionScoped cs(callback_cs_.get());
   if (observer) {
     if (rtp_observer_) {
@@ -1035,7 +1035,7 @@ WebRtc_Word32 ViEChannel::RegisterRtpObserver(ViERTPObserver* observer) {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::RegisterRtcpObserver(ViERTCPObserver* observer) {
+int32_t ViEChannel::RegisterRtcpObserver(ViERTCPObserver* observer) {
   CriticalSectionScoped cs(callback_cs_.get());
   if (observer) {
     if (rtcp_observer_) {
@@ -1059,11 +1059,11 @@ WebRtc_Word32 ViEChannel::RegisterRtcpObserver(ViERTCPObserver* observer) {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::SendApplicationDefinedRTCPPacket(
-    const WebRtc_UWord8 sub_type,
-    WebRtc_UWord32 name,
-    const WebRtc_UWord8* data,
-    WebRtc_UWord16 data_length_in_bytes) {
+int32_t ViEChannel::SendApplicationDefinedRTCPPacket(
+    const uint8_t sub_type,
+    uint32_t name,
+    const uint8_t* data,
+    uint16_t data_length_in_bytes) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
   if (!rtp_rtcp_->Sending()) {
@@ -1097,7 +1097,7 @@ WebRtc_Word32 ViEChannel::SendApplicationDefinedRTCPPacket(
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::GetSendRtcpStatistics(uint16_t* fraction_lost,
+int32_t ViEChannel::GetSendRtcpStatistics(uint16_t* fraction_lost,
                                                 uint32_t* cumulative_lost,
                                                 uint32_t* extended_max,
                                                 uint32_t* jitter_samples,
@@ -1146,8 +1146,8 @@ WebRtc_Word32 ViEChannel::GetSendRtcpStatistics(uint16_t* fraction_lost,
   *extended_max = statistics->extendedHighSeqNum;
   *jitter_samples = statistics->jitter;
 
-  WebRtc_UWord16 dummy;
-  WebRtc_UWord16 rtt = 0;
+  uint16_t dummy;
+  uint16_t rtt = 0;
   if (rtp_rtcp_->RTT(remote_ssrc, &rtt, &dummy, &dummy, &dummy) != 0) {
     WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: Could not get RTT", __FUNCTION__);
@@ -1157,7 +1157,7 @@ WebRtc_Word32 ViEChannel::GetSendRtcpStatistics(uint16_t* fraction_lost,
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::GetReceivedRtcpStatistics(uint16_t* fraction_lost,
+int32_t ViEChannel::GetReceivedRtcpStatistics(uint16_t* fraction_lost,
                                                     uint32_t* cumulative_lost,
                                                     uint32_t* extended_max,
                                                     uint32_t* jitter_samples,
@@ -1165,7 +1165,7 @@ WebRtc_Word32 ViEChannel::GetReceivedRtcpStatistics(uint16_t* fraction_lost,
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
 
-  WebRtc_UWord8 frac_lost = 0;
+  uint8_t frac_lost = 0;
   if (rtp_rtcp_->StatisticsRTP(&frac_lost, cumulative_lost, extended_max,
                               jitter_samples) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
@@ -1185,7 +1185,7 @@ WebRtc_Word32 ViEChannel::GetReceivedRtcpStatistics(uint16_t* fraction_lost,
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::GetRtpStatistics(uint32_t* bytes_sent,
+int32_t ViEChannel::GetRtpStatistics(uint32_t* bytes_sent,
                                            uint32_t* packets_sent,
                                            uint32_t* bytes_received,
                                            uint32_t* packets_received) const {
@@ -1243,7 +1243,7 @@ void ViEChannel::GetEstimatedReceiveBandwidth(
   vie_receiver_.EstimatedReceiveBandwidth(estimated_bandwidth);
 }
 
-WebRtc_Word32 ViEChannel::StartRTPDump(const char file_nameUTF8[1024],
+int32_t ViEChannel::StartRTPDump(const char file_nameUTF8[1024],
                                        RTPDirections direction) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
@@ -1261,7 +1261,7 @@ WebRtc_Word32 ViEChannel::StartRTPDump(const char file_nameUTF8[1024],
   }
 }
 
-WebRtc_Word32 ViEChannel::StopRTPDump(RTPDirections direction) {
+int32_t ViEChannel::StopRTPDump(RTPDirections direction) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
 
@@ -1278,7 +1278,7 @@ WebRtc_Word32 ViEChannel::StopRTPDump(RTPDirections direction) {
   }
 }
 
-WebRtc_Word32 ViEChannel::StartSend() {
+int32_t ViEChannel::StartSend() {
   CriticalSectionScoped cs(callback_cs_.get());
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
@@ -1312,7 +1312,7 @@ WebRtc_Word32 ViEChannel::StartSend() {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::StopSend() {
+int32_t ViEChannel::StopSend() {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
@@ -1351,7 +1351,7 @@ bool ViEChannel::Sending() {
   return rtp_rtcp_->Sending();
 }
 
-WebRtc_Word32 ViEChannel::StartReceive() {
+int32_t ViEChannel::StartReceive() {
   CriticalSectionScoped cs(callback_cs_.get());
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
@@ -1367,7 +1367,7 @@ WebRtc_Word32 ViEChannel::StartReceive() {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::StopReceive() {
+int32_t ViEChannel::StopReceive() {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
@@ -1377,7 +1377,7 @@ WebRtc_Word32 ViEChannel::StopReceive() {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::RegisterSendTransport(Transport* transport) {
+int32_t ViEChannel::RegisterSendTransport(Transport* transport) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
@@ -1402,7 +1402,7 @@ WebRtc_Word32 ViEChannel::RegisterSendTransport(Transport* transport) {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::DeregisterSendTransport() {
+int32_t ViEChannel::DeregisterSendTransport() {
   CriticalSectionScoped cs(callback_cs_.get());
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
@@ -1422,8 +1422,8 @@ WebRtc_Word32 ViEChannel::DeregisterSendTransport() {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::ReceivedRTPPacket(
-    const void* rtp_packet, const WebRtc_Word32 rtp_packet_length) {
+int32_t ViEChannel::ReceivedRTPPacket(
+    const void* rtp_packet, const int32_t rtp_packet_length) {
   {
     CriticalSectionScoped cs(callback_cs_.get());
     if (!external_transport_) {
@@ -1433,8 +1433,8 @@ WebRtc_Word32 ViEChannel::ReceivedRTPPacket(
   return vie_receiver_.ReceivedRTPPacket(rtp_packet, rtp_packet_length);
 }
 
-WebRtc_Word32 ViEChannel::ReceivedRTCPPacket(
-  const void* rtcp_packet, const WebRtc_Word32 rtcp_packet_length) {
+int32_t ViEChannel::ReceivedRTCPPacket(
+  const void* rtcp_packet, const int32_t rtcp_packet_length) {
   {
     CriticalSectionScoped cs(callback_cs_.get());
     if (!external_transport_) {
@@ -1444,7 +1444,7 @@ WebRtc_Word32 ViEChannel::ReceivedRTCPPacket(
   return vie_receiver_.ReceivedRTCPPacket(rtcp_packet, rtcp_packet_length);
 }
 
-WebRtc_Word32 ViEChannel::SetMTU(WebRtc_UWord16 mtu) {
+int32_t ViEChannel::SetMTU(uint16_t mtu) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
   if (rtp_rtcp_->SetMaxTransferUnit(mtu) != 0) {
@@ -1462,18 +1462,18 @@ WebRtc_Word32 ViEChannel::SetMTU(WebRtc_UWord16 mtu) {
   return 0;
 }
 
-WebRtc_UWord16 ViEChannel::MaxDataPayloadLength() const {
+uint16_t ViEChannel::MaxDataPayloadLength() const {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
   return rtp_rtcp_->MaxDataPayloadLength();
 }
 
-WebRtc_Word32 ViEChannel::SetPacketTimeoutNotification(
-    bool enable, WebRtc_UWord32 timeout_seconds) {
+int32_t ViEChannel::SetPacketTimeoutNotification(
+    bool enable, uint32_t timeout_seconds) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
   if (enable) {
-    WebRtc_UWord32 timeout_ms = 1000 * timeout_seconds;
+    uint32_t timeout_ms = 1000 * timeout_seconds;
     if (rtp_rtcp_->SetPacketTimeout(timeout_ms, 0) != 0) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                    "%s", __FUNCTION__);
@@ -1489,7 +1489,7 @@ WebRtc_Word32 ViEChannel::SetPacketTimeoutNotification(
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::RegisterNetworkObserver(
+int32_t ViEChannel::RegisterNetworkObserver(
     ViENetworkObserver* observer) {
   CriticalSectionScoped cs(callback_cs_.get());
   if (observer) {
@@ -1519,8 +1519,8 @@ bool ViEChannel::NetworkObserverRegistered() {
   return networkObserver_ != NULL;
 }
 
-WebRtc_Word32 ViEChannel::SetPeriodicDeadOrAliveStatus(
-  const bool enable, const WebRtc_UWord32 sample_time_seconds) {
+int32_t ViEChannel::SetPeriodicDeadOrAliveStatus(
+  const bool enable, const uint32_t sample_time_seconds) {
   WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
@@ -1532,13 +1532,13 @@ WebRtc_Word32 ViEChannel::SetPeriodicDeadOrAliveStatus(
   }
 
   bool enabled = false;
-  WebRtc_UWord8 current_sampletime_seconds = 0;
+  uint8_t current_sampletime_seconds = 0;
 
   // Get old settings.
   rtp_rtcp_->PeriodicDeadOrAliveStatus(enabled, current_sampletime_seconds);
   // Set new settings.
   if (rtp_rtcp_->SetPeriodicDeadOrAliveStatus(
-        enable, static_cast<WebRtc_UWord8>(sample_time_seconds)) != 0) {
+        enable, static_cast<uint8_t>(sample_time_seconds)) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: Could not set periodic dead-or-alive status",
                  __FUNCTION__);
@@ -1554,7 +1554,7 @@ WebRtc_Word32 ViEChannel::SetPeriodicDeadOrAliveStatus(
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::EnableColorEnhancement(bool enable) {
+int32_t ViEChannel::EnableColorEnhancement(bool enable) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s(enable: %d)", __FUNCTION__, enable);
 
@@ -1571,7 +1571,7 @@ CallStatsObserver* ViEChannel::GetStatsObserver() {
   return stats_observer_.get();
 }
 
-WebRtc_Word32 ViEChannel::FrameToRender(
+int32_t ViEChannel::FrameToRender(
     I420VideoFrame& video_frame) {  // NOLINT
   CriticalSectionScoped cs(callback_cs_.get());
 
@@ -1612,8 +1612,8 @@ WebRtc_Word32 ViEChannel::FrameToRender(
   // Record videoframe.
   file_recorder_.RecordVideoFrame(video_frame);
 
-  WebRtc_UWord32 arr_ofCSRC[kRtpCsrcSize];
-  WebRtc_Word32 no_of_csrcs = rtp_rtcp_->RemoteCSRCs(arr_ofCSRC);
+  uint32_t arr_ofCSRC[kRtpCsrcSize];
+  int32_t no_of_csrcs = rtp_rtcp_->RemoteCSRCs(arr_ofCSRC);
   if (no_of_csrcs <= 0) {
     arr_ofCSRC[0] = rtp_rtcp_->RemoteSSRC();
     no_of_csrcs = 1;
@@ -1624,18 +1624,18 @@ WebRtc_Word32 ViEChannel::FrameToRender(
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::ReceivedDecodedReferenceFrame(
-  const WebRtc_UWord64 picture_id) {
+int32_t ViEChannel::ReceivedDecodedReferenceFrame(
+  const uint64_t picture_id) {
   return rtp_rtcp_->SendRTCPReferencePictureSelection(picture_id);
 }
 
-WebRtc_Word32 ViEChannel::StoreReceivedFrame(
+int32_t ViEChannel::StoreReceivedFrame(
   const EncodedVideoData& frame_to_store) {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::ReceiveStatistics(const WebRtc_UWord32 bit_rate,
-                                            const WebRtc_UWord32 frame_rate) {
+int32_t ViEChannel::ReceiveStatistics(const uint32_t bit_rate,
+                                            const uint32_t frame_rate) {
   CriticalSectionScoped cs(callback_cs_.get());
   if (codec_observer_) {
     WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
@@ -1646,7 +1646,7 @@ WebRtc_Word32 ViEChannel::ReceiveStatistics(const WebRtc_UWord32 bit_rate,
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::RequestKeyFrame() {
+int32_t ViEChannel::RequestKeyFrame() {
   WEBRTC_TRACE(kTraceStream, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
   {
@@ -1658,13 +1658,13 @@ WebRtc_Word32 ViEChannel::RequestKeyFrame() {
   return rtp_rtcp_->RequestKeyFrame();
 }
 
-WebRtc_Word32 ViEChannel::SliceLossIndicationRequest(
-  const WebRtc_UWord64 picture_id) {
-  return rtp_rtcp_->SendRTCPSliceLossIndication((WebRtc_UWord8) picture_id);
+int32_t ViEChannel::SliceLossIndicationRequest(
+  const uint64_t picture_id) {
+  return rtp_rtcp_->SendRTCPSliceLossIndication((uint8_t) picture_id);
 }
 
-WebRtc_Word32 ViEChannel::ResendPackets(const WebRtc_UWord16* sequence_numbers,
-                                        WebRtc_UWord16 length) {
+int32_t ViEChannel::ResendPackets(const uint16_t* sequence_numbers,
+                                        uint16_t length) {
   WEBRTC_TRACE(kTraceStream, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s(length: %d)", __FUNCTION__, length);
   return rtp_rtcp_->SendNACK(sequence_numbers, length);
@@ -1685,7 +1685,7 @@ void ViEChannel::OnRttUpdate(uint32_t rtt) {
     rtp_rtcp_->SetRtt(rtt);
 }
 
-WebRtc_Word32 ViEChannel::StartDecodeThread() {
+int32_t ViEChannel::StartDecodeThread() {
   // Start the decode thread
   if (decode_thread_) {
     // Already started.
@@ -1714,7 +1714,7 @@ WebRtc_Word32 ViEChannel::StartDecodeThread() {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::StopDecodeThread() {
+int32_t ViEChannel::StopDecodeThread() {
   if (!decode_thread_) {
     WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: decode thread not running", __FUNCTION__);
@@ -1734,7 +1734,7 @@ WebRtc_Word32 ViEChannel::StopDecodeThread() {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::RegisterExternalEncryption(Encryption* encryption) {
+int32_t ViEChannel::RegisterExternalEncryption(Encryption* encryption) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
@@ -1756,7 +1756,7 @@ WebRtc_Word32 ViEChannel::RegisterExternalEncryption(Encryption* encryption) {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::DeRegisterExternalEncryption() {
+int32_t ViEChannel::DeRegisterExternalEncryption() {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
@@ -1776,7 +1776,7 @@ WebRtc_Word32 ViEChannel::DeRegisterExternalEncryption() {
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::SetVoiceChannel(WebRtc_Word32 ve_channel_id,
+int32_t ViEChannel::SetVoiceChannel(int32_t ve_channel_id,
                                           VoEVideoSync* ve_sync_interface) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s, audio channel %d, video channel %d", __FUNCTION__,
@@ -1792,11 +1792,11 @@ WebRtc_Word32 ViEChannel::SetVoiceChannel(WebRtc_Word32 ve_channel_id,
                                  rtp_rtcp_.get());
 }
 
-WebRtc_Word32 ViEChannel::VoiceChannel() {
+int32_t ViEChannel::VoiceChannel() {
   return vie_sync_.VoiceChannel();
 }
 
-WebRtc_Word32 ViEChannel::RegisterEffectFilter(ViEEffectFilter* effect_filter) {
+int32_t ViEChannel::RegisterEffectFilter(ViEEffectFilter* effect_filter) {
   CriticalSectionScoped cs(callback_cs_.get());
   if (!effect_filter) {
     if (!effect_filter_) {
@@ -1834,11 +1834,11 @@ void ViEChannel::ReleaseIncomingFileRecorder() {
   vcm_.RegisterFrameStorageCallback(NULL);
 }
 
-void ViEChannel::OnApplicationDataReceived(const WebRtc_Word32 id,
-                                           const WebRtc_UWord8 sub_type,
-                                           const WebRtc_UWord32 name,
-                                           const WebRtc_UWord16 length,
-                                           const WebRtc_UWord8* data) {
+void ViEChannel::OnApplicationDataReceived(const int32_t id,
+                                           const uint8_t sub_type,
+                                           const uint32_t name,
+                                           const uint16_t length,
+                                           const uint8_t* data) {
   if (channel_id_ != ChannelId(id)) {
     WEBRTC_TRACE(kTraceStream, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s, incorrect id", __FUNCTION__, id);
@@ -1854,8 +1854,8 @@ void ViEChannel::OnApplicationDataReceived(const WebRtc_Word32 id,
   }
 }
 
-void ViEChannel::OnSendReportReceived(const WebRtc_Word32 id,
-                                      const WebRtc_UWord32 senderSSRC,
+void ViEChannel::OnSendReportReceived(const int32_t id,
+                                      const uint32_t senderSSRC,
                                       uint32_t ntp_secs,
                                       uint32_t ntp_frac,
                                       uint32_t timestamp) {
@@ -1863,13 +1863,13 @@ void ViEChannel::OnSendReportReceived(const WebRtc_Word32 id,
                                      timestamp);
 }
 
-WebRtc_Word32 ViEChannel::OnInitializeDecoder(
-    const WebRtc_Word32 id,
-    const WebRtc_Word8 payload_type,
+int32_t ViEChannel::OnInitializeDecoder(
+    const int32_t id,
+    const int8_t payload_type,
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     const int frequency,
-    const WebRtc_UWord8 channels,
-    const WebRtc_UWord32 rate) {
+    const uint8_t channels,
+    const uint32_t rate) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s: payload_type %d, payload_name %s", __FUNCTION__,
                payload_type, payload_name);
@@ -1881,7 +1881,7 @@ WebRtc_Word32 ViEChannel::OnInitializeDecoder(
   return 0;
 }
 
-void ViEChannel::OnPacketTimeout(const WebRtc_Word32 id) {
+void ViEChannel::OnPacketTimeout(const int32_t id) {
   assert(ChannelId(id) == channel_id_);
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
@@ -1893,7 +1893,7 @@ void ViEChannel::OnPacketTimeout(const WebRtc_Word32 id) {
   }
 }
 
-void ViEChannel::OnReceivedPacket(const WebRtc_Word32 id,
+void ViEChannel::OnReceivedPacket(const int32_t id,
                                   const RtpRtcpPacketType packet_type) {
   assert(ChannelId(id) == channel_id_);
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
@@ -1909,7 +1909,7 @@ void ViEChannel::OnReceivedPacket(const WebRtc_Word32 id,
   }
 }
 
-void ViEChannel::OnPeriodicDeadOrAlive(const WebRtc_Word32 id,
+void ViEChannel::OnPeriodicDeadOrAlive(const int32_t id,
                                        const RTPAliveType alive) {
   assert(ChannelId(id) == channel_id_);
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
@@ -1927,8 +1927,8 @@ void ViEChannel::OnPeriodicDeadOrAlive(const WebRtc_Word32 id,
   return;
 }
 
-void ViEChannel::OnIncomingSSRCChanged(const WebRtc_Word32 id,
-                                       const WebRtc_UWord32 SSRC) {
+void ViEChannel::OnIncomingSSRCChanged(const int32_t id,
+                                       const uint32_t SSRC) {
   if (channel_id_ != ChannelId(id)) {
     assert(false);
     WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
@@ -1947,8 +1947,8 @@ void ViEChannel::OnIncomingSSRCChanged(const WebRtc_Word32 id,
   }
 }
 
-void ViEChannel::OnIncomingCSRCChanged(const WebRtc_Word32 id,
-                                       const WebRtc_UWord32 CSRC,
+void ViEChannel::OnIncomingCSRCChanged(const int32_t id,
+                                       const uint32_t CSRC,
                                        const bool added) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s: %u added: %d", __FUNCTION__, CSRC, added);

@@ -94,12 +94,12 @@ int ViESyncModule::VoiceChannel() {
   return voe_channel_id_;
 }
 
-WebRtc_Word32 ViESyncModule::TimeUntilNextProcess() {
-  return static_cast<WebRtc_Word32>(kSyncInterval -
-                         (TickTime::Now() - last_sync_time_).Milliseconds());
+int32_t ViESyncModule::TimeUntilNextProcess() {
+  return static_cast<int32_t>(kSyncInterval -
+      (TickTime::Now() - last_sync_time_).Milliseconds());
 }
 
-WebRtc_Word32 ViESyncModule::Process() {
+int32_t ViESyncModule::Process() {
   CriticalSectionScoped cs(data_cs_.get());
   last_sync_time_ = TickTime::Now();
 

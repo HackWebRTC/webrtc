@@ -23,7 +23,7 @@
 #endif
 
 // Global counter to get an id for each new ViE instance.
-static WebRtc_Word32 g_vie_active_instance_counter = 0;
+static int32_t g_vie_active_instance_counter = 0;
 
 namespace webrtc {
 
@@ -178,7 +178,7 @@ int VideoEngine::SetTraceFile(const char* file_nameUTF8,
 }
 
 int VideoEngine::SetTraceFilter(const unsigned int filter) {
-  WebRtc_UWord32 old_filter = 0;
+  uint32_t old_filter = 0;
   Trace::LevelFilter(old_filter);
 
   if (filter == kTraceNone && old_filter != kTraceNone) {
@@ -187,7 +187,7 @@ int VideoEngine::SetTraceFilter(const unsigned int filter) {
                  "SetTraceFilter(filter = 0x%x)", filter);
   }
 
-  WebRtc_Word32 error = Trace::SetLevelFilter(filter);
+  int32_t error = Trace::SetLevelFilter(filter);
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo, g_vie_active_instance_counter,
                "SetTraceFilter(filter = 0x%x)", filter);
   if (error != 0) {

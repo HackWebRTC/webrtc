@@ -27,7 +27,7 @@ public:
     ViEAutotestFileObserver() {};
     ~ViEAutotestFileObserver() {};
 
-    void PlayFileEnded(const WebRtc_Word32 fileId)
+    void PlayFileEnded(const int32_t fileId)
     {
         ViETest::Log("PlayFile ended");
     }

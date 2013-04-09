@@ -54,7 +54,7 @@ int ViEReceiver::RegisterExternalDecryption(Encryption* decryption) {
   if (external_decryption_) {
     return -1;
   }
-  decryption_buffer_ = new WebRtc_UWord8[kViEMaxMtu];
+  decryption_buffer_ = new uint8_t[kViEMaxMtu];
   if (decryption_buffer_ == NULL) {
     return -1;
   }
@@ -92,7 +92,8 @@ int ViEReceiver::ReceivedRTPPacket(const void* rtp_packet,
   if (!receiving_) {
     return -1;
   }
-  return InsertRTPPacket((const WebRtc_Word8*) rtp_packet, rtp_packet_length);
+  return InsertRTPPacket(static_cast<const int8_t*>(rtp_packet),
+                         rtp_packet_length);
 }
 
 int ViEReceiver::ReceivedRTCPPacket(const void* rtcp_packet,
@@ -100,12 +101,12 @@ int ViEReceiver::ReceivedRTCPPacket(const void* rtcp_packet,
   if (!receiving_) {
     return -1;
   }
-  return InsertRTCPPacket((const WebRtc_Word8*) rtcp_packet,
+  return InsertRTCPPacket(static_cast<const int8_t*>(rtcp_packet),
                           rtcp_packet_length);
 }
 
-WebRtc_Word32 ViEReceiver::OnReceivedPayloadData(
-    const WebRtc_UWord8* payload_data, const WebRtc_UWord16 payload_size,
+int32_t ViEReceiver::OnReceivedPayloadData(
+    const uint8_t* payload_data, const uint16_t payload_size,
     const WebRtcRTPHeader* rtp_header) {
   if (rtp_header == NULL) {
     return 0;
@@ -126,8 +127,8 @@ WebRtc_Word32 ViEReceiver::OnReceivedPayloadData(
   return 0;
 }
 
-void ViEReceiver::OnSendReportReceived(const WebRtc_Word32 id,
-                                       const WebRtc_UWord32 senderSSRC,
+void ViEReceiver::OnSendReportReceived(const int32_t id,
+                                       const uint32_t senderSSRC,
                                        uint32_t ntp_secs,
                                        uint32_t ntp_frac,
                                        uint32_t timestamp) {
@@ -135,10 +136,10 @@ void ViEReceiver::OnSendReportReceived(const WebRtc_Word32 id,
                                           timestamp);
 }
 
-int ViEReceiver::InsertRTPPacket(const WebRtc_Word8* rtp_packet,
+int ViEReceiver::InsertRTPPacket(const int8_t* rtp_packet,
                                  int rtp_packet_length) {
   // TODO(mflodman) Change decrypt to get rid of this cast.
-  WebRtc_Word8* tmp_ptr = const_cast<WebRtc_Word8*>(rtp_packet);
+  int8_t* tmp_ptr = const_cast<int8_t*>(rtp_packet);
   unsigned char* received_packet = reinterpret_cast<unsigned char*>(tmp_ptr);
   int received_packet_length = rtp_packet_length;
 
@@ -167,17 +168,17 @@ int ViEReceiver::InsertRTPPacket(const WebRtc_Word8* rtp_packet,
 
     if (rtp_dump_) {
       rtp_dump_->DumpPacket(received_packet,
-                           static_cast<WebRtc_UWord16>(received_packet_length));
+                           static_cast<uint16_t>(received_packet_length));
     }
   }
   assert(rtp_rtcp_);  // Should be set by owner at construction time.
   return rtp_rtcp_->IncomingPacket(received_packet, received_packet_length);
 }
 
-int ViEReceiver::InsertRTCPPacket(const WebRtc_Word8* rtcp_packet,
+int ViEReceiver::InsertRTCPPacket(const int8_t* rtcp_packet,
                                   int rtcp_packet_length) {
   // TODO(mflodman) Change decrypt to get rid of this cast.
-  WebRtc_Word8* tmp_ptr = const_cast<WebRtc_Word8*>(rtcp_packet);
+  int8_t* tmp_ptr = const_cast<int8_t*>(rtcp_packet);
   unsigned char* received_packet = reinterpret_cast<unsigned char*>(tmp_ptr);
   int received_packet_length = rtcp_packet_length;
   {
@@ -207,7 +208,7 @@ int ViEReceiver::InsertRTCPPacket(const WebRtc_Word8* rtcp_packet,
 
     if (rtp_dump_) {
       rtp_dump_->DumpPacket(
-          received_packet, static_cast<WebRtc_UWord16>(received_packet_length));
+          received_packet, static_cast<uint16_t>(received_packet_length));
     }
   }
   {

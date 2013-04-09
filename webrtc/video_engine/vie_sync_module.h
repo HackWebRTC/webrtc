@@ -44,8 +44,8 @@ class ViESyncModule : public Module {
   int SetTargetBufferingDelay(int target_delay_ms);
 
   // Implements Module.
-  virtual WebRtc_Word32 TimeUntilNextProcess();
-  virtual WebRtc_Word32 Process();
+  virtual int32_t TimeUntilNextProcess();
+  virtual int32_t Process();
 
  private:
   scoped_ptr<CriticalSectionWrapper> data_cs_;
