@@ -14,11 +14,11 @@
 #include <assert.h>
 
 // Constants to compensate for shifting signal log(2^shifts).
-const WebRtc_Word16 WebRtcNsx_kLogTable[9] = {
+const int16_t WebRtcNsx_kLogTable[9] = {
   0, 177, 355, 532, 710, 887, 1065, 1242, 1420
 };
 
-const WebRtc_Word16 WebRtcNsx_kCounterDiv[201] = {
+const int16_t WebRtcNsx_kCounterDiv[201] = {
   32767, 16384, 10923, 8192, 6554, 5461, 4681, 4096, 3641, 3277, 2979, 2731,
   2521, 2341, 2185, 2048, 1928, 1820, 1725, 1638, 1560, 1489, 1425, 1365, 1311,
   1260, 1214, 1170, 1130, 1092, 1057, 1024, 993, 964, 936, 910, 886, 862, 840,
@@ -35,7 +35,7 @@ const WebRtc_Word16 WebRtcNsx_kCounterDiv[201] = {
   172, 172, 171, 170, 169, 168, 167, 166, 165, 165, 164, 163
 };
 
-const WebRtc_Word16 WebRtcNsx_kLogTableFrac[256] = {
+const int16_t WebRtcNsx_kLogTableFrac[256] = {
   0, 1, 3, 4, 6, 7, 9, 10, 11, 13, 14, 16, 17, 18, 20, 21,
   22, 24, 25, 26, 28, 29, 30, 32, 33, 34, 36, 37, 38, 40, 41, 42,
   44, 45, 46, 47, 49, 50, 51, 52, 54, 55, 56, 57, 59, 60, 61, 62,

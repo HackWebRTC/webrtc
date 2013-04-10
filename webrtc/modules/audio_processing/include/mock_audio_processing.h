@@ -233,9 +233,9 @@ class MockAudioProcessing : public AudioProcessing {
     return voice_detection_.get();
   };
   MOCK_METHOD0(TimeUntilNextProcess,
-      WebRtc_Word32());
+      int32_t());
   MOCK_METHOD0(Process,
-      WebRtc_Word32());
+      int32_t());
 
  private:
   scoped_ptr<MockEchoCancellation> echo_cancellation_;

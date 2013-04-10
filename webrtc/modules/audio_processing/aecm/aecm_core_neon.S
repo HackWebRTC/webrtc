@@ -24,8 +24,8 @@ GLOBAL_FUNCTION WebRtcAecm_StoreAdaptiveChannelNeon
 GLOBAL_FUNCTION WebRtcAecm_ResetAdaptiveChannelNeon
 
 @ void WebRtcAecm_WindowAndFFTNeon(AecmCore_t* aecm,
-@                                  WebRtc_Word16* fft,
-@                                  const WebRtc_Word16* time_signal,
+@                                  int16_t* fft,
+@                                  const int16_t* time_signal,
 @                                  complex16_t* freq_signal,
 @                                  int time_signal_scaling);
 .align 2
@@ -81,10 +81,10 @@ LOOP_PART_LEN2:
   pop {r4, r5, r6, pc}
 
 @ void WebRtcAecm_InverseFFTAndWindowNeon(AecmCore_t* aecm,
-@                                         WebRtc_Word16* fft,
+@                                         int16_t* fft,
 @                                         complex16_t* efw,
-@                                         WebRtc_Word16* output,
-@                                         const WebRtc_Word16* nearendClean);
+@                                         int16_t* output,
+@                                         const int16_t* nearendClean);
 .align 2
 DEFINE_FUNCTION WebRtcAecm_InverseFFTAndWindowNeon
   push {r4-r8, lr}
@@ -197,11 +197,11 @@ END:
   pop {r4-r8, pc}
 
 @ void WebRtcAecm_CalcLinearEnergiesNeon(AecmCore_t* aecm,
-@                                        const WebRtc_UWord16* far_spectrum,
-@                                        WebRtc_Word32* echo_est,
-@                                        WebRtc_UWord32* far_energy,
-@                                        WebRtc_UWord32* echo_energy_adapt,
-@                                        WebRtc_UWord32* echo_energy_stored);
+@                                        const uint16_t* far_spectrum,
+@                                        int32_t* echo_est,
+@                                        uint32_t* far_energy,
+@                                        uint32_t* echo_energy_adapt,
+@                                        uint32_t* echo_energy_stored);
 .align 2
 DEFINE_FUNCTION WebRtcAecm_CalcLinearEnergiesNeon
   push {r4-r7}

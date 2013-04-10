@@ -80,7 +80,7 @@ struct AecCore {
 
   int mult;  // sampling frequency multiple
   int sampFreq;
-  WebRtc_UWord32 seed;
+  uint32_t seed;
 
   float mu;  // stepsize
   float errThresh;  // error threshold

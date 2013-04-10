@@ -45,7 +45,7 @@ int webrtc_aec_instance_count = 0;
 // (controlled by knownDelay)
 static int EstBufDelay(aecpc_t *aecInst);
 
-WebRtc_Word32 WebRtcAec_Create(void **aecInst)
+int32_t WebRtcAec_Create(void **aecInst)
 {
     aecpc_t *aecpc;
     if (aecInst == NULL) {
@@ -106,7 +106,7 @@ WebRtc_Word32 WebRtcAec_Create(void **aecInst)
     return 0;
 }
 
-WebRtc_Word32 WebRtcAec_Free(void *aecInst)
+int32_t WebRtcAec_Free(void *aecInst)
 {
     aecpc_t *aecpc = aecInst;
 
@@ -130,7 +130,7 @@ WebRtc_Word32 WebRtcAec_Free(void *aecInst)
     return 0;
 }
 
-WebRtc_Word32 WebRtcAec_Init(void *aecInst, WebRtc_Word32 sampFreq, WebRtc_Word32 scSampFreq)
+int32_t WebRtcAec_Init(void *aecInst, int32_t sampFreq, int32_t scSampFreq)
 {
     aecpc_t *aecpc = aecInst;
     AecConfig aecConfig;
@@ -226,11 +226,11 @@ WebRtc_Word32 WebRtcAec_Init(void *aecInst, WebRtc_Word32 sampFreq, WebRtc_Word3
 }
 
 // only buffer L band for farend
-WebRtc_Word32 WebRtcAec_BufferFarend(void *aecInst, const WebRtc_Word16 *farend,
-    WebRtc_Word16 nrOfSamples)
+int32_t WebRtcAec_BufferFarend(void *aecInst, const int16_t *farend,
+                               int16_t nrOfSamples)
 {
     aecpc_t *aecpc = aecInst;
-    WebRtc_Word32 retVal = 0;
+    int32_t retVal = 0;
     int newNrOfSamples = (int) nrOfSamples;
     short newFarend[MAX_RESAMP_LEN];
     const int16_t* farend_ptr = farend;
@@ -304,12 +304,13 @@ WebRtc_Word32 WebRtcAec_BufferFarend(void *aecInst, const WebRtc_Word16 *farend,
     return retVal;
 }
 
-WebRtc_Word32 WebRtcAec_Process(void *aecInst, const WebRtc_Word16 *nearend,
-    const WebRtc_Word16 *nearendH, WebRtc_Word16 *out, WebRtc_Word16 *outH,
-    WebRtc_Word16 nrOfSamples, WebRtc_Word16 msInSndCardBuf, WebRtc_Word32 skew)
+int32_t WebRtcAec_Process(void *aecInst, const int16_t *nearend,
+                          const int16_t *nearendH, int16_t *out, int16_t *outH,
+                          int16_t nrOfSamples, int16_t msInSndCardBuf,
+                          int32_t skew)
 {
     aecpc_t *aecpc = aecInst;
-    WebRtc_Word32 retVal = 0;
+    int32_t retVal = 0;
     short i;
     short nBlocks10ms;
     short nFrames;
@@ -689,7 +690,7 @@ int WebRtcAec_GetDelayMetrics(void* handle, int* median, int* std) {
   return 0;
 }
 
-WebRtc_Word32 WebRtcAec_get_error_code(void *aecInst)
+int32_t WebRtcAec_get_error_code(void *aecInst)
 {
     aecpc_t *aecpc = aecInst;
 

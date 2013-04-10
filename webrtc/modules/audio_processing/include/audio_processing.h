@@ -253,8 +253,8 @@ class AudioProcessing : public Module {
   };
 
   // Inherited from Module.
-  virtual WebRtc_Word32 TimeUntilNextProcess() { return -1; }
-  virtual WebRtc_Word32 Process() { return -1; }
+  virtual int32_t TimeUntilNextProcess() { return -1; }
+  virtual int32_t Process() { return -1; }
 };
 
 // The acoustic echo cancellation (AEC) component provides better performance

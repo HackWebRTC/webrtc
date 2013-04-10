@@ -574,10 +574,10 @@ void void_main(int argc, char* argv[]) {
 
   TickTime t0 = TickTime::Now();
   TickTime t1 = t0;
-  WebRtc_Word64 max_time_us = 0;
-  WebRtc_Word64 max_time_reverse_us = 0;
-  WebRtc_Word64 min_time_us = 1e6;
-  WebRtc_Word64 min_time_reverse_us = 1e6;
+  int64_t max_time_us = 0;
+  int64_t max_time_reverse_us = 0;
+  int64_t min_time_us = 1e6;
+  int64_t min_time_reverse_us = 1e6;
 
   // TODO(ajm): Ideally we would refactor this block into separate functions,
   //            but for now we want to share the variables.
@@ -1015,7 +1015,7 @@ void void_main(int argc, char* argv[]) {
 
   if (perf_testing) {
     if (primary_count > 0) {
-      WebRtc_Word64 exec_time = acc_ticks.Milliseconds();
+      int64_t exec_time = acc_ticks.Milliseconds();
       printf("\nTotal time: %.3f s, file time: %.2f s\n",
         exec_time * 0.001, primary_count * 0.01);
       printf("Time per frame: %.3f ms (average), %.3f ms (max),"

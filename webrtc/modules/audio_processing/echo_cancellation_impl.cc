@@ -24,7 +24,7 @@ namespace webrtc {
 typedef void Handle;
 
 namespace {
-WebRtc_Word16 MapSetting(EchoCancellation::SuppressionLevel level) {
+int16_t MapSetting(EchoCancellation::SuppressionLevel level) {
   switch (level) {
     case EchoCancellation::kLowSuppression:
       return kAecNlpConservative;
@@ -86,7 +86,7 @@ int EchoCancellationImpl::ProcessRenderAudio(const AudioBuffer* audio) {
       err = WebRtcAec_BufferFarend(
           my_handle,
           audio->low_pass_split_data(j),
-          static_cast<WebRtc_Word16>(audio->samples_per_split_channel()));
+          static_cast<int16_t>(audio->samples_per_split_channel()));
 
       if (err != apm_->kNoError) {
         return GetHandleError(my_handle);  // TODO(ajm): warning possible?
@@ -129,7 +129,7 @@ int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio) {
           audio->high_pass_split_data(i),
           audio->low_pass_split_data(i),
           audio->high_pass_split_data(i),
-          static_cast<WebRtc_Word16>(audio->samples_per_split_channel()),
+          static_cast<int16_t>(audio->samples_per_split_channel()),
           apm_->stream_delay_ms(),
           stream_drift_samples_);
 

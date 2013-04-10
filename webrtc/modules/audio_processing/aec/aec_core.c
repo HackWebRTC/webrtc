@@ -1361,7 +1361,7 @@ static void ComfortNoise(AecCore* aec, float efw[2][PART_LEN1],
     int i, num;
     float rand[PART_LEN];
     float noise, noiseAvg, tmp, tmpAvg;
-    WebRtc_Word16 randW16[PART_LEN];
+    int16_t randW16[PART_LEN];
     complex_t u[PART_LEN1];
 
     const float pi2 = 6.28318530717959f;

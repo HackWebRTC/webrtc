@@ -24,7 +24,7 @@ namespace webrtc {
 typedef void Handle;
 
 namespace {
-WebRtc_Word16 MapSetting(EchoControlMobile::RoutingMode mode) {
+int16_t MapSetting(EchoControlMobile::RoutingMode mode) {
   switch (mode) {
     case EchoControlMobile::kQuietEarpieceOrHeadset:
       return 0;
@@ -95,7 +95,7 @@ int EchoControlMobileImpl::ProcessRenderAudio(const AudioBuffer* audio) {
       err = WebRtcAecm_BufferFarend(
           my_handle,
           audio->low_pass_split_data(j),
-          static_cast<WebRtc_Word16>(audio->samples_per_split_channel()));
+          static_cast<int16_t>(audio->samples_per_split_channel()));
 
       if (err != apm_->kNoError) {
         return GetHandleError(my_handle);  // TODO(ajm): warning possible?
@@ -127,8 +127,8 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   for (int i = 0; i < audio->num_channels(); i++) {
     // TODO(ajm): improve how this works, possibly inside AECM.
     //            This is kind of hacked up.
-    WebRtc_Word16* noisy = audio->low_pass_reference(i);
-    WebRtc_Word16* clean = audio->low_pass_split_data(i);
+    int16_t* noisy = audio->low_pass_reference(i);
+    int16_t* clean = audio->low_pass_split_data(i);
     if (noisy == NULL) {
       noisy = clean;
       clean = NULL;
@@ -140,7 +140,7 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio) {
           noisy,
           clean,
           audio->low_pass_split_data(i),
-          static_cast<WebRtc_Word16>(audio->samples_per_split_channel()),
+          static_cast<int16_t>(audio->samples_per_split_channel()),
           apm_->stream_delay_ms());
 
       if (err != apm_->kNoError) {
