@@ -29,18 +29,18 @@ class CaptureSinkFilter;
 class CaptureInputPin: public CBaseInputPin
 {
 public:
-    WebRtc_Word32 _moduleId;
+    int32_t _moduleId;
 
     VideoCaptureCapability _requestedCapability;
     VideoCaptureCapability _resultingCapability;
     HANDLE _threadHandle;
 
-    CaptureInputPin ( WebRtc_Word32 moduleId,
-                      IN TCHAR* szName,
-                      IN CaptureSinkFilter* pFilter,
-                      IN CCritSec * pLock,
-                      OUT HRESULT * pHr,
-                      IN LPCWSTR pszName);
+    CaptureInputPin(int32_t moduleId,
+                    IN TCHAR* szName,
+                    IN CaptureSinkFilter* pFilter,
+                    IN CCritSec * pLock,
+                    OUT HRESULT * pHr,
+                    IN LPCWSTR pszName);
     virtual ~CaptureInputPin();
 
     HRESULT GetMediaType (IN int iPos, OUT CMediaType * pmt);
@@ -53,17 +53,17 @@ class CaptureSinkFilter: public CBaseFilter
 {
 
 public:
-    CaptureSinkFilter (IN TCHAR * tszName,
-                   IN LPUNKNOWN punk,
-                   OUT HRESULT * phr,
-                   VideoCaptureExternal& captureObserver,
-                   WebRtc_Word32 moduleId);
+    CaptureSinkFilter(IN TCHAR * tszName,
+                      IN LPUNKNOWN punk,
+                      OUT HRESULT * phr,
+                      VideoCaptureExternal& captureObserver,
+                      int32_t moduleId);
     virtual ~CaptureSinkFilter();
 
     //  --------------------------------------------------------------------
     //  class methods
 
-    void ProcessCapturedFrame(unsigned char* pBuffer, WebRtc_Word32 length,
+    void ProcessCapturedFrame(unsigned char* pBuffer, int32_t length,
                               const VideoCaptureCapability& frameInfo);
     //  explicit receiver lock aquisition and release
     void LockReceive()  { m_crtRecv.Lock();}
@@ -93,7 +93,7 @@ private:
     CCritSec m_crtRecv;  //  receiver lock; always acquire before filter lock
     CaptureInputPin * m_pInput;
     VideoCaptureExternal& _captureObserver;
-    WebRtc_Word32 _moduleId;
+    int32_t _moduleId;
 };
 } // namespace videocapturemodule
 } // namespace webrtc

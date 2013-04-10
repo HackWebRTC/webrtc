@@ -30,7 +30,7 @@ void DeviceInfoAndroid::SetAndroidCaptureClasses(jclass capabilityClass) {
 }
 
 VideoCaptureModule::DeviceInfo*
-VideoCaptureImpl::CreateDeviceInfo (const WebRtc_Word32 id) {
+VideoCaptureImpl::CreateDeviceInfo (const int32_t id) {
   videocapturemodule::DeviceInfoAndroid *deviceInfo =
       new videocapturemodule::DeviceInfoAndroid(id);
   if (deviceInfo && deviceInfo->Init() != 0) {
@@ -40,18 +40,18 @@ VideoCaptureImpl::CreateDeviceInfo (const WebRtc_Word32 id) {
   return deviceInfo;
 }
 
-DeviceInfoAndroid::DeviceInfoAndroid(const WebRtc_Word32 id) :
+DeviceInfoAndroid::DeviceInfoAndroid(const int32_t id) :
     DeviceInfoImpl(id) {
 }
 
-WebRtc_Word32 DeviceInfoAndroid::Init() {
+int32_t DeviceInfoAndroid::Init() {
   return 0;
 }
 
 DeviceInfoAndroid::~DeviceInfoAndroid() {
 }
 
-WebRtc_UWord32 DeviceInfoAndroid::NumberOfDevices() {
+uint32_t DeviceInfoAndroid::NumberOfDevices() {
   JNIEnv *env;
   jclass javaCmDevInfoClass;
   jobject javaCmDevInfoObject;
@@ -83,19 +83,19 @@ WebRtc_UWord32 DeviceInfoAndroid::NumberOfDevices() {
   return 0;
 }
 
-WebRtc_Word32 DeviceInfoAndroid::GetDeviceName(
-    WebRtc_UWord32 deviceNumber,
+int32_t DeviceInfoAndroid::GetDeviceName(
+    uint32_t deviceNumber,
     char* deviceNameUTF8,
-    WebRtc_UWord32 deviceNameLength,
+    uint32_t deviceNameLength,
     char* deviceUniqueIdUTF8,
-    WebRtc_UWord32 deviceUniqueIdUTF8Length,
+    uint32_t deviceUniqueIdUTF8Length,
     char* /*productUniqueIdUTF8*/,
-    WebRtc_UWord32 /*productUniqueIdUTF8Length*/) {
+    uint32_t /*productUniqueIdUTF8Length*/) {
 
   JNIEnv *env;
   jclass javaCmDevInfoClass;
   jobject javaCmDevInfoObject;
-  WebRtc_Word32 result = 0;
+  int32_t result = 0;
   bool attached = false;
   if (VideoCaptureAndroid::AttachAndUseAndroidDeviceInfoObjects(
           env,
@@ -122,7 +122,7 @@ WebRtc_Word32 DeviceInfoAndroid::GetDeviceName(
           ,&isCopy);
       const jsize javaDeviceNameCharLength =
           env->GetStringUTFLength((jstring) javaDeviceNameObj);
-      if ((WebRtc_UWord32) javaDeviceNameCharLength <
+      if ((uint32_t) javaDeviceNameCharLength <
           deviceUniqueIdUTF8Length) {
         memcpy(deviceUniqueIdUTF8,
                javaDeviceNameChar,
@@ -134,7 +134,7 @@ WebRtc_Word32 DeviceInfoAndroid::GetDeviceName(
                      __FUNCTION__);
         result = -1;
       }
-      if ((WebRtc_UWord32) javaDeviceNameCharLength < deviceNameLength) {
+      if ((uint32_t) javaDeviceNameCharLength < deviceNameLength) {
         memcpy(deviceNameUTF8,
                javaDeviceNameChar,
                javaDeviceNameCharLength + 1);
@@ -159,7 +159,7 @@ WebRtc_Word32 DeviceInfoAndroid::GetDeviceName(
 
 }
 
-WebRtc_Word32 DeviceInfoAndroid::CreateCapabilityMap(
+int32_t DeviceInfoAndroid::CreateCapabilityMap(
     const char* deviceUniqueIdUTF8) {
   MapItem* item = NULL;
   while ((item = _captureCapabilities.Last())) {
@@ -264,7 +264,7 @@ WebRtc_Word32 DeviceInfoAndroid::CreateCapabilityMap(
   return _captureCapabilities.Size();
 }
 
-WebRtc_Word32 DeviceInfoAndroid::GetOrientation(
+int32_t DeviceInfoAndroid::GetOrientation(
     const char* deviceUniqueIdUTF8,
     VideoCaptureRotation& orientation) {
   JNIEnv *env;
@@ -301,7 +301,7 @@ WebRtc_Word32 DeviceInfoAndroid::GetOrientation(
                                          capureIdString);
   VideoCaptureAndroid::ReleaseAndroidDeviceInfoObjects(attached);
 
-  WebRtc_Word32 retValue = 0;
+  int32_t retValue = 0;
   switch (jorientation) {
     case -1: // Error
       orientation = kCameraRotate0;

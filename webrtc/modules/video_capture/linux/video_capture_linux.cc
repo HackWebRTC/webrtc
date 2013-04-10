@@ -31,7 +31,7 @@ namespace webrtc
 {
 namespace videocapturemodule
 {
-VideoCaptureModule* VideoCaptureImpl::Create(const WebRtc_Word32 id,
+VideoCaptureModule* VideoCaptureImpl::Create(const int32_t id,
                                              const char* deviceUniqueId)
 {
     RefCountImpl<videocapturemodule::VideoCaptureModuleV4L2>* implementation =
@@ -46,7 +46,7 @@ VideoCaptureModule* VideoCaptureImpl::Create(const WebRtc_Word32 id,
     return implementation;
 }
 
-VideoCaptureModuleV4L2::VideoCaptureModuleV4L2(const WebRtc_Word32 id)
+VideoCaptureModuleV4L2::VideoCaptureModuleV4L2(const int32_t id)
     : VideoCaptureImpl(id), 
       _captureThread(NULL),
       _captureCritSect(CriticalSectionWrapper::CreateCriticalSection()),
@@ -62,7 +62,7 @@ VideoCaptureModuleV4L2::VideoCaptureModuleV4L2(const WebRtc_Word32 id)
 {
 }
 
-WebRtc_Word32 VideoCaptureModuleV4L2::Init(const char* deviceUniqueIdUTF8)
+int32_t VideoCaptureModuleV4L2::Init(const char* deviceUniqueIdUTF8)
 {
     int len = strlen((const char*) deviceUniqueIdUTF8);
     _deviceUniqueId = new (std::nothrow) char[len + 1];
@@ -121,7 +121,7 @@ VideoCaptureModuleV4L2::~VideoCaptureModuleV4L2()
       close(_deviceFd);
 }
 
-WebRtc_Word32 VideoCaptureModuleV4L2::StartCapture(
+int32_t VideoCaptureModuleV4L2::StartCapture(
     const VideoCaptureCapability& capability)
 {
     if (_captureStarted)
@@ -298,7 +298,7 @@ WebRtc_Word32 VideoCaptureModuleV4L2::StartCapture(
     return 0;
 }
 
-WebRtc_Word32 VideoCaptureModuleV4L2::StopCapture()
+int32_t VideoCaptureModuleV4L2::StopCapture()
 {
     if (_captureThread) {
         // Make sure the capture thread stop stop using the critsect.
@@ -487,7 +487,7 @@ bool VideoCaptureModuleV4L2::CaptureProcess()
     return true;
 }
 
-WebRtc_Word32 VideoCaptureModuleV4L2::CaptureSettings(VideoCaptureCapability& settings)
+int32_t VideoCaptureModuleV4L2::CaptureSettings(VideoCaptureCapability& settings)
 {
     settings.width = _currentWidth;
     settings.height = _currentHeight;

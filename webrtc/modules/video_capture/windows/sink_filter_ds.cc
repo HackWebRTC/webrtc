@@ -34,7 +34,7 @@ typedef struct tagTHREADNAME_INFO
    DWORD dwFlags;       // reserved for future use, must be zero
 } THREADNAME_INFO;
 
-CaptureInputPin::CaptureInputPin (WebRtc_Word32 moduleId,
+CaptureInputPin::CaptureInputPin (int32_t moduleId,
                             IN TCHAR * szName,
                             IN CaptureSinkFilter* pFilter,
                             IN CCritSec * pLock,
@@ -86,7 +86,7 @@ CaptureInputPin::GetMediaType (IN int iPosition, OUT CMediaType * pmt)
     pmt->SetFormatType(&FORMAT_VideoInfo);
     pmt->SetTemporalCompression(FALSE);
 
-    WebRtc_Word32 positionOffset=1;
+    int32_t positionOffset=1;
     if(_requestedCapability.codecType!=kVideoCodecUnknown)
     {
         positionOffset=0;
@@ -353,7 +353,7 @@ CaptureInputPin::Receive ( IN IMediaSample * pIMediaSample )
 
     if (SUCCEEDED (hr))
     {
-        const WebRtc_Word32 length = pIMediaSample->GetActualDataLength();
+        const int32_t length = pIMediaSample->GetActualDataLength();
 
         unsigned char* pBuffer = NULL;
         if(S_OK != pIMediaSample->GetPointer(&pBuffer))
@@ -388,7 +388,7 @@ CaptureSinkFilter::CaptureSinkFilter (IN TCHAR * tszName,
                               IN LPUNKNOWN punk,
                               OUT HRESULT * phr,
                               VideoCaptureExternal& captureObserver,
-                              WebRtc_Word32 moduleId)
+                              int32_t moduleId)
     : CBaseFilter(tszName,punk,& m_crtFilter,CLSID_SINKFILTER),
       m_pInput(NULL),
       _captureObserver(captureObserver),
@@ -484,7 +484,7 @@ void CaptureSinkFilter::SetFilterGraph(IGraphBuilder* graph)
 }
 
 void CaptureSinkFilter::ProcessCapturedFrame(unsigned char* pBuffer,
-                                         WebRtc_Word32 length,
+                                         int32_t length,
                                          const VideoCaptureCapability& frameInfo)
 {
     //  we have the receiver lock
