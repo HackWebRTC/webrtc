@@ -84,10 +84,10 @@ RTPSenderH264::AddH264SVCNALUHeader(const H264_SVC_NALUHeader& svc,
    // I    - Is layer representation an IDR layer (1) or not (0).
    // PRID - Priority identifier for the NAL unit.
    // N    - Specifies whether inter-layer prediction may be used for decoding the coded slice (1) or not (0).
-   // DID  - Indicates the WebRtc_Word32er-layer coding dependency level of a layer representation.
+   // DID  - Indicates the int32_t:er-layer coding dependency level of a layer representation.
    // QID  - Indicates the quality level of an MGS layer representation.
    // TID  - Indicates the temporal level of a layer representation.
-   // U    - Use only reference base pictures during the WebRtc_Word32er prediction process (1) or not (0).
+   // U    - Use only reference base pictures during the int32_t:er prediction process (1) or not (0).
    // D    - Discardable flag.
    // O    - Output_flag. Affects the decoded picture output process as defined in Annex C of [H.264].
    // RR   - Reserved_three_2bits (MUST be '11'). Receivers SHOULD ignore the value of RR.

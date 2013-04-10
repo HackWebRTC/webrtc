@@ -191,20 +191,20 @@ private:
 
     static OSStatus RecordProcess(void *inRefCon,
                                   AudioUnitRenderActionFlags *ioActionFlags,
-                                  const AudioTimeStamp *WebRtc_Word32imeStamp,
+                                  const AudioTimeStamp *timeStamp,
                                   UInt32 inBusNumber,
                                   UInt32 inNumberFrames,
                                   AudioBufferList *ioData);
 
     static OSStatus PlayoutProcess(void *inRefCon,
                                    AudioUnitRenderActionFlags *ioActionFlags,
-                                   const AudioTimeStamp *WebRtc_Word32imeStamp,
+                                   const AudioTimeStamp *timeStamp,
                                    UInt32 inBusNumber,
                                    UInt32 inNumberFrames,
                                    AudioBufferList *ioData);
 
     OSStatus RecordProcessImpl(AudioUnitRenderActionFlags *ioActionFlags,
-                               const AudioTimeStamp *WebRtc_Word32imeStamp,
+                               const AudioTimeStamp *timeStamp,
                                uint32_t inBusNumber,
                                uint32_t inNumberFrames);
 

@@ -348,7 +348,7 @@ int32_t ACMNetEQ::SetPlayoutMode(const AudioPlayoutMode mode) {
   }
 
   int err = 0;
-  for (WebRtc_Word16 idx = 0; idx < num_slaves_ + 1; idx++) {
+  for (int16_t idx = 0; idx < num_slaves_ + 1; idx++) {
     if (!is_initialized_[idx]) {
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                    "SetPlayoutMode: NetEq is not initialized.");

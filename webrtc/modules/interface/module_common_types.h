@@ -30,27 +30,27 @@ namespace webrtc {
 struct RTPHeader
 {
     bool           markerBit;
-    WebRtc_UWord8  payloadType;
-    WebRtc_UWord16 sequenceNumber;
-    WebRtc_UWord32 timestamp;
-    WebRtc_UWord32 ssrc;
-    WebRtc_UWord8  numCSRCs;
-    WebRtc_UWord32 arrOfCSRCs[kRtpCsrcSize];
-    WebRtc_UWord8  paddingLength;
-    WebRtc_UWord16 headerLength;
+    uint8_t  payloadType;
+    uint16_t sequenceNumber;
+    uint32_t timestamp;
+    uint32_t ssrc;
+    uint8_t  numCSRCs;
+    uint32_t arrOfCSRCs[kRtpCsrcSize];
+    uint8_t  paddingLength;
+    uint16_t headerLength;
 };
 
 struct RTPHeaderExtension
 {
-    WebRtc_Word32  transmissionTimeOffset;
+    int32_t  transmissionTimeOffset;
 };
 
 struct RTPAudioHeader
 {
-    WebRtc_UWord8  numEnergy;                         // number of valid entries in arrOfEnergy
-    WebRtc_UWord8  arrOfEnergy[kRtpCsrcSize];   // one energy byte (0-9) per channel
+    uint8_t  numEnergy;                         // number of valid entries in arrOfEnergy
+    uint8_t  arrOfEnergy[kRtpCsrcSize];   // one energy byte (0-9) per channel
     bool           isCNG;                             // is this CNG
-    WebRtc_UWord8  channel;                           // number of channels 2 = stereo
+    uint8_t  channel;                           // number of channels 2 = stereo
 };
 
 enum {kNoPictureId = -1};
@@ -74,11 +74,11 @@ struct RTPVideoHeaderVP8
     }
 
     bool           nonReference;   // Frame is discardable.
-    WebRtc_Word16  pictureId;      // Picture ID index, 15 bits;
+    int16_t  pictureId;      // Picture ID index, 15 bits;
                                    // kNoPictureId if PictureID does not exist.
-    WebRtc_Word16  tl0PicIdx;      // TL0PIC_IDX, 8 bits;
+    int16_t  tl0PicIdx;      // TL0PIC_IDX, 8 bits;
                                    // kNoTl0PicIdx means no value provided.
-    WebRtc_Word8   temporalIdx;    // Temporal layer index, or kNoTemporalIdx.
+    int8_t   temporalIdx;    // Temporal layer index, or kNoTemporalIdx.
     bool           layerSync;      // This frame is a layer sync frame.
                                    // Disabled if temporalIdx == kNoTemporalIdx.
     int            keyIdx;         // 5 bits; kNoKeyIdx means not used.
@@ -101,11 +101,11 @@ enum RTPVideoCodecTypes
 };
 struct RTPVideoHeader
 {
-    WebRtc_UWord16          width;                  // size
-    WebRtc_UWord16          height;
+    uint16_t          width;                  // size
+    uint16_t          height;
 
     bool                    isFirstPacket;   // first packet in frame
-    WebRtc_UWord8           simulcastIdx;    // Index if the simulcast encoder creating
+    uint8_t           simulcastIdx;    // Index if the simulcast encoder creating
                                              // this frame, 0 if not using simulcast.
     RTPVideoCodecTypes      codec;
     RTPVideoTypeHeader      codecHeader;
@@ -169,19 +169,19 @@ public:
                 // allocate new
                 if(src.fragmentationOffset)
                 {
-                    fragmentationOffset = new WebRtc_UWord32[src.fragmentationVectorSize];
+                    fragmentationOffset = new uint32_t[src.fragmentationVectorSize];
                 }
                 if(src.fragmentationLength)
                 {
-                    fragmentationLength = new WebRtc_UWord32[src.fragmentationVectorSize];
+                    fragmentationLength = new uint32_t[src.fragmentationVectorSize];
                 }
                 if(src.fragmentationTimeDiff)
                 {
-                    fragmentationTimeDiff = new WebRtc_UWord16[src.fragmentationVectorSize];
+                    fragmentationTimeDiff = new uint16_t[src.fragmentationVectorSize];
                 }
                 if(src.fragmentationPlType)
                 {
-                    fragmentationPlType = new WebRtc_UWord8[src.fragmentationVectorSize];
+                    fragmentationPlType = new uint8_t[src.fragmentationVectorSize];
                 }
             }
             // set new size
@@ -194,81 +194,81 @@ public:
             if(src.fragmentationOffset)
             {
                 memcpy(fragmentationOffset, src.fragmentationOffset,
-                       src.fragmentationVectorSize * sizeof(WebRtc_UWord32));
+                       src.fragmentationVectorSize * sizeof(uint32_t));
             }
             if(src.fragmentationLength)
             {
                 memcpy(fragmentationLength, src.fragmentationLength,
-                       src.fragmentationVectorSize * sizeof(WebRtc_UWord32));
+                       src.fragmentationVectorSize * sizeof(uint32_t));
             }
             if(src.fragmentationTimeDiff)
             {
                 memcpy(fragmentationTimeDiff, src.fragmentationTimeDiff,
-                       src.fragmentationVectorSize * sizeof(WebRtc_UWord16));
+                       src.fragmentationVectorSize * sizeof(uint16_t));
             }
             if(src.fragmentationPlType)
             {
                 memcpy(fragmentationPlType, src.fragmentationPlType,
-                       src.fragmentationVectorSize * sizeof(WebRtc_UWord8));
+                       src.fragmentationVectorSize * sizeof(uint8_t));
             }
         }
     }
 
-    void VerifyAndAllocateFragmentationHeader(const WebRtc_UWord16 size)
+    void VerifyAndAllocateFragmentationHeader(const uint16_t size)
     {
         if(fragmentationVectorSize < size)
         {
-            WebRtc_UWord16 oldVectorSize = fragmentationVectorSize;
+            uint16_t oldVectorSize = fragmentationVectorSize;
             {
                 // offset
-                WebRtc_UWord32* oldOffsets = fragmentationOffset;
-                fragmentationOffset = new WebRtc_UWord32[size];
+                uint32_t* oldOffsets = fragmentationOffset;
+                fragmentationOffset = new uint32_t[size];
                 memset(fragmentationOffset+oldVectorSize, 0,
-                       sizeof(WebRtc_UWord32)*(size-oldVectorSize));
+                       sizeof(uint32_t)*(size-oldVectorSize));
                 // copy old values
-                memcpy(fragmentationOffset,oldOffsets, sizeof(WebRtc_UWord32) * oldVectorSize);
+                memcpy(fragmentationOffset,oldOffsets, sizeof(uint32_t) * oldVectorSize);
                 delete[] oldOffsets;
             }
             // length
             {
-                WebRtc_UWord32* oldLengths = fragmentationLength;
-                fragmentationLength = new WebRtc_UWord32[size];
+                uint32_t* oldLengths = fragmentationLength;
+                fragmentationLength = new uint32_t[size];
                 memset(fragmentationLength+oldVectorSize, 0,
-                       sizeof(WebRtc_UWord32) * (size- oldVectorSize));
+                       sizeof(uint32_t) * (size- oldVectorSize));
                 memcpy(fragmentationLength, oldLengths,
-                       sizeof(WebRtc_UWord32) * oldVectorSize);
+                       sizeof(uint32_t) * oldVectorSize);
                 delete[] oldLengths;
             }
             // time diff
             {
-                WebRtc_UWord16* oldTimeDiffs = fragmentationTimeDiff;
-                fragmentationTimeDiff = new WebRtc_UWord16[size];
+                uint16_t* oldTimeDiffs = fragmentationTimeDiff;
+                fragmentationTimeDiff = new uint16_t[size];
                 memset(fragmentationTimeDiff+oldVectorSize, 0,
-                       sizeof(WebRtc_UWord16) * (size- oldVectorSize));
+                       sizeof(uint16_t) * (size- oldVectorSize));
                 memcpy(fragmentationTimeDiff, oldTimeDiffs,
-                       sizeof(WebRtc_UWord16) * oldVectorSize);
+                       sizeof(uint16_t) * oldVectorSize);
                 delete[] oldTimeDiffs;
             }
             // payload type
             {
-                WebRtc_UWord8* oldTimePlTypes = fragmentationPlType;
-                fragmentationPlType = new WebRtc_UWord8[size];
+                uint8_t* oldTimePlTypes = fragmentationPlType;
+                fragmentationPlType = new uint8_t[size];
                 memset(fragmentationPlType+oldVectorSize, 0,
-                       sizeof(WebRtc_UWord8) * (size- oldVectorSize));
+                       sizeof(uint8_t) * (size- oldVectorSize));
                 memcpy(fragmentationPlType, oldTimePlTypes,
-                       sizeof(WebRtc_UWord8) * oldVectorSize);
+                       sizeof(uint8_t) * oldVectorSize);
                 delete[] oldTimePlTypes;
             }
             fragmentationVectorSize = size;
         }
     }
 
-    WebRtc_UWord16    fragmentationVectorSize;    // Number of fragmentations
-    WebRtc_UWord32*   fragmentationOffset;        // Offset of pointer to data for each fragm.
-    WebRtc_UWord32*   fragmentationLength;        // Data size for each fragmentation
-    WebRtc_UWord16*   fragmentationTimeDiff;      // Timestamp difference relative "now" for
+    uint16_t    fragmentationVectorSize;    // Number of fragmentations
+    uint32_t*   fragmentationOffset;        // Offset of pointer to data for each fragm.
+    uint32_t*   fragmentationLength;        // Data size for each fragmentation
+    uint16_t*   fragmentationTimeDiff;      // Timestamp difference relative "now" for
                                                   // each fragmentation
-    WebRtc_UWord8*    fragmentationPlType;        // Payload type of each fragmentation
+    uint8_t*    fragmentationPlType;        // Payload type of each fragmentation
 
 private:
     DISALLOW_COPY_AND_ASSIGN(RTPFragmentationHeader);
@@ -277,26 +277,26 @@ private:
 struct RTCPVoIPMetric
 {
     // RFC 3611 4.7
-    WebRtc_UWord8     lossRate;
-    WebRtc_UWord8     discardRate;
-    WebRtc_UWord8     burstDensity;
-    WebRtc_UWord8     gapDensity;
-    WebRtc_UWord16    burstDuration;
-    WebRtc_UWord16    gapDuration;
-    WebRtc_UWord16    roundTripDelay;
-    WebRtc_UWord16    endSystemDelay;
-    WebRtc_UWord8     signalLevel;
-    WebRtc_UWord8     noiseLevel;
-    WebRtc_UWord8     RERL;
-    WebRtc_UWord8     Gmin;
-    WebRtc_UWord8     Rfactor;
-    WebRtc_UWord8     extRfactor;
-    WebRtc_UWord8     MOSLQ;
-    WebRtc_UWord8     MOSCQ;
-    WebRtc_UWord8     RXconfig;
-    WebRtc_UWord16    JBnominal;
-    WebRtc_UWord16    JBmax;
-    WebRtc_UWord16    JBabsMax;
+    uint8_t     lossRate;
+    uint8_t     discardRate;
+    uint8_t     burstDensity;
+    uint8_t     gapDensity;
+    uint16_t    burstDuration;
+    uint16_t    gapDuration;
+    uint16_t    roundTripDelay;
+    uint16_t    endSystemDelay;
+    uint8_t     signalLevel;
+    uint8_t     noiseLevel;
+    uint8_t     RERL;
+    uint8_t     Gmin;
+    uint8_t     Rfactor;
+    uint8_t     extRfactor;
+    uint8_t     MOSLQ;
+    uint8_t     MOSCQ;
+    uint8_t     RXconfig;
+    uint16_t    JBnominal;
+    uint16_t    JBmax;
+    uint16_t    JBabsMax;
 };
 
 // Types for the FEC packet masks. The type |kFecMaskRandom| is based on a
@@ -361,7 +361,7 @@ public:
         codec               = data.codec;
         if (data.payloadSize > 0)
         {
-            payloadData = new WebRtc_UWord8[data.payloadSize];
+            payloadData = new uint8_t[data.payloadSize];
             memcpy(payloadData, data.payloadData, data.payloadSize);
         }
         else
@@ -396,35 +396,35 @@ public:
         if (data.payloadSize > 0)
         {
             delete [] payloadData;
-            payloadData = new WebRtc_UWord8[data.payloadSize];
+            payloadData = new uint8_t[data.payloadSize];
             memcpy(payloadData, data.payloadData, data.payloadSize);
             bufferSize = data.payloadSize;
         }
         return *this;
     };
-    void VerifyAndAllocate( const WebRtc_UWord32 size)
+    void VerifyAndAllocate( const uint32_t size)
     {
         if (bufferSize < size)
         {
-            WebRtc_UWord8* oldPayload = payloadData;
-            payloadData = new WebRtc_UWord8[size];
-            memcpy(payloadData, oldPayload, sizeof(WebRtc_UWord8) * payloadSize);
+            uint8_t* oldPayload = payloadData;
+            payloadData = new uint8_t[size];
+            memcpy(payloadData, oldPayload, sizeof(uint8_t) * payloadSize);
 
             bufferSize = size;
             delete[] oldPayload;
         }
     }
 
-    WebRtc_UWord8               payloadType;
-    WebRtc_UWord32              timeStamp;
-    WebRtc_Word64               renderTimeMs;
-    WebRtc_UWord32              encodedWidth;
-    WebRtc_UWord32              encodedHeight;
+    uint8_t               payloadType;
+    uint32_t              timeStamp;
+    int64_t               renderTimeMs;
+    uint32_t              encodedWidth;
+    uint32_t              encodedHeight;
     bool                        completeFrame;
     bool                        missingFrame;
-    WebRtc_UWord8*              payloadData;
-    WebRtc_UWord32              payloadSize;
-    WebRtc_UWord32              bufferSize;
+    uint8_t*              payloadData;
+    uint32_t              payloadSize;
+    uint32_t              bufferSize;
     RTPFragmentationHeader      fragmentationHeader;
     FrameType                   frameType;
     VideoCodecType              codec;
@@ -470,32 +470,32 @@ public:
     * is copied to the new buffer.
     * Buffer size is updated to minimumSize.
     */
-    WebRtc_Word32 VerifyAndAllocate(const WebRtc_UWord32 minimumSize);
+    int32_t VerifyAndAllocate(const uint32_t minimumSize);
     /**
     *    Update length of data buffer in frame. Function verifies that new length is less or
     *    equal to allocated size.
     */
-    WebRtc_Word32 SetLength(const WebRtc_UWord32 newLength);
+    int32_t SetLength(const uint32_t newLength);
     /*
     *    Swap buffer and size data
     */
-    WebRtc_Word32 Swap(WebRtc_UWord8*& newMemory,
-                       WebRtc_UWord32& newLength,
-                       WebRtc_UWord32& newSize);
+    int32_t Swap(uint8_t*& newMemory,
+                       uint32_t& newLength,
+                       uint32_t& newSize);
     /*
     *    Swap buffer and size data
     */
-    WebRtc_Word32 SwapFrame(VideoFrame& videoFrame);
+    int32_t SwapFrame(VideoFrame& videoFrame);
     /**
     *    Copy buffer: If newLength is bigger than allocated size, a new buffer of size length
     *    is allocated.
     */
-    WebRtc_Word32 CopyFrame(const VideoFrame& videoFrame);
+    int32_t CopyFrame(const VideoFrame& videoFrame);
     /**
     *    Copy buffer: If newLength is bigger than allocated size, a new buffer of size length
     *    is allocated.
     */
-    WebRtc_Word32 CopyFrame(WebRtc_UWord32 length, const WebRtc_UWord8* sourceBuffer);
+    int32_t CopyFrame(uint32_t length, const uint8_t* sourceBuffer);
     /**
     *    Delete VideoFrame and resets members to zero
     */
@@ -503,64 +503,64 @@ public:
     /**
     *   Set frame timestamp (90kHz)
     */
-    void SetTimeStamp(const WebRtc_UWord32 timeStamp) {_timeStamp = timeStamp;}
+    void SetTimeStamp(const uint32_t timeStamp) {_timeStamp = timeStamp;}
     /**
     *   Get pointer to frame buffer
     */
-    WebRtc_UWord8*    Buffer() const {return _buffer;}
+    uint8_t*    Buffer() const {return _buffer;}
 
-    WebRtc_UWord8*&   Buffer() {return _buffer;}
+    uint8_t*&   Buffer() {return _buffer;}
 
     /**
     *   Get allocated buffer size
     */
-    WebRtc_UWord32    Size() const {return _bufferSize;}
+    uint32_t    Size() const {return _bufferSize;}
     /**
     *   Get frame length
     */
-    WebRtc_UWord32    Length() const {return _bufferLength;}
+    uint32_t    Length() const {return _bufferLength;}
     /**
     *   Get frame timestamp (90kHz)
     */
-    WebRtc_UWord32    TimeStamp() const {return _timeStamp;}
+    uint32_t    TimeStamp() const {return _timeStamp;}
     /**
     *   Get frame width
     */
-    WebRtc_UWord32    Width() const {return _width;}
+    uint32_t    Width() const {return _width;}
     /**
     *   Get frame height
     */
-    WebRtc_UWord32    Height() const {return _height;}
+    uint32_t    Height() const {return _height;}
     /**
     *   Set frame width
     */
-    void   SetWidth(const WebRtc_UWord32 width)  {_width = width;}
+    void   SetWidth(const uint32_t width)  {_width = width;}
     /**
     *   Set frame height
     */
-    void  SetHeight(const WebRtc_UWord32 height) {_height = height;}
+    void  SetHeight(const uint32_t height) {_height = height;}
     /**
     *   Set render time in miliseconds
     */
-    void SetRenderTime(const WebRtc_Word64 renderTimeMs) {_renderTimeMs = renderTimeMs;}
+    void SetRenderTime(const int64_t renderTimeMs) {_renderTimeMs = renderTimeMs;}
     /**
     *  Get render time in miliseconds
     */
-    WebRtc_Word64    RenderTimeMs() const {return _renderTimeMs;}
+    int64_t    RenderTimeMs() const {return _renderTimeMs;}
 
 private:
-    void Set(WebRtc_UWord8* buffer,
-             WebRtc_UWord32 size,
-             WebRtc_UWord32 length,
-             WebRtc_UWord32 timeStamp);
+    void Set(uint8_t* buffer,
+             uint32_t size,
+             uint32_t length,
+             uint32_t timeStamp);
 
-    WebRtc_UWord8*          _buffer;          // Pointer to frame buffer
-    WebRtc_UWord32          _bufferSize;      // Allocated buffer size
-    WebRtc_UWord32          _bufferLength;    // Length (in bytes) of buffer
-    WebRtc_UWord32          _timeStamp;       // Timestamp of frame (90kHz)
-    WebRtc_UWord32          _width;
-    WebRtc_UWord32          _height;
-    WebRtc_Word64           _renderTimeMs;
+    uint8_t*          _buffer;          // Pointer to frame buffer
+    uint32_t          _bufferSize;      // Allocated buffer size
+    uint32_t          _bufferLength;    // Length (in bytes) of buffer
+    uint32_t          _timeStamp;       // Timestamp of frame (90kHz)
+    uint32_t          _width;
+    uint32_t          _height;
+    int64_t           _renderTimeMs;
 }; // end of VideoFrame class declaration
 
 // inline implementation of VideoFrame class:
@@ -588,8 +588,8 @@ VideoFrame::~VideoFrame()
 
 
 inline
-WebRtc_Word32
-VideoFrame::VerifyAndAllocate(const WebRtc_UWord32 minimumSize)
+int32_t
+VideoFrame::VerifyAndAllocate(const uint32_t minimumSize)
 {
     if (minimumSize < 1)
     {
@@ -598,7 +598,7 @@ VideoFrame::VerifyAndAllocate(const WebRtc_UWord32 minimumSize)
     if(minimumSize > _bufferSize)
     {
         // create buffer of sufficient size
-        WebRtc_UWord8* newBufferBuffer = new WebRtc_UWord8[minimumSize];
+        uint8_t* newBufferBuffer = new uint8_t[minimumSize];
         if(_buffer)
         {
             // copy old data
@@ -607,7 +607,7 @@ VideoFrame::VerifyAndAllocate(const WebRtc_UWord32 minimumSize)
         }
         else
         {
-            memset(newBufferBuffer, 0, minimumSize * sizeof(WebRtc_UWord8));
+            memset(newBufferBuffer, 0, minimumSize * sizeof(uint8_t));
         }
         _buffer = newBufferBuffer;
         _bufferSize = minimumSize;
@@ -616,8 +616,8 @@ VideoFrame::VerifyAndAllocate(const WebRtc_UWord32 minimumSize)
 }
 
 inline
-WebRtc_Word32
-VideoFrame::SetLength(const WebRtc_UWord32 newLength)
+int32_t
+VideoFrame::SetLength(const uint32_t newLength)
 {
     if (newLength >_bufferSize )
     { // can't accomodate new value
@@ -628,13 +628,13 @@ VideoFrame::SetLength(const WebRtc_UWord32 newLength)
 }
 
 inline
-WebRtc_Word32
+int32_t
 VideoFrame::SwapFrame(VideoFrame& videoFrame)
 {
-    WebRtc_UWord32 tmpTimeStamp  = _timeStamp;
-    WebRtc_UWord32 tmpWidth      = _width;
-    WebRtc_UWord32 tmpHeight     = _height;
-    WebRtc_Word64  tmpRenderTime = _renderTimeMs;
+    uint32_t tmpTimeStamp  = _timeStamp;
+    uint32_t tmpWidth      = _width;
+    uint32_t tmpHeight     = _height;
+    int64_t  tmpRenderTime = _renderTimeMs;
 
     _timeStamp = videoFrame._timeStamp;
     _width = videoFrame._width;
@@ -650,12 +650,12 @@ VideoFrame::SwapFrame(VideoFrame& videoFrame)
 }
 
 inline
-WebRtc_Word32
-VideoFrame::Swap(WebRtc_UWord8*& newMemory, WebRtc_UWord32& newLength, WebRtc_UWord32& newSize)
+int32_t
+VideoFrame::Swap(uint8_t*& newMemory, uint32_t& newLength, uint32_t& newSize)
 {
-    WebRtc_UWord8* tmpBuffer = _buffer;
-    WebRtc_UWord32 tmpLength = _bufferLength;
-    WebRtc_UWord32 tmpSize = _bufferSize;
+    uint8_t* tmpBuffer = _buffer;
+    uint32_t tmpLength = _bufferLength;
+    uint32_t tmpSize = _bufferSize;
     _buffer = newMemory;
     _bufferLength = newLength;
     _bufferSize = newSize;
@@ -666,12 +666,12 @@ VideoFrame::Swap(WebRtc_UWord8*& newMemory, WebRtc_UWord32& newLength, WebRtc_UW
 }
 
 inline
-WebRtc_Word32
-VideoFrame::CopyFrame(WebRtc_UWord32 length, const WebRtc_UWord8* sourceBuffer)
+int32_t
+VideoFrame::CopyFrame(uint32_t length, const uint8_t* sourceBuffer)
 {
     if (length > _bufferSize)
     {
-        WebRtc_Word32 ret = VerifyAndAllocate(length);
+        int32_t ret = VerifyAndAllocate(length);
         if (ret < 0)
         {
             return ret;
@@ -683,7 +683,7 @@ VideoFrame::CopyFrame(WebRtc_UWord32 length, const WebRtc_UWord8* sourceBuffer)
 }
 
 inline
-WebRtc_Word32
+int32_t
 VideoFrame::CopyFrame(const VideoFrame& videoFrame)
 {
     if(CopyFrame(videoFrame.Length(), videoFrame.Buffer()) != 0)
