@@ -238,7 +238,9 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
         Log.d(TAG, "VideoCaptureAndroid::surfaceCreated");
         captureLock.lock();
         try {
-            camera.setPreviewDisplay(holder);
+          if (camera != null) {
+              camera.setPreviewDisplay(holder);
+          }
         } catch (IOException e) {
             Log.e(TAG, "Failed to set preview surface!", e);
         }
