@@ -20,6 +20,11 @@
 #include "webrtc/voice_engine/include/voe_network.h"
 #include "webrtc/video_engine/vie_defines.h"
 
+#ifdef WEBRTC_ANDROID
+#undef NDEBUG
+#include <assert.h>
+#endif
+
 namespace webrtc {
 namespace test {
 
@@ -29,11 +34,12 @@ VoiceChannelTransport::VoiceChannelTransport(VoENetwork* voe_network,
       voe_network_(voe_network) {
   uint8_t socket_threads = 1;
   socket_transport_ = UdpTransport::Create(channel, socket_threads);
+  int registered = voe_network_->RegisterExternalTransport(channel,
+                                                           *socket_transport_);
 #ifndef WEBRTC_ANDROID
-  EXPECT_EQ(0, voe_network_->RegisterExternalTransport(channel,
-                                                       *socket_transport_));
+  EXPECT_EQ(0, registered);
 #else
-  voe_network_->RegisterExternalTransport(channel, *socket_transport_);
+  assert(registered == 0);
 #endif
 }
 
@@ -80,14 +86,15 @@ VideoChannelTransport::VideoChannelTransport(ViENetwork* vie_network,
       vie_network_(vie_network) {
   uint8_t socket_threads = 1;
   socket_transport_ = UdpTransport::Create(channel, socket_threads);
+  int registered = vie_network_->RegisterSendTransport(channel,
+                                                       *socket_transport_);
 #ifndef WEBRTC_ANDROID
-  EXPECT_EQ(0, vie_network_->RegisterSendTransport(channel,
-                                                   *socket_transport_));
+  EXPECT_EQ(0, registered);
 #else
-  vie_network_->RegisterSendTransport(channel, *socket_transport_);
+  assert(registered == 0);
 #endif
 }
-  
+
 VideoChannelTransport::~VideoChannelTransport() {
   vie_network_->DeregisterSendTransport(channel_);
   UdpTransport::Destroy(socket_transport_);

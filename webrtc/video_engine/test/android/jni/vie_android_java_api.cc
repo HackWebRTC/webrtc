@@ -382,7 +382,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_Init(
 
             __android_log_write(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG,
                                 "SetTraceFilter");
-            if (0 != vieData.vie->SetTraceFilter(webrtc::kTraceDefault))
+            if (0 != vieData.vie->SetTraceFilter(webrtc::kTraceError))
             {
                 __android_log_write(ANDROID_LOG_WARN, WEBRTC_LOG_TAG,
                                     "Could not set trace filter");
@@ -1289,6 +1289,21 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VoE_1Del
   VALIDATE_BASE_POINTER;
   voeData.transport.reset(NULL);
   return voeData.base->DeleteChannel(channel);
+}
+
+/*
+ * Class:     org_webrtc_videoengineapp_ViEAndroidJavaAPI
+ * Method:    ViE_DeleteChannel
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_ViE_1DeleteChannel(
+    JNIEnv *,
+    jobject,
+    jint channel)
+{
+  VALIDATE_BASE_POINTER;
+  vieData.transport.reset(NULL);
+  return vieData.base->DeleteChannel(channel);
 }
 
 /*
