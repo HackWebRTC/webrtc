@@ -189,7 +189,7 @@ void WebRtcSpl_MemSetW32(int32_t* vector,
 void WebRtcSpl_MemCpyReversedOrder(int16_t* out_vector,
                                    int16_t* in_vector,
                                    int vector_length);
-int16_t WebRtcSpl_CopyFromEndW16(G_CONST int16_t* in_vector,
+int16_t WebRtcSpl_CopyFromEndW16(const int16_t* in_vector,
                                  int16_t in_vector_length,
                                  int16_t samples,
                                  int16_t* out_vector);
@@ -387,29 +387,29 @@ int WebRtcSpl_MinIndexW32(const int32_t* vector, int length);
 // Description at bottom of file.
 void WebRtcSpl_VectorBitShiftW16(int16_t* out_vector,
                                  int16_t vector_length,
-                                 G_CONST int16_t* in_vector,
+                                 const int16_t* in_vector,
                                  int16_t right_shifts);
 void WebRtcSpl_VectorBitShiftW32(int32_t* out_vector,
                                  int16_t vector_length,
-                                 G_CONST int32_t* in_vector,
+                                 const int32_t* in_vector,
                                  int16_t right_shifts);
 void WebRtcSpl_VectorBitShiftW32ToW16(int16_t* out_vector,
                                       int vector_length,
                                       const int32_t* in_vector,
                                       int right_shifts);
-void WebRtcSpl_ScaleVector(G_CONST int16_t* in_vector,
+void WebRtcSpl_ScaleVector(const int16_t* in_vector,
                            int16_t* out_vector,
                            int16_t gain,
                            int16_t vector_length,
                            int16_t right_shifts);
-void WebRtcSpl_ScaleVectorWithSat(G_CONST int16_t* in_vector,
+void WebRtcSpl_ScaleVectorWithSat(const int16_t* in_vector,
                                   int16_t* out_vector,
                                   int16_t gain,
                                   int16_t vector_length,
                                   int16_t right_shifts);
-void WebRtcSpl_ScaleAndAddVectors(G_CONST int16_t* in_vector1,
+void WebRtcSpl_ScaleAndAddVectors(const int16_t* in_vector1,
                                   int16_t gain1, int right_shifts1,
-                                  G_CONST int16_t* in_vector2,
+                                  const int16_t* in_vector2,
                                   int16_t gain2, int right_shifts2,
                                   int16_t* out_vector,
                                   int vector_length);
@@ -461,18 +461,18 @@ int WebRtcSpl_ScaleAndAddVectorsWithRoundNeon(const int16_t* in_vector1,
 // iLBC specific functions. Implementations in ilbc_specific_functions.c.
 // Description at bottom of file.
 void WebRtcSpl_ReverseOrderMultArrayElements(int16_t* out_vector,
-                                             G_CONST int16_t* in_vector,
-                                             G_CONST int16_t* window,
+                                             const int16_t* in_vector,
+                                             const int16_t* window,
                                              int16_t vector_length,
                                              int16_t right_shifts);
 void WebRtcSpl_ElementwiseVectorMult(int16_t* out_vector,
-                                     G_CONST int16_t* in_vector,
-                                     G_CONST int16_t* window,
+                                     const int16_t* in_vector,
+                                     const int16_t* window,
                                      int16_t vector_length,
                                      int16_t right_shifts);
 void WebRtcSpl_AddVectorsAndShift(int16_t* out_vector,
-                                  G_CONST int16_t* in_vector1,
-                                  G_CONST int16_t* in_vector2,
+                                  const int16_t* in_vector1,
+                                  const int16_t* in_vector2,
                                   int16_t vector_length,
                                   int16_t right_shifts);
 void WebRtcSpl_AddAffineVectorToVector(int16_t* out_vector,
@@ -549,7 +549,7 @@ int16_t WebRtcSpl_LevinsonDurbin(int32_t* auto_corr,
 //
 // Output:
 //      - lpc_coef  : LPC coefficients in Q12
-void WebRtcSpl_ReflCoefToLpc(G_CONST int16_t* refl_coef,
+void WebRtcSpl_ReflCoefToLpc(const int16_t* refl_coef,
                              int use_order,
                              int16_t* lpc_coef);
 
@@ -576,7 +576,7 @@ void WebRtcSpl_LpcToReflCoef(int16_t* lpc_coef,
 //
 // Output:
 //      - refl_coef : Reflection coefficients in Q15.
-void WebRtcSpl_AutoCorrToReflCoef(G_CONST int32_t* auto_corr,
+void WebRtcSpl_AutoCorrToReflCoef(const int32_t* auto_corr,
                                   int use_order,
                                   int16_t* refl_coef);
 
@@ -694,9 +694,9 @@ int32_t WebRtcSpl_DotProductWithScale(const int16_t* vector1,
                                       int scaling);
 
 // Filter operations.
-int WebRtcSpl_FilterAR(G_CONST int16_t* ar_coef,
+int WebRtcSpl_FilterAR(const int16_t* ar_coef,
                        int ar_coef_length,
-                       G_CONST int16_t* in_vector,
+                       const int16_t* in_vector,
                        int in_vector_length,
                        int16_t* filter_state,
                        int filter_state_length,

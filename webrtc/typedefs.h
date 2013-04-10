@@ -14,10 +14,6 @@
 #ifndef WEBRTC_TYPEDEFS_H_
 #define WEBRTC_TYPEDEFS_H_
 
-// Reserved words definitions
-// TODO(andrew): Remove this.
-#define G_CONST const
-
 // For access to standard POSIXish features, use WEBRTC_POSIX instead of a
 // more specific macro.
 #if defined(WEBRTC_MAC) || defined(WEBRTC_LINUX) || \

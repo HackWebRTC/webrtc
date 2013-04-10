@@ -17,9 +17,9 @@
 
 #include "signal_processing_library.h"
 
-int WebRtcSpl_FilterAR(G_CONST int16_t* a,
+int WebRtcSpl_FilterAR(const int16_t* a,
                        int a_length,
-                       G_CONST int16_t* x,
+                       const int16_t* x,
                        int x_length,
                        int16_t* state,
                        int state_length,
@@ -32,14 +32,14 @@ int WebRtcSpl_FilterAR(G_CONST int16_t* a,
     int32_t o;
     int32_t oLOW;
     int i, j, stop;
-    G_CONST int16_t* x_ptr = &x[0];
+    const int16_t* x_ptr = &x[0];
     int16_t* filteredFINAL_ptr = filtered;
     int16_t* filteredFINAL_LOW_ptr = filtered_low;
 
     for (i = 0; i < x_length; i++)
     {
         // Calculate filtered[i] and filtered_low[i]
-        G_CONST int16_t* a_ptr = &a[1];
+        const int16_t* a_ptr = &a[1];
         int16_t* filtered_ptr = &filtered[i - 1];
         int16_t* filtered_low_ptr = &filtered_low[i - 1];
         int16_t* state_ptr = &state[state_length - 1];

@@ -62,7 +62,7 @@ void WebRtcSpl_MemCpyReversedOrder(int16_t* dest, int16_t* source, int length)
     }
 }
 
-int16_t WebRtcSpl_CopyFromEndW16(G_CONST int16_t *vector_in,
+int16_t WebRtcSpl_CopyFromEndW16(const int16_t *vector_in,
                                  int16_t length,
                                  int16_t samples,
                                  int16_t *vector_out)

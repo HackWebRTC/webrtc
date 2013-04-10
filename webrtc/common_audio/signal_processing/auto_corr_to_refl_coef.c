@@ -17,11 +17,11 @@
 
 #include "signal_processing_library.h"
 
-void WebRtcSpl_AutoCorrToReflCoef(G_CONST int32_t *R, int use_order, int16_t *K)
+void WebRtcSpl_AutoCorrToReflCoef(const int32_t *R, int use_order, int16_t *K)
 {
     int i, n;
     int16_t tmp;
-    G_CONST int32_t *rptr;
+    const int32_t *rptr;
     int32_t L_num, L_den;
     int16_t *acfptr, *pptr, *wptr, *p1ptr, *w1ptr, ACF[WEBRTC_SPL_MAX_LPC_ORDER],
             P[WEBRTC_SPL_MAX_LPC_ORDER], W[WEBRTC_SPL_MAX_LPC_ORDER];

@@ -301,7 +301,7 @@ int WebRtcNetEQ_RecInInternal(MCUInst_t *MCU_inst, RTPPacket_t *RTPpacketInput,
 
             MCU_inst->codec_DB_inst.funcUpdBWEst[codecPos](
                 MCU_inst->codec_DB_inst.codec_state[codecPos],
-                (G_CONST uint16_t *) RTPpacket[0].payload,
+                (const uint16_t *) RTPpacket[0].payload,
                 (int32_t) RTPpacket[0].payloadLen, RTPpacket[0].seqNumber,
                 (uint32_t) RTPpacket[0].timeStamp, (uint32_t) uw32_timeRec);
         }

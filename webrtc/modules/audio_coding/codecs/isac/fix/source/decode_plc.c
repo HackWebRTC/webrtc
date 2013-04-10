@@ -52,8 +52,8 @@ static int16_t plc_filterma_Fast(
 
   for (i = 0; i < len; i++)
   {
-    G_CONST int16_t *b_ptr = &B[0];
-    G_CONST int16_t *x_ptr = &In[i];
+    const int16_t *b_ptr = &B[0];
+    const int16_t *x_ptr = &In[i];
 
     o = (int32_t)0;
 

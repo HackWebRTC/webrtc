@@ -23,7 +23,7 @@
 #include "signal_processing_library.h"
 
 void WebRtcSpl_VectorBitShiftW16(int16_t *res, int16_t length,
-                                 G_CONST int16_t *in, int16_t right_shifts)
+                                 const int16_t *in, int16_t right_shifts)
 {
     int i;
 
@@ -44,7 +44,7 @@ void WebRtcSpl_VectorBitShiftW16(int16_t *res, int16_t length,
 
 void WebRtcSpl_VectorBitShiftW32(int32_t *out_vector,
                                  int16_t vector_length,
-                                 G_CONST int32_t *in_vector,
+                                 const int32_t *in_vector,
                                  int16_t right_shifts)
 {
     int i;
@@ -83,13 +83,13 @@ void WebRtcSpl_VectorBitShiftW32ToW16(int16_t* out, int length,
   }
 }
 
-void WebRtcSpl_ScaleVector(G_CONST int16_t *in_vector, int16_t *out_vector,
+void WebRtcSpl_ScaleVector(const int16_t *in_vector, int16_t *out_vector,
                            int16_t gain, int16_t in_vector_length,
                            int16_t right_shifts)
 {
     // Performs vector operation: out_vector = (gain*in_vector)>>right_shifts
     int i;
-    G_CONST int16_t *inptr;
+    const int16_t *inptr;
     int16_t *outptr;
 
     inptr = in_vector;
@@ -101,14 +101,14 @@ void WebRtcSpl_ScaleVector(G_CONST int16_t *in_vector, int16_t *out_vector,
     }
 }
 
-void WebRtcSpl_ScaleVectorWithSat(G_CONST int16_t *in_vector, int16_t *out_vector,
+void WebRtcSpl_ScaleVectorWithSat(const int16_t *in_vector, int16_t *out_vector,
                                  int16_t gain, int16_t in_vector_length,
                                  int16_t right_shifts)
 {
     // Performs vector operation: out_vector = (gain*in_vector)>>right_shifts
     int i;
     int32_t tmpW32;
-    G_CONST int16_t *inptr;
+    const int16_t *inptr;
     int16_t *outptr;
 
     inptr = in_vector;
@@ -121,14 +121,14 @@ void WebRtcSpl_ScaleVectorWithSat(G_CONST int16_t *in_vector, int16_t *out_vecto
     }
 }
 
-void WebRtcSpl_ScaleAndAddVectors(G_CONST int16_t *in1, int16_t gain1, int shift1,
-                                  G_CONST int16_t *in2, int16_t gain2, int shift2,
+void WebRtcSpl_ScaleAndAddVectors(const int16_t *in1, int16_t gain1, int shift1,
+                                  const int16_t *in2, int16_t gain2, int shift2,
                                   int16_t *out, int vector_length)
 {
     // Performs vector operation: out = (gain1*in1)>>shift1 + (gain2*in2)>>shift2
     int i;
-    G_CONST int16_t *in1ptr;
-    G_CONST int16_t *in2ptr;
+    const int16_t *in1ptr;
+    const int16_t *in2ptr;
     int16_t *outptr;
 
     in1ptr = in1;

@@ -21,15 +21,15 @@
 
 #include "signal_processing_library.h"
 
-void WebRtcSpl_ReverseOrderMultArrayElements(int16_t *out, G_CONST int16_t *in,
-                                             G_CONST int16_t *win,
+void WebRtcSpl_ReverseOrderMultArrayElements(int16_t *out, const int16_t *in,
+                                             const int16_t *win,
                                              int16_t vector_length,
                                              int16_t right_shifts)
 {
     int i;
     int16_t *outptr = out;
-    G_CONST int16_t *inptr = in;
-    G_CONST int16_t *winptr = win;
+    const int16_t *inptr = in;
+    const int16_t *winptr = win;
     for (i = 0; i < vector_length; i++)
     {
         (*outptr++) = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(*inptr++,
@@ -37,14 +37,14 @@ void WebRtcSpl_ReverseOrderMultArrayElements(int16_t *out, G_CONST int16_t *in,
     }
 }
 
-void WebRtcSpl_ElementwiseVectorMult(int16_t *out, G_CONST int16_t *in,
-                                     G_CONST int16_t *win, int16_t vector_length,
+void WebRtcSpl_ElementwiseVectorMult(int16_t *out, const int16_t *in,
+                                     const int16_t *win, int16_t vector_length,
                                      int16_t right_shifts)
 {
     int i;
     int16_t *outptr = out;
-    G_CONST int16_t *inptr = in;
-    G_CONST int16_t *winptr = win;
+    const int16_t *inptr = in;
+    const int16_t *winptr = win;
     for (i = 0; i < vector_length; i++)
     {
         (*outptr++) = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(*inptr++,
@@ -52,14 +52,14 @@ void WebRtcSpl_ElementwiseVectorMult(int16_t *out, G_CONST int16_t *in,
     }
 }
 
-void WebRtcSpl_AddVectorsAndShift(int16_t *out, G_CONST int16_t *in1,
-                                  G_CONST int16_t *in2, int16_t vector_length,
+void WebRtcSpl_AddVectorsAndShift(int16_t *out, const int16_t *in1,
+                                  const int16_t *in2, int16_t vector_length,
                                   int16_t right_shifts)
 {
     int i;
     int16_t *outptr = out;
-    G_CONST int16_t *in1ptr = in1;
-    G_CONST int16_t *in2ptr = in2;
+    const int16_t *in1ptr = in1;
+    const int16_t *in2ptr = in2;
     for (i = vector_length; i > 0; i--)
     {
         (*outptr++) = (int16_t)(((*in1ptr++) + (*in2ptr++)) >> right_shifts);
