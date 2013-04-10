@@ -68,7 +68,7 @@ const char VideoRenderOpenGles20::g_fragmentShader[] = {
   "  gl_FragColor=vec4(r,g,b,1.0);\n"
   "}\n" };
 
-VideoRenderOpenGles20::VideoRenderOpenGles20(WebRtc_Word32 id) :
+VideoRenderOpenGles20::VideoRenderOpenGles20(int32_t id) :
     _id(id),
     _textureWidth(-1),
     _textureHeight(-1) {
@@ -88,8 +88,7 @@ VideoRenderOpenGles20::VideoRenderOpenGles20(WebRtc_Word32 id) :
 VideoRenderOpenGles20::~VideoRenderOpenGles20() {
 }
 
-WebRtc_Word32 VideoRenderOpenGles20::Setup(WebRtc_Word32 width,
-                                           WebRtc_Word32 height) {
+int32_t VideoRenderOpenGles20::Setup(int32_t width, int32_t height) {
   WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, _id,
                "%s: width %d, height %d", __FUNCTION__, (int) width,
                (int) height);
@@ -174,11 +173,11 @@ WebRtc_Word32 VideoRenderOpenGles20::Setup(WebRtc_Word32 width,
 // SetCoordinates
 // Sets the coordinates where the stream shall be rendered.
 // Values must be between 0 and 1.
-WebRtc_Word32 VideoRenderOpenGles20::SetCoordinates(WebRtc_Word32 zOrder,
-                                                    const float left,
-                                                    const float top,
-                                                    const float right,
-                                                    const float bottom) {
+int32_t VideoRenderOpenGles20::SetCoordinates(int32_t zOrder,
+                                              const float left,
+                                              const float top,
+                                              const float right,
+                                              const float bottom) {
   if ((top > 1 || top < 0) || (right > 1 || right < 0) ||
       (bottom > 1 || bottom < 0) || (left > 1 || left < 0)) {
     WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
@@ -215,8 +214,7 @@ WebRtc_Word32 VideoRenderOpenGles20::SetCoordinates(WebRtc_Word32 zOrder,
   return 0;
 }
 
-WebRtc_Word32 VideoRenderOpenGles20::Render(const I420VideoFrame&
-                                            frameToRender) {
+int32_t VideoRenderOpenGles20::Render(const I420VideoFrame& frameToRender) {
 
   if (frameToRender.IsZeroSize()) {
     return -1;
@@ -361,7 +359,7 @@ void VideoRenderOpenGles20::SetupTextures(const I420VideoFrame& frameToRender) {
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-  const WebRtc_UWord8* uComponent = frameToRender.buffer(kUPlane);
+  const uint8_t* uComponent = frameToRender.buffer(kUPlane);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width / 2, height / 2, 0,
                GL_LUMINANCE, GL_UNSIGNED_BYTE, (const GLvoid*) uComponent);
 
@@ -374,7 +372,7 @@ void VideoRenderOpenGles20::SetupTextures(const I420VideoFrame& frameToRender) {
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-  const WebRtc_UWord8* vComponent = frameToRender.buffer(kVPlane);
+  const uint8_t* vComponent = frameToRender.buffer(kVPlane);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width / 2, height / 2, 0,
                GL_LUMINANCE, GL_UNSIGNED_BYTE, (const GLvoid*) vComponent);
   checkGlError("SetupTextures");
