@@ -230,9 +230,7 @@ int32_t VideoRenderOpenGles20::Render(const I420VideoFrame& frameToRender) {
       _textureHeight != (GLsizei) frameToRender.height()) {
     SetupTextures(frameToRender);
   }
-  else {
-    UpdateTextures(frameToRender);
-  }
+  UpdateTextures(frameToRender);
 
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, g_indices);
   checkGlError("glDrawArrays");
@@ -326,6 +324,17 @@ void VideoRenderOpenGles20::checkGlError(const char* op) {
 #endif
 }
 
+static void InitializeTexture(int name, int id, int width, int height) {
+  glActiveTexture(name);
+  glBindTexture(GL_TEXTURE_2D, id);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0,
+               GL_LUMINANCE, GL_UNSIGNED_BYTE, NULL);
+}
+
 void VideoRenderOpenGles20::SetupTextures(const I420VideoFrame& frameToRender) {
   WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, _id,
                "%s: width %d, height %d", __FUNCTION__,
@@ -335,46 +344,10 @@ void VideoRenderOpenGles20::SetupTextures(const I420VideoFrame& frameToRender) {
   const GLsizei height = frameToRender.height();
 
   glGenTextures(3, _textureIds); //Generate  the Y, U and V texture
-  GLuint currentTextureId = _textureIds[0]; // Y
-  glActiveTexture( GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, currentTextureId);
+  InitializeTexture(GL_TEXTURE0, _textureIds[0], width, height);
+  InitializeTexture(GL_TEXTURE1, _textureIds[1], width / 2, height / 2);
+  InitializeTexture(GL_TEXTURE2, _textureIds[2], width / 2, height / 2);
 
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0,
-               GL_LUMINANCE, GL_UNSIGNED_BYTE,
-               (const GLvoid*) frameToRender.buffer(kYPlane));
-
-  currentTextureId = _textureIds[1]; // U
-  glActiveTexture( GL_TEXTURE1);
-  glBindTexture(GL_TEXTURE_2D, currentTextureId);
-
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-  const uint8_t* uComponent = frameToRender.buffer(kUPlane);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width / 2, height / 2, 0,
-               GL_LUMINANCE, GL_UNSIGNED_BYTE, (const GLvoid*) uComponent);
-
-  currentTextureId = _textureIds[2]; // V
-  glActiveTexture( GL_TEXTURE2);
-  glBindTexture(GL_TEXTURE_2D, currentTextureId);
-
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-  const uint8_t* vComponent = frameToRender.buffer(kVPlane);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width / 2, height / 2, 0,
-               GL_LUMINANCE, GL_UNSIGNED_BYTE, (const GLvoid*) vComponent);
   checkGlError("SetupTextures");
 
   _textureWidth = width;
