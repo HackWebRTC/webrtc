@@ -106,7 +106,8 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
       nack_seq_nums_(),
       max_nack_list_size_(0),
       max_packet_age_to_nack_(0),
-      waiting_for_key_frame_(false) {
+      waiting_for_key_frame_(false),
+      decode_with_errors_(false) {
   memset(frame_buffers_, 0, sizeof(frame_buffers_));
   memset(receive_statistics_, 0, sizeof(receive_statistics_));
 
@@ -151,6 +152,7 @@ void VCMJitterBuffer::CopyFrom(const VCMJitterBuffer& rhs) {
     first_packet_ = rhs.first_packet_;
     last_decoded_state_ =  rhs.last_decoded_state_;
     num_not_decodable_packets_ = rhs.num_not_decodable_packets_;
+    decode_with_errors_ = rhs.decode_with_errors_;
     assert(max_nack_list_size_ == rhs.max_nack_list_size_);
     assert(max_packet_age_to_nack_ == rhs.max_packet_age_to_nack_);
     memcpy(receive_statistics_, rhs.receive_statistics_,
@@ -445,7 +447,7 @@ VCMEncodedFrame* VCMJitterBuffer::GetCompleteFrameForDecoding(
     waiting_for_key_frame_ = true;
   }
 
-  FrameList::iterator it = FindOldestCompleteContinuousFrame(false);
+  FrameList::iterator it = FindOldestCompleteContinuousFrame();
   if (it == frame_list_.end()) {
     if (max_wait_time_ms == 0) {
       crit_sect_->Leave();
@@ -469,7 +471,7 @@ VCMEncodedFrame* VCMJitterBuffer::GetCompleteFrameForDecoding(
         // Finding oldest frame ready for decoder, but check
         // sequence number and size
         CleanUpOldOrEmptyFrames();
-        it = FindOldestCompleteContinuousFrame(false);
+        it = FindOldestCompleteContinuousFrame();
         if (it == frame_list_.end()) {
           wait_time_ms = end_wait_time_ms - clock_->TimeInMilliseconds();
         } else {
@@ -749,7 +751,7 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(VCMEncodedFrame* encoded_frame,
   // triggered, as the body of the function is empty.
   // TODO(mikhal): Update when decodable is enabled.
   buffer_return = frame->InsertPacket(packet, now_ms,
-                                      nack_mode_ == kNackHybrid,
+                                      decode_with_errors_,
                                       rtt_ms_);
   ret = buffer_return;
   if (buffer_return > 0) {
@@ -995,9 +997,7 @@ VCMEncodedFrame* VCMJitterBuffer::GetFrameForDecodingNACK() {
   if (last_decoded_state_.in_initial_state()) {
     waiting_for_key_frame_ = true;
   }
-  // Allow for a decodable frame when in Hybrid mode.
-  bool enable_decodable = nack_mode_ == kNackHybrid ? true : false;
-  FrameList::iterator it = FindOldestCompleteContinuousFrame(enable_decodable);
+  FrameList::iterator it = FindOldestCompleteContinuousFrame();
   if (it == frame_list_.end()) {
     // If we didn't find one we're good with a complete key/decodable frame.
     it = find_if(frame_list_.begin(), frame_list_.end(),
@@ -1208,7 +1208,7 @@ VCMFrameBufferEnum VCMJitterBuffer::UpdateFrameState(VCMFrameBuffer* frame) {
         assert(false);
     }
   }
-  const FrameList::iterator it = FindOldestCompleteContinuousFrame(false);
+  const FrameList::iterator it = FindOldestCompleteContinuousFrame();
   VCMFrameBuffer* old_frame = NULL;
   if (it != frame_list_.end()) {
     old_frame = *it;
@@ -1224,8 +1224,7 @@ VCMFrameBufferEnum VCMJitterBuffer::UpdateFrameState(VCMFrameBuffer* frame) {
 
 // Find oldest complete frame used for getting next frame to decode
 // Must be called under critical section
-FrameList::iterator VCMJitterBuffer::FindOldestCompleteContinuousFrame(
-    bool enable_decodable) {
+FrameList::iterator VCMJitterBuffer::FindOldestCompleteContinuousFrame() {
   // If we have more than one frame done since last time, pick oldest.
   VCMFrameBuffer* oldest_frame = NULL;
   FrameList::iterator it = frame_list_.begin();
@@ -1239,7 +1238,7 @@ FrameList::iterator VCMJitterBuffer::FindOldestCompleteContinuousFrame(
     VCMFrameBufferStateEnum state = oldest_frame->GetState();
     // Is this frame complete or decodable and continuous?
     if ((state == kStateComplete ||
-         (enable_decodable && state == kStateDecodable)) &&
+         (decode_with_errors_ && state == kStateDecodable)) &&
         last_decoded_state_.ContinuousFrame(oldest_frame)) {
       break;
     } else {

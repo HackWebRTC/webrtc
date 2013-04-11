@@ -375,8 +375,7 @@ TEST_F(TestRunningJitterBuffer, StatisticsTest) {
 
 TEST_F(TestJitterBufferNack, EmptyPackets) {
   // Make sure empty packets doesn't clog the jitter buffer.
-  jitter_buffer_->SetNackMode(kNackHybrid, media_optimization::kLowRttNackMs,
-                              -1);
+  jitter_buffer_->SetNackMode(kNack, media_optimization::kLowRttNackMs, -1);
   EXPECT_GE(InsertFrames(kMaxNumberOfFrames, kFrameEmpty), kNoError);
   InsertFrame(kVideoFrameKey);
   EXPECT_TRUE(DecodeCompleteFrame());

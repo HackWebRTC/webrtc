@@ -637,7 +637,7 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection,
                     // Enable hybrid NACK/FEC. Always wait for retransmissions
                     // and don't add extra delay when RTT is above
                     // kLowRttNackMs.
-                    _receiver.SetNackMode(kNackHybrid,
+                    _receiver.SetNackMode(kNack,
                                           media_optimization::kLowRttNackMs,
                                           -1);
                 }
@@ -1392,7 +1392,7 @@ int VideoCodingModuleImpl::SetReceiverRobustnessMode(
       return VCM_NOT_IMPLEMENTED;
       // Enable hybrid NACK/FEC. Always wait for retransmissions and don't add
       // extra delay when RTT is above kLowRttNackMs.
-      _receiver.SetNackMode(kNackHybrid, media_optimization::kLowRttNackMs, -1);
+      _receiver.SetNackMode(kNack, media_optimization::kLowRttNackMs, -1);
       _dualReceiver.SetNackMode(kNoNack, -1, -1);
       _keyRequestMode = kKeyOnError;
       break;
