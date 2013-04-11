@@ -190,7 +190,7 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
                                               webrtc::VideoFrame& videoFrame,
                                               webrtc::VideoCodecType codecType)
  {
-     assert(!"NOTIMPLEMENTED");
+     assert(false);
  }
 
   virtual void OnCaptureDelayChanged(const int32_t id,
