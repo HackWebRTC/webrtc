@@ -202,10 +202,12 @@ public:
     int GetNetworkStatistics(NetworkStatistics& stats);
 
     // VoEVideoSync
-    int GetDelayEstimate(int& delayMs) const;
+    bool GetDelayEstimate(int* jitter_buffer_delay_ms,
+                          int* playout_buffer_delay_ms) const;
     int SetInitialPlayoutDelay(int delay_ms);
     int SetMinimumPlayoutDelay(int delayMs);
     int GetPlayoutTimestamp(unsigned int& timestamp);
+    void UpdatePlayoutTimestamp(bool rtcp);
     int SetInitTimestamp(unsigned int timestamp);
     int SetInitSequenceNumber(short sequenceNumber);
 
@@ -421,14 +423,12 @@ public:
 
 private:
     int InsertInbandDtmfTone();
-    int32_t
-            MixOrReplaceAudioWithFile(const int mixingFrequency);
+    int32_t MixOrReplaceAudioWithFile(const int mixingFrequency);
     int32_t MixAudioWithFile(AudioFrame& audioFrame, const int mixingFrequency);
-    int32_t GetPlayoutTimeStamp(uint32_t& playoutTimestamp);
     void UpdateDeadOrAliveCounters(bool alive);
     int32_t SendPacketRaw(const void *data, int len, bool RTCP);
-    int32_t UpdatePacketDelay(const uint32_t timestamp,
-                              const uint16_t sequenceNumber);
+    void UpdatePacketDelay(uint32_t timestamp,
+                           uint16_t sequenceNumber);
     void RegisterReceiveCodecsToRTPModule();
     int ApmProcessRx(AudioFrame& audioFrame);
 
@@ -470,10 +470,12 @@ private:
     uint8_t* _decryptionRTCPBufferPtr;
     uint32_t _timeStamp;
     uint8_t _sendTelephoneEventPayloadType;
-    uint32_t _playoutTimeStampRTP;
-    uint32_t _playoutTimeStampRTCP;
+    uint32_t playout_timestamp_rtp_;
+    uint32_t playout_timestamp_rtcp_;
+    uint32_t playout_delay_ms_;
     uint32_t _numberOfDiscardedPackets;
-private:
+
+ private:
     // uses
     Statistics* _engineStatisticsPtr;
     OutputMixer* _outputMixerPtr;
@@ -532,8 +534,7 @@ private:
     uint32_t _countDeadDetections;
     AudioFrame::SpeechType _outputSpeechType;
     // VoEVideoSync
-    uint32_t _averageDelayMs;
-    uint16_t _previousSequenceNumber;
+    uint32_t _average_jitter_buffer_delay_us;
     uint32_t _previousTimestamp;
     uint16_t _recPacketDelayMs;
     // VoEAudioProcessing

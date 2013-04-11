@@ -26,7 +26,9 @@ public:
 
     virtual int SetInitialPlayoutDelay(int channel, int delay_ms);
 
-    virtual int GetDelayEstimate(int channel, int& delayMs);
+    virtual int GetDelayEstimate(int channel,
+                                 int* jitter_buffer_delay_ms,
+                                 int* playout_buffer_delay_ms);
 
     virtual int SetInitTimestamp(int channel, unsigned int timestamp);
 

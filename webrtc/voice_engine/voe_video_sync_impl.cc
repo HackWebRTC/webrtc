@@ -164,26 +164,29 @@ int VoEVideoSyncImpl::SetInitialPlayoutDelay(int channel, int delay_ms)
     return channel_ptr->SetInitialPlayoutDelay(delay_ms);
 }
 
-int VoEVideoSyncImpl::GetDelayEstimate(int channel, int& delayMs)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
-                 "GetDelayEstimate(channel=%d, delayMs=?)", channel);
-    IPHONE_NOT_SUPPORTED(_shared->statistics());
+int VoEVideoSyncImpl::GetDelayEstimate(int channel,
+                                       int* jitter_buffer_delay_ms,
+                                       int* playout_buffer_delay_ms) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "GetDelayEstimate(channel=%d, delayMs=?)", channel);
+  IPHONE_NOT_SUPPORTED(_shared->statistics());
 
-    if (!_shared->statistics().Initialized())
-    {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    voe::ScopedChannel sc(_shared->channel_manager(), channel);
-    voe::Channel* channelPtr = sc.ChannelPtr();
-    if (channelPtr == NULL)
-    {
-        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-            "GetDelayEstimate() failed to locate channel");
-        return -1;
-    }
-    return channelPtr->GetDelayEstimate(delayMs);
+  if (!_shared->statistics().Initialized()) {
+    _shared->SetLastError(VE_NOT_INITED, kTraceError);
+    return -1;
+  }
+  voe::ScopedChannel sc(_shared->channel_manager(), channel);
+  voe::Channel* channelPtr = sc.ChannelPtr();
+  if (channelPtr == NULL) {
+    _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+                          "GetDelayEstimate() failed to locate channel");
+    return -1;
+  }
+  if (!channelPtr->GetDelayEstimate(jitter_buffer_delay_ms,
+                                    playout_buffer_delay_ms)) {
+    return -1;
+  }
+  return 0;
 }
 
 int VoEVideoSyncImpl::GetPlayoutBufferSize(int& bufferMs)

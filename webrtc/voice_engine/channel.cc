@@ -628,7 +628,6 @@ Channel::OnReceivedPayloadData(const uint8_t* payloadData,
     // Update the packet delay
     UpdatePacketDelay(rtpHeader->header.timestamp,
                       rtpHeader->header.sequenceNumber);
-
     return 0;
 }
 
@@ -898,8 +897,8 @@ Channel::Channel(const int32_t channelId,
     _decryptionRTCPBufferPtr(NULL),
     _timeStamp(0), // This is just an offset, RTP module will add it's own random offset
     _sendTelephoneEventPayloadType(106),
-    _playoutTimeStampRTP(0),
-    _playoutTimeStampRTCP(0),
+    playout_timestamp_rtp_(0),
+    playout_timestamp_rtcp_(0),
     _numberOfDiscardedPackets(0),
     _engineStatisticsPtr(NULL),
     _outputMixerPtr(NULL),
@@ -950,8 +949,7 @@ Channel::Channel(const int32_t channelId,
     _countAliveDetections(0),
     _countDeadDetections(0),
     _outputSpeechType(AudioFrame::kNormalSpeech),
-    _averageDelayMs(0),
-    _previousSequenceNumber(0),
+    _average_jitter_buffer_delay_us(0),
     _previousTimestamp(0),
     _recPacketDelayMs(20),
     _RxVadDetection(false),
@@ -2120,10 +2118,7 @@ int32_t Channel::ReceivedRTPPacket(const int8_t* data, int32_t length) {
                "Channel::ReceivedRTPPacket()");
 
   // Store playout timestamp for the received RTP packet
-  uint32_t playoutTimestamp(0);
-  if (GetPlayoutTimeStamp(playoutTimestamp) == 0) {
-    _playoutTimeStampRTP = playoutTimestamp;
-  }
+  UpdatePlayoutTimestamp(false);
 
   // Dump the RTP packet to a file (if RTP dump is enabled).
   if (_rtpDumpIn.DumpPacket((const uint8_t*)data,
@@ -2149,10 +2144,7 @@ int32_t Channel::ReceivedRTCPPacket(const int8_t* data, int32_t length) {
   WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                "Channel::ReceivedRTCPPacket()");
   // Store playout timestamp for the received RTCP packet
-  uint32_t playoutTimestamp(0);
-  if (GetPlayoutTimeStamp(playoutTimestamp) == 0) {
-    _playoutTimeStampRTCP = playoutTimestamp;
-  }
+  UpdatePlayoutTimestamp(true);
 
   // Dump the RTCP packet to a file (if RTP dump is enabled).
   if (_rtpDumpIn.DumpPacket((const uint8_t*)data,
@@ -3836,12 +3828,12 @@ Channel::GetRemoteRTCPData(
 
     // This value is updated on each incoming RTCP packet (0 when no packet
     // has been received)
-    playoutTimestamp = _playoutTimeStampRTCP;
+    playoutTimestamp = playout_timestamp_rtcp_;
 
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                  VoEId(_instanceId, _channelId),
                  "GetRemoteRTCPData() => playoutTimestamp=%lu",
-                 _playoutTimeStampRTCP);
+                 playout_timestamp_rtcp_);
 
     if (NULL != jitter || NULL != fractionLost)
     {
@@ -4659,13 +4651,19 @@ Channel::GetNetworkStatistics(NetworkStatistics& stats)
     return return_value;
 }
 
-int
-Channel::GetDelayEstimate(int& delayMs) const
-{
+bool Channel::GetDelayEstimate(int* jitter_buffer_delay_ms,
+                               int* playout_buffer_delay_ms) const {
+  if (_average_jitter_buffer_delay_us == 0) {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::GetDelayEstimate()");
-    delayMs = (_averageDelayMs + 5) / 10 + _recPacketDelayMs;
-    return 0;
+                 "Channel::GetDelayEstimate() no valid estimate.");
+    return false;
+  }
+  *jitter_buffer_delay_ms = (_average_jitter_buffer_delay_us + 500) / 1000 +
+      _recPacketDelayMs;
+  *playout_buffer_delay_ms = playout_delay_ms_;
+  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
+               "Channel::GetDelayEstimate()");
+  return true;
 }
 
 int Channel::SetInitialPlayoutDelay(int delay_ms)
@@ -4714,24 +4712,69 @@ Channel::SetMinimumPlayoutDelay(int delayMs)
     return 0;
 }
 
-int
-Channel::GetPlayoutTimestamp(unsigned int& timestamp)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::GetPlayoutTimestamp()");
-    uint32_t playoutTimestamp(0);
-    if (GetPlayoutTimeStamp(playoutTimestamp) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_CANNOT_RETRIEVE_VALUE, kTraceError,
-            "GetPlayoutTimestamp() failed to retrieve timestamp");
-        return -1;
+void Channel::UpdatePlayoutTimestamp(bool rtcp) {
+  uint32_t playout_timestamp = 0;
+
+  if (_audioCodingModule.PlayoutTimestamp(&playout_timestamp) == -1)  {
+    WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,_channelId),
+                 "Channel::UpdatePlayoutTimestamp() failed to read playout"
+                 " timestamp from the ACM");
+    _engineStatisticsPtr->SetLastError(
+        VE_CANNOT_RETRIEVE_VALUE, kTraceError,
+        "UpdatePlayoutTimestamp() failed to retrieve timestamp");
+    return;
+  }
+
+  uint16_t delay_ms = 0;
+  if (_audioDeviceModulePtr->PlayoutDelay(&delay_ms) == -1) {
+    WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,_channelId),
+                 "Channel::UpdatePlayoutTimestamp() failed to read playout"
+                 " delay from the ADM");
+    _engineStatisticsPtr->SetLastError(
+        VE_CANNOT_RETRIEVE_VALUE, kTraceError,
+        "UpdatePlayoutTimestamp() failed to retrieve playout delay");
+    return;
+  }
+
+  int32_t playout_frequency = _audioCodingModule.PlayoutFrequency();
+  CodecInst current_recive_codec;
+  if (_audioCodingModule.ReceiveCodec(&current_recive_codec) == 0) {
+    if (STR_CASE_CMP("G722", current_recive_codec.plname) == 0) {
+      playout_frequency = 8000;
+    } else if (STR_CASE_CMP("opus", current_recive_codec.plname) == 0) {
+      playout_frequency = 48000;
     }
-    timestamp = playoutTimestamp;
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-                 VoEId(_instanceId,_channelId),
-                 "GetPlayoutTimestamp() => timestamp=%u", timestamp);
-    return 0;
+  }
+
+  // Remove the playout delay.
+  playout_timestamp -= (delay_ms * (playout_frequency / 1000));
+
+  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
+               "Channel::UpdatePlayoutTimestamp() => playoutTimestamp = %lu",
+               playout_timestamp);
+
+  if (rtcp) {
+    playout_timestamp_rtcp_ = playout_timestamp;
+  } else {
+    playout_timestamp_rtp_ = playout_timestamp;
+  }
+  playout_delay_ms_ = delay_ms;
+}
+
+int Channel::GetPlayoutTimestamp(unsigned int& timestamp) {
+  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
+               "Channel::GetPlayoutTimestamp()");
+  if (playout_timestamp_rtp_ == 0)  {
+    _engineStatisticsPtr->SetLastError(
+        VE_CANNOT_RETRIEVE_VALUE, kTraceError,
+        "GetPlayoutTimestamp() failed to retrieve timestamp");
+    return -1;
+  }
+  timestamp = playout_timestamp_rtp_;
+  WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
+               VoEId(_instanceId,_channelId),
+               "GetPlayoutTimestamp() => timestamp=%u", timestamp);
+  return 0;
 }
 
 int
@@ -4983,47 +5026,6 @@ Channel::InsertInbandDtmfTone()
     return 0;
 }
 
-int32_t
-Channel::GetPlayoutTimeStamp(uint32_t& playoutTimestamp)
-{
-    uint32_t timestamp(0);
-    CodecInst currRecCodec;
-
-    if (_audioCodingModule.PlayoutTimestamp(&timestamp) == -1)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,_channelId),
-                     "Channel::GetPlayoutTimeStamp() failed to read playout"
-                     " timestamp from the ACM");
-        return -1;
-    }
-
-    uint16_t delayMS(0);
-    if (_audioDeviceModulePtr->PlayoutDelay(&delayMS) == -1)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,_channelId),
-                     "Channel::GetPlayoutTimeStamp() failed to read playout"
-                     " delay from the ADM");
-        return -1;
-    }
-
-    int32_t playoutFrequency = _audioCodingModule.PlayoutFrequency();
-    if (_audioCodingModule.ReceiveCodec(&currRecCodec) == 0) {
-      if (STR_CASE_CMP("G722", currRecCodec.plname) == 0) {
-        playoutFrequency = 8000;
-      } else if (STR_CASE_CMP("opus", currRecCodec.plname) == 0) {
-        playoutFrequency = 48000;
-      }
-    }
-    timestamp -= (delayMS * (playoutFrequency/1000));
-
-    playoutTimestamp = timestamp;
-
-    WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::GetPlayoutTimeStamp() => playoutTimestamp = %lu",
-                 playoutTimestamp);
-    return 0;
-}
-
 void
 Channel::ResetDeadOrAliveCounters()
 {
@@ -5072,110 +5074,66 @@ Channel::SendPacketRaw(const void *data, int len, bool RTCP)
     }
 }
 
-int32_t
-Channel::UpdatePacketDelay(const uint32_t timestamp,
-                           const uint16_t sequenceNumber)
-{
-    WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::UpdatePacketDelay(timestamp=%lu, sequenceNumber=%u)",
-                 timestamp, sequenceNumber);
+// Called for incoming RTP packets after successful RTP header parsing.
+void Channel::UpdatePacketDelay(uint32_t rtp_timestamp,
+                                uint16_t sequence_number) {
+  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
+               "Channel::UpdatePacketDelay(timestamp=%lu, sequenceNumber=%u)",
+               rtp_timestamp, sequence_number);
 
-    int32_t rtpReceiveFrequency(0);
+  // Get frequency of last received payload
+  int rtp_receive_frequency = _audioCodingModule.ReceiveFrequency();
 
-    // Get frequency of last received payload
-    rtpReceiveFrequency = _audioCodingModule.ReceiveFrequency();
+  CodecInst current_receive_codec;
+  if (_audioCodingModule.ReceiveCodec(&current_receive_codec) != 0) {
+    return;
+  }
 
-    CodecInst currRecCodec;
-    if (_audioCodingModule.ReceiveCodec(&currRecCodec) == 0) {
-      if (STR_CASE_CMP("G722", currRecCodec.plname) == 0) {
-        // Even though the actual sampling rate for G.722 audio is
-        // 16,000 Hz, the RTP clock rate for the G722 payload format is
-        // 8,000 Hz because that value was erroneously assigned in
-        // RFC 1890 and must remain unchanged for backward compatibility.
-        rtpReceiveFrequency = 8000;
-      } else if (STR_CASE_CMP("opus", currRecCodec.plname) == 0) {
-        // We are resampling Opus internally to 32,000 Hz until all our
-        // DSP routines can operate at 48,000 Hz, but the RTP clock
-        // rate for the Opus payload format is standardized to 48,000 Hz,
-        // because that is the maximum supported decoding sampling rate.
-        rtpReceiveFrequency = 48000;
-      }
-    }
+  if (STR_CASE_CMP("G722", current_receive_codec.plname) == 0) {
+    // Even though the actual sampling rate for G.722 audio is
+    // 16,000 Hz, the RTP clock rate for the G722 payload format is
+    // 8,000 Hz because that value was erroneously assigned in
+    // RFC 1890 and must remain unchanged for backward compatibility.
+    rtp_receive_frequency = 8000;
+  } else if (STR_CASE_CMP("opus", current_receive_codec.plname) == 0) {
+    // We are resampling Opus internally to 32,000 Hz until all our
+    // DSP routines can operate at 48,000 Hz, but the RTP clock
+    // rate for the Opus payload format is standardized to 48,000 Hz,
+    // because that is the maximum supported decoding sampling rate.
+    rtp_receive_frequency = 48000;
+  }
 
-    const uint32_t timeStampDiff = timestamp - _playoutTimeStampRTP;
-    uint32_t timeStampDiffMs(0);
+  // playout_timestamp_rtp_ updated in UpdatePlayoutTimestamp for every incoming
+  // packet.
+  uint32_t timestamp_diff_ms = (rtp_timestamp - playout_timestamp_rtp_) /
+      (rtp_receive_frequency / 1000);
 
-    if (timeStampDiff > 0)
-    {
-        switch (rtpReceiveFrequency) {
-          case 8000:
-            timeStampDiffMs = static_cast<uint32_t>(timeStampDiff >> 3);
-            break;
-          case 16000:
-            timeStampDiffMs = static_cast<uint32_t>(timeStampDiff >> 4);
-            break;
-          case 32000:
-            timeStampDiffMs = static_cast<uint32_t>(timeStampDiff >> 5);
-            break;
-          case 48000:
-            timeStampDiffMs = static_cast<uint32_t>(timeStampDiff / 48);
-            break;
-          default:
-            WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-                         VoEId(_instanceId, _channelId),
-                         "Channel::UpdatePacketDelay() invalid sample rate");
-            timeStampDiffMs = 0;
-            return -1;
-        }
-        if (timeStampDiffMs > (2 * kVoiceEngineMaxMinPlayoutDelayMs))
-        {
-            timeStampDiffMs = 0;
-        }
+  uint16_t packet_delay_ms = (rtp_timestamp - _previousTimestamp) /
+      (rtp_receive_frequency / 1000);
 
-        if (_averageDelayMs == 0)
-        {
-            _averageDelayMs = timeStampDiffMs * 10;
-        }
-        else
-        {
-            // Filter average delay value using exponential filter (alpha is
-            // 7/8). We derive 10*_averageDelayMs here (reduces risk of
-            // rounding error) and compensate for it in GetDelayEstimate()
-            // later. Adding 4/8 results in correct rounding.
-            _averageDelayMs = ((_averageDelayMs*7 + 10*timeStampDiffMs + 4)>>3);
-        }
+  _previousTimestamp = rtp_timestamp;
 
-        if (sequenceNumber - _previousSequenceNumber == 1)
-        {
-            uint16_t packetDelayMs = 0;
-            switch (rtpReceiveFrequency) {
-              case 8000:
-                packetDelayMs = static_cast<uint16_t>(
-                    (timestamp - _previousTimestamp) >> 3);
-                break;
-              case 16000:
-                packetDelayMs = static_cast<uint16_t>(
-                    (timestamp - _previousTimestamp) >> 4);
-                break;
-              case 32000:
-                packetDelayMs = static_cast<uint16_t>(
-                    (timestamp - _previousTimestamp) >> 5);
-                break;
-              case 48000:
-                packetDelayMs = static_cast<uint16_t>(
-                    (timestamp - _previousTimestamp) / 48);
-                break;
-            }
+  if (timestamp_diff_ms > (2 * kVoiceEngineMaxMinPlayoutDelayMs)) {
+    timestamp_diff_ms = 0;
+  }
 
-            if (packetDelayMs >= 10 && packetDelayMs <= 60)
-                _recPacketDelayMs = packetDelayMs;
-        }
-    }
+  if (timestamp_diff_ms == 0) return;
 
-    _previousSequenceNumber = sequenceNumber;
-    _previousTimestamp = timestamp;
+  if (packet_delay_ms >= 10 && packet_delay_ms <= 60) {
+    _recPacketDelayMs = packet_delay_ms;
+  }
 
-    return 0;
+  if (_average_jitter_buffer_delay_us == 0) {
+    _average_jitter_buffer_delay_us = timestamp_diff_ms * 1000;
+    return;
+  }
+
+  // Filter average delay value using exponential filter (alpha is
+  // 7/8). We derive 1000 *_average_jitter_buffer_delay_us here (reduces
+  // risk of rounding error) and compensate for it in GetDelayEstimate()
+  // later.
+  _average_jitter_buffer_delay_us = (_average_jitter_buffer_delay_us * 7 +
+      1000 * timestamp_diff_ms + 500) / 8;
 }
 
 void

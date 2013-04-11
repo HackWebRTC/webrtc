@@ -114,21 +114,16 @@ int32_t ViESyncModule::Process() {
   assert(video_rtp_rtcp_ && voe_sync_interface_);
   assert(sync_.get());
 
-  int current_audio_delay_ms = 0;
+  int audio_jitter_buffer_delay_ms = 0;
+  int playout_buffer_delay_ms = 0;
   if (voe_sync_interface_->GetDelayEstimate(voe_channel_id_,
-                                            current_audio_delay_ms) != 0) {
-    // Could not get VoE delay value, probably not a valid channel Id.
+                                            &audio_jitter_buffer_delay_ms,
+                                            &playout_buffer_delay_ms) != 0) {
+    // Could not get VoE delay value, probably not a valid channel Id or
+    // the channel have not received enough packets.
     WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideo, vie_channel_->Id(),
                  "%s: VE_GetDelayEstimate error for voice_channel %d",
                  __FUNCTION__, voe_channel_id_);
-    return 0;
-  }
-
-  // VoiceEngine report delay estimates even when not started, ignore if the
-  // reported value is lower than 40 ms.
-  if (current_audio_delay_ms < 40) {
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, vie_channel_->Id(),
-                 "A/V Sync: Audio delay < 40, skipping.");
     return 0;
   }
 
@@ -153,14 +148,16 @@ int32_t ViESyncModule::Process() {
     return 0;
   }
 
-  TRACE_COUNTER1("webrtc", "SyncCurrentVideoDelay", total_video_delay_target_ms);
-  TRACE_COUNTER1("webrtc", "SyncCurrentAudioDelay", current_audio_delay_ms);
+  TRACE_COUNTER1("webrtc", "SyncCurrentVideoDelay",
+                 total_video_delay_target_ms);
+  TRACE_COUNTER1("webrtc", "SyncCurrentAudioDelay",
+                 audio_jitter_buffer_delay_ms);
   TRACE_COUNTER1("webrtc", "SyncRelativeDelay", relative_delay_ms);
   int extra_audio_delay_ms = 0;
   // Calculate the necessary extra audio delay and desired total video
   // delay to get the streams in sync.
   if (!sync_->ComputeDelays(relative_delay_ms,
-                            current_audio_delay_ms,
+                            audio_jitter_buffer_delay_ms,
                             &extra_audio_delay_ms,
                             &total_video_delay_target_ms)) {
     return 0;
