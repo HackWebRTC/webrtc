@@ -50,6 +50,19 @@
         'video_coding/codecs/tools/video_codecs_tools.gypi',
         'video_processing/main/test/vpm_tests.gypi',
       ], # includes
+      'targets': [
+        {
+          'target_name': 'modules_unittests',
+          'type': 'executable',
+          'dependencies': [
+            '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
+          ],
+          'sources': [
+            'module_common_types_unittest.cc',
+          ],
+        },
+      ],
     }], # include_tests
   ], # conditions
 }

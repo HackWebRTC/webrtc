@@ -585,28 +585,13 @@ bool RTPReceiver::RetransmitOfOldPacket(
 }
 
 bool RTPReceiver::InOrderPacket(const uint16_t sequence_number) const {
-  if (received_seq_max_ >= sequence_number) {
-    // Detect wrap-around.
-    if (!(received_seq_max_ > 0xff00 && sequence_number < 0x0ff)) {
-      if (received_seq_max_ - max_reordering_threshold_ > sequence_number) {
-        // We have a restart of the remote side.
-      } else {
-        // we received a retransmit of a packet we already have.
-        return false;
-      }
-    }
+  if (IsNewerSequenceNumber(sequence_number, received_seq_max_)) {
+    return true;
   } else {
-    // Detect wrap-around.
-    if (sequence_number > 0xff00 && received_seq_max_ < 0x0ff) {
-      if (received_seq_max_ - max_reordering_threshold_ > sequence_number) {
-        // We have a restart of the remote side
-      } else {
-        // We received a retransmit of a packet we already have
-        return false;
-      }
-    }
+    // If we have a restart of the remote side this packet is still in order.
+    return !IsNewerSequenceNumber(sequence_number, received_seq_max_ -
+                                  max_reordering_threshold_);
   }
-  return true;
 }
 
 uint16_t RTPReceiver::SequenceNumber() const {

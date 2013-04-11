@@ -44,8 +44,9 @@ int VCMSessionInfo::LowSequenceNumber() const {
 int VCMSessionInfo::HighSequenceNumber() const {
   if (packets_.empty())
     return empty_seq_num_high_;
-  return LatestSequenceNumber(packets_.back().seqNum, empty_seq_num_high_,
-                              NULL);
+  if (empty_seq_num_high_ == -1)
+    return packets_.back().seqNum;
+  return LatestSequenceNumber(packets_.back().seqNum, empty_seq_num_high_);
 }
 
 int VCMSessionInfo::PictureId() const {
@@ -388,8 +389,7 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
   // order and insert it. Loop over the list in reverse order.
   ReversePacketIterator rit = packets_.rbegin();
   for (; rit != packets_.rend(); ++rit)
-    if (LatestSequenceNumber((*rit).seqNum, packet.seqNum, NULL) ==
-        packet.seqNum)
+    if (LatestSequenceNumber(packet.seqNum, (*rit).seqNum) == packet.seqNum)
       break;
 
   // Check for duplicate packets.
@@ -412,11 +412,12 @@ void VCMSessionInfo::InformOfEmptyPacket(uint16_t seq_num) {
   // follow the data packets, therefore, we should only keep track of the high
   // and low sequence numbers and may assume that the packets in between are
   // empty packets belonging to the same frame (timestamp).
-  empty_seq_num_high_ = LatestSequenceNumber(seq_num, empty_seq_num_high_,
-                                             NULL);
-  if (empty_seq_num_low_ == -1 ||
-      LatestSequenceNumber(seq_num, empty_seq_num_low_, NULL) ==
-          empty_seq_num_low_)
+  if (empty_seq_num_high_ == -1)
+    empty_seq_num_high_ = seq_num;
+  else
+    empty_seq_num_high_ = LatestSequenceNumber(seq_num, empty_seq_num_high_);
+  if (empty_seq_num_low_ == -1 || IsNewerSequenceNumber(empty_seq_num_low_,
+                                                        seq_num))
     empty_seq_num_low_ = seq_num;
 }
 

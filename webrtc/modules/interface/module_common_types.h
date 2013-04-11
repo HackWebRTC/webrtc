@@ -1044,6 +1044,28 @@ AudioFrame::operator-=(const AudioFrame& rhs)
     return *this;
 }
 
+inline bool IsNewerSequenceNumber(uint16_t sequence_number,
+                                  uint16_t prev_sequence_number) {
+  return sequence_number != prev_sequence_number &&
+      static_cast<uint16_t>(sequence_number - prev_sequence_number) < 0x8000;
+}
+
+inline bool IsNewerTimestamp(uint32_t timestamp, uint32_t prev_timestamp) {
+  return timestamp != prev_timestamp &&
+      static_cast<uint32_t>(timestamp - prev_timestamp) < 0x80000000;
+}
+
+inline uint16_t LatestSequenceNumber(uint16_t sequence_number1,
+                                     uint16_t sequence_number2) {
+  return IsNewerSequenceNumber(sequence_number1, sequence_number2) ?
+      sequence_number1 : sequence_number2;
+}
+
+inline uint32_t LatestTimestamp(uint32_t timestamp1, uint32_t timestamp2) {
+  return IsNewerTimestamp(timestamp1, timestamp2) ? timestamp1 :
+      timestamp2;
+}
+
 } // namespace webrtc
 
 #endif // MODULE_COMMON_TYPES_H

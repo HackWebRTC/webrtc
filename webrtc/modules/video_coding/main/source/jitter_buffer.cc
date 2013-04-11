@@ -36,8 +36,7 @@ class FrameSmallerTimestamp {
  public:
   explicit FrameSmallerTimestamp(uint32_t timestamp) : timestamp_(timestamp) {}
   bool operator()(VCMFrameBuffer* frame) {
-    return (LatestTimestamp(timestamp_, frame->TimeStamp(), NULL) ==
-            timestamp_);
+    return IsNewerTimestamp(timestamp_, frame->TimeStamp());
   }
 
  private:
@@ -718,7 +717,7 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(VCMEncodedFrame* encoded_frame,
       request_key_frame = true;
     }
     latest_received_sequence_number_ = LatestSequenceNumber(
-        latest_received_sequence_number_, packet.seqNum, NULL);
+        latest_received_sequence_number_, packet.seqNum);
   }
 
   // Empty packets may bias the jitter estimate (lacking size component),
@@ -909,12 +908,10 @@ bool VCMJitterBuffer::UpdateNackList(uint16_t sequence_number) {
   if (!last_decoded_state_.in_initial_state()) {
     latest_received_sequence_number_ = LatestSequenceNumber(
         latest_received_sequence_number_,
-        last_decoded_state_.sequence_num(),
-        NULL);
+        last_decoded_state_.sequence_num());
   }
-  bool in_order = LatestSequenceNumber(sequence_number,
-      latest_received_sequence_number_, NULL) == sequence_number;
-  if (in_order) {
+  if (IsNewerSequenceNumber(sequence_number,
+                            latest_received_sequence_number_)) {
     // Push any missing sequence numbers to the NACK list.
     for (uint16_t i = latest_received_sequence_number_ + 1;
         i < sequence_number; ++i) {

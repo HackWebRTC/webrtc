@@ -168,10 +168,7 @@ class VCMJitterBuffer {
    public:
     bool operator() (const uint16_t& sequence_number1,
                      const uint16_t& sequence_number2) const {
-      if (sequence_number1 == sequence_number2)
-        return false;
-      return LatestSequenceNumber(sequence_number1, sequence_number2, NULL) ==
-          sequence_number2;
+      return IsNewerSequenceNumber(sequence_number2, sequence_number1);
     }
   };
   typedef std::set<uint16_t, SequenceNumberLessThan> SequenceNumberSet;
