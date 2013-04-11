@@ -10,6 +10,7 @@
 
 #include "rtcp_sender.h"
 
+#include <algorithm>  // min
 #include <cassert>  // assert
 #include <cstdlib>  // rand
 #include <string.h>  // memcpy
@@ -1375,91 +1376,41 @@ RTCPSender::BuildNACK(uint8_t* rtcpbuffer,
     ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _remoteSSRC);
     pos += 4;
 
-    // add the list
-    int i = 0;
-    int numOfNackFields = 0;
     NACKStringBuilder stringBuilder;
-    while (nackSize > i && numOfNackFields < kRtcpMaxNackFields)
-    {
-        uint16_t nack = nackList[i];
-        // put dow our sequence number
-        ModuleRTPUtility::AssignUWord16ToBuffer(rtcpbuffer+pos, nack);
-        pos += 2;
-        stringBuilder.PushNACK(nack);
-
-        i++;
-        numOfNackFields++;
-        if(nackSize > i)
-        {
-            bool moreThan16Away = (uint16_t(nack+16) < nackList[i])?true: false;
-            if(!moreThan16Away)
-            {
-                // check for a wrap
-                if(uint16_t(nack+16) > 0xff00 && nackList[i] < 0x0fff)
-                {
-                    // wrap
-                    moreThan16Away = true;
-                }
-            }
-            if(moreThan16Away)
-            {
-                // next is more than 16 away
-                rtcpbuffer[pos++]=(uint8_t)0;
-                rtcpbuffer[pos++]=(uint8_t)0;
-            } else
-            {
-                // build our bitmask
-                uint16_t bitmask = 0;
-
-                bool within16Away = (uint16_t(nack+16) > nackList[i])?true: false;
-                if(within16Away)
-                {
-                   // check for a wrap
-                    if(uint16_t(nack+16) > 0xff00 && nackList[i] < 0x0fff)
-                    {
-                        // wrap
-                        within16Away = false;
-                    }
-                }
-
-                while( nackSize > i && within16Away)
-                {
-                    int16_t shift = (nackList[i]-nack)-1;
-                    assert(!(shift > 15) && !(shift < 0));
-
-                    bitmask += (1<< shift);
-                    stringBuilder.PushNACK(nackList[i]);
-                    i++;
-                    if(nackSize > i)
-                    {
-                        within16Away = (uint16_t(nack+16) > nackList[i])?true: false;
-                        if(within16Away)
-                        {
-                            // check for a wrap
-                            if(uint16_t(nack+16) > 0xff00 && nackList[i] < 0x0fff)
-                            {
-                                // wrap
-                                within16Away = false;
-                            }
-                        }
-                    }
-                }
-                ModuleRTPUtility::AssignUWord16ToBuffer(rtcpbuffer+pos, bitmask);
-                pos += 2;
-            }
-            // sanity do we have room from one more 4 byte block?
-            if(pos + 4 >= IP_PACKET_SIZE)
-            {
-                return -2;
-            }
-        } else
-        {
-            // no more in the list
-            rtcpbuffer[pos++]=(uint8_t)0;
-            rtcpbuffer[pos++]=(uint8_t)0;
+    // Build NACK bitmasks and write them to the RTCP message.
+    // The nack list should be sorted and not contain duplicates if one
+    // wants to build the smallest rtcp nack packet.
+    int numOfNackFields = 0;
+    int maxNackFields = std::min<int>(kRtcpMaxNackFields,
+                                      (IP_PACKET_SIZE - pos) / 4);
+    int i = 0;
+    while (i < nackSize && numOfNackFields < maxNackFields) {
+      stringBuilder.PushNACK(nackList[i]);
+      uint16_t nack = nackList[i++];
+      uint16_t bitmask = 0;
+      while (i < nackSize) {
+        int shift = static_cast<uint16_t>(nackList[i] - nack) - 1;
+        if (shift >= 0 && shift <= 15) {
+          stringBuilder.PushNACK(nackList[i]);
+          bitmask |= (1 << shift);
+          ++i;
+        } else {
+          break;
         }
+      }
+      // Write the sequence number and the bitmask to the packet.
+      assert(pos + 4 < IP_PACKET_SIZE);
+      ModuleRTPUtility::AssignUWord16ToBuffer(rtcpbuffer + pos, nack);
+      pos += 2;
+      ModuleRTPUtility::AssignUWord16ToBuffer(rtcpbuffer + pos, bitmask);
+      pos += 2;
+      numOfNackFields++;
     }
-    rtcpbuffer[nackSizePos]=(uint8_t)(2+numOfNackFields);
+    if (i != nackSize) {
+      WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
+                   "Nack list to large for one packet.");
+    }
+    rtcpbuffer[nackSizePos] = static_cast<uint8_t>(2 + numOfNackFields);
     *nackString = stringBuilder.GetResult();
     return 0;
 }
