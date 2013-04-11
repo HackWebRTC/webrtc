@@ -47,7 +47,7 @@ VCMGenericEncoder::InitEncode(const VideoCodec* settings,
                               int32_t numberOfCores,
                               uint32_t maxPayloadSize)
 {
-    _bitRate = settings->startBitrate;
+    _bitRate = settings->startBitrate * 1000;
     _frameRate = settings->maxFramerate;
     _codecType = settings->codecType;
     if (_VCMencodedFrameCallback != NULL)
