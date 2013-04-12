@@ -74,6 +74,7 @@ public:
     virtual int32_t Process();
 
     // Implement VideoCaptureExternal
+    // |capture_time| must be specified in the NTP time format in milliseconds.
     virtual int32_t IncomingFrame(uint8_t* videoFrame,
                                   int32_t videoFrameLength,
                                   const VideoCaptureCapability& frameInfo,

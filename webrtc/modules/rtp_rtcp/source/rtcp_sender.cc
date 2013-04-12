@@ -626,7 +626,7 @@ RTCPSender::BuildSR(uint8_t* rtcpbuffer,
         _lastRTCPTime[i+1] =_lastRTCPTime[i];
     }
 
-    _lastRTCPTime[0] = ModuleRTPUtility::ConvertNTPTimeToMS(NTPsec, NTPfrac);
+    _lastRTCPTime[0] = Clock::NtpToMs(NTPsec, NTPfrac);
     _lastSendReport[0] = (NTPsec << 16) + (NTPfrac >> 16);
 
     uint32_t freqHz = 90000; // For video
@@ -2042,7 +2042,7 @@ int32_t RTCPSender::AddReportBlocks(uint8_t* rtcpbuffer,
   }
   if (received) {
     // answer to the one that sends to me
-    _lastRTCPTime[0] = ModuleRTPUtility::ConvertNTPTimeToMS(NTPsec, NTPfrac);
+    _lastRTCPTime[0] = Clock::NtpToMs(NTPsec, NTPfrac);
 
     // Remote SSRC
     ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _remoteSSRC);

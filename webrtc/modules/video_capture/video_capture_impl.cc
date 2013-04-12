@@ -18,6 +18,7 @@
 #include "trace.h"
 #include "trace_event.h"
 #include "video_capture_config.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 
 #include <stdlib.h>
 
@@ -193,11 +194,15 @@ int32_t VideoCaptureImpl::DeliverCapturedFrame(I420VideoFrame& captureFrame,
   }
 
   // Set the capture time
+  int64_t internal_capture_time = TickTime::MillisecondTimestamp();
   if (capture_time != 0) {
-      captureFrame.set_render_time_ms(capture_time);
+      int64_t time_since_capture =
+          Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() - capture_time;
+      internal_capture_time -= time_since_capture;
+      captureFrame.set_render_time_ms(internal_capture_time);
   }
   else {
-      captureFrame.set_render_time_ms(TickTime::MillisecondTimestamp());
+      captureFrame.set_render_time_ms(internal_capture_time);
   }
 
   TRACE_EVENT1("webrtc", "VC::DeliverCapturedFrame",
