@@ -133,6 +133,14 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   virtual int GetRemoteCSRCs(const int video_channel,
                              unsigned int CSRCs[kRtpCsrcSize]) const = 0;
 
+  // This sets a specific payload type for the RTX stream. Note that this
+  // doesn't enable RTX, SetLocalSSRC must still be called to enable RTX.
+  virtual int SetRtxSendPayloadType(const int video_channel,
+                                    const uint8_t payload_type) = 0;
+
+  virtual int SetRtxReceivePayloadType(const int video_channel,
+                                       const uint8_t payload_type) = 0;
+
   // This function enables manual initialization of the sequence number. The
   // start sequence number is normally a random number.
   virtual int SetStartSequenceNumber(const int video_channel,

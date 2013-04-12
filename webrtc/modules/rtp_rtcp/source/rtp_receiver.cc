@@ -94,7 +94,8 @@ RTPReceiver::RTPReceiver(const int32_t id,
       nack_method_(kNackOff),
       max_reordering_threshold_(kDefaultMaxReorderingThreshold),
       rtx_(false),
-      ssrc_rtx_(0) {
+      ssrc_rtx_(0),
+      payload_type_rtx_(-1) {
   assert(incoming_audio_messages_callback &&
          incoming_messages_callback &&
          incoming_payload_callback);
@@ -288,17 +289,23 @@ int32_t RTPReceiver::SetNACKStatus(const NACKMethod method,
   return 0;
 }
 
-void RTPReceiver::SetRTXStatus(const bool enable,
-                               const uint32_t ssrc) {
+void RTPReceiver::SetRTXStatus(bool enable, uint32_t ssrc) {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
   rtx_ = enable;
   ssrc_rtx_ = ssrc;
 }
 
-void RTPReceiver::RTXStatus(bool* enable, uint32_t* ssrc) const {
+void RTPReceiver::RTXStatus(bool* enable, uint32_t* ssrc,
+                            int* payload_type) const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_);
   *enable = rtx_;
   *ssrc = ssrc_rtx_;
+  *payload_type = payload_type_rtx_;
+}
+
+void RTPReceiver::SetRtxPayloadType(int payload_type) {
+  CriticalSectionScoped cs(critical_section_rtp_receiver_);
+  payload_type_rtx_ = payload_type;
 }
 
 uint32_t RTPReceiver::SSRC() const {
@@ -350,9 +357,22 @@ int32_t RTPReceiver::IncomingRTPPacket(
   }
   if (rtx_) {
     if (ssrc_rtx_ == rtp_header->header.ssrc) {
-      // Sanity check.
-      if (rtp_header->header.headerLength + 2 > packet_length) {
+      // Sanity check, RTX packets has 2 extra header bytes.
+      if (rtp_header->header.headerLength + kRtxHeaderSize > packet_length) {
         return -1;
+      }
+      // If a specific RTX payload type is negotiated, set back to the media
+      // payload type and treat it like a media packet from here.
+      if (payload_type_rtx_ != -1) {
+        if (payload_type_rtx_ == rtp_header->header.payloadType &&
+            rtp_payload_registry_->last_received_media_payload_type() != -1) {
+          rtp_header->header.payloadType =
+              rtp_payload_registry_->last_received_media_payload_type();
+        } else {
+          WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, id_,
+                       "Incorrect RTX configuration, dropping packet.");
+          return -1;
+        }
       }
       rtp_header->header.ssrc = ssrc_;
       rtp_header->header.sequenceNumber =

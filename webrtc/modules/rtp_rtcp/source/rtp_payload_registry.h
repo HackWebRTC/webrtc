@@ -93,6 +93,10 @@ class RTPPayloadRegistry {
     last_received_payload_type_ = last_received_payload_type;
   }
 
+  int8_t last_received_media_payload_type() const {
+    return last_received_media_payload_type_;
+  };
+
  private:
   // Prunes the payload type map of the specific payload type, if it exists.
   void DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(

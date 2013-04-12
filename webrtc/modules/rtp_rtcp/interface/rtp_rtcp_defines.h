@@ -113,6 +113,8 @@ enum RtxMode {
   kRtxAll = 2  // Apply RTX to all packets (source + retransmissions).
 };
 
+const int kRtxHeaderSize = 2;
+
 struct RTCPSenderInfo
 {
     uint32_t NTPseconds;

@@ -232,14 +232,18 @@ class RtpRtcp : public Module {
     /*
     * Turn on/off receiving RTX (RFC 4588) on a specific SSRC.
     */
-    virtual int32_t SetRTXReceiveStatus(const bool enable,
-                                        const uint32_t SSRC) = 0;
+    virtual int32_t SetRTXReceiveStatus(bool enable, uint32_t SSRC) = 0;
+
+    // Sets the payload type to expected for received RTX packets. Note
+    // that this doesn't enable RTX, only the payload type is set.
+    virtual void SetRtxReceivePayloadType(int payload_type) = 0;
 
     /*
     * Get status of receiving RTX (RFC 4588) on a specific SSRC.
     */
     virtual int32_t RTXReceiveStatus(bool* enable,
-                                     uint32_t* SSRC) const = 0;
+                                     uint32_t* SSRC,
+                                     int* payloadType) const = 0;
 
     /*
     *   called by the network module when we receive a packet
@@ -416,15 +420,18 @@ class RtpRtcp : public Module {
     /*
     * Turn on/off sending RTX (RFC 4588) on a specific SSRC.
     */
-    virtual int32_t SetRTXSendStatus(const RtxMode mode,
-                                     const bool setSSRC,
-                                     const uint32_t SSRC) = 0;
+    virtual int32_t SetRTXSendStatus(RtxMode mode, bool set_ssrc,
+                                     uint32_t ssrc) = 0;
+
+    // Sets the payload type to use when sending RTX packets. Note that this
+    // doesn't enable RTX, only the payload type is set.
+    virtual void SetRtxSendPayloadType(int payload_type) = 0;
 
     /*
     * Get status of sending RTX (RFC 4588) on a specific SSRC.
     */
-    virtual int32_t RTXSendStatus(RtxMode* mode,
-                                  uint32_t* SSRC) const = 0;
+    virtual int32_t RTXSendStatus(RtxMode* mode, uint32_t* ssrc,
+                                  int* payloadType) const = 0;
 
     /*
     *   sends kRtcpByeCode when going from true to false

@@ -141,9 +141,11 @@ class RTPReceiver : public Bitrate {
   void GetHeaderExtensionMapCopy(RtpHeaderExtensionMap* map) const;
 
   // RTX.
-  void SetRTXStatus(const bool enable, const uint32_t ssrc);
+  void SetRTXStatus(bool enable, uint32_t ssrc);
 
-  void RTXStatus(bool* enable, uint32_t* ssrc) const;
+  void RTXStatus(bool* enable, uint32_t* ssrc, int* payload_type) const;
+
+  void SetRtxPayloadType(int payload_type);
 
   virtual int8_t REDPayloadType() const;
 
@@ -234,6 +236,7 @@ class RTPReceiver : public Bitrate {
 
   bool rtx_;
   uint32_t ssrc_rtx_;
+  int payload_type_rtx_;
 };
 
 } // namespace webrtc

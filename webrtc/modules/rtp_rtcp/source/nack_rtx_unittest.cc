@@ -193,8 +193,10 @@ TEST_F(RtpRtcpRtxNackTest, RTCP) {
 
 TEST_F(RtpRtcpRtxNackTest, RTXNack) {
   EXPECT_EQ(0, rtp_rtcp_module_->SetRTXReceiveStatus(true, kTestSsrc + 1));
-  EXPECT_EQ(0, rtp_rtcp_module_->SetRTXSendStatus(kRtxRetransmitted,
-                                                  true, kTestSsrc + 1));
+  rtp_rtcp_module_->SetRtxReceivePayloadType(119);
+  EXPECT_EQ(0, rtp_rtcp_module_->SetRTXSendStatus(kRtxRetransmitted, true,
+                                                  kTestSsrc + 1));
+  rtp_rtcp_module_->SetRtxSendPayloadType(119);
 
   transport_.DropEveryNthPacket(10);
 
@@ -251,8 +253,8 @@ TEST_F(RtpRtcpRtxNackTest, RTXNack) {
 
 TEST_F(RtpRtcpRtxNackTest, RTXAllNoLoss) {
   EXPECT_EQ(0, rtp_rtcp_module_->SetRTXReceiveStatus(true, kTestSsrc + 1));
-  EXPECT_EQ(0, rtp_rtcp_module_->SetRTXSendStatus(kRtxAll,
-                                                  true, kTestSsrc + 1));
+  EXPECT_EQ(0, rtp_rtcp_module_->SetRTXSendStatus(kRtxAll, true,
+                                                  kTestSsrc + 1));
   transport_.DropEveryNthPacket(0);
 
   uint32_t timestamp = 3000;
@@ -285,8 +287,7 @@ TEST_F(RtpRtcpRtxNackTest, RTXAllNoLoss) {
 
 TEST_F(RtpRtcpRtxNackTest, RTXAllWithLoss) {
   EXPECT_EQ(0, rtp_rtcp_module_->SetRTXReceiveStatus(true, kTestSsrc + 1));
-  EXPECT_EQ(0, rtp_rtcp_module_->SetRTXSendStatus(kRtxAll,
-                                                  true,
+  EXPECT_EQ(0, rtp_rtcp_module_->SetRTXSendStatus(kRtxAll, true,
                                                   kTestSsrc + 1));
 
   int loss = 10;

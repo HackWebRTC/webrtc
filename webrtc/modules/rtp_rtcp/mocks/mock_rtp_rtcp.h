@@ -76,11 +76,14 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD2(SetSSRCFilter,
       int32_t(const bool enable, const uint32_t allowedSSRC));
   MOCK_METHOD2(SetRTXReceiveStatus,
-      int32_t(const bool enable, const uint32_t SSRC));
-  MOCK_CONST_METHOD2(RTXReceiveStatus,
-      int32_t(bool* enable, uint32_t* SSRC));
+      int32_t(bool enable, uint32_t ssrc));
+  MOCK_CONST_METHOD3(RTXReceiveStatus,
+      int32_t(bool* enable, uint32_t* ssrc, int* payload_type));
+  MOCK_METHOD1(SetRtxReceivePayloadType,
+      void(int));
   MOCK_METHOD2(IncomingPacket,
-      int32_t(const uint8_t* incomingPacket, const uint16_t packetLength));
+      int32_t(const WebRtc_UWord8* incomingPacket,
+              const WebRtc_UWord16 packetLength));
   MOCK_METHOD4(IncomingAudioNTP,
       int32_t(const uint32_t audioReceivedNTPsecs,
               const uint32_t audioReceivedNTPfrac,
@@ -128,10 +131,11 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(SetCSRCStatus,
       int32_t(const bool include));
   MOCK_METHOD3(SetRTXSendStatus,
-      int32_t(const RtxMode mode, const bool setSSRC,
-              const uint32_t SSRC));
- MOCK_CONST_METHOD2(RTXSendStatus,
-      int32_t(RtxMode* mode, uint32_t* SSRC));
+      int32_t(RtxMode mode, bool setSSRC, uint32_t ssrc));
+  MOCK_CONST_METHOD3(RTXSendStatus,
+      int32_t(RtxMode* mode, uint32_t* ssrc, int* payload_type));
+  MOCK_METHOD1(SetRtxSendPayloadType,
+      void(int));
   MOCK_METHOD1(SetSendingStatus,
       int32_t(const bool sending));
   MOCK_CONST_METHOD0(Sending,

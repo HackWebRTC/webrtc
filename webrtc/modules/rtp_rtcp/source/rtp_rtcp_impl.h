@@ -103,8 +103,10 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   virtual int32_t SetRTXReceiveStatus(const bool enable,
                                       const uint32_t ssrc);
 
-  virtual int32_t RTXReceiveStatus(bool* enable,
-                                   uint32_t* ssrc) const;
+  virtual int32_t RTXReceiveStatus(bool* enable, uint32_t* ssrc,
+                                   int* payloadType) const;
+
+  virtual void SetRtxReceivePayloadType(int payload_type);
 
   // Called by the network module when we receive a packet.
   virtual int32_t IncomingPacket(const uint8_t* incoming_packet,
@@ -161,7 +163,11 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
                                    const bool set_ssrc,
                                    const uint32_t ssrc);
 
-  virtual int32_t RTXSendStatus(RtxMode* mode, uint32_t* ssrc) const;
+  virtual int32_t RTXSendStatus(RtxMode* mode, uint32_t* ssrc,
+                                int* payloadType) const;
+
+
+  virtual void SetRtxSendPayloadType(int payload_type);
 
   // Sends kRtcpByeCode when going from true to false.
   virtual int32_t SetSendingStatus(const bool sending);

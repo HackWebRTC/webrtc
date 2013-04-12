@@ -973,8 +973,31 @@ int32_t ViEChannel::GetRemoteCSRC(uint32_t CSRCs[kRtpCsrcSize]) {
   return 0;
 }
 
-int32_t ViEChannel::SetStartSequenceNumber(
-    uint16_t sequence_number) {
+int ViEChannel::SetRtxSendPayloadType(int payload_type) {
+  if (rtp_rtcp_->Sending()) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
+               "%s: already sending", __FUNCTION__);
+    return -1;
+  }
+  rtp_rtcp_->SetRtxSendPayloadType(payload_type);
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
+  for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
+       it != simulcast_rtp_rtcp_.end(); it++) {
+    (*it)->SetRtxSendPayloadType(payload_type);
+  }
+  return 0;
+}
+
+void ViEChannel::SetRtxReceivePayloadType(int payload_type) {
+  rtp_rtcp_->SetRtxReceivePayloadType(payload_type);
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
+  for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
+       it != simulcast_rtp_rtcp_.end(); it++) {
+    (*it)->SetRtxReceivePayloadType(payload_type);
+  }
+}
+
+int32_t ViEChannel::SetStartSequenceNumber(uint16_t sequence_number) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 

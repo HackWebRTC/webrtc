@@ -58,7 +58,7 @@ RTPSender::RTPSender(const int32_t id, const bool audio, Clock *clock,
       start_time_stamp_(0), ssrc_db_(*SSRCDatabase::GetSSRCDatabase()),
       remote_ssrc_(0), sequence_number_forced_(false), ssrc_forced_(false),
       time_stamp_(0), csrcs_(0), csrc_(), include_csrcs_(true),
-      rtx_(kRtxOff) {
+      rtx_(kRtxOff), payload_type_rtx_(-1) {
   memset(nack_byte_count_times_, 0, sizeof(nack_byte_count_times_));
   memset(nack_byte_count_, 0, sizeof(nack_byte_count_));
   memset(csrc_, 0, sizeof(csrc_));
@@ -255,8 +255,7 @@ uint16_t RTPSender::MaxPayloadLength() const {
 
 uint16_t RTPSender::PacketOverHead() const { return packet_over_head_; }
 
-void RTPSender::SetRTXStatus(const RtxMode mode, const bool set_ssrc,
-                             const uint32_t ssrc) {
+void RTPSender::SetRTXStatus(RtxMode mode, bool set_ssrc, uint32_t ssrc) {
   CriticalSectionScoped cs(send_critsect_);
   rtx_ = mode;
   if (rtx_ != kRtxOff) {
@@ -268,10 +267,18 @@ void RTPSender::SetRTXStatus(const RtxMode mode, const bool set_ssrc,
   }
 }
 
-void RTPSender::RTXStatus(RtxMode* mode, uint32_t *SSRC) const {
+void RTPSender::RTXStatus(RtxMode* mode, uint32_t* ssrc,
+                          int* payload_type) const {
   CriticalSectionScoped cs(send_critsect_);
   *mode = rtx_;
-  *SSRC = ssrc_rtx_;
+  *ssrc = ssrc_rtx_;
+  *payload_type = payload_type_rtx_;
+}
+
+
+void RTPSender::SetRtxPayloadType(int payload_type) {
+  CriticalSectionScoped cs(send_critsect_);
+  payload_type_rtx_ = payload_type;
 }
 
 int32_t RTPSender::CheckPayloadType(const int8_t payload_type,
@@ -1221,6 +1228,13 @@ void RTPSender::BuildRtxPacket(uint8_t* buffer, uint16_t* length,
 
   // Add original RTP header.
   memcpy(data_buffer_rtx, buffer, rtp_header.header.headerLength);
+
+  // Replace payload type, if a specific type is set for RTX.
+  if (payload_type_rtx_ != -1) {
+    data_buffer_rtx[1] = static_cast<uint8_t>(payload_type_rtx_);
+    if (rtp_header.header.markerBit)
+      data_buffer_rtx[1] |= kRtpMarkerBitMask;
+  }
 
   // Replace sequence number.
   uint8_t *ptr = data_buffer_rtx + 2;

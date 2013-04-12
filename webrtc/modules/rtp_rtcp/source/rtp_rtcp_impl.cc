@@ -314,7 +314,7 @@ void ModuleRtpRtcpImpl::ProcessDeadOrAliveTimer() {
   bool do_callback = false;
 
   // Do operations on members under lock but avoid making the
-  // ProcessDeadOrAlive() callback under the same lock. 
+  // ProcessDeadOrAlive() callback under the same lock.
   {
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
     if (dead_or_alive_active_) {
@@ -325,7 +325,7 @@ void ModuleRtpRtcpImpl::ProcessDeadOrAliveTimer() {
 
         if (rtcp_receiver_.LastReceived() + 12000 > now)
           RTCPalive = true;
-        
+
         do_callback = true;
       }
     }
@@ -532,30 +532,36 @@ int32_t ModuleRtpRtcpImpl::RemoteCSRCs(
   return rtp_receiver_->CSRCs(arr_of_csrc);
 }
 
-int32_t ModuleRtpRtcpImpl::SetRTXSendStatus(
-    const RtxMode mode,
-    const bool set_ssrc,
-    const uint32_t ssrc) {
+int32_t ModuleRtpRtcpImpl::SetRTXSendStatus(RtxMode mode, bool set_ssrc,
+                                            uint32_t ssrc) {
   rtp_sender_.SetRTXStatus(mode, set_ssrc, ssrc);
   return 0;
 }
 
-int32_t ModuleRtpRtcpImpl::RTXSendStatus(RtxMode* mode, uint32_t* ssrc) const {
-  rtp_sender_.RTXStatus(mode, ssrc);
+int32_t ModuleRtpRtcpImpl::RTXSendStatus(RtxMode* mode, uint32_t* ssrc,
+                                         int* payload_type) const {
+  rtp_sender_.RTXStatus(mode, ssrc, payload_type);
   return 0;
 }
 
-int32_t ModuleRtpRtcpImpl::SetRTXReceiveStatus(
-    const bool enable,
-    const uint32_t ssrc) {
+int32_t ModuleRtpRtcpImpl::SetRTXReceiveStatus(bool enable,
+                                               uint32_t ssrc) {
   rtp_receiver_->SetRTXStatus(enable, ssrc);
   return 0;
 }
 
-int32_t ModuleRtpRtcpImpl::RTXReceiveStatus(bool* enable,
-                                            uint32_t* ssrc) const {
-  rtp_receiver_->RTXStatus(enable, ssrc);
+int32_t ModuleRtpRtcpImpl::RTXReceiveStatus(bool* enable, uint32_t* ssrc,
+                                            int* payload_type) const {
+  rtp_receiver_->RTXStatus(enable, ssrc, payload_type);
   return 0;
+}
+
+void ModuleRtpRtcpImpl::SetRtxSendPayloadType(int payload_type) {
+  rtp_sender_.SetRtxPayloadType(payload_type);
+}
+
+void ModuleRtpRtcpImpl::SetRtxReceivePayloadType(int payload_type) {
+  rtp_receiver_->SetRtxPayloadType(payload_type);
 }
 
 // Called by the network module when we receive a packet.

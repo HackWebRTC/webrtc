@@ -174,10 +174,11 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   bool ProcessNACKBitRate(const uint32_t now);
 
   // RTX.
-  void SetRTXStatus(const RtxMode mode, const bool set_ssrc,
-                    const uint32_t SSRC);
+  void SetRTXStatus(RtxMode mode, bool set_ssrc, uint32_t ssrc);
 
-  void RTXStatus(RtxMode* mode, uint32_t *SSRC) const;
+  void RTXStatus(RtxMode* mode, uint32_t* ssrc, int* payload_type) const;
+
+  void SetRtxPayloadType(int payloadType);
 
   // Functions wrapping RTPSenderInterface.
   virtual int32_t BuildRTPheader(
@@ -310,6 +311,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   bool include_csrcs_;
   RtxMode rtx_;
   uint32_t ssrc_rtx_;
+  int payload_type_rtx_;
 };
 
 }  // namespace webrtc
