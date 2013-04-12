@@ -161,6 +161,7 @@ class VCMJitterBuffer {
   // Enable/disable decoding with errors.
   void DecodeWithErrors(bool enable) {decode_with_errors_ = enable;}
   int64_t LastDecodedTimestamp() const;
+  bool decode_with_errors() const {return decode_with_errors_;}
 
  private:
   class SequenceNumberLessThan {

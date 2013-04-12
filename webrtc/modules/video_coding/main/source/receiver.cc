@@ -309,7 +309,7 @@ VCMEncodedFrame* VCMReceiver::FrameForRendering(uint16_t max_wait_time_ms,
   // Get a complete frame if possible.
   VCMEncodedFrame* frame = jitter_buffer_.GetCompleteFrameForDecoding(0);
 
-  if (frame == NULL) {
+  if (frame == NULL && jitter_buffer_.decode_with_errors()) {
     // Get an incomplete frame.
     const bool dual_receiver_enabled_and_passive = (dual_receiver != NULL &&
         dual_receiver->State() == kPassive &&

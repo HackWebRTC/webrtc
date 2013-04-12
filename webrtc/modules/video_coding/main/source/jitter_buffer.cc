@@ -512,8 +512,6 @@ VCMEncodedFrame* VCMJitterBuffer::GetCompleteFrameForDecoding(
 
   oldest_frame->SetState(kStateDecoding);
 
-  CleanUpOldOrEmptyFrames();
-
   if (oldest_frame->FrameType() == kVideoFrameKey) {
     waiting_for_key_frame_ = false;
   }
@@ -582,8 +580,6 @@ VCMEncodedFrame* VCMJitterBuffer::GetFrameForDecoding() {
   // decoder.
   // Set as decoding. Propagates the missing_frame bit.
   oldest_frame->SetState(kStateDecoding);
-
-  CleanUpOldOrEmptyFrames();
 
   if (oldest_frame->FrameType() == kVideoFrameKey) {
     waiting_for_key_frame_ = false;
@@ -1028,9 +1024,6 @@ VCMEncodedFrame* VCMJitterBuffer::GetFrameForDecodingNACK() {
   // frames to avoid empty frames being cleaned up and then given to the
   // decoder.
   oldest_frame->SetState(kStateDecoding);
-
-  // Clean up old frames and empty frames.
-  CleanUpOldOrEmptyFrames();
 
   if (oldest_frame->FrameType() == kVideoFrameKey) {
     waiting_for_key_frame_ = false;
