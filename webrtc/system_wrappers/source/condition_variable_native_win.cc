@@ -15,6 +15,7 @@
 namespace webrtc {
 
 static HMODULE library = NULL;
+static bool win_support_condition_variables_primitive = false;
 
 PInitializeConditionVariable  PInitializeConditionVariable_;
 PSleepConditionVariableCS     PSleepConditionVariableCS_;
@@ -43,7 +44,6 @@ ConditionVariableWrapper* ConditionVariableNativeWin::Create() {
 }
 
 bool ConditionVariableNativeWin::Init() {
-  bool win_support_condition_variables_primitive = false;
   if (!library) {
     // Native implementation is supported on Vista+.
     library = LoadLibrary(TEXT("Kernel32.dll"));
