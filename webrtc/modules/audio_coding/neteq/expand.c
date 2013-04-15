@@ -1141,11 +1141,15 @@ int WebRtcNetEQ_Expand(DSPInst_t *inst,
         {
             /* Only noise expansion */
             inst->statInst.expandedNoiseSamples += *pw16_len;
+            /* Short-term activity statistics. */
+            inst->activity_stats.expand_bgn_samples += *pw16_len;
         }
         else
         {
             /* Voice expand (note: not necessarily _voiced_) */
             inst->statInst.expandedVoiceSamples += *pw16_len;
+            /* Short-term activity statistics. */
+            inst->activity_stats.expand_normal_samples += *pw16_len;
         }
     }
 

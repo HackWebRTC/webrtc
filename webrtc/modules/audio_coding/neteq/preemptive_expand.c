@@ -181,6 +181,8 @@ int WebRtcNetEQ_PreEmptiveExpand(DSPInst_t *inst,
 
         /* update statistics */
         inst->statInst.preemptiveLength += w16_bestIndex;
+        /* Short-term activity statistics. */
+        inst->activity_stats.preemptive_expand_bgn_samples += w16_bestIndex;
 
         return 0;
     } /* end of special code for BGN mode */
@@ -489,7 +491,8 @@ int WebRtcNetEQ_PreEmptiveExpand(DSPInst_t *inst,
 
         /* Update in-call statistics */
         inst->statInst.preemptiveLength += w16_bestIndex;
-
+        /* Short-term activity statistics. */
+        inst->activity_stats.preemptive_expand_normal_samples += w16_bestIndex;
         return 0;
     }
     else

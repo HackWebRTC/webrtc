@@ -1644,3 +1644,30 @@ int WebRtcNetEQ_SetVADMode(void *inst, int mode)
 #endif /* NETEQ_VAD */
 
 }
+
+void WebRtcNetEQ_GetProcessingActivity(void *inst,
+                                       WebRtcNetEQ_ProcessingActivity *stats) {
+  MainInst_t *NetEqMainInst = (MainInst_t*) inst;
+
+  stats->accelerate_bgn_samples =
+      NetEqMainInst->DSPinst.activity_stats.accelerate_bgn_samples;
+  stats->accelerate_normal_samples =
+      NetEqMainInst->DSPinst.activity_stats.accelarate_normal_samples;
+
+  stats->expand_bgn_sampels =
+      NetEqMainInst->DSPinst.activity_stats.expand_bgn_samples;
+  stats->expand_normal_samples =
+      NetEqMainInst->DSPinst.activity_stats.expand_normal_samples;
+
+  stats->preemptive_expand_bgn_samples =
+      NetEqMainInst->DSPinst.activity_stats.preemptive_expand_bgn_samples;
+  stats->preemptive_expand_normal_samples =
+      NetEqMainInst->DSPinst.activity_stats.preemptive_expand_normal_samples;
+
+  stats->merge_expand_bgn_samples =
+      NetEqMainInst->DSPinst.activity_stats.merge_expand_bgn_samples;
+  stats->merge_expand_normal_samples =
+      NetEqMainInst->DSPinst.activity_stats.merge_expand_normal_samples;
+
+  WebRtcNetEQ_ClearActivityStats(&NetEqMainInst->DSPinst);
+}

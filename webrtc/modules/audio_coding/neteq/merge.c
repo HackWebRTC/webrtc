@@ -535,11 +535,17 @@ int WebRtcNetEQ_Merge(DSPInst_t *inst,
     {
         /* expansion generates noise only */
         inst->statInst.expandedNoiseSamples += (*pw16_len - w16_decodedLen);
+        /* Short-term activity statistics. */
+       inst->activity_stats.merge_expand_bgn_samples +=
+            (*pw16_len - w16_decodedLen);
     }
     else
     {
         /* expansion generates more than only noise */
         inst->statInst.expandedVoiceSamples += (*pw16_len - w16_decodedLen);
+        /* Short-term activity statistics. */
+        inst->activity_stats.merge_expand_normal_samples +=
+            (*pw16_len - w16_decodedLen);
     }
     inst->statInst.expandLength += (*pw16_len - w16_decodedLen);
 

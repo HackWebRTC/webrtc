@@ -396,6 +396,23 @@ int WebRtcNetEQ_ClearPostCallStats(DSPInst_t *inst)
     return (0);
 }
 
+/****************************************************************************
+ * WebRtcNetEQ_ClearActivityStats(...)
+ *
+ * Reset processing activity statistics.
+ *
+ * Input:
+ *    - inst          : NetEQ DSP instance
+ *
+ * Output:
+ *    - inst          : Updated instance
+ *
+ */
+
+void WebRtcNetEQ_ClearActivityStats(DSPInst_t *inst) {
+  memset(&inst->activity_stats, 0, sizeof(ActivityStats));
+}
+
 #ifdef NETEQ_VAD
 
 /****************************************************************************

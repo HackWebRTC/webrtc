@@ -37,5 +37,20 @@ typedef struct
 
 } DSPStats_t;
 
+typedef struct {
+  int preemptive_expand_bgn_samples;
+  int preemptive_expand_normal_samples;
+
+  int expand_bgn_samples;
+  int expand_normal_samples;
+
+  int merge_expand_bgn_samples;
+  int merge_expand_normal_samples;
+
+  int accelerate_bgn_samples;
+  int accelarate_normal_samples;
+} ActivityStats;
+
+
 #endif
 

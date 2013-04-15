@@ -23,6 +23,7 @@
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
 
@@ -655,6 +656,21 @@ int32_t ACMNetEQ::RecOut(AudioFrame& audio_frame) {
   }
   previous_audio_activity_ = audio_frame.vad_activity_;
 
+  WebRtcNetEQ_ProcessingActivity processing_stats;
+  WebRtcNetEQ_GetProcessingActivity(inst_[0], &processing_stats);
+  TRACE_EVENT2("webrtc", "ACM::RecOut",
+               "accelerate bgn", processing_stats.accelerate_bgn_samples,
+               "accelerate normal", processing_stats.accelerate_normal_samples);
+  TRACE_EVENT2("webrtc", "ACM::RecOut",
+               "expand bgn", processing_stats.expand_bgn_sampels,
+               "expand normal", processing_stats.expand_normal_samples);
+  TRACE_EVENT2("webrtc", "ACM::RecOut",
+               "preemptive bgn", processing_stats.preemptive_expand_bgn_samples,
+               "preemptive normal",
+               processing_stats.preemptive_expand_normal_samples);
+  TRACE_EVENT2("webrtc", "ACM::RecOut",
+               "merge bgn", processing_stats.merge_expand_bgn_samples,
+               "merge normal", processing_stats.merge_expand_normal_samples);
   return 0;
 }
 

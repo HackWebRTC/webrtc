@@ -316,6 +316,9 @@ typedef struct DSPInst_t_
     /* Internal statistics instance */
     DSPStats_t statInst;
 
+    /* Internal instance for short-term processing activity. */
+    ActivityStats activity_stats;
+
 #ifdef NETEQ_STEREO
     /* Pointer to Master/Slave info */
     MasterSlaveInfo *msInfo;
@@ -397,6 +400,21 @@ int WebRtcNetEQ_ClearInCallStats(DSPInst_t *inst);
  */
 
 int WebRtcNetEQ_ClearPostCallStats(DSPInst_t *inst);
+
+/****************************************************************************
+ * WebRtcNetEQ_ClearActivityStats(...)
+ *
+ * Reset processing activity statistics.
+ *
+ * Input:
+ *    - inst          : NetEQ DSP instance
+ *
+ * Output:
+ *    - inst          : Updated instance
+ *
+ */
+
+void WebRtcNetEQ_ClearActivityStats(DSPInst_t *inst);
 
 /****************************************************************************
  * WebRtcNetEQ_RecOutInternal(...)

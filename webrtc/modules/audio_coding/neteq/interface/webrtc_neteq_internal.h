@@ -117,6 +117,46 @@ typedef struct
  */
 int WebRtcNetEQ_GetNetworkStatistics(void *inst, WebRtcNetEQ_NetworkStatistics *stats);
 
+
+typedef struct {
+  /* Samples removed from background noise only segments. */
+  int accelerate_bgn_samples;
+
+  /* Samples removed from normal audio segments. */
+  int accelerate_normal_samples;
+
+  /* Number of samples synthesized during background noise only segments. */
+  int expand_bgn_sampels;
+
+  /* Number of samples synthesized during normal audio segments. */
+  int expand_normal_samples;
+
+  /* Number of samples synthesized during background noise only segments,
+   * in preemptive mode. */
+  int preemptive_expand_bgn_samples;
+
+  /* Number of samples synthesized during normal audio segments, in preemptive
+   * mode. */
+  int preemptive_expand_normal_samples;
+
+  /* Number of samples synthesized during background noise only segments,
+   * while merging. */
+  int merge_expand_bgn_samples;
+
+  /* Number of samples synthesized during normal audio segments, while
+   * merging. */
+  int merge_expand_normal_samples;
+} WebRtcNetEQ_ProcessingActivity;
+
+/*
+ * Get the processing activities from NetEQ.
+ * The statistics are reset after the query.
+ * This API is meant to obtain processing activities in high granularity,
+ * e.g. per RecOut() call.
+ */
+void WebRtcNetEQ_GetProcessingActivity(void* inst,
+                                       WebRtcNetEQ_ProcessingActivity* stat);
+
 /*
  * Get the raw waiting times for decoded frames. The function writes the last
  * recorded waiting times (from frame arrival to frame decoding) to the memory
