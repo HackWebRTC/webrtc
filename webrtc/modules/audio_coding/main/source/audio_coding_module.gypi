@@ -106,6 +106,18 @@
         'audio_coding_module_impl.cc',
         'audio_coding_module_impl.h',
       ],
+      'conditions': [
+        ['clang==1', {
+          'cflags': [
+            '-Wno-unsequenced',
+          ],
+          'xcode_settings': {
+            'WARNING_CFLAGS': [
+              '-Wno-unsequenced',
+            ],
+          },
+        }],
+      ],
     },
   ],
   'conditions': [
