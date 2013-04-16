@@ -334,7 +334,6 @@ void VCMReceiver::ReceiveStatistics(uint32_t* bitrate,
   assert(bitrate);
   assert(framerate);
   jitter_buffer_.IncomingRateStatistics(framerate, bitrate);
-  *bitrate /= 1000;  // Should be in kbps.
 }
 
 void VCMReceiver::ReceivedFrameCount(VCMFrameCount* frame_count) const {
