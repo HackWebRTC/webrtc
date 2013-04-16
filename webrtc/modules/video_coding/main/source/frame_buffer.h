@@ -44,6 +44,7 @@ public:
 
     bool IsRetransmitted() const;
     bool IsSessionComplete() const;
+    bool HaveFirstPacket() const;
     bool HaveLastPacket() const;
     // Makes sure the session contain a decodable stream.
     void MakeSessionDecodable();

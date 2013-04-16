@@ -878,11 +878,19 @@ uint16_t* VCMJitterBuffer::GetNackList(uint16_t* nack_list_size,
     return NULL;
   }
   if (last_decoded_state_.in_initial_state()) {
-    const bool have_non_empty_frame = frame_list_.end() != find_if(
-          frame_list_.begin(), frame_list_.end(), HasNonEmptyState);
-    *request_key_frame = have_non_empty_frame;
-    *nack_list_size = 0;
-    return NULL;
+    bool first_frame_is_key = !frame_list_.empty() &&
+        frame_list_.front()->FrameType() == kVideoFrameKey &&
+        frame_list_.front()->HaveFirstPacket();
+    if (!first_frame_is_key) {
+      const bool have_non_empty_frame = frame_list_.end() != find_if(
+            frame_list_.begin(), frame_list_.end(), HasNonEmptyState);
+      bool found_key_frame = RecycleFramesUntilKeyFrame();
+      if (!found_key_frame) {
+        *request_key_frame = have_non_empty_frame;
+        *nack_list_size = 0;
+        return NULL;
+      }
+    }
   }
   if (TooLargeNackList()) {
     TRACE_EVENT_INSTANT1("webrtc", "JB::NackListTooLarge",

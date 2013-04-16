@@ -494,6 +494,24 @@ TEST_F(TestJitterBufferNack, NackListBuiltBeforeFirstDecode) {
   EXPECT_TRUE(list != NULL);
 }
 
+TEST_F(TestJitterBufferNack, UseNackToRecoverFirstKeyFrame) {
+  stream_generator->Init(0, 0, clock_->TimeInMilliseconds());
+  stream_generator->GenerateFrame(kVideoFrameKey, 3, 0,
+                                  clock_->TimeInMilliseconds());
+  EXPECT_EQ(kFirstPacket, InsertPacketAndPop(0));
+  // Drop second packet.
+  EXPECT_EQ(kIncomplete, InsertPacketAndPop(1));
+  EXPECT_FALSE(DecodeCompleteFrame());
+  uint16_t nack_list_size = 0;
+  bool extended = false;
+  uint16_t* list = jitter_buffer_->GetNackList(&nack_list_size, &extended);
+  EXPECT_EQ(1, nack_list_size);
+  ASSERT_TRUE(list != NULL);
+  VCMPacket packet;
+  stream_generator->GetPacket(&packet, 0);
+  EXPECT_EQ(packet.seqNum, list[0]);
+}
+
 TEST_F(TestJitterBufferNack, NormalOperation) {
   EXPECT_EQ(kNack, jitter_buffer_->nack_mode());
 

@@ -59,6 +59,7 @@ class VCMSessionInfo {
   // Returns the number of bytes deleted from the session.
   int MakeDecodable();
   int SessionLength() const;
+  bool HaveFirstPacket() const;
   bool HaveLastPacket() const;
   bool session_nack() const;
   webrtc::FrameType FrameType() const { return frame_type_; }

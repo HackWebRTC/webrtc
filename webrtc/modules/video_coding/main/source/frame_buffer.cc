@@ -217,6 +217,12 @@ VCMFrameBuffer::GetNackCount() const
 }
 
 bool
+VCMFrameBuffer::HaveFirstPacket() const
+{
+    return _sessionInfo.HaveFirstPacket();
+}
+
+bool
 VCMFrameBuffer::HaveLastPacket() const
 {
     return _sessionInfo.HaveLastPacket();

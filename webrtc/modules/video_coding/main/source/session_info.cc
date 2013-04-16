@@ -354,6 +354,11 @@ int VCMSessionInfo::MakeDecodable() {
 }
 
 bool
+VCMSessionInfo::HaveFirstPacket() const {
+  return !packets_.empty() && packets_.front().isFirstPacket;
+}
+
+bool
 VCMSessionInfo::HaveLastPacket() const {
   return (!packets_.empty() && packets_.back().markerBit);
 }
