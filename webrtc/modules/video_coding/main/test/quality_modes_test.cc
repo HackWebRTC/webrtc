@@ -23,6 +23,7 @@
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/data_log.h"
 #include "webrtc/system_wrappers/interface/data_log.h"
+#include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/metrics/video_metrics.h"
 
 using namespace webrtc;

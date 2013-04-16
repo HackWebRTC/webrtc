@@ -8,167 +8,76 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
-#include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/test/receiver_tests.h"
-#include "webrtc/modules/video_coding/main/test/rtp_player.h"
-#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/modules/video_coding/main/test/vcm_payload_sink_factory.h"
 #include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
-using namespace webrtc;
+namespace {
 
-class FrameStorageCallback : public VCMFrameStorageCallback
-{
-public:
-    FrameStorageCallback(VideoCodingModule* vcm) : _vcm(vcm) {}
+const bool kConfigProtectionEnabled = false;
+const webrtc::VCMVideoProtection kConfigProtectionMethod =
+    webrtc::kProtectionNack;
+const float kConfigLossRate = 0.0f;
+const bool kConfigReordering = false;
+const uint32_t kConfigRttMs = 100;
+const uint32_t kConfigRenderDelayMs = 0;
+const uint32_t kConfigMinPlayoutDelayMs = 0;
+const int64_t kConfigMaxRuntimeMs = -1;
 
-    int32_t StoreReceivedFrame(const EncodedVideoData& frameToStore)
-    {
-        _vcm->DecodeFromStorage(frameToStore);
-        return VCM_OK;
+}  // namespace
+
+int DecodeFromStorageTest(const CmdArgs& args) {
+  std::string trace_file = webrtc::test::OutputPath() +
+      "decodeFromStorageTestTrace.txt";
+  webrtc::Trace::CreateTrace();
+  webrtc::Trace::SetTraceFile(trace_file.c_str());
+  webrtc::Trace::SetLevelFilter(webrtc::kTraceAll);
+
+  webrtc::rtpplayer::PayloadTypes payload_types;
+  payload_types.push_back(webrtc::rtpplayer::PayloadCodecTuple(
+      VCM_VP8_PAYLOAD_TYPE, "VP8", webrtc::kVideoCodecVP8));
+
+  std::string output_file = args.outputFile;
+  if (output_file == "") {
+    output_file = webrtc::test::OutputPath() + "DecodeFromStorage.yuv";
+  }
+
+  webrtc::SimulatedClock clock(0);
+  webrtc::rtpplayer::VcmPayloadSinkFactory factory(output_file, &clock,
+      kConfigProtectionEnabled, kConfigProtectionMethod, kConfigRttMs,
+      kConfigRenderDelayMs, kConfigMinPlayoutDelayMs, true);
+  webrtc::scoped_ptr<webrtc::rtpplayer::RtpPlayerInterface> rtp_player(
+      webrtc::rtpplayer::Create(args.inputFile, &factory, &clock, payload_types,
+          kConfigLossRate, kConfigRttMs, kConfigReordering));
+  if (rtp_player.get() == NULL) {
+    return -1;
+  }
+
+  int ret = 0;
+  while ((ret = rtp_player->NextPacket(clock.TimeInMilliseconds())) == 0) {
+    ret = factory.DecodeAndProcessAll(false);
+    if (ret < 0 || (kConfigMaxRuntimeMs > -1 &&
+        clock.TimeInMilliseconds() >= kConfigMaxRuntimeMs)) {
+      break;
     }
+    clock.AdvanceTimeMilliseconds(1);
+  }
 
-private:
-    VideoCodingModule* _vcm;
-};
+  rtp_player->Print();
 
-int DecodeFromStorageTest(CmdArgs& args)
-{
-    // BEGIN Settings
-    bool protectionEnabled = false;
-    VCMVideoProtection protectionMethod = kProtectionNack;
-    uint32_t rttMS = 100;
-    float lossRate = 0.00f;
-    bool reordering = false;
-    uint32_t renderDelayMs = 0;
-    uint32_t minPlayoutDelayMs = 0;
-    const int64_t MAX_RUNTIME_MS = -1;
-    std::string rtpFilename = args.inputFile;
-    std::string outFilename = args.outputFile;
-    if (outFilename == "")
-        outFilename = test::OutputPath() + "DecodeFromStorage.yuv";
-
-    FrameReceiveCallback receiveCallback(outFilename.c_str());
-
-    // END Settings
-
-    Trace::CreateTrace();
-    Trace::SetTraceFile(
-        (test::OutputPath() + "decodeFromStorageTestTrace.txt").c_str());
-    Trace::SetLevelFilter(webrtc::kTraceAll);
-
-
-    SimulatedClock clock(0);
-    NullEventFactory event_factory;
-    // TODO(hlundin): This test was not verified after changing to FakeTickTime.
-    VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock,
-                                                       &event_factory);
-    VideoCodingModule* vcmPlayback = VideoCodingModule::Create(2, &clock,
-                                                               &event_factory);
-    FrameStorageCallback storageCallback(vcmPlayback);
-    RtpDataCallback dataCallback(vcm);
-    int32_t ret = vcm->InitializeReceiver();
-    if (ret < 0)
-    {
-        return -1;
-    }
-    ret = vcmPlayback->InitializeReceiver();
-    if (ret < 0)
-    {
-        return -1;
-    }
-    vcm->RegisterFrameStorageCallback(&storageCallback);
-    vcmPlayback->RegisterReceiveCallback(&receiveCallback);
-    RTPPlayer rtpStream(rtpFilename.c_str(), &dataCallback, &clock);
-    PayloadTypeList payloadTypes;
-    payloadTypes.push_front(new PayloadCodecTuple(VCM_VP8_PAYLOAD_TYPE, "VP8",
-                                                  kVideoCodecVP8));
-
-    // Register receive codecs in VCM
-    for (PayloadTypeList::iterator it = payloadTypes.begin();
-        it != payloadTypes.end(); ++it) {
-        PayloadCodecTuple* payloadType = *it;
-        if (payloadType != NULL)
-        {
-            VideoCodec codec;
-            memset(&codec, 0, sizeof(codec));
-            strncpy(codec.plName, payloadType->name.c_str(), payloadType->name.length());
-            codec.plName[payloadType->name.length()] = '\0';
-            codec.plType = payloadType->payloadType;
-            codec.codecType = payloadType->codecType;
-            if (vcm->RegisterReceiveCodec(&codec, 1) < 0)
-            {
-                return -1;
-            }
-            if (vcmPlayback->RegisterReceiveCodec(&codec, 1) < 0)
-            {
-                return -1;
-            }
-        }
-    }
-    if (rtpStream.Initialize(&payloadTypes) < 0)
-    {
-        return -1;
-    }
-    bool nackEnabled = protectionEnabled && (protectionMethod == kProtectionNack ||
-                                            protectionMethod == kProtectionDualDecoder);
-    rtpStream.SimulatePacketLoss(lossRate, nackEnabled, rttMS);
-    rtpStream.SetReordering(reordering);
-    vcm->SetChannelParameters(0, 0, rttMS);
-    vcm->SetVideoProtection(protectionMethod, protectionEnabled);
-    vcm->SetRenderDelay(renderDelayMs);
-    vcm->SetMinimumPlayoutDelay(minPlayoutDelayMs);
-
-    ret = 0;
-
-    // RTP stream main loop
-    while ((ret = rtpStream.NextPacket(clock.TimeInMilliseconds())) == 0)
-    {
-        if (clock.TimeInMilliseconds() % 5 == 0)
-        {
-            ret = vcm->Decode();
-            if (ret < 0)
-            {
-                return -1;
-            }
-        }
-        if (vcm->TimeUntilNextProcess() <= 0)
-        {
-            vcm->Process();
-        }
-        if (MAX_RUNTIME_MS > -1 && clock.TimeInMilliseconds() >= MAX_RUNTIME_MS)
-        {
-            break;
-        }
-        clock.AdvanceTimeMilliseconds(1);
-    }
-
-    switch (ret)
-    {
+  switch (ret) {
     case 1:
-        printf("Success\n");
-        break;
+      printf("Success\n");
+      break;
     case -1:
-        printf("Failed\n");
-        break;
+      printf("Failed\n");
+      break;
     case 0:
-        printf("Timeout\n");
-        break;
-    }
+      printf("Timeout\n");
+      break;
+  }
 
-    rtpStream.Print();
-
-    // Tear down
-    while (!payloadTypes.empty())
-    {
-        delete payloadTypes.front();
-        payloadTypes.pop_front();
-    }
-    VideoCodingModule::Destroy(vcm);
-    vcm = NULL;
-    VideoCodingModule::Destroy(vcmPlayback);
-    vcmPlayback = NULL;
-    Trace::ReturnTrace();
-
-    return 0;
+  webrtc::Trace::ReturnTrace();
+  return 0;
 }

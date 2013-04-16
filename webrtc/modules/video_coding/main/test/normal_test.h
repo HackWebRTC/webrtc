@@ -14,6 +14,7 @@
 #include "video_coding.h"
 #include "test_util.h"
 
+#include <fstream>
 #include <map>
 
 class NormalTest;

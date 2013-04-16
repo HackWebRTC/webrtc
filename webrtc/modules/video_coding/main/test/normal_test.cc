@@ -21,9 +21,10 @@
 #include "webrtc/modules/video_coding/main/test/test_callbacks.h"
 #include "webrtc/modules/video_coding/main/test/test_macros.h"
 #include "webrtc/modules/video_coding/main/test/test_util.h"
-#include "webrtc/test/testsupport/metrics/video_metrics.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/metrics/video_metrics.h"
 
 using namespace webrtc;
 

@@ -24,6 +24,7 @@
 #include "webrtc/modules/video_coding/main/test/test_macros.h"
 #include "webrtc/modules/video_coding/main/test/test_util.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 using namespace webrtc;
 

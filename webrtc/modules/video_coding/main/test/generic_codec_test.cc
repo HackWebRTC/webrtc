@@ -18,6 +18,7 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/test/test_macros.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 using namespace webrtc;
 
