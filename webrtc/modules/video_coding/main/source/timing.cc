@@ -108,6 +108,10 @@ VCMTiming::SetRequiredDelay(uint32_t requiredDelayMs)
                     "Desired jitter buffer level: %u ms", requiredDelayMs);
         }
         _requiredDelayMs = requiredDelayMs;
+        // When in initial state, set current delay to minimum delay.
+        if (_currentDelayMs == 0) {
+           _currentDelayMs = _requiredDelayMs;
+        }
     }
 }
 
@@ -270,7 +274,6 @@ VCMTiming::RenderTimeMsInternal(uint32_t frameTimestamp, int64_t nowMs) const
     {
         estimatedCompleteTimeMs = nowMs;
     }
-
     return estimatedCompleteTimeMs + _currentDelayMs;
 }
 

@@ -95,19 +95,19 @@ protected:
     uint32_t TargetDelayInternal() const;
 
 private:
-    CriticalSectionWrapper*       _critSect;
-    int32_t                 _vcmId;
-    Clock*                        _clock;
-    int32_t                 _timingId;
-    bool                          _master;
-    VCMTimestampExtrapolator*     _tsExtrapolator;
-    VCMCodecTimer                 _codecTimer;
-    uint32_t                _renderDelayMs;
-    uint32_t                _minTotalDelayMs;
-    uint32_t                _requiredDelayMs;
-    uint32_t                _currentDelayMs;
-    uint32_t                _prevFrameTimestamp;
-    int                           _maxVideoDelayMs;
+    CriticalSectionWrapper* _critSect;
+    int32_t _vcmId;
+    Clock* _clock;
+    int32_t _timingId;
+    bool _master;
+    VCMTimestampExtrapolator* _tsExtrapolator;
+    VCMCodecTimer _codecTimer;
+    uint32_t _renderDelayMs;
+    uint32_t _minTotalDelayMs;
+    uint32_t _requiredDelayMs;
+    uint32_t _currentDelayMs;
+    uint32_t _prevFrameTimestamp;
+    int _maxVideoDelayMs;
 };
 
 } // namespace webrtc

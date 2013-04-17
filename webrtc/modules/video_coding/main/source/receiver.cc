@@ -420,6 +420,8 @@ int VCMReceiver::SetMinReceiverDelay(int desired_delay_ms) {
   jitter_buffer_.SetMaxJitterEstimate(desired_delay_ms);
   max_video_delay_ms_ = desired_delay_ms + kMaxVideoDelayMs;
   timing_->SetMaxVideoDelay(max_video_delay_ms_);
+  // Initializing timing to the desired delay.
+  timing_->SetRequiredDelay(desired_delay_ms);
   return 0;
 }
 
