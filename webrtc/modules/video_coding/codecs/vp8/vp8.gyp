@@ -11,15 +11,6 @@
     '../../../../build/common.gypi',
     '../test_framework/test_framework.gypi'
   ],
-  'variables': {
-    'conditions': [
-      ['build_with_chromium==1', {
-        'use_temporal_layers%': 0,
-      }, {
-        'use_temporal_layers%': 1,
-      }],
-    ],
-  },
   'targets': [
     {
       'target_name': 'webrtc_vp8',
@@ -41,25 +32,6 @@
             '<(DEPTH)/third_party/libvpx/libvpx.gyp:libvpx',
           ],
         }],
-        # TODO(mikhal): Investigate this mechanism for handling differences
-        # between the Chromium and standalone builds.
-        # http://code.google.com/p/webrtc/issues/detail?id=201
-        ['build_with_chromium==1', {
-          'defines': [
-            'WEBRTC_LIBVPX_VERSION=960' # Bali
-          ],
-        }, {
-          'defines': [
-            'WEBRTC_LIBVPX_VERSION=971' # Cayuga
-          ],
-        }],
-        ['use_temporal_layers==1', {
-          'sources': [
-            'default_temporal_layers.cc',
-            'default_temporal_layers.h',
-            'temporal_layers.h',
-          ],
-        }],
       ],
       'direct_dependent_settings': {
         'include_dirs': [
@@ -74,6 +46,9 @@
         'include/vp8.h',
         'include/vp8_common_types.h',
         'vp8_impl.cc',
+        'default_temporal_layers.cc',
+        'default_temporal_layers.h',
+        'temporal_layers.h',
       ],
       # Disable warnings to enable Win64 build, issue 1323.
       'msvs_disabled_warnings': [
