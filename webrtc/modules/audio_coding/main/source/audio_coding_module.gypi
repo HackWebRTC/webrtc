@@ -190,6 +190,7 @@
              '../../codecs/isac/fix/source/filterbanks_unittest.cc',
              '../../codecs/isac/fix/source/lpc_masking_model_unittest.cc',
              '../../codecs/isac/fix/source/transform_unittest.cc',
+             '../../codecs/opus/opus_unittest.cc',
              # Test for NetEq 4.
              '../../neteq4/audio_multi_vector_unittest.cc',
              '../../neteq4/audio_vector_unittest.cc',
