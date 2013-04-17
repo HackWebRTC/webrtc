@@ -17,7 +17,7 @@ namespace webrtc {
 namespace test {
 
 const std::string kInputFilename = "temp_inputfile.tmp";
-const std::string kInputFileContents = "baz";
+const std::string kInputFileContents = "emmastjernloef";
 // Setting the kFrameLength value to a value much larger than the
 // file to test causes the ReadFrame test to fail on Windows.
 const size_t kFrameLength = 1000;
