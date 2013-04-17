@@ -3182,11 +3182,14 @@ Channel::SetSendTelephoneEventPayloadType(unsigned char type)
     memcpy(codec.plname, "telephone-event", 16);
     if (_rtpRtcpModule->RegisterSendPayload(codec) != 0)
     {
-        _engineStatisticsPtr->SetLastError(
-            VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-            "SetSendTelephoneEventPayloadType() failed to register send"
-            "payload type");
-        return -1;
+        _rtpRtcpModule->DeRegisterSendPayload(codec.pltype);
+        if (_rtpRtcpModule->RegisterSendPayload(codec) != 0) {
+            _engineStatisticsPtr->SetLastError(
+                VE_RTP_RTCP_MODULE_ERROR, kTraceError,
+                "SetSendTelephoneEventPayloadType() failed to register send"
+                "payload type");
+            return -1;
+        }
     }
     _sendTelephoneEventPayloadType = type;
     return 0;
