@@ -3677,8 +3677,8 @@ Exit:
 
     if (FAILED(hr))
     {
-        _UnLock();
         _ptrClientOut->Stop();
+        _UnLock();
         _TraceCOMError(hr);
     }
 
@@ -3690,19 +3690,23 @@ Exit:
         }
     }
 
+    _Lock();
+
     if (keepPlaying)
     {
-        hr = _ptrClientOut->Stop();
-        if (FAILED(hr))
+        if (_ptrClientOut != NULL)
         {
-            _TraceCOMError(hr);
+            hr = _ptrClientOut->Stop();
+            if (FAILED(hr))
+            {
+                _TraceCOMError(hr);
+            }
+            hr = _ptrClientOut->Reset();
+            if (FAILED(hr))
+            {
+                _TraceCOMError(hr);
+            }
         }
-        hr = _ptrClientOut->Reset();
-        if (FAILED(hr))
-        {
-            _TraceCOMError(hr);
-        }
-
         // Trigger callback from module process thread
         _playError = 1;
         WEBRTC_TRACE(kTraceError, kTraceUtility, _id, "kPlayoutError message posted: rendering thread has ended pre-maturely");
@@ -3711,6 +3715,8 @@ Exit:
     {
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "_Rendering thread is now terminated properly");
     }
+
+    _UnLock();
 
     return (DWORD)hr;
 }
@@ -4177,12 +4183,14 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread()
 Exit:
     if (FAILED(hr))
     {
-        _UnLock();
         _ptrClientIn->Stop();
+        _UnLock();
         _TraceCOMError(hr);
     }
 
     RevertCaptureThreadPriority();
+
+    _Lock();
 
     if (keepRecording)
     {
@@ -4211,6 +4219,8 @@ Exit:
 
     SAFE_RELEASE(_ptrClientIn);
     SAFE_RELEASE(_ptrCaptureClient);
+
+    _UnLock();
 
     if (syncBuffer)
     {
