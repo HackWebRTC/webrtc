@@ -10,7 +10,6 @@
 
 #include "modules/remote_bitrate_estimator/remote_rate_control.h"
 
-#include <algorithm>
 #include <assert.h>
 #include <math.h>
 #include <string.h>
@@ -92,7 +91,7 @@ bool RemoteRateControl::ValidEstimate() const {
 
 bool RemoteRateControl::TimeToReduceFurther(
     int64_t time_now, unsigned int incoming_bitrate) const {
-  const int bitrate_reduction_interval = std::max(std::min(_rtt, 200u), 10u);
+  const int bitrate_reduction_interval = BWE_MAX(BWE_MIN(_rtt, 200), 10);
   if (time_now - _lastBitRateChange >= bitrate_reduction_interval) {
     return true;
   }
@@ -113,7 +112,7 @@ int32_t RemoteRateControl::SetConfiguredBitRates(
     }
     _minConfiguredBitRate = minBitRateBps;
     _maxConfiguredBitRate = maxBitRateBps;
-    _currentBitRate = std::min(std::max(minBitRateBps, _currentBitRate),
+    _currentBitRate = BWE_MIN(BWE_MAX(minBitRateBps, _currentBitRate),
                               maxBitRateBps);
     return 0;
 }
@@ -215,7 +214,7 @@ uint32_t RemoteRateControl::ChangeBitRate(uint32_t currentBitRate,
     {
     case kRcHold:
         {
-            _maxHoldRate = std::max(_maxHoldRate, incomingBitRate);
+            _maxHoldRate = BWE_MAX(_maxHoldRate, incomingBitRate);
             break;
         }
     case kRcIncrease:
@@ -277,7 +276,7 @@ uint32_t RemoteRateControl::ChangeBitRate(uint32_t currentBitRate,
                     {
                         currentBitRate = static_cast<uint32_t>(_beta * _avgMaxBitRate * 1000 + 0.5f);
                     }
-                    currentBitRate = std::min(currentBitRate, _currentBitRate);
+                    currentBitRate = BWE_MIN(currentBitRate, _currentBitRate);
                 }
                 ChangeRegion(kRcNearMax);
 
@@ -394,7 +393,7 @@ void RemoteRateControl::UpdateMaxBitRateEstimate(float incomingBitRateKbps)
     }
     // Estimate the max bit rate variance and normalize the variance
     // with the average max bit rate.
-    const float norm = std::max(_avgMaxBitRate, 1.0f);
+    const float norm = BWE_MAX(_avgMaxBitRate, 1.0f);
     _varMaxBitRate = (1 - alpha) * _varMaxBitRate +
                alpha * (_avgMaxBitRate - incomingBitRateKbps) *
                        (_avgMaxBitRate - incomingBitRateKbps) /
