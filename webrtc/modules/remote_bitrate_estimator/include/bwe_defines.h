@@ -13,9 +13,6 @@
 
 #include "typedefs.h"
 
-#define BWE_MAX(a,b) ((a)>(b)?(a):(b))
-#define BWE_MIN(a,b) ((a)<(b)?(a):(b))
-
 namespace webrtc {
 enum BandwidthUsage
 {

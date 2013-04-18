@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <algorithm>
 #include <math.h>
 #include <stdlib.h>  // fabsf
 #if _WIN32
@@ -25,6 +26,10 @@ extern MatlabEngine eng;  // global variable defined elsewhere
 
 enum { kOverUsingTimeThreshold = 100 };
 enum { kMinFramePeriodHistoryLength = 60 };
+
+namespace {
+const uint16_t kMaxDeltas = 60;
+}
 
 namespace webrtc {
 OveruseDetector::OveruseDetector(const OverUseDetectorOptions& options)
@@ -249,7 +254,7 @@ void OveruseDetector::UpdateKalman(int64_t t_delta,
   const double residual = t_ts_delta - slope_*h[0] - offset_;
 
   const bool stable_state =
-      (BWE_MIN(num_of_deltas_, 60) * fabsf(offset_) < threshold_);
+      (std::min(num_of_deltas_, kMaxDeltas) * fabsf(offset_) < threshold_);
   // We try to filter out very late frames. For instance periodic key
   // frames doesn't fit the Gaussian model well.
   if (fabsf(residual) < 3 * sqrt(var_noise_)) {
@@ -306,7 +311,8 @@ void OveruseDetector::UpdateKalman(int64_t t_delta,
   plots_.plot1_->Plot();
 
   plots_.plot2_->Append("offset", offset_);
-  plots_.plot2_->Append("limitPos", threshold_/BWE_MIN(num_of_deltas_, 60));
+  plots_.plot2_->Append("limitPos", threshold_ /
+      std::min(num_of_deltas_, kMaxDeltas));
   plots_.plot2_->Plot();
 
   plots_.plot3_->Append("noiseVar", var_noise_);
@@ -322,7 +328,7 @@ double OveruseDetector::UpdateMinFramePeriod(double ts_delta) {
   }
   std::list<double>::iterator it = ts_delta_hist_.begin();
   for (; it != ts_delta_hist_.end(); it++) {
-    min_frame_period = BWE_MIN(*it, min_frame_period);
+    min_frame_period = std::min(*it, min_frame_period);
   }
   ts_delta_hist_.push_back(ts_delta);
   return min_frame_period;
@@ -357,7 +363,7 @@ BandwidthUsage OveruseDetector::Detect(double ts_delta) {
   if (num_of_deltas_ < 2) {
     return kBwNormal;
   }
-  const double T = BWE_MIN(num_of_deltas_, 60) * offset_;
+  const double T = std::min(num_of_deltas_, kMaxDeltas) * offset_;
   if (fabsf(T) > threshold_) {
     if (offset_ > 0) {
       if (time_over_using_ == -1) {
