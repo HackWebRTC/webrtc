@@ -145,12 +145,6 @@ int32_t VCMReceiver::InsertPacket(const VCMPacket& packet,
                      "First packet of frame %u at %u", packet.timestamp,
                      MaskWord64ToUWord32(now_ms));
       }
-      render_time_ms = timing_->RenderTimeMs(packet.timestamp, now_ms);
-      if (render_time_ms >= 0) {
-        buffer->SetRenderTime(render_time_ms);
-      } else {
-        buffer->SetRenderTime(now_ms);
-      }
     }
 
     // Insert packet into the jitter buffer both media and empty packets.
@@ -187,11 +181,11 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
     // No timestamp in jitter buffer at the moment.
     return NULL;
   }
-  const uint32_t time_stamp = static_cast<uint32_t>(ret);
 
-  // Update the timing.
   timing_->SetRequiredDelay(jitter_buffer_.EstimatedJitterMs());
-  timing_->UpdateCurrentDelay(time_stamp);
+  timing_->UpdateCurrentDelay(ret);
+  const int64_t now_ms = clock_->TimeInMilliseconds();
+  next_render_time_ms = timing_->RenderTimeMs(ret, now_ms);
 
   const int32_t temp_wait_time = max_wait_time_ms -
       static_cast<int32_t>(clock_->TimeInMilliseconds() - start_time_ms);
@@ -209,6 +203,15 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
   }
 
   if (frame != NULL) {
+    // Set render time.
+    const int64_t now_ms = clock_->TimeInMilliseconds();
+    const int64_t render_time_ms = timing_->RenderTimeMs(frame->TimeStamp(),
+        now_ms);
+    if (render_time_ms >= 0) {
+      frame->SetRenderTime(render_time_ms);
+    } else {
+      frame->SetRenderTime(now_ms);
+    }
     bool retransmitted = false;
     const int64_t last_packet_time_ms =
       jitter_buffer_.LastPacketTime(frame, &retransmitted);
@@ -216,7 +219,7 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
       // We don't want to include timestamps which have suffered from
       // retransmission here, since we compensate with extra retransmission
       // delay within the jitter estimate.
-      timing_->IncomingTimestamp(time_stamp, last_packet_time_ms);
+      timing_->IncomingTimestamp(frame->TimeStamp(), last_packet_time_ms);
     }
     if (dual_receiver != NULL) {
       dual_receiver->UpdateState(*frame);
