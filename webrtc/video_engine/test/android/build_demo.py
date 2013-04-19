@@ -54,7 +54,8 @@ def main():
   cmd = RunInAndroidEnv('ndk-build')
   print cmd
   try:
-    subprocess.check_call(cmd, cwd=_CURRENT_DIR, shell=True)
+    subprocess.check_call(cmd, cwd=_CURRENT_DIR, executable='/bin/bash',
+                          shell=True)
   except subprocess.CalledProcessError as e:
     print 'NDK build failed: %s' % e
     print '@@@STEP_FAILURE@@@'
@@ -64,7 +65,8 @@ def main():
   cmd = RunInAndroidEnv('ant %s' % options.target.lower())
   print cmd
   try:
-    subprocess.check_call(cmd, cwd=_CURRENT_DIR, shell=True)
+    subprocess.check_call(cmd, cwd=_CURRENT_DIR, executable='/bin/bash',
+                          shell=True)
   except subprocess.CalledProcessError as e:
     print 'Ant build failed: %s' % e
     print '@@@STEP_FAILURE@@@'
