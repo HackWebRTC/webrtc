@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
 #
@@ -29,6 +29,7 @@ function build_project() {
 
   if [ "$?" != "0" ]; then
     echo "[Error] build $1 failed!" 1>&2
+    echo "@@@STEP_FAILURE@@@"
     exit 1
   fi
 }
@@ -42,13 +43,18 @@ CONFIGURATION=Debug
 GYPDEF="OS=ios target_arch=arm armv7=1 arm_neon=1 enable_video=0 include_opus=1"
 
 export GYP_DEFINES=$GYPDEF
-# update gyp settings
-echo '[Updating gyp settings...]'
-./build/gyp_chromium --depth=. webrtc.gyp
-echo '[Updated]\n'
+echo "[Running gclient runhooks...]"
+echo "@@@BUILD_STEP runhooks@@@"
+gclient runhooks
+if [ "$?" != "0" ]; then
+  echo "[Error] gclient runhooks failed!" 1>&2
+  echo "@@@STEP_FAILURE@@@"
+  exit 2
+fi
+echo "[Projects updated]\n"
 
-# build the xcode projects
-echo '[Building xcode projects...]'
+echo "@@@BUILD_STEP compile@@@"
+echo "[Building XCode projects...]"
 array_target_module=(
   "bitrate_controller" "media_file" "paced_sender" "remote_bitrate_estimator"
   "webrtc_utility" "rtp_rtcp" "CNG" "G711" "G722" "iLBC" "iSACFix" "PCM16B"
@@ -62,6 +68,6 @@ build_project "webrtc/modules/modules.xcodeproj" array_target_module[@]
 build_project "webrtc/system_wrappers/source/system_wrappers.xcodeproj"
 build_project "webrtc/voice_engine/voice_engine.xcodeproj"
 build_project "third_party/opus/opus.xcodeproj" array_target_opus[@]
-echo '[Building xcode projects is successful]\n'
+echo "[Building XCode projects is successful]\n"
 
 exit 0
