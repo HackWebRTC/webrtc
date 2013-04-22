@@ -68,8 +68,9 @@ void AcmNetEqTest::InsertZeroPacket(uint16_t sequence_number,
   rtp_header.header.payloadType = payload_type;
   rtp_header.header.markerBit = marker_bit;
   rtp_header.type.Audio.channel = 1;
+  // Receive timestamp can be set to send timestamp in this test.
   ASSERT_EQ(0, neteq_.RecIn(reinterpret_cast<uint8_t*>(payload),
-                            len_payload_bytes, rtp_header));
+                            len_payload_bytes, rtp_header, timestamp));
 }
 
 void AcmNetEqTest::PullData(int expected_num_samples) {

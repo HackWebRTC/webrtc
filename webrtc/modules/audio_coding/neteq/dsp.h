@@ -422,24 +422,25 @@ void WebRtcNetEQ_ClearActivityStats(DSPInst_t *inst);
  * This function asks NetEQ for more speech/audio data.
  *
  * Input:
- *		- inst			: NetEQ instance, i.e. the user that requests more 
- *						  speech/audio data.
- *		- outdata		: Pointer to a memory space where the output data
- *						  should be stored.
- *      - BGNonly       : If non-zero, RecOut will only produce background
- *                        noise. It will still draw packets from the packet
- *                        buffer, but they will never be decoded.
+ *    - inst      : NetEQ instance, i.e. the user that requests more
+ *                  speech/audio data.
+ *    - outdata   : Pointer to a memory space where the output data
+ *                  should be stored.
+ *    - BGNonly   : If non-zero, RecOut will only produce background
+ *                  noise. It will still draw packets from the packet
+ *                  buffer, but they will never be decoded.
+ *    - av_sync   : 1 if NetEQ is in AV-sync, 0 otherwise.
  *
  * Output:
- *		- inst			: Updated user information
- *		- len			: Number of samples that were outputted from NetEq
+ *    - inst      : Updated user information
+ *    - len       : Number of samples that were outputted from NetEq
  *
- * Return value			:  0 - Ok
- *						  -1 - Error
+ * Return value   : 0 - Ok
+ *                 -1 - Error
  */
 
-int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, int16_t *pw16_outData, int16_t *pw16_len,
-                       int16_t BGNonly);
+int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, int16_t *pw16_outData,
+                               int16_t *pw16_len, int16_t BGNonly, int av_sync);
 
 /****************************************************************************
  * WebRtcNetEQ_Normal(...)

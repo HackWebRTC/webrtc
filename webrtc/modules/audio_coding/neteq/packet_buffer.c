@@ -12,11 +12,14 @@
  * Implementation of the actual packet buffer data structure.
  */
 
+#include <assert.h>
 #include "packet_buffer.h"
 
 #include <string.h> /* to define NULL */
 
 #include "signal_processing_library.h"
+
+#include "mcu_dsp_common.h"
 
 #include "neteq_error_codes.h"
 
@@ -140,7 +143,7 @@ int WebRtcNetEQ_PacketBufferFlush(PacketBuf_t *bufferInst)
 
 
 int WebRtcNetEQ_PacketBufferInsert(PacketBuf_t *bufferInst, const RTPPacket_t *RTPpacket,
-                                   int16_t *flushed)
+                                   int16_t *flushed, int av_sync)
 {
     int nextPos;
     int i;
@@ -167,6 +170,43 @@ int WebRtcNetEQ_PacketBufferInsert(PacketBuf_t *bufferInst, const RTPPacket_t *R
     {
         /* faulty or too long payload length */
         return (-1);
+    }
+
+    /* If we are in AV-sync mode, there is a risk that we have inserted a sync
+     * packet but now received the real version of it. Or because of some timing
+     * we might be overwriting a true payload with sync (I'm not sure why this
+     * should happen in regular case, but in some FEC enabled case happens).
+     * Go through packets and delete the sync version of the packet in hand. Or
+     * if this is sync packet and the regular version of it exists in the buffer
+     * refrain from inserting.
+     *
+     * TODO(turajs): Could we get this for free if we had set the RCU-counter of
+     * the sync packet to a number larger than 2?
+     */
+    if (av_sync) {
+      for (i = 0; i < bufferInst->maxInsertPositions; ++i) {
+        /* Check if sequence numbers match and the payload actually exists. */
+        if (bufferInst->seqNumber[i] == RTPpacket->seqNumber &&
+            bufferInst->payloadLengthBytes[i] > 0) {
+          if (WebRtcNetEQ_IsSyncPayload(RTPpacket->payload,
+                                        RTPpacket->payloadLen)) {
+            return 0;
+          }
+
+          if (WebRtcNetEQ_IsSyncPayload(bufferInst->payloadLocation[i],
+                                        bufferInst->payloadLengthBytes[i])) {
+            /* Clear the position in the buffer. */
+            bufferInst->payloadType[i] = -1;
+            bufferInst->payloadLengthBytes[i] = 0;
+
+            /* Reduce packet counter by one. */
+            bufferInst->numPacketsInBuffer--;
+            /* TODO(turajs) if this is the latest packet better we rewind
+             * insertPosition and related variables. */
+            break;  /* There should be only one match. */
+          }
+        }
+      }
     }
 
     /* Find a position in the buffer for this packet */
@@ -406,7 +446,6 @@ int WebRtcNetEQ_PacketBufferFindLowestTimestamp(PacketBuf_t* buffer_inst,
   int32_t new_diff;
   int i;
   int16_t rcu_payload_cntr;
-
   if (buffer_inst->startPayloadMemory == NULL) {
     /* Packet buffer has not been initialized. */
     return PBUFFER_NOT_INITIALIZED;
@@ -493,10 +532,19 @@ int WebRtcNetEQ_PacketBufferFindLowestTimestamp(PacketBuf_t* buffer_inst,
 int WebRtcNetEQ_PacketBufferGetPacketSize(const PacketBuf_t* buffer_inst,
                                           int buffer_pos,
                                           const CodecDbInst_t* codec_database,
-                                          int codec_pos, int last_duration) {
+                                          int codec_pos, int last_duration,
+                                          int av_sync) {
   if (codec_database->funcDurationEst[codec_pos] == NULL) {
     return last_duration;
   }
+
+  if (av_sync != 0 &&
+      WebRtcNetEQ_IsSyncPayload(buffer_inst->payloadLocation[buffer_pos],
+                                buffer_inst->payloadLengthBytes[buffer_pos])) {
+    // In AV-sync and sync payload, report |last_duration| as current duration.
+    return last_duration;
+  }
+
   return (*codec_database->funcDurationEst[codec_pos])(
     codec_database->codec_state[codec_pos],
     (const uint8_t *)buffer_inst->payloadLocation[buffer_pos],
@@ -504,7 +552,8 @@ int WebRtcNetEQ_PacketBufferGetPacketSize(const PacketBuf_t* buffer_inst,
 }
 
 int32_t WebRtcNetEQ_PacketBufferGetSize(const PacketBuf_t* buffer_inst,
-                                        const CodecDbInst_t* codec_database) {
+                                        const CodecDbInst_t* codec_database,
+                                        int av_sync) {
   int i, count;
   int last_duration;
   int last_codec_pos;
@@ -546,9 +595,12 @@ int32_t WebRtcNetEQ_PacketBufferGetSize(const PacketBuf_t* buffer_inst,
          * last_duration to compute a changing duration, we would have to
          * iterate through the packets in chronological order by timestamp.
          */
-         last_duration = WebRtcNetEQ_PacketBufferGetPacketSize(
-           buffer_inst, i, codec_database, codec_pos,
-           last_duration);
+        /* Check for error before setting. */
+        int temp_last_duration = WebRtcNetEQ_PacketBufferGetPacketSize(
+            buffer_inst, i, codec_database, codec_pos,
+            last_duration, av_sync);
+        if (temp_last_duration >= 0)
+          last_duration = temp_last_duration;
       }
       /* Add in the size of this packet. */
       size_samples += last_duration;
@@ -560,7 +612,6 @@ int32_t WebRtcNetEQ_PacketBufferGetSize(const PacketBuf_t* buffer_inst,
   if (size_samples < 0) {
     size_samples = 0;
   }
-
   return size_samples;
 }
 

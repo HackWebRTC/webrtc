@@ -21,6 +21,7 @@
 #include "webrtc/modules/audio_coding/main/source/acm_resampler.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 
@@ -42,6 +43,9 @@ enum {
   kNumFecFragmentationVectors = 2,
   kMaxNumFragmentationVectors = 3
 };
+
+static const uint32_t kMaskTimestamp = 0x03ffffff;
+static const int kDefaultTimestampDiff = 960;  // 20 ms @ 48 kHz.
 
 namespace {
 
@@ -85,7 +89,7 @@ int UpMix(const AudioFrame& frame, int length_out_buff, int16_t* out_buff) {
 
 // Return 1 if timestamp t1 is less than timestamp t2, while compensating for
 // wrap-around.
-static int TimestampLessThan(uint32_t t1, uint32_t t2) {
+int TimestampLessThan(uint32_t t1, uint32_t t2) {
   uint32_t kHalfFullRange = static_cast<uint32_t>(0xFFFFFFFF) / 2;
   if (t1 == t2) {
     return 0;
@@ -98,6 +102,21 @@ static int TimestampLessThan(uint32_t t1, uint32_t t2) {
       return 0;
     return 1;
   }
+}
+
+//
+// Return the timestamp of current time, computed according to sampling rate
+// of the codec identified by |codec_id|.
+//
+uint32_t NowTimestamp(int codec_id) {
+  // Down-cast the time to (32-6)-bit since we only care about
+  // the least significant bits. (32-6) bits cover 2^(32-6) = 67108864 ms.
+  // we masked 6 most significant bits of 32-bit so we don't loose resolution
+  // when do the following multiplication.
+  int sample_rate_khz = ACMCodecDB::database_[codec_id].plfreq / 1000;
+  const uint32_t now_in_ms = static_cast<uint32_t>(
+      TickTime::MillisecondTimestamp() & kMaskTimestamp);
+  return static_cast<uint32_t>(sample_rate_khz * now_in_ms);
 }
 
 }  // namespace
@@ -147,7 +166,12 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(const int32_t id)
       first_payload_received_(false),
       last_incoming_send_timestamp_(0),
       track_neteq_buffer_(false),
-      playout_ts_(0) {
+      playout_ts_(0),
+      av_sync_(false),
+      last_timestamp_diff_(kDefaultTimestampDiff),
+      last_sequence_number_(0),
+      last_ssrc_(0),
+      last_packet_was_sync_(false) {
 
   // Nullify send codec memory, set payload type and set codec name to
   // invalid values.
@@ -1574,8 +1598,8 @@ int AudioCodingModuleImpl::SetVADSafe(bool enable_dtx,
   // If a send codec is registered, set VAD/DTX for the codec.
   if (HaveValidEncoder("SetVAD")) {
     int16_t status = codecs_[current_send_codec_idx_]->SetVAD(enable_dtx,
-                                                                    enable_vad,
-                                                                    mode);
+                                                              enable_vad,
+                                                              mode);
     if (status == 1) {
       // Vad was enabled.
       vad_enabled_ = true;
@@ -1981,6 +2005,29 @@ int32_t AudioCodingModuleImpl::IncomingPacket(
     // and "received frequency."
     CriticalSectionScoped lock(acm_crit_sect_);
 
+    // Check there are packets missed between the last injected packet, and the
+    // latest received packet. If so and we are in AV-sync mode then we would
+    // like to fill the gap. Shouldn't be the first payload.
+    if (av_sync_ && first_payload_received_ &&
+        rtp_info.header.sequenceNumber > last_sequence_number_ + 1) {
+      // If the last packet pushed was sync-packet account for all missing
+      // packets. Otherwise leave some room for PLC.
+      if (last_packet_was_sync_) {
+        while (rtp_info.header.sequenceNumber > last_sequence_number_ + 2) {
+          PushSyncPacketSafe();
+        }
+      } else {
+        // Leave two packet room for NetEq perform PLC.
+        if (rtp_info.header.sequenceNumber > last_sequence_number_ + 3) {
+          last_sequence_number_ += 2;
+          last_incoming_send_timestamp_ += last_timestamp_diff_ * 2;
+          last_receive_timestamp_ += 2 * last_timestamp_diff_;
+          while (rtp_info.header.sequenceNumber > last_sequence_number_ + 1)
+            PushSyncPacketSafe();
+        }
+      }
+    }
+
     uint8_t my_payload_type;
 
     // Check if this is an RED payload.
@@ -2010,32 +2057,18 @@ int32_t AudioCodingModuleImpl::IncomingPacket(
         }
         // Codec is changed, there might be a jump in timestamp, therefore,
         // we have to reset some variables that track NetEq buffer.
-        if (track_neteq_buffer_) {
+        if (track_neteq_buffer_ || av_sync_) {
           last_incoming_send_timestamp_ = rtp_info.header.timestamp;
         }
       }
       last_recv_audio_codec_pltype_ = my_payload_type;
     }
 
-    if (track_neteq_buffer_) {
-      const int in_sample_rate_khz =
-          (ACMCodecDB::database_[current_receive_codec_idx_].plfreq / 1000);
-      if (first_payload_received_) {
-        if (rtp_info.header.timestamp > last_incoming_send_timestamp_) {
-          accumulated_audio_ms_ += (rtp_info.header.timestamp -
-              last_incoming_send_timestamp_) / in_sample_rate_khz;
-        }
-      } else {
-        first_payload_received_ = true;
-      }
-      num_packets_accumulated_++;
-      last_incoming_send_timestamp_ = rtp_info.header.timestamp;
-      playout_ts_ = static_cast<uint32_t>(
-          rtp_info.header.timestamp - static_cast<uint32_t>(
-              initial_delay_ms_ * in_sample_rate_khz));
-    }
+    // Current timestamp based on the receiver sampling frequency.
+    last_receive_timestamp_ = NowTimestamp(current_receive_codec_idx_);
   }
 
+  int per_neteq_payload_length = payload_length;
   // Split the payload for stereo packets, so that first half of payload
   // vector holds left channel, and second half holds right channel.
   if (expected_channels_ == 2) {
@@ -2047,24 +2080,46 @@ int32_t AudioCodingModuleImpl::IncomingPacket(
       memcpy(payload, incoming_payload, payload_length);
       codecs_[current_receive_codec_idx_]->SplitStereoPacket(payload, &length);
       rtp_header.type.Audio.channel = 2;
-      if (track_neteq_buffer_)
-        num_bytes_accumulated_ += length / 2;  // Per neteq, half is inserted
-                                               // into master and half to slave.
+      per_neteq_payload_length = length / 2;
       // Insert packet into NetEQ.
-      return neteq_.RecIn(payload, length, rtp_header);
+      if (neteq_.RecIn(payload, length, rtp_header,
+                       last_receive_timestamp_) < 0)
+        return -1;
     } else {
-      // If we receive a CNG packet while expecting stereo, we ignore the packet
-      // and continue. CNG is not supported for stereo.
+      // If we receive a CNG packet while expecting stereo, we ignore the
+      // packet and continue. CNG is not supported for stereo.
       return 0;
     }
   } else {
-    {
-      CriticalSectionScoped lock(acm_crit_sect_);
-      if (track_neteq_buffer_)
-        num_bytes_accumulated_ += payload_length;
-    }
-    return neteq_.RecIn(incoming_payload, payload_length, rtp_header);
+    if (neteq_.RecIn(incoming_payload, payload_length, rtp_header,
+                     last_receive_timestamp_) < 0)
+      return -1;
   }
+
+  {
+    CriticalSectionScoped lock(acm_crit_sect_);
+
+    // Update buffering uses |last_incoming_send_timestamp_| so it should be
+    // before the next block.
+    if (track_neteq_buffer_)
+      UpdateBufferingSafe(rtp_header, per_neteq_payload_length);
+
+    if (av_sync_) {
+      if(rtp_info.header.sequenceNumber == last_sequence_number_ + 1) {
+        last_timestamp_diff_ = rtp_info.header.timestamp -
+            last_incoming_send_timestamp_;
+      }
+      last_sequence_number_ = rtp_info.header.sequenceNumber;
+      last_ssrc_ = rtp_info.header.ssrc;
+      last_packet_was_sync_ = false;
+    }
+
+    if (av_sync_ || track_neteq_buffer_) {
+      last_incoming_send_timestamp_ = rtp_info.header.timestamp;
+      first_payload_received_ = true;
+    }
+  }
+  return 0;
 }
 
 int AudioCodingModuleImpl::UpdateUponReceivingCodec(int index) {
@@ -2257,9 +2312,9 @@ int32_t AudioCodingModuleImpl::PlayoutData10Ms(
   audio_frame->speech_type_ = audio_frame_.speech_type_;
 
   stereo_mode = (audio_frame_.num_channels_ > 1);
+
   // For stereo playout:
   // Master and Slave samples are interleaved starting with Master.
-
   const uint16_t receive_freq =
       static_cast<uint16_t>(audio_frame_.sample_rate_hz_);
   bool tone_detected = false;
@@ -2269,6 +2324,23 @@ int32_t AudioCodingModuleImpl::PlayoutData10Ms(
   // Limit the scope of ACM Critical section.
   {
     CriticalSectionScoped lock(acm_crit_sect_);
+
+    // If we are in AV-sync and number of packets is below a threshold or
+    // next packet is late then inject a sync packet.
+    if (av_sync_ && NowTimestamp(current_receive_codec_idx_) > 5 *
+        last_timestamp_diff_ + last_receive_timestamp_) {
+      if (!last_packet_was_sync_) {
+        // If the last packet inserted has been a regular packet Skip two
+        // packets to give room for PLC.
+        last_incoming_send_timestamp_ += 2 * last_timestamp_diff_;
+        last_sequence_number_ += 2;
+        last_receive_timestamp_ += 2 * last_timestamp_diff_;
+      }
+
+      // One sync packet.
+      if (PushSyncPacketSafe() < 0)
+        return -1;
+    }
 
     if ((receive_freq != desired_freq_hz) && (desired_freq_hz != -1)) {
       TRACE_EVENT_ASYNC_END2("webrtc", "ACM::PlayoutData10Ms", 0,
@@ -2449,7 +2521,11 @@ int32_t AudioCodingModuleImpl::RegisterVADCallback(
   return 0;
 }
 
+// TODO(turajs): Remove this API if it is not used.
 // TODO(tlegrand): Modify this function to work for stereo, and add tests.
+// TODO(turajs): Receive timestamp in this method is incremented by frame-size
+// and does not reflect the true receive frame-size. Therefore, subsequent
+// jitter computations are not accurate.
 int32_t AudioCodingModuleImpl::IncomingPayload(
     const uint8_t* incoming_payload, const int32_t payload_length,
     const uint8_t payload_type, const uint32_t timestamp) {
@@ -2512,8 +2588,10 @@ int32_t AudioCodingModuleImpl::IncomingPayload(
   // and "received frequency."
   last_recv_audio_codec_pltype_ = payload_type;
 
+  last_receive_timestamp_ += recv_pl_frame_size_smpls_;
   // Insert in NetEQ.
-  if (neteq_.RecIn(incoming_payload, payload_length, *dummy_rtp_header_) < 0) {
+  if (neteq_.RecIn(incoming_payload, payload_length, *dummy_rtp_header_,
+                   last_receive_timestamp_) < 0) {
     return -1;
   }
 
@@ -2836,6 +2914,7 @@ void AudioCodingModuleImpl::ResetFragmentation(int vector_size) {
       static_cast<uint16_t>(vector_size);
 }
 
+// TODO(turajs): Add second parameter to enable/disable AV-sync.
 int AudioCodingModuleImpl::SetInitialPlayoutDelay(int delay_ms) {
   if (delay_ms < 0 || delay_ms > 10000) {
     return -1;
@@ -2854,13 +2933,19 @@ int AudioCodingModuleImpl::SetInitialPlayoutDelay(int delay_ms) {
   }
   initial_delay_ms_ = delay_ms;
   track_neteq_buffer_ = true;
+  av_sync_ = true;
+  neteq_.EnableAVSync(av_sync_);
   return neteq_.SetExtraDelay(delay_ms);
 }
 
 bool AudioCodingModuleImpl::GetSilence(int desired_sample_rate_hz,
                                        AudioFrame* frame) {
   CriticalSectionScoped lock(acm_crit_sect_);
-  if (initial_delay_ms_ == 0 || accumulated_audio_ms_ >= initial_delay_ms_) {
+  if (initial_delay_ms_ == 0 || !track_neteq_buffer_) {
+    return false;
+  }
+
+  if (accumulated_audio_ms_ >= initial_delay_ms_) {
     track_neteq_buffer_ = false;
     return false;
   }
@@ -2904,6 +2989,52 @@ bool AudioCodingModuleImpl::GetSilence(int desired_sample_rate_hz,
   int samples = frame->samples_per_channel_ * frame->num_channels_;
   memset(frame->data_, 0, samples * sizeof(int16_t));
   return true;
+}
+
+// Must be called within the scope of ACM critical section.
+int AudioCodingModuleImpl::PushSyncPacketSafe() {
+  assert(av_sync_);
+  last_sequence_number_++;
+  last_incoming_send_timestamp_ += last_timestamp_diff_;
+  last_receive_timestamp_ += last_timestamp_diff_;
+
+  WebRtcRTPHeader rtp_info;
+  rtp_info.header.payloadType = last_recv_audio_codec_pltype_;
+  rtp_info.header.ssrc = last_ssrc_;
+  rtp_info.header.markerBit = false;
+  rtp_info.header.sequenceNumber = last_sequence_number_;
+  rtp_info.header.timestamp = last_incoming_send_timestamp_;
+  rtp_info.type.Audio.channel = stereo_receive_ ? 2 : 1;
+  last_packet_was_sync_ = true;
+  int payload_len_bytes = neteq_.RecIn(rtp_info, last_receive_timestamp_);
+
+  if (payload_len_bytes < 0)
+    return -1;
+
+  // This is to account for sync packets inserted during the buffering phase.
+  if (track_neteq_buffer_)
+    UpdateBufferingSafe(rtp_info, payload_len_bytes);
+
+  return 0;
+}
+
+// Must be called within the scope of ACM critical section.
+void AudioCodingModuleImpl::UpdateBufferingSafe(const WebRtcRTPHeader& rtp_info,
+                                                int payload_len_bytes) {
+  const int in_sample_rate_khz =
+      (ACMCodecDB::database_[current_receive_codec_idx_].plfreq / 1000);
+  if (first_payload_received_ &&
+      rtp_info.header.timestamp > last_incoming_send_timestamp_) {
+      accumulated_audio_ms_ += (rtp_info.header.timestamp -
+          last_incoming_send_timestamp_) / in_sample_rate_khz;
+  }
+
+  num_packets_accumulated_++;
+  num_bytes_accumulated_ += payload_len_bytes;
+
+  playout_ts_ = static_cast<uint32_t>(
+      rtp_info.header.timestamp - static_cast<uint32_t>(
+          initial_delay_ms_ * in_sample_rate_khz));
 }
 
 }  // namespace webrtc

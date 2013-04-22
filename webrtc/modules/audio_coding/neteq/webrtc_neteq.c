@@ -440,6 +440,9 @@ int WebRtcNetEQ_Init(void *inst, uint16_t fs)
     NetEqMainInst->MCUinst.NoOfExpandCalls = 0;
     NetEqMainInst->MCUinst.fs = fs;
 
+    /* Not in AV-sync by default. */
+    NetEqMainInst->MCUinst.av_sync = 0;
+
 #ifdef NETEQ_ATEVENT_DECODE
     /* init DTMF decoder */
     ok = WebRtcNetEQ_DtmfDecoderInit(&(NetEqMainInst->MCUinst.DTMF_inst),fs,560);
@@ -806,7 +809,7 @@ int WebRtcNetEQ_RecOut(void *inst, int16_t *pw16_outData, int16_t *pw16_len)
 #endif
 
     ok = WebRtcNetEQ_RecOutInternal(&NetEqMainInst->DSPinst, pw16_outData,
-        pw16_len, 0 /* not BGN only */);
+        pw16_len, 0 /* not BGN only */, NetEqMainInst->MCUinst.av_sync);
     if (ok != 0)
     {
         NetEqMainInst->ErrorCode = -ok;
@@ -887,7 +890,7 @@ int WebRtcNetEQ_RecOutMasterSlave(void *inst, int16_t *pw16_outData,
     }
 
     ok  = WebRtcNetEQ_RecOutInternal(&NetEqMainInst->DSPinst, pw16_outData,
-        pw16_len, 0 /* not BGN only */);
+        pw16_len, 0 /* not BGN only */, NetEqMainInst->MCUinst.av_sync);
     if (ok != 0)
     {
         NetEqMainInst->ErrorCode = -ok;
@@ -958,7 +961,7 @@ int WebRtcNetEQ_RecOutNoDecode(void *inst, int16_t *pw16_outData,
 #endif
 
     ok = WebRtcNetEQ_RecOutInternal(&NetEqMainInst->DSPinst, pw16_outData,
-        pw16_len, 1 /* BGN only */);
+        pw16_len, 1 /* BGN only */, NetEqMainInst->MCUinst.av_sync);
     if (ok != 0)
     {
         NetEqMainInst->ErrorCode = -ok;
@@ -1186,7 +1189,8 @@ int WebRtcNetEQ_GetNetworkStatistics(void *inst, WebRtcNetEQ_NetworkStatistics *
         /* Query packet buffer for number of samples. */
         temp32 = WebRtcNetEQ_PacketBufferGetSize(
             &NetEqMainInst->MCUinst.PacketBuffer_inst,
-            &NetEqMainInst->MCUinst.codec_DB_inst);
+            &NetEqMainInst->MCUinst.codec_DB_inst,
+            NetEqMainInst->MCUinst.av_sync);
 
         /* Divide by sample rate.
          * Calculate temp32 * 1000 / fs to get result in ms. */
@@ -1670,4 +1674,22 @@ void WebRtcNetEQ_GetProcessingActivity(void *inst,
       NetEqMainInst->DSPinst.activity_stats.merge_expand_normal_samples;
 
   WebRtcNetEQ_ClearActivityStats(&NetEqMainInst->DSPinst);
+}
+
+void WebRtcNetEQ_EnableAVSync(void* inst, int enable) {
+  MainInst_t *NetEqMainInst = (MainInst_t*) inst;
+  NetEqMainInst->MCUinst.av_sync = (enable != 0) ? 1 : 0;
+}
+
+int WebRtcNetEQ_RecInSyncRTP(void* inst, WebRtcNetEQ_RTPInfo* rtp_info,
+                             uint32_t receive_timestamp) {
+  MainInst_t *NetEqMainInst = (MainInst_t*) inst;
+  if (NetEqMainInst->MCUinst.av_sync == 0)
+    return -1;
+  if (WebRtcNetEQ_RecInRTPStruct(inst, rtp_info, kSyncPayload,
+                                 SYNC_PAYLOAD_LEN_BYTES,
+                                 receive_timestamp) < 0) {
+    return -1;
+  }
+  return SYNC_PAYLOAD_LEN_BYTES;
 }

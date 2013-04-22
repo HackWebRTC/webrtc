@@ -21,7 +21,6 @@
 #include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq_internal.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
-#include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 
@@ -49,7 +48,8 @@ ACMNetEQ::ACMNetEQ()
       callback_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       min_of_max_num_packets_(0),
       min_of_buffer_size_bytes_(0),
-      per_packet_overhead_bytes_(0) {
+      per_packet_overhead_bytes_(0),
+      av_sync_(false) {
   for (int n = 0; n < MAX_NUM_SLAVE_NETEQ + 1; n++) {
     is_initialized_[n] = false;
     ptr_vadinst_[n] = NULL;
@@ -436,12 +436,12 @@ int32_t ACMNetEQ::NetworkStatistics(
   return 0;
 }
 
-int32_t ACMNetEQ::RecIn(const uint8_t* incoming_payload,
-                        const int32_t length_payload,
-                        const WebRtcRTPHeader& rtp_info) {
-  int16_t payload_length = static_cast<int16_t>(length_payload);
+// Should only be called in AV-sync mode.
+int ACMNetEQ::RecIn(const WebRtcRTPHeader& rtp_info,
+                    uint32_t receive_timestamp) {
+  assert(av_sync_);
 
-  // translate to NetEq struct
+  // Translate to NetEq structure.
   WebRtcNetEQ_RTPInfo neteq_rtpinfo;
   neteq_rtpinfo.payloadType = rtp_info.header.payloadType;
   neteq_rtpinfo.sequenceNumber = rtp_info.header.sequenceNumber;
@@ -450,15 +450,53 @@ int32_t ACMNetEQ::RecIn(const uint8_t* incoming_payload,
   neteq_rtpinfo.markerBit = rtp_info.header.markerBit;
 
   CriticalSectionScoped lock(neteq_crit_sect_);
-  // Down-cast the time to (32-6)-bit since we only care about
-  // the least significant bits. (32-6) bits cover 2^(32-6) = 67108864 ms.
-  // we masked 6 most significant bits of 32-bit so we don't loose resolution
-  // when do the following multiplication.
-  const uint32_t now_in_ms =
-      static_cast<uint32_t>(
-          TickTime::MillisecondTimestamp() & 0x03ffffff);
-  uint32_t recv_timestamp = static_cast<uint32_t>(
-      current_samp_freq_khz_ * now_in_ms);
+
+  // Master should be initialized.
+  assert(is_initialized_[0]);
+
+  // Push into Master.
+  int status = WebRtcNetEQ_RecInSyncRTP(inst_[0], &neteq_rtpinfo,
+                                        receive_timestamp);
+  if (status < 0) {
+    LogError("RecInSyncRTP", 0);
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
+                 "RecIn (sync): NetEq, error in pushing in Master");
+    return -1;
+  }
+
+  // If the received stream is stereo, insert a sync payload into slave.
+  if (rtp_info.type.Audio.channel == 2) {
+    // Slave should be initialized.
+    assert(is_initialized_[1]);
+
+    // PUSH into Slave
+    status = WebRtcNetEQ_RecInSyncRTP(inst_[1], &neteq_rtpinfo,
+                                      receive_timestamp);
+    if (status < 0) {
+      LogError("RecInRTPStruct", 1);
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
+                   "RecIn (sync): NetEq, error in pushing in Slave");
+      return -1;
+    }
+  }
+  return status;
+}
+
+int32_t ACMNetEQ::RecIn(const uint8_t* incoming_payload,
+                        const int32_t length_payload,
+                        const WebRtcRTPHeader& rtp_info,
+                        uint32_t receive_timestamp) {
+  int16_t payload_length = static_cast<int16_t>(length_payload);
+
+  // Translate to NetEq structure.
+  WebRtcNetEQ_RTPInfo neteq_rtpinfo;
+  neteq_rtpinfo.payloadType = rtp_info.header.payloadType;
+  neteq_rtpinfo.sequenceNumber = rtp_info.header.sequenceNumber;
+  neteq_rtpinfo.timeStamp = rtp_info.header.timestamp;
+  neteq_rtpinfo.SSRC = rtp_info.header.ssrc;
+  neteq_rtpinfo.markerBit = rtp_info.header.markerBit;
+
+  CriticalSectionScoped lock(neteq_crit_sect_);
 
   int status;
   // In case of stereo payload, first half of the data should be pushed into
@@ -473,10 +511,10 @@ int32_t ACMNetEQ::RecIn(const uint8_t* incoming_payload,
                  "RecIn: NetEq is not initialized.");
     return -1;
   }
-  // PUSH into Master
+  // Push into Master.
   status = WebRtcNetEQ_RecInRTPStruct(inst_[0], &neteq_rtpinfo,
                                       incoming_payload, payload_length,
-                                      recv_timestamp);
+                                      receive_timestamp);
   if (status < 0) {
     LogError("RecInRTPStruct", 0);
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
@@ -491,10 +529,10 @@ int32_t ACMNetEQ::RecIn(const uint8_t* incoming_payload,
                    "RecIn: NetEq is not initialized.");
       return -1;
     }
-    // PUSH into Slave
+    // Push into Slave.
     status = WebRtcNetEQ_RecInRTPStruct(inst_[1], &neteq_rtpinfo,
                                         &incoming_payload[payload_length],
-                                        payload_length, recv_timestamp);
+                                        payload_length, receive_timestamp);
     if (status < 0) {
       LogError("RecInRTPStruct", 1);
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
@@ -529,7 +567,6 @@ int32_t ACMNetEQ::RecOut(AudioFrame& audio_frame) {
         LogError("RecOut", 0);
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                      "RecOut: NetEq, error in pulling out for mono case");
-
         // Check for errors that can be recovered from:
         // RECOUT_ERROR_SAMPLEUNDERRUN = 2003
         int error_code = WebRtcNetEQ_GetErrorCode(inst_[0]);
@@ -1056,6 +1093,8 @@ int16_t ACMNetEQ::AddSlave(const WebRtcNetEQDecoder* used_codecs,
                    "AddSlave: AddSlave Failed, Could not Set Playout Mode.");
       return -1;
     }
+    // Set AV-sync for the slave.
+    WebRtcNetEQ_EnableAVSync(inst_[slave_idx], av_sync_ ? 1 : 0);
   }
 
   return 0;
@@ -1069,6 +1108,15 @@ void ACMNetEQ::set_received_stereo(bool received_stereo) {
 uint8_t ACMNetEQ::num_slaves() {
   CriticalSectionScoped lock(neteq_crit_sect_);
   return num_slaves_;
+}
+
+void ACMNetEQ::EnableAVSync(bool enable) {
+  CriticalSectionScoped lock(neteq_crit_sect_);
+  av_sync_ = enable;
+  for (int i = 0; i < num_slaves_ + 1; ++i) {
+    assert(is_initialized_[i]);
+    WebRtcNetEQ_EnableAVSync(inst_[i], enable ? 1 : 0);
+  }
 }
 
 }  // namespace webrtc

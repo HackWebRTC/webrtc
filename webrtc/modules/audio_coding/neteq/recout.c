@@ -96,7 +96,8 @@ extern uint32_t tot_received_packets;
 
 
 int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, int16_t *pw16_outData,
-                               int16_t *pw16_len, int16_t BGNonly)
+                               int16_t *pw16_len, int16_t BGNonly,
+                               int av_sync)
 {
 
     int16_t blockLen, payloadLen, len = 0, pos;
@@ -413,25 +414,36 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, int16_t *pw16_outData,
                 int16_t dec_Len;
                 if (!BGNonly)
                 {
+                  /* Check if this is a sync payload. */
+                  if (av_sync && WebRtcNetEQ_IsSyncPayload(blockPtr,
+                                                           payloadLen)) {
+                    /* Zero-stuffing with same size as the last frame. */
+                    dec_Len = inst->w16_frameLen;
+                    memset(&pw16_decoded_buffer[len], 0, dec_Len *
+                           sizeof(pw16_decoded_buffer[len]));
+                  } else {
                     /* Do decoding as normal
                      *
                      * blockPtr is pointing to payload, at this point,
-                     * the most significant bit of *(blockPtr - 1) is a flag if set to 1
-                     * indicates that the following payload is the redundant payload.
+                     * the most significant bit of *(blockPtr - 1) is a flag if
+                     * set to 1 indicates that the following payload is the
+                     * redundant payload.
                      */
                     if (((*(blockPtr - 1) & DSP_CODEC_RED_FLAG) != 0)
                         && (inst->codec_ptr_inst.funcDecodeRCU != NULL))
                     {
-                        dec_Len = inst->codec_ptr_inst.funcDecodeRCU(
-                            inst->codec_ptr_inst.codec_state, blockPtr, payloadLen,
-                            &pw16_decoded_buffer[len], &speechType);
+                      dec_Len = inst->codec_ptr_inst.funcDecodeRCU(
+                          inst->codec_ptr_inst.codec_state, blockPtr,
+                          payloadLen, &pw16_decoded_buffer[len], &speechType);
                     }
                     else
                     {
-                        dec_Len = inst->codec_ptr_inst.funcDecode(
-                            inst->codec_ptr_inst.codec_state, blockPtr, payloadLen,
-                            &pw16_decoded_buffer[len], &speechType);
+                      /* Regular decoding. */
+                      dec_Len = inst->codec_ptr_inst.funcDecode(
+                          inst->codec_ptr_inst.codec_state, blockPtr,
+                          payloadLen, &pw16_decoded_buffer[len], &speechType);
                     }
+                  }
                 }
                 else
                 {

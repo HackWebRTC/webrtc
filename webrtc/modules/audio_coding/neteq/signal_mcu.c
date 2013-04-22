@@ -43,9 +43,12 @@ static int WebRtcNetEQ_UpdatePackSizeSamples(MCUInst_t* inst, int buffer_pos,
     if (codec_pos >= 0) {
       codec_pos = inst->codec_DB_inst.position[codec_pos];
       if (codec_pos >= 0) {
-        return WebRtcNetEQ_PacketBufferGetPacketSize(
-          &inst->PacketBuffer_inst, buffer_pos,
-          &inst->codec_DB_inst, codec_pos, pack_size_samples);
+        int temp_packet_size_samples = WebRtcNetEQ_PacketBufferGetPacketSize(
+            &inst->PacketBuffer_inst, buffer_pos, &inst->codec_DB_inst,
+            codec_pos, pack_size_samples, inst->av_sync);
+        if (temp_packet_size_samples > 0)
+          return temp_packet_size_samples;
+        return pack_size_samples;
       }
     }
   }
@@ -245,7 +248,7 @@ int WebRtcNetEQ_SignalMcu(MCUInst_t *inst)
 
     /* Check packet buffer */
     w32_bufsize = WebRtcNetEQ_PacketBufferGetSize(&inst->PacketBuffer_inst,
-        &inst->codec_DB_inst);
+        &inst->codec_DB_inst, inst->av_sync);
 
     if (dspInfo.lastMode == MODE_SUCCESS_ACCELERATE || dspInfo.lastMode
         == MODE_LOWEN_ACCELERATE || dspInfo.lastMode == MODE_SUCCESS_PREEMPTIVE

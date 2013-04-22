@@ -43,7 +43,8 @@ int WebRtcNetEQ_RecInInternal(MCUInst_t *MCU_inst, RTPPacket_t *RTPpacketInput,
 #endif
 
     temp_bufsize = WebRtcNetEQ_PacketBufferGetSize(&MCU_inst->PacketBuffer_inst,
-                                                   &MCU_inst->codec_DB_inst);
+                                                   &MCU_inst->codec_DB_inst,
+                                                   MCU_inst->av_sync);
     /*
      * Copy from input RTP packet to local copy
      * (mainly to enable multiple payloads using RED)
@@ -223,7 +224,7 @@ int WebRtcNetEQ_RecInInternal(MCUInst_t *MCU_inst, RTPPacket_t *RTPpacketInput,
                 MCU_inst->current_Codec = -1;
             }
             i_ok = WebRtcNetEQ_PacketBufferInsert(&MCU_inst->PacketBuffer_inst,
-                &RTPpacket[i_k], &flushed);
+                &RTPpacket[i_k], &flushed, MCU_inst->av_sync);
             if (i_ok < 0)
             {
                 return RECIN_CNG_ERROR;
@@ -259,7 +260,8 @@ int WebRtcNetEQ_RecInInternal(MCUInst_t *MCU_inst, RTPPacket_t *RTPpacketInput,
 
             /* Parse the payload and insert it into the buffer */
             i_ok = WebRtcNetEQ_SplitAndInsertPayload(&RTPpacket[i_k],
-                &MCU_inst->PacketBuffer_inst, &MCU_inst->PayloadSplit_inst, &flushed);
+                &MCU_inst->PacketBuffer_inst, &MCU_inst->PayloadSplit_inst,
+                &flushed, MCU_inst->av_sync);
             if (i_ok < 0)
             {
                 return i_ok;
@@ -311,8 +313,8 @@ int WebRtcNetEQ_RecInInternal(MCUInst_t *MCU_inst, RTPPacket_t *RTPpacketInput,
     {
         /* Calculate the total speech length carried in each packet */
         temp_bufsize = WebRtcNetEQ_PacketBufferGetSize(
-            &MCU_inst->PacketBuffer_inst, &MCU_inst->codec_DB_inst)
-            - temp_bufsize;
+            &MCU_inst->PacketBuffer_inst, &MCU_inst->codec_DB_inst,
+            MCU_inst->av_sync) - temp_bufsize;
 
         if ((temp_bufsize > 0) && (MCU_inst->BufferStat_inst.Automode_inst.lastPackCNGorDTMF
             == 0) && (temp_bufsize

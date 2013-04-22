@@ -88,6 +88,13 @@ typedef struct
     int16_t TSscalingInitialized;
     enum TsScaling scalingFactor;
 
+    /* AV-sync enabled. In AV-sync NetEq screens packets for specific sync
+     * packets. Sync packets are not decoded by a decoder but generate all-zero
+     * signal with the same number of samples as previously decoded payload.
+     * Also in AV-sync mode the sample-size of a sync payload is reported as
+     * previous frame-size. */
+    int av_sync;
+
 #ifdef NETEQ_STEREO
     int usingStereo;
 #endif
@@ -196,6 +203,7 @@ int WebRtcNetEQ_McuSetFs(MCUInst_t *inst, uint16_t fs_hz);
  *
  * Input:
  *      - inst          : MCU instance
+ *      - av_sync       : 1 if NetEQ is in AV-sync mode, otherwise 0.
  *
  * Return value         :  0 - Ok
  *                        <0 - Error
@@ -229,12 +237,17 @@ int WebRtcNetEQ_RecInInternal(MCUInst_t *MCU_inst, RTPPacket_t *RTPpacket,
  *      - MCU_inst      : MCU instance
  *      - RTPpacket     : The RTP packet, parsed into NetEQ's internal RTP struct
  *      - uw32_timeRec  : Time stamp for the arrival of the packet (not RTP timestamp)
+ *      - av_sync       : indicates if AV-sync is enabled, 1 enabled,
+ *                        0 disabled.
  *
  * Return value         :  0 - Ok
  *                        -1 - Error
  */
-int WebRtcNetEQ_SplitAndInsertPayload(RTPPacket_t *packet, PacketBuf_t *Buffer_inst,
-                                      SplitInfo_t *split_inst, int16_t *flushed);
+int WebRtcNetEQ_SplitAndInsertPayload(RTPPacket_t* packet,
+                                      PacketBuf_t* Buffer_inst,
+                                      SplitInfo_t* split_inst,
+                                      int16_t* flushed,
+                                      int av_sync);
 
 /****************************************************************************
  * WebRtcNetEQ_GetTimestampScaling(...)

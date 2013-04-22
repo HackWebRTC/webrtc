@@ -31,6 +31,10 @@
     #define SHARED_MEM_SIZE 640
 #endif
 
+#define  SYNC_PAYLOAD_LEN_BYTES  7
+static const uint8_t kSyncPayload[SYNC_PAYLOAD_LEN_BYTES] = {
+    'a', 'v', 's', 'y', 'n', 'c', '\0' };
+
 /* Struct to hold the NetEQ instance */
 typedef struct
 {
@@ -57,5 +61,9 @@ int WebRtcNetEQ_DSPinit(MainInst_t *inst);
 
 /* The DSP side will call this function to interrupt the MCU side */
 int WebRtcNetEQ_DSP2MCUinterrupt(MainInst_t *inst, int16_t *pw16_shared_mem);
+
+/* Returns 1 if the given payload matches |kSyncPayload| payload, otherwise
+ * 0 is returned. */
+int WebRtcNetEQ_IsSyncPayload(const void* payload, int payload_len_bytes);
 
 #endif

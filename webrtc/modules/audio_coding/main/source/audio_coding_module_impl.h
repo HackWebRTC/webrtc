@@ -312,6 +312,18 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
   bool GetSilence(int desired_sample_rate_hz, AudioFrame* frame);
 
+  // Push a synchronization packet into NetEq. Such packets result in a frame
+  // of zeros (not decoded by the corresponding decoder). The size of the frame
+  // is the same as last decoding. NetEq has a special payload for this.
+  // Call within the scope of ACM critical section.
+  int PushSyncPacketSafe();
+
+  // Update the parameters required in initial phase of buffering, when
+  // initial playout delay is requested. Call within the scope of ACM critical
+  // section.
+  void UpdateBufferingSafe(const WebRtcRTPHeader& rtp_info,
+                           int payload_len_bytes);
+
   AudioPacketizationCallback* packetization_callback_;
   int32_t id_;
   uint32_t last_timestamp_;
@@ -395,6 +407,17 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   uint32_t last_incoming_send_timestamp_;
   bool track_neteq_buffer_;
   uint32_t playout_ts_;
+
+  // AV-sync is enabled. In AV-sync mode, sync packet pushed during long packet
+  // losses.
+  bool av_sync_;
+
+  // Latest send timestamp difference of two consecutive packets.
+  uint32_t last_timestamp_diff_;
+  uint16_t last_sequence_number_;
+  uint32_t last_ssrc_;
+  bool last_packet_was_sync_;
+  int64_t last_receive_timestamp_;
 };
 
 }  // namespace webrtc

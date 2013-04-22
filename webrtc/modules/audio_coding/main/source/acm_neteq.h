@@ -60,13 +60,31 @@ class ACMNetEQ {
   //   - rtp_info             : RTP header for the incoming payload containing
   //                            information about payload type, sequence number,
   //                            timestamp, SSRC and marker bit.
+  //   - receive_timestamp    : received timestamp.
   //
   // Return value             : 0 if ok.
   //                           <0 if NetEQ returned an error.
   //
   int32_t RecIn(const uint8_t* incoming_payload,
                 const int32_t length_payload,
-                const WebRtcRTPHeader& rtp_info);
+                const WebRtcRTPHeader& rtp_info,
+                uint32_t receive_timestamp);
+
+  //
+  // RecIn()
+  // Insert a sync payload to NetEq. Should only be called if |av_sync_| is
+  // enabled;
+  //
+  // Input:
+  //   - rtp_info             : RTP header for the incoming payload containing
+  //                            information about payload type, sequence number,
+  //                            timestamp, SSRC and marker bit.
+  //   - receive_timestamp    : received timestamp.
+  //
+  // Return value             : 0 if ok.
+  //                           <0 if NetEQ returned an error.
+  //
+  int RecIn(const WebRtcRTPHeader& rtp_info, uint32_t receive_timestamp);
 
   //
   // RecOut()
@@ -278,6 +296,11 @@ class ACMNetEQ {
     overhead_bytes = per_packet_overhead_bytes_;
   }
 
+  //
+  // Set AV-sync mode.
+  //
+  void EnableAVSync(bool enable);
+
  private:
   //
   // RTPPack()
@@ -350,6 +373,9 @@ class ACMNetEQ {
   // Minimum of buffer-size among all NetEq instances.
   int min_of_buffer_size_bytes_;
   int per_packet_overhead_bytes_;
+
+  // Keep track of AV-sync. Just used to set the slave when a slave is added.
+  bool av_sync_;
 };
 
 }  // namespace webrtc

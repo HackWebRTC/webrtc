@@ -51,7 +51,6 @@ typedef struct
      2 for redundant payload */
     int *waitingTime;
 
-
     /* Statistics counter */
     uint16_t discardedPackets; /* Number of discarded packets */
 
@@ -104,20 +103,21 @@ int WebRtcNetEQ_PacketBufferFlush(PacketBuf_t *bufferInst);
  * This function inserts an RTP packet into the packet buffer.
  *
  * Input:
- *		- bufferInst	: Buffer instance
- *		- RTPpacket		: An RTP packet struct (with payload, sequence
- *						  number, etc.)
+ *    - bufferInst  : Buffer instance
+ *    - RTPpacket   : An RTP packet struct (with payload, sequence
+ *                    number, etc.)
+ *    - av_sync     : 1 indicates AV-sync enabled, 0 disabled.
  *
  * Output:
- *      - bufferInst    : Updated buffer instance
- *		- flushed		: 1 if buffer was flushed, 0 otherwise
+ *    - bufferInst  : Updated buffer instance
+ *    - flushed     : 1 if buffer was flushed, 0 otherwise
  *
- * Return value			:  0 - Ok
- *						  -1 - Error
+ * Return value     : 0 - Ok
+ *                   -1 - Error
  */
 
 int WebRtcNetEQ_PacketBufferInsert(PacketBuf_t *bufferInst, const RTPPacket_t *RTPpacket,
-                                   int16_t *flushed);
+                                   int16_t *flushed, int av_sync);
 
 /****************************************************************************
  * WebRtcNetEQ_PacketBufferExtract(...)
@@ -183,6 +183,7 @@ int WebRtcNetEQ_PacketBufferFindLowestTimestamp(PacketBuf_t* buffer_inst,
  *    - codec_pos       : The codec database entry associated with the payload
  *                        type of the specified buffer.
  *    - last_duration   : The duration of the previous frame.
+ *    - av_sync         : 1 indicates AV-sync enabled, 0 disabled.
  *
  * Return value         : The buffer size in samples
  */
@@ -190,7 +191,8 @@ int WebRtcNetEQ_PacketBufferFindLowestTimestamp(PacketBuf_t* buffer_inst,
 int WebRtcNetEQ_PacketBufferGetPacketSize(const PacketBuf_t* buffer_inst,
                                           int buffer_pos,
                                           const CodecDbInst_t* codec_database,
-                                          int codec_pos, int last_duration);
+                                          int codec_pos, int last_duration,
+                                          int av_sync);
 
 /****************************************************************************
  * WebRtcNetEQ_PacketBufferGetSize(...)
@@ -204,12 +206,14 @@ int WebRtcNetEQ_PacketBufferGetPacketSize(const PacketBuf_t* buffer_inst,
  * Input:
  *    - buffer_inst     : Buffer instance
  *    - codec_database  : Codec database instance
+ *    - av_sync         : 1 indicates AV-sync enabled, 0 disabled.
  *
  * Return value         : The buffer size in samples
  */
 
 int32_t WebRtcNetEQ_PacketBufferGetSize(const PacketBuf_t* buffer_inst,
-                                        const CodecDbInst_t* codec_database);
+                                        const CodecDbInst_t* codec_database,
+                                        int av_sync);
 
 /****************************************************************************
  * WebRtcNetEQ_IncrementWaitingTimes(...)

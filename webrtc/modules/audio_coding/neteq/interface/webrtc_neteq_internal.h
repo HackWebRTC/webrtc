@@ -271,6 +271,44 @@ int WebRtcNetEQ_RecOutNoDecode(void *inst, int16_t *pw16_outData,
 
 int WebRtcNetEQ_FlushBuffers(void *inst);
 
+/*****************************************************************************
+ * void WebRtcNetEq_EnableAVSync(...)
+ *
+ * Enable AV-sync. If Enabled, NetEq will screen for sync payloads. For
+ * each sync payload a silence frame is generated.
+ *
+ * Input:
+ *    - inst          : NetEQ instance
+ *    - enable        : non-zero to enable, otherwise disabled.
+ *
+ * Output:
+ *    - inst          : Updated NetEQ instance
+ *
+ */
+
+void WebRtcNetEQ_EnableAVSync(void* inst, int enable);
+
+/****************************************************************************
+ * WebRtcNetEQ_RecInSyncRTP(...)
+ *
+ * Insert a sync packet with the given RTP specification.
+ *
+ * Input:
+ *    - inst              : NetEQ instance
+ *    - rtpInfo           : Pointer to RTP info
+ *    - receive_timestamp : Receive time (in timestamps of the used codec)
+ *
+ * Output:
+ *    - inst              : Updated NetEQ instance
+ *
+ * Return value           : if succeeded it returns the number of bytes pushed
+ *                          in, otherwise returns -1.
+ */
+
+int WebRtcNetEQ_RecInSyncRTP(void* inst,
+                             WebRtcNetEQ_RTPInfo* rtp_info,
+                             uint32_t receive_timestamp);
+
 #ifdef __cplusplus
 }
 #endif
