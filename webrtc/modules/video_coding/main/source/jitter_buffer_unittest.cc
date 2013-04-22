@@ -373,6 +373,16 @@ TEST_F(TestRunningJitterBuffer, StatisticsTest) {
   EXPECT_EQ(kDefaultBitrateKbps, bitrate);
 }
 
+TEST_F(TestRunningJitterBuffer, SkipToKeyFrame) {
+  // Insert delta frames.
+  EXPECT_GE(InsertFrames(5, kVideoFrameDelta), kNoError);
+  // Can't decode without a key frame.
+  EXPECT_FALSE(DecodeCompleteFrame());
+  InsertFrame(kVideoFrameKey);
+  // Skip to the next key frame.
+  EXPECT_TRUE(DecodeCompleteFrame());
+}
+
 TEST_F(TestJitterBufferNack, EmptyPackets) {
   // Make sure empty packets doesn't clog the jitter buffer.
   jitter_buffer_->SetNackMode(kNack, media_optimization::kLowRttNackMs, -1);
@@ -408,12 +418,12 @@ TEST_F(TestJitterBufferNack, NackTooOldPackets) {
   EXPECT_FALSE(DecodeCompleteFrame());
   EXPECT_FALSE(DecodeFrame());
 
-  EXPECT_GE(InsertFrame(kVideoFrameKey), kNoError);
   // The next complete continuous frame isn't a key frame, but we're waiting
   // for one.
   EXPECT_FALSE(DecodeCompleteFrame());
+  EXPECT_GE(InsertFrame(kVideoFrameKey), kNoError);
   // Skipping ahead to the key frame.
-  EXPECT_TRUE(DecodeFrame());
+  EXPECT_TRUE(DecodeCompleteFrame());
 }
 
 TEST_F(TestJitterBufferNack, NackLargeJitterBuffer) {
@@ -453,16 +463,13 @@ TEST_F(TestJitterBufferNack, NackListFull) {
   EXPECT_TRUE(request_key_frame);
 
   EXPECT_GE(InsertFrame(kVideoFrameDelta), kNoError);
-  // Waiting for a key frame.
-  EXPECT_FALSE(DecodeCompleteFrame());
-  EXPECT_FALSE(DecodeFrame());
-
-  EXPECT_GE(InsertFrame(kVideoFrameKey), kNoError);
   // The next complete continuous frame isn't a key frame, but we're waiting
   // for one.
   EXPECT_FALSE(DecodeCompleteFrame());
+  EXPECT_FALSE(DecodeFrame());
+  EXPECT_GE(InsertFrame(kVideoFrameKey), kNoError);
   // Skipping ahead to the key frame.
-  EXPECT_TRUE(DecodeFrame());
+  EXPECT_TRUE(DecodeCompleteFrame());
 }
 
 TEST_F(TestJitterBufferNack, NoNackListReturnedBeforeFirstDecode) {
