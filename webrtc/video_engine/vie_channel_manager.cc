@@ -363,8 +363,6 @@ bool ViEChannelManager::SetRembStatus(int channel_id, bool sender,
   }
   ViEChannel* channel = ViEChannelPtr(channel_id);
   assert(channel);
-  ViEEncoder* encoder = ViEEncoderPtr(channel_id);
-  assert(encoder);
 
   return group->SetChannelRembStatus(channel_id, sender, receiver, channel);
 }
