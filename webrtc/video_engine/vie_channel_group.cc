@@ -77,17 +77,14 @@ EncoderStateFeedback* ChannelGroup::GetEncoderStateFeedback() {
   return encoder_state_feedback_.get();
 }
 
-bool ChannelGroup::SetChannelRembStatus(int channel_id,
-                                        bool sender,
-                                        bool receiver,
-                                        ViEChannel* channel,
-                                        ViEEncoder* encoder) {
+bool ChannelGroup::SetChannelRembStatus(int channel_id, bool sender,
+                                        bool receiver, ViEChannel* channel) {
   // Update the channel state.
   if (sender || receiver) {
     if (!channel->EnableRemb(true)) {
       return false;
     }
-  } else if (channel) {
+  } else {
     channel->EnableRemb(false);
   }
   // Update the REMB instance with necessary RTP modules.
