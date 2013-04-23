@@ -149,7 +149,9 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   }
   timestamp_ = 0;
 
-  codec_ = *inst;
+  if (&codec_ != inst) {
+    codec_ = *inst;
+  }
 
   int num_temporal_layers = inst->codecSpecific.VP8.numberOfTemporalLayers > 1 ?
       inst->codecSpecific.VP8.numberOfTemporalLayers : 1;
@@ -562,8 +564,11 @@ int VP8DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
   vpx_codec_control(decoder_, VP8_SET_POSTPROC, &ppcfg);
 #endif
 
-  // Save VideoCodec instance for later; mainly for duplicating the decoder.
-  codec_ = *inst;
+  if (&codec_ != inst) {
+    // Save VideoCodec instance for later; mainly for duplicating the decoder.
+    codec_ = *inst;
+  }
+
   propagation_cnt_ = -1;
   latest_keyframe_complete_ = false;
 
