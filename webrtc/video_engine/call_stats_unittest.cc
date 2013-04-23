@@ -22,6 +22,8 @@ using ::testing::Return;
 
 namespace webrtc {
 
+enum { kDefaultRttMs = 200 };
+
 class MockStatsObserver : public CallStatsObserver {
  public:
   MockStatsObserver() {}
@@ -176,4 +178,32 @@ TEST_F(CallStatsTest, ChangeRtt) {
   call_stats_->DeregisterStatsObserver(&stats_observer);
 }
 
+TEST_F(CallStatsTest, NoRttUpdates) {
+  MockStatsObserver stats_observer;
+  call_stats_->RegisterStatsObserver(&stats_observer);
+
+  // Advance clock to be ready for an update.
+  TickTime::AdvanceFakeClock(1000);
+  EXPECT_CALL(stats_observer, OnRttUpdate(kDefaultRttMs))
+      .Times(1);
+  call_stats_->Process();
+
+  RtcpRttObserver* rtcp_observer = call_stats_->rtcp_rtt_observer();
+  const int kNewRtt = 50;
+  // Report an RTT and verify that it replaces the default.
+  rtcp_observer->OnRttUpdate(kNewRtt);
+  TickTime::AdvanceFakeClock(1000);
+  EXPECT_CALL(stats_observer, OnRttUpdate(kNewRtt))
+      .Times(1);
+  call_stats_->Process();
+
+  TickTime::AdvanceFakeClock(1500);
+  // The last reported RTT should still be reported when all reports have
+  // timed out.
+  EXPECT_CALL(stats_observer, OnRttUpdate(kNewRtt))
+      .Times(1);
+  call_stats_->Process();
+
+  call_stats_->DeregisterStatsObserver(&stats_observer);
+}
 }  // namespace webrtc

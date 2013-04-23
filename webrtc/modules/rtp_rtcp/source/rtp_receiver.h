@@ -158,6 +158,10 @@ class RTPReceiver : public Bitrate {
                         const uint16_t bytes,
                         const bool old_packet);
 
+  void set_rtt_ms(uint32_t rtt_ms) { rtt_ms_ = rtt_ms; }
+
+  uint32_t rtt_ms() const { return rtt_ms_; }
+
  private:
   // Returns whether RED is configured with payload_type.
   bool REDPayloadType(const int8_t payload_type) const;
@@ -237,6 +241,7 @@ class RTPReceiver : public Bitrate {
   bool rtx_;
   uint32_t ssrc_rtx_;
   int payload_type_rtx_;
+  uint32_t rtt_ms_;
 };
 
 } // namespace webrtc
