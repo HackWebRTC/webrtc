@@ -3004,7 +3004,8 @@ int AudioCodingModuleImpl::PushSyncPacketSafe() {
   rtp_info.header.markerBit = false;
   rtp_info.header.sequenceNumber = last_sequence_number_;
   rtp_info.header.timestamp = last_incoming_send_timestamp_;
-  rtp_info.type.Audio.channel = stereo_receive_ ? 2 : 1;
+  rtp_info.type.Audio.channel = stereo_receive_[current_receive_codec_idx_] ?
+      2 : 1;
   last_packet_was_sync_ = true;
   int payload_len_bytes = neteq_.RecIn(rtp_info, last_receive_timestamp_);
 
