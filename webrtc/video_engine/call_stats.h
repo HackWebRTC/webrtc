@@ -68,9 +68,6 @@ class CallStats : public Module {
   // Observers getting stats reports.
   std::list<CallStatsObserver*> observers_;
 
-  uint32_t last_reported_rtt_;
-  bool rtt_report_received_;
-
   DISALLOW_COPY_AND_ASSIGN(CallStats);
 };
 

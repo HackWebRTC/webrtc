@@ -631,7 +631,7 @@ int ViERTP_RTCPImpl::SetSenderBufferingMode(int video_channel,
 }
 
 int ViERTP_RTCPImpl::SetReceiverBufferingMode(int video_channel,
-                                              int target_delay_ms) {
+                                                 int target_delay_ms) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
                ViEId(shared_data_->instance_id(), video_channel),
                "%s(channel: %d, receiver target_delay: %d)",
@@ -645,6 +645,7 @@ int ViERTP_RTCPImpl::SetReceiverBufferingMode(int video_channel,
     shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
     return -1;
   }
+
   // Update the channel with buffering mode settings.
   if (vie_channel->SetReceiverBufferingMode(target_delay_ms) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo,

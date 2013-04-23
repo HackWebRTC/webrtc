@@ -1224,9 +1224,9 @@ int32_t ModuleRtpRtcpImpl::ResetRTT(const uint32_t remote_ssrc) {
   return rtcp_receiver_.ResetRTT(remote_ssrc);
 }
 
-void ModuleRtpRtcpImpl::SetRtt(uint32_t rtt) {
+void ModuleRtpRtcpImpl:: SetRtt(uint32_t rtt) {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "SetRtt(rtt: %u)", rtt);
-  rtp_receiver_->set_rtt_ms(rtt);
+  rtcp_receiver_.SetRTT(static_cast<uint16_t>(rtt));
 }
 
 // Reset RTP statistics.
@@ -1545,8 +1545,13 @@ int32_t ModuleRtpRtcpImpl::SendNACK(const uint16_t* nack_list,
                id_,
                "SendNACK(size:%u)", size);
 
-  // 5 + RTT * 1.5.
-  int64_t wait_time = 5 + ((rtp_receiver_->rtt_ms() * 3) / 2);
+  uint16_t avg_rtt = 0;
+  rtcp_receiver_.RTT(rtp_receiver_->SSRC(), NULL, &avg_rtt, NULL, NULL);
+
+  int64_t wait_time = 5 + ((avg_rtt * 3) >> 1);  // 5 + RTT * 1.5.
+  if (wait_time == 5) {
+    wait_time = 100;  // During startup we don't have an RTT.
+  }
   const int64_t now = clock_->TimeInMilliseconds();
   const int64_t time_limit = now - wait_time;
   uint16_t nackLength = size;

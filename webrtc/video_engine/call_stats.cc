@@ -23,7 +23,6 @@ namespace webrtc {
 const int kRttTimeoutMs = 1500;
 // Time interval for updating the observers.
 const int kUpdateIntervalMs = 1000;
-const uint32_t kInitialRttMs = 200;
 
 class RtcpObserver : public RtcpRttObserver {
  public:
@@ -43,9 +42,7 @@ class RtcpObserver : public RtcpRttObserver {
 CallStats::CallStats()
     : crit_(CriticalSectionWrapper::CreateCriticalSection()),
       rtcp_rtt_observer_(new RtcpObserver(this)),
-      last_process_time_(TickTime::MillisecondTimestamp()),
-      last_reported_rtt_(kInitialRttMs),
-      rtt_report_received_(false) {
+      last_process_time_(TickTime::MillisecondTimestamp()) {
 }
 
 CallStats::~CallStats() {
@@ -76,13 +73,13 @@ int32_t CallStats::Process() {
     if (it->rtt > max_rtt)
       max_rtt = it->rtt;
   }
-  if (max_rtt > 0) {
-    last_reported_rtt_ = max_rtt;
-  }
+
   // If there is a valid rtt, update all observers.
-  for (std::list<CallStatsObserver*>::iterator it = observers_.begin();
-       it != observers_.end(); ++it) {
-    (*it)->OnRttUpdate(last_reported_rtt_);
+  if (max_rtt > 0) {
+    for (std::list<CallStatsObserver*>::iterator it = observers_.begin();
+         it != observers_.end(); ++it) {
+      (*it)->OnRttUpdate(max_rtt);
+    }
   }
   last_process_time_ = time_now;
   return 0;
@@ -117,7 +114,6 @@ void CallStats::OnRttUpdate(uint32_t rtt) {
   CriticalSectionScoped cs(crit_.get());
   int64_t time_now = TickTime::MillisecondTimestamp();
   reports_.push_back(RttTime(rtt, time_now));
-  rtt_report_received_ = true;
 }
 
 }  // namespace webrtc

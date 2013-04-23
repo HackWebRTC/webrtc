@@ -23,7 +23,6 @@ enum { NACK_BYTECOUNT_SIZE      = 60};   // size of our NACK history
 enum { kSendSideNackListSizeSanity = 20000 };
 enum { kDefaultMaxReorderingThreshold = 50 };  // In sequence numbers.
 enum { kRtcpMaxNackFields = 253 };
-enum { kInitialReceiveSideRtt = 100 };
 
 enum { RTCP_INTERVAL_VIDEO_MS       = 1000 };
 enum { RTCP_INTERVAL_AUDIO_MS       = 5000 };

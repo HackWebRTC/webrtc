@@ -95,8 +95,7 @@ RTPReceiver::RTPReceiver(const int32_t id,
       max_reordering_threshold_(kDefaultMaxReorderingThreshold),
       rtx_(false),
       ssrc_rtx_(0),
-      payload_type_rtx_(-1),
-      rtt_ms_(kInitialReceiveSideRtt) {
+      payload_type_rtx_(-1) {
   assert(incoming_audio_messages_callback &&
          incoming_messages_callback &&
          incoming_payload_callback);

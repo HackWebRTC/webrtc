@@ -76,8 +76,6 @@ enum { kViEDefaultRenderDelayMs = 10 };
 
 // ViERTP_RTCP
 enum { kSendSidePacketHistorySize = 600 };
-enum { kDefaultBufferingRtt = 20 };
-enum { kDefaultRealtimeRtt = 200 };
 
 // NACK
 enum { kMaxPacketAgeToNack = 450 };  // In sequence numbers.
