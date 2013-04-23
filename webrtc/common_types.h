@@ -534,6 +534,11 @@ enum VideoCodecMode {
   kScreensharing
 };
 
+// When using an external encoder/decoder one may need to specify extra
+// options. This struct definition is left for the external implementation.
+// TODO(andresp): Support for multiple external encoder/decoders.
+struct ExtraCodecOptions;
+
 // Common video codec properties
 struct VideoCodec
 {
@@ -556,6 +561,7 @@ struct VideoCodec
     SimulcastStream     simulcastStream[kMaxSimulcastStreams];
 
     VideoCodecMode      mode;
+    ExtraCodecOptions*  extra_options;
 };
 
 // Bandwidth over-use detector options.  These are used to drive
