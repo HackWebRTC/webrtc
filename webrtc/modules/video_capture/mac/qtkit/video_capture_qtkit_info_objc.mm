@@ -41,6 +41,9 @@ using namespace webrtc;
 /// ***** Objective-C. Similar to C++ destructor
 /// ***** Returns nothing
 - (void)dealloc {
+
+    [_captureDevicesInfo release];
+
     [super dealloc];
 }
 
