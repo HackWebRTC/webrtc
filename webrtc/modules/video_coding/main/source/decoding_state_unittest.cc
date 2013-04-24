@@ -30,9 +30,8 @@ TEST(TestDecodingState, Sanity) {
 TEST(TestDecodingState, FrameContinuity) {
   VCMDecodingState dec_state;
   // Check that makes decision based on correct method.
-  VCMFrameBuffer frame, frame_key;
+  VCMFrameBuffer frame;
   frame.SetState(kStateEmpty);
-  frame_key.SetState(kStateEmpty);
   VCMPacket* packet = new VCMPacket();
   packet->isFirstPacket = 1;
   packet->timestamp = 1;
@@ -41,15 +40,11 @@ TEST(TestDecodingState, FrameContinuity) {
   packet->codecSpecificHeader.codec = kRTPVideoVP8;
   packet->codecSpecificHeader.codecHeader.VP8.pictureId = 0x007F;
   frame.InsertPacket(*packet, 0, false, 0);
-  // Always start with a key frame.
+  // Should return true on init.
   dec_state.Reset();
-  EXPECT_FALSE(dec_state.ContinuousFrame(&frame));
-  packet->frameType = kVideoFrameKey;
-  frame_key.InsertPacket(*packet, 0, false, 0);
-  EXPECT_TRUE(dec_state.ContinuousFrame(&frame_key));
+  EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
   dec_state.SetState(&frame);
   frame.Reset();
-  packet->frameType = kVideoFrameDelta;
   // Use pictureId
   packet->codecSpecificHeader.codecHeader.VP8.pictureId = 0x0002;
   frame.InsertPacket(*packet, 0, false, 0);
@@ -463,4 +458,5 @@ TEST(TestDecodingState, OldInput) {
 
   delete packet;
 }
+
 }  // namespace webrtc
