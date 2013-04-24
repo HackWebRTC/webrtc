@@ -194,10 +194,11 @@ int32_t VideoCaptureImpl::DeliverCapturedFrame(I420VideoFrame& captureFrame,
   }
 
   // Set the capture time
+  const int64_t ntp_time_ms =
+      Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
   int64_t internal_capture_time = TickTime::MillisecondTimestamp();
   if (capture_time != 0) {
-      int64_t time_since_capture =
-          Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() - capture_time;
+      int64_t time_since_capture = ntp_time_ms - capture_time;
       internal_capture_time -= time_since_capture;
       captureFrame.set_render_time_ms(internal_capture_time);
   }
