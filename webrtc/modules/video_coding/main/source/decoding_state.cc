@@ -149,8 +149,11 @@ bool VCMDecodingState::ContinuousFrame(const VCMFrameBuffer* frame) const {
   // Return true when in initial state.
   // Note that when a method is not applicable it will return false.
   assert(frame != NULL);
-  if (in_initial_state_)
-    return true;
+  if (in_initial_state_) {
+    // Always start with a key frame.
+    if (frame->FrameType() == kVideoFrameKey) return true;
+    return false;
+  }
 
   if (!ContinuousLayer(frame->TemporalId(), frame->Tl0PicId())) {
     // Base layers are not continuous or temporal layers are inactive.
