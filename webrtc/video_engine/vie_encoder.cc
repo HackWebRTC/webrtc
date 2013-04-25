@@ -32,6 +32,10 @@ namespace webrtc {
 
 // Pace in kbits/s until we receive first estimate.
 static const int kInitialPace = 2000;
+
+// Don't stop the encoder unless the delay is above this configured value.
+static const int kMinPacingDelayMs = 200;
+
 // Allow packets to be transmitted in up to 2 times max video bitrate if the
 // bandwidth estimate allows it.
 // TODO(holmer): Expose transmission start, min and max bitrates in the
@@ -471,12 +475,19 @@ void ViEEncoder::TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
 }
 
 bool ViEEncoder::EncoderPaused() const {
-  // Pause video if paused by caller or as long as the network is down and the
-  // pacer queue has grown too large.
-  const bool max_send_buffer_reached =
-      paced_sender_->QueueInMs() >= target_delay_ms_;
-  return encoder_paused_ ||
-      (!network_is_transmitting_ && max_send_buffer_reached);
+  // Pause video if paused by caller or as long as the network is down or the
+  // pacer queue has grown too large in buffered mode.
+  if (encoder_paused_) {
+    return true;
+  }
+  if (target_delay_ms_ > 0) {
+    // Buffered mode.
+    // TODO(pwestin): Workaround until nack is configured as a time and not
+    // number of packets.
+    return paced_sender_->QueueInMs() >=
+        std::max(target_delay_ms_, kMinPacingDelayMs);
+  }
+  return !network_is_transmitting_;
 }
 
 RtpRtcp* ViEEncoder::SendRtpRtcpModule() {
@@ -775,10 +786,6 @@ int32_t ViEEncoder::SendData(
     const RTPVideoHeader* rtp_video_hdr) {
   {
     CriticalSectionScoped cs(data_cs_.get());
-    if (EncoderPaused()) {
-      // Paused, don't send this packet.
-      return 0;
-    }
     TRACE_EVENT2("webrtc", "VE::SendData",
                  "timestamp", time_stamp,
                  "capture_time_ms", capture_time_ms);
