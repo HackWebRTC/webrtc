@@ -72,6 +72,16 @@ void VCMDecodingState::SetState(const VCMFrameBuffer* frame) {
   in_initial_state_ = false;
 }
 
+void VCMDecodingState::CopyFrom(const VCMDecodingState& state) {
+  sequence_num_ = state.sequence_num_;
+  time_stamp_ = state.time_stamp_;
+  picture_id_ = state.picture_id_;
+  temporal_id_ = state.temporal_id_;
+  tl0_pic_id_ = state.tl0_pic_id_;
+  full_sync_ = state.full_sync_;
+  in_initial_state_ = state.in_initial_state_;
+}
+
 void VCMDecodingState::SetStateOneBack(const VCMFrameBuffer* frame) {
   assert(frame != NULL && frame->GetHighSeqNum() >= 0);
   sequence_num_ = static_cast<uint16_t>(frame->GetHighSeqNum()) - 1u;

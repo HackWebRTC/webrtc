@@ -62,6 +62,7 @@ VideoCodingModuleImpl::VideoCodingModuleImpl(const int32_t id,
       _frameStorageCallback(NULL),
       _receiveStatsCallback(NULL),
       _packetRequestCallback(NULL),
+      render_buffer_callback_(NULL),
       _decoder(NULL),
       _dualDecoder(NULL),
 #ifdef DEBUG_DECODER_BIT_STREAM
@@ -154,6 +155,12 @@ VideoCodingModuleImpl::Process()
             _receiver.ReceiveStatistics(&bitRate, &frameRate);
             _receiveStatsCallback->ReceiveStatistics(bitRate, frameRate);
         }
+
+        // Size of render buffer.
+        if (render_buffer_callback_) {
+          int buffer_size_ms = _receiver.RenderBufferSizeMs();
+          render_buffer_callback_->RenderBufferSizeMs(buffer_size_ms);
+      }
     }
 
     // Send-side statistics
@@ -868,6 +875,13 @@ VideoCodingModuleImpl::RegisterPacketRequestCallback(
     CriticalSectionScoped cs(_receiveCritSect);
     _packetRequestCallback = callback;
     return VCM_OK;
+}
+
+int VideoCodingModuleImpl::RegisterRenderBufferSizeCallback(
+  VCMRenderBufferSizeCallback* callback) {
+  CriticalSectionScoped cs(_receiveCritSect);
+  render_buffer_callback_ = callback;
+  return VCM_OK;
 }
 
 // Decode next frame, blocking.

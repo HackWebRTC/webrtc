@@ -432,6 +432,10 @@ int VCMReceiver::SetMinReceiverDelay(int desired_delay_ms) {
   return 0;
 }
 
+int VCMReceiver::RenderBufferSizeMs() {
+  return jitter_buffer_.RenderBufferSizeMs();
+}
+
 void VCMReceiver::UpdateState(VCMReceiverState new_state) {
   CriticalSectionScoped cs(crit_sect_);
   assert(!(state_ == kPassive && new_state == kWaitForPrimaryDecode));

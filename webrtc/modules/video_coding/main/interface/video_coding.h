@@ -412,6 +412,10 @@ public:
     //                     < 0,         on error.
     virtual int32_t Decode(uint16_t maxWaitTimeMs = 200) = 0;
 
+    // Registers a callback which conveys the size of the render buffer.
+    virtual int RegisterRenderBufferSizeCallback(
+        VCMRenderBufferSizeCallback* callback) = 0;
+
     // Waits for the next frame in the dual jitter buffer to become complete
     // (waits no longer than maxWaitTimeMs), then passes it to the dual decoder
     // for decoding. This will never trigger a render callback. Should be

@@ -80,6 +80,10 @@ class VCMReceiver {
   void SetDecodeWithErrors(bool enable);
   bool DecodeWithErrors() const;
 
+  // Returns size in time (milliseconds) of complete continuous frames in the
+  // jitter buffer.
+  int RenderBufferSizeMs();
+
  private:
   VCMEncodedFrame* FrameForDecoding(uint16_t max_wait_time_ms,
                                     int64_t nextrender_time_ms,

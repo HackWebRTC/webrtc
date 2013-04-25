@@ -166,6 +166,9 @@ class VCMJitterBuffer {
   int64_t LastDecodedTimestamp() const;
   bool decode_with_errors() const {return decode_with_errors_;}
 
+  // Returns size in time (milliseconds) of complete continuous frames.
+  int RenderBufferSizeMs();
+
  private:
   class SequenceNumberLessThan {
    public:
@@ -211,6 +214,8 @@ class VCMJitterBuffer {
   // Can return a decodable, incomplete frame when enabled.
   FrameList::iterator FindOldestCompleteContinuousFrame();
 
+  // Cleans the frame list in the JB from old/empty frames.
+  // Should only be called prior to actual use.
   void CleanUpOldOrEmptyFrames();
 
   // Sets the "decodable" and "frame loss" flags of a frame depending on which

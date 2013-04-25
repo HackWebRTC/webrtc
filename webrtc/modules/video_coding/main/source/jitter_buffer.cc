@@ -982,6 +982,46 @@ int64_t VCMJitterBuffer::LastDecodedTimestamp() const {
   return last_decoded_state_.time_stamp();
 }
 
+int VCMJitterBuffer::RenderBufferSizeMs() {
+  CriticalSectionScoped cs(crit_sect_);
+  CleanUpOldOrEmptyFrames();
+  if (frame_list_.empty()) {
+    return 0;
+  }
+  FrameList::iterator frame_it = frame_list_.begin();
+  VCMFrameBuffer* current_frame = *frame_it;
+  // Search for a complete and continuous sequence (starting from the last
+  // decoded state or current frame if in initial state).
+  VCMDecodingState previous_state;
+  if (last_decoded_state_.in_initial_state()) {
+    // Start with a key frame.
+    frame_it = find_if(frame_list_.begin(), frame_list_.end(),
+        CompleteKeyFrameCriteria());
+    if (frame_it == frame_list_.end()) {
+      return 0;
+    }
+    current_frame = *frame_it;
+    previous_state.SetState(current_frame);
+  } else {
+    previous_state.CopyFrom(last_decoded_state_);
+  }
+  bool continuous_complete = true;
+  int64_t start_render = current_frame->RenderTimeMs();
+  ++frame_it;
+  while (frame_it != frame_list_.end() && continuous_complete) {
+    current_frame = *frame_it;
+    continuous_complete = current_frame->IsSessionComplete() &&
+        previous_state.ContinuousFrame(current_frame);
+    previous_state.SetState(current_frame);
+    ++frame_it;
+  }
+  // Desired frame is the previous one.
+  --frame_it;
+  current_frame = *frame_it;
+  // Got the frame, now compute the time delta.
+  return static_cast<int>(current_frame->RenderTimeMs() - start_render);
+}
+
 // Set the frame state to free and remove it from the sorted
 // frame list. Must be called from inside the critical section crit_sect_.
 void VCMJitterBuffer::ReleaseFrameIfNotDecoding(VCMFrameBuffer* frame) {

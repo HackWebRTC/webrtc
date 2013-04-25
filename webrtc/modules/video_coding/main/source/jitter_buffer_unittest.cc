@@ -16,145 +16,11 @@
 #include "webrtc/modules/video_coding/main/source/jitter_buffer.h"
 #include "webrtc/modules/video_coding/main/source/media_opt_util.h"
 #include "webrtc/modules/video_coding/main/source/packet.h"
+#include "webrtc/modules/video_coding/main/source/stream_generator.h"
 #include "webrtc/modules/video_coding/main/test/test_util.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 
 namespace webrtc {
-
-enum { kDefaultFrameRate = 25u };
-enum { kDefaultFramePeriodMs = 1000u / kDefaultFrameRate };
-const unsigned int kDefaultBitrateKbps = 1000;
-const unsigned int kFrameSize = (kDefaultBitrateKbps + kDefaultFrameRate * 4) /
-    (kDefaultFrameRate * 8);
-const unsigned int kMaxPacketSize = 1500;
-
-class StreamGenerator {
- public:
-  StreamGenerator(uint16_t start_seq_num, uint32_t start_timestamp,
-                  int64_t current_time)
-      : packets_(),
-        sequence_number_(start_seq_num),
-        timestamp_(start_timestamp),
-        start_time_(current_time) {}
-
-  void Init(uint16_t start_seq_num, uint32_t start_timestamp,
-            int64_t current_time) {
-    packets_.clear();
-    sequence_number_ = start_seq_num;
-    timestamp_ = start_timestamp;
-    start_time_ = current_time;
-    memset(&packet_buffer, 0, sizeof(packet_buffer));
-  }
-
-  void GenerateFrame(FrameType type, int num_media_packets,
-                     int num_empty_packets, int64_t current_time) {
-    timestamp_ += 90 * (current_time - start_time_);
-    // Move the sequence number counter if all packets from the previous frame
-    // wasn't collected.
-    sequence_number_ += packets_.size();
-    packets_.clear();
-    for (int i = 0; i < num_media_packets; ++i) {
-      const int packet_size = (kFrameSize + num_media_packets / 2) /
-          num_media_packets;
-      packets_.push_back(GeneratePacket(sequence_number_,
-                                        timestamp_,
-                                        packet_size,
-                                        (i == 0),
-                                        (i == num_media_packets - 1),
-                                        type));
-      ++sequence_number_;
-    }
-    for (int i = 0; i < num_empty_packets; ++i) {
-      packets_.push_back(GeneratePacket(sequence_number_,
-                                        timestamp_,
-                                        0,
-                                        false,
-                                        false,
-                                        kFrameEmpty));
-      ++sequence_number_;
-    }
-  }
-
-  VCMPacket GeneratePacket(uint16_t sequence_number,
-                           uint32_t timestamp,
-                           unsigned int size,
-                           bool first_packet,
-                           bool marker_bit,
-                           FrameType type) {
-    EXPECT_LT(size, kMaxPacketSize);
-    VCMPacket packet;
-    packet.seqNum = sequence_number;
-    packet.timestamp = timestamp;
-    packet.frameType = type;
-    packet.isFirstPacket = first_packet;
-    packet.markerBit = marker_bit;
-    packet.sizeBytes = size;
-    packet.dataPtr = packet_buffer;
-    if (packet.isFirstPacket)
-      packet.completeNALU = kNaluStart;
-    else if (packet.markerBit)
-      packet.completeNALU = kNaluEnd;
-    else
-      packet.completeNALU = kNaluIncomplete;
-    return packet;
-  }
-
-  bool PopPacket(VCMPacket* packet, int index) {
-    std::list<VCMPacket>::iterator it = GetPacketIterator(index);
-    if (it == packets_.end())
-      return false;
-    if (packet)
-      *packet = (*it);
-    packets_.erase(it);
-    return true;
-  }
-
-  bool GetPacket(VCMPacket* packet, int index) {
-    std::list<VCMPacket>::iterator it = GetPacketIterator(index);
-    if (it == packets_.end())
-      return false;
-    if (packet)
-      *packet = (*it);
-    return true;
-  }
-
-  bool NextPacket(VCMPacket* packet) {
-    if (packets_.empty())
-      return false;
-    if (packet != NULL)
-      *packet = packets_.front();
-    packets_.pop_front();
-    return true;
-  }
-
-  uint16_t NextSequenceNumber() const {
-    if (packets_.empty())
-      return sequence_number_;
-    return packets_.front().seqNum;
-  }
-
-  int PacketsRemaining() const {
-    return packets_.size();
-  }
-
- private:
-  std::list<VCMPacket>::iterator GetPacketIterator(int index) {
-    std::list<VCMPacket>::iterator it = packets_.begin();
-    for (int i = 0; i < index; ++i) {
-      ++it;
-      if (it == packets_.end()) break;
-    }
-    return it;
-  }
-
-  std::list<VCMPacket> packets_;
-  uint16_t sequence_number_;
-  uint32_t timestamp_;
-  int64_t start_time_;
-  uint8_t packet_buffer[kMaxPacketSize];
-
-  DISALLOW_COPY_AND_ASSIGN(StreamGenerator);
-};
 
 class TestRunningJitterBuffer : public ::testing::Test {
  protected:
@@ -166,7 +32,7 @@ class TestRunningJitterBuffer : public ::testing::Test {
     oldest_packet_to_nack_ = 250;
     jitter_buffer_ = new VCMJitterBuffer(clock_.get(), &event_factory_, -1, -1,
                                          true);
-    stream_generator = new StreamGenerator(0, 0, clock_->TimeInMilliseconds());
+    stream_generator_ = new StreamGenerator(0, 0, clock_->TimeInMilliseconds());
     jitter_buffer_->Start();
     jitter_buffer_->SetNackSettings(max_nack_list_size_,
                                     oldest_packet_to_nack_);
@@ -175,7 +41,7 @@ class TestRunningJitterBuffer : public ::testing::Test {
 
   virtual void TearDown() {
     jitter_buffer_->Stop();
-    delete stream_generator;
+    delete stream_generator_;
     delete jitter_buffer_;
   }
 
@@ -184,7 +50,7 @@ class TestRunningJitterBuffer : public ::testing::Test {
     VCMEncodedFrame* frame;
 
     packet.dataPtr = data_buffer_;
-    bool packet_available = stream_generator->PopPacket(&packet, index);
+    bool packet_available = stream_generator_->PopPacket(&packet, index);
     EXPECT_TRUE(packet_available);
     if (!packet_available)
       return kStateError;  // Return here to avoid crashes below.
@@ -197,7 +63,7 @@ class TestRunningJitterBuffer : public ::testing::Test {
     VCMEncodedFrame* frame;
 
     packet.dataPtr = data_buffer_;
-    bool packet_available = stream_generator->GetPacket(&packet, index);
+    bool packet_available = stream_generator_->GetPacket(&packet, index);
     EXPECT_TRUE(packet_available);
     if (!packet_available)
       return kStateError;  // Return here to avoid crashes below.
@@ -206,7 +72,7 @@ class TestRunningJitterBuffer : public ::testing::Test {
   }
 
   VCMFrameBufferEnum InsertFrame(FrameType frame_type) {
-    stream_generator->GenerateFrame(frame_type,
+    stream_generator_->GenerateFrame(frame_type,
                                     (frame_type != kFrameEmpty) ? 1 : 0,
                                     (frame_type == kFrameEmpty) ? 1 : 0,
                                     clock_->TimeInMilliseconds());
@@ -229,7 +95,7 @@ class TestRunningJitterBuffer : public ::testing::Test {
   }
 
   void DropFrame(int num_packets) {
-    stream_generator->GenerateFrame(kVideoFrameDelta, num_packets, 0,
+    stream_generator_->GenerateFrame(kVideoFrameDelta, num_packets, 0,
                                     clock_->TimeInMilliseconds());
     clock_->AdvanceTimeMilliseconds(kDefaultFramePeriodMs);
   }
@@ -250,7 +116,7 @@ class TestRunningJitterBuffer : public ::testing::Test {
   }
 
   VCMJitterBuffer* jitter_buffer_;
-  StreamGenerator* stream_generator;
+  StreamGenerator* stream_generator_;
   scoped_ptr<SimulatedClock> clock_;
   NullEventFactory event_factory_;
   size_t max_nack_list_size_;
@@ -288,7 +154,7 @@ TEST_F(TestRunningJitterBuffer, Full) {
 
 TEST_F(TestRunningJitterBuffer, EmptyPackets) {
   // Make sure a frame can get complete even though empty packets are missing.
-  stream_generator->GenerateFrame(kVideoFrameKey, 3, 3,
+  stream_generator_->GenerateFrame(kVideoFrameKey, 3, 3,
                                   clock_->TimeInMilliseconds());
   bool request_key_frame = false;
   EXPECT_EQ(kFirstPacket, InsertPacketAndPop(4));
@@ -488,11 +354,11 @@ TEST_F(TestJitterBufferNack, NoNackListReturnedBeforeFirstDecode) {
 }
 
 TEST_F(TestJitterBufferNack, NackListBuiltBeforeFirstDecode) {
-  stream_generator->Init(0, 0, clock_->TimeInMilliseconds());
+  stream_generator_->Init(0, 0, clock_->TimeInMilliseconds());
   InsertFrame(kVideoFrameKey);
-  stream_generator->GenerateFrame(kVideoFrameDelta, 2, 0,
+  stream_generator_->GenerateFrame(kVideoFrameDelta, 2, 0,
                                   clock_->TimeInMilliseconds());
-  stream_generator->NextPacket(NULL);  // Drop packet.
+  stream_generator_->NextPacket(NULL);  // Drop packet.
   EXPECT_EQ(kFirstPacket, InsertPacketAndPop(0));
   EXPECT_TRUE(DecodeCompleteFrame());
   uint16_t nack_list_size = 0;
@@ -503,8 +369,8 @@ TEST_F(TestJitterBufferNack, NackListBuiltBeforeFirstDecode) {
 }
 
 TEST_F(TestJitterBufferNack, UseNackToRecoverFirstKeyFrame) {
-  stream_generator->Init(0, 0, clock_->TimeInMilliseconds());
-  stream_generator->GenerateFrame(kVideoFrameKey, 3, 0,
+  stream_generator_->Init(0, 0, clock_->TimeInMilliseconds());
+  stream_generator_->GenerateFrame(kVideoFrameKey, 3, 0,
                                   clock_->TimeInMilliseconds());
   EXPECT_EQ(kFirstPacket, InsertPacketAndPop(0));
   // Drop second packet.
@@ -516,7 +382,7 @@ TEST_F(TestJitterBufferNack, UseNackToRecoverFirstKeyFrame) {
   EXPECT_EQ(1, nack_list_size);
   ASSERT_TRUE(list != NULL);
   VCMPacket packet;
-  stream_generator->GetPacket(&packet, 0);
+  stream_generator_->GetPacket(&packet, 0);
   EXPECT_EQ(packet.seqNum, list[0]);
 }
 
@@ -530,21 +396,21 @@ TEST_F(TestJitterBufferNack, NormalOperation) {
   //  ----------------------------------------------------------------
   // | 1 | 2 | .. | 8 | 9 | x | 11 | 12 | .. | 19 | x | 21 | .. | 100 |
   //  ----------------------------------------------------------------
-  stream_generator->GenerateFrame(kVideoFrameKey, 100, 0,
+  stream_generator_->GenerateFrame(kVideoFrameKey, 100, 0,
                                   clock_->TimeInMilliseconds());
   clock_->AdvanceTimeMilliseconds(kDefaultFramePeriodMs);
   EXPECT_EQ(kFirstPacket, InsertPacketAndPop(0));
   // Verify that the frame is incomplete.
   EXPECT_FALSE(DecodeCompleteFrame());
-  while (stream_generator->PacketsRemaining() > 1) {
-    if (stream_generator->NextSequenceNumber() % 10 != 0) {
+  while (stream_generator_->PacketsRemaining() > 1) {
+    if (stream_generator_->NextSequenceNumber() % 10 != 0) {
       EXPECT_EQ(kIncomplete, InsertPacketAndPop(0));
     } else {
-      stream_generator->NextPacket(NULL);  // Drop packet
+      stream_generator_->NextPacket(NULL);  // Drop packet
     }
   }
   EXPECT_EQ(kIncomplete, InsertPacketAndPop(0));
-  EXPECT_EQ(0, stream_generator->PacketsRemaining());
+  EXPECT_EQ(0, stream_generator_->PacketsRemaining());
   EXPECT_FALSE(DecodeCompleteFrame());
   EXPECT_FALSE(DecodeIncompleteFrame());
   uint16_t nack_list_size = 0;
@@ -563,24 +429,24 @@ TEST_F(TestJitterBufferNack, NormalOperationWrap) {
   //  -------   ------------------------------------------------------------
   // | 65532 | | 65533 | 65534 | 65535 | x | 1 | .. | 9 | x | 11 |.....| 96 |
   //  -------   ------------------------------------------------------------
-  stream_generator->Init(65532, 0, clock_->TimeInMilliseconds());
+  stream_generator_->Init(65532, 0, clock_->TimeInMilliseconds());
   InsertFrame(kVideoFrameKey);
   EXPECT_FALSE(request_key_frame);
   EXPECT_TRUE(DecodeCompleteFrame());
-  stream_generator->GenerateFrame(kVideoFrameDelta, 100, 0,
+  stream_generator_->GenerateFrame(kVideoFrameDelta, 100, 0,
                                   clock_->TimeInMilliseconds());
   EXPECT_EQ(kFirstPacket, InsertPacketAndPop(0));
-  while (stream_generator->PacketsRemaining() > 1) {
-    if (stream_generator->NextSequenceNumber() % 10 != 0) {
+  while (stream_generator_->PacketsRemaining() > 1) {
+    if (stream_generator_->NextSequenceNumber() % 10 != 0) {
       EXPECT_EQ(kIncomplete, InsertPacketAndPop(0));
       EXPECT_FALSE(request_key_frame);
     } else {
-      stream_generator->NextPacket(NULL);  // Drop packet.
+      stream_generator_->NextPacket(NULL);  // Drop packet
     }
   }
   EXPECT_EQ(kIncomplete, InsertPacketAndPop(0));
   EXPECT_FALSE(request_key_frame);
-  EXPECT_EQ(0, stream_generator->PacketsRemaining());
+  EXPECT_EQ(0, stream_generator_->PacketsRemaining());
   EXPECT_FALSE(DecodeCompleteFrame());
   EXPECT_FALSE(DecodeCompleteFrame());
   uint16_t nack_list_size = 0;

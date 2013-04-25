@@ -196,6 +196,10 @@ public:
     virtual int32_t RegisterPacketRequestCallback(
         VCMPacketRequestCallback* callback);
 
+    // Render buffer size callback.
+    virtual int RegisterRenderBufferSizeCallback(
+        VCMRenderBufferSizeCallback* callback);
+
     // Decode next frame, blocks for a maximum of maxWaitTimeMs milliseconds.
     // Should be called as often as possible to get the most out of the decoder.
     virtual int32_t Decode(uint16_t maxWaitTimeMs = 200);
@@ -294,6 +298,7 @@ private:
     VCMFrameStorageCallback*            _frameStorageCallback;
     VCMReceiveStatisticsCallback*       _receiveStatsCallback;
     VCMPacketRequestCallback*           _packetRequestCallback;
+    VCMRenderBufferSizeCallback*        render_buffer_callback_;
     VCMGenericDecoder*                  _decoder;
     VCMGenericDecoder*                  _dualDecoder;
 #ifdef DEBUG_DECODER_BIT_STREAM
