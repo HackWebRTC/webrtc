@@ -94,8 +94,6 @@
         # Exclude internal video render module in Chromium build.
         'include_internal_video_render%': 0,
 
-        'include_video_engine_file_api%': 0,
-
         'include_tests%': 0,
 
         # Disable the use of protocol buffers in production code.
