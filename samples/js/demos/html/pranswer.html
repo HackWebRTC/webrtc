@@ -115,7 +115,8 @@ function stop() {
 }
 
 function gotRemoteStream(e) {
-  vid2.src = webkitURL.createObjectURL(e.stream);
+  // Call the polyfill wrapper to attach the media stream to this element.
+  attachMediaStream(vid2, e.stream);
   trace("Received remote stream");
 }
 

@@ -88,7 +88,8 @@ function hangup() {
 }
 
 function gotRemoteStream(e){
-  audio2.src = webkitURL.createObjectURL(e.stream);
+  // Call the polyfill wrapper to attach the media stream to this element.
+  attachMediaStream(audio2, e.stream);
   trace("Received remote stream");
 }
 

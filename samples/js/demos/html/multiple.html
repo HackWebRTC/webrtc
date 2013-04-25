@@ -141,12 +141,14 @@ function hangup() {
 }
 
 function gotRemoteStream1(e) {
-  vid2.src = webkitURL.createObjectURL(e.stream);
+  // Call the polyfill wrapper to attach the media stream to this element.
+  attachMediaStream(vid2, e.stream);
   trace("PC1: Received remote stream");
 }
 
 function gotRemoteStream2(e) {
-  vid3.src = webkitURL.createObjectURL(e.stream);
+  // Call the polyfill wrapper to attach the media stream to this element.
+  attachMediaStream(vid3, e.stream);
   trace("PC2: Received remote stream");
 }
 
