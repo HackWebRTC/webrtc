@@ -7,13 +7,6 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'target_defaults': {
-    'conditions': [
-      ['include_video_engine_file_api==1', {
-        'defines': [ 'WEBRTC_VIDEO_ENGINE_FILE_API', ],
-      }],
-    ],
-  },
   'targets': [
     {
       'target_name': 'video_engine_core',

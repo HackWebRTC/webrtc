@@ -109,7 +109,6 @@
         'include_internal_audio_device%': 1,
         'include_internal_video_capture%': 1,
         'include_internal_video_render%': 1,
-        'include_video_engine_file_api%': 1,
         'enable_protobuf%': 1,
         'enable_tracing%': 1,
         'include_tests%': 1,
