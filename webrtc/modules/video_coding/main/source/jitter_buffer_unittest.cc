@@ -241,8 +241,9 @@ class TestRunningJitterBuffer : public ::testing::Test {
     return ret;
   }
 
-  bool DecodeFrame() {
-    VCMEncodedFrame* frame = jitter_buffer_->GetFrameForDecoding();
+  bool DecodeIncompleteFrame() {
+    VCMEncodedFrame* frame =
+        jitter_buffer_->MaybeGetIncompleteFrameForDecoding();
     bool ret = (frame != NULL);
     jitter_buffer_->ReleaseFrame(frame);
     return ret;
@@ -416,7 +417,7 @@ TEST_F(TestJitterBufferNack, NackTooOldPackets) {
   EXPECT_GE(InsertFrame(kVideoFrameDelta), kNoError);
   // Waiting for a key frame.
   EXPECT_FALSE(DecodeCompleteFrame());
-  EXPECT_FALSE(DecodeFrame());
+  EXPECT_FALSE(DecodeIncompleteFrame());
 
   // The next complete continuous frame isn't a key frame, but we're waiting
   // for one.
@@ -466,7 +467,7 @@ TEST_F(TestJitterBufferNack, NackListFull) {
   // The next complete continuous frame isn't a key frame, but we're waiting
   // for one.
   EXPECT_FALSE(DecodeCompleteFrame());
-  EXPECT_FALSE(DecodeFrame());
+  EXPECT_FALSE(DecodeIncompleteFrame());
   EXPECT_GE(InsertFrame(kVideoFrameKey), kNoError);
   // Skipping ahead to the key frame.
   EXPECT_TRUE(DecodeCompleteFrame());
@@ -521,9 +522,10 @@ TEST_F(TestJitterBufferNack, UseNackToRecoverFirstKeyFrame) {
 
 TEST_F(TestJitterBufferNack, NormalOperation) {
   EXPECT_EQ(kNack, jitter_buffer_->nack_mode());
+  jitter_buffer_->DecodeWithErrors(true);
 
   EXPECT_GE(InsertFrame(kVideoFrameKey), kNoError);
-  EXPECT_TRUE(DecodeFrame());
+  EXPECT_TRUE(DecodeIncompleteFrame());
 
   //  ----------------------------------------------------------------
   // | 1 | 2 | .. | 8 | 9 | x | 11 | 12 | .. | 19 | x | 21 | .. | 100 |
@@ -544,7 +546,7 @@ TEST_F(TestJitterBufferNack, NormalOperation) {
   EXPECT_EQ(kIncomplete, InsertPacketAndPop(0));
   EXPECT_EQ(0, stream_generator->PacketsRemaining());
   EXPECT_FALSE(DecodeCompleteFrame());
-  EXPECT_FALSE(DecodeFrame());
+  EXPECT_FALSE(DecodeIncompleteFrame());
   uint16_t nack_list_size = 0;
   bool request_key_frame = false;
   uint16_t* list = jitter_buffer_->GetNackList(&nack_list_size,

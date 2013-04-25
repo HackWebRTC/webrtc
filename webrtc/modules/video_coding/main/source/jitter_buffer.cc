@@ -438,7 +438,6 @@ VCMEncodedFrame* VCMJitterBuffer::GetCompleteFrameForDecoding(
   if (!running_) {
     return NULL;
   }
-
   CleanUpOldOrEmptyFrames();
 
   if (last_decoded_state_.in_initial_state()) {
@@ -482,15 +481,16 @@ VCMEncodedFrame* VCMJitterBuffer::GetCompleteFrameForDecoding(
     frame_event_->Reset();
   }
 
-  if (it == frame_list_.end()) {
+  if (!decode_with_errors_ && it == frame_list_.end()) {
     // Even after signaling we're still missing a complete continuous frame.
-    // Look for a complete key frame.
+    // Look for a complete key frame if we're not decoding with errors.
     it = find_if(frame_list_.begin(), frame_list_.end(),
         CompleteKeyFrameCriteria());
-    if (it == frame_list_.end()) {
+  }
+
+  if (it == frame_list_.end()) {
       crit_sect_->Leave();
       return NULL;
-    }
   }
 
   VCMFrameBuffer* oldest_frame = *it;
@@ -530,15 +530,15 @@ VCMEncodedFrame* VCMJitterBuffer::GetCompleteFrameForDecoding(
   return oldest_frame;
 }
 
-VCMEncodedFrame* VCMJitterBuffer::GetFrameForDecoding() {
-  TRACE_EVENT0("webrtc", "JB::GetFrameForDecoding");
+VCMEncodedFrame* VCMJitterBuffer::MaybeGetIncompleteFrameForDecoding() {
+  TRACE_EVENT0("webrtc", "JB::MaybeGetIncompleteFrameForDecoding");
   CriticalSectionScoped cs(crit_sect_);
   if (!running_) {
     return NULL;
   }
-
-  if (WaitForRetransmissions()) {
-    return GetFrameForDecodingNACK();
+  if (!decode_with_errors_) {
+    // No point to continue, as we are not decoding with errors.
+    return NULL;
   }
 
   CleanUpOldOrEmptyFrames();
@@ -548,15 +548,13 @@ VCMEncodedFrame* VCMJitterBuffer::GetFrameForDecoding() {
   }
 
   VCMFrameBuffer* oldest_frame = frame_list_.front();
-  if (frame_list_.size() <= 1 &&
-      oldest_frame->GetState() != kStateComplete) {
+  // If we have only one frame in the buffer, release it only if it is complete.
+  if (frame_list_.size() <= 1 && oldest_frame->GetState() != kStateComplete) {
     return NULL;
   }
 
   // Incomplete frame pulled out from jitter buffer,
   // update the jitter estimate with what we currently know.
-  // This frame shouldn't have been retransmitted, but if we recently
-  // turned off NACK this might still happen.
   const bool retransmitted = (oldest_frame->GetNackCount() > 0);
   if (retransmitted) {
     jitter_estimate_.FrameNacked();
@@ -996,57 +994,6 @@ void VCMJitterBuffer::DropPacketsFromNackList(
 int64_t VCMJitterBuffer::LastDecodedTimestamp() const {
   CriticalSectionScoped cs(crit_sect_);
   return last_decoded_state_.time_stamp();
-}
-
-VCMEncodedFrame* VCMJitterBuffer::GetFrameForDecodingNACK() {
-  TRACE_EVENT0("webrtc", "JB::GetFrameForDecodingNACK");
-  CleanUpOldOrEmptyFrames();
-  // First look for a complete continuous frame.
-  // When waiting for nack, wait for a key frame, if a continuous frame cannot
-  // be determined (i.e. initial decoding state).
-  if (last_decoded_state_.in_initial_state()) {
-    waiting_for_key_frame_ = true;
-  }
-  FrameList::iterator it = FindOldestCompleteContinuousFrame();
-  if (it == frame_list_.end()) {
-    // If we didn't find one we're good with a complete key frame.
-    it = find_if(frame_list_.begin(), frame_list_.end(),
-                 CompleteKeyFrameCriteria());
-    if (it == frame_list_.end()) {
-      return NULL;
-    }
-  }
-  VCMFrameBuffer* oldest_frame = *it;
-  // Update jitter estimate
-  const bool retransmitted = (oldest_frame->GetNackCount() > 0);
-  if (retransmitted) {
-    jitter_estimate_.FrameNacked();
-  } else if (oldest_frame->Length() > 0) {
-    // Ignore retransmitted and empty frames.
-    UpdateJitterEstimate(*oldest_frame, false);
-  }
-  it = frame_list_.erase(it);
-  if (frame_list_.empty()) {
-    TRACE_EVENT_INSTANT1("webrtc", "JB::FrameListEmptied",
-                         "type", "GetFrameForDecodingNACK");
-  }
-
-  // Look for previous frame loss.
-  VerifyAndSetPreviousFrameLost(oldest_frame);
-
-  // The state must be changed to decoding before cleaning up zero sized
-  // frames to avoid empty frames being cleaned up and then given to the
-  // decoder.
-  oldest_frame->SetState(kStateDecoding);
-
-  if (oldest_frame->FrameType() == kVideoFrameKey) {
-    waiting_for_key_frame_ = false;
-  }
-
-  // We have a frame - update decoded state with frame info.
-  last_decoded_state_.SetState(oldest_frame);
-  DropPacketsFromNackList(last_decoded_state_.sequence_num());
-  return oldest_frame;
 }
 
 // Set the frame state to free and remove it from the sorted

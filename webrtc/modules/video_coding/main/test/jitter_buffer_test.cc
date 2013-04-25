@@ -136,10 +136,13 @@ int JitterBufferTest(CmdArgs& args)
     TEST(0 == jb.GetFrame(packet));
     TEST(-1 == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
     TEST(0 == jb.GetCompleteFrameForDecoding(10));
-    TEST(0 == jb.GetFrameForDecoding());
+    TEST(0 == jb.MaybeGetIncompleteFrameForDecoding());
 
     // Start
     jb.Start();
+
+    // Allow decoding with errors.
+    jb.DecodeWithErrors(true);
 
     // Get frame to use for this timestamp
     VCMEncodedFrame* frameIn = jb.GetFrame(packet);
@@ -808,7 +811,7 @@ int JitterBufferTest(CmdArgs& args)
       TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
 
       // Get the frame
-      frameOut = jb.GetFrameForDecoding();
+      frameOut = jb.MaybeGetIncompleteFrameForDecoding();
 
       // One of the packets has been discarded by the jitter buffer.
       // Last frame can't be extracted yet.
@@ -1665,7 +1668,7 @@ int JitterBufferTest(CmdArgs& args)
         packet.seqNum = seqNum;
         packet.timestamp = timeStamp;
         packet.frameType = kFrameEmpty;
-        VCMEncodedFrame* testFrame = jb.GetFrameForDecoding();
+        VCMEncodedFrame* testFrame = jb.MaybeGetIncompleteFrameForDecoding();
         // timestamp should bever be the last TS inserted
         if (testFrame != NULL)
         {
@@ -1744,7 +1747,7 @@ int JitterBufferTest(CmdArgs& args)
     // Get packet notification
     TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType,
                                        &renderTimeMs));
-    frameOut = jb.GetFrameForDecoding();
+    frameOut = jb.MaybeGetIncompleteFrameForDecoding();
 
     // We can decode everything from a NALU until a packet has been lost.
     // Thus we can decode the first packet of the first NALU and the second NALU
@@ -1810,7 +1813,7 @@ int JitterBufferTest(CmdArgs& args)
     // This packet should not be decoded because it is an incomplete NAL if it
     // is the last
 
-    frameOut = jb.GetFrameForDecoding();
+    frameOut = jb.MaybeGetIncompleteFrameForDecoding();
     // Only last NALU is complete
     TEST(CheckOutFrame(frameOut, insertedLength, false) == 0);
     jb.ReleaseFrame(frameOut);
@@ -1834,7 +1837,7 @@ int JitterBufferTest(CmdArgs& args)
 
     // Will be sent to the decoder, as a packet belonging to a subsequent frame
     // has arrived.
-    frameOut = jb.GetFrameForDecoding();
+    frameOut = jb.MaybeGetIncompleteFrameForDecoding();
 
 
     // Test that a frame can include an empty packet.
@@ -1880,7 +1883,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(frameIn = jb.GetFrame(packet));
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
-    frameOut = jb.GetFrameForDecoding();
+    frameOut = jb.MaybeGetIncompleteFrameForDecoding();
     TEST(frameOut == NULL);
 
     packet.seqNum += 2;
@@ -1889,7 +1892,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(frameIn = jb.GetFrame(packet));
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
-    frameOut = jb.GetFrameForDecoding();
+    frameOut = jb.MaybeGetIncompleteFrameForDecoding();
 
     TEST(frameOut != NULL);
     TEST(CheckOutFrame(frameOut, packet.sizeBytes, false) == 0);

@@ -104,13 +104,16 @@ class VCMJitterBuffer {
   // or more packets.
   bool CompleteSequenceWithNextFrame();
 
-  // TODO(mikhal/stefan): Merge all GetFrameForDecoding into one.
-  // Wait |max_wait_time_ms| for a complete frame to arrive. After timeout NULL
-  // is returned.
+  // Returns a complete frame ready for decoding. Allows max_wait_time_ms to
+  // wait for such a frame, if one is unavailable.
+  // Always starts with a key frame.
   VCMEncodedFrame* GetCompleteFrameForDecoding(uint32_t max_wait_time_ms);
 
-  // Get a frame for decoding (even an incomplete) without delay.
-  VCMEncodedFrame* GetFrameForDecoding();
+  // Get next frame for decoding without delay. If decoding with errors is not
+  // enabled, will return NULL. Actual returned frame will be the next one in
+  // the list, either complete or not.
+  // TODO(mikhal): Consider only allowing decodable/complete.
+  VCMEncodedFrame* MaybeGetIncompleteFrameForDecoding();
 
   // Releases a frame returned from the jitter buffer, should be called when
   // done with decoding.
@@ -188,11 +191,6 @@ class VCMJitterBuffer {
   bool HandleTooOldPackets(uint16_t latest_sequence_number);
   // Drops all packets in the NACK list up until |last_decoded_sequence_number|.
   void DropPacketsFromNackList(uint16_t last_decoded_sequence_number);
-
-  // In NACK-only mode this function doesn't return or release non-complete
-  // frames unless we have a complete key frame. In hybrid mode, we may release
-  // "decodable", incomplete frames.
-  VCMEncodedFrame* GetFrameForDecodingNACK();
 
   void ReleaseFrameIfNotDecoding(VCMFrameBuffer* frame);
 

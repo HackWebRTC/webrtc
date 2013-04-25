@@ -535,10 +535,17 @@ VideoCodingModuleImpl::RegisterProtectionCallback(
 }
 
 // Enable or disable a video protection method.
+// Note: This API should be deprecated, as it does not offer a distinction
+// between the protection method and decoding with or without errors. If such a
+// behavior is desired, use the following API: SetReceiverRobustnessMode.
 int32_t
 VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection,
                                           bool enable)
 {
+    // By default, do not decode with errors.
+    _receiver.SetDecodeWithErrors(false);
+    // The dual decoder should always be error free.
+    _dualReceiver.SetDecodeWithErrors(false);
     switch (videoProtection)
     {
 
@@ -583,6 +590,7 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection,
                 // Enable NACK and always wait for retransmissions and
                 // compensate with extra delay.
                 _dualReceiver.SetNackMode(kNack, -1, -1);
+                _receiver.SetDecodeWithErrors(true);
             }
             else
             {
@@ -597,6 +605,7 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection,
             if (enable)
             {
                 _keyRequestMode = kKeyOnLoss;
+                _receiver.SetDecodeWithErrors(true);
             }
             else if (_keyRequestMode == kKeyOnLoss)
             {
@@ -640,6 +649,8 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection,
                     _receiver.SetNackMode(kNack,
                                           media_optimization::kLowRttNackMs,
                                           -1);
+                    _receiver.SetDecodeWithErrors(false);
+                    _receiver.SetDecodeWithErrors(false);
                 }
                 else
                 {
@@ -1021,6 +1032,10 @@ VideoCodingModuleImpl::DecodeDualFrame(uint16_t maxWaitTimeMs)
     }
     int64_t dummyRenderTime;
     int32_t decodeCount = 0;
+    // The dual decoder's state is copied from the main decoder, which may
+    // decode with errors. Make sure that the dual decoder does not introduce
+    // error.
+    _dualReceiver.SetDecodeWithErrors(false);
     VCMEncodedFrame* dualFrame = _dualReceiver.FrameForDecoding(
                                                             maxWaitTimeMs,
                                                             dummyRenderTime);
@@ -1417,6 +1432,9 @@ int VideoCodingModuleImpl::SetReceiverRobustnessMode(
       _dualReceiver.SetNackMode(kNoNack, -1, -1);
       break;
   }
+  _receiver.SetDecodeWithErrors(errorMode == kAllowDecodeErrors);
+  // The dual decoder should never decode with errors.
+  _dualReceiver.SetDecodeWithErrors(false);
   return VCM_OK;
 }
 

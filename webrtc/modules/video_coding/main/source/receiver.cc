@@ -254,11 +254,8 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
         !jitter_buffer_.CompleteSequenceWithNextFrame()) {
       // Jitter buffer state might get corrupt with this frame.
       dual_receiver->CopyJitterBufferStateFromReceiver(*this);
-      frame = jitter_buffer_.GetFrameForDecoding();
-      assert(frame);
-    } else {
-      frame = jitter_buffer_.GetFrameForDecoding();
     }
+    frame = jitter_buffer_.MaybeGetIncompleteFrameForDecoding();
   }
   if (frame == NULL) {
     // Wait for a complete frame.
@@ -282,7 +279,7 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
       dual_receiver->CopyJitterBufferStateFromReceiver(*this);
     }
 
-    frame = jitter_buffer_.GetFrameForDecoding();
+    frame = jitter_buffer_.MaybeGetIncompleteFrameForDecoding();
   }
   return frame;
 }
@@ -320,7 +317,7 @@ VCMEncodedFrame* VCMReceiver::FrameForRendering(uint16_t max_wait_time_ms,
       dual_receiver->CopyJitterBufferStateFromReceiver(*this);
     }
 
-    frame = jitter_buffer_.GetFrameForDecoding();
+    frame = jitter_buffer_.MaybeGetIncompleteFrameForDecoding();
   }
   return frame;
 }
@@ -410,6 +407,16 @@ void VCMReceiver::CopyJitterBufferStateFromReceiver(
 VCMReceiverState VCMReceiver::State() const {
   CriticalSectionScoped cs(crit_sect_);
   return state_;
+}
+
+void VCMReceiver::SetDecodeWithErrors(bool enable){
+  CriticalSectionScoped cs(crit_sect_);
+  jitter_buffer_.DecodeWithErrors(enable);
+}
+
+bool VCMReceiver::DecodeWithErrors() const {
+  CriticalSectionScoped cs(crit_sect_);
+  return jitter_buffer_.decode_with_errors();
 }
 
 int VCMReceiver::SetMinReceiverDelay(int desired_delay_ms) {
