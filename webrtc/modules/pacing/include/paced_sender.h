@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_PACED_SENDER_H_
 
 #include <list>
+#include <set>
 
 #include "webrtc/modules/interface/module.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
@@ -89,14 +90,27 @@ class PacedSender : public Module {
     int bytes_;
   };
 
-  typedef std::list<Packet> PacketList;
+  // STL list style class which prevents duplicates in the list.
+  class PacketList {
+   public:
+    PacketList() {};
+
+    bool empty() const;
+    Packet front() const;
+    void pop_front();
+    void push_back(const Packet& packet);
+
+   private:
+    std::list<Packet> packet_list_;
+    std::set<uint16_t> sequence_number_set_;
+  };
 
   // Checks if next packet in line can be transmitted. Returns true on success.
   bool GetNextPacket(uint32_t* ssrc, uint16_t* sequence_number,
                      int64_t* capture_time_ms);
 
   // Local helper function to GetNextPacket.
-  void GetNextPacketFromList(std::list<Packet>* list,
+  void GetNextPacketFromList(PacketList* list,
       uint32_t* ssrc, uint16_t* sequence_number, int64_t* capture_time_ms);
 
   // Updates the number of bytes that can be sent for the next time interval.

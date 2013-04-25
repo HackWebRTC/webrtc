@@ -111,6 +111,52 @@ TEST_F(PacedSenderTest, PaceQueuedPackets) {
       sequence_number++, capture_time_ms, 250));
 }
 
+TEST_F(PacedSenderTest, PaceQueuedPacketsWithDuplicates) {
+  uint32_t ssrc = 12345;
+  uint16_t sequence_number = 1234;
+  int64_t capture_time_ms = 56789;
+  uint16_t queued_sequence_number;
+
+  // Due to the multiplicative factor we can send 3 packets not 2 packets.
+  for (int i = 0; i < 3; ++i) {
+    EXPECT_TRUE(send_bucket_->SendPacket(PacedSender::kNormalPriority, ssrc,
+        sequence_number++, capture_time_ms, 250));
+  }
+  queued_sequence_number = sequence_number;
+
+  for (int j = 0; j < 30; ++j) {
+    // Send in duplicate packets.
+    EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kNormalPriority, ssrc,
+        sequence_number, capture_time_ms, 250));
+    EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kNormalPriority, ssrc,
+        sequence_number++, capture_time_ms, 250));
+  }
+  EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
+  for (int k = 0; k < 10; ++k) {
+    EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
+    TickTime::AdvanceFakeClock(5);
+
+    for (int i = 0; i < 3; ++i) {
+      EXPECT_CALL(callback_, TimeToSendPacket(ssrc, queued_sequence_number++,
+                                              capture_time_ms)).Times(1);
+   }
+    EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
+    EXPECT_EQ(0, send_bucket_->Process());
+  }
+  EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
+  TickTime::AdvanceFakeClock(5);
+  EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
+  EXPECT_EQ(0, send_bucket_->Process());
+  EXPECT_TRUE(send_bucket_->SendPacket(PacedSender::kNormalPriority, ssrc,
+      sequence_number++, capture_time_ms, 250));
+  EXPECT_TRUE(send_bucket_->SendPacket(PacedSender::kNormalPriority, ssrc,
+      sequence_number++, capture_time_ms, 250));
+  EXPECT_TRUE(send_bucket_->SendPacket(PacedSender::kNormalPriority, ssrc,
+      sequence_number++, capture_time_ms, 250));
+  EXPECT_FALSE(send_bucket_->SendPacket(PacedSender::kNormalPriority, ssrc,
+      sequence_number++, capture_time_ms, 250));
+}
+
 TEST_F(PacedSenderTest, Padding) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;

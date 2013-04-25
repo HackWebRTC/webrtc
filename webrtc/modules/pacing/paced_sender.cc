@@ -36,6 +36,29 @@ const int kMaxQueueTimeWithoutSendingMs = 30;
 
 namespace webrtc {
 
+bool PacedSender::PacketList::empty() const {
+  return packet_list_.empty();
+}
+
+PacedSender::Packet PacedSender::PacketList::front() const {
+  return packet_list_.front();
+}
+
+void PacedSender::PacketList::pop_front() {
+  PacedSender::Packet& packet = packet_list_.front();
+  packet_list_.pop_front();
+  sequence_number_set_.erase(packet.sequence_number_);
+}
+
+void PacedSender::PacketList::push_back(const PacedSender::Packet& packet) {
+  if (sequence_number_set_.find(packet.sequence_number_) ==
+      sequence_number_set_.end()) {
+    // Don't insert duplicates.
+    packet_list_.push_back(packet);
+    sequence_number_set_.insert(packet.sequence_number_);
+  }
+}
+
 PacedSender::PacedSender(Callback* callback, int target_bitrate_kbps)
     : callback_(callback),
       enable_(false),
@@ -49,9 +72,6 @@ PacedSender::PacedSender(Callback* callback, int target_bitrate_kbps)
 }
 
 PacedSender::~PacedSender() {
-  high_priority_packets_.clear();
-  normal_priority_packets_.clear();
-  low_priority_packets_.clear();
 }
 
 void PacedSender::Pause() {
@@ -262,7 +282,7 @@ bool PacedSender::GetNextPacket(uint32_t* ssrc, uint16_t* sequence_number,
   return false;
 }
 
-void PacedSender::GetNextPacketFromList(std::list<Packet>* list,
+void PacedSender::GetNextPacketFromList(PacketList* list,
     uint32_t* ssrc, uint16_t* sequence_number, int64_t* capture_time_ms) {
   Packet packet = list->front();
   UpdateState(packet.bytes_);
