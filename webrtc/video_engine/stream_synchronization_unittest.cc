@@ -162,6 +162,8 @@ class StreamSynchronizationTest : public ::testing::Test {
     int extra_audio_delay_ms = 0;
     int total_video_delay_ms = base_target_delay;
     int filtered_move = (audio_delay_ms - video_delay_ms) / kSmoothingFilter;
+    const int kNeteqDelayIncrease = 50;
+    const int kNeteqDelayDecrease = 10;
 
     EXPECT_TRUE(DelayedStreams(audio_delay_ms,
                                video_delay_ms,
@@ -200,7 +202,7 @@ class StreamSynchronizationTest : public ::testing::Test {
     EXPECT_EQ(base_target_delay, extra_audio_delay_ms);
 
     // Simulate that NetEQ introduces some audio delay.
-    current_audio_delay_ms = base_target_delay + 50;
+    current_audio_delay_ms = base_target_delay + kNeteqDelayIncrease;
     send_time_->IncreaseTimeMs(1000);
     receive_time_->IncreaseTimeMs(1000 - std::max(audio_delay_ms,
                                                   video_delay_ms));
@@ -212,12 +214,13 @@ class StreamSynchronizationTest : public ::testing::Test {
                                &extra_audio_delay_ms,
                                &total_video_delay_ms));
     filtered_move = 3 * filtered_move +
-        (50 + audio_delay_ms - video_delay_ms) / kSmoothingFilter;
+        (kNeteqDelayIncrease + audio_delay_ms - video_delay_ms) /
+        kSmoothingFilter;
     EXPECT_EQ(base_target_delay + filtered_move, total_video_delay_ms);
     EXPECT_EQ(base_target_delay, extra_audio_delay_ms);
 
     // Simulate that NetEQ reduces its delay.
-    current_audio_delay_ms = base_target_delay + 10;
+    current_audio_delay_ms = base_target_delay + kNeteqDelayDecrease;
     send_time_->IncreaseTimeMs(1000);
     receive_time_->IncreaseTimeMs(1000 - std::max(audio_delay_ms,
                                                   video_delay_ms));
@@ -230,7 +233,8 @@ class StreamSynchronizationTest : public ::testing::Test {
                                &total_video_delay_ms));
 
     filtered_move = filtered_move +
-        (10 + audio_delay_ms - video_delay_ms) / kSmoothingFilter;
+        (kNeteqDelayDecrease + audio_delay_ms - video_delay_ms) /
+        kSmoothingFilter;
 
     EXPECT_EQ(base_target_delay + filtered_move, total_video_delay_ms);
     EXPECT_EQ(base_target_delay, extra_audio_delay_ms);
@@ -384,8 +388,6 @@ TEST_F(StreamSynchronizationTest, VideoDelay) {
   EXPECT_TRUE(DelayedStreams(delay_ms, 0, current_audio_delay_ms,
                              &extra_audio_delay_ms, &total_video_delay_ms));
   EXPECT_EQ(0, extra_audio_delay_ms);
-  // Enough time should have elapsed for the requested total video delay to be
-  // equal to the relative delay between audio and video, i.e., we are in sync.
   EXPECT_EQ(3 * delay_ms / kSmoothingFilter, total_video_delay_ms);
 }
 
