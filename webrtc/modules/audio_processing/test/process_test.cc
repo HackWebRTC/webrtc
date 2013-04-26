@@ -107,6 +107,8 @@ void usage() {
   printf("\n  -aecm    Echo control mobile\n");
   printf("  --aecm_echo_path_in_file FILE\n");
   printf("  --aecm_echo_path_out_file FILE\n");
+  printf("  --no_comfort_noise\n");
+  printf("  --routing_mode MODE  [0 - 4]\n");
   printf("\n  -agc     Gain control\n");
   printf("  --analog\n");
   printf("  --adaptive_digital\n");
@@ -287,6 +289,20 @@ void void_main(int argc, char* argv[]) {
       i++;
       ASSERT_LT(i, argc) << "Specify filename after --aecm_echo_path_out_file";
       aecm_echo_path_out_filename = argv[i];
+
+    } else if (strcmp(argv[i], "--no_comfort_noise") == 0) {
+      ASSERT_EQ(apm->kNoError,
+                apm->echo_control_mobile()->enable_comfort_noise(false));
+
+    } else if (strcmp(argv[i], "--routing_mode") == 0) {
+      i++;
+      ASSERT_LT(i, argc) << "Specify mode after --routing_mode";
+      int routing_mode;
+      ASSERT_EQ(1, sscanf(argv[i], "%d", &routing_mode));
+      ASSERT_EQ(apm->kNoError,
+                apm->echo_control_mobile()->set_routing_mode(
+                    static_cast<webrtc::EchoControlMobile::RoutingMode>(
+                        routing_mode)));
 
     } else if (strcmp(argv[i], "-agc") == 0) {
       ASSERT_EQ(apm->kNoError, apm->gain_control()->Enable(true));
