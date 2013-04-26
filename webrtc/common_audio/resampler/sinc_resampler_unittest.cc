@@ -11,14 +11,12 @@
 // Modified from the Chromium original:
 // src/media/base/sinc_resampler_unittest.cc
 
-// MSVC++ requires this to be set before any other includes to get M_PI.
-#define _USE_MATH_DEFINES
-
 #include <cmath>
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_audio/resampler/sinc_resampler.h"
+#include "webrtc/common_audio/resampler/sinusoidal_linear_chirp_source.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/stringize_macros.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
@@ -194,58 +192,6 @@ TEST(SincResamplerTest, ConvolveBenchmark) {
 
 #undef CONVOLVE_FUNC
 
-// Fake audio source for testing the resampler.  Generates a sinusoidal linear
-// chirp (http://en.wikipedia.org/wiki/Chirp) which can be tuned to stress the
-// resampler for the specific sample rate conversion being used.
-class SinusoidalLinearChirpSource : public SincResamplerCallback {
- public:
-  SinusoidalLinearChirpSource(int sample_rate, int samples,
-                              double max_frequency)
-      : sample_rate_(sample_rate),
-        total_samples_(samples),
-        max_frequency_(max_frequency),
-        current_index_(0) {
-    // Chirp rate.
-    double duration = static_cast<double>(total_samples_) / sample_rate_;
-    k_ = (max_frequency_ - kMinFrequency) / duration;
-  }
-
-  virtual ~SinusoidalLinearChirpSource() {}
-
-  virtual void Run(float* destination, int frames) {
-    for (int i = 0; i < frames; ++i, ++current_index_) {
-      // Filter out frequencies higher than Nyquist.
-      if (Frequency(current_index_) > 0.5 * sample_rate_) {
-        destination[i] = 0;
-      } else {
-        // Calculate time in seconds.
-        double t = static_cast<double>(current_index_) / sample_rate_;
-
-        // Sinusoidal linear chirp.
-        destination[i] = sin(2 * M_PI * (kMinFrequency * t + (k_ / 2) * t * t));
-      }
-    }
-  }
-
-  double Frequency(int position) {
-    return kMinFrequency + position * (max_frequency_ - kMinFrequency)
-        / total_samples_;
-  }
-
- private:
-  enum {
-    kMinFrequency = 5
-  };
-
-  double sample_rate_;
-  int total_samples_;
-  double max_frequency_;
-  double k_;
-  int current_index_;
-
-  DISALLOW_COPY_AND_ASSIGN(SinusoidalLinearChirpSource);
-};
-
 typedef std::tr1::tuple<int, int, double, double> SincResamplerTestData;
 class SincResamplerTest
     : public testing::TestWithParam<SincResamplerTestData> {
@@ -270,15 +216,15 @@ class SincResamplerTest
 TEST_P(SincResamplerTest, Resample) {
   // Make comparisons using one second of data.
   static const double kTestDurationSecs = 1;
-  int input_samples = kTestDurationSecs * input_rate_;
-  int output_samples = kTestDurationSecs * output_rate_;
+  const int input_samples = kTestDurationSecs * input_rate_;
+  const int output_samples = kTestDurationSecs * output_rate_;
 
   // Nyquist frequency for the input sampling rate.
-  double input_nyquist_freq = 0.5 * input_rate_;
+  const double input_nyquist_freq = 0.5 * input_rate_;
 
   // Source for data to be resampled.
   SinusoidalLinearChirpSource resampler_source(
-      input_rate_, input_samples, input_nyquist_freq);
+      input_rate_, input_samples, input_nyquist_freq, 0);
 
   SincResampler resampler(
       input_rate_ / static_cast<double>(output_rate_),
@@ -294,7 +240,7 @@ TEST_P(SincResamplerTest, Resample) {
 
   // Generate pure signal.
   SinusoidalLinearChirpSource pure_source(
-      output_rate_, output_samples, input_nyquist_freq);
+      output_rate_, output_samples, input_nyquist_freq, 0);
   pure_source.Run(pure_destination.get(), output_samples);
 
   // Range of the Nyquist frequency (0.5 * min(input rate, output_rate)) which

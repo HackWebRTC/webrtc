@@ -264,6 +264,10 @@ int SincResampler::ChunkSize() {
   return block_size_ / io_sample_rate_ratio_;
 }
 
+int SincResampler::BlockSize() {
+  return block_size_;
+}
+
 void SincResampler::Flush() {
   virtual_source_idx_ = 0;
   buffer_primed_ = false;

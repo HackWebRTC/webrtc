@@ -24,6 +24,8 @@
       },
       'sources': [
         'include/resampler.h',
+        'push_sinc_resampler.cc',
+        'push_sinc_resampler.h',
         'resampler.cc',
         'sinc_resampler.cc',
         'sinc_resampler.h',
@@ -44,7 +46,10 @@
           ],
           'sources': [
             'resampler_unittest.cc',
+            'push_sinc_resampler_unittest.cc',
             'sinc_resampler_unittest.cc',
+            'sinusoidal_linear_chirp_source.cc',
+            'sinusoidal_linear_chirp_source.h',
           ],
         }, # resampler_unittests
       ], # targets

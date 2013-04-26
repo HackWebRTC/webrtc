@@ -49,6 +49,11 @@ class SincResampler {
   // single call to |read_cb_| for more data.
   int ChunkSize();
 
+  // The number of source frames requested per processing pass (and equal to
+  // |block_size| if provided at construction).  The first pass will request
+  // more to prime the buffer.
+  int BlockSize();
+
   // Flush all buffered data and reset internal indices.
   void Flush();
 
