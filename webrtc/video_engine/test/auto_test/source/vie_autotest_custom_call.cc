@@ -253,11 +253,6 @@ int ViEAutoTest::ViECustomCall() {
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-  webrtc::ViEFile* vie_file = webrtc::ViEFile::GetInterface(vie);
-  number_of_errors += ViETest::TestError(vie_file != NULL,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
-
   bool start_call = false;
   std::string ip_address;
   const unsigned int KMaxUniqueIdLength = 256;
@@ -564,7 +559,6 @@ int ViEAutoTest::ViECustomCall() {
                                            "ERROR: %s at line %d",
                                            __FUNCTION__, __LINE__);
     ViEAutotestFileObserver file_observer;
-    int file_id;
 
     ViEAutotestEncoderObserver* codec_encoder_observer = NULL;
     ViEAutotestDecoderObserver* codec_decoder_observer = NULL;
@@ -586,7 +580,6 @@ int ViEAutoTest::ViECustomCall() {
     if (selection == 3) {
         AutoTestSleep(std::numeric_limits<long>::max());
     }
-    int file_selection = 0;
 
     while (selection == 2) {
       // Keep on modifying the call until user stops the call.
@@ -597,10 +590,6 @@ int ViEAutoTest::ViECustomCall() {
           "Change Video Send Size by Common Resolutions\n"
           "Change Video Send Size by Width & Height\n"
           "Change Video Capture Device\n"
-          "Record Incoming Call\n"
-          "Record Outgoing Call\n"
-          "Play File on Video Channel "
-          "(Assumes you recorded incoming & outgoing call)\n"
           "Change Video Protection Method\n"
           "Toggle Encoder Observer\n"
           "Toggle Decoder Observer\n"
@@ -731,106 +720,12 @@ int ViEAutoTest::ViECustomCall() {
                                                  __FUNCTION__, __LINE__);
           break;
         case 6:
-          // Record the incoming call.
-          std::cout << "Start Recording Incoming Video "
-                    << DEFAULT_INCOMING_FILE_NAME <<  std::endl;
-          error = vie_file->StartRecordIncomingVideo(
-                    video_channel, DEFAULT_INCOMING_FILE_NAME,
-                    webrtc::NO_AUDIO, audio_codec, video_send_codec);
-          std::cout << "Press enter to stop...";
-          std::getline(std::cin, str);
-          error = vie_file->StopRecordIncomingVideo(video_channel);
-          number_of_errors += ViETest::TestError(error == 0,
-                                                 "ERROR:%d %s at line %d",
-                                                 vie_base->LastError(),
-                                                 __FUNCTION__, __LINE__);
-          break;
-        case 7:
-          // Record the outgoing call.
-          std::cout << "Start Recording Outgoing Video "
-                    << DEFAULT_OUTGOING_FILE_NAME <<  std::endl;
-          error = vie_file->StartRecordOutgoingVideo(
-                    video_channel, DEFAULT_OUTGOING_FILE_NAME,
-                    webrtc::NO_AUDIO, audio_codec, video_send_codec);
-          std::cout << "Press enter to stop...";
-          std::getline(std::cin, str);
-          error = vie_file->StopRecordOutgoingVideo(video_channel);
-          number_of_errors += ViETest::TestError(error == 0,
-                                                 "ERROR:%d %s at line %d",
-                                                 vie_base->LastError(),
-                                                 __FUNCTION__, __LINE__);
-          break;
-        case 8:
-          // Send the file on the video_channel.
-          file_selection = FromChoices(
-              "Choose a file name:",
-              DEFAULT_INCOMING_FILE_NAME "\n"
-              DEFAULT_OUTGOING_FILE_NAME "\n")
-                  .WithDefault(DEFAULT_INCOMING_FILE_NAME).Choose();
-
-          // Disconnect the camera first.
-          error = vie_capture->DisconnectCaptureDevice(video_channel);
-          number_of_errors += ViETest::TestError(error == 0,
-                                                 "ERROR:%d %s at line %d",
-                                                 vie_base->LastError(),
-                                                 __FUNCTION__, __LINE__);
-          if (file_selection == 2)
-            error = vie_file->StartPlayFile(DEFAULT_OUTGOING_FILE_NAME,
-                                            file_id, true);
-          else
-            error = vie_file->StartPlayFile(DEFAULT_INCOMING_FILE_NAME,
-                                            file_id, true);
-          number_of_errors += ViETest::TestError(error == 0,
-                                                 "ERROR:%d %s at line %d",
-                                                 vie_base->LastError(),
-                                                 __FUNCTION__, __LINE__);
-          ViETest::Log("Registering file observer");
-          error = vie_file->RegisterObserver(file_id, file_observer);
-          number_of_errors += ViETest::TestError(error == 0,
-                                                 "ERROR:%d %s at line %d",
-                                                 vie_base->LastError(),
-                                                 __FUNCTION__, __LINE__);
-          std::cout << std::endl;
-          std::cout << "Start sending the file that is played in a loop "
-                    << std::endl;
-          error = vie_file->SendFileOnChannel(file_id, video_channel);
-          number_of_errors += ViETest::TestError(error == 0,
-                                                 "ERROR:%d %s at line %d",
-                                                 vie_base->LastError(),
-                                                 __FUNCTION__, __LINE__);
-          std::cout << "Press enter to stop...";
-          std::getline(std::cin, str);
-          ViETest::Log("Stopped sending video on channel");
-          error = vie_file->StopSendFileOnChannel(video_channel);
-          number_of_errors += ViETest::TestError(error == 0,
-                                                 "ERROR:%d %s at line %d",
-                                                 vie_base->LastError(),
-                                                 __FUNCTION__, __LINE__);
-          ViETest::Log("Stop playing the file.");
-          error = vie_file->StopPlayFile(file_id);
-          number_of_errors += ViETest::TestError(error == 0,
-                                                 "ERROR:%d %s at line %d",
-                                                 vie_base->LastError(),
-                                                 __FUNCTION__, __LINE__);
-          error = vie_capture->ConnectCaptureDevice(capture_id,
-                                                        video_channel);
-          number_of_errors += ViETest::TestError(error == 0,
-                                                 "ERROR:%d %s at line %d",
-                                                 vie_base->LastError(),
-                                                 __FUNCTION__, __LINE__);
-          error = vie_file->DeregisterObserver(file_id, file_observer);
-          number_of_errors += ViETest::TestError(error == -1,
-                                                 "ERROR:%d %s at line %d",
-                                                 vie_base->LastError(),
-                                                 __FUNCTION__, __LINE__);
-          break;
-        case 9:
           // Change the Video Protection.
           protection_method = GetVideoProtection();
           SetVideoProtection(vie_codec, vie_rtp_rtcp,
                              video_channel, protection_method);
           break;
-        case 10:
+        case 7:
           // Toggle Encoder Observer.
           if (!codec_encoder_observer) {
             std::cout << "Registering Encoder Observer" << std::endl;
@@ -850,7 +745,7 @@ int ViEAutoTest::ViECustomCall() {
                                                    __FUNCTION__, __LINE__);
           }
           break;
-        case 11:
+        case 8:
           // Toggle Decoder Observer.
           if (!codec_decoder_observer) {
             std::cout << "Registering Decoder Observer" << std::endl;
@@ -870,7 +765,7 @@ int ViEAutoTest::ViECustomCall() {
                                                    __FUNCTION__, __LINE__);
           }
           break;
-        case 12:
+        case 9:
           // Print Call information..
           PrintCallInformation(ip_address.c_str(), device_name,
                                unique_id, video_send_codec,
@@ -882,7 +777,7 @@ int ViEAutoTest::ViECustomCall() {
           PrintVideoStreamInformation(vie_codec,
                                       video_channel);
           break;
-        case 13:
+        case 10:
           // Print Call statistics.
           PrintRTCCPStatistics(vie_rtp_rtcp, video_channel,
                                kSendStatistic);
@@ -896,7 +791,7 @@ int ViEAutoTest::ViECustomCall() {
                                kReceivedStatistic);
           PrintGetDiscardedPackets(vie_codec, video_channel);
           break;
-        case 14:
+        case 11:
           is_image_scale_enabled = !is_image_scale_enabled;
           vie_codec->SetImageScaleStatus(video_channel, is_image_scale_enabled);
           if (is_image_scale_enabled) {
@@ -1003,10 +898,6 @@ int ViEAutoTest::ViECustomCall() {
                                            __FUNCTION__, __LINE__);
 
     int remaining_interfaces = 0;
-    remaining_interfaces = vie_file->Release();
-    number_of_errors += ViETest::TestError(remaining_interfaces == 0,
-                                           "ERROR: %s at line %d",
-                                           __FUNCTION__, __LINE__);
     remaining_interfaces = vie_codec->Release();
     number_of_errors += ViETest::TestError(remaining_interfaces == 0,
                                            "ERROR: %s at line %d",
