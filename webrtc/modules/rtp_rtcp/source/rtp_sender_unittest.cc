@@ -14,6 +14,7 @@
 
 #include <gtest/gtest.h>
 
+#include "webrtc/modules/pacing/include/mock/mock_paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
@@ -33,6 +34,8 @@ const uint16_t kSeqNum = 33;
 const int kTimeOffset = 22222;
 const int kMaxPacketLength = 1500;
 }  // namespace
+
+using testing::_;
 
 class LoopbackTransportTest : public webrtc::Transport {
  public:
@@ -58,13 +61,17 @@ class RtpSenderTest : public ::testing::Test {
  protected:
   RtpSenderTest()
     : fake_clock_(123456),
+      mock_paced_sender_(),
       rtp_sender_(new RTPSender(0, false, &fake_clock_, &transport_, NULL,
-                                NULL)),
+                                &mock_paced_sender_)),
       kMarkerBit(true),
       kType(kRtpExtensionTransmissionTimeOffset) {
     rtp_sender_->SetSequenceNumber(kSeqNum);
+    EXPECT_CALL(mock_paced_sender_,
+        SendPacket(_, _, _, _, _)).WillRepeatedly(testing::Return(true));
   }
   SimulatedClock fake_clock_;
+  MockPacedSender mock_paced_sender_;
   scoped_ptr<RTPSender> rtp_sender_;
   LoopbackTransportTest transport_;
   const bool kMarkerBit;
@@ -173,24 +180,11 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithNegativeTransmissionOffsetExtension) {
   EXPECT_EQ(kNegTimeOffset, rtp_header.extension.transmissionTimeOffset);
 }
 
-TEST_F(RtpSenderTest, NoTrafficSmoothing) {
-  int32_t rtp_length = rtp_sender_->BuildRTPheader(packet_,
-                                                   kPayload,
-                                                   kMarkerBit,
-                                                   kTimestamp);
+TEST_F(RtpSenderTest, TrafficSmoothingWithTimeOffset) {
+  EXPECT_CALL(mock_paced_sender_,
+              SendPacket(PacedSender::kNormalPriority, _, kSeqNum, _, _)).
+                  WillOnce(testing::Return(false));
 
-  // Packet should be sent immediately.
-  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_,
-                                          0,
-                                          rtp_length,
-                                          kTimestamp / 90,
-                                          kAllowRetransmission));
-  EXPECT_EQ(1, transport_.packets_sent_);
-  EXPECT_EQ(rtp_length, transport_.last_sent_packet_len_);
-}
-
-TEST_F(RtpSenderTest, DISABLED_TrafficSmoothing) {
-  // TODO(pwestin) we need to send in a pacer object.
   rtp_sender_->SetStorePacketsStatus(true, 10);
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kType, kId));
   rtp_sender_->SetTargetSendBitrate(300000);
@@ -198,15 +192,23 @@ TEST_F(RtpSenderTest, DISABLED_TrafficSmoothing) {
                                                    kPayload,
                                                    kMarkerBit,
                                                    kTimestamp);
+
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
+
   // Packet should be stored in a send bucket.
   EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_,
                                           0,
                                           rtp_length,
-                                          fake_clock_.TimeInMilliseconds(),
+                                          capture_time_ms,
                                           kAllowRetransmission));
+
   EXPECT_EQ(0, transport_.packets_sent_);
+
   const int kStoredTimeInMs = 100;
   fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
+
+  rtp_sender_->TimeToSendPacket(kSeqNum, capture_time_ms);
+
   // Process send bucket. Packet should now be sent.
   EXPECT_EQ(1, transport_.packets_sent_);
   EXPECT_EQ(rtp_length, transport_.last_sent_packet_len_);
@@ -218,6 +220,60 @@ TEST_F(RtpSenderTest, DISABLED_TrafficSmoothing) {
   map.Register(kType, kId);
   const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
   ASSERT_TRUE(valid_rtp_header);
+
+  // Verify transmission time offset.
+  EXPECT_EQ(kStoredTimeInMs * 90, rtp_header.extension.transmissionTimeOffset);
+}
+
+TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
+  EXPECT_CALL(mock_paced_sender_,
+              SendPacket(PacedSender::kNormalPriority, _, kSeqNum, _, _)).
+                  WillOnce(testing::Return(false));
+
+  rtp_sender_->SetStorePacketsStatus(true, 10);
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kType, kId));
+  rtp_sender_->SetTargetSendBitrate(300000);
+  int32_t rtp_length = rtp_sender_->BuildRTPheader(packet_,
+                                                   kPayload,
+                                                   kMarkerBit,
+                                                   kTimestamp);
+
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
+
+  // Packet should be stored in a send bucket.
+  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_,
+                                          0,
+                                          rtp_length,
+                                          capture_time_ms,
+                                          kAllowRetransmission));
+
+  EXPECT_EQ(0, transport_.packets_sent_);
+
+  EXPECT_CALL(mock_paced_sender_,
+              SendPacket(PacedSender::kHighPriority, _, kSeqNum, _, _)).
+                  WillOnce(testing::Return(false));
+
+  const int kStoredTimeInMs = 100;
+  fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
+
+  EXPECT_EQ(0, rtp_sender_->ReSendPacket(kSeqNum));
+  EXPECT_EQ(0, transport_.packets_sent_);
+
+  rtp_sender_->TimeToSendPacket(kSeqNum, capture_time_ms);
+
+  // Process send bucket. Packet should now be sent.
+  EXPECT_EQ(1, transport_.packets_sent_);
+  EXPECT_EQ(rtp_length, transport_.last_sent_packet_len_);
+
+  // Parse sent packet.
+  webrtc::ModuleRTPUtility::RTPHeaderParser rtp_parser(
+      transport_.last_sent_packet_, rtp_length);
+  webrtc::WebRtcRTPHeader rtp_header;
+  RtpHeaderExtensionMap map;
+  map.Register(kType, kId);
+  const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
+  ASSERT_TRUE(valid_rtp_header);
+
   // Verify transmission time offset.
   EXPECT_EQ(kStoredTimeInMs * 90, rtp_header.extension.transmissionTimeOffset);
 }

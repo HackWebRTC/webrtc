@@ -169,8 +169,6 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
 
   int32_t ReSendPacket(uint16_t packet_id, uint32_t min_resend_time = 0);
 
-  int32_t ReSendToNetwork(const uint8_t *packet, const uint32_t size);
-
   bool ProcessNACKBitRate(const uint32_t now);
 
   // RTX.
@@ -262,6 +260,8 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
 
   void BuildRtxPacket(uint8_t* buffer, uint16_t* length,
                       uint8_t* buffer_rtx);
+
+  bool SendPacketToNetwork(const uint8_t *packet, uint32_t size);
 
   int32_t id_;
   const bool audio_configured_;

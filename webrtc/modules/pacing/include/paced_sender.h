@@ -62,11 +62,14 @@ class PacedSender : public Module {
 
   // Returns true if we send the packet now, else it will add the packet
   // information to the queue and call TimeToSendPacket when it's time to send.
-  bool SendPacket(Priority priority, uint32_t ssrc, uint16_t sequence_number,
-                  int64_t capture_time_ms, int bytes);
+  virtual bool SendPacket(Priority priority,
+                          uint32_t ssrc,
+                          uint16_t sequence_number,
+                          int64_t capture_time_ms,
+                          int bytes);
 
   // Returns the time since the oldest queued packet was captured.
-  int QueueInMs() const;
+  virtual int QueueInMs() const;
 
   // Returns the number of milliseconds until the module want a worker thread
   // to call Process.

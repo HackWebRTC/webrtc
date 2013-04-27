@@ -448,19 +448,18 @@ void RTPSender::SetStorePacketsStatus(const bool enable,
   packet_history_->SetStorePacketsStatus(enable, number_to_store);
 }
 
-bool RTPSender::StorePackets() const { return packet_history_->StorePackets(); }
+bool RTPSender::StorePackets() const {
+  return packet_history_->StorePackets();
+}
 
 int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
   uint16_t length = IP_PACKET_SIZE;
   uint8_t data_buffer[IP_PACKET_SIZE];
   uint8_t *buffer_to_send_ptr = data_buffer;
-
-  int64_t stored_time_in_ms;
+  int64_t capture_time_ms;
   StorageType type;
-  bool found = packet_history_->GetRTPPacket(packet_id, min_resend_time,
-                                             data_buffer, &length,
-                                             &stored_time_in_ms, &type);
-  if (!found) {
+  if (!packet_history_->GetRTPPacket(packet_id, min_resend_time, data_buffer,
+                                     &length, &capture_time_ms, &type)) {
     // Packet not found.
     return 0;
   }
@@ -469,44 +468,63 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
     // packet should not be retransmitted.
     return 0;
   }
+
   uint8_t data_buffer_rtx[IP_PACKET_SIZE];
   if (rtx_ != kRtxOff) {
     BuildRtxPacket(data_buffer, &length, data_buffer_rtx);
     buffer_to_send_ptr = data_buffer_rtx;
   }
 
-  int32_t bytes_sent = ReSendToNetwork(buffer_to_send_ptr, length);
   ModuleRTPUtility::RTPHeaderParser rtp_parser(data_buffer, length);
   WebRtcRTPHeader rtp_header;
   rtp_parser.Parse(rtp_header);
+
+  // Store the time when the packet was last sent or added to pacer.
+  packet_history_->UpdateResendTime(packet_id);
+
+  {
+    // Update send statistics prior to pacer.
+    CriticalSectionScoped cs(send_critsect_);
+    Bitrate::Update(length);
+    packets_sent_++;
+    // We on purpose don't add to payload_bytes_sent_ since this is a
+    // re-transmit and not new payload data.
+  }
+
+  if (paced_sender_) {
+    if (!paced_sender_->SendPacket(PacedSender::kHighPriority,
+                                   rtp_header.header.ssrc,
+                                   rtp_header.header.sequenceNumber,
+                                   capture_time_ms,
+                                   length)) {
+      // We can't send the packet right now.
+      // We will be called when it is time.
+      return 0;
+    }
+  }
+
   TRACE_EVENT_INSTANT2("webrtc_rtp", "RTPSender::ReSendPacket",
                        "timestamp", rtp_header.header.timestamp,
                        "seqnum", rtp_header.header.sequenceNumber);
-  if (bytes_sent <= 0) {
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, id_,
-                 "Transport failed to resend packet_id %u", packet_id);
-    return -1;
+
+  if (SendPacketToNetwork(buffer_to_send_ptr, length)) {
+    return 0;
   }
-  // Store the time when the packet was last resent.
-  packet_history_->UpdateResendTime(packet_id);
-  return bytes_sent;
+  return -1;
 }
 
-int32_t RTPSender::ReSendToNetwork(const uint8_t *packet, const uint32_t size) {
-  int32_t bytes_sent = -1;
+bool RTPSender::SendPacketToNetwork(const uint8_t *packet, uint32_t size) {
+  int bytes_sent = -1;
   if (transport_) {
     bytes_sent = transport_->SendPacket(id_, packet, size);
   }
+  // TODO(pwesin): Add a separate bitrate for sent bitrate after pacer.
   if (bytes_sent <= 0) {
-    return -1;
+    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, id_,
+                 "Transport failed to send packet");
+    return false;
   }
-  // Update send statistics.
-  CriticalSectionScoped cs(send_critsect_);
-  Bitrate::Update(bytes_sent);
-  packets_sent_++;
-  // We on purpose don't add to payload_bytes_sent_ since this is a
-  // re-transmit and not new payload data.
-  return bytes_sent;
+  return true;
 }
 
 int RTPSender::SelectiveRetransmissions() const {
@@ -625,12 +643,13 @@ void RTPSender::UpdateNACKBitRate(const uint32_t bytes,
   }
 }
 
+// Called from pacer when we can send the packet.
 void RTPSender::TimeToSendPacket(uint16_t sequence_number,
                                  int64_t capture_time_ms) {
   StorageType type;
   uint16_t length = IP_PACKET_SIZE;
   uint8_t data_buffer[IP_PACKET_SIZE];
-  int64_t stored_time_ms;  // TODO(pwestin) can we deprecate this?
+  int64_t stored_time_ms;
 
   if (packet_history_ == NULL) {
     return;
@@ -655,20 +674,7 @@ void RTPSender::TimeToSendPacket(uint16_t sequence_number,
                                       rtp_header.header.sequenceNumber,
                                       rtp_header.header.headerLength);
   }
-  int bytes_sent = -1;
-  if (transport_) {
-    bytes_sent = transport_->SendPacket(id_, data_buffer, length);
-  }
-  if (bytes_sent <= 0) {
-    return;
-  }
-  // Update send statistics.
-  CriticalSectionScoped cs(send_critsect_);
-  Bitrate::Update(bytes_sent);
-  packets_sent_++;
-  if (bytes_sent > rtp_header.header.headerLength) {
-    payload_bytes_sent_ += bytes_sent - rtp_header.header.headerLength;
-  }
+  SendPacketToNetwork(data_buffer, length);
 }
 
 // TODO(pwestin): send in the RTPHeaderParser to avoid parsing it again.
@@ -695,17 +701,26 @@ int32_t RTPSender::SendToNetwork(
     return -1;
   }
 
-  int32_t bytes_sent = -1;
   // Create and send RTX Packet.
+  // TODO(pwesin): This should be moved to its own code path triggered by pacer.
+  bool rtx_sent = false;
   if (rtx_ == kRtxAll && storage == kAllowRetransmission) {
     uint16_t length_rtx = payload_length + rtp_header_length;
     uint8_t data_buffer_rtx[IP_PACKET_SIZE];
     BuildRtxPacket(buffer, &length_rtx, data_buffer_rtx);
-    if (transport_) {
-      bytes_sent += transport_->SendPacket(id_, data_buffer_rtx, length_rtx);
-      if (bytes_sent <= 0) {
-        return -1;
-      }
+    if (!SendPacketToNetwork(data_buffer_rtx, length_rtx)) return -1;
+    rtx_sent = true;
+  }
+  {
+    // Update send statistics prior to pacer.
+    CriticalSectionScoped cs(send_critsect_);
+    Bitrate::Update(payload_length + rtp_header_length);
+    ++packets_sent_;
+    payload_bytes_sent_ += payload_length;
+    if (rtx_sent) {
+      // The RTX packet.
+      ++packets_sent_;
+      payload_bytes_sent_ += payload_length;
     }
   }
 
@@ -716,26 +731,13 @@ int32_t RTPSender::SendToNetwork(
         payload_length + rtp_header_length)) {
       // We can't send the packet right now.
       // We will be called when it is time.
-      return payload_length + rtp_header_length;
+      return 0;
     }
   }
-  // Send data packet.
-  bytes_sent = -1;
-  if (transport_) {
-    bytes_sent = transport_->SendPacket(id_, buffer,
-                                        payload_length + rtp_header_length);
+  if (SendPacketToNetwork(buffer, payload_length + rtp_header_length)) {
+    return 0;
   }
-  if (bytes_sent <= 0) {
-    return -1;
-  }
-  // Update send statistics.
-  CriticalSectionScoped cs(send_critsect_);
-  Bitrate::Update(bytes_sent);
-  packets_sent_++;
-  if (bytes_sent > rtp_header_length) {
-    payload_bytes_sent_ += bytes_sent - rtp_header_length;
-  }
-  return 0;
+  return -1;
 }
 
 void RTPSender::ProcessBitrate() {
