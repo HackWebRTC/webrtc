@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "output_mixer.h"
+#include "webrtc/voice_engine/output_mixer.h"
 
-#include "audio_processing.h"
-#include "audio_frame_operations.h"
-#include "critical_section_wrapper.h"
-#include "file_wrapper.h"
-#include "output_mixer_internal.h"
-#include "statistics.h"
-#include "trace.h"
-#include "voe_external_media.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
+#include "webrtc/modules/utility/interface/audio_frame_operations.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/file_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/voice_engine/include/voe_external_media.h"
+#include "webrtc/voice_engine/output_mixer_internal.h"
+#include "webrtc/voice_engine/statistics.h"
 
 namespace webrtc {
 
@@ -528,7 +528,7 @@ int OutputMixer::GetMixedAudio(int sample_rate_hz,
   frame->sample_rate_hz_ = sample_rate_hz;
   // TODO(andrew): Ideally the downmixing would occur much earlier, in
   // AudioCodingModule.
-  return RemixAndResample(_audioFrame, &_resampler, frame);
+  return RemixAndResample(_audioFrame, &resampler_, frame);
 }
 
 int32_t
@@ -602,7 +602,7 @@ void OutputMixer::APMAnalyzeReverseStream() {
   AudioFrame frame;
   frame.num_channels_ = 1;
   frame.sample_rate_hz_ = _audioProcessingModulePtr->sample_rate_hz();
-  if (RemixAndResample(_audioFrame, &_apmResampler, &frame) == -1)
+  if (RemixAndResample(_audioFrame, &audioproc_resampler_, &frame) == -1)
     return;
 
   if (_audioProcessingModulePtr->AnalyzeReverseStream(&frame) == -1) {

@@ -23,7 +23,13 @@
         ],
       },
       'sources': [
+        # TODO(ajm): Adding audio_util here for now. We should transition
+        # to having a single common_audio target.
+        '../audio_util.cc',
+        '../include/audio_util.h',
+        'include/push_resampler.h',
         'include/resampler.h',
+        'push_resampler.cc',
         'push_sinc_resampler.cc',
         'push_sinc_resampler.h',
         'resampler.cc',
@@ -45,7 +51,9 @@
             '<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [
+            '../audio_util_unittest.cc',
             'resampler_unittest.cc',
+            'push_resampler_unittest.cc',
             'push_sinc_resampler_unittest.cc',
             'sinc_resampler_unittest.cc',
             'sinusoidal_linear_chirp_source.cc',

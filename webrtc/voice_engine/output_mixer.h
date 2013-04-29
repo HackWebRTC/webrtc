@@ -11,14 +11,14 @@
 #ifndef WEBRTC_VOICE_ENGINE_OUTPUT_MIXER_H_
 #define WEBRTC_VOICE_ENGINE_OUTPUT_MIXER_H_
 
-#include "audio_conference_mixer.h"
-#include "audio_conference_mixer_defines.h"
-#include "common_types.h"
-#include "dtmf_inband.h"
-#include "file_recorder.h"
-#include "level_indicator.h"
-#include "resampler.h"
-#include "voice_engine_defines.h"
+#include "webrtc/common_audio/resampler/include/push_resampler.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/audio_conference_mixer/interface/audio_conference_mixer.h"
+#include "webrtc/modules/audio_conference_mixer/interface/audio_conference_mixer_defines.h"
+#include "webrtc/modules/utility/interface/file_recorder.h"
+#include "webrtc/voice_engine/dtmf_inband.h"
+#include "webrtc/voice_engine/level_indicator.h"
+#include "webrtc/voice_engine/voice_engine_defines.h"
 
 namespace webrtc {
 
@@ -133,8 +133,8 @@ private:
     CriticalSectionWrapper& _fileCritSect;
     AudioConferenceMixer& _mixerModule;
     AudioFrame _audioFrame;
-    Resampler _resampler;        // converts mixed audio to fit ADM format
-    Resampler _apmResampler;    // converts mixed audio to fit APM rate
+    PushResampler resampler_;  // converts mixed audio to fit ADM format
+    PushResampler audioproc_resampler_;  // converts mixed audio to fit APM rate
     AudioLevel _audioLevel;    // measures audio level for the combined signal
     DtmfInband _dtmfGenerator;
     int _instanceId;
