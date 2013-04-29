@@ -101,8 +101,6 @@ VCMJitterEstimator::Reset()
     _fsSum = 0;
     _fsCount = 0;
     _startupCount = 0;
-    _jitterEstimateMode = kLastEstimate;
-    _maxJitterEstimateMs = kInitialMaxJitterEstimate;
     _rttFilter.Reset();
 }
 
