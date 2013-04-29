@@ -296,15 +296,21 @@ VCMEncodedFrame* VCMReceiver::FrameForRendering(uint16_t max_wait_time_ms,
   uint32_t wait_time_ms = timing_->MaxWaitingTime(
       next_render_time_ms, clock_->TimeInMilliseconds());
   if (max_wait_time_ms < wait_time_ms) {
-    // If we're not allowed to wait until the frame is supposed to be rendered
-    // we will have to return NULL for now.
+    // If we're not allowed to wait until the frame is supposed to be rendered,
+    // waiting as long as we're allowed to avoid busy looping, and then return
+    // NULL. Next call to this function might return the frame.
+    render_wait_event_->Wait(max_wait_time_ms);
     return NULL;
   }
   // Wait until it's time to render.
   render_wait_event_->Wait(wait_time_ms);
 
   // Get a complete frame if possible.
-  VCMEncodedFrame* frame = jitter_buffer_.GetCompleteFrameForDecoding(0);
+  // Note: This might cause us to wait more than a total of |max_wait_time_ms|.
+  // This is necessary to avoid a possible busy loop if no complete frame
+  // has been received.
+  VCMEncodedFrame* frame = jitter_buffer_.GetCompleteFrameForDecoding(
+      max_wait_time_ms);
 
   if (frame == NULL) {
     // Get an incomplete frame.
