@@ -485,6 +485,22 @@ int VideoEngineSampleCode(void* window1, void* window2)
         printf("ERROR in ViERTP_RTCP::SetProtectionStatus\n");
     }
 
+    // Set up buffering delay.
+    std::cout << std::endl;
+    std::cout << "Set buffering delay (mS). Press enter for default(0mS):  ";
+    std::getline(std::cin, str);
+    int buffering_delay = atoi(str.c_str());
+    if (buffering_delay != 0) {
+      error = ptrViERtpRtcp->SetSenderBufferingMode(videoChannel,
+                                                    buffering_delay);
+      if (error < 0)
+        printf("ERROR in ViERTP_RTCP::SetSenderBufferingMode\n");
+
+      error = ptrViERtpRtcp->SetReceiverBufferingMode(videoChannel,
+                                                      buffering_delay);
+      if (error < 0)
+        printf("ERROR in ViERTP_RTCP::SetReceiverBufferingMode\n");
+    }
 
     //
     // Address settings
