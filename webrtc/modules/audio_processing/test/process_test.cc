@@ -104,6 +104,7 @@ void usage() {
   printf("  --no_drift_compensation\n");
   printf("  --no_echo_metrics\n");
   printf("  --no_delay_logging\n");
+  printf("  --aec_suppression_level LEVEL  [0 - 2]\n");
   printf("\n  -aecm    Echo control mobile\n");
   printf("  --aecm_echo_path_in_file FILE\n");
   printf("  --aecm_echo_path_out_file FILE\n");
@@ -276,6 +277,16 @@ void void_main(int argc, char* argv[]) {
 
     } else if (strcmp(argv[i], "--no_level_metrics") == 0) {
       ASSERT_EQ(apm->kNoError, apm->level_estimator()->Enable(false));
+
+    } else if (strcmp(argv[i], "--aec_suppression_level") == 0) {
+      i++;
+      ASSERT_LT(i, argc) << "Specify level after --aec_suppression_level";
+      int suppression_level;
+      ASSERT_EQ(1, sscanf(argv[i], "%d", &suppression_level));
+      ASSERT_EQ(apm->kNoError,
+                apm->echo_cancellation()->set_suppression_level(
+                    static_cast<webrtc::EchoCancellation::SuppressionLevel>(
+                        suppression_level)));
 
     } else if (strcmp(argv[i], "-aecm") == 0) {
       ASSERT_EQ(apm->kNoError, apm->echo_control_mobile()->Enable(true));
