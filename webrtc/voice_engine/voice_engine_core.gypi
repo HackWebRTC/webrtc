@@ -12,8 +12,7 @@
       'target_name': 'voice_engine_core',
       'type': 'static_library',
       'dependencies': [
-        '<(webrtc_root)/common_audio/common_audio.gyp:resampler',
-        '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',
+        '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
         '<(webrtc_root)/modules/modules.gyp:audio_coding_module',
         '<(webrtc_root)/modules/modules.gyp:audio_conference_mixer',
         '<(webrtc_root)/modules/modules.gyp:audio_device',
@@ -126,7 +125,7 @@
             '<(webrtc_root)/test/test.gyp:test_support_main',
             # The rest are to satisfy the unittests' include chain.
             # This would be unnecessary if we used qualified includes.
-            '<(webrtc_root)/common_audio/common_audio.gyp:resampler',
+            '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
             '<(webrtc_root)/modules/modules.gyp:audio_device',
             '<(webrtc_root)/modules/modules.gyp:audio_processing',
             '<(webrtc_root)/modules/modules.gyp:audio_coding_module',

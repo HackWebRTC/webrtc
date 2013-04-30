@@ -141,33 +141,21 @@ include $(PREBUILT_STATIC_LIBRARY)
 endif
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := libvad
+LOCAL_MODULE := libcommon_audio
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/libvad.a
+    $(MY_LIBS_PATH)/libcommon_audio.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := libcommon_audio_neon
+LOCAL_SRC_FILES := \
+    $(MY_LIBS_PATH)/libcommon_audio_neon.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libbitrate_controller
 LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/libbitrate_controller.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := libresampler
-LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/libresampler.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := libsignal_processing
-LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/libsignal_processing.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := libsignal_processing_neon
-LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/libsignal_processing_neon.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
@@ -337,11 +325,9 @@ LOCAL_STATIC_LIBRARIES := \
     libisac_neon \
     libwebrtc_opus \
     libopus \
-    libvad \
+    libcommon_audio \
+    libcommon_audio_neon \
     libbitrate_controller \
-    libresampler \
-    libsignal_processing \
-    libsignal_processing_neon \
     libcommon_video \
     libcpu_features_android \
     libaudio_device \
