@@ -120,12 +120,6 @@ void VCMTiming::UpdateCurrentDelay(uint32_t frameTimestamp)
     CriticalSectionScoped cs(_critSect);
     uint32_t targetDelayMs = TargetDelayInternal();
 
-    // Make sure we try to sync with audio
-    if (targetDelayMs < _minTotalDelayMs)
-    {
-        targetDelayMs = _minTotalDelayMs;
-    }
-
     if (_currentDelayMs == 0)
     {
         // Not initialized, set current delay to target.
@@ -159,14 +153,9 @@ void VCMTiming::UpdateCurrentDelay(uint32_t frameTimestamp)
             // to reordering and should be ignored.
             return;
         }
-        else if (delayDiffMs < -maxChangeMs)
-        {
-            delayDiffMs = -maxChangeMs;
-        }
-        else if (delayDiffMs > maxChangeMs)
-        {
-            delayDiffMs = maxChangeMs;
-        }
+        delayDiffMs = std::max(delayDiffMs, -maxChangeMs);
+        delayDiffMs = std::min(delayDiffMs, maxChangeMs);
+
         _currentDelayMs = _currentDelayMs + static_cast<int32_t>(delayDiffMs);
     }
     _prevFrameTimestamp = frameTimestamp;
@@ -177,18 +166,14 @@ void VCMTiming::UpdateCurrentDelay(int64_t renderTimeMs,
 {
     CriticalSectionScoped cs(_critSect);
     uint32_t targetDelayMs = TargetDelayInternal();
-    // Make sure we try to sync with audio
-    if (targetDelayMs < _minTotalDelayMs)
-    {
-        targetDelayMs = _minTotalDelayMs;
-    }
+
     int64_t delayedMs = actualDecodeTimeMs -
                               (renderTimeMs - MaxDecodeTimeMs() - _renderDelayMs);
     if (delayedMs < 0)
     {
         return;
     }
-    else if (_currentDelayMs + delayedMs <= targetDelayMs)
+    if (_currentDelayMs + delayedMs <= targetDelayMs)
     {
         _currentDelayMs += static_cast<uint32_t>(delayedMs);
     }
@@ -274,7 +259,10 @@ VCMTiming::RenderTimeMsInternal(uint32_t frameTimestamp, int64_t nowMs) const
     {
         estimatedCompleteTimeMs = nowMs;
     }
-    return estimatedCompleteTimeMs + _currentDelayMs;
+
+    // Make sure that we have at least the total minimum delay.
+    uint32_t actual_delay = std::max(_currentDelayMs, _minTotalDelayMs);
+    return estimatedCompleteTimeMs + actual_delay;
 }
 
 // Must be called from inside a critical section

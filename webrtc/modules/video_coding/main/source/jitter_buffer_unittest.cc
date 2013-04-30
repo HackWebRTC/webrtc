@@ -177,12 +177,9 @@ TEST_F(TestRunningJitterBuffer, JitterEstimateMode) {
   InsertFrame(kVideoFrameDelta);
   EXPECT_FALSE(request_key_frame);
   EXPECT_GT(20u, jitter_buffer_->EstimatedJitterMs());
-  // Set kMaxEstimate with a 2 seconds initial delay.
-  jitter_buffer_->SetMaxJitterEstimate(2000u);
-  EXPECT_EQ(2000u, jitter_buffer_->EstimatedJitterMs());
+  jitter_buffer_->SetMaxJitterEstimate(true);
   InsertFrame(kVideoFrameDelta);
   EXPECT_FALSE(request_key_frame);
-  EXPECT_EQ(2000u, jitter_buffer_->EstimatedJitterMs());
   // Jitter cannot decrease.
   InsertFrames(2, kVideoFrameDelta);
   EXPECT_FALSE(request_key_frame);

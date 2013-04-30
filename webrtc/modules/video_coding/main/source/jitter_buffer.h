@@ -135,7 +135,7 @@ class VCMJitterBuffer {
   // Enable a max filter on the jitter estimate by setting an initial
   // non-zero delay. When set to zero (default), the last jitter
   // estimate will be used.
-  void SetMaxJitterEstimate(uint32_t initial_delay_ms);
+  void SetMaxJitterEstimate(bool enable);
 
   // Returns the estimated jitter in milliseconds.
   uint32_t EstimatedJitterMs();
