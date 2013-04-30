@@ -17,7 +17,7 @@ namespace webrtc {
 
 enum { kMaxNumberOfFrames     = 300 };
 enum { kStartNumberOfFrames   = 6 };
-enum { kMaxVideoDelayMs       = 2000 };
+enum { kMaxVideoDelayMs       = 10000 };
 
 enum VCMJitterBufferEnum {
   kMaxConsecutiveOldFrames        = 60,

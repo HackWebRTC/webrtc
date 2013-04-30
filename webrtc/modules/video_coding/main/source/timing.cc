@@ -331,7 +331,8 @@ VCMTiming::TargetVideoDelay() const
 uint32_t
 VCMTiming::TargetDelayInternal() const
 {
-    return _requiredDelayMs + MaxDecodeTimeMs() + _renderDelayMs;
+    return std::max(_minTotalDelayMs,
+                    _requiredDelayMs + MaxDecodeTimeMs() + _renderDelayMs);
 }
 
 }
