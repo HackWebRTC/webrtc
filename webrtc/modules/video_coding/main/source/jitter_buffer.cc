@@ -335,7 +335,8 @@ void VCMJitterBuffer::IncomingRateStatistics(unsigned int* framerate,
     // No frames since last call
     time_last_incoming_frame_count_ = clock_->TimeInMilliseconds();
     *framerate = 0;
-    bitrate = 0;
+    *bitrate = 0;
+    incoming_frame_rate_ = 0;
     incoming_bit_rate_ = 0;
   }
   TRACE_COUNTER1("webrtc", "JBIncomingFramerate", incoming_frame_rate_);
