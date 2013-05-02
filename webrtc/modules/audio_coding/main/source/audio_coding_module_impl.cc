@@ -2932,7 +2932,9 @@ int AudioCodingModuleImpl::SetInitialPlayoutDelay(int delay_ms) {
     return -1;
   }
   initial_delay_ms_ = delay_ms;
-  track_neteq_buffer_ = true;
+  if (delay_ms > 0) {
+    track_neteq_buffer_ = true;
+  }
   av_sync_ = true;
   neteq_.EnableAVSync(av_sync_);
   return neteq_.SetExtraDelay(delay_ms);
@@ -2946,6 +2948,7 @@ bool AudioCodingModuleImpl::GetSilence(int desired_sample_rate_hz,
   }
 
   if (accumulated_audio_ms_ >= initial_delay_ms_) {
+    // We have enough data stored that match our initial delay target.
     track_neteq_buffer_ = false;
     return false;
   }
