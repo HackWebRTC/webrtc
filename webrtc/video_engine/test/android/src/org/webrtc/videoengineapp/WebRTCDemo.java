@@ -161,7 +161,6 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     private TextView etATxPort;
     private int destinationPortVoice = 11113;
     private CheckBox cbEnableSpeaker;
-    private boolean enableSpeaker = false;
     private CheckBox cbEnableAGC;
     private boolean enableAGC = false;
     private CheckBox cbEnableAECM;
@@ -249,24 +248,19 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         IntentFilter receiverFilter = new IntentFilter(Intent.ACTION_HEADSET_PLUG);
 
         receiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    if (intent.getAction().compareTo(Intent.ACTION_HEADSET_PLUG)
-                            == 0) {
-                        int state = intent.getIntExtra("state", 0);
-                        Log.v(TAG, "Intent.ACTION_HEADSET_PLUG state: " + state +
-                                " microphone: " + intent.getIntExtra("microphone", 0));
-                        if (voERunning) {
-                            if (state == 1) {
-                                enableSpeaker = true;
-                            } else {
-                                enableSpeaker = false;
-                            }
-                            routeAudio(enableSpeaker);
-                        }
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().compareTo(Intent.ACTION_HEADSET_PLUG)
+                        == 0) {
+                    int state = intent.getIntExtra("state", 0);
+                    Log.v(TAG, "Intent.ACTION_HEADSET_PLUG state: " + state +
+                         " microphone: " + intent.getIntExtra("microphone", 0));
+                    if (voERunning) {
+                        routeAudio(state == 0 && cbEnableSpeaker.isChecked());
                     }
                 }
-            };
+            }
+        };
         registerReceiver(receiver, receiverFilter);
 
         mTabHost = getTabHost();
@@ -563,7 +557,6 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         cbEnableNack.setChecked(enableNack);
 
         cbEnableSpeaker = (CheckBox) findViewById(R.id.cbSpeaker);
-        cbEnableSpeaker.setChecked(enableSpeaker);
         cbEnableAGC = (CheckBox) findViewById(R.id.cbAutoGainControl);
         cbEnableAGC.setChecked(enableAGC);
         cbEnableAECM = (CheckBox) findViewById(R.id.cbAECM);
@@ -763,7 +756,7 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         }
 
         // Route audio
-        routeAudio(enableSpeaker);
+        routeAudio(cbEnableSpeaker.isChecked());
 
         // set volume to default value
         if (0 != vieAndroidAPI.VoE_SetSpeakerVolume(volumeLevel)) {
@@ -895,9 +888,8 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                 }
                 break;
             case R.id.cbSpeaker:
-                enableSpeaker = cbEnableSpeaker.isChecked();
                 if (voERunning) {
-                    routeAudio(enableSpeaker);
+                    routeAudio(cbEnableSpeaker.isChecked());
                 }
                 break;
             case R.id.cbDebugRecording:
@@ -979,7 +971,6 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                 Integer.parseInt(etARxPort.getText().toString());
 
         enableNack  = cbEnableNack.isChecked();
-        enableSpeaker  = cbEnableSpeaker.isChecked();
         enableAGC  = cbEnableAGC.isChecked();
         enableAECM  = cbEnableAECM.isChecked();
         enableNS  = cbEnableNS.isChecked();
