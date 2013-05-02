@@ -11,16 +11,15 @@
 #ifndef WEBRTC_VOICE_ENGINE_TRANSMIT_MIXER_H
 #define WEBRTC_VOICE_ENGINE_TRANSMIT_MIXER_H
 
-#include "common_types.h"
-#include "voe_base.h"
-#include "file_player.h"
-#include "file_recorder.h"
-#include "level_indicator.h"
-#include "module_common_types.h"
-#include "monitor_module.h"
-#include "resampler.h"
-#include "voice_engine_defines.h"
-
+#include "webrtc/common_audio/resampler/include/push_resampler.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/utility/interface/file_player.h"
+#include "webrtc/modules/utility/interface/file_recorder.h"
+#include "webrtc/voice_engine/include/voe_base.h"
+#include "webrtc/voice_engine/level_indicator.h"
+#include "webrtc/voice_engine/monitor_module.h"
+#include "webrtc/voice_engine/voice_engine_defines.h"
 
 namespace webrtc {
 
@@ -192,7 +191,7 @@ private:
     // owns
     MonitorModule _monitorModule;
     AudioFrame _audioFrame;
-    Resampler _audioResampler; // ADM sample rate -> mixing rate
+    PushResampler resampler_;  // ADM sample rate -> mixing rate
     FilePlayer* _filePlayerPtr;
     FileRecorder* _fileRecorderPtr;
     FileRecorder* _fileCallRecorderPtr;

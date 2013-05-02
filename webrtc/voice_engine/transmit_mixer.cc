@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "transmit_mixer.h"
+#include "webrtc/voice_engine/transmit_mixer.h"
 
-#include "audio_frame_operations.h"
-#include "channel.h"
-#include "channel_manager.h"
-#include "critical_section_wrapper.h"
-#include "event_wrapper.h"
-#include "statistics.h"
-#include "trace.h"
-#include "utility.h"
-#include "voe_base_impl.h"
-#include "voe_external_media.h"
+#include "webrtc/modules/utility/interface/audio_frame_operations.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/voice_engine/channel.h"
+#include "webrtc/voice_engine/channel_manager.h"
+#include "webrtc/voice_engine/include/voe_external_media.h"
+#include "webrtc/voice_engine/statistics.h"
+#include "webrtc/voice_engine/utility.h"
+#include "webrtc/voice_engine/voe_base_impl.h"
 
 #define WEBRTC_ABS(a) (((a) < 0) ? -(a) : (a))
 
@@ -1155,60 +1155,55 @@ bool TransmitMixer::IsRecordingMic()
 int TransmitMixer::GenerateAudioFrame(const int16_t audio[],
                                       int samples_per_channel,
                                       int num_channels,
-                                      int sample_rate_hz)
-{
-    int destination_rate;
-    int num_codec_channels;
-    GetSendCodecInfo(&destination_rate, &num_codec_channels);
+                                      int sample_rate_hz) {
+  int destination_rate;
+  int num_codec_channels;
+  GetSendCodecInfo(&destination_rate, &num_codec_channels);
 
-    // Never upsample the capture signal here. This should be done at the
-    // end of the send chain.
-    destination_rate = std::min(destination_rate, sample_rate_hz);
-    stereo_codec_ = num_codec_channels == 2;
+  // Never upsample the capture signal here. This should be done at the
+  // end of the send chain.
+  destination_rate = std::min(destination_rate, sample_rate_hz);
+  stereo_codec_ = num_codec_channels == 2;
 
-    const int16_t* audio_ptr = audio;
-    int16_t mono_audio[kMaxMonoDeviceDataSizeSamples];
-    assert(samples_per_channel <= kMaxMonoDeviceDataSizeSamples);
-    // If no stereo codecs are in use, we downmix a stereo stream from the
-    // device early in the chain, before resampling.
-    if (num_channels == 2 && !stereo_codec_) {
-      AudioFrameOperations::StereoToMono(audio, samples_per_channel,
-                                         mono_audio);
-      audio_ptr = mono_audio;
-      num_channels = 1;
-    }
+  const int16_t* audio_ptr = audio;
+  int16_t mono_audio[kMaxMonoDeviceDataSizeSamples];
+  assert(samples_per_channel <= kMaxMonoDeviceDataSizeSamples);
+  // If no stereo codecs are in use, we downmix a stereo stream from the
+  // device early in the chain, before resampling.
+  if (num_channels == 2 && !stereo_codec_) {
+    AudioFrameOperations::StereoToMono(audio, samples_per_channel,
+                                       mono_audio);
+    audio_ptr = mono_audio;
+    num_channels = 1;
+  }
 
-    ResamplerType resampler_type = (num_channels == 1) ?
-            kResamplerSynchronous : kResamplerSynchronousStereo;
+  if (resampler_.InitializeIfNeeded(sample_rate_hz,
+                                    destination_rate,
+                                    num_channels) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, -1),
+                 "TransmitMixer::GenerateAudioFrame() unable to resample");
+    return -1;
+  }
 
-    if (_audioResampler.ResetIfNeeded(sample_rate_hz,
-                                      destination_rate,
-                                      resampler_type) != 0)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, -1),
-                     "TransmitMixer::GenerateAudioFrame() unable to resample");
-        return -1;
-    }
-    if (_audioResampler.Push(audio_ptr,
-                             samples_per_channel * num_channels,
-                             _audioFrame.data_,
-                             AudioFrame::kMaxDataSizeSamples,
-                             _audioFrame.samples_per_channel_) == -1)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, -1),
-                     "TransmitMixer::GenerateAudioFrame() resampling failed");
-        return -1;
-    }
+  int out_length = resampler_.Resample(audio_ptr,
+                                       samples_per_channel * num_channels,
+                                       _audioFrame.data_,
+                                       AudioFrame::kMaxDataSizeSamples);
+  if (out_length == -1) {
+    WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, -1),
+                 "TransmitMixer::GenerateAudioFrame() resampling failed");
+    return -1;
+  }
 
-    _audioFrame.samples_per_channel_ /= num_channels;
-    _audioFrame.id_ = _instanceId;
-    _audioFrame.timestamp_ = -1;
-    _audioFrame.sample_rate_hz_ = destination_rate;
-    _audioFrame.speech_type_ = AudioFrame::kNormalSpeech;
-    _audioFrame.vad_activity_ = AudioFrame::kVadUnknown;
-    _audioFrame.num_channels_ = num_channels;
+  _audioFrame.samples_per_channel_ = out_length / num_channels;
+  _audioFrame.id_ = _instanceId;
+  _audioFrame.timestamp_ = -1;
+  _audioFrame.sample_rate_hz_ = destination_rate;
+  _audioFrame.speech_type_ = AudioFrame::kNormalSpeech;
+  _audioFrame.vad_activity_ = AudioFrame::kVadUnknown;
+  _audioFrame.num_channels_ = num_channels;
 
-    return 0;
+  return 0;
 }
 
 int32_t TransmitMixer::RecordAudioToFile(
