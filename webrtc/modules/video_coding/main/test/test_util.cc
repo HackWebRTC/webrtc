@@ -111,7 +111,7 @@ FileOutputFrameReceiver::~FileOutputFrameReceiver() {
   }
 }
 
-int32_t FileOutputFrameReceiver::FrameToRender(
+WebRtc_Word32 FileOutputFrameReceiver::FrameToRender(
     webrtc::I420VideoFrame& video_frame) {
   if (timing_file_ == NULL) {
     std::string basename;

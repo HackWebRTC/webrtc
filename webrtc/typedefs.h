@@ -75,6 +75,17 @@ typedef unsigned int        uint32_t;
 typedef unsigned __int64    uint64_t;
 #endif
 
+// TODO(andrew): remove WebRtc_ types:
+// http://code.google.com/p/webrtc/issues/detail?id=314
+typedef int8_t              WebRtc_Word8;
+typedef int16_t             WebRtc_Word16;
+typedef int32_t             WebRtc_Word32;
+typedef int64_t             WebRtc_Word64;
+typedef uint8_t             WebRtc_UWord8;
+typedef uint16_t            WebRtc_UWord16;
+typedef uint32_t            WebRtc_UWord32;
+typedef uint64_t            WebRtc_UWord64;
+
 // Borrowed from Chromium's base/compiler_specific.h.
 // Annotate a virtual method indicating it must be overriding a virtual
 // method in the parent class.

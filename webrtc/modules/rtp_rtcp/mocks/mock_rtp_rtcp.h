@@ -82,7 +82,8 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(SetRtxReceivePayloadType,
       void(int));
   MOCK_METHOD2(IncomingPacket,
-      int32_t(const uint8_t* incomingPacket, const uint16_t packetLength));
+      int32_t(const WebRtc_UWord8* incomingPacket,
+              const WebRtc_UWord16 packetLength));
   MOCK_METHOD4(IncomingAudioNTP,
       int32_t(const uint32_t audioReceivedNTPsecs,
               const uint32_t audioReceivedNTPfrac,
