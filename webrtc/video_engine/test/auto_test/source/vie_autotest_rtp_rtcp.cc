@@ -431,9 +431,12 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(0, ViE.rtp_rtcp->GetBandwidthUsage(
         tbChannel.videoChannel, sentTotalBitrate, sentVideoBitrate,
         sentFecBitrate, sentNackBitrate));
-    if (FLAGS_include_timing_dependent_tests) {
-      EXPECT_EQ(sentTotalBitrate, 0u);
-    }
+// TODO(pwestin): This is incorrect due to the fact that we measure the bitrate
+//                before the pacer and not after.
+//
+//    if (FLAGS_include_timing_dependent_tests) {
+//      EXPECT_EQ(sentTotalBitrate, 0u);
+//    }
     // Network reception back. Video should now be sent.
     ViETest::Log("Network Up...\n");
     ViE.network->SetNetworkTransmissionState(tbChannel.videoChannel, true);
