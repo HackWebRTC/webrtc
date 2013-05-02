@@ -829,7 +829,6 @@ int ViEAutoTest::ViECustomCall() {
     error = vie_base->DisconnectAudioChannel(video_channel);
 
     voice_channel_transport.reset(NULL);
-    video_channel_transport.reset(NULL);
 
     // If Encoder/Decoder Observer is running, delete them.
     if (codec_encoder_observer) {
@@ -891,6 +890,8 @@ int ViEAutoTest::ViECustomCall() {
     number_of_errors += ViETest::TestError(error == 0,
                                            "ERROR: %s at line %d",
                                            __FUNCTION__, __LINE__);
+
+    video_channel_transport.reset(NULL);
 
     error = vie_base->DeleteChannel(video_channel);
     number_of_errors += ViETest::TestError(error == 0,
