@@ -21,7 +21,7 @@ namespace webrtc {
 
 class MockPacedSender : public PacedSender {
  public:
-  MockPacedSender() : PacedSender(NULL, 0) {}
+  MockPacedSender() : PacedSender(NULL, 0, 0) {}
   MOCK_METHOD5(SendPacket, bool(Priority priority,
                                 uint32_t ssrc,
                                 uint16_t sequence_number,

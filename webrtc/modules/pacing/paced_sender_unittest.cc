@@ -19,6 +19,7 @@ namespace webrtc {
 namespace test {
 
 static const int kTargetBitrate = 800;
+static const float kPaceMultiplier = 1.5f;
 
 class MockPacedSenderCallback : public PacedSender::Callback {
  public:
@@ -33,7 +34,8 @@ class PacedSenderTest : public ::testing::Test {
   PacedSenderTest() {
     TickTime::UseFakeClock(123456);
     // Need to initialize PacedSender after we initialize clock.
-    send_bucket_.reset(new PacedSender(&callback_, kTargetBitrate));
+    send_bucket_.reset(new PacedSender(&callback_, kTargetBitrate,
+                                       kPaceMultiplier));
     send_bucket_->SetStatus(true);
   }
   MockPacedSenderCallback callback_;

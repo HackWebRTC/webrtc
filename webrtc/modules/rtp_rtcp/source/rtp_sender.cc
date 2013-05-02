@@ -491,6 +491,10 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
     // re-transmit and not new payload data.
   }
 
+  TRACE_EVENT_INSTANT2("webrtc_rtp", "RTPSender::ReSendPacket",
+                       "timestamp", rtp_header.header.timestamp,
+                       "seqnum", rtp_header.header.sequenceNumber);
+
   if (paced_sender_) {
     if (!paced_sender_->SendPacket(PacedSender::kHighPriority,
                                    rtp_header.header.ssrc,
@@ -503,10 +507,6 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
     }
   }
 
-  TRACE_EVENT_INSTANT2("webrtc_rtp", "RTPSender::ReSendPacket",
-                       "timestamp", rtp_header.header.timestamp,
-                       "seqnum", rtp_header.header.sequenceNumber);
-
   if (SendPacketToNetwork(buffer_to_send_ptr, length)) {
     return 0;
   }
@@ -518,6 +518,8 @@ bool RTPSender::SendPacketToNetwork(const uint8_t *packet, uint32_t size) {
   if (transport_) {
     bytes_sent = transport_->SendPacket(id_, packet, size);
   }
+  TRACE_EVENT_INSTANT2("webrtc_rtp", "RTPSender::SendPacketToNetwork",
+                       "size", size, "sent", bytes_sent);
   // TODO(pwesin): Add a separate bitrate for sent bitrate after pacer.
   if (bytes_sent <= 0) {
     WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, id_,

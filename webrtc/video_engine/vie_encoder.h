@@ -195,6 +195,7 @@ class ViEEncoder
   int target_delay_ms_;
   bool network_is_transmitting_;
   bool encoder_paused_;
+  bool encoder_paused_and_dropped_frame_;
   std::map<unsigned int, int64_t> time_last_intra_request_ms_;
   int32_t channels_dropping_delta_frames_;
   bool drop_next_frame_;

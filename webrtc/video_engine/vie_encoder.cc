@@ -33,6 +33,17 @@ namespace webrtc {
 // Pace in kbits/s until we receive first estimate.
 static const int kInitialPace = 2000;
 
+// Pacing-rate relative to our target send rate.
+// Multiplicative factor that is applied to the target bitrate to calculate the
+// number of bytes that can be transmitted per interval.
+// Increasing this factor will result in lower delays in cases of bitrate
+// overshoots from the encoder.
+static const float kPaceMultiplier = 2.5f;
+
+// Margin on when we pause the encoder when the pacing buffer overflows relative
+// to the configured buffer delay.
+static const float kEncoderPausePacerMargin = 2.0f;
+
 // Don't stop the encoder unless the delay is above this configured value.
 static const int kMinPacingDelayMs = 200;
 
@@ -106,6 +117,7 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
     target_delay_ms_(0),
     network_is_transmitting_(true),
     encoder_paused_(false),
+    encoder_paused_and_dropped_frame_(false),
     channels_dropping_delta_frames_(0),
     drop_next_frame_(false),
     fec_enabled_(false),
@@ -131,7 +143,8 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
   default_rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(configuration));
   bitrate_observer_.reset(new ViEBitrateObserver(this));
   pacing_callback_.reset(new ViEPacedSenderCallback(this));
-  paced_sender_.reset(new PacedSender(pacing_callback_.get(), kInitialPace));
+  paced_sender_.reset(
+      new PacedSender(pacing_callback_.get(), kInitialPace, kPaceMultiplier));
 }
 
 bool ViEEncoder::Init() {
@@ -485,7 +498,8 @@ bool ViEEncoder::EncoderPaused() const {
     // TODO(pwestin): Workaround until nack is configured as a time and not
     // number of packets.
     return paced_sender_->QueueInMs() >=
-        std::max(target_delay_ms_, kMinPacingDelayMs);
+        std::max(static_cast<int>(target_delay_ms_ * kEncoderPausePacerMargin),
+                 kMinPacingDelayMs);
   }
   return !network_is_transmitting_;
 }
@@ -508,10 +522,22 @@ void ViEEncoder::DeliverFrame(int id,
                video_frame->timestamp());
   {
     CriticalSectionScoped cs(data_cs_.get());
-    if (EncoderPaused() || default_rtp_rtcp_->SendingMedia() == false) {
+    if (default_rtp_rtcp_->SendingMedia() == false) {
       // We've paused or we have no channels attached, don't encode.
       return;
     }
+    if (EncoderPaused()) {
+      if (!encoder_paused_and_dropped_frame_) {
+        TRACE_EVENT_ASYNC_BEGIN0("webrtc", "EncoderPaused", this);
+      }
+      encoder_paused_and_dropped_frame_ = true;
+      return;
+    }
+    if (encoder_paused_and_dropped_frame_) {
+      TRACE_EVENT_ASYNC_END0("webrtc", "EncoderPaused", this);
+    }
+    encoder_paused_and_dropped_frame_ = false;
+
     if (drop_next_frame_) {
       // Drop this frame.
       WEBRTC_TRACE(webrtc::kTraceStream,
