@@ -5,23 +5,458 @@ tree.
 
 Files governed by third party licenses:
 common_audio/signal_processing/spl_sqrt_floor.c
-common_audio/signal_processing/spl_sqrt_floor.s
+common_audio/signal_processing/spl_sqrt_floor_arm.S
 modules/audio_coding/codecs/G711/main/source/g711.h
 modules/audio_coding/codecs/G711/main/source/g711.c
-modules/audio_coding/codecs/G722/main/source/g722_decode.h
 modules/audio_coding/codecs/G722/main/source/g722_decode.c
-modules/audio_coding/codecs/G722/main/source/g722_encode.h
+modules/audio_coding/codecs/G722/main/source/g722_enc_dec.h
 modules/audio_coding/codecs/G722/main/source/g722_encode.c
 modules/audio_coding/codecs/iSAC/main/source/fft.c
-modules/audio_device/main/source/Mac/portaudio/pa_memorybarrier.h
-modules/audio_device/main/source/Mac/portaudio/pa_ringbuffer.h
-modules/audio_device/main/source/Mac/portaudio/pa_ringbuffer.c
+modules/audio_device/mac/portaudio/pa_memorybarrier.h
+modules/audio_device/mac/portaudio/pa_ringbuffer.h
+modules/audio_device/mac/portaudio/pa_ringbuffer.c
 modules/audio_processing/utility/fft4g.c
 modules/audio_processing/aec/aec_rdft.c
-system_wrappers/interface/fix_interlocked_exchange_pointer_windows.h
+system_wrappers/interface/fix_interlocked_exchange_pointer_win.h
 system_wrappers/interface/scoped_ptr.h
 system_wrappers/interface/scoped_refptr.h
-system_wrappers/source/condition_variable_windows.cc
+system_wrappers/source/condition_variable_event_win.cc
 system_wrappers/source/spreadsortlib/constants.hpp
 system_wrappers/source/spreadsortlib/spreadsort.hpp
-system_wrappers/source/thread_windows_set_name.h
+system_wrappers/source/set_thread_name_win.h	
+
+Individual licenses for each file:
+-------------------------------------------------------------------------------
+Files:
+common_audio/signal_processing/spl_sqrt_floor.c
+common_audio/signal_processing/spl_sqrt_floor_arm.S
+License:
+The following email record is related to source files spl_sqrt_floor.c
+and spl_sqrt_floor.s in trunk/src/common_audio/signal_processing/.
+
+
+From: Wilco Dijkstra <Wilco.Dijkstra@ntlworld.com>
+Date: Fri, Jun 24, 2011 at 3:20 AM
+Subject: Re: sqrt routine
+To: Kevin Ma <kma@google.com>
+Hi Kevin,
+Thanks for asking. Those routines are public domain (originally posted to 
+comp.sys.arm a long time ago), so you can use them freely for any purpose.
+Cheers,
+Wilco
+
+----- Original Message -----
+From: "Kevin Ma" <kma@google.com>
+To: <Wilco.Dijkstra@ntlworld.com>
+Sent: Thursday, June 23, 2011 11:44 PM
+Subject: Fwd: sqrt routine
+Hi Wilco,
+I saw your sqrt routine from several web sites, including
+http://www.finesse.demon.co.uk/steven/sqrt.html.
+Just wonder if there's any copyright information with your Successive
+approximation routines, or if I can freely use it for any purpose.
+Thanks.
+Kevin
+-------------------------------------------------------------------------------
+Files:
+modules/audio_coding/codecs/G711/main/source/g711.h
+modules/audio_coding/codecs/G711/main/source/g711.c
+
+License:
+/*
+ * SpanDSP - a series of DSP components for telephony
+ *
+ * g711.c - A-law and u-law transcoding routines
+ *
+ * Written by Steve Underwood <steveu@coppice.org>
+ *
+ * Copyright (C) 2006 Steve Underwood
+ *
+ *  Despite my general liking of the GPL, I place this code in the
+ *  public domain for the benefit of all mankind - even the slimy
+ *  ones who might try to proprietize my work and use it to my
+ *  detriment.
+ *
+ */
+-------------------------------------------------------------------------------
+Files:
+modules/audio_coding/codecs/G722/main/source/g722_decode.c
+modules/audio_coding/codecs/G722/main/source/g722_enc_dec.h
+modules/audio_coding/codecs/G722/main/source/g722_encode.c
+
+License:
+/*
+ * SpanDSP - a series of DSP components for telephony
+ *
+ * g722_decode.c - The ITU G.722 codec, decode part.
+ *
+ * Written by Steve Underwood <steveu@coppice.org>
+ *
+ * Copyright (C) 2005 Steve Underwood
+ *
+ *  Despite my general liking of the GPL, I place my own contributions 
+ *  to this code in the public domain for the benefit of all mankind -
+ *  even the slimy ones who might try to proprietize my work and use it
+ *  to my detriment.
+ *
+ * Based in part on a single channel G.722 codec which is:
+ *
+ * Copyright (c) CMU 1993
+ * Computer Science, Speech Group
+ * Chengxiang Lu and Alex Hauptmann
+ *
+ */
+-------------------------------------------------------------------------------
+Files:
+modules/audio_coding/codecs/iSAC/main/source/fft.c
+
+License:
+*
+ * Copyright(c)1995,97 Mark Olesen <olesen@me.QueensU.CA>
+ *    Queen's Univ at Kingston (Canada)
+ *
+ * Permission to use, copy, modify, and distribute this software for
+ * any purpose without fee is hereby granted, provided that this
+ * entire notice is included in all copies of any software which is
+ * or includes a copy or modification of this software and in all
+ * copies of the supporting documentation for such software.
+ *
+ * THIS SOFTWARE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTY.  IN PARTICULAR, NEITHER THE AUTHOR NOR QUEEN'S
+ * UNIVERSITY AT KINGSTON MAKES ANY REPRESENTATION OR WARRANTY OF ANY
+ * KIND CONCERNING THE MERCHANTABILITY OF THIS SOFTWARE OR ITS
+ * FITNESS FOR ANY PARTICULAR PURPOSE.
+ *
+ * All of which is to say that you can do what you like with this
+ * source code provided you don't try to sell it as your own and you
+ * include an unaltered copy of this message (including the
+ * copyright).
+ *
+ * It is also implicitly understood that bug fixes and improvements
+ * should make their way back to the general Internet community so
+ * that everyone benefits.
+ *
+ */
+-------------------------------------------------------------------------------
+Files:
+modules/audio_device/mac/portaudio/pa_memorybarrier.h
+modules/audio_device/mac/portaudio/pa_ringbuffer.h
+modules/audio_device/mac/portaudio/pa_ringbuffer.c
+
+Licenses:
+/*
+ * $Id: pa_memorybarrier.h 1240 2007-07-17 13:05:07Z bjornroche $
+ * Portable Audio I/O Library
+ * Memory barrier utilities
+ *
+ * Author: Bjorn Roche, XO Audio, LLC
+ *
+ * This program uses the PortAudio Portable Audio Library.
+ * For more information see: http://www.portaudio.com
+ * Copyright (c) 1999-2000 Ross Bencina and Phil Burk
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge,
+ * publish, distribute, sublicense, and/or sell copies of the Software,
+ * and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+ * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+ * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+/*
+ * The text above constitutes the entire PortAudio license; however, 
+ * the PortAudio community also makes the following non-binding requests:
+ *
+ * Any person wishing to distribute modifications to the Software is
+ * requested to send the modifications to the original developer so that
+ * they can be incorporated into the canonical version. It is also 
+ * requested that these non-binding requests be included along with the 
+ * license above.
+ */
+
+/*
+ * $Id: pa_ringbuffer.c 1421 2009-11-18 16:09:05Z bjornroche $
+ * Portable Audio I/O Library
+ * Ring Buffer utility.
+ *
+ * Author: Phil Burk, http://www.softsynth.com
+ * modified for SMP safety on Mac OS X by Bjorn Roche
+ * modified for SMP safety on Linux by Leland Lucius
+ * also, allowed for const where possible
+ * modified for multiple-byte-sized data elements by Sven Fischer 
+ *
+ * Note that this is safe only for a single-thread reader and a
+ * single-thread writer.
+ *
+ * This program uses the PortAudio Portable Audio Library.
+ * For more information see: http://www.portaudio.com
+ * Copyright (c) 1999-2000 Ross Bencina and Phil Burk
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge,
+ * publish, distribute, sublicense, and/or sell copies of the Software,
+ * and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+ * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+ * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+/*
+ * The text above constitutes the entire PortAudio license; however, 
+ * the PortAudio community also makes the following non-binding requests:
+ *
+ * Any person wishing to distribute modifications to the Software is
+ * requested to send the modifications to the original developer so that
+ * they can be incorporated into the canonical version. It is also 
+ * requested that these non-binding requests be included along with the 
+ * license above.
+ */
+/*
+ * $Id: pa_ringbuffer.h 1421 2009-11-18 16:09:05Z bjornroche $
+ * Portable Audio I/O Library
+ * Ring Buffer utility.
+ *
+ * Author: Phil Burk, http://www.softsynth.com
+ * modified for SMP safety on OS X by Bjorn Roche.
+ * also allowed for const where possible.
+ * modified for multiple-byte-sized data elements by Sven Fischer 
+ *
+ * Note that this is safe only for a single-thread reader
+ * and a single-thread writer.
+ *
+ * This program is distributed with the PortAudio Portable Audio Library.
+ * For more information see: http://www.portaudio.com
+ * Copyright (c) 1999-2000 Ross Bencina and Phil Burk
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge,
+ * publish, distribute, sublicense, and/or sell copies of the Software,
+ * and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+ * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+ * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+/*
+ * The text above constitutes the entire PortAudio license; however, 
+ * the PortAudio community also makes the following non-binding requests:
+ *
+ * Any person wishing to distribute modifications to the Software is
+ * requested to send the modifications to the original developer so that
+ * they can be incorporated into the canonical version. It is also 
+ * requested that these non-binding requests be included along with the 
+ * license above.
+ */
+-------------------------------------------------------------------------------
+Files:
+modules/audio_processing/utility/fft4g.c
+modules/audio_processing/aec/aec_rdft.c
+License:
+/*
+ * http://www.kurims.kyoto-u.ac.jp/~ooura/fft.html
+ * Copyright Takuya OOURA, 1996-2001
+ *
+ * You may use, copy, modify and distribute this code for any purpose (include
+ * commercial use) and without fee. Please refer to this package when you modify
+ * this code.
+ */
+-------------------------------------------------------------------------------
+Files:
+system_wrappers/interface/fix_interlocked_exchange_pointer_win.h
+
+License:
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file under third_party_mods/chromium directory of
+// source tree or at
+// http://src.chromium.org/viewvc/chrome/trunk/src/LICENSE
+
+-------------------------------------------------------------------------------
+Files:
+system_wrappers/interface/scoped_ptr.h
+
+License:
+//  (C) Copyright Greg Colvin and Beman Dawes 1998, 1999.
+//  Copyright (c) 2001, 2002 Peter Dimov
+//
+//  Permission to copy, use, modify, sell and distribute this software
+//  is granted provided this copyright notice appears in all copies.
+//  This software is provided "as is" without express or implied
+//  warranty, and with no claim as to its suitability for any purpose.
+//
+//  See http://www.boost.org/libs/smart_ptr/scoped_ptr.htm for documentation.
+//
+
+//  scoped_ptr mimics a built-in pointer except that it guarantees deletion
+//  of the object pointed to, either on destruction of the scoped_ptr or via
+//  an explicit reset(). scoped_ptr is a simple solution for simple needs;
+//  use shared_ptr or std::auto_ptr if your needs are more complex.
+
+//  scoped_ptr_malloc added in by Google.  When one of
+//  these goes out of scope, instead of doing a delete or delete[], it
+//  calls free().  scoped_ptr_malloc<char> is likely to see much more
+//  use than any other specializations.
+
+//  release() added in by Google. Use this to conditionally
+//  transfer ownership of a heap-allocated object to the caller, usually on
+//  method success.
+-------------------------------------------------------------------------------
+Files:
+system_wrappers/interface/scoped_refptr.h
+
+License:
+// Copyright (c) 2011 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file under third_party_mods/chromium or at:
+// http://src.chromium.org/svn/trunk/src/LICENSE
+
+-------------------------------------------------------------------------------
+Files:
+system_wrappers/source/condition_variable_event_win.cc
+
+License:
+/*
+ *  Use of this source code is governed by the ACE copyright license which
+ *  can be found in the LICENSE file in the third_party_mods/ace directory of
+ *  the source tree or at http://www1.cse.wustl.edu/~schmidt/ACE-copying.html.
+ */
+/*
+
+-------------------------------------------------------------------------------
+Files:
+system_wrappers/source/spreadsortlib/constants.hpp
+system_wrappers/source/spreadsortlib/spreadsort.hpp
+
+License:
+/*Boost Software License - Version 1.0 - August 17th, 2003
+
+Permission is hereby granted, free of charge, to any person or organization
+obtaining a copy of the software and accompanying documentation covered by
+this license (the "Software") to use, reproduce, display, distribute,
+execute, and transmit the Software, and to prepare derivative works of the
+Software, and to permit third-parties to whom the Software is furnished to
+do so, all subject to the following:
+
+The copyright notices in the Software and this entire statement, including
+the above license grant, this restriction and the following disclaimer,
+must be included in all copies of the Software, in whole or in part, and
+all derivative works of the Software, unless such copies or derivative
+works are solely in the form of machine-executable object code generated by
+a source language processor.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT
+SHALL THE COPYRIGHT HOLDERS OR ANYONE DISTRIBUTING THE SOFTWARE BE LIABLE
+FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.*/
+-------------------------------------------------------------------------------
+Files:
+system_wrappers/source/set_thread_name_win.h	
+
+License:
+/*
+ *  Use of this source code is governed by the MICROSOFT LIMITED PUBLIC LICENSE
+ *  copyright license which can be found in the LICENSE file in the
+ *  third_party_mods/mslpl directory of the source tree or at
+ *  http://msdn.microsoft.com/en-us/cc300389.aspx#P.
+ */
+This license governs use of code marked as sample or example available on 
+this web site without a license agreement, as provided under the section above 
+titled NOTICE SPECIFIC TO SOFTWARE AVAILABLE ON THIS WEB SITE. If you use 
+such code (the software), you accept this license. If you do not accept the 
+license, do not use the software.
+
+1. Definitions
+
+The terms reproduce, reproduction, derivative works, and distribution 
+have the same meaning here as under U.S. copyright law.
+
+A contribution is the original software, or any additions or changes to the 
+software.
+
+A contributor is any person that distributes its contribution under this 
+license.
+
+Licensed patents are a contributors patent claims that read directly on its 
+contribution.
+
+2. Grant of Rights
+
+(A) Copyright Grant - Subject to the terms of this license, including the 
+license conditions and limitations in section 3, each contributor grants you a 
+non-exclusive, worldwide, royalty-free copyright license to reproduce its 
+contribution, prepare derivative works of its contribution, and distribute its 
+contribution or any derivative works that you create.
+
+(B) Patent Grant - Subject to the terms of this license, including the license 
+conditions and limitations in section 3, each contributor grants you a 
+non-exclusive, worldwide, royalty-free license under its licensed patents to 
+make, have made, use, sell, offer for sale, import, and/or otherwise dispose 
+of its contribution in the software or derivative works of the contribution in 
+the software.
+
+3. Conditions and Limitations
+
+(A) No Trademark License- This license does not grant you rights to use any 
+contributors name, logo, or trademarks.
+
+(B) If you bring a patent claim against any contributor over patents that you 
+claim are infringed by the software, your patent license from such contributor 
+to the software ends automatically.
+
+(C) If you distribute any portion of the software, you must retain all 
+copyright, patent, trademark, and attribution notices that are present in the 
+software.
+
+(D) If you distribute any portion of the software in source code form, you may 
+do so only under this license by including a complete copy of this license 
+with your distribution. If you distribute any portion of the software in 
+compiled or object code form, you may only do so under a license that complies 
+with this license.
+
+(E) The software is licensed as-is. You bear the risk of using it. The 
+contributors give no express warranties, guarantees or conditions. You may 
+have additional consumer rights under your local laws which this license 
+cannot change. To the extent permitted under your local laws, the contributors 
+exclude the implied warranties of merchantability, fitness for a particular 
+purpose and non-infringement.
+
+(F) Platform Limitation - The licenses granted in sections 2(A) and 2(B) 
+extend only to the software or derivative works that you create that run on a 
+Microsoft Windows operating system product.
