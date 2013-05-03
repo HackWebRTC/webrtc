@@ -266,23 +266,23 @@ enum VadModes                 // degree of bandwidth reduction
 struct NetworkStatistics           // NETEQ statistics
 {
     // current jitter buffer size in ms
-    WebRtc_UWord16 currentBufferSize;
+    uint16_t currentBufferSize;
     // preferred (optimal) buffer size in ms
-    WebRtc_UWord16 preferredBufferSize;
+    uint16_t preferredBufferSize;
     // adding extra delay due to "peaky jitter"
     bool jitterPeaksFound;
     // loss rate (network + late) in percent (in Q14)
-    WebRtc_UWord16 currentPacketLossRate;
+    uint16_t currentPacketLossRate;
     // late loss rate in percent (in Q14)
-    WebRtc_UWord16 currentDiscardRate;
+    uint16_t currentDiscardRate;
     // fraction (of original stream) of synthesized speech inserted through
     // expansion (in Q14)
-    WebRtc_UWord16 currentExpandRate;
+    uint16_t currentExpandRate;
     // fraction of synthesized speech inserted through pre-emptive expansion
     // (in Q14)
-    WebRtc_UWord16 currentPreemptiveRate;
+    uint16_t currentPreemptiveRate;
     // fraction of data removed through acceleration (in Q14)
-    WebRtc_UWord16 currentAccelerateRate;
+    uint16_t currentAccelerateRate;
     // clock-drift in parts-per-million (negative or positive)
     int32_t clockDriftPPM;
     // average packet waiting time in the jitter buffer (ms)
