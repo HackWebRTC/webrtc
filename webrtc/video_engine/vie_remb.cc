@@ -122,10 +122,6 @@ void VieRemb::OnReceiveBitrateChanged(std::vector<unsigned int>* ssrcs,
     }
   }
   bitrate_ = bitrate;
-  // TODO(holmer): Remove |ssrcs_| from this class as the REMB is produced
-  // immediately upon a call to this function.
-  ssrcs_.resize(ssrcs->size());
-  std::copy(ssrcs->begin(), ssrcs->end(), ssrcs_.begin());
 
   // Calculate total receive bitrate estimate.
   int64_t now = TickTime::MillisecondTimestamp();
@@ -136,7 +132,7 @@ void VieRemb::OnReceiveBitrateChanged(std::vector<unsigned int>* ssrcs,
   }
   last_remb_time_ = now;
 
-  if (ssrcs_.empty() || receive_modules_.empty()) {
+  if (ssrcs->empty() || receive_modules_.empty()) {
     list_crit_->Leave();
     return;
   }
@@ -154,19 +150,13 @@ void VieRemb::OnReceiveBitrateChanged(std::vector<unsigned int>* ssrcs,
   if (last_send_bitrate_ < kRembMinimumBitrateKbps) {
     last_send_bitrate_ = kRembMinimumBitrateKbps;
   }
-  // Copy SSRCs to avoid race conditions.
-  int ssrcs_length = ssrcs_.size();
-  unsigned int* ssrcs_copy = new unsigned int[ssrcs_length];
-  for (int i = 0; i < ssrcs_length; ++i) {
-    ssrcs_copy[i] = ssrcs_[i];
-  }
+
   list_crit_->Leave();
 
   if (sender) {
     // TODO(holmer): Change RTP module API to take a vector pointer.
-    sender->SetREMBData(bitrate_, ssrcs_length, ssrcs_copy);
+    sender->SetREMBData(bitrate_, ssrcs->size(), &(*ssrcs)[0]);
   }
-  delete [] ssrcs_copy;
 }
 
 }  // namespace webrtc
