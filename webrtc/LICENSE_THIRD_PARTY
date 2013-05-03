@@ -6,12 +6,12 @@ tree.
 Files governed by third party licenses:
 common_audio/signal_processing/spl_sqrt_floor.c
 common_audio/signal_processing/spl_sqrt_floor_arm.S
-modules/audio_coding/codecs/G711/main/source/g711.h
-modules/audio_coding/codecs/G711/main/source/g711.c
-modules/audio_coding/codecs/G722/main/source/g722_decode.c
-modules/audio_coding/codecs/G722/main/source/g722_enc_dec.h
-modules/audio_coding/codecs/G722/main/source/g722_encode.c
-modules/audio_coding/codecs/iSAC/main/source/fft.c
+modules/audio_coding/codecs/g711/main/source/g711.h
+modules/audio_coding/codecs/g711/main/source/g711.c
+modules/audio_coding/codecs/g722/main/source/g722_decode.c
+modules/audio_coding/codecs/g722/main/source/g722_enc_dec.h
+modules/audio_coding/codecs/g722/main/source/g722_encode.c
+modules/audio_coding/codecs/isac/main/source/fft.c
 modules/audio_device/mac/portaudio/pa_memorybarrier.h
 modules/audio_device/mac/portaudio/pa_ringbuffer.h
 modules/audio_device/mac/portaudio/pa_ringbuffer.c
@@ -59,8 +59,8 @@ Thanks.
 Kevin
 -------------------------------------------------------------------------------
 Files:
-modules/audio_coding/codecs/G711/main/source/g711.h
-modules/audio_coding/codecs/G711/main/source/g711.c
+modules/audio_coding/codecs/g711/main/source/g711.h
+modules/audio_coding/codecs/g711/main/source/g711.c
 
 License:
 /*
@@ -80,9 +80,9 @@ License:
  */
 -------------------------------------------------------------------------------
 Files:
-modules/audio_coding/codecs/G722/main/source/g722_decode.c
-modules/audio_coding/codecs/G722/main/source/g722_enc_dec.h
-modules/audio_coding/codecs/G722/main/source/g722_encode.c
+modules/audio_coding/codecs/g722/main/source/g722_decode.c
+modules/audio_coding/codecs/g722/main/source/g722_enc_dec.h
+modules/audio_coding/codecs/g722/main/source/g722_encode.c
 
 License:
 /*
@@ -108,7 +108,7 @@ License:
  */
 -------------------------------------------------------------------------------
 Files:
-modules/audio_coding/codecs/iSAC/main/source/fft.c
+modules/audio_coding/codecs/isac/main/source/fft.c
 
 License:
 *
