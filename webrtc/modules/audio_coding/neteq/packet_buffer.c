@@ -324,8 +324,8 @@ int WebRtcNetEQ_PacketBufferInsert(PacketBuf_t *bufferInst, const RTPPacket_t *R
     {
         /* Payload is 16-bit aligned => just copy it */
 
-        WEBRTC_SPL_MEMCPY_W16(bufferInst->currentMemoryPos,
-            RTPpacket->payload, (RTPpacket->payloadLen + 1) >> 1);
+        WEBRTC_SPL_MEMCPY_W8(bufferInst->currentMemoryPos,
+            RTPpacket->payload, RTPpacket->payloadLen);
     }
     else
     {
