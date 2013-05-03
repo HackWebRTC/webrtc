@@ -405,12 +405,13 @@ VCMJitterEstimator::UpdateMaxFrameSize(uint32_t frameSizeBytes)
     }
 }
 
-void VCMJitterEstimator::SetMaxJitterEstimate(bool enable) {
-  if (enable) {
-    _jitterEstimateMode = kMaxEstimate;
-  } else {
-    _jitterEstimateMode = kLastEstimate;
-  }
+void VCMJitterEstimator::SetMaxJitterEstimate(bool enable)
+{
+    if (enable) {
+        _jitterEstimateMode = kMaxEstimate;
+    } else {
+        _jitterEstimateMode = kLastEstimate;
+    }
 }
 
 // Returns the current filtered estimate if available,

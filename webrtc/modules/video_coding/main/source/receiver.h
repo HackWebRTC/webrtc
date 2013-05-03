@@ -81,16 +81,11 @@ class VCMReceiver {
   bool DecodeWithErrors() const;
 
   // Returns size in time (milliseconds) of complete continuous frames in the
-  // jitter buffer.
+  // jitter buffer. The render time is estimated based on the render delay at
+  // the time this function is called.
   int RenderBufferSizeMs();
 
  private:
-  VCMEncodedFrame* FrameForDecoding(uint16_t max_wait_time_ms,
-                                    int64_t nextrender_time_ms,
-                                    VCMReceiver* dual_receiver);
-  VCMEncodedFrame* FrameForRendering(uint16_t max_wait_time_ms,
-                                     int64_t nextrender_time_ms,
-                                     VCMReceiver* dual_receiver);
   void CopyJitterBufferStateFromReceiver(const VCMReceiver& receiver);
   void UpdateState(VCMReceiverState new_state);
   void UpdateState(const VCMEncodedFrame& frame);

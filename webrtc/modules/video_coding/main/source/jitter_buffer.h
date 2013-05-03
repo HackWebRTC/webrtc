@@ -89,31 +89,25 @@ class VCMJitterBuffer {
   void IncomingRateStatistics(unsigned int* framerate,
                               unsigned int* bitrate);
 
-  // Waits for the first packet in the next frame to arrive and then returns
-  // the timestamp of that frame. |incoming_frame_type| and |render_time_ms| are
-  // set to the frame type and render time of the next frame.
-  // Blocks for up to |max_wait_time_ms| ms. Returns -1 if no packet has arrived
-  // after |max_wait_time_ms| ms.
-  int64_t NextTimestamp(uint32_t max_wait_time_ms,
-                        FrameType* incoming_frame_type,
-                        int64_t* render_time_ms);
-
   // Checks if the packet sequence will be complete if the next frame would be
   // grabbed for decoding. That is, if a frame has been lost between the
   // last decoded frame and the next, or if the next frame is missing one
   // or more packets.
   bool CompleteSequenceWithNextFrame();
 
-  // Returns a complete frame ready for decoding. Allows max_wait_time_ms to
-  // wait for such a frame, if one is unavailable.
-  // Always starts with a key frame.
-  VCMEncodedFrame* GetCompleteFrameForDecoding(uint32_t max_wait_time_ms);
+  // Wait |max_wait_time_ms| for a complete frame to arrive.
+  // The function returns true once such a frame is found, its corresponding
+  // timestamp is returned. Otherwise, returns false.
+  bool NextCompleteTimestamp(uint32_t max_wait_time_ms, uint32_t* timestamp);
 
-  // Get next frame for decoding without delay. If decoding with errors is not
-  // enabled, will return NULL. Actual returned frame will be the next one in
-  // the list, either complete or not.
-  // TODO(mikhal): Consider only allowing decodable/complete.
-  VCMEncodedFrame* MaybeGetIncompleteFrameForDecoding();
+  // Locates a frame for decoding (even an incomplete) without delay.
+  // The function returns true once such a frame is found, its corresponding
+  // timestamp is returned. Otherwise, returns false.
+  bool NextMaybeIncompleteTimestamp(uint32_t* timestamp);
+
+  // Extract frame corresponding to input timestamp.
+  // Frame will be set to a decoding state.
+  VCMEncodedFrame* ExtractAndSetDecode(uint32_t timestamp);
 
   // Releases a frame returned from the jitter buffer, should be called when
   // done with decoding.
@@ -133,8 +127,7 @@ class VCMJitterBuffer {
                                   const VCMPacket& packet);
 
   // Enable a max filter on the jitter estimate by setting an initial
-  // non-zero delay. When set to zero (default), the last jitter
-  // estimate will be used.
+  // non-zero delay.
   void SetMaxJitterEstimate(bool enable);
 
   // Returns the estimated jitter in milliseconds.
@@ -166,8 +159,9 @@ class VCMJitterBuffer {
   int64_t LastDecodedTimestamp() const;
   bool decode_with_errors() const {return decode_with_errors_;}
 
-  // Returns size in time (milliseconds) of complete continuous frames.
-  int RenderBufferSizeMs();
+  // Used to compute time of complete continuous frames. Returns the timestamps
+  // corresponding to the start and end of the continuous complete buffer.
+  void RenderBufferSize(uint32_t* timestamp_start, uint32_t* timestamp_end);
 
  private:
   class SequenceNumberLessThan {

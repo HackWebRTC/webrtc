@@ -97,10 +97,9 @@ TEST_F(TestVCMReceiver, RenderBufferSize_NotAllComplete) {
   EXPECT_EQ(0, receiver_.RenderBufferSizeMs());
   EXPECT_GE(InsertFrame(kVideoFrameKey, true), kNoError);
   int num_of_frames = 10;
-  for (int i = 0; i < num_of_frames; ++i) {
+  for (int i = 1; i < num_of_frames; ++i) {
     EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
   }
-  num_of_frames++;
   EXPECT_GE(InsertFrame(kVideoFrameDelta, false), kNoError);
   for (int i = 0; i < num_of_frames; ++i) {
     EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
@@ -115,6 +114,10 @@ TEST_F(TestVCMReceiver, RenderBufferSize_NoKeyFrame) {
   for (int i = 0; i < num_of_frames; ++i) {
     EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
   }
+  int64_t next_render_time_ms = 0;
+  VCMEncodedFrame* frame = receiver_.FrameForDecoding(10, next_render_time_ms);
+  EXPECT_TRUE(frame == NULL);
+  receiver_.ReleaseFrame(frame);
   EXPECT_GE(InsertFrame(kVideoFrameDelta, false), kNoError);
   for (int i = 0; i < num_of_frames; ++i) {
     EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
