@@ -101,23 +101,15 @@ class TestRunningJitterBuffer : public ::testing::Test {
   }
 
   bool DecodeCompleteFrame() {
-    uint32_t timestamp = 0;
-    bool found_frame = jitter_buffer_->NextCompleteTimestamp(0, &timestamp);
-    if (!found_frame)
-      return false;
-
-    VCMEncodedFrame* frame = jitter_buffer_->ExtractAndSetDecode(timestamp);
+    VCMEncodedFrame* frame = jitter_buffer_->GetCompleteFrameForDecoding(0);
     bool ret = (frame != NULL);
     jitter_buffer_->ReleaseFrame(frame);
     return ret;
   }
 
   bool DecodeIncompleteFrame() {
-    uint32_t timestamp = 0;
-    bool found_frame = jitter_buffer_->NextMaybeIncompleteTimestamp(&timestamp);
-    if (!found_frame)
-      return false;
-    VCMEncodedFrame* frame = jitter_buffer_->ExtractAndSetDecode(timestamp);
+    VCMEncodedFrame* frame =
+        jitter_buffer_->MaybeGetIncompleteFrameForDecoding();
     bool ret = (frame != NULL);
     jitter_buffer_->ReleaseFrame(frame);
     return ret;

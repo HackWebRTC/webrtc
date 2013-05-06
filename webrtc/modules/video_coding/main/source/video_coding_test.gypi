@@ -52,6 +52,7 @@
         '../test/codec_database_test.cc',
         '../test/decode_from_storage_test.cc',
         '../test/generic_codec_test.cc',
+        '../test/jitter_buffer_test.cc',
         '../test/media_opt_test.cc',
         '../test/mt_test_common.cc',
         '../test/mt_rx_tx_test.cc',

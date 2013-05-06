@@ -34,7 +34,8 @@ _renderDelayMs(kDefaultRenderDelayMs),
 _minTotalDelayMs(0),
 _requiredDelayMs(0),
 _currentDelayMs(0),
-_prevFrameTimestamp(0)
+_prevFrameTimestamp(0),
+_maxVideoDelayMs(kMaxVideoDelayMs)
 {
     if (masterTiming == NULL)
     {
@@ -218,6 +219,10 @@ VCMTiming::RenderTimeMs(uint32_t frameTimestamp, int64_t nowMs) const
 {
     CriticalSectionScoped cs(_critSect);
     const int64_t renderTimeMs = RenderTimeMsInternal(frameTimestamp, nowMs);
+    if (renderTimeMs < 0)
+    {
+        return renderTimeMs;
+    }
     if (_master)
     {
         WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _timingId),
@@ -234,6 +239,16 @@ VCMTiming::RenderTimeMsInternal(uint32_t frameTimestamp, int64_t nowMs) const
 {
     int64_t estimatedCompleteTimeMs =
             _tsExtrapolator->ExtrapolateLocalTime(frameTimestamp);
+    if (estimatedCompleteTimeMs - nowMs > _maxVideoDelayMs)
+    {
+        if (_master)
+        {
+            WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _timingId),
+                    "Timestamp arrived 2 seconds early, reset statistics",
+                    frameTimestamp, estimatedCompleteTimeMs);
+        }
+        return -1;
+    }
     if (_master)
     {
         WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _timingId),
@@ -298,6 +313,12 @@ VCMTiming::EnoughTimeToDecode(uint32_t availableProcessingTimeMs) const
         maxDecodeTimeMs = 1;
     }
     return static_cast<int32_t>(availableProcessingTimeMs) - maxDecodeTimeMs > 0;
+}
+
+void VCMTiming::SetMaxVideoDelay(int maxVideoDelayMs)
+{
+    CriticalSectionScoped cs(_critSect);
+    _maxVideoDelayMs = maxVideoDelayMs;
 }
 
 uint32_t

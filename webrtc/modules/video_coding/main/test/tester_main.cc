@@ -98,6 +98,7 @@ int main(int argc, char **argv) {
       ret = NormalTest::RunTest(args);
       ret |= CodecDataBaseTest::RunTest(args);
       ret |= ReceiverTimingTests(args);
+      ret |= JitterBufferTest(args);
       break;
     case 1:
       ret = NormalTest::RunTest(args);
@@ -125,9 +126,12 @@ int main(int argc, char **argv) {
       ret = RtpPlayMT(args);
       break;
     case 9:
-      ret = DecodeFromStorageTest(args);
+      ret = JitterBufferTest(args);
       break;
     case 10:
+      ret = DecodeFromStorageTest(args);
+      break;
+    case 11:
       qualityModeTest(args);
       break;
     default:

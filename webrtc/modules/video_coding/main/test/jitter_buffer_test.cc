@@ -90,23 +90,6 @@ int CheckOutFrame(VCMEncodedFrame* frameOut, unsigned int size, bool startCode)
     return 0;
 }
 
-VCMEncodedFrame* DecodeCompleteFrame(uint32_t max_wait_time_ms) {
-  uint32_t timestamp = 0;
-  bool found_frame = jb.NextCompleteTimestamp(max_wait_time_ms, &timestamp);
-  if (!found_frame)
-    return NULL;
-
-  return jb.ExtractAndSetDecode(timestamp);
-}
-
-VCMEncodedFrame* DecodeIncompleteFrame() {
-  uint32_t timestamp = 0;
-  bool found_frame =
-      jb.MaybeGetIncompleteFrameTimestampForDecoding(&timestamp);
-  if (!found_frame)
-    return NULL;
-  return frame = jb.ExtractAndSetDecode(timestamp);
-}
 
 int JitterBufferTest(CmdArgs& args)
 {
@@ -124,7 +107,9 @@ int JitterBufferTest(CmdArgs& args)
 
     seqNum = 1234;
     timeStamp = 123*90;
+    FrameType incomingFrameType(kVideoFrameKey);
     VCMEncodedFrame* frameOut=NULL;
+    int64_t renderTimeMs = 0;
     packet.timestamp = timeStamp;
     packet.seqNum = seqNum;
 
@@ -149,8 +134,9 @@ int JitterBufferTest(CmdArgs& args)
 
     // Not started
     TEST(0 == jb.GetFrame(packet));
-    TEST(0 == DecodeCompleteFrame(10));
-    TEST(0 == DecodeIncompleteFrame());
+    TEST(-1 == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+    TEST(0 == jb.GetCompleteFrameForDecoding(10));
+    TEST(0 == jb.MaybeGetIncompleteFrameForDecoding());
 
     // Start
     jb.Start();
@@ -163,7 +149,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(frameIn != 0);
 
     // No packets inserted
-    TEST(0 == DecodeCompleteFrame(10));
+    TEST(0 == jb.GetCompleteFrameForDecoding(10));
 
 
     //
@@ -181,20 +167,26 @@ int JitterBufferTest(CmdArgs& args)
     // packet.isFirstPacket;
     // packet.markerBit;
     //
-    packet.frameType = kVideoFrameKey;
+    packet.frameType = kVideoFrameDelta;
     packet.isFirstPacket = true;
     packet.markerBit = true;
 
-    // Insert a packet into a frame.
+    // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
-    // Get the frame (always starts with a key frame).
-    frameOut = DecodeCompleteFrame(10);
+    // get packet notification
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+
+    // check incoming frame type
+    TEST(incomingFrameType == kVideoFrameDelta);
+
+    // get the frame
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     TEST(CheckOutFrame(frameOut, size, false) == 0);
 
     // check the frame type
-    TEST(frameOut->FrameType() == kVideoFrameKey);
+    TEST(frameOut->FrameType() == kVideoFrameDelta);
 
     // Release frame (when done with decoding)
     jb.ReleaseFrame(frameOut);
@@ -223,8 +215,14 @@ int JitterBufferTest(CmdArgs& args)
     // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // get packet notification
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+
+    // check incoming frame type
+    TEST(incomingFrameType == kVideoFrameDelta);
+
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     // it should not be complete
     TEST(frameOut == 0);
@@ -241,7 +239,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kCompleteSession == jb.InsertPacket(frameIn, packet));
 
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     TEST(CheckOutFrame(frameOut, size*2, false) == 0);
 
@@ -276,8 +274,14 @@ int JitterBufferTest(CmdArgs& args)
     // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // get packet notification
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+
+    // check incoming frame type
+    TEST(incomingFrameType == kVideoFrameKey);
+
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     // it should not be complete
     TEST(frameOut == 0);
@@ -312,7 +316,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kCompleteSession == jb.InsertPacket(frameIn, packet));
 
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     TEST(CheckOutFrame(frameOut, size*100, false) == 0);
 
@@ -346,8 +350,14 @@ int JitterBufferTest(CmdArgs& args)
     // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // get packet notification
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+
+    // check incoming frame type
+    TEST(incomingFrameType == kVideoFrameDelta);
+
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     // it should not be complete
     TEST(frameOut == 0);
@@ -382,7 +392,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kCompleteSession == jb.InsertPacket(frameIn, packet));
 
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     TEST(CheckOutFrame(frameOut, size*100, false) == 0);
 
@@ -417,8 +427,14 @@ int JitterBufferTest(CmdArgs& args)
     // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // get packet notification
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+
+    // check incoming frame type
+    TEST(incomingFrameType == kVideoFrameDelta);
+
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     // it should not be complete
     TEST(frameOut == 0);
@@ -453,7 +469,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kCompleteSession == jb.InsertPacket(frameIn, packet));
 
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     TEST(CheckOutFrame(frameOut, size*100, false) == 0);
 
@@ -488,8 +504,14 @@ int JitterBufferTest(CmdArgs& args)
     // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // get packet notification
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+
+    // check incoming frame type
+    TEST(incomingFrameType == kVideoFrameDelta);
+
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     // it should not be complete
     TEST(frameOut == 0);
@@ -506,7 +528,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kCompleteSession == jb.InsertPacket(frameIn, packet));
 
     // check that we fail to get frame since seqnum is not continuous
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
     TEST(frameOut == 0);
 
     seqNum -= 3;
@@ -522,6 +544,12 @@ int JitterBufferTest(CmdArgs& args)
 
     // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
+
+    // get packet notification
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+
+    // check incoming frame type
+    TEST(incomingFrameType == kVideoFrameDelta);
 
     // get the frame
     frameOut = jb.GetCompleteFrameForDecoding(10);
@@ -541,7 +569,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kCompleteSession == jb.InsertPacket(frameIn, packet));
 
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     TEST(CheckOutFrame(frameOut, size*2, false) == 0);
 
@@ -552,7 +580,7 @@ int JitterBufferTest(CmdArgs& args)
     jb.ReleaseFrame(frameOut);
 
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     TEST(CheckOutFrame(frameOut, size*2, false) == 0);
 
@@ -591,8 +619,14 @@ int JitterBufferTest(CmdArgs& args)
     // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // get packet notification
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+
+    // check incoming frame type
+    TEST(incomingFrameType == kVideoFrameDelta);
+
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     // it should not be complete
     TEST(frameOut == 0);
@@ -612,7 +646,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kCompleteSession == jb.InsertPacket(frameIn, packet));
 
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     TEST(CheckOutFrame(frameOut, size*2, false) == 0);
 
@@ -647,8 +681,14 @@ int JitterBufferTest(CmdArgs& args)
     // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // get packet notification
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+
+    // check incoming frame type
+    TEST(incomingFrameType == kVideoFrameDelta);
+
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     // it should not be complete
     TEST(frameOut == 0);
@@ -665,7 +705,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kCompleteSession == jb.InsertPacket(frameIn, packet));
 
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     TEST(CheckOutFrame(frameOut, size * 2 + 4 * 2, true) == 0);
 
@@ -723,8 +763,22 @@ int JitterBufferTest(CmdArgs& args)
       // Insert a packet into a frame
       TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+      // Get packet notification
+      TEST(timeStamp - 33 * 90 == jb.NextTimestamp(10, &incomingFrameType,
+                                                   &renderTimeMs));
+
+      // Check incoming frame type
+      if (i == 0)
+      {
+          TEST(incomingFrameType == kVideoFrameKey);
+      }
+      else
+      {
+          TEST(incomingFrameType == frametype);
+      }
+
       // Get the frame
-      frameOut = DecodeCompleteFrame(10);
+      frameOut = jb.GetCompleteFrameForDecoding(10);
 
       // Should not be complete
       TEST(frameOut == 0);
@@ -757,7 +811,7 @@ int JitterBufferTest(CmdArgs& args)
       TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
 
       // Get the frame
-      frameOut = DecodeIncompleteFrame();
+      frameOut = jb.MaybeGetIncompleteFrameForDecoding();
 
       // One of the packets has been discarded by the jitter buffer.
       // Last frame can't be extracted yet.
@@ -827,7 +881,7 @@ int JitterBufferTest(CmdArgs& args)
     // insert first packet
     timeStamp += 33*90;
     seqNum = 0xfff0;
-    packet.frameType = kVideoFrameKey;
+    packet.frameType = kVideoFrameDelta;
     packet.isFirstPacket = true;
     packet.markerBit = false;
     packet.seqNum = seqNum;
@@ -839,13 +893,19 @@ int JitterBufferTest(CmdArgs& args)
     // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // get packet notification
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+
+    // check incoming frame type
+    TEST(incomingFrameType == kVideoFrameDelta);
+
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     // it should not be complete
     TEST(frameOut == 0);
 
-    // Insert 98 packets.
+    // insert 98 packets
     loop = 0;
     do
     {
@@ -860,8 +920,15 @@ int JitterBufferTest(CmdArgs& args)
         // Insert a packet into a frame
         TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
 
+        // get packet notification
+        TEST(timeStamp == jb.NextTimestamp(2, &incomingFrameType,
+                                           &renderTimeMs));
+
+        // check incoming frame type
+        TEST(incomingFrameType == kVideoFrameDelta);
+
         // get the frame
-        frameOut = DecodeCompleteFrame(2);
+        frameOut = jb.GetCompleteFrameForDecoding(2);
 
         // it should not be complete
         TEST(frameOut == 0);
@@ -882,12 +949,12 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kCompleteSession == jb.InsertPacket(frameIn, packet));
 
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     TEST(CheckOutFrame(frameOut, size*100, false) == 0);
 
     // check the frame type
-    TEST(frameOut->FrameType() == kVideoFrameKey);
+    TEST(frameOut->FrameType() == kVideoFrameDelta);
 
     // Release frame (when done with decoding)
     jb.ReleaseFrame(frameOut);
@@ -908,7 +975,7 @@ int JitterBufferTest(CmdArgs& args)
     // insert "first" packet last seqnum
     timeStamp += 33*90;
     seqNum = 10;
-    packet.frameType = kVideoFrameKey;
+    packet.frameType = kVideoFrameDelta;
     packet.isFirstPacket = false;
     packet.markerBit = true;
     packet.seqNum = seqNum;
@@ -920,8 +987,14 @@ int JitterBufferTest(CmdArgs& args)
     // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // get packet notification
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+
+    // check incoming frame type
+    TEST(incomingFrameType == kVideoFrameDelta);
+
     // get the frame
-    frameOut = DecodeIncompleteFrame();
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     // it should not be complete
     TEST(frameOut == 0);
@@ -941,8 +1014,15 @@ int JitterBufferTest(CmdArgs& args)
         // Insert a packet into a frame
         TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
 
+        // get packet notification
+        TEST(timeStamp == jb.NextTimestamp(2, &incomingFrameType,
+                                           &renderTimeMs));
+
+        // check incoming frame type
+        TEST(incomingFrameType == kVideoFrameDelta);
+
         // get the frame
-        frameOut = DecodeCompleteFrame(2);
+        frameOut = jb.GetCompleteFrameForDecoding(2);
 
         // it should not be complete
         TEST(frameOut == 0);
@@ -963,7 +1043,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kCompleteSession == jb.InsertPacket(frameIn, packet));
 
     // get the frame
-    frameOut = DecodeIncompleteFrame();
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     TEST(CheckOutFrame(frameOut, size*100, false) == 0);
 
@@ -988,7 +1068,7 @@ int JitterBufferTest(CmdArgs& args)
     // insert "first" packet last seqnum
     timeStamp += 33*90;
     seqNum = 1;
-    packet.frameType = kVideoFrameKey;
+    packet.frameType = kVideoFrameDelta;
     packet.isFirstPacket = false;
     packet.markerBit = true;
     packet.seqNum = seqNum;
@@ -1000,8 +1080,14 @@ int JitterBufferTest(CmdArgs& args)
     // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // get packet notification
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+
+    // check incoming frame type
+    TEST(incomingFrameType == kVideoFrameDelta);
+
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     // it should not be complete
     TEST(frameOut == 0);
@@ -1018,8 +1104,14 @@ int JitterBufferTest(CmdArgs& args)
     // Insert a packet into a frame
     TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
 
+    // get packet notification
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+
+    // check incoming frame type
+    TEST(incomingFrameType == kVideoFrameDelta);
+
     // get the frame
-    frameOut = DecodeIncompleteFrame();
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     // it should not be complete
     TEST(frameOut == 0);
@@ -1036,7 +1128,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kCompleteSession == jb.InsertPacket(frameIn, packet));
 
     // get the frame
-    frameOut = DecodeIncompleteFrame();
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     TEST(CheckOutFrame(frameOut, size*3, false) == 0);
 
@@ -1073,8 +1165,12 @@ int JitterBufferTest(CmdArgs& args)
     // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // get packet notification
+    TEST(3000 == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+    TEST(kVideoFrameDelta == incomingFrameType);
+
     // Get the frame
-    frameOut = DecodeCompleteFrame();
+    frameOut = jb.GetCompleteFrameForDecoding(10);
     TEST(3000 == frameOut->TimeStamp());
 
     TEST(CheckOutFrame(frameOut, size, false) == 0);
@@ -1123,8 +1219,12 @@ int JitterBufferTest(CmdArgs& args)
     // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // get packet notification
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+    TEST(kVideoFrameDelta == incomingFrameType);
+
     // Get the frame
-    frameOut = DecodeIncompleteFrame();
+    frameOut = jb.GetCompleteFrameForDecoding(10);
     TEST(timeStamp == frameOut->TimeStamp());
 
     TEST(CheckOutFrame(frameOut, size, false) == 0);
@@ -1170,8 +1270,14 @@ int JitterBufferTest(CmdArgs& args)
     // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // get packet notification
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+
+    // check incoming frame type
+    TEST(incomingFrameType == kVideoFrameDelta);
+
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     // it should not be complete
     TEST(frameOut == 0);
@@ -1187,7 +1293,7 @@ int JitterBufferTest(CmdArgs& args)
     // Insert a packet into a frame
     TEST(kCompleteSession == jb.InsertPacket(frameIn, packet));
 
-    frameOut = DecodeIncompleteFrame();
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     TEST(CheckOutFrame(frameOut, size*2, false) == 0);
 
@@ -1207,8 +1313,14 @@ int JitterBufferTest(CmdArgs& args)
     // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // get packet notification
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+
+    // check incoming frame type
+    TEST(incomingFrameType == kVideoFrameDelta);
+
     // get the frame
-    frameOut = DecodeCompleteFrame(10);
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     // it should not be complete
     TEST(frameOut == 0);
@@ -1225,7 +1337,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kCompleteSession == jb.InsertPacket(frameIn, packet));
 
     // get the frame
-    frameOut = DecodeIncompleteFrame();
+    frameOut = jb.GetCompleteFrameForDecoding(10);
 
     TEST(CheckOutFrame(frameOut, size*2, false) == 0);
 
@@ -1261,6 +1373,10 @@ int JitterBufferTest(CmdArgs& args)
     // Insert first frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // Get packet notification
+    TEST(0xffffff00 == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+    TEST(kVideoFrameDelta == incomingFrameType);
+
     // Insert next frame
     seqNum++;
     timeStamp = 2700;
@@ -1276,8 +1392,12 @@ int JitterBufferTest(CmdArgs& args)
     // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // Get packet notification
+    TEST(0xffffff00 == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+    TEST(kVideoFrameDelta == incomingFrameType);
+
     // Get frame
-    frameOut = jb.GetFrameForDecoding();
+    frameOut = jb.GetCompleteFrameForDecoding(10);
     TEST(0xffffff00 == frameOut->TimeStamp());
 
     TEST(CheckOutFrame(frameOut, size, false) == 0);
@@ -1285,8 +1405,12 @@ int JitterBufferTest(CmdArgs& args)
     // check the frame type
     TEST(frameOut->FrameType() == kVideoFrameDelta);
 
+    // Get packet notification
+    TEST(2700 == jb.NextTimestamp(0, &incomingFrameType, &renderTimeMs));
+    TEST(kVideoFrameDelta == incomingFrameType);
+
     // Get frame
-    VCMEncodedFrame* frameOut2 = DecodeIncompleteFrame();
+    VCMEncodedFrame* frameOut2 = jb.GetCompleteFrameForDecoding(10);
     TEST(2700 == frameOut2->TimeStamp());
 
     TEST(CheckOutFrame(frameOut2, size, false) == 0);
@@ -1324,6 +1448,10 @@ int JitterBufferTest(CmdArgs& args)
     // Insert first frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // Get packet notification
+    TEST(2700 == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+    TEST(kVideoFrameDelta == incomingFrameType);
+
     // Insert second frame
     seqNum--;
     timeStamp = 0xffffff00;
@@ -1339,8 +1467,12 @@ int JitterBufferTest(CmdArgs& args)
     // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // Get packet notification
+    TEST(0xffffff00 == jb.NextTimestamp(10, &incomingFrameType, &renderTimeMs));
+    TEST(kVideoFrameDelta == incomingFrameType);
+
     // Get frame
-    frameOut = jb.GetFrameForDecoding();
+    frameOut = jb.GetCompleteFrameForDecoding(10);
     TEST(0xffffff00 == frameOut->TimeStamp());
 
     TEST(CheckOutFrame(frameOut, size, false) == 0);
@@ -1348,8 +1480,12 @@ int JitterBufferTest(CmdArgs& args)
     // check the frame type
     TEST(frameOut->FrameType() == kVideoFrameDelta);
 
+    // get packet notification
+    TEST(2700 == jb.NextTimestamp(0, &incomingFrameType, &renderTimeMs));
+    TEST(kVideoFrameDelta == incomingFrameType);
+
     // Get frame
-    frameOut2 = DecodeIncompleteFrame();
+    frameOut2 = jb.GetCompleteFrameForDecoding(10);
     TEST(2700 == frameOut2->TimeStamp());
 
     TEST(CheckOutFrame(frameOut2, size, false) == 0);
@@ -1394,6 +1530,13 @@ int JitterBufferTest(CmdArgs& args)
             TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
         }
 
+        // get packet notification
+        TEST(packet.timestamp == jb.NextTimestamp(10, &incomingFrameType,
+                                                  &renderTimeMs));
+
+        // check incoming frame type
+        TEST(incomingFrameType == kVideoFrameDelta);
+
         loop++;
     } while (loop < kMaxPacketsInSession);
 
@@ -1411,7 +1554,7 @@ int JitterBufferTest(CmdArgs& args)
     // Insert the packet -> frame recycled
     TEST(kSizeError == jb.InsertPacket(frameIn, packet));
 
-    TEST(0 == DecodeIncompleteFrame());
+    TEST(0 == jb.GetCompleteFrameForDecoding(10));
 
     //printf("DONE fill frame - packets > max number of packets\n");
 
@@ -1428,6 +1571,8 @@ int JitterBufferTest(CmdArgs& args)
 
     loop = 0;
     seqNum = 65485;
+    uint32_t timeStampStart = timeStamp +  33*90;
+    uint32_t timeStampFirstKey = 0;
     VCMEncodedFrame* ptrLastDeltaFrame = NULL;
     VCMEncodedFrame* ptrFirstKeyFrame = NULL;
     // insert MAX_NUMBER_OF_FRAMES frames
@@ -1451,10 +1596,18 @@ int JitterBufferTest(CmdArgs& args)
         {
             ptrFirstKeyFrame = frameIn;
             packet.frameType = kVideoFrameKey;
+            timeStampFirstKey = packet.timestamp;
         }
 
         // Insert frame
         TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
+
+        // Get packet notification, should be first inserted frame
+        TEST(timeStampStart == jb.NextTimestamp(10, &incomingFrameType,
+                                                &renderTimeMs));
+
+        // check incoming frame type
+        TEST(incomingFrameType == kVideoFrameDelta);
 
         loop++;
     } while (loop < kMaxNumberOfFrames);
@@ -1477,8 +1630,15 @@ int JitterBufferTest(CmdArgs& args)
     // Insert frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // First inserted key frame should be oldest in buffer
+    TEST(timeStampFirstKey == jb.NextTimestamp(10, &incomingFrameType,
+                                               &renderTimeMs));
+
+    // check incoming frame type
+    TEST(incomingFrameType == kVideoFrameKey);
+
     // get the first key frame
-    frameOut = jb.GetFrameForDecoding();
+    frameOut = jb.GetCompleteFrameForDecoding(10);
     TEST(ptrFirstKeyFrame == frameOut);
 
     TEST(CheckOutFrame(frameOut, size, false) == 0);
@@ -1584,6 +1744,9 @@ int JitterBufferTest(CmdArgs& args)
     frameIn = jb.GetFrame(packet);
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
+    // Get packet notification
+    TEST(timeStamp == jb.NextTimestamp(10, &incomingFrameType,
+                                       &renderTimeMs));
     frameOut = jb.MaybeGetIncompleteFrameForDecoding();
 
     // We can decode everything from a NALU until a packet has been lost.
@@ -1700,7 +1863,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(kCompleteSession == jb.InsertPacket(frameIn, emptypacket));
 
     // get the frame
-    frameOut = jb.GetFrameForDecoding();
+    frameOut = jb.GetCompleteFrameForDecoding(10);
     // Only last NALU is complete
     TEST(CheckOutFrame(frameOut, packet.sizeBytes, false) == 0);
 

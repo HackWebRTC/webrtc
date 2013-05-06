@@ -43,7 +43,7 @@ void StreamGenerator::GenerateFrame(FrameType type,
                                     int num_media_packets,
                                     int num_empty_packets,
                                     int64_t current_time) {
-  timestamp_ = 90 * (current_time - start_time_);
+  timestamp_ += 90 * (current_time - start_time_);
   // Move the sequence number counter if all packets from the previous frame
   // wasn't collected.
   sequence_number_ += packets_.size();

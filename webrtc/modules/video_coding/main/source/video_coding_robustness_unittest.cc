@@ -107,12 +107,10 @@ TEST_F(VCMRobustnessTest, TestHardNack) {
   InsertPacket(0, 0, true, false, kVideoFrameKey);
   InsertPacket(0, 1, false, false, kVideoFrameKey);
   InsertPacket(0, 2, false, true, kVideoFrameKey);
-  clock_->AdvanceTimeMilliseconds(1000 / 30);
 
   InsertPacket(3000, 3, true, false, kVideoFrameDelta);
   InsertPacket(3000, 4, false, false, kVideoFrameDelta);
   InsertPacket(3000, 5, false, true, kVideoFrameDelta);
-  clock_->AdvanceTimeMilliseconds(1000 / 30);
 
   ASSERT_EQ(VCM_OK, vcm_->Decode(0));
   ASSERT_EQ(VCM_OK, vcm_->Decode(0));
