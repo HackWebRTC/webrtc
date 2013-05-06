@@ -42,8 +42,9 @@ PacedSender::Packet PacedSender::PacketList::front() const {
 
 void PacedSender::PacketList::pop_front() {
   PacedSender::Packet& packet = packet_list_.front();
+  uint16_t sequence_number = packet.sequence_number_;
   packet_list_.pop_front();
-  sequence_number_set_.erase(packet.sequence_number_);
+  sequence_number_set_.erase(sequence_number);
 }
 
 void PacedSender::PacketList::push_back(const PacedSender::Packet& packet) {
