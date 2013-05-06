@@ -48,11 +48,7 @@ AudioDeviceBuffer::AudioDeviceBuffer() :
     _newMicLevel(0),
     _playDelayMS(0),
     _recDelayMS(0),
-    _clockDrift(0),
-    _measureDelay(false),    // should always be 'false' (EXPERIMENTAL)
-    _pulseList(),
-    _lastPulseTime(AudioDeviceUtility::GetTimeInMS())
-{
+    _clockDrift(0) {
     // valid ID will be set later by SetId, use -1 for now
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id, "%s created", __FUNCTION__);
     memset(_recBuffer, 0, kMaxBufferSizeBytes);
@@ -76,8 +72,6 @@ AudioDeviceBuffer::~AudioDeviceBuffer()
         _playFile.Flush();
         _playFile.CloseFile();
         delete &_playFile;
-
-        _EmptyList();
     }
 
     delete &_critSect;
@@ -113,15 +107,6 @@ int32_t AudioDeviceBuffer::RegisterAudioCallback(AudioTransport* audioCallback)
 int32_t AudioDeviceBuffer::InitPlayout()
 {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id, "%s", __FUNCTION__);
-
-    CriticalSectionScoped lock(&_critSect);
-
-    if (_measureDelay)
-    {
-        _EmptyList();
-        _lastPulseTime = AudioDeviceUtility::GetTimeInMS();
-    }
-
     return 0;
 }
 
@@ -132,15 +117,6 @@ int32_t AudioDeviceBuffer::InitPlayout()
 int32_t AudioDeviceBuffer::InitRecording()
 {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id, "%s", __FUNCTION__);
-
-    CriticalSectionScoped lock(&_critSect);
-
-    if (_measureDelay)
-    {
-        _EmptyList();
-        _lastPulseTime = AudioDeviceUtility::GetTimeInMS();
-    }
-
     return 0;
 }
 
@@ -485,22 +461,6 @@ int32_t AudioDeviceBuffer::DeliverRecordedData()
     uint32_t newMicLevel(0);
     uint32_t totalDelayMS = _playDelayMS +_recDelayMS;
 
-    if (_measureDelay)
-    {
-        CriticalSectionScoped lock(&_critSect);
-
-        memset(&_recBuffer[0], 0, _recSize);
-        uint32_t time = AudioDeviceUtility::GetTimeInMS();
-        if (time - _lastPulseTime > 500)
-        {
-            _pulseList.PushBack(time);
-            _lastPulseTime = time;
-
-            int16_t* ptr16 = (int16_t*)&_recBuffer[0];
-            *ptr16 = 30000;
-        }
-    }
-
     res = _ptrCbAudioTransport->RecordedDataIsAvailable(&_recBuffer[0],
                                                         _recSamples,
                                                         _recBytesPerSample,
@@ -584,33 +544,6 @@ int32_t AudioDeviceBuffer::RequestPlayoutData(uint32_t nSamples)
         {
             WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "NeedMorePlayData() failed");
         }
-
-        // --- Experimental delay-measurement implementation
-        // *** not be used in released code ***
-
-        if (_measureDelay)
-        {
-            CriticalSectionScoped lock(&_critSect);
-
-            int16_t maxAbs = WebRtcSpl_MaxAbsValueW16((const int16_t*)&_playBuffer[0], (int16_t)nSamplesOut*_playChannels);
-            if (maxAbs > 1000)
-            {
-                uint32_t nowTime = AudioDeviceUtility::GetTimeInMS();
-
-                if (!_pulseList.Empty())
-                {
-                    ListItem* item = _pulseList.First();
-                    if (item)
-                    {
-                        int16_t maxIndex = WebRtcSpl_MaxAbsIndexW16((const int16_t*)&_playBuffer[0], (int16_t)nSamplesOut*_playChannels);
-                        uint32_t pulseTime = item->GetUnsignedItem();
-                        uint32_t diff = nowTime - pulseTime + (10*maxIndex)/(nSamplesOut*_playChannels);
-                        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "diff time in playout delay (%d)", diff);
-                    }
-                    _pulseList.PopFront();
-                }
-            }
-        }
     }
 
     return nSamplesOut;
@@ -641,23 +574,6 @@ int32_t AudioDeviceBuffer::GetPlayoutData(void* audioBuffer)
     }
 
     return _playSamples;
-}
-
-// ----------------------------------------------------------------------------
-//  _EmptyList
-// ----------------------------------------------------------------------------
-
-void AudioDeviceBuffer::_EmptyList()
-{
-    while (!_pulseList.Empty())
-    {
-        ListItem* item = _pulseList.First();
-        if (item)
-        {
-            // uint32_t ts = item->GetUnsignedItem();
-        }
-        _pulseList.PopFront();
-    }
 }
 
 }  // namespace webrtc

@@ -71,9 +71,6 @@ public:
     ~AudioDeviceBuffer();
 
 private:
-    void _EmptyList();
-
-private:
     int32_t                   _id;
     CriticalSectionWrapper&         _critSect;
     CriticalSectionWrapper&         _critSectCb;
@@ -117,10 +114,6 @@ private:
     uint32_t                  _recDelayMS;
 
     int32_t                   _clockDrift;
-
-    bool                            _measureDelay;
-    ListWrapper                     _pulseList;
-    uint32_t                  _lastPulseTime;
 };
 
 }  // namespace webrtc
