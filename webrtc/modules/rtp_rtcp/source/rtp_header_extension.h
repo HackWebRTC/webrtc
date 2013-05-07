@@ -18,19 +18,17 @@
 
 namespace webrtc {
 
-enum {RTP_ONE_BYTE_HEADER_EXTENSION = 0xbede};
+const uint16_t kRtpOneByteHeaderExtensionId = 0xBEDE;
 
-enum {
-   RTP_ONE_BYTE_HEADER_LENGTH_IN_BYTES = 4,
-   TRANSMISSION_TIME_OFFSET_LENGTH_IN_BYTES = 4
-};
+const size_t kRtpOneByteHeaderLength = 4;
+const size_t kTransmissionTimeOffsetLength = 4;
 
 struct HeaderExtension {
   HeaderExtension(RTPExtensionType extension_type)
     : type(extension_type),
       length(0) {
      if (type == kRtpExtensionTransmissionTimeOffset) {
-       length = TRANSMISSION_TIME_OFFSET_LENGTH_IN_BYTES;
+       length = kTransmissionTimeOffsetLength;
      }
    }
 
@@ -69,4 +67,5 @@ class RtpHeaderExtensionMap {
   std::map<uint8_t, HeaderExtension*> extensionMap_;
 };
 }
+
 #endif // WEBRTC_MODULES_RTP_RTCP_RTP_HEADER_EXTENSION_H_

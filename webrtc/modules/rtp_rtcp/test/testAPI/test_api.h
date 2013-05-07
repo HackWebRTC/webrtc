@@ -56,13 +56,12 @@ class LoopBackTransport : public webrtc::Transport {
 
 class RtpReceiver : public RtpData {
  public:
-  enum { kMaxPayloadSize = 1500 };
 
   virtual int32_t OnReceivedPayloadData(
       const uint8_t* payloadData,
       const uint16_t payloadSize,
       const webrtc::WebRtcRTPHeader* rtpHeader) {
-    EXPECT_LE(payloadSize, kMaxPayloadSize);
+    EXPECT_LE(payloadSize, sizeof(_payloadData));
     memcpy(_payloadData, payloadData, payloadSize);
     memcpy(&_rtpHeader, rtpHeader, sizeof(_rtpHeader));
     _payloadSize = payloadSize;
@@ -82,7 +81,7 @@ class RtpReceiver : public RtpData {
   }
 
  private:
-  uint8_t _payloadData[kMaxPayloadSize];
+  uint8_t _payloadData[1500];
   uint16_t _payloadSize;
   webrtc::WebRtcRTPHeader _rtpHeader;
 };

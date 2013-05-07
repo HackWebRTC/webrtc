@@ -27,7 +27,7 @@ namespace webrtc {
 
 namespace {
 const int kId = 1;
-const int kTypeLength = TRANSMISSION_TIME_OFFSET_LENGTH_IN_BYTES;
+const int kTypeLength = kTransmissionTimeOffsetLength;
 const int kPayload = 100;
 const uint32_t kTimestamp = 10;
 const uint16_t kSeqNum = 33;
@@ -92,7 +92,7 @@ class RtpSenderTest : public ::testing::Test {
 TEST_F(RtpSenderTest, RegisterRtpHeaderExtension) {
   EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kType, kId));
-  EXPECT_EQ(RTP_ONE_BYTE_HEADER_LENGTH_IN_BYTES + kTypeLength,
+  EXPECT_EQ(kRtpOneByteHeaderLength + kTypeLength,
             rtp_sender_->RtpHeaderExtensionTotalLength());
   EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(kType));
   EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());

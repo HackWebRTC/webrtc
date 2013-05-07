@@ -849,11 +849,11 @@ uint16_t RTPSender::BuildRTPHeaderExtension(
   //  |                             ....                              |
   //
   const uint32_t kPosLength = 2;
-  const uint32_t kHeaderLength = RTP_ONE_BYTE_HEADER_LENGTH_IN_BYTES;
+  const uint32_t kHeaderLength = kRtpOneByteHeaderLength;
 
   // Add extension ID (0xBEDE).
   ModuleRTPUtility::AssignUWord16ToBuffer(data_buffer,
-                                          RTP_ONE_BYTE_HEADER_EXTENSION);
+                                          kRtpOneByteHeaderExtensionId);
 
   // Add extensions.
   uint16_t total_block_length = 0;
@@ -906,14 +906,14 @@ uint8_t RTPSender::BuildTransmissionTimeOffsetExtension(
     // Not registered.
     return 0;
   }
-  int pos = 0;
+  size_t pos = 0;
   const uint8_t len = 2;
   data_buffer[pos++] = (id << 4) + len;
   ModuleRTPUtility::AssignUWord24ToBuffer(data_buffer + pos,
                                           transmission_time_offset_);
   pos += 3;
-  assert(pos == TRANSMISSION_TIME_OFFSET_LENGTH_IN_BYTES);
-  return TRANSMISSION_TIME_OFFSET_LENGTH_IN_BYTES;
+  assert(pos == kTransmissionTimeOffsetLength);
+  return kTransmissionTimeOffsetLength;
 }
 
 bool RTPSender::UpdateTransmissionTimeOffset(

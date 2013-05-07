@@ -215,6 +215,8 @@ void RemoteBitrateEstimatorTest::AddDefaultStream() {
     0));         // RTCP receive time.
 }
 
+const unsigned int RemoteBitrateEstimatorTest::kDefaultSsrc = 1;
+
 // Generates a frame of packets belonging to a stream at a given bitrate and
 // with a given ssrc. The stream is pushed through a very simple simulated
 // network, and is then given to the receive-side bandwidth estimator.

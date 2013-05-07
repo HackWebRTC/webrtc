@@ -85,28 +85,28 @@ class TestVCMReceiver : public ::testing::Test {
 TEST_F(TestVCMReceiver, RenderBufferSize_AllComplete) {
   EXPECT_EQ(0, receiver_.RenderBufferSizeMs());
   EXPECT_GE(InsertFrame(kVideoFrameKey, true), kNoError);
-  int num_of_frames = 10;
-  for (int i = 0; i < num_of_frames; ++i) {
+  size_t num_of_frames = 10;
+  for (size_t i = 0; i < num_of_frames; ++i) {
     EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
   }
-  EXPECT_EQ(num_of_frames  * kDefaultFramePeriodMs,
-      receiver_.RenderBufferSizeMs());
+  EXPECT_EQ(static_cast<int>(num_of_frames * kDefaultFramePeriodMs),
+            receiver_.RenderBufferSizeMs());
 }
 
 TEST_F(TestVCMReceiver, RenderBufferSize_NotAllComplete) {
   EXPECT_EQ(0, receiver_.RenderBufferSizeMs());
   EXPECT_GE(InsertFrame(kVideoFrameKey, true), kNoError);
-  int num_of_frames = 10;
-  for (int i = 0; i < num_of_frames; ++i) {
+  size_t num_of_frames = 10;
+  for (size_t i = 0; i < num_of_frames; ++i) {
     EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
   }
   num_of_frames++;
   EXPECT_GE(InsertFrame(kVideoFrameDelta, false), kNoError);
-  for (int i = 0; i < num_of_frames; ++i) {
+  for (size_t i = 0; i < num_of_frames; ++i) {
     EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
   }
-  EXPECT_EQ(num_of_frames * kDefaultFramePeriodMs,
-      receiver_.RenderBufferSizeMs());
+  EXPECT_EQ(static_cast<int>(num_of_frames * kDefaultFramePeriodMs),
+            receiver_.RenderBufferSizeMs());
 }
 
 TEST_F(TestVCMReceiver, RenderBufferSize_NoKeyFrame) {

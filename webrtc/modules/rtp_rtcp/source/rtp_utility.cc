@@ -382,7 +382,7 @@ bool RTPHeaderParser::Parse(WebRtcRTPHeader& parsedPacket,
     if (remain < (4 + XLen)) {
       return false;
     }
-    if (definedByProfile == RTP_ONE_BYTE_HEADER_EXTENSION) {
+    if (definedByProfile == kRtpOneByteHeaderExtensionId) {
       const uint8_t* ptrRTPDataExtensionEnd = ptr + XLen;
       ParseOneByteExtensionHeader(parsedPacket,
                                   ptrExtensionMap,

@@ -186,7 +186,7 @@ class RemoteBitrateEstimatorTest : public ::testing::Test {
                               unsigned int max_bitrate,
                               unsigned int target_bitrate);
 
-  enum { kDefaultSsrc = 1 };
+  static const unsigned int kDefaultSsrc;
 
   SimulatedClock clock_;  // Time at the receiver.
   OverUseDetectorOptions overuse_detector_options_;

@@ -21,7 +21,7 @@ extern "C" {
 
 namespace {
 
-enum { kNumValidFrameLengths = 3 };
+const int kNumValidFrameLengths = 3;
 
 TEST_F(VadTest, vad_filterbank) {
   VadInstT* self = reinterpret_cast<VadInstT*>(malloc(sizeof(VadInstT)));

@@ -15,11 +15,9 @@
 #include "module_common_types.h"
 #include "jitter_buffer_common.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
-class VCMPacket
-{
+class VCMPacket {
 public:
     VCMPacket();
     VCMPacket(const uint8_t* ptr,

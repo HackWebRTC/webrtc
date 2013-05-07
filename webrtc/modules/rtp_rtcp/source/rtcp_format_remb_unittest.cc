@@ -125,11 +125,10 @@ TEST_F(RtcpFormatRembTest, TestCompund) {
   EXPECT_EQ(0, rtcp_sender_->SetREMBData(1234, 2, SSRCs));
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(kRtcpRemb));
 }
+} // namespace
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
   return RUN_ALL_TESTS();
 }
-
-} // namespace

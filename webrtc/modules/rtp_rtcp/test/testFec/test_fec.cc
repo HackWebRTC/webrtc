@@ -50,9 +50,15 @@ int main() {
   // FEC mask types.
   const FecMaskType kMaskTypes[] = {kFecMaskRandom, kFecMaskBursty};
   const int kNumFecMaskTypes = sizeof(kMaskTypes) / sizeof(*kMaskTypes);
+
+  // TODO(pbos): Fix this. Hack to prevent a warning
+  // ('-Wunneeded-internal-declaration') from clang.
+  (void) kPacketMaskBurstyTbl;
+
   // Maximum number of media packets allowed for the mask type.
   const uint16_t kMaxMediaPackets[] = {kMaxNumberMediaPackets,
       sizeof(kPacketMaskBurstyTbl) / sizeof(*kPacketMaskBurstyTbl)};
+
   if (kMaxMediaPackets[1] != 12) {
     printf("ERROR: max media packets for bursty mode not equal to 12 \n");
     return -1;
