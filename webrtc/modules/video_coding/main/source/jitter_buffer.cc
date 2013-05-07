@@ -911,7 +911,7 @@ bool VCMJitterBuffer::UpdateNackList(uint16_t sequence_number) {
                             latest_received_sequence_number_)) {
     // Push any missing sequence numbers to the NACK list.
     for (uint16_t i = latest_received_sequence_number_ + 1;
-        i < sequence_number; ++i) {
+         IsNewerSequenceNumber(sequence_number, i); ++i) {
       missing_sequence_numbers_.insert(missing_sequence_numbers_.end(), i);
       TRACE_EVENT_INSTANT1("webrtc", "AddNack", "seqnum", i);
     }

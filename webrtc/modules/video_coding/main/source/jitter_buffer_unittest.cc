@@ -456,4 +456,37 @@ TEST_F(TestJitterBufferNack, NormalOperationWrap) {
     EXPECT_EQ(i * 10, list[i]);
 }
 
+TEST_F(TestJitterBufferNack, NormalOperationWrap2) {
+  bool request_key_frame = false;
+  //  -----------------------------------
+  // | 65532 | 65533 | 65534 | x | 0 | 1 |
+  //  -----------------------------------
+  stream_generator_->Init(65532, 0, clock_->TimeInMilliseconds());
+  InsertFrame(kVideoFrameKey);
+  EXPECT_FALSE(request_key_frame);
+  EXPECT_TRUE(DecodeCompleteFrame());
+  stream_generator_->GenerateFrame(kVideoFrameDelta, 1, 0,
+                                   clock_->TimeInMilliseconds());
+  clock_->AdvanceTimeMilliseconds(kDefaultFramePeriodMs);
+  for (int i = 0; i < 5; ++i) {
+    if (stream_generator_->NextSequenceNumber()  != 65535) {
+      EXPECT_EQ(kCompleteSession, InsertPacketAndPop(0));
+      EXPECT_FALSE(request_key_frame);
+    } else {
+      stream_generator_->NextPacket(NULL);  // Drop packet
+    }
+    stream_generator_->GenerateFrame(kVideoFrameDelta, 1, 0,
+                                     clock_->TimeInMilliseconds());
+    clock_->AdvanceTimeMilliseconds(kDefaultFramePeriodMs);
+  }
+  EXPECT_EQ(kCompleteSession, InsertPacketAndPop(0));
+  EXPECT_FALSE(request_key_frame);
+  uint16_t nack_list_size = 0;
+  bool extended = false;
+  uint16_t* list = jitter_buffer_->GetNackList(&nack_list_size, &extended);
+  // Verify the NACK list.
+  ASSERT_EQ(1, nack_list_size);
+  EXPECT_EQ(65535, list[0]);
+}
+
 }  // namespace webrtc
