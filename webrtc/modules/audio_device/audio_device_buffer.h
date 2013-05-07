@@ -67,6 +67,8 @@ public:
         const char fileName[kAdmMaxFileNameSize]);
     int32_t StopOutputFileRecording();
 
+    int32_t SetTypingStatus(bool typingStatus);
+
     AudioDeviceBuffer();
     ~AudioDeviceBuffer();
 
@@ -109,6 +111,8 @@ private:
 
     uint32_t                  _currentMicLevel;
     uint32_t                  _newMicLevel;
+
+    bool                      _typingStatus;
 
     uint32_t                  _playDelayMS;
     uint32_t                  _recDelayMS;

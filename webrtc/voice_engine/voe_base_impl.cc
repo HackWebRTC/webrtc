@@ -133,6 +133,7 @@ int32_t VoEBaseImpl::RecordedDataIsAvailable(
         const uint32_t totalDelayMS,
         const int32_t clockDrift,
         const uint32_t currentMicLevel,
+        const bool keyPressed,
         uint32_t& newMicLevel)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_shared->instance_id(), -1),
@@ -195,7 +196,7 @@ int32_t VoEBaseImpl::RecordedDataIsAvailable(
     // (APM, mix with file, record to file, mute, etc.)
     _shared->transmit_mixer()->PrepareDemux(audioSamples, nSamples, nChannels,
         samplesPerSec, static_cast<uint16_t>(totalDelayMS), clockDrift,
-        currentVoEMicLevel);
+        currentVoEMicLevel, keyPressed);
 
     // Copy the audio frame to each sending channel and perform
     // channel-dependent operations (file mixing, mute, etc.) to prepare

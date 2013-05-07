@@ -332,7 +332,8 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
                             const uint32_t samplesPerSec,
                             const uint16_t totalDelayMS,
                             const int32_t clockDrift,
-                            const uint16_t currentMicLevel)
+                            const uint16_t currentMicLevel,
+                            const bool keyPressed)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::PrepareDemux(nSamples=%u, nChannels=%u,"
@@ -369,7 +370,7 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
 
     // --- Annoying typing detection (utilizes the APM/VAD decision)
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-    TypingDetection();
+    TypingDetection(keyPressed);
 #endif
 
     // --- Mute during DTMF tone if direct feedback is enabled
@@ -1327,20 +1328,13 @@ void TransmitMixer::ProcessAudio(int delay_ms, int clock_drift,
 }
 
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-int TransmitMixer::TypingDetection()
+int TransmitMixer::TypingDetection(const bool keyPressed)
 {
 
     // We let the VAD determine if we're using this feature or not.
     if (_audioFrame.vad_activity_ == AudioFrame::kVadUnknown)
     {
         return (0);
-    }
-
-    int keyPressed = EventWrapper::KeyPressed();
-
-    if (keyPressed < 0)
-    {
-        return (-1);
     }
 
     if (_audioFrame.vad_activity_ == AudioFrame::kVadActive)

@@ -56,7 +56,8 @@ public:
                          const uint32_t samplesPerSec,
                          const uint16_t totalDelayMS,
                          const int32_t  clockDrift,
-                         const uint16_t currentMicLevel);
+                         const uint16_t currentMicLevel,
+                         const bool keyPressed);
 
 
     int32_t DemuxAndMix();
@@ -178,7 +179,7 @@ private:
     void ProcessAudio(int delay_ms, int clock_drift, int current_mic_level);
 
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-    int TypingDetection();
+    int TypingDetection(const bool keyPressed);
 #endif
 
     // uses

@@ -210,6 +210,9 @@ public:
 public:
     virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
 
+private:
+    bool KeyPressed() const;
+
 private:    // avrt function pointers
     PAvRevertMmThreadCharacteristics    _PAvRevertMmThreadCharacteristics;
     PAvSetMmThreadCharacteristicsA      _PAvSetMmThreadCharacteristicsA;

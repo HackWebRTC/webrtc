@@ -13,15 +13,17 @@
 #include "audio_device_config.h"
 
 #include "event_wrapper.h"
+#include "portaudio/pa_ringbuffer.h"
 #include "trace.h"
 #include "thread_wrapper.h"
 
+#include <ApplicationServices/ApplicationServices.h>
 #include <cassert>
-
-#include <sys/sysctl.h>         // sysctlbyname()
-#include <mach/mach.h>          // mach_task_self()
 #include <libkern/OSAtomic.h>   // OSAtomicCompareAndSwap()
-#include "portaudio/pa_ringbuffer.h"
+#include <mach/mach.h>          // mach_task_self()
+#include <sys/sysctl.h>         // sysctlbyname()
+
+
 
 namespace webrtc
 {
@@ -3207,6 +3209,8 @@ bool AudioDeviceMac::CaptureWorkerThread()
 
         _ptrAudioBuffer->SetVQEData(msecOnPlaySide, msecOnRecordSide, 0);
 
+        _ptrAudioBuffer->SetTypingStatus(KeyPressed());
+
         // deliver recorded samples at specified sample rate, mic level etc.
         // to the observer using callback
         _ptrAudioBuffer->DeliverRecordedData();
@@ -3236,4 +3240,14 @@ bool AudioDeviceMac::CaptureWorkerThread()
     return true;
 }
 
+bool AudioDeviceMac::KeyPressed() const{
+
+  bool key_down = false;
+  // loop through all Mac virtual key constant values
+  for (int key_index = 0; key_index <= 0x5C; key_index++) {
+    key_down |= CGEventSourceKeyState(kCGEventSourceStateHIDSystemState,
+                                      key_index);
+  }
+  return(key_down);
+}
 } //  namespace webrtc

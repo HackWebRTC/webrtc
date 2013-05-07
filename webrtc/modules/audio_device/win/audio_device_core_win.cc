@@ -4092,6 +4092,8 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread()
                                                     sndCardRecDelay,
                                                     0);
 
+                        _ptrAudioBuffer->SetTypingStatus(KeyPressed());
+
                         QueryPerformanceCounter(&t1);    // measure time: START
 
                         _UnLock();  // release lock while making the callback
@@ -5145,6 +5147,16 @@ char* AudioDeviceWindowsCore::WideToUTF8(const TCHAR* src) const {
 #endif
 }
 
+
+bool AudioDeviceWindowsCore::KeyPressed() const{
+
+  int key_down = 0;
+  for (int key = VK_SPACE; key < VK_NUMLOCK; key++) {
+    short res = GetAsyncKeyState(key);
+    key_down |= res & 0x1; // Get the LSB
+  }
+  return (key_down > 0);
+}
 }  // namespace webrtc
 
 #endif  // WEBRTC_WINDOWS_CORE_AUDIO_BUILD

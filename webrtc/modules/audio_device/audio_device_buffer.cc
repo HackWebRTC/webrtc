@@ -46,6 +46,7 @@ AudioDeviceBuffer::AudioDeviceBuffer() :
     _playFile(*FileWrapper::Create()),
     _currentMicLevel(0),
     _newMicLevel(0),
+    _typingStatus(false),
     _playDelayMS(0),
     _recDelayMS(0),
     _clockDrift(0) {
@@ -266,6 +267,12 @@ int32_t AudioDeviceBuffer::SetCurrentMicLevel(uint32_t level)
     return 0;
 }
 
+int32_t AudioDeviceBuffer::SetTypingStatus(bool typingStatus)
+{
+    _typingStatus = typingStatus;
+    return 0;
+}
+
 // ----------------------------------------------------------------------------
 //  NewMicLevel
 // ----------------------------------------------------------------------------
@@ -469,6 +476,7 @@ int32_t AudioDeviceBuffer::DeliverRecordedData()
                                                         totalDelayMS,
                                                         _clockDrift,
                                                         _currentMicLevel,
+                                                        _typingStatus,
                                                         newMicLevel);
     if (res != -1)
     {

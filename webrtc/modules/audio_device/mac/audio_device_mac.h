@@ -294,6 +294,9 @@ private:
     bool RenderWorkerThread();
 
 private:
+    bool KeyPressed() const;
+
+private:
     AudioDeviceBuffer* _ptrAudioBuffer;
 
     CriticalSectionWrapper& _critSect;

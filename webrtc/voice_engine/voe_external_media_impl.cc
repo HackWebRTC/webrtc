@@ -244,7 +244,8 @@ int VoEExternalMediaImpl::ExternalRecordingInsertData(
             samplingFreqHz,
             totalDelayMS,
             0,
-            0);
+            0,
+            false); // Typing detection not supported
 
         shared_->transmit_mixer()->DemuxAndMix();
         shared_->transmit_mixer()->EncodeAndSend();
