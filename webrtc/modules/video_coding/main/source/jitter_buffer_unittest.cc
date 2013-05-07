@@ -470,7 +470,7 @@ TEST_F(TestJitterBufferNack, NormalOperationWrap2) {
   clock_->AdvanceTimeMilliseconds(kDefaultFramePeriodMs);
   for (int i = 0; i < 5; ++i) {
     if (stream_generator_->NextSequenceNumber()  != 65535) {
-      EXPECT_EQ(kCompleteSession, InsertPacketAndPop(0));
+      EXPECT_EQ(kFirstPacket, InsertPacketAndPop(0));
       EXPECT_FALSE(request_key_frame);
     } else {
       stream_generator_->NextPacket(NULL);  // Drop packet
@@ -479,7 +479,7 @@ TEST_F(TestJitterBufferNack, NormalOperationWrap2) {
                                      clock_->TimeInMilliseconds());
     clock_->AdvanceTimeMilliseconds(kDefaultFramePeriodMs);
   }
-  EXPECT_EQ(kCompleteSession, InsertPacketAndPop(0));
+  EXPECT_EQ(kFirstPacket, InsertPacketAndPop(0));
   EXPECT_FALSE(request_key_frame);
   uint16_t nack_list_size = 0;
   bool extended = false;
