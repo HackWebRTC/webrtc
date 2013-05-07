@@ -226,7 +226,9 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
 
   // Extract the frame from the jitter buffer and set the render time.
   VCMEncodedFrame* frame = jitter_buffer_.ExtractAndSetDecode(frame_timestamp);
-  assert(frame);
+  if (frame == NULL) {
+    return NULL;
+  }
   frame->SetRenderTime(next_render_time_ms);
   if (dual_receiver != NULL) {
     dual_receiver->UpdateState(*frame);
