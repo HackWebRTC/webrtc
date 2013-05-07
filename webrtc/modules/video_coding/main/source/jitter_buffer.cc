@@ -466,8 +466,7 @@ VCMEncodedFrame* VCMJitterBuffer::GetCompleteFrameForDecoding(
           break;
         }
       } else {
-        crit_sect_->Leave();
-        return NULL;
+        break;
       }
     }
     // Inside |crit_sect_|.
@@ -477,7 +476,7 @@ VCMEncodedFrame* VCMJitterBuffer::GetCompleteFrameForDecoding(
   }
 
   if (!decode_with_errors_ && it == frame_list_.end()) {
-    // Even after signaling we're still missing a complete continuous frame.
+    // We're still missing a complete continuous frame.
     // Look for a complete key frame if we're not decoding with errors.
     it = find_if(frame_list_.begin(), frame_list_.end(),
         CompleteKeyFrameCriteria());
@@ -564,7 +563,7 @@ VCMEncodedFrame* VCMJitterBuffer::MaybeGetIncompleteFrameForDecoding() {
   frame_list_.erase(frame_list_.begin());
   if (frame_list_.empty()) {
     TRACE_EVENT_INSTANT1("webrtc", "JB::FrameListEmptied",
-                         "type", "GetFrameForDecoding");
+                         "type", "MaybeGetIncompleteFrameForDecoding");
   }
 
   // Look for previous frame loss
