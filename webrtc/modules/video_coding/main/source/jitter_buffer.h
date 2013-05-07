@@ -146,7 +146,8 @@ class VCMJitterBuffer {
                    int high_rtt_nack_threshold_ms);
 
   void SetNackSettings(size_t max_nack_list_size,
-                       int max_packet_age_to_nack);
+                       int max_packet_age_to_nack,
+                       int max_incomplete_time_ms);
 
   // Returns the current NACK mode.
   VCMNackMode nack_mode() const;
@@ -206,7 +207,13 @@ class VCMJitterBuffer {
 
   // Finds the oldest complete frame, used for getting next frame to decode.
   // Can return a decodable, incomplete frame when enabled.
-  FrameList::iterator FindOldestCompleteContinuousFrame();
+  FrameList::iterator FindOldestCompleteContinuousFrame(
+      FrameList::iterator start_it,
+      const VCMDecodingState* decoding_state);
+  FrameList::iterator FindLastContinuousAndComplete(
+      FrameList::iterator start_it);
+  void RenderBuffer(FrameList::iterator* start_it,
+                    FrameList::iterator* end_it);
 
   // Cleans the frame list in the JB from old/empty frames.
   // Should only be called prior to actual use.
@@ -235,6 +242,10 @@ class VCMJitterBuffer {
 
   // Returns true if we should wait for retransmissions, false otherwise.
   bool WaitForRetransmissions();
+
+  int NonContinuousOrIncompleteDuration();
+
+  uint16_t EstimatedLowSequenceNumber(const VCMFrameBuffer& frame) const;
 
   int vcm_id_;
   int receiver_id_;
@@ -291,6 +302,7 @@ class VCMJitterBuffer {
   std::vector<uint16_t> nack_seq_nums_;
   size_t max_nack_list_size_;
   int max_packet_age_to_nack_;  // Measured in sequence numbers.
+  int max_incomplete_time_ms_;
 
   bool decode_with_errors_;
   DISALLOW_COPY_AND_ASSIGN(VCMJitterBuffer);

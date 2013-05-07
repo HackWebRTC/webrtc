@@ -195,7 +195,7 @@ PayloadSinkInterface* VcmPayloadSinkFactory::Create(
   vcm->SetVideoProtection(protection_method_, protection_enabled_);
   vcm->SetRenderDelay(render_delay_ms_);
   vcm->SetMinimumPlayoutDelay(min_playout_delay_ms_);
-  vcm->SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack);
+  vcm->SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack, 0);
 
   scoped_ptr<FileOutputFrameReceiver> frame_receiver(
       new FileOutputFrameReceiver(base_out_filename_, stream->ssrc()));

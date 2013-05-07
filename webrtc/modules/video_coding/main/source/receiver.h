@@ -63,7 +63,8 @@ class VCMReceiver {
                    int low_rtt_nack_threshold_ms,
                    int high_rtt_nack_threshold_ms);
   void SetNackSettings(size_t max_nack_list_size,
-                       int max_packet_age_to_nack);
+                       int max_packet_age_to_nack,
+                       int max_incomplete_time_ms);
   VCMNackMode NackMode() const;
   VCMNackStatus NackList(uint16_t* nackList, uint16_t size,
                          uint16_t* nack_list_length);

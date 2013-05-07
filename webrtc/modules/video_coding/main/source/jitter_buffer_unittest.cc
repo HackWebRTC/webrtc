@@ -131,7 +131,7 @@ class TestRunningJitterBuffer : public ::testing::Test {
     stream_generator_ = new StreamGenerator(0, 0, clock_->TimeInMilliseconds());
     jitter_buffer_->Start();
     jitter_buffer_->SetNackSettings(max_nack_list_size_,
-                                    oldest_packet_to_nack_);
+                                    oldest_packet_to_nack_, 0);
     memset(data_buffer_, 0, kDataBufferSize);
   }
 
@@ -1512,6 +1512,30 @@ TEST_F(TestRunningJitterBuffer, SkipToKeyFrame) {
   InsertFrame(kVideoFrameKey);
   // Skip to the next key frame.
   EXPECT_TRUE(DecodeCompleteFrame());
+}
+
+TEST_F(TestRunningJitterBuffer, DontSkipToKeyFrameIfDecodable) {
+  InsertFrame(kVideoFrameKey);
+  EXPECT_TRUE(DecodeCompleteFrame());
+  const int kNumDeltaFrames = 5;
+  EXPECT_GE(InsertFrames(kNumDeltaFrames, kVideoFrameDelta), kNoError);
+  InsertFrame(kVideoFrameKey);
+  for (int i = 0; i < kNumDeltaFrames + 1; ++i) {
+    EXPECT_TRUE(DecodeCompleteFrame());
+  }
+}
+
+TEST_F(TestRunningJitterBuffer, KeyDeltaKeyDelta) {
+  InsertFrame(kVideoFrameKey);
+  EXPECT_TRUE(DecodeCompleteFrame());
+  const int kNumDeltaFrames = 5;
+  EXPECT_GE(InsertFrames(kNumDeltaFrames, kVideoFrameDelta), kNoError);
+  InsertFrame(kVideoFrameKey);
+  EXPECT_GE(InsertFrames(kNumDeltaFrames, kVideoFrameDelta), kNoError);
+  InsertFrame(kVideoFrameKey);
+  for (int i = 0; i < 2 * (kNumDeltaFrames + 1); ++i) {
+    EXPECT_TRUE(DecodeCompleteFrame());
+  }
 }
 
 TEST_F(TestJitterBufferNack, EmptyPackets) {

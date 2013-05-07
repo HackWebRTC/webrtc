@@ -24,7 +24,7 @@ const unsigned int kDefaultFrameRate = 25;
 const unsigned int kMaxPacketSize = 1500;
 const unsigned int kFrameSize = (kDefaultBitrateKbps + kDefaultFrameRate * 4) /
     (kDefaultFrameRate * 8);
-const unsigned int kDefaultFramePeriodMs = 1000 / kDefaultFrameRate;
+const int kDefaultFramePeriodMs = 1000 / kDefaultFrameRate;
 
 
 

@@ -282,9 +282,11 @@ void VCMReceiver::SetNackMode(VCMNackMode nackMode,
 }
 
 void VCMReceiver::SetNackSettings(size_t max_nack_list_size,
-                                  int max_packet_age_to_nack) {
+                                  int max_packet_age_to_nack,
+                                  int max_incomplete_time_ms) {
   jitter_buffer_.SetNackSettings(max_nack_list_size,
-                                 max_packet_age_to_nack);
+                                 max_packet_age_to_nack,
+                                 max_incomplete_time_ms);
 }
 
 VCMNackMode VCMReceiver::NackMode() const {
@@ -298,15 +300,15 @@ VCMNackStatus VCMReceiver::NackList(uint16_t* nack_list,
   bool request_key_frame = false;
   uint16_t* internal_nack_list = jitter_buffer_.GetNackList(
       nack_list_length, &request_key_frame);
-  if (request_key_frame) {
-    // This combination is used to trigger key frame requests.
-    return kNackKeyFrameRequest;
-  }
   if (*nack_list_length > size) {
+    *nack_list_length = 0;
     return kNackNeedMoreMemory;
   }
   if (internal_nack_list != NULL && *nack_list_length > 0) {
     memcpy(nack_list, internal_nack_list, *nack_list_length * sizeof(uint16_t));
+  }
+  if (request_key_frame) {
+    return kNackKeyFrameRequest;
   }
   return kNackOk;
 }

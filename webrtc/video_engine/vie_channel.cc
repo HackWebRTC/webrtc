@@ -35,6 +35,7 @@ namespace webrtc {
 const int kMaxDecodeWaitTimeMs = 50;
 const int kInvalidRtpExtensionId = 0;
 static const int kMaxTargetDelayMs = 10000;
+static const float kMaxIncompleteTimeMultiplier = 3.5f;
 
 // Helper class receiving statistics callbacks.
 class ChannelStatsObserver : public CallStatsObserver {
@@ -121,7 +122,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
 
   rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(configuration));
   vie_receiver_.SetRtpRtcpModule(rtp_rtcp_.get());
-  vcm_.SetNackSettings(kMaxNackListSize, max_nack_reordering_threshold_);
+  vcm_.SetNackSettings(kMaxNackListSize, max_nack_reordering_threshold_, 0);
 }
 
 int32_t ViEChannel::Init() {
@@ -779,15 +780,21 @@ int ViEChannel::SetReceiverBufferingMode(int target_delay_ms) {
     return -1;
   }
   int max_nack_list_size;
+  int max_incomplete_time_ms;
   if (target_delay_ms == 0) {
     // Real-time mode - restore default settings.
     max_nack_reordering_threshold_ = kMaxPacketAgeToNack;
     max_nack_list_size = kMaxNackListSize;
+    max_incomplete_time_ms = 0;
   } else {
     max_nack_list_size =  3 * GetRequiredNackListSize(target_delay_ms) / 4;
     max_nack_reordering_threshold_ = max_nack_list_size;
+    // Calculate the max incomplete time and round to int.
+    max_incomplete_time_ms = static_cast<int>(kMaxIncompleteTimeMultiplier *
+        target_delay_ms + 0.5f);
   }
-  vcm_.SetNackSettings(max_nack_list_size, max_nack_reordering_threshold_);
+  vcm_.SetNackSettings(max_nack_list_size, max_nack_reordering_threshold_,
+                       max_incomplete_time_ms);
   vcm_.SetMinReceiverDelay(target_delay_ms);
   if (vie_sync_.SetTargetBufferingDelay(target_delay_ms) < 0)
     return -1;

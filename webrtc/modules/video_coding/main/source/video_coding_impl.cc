@@ -1452,15 +1452,17 @@ int VideoCodingModuleImpl::SetReceiverRobustnessMode(
   return VCM_OK;
 }
 
-void VideoCodingModuleImpl::SetNackSettings(
-    size_t max_nack_list_size, int max_packet_age_to_nack) {
+void VideoCodingModuleImpl::SetNackSettings(size_t max_nack_list_size,
+                                            int max_packet_age_to_nack,
+                                            int max_incomplete_time_ms) {
   if (max_nack_list_size != 0) {
     CriticalSectionScoped cs(_receiveCritSect);
     max_nack_list_size_ = max_nack_list_size;
   }
-  _receiver.SetNackSettings(max_nack_list_size, max_packet_age_to_nack);
-  _dualReceiver.SetNackSettings(max_nack_list_size,
-                                max_packet_age_to_nack);
+  _receiver.SetNackSettings(max_nack_list_size, max_packet_age_to_nack,
+                            max_incomplete_time_ms);
+  _dualReceiver.SetNackSettings(max_nack_list_size, max_packet_age_to_nack,
+                                max_incomplete_time_ms);
 }
 
 int VideoCodingModuleImpl::SetMinReceiverDelay(int desired_delay_ms) {
