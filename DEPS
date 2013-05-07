@@ -78,6 +78,9 @@ deps = {
   "tools/gyp":
     From("chromium_deps", "src/tools/gyp"),
 
+  "tools/protoc_wrapper":
+    Var("chromium_trunk") + "/src/tools/protoc_wrapper@" + Var("chromium_revision"),
+
   "tools/python":
     Var("chromium_trunk") + "/src/tools/python@" + Var("chromium_revision"),
 
