@@ -45,32 +45,33 @@
 namespace webrtc {
 
 class VideoEngineImpl
-    : public ViEBaseImpl
+    : public ViEBaseImpl,
 #ifdef WEBRTC_VIDEO_ENGINE_CODEC_API
-      , public ViECodecImpl
+      public ViECodecImpl,
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_CAPTURE_API
-      , public ViECaptureImpl
+      public ViECaptureImpl,
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_ENCRYPTION_API
-      , public ViEEncryptionImpl
+      public ViEEncryptionImpl,
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_FILE_API
-      , public ViEFileImpl
+      public ViEFileImpl,
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_IMAGE_PROCESS_API
-      , public ViEImageProcessImpl
+      public ViEImageProcessImpl,
 #endif
-      , public ViENetworkImpl
+      public ViENetworkImpl,
 #ifdef WEBRTC_VIDEO_ENGINE_RENDER_API
-      , public ViERenderImpl
+      public ViERenderImpl,
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_RTP_RTCP_API
-      , public ViERTP_RTCPImpl
+      public ViERTP_RTCPImpl,
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_EXTERNAL_CODEC_API
-      , public ViEExternalCodecImpl
+      public ViEExternalCodecImpl,
 #endif
+      public VideoEngine
 {  // NOLINT
  public:
   VideoEngineImpl()
