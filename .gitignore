@@ -70,6 +70,7 @@
 /tools/grit
 /tools/gritsettings
 /tools/gyp
+/tools/protoc_wrapper
 /tools/python
 /tools/valgrind
 /tools/win
