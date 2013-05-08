@@ -30,8 +30,19 @@ def LowerWord(obj):
 
 
 def DeCamelCase(text):
-  """De-camelize variable names."""
-  pattern = re.compile(r'(?<=[ _*\(\&\!])([a-z]+)(?<!k)([A-Z]+)([a-z])?')
+  """De-camelize variable names.
+
+  This function will look at any stringLikeThis and format it in steps. The
+  sequence will be stringLikeThis -> string_likeThis -> string_like_this.
+  """
+  possible_tokens_before_vars = '[ _*\(\&\!\[]'
+  pattern = re.compile(r'(?<=' + possible_tokens_before_vars + ')' +
+                       # Match some lower-case characters
+                       '([a-z]+)' +
+                       # Don't match kFoo, !kFoo, [kFoo], etc
+                       '(?<!' + possible_tokens_before_vars + 'k)' +
+                       # Match some upper-case characters
+                       '([A-Z]+)([a-z])?')
   while re.search(pattern, text):
     text = re.sub(pattern, LowerWord, text)
   return text
@@ -50,34 +61,6 @@ def PostfixToPrefixInForLoops(text):
   """Converts x++ to ++x in the increment part of a for loop."""
   pattern = r'(for \(.*;.*;) (\w+)\+\+\)'
   return re.sub(pattern, r'\1++\2)', text)
-
-
-def CPPComments(text):
-  """Remove all C-comments and replace with C++ comments."""
-
-  # Keep the copyright header style.
-  line_list = text.splitlines(True)
-  copyright_list = line_list[0:10]
-  code_list = line_list[10:]
-  copy_text = ''.join(copyright_list)
-  code_text = ''.join(code_list)
-
-  # Remove */ for C-comments, don't care about trailing blanks.
-  comment_end = re.compile(r'\n[ ]*\*/[ ]*')
-  code_text = re.sub(comment_end, '', code_text)
-  comment_end = re.compile(r'\*/')
-  code_text = re.sub(comment_end, '', code_text)
-  # Remove comment lines in the middle of comments, replace with C++ comments.
-  comment_star = re.compile(r'(?<=\n)[ ]*(?!\*\w)\*[ ]*')
-  code_text = re.sub(comment_star, r'// ', code_text)
-  # Remove start of C comment and replace with C++ comment.
-  comment_start = re.compile(r'/\*[ ]*\n')
-  code_text = re.sub(comment_start, '', code_text)
-  comment_start = re.compile(r'/\*[ ]*(.)')
-  code_text = re.sub(comment_start, r'// \1', code_text)
-
-  # Add copyright info.
-  return copy_text + code_text
 
 
 def SortIncludeHeaders(text, filename):
@@ -106,7 +89,7 @@ def SortIncludeHeaders(text, filename):
   h_filename, _ = os.path.splitext(os.path.basename(filename))
 
   for item in includes:
-    if re.search(h_filename, item):
+    if re.search(h_filename + '\.', item):
       self_include = item
     elif re.search(sys_pattern, item):
       sys_includes.append(item)
@@ -208,7 +191,6 @@ def main():
     text = DeCamelCase(text)
     text = MoveUnderScore(text)
     text = PostfixToPrefixInForLoops(text)
-    text = CPPComments(text)
     text = AddHeaderPath(text)
     text = AddWebrtcPrefixToOldSrcRelativePaths(text)
     text = SortIncludeHeaders(text, filename)
