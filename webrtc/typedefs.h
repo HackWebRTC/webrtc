@@ -83,6 +83,11 @@ typedef unsigned __int64    uint64_t;
 #if defined(_MSC_VER)
 #define OVERRIDE override
 #elif defined(__clang__)
+// Clang defaults to C++03 and warns about using override. Squelch that.
+// Intentionally no push/pop here so all users of OVERRIDE ignore the warning
+// too. This is like passing -Wno-c++11-extensions, except that GCC won't die
+// (because it won't see this pragma).
+#pragma clang diagnostic ignored "-Wc++11-extensions"
 #define OVERRIDE override
 #else
 #define OVERRIDE
