@@ -89,6 +89,9 @@
         'vad/vad_sp.h',
       ],
       'conditions': [
+        ['target_arch=="ia32" or target_arch=="x64"', {
+          'dependencies': ['common_audio_sse2',],
+        }],
         ['target_arch=="arm"', {
           'sources': [
             'signal_processing/complex_bit_reverse_arm.S',
@@ -122,6 +125,21 @@
     },
   ],  # targets
   'conditions': [
+    ['target_arch=="ia32" or target_arch=="x64"', {
+      'targets': [
+        {
+          'target_name': 'common_audio_sse2',
+          'type': 'static_library',
+          'sources': [
+            'resampler/sinc_resampler_sse.cc',
+          ],
+          'cflags': ['-msse2',],
+          'xcode_settings': {
+            'OTHER_CFLAGS': ['-msse2',],
+          },
+        },
+      ],  # targets
+    }],
     ['target_arch=="arm" and armv7==1', {
       'targets': [
         {
@@ -129,6 +147,7 @@
           'type': 'static_library',
           'includes': ['../build/arm_neon.gypi',],
           'sources': [
+            'resampler/sinc_resampler_neon.cc',
             'signal_processing/cross_correlation_neon.S',
             'signal_processing/downsample_fast_neon.S',
             'signal_processing/min_max_operations_neon.S',
