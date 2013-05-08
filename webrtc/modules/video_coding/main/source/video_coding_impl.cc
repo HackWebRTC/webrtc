@@ -33,9 +33,13 @@ VCMProcessTimer::Period() const
 uint32_t
 VCMProcessTimer::TimeUntilProcess() const
 {
-    return static_cast<uint32_t>(
-        VCM_MAX(static_cast<int64_t>(_periodMs) -
-                (_clock->TimeInMilliseconds() - _latestMs), 0));
+    const int64_t time_since_process = _clock->TimeInMilliseconds() -
+        static_cast<int64_t>(_latestMs);
+    const int64_t time_until_process = static_cast<int64_t>(_periodMs) -
+        time_since_process;
+    if (time_until_process < 0)
+      return 0;
+    return time_until_process;
 }
 
 void
