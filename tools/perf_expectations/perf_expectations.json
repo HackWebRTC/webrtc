@@ -10,8 +10,8 @@
  "linux-large-tests/vie_auto_test/time_between_rendered_frames/net_delay_0_0_plr_0": {"reva": 3337, "revb": 3389, "type": "absolute", "improve": 31.29034, "regress": 34.966995, "sha1": "250facd1"},
  "linux-large-tests/vie_auto_test/time_between_rendered_frames/net_delay_100_10_plr_0": {"reva": 3337, "revb": 3389, "type": "absolute", "improve": 31.15791, "regress": 34.936545, "sha1": "9ff072ce"},
  "linux-large-tests/vie_auto_test/time_between_rendered_frames/net_delay_50_5_plr_5": {"reva": 3337, "revb": 3389, "type": "absolute", "improve": 31.23353, "regress": 36.812685, "sha1": "8f5af7a5"},
- "linux-large-tests/vie_auto_test/total_delay_incl_network/net_delay_0_0_plr_0": {"reva": 3415, "revb": 3439, "type": "absolute", "improve": 26.425485, "regress": 36.22248, "sha1": "8eba596b"},
- "linux-large-tests/vie_auto_test/total_delay_incl_network/net_delay_100_10_plr_0": {"reva": 3337, "revb": 3389, "type": "absolute", "improve": 129.6199, "regress": 164.25045, "sha1": "eda2dc37"},
+ "linux-large-tests/vie_auto_test/total_delay_incl_network/net_delay_0_0_plr_0": {"reva": 3415, "revb": 3987, "type": "absolute", "improve": 24.329215, "regress": 36.22248, "sha1": "715769a1"},
+ "linux-large-tests/vie_auto_test/total_delay_incl_network/net_delay_100_10_plr_0": {"reva": 3982, "revb": 3987, "type": "absolute", "improve": 124.5393, "regress": 170.05485, "sha1": "bb09796f"},
  "linux-large-tests/vie_auto_test/total_delay_incl_network/net_delay_50_5_plr_5": {"reva": 3337, "revb": 3451, "type": "absolute", "improve": 79.99912, "regress": 186.35715, "sha1": "377cb407"},
  "mac-large-tests/vie_auto_test/psnr/net_delay_0_0_plr_0": {"reva": 3394, "revb": 3452, "type": "absolute", "better": "higher", "improve": 38.2137, "regress": 34.0841, "sha1": "7f1bd1b0"},
  "mac-large-tests/vie_auto_test/psnr/net_delay_100_10_plr_0": {"reva": 3394, "revb": 3452, "type": "absolute", "better": "higher", "improve": 38.1759, "regress": 34.048, "sha1": "fe4facc2"},
@@ -23,7 +23,7 @@
  "mac-large-tests/vie_auto_test/time_between_rendered_frames/net_delay_100_10_plr_0": {"reva": 3394, "revb": 3452, "type": "absolute", "improve": 31.9124, "regress": 35.920605, "sha1": "db0345c3"},
  "mac-large-tests/vie_auto_test/time_between_rendered_frames/net_delay_50_5_plr_5": {"reva": 3394, "revb": 3452, "type": "absolute", "improve": 31.972535, "regress": 36.81552, "sha1": "04b8f506"},
  "mac-large-tests/vie_auto_test/total_delay_incl_network/net_delay_0_0_plr_0": {"reva": 3394, "revb": 3452, "type": "absolute", "improve": 26.810235, "regress": 35.407785, "sha1": "61f0eb7d"},
- "mac-large-tests/vie_auto_test/total_delay_incl_network/net_delay_100_10_plr_0": {"reva": 3394, "revb": 3452, "type": "absolute", "improve": 125.87405, "regress": 162.41295, "sha1": "492aa2fc"},
+ "mac-large-tests/vie_auto_test/total_delay_incl_network/net_delay_100_10_plr_0": {"reva": 3980, "revb": 3986, "type": "absolute", "improve": 133.56525, "regress": 183.6744, "sha1": "c2b05383"},
  "mac-large-tests/vie_auto_test/total_delay_incl_network/net_delay_50_5_plr_5": {"reva": 3394, "revb": 3452, "type": "absolute", "improve": 85.895485, "regress": 196.05705, "sha1": "8ac10284"},
  "win-large-tests/vie_auto_test/psnr/net_delay_0_0_plr_0": {"reva": 3361, "revb": 3451, "type": "absolute", "better": "higher", "improve": 38.2431, "regress": 32.3, "sha1": "2b853279"},
  "win-large-tests/vie_auto_test/psnr/net_delay_100_10_plr_0": {"reva": 3361, "revb": 3389, "type": "absolute", "better": "higher", "improve": 37.8, "regress": 34.44225, "sha1": "d81a31e6"},
@@ -36,6 +36,6 @@
  "win-large-tests/vie_auto_test/time_between_rendered_frames/net_delay_50_5_plr_5": {"reva": 3337, "revb": 3389, "type": "absolute", "improve": 31.616, "regress": 36.275295, "sha1": "51c950b1"},
  "win-large-tests/vie_auto_test/total_delay_incl_network/net_delay_0_0_plr_0": {"reva": 3455, "revb": 3463, "type": "absolute", "improve": 30.089635, "regress": 59.560725, "sha1": "6d606c4a"},
  "win-large-tests/vie_auto_test/total_delay_incl_network/net_delay_100_10_plr_0": {"reva": 3337, "revb": 3389, "type": "absolute", "improve": 131.1684, "regress": 164.02155, "sha1": "37814bad"},
- "win-large-tests/vie_auto_test/total_delay_incl_network/net_delay_50_5_plr_5": {"reva": 3455, "revb": 3463, "type": "absolute", "improve": 111.055, "regress": 168.88935, "sha1": "7d00d6f2"},
+ "win-large-tests/vie_auto_test/total_delay_incl_network/net_delay_50_5_plr_5": {"reva": 3974, "revb": 3983, "type": "absolute", "improve": 153.1894, "regress": 205.27185, "sha1": "9e52c01a"},
  "load": true
 }
