@@ -32,7 +32,7 @@ bool VideoEngine::Delete(VideoEngine*& video_engine) {
   }
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo, kModuleId,
                "VideoEngine::Delete(vie = 0x%p)", video_engine);
-  VideoEngineImpl* vie_impl = reinterpret_cast<VideoEngineImpl*>(video_engine);
+  VideoEngineImpl* vie_impl = static_cast<VideoEngineImpl*>(video_engine);
 
   // Check all reference counters.
   ViEBaseImpl* vie_base = vie_impl;

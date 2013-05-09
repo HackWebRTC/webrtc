@@ -35,7 +35,7 @@ ViEBase* ViEBase::GetInterface(VideoEngine* video_engine) {
   if (!video_engine) {
     return NULL;
   }
-  VideoEngineImpl* vie_impl = reinterpret_cast<VideoEngineImpl*>(video_engine);
+  VideoEngineImpl* vie_impl = static_cast<VideoEngineImpl*>(video_engine);
   ViEBaseImpl* vie_base_impl = vie_impl;
   (*vie_base_impl)++;  // Increase ref count.
 

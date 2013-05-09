@@ -25,7 +25,7 @@ ViEEncryption* ViEEncryption::GetInterface(VideoEngine* video_engine) {
   if (video_engine == NULL) {
     return NULL;
   }
-  VideoEngineImpl* vie_impl = reinterpret_cast<VideoEngineImpl*>(video_engine);
+  VideoEngineImpl* vie_impl = static_cast<VideoEngineImpl*>(video_engine);
   ViEEncryptionImpl* vie_encryption_impl = vie_impl;
   // Increase ref count.
   (*vie_encryption_impl)++;

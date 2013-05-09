@@ -79,7 +79,7 @@ ViERTP_RTCP* ViERTP_RTCP::GetInterface(VideoEngine* video_engine) {
   if (!video_engine) {
     return NULL;
   }
-  VideoEngineImpl* vie_impl = reinterpret_cast<VideoEngineImpl*>(video_engine);
+  VideoEngineImpl* vie_impl = static_cast<VideoEngineImpl*>(video_engine);
   ViERTP_RTCPImpl* vie_rtpimpl = vie_impl;
   // Increase ref count.
   (*vie_rtpimpl)++;
