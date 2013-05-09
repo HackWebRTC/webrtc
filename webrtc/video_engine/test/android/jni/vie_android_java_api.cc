@@ -287,14 +287,14 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_GetVideo
 
   __android_log_write(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG, "GetVideoEngine");
 
-  VideoEngine::SetAndroidObjects(webrtcGlobalVM, context);
-
   // Check if already got
   if (vieData.vie) {
-    __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
+    __android_log_write(ANDROID_LOG_INFO, WEBRTC_LOG_TAG,
                         "ViE already got");
-    return -1;
+    return 0;
   }
+
+  VideoEngine::SetAndroidObjects(webrtcGlobalVM, context);
 
   // Create
   vieData.vie = VideoEngine::Create();

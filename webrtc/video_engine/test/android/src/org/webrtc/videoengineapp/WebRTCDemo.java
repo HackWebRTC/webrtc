@@ -336,20 +336,23 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
 
         @Override protected void onDraw(Canvas canvas) {
             super.onDraw(canvas);
+            // Only draw Stats in Main tab.
+            if(mTabHost.getCurrentTabTag() == "tab_video") {
+                Paint loadPaint = new Paint();
+                loadPaint.setAntiAlias(true);
+                loadPaint.setTextSize(16);
+                loadPaint.setARGB(255, 255, 255, 255);
 
-            Paint loadPaint = new Paint();
-            loadPaint.setAntiAlias(true);
-            loadPaint.setTextSize(16);
-            loadPaint.setARGB(255, 255, 255, 255);
+                canvas.drawText("#calls " + numCalls, 4, 222, loadPaint);
 
-            canvas.drawText("#calls " + numCalls, 4, 152, loadPaint);
-
-            String loadText;
-            loadText = "> " + frameRateI + " fps/" + bitRateI + "k bps/ " + packetLoss;
-            canvas.drawText(loadText, 4, 172, loadPaint);
-            loadText = "< " + frameRateO + " fps/ " + bitRateO + "k bps";
-            canvas.drawText(loadText, 4, 192, loadPaint);
-
+                String loadText;
+                loadText = "> " + frameRateI + " fps/" +
+                           bitRateI/1024 + " kbps/ " + packetLoss;
+                canvas.drawText(loadText, 4, 242, loadPaint);
+                loadText = "< " + frameRateO + " fps/ " +
+                           bitRateO/1024 + " kbps";
+                canvas.drawText(loadText, 4, 262, loadPaint);
+            }
             updateDisplay();
         }
 
@@ -732,6 +735,12 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
             return -1;
         }
 
+        // Suggest to use the voice call audio stream for hardware volume controls
+        setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
+        return 0;
+    }
+
+    private int startVoiceEngine() {
         // Create channel
         voiceChannel = vieAndroidAPI.VoE_CreateChannel();
         if (0 > voiceChannel) {
@@ -739,12 +748,6 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
             return -1;
         }
 
-        // Suggest to use the voice call audio stream for hardware volume controls
-        setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
-        return 0;
-    }
-
-    private int startVoiceEngine() {
         // Set local receiver
         if (0 != vieAndroidAPI.VoE_SetLocalReceiver(voiceChannel,
                         receivePortVoice)) {
