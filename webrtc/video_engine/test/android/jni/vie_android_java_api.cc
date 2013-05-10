@@ -683,10 +683,10 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetRecei
       ANDROID_LOG_DEBUG,
       WEBRTC_LOG_TAG,
       "SetReceiveCodec %s, pltype=%d, bitRate=%d, maxBitRate=%d,"
-      " width=%d, height=%d, frameRate=%d, codecSpecific=%d \n",
+      " width=%d, height=%d, frameRate=%d \n",
       codec.plName, codec.plType, codec.startBitrate,
       codec.maxBitrate, codec.width, codec.height,
-      codec.maxFramerate, codec.codecSpecific);
+      codec.maxFramerate);
   int ret = vieData.codec->SetReceiveCodec(channel, codec);
   __android_log_print(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG,
                       "SetReceiveCodec return %d", ret);
@@ -759,7 +759,6 @@ JNIEXPORT jobjectArray JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_
   }
 
   jobjectArray ret;
-  int i;
   int num = vieData.codec->NumberOfCodecs();
   char info[32];
 
@@ -1612,7 +1611,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_
                            codecToList.plname, codecToList.pltype,
                            codecToList.plfreq, codecToList.pacsize,
                            codecToList.channels, codecToList.rate);
-    assert(written >= 0 && written < sizeof(info));
+    assert(written >= 0 && written < static_cast<int>(sizeof(info)));
     __android_log_print(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG,
                         "VoiceEgnine Codec[%d] %s", i, info);
     env->SetObjectArrayElement(ret, i, env->NewStringUTF( info ));
