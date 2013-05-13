@@ -279,13 +279,13 @@ public:
 
 protected:
     int32_t Decode(const webrtc::VCMEncodedFrame& frame);
+    bool RequiresEncoderReset(const VideoCodec& send_codec);
     int32_t RequestKeyFrame();
-    int32_t RequestSliceLossIndication(
-        const uint64_t pictureID) const;
+    int32_t RequestSliceLossIndication(const uint64_t pictureID) const;
     int32_t NackList(uint16_t* nackList, uint16_t& size);
 
 private:
-    int32_t                       _id;
+    int32_t                             _id;
     Clock*                              clock_;
     CriticalSectionWrapper*             _receiveCritSect;
     bool                                _receiverInited;
