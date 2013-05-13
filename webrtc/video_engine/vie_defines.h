@@ -39,7 +39,7 @@ enum { kViEVersionMaxMessageSize = 1024 };
 enum { kViEMaxModuleVersionSize = 960 };
 
 // ViECapture
-enum { kViEMaxCaptureDevices = 10 };
+enum { kViEMaxCaptureDevices = 256 };
 enum { kViECaptureDefaultWidth = 352 };
 enum { kViECaptureDefaultHeight = 288 };
 enum { kViECaptureDefaultFramerate = 30 };
