@@ -114,24 +114,23 @@ inline int ChannelId(const int moduleId) {
   return static_cast<int>(moduleId & 0xffff);
 }
 
+//  Build information macros
+#if defined(_DEBUG) || defined(DEBUG)
+#define BUILDMODE "d"
+#elif defined(NDEBUG)
+#define BUILDMODE "r"
+#else
+#define BUILDMODE "?"
+#endif
+
+#define BUILDTIME __TIME__
+#define BUILDDATE __DATE__
+
+// Example: "Oct 10 2002 12:05:30 r".
+#define BUILDINFO BUILDDATE " " BUILDTIME " " BUILDMODE
+
 // Windows specific.
 #if defined(_WIN32)
-  //  Build information macros
-  #if defined(_DEBUG)
-  #define BUILDMODE TEXT("d")
-  #elif defined(DEBUG)
-  #define BUILDMODE TEXT("d")
-  #elif defined(NDEBUG)
-  #define BUILDMODE TEXT("r")
-  #else
-  #define BUILDMODE TEXT("?")
-  #endif
-
-  #define BUILDTIME TEXT(__TIME__)
-  #define BUILDDATE TEXT(__DATE__)
-
-  // Example: "Oct 10 2002 12:05:30 r".
-  #define BUILDINFO BUILDDATE TEXT(" ") BUILDTIME TEXT(" ") BUILDMODE
   #define RENDER_MODULE_TYPE kRenderWindows
 
   // Warning pragmas.
@@ -154,70 +153,13 @@ inline int ChannelId(const int moduleId) {
 // Mac specific.
 #ifdef WEBRTC_MAC
   #define SLEEP(x) usleep(x * 1000)
-
-  //  Build information macros.
-  #define TEXT(x) x
-  #if defined(_DEBUG)
-  #define BUILDMODE TEXT("d")
-  #elif defined(DEBUG)
-  #define BUILDMODE TEXT("d")
-  #elif defined(NDEBUG)
-  #define BUILDMODE TEXT("r")
-  #else
-  #define BUILDMODE TEXT("?")
-  #endif
-
-  #define BUILDTIME TEXT(__TIME__)
-  #define BUILDDATE TEXT(__DATE__)
-
-  // Example: "Oct 10 2002 12:05:30 r".
-  #define BUILDINFO BUILDDATE TEXT(" ") BUILDTIME TEXT(" ") BUILDMODE
   #define RENDER_MODULE_TYPE kRenderWindows
 #endif
-
-// Linux specific.
-#ifndef WEBRTC_ANDROID
-#ifdef WEBRTC_LINUX
-  //  Build information macros.
-  #if defined(_DEBUG)
-  #define BUILDMODE "d"
-  #elif defined(DEBUG)
-  #define BUILDMODE "d"
-  #elif defined(NDEBUG)
-  #define BUILDMODE "r"
-  #else
-  #define BUILDMODE "?"
-  #endif
-
-  #define BUILDTIME __TIME__
-  #define BUILDDATE __DATE__
-
-  // Example: "Oct 10 2002 12:05:30 r".
-  #define BUILDINFO BUILDDATE " " BUILDTIME " " BUILDMODE
-#endif  // WEBRTC_LINUX
-#endif  // WEBRTC_ANDROID
 
 // Android specific.
 #ifdef WEBRTC_ANDROID
   #define FAR
   #define __cdecl
-
-  #if defined(_DEBUG)
-  #define BUILDMODE "d"
-  #elif defined(DEBUG)
-  #define BUILDMODE "d"
-  #elif defined(NDEBUG)
-  #define BUILDMODE "r"
-  #else
-  #define BUILDMODE "?"
-  #endif
-
-  #define BUILDTIME __TIME__
-  #define BUILDDATE __DATE__
-
-  // Example: "Oct 10 2002 12:05:30 r".
-  #define BUILDINFO BUILDDATE " " BUILDTIME " " BUILDMODE
-
 #endif  // WEBRTC_ANDROID
 
 }  // namespace webrtc
