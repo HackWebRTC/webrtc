@@ -34,7 +34,8 @@ TEST_F(ViEStandardIntegrationTest, RunsBaseTestWithoutErrors)  {
   tests_->ViEBaseStandardTest();
 }
 
-TEST_F(ViEStandardIntegrationTest, RunsCodecTestWithoutErrors)  {
+// Flaky: https://code.google.com/p/webrtc/issues/detail?id=1734
+TEST_F(ViEStandardIntegrationTest, DISABLED_RunsCodecTestWithoutErrors)  {
   tests_->ViECodecStandardTest();
 }
 
