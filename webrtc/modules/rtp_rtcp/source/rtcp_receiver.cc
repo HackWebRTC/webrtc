@@ -918,6 +918,8 @@ void RTCPReceiver::HandlePLI(RTCPUtility::RTCPParserV2& rtcpParser,
                              RTCPPacketInformation& rtcpPacketInformation) {
   const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
   if (_SSRC == rtcpPacket.PLI.MediaSSRC) {
+    TRACE_EVENT_INSTANT0("webrtc_rtp", "PLI");
+
     // Received a signal that we need to send a new key frame.
     rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpPli;
   }

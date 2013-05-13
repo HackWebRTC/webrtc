@@ -981,6 +981,8 @@ bool VCMJitterBuffer::HandleTooOldPackets(uint16_t latest_sequence_number) {
 
 void VCMJitterBuffer::DropPacketsFromNackList(
     uint16_t last_decoded_sequence_number) {
+ TRACE_EVENT_INSTANT1("webrtc", "JB::DropPacketsFromNackList",
+                      "seqnum", last_decoded_sequence_number);
   // Erase all sequence numbers from the NACK list which we won't need any
   // longer.
   missing_sequence_numbers_.erase(missing_sequence_numbers_.begin(),

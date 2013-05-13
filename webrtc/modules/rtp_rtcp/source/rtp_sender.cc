@@ -330,9 +330,6 @@ int32_t RTPSender::SendOutgoingData(
     const uint8_t *payload_data, const uint32_t payload_size,
     const RTPFragmentationHeader *fragmentation,
     VideoCodecInformation *codec_info, const RTPVideoTypeHeader *rtp_type_hdr) {
-  TRACE_EVENT2("webrtc_rtp", "RTPSender::SendOutgoingData",
-               "timestsamp", capture_timestamp,
-               "frame_type", FrameTypeToString(frame_type));
   {
     // Drop this packet if we're not sending media packets.
     CriticalSectionScoped cs(send_critsect_);
@@ -346,6 +343,15 @@ int32_t RTPSender::SendOutgoingData(
                  "%s invalid argument failed to find payload_type:%d",
                  __FUNCTION__, payload_type);
     return -1;
+  }
+
+  if (frame_type == kVideoFrameKey) {
+    TRACE_EVENT_INSTANT1("webrtc_rtp", "SendKeyFrame",
+                         "timestamp", capture_timestamp);
+  } else {
+    TRACE_EVENT_INSTANT2("webrtc_rtp", "SendFrame",
+                         "timestsamp", capture_timestamp,
+                         "frame_type", FrameTypeToString(frame_type));
   }
 
   if (audio_configured_) {

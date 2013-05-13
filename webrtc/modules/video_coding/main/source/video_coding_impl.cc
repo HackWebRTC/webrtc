@@ -1248,9 +1248,14 @@ VideoCodingModuleImpl::IncomingPacket(const uint8_t* incomingPayload,
                                     uint32_t payloadLength,
                                     const WebRtcRTPHeader& rtpInfo)
 {
-    TRACE_EVENT2("webrtc", "VCM::Packet",
-                 "seqnum", rtpInfo.header.sequenceNumber,
-                 "type", rtpInfo.frameType);
+    if (rtpInfo.frameType == kVideoFrameKey) {
+      TRACE_EVENT1("webrtc", "VCM::PacketKeyFrame",
+                   "seqnum", rtpInfo.header.sequenceNumber);
+    } else {
+      TRACE_EVENT2("webrtc", "VCM::Packet",
+                   "seqnum", rtpInfo.header.sequenceNumber,
+                   "type", rtpInfo.frameType);
+    }
     if (incomingPayload == NULL) {
       // The jitter buffer doesn't handle non-zero payload lengths for packets
       // without payload.
