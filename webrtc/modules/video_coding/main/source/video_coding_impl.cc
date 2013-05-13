@@ -318,63 +318,6 @@ VideoCodingModuleImpl::InitializeSender()
     return VCM_OK;
 }
 
-bool VideoCodingModuleImpl::RequiresEncoderReset(const VideoCodec& send_codec) {
-  VideoCodec current_codec;
-
-  if (!_codecDataBase.SendCodec(&current_codec)) {
-    return true;
-  }
-
-  if (current_codec.codecType != send_codec.codecType ||
-      strcmp(current_codec.plName, send_codec.plName) != 0 ||
-      current_codec.plType != send_codec.plType ||
-      current_codec.width != send_codec.width ||
-      current_codec.height != send_codec.height ||
-      current_codec.qpMax != send_codec.qpMax ||
-      current_codec.numberOfSimulcastStreams !=
-          send_codec.numberOfSimulcastStreams ||
-      current_codec.mode != send_codec.mode ||
-      current_codec.extra_options != send_codec.extra_options) {
-    return true;
-  }
-
-  switch (current_codec.codecType) {
-    case kVideoCodecVP8:
-      if (memcmp(&current_codec.codecSpecific.VP8,
-                 &send_codec.codecSpecific.VP8,
-                 sizeof(current_codec.codecSpecific.VP8)) != 0) {
-        return true;
-      }
-      break;
-    case kVideoCodecGeneric:
-      if (memcmp(&current_codec.codecSpecific.Generic,
-                 &send_codec.codecSpecific.Generic,
-                 sizeof(current_codec.codecSpecific.Generic)) != 0) {
-        return true;
-      }
-      break;
-    // Known codecs without payload-specifics
-    case kVideoCodecI420:
-    case kVideoCodecRED:
-    case kVideoCodecULPFEC:
-      break;
-    // Unknown codec type, reset just to be sure.
-    case kVideoCodecUnknown:
-      return true;
-  }
-
-  if (current_codec.numberOfSimulcastStreams > 0) {
-    for (unsigned char i = 0; i < current_codec.numberOfSimulcastStreams; ++i) {
-      if (memcmp(&current_codec.simulcastStream[i],
-                 &send_codec.simulcastStream[i],
-                 sizeof(current_codec.simulcastStream[i])) != 0) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 // Register the send codec to be used.
 int32_t
 VideoCodingModuleImpl::RegisterSendCodec(const VideoCodec* sendCodec,
@@ -386,16 +329,11 @@ VideoCodingModuleImpl::RegisterSendCodec(const VideoCodec* sendCodec,
     {
         return VCM_PARAMETER_ERROR;
     }
-
-    bool requires_reconfigure = RequiresEncoderReset(*sendCodec);
-
-    if (!_codecDataBase.RegisterSendCodec(sendCodec, numberOfCores,
-                                          maxPayloadSize)) {
+    bool ret = _codecDataBase.RegisterSendCodec(sendCodec, numberOfCores,
+                                                maxPayloadSize);
+    if (!ret)
+    {
         return -1;
-    }
-
-    if (!requires_reconfigure) {
-      return VCM_OK;
     }
 
     _encoder = _codecDataBase.GetEncoder(sendCodec, &_encodedFrameCallback);
