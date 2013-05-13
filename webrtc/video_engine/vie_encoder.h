@@ -28,6 +28,7 @@
 namespace webrtc {
 
 class CriticalSectionWrapper;
+class Config;
 class PacedSender;
 class ProcessThread;
 class QMVideoSettingsCallback;
@@ -51,6 +52,7 @@ class ViEEncoder
   ViEEncoder(int32_t engine_id,
              int32_t channel_id,
              uint32_t number_of_cores,
+             const Config& config,
              ProcessThread& module_process_thread,
              BitrateController* bitrate_controller);
   ~ViEEncoder();

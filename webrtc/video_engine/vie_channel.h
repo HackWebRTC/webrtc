@@ -32,21 +32,22 @@ namespace webrtc {
 
 class CallStatsObserver;
 class ChannelStatsObserver;
+class Config;
 class CriticalSectionWrapper;
 class Encryption;
 class PacedSender;
 class ProcessThread;
-class RtpRtcp;
 class RtcpRttObserver;
+class RtpRtcp;
 class ThreadWrapper;
-class VideoCodingModule;
-class VideoDecoder;
-class VideoRenderCallback;
 class ViEDecoderObserver;
 class ViEEffectFilter;
 class ViENetworkObserver;
 class ViERTCPObserver;
 class ViERTPObserver;
+class VideoCodingModule;
+class VideoDecoder;
+class VideoRenderCallback;
 class VoEVideoSync;
 
 class ViEChannel
@@ -64,6 +65,7 @@ class ViEChannel
   ViEChannel(int32_t channel_id,
              int32_t engine_id,
              uint32_t number_of_cores,
+             const Config& config,
              ProcessThread& module_process_thread,
              RtcpIntraFrameObserver* intra_frame_observer,
              RtcpBandwidthObserver* bandwidth_observer,

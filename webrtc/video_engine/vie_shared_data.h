@@ -18,6 +18,7 @@
 
 namespace webrtc {
 
+class Config;
 class ProcessThread;
 class ViEChannelManager;
 class ViEInputManager;
@@ -25,7 +26,7 @@ class ViERenderManager;
 
 class ViESharedData {
  public:
-  ViESharedData();
+  ViESharedData(const Config& config);
   ~ViESharedData();
 
   bool Initialized() const;

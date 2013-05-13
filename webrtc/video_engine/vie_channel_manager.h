@@ -25,6 +25,7 @@
 
 namespace webrtc {
 
+class Config;
 class CriticalSectionWrapper;
 class MapWrapper;
 class ProcessThread;
@@ -44,7 +45,8 @@ class ViEChannelManager: private ViEManagerBase {
  public:
   ViEChannelManager(int engine_id,
                     int number_of_cores,
-                    const OverUseDetectorOptions& options);
+                    const OverUseDetectorOptions& options,
+                    const Config& config);
   ~ViEChannelManager();
 
   void SetModuleProcessThread(ProcessThread* module_process_thread);
@@ -137,6 +139,7 @@ class ViEChannelManager: private ViEManagerBase {
   ProcessThread* module_process_thread_;
   const OverUseDetectorOptions& over_use_detector_options_;
   RemoteBitrateEstimator::EstimationMode bwe_mode_;
+  const Config& config_;
 };
 
 class ViEChannelManagerScoped: private ViEManagerScopedBase {

@@ -27,6 +27,7 @@
 
 namespace webrtc {
 
+class Config;
 class CriticalSectionWrapper;
 class EventWrapper;
 class ProcessThread;
@@ -45,12 +46,14 @@ class ViECapturer
  public:
   static ViECapturer* CreateViECapture(int capture_id,
                                        int engine_id,
+                                       const Config& config,
                                        VideoCaptureModule* capture_module,
                                        ProcessThread& module_process_thread);
 
   static ViECapturer* CreateViECapture(
       int capture_id,
       int engine_id,
+      const Config& config,
       const char* device_unique_idUTF8,
       uint32_t device_unique_idUTF8Length,
       ProcessThread& module_process_thread);
@@ -108,6 +111,7 @@ class ViECapturer
  protected:
   ViECapturer(int capture_id,
               int engine_id,
+              const Config& config,
               ProcessThread& module_process_thread);
 
   int32_t Init(VideoCaptureModule* capture_module);

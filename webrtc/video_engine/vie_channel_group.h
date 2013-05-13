@@ -20,6 +20,7 @@ namespace webrtc {
 
 class BitrateController;
 class CallStats;
+class Config;
 class EncoderStateFeedback;
 struct OverUseDetectorOptions;
 class ProcessThread;
@@ -33,7 +34,8 @@ class ChannelGroup {
  public:
   ChannelGroup(ProcessThread* process_thread,
                const OverUseDetectorOptions& options,
-               RemoteBitrateEstimator::EstimationMode mode);
+               RemoteBitrateEstimator::EstimationMode mode,
+               const Config& config);
   ~ChannelGroup();
 
   void AddChannel(int channel_id);

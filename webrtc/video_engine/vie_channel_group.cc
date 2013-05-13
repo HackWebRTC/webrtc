@@ -24,7 +24,8 @@ namespace webrtc {
 
 ChannelGroup::ChannelGroup(ProcessThread* process_thread,
                            const OverUseDetectorOptions& options,
-                           RemoteBitrateEstimator::EstimationMode mode)
+                           RemoteBitrateEstimator::EstimationMode mode,
+                           const Config& config)
     : remb_(new VieRemb()),
       bitrate_controller_(BitrateController::CreateBitrateController()),
       call_stats_(new CallStats()),

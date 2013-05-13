@@ -18,6 +18,7 @@
 
 namespace webrtc {
 
+class Config;
 class Module;
 class VoiceEngine;
 
@@ -47,7 +48,7 @@ class ViEBaseImpl
   virtual int LastError();
 
  protected:
-  ViEBaseImpl();
+  ViEBaseImpl(const Config& config);
   virtual ~ViEBaseImpl();
 
   ViESharedData* shared_data() { return &shared_data_; }

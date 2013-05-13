@@ -22,6 +22,7 @@
 
 namespace webrtc {
 
+class Config;
 class CriticalSectionWrapper;
 class ProcessThread;
 class RWLockWrapper;
@@ -33,7 +34,7 @@ class VoiceEngine;
 class ViEInputManager : private ViEManagerBase {
   friend class ViEInputManagerScoped;
  public:
-  explicit ViEInputManager(int engine_id);
+  ViEInputManager(int engine_id, const Config& config);
   ~ViEInputManager();
 
   void SetModuleProcessThread(ProcessThread* module_process_thread);
@@ -109,6 +110,7 @@ class ViEInputManager : private ViEManagerBase {
   // Gets the ViEFilePlayer for this file_id.
   ViEFilePlayer* ViEFilePlayerPtr(int file_id) const;
 
+  const Config& config_;
   int engine_id_;
   scoped_ptr<CriticalSectionWrapper> map_cs_;
   scoped_ptr<CriticalSectionWrapper> device_info_cs_;

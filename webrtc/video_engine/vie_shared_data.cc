@@ -22,14 +22,15 @@ namespace webrtc {
 // Active instance counter
 int ViESharedData::instance_counter_ = 0;
 
-ViESharedData::ViESharedData()
+ViESharedData::ViESharedData(const Config& config)
     : instance_id_(++instance_counter_),
       initialized_(false),
       number_cores_(CpuInfo::DetectNumberOfCores()),
       over_use_detector_options_(),
       channel_manager_(*new ViEChannelManager(instance_id_, number_cores_,
-                                              over_use_detector_options_)),
-      input_manager_(*new ViEInputManager(instance_id_)),
+                                              over_use_detector_options_,
+                                              config)),
+      input_manager_(*new ViEInputManager(instance_id_, config)),
       render_manager_(*new ViERenderManager(instance_id_)),
       module_process_thread_(ProcessThread::CreateProcessThread()),
       last_error_(0) {

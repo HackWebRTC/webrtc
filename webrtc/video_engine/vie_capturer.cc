@@ -32,6 +32,7 @@ const int kMaxDeliverWaitTime = 500;
 
 ViECapturer::ViECapturer(int capture_id,
                          int engine_id,
+                         const Config& config,
                          ProcessThread& module_process_thread)
     : ViEFrameProviderBase(capture_id, engine_id),
       capture_cs_(CriticalSectionWrapper::CreateCriticalSection()),
@@ -128,9 +129,10 @@ ViECapturer::~ViECapturer() {
 ViECapturer* ViECapturer::CreateViECapture(
     int capture_id,
     int engine_id,
+    const Config& config,
     VideoCaptureModule* capture_module,
     ProcessThread& module_process_thread) {
-  ViECapturer* capture = new ViECapturer(capture_id, engine_id,
+  ViECapturer* capture = new ViECapturer(capture_id, engine_id, config,
                                          module_process_thread);
   if (!capture || capture->Init(capture_module) != 0) {
     delete capture;
@@ -154,10 +156,11 @@ int32_t ViECapturer::Init(VideoCaptureModule* capture_module) {
 ViECapturer* ViECapturer::CreateViECapture(
     int capture_id,
     int engine_id,
+    const Config& config,
     const char* device_unique_idUTF8,
     const uint32_t device_unique_idUTF8Length,
     ProcessThread& module_process_thread) {
-  ViECapturer* capture = new ViECapturer(capture_id, engine_id,
+  ViECapturer* capture = new ViECapturer(capture_id, engine_id, config,
                                          module_process_thread);
   if (!capture ||
       capture->Init(device_unique_idUTF8, device_unique_idUTF8Length) != 0) {

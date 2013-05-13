@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_engine/vie_impl.h"
-#include "system_wrappers/interface/trace.h"
+#include "webrtc/video_engine/vie_impl.h"
+
+#include "webrtc/common.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 #ifdef WEBRTC_ANDROID
 #include "webrtc/modules/video_capture/include/video_capture_factory.h"
@@ -21,7 +23,11 @@ namespace webrtc {
 enum { kModuleId = 0 };
 
 VideoEngine* VideoEngine::Create() {
-  return new VideoEngineImpl();
+  return new VideoEngineImpl(new Config(), true /* owns_config */);
+}
+
+VideoEngine* VideoEngine::Create(const Config& config) {
+  return new VideoEngineImpl(&config, false /* owns_config */);
 }
 
 bool VideoEngine::Delete(VideoEngine*& video_engine) {
