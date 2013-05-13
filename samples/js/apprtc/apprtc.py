@@ -327,6 +327,10 @@ class MainPage(webapp2.RequestHandler):
     if debug == 'loopback':
     # set compat to false as DTLS does not work for loopback.
       compat = 'false'
+    # set stereo to false by default
+    stereo = 'false'
+    if self.request.get('stereo'):
+      stereo = self.request.get('stereo')
 
 
     # token_timeout for channel creation, default 30min, max 2 days, min 3min.
@@ -390,7 +394,8 @@ class MainPage(webapp2.RequestHandler):
                        'pc_constraints': json.dumps(pc_constraints),
                        'offer_constraints': json.dumps(offer_constraints),
                        'media_constraints': json.dumps(media_constraints),
-                       'turn_url': turn_url
+                       'turn_url': turn_url,
+                       'stereo': stereo
                       }
     if unittest:
       target_page = 'test/test_' + unittest + '.html'

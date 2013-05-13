@@ -125,6 +125,7 @@
                           'OfferToReceiveVideo':true }};
   var isVideoMuted = false;
   var isAudioMuted = false;
+  var stereo = false;
 
   function initialize() {
     console.log("Initializing; room={{ room_key }}.");
@@ -137,6 +138,7 @@
     // changing here.
     openChannel('{{ token }}');
     requestTurn('{{ turn_url }}');
+    stereo = {{ stereo }};
     doGetUserMedia();
   }
 
@@ -292,15 +294,19 @@
 
   function processSignalingMessage(message) {
     var msg = JSON.parse(message);
-
     if (msg.type === 'offer') {
       // Callee creates PeerConnection
       if (!initiator && !started)
         maybeStart();
-
+      // Set Opus in Stereo, if stereo enabled.
+      if (stereo)
+        msg.sdp = addStereo(msg.sdp);
       pc.setRemoteDescription(new RTCSessionDescription(msg));
       doAnswer();
     } else if (msg.type === 'answer' && started) {
+      // Set Opus in Stereo, if stereo enabled.
+      if (stereo)
+        msg.sdp = addStereo(msg.sdp);
       pc.setRemoteDescription(new RTCSessionDescription(msg));
     } else if (msg.type === 'candidate' && started) {
       var candidate = new RTCIceCandidate({sdpMLineIndex:msg.label,
@@ -530,6 +536,39 @@
 
     // Remove CN in m line and sdp.
     sdpLines = removeCN(sdpLines, mLineIndex);
+
+    sdp = sdpLines.join('\r\n');
+    return sdp;
+  }
+
+  // Set Opus in stereo if stereo is enabled.
+  function addStereo(sdp) {
+    var sdpLines = sdp.split('\r\n');
+
+    // Find opus payload.
+    for (var i = 0; i < sdpLines.length; i++) {
+      if (sdpLines[i].search('opus/48000') !== -1) {
+        var opusPayload = extractSdp(sdpLines[i], /:(\d+) opus\/48000/i);
+        break;
+      }
+    }
+
+    // Find the payload in fmtp line.
+    for (var i = 0; i < sdpLines.length; i++) {
+      if (sdpLines[i].search('a=fmtp') !== -1) {
+        var payload = extractSdp(sdpLines[i], /a=fmtp:(\d+)/ );
+        if (payload === opusPayload) {
+          var fmtpLineIndex = i;
+          break;
+        }
+      }
+    }
+    // No fmtp line found.
+    if (fmtpLineIndex === null)
+      return sdp;
+
+    // append stereo=1 to fmtp line.
+    sdpLines[fmtpLineIndex] = sdpLines[fmtpLineIndex].concat(' stereo=1');
 
     sdp = sdpLines.join('\r\n');
     return sdp;
