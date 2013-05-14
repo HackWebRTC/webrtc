@@ -1000,15 +1000,10 @@ FrameList::iterator VCMJitterBuffer::FindLastContinuousAndComplete(
   // Search for a complete and continuous sequence (starting from the last
   // decoded state or current frame if in initial state).
   VCMDecodingState previous_state;
-  if (last_decoded_state_.in_initial_state()) {
-    previous_state.SetState(*start_it);
-  } else {
-    previous_state.CopyFrom(last_decoded_state_);
-  }
-  bool continuous_complete = true;
+  previous_state.SetState(*start_it);
   FrameList::iterator previous_it = start_it;
   ++start_it;
-  while (start_it != frame_list_.end() && continuous_complete) {
+  while (start_it != frame_list_.end()) {
     start_it = FindOldestCompleteContinuousFrame(start_it, &previous_state);
     if (start_it == frame_list_.end())
       break;
