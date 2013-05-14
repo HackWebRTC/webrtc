@@ -122,6 +122,7 @@ def _CommonChecks(input_api, output_api):
                   r'^testing/.*\.py$',
                   r'^tools/gyp/.*\.py$',
                   r'^tools/perf_expectations/.*\.py$',
+                  r'^tools/protoc_wrapper/.*\.py$',
                   r'^tools/python/.*\.py$',
                   r'^tools/python_charts/data/.*\.py$',
                   r'^tools/refactoring.*\.py$',
