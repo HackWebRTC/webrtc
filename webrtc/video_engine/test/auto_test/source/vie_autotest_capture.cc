@@ -151,7 +151,7 @@ void ViEAutoTest::ViECaptureStandardTest() {
                                            capability));
       ViETest::Log("Capture capability %d (of %u)", cap_index + 1,
                    number_of_capabilities);
-      ViETest::Log("witdh %d, height %d, frame rate %d",
+      ViETest::Log("width %d, height %d, frame rate %d",
                    capability.width, capability.height, capability.maxFPS);
       ViETest::Log("expected delay %d, color type %d, encoding %d",
                    capability.expectedCaptureDelay, capability.rawType,
