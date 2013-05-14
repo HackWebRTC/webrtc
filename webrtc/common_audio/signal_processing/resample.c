@@ -20,10 +20,10 @@
 
 // Declaration of internally used functions
 static void WebRtcSpl_32khzTo22khzIntToShort(const int32_t *In, int16_t *Out,
-                                             const int32_t K);
+                                             int32_t K);
 
 void WebRtcSpl_32khzTo22khzIntToInt(const int32_t *In, int32_t *Out,
-                                    const int32_t K);
+                                    int32_t K);
 
 // interpolation coefficients
 static const int16_t kCoefficients32To22[5][9] = {
@@ -421,7 +421,7 @@ static void WebRtcSpl_DotProdIntToShort(const int32_t* in1, const int32_t* in2,
 
 void WebRtcSpl_32khzTo22khzIntToInt(const int32_t* In,
                                     int32_t* Out,
-                                    const int32_t K)
+                                    int32_t K)
 {
     /////////////////////////////////////////////////////////////
     // Filter operation:
@@ -463,7 +463,7 @@ void WebRtcSpl_32khzTo22khzIntToInt(const int32_t* In,
 
 void WebRtcSpl_32khzTo22khzIntToShort(const int32_t *In,
                                       int16_t *Out,
-                                      const int32_t K)
+                                      int32_t K)
 {
     /////////////////////////////////////////////////////////////
     // Filter operation:
