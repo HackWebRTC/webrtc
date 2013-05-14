@@ -718,15 +718,6 @@ int ViERTP_RTCPImpl::SetRembStatus(int video_channel, bool sender,
   return 0;
 }
 
-int ViERTP_RTCPImpl::SetBandwidthEstimationMode(BandwidthEstimationMode mode) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, shared_data_->instance_id(),
-               "ViERTP_RTCPImpl::SetBandwidthEstimationMode(%d)", mode);
-  if (!shared_data_->channel_manager()->SetBandwidthEstimationMode(mode)) {
-    return -1;
-  }
-  return 0;
-}
-
 int ViERTP_RTCPImpl::SetSendTimestampOffsetStatus(int video_channel,
                                                   bool enable,
                                                   int id) {

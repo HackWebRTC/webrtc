@@ -62,11 +62,10 @@ class RtcpFormatRembTest : public ::testing::Test {
       : over_use_detector_options_(),
         system_clock_(Clock::GetRealTimeClock()),
         remote_bitrate_observer_(),
-        remote_bitrate_estimator_(RemoteBitrateEstimator::Create(
-            over_use_detector_options_,
-            RemoteBitrateEstimator::kSingleStreamEstimation,
-            &remote_bitrate_observer_,
-            system_clock_)) {}
+        remote_bitrate_estimator_(
+            RemoteBitrateEstimatorFactory().Create(
+                &remote_bitrate_observer_,
+                system_clock_)) {}
   virtual void SetUp();
   virtual void TearDown();
 

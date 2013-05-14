@@ -28,7 +28,6 @@ ViESharedData::ViESharedData(const Config& config)
       number_cores_(CpuInfo::DetectNumberOfCores()),
       over_use_detector_options_(),
       channel_manager_(*new ViEChannelManager(instance_id_, number_cores_,
-                                              over_use_detector_options_,
                                               config)),
       input_manager_(*new ViEInputManager(instance_id_, config)),
       render_manager_(*new ViERenderManager(instance_id_)),

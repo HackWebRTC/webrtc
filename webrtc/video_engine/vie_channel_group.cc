@@ -8,29 +8,30 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_engine/vie_channel_group.h"
+#include "webrtc/video_engine/vie_channel_group.h"
 
-#include "modules/bitrate_controller/include/bitrate_controller.h"
-#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "modules/rtp_rtcp/interface/rtp_rtcp.h"
-#include "modules/utility/interface/process_thread.h"
-#include "video_engine/call_stats.h"
-#include "video_engine/encoder_state_feedback.h"
-#include "video_engine/vie_channel.h"
-#include "video_engine/vie_encoder.h"
-#include "video_engine/vie_remb.h"
+#include "webrtc/common.h"
+#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/utility/interface/process_thread.h"
+#include "webrtc/video_engine/call_stats.h"
+#include "webrtc/video_engine/encoder_state_feedback.h"
+#include "webrtc/video_engine/vie_channel.h"
+#include "webrtc/video_engine/vie_encoder.h"
+#include "webrtc/video_engine/vie_remb.h"
 
 namespace webrtc {
 
 ChannelGroup::ChannelGroup(ProcessThread* process_thread,
-                           const OverUseDetectorOptions& options,
-                           RemoteBitrateEstimator::EstimationMode mode,
                            const Config& config)
     : remb_(new VieRemb()),
       bitrate_controller_(BitrateController::CreateBitrateController()),
       call_stats_(new CallStats()),
-      remote_bitrate_estimator_(RemoteBitrateEstimator::Create(
-          options, mode, remb_.get(), Clock::GetRealTimeClock())),
+      remote_bitrate_estimator_(
+          config.Get<RemoteBitrateEstimatorFactory>().Create(
+              remb_.get(),
+              Clock::GetRealTimeClock())),
       encoder_state_feedback_(new EncoderStateFeedback()),
       process_thread_(process_thread) {
   call_stats_->RegisterStatsObserver(remote_bitrate_estimator_.get());

@@ -232,10 +232,6 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
                             bool sender,
                             bool receiver) = 0;
 
-  // Sets the bandwidth estimation mode. This can only be changed before
-  // adding a channel.
-  virtual int SetBandwidthEstimationMode(BandwidthEstimationMode mode) = 0;
-
   // Enables RTP timestamp extension offset described in RFC 5450. This call
   // must be done before ViECodec::SetSendCodec is called.
   virtual int SetSendTimestampOffsetStatus(int video_channel,

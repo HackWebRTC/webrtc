@@ -195,9 +195,7 @@ RemoteBitrateEstimatorTest::RemoteBitrateEstimatorTest(bool align_streams)
 void RemoteBitrateEstimatorTest::SetUp() {
   bitrate_observer_.reset(new testing::TestBitrateObserver);
   bitrate_estimator_.reset(
-      RemoteBitrateEstimator::Create(
-          overuse_detector_options_,
-          RemoteBitrateEstimator::kSingleStreamEstimation,
+      RemoteBitrateEstimatorFactory().Create(
           bitrate_observer_.get(),
           &clock_));
   stream_generator_.reset(new testing::StreamGenerator(

@@ -39,17 +39,8 @@ class RemoteBitrateObserver {
 
 class RemoteBitrateEstimator : public CallStatsObserver, public Module {
  public:
-  enum EstimationMode {
-    kMultiStreamEstimation,
-    kSingleStreamEstimation
-  };
-
   virtual ~RemoteBitrateEstimator() {}
 
-  static RemoteBitrateEstimator* Create(const OverUseDetectorOptions& options,
-                                        EstimationMode mode,
-                                        RemoteBitrateObserver* observer,
-                                        Clock* clock);
 
   // Stores an RTCP SR (NTP, RTP timestamp) tuple for a specific SSRC to be used
   // in future RTP timestamp to NTP time conversions. As soon as any SSRC has
@@ -80,6 +71,24 @@ class RemoteBitrateEstimator : public CallStatsObserver, public Module {
   static const int kStreamTimeOutMs = 2000;
 };
 
+struct RemoteBitrateEstimatorFactory {
+  RemoteBitrateEstimatorFactory() {}
+  virtual ~RemoteBitrateEstimatorFactory() {}
+
+  virtual RemoteBitrateEstimator* Create(
+      RemoteBitrateObserver* observer,
+      Clock* clock) const;
+};
+
+struct MultiStreamRemoteBitrateEstimatorFactory
+    : RemoteBitrateEstimatorFactory {
+  MultiStreamRemoteBitrateEstimatorFactory() {}
+  virtual ~MultiStreamRemoteBitrateEstimatorFactory() {}
+
+  virtual RemoteBitrateEstimator* Create(
+      RemoteBitrateObserver* observer,
+      Clock* clock) const;
+};
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_REMOTE_BITRATE_ESTIMATOR_H_
