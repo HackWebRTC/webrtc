@@ -37,7 +37,6 @@ DEFINE_int32(init_delay, 0, "Initial delay in millisecond.");
 DEFINE_bool(dtx, false, "Enable DTX at the sender side.");
 
 namespace webrtc {
-
 namespace {
 
 struct CodecConfig {
@@ -57,7 +56,6 @@ struct Config {
   bool packet_loss;
 };
 
-}
 
 class DelayTest {
  public:
@@ -242,13 +240,8 @@ class DelayTest {
   int encoding_sample_rate_hz_;
 };
 
-}  // namespace webrtc
-
-int main(int argc, char* argv[]) {
-
-  google::ParseCommandLineFlags(&argc, &argv, true);
-
-  webrtc::Config config;
+void RunTest() {
+  Config config;
   strcpy(config.codec.name, FLAGS_codec.c_str());
   config.codec.sample_rate_hz = FLAGS_sample_rate_hz;
   config.codec.num_channels = FLAGS_num_channels;
@@ -256,8 +249,16 @@ int main(int argc, char* argv[]) {
   config.acm.fec = false;
   config.packet_loss = false;
 
-  webrtc::DelayTest delay_test;
+  DelayTest delay_test;
   delay_test.SetUp();
   delay_test.Perform(&config, 1, 240, "delay_test");
   delay_test.TearDown();
+}
+}  // namespace
+}  // namespace webrtc
+
+int main(int argc, char* argv[]) {
+  using namespace webrtc;
+  google::ParseCommandLineFlags(&argc, &argv, true);
+  RunTest();
 }
