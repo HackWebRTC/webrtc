@@ -272,17 +272,21 @@ int16_t WebRtcIsac_Assign(ISACStruct** ISAC_main_inst,
 int16_t WebRtcIsac_Create(ISACStruct** ISAC_main_inst) {
   ISACMainStruct* instISAC;
 
-  instISAC = (ISACMainStruct*)WEBRTC_SPL_VNEW(ISACMainStruct, 1);
-  *ISAC_main_inst = (ISACStruct*)instISAC;
-  if (*ISAC_main_inst != NULL) {
-    instISAC->errorCode = 0;
-    instISAC->initFlag = 0;
-    /* Default is wideband. */
-    instISAC->bandwidthKHz = isac8kHz;
-    instISAC->encoderSamplingRateKHz = kIsacWideband;
-    instISAC->decoderSamplingRateKHz = kIsacWideband;
-    instISAC->in_sample_rate_hz = 16000;
-    return 0;
+  if (ISAC_main_inst != NULL) {
+    instISAC = (ISACMainStruct*)WEBRTC_SPL_VNEW(ISACMainStruct, 1);
+    *ISAC_main_inst = (ISACStruct*)instISAC;
+    if (*ISAC_main_inst != NULL) {
+      instISAC->errorCode = 0;
+      instISAC->initFlag = 0;
+      /* Default is wideband. */
+      instISAC->bandwidthKHz = isac8kHz;
+      instISAC->encoderSamplingRateKHz = kIsacWideband;
+      instISAC->decoderSamplingRateKHz = kIsacWideband;
+      instISAC->in_sample_rate_hz = 16000;
+      return 0;
+    } else {
+      return -1;
+    }
   } else {
     return -1;
   }
@@ -1015,7 +1019,9 @@ int16_t WebRtcIsac_UpdateBwEstimate(ISACStruct* ISAC_main_inst,
     return -1;
   }
 
-  if (packet_size <= 0) {
+  /* Check that the size of the packet is valid, and if not return without
+   * updating the bandwidth estimate. A valid size is at least 10 bytes. */
+  if (packet_size < 10) {
     /* Return error code if the packet length is null. */
     instISAC->errorCode = ISAC_EMPTY_PACKET;
     return -1;
