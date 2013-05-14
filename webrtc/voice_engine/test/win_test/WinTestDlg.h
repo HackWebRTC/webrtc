@@ -125,13 +125,13 @@ protected:
     virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 
 protected:  // VoiceEngineObserver
-    virtual void CallbackOnError(const int channel, const int errCode);
+    virtual void CallbackOnError(int channel, int errCode);
 
 protected:    // VoERTPObserver
     virtual void OnIncomingCSRCChanged(
-        const int channel, const unsigned int CSRC, const bool added);
+        int channel, unsigned int CSRC, bool added);
     virtual void OnIncomingSSRCChanged(
-        const int channel, const unsigned int SSRC);
+        int channel, unsigned int SSRC);
 
 // Implementation
 protected:

@@ -52,10 +52,10 @@ class WEBRTC_DLLEXPORT VoERTPObserver
 {
 public:
     virtual void OnIncomingCSRCChanged(
-        const int channel, const unsigned int CSRC, const bool added) = 0;
+        int channel, unsigned int CSRC, bool added) = 0;
 
     virtual void OnIncomingSSRCChanged(
-        const int channel, const unsigned int SSRC) = 0;
+        int channel, unsigned int SSRC) = 0;
 
 protected:
     virtual ~VoERTPObserver() {}
@@ -66,9 +66,9 @@ class WEBRTC_DLLEXPORT VoERTCPObserver
 {
 public:
     virtual void OnApplicationDataReceived(
-        const int channel, const unsigned char subType,
-        const unsigned int name, const unsigned char* data,
-        const unsigned short dataLengthInBytes) = 0;
+        int channel, unsigned char subType,
+        unsigned int name, const unsigned char* data,
+        unsigned short dataLengthInBytes) = 0;
 
 protected:
     virtual ~VoERTCPObserver() {}
@@ -209,7 +209,7 @@ public:
 
     // Sends an RTCP APP packet on a specific |channel|.
     virtual int SendApplicationDefinedRTCPPacket(
-        int channel, const unsigned char subType, unsigned int name,
+        int channel, unsigned char subType, unsigned int name,
         const char* data, unsigned short dataLengthInBytes) = 0;
 
     // Sets the Forward Error Correction (FEC) status on a specific |channel|.

@@ -263,7 +263,7 @@ int VoEAudioProcessingImpl::GetAgcStatus(bool& enabled, AgcModes& mode) {
 #endif
 }
 
-int VoEAudioProcessingImpl::SetAgcConfig(const AgcConfig config) {
+int VoEAudioProcessingImpl::SetAgcConfig(AgcConfig config) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetAgcConfig()");
 #ifdef WEBRTC_VOICE_ENGINE_AGC
@@ -437,7 +437,7 @@ int VoEAudioProcessingImpl::GetRxAgcStatus(int channel,
 }
 
 int VoEAudioProcessingImpl::SetRxAgcConfig(int channel,
-                                           const AgcConfig config) {
+                                           AgcConfig config) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetRxAgcConfig(channel=%d)", channel);
 #ifdef WEBRTC_VOICE_ENGINE_AGC

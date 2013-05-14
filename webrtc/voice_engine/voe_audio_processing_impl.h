@@ -27,7 +27,7 @@ class VoEAudioProcessingImpl : public VoEAudioProcessing {
 
   virtual int GetAgcStatus(bool& enabled, AgcModes& mode);
 
-  virtual int SetAgcConfig(const AgcConfig config);
+  virtual int SetAgcConfig(AgcConfig config);
 
   virtual int GetAgcConfig(AgcConfig& config);
 
@@ -43,7 +43,7 @@ class VoEAudioProcessingImpl : public VoEAudioProcessing {
 
   virtual int GetRxAgcStatus(int channel, bool& enabled, AgcModes& mode);
 
-  virtual int SetRxAgcConfig(int channel, const AgcConfig config);
+  virtual int SetRxAgcConfig(int channel, AgcConfig config);
 
   virtual int GetRxAgcConfig(int channel, AgcConfig& config);
 

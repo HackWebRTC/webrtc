@@ -17,8 +17,8 @@ namespace webrtc {
 
 class MockVoeConnectionObserver : public VoEConnectionObserver {
  public:
-  MOCK_METHOD2(OnPeriodicDeadOrAlive, void(const int channel,
-                                           const bool alive));
+  MOCK_METHOD2(OnPeriodicDeadOrAlive, void(int channel,
+                                           bool alive));
 };
 
 }

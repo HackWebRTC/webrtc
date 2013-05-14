@@ -22,7 +22,7 @@ class DtmfInbandQueue
 {
 public:
 
-    DtmfInbandQueue(const int32_t id);
+    DtmfInbandQueue(int32_t id);
 
     virtual ~DtmfInbandQueue();
 

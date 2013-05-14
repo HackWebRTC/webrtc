@@ -83,7 +83,7 @@ public:
     // Sets the AGC configuration.
     // Should only be used in situations where the working environment
     // is well known.
-    virtual int SetAgcConfig(const AgcConfig config) = 0;
+    virtual int SetAgcConfig(AgcConfig config) = 0;
 
     // Gets the AGC configuration.
     virtual int GetAgcConfig(AgcConfig& config) = 0;
@@ -152,7 +152,7 @@ public:
 
     // Modifies the AGC configuration on the receiving side for the
     // specified |channel|.
-    virtual int SetRxAgcConfig(int channel, const AgcConfig config) = 0;
+    virtual int SetRxAgcConfig(int channel, AgcConfig config) = 0;
 
     // Gets the AGC configuration on the receiving side.
     virtual int GetRxAgcConfig(int channel, AgcConfig& config) = 0;

@@ -65,10 +65,10 @@ void RunTest(std::string out_path);
 
 class MyObserver : public VoiceEngineObserver {
  public:
-   virtual void CallbackOnError(const int channel, const int err_code);
+   virtual void CallbackOnError(int channel, int err_code);
 };
 
-void MyObserver::CallbackOnError(const int channel, const int err_code) {
+void MyObserver::CallbackOnError(int channel, int err_code) {
   // Add printf for other error codes here
   if (err_code == VE_TYPING_NOISE_WARNING) {
     printf("  TYPING NOISE DETECTED \n");

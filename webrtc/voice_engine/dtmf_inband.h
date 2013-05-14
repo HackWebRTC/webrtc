@@ -24,22 +24,22 @@ class CriticalSectionWrapper;
 class DtmfInband
 {
 public:
-    DtmfInband(const int32_t id);
+    DtmfInband(int32_t id);
 
     virtual ~DtmfInband();
 
     void Init();
 
-    int SetSampleRate(const uint16_t frequency);
+    int SetSampleRate(uint16_t frequency);
 
     int GetSampleRate(uint16_t& frequency);
 
-    int AddTone(const uint8_t eventCode,
+    int AddTone(uint8_t eventCode,
                 int32_t lengthMs,
                 int32_t attenuationDb);
 
     int ResetTone();
-    int StartTone(const uint8_t eventCode, int32_t attenuationDb);
+    int StartTone(uint8_t eventCode, int32_t attenuationDb);
 
     int StopTone();
 
@@ -54,21 +54,21 @@ public:
 private:
     void ReInit();
     int16_t DtmfFix_generate(int16_t* decoded,
-                             const int16_t value,
-                             const int16_t volume,
-                             const int16_t frameLen,
-                             const int16_t fs);
+                             int16_t value,
+                             int16_t volume,
+                             int16_t frameLen,
+                             int16_t fs);
 
 private:
     enum {kDtmfFrameSizeMs = 10};
     enum {kDtmfAmpHigh = 32768};
     enum {kDtmfAmpLow  = 23171};	// 3 dB lower than the high frequency
 
-    int16_t DtmfFix_generateSignal(const int16_t a1_times2,
-                                   const int16_t a2_times2,
-                                   const int16_t volume,
+    int16_t DtmfFix_generateSignal(int16_t a1_times2,
+                                   int16_t a2_times2,
+                                   int16_t volume,
                                    int16_t* signal,
-                                   const int16_t length);
+                                   int16_t length);
 
 private:
     CriticalSectionWrapper& _critSect;

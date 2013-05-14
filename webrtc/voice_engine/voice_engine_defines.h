@@ -197,7 +197,7 @@ enum { kVoiceEngineMaxRtpExtensionId = 14 };
 namespace webrtc
 {
 
-inline int VoEId(const int veId, const int chId)
+inline int VoEId(int veId, int chId)
 {
     if (chId == -1)
     {
@@ -207,13 +207,13 @@ inline int VoEId(const int veId, const int chId)
     return (int) ((veId << 16) + chId);
 }
 
-inline int VoEModuleId(const int veId, const int chId)
+inline int VoEModuleId(int veId, int chId)
 {
     return (int) ((veId << 16) + chId);
 }
 
 // Convert module ID to internal VoE channel ID
-inline int VoEChannelId(const int moduleId)
+inline int VoEChannelId(int moduleId)
 {
     return (int) (moduleId & 0xffff);
 }

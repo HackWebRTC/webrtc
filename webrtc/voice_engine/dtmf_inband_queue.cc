@@ -13,7 +13,7 @@
 
 namespace webrtc {
 
-DtmfInbandQueue::DtmfInbandQueue(const int32_t id):
+DtmfInbandQueue::DtmfInbandQueue(int32_t id):
     _id(id),
     _DtmfCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
     _nextEmptyIndex(0)

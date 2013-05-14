@@ -44,7 +44,7 @@ public:	// module
                     uint32_t& remainingBufferInBytes,
                     uint32_t& position) const;
 
-    int32_t ChangeUniqueId(const int32_t id);
+    int32_t ChangeUniqueId(int32_t id);
 
     int32_t TimeUntilNextProcess();
 

@@ -36,7 +36,7 @@ class OutputMixer : public AudioMixerOutputReceiver,
                     public FileCallback
 {
 public:
-    static int32_t Create(OutputMixer*& mixer, const uint32_t instanceId);
+    static int32_t Create(OutputMixer*& mixer, uint32_t instanceId);
 
     static void Destroy(OutputMixer*& mixer);
 
@@ -63,10 +63,10 @@ public:
     int32_t DoOperationsOnCombinedSignal();
 
     int32_t SetMixabilityStatus(MixerParticipant& participant,
-                                const bool mixable);
+                                bool mixable);
 
     int32_t SetAnonymousMixabilityStatus(MixerParticipant& participant,
-                                         const bool mixable);
+                                         bool mixable);
 
     int GetMixedAudio(int sample_rate_hz, int num_channels,
                       AudioFrame* audioFrame);
@@ -92,34 +92,34 @@ public:
 
     // from AudioMixerOutputReceiver
     virtual void NewMixedAudio(
-        const int32_t id,
+        int32_t id,
         const AudioFrame& generalAudioFrame,
         const AudioFrame** uniqueAudioFrames,
-        const uint32_t size);
+        uint32_t size);
 
     // from AudioMixerStatusReceiver
     virtual void MixedParticipants(
-        const int32_t id,
+        int32_t id,
         const ParticipantStatistics* participantStatistics,
-        const uint32_t size);
+        uint32_t size);
 
     virtual void VADPositiveParticipants(
-        const int32_t id,
+        int32_t id,
         const ParticipantStatistics* participantStatistics,
-        const uint32_t size);
+        uint32_t size);
 
-    virtual void MixedAudioLevel(const int32_t id, const uint32_t level);
+    virtual void MixedAudioLevel(int32_t id, uint32_t level);
 
     // For file recording
-    void PlayNotification(const int32_t id, const uint32_t durationMs);
+    void PlayNotification(int32_t id, uint32_t durationMs);
 
-    void RecordNotification(const int32_t id, const uint32_t durationMs);
+    void RecordNotification(int32_t id, uint32_t durationMs);
 
-    void PlayFileEnded(const int32_t id);
-    void RecordFileEnded(const int32_t id);
+    void PlayFileEnded(int32_t id);
+    void RecordFileEnded(int32_t id);
 
 private:
-    OutputMixer(const uint32_t instanceId);
+    OutputMixer(uint32_t instanceId);
     void APMAnalyzeReverseStream();
     int InsertInbandDtmfTone();
 

@@ -50,7 +50,7 @@ public:
 
     virtual int SendApplicationDefinedRTCPPacket(
         int channel,
-        const unsigned char subType,
+        unsigned char subType,
         unsigned int name,
         const char* data,
         unsigned short dataLengthInBytes);

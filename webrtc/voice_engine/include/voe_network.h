@@ -47,7 +47,7 @@ public:
     // This method will be called peridically and deliver dead-or-alive
     // notifications for a specified |channel| when the observer interface
     // has been installed and activated.
-    virtual void OnPeriodicDeadOrAlive(const int channel, const bool alive) = 0;
+    virtual void OnPeriodicDeadOrAlive(int channel, bool alive) = 0;
 
 protected:
     virtual ~VoEConnectionObserver() {}

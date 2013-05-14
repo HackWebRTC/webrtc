@@ -94,7 +94,7 @@ Channel::InFrameType(int16_t frameType)
 }
 
 int32_t
-Channel::OnRxVadDetected(const int vadDecision)
+Channel::OnRxVadDetected(int vadDecision)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                  "Channel::OnRxVadDetected(vadDecision=%d)", vadDecision);
@@ -332,10 +332,10 @@ Channel::SendRTCPPacket(int channel, const void *data, int len)
 }
 
 void
-Channel::OnPlayTelephoneEvent(const int32_t id,
-                              const uint8_t event,
-                              const uint16_t lengthMs,
-                              const uint8_t volume)
+Channel::OnPlayTelephoneEvent(int32_t id,
+                              uint8_t event,
+                              uint16_t lengthMs,
+                              uint8_t volume)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnPlayTelephoneEvent(id=%d, event=%u, lengthMs=%u,"
@@ -356,8 +356,8 @@ Channel::OnPlayTelephoneEvent(const int32_t id,
 }
 
 void
-Channel::OnIncomingSSRCChanged(const int32_t id,
-                               const uint32_t SSRC)
+Channel::OnIncomingSSRCChanged(int32_t id,
+                               uint32_t SSRC)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnIncomingSSRCChanged(id=%d, SSRC=%d)",
@@ -382,9 +382,9 @@ Channel::OnIncomingSSRCChanged(const int32_t id,
     }
 }
 
-void Channel::OnIncomingCSRCChanged(const int32_t id,
-                                    const uint32_t CSRC,
-                                    const bool added)
+void Channel::OnIncomingCSRCChanged(int32_t id,
+                                    uint32_t CSRC,
+                                    bool added)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnIncomingCSRCChanged(id=%d, CSRC=%d, added=%d)",
@@ -405,10 +405,10 @@ void Channel::OnIncomingCSRCChanged(const int32_t id,
 }
 
 void
-Channel::OnApplicationDataReceived(const int32_t id,
-                                   const uint8_t subType,
-                                   const uint32_t name,
-                                   const uint16_t length,
+Channel::OnApplicationDataReceived(int32_t id,
+                                   uint8_t subType,
+                                   uint32_t name,
+                                   uint16_t length,
                                    const uint8_t* data)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -436,12 +436,12 @@ Channel::OnApplicationDataReceived(const int32_t id,
 
 int32_t
 Channel::OnInitializeDecoder(
-    const int32_t id,
-    const int8_t payloadType,
+    int32_t id,
+    int8_t payloadType,
     const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-    const int frequency,
-    const uint8_t channels,
-    const uint32_t rate)
+    int frequency,
+    uint8_t channels,
+    uint32_t rate)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnInitializeDecoder(id=%d, payloadType=%d, "
@@ -477,7 +477,7 @@ Channel::OnInitializeDecoder(
 }
 
 void
-Channel::OnPacketTimeout(const int32_t id)
+Channel::OnPacketTimeout(int32_t id)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnPacketTimeout(id=%d)", id);
@@ -504,8 +504,8 @@ Channel::OnPacketTimeout(const int32_t id)
 }
 
 void
-Channel::OnReceivedPacket(const int32_t id,
-                          const RtpRtcpPacketType packetType)
+Channel::OnReceivedPacket(int32_t id,
+                          RtpRtcpPacketType packetType)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnReceivedPacket(id=%d, packetType=%d)",
@@ -536,8 +536,8 @@ Channel::OnReceivedPacket(const int32_t id,
 }
 
 void
-Channel::OnPeriodicDeadOrAlive(const int32_t id,
-                               const RTPAliveType alive)
+Channel::OnPeriodicDeadOrAlive(int32_t id,
+                               RTPAliveType alive)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnPeriodicDeadOrAlive(id=%d, alive=%d)", id, alive);
@@ -590,7 +590,7 @@ Channel::OnPeriodicDeadOrAlive(const int32_t id,
 
 int32_t
 Channel::OnReceivedPayloadData(const uint8_t* payloadData,
-                               const uint16_t payloadSize,
+                               uint16_t payloadSize,
                                const WebRtcRTPHeader* rtpHeader)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -631,7 +631,7 @@ Channel::OnReceivedPayloadData(const uint8_t* payloadData,
     return 0;
 }
 
-int32_t Channel::GetAudioFrame(const int32_t id, AudioFrame& audioFrame)
+int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetAudioFrame(id=%d)", id);
@@ -737,7 +737,7 @@ int32_t Channel::GetAudioFrame(const int32_t id, AudioFrame& audioFrame)
 }
 
 int32_t
-Channel::NeededFrequency(const int32_t id)
+Channel::NeededFrequency(int32_t id)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::NeededFrequency(id=%d)", id);
@@ -778,8 +778,8 @@ Channel::NeededFrequency(const int32_t id)
 
 int32_t
 Channel::CreateChannel(Channel*& channel,
-                       const int32_t channelId,
-                       const uint32_t instanceId)
+                       int32_t channelId,
+                       uint32_t instanceId)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(instanceId,channelId),
                  "Channel::CreateChannel(channelId=%d, instanceId=%d)",
@@ -798,7 +798,7 @@ Channel::CreateChannel(Channel*& channel,
 }
 
 void
-Channel::PlayNotification(const int32_t id, const uint32_t durationMs)
+Channel::PlayNotification(int32_t id, uint32_t durationMs)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::PlayNotification(id=%d, durationMs=%d)",
@@ -808,7 +808,7 @@ Channel::PlayNotification(const int32_t id, const uint32_t durationMs)
 }
 
 void
-Channel::RecordNotification(const int32_t id, const uint32_t durationMs)
+Channel::RecordNotification(int32_t id, uint32_t durationMs)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::RecordNotification(id=%d, durationMs=%d)",
@@ -818,7 +818,7 @@ Channel::RecordNotification(const int32_t id, const uint32_t durationMs)
 }
 
 void
-Channel::PlayFileEnded(const int32_t id)
+Channel::PlayFileEnded(int32_t id)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::PlayFileEnded(id=%d)", id);
@@ -846,7 +846,7 @@ Channel::PlayFileEnded(const int32_t id)
 }
 
 void
-Channel::RecordFileEnded(const int32_t id)
+Channel::RecordFileEnded(int32_t id)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::RecordFileEnded(id=%d)", id);
@@ -862,8 +862,8 @@ Channel::RecordFileEnded(const int32_t id)
                  " shutdown");
 }
 
-Channel::Channel(const int32_t channelId,
-                 const uint32_t instanceId) :
+Channel::Channel(int32_t channelId,
+                 uint32_t instanceId) :
     _fileCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _instanceId(instanceId),
@@ -2300,11 +2300,11 @@ Channel::GetPeriodicDeadOrAliveStatus(bool& enabled, int& sampleTimeSeconds)
 }
 
 int Channel::StartPlayingFileLocally(const char* fileName,
-                                     const bool loop,
-                                     const FileFormats format,
-                                     const int startPosition,
-                                     const float volumeScaling,
-                                     const int stopPosition,
+                                     bool loop,
+                                     FileFormats format,
+                                     int startPosition,
+                                     float volumeScaling,
+                                     int stopPosition,
                                      const CodecInst* codecInst)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -2372,10 +2372,10 @@ int Channel::StartPlayingFileLocally(const char* fileName,
 }
 
 int Channel::StartPlayingFileLocally(InStream* stream,
-                                     const FileFormats format,
-                                     const int startPosition,
-                                     const float volumeScaling,
-                                     const int stopPosition,
+                                     FileFormats format,
+                                     int startPosition,
+                                     float volumeScaling,
+                                     int stopPosition,
                                      const CodecInst* codecInst)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -2530,7 +2530,7 @@ int Channel::RegisterFilePlayingToMixer()
     return 0;
 }
 
-int Channel::ScaleLocalFilePlayout(const float scale)
+int Channel::ScaleLocalFilePlayout(float scale)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::ScaleLocalFilePlayout(scale=%5.3f)", scale);
@@ -2586,11 +2586,11 @@ int Channel::GetLocalPlayoutPosition(int& positionMs)
 }
 
 int Channel::StartPlayingFileAsMicrophone(const char* fileName,
-                                          const bool loop,
-                                          const FileFormats format,
-                                          const int startPosition,
-                                          const float volumeScaling,
-                                          const int stopPosition,
+                                          bool loop,
+                                          FileFormats format,
+                                          int startPosition,
+                                          float volumeScaling,
+                                          int stopPosition,
                                           const CodecInst* codecInst)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -2655,10 +2655,10 @@ int Channel::StartPlayingFileAsMicrophone(const char* fileName,
 }
 
 int Channel::StartPlayingFileAsMicrophone(InStream* stream,
-                                          const FileFormats format,
-                                          const int startPosition,
-                                          const float volumeScaling,
-                                          const int stopPosition,
+                                          FileFormats format,
+                                          int startPosition,
+                                          float volumeScaling,
+                                          int stopPosition,
                                           const CodecInst* codecInst)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -2762,7 +2762,7 @@ int Channel::IsPlayingFileAsMicrophone() const
     return _inputFilePlaying;
 }
 
-int Channel::ScaleFileAsMicrophonePlayout(const float scale)
+int Channel::ScaleFileAsMicrophonePlayout(float scale)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::ScaleFileAsMicrophonePlayout(scale=%5.3f)", scale);
@@ -3280,7 +3280,7 @@ Channel::VoiceActivityIndicator(int &activity)
 #ifdef WEBRTC_VOICE_ENGINE_AGC
 
 int
-Channel::SetRxAgcStatus(const bool enable, const AgcModes mode)
+Channel::SetRxAgcStatus(bool enable, AgcModes mode)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetRxAgcStatus(enable=%d, mode=%d)",
@@ -3360,7 +3360,7 @@ Channel::GetRxAgcStatus(bool& enabled, AgcModes& mode)
 }
 
 int
-Channel::SetRxAgcConfig(const AgcConfig config)
+Channel::SetRxAgcConfig(AgcConfig config)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetRxAgcConfig()");
@@ -3424,7 +3424,7 @@ Channel::GetRxAgcConfig(AgcConfig& config)
 #ifdef WEBRTC_VOICE_ENGINE_NR
 
 int
-Channel::SetRxNsStatus(const bool enable, const NsModes mode)
+Channel::SetRxNsStatus(bool enable, NsModes mode)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetRxNsStatus(enable=%d, mode=%d)",
@@ -3888,7 +3888,7 @@ Channel::GetRemoteRTCPData(
 }
 
 int
-Channel::SendApplicationDefinedRTCPPacket(const unsigned char subType,
+Channel::SendApplicationDefinedRTCPPacket(unsigned char subType,
                                              unsigned int name,
                                              const char* data,
                                              unsigned short dataLengthInBytes)
@@ -4835,7 +4835,7 @@ Channel::GetRtpRtcp(RtpRtcp* &rtpRtcpModule) const
 // TODO(andrew): refactor Mix functions here and in transmit_mixer.cc to use
 // a shared helper.
 int32_t
-Channel::MixOrReplaceAudioWithFile(const int mixingFrequency)
+Channel::MixOrReplaceAudioWithFile(int mixingFrequency)
 {
     scoped_array<int16_t> fileBuffer(new int16_t[640]);
     int fileSamples(0);
@@ -4903,7 +4903,7 @@ Channel::MixOrReplaceAudioWithFile(const int mixingFrequency)
 
 int32_t
 Channel::MixAudioWithFile(AudioFrame& audioFrame,
-                          const int mixingFrequency)
+                          int mixingFrequency)
 {
     assert(mixingFrequency <= 32000);
 

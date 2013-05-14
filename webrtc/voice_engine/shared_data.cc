@@ -104,16 +104,16 @@ uint16_t SharedData::NumOfSendingChannels()
     return nChannelsSending;
 }
 
-void SharedData::SetLastError(const int32_t error) const {
+void SharedData::SetLastError(int32_t error) const {
   _engineStatistics.SetLastError(error);
 }
 
-void SharedData::SetLastError(const int32_t error,
-                              const TraceLevel level) const {
+void SharedData::SetLastError(int32_t error,
+                              TraceLevel level) const {
   _engineStatistics.SetLastError(error, level);
 }
 
-void SharedData::SetLastError(const int32_t error, const TraceLevel level,
+void SharedData::SetLastError(int32_t error, TraceLevel level,
                               const char* msg) const {
   _engineStatistics.SetLastError(error, level, msg);
 }

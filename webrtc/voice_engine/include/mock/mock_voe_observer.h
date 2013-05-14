@@ -21,7 +21,7 @@ class MockVoEObserver: public VoiceEngineObserver {
   MockVoEObserver() {}
   virtual ~MockVoEObserver() {}
 
-  MOCK_METHOD2(CallbackOnError, void(const int channel, const int error_code));
+  MOCK_METHOD2(CallbackOnError, void(int channel, int error_code));
 };
 
 }

@@ -26,16 +26,16 @@ class Statistics
  public:
     enum {KTraceMaxMessageSize = 256};
  public:
-    Statistics(const uint32_t instanceId);
+    Statistics(uint32_t instanceId);
     ~Statistics();
 
     int32_t SetInitialized();
     int32_t SetUnInitialized();
     bool Initialized() const;
-    int32_t SetLastError(const int32_t error) const;
-    int32_t SetLastError(const int32_t error, const TraceLevel level) const;
-    int32_t SetLastError(const int32_t error,
-                         const TraceLevel level,
+    int32_t SetLastError(int32_t error) const;
+    int32_t SetLastError(int32_t error, TraceLevel level) const;
+    int32_t SetLastError(int32_t error,
+                         TraceLevel level,
                          const char* msg) const;
     int32_t LastError() const;
 

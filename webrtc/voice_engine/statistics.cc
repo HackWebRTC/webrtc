@@ -20,7 +20,7 @@ namespace webrtc {
 
 namespace voe {
 
-Statistics::Statistics(const uint32_t instanceId) :
+Statistics::Statistics(uint32_t instanceId) :
     _critPtr(CriticalSectionWrapper::CreateCriticalSection()),
     _instanceId(instanceId),
     _lastError(0),
@@ -54,15 +54,15 @@ bool Statistics::Initialized() const
     return _isInitialized;
 }
 
-int32_t Statistics::SetLastError(const int32_t error) const
+int32_t Statistics::SetLastError(int32_t error) const
 {
     CriticalSectionScoped cs(_critPtr);
     _lastError = error;
     return 0;
 }
 
-int32_t Statistics::SetLastError(const int32_t error,
-                                 const TraceLevel level) const
+int32_t Statistics::SetLastError(int32_t error,
+                                 TraceLevel level) const
 {
     CriticalSectionScoped cs(_critPtr);
     _lastError = error;
@@ -73,8 +73,8 @@ int32_t Statistics::SetLastError(const int32_t error,
 }
 
 int32_t Statistics::SetLastError(
-    const int32_t error,
-    const TraceLevel level, const char* msg) const
+    int32_t error,
+    TraceLevel level, const char* msg) const
 {
     CriticalSectionScoped cs(_critPtr);
     char traceMessage[KTraceMaxMessageSize];

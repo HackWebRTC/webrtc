@@ -73,26 +73,26 @@ public:
     // AudioTransport
     virtual int32_t
         RecordedDataIsAvailable(const void* audioSamples,
-                                const uint32_t nSamples,
-                                const uint8_t nBytesPerSample,
-                                const uint8_t nChannels,
-                                const uint32_t samplesPerSec,
-                                const uint32_t totalDelayMS,
-                                const int32_t clockDrift,
-                                const uint32_t currentMicLevel,
-                                const bool keyPressed,
+                                uint32_t nSamples,
+                                uint8_t nBytesPerSample,
+                                uint8_t nChannels,
+                                uint32_t samplesPerSec,
+                                uint32_t totalDelayMS,
+                                int32_t clockDrift,
+                                uint32_t currentMicLevel,
+                                bool keyPressed,
                                 uint32_t& newMicLevel);
 
-    virtual int32_t NeedMorePlayData(const uint32_t nSamples,
-                                     const uint8_t nBytesPerSample,
-                                     const uint8_t nChannels,
-                                     const uint32_t samplesPerSec,
+    virtual int32_t NeedMorePlayData(uint32_t nSamples,
+                                     uint8_t nBytesPerSample,
+                                     uint8_t nChannels,
+                                     uint32_t samplesPerSec,
                                      void* audioSamples,
                                      uint32_t& nSamplesOut);
 
     // AudioDeviceObserver
-    virtual void OnErrorIsReported(const ErrorCode error);
-    virtual void OnWarningIsReported(const WarningCode warning);
+    virtual void OnErrorIsReported(ErrorCode error);
+    virtual void OnWarningIsReported(WarningCode warning);
 
 protected:
     VoEBaseImpl(voe::SharedData* shared);

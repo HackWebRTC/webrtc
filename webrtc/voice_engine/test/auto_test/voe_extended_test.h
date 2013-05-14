@@ -55,7 +55,7 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
                           uint32_t& position) const {
     return 0;
   }
-  virtual int32_t ChangeUniqueId(const int32_t id) {
+  virtual int32_t ChangeUniqueId(int32_t id) {
     return 0;
   }
   virtual int32_t TimeUntilNextProcess() {
@@ -284,14 +284,14 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
   virtual int32_t StereoRecording(bool* enabled) const {
     return -1;
   }
-  virtual int32_t SetRecordingChannel(const ChannelType channel) {
+  virtual int32_t SetRecordingChannel(ChannelType channel) {
     return -1;
   }
   virtual int32_t RecordingChannel(ChannelType* channel) const {
     return -1;
   }
 
-  virtual int32_t SetPlayoutBuffer(const BufferType type, uint16_t sizeMS = 0) {
+  virtual int32_t SetPlayoutBuffer(BufferType type, uint16_t sizeMS = 0) {
     return -1;
   }
   virtual int32_t PlayoutBuffer(BufferType* type, uint16_t* sizeMS) const {
@@ -323,13 +323,13 @@ class AudioDeviceModuleImpl : public AudioDeviceModule {
     return -1;
   }
 
-  virtual int32_t SetRecordingSampleRate(const uint32_t samplesPerSec) {
+  virtual int32_t SetRecordingSampleRate(uint32_t samplesPerSec) {
     return -1;
   }
   virtual int32_t RecordingSampleRate(uint32_t* samplesPerSec) const {
     return -1;
   }
-  virtual int32_t SetPlayoutSampleRate(const uint32_t samplesPerSec) {
+  virtual int32_t SetPlayoutSampleRate(uint32_t samplesPerSec) {
     return -1;
   }
   virtual int32_t PlayoutSampleRate(uint32_t* samplesPerSec) const {
@@ -398,11 +398,11 @@ class XRTPObserver : public VoERTPObserver {
  public:
   XRTPObserver();
   ~XRTPObserver();
-  virtual void OnIncomingCSRCChanged(const int channel,
-                                     const unsigned int CSRC,
-                                     const bool added);
-  virtual void OnIncomingSSRCChanged(const int channel,
-                                     const unsigned int SSRC);
+  virtual void OnIncomingCSRCChanged(int channel,
+                                     unsigned int CSRC,
+                                     bool added);
+  virtual void OnIncomingSSRCChanged(int channel,
+                                     unsigned int SSRC);
  public:
   unsigned int _SSRC;
 };
@@ -442,12 +442,12 @@ class VoEExtendedTest : public VoiceEngineObserver,
 
  protected:
   // from VoiceEngineObserver
-  void CallbackOnError(const int errCode, const int channel);
-  void CallbackOnTrace(const TraceLevel level, const char* message,
-                       const int length);
+  void CallbackOnError(int errCode, int channel);
+  void CallbackOnTrace(TraceLevel level, const char* message,
+                       int length);
 
   // from VoEConnectionObserver
-  void OnPeriodicDeadOrAlive(const int channel, const bool alive);
+  void OnPeriodicDeadOrAlive(int channel, bool alive);
 
  private:
   void Play(int channel, unsigned int timeMillisec,

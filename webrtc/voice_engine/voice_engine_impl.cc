@@ -80,7 +80,7 @@ VoiceEngine* VoiceEngine::Create()
     return GetVoiceEngine();
 }
 
-int VoiceEngine::SetTraceFilter(const unsigned int filter)
+int VoiceEngine::SetTraceFilter(unsigned int filter)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice,
                  VoEId(gVoiceEngineInstanceCounter, -1),
@@ -104,7 +104,7 @@ int VoiceEngine::SetTraceFilter(const unsigned int filter)
 }
 
 int VoiceEngine::SetTraceFile(const char* fileNameUTF8,
-                              const bool addFileCounter)
+                              bool addFileCounter)
 {
     int ret = Trace::SetTraceFile(fileNameUTF8, addFileCounter);
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice,
