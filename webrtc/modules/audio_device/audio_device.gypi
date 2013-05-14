@@ -138,7 +138,7 @@
               ],
               'link_settings': {
                 'libraries': [
-                  '-ldl',
+                  '-ldl','-lX11',
                 ],
               },
               'conditions': [

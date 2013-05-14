@@ -19,7 +19,6 @@
 #include "trace.h"
 #include "thread_wrapper.h"
 
-
 webrtc_adm_linux_alsa::AlsaSymbolTable AlsaSymbolTable;
 
 // Accesses ALSA functions through our late-binding symbol table instead of
@@ -110,6 +109,7 @@ AudioDeviceLinuxALSA::AudioDeviceLinuxALSA(const int32_t id) :
     _playBufDelay(80),
     _playBufDelayFixed(80)
 {
+    memset(_oldKeyState, 0, sizeof(_oldKeyState));
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, id,
                  "%s created", __FUNCTION__);
 }
@@ -182,6 +182,14 @@ int32_t AudioDeviceLinuxALSA::Init()
         return 0;
     }
 
+    //Get X display handle for typing detection
+    _XDisplay = XOpenDisplay(NULL);
+    if (!_XDisplay)
+    {
+        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
+          "  failed to open X display, typing detection will not work");
+    }
+
     _playWarning = 0;
     _playError = 0;
     _recWarning = 0;
@@ -246,6 +254,12 @@ int32_t AudioDeviceLinuxALSA::Terminate()
         }
 
         _critSect.Enter();
+    }
+
+    if (_XDisplay)
+    {
+      XCloseDisplay(_XDisplay);
+      _XDisplay = NULL;
     }
 
     _initialized = false;
@@ -2290,6 +2304,8 @@ bool AudioDeviceLinuxALSA::RecThreadProcess()
                 _playoutDelay * 1000 / _playoutFreq,
                 _recordingDelay * 1000 / _recordingFreq, 0);
 
+            _ptrAudioBuffer->SetTypingStatus(KeyPressed());
+
             // Deliver recorded samples at specified sample rate, mic level etc.
             // to the observer using callback.
             UnLock();
@@ -2317,4 +2333,25 @@ bool AudioDeviceLinuxALSA::RecThreadProcess()
     return true;
 }
 
+
+bool AudioDeviceLinuxALSA::KeyPressed() const{
+
+  char szKey[32];
+  unsigned int i = 0;
+  char state = 0;
+
+  if (!_XDisplay)
+    return false;
+
+  // Check key map status
+  XQueryKeymap(_XDisplay, szKey);
+
+  // A bit change in keymap means a key is pressed
+  for (i = 0; i < sizeof(szKey); i++)
+    state |= (szKey[i] ^ _oldKeyState[i]) & szKey[i];
+
+  // Save old state
+  memcpy((char*)_oldKeyState, (char*)szKey, sizeof(_oldKeyState));
+  return (state != 0);
+}
 }  // namespace webrtc
