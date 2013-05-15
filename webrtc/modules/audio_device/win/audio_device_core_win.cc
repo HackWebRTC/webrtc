@@ -3541,11 +3541,9 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
         case WAIT_OBJECT_0 + 1:     // _hRenderSamplesReadyEvent
             break;
         case WAIT_TIMEOUT:          // timeout notification
-            _ptrClientOut->Stop();
             WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id, "render event timed out after 0.5 seconds");
             goto Exit;
         default:                    // unexpected error
-            _ptrClientOut->Stop();
             WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id, "unknown wait termination on render side");
             goto Exit;
         }
@@ -3999,11 +3997,9 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread()
         case WAIT_OBJECT_0 + 1:        // _hCaptureSamplesReadyEvent
             break;
         case WAIT_TIMEOUT:            // timeout notification
-            _ptrClientIn->Stop();
             WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id, "capture event timed out after 0.5 seconds");
             goto Exit;
         default:                    // unexpected error
-            _ptrClientIn->Stop();
             WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id, "unknown wait termination on capture side");
             goto Exit;
         }
