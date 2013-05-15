@@ -86,8 +86,7 @@ TEST_F(RemoteBitrateEstimatorTest, TestRateIncreaseReordering) {
                                        clock_.TimeInMilliseconds(), timestamp);
     bitrate_estimator_->IncomingPacket(kDefaultSsrc,
                                        1000,
-                                       clock_.TimeInMilliseconds() -
-                                           kFrameIntervalMs,
+                                       clock_.TimeInMilliseconds(),
                                        timestamp - 90 * kFrameIntervalMs);
   }
   bitrate_estimator_->Process();
