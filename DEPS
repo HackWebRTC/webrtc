@@ -10,7 +10,7 @@ vars = {
   # If you do not know, use the full path while defining your new deps entry.
   "googlecode_url": "http://%s.googlecode.com/svn",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "193311",
+  "chromium_revision": "199267",
 
   # External resources like video and audio files used for testing purposes.
   # Downloaded on demand when needed.
@@ -112,9 +112,6 @@ deps_os = {
 
     "third_party/android_testrunner":
       Var("chromium_trunk") + "/src/third_party/android_testrunner@" + Var("chromium_revision"),
-
-    "third_party/WebKit/Tools/Scripts":
-      From("chromium_deps", "src/third_party/WebKit/Tools/Scripts"),
   },
 }
 
