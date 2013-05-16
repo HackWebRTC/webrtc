@@ -19,7 +19,6 @@
 #include "webrtc/video_engine/new_include/video_receive_stream.h"
 #include "webrtc/video_engine/new_include/video_send_stream.h"
 
-
 namespace webrtc {
 namespace newapi {
 
@@ -51,7 +50,7 @@ struct VideoEngineConfig {
 // estimates etc.
 class VideoCall {
  public:
-  virtual void GetVideoCodecs(std::vector<VideoCodec>* codecs) = 0;
+  virtual std::vector<VideoCodec> GetVideoCodecs() = 0;
 
   virtual void GetDefaultSendConfig(VideoSendStreamConfig* config) = 0;
 
@@ -82,7 +81,6 @@ class VideoCall {
   // differ from the actual receive bitrate.
   virtual uint32_t ReceiveBitrateEstimate() = 0;
 
- protected:
   virtual ~VideoCall() {}
 };
 
@@ -91,11 +89,9 @@ class VideoCall {
 class VideoEngine {
  public:
   static VideoEngine* Create(const VideoEngineConfig& engine_config);
+  virtual ~VideoEngine() {}
 
   virtual VideoCall* CreateCall(Transport* send_transport) = 0;
-
- protected:
-  virtual ~VideoEngine() {}
 };
 
 }  // namespace newapi
