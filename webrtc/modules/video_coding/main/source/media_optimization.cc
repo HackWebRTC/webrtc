@@ -457,7 +457,7 @@ void VCMMediaOptimization::UpdateSentBitrate(int64_t now_ms) {
     framesize_sum += it->size_bytes;
   }
   float denom = static_cast<float>(
-      now_ms - _encodedFrameSamples.back().time_complete_ms);
+      now_ms - _encodedFrameSamples.front().time_complete_ms);
   if (denom >= 1.0f) {
     _avgSentBitRateBps = static_cast<uint32_t>(framesize_sum * 8 * 1000 /
                                                denom + 0.5f);
