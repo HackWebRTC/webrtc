@@ -104,13 +104,6 @@ int ViERenderImpl::AddRenderer(const int render_id, void* window,
                "top: %f, right: %f, bottom: %f)",
                __FUNCTION__, render_id, window, z_order, left, top, right,
                bottom);
-  if (!shared_data_->Initialized()) {
-    shared_data_->SetLastError(kViENotInitialized);
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(shared_data_->instance_id()),
-                 "%s - ViE instance %d not initialized", __FUNCTION__,
-                 shared_data_->instance_id());
-    return -1;
-  }
   {
     ViERenderManagerScoped rs(*(shared_data_->render_manager()));
     if (rs.Renderer(render_id)) {
@@ -163,14 +156,6 @@ int ViERenderImpl::AddRenderer(const int render_id, void* window,
 int ViERenderImpl::RemoveRenderer(const int render_id) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(shared_data_->instance_id()),
                "%s(render_id: %d)", __FUNCTION__, render_id);
-  if (!shared_data_->Initialized()) {
-    shared_data_->SetLastError(kViENotInitialized);
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(shared_data_->instance_id()),
-                 "%s - ViE instance %d not initialized", __FUNCTION__,
-                 shared_data_->instance_id());
-    return -1;
-  }
-
   ViERenderer* renderer = NULL;
   {
     ViERenderManagerScoped rs(*(shared_data_->render_manager()));
@@ -346,13 +331,6 @@ int ViERenderImpl::AddRenderer(const int render_id,
                  "%s: Unsupported video frame format requested",
                  __FUNCTION__, render_id);
     shared_data_->SetLastError(kViERenderInvalidFrameFormat);
-    return -1;
-  }
-  if (!shared_data_->Initialized()) {
-    shared_data_->SetLastError(kViENotInitialized);
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(shared_data_->instance_id()),
-                 "%s - ViE instance %d not initialized", __FUNCTION__,
-                 shared_data_->instance_id());
     return -1;
   }
   {

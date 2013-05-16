@@ -933,22 +933,6 @@ int ViERTP_RTCPImpl::GetEstimatedReceiveBandwidth(
   return 0;
 }
 
-int ViERTP_RTCPImpl::SetOverUseDetectorOptions(
-    const OverUseDetectorOptions& options) const {
-  if (!shared_data_->Initialized()) {
-    shared_data_->SetLastError(kViENotInitialized);
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(shared_data_->instance_id()),
-                 "%s - ViE instance %d not initialized", __FUNCTION__,
-                 shared_data_->instance_id());
-    return -1;
-  }
-  // Lock the channel manager to avoid creating a channel with
-  // "undefined" bwe settings (atomic copy).
-  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
-  shared_data_->SetOverUseDetectorOptions(options);
-  return 0;
-}
-
 int ViERTP_RTCPImpl::StartRTPDump(const int video_channel,
                                   const char file_nameUTF8[1024],
                                   RTPDirections direction) {
