@@ -43,6 +43,7 @@ struct RTPHeader
 struct RTPHeaderExtension
 {
     int32_t  transmissionTimeOffset;
+    uint32_t absoluteSendTime;
 };
 
 struct RTPAudioHeader

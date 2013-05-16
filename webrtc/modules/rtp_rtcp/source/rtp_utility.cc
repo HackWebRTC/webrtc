@@ -355,6 +355,9 @@ bool RTPHeaderParser::Parse(WebRtcRTPHeader& parsedPacket,
   // is zero.
   parsedPacket.extension.transmissionTimeOffset = 0;
 
+  // May not be present in packet.
+  parsedPacket.extension.absoluteSendTime = 0;
+
   if (X) {
     /* RTP header extension, RFC 3550.
      0                   1                   2                   3
@@ -464,6 +467,24 @@ void RTPHeaderParser::ParseOneByteExtensionHeader(
         // const uint8_t level = (*ptr & 0x7f);
         // DEBUG_PRINT("RTP_AUDIO_LEVEL_UNIQUE_ID: ID=%u, len=%u, V=%u,
         // level=%u", ID, len, V, level);
+        break;
+      }
+      case kRtpExtensionAbsoluteSendTime: {
+        if (len != 2) {
+          WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
+                       "Incorrect absolute send time len: %d", len);
+          return;
+        }
+        //  0                   1                   2                   3
+        //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        // |  ID   | len=2 |              absolute send time               |
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+        uint32_t absoluteSendTime = *ptr++ << 16;
+        absoluteSendTime += *ptr++ << 8;
+        absoluteSendTime += *ptr++;
+        parsedPacket.extension.absoluteSendTime = absoluteSendTime;
         break;
       }
       default: {

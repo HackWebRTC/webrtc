@@ -136,6 +136,8 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   // RTP header extension
   int32_t SetTransmissionTimeOffset(
       const int32_t transmission_time_offset);
+  int32_t SetAbsoluteSendTime(
+      const uint32_t absolute_send_time);
 
   int32_t RegisterRtpHeaderExtension(const RTPExtensionType type,
                                      const uint8_t id);
@@ -148,11 +150,17 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
 
   uint8_t BuildTransmissionTimeOffsetExtension(
       uint8_t *data_buffer) const;
+  uint8_t BuildAbsoluteSendTimeExtension(
+      uint8_t* data_buffer) const;
 
   bool UpdateTransmissionTimeOffset(uint8_t *rtp_packet,
                                     const uint16_t rtp_packet_length,
                                     const WebRtcRTPHeader &rtp_header,
                                     const int64_t time_diff_ms) const;
+  bool UpdateAbsoluteSendTime(uint8_t *rtp_packet,
+                              const uint16_t rtp_packet_length,
+                              const WebRtcRTPHeader &rtp_header,
+                              const int64_t now_ms) const;
 
   void TimeToSendPacket(uint16_t sequence_number, int64_t capture_time_ms);
 
@@ -283,6 +291,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
 
   RtpHeaderExtensionMap rtp_header_extension_map_;
   int32_t transmission_time_offset_;
+  uint32_t absolute_send_time_;
 
   // NACK
   uint32_t nack_byte_count_times_[NACK_BYTECOUNT_SIZE];

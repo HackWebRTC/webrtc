@@ -26,13 +26,14 @@
 namespace webrtc {
 
 namespace {
-const int kId = 1;
-const int kTypeLength = kTransmissionTimeOffsetLength;
+const int kTransmissionTimeOffsetExtensionId = 1;
+const int kAbsoluteSendTimeExtensionId = 14;
 const int kPayload = 100;
 const uint32_t kTimestamp = 10;
 const uint16_t kSeqNum = 33;
 const int kTimeOffset = 22222;
 const int kMaxPacketLength = 1500;
+const uint32_t kAbsoluteSendTime = 0x00aabbcc;
 }  // namespace
 
 using testing::_;
@@ -60,12 +61,11 @@ class LoopbackTransportTest : public webrtc::Transport {
 class RtpSenderTest : public ::testing::Test {
  protected:
   RtpSenderTest()
-    : fake_clock_(123456),
+    : fake_clock_(123456789),
       mock_paced_sender_(),
       rtp_sender_(new RTPSender(0, false, &fake_clock_, &transport_, NULL,
                                 &mock_paced_sender_)),
-      kMarkerBit(true),
-      kType(kRtpExtensionTransmissionTimeOffset) {
+      kMarkerBit(true) {
     rtp_sender_->SetSequenceNumber(kSeqNum);
     EXPECT_CALL(mock_paced_sender_,
         SendPacket(_, _, _, _, _)).WillRepeatedly(testing::Return(true));
@@ -75,7 +75,6 @@ class RtpSenderTest : public ::testing::Test {
   scoped_ptr<RTPSender> rtp_sender_;
   LoopbackTransportTest transport_;
   const bool kMarkerBit;
-  RTPExtensionType kType;
   uint8_t packet_[kMaxPacketLength];
 
   void VerifyRTPHeaderCommon(const WebRtcRTPHeader& rtp_header) {
@@ -89,12 +88,44 @@ class RtpSenderTest : public ::testing::Test {
   }
 };
 
-TEST_F(RtpSenderTest, RegisterRtpHeaderExtension) {
+TEST_F(RtpSenderTest, RegisterRtpTransmissionTimeOffsetHeaderExtension) {
   EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
-  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kType, kId));
-  EXPECT_EQ(kRtpOneByteHeaderLength + kTypeLength,
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionTransmissionTimeOffset, kTransmissionTimeOffsetExtensionId));
+  EXPECT_EQ(kRtpOneByteHeaderLength + kTransmissionTimeOffsetLength,
             rtp_sender_->RtpHeaderExtensionTotalLength());
-  EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(kType));
+  EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
+      kRtpExtensionTransmissionTimeOffset));
+  EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
+}
+
+TEST_F(RtpSenderTest, RegisterRtpAbsoluteSendTimeHeaderExtension) {
+  EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId));
+  EXPECT_EQ(kRtpOneByteHeaderLength + kAbsoluteSendTimeLength,
+            rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
+      kRtpExtensionAbsoluteSendTime));
+  EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
+}
+
+TEST_F(RtpSenderTest, RegisterRtpHeaderExtensions) {
+  EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionTransmissionTimeOffset, kTransmissionTimeOffsetExtensionId));
+  EXPECT_EQ(kRtpOneByteHeaderLength + kTransmissionTimeOffsetLength,
+            rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId));
+  EXPECT_EQ(kRtpOneByteHeaderLength + kTransmissionTimeOffsetLength +
+      kAbsoluteSendTimeLength, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
+      kRtpExtensionTransmissionTimeOffset));
+  EXPECT_EQ(kRtpOneByteHeaderLength + kAbsoluteSendTimeLength,
+      rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
+      kRtpExtensionAbsoluteSendTime));
   EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
 }
 
@@ -110,7 +141,8 @@ TEST_F(RtpSenderTest, BuildRTPPacket) {
   webrtc::WebRtcRTPHeader rtp_header;
 
   RtpHeaderExtensionMap map;
-  map.Register(kType, kId);
+  map.Register(kRtpExtensionTransmissionTimeOffset,
+               kTransmissionTimeOffsetExtensionId);
   const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
 
   ASSERT_TRUE(valid_rtp_header);
@@ -118,11 +150,13 @@ TEST_F(RtpSenderTest, BuildRTPPacket) {
   VerifyRTPHeaderCommon(rtp_header);
   EXPECT_EQ(length, rtp_header.header.headerLength);
   EXPECT_EQ(0, rtp_header.extension.transmissionTimeOffset);
+  EXPECT_EQ(0u, rtp_header.extension.absoluteSendTime);
 }
 
 TEST_F(RtpSenderTest, BuildRTPPacketWithTransmissionOffsetExtension) {
   EXPECT_EQ(0, rtp_sender_->SetTransmissionTimeOffset(kTimeOffset));
-  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kType, kId));
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionTransmissionTimeOffset, kTransmissionTimeOffsetExtensionId));
 
   int32_t length = rtp_sender_->BuildRTPheader(packet_,
                                                kPayload,
@@ -135,7 +169,8 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithTransmissionOffsetExtension) {
   webrtc::WebRtcRTPHeader rtp_header;
 
   RtpHeaderExtensionMap map;
-  map.Register(kType, kId);
+  map.Register(kRtpExtensionTransmissionTimeOffset,
+               kTransmissionTimeOffsetExtensionId);
   const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
 
   ASSERT_TRUE(valid_rtp_header);
@@ -157,7 +192,8 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithTransmissionOffsetExtension) {
 TEST_F(RtpSenderTest, BuildRTPPacketWithNegativeTransmissionOffsetExtension) {
   const int kNegTimeOffset = -500;
   EXPECT_EQ(0, rtp_sender_->SetTransmissionTimeOffset(kNegTimeOffset));
-  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kType, kId));
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionTransmissionTimeOffset, kTransmissionTimeOffsetExtensionId));
 
   int32_t length = rtp_sender_->BuildRTPheader(packet_,
                                                kPayload,
@@ -170,7 +206,8 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithNegativeTransmissionOffsetExtension) {
   webrtc::WebRtcRTPHeader rtp_header;
 
   RtpHeaderExtensionMap map;
-  map.Register(kType, kId);
+  map.Register(kRtpExtensionTransmissionTimeOffset,
+               kTransmissionTimeOffsetExtensionId);
   const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
 
   ASSERT_TRUE(valid_rtp_header);
@@ -180,13 +217,93 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithNegativeTransmissionOffsetExtension) {
   EXPECT_EQ(kNegTimeOffset, rtp_header.extension.transmissionTimeOffset);
 }
 
-TEST_F(RtpSenderTest, TrafficSmoothingWithTimeOffset) {
+TEST_F(RtpSenderTest, BuildRTPPacketWithAbsoluteSendTimeExtension) {
+  EXPECT_EQ(0, rtp_sender_->SetAbsoluteSendTime(kAbsoluteSendTime));
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId));
+
+  int32_t length = rtp_sender_->BuildRTPheader(packet_,
+                                               kPayload,
+                                               kMarkerBit,
+                                               kTimestamp);
+  EXPECT_EQ(12 + rtp_sender_->RtpHeaderExtensionTotalLength(), length);
+
+  // Verify
+  webrtc::ModuleRTPUtility::RTPHeaderParser rtp_parser(packet_, length);
+  webrtc::WebRtcRTPHeader rtp_header;
+
+  RtpHeaderExtensionMap map;
+  map.Register(kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId);
+  const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
+
+  ASSERT_TRUE(valid_rtp_header);
+  ASSERT_FALSE(rtp_parser.RTCP());
+  VerifyRTPHeaderCommon(rtp_header);
+  EXPECT_EQ(length, rtp_header.header.headerLength);
+  EXPECT_EQ(kAbsoluteSendTime, rtp_header.extension.absoluteSendTime);
+
+  // Parse without map extension
+  webrtc::WebRtcRTPHeader rtp_header2;
+  const bool valid_rtp_header2 = rtp_parser.Parse(rtp_header2, NULL);
+
+  ASSERT_TRUE(valid_rtp_header2);
+  VerifyRTPHeaderCommon(rtp_header2);
+  EXPECT_EQ(length, rtp_header2.header.headerLength);
+  EXPECT_EQ(0u, rtp_header2.extension.absoluteSendTime);
+}
+
+TEST_F(RtpSenderTest, BuildRTPPacketWithHeaderExtensions) {
+  EXPECT_EQ(0, rtp_sender_->SetTransmissionTimeOffset(kTimeOffset));
+  EXPECT_EQ(0, rtp_sender_->SetAbsoluteSendTime(kAbsoluteSendTime));
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionTransmissionTimeOffset, kTransmissionTimeOffsetExtensionId));
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId));
+
+  int32_t length = rtp_sender_->BuildRTPheader(packet_,
+                                               kPayload,
+                                               kMarkerBit,
+                                               kTimestamp);
+  EXPECT_EQ(12 + rtp_sender_->RtpHeaderExtensionTotalLength(), length);
+
+  // Verify
+  webrtc::ModuleRTPUtility::RTPHeaderParser rtp_parser(packet_, length);
+  webrtc::WebRtcRTPHeader rtp_header;
+
+  RtpHeaderExtensionMap map;
+  map.Register(kRtpExtensionTransmissionTimeOffset,
+               kTransmissionTimeOffsetExtensionId);
+  map.Register(kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId);
+  const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
+
+  ASSERT_TRUE(valid_rtp_header);
+  ASSERT_FALSE(rtp_parser.RTCP());
+  VerifyRTPHeaderCommon(rtp_header);
+  EXPECT_EQ(length, rtp_header.header.headerLength);
+  EXPECT_EQ(kTimeOffset, rtp_header.extension.transmissionTimeOffset);
+  EXPECT_EQ(kAbsoluteSendTime, rtp_header.extension.absoluteSendTime);
+
+  // Parse without map extension
+  webrtc::WebRtcRTPHeader rtp_header2;
+  const bool valid_rtp_header2 = rtp_parser.Parse(rtp_header2, NULL);
+
+  ASSERT_TRUE(valid_rtp_header2);
+  VerifyRTPHeaderCommon(rtp_header2);
+  EXPECT_EQ(length, rtp_header2.header.headerLength);
+  EXPECT_EQ(0, rtp_header2.extension.transmissionTimeOffset);
+  EXPECT_EQ(0u, rtp_header2.extension.absoluteSendTime);
+}
+
+TEST_F(RtpSenderTest, TrafficSmoothingWithExtensions) {
   EXPECT_CALL(mock_paced_sender_,
               SendPacket(PacedSender::kNormalPriority, _, kSeqNum, _, _)).
                   WillOnce(testing::Return(false));
 
   rtp_sender_->SetStorePacketsStatus(true, 10);
-  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kType, kId));
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionTransmissionTimeOffset, kTransmissionTimeOffsetExtensionId));
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId));
   rtp_sender_->SetTargetSendBitrate(300000);
   int32_t rtp_length = rtp_sender_->BuildRTPheader(packet_,
                                                    kPayload,
@@ -217,12 +334,17 @@ TEST_F(RtpSenderTest, TrafficSmoothingWithTimeOffset) {
       transport_.last_sent_packet_, rtp_length);
   webrtc::WebRtcRTPHeader rtp_header;
   RtpHeaderExtensionMap map;
-  map.Register(kType, kId);
+  map.Register(kRtpExtensionTransmissionTimeOffset,
+               kTransmissionTimeOffsetExtensionId);
+  map.Register(kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId);
   const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
   ASSERT_TRUE(valid_rtp_header);
 
   // Verify transmission time offset.
   EXPECT_EQ(kStoredTimeInMs * 90, rtp_header.extension.transmissionTimeOffset);
+  uint64_t expected_send_time =
+      0x00fffffful & ((fake_clock_.TimeInMilliseconds() << 18) / 1000);
+  EXPECT_EQ(expected_send_time, rtp_header.extension.absoluteSendTime);
 }
 
 TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
@@ -231,7 +353,10 @@ TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
                   WillOnce(testing::Return(false));
 
   rtp_sender_->SetStorePacketsStatus(true, 10);
-  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kType, kId));
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionTransmissionTimeOffset, kTransmissionTimeOffsetExtensionId));
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId));
   rtp_sender_->SetTargetSendBitrate(300000);
   int32_t rtp_length = rtp_sender_->BuildRTPheader(packet_,
                                                    kPayload,
@@ -270,12 +395,17 @@ TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
       transport_.last_sent_packet_, rtp_length);
   webrtc::WebRtcRTPHeader rtp_header;
   RtpHeaderExtensionMap map;
-  map.Register(kType, kId);
+  map.Register(kRtpExtensionTransmissionTimeOffset,
+               kTransmissionTimeOffsetExtensionId);
+  map.Register(kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId);
   const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
   ASSERT_TRUE(valid_rtp_header);
 
   // Verify transmission time offset.
   EXPECT_EQ(kStoredTimeInMs * 90, rtp_header.extension.transmissionTimeOffset);
+  uint64_t expected_send_time =
+      0x00fffffful & ((fake_clock_.TimeInMilliseconds() << 18) / 1000);
+  EXPECT_EQ(expected_send_time, rtp_header.extension.absoluteSendTime);
 }
 
 TEST_F(RtpSenderTest, SendGenericVideo) {

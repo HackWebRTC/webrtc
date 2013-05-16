@@ -22,15 +22,26 @@ const uint16_t kRtpOneByteHeaderExtensionId = 0xBEDE;
 
 const size_t kRtpOneByteHeaderLength = 4;
 const size_t kTransmissionTimeOffsetLength = 4;
+const size_t kAbsoluteSendTimeLength = 4;
 
 struct HeaderExtension {
   HeaderExtension(RTPExtensionType extension_type)
     : type(extension_type),
       length(0) {
-     if (type == kRtpExtensionTransmissionTimeOffset) {
-       length = kTransmissionTimeOffsetLength;
-     }
-   }
+    // TODO(solenberg): Create handler classes for header extensions so we can
+    // get rid of switches like these as well as handling code spread out all
+    // over.
+    switch (type) {
+      case kRtpExtensionTransmissionTimeOffset:
+        length = kTransmissionTimeOffsetLength;
+        break;
+      case kRtpExtensionAbsoluteSendTime:
+        length = kAbsoluteSendTimeLength;
+        break;
+      default:
+        assert(false);
+    }
+  }
 
    const RTPExtensionType type;
    uint8_t length;
