@@ -38,8 +38,12 @@ void ReceivePackets(
 
 int main() {
   // TODO(marpan): Split this function into subroutines/helper functions.
-  enum { kMaxNumberMediaPackets = 48 };
-  enum { kMaxNumberFecPackets = 48 };
+  enum {
+    kMaxNumberMediaPackets = 48
+  };
+  enum {
+    kMaxNumberFecPackets = 48
+  };
 
   const uint32_t kNumMaskBytesL0 = 2;
   const uint32_t kNumMaskBytesL1 = 6;
@@ -48,7 +52,7 @@ int main() {
   const bool kUseUnequalProtection = true;
 
   // FEC mask types.
-  const FecMaskType kMaskTypes[] = {kFecMaskRandom, kFecMaskBursty};
+  const FecMaskType kMaskTypes[] = { kFecMaskRandom, kFecMaskBursty };
   const int kNumFecMaskTypes = sizeof(kMaskTypes) / sizeof(*kMaskTypes);
 
   // TODO(pbos): Fix this. Hack to prevent a warning
@@ -76,8 +80,8 @@ int main() {
 
   ForwardErrorCorrection::Packet* mediaPacket = NULL;
   // Running over only one loss rate to limit execution time.
-  const float lossRate[] = {0.5f};
-  const uint32_t lossRateSize = sizeof(lossRate)/sizeof(*lossRate);
+  const float lossRate[] = { 0.5f };
+  const uint32_t lossRateSize = sizeof(lossRate) / sizeof(*lossRate);
   const float reorderRate = 0.1f;
   const float duplicateRate = 0.1f;
 
@@ -101,40 +105,35 @@ int main() {
 
   // Loop over the mask types: random and bursty.
   for (int mask_type_idx = 0; mask_type_idx < kNumFecMaskTypes;
-      ++mask_type_idx) {
+       ++mask_type_idx) {
 
-    for (uint32_t lossRateIdx = 0; lossRateIdx < lossRateSize;
-        ++lossRateIdx) {
+    for (uint32_t lossRateIdx = 0; lossRateIdx < lossRateSize; ++lossRateIdx) {
 
       printf("Loss rate: %.2f, Mask type %d \n", lossRate[lossRateIdx],
              mask_type_idx);
 
       const uint32_t packetMaskMax = kMaxMediaPackets[mask_type_idx];
-      uint8_t* packetMask =
-          new uint8_t[packetMaskMax * kNumMaskBytesL1];
+      uint8_t* packetMask = new uint8_t[packetMaskMax * kNumMaskBytesL1];
 
       FecMaskType fec_mask_type = kMaskTypes[mask_type_idx];
 
-      for (uint32_t numMediaPackets = 1;
-          numMediaPackets <= packetMaskMax;
-          numMediaPackets++) {
+      for (uint32_t numMediaPackets = 1; numMediaPackets <= packetMaskMax;
+           numMediaPackets++) {
         internal::PacketMaskTable mask_table(fec_mask_type, numMediaPackets);
 
         for (uint32_t numFecPackets = 1;
-            numFecPackets <= numMediaPackets &&
-            numFecPackets <= packetMaskMax;
-            numFecPackets++) {
+             numFecPackets <= numMediaPackets && numFecPackets <= packetMaskMax;
+             numFecPackets++) {
 
           // Loop over numImpPackets: usually <= (0.3*numMediaPackets).
           // For this test we check up to ~ (0.5*numMediaPackets).
           uint32_t maxNumImpPackets = numMediaPackets / 2 + 1;
-          for (uint32_t numImpPackets = 0;
-              numImpPackets <= maxNumImpPackets &&
-              numImpPackets <= packetMaskMax;
-              numImpPackets++) {
+          for (uint32_t numImpPackets = 0; numImpPackets <= maxNumImpPackets &&
+                                               numImpPackets <= packetMaskMax;
+               numImpPackets++) {
 
-            uint8_t protectionFactor = static_cast<uint8_t>
-            (numFecPackets * 255 / numMediaPackets);
+            uint8_t protectionFactor =
+                static_cast<uint8_t>(numFecPackets * 255 / numMediaPackets);
 
             const uint32_t maskBytesPerFecPacket =
                 (numMediaPackets > 16) ? kNumMaskBytesL1 : kNumMaskBytesL0;
@@ -142,18 +141,15 @@ int main() {
             memset(packetMask, 0, numMediaPackets * maskBytesPerFecPacket);
 
             // Transfer packet masks from bit-mask to byte-mask.
-            internal::GeneratePacketMasks(numMediaPackets,
-                                          numFecPackets,
-                                          numImpPackets,
-                                          kUseUnequalProtection,
-                                          mask_table,
-                                          packetMask);
+            internal::GeneratePacketMasks(numMediaPackets, numFecPackets,
+                                          numImpPackets, kUseUnequalProtection,
+                                          mask_table, packetMask);
 
 #ifdef VERBOSE_OUTPUT
             printf("%u media packets, %u FEC packets, %u numImpPackets, "
-                "loss rate = %.2f \n",
-                numMediaPackets, numFecPackets, numImpPackets,
-                lossRate[lossRateIdx]);
+                   "loss rate = %.2f \n",
+                   numMediaPackets, numFecPackets, numImpPackets,
+                   lossRate[lossRateIdx]);
             printf("Packet mask matrix \n");
 #endif
 
@@ -199,13 +195,13 @@ int main() {
             }
 
             // Construct media packets.
-            for (uint32_t i = 0; i < numMediaPackets; ++i)  {
+            for (uint32_t i = 0; i < numMediaPackets; ++i) {
               mediaPacket = new ForwardErrorCorrection::Packet;
               mediaPacketList.push_back(mediaPacket);
-              mediaPacket->length =
-                  static_cast<uint16_t>((static_cast<float>(rand()) /
-                      RAND_MAX) * (IP_PACKET_SIZE - 12 -
-                          28 - ForwardErrorCorrection::PacketOverhead()));
+              mediaPacket->length = static_cast<uint16_t>(
+                  (static_cast<float>(rand()) / RAND_MAX) *
+                  (IP_PACKET_SIZE - 12 - 28 -
+                   ForwardErrorCorrection::PacketOverhead()));
               if (mediaPacket->length < 12) {
                 mediaPacket->length = 12;
               }
@@ -236,9 +232,8 @@ int main() {
               ModuleRTPUtility::AssignUWord32ToBuffer(&mediaPacket->data[8],
                                                       ssrc);
               // Generate random values for payload
-              for (int32_t j = 12; j < mediaPacket->length; ++j)  {
-                mediaPacket->data[j] =
-                    static_cast<uint8_t> (rand() % 256);
+              for (int32_t j = 12; j < mediaPacket->length; ++j) {
+                mediaPacket->data[j] = static_cast<uint8_t>(rand() % 256);
               }
               seqNum++;
             }
@@ -253,43 +248,42 @@ int main() {
 
             if (fecPacketList.size() != numFecPackets) {
               printf("Error: we requested %u FEC packets, "
-                  "but GenerateFEC() produced %u\n",
-                  numFecPackets,
-                  static_cast<uint32_t>(fecPacketList.size()));
+                     "but GenerateFEC() produced %u\n",
+                     numFecPackets,
+                     static_cast<uint32_t>(fecPacketList.size()));
               return -1;
             }
             memset(mediaLossMask, 0, sizeof(mediaLossMask));
-            ForwardErrorCorrection::PacketList::iterator
-                mediaPacketListItem = mediaPacketList.begin();
+            ForwardErrorCorrection::PacketList::iterator mediaPacketListItem =
+                mediaPacketList.begin();
             ForwardErrorCorrection::ReceivedPacket* receivedPacket;
             uint32_t mediaPacketIdx = 0;
 
             while (mediaPacketListItem != mediaPacketList.end()) {
               mediaPacket = *mediaPacketListItem;
               // We want a value between 0 and 1.
-              const float lossRandomVariable = (static_cast<float>(rand()) /
-                  (RAND_MAX));
+              const float lossRandomVariable =
+                  (static_cast<float>(rand()) / (RAND_MAX));
 
               if (lossRandomVariable >= lossRate[lossRateIdx]) {
                 mediaLossMask[mediaPacketIdx] = 1;
-                receivedPacket =
-                    new ForwardErrorCorrection::ReceivedPacket;
+                receivedPacket = new ForwardErrorCorrection::ReceivedPacket;
                 receivedPacket->pkt = new ForwardErrorCorrection::Packet;
                 receivedPacketList.push_back(receivedPacket);
 
                 receivedPacket->pkt->length = mediaPacket->length;
                 memcpy(receivedPacket->pkt->data, mediaPacket->data,
                        mediaPacket->length);
-                receivedPacket->seqNum =
+                receivedPacket->seq_num =
                     ModuleRTPUtility::BufferToUWord16(&mediaPacket->data[2]);
-                receivedPacket->isFec = false;
+                receivedPacket->is_fec = false;
               }
               mediaPacketIdx++;
               ++mediaPacketListItem;
             }
             memset(fecLossMask, 0, sizeof(fecLossMask));
-            ForwardErrorCorrection::PacketList::iterator
-                fecPacketListItem = fecPacketList.begin();
+            ForwardErrorCorrection::PacketList::iterator fecPacketListItem =
+                fecPacketList.begin();
             ForwardErrorCorrection::Packet* fecPacket;
             uint32_t fecPacketIdx = 0;
             while (fecPacketListItem != fecPacketList.end()) {
@@ -298,8 +292,7 @@ int main() {
                   (static_cast<float>(rand()) / (RAND_MAX));
               if (lossRandomVariable >= lossRate[lossRateIdx]) {
                 fecLossMask[fecPacketIdx] = 1;
-                receivedPacket =
-                    new ForwardErrorCorrection::ReceivedPacket;
+                receivedPacket = new ForwardErrorCorrection::ReceivedPacket;
                 receivedPacket->pkt = new ForwardErrorCorrection::Packet;
 
                 receivedPacketList.push_back(receivedPacket);
@@ -308,8 +301,8 @@ int main() {
                 memcpy(receivedPacket->pkt->data, fecPacket->data,
                        fecPacket->length);
 
-                receivedPacket->seqNum = seqNum;
-                receivedPacket->isFec = true;
+                receivedPacket->seq_num = seqNum;
+                receivedPacket->is_fec = true;
                 receivedPacket->ssrc = ssrc;
 
                 fecMaskList.push_back(fecPacketMasks[fecPacketIdx]);
@@ -352,7 +345,7 @@ int main() {
                 // Recovery possible. Restart search.
                 mediaLossMask[recoveryPosition] = 1;
                 fecMaskIt = fecMaskList.begin();
-              } else if (hammingDist == 0)  {
+              } else if (hammingDist == 0) {
                 // FEC packet cannot provide further recovery.
                 fecMaskList.erase(itemToDelete);
               }
@@ -367,9 +360,9 @@ int main() {
             // For error-checking frame completion.
             bool fecPacketReceived = false;
             while (!receivedPacketList.empty()) {
-              uint32_t numPacketsToDecode = static_cast<uint32_t>
-                  ((static_cast<float>(rand()) / RAND_MAX) *
-                  receivedPacketList.size() + 0.5);
+              uint32_t numPacketsToDecode = static_cast<uint32_t>(
+                  (static_cast<float>(rand()) / RAND_MAX) *
+                      receivedPacketList.size() + 0.5);
               if (numPacketsToDecode < 1) {
                 numPacketsToDecode = 1;
               }
@@ -378,17 +371,16 @@ int main() {
 
               if (fecPacketReceived == false) {
                 ForwardErrorCorrection::ReceivedPacketList::iterator
-                    toDecodeIt = toDecodeList.begin();
+                toDecodeIt = toDecodeList.begin();
                 while (toDecodeIt != toDecodeList.end()) {
                   receivedPacket = *toDecodeIt;
-                  if (receivedPacket->isFec) {
+                  if (receivedPacket->is_fec) {
                     fecPacketReceived = true;
                   }
                   ++toDecodeIt;
                 }
               }
-              if (fec.DecodeFEC(&toDecodeList, &recoveredPacketList)
-                  != 0) {
+              if (fec.DecodeFEC(&toDecodeList, &recoveredPacketList) != 0) {
                 printf("Error: DecodeFEC() failed\n");
                 return -1;
               }
@@ -403,7 +395,7 @@ int main() {
               if (mediaLossMask[mediaPacketIdx] == 1) {
                 // Should have recovered this packet.
                 ForwardErrorCorrection::RecoveredPacketList::iterator
-                    recoveredPacketListItem = recoveredPacketList.begin();
+                recoveredPacketListItem = recoveredPacketList.begin();
 
                 if (recoveredPacketListItem == recoveredPacketList.end()) {
                   printf("Error: insufficient number of recovered packets.\n");
@@ -415,13 +407,13 @@ int main() {
 
                 if (recoveredPacket->pkt->length != mediaPacket->length) {
                   printf("Error: recovered packet length not identical to "
-                      "original media packet\n");
+                         "original media packet\n");
                   return -1;
                 }
                 if (memcmp(recoveredPacket->pkt->data, mediaPacket->data,
                            mediaPacket->length) != 0) {
                   printf("Error: recovered packet payload not identical to "
-                      "original media packet\n");
+                         "original media packet\n");
                   return -1;
                 }
                 delete recoveredPacket;
@@ -455,7 +447,7 @@ int main() {
             // Delete received packets we didn't pass to DecodeFEC(), due to
             // early frame completion.
             ForwardErrorCorrection::ReceivedPacketList::iterator
-                receivedPacketIt = receivedPacketList.begin();
+            receivedPacketIt = receivedPacketList.begin();
             while (receivedPacketIt != receivedPacketList.end()) {
               receivedPacket = *receivedPacketIt;
               delete receivedPacket;
@@ -469,11 +461,11 @@ int main() {
             }
             timeStamp += 90000 / 30;
           }  // loop over numImpPackets
-        }  // loop over FecPackets
-      }  // loop over numMediaPackets
-      delete [] packetMask;
+        }    // loop over FecPackets
+      }      // loop over numMediaPackets
+      delete[] packetMask;
     }  // loop over loss rates
-  }  // loop over mask types
+  }    // loop over mask types
 
   // Have DecodeFEC free allocated memory.
   fec.ResetState(&recoveredPacketList);
