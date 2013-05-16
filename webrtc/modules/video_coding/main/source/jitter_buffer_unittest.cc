@@ -1674,6 +1674,32 @@ TEST_F(TestJitterBufferNack, UseNackToRecoverFirstKeyFrame) {
   EXPECT_EQ(packet.seqNum, list[0]);
 }
 
+TEST_F(TestJitterBufferNack, UseNackToRecoverFirstKeyFrameSecondInQueue) {
+  VCMPacket packet;
+  stream_generator_->Init(0, 0, clock_->TimeInMilliseconds());
+  // First frame is delta.
+  stream_generator_->GenerateFrame(kVideoFrameDelta, 3, 0,
+                                   clock_->TimeInMilliseconds());
+  EXPECT_EQ(kFirstPacket, InsertPacketAndPop(0));
+  // Drop second packet in frame.
+  ASSERT_TRUE(stream_generator_->PopPacket(&packet, 0));
+  EXPECT_EQ(kIncomplete, InsertPacketAndPop(0));
+  // Second frame is key.
+  stream_generator_->GenerateFrame(kVideoFrameKey, 3, 0,
+                                   clock_->TimeInMilliseconds() + 10);
+  EXPECT_EQ(kFirstPacket, InsertPacketAndPop(0));
+  // Drop second packet in frame.
+  EXPECT_EQ(kIncomplete, InsertPacketAndPop(1));
+  EXPECT_FALSE(DecodeCompleteFrame());
+  uint16_t nack_list_size = 0;
+  bool extended = false;
+  uint16_t* list = jitter_buffer_->GetNackList(&nack_list_size, &extended);
+  EXPECT_EQ(1, nack_list_size);
+  ASSERT_TRUE(list != NULL);
+  stream_generator_->GetPacket(&packet, 0);
+  EXPECT_EQ(packet.seqNum, list[0]);
+}
+
 TEST_F(TestJitterBufferNack, NormalOperation) {
   EXPECT_EQ(kNack, jitter_buffer_->nack_mode());
   jitter_buffer_->DecodeWithErrors(true);

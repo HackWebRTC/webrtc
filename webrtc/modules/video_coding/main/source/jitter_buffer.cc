@@ -844,6 +844,9 @@ uint16_t VCMJitterBuffer::EstimatedLowSequenceNumber(
   assert(frame.GetLowSeqNum() >= 0);
   if (frame.HaveFirstPacket())
     return frame.GetLowSeqNum();
+
+  // This estimate is not accurate if more than one packet with lower sequence
+  // number is lost.
   return frame.GetLowSeqNum() - 1;
 }
 
@@ -895,6 +898,8 @@ uint16_t* VCMJitterBuffer::GetNackList(uint16_t* nack_list_size,
       } else {
         // Skip to the last key frame. If it's incomplete we will start
         // NACKing it.
+        // Note that the estimated low sequence number is correct for VP8
+        // streams because only the first packet of a key frame is marked.
         last_decoded_state_.Reset();
         DropPacketsFromNackList(EstimatedLowSequenceNumber(**rit));
       }
@@ -1129,6 +1134,8 @@ bool VCMJitterBuffer::RecycleFramesUntilKeyFrame() {
     if (it != frame_list_.end() && (*it)->FrameType() == kVideoFrameKey) {
       // Reset last decoded state to make sure the next frame decoded is a key
       // frame, and start NACKing from here.
+      // Note that the estimated low sequence number is correct for VP8
+      // streams because only the first packet of a key frame is marked.
       last_decoded_state_.Reset();
       DropPacketsFromNackList(EstimatedLowSequenceNumber(**it));
       return true;
