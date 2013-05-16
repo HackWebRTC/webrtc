@@ -881,6 +881,9 @@ uint16_t* VCMJitterBuffer::GetNackList(uint16_t* nack_list_size,
     if (non_continuous_incomplete_duration > 90 * max_incomplete_time_ms_) {
       TRACE_EVENT_INSTANT1("webrtc", "JB::NonContinuousOrIncompleteDuration",
                            "duration", non_continuous_incomplete_duration);
+      LOG_F(LS_INFO) << "Too long non-decodable duration: " <<
+          non_continuous_incomplete_duration << " > " <<
+          90 * max_incomplete_time_ms_;
       FrameList::reverse_iterator rit = find_if(frame_list_.rbegin(),
                                                 frame_list_.rend(),
                                                 KeyFrameCriteria());
