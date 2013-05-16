@@ -325,26 +325,22 @@ VideoCodingModuleImpl::RegisterSendCodec(const VideoCodec* sendCodec,
                                          uint32_t maxPayloadSize)
 {
     CriticalSectionScoped cs(_sendCritSect);
-    if (sendCodec == NULL)
-    {
+    if (sendCodec == NULL) {
         return VCM_PARAMETER_ERROR;
     }
-    bool ret = _codecDataBase.RegisterSendCodec(sendCodec, numberOfCores,
-                                                maxPayloadSize);
-    if (!ret)
-    {
-        return -1;
-    }
 
-    _encoder = _codecDataBase.GetEncoder(sendCodec, &_encodedFrameCallback);
-    if (_encoder == NULL)
-    {
+    bool ret = _codecDataBase.SetSendCodec(sendCodec, numberOfCores,
+                                           maxPayloadSize,
+                                           &_encodedFrameCallback);
+    if (!ret) {
         WEBRTC_TRACE(webrtc::kTraceError,
                      webrtc::kTraceVideoCoding,
                      VCMId(_id),
                      "Failed to initialize encoder");
         return VCM_CODEC_ERROR;
     }
+
+    _encoder = _codecDataBase.GetEncoder();
     _sendCodecType = sendCodec->codecType;
     int numLayers = (_sendCodecType != kVideoCodecVP8) ? 1 :
                         sendCodec->codecSpecific.VP8.numberOfTemporalLayers;
