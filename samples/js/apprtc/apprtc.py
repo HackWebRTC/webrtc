@@ -60,18 +60,6 @@ def make_loopback_answer(message):
   message = message.replace("a=ice-options:google-ice\\r\\n", "")
   return message
 
-def maybe_add_fake_crypto(message):
-  if message.find("a=crypto") == -1:
-    index = len(message)
-    crypto_line = ("a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:"
-                   "BAADBAADBAADBAADBAADBAADBAADBAADBAADBAAD\\r\\n")
-    # reverse find for multiple find and insert operations.
-    index = message.rfind("c=IN", 0, index)
-    while (index != -1):
-      message = message[:index] + crypto_line + message[index:]
-      index = message.rfind("c=IN", 0, index)
-  return message
-
 def handle_message(room, user, message):
   message_obj = json.loads(message)
   other_user = room.get_other_user(user)
@@ -87,10 +75,6 @@ def handle_message(room, user, message):
       # Special case the loopback scenario.
       if other_user == user:
         message = make_loopback_answer(message)
-      # Workaround Chrome bug.
-      # Insert a=crypto line into offer from FireFox.
-      # TODO(juberti): Remove this call.
-      message = maybe_add_fake_crypto(message)
     on_message(room, other_user, message)
 
 def get_saved_messages(client_id):
@@ -155,11 +139,8 @@ def make_pc_constraints(compat):
     constraints['optional'].append({'DtlsSrtpKeyAgreement': True})
   return constraints
 
-def make_offer_constraints(compat):
+def make_offer_constraints():
   constraints = { 'mandatory': {}, 'optional': [] }
-  # For interop with FireFox. Disable Data Channel in createOffer.
-  if compat.lower() == 'true':
-    constraints['mandatory']['MozDontOfferDataChannel'] = True
   return constraints
 
 def append_url_arguments(request, link):
@@ -383,7 +364,7 @@ class MainPage(webapp2.RequestHandler):
     token = create_channel(room, user, token_timeout)
     pc_config = make_pc_config(stun_server, turn_server, ts_pwd)
     pc_constraints = make_pc_constraints(compat)
-    offer_constraints = make_offer_constraints(compat)
+    offer_constraints = make_offer_constraints()
     media_constraints = make_media_constraints(media, min_re, max_re)
     template_values = {'token': token,
                        'me': user,

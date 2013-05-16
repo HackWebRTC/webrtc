@@ -206,10 +206,6 @@
   }
 
   function createPeerConnection() {    
-    // Force the use of a number IP STUN server for Firefox.
-    if (webrtcDetectedBrowser == "firefox") {
-      pc_config = {"iceServers":[{"url":"stun:23.21.150.121"}]};
-    }
     try {
       // Create an RTCPeerConnection via the polyfill (adapter.js).
       pc = new RTCPeerConnection(pc_config, pc_constraints);
@@ -246,14 +242,6 @@
 
   function doCall() {
     var constraints = {{ offer_constraints | safe }};
-    // temporary measure to remove Moz* constraints in Chrome
-    if (webrtcDetectedBrowser === "chrome") {
-      for (prop in constraints.mandatory) {
-        if (prop.indexOf("Moz") != -1) {
-          delete constraints.mandatory[prop];
-        }
-       }
-     }   
     constraints = mergeConstraints(constraints, sdpConstraints);
     console.log("Sending offer to peer, with constraints: \n" +
                 "  \"" + JSON.stringify(constraints) + "\".")
