@@ -102,6 +102,16 @@
         'frame_editing/frame_editing.cc',
       ],
     }, # frame_editing
+    {
+      'target_name': 'force_mic_volume_max',
+      'type': 'executable',
+      'dependencies': [
+        '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine_core',
+      ],
+      'sources': [
+        'force_mic_volume_max/force_mic_volume_max.cc',
+      ],
+    }, # force_mic_volume_max
   ],
   'conditions': [
     ['include_tests==1', {
