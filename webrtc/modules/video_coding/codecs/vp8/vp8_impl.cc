@@ -465,6 +465,7 @@ int VP8EncoderImpl::GetEncodedPartitions(const I420VideoFrame& input_image) {
     }
   }
   if (encoded_image_._length > 0) {
+    TRACE_COUNTER1("webrtc", "EncodedFrameSize", encoded_image_._length);
     encoded_image_._timeStamp = input_image.timestamp();
     encoded_image_.capture_time_ms_ = input_image.render_time_ms();
     encoded_image_._encodedHeight = raw_->h;

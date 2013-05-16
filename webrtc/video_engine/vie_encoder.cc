@@ -813,9 +813,6 @@ int32_t ViEEncoder::SendData(
     const RTPVideoHeader* rtp_video_hdr) {
   {
     CriticalSectionScoped cs(data_cs_.get());
-    TRACE_EVENT2("webrtc", "VE::SendData",
-                 "timestamp", time_stamp,
-                 "capture_time_ms", capture_time_ms);
     if (channels_dropping_delta_frames_ &&
         frame_type == webrtc::kVideoFrameKey) {
       WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideo,
