@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_engine/test/libvietest/include/tb_external_transport.h"
+#include "webrtc/video_engine/test/libvietest/include/tb_external_transport.h"
 
+#include <cassert>
 #include <math.h>
 #include <stdio.h> // printf
 #include <stdlib.h> // rand
-#include <cassert>
 
 #if defined(WEBRTC_LINUX) || defined(__linux__)
 #include <string.h>
@@ -22,11 +22,11 @@
 #include <cstring>
 #endif
 
-#include "system_wrappers/interface/critical_section_wrapper.h"
-#include "system_wrappers/interface/event_wrapper.h"
-#include "system_wrappers/interface/thread_wrapper.h"
-#include "system_wrappers/interface/tick_util.h"
-#include "video_engine/include/vie_network.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/video_engine/include/vie_network.h"
 
 #if defined(_WIN32)
 #pragma warning(disable: 4355) // 'this' : used in base member initializer list

@@ -8,25 +8,25 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_engine/vie_encoder.h"
+#include "webrtc/video_engine/vie_encoder.h"
 
 #include <cassert>
 
-#include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "modules/pacing/include/paced_sender.h"
-#include "modules/rtp_rtcp/interface/rtp_rtcp.h"
-#include "modules/utility/interface/process_thread.h"
-#include "modules/video_coding/codecs/interface/video_codec_interface.h"
-#include "modules/video_coding/main/interface/video_coding.h"
-#include "modules/video_coding/main/interface/video_coding_defines.h"
-#include "system_wrappers/interface/critical_section_wrapper.h"
-#include "system_wrappers/interface/logging.h"
-#include "system_wrappers/interface/tick_util.h"
-#include "system_wrappers/interface/trace.h"
-#include "system_wrappers/interface/trace_event.h"
-#include "video_engine/include/vie_codec.h"
-#include "video_engine/include/vie_image_process.h"
-#include "video_engine/vie_defines.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/pacing/include/paced_sender.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/utility/interface/process_thread.h"
+#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/logging.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
+#include "webrtc/video_engine/include/vie_codec.h"
+#include "webrtc/video_engine/include/vie_image_process.h"
+#include "webrtc/video_engine/vie_defines.h"
 
 namespace webrtc {
 

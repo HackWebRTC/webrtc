@@ -25,15 +25,6 @@
         'video_engine_core',
         'libvietest',
       ],
-      'include_dirs': [
-        'interface/',
-        'helpers/',
-        'primitives',
-        '../../include',
-        '../..',
-        '../../../modules/video_coding/codecs/interface',
-        '../../../common_video/interface',
-      ],
       'sources': [
         'interface/vie_autotest.h',
         'interface/vie_autotest_defines.h',

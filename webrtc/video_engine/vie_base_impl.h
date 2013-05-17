@@ -11,10 +11,10 @@
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_BASE_IMPL_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_BASE_IMPL_H_
 
-#include "video_engine/include/vie_base.h"
-#include "video_engine/vie_defines.h"
-#include "video_engine/vie_ref_count.h"
-#include "video_engine/vie_shared_data.h"
+#include "webrtc/video_engine/include/vie_base.h"
+#include "webrtc/video_engine/vie_defines.h"
+#include "webrtc/video_engine/vie_ref_count.h"
+#include "webrtc/video_engine/vie_shared_data.h"
 
 namespace webrtc {
 

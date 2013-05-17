@@ -15,10 +15,10 @@
 #include <utility>
 #include <vector>
 
-#include "modules/interface/module.h"
-#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
-#include "system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/modules/interface/module.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 

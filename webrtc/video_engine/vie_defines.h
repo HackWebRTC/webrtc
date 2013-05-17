@@ -11,7 +11,7 @@
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_DEFINES_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_DEFINES_H_
 
-#include "engine_configurations.h"  // NOLINT
+#include "webrtc/engine_configurations.h"
 
 // TODO(mflodman) Remove.
 #ifdef WEBRTC_ANDROID
@@ -22,9 +22,9 @@
 #include <stdio.h>  // NOLINT
 #include <stdlib.h>  // NOLINT
 #include <string.h>  // NOLINT
-#include <sys/types.h>  // NOLINT
 #include <sys/socket.h>  // NOLINT
 #include <sys/time.h>  // NOLINT
+#include <sys/types.h>  // NOLINT
 #include <time.h>  // NOLINT
 #endif
 

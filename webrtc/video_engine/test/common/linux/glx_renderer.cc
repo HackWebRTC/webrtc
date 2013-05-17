@@ -10,8 +10,8 @@
 
 #include "webrtc/video_engine/test/common/linux/glx_renderer.h"
 
-#include <X11/Xlib.h>
 #include <X11/Xatom.h>
+#include <X11/Xlib.h>
 
 #include <cassert>
 

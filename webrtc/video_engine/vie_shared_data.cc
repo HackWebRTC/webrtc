@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/utility/interface/process_thread.h"
-#include "system_wrappers/interface/cpu_info.h"
-#include "system_wrappers/interface/trace.h"
-#include "video_engine/vie_channel_manager.h"
-#include "video_engine/vie_defines.h"
-#include "video_engine/vie_input_manager.h"
-#include "video_engine/vie_render_manager.h"
-#include "video_engine/vie_shared_data.h"
+#include "webrtc/modules/utility/interface/process_thread.h"
+#include "webrtc/system_wrappers/interface/cpu_info.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/video_engine/vie_channel_manager.h"
+#include "webrtc/video_engine/vie_defines.h"
+#include "webrtc/video_engine/vie_input_manager.h"
+#include "webrtc/video_engine/vie_render_manager.h"
+#include "webrtc/video_engine/vie_shared_data.h"
 
 namespace webrtc {
 

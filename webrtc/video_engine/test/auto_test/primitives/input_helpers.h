@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-#include "gflags/gflags.h"
+#include "testing/gflags/include/gflags/gflags.h"
 
 namespace webrtc {
 

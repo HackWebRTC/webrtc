@@ -10,14 +10,14 @@
 
 #include <iostream>
 
-#include "engine_configurations.h"
-#include "video_engine/test/libvietest/include/tb_capture_device.h"
-#include "video_engine/test/libvietest/include/tb_external_transport.h"
-#include "video_engine/test/libvietest/include/tb_interfaces.h"
-#include "video_engine/test/libvietest/include/tb_video_channel.h"
-#include "test/testsupport/fileutils.h"
-#include "video_engine/test/auto_test/interface/vie_autotest.h"
-#include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
+#include "webrtc/engine_configurations.h"
+#include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/video_engine/test/auto_test/interface/vie_autotest.h"
+#include "webrtc/video_engine/test/auto_test/interface/vie_autotest_defines.h"
+#include "webrtc/video_engine/test/libvietest/include/tb_capture_device.h"
+#include "webrtc/video_engine/test/libvietest/include/tb_external_transport.h"
+#include "webrtc/video_engine/test/libvietest/include/tb_interfaces.h"
+#include "webrtc/video_engine/test/libvietest/include/tb_video_channel.h"
 
 class ViERtpObserver: public webrtc::ViERTPObserver
 {

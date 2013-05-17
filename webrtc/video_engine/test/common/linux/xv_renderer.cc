@@ -10,9 +10,9 @@
 
 #include "webrtc/video_engine/test/common/linux/xv_renderer.h"
 
-#include <sys/shm.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/Xvlib.h>
+#include <sys/shm.h>
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 

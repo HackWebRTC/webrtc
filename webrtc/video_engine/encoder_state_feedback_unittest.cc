@@ -12,8 +12,8 @@
 // This file includes unit tests for EncoderStateFeedback.
 #include "webrtc/video_engine/encoder_state_feedback.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include "testing/gmock/include/gmock/gmock.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/common.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"

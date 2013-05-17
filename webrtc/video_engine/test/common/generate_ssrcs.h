@@ -14,8 +14,8 @@
 #include <map>
 #include <vector>
 
-#include "webrtc/video_engine/new_include/video_send_stream.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/video_engine/new_include/video_send_stream.h"
 
 namespace webrtc {
 namespace test {

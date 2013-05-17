@@ -13,8 +13,8 @@
 
 #include "webrtc/common.h"
 #include "webrtc/engine_configurations.h"
-#include "webrtc/video_engine/vie_defines.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/video_engine/vie_defines.h"
 
 #include "webrtc/video_engine/vie_base_impl.h"
 

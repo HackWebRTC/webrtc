@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <gtest/gtest.h>
+#include "testing/gtest/include/gtest/gtest.h"
 
 #include <iostream>
 #include <map>
 
+#include "webrtc/typedefs.h"
 #include "webrtc/video_engine/new_include/video_engine.h"
 #include "webrtc/video_engine/test/common/direct_transport.h"
 #include "webrtc/video_engine/test/common/generate_ssrcs.h"
 #include "webrtc/video_engine/test/common/video_capturer.h"
 #include "webrtc/video_engine/test/common/video_renderer.h"
-#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

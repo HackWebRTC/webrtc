@@ -14,8 +14,8 @@
 #include <vector>
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/video_engine/new_include/video_send_stream.h"
 #include "webrtc/video_engine/new_include/video_receive_stream.h"
+#include "webrtc/video_engine/new_include/video_send_stream.h"
 
 namespace webrtc {
 

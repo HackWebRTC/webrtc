@@ -13,17 +13,17 @@
 
 #include <vector>
 
-#include "common_types.h"  // NOLINT
-#include "engine_configurations.h"  // NOLINT
+#include "webrtc/common_types.h"
+#include "webrtc/engine_configurations.h"
 #include "webrtc/modules/video_capture/include/video_capture.h"
-#include "modules/video_coding/codecs/interface/video_codec_interface.h"
-#include "modules/video_coding/main/interface/video_coding.h"
-#include "modules/video_processing/main/interface/video_processing.h"
-#include "system_wrappers/interface/scoped_ptr.h"
-#include "typedefs.h" // NOLINT
-#include "video_engine/include/vie_capture.h"
-#include "video_engine/vie_defines.h"
-#include "video_engine/vie_frame_provider_base.h"
+#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_processing/main/interface/video_processing.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/typedefs.h"
+#include "webrtc/video_engine/include/vie_capture.h"
+#include "webrtc/video_engine/vie_defines.h"
+#include "webrtc/video_engine/vie_frame_provider_base.h"
 
 namespace webrtc {
 

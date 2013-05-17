@@ -8,31 +8,31 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <android/log.h>
 #include <stdio.h>
 #include <string.h>
-#include <android/log.h>
 
-#include "org_webrtc_videoengineapp_vie_android_java_api.h"
+#include "webrtc/video_engine/test/android/jni/org_webrtc_videoengineapp_vie_android_java_api.h"
 
-#include "voe_base.h"
-#include "voe_codec.h"
-#include "voe_file.h"
-#include "voe_network.h"
-#include "voe_audio_processing.h"
-#include "voe_volume_control.h"
-#include "voe_hardware.h"
-#include "voe_rtp_rtcp.h"
+#include "webrtc/voice_engine/include/voe_audio_processing.h"
+#include "webrtc/voice_engine/include/voe_base.h"
+#include "webrtc/voice_engine/include/voe_codec.h"
+#include "webrtc/voice_engine/include/voe_file.h"
+#include "webrtc/voice_engine/include/voe_hardware.h"
+#include "webrtc/voice_engine/include/voe_network.h"
+#include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
+#include "webrtc/voice_engine/include/voe_volume_control.h"
 
-#include "vie_base.h"
-#include "vie_codec.h"
-#include "vie_capture.h"
-#include "vie_external_codec.h"
-#include "vie_network.h"
-#include "vie_render.h"
-#include "vie_rtp_rtcp.h"
+#include "webrtc/video_engine/include/vie_base.h"
+#include "webrtc/video_engine/include/vie_capture.h"
+#include "webrtc/video_engine/include/vie_codec.h"
+#include "webrtc/video_engine/include/vie_external_codec.h"
+#include "webrtc/video_engine/include/vie_network.h"
+#include "webrtc/video_engine/include/vie_render.h"
+#include "webrtc/video_engine/include/vie_rtp_rtcp.h"
 
-#include "common_types.h"
-#include "android_media_codec_decoder.h"
+#include "webrtc/common_types.h"
+#include "webrtc/video_engine/test/android/jni/android_media_codec_decoder.h"
 
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/channel_transport/include/channel_transport.h"

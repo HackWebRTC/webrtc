@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_engine/vie_sync_module.h"
+#include "webrtc/video_engine/vie_sync_module.h"
 
-#include "modules/rtp_rtcp/interface/rtp_rtcp.h"
-#include "modules/video_coding/main/interface/video_coding.h"
-#include "system_wrappers/interface/critical_section_wrapper.h"
-#include "system_wrappers/interface/trace.h"
-#include "system_wrappers/interface/trace_event.h"
-#include "video_engine/stream_synchronization.h"
-#include "video_engine/vie_channel.h"
-#include "voice_engine/include/voe_video_sync.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
+#include "webrtc/video_engine/stream_synchronization.h"
+#include "webrtc/video_engine/vie_channel.h"
+#include "webrtc/voice_engine/include/voe_video_sync.h"
 
 namespace webrtc {
 

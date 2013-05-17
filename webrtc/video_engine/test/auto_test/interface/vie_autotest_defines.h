@@ -21,8 +21,8 @@
 #include <stdio.h>
 #include <string>
 
-#include "engine_configurations.h"
-#include "gtest/gtest.h"
+#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/engine_configurations.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 
 #if defined(_WIN32)
@@ -30,10 +30,10 @@
 #elif defined (WEBRTC_ANDROID)
 #include <android/log.h>
 #elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-#include <string.h>
-#include <time.h>
-#include <sys/time.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/time.h>
+#include <time.h>
 #endif
 
 // Choose how to log

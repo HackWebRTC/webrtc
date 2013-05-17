@@ -34,16 +34,6 @@
         # system_wrappers
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
-      'include_dirs': [
-        'include',
-        '../common_video/interface',
-        '../modules/video_render/',
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          'include',
-        ],
-      },
       'sources': [
         # interface
         'include/vie_base.h',

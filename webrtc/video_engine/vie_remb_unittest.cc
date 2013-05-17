@@ -11,8 +11,8 @@
 
 // This file includes unit tests for ViERemb.
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include "testing/gmock/include/gmock/gmock.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
 #include <vector>
 

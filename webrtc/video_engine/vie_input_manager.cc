@@ -8,21 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_engine/vie_input_manager.h"
+#include "webrtc/video_engine/vie_input_manager.h"
 
 #include <cassert>
 
-#include "common_types.h"  // NOLINT
+#include "webrtc/common_types.h"
 #include "webrtc/modules/video_capture/include/video_capture_factory.h"
-#include "modules/video_coding/main/interface/video_coding.h"
-#include "modules/video_coding/main/interface/video_coding_defines.h"
-#include "system_wrappers/interface/critical_section_wrapper.h"
-#include "system_wrappers/interface/rw_lock_wrapper.h"
-#include "system_wrappers/interface/trace.h"
-#include "video_engine/include/vie_errors.h"
-#include "video_engine/vie_capturer.h"
-#include "video_engine/vie_defines.h"
-#include "video_engine/vie_file_player.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/video_engine/include/vie_errors.h"
+#include "webrtc/video_engine/vie_capturer.h"
+#include "webrtc/video_engine/vie_defines.h"
+#include "webrtc/video_engine/vie_file_player.h"
 
 namespace webrtc {
 

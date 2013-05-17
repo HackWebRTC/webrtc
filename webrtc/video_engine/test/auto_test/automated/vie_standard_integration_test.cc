@@ -15,8 +15,8 @@
 
 #include <cstdio>
 
-#include "gflags/gflags.h"
-#include "gtest/gtest.h"
+#include "testing/gflags/include/gflags/gflags.h"
+#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/test/testsupport/metrics/video_metrics.h"
 #include "webrtc/test/testsupport/metrics/video_metrics.h"
 #include "webrtc/video_engine/test/auto_test/automated/legacy_fixture.h"

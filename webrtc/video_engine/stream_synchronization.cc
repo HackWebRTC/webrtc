@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_engine/stream_synchronization.h"
+#include "webrtc/video_engine/stream_synchronization.h"
 
-#include <assert.h>
 #include <algorithm>
+#include <assert.h>
 #include <cmath>
 
-#include "system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 

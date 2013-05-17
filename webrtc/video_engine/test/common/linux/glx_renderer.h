@@ -11,8 +11,8 @@
 #ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_LINUX_GLX_RENDERER_H_
 #define WEBRTC_VIDEO_ENGINE_TEST_COMMON_LINUX_GLX_RENDERER_H_
 
-#include <X11/Xlib.h>
 #include <GL/glx.h>
+#include <X11/Xlib.h>
 
 #include "webrtc/video_engine/test/common/gl/gl_renderer.h"
 
