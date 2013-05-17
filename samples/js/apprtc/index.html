@@ -112,7 +112,7 @@
   var remoteStream;
   var channel;
   var channelReady = false;
-  var turnReady = false;
+  var turnDone = false;
   var pc;
   var socket;
   var initiator = {{ initiator }};
@@ -159,7 +159,7 @@
     for (var i in pc_config.iceServers) {
       if (pc_config.iceServers[i].url.substr(0, 5) == 'turn:') {
         turnExists = true;
-        turnReady = true;
+        turnDone = true;
         break;
       }
     }
@@ -179,8 +179,10 @@
         "url": "turn:" + turnServer.username + "@" + turnServer.turn,
         "credential": turnServer.password
       });
-      turnReady = true;
+    } else {
+      console.log("Request for TURN server failed.")
     }
+    turnDone = true;
   }
 
   function resetStatus() {
@@ -223,7 +225,7 @@
   }
 
   function maybeStart() {
-    if (!started && localStream && channelReady && turnReady) {
+    if (!started && localStream && channelReady && turnDone) {
       setStatus("Connecting...");
       console.log("Creating PeerConnection.");
       createPeerConnection();
