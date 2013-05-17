@@ -108,7 +108,12 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
                 currentCapability.height);
         parameters.setPreviewFormat(PIXEL_FORMAT);
         parameters.setPreviewFrameRate(currentCapability.maxFPS);
-        camera.setParameters(parameters);
+        try {
+            camera.setParameters(parameters);
+        } catch (RuntimeException e) {
+            Log.e(TAG, "setParameters failed", e);
+            return -1;
+        }
 
         int bufSize = width * height * pixelFormat.bitsPerPixel / 8;
         byte[] buffer = null;

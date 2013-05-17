@@ -129,9 +129,11 @@ public class VideoCaptureDeviceInfoAndroid {
         List<Size> sizes = parameters.getSupportedPreviewSizes();
         List<Integer> frameRates = parameters.getSupportedPreviewFrameRates();
         int maxFPS = 0;
-        for(Integer frameRate:frameRates) {
-            if(frameRate > maxFPS) {
-                maxFPS = frameRate;
+        if (frameRates != null) {
+            for(Integer frameRate:frameRates) {
+                if(frameRate > maxFPS) {
+                    maxFPS = frameRate;
+                }
             }
         }
 
