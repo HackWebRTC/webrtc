@@ -34,7 +34,6 @@
             'webrtc/test/metrics.gyp:*',
             'webrtc/test/test.gyp:*',
             'webrtc/tools/tools.gyp:*',
-            'webrtc/tools/force_mic_volume_max.gyp:*',
             'tools/e2e_quality/e2e_quality.gyp:*',
           ],
         }],

@@ -108,7 +108,7 @@
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/test/test.gyp:test_support_main',
-            '<(webrtc_root)/tools/tools.gyp:command_line_parser',
+            '<(webrtc_root)/tools/internal_tools.gyp:command_line_parser',
           ],
           'sources': [
             'vp8_sequence_coder.cc',
