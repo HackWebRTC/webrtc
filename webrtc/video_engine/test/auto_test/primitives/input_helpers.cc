@@ -16,7 +16,7 @@
 
 #include <algorithm>
 
-#include "testing/gflags/include/gflags/gflags.h"
+#include <gflags/gflags.h>
 
 namespace webrtc {
 

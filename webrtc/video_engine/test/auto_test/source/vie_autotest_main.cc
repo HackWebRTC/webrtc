@@ -10,7 +10,7 @@
 
 #include "webrtc/video_engine/test/auto_test/interface/vie_autotest_main.h"
 
-#include "testing/gflags/include/gflags/gflags.h"
+#include <gflags/gflags.h>
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/test/testsupport/fileutils.h"

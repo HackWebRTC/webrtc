@@ -15,7 +15,7 @@
 #ifndef WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_VIE_AUTOTEST_H_
 #define WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_VIE_AUTOTEST_H_
 
-#include "testing/gflags/include/gflags/gflags.h"
+#include <gflags/gflags.h>
 #include "webrtc/common_types.h"
 #include "webrtc/modules/video_render/include/video_render_defines.h"
 #include "webrtc/video_engine/include/vie_base.h"

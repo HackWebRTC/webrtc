@@ -10,7 +10,7 @@
 
 #include <ctime>
 
-#include "testing/gflags/include/gflags/gflags.h"
+#include <gflags/gflags.h>
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/test/libtest/include/bit_flip_encryption.h"
 #include "webrtc/test/libtest/include/random_encryption.h"

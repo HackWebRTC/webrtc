@@ -11,9 +11,11 @@
 #ifndef WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_VIE_AUTOTEST_LINUX_H_
 #define WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_VIE_AUTOTEST_LINUX_H_
 
+// Note(pbos): This MUST be included before the X11 headers
+#include "webrtc/video_engine/test/auto_test/interface/vie_autotest_window_manager_interface.h"
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include "webrtc/video_engine/test/auto_test/interface/vie_autotest_window_manager_interface.h"
 
 // Forward declaration
 
