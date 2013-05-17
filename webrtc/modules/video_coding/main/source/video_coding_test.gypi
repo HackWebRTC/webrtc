@@ -1,5 +1,4 @@
 # Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
-#
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
 # tree. An additional intellectual property rights grant can be found
@@ -58,7 +57,6 @@
         '../test/normal_test.cc',
         '../test/pcap_file_reader.cc',
         '../test/quality_modes_test.cc',
-        '../test/receiver_timing_tests.cc',
         '../test/rtp_file_reader.cc',
         '../test/rtp_player.cc',
         '../test/test_callbacks.cc',
@@ -108,6 +106,7 @@
         'session_info_unittest.cc',
         'stream_generator.cc',
         'stream_generator.h',
+        'timing_unittest.cc',
         'video_coding_robustness_unittest.cc',
         'video_coding_impl_unittest.cc',
         'qm_select_unittest.cc',

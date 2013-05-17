@@ -200,7 +200,7 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
   if (timing_error) {
     // Timing error => reset timing and flush the jitter buffer.
     jitter_buffer_.Flush();
-    timing_->Reset(clock_->TimeInMilliseconds());
+    timing_->Reset();
     return NULL;
   }
 

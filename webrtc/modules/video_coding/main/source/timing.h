@@ -33,7 +33,7 @@ public:
     ~VCMTiming();
 
     // Resets the timing to the initial state.
-    void Reset(int64_t nowMs = -1);
+    void Reset();
     void ResetDecodeTime();
 
     // The amount of time needed to render an image. Defaults to 10 ms.

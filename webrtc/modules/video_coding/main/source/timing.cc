@@ -57,17 +57,11 @@ VCMTiming::~VCMTiming()
 }
 
 void
-VCMTiming::Reset(int64_t nowMs /* = -1 */)
+VCMTiming::Reset()
 {
     CriticalSectionScoped cs(_critSect);
-    if (nowMs > -1)
-    {
-        _tsExtrapolator->Reset(nowMs);
-    }
-    else
-    {
-        _tsExtrapolator->Reset();
-    }
+
+    _tsExtrapolator->Reset();
     _codecTimer.Reset();
     _renderDelayMs = kDefaultRenderDelayMs;
     _minTotalDelayMs = 0;
