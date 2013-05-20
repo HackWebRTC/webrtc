@@ -200,7 +200,8 @@ int ViESender::SendRTCPPacket(int vie_id, const void* data, int len) {
   if (bytes_sent != send_packet_length) {
     WEBRTC_TRACE(
         webrtc::kTraceWarning, webrtc::kTraceVideo, channel_id_,
-        "ViESender::SendRTCPPacket - Transport failed to send RTCP packet");
+        "ViESender::SendRTCPPacket - Transport failed to send RTCP packet"
+        " (%d vs %d)", bytes_sent, send_packet_length);
   }
   return bytes_sent;
 }
