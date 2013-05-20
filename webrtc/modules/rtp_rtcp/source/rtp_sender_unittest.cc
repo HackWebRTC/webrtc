@@ -34,6 +34,9 @@ const uint16_t kSeqNum = 33;
 const int kTimeOffset = 22222;
 const int kMaxPacketLength = 1500;
 const uint32_t kAbsoluteSendTime = 0x00aabbcc;
+const uint8_t kAudioLevel = 0x5a;
+const uint8_t kAudioLevelExtensionId = 9;
+const int kAudioPayload = 103;
 }  // namespace
 
 using testing::_;
@@ -63,23 +66,31 @@ class RtpSenderTest : public ::testing::Test {
   RtpSenderTest()
     : fake_clock_(123456789),
       mock_paced_sender_(),
-      rtp_sender_(new RTPSender(0, false, &fake_clock_, &transport_, NULL,
-                                &mock_paced_sender_)),
+      rtp_sender_(),
+      payload_(kPayload),
+      transport_(),
       kMarkerBit(true) {
-    rtp_sender_->SetSequenceNumber(kSeqNum);
     EXPECT_CALL(mock_paced_sender_,
         SendPacket(_, _, _, _, _)).WillRepeatedly(testing::Return(true));
   }
+
+  virtual void SetUp() {
+    rtp_sender_.reset(new RTPSender(0, false, &fake_clock_, &transport_, NULL,
+                                    &mock_paced_sender_));
+    rtp_sender_->SetSequenceNumber(kSeqNum);
+  }
+
   SimulatedClock fake_clock_;
   MockPacedSender mock_paced_sender_;
   scoped_ptr<RTPSender> rtp_sender_;
+  int payload_;
   LoopbackTransportTest transport_;
   const bool kMarkerBit;
   uint8_t packet_[kMaxPacketLength];
 
   void VerifyRTPHeaderCommon(const WebRtcRTPHeader& rtp_header) {
     EXPECT_EQ(kMarkerBit, rtp_header.header.markerBit);
-    EXPECT_EQ(kPayload, rtp_header.header.payloadType);
+    EXPECT_EQ(payload_, rtp_header.header.payloadType);
     EXPECT_EQ(kSeqNum, rtp_header.header.sequenceNumber);
     EXPECT_EQ(kTimestamp, rtp_header.header.timestamp);
     EXPECT_EQ(rtp_sender_->SSRC(), rtp_header.header.ssrc);
@@ -110,6 +121,20 @@ TEST_F(RtpSenderTest, RegisterRtpAbsoluteSendTimeHeaderExtension) {
   EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
 }
 
+TEST_F(RtpSenderTest, RegisterRtpAudioLevelHeaderExtension) {
+  EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionAudioLevel, kAudioLevelExtensionId));
+  // Accounted size for audio level is zero because it is currently specially
+  // treated by RTPSenderAudio.
+  EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
+  // EXPECT_EQ(kRtpOneByteHeaderLength + kAudioLevelLength,
+  //           rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
+      kRtpExtensionAudioLevel));
+  EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
+}
+
 TEST_F(RtpSenderTest, RegisterRtpHeaderExtensions) {
   EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
@@ -120,12 +145,19 @@ TEST_F(RtpSenderTest, RegisterRtpHeaderExtensions) {
       kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId));
   EXPECT_EQ(kRtpOneByteHeaderLength + kTransmissionTimeOffsetLength +
       kAbsoluteSendTimeLength, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionAudioLevel, kAudioLevelExtensionId));
+  EXPECT_EQ(kRtpOneByteHeaderLength + kTransmissionTimeOffsetLength +
+      kAbsoluteSendTimeLength, rtp_sender_->RtpHeaderExtensionTotalLength());
   EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
       kRtpExtensionTransmissionTimeOffset));
   EXPECT_EQ(kRtpOneByteHeaderLength + kAbsoluteSendTimeLength,
       rtp_sender_->RtpHeaderExtensionTotalLength());
   EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
       kRtpExtensionAbsoluteSendTime));
+  EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
+  EXPECT_EQ(0, rtp_sender_->DeregisterRtpHeaderExtension(
+      kRtpExtensionAudioLevel));
   EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
 }
 
@@ -465,5 +497,121 @@ TEST_F(RtpSenderTest, SendGenericVideo) {
   EXPECT_EQ(0, memcmp(payload, payload_data, sizeof(payload)));
 }
 
-}  // namespace webrtc
+class RtpSenderAudioTest : public RtpSenderTest {
+ protected:
+  RtpSenderAudioTest() {}
 
+  virtual void SetUp() {
+    payload_ = kAudioPayload;
+    rtp_sender_.reset(new RTPSender(0, true, &fake_clock_, &transport_, NULL,
+                                    &mock_paced_sender_));
+    rtp_sender_->SetSequenceNumber(kSeqNum);
+  }
+};
+
+TEST_F(RtpSenderAudioTest, BuildRTPPacketWithAudioLevelExtension) {
+  EXPECT_EQ(0, rtp_sender_->SetAudioLevelIndicationStatus(true,
+      kAudioLevelExtensionId));
+  EXPECT_EQ(0, rtp_sender_->SetAudioLevel(kAudioLevel));
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionAudioLevel, kAudioLevelExtensionId));
+
+  int32_t length = rtp_sender_->BuildRTPheader(packet_,
+                                               kAudioPayload,
+                                               kMarkerBit,
+                                               kTimestamp);
+  EXPECT_EQ(12 + rtp_sender_->RtpHeaderExtensionTotalLength(), length);
+
+  // Currently, no space is added by for header extension by BuildRTPHeader().
+  EXPECT_EQ(0, rtp_sender_->RtpHeaderExtensionTotalLength());
+
+  // Verify
+  webrtc::ModuleRTPUtility::RTPHeaderParser rtp_parser(packet_, length);
+  webrtc::WebRtcRTPHeader rtp_header;
+
+  RtpHeaderExtensionMap map;
+  map.Register(kRtpExtensionAudioLevel, kAudioLevelExtensionId);
+  const bool valid_rtp_header = rtp_parser.Parse(rtp_header, &map);
+
+  ASSERT_TRUE(valid_rtp_header);
+  ASSERT_FALSE(rtp_parser.RTCP());
+  VerifyRTPHeaderCommon(rtp_header);
+  EXPECT_EQ(length, rtp_header.header.headerLength);
+  // TODO(solenberg): Should verify that we got audio level in header extension.
+
+  // Parse without map extension
+  webrtc::WebRtcRTPHeader rtp_header2;
+  const bool valid_rtp_header2 = rtp_parser.Parse(rtp_header2, NULL);
+
+  ASSERT_TRUE(valid_rtp_header2);
+  VerifyRTPHeaderCommon(rtp_header2);
+  EXPECT_EQ(length, rtp_header2.header.headerLength);
+  // TODO(solenberg): Should verify that we didn't get audio level.
+}
+
+TEST_F(RtpSenderAudioTest, SendAudio) {
+  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "PAYLOAD_NAME";
+  const uint8_t payload_type = 127;
+  ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 48000,
+                                            0, 1500));
+  uint8_t payload[] = {47, 11, 32, 93, 89};
+
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kAudioFrameCN, payload_type, 1234,
+                                             4321, payload, sizeof(payload),
+                                             NULL));
+
+  ModuleRTPUtility::RTPHeaderParser rtp_parser(transport_.last_sent_packet_,
+      transport_.last_sent_packet_len_);
+  webrtc::WebRtcRTPHeader rtp_header;
+  ASSERT_TRUE(rtp_parser.Parse(rtp_header));
+
+  const uint8_t* payload_data = ModuleRTPUtility::GetPayloadData(&rtp_header,
+      transport_.last_sent_packet_);
+
+  ASSERT_EQ(sizeof(payload), ModuleRTPUtility::GetPayloadDataLength(&rtp_header,
+            transport_.last_sent_packet_len_));
+
+  EXPECT_EQ(0, memcmp(payload, payload_data, sizeof(payload)));
+}
+
+TEST_F(RtpSenderAudioTest, SendAudioWithAudioLevelExtension) {
+  EXPECT_EQ(0, rtp_sender_->SetAudioLevelIndicationStatus(true,
+      kAudioLevelExtensionId));
+  EXPECT_EQ(0, rtp_sender_->SetAudioLevel(kAudioLevel));
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+      kRtpExtensionAudioLevel, kAudioLevelExtensionId));
+
+  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "PAYLOAD_NAME";
+  const uint8_t payload_type = 127;
+  ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 48000,
+                                            0, 1500));
+  uint8_t payload[] = {47, 11, 32, 93, 89};
+
+  ASSERT_EQ(0, rtp_sender_->SendOutgoingData(kAudioFrameCN, payload_type, 1234,
+                                             4321, payload, sizeof(payload),
+                                             NULL));
+
+  ModuleRTPUtility::RTPHeaderParser rtp_parser(transport_.last_sent_packet_,
+      transport_.last_sent_packet_len_);
+  webrtc::WebRtcRTPHeader rtp_header;
+  ASSERT_TRUE(rtp_parser.Parse(rtp_header));
+
+  const uint8_t* payload_data = ModuleRTPUtility::GetPayloadData(&rtp_header,
+      transport_.last_sent_packet_);
+
+  ASSERT_EQ(sizeof(payload), ModuleRTPUtility::GetPayloadDataLength(&rtp_header,
+            transport_.last_sent_packet_len_));
+
+  EXPECT_EQ(0, memcmp(payload, payload_data, sizeof(payload)));
+
+  uint8_t extension[] = { 0xbe, 0xde, 0x00, 0x01,
+                          (kAudioLevelExtensionId << 4) + 0, // ID + length.
+                          kAudioLevel,                       // Data.
+                          0x00, 0x00                         // Padding.
+                        };
+
+  EXPECT_EQ(0, memcmp(extension, payload_data - sizeof(extension),
+                      sizeof(extension)));
+}
+
+}  // namespace webrtc

@@ -892,6 +892,11 @@ uint16_t RTPSender::BuildRTPHeaderExtension(
         block_length = BuildTransmissionTimeOffsetExtension(
             data_buffer + kHeaderLength + total_block_length);
         break;
+      case kRtpExtensionAudioLevel:
+        // Because AudioLevel is handled specially by RTPSenderAudio, we pretend
+        // we don't have to care about it here, which is true until we wan't to
+        // use it together with any of the other extensions we support.
+        break;
       case kRtpExtensionAbsoluteSendTime:
         block_length = BuildAbsoluteSendTimeExtension(
             data_buffer + kHeaderLength + total_block_length);
