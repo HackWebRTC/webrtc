@@ -242,6 +242,16 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
                                               bool enable,
                                               int id) = 0;
 
+  // Enables RTP absolute send time header extension. This call must be done
+  // before ViECodec::SetSendCodec is called.
+  virtual int SetSendAbsoluteSendTimeStatus(int video_channel,
+                                            bool enable,
+                                            int id) = 0;
+
+  virtual int SetReceiveAbsoluteSendTimeStatus(int video_channel,
+                                               bool enable,
+                                               int id) = 0;
+
   // Enables transmission smoothening, i.e. packets belonging to the same frame
   // will be sent over a longer period of time instead of sending them
   // back-to-back.

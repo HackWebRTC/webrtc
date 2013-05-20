@@ -90,6 +90,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
       bandwidth_observer_(bandwidth_observer),
       rtp_packet_timeout_(false),
       send_timestamp_extension_id_(kInvalidRtpExtensionId),
+      absolute_send_time_extension_id_(kInvalidRtpExtensionId),
       using_packet_spread_(false),
       external_transport_(NULL),
       decoder_reset_(true),
@@ -369,6 +370,21 @@ int32_t ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       } else {
         rtp_rtcp->DeregisterSendRtpHeaderExtension(
             kRtpExtensionTransmissionTimeOffset);
+      }
+      if (absolute_send_time_extension_id_ != kInvalidRtpExtensionId) {
+        // Deregister in case the extension was previously enabled.
+        rtp_rtcp->DeregisterSendRtpHeaderExtension(
+            kRtpExtensionAbsoluteSendTime);
+        if (rtp_rtcp->RegisterSendRtpHeaderExtension(
+            kRtpExtensionAbsoluteSendTime,
+            absolute_send_time_extension_id_) != 0) {
+          WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
+                       "%s: could not register absolute send time extension",
+                       __FUNCTION__);
+        }
+      } else {
+        rtp_rtcp->DeregisterSendRtpHeaderExtension(
+            kRtpExtensionAbsoluteSendTime);
       }
     }
     // |RegisterSimulcastRtpRtcpModules| resets all old weak pointers and old
@@ -862,6 +878,47 @@ int ViEChannel::SetReceiveTimestampOffsetStatus(bool enable, int id) {
   } else {
     return rtp_rtcp_->DeregisterReceiveRtpHeaderExtension(
         kRtpExtensionTransmissionTimeOffset);
+  }
+}
+
+int ViEChannel::SetSendAbsoluteSendTimeStatus(bool enable, int id) {
+  CriticalSectionScoped cs(rtp_rtcp_cs_.get());
+  int error = 0;
+  if (enable) {
+    // Enable the extension, but disable possible old id to avoid errors.
+    absolute_send_time_extension_id_ = id;
+    rtp_rtcp_->DeregisterSendRtpHeaderExtension(
+        kRtpExtensionAbsoluteSendTime);
+    error = rtp_rtcp_->RegisterSendRtpHeaderExtension(
+        kRtpExtensionAbsoluteSendTime, id);
+    for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
+         it != simulcast_rtp_rtcp_.end(); it++) {
+      (*it)->DeregisterSendRtpHeaderExtension(
+          kRtpExtensionAbsoluteSendTime);
+      error |= (*it)->RegisterSendRtpHeaderExtension(
+          kRtpExtensionAbsoluteSendTime, id);
+    }
+  } else {
+    // Disable the extension.
+    absolute_send_time_extension_id_ = kInvalidRtpExtensionId;
+    rtp_rtcp_->DeregisterSendRtpHeaderExtension(
+        kRtpExtensionAbsoluteSendTime);
+    for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
+         it != simulcast_rtp_rtcp_.end(); it++) {
+      (*it)->DeregisterSendRtpHeaderExtension(
+          kRtpExtensionAbsoluteSendTime);
+    }
+  }
+  return error;
+}
+
+int ViEChannel::SetReceiveAbsoluteSendTimeStatus(bool enable, int id) {
+  if (enable) {
+    return rtp_rtcp_->RegisterReceiveRtpHeaderExtension(
+        kRtpExtensionAbsoluteSendTime, id);
+  } else {
+    return rtp_rtcp_->DeregisterReceiveRtpHeaderExtension(
+        kRtpExtensionAbsoluteSendTime);
   }
 }
 

@@ -194,13 +194,6 @@ bool ViEEncoder::Init() {
                  "%s RegisterSendPayload failure", __FUNCTION__);
     return false;
   }
-  if (default_rtp_rtcp_->RegisterSendRtpHeaderExtension(
-      kRtpExtensionTransmissionTimeOffset, 1) != 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "%s RegisterSendRtpHeaderExtension failure", __FUNCTION__);
-    return false;
-  }
 #else
   VideoCodec video_codec;
   if (vcm_.Codec(webrtc::kVideoCodecI420, &video_codec) == VCM_OK) {
