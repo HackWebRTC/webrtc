@@ -63,6 +63,9 @@
     # which can be easily parsed for offline processing.
     'enable_data_logging%': 0,
 
+    # Enables the use of protocol buffers for debug recordings.
+    'enable_protobuf%': 1,
+
     # Disable these to not build components which can be externally provided.
     'build_libjpeg%': 1,
     'build_libyuv%': 1,
@@ -96,9 +99,6 @@
 
         'include_tests%': 0,
 
-        # Disable the use of protocol buffers in production code.
-        'enable_protobuf%': 0,
-
         'enable_tracing%': 0,
 
         'enable_android_opensl%': 0,
@@ -107,7 +107,6 @@
         'include_internal_audio_device%': 1,
         'include_internal_video_capture%': 1,
         'include_internal_video_render%': 1,
-        'enable_protobuf%': 1,
         'enable_tracing%': 1,
         'include_tests%': 1,
 
