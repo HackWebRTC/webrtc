@@ -47,7 +47,7 @@ class TestVCMReceiver : public ::testing::Test {
     bool packet_available = stream_generator_->GetPacket(&packet, index);
     EXPECT_TRUE(packet_available);
     if (!packet_available)
-      return kStateError;  // Return here to avoid crashes below.
+      return kGeneralError;  // Return here to avoid crashes below.
     // Arbitrary width and height.
     return receiver_.InsertPacket(packet, 640, 480);
   }
@@ -58,7 +58,7 @@ class TestVCMReceiver : public ::testing::Test {
     bool packet_available = stream_generator_->PopPacket(&packet, index);
     EXPECT_TRUE(packet_available);
     if (!packet_available)
-      return kStateError;  // Return here to avoid crashes below.
+      return kGeneralError;  // Return here to avoid crashes below.
     return receiver_.InsertPacket(packet, kWidth, kHeight);
   }
 

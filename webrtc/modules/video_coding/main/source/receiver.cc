@@ -77,66 +77,36 @@ void VCMReceiver::UpdateRtt(uint32_t rtt) {
 int32_t VCMReceiver::InsertPacket(const VCMPacket& packet,
                                   uint16_t frame_width,
                                   uint16_t frame_height) {
-  // Find an empty frame.
-  VCMEncodedFrame* buffer = NULL;
-  const int32_t error = jitter_buffer_.GetFrame(packet, buffer);
-  if (error == VCM_OLD_PACKET_ERROR) {
+  // Insert the packet into the jitter buffer. The packet can either be empty or
+  // contain media at this point.
+  bool retransmitted = false;
+  const VCMFrameBufferEnum ret = jitter_buffer_.InsertPacket(packet,
+                                                             &retransmitted);
+  if (ret == kOldPacket) {
     return VCM_OK;
-  } else if (error != VCM_OK) {
-    return error;
+  } else if (ret == kFlushIndicator) {
+    return VCM_FLUSH_INDICATOR;
+  } else if (ret < 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCoding,
+                 VCMId(vcm_id_, receiver_id_),
+                 "Error inserting packet seqnum=%u, timestamp=%u",
+                 packet.seqNum, packet.timestamp);
+    return VCM_JITTER_BUFFER_ERROR;
   }
-  assert(buffer);
-  {
-    CriticalSectionScoped cs(crit_sect_);
-
-    if (frame_width && frame_height) {
-      buffer->SetEncodedSize(static_cast<uint32_t>(frame_width),
-                             static_cast<uint32_t>(frame_height));
-    }
-
-    if (master_) {
-      // Only trace the primary receiver to make it possible to parse and plot
-      // the trace file.
-      WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
-                   VCMId(vcm_id_, receiver_id_),
-                   "Packet seq_no %u of frame %u at %u",
-                   packet.seqNum, packet.timestamp,
-                   MaskWord64ToUWord32(clock_->TimeInMilliseconds()));
-    }
-    // First packet received belonging to this frame.
-    if (buffer->Length() == 0 && master_) {
-      const int64_t now_ms = clock_->TimeInMilliseconds();
-      // Only trace the primary receiver to make it possible to parse and plot
-      // the trace file.
-      WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
-          VCMId(vcm_id_, receiver_id_),
-          "First packet of frame %u at %u", packet.timestamp,
-          MaskWord64ToUWord32(now_ms));
-    }
-
-    // Insert packet into the jitter buffer both media and empty packets.
-    const VCMFrameBufferEnum
-    ret = jitter_buffer_.InsertPacket(buffer, packet);
-    if (ret == kCompleteSession) {
-      bool retransmitted = false;
-      const int64_t last_packet_time_ms =
-         jitter_buffer_.LastPacketTime(buffer, &retransmitted);
-      if (last_packet_time_ms >= 0 && !retransmitted) {
-        // We don't want to include timestamps which have suffered from
-        // retransmission here, since we compensate with extra retransmission
-        // delay within the jitter estimate.
-        timing_->IncomingTimestamp(packet.timestamp, last_packet_time_ms);
-      }
-    }
-    if (ret == kFlushIndicator) {
-      return VCM_FLUSH_INDICATOR;
-    } else if (ret < 0) {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCoding,
-                   VCMId(vcm_id_, receiver_id_),
-                   "Error inserting packet seq_no=%u, time_stamp=%u",
-                   packet.seqNum, packet.timestamp);
-      return VCM_JITTER_BUFFER_ERROR;
-    }
+  if (ret == kCompleteSession && !retransmitted) {
+    // We don't want to include timestamps which have suffered from
+    // retransmission here, since we compensate with extra retransmission
+    // delay within the jitter estimate.
+    timing_->IncomingTimestamp(packet.timestamp, clock_->TimeInMilliseconds());
+  }
+  if (master_) {
+    // Only trace the primary receiver to make it possible to parse and plot
+    // the trace file.
+    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
+                 VCMId(vcm_id_, receiver_id_),
+                 "Packet seqnum=%u timestamp=%u inserted at %u",
+                 packet.seqNum, packet.timestamp,
+                 MaskWord64ToUWord32(clock_->TimeInMilliseconds()));
   }
   return VCM_OK;
 }

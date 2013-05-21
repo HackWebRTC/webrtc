@@ -45,6 +45,8 @@ public:
     VCMNaluCompleteness completeNALU;   // Default is kNaluIncomplete.
     bool insertStartCode;               // True if a start code should be inserted before this
                                         // packet.
+    int width;
+    int height;
     RTPVideoHeader codecSpecificHeader;
 
 protected:

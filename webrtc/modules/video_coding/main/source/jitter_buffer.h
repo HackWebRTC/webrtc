@@ -113,18 +113,15 @@ class VCMJitterBuffer {
   // done with decoding.
   void ReleaseFrame(VCMEncodedFrame* frame);
 
-  // Returns the frame assigned to this timestamp.
-  int GetFrame(const VCMPacket& packet, VCMEncodedFrame*&);
-  VCMEncodedFrame* GetFrame(const VCMPacket& packet);  // Deprecated.
-
   // Returns the time in ms when the latest packet was inserted into the frame.
   // Retransmitted is set to true if any of the packets belonging to the frame
   // has been retransmitted.
-  int64_t LastPacketTime(VCMEncodedFrame* frame, bool* retransmitted) const;
+  int64_t LastPacketTime(const VCMEncodedFrame* frame,
+                         bool* retransmitted) const;
 
   // Inserts a packet into a frame returned from GetFrame().
-  VCMFrameBufferEnum InsertPacket(VCMEncodedFrame* frame,
-                                  const VCMPacket& packet);
+  VCMFrameBufferEnum InsertPacket(const VCMPacket& packet,
+                                  bool* retransmitted);
 
   // Enable a max filter on the jitter estimate by setting an initial
   // non-zero delay.
@@ -174,6 +171,10 @@ class VCMJitterBuffer {
   };
   typedef std::set<uint16_t, SequenceNumberLessThan> SequenceNumberSet;
 
+  // Gets the frame assigned to the timestamp of the packet. May recycle
+  // existing frames if no free frames are available. Returns an error code if
+  // failing, or kNoError on success.
+  VCMFrameBufferEnum GetFrame(const VCMPacket& packet, VCMFrameBuffer** frame);
   // Returns true if the NACK list was updated to cover sequence numbers up to
   // |sequence_number|. If false a key frame is needed to get into a state where
   // we can continue decoding.
@@ -264,7 +265,7 @@ class VCMJitterBuffer {
   VCMFrameBuffer* frame_buffers_[kMaxNumberOfFrames];
   FrameList frame_list_;
   VCMDecodingState last_decoded_state_;
-  bool first_packet_;
+  bool first_packet_since_reset_;
 
   // Statistics.
   int num_not_decodable_packets_;
