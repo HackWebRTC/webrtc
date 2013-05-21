@@ -10,7 +10,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
-#include <iostream>
+#include <cstdio>
 #include <map>
 
 #include "webrtc/typedefs.h"
@@ -76,8 +76,8 @@ TEST_F(LoopbackTest, Test) {
   camera->Start();
 
   // TODO(pbos): Run this time limited (optionally), so it can run automated.
-  std::cout << ">> Press ENTER to continue..." << std::endl;
-  std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  puts(">> Press ENTER to continue...");
+  while (getchar() != '\n' && !feof(stdin));
 
   receive_stream->StopReceive();
   send_stream->StopSend();
