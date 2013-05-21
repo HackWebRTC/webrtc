@@ -11,8 +11,8 @@
 #ifndef WEBRTC_VOICE_ENGINE_CHANNEL_MANAGER_H
 #define WEBRTC_VOICE_ENGINE_CHANNEL_MANAGER_H
 
-#include "channel_manager_base.h"
-#include "typedefs.h"
+#include "webrtc/typedefs.h"
+#include "webrtc/voice_engine/channel_manager_base.h"
 
 namespace webrtc
 {

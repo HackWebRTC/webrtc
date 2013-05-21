@@ -9,10 +9,10 @@
  */
 
 #include <math.h>
-#include "stdafx.h"
-#include "WinTest.h"
-#include "WinTestDlg.h"
-#include "testsupport/fileutils.h"
+#include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/voice_engine/test/win_test/WinTest.h"
+#include "webrtc/voice_engine/test/win_test/WinTestDlg.h"
+#include "webrtc/voice_engine/test/win_test/stdafx.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -3585,4 +3585,3 @@ void CWinTestDlg::OnBnClickedButtonTest1()
 {
     // add tests here...
 }
-

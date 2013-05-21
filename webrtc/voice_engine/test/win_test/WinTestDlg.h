@@ -80,21 +80,21 @@
 
 #include <string>
 
-#include "voe_base.h"
-#include "voe_rtp_rtcp.h"
-#include "voe_codec.h"
-#include "voe_dtmf.h"
-#include "voe_encryption.h"
-#include "voe_external_media.h"
-#include "voe_file.h"
-#include "voe_hardware.h"
-#include "voe_network.h"
-#include "voe_video_sync.h"
-#include "voe_volume_control.h"
+#include "webrtc/voice_engine/include/voe_base.h"
+#include "webrtc/voice_engine/include/voe_codec.h"
+#include "webrtc/voice_engine/include/voe_dtmf.h"
+#include "webrtc/voice_engine/include/voe_encryption.h"
+#include "webrtc/voice_engine/include/voe_external_media.h"
+#include "webrtc/voice_engine/include/voe_file.h"
+#include "webrtc/voice_engine/include/voe_hardware.h"
+#include "webrtc/voice_engine/include/voe_network.h"
+#include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
+#include "webrtc/voice_engine/include/voe_video_sync.h"
+#include "webrtc/voice_engine/include/voe_volume_control.h"
 
-#include "voe_audio_processing.h"
-#include "voe_rtp_rtcp.h"
-#include "voe_errors.h"
+#include "webrtc/voice_engine/include/voe_audio_processing.h"
+#include "webrtc/voice_engine/include/voe_errors.h"
+#include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 
 class MediaProcessImpl;
 class ConnectionObserver;

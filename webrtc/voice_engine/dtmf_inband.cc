@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "dtmf_inband.h"
+#include "webrtc/voice_engine/dtmf_inband.h"
 
-#include "critical_section_wrapper.h"
-#include "trace.h"
 #include <cassert>
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 

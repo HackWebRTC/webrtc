@@ -11,10 +11,10 @@
 #ifndef WEBRTC_VOICE_ENGINE_VOE_BASE_IMPL_H
 #define WEBRTC_VOICE_ENGINE_VOE_BASE_IMPL_H
 
-#include "voe_base.h"
+#include "webrtc/voice_engine/include/voe_base.h"
 
-#include "module_common_types.h"
-#include "shared_data.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/voice_engine/shared_data.h"
 
 namespace webrtc
 {

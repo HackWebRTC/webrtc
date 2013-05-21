@@ -28,7 +28,8 @@
 #include "webrtc/voice_engine/voice_engine_defines.h"
 
 #ifdef WEBRTC_DTMF_DETECTION
-#include "voe_dtmf.h" // TelephoneEventDetectionMethods, TelephoneEventObserver
+// TelephoneEventDetectionMethods, TelephoneEventObserver
+#include "webrtc/voice_engine/include/voe_dtmf.h"
 #endif
 
 namespace webrtc

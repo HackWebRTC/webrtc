@@ -11,9 +11,9 @@
 #ifndef WEBRTC_VOICE_ENGINE_VOE_AUDIO_PROCESSING_IMPL_H
 #define WEBRTC_VOICE_ENGINE_VOE_AUDIO_PROCESSING_IMPL_H
 
-#include "voe_audio_processing.h"
+#include "webrtc/voice_engine/include/voe_audio_processing.h"
 
-#include "shared_data.h"
+#include "webrtc/voice_engine/shared_data.h"
 
 namespace webrtc {
 
@@ -110,4 +110,3 @@ class VoEAudioProcessingImpl : public VoEAudioProcessing {
 }  //  namespace webrtc
 
 #endif  // WEBRTC_VOICE_ENGINE_VOE_AUDIO_PROCESSING_IMPL_H
-

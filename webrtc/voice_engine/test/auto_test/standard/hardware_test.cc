@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "after_streaming_fixture.h"
-#include "modules/audio_device/include/audio_device.h"
+#include "webrtc/modules/audio_device/include/audio_device.h"
+#include "webrtc/voice_engine/test/auto_test/fixtures/after_streaming_fixture.h"
 
 class HardwareTest : public AfterStreamingFixture {
 };

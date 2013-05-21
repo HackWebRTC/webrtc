@@ -14,7 +14,7 @@
 #include "webrtc/voice_engine/test/auto_test/voe_test_common.h"
 
 // Read WEBRTC_VOICE_ENGINE_XXX_API compiler flags
-#include "engine_configurations.h"
+#include "webrtc/engine_configurations.h"
 
 // Select the tests to execute, list order below is same as they will be
 // executed. Note that, all settings below will be overriden by sub-API

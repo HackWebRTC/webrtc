@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "voice_engine/transmit_mixer.h"
+#include "webrtc/voice_engine/transmit_mixer.h"
 
-#include "gtest/gtest.h"
-#include "voice_engine/include/voe_external_media.h"
+#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/voice_engine/include/voe_external_media.h"
 
 namespace webrtc {
 namespace voe {

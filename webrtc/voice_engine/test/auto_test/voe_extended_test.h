@@ -11,15 +11,15 @@
 #ifndef WEBRTC_VOICE_ENGINE_VOE_EXTENDED_TEST_H
 #define WEBRTC_VOICE_ENGINE_VOE_EXTENDED_TEST_H
 
-#include "voe_standard_test.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/ref_count.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
-#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/channel_transport/include/channel_transport.h"
+#include "webrtc/voice_engine/test/auto_test/voe_standard_test.h"
 
 namespace voetest {
 

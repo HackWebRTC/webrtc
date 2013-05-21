@@ -9,11 +9,11 @@
  */
 
 #if defined(WEBRTC_ANDROID) && !defined(WEBRTC_ANDROID_OPENSLES)
-#include "modules/audio_device/android/audio_device_jni_android.h"
+#include "webrtc/modules/audio_device/android/audio_device_jni_android.h"
 #endif
 
-#include "voice_engine_impl.h"
-#include "trace.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/voice_engine/voice_engine_impl.h"
 
 namespace webrtc
 {

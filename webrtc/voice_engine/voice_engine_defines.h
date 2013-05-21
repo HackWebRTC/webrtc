@@ -255,28 +255,28 @@ inline int VoEChannelId(int moduleId)
 
 #ifdef WEBRTC_LINUX
 
-#include <pthread.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
+#include <pthread.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #ifndef QNX
   #include <linux/net.h>
 #ifndef ANDROID
   #include <sys/soundcard.h>
 #endif // ANDROID
 #endif // QNX
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <errno.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <sched.h>
-#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <sys/time.h>
+#include <time.h>
+#include <unistd.h>
 
 #define DWORD unsigned long int
 #define WINAPI
@@ -339,22 +339,22 @@ inline int VoEChannelId(int moduleId)
 
 #ifdef WEBRTC_MAC
 
-#include <pthread.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sched.h>
-#include <sys/time.h>
-#include <time.h>
 #include <AudioUnit/AudioUnit.h>
+#include <arpa/inet.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <pthread.h>
+#include <sched.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <time.h>
+#include <unistd.h>
 #if !defined(WEBRTC_IOS)
   #include <CoreServices/CoreServices.h>
   #include <CoreAudio/CoreAudio.h>
