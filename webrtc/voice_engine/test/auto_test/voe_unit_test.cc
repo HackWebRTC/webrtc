@@ -22,6 +22,7 @@
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
+#include "webrtc/voice_engine/test/auto_test/voe_test_defines.h"
 #include "webrtc/voice_engine/test/auto_test/fakes/fake_media_process.h"
 
 using namespace webrtc;

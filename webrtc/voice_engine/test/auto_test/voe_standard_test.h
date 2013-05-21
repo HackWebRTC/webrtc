@@ -22,7 +22,7 @@
 #include "voe_errors.h"
 #include "voe_file.h"
 #include "voe_rtp_rtcp.h"
-#include "voe_test_defines.h"
+#include "voe_test_common.h"
 #include "voe_test_interface.h"
 #ifdef WEBRTC_VOICE_ENGINE_CALL_REPORT_API
 #include "voe_call_report.h"
@@ -47,7 +47,7 @@
 #include "voe_volume_control.h"
 #endif
 
-#ifdef _TEST_NETEQ_STATS_
+#ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
 namespace webrtc {
 class CriticalSectionWrapper;
 class ThreadWrapper;
@@ -199,11 +199,10 @@ class VoETestManager {
     return voe_call_report_;
   }
 
-#ifdef _TEST_NETEQ_STATS_
+#ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
   VoENetEqStats* NetEqStatsPtr() const {
     return voe_neteq_stats_;
   }
-
 #endif
 
  private:
@@ -219,7 +218,7 @@ class VoETestManager {
   VoEFile*               voe_file_;
   VoEHardware*           voe_hardware_;
   VoENetwork*            voe_network_;
-#ifdef _TEST_NETEQ_STATS_
+#ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
   VoENetEqStats*         voe_neteq_stats_;
 #endif
   VoERTP_RTCP*           voe_rtp_rtcp_;

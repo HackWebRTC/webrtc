@@ -16,6 +16,7 @@
 
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
+#include "webrtc/voice_engine/test/auto_test/voe_test_defines.h"
 
 #if defined(_WIN32)
 #include <conio.h>

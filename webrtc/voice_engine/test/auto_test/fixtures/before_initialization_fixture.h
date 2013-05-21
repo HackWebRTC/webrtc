@@ -31,14 +31,10 @@
 #include "voice_engine/include/voe_rtp_rtcp.h"
 #include "voice_engine/include/voe_video_sync.h"
 #include "voice_engine/include/voe_volume_control.h"
-#include "voice_engine/test/auto_test/voe_test_defines.h"
+#include "webrtc/voice_engine/test/auto_test/voe_test_common.h"
 
-// TODO(qhogpat): Remove these undefs once the clashing macros are gone.
-#undef TEST
-#undef ASSERT_TRUE
-#undef ASSERT_FALSE
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
+#include "testing/gmock/include/gmock/gmock.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
 // This convenient fixture sets up all voice engine interfaces automatically for
 // use by testing subclasses. It allocates each interface and releases it once

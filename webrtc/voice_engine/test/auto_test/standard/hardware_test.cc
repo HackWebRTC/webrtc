@@ -10,7 +10,6 @@
 
 #include "after_streaming_fixture.h"
 #include "modules/audio_device/include/audio_device.h"
-#include "voe_test_defines.h"
 
 class HardwareTest : public AfterStreamingFixture {
 };

@@ -29,6 +29,7 @@
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/test/channel_transport/include/channel_transport.h"
 #include "webrtc/voice_engine/test/auto_test/voe_standard_test.h"
+#include "webrtc/voice_engine/test/auto_test/voe_test_defines.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"  // defines build macros
 
 using namespace webrtc;

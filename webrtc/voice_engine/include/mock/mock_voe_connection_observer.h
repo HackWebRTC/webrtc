@@ -13,6 +13,8 @@
 
 #include "voice_engine/include/voe_network.h"
 
+#include "testing/gmock/include/gmock/gmock.h"
+
 namespace webrtc {
 
 class MockVoeConnectionObserver : public VoEConnectionObserver {
