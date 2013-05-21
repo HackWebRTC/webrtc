@@ -17,7 +17,7 @@ namespace webrtc {
 namespace test {
 
 VcmCapturer::VcmCapturer(webrtc::newapi::VideoSendStreamInput* input)
-    : VideoCapturer(input), started_(false), vcm(NULL), last_timestamp(0) {}
+    : VideoCapturer(input), started_(false), vcm_(NULL), last_timestamp_(0) {}
 
 bool VcmCapturer::Init(size_t width, size_t height, size_t target_fps) {
   VideoCaptureModule::DeviceInfo* device_info =
@@ -32,10 +32,10 @@ bool VcmCapturer::Init(size_t width, size_t height, size_t target_fps) {
     return false;
   }
 
-  vcm = webrtc::VideoCaptureFactory::Create(0, unique_name);
-  vcm->RegisterCaptureDataCallback(*this);
+  vcm_ = webrtc::VideoCaptureFactory::Create(0, unique_name);
+  vcm_->RegisterCaptureDataCallback(*this);
 
-  device_info->GetCapability(vcm->CurrentDeviceName(), 0, capability_);
+  device_info->GetCapability(vcm_->CurrentDeviceName(), 0, capability_);
   delete device_info;
 
   capability_.width = static_cast<int32_t>(width);
@@ -43,12 +43,12 @@ bool VcmCapturer::Init(size_t width, size_t height, size_t target_fps) {
   capability_.maxFPS = static_cast<int32_t>(target_fps);
   capability_.rawType = kVideoI420;
 
-  if (vcm->StartCapture(capability_) != 0) {
+  if (vcm_->StartCapture(capability_) != 0) {
     Destroy();
     return false;
   }
 
-  assert(vcm->CaptureStarted());
+  assert(vcm_->CaptureStarted());
 
   return true;
 }
@@ -56,13 +56,13 @@ bool VcmCapturer::Init(size_t width, size_t height, size_t target_fps) {
 VcmCapturer* VcmCapturer::Create(newapi::VideoSendStreamInput* input,
                                  size_t width, size_t height,
                                  size_t target_fps) {
-  VcmCapturer* vcm_capturer = new VcmCapturer(input);
-  if (!vcm_capturer->Init(width, height, target_fps)) {
+  VcmCapturer* vcm__capturer = new VcmCapturer(input);
+  if (!vcm__capturer->Init(width, height, target_fps)) {
     // TODO(pbos): Log a warning that this failed.
-    delete vcm_capturer;
+    delete vcm__capturer;
     return NULL;
   }
-  return vcm_capturer;
+  return vcm__capturer;
 }
 
 
@@ -71,31 +71,31 @@ void VcmCapturer::Start() { started_ = true; }
 void VcmCapturer::Stop() { started_ = false; }
 
 void VcmCapturer::Destroy() {
-  if (vcm == NULL) {
+  if (vcm_ == NULL) {
     return;
   }
 
-  vcm->StopCapture();
-  vcm->DeRegisterCaptureDataCallback();
-  vcm->Release();
+  vcm_->StopCapture();
+  vcm_->DeRegisterCaptureDataCallback();
+  vcm_->Release();
 
   // TODO(pbos): How do I destroy the VideoCaptureModule? This still leaves
   //             non-freed memory.
-  vcm = NULL;
+  vcm_ = NULL;
 }
 
 VcmCapturer::~VcmCapturer() { Destroy(); }
 
 void VcmCapturer::OnIncomingCapturedFrame(const int32_t id,
                                           I420VideoFrame& frame) {
-  if (last_timestamp == 0 || frame.timestamp() < last_timestamp) {
-    last_timestamp = frame.timestamp();
+  if (last_timestamp_ == 0 || frame.timestamp() < last_timestamp_) {
+    last_timestamp_ = frame.timestamp();
   }
 
   if (started_) {
-    input_->PutFrame(frame, frame.timestamp() - last_timestamp);
+    input_->PutFrame(frame, frame.timestamp() - last_timestamp_);
   }
-  last_timestamp = frame.timestamp();
+  last_timestamp_ = frame.timestamp();
 }
 
 void VcmCapturer::OnIncomingCapturedEncodedFrame(const int32_t id,

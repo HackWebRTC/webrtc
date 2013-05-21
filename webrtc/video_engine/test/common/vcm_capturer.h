@@ -42,10 +42,10 @@ class VcmCapturer : public VideoCapturer, public VideoCaptureDataCallback {
   void Destroy();
 
   bool started_;
-  VideoCaptureModule* vcm;
+  VideoCaptureModule* vcm_;
   VideoCaptureCapability capability_;
 
-  uint32_t last_timestamp;
+  uint32_t last_timestamp_;
 };
 }  // test
 }  // webrtc
