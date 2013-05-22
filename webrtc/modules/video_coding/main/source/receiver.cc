@@ -77,6 +77,11 @@ void VCMReceiver::UpdateRtt(uint32_t rtt) {
 int32_t VCMReceiver::InsertPacket(const VCMPacket& packet,
                                   uint16_t frame_width,
                                   uint16_t frame_height) {
+  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCoding,
+               VCMId(vcm_id_, receiver_id_),
+               "Inserting key frame packet seqnum=%u, timestamp=%u",
+               packet.seqNum, packet.timestamp);
+
   // Insert the packet into the jitter buffer. The packet can either be empty or
   // contain media at this point.
   bool retransmitted = false;
