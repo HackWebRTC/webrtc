@@ -22,7 +22,7 @@ namespace webrtc {
 class MockRemoteBitrateObserver : public RemoteBitrateObserver {
  public:
   MOCK_METHOD2(OnReceiveBitrateChanged,
-      void(std::vector<unsigned int>* ssrcs, unsigned int bitrate));
+      void(const std::vector<unsigned int>& ssrcs, unsigned int bitrate));
 };
 
 }  // namespace webrtc

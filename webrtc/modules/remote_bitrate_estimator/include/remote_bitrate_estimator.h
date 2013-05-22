@@ -31,7 +31,7 @@ class RemoteBitrateObserver {
  public:
   // Called when a receive channel group has a new bitrate estimate for the
   // incoming streams.
-  virtual void OnReceiveBitrateChanged(std::vector<unsigned int>* ssrcs,
+  virtual void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
                                        unsigned int bitrate) = 0;
 
   virtual ~RemoteBitrateObserver() {}
@@ -40,7 +40,6 @@ class RemoteBitrateObserver {
 class RemoteBitrateEstimator : public CallStatsObserver, public Module {
  public:
   virtual ~RemoteBitrateEstimator() {}
-
 
   // Stores an RTCP SR (NTP, RTP timestamp) tuple for a specific SSRC to be used
   // in future RTP timestamp to NTP time conversions. As soon as any SSRC has
@@ -51,11 +50,12 @@ class RemoteBitrateEstimator : public CallStatsObserver, public Module {
   // Called for each incoming packet. Updates the incoming payload bitrate
   // estimate and the over-use detector. If an over-use is detected the
   // remote bitrate estimate will be updated. Note that |payload_size| is the
-  // packet size excluding headers.
-  virtual void IncomingPacket(unsigned int ssrc,
+  // packet size excluding headers. The estimator can only count on the
+  // "header" (an RTPHeader) and "extension" (an RTPHeaderExtension) fields of
+  // the WebRtcRTPHeader to be initialized.
+  virtual void IncomingPacket(int64_t arrival_time_ms,
                               int payload_size,
-                              int64_t arrival_time,
-                              uint32_t rtp_timestamp) = 0;
+                              const WebRtcRTPHeader& header) = 0;
 
   // Removes all data for |ssrc|.
   virtual void RemoveStream(unsigned int ssrc) = 0;

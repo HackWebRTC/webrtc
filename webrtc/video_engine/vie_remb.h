@@ -51,7 +51,7 @@ class VieRemb : public RemoteBitrateObserver {
   // estimate has decreased or if no RTCP REMB packet has been sent for
   // a certain time interval.
   // Implements RtpReceiveBitrateUpdate.
-  virtual void OnReceiveBitrateChanged(std::vector<unsigned int>* ssrcs,
+  virtual void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
                                        unsigned int bitrate);
 
  private:

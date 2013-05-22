@@ -104,11 +104,10 @@ bool VieRemb::InUse() const {
     return true;
 }
 
-void VieRemb::OnReceiveBitrateChanged(std::vector<unsigned int>* ssrcs,
+void VieRemb::OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
                                       unsigned int bitrate) {
   WEBRTC_TRACE(kTraceStream, kTraceVideo, -1,
                "VieRemb::UpdateBitrateEstimate(bitrate: %u)", bitrate);
-  assert(ssrcs);
   list_crit_->Enter();
   // If we already have an estimate, check if the new total estimate is below
   // kSendThresholdPercent of the previous estimate.
@@ -132,7 +131,7 @@ void VieRemb::OnReceiveBitrateChanged(std::vector<unsigned int>* ssrcs,
   }
   last_remb_time_ = now;
 
-  if (ssrcs->empty() || receive_modules_.empty()) {
+  if (ssrcs.empty() || receive_modules_.empty()) {
     list_crit_->Leave();
     return;
   }
@@ -154,8 +153,8 @@ void VieRemb::OnReceiveBitrateChanged(std::vector<unsigned int>* ssrcs,
   list_crit_->Leave();
 
   if (sender) {
-    // TODO(holmer): Change RTP module API to take a vector pointer.
-    sender->SetREMBData(bitrate_, ssrcs->size(), &(*ssrcs)[0]);
+    // TODO(holmer): Change RTP module API to take a const vector reference.
+    sender->SetREMBData(bitrate_, ssrcs.size(), &ssrcs[0]);
   }
 }
 

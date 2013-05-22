@@ -268,12 +268,12 @@ double RemoteRateControl::RateIncreaseFactor(int64_t now_ms,
 }
 
 void RemoteRateControl::UpdateChangePeriod(int64_t now_ms) {
-  int64_t changePeriod = 0;
+  int64_t change_period = 0;
   if (last_change_ms_ > -1) {
-    changePeriod = now_ms - last_change_ms_;
+    change_period = now_ms - last_change_ms_;
   }
   last_change_ms_ = now_ms;
-  avg_change_period_ = 0.9f * avg_change_period_ + 0.1f * changePeriod;
+  avg_change_period_ = 0.9f * avg_change_period_ + 0.1f * change_period;
 }
 
 void RemoteRateControl::UpdateMaxBitRateEstimate(float incoming_bit_rate_kbps) {
@@ -288,8 +288,8 @@ void RemoteRateControl::UpdateMaxBitRateEstimate(float incoming_bit_rate_kbps) {
   // with the average max bit rate.
   const float norm = std::max(avg_max_bit_rate_, 1.0f);
   var_max_bit_rate_ = (1 - alpha) * var_max_bit_rate_ +
-         alpha * (avg_max_bit_rate_ - incoming_bit_rate_kbps) *
-             (avg_max_bit_rate_ - incoming_bit_rate_kbps) / norm;
+      alpha * (avg_max_bit_rate_ - incoming_bit_rate_kbps) *
+          (avg_max_bit_rate_ - incoming_bit_rate_kbps) / norm;
   // 0.4 ~= 14 kbit/s at 500 kbit/s
   if (var_max_bit_rate_ < 0.4f) {
     var_max_bit_rate_ = 0.4f;
@@ -347,7 +347,7 @@ void RemoteRateControl::ChangeState(RateControlState new_state) {
   StateStr(rate_control_state_, state2);
   StateStr(current_input_._bwState, state3);
   WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
-         "\t%s => %s due to %s\n", state1, state2, state3);
+               "\t%s => %s due to %s\n", state1, state2, state3);
 }
 
 void RemoteRateControl::StateStr(RateControlState state, char* str) {
