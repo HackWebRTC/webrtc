@@ -75,11 +75,12 @@ RtpStream::RtcpPacket* RtpStream::Rtcp(int64_t time_now_us) {
     return NULL;
   }
   RtcpPacket* rtcp = new RtcpPacket;
-  int64_t send_time_us = RtpStream::kSendSideOffsetUs + time_now_us;
+  int64_t send_time_us = time_now_us + kSendSideOffsetUs;
   rtcp->timestamp = rtp_timestamp_offset_ + static_cast<uint32_t>(
-          ((frequency_ / 1000) * send_time_us + 500) / 1000);
+      ((frequency_ / 1000) * send_time_us + 500) / 1000);
   rtcp->ntp_secs = send_time_us / 1000000;
-  rtcp->ntp_frac = (send_time_us % 1000000) * kNtpFracPerMs;
+  rtcp->ntp_frac = static_cast<int64_t>((send_time_us % 1000000) *
+      kNtpFracPerMs);
   rtcp->ssrc = ssrc_;
   next_rtcp_time_ = time_now_us + kRtcpIntervalUs;
   return rtcp;
