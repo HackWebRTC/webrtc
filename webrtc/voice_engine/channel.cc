@@ -950,6 +950,7 @@ Channel::Channel(int32_t channelId,
     _countDeadDetections(0),
     _outputSpeechType(AudioFrame::kNormalSpeech),
     _average_jitter_buffer_delay_us(0),
+    least_required_delay_ms_(0),
     _previousTimestamp(0),
     _recPacketDelayMs(20),
     _RxVadDetection(false),
@@ -5091,6 +5092,9 @@ void Channel::UpdatePacketDelay(uint32_t rtp_timestamp,
   if (_audioCodingModule.ReceiveCodec(&current_receive_codec) != 0) {
     return;
   }
+
+  // Update the least required delay.
+  least_required_delay_ms_ = _audioCodingModule.LeastRequiredDelayMs();
 
   if (STR_CASE_CMP("G722", current_receive_codec.plname) == 0) {
     // Even though the actual sampling rate for G.722 audio is

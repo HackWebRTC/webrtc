@@ -167,8 +167,17 @@ class AudioCodingModuleImpl : public AudioCodingModule {
                           const uint8_t payload_type,
                           const uint32_t timestamp = 0);
 
-  // Minimum playout delay (used for lip-sync).
-  int32_t SetMinimumPlayoutDelay(const int32_t time_ms);
+  // NetEq minimum playout delay (used for lip-sync). The actual target delay
+  // is the max of |time_ms| and the required delay dictated by the channel.
+  int SetMinimumPlayoutDelay(int time_ms);
+
+  //
+  // The shortest latency, in milliseconds, required by jitter buffer. This
+  // is computed based on inter-arrival times and playout mode of NetEq. The
+  // actual delay is the maximum of least-required-delay and the minimum-delay
+  // specified by SetMinumumPlayoutDelay() API.
+  //
+  int LeastRequiredDelayMs() const ;
 
   // Configure Dtmf playout status i.e on/off playout the incoming outband Dtmf
   // tone.

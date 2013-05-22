@@ -639,8 +639,9 @@ class AudioCodingModule: public Module {
                                         const uint32_t timestamp = 0) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
-  // int32_t SetMinimumPlayoutDelay()
-  // Set Minimum playout delay, used for lip-sync.
+  // int SetMinimumPlayoutDelay()
+  // Set a minimum for the playout delay, used for lip-sync. NetEq maintains
+  // such a delay unless channel condition yields to a higher delay.
   //
   // Input:
   //   -time_ms            : minimum delay in milliseconds.
@@ -649,7 +650,15 @@ class AudioCodingModule: public Module {
   //   -1 if failed to set the delay,
   //    0 if the minimum delay is set.
   //
-  virtual int32_t SetMinimumPlayoutDelay(const int32_t time_ms) = 0;
+  virtual int SetMinimumPlayoutDelay(int time_ms) = 0;
+
+  //
+  // The shortest latency, in milliseconds, required by jitter buffer. This
+  // is computed based on inter-arrival times and playout mode of NetEq. The
+  // actual delay is the maximum of least-required-delay and the minimum-delay
+  // specified by SetMinumumPlayoutDelay() API.
+  //
+  virtual int LeastRequiredDelayMs() const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t RegisterIncomingMessagesCallback()
@@ -945,8 +954,9 @@ class AudioCodingModule: public Module {
   // Set an initial delay for playout.
   // An initial delay yields ACM playout silence until equivalent of |delay_ms|
   // audio payload is accumulated in NetEq jitter. Thereafter, ACM pulls audio
-  // from NetEq in its regular fashion, and the given delay is maintained as
-  // "minimum playout delay."
+  // from NetEq in its regular fashion, and the given delay is maintained
+  // through out the call, unless channel conditions yield to a higher jitter
+  // buffer delay.
   //
   // Input:
   //   -delay_ms           : delay in milliseconds.

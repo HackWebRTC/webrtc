@@ -153,21 +153,24 @@ int32_t ViESyncModule::Process() {
   TRACE_COUNTER1("webrtc", "SyncCurrentAudioDelay",
                  audio_jitter_buffer_delay_ms);
   TRACE_COUNTER1("webrtc", "SyncRelativeDelay", relative_delay_ms);
-  int extra_audio_delay_ms = 0;
+  int total_audio_delay_target_ms = 0;
   // Calculate the necessary extra audio delay and desired total video
   // delay to get the streams in sync.
+  int current_audio_delay = audio_jitter_buffer_delay_ms +
+      playout_buffer_delay_ms;
   if (!sync_->ComputeDelays(relative_delay_ms,
-                            audio_jitter_buffer_delay_ms,
-                            &extra_audio_delay_ms,
+                            current_audio_delay,
+                            &total_audio_delay_target_ms,
                             &total_video_delay_target_ms)) {
     return 0;
   }
 
-  TRACE_COUNTER1("webrtc", "SyncExtraAudioDelayTarget", extra_audio_delay_ms);
+  TRACE_COUNTER1("webrtc", "SyncTotalAudioDelayTarget",
+                 total_audio_delay_target_ms);
   TRACE_COUNTER1("webrtc", "SyncTotalVideoDelayTarget",
                  total_video_delay_target_ms);
   if (voe_sync_interface_->SetMinimumPlayoutDelay(
-      voe_channel_id_, extra_audio_delay_ms) == -1) {
+      voe_channel_id_, total_audio_delay_target_ms) == -1) {
     WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideo, vie_channel_->Id(),
                  "Error setting voice delay");
   }

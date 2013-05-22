@@ -2116,8 +2116,11 @@ int32_t AudioCodingModuleImpl::IncomingPacket(
 
     if (av_sync_ || track_neteq_buffer_) {
       last_incoming_send_timestamp_ = rtp_info.header.timestamp;
-      first_payload_received_ = true;
     }
+
+    // Set the following regardless of tracking NetEq buffer or being in
+    // AV-sync mode.
+    first_payload_received_ = true;
   }
   return 0;
 }
@@ -2192,8 +2195,7 @@ int AudioCodingModuleImpl::InitStereoSlave() {
 }
 
 // Minimum playout delay (Used for lip-sync).
-int32_t AudioCodingModuleImpl::SetMinimumPlayoutDelay(
-    const int32_t time_ms) {
+int AudioCodingModuleImpl::SetMinimumPlayoutDelay(int time_ms) {
   if ((time_ms < 0) || (time_ms > 10000)) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                  "Delay must be in the range of 0-10000 milliseconds.");
@@ -2205,7 +2207,7 @@ int32_t AudioCodingModuleImpl::SetMinimumPlayoutDelay(
     if (track_neteq_buffer_ && first_payload_received_)
       return 0;
   }
-  return neteq_.SetExtraDelay(time_ms);
+  return neteq_.SetMinimumDelay(time_ms);
 }
 
 // Get Dtmf playout status.
@@ -2937,7 +2939,7 @@ int AudioCodingModuleImpl::SetInitialPlayoutDelay(int delay_ms) {
   }
   av_sync_ = true;
   neteq_.EnableAVSync(av_sync_);
-  return neteq_.SetExtraDelay(delay_ms);
+  return neteq_.SetMinimumDelay(delay_ms);
 }
 
 bool AudioCodingModuleImpl::GetSilence(int desired_sample_rate_hz,
@@ -3039,6 +3041,10 @@ void AudioCodingModuleImpl::UpdateBufferingSafe(const WebRtcRTPHeader& rtp_info,
   playout_ts_ = static_cast<uint32_t>(
       rtp_info.header.timestamp - static_cast<uint32_t>(
           initial_delay_ms_ * in_sample_rate_khz));
+}
+
+int AudioCodingModuleImpl::LeastRequiredDelayMs() const {
+  return std::max(neteq_.LeastRequiredDelayMs(), initial_delay_ms_);
 }
 
 }  // namespace webrtc

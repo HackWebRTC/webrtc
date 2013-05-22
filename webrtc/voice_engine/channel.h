@@ -205,6 +205,7 @@ public:
     // VoEVideoSync
     bool GetDelayEstimate(int* jitter_buffer_delay_ms,
                           int* playout_buffer_delay_ms) const;
+    int least_required_delay_ms() const { return least_required_delay_ms_; }
     int SetInitialPlayoutDelay(int delay_ms);
     int SetMinimumPlayoutDelay(int delayMs);
     int GetPlayoutTimestamp(unsigned int& timestamp);
@@ -536,6 +537,7 @@ private:
     AudioFrame::SpeechType _outputSpeechType;
     // VoEVideoSync
     uint32_t _average_jitter_buffer_delay_us;
+    int least_required_delay_ms_;
     uint32_t _previousTimestamp;
     uint16_t _recPacketDelayMs;
     // VoEAudioProcessing
