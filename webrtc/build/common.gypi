@@ -308,6 +308,59 @@
          ],
       }],
     ], # conditions
+    'direct_dependent_settings': {
+      'include_dirs': [
+        '../..',
+      ],
+      'conditions': [
+        ['build_with_mozilla==1', {
+          'defines': [
+            # Changes settings for Mozilla build.
+            'WEBRTC_MOZILLA_BUILD',
+           ],
+        }],
+        ['build_with_chromium==1', {
+          'defines': [
+            # Changes settings for Chromium build.
+            'WEBRTC_CHROMIUM_BUILD',
+          ],
+        }],
+        ['OS=="mac"', {
+          'defines': [
+            'WEBRTC_MAC',
+          ],
+        }],
+        ['OS=="ios"', {
+          'defines': [
+            'WEBRTC_MAC',
+            'WEBRTC_IOS',
+          ],
+        }],
+        ['OS=="win"', {
+          'defines': [
+            'WEBRTC_WIN',
+          ],
+        }],
+        ['OS=="linux"', {
+          'defines': [
+            'WEBRTC_LINUX',
+          ],
+        }],
+        ['OS=="android"', {
+          'defines': [
+            'WEBRTC_LINUX',
+            'WEBRTC_ANDROID',
+           ],
+           'conditions': [
+             ['enable_android_opensl==1', {
+               'defines': [
+                 'WEBRTC_ANDROID_OPENSLES',
+               ],
+             }]
+           ],
+        }],
+      ],
+    },
   }, # target_defaults
 }
 

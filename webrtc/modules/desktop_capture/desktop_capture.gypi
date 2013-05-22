@@ -26,23 +26,6 @@
           'dependencies': [
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
           ],
-          'direct_dependent_settings': {
-            # Headers may use include path relative to webrtc root and depend on
-            # WEBRTC_WIN define, so we need to make sure dependent targets have
-            # these settings.
-            #
-            # TODO(sergeyu): Move these settings to common.gypi
-            'include_dirs': [
-              '../../..',
-            ],
-            'conditions': [
-              ['OS=="win"', {
-                'defines': [
-                  'WEBRTC_WIN',
-                ],
-              }],
-            ],
-          },
           'sources': [
             "desktop_capturer.h",
             "desktop_frame.cc",
