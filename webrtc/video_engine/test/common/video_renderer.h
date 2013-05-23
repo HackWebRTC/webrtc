@@ -21,6 +21,8 @@ class VideoRenderer : public newapi::VideoRenderer {
                                size_t width,
                                size_t height);
   virtual ~VideoRenderer() {}
+ protected:
+  VideoRenderer() {}
 };
 }  // test
 }  // webrtc

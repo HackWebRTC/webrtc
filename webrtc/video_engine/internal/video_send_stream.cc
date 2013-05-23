@@ -24,7 +24,8 @@ namespace webrtc {
 namespace internal {
 
 VideoSendStream::VideoSendStream(
-    newapi::Transport* transport, webrtc::VideoEngine* video_engine,
+    newapi::Transport* transport,
+    webrtc::VideoEngine* video_engine,
     const newapi::VideoSendStreamConfig& send_stream_config)
     : transport_(transport), config_(send_stream_config) {
 
@@ -74,7 +75,9 @@ VideoSendStream::~VideoSendStream() {
 }
 
 void VideoSendStream::PutFrame(const I420VideoFrame& frame,
-                               int32_t delta_capture_time) {
+                               uint32_t time_since_capture_ms) {
+  // TODO(pbos): frame_copy should happen after the VideoProcessingModule has
+  //             resized the frame.
   I420VideoFrame frame_copy;
   frame_copy.CopyFrame(frame);
 
@@ -95,7 +98,7 @@ void VideoSendStream::PutFrame(const I420VideoFrame& frame,
   vf.width = frame.width();
   vf.height = frame.height();
 
-  external_capture_->IncomingFrameI420(vf, frame.timestamp());
+  external_capture_->IncomingFrameI420(vf, frame.render_time_ms());
 
   if (config_.local_renderer != NULL) {
     config_.local_renderer->RenderFrame(frame, 0);
@@ -105,11 +108,13 @@ void VideoSendStream::PutFrame(const I420VideoFrame& frame,
 newapi::VideoSendStreamInput* VideoSendStream::Input() { return this; }
 
 void VideoSendStream::StartSend() {
-  if (video_engine_base_->StartSend(channel_) != 0) abort();
+  if (video_engine_base_->StartSend(channel_) != 0)
+    abort();
 }
 
 void VideoSendStream::StopSend() {
-  if (video_engine_base_->StopSend(channel_) != 0) abort();
+  if (video_engine_base_->StopSend(channel_) != 0)
+    abort();
 }
 
 void VideoSendStream::GetSendStatistics(
@@ -118,7 +123,8 @@ void VideoSendStream::GetSendStatistics(
 }
 
 bool VideoSendStream::SetTargetBitrate(
-    int min_bitrate, int max_bitrate,
+    int min_bitrate,
+    int max_bitrate,
     const std::vector<SimulcastStream>& streams) {
   return false;
 }
@@ -127,7 +133,8 @@ void VideoSendStream::GetSendCodec(VideoCodec* send_codec) {
   *send_codec = config_.codec;
 }
 
-int VideoSendStream::SendPacket(int /*channel*/, const void* packet,
+int VideoSendStream::SendPacket(int /*channel*/,
+                                const void* packet,
                                 int length) {
   // TODO(pbos): Lock these methods and the destructor so it can't be processing
   //             a packet when the destructor has been called.
@@ -135,7 +142,8 @@ int VideoSendStream::SendPacket(int /*channel*/, const void* packet,
   return transport_->SendRTP(packet, static_cast<size_t>(length)) ? 0 : -1;
 }
 
-int VideoSendStream::SendRTCPPacket(int /*channel*/, const void* packet,
+int VideoSendStream::SendRTCPPacket(int /*channel*/,
+                                    const void* packet,
                                     int length) {
   assert(length >= 0);
   return transport_->SendRTCP(packet, static_cast<size_t>(length)) ? 0 : -1;

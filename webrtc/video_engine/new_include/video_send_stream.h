@@ -46,7 +46,7 @@ class VideoSendStreamInput {
   // TODO(mflodman) Replace time_since_capture_ms when I420VideoFrame uses NTP
   // time.
   virtual void PutFrame(const I420VideoFrame& video_frame,
-                        int time_since_capture_ms) = 0;
+                        uint32_t time_since_capture_ms) = 0;
 
  protected:
   virtual ~VideoSendStreamInput() {}

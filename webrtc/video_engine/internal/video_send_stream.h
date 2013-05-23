@@ -38,8 +38,8 @@ class VideoSendStream : public newapi::VideoSendStream,
 
   virtual ~VideoSendStream();
 
-  virtual void PutFrame(const I420VideoFrame& frame, int32_t delta_capture_time)
-      OVERRIDE;
+  virtual void PutFrame(const I420VideoFrame& frame,
+                        uint32_t time_since_capture_ms) OVERRIDE;
 
   virtual newapi::VideoSendStreamInput* Input() OVERRIDE;
 

@@ -29,6 +29,8 @@
       'sources': [
         'common/flags.cc',
         'common/flags.h',
+        'common/frame_generator.cc',
+        'common/frame_generator.h',
         'common/generate_ssrcs.h',
         'common/vcm_capturer.h',
         'common/vcm_capturer.cc',
