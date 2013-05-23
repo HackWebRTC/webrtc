@@ -39,8 +39,11 @@ FrameGenerator::FrameGenerator(size_t width, size_t height, Clock* clock)
   // Generate frame by constructor arguments
   assert(width > 0);
   assert(height > 0);
-  frame_.CreateEmptyFrame(static_cast<int>(width), static_cast<int>(height),
-                          width, (width + 1) / 2, (width + 1) / 2);
+  frame_.CreateEmptyFrame(static_cast<int>(width),
+                          static_cast<int>(height),
+                          static_cast<int>(width),
+                          static_cast<int>((width + 1) / 2),
+                          static_cast<int>((width + 1) / 2));
 }
 
 BlackFrameGenerator::BlackFrameGenerator(size_t width,
