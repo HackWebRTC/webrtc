@@ -192,6 +192,19 @@ class VideoCallbackAndroid: public ViEDecoderObserver,
     virtual void IncomingCodecChanged(const int videoChannel,
                                       const webrtc::VideoCodec& videoCodec)
     {
+        JNIEnv* threadEnv = NULL;
+        int ret = webrtcGlobalVM->AttachCurrentThread(&threadEnv, NULL);
+        // Get the JNI env for this thread
+        if ((ret < 0) || !threadEnv)
+        {
+            __android_log_print(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG,
+                                "Could not attach thread to JVM (%d, %p)", ret,
+                                threadEnv);
+            return;
+        }
+        threadEnv->CallIntMethod(_callbackObj, _incomingResolutionId,
+                                 videoCodec.width, videoCodec.height);
+        webrtcGlobalVM->DetachCurrentThread();
     }
     ;
 
@@ -217,6 +230,7 @@ public:
   jobject _callbackObj;
   jclass _callbackCls;
   jmethodID _callbackId;
+  jmethodID _incomingResolutionId;
   int _frameRateO, _bitRateO;
   VideoCallbackAndroid(VideoEngineData& vieData, JNIEnv * env,
                        jobject callback) :
@@ -225,6 +239,8 @@ public:
     _callbackCls = _env->GetObjectClass(_callbackObj);
     _callbackId
         = _env->GetMethodID(_callbackCls, "updateStats", "(IIIII)I");
+    _incomingResolutionId
+        = _env->GetMethodID(_callbackCls, "newIncomingResolution", "(II)I");
     if (_callbackId == NULL) {
       __android_log_print(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                           "Failed to get jid");

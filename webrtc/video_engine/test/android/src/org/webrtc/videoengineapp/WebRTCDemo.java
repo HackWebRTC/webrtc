@@ -178,6 +178,9 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     private int bitRateO;
     private int numCalls = 0;
 
+    private int widthI;
+    private int heightI;
+
     // Variable for storing variables
     private String webrtcName = "/webrtc";
     private String webrtcDebugDir = null;
@@ -352,6 +355,8 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
                 loadText = "< " + frameRateO + " fps/ " +
                            bitRateO/1024 + " kbps";
                 canvas.drawText(loadText, 4, 262, loadPaint);
+		loadText = "Incoming resolution " + widthI + "x" + heightI;
+                canvas.drawText(loadText, 4, 282, loadPaint);
             }
             updateDisplay();
         }
@@ -1021,6 +1026,12 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         frameRateO = inFrameRateO;
         bitRateO = inBitRateO;
         return 0;
+    }
+
+    public int newIncomingResolution(int width, int height) {
+	widthI = width;
+	heightI = height;
+	return 0;
     }
 
     private void addStatusView() {
