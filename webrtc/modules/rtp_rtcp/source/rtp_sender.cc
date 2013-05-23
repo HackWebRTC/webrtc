@@ -510,7 +510,6 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
   TRACE_EVENT_INSTANT2("webrtc_rtp", "RTPSender::ReSendPacket",
                        "timestamp", rtp_header.header.timestamp,
                        "seqnum", rtp_header.header.sequenceNumber);
-
   if (paced_sender_) {
     if (!paced_sender_->SendPacket(PacedSender::kHighPriority,
                                    rtp_header.header.ssrc,

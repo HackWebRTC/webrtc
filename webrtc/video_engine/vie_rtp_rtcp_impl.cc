@@ -247,7 +247,7 @@ int ViERTP_RTCPImpl::SetRtxSendPayloadType(const int video_channel,
     shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
     return -1;
   }
-  if (!vie_channel->SetRtxSendPayloadType(payload_type)) {
+  if (vie_channel->SetRtxSendPayloadType(payload_type) != 0) {
     return -1;
   }
   return 0;

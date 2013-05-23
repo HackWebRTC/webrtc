@@ -627,7 +627,6 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
   int64_t now_ms = clock_->TimeInMilliseconds();
   VCMFrameBufferEnum buffer_return = kSizeError;
   VCMFrameBufferEnum ret = kSizeError;
-
   VCMFrameBuffer* frame = NULL;
   const VCMFrameBufferEnum error = GetFrame(packet, &frame);
   if (error != kNoError) {

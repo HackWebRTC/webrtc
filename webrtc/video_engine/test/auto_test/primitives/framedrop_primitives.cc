@@ -255,8 +255,9 @@ void TestFullStack(const TbInterfaces& interfaces,
   int32_t num_rtp_packets = 0;
   int32_t num_dropped_packets = 0;
   int32_t num_rtcp_packets = 0;
+  std::map<uint8_t, int> packet_counters;
   external_transport.GetStats(num_rtp_packets, num_dropped_packets,
-                              num_rtcp_packets);
+                              num_rtcp_packets, &packet_counters);
   ViETest::Log("RTP packets    : %5d", num_rtp_packets);
   ViETest::Log("Dropped packets: %5d", num_dropped_packets);
   ViETest::Log("RTCP packets   : %5d", num_rtcp_packets);

@@ -161,16 +161,82 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     }
 
     //
+    // RTX
+    //
+    unsigned short recFractionsLost = 0;
+    unsigned int recCumulativeLost = 0;
+    unsigned int recExtendedMax = 0;
+    unsigned int recJitter = 0;
+    int recRttMs = 0;
+    unsigned int sentTotalBitrate = 0;
+    unsigned int sentVideoBitrate = 0;
+    unsigned int sentFecBitrate = 0;
+    unsigned int sentNackBitrate = 0;
+
+    ViETest::Log("Testing NACK over RTX\n");
+    EXPECT_EQ(0, ViE.base->StopSend(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.base->StopReceive(tbChannel.videoChannel));
+
+    myTransport.ClearStats();
+
+    const uint8_t kRtxPayloadType = 96;
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetNACKStatus(tbChannel.videoChannel, true));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetRtxSendPayloadType(tbChannel.videoChannel,
+                                                     kRtxPayloadType));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetRtxReceivePayloadType(tbChannel.videoChannel,
+                                                        kRtxPayloadType));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetLocalSSRC(tbChannel.videoChannel, 1234,
+                                            webrtc::kViEStreamTypeRtx, 0));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetRemoteSSRCType(tbChannel.videoChannel,
+                                                 webrtc::kViEStreamTypeRtx,
+                                                 1234));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetStartSequenceNumber(
+        tbChannel.videoChannel, startSequenceNumber));
+    EXPECT_EQ(0, ViE.base->StartReceive(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.base->StartSend(tbChannel.videoChannel));
+
+    // Make sure the first key frame gets through.
+    AutoTestSleep(100);
+    const int kPacketLossRate = 20;
+    NetworkParameters network;
+    network.packet_loss_rate = kPacketLossRate;
+    network.loss_model = kUniformLoss;
+    myTransport.SetNetworkParameters(network);
+    AutoTestSleep(kAutoTestSleepTimeMs);
+
+    EXPECT_EQ(0, ViE.rtp_rtcp->GetReceivedRTCPStatistics(
+        tbChannel.videoChannel, recFractionsLost, recCumulativeLost,
+        recExtendedMax, recJitter, recRttMs));
+    EXPECT_EQ(0, ViE.rtp_rtcp->GetBandwidthUsage(
+        tbChannel.videoChannel, sentTotalBitrate, sentVideoBitrate,
+        sentFecBitrate, sentNackBitrate));
+
+    int num_rtp_packets = 0;
+    int num_dropped_packets = 0;
+    int num_rtcp_packets = 0;
+    std::map<uint8_t, int> packet_counters;
+    myTransport.GetStats(num_rtp_packets, num_dropped_packets, num_rtcp_packets,
+                         &packet_counters);
+    EXPECT_GT(num_rtp_packets, 0);
+    EXPECT_GT(num_dropped_packets, 0);
+    EXPECT_GT(num_rtcp_packets, 0);
+    EXPECT_GT(packet_counters[kRtxPayloadType], 0);
+
+    // Make sure we have lost packets and that they were retransmitted.
+    EXPECT_GT(recCumulativeLost, 0u);
+    EXPECT_GT(sentTotalBitrate, 0u);
+    EXPECT_GT(sentNackBitrate, 0u);
+
+    //
     //  Statistics
     //
     // Stop and restart to clear stats
     ViETest::Log("Testing statistics\n");
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetNACKStatus(tbChannel.videoChannel, false));
     EXPECT_EQ(0, ViE.base->StopReceive(tbChannel.videoChannel));
     EXPECT_EQ(0, ViE.base->StopSend(tbChannel.videoChannel));
 
     myTransport.ClearStats();
-    const int kPacketLossRate = 20;
-    NetworkParameters network;
     network.packet_loss_rate = kPacketLossRate;
     network.loss_model = kUniformLoss;
     myTransport.SetNetworkParameters(network);
@@ -189,16 +255,6 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     unsigned int sentExtendedMax = 0;
     unsigned int sentJitter = 0;
     int sentRttMs = 0;
-    unsigned short recFractionsLost = 0;
-    unsigned int recCumulativeLost = 0;
-    unsigned int recExtendedMax = 0;
-    unsigned int recJitter = 0;
-    int recRttMs = 0;
-
-    unsigned int sentTotalBitrate = 0;
-    unsigned int sentVideoBitrate = 0;
-    unsigned int sentFecBitrate = 0;
-    unsigned int sentNackBitrate = 0;
 
     EXPECT_EQ(0, ViE.rtp_rtcp->GetBandwidthUsage(
         tbChannel.videoChannel, sentTotalBitrate, sentVideoBitrate,
