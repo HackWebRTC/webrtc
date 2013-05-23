@@ -413,7 +413,7 @@ TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
   const int kStoredTimeInMs = 100;
   fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
 
-  EXPECT_EQ(0, rtp_sender_->ReSendPacket(kSeqNum));
+  EXPECT_EQ(rtp_length, rtp_sender_->ReSendPacket(kSeqNum));
   EXPECT_EQ(0, transport_.packets_sent_);
 
   rtp_sender_->TimeToSendPacket(kSeqNum, capture_time_ms);

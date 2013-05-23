@@ -115,6 +115,10 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     ViETest::Log("Set start sequence number: %u", startSequenceNumber);
     EXPECT_EQ(0, ViE.rtp_rtcp->SetStartSequenceNumber(
         tbChannel.videoChannel, startSequenceNumber));
+    const unsigned int kVideoSsrc = 123456;
+    // Set an SSRC to avoid issues with collisions.
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetLocalSSRC(tbChannel.videoChannel, kVideoSsrc,
+                                            webrtc::kViEStreamTypeNormal, 0));
 
     myTransport.EnableSequenceNumberCheck();
 
@@ -263,7 +267,7 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
 
     if (FLAGS_include_timing_dependent_tests) {
       EXPECT_GT(sentTotalBitrate, 0u);
-      EXPECT_GE(sentFecBitrate, 10u);
+      EXPECT_GT(sentFecBitrate, 0u);
       EXPECT_EQ(sentNackBitrate, 0u);
     }
 
@@ -279,12 +283,11 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
         tbChannel.videoChannel, sentTotalBitrate, sentVideoBitrate,
         sentFecBitrate, sentNackBitrate));
 
-    // TODO(holmer): Write a non-flaky verification of this API.
-    // numberOfErrors += ViETest::TestError(sentTotalBitrate > 0 &&
-    //                                      sentFecBitrate == 0 &&
-    //                                      sentNackBitrate > 0,
-    //                                      "ERROR: %s at line %d",
-    //                                      __FUNCTION__, __LINE__);
+    if (FLAGS_include_timing_dependent_tests) {
+      EXPECT_GT(sentTotalBitrate, 0u);
+      EXPECT_EQ(sentFecBitrate, 0u);
+      EXPECT_GT(sentNackBitrate, 0u);
+    }
 
     EXPECT_EQ(0, ViE.base->StopReceive(tbChannel.videoChannel));
     EXPECT_EQ(0, ViE.base->StopSend(tbChannel.videoChannel));

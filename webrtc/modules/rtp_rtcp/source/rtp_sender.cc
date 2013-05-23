@@ -519,12 +519,12 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
                                    length)) {
       // We can't send the packet right now.
       // We will be called when it is time.
-      return 0;
+      return length;
     }
   }
 
   if (SendPacketToNetwork(buffer_to_send_ptr, length)) {
-    return 0;
+    return length;
   }
   return -1;
 }
