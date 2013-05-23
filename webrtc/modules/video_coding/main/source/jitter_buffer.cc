@@ -1101,8 +1101,9 @@ bool VCMJitterBuffer::RecycleFramesUntilKeyFrame() {
     FrameList::iterator it = frame_list_.begin();
     WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCoding,
                  VCMId(vcm_id_, receiver_id_),
-                 "Jitter buffer drop count:%d, low_seq %d", drop_count_,
-                 (*it)->GetLowSeqNum());
+                 "Jitter buffer drop count:%d, low_seq %d, frame type: %s",
+                 drop_count_, (*it)->GetLowSeqNum(),
+                 (*it)->FrameType() == kVideoFrameKey ? "key" : "delta");
     TRACE_EVENT_INSTANT0("webrtc", "JB::RecycleFramesUntilKeyFrame");
     ReleaseFrameIfNotDecoding(*it);
     it = frame_list_.erase(it);
