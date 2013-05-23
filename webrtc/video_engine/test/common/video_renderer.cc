@@ -34,11 +34,9 @@ class NullRenderer : public VideoRenderer {
                            int time_to_render_ms) OVERRIDE {}
 };
 
-VideoRenderer* VideoRenderer::Create(const char* window_title) {
-  // TODO(pbos): Get these from command-line parameters.
-  int width = 640;
-  int height = 480;
-
+VideoRenderer* VideoRenderer::Create(const char* window_title,
+                                     size_t width,
+                                     size_t height) {
 #ifdef WEBRTC_TEST_XV
   XvRenderer* xv_renderer = XvRenderer::Create(window_title, width, height);
   if (xv_renderer != NULL) {

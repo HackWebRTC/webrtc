@@ -26,14 +26,12 @@ class NullCapturer : public VideoCapturer {
 VideoCapturer::VideoCapturer(newapi::VideoSendStreamInput* input)
     : input_(input) {}
 
-VideoCapturer* VideoCapturer::Create(newapi::VideoSendStreamInput* input) {
-  // TODO(pbos): These should be specified by command-line parameters.
-  size_t width = 640;
-  size_t height = 480;
-  size_t target_fps = 30;
+VideoCapturer* VideoCapturer::Create(newapi::VideoSendStreamInput* input,
+                                     size_t width,
+                                     size_t height,
+                                     size_t fps) {
+  VcmCapturer* vcm_capturer = VcmCapturer::Create(input, width, height, fps);
 
-  VcmCapturer* vcm_capturer = VcmCapturer::Create(input, width, height,
-                                                  target_fps);
   if (vcm_capturer != NULL) {
     return vcm_capturer;
   }

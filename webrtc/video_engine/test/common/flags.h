@@ -7,22 +7,26 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_VIDEO_RENDERER_H_
-#define WEBRTC_VIDEO_ENGINE_TEST_COMMON_VIDEO_RENDERER_H_
 
-#include "webrtc/video_engine/new_include/common.h"
+#ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_FLAGS_H_
+#define WEBRTC_VIDEO_ENGINE_TEST_COMMON_FLAGS_H_
+
+#include <stddef.h>
 
 namespace webrtc {
 namespace test {
+namespace flags {
 
-class VideoRenderer : public newapi::VideoRenderer {
- public:
-  static VideoRenderer* Create(const char* window_title,
-                               size_t width,
-                               size_t height);
-  virtual ~VideoRenderer() {}
-};
+void Init(int* argc, char ***argv);
+
+size_t Width();
+size_t Height();
+size_t Fps();
+size_t MinBitrate();
+size_t StartBitrate();
+size_t MaxBitrate();
+}  // flags
 }  // test
 }  // webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_VIDEO_RENDERER_H_
+#endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_FLAGS_H_

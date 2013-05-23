@@ -27,6 +27,8 @@
       'target_name': 'video_tests_common',
       'type': 'static_library',
       'sources': [
+        'common/flags.cc',
+        'common/flags.h',
         'common/generate_ssrcs.h',
         'common/vcm_capturer.h',
         'common/vcm_capturer.cc',
@@ -95,6 +97,7 @@
         ],
       },
       'dependencies': [
+        '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
         '<(webrtc_root)/modules/modules.gyp:video_capture_module',
         'video_engine_core',
       ],

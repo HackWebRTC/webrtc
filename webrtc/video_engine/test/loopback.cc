@@ -16,6 +16,7 @@
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/new_include/video_engine.h"
 #include "webrtc/video_engine/test/common/direct_transport.h"
+#include "webrtc/video_engine/test/common/flags.h"
 #include "webrtc/video_engine/test/common/generate_ssrcs.h"
 #include "webrtc/video_engine/test/common/video_capturer.h"
 #include "webrtc/video_engine/test/common/video_renderer.h"
@@ -28,10 +29,10 @@ class LoopbackTest : public ::testing::Test {
 };
 
 TEST_F(LoopbackTest, Test) {
-  test::VideoRenderer* local_preview =
-      test::VideoRenderer::Create("Local Preview");
-  test::VideoRenderer* loopback_video =
-      test::VideoRenderer::Create("Loopback Video");
+  test::VideoRenderer* local_preview = test::VideoRenderer::Create(
+      "Local Preview", test::flags::Width(), test::flags::Height());
+  test::VideoRenderer* loopback_video = test::VideoRenderer::Create(
+      "Loopback Video", test::flags::Width(), test::flags::Height());
 
   newapi::VideoEngine* video_engine =
       newapi::VideoEngine::Create(webrtc::newapi::VideoEngineConfig());
@@ -48,19 +49,24 @@ TEST_F(LoopbackTest, Test) {
 
   send_config.local_renderer = local_preview;
 
-  // TODO(pbos): Should be specified by command-line parameters. And not even
-  //             visible in the test. Break it out to some get-test-defaults
-  //             class
-  send_config.codec.width = 640;
-  send_config.codec.height = 480;
-  send_config.codec.minBitrate = 1000;
-  send_config.codec.startBitrate = 1500;
-  send_config.codec.maxBitrate = 2000;
+  // TODO(pbos): static_cast shouldn't be required after mflodman refactors the
+  //             VideoCodec struct.
+  send_config.codec.width = static_cast<unsigned short>(test::flags::Width());
+  send_config.codec.height = static_cast<unsigned short>(test::flags::Height());
+  send_config.codec.minBitrate =
+      static_cast<unsigned int>(test::flags::MinBitrate());
+  send_config.codec.startBitrate =
+      static_cast<unsigned int>(test::flags::StartBitrate());
+  send_config.codec.maxBitrate =
+      static_cast<unsigned int>(test::flags::MaxBitrate());
 
   newapi::VideoSendStream* send_stream = call->CreateSendStream(send_config);
 
   test::VideoCapturer* camera =
-      test::VideoCapturer::Create(send_stream->Input());
+      test::VideoCapturer::Create(send_stream->Input(),
+                                  test::flags::Width(),
+                                  test::flags::Height(),
+                                  test::flags::Fps());
 
   newapi::VideoReceiveStreamConfig receive_config;
   call->GetDefaultReceiveConfig(&receive_config);
@@ -98,6 +104,7 @@ TEST_F(LoopbackTest, Test) {
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
+  webrtc::test::flags::Init(&argc, &argv);
 
   return RUN_ALL_TESTS();
 }

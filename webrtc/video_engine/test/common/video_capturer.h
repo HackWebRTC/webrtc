@@ -20,7 +20,10 @@ namespace test {
 
 class VideoCapturer {
  public:
-  static VideoCapturer* Create(newapi::VideoSendStreamInput* input);
+  static VideoCapturer* Create(newapi::VideoSendStreamInput* input,
+                               size_t width,
+                               size_t height,
+                               size_t fps);
   virtual ~VideoCapturer() {}
 
   virtual void Start() = 0;
