@@ -34,7 +34,6 @@ class GlxRenderer : public GlRenderer {
   void Resize(size_t width, size_t height);
   void Destroy();
 
-  bool is_init_;
   size_t width_, height_;
 
   Display* display_;

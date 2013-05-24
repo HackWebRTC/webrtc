@@ -21,14 +21,15 @@ namespace webrtc {
 namespace test {
 
 GlxRenderer::GlxRenderer(size_t width, size_t height)
-    : is_init_(false),
-      width_(width),
+    : width_(width),
       height_(height),
       display_(NULL),
       context_(NULL) {
   assert(width > 0);
   assert(height > 0);
 }
+
+GlxRenderer::~GlxRenderer() { Destroy(); }
 
 bool GlxRenderer::Init(const char* window_title) {
   if ((display_ = XOpenDisplay(NULL)) == NULL) {
@@ -90,12 +91,6 @@ bool GlxRenderer::Init(const char* window_title) {
 }
 
 void GlxRenderer::Destroy() {
-  if (!is_init_) {
-    return;
-  }
-
-  is_init_ = false;
-
   if (context_ != NULL) {
     glXMakeCurrent(display_, window_, context_);
     GlRenderer::Destroy();
@@ -120,8 +115,6 @@ GlxRenderer* GlxRenderer::Create(const char* window_title, size_t width,
   }
   return glx_renderer;
 }
-
-GlxRenderer::~GlxRenderer() { Destroy(); }
 
 void GlxRenderer::Resize(size_t width, size_t height) {
   width_ = width;
