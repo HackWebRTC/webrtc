@@ -47,7 +47,8 @@ void DesktopRegion::IntersectWith(const DesktopRect& rect) {
     remove_empty_rects = remove_empty_rects | it->is_empty();
   }
   if (remove_empty_rects) {
-    RectsList new_rects(rects_.size());
+    RectsList new_rects;
+    new_rects.reserve(rects_.size());
     for (RectsList::iterator it = rects_.begin(); it != rects_.end(); ++it) {
       if (!it->is_empty())
         new_rects.push_back(*it);
