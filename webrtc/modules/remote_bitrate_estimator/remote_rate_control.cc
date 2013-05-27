@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/remote_bitrate_estimator/remote_rate_control.h"
+#include "webrtc/modules/remote_bitrate_estimator/remote_rate_control.h"
 
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstring>
 
-#include "system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 

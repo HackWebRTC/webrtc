@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_REMOTE_RATE_CONTROL_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_REMOTE_RATE_CONTROL_H_
 
-#include "modules/remote_bitrate_estimator/include/bwe_defines.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 
 namespace webrtc {
 

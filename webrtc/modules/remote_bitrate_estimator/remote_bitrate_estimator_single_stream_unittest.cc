@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <gtest/gtest.h>
+#include "testing/gtest/include/gtest/gtest.h"
 
-#include "modules/remote_bitrate_estimator/remote_bitrate_estimator_unittest_helper.h"
+#include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_unittest_helper.h"
 #include "webrtc/system_wrappers/interface/constructor_magic.h"
 
 namespace webrtc {
