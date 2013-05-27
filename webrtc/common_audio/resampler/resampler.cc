@@ -16,8 +16,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "signal_processing_library.h"
-#include "resampler.h"
+#include "webrtc/common_audio/resampler/include/resampler.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
 
 namespace webrtc

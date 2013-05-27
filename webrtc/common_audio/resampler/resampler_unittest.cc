@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "gtest/gtest.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
-#include "common_audio/resampler/include/resampler.h"
+#include "webrtc/common_audio/resampler/include/resampler.h"
 
 // TODO(andrew): this is a work-in-progress. Many more tests are needed.
 

@@ -367,4 +367,3 @@ INSTANTIATE_TEST_CASE_P(
         std::tr1::make_tuple(192000, 192000, kResamplingRMSError, -73.52)));
 
 }  // namespace webrtc
-

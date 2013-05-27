@@ -108,4 +108,3 @@ DEFINE_FUNCTION WebRtcSpl_SqrtFloor
 
   bic    r0, r2, #3 << 30  @ for rounding add: cmp r0, r2  adc r2, #1
   bx lr
-
