@@ -18,11 +18,11 @@
 #elif defined(WEBRTC_ANDROID)
 // Not implemented yet, might be possible to use Linux implementation
 #else // defined(WEBRTC_LINUX)
-#include <unistd.h>  // required for get_nprocs() with uClibc
 #include <sys/sysinfo.h>
+#include <unistd.h>  // required for get_nprocs() with uClibc
 #endif
 
-#include "system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
