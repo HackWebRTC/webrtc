@@ -22,8 +22,8 @@
 #include <arpa/inet.h>
 #include <ctype.h>
 #include <fcntl.h>
-#include <netdb.h>
 #include <net/if.h>
+#include <netdb.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
@@ -45,11 +45,11 @@
 #endif
 
 #include "webrtc/common_types.h"
-#include "webrtc/typedefs.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/test/channel_transport/udp_socket_manager_wrapper.h"
+#include "webrtc/typedefs.h"
 
 #if defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
 #define GetLastError() errno

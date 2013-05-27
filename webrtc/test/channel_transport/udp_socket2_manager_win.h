@@ -24,6 +24,7 @@
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/test/channel_transport/udp_socket2_win.h"
 #include "webrtc/test/channel_transport/udp_socket_manager_wrapper.h"
+#include "webrtc/test/channel_transport/udp_transport.h"
 
 #define MAX_IO_BUFF_SIZE 1600
 
