@@ -42,6 +42,7 @@ class ChannelGroup {
 
   bool SetChannelRembStatus(int channel_id, bool sender, bool receiver,
                             ViEChannel* channel);
+  void SetReceiveAbsoluteSendTimeStatus(bool enable);
 
   BitrateController* GetBitrateController();
   CallStats* GetCallStats();

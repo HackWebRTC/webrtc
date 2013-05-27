@@ -91,6 +91,7 @@ ViEChannel::ViEChannel(int32_t channel_id,
       rtp_packet_timeout_(false),
       send_timestamp_extension_id_(kInvalidRtpExtensionId),
       absolute_send_time_extension_id_(kInvalidRtpExtensionId),
+      receive_absolute_send_time_enabled_(false),
       using_packet_spread_(false),
       external_transport_(NULL),
       decoder_reset_(true),
@@ -914,12 +915,22 @@ int ViEChannel::SetSendAbsoluteSendTimeStatus(bool enable, int id) {
 
 int ViEChannel::SetReceiveAbsoluteSendTimeStatus(bool enable, int id) {
   if (enable) {
-    return rtp_rtcp_->RegisterReceiveRtpHeaderExtension(
-        kRtpExtensionAbsoluteSendTime, id);
+    if (rtp_rtcp_->RegisterReceiveRtpHeaderExtension(
+        kRtpExtensionAbsoluteSendTime, id) != 0) {
+      return -1;
+    }
   } else {
-    return rtp_rtcp_->DeregisterReceiveRtpHeaderExtension(
-        kRtpExtensionAbsoluteSendTime);
+    if (rtp_rtcp_->DeregisterReceiveRtpHeaderExtension(
+        kRtpExtensionAbsoluteSendTime) != 0) {
+      return -1;
+    }
   }
+  receive_absolute_send_time_enabled_ = enable;
+  return 0;
+}
+
+bool ViEChannel::GetReceiveAbsoluteSendTimeStatus() const {
+  return receive_absolute_send_time_enabled_;
 }
 
 void ViEChannel::SetTransmissionSmoothingStatus(bool enable) {

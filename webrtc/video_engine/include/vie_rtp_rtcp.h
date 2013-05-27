@@ -248,6 +248,8 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
                                             bool enable,
                                             int id) = 0;
 
+  // When enabled for a channel, *all* channels on the same transport will be
+  // expected to include the absolute send time header extension.
   virtual int SetReceiveAbsoluteSendTimeStatus(int video_channel,
                                                bool enable,
                                                int id) = 0;

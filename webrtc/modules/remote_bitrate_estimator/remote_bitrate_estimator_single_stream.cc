@@ -225,4 +225,10 @@ RemoteBitrateEstimator* RemoteBitrateEstimatorFactory::Create(
     Clock* clock) const {
   return new RemoteBitrateEstimatorSingleStream(observer, clock);
 }
+
+RemoteBitrateEstimator* AbsoluteSendTimeRemoteBitrateEstimatorFactory::Create(
+    RemoteBitrateObserver* observer,
+    Clock* clock) const {
+  return new RemoteBitrateEstimatorSingleStream(observer, clock);
+}
 }  // namespace webrtc

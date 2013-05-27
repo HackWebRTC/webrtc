@@ -125,6 +125,7 @@ class ViEChannel
   int SetReceiveTimestampOffsetStatus(bool enable, int id);
   int SetSendAbsoluteSendTimeStatus(bool enable, int id);
   int SetReceiveAbsoluteSendTimeStatus(bool enable, int id);
+  bool GetReceiveAbsoluteSendTimeStatus() const;
   void SetTransmissionSmoothingStatus(bool enable);
   int32_t EnableTMMBR(const bool enable);
   int32_t EnableKeyFrameRequestCallback(const bool enable);
@@ -385,6 +386,7 @@ class ViEChannel
   bool rtp_packet_timeout_;
   int send_timestamp_extension_id_;
   int absolute_send_time_extension_id_;
+  bool receive_absolute_send_time_enabled_;
   bool using_packet_spread_;
 
   Transport* external_transport_;

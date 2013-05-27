@@ -80,6 +80,15 @@ struct RemoteBitrateEstimatorFactory {
       Clock* clock) const;
 };
 
+struct AbsoluteSendTimeRemoteBitrateEstimatorFactory {
+  AbsoluteSendTimeRemoteBitrateEstimatorFactory() {}
+  virtual ~AbsoluteSendTimeRemoteBitrateEstimatorFactory() {}
+
+  virtual RemoteBitrateEstimator* Create(
+      RemoteBitrateObserver* observer,
+      Clock* clock) const;
+};
+
 struct MultiStreamRemoteBitrateEstimatorFactory
     : RemoteBitrateEstimatorFactory {
   MultiStreamRemoteBitrateEstimatorFactory() {}

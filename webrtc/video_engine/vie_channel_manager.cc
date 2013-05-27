@@ -367,10 +367,39 @@ bool ViEChannelManager::SetRembStatus(int channel_id, bool sender,
   return group->SetChannelRembStatus(channel_id, sender, receiver, channel);
 }
 
+bool ViEChannelManager::SetReceiveAbsoluteSendTimeStatus(int channel_id,
+                                                         bool enable,
+                                                         int id) {
+  CriticalSectionScoped cs(channel_id_critsect_);
+  ViEChannel* channel = ViEChannelPtr(channel_id);
+  if (!channel) {
+    return false;
+  }
+  if (channel->SetReceiveAbsoluteSendTimeStatus(enable, id) != 0) {
+    return false;
+  }
+
+  // Enable absolute send time extension on the group if at least one of the
+  // channels use it.
+  ChannelGroup* group = FindGroup(channel_id);
+  assert(group);
+  bool any_enabled = false;
+  for (ChannelMap::const_iterator c_it = channel_map_.begin();
+       c_it != channel_map_.end(); ++c_it) {
+    if (group->HasChannel(c_it->first) &&
+        c_it->second->GetReceiveAbsoluteSendTimeStatus()) {
+      any_enabled = true;
+      break;
+    }
+  }
+  group->SetReceiveAbsoluteSendTimeStatus(any_enabled);
+  return true;
+}
+
 void ViEChannelManager::UpdateSsrcs(int channel_id,
                                     const std::list<unsigned int>& ssrcs) {
   CriticalSectionScoped cs(channel_id_critsect_);
-  ChannelGroup* channel_group =  FindGroup(channel_id);
+  ChannelGroup* channel_group = FindGroup(channel_id);
   if (channel_group == NULL) {
     return;
   }
