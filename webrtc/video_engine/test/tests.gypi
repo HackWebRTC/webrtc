@@ -10,18 +10,6 @@
   'variables': {
     'xv_renderer%': 0,
   },
-  'conditions': [
-    ['OS=="linux"', {
-      'variables': {
-       'glx_renderer%': 1,
-      },
-    }, {
-      # OS != "linux"
-      'variables': {
-        'glx_renderer%': 0,
-      },
-    }],
-  ],
   'targets': [
     {
       'target_name': 'video_tests_common',
@@ -32,25 +20,25 @@
         'common/frame_generator.cc',
         'common/frame_generator.h',
         'common/generate_ssrcs.h',
-        'common/vcm_capturer.h',
+        'common/gl/gl_renderer.cc',
+        'common/gl/gl_renderer.h',
+        'common/linux/glx_renderer.cc',
+        'common/linux/glx_renderer.h',
+        'common/linux/video_renderer_linux.cc',
+        'common/mac/run_tests.mm',
+        'common/mac/video_renderer_mac.h',
+        'common/mac/video_renderer_mac.mm',
+        'common/null_platform_renderer.cc',
+        'common/run_tests.cc',
+        'common/run_tests.h',
         'common/vcm_capturer.cc',
+        'common/vcm_capturer.h',
         'common/video_capturer.cc',
         'common/video_capturer.h',
         'common/video_renderer.cc',
         'common/video_renderer.h',
       ],
       'conditions': [
-        ['glx_renderer==1', {
-          'defines': [
-            'WEBRTC_TEST_GLX',
-          ],
-          'sources' : [
-            'common/gl/gl_renderer.cc',
-            'common/gl/gl_renderer.h',
-            'common/linux/glx_renderer.cc',
-            'common/linux/glx_renderer.h',
-          ],
-        }],
         ['xv_renderer==1', {
           'defines': [
             'WEBRTC_TEST_XV',
@@ -58,6 +46,23 @@
           'sources': [
             'common/linux/xv_renderer.cc',
             'common/linux/xv_renderer.h',
+          ],
+        }],
+        ['OS=="linux"', {
+          'sources!': [
+            'common/null_platform_renderer.cc',
+          ],
+        }],
+        ['OS=="mac"', {
+          'sources!': [
+            'common/null_platform_renderer.cc',
+            'common/run_tests.cc',
+          ],
+        }],
+        ['OS!="linux" and OS!="mac"', {
+          'sources!' : [
+            'common/gl/gl_renderer.cc',
+            'common/gl/gl_renderer.h',
           ],
         }],
       ],
@@ -99,6 +104,7 @@
         ],
       },
       'dependencies': [
+        '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
         '<(webrtc_root)/modules/modules.gyp:video_capture_module',
         'video_engine_core',

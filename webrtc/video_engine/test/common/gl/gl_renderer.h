@@ -11,7 +11,11 @@
 #ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_GL_GL_RENDERER_H_
 #define WEBRTC_VIDEO_ENGINE_TEST_COMMON_GL_GL_RENDERER_H_
 
+#ifdef WEBRTC_MAC
+#include <OpenGL/gl.h>
+#else
 #include <GL/gl.h>
+#endif
 
 #include "webrtc/video_engine/test/common/video_renderer.h"
 

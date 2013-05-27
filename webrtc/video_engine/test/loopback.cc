@@ -8,16 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "testing/gtest/include/gtest/gtest.h"
-
 #include <cstdio>
 #include <map>
+
+#include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/new_include/video_engine.h"
 #include "webrtc/video_engine/test/common/direct_transport.h"
 #include "webrtc/video_engine/test/common/flags.h"
 #include "webrtc/video_engine/test/common/generate_ssrcs.h"
+#include "webrtc/video_engine/test/common/run_tests.h"
 #include "webrtc/video_engine/test/common/video_capturer.h"
 #include "webrtc/video_engine/test/common/video_renderer.h"
 
@@ -51,8 +52,8 @@ TEST_F(LoopbackTest, Test) {
 
   // TODO(pbos): static_cast shouldn't be required after mflodman refactors the
   //             VideoCodec struct.
-  send_config.codec.width = static_cast<unsigned short>(test::flags::Width());
-  send_config.codec.height = static_cast<unsigned short>(test::flags::Height());
+  send_config.codec.width = static_cast<uint16_t>(test::flags::Width());
+  send_config.codec.height = static_cast<uint16_t>(test::flags::Height());
   send_config.codec.minBitrate =
       static_cast<unsigned int>(test::flags::MinBitrate());
   send_config.codec.startBitrate =
@@ -106,5 +107,5 @@ int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   webrtc::test::flags::Init(&argc, &argv);
 
-  return RUN_ALL_TESTS();
+  return webrtc::test::RunAllTests();
 }

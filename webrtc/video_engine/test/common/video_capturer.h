@@ -36,4 +36,4 @@ class VideoCapturer {
 }  // test
 }  // webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_VIDEO_CAPTURER_H
+#endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_VIDEO_CAPTURER_H_
