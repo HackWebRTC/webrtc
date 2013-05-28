@@ -226,7 +226,7 @@ int TbExternalTransport::SendPacket(int channel, const void *data, int len)
         _statCrit.Enter();
         _dropCount++;
         _statCrit.Leave();
-        return 0;
+        return len;
     }
 
     VideoPacket* newPacket = new VideoPacket();
