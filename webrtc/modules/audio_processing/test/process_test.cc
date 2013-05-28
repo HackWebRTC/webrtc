@@ -17,8 +17,6 @@
 
 #include <algorithm>
 
-#include "testing/gtest/include/gtest/gtest.h"
-
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
@@ -27,8 +25,10 @@
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/perf_test.h"
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
+#include "gtest/gtest.h"
 #include "external/webrtc/webrtc/modules/audio_processing/debug.pb.h"
 #else
+#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/audio_processing/debug.pb.h"
 #endif
 
