@@ -23,6 +23,7 @@
       ],         
     },
     {   
+      # The test below takes long to run, no need to add it to any bot.
       'target_name': 'test_packet_masks_metrics',
       'type': 'executable',
       'dependencies': [
