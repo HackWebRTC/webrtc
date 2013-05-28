@@ -291,20 +291,13 @@ ifeq ($(APP_ABI), x86)  # x86 Android specific
       $(MY_LIBS_PATH)/libvpx_intrinsics_ssse3.a
   include $(PREBUILT_STATIC_LIBRARY)
 
-  include $(CLEAR_VARS)
-  LOCAL_MODULE := libvpx_intrinsics_sse4_1
-  LOCAL_SRC_FILES := \
-      $(MY_LIBS_PATH)/libvpx_intrinsics_sse4_1.a
-  include $(PREBUILT_STATIC_LIBRARY)
-
   LOCAL_PLATFORM_SPECIFIC_STATIC_LIBRARIES := \
       libvideo_processing_sse2 \
       libaudio_processing_sse2 \
       libcommon_audio_sse2 \
       libvpx_intrinsics_mmx \
       libvpx_intrinsics_sse2 \
-      libvpx_intrinsics_ssse3 \
-      libvpx_intrinsics_sse4_1
+      libvpx_intrinsics_ssse3
 else                    # arm Android specific
   include $(CLEAR_VARS)
   LOCAL_MODULE := libaudio_processing_neon
@@ -365,7 +358,7 @@ LOCAL_LDLIBS := \
 
 # TODO(yujie.mao): Replace LOCAL_WHOLE_STATIC_LIBRARIES to
 # LOCAL_STATIC_LIBRARIES after removing the circular dependencies between
-# libvpx.a and libvpx_intrinsics_[mmx,sse2,ssse3,sse4_1].a
+# libvpx.a and libvpx_intrinsics_[mmx,sse2,ssse3].a
 LOCAL_WHOLE_STATIC_LIBRARIES := \
     libvoice_engine_core \
     libvideo_engine_core \
