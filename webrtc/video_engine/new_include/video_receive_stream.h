@@ -41,6 +41,7 @@ struct ReceiveStatistics {
 
 // Receive stream specific RTP settings.
 struct RtpReceiveConfig {
+  RtpReceiveConfig() : ssrc(0), nack(NULL), fec(NULL) {}
   // TODO(mflodman) Do we require a set ssrc? What happens if the ssrc changes?
   uint32_t ssrc;
 
@@ -60,6 +61,8 @@ struct RtpReceiveConfig {
 // TODO(mflodman) Move all these settings to VideoDecoder and move the
 // declaration to common_types.h.
 struct ExternalVideoDecoder {
+  ExternalVideoDecoder()
+      : decoder(NULL), payload_type(0), renderer(false), expected_delay_ms(0) {}
   // The actual decoder.
   VideoDecoder* decoder;
 
@@ -78,6 +81,13 @@ struct ExternalVideoDecoder {
 };
 
 struct VideoReceiveStreamConfig {
+  VideoReceiveStreamConfig()
+      : renderer(NULL),
+        render_delay_ms(0),
+        audio_channel_id(0),
+        pre_decode_callback(NULL),
+        post_decode_callback(NULL),
+        target_delay_ms(0) {}
   // Codecs the receive stream
   std::vector<VideoCodec> codecs;
 

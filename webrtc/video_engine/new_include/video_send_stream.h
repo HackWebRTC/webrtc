@@ -27,6 +27,17 @@ namespace newapi {
 struct SendStreamState;
 
 struct SendStatistics {
+  SendStatistics()
+      : input_frame_rate(0),
+        encode_frame(0),
+        key_frames(0),
+        delta_frames(0),
+        video_packets(0),
+        retransmitted_packets(0),
+        fec_packets(0),
+        padding_packets(0),
+        send_bitrate_bps(0),
+        delay_ms(0) {}
   RtpStatistics rtp;
   int input_frame_rate;
   int encode_frame;
@@ -53,6 +64,12 @@ class VideoSendStreamInput {
 };
 
 struct RtpSendConfig {
+  RtpSendConfig()
+      : mode(kRtcpReducedSize),
+        max_packet_size(0),
+        nack(NULL),
+        fec(NULL),
+        rtx(NULL) {}
   RtcpMode mode;
 
   std::vector<uint32_t> ssrcs;
@@ -77,6 +94,15 @@ struct RtpSendConfig {
 };
 
 struct VideoSendStreamConfig {
+  VideoSendStreamConfig()
+      : pre_encode_callback(NULL),
+        encoded_callback(NULL),
+        local_renderer(NULL),
+        render_delay_ms(0),
+        encoder(NULL),
+        internal_source(false),
+        target_delay_ms(0),
+        start_state(NULL) {}
   VideoCodec codec;
 
   RtpSendConfig rtp;
