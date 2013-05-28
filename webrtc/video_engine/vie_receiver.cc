@@ -278,7 +278,8 @@ void ViEReceiver::EstimatedReceiveBandwidth(
   // LatestEstimate returns an error if there is no valid bitrate estimate, but
   // ViEReceiver instead returns a zero estimate.
   remote_bitrate_estimator_->LatestEstimate(&ssrcs, available_bandwidth);
-  if (!ssrcs.empty()) {
+  if (std::find(ssrcs.begin(), ssrcs.end(), rtp_rtcp_->RemoteSSRC()) !=
+      ssrcs.end()) {
     *available_bandwidth /= ssrcs.size();
   } else {
     *available_bandwidth = 0;
