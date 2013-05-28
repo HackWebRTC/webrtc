@@ -14,7 +14,7 @@
 
 #include <algorithm>
 
-#include <gflags/gflags.h>
+#include "gflags/gflags.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/channel_transport/include/channel_transport.h"
 #include "webrtc/video_engine/test/auto_test/interface/vie_autotest.h"
