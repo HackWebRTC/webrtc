@@ -14,7 +14,7 @@
       'type': 'executable',
       'dependencies': [
         '<(webrtc_root)/test/channel_transport.gyp:channel_transport',
-        '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine_core',
+        '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
       ],

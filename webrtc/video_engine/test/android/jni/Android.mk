@@ -16,9 +16,9 @@ BUILDTYPE ?= Debug
 MY_LIBS_PATH := ../../../../../out/$(BUILDTYPE)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := libvoice_engine_core
+LOCAL_MODULE := libvoice_engine
 LOCAL_SRC_FILES := \
-    $(MY_LIBS_PATH)/libvoice_engine_core.a
+    $(MY_LIBS_PATH)/libvoice_engine.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
@@ -360,7 +360,7 @@ LOCAL_LDLIBS := \
 # LOCAL_STATIC_LIBRARIES after removing the circular dependencies between
 # libvpx.a and libvpx_intrinsics_[mmx,sse2,ssse3].a
 LOCAL_WHOLE_STATIC_LIBRARIES := \
-    libvoice_engine_core \
+    libvoice_engine \
     libvideo_engine_core \
     libvideo_processing \
     libwebrtc_video_coding \

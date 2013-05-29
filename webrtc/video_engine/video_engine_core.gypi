@@ -29,7 +29,7 @@
         '<(webrtc_root)/modules/modules.gyp:video_render_module',
 
         # VoiceEngine
-        '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine_core',
+        '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
 
         # system_wrappers
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
