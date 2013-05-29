@@ -57,11 +57,10 @@ FrameGeneratorCapturer::~FrameGeneratorCapturer() {
 
   if (thread_ != NULL) {
     if (!thread_->Stop()) {
-      // TODO(pbos): Log a warning instead.
-      assert(!"Couldn't stop FrameGeneratorCapturer thread!");
+      // TODO(pbos): Log a warning. This will leak a thread.
+    } else {
+      delete thread_;
     }
-
-    delete thread_;
   }
 }
 
