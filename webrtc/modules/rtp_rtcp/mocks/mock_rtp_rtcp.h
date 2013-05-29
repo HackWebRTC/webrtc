@@ -11,11 +11,11 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_MOCKS_MOCK_RTP_RTCP_H_
 #define WEBRTC_MODULES_RTP_RTCP_MOCKS_MOCK_RTP_RTCP_H_
 
-#include <gmock/gmock.h>
+#include "testing/gmock/include/gmock/gmock.h"
 
-#include "modules/interface/module.h"
-#include "modules/rtp_rtcp/interface/rtp_rtcp.h"
-#include "modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/interface/module.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 
 namespace webrtc {
 

@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <gtest/gtest.h>
+#include "testing/gtest/include/gtest/gtest.h"
 
-#include "typedefs.h"
-#include "common_types.h"
-#include "rtp_utility.h"
-#include "rtcp_sender.h"
-#include "rtcp_receiver.h"
-#include "rtp_rtcp_impl.h"
-#include "modules/remote_bitrate_estimator/include/bwe_defines.h"
-#include "modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_receiver.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
+#include "webrtc/typedefs.h"
 
 namespace {
 

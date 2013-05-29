@@ -8,15 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtp_utility.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
 #include <cassert>
 #include <cmath>  // ceil
 #include <cstring>  // memcpy
 
 #if defined(_WIN32)
+// Order for these headers are important
 #include <Windows.h>  // FILETIME
+
 #include <WinSock.h>  // timeval
+
 #include <MMSystem.h>  // timeGetTime
 #elif ((defined WEBRTC_LINUX) || (defined WEBRTC_MAC))
 #include <sys/time.h>  // gettimeofday
@@ -26,8 +29,8 @@
 #include <stdio.h>
 #endif
 
-#include "system_wrappers/interface/tick_util.h"
-#include "system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 #if (defined(_DEBUG) && defined(_WIN32) && (_MSC_VER >= 1400))
 #define DEBUG_PRINT(...)           \

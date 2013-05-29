@@ -10,8 +10,8 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 
-#include <string.h>
 #include <cassert>
+#include <string.h>
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_audio.h"

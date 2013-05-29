@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtcp_receiver.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_receiver.h"
 
-#include <string.h> //memset
 #include <cassert> //assert
+#include <string.h> //memset
 
-#include "trace.h"
-#include "trace_event.h"
-#include "critical_section_wrapper.h"
-#include "rtcp_utility.h"
-#include "rtp_rtcp_impl.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace
 {

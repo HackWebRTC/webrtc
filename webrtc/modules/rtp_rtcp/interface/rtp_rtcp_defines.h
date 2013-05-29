@@ -11,9 +11,9 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_DEFINES_H_
 #define WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_DEFINES_H_
 
-#include "typedefs.h"
-#include "module_common_types.h"
+#include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/typedefs.h"
 
 #ifndef NULL
     #define NULL    0

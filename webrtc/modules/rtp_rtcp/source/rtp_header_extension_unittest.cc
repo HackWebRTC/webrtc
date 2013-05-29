@@ -13,11 +13,11 @@
  * This file includes unit tests for the RtpHeaderExtensionMap.
  */
 
-#include <gtest/gtest.h>
+#include "testing/gtest/include/gtest/gtest.h"
 
-#include "rtp_header_extension.h"
-#include "rtp_rtcp_defines.h"
-#include "typedefs.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

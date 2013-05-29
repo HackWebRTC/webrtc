@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtp_sender_audio.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_sender_audio.h"
 
-#include <string.h> //memcpy
 #include <cassert> //assert
+#include <string.h> //memcpy
 
-#include "trace_event.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
 RTPSenderAudio::RTPSenderAudio(const int32_t id, Clock* clock,

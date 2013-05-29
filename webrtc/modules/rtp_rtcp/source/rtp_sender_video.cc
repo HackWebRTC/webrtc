@@ -8,21 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtp_sender_video.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
 
-#include "critical_section_wrapper.h"
-#include "trace.h"
-#include "trace_event.h"
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "rtp_utility.h"
-
-#include <string.h> // memcpy
-#include <cassert>  // assert
-#include <cstdlib>  // srand
-
-#include "producer_fec.h"
-#include "rtp_format_vp8.h"
-#include "rtp_format_video_generic.h"
+#include "webrtc/modules/rtp_rtcp/source/producer_fec.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_format_vp8.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
 enum { REDForFECHeaderLength = 1 };

@@ -12,7 +12,7 @@
  * This file includes unit tests for the RTPSender.
  */
 
-#include <gtest/gtest.h>
+#include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/modules/pacing/include/mock/mock_paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
