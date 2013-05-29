@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-
-#pragma once
+#ifndef WEBRTC_VOICE_ENGINE_TEST_WIN_TEST_WINTESTDLG_H_
+#define WEBRTC_VOICE_ENGINE_TEST_WIN_TEST_WINTESTDLG_H_
 
 #if (_MSC_VER >= 1400)
 #define PRINT_GET_RESULT(...) \
@@ -278,4 +278,5 @@ public:
     afx_msg void OnBnClickedButtonClearErrorCallback();
     afx_msg void OnBnClickedCheckBwe1();
 };
-#pragma once
+
+#endif  // WEBRTC_VOICE_ENGINE_TEST_WIN_TEST_WINTESTDLG_H_

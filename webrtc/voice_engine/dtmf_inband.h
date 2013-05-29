@@ -8,12 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VOICE_ENGINE_DTMF_INBAND_H
-#define WEBRTC_VOICE_ENGINE_DTMF_INBAND_H
-
-#if _MSC_VER > 1000
-#pragma once
-#endif
+#ifndef WEBRTC_VOICE_ENGINE_DTMF_INBAND_H_
+#define WEBRTC_VOICE_ENGINE_DTMF_INBAND_H_
 
 #include "webrtc/typedefs.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
@@ -88,4 +84,4 @@ private:
 
 }   // namespace webrtc
 
-#endif // #ifndef WEBRTC_VOICE_ENGINE_DTMF_INBAND_H
+#endif // #ifndef WEBRTC_VOICE_ENGINE_DTMF_INBAND_H_

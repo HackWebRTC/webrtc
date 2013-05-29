@@ -11,10 +11,6 @@
 #ifndef WEBRTC_TEST_CHANNEL_TRANSPORT_UDP_SOCKET2_MANAGER_WINDOWS_H_
 #define WEBRTC_TEST_CHANNEL_TRANSPORT_UDP_SOCKET2_MANAGER_WINDOWS_H_
 
-#if _MSC_VER > 1000
-#pragma once
-#endif
-
 #include <winsock2.h>
 
 #include "webrtc/system_wrappers/interface/atomic32.h"
