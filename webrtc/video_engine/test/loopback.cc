@@ -13,6 +13,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/new_include/video_engine.h"
 #include "webrtc/video_engine/test/common/direct_transport.h"
@@ -63,11 +64,14 @@ TEST_F(LoopbackTest, Test) {
 
   newapi::VideoSendStream* send_stream = call->CreateSendStream(send_config);
 
+  Clock* test_clock = Clock::GetRealTimeClock();
+
   test::VideoCapturer* camera =
       test::VideoCapturer::Create(send_stream->Input(),
                                   test::flags::Width(),
                                   test::flags::Height(),
-                                  test::flags::Fps());
+                                  test::flags::Fps(),
+                                  test_clock);
 
   newapi::VideoReceiveStreamConfig receive_config;
   call->GetDefaultReceiveConfig(&receive_config);

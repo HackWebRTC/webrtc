@@ -19,6 +19,8 @@
         'common/flags.h',
         'common/frame_generator.cc',
         'common/frame_generator.h',
+        'common/frame_generator_capturer.cc',
+        'common/frame_generator_capturer.h',
         'common/generate_ssrcs.h',
         'common/gl/gl_renderer.cc',
         'common/gl/gl_renderer.h',
