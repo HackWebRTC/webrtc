@@ -3,6 +3,7 @@ var getUserMedia = null;
 var attachMediaStream = null;
 var reattachMediaStream = null;
 var webrtcDetectedBrowser = null;
+var webrtcDetectedVersion = null;
 
 function trace(text) {
   // This function is used for logging.
@@ -30,6 +31,14 @@ if (navigator.mozGetUserMedia) {
   // Code from Adam Barth.
   getUserMedia = navigator.mozGetUserMedia.bind(navigator);
 
+  // Creates Turn Uri with new turn format.
+  createIceServer = function(turn_url, username, password) {
+    var iceServer = { 'url': turn_url,
+                      'credential': password,
+                      'username': username };
+    return iceServer;
+  };
+
   // Attach a media stream to an element.
   attachMediaStream = function(element, stream) {
     console.log("Attaching media stream");
@@ -55,6 +64,24 @@ if (navigator.mozGetUserMedia) {
   console.log("This appears to be Chrome");
 
   webrtcDetectedBrowser = "chrome";
+  webrtcDetectedVersion =
+             parseInt(navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]);
+
+  // For pre-M28 chrome versions use old turn format, else use the new format.
+  if (webrtcDetectedVersion < 28) {
+    createIceServer = function(turn_url, username, password) {
+      var iceServer = { 'url': 'turn:' + username + '@' + turn_url,
+                        'credential': password };
+      return iceServer;
+    };
+  } else {
+    createIceServer = function(turn_url, username, password) {
+      var iceServer = { 'url': turn_url,
+                        'credential': password,
+                        'username': username };
+      return iceServer;
+    };
+  }
 
   // The RTCPeerConnection object.
   RTCPeerConnection = webkitRTCPeerConnection;

@@ -75,10 +75,10 @@
   function onTurnResult() {
     if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
       var turnServer = JSON.parse(xmlhttp.responseText);
-      pcConfig.iceServers.push({
-        'url': 'turn:' + turnServer.username + '@' + turnServer.turn,
-        'credential': turnServer.password
-      });
+      // Create a turnUri using the polyfill (adapter.js).
+      var iceServer = createIceServer(turnServer.uris[0], turnServer.username,
+                                    turnServer.password);
+      pcConfig.iceServers.push(iceServer);
     } else {
       console.log("Request for TURN server failed.")
     }
