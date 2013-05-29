@@ -27,7 +27,7 @@ class VideoCapturer {
   static VideoCapturer* Create(newapi::VideoSendStreamInput* input,
                                size_t width,
                                size_t height,
-                               size_t fps,
+                               int fps,
                                Clock* clock);
   virtual ~VideoCapturer() {}
 

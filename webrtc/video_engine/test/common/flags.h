@@ -21,7 +21,7 @@ void Init(int* argc, char ***argv);
 
 size_t Width();
 size_t Height();
-size_t Fps();
+int Fps();
 size_t MinBitrate();
 size_t StartBitrate();
 size_t MaxBitrate();

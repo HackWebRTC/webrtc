@@ -41,9 +41,9 @@ size_t Height() {
 }
 
 DEFINE_int32(fps, 30, "Frames per second.");
-size_t Fps() {
+int Fps() {
   assert(flags_are_init);
-  return static_cast<size_t>(FLAGS_fps);
+  return static_cast<int>(FLAGS_fps);
 }
 
 DEFINE_int32(min_bitrate, 50, "Minimum video bitrate.");

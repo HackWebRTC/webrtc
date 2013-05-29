@@ -32,7 +32,7 @@ VideoCapturer::VideoCapturer(newapi::VideoSendStreamInput* input)
 VideoCapturer* VideoCapturer::Create(newapi::VideoSendStreamInput* input,
                                      size_t width,
                                      size_t height,
-                                     size_t fps,
+                                     int fps,
                                      Clock* clock) {
   VcmCapturer* vcm_capturer = VcmCapturer::Create(input, width, height, fps);
 
