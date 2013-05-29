@@ -956,9 +956,6 @@ int32_t ViEChannel::SetSSRC(const uint32_t SSRC,
     return rtp_rtcp_->SetSSRC(SSRC);
   }
   CriticalSectionScoped cs(rtp_rtcp_cs_.get());
-  if (rtp_rtcp_->SetSSRC(SSRC) != 0) {
-    return -1;
-  }
   if (simulcast_idx > simulcast_rtp_rtcp_.size()) {
       return -1;
   }
@@ -968,11 +965,11 @@ int32_t ViEChannel::SetSSRC(const uint32_t SSRC,
       return -1;
     }
   }
-  RtpRtcp* rtp_rtcp = *it;
+  RtpRtcp* rtp_rtcp_module = *it;
   if (usage == kViEStreamTypeRtx) {
-    return rtp_rtcp->SetRTXSendStatus(kRtxRetransmitted, true, SSRC);
+    return rtp_rtcp_module->SetRTXSendStatus(kRtxRetransmitted, true, SSRC);
   }
-  return 0;
+  return rtp_rtcp_module->SetSSRC(SSRC);
 }
 
 int32_t ViEChannel::SetRemoteSSRCType(const StreamType usage,
