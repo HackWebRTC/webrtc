@@ -89,7 +89,7 @@ void ViEReceiver::RegisterSimulcastRtpRtcpModules(
   }
 }
 
-int ViEReceiver::SetReceiveTimestampOffsetStatus(bool enable, int id) {
+bool ViEReceiver::SetReceiveTimestampOffsetStatus(bool enable, int id) {
   if (enable) {
     return rtp_header_parser_->RegisterRtpHeaderExtension(
         kRtpExtensionTransmissionTimeOffset, id);
@@ -99,7 +99,7 @@ int ViEReceiver::SetReceiveTimestampOffsetStatus(bool enable, int id) {
   }
 }
 
-int ViEReceiver::SetReceiveAbsoluteSendTimeStatus(bool enable, int id) {
+bool ViEReceiver::SetReceiveAbsoluteSendTimeStatus(bool enable, int id) {
   if (enable) {
     return rtp_header_parser_->RegisterRtpHeaderExtension(
         kRtpExtensionAbsoluteSendTime, id);

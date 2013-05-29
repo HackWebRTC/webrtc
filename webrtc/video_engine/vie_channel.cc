@@ -873,7 +873,7 @@ int ViEChannel::SetSendTimestampOffsetStatus(bool enable, int id) {
 }
 
 int ViEChannel::SetReceiveTimestampOffsetStatus(bool enable, int id) {
-  return vie_receiver_.SetReceiveTimestampOffsetStatus(enable, id);
+  return vie_receiver_.SetReceiveTimestampOffsetStatus(enable, id) ? 0 : -1;
 }
 
 int ViEChannel::SetSendAbsoluteSendTimeStatus(bool enable, int id) {
@@ -909,7 +909,7 @@ int ViEChannel::SetSendAbsoluteSendTimeStatus(bool enable, int id) {
 
 int ViEChannel::SetReceiveAbsoluteSendTimeStatus(bool enable, int id) {
   receive_absolute_send_time_enabled_ = enable;
-  return vie_receiver_.SetReceiveAbsoluteSendTimeStatus(enable, id);
+  return vie_receiver_.SetReceiveAbsoluteSendTimeStatus(enable, id) ? 0 : -1;
 }
 
 bool ViEChannel::GetReceiveAbsoluteSendTimeStatus() const {

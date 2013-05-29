@@ -42,8 +42,8 @@ class ViEReceiver : public RtpData {
 
   void RegisterSimulcastRtpRtcpModules(const std::list<RtpRtcp*>& rtp_modules);
 
-  int SetReceiveTimestampOffsetStatus(bool enable, int id);
-  int SetReceiveAbsoluteSendTimeStatus(bool enable, int id);
+  bool SetReceiveTimestampOffsetStatus(bool enable, int id);
+  bool SetReceiveAbsoluteSendTimeStatus(bool enable, int id);
 
   void StartReceive();
   void StopReceive();
