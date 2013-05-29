@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/rtp_dump.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
@@ -27,6 +28,7 @@ ViEReceiver::ViEReceiver(const int32_t channel_id,
                          RemoteBitrateEstimator* remote_bitrate_estimator)
     : receive_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       channel_id_(channel_id),
+      rtp_header_parser_(RtpHeaderParser::Create()),
       rtp_rtcp_(NULL),
       vcm_(module_vcm),
       remote_bitrate_estimator_(remote_bitrate_estimator),
@@ -84,6 +86,26 @@ void ViEReceiver::RegisterSimulcastRtpRtcpModules(
     rtp_rtcp_simulcast_.insert(rtp_rtcp_simulcast_.begin(),
                                rtp_modules.begin(),
                                rtp_modules.end());
+  }
+}
+
+int ViEReceiver::SetReceiveTimestampOffsetStatus(bool enable, int id) {
+  if (enable) {
+    return rtp_header_parser_->RegisterRtpHeaderExtension(
+        kRtpExtensionTransmissionTimeOffset, id);
+  } else {
+    return rtp_header_parser_->DeregisterRtpHeaderExtension(
+        kRtpExtensionTransmissionTimeOffset);
+  }
+}
+
+int ViEReceiver::SetReceiveAbsoluteSendTimeStatus(bool enable, int id) {
+  if (enable) {
+    return rtp_header_parser_->RegisterRtpHeaderExtension(
+        kRtpExtensionAbsoluteSendTime, id);
+  } else {
+    return rtp_header_parser_->DeregisterRtpHeaderExtension(
+        kRtpExtensionAbsoluteSendTime);
   }
 }
 
@@ -168,8 +190,16 @@ int ViEReceiver::InsertRTPPacket(const int8_t* rtp_packet,
                            static_cast<uint16_t>(received_packet_length));
     }
   }
+  RTPHeader header;
+  if (!rtp_header_parser_->Parse(received_packet, received_packet_length,
+                                 &header)) {
+    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideo, channel_id_,
+                 "IncomingPacket invalid RTP header");
+    return -1;
+  }
   assert(rtp_rtcp_);  // Should be set by owner at construction time.
-  return rtp_rtcp_->IncomingPacket(received_packet, received_packet_length);
+  return rtp_rtcp_->IncomingRtpPacket(received_packet, received_packet_length,
+                                      header);
 }
 
 int ViEReceiver::InsertRTCPPacket(const int8_t* rtcp_packet,
@@ -213,11 +243,11 @@ int ViEReceiver::InsertRTCPPacket(const int8_t* rtcp_packet,
     std::list<RtpRtcp*>::iterator it = rtp_rtcp_simulcast_.begin();
     while (it != rtp_rtcp_simulcast_.end()) {
       RtpRtcp* rtp_rtcp = *it++;
-      rtp_rtcp->IncomingPacket(received_packet, received_packet_length);
+      rtp_rtcp->IncomingRtcpPacket(received_packet, received_packet_length);
     }
   }
   assert(rtp_rtcp_);  // Should be set by owner at construction time.
-  return rtp_rtcp_->IncomingPacket(received_packet, received_packet_length);
+  return rtp_rtcp_->IncomingRtcpPacket(received_packet, received_packet_length);
 }
 
 void ViEReceiver::StartReceive() {

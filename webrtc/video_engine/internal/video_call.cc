@@ -150,7 +150,7 @@ bool VideoCall::DeliverRtcp(ModuleRTPUtility::RTPHeaderParser* rtp_parser,
 
 bool VideoCall::DeliverRtp(ModuleRTPUtility::RTPHeaderParser* rtp_parser,
                            const void* packet, size_t length) {
-  WebRtcRTPHeader rtp_header;
+  RTPHeader rtp_header;
 
   // TODO(pbos): ExtensionMap if there are extensions
   if (!rtp_parser->Parse(rtp_header)) {
@@ -158,7 +158,7 @@ bool VideoCall::DeliverRtp(ModuleRTPUtility::RTPHeaderParser* rtp_parser,
     return false;
   }
 
-  uint32_t ssrc = rtp_header.header.ssrc;
+  uint32_t ssrc = rtp_header.ssrc;
   if (receive_ssrcs_.find(ssrc) == receive_ssrcs_.end()) {
     // TODO(pbos): Log some warning, SSRC without receiver.
     return false;

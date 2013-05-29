@@ -252,7 +252,7 @@ int ReceiverFEC::ParseAndReceivePacket(
   WebRtcRTPHeader header;
   memset(&header, 0, sizeof(header));
   ModuleRTPUtility::RTPHeaderParser parser(packet->data, packet->length);
-  if (!parser.Parse(header)) {
+  if (!parser.Parse(header.header)) {
     return -1;
   }
   if (owner_->ReceiveRecoveredPacketCallback(

@@ -57,10 +57,6 @@ class MockRtpRtcp : public RtpRtcp {
       int32_t(const VideoCodec& videoCodec, int8_t* plType));
   MOCK_METHOD1(DeRegisterReceivePayload,
       int32_t(const int8_t payloadType));
-  MOCK_METHOD2(RegisterReceiveRtpHeaderExtension,
-      int32_t(const RTPExtensionType type, const uint8_t id));
-  MOCK_METHOD1(DeregisterReceiveRtpHeaderExtension,
-               int32_t(const RTPExtensionType type));
   MOCK_CONST_METHOD0(RemoteTimestamp,
       uint32_t());
   MOCK_CONST_METHOD0(LocalTimeOfRemoteTimeStamp,
@@ -81,8 +77,11 @@ class MockRtpRtcp : public RtpRtcp {
       int32_t(bool* enable, uint32_t* ssrc, int* payload_type));
   MOCK_METHOD1(SetRtxReceivePayloadType,
       void(int));
-  MOCK_METHOD2(IncomingPacket,
-      int32_t(const uint8_t* incomingPacket, const uint16_t packetLength));
+  MOCK_METHOD3(IncomingRtpPacket,
+      int32_t(const uint8_t* incomingPacket, const uint16_t packetLength,
+              const webrtc::RTPHeader& header));
+  MOCK_METHOD2(IncomingRtcpPacket,
+      int32_t(const uint8_t* incomingPacket, uint16_t packetLength));
   MOCK_METHOD4(IncomingAudioNTP,
       int32_t(const uint32_t audioReceivedNTPsecs,
               const uint32_t audioReceivedNTPfrac,

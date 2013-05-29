@@ -492,8 +492,8 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
   }
 
   ModuleRTPUtility::RTPHeaderParser rtp_parser(data_buffer, length);
-  WebRtcRTPHeader rtp_header;
-  rtp_parser.Parse(rtp_header);
+  RTPHeader header;
+  rtp_parser.Parse(header);
 
   // Store the time when the packet was last sent or added to pacer.
   packet_history_->UpdateResendTime(packet_id);
@@ -508,12 +508,13 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
   }
 
   TRACE_EVENT_INSTANT2("webrtc_rtp", "RTPSender::ReSendPacket",
-                       "timestamp", rtp_header.header.timestamp,
-                       "seqnum", rtp_header.header.sequenceNumber);
+                       "timestamp", header.timestamp,
+                       "seqnum", header.sequenceNumber);
+
   if (paced_sender_) {
     if (!paced_sender_->SendPacket(PacedSender::kHighPriority,
-                                   rtp_header.header.ssrc,
-                                   rtp_header.header.sequenceNumber,
+                                   header.ssrc,
+                                   header.sequenceNumber,
                                    capture_time_ms,
                                    length)) {
       // We can't send the packet right now.
@@ -678,10 +679,10 @@ void RTPSender::TimeToSendPacket(uint16_t sequence_number,
   assert(length > 0);
 
   ModuleRTPUtility::RTPHeaderParser rtp_parser(data_buffer, length);
-  WebRtcRTPHeader rtp_header;
+  RTPHeader rtp_header;
   rtp_parser.Parse(rtp_header);
   TRACE_EVENT_INSTANT2("webrtc_rtp", "RTPSender::TimeToSendPacket",
-                       "timestamp", rtp_header.header.timestamp,
+                       "timestamp", rtp_header.timestamp,
                        "seqnum", sequence_number);
 
   int64_t now_ms = clock_->TimeInMilliseconds();
@@ -693,8 +694,8 @@ void RTPSender::TimeToSendPacket(uint16_t sequence_number,
   if (updated_transmission_time_offset || updated_abs_send_time) {
     // Update stored packet in case of receiving a re-transmission request.
     packet_history_->ReplaceRTPHeader(data_buffer,
-                                      rtp_header.header.sequenceNumber,
-                                      rtp_header.header.headerLength);
+                                      rtp_header.sequenceNumber,
+                                      rtp_header.headerLength);
   }
   SendPacketToNetwork(data_buffer, length);
 }
@@ -705,7 +706,7 @@ int32_t RTPSender::SendToNetwork(
     int64_t capture_time_ms, StorageType storage) {
   ModuleRTPUtility::RTPHeaderParser rtp_parser(
       buffer, payload_length + rtp_header_length);
-  WebRtcRTPHeader rtp_header;
+  RTPHeader rtp_header;
   rtp_parser.Parse(rtp_header);
 
   int64_t now_ms = clock_->TimeInMilliseconds();
@@ -753,8 +754,8 @@ int32_t RTPSender::SendToNetwork(
 
   if (paced_sender_ && storage != kDontStore) {
     if (!paced_sender_->SendPacket(
-        PacedSender::kNormalPriority, rtp_header.header.ssrc,
-        rtp_header.header.sequenceNumber, capture_time_ms,
+        PacedSender::kNormalPriority, rtp_header.ssrc,
+        rtp_header.sequenceNumber, capture_time_ms,
         payload_length + rtp_header_length)) {
       // We can't send the packet right now.
       // We will be called when it is time.
@@ -991,7 +992,7 @@ uint8_t RTPSender::BuildAbsoluteSendTimeExtension(
 
 bool RTPSender::UpdateTransmissionTimeOffset(
     uint8_t *rtp_packet, const uint16_t rtp_packet_length,
-    const WebRtcRTPHeader &rtp_header, const int64_t time_diff_ms) const {
+    const RTPHeader &rtp_header, const int64_t time_diff_ms) const {
   CriticalSectionScoped cs(send_critsect_);
 
   // Get length until start of header extension block.
@@ -1003,17 +1004,17 @@ bool RTPSender::UpdateTransmissionTimeOffset(
                  "Failed to update transmission time offset, not registered.");
     return false;
   }
-  int block_pos = 12 + rtp_header.header.numCSRCs + extension_block_pos;
+  int block_pos = 12 + rtp_header.numCSRCs + extension_block_pos;
   if (rtp_packet_length < block_pos + kTransmissionTimeOffsetLength ||
-      rtp_header.header.headerLength <
+      rtp_header.headerLength <
           block_pos + kTransmissionTimeOffsetLength) {
     WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_,
                  "Failed to update transmission time offset, invalid length.");
     return false;
   }
   // Verify that header contains extension.
-  if (!((rtp_packet[12 + rtp_header.header.numCSRCs] == 0xBE) &&
-        (rtp_packet[12 + rtp_header.header.numCSRCs + 1] == 0xDE))) {
+  if (!((rtp_packet[12 + rtp_header.numCSRCs] == 0xBE) &&
+        (rtp_packet[12 + rtp_header.numCSRCs + 1] == 0xDE))) {
     WEBRTC_TRACE(
         kTraceStream, kTraceRtpRtcp, id_,
         "Failed to update transmission time offset, hdr extension not found.");
@@ -1042,7 +1043,7 @@ bool RTPSender::UpdateTransmissionTimeOffset(
 
 bool RTPSender::UpdateAbsoluteSendTime(
     uint8_t *rtp_packet, const uint16_t rtp_packet_length,
-    const WebRtcRTPHeader &rtp_header, const int64_t now_ms) const {
+    const RTPHeader &rtp_header, const int64_t now_ms) const {
   CriticalSectionScoped cs(send_critsect_);
 
   // Get length until start of header extension block.
@@ -1054,16 +1055,16 @@ bool RTPSender::UpdateAbsoluteSendTime(
                  "Failed to update absolute send time, not registered.");
     return false;
   }
-  int block_pos = 12 + rtp_header.header.numCSRCs + extension_block_pos;
+  int block_pos = 12 + rtp_header.numCSRCs + extension_block_pos;
   if (rtp_packet_length < block_pos + kAbsoluteSendTimeLength ||
-      rtp_header.header.headerLength < block_pos + kAbsoluteSendTimeLength) {
+      rtp_header.headerLength < block_pos + kAbsoluteSendTimeLength) {
     WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_,
                  "Failed to update absolute send time, invalid length.");
     return false;
   }
   // Verify that header contains extension.
-  if (!((rtp_packet[12 + rtp_header.header.numCSRCs] == 0xBE) &&
-        (rtp_packet[12 + rtp_header.header.numCSRCs + 1] == 0xDE))) {
+  if (!((rtp_packet[12 + rtp_header.numCSRCs] == 0xBE) &&
+        (rtp_packet[12 + rtp_header.numCSRCs + 1] == 0xDE))) {
     WEBRTC_TRACE(
         kTraceStream, kTraceRtpRtcp, id_,
         "Failed to update absolute send time, hdr extension not found.");
@@ -1352,16 +1353,16 @@ void RTPSender::BuildRtxPacket(uint8_t* buffer, uint16_t* length,
   ModuleRTPUtility::RTPHeaderParser rtp_parser(
       reinterpret_cast<const uint8_t *>(buffer), *length);
 
-  WebRtcRTPHeader rtp_header;
+  RTPHeader rtp_header;
   rtp_parser.Parse(rtp_header);
 
   // Add original RTP header.
-  memcpy(data_buffer_rtx, buffer, rtp_header.header.headerLength);
+  memcpy(data_buffer_rtx, buffer, rtp_header.headerLength);
 
   // Replace payload type, if a specific type is set for RTX.
   if (payload_type_rtx_ != -1) {
     data_buffer_rtx[1] = static_cast<uint8_t>(payload_type_rtx_);
-    if (rtp_header.header.markerBit)
+    if (rtp_header.markerBit)
       data_buffer_rtx[1] |= kRtpMarkerBitMask;
   }
 
@@ -1374,14 +1375,13 @@ void RTPSender::BuildRtxPacket(uint8_t* buffer, uint16_t* length,
   ModuleRTPUtility::AssignUWord32ToBuffer(ptr, ssrc_rtx_);
 
   // Add OSN (original sequence number).
-  ptr = data_buffer_rtx + rtp_header.header.headerLength;
-  ModuleRTPUtility::AssignUWord16ToBuffer(ptr,
-                                          rtp_header.header.sequenceNumber);
+  ptr = data_buffer_rtx + rtp_header.headerLength;
+  ModuleRTPUtility::AssignUWord16ToBuffer(ptr, rtp_header.sequenceNumber);
   ptr += 2;
 
   // Add original payload data.
-  memcpy(ptr, buffer + rtp_header.header.headerLength,
-         *length - rtp_header.header.headerLength);
+  memcpy(ptr, buffer + rtp_header.headerLength,
+         *length - rtp_header.headerLength);
   *length += 2;
 }
 

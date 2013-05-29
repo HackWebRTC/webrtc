@@ -868,6 +868,7 @@ Channel::Channel(int32_t channelId,
     _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _instanceId(instanceId),
     _channelId(channelId),
+    rtp_header_parser_(RtpHeaderParser::Create()),
     _audioCodingModule(*AudioCodingModule::Create(
         VoEModuleId(instanceId, channelId))),
     _rtpDumpIn(*RtpDump::CreateRtpDump()),
@@ -2128,12 +2129,20 @@ int32_t Channel::ReceivedRTPPacket(const int8_t* data, int32_t length) {
                  VoEId(_instanceId,_channelId),
                  "Channel::SendPacket() RTP dump to input file failed");
   }
-
+  RTPHeader header;
+  if (!rtp_header_parser_->Parse(reinterpret_cast<const uint8_t*>(data),
+                                 static_cast<uint16_t>(length), &header)) {
+    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideo,
+                 VoEId(_instanceId,_channelId),
+                 "IncomingPacket invalid RTP header");
+    return -1;
+  }
   // Deliver RTP packet to RTP/RTCP module for parsing
   // The packet will be pushed back to the channel thru the
   // OnReceivedPayloadData callback so we don't push it to the ACM here
-  if (_rtpRtcpModule->IncomingPacket((const uint8_t*)data,
-                                     (uint16_t)length) == -1) {
+  if (_rtpRtcpModule->IncomingRtpPacket(reinterpret_cast<const uint8_t*>(data),
+                                        static_cast<uint16_t>(length),
+                                        header) == -1) {
     _engineStatisticsPtr->SetLastError(
         VE_SOCKET_TRANSPORT_MODULE_ERROR, kTraceWarning,
         "Channel::IncomingRTPPacket() RTP packet is invalid");
@@ -2156,8 +2165,8 @@ int32_t Channel::ReceivedRTCPPacket(const int8_t* data, int32_t length) {
   }
 
   // Deliver RTCP packet to RTP/RTCP module for parsing
-  if (_rtpRtcpModule->IncomingPacket((const uint8_t*)data,
-                                     (uint16_t)length) == -1) {
+  if (_rtpRtcpModule->IncomingRtcpPacket((const uint8_t*)data,
+                                         (uint16_t)length) == -1) {
     _engineStatisticsPtr->SetLastError(
         VE_SOCKET_TRANSPORT_MODULE_ERROR, kTraceWarning,
         "Channel::IncomingRTPPacket() RTCP packet is invalid");
@@ -3699,6 +3708,12 @@ Channel::SetRTPAudioLevelIndicationStatus(bool enable, unsigned char ID)
     }
 
     _includeAudioLevelIndication = enable;
+    if (enable) {
+      rtp_header_parser_->RegisterRtpHeaderExtension(kRtpExtensionAudioLevel,
+                                                     ID);
+    } else {
+      rtp_header_parser_->DeregisterRtpHeaderExtension(kRtpExtensionAudioLevel);
+    }
     return _rtpRtcpModule->SetRTPAudioLevelIndicationStatus(enable, ID);
 }
 int

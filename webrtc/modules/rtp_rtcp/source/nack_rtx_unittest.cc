@@ -15,8 +15,10 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_types.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 using namespace webrtc;
 
@@ -87,14 +89,20 @@ class RtxLoopBackTransport : public webrtc::Transport {
         count_ < consecutive_drop_end_) {
       return len;
     }
-    if (module_->IncomingPacket((const uint8_t*)data, len) == 0) {
-      return len;
+    RTPHeader header;
+    scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+    if (!parser->Parse(static_cast<const uint8_t*>(data), len, &header)) {
+      return -1;
     }
-    return -1;
+    if (module_->IncomingRtpPacket(static_cast<const uint8_t*>(data), len,
+                                   header) < 0) {
+      return -1;
+    }
+    return len;
   }
 
   virtual int SendRTCPPacket(int channel, const void *data, int len) {
-    if (module_->IncomingPacket((const uint8_t*)data, len) == 0) {
+    if (module_->IncomingRtcpPacket((const uint8_t*)data, len) == 0) {
       return len;
     }
     return -1;

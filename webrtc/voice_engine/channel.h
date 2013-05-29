@@ -15,6 +15,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_conference_mixer/interface/audio_conference_mixer_defines.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/utility/interface/file_player.h"
 #include "webrtc/modules/utility/interface/file_recorder.h"
@@ -442,6 +443,7 @@ private:
     int32_t _channelId;
 
 private:
+    scoped_ptr<RtpHeaderParser> rtp_header_parser_;
     scoped_ptr<RtpRtcp> _rtpRtcpModule;
     AudioCodingModule& _audioCodingModule;
     RtpDump& _rtpDumpIn;

@@ -16,13 +16,14 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "common_types.h"
-#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h"
-#include "modules/rtp_rtcp/source/rtcp_receiver.h"
-#include "modules/rtp_rtcp/source/rtcp_sender.h"
-#include "modules/rtp_rtcp/source/rtp_utility.h"
-#include "modules/rtp_rtcp/source/rtp_rtcp_impl.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_receiver.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 
 namespace webrtc {
 
@@ -353,7 +354,11 @@ TEST_F(RtcpSenderTest, TestCompound) {
   EXPECT_EQ(0, rtp_rtcp_impl_->RegisterReceivePayload(codec_inst));
 
   // Make sure RTP packet has been received.
-  EXPECT_EQ(0, rtp_rtcp_impl_->IncomingPacket(packet_, packet_length));
+  scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+  RTPHeader header;
+  EXPECT_TRUE(parser->Parse(packet_, packet_length, &header));
+  EXPECT_EQ(0, rtp_rtcp_impl_->IncomingRtpPacket(packet_, packet_length,
+                                                 header));
 
   EXPECT_EQ(0, rtcp_sender_->SetIJStatus(true));
   EXPECT_EQ(0, rtcp_sender_->SetRTCPStatus(kRtcpCompound));

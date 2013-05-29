@@ -155,11 +155,11 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
 
   bool UpdateTransmissionTimeOffset(uint8_t *rtp_packet,
                                     const uint16_t rtp_packet_length,
-                                    const WebRtcRTPHeader &rtp_header,
+                                    const RTPHeader &rtp_header,
                                     const int64_t time_diff_ms) const;
   bool UpdateAbsoluteSendTime(uint8_t *rtp_packet,
                               const uint16_t rtp_packet_length,
-                              const WebRtcRTPHeader &rtp_header,
+                              const RTPHeader &rtp_header,
                               const int64_t now_ms) const;
 
   void TimeToSendPacket(uint16_t sequence_number, int64_t capture_time_ms);

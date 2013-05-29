@@ -89,7 +89,7 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
     const WebRtcRTPHeader& header) {
   uint32_t ssrc = header.header.ssrc;
   uint32_t rtp_timestamp = header.header.timestamp +
-      header.extension.transmissionTimeOffset;
+      header.header.extension.transmissionTimeOffset;
   CriticalSectionScoped cs(crit_sect_.get());
   SsrcOveruseDetectorMap::iterator it = overuse_detectors_.find(ssrc);
   if (it == overuse_detectors_.end()) {

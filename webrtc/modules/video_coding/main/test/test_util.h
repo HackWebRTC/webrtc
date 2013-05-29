@@ -50,7 +50,7 @@ int MTRxTxTest(CmdArgs& args);
 double NormalDist(double mean, double stdDev);
 
 struct RtpPacket {
-  int8_t data[1650]; // max packet size
+  uint8_t data[1650]; // max packet size
   int32_t length;
   int64_t receiveTime;
 };

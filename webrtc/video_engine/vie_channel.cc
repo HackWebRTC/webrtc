@@ -873,13 +873,7 @@ int ViEChannel::SetSendTimestampOffsetStatus(bool enable, int id) {
 }
 
 int ViEChannel::SetReceiveTimestampOffsetStatus(bool enable, int id) {
-  if (enable) {
-    return rtp_rtcp_->RegisterReceiveRtpHeaderExtension(
-        kRtpExtensionTransmissionTimeOffset, id);
-  } else {
-    return rtp_rtcp_->DeregisterReceiveRtpHeaderExtension(
-        kRtpExtensionTransmissionTimeOffset);
-  }
+  return vie_receiver_.SetReceiveTimestampOffsetStatus(enable, id);
 }
 
 int ViEChannel::SetSendAbsoluteSendTimeStatus(bool enable, int id) {
@@ -914,19 +908,8 @@ int ViEChannel::SetSendAbsoluteSendTimeStatus(bool enable, int id) {
 }
 
 int ViEChannel::SetReceiveAbsoluteSendTimeStatus(bool enable, int id) {
-  if (enable) {
-    if (rtp_rtcp_->RegisterReceiveRtpHeaderExtension(
-        kRtpExtensionAbsoluteSendTime, id) != 0) {
-      return -1;
-    }
-  } else {
-    if (rtp_rtcp_->DeregisterReceiveRtpHeaderExtension(
-        kRtpExtensionAbsoluteSendTime) != 0) {
-      return -1;
-    }
-  }
   receive_absolute_send_time_enabled_ = enable;
-  return 0;
+  return vie_receiver_.SetReceiveAbsoluteSendTimeStatus(enable, id);
 }
 
 bool ViEChannel::GetReceiveAbsoluteSendTimeStatus() const {

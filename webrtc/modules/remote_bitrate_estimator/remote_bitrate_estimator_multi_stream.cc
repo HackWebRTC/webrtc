@@ -142,7 +142,7 @@ void RemoteBitrateEstimatorMultiStream::IncomingPacket(
     const WebRtcRTPHeader& header) {
   uint32_t ssrc = header.header.ssrc;
   uint32_t rtp_timestamp = header.header.timestamp +
-      header.extension.transmissionTimeOffset;
+      header.header.extension.transmissionTimeOffset;
   CriticalSectionScoped cs(crit_sect_.get());
   incoming_bitrate_.Update(payload_size, arrival_time_ms);
   // Add this stream to the map of streams if it doesn't already exist.

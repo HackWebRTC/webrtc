@@ -227,7 +227,7 @@ void RemoteBitrateEstimatorTest::IncomingPacket(uint32_t ssrc,
   memset(&header, 0, sizeof(header));
   header.header.ssrc = ssrc;
   header.header.timestamp = rtp_timestamp;
-  header.extension.absoluteSendTime = absolute_send_time;
+  header.header.extension.absoluteSendTime = absolute_send_time;
   bitrate_estimator_->IncomingPacket(arrival_time, payload_size, header);
 }
 

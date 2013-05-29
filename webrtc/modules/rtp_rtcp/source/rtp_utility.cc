@@ -86,15 +86,15 @@ uint32_t ConvertNTPTimeToMS(uint32_t NTPsec, uint32_t NTPfrac) {
  * Misc utility routines
  */
 
-const uint8_t* GetPayloadData(const WebRtcRTPHeader* rtp_header,
+const uint8_t* GetPayloadData(const RTPHeader& rtp_header,
                               const uint8_t* packet) {
-  return packet + rtp_header->header.headerLength;
+  return packet + rtp_header.headerLength;
 }
 
-uint16_t GetPayloadDataLength(const WebRtcRTPHeader* rtp_header,
+uint16_t GetPayloadDataLength(const RTPHeader& rtp_header,
                               const uint16_t packet_length) {
-  uint16_t length = packet_length - rtp_header->header.paddingLength -
-      rtp_header->header.headerLength;
+  uint16_t length = packet_length - rtp_header.paddingLength -
+      rtp_header.headerLength;
   return static_cast<uint16_t>(length);
 }
 
@@ -288,7 +288,7 @@ bool RTPHeaderParser::RTCP() const {
   return RTCP;
 }
 
-bool RTPHeaderParser::Parse(WebRtcRTPHeader& parsedPacket,
+bool RTPHeaderParser::Parse(RTPHeader& header,
                             RtpHeaderExtensionMap* ptrExtensionMap) const {
   const ptrdiff_t length = _ptrRTPDataEnd - _ptrRTPDataBegin;
 
@@ -332,31 +332,30 @@ bool RTPHeaderParser::Parse(WebRtcRTPHeader& parsedPacket,
     return false;
   }
 
-  parsedPacket.header.markerBit      = M;
-  parsedPacket.header.payloadType    = PT;
-  parsedPacket.header.sequenceNumber = sequenceNumber;
-  parsedPacket.header.timestamp      = RTPTimestamp;
-  parsedPacket.header.ssrc           = SSRC;
-  parsedPacket.header.numCSRCs       = CC;
-  parsedPacket.header.paddingLength  = P ? *(_ptrRTPDataEnd - 1) : 0;
+  header.markerBit      = M;
+  header.payloadType    = PT;
+  header.sequenceNumber = sequenceNumber;
+  header.timestamp      = RTPTimestamp;
+  header.ssrc           = SSRC;
+  header.numCSRCs       = CC;
+  header.paddingLength  = P ? *(_ptrRTPDataEnd - 1) : 0;
 
   for (unsigned int i = 0; i < CC; ++i) {
     uint32_t CSRC = *ptr++ << 24;
     CSRC += *ptr++ << 16;
     CSRC += *ptr++ << 8;
     CSRC += *ptr++;
-    parsedPacket.header.arrOfCSRCs[i] = CSRC;
+    header.arrOfCSRCs[i] = CSRC;
   }
-  parsedPacket.type.Audio.numEnergy = parsedPacket.header.numCSRCs;
 
-  parsedPacket.header.headerLength   = 12 + CSRCocts;
+  header.headerLength   = 12 + CSRCocts;
 
   // If in effect, MAY be omitted for those packets for which the offset
   // is zero.
-  parsedPacket.extension.transmissionTimeOffset = 0;
+  header.extension.transmissionTimeOffset = 0;
 
   // May not be present in packet.
-  parsedPacket.extension.absoluteSendTime = 0;
+  header.extension.absoluteSendTime = 0;
 
   if (X) {
     /* RTP header extension, RFC 3550.
@@ -373,7 +372,7 @@ bool RTPHeaderParser::Parse(WebRtcRTPHeader& parsedPacket,
       return false;
     }
 
-    parsedPacket.header.headerLength += 4;
+    header.headerLength += 4;
 
     uint16_t definedByProfile = *ptr++ << 8;
     definedByProfile += *ptr++;
@@ -387,18 +386,18 @@ bool RTPHeaderParser::Parse(WebRtcRTPHeader& parsedPacket,
     }
     if (definedByProfile == kRtpOneByteHeaderExtensionId) {
       const uint8_t* ptrRTPDataExtensionEnd = ptr + XLen;
-      ParseOneByteExtensionHeader(parsedPacket,
+      ParseOneByteExtensionHeader(header,
                                   ptrExtensionMap,
                                   ptrRTPDataExtensionEnd,
                                   ptr);
     }
-    parsedPacket.header.headerLength += XLen;
+    header.headerLength += XLen;
   }
   return true;
 }
 
 void RTPHeaderParser::ParseOneByteExtensionHeader(
-    WebRtcRTPHeader& parsedPacket,
+    RTPHeader& header,
     const RtpHeaderExtensionMap* ptrExtensionMap,
     const uint8_t* ptrRTPDataExtensionEnd,
     const uint8_t* ptr) const {
@@ -446,10 +445,11 @@ void RTPHeaderParser::ParseOneByteExtensionHeader(
         int32_t transmissionTimeOffset = *ptr++ << 16;
         transmissionTimeOffset += *ptr++ << 8;
         transmissionTimeOffset += *ptr++;
-        parsedPacket.extension.transmissionTimeOffset = transmissionTimeOffset;
+        header.extension.transmissionTimeOffset =
+            transmissionTimeOffset;
         if (transmissionTimeOffset & 0x800000) {
           // Negative offset, correct sign for Word24 to Word32.
-          parsedPacket.extension.transmissionTimeOffset |= 0xFF000000;
+          header.extension.transmissionTimeOffset |= 0xFF000000;
         }
         break;
       }
@@ -484,7 +484,7 @@ void RTPHeaderParser::ParseOneByteExtensionHeader(
         uint32_t absoluteSendTime = *ptr++ << 16;
         absoluteSendTime += *ptr++ << 8;
         absoluteSendTime += *ptr++;
-        parsedPacket.extension.absoluteSendTime = absoluteSendTime;
+        header.extension.absoluteSendTime = absoluteSendTime;
         break;
       }
       default: {
