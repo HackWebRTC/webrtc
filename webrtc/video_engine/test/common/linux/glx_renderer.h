@@ -15,6 +15,7 @@
 #include <X11/Xlib.h>
 
 #include "webrtc/video_engine/test/common/gl/gl_renderer.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 namespace test {

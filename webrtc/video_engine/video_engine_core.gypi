@@ -120,17 +120,20 @@
         'vie_sync_module.cc',
 
         # New VideoEngine API
-        'new_include/common.h',
-        'new_include/video_engine.h',
-        'new_include/video_receive_stream.h',
-        'new_include/video_send_stream.h',
-        'internal/video_engine.cc',
         'internal/video_call.cc',
         'internal/video_call.h',
+        'internal/video_engine.cc',
         'internal/video_receive_stream.cc',
         'internal/video_receive_stream.h',
         'internal/video_send_stream.cc',
         'internal/video_send_stream.h',
+        'new_include/config.h',
+        'new_include/frame_callback.h',
+        'new_include/transport.h',
+        'new_include/video_engine.h',
+        'new_include/video_receive_stream.h',
+        'new_include/video_renderer.h',
+        'new_include/video_send_stream.h',
       ], # source
       # TODO(jschuh): Bug 1348: fix size_t to int truncations.
       'msvs_disabled_warnings': [ 4267, ],

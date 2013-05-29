@@ -15,8 +15,8 @@
 #include <X11/extensions/XShm.h>
 #include <X11/extensions/Xvlib.h>
 
-#include "webrtc/video_engine/new_include/common.h"
 #include "webrtc/video_engine/test/common/video_renderer.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 namespace test {

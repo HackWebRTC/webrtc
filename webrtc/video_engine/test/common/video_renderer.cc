@@ -13,6 +13,8 @@
 // TODO(pbos): Windows renderer
 // TODO(pbos): Android renderer
 
+#include "webrtc/typedefs.h"
+
 namespace webrtc {
 namespace test {
 

@@ -10,7 +10,7 @@
 #ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_DIRECT_TRANSPORT_H_
 #define WEBRTC_VIDEO_ENGINE_TEST_COMMON_DIRECT_TRANSPORT_H_
 
-#include "webrtc/video_engine/new_include/common.h"
+#include "webrtc/video_engine/new_include/transport.h"
 
 namespace webrtc {
 namespace test {

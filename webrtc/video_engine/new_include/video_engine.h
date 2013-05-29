@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "webrtc/common_types.h"
-#include "webrtc/video_engine/new_include/common.h"
 #include "webrtc/video_engine/new_include/video_receive_stream.h"
 #include "webrtc/video_engine/new_include/video_send_stream.h"
 

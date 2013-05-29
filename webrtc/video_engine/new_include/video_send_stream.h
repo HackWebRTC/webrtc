@@ -15,7 +15,9 @@
 #include <vector>
 
 #include "webrtc/common_types.h"
-#include "webrtc/video_engine/new_include/common.h"
+#include "webrtc/video_engine/new_include/config.h"
+#include "webrtc/video_engine/new_include/frame_callback.h"
+#include "webrtc/video_engine/new_include/video_renderer.h"
 
 namespace webrtc {
 

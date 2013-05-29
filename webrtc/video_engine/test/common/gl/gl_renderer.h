@@ -18,6 +18,8 @@
 #endif
 
 #include "webrtc/video_engine/test/common/video_renderer.h"
+#include "webrtc/typedefs.h"
+
 
 namespace webrtc {
 namespace test {

@@ -22,7 +22,6 @@
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
 #include "webrtc/video_engine/internal/video_receive_stream.h"
 #include "webrtc/video_engine/internal/video_send_stream.h"
-#include "webrtc/video_engine/new_include/common.h"
 #include "webrtc/video_engine/new_include/video_engine.h"
 
 namespace webrtc {

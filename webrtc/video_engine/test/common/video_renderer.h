@@ -10,7 +10,9 @@
 #ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_VIDEO_RENDERER_H_
 #define WEBRTC_VIDEO_ENGINE_TEST_COMMON_VIDEO_RENDERER_H_
 
-#include "webrtc/video_engine/new_include/common.h"
+#include <stddef.h>
+
+#include "webrtc/video_engine/new_include/video_renderer.h"
 
 namespace webrtc {
 namespace test {
