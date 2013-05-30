@@ -77,7 +77,7 @@ static void InitPointersToMIPS() {
   WebRtcSpl_MinValueW16 = WebRtcSpl_MinValueW16_mips;
   WebRtcSpl_MinValueW32 = WebRtcSpl_MinValueW32_mips;
   WebRtcSpl_CrossCorrelation = WebRtcSpl_CrossCorrelationC;
-  WebRtcSpl_DownsampleFast = WebRtcSpl_DownsampleFastC;
+  WebRtcSpl_DownsampleFast = WebRtcSpl_DownsampleFast_mips;
   WebRtcSpl_ScaleAndAddVectorsWithRound =
       WebRtcSpl_ScaleAndAddVectorsWithRoundC;
   WebRtcSpl_RealForwardFFT = WebRtcSpl_RealForwardFFTC;

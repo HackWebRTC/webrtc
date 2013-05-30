@@ -771,6 +771,16 @@ int WebRtcSpl_DownsampleFastNeon(const int16_t* data_in,
                                  int factor,
                                  int delay);
 #endif
+#if defined(MIPS32_LE)
+int WebRtcSpl_DownsampleFast_mips(const int16_t* data_in,
+                                  int data_in_length,
+                                  int16_t* data_out,
+                                  int data_out_length,
+                                  const int16_t* __restrict coefficients,
+                                  int coefficients_length,
+                                  int factor,
+                                  int delay);
+#endif
 
 // End: Filter operations.
 

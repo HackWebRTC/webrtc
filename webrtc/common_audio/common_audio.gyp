@@ -45,6 +45,7 @@
         'signal_processing/auto_corr_to_refl_coef.c',
         'signal_processing/auto_correlation.c',
         'signal_processing/complex_fft.c',
+        'signal_processing/complex_fft_tables.h',
         'signal_processing/complex_bit_reverse.c',
         'signal_processing/copy_set_operations.c',
         'signal_processing/cross_correlation.c',
@@ -115,8 +116,17 @@
         }],
         ['target_arch=="mipsel"', {
           'sources': [
+            'signal_processing/complex_bit_reverse_mips.c',
+            'signal_processing/complex_fft_mips.c',
+            'signal_processing/downsample_fast_mips.c',
+            'signal_processing/filter_ar_fast_q12_mips.c',
             'signal_processing/min_max_operations_mips.c',
             'signal_processing/resample_by_2_mips.c',
+          ],
+          'sources!': [
+            'signal_processing/complex_bit_reverse.c',
+            'signal_processing/complex_fft.c',
+            'signal_processing/filter_ar_fast_q12.c',
           ],
         }],
       ],  # conditions
