@@ -1292,7 +1292,7 @@ VideoCodingModuleImpl::IncomingPacket(const uint8_t* incomingPayload,
 int32_t
 VideoCodingModuleImpl::SetMinimumPlayoutDelay(uint32_t minPlayoutDelayMs)
 {
-    _timing.SetMinimumTotalDelay(minPlayoutDelayMs);
+    _timing.set_min_playout_delay(minPlayoutDelayMs);
     return VCM_OK;
 }
 
@@ -1301,7 +1301,7 @@ VideoCodingModuleImpl::SetMinimumPlayoutDelay(uint32_t minPlayoutDelayMs)
 int32_t
 VideoCodingModuleImpl::SetRenderDelay(uint32_t timeMS)
 {
-    _timing.SetRenderDelay(timeMS);
+    _timing.set_render_delay(timeMS);
     return VCM_OK;
 }
 

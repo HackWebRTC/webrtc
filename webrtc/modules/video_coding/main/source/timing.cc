@@ -33,8 +33,8 @@ VCMTiming::VCMTiming(Clock* clock,
       ts_extrapolator_(),
       codec_timer_(),
       render_delay_ms_(kDefaultRenderDelayMs),
-      min_total_delay_ms_(0),
-      required_delay_ms_(0),
+      min_playout_delay_ms_(0),
+      jitter_delay_ms_(0),
       current_delay_ms_(0),
       prev_frame_timestamp_(0) {
   if (master_timing == NULL) {
@@ -57,8 +57,8 @@ void VCMTiming::Reset() {
   ts_extrapolator_->Reset();
   codec_timer_.Reset();
   render_delay_ms_ = kDefaultRenderDelayMs;
-  min_total_delay_ms_ = 0;
-  required_delay_ms_ = 0;
+  min_playout_delay_ms_ = 0;
+  jitter_delay_ms_ = 0;
   current_delay_ms_ = 0;
   prev_frame_timestamp_ = 0;
 }
@@ -67,28 +67,28 @@ void VCMTiming::ResetDecodeTime() {
   codec_timer_.Reset();
 }
 
-void VCMTiming::SetRenderDelay(uint32_t render_delay_ms) {
+void VCMTiming::set_render_delay(uint32_t render_delay_ms) {
   CriticalSectionScoped cs(crit_sect_);
   render_delay_ms_ = render_delay_ms;
 }
 
-void VCMTiming::SetMinimumTotalDelay(uint32_t min_total_delay_ms) {
+void VCMTiming::set_min_playout_delay(uint32_t min_playout_delay_ms) {
   CriticalSectionScoped cs(crit_sect_);
-  min_total_delay_ms_ = min_total_delay_ms;
+  min_playout_delay_ms_ = min_playout_delay_ms;
 }
 
-void VCMTiming::SetRequiredDelay(uint32_t required_delay_ms) {
+void VCMTiming::SetJitterDelay(uint32_t jitter_delay_ms) {
   CriticalSectionScoped cs(crit_sect_);
-  if (required_delay_ms != required_delay_ms_) {
+  if (jitter_delay_ms != jitter_delay_ms_) {
     if (master_) {
       WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
           VCMId(vcm_id_, timing_id_),
-          "Desired jitter buffer level: %u ms", required_delay_ms);
+          "Desired jitter buffer level: %u ms", jitter_delay_ms);
     }
-    required_delay_ms_ = required_delay_ms;
+    jitter_delay_ms_ = jitter_delay_ms;
     // When in initial state, set current delay to minimum delay.
     if (current_delay_ms_ == 0) {
-      current_delay_ms_ = required_delay_ms_;
+      current_delay_ms_ = jitter_delay_ms_;
     }
   }
 }
@@ -180,9 +180,9 @@ int64_t VCMTiming::RenderTimeMs(uint32_t frame_timestamp, int64_t now_ms)
   if (master_) {
     WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(vcm_id_,
         timing_id_), "Render frame %u at %u. Render delay %u",
-        "required delay %u, max decode time %u, min total delay %u",
+        "jitter delay %u, max decode time %u, playout delay %u",
         frame_timestamp, MaskWord64ToUWord32(render_time_ms), render_delay_ms_,
-        required_delay_ms_, MaxDecodeTimeMs(), min_total_delay_ms_);
+        jitter_delay_ms_, MaxDecodeTimeMs(), min_playout_delay_ms_);
   }
   return render_time_ms;
 }
@@ -200,8 +200,8 @@ int64_t VCMTiming::RenderTimeMsInternal(uint32_t frame_timestamp,
     estimated_complete_time_ms = now_ms;
   }
 
-  // Make sure that we have at least the total minimum delay.
-  uint32_t actual_delay = std::max(current_delay_ms_, min_total_delay_ms_);
+  // Make sure that we have at least the playout delay.
+  uint32_t actual_delay = std::max(current_delay_ms_, min_playout_delay_ms_);
   return estimated_complete_time_ms + actual_delay;
 }
 
@@ -253,8 +253,8 @@ uint32_t VCMTiming::TargetVideoDelay() const {
 }
 
 uint32_t VCMTiming::TargetDelayInternal() const {
-  return std::max(min_total_delay_ms_,
-      required_delay_ms_ + MaxDecodeTimeMs() + render_delay_ms_);
+  return std::max(min_playout_delay_ms_,
+      jitter_delay_ms_ + MaxDecodeTimeMs() + render_delay_ms_);
 }
 
 }  // namespace webrtc

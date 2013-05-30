@@ -34,15 +34,15 @@ class VCMTiming {
   void Reset();
   void ResetDecodeTime();
 
-  // The amount of time needed to render an image. Defaults to 10 ms.
-  void SetRenderDelay(uint32_t render_delay_ms);
+  // Set the amount of time needed to render an image. Defaults to 10 ms.
+  void set_render_delay(uint32_t render_delay_ms);
 
-  // The minimum time the video must be delayed on the receiver to
+  // Set the minimum time the video must be delayed on the receiver to
   // get the desired jitter buffer level.
-  void SetRequiredDelay(uint32_t required_delay_ms);
+  void SetJitterDelay(uint32_t required_delay_ms);
 
-  // Minimum total delay required to sync video with audio.
-  void SetMinimumTotalDelay(uint32_t min_total_delay_ms);
+  // Set the minimum playout delay required to sync video with audio.
+  void set_min_playout_delay(uint32_t min_playout_delay);
 
   // Increases or decreases the current delay to get closer to the target delay.
   // Calculates how long it has been since the previous call to this function,
@@ -99,8 +99,8 @@ class VCMTiming {
   VCMTimestampExtrapolator* ts_extrapolator_;
   VCMCodecTimer codec_timer_;
   uint32_t render_delay_ms_;
-  uint32_t min_total_delay_ms_;
-  uint32_t required_delay_ms_;
+  uint32_t min_playout_delay_ms_;
+  uint32_t jitter_delay_ms_;
   uint32_t current_delay_ms_;
   uint32_t prev_frame_timestamp_;
 };

@@ -149,7 +149,7 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
   }
 
   // We have a frame - Set timing and render timestamp.
-  timing_->SetRequiredDelay(jitter_buffer_.EstimatedJitterMs());
+  timing_->SetJitterDelay(jitter_buffer_.EstimatedJitterMs());
   const int64_t now_ms = clock_->TimeInMilliseconds();
   timing_->UpdateCurrentDelay(frame_timestamp);
   next_render_time_ms = timing_->RenderTimeMs(frame_timestamp, now_ms);
@@ -332,7 +332,7 @@ int VCMReceiver::SetMinReceiverDelay(int desired_delay_ms) {
   jitter_buffer_.SetMaxJitterEstimate(desired_delay_ms > 0);
   max_video_delay_ms_ = desired_delay_ms + kMaxVideoDelayMs;
   // Initializing timing to the desired delay.
-  timing_->SetMinimumTotalDelay(desired_delay_ms);
+  timing_->set_min_playout_delay(desired_delay_ms);
   return 0;
 }
 
@@ -347,7 +347,7 @@ int VCMReceiver::RenderBufferSizeMs() {
   }
   // Update timing.
   const int64_t now_ms = clock_->TimeInMilliseconds();
-  timing_->SetRequiredDelay(jitter_buffer_.EstimatedJitterMs());
+  timing_->SetJitterDelay(jitter_buffer_.EstimatedJitterMs());
   // Get render timestamps.
   uint32_t render_start = timing_->RenderTimeMs(timestamp_start, now_ms);
   uint32_t render_end = timing_->RenderTimeMs(timestamp_end, now_ms);

@@ -39,9 +39,9 @@ TEST(ReceiverTiming, Tests) {
 
   timing.IncomingTimestamp(timeStamp, clock.TimeInMilliseconds());
   jitterDelayMs = 20;
-  timing.SetRequiredDelay(jitterDelayMs);
+  timing.SetJitterDelay(jitterDelayMs);
   timing.UpdateCurrentDelay(timeStamp);
-  timing.SetRenderDelay(0);
+  timing.set_render_delay(0);
   waitTime = timing.MaxWaitingTime(
       timing.RenderTimeMs(timeStamp, clock.TimeInMilliseconds()),
       clock.TimeInMilliseconds());
@@ -52,7 +52,7 @@ TEST(ReceiverTiming, Tests) {
   jitterDelayMs += VCMTiming::kDelayMaxChangeMsPerS + 10;
   timeStamp += 90000;
   clock.AdvanceTimeMilliseconds(1000);
-  timing.SetRequiredDelay(jitterDelayMs);
+  timing.SetJitterDelay(jitterDelayMs);
   timing.UpdateCurrentDelay(timeStamp);
   waitTime = timing.MaxWaitingTime(timing.RenderTimeMs(
       timeStamp, clock.TimeInMilliseconds()), clock.TimeInMilliseconds());
@@ -91,7 +91,7 @@ TEST(ReceiverTiming, Tests) {
     timing.IncomingTimestamp(timeStamp, clock.TimeInMilliseconds());
   }
   maxDecodeTimeMs = 10;
-  timing.SetRequiredDelay(jitterDelayMs);
+  timing.SetJitterDelay(jitterDelayMs);
   clock.AdvanceTimeMilliseconds(1000);
   timeStamp += 90000;
   timing.UpdateCurrentDelay(timeStamp);
@@ -101,12 +101,12 @@ TEST(ReceiverTiming, Tests) {
   EXPECT_EQ(waitTime, jitterDelayMs);
 
   uint32_t minTotalDelayMs = 200;
-  timing.SetMinimumTotalDelay(minTotalDelayMs);
+  timing.set_min_playout_delay(minTotalDelayMs);
   clock.AdvanceTimeMilliseconds(5000);
   timeStamp += 5*90000;
   timing.UpdateCurrentDelay(timeStamp);
   const int kRenderDelayMs = 10;
-  timing.SetRenderDelay(kRenderDelayMs);
+  timing.set_render_delay(kRenderDelayMs);
   waitTime = timing.MaxWaitingTime(
       timing.RenderTimeMs(timeStamp, clock.TimeInMilliseconds()),
       clock.TimeInMilliseconds());
@@ -116,8 +116,8 @@ TEST(ReceiverTiming, Tests) {
   // The total video delay should be equal to the min total delay.
   EXPECT_EQ(minTotalDelayMs, timing.TargetVideoDelay());
 
-  // Reset min total delay.
-  timing.SetMinimumTotalDelay(0);
+  // Reset playout delay.
+  timing.set_min_playout_delay(0);
   clock.AdvanceTimeMilliseconds(5000);
   timeStamp += 5*90000;
   timing.UpdateCurrentDelay(timeStamp);
