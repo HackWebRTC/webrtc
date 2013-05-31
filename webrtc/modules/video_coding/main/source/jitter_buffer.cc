@@ -847,7 +847,9 @@ uint16_t* VCMJitterBuffer::GetNackList(uint16_t* nack_list_size,
     if (!first_frame_is_key) {
       const bool have_non_empty_frame = frame_list_.end() != find_if(
             frame_list_.begin(), frame_list_.end(), HasNonEmptyState);
-      LOG_F(LS_INFO) << "First frame is not key; Recycling.";
+      if (have_non_empty_frame) {
+        LOG_F(LS_INFO) << "First frame is not key; Recycling.";
+      }
       bool found_key_frame = RecycleFramesUntilKeyFrame();
       if (!found_key_frame) {
         *request_key_frame = have_non_empty_frame;
