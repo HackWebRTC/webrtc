@@ -220,6 +220,14 @@ public:
     virtual int GetFECStatus(
         int channel, bool& enabled, int& redPayloadtype) = 0;
 
+    // This function enables Negative Acknowledgment (NACK) using RTCP,
+    // implemented based on RFC 4585. NACK retransmits RTP packets if lost on
+    // the network. This creates a lossless transport at the expense of delay.
+    // If using NACK, NACK should be enabled on both endpoints in a call.
+    virtual int SetNACKStatus(int channel,
+                              bool enable,
+                              int maxNoPackets) = 0;
+
     // Enables capturing of RTP packets to a binary file on a specific
     // |channel| and for a given |direction|. The file can later be replayed
     // using e.g. RTP Tools rtpplay since the binary file format is

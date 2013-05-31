@@ -94,6 +94,11 @@ public:
 
     virtual int GetFECStatus(int channel, bool& enabled, int& redPayloadtype);
 
+    //NACK
+    virtual int SetNACKStatus(int channel,
+                              bool enable,
+                              int maxNoPackets);
+
     // Store RTP and RTCP packets and dump to file (compatible with rtpplay)
     virtual int StartRTPDump(int channel,
                              const char fileNameUTF8[1024],

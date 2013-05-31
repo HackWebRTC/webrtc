@@ -568,6 +568,19 @@ int VoERTP_RTCPImpl::GetFECStatus(int channel,
 #endif
 }
 
+
+int VoERTP_RTCPImpl::SetNACKStatus(int channel,
+                                   bool enable,
+                                   int maxNoPackets)
+{
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+                 "SetNACKStatus(channel=%d, enable=%d, maxNoPackets=%d)",
+                 channel, enable, maxNoPackets);
+    // Dummy for now
+    return 0;
+}
+
+
 int VoERTP_RTCPImpl::StartRTPDump(int channel,
                                   const char fileNameUTF8[1024],
                                   RTPDirections direction)
