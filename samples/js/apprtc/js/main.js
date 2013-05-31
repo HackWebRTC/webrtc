@@ -10,23 +10,22 @@
   var started = false;
   var turnDone = false;
   var channelReady = false;
+  var signalingReady = false;
+  var msgQueue = [];
   // Set up audio and video regardless of what devices are present.
   var sdpConstraints = {'mandatory': {
                           'OfferToReceiveAudio': true,
                           'OfferToReceiveVideo': true }};
   var isVideoMuted = false;
   var isAudioMuted = false;
-  var aspectRatio;
 
   function initialize() {
     console.log('Initializing; room=' + roomKey + '.');
     card = document.getElementById('card');
     localVideo = document.getElementById('localVideo');
     // Reset localVideo display to center.
-    localVideo.addEventListener("loadedmetadata", function(){
-      aspectRatio = this.videoWidth / this.videoHeight;
-      window.onresize();
-    });
+    localVideo.addEventListener('loadedmetadata', function(){
+      window.onresize();});
     miniVideo = document.getElementById('miniVideo');
     remoteVideo = document.getElementById('remoteVideo');
     resetStatus();
@@ -35,6 +34,8 @@
     openChannel();
     maybeRequestTurn();
     doGetUserMedia();
+    // Caller is always ready to create peerConnection.
+    signalingReady = initiator;
   }
 
   function openChannel() {
@@ -59,7 +60,7 @@
 
     var currentDomain = document.domain;
     if (currentDomain.search('localhost') === -1 &&
-        currentDomain.search('apprtc.appspot.com') === -1) {
+        currentDomain.search('apprtc') === -1) {
       // Not authorized domain. Try with default STUN instead.
       turnDone = true;
       return;
@@ -73,17 +74,21 @@
   }
 
   function onTurnResult() {
-    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+    if (xmlhttp.readyState !== 4)
+      return;
+
+    if (xmlhttp.status === 200) {
       var turnServer = JSON.parse(xmlhttp.responseText);
       // Create a turnUri using the polyfill (adapter.js).
       var iceServer = createIceServer(turnServer.uris[0], turnServer.username,
                                     turnServer.password);
       pcConfig.iceServers.push(iceServer);
     } else {
-      console.log("Request for TURN server failed.")
+      console.log('Request for TURN server failed.');
     }
     // If TURN request failed, continue the call with default STUN.
     turnDone = true;
+    maybeStart();
   }
 
   function resetStatus() {
@@ -127,18 +132,19 @@
   }
 
   function maybeStart() {
-    if (!started && localStream && channelReady && turnDone) {
+    if (!started && signalingReady &&
+        localStream && channelReady && turnDone) {
       setStatus('Connecting...');
       console.log('Creating PeerConnection.');
       createPeerConnection();
       console.log('Adding local stream.');
       pc.addStream(localStream);
       started = true;
-      // Caller initiates offer to peer.
+
       if (initiator)
         doCall();
-    } else {
-      setTimeout(maybeStart, 100);
+      else
+        calleeStart();
     }
   }
 
@@ -151,6 +157,13 @@
     console.log('Sending offer to peer, with constraints: \n' +
                 '  \'' + JSON.stringify(constraints) + '\'.')
     pc.createOffer(setLocalAndSendMessage, null, constraints);
+  }
+
+  function calleeStart() {
+    // Callee starts to process cached offer and other messages.
+    while (msgQueue.length > 0) {
+      processSignalingMessage(msgQueue.shift());
+    }
   }
 
   function doAnswer() {
@@ -186,27 +199,27 @@
   }
 
   function processSignalingMessage(message) {
-    var msg = JSON.parse(message);
+    if (!started) {
+      console.log('peerConnection has not been created yet!');
+      return;
+    }
 
-    if (msg.type === 'offer') {
-      // Callee creates PeerConnection
-      if (!initiator && !started)
-        maybeStart();
+    if (message.type === 'offer') {
       // Set Opus in Stereo, if stereo enabled.
       if (stereo)
-        msg.sdp = addStereo(msg.sdp);
-      pc.setRemoteDescription(new RTCSessionDescription(msg));
+        message.sdp = addStereo(message.sdp);
+      pc.setRemoteDescription(new RTCSessionDescription(message));
       doAnswer();
-    } else if (msg.type === 'answer' && started) {
+    } else if (message.type === 'answer') {
       // Set Opus in Stereo, if stereo enabled.
       if (stereo)
-        msg.sdp = addStereo(msg.sdp);
-      pc.setRemoteDescription(new RTCSessionDescription(msg));
-    } else if (msg.type === 'candidate' && started) {
-      var candidate = new RTCIceCandidate({sdpMLineIndex: msg.label,
-                                           candidate: msg.candidate});
+        message.sdp = addStereo(message.sdp);
+      pc.setRemoteDescription(new RTCSessionDescription(message));
+    } else if (message.type === 'candidate') {
+      var candidate = new RTCIceCandidate({sdpMLineIndex: message.label,
+                                           candidate: message.candidate});
       pc.addIceCandidate(candidate);
-    } else if (msg.type === 'bye' && started) {
+    } else if (message.type === 'bye') {
       onRemoteHangup();
     }
   }
@@ -214,10 +227,28 @@
   function onChannelOpened() {
     console.log('Channel opened.');
     channelReady = true;
+    maybeStart();
   }
   function onChannelMessage(message) {
     console.log('S->C: ' + message.data);
-    processSignalingMessage(message.data);
+    var msg = JSON.parse(message.data);
+    // Since the turn response is async and also GAE might disorder the
+    // Message delivery due to possible datastore query at server side,
+    // So callee needs to cache messages before peerConnection is created.
+    if (!initiator && !started) {
+      if (msg.type === 'offer') {
+        // Add offer to the beginning of msgQueue, since we can't handle
+        // Early candidates before offer at present.
+        msgQueue.unshift(msg);
+        // Callee creates PeerConnection
+        signalingReady = true;
+        maybeStart();
+      } else {
+        msgQueue.push(msg);
+      }
+    } else {
+      processSignalingMessage(msg);
+    }
   }
   function onChannelError() {
     console.log('Channel error.');
@@ -233,7 +264,7 @@
     localVideo.style.opacity = 1;
     localStream = stream;
     // Caller creates PeerConnection.
-    if (initiator) maybeStart();
+    maybeStart();
   }
 
   function onUserMediaError(error) {
@@ -283,10 +314,12 @@
 
   function stop() {
     started = false;
+    signalingReady = false;
     isAudioMuted = false;
     isVideoMuted = false;
     pc.close();
     pc = null;
+    msgQueue.length = 0;
   }
 
   function waitForRemoteVideo() {
@@ -519,6 +552,7 @@
 
   // Set the video diplaying in the center of window.
   window.onresize = function(){
+    var aspectRatio;
     if (remoteVideo.style.opacity === '1') {
       aspectRatio = remoteVideo.videoWidth/remoteVideo.videoHeight;
     } else if (localVideo.style.opacity === '1') {
@@ -533,9 +567,9 @@
                      innerWidth : aspectRatio * window.innerHeight;
     var videoHeight = innerHeight < window.innerWidth / aspectRatio ?
                       innerHeight : window.innerWidth / aspectRatio;
-    containerDiv = document.getElementById("container");
-    containerDiv.style.width = videoWidth + "px";
-    containerDiv.style.height = videoHeight + "px";
-    containerDiv.style.left = (innerWidth - videoWidth) / 2 + "px";
-    containerDiv.style.top = (innerHeight - videoHeight) / 2 + "px";
+    containerDiv = document.getElementById('container');
+    containerDiv.style.width = videoWidth + 'px';
+    containerDiv.style.height = videoHeight + 'px';
+    containerDiv.style.left = (innerWidth - videoWidth) / 2 + 'px';
+    containerDiv.style.top = (innerHeight - videoHeight) / 2 + 'px';
   };
