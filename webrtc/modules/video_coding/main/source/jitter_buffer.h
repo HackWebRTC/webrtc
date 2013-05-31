@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_JITTER_BUFFER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_JITTER_BUFFER_H_
 
-#include <map>
+#include <list>
 #include <set>
 #include <vector>
 
@@ -47,22 +47,11 @@ struct VCMJitterSample {
   int64_t latest_packet_time;
 };
 
-class TimestampLessThan {
- public:
-  bool operator() (const uint32_t& timestamp1,
-                   const uint32_t& timestamp2) const {
-    return IsNewerTimestamp(timestamp2, timestamp1);
-  }
-};
-
-class FrameList :
-  public std::map<uint32_t, VCMFrameBuffer*, TimestampLessThan> {
+class FrameList : public std::list<VCMFrameBuffer*> {
  public:
   void InsertFrame(VCMFrameBuffer* frame);
   VCMFrameBuffer* FindFrame(uint32_t timestamp) const;
   VCMFrameBuffer* PopFrame(uint32_t timestamp);
-  VCMFrameBuffer* Front() const;
-  VCMFrameBuffer* Back() const;
   int RecycleFramesUntilKeyFrame(FrameList::iterator* key_frame_it);
   int CleanUpOldOrEmptyFrames(VCMDecodingState* decoding_state);
 };
