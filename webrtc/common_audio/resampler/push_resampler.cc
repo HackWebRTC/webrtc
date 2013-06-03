@@ -19,14 +19,11 @@
 namespace webrtc {
 
 PushResampler::PushResampler()
-      // Requires valid values at construction, so give it something arbitrary.
-    : resampler_(new Resampler(48000, 48000, kResamplerSynchronous)),
-      sinc_resampler_(NULL),
+    : sinc_resampler_(NULL),
       sinc_resampler_right_(NULL),
       src_sample_rate_hz_(0),
       dst_sample_rate_hz_(0),
       num_channels_(0),
-      use_sinc_resampler_(false),
       src_left_(NULL),
       src_right_(NULL),
       dst_left_(NULL),
@@ -55,16 +52,6 @@ int PushResampler::InitializeIfNeeded(int src_sample_rate_hz,
   dst_sample_rate_hz_ = dst_sample_rate_hz;
   num_channels_ = num_channels;
 
-  const ResamplerType resampler_type =
-      num_channels == 1 ? kResamplerSynchronous : kResamplerSynchronousStereo;
-  if (resampler_->Reset(src_sample_rate_hz, dst_sample_rate_hz,
-                        resampler_type) == 0) {
-    // The resampler supports these rates.
-    use_sinc_resampler_ = false;
-    return 0;
-  }
-
-  use_sinc_resampler_ = true;
   const int src_size_10ms_mono = src_sample_rate_hz / 100;
   const int dst_size_10ms_mono = dst_sample_rate_hz / 100;
   sinc_resampler_.reset(new PushSincResampler(src_size_10ms_mono,
@@ -89,20 +76,6 @@ int PushResampler::Resample(const int16_t* src, int src_length,
     return -1;
   }
 
-  if (use_sinc_resampler_) {
-    return ResampleSinc(src, src_length, dst, dst_capacity);
-  }
-
-  int resulting_length = 0;
-  if (resampler_->Push(src, src_length, dst, dst_capacity,
-                       resulting_length) != 0) {
-    return -1;
-  }
-  return resulting_length;
-}
-
-int PushResampler::ResampleSinc(const int16_t* src, int src_length,
-                                int16_t* dst, int dst_capacity) {
   if (src_sample_rate_hz_ == dst_sample_rate_hz_) {
     // The old resampler provides this memcpy facility in the case of matching
     // sample rates, so reproduce it here for the sinc resampler.

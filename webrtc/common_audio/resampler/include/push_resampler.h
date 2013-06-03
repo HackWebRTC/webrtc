@@ -16,12 +16,10 @@
 
 namespace webrtc {
 
-class Resampler;
 class PushSincResampler;
 
-// Wraps the old resampler and new arbitrary rate conversion resampler. The
-// old resampler will be used whenever it supports the requested rates, and
-// otherwise the sinc resampler will be enabled.
+// Wraps PushSincResampler to provide stereo support.
+// TODO(ajm): add support for an arbitrary number of channels.
 class PushResampler {
  public:
   PushResampler();
@@ -37,19 +35,15 @@ class PushResampler {
   int Resample(const int16_t* src, int src_length, int16_t* dst,
                int dst_capacity);
 
-  bool use_sinc_resampler() const { return use_sinc_resampler_; }
-
  private:
   int ResampleSinc(const int16_t* src, int src_length, int16_t* dst,
                    int dst_capacity);
 
-  scoped_ptr<Resampler> resampler_;
   scoped_ptr<PushSincResampler> sinc_resampler_;
   scoped_ptr<PushSincResampler> sinc_resampler_right_;
   int src_sample_rate_hz_;
   int dst_sample_rate_hz_;
   int num_channels_;
-  bool use_sinc_resampler_;
   scoped_array<int16_t> src_left_;
   scoped_array<int16_t> src_right_;
   scoped_array<int16_t> dst_left_;

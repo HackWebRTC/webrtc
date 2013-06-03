@@ -158,7 +158,13 @@ void OutputMixerTest::RunResampleTest(int src_channels,
   printf("(%d, %d Hz) -> (%d, %d Hz) ",  // SNR reported on the same line later.
       src_channels, src_sample_rate_hz, dst_channels, dst_sample_rate_hz);
   EXPECT_EQ(0, RemixAndResample(src_frame_, &resampler, &dst_frame_));
-  EXPECT_GT(ComputeSNR(golden_frame_, dst_frame_, max_delay), 39.0f);
+  if (src_sample_rate_hz == 96000 && dst_sample_rate_hz == 8000) {
+    // The sinc resampler gives poor SNR at this extreme conversion, but we
+    // expect to see this rarely in practice.
+    EXPECT_GT(ComputeSNR(golden_frame_, dst_frame_, max_delay), 14.0f);
+  } else {
+    EXPECT_GT(ComputeSNR(golden_frame_, dst_frame_, max_delay), 46.0f);
+  }
 }
 
 TEST_F(OutputMixerTest, RemixAndResampleCopyFrameSucceeds) {
