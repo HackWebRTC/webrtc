@@ -146,7 +146,7 @@ TEST_F(ExternalMediaTest,
 
 TEST_F(ExternalMediaTest,
        ExternalMixingResamplingToInvalidFrequenciesFails) {
-  const int kInvalidFrequencies[] = {-8000, -1, 1, 1000, 8001, 16001};
+  const int kInvalidFrequencies[] = {-8000, -1};
   webrtc::AudioFrame frame;
   PausePlaying();
   EXPECT_EQ(0, voe_xmedia_->SetExternalMixing(channel_, true));
