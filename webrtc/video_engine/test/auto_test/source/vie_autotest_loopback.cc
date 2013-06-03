@@ -217,6 +217,15 @@ int VideoEngineSampleCode(void* window1, void* window2)
         return -1;
     }
 
+    // Setting SSRC manually (arbitrary value), as otherwise we will get a clash
+    // (loopback), and a new SSRC will be set, which will reset the receiver.
+    error = ptrViERtpRtcp->SetLocalSSRC(videoChannel, 0x01234567);
+    if (error == -1)
+    {
+        printf("ERROR in ViERTP_RTCP::SetLocalSSRC\n");
+        return -1;
+    }
+
     //
     // Set up rendering
     //
