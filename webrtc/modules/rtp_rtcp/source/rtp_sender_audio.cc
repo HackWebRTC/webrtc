@@ -487,7 +487,7 @@ int32_t
 RTPSenderAudio::SetAudioLevelIndicationStatus(const bool enable,
                                               const uint8_t ID)
 {
-    if(ID < 1 || ID > 14)
+    if(enable && (ID < 1 || ID > 14))
     {
         return -1;
     }

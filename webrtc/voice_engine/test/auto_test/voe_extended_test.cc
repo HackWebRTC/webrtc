@@ -4525,11 +4525,13 @@ int VoEExtendedTest::TestRTP_RTCP() {
   TEST_MUSTPASS(-1 != rtp_rtcp->SetRTPAudioLevelIndicationStatus(0, true, 15));
   MARK();
   TEST_ERROR(VE_INVALID_ARGUMENT);
-  TEST_MUSTPASS(-1 != rtp_rtcp->SetRTPAudioLevelIndicationStatus(0, false, 15));
-  MARK();
   TEST_MUSTPASS(-1 != rtp_rtcp->SetRTPAudioLevelIndicationStatus(1, true, 5));
   MARK();
   TEST_ERROR(VE_CHANNEL_NOT_VALID);
+
+  // test any id can be used on disabling.
+  TEST_MUSTPASS(0 != rtp_rtcp->SetRTPAudioLevelIndicationStatus(0, false, 0));
+  MARK();
 
   // test complete valid input range [1,14]
   bool audioLevelEnabled(false);

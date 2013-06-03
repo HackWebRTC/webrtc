@@ -547,6 +547,7 @@ TEST_F(RtpSenderAudioTest, BuildRTPPacketWithAudioLevelExtension) {
   VerifyRTPHeaderCommon(rtp_header2);
   EXPECT_EQ(length, rtp_header2.headerLength);
   // TODO(solenberg): Should verify that we didn't get audio level.
+  EXPECT_EQ(0, rtp_sender_->SetAudioLevelIndicationStatus(false, 0));
 }
 
 TEST_F(RtpSenderAudioTest, SendAudio) {
@@ -612,6 +613,7 @@ TEST_F(RtpSenderAudioTest, SendAudioWithAudioLevelExtension) {
 
   EXPECT_EQ(0, memcmp(extension, payload_data - sizeof(extension),
                       sizeof(extension)));
+  EXPECT_EQ(0, rtp_sender_->SetAudioLevelIndicationStatus(false, 0));
 }
 
 }  // namespace webrtc

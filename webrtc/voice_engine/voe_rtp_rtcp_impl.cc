@@ -224,8 +224,8 @@ int VoERTP_RTCPImpl::SetRTPAudioLevelIndicationStatus(int channel,
         _shared->SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    if (ID < kVoiceEngineMinRtpExtensionId ||
-        ID > kVoiceEngineMaxRtpExtensionId)
+    if (enable && (ID < kVoiceEngineMinRtpExtensionId ||
+                   ID > kVoiceEngineMaxRtpExtensionId))
     {
         // [RFC5285] The 4-bit ID is the local identifier of this element in
         // the range 1-14 inclusive.
