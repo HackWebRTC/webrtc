@@ -136,6 +136,11 @@ void GlxRenderer::Resize(size_t width, size_t height) {
   size_hints->min_aspect.y = size_hints->max_aspect.y = height_;
   XSetWMNormalHints(display_, window_, size_hints);
   XFree(size_hints);
+
+  XWindowChanges wc;
+  wc.width = static_cast<int>(width);
+  wc.height = static_cast<int>(height);
+  XConfigureWindow(display_, window_, CWWidth | CWHeight, &wc);
 }
 
 void GlxRenderer::RenderFrame(const webrtc::I420VideoFrame& frame,
