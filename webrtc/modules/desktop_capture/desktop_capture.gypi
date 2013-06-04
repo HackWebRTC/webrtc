@@ -59,6 +59,7 @@
             '<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [
+            "desktop_region_unittest.cc",
             "window_capturer_unittest.cc",
           ],
         },
