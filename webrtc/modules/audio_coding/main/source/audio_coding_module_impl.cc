@@ -2119,8 +2119,9 @@ int32_t AudioCodingModuleImpl::IncomingPacket(
     }
 
     // Set the following regardless of tracking NetEq buffer or being in
-    // AV-sync mode.
-    first_payload_received_ = true;
+    // AV-sync mode. Only if the received packet is not CNG.
+    if (!rtp_info.type.Audio.isCNG)
+      first_payload_received_ = true;
   }
   return 0;
 }
@@ -2327,10 +2328,11 @@ int32_t AudioCodingModuleImpl::PlayoutData10Ms(
   {
     CriticalSectionScoped lock(acm_crit_sect_);
 
-    // If we are in AV-sync and number of packets is below a threshold or
-    // next packet is late then inject a sync packet.
-    if (av_sync_ && NowTimestamp(current_receive_codec_idx_) > 5 *
-        last_timestamp_diff_ + last_receive_timestamp_) {
+    // If we are in AV-sync and have already received an audio packet, but the
+    // latest packet is too late, then insert sync packet.
+    if (av_sync_ && first_payload_received_ &&
+        NowTimestamp(current_receive_codec_idx_) > 5 * last_timestamp_diff_ +
+        last_receive_timestamp_) {
       if (!last_packet_was_sync_) {
         // If the last packet inserted has been a regular packet Skip two
         // packets to give room for PLC.
@@ -2934,10 +2936,12 @@ int AudioCodingModuleImpl::SetInitialPlayoutDelay(int delay_ms) {
     return -1;
   }
   initial_delay_ms_ = delay_ms;
-  if (delay_ms > 0) {
-    track_neteq_buffer_ = true;
-  }
-  av_sync_ = true;
+
+  // If initial delay is zero, NetEq buffer should not be tracked, also we
+  // don't want to be in AV-sync mode.
+  track_neteq_buffer_ = delay_ms > 0;
+  av_sync_ = delay_ms > 0;
+
   neteq_.EnableAVSync(av_sync_);
   return neteq_.SetMinimumDelay(delay_ms);
 }
