@@ -10,7 +10,8 @@
 
 #include "webrtc/common_video/libyuv/include/scaler.h"
 
-#include "third_party/libyuv/include/libyuv.h"
+// NOTE(ajm): Path provided by gyp.
+#include "libyuv.h"  // NOLINT
 
 namespace webrtc {
 

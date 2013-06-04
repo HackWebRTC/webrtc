@@ -9,14 +9,16 @@
  */
 
 #if defined(WIN32)
- #include <basetsd.h>
+#include <basetsd.h>
 #endif
 #include <setjmp.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "third_party/libyuv/include/libyuv.h"
-#include "third_party/libyuv/include/libyuv/mjpeg_decoder.h"
+// NOTE(ajm): Path provided by gyp.
+#include "libyuv.h"  // NOLINT
+#include "libyuv/mjpeg_decoder.h"  // NOLINT
+
 #include "webrtc/common_video/jpeg/data_manager.h"
 #include "webrtc/common_video/jpeg/include/jpeg.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
