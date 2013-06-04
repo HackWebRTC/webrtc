@@ -942,8 +942,8 @@ int32_t ViEChannel::EnableKeyFrameRequestCallback(const bool enable) {
 }
 
 int32_t ViEChannel::SetSSRC(const uint32_t SSRC,
-                                  const StreamType usage,
-                                  const uint8_t simulcast_idx) {
+                            const StreamType usage,
+                            const uint8_t simulcast_idx) {
   WEBRTC_TRACE(webrtc::kTraceInfo,
                webrtc::kTraceVideo,
                ViEId(engine_id_, channel_id_),
@@ -973,7 +973,7 @@ int32_t ViEChannel::SetSSRC(const uint32_t SSRC,
 }
 
 int32_t ViEChannel::SetRemoteSSRCType(const StreamType usage,
-                                            const uint32_t SSRC) const {
+                                      const uint32_t SSRC) const {
   WEBRTC_TRACE(webrtc::kTraceInfo,
                webrtc::kTraceVideo,
                ViEId(engine_id_, channel_id_),

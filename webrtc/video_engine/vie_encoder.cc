@@ -10,6 +10,7 @@
 
 #include "webrtc/video_engine/vie_encoder.h"
 
+#include <algorithm>
 #include <cassert>
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -91,8 +92,9 @@ class ViEPacedSenderCallback : public PacedSender::Callback {
                                 int64_t capture_time_ms) {
     owner_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms);
   }
-  virtual void TimeToSendPadding(int /*bytes*/) {
+  virtual int TimeToSendPadding(int bytes) {
     // TODO(pwestin): Hook up this.
+    return 0;
   }
  private:
   ViEEncoder* owner_;
@@ -1000,7 +1002,7 @@ void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
 
   vcm_.SetChannelParameters(bitrate_bps, fraction_lost, round_trip_time_ms);
   int bitrate_kbps = bitrate_bps / 1000;
-  paced_sender_->UpdateBitrate(bitrate_kbps);
+  paced_sender_->UpdateBitrate(bitrate_kbps, 0);
   default_rtp_rtcp_->SetTargetSendBitrate(bitrate_bps);
 }
 

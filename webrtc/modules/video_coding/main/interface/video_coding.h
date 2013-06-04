@@ -165,7 +165,7 @@ public:
     //                     < 0,                     on error.
     virtual int32_t CodecConfigParameters(uint8_t* buffer, int32_t size) = 0;
 
-    // API to get currently configured encoder target bitrate in kbit/s.
+    // API to get currently configured encoder target bitrate in bits/s.
     //
     // Return value      : 0,   on success.
     //                     < 0, on error.
