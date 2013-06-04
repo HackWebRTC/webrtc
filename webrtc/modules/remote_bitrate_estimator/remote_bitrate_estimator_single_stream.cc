@@ -37,7 +37,7 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
   // packet size excluding headers.
   virtual void IncomingPacket(int64_t arrival_time_ms,
                               int payload_size,
-                              const WebRtcRTPHeader& header);
+                              const RTPHeader& header);
 
   // Triggers a new estimate calculation.
   // Implements the Module interface.
@@ -86,10 +86,10 @@ RemoteBitrateEstimatorSingleStream::RemoteBitrateEstimatorSingleStream(
 void RemoteBitrateEstimatorSingleStream::IncomingPacket(
     int64_t arrival_time_ms,
     int payload_size,
-    const WebRtcRTPHeader& header) {
-  uint32_t ssrc = header.header.ssrc;
-  uint32_t rtp_timestamp = header.header.timestamp +
-      header.header.extension.transmissionTimeOffset;
+    const RTPHeader& header) {
+  uint32_t ssrc = header.ssrc;
+  uint32_t rtp_timestamp = header.timestamp +
+      header.extension.transmissionTimeOffset;
   CriticalSectionScoped cs(crit_sect_.get());
   SsrcOveruseDetectorMap::iterator it = overuse_detectors_.find(ssrc);
   if (it == overuse_detectors_.end()) {

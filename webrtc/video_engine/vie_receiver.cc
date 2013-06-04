@@ -133,12 +133,6 @@ int32_t ViEReceiver::OnReceivedPayloadData(
   if (rtp_header == NULL) {
     return 0;
   }
-
-  // TODO(holmer): Make sure packets reconstructed using FEC are not passed to
-  // the bandwidth estimator.
-  const int packet_size = payload_size + rtp_header->header.paddingLength;
-  remote_bitrate_estimator_->IncomingPacket(TickTime::MillisecondTimestamp(),
-                                            packet_size, *rtp_header);
   if (vcm_->IncomingPacket(payload_data, payload_size, *rtp_header) != 0) {
     // Check this...
     return -1;
@@ -197,6 +191,9 @@ int ViEReceiver::InsertRTPPacket(const int8_t* rtp_packet,
                  "IncomingPacket invalid RTP header");
     return -1;
   }
+  const int payload_size = received_packet_length - header.headerLength;
+  remote_bitrate_estimator_->IncomingPacket(TickTime::MillisecondTimestamp(),
+                                            payload_size, header);
   assert(rtp_rtcp_);  // Should be set by owner at construction time.
   return rtp_rtcp_->IncomingRtpPacket(received_packet, received_packet_length,
                                       header);

@@ -223,11 +223,11 @@ void RemoteBitrateEstimatorTest::IncomingPacket(uint32_t ssrc,
                                                 int64_t arrival_time,
                                                 uint32_t rtp_timestamp,
                                                 uint32_t absolute_send_time) {
-  WebRtcRTPHeader header;
+  RTPHeader header;
   memset(&header, 0, sizeof(header));
-  header.header.ssrc = ssrc;
-  header.header.timestamp = rtp_timestamp;
-  header.header.extension.absoluteSendTime = absolute_send_time;
+  header.ssrc = ssrc;
+  header.timestamp = rtp_timestamp;
+  header.extension.absoluteSendTime = absolute_send_time;
   bitrate_estimator_->IncomingPacket(arrival_time, payload_size, header);
 }
 

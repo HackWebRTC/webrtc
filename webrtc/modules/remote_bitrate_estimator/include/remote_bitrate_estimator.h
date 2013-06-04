@@ -55,7 +55,7 @@ class RemoteBitrateEstimator : public CallStatsObserver, public Module {
   // the WebRtcRTPHeader to be initialized.
   virtual void IncomingPacket(int64_t arrival_time_ms,
                               int payload_size,
-                              const WebRtcRTPHeader& header) = 0;
+                              const RTPHeader& header) = 0;
 
   // Removes all data for |ssrc|.
   virtual void RemoveStream(unsigned int ssrc) = 0;
