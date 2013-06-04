@@ -214,9 +214,7 @@ class AudioDeviceAndroidJni : public AudioDeviceGeneric {
 
   // Signal flags to threads
   bool _startRec;
-  bool _stopRec;
   bool _startPlay;
-  bool _stopPlay;
 
   // Warnings and errors
   uint16_t _playWarning;
