@@ -11,42 +11,119 @@
     'conditions': [
       # Desktop capturer is supported only on Windows, OSX and Linux.
       ['OS=="win" or OS=="mac" or OS=="linux"', {
-        'desktop_capture_enabled%': 1,
+        'desktop_capture_supported%': 1,
       }, {
-        'desktop_capture_enabled%': 0,
+        'desktop_capture_supported%': 0,
       }],
     ],
   },
+  'targets': [
+    {
+      'target_name': 'desktop_capture',
+      'type': 'static_library',
+      'dependencies': [
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+      ],
+      'sources': [
+        "desktop_capturer.h",
+        "desktop_frame.cc",
+        "desktop_frame.h",
+        "desktop_frame_win.cc",
+        "desktop_frame_win.h",
+        "desktop_geometry.cc",
+        "desktop_geometry.h",
+        "desktop_region.cc",
+        "desktop_region.h",
+        "differ.cc",
+        "differ.h",
+        "differ_block.cc",
+        "differ_block.h",
+        "mac/desktop_configuration.h",
+        "mac/desktop_configuration.mm",
+        "mac/scoped_pixel_buffer_object.cc",
+        "mac/scoped_pixel_buffer_object.h",
+        "mouse_cursor_shape.h",
+        "screen_capture_frame_queue.cc",
+        "screen_capture_frame_queue.h",
+        "screen_capturer.h",
+        "screen_capturer_fake.cc",
+        "screen_capturer_fake.h",
+        "screen_capturer_helper.cc",
+        "screen_capturer_helper.h",
+        "screen_capturer_mac.mm",
+        "screen_capturer_win.cc",
+        "screen_capturer_x11.cc",
+        "shared_desktop_frame.cc",
+        "shared_desktop_frame.h",
+        "shared_memory.cc",
+        "shared_memory.h",
+        "win/desktop.cc",
+        "win/desktop.h",
+        "win/scoped_thread_desktop.cc",
+        "win/scoped_thread_desktop.h",
+        "window_capturer.h",
+        "window_capturer_linux.cc",
+        "window_capturer_mac.cc",
+        "window_capturer_win.cc",
+        "x11/x_server_pixel_buffer.cc",
+        "x11/x_server_pixel_buffer.h",
+      ],
+      'conditions': [
+        ['OS!="ios" and (target_arch=="ia32" or target_arch=="x64")', {
+          'dependencies': [
+            'desktop_capture_differ_sse2',
+          ],
+        }],
+        ['use_x11 == 1', {
+          'link_settings': {
+            'libraries': [
+              '-lX11',
+              '-lXdamage',
+              '-lXext',
+              '-lXfixes',
+            ],
+          },
+        }],
+        ['OS!="win" and OS!="mac" and use_x11==0', {
+          'sources': [
+            "screen_capturer_null.cc",
+          ],
+        }],
+        ['OS=="mac"', {
+          'link_settings': {
+            'libraries': [
+              '$(SDKROOT)/System/Library/Frameworks/AppKit.framework',
+              '$(SDKROOT)/System/Library/Frameworks/IOKit.framework',
+              '$(SDKROOT)/System/Library/Frameworks/OpenGL.framework',
+            ],
+          },
+        }],
+      ],
+    },
+  ],  # targets
   'conditions': [
-    ['desktop_capture_enabled==1', {
+    ['OS!="ios" and (target_arch=="ia32" or target_arch=="x64")', {
       'targets': [
         {
-          'target_name': 'desktop_capture',
+          # Have to be compiled as a separate target because it needs to be
+          # compiled with SSE2 enabled.
+          'target_name': 'desktop_capture_differ_sse2',
           'type': 'static_library',
-          'dependencies': [
-            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-          ],
           'sources': [
-            "desktop_capturer.h",
-            "desktop_frame.cc",
-            "desktop_frame.h",
-            "desktop_frame_win.cc",
-            "desktop_frame_win.h",
-            "desktop_geometry.cc",
-            "desktop_geometry.h",
-            "desktop_region.cc",
-            "desktop_region.h",
-            "shared_memory.cc",
-            "shared_memory.h",
-            "window_capturer.h",
-            "window_capturer_linux.cc",
-            "window_capturer_mac.cc",
-            "window_capturer_win.cc",
+            "differ_block_sse2.cc",
+            "differ_block_sse2.h",
+          ],
+          'conditions': [
+            [ 'os_posix == 1 and OS != "mac"', {
+              'cflags': [
+                '-msse2',
+              ],
+            }],
           ],
         },
       ],  # targets
-    }],  # desktop_capture_enabled==1
-    ['desktop_capture_enabled==1 and include_tests==1', {
+    }],
+    ['include_tests==1', {
       'targets': [
         {
           'target_name': 'desktop_capture_unittests',
@@ -56,14 +133,34 @@
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/test/test.gyp:test_support',
             '<(webrtc_root)/test/test.gyp:test_support_main',
+            '<(DEPTH)/testing/gmock.gyp:gmock',
             '<(DEPTH)/testing/gtest.gyp:gtest',
           ],
           'sources': [
             "desktop_region_unittest.cc",
+            "differ_block_unittest.cc",
+            "differ_unittest.cc",
+            "screen_capturer_helper_unittest.cc",
+            "screen_capturer_mac_unittest.cc",
+            "screen_capturer_mock_objects.h",
+            "screen_capturer_unittest.cc",
             "window_capturer_unittest.cc",
           ],
+          'conditions': [
+            # Run screen/window capturer tests only on platforms where they are
+            # supported.
+            ['desktop_capture_supported==1', {
+              'sources!': [
+                "screen_capturer_helper_unittest.cc",
+                "screen_capturer_mac_unittest.cc",
+                "screen_capturer_mock_objects.h",
+                "screen_capturer_unittest.cc",
+                "window_capturer_unittest.cc",
+              ],
+            }],
+          ],
         },
-      ], # targets
-    }],  # desktop_capture_enabled==1 && include_tests==1
+      ],  # targets
+    }],  # include_tests==1
   ],
 }
