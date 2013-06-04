@@ -130,9 +130,9 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
       VideoCodecInformation *codec_info = NULL,
       const RTPVideoTypeHeader * rtp_type_hdr = NULL);
 
-  int32_t SendPadData(int8_t payload_type,
-                      uint32_t capture_timestamp,
-                      int64_t capture_time_ms, int32_t bytes);
+  int BuildPaddingPacket(uint8_t* packet, int header_length, int32_t bytes);
+  bool SendPadData(int8_t payload_type, uint32_t capture_timestamp,
+                   int64_t capture_time_ms, int32_t bytes);
   // RTP header extension
   int32_t SetTransmissionTimeOffset(
       const int32_t transmission_time_offset);
@@ -146,7 +146,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
 
   uint16_t RtpHeaderExtensionTotalLength() const;
 
-  uint16_t BuildRTPHeaderExtension(uint8_t *data_buffer) const;
+  uint16_t BuildRTPHeaderExtension(uint8_t* data_buffer) const;
 
   uint8_t BuildTransmissionTimeOffsetExtension(
       uint8_t *data_buffer) const;
@@ -260,11 +260,16 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
                            RtpVideoCodecTypes *video_type);
 
  private:
+  int CreateRTPHeader(uint8_t* header, int8_t payload_type,
+                      uint32_t ssrc, bool marker_bit,
+                      uint32_t timestamp, uint16_t sequence_number,
+                      const uint32_t* csrcs, uint8_t csrcs_length) const;
+
   void UpdateNACKBitRate(const uint32_t bytes, const uint32_t now);
 
-  int32_t SendPaddingAccordingToBitrate(int8_t payload_type,
-                                        uint32_t capture_timestamp,
-                                        int64_t capture_time_ms);
+  bool SendPaddingAccordingToBitrate(int8_t payload_type,
+                                     uint32_t capture_timestamp,
+                                     int64_t capture_time_ms);
 
   void BuildRtxPacket(uint8_t* buffer, uint16_t* length,
                       uint8_t* buffer_rtx);
@@ -314,9 +319,10 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   uint16_t sequence_number_rtx_;
   bool ssrc_forced_;
   uint32_t ssrc_;
-  uint32_t time_stamp_;
-  uint8_t csrcs_;
-  uint32_t csrc_[kRtpCsrcSize];
+  uint32_t timestamp_;
+  int64_t capture_timestamp_;
+  uint8_t num_csrcs_;
+  uint32_t csrcs_[kRtpCsrcSize];
   bool include_csrcs_;
   RtxMode rtx_;
   uint32_t ssrc_rtx_;
