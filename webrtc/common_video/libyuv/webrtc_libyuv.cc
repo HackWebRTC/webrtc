@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 
 #include <assert.h>
 #include <string.h>
 
-#include "libyuv.h"
+#include "third_party/libyuv/include/libyuv.h"
 
 namespace webrtc {
 

@@ -134,4 +134,3 @@ class I420VideoFrame {
 }  // namespace webrtc
 
 #endif  // COMMON_VIDEO_INTERFACE_I420_VIDEO_FRAME_H
-

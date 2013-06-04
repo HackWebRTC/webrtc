@@ -11,10 +11,10 @@
 #include <math.h>
 #include <string.h>
 
-#include "common_video/libyuv/include/scaler.h"
-#include "gtest/gtest.h"
-#include "system_wrappers/interface/tick_util.h"
-#include "testsupport/fileutils.h"
+#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/common_video/libyuv/include/scaler.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
 
