@@ -205,7 +205,7 @@ bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
     }
     return false;
   }
-  paced_sender::PacketList* packet_list;
+  paced_sender::PacketList* packet_list = NULL;
   switch (priority) {
     case kHighPriority:
       packet_list = high_priority_packets_.get();
