@@ -56,11 +56,13 @@
           'target_name': 'modules_unittests',
           'type': 'executable',
           'dependencies': [
+            'webrtc_utility',
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'sources': [
             'module_common_types_unittest.cc',
+            'utility/source/audio_frame_operations_unittest.cc',
           ],
         },
       ],
