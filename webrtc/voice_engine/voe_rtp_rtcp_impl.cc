@@ -576,7 +576,16 @@ int VoERTP_RTCPImpl::SetNACKStatus(int channel,
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "SetNACKStatus(channel=%d, enable=%d, maxNoPackets=%d)",
                  channel, enable, maxNoPackets);
-    // Dummy for now
+
+    voe::ScopedChannel sc(_shared->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
+    if (channelPtr == NULL)
+    {
+        _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
+            "SetNACKStatus() failed to locate channel");
+        return -1;
+    }
+    channelPtr->SetNACKStatus(enable, maxNoPackets);
     return 0;
 }
 

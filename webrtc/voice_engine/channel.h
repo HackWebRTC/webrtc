@@ -278,6 +278,8 @@ public:
     int GetRTPStatistics(CallStatistics& stats);
     int SetFECStatus(bool enable, int redPayloadtype);
     int GetFECStatus(bool& enabled, int& redPayloadtype);
+    void SetNACKStatus(bool enable, int maxNumberOfPackets);
+    int ResendPackets(const uint16_t* sequence_numbers, int length);
     int StartRTPDump(const char fileNameUTF8[1024], RTPDirections direction);
     int StopRTPDump(RTPDirections direction);
     bool RTPDumpIsActive(RTPDirections direction);

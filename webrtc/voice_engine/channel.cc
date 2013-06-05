@@ -4230,6 +4230,19 @@ Channel::GetFECStatus(bool& enabled, int& redPayloadtype)
     return 0;
 }
 
+void Channel::SetNACKStatus(bool enable, int maxNumberOfPackets) {
+  // None of these functions can fail.
+  _rtpRtcpModule->SetStorePacketsStatus(enable, maxNumberOfPackets);
+  _rtpRtcpModule->SetNACKStatus(enable ? kNackRtcp : kNackOff,
+                                maxNumberOfPackets);
+}
+
+// Called by the ACM when it's missing one or more packets.
+int Channel::ResendPackets(const uint16_t* sequence_numbers,
+                           int length) {
+  return _rtpRtcpModule->SendNACK(sequence_numbers, length);
+}
+
 int
 Channel::StartRTPDump(const char fileNameUTF8[1024],
                       RTPDirections direction)
