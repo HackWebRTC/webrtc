@@ -86,12 +86,7 @@ class VideoSendStream {
     VideoCodec codec;
 
     struct Rtp {
-      Rtp()
-          : mode(kRtcpReducedSize),
-            max_packet_size(0),
-            nack(NULL),
-            fec(NULL),
-            rtx(NULL) {}
+      Rtp() : mode(kRtcpReducedSize), max_packet_size(0) {}
       RtcpMode mode;
 
       std::vector<uint32_t> ssrcs;
