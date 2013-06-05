@@ -34,7 +34,7 @@ class VideoReceiveStream : public newapi::VideoReceiveStream,
                            public webrtc::Transport {
  public:
   VideoReceiveStream(webrtc::VideoEngine* video_engine,
-                     const newapi::VideoReceiveStreamConfig& config,
+                     const newapi::VideoReceiveStream::Config& config,
                      newapi::Transport* transport);
   virtual ~VideoReceiveStream();
 
@@ -42,8 +42,6 @@ class VideoReceiveStream : public newapi::VideoReceiveStream,
   virtual void StopReceive() OVERRIDE;
 
   virtual void GetCurrentReceiveCodec(VideoCodec* receive_codec) OVERRIDE;
-  virtual void GetReceiveStatistics(newapi::ReceiveStatistics* statistics)
-      OVERRIDE;
 
   virtual bool DeliverRtcp(const void* packet, size_t length);
   virtual bool DeliverRtp(const void* packet, size_t length);
@@ -62,7 +60,7 @@ class VideoReceiveStream : public newapi::VideoReceiveStream,
 
  private:
   newapi::Transport* transport_;
-  newapi::VideoReceiveStreamConfig config_;
+  newapi::VideoReceiveStream::Config config_;
   Clock* clock_;
 
   ViEBase* video_engine_base_;

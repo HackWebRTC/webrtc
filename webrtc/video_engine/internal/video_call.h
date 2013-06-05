@@ -38,20 +38,18 @@ class VideoCall : public newapi::VideoCall, public newapi::PacketReceiver {
   virtual newapi::PacketReceiver* Receiver() OVERRIDE;
   virtual std::vector<VideoCodec> GetVideoCodecs() OVERRIDE;
 
-  virtual void GetDefaultSendConfig(
-      newapi::VideoSendStreamConfig* send_stream_config) OVERRIDE;
+  virtual newapi::VideoSendStream::Config GetDefaultSendConfig() OVERRIDE;
 
   virtual newapi::VideoSendStream* CreateSendStream(
-      const newapi::VideoSendStreamConfig& send_stream_config) OVERRIDE;
+      const newapi::VideoSendStream::Config& send_stream_config) OVERRIDE;
 
   virtual newapi::SendStreamState* DestroySendStream(
       newapi::VideoSendStream* send_stream) OVERRIDE;
 
-  virtual void GetDefaultReceiveConfig(
-      newapi::VideoReceiveStreamConfig* receive_stream_config) OVERRIDE;
+  virtual newapi::VideoReceiveStream::Config GetDefaultReceiveConfig() OVERRIDE;
 
   virtual newapi::VideoReceiveStream* CreateReceiveStream(
-      const newapi::VideoReceiveStreamConfig& receive_stream_config) OVERRIDE;
+      const newapi::VideoReceiveStream::Config& receive_stream_config) OVERRIDE;
 
   virtual void DestroyReceiveStream(newapi::VideoReceiveStream* receive_stream)
       OVERRIDE;

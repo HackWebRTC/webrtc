@@ -45,8 +45,7 @@ TEST_F(LoopbackTest, Test) {
   // Loopback, call sends to itself.
   transport.SetReceiver(call->Receiver());
 
-  newapi::VideoSendStreamConfig send_config;
-  call->GetDefaultSendConfig(&send_config);
+  newapi::VideoSendStream::Config send_config = call->GetDefaultSendConfig();
   test::GenerateRandomSsrcs(&send_config, &reserved_ssrcs);
 
   send_config.local_renderer = local_preview;
@@ -73,8 +72,8 @@ TEST_F(LoopbackTest, Test) {
                                   test::flags::Fps(),
                                   test_clock);
 
-  newapi::VideoReceiveStreamConfig receive_config;
-  call->GetDefaultReceiveConfig(&receive_config);
+  newapi::VideoReceiveStream::Config receive_config =
+      call->GetDefaultReceiveConfig();
   receive_config.rtp.ssrc = send_config.rtp.ssrcs[0];
   receive_config.renderer = loopback_video;
 

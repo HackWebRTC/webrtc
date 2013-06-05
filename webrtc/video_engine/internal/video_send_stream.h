@@ -34,7 +34,7 @@ class VideoSendStream : public newapi::VideoSendStream,
  public:
   VideoSendStream(newapi::Transport* transport,
                   webrtc::VideoEngine* video_engine,
-                  const newapi::VideoSendStreamConfig& send_stream_config);
+                  const newapi::VideoSendStream::Config& config);
 
   virtual ~VideoSendStream();
 
@@ -46,9 +46,6 @@ class VideoSendStream : public newapi::VideoSendStream,
   virtual void StartSend() OVERRIDE;
 
   virtual void StopSend() OVERRIDE;
-
-  virtual void GetSendStatistics(
-      std::vector<newapi::SendStatistics>* statistics) OVERRIDE;
 
   virtual bool SetTargetBitrate(int min_bitrate, int max_bitrate,
                                 const std::vector<SimulcastStream>& streams)
@@ -64,7 +61,7 @@ class VideoSendStream : public newapi::VideoSendStream,
 
  private:
   newapi::Transport* transport_;
-  newapi::VideoSendStreamConfig config_;
+  newapi::VideoSendStream::Config config_;
 
   ViEBase* video_engine_base_;
   ViECapture* capture_;

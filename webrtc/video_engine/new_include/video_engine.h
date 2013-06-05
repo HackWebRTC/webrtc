@@ -51,20 +51,20 @@ class VideoCall {
  public:
   virtual std::vector<VideoCodec> GetVideoCodecs() = 0;
 
-  virtual void GetDefaultSendConfig(VideoSendStreamConfig* config) = 0;
+  virtual VideoSendStream::Config GetDefaultSendConfig() = 0;
 
   virtual VideoSendStream* CreateSendStream(
-      const VideoSendStreamConfig& config) = 0;
+      const VideoSendStream::Config& config) = 0;
 
   // Returns the internal state of the send stream, for resume sending with a
   // new stream with different settings.
   // Note: Only the last returned send-stream state is valid.
   virtual SendStreamState* DestroySendStream(VideoSendStream* send_stream) = 0;
 
-  virtual void GetDefaultReceiveConfig(VideoReceiveStreamConfig* config) = 0;
+  virtual VideoReceiveStream::Config GetDefaultReceiveConfig() = 0;
 
   virtual VideoReceiveStream* CreateReceiveStream(
-      const VideoReceiveStreamConfig& config) = 0;
+      const VideoReceiveStream::Config& config) = 0;
   virtual void DestroyReceiveStream(VideoReceiveStream* receive_stream) = 0;
 
   // All received RTP and RTCP packets for the call should be inserted to this

@@ -59,14 +59,14 @@ std::vector<VideoCodec> VideoCall::GetVideoCodecs() {
   return codecs;
 }
 
-void VideoCall::GetDefaultSendConfig(
-    newapi::VideoSendStreamConfig* send_stream_config) {
-  *send_stream_config = newapi::VideoSendStreamConfig();
-  codec_->GetCodec(0, send_stream_config->codec);
+VideoSendStream::Config VideoCall::GetDefaultSendConfig() {
+  VideoSendStream::Config config;
+  codec_->GetCodec(0, config.codec);
+  return config;
 }
 
 newapi::VideoSendStream* VideoCall::CreateSendStream(
-    const newapi::VideoSendStreamConfig& send_stream_config) {
+    const newapi::VideoSendStream::Config& send_stream_config) {
   assert(send_stream_config.rtp.ssrcs.size() > 0);
   assert(send_stream_config.codec.numberOfSimulcastStreams == 0 ||
          send_stream_config.codec.numberOfSimulcastStreams ==
@@ -95,14 +95,12 @@ newapi::SendStreamState* VideoCall::DestroySendStream(
   return NULL;
 }
 
-void VideoCall::GetDefaultReceiveConfig(
-    newapi::VideoReceiveStreamConfig* receive_stream_config) {
-  // TODO(pbos): This is not the default config.
-  *receive_stream_config = newapi::VideoReceiveStreamConfig();
+VideoReceiveStream::Config VideoCall::GetDefaultReceiveConfig() {
+  return newapi::VideoReceiveStream::Config();
 }
 
 newapi::VideoReceiveStream* VideoCall::CreateReceiveStream(
-    const newapi::VideoReceiveStreamConfig& receive_stream_config) {
+    const newapi::VideoReceiveStream::Config& receive_stream_config) {
   assert(receive_ssrcs_[receive_stream_config.rtp.ssrc] == NULL);
 
   VideoReceiveStream* receive_stream = new VideoReceiveStream(

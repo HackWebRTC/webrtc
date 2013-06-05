@@ -26,8 +26,8 @@ namespace internal {
 VideoSendStream::VideoSendStream(
     newapi::Transport* transport,
     webrtc::VideoEngine* video_engine,
-    const newapi::VideoSendStreamConfig& send_stream_config)
-    : transport_(transport), config_(send_stream_config) {
+    const newapi::VideoSendStream::Config& config)
+    : transport_(transport), config_(config) {
 
   if (config_.codec.numberOfSimulcastStreams > 0) {
     assert(config_.rtp.ssrcs.size() == config_.codec.numberOfSimulcastStreams);
@@ -115,11 +115,6 @@ void VideoSendStream::StartSend() {
 void VideoSendStream::StopSend() {
   if (video_engine_base_->StopSend(channel_) != 0)
     abort();
-}
-
-void VideoSendStream::GetSendStatistics(
-    std::vector<newapi::SendStatistics>* statistics) {
-  // TODO(pbos): Implement
 }
 
 bool VideoSendStream::SetTargetBitrate(
