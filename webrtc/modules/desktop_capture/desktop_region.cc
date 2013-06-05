@@ -42,6 +42,7 @@ DesktopRegion::~DesktopRegion() {
 }
 
 DesktopRegion& DesktopRegion::operator=(const DesktopRegion& other) {
+  Clear();
   rows_ = other.rows_;
   for (Rows::iterator it = rows_.begin(); it != rows_.end(); ++it) {
     // Copy each row.
