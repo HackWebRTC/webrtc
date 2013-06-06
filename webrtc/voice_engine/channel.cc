@@ -625,9 +625,21 @@ Channel::OnReceivedPayloadData(const uint8_t* payloadData,
         return -1;
     }
 
-    // Update the packet delay
+    // Update the packet delay.
     UpdatePacketDelay(rtpHeader->header.timestamp,
                       rtpHeader->header.sequenceNumber);
+
+    if (kNackOff != _rtpRtcpModule->NACK()) {  // Is NACK on?
+        uint16_t round_trip_time = 0;
+        _rtpRtcpModule->RTT(_rtpRtcpModule->RemoteSSRC(), &round_trip_time,
+                            NULL, NULL, NULL);
+
+        std::vector<uint16_t> nack_list = _audioCodingModule.GetNackList(
+            round_trip_time);
+        if (!nack_list.empty()) {
+          ResendPackets(nack_list.data(), nack_list.size());
+        }
+    }
     return 0;
 }
 
@@ -4235,11 +4247,14 @@ void Channel::SetNACKStatus(bool enable, int maxNumberOfPackets) {
   _rtpRtcpModule->SetStorePacketsStatus(enable, maxNumberOfPackets);
   _rtpRtcpModule->SetNACKStatus(enable ? kNackRtcp : kNackOff,
                                 maxNumberOfPackets);
+  if (enable)
+    _audioCodingModule.EnableNack(maxNumberOfPackets);
+  else
+    _audioCodingModule.DisableNack();
 }
 
-// Called by the ACM when it's missing one or more packets.
-int Channel::ResendPackets(const uint16_t* sequence_numbers,
-                           int length) {
+// Called when we are missing one or more packets.
+int Channel::ResendPackets(const uint16_t* sequence_numbers, int length) {
   return _rtpRtcpModule->SendNACK(sequence_numbers, length);
 }
 
