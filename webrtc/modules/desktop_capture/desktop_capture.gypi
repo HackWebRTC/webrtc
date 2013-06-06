@@ -46,8 +46,6 @@
         "screen_capture_frame_queue.cc",
         "screen_capture_frame_queue.h",
         "screen_capturer.h",
-        "screen_capturer_fake.cc",
-        "screen_capturer_fake.h",
         "screen_capturer_helper.cc",
         "screen_capturer_helper.h",
         "screen_capturer_mac.mm",
