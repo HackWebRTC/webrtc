@@ -637,7 +637,9 @@ Channel::OnReceivedPayloadData(const uint8_t* payloadData,
         std::vector<uint16_t> nack_list = _audioCodingModule.GetNackList(
             round_trip_time);
         if (!nack_list.empty()) {
-          ResendPackets(nack_list.data(), nack_list.size());
+          // Can't use nack_list.data() since it's not supported by all
+          // compilers.
+          ResendPackets(&(nack_list[0]), nack_list.size());
         }
     }
     return 0;
