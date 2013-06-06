@@ -468,6 +468,10 @@ int WebRtcNetEQ_Init(void *inst, uint16_t fs)
     NetEqMainInst->masterSlave = 0;
 #endif
 
+    /* Set to an invalid value. */
+    NetEqMainInst->MCUinst.decoded_packet_sequence_number = -1;
+    NetEqMainInst->MCUinst.decoded_packet_timestamp = 0;
+
     return (ok);
 }
 
@@ -1728,4 +1732,16 @@ int WebRtcNetEQ_GetRequiredDelayMs(const void* inst) {
   return (auto_mode->required_delay_q8 *
       ((auto_mode->packetSpeechLenSamp * 1000) / NetEqMainInst->MCUinst.fs) +
       128) >> 8;
+}
+
+int WebRtcNetEQ_DecodedRtpInfo(const void* inst,
+                               int* sequence_number,
+                               uint32_t* timestamp) {
+  const MainInst_t *NetEqMainInst = (inst == NULL) ? NULL :
+      (const MainInst_t*) inst;
+  if (NetEqMainInst->MCUinst.decoded_packet_sequence_number < 0)
+    return -1;
+  *sequence_number = NetEqMainInst->MCUinst.decoded_packet_sequence_number;
+  *timestamp = NetEqMainInst->MCUinst.decoded_packet_timestamp;
+  return 0;
 }

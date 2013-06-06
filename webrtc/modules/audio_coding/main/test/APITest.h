@@ -11,11 +11,12 @@
 #ifndef API_TEST_H
 #define API_TEST_H
 
-#include "ACMTest.h"
-#include "Channel.h"
-#include "PCMFile.h"
-#include "event_wrapper.h"
-#include "utility.h"
+#include "webrtc/modules/audio_coding/main/test/ACMTest.h"
+#include "webrtc/modules/audio_coding/main/test/Channel.h"
+#include "webrtc/modules/audio_coding/main/test/PCMFile.h"
+#include "webrtc/modules/audio_coding/main/test/utility.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 
 namespace webrtc {
 

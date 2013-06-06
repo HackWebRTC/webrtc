@@ -290,6 +290,11 @@ class ACMNetEQ {
   void EnableAVSync(bool enable);
 
   //
+  // Get sequence number and timestamp of the last decoded RTP.
+  //
+  bool DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) const;
+
+  //
   // Set a minimum delay in NetEq. Unless channel condition dictates a longer
   // delay, the given delay is maintained by NetEq.
   //

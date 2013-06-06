@@ -13,12 +13,13 @@
 
 #include <stdio.h>
 
-#include "audio_coding_module.h"
-#include "critical_section_wrapper.h"
-#include "rw_lock_wrapper.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
+
+class CriticalSectionWrapper;
 
 #define MAX_NUM_PAYLOADS   50
 #define MAX_NUM_FRAMESIZES  6
@@ -76,6 +77,18 @@ class Channel : public AudioPacketizationCallback {
 
   double BitRate();
 
+  void set_send_timestamp(uint32_t new_send_ts) {
+    external_send_timestamp_ = new_send_ts;
+  }
+
+  void set_sequence_number(uint16_t new_sequence_number) {
+    external_sequence_number_ = new_sequence_number;
+  }
+
+  void set_num_packets_to_drop(int new_num_packets_to_drop) {
+    num_packets_to_drop_ = new_num_packets_to_drop;
+  }
+
  private:
   void CalcStatistics(WebRtcRTPHeader& rtpInfo, uint16_t payloadSize);
 
@@ -98,6 +111,12 @@ class Channel : public AudioPacketizationCallback {
   bool _useFECTestWithPacketLoss;
   uint64_t _beginTime;
   uint64_t _totalBytes;
+
+  // External timing info, defaulted to -1. Only used if they are
+  // non-negative.
+  int64_t external_send_timestamp_;
+  int32_t external_sequence_number_;
+  int num_packets_to_drop_;
 };
 
 }  // namespace webrtc

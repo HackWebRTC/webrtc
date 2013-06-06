@@ -103,6 +103,8 @@
         'audio_coding_module.cc',
         'audio_coding_module_impl.cc',
         'audio_coding_module_impl.h',
+        'nack.cc',
+        'nack.h',
       ],
     },
   ],
@@ -165,6 +167,22 @@
            ],
         }, # delay_test
         {
+          'target_name': 'insert_packet_with_timing',
+          'type': 'executable',
+          'dependencies': [
+            'audio_coding_module',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
+            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+          ],
+          'sources': [
+             '../test/insert_packet_with_timing.cc',
+             '../test/Channel.cc',
+             '../test/PCMFile.cc',
+           ],
+        }, # delay_test
+        {
           'target_name': 'audio_coding_unittests',
           'type': 'executable',
           'dependencies': [
@@ -184,12 +202,13 @@
           ],
           'sources': [
              'acm_neteq_unittest.cc',
+             'nack_unittest.cc',
              '../../codecs/cng/cng_unittest.cc',
              '../../codecs/isac/fix/source/filters_unittest.cc',
              '../../codecs/isac/fix/source/filterbanks_unittest.cc',
              '../../codecs/isac/fix/source/lpc_masking_model_unittest.cc',
              '../../codecs/isac/fix/source/transform_unittest.cc',
-            '../../codecs/isac/main/source/isac_unittest.cc',
+             '../../codecs/isac/main/source/isac_unittest.cc',
              '../../codecs/opus/opus_unittest.cc',
              # Test for NetEq 4.
              '../../neteq4/audio_multi_vector_unittest.cc',

@@ -8,14 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/modules/audio_coding/main/test/Channel.h"
+
 #include <assert.h>
 #include <iostream>
 
-#include "audio_coding_module.h"
-#include "Channel.h"
-#include "tick_util.h"
-#include "typedefs.h"
-#include "common_types.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 namespace webrtc {
 
@@ -29,9 +28,12 @@ int32_t Channel::SendData(const FrameType frameType, const uint8_t payloadType,
 
   rtpInfo.header.markerBit = false;
   rtpInfo.header.ssrc = 0;
-  rtpInfo.header.sequenceNumber = _seqNo++;
+  rtpInfo.header.sequenceNumber = (external_sequence_number_ < 0) ?
+      _seqNo++ : static_cast<uint16_t>(external_sequence_number_);
   rtpInfo.header.payloadType = payloadType;
-  rtpInfo.header.timestamp = timeStamp;
+  rtpInfo.header.timestamp = (external_send_timestamp_ < 0) ? timeStamp :
+      static_cast<uint32_t>(external_send_timestamp_);
+
   if (frameType == kAudioFrameCN) {
     rtpInfo.type.Audio.isCNG = true;
   } else {
@@ -106,6 +108,11 @@ int32_t Channel::SendData(const FrameType frameType, const uint8_t payloadType,
       _packetLoss = 0;
       return 0;
     }
+  }
+
+  if (num_packets_to_drop_ > 0) {
+    num_packets_to_drop_--;
+    return 0;
   }
 
   status = _receiverACM->IncomingPacket(_payloadData, payloadDataSize, rtpInfo);
@@ -208,7 +215,10 @@ Channel::Channel(int16_t chID)
       _packetLoss(0),
       _useFECTestWithPacketLoss(false),
       _beginTime(TickTime::MillisecondTimestamp()),
-      _totalBytes(0) {
+      _totalBytes(0),
+      external_send_timestamp_(-1),
+      external_sequence_number_(-1),
+      num_packets_to_drop_(0) {
   int n;
   int k;
   for (n = 0; n < MAX_NUM_PAYLOADS; n++) {

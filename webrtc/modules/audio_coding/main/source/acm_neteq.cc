@@ -1117,4 +1117,11 @@ int ACMNetEQ::LeastRequiredDelayMs() const {
   return WebRtcNetEQ_GetRequiredDelayMs(inst_[0]);
 }
 
+bool ACMNetEQ::DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) const {
+  CriticalSectionScoped lock(neteq_crit_sect_);
+  if (WebRtcNetEQ_DecodedRtpInfo(inst_[0], sequence_number, timestamp) < 0)
+    return false;
+  return true;
+}
+
 }  // namespace webrtc

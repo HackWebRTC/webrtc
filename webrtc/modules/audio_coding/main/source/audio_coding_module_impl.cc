@@ -13,13 +13,18 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include <algorithm>  // For std::max.
+
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/main/source/acm_codec_database.h"
 #include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
 #include "webrtc/modules/audio_coding/main/source/acm_dtmf_detection.h"
 #include "webrtc/modules/audio_coding/main/source/acm_generic_codec.h"
 #include "webrtc/modules/audio_coding/main/source/acm_resampler.h"
+#include "webrtc/modules/audio_coding/main/source/nack.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace.h"
@@ -46,6 +51,10 @@ enum {
 
 static const uint32_t kMaskTimestamp = 0x03ffffff;
 static const int kDefaultTimestampDiff = 960;  // 20 ms @ 48 kHz.
+
+// If packet N is arrived all packets prior to N - |kNackThresholdPackets| which
+// are not received are considered as lost, and appear in NACK list.
+static const int kNackThresholdPackets = 2;
 
 namespace {
 
@@ -104,24 +113,9 @@ int TimestampLessThan(uint32_t t1, uint32_t t2) {
   }
 }
 
-//
-// Return the timestamp of current time, computed according to sampling rate
-// of the codec identified by |codec_id|.
-//
-uint32_t NowTimestamp(int codec_id) {
-  // Down-cast the time to (32-6)-bit since we only care about
-  // the least significant bits. (32-6) bits cover 2^(32-6) = 67108864 ms.
-  // we masked 6 most significant bits of 32-bit so we don't loose resolution
-  // when do the following multiplication.
-  int sample_rate_khz = ACMCodecDB::database_[codec_id].plfreq / 1000;
-  const uint32_t now_in_ms = static_cast<uint32_t>(
-      TickTime::MillisecondTimestamp() & kMaskTimestamp);
-  return static_cast<uint32_t>(sample_rate_khz * now_in_ms);
-}
-
 }  // namespace
 
-AudioCodingModuleImpl::AudioCodingModuleImpl(const int32_t id)
+AudioCodingModuleImpl::AudioCodingModuleImpl(const int32_t id, Clock* clock)
     : packetization_callback_(NULL),
       id_(id),
       last_timestamp_(0xD87F3F9F),
@@ -171,7 +165,10 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(const int32_t id)
       last_timestamp_diff_(kDefaultTimestampDiff),
       last_sequence_number_(0),
       last_ssrc_(0),
-      last_packet_was_sync_(false) {
+      last_packet_was_sync_(false),
+      clock_(clock),
+      nack_(),
+      nack_enabled_(false) {
 
   // Nullify send codec memory, set payload type and set codec name to
   // invalid values.
@@ -726,13 +723,14 @@ int AudioCodingModuleImpl::ProcessSingleStream() {
       if (fec_active) {
         // Callback with payload data, including redundant data (FEC/RED).
         packetization_callback_->SendData(frame_type, current_payload_type,
-                                          rtp_timestamp, stream, length_bytes,
+                                          rtp_timestamp, stream,
+                                          length_bytes,
                                           &my_fragmentation);
       } else {
         // Callback with payload data.
         packetization_callback_->SendData(frame_type, current_payload_type,
-                                          rtp_timestamp, stream, length_bytes,
-                                          NULL);
+                                          rtp_timestamp, stream,
+                                          length_bytes, NULL);
       }
     }
 
@@ -1654,7 +1652,7 @@ int32_t AudioCodingModuleImpl::InitializeReceiverSafe() {
   num_packets_accumulated_ = 0;
   num_bytes_accumulated_ = 0;
   accumulated_audio_ms_ = 0;
-  first_payload_received_ = 0;;
+  first_payload_received_ = 0;
   last_incoming_send_timestamp_ = 0;
   track_neteq_buffer_ = false;
   playout_ts_ = 0;
@@ -2060,12 +2058,26 @@ int32_t AudioCodingModuleImpl::IncomingPacket(
         if (track_neteq_buffer_ || av_sync_) {
           last_incoming_send_timestamp_ = rtp_info.header.timestamp;
         }
+
+        if (nack_enabled_) {
+          assert(nack_.get());
+          // Codec is changed, reset NACK and update sampling rate.
+          nack_->Reset();
+          nack_->UpdateSampleRate(
+              ACMCodecDB::database_[current_receive_codec_idx_].plfreq);
+        }
       }
       last_recv_audio_codec_pltype_ = my_payload_type;
     }
 
     // Current timestamp based on the receiver sampling frequency.
     last_receive_timestamp_ = NowTimestamp(current_receive_codec_idx_);
+
+    if (nack_enabled_) {
+      assert(nack_.get());
+      nack_->UpdateLastReceivedPacket(rtp_header.header.sequenceNumber,
+                                      rtp_header.header.timestamp);
+    }
   }
 
   int per_neteq_payload_length = payload_length;
@@ -2105,7 +2117,7 @@ int32_t AudioCodingModuleImpl::IncomingPacket(
       UpdateBufferingSafe(rtp_header, per_neteq_payload_length);
 
     if (av_sync_) {
-      if(rtp_info.header.sequenceNumber == last_sequence_number_ + 1) {
+      if (rtp_info.header.sequenceNumber == last_sequence_number_ + 1) {
         last_timestamp_diff_ = rtp_info.header.timestamp -
             last_incoming_send_timestamp_;
       }
@@ -2309,6 +2321,10 @@ int32_t AudioCodingModuleImpl::PlayoutData10Ms(
                  "PlayoutData failed, RecOut Failed");
     return -1;
   }
+  int seq_num;
+  uint32_t timestamp;
+  bool update_nack = nack_enabled_ &&  // Update NACK only if it is enabled.
+      neteq_.DecodedRtpInfo(&seq_num, &timestamp);
 
   audio_frame->num_channels_ = audio_frame_.num_channels_;
   audio_frame->vad_activity_ = audio_frame_.vad_activity_;
@@ -2327,6 +2343,11 @@ int32_t AudioCodingModuleImpl::PlayoutData10Ms(
   // Limit the scope of ACM Critical section.
   {
     CriticalSectionScoped lock(acm_crit_sect_);
+
+    if (update_nack) {
+      assert(nack_.get());
+      nack_->UpdateLastDecodedPacket(seq_num, timestamp);
+    }
 
     // If we are in AV-sync and have already received an audio packet, but the
     // latest packet is too late, then insert sync packet.
@@ -3047,8 +3068,61 @@ void AudioCodingModuleImpl::UpdateBufferingSafe(const WebRtcRTPHeader& rtp_info,
           initial_delay_ms_ * in_sample_rate_khz));
 }
 
+uint32_t AudioCodingModuleImpl::NowTimestamp(int codec_id) {
+  // Down-cast the time to (32-6)-bit since we only care about
+  // the least significant bits. (32-6) bits cover 2^(32-6) = 67108864 ms.
+  // we masked 6 most significant bits of 32-bit so we don't lose resolution
+  // when do the following multiplication.
+  int sample_rate_khz = ACMCodecDB::database_[codec_id].plfreq / 1000;
+  const uint32_t now_in_ms = static_cast<uint32_t>(
+      clock_->TimeInMilliseconds() & kMaskTimestamp);
+  return static_cast<uint32_t>(sample_rate_khz * now_in_ms);
+}
+
+std::vector<uint16_t> AudioCodingModuleImpl::GetNackList(
+    int round_trip_time_ms) const {
+  CriticalSectionScoped lock(acm_crit_sect_);
+  if (round_trip_time_ms < 0) {
+    WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceAudioCoding, id_,
+                 "GetNackList: round trip time cannot be negative."
+                 " round_trip_time_ms=%d", round_trip_time_ms);
+  }
+  if (nack_enabled_ && round_trip_time_ms >= 0) {
+    assert(nack_.get());
+    return nack_->GetNackList(round_trip_time_ms);
+  }
+  std::vector<uint16_t> empty_list;
+  return empty_list;
+}
+
 int AudioCodingModuleImpl::LeastRequiredDelayMs() const {
   return std::max(neteq_.LeastRequiredDelayMs(), initial_delay_ms_);
+}
+
+int AudioCodingModuleImpl::EnableNack(size_t max_nack_list_size) {
+  // Don't do anything if |max_nack_list_size| is out of range.
+  if (max_nack_list_size == 0 || max_nack_list_size > Nack::kNackListSizeLimit)
+    return -1;
+
+  CriticalSectionScoped lock(acm_crit_sect_);
+  if (!nack_enabled_) {
+    nack_.reset(Nack::Create(kNackThresholdPackets));
+    nack_enabled_ = true;
+
+    // Sampling rate might need to be updated if we change from disable to
+    // enable. Do it if the receive codec is valid.
+    if (current_receive_codec_idx_ >= 0) {
+      nack_->UpdateSampleRate(
+          ACMCodecDB::database_[current_receive_codec_idx_].plfreq);
+    }
+  }
+  return nack_->SetMaxNackListSize(max_nack_list_size);
+}
+
+void AudioCodingModuleImpl::DisableNack() {
+  CriticalSectionScoped lock(acm_crit_sect_);
+  nack_.reset();  // Memory is released.
+  nack_enabled_ = false;
 }
 
 }  // namespace webrtc
