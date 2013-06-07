@@ -20,15 +20,18 @@ import sys
 
 MODIFY_STRING = '# The following added by %s\n'
 
+
 def main(argv):
   if not argv[1]:
     # Special case; do nothing.
     return 0
 
-  modify_string = (MODIFY_STRING % argv[0])
-  gitignore_file = os.path.dirname(argv[0]) + '/../.gitignore'
+  modify_string = MODIFY_STRING % argv[0]
+  gitignore_file = os.path.dirname(argv[0]) + '/../../.gitignore'
   lines = open(gitignore_file, 'r').readlines()
   for i, line in enumerate(lines):
+    # Look for modify_string in the file to ensure we don't append the extra
+    # patterns more than once.
     if line == modify_string:
       lines = lines[:i]
       break
