@@ -639,7 +639,7 @@ Channel::OnReceivedPayloadData(const uint8_t* payloadData,
         if (!nack_list.empty()) {
           // Can't use nack_list.data() since it's not supported by all
           // compilers.
-          ResendPackets(&(nack_list[0]), nack_list.size());
+          ResendPackets(&(nack_list[0]), static_cast<int>(nack_list.size()));
         }
     }
     return 0;
