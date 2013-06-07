@@ -4607,13 +4607,12 @@ int VoEExtendedTest::TestRTP_RTCP() {
   TEST_MUSTPASS(network->DeRegisterExternalTransport(1));
   TEST_MUSTPASS(voe_base_->DeleteChannel(0));
   TEST_MUSTPASS(voe_base_->DeleteChannel(1));
+  voice_channel_transport.reset(NULL);
 
   TEST_MUSTPASS(voe_base_->CreateChannel());
-
   voice_channel_transport.reset(new VoiceChannelTransport(network, 0));
-
-  voice_channel_transport->SetSendDestination("127.0.0.1", 12345);
-  voice_channel_transport->SetLocalReceiver(12345);
+  voice_channel_transport->SetSendDestination("127.0.0.1", 12347);
+  voice_channel_transport->SetLocalReceiver(12347);
 
   TEST_MUSTPASS(voe_base_->StartReceive(0));
   TEST_MUSTPASS(voe_base_->StartSend(0));
@@ -4774,13 +4773,13 @@ int VoEExtendedTest::TestRTP_RTCP() {
   TEST_MUSTPASS(voe_base_->StopPlayout(0));
   TEST_MUSTPASS(voe_base_->StopReceive(0));
   TEST_MUSTPASS(voe_base_->DeleteChannel(0));
+  voice_channel_transport.reset(NULL);
 
   SleepMs(100);
 
   TEST_MUSTPASS(voe_base_->CreateChannel());
 
   voice_channel_transport.reset(new VoiceChannelTransport(network, 0));
-
   voice_channel_transport->SetSendDestination("127.0.0.1", 12345);
   voice_channel_transport->SetLocalReceiver(12345);
 
@@ -4831,12 +4830,10 @@ int VoEExtendedTest::TestRTP_RTCP() {
   TEST_MUSTPASS((NTPHigh == NTPHigh2) && (NTPLow == NTPLow2));
   TEST_MUSTPASS(timestamp == timestamp2);
   TEST_MUSTPASS(playoutTimestamp == playoutTimestamp2);
-
+  CodecInst cinst;
 #ifdef WEBRTC_CODEC_RED
-  //The following test is related to defect 4985 and 4986
   TEST_LOG("Turn FEC and VAD on and wait for 4 seconds and ensure that "
     "the jitter is still small...");
-  CodecInst cinst;
 #if (!defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID))
   cinst.pltype = 104;
   strcpy(cinst.plname, "isac");
@@ -4860,7 +4857,7 @@ int VoEExtendedTest::TestRTP_RTCP() {
   TEST_MUSTPASS(voe_base_->StartSend(0));
   TEST_MUSTPASS(voe_base_->StartReceive(0));
   TEST_MUSTPASS(voe_base_->StartPlayout(0));
-  TEST_MUSTPASS(rtp_rtcp->SetFECStatus(0, true, -1));
+  TEST_MUSTPASS(rtp_rtcp->SetFECStatus(0, true, 126));
   MARK();
   TEST_MUSTPASS(codec->SetVADStatus(0,true));
   SleepMs(4000);
@@ -4873,8 +4870,8 @@ int VoEExtendedTest::TestRTP_RTCP() {
   TEST_MUSTPASS(jitter2 > 1000)
   TEST_MUSTPASS(rtp_rtcp->SetFECStatus(0, false));
   MARK();
-  //4985 and 4986 end
 #endif // #ifdef WEBRTC_CODEC_RED
+
   TEST(GetRTPStatistics);
   ANL();
   // Statistics summarized on local side based on received RTP packets.
@@ -5029,9 +5026,9 @@ int VoEExtendedTest::TestRTP_RTCP() {
   // We have to re-register the audio codec payload type as stopReceive will
   // clean the database
   TEST_MUSTPASS(codec->SetRecPayloadType(0, cinst));
+  voice_channel_transport.reset(NULL);
 
   voice_channel_transport.reset(new VoiceChannelTransport(network, 0));
-
   voice_channel_transport->SetSendDestination("127.0.0.1", 8000);
   voice_channel_transport->SetLocalReceiver(8000);
 
