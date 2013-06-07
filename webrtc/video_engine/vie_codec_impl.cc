@@ -193,28 +193,7 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
   // Stop the media flow while reconfiguring.
   vie_encoder->Pause();
 
-  // Check if we have a frame provider that is a camera and can provide this
-  // codec for us.
-  bool use_capture_device_as_encoder = false;
-  frame_provider = is.FrameProvider(vie_encoder);
-  if (frame_provider) {
-    if (frame_provider->Id() >= kViECaptureIdBase &&
-        frame_provider->Id() <= kViECaptureIdMax) {
-      ViECapturer* vie_capture = static_cast<ViECapturer*>(frame_provider);
-      // Try to get preencoded. Nothing to do if it is not supported.
-      if (vie_capture && vie_capture->PreEncodeToViEEncoder(
-          video_codec_internal,
-          *vie_encoder,
-          video_channel) == 0) {
-        use_capture_device_as_encoder = true;
-      }
-    }
-  }
-
-  // Update the encoder settings if we are not using a capture device capable
-  // of this codec.
-  if (!use_capture_device_as_encoder &&
-      vie_encoder->SetEncoder(video_codec_internal) != 0) {
+  if (vie_encoder->SetEncoder(video_codec_internal) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo,
                  ViEId(shared_data_->instance_id(), video_channel),
                  "%s: Could not change encoder for channel %d", __FUNCTION__,

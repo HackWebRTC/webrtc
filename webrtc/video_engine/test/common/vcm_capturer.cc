@@ -98,10 +98,6 @@ void VcmCapturer::OnIncomingCapturedFrame(const int32_t id,
   last_timestamp_ = frame.timestamp();
 }
 
-void VcmCapturer::OnIncomingCapturedEncodedFrame(const int32_t id,
-                                                 VideoFrame& frame,
-                                                 VideoCodecType codec_type) {}
-
 void VcmCapturer::OnCaptureDelayChanged(const int32_t id, const int32_t delay) {
 }
 }  // test

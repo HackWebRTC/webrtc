@@ -29,10 +29,6 @@ class VcmCapturer : public VideoCapturer, public VideoCaptureDataCallback {
 
   virtual void OnIncomingCapturedFrame(
       const int32_t id, I420VideoFrame& frame) OVERRIDE;  // NOLINT
-  virtual void OnIncomingCapturedEncodedFrame(const int32_t id,
-                                              VideoFrame& frame,
-                                              VideoCodecType codec_type)
-      OVERRIDE;
   virtual void OnCaptureDelayChanged(const int32_t id, const int32_t delay)
       OVERRIDE;
 

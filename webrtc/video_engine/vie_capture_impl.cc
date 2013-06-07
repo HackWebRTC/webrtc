@@ -197,19 +197,7 @@ int ViECaptureImpl::ConnectCaptureDevice(const int capture_id,
     shared_data_->SetLastError(kViECaptureDeviceAlreadyConnected);
     return -1;
   }
-  VideoCodec codec;
-  bool use_hardware_encoder = false;
-  if (vie_encoder->GetEncoder(&codec) == 0) {
-    // Try to provide the encoder with pre-encoded frames if possible.
-    if (vie_capture->PreEncodeToViEEncoder(codec, *vie_encoder,
-                                           video_channel) == 0) {
-      use_hardware_encoder = true;
-    }
-  }
-  // If we don't use the camera as hardware encoder, we register the vie_encoder
-  // for callbacks.
-  if (!use_hardware_encoder &&
-      vie_capture->RegisterFrameCallback(video_channel, vie_encoder) != 0) {
+  if (vie_capture->RegisterFrameCallback(video_channel, vie_encoder) != 0) {
     shared_data_->SetLastError(kViECaptureDeviceUnknownError);
     return -1;
   }
