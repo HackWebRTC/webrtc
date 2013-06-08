@@ -26,25 +26,25 @@ namespace webrtc
 class EventWrapper;
 class ThreadWrapper;
 
-const int N_REC_SAMPLES_PER_SEC = 48000;
-const int N_PLAY_SAMPLES_PER_SEC = 48000;
+const uint32_t N_REC_SAMPLES_PER_SEC = 48000;
+const uint32_t N_PLAY_SAMPLES_PER_SEC = 48000;
 
-const int N_REC_CHANNELS = 1; // default is mono recording
-const int N_PLAY_CHANNELS = 2; // default is stereo playout
-const int N_DEVICE_CHANNELS = 64;
+const uint32_t N_REC_CHANNELS = 1; // default is mono recording
+const uint32_t N_PLAY_CHANNELS = 2; // default is stereo playout
+const uint32_t N_DEVICE_CHANNELS = 64;
 
-const int ENGINE_REC_BUF_SIZE_IN_SAMPLES = (N_REC_SAMPLES_PER_SEC / 100);
-const int ENGINE_PLAY_BUF_SIZE_IN_SAMPLES = (N_PLAY_SAMPLES_PER_SEC / 100);
+const uint32_t ENGINE_REC_BUF_SIZE_IN_SAMPLES = (N_REC_SAMPLES_PER_SEC / 100);
+const uint32_t ENGINE_PLAY_BUF_SIZE_IN_SAMPLES = (N_PLAY_SAMPLES_PER_SEC / 100);
 
 const int N_BLOCKS_IO = 2;
 const int N_BUFFERS_IN = 2;  // Must be at least N_BLOCKS_IO.
 const int N_BUFFERS_OUT = 3;  // Must be at least N_BLOCKS_IO.
 
-const int TIMER_PERIOD_MS = (2 * 10 * N_BLOCKS_IO * 1000000);
+const uint32_t TIMER_PERIOD_MS = (2 * 10 * N_BLOCKS_IO * 1000000);
 
-const int REC_BUF_SIZE_IN_SAMPLES =
+const uint32_t REC_BUF_SIZE_IN_SAMPLES =
     ENGINE_REC_BUF_SIZE_IN_SAMPLES * N_DEVICE_CHANNELS * N_BUFFERS_IN;
-const int PLAY_BUF_SIZE_IN_SAMPLES =
+const uint32_t PLAY_BUF_SIZE_IN_SAMPLES =
     ENGINE_PLAY_BUF_SIZE_IN_SAMPLES * N_PLAY_CHANNELS * N_BUFFERS_OUT;
 
 class AudioDeviceMac: public AudioDeviceGeneric
