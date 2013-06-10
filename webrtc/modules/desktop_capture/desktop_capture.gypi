@@ -55,8 +55,11 @@
         "shared_desktop_frame.h",
         "shared_memory.cc",
         "shared_memory.h",
+        "win/cursor.cc",
+        "win/cursor.h",
         "win/desktop.cc",
         "win/desktop.h",
+        "win/scoped_gdi_object.h",
         "win/scoped_thread_desktop.cc",
         "win/scoped_thread_desktop.h",
         "window_capturer.h",
@@ -143,6 +146,9 @@
             "screen_capturer_mock_objects.h",
             "screen_capturer_unittest.cc",
             "window_capturer_unittest.cc",
+            "win/cursor_unittest.cc",
+            "win/cursor_unittest_resources.h",
+            "win/cursor_unittest_resources.rc",
           ],
           'conditions': [
             # Run screen/window capturer tests only on platforms where they are

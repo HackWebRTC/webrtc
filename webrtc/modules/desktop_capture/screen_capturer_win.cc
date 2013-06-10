@@ -19,6 +19,7 @@
 #include "webrtc/modules/desktop_capture/mouse_cursor_shape.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
+#include "webrtc/modules/desktop_capture/win/cursor.h"
 #include "webrtc/modules/desktop_capture/win/desktop.h"
 #include "webrtc/modules/desktop_capture/win/scoped_thread_desktop.h"
 #include "webrtc/system_wrappers/interface/logging.h"
@@ -36,15 +37,6 @@ const UINT DWM_EC_ENABLECOMPOSITION = 1;
 typedef HRESULT (WINAPI * DwmEnableCompositionFunc)(UINT);
 
 const wchar_t kDwmapiLibraryName[] = L"dwmapi.dll";
-
-// Pixel colors used when generating cursor outlines.
-const uint32_t kPixelBgraBlack = 0xff000000;
-const uint32_t kPixelBgraWhite = 0xffffffff;
-const uint32_t kPixelBgraTransparent = 0x00000000;
-
-uint8_t AlphaMul(uint8_t v, uint8_t alpha) {
-  return (static_cast<uint16_t>(v) * alpha) >> 8;
-}
 
 // ScreenCapturerWin captures 32bit RGB using GDI.
 //
@@ -66,10 +58,6 @@ class ScreenCapturerWin : public ScreenCapturer {
 
   // Captures the current screen contents into the current buffer.
   void CaptureImage();
-
-  // Expand the cursor shape to add a white outline for visibility against
-  // dark backgrounds.
-  void AddCursorOutline(int width, int height, uint32_t* dst);
 
   // Capture the current cursor shape.
   void CaptureCursor();
@@ -330,178 +318,19 @@ void ScreenCapturerWin::CaptureImage() {
   }
 }
 
-void ScreenCapturerWin::AddCursorOutline(int width,
-                                         int height,
-                                         uint32_t* dst) {
-  for (int y = 0; y < height; y++) {
-    for (int x = 0; x < width; x++) {
-      // If this is a transparent pixel (bgr == 0 and alpha = 0), check the
-      // neighbor pixels to see if this should be changed to an outline pixel.
-      if (*dst == kPixelBgraTransparent) {
-        // Change to white pixel if any neighbors (top, bottom, left, right)
-        // are black.
-        if ((y > 0 && dst[-width] == kPixelBgraBlack) ||
-            (y < height - 1 && dst[width] == kPixelBgraBlack) ||
-            (x > 0 && dst[-1] == kPixelBgraBlack) ||
-            (x < width - 1 && dst[1] == kPixelBgraBlack)) {
-          *dst = kPixelBgraWhite;
-        }
-      }
-      dst++;
-    }
-  }
-}
-
 void ScreenCapturerWin::CaptureCursor() {
   CURSORINFO cursor_info;
   cursor_info.cbSize = sizeof(CURSORINFO);
   if (!GetCursorInfo(&cursor_info)) {
-    LOG_F(LS_INFO) << "Unable to get cursor info. Error = " << GetLastError();
+    LOG_F(LS_ERROR) << "Unable to get cursor info. Error = " << GetLastError();
     return;
   }
 
-  // Note that this does not need to be freed.
-  HCURSOR hcursor = cursor_info.hCursor;
-  ICONINFO iinfo;
-  if (!GetIconInfo(hcursor, &iinfo)) {
-    LOG_F(LS_INFO) << "Unable to get cursor icon info. Error = "
-                    << GetLastError();
+  // Note that |cursor_info.hCursor| does not need to be freed.
+  scoped_ptr<MouseCursorShape> cursor(
+      CreateMouseCursorShapeFromCursor(desktop_dc_, cursor_info.hCursor));
+  if (!cursor.get())
     return;
-  }
-  int hotspot_x = iinfo.xHotspot;
-  int hotspot_y = iinfo.yHotspot;
-
-  // Get the cursor bitmap.
-  HBITMAP hbitmap;
-  BITMAP bitmap;
-  bool color_bitmap;
-  if (iinfo.hbmColor) {
-    // Color cursor bitmap.
-    color_bitmap = true;
-    hbitmap = reinterpret_cast<HBITMAP>(
-        CopyImage(iinfo.hbmColor, IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION));
-    if (!hbitmap) {
-      LOG_F(LS_INFO) << "Unable to copy color cursor image. Error = "
-                       << GetLastError();
-      return;
-    }
-
-    // Free the color and mask bitmaps since we only need our copy.
-    DeleteObject(iinfo.hbmColor);
-    DeleteObject(iinfo.hbmMask);
-  } else {
-    // Black and white (xor) cursor.
-    color_bitmap = false;
-    hbitmap = iinfo.hbmMask;
-  }
-
-  if (!GetObject(hbitmap, sizeof(BITMAP), &bitmap)) {
-    LOG_F(LS_INFO) << "Unable to get cursor bitmap. Error = " << GetLastError();
-    DeleteObject(hbitmap);
-    return;
-  }
-
-  int width = bitmap.bmWidth;
-  int height = bitmap.bmHeight;
-  // For non-color cursors, the mask contains both an AND and an XOR mask and
-  // the height includes both. Thus, the width is correct, but we need to
-  // divide by 2 to get the correct mask height.
-  if (!color_bitmap) {
-    height /= 2;
-  }
-  int data_size = height * width * DesktopFrame::kBytesPerPixel;
-
-  scoped_ptr<MouseCursorShape> cursor(new MouseCursorShape());
-  cursor->data.resize(data_size);
-  uint8_t* cursor_dst_data =
-      reinterpret_cast<uint8_t*>(&*(cursor->data.begin()));
-
-  // Copy/convert cursor bitmap into format needed by chromotocol.
-  int row_bytes = bitmap.bmWidthBytes;
-  if (color_bitmap) {
-    if (bitmap.bmPlanes != 1 || bitmap.bmBitsPixel != 32) {
-      LOG_F(LS_INFO) << "Unsupported color cursor format. Error = "
-                     << GetLastError();
-      DeleteObject(hbitmap);
-      return;
-    }
-
-    // Copy across colour cursor imagery.
-    // MouseCursorShape stores imagery top-down, and premultiplied
-    // by the alpha channel, whereas windows stores them bottom-up
-    // and not premultiplied.
-    uint8_t* cursor_src_data = reinterpret_cast<uint8_t*>(bitmap.bmBits);
-    uint8_t* src = cursor_src_data + ((height - 1) * row_bytes);
-    uint8_t* dst = cursor_dst_data;
-    for (int row = 0; row < height; ++row) {
-      for (int column = 0; column < width; ++column) {
-        dst[0] = AlphaMul(src[0], src[3]);
-        dst[1] = AlphaMul(src[1], src[3]);
-        dst[2] = AlphaMul(src[2], src[3]);
-        dst[3] = src[3];
-        dst += DesktopFrame::kBytesPerPixel;
-        src += DesktopFrame::kBytesPerPixel;
-      }
-      src -= row_bytes + (width * DesktopFrame::kBytesPerPixel);
-    }
-  } else {
-    if (bitmap.bmPlanes != 1 || bitmap.bmBitsPixel != 1) {
-      LOG(LS_VERBOSE) << "Unsupported cursor mask format. Error = "
-                      << GetLastError();
-      DeleteObject(hbitmap);
-      return;
-    }
-
-    // x2 because there are 2 masks in the bitmap: AND and XOR.
-    int mask_bytes = height * row_bytes * 2;
-    scoped_array<uint8_t> mask(new uint8_t[mask_bytes]);
-    if (!GetBitmapBits(hbitmap, mask_bytes, mask.get())) {
-      LOG(LS_VERBOSE) << "Unable to get cursor mask bits. Error = "
-                      << GetLastError();
-      DeleteObject(hbitmap);
-      return;
-    }
-    uint8_t* and_mask = mask.get();
-    uint8_t* xor_mask = mask.get() + height * row_bytes;
-    uint8_t* dst = cursor_dst_data;
-    bool add_outline = false;
-    for (int y = 0; y < height; y++) {
-      for (int x = 0; x < width; x++) {
-        int byte = y * row_bytes + x / 8;
-        int bit = 7 - x % 8;
-        int and_bit = and_mask[byte] & (1 << bit);
-        int xor_bit = xor_mask[byte] & (1 << bit);
-
-        // The two cursor masks combine as follows:
-        //  AND  XOR   Windows Result  Our result   RGB  Alpha
-        //   0    0    Black           Black         00    ff
-        //   0    1    White           White         ff    ff
-        //   1    0    Screen          Transparent   00    00
-        //   1    1    Reverse-screen  Black         00    ff
-        // Since we don't support XOR cursors, we replace the "Reverse Screen"
-        // with black. In this case, we also add an outline around the cursor
-        // so that it is visible against a dark background.
-        int rgb = (!and_bit && xor_bit) ? 0xff : 0x00;
-        int alpha = (and_bit && !xor_bit) ? 0x00 : 0xff;
-        *dst++ = rgb;
-        *dst++ = rgb;
-        *dst++ = rgb;
-        *dst++ = alpha;
-        if (and_bit && xor_bit) {
-          add_outline = true;
-        }
-      }
-    }
-    if (add_outline) {
-      AddCursorOutline(width, height,
-                       reinterpret_cast<uint32_t*>(cursor_dst_data));
-    }
-  }
-
-  DeleteObject(hbitmap);
-
-  cursor->size.set(width, height);
-  cursor->hotspot.set(hotspot_x, hotspot_y);
 
   // Compare the current cursor with the last one we sent to the client. If
   // they're the same, then don't bother sending the cursor again.
@@ -511,7 +340,8 @@ void ScreenCapturerWin::CaptureCursor() {
     return;
   }
 
-  LOG(LS_VERBOSE) << "Sending updated cursor: " << width << "x" << height;
+  LOG(LS_VERBOSE) << "Sending updated cursor: " << cursor->size.width() << "x"
+                  << cursor->size.height();
 
   // Record the last cursor image that we sent to the client.
   last_cursor_ = *cursor;
