@@ -121,6 +121,21 @@
     },
   ],
   'conditions': [
+    ['OS=="android"', {
+      'targets': [
+        {
+          'target_name': 'video_capture_module_java',
+          'type': 'none',
+          'variables': {
+            'java_in_dir': 'android/java',
+          },
+          'dependencies': [
+            'video_render_module_java',
+          ],
+          'includes': [ '../../../build/java.gypi' ],
+        },
+      ],
+    }],
     ['include_tests==1', {
       'targets': [
         {

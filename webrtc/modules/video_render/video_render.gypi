@@ -154,6 +154,18 @@
   ], # targets
 
   'conditions': [
+    ['OS=="android"', {
+      'targets': [
+        {
+          'target_name': 'video_render_module_java',
+          'type': 'none',
+          'variables': {
+            'java_in_dir': 'android/java',
+          },
+          'includes': [ '../../../build/java.gypi' ],
+        },
+      ],
+    }],
     ['include_internal_video_render==1', {
       'defines': ['WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER',],
     }],
