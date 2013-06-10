@@ -15,6 +15,8 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
+#include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/video_engine/internal/video_receive_stream.h"
 #include "webrtc/video_engine/internal/video_send_stream.h"
 #include "webrtc/video_engine/new_include/video_engine.h"
@@ -41,7 +43,7 @@ class VideoCall : public newapi::VideoCall, public newapi::PacketReceiver {
   virtual newapi::VideoSendStream::Config GetDefaultSendConfig() OVERRIDE;
 
   virtual newapi::VideoSendStream* CreateSendStream(
-      const newapi::VideoSendStream::Config& send_stream_config) OVERRIDE;
+      const newapi::VideoSendStream::Config& config) OVERRIDE;
 
   virtual newapi::SendStreamState* DestroySendStream(
       newapi::VideoSendStream* send_stream) OVERRIDE;
@@ -49,7 +51,7 @@ class VideoCall : public newapi::VideoCall, public newapi::PacketReceiver {
   virtual newapi::VideoReceiveStream::Config GetDefaultReceiveConfig() OVERRIDE;
 
   virtual newapi::VideoReceiveStream* CreateReceiveStream(
-      const newapi::VideoReceiveStream::Config& receive_stream_config) OVERRIDE;
+      const newapi::VideoReceiveStream::Config& config) OVERRIDE;
 
   virtual void DestroyReceiveStream(newapi::VideoReceiveStream* receive_stream)
       OVERRIDE;
@@ -68,7 +70,9 @@ class VideoCall : public newapi::VideoCall, public newapi::PacketReceiver {
   newapi::Transport* send_transport;
 
   std::map<uint32_t, newapi::VideoReceiveStream*> receive_ssrcs_;
+  scoped_ptr<RWLockWrapper> receive_lock_;
   std::map<uint32_t, newapi::VideoSendStream*> send_ssrcs_;
+  scoped_ptr<RWLockWrapper> send_lock_;
 
   webrtc::VideoEngine* video_engine_;
   ViERTP_RTCP* rtp_rtcp_;

@@ -29,7 +29,10 @@ namespace internal {
 
 VideoCall::VideoCall(webrtc::VideoEngine* video_engine,
                      newapi::Transport* send_transport)
-    : send_transport(send_transport), video_engine_(video_engine) {
+    : send_transport(send_transport),
+      receive_lock_(RWLockWrapper::CreateRWLock()),
+      send_lock_(RWLockWrapper::CreateRWLock()),
+      video_engine_(video_engine) {
   assert(video_engine != NULL);
   assert(send_transport != NULL);
 
@@ -66,19 +69,18 @@ VideoSendStream::Config VideoCall::GetDefaultSendConfig() {
 }
 
 newapi::VideoSendStream* VideoCall::CreateSendStream(
-    const newapi::VideoSendStream::Config& send_stream_config) {
-  assert(send_stream_config.rtp.ssrcs.size() > 0);
-  assert(send_stream_config.codec.numberOfSimulcastStreams == 0 ||
-         send_stream_config.codec.numberOfSimulcastStreams ==
-             send_stream_config.rtp.ssrcs.size());
+    const newapi::VideoSendStream::Config& config) {
+  assert(config.rtp.ssrcs.size() > 0);
+  assert(config.codec.numberOfSimulcastStreams == 0 ||
+         config.codec.numberOfSimulcastStreams == config.rtp.ssrcs.size());
+
   VideoSendStream* send_stream =
-      new VideoSendStream(send_transport, video_engine_, send_stream_config);
-  for (size_t i = 0; i < send_stream_config.rtp.ssrcs.size(); ++i) {
-    uint32_t ssrc = send_stream_config.rtp.ssrcs[i];
-    // SSRC must be previously unused!
-    assert(send_ssrcs_[ssrc] == NULL &&
-           receive_ssrcs_.find(ssrc) == receive_ssrcs_.end());
-    send_ssrcs_[ssrc] = send_stream;
+      new VideoSendStream(send_transport, video_engine_, config);
+
+  WriteLockScoped write_lock(*send_lock_);
+  for (size_t i = 0; i < config.rtp.ssrcs.size(); ++i) {
+    assert(send_ssrcs_.find(config.rtp.ssrcs[i]) == send_ssrcs_.end());
+    send_ssrcs_[config.rtp.ssrcs[i]] = send_stream;
   }
   return send_stream;
 }
@@ -100,14 +102,13 @@ VideoReceiveStream::Config VideoCall::GetDefaultReceiveConfig() {
 }
 
 newapi::VideoReceiveStream* VideoCall::CreateReceiveStream(
-    const newapi::VideoReceiveStream::Config& receive_stream_config) {
-  assert(receive_ssrcs_[receive_stream_config.rtp.ssrc] == NULL);
-
+    const newapi::VideoReceiveStream::Config& config) {
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
-      video_engine_, receive_stream_config, send_transport);
+      video_engine_, config, send_transport);
 
-  receive_ssrcs_[receive_stream_config.rtp.ssrc] = receive_stream;
-
+  WriteLockScoped write_lock(*receive_lock_);
+  assert(receive_ssrcs_.find(config.rtp.ssrc) == receive_ssrcs_.end());
+  receive_ssrcs_[config.rtp.ssrc] = receive_stream;
   return receive_stream;
 }
 
@@ -135,6 +136,7 @@ bool VideoCall::DeliverRtcp(ModuleRTPUtility::RTPHeaderParser* rtp_parser,
   // TODO(pbos): Figure out what channel needs it actually.
   //             Do NOT broadcast! Also make sure it's a valid packet.
   bool rtcp_delivered = false;
+  ReadLockScoped read_lock(*receive_lock_);
   for (std::map<uint32_t, newapi::VideoReceiveStream*>::iterator it =
            receive_ssrcs_.begin();
        it != receive_ssrcs_.end(); ++it) {
@@ -156,14 +158,14 @@ bool VideoCall::DeliverRtp(ModuleRTPUtility::RTPHeaderParser* rtp_parser,
     return false;
   }
 
-  uint32_t ssrc = rtp_header.ssrc;
-  if (receive_ssrcs_.find(ssrc) == receive_ssrcs_.end()) {
+  ReadLockScoped read_lock(*receive_lock_);
+  if (receive_ssrcs_.find(rtp_header.ssrc) == receive_ssrcs_.end()) {
     // TODO(pbos): Log some warning, SSRC without receiver.
     return false;
   }
 
   VideoReceiveStream* receiver =
-      static_cast<VideoReceiveStream*>(receive_ssrcs_[ssrc]);
+      static_cast<VideoReceiveStream*>(receive_ssrcs_[rtp_header.ssrc]);
   return receiver->DeliverRtp(packet, length);
 }
 
