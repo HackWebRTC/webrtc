@@ -166,6 +166,11 @@ int32_t ViEChannel::Init() {
                  "%s: VCM::InitializeReceiver failure", __FUNCTION__);
     return -1;
   }
+  if (vcm_.SetVideoProtection(kProtectionKeyOnLoss, true)) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
+                 "%s: VCM::SetVideoProtection failure", __FUNCTION__);
+    return -1;
+  }
   if (vcm_.RegisterReceiveCallback(this) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: VCM::RegisterReceiveCallback failure", __FUNCTION__);
