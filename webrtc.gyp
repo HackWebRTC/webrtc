@@ -30,7 +30,6 @@
         ['include_tests==1', {
           'dependencies': [
             'webrtc/system_wrappers/source/system_wrappers_tests.gyp:*',
-            'webrtc/test/channel_transport.gyp:*',
             'webrtc/test/metrics.gyp:*',
             'webrtc/test/test.gyp:*',
             'webrtc/tools/tools.gyp:*',

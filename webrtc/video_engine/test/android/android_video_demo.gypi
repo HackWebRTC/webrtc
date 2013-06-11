@@ -12,7 +12,7 @@
       'type': 'none',
       'dependencies': [
         '<(webrtc_root)/modules/modules.gyp:*',
-        '<(webrtc_root)/test/channel_transport.gyp:channel_transport',
+        '<(webrtc_root)/test/test.gyp:channel_transport',
         '<(webrtc_root)/video_engine/video_engine.gyp:video_engine_core',
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
       ],

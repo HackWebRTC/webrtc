@@ -125,7 +125,6 @@
           'dependencies': [
             'voice_engine',
             '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
             # The rest are to satisfy the unittests' include chain.
             # This would be unnecessary if we used qualified includes.
             '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
@@ -137,6 +136,7 @@
             '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
             '<(webrtc_root)/modules/modules.gyp:webrtc_utility',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
           'include_dirs': [
             'include',
@@ -155,13 +155,13 @@
           'type': 'executable',
           'dependencies': [
             'voice_engine',
-            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(webrtc_root)/test/test.gyp:test_support',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(DEPTH)/testing/gmock.gyp:gmock',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/test/libtest/libtest.gyp:libtest',
-            '<(webrtc_root)/test/channel_transport.gyp:channel_transport',
+            '<(webrtc_root)/test/test.gyp:channel_transport',
+            '<(webrtc_root)/test/test.gyp:test_support',
            ],
           'include_dirs': [
             'auto_test',
@@ -239,11 +239,11 @@
           'target_name': 'voe_cmd_test',
           'type': 'executable',
           'dependencies': [
-            '<(webrtc_root)/test/test.gyp:test_support',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
             'voice_engine',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(webrtc_root)/test/channel_transport.gyp:channel_transport',
+            '<(webrtc_root)/test/test.gyp:channel_transport',
+            '<(webrtc_root)/test/test.gyp:test_support',
           ],
           'sources': [
             'test/cmd_test/voe_cmd_test.cc',

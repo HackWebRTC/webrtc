@@ -7,16 +7,6 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'variables': {
-    'conditions': [
-      # Desktop capturer is supported only on Windows, OSX and Linux.
-      ['OS=="win" or OS=="mac" or OS=="linux"', {
-        'desktop_capture_supported%': 1,
-      }, {
-        'desktop_capture_supported%': 0,
-      }],
-    ],
-  },
   'targets': [
     {
       'target_name': 'desktop_capture',
@@ -124,47 +114,5 @@
         },
       ],  # targets
     }],
-    ['include_tests==1', {
-      'targets': [
-        {
-          'target_name': 'desktop_capture_unittests',
-          'type': 'executable',
-          'dependencies': [
-            'desktop_capture',
-            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(webrtc_root)/test/test.gyp:test_support',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
-            '<(DEPTH)/testing/gmock.gyp:gmock',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
-          ],
-          'sources': [
-            "desktop_region_unittest.cc",
-            "differ_block_unittest.cc",
-            "differ_unittest.cc",
-            "screen_capturer_helper_unittest.cc",
-            "screen_capturer_mac_unittest.cc",
-            "screen_capturer_mock_objects.h",
-            "screen_capturer_unittest.cc",
-            "window_capturer_unittest.cc",
-            "win/cursor_unittest.cc",
-            "win/cursor_unittest_resources.h",
-            "win/cursor_unittest_resources.rc",
-          ],
-          'conditions': [
-            # Run screen/window capturer tests only on platforms where they are
-            # supported.
-            ['desktop_capture_supported==1', {
-              'sources!': [
-                "screen_capturer_helper_unittest.cc",
-                "screen_capturer_mac_unittest.cc",
-                "screen_capturer_mock_objects.h",
-                "screen_capturer_unittest.cc",
-                "window_capturer_unittest.cc",
-              ],
-            }],
-          ],
-        },
-      ],  # targets
-    }],  # include_tests==1
   ],
 }

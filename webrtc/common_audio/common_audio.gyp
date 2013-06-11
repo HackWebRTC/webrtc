@@ -167,10 +167,9 @@
       ],  # targets
     }],
     ['include_tests==1', {
-      # TODO(ajm): Use a single common_audio_unittests target.
       'targets' : [
         {
-          'target_name': 'resampler_unittests',
+          'target_name': 'common_audio_unittests',
           'type': 'executable',
           'dependencies': [
             'common_audio',
@@ -186,30 +185,8 @@
             'resampler/sinc_resampler_unittest.cc',
             'resampler/sinusoidal_linear_chirp_source.cc',
             'resampler/sinusoidal_linear_chirp_source.h',
-          ],
-        },
-        {
-          'target_name': 'signal_processing_unittests',
-          'type': 'executable',
-          'dependencies': [
-            'common_audio',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
-          ],
-          'sources': [
             'signal_processing/real_fft_unittest.cc',
             'signal_processing/signal_processing_unittest.cc',
-          ],
-        },
-        {
-          'target_name': 'vad_unittests',
-          'type': 'executable',
-          'dependencies': [
-            'common_audio',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
-          ],
-          'sources': [
             'vad/vad_core_unittest.cc',
             'vad/vad_filterbank_unittest.cc',
             'vad/vad_gmm_unittest.cc',
