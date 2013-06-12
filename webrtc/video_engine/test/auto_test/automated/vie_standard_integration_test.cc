@@ -59,7 +59,13 @@ TEST_F(ViEStandardIntegrationTest, RunsRenderTestWithoutErrors)  {
   tests_->ViERenderStandardTest();
 }
 
-TEST_F(ViEStandardIntegrationTest, RunsRtpRtcpTestWithoutErrors)  {
+// Fails on Mac, see https://code.google.com/p/webrtc/issues/detail?id=1790
+#if defined(WEBRTC_MAC)
+#define MAYBE_RunsRtpRtcpTestWithoutErrors DISABLED_RunsRtpRtcpTestWithoutErrors
+#else
+#define MAYBE_RunsRtpRtcpTestWithoutErrors RunsRtpRtcpTestWithoutErrors
+#endif
+TEST_F(ViEStandardIntegrationTest, MAYBE_RunsRtpRtcpTestWithoutErrors)  {
   tests_->ViERtpRtcpStandardTest();
 }
 
