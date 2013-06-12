@@ -20,6 +20,7 @@
 #include <ctime>
 #include <list>
 
+#include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_private_tables_bursty.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction_internal.h"
@@ -29,14 +30,51 @@
 
 //#define VERBOSE_OUTPUT
 
-using namespace webrtc;
+namespace webrtc {
+namespace test {
 
 void ReceivePackets(
     ForwardErrorCorrection::ReceivedPacketList* toDecodeList,
     ForwardErrorCorrection::ReceivedPacketList* receivedPacketList,
-    uint32_t numPacketsToDecode, float reorderRate, float duplicateRate);
+    uint32_t numPacketsToDecode, float reorderRate, float duplicateRate) {
+  assert(toDecodeList->empty());
+  assert(numPacketsToDecode <= receivedPacketList->size());
 
-int main() {
+  ForwardErrorCorrection::ReceivedPacketList::iterator it;
+  for (uint32_t i = 0; i < numPacketsToDecode; i++) {
+    it = receivedPacketList->begin();
+    // Reorder packets.
+    float randomVariable = static_cast<float>(rand()) / RAND_MAX;
+    while (randomVariable < reorderRate) {
+      ++it;
+      if (it == receivedPacketList->end()) {
+        --it;
+        break;
+      }
+      randomVariable = static_cast<float>(rand()) / RAND_MAX;
+    }
+    ForwardErrorCorrection::ReceivedPacket* receivedPacket = *it;
+    toDecodeList->push_back(receivedPacket);
+
+    // Duplicate packets.
+    randomVariable = static_cast<float>(rand()) / RAND_MAX;
+    while (randomVariable < duplicateRate) {
+      ForwardErrorCorrection::ReceivedPacket* duplicatePacket =
+          new ForwardErrorCorrection::ReceivedPacket;
+      *duplicatePacket = *receivedPacket;
+      duplicatePacket->pkt = new ForwardErrorCorrection::Packet;
+      memcpy(duplicatePacket->pkt->data, receivedPacket->pkt->data,
+             receivedPacket->pkt->length);
+      duplicatePacket->pkt->length = receivedPacket->pkt->length;
+
+      toDecodeList->push_back(duplicatePacket);
+      randomVariable = static_cast<float>(rand()) / RAND_MAX;
+    }
+    receivedPacketList->erase(it);
+  }
+}
+
+TEST(FecTest, FecTest) {
   // TODO(marpan): Split this function into subroutines/helper functions.
   enum {
     kMaxNumberMediaPackets = 48
@@ -63,10 +101,8 @@ int main() {
   const uint16_t kMaxMediaPackets[] = {kMaxNumberMediaPackets,
       sizeof(kPacketMaskBurstyTbl) / sizeof(*kPacketMaskBurstyTbl)};
 
-  if (kMaxMediaPackets[1] != 12) {
-    printf("ERROR: max media packets for bursty mode not equal to 12 \n");
-    return -1;
-  }
+  ASSERT_EQ(12, kMaxMediaPackets[1]) << "Max media packets for bursty mode not "
+                                     << "equal to 12.";
 
   uint32_t id = 0;
   ForwardErrorCorrection fec(id);
@@ -178,20 +214,14 @@ int main() {
               for (uint32_t j = 0; j < rowLimit; ++j) {
                 rowSum += fecPacketMasks[i][j];
               }
-              if (rowSum == 0) {
-                printf("ERROR: row is all zero %d \n", i);
-                return -1;
-              }
+              ASSERT_NE(0u, rowSum) << "Row is all zero " << i;
             }
             for (uint32_t j = 0; j < rowLimit; ++j) {
               uint32_t columnSum = 0;
               for (uint32_t i = 0; i < numFecPackets; ++i) {
                 columnSum += fecPacketMasks[i][j];
               }
-              if (columnSum == 0) {
-                printf("ERROR: column is all zero %d \n", j);
-                return -1;
-              }
+              ASSERT_NE(0u, columnSum) << "Column is all zero " << j;
             }
 
             // Construct media packets.
@@ -239,20 +269,14 @@ int main() {
             }
             mediaPacket->data[1] |= 0x80;
 
-            if (fec.GenerateFEC(mediaPacketList, protectionFactor,
-                                numImpPackets, kUseUnequalProtection,
-                                fec_mask_type, &fecPacketList) != 0) {
-              printf("Error: GenerateFEC() failed\n");
-              return -1;
-            }
+            ASSERT_EQ(0, fec.GenerateFEC(mediaPacketList, protectionFactor,
+                                         numImpPackets, kUseUnequalProtection,
+                                         fec_mask_type, &fecPacketList))
+                << "GenerateFEC() failed";
 
-            if (fecPacketList.size() != numFecPackets) {
-              printf("Error: we requested %u FEC packets, "
-                     "but GenerateFEC() produced %u\n",
-                     numFecPackets,
-                     static_cast<uint32_t>(fecPacketList.size()));
-              return -1;
-            }
+            ASSERT_EQ(numFecPackets, fecPacketList.size())
+                << "We requested " << numFecPackets << " FEC packets, but "
+                << "GenerateFEC() produced " << fecPacketList.size();
             memset(mediaLossMask, 0, sizeof(mediaLossMask));
             ForwardErrorCorrection::PacketList::iterator mediaPacketListItem =
                 mediaPacketList.begin();
@@ -380,14 +404,10 @@ int main() {
                   ++toDecodeIt;
                 }
               }
-              if (fec.DecodeFEC(&toDecodeList, &recoveredPacketList) != 0) {
-                printf("Error: DecodeFEC() failed\n");
-                return -1;
-              }
-              if (!toDecodeList.empty()) {
-                printf("Error: received packet list is not empty\n");
-                return -1;
-              }
+              ASSERT_EQ(0, fec.DecodeFEC(&toDecodeList, &recoveredPacketList))
+                  << "DecodeFEC() failed";
+              ASSERT_TRUE(toDecodeList.empty())
+                  << "Received packet list is not empty.";
             }
             mediaPacketListItem = mediaPacketList.begin();
             mediaPacketIdx = 0;
@@ -397,25 +417,20 @@ int main() {
                 ForwardErrorCorrection::RecoveredPacketList::iterator
                 recoveredPacketListItem = recoveredPacketList.begin();
 
-                if (recoveredPacketListItem == recoveredPacketList.end()) {
-                  printf("Error: insufficient number of recovered packets.\n");
-                  return -1;
-                }
+                ASSERT_FALSE(
+                    recoveredPacketListItem == recoveredPacketList.end())
+                  << "Insufficient number of recovered packets.";
                 mediaPacket = *mediaPacketListItem;
                 ForwardErrorCorrection::RecoveredPacket* recoveredPacket =
                     *recoveredPacketListItem;
 
-                if (recoveredPacket->pkt->length != mediaPacket->length) {
-                  printf("Error: recovered packet length not identical to "
-                         "original media packet\n");
-                  return -1;
-                }
-                if (memcmp(recoveredPacket->pkt->data, mediaPacket->data,
-                           mediaPacket->length) != 0) {
-                  printf("Error: recovered packet payload not identical to "
-                         "original media packet\n");
-                  return -1;
-                }
+                ASSERT_EQ(recoveredPacket->pkt->length, mediaPacket->length)
+                    << "Recovered packet length not identical to original "
+                    << "media packet";
+                ASSERT_EQ(0, memcmp(recoveredPacket->pkt->data,
+                                    mediaPacket->data, mediaPacket->length))
+                    << "Recovered packet payload not identical to original "
+                    << "media packet";
                 delete recoveredPacket;
                 recoveredPacketList.pop_front();
               }
@@ -423,12 +438,9 @@ int main() {
               ++mediaPacketListItem;
             }
             fec.ResetState(&recoveredPacketList);
-            if (!recoveredPacketList.empty()) {
-              printf("Error: excessive number of recovered packets.\n");
-              printf("\t size is:%u\n",
-                     static_cast<uint32_t>(recoveredPacketList.size()));
-              return -1;
-            }
+            ASSERT_TRUE(recoveredPacketList.empty())
+                << "Excessive number of recovered packets.\t size is: "
+                << recoveredPacketList.size();
             // -- Teardown --
             mediaPacketListItem = mediaPacketList.begin();
             while (mediaPacketListItem != mediaPacketList.end()) {
@@ -469,51 +481,9 @@ int main() {
 
   // Have DecodeFEC free allocated memory.
   fec.ResetState(&recoveredPacketList);
-  if (!recoveredPacketList.empty()) {
-    printf("Error: recovered packet list is not empty\n");
-    return -1;
-  }
-  printf("\nAll tests passed successfully\n");
-  return 0;
+  ASSERT_TRUE(recoveredPacketList.empty())
+      << "Recovered packet list is not empty";
 }
 
-void ReceivePackets(
-    ForwardErrorCorrection::ReceivedPacketList* toDecodeList,
-    ForwardErrorCorrection::ReceivedPacketList* receivedPacketList,
-    uint32_t numPacketsToDecode, float reorderRate, float duplicateRate) {
-  assert(toDecodeList->empty());
-  assert(numPacketsToDecode <= receivedPacketList->size());
-
-  ForwardErrorCorrection::ReceivedPacketList::iterator it;
-  for (uint32_t i = 0; i < numPacketsToDecode; i++) {
-    it = receivedPacketList->begin();
-    // Reorder packets.
-    float randomVariable = static_cast<float>(rand()) / RAND_MAX;
-    while (randomVariable < reorderRate) {
-      ++it;
-      if (it == receivedPacketList->end()) {
-        --it;
-        break;
-      }
-      randomVariable = static_cast<float>(rand()) / RAND_MAX;
-    }
-    ForwardErrorCorrection::ReceivedPacket* receivedPacket = *it;
-    toDecodeList->push_back(receivedPacket);
-
-    // Duplicate packets.
-    randomVariable = static_cast<float>(rand()) / RAND_MAX;
-    while (randomVariable < duplicateRate) {
-      ForwardErrorCorrection::ReceivedPacket* duplicatePacket =
-          new ForwardErrorCorrection::ReceivedPacket;
-      *duplicatePacket = *receivedPacket;
-      duplicatePacket->pkt = new ForwardErrorCorrection::Packet;
-      memcpy(duplicatePacket->pkt->data, receivedPacket->pkt->data,
-             receivedPacket->pkt->length);
-      duplicatePacket->pkt->length = receivedPacket->pkt->length;
-
-      toDecodeList->push_back(duplicatePacket);
-      randomVariable = static_cast<float>(rand()) / RAND_MAX;
-    }
-    receivedPacketList->erase(it);
-  }
-}
+}  // namespace test
+}  // namespace webrtc
