@@ -19,25 +19,13 @@ import dashboard_connection
 import tgrid_parser
 
 # Bots that must be green in order to increment the LKGR revision.
-BOTS = ['Win32 Debug',
-        'Win32 Release',
-        'Mac32 Debug',
-        'Mac32 Release',
-        'Mac64 Debug',
-        'Mac64 Release',
-        'Linux32 Debug',
-        'Linux32 Release',
-        'Linux64 Debug',
-        'Linux64 Release',
-        'Linux Clang',
-        'Linux Memcheck',
-        'Linux Tsan',
-        'Linux Asan',
+# TODO(kjellander): Remake this entirely as we have now switched to Chrome infra
+# bots. This is just to get the LGKR moving forward for now.
+BOTS = ['Linux32 Debug Coverage',
         'Win Large Tests',
         'Mac Large Tests',
         'Linux Large Tests',
-        'CrOS',
-        'Android',
+        'Android Platform',
         'Android NDK',
        ]
 
