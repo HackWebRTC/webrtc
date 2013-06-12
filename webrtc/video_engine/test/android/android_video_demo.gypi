@@ -20,9 +20,15 @@
         {
           # TODO(leozwang): Convert building of the demo to a proper GYP target
           # so this action and the custom build script is not needed.
-          # (http://crbug.com/255101)
           'action_name': 'build_video_demo_apk',
           'inputs' : [
+            '<(webrtc_root)/modules/audio_device/android/org/webrtc/voiceengine/WebRTCAudioDevice.java',
+            '<(webrtc_root)/modules/video_capture/android/java/org/webrtc/videoengine/CaptureCapabilityAndroid.java',
+            '<(webrtc_root)/modules/video_capture/android/java/org/webrtc/videoengine/VideoCaptureAndroid.java',
+            '<(webrtc_root)/modules/video_capture/android/java/org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid.java',
+            '<(webrtc_root)/modules/video_render/android/java/org/webrtc/videoengine/ViEAndroidGLES20.java',
+            '<(webrtc_root)/modules/video_render/android/java/org/webrtc/videoengine/ViERenderer.java',
+            '<(webrtc_root)/modules/video_render/android/java/org/webrtc/videoengine/ViESurfaceRenderer.java',
             '<(webrtc_root)/video_engine/test/android/src/org/webrtc/videoengine/ViEMediaCodecDecoder.java',
             '<(webrtc_root)/video_engine/test/android/src/org/webrtc/videoengineapp/IViEAndroidCallback.java',
             '<(webrtc_root)/video_engine/test/android/src/org/webrtc/videoengineapp/ViEAndroidJavaAPI.java',

@@ -182,18 +182,6 @@
     },
   ],
   'conditions': [
-    ['OS=="android"', {
-      'targets': [
-        {
-          'target_name': 'audio_device_module_java',
-          'type': 'none',
-          'variables': {
-            'java_in_dir': 'android/java',
-          },
-          'includes': [ '../../../build/java.gypi' ],
-        },
-      ],
-    }],
     ['include_tests==1', {
       'targets': [
         {
