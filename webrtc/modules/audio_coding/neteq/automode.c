@@ -218,12 +218,12 @@ int WebRtcNetEQ_UpdateIatStatistics(AutomodeInst_t *inst, int maxBufLen,
         {
             int high_lim_delay;
             /* Convert the minimum delay from milliseconds to packets in Q8.
-             * |fsHz| is sampling rate in Hertz, and |inst->packetSpeechLenSamp|
+             * |fsHz| is sampling rate in Hertz, and |packetLenSamp|
              * is the number of samples per packet (according to the last
              * decoding).
              */
             int32_t minimum_delay_q8 = ((inst->minimum_delay_ms *
-                (fsHz / 1000)) << 8) / inst->packetSpeechLenSamp;
+                (fsHz / 1000)) << 8) / packetLenSamp;
             inst->optBufLevel = tempvar;
 
             if (streamingMode != 0)
