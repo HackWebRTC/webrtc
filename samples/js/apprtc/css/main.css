@@ -18,13 +18,13 @@
     -webkit-perspective: 1000;
   }
   #card {
-    -webkit-transition-property: rotation;
     -webkit-transition-duration: 2s;
     -webkit-transform-style: preserve-3d;
   }
   #local {
     position: absolute;
     width: 100%;
+    transform: scale(-1, 1);
     -webkit-transform: scale(-1, 1);
     -webkit-backface-visibility: hidden;
   }
@@ -40,8 +40,9 @@
     width: 30%;
     bottom: 32px;
     right: 4px;
-    -webkit-transform: scale(-1, 1);
     opacity: 1.0;
+    transform: scale(-1, 1);
+    -webkit-transform: scale(-1, 1);
   }
   #localVideo {
     width: 100%;
@@ -84,12 +85,4 @@
    border-style: solid;
    border-color: #FFFFFF;
    margin: 2px;
-  }
-  #logo {
-    display: block;
-    top: 4;
-    right: 4;
-    position: absolute;
-    float: right;
-    opacity: 0.5;
   }
