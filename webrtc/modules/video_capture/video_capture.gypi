@@ -124,7 +124,7 @@
     ['include_tests==1', {
       'targets': [
         {
-          'target_name': 'video_capture_module_test',
+          'target_name': 'video_capture_integrationtests',
           'type': 'executable',
           'dependencies': [
             'video_capture_module',

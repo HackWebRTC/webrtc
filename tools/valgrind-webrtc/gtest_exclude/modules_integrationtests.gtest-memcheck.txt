@@ -1,0 +1,4 @@
+# Tests that are too slow.
+AudioCodingModuleTest.TestAllCodecs
+AudioCodingModuleTest.RunAllTests
+FecTest.FecTest

@@ -351,3 +351,21 @@
    fun:_ZN11ViEAutoTest19ViEFileStandardTestEv
    fun:_ZN12_GLOBAL__N_157ViEStandardIntegrationTest_RunsFileTestWithoutErrors_Test8TestBodyEv
 }
+
+{
+   bug_270_1
+   Memcheck:Uninitialized
+   ...
+   fun:WebRtcNetEQ_RecOutInternal
+   fun:WebRtcNetEQ_RecOut
+   ...
+}
+
+{
+   bug_270_2
+   Memcheck:Uninitialized
+   fun:WebRtcNetEQ_GetSpeechOutputType
+   ...
+}
+
+

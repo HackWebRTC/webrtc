@@ -39,21 +39,4 @@
       ],
     },
   ],
-  'conditions': [
-    ['include_tests==1', {
-      'targets': [
-        {
-          'target_name': 'common_unittests',
-          'type': 'executable',
-          'dependencies': [
-             '<(DEPTH)/testing/gtest.gyp:gtest',
-             '<(webrtc_root)/test/test.gyp:test_support_main',
-          ],
-          'sources': [
-            'webrtc/common_unittest.cc',
-          ],
-        },
-      ],  # targets
-    }],  # include_tests
-  ],
 }
