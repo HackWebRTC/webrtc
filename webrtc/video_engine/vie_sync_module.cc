@@ -153,7 +153,7 @@ int32_t ViESyncModule::Process() {
   TRACE_COUNTER1("webrtc", "SyncCurrentAudioDelay", current_audio_delay_ms);
   TRACE_COUNTER1("webrtc", "SyncRelativeDelay", relative_delay_ms);
   int target_audio_delay_ms = 0;
-  int target_video_delay_ms = 0;
+  int target_video_delay_ms = current_video_delay_ms;
   // Calculate the necessary extra audio delay and desired total video
   // delay to get the streams in sync.
   if (!sync_->ComputeDelays(relative_delay_ms,
