@@ -190,6 +190,9 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   virtual void TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
                                 int64_t capture_time_ms);
+  // Returns the number of padding bytes actually sent, which can be more or
+  // less than |bytes|.
+  virtual int TimeToSendPadding(int bytes);
   // RTCP part.
 
   // Get RTCP status.

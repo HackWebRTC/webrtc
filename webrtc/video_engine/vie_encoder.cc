@@ -93,8 +93,7 @@ class ViEPacedSenderCallback : public PacedSender::Callback {
     owner_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms);
   }
   virtual int TimeToSendPadding(int bytes) {
-    // TODO(pwestin): Hook up this.
-    return 0;
+    return owner_->TimeToSendPadding(bytes);
   }
  private:
   ViEEncoder* owner_;
@@ -117,6 +116,7 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
     callback_cs_(CriticalSectionWrapper::CreateCriticalSection()),
     data_cs_(CriticalSectionWrapper::CreateCriticalSection()),
     bitrate_controller_(bitrate_controller),
+    send_padding_(false),
     target_delay_ms_(0),
     network_is_transmitting_(true),
     encoder_paused_(false),
@@ -183,6 +183,7 @@ bool ViEEncoder::Init() {
                  "%s Codec failure", __FUNCTION__);
     return false;
   }
+  send_padding_ = video_codec.numberOfSimulcastStreams > 1;
   if (vcm_.RegisterSendCodec(&video_codec, number_of_cores_,
                              default_rtp_rtcp_->MaxDataPayloadLength()) != 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
@@ -199,6 +200,7 @@ bool ViEEncoder::Init() {
 #else
   VideoCodec video_codec;
   if (vcm_.Codec(webrtc::kVideoCodecI420, &video_codec) == VCM_OK) {
+    send_padding_ = video_codec.numberOfSimulcastStreams > 1;
     vcm_.RegisterSendCodec(&video_codec, number_of_cores_,
                            default_rtp_rtcp_->MaxDataPayloadLength());
     default_rtp_rtcp_->RegisterSendPayload(video_codec);
@@ -358,11 +360,12 @@ int32_t ViEEncoder::DeRegisterExternalEncoder(uint8_t pl_type) {
     return -1;
   }
 
-  // If the external encoder is the current send codeci, use vcm internal
+  // If the external encoder is the current send codec, use vcm internal
   // encoder.
   if (current_send_codec.plType == pl_type) {
     uint16_t max_data_payload_length =
         default_rtp_rtcp_->MaxDataPayloadLength();
+    send_padding_ = current_send_codec.numberOfSimulcastStreams > 1;
     if (vcm_.RegisterSendCodec(&current_send_codec, number_of_cores_,
                                max_data_payload_length) != VCM_OK) {
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
@@ -401,6 +404,7 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
   uint16_t max_data_payload_length =
       default_rtp_rtcp_->MaxDataPayloadLength();
 
+  send_padding_ = video_codec.numberOfSimulcastStreams > 1;
   if (vcm_.RegisterSendCodec(&video_codec, number_of_cores_,
                              max_data_payload_length) != VCM_OK) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
@@ -481,6 +485,13 @@ int32_t ViEEncoder::ScaleInputImage(bool enable) {
 void ViEEncoder::TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
                                   int64_t capture_time_ms) {
   default_rtp_rtcp_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms);
+}
+
+int ViEEncoder::TimeToSendPadding(int bytes) {
+  if (send_padding_) {
+    return default_rtp_rtcp_->TimeToSendPadding(bytes);
+  }
+  return 0;
 }
 
 bool ViEEncoder::EncoderPaused() const {
@@ -1002,7 +1013,13 @@ void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
 
   vcm_.SetChannelParameters(bitrate_bps, fraction_lost, round_trip_time_ms);
   int bitrate_kbps = bitrate_bps / 1000;
-  paced_sender_->UpdateBitrate(bitrate_kbps, 0);
+  VideoCodec send_codec;
+  if (vcm_.SendCodec(&send_codec) != 0) {
+    return;
+  }
+  int pad_up_to_bitrate = std::min(bitrate_kbps,
+                                   static_cast<int>(send_codec.maxBitrate));
+  paced_sender_->UpdateBitrate(bitrate_kbps, pad_up_to_bitrate);
   default_rtp_rtcp_->SetTargetSendBitrate(bitrate_bps);
 }
 

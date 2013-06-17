@@ -132,7 +132,8 @@ RTPSenderVideo::SendVideoPacket(uint8_t* data_buffer,
         red_packet->length() - rtp_header_length,
         rtp_header_length,
         capture_time_ms,
-        storage);
+        storage,
+        PacedSender::kNormalPriority);
 
     ret |= packet_success;
 
@@ -169,7 +170,8 @@ RTPSenderVideo::SendVideoPacket(uint8_t* data_buffer,
           red_packet->length() - rtp_header_length,
           rtp_header_length,
           capture_time_ms,
-          storage);
+          storage,
+          PacedSender::kNormalPriority);
 
       ret |= packet_success;
 
@@ -190,7 +192,8 @@ RTPSenderVideo::SendVideoPacket(uint8_t* data_buffer,
                                      payload_length,
                                      rtp_header_length,
                                      capture_time_ms,
-                                     storage);
+                                     storage,
+                                     PacedSender::kNormalPriority);
   if (ret == 0) {
     _videoBitrate.Update(payload_length + rtp_header_length);
   }
@@ -215,7 +218,8 @@ RTPSenderVideo::SendRTPIntraRequest()
     TRACE_EVENT_INSTANT1("webrtc_rtp",
                          "Video::IntraRequest",
                          "seqnum", _rtpSender.SequenceNumber());
-    return _rtpSender.SendToNetwork(data, 0, length, -1, kDontStore);
+    return _rtpSender.SendToNetwork(data, 0, length, -1, kDontStore,
+                                    PacedSender::kNormalPriority);
 }
 
 int32_t

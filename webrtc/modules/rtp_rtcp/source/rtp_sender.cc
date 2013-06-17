@@ -12,7 +12,6 @@
 
 #include <cstdlib>  // srand
 
-#include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_audio.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
@@ -377,9 +376,14 @@ int32_t RTPSender::SendOutgoingData(
     assert(frame_type != kAudioFrameSpeech && frame_type != kAudioFrameCN);
 
     if (frame_type == kFrameEmpty) {
+      if (paced_sender_->Enabled()) {
+        // Padding is driven by the pacer and not by the encoder.
+        return 0;
+      }
       return SendPaddingAccordingToBitrate(payload_type, capture_timestamp,
                                            capture_time_ms) ? 0 : -1;
     }
+    capture_time_ms_ = capture_time_ms;
     return video_->SendVideo(video_type, frame_type, payload_type,
                              capture_timestamp, capture_time_ms, payload_data,
                              payload_size, fragmentation, codec_info,
@@ -409,7 +413,10 @@ bool RTPSender::SendPaddingAccordingToBitrate(
       bytes = bytes_cap;
     }
   }
-  return SendPadData(payload_type, capture_timestamp, capture_time_ms, bytes);
+  int bytes_sent = SendPadData(payload_type, capture_time_ms, bytes,
+                               kDontRetransmit, false);
+  // We did not manage to send all bytes. Comparing with 31 due to modulus 32.
+  return bytes - bytes_sent < 31;
 }
 
 int RTPSender::BuildPaddingPacket(uint8_t* packet, int header_length,
@@ -436,35 +443,54 @@ int RTPSender::BuildPaddingPacket(uint8_t* packet, int header_length,
   return padding_bytes_in_packet;
 }
 
-bool RTPSender::SendPadData(int8_t payload_type, uint32_t capture_timestamp,
-                            int64_t capture_time_ms, int32_t bytes) {
+int RTPSender::SendPadData(int payload_type, int64_t capture_time_ms,
+                           int32_t bytes, StorageType store,
+                           bool force_full_size_packets) {
   // Drop this packet if we're not sending media packets.
   if (!sending_media_) {
-    return true;
+    return bytes;
   }
-  uint8_t data_buffer[IP_PACKET_SIZE];
-  for (; bytes > 0; bytes -= kMaxPaddingLength) {
-    // Correct seq num, timestamp and payload type.
-    int header_length = BuildRTPheader(data_buffer,
-                                       payload_type,
-                                       false,  // No markerbit.
-                                       capture_timestamp,
-                                       true,  // Timestamp provided.
-                                       true);  // Increment sequence number.
-    int padding_bytes_in_packet = BuildPaddingPacket(data_buffer, header_length,
-                                                     bytes);
-    // Send the packet.
-    if (SendToNetwork(data_buffer, padding_bytes_in_packet, header_length,
-                      capture_time_ms, kDontRetransmit) < 0) {
+  uint32_t ssrc;
+  uint16_t sequence_number;
+  uint32_t timestamp;
+  {
+    CriticalSectionScoped cs(send_critsect_);
+    timestamp = timestamp_;
+    if (rtx_ == kRtxOff) {
+      ssrc = ssrc_;
+      sequence_number = sequence_number_;
+      ++sequence_number_;
+    } else {
+      ssrc = ssrc_rtx_;
+      sequence_number = sequence_number_rtx_;
+      ++sequence_number_rtx_;
+    }
+  }
+  int padding_bytes_in_packet = 0;
+  int bytes_sent = 0;
+  for (; bytes > 0; bytes -= padding_bytes_in_packet) {
+    // Generate an RTX packet which only contains random padding data.
+    uint8_t padding_packet[IP_PACKET_SIZE];
+    int header_length = CreateRTPHeader(padding_packet, payload_type, ssrc,
+                                        false, timestamp, sequence_number,
+                                        NULL, 0);
+    // Always send full padding packets.
+    if (force_full_size_packets && bytes < kMaxPaddingLength)
+      bytes = kMaxPaddingLength;
+    padding_bytes_in_packet = BuildPaddingPacket(padding_packet, header_length,
+                                                 bytes);
+    if (padding_bytes_in_packet == 0) {
+      break;
+    }
+    if (0 > SendToNetwork(padding_packet, padding_bytes_in_packet,
+                          header_length, capture_time_ms, store,
+                          PacedSender::kLowPriority)) {
       // Error sending the packet.
       break;
     }
+    bytes_sent += padding_bytes_in_packet;
   }
-  if (bytes > 31) {  // 31 due to our modulus 32.
-    // We did not manage to send all bytes.
-    return false;
-  }
-  return true;
+  return bytes_sent;
 }
 
 void RTPSender::SetStorePacketsStatus(const bool enable,
@@ -524,7 +550,7 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
                                    header.ssrc,
                                    header.sequenceNumber,
                                    capture_time_ms,
-                                   length)) {
+                                   length - header.headerLength)) {
       // We can't send the packet right now.
       // We will be called when it is time.
       return length;
@@ -708,10 +734,24 @@ void RTPSender::TimeToSendPacket(uint16_t sequence_number,
   SendPacketToNetwork(data_buffer, length);
 }
 
+int RTPSender::TimeToSendPadding(int bytes) {
+  if (!sending_media_) {
+    return 0;
+  }
+  int payload_type;
+  {
+    CriticalSectionScoped cs(send_critsect_);
+    payload_type = (rtx_ == kRtxOff) ? payload_type_ : payload_type_rtx_;
+  }
+  return SendPadData(payload_type, capture_time_ms_, bytes, kDontStore,
+                     true);
+}
+
 // TODO(pwestin): send in the RTPHeaderParser to avoid parsing it again.
 int32_t RTPSender::SendToNetwork(
     uint8_t *buffer, int payload_length, int rtp_header_length,
-    int64_t capture_time_ms, StorageType storage) {
+    int64_t capture_time_ms, StorageType storage,
+    PacedSender::Priority priority) {
   ModuleRTPUtility::RTPHeaderParser rtp_parser(
       buffer, payload_length + rtp_header_length);
   RTPHeader rtp_header;
@@ -761,10 +801,9 @@ int32_t RTPSender::SendToNetwork(
   }
 
   if (paced_sender_ && storage != kDontStore) {
-    if (!paced_sender_->SendPacket(
-        PacedSender::kNormalPriority, rtp_header.ssrc,
-        rtp_header.sequenceNumber, capture_time_ms,
-        payload_length + rtp_header_length)) {
+    if (!paced_sender_->SendPacket(priority, rtp_header.ssrc,
+                                   rtp_header.sequenceNumber, capture_time_ms,
+                                   payload_length)) {
       // We can't send the packet right now.
       // We will be called when it is time.
       return 0;
@@ -865,7 +904,6 @@ int32_t RTPSender::BuildRTPheader(
 
   if (time_stamp_provided) {
     timestamp_ = start_time_stamp_ + capture_timestamp;
-    capture_timestamp_ = capture_timestamp;
   } else {
     // Make a unique time stamp.
     // We can't inc by the actual time, since then we increase the risk of back

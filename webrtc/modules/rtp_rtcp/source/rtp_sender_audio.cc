@@ -480,7 +480,8 @@ int32_t RTPSenderAudio::SendAudio(
                                    payloadSize,
                                    static_cast<uint16_t>(rtpHeaderLength),
                                    -1,
-                                   kAllowRetransmission);
+                                   kAllowRetransmission,
+                                   PacedSender::kHighPriority);
 }
 
 int32_t
@@ -619,7 +620,8 @@ RTPSenderAudio::SendTelephoneEventPacket(const bool ended,
                              "timestamp", dtmfTimeStamp,
                              "seqnum", _rtpSender->SequenceNumber());
         retVal = _rtpSender->SendToNetwork(dtmfbuffer, 4, 12, -1,
-                                           kAllowRetransmission);
+                                           kAllowRetransmission,
+                                           PacedSender::kHighPriority);
         sendCount--;
 
     }while (sendCount > 0 && retVal == 0);

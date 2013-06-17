@@ -16,6 +16,7 @@
 #include <map>
 
 #include "webrtc/common_types.h"
+#include "webrtc/modules/pacing/include/paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/bitrate.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
@@ -28,7 +29,6 @@
 namespace webrtc {
 
 class CriticalSectionWrapper;
-class PacedSender;
 class RTPPacketHistory;
 class RTPSenderAudio;
 class RTPSenderVideo;
@@ -57,7 +57,8 @@ class RTPSenderInterface {
 
   virtual int32_t SendToNetwork(
       uint8_t *data_buffer, int payload_length, int rtp_header_length,
-      int64_t capture_time_ms, StorageType storage) = 0;
+      int64_t capture_time_ms, StorageType storage,
+      PacedSender::Priority priority) = 0;
 };
 
 class RTPSender : public Bitrate, public RTPSenderInterface {
@@ -131,8 +132,8 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
       const RTPVideoTypeHeader * rtp_type_hdr = NULL);
 
   int BuildPaddingPacket(uint8_t* packet, int header_length, int32_t bytes);
-  bool SendPadData(int8_t payload_type, uint32_t capture_timestamp,
-                   int64_t capture_time_ms, int32_t bytes);
+  int SendPadData(int payload_type, int64_t capture_time_ms, int32_t bytes,
+                  StorageType store, bool force_full_size_packets);
   // RTP header extension
   int32_t SetTransmissionTimeOffset(
       const int32_t transmission_time_offset);
@@ -163,6 +164,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
                               const int64_t now_ms) const;
 
   void TimeToSendPacket(uint16_t sequence_number, int64_t capture_time_ms);
+  int TimeToSendPadding(int bytes);
 
   // NACK.
   int SelectiveRetransmissions() const;
@@ -204,7 +206,8 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
 
   virtual int32_t SendToNetwork(
       uint8_t *data_buffer, int payload_length, int rtp_header_length,
-      int64_t capture_time_ms, StorageType storage);
+      int64_t capture_time_ms, StorageType storage,
+      PacedSender::Priority priority);
 
   // Audio.
 
@@ -320,7 +323,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   bool ssrc_forced_;
   uint32_t ssrc_;
   uint32_t timestamp_;
-  int64_t capture_timestamp_;
+  int64_t capture_time_ms_;
   uint8_t num_csrcs_;
   uint32_t csrcs_[kRtpCsrcSize];
   bool include_csrcs_;

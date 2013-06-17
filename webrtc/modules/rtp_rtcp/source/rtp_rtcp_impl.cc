@@ -977,7 +977,17 @@ void ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
     "TimeToSendPacket(ssrc:0x%x sequence_number:%u capture_time_ms:%ll)",
     ssrc, sequence_number, capture_time_ms);
 
-  if (simulcast_) {
+  bool no_child_modules = false;
+  {
+    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
+    no_child_modules = !child_modules_.empty();
+  }
+  if (no_child_modules) {
+    // Don't send from default module.
+    if (SendingMedia() && ssrc == rtp_sender_.SSRC()) {
+      rtp_sender_.TimeToSendPacket(sequence_number, capture_time_ms);
+    }
+  } else {
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
     std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
     while (it != child_modules_.end()) {
@@ -987,25 +997,35 @@ void ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
       }
       ++it;
     }
+  }
+}
+
+int ModuleRtpRtcpImpl::TimeToSendPadding(int bytes) {
+  WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, id_, "TimeToSendPadding(bytes: %d)",
+               bytes);
+
+  bool no_child_modules = false;
+  {
+    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
+    no_child_modules = child_modules_.empty();
+  }
+  if (no_child_modules) {
+    // Don't send from default module.
+    if (SendingMedia()) {
+      return rtp_sender_.TimeToSendPadding(bytes);
+    }
   } else {
-    bool have_child_modules = !child_modules_.empty();
-    if (!have_child_modules) {
-      // Don't send from default module.
-      if (SendingMedia() && ssrc == rtp_sender_.SSRC()) {
-        rtp_sender_.TimeToSendPacket(sequence_number, capture_time_ms);
+    CriticalSectionScoped lock(critical_section_module_ptrs_.get());
+    std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
+    while (it != child_modules_.end()) {
+      // Send padding on one of the modules sending media.
+      if ((*it)->SendingMedia()) {
+        return (*it)->rtp_sender_.TimeToSendPadding(bytes);
       }
-    } else {
-      CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-      std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
-      while (it != child_modules_.end()) {
-        if ((*it)->SendingMedia() && ssrc == (*it)->rtp_sender_.SSRC()) {
-          (*it)->rtp_sender_.TimeToSendPacket(sequence_number, capture_time_ms);
-          return;
-        }
-        ++it;
-      }
+      ++it;
     }
   }
+  return 0;
 }
 
 uint16_t ModuleRtpRtcpImpl::MaxPayloadLength() const {

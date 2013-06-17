@@ -175,6 +175,7 @@ class ViEEncoder
   // Called by PacedSender.
   void TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
                         int64_t capture_time_ms);
+  int TimeToSendPadding(int bytes);
 
  private:
   bool EncoderPaused() const;
@@ -194,6 +195,7 @@ class ViEEncoder
 
   BitrateController* bitrate_controller_;
 
+  bool send_padding_;
   int target_delay_ms_;
   bool network_is_transmitting_;
   bool encoder_paused_;

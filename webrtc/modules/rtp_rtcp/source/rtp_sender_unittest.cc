@@ -349,7 +349,8 @@ TEST_F(RtpSenderTest, TrafficSmoothingWithExtensions) {
                                           0,
                                           rtp_length,
                                           capture_time_ms,
-                                          kAllowRetransmission));
+                                          kAllowRetransmission,
+                                          PacedSender::kNormalPriority));
 
   EXPECT_EQ(0, transport_.packets_sent_);
 
@@ -402,7 +403,8 @@ TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
                                           0,
                                           rtp_length,
                                           capture_time_ms,
-                                          kAllowRetransmission));
+                                          kAllowRetransmission,
+                                          PacedSender::kNormalPriority));
 
   EXPECT_EQ(0, transport_.packets_sent_);
 
