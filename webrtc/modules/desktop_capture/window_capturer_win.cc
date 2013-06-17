@@ -64,7 +64,7 @@ BOOL CALLBACK WindowsEnumerationHandler(HWND hwnd, LPARAM param) {
     return TRUE;
 
   WindowCapturer::Window window;
-  window.id = hwnd;
+  window.id = reinterpret_cast<WindowCapturer::WindowId>(hwnd);
 
   const size_t kTitleLength = 500;
   WCHAR window_title[kTitleLength];

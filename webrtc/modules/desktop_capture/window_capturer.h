@@ -22,11 +22,7 @@ namespace webrtc {
 
 class WindowCapturer : public DesktopCapturer {
  public:
-#if defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-  typedef unsigned int WindowId;
-#elif defined(WEBRTC_WIN)
-  typedef void* WindowId;
-#endif
+  typedef intptr_t WindowId;
 
   struct Window {
     WindowId id;
