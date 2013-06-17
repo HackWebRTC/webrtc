@@ -82,11 +82,21 @@ void VCMDecodingState::CopyFrom(const VCMDecodingState& state) {
   in_initial_state_ = state.in_initial_state_;
 }
 
-void VCMDecodingState::UpdateEmptyFrame(const VCMFrameBuffer* frame) {
-  if (ContinuousFrame(frame)) {
-    time_stamp_ = frame->TimeStamp();
-    sequence_num_ = frame->GetHighSeqNum();
+bool VCMDecodingState::UpdateEmptyFrame(const VCMFrameBuffer* frame) {
+  bool empty_packet = frame->GetHighSeqNum() == frame->GetLowSeqNum();
+  if (in_initial_state_ && empty_packet) {
+    // Drop empty packets as long as we are in the initial state.
+    return true;
   }
+  if ((empty_packet && ContinuousSeqNum(frame->GetHighSeqNum())) ||
+      ContinuousFrame(frame)) {
+    // Continuous empty packets or continuous frames can be dropped if we
+    // advance the sequence number.
+    sequence_num_ = frame->GetHighSeqNum();
+    time_stamp_ = frame->TimeStamp();
+    return true;
+  }
+  return false;
 }
 
 void VCMDecodingState::UpdateOldPacket(const VCMPacket* packet) {
@@ -139,11 +149,14 @@ bool VCMDecodingState::ContinuousFrame(const VCMFrameBuffer* frame) const {
   // Return true when in initial state.
   // Note that when a method is not applicable it will return false.
   assert(frame != NULL);
-  if (in_initial_state_) {
-    // Always start with a key frame.
-    if (frame->FrameType() == kVideoFrameKey) return true;
+  // A key frame is always considered continuous as it doesn't refer to any
+  // frames and therefore won't introduce any errors even if prior frames are
+  // missing.
+  if (frame->FrameType() == kVideoFrameKey)
+    return true;
+  // When in the initial state we always require a key frame to start decoding.
+  if (in_initial_state_)
     return false;
-  }
 
   if (!ContinuousLayer(frame->TemporalId(), frame->Tl0PicId())) {
     // Base layers are not continuous or temporal layers are inactive.

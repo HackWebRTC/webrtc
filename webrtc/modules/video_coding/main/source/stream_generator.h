@@ -46,6 +46,7 @@ class StreamGenerator {
                            FrameType type);
 
   bool PopPacket(VCMPacket* packet, int index);
+  void DropLastPacket();
 
   bool GetPacket(VCMPacket* packet, int index);
 
