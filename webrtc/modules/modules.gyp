@@ -225,7 +225,7 @@
           'conditions': [
             # Run screen/window capturer tests only on platforms where they are
             # supported.
-            ['desktop_capture_supported==1', {
+            ['desktop_capture_supported==0', {
               'sources!': [
                 'desktop_capture/screen_capturer_helper_unittest.cc',
                 'desktop_capture/screen_capturer_mac_unittest.cc',
