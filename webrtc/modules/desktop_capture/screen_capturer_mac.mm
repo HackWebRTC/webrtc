@@ -482,7 +482,7 @@ void ScreenCapturerMac::GlBlitFast(const DesktopFrame& frame,
 
   CGLContextObj CGL_MACRO_CONTEXT = cgl_context_;
   glBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, pixel_buffer_object_.get());
-  glReadPixels(0, 0, frame.size().height(), frame.size().width(), GL_BGRA,
+  glReadPixels(0, 0, frame.size().width(), frame.size().height(), GL_BGRA,
                GL_UNSIGNED_BYTE, 0);
   GLubyte* ptr = static_cast<GLubyte*>(
       glMapBufferARB(GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY_ARB));
