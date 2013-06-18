@@ -211,7 +211,9 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   }
   config_->g_lag_in_frames = 0;  // 0- no frame lagging
 
-  if (codec_.width * codec_.height > 640 * 480 && number_of_cores >= 2) {
+  if (codec_.width * codec_.height > 1280 * 960 && number_of_cores >= 6) {
+    config_->g_threads = 3;  // 3 threads for 1080p.
+  } else if (codec_.width * codec_.height > 640 * 480 && number_of_cores >= 3) {
     config_->g_threads = 2;  // 2 threads for qHD/HD.
   } else {
     config_->g_threads = 1;  // 1 thread for VGA or less
