@@ -113,6 +113,11 @@ deps_os = {
       From("chromium_deps", "src/third_party/gold"),
   },
   "android": {
+    # Precompiled tools needed for Android test execution. Needed since we can't
+    # compile them from source in WebRTC since they depend on Chromium's base.
+    "tools/android":
+      (Var("googlecode_url") % "webrtc") + "/deps/tools/android@4235",
+
     "third_party/android_tools":
       From("chromium_deps", "src/third_party/android_tools"),
 

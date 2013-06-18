@@ -66,6 +66,7 @@
 /third_party/winsdk_samples/src
 /third_party/yasm
 /third_party/WebKit/Tools/Scripts
+/tools/android
 /tools/clang
 /tools/grit
 /tools/gritsettings

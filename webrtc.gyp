@@ -36,6 +36,11 @@
             'tools/e2e_quality/e2e_quality.gyp:*',
           ],
         }],
+        ['OS=="android"', {
+          'dependencies': [
+            'tools/android/android_tools_precompiled.gyp:*',
+          ],
+        }],
       ],
     },
   ],
