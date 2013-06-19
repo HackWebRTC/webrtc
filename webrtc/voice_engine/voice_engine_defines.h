@@ -315,8 +315,6 @@ inline int VoEChannelId(int moduleId)
   // Always excluded for Android builds
   #undef WEBRTC_CODEC_ISAC
   #undef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
-  #undef WEBRTC_CONFERENCING
-  #undef WEBRTC_TYPING_DETECTION
 
   #define ANDROID_NOT_SUPPORTED(stat) NOT_SUPPORTED(stat)
 
