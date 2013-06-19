@@ -160,8 +160,9 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
       EXPECT_STRCASEEQ(sendCName, remoteCName);
     }
 
+
     //
-    // RTX
+    // Pacing
     //
     unsigned short recFractionsLost = 0;
     unsigned int recCumulativeLost = 0;
@@ -173,6 +174,48 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     unsigned int sentFecBitrate = 0;
     unsigned int sentNackBitrate = 0;
 
+    ViETest::Log("Testing Pacing\n");
+    EXPECT_EQ(0, ViE.base->StopSend(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.base->StopReceive(tbChannel.videoChannel));
+
+    myTransport.ClearStats();
+
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetNACKStatus(tbChannel.videoChannel, true));
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetTransmissionSmoothingStatus(
+        tbChannel.videoChannel, true));
+    EXPECT_EQ(0, ViE.base->StartReceive(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.base->StartSend(tbChannel.videoChannel));
+
+    NetworkParameters network;
+    network.packet_loss_rate = 0;
+    network.loss_model = kUniformLoss;
+    myTransport.SetNetworkParameters(network);
+
+    AutoTestSleep(kAutoTestSleepTimeMs);
+
+    EXPECT_EQ(0, ViE.rtp_rtcp->GetReceivedRTCPStatistics(
+        tbChannel.videoChannel, recFractionsLost, recCumulativeLost,
+        recExtendedMax, recJitter, recRttMs));
+    EXPECT_EQ(0, ViE.rtp_rtcp->GetBandwidthUsage(
+        tbChannel.videoChannel, sentTotalBitrate, sentVideoBitrate,
+        sentFecBitrate, sentNackBitrate));
+
+    int num_rtp_packets = 0;
+    int num_dropped_packets = 0;
+    int num_rtcp_packets = 0;
+    std::map<uint8_t, int> packet_counters;
+    myTransport.GetStats(num_rtp_packets, num_dropped_packets, num_rtcp_packets,
+                         &packet_counters);
+    EXPECT_GT(num_rtp_packets, 0);
+    EXPECT_EQ(num_dropped_packets, 0);
+    EXPECT_GT(num_rtcp_packets, 0);
+    EXPECT_GT(sentTotalBitrate, 0u);
+    EXPECT_EQ(sentNackBitrate, 0u);
+    EXPECT_EQ(recCumulativeLost, 0u);
+
+    //
+    // RTX
+    //
     ViETest::Log("Testing NACK over RTX\n");
     EXPECT_EQ(0, ViE.base->StopSend(tbChannel.videoChannel));
     EXPECT_EQ(0, ViE.base->StopReceive(tbChannel.videoChannel));
@@ -180,6 +223,8 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     myTransport.ClearStats();
 
     const uint8_t kRtxPayloadType = 96;
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetTransmissionSmoothingStatus(
+        tbChannel.videoChannel, false));
     EXPECT_EQ(0, ViE.rtp_rtcp->SetNACKStatus(tbChannel.videoChannel, true));
     EXPECT_EQ(0, ViE.rtp_rtcp->SetRtxSendPayloadType(tbChannel.videoChannel,
                                                      kRtxPayloadType));
@@ -198,7 +243,6 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     // Make sure the first key frame gets through.
     AutoTestSleep(100);
     const int kPacketLossRate = 20;
-    NetworkParameters network;
     network.packet_loss_rate = kPacketLossRate;
     network.loss_model = kUniformLoss;
     myTransport.SetNetworkParameters(network);
@@ -211,10 +255,7 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
         tbChannel.videoChannel, sentTotalBitrate, sentVideoBitrate,
         sentFecBitrate, sentNackBitrate));
 
-    int num_rtp_packets = 0;
-    int num_dropped_packets = 0;
-    int num_rtcp_packets = 0;
-    std::map<uint8_t, int> packet_counters;
+    packet_counters.clear();
     myTransport.GetStats(num_rtp_packets, num_dropped_packets, num_rtcp_packets,
                          &packet_counters);
     EXPECT_GT(num_rtp_packets, 0);

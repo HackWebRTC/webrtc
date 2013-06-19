@@ -361,7 +361,8 @@ int32_t RTPSenderVideo::SendGeneric(const FrameType frame_type,
 
     // MarkerBit is 1 on final packet (bytes_to_send == 0)
     if (_rtpSender.BuildRTPheader(buffer, payload_type, size == 0,
-                                  capture_timestamp) != rtp_header_length) {
+                                  capture_timestamp,
+                                  capture_time_ms) != rtp_header_length) {
       return -1;
     }
 
@@ -465,7 +466,7 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
         // Write RTP header.
         // Set marker bit true if this is the last packet in frame.
         _rtpSender.BuildRTPheader(dataBuffer, payloadType, last,
-            captureTimeStamp);
+            captureTimeStamp, capture_time_ms);
         if (-1 == SendVideoPacket(dataBuffer, payloadBytesInPacket,
                                   rtpHeaderLength, captureTimeStamp,
                                   capture_time_ms, storage, protect))

@@ -353,12 +353,14 @@ int32_t RTPSenderAudio::SendAudio(
     // we need to get the current timestamp to calc the diff
     uint32_t oldTimeStamp = _rtpSender->Timestamp();
     rtpHeaderLength = _rtpSender->BuildRTPheader(dataBuffer, _REDPayloadType,
-                                                 markerBit, captureTimeStamp);
+                                                 markerBit, captureTimeStamp,
+                                                 _clock->TimeInMilliseconds());
 
     timestampOffset = uint16_t(_rtpSender->Timestamp() - oldTimeStamp);
   } else {
     rtpHeaderLength = _rtpSender->BuildRTPheader(dataBuffer, payloadType,
-                                                 markerBit, captureTimeStamp);
+                                                 markerBit, captureTimeStamp,
+                                                 _clock->TimeInMilliseconds());
   }
   if (rtpHeaderLength <= 0) {
     return -1;
@@ -583,7 +585,8 @@ RTPSenderAudio::SendTelephoneEventPacket(const bool ended,
         _sendAudioCritsect->Enter();
 
         //Send DTMF data
-        _rtpSender->BuildRTPheader(dtmfbuffer, _dtmfPayloadType, markerBit, dtmfTimeStamp);
+        _rtpSender->BuildRTPheader(dtmfbuffer, _dtmfPayloadType, markerBit,
+                                   dtmfTimeStamp, _clock->TimeInMilliseconds());
 
         // reset CSRC and X bit
         dtmfbuffer[0] &= 0xe0;

@@ -44,6 +44,7 @@ class RTPSenderInterface {
   virtual int32_t BuildRTPheader(
       uint8_t *data_buffer, const int8_t payload_type,
       const bool marker_bit, const uint32_t capture_time_stamp,
+      int64_t capture_time_ms,
       const bool time_stamp_provided = true,
       const bool inc_sequence_number = true) = 0;
 
@@ -132,8 +133,9 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
       const RTPVideoTypeHeader * rtp_type_hdr = NULL);
 
   int BuildPaddingPacket(uint8_t* packet, int header_length, int32_t bytes);
-  int SendPadData(int payload_type, int64_t capture_time_ms, int32_t bytes,
-                  StorageType store, bool force_full_size_packets);
+  int SendPadData(int payload_type, uint32_t timestamp, int64_t capture_time_ms,
+                  int32_t bytes, StorageType store,
+                  bool force_full_size_packets);
   // RTP header extension
   int32_t SetTransmissionTimeOffset(
       const int32_t transmission_time_offset);
@@ -192,6 +194,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   virtual int32_t BuildRTPheader(
       uint8_t *data_buffer, const int8_t payload_type,
       const bool marker_bit, const uint32_t capture_time_stamp,
+      int64_t capture_time_ms,
       const bool time_stamp_provided = true,
       const bool inc_sequence_number = true);
 
@@ -324,6 +327,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   uint32_t ssrc_;
   uint32_t timestamp_;
   int64_t capture_time_ms_;
+  bool last_packet_marker_bit_;
   uint8_t num_csrcs_;
   uint32_t csrcs_[kRtpCsrcSize];
   bool include_csrcs_;

@@ -165,7 +165,8 @@ TEST_F(RtpSenderTest, BuildRTPPacket) {
   int32_t length = rtp_sender_->BuildRTPheader(packet_,
                                                kPayload,
                                                kMarkerBit,
-                                               kTimestamp);
+                                               kTimestamp,
+                                               0);
   EXPECT_EQ(12, length);
 
   // Verify
@@ -193,7 +194,8 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithTransmissionOffsetExtension) {
   int32_t length = rtp_sender_->BuildRTPheader(packet_,
                                                kPayload,
                                                kMarkerBit,
-                                               kTimestamp);
+                                               kTimestamp,
+                                               0);
   EXPECT_EQ(12 + rtp_sender_->RtpHeaderExtensionTotalLength(), length);
 
   // Verify
@@ -230,7 +232,8 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithNegativeTransmissionOffsetExtension) {
   int32_t length = rtp_sender_->BuildRTPheader(packet_,
                                                kPayload,
                                                kMarkerBit,
-                                               kTimestamp);
+                                               kTimestamp,
+                                               0);
   EXPECT_EQ(12 + rtp_sender_->RtpHeaderExtensionTotalLength(), length);
 
   // Verify
@@ -257,7 +260,8 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithAbsoluteSendTimeExtension) {
   int32_t length = rtp_sender_->BuildRTPheader(packet_,
                                                kPayload,
                                                kMarkerBit,
-                                               kTimestamp);
+                                               kTimestamp,
+                                               0);
   EXPECT_EQ(12 + rtp_sender_->RtpHeaderExtensionTotalLength(), length);
 
   // Verify
@@ -295,7 +299,8 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithHeaderExtensions) {
   int32_t length = rtp_sender_->BuildRTPheader(packet_,
                                                kPayload,
                                                kMarkerBit,
-                                               kTimestamp);
+                                               kTimestamp,
+                                               0);
   EXPECT_EQ(12 + rtp_sender_->RtpHeaderExtensionTotalLength(), length);
 
   // Verify
@@ -337,12 +342,12 @@ TEST_F(RtpSenderTest, TrafficSmoothingWithExtensions) {
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
       kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId));
   rtp_sender_->SetTargetSendBitrate(300000);
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   int32_t rtp_length = rtp_sender_->BuildRTPheader(packet_,
                                                    kPayload,
                                                    kMarkerBit,
-                                                   kTimestamp);
-
-  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
+                                                   kTimestamp,
+                                                   capture_time_ms);
 
   // Packet should be stored in a send bucket.
   EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_,
@@ -391,12 +396,12 @@ TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
       kRtpExtensionAbsoluteSendTime, kAbsoluteSendTimeExtensionId));
   rtp_sender_->SetTargetSendBitrate(300000);
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   int32_t rtp_length = rtp_sender_->BuildRTPheader(packet_,
                                                    kPayload,
                                                    kMarkerBit,
-                                                   kTimestamp);
-
-  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
+                                                   kTimestamp,
+                                                   capture_time_ms);
 
   // Packet should be stored in a send bucket.
   EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_,
@@ -521,7 +526,8 @@ TEST_F(RtpSenderAudioTest, BuildRTPPacketWithAudioLevelExtension) {
   int32_t length = rtp_sender_->BuildRTPheader(packet_,
                                                kAudioPayload,
                                                kMarkerBit,
-                                               kTimestamp);
+                                               kTimestamp,
+                                               0);
   EXPECT_EQ(12 + rtp_sender_->RtpHeaderExtensionTotalLength(), length);
 
   // Currently, no space is added by for header extension by BuildRTPHeader().

@@ -980,7 +980,7 @@ void ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
   bool no_child_modules = false;
   {
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-    no_child_modules = !child_modules_.empty();
+    no_child_modules = child_modules_.empty();
   }
   if (no_child_modules) {
     // Don't send from default module.

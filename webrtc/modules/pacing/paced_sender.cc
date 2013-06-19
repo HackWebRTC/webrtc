@@ -181,29 +181,11 @@ bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
   if (capture_time_ms < 0) {
     capture_time_ms = TickTime::MillisecondTimestamp();
   }
-  if (paused_) {
-    // Queue all packets when we are paused.
-    switch (priority) {
-      case kHighPriority:
-        high_priority_packets_->push_back(paced_sender::Packet(ssrc,
-                                                               sequence_number,
-                                                               capture_time_ms,
-                                                               bytes));
-        break;
-      case kNormalPriority:
-        if (capture_time_ms > capture_time_ms_last_queued_) {
-          capture_time_ms_last_queued_ = capture_time_ms;
-          TRACE_EVENT_ASYNC_BEGIN1("webrtc_rtp", "PacedSend", capture_time_ms,
-                                   "capture_time_ms", capture_time_ms);
-        }
-      case kLowPriority:
-        // Queue the low priority packets in the normal priority queue when we
-        // are paused to avoid starvation.
-        normal_priority_packets_->push_back(paced_sender::Packet(
-            ssrc, sequence_number, capture_time_ms, bytes));
-        break;
-    }
-    return false;
+  if (paused_ && priority == kNormalPriority &&
+      capture_time_ms > capture_time_ms_last_queued_) {
+    capture_time_ms_last_queued_ = capture_time_ms;
+    TRACE_EVENT_ASYNC_BEGIN1("webrtc_rtp", "PacedSend", capture_time_ms,
+                             "capture_time_ms", capture_time_ms);
   }
   paced_sender::PacketList* packet_list = NULL;
   switch (priority) {
@@ -216,11 +198,6 @@ bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
     case kLowPriority:
       packet_list = low_priority_packets_.get();
       break;
-  }
-  if (packet_list->empty() &&
-      media_budget_->bytes_remaining() > 0) {
-    UpdateMediaBytesSent(bytes);
-    return true;  // We can send now.
   }
   packet_list->push_back(paced_sender::Packet(ssrc, sequence_number,
                                               capture_time_ms, bytes));
@@ -267,9 +244,11 @@ int32_t PacedSender::Process() {
   CriticalSectionScoped cs(critsect_.get());
   int elapsed_time_ms = (now - time_last_update_).Milliseconds();
   time_last_update_ = now;
-  if (!paused_ && elapsed_time_ms > 0) {
-    uint32_t delta_time_ms = std::min(kMaxIntervalTimeMs, elapsed_time_ms);
-    UpdateBytesPerInterval(delta_time_ms);
+  if (!paused_) {
+    if (elapsed_time_ms > 0) {
+      uint32_t delta_time_ms = std::min(kMaxIntervalTimeMs, elapsed_time_ms);
+      UpdateBytesPerInterval(delta_time_ms);
+    }
     uint32_t ssrc;
     uint16_t sequence_number;
     int64_t capture_time_ms;
