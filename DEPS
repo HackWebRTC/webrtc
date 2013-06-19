@@ -118,6 +118,9 @@ deps_os = {
     "tools/android":
       (Var("googlecode_url") % "webrtc") + "/deps/tools/android@4235",
 
+    "tools/android-dummy-test":
+      (Var("googlecode_url") % "webrtc") + "/deps/tools/android-dummy-test@4244",
+
     "third_party/android_tools":
       From("chromium_deps", "src/third_party/android_tools"),
 

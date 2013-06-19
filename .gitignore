@@ -67,6 +67,7 @@
 /third_party/yasm
 /third_party/WebKit/Tools/Scripts
 /tools/android
+/tools/android-dummy-test
 /tools/clang
 /tools/grit
 /tools/gritsettings
