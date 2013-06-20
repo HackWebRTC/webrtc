@@ -486,7 +486,7 @@ class RtpRtcp : public Module {
         const RTPFragmentationHeader* fragmentation = NULL,
         const RTPVideoHeader* rtpVideoHdr = NULL) = 0;
 
-    virtual void TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
+    virtual bool TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
                                   int64_t capture_time_ms) = 0;
 
     virtual int TimeToSendPadding(int bytes) = 0;

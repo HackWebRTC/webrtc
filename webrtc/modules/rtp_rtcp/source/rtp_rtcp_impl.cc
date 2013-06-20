@@ -967,7 +967,7 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
   return ret_val;
 }
 
-void ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
+bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
                                          uint16_t sequence_number,
                                          int64_t capture_time_ms) {
   WEBRTC_TRACE(
@@ -985,19 +985,21 @@ void ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
   if (no_child_modules) {
     // Don't send from default module.
     if (SendingMedia() && ssrc == rtp_sender_.SSRC()) {
-      rtp_sender_.TimeToSendPacket(sequence_number, capture_time_ms);
+      return rtp_sender_.TimeToSendPacket(sequence_number, capture_time_ms);
     }
   } else {
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
     std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
     while (it != child_modules_.end()) {
       if ((*it)->SendingMedia() && ssrc == (*it)->rtp_sender_.SSRC()) {
-        (*it)->rtp_sender_.TimeToSendPacket(sequence_number, capture_time_ms);
-        return;
+        return (*it)->rtp_sender_.TimeToSendPacket(sequence_number,
+                                                   capture_time_ms);
       }
       ++it;
     }
   }
+  // No RTP sender is interested in sending this packet.
+  return true;
 }
 
 int ModuleRtpRtcpImpl::TimeToSendPadding(int bytes) {

@@ -181,7 +181,7 @@ bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
   if (capture_time_ms < 0) {
     capture_time_ms = TickTime::MillisecondTimestamp();
   }
-  if (paused_ && priority == kNormalPriority &&
+  if (priority != kHighPriority &&
       capture_time_ms > capture_time_ms_last_queued_) {
     capture_time_ms_last_queued_ = capture_time_ms;
     TRACE_EVENT_ASYNC_BEGIN1("webrtc_rtp", "PacedSend", capture_time_ms,
@@ -252,11 +252,25 @@ int32_t PacedSender::Process() {
     uint32_t ssrc;
     uint16_t sequence_number;
     int64_t capture_time_ms;
-    Priority priority;
-    bool last_packet;
-    while (GetNextPacket(&ssrc, &sequence_number, &capture_time_ms,
-                         &priority, &last_packet)) {
-      if (priority == kNormalPriority) {
+    paced_sender::PacketList* packet_list;
+    while (ShouldSendNextPacket(&packet_list)) {
+      GetNextPacketFromList(packet_list, &ssrc, &sequence_number,
+                            &capture_time_ms);
+      critsect_->Leave();
+
+      const bool success = callback_->TimeToSendPacket(ssrc, sequence_number,
+                                                       capture_time_ms);
+      // If packet cannt be sent then keep it in packet list and exit early.
+      // There's no need to send more packets.
+      if (!success) {
+        return 0;
+      }
+
+      critsect_->Enter();
+      packet_list->pop_front();
+      const bool last_packet = packet_list->empty() ||
+          packet_list->front().capture_time_ms_ > capture_time_ms;
+      if (packet_list != high_priority_packets_.get()) {
         if (capture_time_ms > capture_time_ms_last_sent_) {
           capture_time_ms_last_sent_ = capture_time_ms;
         } else if (capture_time_ms == capture_time_ms_last_sent_ &&
@@ -264,9 +278,6 @@ int32_t PacedSender::Process() {
           TRACE_EVENT_ASYNC_END0("webrtc_rtp", "PacedSend", capture_time_ms);
         }
       }
-      critsect_->Leave();
-      callback_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms);
-      critsect_->Enter();
     }
     if (high_priority_packets_->empty() &&
         normal_priority_packets_->empty() &&
@@ -295,61 +306,45 @@ void PacedSender::UpdateBytesPerInterval(uint32_t delta_time_ms) {
 }
 
 // MUST have critsect_ when calling.
-bool PacedSender::GetNextPacket(uint32_t* ssrc, uint16_t* sequence_number,
-                                int64_t* capture_time_ms, Priority* priority,
-                                bool* last_packet) {
+bool PacedSender::ShouldSendNextPacket(paced_sender::PacketList** packet_list) {
   if (media_budget_->bytes_remaining() <= 0) {
     // All bytes consumed for this interval.
     // Check if we have not sent in a too long time.
     if ((TickTime::Now() - time_last_send_).Milliseconds() >
         kMaxQueueTimeWithoutSendingMs) {
       if (!high_priority_packets_->empty()) {
-        *priority = kHighPriority;
-        GetNextPacketFromList(high_priority_packets_.get(), ssrc,
-                              sequence_number, capture_time_ms, last_packet);
+        *packet_list = high_priority_packets_.get();
         return true;
       }
       if (!normal_priority_packets_->empty()) {
-        *priority = kNormalPriority;
-        GetNextPacketFromList(normal_priority_packets_.get(), ssrc,
-                              sequence_number, capture_time_ms, last_packet);
+        *packet_list = normal_priority_packets_.get();
         return true;
       }
     }
     return false;
   }
   if (!high_priority_packets_->empty()) {
-    *priority = kHighPriority;
-    GetNextPacketFromList(high_priority_packets_.get(), ssrc, sequence_number,
-                          capture_time_ms, last_packet);
+    *packet_list = high_priority_packets_.get();
     return true;
   }
   if (!normal_priority_packets_->empty()) {
-    *priority = kNormalPriority;
-    GetNextPacketFromList(normal_priority_packets_.get(), ssrc,
-                          sequence_number, capture_time_ms, last_packet);
+    *packet_list = normal_priority_packets_.get();
     return true;
   }
   if (!low_priority_packets_->empty()) {
-    *priority = kLowPriority;
-    GetNextPacketFromList(low_priority_packets_.get(), ssrc, sequence_number,
-                          capture_time_ms, last_packet);
+    *packet_list = low_priority_packets_.get();
     return true;
   }
   return false;
 }
 
 void PacedSender::GetNextPacketFromList(paced_sender::PacketList* packets,
-    uint32_t* ssrc, uint16_t* sequence_number, int64_t* capture_time_ms,
-    bool* last_packet) {
+    uint32_t* ssrc, uint16_t* sequence_number, int64_t* capture_time_ms) {
   paced_sender::Packet packet = packets->front();
   UpdateMediaBytesSent(packet.bytes_);
   *sequence_number = packet.sequence_number_;
   *ssrc = packet.ssrc_;
   *capture_time_ms = packet.capture_time_ms_;
-  packets->pop_front();
-  *last_packet = packets->empty() ||
-      packets->front().capture_time_ms_ > *capture_time_ms;
 }
 
 // MUST have critsect_ when calling.

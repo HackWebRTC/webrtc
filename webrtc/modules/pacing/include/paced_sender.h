@@ -42,7 +42,8 @@ class PacedSender : public Module {
     // Note: packets sent as a result of a callback should not pass by this
     // module again.
     // Called when it's time to send a queued packet.
-    virtual void TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
+    // Returns false if packet cannot be sent.
+    virtual bool TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
                                   int64_t capture_time_ms) = 0;
     // Called when it's a good time to send a padding data.
     virtual int TimeToSendPadding(int bytes) = 0;
@@ -90,15 +91,13 @@ class PacedSender : public Module {
   virtual int32_t Process();
 
  private:
-  // Checks if next packet in line can be transmitted. Returns true on success.
-  bool GetNextPacket(uint32_t* ssrc, uint16_t* sequence_number,
-                     int64_t* capture_time_ms, Priority* priority,
-                     bool* last_packet);
+  // Return true if next packet in line should be transmitted.
+  // Return packet list that contains the next packet.
+  bool ShouldSendNextPacket(paced_sender::PacketList** packet_list);
 
   // Local helper function to GetNextPacket.
   void GetNextPacketFromList(paced_sender::PacketList* packets,
-      uint32_t* ssrc, uint16_t* sequence_number, int64_t* capture_time_ms,
-      bool* last_packet);
+      uint32_t* ssrc, uint16_t* sequence_number, int64_t* capture_time_ms);
 
   // Updates the number of bytes that can be sent for the next time interval.
   void UpdateBytesPerInterval(uint32_t delta_time_in_ms);

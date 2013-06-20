@@ -173,7 +173,7 @@ class ViEEncoder
                         const uint32_t round_trip_time_ms);
 
   // Called by PacedSender.
-  void TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
+  bool TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
                         int64_t capture_time_ms);
   int TimeToSendPadding(int bytes);
 

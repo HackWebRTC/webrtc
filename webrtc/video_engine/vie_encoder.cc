@@ -88,9 +88,9 @@ class ViEPacedSenderCallback : public PacedSender::Callback {
   explicit ViEPacedSenderCallback(ViEEncoder* owner)
       : owner_(owner) {
   }
-  virtual void TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
+  virtual bool TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
                                 int64_t capture_time_ms) {
-    owner_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms);
+    return owner_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms);
   }
   virtual int TimeToSendPadding(int bytes) {
     return owner_->TimeToSendPadding(bytes);
@@ -482,9 +482,10 @@ int32_t ViEEncoder::ScaleInputImage(bool enable) {
   return 0;
 }
 
-void ViEEncoder::TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
+bool ViEEncoder::TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
                                   int64_t capture_time_ms) {
-  default_rtp_rtcp_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms);
+  return default_rtp_rtcp_->TimeToSendPacket(ssrc, sequence_number,
+                                             capture_time_ms);
 }
 
 int ViEEncoder::TimeToSendPadding(int bytes) {

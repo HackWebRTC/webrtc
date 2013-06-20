@@ -701,7 +701,7 @@ void RTPSender::UpdateNACKBitRate(const uint32_t bytes,
 }
 
 // Called from pacer when we can send the packet.
-void RTPSender::TimeToSendPacket(uint16_t sequence_number,
+bool RTPSender::TimeToSendPacket(uint16_t sequence_number,
                                  int64_t capture_time_ms) {
   StorageType type;
   uint16_t length = IP_PACKET_SIZE;
@@ -709,11 +709,13 @@ void RTPSender::TimeToSendPacket(uint16_t sequence_number,
   int64_t stored_time_ms;
 
   if (packet_history_ == NULL) {
-    return;
+    // Packet cannot be found. Allow sending to continue.
+    return true;
   }
   if (!packet_history_->GetRTPPacket(sequence_number, 0, data_buffer, &length,
                                      &stored_time_ms, &type)) {
-    return;
+    // Packet cannot be found. Allow sending to continue.
+    return true;
   }
   assert(length > 0);
 
@@ -736,7 +738,7 @@ void RTPSender::TimeToSendPacket(uint16_t sequence_number,
                                       rtp_header.sequenceNumber,
                                       rtp_header.headerLength);
   }
-  SendPacketToNetwork(data_buffer, length);
+  return SendPacketToNetwork(data_buffer, length);
 }
 
 int RTPSender::TimeToSendPadding(int bytes) {

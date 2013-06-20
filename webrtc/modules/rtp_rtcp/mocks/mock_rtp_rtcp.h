@@ -156,7 +156,7 @@ class MockRtpRtcp : public RtpRtcp {
               const RTPFragmentationHeader* fragmentation,
               const RTPVideoHeader* rtpVideoHdr));
   MOCK_METHOD3(TimeToSendPacket,
-      void(uint32_t ssrc, uint16_t sequence_number, int64_t capture_time_ms));
+      bool(uint32_t ssrc, uint16_t sequence_number, int64_t capture_time_ms));
   MOCK_METHOD1(TimeToSendPadding,
       int(int bytes));
   MOCK_METHOD3(RegisterRtcpObservers,
