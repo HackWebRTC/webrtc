@@ -842,11 +842,6 @@ void VCMJitterBuffer::FindAndInsertContinuousFrames(
   }
 }
 
-void VCMJitterBuffer::SetMaxJitterEstimate(bool enable) {
-  CriticalSectionScoped cs(crit_sect_);
-  jitter_estimate_.SetMaxJitterEstimate(enable);
-}
-
 uint32_t VCMJitterBuffer::EstimatedJitterMs() {
   CriticalSectionScoped cs(crit_sect_);
   // Compute RTT multiplier for estimation.

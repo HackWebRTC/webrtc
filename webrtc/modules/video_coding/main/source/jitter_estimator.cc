@@ -33,10 +33,7 @@ _numStdDevFrameSizeOutlier(3),
 _noiseStdDevs(2.33), // ~Less than 1% chance
                      // (look up in normal distribution table)...
 _noiseStdDevOffset(30.0), // ...of getting 30 ms freezes
-_rttFilter(vcmId, receiverId),
-_jitterEstimateMode(kLastEstimate),
-_maxJitterEstimateMs(0)
-{
+_rttFilter(vcmId, receiverId) {
     Reset();
 }
 
@@ -64,8 +61,6 @@ VCMJitterEstimator::operator=(const VCMJitterEstimator& rhs)
         _startupCount = rhs._startupCount;
         _latestNackTimestamp = rhs._latestNackTimestamp;
         _nackCount = rhs._nackCount;
-        _jitterEstimateMode = rhs._jitterEstimateMode;
-        _maxJitterEstimateMs = rhs._maxJitterEstimateMs;
         _rttFilter = rhs._rttFilter;
     }
     return *this;
@@ -405,15 +400,6 @@ VCMJitterEstimator::UpdateMaxFrameSize(uint32_t frameSizeBytes)
     }
 }
 
-void VCMJitterEstimator::SetMaxJitterEstimate(bool enable)
-{
-    if (enable) {
-        _jitterEstimateMode = kMaxEstimate;
-    } else {
-        _jitterEstimateMode = kLastEstimate;
-    }
-}
-
 // Returns the current filtered estimate if available,
 // otherwise tries to calculate an estimate.
 int
@@ -428,13 +414,7 @@ VCMJitterEstimator::GetJitterEstimate(double rttMultiplier)
     {
         jitterMS += _rttFilter.RttMs() * rttMultiplier;
     }
-    int jitterMsInt = static_cast<uint32_t>(jitterMS + 0.5);
-    if (_jitterEstimateMode == kLastEstimate) {
-        return jitterMsInt;
-    } else {
-        _maxJitterEstimateMs = VCM_MAX(_maxJitterEstimateMs, jitterMsInt);
-        return _maxJitterEstimateMs;
-    }
+    return static_cast<uint32_t>(jitterMS + 0.5);
 }
 
 }

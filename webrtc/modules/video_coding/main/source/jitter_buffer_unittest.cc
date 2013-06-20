@@ -1384,26 +1384,6 @@ TEST_F(TestRunningJitterBuffer, EmptyPackets) {
   EXPECT_FALSE(request_key_frame);
 }
 
-TEST_F(TestRunningJitterBuffer, JitterEstimateMode) {
-  bool request_key_frame = false;
-  // Default value (should be in kLastEstimate mode).
-  InsertFrame(kVideoFrameKey);
-  EXPECT_FALSE(request_key_frame);
-  InsertFrame(kVideoFrameDelta);
-  EXPECT_FALSE(request_key_frame);
-  EXPECT_GT(20u, jitter_buffer_->EstimatedJitterMs());
-  jitter_buffer_->SetMaxJitterEstimate(true);
-  InsertFrame(kVideoFrameDelta);
-  EXPECT_FALSE(request_key_frame);
-  // Jitter cannot decrease.
-  InsertFrames(2, kVideoFrameDelta);
-  EXPECT_FALSE(request_key_frame);
-  uint32_t je1 = jitter_buffer_->EstimatedJitterMs();
-  InsertFrames(2, kVideoFrameDelta);
-  EXPECT_FALSE(request_key_frame);
-  EXPECT_GE(je1, jitter_buffer_->EstimatedJitterMs());
-}
-
 TEST_F(TestRunningJitterBuffer, StatisticsTest) {
   uint32_t num_delta_frames = 0;
   uint32_t num_key_frames = 0;
