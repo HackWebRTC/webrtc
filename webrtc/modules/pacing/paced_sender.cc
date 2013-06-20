@@ -260,13 +260,12 @@ int32_t PacedSender::Process() {
 
       const bool success = callback_->TimeToSendPacket(ssrc, sequence_number,
                                                        capture_time_ms);
+      critsect_->Enter();
       // If packet cannt be sent then keep it in packet list and exit early.
       // There's no need to send more packets.
       if (!success) {
         return 0;
       }
-
-      critsect_->Enter();
       packet_list->pop_front();
       const bool last_packet = packet_list->empty() ||
           packet_list->front().capture_time_ms_ > capture_time_ms;
