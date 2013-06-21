@@ -721,7 +721,14 @@ void ScreenCapturerMac::ScreenConfigurationChanged() {
   LOG(LS_INFO) << "Using GlBlit";
 
   CGLPixelFormatAttribute attributes[] = {
+    // This function does an early return if IsOSLionOrLater(), this code only
+    // runs on 10.6 and can be deleted once 10.6 support is dropped.  So just
+    // keep using kCGLPFAFullScreen even though it was deprecated in 10.6 --
+    // it's still functional there, and it's not used on newer OS X versions.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     kCGLPFAFullScreen,
+#pragma clang diagnostic pop
     kCGLPFADisplayMask,
     (CGLPixelFormatAttribute)CGDisplayIDToOpenGLDisplayMask(mainDevice),
     (CGLPixelFormatAttribute)0
