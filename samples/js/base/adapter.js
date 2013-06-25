@@ -18,6 +18,9 @@ if (navigator.mozGetUserMedia) {
 
   webrtcDetectedBrowser = "firefox";
 
+  webrtcDetectedVersion =
+                  parseInt(navigator.userAgent.match(/Firefox\/([0-9]+)\./)[1]);
+
   // The RTCPeerConnection object.
   RTCPeerConnection = mozRTCPeerConnection;
 
@@ -31,11 +34,23 @@ if (navigator.mozGetUserMedia) {
   // Code from Adam Barth.
   getUserMedia = navigator.mozGetUserMedia.bind(navigator);
 
-  // Creates Turn Uri with new turn format.
-  createIceServer = function(turn_url, username, password) {
-    var iceServer = { 'url': turn_url,
-                      'credential': password,
-                      'username': username };
+  // Creates iceServer from the url for FF.
+  createIceServer = function(url, username, password) {
+    var iceServer = null;
+    var url_parts = url.split(':');
+    if (url_parts[0].indexOf('stun') === 0) {
+      // Create iceServer with stun url.
+      iceServer = { 'url': url };
+    } else if (url_parts[0].indexOf('turn') === 0 &&
+               (url.indexOf('transport=udp') !== -1 ||
+                url.indexOf('?transport') === -1)) {
+      // Create iceServer with turn url.
+      // Ignore the transport parameter from TURN url.
+      var turn_url_parts = url.split("?");
+      iceServer = { 'url': turn_url_parts[0],
+                    'credential': password,
+                    'username': username };
+    }
     return iceServer;
   };
 
@@ -67,21 +82,28 @@ if (navigator.mozGetUserMedia) {
   webrtcDetectedVersion =
              parseInt(navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]);
 
-  // For pre-M28 chrome versions use old turn format, else use the new format.
-  if (webrtcDetectedVersion < 28) {
-    createIceServer = function(turn_url, username, password) {
-      var iceServer = { 'url': 'turn:' + username + '@' + turn_url,
-                        'credential': password };
-      return iceServer;
-    };
-  } else {
-    createIceServer = function(turn_url, username, password) {
-      var iceServer = { 'url': turn_url,
-                        'credential': password,
-                        'username': username };
-      return iceServer;
-    };
-  }
+  // Creates iceServer from the url for Chrome.
+  createIceServer = function(url, username, password) {
+    var iceServer = null;
+    var url_parts = url.split(':');
+    if (url_parts[0].indexOf('stun') === 0) {
+      // Create iceServer with stun url.
+      iceServer = { 'url': url };
+    } else if (url_parts[0].indexOf('turn') === 0) {
+      if (webrtcDetectedVersion < 28) {
+        // For pre-M28 chrome versions use old TURN format.
+        var url_turn_parts = url.split("turn:");
+        iceServer = { 'url': 'turn:' + username + '@' + url_turn_parts[1],
+                      'credential': password };
+      } else {
+        // For Chrome M28 & above use new TURN format.
+        iceServer = { 'url': url,
+                      'credential': password,
+                      'username': username };
+      }
+    }
+    return iceServer;
+  };
 
   // The RTCPeerConnection object.
   RTCPeerConnection = webkitRTCPeerConnection;
