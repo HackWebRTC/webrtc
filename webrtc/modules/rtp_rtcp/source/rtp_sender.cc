@@ -459,7 +459,7 @@ int RTPSender::SendPadData(int payload_type, uint32_t timestamp,
         bytes = (bytes + 16) & 0xffe0;
       }
     }
-    if (padding_bytes_in_packet < 32) {
+    if (bytes < 32) {
       // Sanity don't send empty packets.
       break;
     }
