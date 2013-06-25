@@ -140,15 +140,6 @@ int32_t ViEReceiver::OnReceivedPayloadData(
   return 0;
 }
 
-void ViEReceiver::OnSendReportReceived(const int32_t id,
-                                       const uint32_t senderSSRC,
-                                       uint32_t ntp_secs,
-                                       uint32_t ntp_frac,
-                                       uint32_t timestamp) {
-  remote_bitrate_estimator_->IncomingRtcp(senderSSRC, ntp_secs, ntp_frac,
-                                          timestamp);
-}
-
 int ViEReceiver::InsertRTPPacket(const int8_t* rtp_packet,
                                  int rtp_packet_length) {
   // TODO(mflodman) Change decrypt to get rid of this cast.

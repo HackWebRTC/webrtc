@@ -27,9 +27,6 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
                                      Clock* clock);
   virtual ~RemoteBitrateEstimatorSingleStream() {}
 
-  virtual void IncomingRtcp(unsigned int ssrc, uint32_t ntp_secs,
-                            uint32_t ntp_frac, uint32_t rtp_timestamp) {}
-
   // Called for each incoming packet. If this is a new SSRC, a new
   // BitrateControl will be created. Updates the incoming payload bitrate
   // estimate and the over-use detector. If an over-use is detected the

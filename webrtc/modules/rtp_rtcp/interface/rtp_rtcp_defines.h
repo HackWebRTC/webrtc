@@ -164,15 +164,6 @@ public:
 
     virtual void OnRTCPPacketTimeout(const int32_t /*id*/)  {};
 
-    // |ntp_secs|, |ntp_frac| and |timestamp| are the NTP time and RTP timestamp
-    // parsed from the RTCP sender report from the sender with ssrc
-    // |senderSSRC|.
-    virtual void OnSendReportReceived(const int32_t id,
-                                      const uint32_t senderSSRC,
-                                      uint32_t ntp_secs,
-                                      uint32_t ntp_frac,
-                                      uint32_t timestamp)  {};
-
     virtual void OnReceiveReportReceived(const int32_t id,
                                          const uint32_t senderSSRC)  {};
 

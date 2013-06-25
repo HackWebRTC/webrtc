@@ -1944,15 +1944,6 @@ void ViEChannel::OnApplicationDataReceived(const int32_t id,
   }
 }
 
-void ViEChannel::OnSendReportReceived(const int32_t id,
-                                      const uint32_t senderSSRC,
-                                      uint32_t ntp_secs,
-                                      uint32_t ntp_frac,
-                                      uint32_t timestamp) {
-  vie_receiver_.OnSendReportReceived(id, senderSSRC, ntp_secs, ntp_frac,
-                                     timestamp);
-}
-
 int32_t ViEChannel::OnInitializeDecoder(
     const int32_t id,
     const int8_t payload_type,

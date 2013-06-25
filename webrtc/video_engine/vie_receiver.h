@@ -61,12 +61,6 @@ class ViEReceiver : public RtpData {
       const uint16_t payload_size,
       const WebRtcRTPHeader* rtp_header);
 
-  void OnSendReportReceived(const int32_t id,
-                            const uint32_t senderSSRC,
-                            uint32_t ntp_secs,
-                            uint32_t ntp_frac,
-                            uint32_t timestamp);
-
   void EstimatedReceiveBandwidth(unsigned int* available_bandwidth) const;
 
  private:

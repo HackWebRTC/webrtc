@@ -202,11 +202,6 @@ class ViEChannel
                                          const uint32_t name,
                                          const uint16_t length,
                                          const uint8_t* data);
-  virtual void OnSendReportReceived(const int32_t id,
-                                    const uint32_t senderSSRC,
-                                    uint32_t ntp_secs,
-                                    uint32_t ntp_frac,
-                                    uint32_t timestamp);
   // Implements RtpFeedback.
   virtual int32_t OnInitializeDecoder(
       const int32_t id,
