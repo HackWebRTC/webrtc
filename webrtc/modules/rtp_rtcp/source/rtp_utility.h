@@ -124,6 +124,7 @@ namespace ModuleRTPUtility
         ~RTPHeaderParser();
 
         bool RTCP() const;
+        bool ParseRtcp(RTPHeader* header) const;
         bool Parse(RTPHeader& parsedPacket,
                    RtpHeaderExtensionMap* ptrExtensionMap = NULL) const;
 
