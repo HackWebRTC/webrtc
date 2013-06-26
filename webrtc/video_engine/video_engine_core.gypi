@@ -50,6 +50,7 @@
         # headers
         'call_stats.h',
         'encoder_state_feedback.h',
+        'overuse_frame_detector.h',
         'stream_synchronization.h',
         'vie_base_impl.h',
         'vie_capture_impl.h',
@@ -83,6 +84,7 @@
         # ViE
         'call_stats.cc',
         'encoder_state_feedback.cc',
+        'overuse_frame_detector.cc',
         'stream_synchronization.cc',
         'vie_base_impl.cc',
         'vie_capture_impl.cc',
@@ -152,6 +154,7 @@
           'sources': [
             'call_stats_unittest.cc',
             'encoder_state_feedback_unittest.cc',
+            'overuse_frame_detector_unittest.cc',
             'stream_synchronization_unittest.cc',
             'vie_remb_unittest.cc',
           ],
