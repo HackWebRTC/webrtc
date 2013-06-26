@@ -1,3 +1,4 @@
+*.DS_Store
 *.Makefile
 *.host.mk
 *.ncb
@@ -25,7 +26,6 @@
 *~
 .*.sw?
 .sw?
-.DS_Store
 .cproject
 .gdb_history
 .gdbinit
