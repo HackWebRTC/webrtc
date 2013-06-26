@@ -386,7 +386,6 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
     libremote_bitrate_estimator \
     librtp_rtcp \
     libmedia_file \
-    libudp_transport \
     libchannel_transport \
     libwebrtc_utility \
     libaudio_conference_mixer \
