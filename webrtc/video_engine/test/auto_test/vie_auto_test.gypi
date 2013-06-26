@@ -69,7 +69,6 @@
         'source/vie_autotest_capture.cc',
         'source/vie_autotest_codec.cc',
         'source/vie_autotest_encryption.cc',
-        'source/vie_autotest_file.cc',
         'source/vie_autotest_image_process.cc',
         'source/vie_autotest_loopback.cc',
         'source/vie_autotest_main.cc',

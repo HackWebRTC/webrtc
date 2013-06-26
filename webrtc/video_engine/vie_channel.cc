@@ -100,7 +100,6 @@ ViEChannel::ViEChannel(int32_t channel_id,
       external_encryption_(NULL),
       effect_filter_(NULL),
       color_enhancement_(false),
-      file_recorder_(channel_id),
       mtu_(0),
       sender_(sender),
       nack_history_size_sender_(kSendSidePacketHistorySize),
@@ -1699,9 +1698,6 @@ int32_t ViEChannel::FrameToRender(
     VideoProcessingModule::ColorEnhancement(&video_frame);
   }
 
-  // Record videoframe.
-  file_recorder_.RecordVideoFrame(video_frame);
-
   uint32_t arr_ofCSRC[kRtpCsrcSize];
   int32_t no_of_csrcs = rtp_rtcp_->RemoteCSRCs(arr_ofCSRC);
   if (no_of_csrcs <= 0) {
@@ -1911,17 +1907,6 @@ int32_t ViEChannel::RegisterEffectFilter(ViEEffectFilter* effect_filter) {
   }
   effect_filter_ = effect_filter;
   return 0;
-}
-
-ViEFileRecorder& ViEChannel::GetIncomingFileRecorder() {
-  // Start getting callback of all frames before they are decoded.
-  vcm_.RegisterFrameStorageCallback(this);
-  return file_recorder_;
-}
-
-void ViEChannel::ReleaseIncomingFileRecorder() {
-  // Stop getting callback of all frames before they are decoded.
-  vcm_.RegisterFrameStorageCallback(NULL);
 }
 
 void ViEChannel::OnApplicationDataReceived(const int32_t id,

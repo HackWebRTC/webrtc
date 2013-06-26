@@ -39,10 +39,6 @@ TEST_F(DISABLED_ON_MAC(ViEApiIntegrationTest),
   tests_->ViEEncryptionAPITest();
 }
 
-TEST_F(DISABLED_ON_MAC(ViEApiIntegrationTest), RunsFileTestWithoutErrors) {
-  tests_->ViEFileAPITest();
-}
-
 TEST_F(DISABLED_ON_MAC(ViEApiIntegrationTest),
        RunsImageProcessTestWithoutErrors) {
   tests_->ViEImageProcessAPITest();

@@ -132,7 +132,6 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
     picture_id_sli_(0),
     has_received_rpsi_(false),
     picture_id_rpsi_(0),
-    file_recorder_(channel_id),
     qm_callback_(NULL) {
   WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo,
                ViEId(engine_id, channel_id),
@@ -587,8 +586,6 @@ void ViEEncoder::DeliverFrame(int id,
                                 video_frame->height());
     }
   }
-  // Record raw frame.
-  file_recorder_.RecordVideoFrame(*video_frame);
 
   // Make sure the CSRC list is correct.
   if (num_csrcs > 0) {
@@ -663,7 +660,6 @@ void ViEEncoder::DelayChanged(int id, int frame_delay) {
                frame_delay);
 
   default_rtp_rtcp_->SetCameraDelay(frame_delay);
-  file_recorder_.SetFrameDelay(frame_delay);
 }
 
 int ViEEncoder::GetPreferedFrameSettings(int* width,
@@ -1053,10 +1049,6 @@ int32_t ViEEncoder::RegisterEffectFilter(ViEEffectFilter* effect_filter) {
   }
   effect_filter_ = effect_filter;
   return 0;
-}
-
-ViEFileRecorder& ViEEncoder::GetOutgoingFileRecorder() {
-  return file_recorder_;
 }
 
 int ViEEncoder::StartDebugRecording(const char* fileNameUTF8) {

@@ -22,7 +22,6 @@
 #include "webrtc/video_engine/include/vie_errors.h"
 #include "webrtc/video_engine/vie_capturer.h"
 #include "webrtc/video_engine/vie_defines.h"
-#include "webrtc/video_engine/vie_file_player.h"
 
 namespace webrtc {
 
@@ -39,10 +38,6 @@ ViEInputManager::ViEInputManager(const int engine_id, const Config& config)
 
   for (int idx = 0; idx < kViEMaxCaptureDevices; idx++) {
     free_capture_device_id_[idx] = true;
-  }
-
-  for (int idx = 0; idx < kViEMaxFilePlayers; idx++) {
-    free_file_id_[idx] = true;
   }
 }
 
@@ -394,83 +389,6 @@ int ViEInputManager::CreateExternalCaptureDevice(
   return 0;
 }
 
-int ViEInputManager::CreateFilePlayer(const char* file_nameUTF8,
-                                      const bool loop,
-                                      const webrtc::FileFormats file_format,
-                                      VoiceEngine* voe_ptr, int& file_id) {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(engine_id_),
-               "%s(device_unique_id: %s)", __FUNCTION__, file_nameUTF8);
-
-  CriticalSectionScoped cs(map_cs_.get());
-  int new_file_id = 0;
-  if (GetFreeFileId(&new_file_id) == false) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_),
-                 "%s: Maximum supported number of file players already in use",
-                 __FUNCTION__);
-    return kViEFileMaxNoOfFilesOpened;
-  }
-
-  ViEFilePlayer* vie_file_player = ViEFilePlayer::CreateViEFilePlayer(
-      new_file_id, engine_id_, file_nameUTF8, loop, file_format, voe_ptr);
-  if (!vie_file_player) {
-    ReturnFileId(new_file_id);
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_),
-                 "%s: Could not open file %s for playback", __FUNCTION__,
-                 file_nameUTF8);
-    return kViEFileUnknownError;
-  }
-
-  if (vie_frame_provider_map_.Insert(new_file_id, vie_file_player) != 0) {
-    ReturnCaptureId(new_file_id);
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_),
-                 "%s: Could not insert file player for %s", __FUNCTION__,
-                 file_nameUTF8);
-    delete vie_file_player;
-    return kViEFileUnknownError;
-  }
-
-  file_id = new_file_id;
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(engine_id_),
-               "%s(filename: %s, file_id: %d)", __FUNCTION__, file_nameUTF8,
-               new_file_id);
-  return 0;
-}
-
-int ViEInputManager::DestroyFilePlayer(int file_id) {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(engine_id_),
-               "%s(file_id: %d)", __FUNCTION__, file_id);
-
-  ViEFilePlayer* vie_file_player = NULL;
-  {
-    // We need exclusive access to the object to delete it.
-    // Take this write lock first since the read lock is taken before map_cs_.
-    ViEManagerWriteScoped wl(this);
-
-    CriticalSectionScoped cs(map_cs_.get());
-    vie_file_player = ViEFilePlayerPtr(file_id);
-    if (!vie_file_player) {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_),
-                   "%s(file_id: %d) - No such file player", __FUNCTION__,
-                   file_id);
-      return -1;
-    }
-    int num_callbacks = vie_file_player->NumberOfRegisteredFrameCallbacks();
-    if (num_callbacks > 0) {
-      WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo,
-                   ViEId(engine_id_), "%s(file_id: %d) - %u registered "
-                   "callbacks when destroying file player", __FUNCTION__,
-                   file_id, num_callbacks);
-    }
-    vie_frame_provider_map_.Erase(file_id);
-    ReturnFileId(file_id);
-    // Leave cs before deleting the file object. This is because deleting the
-    // object might cause deletions of renderers so we prefer to not have a lock
-    // at that time.
-  }
-  delete vie_file_player;
-  return 0;
-}
-
 bool ViEInputManager::GetFreeCaptureId(int* freecapture_id) {
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(engine_id_), "%s",
                __FUNCTION__);
@@ -494,35 +412,6 @@ void ViEInputManager::ReturnCaptureId(int capture_id) {
   if (capture_id >= kViECaptureIdBase &&
       capture_id < kViEMaxCaptureDevices + kViECaptureIdBase) {
     free_capture_device_id_[capture_id - kViECaptureIdBase] = true;
-  }
-  return;
-}
-
-bool ViEInputManager::GetFreeFileId(int* free_file_id) {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(engine_id_), "%s",
-               __FUNCTION__);
-
-  for (int id = 0; id < kViEMaxFilePlayers; id++) {
-    if (free_file_id_[id]) {
-      // We found a free capture device id.
-      free_file_id_[id] = false;
-      *free_file_id = id + kViEFileIdBase;
-      WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(engine_id_),
-                   "%s: new id: %d", __FUNCTION__, *free_file_id);
-      return true;
-    }
-  }
-  return false;
-}
-
-void ViEInputManager::ReturnFileId(int file_id) {
-  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(engine_id_),
-               "%s(%d)", __FUNCTION__, file_id);
-
-  CriticalSectionScoped cs(map_cs_.get());
-  if (file_id >= kViEFileIdBase &&
-      file_id < kViEMaxFilePlayers + kViEFileIdBase) {
-    free_file_id_[file_id - kViEFileIdBase] = true;
   }
   return;
 }
@@ -572,20 +461,6 @@ ViECapturer* ViEInputManager::ViECapturePtr(int capture_id) const {
   return vie_capture;
 }
 
-ViEFilePlayer* ViEInputManager::ViEFilePlayerPtr(int file_id) const {
-  if (file_id < kViEFileIdBase || file_id > kViEFileIdMax) {
-    return NULL;
-  }
-  CriticalSectionScoped cs(map_cs_.get());
-  MapItem* map_item = vie_frame_provider_map_.Find(file_id);
-  if (!map_item) {
-    return NULL;
-  }
-  ViEFilePlayer* vie_file_player =
-      static_cast<ViEFilePlayer*>(map_item->GetItem());
-  return vie_file_player;
-}
-
 ViEInputManagerScoped::ViEInputManagerScoped(
     const ViEInputManager& vie_input_manager)
     : ViEManagerScopedBase(vie_input_manager) {
@@ -606,11 +481,6 @@ ViEFrameProviderBase* ViEInputManagerScoped::FrameProvider(
     int provider_id) const {
   return static_cast<const ViEInputManager*>(vie_manager_)->ViEFrameProvider(
       provider_id);
-}
-
-ViEFilePlayer* ViEInputManagerScoped::FilePlayer(int file_id) const {
-  return static_cast<const ViEInputManager*>(vie_manager_)->ViEFilePlayerPtr(
-      file_id);
 }
 
 }  // namespace webrtc
