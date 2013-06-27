@@ -9,7 +9,7 @@
   'variables': {
     # NOTE: This laundry list of libs comes from jni/Android.mk and should be
     # kept in sync with that location.  Also note that the explicit library
-    # names must be used (instead of the names of their gyp targets) because
+    # names must be used (in addition to the names of their gyp targets) because
     # these are fed into the 'inputs' attribute of the action below, not to
     # 'dependencies' because these need to be real (build-time) dependencies,
     # not just order-only dependencies
@@ -81,6 +81,12 @@
         }, {
           'inputs': [ '<@(android_mk_arm_libs)' ],
         }],
+      ],
+      'dependencies': [
+        '<(webrtc_root)/modules/modules.gyp:*',
+        '<(webrtc_root)/test/test.gyp:channel_transport',
+        '<(webrtc_root)/video_engine/video_engine.gyp:video_engine_core',
+        '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
       ],
       'actions': [
         {
