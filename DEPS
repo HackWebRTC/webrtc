@@ -12,10 +12,6 @@ vars = {
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
   "chromium_revision": "203806",
 
-  # External resources like video and audio files used for testing purposes.
-  # Downloaded on demand when needed.
-  "webrtc_resources_revision": "16",
-
   # A small subset of WebKit is needed for the Android Python test framework.
   "webkit_trunk": "http://src.chromium.org/blink/trunk",
 }
@@ -162,7 +158,7 @@ hooks = [
     # If a newer version or no current download exists, it will download
     # the resources and extract them.
     "pattern": ".",
-    "action": ["python", Var("root_dir") + "/tools/resources/update.py"],
+    "action": ["python", Var("root_dir") + "/webrtc/tools/update.py"],
   },
   {
     # A change to a .gyp, .gypi, or to GYP itself should run the generator.

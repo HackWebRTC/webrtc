@@ -7,8 +7,6 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-__author__ = 'kjellander@webrtc.org (Henrik Kjellander)'
-
 """Downloads WebRTC resources files from a remote host."""
 
 from optparse import OptionParser
@@ -20,7 +18,7 @@ import tarfile
 import tempfile
 import urllib2
 
-DEPS_KEY = 'webrtc_resources_revision'
+DESIRED_VERSION = 16
 REMOTE_URL_BASE = 'http://commondatastorage.googleapis.com/webrtc-resources'
 VERSION_FILENAME = 'webrtc-resources-version'
 FILENAME_PREFIX = 'webrtc-resources-'
@@ -44,7 +42,6 @@ def main():
     return
 
   project_root_dir = os.path.normpath(sys.path[0] + '/../../')
-  deps_file = os.path.join(project_root_dir, 'DEPS')
   downloads_dir = os.path.join(project_root_dir, 'resources')
   current_version_file = os.path.join(downloads_dir, VERSION_FILENAME)
 
@@ -63,10 +60,9 @@ def main():
 
   # Download archive if forced or DEPS version is different than our current.
   current_version = _get_current_version(current_version_file)
-  desired_version = _get_desired_version(deps_file)
-  if desired_version != current_version or options.force:
+  if DESIRED_VERSION != current_version or options.force:
     base_url = options.base_url or REMOTE_URL_BASE
-    _perform_download(base_url, desired_version, downloads_dir)
+    _perform_download(base_url, DESIRED_VERSION, downloads_dir)
   else:
     print 'Already have correct version: %s' % current_version
 
@@ -87,26 +83,6 @@ def _get_current_version(current_version_file):
     f.close()
     print 'Found downloaded resources: version: %s' % current_version
   return current_version
-
-
-def _get_desired_version(deps_file):
-  """Evaluates the project's DEPS and returns the desired resources version.
-
-  Args:
-      deps_file: Full path to the DEPS file of the project.
-  Returns:
-      The desired resources version.
-  """
-  # Evaluate the DEPS file as Python code to extract the variables defined.
-  locals_dict = {'Var': lambda name: locals_dict['vars'][name],
-           'File': lambda name: name,
-           'From': lambda deps, definition: deps}
-  execfile(deps_file, {}, locals_dict)
-  deps_vars = locals_dict['vars']
-
-  desired_version = int(deps_vars[DEPS_KEY])
-  print 'Version in DEPS file: %d' % desired_version
-  return desired_version
 
 
 def _perform_download(base_url, desired_version, downloads_dir):
