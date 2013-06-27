@@ -19,7 +19,6 @@ VCMSessionInfo::VCMSessionInfo()
       complete_(false),
       decodable_(false),
       frame_type_(kVideoFrameDelta),
-      previous_frame_loss_(false),
       packets_(),
       empty_seq_num_low_(-1),
       empty_seq_num_high_(-1),
@@ -89,7 +88,6 @@ void VCMSessionInfo::Reset() {
   complete_ = false;
   decodable_ = false;
   frame_type_ = kVideoFrameDelta;
-  previous_frame_loss_ = false;
   packets_.clear();
   empty_seq_num_low_ = -1;
   empty_seq_num_high_ = -1;

@@ -72,8 +72,6 @@ class VCMSessionInfo {
   bool LayerSync() const;
   int Tl0PicId() const;
   bool NonReference() const;
-  void SetPreviousFrameLoss() { previous_frame_loss_ = true; }
-  bool PreviousFrameLoss() const { return previous_frame_loss_; }
 
   // The number of packets discarded because the decoder can't make use of
   // them.

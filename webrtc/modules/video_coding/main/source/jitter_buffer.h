@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_JITTER_BUFFER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_JITTER_BUFFER_H_
 
+#include <list>
 #include <map>
 #include <set>
 #include <vector>
@@ -40,6 +41,8 @@ class VCMFrameBuffer;
 class VCMPacket;
 class VCMEncodedFrame;
 
+typedef std::list<VCMFrameBuffer*> UnorderedFrameList;
+
 struct VCMJitterSample {
   VCMJitterSample() : timestamp(0), frame_size(0), latest_packet_time(-1) {}
   uint32_t timestamp;
@@ -63,8 +66,11 @@ class FrameList :
   VCMFrameBuffer* PopFrame(uint32_t timestamp);
   VCMFrameBuffer* Front() const;
   VCMFrameBuffer* Back() const;
-  int RecycleFramesUntilKeyFrame(FrameList::iterator* key_frame_it);
-  int CleanUpOldOrEmptyFrames(VCMDecodingState* decoding_state);
+  int RecycleFramesUntilKeyFrame(FrameList::iterator* key_frame_it,
+      UnorderedFrameList* free_frames);
+  int CleanUpOldOrEmptyFrames(VCMDecodingState* decoding_state,
+      UnorderedFrameList* free_frames);
+  void Reset(UnorderedFrameList* free_frames);
 };
 
 class VCMJitterBuffer {
@@ -191,6 +197,8 @@ class VCMJitterBuffer {
   // existing frames if no free frames are available. Returns an error code if
   // failing, or kNoError on success.
   VCMFrameBufferEnum GetFrame(const VCMPacket& packet, VCMFrameBuffer** frame);
+  void CopyFrames(FrameList* to_list, const FrameList& from_list);
+  void CopyFrames(FrameList* to_list, const FrameList& from_list, int* index);
   // Returns true if |frame| is continuous in |decoding_state|, not taking
   // decodable frames into account.
   bool IsContinuousInState(const VCMFrameBuffer& frame,
@@ -225,25 +233,20 @@ class VCMJitterBuffer {
   // jitter buffer size).
   VCMFrameBuffer* GetEmptyFrame();
 
+  // Attempts to increase the size of the jitter buffer. Returns true on
+  // success, false otherwise.
+  bool TryToIncreaseJitterBufferSize();
+
   // Recycles oldest frames until a key frame is found. Used if jitter buffer is
   // completely full. Returns true if a key frame was found.
   bool RecycleFramesUntilKeyFrame();
 
-  // Sets the state of |frame| to complete if it's not too old to be decoded.
-  // Also updates the frame statistics.
-  void UpdateFrameState(VCMFrameBuffer* frame);
+  // Updates the frame statistics.
+  void CountFrame(const VCMFrameBuffer& frame);
 
   // Cleans the frame list in the JB from old/empty frames.
   // Should only be called prior to actual use.
   void CleanUpOldOrEmptyFrames();
-
-  // Sets the "decodable" and "frame loss" flags of a frame depending on which
-  // packets have been received and which are missing.
-  // A frame is "decodable" if enough packets of that frame has been received
-  // for it to be usable by the decoder.
-  // A frame has the "frame loss" flag set if packets are missing  after the
-  // last decoded frame and before |frame|.
-  void VerifyAndSetPreviousFrameLost(VCMFrameBuffer* frame);
 
   // Returns true if |packet| is likely to have been retransmitted.
   bool IsPacketRetransmitted(const VCMPacket& packet) const;
@@ -280,6 +283,7 @@ class VCMJitterBuffer {
   int max_number_of_frames_;
   // Array of pointers to the frames in jitter buffer.
   VCMFrameBuffer* frame_buffers_[kMaxNumberOfFrames];
+  UnorderedFrameList free_frames_;
   FrameList decodable_frames_;
   FrameList incomplete_frames_;
   VCMDecodingState last_decoded_state_;

@@ -32,8 +32,6 @@ TEST(TestDecodingState, FrameContinuity) {
   // Check that makes decision based on correct method.
   VCMFrameBuffer frame;
   VCMFrameBuffer frame_key;
-  frame.SetState(kStateEmpty);
-  frame_key.SetState(kStateEmpty);
   VCMPacket* packet = new VCMPacket();
   packet->isFirstPacket = 1;
   packet->timestamp = 1;
@@ -56,7 +54,6 @@ TEST(TestDecodingState, FrameContinuity) {
   frame.InsertPacket(*packet, 0, false, 0);
   EXPECT_FALSE(dec_state.ContinuousFrame(&frame));
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet->codecSpecificHeader.codecHeader.VP8.pictureId = 0;
   packet->seqNum = 10;
   frame.InsertPacket(*packet, 0, false, 0);
@@ -65,12 +62,10 @@ TEST(TestDecodingState, FrameContinuity) {
   // Use sequence numbers.
   packet->codecSpecificHeader.codecHeader.VP8.pictureId = kNoPictureId;
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet->seqNum = dec_state.sequence_num() - 1u;
   frame.InsertPacket(*packet, 0, false, 0);
   EXPECT_FALSE(dec_state.ContinuousFrame(&frame));
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet->seqNum = dec_state.sequence_num() + 1u;
   frame.InsertPacket(*packet, 0, false, 0);
   // Insert another packet to this frame
@@ -84,7 +79,6 @@ TEST(TestDecodingState, FrameContinuity) {
   // Insert packet with temporal info.
   dec_state.Reset();
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet->codecSpecificHeader.codecHeader.VP8.tl0PicIdx = 0;
   packet->codecSpecificHeader.codecHeader.VP8.temporalIdx = 0;
   packet->codecSpecificHeader.codecHeader.VP8.pictureId = 0;
@@ -95,7 +89,6 @@ TEST(TestDecodingState, FrameContinuity) {
   dec_state.SetState(&frame);
   EXPECT_TRUE(dec_state.full_sync());
   frame.Reset();
-  frame.SetState(kStateEmpty);
   // 1 layer up - still good.
   packet->codecSpecificHeader.codecHeader.VP8.tl0PicIdx = 0;
   packet->codecSpecificHeader.codecHeader.VP8.temporalIdx = 1;
@@ -107,7 +100,6 @@ TEST(TestDecodingState, FrameContinuity) {
   dec_state.SetState(&frame);
   EXPECT_TRUE(dec_state.full_sync());
   frame.Reset();
-  frame.SetState(kStateEmpty);
   // Lost non-base layer packet => should update sync parameter.
   packet->codecSpecificHeader.codecHeader.VP8.tl0PicIdx = 0;
   packet->codecSpecificHeader.codecHeader.VP8.temporalIdx = 3;
@@ -118,7 +110,6 @@ TEST(TestDecodingState, FrameContinuity) {
   EXPECT_FALSE(dec_state.ContinuousFrame(&frame));
   // Now insert the next non-base layer (belonging to a next tl0PicId).
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet->codecSpecificHeader.codecHeader.VP8.tl0PicIdx = 1;
   packet->codecSpecificHeader.codecHeader.VP8.temporalIdx = 2;
   packet->codecSpecificHeader.codecHeader.VP8.pictureId = 4;
@@ -131,7 +122,6 @@ TEST(TestDecodingState, FrameContinuity) {
   EXPECT_TRUE(dec_state.full_sync());
   // Next base layer (dropped interim non-base layers) - should update sync.
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet->codecSpecificHeader.codecHeader.VP8.tl0PicIdx = 1;
   packet->codecSpecificHeader.codecHeader.VP8.temporalIdx = 0;
   packet->codecSpecificHeader.codecHeader.VP8.pictureId = 5;
@@ -144,7 +134,6 @@ TEST(TestDecodingState, FrameContinuity) {
 
   // Check wrap for temporal layers.
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet->codecSpecificHeader.codecHeader.VP8.tl0PicIdx = 0x00FF;
   packet->codecSpecificHeader.codecHeader.VP8.temporalIdx = 0;
   packet->codecSpecificHeader.codecHeader.VP8.pictureId = 6;
@@ -154,7 +143,6 @@ TEST(TestDecodingState, FrameContinuity) {
   dec_state.SetState(&frame);
   EXPECT_FALSE(dec_state.full_sync());
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet->codecSpecificHeader.codecHeader.VP8.tl0PicIdx = 0x0000;
   packet->codecSpecificHeader.codecHeader.VP8.temporalIdx = 0;
   packet->codecSpecificHeader.codecHeader.VP8.pictureId = 7;
@@ -173,7 +161,6 @@ TEST(TestDecodingState, UpdateOldPacket) {
   // Update only if zero size and newer than previous.
   // Should only update if the timeStamp match.
   VCMFrameBuffer frame;
-  frame.SetState(kStateEmpty);
   VCMPacket* packet = new VCMPacket();
   packet->timestamp = 1;
   packet->seqNum = 1;
@@ -222,7 +209,6 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   VCMPacket* packet = new VCMPacket();
   packet->frameType = kVideoFrameDelta;
   packet->codecSpecificHeader.codec = kRTPVideoVP8;
-  frame.SetState(kStateEmpty);
   packet->timestamp = 0;
   packet->seqNum = 0;
   packet->codecSpecificHeader.codecHeader.VP8.tl0PicIdx = 0;
@@ -232,7 +218,6 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   dec_state.SetState(&frame);
   // tl0PicIdx 0, temporal id 1.
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet->timestamp = 1;
   packet->seqNum = 1;
   packet->codecSpecificHeader.codecHeader.VP8.tl0PicIdx = 0;
@@ -245,7 +230,6 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   // Lost tl0PicIdx 0, temporal id 2.
   // Insert tl0PicIdx 0, temporal id 3.
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet->timestamp = 3;
   packet->seqNum = 3;
   packet->codecSpecificHeader.codecHeader.VP8.tl0PicIdx = 0;
@@ -257,7 +241,6 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   EXPECT_FALSE(dec_state.full_sync());
   // Insert next base layer
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet->timestamp = 4;
   packet->seqNum = 4;
   packet->codecSpecificHeader.codecHeader.VP8.tl0PicIdx = 1;
@@ -270,7 +253,6 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   // Insert key frame - should update sync value.
   // A key frame is always a base layer.
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet->frameType = kVideoFrameKey;
   packet->isFirstPacket = 1;
   packet->timestamp = 5;
@@ -285,7 +267,6 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   // After sync, a continuous PictureId is required
   // (continuous base layer is not enough )
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet->frameType = kVideoFrameDelta;
   packet->timestamp = 6;
   packet->seqNum = 6;
@@ -296,7 +277,6 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
   EXPECT_TRUE(dec_state.full_sync());
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet->frameType = kVideoFrameDelta;
   packet->isFirstPacket = 1;
   packet->timestamp = 8;
@@ -312,7 +292,6 @@ TEST(TestDecodingState, MultiLayerBehavior) {
 
   // Insert a non-ref frame - should update sync value.
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet->frameType = kVideoFrameDelta;
   packet->isFirstPacket = 1;
   packet->timestamp = 9;
@@ -333,7 +312,6 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   // Base layer.
   frame.Reset();
   dec_state.Reset();
-  frame.SetState(kStateEmpty);
   packet->frameType = kVideoFrameDelta;
   packet->isFirstPacket = 1;
   packet->markerBit = 1;
@@ -348,7 +326,6 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   EXPECT_TRUE(dec_state.full_sync());
   // Layer 2 - 2 packets (insert one, lose one).
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet->frameType = kVideoFrameDelta;
   packet->isFirstPacket = 1;
   packet->markerBit = 0;
@@ -362,7 +339,6 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   EXPECT_TRUE(dec_state.ContinuousFrame(&frame));
   // Layer 1
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet->frameType = kVideoFrameDelta;
   packet->isFirstPacket = 1;
   packet->markerBit = 1;
@@ -384,7 +360,6 @@ TEST(TestDecodingState, DiscontinuousPicIdContinuousSeqNum) {
   VCMFrameBuffer frame;
   VCMPacket packet;
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet.frameType = kVideoFrameKey;
   packet.codecSpecificHeader.codec = kRTPVideoVP8;
   packet.timestamp = 0;
@@ -399,7 +374,6 @@ TEST(TestDecodingState, DiscontinuousPicIdContinuousSeqNum) {
   // Continuous sequence number but discontinuous picture id. This implies a
   // a loss and we have to fall back to only decoding the base layer.
   frame.Reset();
-  frame.SetState(kStateEmpty);
   packet.frameType = kVideoFrameDelta;
   packet.timestamp += 3000;
   ++packet.seqNum;
@@ -416,7 +390,6 @@ TEST(TestDecodingState, OldInput) {
   // Identify packets belonging to old frames/packets.
   // Set state for current frames.
   VCMFrameBuffer frame;
-  frame.SetState(kStateEmpty);
   VCMPacket* packet = new VCMPacket();
   packet->timestamp = 10;
   packet->seqNum = 1;

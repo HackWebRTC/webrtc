@@ -40,7 +40,7 @@ public:
     VCMFrameBufferStateEnum GetState() const;
     // Get current state and timestamp of frame
     VCMFrameBufferStateEnum GetState(uint32_t& timeStamp) const;
-    void SetState(VCMFrameBufferStateEnum state); // Set state of frame
+    void PrepareForDecode(bool continuous);
 
     bool IsRetransmitted() const;
     bool IsSessionComplete() const;
@@ -83,11 +83,9 @@ public:
     // them.
     int NotDecodablePackets() const;
 
-protected:
-    void RestructureFrameInformation();
-    void PrepareForDecode();
-
 private:
+    void SetState(VCMFrameBufferStateEnum state); // Set state of frame
+
     VCMFrameBufferStateEnum    _state;         // Current state of the frame
     bool                       _frameCounted;  // Was this frame counted by JB?
     VCMSessionInfo             _sessionInfo;
