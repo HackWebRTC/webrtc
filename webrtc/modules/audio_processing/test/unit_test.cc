@@ -51,7 +51,9 @@ namespace {
 // When false, this will compare the output data with the results stored to
 // file. This is the typical case. When the file should be updated, it can
 // be set to true with the command-line switch --write_ref_data.
+#ifdef WEBRTC_AUDIOPROC_BIT_EXACT
 bool write_ref_data = false;
+#endif
 
 const int kSampleRates[] = {8000, 16000, 32000};
 const size_t kSampleRatesSize = sizeof(kSampleRates) / sizeof(*kSampleRates);
@@ -1580,21 +1582,8 @@ TEST_F(ApmTest, Process) {
 }
 #endif  // WEBRTC_AUDIOPROC_BIT_EXACT
 
+// TODO(henrike): re-implement functionality lost when removing the old main
+//                function. See
+//                https://code.google.com/p/webrtc/issues/detail?id=1981
+
 }  // namespace
-
-int main(int argc, char** argv) {
-  for (int i = 1; i < argc; i++) {
-    if (strcmp(argv[i], "--write_ref_data") == 0) {
-      write_ref_data = true;
-    }
-  }
-
-  // We don't use TestSuite here because it would require the Android platform
-  // build to depend on Gmock.
-  webrtc::test::SetExecutablePath(argv[0]);
-  testing::InitGoogleTest(&argc, argv);
-  int result = RUN_ALL_TESTS();
-  // Optional, but removes memory leak noise from Valgrind.
-  google::protobuf::ShutdownProtobufLibrary();
-  return result;
-}
