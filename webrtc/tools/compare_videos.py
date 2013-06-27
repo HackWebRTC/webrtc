@@ -92,7 +92,7 @@ def main():
   cmd = [
     options.frame_analyzer,
     '--reference_file=%s' % options.ref_video,
-    '--test_file=%s' % options.ref_video,
+    '--test_file=%s' % options.test_video,
     '--stats_file=%s' % options.stats_file,
     '--width=%d' % options.yuv_frame_width,
     '--height=%d' % options.yuv_frame_height,
