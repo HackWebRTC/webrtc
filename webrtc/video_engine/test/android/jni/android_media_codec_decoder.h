@@ -18,7 +18,7 @@ namespace webrtc {
 class AndroidMediaCodecDecoder : public VideoDecoder {
  public:
   AndroidMediaCodecDecoder(JavaVM* vm, jobject surface, jclass decoderClass);
-  virtual ~AndroidMediaCodecDecoder() { }
+  virtual ~AndroidMediaCodecDecoder();
 
   // Initialize the decoder with the information from the VideoCodec.
   //
@@ -92,6 +92,8 @@ class AndroidMediaCodecDecoder : public VideoDecoder {
   virtual VideoDecoder* Copy() { return NULL; }
 
  private:
+  void Initialize(JavaVM* vm, jobject surface, jclass decoderClass);
+
   DecodedImageCallback* decode_complete_callback_;
   JavaVM* vm_;
   jobject surface_;
