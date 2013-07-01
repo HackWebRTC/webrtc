@@ -69,6 +69,11 @@
       '<(PRODUCT_DIR)/libcommon_audio_neon.a',
       '<(PRODUCT_DIR)/libvpx_arm_neon.a',
     ],
+    'android_modules_java_jars': [
+      '<(PRODUCT_DIR)/lib.java/audio_device_module_java.jar',
+      '<(PRODUCT_DIR)/lib.java/video_capture_module_java.jar',
+      '<(PRODUCT_DIR)/lib.java/video_render_module_java.jar',
+    ],
   },
 
   'targets': [
@@ -84,6 +89,7 @@
       ],
       'dependencies': [
         '<(webrtc_root)/modules/modules.gyp:*',
+        '<(webrtc_root)/modules/modules_java.gyp:*',
         '<(webrtc_root)/test/test.gyp:channel_transport',
         '<(webrtc_root)/video_engine/video_engine.gyp:video_engine_core',
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
@@ -94,18 +100,12 @@
           # so this action and the custom build script is not needed.
           'action_name': 'build_video_demo_apk',
           'inputs' : [
-            '<(webrtc_root)/modules/audio_device/android/org/webrtc/voiceengine/WebRTCAudioDevice.java',
-            '<(webrtc_root)/modules/video_capture/android/java/org/webrtc/videoengine/CaptureCapabilityAndroid.java',
-            '<(webrtc_root)/modules/video_capture/android/java/org/webrtc/videoengine/VideoCaptureAndroid.java',
-            '<(webrtc_root)/modules/video_capture/android/java/org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid.java',
-            '<(webrtc_root)/modules/video_render/android/java/org/webrtc/videoengine/ViEAndroidGLES20.java',
-            '<(webrtc_root)/modules/video_render/android/java/org/webrtc/videoengine/ViERenderer.java',
-            '<(webrtc_root)/modules/video_render/android/java/org/webrtc/videoengine/ViESurfaceRenderer.java',
             '<(webrtc_root)/video_engine/test/android/src/org/webrtc/videoengine/ViEMediaCodecDecoder.java',
             '<(webrtc_root)/video_engine/test/android/src/org/webrtc/videoengineapp/IViEAndroidCallback.java',
             '<(webrtc_root)/video_engine/test/android/src/org/webrtc/videoengineapp/ViEAndroidJavaAPI.java',
             '<(webrtc_root)/video_engine/test/android/src/org/webrtc/videoengineapp/WebRTCDemo.java',
             '<@(android_mk_common_libs)',
+            '<@(android_modules_java_jars)',
           ],
           'outputs': ['<(webrtc_root)'],
           'action': ['python',
