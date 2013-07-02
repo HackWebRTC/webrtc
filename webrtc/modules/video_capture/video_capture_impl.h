@@ -132,7 +132,10 @@ private:
 
     // Used to make sure incoming timestamp is increasing for every frame.
     int64_t last_capture_time_;
+
+    // Delta used for translating between NTP and internal timestamps.
+    const int64_t delta_ntp_internal_ms_;
 };
 } // namespace videocapturemodule
-} //namespace webrtc
+} // namespace webrtc
 #endif  // WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_VIDEO_CAPTURE_IMPL_H_
