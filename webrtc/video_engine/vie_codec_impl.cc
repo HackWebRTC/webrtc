@@ -82,8 +82,7 @@ int ViECodecImpl::NumberOfCodecs() const {
 int ViECodecImpl::GetCodec(const unsigned char list_number,
                            VideoCodec& video_codec) const {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(shared_data_->instance_id()),
-               "%s(list_number: %d, codec_type: %d)", __FUNCTION__,
-               list_number, video_codec.codecType);
+               "%s(list_number: %d)", __FUNCTION__, list_number);
   if (list_number == VideoCodingModule::NumberOfCodecs()) {
     memset(&video_codec, 0, sizeof(VideoCodec));
     strcpy(video_codec.plName, "red");
