@@ -3055,7 +3055,8 @@ void AudioCodingModuleImpl::UpdateBufferingSafe(const WebRtcRTPHeader& rtp_info,
   const int in_sample_rate_khz =
       (ACMCodecDB::database_[current_receive_codec_idx_].plfreq / 1000);
   if (first_payload_received_ &&
-      rtp_info.header.timestamp > last_incoming_send_timestamp_) {
+      rtp_info.header.timestamp > last_incoming_send_timestamp_ &&
+      in_sample_rate_khz > 0) {
       accumulated_audio_ms_ += (rtp_info.header.timestamp -
           last_incoming_send_timestamp_) / in_sample_rate_khz;
   }
