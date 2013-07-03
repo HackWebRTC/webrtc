@@ -25,14 +25,17 @@
         'conditions': [
           ['build_with_chromium==1 or build_with_libjingle==1', {
             'webrtc_root%': '<(DEPTH)/third_party/webrtc',
+            'apk_tests_path%': '<(DEPTH)/third_party/webrtc/build/apk_tests.gyp',
           }, {
             'webrtc_root%': '<(DEPTH)/webrtc',
+            'apk_tests_path%': '<(DEPTH)/webrtc/build/apk_test_noop.gyp',
           }],
         ],
       },
       'build_with_chromium%': '<(build_with_chromium)',
       'build_with_libjingle%': '<(build_with_libjingle)',
       'webrtc_root%': '<(webrtc_root)',
+      'apk_tests_path%': '<(apk_tests_path)',
 
       'webrtc_vp8_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp8',
       'include_opus%': 1,
@@ -40,6 +43,7 @@
     'build_with_chromium%': '<(build_with_chromium)',
     'build_with_libjingle%': '<(build_with_libjingle)',
     'webrtc_root%': '<(webrtc_root)',
+    'apk_tests_path%': '<(apk_tests_path)',
     'webrtc_vp8_dir%': '<(webrtc_vp8_dir)',
     'include_opus%': '<(include_opus)',
 
