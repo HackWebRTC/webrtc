@@ -998,4 +998,4 @@ int32_t ModuleVideoRenderImpl::MirrorRenderStream(const int renderId,
     return incomingStream->EnableMirroring(enable, mirrorXAxis, mirrorYAxis);
 }
 
-} //namespace webrtc
+}  // namespace webrtc

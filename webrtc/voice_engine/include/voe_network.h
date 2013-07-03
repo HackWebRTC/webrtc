@@ -119,6 +119,6 @@ protected:
     virtual ~VoENetwork() {}
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  //  WEBRTC_VOICE_ENGINE_VOE_NETWORK_H

@@ -186,4 +186,4 @@ bool ProcessThreadImpl::Process()
     }
     return true;
 }
-} // namespace webrtc
+}  // namespace webrtc

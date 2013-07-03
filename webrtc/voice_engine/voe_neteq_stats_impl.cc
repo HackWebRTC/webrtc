@@ -75,4 +75,4 @@ int VoENetEqStatsImpl::GetNetworkStatistics(int channel,
 
 #endif  // #ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
 
-}   // namespace webrtc
+}  // namespace webrtc

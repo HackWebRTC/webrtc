@@ -1571,7 +1571,7 @@ int NetEQTest_init_coders(enum WebRtcNetEQDecoder coder, int enc_frameSize, int 
         if (ok != 0) {
             return(ok);
         }
-    } // end for
+    }  // end for
 
     return(0);
 }			
@@ -1974,7 +1974,7 @@ int NetEQTest_encode(int coder, int16_t *indata, int frameLen, unsigned char * e
         encoded += cdlen;
         totalLen += cdlen;
 
-    } // end for
+    }  // end for
 
 	first_cng=1;
 	return(totalLen);

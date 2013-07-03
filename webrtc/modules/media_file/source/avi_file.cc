@@ -1763,4 +1763,4 @@ void AviFile::WriteIndex()
     }
     PutLE32LengthFromCurrent(static_cast<long>(idxChunkSize));
 }
-} // namespace webrtc
+}  // namespace webrtc

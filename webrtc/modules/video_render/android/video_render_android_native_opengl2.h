@@ -91,6 +91,6 @@ class AndroidNativeOpenGl2Renderer: private VideoRenderAndroid {
   jclass _javaRenderClass;
 };
 
-} //namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_ANDROID_VIDEO_RENDER_ANDROID_NATIVE_OPENGL2_H_

@@ -119,6 +119,6 @@ protected:
 
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_VIDEO_CODING_GENERIC_DECODER_H_

@@ -2954,7 +2954,7 @@ bool AudioDeviceLinuxPulse::PlayThreadProcess()
         EnableWriteCallback();
         PaUnLock();
 
-    } // _playing
+    }  // _playing
 
     UnLock();
     return true;
@@ -3103,7 +3103,7 @@ bool AudioDeviceLinuxPulse::RecThreadProcess()
         EnableReadCallback();
         PaUnLock();
 
-    } // _recording
+    }  // _recording
 
     UnLock();
     return true;

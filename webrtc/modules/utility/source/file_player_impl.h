@@ -118,5 +118,5 @@ private:
 };
 #endif //WEBRTC_MODULE_UTILITY_VIDEO
 
-} // namespace webrtc
+}  // namespace webrtc
 #endif // WEBRTC_MODULES_UTILITY_SOURCE_FILE_PLAYER_IMPL_H_

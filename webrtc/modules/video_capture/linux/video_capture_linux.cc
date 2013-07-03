@@ -496,5 +496,5 @@ int32_t VideoCaptureModuleV4L2::CaptureSettings(VideoCaptureCapability& settings
 
     return 0;
 }
-} // namespace videocapturemodule
-} // namespace webrtc
+}  // namespace videocapturemodule
+}  // namespace webrtc

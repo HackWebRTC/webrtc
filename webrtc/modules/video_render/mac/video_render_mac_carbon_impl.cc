@@ -292,6 +292,6 @@ int32_t VideoRenderMacCarbonImpl::SetBitmap(const void* bitMap,
 }
 
 
-} //namespace webrtc
+}  // namespace webrtc
 
 #endif // CARBON_RENDERING

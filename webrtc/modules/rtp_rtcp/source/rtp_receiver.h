@@ -237,6 +237,6 @@ class RTPReceiver : public Bitrate {
   int payload_type_rtx_;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_H_

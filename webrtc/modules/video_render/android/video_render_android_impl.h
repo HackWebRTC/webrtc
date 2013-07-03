@@ -146,6 +146,6 @@ class VideoRenderAndroid: IVideoRender {
   ThreadWrapper* _javaRenderThread;
 };
 
-} //namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_ANDROID_VIDEO_RENDER_ANDROID_IMPL_H_

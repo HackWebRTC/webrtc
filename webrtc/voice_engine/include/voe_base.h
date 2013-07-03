@@ -186,6 +186,6 @@ protected:
     virtual ~VoEBase() {}
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  //  WEBRTC_VOICE_ENGINE_VOE_BASE_H

@@ -264,6 +264,6 @@ class AudioDeviceAndroidJni : public AudioDeviceGeneric {
   static jclass globalScClass;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_JNI_ANDROID_H

@@ -290,4 +290,4 @@ VideoProcessingModuleImpl::EnableContentAnalysis(bool enable)
     _framePreProcessor.EnableContentAnalysis(enable);
 }
 
-} //namespace
+}  // namespace

@@ -319,4 +319,4 @@ int VoENetworkImpl::GetPeriodicDeadOrAliveStatus(int channel,
                                                     sampleTimeSeconds);
 }
 
-} // namespace webrtc
+}  // namespace webrtc

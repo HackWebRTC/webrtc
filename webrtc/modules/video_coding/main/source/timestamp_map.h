@@ -47,6 +47,6 @@ private:
     int32_t                   _length;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_VIDEO_CODING_TIMESTAMP_MAP_H_

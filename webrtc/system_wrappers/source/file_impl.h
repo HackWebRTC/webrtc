@@ -59,6 +59,6 @@ class FileWrapperImpl : public FileWrapper {
   char file_name_utf8_[kMaxFileNameSize];
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_SYSTEM_WRAPPERS_SOURCE_FILE_IMPL_H_

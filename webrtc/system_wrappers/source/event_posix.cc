@@ -280,4 +280,4 @@ bool EventPosix::StopTimer() {
   return true;
 }
 
-} // namespace webrtc
+}  // namespace webrtc

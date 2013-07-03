@@ -70,6 +70,6 @@ class MapWrapper {
   std::map<int, MapItem*>    map_;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_MAP_WRAPPER_H_

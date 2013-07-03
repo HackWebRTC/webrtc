@@ -2136,4 +2136,4 @@ RTCPSender::SetTMMBN(const TMMBRSet* boundingSet,
     }
     return -1;
 }
-} // namespace webrtc
+}  // namespace webrtc

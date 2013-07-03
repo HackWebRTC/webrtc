@@ -278,4 +278,4 @@ inline uint16_t RtpDumpImpl::RtpDumpHtons(uint16_t x) const
     return 0;
 #endif
 }
-} // namespace webrtc
+}  // namespace webrtc

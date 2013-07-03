@@ -359,7 +359,7 @@ CodecDataBaseTest::Perform(CmdArgs& args)
                 {
                     printf("frame number:%d\n",frameCnt);
                 }
-            } // end for:encode-decode
+            }  // end for:encode-decode
            // byte count for codec specific
 
             printf("Total bytes encoded: %f \n\n",(8.0/1000)*(encodeCallCDT->EncodedBytes()/((int)10/VideoCodingModule::NumberOfCodecs())));
@@ -375,14 +375,14 @@ CodecDataBaseTest::Perform(CmdArgs& args)
                 printf("PSNR from encoder-decoder send-receive control test"
                        "is %f\n\n", psnr.average);
             }
-        } // end: iterate codecs
+        }  // end: iterate codecs
         rewind(_sourceFile);
         delete [] tmpBuffer;
         delete decodeCallCDT;
         delete encodeCallCDT;
         // closing and calculating PSNR for prior encoder-decoder test
         TearDown(); // closing open files
-    } // end of #codecs >1
+    }  // end of #codecs >1
 
     delete waitEvent;
     Print();

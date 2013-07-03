@@ -236,6 +236,6 @@ private:
 
     FileCallback* _ptrCallback;
 };
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_MEDIA_FILE_SOURCE_MEDIA_FILE_IMPL_H_

@@ -28,4 +28,4 @@ ThreadWrapper* ThreadWrapper::CreateThread(ThreadRunFunction func,
 #endif
 }
 
-} // namespace webrtc
+}  // namespace webrtc

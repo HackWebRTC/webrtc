@@ -482,7 +482,7 @@ VideoCodingModuleImpl::SetChannelParameters(uint32_t target_bitrate,
         else
         {
             return VCM_UNINITIALIZED;
-        } // encoder
+        }  // encoder
     }// send side
     return VCM_OK;
 }

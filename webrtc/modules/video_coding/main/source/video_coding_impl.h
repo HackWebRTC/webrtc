@@ -327,5 +327,5 @@ private:
     bool                                owns_event_factory_;
     bool                                frame_dropper_enabled_;
 };
-} // namespace webrtc
+}  // namespace webrtc
 #endif // WEBRTC_MODULES_VIDEO_CODING_VIDEO_CODING_IMPL_H_

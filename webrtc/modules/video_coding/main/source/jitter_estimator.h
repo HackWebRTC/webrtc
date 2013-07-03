@@ -149,6 +149,6 @@ private:
     enum { kFsAccuStartupSamples = 5 };
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_VIDEO_CODING_JITTER_ESTIMATOR_H_

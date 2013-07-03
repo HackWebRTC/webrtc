@@ -50,4 +50,4 @@ int32_t AudioDeviceUtilityMac::Init()
     return 0;
 }
 
-} //  namespace webrtc
+}  // namespace webrtc

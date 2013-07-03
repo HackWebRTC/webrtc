@@ -80,8 +80,8 @@ private:
     RWLockWrapper* _itemsRWLockPtr;
 };
 
-} // namespace voe
+}  // namespace voe
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_VOICE_ENGINE_CHANNEL_MANAGER_BASE_H

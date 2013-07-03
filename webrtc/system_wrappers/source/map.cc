@@ -138,4 +138,4 @@ int MapWrapper::Erase(const int id) {
   return -1;
 }
 
-} // namespace webrtc
+}  // namespace webrtc

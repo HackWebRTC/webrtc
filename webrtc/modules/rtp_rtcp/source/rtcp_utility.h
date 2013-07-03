@@ -441,6 +441,6 @@ namespace RTCPUtility {
 
         RTCPCommonHeader         _header;
     };
-} // RTCPUtility
-} // namespace webrtc
+}  // RTCPUtility
+}  // namespace webrtc
 #endif // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_UTILITY_H_

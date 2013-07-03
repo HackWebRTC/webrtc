@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#pragma warning(disable: 4995)  //  name was marked as #pragma deprecated
+#pragma warning(disable: 4995)  // name was marked as #pragma deprecated
 
 #if (_MSC_VER >= 1310) && (_MSC_VER < 1400)
 // Reports the major and minor versions of the compiler.

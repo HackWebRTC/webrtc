@@ -42,4 +42,4 @@ int32_t AudioDeviceUtilityIPhone::Init() {
     return 0;
 }
 
-}  //  namespace webrtc
+}  // namespace webrtc

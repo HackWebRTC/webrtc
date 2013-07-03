@@ -394,7 +394,7 @@ int32_t DeviceInfoImpl::GetOrientation(const char* deviceUniqueIdUTF8,
     orientation = kCameraRotate0;
     return -1;
 }
-} //namespace videocapturemodule
-} // namespace webrtc
+}  // namespace videocapturemodule
+}  // namespace webrtc
 
 

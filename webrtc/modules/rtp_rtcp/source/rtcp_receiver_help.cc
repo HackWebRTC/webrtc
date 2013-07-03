@@ -197,4 +197,4 @@ void RTCPReceiveInformation::VerifyAndAllocateBoundingSet(
     const uint32_t minimumSize) {
   TmmbnBoundingSet.VerifyAndAllocateSet(minimumSize);
 }
-} // namespace webrtc
+}  // namespace webrtc

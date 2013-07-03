@@ -379,6 +379,6 @@ private:
     int _renderBufSizeSamples;
 };
 
-} //  namespace webrtc
+}  // namespace webrtc
 
 #endif  // MODULES_AUDIO_DEVICE_MAIN_SOURCE_MAC_AUDIO_DEVICE_MAC_H_

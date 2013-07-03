@@ -88,6 +88,6 @@ enum Rotation
     kRotation270 = 3
 };
 
-} //namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_VIDEO_RENDER_MAIN_INTERFACE_VIDEO_RENDER_DEFINES_H_

@@ -53,5 +53,5 @@ protected:
     void CopyCodecSpecifics(const RTPVideoHeader& videoHeader);
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 #endif // WEBRTC_MODULES_VIDEO_CODING_PACKET_H_

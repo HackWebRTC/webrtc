@@ -1174,5 +1174,5 @@ int32_t VideoRenderDirect3D9::ConfigureRenderer(const uint32_t channel,
     return 0;
 }
 
-} //namespace webrtc
+}  // namespace webrtc
 

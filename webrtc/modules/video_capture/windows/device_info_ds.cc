@@ -809,5 +809,5 @@ int32_t DeviceInfoDS::DisplayCaptureSettingsDialogBox(
     filter->Release();
     return 0;
 }
-} // namespace videocapturemodule
-} // namespace webrtc
+}  // namespace videocapturemodule
+}  // namespace webrtc

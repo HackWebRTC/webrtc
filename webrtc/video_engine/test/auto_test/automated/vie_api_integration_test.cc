@@ -52,4 +52,4 @@ TEST_F(DISABLED_ON_MAC(ViEApiIntegrationTest), RunsRtpRtcpTestWithoutErrors) {
   tests_->ViERtpRtcpAPITest();
 }
 
-} // namespace
+}  // namespace

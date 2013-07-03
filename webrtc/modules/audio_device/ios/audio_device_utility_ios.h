@@ -31,6 +31,6 @@ private:
     AudioDeviceModule::ErrorCode _lastError;
 };
 
-}  //  namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_UTILITY_IPHONE_H

@@ -144,6 +144,6 @@ private:
     bool                        _internalSource;
 }; // end of VCMGenericEncoder class
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_VIDEO_CODING_GENERIC_ENCODER_H_

@@ -807,4 +807,4 @@ int VoEHardwareImpl::PlayoutSampleRate(unsigned int* samples_per_sec) const {
 
 #endif  // WEBRTC_VOICE_ENGINE_HARDWARE_API
 
-} // namespace webrtc
+}  // namespace webrtc

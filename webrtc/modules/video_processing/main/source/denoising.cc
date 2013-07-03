@@ -177,4 +177,4 @@ VPMDenoising::ProcessFrame(I420VideoFrame* frame)
     return numPixelsChanged;
 }
 
-} //namespace
+}  // namespace

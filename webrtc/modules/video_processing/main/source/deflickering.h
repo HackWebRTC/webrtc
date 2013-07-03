@@ -60,6 +60,6 @@ private:
     uint8_t _quantHistUW8[kFrameHistorySize][kNumQuants];
 };
 
-} //namespace
+}  // namespace
 
 #endif // VPM_DEFLICKERING_H

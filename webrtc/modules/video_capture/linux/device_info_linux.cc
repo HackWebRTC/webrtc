@@ -326,5 +326,5 @@ int32_t DeviceInfoLinux::FillCapabilityMap(int fd)
     return _captureCapabilities.Size();
 }
 
-} // namespace videocapturemodule
-} // namespace webrtc
+}  // namespace videocapturemodule
+}  // namespace webrtc

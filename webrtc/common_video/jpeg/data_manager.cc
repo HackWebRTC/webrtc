@@ -83,4 +83,4 @@ termSource (j_decompress_ptr cinfo)
   //
 }
 
-} // end of namespace webrtc
+}  // namespace webrtc

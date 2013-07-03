@@ -236,6 +236,6 @@ private:
 
 #endif // WEBRTC_VOICE_ENGINE_TRANSMIT_MIXER_H
 
-}  //  namespace voe
+}  // namespace voe
 
 }  // namespace webrtc

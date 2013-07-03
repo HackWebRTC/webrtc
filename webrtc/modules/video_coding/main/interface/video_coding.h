@@ -589,6 +589,6 @@ public:
     virtual int StopDebugRecording() = 0;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_INTERFACE_VIDEO_CODING_H_

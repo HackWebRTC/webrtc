@@ -124,4 +124,4 @@ TEST_F(RtcpFormatRembTest, TestCompund) {
   EXPECT_EQ(0, rtcp_sender_->SetREMBData(1234, 2, SSRCs));
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(kRtcpRemb));
 }
-} // namespace
+}  // namespace

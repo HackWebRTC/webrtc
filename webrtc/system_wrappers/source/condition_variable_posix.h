@@ -35,6 +35,6 @@ class ConditionVariablePosix : public ConditionVariableWrapper {
   pthread_cond_t cond_;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_SYSTEM_WRAPPERS_SOURCE_CONDITION_VARIABLE_POSIX_H_

@@ -56,6 +56,6 @@ class VideoFramesQueue {
   // Estimated render delay.
   uint32_t _renderDelayMs;
 };
-} // namespace webrtc
+}  // namespace webrtc
 #endif // WEBRTC_MODULE_UTILITY_VIDEO
 #endif  // WEBRTC_MODULES_UTILITY_SOURCE_VIDEO_FRAMES_QUEUE_H_

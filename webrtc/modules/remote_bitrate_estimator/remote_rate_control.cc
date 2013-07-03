@@ -381,4 +381,4 @@ void RemoteRateControl::StateStr(BandwidthUsage state, char* str) {
       assert(false);
   }
 }
-} // namespace webrtc
+}  // namespace webrtc

@@ -48,5 +48,5 @@ public:
 protected:
     virtual ~RtpDump();
 };
-} // namespace webrtc
+}  // namespace webrtc
 #endif // WEBRTC_MODULES_UTILITY_INTERFACE_RTP_DUMP_H_

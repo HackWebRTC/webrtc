@@ -526,5 +526,5 @@ STDMETHODIMP CaptureSinkFilter::GetClassID( OUT CLSID * pCLSID )
     return S_OK;
 }
 
-} // namespace videocapturemodule
-} //namespace webrtc
+}  // namespace videocapturemodule
+}  // namespace webrtc

@@ -222,7 +222,7 @@ const float kSpatialErr2x2VsHoriz = 0.1f;   // percentage to favor 2x2 over H
 const float kSpatialErr2X2VsVert = 0.1f;    // percentage to favor 2x2 over V
 const float kSpatialErrVertVsHoriz = 0.1f;  // percentage to favor H over V
 
-}  //  namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_VIDEO_CODING_SOURCE_QM_SELECT_DATA_H_
 

@@ -55,7 +55,7 @@ struct WAVE_CHUNK_header
    int8_t  fmt_ckID[4];
    int32_t fmt_ckSize;
 };
-} // unnamed namespace
+}  // unnamed namespace
 
 namespace webrtc {
 ModuleFileUtility::ModuleFileUtility(const int32_t id)
@@ -2559,4 +2559,4 @@ uint32_t ModuleFileUtility::PlayoutPositionMs()
         return 0;
     }
 }
-} // namespace webrtc
+}  // namespace webrtc

@@ -223,4 +223,4 @@ bool VCMGenericDecoder::External() const
     return _isExternal;
 }
 
-} // namespace
+}  // namespace

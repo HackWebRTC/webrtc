@@ -27,6 +27,6 @@ public:
     virtual int32_t Init() { return 0; }
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // MODULES_AUDIO_DEVICE_MAIN_SOURCE_LINUX_AUDIO_DEVICE_UTILITY_DUMMY_H_

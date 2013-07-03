@@ -177,4 +177,4 @@ int MapNoStl::Remove(MapNoStlItem* item) {
   return 0;
 }
 
-} // namespace webrtc
+}  // namespace webrtc

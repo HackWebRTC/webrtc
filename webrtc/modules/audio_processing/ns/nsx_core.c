@@ -588,7 +588,7 @@ static void NoiseEstimationC(NsxInst_t* inst,
                      width_factor, countDiv, 15);
         inst->noiseEstDensity[offset + i] = tmp16no1 + tmp16no2;
       }
-    } // end loop over magnitude spectrum
+    }  // end loop over magnitude spectrum
 
     if (counter >= END_STARTUP_LONG) {
       inst->noiseEstCounter[s] = 0;
@@ -598,7 +598,7 @@ static void NoiseEstimationC(NsxInst_t* inst,
     }
     inst->noiseEstCounter[s]++;
 
-  } // end loop over simultaneous estimates
+  }  // end loop over simultaneous estimates
 
   // Sequentially update the noise during startup
   if (inst->blockIndex < END_STARTUP_LONG) {
@@ -1146,7 +1146,7 @@ void WebRtcNsx_FeatureParameterExtraction(NsxInst_t* inst, int flag) {
     WebRtcSpl_ZerosArrayW16(inst->histLrt, HIST_PAR_EST);
     WebRtcSpl_ZerosArrayW16(inst->histSpecDiff, HIST_PAR_EST);
     WebRtcSpl_ZerosArrayW16(inst->histSpecFlat, HIST_PAR_EST);
-  } // end of flag == 1
+  }  // end of flag == 1
 }
 
 
@@ -1874,7 +1874,7 @@ void WebRtcNsx_DataSynthesis(NsxInst_t* inst, short* outFrame) {
     tmp16no2 = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(inst->priorNonSpeechProb,
                                                         gainFactor2, 14); // Q13;
     gainFactor = tmp16no1 + tmp16no2; // Q13
-  } // out of flag_gain_map==1
+  }  // out of flag_gain_map==1
 
   // Synthesis, read out fully processed segment, and update synthesis buffer.
   WebRtcNsx_SynthesisUpdate(inst, outFrame, gainFactor);
@@ -1960,7 +1960,7 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
       for (i = 0; i < inst->blockLen10ms; i++) {
         outFrameHB[i] = inst->dataBufHBFX[i]; // Q0
       }
-    } // end of H band gain computation
+    }  // end of H band gain computation
     return 0;
   }
 
@@ -2153,7 +2153,7 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
     priorSnr = tmpU32no1 + tmpU32no2 + 512; // Q22 (added 512 for rounding)
     // priorLocSnr = 1 + 2*priorSnr
     priorLocSnr[i] = 2048 + WEBRTC_SPL_RSHIFT_U32(priorSnr, 10); // Q11
-  } // end of loop over frequencies
+  }  // end of loop over frequencies
   // done with step 1: DD computation of prior and post SNR
 
   // STEP 2: compute speech/noise likelihood
@@ -2314,7 +2314,7 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
       tmp32no2 += tmp32no1; // Q(qMagn)
     }
     inst->avgMagnPause[i] = tmp32no2;
-  } // end of frequency loop
+  }  // end of frequency loop
 
   norm32no1 = WebRtcSpl_NormU32(maxNoiseU32);
   qNoise = inst->prevQNoise + norm32no1 - 5;
@@ -2389,7 +2389,7 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
       inst->noiseSupFilter[i] = (uint16_t)WebRtcSpl_DivU32U16(tmpU32no1,
                                                                     END_STARTUP_SHORT);
     }
-  } // end of loop over frequencies
+  }  // end of loop over frequencies
   //done with step3
 
   // save noise and magnitude spectrum for next frame
@@ -2484,7 +2484,7 @@ int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* speechFrame, short* speechFram
       outFrameHB[i]
         = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(gainTimeDomainHB, inst->dataBufHBFX[i], 14); // Q0
     }
-  } // end of H band gain computation
+  }  // end of H band gain computation
 
   return 0;
 }

@@ -63,6 +63,6 @@ protected:
     char* _lastUsedDeviceName;
     uint32_t _lastUsedDeviceNameLength;
 };
-} //namespace videocapturemodule
-} // namespace webrtc
+}  // namespace videocapturemodule
+}  // namespace webrtc
 #endif // WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_DEVICE_INFO_IMPL_H_

@@ -272,4 +272,4 @@ void VCMEncodedFrameCallback::CopyCodecSpecific(const CodecSpecificInfo& info,
         }
     }
 }
-} // namespace webrtc
+}  // namespace webrtc

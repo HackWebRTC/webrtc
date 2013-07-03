@@ -100,6 +100,6 @@ protected:
     AudioRelayReceiver() {}
     virtual ~AudioRelayReceiver() {}
 };
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_INTERFACE_AUDIO_CONFERENCE_MIXER_DEFINES_H_

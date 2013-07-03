@@ -370,7 +370,7 @@ void GeneratePacketMasks(int num_media_packets, int num_fec_packets,
                           num_mask_bytes, packet_mask, mask_table);
 
   }  // End of UEP modification
-}    //End of GetPacketMasks
+}  //End of GetPacketMasks
 
 }  // namespace internal
 }  // namespace webrtc

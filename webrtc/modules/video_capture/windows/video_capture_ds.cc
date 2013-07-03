@@ -409,5 +409,5 @@ HRESULT VideoCaptureDS::ConnectDVCamera()
     }
     return hr;
 }
-} // namespace videocapturemodule
-} //namespace webrtc
+}  // namespace videocapturemodule
+}  // namespace webrtc

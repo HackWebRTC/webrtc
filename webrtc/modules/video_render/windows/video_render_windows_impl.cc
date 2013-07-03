@@ -342,5 +342,5 @@ int32_t VideoRenderWindowsImpl::SetBitmap(const void* bitMap,
     return error;
 }
 
-} //namespace webrtc
+}  // namespace webrtc
 

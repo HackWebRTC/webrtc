@@ -124,6 +124,6 @@ private:
 
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_VOICE_ENGINE_VOE_BASE_IMPL_H

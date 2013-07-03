@@ -178,4 +178,4 @@ void RtpHeaderExtensionMap::GetCopy(RtpHeaderExtensionMap* map) const {
     it++;
   }
 }
-} // namespace webrtc
+}  // namespace webrtc

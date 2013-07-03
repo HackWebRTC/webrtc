@@ -222,6 +222,6 @@ void ChannelManagerBase::GetChannels(MapWrapper& channels) const
     }
 }
 
-} // namespace voe
+}  // namespace voe
 
-} // namespace webrtc
+}  // namespace webrtc

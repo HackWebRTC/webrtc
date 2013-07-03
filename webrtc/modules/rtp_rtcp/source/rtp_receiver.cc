@@ -822,7 +822,7 @@ int32_t RTPReceiver::CheckPayloadChanged(
       rtp_media_receiver_->GetLastMediaSpecificPayload(specific_payload);
       is_red = false;
     }
-  }   // End critsect.
+  }  // End critsect.
 
   if (re_initialize_decoder) {
     if (-1 == rtp_media_receiver_->InvokeOnInitializeDecoder(
@@ -1137,4 +1137,4 @@ void RTPReceiver::ProcessBitrate() {
                     "RTPReceiverPacketRate", ssrc_, PacketRate());
 }
 
-} // namespace webrtc
+}  // namespace webrtc

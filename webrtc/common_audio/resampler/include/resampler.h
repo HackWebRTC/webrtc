@@ -111,6 +111,6 @@ private:
     Resampler* slave_right_;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_RESAMPLER_RESAMPLER_H_

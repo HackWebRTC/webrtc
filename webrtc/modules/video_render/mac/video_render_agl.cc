@@ -1784,7 +1784,7 @@ int VideoRenderAGL::CalculateVisibleRegion(ControlRef control, RgnHandle &visibl
                             continue;
                         }
 
-                    } // next child control
+                    }  // next child control
                 }
                 lastControl = tempControl;
                 GetSuperControl(tempControl, &subControl);
@@ -1996,7 +1996,7 @@ void VideoRenderAGL::UnlockAGLCntx()
     _renderCritSec.Leave();
 }
 
-} //namespace webrtc
+}  // namespace webrtc
 
 #endif   // CARBON_RENDERING
 

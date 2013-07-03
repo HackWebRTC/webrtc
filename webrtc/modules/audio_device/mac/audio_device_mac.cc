@@ -2271,7 +2271,7 @@ AudioDeviceMac::GetNumberDevices(const AudioObjectPropertyScope scope,
 
             free(bufferList);
             bufferList = NULL;
-        } // for
+        }  // for
     }
 
     if (!listOK)
@@ -3269,4 +3269,4 @@ bool AudioDeviceMac::KeyPressed() const{
   }
   return(key_down);
 }
-} //  namespace webrtc
+}  // namespace webrtc

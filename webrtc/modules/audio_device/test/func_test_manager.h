@@ -218,6 +218,6 @@ private:
     AudioTransportImpl* _audioTransport;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // #ifndef WEBRTC_AUDIO_DEVICE_FUNC_TEST_MANAGER_H

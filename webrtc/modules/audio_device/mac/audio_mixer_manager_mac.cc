@@ -1163,5 +1163,5 @@ void AudioMixerManagerMac::logCAMsg(const TraceLevel level,
 #endif
 }
 
-} // namespace webrtc
+}  // namespace webrtc
 // EOF

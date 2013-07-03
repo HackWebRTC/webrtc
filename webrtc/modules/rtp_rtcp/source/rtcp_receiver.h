@@ -243,5 +243,5 @@ protected:
   uint16_t _rtt;
 
 };
-} // namespace webrtc
+}  // namespace webrtc
 #endif // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_H_

@@ -1524,4 +1524,4 @@ RTCPUtility::RTCPPacketIterator::Current()
 
     return &_header;
 }
-} // namespace webrtc
+}  // namespace webrtc

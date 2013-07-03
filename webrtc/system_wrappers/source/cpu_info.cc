@@ -61,4 +61,4 @@ uint32_t CpuInfo::DetectNumberOfCores() {
   return number_of_cores_;
 }
 
-} // namespace webrtc
+}  // namespace webrtc

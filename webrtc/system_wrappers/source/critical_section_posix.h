@@ -31,6 +31,6 @@ class CriticalSectionPosix : public CriticalSectionWrapper {
   friend class ConditionVariablePosix;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_SYSTEM_WRAPPERS_SOURCE_CRITICAL_SECTION_POSIX_H_

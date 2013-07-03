@@ -136,6 +136,6 @@ private:
     // Delta used for translating between NTP and internal timestamps.
     const int64_t delta_ntp_internal_ms_;
 };
-} // namespace videocapturemodule
-} // namespace webrtc
+}  // namespace videocapturemodule
+}  // namespace webrtc
 #endif  // WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_VIDEO_CAPTURE_IMPL_H_

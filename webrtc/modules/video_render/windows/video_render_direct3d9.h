@@ -250,6 +250,6 @@ private:
     DWORD _availableMemory;
 };
 
-} //namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_WINDOWS_VIDEO_RENDER_DIRECT3D9_H_

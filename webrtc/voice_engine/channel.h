@@ -551,8 +551,8 @@ private:
     bool _rxNsIsEnabled;
 };
 
-} // namespace voe
+}  // namespace voe
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_VOICE_ENGINE_CHANNEL_H

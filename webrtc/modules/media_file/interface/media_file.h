@@ -223,5 +223,5 @@ protected:
     MediaFile() {}
     virtual ~MediaFile() {}
 };
-} // namespace webrtc
+}  // namespace webrtc
 #endif // WEBRTC_MODULES_MEDIA_FILE_INTERFACE_MEDIA_FILE_H_

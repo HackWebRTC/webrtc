@@ -1269,7 +1269,7 @@ void parsePtypeFile(FILE *ptypeFile, std::map<uint8_t, decoderStruct>* decoders)
         }
 
         n = fscanf(ptypeFile, "%s %i\n", codec, &pt);
-    } // end while
+    }  // end while
 
 }
 

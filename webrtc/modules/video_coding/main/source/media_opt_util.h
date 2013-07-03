@@ -390,7 +390,7 @@ private:
     int                       _numLayers;
 };
 
-} // namespace media_optimization
-} // namespace webrtc
+}  // namespace media_optimization
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_VIDEO_CODING_MEDIA_OPT_UTIL_H_

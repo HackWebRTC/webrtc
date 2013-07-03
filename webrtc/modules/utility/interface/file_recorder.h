@@ -86,5 +86,5 @@ protected:
     virtual ~FileRecorder() {}
 
 };
-} // namespace webrtc
+}  // namespace webrtc
 #endif // WEBRTC_MODULES_UTILITY_INTERFACE_FILE_RECORDER_H_

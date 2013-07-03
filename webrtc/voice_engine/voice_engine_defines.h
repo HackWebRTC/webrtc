@@ -123,7 +123,7 @@ enum { kVoiceEngineMinRtpExtensionId = 1 };
 // Max 4-bit ID for RTP extension
 enum { kVoiceEngineMaxRtpExtensionId = 14 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 // TODO(ajm): we shouldn't be using the precompiler for this.
 // Use enums or bools as appropriate.
@@ -218,7 +218,7 @@ inline int VoEChannelId(int moduleId)
     return (int) (moduleId & 0xffff);
 }
 
-} // namespace webrtc
+}  // namespace webrtc
 
 // ----------------------------------------------------------------------------
 //  Platform settings

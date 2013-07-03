@@ -67,7 +67,7 @@ namespace webrtc {
 #define ACM_ISAC_GETDECSAMPRATE    ACMISACFixGetDecSampRate  // local Impl
 #endif
 
-}  //namespace
+}  // namespace
 
 #endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_ISAC_MACROS_H_
 

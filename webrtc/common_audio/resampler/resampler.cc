@@ -1081,4 +1081,4 @@ int Resampler::Pull(int16_t* samplesOut, int desiredLen, int &outLen)
     }
 }
 
-} // namespace webrtc
+}  // namespace webrtc

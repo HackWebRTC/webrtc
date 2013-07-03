@@ -5324,5 +5324,5 @@ int Channel::SetRedPayloadType(int red_payload_type) {
   return 0;
 }
 
-} // namespace voe
-} // namespace webrtc
+}  // namespace voe
+}  // namespace webrtc

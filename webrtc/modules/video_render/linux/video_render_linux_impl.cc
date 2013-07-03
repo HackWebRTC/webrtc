@@ -266,5 +266,5 @@ int32_t VideoRenderLinuxImpl::SetBitmap(const void* bitMap,
     return -1;
 }
 
-} //namespace webrtc
+}  // namespace webrtc
 

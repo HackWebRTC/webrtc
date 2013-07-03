@@ -793,4 +793,4 @@ int32_t AviRecorder::WriteEncodedAudioData(
 }
 
 #endif // WEBRTC_MODULE_UTILITY_VIDEO
-} // namespace webrtc
+}  // namespace webrtc

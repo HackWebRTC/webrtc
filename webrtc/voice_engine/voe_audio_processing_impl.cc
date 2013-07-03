@@ -1086,4 +1086,4 @@ bool VoEAudioProcessingImpl::IsStereoChannelSwappingEnabled() {
 
 #endif  // #ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
 
-}   // namespace webrtc
+}  // namespace webrtc

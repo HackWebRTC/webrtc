@@ -51,4 +51,4 @@ int32_t AudioDeviceUtilityLinux::Init()
 }
 
 
-} // namespace webrtc
+}  // namespace webrtc

@@ -142,7 +142,7 @@ private:
 };
 
 
-} //namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_MAC_VIDEO_RENDER_MAC_CARBON_IMPL_H_
 #endif // CARBON_RENDERING

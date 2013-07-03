@@ -93,6 +93,6 @@ private:
     int64_t              _latestPacketTimeMs;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_VIDEO_CODING_FRAME_BUFFER_H_

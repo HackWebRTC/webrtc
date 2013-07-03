@@ -120,6 +120,6 @@ protected:
     RTPFragmentationHeader        _fragmentation;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_VIDEO_CODING_ENCODED_FRAME_H_

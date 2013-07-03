@@ -42,6 +42,6 @@ private:
     ListWrapper             _modules;
     ThreadWrapper*          _thread;
 };
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_UTILITY_SOURCE_PROCESS_THREAD_IMPL_H_

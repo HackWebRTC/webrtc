@@ -1600,7 +1600,7 @@ int VoEExtendedTest::TestCodec() {
       }
     }
     ANL();
-  } // for (int index = 0; index < nCodecs; index++)
+  }  // for (int index = 0; index < nCodecs; index++)
 
   // restore PCMU
   const CodecInst tmp = { 0, "PCMU", 8000, 160, 1, 64000 };
@@ -5304,4 +5304,4 @@ int VoEExtendedTest::TestVolumeControl()
   return 0;
 }
 
-} //  namespace voetest
+}  // namespace voetest

@@ -125,7 +125,7 @@ private:
     bool _fullscreen;
 };
 
-} //namespace webrtc
+}  // namespace webrtc
 
 
 #endif  // WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_EXTERNAL_VIDEO_RENDER_EXTERNAL_IMPL_H_

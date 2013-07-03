@@ -115,6 +115,6 @@ BOOL PinMatchesCategory(IPin *pPin, REFGUID Category)
     }
     return bFound;
 }
-} // namespace videocapturemodule
-} // namespace webrtc
+}  // namespace videocapturemodule
+}  // namespace webrtc
 

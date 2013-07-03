@@ -107,5 +107,5 @@ int AudioFrameOperations::ScaleWithSat(float scale, AudioFrame& frame) {
   return 0;
 }
 
-}  //  namespace webrtc
+}  // namespace webrtc
 

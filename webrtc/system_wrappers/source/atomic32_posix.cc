@@ -54,4 +54,4 @@ int32_t Atomic32::Value() const {
   return value_;
 }
 
-} // namespace webrtc
+}  // namespace webrtc

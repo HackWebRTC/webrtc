@@ -956,4 +956,4 @@ bool VCMQmRobustness::SetUepProtection(uint8_t code_rate_delta,
   // Default.
   return false;
 }
-}  // end of namespace
+}  // namespace

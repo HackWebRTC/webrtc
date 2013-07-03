@@ -1260,6 +1260,6 @@ void VideoRenderNSOpenGL::UnlockAGLCntx()
  */
 
 
-} //namespace webrtc
+}  // namespace webrtc
 
 #endif // COCOA_RENDERING

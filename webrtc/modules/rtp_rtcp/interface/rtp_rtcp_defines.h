@@ -307,5 +307,5 @@ class NullRtpAudioFeedback : public RtpAudioFeedback {
                                     const uint8_t volume) {}
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 #endif // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_DEFINES_H_

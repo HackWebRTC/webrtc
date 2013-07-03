@@ -30,5 +30,5 @@ public:
 protected:
     virtual ~ProcessThread();
 };
-} // namespace webrtc
+}  // namespace webrtc
 #endif // WEBRTC_MODULES_UTILITY_INTERFACE_PROCESS_THREAD_H_

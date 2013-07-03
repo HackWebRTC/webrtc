@@ -47,5 +47,5 @@ public:
 protected:
     FileCallback() {}
 };
-} // namespace webrtc
+}  // namespace webrtc
 #endif // WEBRTC_MODULES_MEDIA_FILE_INTERFACE_MEDIA_FILE_DEFINES_H_

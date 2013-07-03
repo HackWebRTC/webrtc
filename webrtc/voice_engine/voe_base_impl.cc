@@ -1241,4 +1241,4 @@ int32_t VoEBaseImpl::TerminateInternal()
     return _shared->statistics().SetUnInitialized();
 }
 
-} // namespace webrtc
+}  // namespace webrtc

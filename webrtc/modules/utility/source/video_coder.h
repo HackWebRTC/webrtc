@@ -63,6 +63,6 @@ private:
     I420VideoFrame* _decodedVideo;
     EncodedVideoData* _videoEncodedData;
 };
-} // namespace webrtc
+}  // namespace webrtc
 #endif // WEBRTC_MODULE_UTILITY_VIDEO
 #endif // WEBRTC_MODULES_UTILITY_SOURCE_VIDEO_CODER_H_

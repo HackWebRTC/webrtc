@@ -118,6 +118,6 @@ void SharedData::SetLastError(int32_t error, TraceLevel level,
   _engineStatistics.SetLastError(error, level, msg);
 }
 
-}  //  namespace voe
+}  // namespace voe
 
-}  //  namespace webrtc
+}  // namespace webrtc

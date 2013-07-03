@@ -48,6 +48,6 @@ private:
     voe::SharedData* _shared;
 };
 
-}   // namespace webrtc
+}  // namespace webrtc
 
 #endif    // WEBRTC_VOICE_ENGINE_VOE_VIDEO_SYNC_IMPL_H

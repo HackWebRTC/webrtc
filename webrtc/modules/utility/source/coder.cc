@@ -124,4 +124,4 @@ int32_t AudioCoder::SendData(
     _encodedLengthInBytes = payloadSize;
     return 0;
 }
-} // namespace webrtc
+}  // namespace webrtc

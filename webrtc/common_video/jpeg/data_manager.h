@@ -62,7 +62,7 @@ skipInputData(j_decompress_ptr cinfo, long num_bytes);
 void
 termSource (j_decompress_ptr cinfo);
 
-} // end of namespace webrtc
+}  // namespace webrtc
 
 
 #endif /* WEBRTC_COMMON_VIDEO_JPEG_DATA_MANAGER */

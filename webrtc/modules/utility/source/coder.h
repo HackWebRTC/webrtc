@@ -59,6 +59,6 @@ private:
 
     uint32_t _decodeTimestamp;
 };
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_UTILITY_SOURCE_CODER_H_

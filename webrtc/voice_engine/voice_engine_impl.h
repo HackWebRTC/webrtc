@@ -154,6 +154,6 @@ private:
     Atomic32 _ref_count;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_VOICE_ENGINE_VOICE_ENGINE_IMPL_H

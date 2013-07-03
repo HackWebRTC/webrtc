@@ -203,6 +203,6 @@ private:
     // Used for inhibiting saturation in mixing.
     scoped_ptr<AudioProcessing> _limiter;
 };
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_AUDIO_CONFERENCE_MIXER_IMPL_H_

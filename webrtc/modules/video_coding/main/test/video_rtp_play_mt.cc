@@ -32,7 +32,7 @@ const uint32_t kConfigRenderDelayMs = 0;
 const uint32_t kConfigMinPlayoutDelayMs = 0;
 const int64_t kConfigMaxRuntimeMs = 10000;
 
-} // namespace
+}  // namespace
 
 bool PlayerThread(void* obj) {
   assert(obj);

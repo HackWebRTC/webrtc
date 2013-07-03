@@ -68,6 +68,6 @@ class ThreadPosix : public ThreadWrapper {
   pthread_t               thread_;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_SYSTEM_WRAPPERS_SOURCE_THREAD_POSIX_H_

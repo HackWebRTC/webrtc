@@ -130,7 +130,7 @@ private:
     std::vector<int64_t> _tmmbrSetTimeouts;
 };
 
-} // end namespace RTCPHelp
-} // namespace webrtc
+}  // end namespace RTCPHelp
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_HELP_H_

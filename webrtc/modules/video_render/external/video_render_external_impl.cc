@@ -201,5 +201,5 @@ int32_t VideoRenderExternalImpl::RenderFrame(
 {
     return 0;
 }
-} //namespace webrtc
+}  // namespace webrtc
 

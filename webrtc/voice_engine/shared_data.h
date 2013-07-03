@@ -83,7 +83,7 @@ protected:
     virtual ~SharedData();
 };
 
-} //  namespace voe
+}  // namespace voe
 
-} //  namespace webrtc
+}  // namespace webrtc
 #endif // WEBRTC_VOICE_ENGINE_SHARED_DATA_H

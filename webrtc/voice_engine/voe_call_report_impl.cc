@@ -408,4 +408,4 @@ int VoECallReportImpl::WriteReportToFile(const char* fileNameUTF8)
 
 #endif  // WEBRTC_VOICE_ENGINE_CALL_REPORT_API
 
-} // namespace webrtc
+}  // namespace webrtc

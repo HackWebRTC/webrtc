@@ -312,6 +312,6 @@ int32_t VideoX11Channel::GetStreamProperties(uint32_t& zOrder,
 }
 
 
-} //namespace webrtc
+}  // namespace webrtc
 
 

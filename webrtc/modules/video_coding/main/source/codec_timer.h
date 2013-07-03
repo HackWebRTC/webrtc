@@ -56,6 +56,6 @@ private:
 
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_VIDEO_CODING_CODEC_TIMER_H_

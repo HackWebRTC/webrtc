@@ -433,5 +433,5 @@ uint32_t VideoCaptureImpl::CalculateFrameRate(const TickTime& now)
 
     return nrOfFrames;
 }
-} // namespace videocapturemodule
-} // namespace webrtc
+}  // namespace videocapturemodule
+}  // namespace webrtc

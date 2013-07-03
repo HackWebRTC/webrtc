@@ -129,4 +129,4 @@ void ConditionVariablePosix::WakeAll() {
   pthread_cond_broadcast(&cond_);
 }
 
-} // namespace webrtc
+}  // namespace webrtc

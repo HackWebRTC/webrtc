@@ -107,5 +107,5 @@ protected:
     virtual ~FilePlayer() {}
 
 };
-} // namespace webrtc
+}  // namespace webrtc
 #endif // WEBRTC_MODULES_UTILITY_INTERFACE_FILE_PLAYER_H_

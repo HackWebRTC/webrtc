@@ -47,4 +47,4 @@ int32_t AudioDeviceUtilityAndroid::Init()
     return 0;
 }
 
-} // namespace webrtc
+}  // namespace webrtc

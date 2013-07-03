@@ -1420,6 +1420,6 @@ bool TransmitMixer::IsStereoChannelSwappingEnabled() {
   return swap_stereo_channels_;
 }
 
-}  //  namespace voe
+}  // namespace voe
 
-}  //  namespace webrtc
+}  // namespace webrtc

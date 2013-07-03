@@ -156,6 +156,6 @@ Channel* ScopedChannel::GetNextChannel(void*& iterator) const
     return static_cast<Channel*> (it->GetItem());
 }
 
-} // namespace voe
+}  // namespace voe
 
-} // namespace webrtc
+}  // namespace webrtc

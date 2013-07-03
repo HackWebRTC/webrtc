@@ -2730,7 +2730,7 @@ bool AudioDeviceAndroidJni::PlayThreadProcess()
 
         Lock();
 
-    } // _playing
+    }  // _playing
 
     if (_shutdownPlayThread)
     {
@@ -2867,7 +2867,7 @@ bool AudioDeviceAndroidJni::RecThreadProcess()
             Lock();
         }
 
-    } // _recording
+    }  // _recording
 
     if (_shutdownRecThread)
     {
@@ -2898,4 +2898,4 @@ bool AudioDeviceAndroidJni::RecThreadProcess()
     return true;
 }
 
-} // namespace webrtc
+}  // namespace webrtc

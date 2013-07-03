@@ -247,6 +247,6 @@ public:
     virtual VideoDecoder* Copy() { return NULL; }
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_VIDEO_CODING_CODECS_INTERFACE_VIDEO_CODEC_INTERFACE_H

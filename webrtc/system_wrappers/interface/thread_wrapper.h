@@ -89,6 +89,6 @@ class ThreadWrapper {
   virtual bool Stop() = 0;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_THREAD_WRAPPER_H_

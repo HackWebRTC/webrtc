@@ -59,6 +59,6 @@ namespace VideoProcessing
         return VPM_OK;
     }
 
-} //namespace
+}  // namespace
 
-} //namespace webrtc
+}  // namespace webrtc

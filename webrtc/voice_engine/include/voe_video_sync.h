@@ -99,6 +99,6 @@ protected:
     virtual ~VoEVideoSync() { }
 };
 
-}   // namespace webrtc
+}  // namespace webrtc
 
 #endif  // #ifndef WEBRTC_VOICE_ENGINE_VOE_VIDEO_SYNC_H

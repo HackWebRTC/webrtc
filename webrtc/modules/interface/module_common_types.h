@@ -1067,6 +1067,6 @@ inline uint32_t LatestTimestamp(uint32_t timestamp1, uint32_t timestamp2) {
       timestamp2;
 }
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // MODULE_COMMON_TYPES_H

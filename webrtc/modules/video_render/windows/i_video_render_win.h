@@ -106,5 +106,5 @@ public:
 
 };
 
-} //namespace webrtc
+}  // namespace webrtc
 #endif  // WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_WINDOWS_I_VIDEO_RENDER_WIN_H_

@@ -75,6 +75,6 @@ private:
 
 };
 	
-} //namespace webrtc
+}  // namespace webrtc
 
 #endif  // AUDIO_MIXER_MAC_H

@@ -271,6 +271,6 @@ private:
 
     ListWrapper* _indexList; // Elements are of type AVIINDEXENTRY.
 };
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_MEDIA_FILE_SOURCE_AVI_FILE_H_

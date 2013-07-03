@@ -126,5 +126,5 @@ int32_t VideoFramesQueue::SetRenderDelay(uint32_t renderDelay) {
   _renderDelayMs = renderDelay;
   return 0;
 }
-} // namespace webrtc
+}  // namespace webrtc
 #endif // WEBRTC_MODULE_UTILITY_VIDEO

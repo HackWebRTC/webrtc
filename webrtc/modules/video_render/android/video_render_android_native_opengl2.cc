@@ -447,4 +447,4 @@ jint AndroidNativeOpenGl2Channel::CreateOpenGLNative(
   return _openGLRenderer.Setup(width, height);
 }
 
-}  //namespace webrtc
+}  // namespace webrtc

@@ -25,7 +25,7 @@ const uint32_t kConfigRenderDelayMs = 0;
 const uint32_t kConfigMinPlayoutDelayMs = 0;
 const int64_t kConfigMaxRuntimeMs = -1;
 
-} // namespace
+}  // namespace
 
 int RtpPlay(const CmdArgs& args) {
   std::string trace_file = webrtc::test::OutputPath() + "receiverTestTrace.txt";

@@ -483,4 +483,4 @@ int32_t KeySort(void* data, void* key, uint32_t num_of_elements,
 #endif
 }
 
-} // namespace webrtc
+}  // namespace webrtc

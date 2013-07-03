@@ -507,4 +507,4 @@ int RTPSenderVideo::SetSelectiveRetransmissions(uint8_t settings) {
   return 0;
 }
 
-} // namespace webrtc
+}  // namespace webrtc

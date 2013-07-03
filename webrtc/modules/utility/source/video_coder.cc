@@ -148,5 +148,5 @@ int32_t VideoCoder::SendData(
     _videoEncodedData->payloadSize = payloadSize;
     return 0;
 }
-} // namespace webrtc
+}  // namespace webrtc
 #endif // WEBRTC_MODULE_UTILITY_VIDEO

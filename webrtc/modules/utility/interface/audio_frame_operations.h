@@ -53,6 +53,6 @@ class AudioFrameOperations {
   static int ScaleWithSat(float scale, AudioFrame& frame);
 };
 
-}  //  namespace webrtc
+}  // namespace webrtc
 
 #endif  // #ifndef WEBRTC_VOICE_ENGINE_AUDIO_FRAME_OPERATIONS_H_

@@ -94,6 +94,6 @@ int32_t Statistics::LastError() const
     return _lastError;
 }
 
-}  //  namespace voe
+}  // namespace voe
 
-}  //  namespace webrtc
+}  // namespace webrtc

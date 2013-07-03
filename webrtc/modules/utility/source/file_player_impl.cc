@@ -728,4 +728,4 @@ int32_t VideoFilePlayerImpl::SetUpVideoDecoder()
     return 0;
 }
 #endif // WEBRTC_MODULE_UTILITY_VIDEO
-} // namespace webrtc
+}  // namespace webrtc

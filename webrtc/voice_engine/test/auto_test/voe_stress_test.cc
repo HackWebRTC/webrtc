@@ -79,8 +79,8 @@ int VoEStressTest::DoTest() {
         // Should not be possible
         printf("Invalid selection! (Test code error)\n");
         assert(false);
-    } // switch
-  } // while
+    }  // switch
+  }  // while
 
   return 0;
 }
@@ -409,4 +409,4 @@ bool VoEStressTest::ProcessExtraApi() {
   return true;
 }
 
-} //  namespace voetest
+}  // namespace voetest

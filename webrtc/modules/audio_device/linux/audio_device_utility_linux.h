@@ -31,6 +31,6 @@ private:
     int32_t _id;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // MODULES_AUDIO_DEVICE_MAIN_SOURCE_LINUX_AUDIO_DEVICE_UTILITY_LINUX_H_

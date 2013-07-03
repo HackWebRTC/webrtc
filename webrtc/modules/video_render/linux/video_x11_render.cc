@@ -150,5 +150,5 @@ int32_t VideoX11Render::GetIncomingStreamProperties(
     return -1;
 }
 
-} //namespace webrtc
+}  // namespace webrtc
 

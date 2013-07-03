@@ -65,6 +65,6 @@ class MapNoStl {
   DISALLOW_COPY_AND_ASSIGN(MapNoStl);
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_SYSTEM_WRAPPERS_SOURCE_MAP_NO_STL_H_

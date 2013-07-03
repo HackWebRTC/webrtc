@@ -443,7 +443,7 @@ int32_t AudioTransportImpl::NeedMorePlayData(
             }
             _audioList.PopFront();
         }
-    } // if (_fullDuplex)
+    }  // if (_fullDuplex)
 
     if (_playFromFile && _playFile.Open())
     {
@@ -475,7 +475,7 @@ int32_t AudioTransportImpl::NeedMorePlayData(
                 audio16++;
             }
         }
-    } // if (_playFromFile && _playFile.Open())
+    }  // if (_playFromFile && _playFile.Open())
 
     _playCount++;
 
@@ -550,7 +550,7 @@ int32_t AudioTransportImpl::NeedMorePlayData(
         {
             TEST_LOG("++");
         }
-    } // if (_playCount % 100 == 0)
+    }  // if (_playCount % 100 == 0)
 
     nSamplesOut = nSamples;
 
@@ -880,7 +880,7 @@ int32_t FuncTestManager::TestAudioLayerSelection()
                 TEST_LOG("\nActiveAudioLayer: kWindowsCoreAudio <=> "
                     "switch was possible\n \n");
         }
-    } // if (tryWinWave || tryWinCore)
+    }  // if (tryWinWave || tryWinCore)
 
     PRINT_TEST_RESULTS;
 
@@ -2460,7 +2460,7 @@ int32_t FuncTestManager::TestDeviceRemoval()
 
             loopCount++;
         }
-    } // loopCount
+    }  // loopCount
 
     EXPECT_EQ(0, audioDevice->Terminate());
     EXPECT_FALSE(audioDevice->Initialized());
@@ -2729,6 +2729,6 @@ int32_t FuncTestManager::TestAdvancedMBAPI()
     return 0;
 }
 
-} // namespace webrtc
+}  // namespace webrtc
 
 // EOF

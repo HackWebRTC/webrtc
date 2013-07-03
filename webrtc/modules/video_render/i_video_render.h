@@ -128,6 +128,6 @@ public:
                               const float bottom) = 0;
 
 };
-} //namespace webrtc
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_I_VIDEO_RENDER_H_

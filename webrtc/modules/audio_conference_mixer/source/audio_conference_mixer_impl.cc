@@ -1217,4 +1217,4 @@ bool AudioConferenceMixerImpl::LimitMixedAudio(AudioFrame& mixedAudio)
     }
     return true;
 }
-} // namespace webrtc
+}  // namespace webrtc

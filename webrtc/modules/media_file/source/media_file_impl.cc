@@ -1368,4 +1368,4 @@ bool MediaFileImpl::ValidFrequency(const uint32_t frequency)
                  "Frequency should be 8000, 16000 or 32000 (Hz)");
     return false;
 }
-} // namespace webrtc
+}  // namespace webrtc

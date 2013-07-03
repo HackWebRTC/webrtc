@@ -122,4 +122,4 @@ void VCMContentMetricsProcessing::UpdateRecursiveAvg(
       recursive_avg_->motion_magnitude +
       recursive_avg_factor_ * contentMetrics->motion_magnitude;
 }
-}  // end of namespace
+}  // namespace

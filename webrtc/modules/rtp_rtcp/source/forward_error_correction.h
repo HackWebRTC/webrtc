@@ -308,5 +308,5 @@ class ForwardErrorCorrection {
   FecPacketList fec_packet_list_;
   bool fec_packet_received_;
 };
-}       // namespace webrtc
+}  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_FORWARD_ERROR_CORRECTION_H_

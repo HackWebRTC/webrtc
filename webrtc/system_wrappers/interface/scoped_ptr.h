@@ -253,6 +253,6 @@ void swap(scoped_ptr_malloc<T,FF>& a, scoped_ptr_malloc<T,FF>& b) {
   a.swap(b);
 }
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif  // #ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_SCOPED_PTR_H_
