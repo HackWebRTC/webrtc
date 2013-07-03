@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_processing/main/test/unit_test/unit_test.h"
+#include "webrtc/modules/video_processing/main/test/unit_test/video_processing_unittest.h"
 
 #include <string>
 

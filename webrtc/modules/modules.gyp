@@ -143,7 +143,7 @@
             'audio_coding/neteq4/mock/mock_payload_splitter.h',
             'audio_processing/aec/system_delay_unittest.cc',
             'audio_processing/aec/echo_cancellation_unittest.cc',
-            'audio_processing/test/unit_test.cc',
+            'audio_processing/test/audio_processing_unittest.cc',
             'audio_processing/utility/delay_estimator_unittest.cc',
             'audio_processing/utility/ring_buffer_unittest.cc',
             'bitrate_controller/bitrate_controller_unittest.cc',
@@ -218,8 +218,8 @@
             'video_processing/main/test/unit_test/content_metrics_test.cc',
             'video_processing/main/test/unit_test/deflickering_test.cc',
             'video_processing/main/test/unit_test/denoising_test.cc',
-            'video_processing/main/test/unit_test/unit_test.cc',
-            'video_processing/main/test/unit_test/unit_test.h',
+            'video_processing/main/test/unit_test/video_processing_unittest.cc',
+            'video_processing/main/test/unit_test/video_processing_unittest.h',
           ],
           'conditions': [
             # Run screen/window capturer tests only on platforms where they are
