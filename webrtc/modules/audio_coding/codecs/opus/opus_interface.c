@@ -22,15 +22,18 @@ enum {
   /* Maximum supported frame size in WebRTC is 60 ms. */
   kWebRtcOpusMaxEncodeFrameSizeMs = 60,
 
-  /* The format allows up to 120ms frames. Since we
-   * don't control the other side, we must allow
-   * for packets that large. NetEq is currently
-   * limited to 60 ms on the receive side.
-   */
+  /* The format allows up to 120 ms frames. Since we don't control the other
+   * side, we must allow for packets of that size. NetEq is currently limited
+   * to 60 ms on the receive side. */
   kWebRtcOpusMaxDecodeFrameSizeMs = 120,
 
-  /* Sample count is 48 kHz * samples per frame * stereo. */
-  kWebRtcOpusMaxFrameSize = 48 * kWebRtcOpusMaxDecodeFrameSizeMs * 2,
+  /* Maximum sample count per channel is 48 kHz * maximum frame size in
+   * milliseconds. */
+  kWebRtcOpusMaxFrameSizePerChannel = 48 * kWebRtcOpusMaxDecodeFrameSizeMs,
+
+  /* Maximum sample count per frame is 48 kHz * maximum frame size in
+   * milliseconds * maximum number of channels. */
+  kWebRtcOpusMaxFrameSize = kWebRtcOpusMaxFrameSizePerChannel * 2,
 
   /* Number of samples in resampler state. */
   kWebRtcOpusStateSize = 7,
@@ -113,7 +116,7 @@ int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, int channels) {
   OpusDecInst* state;
 
   if (inst != NULL) {
-    /* Create Opus decoder memory. */
+    /* Create Opus decoder state. */
     state = (OpusDecInst*) calloc(1, sizeof(OpusDecInst));
     if (state == NULL) {
       return -1;
@@ -192,7 +195,7 @@ static int DecodeNative(OpusDecoder* inst, const int16_t* encoded,
   opus_int16* audio = (opus_int16*) decoded;
 
   int res = opus_decode(inst, coded, encoded_bytes, audio,
-                        kWebRtcOpusMaxFrameSize, 0);
+                        kWebRtcOpusMaxFrameSizePerChannel, 0);
   /* TODO(tlegrand): set to DTX for zero-length packets? */
   *audio_type = 0;
 
@@ -235,11 +238,11 @@ static int WebRtcOpus_Resample48to32(const int16_t* samples_in, int length,
 int16_t WebRtcOpus_DecodeNew(OpusDecInst* inst, const uint8_t* encoded,
                              int16_t encoded_bytes, int16_t* decoded,
                              int16_t* audio_type) {
-  /* Enough for 120 ms (the largest Opus packet size) of mono audio at 48 kHz
-   * and resampler overlap. This will need to be enlarged for stereo decoding.
-   */
+  /* |buffer16_left| and |buffer_out| are big enough for 120 ms (the largest
+   * Opus packet size) of stereo audio at 48 kHz, while |buffer16_right| only
+   * need to be big enough for maximum size of one of the channels. */
   int16_t buffer16_left[kWebRtcOpusMaxFrameSize];
-  int16_t buffer16_right[kWebRtcOpusMaxFrameSize];
+  int16_t buffer16_right[kWebRtcOpusMaxFrameSizePerChannel];
   int16_t buffer_out[kWebRtcOpusMaxFrameSize];
   int16_t* coded = (int16_t*) encoded;
   int decoded_samples;
@@ -251,7 +254,7 @@ int16_t WebRtcOpus_DecodeNew(OpusDecInst* inst, const uint8_t* encoded,
    * left and right channel. Each block is resampled to 32 kHz, and then
    * interleaved again. */
 
-  /* Decode to a temporary buffer. */
+  /* Decode to temporarily to |buffer16_left|. */
   decoded_samples = DecodeNative(inst->decoder_left, coded, encoded_bytes,
                                  buffer16_left, audio_type);
   if (decoded_samples < 0) {
@@ -261,8 +264,8 @@ int16_t WebRtcOpus_DecodeNew(OpusDecInst* inst, const uint8_t* encoded,
   /* De-interleave if stereo. */
   if (inst->channels == 2) {
     /* The parameter |decoded_samples| holds the number of samples pairs, in
-     * case of stereo. Number of samples in |buffer16| equals |decoded_samples|
-     * times 2. */
+     * case of stereo. Number of samples in |buffer16_left| equals
+     * |decoded_samples| times 2. */
     for (i = 0; i < decoded_samples; i++) {
       /* Take every second sample, starting at the first sample. */
       buffer16_left[i] = buffer16_left[i * 2];
@@ -304,9 +307,8 @@ int16_t WebRtcOpus_DecodeNew(OpusDecInst* inst, const uint8_t* encoded,
 int16_t WebRtcOpus_Decode(OpusDecInst* inst, const int16_t* encoded,
                           int16_t encoded_bytes, int16_t* decoded,
                           int16_t* audio_type) {
-  /* Enough for 120 ms (the largest Opus packet size) of mono audio at 48 kHz
-   * and resampler overlap. This will need to be enlarged for stereo decoding.
-   */
+  /* |buffer16| is big enough for 120 ms (the largestOpus packet size) of
+   * stereo audio at 48 kHz. */
   int16_t buffer16[kWebRtcOpusMaxFrameSize];
   int decoded_samples;
   int16_t output_samples;
@@ -345,9 +347,8 @@ int16_t WebRtcOpus_Decode(OpusDecInst* inst, const int16_t* encoded,
 int16_t WebRtcOpus_DecodeSlave(OpusDecInst* inst, const int16_t* encoded,
                                int16_t encoded_bytes, int16_t* decoded,
                                int16_t* audio_type) {
-  /* Enough for 120 ms (the largest Opus packet size) of mono audio at 48 kHz
-   * and resampler overlap. This will need to be enlarged for stereo decoding.
-   */
+  /* |buffer16| is big enough for 120 ms (the largestOpus packet size) of
+   * stereo audio at 48 kHz. */
   int16_t buffer16[kWebRtcOpusMaxFrameSize];
   int decoded_samples;
   int16_t output_samples;
