@@ -303,8 +303,7 @@ int16_t ACMGenericCodec::Encode(uint8_t* bitstream,
 
         // Reset the variables which will be incremented in the loop.
         *bitstream_len_byte = 0;
-        bool done = false;
-        while (!done) {
+        do {
           status = InternalEncode(&bitstream[*bitstream_len_byte],
                                   &tmp_bitstream_len_byte);
           *bitstream_len_byte += tmp_bitstream_len_byte;
@@ -323,12 +322,7 @@ int16_t ACMGenericCodec::Encode(uint8_t* bitstream,
             // break from the loop
             break;
           }
-
-          // TODO(andrew): This should be multiplied by the number of
-          //               channels, right?
-          // http://code.google.com/p/webrtc/issues/detail?id=714
-          done = in_audio_ix_read_ >= frame_len_smpl_;
-        }
+        } while (in_audio_ix_read_ < frame_len_smpl_ * num_channels_);
       }
       if (status >= 0) {
         *encoding_type = (vad_label_[0] == 1) ? kActiveNormalEncoded :
