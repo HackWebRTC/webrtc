@@ -48,6 +48,9 @@
 // Macro that calls a COM method returning HRESULT value.
 #define EXIT_ON_ERROR(hres)    do { if (FAILED(hres)) goto Exit; } while(0)
 
+// Macro that continues to a COM error.
+#define CONTINUE_ON_ERROR(hres) do { if (FAILED(hres)) goto Next; } while(0)
+
 // Macro that releases a COM object if not NULL.
 #define SAFE_RELEASE(p)     do { if ((p)) { (p)->Release(); (p) = NULL; } } while(0)
 
@@ -4933,13 +4936,13 @@ int32_t AudioDeviceWindowsCore::_EnumerateEndpointDevicesAll(EDataFlow dataFlow)
         hr = pCollection->Item(
                             i,
                             &pEndpoint);
-        EXIT_ON_ERROR(hr);
+        CONTINUE_ON_ERROR(hr);
 
         // use the IMMDevice interface of the specified endpoint device...
 
         // Get the endpoint ID string (uniquely identifies the device among all audio endpoint devices)
         hr = pEndpoint->GetId(&pwszID);
-        EXIT_ON_ERROR(hr);
+        CONTINUE_ON_ERROR(hr);
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "ID string    : %S", pwszID);
 
         // Retrieve an interface to the device's property store.
@@ -4947,7 +4950,7 @@ int32_t AudioDeviceWindowsCore::_EnumerateEndpointDevicesAll(EDataFlow dataFlow)
         hr = pEndpoint->OpenPropertyStore(
                           STGM_READ,
                           &pProps);
-        EXIT_ON_ERROR(hr);
+        CONTINUE_ON_ERROR(hr);
 
         // use the IPropertyStore interface...
 
@@ -4960,13 +4963,13 @@ int32_t AudioDeviceWindowsCore::_EnumerateEndpointDevicesAll(EDataFlow dataFlow)
         hr = pProps->GetValue(
                        PKEY_Device_FriendlyName,
                        &varName);
-        EXIT_ON_ERROR(hr);
+        CONTINUE_ON_ERROR(hr);
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "friendly name: \"%S\"", varName.pwszVal);
 
         // Get the endpoint's current device state
         DWORD dwState;
         hr = pEndpoint->GetState(&dwState);
-        EXIT_ON_ERROR(hr);
+        CONTINUE_ON_ERROR(hr);
         if (dwState & DEVICE_STATE_ACTIVE)
             WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "state (0x%x)  : *ACTIVE*", dwState);
         if (dwState & DEVICE_STATE_DISABLED)
@@ -4980,9 +4983,9 @@ int32_t AudioDeviceWindowsCore::_EnumerateEndpointDevicesAll(EDataFlow dataFlow)
         DWORD dwHwSupportMask = 0;
         hr = pEndpoint->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL,
                                NULL, (void**)&pEndpointVolume);
-        EXIT_ON_ERROR(hr);
+        CONTINUE_ON_ERROR(hr);
         hr = pEndpointVolume->QueryHardwareSupport(&dwHwSupportMask);
-        EXIT_ON_ERROR(hr);
+        CONTINUE_ON_ERROR(hr);
         if (dwHwSupportMask & ENDPOINT_HARDWARE_SUPPORT_VOLUME)
             // The audio endpoint device supports a hardware volume control
             WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "hwmask (0x%x) : HARDWARE_SUPPORT_VOLUME", dwHwSupportMask);
@@ -4997,7 +5000,7 @@ int32_t AudioDeviceWindowsCore::_EnumerateEndpointDevicesAll(EDataFlow dataFlow)
         UINT nChannelCount(0);
         hr = pEndpointVolume->GetChannelCount(
                                 &nChannelCount);
-        EXIT_ON_ERROR(hr);
+        CONTINUE_ON_ERROR(hr);
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "#channels    : %u", nChannelCount);
 
         if (dwHwSupportMask & ENDPOINT_HARDWARE_SUPPORT_VOLUME)
@@ -5010,7 +5013,7 @@ int32_t AudioDeviceWindowsCore::_EnumerateEndpointDevicesAll(EDataFlow dataFlow)
                                     &fLevelMinDB,
                                     &fLevelMaxDB,
                                     &fVolumeIncrementDB);
-            EXIT_ON_ERROR(hr);
+            CONTINUE_ON_ERROR(hr);
             WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "volume range : %4.2f (min), %4.2f (max), %4.2f (inc) [dB]",
                 fLevelMinDB, fLevelMaxDB, fVolumeIncrementDB);
 
@@ -5033,10 +5036,14 @@ int32_t AudioDeviceWindowsCore::_EnumerateEndpointDevicesAll(EDataFlow dataFlow)
             hr = pEndpointVolume->GetVolumeStepInfo(
                                     &nStep,
                                     &nStepCount);
-            EXIT_ON_ERROR(hr);
+            CONTINUE_ON_ERROR(hr);
             WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "volume steps : %d (nStep), %d (nStepCount)", nStep, nStepCount);
         }
-
+Next:
+        if (FAILED(hr)) {
+          WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                       "Error when logging device information");
+        }
         CoTaskMemFree(pwszID);
         pwszID = NULL;
         PropVariantClear(&varName);
