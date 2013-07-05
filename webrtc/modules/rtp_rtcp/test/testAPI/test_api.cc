@@ -33,6 +33,10 @@ class RtpRtcpAPITest : public ::testing::Test {
     configuration.audio = true;
     configuration.clock = &fake_clock;
     module = RtpRtcp::CreateRtpRtcp(configuration);
+    rtp_payload_registry_.reset(new RTPPayloadRegistry(
+            test_id, RTPPayloadStrategy::CreateStrategy(true)));
+    rtp_receiver_.reset(RtpReceiver::CreateAudioReceiver(
+        test_id, &fake_clock, NULL, NULL, NULL, rtp_payload_registry_.get()));
   }
 
   virtual void TearDown() {
@@ -40,6 +44,8 @@ class RtpRtcpAPITest : public ::testing::Test {
   }
 
   int test_id;
+  scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
+  scoped_ptr<RtpReceiver> rtp_receiver_;
   RtpRtcp* module;
   uint32_t test_ssrc;
   uint32_t test_timestamp;
@@ -103,9 +109,9 @@ TEST_F(RtpRtcpAPITest, RTCP) {
   EXPECT_EQ(0, module->SetTMMBRStatus(false));
   EXPECT_FALSE(module->TMMBR());
 
-  EXPECT_EQ(kNackOff, module->NACK());
-  EXPECT_EQ(0, module->SetNACKStatus(kNackRtcp, 450));
-  EXPECT_EQ(kNackRtcp, module->NACK());
+  EXPECT_EQ(kNackOff, rtp_receiver_->NACK());
+  EXPECT_EQ(0, rtp_receiver_->SetNACKStatus(kNackRtcp, 450));
+  EXPECT_EQ(kNackRtcp, rtp_receiver_->NACK());
 }
 
 TEST_F(RtpRtcpAPITest, RTXSender) {
@@ -129,7 +135,7 @@ TEST_F(RtpRtcpAPITest, RTXSender) {
   EXPECT_EQ(0, module->SetRTXSendStatus(kRtxRetransmitted, false, 1));
   EXPECT_EQ(0, module->RTXSendStatus(&rtx_mode, &ssrc, &payload_type));
   EXPECT_EQ(kRtxRetransmitted, rtx_mode);
-  EXPECT_EQ(kRtxPayloadType ,payload_type);
+  EXPECT_EQ(kRtxPayloadType, payload_type);
 }
 
 TEST_F(RtpRtcpAPITest, RTXReceiver) {
@@ -137,14 +143,14 @@ TEST_F(RtpRtcpAPITest, RTXReceiver) {
   unsigned int ssrc = 0;
   const int kRtxPayloadType = 119;
   int payload_type = -1;
-  EXPECT_EQ(0, module->SetRTXReceiveStatus(true, 1));
-  module->SetRtxReceivePayloadType(kRtxPayloadType);
-  EXPECT_EQ(0, module->RTXReceiveStatus(&enable, &ssrc, &payload_type));
+  rtp_receiver_->SetRTXStatus(true, 1);
+  rtp_receiver_->SetRtxPayloadType(kRtxPayloadType);
+  rtp_receiver_->RTXStatus(&enable, &ssrc, &payload_type);
   EXPECT_TRUE(enable);
   EXPECT_EQ(1u, ssrc);
   EXPECT_EQ(kRtxPayloadType ,payload_type);
-  EXPECT_EQ(0, module->SetRTXReceiveStatus(false, 0));
-  EXPECT_EQ(0, module->RTXReceiveStatus(&enable, &ssrc, &payload_type));
+  rtp_receiver_->SetRTXStatus(false, 0);
+  rtp_receiver_->RTXStatus(&enable, &ssrc, &payload_type);
   EXPECT_FALSE(enable);
   EXPECT_EQ(kRtxPayloadType ,payload_type);
 }

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_PAYLOAD_REGISTRY_H_
-#define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_PAYLOAD_REGISTRY_H_
+#ifndef WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_PAYLOAD_REGISTRY_H_
+#define WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_PAYLOAD_REGISTRY_H_
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
@@ -21,7 +21,7 @@ namespace webrtc {
 // of payload handling.
 class RTPPayloadStrategy {
  public:
-  virtual ~RTPPayloadStrategy() {};
+  virtual ~RTPPayloadStrategy() {}
 
   virtual bool CodecsMustBeUnique() const = 0;
 
@@ -42,10 +42,13 @@ class RTPPayloadStrategy {
       const uint8_t channels,
       const uint32_t rate) const = 0;
 
+  virtual int GetPayloadTypeFrequency(
+      const ModuleRTPUtility::Payload& payload) const = 0;
+
   static RTPPayloadStrategy* CreateStrategy(const bool handling_audio);
 
  protected:
-   RTPPayloadStrategy() {};
+  RTPPayloadStrategy() {}
 };
 
 class RTPPayloadRegistry {
@@ -73,7 +76,11 @@ class RTPPayloadRegistry {
       const uint32_t rate,
       int8_t* payload_type) const;
 
-  int32_t PayloadTypeToPayload(
+  bool GetPayloadSpecifics(uint8_t payload_type, PayloadUnion* payload) const;
+
+  int GetPayloadTypeFrequency(uint8_t payload_type) const;
+
+  bool PayloadTypeToPayload(
     const uint8_t payload_type,
     ModuleRTPUtility::Payload*& payload) const;
 
@@ -116,4 +123,4 @@ class RTPPayloadRegistry {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_PAYLOAD_REGISTRY_H_
+#endif  // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_PAYLOAD_REGISTRY_H_

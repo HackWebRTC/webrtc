@@ -12,21 +12,30 @@
 
 #include <cstdlib>
 
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+
 namespace webrtc {
 
 RTPReceiverStrategy::RTPReceiverStrategy(RtpData* data_callback)
-    : data_callback_(data_callback) {
+    : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
+      data_callback_(data_callback) {
   memset(&last_payload_, 0, sizeof(last_payload_));
 }
 
 void RTPReceiverStrategy::GetLastMediaSpecificPayload(
-  ModuleRTPUtility::PayloadUnion* payload) const {
+    PayloadUnion* payload) const {
+  CriticalSectionScoped cs(crit_sect_.get());
   memcpy(payload, &last_payload_, sizeof(*payload));
 }
 
 void RTPReceiverStrategy::SetLastMediaSpecificPayload(
-  const ModuleRTPUtility::PayloadUnion& payload) {
+    const PayloadUnion& payload) {
+  CriticalSectionScoped cs(crit_sect_.get());
   memcpy(&last_payload_, &payload, sizeof(last_payload_));
+}
+
+int RTPReceiverStrategy::Energy(uint8_t array_of_energy[kRtpCsrcSize]) const {
+  return 0;
 }
 
 }  // namespace webrtc

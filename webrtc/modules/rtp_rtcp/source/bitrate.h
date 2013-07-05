@@ -42,6 +42,8 @@ class Bitrate {
   // Bitrate last second, updated now.
   uint32_t BitrateNow() const;
 
+  int64_t time_last_rate_update() const;
+
  protected:
   Clock* clock_;
 

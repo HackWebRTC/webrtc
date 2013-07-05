@@ -15,14 +15,16 @@
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-class RTPReceiverVideo;
+
+class CriticalSectionWrapper;
 
 class ReceiverFEC {
  public:
-  ReceiverFEC(const int32_t id, RTPReceiverVideo* owner);
+  ReceiverFEC(const int32_t id, RtpData* callback);
   virtual ~ReceiverFEC();
 
   int32_t AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
@@ -35,10 +37,9 @@ class ReceiverFEC {
   void SetPayloadTypeFEC(const int8_t payload_type);
 
  private:
-  int ParseAndReceivePacket(const ForwardErrorCorrection::Packet* packet);
-
   int id_;
-  RTPReceiverVideo* owner_;
+  scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  RtpData* recovered_packet_callback_;
   ForwardErrorCorrection* fec_;
   // TODO(holmer): In the current version received_packet_list_ is never more
   // than one packet, since we process FEC every time a new packet

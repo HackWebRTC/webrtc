@@ -53,6 +53,7 @@ public:
 private:
 
     webrtc::VideoCodingModule*       _vcm;
+    webrtc::RtpReceiver*             rtp_receiver_;
     webrtc::RtpRtcp*                 _rtp;
     webrtc::RTPSendCompleteCallback* _outgoingTransport;
     RtpDataCallback*                 _dataCallback;

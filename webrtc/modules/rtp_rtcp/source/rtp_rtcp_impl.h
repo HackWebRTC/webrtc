@@ -17,8 +17,6 @@
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_payload_registry.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
@@ -43,71 +41,11 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   // Receiver part.
 
-  // Configure a timeout value.
-  virtual int32_t SetPacketTimeout(const uint32_t rtp_timeout_ms,
-                                   const uint32_t rtcp_timeout_ms);
-
-  // Set periodic dead or alive notification.
-  virtual int32_t SetPeriodicDeadOrAliveStatus(
-      const bool enable,
-      const uint8_t sample_time_seconds);
-
-  // Get periodic dead or alive notification status.
-  virtual int32_t PeriodicDeadOrAliveStatus(
-      bool& enable,
-      uint8_t& sample_time_seconds);
-
-  virtual int32_t RegisterReceivePayload(const CodecInst& voice_codec);
-
-  virtual int32_t RegisterReceivePayload(const VideoCodec& video_codec);
-
-  virtual int32_t ReceivePayloadType(const CodecInst& voice_codec,
-                                     int8_t* pl_type);
-
-  virtual int32_t ReceivePayloadType(const VideoCodec& video_codec,
-                                     int8_t* pl_type);
-
-  virtual int32_t DeRegisterReceivePayload(
-      const int8_t payload_type);
-
-  // Get the currently configured SSRC filter.
-  virtual int32_t SSRCFilter(uint32_t& allowed_ssrc) const;
-
-  // Set a SSRC to be used as a filter for incoming RTP streams.
-  virtual int32_t SetSSRCFilter(const bool enable,
-                                const uint32_t allowed_ssrc);
-
-  // Get last received remote timestamp.
-  virtual uint32_t RemoteTimestamp() const;
-
-  // Get the local time of the last received remote timestamp.
-  virtual int64_t LocalTimeOfRemoteTimeStamp() const;
-
-  // Get the current estimated remote timestamp.
-  virtual int32_t EstimatedRemoteTimeStamp(
-      uint32_t& timestamp) const;
-
-  virtual uint32_t RemoteSSRC() const;
-
-  virtual int32_t RemoteCSRCs(
-      uint32_t arr_of_csrc[kRtpCsrcSize]) const;
-
-  virtual int32_t SetRTXReceiveStatus(const bool enable,
-                                      const uint32_t ssrc);
-
-  virtual int32_t RTXReceiveStatus(bool* enable, uint32_t* ssrc,
-                                   int* payloadType) const;
-
-  virtual void SetRtxReceivePayloadType(int payload_type);
-
-  // Called when we receive an RTP packet.
-  virtual int32_t IncomingRtpPacket(const uint8_t* incoming_packet,
-                                    const uint16_t packet_length,
-                                    const RTPHeader& parsed_rtp_header);
-
   // Called when we receive an RTCP packet.
   virtual int32_t IncomingRtcpPacket(const uint8_t* incoming_packet,
                                      uint16_t incoming_packet_length);
+
+  virtual void SetRemoteSSRC(const uint32_t ssrc);
 
   // Sender part.
 
@@ -239,32 +177,11 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Normal SR and RR are triggered via the process function.
   virtual int32_t SendRTCP(uint32_t rtcp_packet_type = kRtcpReport);
 
-  // Statistics of our locally created statistics of the received RTP stream.
-  virtual int32_t StatisticsRTP(uint8_t*  fraction_lost,
-                                uint32_t* cum_lost,
-                                uint32_t* ext_max,
-                                uint32_t* jitter,
-                                uint32_t* max_jitter = NULL) const;
-
-  // Reset RTP statistics.
-  virtual int32_t ResetStatisticsRTP();
-
-  virtual int32_t ResetReceiveDataCountersRTP();
-
   virtual int32_t ResetSendDataCountersRTP();
 
   // Statistics of the amount of data sent and received.
   virtual int32_t DataCountersRTP(uint32_t* bytes_sent,
-                                  uint32_t* packets_sent,
-                                  uint32_t* bytes_received,
-                                  uint32_t* packets_received) const;
-
-  virtual int32_t ReportBlockStatistics(
-      uint8_t* fraction_lost,
-      uint32_t* cum_lost,
-      uint32_t* ext_max,
-      uint32_t* jitter,
-      uint32_t* jitter_transmission_time_offset);
+                                  uint32_t* packets_sent) const;
 
   // Get received RTCP report, sender info.
   virtual int32_t RemoteRTCPStat(RTCPSenderInfo* sender_info);
@@ -313,13 +230,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   // (NACK) Negative acknowledgment part.
 
-  // Is Negative acknowledgment requests on/off?
-  virtual NACKMethod NACK() const;
-
-  // Turn negative acknowledgment requests on/off.
-  virtual int32_t SetNACKStatus(const NACKMethod method,
-                                int max_reordering_threshold);
-
   virtual int SelectiveRetransmissions() const;
 
   virtual int SetSelectiveRetransmissions(uint8_t settings);
@@ -349,12 +259,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   virtual int32_t SetAudioPacketSize(
       const uint16_t packet_size_samples);
 
-  // Forward DTMFs to decoder for playout.
-  virtual int SetTelephoneEventForwardToDecoder(bool forward_to_decoder);
-
-  // Is forwarding of outband telephone events turned on/off?
-  virtual bool TelephoneEventForwardToDecoder() const;
-
   virtual bool SendTelephoneEventActive(int8_t& telephone_event) const;
 
   // Send a TelephoneEvent tone using RFC 2833 (4733).
@@ -381,8 +285,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   virtual int32_t SetAudioLevel(const uint8_t level_d_bov);
 
   // Video part.
-
-  virtual RtpVideoCodecTypes ReceivedVideoCodec() const;
 
   virtual RtpVideoCodecTypes SendVideoCodec() const;
 
@@ -425,8 +327,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
                            uint32_t* fec_rate,
                            uint32_t* nackRate) const;
 
-  virtual void SetRemoteSSRC(const uint32_t ssrc);
-
   virtual uint32_t SendTimeOfSendReport(const uint32_t send_report);
 
   // Good state of RTP receiver inform sender.
@@ -456,8 +356,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   bool UpdateRTCPReceiveInformationTimers();
 
-  void ProcessDeadOrAliveTimer();
-
   uint32_t BitrateReceivedNow() const;
 
   // Get remote SequenceNumber.
@@ -466,10 +364,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   // Only for internal testing.
   uint32_t LastSendReport(uint32_t& last_rtcptime);
 
-  RTPPayloadRegistry        rtp_payload_registry_;
-
   RTPSender                 rtp_sender_;
-  scoped_ptr<RTPReceiver>   rtp_receiver_;
 
   RTCPSender                rtcp_sender_;
   RTCPReceiver              rtcp_receiver_;
@@ -479,14 +374,13 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
  private:
   int64_t RtcpReportInterval();
 
-  RTPReceiverAudio*         rtp_telephone_event_handler_;
+  ReceiveStatistics* receive_statistics_;
 
   int32_t             id_;
   const bool                audio_;
   bool                      collision_detected_;
   int64_t             last_process_time_;
   int64_t             last_bitrate_process_time_;
-  int64_t             last_packet_timeout_process_time_;
   int64_t             last_rtt_process_time_;
   uint16_t            packet_overhead_;
 
@@ -495,10 +389,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
   ModuleRtpRtcpImpl*            default_module_;
   std::list<ModuleRtpRtcpImpl*> child_modules_;
 
-  // Dead or alive.
-  bool                  dead_or_alive_active_;
-  uint32_t        dead_or_alive_timeout_ms_;
-  int64_t         dead_or_alive_last_timer_;
   // Send side
   NACKMethod            nack_method_;
   uint32_t        nack_last_time_sent_full_;

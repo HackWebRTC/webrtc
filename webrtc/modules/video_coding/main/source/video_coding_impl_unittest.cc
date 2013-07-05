@@ -192,7 +192,7 @@ TEST_F(TestVideoCodingModule, PaddingOnlyFrames) {
   header.header.payloadType = kUnusedPayloadType;
   header.header.ssrc = 1;
   header.header.headerLength = 12;
-  header.type.Video.codec = kRTPVideoVP8;
+  header.type.Video.codec = kRtpVideoVp8;
   for (int i = 0; i < 10; ++i) {
     EXPECT_CALL(packet_request_callback_, ResendPackets(_, _))
         .Times(0);
@@ -216,7 +216,7 @@ TEST_F(TestVideoCodingModule, PaddingOnlyFramesWithLosses) {
   header.header.payloadType = kUnusedPayloadType;
   header.header.ssrc = 1;
   header.header.headerLength = 12;
-  header.type.Video.codec = kRTPVideoVP8;
+  header.type.Video.codec = kRtpVideoVp8;
   // Insert one video frame to get one frame decoded.
   header.frameType = kVideoFrameKey;
   header.type.Video.isFirstPacket = true;
@@ -270,7 +270,7 @@ TEST_F(TestVideoCodingModule, PaddingOnlyAndVideo) {
   header.header.payloadType = kUnusedPayloadType;
   header.header.ssrc = 1;
   header.header.headerLength = 12;
-  header.type.Video.codec = kRTPVideoVP8;
+  header.type.Video.codec = kRtpVideoVp8;
   header.type.Video.codecHeader.VP8.pictureId = -1;
   header.type.Video.codecHeader.VP8.tl0PicIdx = -1;
   for (int i = 0; i < 3; ++i) {

@@ -37,6 +37,7 @@
 
 namespace webrtc {
 
+class RtpReceiver;
 class RtpRtcp;
 class VoiceEngine;
 
@@ -92,7 +93,8 @@ public:
     // Get the received RTP timestamp
     virtual int GetPlayoutTimestamp(int channel, unsigned int& timestamp) = 0;
 
-    virtual int GetRtpRtcp (int channel, RtpRtcp* &rtpRtcpModule) = 0;
+    virtual int GetRtpRtcp (int channel, RtpRtcp** rtpRtcpModule,
+                            RtpReceiver** rtp_receiver) = 0;
 
 protected:
     VoEVideoSync() { }

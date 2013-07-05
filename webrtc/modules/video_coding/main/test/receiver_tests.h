@@ -21,7 +21,7 @@
 #include <string>
 #include <stdio.h>
 
-class RtpDataCallback : public webrtc::RtpData {
+class RtpDataCallback : public webrtc::NullRtpData {
  public:
   RtpDataCallback(webrtc::VideoCodingModule* vcm) : vcm_(vcm) {}
   virtual ~RtpDataCallback() {}

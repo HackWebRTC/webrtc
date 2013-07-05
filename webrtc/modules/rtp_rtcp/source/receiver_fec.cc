@@ -14,14 +14,16 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_video.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 // RFC 5109
 namespace webrtc {
-ReceiverFEC::ReceiverFEC(const int32_t id, RTPReceiverVideo* owner)
+ReceiverFEC::ReceiverFEC(const int32_t id, RtpData* callback)
     : id_(id),
-      owner_(owner),
+      crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
+      recovered_packet_callback_(callback),
       fec_(new ForwardErrorCorrection(id)),
       payload_type_fec_(-1) {}
 
@@ -42,6 +44,7 @@ ReceiverFEC::~ReceiverFEC() {
 }
 
 void ReceiverFEC::SetPayloadTypeFEC(const int8_t payload_type) {
+  CriticalSectionScoped cs(crit_sect_.get());
   payload_type_fec_ = payload_type;
 }
 //     0                   1                    2                   3
@@ -76,6 +79,8 @@ int32_t ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
                                           const uint8_t* incoming_rtp_packet,
                                           const uint16_t payload_data_length,
                                           bool& FECpacket) {
+  CriticalSectionScoped cs(crit_sect_.get());
+
   if (payload_type_fec_ == -1) {
     return -1;
   }
@@ -221,12 +226,18 @@ int32_t ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
 }
 
 int32_t ReceiverFEC::ProcessReceivedFEC() {
+  crit_sect_->Enter();
   if (!received_packet_list_.empty()) {
     // Send received media packet to VCM.
     if (!received_packet_list_.front()->is_fec) {
-      if (ParseAndReceivePacket(received_packet_list_.front()->pkt) != 0) {
+      ForwardErrorCorrection::Packet* packet =
+          received_packet_list_.front()->pkt;
+      crit_sect_->Leave();
+      if (!recovered_packet_callback_->OnRecoveredPacket(packet->data,
+                                                         packet->length)) {
         return -1;
       }
+      crit_sect_->Enter();
     }
     if (fec_->DecodeFEC(&received_packet_list_, &recovered_packet_list_) != 0) {
       return -1;
@@ -239,27 +250,16 @@ int32_t ReceiverFEC::ProcessReceivedFEC() {
   for (; it != recovered_packet_list_.end(); ++it) {
     if ((*it)->returned)  // Already sent to the VCM and the jitter buffer.
       continue;
-    if (ParseAndReceivePacket((*it)->pkt) != 0) {
+    ForwardErrorCorrection::Packet* packet = (*it)->pkt;
+    crit_sect_->Leave();
+    if (!recovered_packet_callback_->OnRecoveredPacket(packet->data,
+                                                       packet->length)) {
       return -1;
     }
+    crit_sect_->Enter();
     (*it)->returned = true;
   }
-  return 0;
-}
-
-int ReceiverFEC::ParseAndReceivePacket(
-    const ForwardErrorCorrection::Packet* packet) {
-  WebRtcRTPHeader header;
-  memset(&header, 0, sizeof(header));
-  ModuleRTPUtility::RTPHeaderParser parser(packet->data, packet->length);
-  if (!parser.Parse(header.header)) {
-    return -1;
-  }
-  if (owner_->ReceiveRecoveredPacketCallback(
-          &header, &packet->data[header.header.headerLength],
-          packet->length - header.header.headerLength) != 0) {
-    return -1;
-  }
+  crit_sect_->Leave();
   return 0;
 }
 

@@ -44,6 +44,7 @@ struct RTPHeader
     uint32_t arrOfCSRCs[kRtpCsrcSize];
     uint8_t paddingLength;
     uint16_t headerLength;
+    int payload_type_frequency;
     RTPHeaderExtension extension;
 };
 
@@ -93,13 +94,13 @@ union RTPVideoTypeHeader
     RTPVideoHeaderVP8       VP8;
 };
 
-enum RTPVideoCodecTypes
+enum RtpVideoCodecTypes
 {
-    kRTPVideoGeneric  = 0,
-    kRTPVideoVP8      = 8,
-    kRTPVideoNoVideo  = 10,
-    kRTPVideoFEC      = 11,
-    kRTPVideoI420     = 12
+    kRtpVideoNone,
+    kRtpVideoGeneric,
+    kRtpVideoVp8,
+    kRtpVideoFec,
+    kRtpVideoI420
 };
 struct RTPVideoHeader
 {
@@ -109,7 +110,7 @@ struct RTPVideoHeader
     bool                    isFirstPacket;   // first packet in frame
     uint8_t           simulcastIdx;    // Index if the simulcast encoder creating
                                              // this frame, 0 if not using simulcast.
-    RTPVideoCodecTypes      codec;
+    RtpVideoCodecTypes      codec;
     RTPVideoTypeHeader      codecHeader;
 };
 union RTPTypeHeader

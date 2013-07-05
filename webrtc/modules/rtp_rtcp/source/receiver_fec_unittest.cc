@@ -16,20 +16,31 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_test_helper.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
-#include "webrtc/modules/rtp_rtcp/source/mock/mock_rtp_receiver_video.h"
 #include "webrtc/modules/rtp_rtcp/source/receiver_fec.h"
 
 using ::testing::_;
 using ::testing::Args;
 using ::testing::ElementsAreArray;
+using ::testing::Return;
 
 namespace webrtc {
+
+class MockRtpData : public RtpData {
+ public:
+  MOCK_METHOD3(OnReceivedPayloadData,
+      int32_t(const uint8_t* payloadData,
+              const uint16_t payloadSize,
+              const WebRtcRTPHeader* rtpHeader));
+
+  MOCK_METHOD2(OnRecoveredPacket,
+      bool(const uint8_t* packet, int packet_length));
+};
 
 class ReceiverFecTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
     fec_ = new ForwardErrorCorrection(0);
-    receiver_fec_ = new ReceiverFEC(0, &rtp_receiver_video_);
+    receiver_fec_ = new ReceiverFEC(0, &rtp_data_callback_);
     generator_ = new FrameGenerator();
     receiver_fec_->SetPayloadTypeFEC(kFecPayloadType);
   }
@@ -64,11 +75,10 @@ class ReceiverFecTest : public ::testing::Test {
     // Verify that the content of the reconstructed packet is equal to the
     // content of |packet|, and that the same content is received |times| number
     // of times in a row.
-    EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(
-                                         _, _, packet->length - kRtpHeaderSize))
-        .With(Args<1, 2>(ElementsAreArray(packet->data + kRtpHeaderSize,
-                                          packet->length - kRtpHeaderSize)))
-        .Times(times);
+    EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, packet->length))
+        .With(Args<0, 1>(ElementsAreArray(packet->data,
+                                          packet->length)))
+        .Times(times).WillRepeatedly(Return(true));
   }
 
   void BuildAndAddRedMediaPacket(RtpPacket* packet) {
@@ -92,7 +102,7 @@ class ReceiverFecTest : public ::testing::Test {
   }
 
   ForwardErrorCorrection* fec_;
-  MockRTPReceiverVideo rtp_receiver_video_;
+  MockRtpData rtp_data_callback_;
   ReceiverFEC* receiver_fec_;
   FrameGenerator* generator_;
 };
@@ -255,8 +265,8 @@ TEST_F(ReceiverFecTest, PacketNotDroppedTooEarly) {
   GenerateFEC(&media_packets_batch1, &fec_packets, kNumFecPacketsBatch1);
 
   BuildAndAddRedMediaPacket(media_rtp_packets_batch1.front());
-  EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(_, _, _))
-      .Times(1);
+  EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
+      .Times(1).WillRepeatedly(Return(true));
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
   delayed_fec = fec_packets.front();
 
@@ -270,15 +280,15 @@ TEST_F(ReceiverFecTest, PacketNotDroppedTooEarly) {
   for (std::list<RtpPacket*>::iterator it = media_rtp_packets_batch2.begin();
        it != media_rtp_packets_batch2.end(); ++it) {
     BuildAndAddRedMediaPacket(*it);
-    EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(_, _, _))
-        .Times(1);
+    EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
+        .Times(1).WillRepeatedly(Return(true));
     EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
   }
 
   // Add the delayed FEC packet. One packet should be reconstructed.
   BuildAndAddRedFecPacket(delayed_fec);
-  EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(_, _, _))
-      .Times(1);
+  EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
+      .Times(1).WillRepeatedly(Return(true));
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
 
   DeletePackets(&media_packets_batch1);
@@ -299,8 +309,8 @@ TEST_F(ReceiverFecTest, PacketDroppedWhenTooOld) {
   GenerateFEC(&media_packets_batch1, &fec_packets, kNumFecPacketsBatch1);
 
   BuildAndAddRedMediaPacket(media_rtp_packets_batch1.front());
-  EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(_, _, _))
-      .Times(1);
+  EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
+      .Times(1).WillRepeatedly(Return(true));
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
   delayed_fec = fec_packets.front();
 
@@ -314,15 +324,15 @@ TEST_F(ReceiverFecTest, PacketDroppedWhenTooOld) {
   for (std::list<RtpPacket*>::iterator it = media_rtp_packets_batch2.begin();
        it != media_rtp_packets_batch2.end(); ++it) {
     BuildAndAddRedMediaPacket(*it);
-    EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(_, _, _))
-        .Times(1);
+    EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
+        .Times(1).WillRepeatedly(Return(true));
     EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
   }
 
   // Add the delayed FEC packet. No packet should be reconstructed since the
   // first media packet of that frame has been dropped due to being too old.
   BuildAndAddRedFecPacket(delayed_fec);
-  EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(_, _, _))
+  EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
       .Times(0);
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
 
@@ -346,7 +356,7 @@ TEST_F(ReceiverFecTest, OldFecPacketDropped) {
          it != fec_packets.end(); ++it) {
       // Only FEC packets inserted. No packets recoverable at this time.
       BuildAndAddRedFecPacket(*it);
-      EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(_, _, _))
+      EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
           .Times(0);
       EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
     }
@@ -360,8 +370,8 @@ TEST_F(ReceiverFecTest, OldFecPacketDropped) {
   // and should've been dropped. Only the media packet we inserted will be
   // returned.
   BuildAndAddRedMediaPacket(media_rtp_packets.front());
-  EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(_, _, _))
-      .Times(1);
+  EXPECT_CALL(rtp_data_callback_, OnRecoveredPacket(_, _))
+      .Times(1).WillRepeatedly(Return(true));
   EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
 
   DeletePackets(&media_packets);

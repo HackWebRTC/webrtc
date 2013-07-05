@@ -102,6 +102,6 @@ class FileOutputFrameReceiver : public webrtc::VCMReceiveCallback {
 };
 
 // Codec type conversion
-webrtc::RTPVideoCodecTypes ConvertCodecType(const char* plname);
+webrtc::RtpVideoCodecTypes ConvertCodecType(const char* plname);
 
 #endif

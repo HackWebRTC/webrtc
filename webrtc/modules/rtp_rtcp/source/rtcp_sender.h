@@ -17,6 +17,7 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
@@ -26,7 +27,7 @@
 
 namespace webrtc {
 
-class ModuleRtpRtcpImpl; 
+class ModuleRtpRtcpImpl;
 
 class NACKStringBuilder
 {
@@ -70,7 +71,7 @@ public:
 
     void SetSSRC( const uint32_t ssrc);
 
-    int32_t SetRemoteSSRC( const uint32_t ssrc);
+    void SetRemoteSSRC(uint32_t ssrc);
 
     int32_t SetCameraDelay(const int32_t delayMS);
 
@@ -88,11 +89,13 @@ public:
 
     uint32_t LastSendReport(uint32_t& lastRTCPTime);
 
-    int32_t SendRTCP(const uint32_t rtcpPacketTypeFlags,
-                     const int32_t nackSize = 0,
-                     const uint16_t* nackList = 0,
-                     const bool repeat = false,
-                     const uint64_t pictureID = 0);
+    int32_t SendRTCP(
+        uint32_t rtcpPacketTypeFlags,
+        const ReceiveStatistics::RtpReceiveStatistics* receive_stats,
+        int32_t nackSize = 0,
+        const uint16_t* nackList = 0,
+        bool repeat = false,
+        uint64_t pictureID = 0);
 
     int32_t AddReportBlock(const uint32_t SSRC,
                            const RTCPReportBlock* receiveBlock);

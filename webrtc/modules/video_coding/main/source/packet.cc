@@ -94,7 +94,7 @@ void VCMPacket::CopyCodecSpecifics(const RTPVideoHeader& videoHeader)
 {
     switch(videoHeader.codec)
     {
-        case kRTPVideoVP8:
+        case kRtpVideoVp8:
             {
                 // Handle all packets within a frame as depending on the previous packet
                 // TODO(holmer): This should be changed to make fragments independent
@@ -111,7 +111,7 @@ void VCMPacket::CopyCodecSpecifics(const RTPVideoHeader& videoHeader)
                 codec = kVideoCodecVP8;
                 break;
             }
-        case kRTPVideoI420:
+        case kRtpVideoI420:
             {
                 codec = kVideoCodecI420;
                 break;

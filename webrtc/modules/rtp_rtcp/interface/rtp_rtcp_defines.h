@@ -11,22 +11,39 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_DEFINES_H_
 #define WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_DEFINES_H_
 
+#include <stddef.h>
+
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/typedefs.h"
-
-#ifndef NULL
-    #define NULL    0
-#endif
 
 #define RTCP_CNAME_SIZE 256    // RFC 3550 page 44, including null termination
 #define IP_PACKET_SIZE 1500    // we assume ethernet
 #define MAX_NUMBER_OF_PARALLEL_TELEPHONE_EVENTS 10
 #define TIMEOUT_SEI_MESSAGES_MS 30000   // in milliseconds
 
-namespace webrtc{
+namespace webrtc {
 
-const int32_t kDefaultVideoFrequency = 90000;
+const int kVideoPayloadTypeFrequency = 90000;
+
+struct AudioPayload
+{
+    uint32_t    frequency;
+    uint8_t     channels;
+    uint32_t    rate;
+};
+
+struct VideoPayload
+{
+    RtpVideoCodecTypes   videoCodecType;
+    uint32_t       maxRate;
+};
+
+union PayloadUnion
+{
+    AudioPayload Audio;
+    VideoPayload Video;
+};
 
 enum RTCPMethod
 {
@@ -145,6 +162,9 @@ public:
         const uint8_t* payloadData,
         const uint16_t payloadSize,
         const WebRtcRTPHeader* rtpHeader) = 0;
+
+    virtual bool OnRecoveredPacket(const uint8_t* packet,
+                                   int packet_length) = 0;
 protected:
     virtual ~RtpData() {}
 };
@@ -161,8 +181,6 @@ public:
     virtual void OnXRVoIPMetricReceived(
         const int32_t /*id*/,
         const RTCPVoIPMetric* /*metric*/)  {};
-
-    virtual void OnRTCPPacketTimeout(const int32_t /*id*/)  {};
 
     virtual void OnReceiveReportReceived(const int32_t id,
                                          const uint32_t senderSSRC)  {};
@@ -186,20 +204,14 @@ public:
         const uint8_t channels,
         const uint32_t rate) = 0;
 
-    virtual void OnPacketTimeout(const int32_t id) = 0;
-
-    virtual void OnReceivedPacket(const int32_t id,
-                                  const RtpRtcpPacketType packetType) = 0;
-
-    virtual void OnPeriodicDeadOrAlive(const int32_t id,
-                                       const RTPAliveType alive) = 0;
-
     virtual void OnIncomingSSRCChanged( const int32_t id,
                                         const uint32_t SSRC) = 0;
 
     virtual void OnIncomingCSRCChanged( const int32_t id,
                                         const uint32_t CSRC,
                                         const bool added) = 0;
+
+    virtual void OnResetStatistics() = 0;
 
 protected:
     virtual ~RtpFeedback() {}
@@ -268,32 +280,32 @@ class NullRtpFeedback : public RtpFeedback {
    return 0;
  }
 
- virtual void OnPacketTimeout(const int32_t id) {}
-
- virtual void OnReceivedPacket(const int32_t id,
-                               const RtpRtcpPacketType packetType) {}
-
- virtual void OnPeriodicDeadOrAlive(const int32_t id,
-                                    const RTPAliveType alive) {}
-
- virtual void OnIncomingSSRCChanged(const int32_t id,
+  virtual void OnIncomingSSRCChanged(const int32_t id,
                                     const uint32_t SSRC) {}
 
  virtual void OnIncomingCSRCChanged(const int32_t id,
                                     const uint32_t CSRC,
                                     const bool added) {}
+
+ virtual void OnResetStatistics() {}
 };
 
 // Null object version of RtpData.
 class NullRtpData : public RtpData {
  public:
   virtual ~NullRtpData() {}
+
   virtual int32_t OnReceivedPayloadData(
       const uint8_t* payloadData,
       const uint16_t payloadSize,
       const WebRtcRTPHeader* rtpHeader) {
-   return 0;
- }
+    return 0;
+  }
+
+  virtual bool OnRecoveredPacket(const uint8_t* packet,
+                                 int packet_length) {
+    return true;
+  }
 };
 
 // Null object version of RtpAudioFeedback.
