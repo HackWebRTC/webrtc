@@ -14,6 +14,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/new_include/video_engine.h"
 #include "webrtc/video_engine/test/common/direct_transport.h"
@@ -31,16 +32,16 @@ class LoopbackTest : public ::testing::Test {
 };
 
 TEST_F(LoopbackTest, Test) {
-  test::VideoRenderer* local_preview = test::VideoRenderer::Create(
-      "Local Preview", test::flags::Width(), test::flags::Height());
-  test::VideoRenderer* loopback_video = test::VideoRenderer::Create(
-      "Loopback Video", test::flags::Width(), test::flags::Height());
+  scoped_ptr<test::VideoRenderer> local_preview(test::VideoRenderer::Create(
+      "Local Preview", test::flags::Width(), test::flags::Height()));
+  scoped_ptr<test::VideoRenderer> loopback_video(test::VideoRenderer::Create(
+      "Loopback Video", test::flags::Width(), test::flags::Height()));
 
-  newapi::VideoEngine* video_engine =
-      newapi::VideoEngine::Create(webrtc::newapi::VideoEngineConfig());
+  scoped_ptr<newapi::VideoEngine> video_engine(
+      newapi::VideoEngine::Create(webrtc::newapi::VideoEngineConfig()));
 
   test::DirectTransport transport(NULL);
-  newapi::VideoCall* call = video_engine->CreateCall(&transport);
+  scoped_ptr<newapi::VideoCall> call(video_engine->CreateCall(&transport));
 
   // Loopback, call sends to itself.
   transport.SetReceiver(call->Receiver());
@@ -48,7 +49,7 @@ TEST_F(LoopbackTest, Test) {
   newapi::VideoSendStream::Config send_config = call->GetDefaultSendConfig();
   test::GenerateRandomSsrcs(&send_config, &reserved_ssrcs);
 
-  send_config.local_renderer = local_preview;
+  send_config.local_renderer = local_preview.get();
 
   // TODO(pbos): static_cast shouldn't be required after mflodman refactors the
   //             VideoCodec struct.
@@ -65,17 +66,17 @@ TEST_F(LoopbackTest, Test) {
 
   Clock* test_clock = Clock::GetRealTimeClock();
 
-  test::VideoCapturer* camera =
+  scoped_ptr<test::VideoCapturer> camera(
       test::VideoCapturer::Create(send_stream->Input(),
                                   test::flags::Width(),
                                   test::flags::Height(),
                                   test::flags::Fps(),
-                                  test_clock);
+                                  test_clock));
 
   newapi::VideoReceiveStream::Config receive_config =
       call->GetDefaultReceiveConfig();
   receive_config.rtp.ssrc = send_config.rtp.ssrcs[0];
-  receive_config.renderer = loopback_video;
+  receive_config.renderer = loopback_video.get();
 
   newapi::VideoReceiveStream* receive_stream =
       call->CreateReceiveStream(receive_config);
@@ -87,22 +88,15 @@ TEST_F(LoopbackTest, Test) {
 
   // TODO(pbos): Run this time limited (optionally), so it can run automated.
   puts(">> Press ENTER to continue...");
-  while (getchar() != '\n' && !feof(stdin));
+  while (getchar() != '\n' && !feof(stdin))
+    ;
 
-  receive_stream->StopReceive();
+  camera->Stop();
   send_stream->StopSend();
-
-  // Stop sending
-  delete camera;
+  receive_stream->StopReceive();
 
   call->DestroyReceiveStream(receive_stream);
   call->DestroySendStream(send_stream);
-
-  delete call;
-  delete video_engine;
-
-  delete loopback_video;
-  delete local_preview;
 }
 }  // webrtc
 
