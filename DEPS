@@ -158,7 +158,7 @@ hooks = [
     # If a newer version or no current download exists, it will download
     # the resources and extract them.
     "pattern": ".",
-    "action": ["python", Var("root_dir") + "/webrtc/tools/update_resources.py"],
+    "action": ["python", Var("root_dir") + "/webrtc/tools/update.py"],
   },
   {
     # A change to a .gyp, .gypi, or to GYP itself should run the generator.

@@ -62,8 +62,6 @@
       'sources': [
         'test_suite.cc',
         'test_suite.h',
-        'testsupport/android/root_path_android.cc',
-        'testsupport/android/root_path_android_chromium.cc',
         'testsupport/fileutils.cc',
         'testsupport/fileutils.h',
         'testsupport/frame_reader.cc',
@@ -80,36 +78,6 @@
         'testsupport/perf_test.h',
         'testsupport/trace_to_stderr.cc',
         'testsupport/trace_to_stderr.h',
-      ],
-      'conditions': [
-        # TODO(henrike): remove build_with_chromium==1 when the bots are using
-        # Chromium's buildbots.
-        ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
-          'dependencies': [
-            '<(DEPTH)/base/base.gyp:base',
-          ],
-          'sources!': [
-            'testsupport/android/root_path_android.cc',
-          ],
-          # WebRTC tests use resource files for testing. These files are not
-          # hosted in WebRTC. The script ensures that the needed resources
-          # are downloaded. In stand alone WebRTC the script is called by
-          # the DEPS file. In Chromium, i.e. here, the files are pulled down
-          # only if tests requiring the resources are being built.
-          'actions': [
-            {
-              'action_name': 'get_resources',
-              'inputs': ['<(webrtc_root)/tools/update_resources.py'],
-              'outputs': ['../../resources'],
-              'action': ['python',
-                         '<(webrtc_root)/tools/update_resources.py',
-                         '-p ../../../'],
-            }],
-        }, {
-          'sources!': [
-            'testsupport/android/root_path_android_chromium.cc',
-          ],
-        }],
       ],
     },
     {

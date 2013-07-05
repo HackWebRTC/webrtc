@@ -31,33 +31,28 @@
 namespace webrtc {
 namespace test {
 
-namespace {
-
 #ifdef WIN32
-const char* kPathDelimiter = "\\";
+static const char* kPathDelimiter = "\\";
 #else
-const char* kPathDelimiter = "/";
+static const char* kPathDelimiter = "/";
 #endif
 
 #ifdef WEBRTC_ANDROID
-const char* kResourcesDirName = "resources";
+static const char* kRootDirName = "/sdcard/";
+static const char* kResourcesDirName = "resources";
 #else
 // The file we're looking for to identify the project root dir.
-const char* kProjectRootFileName = "DEPS";
-const char* kResourcesDirName = "resources";
+static const char* kProjectRootFileName = "DEPS";
+static const char* kOutputDirName = "out";
+static const char* kFallbackPath = "./";
+static const char* kResourcesDirName = "resources";
 #endif
-
-const char* kFallbackPath = "./";
-const char* kOutputDirName = "out";
-char relative_dir_path[FILENAME_MAX];
-bool relative_dir_path_set = false;
-
-}  // namespace
-
 const char* kCannotFindProjectRootDir = "ERROR_CANNOT_FIND_PROJECT_ROOT_DIR";
 
-std::string OutputPathAndroid();
-std::string ProjectRoothPathAndroid();
+namespace {
+char relative_dir_path[FILENAME_MAX];
+bool relative_dir_path_set = false;
+}
 
 void SetExecutablePath(const std::string& path) {
   std::string working_dir = WorkingDir();
@@ -78,30 +73,18 @@ bool FileExists(std::string& file_name) {
   return stat(file_name.c_str(), &file_info) == 0;
 }
 
-std::string OutputPathImpl() {
-  std::string path = ProjectRootPath();
-  if (path == kCannotFindProjectRootDir) {
-    return kFallbackPath;
-  }
-  path += kOutputDirName;
-  if (!CreateDirectory(path)) {
-    return kFallbackPath;
-  }
-  return path + kPathDelimiter;
-}
-
 #ifdef WEBRTC_ANDROID
 
 std::string ProjectRootPath() {
-  return ProjectRoothPathAndroid();
+  return kRootDirName;
 }
 
 std::string OutputPath() {
-  return OutputPathAndroid();
+  return kRootDirName;
 }
 
 std::string WorkingDir() {
-  return ProjectRootPath();
+  return kRootDirName;
 }
 
 #else // WEBRTC_ANDROID
@@ -131,7 +114,15 @@ std::string ProjectRootPath() {
 }
 
 std::string OutputPath() {
-  return OutputPathImpl();
+  std::string path = ProjectRootPath();
+  if (path == kCannotFindProjectRootDir) {
+    return kFallbackPath;
+  }
+  path += kOutputDirName;
+  if (!CreateDirectory(path)) {
+    return kFallbackPath;
+  }
+  return path + kPathDelimiter;
 }
 
 std::string WorkingDir() {

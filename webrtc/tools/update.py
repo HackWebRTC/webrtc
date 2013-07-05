@@ -23,7 +23,6 @@ REMOTE_URL_BASE = 'http://commondatastorage.googleapis.com/webrtc-resources'
 VERSION_FILENAME = 'webrtc-resources-version'
 FILENAME_PREFIX = 'webrtc-resources-'
 EXTENSION = '.tgz'
-RELATIVE_OUTPUT_PATH = '../../'
 
 
 def main():
@@ -42,6 +41,14 @@ def main():
     print 'Skipping resources download since WEBRTC_SKIP_RESOURCES_DOWNLOAD set'
     return
 
+  project_root_dir = os.path.normpath(sys.path[0] + '/../../')
+  downloads_dir = os.path.join(project_root_dir, 'resources')
+  current_version_file = os.path.join(downloads_dir, VERSION_FILENAME)
+
+  # Ensure the downloads dir is created.
+  if not os.path.isdir(downloads_dir):
+    os.mkdir(downloads_dir)
+
   # Define and parse arguments.
   parser = OptionParser()
   parser.add_option('-f', '--force', action='store_true', dest='force',
@@ -49,17 +56,7 @@ def main():
   parser.add_option('-b', '--base_url', dest='base_url',
                     help= 'Overrides the default Base URL (%s) and uses the '
                     'supplied URL instead.' % REMOTE_URL_BASE)
-  parser.add_option('-p', dest='path', help= 'path of resources directory'
-                    'relative to this script', default=RELATIVE_OUTPUT_PATH)
-  options = parser.parse_args()[0]
-
-  project_root_dir = os.path.normpath(sys.path[0] + '/' + options.path)
-  downloads_dir = os.path.join(project_root_dir, 'resources')
-  current_version_file = os.path.join(downloads_dir, VERSION_FILENAME)
-
-  # Ensure the downloads dir is created.
-  if not os.path.isdir(downloads_dir):
-    os.mkdir(downloads_dir)
+  (options, unused_args) = parser.parse_args()
 
   # Download archive if forced or DEPS version is different than our current.
   current_version = _get_current_version(current_version_file)
