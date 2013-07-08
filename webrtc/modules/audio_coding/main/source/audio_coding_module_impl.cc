@@ -1326,10 +1326,6 @@ int32_t AudioCodingModuleImpl::RegisterIncomingMessagesCallback(
 // Add 10MS of raw (PCM) audio data to the encoder.
 int32_t AudioCodingModuleImpl::Add10MsData(
     const AudioFrame& audio_frame) {
-  TRACE_EVENT2("webrtc", "ACM::Add10MsData",
-               "timestamp", audio_frame.timestamp_,
-               "samples_per_channel", audio_frame.samples_per_channel_);
-
   if (audio_frame.samples_per_channel_ <= 0) {
     assert(false);
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
@@ -1378,6 +1374,8 @@ int32_t AudioCodingModuleImpl::Add10MsData(
   if (PreprocessToAddData(audio_frame, &ptr_frame) < 0) {
     return -1;
   }
+  TRACE_EVENT_ASYNC_BEGIN1("webrtc", "Audio", ptr_frame->timestamp_,
+                           "now", clock_->TimeInMilliseconds());
 
   // Check whether we need an up-mix or down-mix?
   bool remix = ptr_frame->num_channels_ != send_codec_inst_.channels;
@@ -2306,11 +2304,11 @@ AudioPlayoutMode AudioCodingModuleImpl::PlayoutMode() const {
 // Automatic resample to the requested frequency.
 int32_t AudioCodingModuleImpl::PlayoutData10Ms(
     int32_t desired_freq_hz, AudioFrame* audio_frame) {
-  TRACE_EVENT_ASYNC_BEGIN0("webrtc", "ACM::PlayoutData10Ms", 0);
+  TRACE_EVENT_ASYNC_BEGIN0("webrtc", "ACM::PlayoutData10Ms", this);
   bool stereo_mode;
 
   if (GetSilence(desired_freq_hz, audio_frame)) {
-     TRACE_EVENT_ASYNC_END1("webrtc", "ACM::PlayoutData10Ms", 0,
+     TRACE_EVENT_ASYNC_END1("webrtc", "ACM::PlayoutData10Ms", this,
                             "silence", true);
      return 0;  // Silence is generated, return.
   }
@@ -2321,11 +2319,11 @@ int32_t AudioCodingModuleImpl::PlayoutData10Ms(
                  "PlayoutData failed, RecOut Failed");
     return -1;
   }
-  int seq_num;
-  uint32_t timestamp;
-  bool update_nack = nack_enabled_ &&  // Update NACK only if it is enabled.
-      neteq_.DecodedRtpInfo(&seq_num, &timestamp);
-
+  int decoded_seq_num;
+  uint32_t decoded_timestamp;
+  bool update_nack =
+      neteq_.DecodedRtpInfo(&decoded_seq_num, &decoded_timestamp) &&
+      nack_enabled_;  // Update NACK only if it is enabled.
   audio_frame->num_channels_ = audio_frame_.num_channels_;
   audio_frame->vad_activity_ = audio_frame_.vad_activity_;
   audio_frame->speech_type_ = audio_frame_.speech_type_;
@@ -2346,7 +2344,7 @@ int32_t AudioCodingModuleImpl::PlayoutData10Ms(
 
     if (update_nack) {
       assert(nack_.get());
-      nack_->UpdateLastDecodedPacket(seq_num, timestamp);
+      nack_->UpdateLastDecodedPacket(decoded_seq_num, decoded_timestamp);
     }
 
     // If we are in AV-sync and have already received an audio packet, but the
@@ -2368,8 +2366,9 @@ int32_t AudioCodingModuleImpl::PlayoutData10Ms(
     }
 
     if ((receive_freq != desired_freq_hz) && (desired_freq_hz != -1)) {
-      TRACE_EVENT_ASYNC_END2("webrtc", "ACM::PlayoutData10Ms", 0,
-                             "stereo", stereo_mode, "resample", true);
+      TRACE_EVENT_ASYNC_END2("webrtc", "ACM::PlayoutData10Ms", this,
+                             "seqnum", decoded_seq_num,
+                             "now", clock_->TimeInMilliseconds());
       // Resample payload_data.
       int16_t temp_len = output_resampler_.Resample10Msec(
           audio_frame_.data_, receive_freq, audio_frame->data_,
@@ -2386,8 +2385,9 @@ int32_t AudioCodingModuleImpl::PlayoutData10Ms(
       // Set the sampling frequency.
       audio_frame->sample_rate_hz_ = desired_freq_hz;
     } else {
-      TRACE_EVENT_ASYNC_END2("webrtc", "ACM::PlayoutData10Ms", 0,
-                             "stereo", stereo_mode, "resample", false);
+      TRACE_EVENT_ASYNC_END2("webrtc", "ACM::PlayoutData10Ms", this,
+                             "seqnum", decoded_seq_num,
+                             "now", clock_->TimeInMilliseconds());
       memcpy(audio_frame->data_, audio_frame_.data_,
              audio_frame_.samples_per_channel_ * audio_frame->num_channels_
              * sizeof(int16_t));

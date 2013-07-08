@@ -335,8 +335,8 @@ void ViECapturer::OnIncomingCapturedFrame(const int32_t capture_id,
   // the camera, and not when the camera actually captured the frame.
   video_frame.set_render_time_ms(video_frame.render_time_ms() - FrameDelay());
 
-  TRACE_EVENT_INSTANT1("webrtc", "VC::OnIncomingCapturedFrame",
-                       "render_time", video_frame.render_time_ms());
+  TRACE_EVENT_ASYNC_BEGIN1("webrtc", "Video", video_frame.render_time_ms(),
+                           "render_time", video_frame.render_time_ms());
 
   captured_frame_.SwapFrame(&video_frame);
   capture_event_.Set();

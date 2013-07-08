@@ -1116,7 +1116,6 @@ RTCPSender::BuildREMB(uint8_t* rtcpbuffer, uint32_t& pos)
         ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _rembSSRC[i]);
         pos += 4;
     }
-    TRACE_COUNTER_ID1("webrtc_rtp", "RTCPRembBitrate", _SSRC, _rembBitrate);
     return 0;
 }
 

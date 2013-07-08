@@ -123,7 +123,6 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
     int64_t& next_render_time_ms,
     bool render_timing,
     VCMReceiver* dual_receiver) {
-  TRACE_EVENT0("webrtc", "Recv::FrameForDecoding");
   const int64_t start_time_ms = clock_->TimeInMilliseconds();
   uint32_t frame_timestamp = 0;
   // Exhaust wait time to get a complete frame for decoding.
@@ -183,7 +182,6 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
 
   if (!render_timing) {
     // Decode frame as close as possible to the render timestamp.
-    TRACE_EVENT0("webrtc", "FrameForRendering");
     const int32_t available_wait_time = max_wait_time_ms -
         static_cast<int32_t>(clock_->TimeInMilliseconds() - start_time_ms);
     uint16_t new_max_wait_time = static_cast<uint16_t>(
@@ -207,6 +205,8 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(
     return NULL;
   }
   frame->SetRenderTime(next_render_time_ms);
+  TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", frame->TimeStamp(),
+                          "SetRenderTS", "render_time", next_render_time_ms);
   if (dual_receiver != NULL) {
     dual_receiver->UpdateState(*frame);
   }

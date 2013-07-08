@@ -19,7 +19,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/interface/trace.h"
-#include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
 
@@ -211,7 +210,6 @@ bool RtpReceiverImpl::IncomingRtpPacket(
   int packet_length,
   PayloadUnion payload_specific,
   bool in_order) {
-  TRACE_EVENT0("webrtc_rtp", "RTPRecv::Packet");
   // The rtp_header argument contains the parsed RTP header.
   int length = packet_length - rtp_header->paddingLength;
 

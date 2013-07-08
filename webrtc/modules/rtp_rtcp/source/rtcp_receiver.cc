@@ -489,10 +489,6 @@ RTCPReceiver::HandleReportBlock(const RTCPUtility::RTCPPacket& rtcpPacket,
 
   _lastReceivedRrMs = _clock->TimeInMilliseconds();
   const RTCPPacketReportBlockItem& rb = rtcpPacket.ReportBlockItem;
-  TRACE_COUNTER_ID1("webrtc_rtp", "RRFractionLost", rb.SSRC, rb.FractionLost);
-  TRACE_COUNTER_ID1("webrtc_rtp", "RRCumulativeNumOfPacketLost",
-                    rb.SSRC, rb.CumulativeNumOfPacketsLost);
-  TRACE_COUNTER_ID1("webrtc_rtp", "RRJitter", rb.SSRC, rb.Jitter);
   reportBlock->remoteReceiveBlock.remoteSSRC = remoteSSRC;
   reportBlock->remoteReceiveBlock.sourceSSRC = rb.SSRC;
   reportBlock->remoteReceiveBlock.fractionLost = rb.FractionLost;

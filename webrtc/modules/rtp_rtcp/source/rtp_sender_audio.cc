@@ -475,9 +475,9 @@ int32_t RTPSenderAudio::SendAudio(
     }
     _lastPayloadType = payloadType;
   }  // end critical section
-  TRACE_EVENT_INSTANT2("webrtc_rtp", "Audio::Send",
-                       "timestamp", captureTimeStamp,
-                       "seqnum", _rtpSender->SequenceNumber());
+  TRACE_EVENT_ASYNC_END2("webrtc", "Audio", captureTimeStamp,
+                         "timestamp", _rtpSender->Timestamp(),
+                         "seqnum", _rtpSender->SequenceNumber());
   return _rtpSender->SendToNetwork(dataBuffer,
                                    payloadSize,
                                    static_cast<uint16_t>(rtpHeaderLength),

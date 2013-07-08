@@ -213,9 +213,6 @@ int32_t VideoCaptureImpl::DeliverCapturedFrame(I420VideoFrame& captureFrame,
     captureFrame.set_render_time_ms(TickTime::MillisecondTimestamp());
   }
 
-  TRACE_EVENT1("webrtc", "VC::DeliverCapturedFrame",
-               "capture_time", capture_time);
-
   if (captureFrame.render_time_ms() == last_capture_time_) {
     // We don't allow the same capture time for two frames, drop this one.
     return -1;

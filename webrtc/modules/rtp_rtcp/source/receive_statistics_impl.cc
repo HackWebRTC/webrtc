@@ -14,7 +14,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
-#include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc {
 
@@ -284,10 +283,6 @@ int32_t ReceiveStatisticsImpl::TimeUntilNextProcess() {
 
 int32_t ReceiveStatisticsImpl::Process() {
   incoming_bitrate_.Process();
-  TRACE_COUNTER_ID1("webrtc_rtp", "RTPReceiverBitrate", ssrc_,
-                    incoming_bitrate_.BitrateLast());
-  TRACE_COUNTER_ID1("webrtc_rtp", "RTPReceiverPacketRate", ssrc_,
-                    incoming_bitrate_.PacketRate());
   return 0;
 }
 

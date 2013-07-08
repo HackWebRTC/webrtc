@@ -566,10 +566,8 @@ void ViEEncoder::DeliverFrame(int id,
       kMsToRtpTimestamp *
       static_cast<uint32_t>(video_frame->render_time_ms());
 
-  TRACE_EVENT2("webrtc", "VE::DeliverFrame",
-               "timestamp", time_stamp,
-               "render_time", video_frame->render_time_ms());
-
+  TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", video_frame->render_time_ms(),
+                          "Encode");
   video_frame->set_timestamp(time_stamp);
   {
     CriticalSectionScoped cs(callback_cs_.get());
