@@ -16,10 +16,11 @@
 #include "webrtc/modules/video_processing/main/test/unit_test/video_processing_unittest.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
-TEST_F(VideoProcessingModuleTest, Denoising)
+TEST_F(VideoProcessingModuleTest, DISABLED_ON_ANDROID(Denoising))
 {
     enum { NumRuns = 10 };
     uint32_t frameNum = 0;

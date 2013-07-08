@@ -21,6 +21,7 @@
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "gtest/gtest.h"
 #include "external/webrtc/webrtc/modules/audio_processing/test/unittest.pb.h"
@@ -1402,7 +1403,7 @@ TEST_F(ApmTest, DebugDump) {
 // TODO(andrew): Make this test more robust such that it can be run on multiple
 // platforms. It currently requires bit-exactness.
 #ifdef WEBRTC_AUDIOPROC_BIT_EXACT
-TEST_F(ApmTest, Process) {
+TEST_F(ApmTest, DISABLED_ON_ANDROID(Process)) {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
   webrtc::audioproc::OutputData ref_data;
 

@@ -215,4 +215,3 @@ TEST(TemporalLayersTest, KeyFrame) {
   EXPECT_EQ(true, vp8_info.layerSync);
 }
 }  // namespace webrtc
-
