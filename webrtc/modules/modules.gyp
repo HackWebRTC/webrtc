@@ -309,7 +309,7 @@
       'conditions': [
         # TODO(henrike): remove build_with_chromium==1 when the bots are using
         # Chromium's buildbots.
-        ['OS=="build_with_chromium==1 and android" and gtest_target_type=="shared_library"', {
+        ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
           'targets': [
             {
               'target_name': 'modules_unittests_apk_target',
