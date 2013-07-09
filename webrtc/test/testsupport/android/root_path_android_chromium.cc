@@ -20,7 +20,7 @@ std::string OutputPathImpl();
 // The Android testing framework will push files relative to the root path of
 // the Chromium workspace. The root path for webrtc is one directory up from
 // trunk/webrtc (in standalone) or src/third_party/webrtc (in Chromium).
-std::string ProjectRoothPathAndroid() {
+std::string ProjectRootPathAndroid() {
   base::FilePath root_path;
   base::android::GetExternalStorageDirectory(&root_path);
   return root_path.value() + "/";

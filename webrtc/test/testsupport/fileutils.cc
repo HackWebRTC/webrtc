@@ -57,7 +57,7 @@ bool relative_dir_path_set = false;
 const char* kCannotFindProjectRootDir = "ERROR_CANNOT_FIND_PROJECT_ROOT_DIR";
 
 std::string OutputPathAndroid();
-std::string ProjectRoothPathAndroid();
+std::string ProjectRootPathAndroid();
 
 void SetExecutablePath(const std::string& path) {
   std::string working_dir = WorkingDir();
@@ -93,7 +93,7 @@ std::string OutputPathImpl() {
 #ifdef WEBRTC_ANDROID
 
 std::string ProjectRootPath() {
-  return ProjectRoothPathAndroid();
+  return ProjectRootPathAndroid();
 }
 
 std::string OutputPath() {

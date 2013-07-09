@@ -14,7 +14,7 @@ namespace webrtc {
 namespace test {
 
 static const char* kRootDirName = "/sdcard/";
-std::string ProjectRoothPathAndroid() {
+std::string ProjectRootPathAndroid() {
   return kRootDirName;
 }
 
