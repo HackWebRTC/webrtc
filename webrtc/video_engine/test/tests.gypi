@@ -12,6 +12,8 @@
       'target_name': 'video_tests_common',
       'type': 'static_library',
       'sources': [
+        'common/file_capturer.cc',
+        'common/file_capturer.h',
         'common/flags.cc',
         'common/flags.h',
         'common/frame_generator.cc',
@@ -30,6 +32,8 @@
         'common/null_platform_renderer.cc',
         'common/run_tests.cc',
         'common/run_tests.h',
+        'common/statistics.cc',
+        'common/statistics.h',
         'common/vcm_capturer.cc',
         'common/vcm_capturer.h',
         'common/video_capturer.cc',
@@ -100,9 +104,24 @@
       'type': 'executable',
       'sources': [
         'loopback.cc',
+        'test_main.cc',
       ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
+        'video_tests_common',
+      ],
+    },
+    {
+      'target_name': 'video_full_stack',
+      'type': 'executable',
+      'sources': [
+        'full_stack.cc',
+        'test_main.cc',
+      ],
+      'dependencies': [
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+        '<(webrtc_root)/test/test.gyp:test_support',
         'video_tests_common',
       ],
     },

@@ -22,11 +22,11 @@ class DirectTransport : public newapi::Transport {
 
   void SetReceiver(newapi::PacketReceiver* receiver) { receiver_ = receiver; }
 
-  bool SendRTP(const void* data, size_t length) OVERRIDE {
+  virtual bool SendRTP(const uint8_t* data, size_t length) OVERRIDE {
     return receiver_->DeliverPacket(data, length);
   }
 
-  bool SendRTCP(const void* data, size_t length) OVERRIDE {
+  virtual bool SendRTCP(const uint8_t* data, size_t length) OVERRIDE {
     return SendRTP(data, length);
   }
 

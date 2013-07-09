@@ -7,26 +7,30 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-
-#ifndef WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_TRANSPORT_H_
-#define WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_TRANSPORT_H_
-
-#include <stddef.h>
+#ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_STATISTICS_H_
+#define WEBRTC_VIDEO_ENGINE_TEST_COMMON_STATISTICS_H_
 
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-namespace newapi {
+namespace test {
 
-class Transport {
+class Statistics {
  public:
-  virtual bool SendRTP(const uint8_t* packet, size_t length) = 0;
-  virtual bool SendRTCP(const uint8_t* packet, size_t length) = 0;
+  Statistics();
 
- protected:
-  virtual ~Transport() {}
+  void AddSample(double sample);
+
+  double Mean() const;
+  double Variance() const;
+  double StandardDeviation() const;
+
+ private:
+  double sum_;
+  double sum_squared_;
+  uint64_t count_;
 };
-}  // namespace newapi
+}  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_TRANSPORT_H_
+#endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_STATISTICS_H_

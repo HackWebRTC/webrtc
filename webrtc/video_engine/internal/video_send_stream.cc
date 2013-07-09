@@ -23,10 +23,9 @@
 namespace webrtc {
 namespace internal {
 
-VideoSendStream::VideoSendStream(
-    newapi::Transport* transport,
-    webrtc::VideoEngine* video_engine,
-    const newapi::VideoSendStream::Config& config)
+VideoSendStream::VideoSendStream(newapi::Transport* transport,
+                                 webrtc::VideoEngine* video_engine,
+                                 const newapi::VideoSendStream::Config& config)
     : transport_(transport), config_(config) {
 
   if (config_.codec.numberOfSimulcastStreams > 0) {
@@ -134,14 +133,18 @@ int VideoSendStream::SendPacket(int /*channel*/,
   // TODO(pbos): Lock these methods and the destructor so it can't be processing
   //             a packet when the destructor has been called.
   assert(length >= 0);
-  return transport_->SendRTP(packet, static_cast<size_t>(length)) ? 0 : -1;
+  bool success = transport_->SendRTP(static_cast<const uint8_t*>(packet),
+                                     static_cast<size_t>(length));
+  return success ? 0 : -1;
 }
 
 int VideoSendStream::SendRTCPPacket(int /*channel*/,
                                     const void* packet,
                                     int length) {
   assert(length >= 0);
-  return transport_->SendRTCP(packet, static_cast<size_t>(length)) ? 0 : -1;
+  bool success = transport_->SendRTCP(static_cast<const uint8_t*>(packet),
+                                      static_cast<size_t>(length));
+  return success ? 0 : -1;
 }
 
 }  // namespace internal

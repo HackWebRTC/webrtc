@@ -14,6 +14,7 @@
 #include <cstring>
 
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/video_engine/new_include/video_send_stream.h"
 
 namespace webrtc {
 namespace test {
@@ -25,12 +26,12 @@ FrameGenerator* FrameGenerator::Create(size_t width,
 }
 
 void FrameGenerator::InsertFrame(newapi::VideoSendStreamInput* input) {
-  int64_t time_before = clock_->TimeInMilliseconds();
+  int64_t time_before = clock_->CurrentNtpInMilliseconds();
   frame_.set_render_time_ms(time_before);
 
   GenerateNextFrame();
 
-  int64_t time_after = clock_->TimeInMilliseconds();
+  int64_t time_after = clock_->CurrentNtpInMilliseconds();
   input->PutFrame(frame_, static_cast<uint32_t>(time_after - time_before));
 }
 

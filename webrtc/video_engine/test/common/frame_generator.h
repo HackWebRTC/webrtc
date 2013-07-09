@@ -12,11 +12,14 @@
 
 #include "webrtc/common_video/interface/i420_video_frame.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_engine/new_include/video_send_stream.h"
 
 namespace webrtc {
 
 class Clock;
+
+namespace newapi {
+class VideoSendStreamInput;
+}  // newapi
 
 namespace test {
 

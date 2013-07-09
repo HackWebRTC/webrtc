@@ -10,8 +10,8 @@
 
 #include "webrtc/video_engine/test/common/frame_generator_capturer.h"
 
-#include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/video_engine/test/common/frame_generator.h"
@@ -22,10 +22,9 @@ namespace test {
 FrameGeneratorCapturer* FrameGeneratorCapturer::Create(
     newapi::VideoSendStreamInput* input,
     FrameGenerator* frame_generator,
-    int target_fps,
-    Clock* clock) {
+    int target_fps) {
   FrameGeneratorCapturer* capturer =
-      new FrameGeneratorCapturer(input, frame_generator, target_fps, clock);
+      new FrameGeneratorCapturer(input, frame_generator, target_fps);
 
   if (!capturer->Init()) {
     delete capturer;
@@ -38,11 +37,10 @@ FrameGeneratorCapturer* FrameGeneratorCapturer::Create(
 FrameGeneratorCapturer::FrameGeneratorCapturer(
     newapi::VideoSendStreamInput* input,
     FrameGenerator* frame_generator,
-    int target_fps,
-    Clock* clock)
+    int target_fps)
     : VideoCapturer(input),
       sending_(false),
-      clock_(clock),
+      tick_(EventWrapper::Create()),
       lock_(CriticalSectionWrapper::CreateCriticalSection()),
       thread_(NULL),
       frame_generator_(frame_generator),
@@ -55,26 +53,22 @@ FrameGeneratorCapturer::FrameGeneratorCapturer(
 FrameGeneratorCapturer::~FrameGeneratorCapturer() {
   Stop();
 
-  if (thread_ != NULL) {
-    if (!thread_->Stop()) {
-      // TODO(pbos): Log a warning. This will leak a thread.
-    } else {
-      delete thread_;
-    }
-  }
+  if (thread_.get() != NULL)
+    thread_->Stop();
 }
 
 bool FrameGeneratorCapturer::Init() {
-  thread_ = ThreadWrapper::CreateThread(FrameGeneratorCapturer::Run,
-                                        this,
-                                        webrtc::kHighPriority,
-                                        "FrameGeneratorCapturer");
-  if (thread_ == NULL)
+  if (!tick_->StartTimer(true, 1000 / target_fps_))
+    return false;
+  thread_.reset(ThreadWrapper::CreateThread(FrameGeneratorCapturer::Run,
+                                            this,
+                                            webrtc::kHighPriority,
+                                            "FrameGeneratorCapturer"));
+  if (thread_.get() == NULL)
     return false;
   unsigned int thread_id;
   if (!thread_->Start(thread_id)) {
-    delete thread_;
-    thread_ = NULL;
+    thread_.reset();
     return false;
   }
   return true;
@@ -86,29 +80,21 @@ bool FrameGeneratorCapturer::Run(void* obj) {
 }
 
 void FrameGeneratorCapturer::InsertFrame() {
-  int64_t time_start = clock_->TimeInMilliseconds();
-
   {
-    CriticalSectionScoped cs(lock_);
+    CriticalSectionScoped cs(lock_.get());
     if (sending_)
       frame_generator_->InsertFrame(input_);
   }
-
-  int64_t remaining_sleep =
-      1000 / target_fps_ - (clock_->TimeInMilliseconds() - time_start);
-
-  if (remaining_sleep > 0) {
-    SleepMs(static_cast<int>(remaining_sleep));
-  }
+  tick_->Wait(WEBRTC_EVENT_INFINITE);
 }
 
 void FrameGeneratorCapturer::Start() {
-  CriticalSectionScoped cs(lock_);
+  CriticalSectionScoped cs(lock_.get());
   sending_ = true;
 }
 
 void FrameGeneratorCapturer::Stop() {
-  CriticalSectionScoped cs(lock_);
+  CriticalSectionScoped cs(lock_.get());
   sending_ = false;
 }
 }  // test

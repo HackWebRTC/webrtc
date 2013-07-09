@@ -10,6 +10,8 @@
 
 #include "webrtc/video_engine/test/common/video_capturer.h"
 
+#include "test/testsupport/fileutils.h"
+#include "webrtc/video_engine/test/common/file_capturer.h"
 #include "webrtc/video_engine/test/common/frame_generator.h"
 #include "webrtc/video_engine/test/common/frame_generator_capturer.h"
 #include "webrtc/video_engine/test/common/vcm_capturer.h"
@@ -43,7 +45,7 @@ VideoCapturer* VideoCapturer::Create(newapi::VideoSendStreamInput* input,
 
   FrameGeneratorCapturer* frame_generator_capturer =
       FrameGeneratorCapturer::Create(
-          input, FrameGenerator::Create(width, height, clock), fps, clock);
+          input, FrameGenerator::Create(width, height, clock), fps);
   if (frame_generator_capturer != NULL) {
     return frame_generator_capturer;
   }

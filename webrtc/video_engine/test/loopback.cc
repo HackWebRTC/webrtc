@@ -20,7 +20,6 @@
 #include "webrtc/video_engine/test/common/direct_transport.h"
 #include "webrtc/video_engine/test/common/flags.h"
 #include "webrtc/video_engine/test/common/generate_ssrcs.h"
-#include "webrtc/video_engine/test/common/run_tests.h"
 #include "webrtc/video_engine/test/common/video_capturer.h"
 #include "webrtc/video_engine/test/common/video_renderer.h"
 
@@ -28,7 +27,7 @@ namespace webrtc {
 
 class LoopbackTest : public ::testing::Test {
  protected:
-  std::map<uint32_t, bool> reserved_ssrcs;
+  std::map<uint32_t, bool> reserved_ssrcs_;
 };
 
 TEST_F(LoopbackTest, Test) {
@@ -47,7 +46,7 @@ TEST_F(LoopbackTest, Test) {
   transport.SetReceiver(call->Receiver());
 
   newapi::VideoSendStream::Config send_config = call->GetDefaultSendConfig();
-  test::GenerateRandomSsrcs(&send_config, &reserved_ssrcs);
+  test::GenerateRandomSsrcs(&send_config, &reserved_ssrcs_);
 
   send_config.local_renderer = local_preview.get();
 
@@ -99,10 +98,3 @@ TEST_F(LoopbackTest, Test) {
   call->DestroySendStream(send_stream);
 }
 }  // webrtc
-
-int main(int argc, char* argv[]) {
-  ::testing::InitGoogleTest(&argc, argv);
-  webrtc::test::flags::Init(&argc, &argv);
-
-  return webrtc::test::RunAllTests();
-}

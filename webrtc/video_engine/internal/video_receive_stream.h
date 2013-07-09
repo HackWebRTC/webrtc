@@ -49,7 +49,7 @@ class VideoReceiveStream : public newapi::VideoReceiveStream,
   virtual int FrameSizeChange(unsigned int width, unsigned int height,
                               unsigned int /*number_of_streams*/) OVERRIDE;
 
-  virtual int DeliverFrame(uint8_t* frame, int buffer_size, uint32_t time_stamp,
+  virtual int DeliverFrame(uint8_t* frame, int buffer_size, uint32_t timestamp,
                            int64_t render_time) OVERRIDE;
 
   virtual int SendPacket(int /*channel*/, const void* packet, int length)

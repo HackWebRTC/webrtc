@@ -114,7 +114,7 @@ int VideoReceiveStream::FrameSizeChange(unsigned int width, unsigned int height,
 }
 
 int VideoReceiveStream::DeliverFrame(uint8_t* frame, int buffer_size,
-                                     uint32_t time_stamp, int64_t render_time) {
+                                     uint32_t timestamp, int64_t render_time) {
   if (config_.renderer == NULL) {
     return 0;
   }
@@ -123,6 +123,8 @@ int VideoReceiveStream::DeliverFrame(uint8_t* frame, int buffer_size,
   video_frame.CreateEmptyFrame(width_, height_, width_, height_, height_);
   ConvertToI420(kI420, frame, 0, 0, width_, height_, buffer_size,
                 webrtc::kRotateNone, &video_frame);
+  video_frame.set_timestamp(timestamp);
+  video_frame.set_render_time_ms(render_time);
 
   if (config_.post_decode_callback != NULL) {
     config_.post_decode_callback->FrameCallback(&video_frame);
@@ -137,16 +139,22 @@ int VideoReceiveStream::DeliverFrame(uint8_t* frame, int buffer_size,
   return 0;
 }
 
-int VideoReceiveStream::SendPacket(int /*channel*/, const void* packet,
+int VideoReceiveStream::SendPacket(int /*channel*/,
+                                   const void* packet,
                                    int length) {
   assert(length >= 0);
-  return transport_->SendRTP(packet, static_cast<size_t>(length)) ? 0 : -1;
+  bool success = transport_->SendRTP(static_cast<const uint8_t*>(packet),
+                                     static_cast<size_t>(length));
+  return success ? 0 : -1;
 }
 
-int VideoReceiveStream::SendRTCPPacket(int /*channel*/, const void* packet,
+int VideoReceiveStream::SendRTCPPacket(int /*channel*/,
+                                       const void* packet,
                                        int length) {
   assert(length >= 0);
-  return transport_->SendRTCP(packet, static_cast<size_t>(length)) ? 0 : -1;
+  bool success = transport_->SendRTCP(static_cast<const uint8_t*>(packet),
+                                      static_cast<size_t>(length));
+  return success ? 0 : -1;
 }
 }  // internal
 }  // webrtc
