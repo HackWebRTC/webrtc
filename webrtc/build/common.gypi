@@ -41,6 +41,7 @@
       'modules_java_gyp_path%': '<(modules_java_gyp_path)',
 
       'webrtc_vp8_dir%': '<(webrtc_root)/modules/video_coding/codecs/vp8',
+      'rbe_components_path%': '<(webrtc_root)/modules/remote_bitrate_estimator',
       'include_opus%': 1,
     },
     'build_with_chromium%': '<(build_with_chromium)',
@@ -50,6 +51,7 @@
     'modules_java_gyp_path%': '<(modules_java_gyp_path)',
     'webrtc_vp8_dir%': '<(webrtc_vp8_dir)',
     'include_opus%': '<(include_opus)',
+    'rbe_components_path%': '<(rbe_components_path)',
 
     # The Chromium common.gypi we use treats all gyp files without
     # chromium_code==1 as third party code. This disables many of the
