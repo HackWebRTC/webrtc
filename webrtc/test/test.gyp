@@ -100,10 +100,11 @@
             {
               'action_name': 'get_resources',
               'inputs': ['<(webrtc_root)/tools/update_resources.py'],
-              'outputs': ['../../resources'],
+              'outputs': ['../../../resources'],
               'action': ['python',
                          '<(webrtc_root)/tools/update_resources.py',
-                         '-p ../../../'],
+                         '-p',
+                         '../../../'],
             }],
         }, {
           'sources!': [
