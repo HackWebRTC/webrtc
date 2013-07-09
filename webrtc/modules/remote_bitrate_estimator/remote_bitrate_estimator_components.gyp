@@ -18,8 +18,6 @@
         '<(webrtc_root)/modules/remote_bitrate_estimator',
       ],
       'sources': [
-        'bitrate_estimator.cc',
-        'bitrate_estimator.h',
         'overuse_detector.cc',
         'overuse_detector.h',
         'remote_bitrate_estimator_single_stream.cc',
@@ -27,19 +25,25 @@
         'remote_rate_control.h',
       ],
     },
-    {
-      'target_name': 'rbe_components_unittests',
-      'type': 'static_library',
-      'dependencies': [
-        '<(DEPTH)/testing/gmock.gyp:gmock',
-        '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(webrtc_root)/modules/modules.gyp:remote_bitrate_estimator',
-      ],
-      'sources': [
-        '<(rbe_components_path)/remote_bitrate_estimator_single_stream_unittest.cc',
-        '<(rbe_components_path)/remote_bitrate_estimator_unittest_helper.cc',
-        '<(rbe_components_path)/remote_bitrate_estimator_unittest_helper.h',
+  ],
+  'conditions': [
+    ['include_tests==1', {
+      'targets': [
+        {
+          'target_name': 'rbe_components_unittests',
+          'type': 'static_library',
+          'dependencies': [
+            '<(DEPTH)/testing/gmock.gyp:gmock',
+            '<(DEPTH)/testing/gtest.gyp:gtest',
+          ],
+          'sources': [
+            '<(rbe_components_path)/remote_bitrate_estimator_single_stream_unittest.cc',
+            '<(rbe_components_path)/remote_bitrate_estimator_unittest_helper.cc',
+            '<(rbe_components_path)/remote_bitrate_estimator_unittest_helper.h',
+          ],
+        },
       ],
     },
+    ],
   ],
 }

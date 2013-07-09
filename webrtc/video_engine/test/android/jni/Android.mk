@@ -171,6 +171,12 @@ LOCAL_SRC_FILES := \
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
+LOCAL_MODULE := librbe_components
+LOCAL_SRC_FILES := \
+    $(MY_LIBS_PATH)/librbe_components.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
 LOCAL_MODULE := librtp_rtcp
 LOCAL_SRC_FILES := \
     $(MY_LIBS_PATH)/librtp_rtcp.a
@@ -384,6 +390,7 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
     libcpu_features_android \
     libaudio_device \
     libremote_bitrate_estimator \
+    librbe_components \
     librtp_rtcp \
     libmedia_file \
     libchannel_transport \
