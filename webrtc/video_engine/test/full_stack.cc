@@ -39,9 +39,10 @@ struct FullStackTestParams {
   const char* test_label;
   struct {
     const char* name;
-    size_t width, height, fps;
+    size_t width, height;
+    int fps;
   } clip;
-  size_t bitrate;
+  unsigned int bitrate;
   double avg_psnr_threshold;
   double avg_ssim_threshold;
 };
@@ -274,13 +275,14 @@ TEST_P(FullStackTest, NoPacketLoss) {
       newapi::VideoEngine::Create(newapi::VideoEngineConfig()));
 
   test::DirectTransport transport(NULL);
-  VideoAnalyzer analyzer(NULL,
-                         &transport,
-                         loopback_video.get(),
-                         params.test_label,
-                         params.avg_psnr_threshold,
-                         params.avg_ssim_threshold,
-                         FLAGS_seconds * params.clip.fps);
+  VideoAnalyzer analyzer(
+      NULL,
+      &transport,
+      loopback_video.get(),
+      params.test_label,
+      params.avg_psnr_threshold,
+      params.avg_ssim_threshold,
+      static_cast<uint64_t>(FLAGS_seconds * params.clip.fps));
 
   scoped_ptr<newapi::VideoCall> call(video_engine->CreateCall(&analyzer));
   analyzer.receiver_ = call->Receiver();

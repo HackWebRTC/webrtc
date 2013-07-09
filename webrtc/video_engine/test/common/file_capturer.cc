@@ -33,7 +33,8 @@ YuvFileFrameGenerator::YuvFileFrameGenerator(FILE* file,
                                              size_t height,
                                              Clock* clock)
     : FrameGenerator(width, height, clock), file_(file) {
-  frame_size_ = CalcBufferSize(kI420, width_, height_);
+  frame_size_ = CalcBufferSize(
+      kI420, static_cast<int>(width_), static_cast<int>(height_));
   frame_buffer_ = new uint8_t[frame_size_];
 }
 
@@ -49,8 +50,15 @@ void YuvFileFrameGenerator::GenerateNextFrame() {
     return;
   }
 
-  ConvertToI420(kI420, frame_buffer_, 0, 0, width_, height_, frame_size_,
-                kRotateNone, &frame_);
+  ConvertToI420(kI420,
+                frame_buffer_,
+                0,
+                0,
+                static_cast<int>(width_),
+                static_cast<int>(height_),
+                0,
+                kRotateNone,
+                &frame_);
 }
 }  // namespace test
 }  // namespace webrtc
