@@ -282,7 +282,7 @@ bool RtpReceiverImpl::IncomingRtpPacket(
     return false;
   }
   if (should_reset_statistics) {
-    cb_rtp_feedback_->OnResetStatistics();
+    cb_rtp_feedback_->OnResetStatistics(ssrc_);
   }
   WebRtcRTPHeader webrtc_rtp_header;
   memset(&webrtc_rtp_header, 0, sizeof(webrtc_rtp_header));
@@ -413,7 +413,7 @@ void RtpReceiverImpl::CheckSSRCChanged(const RTPHeader* rtp_header) {
       // We need the payload_type_ to make the call if the remote SSRC is 0.
       new_ssrc = true;
 
-      cb_rtp_feedback_->OnResetStatistics();
+      cb_rtp_feedback_->OnResetStatistics(ssrc_);
 
       last_received_timestamp_      = 0;
       last_received_sequence_number_ = 0;
