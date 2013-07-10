@@ -2184,6 +2184,9 @@ int32_t Channel::ReceivedRTPPacket(const int8_t* data, int32_t length) {
   }
   header.payload_type_frequency =
       rtp_payload_registry_->GetPayloadTypeFrequency(header.payloadType);
+  if (header.payload_type_frequency < 0) {
+    return -1;
+  }
   bool retransmitted = IsPacketRetransmitted(header);
   bool in_order = rtp_receiver_->InOrderPacket(header.sequenceNumber);
   rtp_receive_statistics_->IncomingPacket(header, static_cast<uint16_t>(length),

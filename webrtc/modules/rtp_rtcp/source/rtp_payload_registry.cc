@@ -103,6 +103,7 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(
   if (ModuleRTPUtility::StringCompare(payload_name, "red", 3)) {
     red_payload_type_ = payload_type;
     payload = new ModuleRTPUtility::Payload;
+    memset(payload, 0, sizeof(*payload));
     payload->audio = false;
     payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
     strncpy(payload->name, payload_name, RTP_PAYLOAD_NAME_SIZE - 1);
