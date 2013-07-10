@@ -7,19 +7,16 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_TEST_RUNNER_H_
-#define WEBRTC_VIDEO_ENGINE_TEST_COMMON_TEST_RUNNER_H_
+#include "webrtc/video_engine/test/common/run_loop.h"
+
+#include <stdio.h>
 
 namespace webrtc {
 namespace test {
 
-// Blocks until the user presses enter.
-void PressEnterToContinue();
-
-// Performs platform-dependent initializations and calls gtest's
-// RUN_ALL_TESTS().
-int RunAllTests();
+void PressEnterToContinue() {
+  puts(">> Press ENTER to continue...");
+  while (getchar() != '\n' && !feof(stdin));
+}
 }  // namespace test
 }  // namespace webrtc
-
-#endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_TEST_RUNNER_H_

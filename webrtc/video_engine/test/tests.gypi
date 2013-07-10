@@ -32,6 +32,8 @@
         'common/null_platform_renderer.cc',
         'common/run_tests.cc',
         'common/run_tests.h',
+        'common/run_loop.cc',
+        'common/run_loop.h',
         'common/statistics.cc',
         'common/statistics.h',
         'common/vcm_capturer.cc',
@@ -40,6 +42,9 @@
         'common/video_capturer.h',
         'common/video_renderer.cc',
         'common/video_renderer.h',
+        'common/win/d3d_renderer.cc',
+        'common/win/d3d_renderer.h',
+        'common/win/run_loop_win.cc',
       ],
       'conditions': [
         ['OS=="linux"', {
@@ -57,6 +62,12 @@
           'sources!' : [
             'common/gl/gl_renderer.cc',
             'common/gl/gl_renderer.h',
+          ],
+        }],
+        ['OS=="win"', {
+          'sources!': [
+            'common/null_platform_renderer.cc',
+            'common/run_loop.cc',
           ],
         }],
       ],

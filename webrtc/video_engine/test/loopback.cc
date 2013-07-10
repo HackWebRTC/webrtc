@@ -20,6 +20,8 @@
 #include "webrtc/video_engine/test/common/direct_transport.h"
 #include "webrtc/video_engine/test/common/flags.h"
 #include "webrtc/video_engine/test/common/generate_ssrcs.h"
+#include "webrtc/video_engine/test/common/run_loop.h"
+#include "webrtc/video_engine/test/common/run_tests.h"
 #include "webrtc/video_engine/test/common/video_capturer.h"
 #include "webrtc/video_engine/test/common/video_renderer.h"
 
@@ -82,13 +84,9 @@ TEST_F(LoopbackTest, Test) {
 
   receive_stream->StartReceive();
   send_stream->StartSend();
-
   camera->Start();
 
-  // TODO(pbos): Run this time limited (optionally), so it can run automated.
-  puts(">> Press ENTER to continue...");
-  while (getchar() != '\n' && !feof(stdin))
-    ;
+  test::PressEnterToContinue();
 
   camera->Stop();
   send_stream->StopSend();

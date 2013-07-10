@@ -34,7 +34,7 @@ class VideoRenderer : public newapi::VideoRenderer {
  protected:
   VideoRenderer() {}
 };
-}  // test
-}  // webrtc
+}  // namespace test
+}  // namespace webrtc
 
 #endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_VIDEO_RENDERER_H_
