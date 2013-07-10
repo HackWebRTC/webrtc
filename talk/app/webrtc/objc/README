@@ -1,0 +1,45 @@
+This directory contains the ObjectiveC implementation of the
+webrtc::PeerConnection API.  This can be built for Mac or iOS.
+
+Prerequisites:
+- Make sure gclient is checking out tools necessary to target iOS: your
+  .gclient file should contain a line like:
+  target_os = ['ios', 'mac']
+  Make sure to re-run gclient sync after adding this to download the tools.
+- Set up webrtc-related GYP variables:
+- For Mac:
+  export GYP_DEFINES="build_with_libjingle=1 build_with_chromium=0 OS=mac
+  target_arch=x64 libjingle_objc=1 libpeer_target_type=static_library
+  $GYP_DEFINES"
+- For iOS:
+  export GYP_DEFINES="build_with_libjingle=1 build_with_chromium=0 OS=ios
+  libjingle_enable_video=0 libjingle_objc=1 enable_video=0 $GYP_DEFINES"
+- Finally, run "gclient runhooks" to generate iOS or Mac targeting Xcode
+    projects.
+
+Example of building & using the app:
+
+cd <path/to/libjingle>/trunk/talk
+- Open libjingle.xcproj.  Select iPhone or iPad simulator and build everything.
+  Then switch to iOS device and build everything.  This creates x86 and ARM
+  archives.
+cd examples/ios
+./makeLibs.sh
+- This will generate fat archives containing both targets and copy them to
+  ./libs.
+- This step must be rerun every time you run gclient sync or build the API
+  libraries.
+- Open AppRTCDemo.xcodeproj, select your device or simulator and run.
+- If you have any problems deploying for the first time, check the project
+  properties to ensure that the Bundle Identifier matches your phone
+  provisioning profile.  Or use the simulator as it doesn't require a profile.
+
+- In desktop chrome, navigate to http://apprtc.appspot.com and note the r=<NNN>
+  room number in the resulting URL.
+
+- Enter that number into the text field on the phone.
+
+- Alternatively, you can background the app and launch Safari.  In Safari, open
+  the url apprtc://apprtc.appspot.com/?r=<NNN> where <NNN> is the room name.
+  Other options are to put the link in an email and send it to your self.
+  Clicking on it will launch AppRTCDemo and navigate to the room.
