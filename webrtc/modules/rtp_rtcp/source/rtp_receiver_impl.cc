@@ -334,6 +334,8 @@ bool RtpReceiverImpl::RetransmitOfOldPacket(const RTPHeader& header,
 
   CriticalSectionScoped cs(critical_section_rtp_receiver_);
   uint32_t frequency_khz = header.payload_type_frequency / 1000;
+  assert(frequency_khz > 0);
+
   int64_t time_diff_ms = clock_->TimeInMilliseconds() -
       last_receive_time_;
 
