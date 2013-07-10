@@ -10,14 +10,14 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_impl.h"
 
+#include <cassert>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <cassert>
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {

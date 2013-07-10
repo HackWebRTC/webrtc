@@ -16,8 +16,8 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_receiver_audio.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_receiver_audio.h"
 
 using namespace webrtc;
 

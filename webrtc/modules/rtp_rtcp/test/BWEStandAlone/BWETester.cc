@@ -17,12 +17,12 @@
 #include <iostream>
 #include <string>
 
-#include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/modules/rtp_rtcp/test/BWEStandAlone/BWEConvergenceTest.h"
 #include "webrtc/modules/rtp_rtcp/test/BWEStandAlone/BWEStabilityTest.h"
 #include "webrtc/modules/rtp_rtcp/test/BWEStandAlone/BWETwoWayLimitFinding.h"
 #include "webrtc/modules/rtp_rtcp/test/BWEStandAlone/MatlabPlot.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 #ifdef MATLAB
 MatlabEngine eng;

@@ -16,9 +16,9 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_receiver_video.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_receiver_video.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/rtp_rtcp/test/testAPI/test_api.h"
 
