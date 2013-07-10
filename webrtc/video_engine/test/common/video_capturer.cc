@@ -10,7 +10,7 @@
 
 #include "webrtc/video_engine/test/common/video_capturer.h"
 
-#include "test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/video_engine/test/common/file_capturer.h"
 #include "webrtc/video_engine/test/common/frame_generator.h"
 #include "webrtc/video_engine/test/common/frame_generator_capturer.h"

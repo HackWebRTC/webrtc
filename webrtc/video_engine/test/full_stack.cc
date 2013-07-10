@@ -12,8 +12,8 @@
 #include <deque>
 #include <map>
 
-#include "testing/gtest/include/gtest/gtest.h"
 #include "gflags/gflags.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
