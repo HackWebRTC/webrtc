@@ -69,5 +69,18 @@ class ReceiveStatistics : public Module {
   virtual StreamStatistician* GetStatistician(uint32_t ssrc) const = 0;
 };
 
+class NullReceiveStatistics : public ReceiveStatistics {
+ public:
+  virtual void IncomingPacket(const RTPHeader& rtp_header, size_t bytes,
+                                bool retransmitted, bool in_order) {}
+  virtual void GetActiveStatisticians(
+      StatisticianMap* statisticians) const { statisticians->clear(); }
+  virtual StreamStatistician* GetStatistician(uint32_t ssrc) const {
+    return NULL;
+  }
+  virtual int32_t TimeUntilNextProcess() { return 0; }
+  virtual int32_t Process() { return 0; }
+};
+
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RECEIVE_STATISTICS_H_
