@@ -3130,7 +3130,7 @@ Channel::SetSendTelephoneEventPayloadType(unsigned char type)
             "SetSendTelephoneEventPayloadType() invalid type");
         return -1;
     }
-    CodecInst codec;
+    CodecInst codec = {};
     codec.plfreq = 8000;
     codec.pltype = type;
     memcpy(codec.plname, "telephone-event", 16);

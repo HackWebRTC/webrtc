@@ -14,6 +14,7 @@
 
 class FakeMediaProcess : public webrtc::VoEMediaProcess {
  public:
+  FakeMediaProcess() : frequency(0) {}
   virtual void Process(int channel,
                        const webrtc::ProcessingTypes type,
                        int16_t audio_10ms[],
