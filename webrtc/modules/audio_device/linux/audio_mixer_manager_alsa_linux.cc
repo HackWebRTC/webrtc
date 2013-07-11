@@ -10,8 +10,8 @@
 
 #include <cassert>
 
-#include "audio_mixer_manager_alsa_linux.h"
-#include "trace.h"
+#include "webrtc/modules/audio_device/linux/audio_mixer_manager_alsa_linux.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 extern webrtc_adm_linux_alsa::AlsaSymbolTable AlsaSymbolTable;
 

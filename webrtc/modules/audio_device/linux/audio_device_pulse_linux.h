@@ -11,12 +11,12 @@
 #ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_PULSE_LINUX_H
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_PULSE_LINUX_H
 
-#include "audio_device_generic.h"
-#include "audio_mixer_manager_pulse_linux.h"
-#include "critical_section_wrapper.h"
+#include "webrtc/modules/audio_device/audio_device_generic.h"
+#include "webrtc/modules/audio_device/linux/audio_mixer_manager_pulse_linux.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
-#include <pulse/pulseaudio.h>
 #include <X11/Xlib.h>
+#include <pulse/pulseaudio.h>
 
 // We define this flag if it's missing from our headers, because we want to be
 // able to compile against old headers but still use PA_STREAM_ADJUST_LATENCY

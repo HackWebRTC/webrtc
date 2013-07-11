@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "trace.h"
-#include "critical_section_wrapper.h"
-#include "audio_device_buffer.h"
-#include "audio_device_utility.h"
-#include "audio_device_config.h"
+#include "webrtc/modules/audio_device/audio_device_buffer.h"
+#include "webrtc/modules/audio_device/audio_device_config.h"
+#include "webrtc/modules/audio_device/audio_device_utility.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
+#include <cassert>
 #include <stdlib.h>
 #include <string.h>
-#include <cassert>
 
-#include "signal_processing_library.h"
+#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
 namespace webrtc {
 

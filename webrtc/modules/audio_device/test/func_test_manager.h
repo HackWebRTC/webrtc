@@ -11,16 +11,16 @@
 #ifndef WEBRTC_AUDIO_DEVICE_FUNC_TEST_MANAGER_H
 #define WEBRTC_AUDIO_DEVICE_FUNC_TEST_MANAGER_H
 
-#include "modules/audio_device/audio_device_utility.h"
+#include "webrtc/modules/audio_device/audio_device_utility.h"
 
 #include <string>
 
-#include "typedefs.h"
-#include "audio_device.h"
-#include "audio_device_test_defines.h"
-#include "file_wrapper.h"
-#include "list_wrapper.h"
-#include "resampler.h"
+#include "webrtc/common_audio/resampler/include/resampler.h"
+#include "webrtc/modules/audio_device/include/audio_device.h"
+#include "webrtc/modules/audio_device/test/audio_device_test_defines.h"
+#include "webrtc/system_wrappers/interface/file_wrapper.h"
+#include "webrtc/system_wrappers/interface/list_wrapper.h"
+#include "webrtc/typedefs.h"
 
 #if defined(WEBRTC_IOS) || defined(ANDROID)
 #define USE_SLEEP_AS_PAUSE

@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <stdio.h>
-#include <ctype.h>
 #include <cassert>
+#include <ctype.h>
+#include <stdio.h>
 #include <string.h>
 
-#include "func_test_manager.h"
-#include "gtest/gtest.h"
-#include "system_wrappers/interface/sleep.h"
-#include "testsupport/fileutils.h"
+#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/modules/audio_device/test/func_test_manager.h"
+#include "webrtc/system_wrappers/interface/sleep.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
-#include "modules/audio_device/audio_device_config.h"
-#include "modules/audio_device/audio_device_impl.h"
+#include "webrtc/modules/audio_device/audio_device_config.h"
+#include "webrtc/modules/audio_device/audio_device_impl.h"
 
 #ifndef __GNUC__
 // Disable warning message ('sprintf': name was marked as #pragma deprecated)

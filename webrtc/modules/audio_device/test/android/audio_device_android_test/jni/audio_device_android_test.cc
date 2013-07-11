@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <string.h> // memset
 #include <android/log.h>
+#include <string.h> // memset
 
-#include "org_webrtc_voiceengine_test_AudioDeviceAndroidTest.h"
+#include "webrtc/modules/audio_device/test/android/audio_device_android_test/jni/org_webrtc_voiceengine_test_AudioDeviceAndroidTest.h"
 
-#include "../../../../interface/audio_device.h"
+#include "webrtc/modules/audio_device/main/interface/audio_device.h"
 
 #define LOG_TAG "WebRTC ADM Native"
 

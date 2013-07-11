@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 
-#include "audio_device_generic.h"
+#include "webrtc/modules/audio_device/audio_device_generic.h"
 
 namespace webrtc {
 

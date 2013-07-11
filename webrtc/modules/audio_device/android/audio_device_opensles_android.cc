@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_device/android/audio_device_opensles_android.h"
+#include "webrtc/modules/audio_device/android/audio_device_opensles_android.h"
 
 #ifdef WEBRTC_ANDROID_DEBUG
 #include <android/log.h>
@@ -18,10 +18,10 @@
 #include <sys/time.h>
 #include <time.h>
 
-#include "modules/audio_device/audio_device_utility.h"
-#include "system_wrappers/interface/event_wrapper.h"
-#include "system_wrappers/interface/thread_wrapper.h"
-#include "system_wrappers/interface/trace.h"
+#include "webrtc/modules/audio_device/audio_device_utility.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 #ifdef WEBRTC_ANDROID_DEBUG
 #define WEBRTC_OPENSL_TRACE(a, b, c, ...)                               \

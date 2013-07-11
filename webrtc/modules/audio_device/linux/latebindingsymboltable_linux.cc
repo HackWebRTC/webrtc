@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "latebindingsymboltable_linux.h"
+#include "webrtc/modules/audio_device/linux/latebindingsymboltable_linux.h"
 
 #ifdef WEBRTC_LINUX
 #include <dlfcn.h>

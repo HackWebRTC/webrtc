@@ -11,15 +11,15 @@
 #ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_ALSA_LINUX_H
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_ALSA_LINUX_H
 
-#include "audio_device_generic.h"
-#include "audio_mixer_manager_alsa_linux.h"
-#include "critical_section_wrapper.h"
+#include "webrtc/modules/audio_device/audio_device_generic.h"
+#include "webrtc/modules/audio_device/linux/audio_mixer_manager_alsa_linux.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 
-#include <alsa/asoundlib.h>
-#include <sys/soundcard.h>
-#include <sys/ioctl.h>
 #include <X11/Xlib.h>
+#include <alsa/asoundlib.h>
+#include <sys/ioctl.h>
+#include <sys/soundcard.h>
 
 
 namespace webrtc

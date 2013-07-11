@@ -11,12 +11,12 @@
 #ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_MAC_H
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_MAC_H
 
-#include "audio_device_generic.h"
-#include "critical_section_wrapper.h"
-#include "audio_mixer_manager_mac.h"
+#include "webrtc/modules/audio_device/audio_device_generic.h"
+#include "webrtc/modules/audio_device/mac/audio_mixer_manager_mac.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
-#include <CoreAudio/CoreAudio.h>
 #include <AudioToolbox/AudioConverter.h>
+#include <CoreAudio/CoreAudio.h>
 #include <mach/semaphore.h>
 
 struct PaUtilRingBuffer;

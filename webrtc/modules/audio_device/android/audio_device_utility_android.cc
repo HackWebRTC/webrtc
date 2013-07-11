@@ -12,10 +12,10 @@
  *  Android audio device utility implementation
  */
 
-#include "audio_device_utility_android.h"
+#include "webrtc/modules/audio_device/android/audio_device_utility_android.h"
 
-#include "critical_section_wrapper.h"
-#include "trace.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc
 {

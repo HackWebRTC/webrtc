@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "audio_device_utility.h"
-#include "audio_device_mac.h"
-#include "audio_device_config.h"
+#include "webrtc/modules/audio_device/audio_device_config.h"
+#include "webrtc/modules/audio_device/audio_device_utility.h"
+#include "webrtc/modules/audio_device/mac/audio_device_mac.h"
 
-#include "event_wrapper.h"
-#include "portaudio/pa_ringbuffer.h"
-#include "trace.h"
-#include "thread_wrapper.h"
+#include "webrtc/modules/audio_device/mac/portaudio/pa_ringbuffer.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 #include <ApplicationServices/ApplicationServices.h>
 #include <cassert>

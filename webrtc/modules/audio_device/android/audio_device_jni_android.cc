@@ -18,13 +18,13 @@
 #include <android/log.h>
 #include <stdlib.h>
 
-#include "audio_device_utility.h"
-#include "audio_device_jni_android.h"
-#include "audio_device_config.h"
+#include "webrtc/modules/audio_device/android/audio_device_jni_android.h"
+#include "webrtc/modules/audio_device/audio_device_config.h"
+#include "webrtc/modules/audio_device/audio_device_utility.h"
 
-#include "trace.h"
-#include "thread_wrapper.h"
-#include "event_wrapper.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc
 {
