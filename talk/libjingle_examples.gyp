@@ -233,6 +233,7 @@
               # (http://crbug.com/225101)
               'action_name': 'build_apprtcdemo_apk',
               'inputs' : [
+                '<(PRODUCT_DIR)/libjingle_peerconnection.jar',
                 '<(PRODUCT_DIR)/libjingle_peerconnection_so.so',
                 'examples/android/AndroidManifest.xml',
                 'examples/android/README',
@@ -256,7 +257,7 @@
               ],
               'action': [
                 'bash', '-ec',
-                'rm -f <(_outputs) && '
+                'rm -fr <(_outputs) examples/android/{bin,libs} && '
                 'mkdir -p examples/android/libs/<(android_app_abi) && '
                 'cp <(PRODUCT_DIR)/libjingle_peerconnection.jar examples/android/libs/ &&'
                 '<(android_strip) -o examples/android/libs/<(android_app_abi)/libjingle_peerconnection_so.so  <(PRODUCT_DIR)/libjingle_peerconnection_so.so &&'

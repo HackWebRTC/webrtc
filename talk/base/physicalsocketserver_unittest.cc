@@ -287,7 +287,8 @@ TEST_F(PosixSignalDeliveryTest, SignalOnDifferentThread) {
   // thread. Our implementation should safely handle it and dispatch
   // RecordSignal() on this thread.
   scoped_ptr<Thread> thread(new Thread());
-  thread->Start(new RaiseSigTermRunnable());
+  scoped_ptr<RaiseSigTermRunnable> runnable(new RaiseSigTermRunnable());
+  thread->Start(runnable.get());
   EXPECT_TRUE(ss_->Wait(1500, true));
   EXPECT_TRUE(ExpectSignal(SIGTERM));
   EXPECT_EQ(Thread::Current(), signaled_thread_);

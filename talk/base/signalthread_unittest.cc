@@ -127,6 +127,8 @@ class OwnerThread : public Thread, public sigslot::has_slots<> {
     signal_thread->Start();
     Thread::Current()->socketserver()->Wait(100, false);
     signal_thread->Release();
+    // Delete |signal_thread|.
+    signal_thread->Destroy(true);
     has_run_ = true;
   }
 

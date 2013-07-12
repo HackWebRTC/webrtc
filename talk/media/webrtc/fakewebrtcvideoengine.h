@@ -708,10 +708,6 @@ class FakeWebRtcVideoEngine
   WEBRTC_STUB(DeregisterDecoderObserver, (const int));
   WEBRTC_STUB(SendKeyFrame, (const int));
   WEBRTC_STUB(WaitForFirstKeyFrame, (const int, const bool));
-#ifdef USE_WEBRTC_DEV_BRANCH
-  WEBRTC_STUB(StartDebugRecording, (int, const char*));
-  WEBRTC_STUB(StopDebugRecording, (int));
-#endif
 
   // webrtc::ViECapture
   WEBRTC_STUB(NumberOfCaptureDevices, ());
@@ -783,10 +779,12 @@ class FakeWebRtcVideoEngine
   // Not using WEBRTC_STUB due to bool return value
   virtual bool IsIPv6Enabled(int channel) { return true; }
   WEBRTC_STUB(SetMTU, (int, unsigned int));
+#ifndef USE_WEBRTC_DEV_BRANCH
   WEBRTC_STUB(SetPacketTimeoutNotification, (const int, bool, int));
   WEBRTC_STUB(RegisterObserver, (const int, webrtc::ViENetworkObserver&));
   WEBRTC_STUB(SetPeriodicDeadOrAliveStatus, (const int, const bool,
     const unsigned int));
+#endif
 
   // webrtc::ViERender
   WEBRTC_STUB(RegisterVideoRenderModule, (webrtc::VideoRender&));

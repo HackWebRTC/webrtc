@@ -926,6 +926,8 @@ void SocketTest::UdpReadyToSend(const IPAddress& loopback) {
       new TestClient(AsyncUDPSocket::Create(ss_, empty)));
   int test_packet_size = 1200;
   talk_base::scoped_array<char> test_packet(new char[test_packet_size]);
+  // Init the test packet just to avoid memcheck warning.
+  memset(test_packet.get(), 0, test_packet_size);
   // Set the send buffer size to the same size as the test packet to have a
   // better chance to get EWOULDBLOCK.
   int send_buffer_size = test_packet_size;

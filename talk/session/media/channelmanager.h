@@ -144,7 +144,12 @@ class ChannelManager : public talk_base::MessageHandler,
   bool SetOutputVolume(int level);
   bool IsSameCapturer(const std::string& capturer_name,
                       VideoCapturer* capturer);
+  // TODO(noahric): Nearly everything called "device" in this API is actually a
+  // device name, so this should really be GetCaptureDeviceName, and the
+  // next method should be GetCaptureDevice.
   bool GetCaptureDevice(std::string* cam_device);
+  // Gets the current capture Device.
+  bool GetVideoCaptureDevice(Device* device);
   // Create capturer based on what has been set in SetCaptureDevice().
   VideoCapturer* CreateVideoCapturer();
   bool SetCaptureDevice(const std::string& cam_device);

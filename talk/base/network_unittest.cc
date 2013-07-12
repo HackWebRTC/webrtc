@@ -128,6 +128,7 @@ TEST_F(NetworkTest, TestCreateNetworks) {
       close(fd);
 #endif
     }
+    delete (*it);
   }
 }
 
@@ -480,6 +481,10 @@ TEST_F(NetworkTest, TestIPv6Toggle) {
     }
   }
   EXPECT_TRUE(ipv6_found);
+  for (NetworkManager::NetworkList::iterator it = list.begin();
+       it != list.end(); ++it) {
+    delete (*it);
+  }
 #endif
   ipv6_found = false;
   manager.set_ipv6_enabled(false);
@@ -492,6 +497,10 @@ TEST_F(NetworkTest, TestIPv6Toggle) {
     }
   }
   EXPECT_FALSE(ipv6_found);
+  for (NetworkManager::NetworkList::iterator it = list.begin();
+       it != list.end(); ++it) {
+    delete (*it);
+  }
 }
 
 #if defined(POSIX)

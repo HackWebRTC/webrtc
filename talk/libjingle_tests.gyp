@@ -33,15 +33,15 @@
       'target_name': 'gunit',
       'type': 'static_library',
       'sources': [
-        '<(DEPTH)/third_party/gtest/src/gtest-all.cc',
+        '<(DEPTH)/testing/gtest/src/gtest-all.cc',
       ],
       'include_dirs': [
-        '<(DEPTH)/third_party/gtest/include',
-        '<(DEPTH)/third_party/gtest',
+        '<(DEPTH)/testing/gtest/include',
+        '<(DEPTH)/testing/gtest',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '<(DEPTH)/third_party/gtest/include',
+          '<(DEPTH)/testing/gtest/include',
         ],
       },
       'conditions': [

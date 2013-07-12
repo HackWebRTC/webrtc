@@ -73,6 +73,7 @@ public:
 
   virtual void SetUp() { }
   virtual void TearDown() {
+    delete http_stream;
     // Avoid an ASSERT, in case a test doesn't clean up properly
     base.abort(HE_NONE);
   }

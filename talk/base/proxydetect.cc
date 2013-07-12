@@ -445,7 +445,7 @@ bool GetDefaultFirefoxProfile(Pathname* profile_path) {
   // Note: we are looking for the first entry with "Default=1", or the last
   // entry in the file
   path.SetFilename("profiles.ini");
-  FileStream* fs = Filesystem::OpenFile(path, "r");
+  scoped_ptr<FileStream> fs(Filesystem::OpenFile(path, "r"));
   if (!fs) {
     return false;
   }
@@ -510,7 +510,7 @@ bool GetDefaultFirefoxProfile(Pathname* profile_path) {
 bool ReadFirefoxPrefs(const Pathname& filename,
                       const char * prefix,
                       StringMap* settings) {
-  FileStream* fs = Filesystem::OpenFile(filename, "r");
+  scoped_ptr<FileStream> fs(Filesystem::OpenFile(filename, "r"));
   if (!fs) {
     LOG(LS_ERROR) << "Failed to open file: " << filename.pathname();
     return false;

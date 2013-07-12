@@ -83,9 +83,11 @@
   }
   webrtc::RTCPeerConnectionObserver *observer =
       new webrtc::RTCPeerConnectionObserver(delegate);
+  webrtc::DTLSIdentityServiceInterface* dummy_dtls_identity_service = NULL;
   talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peerConnection =
       self.nativeFactory->CreatePeerConnection(
-          iceServers, constraints.constraints, observer);
+          iceServers, constraints.constraints, dummy_dtls_identity_service,
+          observer);
   RTCPeerConnection *pc =
       [[RTCPeerConnection alloc] initWithPeerConnection:peerConnection
                                                observer:observer];

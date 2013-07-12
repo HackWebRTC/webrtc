@@ -78,8 +78,8 @@ TEST(MultipartTest, TestAddAndRead) {
   EXPECT_TRUE(multipart.GetSize(&size));
   EXPECT_EQ(part_size, size);
 
-  talk_base::MemoryStream* stream =
-      new talk_base::MemoryStream(kTestStreamContent);
+  talk_base::scoped_ptr<talk_base::MemoryStream> stream(
+      new talk_base::MemoryStream(kTestStreamContent));
   size_t stream_size = 0;
   EXPECT_TRUE(stream->GetSize(&stream_size));
   part_size +=

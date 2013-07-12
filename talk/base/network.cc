@@ -498,6 +498,11 @@ void BasicNetworkManager::DumpNetworks(bool include_ignored) {
                    << ((network->ignored()) ? ", Ignored" : "");
     }
   }
+  // Release the network list created previously.
+  // Do this in a seperated for loop for better readability.
+  for (size_t i = 0; i < list.size(); ++i) {
+    delete list[i];
+  }
 }
 
 Network::Network(const std::string& name, const std::string& desc,

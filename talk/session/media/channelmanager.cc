@@ -43,6 +43,7 @@
 #include "talk/media/base/hybriddataengine.h"
 #include "talk/media/base/rtpdataengine.h"
 #include "talk/media/base/videocapturer.h"
+#include "talk/media/devices/devicemanager.h"
 #ifdef HAVE_SCTP
 #include "talk/media/sctp/sctpdataengine.h"
 #endif
@@ -593,6 +594,14 @@ bool ChannelManager::IsSameCapturer(const std::string& capturer_name,
     return false;
   }
   return capturer->GetId() == device.id;
+}
+
+bool ChannelManager::GetVideoCaptureDevice(Device* device) {
+  std::string device_name;
+  if (!GetCaptureDevice(&device_name)) {
+    return false;
+  }
+  return device_manager_->GetVideoCaptureDevice(device_name, device);
 }
 
 bool ChannelManager::GetCaptureDevice(std::string* cam_name) {

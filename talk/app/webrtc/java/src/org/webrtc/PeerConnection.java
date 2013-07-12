@@ -79,6 +79,9 @@ public class PeerConnection {
 
     /** Triggered when a remote peer close a stream. */
     public void onRemoveStream(MediaStream stream);
+
+    /** Triggered when a remote peer opens a DataChannel. */
+    public void onDataChannel(DataChannel dataChannel);
   }
 
   /** Java version of PeerConnectionInterface.IceServer. */
@@ -117,6 +120,9 @@ public class PeerConnection {
   public native SessionDescription getLocalDescription();
 
   public native SessionDescription getRemoteDescription();
+
+  public native DataChannel createDataChannel(
+      String label, DataChannel.Init init);
 
   public native void createOffer(
       SdpObserver observer, MediaConstraints constraints);

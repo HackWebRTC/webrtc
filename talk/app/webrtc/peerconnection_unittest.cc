@@ -884,6 +884,7 @@ class P2PTestConductor : public testing::Test {
     if (receiving_client_) {
       receiving_client_->set_signaling_message_receiver(NULL);
     }
+    talk_base::CleanupSSL();
   }
 
   bool CreateTestClients() {

@@ -470,8 +470,8 @@ class WebRtcSessionTest : public testing::Test {
     desc_factory_->set_secure(cricket::SEC_ENABLED);
     std::string identity_name = "WebRTC" +
         talk_base::ToString(talk_base::CreateRandomId());
-    tdesc_factory_->set_identity(talk_base::SSLIdentity::Generate(
-        identity_name));
+    identity_.reset(talk_base::SSLIdentity::Generate(identity_name));
+    tdesc_factory_->set_identity(identity_.get());
     tdesc_factory_->set_digest_algorithm(talk_base::DIGEST_SHA_256);
     tdesc_factory_->set_secure(cricket::SEC_REQUIRED);
   }
@@ -701,8 +701,8 @@ class WebRtcSessionTest : public testing::Test {
     // and answer.
     SetLocalDescriptionWithoutError(offer);
 
-    SessionDescriptionInterface* answer = CreateRemoteAnswer(
-        session_->local_description());
+    talk_base::scoped_ptr<SessionDescriptionInterface> answer(
+        CreateRemoteAnswer(session_->local_description()));
     std::string sdp;
     EXPECT_TRUE(answer->ToString(&sdp));
 
@@ -722,11 +722,9 @@ class WebRtcSessionTest : public testing::Test {
 
     SessionDescriptionInterface* new_answer = CreateSessionDescription(
         JsepSessionDescription::kAnswer, sdp, NULL);
-    delete answer;
-    answer = new_answer;
 
     // SetRemoteDescription to enable rtcp mux.
-    SetRemoteDescriptionWithoutError(answer);
+    SetRemoteDescriptionWithoutError(new_answer);
     EXPECT_TRUE_WAIT(observer_.oncandidatesready_, kIceCandidatesTimeout);
     EXPECT_EQ(expected_candidate_num, observer_.mline_0_candidates_.size());
     EXPECT_EQ(expected_candidate_num, observer_.mline_1_candidates_.size());
@@ -858,6 +856,7 @@ class WebRtcSessionTest : public testing::Test {
   cricket::FakeDeviceManager* device_manager_;
   talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
   talk_base::scoped_ptr<cricket::TransportDescriptionFactory> tdesc_factory_;
+  talk_base::scoped_ptr<talk_base::SSLIdentity> identity_;
   talk_base::scoped_ptr<cricket::MediaSessionDescriptionFactory> desc_factory_;
   talk_base::scoped_ptr<talk_base::PhysicalSocketServer> pss_;
   talk_base::scoped_ptr<talk_base::VirtualSocketServer> vss_;
@@ -1877,8 +1876,8 @@ TEST_F(WebRtcSessionTest, VerifyCryptoParamsInSDP) {
       session_->CreateOffer(NULL));
   VerifyCryptoParams(offer->description());
   SetRemoteDescriptionWithoutError(offer.release());
-  const webrtc::SessionDescriptionInterface* answer =
-      session_->CreateAnswer(NULL);
+  scoped_ptr<SessionDescriptionInterface> answer(
+      session_->CreateAnswer(NULL));
   VerifyCryptoParams(answer->description());
 }
 
@@ -2101,7 +2100,8 @@ TEST_F(WebRtcSessionTest, TestInitiatorGIceInAnswer) {
   Init();
   mediastream_signaling_.SendAudioVideoStream1();
   SessionDescriptionInterface* offer = session_->CreateOffer(NULL);
-  SessionDescriptionInterface* answer = CreateRemoteAnswer(offer);
+  talk_base::scoped_ptr<SessionDescriptionInterface> answer(
+    CreateRemoteAnswer(offer));
   SetLocalDescriptionWithoutError(offer);
   std::string sdp;
   EXPECT_TRUE(answer->ToString(&sdp));
@@ -2137,7 +2137,8 @@ TEST_F(WebRtcSessionTest, TestReceiverGIceInOffer) {
   mediastream_signaling_.SendAudioVideoStream1();
   SessionDescriptionInterface* offer = session_->CreateOffer(NULL);
   SetRemoteDescriptionWithoutError(offer);
-  SessionDescriptionInterface* answer = session_->CreateAnswer(NULL);
+  talk_base::scoped_ptr<SessionDescriptionInterface> answer(
+      session_->CreateAnswer(NULL));
   std::string sdp;
   EXPECT_TRUE(answer->ToString(&sdp));
   // Adding ice-options to the session level.
@@ -2185,15 +2186,16 @@ TEST_F(WebRtcSessionTest, TestIceOfferGIceOnlyAnswer) {
   SetLocalDescriptionWithoutError(ice_only_offer);
   std::string original_offer_sdp;
   EXPECT_TRUE(offer->ToString(&original_offer_sdp));
-  SessionDescriptionInterface* pranswer_with_gice =
+  talk_base::scoped_ptr<SessionDescriptionInterface> pranswer_with_gice(
       CreateSessionDescription(JsepSessionDescription::kPrAnswer,
-                               original_offer_sdp, NULL);
+                               original_offer_sdp, NULL));
   SetRemoteDescriptionExpectError(kPushDownPranswerTDFailed,
-                                  pranswer_with_gice);
-  SessionDescriptionInterface* answer_with_gice =
+                                  pranswer_with_gice.get());
+  talk_base::scoped_ptr<SessionDescriptionInterface> answer_with_gice(
       CreateSessionDescription(JsepSessionDescription::kAnswer,
-                               original_offer_sdp, NULL);
-  SetRemoteDescriptionExpectError(kPushDownAnswerTDFailed, answer_with_gice);
+                               original_offer_sdp, NULL));
+  SetRemoteDescriptionExpectError(kPushDownAnswerTDFailed,
+                                  answer_with_gice.get());
 }
 
 // Verifing local offer and remote answer have matching m-lines as per RFC 3264.
@@ -2207,13 +2209,13 @@ TEST_F(WebRtcSessionTest, TestIncorrectMLinesInRemoteAnswer) {
 
   cricket::SessionDescription* answer_copy = answer->description()->Copy();
   answer_copy->RemoveContentByName("video");
-  JsepSessionDescription* modified_answer =
-      new JsepSessionDescription(JsepSessionDescription::kAnswer);
+  talk_base::scoped_ptr<JsepSessionDescription> modified_answer(
+      new JsepSessionDescription(JsepSessionDescription::kAnswer));
 
   EXPECT_TRUE(modified_answer->Initialize(answer_copy,
                                           answer->session_id(),
                                           answer->session_version()));
-  SetRemoteDescriptionExpectError(kMlineMismatch, modified_answer);
+  SetRemoteDescriptionExpectError(kMlineMismatch, modified_answer.get());
 
   // Modifying content names.
   std::string sdp;
@@ -2227,9 +2229,9 @@ TEST_F(WebRtcSessionTest, TestIncorrectMLinesInRemoteAnswer) {
                              kAudioMidReplaceStr.length(),
                              &sdp);
 
-  SessionDescriptionInterface* modified_answer1 =
-      CreateSessionDescription(JsepSessionDescription::kAnswer, sdp, NULL);
-  SetRemoteDescriptionExpectError(kMlineMismatch, modified_answer1);
+  talk_base::scoped_ptr<SessionDescriptionInterface> modified_answer1(
+      CreateSessionDescription(JsepSessionDescription::kAnswer, sdp, NULL));
+  SetRemoteDescriptionExpectError(kMlineMismatch, modified_answer1.get());
 
   SetRemoteDescriptionWithoutError(answer.release());
 }
@@ -2388,9 +2390,9 @@ TEST_F(WebRtcSessionTest, TestSessionContentError) {
   video_channel_->set_fail_set_send_codecs(true);
 
   mediastream_signaling_.SendAudioVideoStream2();
-  SessionDescriptionInterface* answer =
-      CreateRemoteAnswer(session_->local_description());
-  SetRemoteDescriptionExpectError("ERROR_CONTENT", answer);
+  talk_base::scoped_ptr<SessionDescriptionInterface> answer(
+      CreateRemoteAnswer(session_->local_description()));
+  SetRemoteDescriptionExpectError("ERROR_CONTENT", answer.get());
 }
 
 // Runs the loopback call test with BUNDLE and STUN disabled.

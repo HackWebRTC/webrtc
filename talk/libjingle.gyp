@@ -84,6 +84,7 @@
                 'peerconnection_java_files': [
                   'app/webrtc/java/src/org/webrtc/AudioSource.java',
                   'app/webrtc/java/src/org/webrtc/AudioTrack.java',
+                  'app/webrtc/java/src/org/webrtc/DataChannel.java',
                   'app/webrtc/java/src/org/webrtc/IceCandidate.java',
                   'app/webrtc/java/src/org/webrtc/MediaConstraints.java',
                   'app/webrtc/java/src/org/webrtc/MediaSource.java',
@@ -590,15 +591,7 @@
         }],
         ['OS=="mac"', {
           'conditions': [
-            [ 'libjingle_objc != 1', {
-              'sources': [
-                'base/macasyncsocket.cc',
-                'base/macasyncsocket.h',
-                'base/maccocoasocketserver.h',
-                'base/maccocoasocketserver.mm',
-                'base/macsocketserver.cc',
-                'base/macsocketserver.h',
-              ],
+            ['libjingle_objc != 1', {
               'link_settings' :{
                 'xcode_settings': {
                   'OTHER_LDFLAGS': [
@@ -606,15 +599,17 @@
                   ],
                 },
               },
-            }, {
-              'defines': [
-                'CARBON_DEPRECATED=YES',
-              ],
             }],
           ],
           'sources': [
+            'base/macasyncsocket.cc',
+            'base/macasyncsocket.h',
+            'base/maccocoasocketserver.h',
+            'base/maccocoasocketserver.mm',
             'base/macconversion.cc',
             'base/macconversion.h',
+            'base/macsocketserver.cc',
+            'base/macsocketserver.h',
             'base/macutils.cc',
             'base/macutils.h',
             'base/macwindowpicker.cc',
@@ -967,11 +962,11 @@
         'libjingle_media',
       ],
       'include_dirs': [
-        '<(DEPTH)/third_party/gtest/include',
+        '<(DEPTH)/testing/gtest/include',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '<(DEPTH)/third_party/gtest/include',
+          '<(DEPTH)/testing/gtest/include',
         ],
       },
       'defines': [

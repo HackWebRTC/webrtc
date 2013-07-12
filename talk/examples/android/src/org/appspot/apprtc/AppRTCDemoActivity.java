@@ -42,6 +42,7 @@ import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
 import org.webrtc.MediaStream;
@@ -330,6 +331,16 @@ public class AppRTCDemoActivity extends Activity
       runOnUiThread(new Runnable() {
           public void run() {
             stream.videoTracks.get(0).dispose();
+          }
+        });
+    }
+
+    @Override public void onDataChannel(final DataChannel dc) {
+      runOnUiThread(new Runnable() {
+          public void run() {
+            throw new RuntimeException(
+                "AppRTC doesn't use data channels, but got: " + dc.label() +
+                " anyway!");
           }
         });
     }

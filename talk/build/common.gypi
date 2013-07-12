@@ -102,6 +102,11 @@
           'use_nss%': 1,
         },
       }],
+      ['libjingle_objc==1', {
+        'defines': [
+          'CARBON_DEPRECATED=YES',
+        ],
+      }],
       ['os_posix==1', {
         'defines': [
           'HASH_NAMESPACE=__gnu_cxx',

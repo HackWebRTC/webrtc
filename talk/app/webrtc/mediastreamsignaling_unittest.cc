@@ -732,8 +732,9 @@ TEST_F(MediaStreamSignalingTest, AddRemoveTrackFromExistingRemoteMediaStream) {
                                        reference_collection_));
 
   // Remove the extra audio and video tracks again.
-  CreateSessionDescriptionAndReference(1, 1, desc_ms1.use());
-  signaling_->OnRemoteDescriptionChanged(desc_ms1.get());
+  talk_base::scoped_ptr<SessionDescriptionInterface> desc_ms2;
+  CreateSessionDescriptionAndReference(1, 1, desc_ms2.use());
+  signaling_->OnRemoteDescriptionChanged(desc_ms2.get());
   EXPECT_TRUE(CompareStreamCollections(signaling_->remote_streams(),
                                        reference_collection_));
   EXPECT_TRUE(CompareStreamCollections(observer_->remote_streams(),

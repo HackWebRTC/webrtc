@@ -247,11 +247,11 @@ void TestPhysicalInternal(const SocketAddress& int_addr) {
       SocketAddress(ext_addr2)
   };
 
-  PhysicalSocketServer* int_pss = new PhysicalSocketServer();
-  PhysicalSocketServer* ext_pss = new PhysicalSocketServer();
+  scoped_ptr<PhysicalSocketServer> int_pss(new PhysicalSocketServer());
+  scoped_ptr<PhysicalSocketServer> ext_pss(new PhysicalSocketServer());
 
-  TestBindings(int_pss, int_addr, ext_pss, ext_addrs);
-  TestFilters(int_pss, int_addr, ext_pss, ext_addrs);
+  TestBindings(int_pss.get(), int_addr, ext_pss.get(), ext_addrs);
+  TestFilters(int_pss.get(), int_addr, ext_pss.get(), ext_addrs);
 }
 
 TEST(NatTest, TestPhysicalIPv4) {
@@ -269,16 +269,20 @@ TEST(NatTest, TestPhysicalIPv6) {
 class TestVirtualSocketServer : public VirtualSocketServer {
  public:
   explicit TestVirtualSocketServer(SocketServer* ss)
-      : VirtualSocketServer(ss) {}
+      : VirtualSocketServer(ss),
+        ss_(ss) {}
   // Expose this publicly
   IPAddress GetNextIP(int af) { return VirtualSocketServer::GetNextIP(af); }
+
+ private:
+  scoped_ptr<SocketServer> ss_;
 };
 
 void TestVirtualInternal(int family) {
-  TestVirtualSocketServer* int_vss = new TestVirtualSocketServer(
-      new PhysicalSocketServer());
-  TestVirtualSocketServer* ext_vss = new TestVirtualSocketServer(
-      new PhysicalSocketServer());
+  scoped_ptr<TestVirtualSocketServer> int_vss(new TestVirtualSocketServer(
+      new PhysicalSocketServer()));
+  scoped_ptr<TestVirtualSocketServer> ext_vss(new TestVirtualSocketServer(
+      new PhysicalSocketServer()));
 
   SocketAddress int_addr;
   SocketAddress ext_addrs[4];
@@ -288,8 +292,8 @@ void TestVirtualInternal(int family) {
   ext_addrs[2].SetIP(ext_addrs[0].ipaddr());
   ext_addrs[3].SetIP(ext_addrs[1].ipaddr());
 
-  TestBindings(int_vss, int_addr, ext_vss, ext_addrs);
-  TestFilters(int_vss, int_addr, ext_vss, ext_addrs);
+  TestBindings(int_vss.get(), int_addr, ext_vss.get(), ext_addrs);
+  TestFilters(int_vss.get(), int_addr, ext_vss.get(), ext_addrs);
 }
 
 TEST(NatTest, TestVirtualIPv4) {
