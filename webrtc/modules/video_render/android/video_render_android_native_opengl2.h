@@ -13,9 +13,9 @@
 
 #include <jni.h>
 
-#include "video_render_defines.h"
-#include "video_render_android_impl.h"
-#include "video_render_opengles20.h"
+#include "webrtc/modules/video_render/android/video_render_android_impl.h"
+#include "webrtc/modules/video_render/android/video_render_opengles20.h"
+#include "webrtc/modules/video_render/include/video_render_defines.h"
 
 namespace webrtc {
 

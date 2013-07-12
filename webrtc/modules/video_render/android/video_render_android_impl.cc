@@ -8,21 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_render_android_impl.h"
+#include "webrtc/modules/video_render/android/video_render_android_impl.h"
 
-#include "critical_section_wrapper.h"
-#include "event_wrapper.h"
-#include "thread_wrapper.h"
-#include "tick_util.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
 
 #ifdef ANDROID
-#include <stdio.h>
 #include <android/log.h>
+#include <stdio.h>
 
 #undef WEBRTC_TRACE
 #define WEBRTC_TRACE(a,b,c,...)  __android_log_print(ANDROID_LOG_DEBUG, "*WEBRTCN*", __VA_ARGS__)
 #else
-#include "trace.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 #endif
 
 namespace webrtc {

@@ -13,7 +13,7 @@
 
 #include <jni.h>
 #include "webrtc/modules/video_render/i_video_render.h"
-#include "map_wrapper.h"
+#include "webrtc/system_wrappers/interface/map_wrapper.h"
 
 
 namespace webrtc {

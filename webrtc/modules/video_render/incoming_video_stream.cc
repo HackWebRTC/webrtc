@@ -21,14 +21,14 @@
 #include <sys/time.h>
 #endif
 
-#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_render//video_render_frames.h"
-#include "system_wrappers/interface/critical_section_wrapper.h"
-#include "system_wrappers/interface/event_wrapper.h"
-#include "system_wrappers/interface/map_wrapper.h"
-#include "system_wrappers/interface/thread_wrapper.h"
-#include "system_wrappers/interface/tick_util.h"
-#include "system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/map_wrapper.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 

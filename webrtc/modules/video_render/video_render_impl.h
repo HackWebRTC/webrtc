@@ -11,9 +11,9 @@
 #ifndef WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_VIDEO_RENDER_IMPL_H_
 #define WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_VIDEO_RENDER_IMPL_H_
 
-#include "engine_configurations.h"
-#include "video_render.h"
-#include "map_wrapper.h"
+#include "webrtc/engine_configurations.h"
+#include "webrtc/modules/video_render/include/video_render.h"
+#include "webrtc/system_wrappers/interface/map_wrapper.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;

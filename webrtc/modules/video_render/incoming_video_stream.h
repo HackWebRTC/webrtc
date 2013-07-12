@@ -12,7 +12,7 @@
 #define WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_INCOMING_VIDEO_STREAM_H_
 
 #include "webrtc/modules/video_render/include/video_render.h"
-#include "system_wrappers/interface/map_wrapper.h"
+#include "webrtc/system_wrappers/interface/map_wrapper.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;

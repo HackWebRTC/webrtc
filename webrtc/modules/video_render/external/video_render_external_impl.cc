@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_render_external_impl.h"
+#include "webrtc/modules/video_render/external/video_render_external_impl.h"
 
 namespace webrtc {
 
@@ -202,4 +202,3 @@ int32_t VideoRenderExternalImpl::RenderFrame(
     return 0;
 }
 }  // namespace webrtc
-

@@ -12,9 +12,9 @@
 
 #include <cassert>
 
-#include "modules/interface/module_common_types.h"
-#include "system_wrappers/interface/tick_util.h"
-#include "system_wrappers/interface/trace.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
