@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "coder.h"
-#include "common_types.h"
-#include "module_common_types.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/utility/source/coder.h"
 
 // OS independent case insensitive string comparison.
 #ifdef WIN32

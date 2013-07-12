@@ -13,10 +13,10 @@
 
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
 
-#include "common_video/interface/i420_video_frame.h"
-#include "engine_configurations.h"
-#include "list_wrapper.h"
-#include "typedefs.h"
+#include "webrtc/common_video/interface/i420_video_frame.h"
+#include "webrtc/engine_configurations.h"
+#include "webrtc/system_wrappers/interface/list_wrapper.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

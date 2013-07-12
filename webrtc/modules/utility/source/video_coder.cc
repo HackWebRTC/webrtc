@@ -10,7 +10,7 @@
 
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
 
-#include "video_coder.h"
+#include "webrtc/modules/utility/source/video_coder.h"
 
 namespace webrtc {
 VideoCoder::VideoCoder(uint32_t instanceID)

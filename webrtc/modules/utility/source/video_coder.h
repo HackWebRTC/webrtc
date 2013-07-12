@@ -13,8 +13,8 @@
 
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
 
-#include "engine_configurations.h"
-#include "video_coding.h"
+#include "webrtc/engine_configurations.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
 
 namespace webrtc {
 class VideoCoder : public VCMPacketizationCallback, public VCMReceiveCallback

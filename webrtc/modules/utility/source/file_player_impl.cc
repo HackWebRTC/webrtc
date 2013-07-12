@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "file_player_impl.h"
-#include "trace.h"
+#include "webrtc/modules/utility/source/file_player_impl.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
     #include "frame_scaler.h"

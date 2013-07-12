@@ -11,9 +11,9 @@
 #ifndef WEBRTC_MODULES_UTILITY_SOURCE_CODER_H_
 #define WEBRTC_MODULES_UTILITY_SOURCE_CODER_H_
 
-#include "audio_coding_module.h"
-#include "common_types.h"
-#include "typedefs.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 class AudioFrame;

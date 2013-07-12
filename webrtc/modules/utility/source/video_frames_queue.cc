@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_frames_queue.h"
+#include "webrtc/modules/utility/source/video_frames_queue.h"
 
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
 
 #include <cassert>
 
-#include "module_common_types.h"
-#include "tick_util.h"
-#include "trace.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 VideoFramesQueue::VideoFramesQueue()

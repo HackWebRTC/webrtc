@@ -11,16 +11,16 @@
 #ifndef WEBRTC_MODULES_UTILITY_SOURCE_FILE_PLAYER_IMPL_H_
 #define WEBRTC_MODULES_UTILITY_SOURCE_FILE_PLAYER_IMPL_H_
 
-#include "coder.h"
-#include "common_types.h"
-#include "critical_section_wrapper.h"
-#include "engine_configurations.h"
-#include "file_player.h"
-#include "media_file_defines.h"
-#include "media_file.h"
-#include "resampler.h"
-#include "tick_util.h"
-#include "typedefs.h"
+#include "webrtc/common_audio/resampler/include/resampler.h"
+#include "webrtc/common_types.h"
+#include "webrtc/engine_configurations.h"
+#include "webrtc/modules/media_file/interface/media_file.h"
+#include "webrtc/modules/media_file/interface/media_file_defines.h"
+#include "webrtc/modules/utility/interface/file_player.h"
+#include "webrtc/modules/utility/source/coder.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 class VideoCoder;
