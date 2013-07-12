@@ -13,7 +13,7 @@
 
 #include <Streams.h> // Include base DS filter header files
 
-#include "video_capture_defines.h"
+#include "webrtc/modules/video_capture/include/video_capture_defines.h"
 
 namespace webrtc
 {

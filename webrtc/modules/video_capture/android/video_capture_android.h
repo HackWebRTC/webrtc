@@ -12,8 +12,9 @@
 #define WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_ANDROID_VIDEO_CAPTURE_ANDROID_H_
 
 #include <jni.h>
-#include "device_info_android.h"
-#include "../video_capture_impl.h"
+
+#include "webrtc/modules/video_capture/android/device_info_android.h"
+#include "webrtc/modules/video_capture/video_capture_impl.h"
 
 #define AndroidJavaCaptureClass "org/webrtc/videoengine/VideoCaptureAndroid"
 

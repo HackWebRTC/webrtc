@@ -12,7 +12,7 @@
                        // that DEFINE_GUID() entries will be defined in this
                        // object file.
 
-#include "help_functions_ds.h"
+#include "webrtc/modules/video_capture/windows/help_functions_ds.h"
 
 #include <cguid.h>
 
@@ -117,4 +117,3 @@ BOOL PinMatchesCategory(IPin *pPin, REFGUID Category)
 }
 }  // namespace videocapturemodule
 }  // namespace webrtc
-

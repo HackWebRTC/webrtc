@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "device_info_impl.h"
-#include "video_capture_config.h"
-#include "trace.h"
 #include <stdlib.h>
+
+#include "webrtc/modules/video_capture/device_info_impl.h"
+#include "webrtc/modules/video_capture/video_capture_config.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 #ifndef abs
 #define abs(a) (a>=0?a:-a)
@@ -396,5 +397,3 @@ int32_t DeviceInfoImpl::GetOrientation(const char* deviceUniqueIdUTF8,
 }
 }  // namespace videocapturemodule
 }  // namespace webrtc
-
-

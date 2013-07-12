@@ -10,9 +10,9 @@
 
 #pragma mark **** imports/includes
 
-#import "video_capture_qtkit_info_objc.h"
+#import "webrtc/modules/video_capture/mac/qtkit/video_capture_qtkit_info_objc.h"
 
-#include "trace.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 using namespace webrtc;
 

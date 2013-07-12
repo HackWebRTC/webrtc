@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "device_info_ds.h"
+#include "webrtc/modules/video_capture/windows/device_info_ds.h"
 
-#include "../video_capture_config.h"
-#include "../video_capture_delay.h"
-#include "help_functions_ds.h"
-#include "ref_count.h"
-#include "trace.h"
+#include "webrtc/modules/video_capture/video_capture_config.h"
+#include "webrtc/modules/video_capture/video_capture_delay.h"
+#include "webrtc/modules/video_capture/windows/help_functions_ds.h"
+#include "webrtc/system_wrappers/interface/ref_count.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
-#include <Streams.h>
 #include <Dvdmedia.h>
+#include <Streams.h>
 
 namespace webrtc
 {

@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_capture_impl.h"
-
-#include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "critical_section_wrapper.h"
-#include "module_common_types.h"
-#include "ref_count.h"
-#include "tick_util.h"
-#include "trace.h"
-#include "trace_event.h"
-#include "video_capture_config.h"
-#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/modules/video_capture/video_capture_impl.h"
 
 #include <stdlib.h>
+
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/video_capture/video_capture_config.h"
+#include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/ref_count.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/system_wrappers/interface/trace.h"
+#include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc
 {
