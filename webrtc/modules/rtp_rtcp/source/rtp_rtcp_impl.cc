@@ -41,7 +41,7 @@ RtpRtcp::Configuration::Configuration()
       audio(false),
       clock(NULL),
       default_module(NULL),
-      receive_statistics(NullObjectReceiveStatistics()),
+      receive_statistics(),
       outgoing_transport(NULL),
       rtcp_feedback(NULL),
       intra_frame_callback(NULL),

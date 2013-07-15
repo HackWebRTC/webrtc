@@ -1689,12 +1689,14 @@ int RTCPSender::PrepareRTCP(
   // If the data does not fit in the packet we fill it as much as possible.
   int32_t buildVal = 0;
 
-  // We need to send our NTP even if we haven't received any reports.
-  _clock->CurrentNtp(NTPsec, NTPfrac);
   if (ShouldSendReportBlocks(rtcpPacketTypeFlags)) {
     ReceiveStatistics::StatisticianMap statisticians;
     receive_statistics_->GetActiveStatisticians(&statisticians);
-    if (!statisticians.empty()) {
+    if (statisticians.empty()) {
+      // We need to send our NTP even if we dont have received any
+      // reports.
+      _clock->CurrentNtp(NTPsec, NTPfrac);
+    } else {
       ReceiveStatistics::StatisticianMap::const_iterator it;
       int i;
       for (it = statisticians.begin(), i = 0; it != statisticians.end();
@@ -1703,8 +1705,9 @@ int RTCPSender::PrepareRTCP(
         if (PrepareReport(it->second, &report_block, &NTPsec, &NTPfrac))
           AddReportBlock(it->first, &internal_report_blocks_, &report_block);
       }
-      if (_IJ && !statisticians.empty()) {
-        rtcpPacketTypeFlags |= kRtcpTransmissionTimeOffset;
+      if (_IJ && !statisticians.empty())
+      {
+          rtcpPacketTypeFlags |= kRtcpTransmissionTimeOffset;
       }
       _lastRTCPTime[0] = Clock::NtpToMs(NTPsec, NTPfrac);
     }
