@@ -1247,12 +1247,10 @@ int32_t ViEChannel::GetReceivedRtcpStatistics(uint16_t* fraction_lost,
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
 
-  uint32_t remote_ssrc = vie_receiver_.GetRemoteSsrc();
   uint8_t frac_lost = 0;
-  StreamStatistician* statistician =
-      vie_receiver_.GetReceiveStatistics()->GetStatistician(remote_ssrc);
-  StreamStatistician::Statistics receive_stats;
-  if (!statistician || !statistician->GetStatistics(
+  ReceiveStatistics* receive_statistics = vie_receiver_.GetReceiveStatistics();
+  ReceiveStatistics::RtpReceiveStatistics receive_stats;
+  if (!receive_statistics || !receive_statistics->Statistics(
       &receive_stats, rtp_rtcp_->RTCP() == kRtcpOff)) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: Could not get received RTP statistics", __FUNCTION__);
@@ -1264,6 +1262,7 @@ int32_t ViEChannel::GetReceivedRtcpStatistics(uint16_t* fraction_lost,
   *jitter_samples = receive_stats.jitter;
   *fraction_lost = frac_lost;
 
+  uint32_t remote_ssrc = vie_receiver_.GetRemoteSsrc();
   uint16_t dummy = 0;
   uint16_t rtt = 0;
   if (rtp_rtcp_->RTT(remote_ssrc, &rtt, &dummy, &dummy, &dummy) != 0) {
@@ -1281,12 +1280,8 @@ int32_t ViEChannel::GetRtpStatistics(uint32_t* bytes_sent,
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
-  StreamStatistician* statistician = vie_receiver_.GetReceiveStatistics()->
-      GetStatistician(vie_receiver_.GetRemoteSsrc());
-  *bytes_received = 0;
-  *packets_received = 0;
-  if (statistician)
-    statistician->GetDataCounters(bytes_received, packets_received);
+  ReceiveStatistics* receive_statistics = vie_receiver_.GetReceiveStatistics();
+  receive_statistics->GetDataCounters(bytes_received, packets_received);
   if (rtp_rtcp_->DataCountersRTP(bytes_sent, packets_sent) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: Could not get counters", __FUNCTION__);
@@ -1866,7 +1861,8 @@ int32_t ViEChannel::OnInitializeDecoder(
   return 0;
 }
 
-void ViEChannel::OnIncomingSSRCChanged(const int32_t id, const uint32_t ssrc) {
+void ViEChannel::OnIncomingSSRCChanged(const int32_t id,
+                                       const uint32_t SSRC) {
   if (channel_id_ != ChannelId(id)) {
     assert(false);
     WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
@@ -1875,14 +1871,14 @@ void ViEChannel::OnIncomingSSRCChanged(const int32_t id, const uint32_t ssrc) {
   }
 
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
-               "%s: %u", __FUNCTION__, ssrc);
+               "%s: %u", __FUNCTION__, SSRC);
 
-  rtp_rtcp_->SetRemoteSSRC(ssrc);
+  rtp_rtcp_->SetRemoteSSRC(SSRC);
 
   CriticalSectionScoped cs(callback_cs_.get());
   {
     if (rtp_observer_) {
-      rtp_observer_->IncomingSSRCChanged(channel_id_, ssrc);
+      rtp_observer_->IncomingSSRCChanged(channel_id_, SSRC);
     }
   }
 }
@@ -1911,11 +1907,8 @@ void ViEChannel::OnIncomingCSRCChanged(const int32_t id,
   }
 }
 
-void ViEChannel::OnResetStatistics(uint32_t ssrc) {
-  StreamStatistician* statistician =
-      vie_receiver_.GetReceiveStatistics()->GetStatistician(ssrc);
-  if (statistician)
-    statistician->ResetStatistics();
+void ViEChannel::OnResetStatistics() {
+  vie_receiver_.GetReceiveStatistics()->ResetStatistics();
 }
 
 }  // namespace webrtc

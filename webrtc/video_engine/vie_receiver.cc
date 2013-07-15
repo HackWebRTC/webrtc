@@ -412,10 +412,8 @@ bool ViEReceiver::IsPacketRetransmitted(const RTPHeader& header) const {
   rtp_receiver_->RTXStatus(&rtx_enabled, &rtx_ssrc, &rtx_payload_type);
   if (!rtx_enabled) {
     // Check if this is a retransmission.
-    StreamStatistician::Statistics stats;
-    StreamStatistician* statistician =
-        rtp_receive_statistics_->GetStatistician(header.ssrc);
-    if (statistician && statistician->GetStatistics(&stats, false)) {
+    ReceiveStatistics::RtpReceiveStatistics stats;
+    if (rtp_receive_statistics_->Statistics(&stats, false)) {
       uint16_t min_rtt = 0;
       rtp_rtcp_->RTT(rtp_receiver_->SSRC(), NULL, NULL, &min_rtt, NULL);
       return rtp_receiver_->RetransmitOfOldPacket(header, stats.jitter,

@@ -205,13 +205,13 @@ public:
         const uint32_t rate) = 0;
 
     virtual void OnIncomingSSRCChanged( const int32_t id,
-                                        const uint32_t ssrc) = 0;
+                                        const uint32_t SSRC) = 0;
 
     virtual void OnIncomingCSRCChanged( const int32_t id,
                                         const uint32_t CSRC,
                                         const bool added) = 0;
 
-    virtual void OnResetStatistics(uint32_t ssrc) = 0;
+    virtual void OnResetStatistics() = 0;
 
 protected:
     virtual ~RtpFeedback() {}
@@ -281,13 +281,13 @@ class NullRtpFeedback : public RtpFeedback {
  }
 
   virtual void OnIncomingSSRCChanged(const int32_t id,
-                                    const uint32_t ssrc) {}
+                                    const uint32_t SSRC) {}
 
  virtual void OnIncomingCSRCChanged(const int32_t id,
                                     const uint32_t CSRC,
                                     const bool added) {}
 
- virtual void OnResetStatistics(uint32_t ssrc) {}
+ virtual void OnResetStatistics() {}
 };
 
 // Null object version of RtpData.

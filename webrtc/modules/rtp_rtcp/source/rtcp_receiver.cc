@@ -406,6 +406,7 @@ RTCPReceiver::HandleSenderReceiverReport(RTCPUtility::RTCPParserV2& rtcpParser,
         TRACE_EVENT_INSTANT2("webrtc_rtp", "SR",
                              "remote_ssrc", remoteSSRC,
                              "ssrc", _SSRC);
+
         if (_remoteSSRC == remoteSSRC) // have I received RTP packets from this party
         {
             // only signal that we have received a SR when we accept one

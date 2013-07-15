@@ -329,12 +329,12 @@ public:
                                RTPAliveType alive);
 
     void OnIncomingSSRCChanged(int32_t id,
-                               uint32_t ssrc);
+                               uint32_t SSRC);
 
     void OnIncomingCSRCChanged(int32_t id,
                                uint32_t CSRC, bool added);
 
-    void OnResetStatistics(uint32_t ssrc);
+    void OnResetStatistics();
 
 public:
     // From RtcpFeedback in the RTP/RTCP module

@@ -374,6 +374,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
  private:
   int64_t RtcpReportInterval();
 
+  ReceiveStatistics* receive_statistics_;
+
   int32_t             id_;
   const bool                audio_;
   bool                      collision_detected_;
