@@ -17,17 +17,17 @@
           # This will be set to zero in the supplement.gypi triggered by a
           # gclient hook in the standalone build.
           'build_with_chromium%': 1,
-          'build_with_libjingle%': 0,
         },
         'build_with_chromium%': '<(build_with_chromium)',
-        'build_with_libjingle%': '<(build_with_libjingle)',
 
         'conditions': [
-          ['build_with_chromium==1 or build_with_libjingle==1', {
+          ['build_with_chromium==1', {
+            'build_with_libjingle': 1,
             'webrtc_root%': '<(DEPTH)/third_party/webrtc',
             'apk_tests_path%': '<(DEPTH)/third_party/webrtc/build/apk_tests.gyp',
             'modules_java_gyp_path%': '<(DEPTH)/third_party/webrtc/modules/modules_java_chromium.gyp',
           }, {
+            'build_with_libjingle%': 0,
             'webrtc_root%': '<(DEPTH)/webrtc',
             'apk_tests_path%': '<(DEPTH)/webrtc/build/apk_test_noop.gyp',
             'modules_java_gyp_path%': '<(DEPTH)/webrtc/modules/modules_java.gyp',
@@ -94,6 +94,9 @@
 
     'conditions': [
       ['build_with_chromium==1', {
+        # clang_use_chrome_plugins must not be disabled when building Chromium.
+        'clang_use_chrome_plugins': 1,
+
         # Exclude pulse audio on Chromium since its prerequisites don't require
         # pulse audio.
         'include_pulse_audio%': 0,
@@ -107,24 +110,27 @@
         # Exclude internal video render module in Chromium build.
         'include_internal_video_render%': 0,
 
-        'include_tests%': 0,
-
-        'enable_tracing%': 0,
-
-        'enable_android_opensl%': 0,
+        # Include ndk cpu features in Chromium build.
+        'include_ndk_cpu_features%': 1,
       }, {  # Settings for the standalone (not-in-Chromium) build.
-        'include_pulse_audio%': 1,
-        'include_internal_audio_device%': 1,
-        'include_internal_video_capture%': 1,
-        'include_internal_video_render%': 1,
-        'enable_tracing%': 1,
-        'include_tests%': 1,
-
         # TODO(andrew): For now, disable the Chrome plugins, which causes a
         # flood of chromium-style warnings. Investigate enabling them:
         # http://code.google.com/p/webrtc/issues/detail?id=163
         'clang_use_chrome_plugins%': 0,
 
+        'include_pulse_audio%': 1,
+        'include_internal_audio_device%': 1,
+        'include_internal_video_capture%': 1,
+        'include_internal_video_render%': 1,
+        'include_ndk_cpu_features%': 0,
+      }],
+      ['build_with_libjingle==1', {
+        'include_tests%': 0,
+        'enable_tracing%': 0,
+        'enable_android_opensl%': 0,
+      }, {
+        'include_tests%': 1,
+        'enable_tracing%': 1,
         # Switch between Android audio device OpenSL ES implementation
         # and Java Implementation
         'enable_android_opensl%': 0,
@@ -135,9 +141,6 @@
         'build_libjpeg%': 0,
         'build_libyuv%': 0,
         'build_libvpx%': 0,
-        'include_tests%': 0,
-      }],
-      ['build_with_libjingle==1', {
         'include_tests%': 0,
       }],
       ['target_arch=="arm"', {

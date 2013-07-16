@@ -211,7 +211,7 @@
             'cpu_features_android.c',
           ],
           'conditions': [
-            ['build_with_chromium==1', {
+            ['include_ndk_cpu_features==1', {
               'conditions': [
                 ['android_webview_build == 1', {
                   'libraries': [
