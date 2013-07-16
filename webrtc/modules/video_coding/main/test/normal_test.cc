@@ -95,7 +95,7 @@ VCMNTEncodeCompleteCallback::SendData(
   switch (_test.VideoType())
   {
   case kVideoCodecVP8:
-    rtpInfo.type.Video.codec = kRtpVideoVp8;
+    rtpInfo.type.Video.codec = kRTPVideoVP8;
     rtpInfo.type.Video.codecHeader.VP8.InitRTPVideoHeaderVP8();
     rtpInfo.type.Video.codecHeader.VP8.nonReference =
         videoHdr->codecHeader.VP8.nonReference;
@@ -103,7 +103,7 @@ VCMNTEncodeCompleteCallback::SendData(
         videoHdr->codecHeader.VP8.pictureId;
     break;
   case kVideoCodecI420:
-    rtpInfo.type.Video.codec = kRtpVideoI420;
+    rtpInfo.type.Video.codec = kRTPVideoI420;
     break;
   default:
     assert(false);

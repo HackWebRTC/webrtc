@@ -216,8 +216,7 @@ int VoEVideoSyncImpl::GetPlayoutBufferSize(int& bufferMs)
     return 0;
 }
 
-int VoEVideoSyncImpl::GetRtpRtcp(int channel, RtpRtcp** rtpRtcpModule,
-                                 RtpReceiver** rtp_receiver)
+int VoEVideoSyncImpl::GetRtpRtcp(int channel, RtpRtcp* &rtpRtcpModule)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "GetRtpRtcp(channel=%i)", channel);
@@ -235,7 +234,7 @@ int VoEVideoSyncImpl::GetRtpRtcp(int channel, RtpRtcp** rtpRtcpModule,
             "GetPlayoutTimestamp() failed to locate channel");
         return -1;
     }
-    return channelPtr->GetRtpRtcp(rtpRtcpModule, rtp_receiver);
+    return channelPtr->GetRtpRtcp(rtpRtcpModule);
 }
 
 int VoEVideoSyncImpl::GetLeastRequiredDelayMs(int channel) const {

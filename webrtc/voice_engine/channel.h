@@ -35,21 +35,16 @@
 
 namespace webrtc
 {
-class AudioDeviceModule;
 class CriticalSectionWrapper;
-class FileWrapper;
 class ProcessThread;
-class ReceiveStatistics;
-class RtpDump;
-class RTPPayloadRegistry;
-class RtpReceiver;
-class RTPReceiverAudio;
+class AudioDeviceModule;
 class RtpRtcp;
-class TelephoneEventHandler;
-class VoEMediaProcess;
-class VoERTCPObserver;
-class VoERTPObserver;
+class FileWrapper;
+class RtpDump;
 class VoiceEngineObserver;
+class VoEMediaProcess;
+class VoERTPObserver;
+class VoERTCPObserver;
 
 struct CallStatistics;
 struct ReportBlock;
@@ -138,6 +133,12 @@ public:
     int32_t DeRegisterExternalTransport();
     int32_t ReceivedRTPPacket(const int8_t* data, int32_t length);
     int32_t ReceivedRTCPPacket(const int8_t* data, int32_t length);
+    int32_t SetPacketTimeoutNotification(bool enable, int timeoutSeconds);
+    int32_t GetPacketTimeoutNotification(bool& enabled, int& timeoutSeconds);
+    int32_t RegisterDeadOrAliveObserver(VoEConnectionObserver& observer);
+    int32_t DeRegisterDeadOrAliveObserver();
+    int32_t SetPeriodicDeadOrAliveStatus(bool enable, int sampleTimeSeconds);
+    int32_t GetPeriodicDeadOrAliveStatus(bool& enabled, int& sampleTimeSeconds);
 
     // VoEFile
     int StartPlayingFileLocally(const char* fileName, bool loop,
@@ -214,7 +215,7 @@ public:
     int SetInitSequenceNumber(short sequenceNumber);
 
     // VoEVideoSyncExtended
-    int GetRtpRtcp(RtpRtcp** rtpRtcpModule, RtpReceiver** rtp_receiver) const;
+    int GetRtpRtcp(RtpRtcp* &rtpRtcpModule) const;
 
     // VoEEncryption
     int RegisterExternalEncryption(Encryption& encryption);
@@ -306,11 +307,6 @@ public:
                                   uint16_t payloadSize,
                                   const WebRtcRTPHeader* rtpHeader);
 
-    bool OnRecoveredPacket(const uint8_t* packet, int packet_length) {
-      // Generic FEC not supported for audio.
-      return true;
-    }
-
 public:
     // From RtpFeedback in the RTP/RTCP module
     int32_t OnInitializeDecoder(
@@ -333,8 +329,6 @@ public:
 
     void OnIncomingCSRCChanged(int32_t id,
                                uint32_t CSRC, bool added);
-
-    void OnResetStatistics();
 
 public:
     // From RtcpFeedback in the RTP/RTCP module
@@ -432,7 +426,6 @@ public:
     uint32_t EncodeAndSend();
 
 private:
-    bool IsPacketRetransmitted(const RTPHeader& header) const;
     int ResendPackets(const uint16_t* sequence_numbers, int length);
     int InsertInbandDtmfTone();
     int32_t MixOrReplaceAudioWithFile(int mixingFrequency);
@@ -453,10 +446,6 @@ private:
 
 private:
     scoped_ptr<RtpHeaderParser> rtp_header_parser_;
-    scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
-    scoped_ptr<ReceiveStatistics> rtp_receive_statistics_;
-    scoped_ptr<RtpReceiver> rtp_receiver_;
-    TelephoneEventHandler* telephone_event_handler_;
     scoped_ptr<RtpRtcp> _rtpRtcpModule;
     AudioCodingModule& _audioCodingModule;
     RtpDump& _rtpDumpIn;

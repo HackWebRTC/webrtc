@@ -18,7 +18,6 @@
 #include <time.h>
 #include <vector>
 
-#include "webrtc/modules/rtp_rtcp/interface/rtp_receiver.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/test/test_macros.h"
 #include "webrtc/modules/video_coding/main/test/test_util.h"
@@ -203,6 +202,7 @@ MediaOptTest::GeneralSetup()
     RtpRtcp::Configuration configuration;
     configuration.id = 1;
     configuration.audio = false;
+    configuration.incoming_data = _dataCallback;
     configuration.outgoing_transport = _outgoingTransport;
     _rtp = RtpRtcp::CreateRtpRtcp(configuration);
 
@@ -211,33 +211,21 @@ MediaOptTest::GeneralSetup()
     // Registering codecs for the RTP module
 
     // Register receive and send payload
-    VideoCodec video_codec;
-    strncpy(video_codec.plName, "VP8", 32);
-    video_codec.plType = VCM_VP8_PAYLOAD_TYPE;
-    rtp_receiver_->RegisterReceivePayload(video_codec.plName,
-                                          video_codec.plType,
-                                          90000,
-                                          0,
-                                          video_codec.maxBitrate);
-    _rtp->RegisterSendPayload(video_codec);
+    VideoCodec videoCodec;
+    strncpy(videoCodec.plName, "VP8", 32);
+    videoCodec.plType = VCM_VP8_PAYLOAD_TYPE;
+    _rtp->RegisterReceivePayload(videoCodec);
+    _rtp->RegisterSendPayload(videoCodec);
 
-    strncpy(video_codec.plName, "ULPFEC", 32);
-    video_codec.plType = VCM_ULPFEC_PAYLOAD_TYPE;
-    rtp_receiver_->RegisterReceivePayload(video_codec.plName,
-                                          video_codec.plType,
-                                          90000,
-                                          0,
-                                          video_codec.maxBitrate);
-    _rtp->RegisterSendPayload(video_codec);
+    strncpy(videoCodec.plName, "ULPFEC", 32);
+    videoCodec.plType = VCM_ULPFEC_PAYLOAD_TYPE;
+    _rtp->RegisterReceivePayload(videoCodec);
+    _rtp->RegisterSendPayload(videoCodec);
 
-    strncpy(video_codec.plName, "RED", 32);
-    video_codec.plType = VCM_RED_PAYLOAD_TYPE;
-    rtp_receiver_->RegisterReceivePayload(video_codec.plName,
-                                          video_codec.plType,
-                                          90000,
-                                          0,
-                                          video_codec.maxBitrate);
-    _rtp->RegisterSendPayload(video_codec);
+    strncpy(videoCodec.plName, "RED", 32);
+    videoCodec.plType = VCM_RED_PAYLOAD_TYPE;
+    _rtp->RegisterReceivePayload(videoCodec);
+    _rtp->RegisterSendPayload(videoCodec);
 
     if (_nackFecEnabled == 1)
         _rtp->SetGenericFECStatus(_nackFecEnabled, VCM_RED_PAYLOAD_TYPE,

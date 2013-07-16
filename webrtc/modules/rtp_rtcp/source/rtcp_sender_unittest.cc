@@ -20,8 +20,6 @@
 #include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_video.h"
@@ -219,7 +217,7 @@ void CreateRtpPacket(const bool marker_bit, const uint8_t payload,
 }
 
 class TestTransport : public Transport,
-                      public NullRtpData {
+                      public RtpData {
  public:
   TestTransport()
       : rtcp_receiver_(NULL) {
@@ -279,8 +277,6 @@ class RtcpSenderTest : public ::testing::Test {
   RtcpSenderTest()
       : over_use_detector_options_(),
         system_clock_(Clock::GetRealTimeClock()),
-        rtp_payload_registry_(new RTPPayloadRegistry(
-            0, RTPPayloadStrategy::CreateStrategy(false))),
         remote_bitrate_observer_(),
         remote_bitrate_estimator_(
             RemoteBitrateEstimatorFactory().Create(
@@ -292,12 +288,11 @@ class RtcpSenderTest : public ::testing::Test {
     configuration.id = 0;
     configuration.audio = false;
     configuration.clock = system_clock_;
+    configuration.incoming_data = test_transport_;
     configuration.outgoing_transport = test_transport_;
     configuration.remote_bitrate_estimator = remote_bitrate_estimator_.get();
 
     rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(configuration);
-    rtp_receiver_.reset(RtpReceiver::CreateVideoReceiver(
-        0, system_clock_, test_transport_, NULL, rtp_payload_registry_.get()));
     rtcp_sender_ = new RTCPSender(0, false, system_clock_, rtp_rtcp_impl_);
     rtcp_receiver_ = new RTCPReceiver(0, system_clock_, rtp_rtcp_impl_);
     test_transport_->SetRTCPReceiver(rtcp_receiver_);
@@ -320,8 +315,6 @@ class RtcpSenderTest : public ::testing::Test {
 
   OverUseDetectorOptions over_use_detector_options_;
   Clock* system_clock_;
-  scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
-  scoped_ptr<RtpReceiver> rtp_receiver_;
   ModuleRtpRtcpImpl* rtp_rtcp_impl_;
   RTCPSender* rtcp_sender_;
   RTCPReceiver* rtcp_receiver_;
@@ -335,7 +328,7 @@ class RtcpSenderTest : public ::testing::Test {
 
 TEST_F(RtcpSenderTest, RtcpOff) {
   EXPECT_EQ(0, rtcp_sender_->SetRTCPStatus(kRtcpOff));
-  EXPECT_EQ(-1, rtcp_sender_->SendRTCP(kRtcpSr, NULL));
+  EXPECT_EQ(-1, rtcp_sender_->SendRTCP(kRtcpSr));
 }
 
 TEST_F(RtcpSenderTest, IJStatus) {
@@ -359,27 +352,18 @@ TEST_F(RtcpSenderTest, TestCompound) {
   strncpy(codec_inst.plName, "VP8", webrtc::kPayloadNameSize - 1);
   codec_inst.codecType = webrtc::kVideoCodecVP8;
   codec_inst.plType = payload;
-  EXPECT_EQ(0, rtp_receiver_->RegisterReceivePayload(codec_inst.plName,
-                                                     codec_inst.plType,
-                                                     90000,
-                                                     0,
-                                                     codec_inst.maxBitrate));
+  EXPECT_EQ(0, rtp_rtcp_impl_->RegisterReceivePayload(codec_inst));
 
   // Make sure RTP packet has been received.
   scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
   RTPHeader header;
   EXPECT_TRUE(parser->Parse(packet_, packet_length, &header));
-  PayloadUnion payload_specific;
-  EXPECT_TRUE(rtp_payload_registry_->GetPayloadSpecifics(header.payloadType,
-                                                        &payload_specific));
-  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(&header, packet_, packet_length,
-                                               payload_specific, true));
+  EXPECT_EQ(0, rtp_rtcp_impl_->IncomingRtpPacket(packet_, packet_length,
+                                                 header));
 
   EXPECT_EQ(0, rtcp_sender_->SetIJStatus(true));
   EXPECT_EQ(0, rtcp_sender_->SetRTCPStatus(kRtcpCompound));
-  ReceiveStatistics::RtpReceiveStatistics receive_stats;
-  memset(&receive_stats, 0, sizeof(receive_stats));
-  EXPECT_EQ(0, rtcp_sender_->SendRTCP(kRtcpRr, &receive_stats));
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(kRtcpRr));
 
   // Transmission time offset packet should be received.
   ASSERT_TRUE(test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags &
@@ -389,9 +373,7 @@ TEST_F(RtcpSenderTest, TestCompound) {
 TEST_F(RtcpSenderTest, TestCompound_NoRtpReceived) {
   EXPECT_EQ(0, rtcp_sender_->SetIJStatus(true));
   EXPECT_EQ(0, rtcp_sender_->SetRTCPStatus(kRtcpCompound));
-  // |receive_stats| is NULL since no data has been received.
-  ReceiveStatistics::RtpReceiveStatistics* receive_stats = NULL;
-  EXPECT_EQ(0, rtcp_sender_->SendRTCP(kRtcpRr, receive_stats));
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(kRtcpRr));
 
   // Transmission time offset packet should not be received.
   ASSERT_FALSE(test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags &
@@ -409,9 +391,7 @@ TEST_F(RtcpSenderTest, SendsTmmbnIfSetAndEmpty) {
   TMMBRSet bounding_set;
   EXPECT_EQ(0, rtcp_sender_->SetTMMBN(&bounding_set, 3));
   ASSERT_EQ(0U, test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags);
-  ReceiveStatistics::RtpReceiveStatistics receive_stats;
-  memset(&receive_stats, 0, sizeof(receive_stats));
-  EXPECT_EQ(0, rtcp_sender_->SendRTCP(kRtcpSr, &receive_stats));
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(kRtcpSr));
   // We now expect the packet to show up in the rtcp_packet_info_ of
   // test_transport_.
   ASSERT_NE(0U, test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags);
@@ -433,9 +413,7 @@ TEST_F(RtcpSenderTest, SendsTmmbnIfSetAndValid) {
 
   EXPECT_EQ(0, rtcp_sender_->SetTMMBN(&bounding_set, 3));
   ASSERT_EQ(0U, test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags);
-  ReceiveStatistics::RtpReceiveStatistics receive_stats;
-  memset(&receive_stats, 0, sizeof(receive_stats));
-  EXPECT_EQ(0, rtcp_sender_->SendRTCP(kRtcpSr, &receive_stats));
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(kRtcpSr));
   // We now expect the packet to show up in the rtcp_packet_info_ of
   // test_transport_.
   ASSERT_NE(0U, test_transport_->rtcp_packet_info_.rtcpPacketTypeFlags);

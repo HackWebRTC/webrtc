@@ -67,7 +67,7 @@ class VCMRobustnessTest : public ::testing::Test {
     rtp_info.header.sequenceNumber = seq_no;
     rtp_info.header.markerBit = marker_bit;
     rtp_info.header.payloadType = video_codec_.plType;
-    rtp_info.type.Video.codec = kRtpVideoVp8;
+    rtp_info.type.Video.codec = kRTPVideoVP8;
     rtp_info.type.Video.codecHeader.VP8.InitRTPVideoHeaderVP8();
     rtp_info.type.Video.isFirstPacket = first;
 

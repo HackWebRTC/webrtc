@@ -57,10 +57,6 @@ uint32_t Bitrate::BitrateNow() const {
   return static_cast<uint32_t>(bitrate);
 }
 
-int64_t Bitrate::time_last_rate_update() const {
-  return time_last_rate_update_;
-}
-
 void Bitrate::Process() {
   // Triggered by timer.
   int64_t now = clock_->TimeInMilliseconds();

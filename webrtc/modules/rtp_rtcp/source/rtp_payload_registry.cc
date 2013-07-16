@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_payload_registry.h"
 
 #include "webrtc/system_wrappers/interface/trace.h"
 
@@ -21,7 +21,8 @@ RTPPayloadRegistry::RTPPayloadRegistry(
       rtp_payload_strategy_(rtp_payload_strategy),
       red_payload_type_(-1),
       last_received_payload_type_(-1),
-      last_received_media_payload_type_(-1) {}
+      last_received_media_payload_type_(-1) {
+}
 
 RTPPayloadRegistry::~RTPPayloadRegistry() {
   while (!payload_type_map_.empty()) {
@@ -225,29 +226,7 @@ int32_t RTPPayloadRegistry::ReceivePayloadType(
   return -1;
 }
 
-bool RTPPayloadRegistry::GetPayloadSpecifics(uint8_t payload_type,
-                                             PayloadUnion* payload) const {
-  ModuleRTPUtility::PayloadTypeMap::const_iterator it =
-    payload_type_map_.find(payload_type);
-
-  // Check that this is a registered payload type.
-  if (it == payload_type_map_.end()) {
-    return false;
-  }
-  *payload = it->second->typeSpecific;
-  return true;
-}
-
-int RTPPayloadRegistry::GetPayloadTypeFrequency(
-    uint8_t payload_type) const {
-  ModuleRTPUtility::Payload* payload;
-  if (!PayloadTypeToPayload(payload_type, payload)) {
-    return -1;
-  }
-  return rtp_payload_strategy_->GetPayloadTypeFrequency(*payload);
-}
-
-bool RTPPayloadRegistry::PayloadTypeToPayload(
+int32_t RTPPayloadRegistry::PayloadTypeToPayload(
   const uint8_t payload_type,
   ModuleRTPUtility::Payload*& payload) const {
 
@@ -256,10 +235,10 @@ bool RTPPayloadRegistry::PayloadTypeToPayload(
 
   // Check that this is a registered payload type.
   if (it == payload_type_map_.end()) {
-    return false;
+    return -1;
   }
   payload = it->second;
-  return true;
+  return 0;
 }
 
 bool RTPPayloadRegistry::ReportMediaPayloadType(
@@ -311,11 +290,6 @@ class RTPPayloadAudioStrategy : public RTPPayloadStrategy {
     payload->audio = true;
     return payload;
   }
-
-  int GetPayloadTypeFrequency(
-      const ModuleRTPUtility::Payload& payload) const {
-    return payload.typeSpecific.Audio.frequency;
-  }
 };
 
 class RTPPayloadVideoStrategy : public RTPPayloadStrategy {
@@ -342,15 +316,15 @@ class RTPPayloadVideoStrategy : public RTPPayloadStrategy {
       const uint32_t frequency,
       const uint8_t channels,
       const uint32_t rate) const {
-    RtpVideoCodecTypes videoType = kRtpVideoGeneric;
+    RtpVideoCodecTypes videoType = kRtpGenericVideo;
     if (ModuleRTPUtility::StringCompare(payloadName, "VP8", 3)) {
-      videoType = kRtpVideoVp8;
+      videoType = kRtpVp8Video;
     } else if (ModuleRTPUtility::StringCompare(payloadName, "I420", 4)) {
-      videoType = kRtpVideoGeneric;
+      videoType = kRtpGenericVideo;
     } else if (ModuleRTPUtility::StringCompare(payloadName, "ULPFEC", 6)) {
-      videoType = kRtpVideoFec;
+      videoType = kRtpFecVideo;
     } else {
-      videoType = kRtpVideoGeneric;
+      videoType = kRtpGenericVideo;
     }
     ModuleRTPUtility::Payload* payload = new ModuleRTPUtility::Payload;
 
@@ -360,11 +334,6 @@ class RTPPayloadVideoStrategy : public RTPPayloadStrategy {
     payload->typeSpecific.Video.maxRate = rate;
     payload->audio = false;
     return payload;
-  }
-
-  int GetPayloadTypeFrequency(
-      const ModuleRTPUtility::Payload& payload) const {
-    return kVideoPayloadTypeFrequency;
   }
 };
 

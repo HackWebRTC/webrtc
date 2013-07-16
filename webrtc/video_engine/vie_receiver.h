@@ -14,7 +14,6 @@
 #include <list>
 
 #include "webrtc/engine_configurations.h"
-#include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
@@ -24,38 +23,22 @@ namespace webrtc {
 
 class CriticalSectionWrapper;
 class Encryption;
-class ReceiveStatistics;
 class RemoteBitrateEstimator;
 class RtpDump;
 class RtpHeaderParser;
-class RTPPayloadRegistry;
-class RtpReceiver;
 class RtpRtcp;
 class VideoCodingModule;
 
 class ViEReceiver : public RtpData {
  public:
   ViEReceiver(const int32_t channel_id, VideoCodingModule* module_vcm,
-              RemoteBitrateEstimator* remote_bitrate_estimator,
-              RtpFeedback* rtp_feedback);
+              RemoteBitrateEstimator* remote_bitrate_estimator);
   ~ViEReceiver();
-
-  bool SetReceiveCodec(const VideoCodec& video_codec);
-  bool RegisterPayload(const VideoCodec& video_codec);
-
-  bool SetNackStatus(bool enable, int max_nack_reordering_threshold);
-  void SetRtxStatus(bool enable, uint32_t ssrc);
-  void SetRtxPayloadType(uint32_t payload_type);
-
-  uint32_t GetRemoteSsrc() const;
-  int GetCsrcs(uint32_t* csrcs) const;
 
   int RegisterExternalDecryption(Encryption* decryption);
   int DeregisterExternalDecryption();
 
   void SetRtpRtcpModule(RtpRtcp* module);
-
-  RtpReceiver* GetRtpReceiver() const;
 
   void RegisterSimulcastRtpRtcpModules(const std::list<RtpRtcp*>& rtp_modules);
 
@@ -71,8 +54,6 @@ class ViEReceiver : public RtpData {
   // Receives packets from external transport.
   int ReceivedRTPPacket(const void* rtp_packet, int rtp_packet_length);
   int ReceivedRTCPPacket(const void* rtcp_packet, int rtcp_packet_length);
-  virtual bool OnRecoveredPacket(const uint8_t* packet,
-                                 int packet_length) OVERRIDE;
 
   // Implements RtpData.
   virtual int32_t OnReceivedPayloadData(
@@ -82,19 +63,13 @@ class ViEReceiver : public RtpData {
 
   void EstimatedReceiveBandwidth(unsigned int* available_bandwidth) const;
 
-  ReceiveStatistics* GetReceiveStatistics() const;
-
  private:
   int InsertRTPPacket(const int8_t* rtp_packet, int rtp_packet_length);
   int InsertRTCPPacket(const int8_t* rtcp_packet, int rtcp_packet_length);
-  bool IsPacketRetransmitted(const RTPHeader& header) const;
 
   scoped_ptr<CriticalSectionWrapper> receive_cs_;
   const int32_t channel_id_;
   scoped_ptr<RtpHeaderParser> rtp_header_parser_;
-  scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
-  scoped_ptr<RtpReceiver> rtp_receiver_;
-  scoped_ptr<ReceiveStatistics> rtp_receive_statistics_;
   RtpRtcp* rtp_rtcp_;
   std::list<RtpRtcp*> rtp_rtcp_simulcast_;
   VideoCodingModule* vcm_;

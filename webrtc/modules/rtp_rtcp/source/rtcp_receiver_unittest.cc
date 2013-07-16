@@ -136,7 +136,7 @@ class PacketBuilder {
 
 // This test transport verifies that no functions get called.
 class TestTransport : public Transport,
-                      public NullRtpData {
+                      public RtpData {
  public:
   explicit TestTransport()
       : rtcp_receiver_(NULL) {

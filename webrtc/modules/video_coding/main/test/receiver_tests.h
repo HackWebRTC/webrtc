@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <string>
 
-class RtpDataCallback : public webrtc::NullRtpData {
+class RtpDataCallback : public webrtc::RtpData {
  public:
   RtpDataCallback(webrtc::VideoCodingModule* vcm) : vcm_(vcm) {}
   virtual ~RtpDataCallback() {}

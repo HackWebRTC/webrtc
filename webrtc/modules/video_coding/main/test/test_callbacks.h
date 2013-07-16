@@ -29,7 +29,6 @@
 
 namespace webrtc
 {
-class RTPPayloadRegistry;
 class RtpDump;
 
 // Send Side - Packetization callback - send an encoded frame to the VCMReceiver
@@ -60,7 +59,7 @@ public:
     // Return encode complete (true/false)
     bool EncodeComplete();
     // Inform callback of codec used
-    void SetCodecType(RtpVideoCodecTypes codecType)
+    void SetCodecType(RTPVideoCodecTypes codecType)
     {_codecType = codecType;}
     // Inform callback of frame dimensions
     void SetFrameDimensions(int32_t width, int32_t height)
@@ -83,7 +82,7 @@ private:
     bool               _encodeComplete;
     int32_t      _width;
     int32_t      _height;
-    RtpVideoCodecTypes _codecType;
+    RTPVideoCodecTypes _codecType;
 
 }; // end of VCMEncodeCompleteCallback
 
@@ -114,7 +113,7 @@ public:
     // Return encode complete (true/false)
     bool EncodeComplete();
     // Inform callback of codec used
-    void SetCodecType(RtpVideoCodecTypes codecType)
+    void SetCodecType(RTPVideoCodecTypes codecType)
     {_codecType = codecType;}
 
     // Inform callback of frame dimensions
@@ -131,7 +130,7 @@ private:
     RtpRtcp*           _RTPModule;
     int16_t      _width;
     int16_t      _height;
-    RtpVideoCodecTypes _codecType;
+    RTPVideoCodecTypes _codecType;
 }; // end of VCMEncodeCompleteCallback
 
 // Decode Complete callback
@@ -189,8 +188,6 @@ protected:
 
     Clock*                  _clock;
     uint32_t          _sendCount;
-    RTPPayloadRegistry* rtp_payload_registry_;
-    RtpReceiver* rtp_receiver_;
     RtpRtcp*                _rtp;
     double                  _lossPct;
     double                  _burstLength;

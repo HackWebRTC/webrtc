@@ -104,7 +104,7 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header)
     {
         switch (header->codec)
         {
-            case kRtpVideoVp8:
+            case kRTPVideoVP8:
             {
                 if (_codecSpecificInfo.codecType != kVideoCodecVP8)
                 {

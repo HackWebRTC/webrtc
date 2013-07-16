@@ -157,8 +157,7 @@ VideoCodingModuleImpl::Process()
             uint32_t bitRate;
             uint32_t frameRate;
             _receiver.ReceiveStatistics(&bitRate, &frameRate);
-            _receiveStatsCallback->OnReceiveStatisticsUpdate(bitRate,
-                                                             frameRate);
+            _receiveStatsCallback->ReceiveStatistics(bitRate, frameRate);
         }
 
         // Size of render buffer.

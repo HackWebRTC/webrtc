@@ -114,8 +114,7 @@ class ViEEncoder
 
   int CodecTargetBitrate(uint32_t* bitrate) const;
   // Loss protection.
-  int32_t UpdateProtectionMethod(bool enable_nack);
-  bool nack_enabled() const { return nack_enabled_; }
+  int32_t UpdateProtectionMethod();
 
   // Buffering mode.
   void SetSenderBufferingMode(int target_delay_ms);

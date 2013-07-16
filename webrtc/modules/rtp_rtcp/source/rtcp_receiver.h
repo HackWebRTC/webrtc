@@ -42,7 +42,6 @@ public:
     void SetSSRC( const uint32_t ssrc);
     void SetRelaySSRC( const uint32_t ssrc);
     int32_t SetRemoteSSRC( const uint32_t ssrc);
-    uint32_t RemoteSSRC() const;
 
     uint32_t RelaySSRC() const;
 
@@ -68,7 +67,7 @@ public:
                 uint32_t *rtcp_timestamp) const;
 
     // get rtt
-    int32_t RTT(uint32_t remoteSSRC,
+    int32_t RTT(const uint32_t remoteSSRC,
                 uint16_t* RTT,
                 uint16_t* avgRTT,
                 uint16_t* minRTT,
@@ -106,6 +105,9 @@ public:
     int32_t BoundingSet(bool &tmmbrOwner, TMMBRSet* boundingSetRec);
 
     int32_t UpdateTMMBR();
+
+    int32_t SetPacketTimeout(const uint32_t timeoutMS);
+    void PacketTimeout();
 
 protected:
     RTCPHelp::RTCPReportBlockInformation* CreateReportBlockInformation(const uint32_t remoteSSRC);

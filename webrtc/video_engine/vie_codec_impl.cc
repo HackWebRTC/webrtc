@@ -247,7 +247,7 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
   shared_data_->channel_manager()->UpdateSsrcs(video_channel, ssrcs);
 
   // Update the protection mode, we might be switching NACK/FEC.
-  vie_encoder->UpdateProtectionMethod(vie_encoder->nack_enabled());
+  vie_encoder->UpdateProtectionMethod();
 
   // Get new best format for frame provider.
   if (frame_provider) {

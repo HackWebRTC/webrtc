@@ -10,10 +10,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/common_types.h"
-#include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_payload_registry.h"
-#include "webrtc/modules/rtp_rtcp/interface/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
@@ -27,18 +24,10 @@ class LoopBackTransport : public webrtc::Transport {
   LoopBackTransport()
     : _count(0),
       _packetLoss(0),
-      rtp_payload_registry_(NULL),
-      rtp_receiver_(NULL),
       _rtpRtcpModule(NULL) {
   }
-  void SetSendModule(RtpRtcp* rtpRtcpModule,
-                     RTPPayloadRegistry* payload_registry,
-                     RtpReceiver* receiver,
-                     ReceiveStatistics* receive_statistics) {
+  void SetSendModule(RtpRtcp* rtpRtcpModule) {
     _rtpRtcpModule = rtpRtcpModule;
-    rtp_payload_registry_ = payload_registry;
-    rtp_receiver_ = receiver;
-    receive_statistics_ = receive_statistics;
   }
   void DropEveryNthPacket(int n) {
     _packetLoss = n;
@@ -55,15 +44,8 @@ class LoopBackTransport : public webrtc::Transport {
     if (!parser->Parse(static_cast<const uint8_t*>(data), len, &header)) {
       return -1;
     }
-    PayloadUnion payload_specific;
-    if (!rtp_payload_registry_->GetPayloadSpecifics(
-        header.payloadType, &payload_specific)) {
-      return -1;
-    }
-    receive_statistics_->IncomingPacket(header, len, false, true);
-    if (!rtp_receiver_->IncomingRtpPacket(&header,
-                                          static_cast<const uint8_t*>(data),
-                                          len, payload_specific, true)) {
+    if (_rtpRtcpModule->IncomingRtpPacket(static_cast<const uint8_t*>(data),
+                                          len, header) < 0) {
       return -1;
     }
     return len;
@@ -77,13 +59,10 @@ class LoopBackTransport : public webrtc::Transport {
  private:
   int _count;
   int _packetLoss;
-  ReceiveStatistics* receive_statistics_;
-  RTPPayloadRegistry* rtp_payload_registry_;
-  RtpReceiver* rtp_receiver_;
   RtpRtcp* _rtpRtcpModule;
 };
 
-class TestRtpReceiver : public NullRtpData {
+class RtpReceiver : public RtpData {
  public:
 
   virtual int32_t OnReceivedPayloadData(

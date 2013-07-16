@@ -28,7 +28,6 @@ class RtpRtcpVideoTest : public ::testing::Test {
  protected:
   RtpRtcpVideoTest()
       : test_id_(123),
-        rtp_payload_registry_(0, RTPPayloadStrategy::CreateStrategy(false)),
         test_ssrc_(3456),
         test_timestamp_(4567),
         test_sequence_number_(2345),
@@ -38,26 +37,23 @@ class RtpRtcpVideoTest : public ::testing::Test {
 
   virtual void SetUp() {
     transport_ = new LoopBackTransport();
-    receiver_ = new TestRtpReceiver();
-    receive_statistics_.reset(ReceiveStatistics::Create(&fake_clock));
+    receiver_ = new RtpReceiver();
     RtpRtcp::Configuration configuration;
     configuration.id = test_id_;
     configuration.audio = false;
     configuration.clock = &fake_clock;
+    configuration.incoming_data = receiver_;
     configuration.outgoing_transport = transport_;
 
     video_module_ = RtpRtcp::CreateRtpRtcp(configuration);
-    rtp_receiver_.reset(RtpReceiver::CreateVideoReceiver(
-        test_id_, &fake_clock, receiver_, NULL, &rtp_payload_registry_));
 
     EXPECT_EQ(0, video_module_->SetRTCPStatus(kRtcpCompound));
     EXPECT_EQ(0, video_module_->SetSSRC(test_ssrc_));
-    EXPECT_EQ(0, rtp_receiver_->SetNACKStatus(kNackRtcp, 450));
+    EXPECT_EQ(0, video_module_->SetNACKStatus(kNackRtcp, 450));
     EXPECT_EQ(0, video_module_->SetStorePacketsStatus(true, 600));
     EXPECT_EQ(0, video_module_->SetSendingStatus(true));
 
-    transport_->SetSendModule(video_module_, &rtp_payload_registry_,
-                              rtp_receiver_.get(), receive_statistics_.get());
+    transport_->SetSendModule(video_module_);
 
     VideoCodec video_codec;
     memset(&video_codec, 0, sizeof(video_codec));
@@ -65,11 +61,7 @@ class RtpRtcpVideoTest : public ::testing::Test {
     memcpy(video_codec.plName, "I420", 5);
 
     EXPECT_EQ(0, video_module_->RegisterSendPayload(video_codec));
-    EXPECT_EQ(0, rtp_receiver_->RegisterReceivePayload(video_codec.plName,
-                                                       video_codec.plType,
-                                                       90000,
-                                                       0,
-                                                       video_codec.maxBitrate));
+    EXPECT_EQ(0, video_module_->RegisterReceivePayload(video_codec));
 
     payload_data_length_ = sizeof(video_frame_);
 
@@ -127,12 +119,9 @@ class RtpRtcpVideoTest : public ::testing::Test {
   }
 
   int test_id_;
-  scoped_ptr<ReceiveStatistics> receive_statistics_;
-  RTPPayloadRegistry rtp_payload_registry_;
-  scoped_ptr<RtpReceiver> rtp_receiver_;
   RtpRtcp* video_module_;
   LoopBackTransport* transport_;
-  TestRtpReceiver* receiver_;
+  RtpReceiver* receiver_;
   uint32_t test_ssrc_;
   uint32_t test_timestamp_;
   uint16_t test_sequence_number_;
@@ -160,11 +149,7 @@ TEST_F(RtpRtcpVideoTest, PaddingOnlyFrames) {
   codec.codecType = kVideoCodecVP8;
   codec.plType = kPayloadType;
   strncpy(codec.plName, "VP8", 4);
-  EXPECT_EQ(0, rtp_receiver_->RegisterReceivePayload(codec.plName,
-                                                     codec.plType,
-                                                     90000,
-                                                     0,
-                                                     codec.maxBitrate));
+  EXPECT_EQ(0, video_module_->RegisterReceivePayload(codec));
   for (int frame_idx = 0; frame_idx < 10; ++frame_idx) {
     for (int packet_idx = 0; packet_idx < 5; ++packet_idx) {
       int packet_size = PaddingPacket(padding_packet, timestamp, seq_num,
@@ -173,12 +158,8 @@ TEST_F(RtpRtcpVideoTest, PaddingOnlyFrames) {
       RTPHeader header;
       scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
       EXPECT_TRUE(parser->Parse(padding_packet, packet_size, &header));
-      PayloadUnion payload_specific;
-      EXPECT_TRUE(rtp_payload_registry_.GetPayloadSpecifics(header.payloadType,
-                                                           &payload_specific));
-      EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(&header, padding_packet,
-                                                   packet_size,
-                                                   payload_specific, true));
+      EXPECT_EQ(0, video_module_->IncomingRtpPacket(padding_packet,
+                                                    packet_size, header));
       EXPECT_EQ(0, receiver_->payload_size());
       EXPECT_EQ(packet_size - 12, receiver_->rtp_header().header.paddingLength);
     }
