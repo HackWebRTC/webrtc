@@ -1,14 +1,19 @@
 # Names should be added to this file like so:
 # Name or Organization <email address>
 
-Google Inc.
-Mozilla Foundation
-Intel Corporation
-Vonage Holdings Corp.
-MIPS Technologies
-Ben Strong <bstrong@gmail.com>
-Martin Storsjo <martin@martin.st>
-Jie Mao <maojie0924@gmail.com>
 Anil Kumar <an1kumar@gmail.com>
-Opera Software ASA
+Ben Strong <bstrong@gmail.com>
+Eric Rescorla, RTFM Inc.
+Jie Mao <maojie0924@gmail.com>
+Luke Weber
+Martin Storsjo <martin@martin.st>
+Pali Rohar
+Robert Nagy
 Silviu Caragea <silviu.cpp@gmail.com>
+
+Google Inc.
+Intel Corporation
+MIPS Technologies
+Mozilla Foundation
+Opera Software ASA
+Vonage Holdings Corp.
