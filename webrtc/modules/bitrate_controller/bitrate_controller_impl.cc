@@ -9,11 +9,11 @@
  *
  */
 
-#include "modules/bitrate_controller/bitrate_controller_impl.h"
+#include "webrtc/modules/bitrate_controller/bitrate_controller_impl.h"
 
 #include <utility>
 
-#include "modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 
 namespace webrtc {
 
@@ -228,4 +228,3 @@ bool BitrateControllerImpl::AvailableBandwidth(uint32_t* bandwidth) const {
   return bandwidth_estimation_.AvailableBandwidth(bandwidth);
 }
 }  // namespace webrtc
-
