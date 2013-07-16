@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <gtest/gtest.h>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <cmath>
+#include "testing/gtest/include/gtest/gtest.h"
 
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"

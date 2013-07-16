@@ -11,10 +11,10 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_RECEIVER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_RECEIVER_H_
 
-#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/modules/video_coding/main/source/jitter_buffer.h"
 #include "webrtc/modules/video_coding/main/source/packet.h"
 #include "webrtc/modules/video_coding/main/source/timing.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 
 namespace webrtc {
 

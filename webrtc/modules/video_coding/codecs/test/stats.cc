@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/codecs/test/stats.h"
+#include "webrtc/modules/video_coding/codecs/test/stats.h"
 
 #include <algorithm>  // min_element, max_element
 #include <cassert>

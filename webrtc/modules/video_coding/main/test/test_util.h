@@ -19,8 +19,8 @@
 
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
-#include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/constructor_magic.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
 
 enum { kMaxNackListSize = 250 };
 enum { kMaxPacketAgeToNack = 450 };

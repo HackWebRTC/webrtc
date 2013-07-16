@@ -16,16 +16,16 @@
  */
 
 
-#include <string.h>
 #include <cstdlib>
 #include <fstream>
 #include <list>
+#include <string.h>
 
-#include "module_common_types.h"
-#include "rtp_rtcp.h"
-#include "test_util.h"
-#include "trace.h"
-#include "video_coding.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/test/test_util.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc
 {

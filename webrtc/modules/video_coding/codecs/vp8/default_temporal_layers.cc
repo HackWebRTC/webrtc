@@ -9,16 +9,16 @@
 
 #include "webrtc/modules/video_coding/codecs/vp8/default_temporal_layers.h"
 
+#include <cassert>
 #include <stdlib.h>
 #include <string.h>
-#include <cassert>
 
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 
-#include "vpx/vpx_encoder.h"
-#include "vpx/vp8cx.h"
+#include "third_party/libvpx/source/libvpx/vpx/vpx_encoder.h"
+#include "third_party/libvpx/source/libvpx/vpx/vp8cx.h"
 
 namespace webrtc {
 
@@ -278,4 +278,3 @@ void DefaultTemporalLayers::PopulateCodecSpecific(
   }
 }
 }  // namespace webrtc
-

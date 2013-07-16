@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "packet.h"
-#include "module_common_types.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/video_coding/main/source/packet.h"
 
 #include <assert.h>
 

@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_VIDEO_CODING_IMPL_H_
 #define WEBRTC_MODULES_VIDEO_CODING_VIDEO_CODING_IMPL_H_
 
-#include "modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
 
 #include <vector>
 

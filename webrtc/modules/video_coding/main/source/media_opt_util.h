@@ -14,9 +14,9 @@
 #include <cmath>
 #include <cstdlib>
 
-#include "webrtc/modules/video_coding/utility/include/exp_filter.h"
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"
 #include "webrtc/modules/video_coding/main/source/qm_select.h"
+#include "webrtc/modules/video_coding/utility/include/exp_filter.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/typedefs.h"
 

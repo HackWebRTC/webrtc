@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "frame_buffer.h"
-#include "packet.h"
+#include "webrtc/modules/video_coding/main/source/frame_buffer.h"
+#include "webrtc/modules/video_coding/main/source/packet.h"
 
 #include <cassert>
 #include <string.h>

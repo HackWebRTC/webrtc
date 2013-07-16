@@ -11,8 +11,8 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/video_coding/codecs/interface/mock/mock_video_codec_interface.h"
-#include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/interface/mock/mock_vcm_callbacks.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/test/test_util.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 

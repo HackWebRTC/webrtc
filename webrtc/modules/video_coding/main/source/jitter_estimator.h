@@ -11,8 +11,8 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_JITTER_ESTIMATOR_H_
 #define WEBRTC_MODULES_VIDEO_CODING_JITTER_ESTIMATOR_H_
 
-#include "typedefs.h"
-#include "rtt_filter.h"
+#include "webrtc/modules/video_coding/main/source/rtt_filter.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc
 {

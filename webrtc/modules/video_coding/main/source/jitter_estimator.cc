@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "trace.h"
-#include "internal_defines.h"
-#include "jitter_estimator.h"
-#include "rtt_filter.h"
+#include "webrtc/modules/video_coding/main/source/internal_defines.h"
+#include "webrtc/modules/video_coding/main/source/jitter_estimator.h"
+#include "webrtc/modules/video_coding/main/source/rtt_filter.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 #include <assert.h>
 #include <math.h>

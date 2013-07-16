@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_RTT_FILTER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_RTT_FILTER_H_
 
-#include "typedefs.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc
 {

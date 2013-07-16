@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "encoded_frame.h"
-#include "generic_encoder.h"
-#include "media_optimization.h"
-#include "../../../../engine_configurations.h"
+#include "webrtc/engine_configurations.h"
+#include "webrtc/modules/video_coding/main/source/encoded_frame.h"
+#include "webrtc/modules/video_coding/main/source/generic_encoder.h"
+#include "webrtc/modules/video_coding/main/source/media_optimization.h"
 
 namespace webrtc {
 

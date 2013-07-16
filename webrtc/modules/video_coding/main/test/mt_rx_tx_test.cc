@@ -380,4 +380,3 @@ int MTRxTxTest(CmdArgs& args)
     return 0;
 
 }
-

@@ -16,7 +16,7 @@
 * This file includes parameters for content-aware media optimization
 ****************************************************************/
 
-#include "typedefs.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 //
@@ -225,4 +225,3 @@ const float kSpatialErrVertVsHoriz = 0.1f;  // percentage to favor H over V
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_VIDEO_CODING_SOURCE_QM_SELECT_DATA_H_
-

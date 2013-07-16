@@ -13,13 +13,13 @@
 
 #include <vector>
 
-#include "common_types.h"
-#include "common_video/interface/i420_video_frame.h"
-#include "modules/interface/module_common_types.h"
-#include "modules/video_coding/codecs/interface/video_error_codes.h"
-#include "common_video/interface/video_image.h"
+#include "webrtc/common_types.h"
+#include "webrtc/common_video/interface/i420_video_frame.h"
+#include "webrtc/common_video/interface/video_image.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/video_coding/codecs/interface/video_error_codes.h"
 
-#include "typedefs.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc
 {

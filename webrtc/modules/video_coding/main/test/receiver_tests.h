@@ -11,15 +11,16 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_TEST_RECEIVER_TESTS_H_
 #define WEBRTC_MODULES_VIDEO_CODING_TEST_RECEIVER_TESTS_H_
 
-#include "video_coding.h"
-#include "module_common_types.h"
-#include "common_types.h"
-#include "rtp_rtcp.h"
-#include "typedefs.h"
-#include "test_util.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/test/test_util.h"
+#include "webrtc/modules/video_coding/main/test/video_source.h"
+#include "webrtc/typedefs.h"
 
-#include <string>
 #include <stdio.h>
+#include <string>
 
 class RtpDataCallback : public webrtc::NullRtpData {
  public:

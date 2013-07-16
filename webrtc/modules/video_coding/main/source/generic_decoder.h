@@ -11,11 +11,11 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_GENERIC_DECODER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_GENERIC_DECODER_H_
 
-#include "timing.h"
-#include "timestamp_map.h"
-#include "video_codec_interface.h"
-#include "encoded_frame.h"
-#include "module_common_types.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/main/source/encoded_frame.h"
+#include "webrtc/modules/video_coding/main/source/timestamp_map.h"
+#include "webrtc/modules/video_coding/main/source/timing.h"
 
 namespace webrtc
 {

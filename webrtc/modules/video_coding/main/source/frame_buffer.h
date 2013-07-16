@@ -11,11 +11,11 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_FRAME_BUFFER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_FRAME_BUFFER_H_
 
-#include "modules/interface/module_common_types.h"
-#include "modules/video_coding/main/source/encoded_frame.h"
-#include "modules/video_coding/main/source/jitter_buffer_common.h"
-#include "modules/video_coding/main/source/session_info.h"
-#include "typedefs.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/video_coding/main/source/encoded_frame.h"
+#include "webrtc/modules/video_coding/main/source/jitter_buffer_common.h"
+#include "webrtc/modules/video_coding/main/source/session_info.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc
 {

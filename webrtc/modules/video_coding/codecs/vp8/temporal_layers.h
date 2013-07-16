@@ -44,4 +44,3 @@ class TemporalLayers {
 
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_TEMPORAL_LAYERS_H_
-

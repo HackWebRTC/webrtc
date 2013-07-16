@@ -11,11 +11,11 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_MEDIA_OPTIMIZATION_H_
 #define WEBRTC_MODULES_VIDEO_CODING_MEDIA_OPTIMIZATION_H_
 
-#include "module_common_types.h"
-#include "video_coding.h"
-#include "trace.h"
-#include "media_opt_util.h"
-#include "qm_select.h"
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/source/media_opt_util.h"
+#include "webrtc/modules/video_coding/main/source/qm_select.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 
 #include <list>
 

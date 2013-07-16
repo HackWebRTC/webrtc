@@ -13,15 +13,15 @@
 
 #include <string>
 
-#include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "common_video/libyuv/include/scaler.h"
-#include "common_video/interface/i420_video_frame.h"
-#include "modules/video_coding/codecs/interface/video_codec_interface.h"
-#include "modules/video_coding/codecs/test/packet_manipulator.h"
-#include "modules/video_coding/codecs/test/stats.h"
-#include "system_wrappers/interface/tick_util.h"
-#include "testsupport/frame_reader.h"
-#include "testsupport/frame_writer.h"
+#include "webrtc/common_video/interface/i420_video_frame.h"
+#include "webrtc/common_video/libyuv/include/scaler.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
+#include "webrtc/modules/video_coding/codecs/test/stats.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/test/testsupport/frame_reader.h"
+#include "webrtc/test/testsupport/frame_writer.h"
 
 namespace webrtc {
 namespace test {

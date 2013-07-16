@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "test.h"
+#include "webrtc/modules/video_coding/codecs/test_framework/test.h"
 
 #include <cstring>
 #include <iostream>
 
-#include "testsupport/metrics/video_metrics.h"
-#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/test/testsupport/metrics/video_metrics.h"
 
 using namespace webrtc;
 

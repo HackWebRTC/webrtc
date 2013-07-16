@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_coding_impl.h"
-#include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "common_types.h"
-#include "encoded_frame.h"
-#include "jitter_buffer.h"
-#include "packet.h"
-#include "trace.h"
-#include "video_codec_interface.h"
+#include "webrtc/common_types.h"
+#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/modules/video_coding/main/source/encoded_frame.h"
+#include "webrtc/modules/video_coding/main/source/jitter_buffer.h"
+#include "webrtc/modules/video_coding/main/source/packet.h"
+#include "webrtc/modules/video_coding/main/source/video_coding_impl.h"
 #include "webrtc/system_wrappers/interface/clock.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 
 namespace webrtc

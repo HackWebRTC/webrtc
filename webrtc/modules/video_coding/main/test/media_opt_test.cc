@@ -13,8 +13,8 @@
 
 #include "webrtc/modules/video_coding/main/test/media_opt_test.h"
 
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 #include <vector>
 

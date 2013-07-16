@@ -14,11 +14,11 @@
 
 #include <cassert>
 
-#include "gtest/gtest.h"
-#include "testsupport/fileutils.h"
-#include "tick_util.h"
-#include "unit_test.h"
-#include "video_source.h"
+#include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/modules/video_coding/codecs/test_framework/unit_test.h"
+#include "webrtc/modules/video_coding/codecs/test_framework/video_source.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 using namespace webrtc;
 

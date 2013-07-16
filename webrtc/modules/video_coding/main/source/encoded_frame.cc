@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "encoded_frame.h"
-#include "generic_encoder.h"
-#include "jitter_buffer_common.h"
-#include "video_coding_defines.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
+#include "webrtc/modules/video_coding/main/source/encoded_frame.h"
+#include "webrtc/modules/video_coding/main/source/generic_encoder.h"
+#include "webrtc/modules/video_coding/main/source/jitter_buffer_common.h"
 
 namespace webrtc {
 

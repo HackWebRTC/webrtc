@@ -13,9 +13,9 @@
 
 #include <cstdlib>
 
-#include "modules/video_coding/codecs/interface/video_codec_interface.h"
-#include "system_wrappers/interface/critical_section_wrapper.h"
-#include "testsupport/packet_reader.h"
+#include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/test/testsupport/packet_reader.h"
 
 namespace webrtc {
 namespace test {

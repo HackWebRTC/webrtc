@@ -13,9 +13,9 @@
 
 #include <list>
 
-#include "modules/interface/module_common_types.h"
-#include "modules/video_coding/main/source/packet.h"
-#include "typedefs.h"  // NOLINT(build/include)
+#include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/video_coding/main/source/packet.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

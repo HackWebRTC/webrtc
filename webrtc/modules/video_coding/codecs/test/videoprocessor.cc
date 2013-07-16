@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/codecs/test/videoprocessor.h"
+#include "webrtc/modules/video_coding/codecs/test/videoprocessor.h"
 
 #include <cassert>
 #include <cstring>
 #include <limits>
 #include <vector>
 
-#include "system_wrappers/interface/cpu_info.h"
+#include "webrtc/system_wrappers/interface/cpu_info.h"
 
 namespace webrtc {
 namespace test {

@@ -13,7 +13,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_IMPL_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_IMPL_H_
 
-#include "modules/video_coding/codecs/vp8/include/vp8.h"
+#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 
 // VPX forward declaration
 typedef struct vpx_codec_ctx vpx_codec_ctx_t;
