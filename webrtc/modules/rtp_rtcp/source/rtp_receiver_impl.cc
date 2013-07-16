@@ -84,7 +84,8 @@ RtpReceiverImpl::RtpReceiverImpl(int32_t id,
       rtx_(false),
       ssrc_rtx_(0),
       payload_type_rtx_(-1) {
-  assert(incoming_audio_messages_callback && incoming_messages_callback);
+  assert(incoming_audio_messages_callback);
+  assert(incoming_messages_callback);
 
   memset(current_remote_csrc_, 0, sizeof(current_remote_csrc_));
 
@@ -368,6 +369,11 @@ bool RtpReceiverImpl::RetransmitOfOldPacket(const RTPHeader& header,
 
 bool RtpReceiverImpl::InOrderPacket(const uint16_t sequence_number) const {
   CriticalSectionScoped cs(critical_section_rtp_receiver_);
+
+  // First packet is always in order.
+  if (last_receive_time_ == 0)
+    return true;
+
   if (IsNewerSequenceNumber(sequence_number, last_received_sequence_number_)) {
     return true;
   } else {
