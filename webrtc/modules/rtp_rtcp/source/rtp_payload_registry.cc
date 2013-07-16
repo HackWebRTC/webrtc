@@ -283,7 +283,6 @@ class RTPPayloadAudioStrategy : public RTPPayloadStrategy {
     ModuleRTPUtility::Payload* payload = new ModuleRTPUtility::Payload;
     payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
     strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
-    assert(frequency >= 1000);
     payload->typeSpecific.Audio.frequency = frequency;
     payload->typeSpecific.Audio.channels = channels;
     payload->typeSpecific.Audio.rate = rate;
