@@ -78,6 +78,7 @@ void TestRtpObserver::OnIncomingSSRCChanged(int channel,
 
 class RtcpAppHandler : public webrtc::VoERTCPObserver {
  public:
+  RtcpAppHandler() : length_in_bytes_(0), sub_type_(0), name_(0) {}
   void OnApplicationDataReceived(int channel,
                                  unsigned char sub_type,
                                  unsigned int name,
@@ -190,7 +191,7 @@ TEST_F(RtpRtcpTest, RtcpApplicationDefinedPacketsCanBeSentAndReceived) {
   Sleep(1000);
 
   // Ensure we received the data in the callback.
-  EXPECT_EQ(data_length, rtcp_app_handler.length_in_bytes_);
+  ASSERT_EQ(data_length, rtcp_app_handler.length_in_bytes_);
   EXPECT_EQ(0, memcmp(data, rtcp_app_handler.data_, data_length));
   EXPECT_EQ(data_name, rtcp_app_handler.name_);
   EXPECT_EQ(data_subtype, rtcp_app_handler.sub_type_);
