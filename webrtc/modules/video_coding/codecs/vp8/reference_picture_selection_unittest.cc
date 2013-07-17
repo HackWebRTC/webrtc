@@ -9,9 +9,9 @@
  */
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "vpx/vpx_encoder.h"
+#include "vpx/vp8cx.h"
 #include "webrtc/modules/video_coding/codecs/vp8/reference_picture_selection.h"
-#include "third_party/libvpx/source/libvpx/vpx/vpx_encoder.h"
-#include "third_party/libvpx/source/libvpx/vpx/vp8cx.h"
 
 using webrtc::ReferencePictureSelection;
 

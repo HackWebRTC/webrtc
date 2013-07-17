@@ -13,8 +13,8 @@
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/default_temporal_layers.h"
 
-#include "third_party/libvpx/source/libvpx/vpx/vpx_encoder.h"
-#include "third_party/libvpx/source/libvpx/vpx/vp8cx.h"
+#include "vpx/vpx_encoder.h"
+#include "vpx/vp8cx.h"
 
 namespace webrtc {
 

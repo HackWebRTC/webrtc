@@ -18,10 +18,10 @@
 #include <time.h>
 #include <vector>
 
-#include "third_party/libvpx/source/libvpx/vpx/vpx_encoder.h"
-#include "third_party/libvpx/source/libvpx/vpx/vpx_decoder.h"
-#include "third_party/libvpx/source/libvpx/vpx/vp8cx.h"
-#include "third_party/libvpx/source/libvpx/vpx/vp8dx.h"
+#include "vpx/vpx_encoder.h"
+#include "vpx/vpx_decoder.h"
+#include "vpx/vp8cx.h"
+#include "vpx/vp8dx.h"
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/interface/module_common_types.h"
