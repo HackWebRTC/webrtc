@@ -393,12 +393,6 @@ enum DtmfFlags {
   DF_SEND = 0x02,
 };
 
-// Special purpose DTMF event code used by the VoiceMediaChannel::InsertDtmf.
-const int kDtmfDelay = -1;  // Insert a delay to the end of the DTMF queue.
-const int kDtmfReset = -2;  // Reset the DTMF queue.
-// The delay in ms when the InsertDtmf is called with kDtmfDelay.
-const int kDtmfDelayInMs = 2000;
-
 class MediaChannel : public sigslot::has_slots<> {
  public:
   class NetworkInterface {
@@ -738,10 +732,8 @@ class VoiceMediaChannel : public MediaChannel {
   // Send and/or play a DTMF |event| according to the |flags|.
   // The DTMF out-of-band signal will be used on sending.
   // The |ssrc| should be either 0 or a valid send stream ssrc.
-  // The valid value for the |event| are -2 to 15.
-  // kDtmfReset(-2) is used to reset the DTMF.
-  // kDtmfDelay(-1) is used to insert a delay to the end of the DTMF queue.
-  // 0 to 15 which corresponding to DTMF event 0-9, *, #, A-D.
+  // The valid value for the |event| are 0 to 15 which corresponding to
+  // DTMF event 0-9, *, #, A-D.
   virtual bool InsertDtmf(uint32 ssrc, int event, int duration, int flags) = 0;
   // Gets quality stats for the channel.
   virtual bool GetStats(VoiceMediaInfo* info) = 0;

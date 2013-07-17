@@ -140,7 +140,8 @@ class RtpDataMediaChannelTest : public testing::Test {
 
   std::string GetSentData(int index) {
     // Assume RTP header of length 12
-    const talk_base::Buffer* packet = iface_->GetRtpPacket(index);
+    talk_base::scoped_ptr<const talk_base::Buffer> packet(
+        iface_->GetRtpPacket(index));
     if (packet->length() > 12) {
       return std::string(packet->data() + 12, packet->length() - 12);
     } else {
@@ -149,7 +150,8 @@ class RtpDataMediaChannelTest : public testing::Test {
   }
 
   cricket::RtpHeader GetSentDataHeader(int index) {
-    const talk_base::Buffer* packet = iface_->GetRtpPacket(index);
+    talk_base::scoped_ptr<const talk_base::Buffer> packet(
+        iface_->GetRtpPacket(index));
     cricket::RtpHeader header;
     GetRtpHeader(packet->data(), packet->length(), &header);
     return header;

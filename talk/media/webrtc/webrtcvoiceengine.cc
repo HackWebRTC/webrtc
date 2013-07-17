@@ -2290,12 +2290,6 @@ bool WebRtcVoiceMediaChannel::InsertDtmf(uint32 ssrc, int event,
     return false;
   }
 
-  // TODO(ronghuawu): Remove this once the reset and delay are supported by VoE.
-  // https://code.google.com/p/webrtc/issues/detail?id=747
-  if (event == kDtmfReset || event == kDtmfDelay) {
-    return true;
-  }
-
   // Send the event.
   if (flags & cricket::DF_SEND) {
     if (send_ssrc_ != ssrc && ssrc != 0) {

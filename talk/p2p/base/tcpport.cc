@@ -121,8 +121,11 @@ void TCPPort::PrepareAddress() {
                  ICE_TYPE_PREFERENCE_HOST_TCP, true);
   } else {
     LOG_J(LS_INFO, this) << "Not listening due to firewall restrictions.";
-    // Sending error signal as we can't allocate tcp candidate.
-    SignalPortError(this);
+    // Note: We still add the address, since otherwise the remote side won't
+    // recognize our incoming TCP connections.
+    AddAddress(talk_base::SocketAddress(ip(), 0),
+               talk_base::SocketAddress(ip(), 0), TCP_PROTOCOL_NAME,
+               LOCAL_PORT_TYPE, ICE_TYPE_PREFERENCE_HOST_TCP, true);
   }
 }
 

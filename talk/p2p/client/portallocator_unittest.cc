@@ -505,18 +505,6 @@ TEST_F(PortAllocatorTest, TestGetAllPortsNoSockets) {
   // There is no error reporting from RelayEntry to handle this failure.
 }
 
-TEST_F(PortAllocatorTest, TestTcpPortNoListenAllowed) {
-  AddInterface(kClientAddr);
-  allocator().set_flags(cricket::PORTALLOCATOR_DISABLE_UDP |
-                        cricket::PORTALLOCATOR_DISABLE_STUN |
-                        cricket::PORTALLOCATOR_DISABLE_RELAY);
-  allocator().set_allow_tcp_listen(false);
-  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
-  session_->StartGettingPorts();
-  EXPECT_TRUE_WAIT(candidate_allocation_done_, kDefaultAllocationTimeout);
-  EXPECT_TRUE(candidates_.empty());
-}
-
 // Testing STUN timeout.
 TEST_F(PortAllocatorTest, TestGetAllPortsNoUdpAllowed) {
   fss_->AddRule(false, talk_base::FP_UDP, talk_base::FD_ANY, kClientAddr);

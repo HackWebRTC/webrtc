@@ -225,8 +225,7 @@
         ['os_posix==1', {
           'sources': [
             'base/sslidentity_unittest.cc',
-            # TODO(ronghuawu): reenable once fixed on build bots.
-            # 'base/sslstreamadapter_unittest.cc',
+            'base/sslstreamadapter_unittest.cc',
           ],
         }],
       ],  # conditions

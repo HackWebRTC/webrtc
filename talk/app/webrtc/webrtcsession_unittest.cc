@@ -66,8 +66,6 @@ using cricket::FakeVoiceMediaChannel;
 using cricket::NS_GINGLE_P2P;
 using cricket::NS_JINGLE_ICE_UDP;
 using cricket::TransportInfo;
-using cricket::kDtmfDelay;
-using cricket::kDtmfReset;
 using talk_base::SocketAddress;
 using talk_base::scoped_ptr;
 using webrtc::CreateSessionDescription;
@@ -2247,13 +2245,13 @@ TEST_F(WebRtcSessionTest, TestIncorrectMLinesInLocalAnswer) {
 
   cricket::SessionDescription* answer_copy = answer->description()->Copy();
   answer_copy->RemoveContentByName("video");
-  JsepSessionDescription* modified_answer =
-      new JsepSessionDescription(JsepSessionDescription::kAnswer);
+  talk_base::scoped_ptr<JsepSessionDescription> modified_answer(
+      new JsepSessionDescription(JsepSessionDescription::kAnswer));
 
   EXPECT_TRUE(modified_answer->Initialize(answer_copy,
                                           answer->session_id(),
                                           answer->session_version()));
-  SetLocalDescriptionExpectError(kMlineMismatch, modified_answer);
+  SetLocalDescriptionExpectError(kMlineMismatch, modified_answer.get());
   SetLocalDescriptionWithoutError(answer);
 }
 

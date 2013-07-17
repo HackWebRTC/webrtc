@@ -57,8 +57,6 @@ using cricket::CA_PRANSWER;
 using cricket::CA_ANSWER;
 using cricket::CA_UPDATE;
 using cricket::FakeVoiceMediaChannel;
-using cricket::kDtmfDelay;
-using cricket::kDtmfReset;
 using cricket::ScreencastId;
 using cricket::StreamParams;
 using cricket::TransportChannel;
@@ -2221,23 +2219,17 @@ TEST_F(VoiceChannelTest, TestInsertDtmf) {
   EXPECT_TRUE(SendAccept());
   EXPECT_EQ(0U, media_channel1_->dtmf_info_queue().size());
 
-  EXPECT_TRUE(channel1_->InsertDtmf(-1, kDtmfReset, -1, cricket::DF_SEND));
-  EXPECT_TRUE(channel1_->InsertDtmf(0, kDtmfDelay, 90, cricket::DF_PLAY));
   EXPECT_TRUE(channel1_->InsertDtmf(1, 3, 100, cricket::DF_SEND));
   EXPECT_TRUE(channel1_->InsertDtmf(2, 5, 110, cricket::DF_PLAY));
   EXPECT_TRUE(channel1_->InsertDtmf(3, 7, 120,
                                     cricket::DF_PLAY | cricket::DF_SEND));
 
-  ASSERT_EQ(5U, media_channel1_->dtmf_info_queue().size());
+  ASSERT_EQ(3U, media_channel1_->dtmf_info_queue().size());
   EXPECT_TRUE(CompareDtmfInfo(media_channel1_->dtmf_info_queue()[0],
-                              -1, kDtmfReset, -1, cricket::DF_SEND));
-  EXPECT_TRUE(CompareDtmfInfo(media_channel1_->dtmf_info_queue()[1],
-                              0, kDtmfDelay, 90, cricket::DF_PLAY));
-  EXPECT_TRUE(CompareDtmfInfo(media_channel1_->dtmf_info_queue()[2],
                               1, 3, 100, cricket::DF_SEND));
-  EXPECT_TRUE(CompareDtmfInfo(media_channel1_->dtmf_info_queue()[3],
+  EXPECT_TRUE(CompareDtmfInfo(media_channel1_->dtmf_info_queue()[1],
                               2, 5, 110, cricket::DF_PLAY));
-  EXPECT_TRUE(CompareDtmfInfo(media_channel1_->dtmf_info_queue()[4],
+  EXPECT_TRUE(CompareDtmfInfo(media_channel1_->dtmf_info_queue()[2],
                               3, 7, 120, cricket::DF_PLAY | cricket::DF_SEND));
 }
 

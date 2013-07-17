@@ -29,6 +29,7 @@
 
 {
   'variables': {
+   'webrtc_root%': '<(DEPTH)/webrtc',
     # TODO(ronghuawu): Chromium build will need a different libjingle_root.
     'libjingle_root%': '<(DEPTH)',
     # TODO(ronghuawu): For now, disable the Chrome plugins, which causes a
@@ -44,6 +45,7 @@
       '../..',
       '../../third_party',
       '../../third_party/webrtc',
+      '../../webrtc',
     ],
     'defines': [
       'EXPAT_RELATIVE_PATH',
