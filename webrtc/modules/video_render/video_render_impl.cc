@@ -26,7 +26,8 @@
 
 // WEBRTC_IOS should go before WEBRTC_MAC because WEBRTC_MAC
 // gets defined if WEBRTC_IOS is defined
-#elif defined(WEBRTC_IOS)
+#elif defined(WEBRTC_IOS) && 0
+// TODO(sjlee): land https://webrtc-codereview.appspot.com/1641004/
 #if defined(IPHONE_GLES_RENDERING)
 #define STANDARD_RENDERING kRenderiPhone
 #include "iPhone/video_render_iphone_impl.h"
@@ -45,7 +46,7 @@
 #include "webrtc/modules/video_render/android/video_render_android_impl.h"
 #include "webrtc/modules/video_render/android/video_render_android_native_opengl2.h"
 #include "webrtc/modules/video_render/android/video_render_android_surface_view.h"
-#define STANDARD_RENDERING	kRenderAndroid
+#define STANDARD_RENDERING kRenderAndroid
 
 #elif defined(WEBRTC_LINUX)
 #include "webrtc/modules/video_render/linux/video_render_linux_impl.h"
@@ -116,7 +117,8 @@ ModuleVideoRenderImpl::ModuleVideoRenderImpl(
         }
         break;
 
-#elif defined(WEBRTC_IOS)
+#elif defined(WEBRTC_IOS) && 0
+        // TODO(sjlee): land https://webrtc-codereview.appspot.com/1641004/
         case kRenderiPhone:
         {
             VideoRenderIPhoneImpl* ptrRenderer = new VideoRenderIPhoneImpl(_id, videoRenderType, window, _fullScreen);
@@ -276,7 +278,8 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
             break;
 #endif
 
-#elif defined(WEBRTC_IOS)
+#elif defined(WEBRTC_IOS) && 0
+            // TODO(sjlee): land https://webrtc-codereview.appspot.com/1641004/
             case kRenderiPhone:
             break;
 
@@ -354,6 +357,7 @@ int32_t ModuleVideoRenderImpl::ChangeWindow(void* window)
     _ptrRenderer = NULL;
     delete _ptrRenderer;
 
+#if 0  // TODO(sjlee): land https://webrtc-codereview.appspot.com/1641004/
     VideoRenderIPhoneImpl* ptrRenderer;
     ptrRenderer = new VideoRenderIPhoneImpl(_id, kRenderiPhone, window, _fullScreen);
     if (!ptrRenderer)
@@ -362,7 +366,9 @@ int32_t ModuleVideoRenderImpl::ChangeWindow(void* window)
     }
     _ptrRenderer = reinterpret_cast<IVideoRender*>(ptrRenderer);
     return _ptrRenderer->ChangeWindow(window);
-
+#else
+    return -1;
+#endif
 #elif defined(WEBRTC_MAC)
 
     _ptrRenderer = NULL;

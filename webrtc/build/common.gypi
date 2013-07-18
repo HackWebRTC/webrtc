@@ -140,7 +140,6 @@
         'enable_protobuf%': 0,
         'build_libjpeg%': 0,
         'build_libyuv%': 0,
-        'build_libvpx%': 0,
         'include_tests%': 0,
       }],
       ['target_arch=="arm"', {
