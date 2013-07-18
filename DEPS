@@ -10,7 +10,7 @@ vars = {
   # If you do not know, use the full path while defining your new deps entry.
   "googlecode_url": "http://%s.googlecode.com/svn",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "205140",
+  "chromium_revision": "203806",
 
   # A small subset of WebKit is needed for the Android Python test framework.
   "webkit_trunk": "http://src.chromium.org/blink/trunk",
@@ -44,26 +44,11 @@ deps = {
   "third_party/google-gflags/src":
     (Var("googlecode_url") % "google-gflags") + "/trunk/src@45",
 
-  "third_party/icu/":
-    From("chromium_deps", "src/third_party/icu"),
-
-  "third_party/jsoncpp/":
-    Var("chromium_trunk") + "/src/third_party/jsoncpp@" + Var("chromium_revision"),
-
-  "third_party/jsoncpp/source":
-    "http://jsoncpp.svn.sourceforge.net/svnroot/jsoncpp/trunk/jsoncpp@248",
-
-  "third_party/junit/":
-    (Var("googlecode_url") % "webrtc") + "/deps/third_party/junit@3367",
-
   "third_party/libjpeg":
     Var("chromium_trunk") + "/src/third_party/libjpeg@" + Var("chromium_revision"),
 
   "third_party/libjpeg_turbo":
     From("chromium_deps", "src/third_party/libjpeg_turbo"),
-
-  "third_party/libsrtp/":
-    From("chromium_deps", "src/third_party/libsrtp"),
 
   "third_party/libvpx":
     Var("chromium_trunk") + "/deps/third_party/libvpx@208227",
@@ -122,9 +107,6 @@ deps_os = {
   "unix": {
     "third_party/gold":
       From("chromium_deps", "src/third_party/gold"),
-
-    "third_party/openssl":
-      From("chromium_deps", "src/third_party/openssl"),
   },
   "android": {
     # Precompiled tools needed for Android test execution. Needed since we can't
@@ -143,9 +125,6 @@ deps_os = {
 
     "third_party/WebKit/Tools/Scripts":
       Var("webkit_trunk") + "/Tools/Scripts@151677",
-
-    "third_party/openssl":
-      From("chromium_deps", "src/third_party/openssl"),
   },
 }
 
@@ -185,7 +164,7 @@ hooks = [
     # A change to a .gyp, .gypi, or to GYP itself should run the generator.
     "pattern": ".",
     "action": ["python", Var("root_dir") + "/build/gyp_chromium",
-               "--depth=" + Var("root_dir"), Var("root_dir") + "/all.gyp",
+               "--depth=" + Var("root_dir"), Var("root_dir") + "/webrtc.gyp",
                Var("extra_gyp_flag")],
   },
 ]
