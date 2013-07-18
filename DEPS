@@ -112,7 +112,7 @@ deps_os = {
     # Precompiled tools needed for Android test execution. Needed since we can't
     # compile them from source in WebRTC since they depend on Chromium's base.
     "tools/android":
-      (Var("googlecode_url") % "webrtc") + "/deps/tools/android@4235",
+      (Var("googlecode_url") % "webrtc") + "/deps/tools/android@4258",
 
     "tools/android-dummy-test":
       (Var("googlecode_url") % "webrtc") + "/deps/tools/android-dummy-test@4244",
