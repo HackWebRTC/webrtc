@@ -6,27 +6,6 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-def _LicenseHeader(input_api):
-  """Returns the license header regexp."""
-  # Accept any year number from 2011 to the current year
-  current_year = int(input_api.time.strftime('%Y'))
-  allowed_years = (str(s) for s in reversed(xrange(2011, current_year + 1)))
-  years_re = '(' + '|'.join(allowed_years) + ')'
-  license_header = (
-      r'.*? Copyright \(c\) %(year)s The WebRTC project authors\. '
-        r'All Rights Reserved\.\n'
-      r'.*?\n'
-      r'.*? Use of this source code is governed by a BSD-style license\n'
-      r'.*? that can be found in the LICENSE file in the root of the source\n'
-      r'.*? tree\. An additional intellectual property rights grant can be '
-        r'found\n'
-      r'.*? in the file PATENTS\.  All contributing project authors may\n'
-      r'.*? be found in the AUTHORS file in the root of the source tree\.\n'
-  ) % {
-      'year': years_re,
-  }
-  return license_header
-
 def _CheckNoIOStreamInHeaders(input_api, output_api):
   """Checks to make sure no .h files include <iostream>."""
   files = []
@@ -146,8 +125,6 @@ def _CommonChecks(input_api, output_api):
   results.extend(input_api.canned_checks.CheckChangeTodoHasOwner(
       input_api, output_api))
   results.extend(_CheckApprovedFilesLintClean(input_api, output_api))
-  results.extend(input_api.canned_checks.CheckLicense(
-      input_api, output_api, _LicenseHeader(input_api)))
   results.extend(_CheckNoIOStreamInHeaders(input_api, output_api))
   results.extend(_CheckNoFRIEND_TEST(input_api, output_api))
   return results
@@ -170,4 +147,3 @@ def CheckChangeOnCommit(input_api, output_api):
   results.extend(input_api.canned_checks.CheckChangeHasTestField(
       input_api, output_api))
   return results
-
