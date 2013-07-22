@@ -1240,7 +1240,7 @@ void TestMismatch(const std::string& string1, const std::string& string2) {
   int position = 0;
   for (size_t i = 0; i < string1.length() && i < string2.length(); ++i) {
     if (string1.c_str()[i] != string2.c_str()[i]) {
-      position = i;
+      position = static_cast<int>(i);
       break;
     }
   }

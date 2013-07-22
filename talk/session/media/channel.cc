@@ -615,7 +615,7 @@ void BaseChannel::SetReadyToSend(TransportChannel* channel, bool ready) {
 bool BaseChannel::PacketIsRtcp(const TransportChannel* channel,
                                const char* data, size_t len) {
   return (channel == rtcp_transport_channel_ ||
-          rtcp_mux_filter_.DemuxRtcp(data, len));
+          rtcp_mux_filter_.DemuxRtcp(data, static_cast<int>(len)));
 }
 
 bool BaseChannel::SendPacket(bool rtcp, talk_base::Buffer* packet) {
@@ -669,9 +669,10 @@ bool BaseChannel::SendPacket(bool rtcp, talk_base::Buffer* packet) {
   if (srtp_filter_.IsActive()) {
     bool res;
     char* data = packet->data();
-    int len = packet->length();
+    int len = static_cast<int>(packet->length());
     if (!rtcp) {
-      res = srtp_filter_.ProtectRtp(data, len, packet->capacity(), &len);
+      res = srtp_filter_.ProtectRtp(data, len,
+                                    static_cast<int>(packet->capacity()), &len);
       if (!res) {
         int seq_num = -1;
         uint32 ssrc = 0;
@@ -683,7 +684,9 @@ bool BaseChannel::SendPacket(bool rtcp, talk_base::Buffer* packet) {
         return false;
       }
     } else {
-      res = srtp_filter_.ProtectRtcp(data, len, packet->capacity(), &len);
+      res = srtp_filter_.ProtectRtcp(data, len,
+                                     static_cast<int>(packet->capacity()),
+                                     &len);
       if (!res) {
         int type = -1;
         GetRtcpType(data, len, &type);
@@ -761,7 +764,7 @@ void BaseChannel::HandlePacket(bool rtcp, talk_base::Buffer* packet) {
   // Unprotect the packet, if needed.
   if (srtp_filter_.IsActive()) {
     char* data = packet->data();
-    int len = packet->length();
+    int len = static_cast<int>(packet->length());
     bool res;
     if (!rtcp) {
       res = srtp_filter_.UnprotectRtp(data, len, &len);
@@ -1009,15 +1012,21 @@ bool BaseChannel::SetupDtlsSrtp(bool rtcp_channel) {
   }
 
   if (rtcp_channel) {
-    ret = srtp_filter_.SetRtcpParams(selected_cipher,
-      &(*send_key)[0], send_key->size(),
-      selected_cipher,
-      &(*recv_key)[0], recv_key->size());
+    ret = srtp_filter_.SetRtcpParams(
+        selected_cipher,
+        &(*send_key)[0],
+        static_cast<int>(send_key->size()),
+        selected_cipher,
+        &(*recv_key)[0],
+        static_cast<int>(recv_key->size()));
   } else {
-    ret = srtp_filter_.SetRtpParams(selected_cipher,
-      &(*send_key)[0], send_key->size(),
-      selected_cipher,
-      &(*recv_key)[0], recv_key->size());
+    ret = srtp_filter_.SetRtpParams(
+        selected_cipher,
+        &(*send_key)[0],
+        static_cast<int>(send_key->size()),
+        selected_cipher,
+        &(*recv_key)[0],
+        static_cast<int>(recv_key->size()));
   }
 
   if (!ret)

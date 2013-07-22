@@ -166,8 +166,6 @@ class ChannelManager : public talk_base::MessageHandler,
   // Sets the externally provided video capturer. The ssrc is the ssrc of the
   // (video) stream for which the video capturer should be set.
   bool SetVideoCapturer(VideoCapturer* capturer);
-  // Starts and stops the local camera and renders it to the local renderer.
-  bool SetVideoCapture(bool capture);
   bool capturing() const { return capturing_; }
 
   // Configures the logging output of the mediaengine(s).

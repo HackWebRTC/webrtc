@@ -202,11 +202,8 @@ class WebRtcVideoMediaChannelTest
   virtual cricket::VideoCodec DefaultCodec() { return kVP8Codec; }
   virtual void SetUp() {
     Base::SetUp();
-    // Need to start the capturer to allow us to pump in frames.
-    engine_.SetCapture(true);
   }
   virtual void TearDown() {
-    engine_.SetCapture(false);
     Base::TearDown();
   }
 };
@@ -1356,41 +1353,6 @@ TEST_F(WebRtcVideoEngineTest, CreateChannel) {
   delete channel;
 }
 
-TEST_F(WebRtcVideoMediaChannelTest, TestVideoProcessor_DropFrames) {
-  // Connect a video processor.
-  cricket::FakeMediaProcessor vp;
-  vp.set_drop_frames(false);
-  EXPECT_TRUE(engine_.RegisterProcessor(&vp));
-  EXPECT_EQ(0, vp.dropped_frame_count());
-  // Send the first frame with default codec.
-  int packets = NumRtpPackets();
-  cricket::VideoCodec codec(DefaultCodec());
-  EXPECT_TRUE(SetOneCodec(codec));
-  EXPECT_TRUE(SetSend(true));
-  EXPECT_TRUE(channel_->SetRender(true));
-  EXPECT_EQ(0, renderer_.num_rendered_frames());
-  EXPECT_TRUE(WaitAndSendFrame(30));
-  EXPECT_FRAME_WAIT(1, codec.width, codec.height, kTimeout);
-  // Verify frame was sent.
-  EXPECT_TRUE_WAIT(NumRtpPackets() > packets, kTimeout);
-  packets = NumRtpPackets();
-  EXPECT_EQ(0, vp.dropped_frame_count());
-  // Send another frame and expect it to be sent.
-  EXPECT_TRUE(WaitAndSendFrame(30));
-  EXPECT_FRAME_WAIT(2, codec.width, codec.height, kTimeout);
-  EXPECT_TRUE_WAIT(NumRtpPackets() > packets, kTimeout);
-  packets = NumRtpPackets();
-  EXPECT_EQ(0, vp.dropped_frame_count());
-  // Attempt to send a frame and expect it to be dropped.
-  vp.set_drop_frames(true);
-  EXPECT_TRUE(WaitAndSendFrame(30));
-  DrainOutgoingPackets();
-  EXPECT_FRAME_WAIT(2, codec.width, codec.height, kTimeout);
-  EXPECT_EQ(packets, NumRtpPackets());
-  EXPECT_EQ(1, vp.dropped_frame_count());
-  // Disconnect video processor.
-  EXPECT_TRUE(engine_.UnregisterProcessor(&vp));
-}
 TEST_F(WebRtcVideoMediaChannelTest, SetRecvCodecs) {
   std::vector<cricket::VideoCodec> codecs;
   codecs.push_back(kVP8Codec);
@@ -1433,7 +1395,7 @@ TEST_F(WebRtcVideoMediaChannelTest, SendManyResizeOnce) {
 }
 
 TEST_F(WebRtcVideoMediaChannelTest, SendVp8HdAndReceiveAdaptedVp8Vga) {
-  EXPECT_TRUE(engine_.SetVideoCapturer(NULL));
+  EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
   channel_->UpdateAspectRatio(1280, 720);
   video_capturer_.reset(new cricket::FakeVideoCapturer);
   const std::vector<cricket::VideoFormat>* formats =
@@ -1500,33 +1462,6 @@ TEST_F(WebRtcVideoMediaChannelTest, AddRemoveRecvStreamsNoConference) {
 
 TEST_F(WebRtcVideoMediaChannelTest, AddRemoveSendStreams) {
   Base::AddRemoveSendStreams();
-}
-
-TEST_F(WebRtcVideoMediaChannelTest, SetVideoCapturer) {
-  // Use 123 to verify there's no assumption to the module id
-  FakeWebRtcVideoCaptureModule* vcm =
-      new FakeWebRtcVideoCaptureModule(NULL, 123);
-  talk_base::scoped_ptr<cricket::WebRtcVideoCapturer> capturer(
-      new cricket::WebRtcVideoCapturer);
-  EXPECT_TRUE(capturer->Init(vcm));
-  EXPECT_TRUE(engine_.SetVideoCapturer(capturer.get()));
-  EXPECT_FALSE(engine_.IsCapturing());
-  EXPECT_TRUE(engine_.SetCapture(true));
-  cricket::VideoCodec codec(DefaultCodec());
-  EXPECT_TRUE(SetOneCodec(codec));
-  EXPECT_TRUE(channel_->SetSend(true));
-  EXPECT_TRUE(engine_.IsCapturing());
-
-  EXPECT_EQ(engine_.default_codec_format().width, vcm->cap().width);
-  EXPECT_EQ(engine_.default_codec_format().height, vcm->cap().height);
-  EXPECT_EQ(cricket::VideoFormat::IntervalToFps(
-      engine_.default_codec_format().interval),
-            vcm->cap().maxFPS);
-  EXPECT_EQ(webrtc::kVideoI420, vcm->cap().rawType);
-  EXPECT_EQ(webrtc::kVideoCodecUnknown, vcm->cap().codecType);
-
-  EXPECT_TRUE(engine_.SetVideoCapturer(NULL));
-  EXPECT_FALSE(engine_.IsCapturing());
 }
 
 TEST_F(WebRtcVideoMediaChannelTest, SimulateConference) {

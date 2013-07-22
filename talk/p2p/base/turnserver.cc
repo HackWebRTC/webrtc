@@ -847,7 +847,7 @@ void TurnServer::Allocation::OnExternalPacket(
     // There is a channel bound to this address. Send as a channel message.
     talk_base::ByteBuffer buf;
     buf.WriteUInt16(channel->id());
-    buf.WriteUInt16(size);
+    buf.WriteUInt16(static_cast<uint16>(size));
     buf.WriteBytes(data, size);
     server_->Send(&conn_, buf);
   } else if (HasPermission(addr.ipaddr())) {

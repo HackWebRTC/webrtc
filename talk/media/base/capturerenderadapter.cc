@@ -39,11 +39,8 @@ CaptureRenderAdapter::CaptureRenderAdapter(VideoCapturer* video_capturer)
 }
 
 CaptureRenderAdapter::~CaptureRenderAdapter() {
-  // Have to disconnect here since |video_capturer_| lives on past the
-  // destruction of this object.
-  if (video_capturer_) {
-    video_capturer_->SignalVideoFrame.disconnect(this);
-  }
+  // has_slots destructor will disconnect us from any signals we may be
+  // connected to.
 }
 
 CaptureRenderAdapter* CaptureRenderAdapter::Create(
@@ -111,7 +108,8 @@ void CaptureRenderAdapter::MaybeSetRenderingSize(const VideoFrame* frame) {
     const bool new_resolution = iter->render_width != frame->GetWidth() ||
         iter->render_height != frame->GetHeight();
     if (new_resolution) {
-      if (iter->renderer->SetSize(frame->GetWidth(), frame->GetHeight(), 0)) {
+      if (iter->renderer->SetSize(static_cast<int>(frame->GetWidth()),
+                                  static_cast<int>(frame->GetHeight()), 0)) {
         iter->render_width = frame->GetWidth();
         iter->render_height = frame->GetHeight();
       } else {

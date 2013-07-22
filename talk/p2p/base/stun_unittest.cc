@@ -924,7 +924,7 @@ TEST_F(StunTest, WriteMessageWithIPv6AddressAttribute) {
   talk_base::ByteBuffer out;
   EXPECT_TRUE(msg.Write(&out));
   ASSERT_EQ(out.Length(), sizeof(kStunMessageWithIPv6MappedAddress));
-  int len1 = out.Length();
+  int len1 = static_cast<int>(out.Length());
   std::string bytes;
   out.ReadString(&bytes, len1);
   ASSERT_EQ(0, std::memcmp(bytes.c_str(),
@@ -955,7 +955,7 @@ TEST_F(StunTest, WriteMessageWithIPv4AddressAttribute) {
   talk_base::ByteBuffer out;
   EXPECT_TRUE(msg.Write(&out));
   ASSERT_EQ(out.Length(), sizeof(kStunMessageWithIPv4MappedAddress));
-  int len1 = out.Length();
+  int len1 = static_cast<int>(out.Length());
   std::string bytes;
   out.ReadString(&bytes, len1);
   ASSERT_EQ(0, std::memcmp(bytes.c_str(),
@@ -986,7 +986,7 @@ TEST_F(StunTest, WriteMessageWithIPv6XorAddressAttribute) {
   talk_base::ByteBuffer out;
   EXPECT_TRUE(msg.Write(&out));
   ASSERT_EQ(out.Length(), sizeof(kStunMessageWithIPv6XorMappedAddress));
-  int len1 = out.Length();
+  int len1 = static_cast<int>(out.Length());
   std::string bytes;
   out.ReadString(&bytes, len1);
   ASSERT_EQ(0, std::memcmp(bytes.c_str(),
@@ -1017,7 +1017,7 @@ TEST_F(StunTest, WriteMessageWithIPv4XoreAddressAttribute) {
   talk_base::ByteBuffer out;
   EXPECT_TRUE(msg.Write(&out));
   ASSERT_EQ(out.Length(), sizeof(kStunMessageWithIPv4XorMappedAddress));
-  int len1 = out.Length();
+  int len1 = static_cast<int>(out.Length());
   std::string bytes;
   out.ReadString(&bytes, len1);
   ASSERT_EQ(0, std::memcmp(bytes.c_str(),

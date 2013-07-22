@@ -629,25 +629,24 @@ SessionDescriptionInterface* WebRtcSession::CreateAnswer(
 
 bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
                                         std::string* err_desc) {
+  // Takes the ownership of |desc| regardless of the result.
+  talk_base::scoped_ptr<SessionDescriptionInterface> desc_temp(desc);
+
   if (error() != cricket::BaseSession::ERROR_NONE) {
-    delete desc;
     return BadLocalSdp(SessionErrorMsg(error()), err_desc);
   }
 
   if (!desc || !desc->description()) {
-    delete desc;
     return BadLocalSdp(kInvalidSdp, err_desc);
   }
   Action action = GetAction(desc->type());
   if (!ExpectSetLocalDescription(action)) {
     std::string type = desc->type();
-    delete desc;
     return BadLocalSdp(BadStateErrMsg(type, state()), err_desc);
   }
 
   if (session_desc_factory_.secure() == cricket::SEC_REQUIRED &&
       !VerifyCrypto(desc->description())) {
-    delete desc;
     return BadLocalSdp(kSdpWithoutCrypto, err_desc);
   }
 
@@ -665,10 +664,10 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
   UpdateSessionDescriptionSecurePolicy(desc->description());
 
   set_local_description(desc->description()->Copy());
-  local_desc_.reset(desc);
+  local_desc_.reset(desc_temp.release());
 
   // Transport and Media channels will be created only when offer is set.
-  if (action == kOffer && !CreateChannels(desc->description())) {
+  if (action == kOffer && !CreateChannels(local_desc_->description())) {
     // TODO(mallinath) - Handle CreateChannel failure, as new local description
     // is applied. Restore back to old description.
     return BadLocalSdp(kCreateChannelFailed, err_desc);
@@ -676,10 +675,10 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
 
   // Remove channel and transport proxies, if MediaContentDescription is
   // rejected.
-  RemoveUnusedChannelsAndTransports(desc->description());
+  RemoveUnusedChannelsAndTransports(local_desc_->description());
 
   if (!UpdateSessionState(action, cricket::CS_LOCAL,
-                          desc->description(), err_desc)) {
+                          local_desc_->description(), err_desc)) {
     return false;
   }
   // Kick starting the ice candidates allocation.
@@ -697,19 +696,19 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
 
 bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
                                          std::string* err_desc) {
+  // Takes the ownership of |desc| regardless of the result.
+  talk_base::scoped_ptr<SessionDescriptionInterface> desc_temp(desc);
+
   if (error() != cricket::BaseSession::ERROR_NONE) {
-    delete desc;
     return BadRemoteSdp(SessionErrorMsg(error()), err_desc);
   }
 
   if (!desc || !desc->description()) {
-    delete desc;
     return BadRemoteSdp(kInvalidSdp, err_desc);
   }
   Action action = GetAction(desc->type());
   if (!ExpectSetRemoteDescription(action)) {
     std::string type = desc->type();
-    delete desc;
     return BadRemoteSdp(BadStateErrMsg(type, state()), err_desc);
   }
 
@@ -720,7 +719,6 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
 
   if (session_desc_factory_.secure() == cricket::SEC_REQUIRED &&
       !VerifyCrypto(desc->description())) {
-    delete desc;
     return BadRemoteSdp(kSdpWithoutCrypto, err_desc);
   }
 
@@ -746,7 +744,6 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
   // Update remote MediaStreams.
   mediastream_signaling_->OnRemoteDescriptionChanged(desc);
   if (local_description() && !UseCandidatesInSessionDescription(desc)) {
-    delete desc;
     return BadRemoteSdp(kInvalidCandidates, err_desc);
   }
 
@@ -758,7 +755,7 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
   // that indicates the remote peer requests ice restart.
   ice_restart_latch_->CheckForRemoteIceRestart(remote_desc_.get(),
                                                desc);
-  remote_desc_.reset(desc);
+  remote_desc_.reset(desc_temp.release());
   if (error() != cricket::BaseSession::ERROR_NONE) {
     return BadRemoteSdp(SessionErrorMsg(error()), err_desc);
   }
@@ -1245,7 +1242,7 @@ bool WebRtcSession::GetLocalCandidateMediaIndex(const std::string& content_name,
   const ContentInfos& contents = BaseSession::local_description()->contents();
   for (size_t index = 0; index < contents.size(); ++index) {
     if (contents[index].name == content_name) {
-      *sdp_mline_index = index;
+      *sdp_mline_index = static_cast<int>(index);
       content_found = true;
       break;
     }
@@ -1428,7 +1425,7 @@ void WebRtcSession::UpdateSessionDescriptionSecurePolicy(
        iter != sdesc->contents().end(); ++iter) {
     if (cricket::IsMediaContent(&*iter)) {
       MediaContentDescription* mdesc =
-          static_cast<MediaContentDescription*> (iter->description);
+          static_cast<MediaContentDescription*>(iter->description);
       if (mdesc) {
         mdesc->set_crypto_required(
             session_desc_factory_.secure() == cricket::SEC_REQUIRED);

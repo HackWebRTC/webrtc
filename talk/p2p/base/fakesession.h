@@ -175,7 +175,7 @@ class FakeTransportChannel : public TransportChannelImpl,
     } else {
       talk_base::Thread::Current()->Send(this, 0, packet);
     }
-    return len;
+    return static_cast<int>(len);
   }
   virtual int SetOption(talk_base::Socket::Option opt, int value) {
     return true;

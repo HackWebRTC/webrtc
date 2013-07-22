@@ -206,7 +206,8 @@ class DtlsTestClient : public sigslot::has_slots<> {
       // against, and make sure that it doesn't look like DTLS.
       memset(packet.get(), sent & 0xff, size);
       packet[0] = (srtp) ? 0x80 : 0x00;
-      talk_base::SetBE32(packet.get() + kPacketNumOffset, sent);
+      talk_base::SetBE32(packet.get() + kPacketNumOffset,
+                         static_cast<uint32>(sent));
 
       // Only set the bypass flag if we've activated DTLS.
       int flags = (identity_.get() && srtp) ? cricket::PF_SRTP_BYPASS : 0;
@@ -342,7 +343,7 @@ class DtlsTransportChannelTest : public testing::Test {
   }
 
   void SetChannelCount(size_t channel_ct) {
-    channel_ct_ = channel_ct;
+    channel_ct_ = static_cast<int>(channel_ct);
   }
   void PrepareDtls(bool c1, bool c2) {
     if (c1) {

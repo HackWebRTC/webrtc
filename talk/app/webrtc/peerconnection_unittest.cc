@@ -147,7 +147,8 @@ class PeerConnectionTestClientBase
 
   void AddMediaStream(bool audio, bool video) {
     std::string label = kStreamLabelBase +
-        talk_base::ToString<int>(peer_connection_->local_streams()->count());
+        talk_base::ToString<int>(
+            static_cast<int>(peer_connection_->local_streams()->count()));
     talk_base::scoped_refptr<webrtc::MediaStreamInterface> stream =
         peer_connection_factory_->CreateLocalMediaStream(label);
 
@@ -306,11 +307,11 @@ class PeerConnectionTestClientBase
           desc->GetTransportDescriptionByName(contents[index].name);
 
       std::map<int, IceUfragPwdPair>::const_iterator ufragpair_it =
-          ice_ufrag_pwd_.find(index);
+          ice_ufrag_pwd_.find(static_cast<int>(index));
       if (ufragpair_it == ice_ufrag_pwd_.end()) {
         ASSERT_FALSE(ExpectIceRestart());
-        ice_ufrag_pwd_[index] = IceUfragPwdPair(transport_desc->ice_ufrag,
-                                                transport_desc->ice_pwd);
+        ice_ufrag_pwd_[static_cast<int>(index)] =
+            IceUfragPwdPair(transport_desc->ice_ufrag, transport_desc->ice_pwd);
       } else if (ExpectIceRestart()) {
         const IceUfragPwdPair& ufrag_pwd = ufragpair_it->second;
         EXPECT_NE(ufrag_pwd.first, transport_desc->ice_ufrag);
@@ -1007,13 +1008,13 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTest16To9) {
 
   ASSERT_LE(0, initializing_client()->rendered_height());
   double initiating_video_ratio =
-      static_cast<double> (initializing_client()->rendered_width()) /
+      static_cast<double>(initializing_client()->rendered_width()) /
       initializing_client()->rendered_height();
   EXPECT_LE(requested_ratio, initiating_video_ratio);
 
   ASSERT_LE(0, receiving_client()->rendered_height());
   double receiving_video_ratio =
-      static_cast<double> (receiving_client()->rendered_width()) /
+      static_cast<double>(receiving_client()->rendered_width()) /
       receiving_client()->rendered_height();
   EXPECT_LE(requested_ratio, receiving_video_ratio);
 }

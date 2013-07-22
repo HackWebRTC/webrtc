@@ -319,7 +319,7 @@ class PseudoTcpTest : public PseudoTcpTestBase {
           LOG(LS_VERBOSE) << "Flow Controlled";
         }
       } else {
-        sent = tosend = 0;
+        sent = static_cast<int>(tosend = 0);
       }
     } while (sent > 0);
     *done = (tosend == 0);
@@ -439,7 +439,7 @@ class PseudoTcpTestPingPong : public PseudoTcpTestBase {
           LOG(LS_VERBOSE) << "Flow Controlled";
         }
       } else {
-        sent = tosend = 0;
+        sent = static_cast<int>(tosend = 0);
       }
     } while (sent > 0);
   }
@@ -507,11 +507,11 @@ class PseudoTcpTestReceiveWindow : public PseudoTcpTestBase {
   }
 
   uint32 EstimateReceiveWindowSize() const {
-    return recv_position_[0];
+    return static_cast<uint32>(recv_position_[0]);
   }
 
   uint32 EstimateSendWindowSize() const {
-    return send_position_[0] - recv_position_[0];
+    return static_cast<uint32>(send_position_[0] - recv_position_[0]);
   }
 
  private:
@@ -566,12 +566,13 @@ class PseudoTcpTestReceiveWindow : public PseudoTcpTestBase {
           LOG(LS_VERBOSE) << "Flow Controlled";
         }
       } else {
-        sent = tosend = 0;
+        sent = static_cast<int>(tosend = 0);
       }
     } while (sent > 0);
     // At this point, we've filled up the available space in the send queue.
 
-    int message_queue_size = talk_base::Thread::Current()->size();
+    int message_queue_size =
+        static_cast<int>(talk_base::Thread::Current()->size());
     // The message queue will always have at least 2 messages, an RCLOCK and
     // an LCLOCK, since they are added back on the delay queue at the same time
     // they are pulled off and therefore are never really removed.

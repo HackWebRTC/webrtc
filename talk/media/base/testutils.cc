@@ -186,9 +186,10 @@ bool RtpTestUtility::VerifyTestPacketsFromStream(
       result &= rtp_packet.ReadFromByteBuffer(&buf);
       result &= rtp_packet.SameExceptSeqNumTimestampSsrc(
           kTestRawRtpPackets[index],
-          kTestRawRtpPackets[index].sequence_number +
-              loop * GetTestPacketCount(),
-          kTestRawRtpPackets[index].timestamp + loop * kRtpTimestampIncrease,
+          static_cast<uint16>(kTestRawRtpPackets[index].sequence_number +
+                              loop * GetTestPacketCount()),
+          static_cast<uint32>(kTestRawRtpPackets[index].timestamp +
+                              loop * kRtpTimestampIncrease),
           ssrc);
     }
   }

@@ -524,20 +524,6 @@ TEST_F(ChannelManagerTest, SetLogging) {
   EXPECT_STREQ("test-video", fme_->video_logfilter().c_str());
 }
 
-// Test that SetVideoCapture passes through the right value.
-TEST_F(ChannelManagerTest, SetVideoCapture) {
-  // Should fail until we are initialized.
-  EXPECT_FALSE(fme_->capture());
-  EXPECT_FALSE(cm_->SetVideoCapture(true));
-  EXPECT_FALSE(fme_->capture());
-  EXPECT_TRUE(cm_->Init());
-  EXPECT_FALSE(fme_->capture());
-  EXPECT_TRUE(cm_->SetVideoCapture(true));
-  EXPECT_TRUE(fme_->capture());
-  EXPECT_TRUE(cm_->SetVideoCapture(false));
-  EXPECT_FALSE(fme_->capture());
-}
-
 // Test that the Video/Voice Processors register and unregister
 TEST_F(ChannelManagerTest, RegisterProcessors) {
   cricket::FakeMediaProcessor fmp;

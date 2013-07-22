@@ -63,7 +63,7 @@ class TestSessionChannel : public sigslot::has_slots<> {
   void OnCandidatesReady(PortAllocatorSession* session,
                          const std::vector<Candidate>& candidates) {
     EXPECT_EQ(proxy_session_, session);
-    candidates_count_ += candidates.size();
+    candidates_count_ += static_cast<int>(candidates.size());
   }
   void OnCandidatesAllocationDone(PortAllocatorSession* session) {
     EXPECT_EQ(proxy_session_, session);

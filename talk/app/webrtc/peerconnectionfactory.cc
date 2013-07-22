@@ -189,7 +189,7 @@ bool PeerConnectionFactory::Initialize() {
 void PeerConnectionFactory::OnMessage(talk_base::Message* msg) {
   switch (msg->message_id) {
     case MSG_INIT_FACTORY: {
-     InitMessageData* pdata = static_cast<InitMessageData*> (msg->pdata);
+     InitMessageData* pdata = static_cast<InitMessageData*>(msg->pdata);
      pdata->data() = Initialize_s();
      break;
     }
@@ -199,7 +199,7 @@ void PeerConnectionFactory::OnMessage(talk_base::Message* msg) {
     }
     case MSG_CREATE_PEERCONNECTION: {
       CreatePeerConnectionParams* pdata =
-          static_cast<CreatePeerConnectionParams*> (msg->pdata);
+          static_cast<CreatePeerConnectionParams*>(msg->pdata);
       pdata->peerconnection = CreatePeerConnection_s(pdata->configuration,
                                                      pdata->constraints,
                                                      pdata->allocator_factory,
@@ -214,7 +214,7 @@ void PeerConnectionFactory::OnMessage(talk_base::Message* msg) {
     }
     case MSG_CREATE_VIDEOSOURCE: {
       CreateVideoSourceParams* pdata =
-          static_cast<CreateVideoSourceParams*> (msg->pdata);
+          static_cast<CreateVideoSourceParams*>(msg->pdata);
       pdata->source = CreateVideoSource_s(pdata->capturer, pdata->constraints);
       break;
     }

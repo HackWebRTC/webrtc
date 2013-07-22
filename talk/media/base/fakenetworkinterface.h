@@ -69,7 +69,7 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
     talk_base::CritScope cs(&crit_);
     int bytes = 0;
     for (size_t i = 0; i < rtp_packets_.size(); ++i) {
-      bytes += rtp_packets_[i].length();
+      bytes += static_cast<int>(rtp_packets_[i].length());
     }
     return bytes;
   }
@@ -83,7 +83,7 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
 
   int NumRtpPackets() {
     talk_base::CritScope cs(&crit_);
-    return rtp_packets_.size();
+    return static_cast<int>(rtp_packets_.size());
   }
 
   int NumRtpPackets(uint32 ssrc) {
@@ -95,7 +95,7 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
 
   int NumSentSsrcs() {
     talk_base::CritScope cs(&crit_);
-    return sent_ssrcs_.size();
+    return static_cast<int>(sent_ssrcs_.size());
   }
 
   // Note: callers are responsible for deleting the returned buffer.
@@ -109,7 +109,7 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
 
   int NumRtcpPackets() {
     talk_base::CritScope cs(&crit_);
-    return rtcp_packets_.size();
+    return static_cast<int>(rtcp_packets_.size());
   }
 
   // Note: callers are responsible for deleting the returned buffer.
@@ -218,7 +218,7 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
       }
       if (ssrc == cur_ssrc) {
         if (bytes) {
-          *bytes += rtp_packets_[i].length();
+          *bytes += static_cast<int>(rtp_packets_[i].length());
         }
         if (packets) {
           ++(*packets);

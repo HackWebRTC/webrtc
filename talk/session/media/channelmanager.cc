@@ -713,26 +713,6 @@ bool ChannelManager::SetLocalRenderer(VideoRenderer* renderer) {
   return ret;
 }
 
-bool ChannelManager::SetVideoCapturer(VideoCapturer* capturer) {
-  bool ret = true;
-  if (initialized_) {
-    ret = worker_thread_->Invoke<bool>(
-        Bind(&MediaEngineInterface::SetVideoCapturer,
-             media_engine_.get(), capturer));
-  }
-  return ret;
-}
-
-bool ChannelManager::SetVideoCapture(bool capture) {
-  bool ret = initialized_ && worker_thread_->Invoke<bool>(
-      Bind(&MediaEngineInterface::SetVideoCapture,
-           media_engine_.get(), capture));
-  if (ret) {
-    capturing_ = capture;
-  }
-  return ret;
-}
-
 void ChannelManager::SetVoiceLogging(int level, const char* filter) {
   if (initialized_) {
     worker_thread_->Invoke<void>(

@@ -112,7 +112,8 @@ void SetCustomAssertLogger(AssertLogger logger);
 
 namespace talk_base {
 
-// Break causes the debugger to stop executing, or the program to abort.
+// If a debugger is attached, triggers a debugger breakpoint. If a debugger is
+// not attached, forces program termination.
 void Break();
 
 inline bool Assert(bool result, const char* function, const char* file,

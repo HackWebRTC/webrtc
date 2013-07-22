@@ -62,8 +62,8 @@ void FrameBuffer::SetData(char* data, size_t length) {
   data_.reset(data);
   length_ = length;
   uint8_t* new_memory = reinterpret_cast<uint8_t*>(data);
-  uint32_t new_length = length;
-  uint32_t new_size = length;
+  uint32_t new_length = static_cast<int>(length);
+  uint32_t new_size = static_cast<int>(length);
   video_frame_.Swap(new_memory, new_length, new_size);
 }
 
@@ -150,7 +150,7 @@ const uint8* WebRtcVideoFrame::GetUPlane() const {
 const uint8* WebRtcVideoFrame::GetVPlane() const {
   uint8_t* buffer = frame()->Buffer();
   if (buffer) {
-    int uv_size = GetChromaSize();
+    int uv_size = static_cast<int>(GetChromaSize());
     buffer += frame()->Width() * frame()->Height() + uv_size;
   }
   return buffer;
@@ -172,7 +172,7 @@ uint8* WebRtcVideoFrame::GetUPlane() {
 uint8* WebRtcVideoFrame::GetVPlane() {
   uint8_t* buffer = frame()->Buffer();
   if (buffer) {
-    int uv_size = GetChromaSize();
+    int uv_size = static_cast<int>(GetChromaSize());
     buffer += frame()->Width() * frame()->Height() + uv_size;
   }
   return buffer;
@@ -192,7 +192,7 @@ VideoFrame* WebRtcVideoFrame::Copy() const {
 }
 
 bool WebRtcVideoFrame::MakeExclusive() {
-  const int length = video_buffer_->length();
+  const int length = static_cast<int>(video_buffer_->length());
   RefCountedBuffer* exclusive_buffer = new RefCountedBuffer(length);
   memcpy(exclusive_buffer->data(), video_buffer_->data(), length);
   Attach(exclusive_buffer, length, frame()->Width(), frame()->Height(),
@@ -228,7 +228,10 @@ size_t WebRtcVideoFrame::ConvertToRgbBuffer(uint32 to_fourcc, uint8* buffer,
 
   if (libyuv::ConvertFromI420(GetYPlane(), GetYPitch(), GetUPlane(),
                               GetUPitch(), GetVPlane(), GetVPitch(), buffer,
-                              stride_rgb, width, height, to_fourcc)) {
+                              stride_rgb,
+                              static_cast<int>(width),
+                              static_cast<int>(height),
+                              to_fourcc)) {
     LOG(LS_WARNING) << "RGB type not supported: " << to_fourcc;
     return 0;  // 0 indicates error
   }

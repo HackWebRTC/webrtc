@@ -163,7 +163,8 @@ class FileMediaEngineTest : public testing::Test {
     for (size_t i = 0; i < ssrc_count; ++i) {
       ret &= RtpTestUtility::WriteTestPackets(
           RtpTestUtility::GetTestPacketCount(), false,
-          RtpTestUtility::kDefaultSsrc + i, &writer);
+          static_cast<uint32>(RtpTestUtility::kDefaultSsrc + i),
+          &writer);
     }
     return ret;
   }

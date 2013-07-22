@@ -499,7 +499,9 @@ void MainWnd::LayoutConnectUI(bool show) {
     size_t y = rc.bottom / 2;
     for (size_t i = 0; i < ARRAYSIZE(windows); ++i) {
       size_t top = y - (windows[i].height / 2);
-      ::MoveWindow(windows[i].wnd, x, top, windows[i].width, windows[i].height,
+      ::MoveWindow(windows[i].wnd, static_cast<int>(x), static_cast<int>(top),
+                   static_cast<int>(windows[i].width),
+                   static_cast<int>(windows[i].height),
                    TRUE);
       x += kSeparator + windows[i].width;
       if (windows[i].text[0] != 'X')

@@ -392,7 +392,7 @@ class FakeWebRtcVideoEngine
     return -1;
   }
 
-  int GetNumChannels() const { return channels_.size(); }
+  int GetNumChannels() const { return static_cast<int>(channels_.size()); }
   bool IsChannel(int channel) const {
     return (channels_.find(channel) != channels_.end());
   }
@@ -401,7 +401,7 @@ class FakeWebRtcVideoEngine
   }
 
   int GetLastCapturer() const { return last_capturer_; }
-  int GetNumCapturers() const { return capturers_.size(); }
+  int GetNumCapturers() const { return static_cast<int>(capturers_.size()); }
   void set_fail_alloc_capturer(bool fail_alloc_capturer) {
     fail_alloc_capturer_ = fail_alloc_capturer;
   }
@@ -497,7 +497,8 @@ class FakeWebRtcVideoEngine
   }
   int GetNumSsrcs(int channel) const {
     WEBRTC_ASSERT_CHANNEL(channel);
-    return channels_.find(channel)->second->ssrcs_.size();
+    return static_cast<int>(
+        channels_.find(channel)->second->ssrcs_.size());
   }
   bool GetIsTransmitting(int channel) const {
     WEBRTC_ASSERT_CHANNEL(channel);
@@ -518,7 +519,8 @@ class FakeWebRtcVideoEngine
   };
   int GetNumExternalDecoderRegistered(int channel) const {
     WEBRTC_ASSERT_CHANNEL(channel);
-    return channels_.find(channel)->second->ext_decoder_pl_types_.size();
+    return static_cast<int>(
+        channels_.find(channel)->second->ext_decoder_pl_types_.size());
   };
   bool ExternalEncoderRegistered(int channel,
                                  unsigned int pl_type) const {
@@ -528,13 +530,15 @@ class FakeWebRtcVideoEngine
   };
   int GetNumExternalEncoderRegistered(int channel) const {
     WEBRTC_ASSERT_CHANNEL(channel);
-    return channels_.find(channel)->second->ext_encoder_pl_types_.size();
+    return static_cast<int>(
+        channels_.find(channel)->second->ext_encoder_pl_types_.size());
   };
   int GetTotalNumExternalEncoderRegistered() const {
     std::map<int, Channel*>::const_iterator it;
     int total_num_registered = 0;
     for (it = channels_.begin(); it != channels_.end(); ++it)
-      total_num_registered += it->second->ext_encoder_pl_types_.size();
+      total_num_registered +=
+          static_cast<int>(it->second->ext_encoder_pl_types_.size());
     return total_num_registered;
   }
   void SetSendBitrates(int channel, unsigned int video_bitrate,
@@ -708,10 +712,8 @@ class FakeWebRtcVideoEngine
   WEBRTC_STUB(DeregisterDecoderObserver, (const int));
   WEBRTC_STUB(SendKeyFrame, (const int));
   WEBRTC_STUB(WaitForFirstKeyFrame, (const int, const bool));
-#ifdef USE_WEBRTC_DEV_BRANCH
   WEBRTC_STUB(StartDebugRecording, (int, const char*));
   WEBRTC_STUB(StopDebugRecording, (int));
-#endif
 
   // webrtc::ViECapture
   WEBRTC_STUB(NumberOfCaptureDevices, ());
@@ -783,12 +785,10 @@ class FakeWebRtcVideoEngine
   // Not using WEBRTC_STUB due to bool return value
   virtual bool IsIPv6Enabled(int channel) { return true; }
   WEBRTC_STUB(SetMTU, (int, unsigned int));
-#ifndef USE_WEBRTC_DEV_BRANCH
   WEBRTC_STUB(SetPacketTimeoutNotification, (const int, bool, int));
   WEBRTC_STUB(RegisterObserver, (const int, webrtc::ViENetworkObserver&));
   WEBRTC_STUB(SetPeriodicDeadOrAliveStatus, (const int, const bool,
     const unsigned int));
-#endif
 
   // webrtc::ViERender
   WEBRTC_STUB(RegisterVideoRenderModule, (webrtc::VideoRender&));

@@ -234,6 +234,7 @@ struct VideoOptions {
   void SetAll(const VideoOptions& change) {
     adapt_input_to_encoder.SetFrom(change.adapt_input_to_encoder);
     adapt_input_to_cpu_usage.SetFrom(change.adapt_input_to_cpu_usage);
+    adapt_cpu_with_smoothing.SetFrom(change.adapt_cpu_with_smoothing);
     adapt_view_switch.SetFrom(change.adapt_view_switch);
     video_noise_reduction.SetFrom(change.video_noise_reduction);
     video_three_layers.SetFrom(change.video_three_layers);
@@ -256,6 +257,7 @@ struct VideoOptions {
   bool operator==(const VideoOptions& o) const {
     return adapt_input_to_encoder == o.adapt_input_to_encoder &&
         adapt_input_to_cpu_usage == o.adapt_input_to_cpu_usage &&
+        adapt_cpu_with_smoothing == o.adapt_cpu_with_smoothing &&
         adapt_view_switch == o.adapt_view_switch &&
         video_noise_reduction == o.video_noise_reduction &&
         video_three_layers == o.video_three_layers &&
@@ -279,6 +281,7 @@ struct VideoOptions {
     ost << "VideoOptions {";
     ost << ToStringIfSet("encoder adaption", adapt_input_to_encoder);
     ost << ToStringIfSet("cpu adaption", adapt_input_to_cpu_usage);
+    ost << ToStringIfSet("cpu adaptation smoothing", adapt_cpu_with_smoothing);
     ost << ToStringIfSet("adapt view switch", adapt_view_switch);
     ost << ToStringIfSet("noise reduction", video_noise_reduction);
     ost << ToStringIfSet("3 layers", video_three_layers);
@@ -303,6 +306,8 @@ struct VideoOptions {
   Settable<bool> adapt_input_to_encoder;
   // Enable CPU adaptation?
   Settable<bool> adapt_input_to_cpu_usage;
+  // Enable CPU adaptation smoothing?
+  Settable<bool> adapt_cpu_with_smoothing;
   // Enable Adapt View Switch?
   Settable<bool> adapt_view_switch;
   // Enable denoising?

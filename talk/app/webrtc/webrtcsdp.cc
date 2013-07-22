@@ -632,7 +632,7 @@ void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
 void GetMediaStreamLabels(const ContentInfo* content,
                           std::set<std::string>* labels) {
   const MediaContentDescription* media_desc =
-      static_cast<const MediaContentDescription*> (
+      static_cast<const MediaContentDescription*>(
           content->description);
   const cricket::StreamParamsVec& streams =  media_desc->streams();
   for (cricket::StreamParamsVec::const_iterator it = streams.begin();
@@ -1123,7 +1123,7 @@ void BuildMediaDescription(const ContentInfo* content_info,
   // trunk/cppguide.xml?showone=Streams#Streams
   std::ostringstream os;
   const MediaContentDescription* media_desc =
-      static_cast<const MediaContentDescription*> (
+      static_cast<const MediaContentDescription*>(
           content_info->description);
   ASSERT(media_desc != NULL);
 
@@ -1928,7 +1928,7 @@ void MaybeCreateStaticPayloadAudioCodecs(
   if (!media_desc) {
     return;
   }
-  int preference = fmts.size();
+  int preference = static_cast<int>(fmts.size());
   std::vector<int>::const_iterator it = fmts.begin();
   bool add_new_codec = false;
   for (; it != fmts.end(); ++it) {

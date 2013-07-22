@@ -473,7 +473,7 @@ bool Port::ParseStunUsername(const StunMessage* stun_msg,
       return false;
     }
   } else if (IsGoogleIce()) {
-    int remote_frag_len = username_attr_str.size();
+    int remote_frag_len = static_cast<int>(username_attr_str.size());
     remote_frag_len -= static_cast<int>(username_fragment().size());
     if (remote_frag_len < 0)
       return false;
@@ -752,8 +752,10 @@ class ConnectionRequest : public StunRequest {
 
     // connection_ already holds this ping, so subtract one from count.
     if (connection_->port()->send_retransmit_count_attribute()) {
-      request->AddAttribute(new StunUInt32Attribute(STUN_ATTR_RETRANSMIT_COUNT,
-          connection_->pings_since_last_response_.size() - 1));
+      request->AddAttribute(new StunUInt32Attribute(
+          STUN_ATTR_RETRANSMIT_COUNT,
+          static_cast<uint32>(
+              connection_->pings_since_last_response_.size() - 1)));
     }
 
     // Adding ICE-specific attributes to the STUN request message.

@@ -113,16 +113,8 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   const std::vector<RtpHeaderExtension>& rtp_header_extensions() const;
   void SetLogging(int min_sev, const char* filter);
 
-  // If capturer is NULL, unregisters the capturer and stops capturing.
-  // Otherwise sets the capturer and starts capturing.
-  bool SetVideoCapturer(VideoCapturer* capturer);
-  VideoCapturer* GetVideoCapturer() const;
   bool SetLocalRenderer(VideoRenderer* renderer);
-  bool SetCapture(bool capture);
   sigslot::repeater2<VideoCapturer*, CaptureState> SignalCaptureStateChange;
-  CaptureState UpdateCapturingState();
-  bool IsCapturing() const;
-  void OnFrameCaptured(VideoCapturer* capturer, const CapturedFrame* frame);
 
   // Set the VoiceEngine for A/V sync. This can only be called before Init.
   bool SetVoiceEngine(WebRtcVoiceEngine* voice_engine);
@@ -136,9 +128,6 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   void SetExternalEncoderFactory(WebRtcVideoEncoderFactory* encoder_factory);
   // Enable the render module with timing control.
   bool EnableTimedRender();
-
-  bool RegisterProcessor(VideoProcessor* video_processor);
-  bool UnregisterProcessor(VideoProcessor* video_processor);
 
   // Returns an external decoder for the given codec type. The return value
   // can be NULL if decoder factory is not given or it does not support the
@@ -175,9 +164,6 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   bool ShouldIgnoreTrace(const std::string& trace);
   int GetNumOfChannels();
 
-  void IncrementFrameListeners();
-  void DecrementFrameListeners();
-
   VideoFormat GetStartCaptureFormat() const { return default_codec_format_; }
 
   talk_base::CpuMonitor* cpu_monitor() { return cpu_monitor_.get(); }
@@ -209,11 +195,9 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   void SetTraceFilter(int filter);
   void SetTraceOptions(const std::string& options);
   bool InitVideoEngine();
-  bool SetCapturer(VideoCapturer* capturer);
 
   // webrtc::TraceCallback implementation.
   virtual void Print(webrtc::TraceLevel level, const char* trace, int length);
-  void ClearCapturer();
 
   // WebRtcVideoEncoderFactory::Observer implementation.
   virtual void OnCodecsAvailable();
@@ -234,8 +218,6 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   talk_base::CriticalSection channels_crit_;
   VideoChannels channels_;
 
-  VideoCapturer* video_capturer_;
-  int frame_listeners_;
   bool capture_started_;
   int local_renderer_w_;
   int local_renderer_h_;

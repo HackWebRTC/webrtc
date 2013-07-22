@@ -349,7 +349,7 @@ int RelayPort::SendTo(const void* data, size_t size,
   }
   // The caller of the function is expecting the number of user data bytes,
   // rather than the size of the packet.
-  return size;
+  return static_cast<int>(size);
 }
 
 int RelayPort::SetOption(talk_base::Socket::Option opt, int value) {

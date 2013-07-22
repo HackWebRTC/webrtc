@@ -92,7 +92,7 @@ static bool CreateCryptoParams(int tag, const std::string& cipher,
 #ifdef HAVE_SRTP
 static bool AddCryptoParams(const std::string& cipher_suite,
                             CryptoParamsVec *out) {
-  int size = out->size();
+  int size = static_cast<int>(out->size());
 
   out->resize(size + 1);
   return CreateCryptoParams(size, cipher_suite, &out->at(size));

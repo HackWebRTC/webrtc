@@ -207,6 +207,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
   ~SSLStreamAdapterTestBase() {
     // Put it back for the next test.
     talk_base::SetRandomTestMode(false);
+    talk_base::CleanupSSL();
   }
 
   static void SetUpTestCase() {
@@ -571,14 +572,13 @@ class SSLStreamAdapterTestDTLS : public SSLStreamAdapterTestBase {
   }
 
   virtual void ReadData(talk_base::StreamInterface *stream) {
-    unsigned char *buffer = new unsigned char[2000];
+    unsigned char buffer[2000];
     size_t bread;
     int err2;
     talk_base::StreamResult r;
 
     for (;;) {
-      r = stream->Read(buffer, 2000,
-                       &bread, &err2);
+      r = stream->Read(buffer, 2000, &bread, &err2);
 
       if (r == talk_base::SR_ERROR) {
         // Unfortunately, errors are the way that the stream adapter
@@ -595,7 +595,8 @@ class SSLStreamAdapterTestDTLS : public SSLStreamAdapterTestBase {
 
       // Now parse the datagram
       ASSERT_EQ(packet_size_, bread);
-      uint32_t packet_num = *(reinterpret_cast<uint32_t *>(buffer));
+      unsigned char* ptr_to_buffer = buffer;
+      uint32_t packet_num = *(reinterpret_cast<uint32_t *>(ptr_to_buffer));
 
       for (size_t i = 4; i < packet_size_; i++) {
         ASSERT_EQ((packet_num & 0xff), buffer[i]);

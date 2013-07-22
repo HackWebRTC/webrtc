@@ -157,7 +157,7 @@ FileVideoCapturer::FileVideoCapturer()
 
 FileVideoCapturer::~FileVideoCapturer() {
   Stop();
-  delete[] static_cast<char*> (captured_frame_.data);
+  delete[] static_cast<char*>(captured_frame_.data);
 }
 
 bool FileVideoCapturer::Init(const Device& device) {
@@ -330,7 +330,7 @@ bool FileVideoCapturer::ReadFrame(bool first_frame, int* wait_time_ms) {
   // 2.2 Reallocate memory for the frame data if necessary.
   if (frame_buffer_size_ < captured_frame_.data_size) {
     frame_buffer_size_ = captured_frame_.data_size;
-    delete[] static_cast<char*> (captured_frame_.data);
+    delete[] static_cast<char*>(captured_frame_.data);
     captured_frame_.data = new char[frame_buffer_size_];
   }
   // 2.3 Read the frame adata.

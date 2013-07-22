@@ -225,17 +225,11 @@ class HybridVideoEngine : public HybridVideoEngineInterface {
   bool SetCaptureDevice(const Device* device) {
     return video2_.SetCaptureDevice(device);
   }
-  bool SetVideoCapturer(VideoCapturer* capturer) {
-    return video2_.SetVideoCapturer(capturer);
-  }
   VideoCapturer* GetVideoCapturer() const {
     return video2_.GetVideoCapturer();
   }
   bool SetLocalRenderer(VideoRenderer* renderer) {
     return video2_.SetLocalRenderer(renderer);
-  }
-  bool SetCapture(bool capture) {
-    return video2_.SetCapture(capture);
   }
   sigslot::repeater2<VideoCapturer*, CaptureState> SignalCaptureStateChange;
 

@@ -36,7 +36,9 @@
     # flood of chromium-style warnings.
     'clang_use_chrome_plugins%': 0,
     'libpeer_target_type%': 'static_library',
-    'java_home%': '<!(python -c "import os; print os.getenv(\'JAVA_HOME\');")',
+    # TODO(henrike): make sure waterfall bots have $JAVA_HOME configured
+    # properly and remove the default value below. See issue 2113.
+    'java_home%': '<!(python -c "import os; print os.getenv(\'JAVA_HOME\', \'/usr/lib/jvm/java-6-sun\');")',
     # Whether or not to build the ObjectiveC PeerConnection API & tests.
     'libjingle_objc%' : 0,
   },

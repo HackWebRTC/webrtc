@@ -105,6 +105,15 @@ class CoordinatedVideoAdapter
   // Enable or disable video adaptation due to the change of the CPU load.
   void set_cpu_adaptation(bool enable) { cpu_adaptation_ = enable; }
   bool cpu_adaptation() const { return cpu_adaptation_; }
+  // Enable or disable smoothing when doing CPU adaptation. When smoothing is
+  // enabled, system CPU load is tracked using an exponential weighted
+  // average.
+  void set_cpu_smoothing(bool enable) {
+    LOG(LS_INFO) << "CPU smoothing is now "
+                 << (enable ? "enabled" : "disabled");
+    cpu_smoothing_ = enable;
+  }
+  bool cpu_smoothing() const { return cpu_smoothing_; }
   // Enable or disable video adaptation due to the change of the GD
   void set_gd_adaptation(bool enable) { gd_adaptation_ = enable; }
   bool gd_adaptation() const { return gd_adaptation_; }
@@ -121,12 +130,12 @@ class CoordinatedVideoAdapter
 
   // When the video is decreased, set the waiting time for CPU adaptation to
   // decrease video again.
-  void set_cpu_downgrade_wait_time(uint32 cpu_downgrade_wait_time) {
-    if (cpu_downgrade_wait_time_ != static_cast<int>(cpu_downgrade_wait_time)) {
-      LOG(LS_INFO) << "VAdapt Change Cpu Downgrade Wait Time from: "
-                   << cpu_downgrade_wait_time_ << " to "
-                   << cpu_downgrade_wait_time;
-      cpu_downgrade_wait_time_ = static_cast<int>(cpu_downgrade_wait_time);
+  void set_cpu_adapt_wait_time(uint32 cpu_adapt_wait_time) {
+    if (cpu_adapt_wait_time_ != static_cast<int>(cpu_adapt_wait_time)) {
+      LOG(LS_INFO) << "VAdapt Change Cpu Adapt Wait Time from: "
+                   << cpu_adapt_wait_time_ << " to "
+                   << cpu_adapt_wait_time;
+      cpu_adapt_wait_time_ = static_cast<int>(cpu_adapt_wait_time);
     }
   }
   // CPU system load high threshold for reducing resolution.  e.g. 0.85f
@@ -175,7 +184,7 @@ class CoordinatedVideoAdapter
 
  private:
   // Adapt to the minimum of the formats the server requests, the CPU wants, and
-  // the encoder wants.  Returns true if resolution changed.
+  // the encoder wants. Returns true if resolution changed.
   bool AdaptToMinimumFormat(int* new_width, int* new_height);
   bool IsMinimumFormat(int pixels);
   void StepPixelCount(CoordinatedVideoAdapter::AdaptRequest request,
@@ -185,11 +194,12 @@ class CoordinatedVideoAdapter
     float process_load, float system_load);
 
   bool cpu_adaptation_;  // True if cpu adaptation is enabled.
+  bool cpu_smoothing_;  // True if cpu smoothing is enabled (with adaptation).
   bool gd_adaptation_;  // True if gd adaptation is enabled.
   bool view_adaptation_;  // True if view adaptation is enabled.
   bool view_switch_;  // True if view switch is enabled.
   int cpu_downgrade_count_;
-  int cpu_downgrade_wait_time_;
+  int cpu_adapt_wait_time_;
   // cpu system load thresholds relative to max cpus.
   float high_system_threshold_;
   float low_system_threshold_;
@@ -204,6 +214,10 @@ class CoordinatedVideoAdapter
   CoordinatedVideoAdapter::AdaptReason adapt_reason_;
   // The critical section to protect handling requests.
   talk_base::CriticalSection request_critical_section_;
+
+  // The weighted average of cpu load over time. It's always updated (if cpu
+  // adaptation is on), but only used if cpu_smoothing_ is set.
+  float system_load_average_;
 
   DISALLOW_COPY_AND_ASSIGN(CoordinatedVideoAdapter);
 };

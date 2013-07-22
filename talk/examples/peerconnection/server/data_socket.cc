@@ -27,6 +27,7 @@
 
 #include "talk/examples/peerconnection/server/data_socket.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -131,7 +132,8 @@ bool DataSocket::OnDataAvailable(bool* close_socket) {
 }
 
 bool DataSocket::Send(const std::string& data) const {
-  return send(socket_, data.data(), data.length(), 0) != SOCKET_ERROR;
+  return send(socket_, data.data(), static_cast<int>(data.length()), 0) !=
+      SOCKET_ERROR;
 }
 
 bool DataSocket::Send(const std::string& status, bool connection_close,
@@ -151,7 +153,8 @@ bool DataSocket::Send(const std::string& status, bool connection_close,
   if (!content_type.empty())
     buffer += "Content-Type: " + content_type + "\r\n";
 
-  buffer += "Content-Length: " + int2str(data.size()) + "\r\n";
+  buffer += "Content-Length: " + int2str(static_cast<int>(data.size())) +
+            "\r\n";
 
   if (!extra_headers.empty()) {
     buffer += extra_headers;

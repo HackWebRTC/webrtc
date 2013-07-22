@@ -270,7 +270,7 @@ uint32 CreateRandomId() {
 }
 
 uint64 CreateRandomId64() {
-  return static_cast<uint64> (CreateRandomId()) << 32 | CreateRandomId();
+  return static_cast<uint64>(CreateRandomId()) << 32 | CreateRandomId();
 }
 
 uint32 CreateRandomNonZeroId() {

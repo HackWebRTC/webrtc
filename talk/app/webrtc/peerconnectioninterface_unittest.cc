@@ -94,7 +94,7 @@ bool GetFirstSsrc(const cricket::ContentInfo* content_info, int* ssrc) {
     return false;
   }
   const cricket::MediaContentDescription* media_desc =
-      static_cast<const cricket::MediaContentDescription*> (
+      static_cast<const cricket::MediaContentDescription*>(
           content_info->description);
   if (!media_desc || media_desc->streams().empty()) {
     return false;

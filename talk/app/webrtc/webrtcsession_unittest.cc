@@ -496,12 +496,12 @@ class WebRtcSessionTest : public testing::Test {
     // Create a SDP without Crypto.
     cricket::MediaSessionOptions options;
     options.has_video = true;
-    scoped_ptr<JsepSessionDescription> offer(
+    JsepSessionDescription* offer(
         CreateRemoteOffer(options, cricket::SEC_DISABLED));
-    ASSERT_TRUE(offer.get() != NULL);
+    ASSERT_TRUE(offer != NULL);
     VerifyNoCryptoParams(offer->description(), false);
     SetRemoteDescriptionExpectError("Called with a SDP without crypto enabled",
-                                    offer.release());
+                                    offer);
     const webrtc::SessionDescriptionInterface* answer =
         session_->CreateAnswer(NULL);
     // Answer should be NULL as no crypto params in offer.
@@ -832,7 +832,7 @@ class WebRtcSessionTest : public testing::Test {
     const cricket::ContentDescription* description = content->description;
     ASSERT(description != NULL);
     const cricket::AudioContentDescription* audio_content_desc =
-        static_cast<const cricket::AudioContentDescription*> (description);
+        static_cast<const cricket::AudioContentDescription*>(description);
     ASSERT(audio_content_desc != NULL);
     for (size_t i = 0; i < audio_content_desc->codecs().size(); ++i) {
       if (audio_content_desc->codecs()[i].name == "CN")
@@ -2184,16 +2184,16 @@ TEST_F(WebRtcSessionTest, TestIceOfferGIceOnlyAnswer) {
   SetLocalDescriptionWithoutError(ice_only_offer);
   std::string original_offer_sdp;
   EXPECT_TRUE(offer->ToString(&original_offer_sdp));
-  talk_base::scoped_ptr<SessionDescriptionInterface> pranswer_with_gice(
+  SessionDescriptionInterface* pranswer_with_gice =
       CreateSessionDescription(JsepSessionDescription::kPrAnswer,
-                               original_offer_sdp, NULL));
+                               original_offer_sdp, NULL);
   SetRemoteDescriptionExpectError(kPushDownPranswerTDFailed,
-                                  pranswer_with_gice.get());
-  talk_base::scoped_ptr<SessionDescriptionInterface> answer_with_gice(
+                                  pranswer_with_gice);
+  SessionDescriptionInterface* answer_with_gice =
       CreateSessionDescription(JsepSessionDescription::kAnswer,
-                               original_offer_sdp, NULL));
+                               original_offer_sdp, NULL);
   SetRemoteDescriptionExpectError(kPushDownAnswerTDFailed,
-                                  answer_with_gice.get());
+                                  answer_with_gice);
 }
 
 // Verifing local offer and remote answer have matching m-lines as per RFC 3264.
@@ -2207,13 +2207,13 @@ TEST_F(WebRtcSessionTest, TestIncorrectMLinesInRemoteAnswer) {
 
   cricket::SessionDescription* answer_copy = answer->description()->Copy();
   answer_copy->RemoveContentByName("video");
-  talk_base::scoped_ptr<JsepSessionDescription> modified_answer(
-      new JsepSessionDescription(JsepSessionDescription::kAnswer));
+  JsepSessionDescription* modified_answer =
+      new JsepSessionDescription(JsepSessionDescription::kAnswer);
 
   EXPECT_TRUE(modified_answer->Initialize(answer_copy,
                                           answer->session_id(),
                                           answer->session_version()));
-  SetRemoteDescriptionExpectError(kMlineMismatch, modified_answer.get());
+  SetRemoteDescriptionExpectError(kMlineMismatch, modified_answer);
 
   // Modifying content names.
   std::string sdp;
@@ -2227,9 +2227,9 @@ TEST_F(WebRtcSessionTest, TestIncorrectMLinesInRemoteAnswer) {
                              kAudioMidReplaceStr.length(),
                              &sdp);
 
-  talk_base::scoped_ptr<SessionDescriptionInterface> modified_answer1(
-      CreateSessionDescription(JsepSessionDescription::kAnswer, sdp, NULL));
-  SetRemoteDescriptionExpectError(kMlineMismatch, modified_answer1.get());
+  SessionDescriptionInterface* modified_answer1 =
+      CreateSessionDescription(JsepSessionDescription::kAnswer, sdp, NULL);
+  SetRemoteDescriptionExpectError(kMlineMismatch, modified_answer1);
 
   SetRemoteDescriptionWithoutError(answer.release());
 }
@@ -2245,13 +2245,13 @@ TEST_F(WebRtcSessionTest, TestIncorrectMLinesInLocalAnswer) {
 
   cricket::SessionDescription* answer_copy = answer->description()->Copy();
   answer_copy->RemoveContentByName("video");
-  talk_base::scoped_ptr<JsepSessionDescription> modified_answer(
-      new JsepSessionDescription(JsepSessionDescription::kAnswer));
+  JsepSessionDescription* modified_answer =
+      new JsepSessionDescription(JsepSessionDescription::kAnswer);
 
   EXPECT_TRUE(modified_answer->Initialize(answer_copy,
                                           answer->session_id(),
                                           answer->session_version()));
-  SetLocalDescriptionExpectError(kMlineMismatch, modified_answer.get());
+  SetLocalDescriptionExpectError(kMlineMismatch, modified_answer);
   SetLocalDescriptionWithoutError(answer);
 }
 
@@ -2388,9 +2388,9 @@ TEST_F(WebRtcSessionTest, TestSessionContentError) {
   video_channel_->set_fail_set_send_codecs(true);
 
   mediastream_signaling_.SendAudioVideoStream2();
-  talk_base::scoped_ptr<SessionDescriptionInterface> answer(
-      CreateRemoteAnswer(session_->local_description()));
-  SetRemoteDescriptionExpectError("ERROR_CONTENT", answer.get());
+  SessionDescriptionInterface* answer =
+      CreateRemoteAnswer(session_->local_description());
+  SetRemoteDescriptionExpectError("ERROR_CONTENT", answer);
 }
 
 // Runs the loopback call test with BUNDLE and STUN disabled.

@@ -187,7 +187,7 @@ class TestPort : public Port {
       last_stun_buf_.reset(buf);
       last_stun_msg_.reset(msg);
     }
-    return size;
+    return static_cast<int>(size);
   }
   virtual int SetOption(talk_base::Socket::Option opt, int value) {
     return 0;
@@ -789,10 +789,10 @@ class FakeAsyncPacketSocket : public AsyncPacketSocket {
 
   // Send a packet.
   virtual int Send(const void *pv, size_t cb) {
-    return cb;
+    return static_cast<int>(cb);
   }
   virtual int SendTo(const void *pv, size_t cb, const SocketAddress& addr) {
-    return cb;
+    return static_cast<int>(cb);
   }
   virtual int Close() {
     return 0;
@@ -2258,4 +2258,3 @@ TEST_F(PortTest, TestIceLiteConnectivity) {
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_USE_CANDIDATE) != NULL);
   ch1.Stop();
 }
-

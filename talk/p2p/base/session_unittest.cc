@@ -921,7 +921,7 @@ class TestClient : public sigslot::has_slots<> {
   }
 
   uint32 sent_stanza_count() const {
-    return sent_stanzas.size();
+    return static_cast<uint32>(sent_stanzas.size());
   }
 
   const buzz::XmlElement* stanza() const {

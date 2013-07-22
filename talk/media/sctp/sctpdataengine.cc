@@ -27,7 +27,6 @@
 
 #include "talk/media/sctp/sctpdataengine.h"
 
-#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <vector>
@@ -39,14 +38,6 @@
 #include "talk/media/base/constants.h"
 #include "talk/media/base/streamparams.h"
 #include "usrsctplib/usrsctp.h"
-
-#ifdef _WIN32
-// EINPROGRESS gets #defined to WSAEINPROGRESS in some headers above, which
-// is not 112.  112 is the value defined in <errno.h>.  usrsctp uses 112 for
-// EINPROGRESS.
-#undef EINPROGRESS
-#define EINPROGRESS (112)
-#endif
 
 namespace cricket {
 
@@ -343,8 +334,9 @@ bool SctpDataMediaChannel::Connect() {
   sockaddr_conn remote_sconn = GetSctpSockAddr(remote_port_);
   int connect_result = usrsctp_connect(
       sock_, reinterpret_cast<sockaddr *>(&remote_sconn), sizeof(remote_sconn));
-  if (connect_result < 0 && errno != EINPROGRESS) {
-    LOG_ERRNO(LS_ERROR) << debug_name_ << "Failed usrsctp_connect";
+  if (connect_result < 0 && errno != SCTP_EINPROGRESS) {
+    LOG_ERRNO(LS_ERROR) << debug_name_ << "Failed usrsctp_connect. got errno="
+                        << errno << ", but wanted " << SCTP_EINPROGRESS;
     CloseSctpSocket();
     return false;
   }

@@ -332,7 +332,7 @@ int TurnPort::SendTo(const void* data, size_t size,
 
   // The caller of the function is expecting the number of user data bytes,
   // rather than the size of the packet.
-  return size;
+  return static_cast<int>(size);
 }
 
 void TurnPort::OnReadPacket(talk_base::AsyncPacketSocket* socket,
@@ -901,7 +901,7 @@ int TurnEntry::Send(const void* data, size_t size, bool payload) {
   } else {
     // If the channel is bound, we can send the data as a Channel Message.
     buf.WriteUInt16(channel_id_);
-    buf.WriteUInt16(size);
+    buf.WriteUInt16(static_cast<uint16>(size));
     buf.WriteBytes(reinterpret_cast<const char*>(data), size);
   }
   return port_->Send(buf.Data(), buf.Length());

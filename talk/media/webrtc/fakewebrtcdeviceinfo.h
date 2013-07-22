@@ -53,7 +53,7 @@ class FakeWebRtcDeviceInfo : public webrtc::VideoCaptureModule::DeviceInfo {
     dev->caps.push_back(cap);
   }
   virtual uint32_t NumberOfDevices() {
-    return devices_.size();
+    return static_cast<int>(devices_.size());
   }
   virtual int32_t GetDeviceName(uint32_t device_num,
                                 char* device_name,
@@ -77,7 +77,7 @@ class FakeWebRtcDeviceInfo : public webrtc::VideoCaptureModule::DeviceInfo {
   virtual int32_t NumberOfCapabilities(const char* device_id) {
     Device* dev = GetDeviceById(device_id);
     if (!dev) return -1;
-    return dev->caps.size();
+    return static_cast<int32_t>(dev->caps.size());
   }
   virtual int32_t GetCapability(const char* device_id,
                                 const uint32_t device_cap_num,

@@ -27,16 +27,23 @@
 
 #include <limits.h>  // For INT_MAX
 
-#include "talk/media/base/constants.h"
 #include "talk/base/logging.h"
 #include "talk/base/timeutils.h"
+#include "talk/media/base/constants.h"
 #include "talk/media/base/videoframe.h"
 
 namespace cricket {
 
 // TODO(fbarchard): Make downgrades settable
 static const int kMaxCpuDowngrades = 2;  // Downgrade at most 2 times for CPU.
-static const int kDefaultDowngradeWaitTimeMs = 2000;
+// The number of milliseconds of data to require before acting on cpu sampling
+// information.
+static const size_t kCpuLoadMinSampleTime = 5000;
+// The amount of weight to give to each new cpu load sample. The lower the
+// value, the slower we'll adapt to changing cpu conditions.
+static const float kCpuLoadWeightCoefficient = 0.4f;
+// The seed value for the cpu load moving average.
+static const float kCpuLoadInitialAverage = 0.5f;
 
 // TODO(fbarchard): Consider making scale factor table settable, to allow
 // application to select quality vs performance tradeoff.
@@ -150,8 +157,8 @@ VideoAdapter::~VideoAdapter() {
 
 void VideoAdapter::SetInputFormat(const VideoFrame& in_frame) {
   talk_base::CritScope cs(&critical_section_);
-  input_format_.width = in_frame.GetWidth();
-  input_format_.height = in_frame.GetHeight();
+  input_format_.width = static_cast<int>(in_frame.GetWidth());
+  input_format_.height = static_cast<int>(in_frame.GetHeight());
 }
 
 void VideoAdapter::SetInputFormat(const VideoFormat& format) {
@@ -230,9 +237,10 @@ bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
   }
 
   if (output_num_pixels_) {
-    float scale = VideoAdapter::FindClosestScale(in_frame->GetWidth(),
-                                                 in_frame->GetHeight(),
-                                                 output_num_pixels_);
+    float scale = VideoAdapter::FindClosestScale(
+        static_cast<int>(in_frame->GetWidth()),
+        static_cast<int>(in_frame->GetHeight()),
+        output_num_pixels_);
     output_format_.width = static_cast<int>(in_frame->GetWidth() * scale + .5f);
     output_format_.height = static_cast<int>(in_frame->GetHeight() * scale +
                                              .5f);
@@ -291,11 +299,12 @@ bool VideoAdapter::StretchToOutputFrame(const VideoFrame* in_frame) {
 // Implementation of CoordinatedVideoAdapter
 CoordinatedVideoAdapter::CoordinatedVideoAdapter()
     : cpu_adaptation_(false),
+      cpu_smoothing_(false),
       gd_adaptation_(true),
       view_adaptation_(true),
       view_switch_(false),
       cpu_downgrade_count_(0),
-      cpu_downgrade_wait_time_(0),
+      cpu_adapt_wait_time_(0),
       high_system_threshold_(kHighSystemCpuThreshold),
       low_system_threshold_(kLowSystemCpuThreshold),
       process_threshold_(kProcessCpuThreshold),
@@ -303,7 +312,8 @@ CoordinatedVideoAdapter::CoordinatedVideoAdapter()
       view_desired_interval_(0),
       encoder_desired_num_pixels_(INT_MAX),
       cpu_desired_num_pixels_(INT_MAX),
-      adapt_reason_(0) {
+      adapt_reason_(0),
+      system_load_average_(kCpuLoadInitialAverage) {
 }
 
 // Helper function to UPGRADE or DOWNGRADE a number of pixels
@@ -406,28 +416,40 @@ void CoordinatedVideoAdapter::OnCpuLoadUpdated(
   if (!cpu_adaptation_) {
     return;
   }
+  // Update the moving average of system load. Even if we aren't smoothing,
+  // we'll still calculate this information, in case smoothing is later enabled.
+  system_load_average_ = kCpuLoadWeightCoefficient * system_load +
+      (1.0f - kCpuLoadWeightCoefficient) * system_load_average_;
+  if (cpu_smoothing_) {
+    system_load = system_load_average_;
+  }
+  // If we haven't started taking samples yet, wait until we have at least
+  // the correct number of samples per the wait time.
+  if (cpu_adapt_wait_time_ == 0) {
+    cpu_adapt_wait_time_ = talk_base::TimeAfter(kCpuLoadMinSampleTime);
+  }
   AdaptRequest request = FindCpuRequest(current_cpus, max_cpus,
                                         process_load, system_load);
+  // Make sure we're not adapting too quickly.
+  if (request != KEEP) {
+    if (talk_base::TimeIsLater(talk_base::Time(),
+                               cpu_adapt_wait_time_)) {
+      LOG(LS_VERBOSE) << "VAdapt CPU load high/low but do not adapt until "
+                      << talk_base::TimeUntil(cpu_adapt_wait_time_) << " ms";
+      request = KEEP;
+    }
+  }
+
   // Update how many times we have downgraded due to the cpu load.
   switch (request) {
     case DOWNGRADE:
+      // Ignore downgrades if we have downgraded the maximum times.
       if (cpu_downgrade_count_ < kMaxCpuDowngrades) {
-        // Ignore downgrades if we have downgraded the maximum times or we just
-        // downgraded in a short time.
-        if (cpu_downgrade_wait_time_ != 0 &&
-            talk_base::TimeIsLater(talk_base::Time(),
-                                   cpu_downgrade_wait_time_)) {
-          LOG(LS_VERBOSE) << "VAdapt CPU load high but do not downgrade until "
-                          << talk_base::TimeUntil(cpu_downgrade_wait_time_)
-                          << " ms.";
-          request = KEEP;
-        } else {
-          ++cpu_downgrade_count_;
-        }
+        ++cpu_downgrade_count_;
       } else {
-          LOG(LS_VERBOSE) << "VAdapt CPU load high but do not downgrade "
-                             "because maximum downgrades reached";
-          SignalCpuAdaptationUnable();
+        LOG(LS_VERBOSE) << "VAdapt CPU load high but do not downgrade "
+                           "because maximum downgrades reached";
+        SignalCpuAdaptationUnable();
       }
       break;
     case UPGRADE:
@@ -517,9 +539,6 @@ bool CoordinatedVideoAdapter::AdaptToMinimumFormat(int* new_width,
   if (cpu_adaptation_ && cpu_desired_num_pixels_ &&
       (cpu_desired_num_pixels_ < min_num_pixels)) {
     min_num_pixels = cpu_desired_num_pixels_;
-    // Update the cpu_downgrade_wait_time_ if we are going to downgrade video.
-    cpu_downgrade_wait_time_ =
-      talk_base::TimeAfter(kDefaultDowngradeWaitTimeMs);
   }
 
   // Determine which factors are keeping adapter resolution low.
@@ -582,6 +601,14 @@ bool CoordinatedVideoAdapter::AdaptToMinimumFormat(int* new_width,
                   << "x" << new_output.height
                   << " Changed: " << (changed ? "true" : "false")
                   << " Reason: " << kReasons[adapt_reason_];
+
+  if (changed) {
+    // When any adaptation occurs, historic CPU load levels are no longer
+    // accurate. Clear out our state so we can re-learn at the new normal.
+    cpu_adapt_wait_time_ = talk_base::TimeAfter(kCpuLoadMinSampleTime);
+    system_load_average_ = kCpuLoadInitialAverage;
+  }
+
   return changed;
 }
 

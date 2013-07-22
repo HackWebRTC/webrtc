@@ -140,8 +140,10 @@ class WebRtcSession : public cricket::BaseSession,
   SessionDescriptionInterface* CreateAnswer(
       const MediaConstraintsInterface* constraints);
 
+  // The ownership of |desc| will be transferred after this call.
   bool SetLocalDescription(SessionDescriptionInterface* desc,
                            std::string* err_desc);
+  // The ownership of |desc| will be transferred after this call.
   bool SetRemoteDescription(SessionDescriptionInterface* desc,
                             std::string* err_desc);
   bool ProcessIceMessage(const IceCandidateInterface* ice_candidate);

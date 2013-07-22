@@ -28,8 +28,18 @@
 #ifndef TALK_MEDIA_SCTP_SCTPDATAENGINE_H_
 #define TALK_MEDIA_SCTP_SCTPDATAENGINE_H_
 
+#include <errno.h>
 #include <string>
 #include <vector>
+
+namespace cricket {
+// Some ERRNO values get re-#defined to WSA* equivalents in some talk/
+// headers.  We save the original ones in an enum.
+enum PreservedErrno {
+  SCTP_EINPROGRESS = EINPROGRESS,
+  SCTP_EWOULDBLOCK = EWOULDBLOCK
+};
+}  // namespace cricket
 
 #include "talk/base/buffer.h"
 #include "talk/base/scoped_ptr.h"

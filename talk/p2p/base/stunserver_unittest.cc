@@ -58,7 +58,7 @@ class StunServerTest : public testing::Test {
   void Send(const StunMessage& msg) {
     talk_base::ByteBuffer buf;
     msg.Write(&buf);
-    Send(buf.Data(), buf.Length());
+    Send(buf.Data(), static_cast<int>(buf.Length()));
   }
   void Send(const char* buf, int len) {
     client_->SendTo(buf, len, server_addr);
@@ -113,7 +113,7 @@ TEST_F(StunServerTest, TestBad) {
   const char* bad = "this is a completely nonsensical message whose only "
                     "purpose is to make the parser go 'ack'.  it doesn't "
                     "look anything like a normal stun message";
-  Send(bad, std::strlen(bad));
+  Send(bad, static_cast<int>(std::strlen(bad)));
 
   StunMessage* msg = Receive();
   ASSERT_TRUE(msg == NULL);

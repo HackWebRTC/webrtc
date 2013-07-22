@@ -115,7 +115,7 @@ void PortAllocatorSessionMuxer::OnSessionProxyDestroyed(
 }
 
 void PortAllocatorSessionMuxer::OnMessage(talk_base::Message *pmsg) {
-  ProxyObjData* proxy = static_cast<ProxyObjData*> (pmsg->pdata);
+  ProxyObjData* proxy = static_cast<ProxyObjData*>(pmsg->pdata);
   switch (pmsg->message_id) {
     case MSG_SEND_ALLOCATION_DONE:
       SendAllocationDone_w(proxy->data());

@@ -377,64 +377,78 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   }
 
   bool SendRtp1() {
-    return media_channel1_->SendRtp(rtp_packet_.c_str(), rtp_packet_.size());
+    return media_channel1_->SendRtp(rtp_packet_.c_str(),
+                                    static_cast<int>(rtp_packet_.size()));
   }
   bool SendRtp2() {
-    return media_channel2_->SendRtp(rtp_packet_.c_str(), rtp_packet_.size());
+    return media_channel2_->SendRtp(rtp_packet_.c_str(),
+                                    static_cast<int>(rtp_packet_.size()));
   }
   bool SendRtcp1() {
-    return media_channel1_->SendRtcp(rtcp_packet_.c_str(), rtcp_packet_.size());
+    return media_channel1_->SendRtcp(rtcp_packet_.c_str(),
+                                     static_cast<int>(rtcp_packet_.size()));
   }
   bool SendRtcp2() {
-    return media_channel2_->SendRtcp(rtcp_packet_.c_str(), rtcp_packet_.size());
+    return media_channel2_->SendRtcp(rtcp_packet_.c_str(),
+                                     static_cast<int>(rtcp_packet_.size()));
   }
   // Methods to send custom data.
   bool SendCustomRtp1(uint32 ssrc, int sequence_number) {
     std::string data(CreateRtpData(ssrc, sequence_number));
-    return media_channel1_->SendRtp(data.c_str(), data.size());
+    return media_channel1_->SendRtp(data.c_str(),
+                                    static_cast<int>(data.size()));
   }
   bool SendCustomRtp2(uint32 ssrc, int sequence_number) {
     std::string data(CreateRtpData(ssrc, sequence_number));
-    return media_channel2_->SendRtp(data.c_str(), data.size());
+    return media_channel2_->SendRtp(data.c_str(),
+                                    static_cast<int>(data.size()));
   }
   bool SendCustomRtcp1(uint32 ssrc) {
     std::string data(CreateRtcpData(ssrc));
-    return media_channel1_->SendRtcp(data.c_str(), data.size());
+    return media_channel1_->SendRtcp(data.c_str(),
+                                     static_cast<int>(data.size()));
   }
   bool SendCustomRtcp2(uint32 ssrc) {
     std::string data(CreateRtcpData(ssrc));
-    return media_channel2_->SendRtcp(data.c_str(), data.size());
+    return media_channel2_->SendRtcp(data.c_str(),
+                                     static_cast<int>(data.size()));
   }
   bool CheckRtp1() {
-    return media_channel1_->CheckRtp(rtp_packet_.c_str(), rtp_packet_.size());
+    return media_channel1_->CheckRtp(rtp_packet_.c_str(),
+                                     static_cast<int>(rtp_packet_.size()));
   }
   bool CheckRtp2() {
-    return media_channel2_->CheckRtp(rtp_packet_.c_str(), rtp_packet_.size());
+    return media_channel2_->CheckRtp(rtp_packet_.c_str(),
+                                     static_cast<int>(rtp_packet_.size()));
   }
   bool CheckRtcp1() {
     return media_channel1_->CheckRtcp(rtcp_packet_.c_str(),
-                                      rtcp_packet_.size());
+                                      static_cast<int>(rtcp_packet_.size()));
   }
   bool CheckRtcp2() {
     return media_channel2_->CheckRtcp(rtcp_packet_.c_str(),
-                                      rtcp_packet_.size());
+                                      static_cast<int>(rtcp_packet_.size()));
   }
   // Methods to check custom data.
   bool CheckCustomRtp1(uint32 ssrc, int sequence_number) {
     std::string data(CreateRtpData(ssrc, sequence_number));
-    return media_channel1_->CheckRtp(data.c_str(), data.size());
+    return media_channel1_->CheckRtp(data.c_str(),
+                                     static_cast<int>(data.size()));
   }
   bool CheckCustomRtp2(uint32 ssrc, int sequence_number) {
     std::string data(CreateRtpData(ssrc, sequence_number));
-    return media_channel2_->CheckRtp(data.c_str(), data.size());
+    return media_channel2_->CheckRtp(data.c_str(),
+                                     static_cast<int>(data.size()));
   }
   bool CheckCustomRtcp1(uint32 ssrc) {
     std::string data(CreateRtcpData(ssrc));
-    return media_channel1_->CheckRtcp(data.c_str(), data.size());
+    return media_channel1_->CheckRtcp(data.c_str(),
+                                      static_cast<int>(data.size()));
   }
   bool CheckCustomRtcp2(uint32 ssrc) {
     std::string data(CreateRtcpData(ssrc));
-    return media_channel2_->CheckRtcp(data.c_str(), data.size());
+    return media_channel2_->CheckRtcp(data.c_str(),
+                                      static_cast<int>(data.size()));
   }
   std::string CreateRtpData(uint32 ssrc, int sequence_number) {
     std::string data(rtp_packet_);
@@ -1744,7 +1758,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
   void TestSrtpError() {
     static const unsigned char kBadPacket[] = {
-      0x90, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01
+      0x84, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01
     };
     CreateChannels(RTCP | SECURE, RTCP | SECURE);
     EXPECT_FALSE(channel1_->secure());

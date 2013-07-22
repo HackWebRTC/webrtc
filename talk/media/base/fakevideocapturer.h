@@ -84,7 +84,7 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
     if (fourcc == cricket::FOURCC_ARGB) {
       size = width * 4 * height;
     } else if (fourcc == cricket::FOURCC_I420) {
-      size = cricket::VideoFrame::SizeOf(width, height);
+      size = static_cast<uint32>(cricket::VideoFrame::SizeOf(width, height));
     } else {
       return false;  // Unsupported FOURCC.
     }

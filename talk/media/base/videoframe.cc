@@ -87,8 +87,8 @@ bool VideoFrame::CopyToPlanes(
     uint8* dst_y, uint8* dst_u, uint8* dst_v,
     int32 dst_pitch_y, int32 dst_pitch_u, int32 dst_pitch_v) const {
 #if !defined(DISABLE_YUV)
-  int32 src_width = GetWidth();
-  int32 src_height = GetHeight();
+  int32 src_width = static_cast<int>(GetWidth());
+  int32 src_height = static_cast<int>(GetHeight());
   return libyuv::I420Copy(GetYPlane(), GetYPitch(),
                           GetUPlane(), GetUPitch(),
                           GetVPlane(), GetVPitch(),
@@ -147,7 +147,8 @@ void VideoFrame::StretchToPlanes(
     } else if (src_width * height < src_height * width) {
       // Reduce the input height.
       src_height = src_width * height / width;
-      int32 iheight_offset = (GetHeight() - src_height) >> 2;
+      int32 iheight_offset = static_cast<int32>(
+          (GetHeight() - src_height) >> 2);
       iheight_offset <<= 1;  // Ensure that iheight_offset is even.
       src_y += iheight_offset * GetYPitch();
       src_u += iheight_offset / 2 * GetUPitch();
@@ -160,9 +161,9 @@ void VideoFrame::StretchToPlanes(
   // Scale to the output I420 frame.
   libyuv::Scale(src_y, src_u, src_v,
                 GetYPitch(), GetUPitch(), GetVPitch(),
-                src_width, src_height,
+                static_cast<int>(src_width), static_cast<int>(src_height),
                 dst_y, dst_u, dst_v, dst_pitch_y, dst_pitch_u, dst_pitch_v,
-                width, height, interpolate);
+                static_cast<int>(width), static_cast<int>(height), interpolate);
 #endif
 }
 
@@ -180,7 +181,9 @@ size_t VideoFrame::StretchToBuffer(size_t dst_width, size_t dst_height,
     uint8* dst_u = dst_y + dst_width * dst_height;
     uint8* dst_v = dst_u + ((dst_width + 1) >> 1) * ((dst_height + 1) >> 1);
     StretchToPlanes(dst_y, dst_u, dst_v,
-                    dst_width, (dst_width + 1) >> 1, (dst_width + 1) >> 1,
+                    static_cast<int32>(dst_width),
+                    static_cast<int32>((dst_width + 1) >> 1),
+                    static_cast<int32>((dst_width + 1) >> 1),
                     dst_width, dst_height, interpolate, vert_crop);
   }
   return needed;
@@ -203,7 +206,8 @@ void VideoFrame::StretchToFrame(VideoFrame* dst,
 
 VideoFrame* VideoFrame::Stretch(size_t dst_width, size_t dst_height,
                                 bool interpolate, bool vert_crop) const {
-  VideoFrame* dest = CreateEmptyFrame(dst_width, dst_height,
+  VideoFrame* dest = CreateEmptyFrame(static_cast<int>(dst_width),
+                                      static_cast<int>(dst_height),
                                       GetPixelWidth(), GetPixelHeight(),
                                       GetElapsedTime(), GetTimeStamp());
   if (dest) {
@@ -217,7 +221,9 @@ bool VideoFrame::SetToBlack() {
   return libyuv::I420Rect(GetYPlane(), GetYPitch(),
                           GetUPlane(), GetUPitch(),
                           GetVPlane(), GetVPitch(),
-                          0, 0, GetWidth(), GetHeight(),
+                          0, 0,
+                          static_cast<int>(GetWidth()),
+                          static_cast<int>(GetHeight()),
                           16, 128, 128) == 0;
 #else
   int uv_size = GetUPitch() * GetChromaHeight();

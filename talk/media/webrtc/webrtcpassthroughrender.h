@@ -92,7 +92,7 @@ class WebRtcPassthroughRender : public webrtc::VideoRender {
   }
 
   virtual uint32_t GetNumIncomingRenderStreams() const {
-    return stream_render_map_.size();
+    return static_cast<uint32_t>(stream_render_map_.size());
   }
 
   virtual bool HasIncomingRenderStream(const uint32_t stream_id) const;

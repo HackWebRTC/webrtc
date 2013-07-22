@@ -322,7 +322,7 @@ void Jid::PrepDomainLabel(
     std::string* buf, bool* valid) {
   *valid = false;
 
-  int start_len = buf->length();
+  int start_len = static_cast<int>(buf->length());
   for (std::string::const_iterator i = start; i < end; ++i) {
     bool char_valid = true;
     unsigned char ch = *i;
@@ -338,7 +338,7 @@ void Jid::PrepDomainLabel(
     }
   }
 
-  int count = buf->length() - start_len;
+  int count = static_cast<int>(buf->length() - start_len);
   if (count == 0) {
     return;
   }

@@ -53,7 +53,7 @@ void MD5Update(MD5Context* ctx, const uint8* buf, size_t len) {
   if ((ctx->bits[0] = t + (static_cast<uint32>(len) << 3)) < t) {
     ctx->bits[1]++;  // Carry from low to high.
   }
-  ctx->bits[1] += len >> 29;
+  ctx->bits[1] += static_cast<uint32>(len >> 29);
   t = (t >> 3) & 0x3f;  // Bytes already in shsInfo->data.
 
   // Handle any leading odd-sized chunks.

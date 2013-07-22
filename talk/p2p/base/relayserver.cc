@@ -162,7 +162,7 @@ void RelayServer::RemoveInternalServerSocket(
 }
 
 int RelayServer::GetConnectionCount() const {
-  return connections_.size();
+  return static_cast<int>(connections_.size());
 }
 
 talk_base::SocketAddressPair RelayServer::GetConnection(int connection) const {

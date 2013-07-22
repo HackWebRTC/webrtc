@@ -679,17 +679,15 @@
             'base/winping.cc',
             'base/winping.h',
           ],
+          'link_settings': {
+            'libraries': [
+              '-lcrypt32.lib',
+              '-liphlpapi.lib',
+              '-lsecur32.lib',
+            ],
+          },
           # Suppress warnings about WIN32_LEAN_AND_MEAN.
           'msvs_disabled_warnings': [4005],
-          'msvs_settings': {
-            'VCLibrarianTool': {
-              'AdditionalDependencies': [
-                'crypt32.lib',
-                'iphlpapi.lib',
-                'secur32.lib',
-              ],
-            },
-          },
         }],
         ['os_posix==1', {
           'sources': [

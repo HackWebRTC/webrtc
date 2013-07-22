@@ -329,11 +329,11 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
     }
     ASSERT_TRUE(desc.get() != NULL);
     const cricket::MediaContentDescription* audio_media_desc =
-        static_cast<const cricket::MediaContentDescription*> (
+        static_cast<const cricket::MediaContentDescription*>(
             desc.get()->GetContentDescriptionByName("audio"));
     ASSERT_TRUE(audio_media_desc != NULL);
     const cricket::MediaContentDescription* video_media_desc =
-        static_cast<const cricket::MediaContentDescription*> (
+        static_cast<const cricket::MediaContentDescription*>(
             desc.get()->GetContentDescriptionByName("video"));
     ASSERT_TRUE(video_media_desc != NULL);
     EXPECT_TRUE(CompareCryptoParams(audio_media_desc->cryptos(),
@@ -345,7 +345,7 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
     // Verify the selected crypto is one from the reference audio
     // media content.
     const cricket::MediaContentDescription* ref_audio_media_desc =
-        static_cast<const cricket::MediaContentDescription*> (
+        static_cast<const cricket::MediaContentDescription*>(
             ref_desc.get()->GetContentDescriptionByName("audio"));
     bool found = false;
     for (size_t i = 0; i < ref_audio_media_desc->cryptos().size(); ++i) {
@@ -394,7 +394,7 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
     const cricket::ContentDescription* description = content->description;
     ASSERT(description != NULL);
     const cricket::AudioContentDescription* audio_content_desc =
-        static_cast<const cricket::AudioContentDescription*> (description);
+        static_cast<const cricket::AudioContentDescription*>(description);
     ASSERT(audio_content_desc != NULL);
     for (size_t i = 0; i < audio_content_desc->codecs().size(); ++i) {
       if (audio_content_desc->codecs()[i].name == "CN")
@@ -1751,7 +1751,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCryptoDtls) {
   audio_media_desc = static_cast<const cricket::MediaContentDescription*>(
       offer->GetContentDescriptionByName("audio"));
   ASSERT_TRUE(audio_media_desc != NULL);
-  video_media_desc = static_cast<const cricket::MediaContentDescription*> (
+  video_media_desc = static_cast<const cricket::MediaContentDescription*>(
       offer->GetContentDescriptionByName("video"));
   ASSERT_TRUE(video_media_desc != NULL);
   EXPECT_EQ(2u, audio_media_desc->cryptos().size());
@@ -1768,10 +1768,10 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCryptoDtls) {
   answer.reset(f2_.CreateAnswer(offer.get(), options, NULL));
   ASSERT_TRUE(answer.get() != NULL);
 
-  audio_media_desc = static_cast<const cricket::MediaContentDescription*> (
+  audio_media_desc = static_cast<const cricket::MediaContentDescription*>(
       answer->GetContentDescriptionByName("audio"));
   ASSERT_TRUE(audio_media_desc != NULL);
-  video_media_desc = static_cast<const cricket::MediaContentDescription*> (
+  video_media_desc = static_cast<const cricket::MediaContentDescription*>(
       answer->GetContentDescriptionByName("video"));
   ASSERT_TRUE(video_media_desc != NULL);
   EXPECT_EQ(1u, audio_media_desc->cryptos().size());
@@ -1789,10 +1789,10 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCryptoDtls) {
   answer.reset(f2_.CreateAnswer(offer.get(), options, NULL));
   ASSERT_TRUE(answer.get() != NULL);
 
-  audio_media_desc = static_cast<const cricket::MediaContentDescription*> (
+  audio_media_desc = static_cast<const cricket::MediaContentDescription*>(
       answer->GetContentDescriptionByName("audio"));
   ASSERT_TRUE(audio_media_desc != NULL);
-  video_media_desc = static_cast<const cricket::MediaContentDescription*> (
+  video_media_desc = static_cast<const cricket::MediaContentDescription*>(
       answer->GetContentDescriptionByName("video"));
   ASSERT_TRUE(video_media_desc != NULL);
   EXPECT_TRUE(audio_media_desc->cryptos().empty());

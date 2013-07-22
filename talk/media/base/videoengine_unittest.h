@@ -76,7 +76,7 @@ inline std::ostream& operator<<(std::ostream& s, const cricket::VideoCodec& c) {
 }
 
 inline int TimeBetweenSend(const cricket::VideoCodec& codec) {
-  return static_cast<int> (
+  return static_cast<int>(
       cricket::VideoFormat::FpsToInterval(codec.framerate) /
       talk_base::kNumNanosecsPerMillisec);
 }
@@ -95,12 +95,12 @@ class VideoEngineOverride : public T {
   }
   bool is_camera_on() const { return T::GetVideoCapturer()->IsRunning(); }
   void set_has_senders(bool has_senders) {
+    cricket::VideoCapturer* video_capturer = T::GetVideoCapturer();
     if (has_senders) {
-      this->RegisterSender(this,
-                           &VideoEngineOverride<T>::OnLocalFrame,
-                           &VideoEngineOverride<T>::OnLocalFrameFormat);
+      video_capturer->SignalVideoFrame.connect(this,
+          &VideoEngineOverride<T>::OnLocalFrame);
     } else {
-      this->UnregisterSender(this);
+      video_capturer->SignalVideoFrame.disconnect(this);
     }
   }
   void OnLocalFrame(cricket::VideoCapturer*,
@@ -163,39 +163,6 @@ class VideoEngineTest : public testing::Test {
     CoUninitialize();
   }
 #endif
-
-  // Tests starting and stopping the capturer.
-  void SetCapture() {
-    EXPECT_FALSE(engine_.GetVideoCapturer());
-    EXPECT_TRUE(engine_.Init(talk_base::Thread::Current()));
-    ResetCapturer();
-    EXPECT_TRUE(engine_.GetVideoCapturer() != NULL);
-    EXPECT_FALSE(engine_.is_camera_on());
-    EXPECT_TRUE(engine_.SetCapture(true));
-    EXPECT_TRUE(engine_.is_camera_on());
-    EXPECT_TRUE(engine_.SetCapture(false));
-    EXPECT_FALSE(engine_.is_camera_on());
-    engine_.set_has_senders(true);
-    EXPECT_TRUE(engine_.is_camera_on());
-    EXPECT_TRUE(engine_.SetCapture(true));
-    EXPECT_TRUE(engine_.is_camera_on());
-    EXPECT_TRUE(engine_.SetCapture(false));
-    EXPECT_TRUE(engine_.is_camera_on());
-    engine_.set_has_senders(false);
-    EXPECT_FALSE(engine_.is_camera_on());
-    EXPECT_TRUE(engine_.SetCapture(true));
-    EXPECT_TRUE(engine_.is_camera_on());
-    EXPECT_TRUE(engine_.SetCapture(false));
-    EXPECT_FALSE(engine_.is_camera_on());
-    EXPECT_TRUE(engine_.SetVideoCapturer(NULL));
-    EXPECT_TRUE(engine_.GetVideoCapturer() == NULL);
-    engine_.Terminate();
-  }
-  void ResetCapturer() {
-    cricket::Device device("test", "device");
-    video_capturer_.reset(new cricket::FakeVideoCapturer);
-    EXPECT_TRUE(engine_.SetVideoCapturer(video_capturer_.get()));
-  }
 
   void ConstrainNewCodecBody() {
     cricket::VideoCodec empty, in, out;
@@ -482,9 +449,6 @@ class VideoMediaChannelTest : public testing::Test,
   virtual void SetUp() {
     cricket::Device device("test", "device");
     EXPECT_TRUE(engine_.Init(talk_base::Thread::Current()));
-    video_capturer_.reset(new cricket::FakeVideoCapturer);
-    EXPECT_TRUE(video_capturer_.get() != NULL);
-    EXPECT_TRUE(engine_.SetVideoCapturer(video_capturer_.get()));
     channel_.reset(engine_.CreateChannel(NULL));
     EXPECT_TRUE(channel_.get() != NULL);
     ConnectVideoChannelError();
@@ -494,19 +458,34 @@ class VideoMediaChannelTest : public testing::Test,
     media_error_ = cricket::VideoMediaChannel::ERROR_NONE;
     channel_->SetRecvCodecs(engine_.codecs());
     EXPECT_TRUE(channel_->AddSendStream(DefaultSendStreamParams()));
+
+    video_capturer_.reset(new cricket::FakeVideoCapturer);
+    cricket::VideoFormat format(640, 480,
+                                cricket::VideoFormat::FpsToInterval(30),
+                                cricket::FOURCC_I420);
+    EXPECT_EQ(cricket::CS_RUNNING, video_capturer_->Start(format));
+    EXPECT_TRUE(channel_->SetCapturer(kSsrc, video_capturer_.get()));
   }
   void SetUpSecondStream() {
     EXPECT_TRUE(channel_->AddRecvStream(
         cricket::StreamParams::CreateLegacy(kSsrc)));
     EXPECT_TRUE(channel_->AddRecvStream(
-        cricket::StreamParams::CreateLegacy(kSsrc+2)));
+        cricket::StreamParams::CreateLegacy(kSsrc + 2)));
     // SetUp() already added kSsrc make sure duplicate SSRCs cant be added.
     EXPECT_FALSE(channel_->AddSendStream(
         cricket::StreamParams::CreateLegacy(kSsrc)));
     EXPECT_TRUE(channel_->AddSendStream(
-        cricket::StreamParams::CreateLegacy(kSsrc+2)));
+        cricket::StreamParams::CreateLegacy(kSsrc + 2)));
+
+    video_capturer_2_.reset(new cricket::FakeVideoCapturer());
+    cricket::VideoFormat format(640, 480,
+                                cricket::VideoFormat::FpsToInterval(30),
+                                cricket::FOURCC_I420);
+    EXPECT_EQ(cricket::CS_RUNNING, video_capturer_2_->Start(format));
+
+    EXPECT_TRUE(channel_->SetCapturer(kSsrc + 2, video_capturer_2_.get()));
     // Make the second renderer available for use by a new stream.
-    EXPECT_TRUE(channel_->SetRenderer(kSsrc+2, &renderer2_));
+    EXPECT_TRUE(channel_->SetRenderer(kSsrc + 2, &renderer2_));
   }
   virtual void TearDown() {
     channel_.reset();
@@ -529,6 +508,19 @@ class VideoMediaChannelTest : public testing::Test,
   bool SetOneCodec(const cricket::VideoCodec& codec) {
     std::vector<cricket::VideoCodec> codecs;
     codecs.push_back(codec);
+
+    cricket::VideoFormat capture_format(codec.width, codec.height,
+        cricket::VideoFormat::FpsToInterval(codec.framerate),
+        cricket::FOURCC_I420);
+
+    if (video_capturer_) {
+      EXPECT_EQ(cricket::CS_RUNNING, video_capturer_->Start(capture_format));
+    }
+
+    if (video_capturer_2_) {
+      EXPECT_EQ(cricket::CS_RUNNING, video_capturer_2_->Start(capture_format));
+    }
+
     bool sending = channel_->sending();
     bool success = SetSend(false);
     if (success)
@@ -550,6 +542,9 @@ class VideoMediaChannelTest : public testing::Test,
     return NumRtpPackets();
   }
   bool SendFrame() {
+    if (video_capturer_2_) {
+      video_capturer_2_->CaptureFrame();
+    }
     return video_capturer_.get() &&
         video_capturer_->CaptureFrame();
   }
@@ -705,6 +700,7 @@ class VideoMediaChannelTest : public testing::Test,
   // Test that SetSend works.
   void SetSend() {
     EXPECT_FALSE(channel_->sending());
+    EXPECT_TRUE(channel_->SetCapturer(kSsrc, video_capturer_.get()));
     EXPECT_TRUE(SetOneCodec(DefaultCodec()));
     EXPECT_FALSE(channel_->sending());
     EXPECT_TRUE(SetSend(true));
@@ -877,6 +873,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(channel_->SetOptions(vmo));
     EXPECT_TRUE(channel_->AddRecvStream(
         cricket::StreamParams::CreateLegacy(1234)));
+    channel_->UpdateAspectRatio(640, 400);
     EXPECT_TRUE(SetSend(true));
     EXPECT_TRUE(channel_->SetRender(true));
     EXPECT_TRUE(SendFrame());
@@ -948,6 +945,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(SetDefaultCodec());
     EXPECT_TRUE(channel_->AddSendStream(
         cricket::StreamParams::CreateLegacy(999)));
+    EXPECT_TRUE(channel_->SetCapturer(999u, video_capturer_.get()));
     EXPECT_TRUE(SetSend(true));
     EXPECT_TRUE(WaitAndSendFrame(0));
     EXPECT_TRUE_WAIT(NumRtpPackets() > 0, kTimeout);
@@ -1012,6 +1010,7 @@ class VideoMediaChannelTest : public testing::Test,
 
     EXPECT_TRUE(channel_->AddSendStream(
         cricket::StreamParams::CreateLegacy(789u)));
+    EXPECT_TRUE(channel_->SetCapturer(789u, video_capturer_.get()));
     EXPECT_EQ(rtp_packets, NumRtpPackets());
     // Wait 30ms to guarantee the engine does not drop the frame.
     EXPECT_TRUE(WaitAndSendFrame(30));
@@ -1236,13 +1235,25 @@ class VideoMediaChannelTest : public testing::Test,
       EXPECT_TRUE(capturer->CaptureCustomFrame(format.width, format.height,
                                                cricket::FOURCC_I420));
       ++captured_frames;
-      EXPECT_FRAME_WAIT(captured_frames, format.width, format.height, kTimeout);
+      // Wait until frame of right size is captured.
+      EXPECT_TRUE_WAIT(renderer_.num_rendered_frames() >= captured_frames &&
+                       format.width == renderer_.width() &&
+                       format.height == renderer_.height(), kTimeout);
+      EXPECT_GE(renderer_.num_rendered_frames(), captured_frames);
+      EXPECT_EQ(format.width, renderer_.width());
+      EXPECT_EQ(format.height, renderer_.height());
+      captured_frames = renderer_.num_rendered_frames() + 1;
       EXPECT_FALSE(renderer_.black_frame());
       EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
-      // Make sure a black frame is generated as no new frame is captured.
-      // A black frame should be the resolution of the send codec.
-      ++captured_frames;
-      EXPECT_FRAME_WAIT(captured_frames, codec.width, codec.height, kTimeout);
+      // Make sure a black frame is generated within the specified timeout.
+      // The black frame should be the resolution of the send codec.
+      EXPECT_TRUE_WAIT(renderer_.num_rendered_frames() >= captured_frames &&
+                       codec.width == renderer_.width() &&
+                       codec.height == renderer_.height() &&
+                       renderer_.black_frame(), kTimeout);
+      EXPECT_GE(renderer_.num_rendered_frames(), captured_frames);
+      EXPECT_EQ(codec.width, renderer_.width());
+      EXPECT_EQ(codec.height, renderer_.height());
       EXPECT_TRUE(renderer_.black_frame());
 
       // The black frame has the same timestamp as the next frame since it's
@@ -1263,13 +1274,18 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(0, renderer_.num_rendered_frames());
     EXPECT_TRUE(SendFrame());
     EXPECT_FRAME_WAIT(1, 640, 400, kTimeout);
+    // Remove the capturer.
+    EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
     // No capturer was added, so this RemoveCapturer should
     // fail.
     EXPECT_FALSE(channel_->SetCapturer(kSsrc, NULL));
-    // Wait for kTimeout, to make sure no frames are sent
-    WAIT(renderer_.num_rendered_frames() != 1, kTimeout);
-    // Still a single frame, from the original SendFrame() call.
-    EXPECT_EQ(1, renderer_.num_rendered_frames());
+    // Wait for frames to stop flowing.
+    talk_base::Thread::Current()->ProcessMessages(300);
+    int num_frames = renderer_.num_rendered_frames();
+    // Wait to make sure no more frames are sent
+    WAIT(renderer_.num_rendered_frames() != num_frames, 300);
+    // Verify no more frames were sent.
+    EXPECT_EQ(num_frames, renderer_.num_rendered_frames());
   }
 
   // Tests that we can add and remove capturer as unique sources.
@@ -1328,6 +1344,9 @@ class VideoMediaChannelTest : public testing::Test,
     // Capture a frame with additional capturer2, frames should be received
     EXPECT_TRUE(capturer2->CaptureCustomFrame(1024, 768, cricket::FOURCC_I420));
     EXPECT_FRAME_ON_RENDERER_WAIT(renderer2, 1, 1024, 768, kTimeout);
+    // Successfully remove the capturer.
+    EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
+    // Fail to re-remove the capturer.
     EXPECT_FALSE(channel_->SetCapturer(kSsrc, NULL));
     // The capturers must be unregistered here as it runs out of it's scope
     // next.
@@ -1372,8 +1391,9 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(capturer->CaptureCustomFrame(kWidth, kHeight,
                                              cricket::FOURCC_ARGB));
     EXPECT_TRUE(capturer->CaptureFrame());
-    EXPECT_FRAME_ON_RENDERER_WAIT(renderer, 2, kScaledWidth, kScaledHeight,
-                                  kTimeout);
+    EXPECT_EQ_WAIT(2, renderer.num_rendered_frames(), kTimeout);
+    EXPECT_TRUE_WAIT(kScaledWidth == renderer.width() &&
+                     kScaledHeight == renderer.height(), kTimeout);
     EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
   }
 
@@ -1626,12 +1646,15 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_FALSE(channel_->AddRecvStream(
         cricket::StreamParams::CreateLegacy(kSsrc)));
 
+    EXPECT_TRUE(channel_->SetCapturer(kSsrc, video_capturer_.get()));
+
     SendAndReceive(codec);
     EXPECT_TRUE(channel_->RemoveSendStream(0));
   }
 
   VideoEngineOverride<E> engine_;
   talk_base::scoped_ptr<cricket::FakeVideoCapturer> video_capturer_;
+  talk_base::scoped_ptr<cricket::FakeVideoCapturer> video_capturer_2_;
   talk_base::scoped_ptr<C> channel_;
   cricket::FakeNetworkInterface network_interface_;
   cricket::FakeVideoRenderer renderer_;

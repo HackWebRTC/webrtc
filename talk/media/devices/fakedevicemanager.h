@@ -152,21 +152,24 @@ class FakeDeviceManager : public DeviceManagerInterface {
   void SetAudioInputDevices(const std::vector<std::string>& devices) {
     input_devices_.clear();
     for (size_t i = 0; i < devices.size(); ++i) {
-      input_devices_.push_back(Device(devices[i], i));
+      input_devices_.push_back(Device(devices[i],
+                                      static_cast<int>(i)));
     }
     SignalDevicesChange();
   }
   void SetAudioOutputDevices(const std::vector<std::string>& devices) {
     output_devices_.clear();
     for (size_t i = 0; i < devices.size(); ++i) {
-      output_devices_.push_back(Device(devices[i], i));
+      output_devices_.push_back(Device(devices[i],
+                                       static_cast<int>(i)));
     }
     SignalDevicesChange();
   }
   void SetVideoCaptureDevices(const std::vector<std::string>& devices) {
     vidcap_devices_.clear();
     for (size_t i = 0; i < devices.size(); ++i) {
-      vidcap_devices_.push_back(Device(devices[i], i));
+      vidcap_devices_.push_back(Device(devices[i],
+                                       static_cast<int>(i)));
     }
     SignalDevicesChange();
   }

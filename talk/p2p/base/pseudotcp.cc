@@ -428,7 +428,7 @@ uint32 PseudoTcp::GetBytesInFlight() const {
 uint32 PseudoTcp::GetBytesBufferedNotSent() const {
   size_t buffered_bytes = 0;
   m_sbuf.GetBuffered(&buffered_bytes);
-  return m_snd_una + buffered_bytes - m_snd_nxt;
+  return static_cast<uint32>(m_snd_una + buffered_bytes - m_snd_nxt);
 }
 
 uint32 PseudoTcp::GetRoundTripTimeEstimateMs() const {
@@ -461,15 +461,16 @@ int PseudoTcp::Recv(char* buffer, size_t len) {
 
   if (uint32(available_space) - m_rcv_wnd >=
       talk_base::_min<uint32>(m_rbuf_len / 2, m_mss)) {
-    bool bWasClosed = (m_rcv_wnd == 0); // !?! Not sure about this was closed business
-    m_rcv_wnd = available_space;
+    // TODO(jbeda): !?! Not sure about this was closed business
+    bool bWasClosed = (m_rcv_wnd == 0);
+    m_rcv_wnd = static_cast<uint32>(available_space);
 
     if (bWasClosed) {
       attemptSend(sfImmediateAck);
     }
   }
 
-  return read;
+  return static_cast<int>(read);
 }
 
 int PseudoTcp::Send(const char* buffer, size_t len) {
@@ -516,18 +517,19 @@ uint32 PseudoTcp::queue(const char* data, uint32 len, bool bCtrl) {
 
   // We can concatenate data if the last segment is the same type
   // (control v. regular data), and has not been transmitted yet
-  if (!m_slist.empty() && (m_slist.back().bCtrl == bCtrl) && (m_slist.back().xmit == 0)) {
+  if (!m_slist.empty() && (m_slist.back().bCtrl == bCtrl) &&
+      (m_slist.back().xmit == 0)) {
     m_slist.back().len += len;
   } else {
     size_t snd_buffered = 0;
     m_sbuf.GetBuffered(&snd_buffered);
-    SSegment sseg(m_snd_una + snd_buffered, len, bCtrl);
+    SSegment sseg(static_cast<uint32>(m_snd_una + snd_buffered), len, bCtrl);
     m_slist.push_back(sseg);
   }
 
   size_t written = 0;
   m_sbuf.Write(data, len, &written, NULL);
-  return written;
+  return static_cast<uint32>(written);
 }
 
 IPseudoTcpNotify::WriteResult PseudoTcp::packet(uint32 seq, uint8 flags,
@@ -1184,8 +1186,8 @@ PseudoTcp::queueConnectMessage() {
     buf.WriteUInt8(1);
     buf.WriteUInt8(m_rwnd_scale);
   }
-  m_snd_wnd = buf.Length();
-  queue(buf.Data(), buf.Length(), true);
+  m_snd_wnd = static_cast<uint32>(buf.Length());
+  queue(buf.Data(), static_cast<uint32>(buf.Length()), true);
 }
 
 void
@@ -1290,7 +1292,7 @@ PseudoTcp::resizeReceiveBuffer(uint32 new_size) {
 
   size_t available_space = 0;
   m_rbuf.GetWriteRemaining(&available_space);
-  m_rcv_wnd = available_space;
+  m_rcv_wnd = static_cast<uint32>(available_space);
 }
 
 }  // namespace cricket

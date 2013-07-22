@@ -2344,9 +2344,10 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(talk_base::Buffer* packet) {
   }
 
   // Pass it off to the decoder.
-  engine()->voe()->network()->ReceivedRTPPacket(which_channel,
-                                                   packet->data(),
-                                                   packet->length());
+  engine()->voe()->network()->ReceivedRTPPacket(
+      which_channel,
+      packet->data(),
+      static_cast<unsigned int>(packet->length()));
 }
 
 void WebRtcVoiceMediaChannel::OnRtcpReceived(talk_base::Buffer* packet) {
@@ -2357,9 +2358,10 @@ void WebRtcVoiceMediaChannel::OnRtcpReceived(talk_base::Buffer* packet) {
     which_channel = voe_channel();
   }
 
-  engine()->voe()->network()->ReceivedRTCPPacket(which_channel,
-                                                    packet->data(),
-                                                    packet->length());
+  engine()->voe()->network()->ReceivedRTCPPacket(
+      which_channel,
+      packet->data(),
+      static_cast<unsigned int>(packet->length()));
 }
 
 bool WebRtcVoiceMediaChannel::MuteStream(uint32 ssrc, bool muted) {
@@ -2543,7 +2545,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
         rinfo.jitter_buffer_ms = ns.currentBufferSize;
         rinfo.jitter_buffer_preferred_ms = ns.preferredBufferSize;
         rinfo.expand_rate =
-            static_cast<float> (ns.currentExpandRate) / (1 << 14);
+            static_cast<float>(ns.currentExpandRate) / (1 << 14);
       }
       if (engine()->voe()->sync()) {
         int playout_buffer_delay_ms = 0;
@@ -2757,7 +2759,7 @@ VoiceMediaChannel::Error
 int WebRtcSoundclipStream::Read(void *buf, int len) {
   size_t res = 0;
   mem_.Read(buf, len, &res, NULL);
-  return res;
+  return static_cast<int>(res);
 }
 
 int WebRtcSoundclipStream::Rewind() {
