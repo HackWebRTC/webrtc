@@ -57,6 +57,7 @@ static const int kTransmissionMaxBitrateMultiplier = 2;
 class QMVideoSettingsCallback : public VCMQMSettingsCallback {
  public:
   explicit QMVideoSettingsCallback(VideoProcessingModule* vpm);
+
   ~QMVideoSettingsCallback();
 
   // Update VPM with QM (quality modes: frame size & frame rate) settings.
@@ -73,6 +74,7 @@ class ViEBitrateObserver : public BitrateObserver {
   explicit ViEBitrateObserver(ViEEncoder* owner)
       : owner_(owner) {
   }
+  virtual ~ViEBitrateObserver() {}
   // Implements BitrateObserver.
   virtual void OnNetworkChanged(const uint32_t bitrate_bps,
                                 const uint8_t fraction_lost,
@@ -88,6 +90,7 @@ class ViEPacedSenderCallback : public PacedSender::Callback {
   explicit ViEPacedSenderCallback(ViEEncoder* owner)
       : owner_(owner) {
   }
+  virtual ~ViEPacedSenderCallback() {}
   virtual bool TimeToSendPacket(uint32_t ssrc, uint16_t sequence_number,
                                 int64_t capture_time_ms) {
     return owner_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms);
@@ -381,7 +384,6 @@ int32_t ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
                ViEId(engine_id_, channel_id_),
                "%s: CodecType: %d, width: %u, height: %u", __FUNCTION__,
                video_codec.codecType, video_codec.width, video_codec.height);
-
   // Setting target width and height for VPM.
   if (vpm_.SetTargetResolution(video_codec.width, video_codec.height,
                                video_codec.maxFramerate) != VPM_OK) {

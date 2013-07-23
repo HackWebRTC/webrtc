@@ -284,7 +284,10 @@ TEST_P(FullStackTest, NoPacketLoss) {
       params.avg_ssim_threshold,
       static_cast<uint64_t>(FLAGS_seconds * params.clip.fps));
 
-  scoped_ptr<newapi::VideoCall> call(video_engine->CreateCall(&analyzer));
+  newapi::VideoCall::Config call_config;
+  call_config.send_transport = &analyzer;
+
+  scoped_ptr<newapi::VideoCall> call(video_engine->CreateCall(call_config));
   analyzer.receiver_ = call->Receiver();
   transport.SetReceiver(&analyzer);
 

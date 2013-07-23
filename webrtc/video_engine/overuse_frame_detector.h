@@ -21,21 +21,16 @@ namespace webrtc {
 
 class Clock;
 class CriticalSectionWrapper;
+class CpuOveruseObserver;
 
-class OveruseObserver {
- public:
-  // Called when an overuse has been detected, based on the number of calls to
-  // 'CapturedFrame' and 'EncodedFrame'.
-  virtual void OveruseDetected() = 0;
-  virtual ~OveruseObserver() {}
-};
-
-// Use to detect system overuse based on the number of captured frames vs. the
+// Use to detect system overuse based on the number of captured frames vs the
 // number of encoded frames.
 class OveruseFrameDetector : public Module {
  public:
-  OveruseFrameDetector(Clock* clock, OveruseObserver* observer);
+  explicit OveruseFrameDetector(Clock* clock);
   ~OveruseFrameDetector();
+
+  void SetObserver(CpuOveruseObserver* observer);
 
   // Called for each new captured frame.
   void CapturedFrame();
@@ -54,10 +49,11 @@ class OveruseFrameDetector : public Module {
   scoped_ptr<CriticalSectionWrapper> crit_;
 
   // Observer getting overuse reports.
-  OveruseObserver* observer_;
+  CpuOveruseObserver* observer_;
 
   Clock* clock_;
   int64_t last_process_time_;
+  int64_t last_callback_time_;
 
   // Capture time for frames.
   std::list<int64_t> capture_times_;

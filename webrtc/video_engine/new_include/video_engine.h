@@ -49,6 +49,13 @@ struct VideoEngineConfig {
 // estimates etc.
 class VideoCall {
  public:
+  struct Config {
+    Config() : send_transport(NULL), overuse_detection(false) {}
+
+    Transport* send_transport;
+    bool overuse_detection;
+  };
+
   virtual std::vector<VideoCodec> GetVideoCodecs() = 0;
 
   virtual VideoSendStream::Config GetDefaultSendConfig() = 0;
@@ -87,10 +94,10 @@ class VideoCall {
 // calls.
 class VideoEngine {
  public:
-  static VideoEngine* Create(const VideoEngineConfig& engine_config);
+  static VideoEngine* Create(const VideoEngineConfig& config);
   virtual ~VideoEngine() {}
 
-  virtual VideoCall* CreateCall(Transport* send_transport) = 0;
+  virtual VideoCall* CreateCall(const VideoCall::Config& config) = 0;
 };
 
 }  // namespace newapi

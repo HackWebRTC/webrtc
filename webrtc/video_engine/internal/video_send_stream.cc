@@ -23,7 +23,58 @@
 namespace webrtc {
 namespace internal {
 
+// Super simple and temporary overuse logic. This will move to the application
+// as soon as the new API allows changing send codec on the fly.
+class ResolutionAdaptor : public webrtc::CpuOveruseObserver {
+ public:
+  ResolutionAdaptor(ViECodec* codec, int channel, size_t width, size_t height)
+      : codec_(codec),
+        channel_(channel),
+        max_width_(width),
+        max_height_(height) {}
+
+  virtual ~ResolutionAdaptor() {}
+
+  virtual void OveruseDetected() OVERRIDE {
+    VideoCodec codec;
+    if (codec_->GetSendCodec(channel_, codec) != 0)
+      return;
+
+    if (codec.width / 2 < min_width || codec.height / 2 < min_height)
+      return;
+
+    codec.width /= 2;
+    codec.height /= 2;
+    codec_->SetSendCodec(channel_, codec);
+  }
+
+  virtual void NormalUsage() OVERRIDE {
+    VideoCodec codec;
+    if (codec_->GetSendCodec(channel_, codec) != 0)
+      return;
+
+    if (codec.width * 2u > max_width_ || codec.height * 2u > max_height_)
+      return;
+
+    codec.width *= 2;
+    codec.height *= 2;
+    codec_->SetSendCodec(channel_, codec);
+  }
+
+ private:
+  // Temporary and arbitrary chosen minimum resolution.
+  static const size_t min_width = 160;
+  static const size_t min_height = 120;
+
+  ViECodec* codec_;
+  const int channel_;
+
+  const size_t max_width_;
+  const size_t max_height_;
+};
+
 VideoSendStream::VideoSendStream(newapi::Transport* transport,
+                                 bool overuse_detection,
                                  webrtc::VideoEngine* video_engine,
                                  const newapi::VideoSendStream::Config& config)
     : transport_(transport), config_(config) {
@@ -56,6 +107,14 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
   codec_ = ViECodec::GetInterface(video_engine);
   if (codec_->SetSendCodec(channel_, config_.codec) != 0) {
     abort();
+  }
+
+  if (overuse_detection) {
+    overuse_observer_.reset(
+        new ResolutionAdaptor(codec_, channel_, config_.codec.width,
+                              config_.codec.height));
+    video_engine_base_->RegisterCpuOveruseObserver(channel_,
+                                                overuse_observer_.get());
   }
 }
 

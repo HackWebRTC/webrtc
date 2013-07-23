@@ -34,7 +34,7 @@ namespace internal {
 class VideoCall : public newapi::VideoCall, public newapi::PacketReceiver {
  public:
   VideoCall(webrtc::VideoEngine* video_engine,
-            newapi::Transport* send_transport);
+            const newapi::VideoCall::Config& config);
   virtual ~VideoCall();
 
   virtual newapi::PacketReceiver* Receiver() OVERRIDE;
@@ -67,7 +67,7 @@ class VideoCall : public newapi::VideoCall, public newapi::PacketReceiver {
   bool DeliverRtcp(ModuleRTPUtility::RTPHeaderParser* rtp_parser,
                    const void* packet, size_t length);
 
-  newapi::Transport* send_transport;
+  newapi::VideoCall::Config config_;
 
   std::map<uint32_t, newapi::VideoReceiveStream*> receive_ssrcs_;
   scoped_ptr<RWLockWrapper> receive_lock_;

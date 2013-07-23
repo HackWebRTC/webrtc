@@ -21,6 +21,7 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/video_engine/include/vie_errors.h"
+#include "webrtc/video_engine/vie_capturer.h"
 #include "webrtc/video_engine/vie_channel.h"
 #include "webrtc/video_engine/vie_channel_manager.h"
 #include "webrtc/video_engine/vie_defines.h"
@@ -83,6 +84,36 @@ int ViEBaseImpl::SetVoiceEngine(VoiceEngine* voice_engine) {
     shared_data_.SetLastError(kViEBaseVoEFailure);
     return -1;
   }
+  return 0;
+}
+
+int ViEBaseImpl::RegisterCpuOveruseObserver(int video_channel,
+                                            CpuOveruseObserver* observer) {
+  ViEChannelManagerScoped cs(*(shared_data_.channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError,
+                 kTraceVideo,
+                 ViEId(shared_data_.instance_id()),
+                 "%s: channel %d doesn't exist",
+                 __FUNCTION__,
+                 video_channel);
+    shared_data_.SetLastError(kViEBaseInvalidChannelId);
+    return -1;
+  }
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  assert(vie_encoder);
+
+  ViEInputManagerScoped is(*(shared_data_.input_manager()));
+  ViEFrameProviderBase* provider = is.FrameProvider(vie_encoder);
+  if (provider) {
+    ViECapturer* capturer = is.Capture(provider->Id());
+    assert(capturer);
+    capturer->RegisterCpuOveruseObserver(observer);
+  }
+
+  shared_data_.overuse_observers()->insert(
+      std::pair<int, CpuOveruseObserver*>(video_channel, observer));
   return 0;
 }
 

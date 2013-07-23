@@ -28,11 +28,15 @@ class ViENetwork;
 class ViERTP_RTCP;
 
 namespace internal {
+
+class ResolutionAdaptor;
+
 class VideoSendStream : public newapi::VideoSendStream,
                         public newapi::VideoSendStreamInput,
                         public webrtc::Transport {
  public:
   VideoSendStream(newapi::Transport* transport,
+                  bool overuse_detection,
                   webrtc::VideoEngine* video_engine,
                   const newapi::VideoSendStream::Config& config);
 
@@ -72,6 +76,7 @@ class VideoSendStream : public newapi::VideoSendStream,
 
   int channel_;
   int capture_id_;
+  scoped_ptr<ResolutionAdaptor> overuse_observer_;
 };
 }  // namespace internal
 }  // namespace webrtc

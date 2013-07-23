@@ -13,6 +13,7 @@
 
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/overuse_frame_detector.h"
 
 using ::testing::_;
@@ -23,24 +24,25 @@ namespace webrtc {
 
 const int kProcessIntervalMs = 2000;
 
-class MockOveruseObserver : public OveruseObserver {
+class MockCpuOveruseObserver : public CpuOveruseObserver {
  public:
-  MockOveruseObserver() {}
-  virtual ~MockOveruseObserver() {}
+  MockCpuOveruseObserver() {}
+  virtual ~MockCpuOveruseObserver() {}
 
   MOCK_METHOD0(OveruseDetected, void());
+  MOCK_METHOD0(NormalUsage, void());
 };
 
 class OveruseFrameDetectorTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
     clock_.reset(new SimulatedClock(1234));
-    observer_.reset(new MockOveruseObserver());
-    overuse_detector_.reset(new OveruseFrameDetector(clock_.get(),
-                                                     observer_.get()));
+    observer_.reset(new MockCpuOveruseObserver());
+    overuse_detector_.reset(new OveruseFrameDetector(clock_.get()));
+    overuse_detector_->SetObserver(observer_.get());
   }
   scoped_ptr<SimulatedClock> clock_;
-  scoped_ptr<MockOveruseObserver> observer_;
+  scoped_ptr<MockCpuOveruseObserver> observer_;
   scoped_ptr<OveruseFrameDetector> overuse_detector_;
 };
 

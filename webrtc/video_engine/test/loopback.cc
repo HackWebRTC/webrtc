@@ -42,7 +42,10 @@ TEST_F(LoopbackTest, Test) {
       newapi::VideoEngine::Create(webrtc::newapi::VideoEngineConfig()));
 
   test::DirectTransport transport(NULL);
-  scoped_ptr<newapi::VideoCall> call(video_engine->CreateCall(&transport));
+  newapi::VideoCall::Config call_config;
+  call_config.send_transport = &transport;
+  call_config.overuse_detection = true;
+  scoped_ptr<newapi::VideoCall> call(video_engine->CreateCall(call_config));
 
   // Loopback, call sends to itself.
   transport.SetReceiver(call->Receiver());

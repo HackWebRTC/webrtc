@@ -10,10 +10,9 @@
 
 #include "webrtc/video_engine/overuse_frame_detector.h"
 
-#include <cassert>
-
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/video_engine/include/vie_base.h"
 
 namespace webrtc {
 
@@ -21,17 +20,22 @@ namespace webrtc {
 const int64_t kProcessIntervalMs = 2000;
 const int kOveruseHistoryMs = 5000;
 const float kMinEncodeRatio = 29 / 30.0f;
+const int kMinCallbackDeltaMs = 30000;
 
-OveruseFrameDetector::OveruseFrameDetector(Clock* clock,
-                                           OveruseObserver* observer)
+OveruseFrameDetector::OveruseFrameDetector(Clock* clock)
     : crit_(CriticalSectionWrapper::CreateCriticalSection()),
-      observer_(observer),
+      observer_(NULL),
       clock_(clock),
-      last_process_time_(clock->TimeInMilliseconds()) {
-  assert(observer);
+      last_process_time_(clock->TimeInMilliseconds()),
+      last_callback_time_(clock->TimeInMilliseconds()) {
 }
 
 OveruseFrameDetector::~OveruseFrameDetector() {
+}
+
+void OveruseFrameDetector::SetObserver(CpuOveruseObserver* observer) {
+  CriticalSectionScoped cs(crit_.get());
+  observer_ = observer;
 }
 
 void OveruseFrameDetector::CapturedFrame() {
@@ -51,30 +55,43 @@ int32_t OveruseFrameDetector::TimeUntilNextProcess() {
 
 int32_t OveruseFrameDetector::Process() {
   CriticalSectionScoped cs(crit_.get());
-  if (clock_->TimeInMilliseconds() < last_process_time_ + kProcessIntervalMs)
+  int64_t now = clock_->TimeInMilliseconds();
+  if (now < last_process_time_ + kProcessIntervalMs)
     return 0;
 
-  last_process_time_ = clock_->TimeInMilliseconds();
+  last_process_time_ = now;
+  if (!observer_ || encode_times_.size() == 0 || capture_times_.size() == 0)
+    return 0;
+
   CleanOldSamples();
-
-  if (encode_times_.size() == 0 || capture_times_.size() == 0)
+  if (encode_times_.front() > now - kOveruseHistoryMs / 2) {
     return 0;
-
+  }
   float encode_ratio = encode_times_.size() /
       static_cast<float>(capture_times_.size());
   if (encode_ratio < kMinEncodeRatio) {
     observer_->OveruseDetected();
+    capture_times_.clear();
+    encode_times_.clear();
+    last_callback_time_ = now;
+  } else if (last_callback_time_ < now - kMinCallbackDeltaMs) {
+    // TODO(mflodman) This should only be triggered if we have a good reason to
+    // believe we can increase the resolution again.
+    observer_->NormalUsage();
+    last_callback_time_ = now;
+    capture_times_.clear();
+    encode_times_.clear();
   }
   return 0;
 }
 
 void OveruseFrameDetector::CleanOldSamples() {
   int64_t time_now = clock_->TimeInMilliseconds();
-  while (capture_times_.size() > 0 &&
+  while (!capture_times_.empty() &&
          capture_times_.front() < time_now - kOveruseHistoryMs) {
     capture_times_.pop_front();
   }
-  while (encode_times_.size() > 0 &&
+  while (!encode_times_.empty() &&
          encode_times_.front() < time_now - kOveruseHistoryMs) {
     encode_times_.pop_front();
   }

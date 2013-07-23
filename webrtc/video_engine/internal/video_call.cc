@@ -28,13 +28,13 @@ namespace webrtc {
 namespace internal {
 
 VideoCall::VideoCall(webrtc::VideoEngine* video_engine,
-                     newapi::Transport* send_transport)
-    : send_transport(send_transport),
+                     const newapi::VideoCall::Config& config)
+    : config_(config),
       receive_lock_(RWLockWrapper::CreateRWLock()),
       send_lock_(RWLockWrapper::CreateRWLock()),
       video_engine_(video_engine) {
   assert(video_engine != NULL);
-  assert(send_transport != NULL);
+  assert(config.send_transport != NULL);
 
   rtp_rtcp_ = ViERTP_RTCP::GetInterface(video_engine_);
   assert(rtp_rtcp_ != NULL);
@@ -75,7 +75,8 @@ newapi::VideoSendStream* VideoCall::CreateSendStream(
          config.codec.numberOfSimulcastStreams == config.rtp.ssrcs.size());
 
   VideoSendStream* send_stream =
-      new VideoSendStream(send_transport, video_engine_, config);
+      new VideoSendStream(config_.send_transport, config_.overuse_detection,
+                          video_engine_, config);
 
   WriteLockScoped write_lock(*send_lock_);
   for (size_t i = 0; i < config.rtp.ssrcs.size(); ++i) {
@@ -104,7 +105,7 @@ VideoReceiveStream::Config VideoCall::GetDefaultReceiveConfig() {
 newapi::VideoReceiveStream* VideoCall::CreateReceiveStream(
     const newapi::VideoReceiveStream::Config& config) {
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
-      video_engine_, config, send_transport);
+      video_engine_, config, config_.send_transport);
 
   WriteLockScoped write_lock(*receive_lock_);
   assert(receive_ssrcs_.find(config.rtp.ssrc) == receive_ssrcs_.end());

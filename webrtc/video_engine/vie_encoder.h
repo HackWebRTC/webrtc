@@ -26,16 +26,16 @@
 
 namespace webrtc {
 
-class CriticalSectionWrapper;
 class Config;
+class CriticalSectionWrapper;
 class PacedSender;
 class ProcessThread;
 class QMVideoSettingsCallback;
 class RtpRtcp;
-class VideoCodingModule;
 class ViEBitrateObserver;
 class ViEEffectFilter;
 class ViEEncoderObserver;
+class VideoCodingModule;
 class ViEPacedSenderCallback;
 
 class ViEEncoder

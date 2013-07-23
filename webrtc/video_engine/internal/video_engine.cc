@@ -21,8 +21,8 @@ namespace internal {
 
 class VideoEngine : public newapi::VideoEngine {
  public:
-  explicit VideoEngine(const newapi::VideoEngineConfig& engine_config)
-      : config_(engine_config) {
+  explicit VideoEngine(const newapi::VideoEngineConfig& config)
+      : config_(config) {
     video_engine_ = webrtc::VideoEngine::Create();
     assert(video_engine_ != NULL);
 
@@ -36,8 +36,9 @@ class VideoEngine : public newapi::VideoEngine {
 
   virtual ~VideoEngine() { webrtc::VideoEngine::Delete(video_engine_); }
 
-  virtual newapi::VideoCall* CreateCall(newapi::Transport* transport) OVERRIDE {
-    return new VideoCall(video_engine_, transport);
+  virtual newapi::VideoCall* CreateCall(
+      const newapi::VideoCall::Config& config) OVERRIDE {
+    return new VideoCall(video_engine_, config);
   }
 
  private:
