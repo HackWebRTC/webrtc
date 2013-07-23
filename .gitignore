@@ -51,7 +51,9 @@
 /third_party/gold
 /third_party/google-gflags/src
 /third_party/google-visualization-python
+/third_party/icu
 /third_party/jsoncpp
+/third_party/junit
 /third_party/libjingle
 /third_party/libjpeg
 /third_party/libjpeg_turbo
@@ -60,8 +62,10 @@
 /third_party/libyuv
 /third_party/llvm-build
 /third_party/oauth2
+/third_party/openssl
 /third_party/opus
 /third_party/protobuf
+/third_party/sqlite
 /third_party/valgrind
 /third_party/winsdk_samples/src
 /third_party/yasm

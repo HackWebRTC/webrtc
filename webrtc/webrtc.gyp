@@ -7,21 +7,21 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'includes': ['webrtc/build/common.gypi',],
+  'includes': ['build/common.gypi',],
   'variables': {
     'webrtc_all_dependencies': [
-      'webrtc/common_audio/common_audio.gyp:*',
-      'webrtc/common_video/common_video.gyp:*',
-      'webrtc/modules/modules.gyp:*',
-      'webrtc/system_wrappers/source/system_wrappers.gyp:*',
-      'webrtc/video_engine/video_engine.gyp:*',
-      'webrtc/voice_engine/voice_engine.gyp:*',
+      'common_audio/common_audio.gyp:*',
+      'common_video/common_video.gyp:*',
+      'modules/modules.gyp:*',
+      'system_wrappers/source/system_wrappers.gyp:*',
+      'video_engine/video_engine.gyp:*',
+      'voice_engine/voice_engine.gyp:*',
       '<(webrtc_vp8_dir)/vp8.gyp:*',
     ],
   },
   'targets': [
     {
-      'target_name': 'All',
+      'target_name': 'webrtc',
       'type': 'none',
       'dependencies': [
         '<@(webrtc_all_dependencies)',
@@ -29,17 +29,17 @@
       'conditions': [
         ['include_tests==1', {
           'dependencies': [
-            'webrtc/system_wrappers/source/system_wrappers_tests.gyp:*',
-            'webrtc/test/metrics.gyp:*',
-            'webrtc/test/test.gyp:*',
-            'webrtc/tools/tools.gyp:*',
-            'tools/e2e_quality/e2e_quality.gyp:*',
+            'system_wrappers/source/system_wrappers_tests.gyp:*',
+            'test/metrics.gyp:*',
+            'test/test.gyp:*',
+            'tools/tools.gyp:*',
+            '../tools/e2e_quality/e2e_quality.gyp:*',
           ],
         }],
         ['OS=="android"', {
           'dependencies': [
-            'tools/android/android_tools_precompiled.gyp:*',
-            'tools/android-dummy-test/android_dummy_test.gyp:*',
+            '../tools/android/android_tools_precompiled.gyp:*',
+            '../tools/android-dummy-test/android_dummy_test.gyp:*',
           ],
         }],
       ],
