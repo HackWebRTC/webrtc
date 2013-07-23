@@ -173,8 +173,6 @@ ScreenCapturerLinux::~ScreenCapturerLinux() {
 }
 
 bool ScreenCapturerLinux::Init(bool use_x_damage) {
-  use_x_damage = true;
-
   // TODO(ajwong): We should specify the display string we are attaching to
   // in the constructor.
   display_ = XOpenDisplay(NULL);
