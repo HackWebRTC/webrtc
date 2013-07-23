@@ -227,7 +227,7 @@ struct CodecInst
     int plfreq;
     int pacsize;
     int channels;
-    int rate;
+    int rate;  // bits/sec unlike {start,min,max}Bitrate elsewhere in this file!
 };
 
 enum FrameType
@@ -525,9 +525,9 @@ struct SimulcastStream
     unsigned short      width;
     unsigned short      height;
     unsigned char       numberOfTemporalLayers;
-    unsigned int        maxBitrate;
-    unsigned int        targetBitrate;
-    unsigned int        minBitrate;
+    unsigned int        maxBitrate;  // kilobits/sec.
+    unsigned int        targetBitrate;  // kilobits/sec.
+    unsigned int        minBitrate;  // kilobits/sec.
     unsigned int        qpMax; // minimum quality
 };
 
@@ -546,9 +546,9 @@ struct VideoCodec
     unsigned short      width;
     unsigned short      height;
 
-    unsigned int        startBitrate;
-    unsigned int        maxBitrate;
-    unsigned int        minBitrate;
+    unsigned int        startBitrate;  // kilobits/sec.
+    unsigned int        maxBitrate;  // kilobits/sec.
+    unsigned int        minBitrate;  // kilobits/sec.
     unsigned char       maxFramerate;
 
     VideoCodecUnion     codecSpecific;
