@@ -125,7 +125,7 @@
   function createPeerConnection() {
     // For FF, use Mozilla STUN server.
     if (webrtcDetectedBrowser === "firefox") {
-      pc_config = {"iceServers":[{"url":"stun:stun.services.mozilla.com"}]};
+      pcConfig = {"iceServers":[{"url":"stun:stun.services.mozilla.com"}]};
     }
     try {
       // Create an RTCPeerConnection via the polyfill (adapter.js).
