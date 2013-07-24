@@ -20,8 +20,6 @@ GLOBAL_FUNCTION WebRtcNsx_NoiseEstimationNeon
 GLOBAL_FUNCTION WebRtcNsx_PrepareSpectrumNeon
 GLOBAL_FUNCTION WebRtcNsx_SynthesisUpdateNeon
 GLOBAL_FUNCTION WebRtcNsx_AnalysisUpdateNeon
-GLOBAL_FUNCTION WebRtcNsx_DenormalizeNeon
-GLOBAL_FUNCTION WebRtcNsx_CreateComplexBufferNeon
 GLOBAL_LABEL WebRtcNsx_kLogTable
 GLOBAL_LABEL WebRtcNsx_kCounterDiv
 GLOBAL_LABEL WebRtcNsx_kLogTableFrac
@@ -426,6 +424,7 @@ POST_LOOP_MAGNLEN:
 
   pop {r4, r5, r6, pc}
 
+@ TODO(kma): Remove copying to 2nd half of freq_buf, for real FFT interface.
 @ void PrepareSpectrumNeon(NsxInst_t* inst, int16_t* freq_buf);
 .align 2
 DEFINE_FUNCTION WebRtcNsx_PrepareSpectrumNeon
@@ -540,35 +539,6 @@ LOOP_ANALEN2:
   vst1.16 {d16, d17, d18, d19}, [r2]
 
   pop {r4-r9}
-  bx r14
-
-@ void WebRtcNsx_DenormalizeNeon(NsxInst_t* inst, int16_t* in, int factor);
-.align 2
-DEFINE_FUNCTION WebRtcNsx_DenormalizeNeon
-  movw r12, #offset_nsx_normData
-  movw r3, #offset_nsx_real
-  ldr r12, [r0, r12]          @ inst->normData
-  add r3, r0                  @ &inst->real[0]
-  sub r2, r12
-  vdup.32 q10, r2
-
-  movw r2, #offset_nsx_anaLen
-  ldrsh r2, [r0, r2]          @ inst->anaLen
-  add r0, r3, r2, lsl #1      @ &inst->real[inst->anaLen]
-
-LOOP_ANALEN:
-  vld2.16 {d0, d1}, [r1]!     @ &in[]
-  vld2.16 {d2, d3}, [r1]!     @ &in[]
-  vmovl.s16 q2, d0
-  vmovl.s16 q3, d2
-  vshl.s32 q2, q10
-  vshl.s32 q3, q10
-  vqmovn.s32 d0, q2
-  vqmovn.s32 d1, q3
-  vst1.16 {d0, d1}, [r3]!     @ inst->real[]
-  cmp r3, r0
-  blt LOOP_ANALEN
-
   bx r14
 
 @ void SynthesisUpdateNeon(NsxInst_t* inst,
@@ -703,34 +673,4 @@ LOOP_WINDOW_DATA:
 
 POST_LOOP_WINDOW_DATA:
   pop {r4-r6}
-  bx r14
-
-@ void CreateComplexBufferNeon(NsxInst_t* inst, int16_t* in, int16_t* out);
-.align 2
-DEFINE_FUNCTION WebRtcNsx_CreateComplexBufferNeon
-  movw r3, #offset_nsx_anaLen
-  movw r12, #offset_nsx_normData
-  ldrsh r3, [r0, r3]                  @ inst->anaLen
-  ldr r12, [r0, r12]                  @ inst->normData
-  add r3, r1, r3, lsl #1              @ &in[inst->anaLen]
-
-  vmov.i16 d7, #0                     @ For writing to imaginary parts.
-  vmov.i16 d5, #0                     @ For writing to imaginary parts.
-  vdup.i16 q10, r12
-
-LOOP_CREATE_COMPLEX_BUFFER:           @ Unrolled by 16.
-  vld1.16 {d0, d1, d2, d3}, [r1]!     @ in[]
-  cmp r1, r3
-  vshl.s16 q0, q10
-  vshl.s16 q1, q10
-  vmov d4, d1
-  vmov d1, d5
-  vmov d6, d3
-  vmov d3, d7
-  vst2.16 {d0, d1}, [r2]!
-  vst2.16 {d4, d5}, [r2]!
-  vst2.16 {d2, d3}, [r2]!
-  vst2.16 {d6, d7}, [r2]!
-  blt LOOP_CREATE_COMPLEX_BUFFER
-
   bx r14

@@ -12,7 +12,6 @@
 
 #include <assert.h>
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -436,26 +435,6 @@ static const int16_t kDeterminantEstMatrix[66] = {
   355,    330
 };
 
-// Declare function pointers.
-NoiseEstimation WebRtcNsx_NoiseEstimation;
-PrepareSpectrum WebRtcNsx_PrepareSpectrum;
-SynthesisUpdate WebRtcNsx_SynthesisUpdate;
-AnalysisUpdate WebRtcNsx_AnalysisUpdate;
-Denormalize WebRtcNsx_Denormalize;
-CreateComplexBuffer WebRtcNsx_CreateComplexBuffer;
-
-#if (defined WEBRTC_DETECT_ARM_NEON || defined WEBRTC_ARCH_ARM_NEON)
-// Initialize function pointers for ARM Neon platform.
-static void WebRtcNsx_InitNeon(void) {
-  WebRtcNsx_NoiseEstimation = WebRtcNsx_NoiseEstimationNeon;
-  WebRtcNsx_PrepareSpectrum = WebRtcNsx_PrepareSpectrumNeon;
-  WebRtcNsx_SynthesisUpdate = WebRtcNsx_SynthesisUpdateNeon;
-  WebRtcNsx_AnalysisUpdate = WebRtcNsx_AnalysisUpdateNeon;
-  WebRtcNsx_Denormalize = WebRtcNsx_DenormalizeNeon;
-  WebRtcNsx_CreateComplexBuffer = WebRtcNsx_CreateComplexBufferNeon;
-}
-#endif
-
 // Update the noise estimation information.
 static void UpdateNoiseEstimate(NsxInst_t* inst, int offset) {
   int32_t tmp32no1 = 0;
@@ -614,7 +593,6 @@ static void NoiseEstimationC(NsxInst_t* inst,
 // Filter the data in the frequency domain, and create spectrum.
 static void PrepareSpectrumC(NsxInst_t* inst, int16_t* freq_buf) {
   int i = 0, j = 0;
-  int16_t tmp16 = 0;
 
   for (i = 0; i < inst->magnLen; i++) {
     inst->real[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(inst->real[i],
@@ -626,22 +604,19 @@ static void PrepareSpectrumC(NsxInst_t* inst, int16_t* freq_buf) {
   freq_buf[0] = inst->real[0];
   freq_buf[1] = -inst->imag[0];
   for (i = 1, j = 2; i < inst->anaLen2; i += 1, j += 2) {
-    tmp16 = (inst->anaLen << 1) - j;
     freq_buf[j] = inst->real[i];
     freq_buf[j + 1] = -inst->imag[i];
-    freq_buf[tmp16] = inst->real[i];
-    freq_buf[tmp16 + 1] = inst->imag[i];
   }
   freq_buf[inst->anaLen] = inst->real[inst->anaLen2];
   freq_buf[inst->anaLen + 1] = -inst->imag[inst->anaLen2];
 }
 
-// Denormalize the input buffer.
-static __inline void DenormalizeC(NsxInst_t* inst, int16_t* in, int factor) {
-  int i = 0, j = 0;
+// Denormalize the real-valued signal |in|, the output from inverse FFT.
+static __inline void Denormalize(NsxInst_t* inst, int16_t* in, int factor) {
+  int i = 0;
   int32_t tmp32 = 0;
-  for (i = 0, j = 0; i < inst->anaLen; i += 1, j += 2) {
-    tmp32 = WEBRTC_SPL_SHIFT_W32((int32_t)in[j],
+  for (i = 0; i < inst->anaLen; i += 1) {
+    tmp32 = WEBRTC_SPL_SHIFT_W32((int32_t)in[i],
                                  factor - inst->normData);
     inst->real[i] = WebRtcSpl_SatW32ToW16(tmp32); // Q0
   }
@@ -701,17 +676,31 @@ static void AnalysisUpdateC(NsxInst_t* inst,
   }
 }
 
-// Create a complex number buffer (out[]) as the intput (in[]) interleaved with
-// zeros, and normalize it.
-static __inline void CreateComplexBufferC(NsxInst_t* inst,
-                                          int16_t* in,
-                                          int16_t* out) {
-  int i = 0, j = 0;
-  for (i = 0, j = 0; i < inst->anaLen; i += 1, j += 2) {
-    out[j] = WEBRTC_SPL_LSHIFT_W16(in[i], inst->normData); // Q(normData)
-    out[j + 1] = 0; // Insert zeros in imaginary part
+// Normalize the real-valued signal |in|, the input to forward FFT.
+static __inline void NormalizeRealBuffer(NsxInst_t* inst,
+                                         const int16_t* in,
+                                         int16_t* out) {
+  int i = 0;
+  for (i = 0; i < inst->anaLen; ++i) {
+    out[i] = WEBRTC_SPL_LSHIFT_W16(in[i], inst->normData); // Q(normData)
   }
 }
+
+// Declare function pointers.
+NoiseEstimation WebRtcNsx_NoiseEstimation;
+PrepareSpectrum WebRtcNsx_PrepareSpectrum;
+SynthesisUpdate WebRtcNsx_SynthesisUpdate;
+AnalysisUpdate WebRtcNsx_AnalysisUpdate;
+
+#if (defined WEBRTC_DETECT_ARM_NEON || defined WEBRTC_ARCH_ARM_NEON)
+// Initialize function pointers for ARM Neon platform.
+static void WebRtcNsx_InitNeon(void) {
+  WebRtcNsx_NoiseEstimation = WebRtcNsx_NoiseEstimationNeon;
+  WebRtcNsx_PrepareSpectrum = WebRtcNsx_PrepareSpectrumNeon;
+  WebRtcNsx_SynthesisUpdate = WebRtcNsx_SynthesisUpdateNeon;
+  WebRtcNsx_AnalysisUpdate = WebRtcNsx_AnalysisUpdateNeon;
+}
+#endif
 
 void WebRtcNsx_CalcParametricNoiseEstimate(NsxInst_t* inst,
                                            int16_t pink_noise_exp_avg,
@@ -900,17 +889,14 @@ int32_t WebRtcNsx_InitCore(NsxInst_t* inst, uint32_t fs) {
   WebRtcNsx_PrepareSpectrum = PrepareSpectrumC;
   WebRtcNsx_SynthesisUpdate = SynthesisUpdateC;
   WebRtcNsx_AnalysisUpdate = AnalysisUpdateC;
-  WebRtcNsx_Denormalize = DenormalizeC;
-  WebRtcNsx_CreateComplexBuffer = CreateComplexBufferC;
 
 #ifdef WEBRTC_DETECT_ARM_NEON
-    uint64_t features = WebRtc_GetCPUFeaturesARM();
-    if ((features & kCPUFeatureNEON) != 0)
-    {
-        WebRtcNsx_InitNeon();
-    }
+  uint64_t features = WebRtc_GetCPUFeaturesARM();
+  if ((features & kCPUFeatureNEON) != 0) {
+      WebRtcNsx_InitNeon();
+  }
 #elif defined(WEBRTC_ARCH_ARM_NEON)
-    WebRtcNsx_InitNeon();
+  WebRtcNsx_InitNeon();
 #endif
 
   inst->initFlag = 1;
@@ -1606,7 +1592,7 @@ void WebRtcNsx_DataAnalysis(NsxInst_t* inst, short* speechFrame, uint16_t* magnU
   right_shifts_in_magnU16 = WEBRTC_SPL_MAX(right_shifts_in_magnU16, 0);
 
   // create realImag as winData interleaved with zeros (= imag. part), normalize it
-  WebRtcNsx_CreateComplexBuffer(inst, winData, realImag);
+  NormalizeRealBuffer(inst, winData, realImag);
 
   // FFT output will be in winData[].
   WebRtcSpl_RealForwardFFT(inst->real_fft, realImag, winData);
@@ -1838,8 +1824,7 @@ void WebRtcNsx_DataSynthesis(NsxInst_t* inst, short* outFrame) {
   // Inverse FFT output will be in rfft_out[].
   outCIFFT = WebRtcSpl_RealInverseFFT(inst->real_fft, realImag, rfft_out);
 
-  // Denormalize.
-  WebRtcNsx_Denormalize(inst, rfft_out, outCIFFT);
+  Denormalize(inst, rfft_out, outCIFFT);
 
   //scale factor: only do it after END_STARTUP_LONG time
   gainFactor = 8192; // 8192 = Q13(1.0)
