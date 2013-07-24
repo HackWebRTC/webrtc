@@ -68,6 +68,9 @@ public class VideoStreamsView
   private long lastFPSLogTime = System.nanoTime();
   private long numFramesSinceLastLog = 0;
   private FramePool framePool = new FramePool();
+  // Accessed on multiple threads!  Must be synchronized.
+  private EnumMap<Endpoint, I420Frame> framesToRender =
+      new EnumMap<Endpoint, I420Frame>(Endpoint.class);
 
   public VideoStreamsView(Context c, Point screenDimensions) {
     super(c);
@@ -83,18 +86,43 @@ public class VideoStreamsView
     // to get spent on the render thread instead of the UI thread.
     abortUnless(framePool.validateDimensions(frame), "Frame too large!");
     final I420Frame frameCopy = framePool.takeFrame(frame).copyFrom(frame);
-    queueEvent(new Runnable() {
-        public void run() {
-          updateFrame(stream, frameCopy);
-        }
-      });
+    boolean needToScheduleRender;
+    synchronized (framesToRender) {
+      // A new render needs to be scheduled (via updateFrames()) iff there isn't
+      // already a render scheduled, which is true iff framesToRender is empty.
+      needToScheduleRender = framesToRender.isEmpty();
+      I420Frame frameToDrop = framesToRender.put(stream, frameCopy);
+      if (frameToDrop != null) {
+        framePool.returnFrame(frameToDrop);
+      }
+    }
+    if (needToScheduleRender) {
+      queueEvent(new Runnable() {
+          public void run() {
+            updateFrames();
+          }
+        });
+    }
   }
 
-  // Upload the planes from |frame| to the textures owned by this View.
-  private void updateFrame(Endpoint stream, I420Frame frame) {
-    int[] textures = yuvTextures[stream == Endpoint.LOCAL ? 0 : 1];
-    texImage2D(frame, textures);
-    framePool.returnFrame(frame);
+  // Upload the planes from |framesToRender| to the textures owned by this View.
+  private void updateFrames() {
+    I420Frame localFrame = null;
+    I420Frame remoteFrame = null;
+    synchronized (framesToRender) {
+      localFrame = framesToRender.remove(Endpoint.LOCAL);
+      remoteFrame = framesToRender.remove(Endpoint.REMOTE);
+    }
+    if (localFrame != null) {
+      texImage2D(localFrame, yuvTextures[0]);
+      framePool.returnFrame(localFrame);
+    }
+    if (remoteFrame != null) {
+      texImage2D(remoteFrame, yuvTextures[1]);
+      framePool.returnFrame(remoteFrame);
+    }
+    abortUnless(localFrame != null || remoteFrame != null,
+                "Nothing to render!");
     requestRender();
   }
 
