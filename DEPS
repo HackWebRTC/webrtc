@@ -10,7 +10,7 @@ vars = {
   # If you do not know, use the full path while defining your new deps entry.
   "googlecode_url": "http://%s.googlecode.com/svn",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "205140",
+  "chromium_revision": "212975",
 
   # A small subset of WebKit is needed for the Android Python test framework.
   "webkit_trunk": "http://src.chromium.org/blink/trunk",
@@ -66,7 +66,7 @@ deps = {
     From("chromium_deps", "src/third_party/libsrtp"),
 
   "third_party/libvpx":
-    Var("chromium_trunk") + "/deps/third_party/libvpx@211873",
+    Var("chromium_trunk") + "/deps/third_party/libvpx@212975",
 
   "third_party/libyuv":
     (Var("googlecode_url") % "libyuv") + "/trunk@723",
