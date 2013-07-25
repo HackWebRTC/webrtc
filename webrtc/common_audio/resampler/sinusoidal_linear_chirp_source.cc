@@ -29,7 +29,7 @@ SinusoidalLinearChirpSource::SinusoidalLinearChirpSource(int sample_rate,
   k_ = (max_frequency_ - kMinFrequency) / duration;
 }
 
-void SinusoidalLinearChirpSource::Run(float* destination, int frames) {
+void SinusoidalLinearChirpSource::Run(int frames, float* destination) {
   for (int i = 0; i < frames; ++i, ++current_index_) {
     // Filter out frequencies higher than Nyquist.
     if (Frequency(current_index_) > 0.5 * sample_rate_) {

@@ -67,10 +67,19 @@ TEST_P(PushSincResamplerTest, Resample) {
   scoped_array<int16_t> source_int(new int16_t[input_block_size]);
   scoped_array<int16_t> destination_int(new int16_t[output_block_size]);
 
+  // The sinc resampler has an implicit delay of approximately half the kernel
+  // size at the input sample rate. By moving to a push model, this delay
+  // becomes explicit and is managed by zero-stuffing in PushSincResampler. We
+  // deal with it in the test by delaying the "pure" source to match. It must be
+  // checked before the first call to Resample(), because ChunkSize() will
+  // change afterwards.
+  const int output_delay_samples = output_block_size -
+      resampler.get_resampler_for_testing()->ChunkSize();
+
   // Generate resampled signal.
   // With the PushSincResampler, we produce the signal block-by-10ms-block
   // rather than in a single pass, to exercise how it will be used in WebRTC.
-  resampler_source.Run(source.get(), input_samples);
+  resampler_source.Run(input_samples, source.get());
   for (int i = 0; i < kNumBlocks; ++i) {
     for (int j = 0; j < input_block_size; ++j) {
       source_int[j] = static_cast<int16_t>(std::floor(32767 *
@@ -86,17 +95,9 @@ TEST_P(PushSincResamplerTest, Resample) {
   }
 
   // Generate pure signal.
-  // The sinc resampler has an implicit delay of half the kernel size (32) at
-  // the input sample rate. By moving to a push model, this delay becomes
-  // explicit and is managed by zero-stuffing in PushSincResampler. This delay
-  // can be a fractional sample amount, so we deal with it in the test by
-  // delaying the "pure" source to match.
-  static const int kInputKernelDelaySamples = 16;
-  double output_delay_samples = static_cast<double>(output_rate_)
-      / input_rate_ * kInputKernelDelaySamples;
   SinusoidalLinearChirpSource pure_source(
       output_rate_, output_samples, input_nyquist_freq, output_delay_samples);
-  pure_source.Run(pure_destination.get(), output_samples);
+  pure_source.Run(output_samples, pure_destination.get());
 
   // Range of the Nyquist frequency (0.5 * min(input rate, output_rate)) which
   // we refer to as low and high.
@@ -216,17 +217,17 @@ INSTANTIATE_TEST_CASE_P(
         std::tr1::make_tuple(8000, 16000, kResamplingRMSError, -70.30),
         std::tr1::make_tuple(16000, 16000, kResamplingRMSError, -75.51),
         std::tr1::make_tuple(32000, 16000, -18.48, -28.59),
-        std::tr1::make_tuple(44100, 16000, -19.59, -19.77),
-        std::tr1::make_tuple(48000, 16000, -20.01, -18.11),
-        std::tr1::make_tuple(96000, 16000, -20.95, -10.99),
+        std::tr1::make_tuple(44100, 16000, -19.30, -19.67),
+        std::tr1::make_tuple(48000, 16000, -19.81, -18.11),
+        std::tr1::make_tuple(96000, 16000, -20.95, -10.96),
 
         // To 32 kHz
         std::tr1::make_tuple(8000, 32000, kResamplingRMSError, -70.30),
         std::tr1::make_tuple(16000, 32000, kResamplingRMSError, -75.51),
         std::tr1::make_tuple(32000, 32000, kResamplingRMSError, -75.56),
-        std::tr1::make_tuple(44100, 32000, -16.52, -51.10),
-        std::tr1::make_tuple(48000, 32000, -16.90, -44.17),
-        std::tr1::make_tuple(96000, 32000, -19.80, -18.05),
+        std::tr1::make_tuple(44100, 32000, -16.44, -51.10),
+        std::tr1::make_tuple(48000, 32000, -16.90, -44.03),
+        std::tr1::make_tuple(96000, 32000, -19.61, -18.04),
         std::tr1::make_tuple(192000, 32000, -21.02, -10.94)));
 
 }  // namespace webrtc
