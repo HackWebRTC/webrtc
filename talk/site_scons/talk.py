@@ -564,7 +564,7 @@ def ExtendComponent(env, component, **kwargs):
     # name of the EXE (but not PDB) is reconstructed after signing.
     postsignprefix = PopEntry(params, 'postsignprefix')
     if postsignprefix is not None:
-        target = postsignprefix + target
+      target = postsignprefix + target
     signed_node = env.SignedBinary(
       source = node,
       target = '$STAGING_DIR/' + target,

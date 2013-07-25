@@ -97,6 +97,8 @@ def _CommonChecks(input_api, output_api):
   results.extend(input_api.canned_checks.RunPylint(input_api, output_api,
       black_list=(r'^.*gviz_api\.py$',
                   r'^.*gaeunit\.py$',
+                  # Embedded shell-script fakes out pylint.
+                  r'^talk/site_scons/site_tools/talk_linux.py$',
                   r'^third_party/.*\.py$',
                   r'^testing/.*\.py$',
                   r'^tools/gyp/.*\.py$',

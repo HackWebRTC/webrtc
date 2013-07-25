@@ -16,5 +16,5 @@ def generate(env):
     )
     env.Append(BUILDERS={'RES': builder, 'Grit': builder})
 
-def exists(env):
+def exists(dummy):
   return 1

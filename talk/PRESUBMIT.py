@@ -25,13 +25,13 @@
 
 def _LicenseHeader(input_api):
   """Returns the license header regexp."""
-  # Accept any year number from 2011 to the current year
+  # Accept any year number from 2008 to the current year
   current_year = int(input_api.time.strftime('%Y'))
   allowed_years = (str(s) for s in reversed(xrange(2008, current_year + 1)))
   years_re = '(' + '|'.join(allowed_years) + ')'
   license_header = (
       r'.*? libjingle\n'
-      r'.*? Copyright %(year)s Google Inc\.\n'
+      r'.*? Copyright %(year)s,? Google Inc\.\n'
       r'.*?\n'
       r'.*? Redistribution and use in source and binary forms, with or without'
         r'\n'
