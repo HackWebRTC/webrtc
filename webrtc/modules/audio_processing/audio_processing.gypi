@@ -60,6 +60,7 @@
         'audio_processing_impl.h',
         'echo_cancellation_impl.cc',
         'echo_cancellation_impl.h',
+        'echo_cancellation_impl_wrapper.h',
         'echo_control_mobile_impl.cc',
         'echo_control_mobile_impl.h',
         'gain_control_impl.cc',

@@ -11,21 +11,21 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_ECHO_CANCELLATION_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_ECHO_CANCELLATION_IMPL_H_
 
-#include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/modules/audio_processing/processing_component.h"
+#include "webrtc/modules/audio_processing/echo_cancellation_impl_wrapper.h"
 
 namespace webrtc {
+
 class AudioProcessingImpl;
 class AudioBuffer;
 
-class EchoCancellationImpl : public EchoCancellation,
-                             public ProcessingComponent {
+class EchoCancellationImpl : public EchoCancellationImplWrapper {
  public:
   explicit EchoCancellationImpl(const AudioProcessingImpl* apm);
   virtual ~EchoCancellationImpl();
 
-  int ProcessRenderAudio(const AudioBuffer* audio);
-  int ProcessCaptureAudio(AudioBuffer* audio);
+  // EchoCancellationImplWrapper implementation.
+  virtual int ProcessRenderAudio(const AudioBuffer* audio);
+  virtual int ProcessCaptureAudio(AudioBuffer* audio);
 
   // EchoCancellation implementation.
   virtual bool is_enabled() const;
@@ -71,6 +71,7 @@ class EchoCancellationImpl : public EchoCancellation,
   bool stream_has_echo_;
   bool delay_logging_enabled_;
 };
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_ECHO_CANCELLATION_IMPL_H_

@@ -21,7 +21,7 @@
 namespace webrtc {
 class AudioBuffer;
 class CriticalSectionWrapper;
-class EchoCancellationImpl;
+class EchoCancellationImplWrapper;
 class EchoControlMobileImpl;
 class FileWrapper;
 class GainControlImpl;
@@ -58,6 +58,7 @@ class AudioProcessingImpl : public AudioProcessing {
   // AudioProcessing methods.
   virtual int Initialize();
   virtual int InitializeLocked();
+  virtual void SetExtraOptions(const Config& config);
   virtual int set_sample_rate_hz(int rate);
   virtual int sample_rate_hz() const;
   virtual int set_num_channels(int input_channels, int output_channels);
@@ -92,7 +93,7 @@ class AudioProcessingImpl : public AudioProcessing {
 
   int id_;
 
-  EchoCancellationImpl* echo_cancellation_;
+  EchoCancellationImplWrapper* echo_cancellation_;
   EchoControlMobileImpl* echo_control_mobile_;
   GainControlImpl* gain_control_;
   HighPassFilterImpl* high_pass_filter_;
