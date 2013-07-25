@@ -10,7 +10,7 @@ vars = {
   # If you do not know, use the full path while defining your new deps entry.
   "googlecode_url": "http://%s.googlecode.com/svn",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "212975",
+  "chromium_revision": "205140",
 
   # A small subset of WebKit is needed for the Android Python test framework.
   "webkit_trunk": "http://src.chromium.org/blink/trunk",
