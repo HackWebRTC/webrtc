@@ -10,8 +10,8 @@
     ['OS=="android"', {
       'variables': {
         'isolate_dependency_untracked': [
-          '../../resources/',
-          '../../data/',
+          '../../../resources/',
+          '../../../data/',
         ],
       },
     }],
