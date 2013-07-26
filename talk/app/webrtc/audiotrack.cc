@@ -35,8 +35,7 @@ static const char kAudioTrackKind[] = "audio";
 AudioTrack::AudioTrack(const std::string& label,
                        AudioSourceInterface* audio_source)
     : MediaStreamTrack<AudioTrackInterface>(label),
-      audio_source_(audio_source),
-      renderer_(new AudioTrackRenderer()) {
+      audio_source_(audio_source) {
 }
 
 std::string AudioTrack::kind() const {

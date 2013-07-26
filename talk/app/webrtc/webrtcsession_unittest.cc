@@ -83,6 +83,7 @@ using webrtc::kSetLocalSdpFailed;
 using webrtc::kSetRemoteSdpFailed;
 using webrtc::kPushDownAnswerTDFailed;
 using webrtc::kPushDownPranswerTDFailed;
+using webrtc::kBundleWithoutRtcpMux;
 
 static const SocketAddress kClientAddr1("11.11.11.11", 0);
 static const SocketAddress kClientAddr2("22.22.22.22", 0);
@@ -313,6 +314,24 @@ class FakeMediaStreamSignaling : public webrtc::MediaStreamSignaling,
   }
 
   cricket::MediaSessionOptions options_;
+};
+
+class FakeAudioRenderer : public cricket::AudioRenderer {
+ public:
+  FakeAudioRenderer() : channel_id_(-1) {}
+
+  virtual void AddChannel(int channel_id) OVERRIDE {
+    ASSERT(channel_id_ == -1);
+    channel_id_ = channel_id;
+  }
+  virtual void RemoveChannel(int channel_id) OVERRIDE {
+    ASSERT(channel_id == channel_id_);
+    channel_id_ = -1;
+  }
+
+  int channel_id() const { return channel_id_; }
+ private:
+  int channel_id_;
 };
 
 class WebRtcSessionTest : public testing::Test {
@@ -887,10 +906,6 @@ TEST_F(WebRtcSessionTest, TestSessionCandidates) {
 // with rtcp-mux and/or bundle.
 TEST_F(WebRtcSessionTest, TestSessionCandidatesWithRtcpMux) {
   TestSessionCandidatesWithBundleRtcpMux(false, true);
-}
-
-TEST_F(WebRtcSessionTest, TestSessionCandidatesWithBundle) {
-  TestSessionCandidatesWithBundleRtcpMux(true, false);
 }
 
 TEST_F(WebRtcSessionTest, TestSessionCandidatesWithBundleRtcpMux) {
@@ -1954,6 +1969,36 @@ TEST_F(WebRtcSessionTest, TestDisabledBundleInAnswer) {
   EXPECT_TRUE(kAudioTrack1 == voice_channel_->send_streams()[0].id);
 }
 
+// This test verifies that SetLocalDescription and SetRemoteDescription fails
+// if BUNDLE is enabled but rtcp-mux is disabled in m-lines.
+TEST_F(WebRtcSessionTest, TestDisabledRtcpMuxWithBundleEnabled) {
+  WebRtcSessionTest::Init();
+  mediastream_signaling_.SendAudioVideoStream1();
+  EXPECT_TRUE((cricket::PORTALLOCATOR_ENABLE_BUNDLE & allocator_.flags()) ==
+      cricket::PORTALLOCATOR_ENABLE_BUNDLE);
+  FakeConstraints constraints;
+  constraints.SetMandatoryUseRtpMux(true);
+  SessionDescriptionInterface* offer = session_->CreateOffer(&constraints);
+  std::string offer_str;
+  offer->ToString(&offer_str);
+  // Disable rtcp-mux
+  const std::string rtcp_mux = "rtcp-mux";
+  const std::string xrtcp_mux = "xrtcp-mux";
+  talk_base::replace_substrs(rtcp_mux.c_str(), rtcp_mux.length(),
+                             xrtcp_mux.c_str(), xrtcp_mux.length(),
+                             &offer_str);
+  JsepSessionDescription *local_offer =
+      new JsepSessionDescription(JsepSessionDescription::kOffer);
+  EXPECT_TRUE((local_offer)->Initialize(offer_str, NULL));
+  SetLocalDescriptionExpectError(kBundleWithoutRtcpMux, local_offer);
+  JsepSessionDescription *remote_offer =
+      new JsepSessionDescription(JsepSessionDescription::kOffer);
+  EXPECT_TRUE((remote_offer)->Initialize(offer_str, NULL));
+  SetRemoteDescriptionExpectError(kBundleWithoutRtcpMux, remote_offer);
+  // Trying unmodified SDP.
+  SetLocalDescriptionWithoutError(offer);
+}
+
 TEST_F(WebRtcSessionTest, SetAudioPlayout) {
   Init();
   mediastream_signaling_.SendAudioVideoStream1();
@@ -1966,14 +2011,17 @@ TEST_F(WebRtcSessionTest, SetAudioPlayout) {
   EXPECT_TRUE(channel->GetOutputScaling(receive_ssrc, &left_vol, &right_vol));
   EXPECT_EQ(1, left_vol);
   EXPECT_EQ(1, right_vol);
-  session_->SetAudioPlayout(receive_ssrc, false);
+  talk_base::scoped_ptr<FakeAudioRenderer> renderer(new FakeAudioRenderer());
+  session_->SetAudioPlayout(receive_ssrc, false, renderer.get());
   EXPECT_TRUE(channel->GetOutputScaling(receive_ssrc, &left_vol, &right_vol));
   EXPECT_EQ(0, left_vol);
   EXPECT_EQ(0, right_vol);
-  session_->SetAudioPlayout(receive_ssrc, true);
+  EXPECT_EQ(0, renderer->channel_id());
+  session_->SetAudioPlayout(receive_ssrc, true, NULL);
   EXPECT_TRUE(channel->GetOutputScaling(receive_ssrc, &left_vol, &right_vol));
   EXPECT_EQ(1, left_vol);
   EXPECT_EQ(1, right_vol);
+  EXPECT_EQ(-1, renderer->channel_id());
 }
 
 TEST_F(WebRtcSessionTest, SetAudioSend) {
@@ -1989,15 +2037,18 @@ TEST_F(WebRtcSessionTest, SetAudioSend) {
   cricket::AudioOptions options;
   options.echo_cancellation.Set(true);
 
-  session_->SetAudioSend(send_ssrc, false, options);
+  talk_base::scoped_ptr<FakeAudioRenderer> renderer(new FakeAudioRenderer());
+  session_->SetAudioSend(send_ssrc, false, options, renderer.get());
   EXPECT_TRUE(channel->IsStreamMuted(send_ssrc));
   EXPECT_FALSE(channel->options().echo_cancellation.IsSet());
+  EXPECT_EQ(0, renderer->channel_id());
 
-  session_->SetAudioSend(send_ssrc, true, options);
+  session_->SetAudioSend(send_ssrc, true, options, NULL);
   EXPECT_FALSE(channel->IsStreamMuted(send_ssrc));
   bool value;
   EXPECT_TRUE(channel->options().echo_cancellation.Get(&value));
   EXPECT_TRUE(value);
+  EXPECT_EQ(-1, renderer->channel_id());
 }
 
 TEST_F(WebRtcSessionTest, SetVideoPlayout) {

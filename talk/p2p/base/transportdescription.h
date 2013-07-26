@@ -71,7 +71,7 @@ enum IceMode {
 typedef std::vector<Candidate> Candidates;
 
 struct TransportDescription {
-  TransportDescription() {}
+  TransportDescription() : ice_mode(ICEMODE_FULL) {}
 
   TransportDescription(const std::string& transport_type,
                        const std::vector<std::string>& transport_options,

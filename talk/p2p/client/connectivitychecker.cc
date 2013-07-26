@@ -61,6 +61,7 @@ class TestHttpPortAllocator : public HttpPortAllocator {
 
 void TestHttpPortAllocatorSession::ConfigReady(PortConfiguration* config) {
   SignalConfigReady(username(), password(), config, proxy_);
+  delete config;
 }
 
 void TestHttpPortAllocatorSession::OnRequestDone(

@@ -53,7 +53,8 @@ MediaSessionClient::MediaSessionClient(
       focus_call_(NULL),
       channel_manager_(new ChannelManager(session_manager_->worker_thread())),
       desc_factory_(channel_manager_,
-          session_manager_->transport_desc_factory()) {
+          session_manager_->transport_desc_factory()),
+      multisession_enabled_(false) {
   Construct();
 }
 #endif
@@ -71,7 +72,8 @@ MediaSessionClient::MediaSessionClient(
           device_manager, new CaptureManager(),
           session_manager_->worker_thread())),
       desc_factory_(channel_manager_,
-                    session_manager_->transport_desc_factory()) {
+                    session_manager_->transport_desc_factory()),
+      multisession_enabled_(false) {
   Construct();
 }
 
@@ -533,7 +535,8 @@ bool ParseJingleStreamsOrLegacySsrc(const buzz::XmlElement* desc_elem,
 bool ParseJingleAudioContent(const buzz::XmlElement* content_elem,
                              ContentDescription** content,
                              ParseError* error) {
-  AudioContentDescription* audio = new AudioContentDescription();
+  talk_base::scoped_ptr<AudioContentDescription> audio(
+      new AudioContentDescription());
 
   for (const buzz::XmlElement* payload_elem =
            content_elem->FirstNamed(QN_JINGLE_RTP_PAYLOADTYPE);
@@ -545,11 +548,11 @@ bool ParseJingleAudioContent(const buzz::XmlElement* content_elem,
     }
   }
 
-  if (!ParseJingleStreamsOrLegacySsrc(content_elem, audio, error)) {
+  if (!ParseJingleStreamsOrLegacySsrc(content_elem, audio.get(), error)) {
     return false;
   }
 
-  if (!ParseJingleEncryption(content_elem, audio, error)) {
+  if (!ParseJingleEncryption(content_elem, audio.get(), error)) {
     return false;
   }
 
@@ -561,14 +564,15 @@ bool ParseJingleAudioContent(const buzz::XmlElement* content_elem,
   }
   audio->set_rtp_header_extensions(hdrexts);
 
-  *content = audio;
+  *content = audio.release();
   return true;
 }
 
 bool ParseJingleVideoContent(const buzz::XmlElement* content_elem,
                              ContentDescription** content,
                              ParseError* error) {
-  VideoContentDescription* video = new VideoContentDescription();
+  talk_base::scoped_ptr<VideoContentDescription> video(
+      new VideoContentDescription());
 
   for (const buzz::XmlElement* payload_elem =
            content_elem->FirstNamed(QN_JINGLE_RTP_PAYLOADTYPE);
@@ -580,12 +584,12 @@ bool ParseJingleVideoContent(const buzz::XmlElement* content_elem,
     }
   }
 
-  if (!ParseJingleStreamsOrLegacySsrc(content_elem, video, error)) {
+  if (!ParseJingleStreamsOrLegacySsrc(content_elem, video.get(), error)) {
     return false;
   }
-  ParseBandwidth(content_elem, video);
+  ParseBandwidth(content_elem, video.get());
 
-  if (!ParseJingleEncryption(content_elem, video, error)) {
+  if (!ParseJingleEncryption(content_elem, video.get(), error)) {
     return false;
   }
 
@@ -597,14 +601,15 @@ bool ParseJingleVideoContent(const buzz::XmlElement* content_elem,
   }
   video->set_rtp_header_extensions(hdrexts);
 
-  *content = video;
+  *content = video.release();
   return true;
 }
 
 bool ParseJingleSctpDataContent(const buzz::XmlElement* content_elem,
                                 ContentDescription** content,
                                 ParseError* error) {
-  DataContentDescription* data = new DataContentDescription();
+  talk_base::scoped_ptr<DataContentDescription> data(
+      new DataContentDescription());
   data->set_protocol(kMediaProtocolSctp);
 
   for (const buzz::XmlElement* stream_elem =
@@ -626,7 +631,7 @@ bool ParseJingleSctpDataContent(const buzz::XmlElement* content_elem,
     data->mutable_streams().push_back(stream);
   }
 
-  *content = data;
+  *content = data.release();
   return true;
 }
 

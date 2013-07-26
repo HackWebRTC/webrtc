@@ -1061,7 +1061,8 @@ TEST_F(PortTest, TestLoopbackCallAsIce) {
   ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
   msg = lport->last_stun_msg();
   EXPECT_EQ(STUN_BINDING_REQUEST, msg->type());
-  IceMessage* modified_req = CreateStunMessage(STUN_BINDING_REQUEST);
+  talk_base::scoped_ptr<IceMessage> modified_req(
+      CreateStunMessage(STUN_BINDING_REQUEST));
   const StunByteStringAttribute* username_attr = msg->GetByteString(
       STUN_ATTR_USERNAME);
   modified_req->AddAttribute(new StunByteStringAttribute(
@@ -1075,7 +1076,7 @@ TEST_F(PortTest, TestLoopbackCallAsIce) {
 
   lport->Reset();
   talk_base::scoped_ptr<ByteBuffer> buf(new ByteBuffer());
-  WriteStunMessage(modified_req, buf.get());
+  WriteStunMessage(modified_req.get(), buf.get());
   conn1->OnReadPacket(buf->Data(), buf->Length());
   ASSERT_TRUE_WAIT(lport->last_stun_msg() != NULL, 1000);
   msg = lport->last_stun_msg();

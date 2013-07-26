@@ -28,6 +28,7 @@
 #ifndef TALK_APP_WEBRTC_AUDIOTRACKRENDERER_H_
 #define TALK_APP_WEBRTC_AUDIOTRACKRENDERER_H_
 
+#include "talk/base/thread.h"
 #include "talk/media/base/audiorenderer.h"
 
 namespace webrtc {
@@ -35,16 +36,19 @@ namespace webrtc {
 // Class used for AudioTrack to get the ID of WebRtc voice channel that
 // the AudioTrack is connecting to.
 // Each AudioTrack owns a AudioTrackRenderer instance.
-// SetChannelID() should be called only when a AudioTrack is added to a
-// MediaStream and should not be changed afterwards.
+// AddChannel() will be called when an AudioTrack is added to a MediaStream.
+// RemoveChannel will be called when the AudioTrack or WebRtc VoE channel is
+// going away.
+// This implementation only supports one channel, and it is only used by
+// Chrome for remote audio tracks."
 class AudioTrackRenderer : public cricket::AudioRenderer {
  public:
   AudioTrackRenderer();
   ~AudioTrackRenderer();
 
   // Implements cricket::AudioRenderer.
-  virtual void SetChannelId(int channel_id);
-  virtual int GetChannelId() const;
+  virtual void AddChannel(int channel_id) OVERRIDE;
+  virtual void RemoveChannel(int channel_id) OVERRIDE;
 
  private:
   int channel_id_;

@@ -36,13 +36,14 @@ AudioTrackRenderer::AudioTrackRenderer() : channel_id_(-1) {
 AudioTrackRenderer::~AudioTrackRenderer() {
 }
 
-void AudioTrackRenderer::SetChannelId(int channel_id) {
-  ASSERT(channel_id_ == -1);
+void AudioTrackRenderer::AddChannel(int channel_id) {
+  ASSERT(channel_id_ == -1 || channel_id_ == channel_id);
   channel_id_ = channel_id;
 }
 
-int AudioTrackRenderer::GetChannelId() const {
-  return channel_id_;
+void AudioTrackRenderer::RemoveChannel(int channel_id) {
+  ASSERT(channel_id_ == -1 || channel_id_ == channel_id);
+  channel_id_ = -1;
 }
 
 }  // namespace webrtc

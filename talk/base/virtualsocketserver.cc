@@ -114,7 +114,8 @@ class VirtualSocket : public AsyncSocket, public MessageHandler {
  public:
   VirtualSocket(VirtualSocketServer* server, int family, int type, bool async)
       : server_(server), family_(family), type_(type), async_(async),
-        state_(CS_CLOSED), listen_queue_(NULL), write_enabled_(false),
+        state_(CS_CLOSED), error_(0), listen_queue_(NULL),
+        write_enabled_(false),
         network_size_(0), recv_buffer_size_(0), bound_(false), was_any_(false) {
     ASSERT((type_ == SOCK_DGRAM) || (type_ == SOCK_STREAM));
     ASSERT(async_ || (type_ != SOCK_STREAM));  // We only support async streams

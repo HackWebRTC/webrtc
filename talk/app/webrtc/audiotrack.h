@@ -28,7 +28,6 @@
 #ifndef TALK_APP_WEBRTC_AUDIOTRACK_H_
 #define TALK_APP_WEBRTC_AUDIOTRACK_H_
 
-#include "talk/app/webrtc/audiotrackrenderer.h"
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/mediastreamtrack.h"
 #include "talk/app/webrtc/notifier.h"
@@ -46,8 +45,9 @@ class AudioTrack : public MediaStreamTrack<AudioTrackInterface> {
     return audio_source_.get();
   }
 
-  virtual cricket::AudioRenderer* FrameInput() {
-    return renderer_.get();
+  // This method is used for supporting multiple sources/sinks for AudioTracks.
+  virtual cricket::AudioRenderer* GetRenderer() {
+    return NULL;
   }
 
   // Implement MediaStreamTrack
@@ -58,7 +58,6 @@ class AudioTrack : public MediaStreamTrack<AudioTrackInterface> {
 
  private:
   talk_base::scoped_refptr<AudioSourceInterface> audio_source_;
-  talk_base::scoped_ptr<AudioTrackRenderer> renderer_;
 };
 
 }  // namespace webrtc

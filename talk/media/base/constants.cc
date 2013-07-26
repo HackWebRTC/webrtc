@@ -49,13 +49,15 @@ const char* kCodecParamAssociatedPayloadType = "apt";
 
 const char* kOpusCodecName = "opus";
 
+// draft-spittka-payload-rtp-opus-03.txt
 const char* kCodecParamPTime = "ptime";
 const char* kCodecParamMaxPTime = "maxptime";
-
 const char* kCodecParamMinPTime = "minptime";
 const char* kCodecParamSPropStereo = "sprop-stereo";
 const char* kCodecParamStereo = "stereo";
 const char* kCodecParamUseInbandFec = "useinbandfec";
+const char* kCodecParamMaxAverageBitrate = "maxaveragebitrate";
+
 const char* kCodecParamSctpProtocol = "protocol";
 const char* kCodecParamSctpStreams = "streams";
 

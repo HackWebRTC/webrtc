@@ -245,12 +245,11 @@ bool RtpSenderReceiver::ReadNextPacket(RtpDumpPacket* packet) {
 }
 
 bool RtpSenderReceiver::SendRtpPacket(const void* data, size_t len) {
-  if (!media_channel_ || !media_channel_->network_interface()) {
+  if (!media_channel_)
     return false;
-  }
 
   talk_base::Buffer packet(data, len, kMaxRtpPacketLen);
-  return media_channel_->network_interface()->SendPacket(&packet);
+  return media_channel_->SendPacket(&packet);
 }
 
 ///////////////////////////////////////////////////////////////////////////

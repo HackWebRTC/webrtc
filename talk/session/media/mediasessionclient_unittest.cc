@@ -1213,10 +1213,9 @@ class MediaSessionTestParser {
 
 class JingleSessionTestParser : public MediaSessionTestParser {
  public:
-  JingleSessionTestParser() : action_(NULL) {}
+  JingleSessionTestParser() {}
 
   ~JingleSessionTestParser() {
-    delete action_;
   }
 
   buzz::XmlElement* ActionFromStanza(buzz::XmlElement* stanza) {
@@ -1227,7 +1226,7 @@ class JingleSessionTestParser : public MediaSessionTestParser {
     // We need to be able to use multiple contents, but the action
     // gets deleted before we can call NextContent, so we need to
     // stash away a copy.
-    action_ = CopyElement(action);
+    action_.reset(CopyElement(action));
     return action_->FirstNamed(cricket::QN_JINGLE_CONTENT);
   }
 
@@ -1351,7 +1350,7 @@ class JingleSessionTestParser : public MediaSessionTestParser {
   }
 
  private:
-  buzz::XmlElement* action_;
+  talk_base::scoped_ptr<buzz::XmlElement> action_;
 };
 
 class GingleSessionTestParser : public MediaSessionTestParser {
@@ -1520,6 +1519,7 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
     delete pa_;
     delete nm_;
     delete parser_;
+    ClearStanzas();
   }
 
   buzz::XmlElement* ActionFromStanza(buzz::XmlElement* stanza) {
@@ -1700,8 +1700,9 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
                                 buzz::XmlElement** element) {
     *element = NULL;
 
-    buzz::XmlElement* el = buzz::XmlElement::ForStr(initiate_string);
-    client_->session_manager()->OnIncomingMessage(el);
+    talk_base::scoped_ptr<buzz::XmlElement> el(
+        buzz::XmlElement::ForStr(initiate_string));
+    client_->session_manager()->OnIncomingMessage(el.get());
     ASSERT_TRUE(call_ != NULL);
     ASSERT_TRUE(call_->sessions()[0] != NULL);
     ASSERT_EQ(cricket::Session::STATE_RECEIVEDINITIATE,
@@ -1710,8 +1711,7 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
     ASSERT_TRUE(buzz::QN_IQ == stanzas_[0]->Name());
     ASSERT_TRUE(stanzas_[0]->HasAttr(buzz::QN_TYPE));
     ASSERT_EQ(std::string(buzz::STR_RESULT), stanzas_[0]->Attr(buzz::QN_TYPE));
-    delete stanzas_[0];
-    stanzas_.clear();
+    ClearStanzas();
     CheckVideoBandwidth(expected_video_bandwidth_,
                         call_->sessions()[0]->remote_description());
     CheckVideoRtcpMux(expected_video_rtcp_mux_,
@@ -1734,8 +1734,7 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
     ASSERT_TRUE(ContentFromAction(e) != NULL);
     *element = CopyElement(ContentFromAction(e));
     ASSERT_TRUE(*element != NULL);
-    delete stanzas_[0];
-    stanzas_.clear();
+    ClearStanzas();
     if (expect_outgoing_crypto_) {
       CheckCryptoForGoodOutgoingAccept(call_->sessions()[0]);
     }
@@ -1756,8 +1755,7 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
     e = ActionFromStanza(stanzas_[0]);
     ASSERT_TRUE(e != NULL);
     ASSERT_TRUE(parser_->ActionIsTerminate(e));
-    delete stanzas_[0];
-    stanzas_.clear();
+    ClearStanzas();
   }
 
   void TestRejectOffer(const std::string &initiate_string,
@@ -1765,8 +1763,9 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
                        buzz::XmlElement** element) {
     *element = NULL;
 
-    buzz::XmlElement* el = buzz::XmlElement::ForStr(initiate_string);
-    client_->session_manager()->OnIncomingMessage(el);
+    talk_base::scoped_ptr<buzz::XmlElement> el(
+        buzz::XmlElement::ForStr(initiate_string));
+    client_->session_manager()->OnIncomingMessage(el.get());
     ASSERT_TRUE(call_ != NULL);
     ASSERT_TRUE(call_->sessions()[0] != NULL);
     ASSERT_EQ(cricket::Session::STATE_RECEIVEDINITIATE,
@@ -1775,8 +1774,7 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
     ASSERT_TRUE(buzz::QN_IQ == stanzas_[0]->Name());
     ASSERT_TRUE(stanzas_[0]->HasAttr(buzz::QN_TYPE));
     ASSERT_EQ(std::string(buzz::STR_RESULT), stanzas_[0]->Attr(buzz::QN_TYPE));
-    delete stanzas_[0];
-    stanzas_.clear();
+    ClearStanzas();
 
     call_->AcceptSession(call_->sessions()[0], options);
     ASSERT_EQ(cricket::Session::STATE_SENTACCEPT,
@@ -1791,8 +1789,7 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
     ASSERT_TRUE(ContentFromAction(e) != NULL);
     *element = CopyElement(ContentFromAction(e));
     ASSERT_TRUE(*element != NULL);
-    delete stanzas_[0];
-    stanzas_.clear();
+    ClearStanzas();
 
     buzz::XmlElement* content = *element;
     // The NextContent method actually returns the second content. So we
@@ -1826,13 +1823,13 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
     e = ActionFromStanza(stanzas_[0]);
     ASSERT_TRUE(e != NULL);
     ASSERT_TRUE(parser_->ActionIsTerminate(e));
-    delete stanzas_[0];
-    stanzas_.clear();
+    ClearStanzas();
   }
 
   void TestBadIncomingInitiate(const std::string& initiate_string) {
-    buzz::XmlElement* el = buzz::XmlElement::ForStr(initiate_string);
-    client_->session_manager()->OnIncomingMessage(el);
+    talk_base::scoped_ptr<buzz::XmlElement> el(
+        buzz::XmlElement::ForStr(initiate_string));
+    client_->session_manager()->OnIncomingMessage(el.get());
     ASSERT_TRUE(call_ != NULL);
     ASSERT_TRUE(call_->sessions()[0] != NULL);
     ASSERT_EQ(cricket::Session::STATE_SENTREJECT,
@@ -1841,8 +1838,7 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
     ASSERT_TRUE(buzz::QN_IQ == stanzas_[0]->Name());
     ASSERT_TRUE(stanzas_[1]->HasAttr(buzz::QN_TYPE));
     ASSERT_EQ(std::string(buzz::STR_RESULT), stanzas_[1]->Attr(buzz::QN_TYPE));
-    delete stanzas_[0];
-    stanzas_.clear();
+    ClearStanzas();
   }
 
   void TestGoodOutgoingInitiate(const cricket::CallOptions& options) {
@@ -2089,8 +2085,7 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
       CheckSctpDataContent(content);
     }
 
-    delete stanzas_[0];
-    stanzas_.clear();
+    ClearStanzas();
   }
 
   void TestHasAllSupportedAudioCodecs(buzz::XmlElement* e) {
@@ -2379,25 +2374,23 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
       buzz::XmlElement** element) {
     *element = NULL;
 
-    buzz::XmlElement* el = buzz::XmlElement::ForStr(initiate_string);
-    client_->session_manager()->OnIncomingMessage(el);
+    talk_base::scoped_ptr<buzz::XmlElement> el(
+        buzz::XmlElement::ForStr(initiate_string));
+    client_->session_manager()->OnIncomingMessage(el.get());
 
     ASSERT_EQ(cricket::Session::STATE_RECEIVEDINITIATE,
               call_->sessions()[0]->state());
-    delete stanzas_[0];
-    stanzas_.clear();
+    ClearStanzas();
     CheckBadCryptoFromIncomingInitiate(call_->sessions()[0]);
 
     call_->AcceptSession(call_->sessions()[0], cricket::CallOptions());
-    delete stanzas_[0];
-    stanzas_.clear();
+    ClearStanzas();
     CheckNoCryptoForOutgoingAccept(call_->sessions()[0]);
 
     call_->Terminate();
     ASSERT_EQ(cricket::Session::STATE_SENTTERMINATE,
               call_->sessions()[0]->state());
-    delete stanzas_[0];
-    stanzas_.clear();
+    ClearStanzas();
   }
 
   void TestIncomingAcceptWithSsrcs(
@@ -2425,11 +2418,11 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
       ASSERT_TRUE(content_desc != NULL);
       ASSERT_EQ("", content_desc->Attr(cricket::QN_SSRC));
     }
-    delete stanzas_[0];
-    stanzas_.clear();
+    ClearStanzas();
 
     // We need to insert the session ID into the session accept message.
-    buzz::XmlElement* el = buzz::XmlElement::ForStr(accept_string);
+    talk_base::scoped_ptr<buzz::XmlElement> el(
+        buzz::XmlElement::ForStr(accept_string));
     const std::string sid = call_->sessions()[0]->id();
     if (initial_protocol_ == cricket::PROTOCOL_JINGLE) {
       buzz::XmlElement* jingle = el->FirstNamed(cricket::QN_JINGLE);
@@ -2439,7 +2432,7 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
       session->SetAttr(cricket::QN_ID, sid);
     }
 
-    client_->session_manager()->OnIncomingMessage(el);
+    client_->session_manager()->OnIncomingMessage(el.get());
 
     ASSERT_EQ(cricket::Session::STATE_RECEIVEDACCEPT,
               call_->sessions()[0]->state());
@@ -2447,8 +2440,7 @@ class MediaSessionClientTest : public sigslot::has_slots<> {
     ASSERT_TRUE(buzz::QN_IQ == stanzas_[0]->Name());
     ASSERT_TRUE(stanzas_[0]->HasAttr(buzz::QN_TYPE));
     ASSERT_EQ(std::string(buzz::STR_RESULT), stanzas_[0]->Attr(buzz::QN_TYPE));
-    delete stanzas_[0];
-    stanzas_.clear();
+    ClearStanzas();
 
     CheckAudioSsrcForIncomingAccept(call_->sessions()[0]);
     CheckVideoSsrcForIncomingAccept(call_->sessions()[0]);

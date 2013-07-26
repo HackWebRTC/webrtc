@@ -50,11 +50,11 @@ def _InternalBuildDebianPackage(env, debian_files, package_files,
   # generated files.
   control_file = None
   changelog_file = None
-  for file in debian_files:
-    if os.path.basename(file) == 'control':
-      control_file = env.File(file).srcnode().abspath
-    elif os.path.basename(file) == 'changelog':
-      changelog_file = env.File(file).srcnode().abspath
+  for file_name in debian_files:
+    if os.path.basename(file_name) == 'control':
+      control_file = env.File(file_name).srcnode().abspath
+    elif os.path.basename(file_name) == 'changelog':
+      changelog_file = env.File(file_name).srcnode().abspath
   if not control_file:
     raise Exception('Need to have a control file')
   if not changelog_file:
@@ -87,18 +87,18 @@ def _InternalBuildDebianPackage(env, debian_files, package_files,
   # Path to where we will construct the debian build tree.
   deb_build_tree = os.path.join(source_dir_name, 'deb_build_tree')
   # First copy the files.
-  for file in package_files:
-    env.Command(os.path.join(deb_build_tree, file[0]), file[1],
+  for file_name in package_files:
+    env.Command(os.path.join(deb_build_tree, file_name[0]), file_name[1],
         SCons.Defaults.Copy('$TARGET', '$SOURCE'))
-    env.Depends(targets, os.path.join(deb_build_tree, file[0]))
+    env.Depends(targets, os.path.join(deb_build_tree, file_name[0]))
   # Now copy the Debian metadata sources. We have to do this all at once so
   # that we can remove the target directory before copying, because there
   # can't be any other stale files there or else dpkg-buildpackage may use
   # them and give incorrect build output.
   copied_debian_files_paths = []
-  for file in debian_files:
+  for file_name in debian_files:
     copied_debian_files_paths.append(os.path.join(deb_build_tree, 'debian',
-        os.path.basename(file)))
+                                                  os.path.basename(file_name)))
   copy_commands = [
       """dir=$$(dirname $TARGET) && \
           rm -Rf $$dir && \

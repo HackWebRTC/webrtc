@@ -75,7 +75,7 @@ void LocalAudioTrackHandler::OnStateChanged() {
 
 void LocalAudioTrackHandler::Stop() {
   cricket::AudioOptions options;
-  provider_->SetAudioSend(ssrc(), false, options);
+  provider_->SetAudioSend(ssrc(), false, options, NULL);
 }
 
 void LocalAudioTrackHandler::OnEnabledChanged() {
@@ -84,7 +84,8 @@ void LocalAudioTrackHandler::OnEnabledChanged() {
     options = static_cast<LocalAudioSource*>(
         audio_track_->GetSource())->options();
   }
-  provider_->SetAudioSend(ssrc(), audio_track_->enabled(), options);
+  provider_->SetAudioSend(ssrc(), audio_track_->enabled(), options,
+                          audio_track_->GetRenderer());
 }
 
 RemoteAudioTrackHandler::RemoteAudioTrackHandler(
@@ -95,21 +96,21 @@ RemoteAudioTrackHandler::RemoteAudioTrackHandler(
       audio_track_(track),
       provider_(provider) {
   OnEnabledChanged();
-  provider_->SetAudioRenderer(ssrc, audio_track_->FrameInput());
 }
 
 RemoteAudioTrackHandler::~RemoteAudioTrackHandler() {
 }
 
 void RemoteAudioTrackHandler::Stop() {
-  provider_->SetAudioPlayout(ssrc(), false);
+  provider_->SetAudioPlayout(ssrc(), false, NULL);
 }
 
 void RemoteAudioTrackHandler::OnStateChanged() {
 }
 
 void RemoteAudioTrackHandler::OnEnabledChanged() {
-  provider_->SetAudioPlayout(ssrc(), audio_track_->enabled());
+  provider_->SetAudioPlayout(ssrc(), audio_track_->enabled(),
+                             audio_track_->GetRenderer());
 }
 
 LocalVideoTrackHandler::LocalVideoTrackHandler(

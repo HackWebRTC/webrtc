@@ -39,6 +39,7 @@ PortAllocatorSession::PortAllocatorSession(const std::string& content_name,
     : content_name_(content_name),
       component_(component),
       flags_(flags),
+      generation_(0),
       // If PORTALLOCATOR_ENABLE_SHARED_UFRAG flag is not enabled, ignore the
       // incoming ufrag and pwd, which will cause each Port to generate one
       // by itself.

@@ -45,14 +45,13 @@ namespace webrtc {
 class AudioProviderInterface {
  public:
   // Enable/disable the audio playout of a remote audio track with |ssrc|.
-  virtual void SetAudioPlayout(uint32 ssrc, bool enable) = 0;
+  virtual void SetAudioPlayout(uint32 ssrc, bool enable,
+                               cricket::AudioRenderer* renderer) = 0;
   // Enable/disable sending audio on the local audio track with |ssrc|.
   // When |enable| is true |options| should be applied to the audio track.
   virtual void SetAudioSend(uint32 ssrc, bool enable,
-                            const cricket::AudioOptions& options) = 0;
-  // Sets the renderer to be used for the specified |ssrc|.
-  virtual bool SetAudioRenderer(uint32 ssrc,
-                                cricket::AudioRenderer* renderer) = 0;
+                            const cricket::AudioOptions& options,
+                            cricket::AudioRenderer* renderer) = 0;
 
  protected:
   virtual ~AudioProviderInterface() {}

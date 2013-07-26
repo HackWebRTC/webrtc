@@ -211,6 +211,7 @@ AsyncSocket* FirewallSocketServer::WrapSocket(AsyncSocket* sock, int type) {
       (type == SOCK_STREAM && !tcp_sockets_enabled_) ||
       (type == SOCK_DGRAM && !udp_sockets_enabled_)) {
     LOG(LS_VERBOSE) << "FirewallSocketServer socket creation denied";
+    delete sock;
     return NULL;
   }
   return new FirewallSocket(this, sock, type);

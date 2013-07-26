@@ -81,6 +81,8 @@ const char kWebRTCIdentityPrefix[] = "WebRTC";
 const char kSetLocalSdpFailed[] = "SetLocalDescription failed: ";
 const char kSetRemoteSdpFailed[] = "SetRemoteDescription failed: ";
 const char kCreateChannelFailed[] = "Failed to create channels.";
+const char kBundleWithoutRtcpMux[] = "RTCP-MUX must be enabled when BUNDLE "
+                                     "is enabled.";
 const char kInvalidCandidates[] = "Description contains invalid candidates.";
 const char kInvalidSdp[] = "Invalid session description.";
 const char kMlineMismatch[] =
@@ -639,6 +641,11 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
   if (!desc || !desc->description()) {
     return BadLocalSdp(kInvalidSdp, err_desc);
   }
+
+  if (!VerifyBundleSettings(desc->description())) {
+    return BadLocalSdp(kBundleWithoutRtcpMux, err_desc);
+  }
+
   Action action = GetAction(desc->type());
   if (!ExpectSetLocalDescription(action)) {
     std::string type = desc->type();
@@ -706,6 +713,11 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
   if (!desc || !desc->description()) {
     return BadRemoteSdp(kInvalidSdp, err_desc);
   }
+
+  if (!VerifyBundleSettings(desc->description())) {
+    return BadRemoteSdp(kBundleWithoutRtcpMux, err_desc);
+  }
+
   Action action = GetAction(desc->type());
   if (!ExpectSetRemoteDescription(action)) {
     std::string type = desc->type();
@@ -881,10 +893,16 @@ std::string WebRtcSession::BadStateErrMsg(
   return desc.str();
 }
 
-void WebRtcSession::SetAudioPlayout(uint32 ssrc, bool enable) {
+void WebRtcSession::SetAudioPlayout(uint32 ssrc, bool enable,
+                                    cricket::AudioRenderer* renderer) {
   ASSERT(signaling_thread()->IsCurrent());
   if (!voice_channel_) {
     LOG(LS_ERROR) << "SetAudioPlayout: No audio channel exists.";
+    return;
+  }
+  if (!voice_channel_->SetRemoteRenderer(ssrc, renderer)) {
+    // SetRenderer() can fail if the ssrc does not match any playout channel.
+    LOG(LS_ERROR) << "SetAudioPlayout: ssrc is incorrect: " << ssrc;
     return;
   }
   if (!voice_channel_->SetOutputScaling(ssrc, enable ? 1 : 0, enable ? 1 : 0)) {
@@ -896,10 +914,16 @@ void WebRtcSession::SetAudioPlayout(uint32 ssrc, bool enable) {
 }
 
 void WebRtcSession::SetAudioSend(uint32 ssrc, bool enable,
-                                 const cricket::AudioOptions& options) {
+                                 const cricket::AudioOptions& options,
+                                 cricket::AudioRenderer* renderer) {
   ASSERT(signaling_thread()->IsCurrent());
   if (!voice_channel_) {
     LOG(LS_ERROR) << "SetAudioSend: No audio channel exists.";
+    return;
+  }
+  if (!voice_channel_->SetLocalRenderer(ssrc, renderer)) {
+    // SetRenderer() can fail if the ssrc does not match any send channel.
+    LOG(LS_ERROR) << "SetAudioSend: ssrc is incorrect: " << ssrc;
     return;
   }
   if (!voice_channel_->MuteStream(ssrc, !enable)) {
@@ -911,22 +935,6 @@ void WebRtcSession::SetAudioSend(uint32 ssrc, bool enable,
   }
   if (enable)
     voice_channel_->SetChannelOptions(options);
-}
-
-bool WebRtcSession::SetAudioRenderer(uint32 ssrc,
-                                     cricket::AudioRenderer* renderer) {
-  if (!voice_channel_) {
-    LOG(LS_ERROR) << "SetAudioRenderer: No audio channel exists.";
-    return false;
-  }
-
-  if (!voice_channel_->SetRenderer(ssrc, renderer)) {
-    // SetRenderer() can fail if the ssrc is not mapping to the playout channel.
-    LOG(LS_ERROR) << "SetAudioRenderer: ssrc is incorrect: " << ssrc;
-    return false;
-  }
-
-  return true;
 }
 
 bool WebRtcSession::SetCaptureDevice(uint32 ssrc,
@@ -1339,9 +1347,12 @@ void WebRtcSession::RemoveUnusedChannelsAndTransports(
   }
 }
 
+// TODO(mallinath) - Add a correct error code if the channels are not creatued
+// due to BUNDLE is enabled but rtcp-mux is disabled.
 bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
   // Disabling the BUNDLE flag in PortAllocator if offer disabled it.
-  if (state() == STATE_INIT && !desc->HasGroup(cricket::GROUP_TYPE_BUNDLE)) {
+  bool bundle_enabled = desc->HasGroup(cricket::GROUP_TYPE_BUNDLE);
+  if (state() == STATE_INIT && !bundle_enabled) {
     port_allocator()->set_flags(port_allocator()->flags() &
                                 ~cricket::PORTALLOCATOR_ENABLE_BUNDLE);
   }
@@ -1349,7 +1360,7 @@ bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
   // Creating the media channels and transport proxies.
   const cricket::ContentInfo* voice = cricket::GetFirstAudioContent(desc);
   if (voice && !voice->rejected && !voice_channel_) {
-    if (!CreateVoiceChannel(desc)) {
+    if (!CreateVoiceChannel(voice)) {
       LOG(LS_ERROR) << "Failed to create voice channel.";
       return false;
     }
@@ -1357,7 +1368,7 @@ bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
 
   const cricket::ContentInfo* video = cricket::GetFirstVideoContent(desc);
   if (video && !video->rejected && !video_channel_) {
-    if (!CreateVideoChannel(desc)) {
+    if (!CreateVideoChannel(video)) {
       LOG(LS_ERROR) << "Failed to create video channel.";
       return false;
     }
@@ -1366,7 +1377,7 @@ bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
   const cricket::ContentInfo* data = cricket::GetFirstDataContent(desc);
   if (data_channel_type_ != cricket::DCT_NONE &&
       data && !data->rejected && !data_channel_.get()) {
-    if (!CreateDataChannel(desc)) {
+    if (!CreateDataChannel(data)) {
       LOG(LS_ERROR) << "Failed to create data channel.";
       return false;
     }
@@ -1375,29 +1386,23 @@ bool WebRtcSession::CreateChannels(const SessionDescription* desc) {
   return true;
 }
 
-bool WebRtcSession::CreateVoiceChannel(const SessionDescription* desc) {
-  const cricket::ContentInfo* voice = cricket::GetFirstAudioContent(desc);
+bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content) {
   voice_channel_.reset(channel_manager_->CreateVoiceChannel(
-      this, voice->name, true));
-  return voice_channel_ ? true : false;
+      this, content->name, true));
+  return (voice_channel_ != NULL);
 }
 
-bool WebRtcSession::CreateVideoChannel(const SessionDescription* desc) {
-  const cricket::ContentInfo* video = cricket::GetFirstVideoContent(desc);
+bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content) {
   video_channel_.reset(channel_manager_->CreateVideoChannel(
-      this, video->name, true, voice_channel_.get()));
-  return video_channel_ ? true : false;
+      this, content->name, true, voice_channel_.get()));
+  return (video_channel_ != NULL);
 }
 
-bool WebRtcSession::CreateDataChannel(const SessionDescription* desc) {
-  const cricket::ContentInfo* data = cricket::GetFirstDataContent(desc);
+bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content) {
   bool rtcp = (data_channel_type_ == cricket::DCT_RTP);
   data_channel_.reset(channel_manager_->CreateDataChannel(
-      this, data->name, rtcp, data_channel_type_));
-  if (!data_channel_.get()) {
-    return false;
-  }
-  return true;
+      this, content->name, rtcp,  data_channel_type_));
+  return (data_channel_ != NULL);
 }
 
 void WebRtcSession::CopySavedCandidates(
@@ -1432,6 +1437,38 @@ void WebRtcSession::UpdateSessionDescriptionSecurePolicy(
       }
     }
   }
+}
+
+// Returns false if bundle is enabled and rtcp_mux is disabled.
+bool WebRtcSession::VerifyBundleSettings(const SessionDescription* desc) {
+  bool bundle_enabled = desc->HasGroup(cricket::GROUP_TYPE_BUNDLE);
+  if (!bundle_enabled)
+    return true;
+
+  const cricket::ContentGroup* bundle_group =
+      desc->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  ASSERT(bundle_group != NULL);
+
+  const cricket::ContentInfos& contents = desc->contents();
+  for (cricket::ContentInfos::const_iterator citer = contents.begin();
+       citer != contents.end(); ++citer) {
+    const cricket::ContentInfo* content = (&*citer);
+    ASSERT(content != NULL);
+    if (bundle_group->HasContentName(content->name) &&
+        !content->rejected && content->type == cricket::NS_JINGLE_RTP) {
+      if (!HasRtcpMuxEnabled(content))
+        return false;
+    }
+  }
+  // RTCP-MUX is enabled in all the contents.
+  return true;
+}
+
+bool WebRtcSession::HasRtcpMuxEnabled(
+    const cricket::ContentInfo* content) {
+  const cricket::MediaContentDescription* description =
+      static_cast<cricket::MediaContentDescription*>(content->description);
+  return description->rtcp_mux();
 }
 
 }  // namespace webrtc

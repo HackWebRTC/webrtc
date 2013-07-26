@@ -1238,7 +1238,8 @@ class VideoMediaChannelTest : public testing::Test,
       // Wait until frame of right size is captured.
       EXPECT_TRUE_WAIT(renderer_.num_rendered_frames() >= captured_frames &&
                        format.width == renderer_.width() &&
-                       format.height == renderer_.height(), kTimeout);
+                       format.height == renderer_.height() &&
+                       !renderer_.black_frame(), kTimeout);
       EXPECT_GE(renderer_.num_rendered_frames(), captured_frames);
       EXPECT_EQ(format.width, renderer_.width());
       EXPECT_EQ(format.height, renderer_.height());

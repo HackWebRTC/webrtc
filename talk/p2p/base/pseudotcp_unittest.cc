@@ -174,7 +174,7 @@ class PseudoTcpTestBase : public testing::Test,
   void UpdateLocalClock() { UpdateClock(&local_, MSG_LCLOCK); }
   void UpdateRemoteClock() { UpdateClock(&remote_, MSG_RCLOCK); }
   void UpdateClock(PseudoTcp* tcp, uint32 message) {
-    long interval;  // NOLINT
+    long interval = 0;  // NOLINT
     tcp->GetNextClock(PseudoTcp::Now(), interval);
     interval = talk_base::_max<int>(interval, 0L);  // sometimes interval is < 0
     talk_base::Thread::Current()->Clear(this, message);

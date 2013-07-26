@@ -54,10 +54,11 @@ namespace webrtc {
 class MockAudioProvider : public AudioProviderInterface {
  public:
   virtual ~MockAudioProvider() {}
-  MOCK_METHOD2(SetAudioPlayout, void(uint32 ssrc, bool enable));
-  MOCK_METHOD3(SetAudioSend, void(uint32 ssrc, bool enable,
-                                  const cricket::AudioOptions& options));
-  MOCK_METHOD2(SetAudioRenderer, bool(uint32, cricket::AudioRenderer*));
+  MOCK_METHOD3(SetAudioPlayout, void(uint32 ssrc, bool enable,
+                                     cricket::AudioRenderer* renderer));
+  MOCK_METHOD4(SetAudioSend, void(uint32 ssrc, bool enable,
+                                  const cricket::AudioOptions& options,
+                                  cricket::AudioRenderer* renderer));
 };
 
 // Helper class to test MediaStreamHandler.
@@ -114,7 +115,7 @@ class MediaStreamHandlerTest : public testing::Test {
   }
 
   void AddLocalAudioTrack() {
-    EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, true, _));
+    EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, true, _, _));
     handlers_.AddLocalAudioTrack(stream_, stream_->GetAudioTracks()[0],
                                  kAudioSsrc);
   }
@@ -128,7 +129,7 @@ class MediaStreamHandlerTest : public testing::Test {
   }
 
   void RemoveLocalAudioTrack() {
-    EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, false, _))
+    EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, false, _, _))
         .Times(1);
     handlers_.RemoveLocalTrack(stream_, audio_track_);
   }
@@ -142,8 +143,7 @@ class MediaStreamHandlerTest : public testing::Test {
   }
 
   void AddRemoteAudioTrack() {
-    EXPECT_CALL(audio_provider_, SetAudioRenderer(kAudioSsrc, _));
-    EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true));
+    EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true, _));
     handlers_.AddRemoteAudioTrack(stream_, stream_->GetAudioTracks()[0],
                                   kAudioSsrc);
   }
@@ -156,7 +156,7 @@ class MediaStreamHandlerTest : public testing::Test {
   }
 
   void RemoveRemoteAudioTrack() {
-    EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false));
+    EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false, _));
     handlers_.RemoveRemoteTrack(stream_, stream_->GetAudioTracks()[0]);
   }
 
@@ -203,7 +203,7 @@ TEST_F(MediaStreamHandlerTest, RemoveLocalStream) {
       .Times(1);
   EXPECT_CALL(video_provider_, SetVideoSend(kVideoSsrc, false, _))
       .Times(1);
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, false, _))
+  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, false, _, _))
       .Times(1);
   handlers_.RemoveLocalStream(stream_);
 }
@@ -236,7 +236,7 @@ TEST_F(MediaStreamHandlerTest, RemoveRemoteStream) {
 
   EXPECT_CALL(video_provider_, SetVideoPlayout(kVideoSsrc, false, NULL))
       .Times(1);
-  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false))
+  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false, _))
       .Times(1);
   handlers_.RemoveRemoteStream(stream_);
 }
@@ -244,10 +244,10 @@ TEST_F(MediaStreamHandlerTest, RemoveRemoteStream) {
 TEST_F(MediaStreamHandlerTest, LocalAudioTrackDisable) {
   AddLocalAudioTrack();
 
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, false, _));
+  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, false, _, _));
   audio_track_->set_enabled(false);
 
-  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, true, _));
+  EXPECT_CALL(audio_provider_, SetAudioSend(kAudioSsrc, true, _, _));
   audio_track_->set_enabled(true);
 
   RemoveLocalAudioTrack();
@@ -257,10 +257,10 @@ TEST_F(MediaStreamHandlerTest, LocalAudioTrackDisable) {
 TEST_F(MediaStreamHandlerTest, RemoteAudioTrackDisable) {
   AddRemoteAudioTrack();
 
-  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false));
+  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, false, _));
   audio_track_->set_enabled(false);
 
-  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true));
+  EXPECT_CALL(audio_provider_, SetAudioPlayout(kAudioSsrc, true, _));
   audio_track_->set_enabled(true);
 
   RemoveRemoteAudioTrack();

@@ -413,9 +413,9 @@ class MediaChannel : public sigslot::has_slots<> {
   MediaChannel() : network_interface_(NULL) {}
   virtual ~MediaChannel() {}
 
-  // Gets/sets the abstract inteface class for sending RTP/RTCP data.
-  NetworkInterface *network_interface() { return network_interface_; }
+  // Sets the abstract interface class for sending RTP/RTCP data.
   virtual void SetInterface(NetworkInterface *iface) {
+    talk_base::CritScope cs(&network_interface_crit_);
     network_interface_ = iface;
   }
 
@@ -451,8 +451,40 @@ class MediaChannel : public sigslot::has_slots<> {
   // Sets the rate control to use when sending data.
   virtual bool SetSendBandwidth(bool autobw, int bps) = 0;
 
- protected:
-  NetworkInterface *network_interface_;
+  // Base method to send packet using NetworkInterface.
+  bool SendPacket(talk_base::Buffer* packet) {
+    return DoSendPacket(packet, false);
+  }
+
+  bool SendRtcp(talk_base::Buffer* packet) {
+    return DoSendPacket(packet, true);
+  }
+
+  int SetOption(NetworkInterface::SocketType type,
+                talk_base::Socket::Option opt,
+                int option) {
+    talk_base::CritScope cs(&network_interface_crit_);
+    if (!network_interface_)
+      return -1;
+
+    return network_interface_->SetOption(type, opt, option);
+  }
+
+ private:
+  bool DoSendPacket(talk_base::Buffer* packet, bool rtcp) {
+    talk_base::CritScope cs(&network_interface_crit_);
+    if (!network_interface_)
+      return false;
+
+    return (!rtcp) ? network_interface_->SendPacket(packet) :
+                     network_interface_->SendRtcp(packet);
+  }
+
+  // |network_interface_| can be accessed from the worker_thread and
+  // from any MediaEngine threads. This critical section is to protect accessing
+  // of network_interface_ object.
+  talk_base::CriticalSection network_interface_crit_;
+  NetworkInterface* network_interface_;
 };
 
 enum SendFlags {
@@ -712,8 +744,10 @@ class VoiceMediaChannel : public MediaChannel {
   virtual bool SetPlayout(bool playout) = 0;
   // Starts or stops sending (and potentially capture) of local audio.
   virtual bool SetSend(SendFlags flag) = 0;
-  // Sets the renderer object to be used for the specified audio stream.
-  virtual bool SetRenderer(uint32 ssrc, AudioRenderer* renderer) = 0;
+  // Sets the renderer object to be used for the specified remote audio stream.
+  virtual bool SetRemoteRenderer(uint32 ssrc, AudioRenderer* renderer) = 0;
+  // Sets the renderer object to be used for the specified local audio stream.
+  virtual bool SetLocalRenderer(uint32 ssrc, AudioRenderer* renderer) = 0;
   // Gets current energy levels for all incoming streams.
   virtual bool GetActiveStreams(AudioInfo::StreamList* actives) = 0;
   // Get the current energy level of the stream sent to the speaker.

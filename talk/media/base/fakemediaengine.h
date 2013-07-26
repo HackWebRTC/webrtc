@@ -36,6 +36,7 @@
 
 #include "talk/base/buffer.h"
 #include "talk/base/stringutils.h"
+#include "talk/media/base/audiorenderer.h"
 #include "talk/media/base/mediaengine.h"
 #include "talk/media/base/rtputils.h"
 #include "talk/media/base/streamparams.h"
@@ -69,18 +70,15 @@ template <class Base> class RtpHelper : public Base {
   const std::list<std::string>& rtcp_packets() const { return rtcp_packets_; }
 
   bool SendRtp(const void* data, int len) {
-    if (!sending_ || !Base::network_interface_) {
+    if (!sending_) {
       return false;
     }
     talk_base::Buffer packet(data, len, kMaxRtpPacketLen);
-    return Base::network_interface_->SendPacket(&packet);
+    return Base::SendPacket(&packet);
   }
   bool SendRtcp(const void* data, int len) {
-    if (!Base::network_interface_) {
-      return false;
-    }
     talk_base::Buffer packet(data, len, kMaxRtpPacketLen);
-    return Base::network_interface_->SendRtcp(&packet);
+    return Base::SendRtcp(&packet);
   }
 
   bool CheckRtp(const void* data, int len) {
@@ -294,9 +292,44 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     output_scalings_.erase(ssrc);
     return true;
   }
-  virtual bool SetRenderer(uint32 ssrc, AudioRenderer* renderer) {
-    // TODO(xians): Implement this.
-    return false;
+  virtual bool SetRemoteRenderer(uint32 ssrc, AudioRenderer* renderer) {
+    std::map<uint32, AudioRenderer*>::iterator it =
+        remote_renderers_.find(ssrc);
+    if (renderer) {
+      if (it != remote_renderers_.end()) {
+        ASSERT(it->second == renderer);
+      } else {
+        remote_renderers_.insert(std::make_pair(ssrc, renderer));
+        renderer->AddChannel(0);
+      }
+    } else {
+      if (it != remote_renderers_.end()) {
+        it->second->RemoveChannel(0);
+        remote_renderers_.erase(it);
+      } else {
+        return false;
+      }
+    }
+    return true;
+  }
+  virtual bool SetLocalRenderer(uint32 ssrc, AudioRenderer* renderer) {
+    std::map<uint32, AudioRenderer*>::iterator it = local_renderers_.find(ssrc);
+    if (renderer) {
+      if (it != local_renderers_.end()) {
+        ASSERT(it->second == renderer);
+      } else {
+        local_renderers_.insert(std::make_pair(ssrc, renderer));
+        renderer->AddChannel(0);
+      }
+    } else {
+      if (it != local_renderers_.end()) {
+        it->second->RemoveChannel(0);
+        local_renderers_.erase(it);
+      } else {
+        return false;
+      }
+    }
+    return true;
   }
 
   virtual bool GetActiveStreams(AudioInfo::StreamList* streams) { return true; }
@@ -394,6 +427,8 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   bool ringback_tone_loop_;
   int time_since_last_typing_;
   AudioOptions options_;
+  std::map<uint32, AudioRenderer*> local_renderers_;
+  std::map<uint32, AudioRenderer*> remote_renderers_;
 };
 
 // A helper function to compare the FakeVoiceMediaChannel::DtmfInfo.

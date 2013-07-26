@@ -155,11 +155,11 @@ class AudioTrackInterface : public MediaStreamTrackInterface {
   // TODO(xians): Figure out if the following interface should be const or not.
   virtual AudioSourceInterface* GetSource() const =  0;
 
-  // Gets a pointer to the frame input of this AudioTrack.
+  // Gets a pointer to the audio renderer of this AudioTrack.
   // The pointer is valid for the lifetime of this AudioTrack.
   // TODO(xians): Make the following interface pure virtual once Chrome has its
   // implementation.
-  virtual cricket::AudioRenderer* FrameInput() { return NULL; }
+  virtual cricket::AudioRenderer* GetRenderer() { return NULL; }
 
  protected:
   virtual ~AudioTrackInterface() {}

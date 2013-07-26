@@ -872,6 +872,10 @@ class TestClient : public sigslot::has_slots<> {
     }
     delete session_manager;
     delete client;
+    for (std::deque<buzz::XmlElement*>::iterator it = sent_stanzas.begin();
+         it != sent_stanzas.end(); ++it) {
+      delete *it;
+    }
   }
 
   void Construct(cricket::PortAllocator* pa,
@@ -899,11 +903,8 @@ class TestClient : public sigslot::has_slots<> {
     new_remote_description = false;
     last_content_action = cricket::CA_OFFER;
     last_content_source = cricket::CS_LOCAL;
-    last_expected_sent_stanza = NULL;
     session = NULL;
     last_session_state = cricket::BaseSession::STATE_INIT;
-    chan_a = NULL;
-    chan_b = NULL;
     blow_up_on_error = true;
     error_count = 0;
 
@@ -925,7 +926,7 @@ class TestClient : public sigslot::has_slots<> {
   }
 
   const buzz::XmlElement* stanza() const {
-    return last_expected_sent_stanza;
+    return last_expected_sent_stanza.get();
   }
 
   cricket::BaseSession::State session_state() const {
@@ -964,7 +965,7 @@ class TestClient : public sigslot::has_slots<> {
     EXPECT_TRUE(!sent_stanzas.empty()) <<
         "Found no stanza when expected " << expected;
 
-    last_expected_sent_stanza = sent_stanzas.front();
+    last_expected_sent_stanza.reset(sent_stanzas.front());
     sent_stanzas.pop_front();
 
     std::string actual = last_expected_sent_stanza->Str();
@@ -1094,12 +1095,12 @@ class TestClient : public sigslot::has_slots<> {
     // multiple contents with single components, but not both.
     int component_a = 1;
     int component_b = (content_name_a == content_name_b) ? 2 : 1;
-    chan_a = new ChannelHandler(
+    chan_a.reset(new ChannelHandler(
         session->CreateChannel(content_name_a, channel_name_a, component_a),
-        channel_name_a);
-    chan_b = new ChannelHandler(
+        channel_name_a));
+    chan_b.reset(new ChannelHandler(
         session->CreateChannel(content_name_b, channel_name_b, component_b),
-        channel_name_b);
+        channel_name_b));
   }
 
   int* next_message_id;
@@ -1119,15 +1120,15 @@ class TestClient : public sigslot::has_slots<> {
   cricket::ContentAction last_content_action;
   cricket::ContentSource last_content_source;
   std::deque<buzz::XmlElement*> sent_stanzas;
-  buzz::XmlElement* last_expected_sent_stanza;
+  talk_base::scoped_ptr<buzz::XmlElement> last_expected_sent_stanza;
 
   cricket::SessionManager* session_manager;
   TestSessionClient* client;
   cricket::PortAllocator* port_allocator_;
   cricket::Session* session;
   cricket::BaseSession::State last_session_state;
-  ChannelHandler* chan_a;
-  ChannelHandler* chan_b;
+  talk_base::scoped_ptr<ChannelHandler> chan_a;
+  talk_base::scoped_ptr<ChannelHandler> chan_b;
   bool blow_up_on_error;
   int error_count;
 };
@@ -1409,8 +1410,8 @@ class SessionTest : public testing::Test {
       EXPECT_TRUE(responder_proxy_chan_b->impl() != NULL);
       EXPECT_EQ(responder_proxy_chan_a->impl(), responder_proxy_chan_b->impl());
     }
-    TestSendRecv(initiator->chan_a, initiator->chan_b,
-                 responder->chan_a, responder->chan_b);
+    TestSendRecv(initiator->chan_a.get(), initiator->chan_b.get(),
+                 responder->chan_a.get(), responder->chan_b.get());
 
     if (resulting_protocol == PROTOCOL_JINGLE) {
       // Deliver a description-info message to the initiator and check if the
@@ -1855,8 +1856,8 @@ class SessionTest : public testing::Test {
                    initiator->session_state(), kEventTimeout);
     EXPECT_EQ_WAIT(cricket::BaseSession::STATE_INPROGRESS,
                    responder->session_state(), kEventTimeout);
-    TestSendRecv(initiator->chan_a, initiator->chan_b,
-                 responder->chan_a, responder->chan_b);
+    TestSendRecv(initiator->chan_a.get(), initiator->chan_b.get(),
+                 responder->chan_a.get(), responder->chan_b.get());
   }
 
   void TestCandidatesInInitiateAndAccept(const std::string& test_name) {
@@ -1993,8 +1994,8 @@ class SessionTest : public testing::Test {
                    initiator->session_state(), kEventTimeout);
     EXPECT_EQ_WAIT(cricket::BaseSession::STATE_INPROGRESS,
                    responder->session_state(), kEventTimeout);
-    TestSendRecv(initiator->chan_a, initiator->chan_b,
-                 responder->chan_a, responder->chan_b);
+    TestSendRecv(initiator->chan_a.get(), initiator->chan_b.get(),
+                 responder->chan_a.get(), responder->chan_b.get());
   }
 
   // Tests that when an initiator terminates right after initiate,

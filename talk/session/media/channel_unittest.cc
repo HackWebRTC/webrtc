@@ -188,6 +188,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     talk_base::InitializeSSL();
   }
 
+  static void TearDownTestCase() {
+    talk_base::CleanupSSL();
+  }
+
   void CreateChannels(int flags1, int flags2) {
     CreateChannels(new typename T::MediaChannel(NULL),
                    new typename T::MediaChannel(NULL),

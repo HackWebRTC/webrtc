@@ -104,12 +104,6 @@ class WebRtcMediaEngine : public cricket::MediaEngineInterface {
       const Device* in_device, const Device* out_device) OVERRIDE {
     return delegate_->SetSoundDevices(in_device, out_device);
   }
-  virtual bool SetVideoCapturer(VideoCapturer* capturer) OVERRIDE {
-    return delegate_->SetVideoCapturer(capturer);
-  }
-  virtual VideoCapturer* GetVideoCapturer() const {
-    return delegate_->GetVideoCapturer();
-  }
   virtual bool GetOutputVolume(int* level) OVERRIDE {
     return delegate_->GetOutputVolume(level);
   }
@@ -124,9 +118,6 @@ class WebRtcMediaEngine : public cricket::MediaEngineInterface {
   }
   virtual bool SetLocalRenderer(VideoRenderer* renderer) OVERRIDE {
     return delegate_->SetLocalRenderer(renderer);
-  }
-  virtual bool SetVideoCapture(bool capture) OVERRIDE {
-    return delegate_->SetVideoCapture(capture);
   }
   virtual const std::vector<AudioCodec>& audio_codecs() OVERRIDE {
     return delegate_->audio_codecs();

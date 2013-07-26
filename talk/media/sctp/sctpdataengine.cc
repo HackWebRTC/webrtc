@@ -649,7 +649,7 @@ void SctpDataMediaChannel::OnPacketFromSctpToNetwork(
                   << "SCTP seems to have made a poacket that is bigger "
                      "than its official MTU.";
   }
-  network_interface()->SendPacket(buffer);
+  MediaChannel::SendPacket(buffer);
 }
 
 void SctpDataMediaChannel::OnMessage(talk_base::Message* msg) {

@@ -108,6 +108,8 @@ RelayServer::~RelayServer() {
     delete internal_sockets_[i];
   for (size_t i = 0; i < external_sockets_.size(); ++i)
     delete external_sockets_[i];
+  for (size_t i = 0; i < removed_sockets_.size(); ++i)
+    delete removed_sockets_[i];
   while (!server_sockets_.empty()) {
     talk_base::AsyncSocket* socket = server_sockets_.begin()->first;
     server_sockets_.erase(server_sockets_.begin()->first);
@@ -127,6 +129,7 @@ void RelayServer::RemoveInternalSocket(talk_base::AsyncPacketSocket* socket) {
       std::find(internal_sockets_.begin(), internal_sockets_.end(), socket);
   ASSERT(iter != internal_sockets_.end());
   internal_sockets_.erase(iter);
+  removed_sockets_.push_back(socket);
   socket->SignalReadPacket.disconnect(this);
 }
 
@@ -142,6 +145,7 @@ void RelayServer::RemoveExternalSocket(talk_base::AsyncPacketSocket* socket) {
       std::find(external_sockets_.begin(), external_sockets_.end(), socket);
   ASSERT(iter != external_sockets_.end());
   external_sockets_.erase(iter);
+  removed_sockets_.push_back(socket);
   socket->SignalReadPacket.disconnect(this);
 }
 

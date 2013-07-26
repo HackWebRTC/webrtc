@@ -1374,7 +1374,7 @@ bool Session::OnDescriptionInfoMessage(const SessionMessage& msg,
     return false;
   }
 
-  ContentInfos updated_contents = description_info.ClearContents();
+  ContentInfos& updated_contents = description_info.contents;
 
   // TODO: Currently, reflector sends back
   // video stream updates even for an audio-only call, which causes

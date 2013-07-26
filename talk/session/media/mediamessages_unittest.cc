@@ -152,6 +152,15 @@ class MediaMessagesTest : public testing::Test {
     return desc;
   }
 
+  size_t ClearXmlElements(cricket::XmlElements* elements) {
+    size_t size = elements->size();
+    for (size_t i = 0; i < size; i++) {
+      delete elements->at(i);
+    }
+    elements->clear();
+    return size;
+  }
+
   talk_base::scoped_ptr<cricket::SessionDescription> remote_description_;
 };
 
@@ -177,6 +186,7 @@ TEST_F(MediaMessagesTest, ViewNoneToFromXml) {
 
   ASSERT_EQ(1U, actual_view_elems.size());
   EXPECT_EQ(expected_view_elem->Str(), actual_view_elems[0]->Str());
+  ClearXmlElements(&actual_view_elems);
 
   cricket::ParseError parse_error;
   EXPECT_TRUE(cricket::IsJingleViewRequest(action_elem.get()));
@@ -211,6 +221,7 @@ TEST_F(MediaMessagesTest, ViewVgaToFromXml) {
   ASSERT_EQ(2U, actual_view_elems.size());
   EXPECT_EQ(expected_view_elem1->Str(), actual_view_elems[0]->Str());
   EXPECT_EQ(expected_view_elem2->Str(), actual_view_elems[1]->Str());
+  ClearXmlElements(&actual_view_elems);
 
   view_request.static_video_views.clear();
   cricket::ParseError parse_error;

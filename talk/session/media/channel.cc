@@ -190,10 +190,11 @@ struct PacketMessageData : public talk_base::MessageData {
 };
 
 struct AudioRenderMessageData: public talk_base::MessageData {
-  AudioRenderMessageData(uint32 s, AudioRenderer* r)
-      : ssrc(s), renderer(r), result(false) {}
+  AudioRenderMessageData(uint32 s, AudioRenderer* r, bool l)
+      : ssrc(s), renderer(r), is_local(l), result(false) {}
   uint32 ssrc;
   AudioRenderer* renderer;
+  bool is_local;
   bool result;
 };
 
@@ -1441,8 +1442,14 @@ bool VoiceChannel::Init() {
   return true;
 }
 
-bool VoiceChannel::SetRenderer(uint32 ssrc, AudioRenderer* renderer) {
-  AudioRenderMessageData data(ssrc, renderer);
+bool VoiceChannel::SetRemoteRenderer(uint32 ssrc, AudioRenderer* renderer) {
+  AudioRenderMessageData data(ssrc, renderer, false);
+  Send(MSG_SETRENDERER, &data);
+  return data.result;
+}
+
+bool VoiceChannel::SetLocalRenderer(uint32 ssrc, AudioRenderer* renderer) {
+  AudioRenderMessageData data(ssrc, renderer, true);
   Send(MSG_SETRENDERER, &data);
   return data.result;
 }
@@ -1736,8 +1743,12 @@ bool VoiceChannel::SetChannelOptions_w(const AudioOptions& options) {
   return media_channel()->SetOptions(options);
 }
 
-bool VoiceChannel::SetRenderer_w(uint32 ssrc, AudioRenderer* renderer) {
-  return media_channel()->SetRenderer(ssrc, renderer);
+bool VoiceChannel::SetRenderer_w(uint32 ssrc, AudioRenderer* renderer,
+                                 bool is_local) {
+  if (is_local)
+    return media_channel()->SetLocalRenderer(ssrc, renderer);
+
+  return media_channel()->SetRemoteRenderer(ssrc, renderer);
 }
 
 void VoiceChannel::OnMessage(talk_base::Message *pmsg) {
@@ -1798,7 +1809,7 @@ void VoiceChannel::OnMessage(talk_base::Message *pmsg) {
     case MSG_SETRENDERER: {
       AudioRenderMessageData* data =
           static_cast<AudioRenderMessageData*>(pmsg->pdata);
-      data->result = SetRenderer_w(data->ssrc, data->renderer);
+      data->result = SetRenderer_w(data->ssrc, data->renderer, data->is_local);
       break;
     }
     default:

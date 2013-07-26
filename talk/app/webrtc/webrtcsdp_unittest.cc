@@ -120,6 +120,7 @@ struct CodecParams {
   int sprop_stereo;
   int stereo;
   int useinband;
+  int maxaveragebitrate;
 };
 
 // Reference sdp string
@@ -1121,7 +1122,8 @@ class WebRtcSdpTest : public testing::Test {
     std::ostringstream os;
     os << "minptime=" << params.min_ptime << " stereo=" << params.stereo
        << " sprop-stereo=" << params.sprop_stereo
-       << " useinbandfec=" << params.useinband << "\r\n"
+       << " useinbandfec=" << params.useinband
+       << " maxaveragebitrate=" << params.maxaveragebitrate << "\r\n"
        << "a=ptime:" << params.ptime << "\r\n"
        << "a=maxptime:" << params.max_ptime << "\r\n";
     sdp += os.str();
@@ -1142,6 +1144,8 @@ class WebRtcSdpTest : public testing::Test {
     VerifyCodecParameter(opus.params, "stereo", params.stereo);
     VerifyCodecParameter(opus.params, "sprop-stereo", params.sprop_stereo);
     VerifyCodecParameter(opus.params, "useinbandfec", params.useinband);
+    VerifyCodecParameter(opus.params, "maxaveragebitrate",
+                         params.maxaveragebitrate);
     for (size_t i = 0; i < acd->codecs().size(); ++i) {
       cricket::AudioCodec codec = acd->codecs()[i];
       VerifyCodecParameter(codec.params, "ptime", params.ptime);
@@ -1854,6 +1858,7 @@ TEST_F(WebRtcSdpTest, DeserializeSerializeCodecParams) {
   params.sprop_stereo = 1;
   params.stereo = 1;
   params.useinband = 1;
+  params.maxaveragebitrate = 128000;
   TestDeserializeCodecParams(params, &jdesc_output);
   TestSerialize(jdesc_output);
 }

@@ -597,6 +597,10 @@ class FakeWebRtcVideoEngine
     channels_.erase(channel);
     return 0;
   }
+#ifdef USE_WEBRTC_DEV_BRANCH
+  WEBRTC_STUB(RegisterCpuOveruseObserver,
+      (int channel, webrtc::CpuOveruseObserver* observer));
+#endif
   WEBRTC_STUB(ConnectAudioChannel, (const int, const int));
   WEBRTC_STUB(DisconnectAudioChannel, (const int));
   WEBRTC_FUNC(StartSend, (const int channel)) {

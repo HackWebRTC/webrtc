@@ -2528,10 +2528,9 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
 void WebRtcVideoMediaChannel::SetInterface(NetworkInterface* iface) {
   MediaChannel::SetInterface(iface);
   // Set the RTP recv/send buffer to a bigger size
-  if (network_interface_) {
-    network_interface_->SetOption(NetworkInterface::ST_RTP,
-                                  talk_base::Socket::OPT_RCVBUF,
-                                  kVideoRtpBufferSize);
+  MediaChannel::SetOption(NetworkInterface::ST_RTP,
+                          talk_base::Socket::OPT_RCVBUF,
+                          kVideoRtpBufferSize);
 
     // TODO(sriniv): Remove or re-enable this.
     // As part of b/8030474, send-buffer is size now controlled through
@@ -2539,7 +2538,6 @@ void WebRtcVideoMediaChannel::SetInterface(NetworkInterface* iface) {
     // network_interface_->SetOption(NetworkInterface::ST_RTP,
     //                              talk_base::Socket::OPT_SNDBUF,
     //                              kVideoRtpBufferSize);
-  }
 }
 
 void WebRtcVideoMediaChannel::UpdateAspectRatio(int ratio_w, int ratio_h) {
@@ -3350,21 +3348,15 @@ void WebRtcVideoMediaChannel::OnMessage(talk_base::Message* msg) {
 
 int WebRtcVideoMediaChannel::SendPacket(int channel, const void* data,
                                         int len) {
-  if (!network_interface_) {
-    return -1;
-  }
   talk_base::Buffer packet(data, len, kMaxRtpPacketLen);
-  return network_interface_->SendPacket(&packet) ? len : -1;
+  return MediaChannel::SendPacket(&packet) ? len : -1;
 }
 
 int WebRtcVideoMediaChannel::SendRTCPPacket(int channel,
                                             const void* data,
                                             int len) {
-  if (!network_interface_) {
-    return -1;
-  }
   talk_base::Buffer packet(data, len, kMaxRtpPacketLen);
-  return network_interface_->SendRtcp(&packet) ? len : -1;
+  return MediaChannel::SendRtcp(&packet) ? len : -1;
 }
 
 void WebRtcVideoMediaChannel::QueueBlackFrame(uint32 ssrc, int64 timestamp,

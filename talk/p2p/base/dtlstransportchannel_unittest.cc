@@ -149,13 +149,13 @@ class DtlsTestClient : public sigslot::has_slots<> {
         cricket::NS_GINGLE_P2P : cricket::NS_JINGLE_ICE_UDP;
     cricket::TransportDescription local_desc(
         transport_type, std::vector<std::string>(), kIceUfrag1, kIcePwd1,
-        cricket::ICEMODE_FULL, local_fingerprint.release(),
+        cricket::ICEMODE_FULL, local_fingerprint.get(),
         cricket::Candidates());
     ASSERT_TRUE(transport_->SetLocalTransportDescription(local_desc,
                                                          cricket::CA_OFFER));
     cricket::TransportDescription remote_desc(
         transport_type, std::vector<std::string>(), kIceUfrag1, kIcePwd1,
-        cricket::ICEMODE_FULL, remote_fingerprint.release(),
+        cricket::ICEMODE_FULL, remote_fingerprint.get(),
         cricket::Candidates());
     ASSERT_TRUE(transport_->SetRemoteTransportDescription(remote_desc,
                                                           cricket::CA_ANSWER));
@@ -178,9 +178,9 @@ class DtlsTestClient : public sigslot::has_slots<> {
     } else {
       ASSERT_TRUE(received_dtls_client_hello_);
       ASSERT_FALSE(received_dtls_server_hello_);
-    } 
+    }
   }
-  
+
   void CheckSrtp(const std::string& expected_cipher) {
     for (std::vector<cricket::DtlsTransportChannelWrapper*>::iterator it =
            channels_.begin(); it != channels_.end(); ++it) {
@@ -306,7 +306,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
           ASSERT_TRUE(VerifyPacket(data, size, NULL));
         }
       }
-    } 
+    }
   }
 
  private:
@@ -330,6 +330,10 @@ class DtlsTransportChannelTest : public testing::Test {
  public:
   static void SetUpTestCase() {
     talk_base::InitializeSSL();
+  }
+
+  static void TearDownTestCase() {
+    talk_base::CleanupSSL();
   }
 
   DtlsTransportChannelTest() :

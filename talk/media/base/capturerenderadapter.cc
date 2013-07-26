@@ -39,8 +39,17 @@ CaptureRenderAdapter::CaptureRenderAdapter(VideoCapturer* video_capturer)
 }
 
 CaptureRenderAdapter::~CaptureRenderAdapter() {
-  // has_slots destructor will disconnect us from any signals we may be
-  // connected to.
+  // Since the signal we're connecting to is multi-threaded,
+  // disconnect_all() will block until all calls are serviced, meaning any
+  // outstanding calls to OnVideoFrame will be done when this is done, and no
+  // more calls will be serviced by this.
+  // We do this explicitly instead of just letting the has_slots<> destructor
+  // take care of it because we need to do this *before* video_renderers_ is
+  // cleared by the destructor; otherwise we could mess with it while
+  // OnVideoFrame is running.
+  // We *don't* take capture_crit_ here since it could deadlock with the lock
+  // taken by the video frame signal.
+  disconnect_all();
 }
 
 CaptureRenderAdapter* CaptureRenderAdapter::Create(

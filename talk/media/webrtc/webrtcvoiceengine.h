@@ -77,6 +77,7 @@ class WebRtcMonitorStream : public webrtc::OutStream {
 };
 
 class AudioDeviceModule;
+class AudioRenderer;
 class VoETraceWrapper;
 class VoEWrapper;
 class VoiceProcessor;
@@ -282,10 +283,6 @@ class WebRtcMediaChannel : public T, public webrtc::Transport {
  protected:
   // implements Transport interface
   virtual int SendPacket(int channel, const void *data, int len) {
-    if (!T::network_interface_) {
-      return -1;
-    }
-
     // We need to store the sequence number to be able to pick up
     // the same sequence when the device is restarted.
     // TODO(oja): Remove when WebRtc has fixed the problem.
@@ -297,19 +294,20 @@ class WebRtcMediaChannel : public T, public webrtc::Transport {
       LOG(INFO) << "WebRtcVoiceMediaChannel sends first packet seqnum="
                 << seq_num;
     }
-    sequence_number_ = seq_num;
 
     talk_base::Buffer packet(data, len, kMaxRtpPacketLen);
-    return T::network_interface_->SendPacket(&packet) ? len : -1;
-  }
-  virtual int SendRTCPPacket(int channel, const void *data, int len) {
-    if (!T::network_interface_) {
+    if (!T::SendPacket(&packet)) {
       return -1;
     }
-
-    talk_base::Buffer packet(data, len, kMaxRtpPacketLen);
-    return T::network_interface_->SendRtcp(&packet) ? len : -1;
+    sequence_number_ = seq_num;
+    return len;
   }
+
+  virtual int SendRTCPPacket(int channel, const void *data, int len) {
+    talk_base::Buffer packet(data, len, kMaxRtpPacketLen);
+    return T::SendRtcp(&packet) ? len : -1;
+  }
+
   int sequence_number() const {
     return sequence_number_;
   }
@@ -348,7 +346,8 @@ class WebRtcVoiceMediaChannel
   virtual bool RemoveSendStream(uint32 ssrc);
   virtual bool AddRecvStream(const StreamParams& sp);
   virtual bool RemoveRecvStream(uint32 ssrc);
-  virtual bool SetRenderer(uint32 ssrc, AudioRenderer* renderer);
+  virtual bool SetRemoteRenderer(uint32 ssrc, AudioRenderer* renderer);
+  virtual bool SetLocalRenderer(uint32 ssrc, AudioRenderer* renderer);
   virtual bool GetActiveStreams(AudioInfo::StreamList* actives);
   virtual int GetOutputLevel();
   virtual int GetTimeSinceLastTyping();
@@ -393,12 +392,17 @@ class WebRtcVoiceMediaChannel
   static Error WebRtcErrorToChannelError(int err_code);
 
  private:
+  struct WebRtcVoiceChannelInfo;
+
   void SetNack(uint32 ssrc, int channel, bool nack_enabled);
   bool SetSendCodec(const webrtc::CodecInst& send_codec);
   bool ChangePlayout(bool playout);
   bool ChangeSend(SendFlags send);
+  bool InConferenceMode() const {
+    return options_.conference_mode.GetWithDefaultIfUnset(false);
+  }
 
-  typedef std::map<uint32, int> ChannelMap;
+  typedef std::map<uint32, WebRtcVoiceChannelInfo> ChannelMap;
   talk_base::scoped_ptr<WebRtcSoundclipStream> ringback_tone_;
   std::set<int> ringback_channels_;  // channels playing ringback
   std::vector<AudioCodec> recv_codecs_;
@@ -411,16 +415,25 @@ class WebRtcVoiceMediaChannel
   SendFlags desired_send_;
   SendFlags send_;
 
+  // TODO(xians): Add support for multiple send channels.
   uint32 send_ssrc_;
+  // Weak pointer to the renderer of the local audio track. It is owned by the
+  // track and will set to NULL when the track is going away or channel gets
+  // deleted. Used to notify the audio track that the media channel is added
+  // or removed.
+  AudioRenderer* local_renderer_;
   uint32 default_receive_ssrc_;
-  ChannelMap mux_channels_;  // for multiple sources
-  // mux_channels_ can be read from WebRtc callback thread.  Accesses off the
-  // WebRtc thread must be synchronized with edits on the worker thread.  Reads
-  // on the worker thread are ok.
+  // Note the default channel (voe_channel()) can reside in both
+  // receive_channels_ and send channel in non-conference mode and in that case
+  // it will only be there if a non-zero default_receive_ssrc_ is set.
+  ChannelMap receive_channels_;  // for multiple sources
+  // receive_channels_ can be read from WebRtc callback thread.  Access from
+  // the WebRtc thread must be synchronized with edits on the worker thread.
+  // Reads on the worker thread are ok.
   //
   // Do not lock this on the VoE media processor thread; potential for deadlock
   // exists.
-  mutable talk_base::CriticalSection mux_channels_cs_;
+  mutable talk_base::CriticalSection receive_channels_cs_;
 };
 
 }  // namespace cricket

@@ -63,6 +63,7 @@ class MediaStreamSignaling;
 extern const char kSetLocalSdpFailed[];
 extern const char kSetRemoteSdpFailed[];
 extern const char kCreateChannelFailed[];
+extern const char kBundleWithoutRtcpMux[];
 extern const char kInvalidCandidates[];
 extern const char kInvalidSdp[];
 extern const char kMlineMismatch[];
@@ -158,11 +159,11 @@ class WebRtcSession : public cricket::BaseSession,
   virtual bool GetTrackIdBySsrc(uint32 ssrc, std::string* id);
 
   // AudioMediaProviderInterface implementation.
-  virtual void SetAudioPlayout(uint32 ssrc, bool enable) OVERRIDE;
+  virtual void SetAudioPlayout(uint32 ssrc, bool enable,
+                               cricket::AudioRenderer* renderer) OVERRIDE;
   virtual void SetAudioSend(uint32 ssrc, bool enable,
-                            const cricket::AudioOptions& options) OVERRIDE;
-  virtual bool SetAudioRenderer(uint32 ssrc,
-                                cricket::AudioRenderer* renderer) OVERRIDE;
+                            const cricket::AudioOptions& options,
+                            cricket::AudioRenderer* renderer) OVERRIDE;
 
   // Implements VideoMediaProviderInterface.
   virtual bool SetCaptureDevice(uint32 ssrc,
@@ -243,9 +244,10 @@ class WebRtcSession : public cricket::BaseSession,
   bool CreateChannels(const cricket::SessionDescription* desc);
 
   // Helper methods to create media channels.
-  bool CreateVoiceChannel(const cricket::SessionDescription* desc);
-  bool CreateVideoChannel(const cricket::SessionDescription* desc);
-  bool CreateDataChannel(const cricket::SessionDescription* desc);
+  bool CreateVoiceChannel(const cricket::ContentInfo* content);
+  bool CreateVideoChannel(const cricket::ContentInfo* content);
+  bool CreateDataChannel(const cricket::ContentInfo* content);
+
   // Copy the candidates from |saved_candidates_| to |dest_desc|.
   // The |saved_candidates_| will be cleared after this function call.
   void CopySavedCandidates(SessionDescriptionInterface* dest_desc);
@@ -261,6 +263,9 @@ class WebRtcSession : public cricket::BaseSession,
 
   std::string BadStateErrMsg(const std::string& type, State state);
   void SetIceConnectionState(PeerConnectionInterface::IceConnectionState state);
+
+  bool VerifyBundleSettings(const cricket::SessionDescription* desc);
+  bool HasRtcpMuxEnabled(const cricket::ContentInfo* content);
 
   talk_base::scoped_ptr<cricket::VoiceChannel> voice_channel_;
   talk_base::scoped_ptr<cricket::VideoChannel> video_channel_;

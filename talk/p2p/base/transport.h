@@ -146,6 +146,19 @@ enum TransportState {
 // Stats that we can return about the connections for a transport channel.
 // TODO(hta): Rename to ConnectionStats
 struct ConnectionInfo {
+  ConnectionInfo()
+      : best_connection(false),
+        writable(false),
+        readable(false),
+        timeout(false),
+        new_connection(false),
+        rtt(0),
+        sent_total_bytes(0),
+        sent_bytes_second(0),
+        recv_total_bytes(0),
+        recv_bytes_second(0),
+        key(NULL) {}
+
   bool best_connection;        // Is this the best connection we have?
   bool writable;               // Has this connection received a STUN response?
   bool readable;               // Has this connection received a STUN request?

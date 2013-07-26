@@ -773,7 +773,7 @@ static void FindCodecsToOffer(
     if (!FindMatchingCodec<C>(*offered_codecs, *it, NULL) && IsRtxCodec(*it)) {
       C rtx_codec = *it;
       int referenced_pl_type =
-          talk_base::FromString<int>(
+          talk_base::FromString<int>(0,
               rtx_codec.params[kCodecParamAssociatedPayloadType]);
       new_rtx_codecs.insert(std::pair<int, C>(referenced_pl_type,
                                               rtx_codec));

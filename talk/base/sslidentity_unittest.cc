@@ -65,6 +65,10 @@ class SSLIdentityTest : public testing::Test {
     talk_base::InitializeSSL();
   }
 
+  static void TearDownTestCase() {
+    talk_base::CleanupSSL();
+  }
+
   virtual void SetUp() {
     identity1_.reset(talk_base::SSLIdentity::Generate("test1"));
     identity2_.reset(talk_base::SSLIdentity::Generate("test2"));

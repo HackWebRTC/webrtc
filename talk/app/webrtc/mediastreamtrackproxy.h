@@ -42,7 +42,7 @@ BEGIN_PROXY_MAP(AudioTrack)
   PROXY_CONSTMETHOD0(TrackState, state)
   PROXY_CONSTMETHOD0(bool, enabled)
   PROXY_CONSTMETHOD0(AudioSourceInterface*, GetSource)
-  PROXY_METHOD0(cricket::AudioRenderer*, FrameInput)
+  PROXY_METHOD0(cricket::AudioRenderer*, GetRenderer)
 
   PROXY_METHOD1(bool, set_enabled, bool)
   PROXY_METHOD1(bool, set_state, TrackState)

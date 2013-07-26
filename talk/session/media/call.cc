@@ -591,17 +591,18 @@ VideoContentDescription* Call::CreateVideoStreamUpdate(
 
 void Call::SendVideoStreamUpdate(
     Session* session, VideoContentDescription* video) {
+  // Takes the ownership of |video|.
+  talk_base::scoped_ptr<VideoContentDescription> description(video);
   const ContentInfo* video_info =
       GetFirstVideoContent(session->local_description());
   if (video_info == NULL) {
     LOG(LS_WARNING) << "Cannot send stream update for video.";
-    delete video;
     return;
   }
 
   std::vector<ContentInfo> contents;
   contents.push_back(
-      ContentInfo(video_info->name, video_info->type, video));
+      ContentInfo(video_info->name, video_info->type, description.get()));
 
   session->SendDescriptionInfoMessage(contents);
 }
