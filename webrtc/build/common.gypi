@@ -94,9 +94,6 @@
 
     'conditions': [
       ['build_with_chromium==1', {
-        # clang_use_chrome_plugins must not be disabled when building Chromium.
-        'clang_use_chrome_plugins': 1,
-
         # Exclude pulse audio on Chromium since its prerequisites don't require
         # pulse audio.
         'include_pulse_audio%': 0,
