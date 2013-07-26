@@ -379,13 +379,16 @@ static void WindowAndFFT(AecmCore_t* aecm,
 }
 
 static void InverseFFTAndWindow(AecmCore_t* aecm,
-                                 int16_t* fft,
-                                 complex16_t* efw,
-                                 int16_t* output,
-                                 const int16_t* nearendClean)
+                                int16_t* fft,
+                                complex16_t* efw,
+                                int16_t* output,
+                                const int16_t* nearendClean)
 {
     int i, j, outCFFT;
     int32_t tmp32no1;
+    // Reuse |efw| for the inverse FFT output after transferring
+    // the contents to |fft|.
+    int16_t* ifft_out = (int16_t*)efw;
 
     // Synthesis
     for (i = 1, j = 2; i < PART_LEN; i += 1, j += 2) {
@@ -399,22 +402,21 @@ static void InverseFFTAndWindow(AecmCore_t* aecm,
     fft[PART_LEN2 + 1] = -efw[PART_LEN].imag;
 
     // Inverse FFT. Keep outCFFT to scale the samples in the next block.
-    outCFFT = WebRtcSpl_RealInverseFFT(aecm->real_fft, fft, output);
-
+    outCFFT = WebRtcSpl_RealInverseFFT(aecm->real_fft, fft, ifft_out);
     for (i = 0; i < PART_LEN; i++) {
-        output[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(
-            output[i], WebRtcAecm_kSqrtHanning[i], 14);
-        tmp32no1 = WEBRTC_SPL_SHIFT_W32((int32_t)output[i],
-                                        outCFFT - aecm->dfaCleanQDomain);
-        output[i] = (int16_t)WEBRTC_SPL_SAT(WEBRTC_SPL_WORD16_MAX,
-            tmp32no1 + aecm->outBuf[i], WEBRTC_SPL_WORD16_MIN);
+      ifft_out[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(
+          ifft_out[i], WebRtcAecm_kSqrtHanning[i], 14);
+      tmp32no1 = WEBRTC_SPL_SHIFT_W32((int32_t)ifft_out[i],
+                                      outCFFT - aecm->dfaCleanQDomain);
+      output[i] = (int16_t)WEBRTC_SPL_SAT(WEBRTC_SPL_WORD16_MAX,
+          tmp32no1 + aecm->outBuf[i], WEBRTC_SPL_WORD16_MIN);
 
-        tmp32no1 = WEBRTC_SPL_MUL_16_16_RSFT(output[PART_LEN + i],
-            WebRtcAecm_kSqrtHanning[PART_LEN - i], 14);
-        tmp32no1 = WEBRTC_SPL_SHIFT_W32(tmp32no1,
-            outCFFT - aecm->dfaCleanQDomain);
-        aecm->outBuf[i] = (int16_t)WEBRTC_SPL_SAT(
-            WEBRTC_SPL_WORD16_MAX, tmp32no1, WEBRTC_SPL_WORD16_MIN);
+      tmp32no1 = WEBRTC_SPL_MUL_16_16_RSFT(ifft_out[PART_LEN + i],
+          WebRtcAecm_kSqrtHanning[PART_LEN - i], 14);
+      tmp32no1 = WEBRTC_SPL_SHIFT_W32(tmp32no1,
+          outCFFT - aecm->dfaCleanQDomain);
+      aecm->outBuf[i] = (int16_t)WEBRTC_SPL_SAT(
+          WEBRTC_SPL_WORD16_MAX, tmp32no1, WEBRTC_SPL_WORD16_MIN);
     }
 
     // Copy the current block to the old position (aecm->outBuf is shifted elsewhere)
