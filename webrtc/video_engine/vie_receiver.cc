@@ -111,18 +111,12 @@ bool ViEReceiver::SetReceiveAbsoluteSendTimeStatus(bool enable, int id) {
 
 int ViEReceiver::ReceivedRTPPacket(const void* rtp_packet,
                                    int rtp_packet_length) {
-  if (!receiving_) {
-    return -1;
-  }
   return InsertRTPPacket(static_cast<const int8_t*>(rtp_packet),
                          rtp_packet_length);
 }
 
 int ViEReceiver::ReceivedRTCPPacket(const void* rtcp_packet,
                                     int rtcp_packet_length) {
-  if (!receiving_) {
-    return -1;
-  }
   return InsertRTCPPacket(static_cast<const int8_t*>(rtcp_packet),
                           rtcp_packet_length);
 }
@@ -149,6 +143,9 @@ int ViEReceiver::InsertRTPPacket(const int8_t* rtp_packet,
 
   {
     CriticalSectionScoped cs(receive_cs_.get());
+    if (!receiving_) {
+      return -1;
+    }
 
     if (external_decryption_) {
       int decrypted_length = kViEMaxMtu;
@@ -198,6 +195,9 @@ int ViEReceiver::InsertRTCPPacket(const int8_t* rtcp_packet,
   int received_packet_length = rtcp_packet_length;
   {
     CriticalSectionScoped cs(receive_cs_.get());
+    if (!receiving_) {
+      return -1;
+    }
 
     if (external_decryption_) {
       int decrypted_length = kViEMaxMtu;
@@ -239,10 +239,12 @@ int ViEReceiver::InsertRTCPPacket(const int8_t* rtcp_packet,
 }
 
 void ViEReceiver::StartReceive() {
+  CriticalSectionScoped cs(receive_cs_.get());
   receiving_ = true;
 }
 
 void ViEReceiver::StopReceive() {
+  CriticalSectionScoped cs(receive_cs_.get());
   receiving_ = false;
 }
 
