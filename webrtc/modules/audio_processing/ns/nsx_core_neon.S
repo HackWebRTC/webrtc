@@ -424,7 +424,6 @@ POST_LOOP_MAGNLEN:
 
   pop {r4, r5, r6, pc}
 
-@ TODO(kma): Remove copying to 2nd half of freq_buf, for real FFT interface.
 @ void PrepareSpectrumNeon(NsxInst_t* inst, int16_t* freq_buf);
 .align 2
 DEFINE_FUNCTION WebRtcNsx_PrepareSpectrumNeon
@@ -486,57 +485,31 @@ LOOP_MAGNLEN:
   rsb r0, r0, #0
   strh r0, [r1], #2           @ Store to freq_buf[1]. Now r1 -> &freq_buf[2]
 
-  add r2, r1, r7, lsl #2
-  sub r2, #36                 @ &freq_buf[-16]
-
-  mvn r12, #0x1F              @ -32
-
 @ Process and write (inst->anaLen2 * 4 - 32) samples into freq_buf[].
 LOOP_ANALEN2:
-  vld1.16 d3, [r3]!     @ inst->real[], starting from inst->real[1]
-  vld1.16 d1, [r3]!
-  vmov.s16 d4, d3
-  vld1.16 d2, [r6]!     @ inst->imag[], starting from inst->imag[1]
-  vmov.s16 d6, d1
-  vneg.s16 d5, d2
-  vld1.16 d0, [r6]!
-  vneg.s16 d7, d0
-  vzip.16 d1, d0
-  vzip.16 d3, d2
+  vld1.16 d5, [r6]!     @ inst->imag[], starting from inst->imag[1]
+  vld1.16 d7, [r6]!
+  vneg.s16 d5, d5
+  vld1.16 d4, [r3]!     @ inst->real[], starting from inst->real[1]
+  vneg.s16 d7, d7
+  vld1.16 d6, [r3]!
   vzip.16 d4, d5
-  vrev64.32 q8, q0
-  vrev64.32 q9, q1
   vzip.16 d6, d7
   subs r5, #1
-  vst1.16 {d16, d17, d18, d19}, [r2], r12
   vst1.16 {d4, d5, d6, d7}, [r1]!
   bgt LOOP_ANALEN2
 
 @ Process and write 32 samples into freq_buf[]. We need to adjust the pointers
 @ to overwrite the 2 starting samples in the back half of the buffer.
-  sub r0, r3, #2
-  sub r4, r6, #2
-  add r2, #4
-  vld1.16 d3, [r3]!     @ inst->real[], starting from inst->real[1]
-  vld1.16 d1, [r3]!
-  vmov.s16 d4, d3
-  vld1.16 d2, [r6]!     @ inst->imag[], starting from inst->imag[1]
-  vmov.s16 d6, d1
-  vld1.16 d0, [r6]!
-  vneg.s16 d5, d2
-  vld1.16 d23, [r0]!     @ inst->real[], starting from inst->real[1]
-  vneg.s16 d7, d0
-  vld1.16 d21, [r0]
+  vld1.16 d5, [r6]!     @ inst->imag[], starting from inst->imag[1]
+  vld1.16 d7, [r6]!
+  vneg.s16 d5, d5
+  vld1.16 d4, [r3]!     @ inst->real[], starting from inst->real[1]
+  vneg.s16 d7, d7
+  vld1.16 d6, [r3]!
   vzip.16 d4, d5
-  vld1.16 d22, [r4]!     @ inst->imag[], starting from inst->imag[1]
-  vld1.16 d20, [r4]
-  vzip.16 d23, d22
-  vzip.16 d21, d20
   vzip.16 d6, d7
-  vrev64.32 q8, q10
-  vrev64.32 q9, q11
   vst1.16 {d4, d5, d6, d7}, [r1]
-  vst1.16 {d16, d17, d18, d19}, [r2]
 
   pop {r4-r9}
   bx r14
