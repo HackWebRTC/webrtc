@@ -1,0 +1,5 @@
+# Fails when run under memcheck
+# https://code.google.com/p/webrtc/issues/detail?id=1972
+P2PTransportChannelTest.TestOPENToNAT_FULL_CONEAsGiceNoneSharedUfrag
+P2PTransportChannelTest.TestOPENToNAT_FULL_CONEAsGiceP0SharedUfrag
+PortTest.TestSendStunMessageAsIce
