@@ -294,6 +294,10 @@ int32_t DeviceInfoLinux::FillCapabilityMap(int fd)
                     {
                         cap->rawType = kVideoYUY2;
                     }
+                    else if (videoFormats[fmts] == V4L2_PIX_FMT_YUV420)
+                    {
+                        cap->rawType = kVideoI420;
+                    }
                     else if (videoFormats[fmts] == V4L2_PIX_FMT_MJPEG)
                     {
                         cap->rawType = kVideoMJPEG;

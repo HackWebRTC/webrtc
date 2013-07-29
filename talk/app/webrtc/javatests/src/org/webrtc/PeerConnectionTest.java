@@ -57,8 +57,9 @@ public class PeerConnectionTest extends TestCase {
     private final String name;
     private int expectedIceCandidates = 0;
     private int expectedErrors = 0;
-    private LinkedList<Integer> expectedSetSizeDimensions =
-        new LinkedList<Integer>();  // Alternating width/height.
+    private int expectedSetSize = 0;
+    private int previouslySeenWidth = 0;
+    private int previouslySeenHeight = 0;
     private int expectedFramesDelivered = 0;
     private LinkedList<SignalingState> expectedSignalingChanges =
         new LinkedList<SignalingState>();
@@ -116,21 +117,30 @@ public class PeerConnectionTest extends TestCase {
       assertTrue(--expectedErrors >= 0);
     }
 
-    public synchronized void expectSetSize(int width, int height) {
+    public synchronized void expectSetSize() {
       if (RENDER_TO_GUI) {
         // When new frames are delivered to the GUI renderer we don't get
         // notified of frame size info.
         return;
       }
-      expectedSetSizeDimensions.add(width);
-      expectedSetSizeDimensions.add(height);
+      ++expectedSetSize;
     }
 
     @Override
     public synchronized void setSize(int width, int height) {
       assertFalse(RENDER_TO_GUI);
-      assertEquals(width, expectedSetSizeDimensions.removeFirst().intValue());
-      assertEquals(height, expectedSetSizeDimensions.removeFirst().intValue());
+      assertTrue(--expectedSetSize >= 0);
+      // Because different camera devices (fake & physical) produce different
+      // resolutions, we only sanity-check the set sizes,
+      assertTrue(width > 0);
+      assertTrue(height > 0);
+      if (previouslySeenWidth > 0) {
+        assertEquals(previouslySeenWidth, width);
+        assertEquals(previouslySeenHeight, height);
+      } else {
+        previouslySeenWidth = width;
+        previouslySeenHeight = height;
+      }
     }
 
     public synchronized void expectFramesDelivered(int count) {
@@ -292,9 +302,8 @@ public class PeerConnectionTest extends TestCase {
         stillWaitingForExpectations.add(
             "expectedRemoveStreamLabels: " + expectedRemoveStreamLabels.size());
       }
-      if (!expectedSetSizeDimensions.isEmpty()) {
-        stillWaitingForExpectations.add(
-            "expectedSetSizeDimensions: " + expectedSetSizeDimensions.size());
+      if (expectedSetSize != 0) {
+        stillWaitingForExpectations.add("expectedSetSize");
       }
       if (expectedFramesDelivered > 0) {
         stillWaitingForExpectations.add(
@@ -506,7 +515,7 @@ public class PeerConnectionTest extends TestCase {
     // serialized SDP, because the C++ API doesn't auto-translate.
     // Drop |label| params from {Audio,Video}Track-related APIs once
     // https://code.google.com/p/webrtc/issues/detail?id=1253 is fixed.
-    offeringExpectations.expectSetSize(640, 480);
+    offeringExpectations.expectSetSize();
     WeakReference<MediaStream> oLMS = addTracksToPC(
         factory, offeringPC, videoSource, "oLMS", "oLMSv0", "oLMSa0",
         offeringExpectations);
@@ -532,7 +541,7 @@ public class PeerConnectionTest extends TestCase {
     assertTrue(sdpLatch.await());
     assertNull(sdpLatch.getSdp());
 
-    answeringExpectations.expectSetSize(640, 480);
+    answeringExpectations.expectSetSize();
     WeakReference<MediaStream> aLMS = addTracksToPC(
         factory, answeringPC, videoSource, "aLMS", "aLMSv0", "aLMSa0",
         answeringExpectations);
@@ -581,8 +590,8 @@ public class PeerConnectionTest extends TestCase {
       // chosen arbitrarily).
       offeringExpectations.expectFramesDelivered(10);
       answeringExpectations.expectFramesDelivered(10);
-      offeringExpectations.expectSetSize(640, 480);
-      answeringExpectations.expectSetSize(640, 480);
+      offeringExpectations.expectSetSize();
+      answeringExpectations.expectSetSize();
     }
 
     offeringExpectations.expectIceConnectionChange(
