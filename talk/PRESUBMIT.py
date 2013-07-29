@@ -23,6 +23,37 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# List of files that should not be committed to
+DO_NOT_SUBMIT_FILES = [
+    "talk/app/webrtc/mediaconstraintsinterface.h",
+    "talk/app/webrtc/webrtcsdp_unittest.cc",
+    "talk/base/linux.cc",
+    "talk/base/linux.h",
+    "talk/base/linux_unittest.cc",
+    "talk/main.scons",
+    "talk/media/base/hybridvideoengine.cc",
+    "talk/media/base/mediaengine.cc",
+    "talk/media/base/mutedvideocapturer.cc",
+    "talk/media/base/streamparams.h",
+    "talk/media/base/videocapturer.cc",
+    "talk/media/base/videocapturer.h",
+    "talk/media/base/videocapturer_unittest.cc",
+    "talk/media/base/videoengine_unittest.h",
+    "talk/media/devices/devicemanager.cc",
+    "talk/media/webrtc/fakewebrtcvideoengine.h",
+    "talk/media/webrtc/fakewebrtcvoiceengine.h",
+    "talk/media/webrtc/webrtcexport.h",
+    "talk/media/webrtc/webrtcmediaengine.h",
+    "talk/media/webrtc/webrtcvideoengine.cc",
+    "talk/media/webrtc/webrtcvideoengine.h",
+    "talk/media/webrtc/webrtcvideoengine_unittest.cc",
+    "talk/media/webrtc/webrtcvoiceengine.cc",
+    "talk/media/webrtc/webrtcvoiceengine.h",
+    "talk/media/webrtc/webrtcvoiceengine_unittest.cc",
+    "talk/p2p/base/session.cc",
+    "talk/session/media/channel.cc",
+    "talk/session/media/mediasession_unittest.cc"]
+
 def _LicenseHeader(input_api):
   """Returns the license header regexp."""
   # Accept any year number from 2008 to the current year
@@ -75,11 +106,26 @@ def _LicenseHeader(input_api):
   }
   return license_header
 
+def _ProtectedFiles(input_api, output_api):
+  results = []
+  changed_files = []
+  for f in input_api.AffectedFiles():
+    changed_files.append(f.LocalPath())
+  bad_files = list(set(DO_NOT_SUBMIT_FILES) & set(changed_files))
+  if bad_files:
+    error_type = output_api.PresubmitError
+    results.append(error_type(
+        'The following affected files are only allowed to be updated when '
+        'importing libjingle',
+        bad_files))
+  return results
+
 def _CommonChecks(input_api, output_api):
   """Checks common to both upload and commit."""
   results = []
   results.extend(input_api.canned_checks.CheckLicense(
       input_api, output_api, _LicenseHeader(input_api)))
+  results.extend(_ProtectedFiles(input_api, output_api))
   return results
 
 def CheckChangeOnUpload(input_api, output_api):
