@@ -586,7 +586,7 @@ TEST_F(TestBasicJitterBuffer, PacketLoss) {
   bool retransmitted = false;
   EXPECT_EQ(kFirstPacket, jitter_buffer_->InsertPacket(*packet_,
                                                        &retransmitted));
-
+  int insert_return_val;
   for (int i = 0; i < 11; ++i) {
     webrtc::FrameType frametype = kVideoFrameDelta;
     seq_num_++;
@@ -612,9 +612,9 @@ TEST_F(TestBasicJitterBuffer, PacketLoss) {
     packet_->seqNum = seq_num_;
     packet_->completeNALU = kNaluEnd;
 
-    EXPECT_EQ(kIncomplete, jitter_buffer_->InsertPacket(*packet_,
-                                                        &retransmitted));
-
+    insert_return_val = jitter_buffer_->InsertPacket(*packet_, &retransmitted);
+    EXPECT_TRUE(insert_return_val == kIncomplete
+                || insert_return_val == kDecodableSession);
 
     // Insert an empty (non-media) packet.
     seq_num_++;
@@ -624,8 +624,9 @@ TEST_F(TestBasicJitterBuffer, PacketLoss) {
     packet_->completeNALU = kNaluEnd;
     packet_->frameType = kFrameEmpty;
 
-    EXPECT_EQ(kIncomplete, jitter_buffer_->InsertPacket(*packet_,
-                                                        &retransmitted));
+    insert_return_val = jitter_buffer_->InsertPacket(*packet_, &retransmitted);
+    EXPECT_TRUE(insert_return_val == kIncomplete
+                || insert_return_val == kDecodableSession);
 
     frame_out = DecodeIncompleteFrame();
 

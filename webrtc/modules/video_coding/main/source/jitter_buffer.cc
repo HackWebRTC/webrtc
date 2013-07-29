@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <utility>
 
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/source/frame_buffer.h"
@@ -167,7 +168,9 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
       max_nack_list_size_(0),
       max_packet_age_to_nack_(0),
       max_incomplete_time_ms_(0),
-      decode_with_errors_(false) {
+      decode_with_errors_(false),
+      average_packets_per_frame_(0.0f),
+      frame_counter_(0) {
   memset(frame_buffers_, 0, sizeof(frame_buffers_));
   memset(receive_statistics_, 0, sizeof(receive_statistics_));
 
@@ -221,6 +224,7 @@ void VCMJitterBuffer::CopyFrom(const VCMJitterBuffer& rhs) {
     nack_seq_nums_.resize(rhs.nack_seq_nums_.size());
     missing_sequence_numbers_ = rhs.missing_sequence_numbers_;
     latest_received_sequence_number_ = rhs.latest_received_sequence_number_;
+    average_packets_per_frame_ = rhs.average_packets_per_frame_;
     for (int i = 0; i < kMaxNumberOfFrames; i++) {
       if (frame_buffers_[i] != NULL) {
         delete frame_buffers_[i];
@@ -561,6 +565,10 @@ VCMEncodedFrame* VCMJitterBuffer::ExtractAndSetDecode(uint32_t timestamp) {
   // We have a frame - update the last decoded state and nack list.
   last_decoded_state_.SetState(frame);
   DropPacketsFromNackList(last_decoded_state_.sequence_num());
+
+  if ((*frame).IsSessionComplete())
+    UpdateAveragePacketsPerFrame(frame->NumPackets());
+
   return frame;
 }
 
@@ -693,9 +701,12 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
   // Note: Under current version, a decodable frame will never be
   // triggered, as the body of the function is empty.
   // TODO(mikhal): Update when decodable is enabled.
+  FrameData frame_data;
+  frame_data.rtt_ms = rtt_ms_;
+  frame_data.rolling_average_packets_per_frame = average_packets_per_frame_;
   buffer_return = frame->InsertPacket(packet, now_ms,
                                       decode_with_errors_,
-                                      rtt_ms_);
+                                      frame_data);
   if (!frame->GetCountedFrame()) {
     TRACE_EVENT_ASYNC_BEGIN1("webrtc", "Video", frame->TimeStamp(),
                              "timestamp", frame->TimeStamp());
@@ -1207,6 +1218,22 @@ void VCMJitterBuffer::CountFrame(const VCMFrameBuffer& frame) {
       default:
         assert(false);
     }
+  }
+}
+
+void VCMJitterBuffer::UpdateAveragePacketsPerFrame(int current_number_packets) {
+  if (frame_counter_ > kFastConvergeThreshold) {
+    average_packets_per_frame_ = average_packets_per_frame_
+              * (1 - kNormalConvergeMultiplier)
+            + current_number_packets * kNormalConvergeMultiplier;
+  } else if (frame_counter_ > 0) {
+    average_packets_per_frame_ = average_packets_per_frame_
+              * (1 - kFastConvergeMultiplier)
+            + current_number_packets * kFastConvergeMultiplier;
+    frame_counter_++;
+  } else {
+    average_packets_per_frame_ = current_number_packets;
+    frame_counter_++;
   }
 }
 

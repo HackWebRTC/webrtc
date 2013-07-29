@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_SESSION_INFO_H_
-#define WEBRTC_MODULES_VIDEO_CODING_SESSION_INFO_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_SESSION_INFO_H_
+#define WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_SESSION_INFO_H_
 
 #include <list>
 
@@ -18,6 +18,12 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
+// Used to pass data from jitter buffer to session info.
+// This data is then used in determining whether a frame is decodable.
+struct FrameData {
+  int rtt_ms;
+  float rolling_average_packets_per_frame;
+};
 
 class VCMSessionInfo {
  public:
@@ -42,7 +48,7 @@ class VCMSessionInfo {
   int InsertPacket(const VCMPacket& packet,
                    uint8_t* frame_buffer,
                    bool enable_decodable_state,
-                   int rtt_ms);
+                   const FrameData& frame_data);
   bool complete() const;
   bool decodable() const;
 
@@ -59,6 +65,7 @@ class VCMSessionInfo {
   // Returns the number of bytes deleted from the session.
   int MakeDecodable();
   int SessionLength() const;
+  int NumPackets() const;
   bool HaveFirstPacket() const;
   bool HaveLastPacket() const;
   bool session_nack() const;
@@ -112,7 +119,21 @@ class VCMSessionInfo {
 
   // When enabled, determine if session is decodable, i.e. incomplete but
   // would be sent to the decoder.
-  void UpdateDecodableSession(int rtt_ms);
+  // Note: definition assumes random loss.
+  // A frame is defined to be decodable when:
+  //  Round trip time is higher than threshold
+  //  It is not a key frame
+  //  It has the first packet: In VP8 the first packet contains all or part of
+  //    the first partition, which consists of the most relevant information for
+  //    decoding.
+  //  Either more than the upper threshold of the average number of packets per
+  //        frame is present
+  //      or less than the lower threshold of the average number of packets per
+  //        frame is present: suggests a small frame. Such a frame is unlikely
+  //        to contain many motion vectors, so having the first packet will
+  //        likely suffice. Once we have more than the lower threshold of the
+  //        frame, we know that the frame is medium or large-sized.
+  void UpdateDecodableSession(const FrameData& frame_data);
 
   // If this session has been NACKed by the jitter buffer.
   bool session_nack_;
@@ -130,4 +151,4 @@ class VCMSessionInfo {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_SESSION_INFO_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_SESSION_INFO_H_

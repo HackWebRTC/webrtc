@@ -58,8 +58,8 @@ class TimestampLessThan {
   }
 };
 
-class FrameList :
-  public std::map<uint32_t, VCMFrameBuffer*, TimestampLessThan> {
+class FrameList
+    : public std::map<uint32_t, VCMFrameBuffer*, TimestampLessThan> {
  public:
   void InsertFrame(VCMFrameBuffer* frame);
   VCMFrameBuffer* FindFrame(uint32_t timestamp) const;
@@ -244,6 +244,9 @@ class VCMJitterBuffer {
   // Updates the frame statistics.
   void CountFrame(const VCMFrameBuffer& frame);
 
+  // Update rolling average of packets per frame.
+  void UpdateAveragePacketsPerFrame(int current_number_packets_);
+
   // Cleans the frame list in the JB from old/empty frames.
   // Should only be called prior to actual use.
   void CleanUpOldOrEmptyFrames();
@@ -328,6 +331,11 @@ class VCMJitterBuffer {
   int max_incomplete_time_ms_;
 
   bool decode_with_errors_;
+  // Estimated rolling average of packets per frame
+  float average_packets_per_frame_;
+  // average_packets_per_frame converges fast if we have fewer than this many
+  // frames.
+  int frame_counter_;
   DISALLOW_COPY_AND_ASSIGN(VCMJitterBuffer);
 };
 }  // namespace webrtc
