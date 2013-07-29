@@ -15,6 +15,9 @@ import sys
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Chrome browsertests will throw away stderr; avoid that output gets lost.
+sys.stderr = sys.stdout
+
 
 def _ParseArgs():
   """Registers the command-line options."""
@@ -85,7 +88,7 @@ def main():
   barcode_decoder = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr)
   barcode_decoder.wait()
   if barcode_decoder.returncode != 0:
-    print >> sys.stderr, 'Failed to run barcode decoder script.'
+    print 'Failed to run barcode decoder script.'
     return 1
 
   # Run frame analyzer to compare the videos and print output.
@@ -100,7 +103,7 @@ def main():
   frame_analyzer = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr)
   frame_analyzer.wait()
   if frame_analyzer.returncode != 0:
-    print >> sys.stderr, 'Failed to run frame analyzer.'
+    print 'Failed to run frame analyzer.'
     return 1
 
   return 0
