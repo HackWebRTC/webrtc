@@ -83,10 +83,11 @@ public class GAEChannelClient {
               ", desc: " + description);
         }
       });
-    proxyingMessageHandler = new ProxyingMessageHandler(activity, handler);
+    proxyingMessageHandler =
+        new ProxyingMessageHandler(activity, handler, token);
     webView.addJavascriptInterface(
         proxyingMessageHandler, "androidMessageHandler");
-    webView.loadUrl("file:///android_asset/channel.html?token=" + token);
+    webView.loadUrl("file:///android_asset/channel.html");
   }
 
   /** Close the connection to the AppEngine channel. */
@@ -106,10 +107,14 @@ public class GAEChannelClient {
     private final Activity activity;
     private final MessageHandler handler;
     private final boolean[] disconnected = { false };
+    private final String token;
 
-    public ProxyingMessageHandler(Activity activity, MessageHandler handler) {
+    public
+     ProxyingMessageHandler(Activity activity, MessageHandler handler,
+                            String token) {
       this.activity = activity;
       this.handler = handler;
+      this.token = token;
     }
 
     public void disconnect() {
@@ -118,6 +123,10 @@ public class GAEChannelClient {
 
     private boolean disconnected() {
       return disconnected[0];
+    }
+
+    @JavascriptInterface public String getToken() {
+      return token;
     }
 
     @JavascriptInterface public void onOpen() {

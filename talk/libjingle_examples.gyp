@@ -238,6 +238,7 @@
                 'examples/android/AndroidManifest.xml',
                 'examples/android/README',
                 'examples/android/ant.properties',
+                'examples/android/assets/channel.html',
                 'examples/android/build.xml',
                 'examples/android/jni/Android.mk',
                 'examples/android/project.properties',
