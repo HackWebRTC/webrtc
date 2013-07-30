@@ -1,4 +1,6 @@
 # Tests that are failing when run under memcheck.
+DtmfSenderTest.InsertDtmf
+DtmfSenderTest.InsertDtmfTwice
 JsepPeerConnectionP2PTestClient.AddDataChannelAfterRenegotiation
 JsepPeerConnectionP2PTestClient.GetAudioInputLevelStats
 JsepPeerConnectionP2PTestClient.GetAudioOutputLevelStats
