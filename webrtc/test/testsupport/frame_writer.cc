@@ -48,6 +48,8 @@ void FrameWriterImpl::Close() {
   }
 }
 
+size_t FrameWriterImpl::FrameLength() { return frame_length_in_bytes_; }
+
 bool FrameWriterImpl::WriteFrame(uint8_t* frame_buffer) {
   assert(frame_buffer);
   if (output_file_ == NULL) {

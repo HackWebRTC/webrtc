@@ -41,6 +41,8 @@ TraceToStderr::~TraceToStderr() {
   Trace::ReturnTrace();
 }
 
+void TraceToStderr::SetTimeSeconds(float time) { time_seconds_ = time; }
+
 void TraceToStderr::Print(TraceLevel level, const char* msg_array, int length) {
   if (level & kLevelFilter) {
     assert(length > Trace::kBoilerplateLength);
