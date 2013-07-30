@@ -1007,4 +1007,26 @@
    fun:_ZN9talk_base9HappyTaskC1EPNS_10TaskParentE
    fun:_ZN9talk_base41unstarted_task_test_DoNotDeleteTask2_Test8TestBodyEv
 }
+{
+   bug_2153_3
+   Memcheck:Leak
+   fun:calloc
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN6webrtc26AudioMixerManagerLinuxALSA11OpenSpeakerEPc
+   fun:_ZN6webrtc20AudioDeviceLinuxALSA11InitSpeakerEv
+   ...
+}
+{
+   bug_2153_4
+   Memcheck:Leak
+   fun:calloc
+   obj:*
+   fun:_ZN6webrtc26AudioMixerManagerLinuxALSA14OpenMicrophoneEPc
+   fun:_ZN6webrtc20AudioDeviceLinuxALSA14InitMicrophoneEv
+   ...
+}
 
