@@ -430,7 +430,7 @@
   // Ctrl-D: toggle audio mute; Ctrl-E: toggle video mute.
   // On Mac, Command key is instead of Ctrl.
   // Return false to screen out original Chrome shortcuts.
-  document.onkeydown = function() {
+  document.onkeydown = function(event) {
     if (navigator.appVersion.indexOf('Mac') != -1) {
       if (event.metaKey && event.keyCode === 68) {
         toggleAudioMute();
