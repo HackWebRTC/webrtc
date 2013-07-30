@@ -40,7 +40,9 @@
         'audio_device_impl.cc',
         'audio_device_impl.h',
         'audio_device_config.h',
+        'dummy/audio_device_dummy.cc',
         'dummy/audio_device_dummy.h',
+        'dummy/audio_device_utility_dummy.cc',
         'dummy/audio_device_utility_dummy.h',
       ],
       'conditions': [

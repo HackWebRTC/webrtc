@@ -22,9 +22,9 @@ class AudioDeviceUtilityLinux: public AudioDeviceUtility
 {
 public:
     AudioDeviceUtilityLinux(const int32_t id);
-    ~AudioDeviceUtilityLinux();
+    virtual ~AudioDeviceUtilityLinux();
 
-    virtual int32_t Init();
+    virtual int32_t Init() OVERRIDE;
 
 private:
     CriticalSectionWrapper& _critSect;

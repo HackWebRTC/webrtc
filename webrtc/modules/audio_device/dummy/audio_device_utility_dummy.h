@@ -22,11 +22,10 @@ class AudioDeviceUtilityDummy: public AudioDeviceUtility
 {
 public:
     AudioDeviceUtilityDummy(const int32_t id) {}
-    ~AudioDeviceUtilityDummy() {}
+    virtual ~AudioDeviceUtilityDummy() {}
 
-    virtual int32_t Init() { return 0; }
+    virtual int32_t Init() OVERRIDE;
 };
-
 }  // namespace webrtc
 
 #endif  // MODULES_AUDIO_DEVICE_MAIN_SOURCE_LINUX_AUDIO_DEVICE_UTILITY_DUMMY_H_
