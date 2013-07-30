@@ -68,7 +68,7 @@
 #include "talk/media/base/videorenderer.h"
 #include "talk/media/devices/videorendererfactory.h"
 #include "talk/media/webrtc/webrtcvideocapturer.h"
-#include "third_party/icu/public/common/unicode/unistr.h"
+#include "third_party/icu/source/common/unicode/unistr.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/voice_engine/include/voe_base.h"
