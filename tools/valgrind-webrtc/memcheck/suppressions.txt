@@ -988,4 +988,13 @@
    fun:_Znw*
    fun:_ZN15PubSubTasksTestC1Ev
 }
-
+# libjingle_peerconnection_unittest failures which can't be reproduced locally
+{
+   bug_2153_1
+   Memcheck:Leak
+   fun:calloc
+   obj:*
+   fun:_ZN6webrtc26AudioMixerManagerLinuxALSA11OpenSpeakerEPc
+   fun:_ZN6webrtc20AudioDeviceLinuxALSA11InitSpeakerEv
+   ...
+}
