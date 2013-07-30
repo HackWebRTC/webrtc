@@ -426,7 +426,7 @@
                 '<(PRODUCT_DIR)/libjingle_peerconnection_test.jar',
               ],
               'action': [
-                'build/build_jar.sh', '/usr', '<@(_outputs)',
+                'build/build_jar.sh', '<(java_home)', '<@(_outputs)',
                 '<(INTERMEDIATE_DIR)',
                 '<(java_src_dir):<(PRODUCT_DIR)/libjingle_peerconnection.jar:<(DEPTH)/third_party/junit/junit-4.11.jar',
                 '<@(java_files)'
