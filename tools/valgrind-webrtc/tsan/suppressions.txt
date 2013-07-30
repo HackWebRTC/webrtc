@@ -406,6 +406,27 @@
   ...
 }
 {
+  bug_1205_38
+  ThreadSanitizer:Race
+  fun:webrtc::VideoCodingModuleImpl::RegisterPacketRequestCallback
+  fun:webrtc::ViEChannel::ProcessNACKRequest
+  fun:webrtc::ViEChannel::SetNACKStatus
+  fun:webrtc::ViERTP_RTCPImpl::SetNACKStatus
+  fun:cricket::WebRtcVideoMediaChannel::SetNackFec
+  ...
+}
+{
+  bug_1205_39
+  ThreadSanitizer:Race
+  fun:talk_base::Thread::Send
+  fun:FakeAudioCaptureModule::UpdateProcessing
+  fun:FakeAudioCaptureModule::StopRecording
+  fun:webrtc::VoEBaseImpl::StopSend
+  fun:webrtc::VoEBaseImpl::DeleteChannel
+  fun:cricket::WebRtcVoiceMediaChannel::~WebRtcVoiceMediaChannel
+  ...
+}
+{
   bug_2078_1
   ThreadSanitizer:Race
   fun:talk_base::Thread::~Thread
@@ -632,6 +653,19 @@
   fun:talk_base::MemoryStreamBase::SetPosition
   fun:talk_base::StreamInterface::Rewind
   ...
+}
+{
+  bug_2078_25
+  ThreadSanitizer:Race
+  fun:cricket::FileNetworkInterface::SendPacket
+  fun:cricket::MediaChannel::DoSendPacket
+  fun:cricket::MediaChannel::SendPacket
+  fun:cricket::RtpSenderReceiver::SendRtpPacket
+  fun:cricket::RtpSenderReceiver::OnMessage
+  fun:talk_base::MessageQueue::Dispatch
+  fun:talk_base::Thread::ProcessMessages
+  fun:talk_base::Thread::Run
+  fun:talk_base::Thread::PreRun
 }
 {
   bug_2079_1
@@ -957,4 +991,10 @@
   fun:talk_base::ReadTask::OnMessage
   fun:talk_base::MessageQueue::Dispatch
   ...
+}
+{
+  bug_2080_33
+  ThreadSanitizer:Race
+  fun:talk_base::SharedExclusiveLockTest_TestSharedShared_Test::TestBody
+  fun:testing::internal::HandleSehExceptionsInMethodIfSupported
 }
