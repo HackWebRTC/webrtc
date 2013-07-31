@@ -51,14 +51,14 @@ class Accelerate : public TimeStretch {
   // values when the signal contains no active speech.
   virtual void SetParametersForPassiveSpeech(int len,
                                              int16_t* best_correlation,
-                                             int* peak_index) const;
+                                             int* peak_index) const OVERRIDE;
 
   // Checks the criteria for performing the time-stretching operation and,
   // if possible, performs the time-stretching.
   virtual ReturnCodes CheckCriteriaAndStretch(
       const int16_t* input, int input_length, size_t peak_index,
       int16_t best_correlation, bool active_speech,
-      AudioMultiVector<int16_t>* output) const;
+      AudioMultiVector<int16_t>* output) const OVERRIDE;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Accelerate);

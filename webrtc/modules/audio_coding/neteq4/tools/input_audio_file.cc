@@ -13,6 +13,12 @@
 namespace webrtc {
 namespace test {
 
+InputAudioFile::InputAudioFile(const std::string file_name) {
+  fp_ = fopen(file_name.c_str(), "rb");
+}
+
+InputAudioFile::~InputAudioFile() { fclose(fp_); }
+
 bool InputAudioFile::Read(size_t samples, int16_t* destination) {
   if (!fp_) {
     return false;

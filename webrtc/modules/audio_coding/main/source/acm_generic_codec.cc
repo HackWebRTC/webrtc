@@ -591,6 +591,10 @@ bool ACMGenericCodec::CanChangeEncodingParam(CodecInst& /*codec_inst*/) {
   return true;
 }
 
+void ACMGenericCodec::CurrentRate(int32_t& /* rate_bps */) {
+  return;
+}
+
 int16_t ACMGenericCodec::InitDecoder(WebRtcACMCodecParams* codec_params,
                                      bool force_initialization) {
   WriteLockScoped lockCodc(codec_wrapper_lock_);
@@ -1159,6 +1163,10 @@ bool ACMGenericCodec::IsAudioBufferFresh() const {
   return is_audio_buff_fresh_;
 }
 
+int16_t ACMGenericCodec::UpdateDecoderSampFreq(int16_t /* codec_id */) {
+  return 0;
+}
+
 // This function is replaced by codec specific functions for some codecs.
 int16_t ACMGenericCodec::EncoderSampFreq(uint16_t& samp_freq_hz) {
   int32_t f;
@@ -1230,5 +1238,7 @@ int16_t ACMGenericCodec::REDPayloadISAC(const int32_t /* isac_rate */,
                "Error: REDPayloadISAC is an iSAC specific function");
   return -1;
 }
+
+bool ACMGenericCodec::IsTrueStereoCodec() { return false; }
 
 }  // namespace webrtc

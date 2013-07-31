@@ -44,6 +44,12 @@ DelayManager::DelayManager(int max_packets_in_buffer,
   Reset();
 }
 
+DelayManager::~DelayManager() {}
+
+const DelayManager::IATVector& DelayManager::iat_vector() const {
+  return iat_vector_;
+}
+
 // Set the histogram vector to an exponentially decaying distribution
 // iat_vector_[i] = 0.5^(i+1), i = 0, 1, 2, ...
 // iat_vector_ is in Q30.
@@ -323,6 +329,8 @@ void DelayManager::UpdateCounters(int elapsed_time_ms) {
   max_timer_ms_ += elapsed_time_ms;
 }
 
+void DelayManager::ResetPacketIatCount() { packet_iat_count_ms_ = 0; }
+
 void DelayManager::BufferLimits(int* lower_limit, int* higher_limit) const {
   if (!lower_limit || !higher_limit) {
     LOG_F(LS_ERROR) << "NULL pointers supplied as input";
@@ -365,5 +373,19 @@ void DelayManager::LastDecoderType(NetEqDecoder decoder_type) {
   } else if (last_pack_cng_or_dtmf_ != 0) {
     last_pack_cng_or_dtmf_ = -1;
   }
+}
+
+void DelayManager::set_extra_delay_ms(int16_t delay) {
+  extra_delay_ms_ = delay;
+}
+
+int DelayManager::base_target_level() const { return base_target_level_; }
+void DelayManager::set_streaming_mode(bool value) { streaming_mode_ = value; }
+int DelayManager::last_pack_cng_or_dtmf() const {
+  return last_pack_cng_or_dtmf_;
+}
+
+void DelayManager::set_last_pack_cng_or_dtmf(int value) {
+  last_pack_cng_or_dtmf_ = value;
 }
 }  // namespace webrtc

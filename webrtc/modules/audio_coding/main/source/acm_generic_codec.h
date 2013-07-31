@@ -594,9 +594,7 @@ class ACMGenericCodec {
   //    0 if succeeded in updating the decoder.
   //   -1 if failed to update.
   //
-  virtual int16_t UpdateDecoderSampFreq(int16_t /* codec_id */) {
-    return 0;
-  }
+  virtual int16_t UpdateDecoderSampFreq(int16_t /* codec_id */);
 
   ///////////////////////////////////////////////////////////////////////////
   // UpdateEncoderSampFreq()
@@ -747,9 +745,7 @@ class ACMGenericCodec {
   //   -true  if stereo codec
   //   -false if not stereo codec.
   //
-  virtual bool IsTrueStereoCodec() {
-    return false;
-  }
+  virtual bool IsTrueStereoCodec();
 
   ///////////////////////////////////////////////////////////////////////////
   // HasFrameToEncode()
@@ -1148,9 +1144,7 @@ class ACMGenericCodec {
   // Output:
   //   -rate_bps           : the current target rate of the codec.
   //
-  virtual void CurrentRate(int32_t& /* rate_bps */) {
-    return;
-  }
+  virtual void CurrentRate(int32_t& /* rate_bps */);
 
   virtual void SaveDecoderParamSafe(const WebRtcACMCodecParams* codec_params);
 

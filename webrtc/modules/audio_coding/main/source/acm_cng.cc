@@ -140,4 +140,7 @@ void ACMCNG::InternalDestructEncoderInst(void* ptr_inst) {
   return;
 }
 
+int16_t ACMCNG::EnableDTX() { return -1; }
+int16_t ACMCNG::DisableDTX() { return -1; }
+
 }  // namespace webrtc

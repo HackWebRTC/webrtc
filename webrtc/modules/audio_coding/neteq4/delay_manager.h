@@ -33,10 +33,10 @@ class DelayManager {
   // object to the DelayManager.
   DelayManager(int max_packets_in_buffer, DelayPeakDetector* peak_detector);
 
-  virtual ~DelayManager() {}
+  virtual ~DelayManager();
 
   // Read the inter-arrival time histogram. Mainly for testing purposes.
-  virtual const IATVector& iat_vector() const { return iat_vector_; }
+  virtual const IATVector& iat_vector() const;
 
   // Updates the delay manager with a new incoming packet, with
   // |sequence_number| and |timestamp| from the RTP header. This updates the
@@ -79,7 +79,7 @@ class DelayManager {
   virtual void UpdateCounters(int elapsed_time_ms);
 
   // Reset the inter-arrival time counter to 0.
-  virtual void ResetPacketIatCount() { packet_iat_count_ms_ = 0; }
+  virtual void ResetPacketIatCount();
 
   // Writes the lower and higher limits which the buffer level should stay
   // within to the corresponding pointers. The values are in (fractions of)
@@ -93,13 +93,11 @@ class DelayManager {
   virtual void LastDecoderType(NetEqDecoder decoder_type);
 
   // Accessors and mutators.
-  virtual void set_extra_delay_ms(int16_t delay) { extra_delay_ms_ = delay; }
-  virtual int base_target_level() const { return base_target_level_; }
-  virtual void set_streaming_mode(bool value) { streaming_mode_ = value; }
-  virtual int last_pack_cng_or_dtmf() const { return last_pack_cng_or_dtmf_; }
-  virtual void set_last_pack_cng_or_dtmf(int value) {
-    last_pack_cng_or_dtmf_ = value;
-  }
+  virtual void set_extra_delay_ms(int16_t delay);
+  virtual int base_target_level() const;
+  virtual void set_streaming_mode(bool value);
+  virtual int last_pack_cng_or_dtmf() const;
+  virtual void set_last_pack_cng_or_dtmf(int value);
 
  private:
   static const int kLimitProbability = 53687091;  // 1/20 in Q30.

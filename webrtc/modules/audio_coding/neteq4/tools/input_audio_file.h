@@ -23,13 +23,9 @@ namespace test {
 // Class for handling a looping input audio file.
 class InputAudioFile {
  public:
-  explicit InputAudioFile(const std::string file_name) {
-    fp_ = fopen(file_name.c_str(), "rb");
-  }
+  explicit InputAudioFile(const std::string file_name);
 
-  virtual ~InputAudioFile() {
-    fclose(fp_);
-  }
+  virtual ~InputAudioFile();
 
   // Reads |samples| elements from source file to |destination|. Returns true
   // if the read was successful, otherwise false. If the file end is reached,

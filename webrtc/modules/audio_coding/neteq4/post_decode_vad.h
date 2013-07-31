@@ -33,11 +33,7 @@ class PostDecodeVad {
         vad_instance_(NULL) {
   }
 
-  virtual ~PostDecodeVad() {
-    if (vad_instance_) {
-      WebRtcVad_Free(vad_instance_);
-    }
-  }
+  virtual ~PostDecodeVad();
 
   // Enables post-decode VAD.
   void Enable();

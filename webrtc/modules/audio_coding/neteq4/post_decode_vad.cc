@@ -12,6 +12,11 @@
 
 namespace webrtc {
 
+PostDecodeVad::~PostDecodeVad() {
+  if (vad_instance_)
+    WebRtcVad_Free(vad_instance_);
+}
+
 void PostDecodeVad::Enable() {
   if (!vad_instance_) {
     // Create the instance.

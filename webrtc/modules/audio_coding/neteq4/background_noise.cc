@@ -21,6 +21,15 @@
 
 namespace webrtc {
 
+BackgroundNoise::BackgroundNoise(size_t num_channels)
+    : num_channels_(num_channels),
+      channel_parameters_(new ChannelParameters[num_channels_]),
+      mode_(kBgnOn) {
+  Reset();
+}
+
+BackgroundNoise::~BackgroundNoise() {}
+
 void BackgroundNoise::Reset() {
   initialized_ = false;
   for (size_t channel = 0; channel < num_channels_; ++channel) {
