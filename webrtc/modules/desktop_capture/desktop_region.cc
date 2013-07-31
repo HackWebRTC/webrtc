@@ -23,6 +23,8 @@ DesktopRegion::Row::Row(int32_t top, int32_t bottom)
     : top(top), bottom(bottom) {
 }
 
+DesktopRegion::Row::~Row() {}
+
 DesktopRegion::DesktopRegion() {}
 
 DesktopRegion::DesktopRegion(const DesktopRect& rect) {
