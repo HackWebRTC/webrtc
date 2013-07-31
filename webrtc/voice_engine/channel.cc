@@ -4418,6 +4418,63 @@ Channel::Demultiplex(const AudioFrame& audioFrame)
     return 0;
 }
 
+// TODO(xians): This method borrows quite some code from
+// TransmitMixer::GenerateAudioFrame(), refactor these two methods and reduce
+// code duplication.
+void Channel::Demultiplex(const int16_t* audio_data,
+                          int number_of_frames,
+                          int number_of_channels,
+                          int sample_rate) {
+  // The highest sample rate that WebRTC supports for mono audio is 96kHz.
+  static const int kMaxNumberOfFrames = 960;
+  assert(number_of_frames <= kMaxNumberOfFrames);
+
+  // Get the send codec information for doing resampling or downmixing later on.
+  CodecInst codec;
+  GetSendCodec(codec);
+  assert(codec.channels == 1 || codec.channels == 2);
+  int support_sample_rate = std::min(32000,
+                                     std::min(sample_rate, codec.plfreq));
+
+  // Downmix the data to mono if needed.
+  const int16_t* audio_ptr = audio_data;
+  if (number_of_channels == 2 && codec.channels == 1) {
+    if (!mono_recording_audio_.get())
+      mono_recording_audio_.reset(new int16_t[kMaxNumberOfFrames]);
+
+    AudioFrameOperations::StereoToMono(audio_data, number_of_frames,
+                                       mono_recording_audio_.get());
+    audio_ptr = mono_recording_audio_.get();
+  }
+
+  // Resample the data to the sample rate that the codec is using.
+  if (input_resampler_.InitializeIfNeeded(sample_rate,
+                                          support_sample_rate,
+                                          codec.channels)) {
+    WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, -1),
+                 "Channel::Demultiplex() unable to resample");
+    return;
+  }
+
+  int out_length = input_resampler_.Resample(audio_ptr,
+                                             number_of_frames * codec.channels,
+                                             _audioFrame.data_,
+                                             AudioFrame::kMaxDataSizeSamples);
+  if (out_length == -1) {
+    WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, -1),
+                 "Channel::Demultiplex() resampling failed");
+    return;
+  }
+
+  _audioFrame.samples_per_channel_ = out_length / codec.channels;
+  _audioFrame.timestamp_ = -1;
+  _audioFrame.sample_rate_hz_ = support_sample_rate;
+  _audioFrame.speech_type_ = AudioFrame::kNormalSpeech;
+  _audioFrame.vad_activity_ = AudioFrame::kVadUnknown;
+  _audioFrame.num_channels_ = codec.channels;
+  _audioFrame.id_ = _channelId;
+}
+
 uint32_t
 Channel::PrepareEncodeAndSend(int mixingFrequency)
 {

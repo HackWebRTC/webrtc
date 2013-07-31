@@ -443,6 +443,23 @@ TransmitMixer::DemuxAndMix()
     return 0;
 }
 
+void TransmitMixer::DemuxAndMix(int voe_channels[],
+                                int number_of_voe_channels) {
+  for (int i = 0; i < number_of_voe_channels; ++i) {
+    voe::ScopedChannel sc(*_channelManagerPtr, voe_channels[i]);
+    voe::Channel* channel_ptr = sc.ChannelPtr();
+    if (channel_ptr) {
+      if (channel_ptr->InputIsOnHold()) {
+        channel_ptr->UpdateLocalTimeStamp();
+      } else if (channel_ptr->Sending()) {
+        // Demultiplex makes a copy of its input.
+        channel_ptr->Demultiplex(_audioFrame);
+        channel_ptr->PrepareEncodeAndSend(_audioFrame.sample_rate_hz_);
+      }
+    }
+  }
+}
+
 int32_t
 TransmitMixer::EncodeAndSend()
 {
@@ -461,6 +478,16 @@ TransmitMixer::EncodeAndSend()
         channelPtr = sc.GetNextChannel(iterator);
     }
     return 0;
+}
+
+void TransmitMixer::EncodeAndSend(int voe_channels[],
+                                  int number_of_voe_channels) {
+  for (int i = 0; i < number_of_voe_channels; ++i) {
+    voe::ScopedChannel sc(*_channelManagerPtr, voe_channels[i]);
+    voe::Channel* channel_ptr = sc.ChannelPtr();
+    if (channel_ptr && channel_ptr->Sending() && !channel_ptr->InputIsOnHold())
+      channel_ptr->EncodeAndSend();
+  }
 }
 
 uint32_t TransmitMixer::CaptureLevel() const

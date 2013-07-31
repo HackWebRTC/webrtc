@@ -111,6 +111,17 @@ public:
                                      void* audioSamples,
                                      uint32_t& nSamplesOut);
 
+    virtual int OnDataAvailable(int voe_channels[],
+                                int number_of_voe_channels,
+                                const int16_t* audio_data,
+                                int sample_rate,
+                                int number_of_channels,
+                                int number_of_frames,
+                                int audio_delay_milliseconds,
+                                int current_volume,
+                                bool key_pressed,
+                                bool need_audio_processing);
+
     AudioTransportImpl(AudioDeviceModule* audioDevice);
     ~AudioTransportImpl();
 

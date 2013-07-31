@@ -274,6 +274,69 @@ int32_t VoEBaseImpl::NeedMorePlayData(
     return 0;
 }
 
+int VoEBaseImpl::OnDataAvailable(int voe_channels[],
+                                 int number_of_voe_channels,
+                                 const int16_t* audio_data,
+                                 int sample_rate,
+                                 int number_of_channels,
+                                 int number_of_frames,
+                                 int audio_delay_milliseconds,
+                                 int current_volume,
+                                 bool key_pressed,
+                                 bool need_audio_processing) {
+  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "VoEBaseImpl::OnDataAvailable(number_of_voe_channels=%d, "
+               "sample_rate=%d, number_of_channels=%d, number_of_frames=%d, "
+               "audio_delay_milliseconds=%d, current_volume=%d, "
+               "key_pressed=%d, need_audio_processing=%d)",
+               number_of_voe_channels, sample_rate, number_of_channels,
+               number_of_frames, audio_delay_milliseconds, current_volume,
+               key_pressed, need_audio_processing);
+
+  if (need_audio_processing) {
+    // Perform channel-independent operations
+    // (APM, mix with file, record to file, mute, etc.)
+    _shared->transmit_mixer()->PrepareDemux(
+        audio_data, number_of_frames, number_of_channels,
+        sample_rate, static_cast<uint16_t>(audio_delay_milliseconds), 0,
+        current_volume, key_pressed);
+    _shared->transmit_mixer()->DemuxAndMix(voe_channels,
+                                           number_of_voe_channels);
+    _shared->transmit_mixer()->EncodeAndSend(voe_channels,
+                                             number_of_voe_channels);
+    // Update the volume if the analog AGC is working.
+    if (_shared->audio_processing() &&
+        _shared->audio_processing()->gain_control()->mode() ==
+            GainControl::kAdaptiveAnalog) {
+      return _shared->transmit_mixer()->CaptureLevel();
+    }
+
+    // Return 0 to indicate no need to change the volume.
+    return 0;
+  }
+
+  // No need to go through the APM, demultiplex the data to each VoE channel,
+  // encode and send to the network.
+  for (int i = 0; i < number_of_voe_channels; ++i) {
+    voe::ScopedChannel sc(_shared->channel_manager(), voe_channels[i]);
+    voe::Channel* channel_ptr = sc.ChannelPtr();
+    if (!channel_ptr)
+      continue;
+
+    if (channel_ptr->InputIsOnHold()) {
+      channel_ptr->UpdateLocalTimeStamp();
+    } else if (channel_ptr->Sending()) {
+      channel_ptr->Demultiplex(audio_data, sample_rate, number_of_frames,
+                               number_of_channels);
+      channel_ptr->PrepareEncodeAndSend(sample_rate);
+      channel_ptr->EncodeAndSend();
+    }
+  }
+
+  // Return 0 to indicate no need to change the volume.
+  return 0;
+}
+
 int VoEBaseImpl::RegisterVoiceEngineObserver(VoiceEngineObserver& observer)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),

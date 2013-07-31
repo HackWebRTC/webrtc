@@ -61,8 +61,14 @@ public:
 
 
     int32_t DemuxAndMix();
+    // Used by the Chrome to pass the recording data to the specific VoE
+    // channels for demux.
+    void DemuxAndMix(int voe_channels[], int number_of_voe_channels);
 
     int32_t EncodeAndSend();
+    // Used by the Chrome to pass the recording data to the specific VoE
+    // channels for encoding and sending to the network.
+    void EncodeAndSend(int voe_channels[], int number_of_voe_channels);
 
     uint32_t CaptureLevel() const;
 

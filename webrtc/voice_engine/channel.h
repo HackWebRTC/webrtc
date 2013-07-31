@@ -11,7 +11,7 @@
 #ifndef WEBRTC_VOICE_ENGINE_CHANNEL_H
 #define WEBRTC_VOICE_ENGINE_CHANNEL_H
 
-#include "webrtc/common_audio/resampler/include/resampler.h"
+#include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_conference_mixer/interface/audio_conference_mixer_defines.h"
@@ -422,6 +422,13 @@ public:
         return _outputAudioLevel.Level();
     }
     uint32_t Demultiplex(const AudioFrame& audioFrame);
+    // Demultiplex the data to the channel's |_audioFrame|. The difference
+    // between this method and the overloaded method above is that |audio_data|
+    // does not go through transmit_mixer and APM.
+    void Demultiplex(const int16_t* audio_data,
+                     int number_of_frames,
+                     int number_of_channels,
+                     int sample_rate);
     uint32_t PrepareEncodeAndSend(int mixingFrequency);
     uint32_t EncodeAndSend();
 
@@ -454,6 +461,9 @@ private:
     AudioLevel _outputAudioLevel;
     bool _externalTransport;
     AudioFrame _audioFrame;
+    scoped_array<int16_t> mono_recording_audio_;
+    // Resampler is used when input data is stereo while codec is mono.
+    PushResampler input_resampler_;
     uint8_t _audioLevel_dBov;
     FilePlayer* _inputFilePlayerPtr;
     FilePlayer* _outputFilePlayerPtr;
