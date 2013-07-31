@@ -34,24 +34,24 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
   // packet size excluding headers.
   virtual void IncomingPacket(int64_t arrival_time_ms,
                               int payload_size,
-                              const RTPHeader& header);
+                              const RTPHeader& header) OVERRIDE;
 
   // Triggers a new estimate calculation.
   // Implements the Module interface.
-  virtual int32_t Process();
-  virtual int32_t TimeUntilNextProcess();
+  virtual int32_t Process() OVERRIDE;
+  virtual int32_t TimeUntilNextProcess() OVERRIDE;
   // Set the current round-trip time experienced by the stream.
   // Implements the StatsObserver interface.
-  virtual void OnRttUpdate(uint32_t rtt);
+  virtual void OnRttUpdate(uint32_t rtt) OVERRIDE;
 
   // Removes all data for |ssrc|.
-  virtual void RemoveStream(unsigned int ssrc);
+  virtual void RemoveStream(unsigned int ssrc) OVERRIDE;
 
   // Returns true if a valid estimate exists and sets |bitrate_bps| to the
   // estimated payload bitrate in bits per second. |ssrcs| is the list of ssrcs
   // currently being received and of which the bitrate estimate is based upon.
   virtual bool LatestEstimate(std::vector<unsigned int>* ssrcs,
-                              unsigned int* bitrate_bps) const;
+                              unsigned int* bitrate_bps) const OVERRIDE;
 
  private:
   typedef std::map<unsigned int, OveruseDetector> SsrcOveruseDetectorMap;

@@ -30,22 +30,13 @@ class TestBitrateObserver : public RemoteBitrateObserver {
   virtual ~TestBitrateObserver() {}
 
   virtual void OnReceiveBitrateChanged(const std::vector<unsigned int>& ssrcs,
-                                       unsigned int bitrate) {
-    latest_bitrate_ = bitrate;
-    updated_ = true;
-  }
+                                       unsigned int bitrate) OVERRIDE;
 
-  void Reset() {
-    updated_ = false;
-  }
+  void Reset() { updated_ = false; }
 
-  bool updated() const {
-    return updated_;
-  }
+  bool updated() const { return updated_; }
 
-  unsigned int latest_bitrate() const {
-    return latest_bitrate_;
-  }
+  unsigned int latest_bitrate() const { return latest_bitrate_; }
 
  private:
   bool updated_;
@@ -154,6 +145,7 @@ class StreamGenerator {
 class RemoteBitrateEstimatorTest : public ::testing::Test {
  public:
   RemoteBitrateEstimatorTest();
+  virtual ~RemoteBitrateEstimatorTest();
 
  protected:
   virtual void SetUp() = 0;

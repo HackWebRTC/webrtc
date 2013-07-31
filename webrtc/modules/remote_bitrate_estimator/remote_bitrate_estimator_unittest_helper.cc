@@ -18,6 +18,13 @@ enum { kMtu = 1200 };
 
 namespace testing {
 
+void TestBitrateObserver::OnReceiveBitrateChanged(
+    const std::vector<unsigned int>& ssrcs,
+    unsigned int bitrate) {
+  latest_bitrate_ = bitrate;
+  updated_ = true;
+}
+
 RtpStream::RtpStream(int fps,
                      int bitrate_bps,
                      unsigned int ssrc,
@@ -186,6 +193,8 @@ RemoteBitrateEstimatorTest::RemoteBitrateEstimatorTest()
       stream_generator_(new testing::StreamGenerator(
           1e6,  // Capacity.
           clock_.TimeInMicroseconds())) {}
+
+RemoteBitrateEstimatorTest::~RemoteBitrateEstimatorTest() {}
 
 void RemoteBitrateEstimatorTest::AddDefaultStream() {
   stream_generator_->AddStream(new testing::RtpStream(
