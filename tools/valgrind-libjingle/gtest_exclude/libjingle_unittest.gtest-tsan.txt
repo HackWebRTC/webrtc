@@ -1,3 +1,0 @@
-# Tests that are failing when run under TSan.
-PhysicalSocketTest.TestUdpReadyToSendIPv4
-ThreadTest.Release
