@@ -490,6 +490,7 @@ private:
     uint32_t playout_timestamp_rtcp_;
     uint32_t playout_delay_ms_;
     uint32_t _numberOfDiscardedPackets;
+    uint16_t send_sequence_number_;
 
  private:
     // uses

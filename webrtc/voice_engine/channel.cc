@@ -915,6 +915,7 @@ Channel::Channel(int32_t channelId,
     playout_timestamp_rtp_(0),
     playout_timestamp_rtcp_(0),
     _numberOfDiscardedPackets(0),
+    send_sequence_number_(0),
     _engineStatisticsPtr(NULL),
     _outputMixerPtr(NULL),
     _transmitMixerPtr(NULL),
@@ -1400,6 +1401,11 @@ Channel::StartSend()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StartSend()");
+    // Resume the previous sequence number which was reset by StopSend().
+    // This needs to be done before |_sending| is set to true.
+    if (send_sequence_number_)
+      SetInitSequenceNumber(send_sequence_number_);
+
     {
         // A lock is needed because |_sending| can be accessed or modified by
         // another thread at the same time.
@@ -1441,6 +1447,14 @@ Channel::StopSend()
         }
         _sending = false;
     }
+
+    // Store the sequence number to be able to pick up the same sequence for
+    // the next StartSend(). This is needed for restarting device, otherwise
+    // it might cause libSRTP to complain about packets being replayed.
+    // TODO(xians): Remove this workaround after RtpRtcpModule's refactoring
+    // CL is landed. See issue
+    // https://code.google.com/p/webrtc/issues/detail?id=2111 .
+    send_sequence_number_ = _rtpRtcpModule->SequenceNumber();
 
     // Reset sending SSRC and sequence number and triggers direct transmission
     // of RTCP BYE
