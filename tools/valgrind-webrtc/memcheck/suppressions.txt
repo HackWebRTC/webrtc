@@ -806,6 +806,13 @@
    ...
 }
 {
+   bug_1972_64
+   Memcheck:Leak
+   fun:_Znw*
+   fun:_ZN7cricket7UDPPort16CreateConnectionERKNS_9CandidateENS_13PortInterface15CandidateOriginE
+   ...
+}
+{
    bug_1976_1
    Memcheck:Leak
    fun:_Zna*
@@ -993,7 +1000,7 @@
    bug_2153_1
    Memcheck:Leak
    fun:calloc
-   obj:*
+   ...
    fun:_ZN6webrtc26AudioMixerManagerLinuxALSA11OpenSpeakerEPc
    fun:_ZN6webrtc20AudioDeviceLinuxALSA11InitSpeakerEv
    ...
@@ -1009,19 +1016,6 @@
 }
 {
    bug_2153_3
-   Memcheck:Leak
-   fun:calloc
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZN6webrtc26AudioMixerManagerLinuxALSA11OpenSpeakerEPc
-   fun:_ZN6webrtc20AudioDeviceLinuxALSA11InitSpeakerEv
-   ...
-}
-{
-   bug_2153_4
    Memcheck:Leak
    fun:calloc
    obj:*
