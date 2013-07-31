@@ -25,7 +25,7 @@ class RtcpBandwidthObserverImpl : public RtcpBandwidthObserver {
   virtual ~RtcpBandwidthObserverImpl() {
   }
   // Received RTCP REMB or TMMBR.
-  virtual void OnReceivedEstimatedBitrate(const uint32_t bitrate) {
+  virtual void OnReceivedEstimatedBitrate(const uint32_t bitrate) OVERRIDE {
     owner_->OnReceivedEstimatedBitrate(bitrate);
   }
   // Received RTCP receiver block.
@@ -34,7 +34,7 @@ class RtcpBandwidthObserverImpl : public RtcpBandwidthObserver {
       const uint8_t fraction_loss,
       const uint32_t rtt,
       const uint32_t last_received_extended_high_seq_num,
-      const uint32_t now_ms) {
+      const uint32_t now_ms) OVERRIDE {
     uint32_t number_of_packets = 0;
     std::map<uint32_t, uint32_t>::iterator it =
         ssrc_to_last_received_extended_high_seq_num_.find(ssrc);

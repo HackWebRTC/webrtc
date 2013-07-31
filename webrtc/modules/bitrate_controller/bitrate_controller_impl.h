@@ -34,16 +34,16 @@ class BitrateControllerImpl : public BitrateController {
   explicit BitrateControllerImpl();
   virtual ~BitrateControllerImpl();
 
-  virtual bool AvailableBandwidth(uint32_t* bandwidth) const;
+  virtual bool AvailableBandwidth(uint32_t* bandwidth) const OVERRIDE;
 
-  virtual RtcpBandwidthObserver* CreateRtcpBandwidthObserver();
+  virtual RtcpBandwidthObserver* CreateRtcpBandwidthObserver() OVERRIDE;
 
   virtual void SetBitrateObserver(BitrateObserver* observer,
                                   const uint32_t start_bitrate,
                                   const uint32_t min_bitrate,
-                                  const uint32_t max_bitrate);
+                                  const uint32_t max_bitrate) OVERRIDE;
 
-  virtual void RemoveBitrateObserver(BitrateObserver* observer);
+  virtual void RemoveBitrateObserver(BitrateObserver* observer) OVERRIDE;
 
  protected:
   struct BitrateConfiguration {
