@@ -574,7 +574,6 @@
               '-lcrypto',
               '-ldl',
               '-lrt',
-              '-lssl',
               '-lXext',
               '-lX11',
               '-lXcomposite',
@@ -650,7 +649,7 @@
             ],
           },
           'defines': [
-	    'SSL_USE_NSS',
+            'SSL_USE_NSS',
           ],
         }],
         ['OS=="win"', {
