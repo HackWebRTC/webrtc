@@ -21,8 +21,6 @@
 #define PART_LEN 64  // Length of partition
 #define PART_LEN1 (PART_LEN + 1)  // Unique fft coefficients
 #define PART_LEN2 (PART_LEN * 2)  // Length of partition * 2
-#define NR_PART 12  // Number of partitions in filter.
-#define PREF_BAND_SIZE 24
 
 // Delay estimator constants, used for logging.
 enum { kMaxDelayBlocks = 60 };

@@ -19,6 +19,9 @@
 #include "webrtc/modules/audio_processing/utility/ring_buffer.h"
 #include "webrtc/typedefs.h"
 
+#define NR_PART 12  // Number of partitions in filter.
+#define PREF_BAND_SIZE 24
+
 typedef struct PowerLevel {
   float sfrsum;
   int sfrcounter;
