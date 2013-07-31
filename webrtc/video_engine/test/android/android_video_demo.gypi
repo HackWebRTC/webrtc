@@ -23,7 +23,6 @@
       'link_settings': {
         'libraries': [
           '-llog',
-          '-lgcc',
           '-lGLESv2',
           '-lOpenSLES',
         ],

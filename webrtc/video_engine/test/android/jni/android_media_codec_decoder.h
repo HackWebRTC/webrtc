@@ -94,7 +94,6 @@ class AndroidMediaCodecDecoder : public VideoDecoder {
  private:
   void Initialize(JavaVM* vm, jobject surface, jclass decoderClass);
 
-  DecodedImageCallback* decode_complete_callback_;
   JavaVM* vm_;
   jobject surface_;
   jobject mediaCodecDecoder_;

@@ -19,8 +19,7 @@ namespace webrtc {
 
 AndroidMediaCodecDecoder::AndroidMediaCodecDecoder(
     JavaVM* vm, jobject surface, jclass decoderClass)
-  : decode_complete_callback_(NULL),
-    vm_(vm),
+  : vm_(vm),
     surface_(NULL),
     mediaCodecDecoder_(NULL),
     decoderClass_(NULL),
