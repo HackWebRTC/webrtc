@@ -557,7 +557,7 @@ int32_t AudioTransportImpl::NeedMorePlayData(
     return 0;
 }
 
-int AudioTransportImpl::OnDataAvailable(int voe_channels[],
+int AudioTransportImpl::OnDataAvailable(const int voe_channels[],
                                         int number_of_voe_channels,
                                         const int16_t* audio_data,
                                         int sample_rate,

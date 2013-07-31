@@ -90,7 +90,7 @@ public:
                                      void* audioSamples,
                                      uint32_t& nSamplesOut);
 
-    virtual int OnDataAvailable(int voe_channels[],
+    virtual int OnDataAvailable(const int voe_channels[],
                                 int number_of_voe_channels,
                                 const int16_t* audio_data,
                                 int sample_rate,
@@ -116,6 +116,23 @@ private:
     int32_t StopSend();
     int32_t TerminateInternal();
 
+    // Helper function to process the recorded data with AudioProcessing Module,
+    // demultiplex the data to specific voe channels, encode and send to the
+    // network. When |number_of_VoE_channels| is 0, it will demultiplex the
+    // data to all the existing VoE channels.
+    // It returns new AGC microphone volume or 0 if no volume changes
+    // should be done.
+    int ProcessRecordedDataWithAPM(const int voe_channels[],
+                                   int number_of_voe_channels,
+                                   const void* audio_data,
+                                   uint32_t sample_rate,
+                                   uint8_t number_of_channels,
+                                   uint32_t number_of_frames,
+                                   uint32_t audio_delay_milliseconds,
+                                   int32_t clock_drift,
+                                   uint32_t current_volume,
+                                   bool key_pressed);
+
     int32_t AddBuildInfo(char* str) const;
     int32_t AddVoEVersion(char* str) const;
 #ifdef WEBRTC_EXTERNAL_TRANSPORT
@@ -132,7 +149,6 @@ private:
     uint32_t _oldMicLevel;
     AudioFrame _audioFrame;
     voe::SharedData* _shared;
-
 };
 
 }  // namespace webrtc

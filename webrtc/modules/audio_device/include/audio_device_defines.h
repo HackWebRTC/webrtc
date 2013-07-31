@@ -87,7 +87,7 @@ public:
     // When the volume does not need to be updated, it returns 0.
     // TODO(xians): Make the interface pure virtual after libjingle has its
     // implementation.
-    virtual int OnDataAvailable(int voe_channels[],
+    virtual int OnDataAvailable(const int voe_channels[],
                                 int number_of_voe_channels,
                                 const int16_t* audio_data,
                                 int sample_rate,

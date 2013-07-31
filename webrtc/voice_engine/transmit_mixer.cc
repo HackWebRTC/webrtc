@@ -443,7 +443,7 @@ TransmitMixer::DemuxAndMix()
     return 0;
 }
 
-void TransmitMixer::DemuxAndMix(int voe_channels[],
+void TransmitMixer::DemuxAndMix(const int voe_channels[],
                                 int number_of_voe_channels) {
   for (int i = 0; i < number_of_voe_channels; ++i) {
     voe::ScopedChannel sc(*_channelManagerPtr, voe_channels[i]);
@@ -480,7 +480,7 @@ TransmitMixer::EncodeAndSend()
     return 0;
 }
 
-void TransmitMixer::EncodeAndSend(int voe_channels[],
+void TransmitMixer::EncodeAndSend(const int voe_channels[],
                                   int number_of_voe_channels) {
   for (int i = 0; i < number_of_voe_channels; ++i) {
     voe::ScopedChannel sc(*_channelManagerPtr, voe_channels[i]);

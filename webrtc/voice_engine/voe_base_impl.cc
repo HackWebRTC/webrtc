@@ -142,91 +142,9 @@ int32_t VoEBaseImpl::RecordedDataIsAvailable(
                      "totalDelayMS=%u, clockDrift=%d, currentMicLevel=%u)",
                  nSamples, nBytesPerSample, nChannels, samplesPerSec,
                  totalDelayMS, clockDrift, currentMicLevel);
-
-    assert(_shared->transmit_mixer() != NULL);
-    assert(_shared->audio_device() != NULL);
-
-    bool isAnalogAGC(false);
-    uint32_t maxVolume(0);
-    uint16_t currentVoEMicLevel(0);
-    uint32_t newVoEMicLevel(0);
-
-    if (_shared->audio_processing() &&
-        (_shared->audio_processing()->gain_control()->mode()
-                    == GainControl::kAdaptiveAnalog))
-    {
-        isAnalogAGC = true;
-    }
-
-    // Will only deal with the volume in adaptive analog mode
-    if (isAnalogAGC)
-    {
-        // Scale from ADM to VoE level range
-        if (_shared->audio_device()->MaxMicrophoneVolume(&maxVolume) == 0)
-        {
-            if (0 != maxVolume)
-            {
-                currentVoEMicLevel = (uint16_t) ((currentMicLevel
-                        * kMaxVolumeLevel + (int) (maxVolume / 2))
-                        / (maxVolume));
-            }
-        }
-        // We learned that on certain systems (e.g Linux) the currentVoEMicLevel
-        // can be greater than the maxVolumeLevel therefore
-        // we are going to cap the currentVoEMicLevel to the maxVolumeLevel
-        // and change the maxVolume to currentMicLevel if it turns out that
-        // the currentVoEMicLevel is indeed greater than the maxVolumeLevel.
-        if (currentVoEMicLevel > kMaxVolumeLevel)
-        {
-            currentVoEMicLevel = kMaxVolumeLevel;
-            maxVolume = currentMicLevel;
-        }
-    }
-
-    // Keep track if the MicLevel has been changed by the AGC, if not,
-    // use the old value AGC returns to let AGC continue its trend,
-    // so eventually the AGC is able to change the mic level. This handles
-    // issues with truncation introduced by the scaling.
-    if (_oldMicLevel == currentMicLevel)
-    {
-        currentVoEMicLevel = (uint16_t) _oldVoEMicLevel;
-    }
-
-    // Perform channel-independent operations
-    // (APM, mix with file, record to file, mute, etc.)
-    _shared->transmit_mixer()->PrepareDemux(audioSamples, nSamples, nChannels,
-        samplesPerSec, static_cast<uint16_t>(totalDelayMS), clockDrift,
-        currentVoEMicLevel, keyPressed);
-
-    // Copy the audio frame to each sending channel and perform
-    // channel-dependent operations (file mixing, mute, etc.) to prepare
-    // for encoding.
-    _shared->transmit_mixer()->DemuxAndMix();
-    // Do the encoding and packetize+transmit the RTP packet when encoding
-    // is done.
-    _shared->transmit_mixer()->EncodeAndSend();
-
-    // Will only deal with the volume in adaptive analog mode
-    if (isAnalogAGC)
-    {
-        // Scale from VoE to ADM level range
-        newVoEMicLevel = _shared->transmit_mixer()->CaptureLevel();
-        if (newVoEMicLevel != currentVoEMicLevel)
-        {
-            // Add (kMaxVolumeLevel/2) to round the value
-            newMicLevel = (uint32_t) ((newVoEMicLevel * maxVolume
-                    + (int) (kMaxVolumeLevel / 2)) / (kMaxVolumeLevel));
-        }
-        else
-        {
-            // Pass zero if the level is unchanged
-            newMicLevel = 0;
-        }
-
-        // Keep track of the value AGC returns
-        _oldVoEMicLevel = newVoEMicLevel;
-        _oldMicLevel = currentMicLevel;
-    }
+    newMicLevel = static_cast<uint32_t>(ProcessRecordedDataWithAPM(
+        NULL, 0, audioSamples, samplesPerSec, nChannels, nSamples,
+        totalDelayMS, clockDrift, currentMicLevel, keyPressed));
 
     return 0;
 }
@@ -274,7 +192,7 @@ int32_t VoEBaseImpl::NeedMorePlayData(
     return 0;
 }
 
-int VoEBaseImpl::OnDataAvailable(int voe_channels[],
+int VoEBaseImpl::OnDataAvailable(const int voe_channels[],
                                  int number_of_voe_channels,
                                  const int16_t* audio_data,
                                  int sample_rate,
@@ -292,27 +210,14 @@ int VoEBaseImpl::OnDataAvailable(int voe_channels[],
                number_of_voe_channels, sample_rate, number_of_channels,
                number_of_frames, audio_delay_milliseconds, current_volume,
                key_pressed, need_audio_processing);
+  if (number_of_voe_channels == 0)
+    return 0;
 
   if (need_audio_processing) {
-    // Perform channel-independent operations
-    // (APM, mix with file, record to file, mute, etc.)
-    _shared->transmit_mixer()->PrepareDemux(
-        audio_data, number_of_frames, number_of_channels,
-        sample_rate, static_cast<uint16_t>(audio_delay_milliseconds), 0,
-        current_volume, key_pressed);
-    _shared->transmit_mixer()->DemuxAndMix(voe_channels,
-                                           number_of_voe_channels);
-    _shared->transmit_mixer()->EncodeAndSend(voe_channels,
-                                             number_of_voe_channels);
-    // Update the volume if the analog AGC is working.
-    if (_shared->audio_processing() &&
-        _shared->audio_processing()->gain_control()->mode() ==
-            GainControl::kAdaptiveAnalog) {
-      return _shared->transmit_mixer()->CaptureLevel();
-    }
-
-    // Return 0 to indicate no need to change the volume.
-    return 0;
+    return ProcessRecordedDataWithAPM(
+        voe_channels, number_of_voe_channels, audio_data, sample_rate,
+        number_of_channels, number_of_frames, audio_delay_milliseconds,
+        0, current_volume, key_pressed);
   }
 
   // No need to go through the APM, demultiplex the data to each VoE channel,
@@ -1302,6 +1207,100 @@ int32_t VoEBaseImpl::TerminateInternal()
     }
 
     return _shared->statistics().SetUnInitialized();
+}
+
+int VoEBaseImpl::ProcessRecordedDataWithAPM(
+    const int voe_channels[],
+    int number_of_voe_channels,
+    const void* audio_data,
+    uint32_t sample_rate,
+    uint8_t number_of_channels,
+    uint32_t number_of_frames,
+    uint32_t audio_delay_milliseconds,
+    int32_t clock_drift,
+    uint32_t current_volume,
+    bool key_pressed) {
+  assert(_shared->transmit_mixer() != NULL);
+  assert(_shared->audio_device() != NULL);
+
+  bool is_analog_agc(false);
+  if (_shared->audio_processing() &&
+      _shared->audio_processing()->gain_control()->mode() ==
+          GainControl::kAdaptiveAnalog) {
+    is_analog_agc = true;
+  }
+
+  // Only deal with the volume in adaptive analog mode.
+  uint32_t max_volume = 0;
+  uint16_t current_voe_mic_level = 0;
+  if (is_analog_agc) {
+    // Scale from ADM to VoE level range
+    if (_shared->audio_device()->MaxMicrophoneVolume(&max_volume) == 0) {
+      if (max_volume) {
+        current_voe_mic_level = static_cast<uint16_t>(
+            (current_volume * kMaxVolumeLevel +
+                static_cast<int>(max_volume / 2)) / max_volume);
+      }
+    }
+    // We learned that on certain systems (e.g Linux) the current_voe_mic_level
+    // can be greater than the maxVolumeLevel therefore
+    // we are going to cap the current_voe_mic_level to the maxVolumeLevel
+    // and change the maxVolume to current_volume if it turns out that
+    // the current_voe_mic_level is indeed greater than the maxVolumeLevel.
+    if (current_voe_mic_level > kMaxVolumeLevel) {
+      current_voe_mic_level = kMaxVolumeLevel;
+      max_volume = current_volume;
+    }
+  }
+
+  // Keep track if the MicLevel has been changed by the AGC, if not,
+  // use the old value AGC returns to let AGC continue its trend,
+  // so eventually the AGC is able to change the mic level. This handles
+  // issues with truncation introduced by the scaling.
+  if (_oldMicLevel == current_volume)
+    current_voe_mic_level = static_cast<uint16_t>(_oldVoEMicLevel);
+
+  // Perform channel-independent operations
+  // (APM, mix with file, record to file, mute, etc.)
+  _shared->transmit_mixer()->PrepareDemux(
+      audio_data, number_of_frames, number_of_channels, sample_rate,
+      static_cast<uint16_t>(audio_delay_milliseconds), clock_drift,
+      current_voe_mic_level, key_pressed);
+
+  // Copy the audio frame to each sending channel and perform
+  // channel-dependent operations (file mixing, mute, etc.), encode and
+  // packetize+transmit the RTP packet. When |number_of_voe_channels| == 0,
+  // do the operations on all the existing VoE channels; otherwise the
+  // operations will be done on specific channels.
+  if (number_of_voe_channels == 0) {
+    _shared->transmit_mixer()->DemuxAndMix();
+    _shared->transmit_mixer()->EncodeAndSend();
+  } else {
+    _shared->transmit_mixer()->DemuxAndMix(voe_channels,
+                                           number_of_voe_channels);
+    _shared->transmit_mixer()->EncodeAndSend(voe_channels,
+                                             number_of_voe_channels);
+  }
+
+  if (!is_analog_agc)
+    return 0;
+
+  // Scale from VoE to ADM level range.
+  uint32_t new_voe_mic_level = _shared->transmit_mixer()->CaptureLevel();
+
+  // Keep track of the value AGC returns.
+  _oldVoEMicLevel = new_voe_mic_level;
+  _oldMicLevel = current_volume;
+
+  if (new_voe_mic_level != current_voe_mic_level) {
+    // Return the new volume if AGC has changed the volume.
+    return static_cast<int>(
+        (new_voe_mic_level * max_volume +
+            static_cast<int>(kMaxVolumeLevel / 2)) / kMaxVolumeLevel);
+  }
+
+  // Return 0 to indicate no change on the volume.
+  return 0;
 }
 
 }  // namespace webrtc

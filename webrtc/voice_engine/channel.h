@@ -426,9 +426,9 @@ public:
     // between this method and the overloaded method above is that |audio_data|
     // does not go through transmit_mixer and APM.
     void Demultiplex(const int16_t* audio_data,
+                     int sample_rate,
                      int number_of_frames,
-                     int number_of_channels,
-                     int sample_rate);
+                     int number_of_channels);
     uint32_t PrepareEncodeAndSend(int mixingFrequency);
     uint32_t EncodeAndSend();
 

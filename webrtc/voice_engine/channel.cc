@@ -4422,9 +4422,9 @@ Channel::Demultiplex(const AudioFrame& audioFrame)
 // TransmitMixer::GenerateAudioFrame(), refactor these two methods and reduce
 // code duplication.
 void Channel::Demultiplex(const int16_t* audio_data,
+                          int sample_rate,
                           int number_of_frames,
-                          int number_of_channels,
-                          int sample_rate) {
+                          int number_of_channels) {
   // The highest sample rate that WebRTC supports for mono audio is 96kHz.
   static const int kMaxNumberOfFrames = 960;
   assert(number_of_frames <= kMaxNumberOfFrames);
