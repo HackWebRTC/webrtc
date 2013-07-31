@@ -402,7 +402,7 @@
     },  # target libjingle_peerconnection_unittest
   ],
   'conditions': [
-    ['OS=="linux"', {
+    ['OS=="linux" or OS=="android"', {
       'targets': [
         {
           'target_name': 'libjingle_peerconnection_test_jar',
