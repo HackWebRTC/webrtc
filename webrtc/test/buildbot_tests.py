@@ -64,8 +64,14 @@ _LINUX_TESTS = {
     'isac_fixed_perf': ['iSACFixtest',
                         '32000', '../../resources/speech_and_misc_wb.pcm',
                         'isac_speech_and_misc_wb.pcm'],
+    'libjingle_peerconnection_java_unittest': [
+        'libjingle_peerconnection_java_unittest'],
 }
 
+_CUSTOM_ENV = {
+    'libjingle_peerconnection_java_unittest':
+        {'LD_PRELOAD': '/usr/lib/x86_64-linux-gnu/libpulse.so.0'},
+}
 
 def main():
   parser = optparse.OptionParser('usage: %prog -t <test> [-t <test> ...]\n'
@@ -108,6 +114,9 @@ def main():
   print 'Running WebRTC Buildbot tests: %s' % options.test
   for test in options.test:
     cmd_line = test_dict[test]
+    env = os.environ.copy()
+    if test in _CUSTOM_ENV:
+      env.update(_CUSTOM_ENV[test])
 
     # Create absolute paths to test executables for non-Python tests.
     if cmd_line[0] != 'python':
@@ -115,7 +124,7 @@ def main():
 
     print 'Running: %s' % ' '.join(cmd_line)
     try:
-      subprocess.check_call(cmd_line)
+      subprocess.check_call(cmd_line, env=env)
     except subprocess.CalledProcessError as e:
       print >> sys.stderr, ('An error occurred during test execution: return '
                             'code: %d' % e.returncode)
