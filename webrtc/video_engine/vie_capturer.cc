@@ -16,6 +16,7 @@
 #include "webrtc/modules/video_capture/include/video_capture_factory.h"
 #include "webrtc/modules/video_processing/main/interface/video_processing.h"
 #include "webrtc/modules/video_render/include/video_render_defines.h"
+#include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
@@ -349,7 +350,7 @@ void ViECapturer::OnIncomingCapturedFrame(const int32_t capture_id,
 
   captured_frame_.SwapFrame(&video_frame);
   capture_event_.Set();
-  overuse_detector_->CapturedFrame();
+  overuse_detector_->FrameCaptured();
   return;
 }
 
@@ -513,12 +514,19 @@ bool ViECapturer::ViECaptureProcess() {
     if (!captured_frame_.IsZeroSize()) {
       // New I420 frame.
       capture_cs_->Enter();
-      // The frame sent for encoding, update the overuse detector.
-      overuse_detector_->EncodedFrame();
       deliver_frame_.SwapFrame(&captured_frame_);
       captured_frame_.ResetSize();
       capture_cs_->Leave();
+
+      int64_t encode_start_time =
+          Clock::GetRealTimeClock()->TimeInMilliseconds();
       DeliverI420Frame(&deliver_frame_);
+
+      // The frame has been encoded, update the overuse detector with the
+      // duration.
+      overuse_detector_->FrameEncoded(
+          Clock::GetRealTimeClock()->TimeInMilliseconds() - encode_start_time,
+          deliver_frame_.width(), deliver_frame_.height());
     }
     deliver_cs_->Leave();
     if (current_brightness_level_ != reported_brightness_level_) {
