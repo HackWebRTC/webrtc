@@ -14,6 +14,7 @@
 
 #include <algorithm>  // min, max
 #include <cstring>  // memset
+#include <limits>  // numeric_limits<T>
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/neteq4/background_noise.h"
@@ -451,9 +452,10 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
     int32_t ratio;
     if (best_distortion[i] > 0) {
       ratio = (best_correlation[i] << 16) / best_distortion[i];
+    } else if (best_correlation[i] == 0) {
+      ratio = 0;  // No correlation set result to zero.
     } else {
-      assert(best_correlation[i] == 0);  // If one is zero, both must be.
-      ratio = 0;  // Divide zero by zero => set result to zero.
+      ratio = std::numeric_limits<int32_t>::max();  // Denominator is zero.
     }
     if (ratio > best_ratio) {
       best_index = i;
