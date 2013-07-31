@@ -447,6 +447,15 @@
   ...
 }
 {
+  bug_1205_43
+  ThreadSanitizer:Race
+  fun:talk_base::Thread::Send
+  fun:FakeAudioCaptureModule::UpdateProcessing
+  fun:FakeAudioCaptureModule::StopPlayout
+  fun:webrtc::VoEBaseImpl::StopPlayout
+  ...
+}
+{
   bug_2078_1
   ThreadSanitizer:Race
   fun:talk_base::Thread::~Thread
@@ -1024,4 +1033,13 @@
   ThreadSanitizer:Race
   fun:talk_base::SharedExclusiveLockTest_TestSharedShared_Test::TestBody
   fun:testing::internal::HandleSehExceptionsInMethodIfSupported
+}
+{
+  bug_2080_34
+  ThreadSanitizer:Race
+  fun:talk_base::WriteTask::OnMessage
+  fun:talk_base::MessageQueue::Dispatch
+  fun:talk_base::Thread::ProcessMessages
+  fun:talk_base::Thread::Run
+  fun:talk_base::Thread::PreRun
 }
