@@ -80,11 +80,7 @@ class RTPReceiverStrategy {
     const int8_t payload_type,
     ModuleRTPUtility::PayloadUnion* specific_payload,
     bool* should_reset_statistics,
-    bool* should_discard_changes) {
-    // Default: Keep changes and don't reset statistics.
-    *should_discard_changes = false;
-    *should_reset_statistics = false;
-  }
+    bool* should_discard_changes);
 
   // Stores / retrieves the last media specific payload for later reference.
   void GetLastMediaSpecificPayload(

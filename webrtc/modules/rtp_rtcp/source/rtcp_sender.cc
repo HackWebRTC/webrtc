@@ -31,6 +31,8 @@ NACKStringBuilder::NACKStringBuilder() :
     // Empty.
 }
 
+NACKStringBuilder::~NACKStringBuilder() {}
+
 void NACKStringBuilder::PushNACK(uint16_t nack)
 {
     if (_count == 0)

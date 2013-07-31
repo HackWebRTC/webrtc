@@ -41,6 +41,8 @@ RTPReceiverAudio::RTPReceiverAudio(const int32_t id,
   last_payload_.Audio.channels = 1;
 }
 
+RTPReceiverAudio::~RTPReceiverAudio() {}
+
 uint32_t RTPReceiverAudio::AudioFrequency() const {
   CriticalSectionScoped lock(critical_section_rtp_receiver_audio_.get());
   if (last_received_g722_) {

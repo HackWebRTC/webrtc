@@ -67,6 +67,8 @@ RtpFormatVp8::RtpFormatVp8(const uint8_t* payload_data,
     part_info_.fragmentationOffset[0] = 0;
 }
 
+RtpFormatVp8::~RtpFormatVp8() {}
+
 int RtpFormatVp8::NextPacket(uint8_t* buffer,
                              int* bytes_to_send,
                              bool* last_packet) {

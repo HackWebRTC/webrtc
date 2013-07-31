@@ -71,7 +71,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
 
   void ProcessBitrate();
 
-  uint16_t ActualSendBitrateKbit() const;
+  virtual uint16_t ActualSendBitrateKbit() const OVERRIDE;
 
   uint32_t VideoBitrateSent() const;
   uint32_t FecOverheadRate() const;
@@ -79,7 +79,8 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
 
   void SetTargetSendBitrate(const uint32_t bits);
 
-  uint16_t MaxDataPayloadLength() const;  // with RTP and FEC headers.
+  virtual uint16_t MaxDataPayloadLength() const
+      OVERRIDE;  // with RTP and FEC headers.
 
   int32_t RegisterPayload(
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
@@ -111,7 +112,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   uint32_t GenerateNewSSRC();
   void SetSSRC(const uint32_t ssrc);
 
-  uint16_t SequenceNumber() const;
+  virtual uint16_t SequenceNumber() const OVERRIDE;
   void SetSequenceNumber(uint16_t seq);
 
   int32_t CSRCs(uint32_t arr_of_csrc[kRtpCsrcSize]) const;
@@ -196,21 +197,21 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
       const bool marker_bit, const uint32_t capture_time_stamp,
       int64_t capture_time_ms,
       const bool time_stamp_provided = true,
-      const bool inc_sequence_number = true);
+      const bool inc_sequence_number = true) OVERRIDE;
 
-  virtual uint16_t RTPHeaderLength() const;
-  virtual uint16_t IncrementSequenceNumber();
-  virtual uint16_t MaxPayloadLength() const;
-  virtual uint16_t PacketOverHead() const;
+  virtual uint16_t RTPHeaderLength() const OVERRIDE;
+  virtual uint16_t IncrementSequenceNumber() OVERRIDE;
+  virtual uint16_t MaxPayloadLength() const OVERRIDE;
+  virtual uint16_t PacketOverHead() const OVERRIDE;
 
   // Current timestamp.
-  virtual uint32_t Timestamp() const;
-  virtual uint32_t SSRC() const;
+  virtual uint32_t Timestamp() const OVERRIDE;
+  virtual uint32_t SSRC() const OVERRIDE;
 
   virtual int32_t SendToNetwork(
       uint8_t *data_buffer, int payload_length, int rtp_header_length,
       int64_t capture_time_ms, StorageType storage,
-      PacedSender::Priority priority);
+      PacedSender::Priority priority) OVERRIDE;
 
   // Audio.
 

@@ -30,6 +30,7 @@ class RTPReceiverAudio : public RTPReceiverStrategy {
   RTPReceiverAudio(const int32_t id,
                    RtpData* data_callback,
                    RtpAudioFeedback* incoming_messages_callback);
+  virtual ~RTPReceiverAudio();
 
   uint32_t AudioFrequency() const;
 
@@ -48,32 +49,33 @@ class RTPReceiverAudio : public RTPReceiverStrategy {
                       uint32_t* frequency,
                       bool* cng_payload_type_has_changed);
 
-  int32_t ParseRtpPacket(
+  virtual int32_t ParseRtpPacket(
       WebRtcRTPHeader* rtp_header,
       const ModuleRTPUtility::PayloadUnion& specific_payload,
       const bool is_red,
       const uint8_t* packet,
       const uint16_t packet_length,
       const int64_t timestamp_ms,
-      const bool is_first_packet);
+      const bool is_first_packet) OVERRIDE;
 
-  int32_t GetFrequencyHz() const;
+  virtual int32_t GetFrequencyHz() const OVERRIDE;
 
-  RTPAliveType ProcessDeadOrAlive(uint16_t last_payload_length) const;
+  virtual RTPAliveType ProcessDeadOrAlive(uint16_t last_payload_length) const
+      OVERRIDE;
 
-  bool ShouldReportCsrcChanges(uint8_t payload_type) const;
+  virtual bool ShouldReportCsrcChanges(uint8_t payload_type) const OVERRIDE;
 
-  int32_t OnNewPayloadTypeCreated(
+  virtual int32_t OnNewPayloadTypeCreated(
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
       const int8_t payload_type,
-      const uint32_t frequency);
+      const uint32_t frequency) OVERRIDE;
 
-  int32_t InvokeOnInitializeDecoder(
+  virtual int32_t InvokeOnInitializeDecoder(
       RtpFeedback* callback,
       const int32_t id,
       const int8_t payload_type,
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-      const ModuleRTPUtility::PayloadUnion& specific_payload) const;
+      const ModuleRTPUtility::PayloadUnion& specific_payload) const OVERRIDE;
 
   // We do not allow codecs to have multiple payload types for audio, so we
   // need to override the default behavior (which is to do nothing).
@@ -87,10 +89,10 @@ class RTPReceiverAudio : public RTPReceiverStrategy {
 
   // We need to look out for special payload types here and sometimes reset
   // statistics. In addition we sometimes need to tweak the frequency.
-  void CheckPayloadChanged(const int8_t payload_type,
+  virtual void CheckPayloadChanged(const int8_t payload_type,
                            ModuleRTPUtility::PayloadUnion* specific_payload,
                            bool* should_reset_statistics,
-                           bool* should_discard_changes);
+                           bool* should_discard_changes) OVERRIDE;
 
  private:
 

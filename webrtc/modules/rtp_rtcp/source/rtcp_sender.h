@@ -32,6 +32,8 @@ class NACKStringBuilder
 {
 public:
     NACKStringBuilder();
+    ~NACKStringBuilder();
+
     void PushNACK(uint16_t nack);
     std::string GetResult();
 

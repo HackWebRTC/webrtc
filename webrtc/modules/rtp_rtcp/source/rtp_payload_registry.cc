@@ -253,13 +253,13 @@ bool RTPPayloadRegistry::ReportMediaPayloadType(
 
 class RTPPayloadAudioStrategy : public RTPPayloadStrategy {
  public:
-  bool CodecsMustBeUnique() const { return true; }
+  virtual bool CodecsMustBeUnique() const OVERRIDE { return true; }
 
-  bool PayloadIsCompatible(
+  virtual bool PayloadIsCompatible(
        const ModuleRTPUtility::Payload& payload,
        const uint32_t frequency,
        const uint8_t channels,
-       const uint32_t rate) const {
+       const uint32_t rate) const OVERRIDE {
     return
         payload.audio &&
         payload.typeSpecific.Audio.frequency == frequency &&
@@ -268,18 +268,18 @@ class RTPPayloadAudioStrategy : public RTPPayloadStrategy {
             payload.typeSpecific.Audio.rate == 0 || rate == 0);
   }
 
-  void UpdatePayloadRate(
+  virtual void UpdatePayloadRate(
       ModuleRTPUtility::Payload* payload,
-      const uint32_t rate) const {
+      const uint32_t rate) const OVERRIDE {
     payload->typeSpecific.Audio.rate = rate;
   }
 
-  ModuleRTPUtility::Payload* CreatePayloadType(
+  virtual ModuleRTPUtility::Payload* CreatePayloadType(
       const char payloadName[RTP_PAYLOAD_NAME_SIZE],
       const int8_t payloadType,
       const uint32_t frequency,
       const uint8_t channels,
-      const uint32_t rate) const {
+      const uint32_t rate) const OVERRIDE {
     ModuleRTPUtility::Payload* payload = new ModuleRTPUtility::Payload;
     payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
     strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
@@ -293,28 +293,28 @@ class RTPPayloadAudioStrategy : public RTPPayloadStrategy {
 
 class RTPPayloadVideoStrategy : public RTPPayloadStrategy {
  public:
-  bool CodecsMustBeUnique() const { return false; }
+  virtual bool CodecsMustBeUnique() const OVERRIDE { return false; }
 
-  bool PayloadIsCompatible(
+  virtual bool PayloadIsCompatible(
       const ModuleRTPUtility::Payload& payload,
       const uint32_t frequency,
       const uint8_t channels,
-      const uint32_t rate) const {
+      const uint32_t rate) const OVERRIDE {
     return !payload.audio;
   }
 
-  void UpdatePayloadRate(
+  virtual void UpdatePayloadRate(
       ModuleRTPUtility::Payload* payload,
-      const uint32_t rate) const {
+      const uint32_t rate) const OVERRIDE {
     payload->typeSpecific.Video.maxRate = rate;
   }
 
-  ModuleRTPUtility::Payload* CreatePayloadType(
+  virtual ModuleRTPUtility::Payload* CreatePayloadType(
       const char payloadName[RTP_PAYLOAD_NAME_SIZE],
       const int8_t payloadType,
       const uint32_t frequency,
       const uint8_t channels,
-      const uint32_t rate) const {
+      const uint32_t rate) const OVERRIDE {
     RtpVideoCodecTypes videoType = kRtpGenericVideo;
     if (ModuleRTPUtility::StringCompare(payloadName, "VP8", 3)) {
       videoType = kRtpVp8Video;
