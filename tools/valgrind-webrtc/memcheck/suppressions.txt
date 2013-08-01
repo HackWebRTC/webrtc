@@ -917,27 +917,6 @@
    fun:BIO_new_mem_buf
    fun:_ZN9talk_base15OpenSSLIdentity14FromPEMStringsERKSsS2_
 }
-# For sscanf
-{
-   sscanf_1
-   Memcheck:Uninitialized
-   fun:__GI___rawmemchr
-   fun:_IO_str_init_static_internal
-   fun:vsscanf
-   fun:sscanf
-   fun:_ZN9talk_base16HttpResponseData11parseLeaderEPKcm
-   ...
-}
-{
-   sscanf_2
-   Memcheck:Uninitialized
-   fun:__GI___rawmemchr
-   fun:_IO_str_init_static_internal
-   fun:vsscanf
-   fun:sscanf
-   fun:_ZN9talk_base15HttpRequestData11parseLeaderEPKcm
-   ...
-}
 # For HttpServer.SignalsCloseAfterForcedCloseAll
 {
    SignalsCloseAfterForcedCloseAll
