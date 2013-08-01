@@ -40,6 +40,10 @@
 // It is the main entry point to the PeerConnection API for clients.
 @interface RTCPeerConnectionFactory : NSObject
 
+// Initialize & de-initialize the SSL subsystem.  Failure is fatal.
++ (void)initializeSSL;
++ (void)deinitializeSSL;
+
 // Create an RTCPeerConnection object.   RTCPeerConnectionFactory will create
 // required libjingle threads, socket and network manager factory classes for
 // networking.

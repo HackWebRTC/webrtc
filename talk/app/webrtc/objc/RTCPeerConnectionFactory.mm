@@ -53,6 +53,7 @@
 #include "talk/app/webrtc/videosourceinterface.h"
 #include "talk/app/webrtc/videotrack.h"
 #include "talk/base/logging.h"
+#include "talk/base/ssladapter.h"
 
 @interface RTCPeerConnectionFactory ()
 
@@ -62,6 +63,16 @@
 @end
 
 @implementation RTCPeerConnectionFactory
+
++ (void)initializeSSL {
+  BOOL initialized = talk_base::InitializeSSL();
+  NSAssert(initialized, @"Failed to initialize SSL library");
+}
+
++ (void)deinitializeSSL {
+  BOOL deinitialized = talk_base::CleanupSSL();
+  NSAssert(deinitialized, @"Failed to deinitialize SSL library");
+}
 
 - (id)init {
   if ((self = [super init])) {

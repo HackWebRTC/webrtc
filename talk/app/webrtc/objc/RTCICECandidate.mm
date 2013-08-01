@@ -25,32 +25,62 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import <Foundation/Foundation.h>
+#if !defined(__has_feature) || !__has_feature(objc_arc)
+#error "This file requires ARC support."
+#endif
 
-// RTCICECandidate contains an instance of ICECandidateInterface.
-@interface RTCICECandidate : NSObject
+#import "RTCICECandidate+internal.h"
 
-// If present, this contains the identifier of the "media stream
-// identification" as defined in [RFC 3388] for m-line this candidate is
-// associated with.
-@property(nonatomic, copy, readonly) NSString *sdpMid;
+@implementation RTCICECandidate {
+  NSString *_sdpMid;
+  NSInteger _sdpMLineIndex;
+  NSString *_sdp;
+}
 
-// This indicates the index (starting at zero) of m-line in the SDP this
-// candidate is associated with.
-@property(nonatomic, assign, readonly) NSInteger sdpMLineIndex;
-
-// Creates an SDP-ized form of this candidate.
-@property(nonatomic, copy, readonly) NSString *sdp;
-
-// Creates an ICECandidateInterface based on SDP string.
 - (id)initWithMid:(NSString *)sdpMid
             index:(NSInteger)sdpMLineIndex
-              sdp:(NSString *)sdp;
+              sdp:(NSString *)sdp {
+  if (!sdpMid || !sdp) {
+    NSAssert(NO, @"nil arguments not allowed");
+    return nil;
+  }
+  if ((self = [super init])) {
+    _sdpMid = [sdpMid copy];
+    _sdpMLineIndex = sdpMLineIndex;
+    _sdp = [sdp copy];
+  }
+  return self;
+}
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Disallow init and don't add to documentation
-- (id)init __attribute__(
-    (unavailable("init is not a supported initializer for this class.")));
-#endif /* DOXYGEN_SHOULD_SKIP_THIS */
+- (NSString *)description {
+  return [NSString stringWithFormat:@"%@:%ld:%@",
+          self.sdpMid,
+          (long)self.sdpMLineIndex,
+          self.sdp];
+}
+
+@end
+
+@implementation RTCICECandidate (Internal)
+
+- (id)initWithCandidate:(const webrtc::IceCandidateInterface *)candidate {
+  if ((self = [super init])) {
+    std::string sdp;
+    if (candidate->ToString(&sdp)) {
+      _sdpMid = @(candidate->sdp_mid().c_str());
+      _sdpMLineIndex = candidate->sdp_mline_index();
+      _sdp = @(sdp.c_str());
+    } else {
+      self = nil;
+      NSAssert(NO, @"ICECandidateInterface->ToString failed");
+    }
+  }
+  return self;
+}
+
+- (const webrtc::IceCandidateInterface*)candidate {
+  return webrtc::CreateIceCandidate(
+      [self.sdpMid UTF8String], self.sdpMLineIndex, [self.sdp UTF8String]);
+}
 
 @end

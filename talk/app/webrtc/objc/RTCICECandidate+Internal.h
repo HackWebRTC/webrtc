@@ -25,62 +25,15 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
+#import "RTCICECandidate.h"
 
-#import "RTCICECandidate+internal.h"
+#include "talk/app/webrtc/peerconnectioninterface.h"
 
-@implementation RTCICECandidate {
-  NSString *_sdpMid;
-  NSInteger _sdpMLineIndex;
-  NSString *_sdp;
-}
+@interface RTCICECandidate (Internal)
 
-- (id)initWithMid:(NSString *)sdpMid
-            index:(NSInteger)sdpMLineIndex
-              sdp:(NSString *)sdp {
-  if (!sdpMid || !sdp) {
-    NSAssert(NO, @"nil arguments not allowed");
-    return nil;
-  }
-  if ((self = [super init])) {
-    _sdpMid = [sdpMid copy];
-    _sdpMLineIndex = sdpMLineIndex;
-    _sdp = [sdp copy];
-  }
-  return self;
-}
+@property(nonatomic, assign, readonly) const
+    webrtc::IceCandidateInterface* candidate;
 
-- (NSString *)description {
-  return [NSString stringWithFormat:@"%@:%ld:%@",
-          self.sdpMid,
-          (long)self.sdpMLineIndex,
-          self.sdp];
-}
-
-@end
-
-@implementation RTCICECandidate (Internal)
-
-- (id)initWithCandidate:(const webrtc::IceCandidateInterface *)candidate {
-  if ((self = [super init])) {
-    std::string sdp;
-    if (candidate->ToString(&sdp)) {
-      _sdpMid = @(candidate->sdp_mid().c_str());
-      _sdpMLineIndex = candidate->sdp_mline_index();
-      _sdp = @(sdp.c_str());
-    } else {
-      self = nil;
-      NSAssert(NO, @"ICECandidateInterface->ToString failed");
-    }
-  }
-  return self;
-}
-
-- (const webrtc::IceCandidateInterface *)candidate {
-  return webrtc::CreateIceCandidate(
-      [self.sdpMid UTF8String], self.sdpMLineIndex, [self.sdp UTF8String]);
-}
+- (id)initWithCandidate:(const webrtc::IceCandidateInterface*)candidate;
 
 @end

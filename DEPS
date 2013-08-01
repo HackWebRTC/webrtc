@@ -131,12 +131,29 @@ deps_os = {
     # NSS, for SSLClientSocketNSS.
     "third_party/nss":
       From("chromium_deps", "src/third_party/nss"),
+
+    # TODO(fischman): delete this in favor of the copy in "ios" below, once the
+    # webrtc iOS bots are fixed to target_os=['ios'] in their .gclient
+    # https://code.google.com/p/webrtc/issues/detail?id=2152
+    "net/third_party/nss":
+      Var("chromium_trunk") + "/src/net/third_party/nss@" + Var("chromium_revision"),
   },
 
   "ios": {
     # NSS, for SSLClientSocketNSS.
     "third_party/nss":
       From("chromium_deps", "src/third_party/nss"),
+
+    "net/third_party/nss":
+      Var("chromium_trunk") + "/src/net/third_party/nss@" + Var("chromium_revision"),
+
+    # class-dump utility to generate header files for undocumented SDKs.
+    "testing/iossim/third_party/class-dump":
+      From("chromium_deps", "src/testing/iossim/third_party/class-dump"),
+
+    # Helper for running under the simulator.
+    "testing/iossim":
+      Var("chromium_trunk") + "/src/testing/iossim@" + Var("chromium_revision"),
   },
 
   "unix": {

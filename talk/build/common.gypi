@@ -99,12 +99,12 @@
       ['OS=="ios"', {
         'defines': [
           'IOS',
-          'SSL_USE_NSS',
+          'HAVE_NSS_SSL_H=1',
           'SSL_USE_NSS_RNG',
         ],
-        'variables': {
-          'use_nss%': 1,
-        },
+        'defines!': [
+          'HAVE_OPENSSL_SSL_H=1',
+        ],
       }],
       ['libjingle_objc==1', {
         'defines': [

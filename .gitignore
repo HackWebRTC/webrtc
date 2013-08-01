@@ -38,6 +38,7 @@
 /chromium_deps
 /google_apis/build
 /gyp-mac-tool
+/net/third_party/nss/
 /out
 /resources
 /talk/examples/android/bin

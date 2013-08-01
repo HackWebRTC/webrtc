@@ -31,18 +31,18 @@
 @interface RTCICEServer : NSObject
 
 // The server URI.
-@property(nonatomic, strong, readonly) NSURL *URI;
+@property(nonatomic, strong, readonly) NSURL* URI;
 
 // The server password.
-@property(nonatomic, copy, readonly) NSString *password;
+@property(nonatomic, copy, readonly) NSString* password;
 
 // Initializer for RTCICEServer taking uri and password.
-- (id)initWithURI:(NSString *)URI password:(NSString *)password;
+- (id)initWithURI:(NSString*)URI password:(NSString*)password;
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // Disallow init and don't add to documentation
-- (id)init __attribute__(
-    (unavailable("init is not a supported initializer for this class.")));
+- (id)init __attribute__((
+    unavailable("init is not a supported initializer for this class.")));
 #endif /* DOXYGEN_SHOULD_SKIP_THIS */
 
 @end

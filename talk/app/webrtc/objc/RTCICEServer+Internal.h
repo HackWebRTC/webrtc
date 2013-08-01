@@ -31,7 +31,8 @@
 
 @interface RTCICEServer (Internal)
 
-@property(nonatomic, assign, readonly)
-    webrtc::PeerConnectionInterface::IceServer iceServer;
+@property(nonatomic,
+          assign,
+          readonly) webrtc::PeerConnectionInterface::IceServer iceServer;
 
 @end

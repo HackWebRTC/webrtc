@@ -218,6 +218,65 @@
       ], # targets
     }],  # OS=="linux" or OS=="win"
 
+    ['libjingle_objc==1 and OS=="ios"', {
+      'targets': [
+        {
+          'target_name': 'AppRTCDemo',
+          'type': 'executable',
+          'product_name': 'AppRTCDemo',
+          'mac_bundle': 1,
+          'mac_bundle_resources': [
+            'examples/ios/AppRTCDemo/ResourceRules.plist',
+            'examples/ios/AppRTCDemo/en.lproj/APPRTCViewController.xib',
+            'examples/ios/AppRTCDemo/ios_channel.html',
+            'examples/ios/Icon.png',
+          ],
+          'dependencies': [
+            'libjingle.gyp:libjingle_peerconnection_objc',
+          ],
+          'conditions': [
+            ['target_arch=="ia32"', {
+              'dependencies' : [
+                '<(DEPTH)/testing/iossim/iossim.gyp:iossim#host',
+              ],
+            }],
+          ],
+          'sources': [
+            'examples/ios/AppRTCDemo/APPRTCAppClient.h',
+            'examples/ios/AppRTCDemo/APPRTCAppClient.m',
+            'examples/ios/AppRTCDemo/APPRTCAppDelegate.h',
+            'examples/ios/AppRTCDemo/APPRTCAppDelegate.m',
+            'examples/ios/AppRTCDemo/APPRTCViewController.h',
+            'examples/ios/AppRTCDemo/APPRTCViewController.m',
+            'examples/ios/AppRTCDemo/AppRTCDemo-Prefix.pch',
+            'examples/ios/AppRTCDemo/GAEChannelClient.h',
+            'examples/ios/AppRTCDemo/GAEChannelClient.m',
+            'examples/ios/AppRTCDemo/main.m',
+          ],
+          'xcode_settings': {
+            'CLANG_ENABLE_OBJC_ARC': 'YES',
+            'INFOPLIST_FILE': 'examples/ios/AppRTCDemo/Info.plist',
+            'OTHER_LDFLAGS': [
+              '-framework Foundation',
+              '-framework UIKit',
+            ],
+          },
+          'postbuilds': [
+            {
+              # Ideally app signing would be a part of gyp.
+              # Delete if/when that comes to pass.
+              'postbuild_name': 'Sign AppRTCDemo',
+              'action': [
+                '/usr/bin/codesign', '-v', '--force', '--sign',
+                '<!(security find-identity -p codesigning -v | grep "iPhone Developer" | awk \'{print $2}\')',
+                '${BUILT_PRODUCTS_DIR}/AppRTCDemo.app',
+              ],
+            },
+          ],
+        },  # target AppRTCDemo
+      ],  # targets
+    }],  # libjingle_objc==1
+
     ['OS=="android"', {
       'targets': [
         {
