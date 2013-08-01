@@ -198,16 +198,6 @@
   ...
 }
 {
-  bug_1205_17
-  ThreadSanitizer:Race
-  fun:webrtc::VCMJitterBuffer::DecodeWithErrors
-  fun:webrtc::VCMReceiver::SetDecodeWithErrors
-  fun:webrtc::VideoCodingModuleImpl::SetVideoProtection
-  fun:webrtc::ViEChannel::SetHybridNACKFECStatus
-  fun:webrtc::ViERTP_RTCPImpl::SetHybridNACKFECStatus
-  ...
-}
-{
   bug_1205_18
   ThreadSanitizer:Race
   fun:webrtc::voe::Channel::SetChannelOutputVolumeScaling
@@ -453,6 +443,16 @@
   fun:FakeAudioCaptureModule::UpdateProcessing
   fun:FakeAudioCaptureModule::StopPlayout
   fun:webrtc::VoEBaseImpl::StopPlayout
+  ...
+}
+{
+  bug_1205_44
+  ThreadSanitizer:Race
+  fun:webrtc::VCMJitterBuffer::DecodeErrorMode
+  fun:webrtc::VCMReceiver::SetDecodeErrorMode
+  fun:webrtc::VideoCodingModuleImpl::SetVideoProtection
+  fun:webrtc::ViEChannel::SetHybridNACKFECStatus
+  fun:webrtc::ViERTP_RTCPImpl::SetHybridNACKFECStatus
   ...
 }
 {
