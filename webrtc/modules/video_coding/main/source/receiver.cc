@@ -12,7 +12,6 @@
 
 #include <assert.h>
 
-#include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/source/encoded_frame.h"
 #include "webrtc/modules/video_coding/main/source/internal_defines.h"
 #include "webrtc/modules/video_coding/main/source/media_opt_util.h"
@@ -314,14 +313,15 @@ VCMReceiverState VCMReceiver::State() const {
   return state_;
 }
 
-void VCMReceiver::SetDecodeWithErrors(bool enable){
+void VCMReceiver::SetDecodeErrorMode(
+    VCMDecodeErrorMode decode_error_mode) {
   CriticalSectionScoped cs(crit_sect_);
-  jitter_buffer_.DecodeWithErrors(enable);
+  jitter_buffer_.DecodeErrorMode(decode_error_mode);
 }
 
-bool VCMReceiver::DecodeWithErrors() const {
+VCMDecodeErrorMode VCMReceiver::DecodeErrorMode() const {
   CriticalSectionScoped cs(crit_sect_);
-  return jitter_buffer_.decode_with_errors();
+  return jitter_buffer_.decode_error_mode();
 }
 
 int VCMReceiver::SetMinReceiverDelay(int desired_delay_ms) {

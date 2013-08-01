@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_FRAME_BUFFER_H_
 
 #include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/source/encoded_frame.h"
 #include "webrtc/modules/video_coding/main/source/jitter_buffer_common.h"
 #include "webrtc/modules/video_coding/main/source/session_info.h"
@@ -30,7 +31,7 @@ class VCMFrameBuffer : public VCMEncodedFrame {
 
   VCMFrameBufferEnum InsertPacket(const VCMPacket& packet,
                                   int64_t timeInMs,
-                                  bool enableDecodableState,
+                                  VCMDecodeErrorMode decode_error_mode,
                                   const FrameData& frame_data);
 
   // State

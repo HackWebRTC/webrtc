@@ -82,8 +82,9 @@ VCMFrameBuffer::IsSessionComplete() const {
 
 // Insert packet
 VCMFrameBufferEnum
-VCMFrameBuffer::InsertPacket(const VCMPacket& packet, int64_t timeInMs,
-                             bool enableDecodableState,
+VCMFrameBuffer::InsertPacket(const VCMPacket& packet,
+                             int64_t timeInMs,
+                             VCMDecodeErrorMode decode_error_mode,
                              const FrameData& frame_data) {
     // is this packet part of this frame
     if (TimeStamp() && (TimeStamp() != packet.timestamp)) {
@@ -141,7 +142,7 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, int64_t timeInMs,
     CopyCodecSpecific(&packet.codecSpecificHeader);
 
     int retVal = _sessionInfo.InsertPacket(packet, _buffer,
-                                           enableDecodableState,
+                                           decode_error_mode,
                                            frame_data);
     if (retVal == -1) {
         return kSizeError;

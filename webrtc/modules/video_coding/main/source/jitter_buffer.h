@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/modules/video_coding/main/source/decoding_state.h"
 #include "webrtc/modules/video_coding/main/source/inter_frame_delay.h"
@@ -175,9 +176,11 @@ class VCMJitterBuffer {
   uint16_t* GetNackList(uint16_t* nack_list_size, bool* request_key_frame);
 
   // Enable/disable decoding with errors.
-  void DecodeWithErrors(bool enable) {decode_with_errors_ = enable;}
+  // TODO(agalusza): Add logic for handling kSelectiveErrors.
+  void DecodeErrorMode(VCMDecodeErrorMode error_mode)
+    {decode_error_mode_ = error_mode;}
   int64_t LastDecodedTimestamp() const;
-  bool decode_with_errors() const {return decode_with_errors_;}
+  VCMDecodeErrorMode decode_error_mode() const {return decode_error_mode_;}
 
   // Used to compute time of complete continuous frames. Returns the timestamps
   // corresponding to the start and end of the continuous complete buffer.
@@ -330,7 +333,7 @@ class VCMJitterBuffer {
   int max_packet_age_to_nack_;  // Measured in sequence numbers.
   int max_incomplete_time_ms_;
 
-  bool decode_with_errors_;
+  VCMDecodeErrorMode decode_error_mode_;
   // Estimated rolling average of packets per frame
   float average_packets_per_frame_;
   // average_packets_per_frame converges fast if we have fewer than this many

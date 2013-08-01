@@ -15,6 +15,8 @@
 #include "webrtc/modules/video_coding/main/source/packet.h"
 #include "webrtc/modules/video_coding/main/source/timing.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 
 namespace webrtc {
 
@@ -78,8 +80,8 @@ class VCMReceiver {
   int SetMinReceiverDelay(int desired_delay_ms);
 
   // Decoding with errors.
-  void SetDecodeWithErrors(bool enable);
-  bool DecodeWithErrors() const;
+  void SetDecodeErrorMode(VCMDecodeErrorMode decode_error_mode);
+  VCMDecodeErrorMode DecodeErrorMode() const;
 
   // Returns size in time (milliseconds) of complete continuous frames in the
   // jitter buffer. The render time is estimated based on the render delay at

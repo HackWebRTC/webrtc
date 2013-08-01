@@ -243,7 +243,7 @@ TEST_F(TestBasicJitterBuffer, StopRunning) {
   EXPECT_TRUE(NULL == DecodeIncompleteFrame());
   jitter_buffer_->Start();
   // Allow decoding with errors.
-  jitter_buffer_->DecodeWithErrors(true);
+  jitter_buffer_->DecodeErrorMode(kWithErrors);
 
   // No packets inserted.
   EXPECT_TRUE(NULL == DecodeCompleteFrame());
@@ -573,7 +573,7 @@ TEST_F(TestBasicJitterBuffer, PacketLoss) {
   // Select a start seqNum which triggers a difficult wrap situation
   // The JB will only output (incomplete)frames if the next one has started
   // to arrive. Start by inserting one frame (key).
-  jitter_buffer_->DecodeWithErrors(true);
+  jitter_buffer_->DecodeErrorMode(kWithErrors);
   seq_num_ = 0xffff - 4;
   seq_num_++;
   packet_->frameType = kVideoFrameKey;
@@ -586,7 +586,6 @@ TEST_F(TestBasicJitterBuffer, PacketLoss) {
   bool retransmitted = false;
   EXPECT_EQ(kFirstPacket, jitter_buffer_->InsertPacket(*packet_,
                                                        &retransmitted));
-  int insert_return_val;
   for (int i = 0; i < 11; ++i) {
     webrtc::FrameType frametype = kVideoFrameDelta;
     seq_num_++;
@@ -612,9 +611,8 @@ TEST_F(TestBasicJitterBuffer, PacketLoss) {
     packet_->seqNum = seq_num_;
     packet_->completeNALU = kNaluEnd;
 
-    insert_return_val = jitter_buffer_->InsertPacket(*packet_, &retransmitted);
-    EXPECT_TRUE(insert_return_val == kIncomplete
-                || insert_return_val == kDecodableSession);
+    EXPECT_EQ(jitter_buffer_->InsertPacket(*packet_, &retransmitted),
+              kDecodableSession);
 
     // Insert an empty (non-media) packet.
     seq_num_++;
@@ -624,9 +622,8 @@ TEST_F(TestBasicJitterBuffer, PacketLoss) {
     packet_->completeNALU = kNaluEnd;
     packet_->frameType = kFrameEmpty;
 
-    insert_return_val = jitter_buffer_->InsertPacket(*packet_, &retransmitted);
-    EXPECT_TRUE(insert_return_val == kIncomplete
-                || insert_return_val == kDecodableSession);
+    EXPECT_EQ(jitter_buffer_->InsertPacket(*packet_, &retransmitted),
+                kDecodableSession);
 
     frame_out = DecodeIncompleteFrame();
 
@@ -1098,7 +1095,7 @@ TEST_F(TestBasicJitterBuffer, ExceedNumOfFrameWithSeqNumWrap) {
 }
 
 TEST_F(TestBasicJitterBuffer, EmptyLastFrame) {
-  jitter_buffer_->DecodeWithErrors(true);
+  jitter_buffer_->DecodeErrorMode(kWithErrors);
   seq_num_ = 3;
   // Insert one empty packet per frame, should never return the last timestamp
   // inserted. Only return empty frames in the presence of subsequent frames.
@@ -1125,7 +1122,7 @@ TEST_F(TestBasicJitterBuffer, EmptyLastFrame) {
 
 TEST_F(TestBasicJitterBuffer, H264IncompleteNalu) {
   jitter_buffer_->SetNackMode(kNoNack, -1, -1);
-  jitter_buffer_->DecodeWithErrors(true);
+  jitter_buffer_->DecodeErrorMode(kWithErrors);
   seq_num_ ++;
   timestamp_ += 33 * 90;
   int insertedLength = 0;
@@ -1147,7 +1144,7 @@ TEST_F(TestBasicJitterBuffer, H264IncompleteNalu) {
   packet_->completeNALU = kNaluIncomplete;
   packet_->markerBit = false;
 
-  EXPECT_EQ(kIncomplete, jitter_buffer_->InsertPacket(*packet_,
+  EXPECT_EQ(kDecodableSession, jitter_buffer_->InsertPacket(*packet_,
                                                       &retransmitted));
 
   seq_num_++;
@@ -1157,14 +1154,14 @@ TEST_F(TestBasicJitterBuffer, H264IncompleteNalu) {
   packet_->completeNALU = kNaluEnd;
   packet_->markerBit = false;
 
-  EXPECT_EQ(kIncomplete, jitter_buffer_->InsertPacket(*packet_,
+  EXPECT_EQ(kDecodableSession, jitter_buffer_->InsertPacket(*packet_,
                                                       &retransmitted));
 
   seq_num_++;
   packet_->seqNum = seq_num_;
   packet_->completeNALU = kNaluComplete;
   packet_->markerBit = true; // Last packet
-  EXPECT_EQ(kIncomplete, jitter_buffer_->InsertPacket(*packet_,
+  EXPECT_EQ(kDecodableSession, jitter_buffer_->InsertPacket(*packet_,
                                                       &retransmitted));
   // The JB will only output (incomplete) frames if a packet belonging to a
   // subsequent frame was already inserted. Insert one packet of a subsequent
@@ -1213,7 +1210,7 @@ TEST_F(TestBasicJitterBuffer, H264IncompleteNalu) {
   packet_->isFirstPacket = true;
   packet_->completeNALU = kNaluStart;
   packet_->markerBit = false;
-  EXPECT_EQ(kIncomplete, jitter_buffer_->InsertPacket(*packet_,
+  EXPECT_EQ(kDecodableSession, jitter_buffer_->InsertPacket(*packet_,
                                                       &retransmitted));
   insertedLength += packet_->sizeBytes;  // This packet should be decoded.
 
@@ -1224,7 +1221,7 @@ TEST_F(TestBasicJitterBuffer, H264IncompleteNalu) {
   packet_->isFirstPacket = false;
   packet_->completeNALU = kNaluComplete;
   packet_->markerBit = false;
-  EXPECT_EQ(kIncomplete, jitter_buffer_->InsertPacket(*packet_,
+  EXPECT_EQ(kDecodableSession, jitter_buffer_->InsertPacket(*packet_,
                                                       &retransmitted));
   insertedLength += packet_->sizeBytes;  // This packet should be decoded.
 
@@ -1235,7 +1232,7 @@ TEST_F(TestBasicJitterBuffer, H264IncompleteNalu) {
   packet_->isFirstPacket = false;
   packet_->completeNALU = kNaluStart;
   packet_->markerBit = false;
-  EXPECT_EQ(kIncomplete, jitter_buffer_->InsertPacket(*packet_,
+  EXPECT_EQ(kDecodableSession, jitter_buffer_->InsertPacket(*packet_,
                                                       &retransmitted));
   // This packet should be decoded since it's the beginning of a NAL.
   insertedLength += packet_->sizeBytes;
@@ -1247,7 +1244,7 @@ TEST_F(TestBasicJitterBuffer, H264IncompleteNalu) {
   packet_->isFirstPacket = false;
   packet_->completeNALU = kNaluEnd;
   packet_->markerBit = true;
-  EXPECT_EQ(kIncomplete, jitter_buffer_->InsertPacket(*packet_,
+  EXPECT_EQ(kDecodableSession, jitter_buffer_->InsertPacket(*packet_,
                                                       &retransmitted));
   // This packet should not be decoded because it is an incomplete NAL if it
   // is the last.
@@ -1311,7 +1308,7 @@ TEST_F(TestBasicJitterBuffer, NextFrameWhenIncomplete) {
   // Test that a we cannot get incomplete frames from the JB if we haven't
   // received the marker bit, unless we have received a packet from a later
   // timestamp.
-  jitter_buffer_->DecodeWithErrors(true);
+  jitter_buffer_->DecodeErrorMode(kWithErrors);
   // Start with a complete key frame - insert and decode.
   packet_->frameType = kVideoFrameKey;
   packet_->isFirstPacket = true;
@@ -1686,7 +1683,7 @@ TEST_F(TestJitterBufferNack, UseNackToRecoverFirstKeyFrameSecondInQueue) {
 
 TEST_F(TestJitterBufferNack, NormalOperation) {
   EXPECT_EQ(kNack, jitter_buffer_->nack_mode());
-  jitter_buffer_->DecodeWithErrors(true);
+  jitter_buffer_->DecodeErrorMode(kWithErrors);
 
   EXPECT_GE(InsertFrame(kVideoFrameKey), kNoError);
   EXPECT_TRUE(DecodeIncompleteFrame());
@@ -1702,12 +1699,12 @@ TEST_F(TestJitterBufferNack, NormalOperation) {
   EXPECT_FALSE(DecodeCompleteFrame());
   while (stream_generator_->PacketsRemaining() > 1) {
     if (stream_generator_->NextSequenceNumber() % 10 != 0) {
-      EXPECT_EQ(kIncomplete, InsertPacketAndPop(0));
+      EXPECT_EQ(kDecodableSession, InsertPacketAndPop(0));
     } else {
       stream_generator_->NextPacket(NULL);  // Drop packet
     }
   }
-  EXPECT_EQ(kIncomplete, InsertPacketAndPop(0));
+  EXPECT_EQ(kDecodableSession, InsertPacketAndPop(0));
   EXPECT_EQ(0, stream_generator_->PacketsRemaining());
   EXPECT_FALSE(DecodeCompleteFrame());
   EXPECT_FALSE(DecodeIncompleteFrame());

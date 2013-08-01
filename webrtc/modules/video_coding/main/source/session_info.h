@@ -14,6 +14,7 @@
 #include <list>
 
 #include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/source/packet.h"
 #include "webrtc/typedefs.h"
 
@@ -47,7 +48,7 @@ class VCMSessionInfo {
   void Reset();
   int InsertPacket(const VCMPacket& packet,
                    uint8_t* frame_buffer,
-                   bool enable_decodable_state,
+                   VCMDecodeErrorMode enable_decodable_state,
                    const FrameData& frame_data);
   bool complete() const;
   bool decodable() const;

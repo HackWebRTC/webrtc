@@ -102,7 +102,7 @@ TEST_F(VCMRobustnessTest, TestHardNack) {
 
   ASSERT_EQ(VCM_OK, vcm_->SetReceiverRobustnessMode(
       VideoCodingModule::kHardNack,
-      VideoCodingModule::kNoDecodeErrors));
+      kNoErrors));
 
   InsertPacket(0, 0, true, false, kVideoFrameKey);
   InsertPacket(0, 1, false, false, kVideoFrameKey);
@@ -146,7 +146,7 @@ TEST_F(VCMRobustnessTest, TestHardNackNoneDecoded) {
 
   ASSERT_EQ(VCM_OK, vcm_->SetReceiverRobustnessMode(
       VideoCodingModule::kHardNack,
-      VideoCodingModule::kNoDecodeErrors));
+      kNoErrors));
 
   InsertPacket(3000, 3, true, false, kVideoFrameDelta);
   InsertPacket(3000, 4, false, false, kVideoFrameDelta);
@@ -216,7 +216,7 @@ TEST_F(VCMRobustnessTest, TestDualDecoder) {
 
   ASSERT_EQ(VCM_OK, vcm_->SetReceiverRobustnessMode(
       VideoCodingModule::kDualDecoder,
-      VideoCodingModule::kAllowDecodeErrors));
+      kWithErrors));
 
   InsertPacket(0, 0, true, false, kVideoFrameKey);
   InsertPacket(0, 1, false, false, kVideoFrameKey);
@@ -297,7 +297,7 @@ TEST_F(VCMRobustnessTest, TestModeNoneWithErrors) {
 
   ASSERT_EQ(VCM_OK, vcm_->SetReceiverRobustnessMode(
       VideoCodingModule::kNone,
-      VideoCodingModule::kAllowDecodeErrors));
+      kWithErrors));
 
   InsertPacket(0, 0, true, false, kVideoFrameKey);
   InsertPacket(0, 1, false, false, kVideoFrameKey);

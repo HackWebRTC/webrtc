@@ -19,20 +19,17 @@
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
-//#define DEBUG_DECODER_BIT_STREAM
+// #define DEBUG_DECODER_BIT_STREAM
 
 uint32_t
-VCMProcessTimer::Period() const
-{
+VCMProcessTimer::Period() const {
     return _periodMs;
 }
 
 uint32_t
-VCMProcessTimer::TimeUntilProcess() const
-{
+VCMProcessTimer::TimeUntilProcess() const {
     const int64_t time_since_process = _clock->TimeInMilliseconds() -
         static_cast<int64_t>(_latestMs);
     const int64_t time_until_process = static_cast<int64_t>(_periodMs) -
@@ -43,8 +40,7 @@ VCMProcessTimer::TimeUntilProcess() const
 }
 
 void
-VCMProcessTimer::Processed()
-{
+VCMProcessTimer::Processed() {
     _latestMs = _clock->TimeInMilliseconds();
 }
 
@@ -98,10 +94,8 @@ VideoCodingModuleImpl::VideoCodingModuleImpl(const int32_t id,
 #endif
 }
 
-VideoCodingModuleImpl::~VideoCodingModuleImpl()
-{
-    if (_dualDecoder != NULL)
-    {
+VideoCodingModuleImpl::~VideoCodingModuleImpl() {
+    if (_dualDecoder != NULL) {
         _codecDataBase.ReleaseDecoder(_dualDecoder);
     }
     delete _receiveCritSect;
@@ -112,48 +106,40 @@ VideoCodingModuleImpl::~VideoCodingModuleImpl()
 #ifdef DEBUG_DECODER_BIT_STREAM
     fclose(_bitStreamBeforeDecoder);
 #endif
-    if (_encoderInputFile != NULL)
-    {
+    if (_encoderInputFile != NULL) {
         fclose(_encoderInputFile);
     }
 }
 
 VideoCodingModule*
-VideoCodingModule::Create(const int32_t id)
-{
+VideoCodingModule::Create(const int32_t id) {
     return new VideoCodingModuleImpl(id, Clock::GetRealTimeClock(),
                                      new EventFactoryImpl, true);
 }
 
 VideoCodingModule*
 VideoCodingModule::Create(const int32_t id, Clock* clock,
-                          EventFactory* event_factory)
-{
+                          EventFactory* event_factory) {
     assert(clock);
     assert(event_factory);
     return new VideoCodingModuleImpl(id, clock, event_factory, false);
 }
 
 void
-VideoCodingModule::Destroy(VideoCodingModule* module)
-{
-    if (module != NULL)
-    {
+VideoCodingModule::Destroy(VideoCodingModule* module) {
+    if (module != NULL) {
         delete static_cast<VideoCodingModuleImpl*>(module);
     }
 }
 
 int32_t
-VideoCodingModuleImpl::Process()
-{
+VideoCodingModuleImpl::Process() {
     int32_t returnValue = VCM_OK;
 
     // Receive-side statistics
-    if (_receiveStatsTimer.TimeUntilProcess() == 0)
-    {
+    if (_receiveStatsTimer.TimeUntilProcess() == 0) {
         _receiveStatsTimer.Processed();
-        if (_receiveStatsCallback != NULL)
-        {
+        if (_receiveStatsCallback != NULL) {
             uint32_t bitRate;
             uint32_t frameRate;
             _receiver.ReceiveStatistics(&bitRate, &frameRate);
@@ -168,11 +154,9 @@ VideoCodingModuleImpl::Process()
     }
 
     // Send-side statistics
-    if (_sendStatsTimer.TimeUntilProcess() == 0)
-    {
+    if (_sendStatsTimer.TimeUntilProcess() == 0) {
         _sendStatsTimer.Processed();
-        if (_sendStatsCallback != NULL)
-        {
+        if (_sendStatsCallback != NULL) {
             uint32_t bitRate;
             uint32_t frameRate;
             {
@@ -187,11 +171,9 @@ VideoCodingModuleImpl::Process()
     // Packet retransmission requests
     // TODO(holmer): Add API for changing Process interval and make sure it's
     // disabled when NACK is off.
-    if (_retransmissionTimer.TimeUntilProcess() == 0)
-    {
+    if (_retransmissionTimer.TimeUntilProcess() == 0) {
         _retransmissionTimer.Processed();
-        if (_packetRequestCallback != NULL)
-        {
+        if (_packetRequestCallback != NULL) {
             uint16_t length;
             {
                 CriticalSectionScoped cs(_receiveCritSect);
@@ -199,26 +181,21 @@ VideoCodingModuleImpl::Process()
             }
             std::vector<uint16_t> nackList(length);
             const int32_t ret = NackList(&nackList[0], length);
-            if (ret != VCM_OK && returnValue == VCM_OK)
-            {
+            if (ret != VCM_OK && returnValue == VCM_OK) {
                 returnValue = ret;
             }
-            if (length > 0)
-            {
+            if (length > 0) {
                 _packetRequestCallback->ResendPackets(&nackList[0], length);
             }
         }
     }
 
     // Key frame requests
-    if (_keyRequestTimer.TimeUntilProcess() == 0)
-    {
+    if (_keyRequestTimer.TimeUntilProcess() == 0) {
         _keyRequestTimer.Processed();
-        if (_scheduleKeyRequest && _frameTypeCallback != NULL)
-        {
+        if (_scheduleKeyRequest && _frameTypeCallback != NULL) {
             const int32_t ret = RequestKeyFrame();
-            if (ret != VCM_OK && returnValue == VCM_OK)
-            {
+            if (ret != VCM_OK && returnValue == VCM_OK) {
                 returnValue = ret;
             }
         }
@@ -228,8 +205,7 @@ VideoCodingModuleImpl::Process()
 }
 
 int32_t
-VideoCodingModuleImpl::Id() const
-{
+VideoCodingModuleImpl::Id() const {
     CriticalSectionScoped receiveCs(_receiveCritSect);
     {
         CriticalSectionScoped sendCs(_sendCritSect);
@@ -239,8 +215,7 @@ VideoCodingModuleImpl::Id() const
 
 //  Change the unique identifier of this object
 int32_t
-VideoCodingModuleImpl::ChangeUniqueId(const int32_t id)
-{
+VideoCodingModuleImpl::ChangeUniqueId(const int32_t id) {
     CriticalSectionScoped receiveCs(_receiveCritSect);
     {
         CriticalSectionScoped sendCs(_sendCritSect);
@@ -252,14 +227,12 @@ VideoCodingModuleImpl::ChangeUniqueId(const int32_t id)
 // Returns the number of milliseconds until the module wants a worker thread to
 // call Process
 int32_t
-VideoCodingModuleImpl::TimeUntilNextProcess()
-{
+VideoCodingModuleImpl::TimeUntilNextProcess() {
     uint32_t timeUntilNextProcess = VCM_MIN(
                                     _receiveStatsTimer.TimeUntilProcess(),
                                     _sendStatsTimer.TimeUntilProcess());
     if ((_receiver.NackMode() != kNoNack) ||
-        (_dualReceiver.State() != kPassive))
-    {
+        (_dualReceiver.State() != kPassive)) {
         // We need a Process call more often if we are relying on
         // retransmissions
         timeUntilNextProcess = VCM_MIN(timeUntilNextProcess,
@@ -273,17 +246,14 @@ VideoCodingModuleImpl::TimeUntilNextProcess()
 
 // Get number of supported codecs
 uint8_t
-VideoCodingModule::NumberOfCodecs()
-{
+VideoCodingModule::NumberOfCodecs() {
     return VCMCodecDataBase::NumberOfCodecs();
 }
 
 // Get supported codec with id
 int32_t
-VideoCodingModule::Codec(uint8_t listId, VideoCodec* codec)
-{
-    if (codec == NULL)
-    {
+VideoCodingModule::Codec(uint8_t listId, VideoCodec* codec) {
+    if (codec == NULL) {
         return VCM_PARAMETER_ERROR;
     }
     return VCMCodecDataBase::Codec(listId, codec) ? 0 : -1;
@@ -291,10 +261,8 @@ VideoCodingModule::Codec(uint8_t listId, VideoCodec* codec)
 
 // Get supported codec with type
 int32_t
-VideoCodingModule::Codec(VideoCodecType codecType, VideoCodec* codec)
-{
-    if (codec == NULL)
-    {
+VideoCodingModule::Codec(VideoCodecType codecType, VideoCodec* codec) {
+    if (codec == NULL) {
         return VCM_PARAMETER_ERROR;
     }
     return VCMCodecDataBase::Codec(codecType, codec) ? 0 : -1;
@@ -306,15 +274,14 @@ VideoCodingModule::Codec(VideoCodecType codecType, VideoCodec* codec)
 
 // Reset send side to initial state - all components
 int32_t
-VideoCodingModuleImpl::InitializeSender()
-{
+VideoCodingModuleImpl::InitializeSender() {
     CriticalSectionScoped cs(_sendCritSect);
     _codecDataBase.ResetSender();
     _encoder = NULL;
     _encodedFrameCallback.SetTransportCallback(NULL);
     // setting default bitRate and frameRate to 0
     _mediaOpt.SetEncodingData(kVideoCodecUnknown, 0, 0, 0, 0, 0, 0);
-    _mediaOpt.Reset(); // Resetting frame dropper
+    _mediaOpt.Reset();  // Resetting frame dropper
     return VCM_OK;
 }
 
@@ -322,8 +289,7 @@ VideoCodingModuleImpl::InitializeSender()
 int32_t
 VideoCodingModuleImpl::RegisterSendCodec(const VideoCodec* sendCodec,
                                          uint32_t numberOfCores,
-                                         uint32_t maxPayloadSize)
-{
+                                         uint32_t maxPayloadSize) {
     CriticalSectionScoped cs(_sendCritSect);
     if (sendCodec == NULL) {
         return VCM_PARAMETER_ERROR;
@@ -370,12 +336,10 @@ VideoCodingModuleImpl::RegisterSendCodec(const VideoCodec* sendCodec,
 
 // Get current send codec
 int32_t
-VideoCodingModuleImpl::SendCodec(VideoCodec* currentSendCodec) const
-{
+VideoCodingModuleImpl::SendCodec(VideoCodec* currentSendCodec) const {
     CriticalSectionScoped cs(_sendCritSect);
 
-    if (currentSendCodec == NULL)
-    {
+    if (currentSendCodec == NULL) {
         return VCM_PARAMETER_ERROR;
     }
     return _codecDataBase.SendCodec(currentSendCodec) ? 0 : -1;
@@ -383,8 +347,7 @@ VideoCodingModuleImpl::SendCodec(VideoCodec* currentSendCodec) const
 
 // Get the current send codec type
 VideoCodecType
-VideoCodingModuleImpl::SendCodec() const
-{
+VideoCodingModuleImpl::SendCodec() const {
     CriticalSectionScoped cs(_sendCritSect);
 
     return _codecDataBase.SendCodec();
@@ -394,18 +357,15 @@ VideoCodingModuleImpl::SendCodec() const
 // This can not be used together with external decoder callbacks.
 int32_t
 VideoCodingModuleImpl::RegisterExternalEncoder(VideoEncoder* externalEncoder,
-                                               uint8_t payloadType,
-                                               bool internalSource /*= false*/)
-{
+                                              uint8_t payloadType,
+                                              bool internalSource /*= false*/) {
     CriticalSectionScoped cs(_sendCritSect);
 
-    if (externalEncoder == NULL)
-    {
+    if (externalEncoder == NULL) {
         bool wasSendCodec = false;
         const bool ret = _codecDataBase.DeregisterExternalEncoder(
             payloadType, &wasSendCodec);
-        if (wasSendCodec)
-        {
+        if (wasSendCodec) {
             // Make sure the VCM doesn't use the de-registered codec
             _encoder = NULL;
         }
@@ -419,19 +379,16 @@ VideoCodingModuleImpl::RegisterExternalEncoder(VideoEncoder* externalEncoder,
 // Get codec config parameters
 int32_t
 VideoCodingModuleImpl::CodecConfigParameters(uint8_t* buffer,
-                                             int32_t size)
-{
+                                             int32_t size) {
     CriticalSectionScoped cs(_sendCritSect);
-    if (_encoder != NULL)
-    {
+    if (_encoder != NULL) {
         return _encoder->CodecConfigParameters(buffer, size);
     }
     return VCM_UNINITIALIZED;
 }
 
 // Get encode bitrate
-int VideoCodingModuleImpl::Bitrate(unsigned int* bitrate) const
-{
+int VideoCodingModuleImpl::Bitrate(unsigned int* bitrate) const {
   CriticalSectionScoped cs(_sendCritSect);
   // return the bit rate which the encoder is set to
   if (!_encoder) {
@@ -442,8 +399,7 @@ int VideoCodingModuleImpl::Bitrate(unsigned int* bitrate) const
 }
 
 // Get encode frame rate
-int VideoCodingModuleImpl::FrameRate(unsigned int* framerate) const
-{
+int VideoCodingModuleImpl::FrameRate(unsigned int* framerate) const {
   CriticalSectionScoped cs(_sendCritSect);
   // input frame rate, not compensated
   if (!_encoder) {
@@ -457,39 +413,32 @@ int VideoCodingModuleImpl::FrameRate(unsigned int* framerate) const
 int32_t
 VideoCodingModuleImpl::SetChannelParameters(uint32_t target_bitrate,
                                             uint8_t lossRate,
-                                            uint32_t rtt)
-{
+                                            uint32_t rtt) {
     int32_t ret = 0;
     {
         CriticalSectionScoped sendCs(_sendCritSect);
         uint32_t targetRate = _mediaOpt.SetTargetRates(target_bitrate,
                                                              lossRate,
                                                              rtt);
-        if (_encoder != NULL)
-        {
+        if (_encoder != NULL) {
             ret = _encoder->SetChannelParameters(lossRate, rtt);
-            if (ret < 0 )
-            {
+            if (ret < 0) {
                 return ret;
             }
             ret = (int32_t)_encoder->SetRates(targetRate,
                                                     _mediaOpt.InputFrameRate());
-            if (ret < 0)
-            {
+            if (ret < 0) {
                 return ret;
             }
-        }
-        else
-        {
+        } else {
             return VCM_UNINITIALIZED;
         }  // encoder
-    }// send side
+    }  // send side
     return VCM_OK;
 }
 
 int32_t
-VideoCodingModuleImpl::SetReceiveChannelParameters(uint32_t rtt)
-{
+VideoCodingModuleImpl::SetReceiveChannelParameters(uint32_t rtt) {
     CriticalSectionScoped receiveCs(_receiveCritSect);
     _receiver.UpdateRtt(rtt);
     return 0;
@@ -499,8 +448,7 @@ VideoCodingModuleImpl::SetReceiveChannelParameters(uint32_t rtt)
 // buffers
 int32_t
 VideoCodingModuleImpl::RegisterTransportCallback(
-    VCMPacketizationCallback* transport)
-{
+    VCMPacketizationCallback* transport) {
     CriticalSectionScoped cs(_sendCritSect);
     _encodedFrameCallback.SetMediaOpt(&_mediaOpt);
     _encodedFrameCallback.SetTransportCallback(transport);
@@ -512,8 +460,7 @@ VideoCodingModuleImpl::RegisterTransportCallback(
 // average frame rate and bit rate.
 int32_t
 VideoCodingModuleImpl::RegisterSendStatisticsCallback(
-    VCMSendStatisticsCallback* sendStats)
-{
+    VCMSendStatisticsCallback* sendStats) {
     CriticalSectionScoped cs(_sendCritSect);
     _sendStatsCallback = sendStats;
     return VCM_OK;
@@ -523,8 +470,7 @@ VideoCodingModuleImpl::RegisterSendStatisticsCallback(
 // rate/dimensions need to be updated for video quality optimization
 int32_t
 VideoCodingModuleImpl::RegisterVideoQMCallback(
-    VCMQMSettingsCallback* videoQMSettings)
-{
+    VCMQMSettingsCallback* videoQMSettings) {
     CriticalSectionScoped cs(_sendCritSect);
     return _mediaOpt.RegisterVideoQMCallback(videoQMSettings);
 }
@@ -534,8 +480,7 @@ VideoCodingModuleImpl::RegisterVideoQMCallback(
 // requested FEC rate and NACK status (on/off).
 int32_t
 VideoCodingModuleImpl::RegisterProtectionCallback(
-    VCMProtectionCallback* protection)
-{
+    VCMProtectionCallback* protection) {
     CriticalSectionScoped cs(_sendCritSect);
     _mediaOpt.RegisterProtectionCallback(protection);
     return VCM_OK;
@@ -547,15 +492,12 @@ VideoCodingModuleImpl::RegisterProtectionCallback(
 // behavior is desired, use the following API: SetReceiverRobustnessMode.
 int32_t
 VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection,
-                                          bool enable)
-{
+                                          bool enable) {
     // By default, do not decode with errors.
-    _receiver.SetDecodeWithErrors(false);
+    _receiver.SetDecodeErrorMode(kNoErrors);
     // The dual decoder should always be error free.
-    _dualReceiver.SetDecodeWithErrors(false);
-    switch (videoProtection)
-    {
-
+    _dualReceiver.SetDecodeErrorMode(kNoErrors);
+    switch (videoProtection) {
     case kProtectionNack:
         {
             // Both send-side and receive-side
@@ -574,13 +516,10 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection,
     case kProtectionNackReceiver:
         {
             CriticalSectionScoped cs(_receiveCritSect);
-            if (enable)
-            {
+            if (enable) {
               // Enable NACK and always wait for retransmits.
                 _receiver.SetNackMode(kNack, -1, -1);
-            }
-            else
-            {
+            } else {
                 _receiver.SetNackMode(kNoNack, -1, -1);
             }
             break;
@@ -589,18 +528,15 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection,
     case kProtectionDualDecoder:
         {
             CriticalSectionScoped cs(_receiveCritSect);
-            if (enable)
-            {
+            if (enable) {
                 // Enable NACK but don't wait for retransmissions and don't
                 // add any extra delay.
                 _receiver.SetNackMode(kNack, 0, 0);
                 // Enable NACK and always wait for retransmissions and
                 // compensate with extra delay.
                 _dualReceiver.SetNackMode(kNack, -1, -1);
-                _receiver.SetDecodeWithErrors(true);
-            }
-            else
-            {
+                _receiver.SetDecodeErrorMode(kWithErrors);
+            } else {
                 _dualReceiver.SetNackMode(kNoNack, -1, -1);
             }
             break;
@@ -609,17 +545,12 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection,
     case kProtectionKeyOnLoss:
         {
             CriticalSectionScoped cs(_receiveCritSect);
-            if (enable)
-            {
+            if (enable) {
                 _keyRequestMode = kKeyOnLoss;
-                _receiver.SetDecodeWithErrors(true);
-            }
-            else if (_keyRequestMode == kKeyOnLoss)
-            {
-                _keyRequestMode = kKeyOnError; // default mode
-            }
-            else
-            {
+                _receiver.SetDecodeErrorMode(kWithErrors);
+            } else if (_keyRequestMode == kKeyOnLoss) {
+                _keyRequestMode = kKeyOnError;  // default mode
+            } else {
                 return VCM_PARAMETER_ERROR;
             }
             break;
@@ -628,16 +559,11 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection,
     case kProtectionKeyOnKeyLoss:
         {
             CriticalSectionScoped cs(_receiveCritSect);
-            if (enable)
-            {
+            if (enable) {
                 _keyRequestMode = kKeyOnKeyLoss;
-            }
-            else if (_keyRequestMode == kKeyOnKeyLoss)
-            {
-                _keyRequestMode = kKeyOnError; // default mode
-            }
-            else
-            {
+            } else if (_keyRequestMode == kKeyOnKeyLoss) {
+                _keyRequestMode = kKeyOnError;  // default mode
+            } else {
                 return VCM_PARAMETER_ERROR;
             }
             break;
@@ -648,19 +574,16 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection,
             {
               // Receive side
                 CriticalSectionScoped cs(_receiveCritSect);
-                if (enable)
-                {
+                if (enable) {
                     // Enable hybrid NACK/FEC. Always wait for retransmissions
                     // and don't add extra delay when RTT is above
                     // kLowRttNackMs.
                     _receiver.SetNackMode(kNack,
                                           media_optimization::kLowRttNackMs,
                                           -1);
-                    _receiver.SetDecodeWithErrors(false);
-                    _receiver.SetDecodeWithErrors(false);
-                }
-                else
-                {
+                    _receiver.SetDecodeErrorMode(kNoErrors);
+                    _receiver.SetDecodeErrorMode(kNoErrors);
+                } else {
                     _receiver.SetNackMode(kNoNack, -1, -1);
                 }
             }
@@ -693,44 +616,35 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection,
 // Add one raw video frame to the encoder, blocking.
 int32_t
 VideoCodingModuleImpl::AddVideoFrame(const I420VideoFrame& videoFrame,
-                                     const VideoContentMetrics* contentMetrics,
-                                     const CodecSpecificInfo* codecSpecificInfo)
-{
+                                  const VideoContentMetrics* contentMetrics,
+                                  const CodecSpecificInfo* codecSpecificInfo) {
     CriticalSectionScoped cs(_sendCritSect);
-    if (_encoder == NULL)
-    {
+    if (_encoder == NULL) {
         return VCM_UNINITIALIZED;
     }
     // TODO(holmer): Add support for dropping frames per stream. Currently we
     // only have one frame dropper for all streams.
-    if (_nextFrameTypes[0] == kFrameEmpty)
-    {
+    if (_nextFrameTypes[0] == kFrameEmpty) {
         return VCM_OK;
     }
     _mediaOpt.UpdateIncomingFrameRate();
 
-    if (_mediaOpt.DropFrame())
-    {
+    if (_mediaOpt.DropFrame()) {
         WEBRTC_TRACE(webrtc::kTraceStream,
                      webrtc::kTraceVideoCoding,
                      VCMId(_id),
                      "Drop frame due to bitrate");
-    }
-    else
-    {
+    } else {
         _mediaOpt.UpdateContentData(contentMetrics);
         int32_t ret = _encoder->Encode(videoFrame,
                                              codecSpecificInfo,
                                              _nextFrameTypes);
-        if (_encoderInputFile != NULL)
-        {
-            if (PrintI420VideoFrame(videoFrame, _encoderInputFile) < 0)
-            {
+        if (_encoderInputFile != NULL) {
+            if (PrintI420VideoFrame(videoFrame, _encoderInputFile) < 0) {
                 return -1;
             }
         }
-        if (ret < 0)
-        {
+        if (ret < 0) {
             WEBRTC_TRACE(webrtc::kTraceError,
                          webrtc::kTraceVideoCoding,
                          VCMId(_id),
@@ -763,8 +677,7 @@ int32_t VideoCodingModuleImpl::IntraFrameRequest(int stream_index) {
 }
 
 int32_t
-VideoCodingModuleImpl::EnableFrameDropper(bool enable)
-{
+VideoCodingModuleImpl::EnableFrameDropper(bool enable) {
     CriticalSectionScoped cs(_sendCritSect);
     frame_dropper_enabled_ = enable;
     _mediaOpt.EnableFrameDropper(enable);
@@ -773,26 +686,22 @@ VideoCodingModuleImpl::EnableFrameDropper(bool enable)
 
 
 int32_t
-VideoCodingModuleImpl::SentFrameCount(VCMFrameCount &frameCount) const
-{
+VideoCodingModuleImpl::SentFrameCount(VCMFrameCount &frameCount) const {
     CriticalSectionScoped cs(_sendCritSect);
     return _mediaOpt.SentFrameCount(frameCount);
 }
 
 // Initialize receiver, resets codec database etc
 int32_t
-VideoCodingModuleImpl::InitializeReceiver()
-{
+VideoCodingModuleImpl::InitializeReceiver() {
     CriticalSectionScoped cs(_receiveCritSect);
     int32_t ret = _receiver.Initialize();
-    if (ret < 0)
-    {
+    if (ret < 0) {
         return ret;
     }
 
     ret = _dualReceiver.Initialize();
-    if (ret < 0)
-    {
+    if (ret < 0) {
         return ret;
     }
     _codecDataBase.ResetReceiver();
@@ -815,8 +724,7 @@ VideoCodingModuleImpl::InitializeReceiver()
 // ready for rendering.
 int32_t
 VideoCodingModuleImpl::RegisterReceiveCallback(
-    VCMReceiveCallback* receiveCallback)
-{
+    VCMReceiveCallback* receiveCallback) {
     CriticalSectionScoped cs(_receiveCritSect);
     _decodedFrameCallback.SetUserReceiveCallback(receiveCallback);
     return VCM_OK;
@@ -824,8 +732,7 @@ VideoCodingModuleImpl::RegisterReceiveCallback(
 
 int32_t
 VideoCodingModuleImpl::RegisterReceiveStatisticsCallback(
-                                     VCMReceiveStatisticsCallback* receiveStats)
-{
+                                   VCMReceiveStatisticsCallback* receiveStats) {
     CriticalSectionScoped cs(_receiveCritSect);
     _receiveStatsCallback = receiveStats;
     return VCM_OK;
@@ -836,11 +743,9 @@ VideoCodingModuleImpl::RegisterReceiveStatisticsCallback(
 int32_t
 VideoCodingModuleImpl::RegisterExternalDecoder(VideoDecoder* externalDecoder,
                                                uint8_t payloadType,
-                                               bool internalRenderTiming)
-{
+                                               bool internalRenderTiming) {
     CriticalSectionScoped cs(_receiveCritSect);
-    if (externalDecoder == NULL)
-    {
+    if (externalDecoder == NULL) {
         // Make sure the VCM updates the decoder next time it decodes.
         _decoder = NULL;
         return _codecDataBase.DeregisterExternalDecoder(payloadType) ? 0 : -1;
@@ -852,8 +757,7 @@ VideoCodingModuleImpl::RegisterExternalDecoder(VideoDecoder* externalDecoder,
 // Register a frame type request callback.
 int32_t
 VideoCodingModuleImpl::RegisterFrameTypeCallback(
-    VCMFrameTypeCallback* frameTypeCallback)
-{
+    VCMFrameTypeCallback* frameTypeCallback) {
     CriticalSectionScoped cs(_receiveCritSect);
     _frameTypeCallback = frameTypeCallback;
     return VCM_OK;
@@ -861,8 +765,7 @@ VideoCodingModuleImpl::RegisterFrameTypeCallback(
 
 int32_t
 VideoCodingModuleImpl::RegisterFrameStorageCallback(
-    VCMFrameStorageCallback* frameStorageCallback)
-{
+    VCMFrameStorageCallback* frameStorageCallback) {
     CriticalSectionScoped cs(_receiveCritSect);
     _frameStorageCallback = frameStorageCallback;
     return VCM_OK;
@@ -870,8 +773,7 @@ VideoCodingModuleImpl::RegisterFrameStorageCallback(
 
 int32_t
 VideoCodingModuleImpl::RegisterPacketRequestCallback(
-    VCMPacketRequestCallback* callback)
-{
+    VCMPacketRequestCallback* callback) {
     CriticalSectionScoped cs(_receiveCritSect);
     _packetRequestCallback = callback;
     return VCM_OK;
@@ -887,17 +789,14 @@ int VideoCodingModuleImpl::RegisterRenderBufferSizeCallback(
 // Decode next frame, blocking.
 // Should be called as often as possible to get the most out of the decoder.
 int32_t
-VideoCodingModuleImpl::Decode(uint16_t maxWaitTimeMs)
-{
+VideoCodingModuleImpl::Decode(uint16_t maxWaitTimeMs) {
     int64_t nextRenderTimeMs;
     {
         CriticalSectionScoped cs(_receiveCritSect);
-        if (!_receiverInited)
-        {
+        if (!_receiverInited) {
             return VCM_UNINITIALIZED;
         }
-        if (!_codecDataBase.DecoderRegistered())
-        {
+        if (!_codecDataBase.DecoderRegistered()) {
             return VCM_NO_CODEC_REGISTERED;
         }
     }
@@ -912,34 +811,29 @@ VideoCodingModuleImpl::Decode(uint16_t maxWaitTimeMs)
         _codecDataBase.SupportsRenderScheduling(),
         &_dualReceiver);
 
-    if (dualReceiverEnabledNotReceiving && _dualReceiver.State() == kReceiving)
-    {
+    if (dualReceiverEnabledNotReceiving
+        && _dualReceiver.State() == kReceiving) {
         // Dual receiver is enabled (kNACK enabled), but was not receiving
         // before the call to FrameForDecoding(). After the call the state
         // changed to receiving, and therefore we must copy the primary decoder
         // state to the dual decoder to make it possible for the dual decoder to
         // start decoding retransmitted frames and recover.
         CriticalSectionScoped cs(_receiveCritSect);
-        if (_dualDecoder != NULL)
-        {
+        if (_dualDecoder != NULL) {
             _codecDataBase.ReleaseDecoder(_dualDecoder);
         }
         _dualDecoder = _codecDataBase.CreateDecoderCopy();
-        if (_dualDecoder != NULL)
-        {
+        if (_dualDecoder != NULL) {
             _dualDecoder->RegisterDecodeCompleteCallback(
                 &_dualDecodedFrameCallback);
-        }
-        else
-        {
+        } else {
             _dualReceiver.Reset();
         }
     }
 
-    if (frame == NULL)
+    if (frame == NULL) {
       return VCM_FRAME_NOT_READY;
-    else
-    {
+    } else {
         CriticalSectionScoped cs(_receiveCritSect);
 
         // If this frame was too late, we should adjust the delay accordingly
@@ -947,8 +841,7 @@ VideoCodingModuleImpl::Decode(uint16_t maxWaitTimeMs)
                                    clock_->TimeInMilliseconds());
 
 #ifdef DEBUG_DECODER_BIT_STREAM
-        if (_bitStreamBeforeDecoder != NULL)
-        {
+        if (_bitStreamBeforeDecoder != NULL) {
           // Write bit stream to file for debugging purposes
           if (fwrite(frame->Buffer(), 1, frame->Length(),
                      _bitStreamBeforeDecoder) !=  frame->Length()) {
@@ -956,11 +849,9 @@ VideoCodingModuleImpl::Decode(uint16_t maxWaitTimeMs)
           }
         }
 #endif
-        if (_frameStorageCallback != NULL)
-        {
+        if (_frameStorageCallback != NULL) {
             int32_t ret = frame->Store(*_frameStorageCallback);
-            if (ret < 0)
-            {
+            if (ret < 0) {
                 return ret;
             }
         }
@@ -968,8 +859,7 @@ VideoCodingModuleImpl::Decode(uint16_t maxWaitTimeMs)
         const int32_t ret = Decode(*frame);
         _receiver.ReleaseFrame(frame);
         frame = NULL;
-        if (ret != VCM_OK)
-        {
+        if (ret != VCM_OK) {
             return ret;
         }
     }
@@ -978,23 +868,19 @@ VideoCodingModuleImpl::Decode(uint16_t maxWaitTimeMs)
 
 int32_t
 VideoCodingModuleImpl::RequestSliceLossIndication(
-    const uint64_t pictureID) const
-{
+    const uint64_t pictureID) const {
     TRACE_EVENT1("webrtc", "RequestSLI", "picture_id", pictureID);
-    if (_frameTypeCallback != NULL)
-    {
+    if (_frameTypeCallback != NULL) {
         const int32_t ret =
             _frameTypeCallback->SliceLossIndicationRequest(pictureID);
-        if (ret < 0)
-        {
+        if (ret < 0) {
             WEBRTC_TRACE(webrtc::kTraceError,
                          webrtc::kTraceVideoCoding,
                          VCMId(_id),
                          "Failed to request key frame");
             return ret;
         }
-    } else
-    {
+    } else {
         WEBRTC_TRACE(webrtc::kTraceWarning,
                      webrtc::kTraceVideoCoding,
                      VCMId(_id),
@@ -1005,14 +891,11 @@ VideoCodingModuleImpl::RequestSliceLossIndication(
 }
 
 int32_t
-VideoCodingModuleImpl::RequestKeyFrame()
-{
+VideoCodingModuleImpl::RequestKeyFrame() {
     TRACE_EVENT0("webrtc", "RequestKeyFrame");
-    if (_frameTypeCallback != NULL)
-    {
+    if (_frameTypeCallback != NULL) {
         const int32_t ret = _frameTypeCallback->RequestKeyFrame();
-        if (ret < 0)
-        {
+        if (ret < 0) {
             WEBRTC_TRACE(webrtc::kTraceError,
                          webrtc::kTraceVideoCoding,
                          VCMId(_id),
@@ -1020,9 +903,7 @@ VideoCodingModuleImpl::RequestKeyFrame()
             return ret;
         }
         _scheduleKeyRequest = false;
-    }
-    else
-    {
+    } else {
         WEBRTC_TRACE(webrtc::kTraceWarning,
                      webrtc::kTraceVideoCoding,
                      VCMId(_id),
@@ -1033,12 +914,10 @@ VideoCodingModuleImpl::RequestKeyFrame()
 }
 
 int32_t
-VideoCodingModuleImpl::DecodeDualFrame(uint16_t maxWaitTimeMs)
-{
+VideoCodingModuleImpl::DecodeDualFrame(uint16_t maxWaitTimeMs) {
     CriticalSectionScoped cs(_receiveCritSect);
     if (_dualReceiver.State() != kReceiving ||
-        _dualReceiver.NackMode() != kNack)
-    {
+        _dualReceiver.NackMode() != kNack) {
         // The dual receiver is currently not receiving or
         // dual decoder mode is disabled.
         return VCM_OK;
@@ -1048,12 +927,11 @@ VideoCodingModuleImpl::DecodeDualFrame(uint16_t maxWaitTimeMs)
     // The dual decoder's state is copied from the main decoder, which may
     // decode with errors. Make sure that the dual decoder does not introduce
     // error.
-    _dualReceiver.SetDecodeWithErrors(false);
+    _dualReceiver.SetDecodeErrorMode(kNoErrors);
     VCMEncodedFrame* dualFrame = _dualReceiver.FrameForDecoding(
                                                             maxWaitTimeMs,
                                                             dummyRenderTime);
-    if (dualFrame != NULL && _dualDecoder != NULL)
-    {
+    if (dualFrame != NULL && _dualDecoder != NULL) {
         WEBRTC_TRACE(webrtc::kTraceStream,
                      webrtc::kTraceVideoCoding,
                      VCMId(_id),
@@ -1062,8 +940,7 @@ VideoCodingModuleImpl::DecodeDualFrame(uint16_t maxWaitTimeMs)
         // Decode dualFrame and try to catch up
         int32_t ret = _dualDecoder->Decode(*dualFrame,
                                                  clock_->TimeInMilliseconds());
-        if (ret != WEBRTC_VIDEO_CODEC_OK)
-        {
+        if (ret != WEBRTC_VIDEO_CODEC_OK) {
             WEBRTC_TRACE(webrtc::kTraceWarning,
                          webrtc::kTraceVideoCoding,
                          VCMId(_id),
@@ -1071,8 +948,7 @@ VideoCodingModuleImpl::DecodeDualFrame(uint16_t maxWaitTimeMs)
             _dualReceiver.ReleaseFrame(dualFrame);
             return VCM_CODEC_ERROR;
         }
-        if (_receiver.DualDecoderCaughtUp(dualFrame, _dualReceiver))
-        {
+        if (_receiver.DualDecoderCaughtUp(dualFrame, _dualReceiver)) {
             // Copy the complete decoder state of the dual decoder
             // to the primary decoder.
             WEBRTC_TRACE(webrtc::kTraceStream,
@@ -1092,37 +968,30 @@ VideoCodingModuleImpl::DecodeDualFrame(uint16_t maxWaitTimeMs)
 
 // Must be called from inside the receive side critical section.
 int32_t
-VideoCodingModuleImpl::Decode(const VCMEncodedFrame& frame)
-{
+VideoCodingModuleImpl::Decode(const VCMEncodedFrame& frame) {
     TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", frame.TimeStamp(),
                             "Decode", "type", frame.FrameType());
     // Change decoder if payload type has changed
     const bool renderTimingBefore = _codecDataBase.SupportsRenderScheduling();
     _decoder = _codecDataBase.GetDecoder(frame.PayloadType(),
                                          &_decodedFrameCallback);
-    if (renderTimingBefore != _codecDataBase.SupportsRenderScheduling())
-    {
+    if (renderTimingBefore != _codecDataBase.SupportsRenderScheduling()) {
         // Make sure we reset the decode time estimate since it will
         // be zero for codecs without render timing.
         _timing.ResetDecodeTime();
     }
-    if (_decoder == NULL)
-    {
+    if (_decoder == NULL) {
         return VCM_NO_CODEC_REGISTERED;
     }
     // Decode a frame
     int32_t ret = _decoder->Decode(frame, clock_->TimeInMilliseconds());
 
     // Check for failed decoding, run frame type request callback if needed.
-    if (ret < 0)
-    {
-        if (ret == VCM_ERROR_REQUEST_SLI)
-        {
+    if (ret < 0) {
+        if (ret == VCM_ERROR_REQUEST_SLI) {
             return RequestSliceLossIndication(
                     _decodedFrameCallback.LastReceivedPictureID() + 1);
-        }
-        else
-        {
+        } else {
             WEBRTC_TRACE(webrtc::kTraceError,
                          webrtc::kTraceVideoCoding,
                          VCMId(_id),
@@ -1130,20 +999,15 @@ VideoCodingModuleImpl::Decode(const VCMEncodedFrame& frame)
                          frame.TimeStamp());
             ret = RequestKeyFrame();
         }
-    }
-    else if (ret == VCM_REQUEST_SLI)
-    {
+    } else if (ret == VCM_REQUEST_SLI) {
         ret = RequestSliceLossIndication(
             _decodedFrameCallback.LastReceivedPictureID() + 1);
     }
-    if (!frame.Complete() || frame.MissingFrame())
-    {
-        switch (_keyRequestMode)
-        {
+    if (!frame.Complete() || frame.MissingFrame()) {
+        switch (_keyRequestMode) {
             case kKeyOnKeyLoss:
             {
-                if (frame.FrameType() == kVideoFrameKey)
-                {
+                if (frame.FrameType() == kVideoFrameKey) {
                     _scheduleKeyRequest = true;
                     return VCM_OK;
                 }
@@ -1164,12 +1028,10 @@ VideoCodingModuleImpl::Decode(const VCMEncodedFrame& frame)
 
 int32_t
 VideoCodingModuleImpl::DecodeFromStorage(
-    const EncodedVideoData& frameFromStorage)
-{
+    const EncodedVideoData& frameFromStorage) {
     CriticalSectionScoped cs(_receiveCritSect);
     int32_t ret = _frameFromFile.ExtractFromStorage(frameFromStorage);
-    if (ret < 0)
-    {
+    if (ret < 0) {
         return ret;
     }
     return Decode(_frameFromFile);
@@ -1177,22 +1039,18 @@ VideoCodingModuleImpl::DecodeFromStorage(
 
 // Reset the decoder state
 int32_t
-VideoCodingModuleImpl::ResetDecoder()
-{
+VideoCodingModuleImpl::ResetDecoder() {
     CriticalSectionScoped cs(_receiveCritSect);
-    if (_decoder != NULL)
-    {
+    if (_decoder != NULL) {
         _receiver.Initialize();
         _timing.Reset();
         _scheduleKeyRequest = false;
         _decoder->Reset();
     }
-    if (_dualReceiver.State() != kPassive)
-    {
+    if (_dualReceiver.State() != kPassive) {
         _dualReceiver.Initialize();
     }
-    if (_dualDecoder != NULL)
-    {
+    if (_dualDecoder != NULL) {
         _codecDataBase.ReleaseDecoder(_dualDecoder);
         _dualDecoder = NULL;
     }
@@ -1203,11 +1061,9 @@ VideoCodingModuleImpl::ResetDecoder()
 int32_t
 VideoCodingModuleImpl::RegisterReceiveCodec(const VideoCodec* receiveCodec,
                                                 int32_t numberOfCores,
-                                                bool requireKeyFrame)
-{
+                                                bool requireKeyFrame) {
     CriticalSectionScoped cs(_receiveCritSect);
-    if (receiveCodec == NULL)
-    {
+    if (receiveCodec == NULL) {
         return VCM_PARAMETER_ERROR;
     }
     if (!_codecDataBase.RegisterReceiveCodec(receiveCodec, numberOfCores,
@@ -1219,11 +1075,9 @@ VideoCodingModuleImpl::RegisterReceiveCodec(const VideoCodec* receiveCodec,
 
 // Get current received codec
 int32_t
-VideoCodingModuleImpl::ReceiveCodec(VideoCodec* currentReceiveCodec) const
-{
+VideoCodingModuleImpl::ReceiveCodec(VideoCodec* currentReceiveCodec) const {
     CriticalSectionScoped cs(_receiveCritSect);
-    if (currentReceiveCodec == NULL)
-    {
+    if (currentReceiveCodec == NULL) {
         return VCM_PARAMETER_ERROR;
     }
     return _codecDataBase.ReceiveCodec(currentReceiveCodec) ? 0 : -1;
@@ -1231,8 +1085,7 @@ VideoCodingModuleImpl::ReceiveCodec(VideoCodec* currentReceiveCodec) const
 
 // Get current received codec
 VideoCodecType
-VideoCodingModuleImpl::ReceiveCodec() const
-{
+VideoCodingModuleImpl::ReceiveCodec() const {
     CriticalSectionScoped cs(_receiveCritSect);
     return _codecDataBase.ReceiveCodec();
 }
@@ -1241,8 +1094,7 @@ VideoCodingModuleImpl::ReceiveCodec() const
 int32_t
 VideoCodingModuleImpl::IncomingPacket(const uint8_t* incomingPayload,
                                     uint32_t payloadLength,
-                                    const WebRtcRTPHeader& rtpInfo)
-{
+                                    const WebRtcRTPHeader& rtpInfo) {
     if (rtpInfo.frameType == kVideoFrameKey) {
       TRACE_EVENT1("webrtc", "VCM::PacketKeyFrame",
                    "seqnum", rtpInfo.header.sequenceNumber);
@@ -1255,8 +1107,7 @@ VideoCodingModuleImpl::IncomingPacket(const uint8_t* incomingPayload,
     }
     const VCMPacket packet(incomingPayload, payloadLength, rtpInfo);
     int32_t ret;
-    if (_dualReceiver.State() != kPassive)
-    {
+    if (_dualReceiver.State() != kPassive) {
         ret = _dualReceiver.InsertPacket(packet,
                                          rtpInfo.type.Video.width,
                                          rtpInfo.type.Video.height);
@@ -1285,8 +1136,7 @@ VideoCodingModuleImpl::IncomingPacket(const uint8_t* incomingPayload,
 // to sync with audio. Not included in  VideoCodingModule::Delay()
 // Defaults to 0 ms.
 int32_t
-VideoCodingModuleImpl::SetMinimumPlayoutDelay(uint32_t minPlayoutDelayMs)
-{
+VideoCodingModuleImpl::SetMinimumPlayoutDelay(uint32_t minPlayoutDelayMs) {
     _timing.set_min_playout_delay(minPlayoutDelayMs);
     return VCM_OK;
 }
@@ -1294,40 +1144,34 @@ VideoCodingModuleImpl::SetMinimumPlayoutDelay(uint32_t minPlayoutDelayMs)
 // The estimated delay caused by rendering, defaults to
 // kDefaultRenderDelayMs = 10 ms
 int32_t
-VideoCodingModuleImpl::SetRenderDelay(uint32_t timeMS)
-{
+VideoCodingModuleImpl::SetRenderDelay(uint32_t timeMS) {
     _timing.set_render_delay(timeMS);
     return VCM_OK;
 }
 
 // Current video delay
 int32_t
-VideoCodingModuleImpl::Delay() const
-{
+VideoCodingModuleImpl::Delay() const {
     return _timing.TargetVideoDelay();
 }
 
 // Nack list
 int32_t
-VideoCodingModuleImpl::NackList(uint16_t* nackList, uint16_t& size)
-{
+VideoCodingModuleImpl::NackList(uint16_t* nackList, uint16_t& size) {
     VCMNackStatus nackStatus = kNackOk;
     uint16_t nack_list_length = 0;
     // Collect sequence numbers from the default receiver
     // if in normal nack mode. Otherwise collect them from
     // the dual receiver if the dual receiver is receiving.
-    if (_receiver.NackMode() != kNoNack)
-    {
+    if (_receiver.NackMode() != kNoNack) {
         nackStatus = _receiver.NackList(nackList, size, &nack_list_length);
     }
-    if (nack_list_length == 0 && _dualReceiver.State() != kPassive)
-    {
+    if (nack_list_length == 0 && _dualReceiver.State() != kPassive) {
         nackStatus = _dualReceiver.NackList(nackList, size, &nack_list_length);
     }
     size = nack_list_length;
 
-    switch (nackStatus)
-    {
+    switch (nackStatus) {
     case kNackNeedMoreMemory:
         {
             WEBRTC_TRACE(webrtc::kTraceError,
@@ -1352,8 +1196,7 @@ VideoCodingModuleImpl::NackList(uint16_t* nackList, uint16_t& size)
 }
 
 int32_t
-VideoCodingModuleImpl::ReceivedFrameCount(VCMFrameCount& frameCount) const
-{
+VideoCodingModuleImpl::ReceivedFrameCount(VCMFrameCount& frameCount) const {
     _receiver.ReceivedFrameCount(&frameCount);
     return VCM_OK;
 }
@@ -1395,29 +1238,26 @@ int VideoCodingModuleImpl::SetSenderKeyFramePeriod(int periodMs) {
 
 int VideoCodingModuleImpl::SetReceiverRobustnessMode(
     ReceiverRobustness robustnessMode,
-    DecodeErrors errorMode) {
+    VCMDecodeErrorMode decode_error_mode) {
   CriticalSectionScoped cs(_receiveCritSect);
   switch (robustnessMode) {
     case kNone:
       _receiver.SetNackMode(kNoNack, -1, -1);
       _dualReceiver.SetNackMode(kNoNack, -1, -1);
-      if (errorMode == kNoDecodeErrors) {
+      if (decode_error_mode == kNoErrors) {
         _keyRequestMode = kKeyOnLoss;
       } else {
         _keyRequestMode = kKeyOnError;
       }
       break;
     case kHardNack:
-      if (errorMode == kAllowDecodeErrors) {
-        return VCM_PARAMETER_ERROR;
-      }
-      // Always wait for retransmissions.
+      // Always wait for retransmissions (except when decoding with errors).
       _receiver.SetNackMode(kNack, -1, -1);
       _dualReceiver.SetNackMode(kNoNack, -1, -1);
       _keyRequestMode = kKeyOnError;  // TODO(hlundin): On long NACK list?
       break;
     case kSoftNack:
-      assert(false); // TODO(hlundin): Not completed.
+      assert(false);  // TODO(hlundin): Not completed.
       return VCM_NOT_IMPLEMENTED;
       // Enable hybrid NACK/FEC. Always wait for retransmissions and don't add
       // extra delay when RTT is above kLowRttNackMs.
@@ -1426,7 +1266,7 @@ int VideoCodingModuleImpl::SetReceiverRobustnessMode(
       _keyRequestMode = kKeyOnError;
       break;
     case kDualDecoder:
-      if (errorMode == kNoDecodeErrors) {
+      if (decode_error_mode == kNoErrors) {
         return VCM_PARAMETER_ERROR;
       }
       // Enable NACK but don't wait for retransmissions and don't add any extra
@@ -1437,19 +1277,25 @@ int VideoCodingModuleImpl::SetReceiverRobustnessMode(
       _keyRequestMode = kKeyOnError;
       break;
     case kReferenceSelection:
-      assert(false); // TODO(hlundin): Not completed.
+      assert(false);  // TODO(hlundin): Not completed.
       return VCM_NOT_IMPLEMENTED;
-      if (errorMode == kNoDecodeErrors) {
+      if (decode_error_mode == kNoErrors) {
         return VCM_PARAMETER_ERROR;
       }
       _receiver.SetNackMode(kNoNack, -1, -1);
       _dualReceiver.SetNackMode(kNoNack, -1, -1);
       break;
   }
-  _receiver.SetDecodeWithErrors(errorMode == kAllowDecodeErrors);
+  _receiver.SetDecodeErrorMode(decode_error_mode);
   // The dual decoder should never decode with errors.
-  _dualReceiver.SetDecodeWithErrors(false);
+  _dualReceiver.SetDecodeErrorMode(kNoErrors);
   return VCM_OK;
+}
+
+void VideoCodingModuleImpl::SetDecodeErrorMode(
+    VCMDecodeErrorMode decode_error_mode) {
+  CriticalSectionScoped cs(_receiveCritSect);
+  _receiver.SetDecodeErrorMode(decode_error_mode);
 }
 
 void VideoCodingModuleImpl::SetNackSettings(size_t max_nack_list_size,
@@ -1477,7 +1323,7 @@ int VideoCodingModuleImpl::StartDebugRecording(const char* file_name_utf8) {
   return VCM_OK;
 }
 
-int VideoCodingModuleImpl::StopDebugRecording(){
+int VideoCodingModuleImpl::StopDebugRecording() {
   CriticalSectionScoped cs(_sendCritSect);
   if (_encoderInputFile != NULL) {
     fclose(_encoderInputFile);

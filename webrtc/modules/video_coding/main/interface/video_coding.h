@@ -41,6 +41,19 @@ class EventFactoryImpl : public EventFactory {
   }
 };
 
+// Used to indicate which decode with errors mode should be used.
+enum VCMDecodeErrorMode {
+  kNoErrors,                // Never decode with errors. Video will freeze
+                            // if nack is disabled.
+  kSelectiveErrors,         // Frames that are determined decodable in
+                            // VCMSessionInfo may be decoded with missing
+                            // packets. As not all incomplete frames will be
+                            // decodable, video will freeze if nack is disabled.
+  kWithErrors               // Release frames as needed. Errors may be
+                            // introduced as some encoded frames may not be
+                            // complete.
+};
+
 class VideoCodingModule : public Module
 {
 public:
@@ -257,7 +270,7 @@ public:
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
     virtual int32_t SetVideoProtection(VCMVideoProtection videoProtection,
-                                             bool enable) = 0;
+                                       bool enable) = 0;
 
     // Add one raw video frame to the encoder. This function does all the necessary
     // processing, then decides what frame type to encode, or if the frame should be
@@ -324,8 +337,8 @@ public:
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
     virtual int32_t RegisterReceiveCodec(const VideoCodec* receiveCodec,
-                                               int32_t numberOfCores,
-                                               bool requireKeyFrame = false) = 0;
+                                         int32_t numberOfCores,
+                                         bool requireKeyFrame = false) = 0;
 
     // Register an externally defined decoder/renderer object. Can be a decoder only or a
     // decoder coupled with a renderer. Note that RegisterReceiveCodec must be called to
@@ -566,7 +579,7 @@ public:
     // Return value      : VCM_OK, on success;
     //                     < 0, on error.
     virtual int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode,
-                                          DecodeErrors errorMode) = 0;
+                                          VCMDecodeErrorMode errorMode) = 0;
 
     // Sets the maximum number of sequence numbers that we are allowed to NACK
     // and the oldest sequence number that we will consider to NACK. If a

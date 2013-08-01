@@ -392,7 +392,7 @@ VCMSessionInfo::session_nack() const {
 
 int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
                                  uint8_t* frame_buffer,
-                                 bool enable_decodable_state,
+                                 VCMDecodeErrorMode decode_error_mode,
                                  const FrameData& frame_data) {
   // Check if this is first packet (only valid for some codecs)
   if (packet.isFirstPacket) {
@@ -429,8 +429,11 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
 
   int returnLength = InsertBuffer(frame_buffer, packet_list_it);
   UpdateCompleteSession();
-  if (enable_decodable_state)
+  if (decode_error_mode == kWithErrors)
+    decodable_ = true;
+  else if (decode_error_mode == kSelectiveErrors)
     UpdateDecodableSession(frame_data);
+
   return returnLength;
 }
 
