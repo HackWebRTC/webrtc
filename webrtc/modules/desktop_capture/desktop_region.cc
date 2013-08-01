@@ -208,9 +208,9 @@ void DesktopRegion::Intersect(const DesktopRegion& region1,
     if (new_row->second->spans.empty()) {
       delete new_row->second;
       rows_.erase(new_row);
+    } else {
+      MergeWithPrecedingRow(new_row);
     }
-
-    MergeWithPrecedingRow(new_row);
 
     // If |it1| was completely consumed, move to the next one.
     if (it1->second->bottom == bottom)

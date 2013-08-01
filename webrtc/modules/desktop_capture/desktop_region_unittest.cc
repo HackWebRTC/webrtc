@@ -426,6 +426,9 @@ TEST(DesktopRegionTest, Intersect) {
            DesktopRect::MakeLTRB(50, 30,  90, 50) },
       2, { DesktopRect::MakeLTRB(50, 10, 100, 30),
            DesktopRect::MakeLTRB(50, 30, 90, 50) } },
+    { 1, { DesktopRect::MakeLTRB(0, 0, 100, 100) },
+      1, { DesktopRect::MakeLTRB(100, 50, 200, 200) },
+      0, {} },
   };
 
   for (size_t i = 0; i < (sizeof(cases) / sizeof(Case)); ++i) {
