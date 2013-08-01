@@ -30,15 +30,15 @@ class ThreadPosix : public ThreadWrapper {
 
   ThreadPosix(ThreadRunFunction func, ThreadObj obj, ThreadPriority prio,
               const char* thread_name);
-  ~ThreadPosix();
+  virtual ~ThreadPosix();
 
   // From ThreadWrapper.
-  virtual void SetNotAlive();
-  virtual bool Start(unsigned int& id);
+  virtual void SetNotAlive() OVERRIDE;
+  virtual bool Start(unsigned int& id) OVERRIDE;
   // Not implemented on Mac.
   virtual bool SetAffinity(const int* processor_numbers,
-                           unsigned int amount_of_processors);
-  virtual bool Stop();
+                           unsigned int amount_of_processors) OVERRIDE;
+  virtual bool Stop() OVERRIDE;
 
   void Run();
 

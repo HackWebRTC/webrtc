@@ -78,9 +78,7 @@ class ThreadWrapper {
   // should be lower than (number of CPUs - 1). amount_of_processors should be
   // equal to the number of processors listed in processor_numbers.
   virtual bool SetAffinity(const int* processor_numbers,
-                           const unsigned int amount_of_processors) {
-    return false;
-  }
+                           const unsigned int amount_of_processors);
 
   // Stops the spawned thread and waits for it to be reclaimed with a timeout
   // of two seconds. Will return false if the thread was not reclaimed.
