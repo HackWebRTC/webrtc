@@ -26,7 +26,6 @@
  */
 
 #include "talk/base/gunit.h"
-#include "talk/base/host.h"
 #include "talk/base/nethelpers.h"
 #include "talk/base/physicalsocketserver.h"
 #include "talk/base/testclient.h"

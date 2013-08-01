@@ -32,7 +32,6 @@
 
 #include "talk/base/common.h"
 #include "talk/base/helpers.h"
-#include "talk/base/host.h"
 #include "talk/base/logging.h"
 #include "talk/p2p/base/basicpacketsocketfactory.h"
 #include "talk/p2p/base/common.h"

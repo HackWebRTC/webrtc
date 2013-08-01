@@ -297,8 +297,6 @@ class ChannelManager : public talk_base::MessageHandler,
   bool capturing_;
   bool monitoring_;
 
-  talk_base::scoped_ptr<VideoCapturer> video_capturer_;
-
   // String containing currently set device. Note that this string is subtly
   // different from camera_device_. E.g. camera_device_ will list unplugged
   // but selected devices while this sting will be empty or contain current

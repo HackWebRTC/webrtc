@@ -599,7 +599,7 @@ class FakeSoundclipMedia : public SoundclipMedia {
 class FakeDataMediaChannel : public RtpHelper<DataMediaChannel> {
  public:
   explicit FakeDataMediaChannel(void* unused)
-      : auto_bandwidth_(false), max_bps_(-1) {}
+      : auto_bandwidth_(false), send_blocked_(false), max_bps_(-1) {}
   ~FakeDataMediaChannel() {}
   const std::vector<DataCodec>& recv_codecs() const { return recv_codecs_; }
   const std::vector<DataCodec>& send_codecs() const { return send_codecs_; }
@@ -647,13 +647,20 @@ class FakeDataMediaChannel : public RtpHelper<DataMediaChannel> {
   virtual bool SendData(const SendDataParams& params,
                         const talk_base::Buffer& payload,
                         SendDataResult* result) {
-    last_sent_data_params_ = params;
-    last_sent_data_ = std::string(payload.data(), payload.length());
-    return true;
+    if (send_blocked_) {
+      *result = SDR_BLOCK;
+      return false;
+    } else {
+      last_sent_data_params_ = params;
+      last_sent_data_ = std::string(payload.data(), payload.length());
+      return true;
+    }
   }
 
   SendDataParams last_sent_data_params() { return last_sent_data_params_; }
   std::string last_sent_data() { return last_sent_data_; }
+  bool is_send_blocked() { return send_blocked_; }
+  void set_send_blocked(bool blocked) { send_blocked_ = blocked; }
 
  private:
   std::vector<DataCodec> recv_codecs_;
@@ -661,6 +668,7 @@ class FakeDataMediaChannel : public RtpHelper<DataMediaChannel> {
   SendDataParams last_sent_data_params_;
   std::string last_sent_data_;
   bool auto_bandwidth_;
+  bool send_blocked_;
   int max_bps_;
 };
 

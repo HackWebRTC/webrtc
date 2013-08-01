@@ -34,7 +34,6 @@
 #include "talk/base/common.h"
 #include "talk/base/gunit.h"
 #include "talk/base/helpers.h"
-#include "talk/base/host.h"
 #include "talk/base/logging.h"
 #include "talk/base/natserver.h"
 #include "talk/base/natsocketfactory.h"

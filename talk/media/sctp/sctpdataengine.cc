@@ -270,7 +270,8 @@ bool SctpDataMediaChannel::OpenSctpSocket() {
   // Subscribe to SCTP event notifications.
   int event_types[] = {SCTP_ASSOC_CHANGE,
                        SCTP_PEER_ADDR_CHANGE,
-                       SCTP_SEND_FAILED_EVENT};
+                       SCTP_SEND_FAILED_EVENT,
+                       SCTP_SENDER_DRY_EVENT};
   struct sctp_event event = {0};
   event.se_assoc_id = SCTP_ALL_ASSOC;
   event.se_on = 1;
@@ -479,11 +480,14 @@ bool SctpDataMediaChannel::SendData(
                               static_cast<socklen_t>(sizeof(sndinfo)),
                               SCTP_SENDV_SNDINFO, 0);
   if (res < 0) {
-    LOG_ERRNO(LS_ERROR) << "ERROR:" << debug_name_
-                        << "SendData->(...): "
-                        << " usrsctp_sendv: ";
-    // TODO(pthatcher): Make result SDR_BLOCK if the error is because
-    // it would block.
+    if (errno == EWOULDBLOCK) {
+      *result = SDR_BLOCK;
+      LOG(LS_INFO) << debug_name_ << "->SendData(...): EWOULDBLOCK returned";
+    } else {
+      LOG_ERRNO(LS_ERROR) << "ERROR:" << debug_name_
+                          << "->SendData(...): "
+                          << " usrsctp_sendv: ";
+    }
     return false;
   }
   if (result) {
@@ -562,8 +566,7 @@ void SctpDataMediaChannel::OnDataFromSctpToChannel(
   }
 }
 
-void SctpDataMediaChannel::OnNotificationFromSctp(
-    talk_base::Buffer* buffer) {
+void SctpDataMediaChannel::OnNotificationFromSctp(talk_base::Buffer* buffer) {
   const sctp_notification& notification =
       reinterpret_cast<const sctp_notification&>(*buffer->data());
   ASSERT(notification.sn_header.sn_length == buffer->length());
@@ -591,6 +594,7 @@ void SctpDataMediaChannel::OnNotificationFromSctp(
       break;
     case SCTP_SENDER_DRY_EVENT:
       LOG(LS_INFO) << "SCTP_SENDER_DRY_EVENT";
+      SignalReadyToSend(true);
       break;
     // TODO(ldixon): Unblock after congestion.
     case SCTP_NOTIFICATIONS_STOPPED_EVENT:

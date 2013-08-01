@@ -145,12 +145,19 @@ int VideoCapturerState::DecCaptureStartRef() {
 }
 
 CaptureManager::~CaptureManager() {
-  while (!capture_states_.empty()) {
-    // There may have been multiple calls to StartVideoCapture which means that
-    // an equal number of calls to StopVideoCapture must be made. Note that
-    // StopVideoCapture will remove the element from |capture_states_| when a
-    // successfull stop has been made.
-    UnregisterVideoCapturer(capture_states_.begin()->second);
+  // Since we don't own any of the capturers, all capturers should have been
+  // cleaned up before we get here. In fact, in the normal shutdown sequence,
+  // all capturers *will* be shut down by now, so trying to stop them here
+  // will crash. If we're still tracking any, it's a dangling pointer.
+  if (!capture_states_.empty()) {
+    ASSERT(false &&
+           "CaptureManager destructing while still tracking capturers!");
+    // Delete remaining VideoCapturerStates, but don't touch the capturers.
+    do {
+      CaptureStates::iterator it = capture_states_.begin();
+      delete it->second;
+      capture_states_.erase(it);
+    } while (!capture_states_.empty());
   }
 }
 

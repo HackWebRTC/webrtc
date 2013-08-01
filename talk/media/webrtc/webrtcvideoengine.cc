@@ -429,7 +429,7 @@ class WebRtcVideoChannelRecvInfo  {
   DecoderMap registered_decoders_;
 };
 
-class WebRtcVideoChannelSendInfo  {
+class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
  public:
   typedef std::map<int, webrtc::VideoEncoder*> EncoderMap;  // key: payload type
   WebRtcVideoChannelSendInfo(int channel_id, int capture_id,
@@ -445,9 +445,7 @@ class WebRtcVideoChannelSendInfo  {
         capturer_updated_(false),
         interval_(0),
         video_adapter_(new CoordinatedVideoAdapter) {
-    // TODO(asapersson):
-    // video_adapter_->SignalCpuAdaptationUnable.connect(
-    //     this, &WebRtcVideoChannelSendInfo::OnCpuAdaptationUnable);
+    SignalCpuAdaptationUnable.repeat(video_adapter_->SignalCpuAdaptationUnable);
     if (cpu_monitor) {
       cpu_monitor->SignalUpdate.connect(
           video_adapter_.get(), &CoordinatedVideoAdapter::OnCpuLoadUpdated);
@@ -584,6 +582,8 @@ class WebRtcVideoChannelSendInfo  {
   void ClearRegisteredEncoders() {
     registered_encoders_.clear();
   }
+
+  sigslot::repeater0<> SignalCpuAdaptationUnable;
 
  private:
   int channel_id_;
@@ -2931,6 +2931,8 @@ bool WebRtcVideoMediaChannel::ConfigureSending(int channel_id,
                                      external_capture,
                                      engine()->cpu_monitor()));
   send_channel->ApplyCpuOptions(options_);
+  send_channel->SignalCpuAdaptationUnable.connect(this,
+      &WebRtcVideoMediaChannel::OnCpuAdaptationUnable);
 
   // Register encoder observer for outgoing framerate and bitrate.
   if (engine()->vie()->codec()->RegisterEncoderObserver(
@@ -3402,6 +3404,12 @@ void WebRtcVideoMediaChannel::FlushBlackFrame(uint32 ssrc, int64 timestamp) {
       LOG(LS_ERROR) << "Failed to send black frame.";
     }
   }
+}
+
+void WebRtcVideoMediaChannel::OnCpuAdaptationUnable() {
+  // ssrc is hardcoded to 0.  This message is based on a system wide issue,
+  // so finding which ssrc caused it doesn't matter.
+  SignalMediaError(0, VideoMediaChannel::ERROR_REC_CPU_MAX_CANT_DOWNGRADE);
 }
 
 void WebRtcVideoMediaChannel::SetNetworkTransmissionState(

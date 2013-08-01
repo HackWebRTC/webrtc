@@ -180,6 +180,10 @@ TEST_F(CaptureManagerTest, KeepFirstResolutionLow) {
   EXPECT_TRUE(video_capturer_.CaptureFrame());
   EXPECT_EQ(1, NumFramesRendered());
   EXPECT_TRUE(WasRenderedResolution(format_qvga_));
+  EXPECT_TRUE(capture_manager_.StopVideoCapture(&video_capturer_,
+                                                format_qvga_));
+  EXPECT_TRUE(capture_manager_.StopVideoCapture(&video_capturer_,
+                                                format_vga_));
 }
 
 // Ensure that the reference counting is working when multiple start and
@@ -230,6 +234,8 @@ TEST_F(CaptureManagerTest, TestForceRestart) {
   EXPECT_TRUE(video_capturer_.CaptureFrame());
   EXPECT_EQ(2, NumFramesRendered());
   EXPECT_TRUE(WasRenderedResolution(format_vga_));
+  EXPECT_TRUE(capture_manager_.StopVideoCapture(&video_capturer_,
+                                                format_vga_));
 }
 
 TEST_F(CaptureManagerTest, TestRequestRestart) {
@@ -248,4 +254,6 @@ TEST_F(CaptureManagerTest, TestRequestRestart) {
   EXPECT_TRUE(video_capturer_.CaptureFrame());
   EXPECT_EQ(2, NumFramesRendered());
   EXPECT_TRUE(WasRenderedResolution(format_vga_));
+  EXPECT_TRUE(capture_manager_.StopVideoCapture(&video_capturer_,
+                                                format_qvga_));
 }

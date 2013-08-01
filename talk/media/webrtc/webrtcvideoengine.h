@@ -396,6 +396,9 @@ class WebRtcVideoMediaChannel : public talk_base::MessageHandler,
                           const std::vector<RtpHeaderExtension>& extensions,
                           const char header_extension_uri[]);
 
+  // Signal when cpu adaptation has no further scope to adapt.
+  void OnCpuAdaptationUnable();
+
   // Global state.
   WebRtcVideoEngine* engine_;
   VoiceMediaChannel* voice_channel_;

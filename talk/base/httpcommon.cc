@@ -528,11 +528,14 @@ HttpRequestData::formatLeader(char* buffer, size_t size) const {
 
 HttpError
 HttpRequestData::parseLeader(const char* line, size_t len) {
-  UNUSED(len);
   unsigned int vmajor, vminor;
   int vend, dstart, dend;
-  if ((sscanf(line, "%*s%n %n%*s%n HTTP/%u.%u", &vend, &dstart, &dend,
-              &vmajor, &vminor) != 2)
+  // sscanf isn't safe with strings that aren't null-terminated, and there is
+  // no guarantee that |line| is. Create a local copy that is null-terminated.
+  std::string line_str(line, len);
+  line = line_str.c_str();
+  if ((sscanf(line, "%*s%n %n%*s%n HTTP/%u.%u",
+              &vend, &dstart, &dend, &vmajor, &vminor) != 2)
       || (vmajor != 1)) {
     return HE_PROTOCOL;
   }
@@ -649,6 +652,10 @@ HttpResponseData::parseLeader(const char* line, size_t len) {
   size_t pos = 0;
   unsigned int vmajor, vminor, temp_scode;
   int temp_pos;
+  // sscanf isn't safe with strings that aren't null-terminated, and there is
+  // no guarantee that |line| is. Create a local copy that is null-terminated.
+  std::string line_str(line, len);
+  line = line_str.c_str();
   if (sscanf(line, "HTTP %u%n",
              &temp_scode, &temp_pos) == 1) {
     // This server's response has no version. :( NOTE: This happens for every

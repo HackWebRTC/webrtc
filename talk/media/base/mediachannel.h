@@ -957,6 +957,9 @@ class DataMediaChannel : public MediaChannel {
   // Signal errors from MediaChannel.  Arguments are:
   //     ssrc(uint32), and error(DataMediaChannel::Error).
   sigslot::signal2<uint32, DataMediaChannel::Error> SignalMediaError;
+  // Signal when the media channel is ready to send the stream. Arguments are:
+  //     writable(bool)
+  sigslot::signal1<bool> SignalReadyToSend;
 };
 
 }  // namespace cricket

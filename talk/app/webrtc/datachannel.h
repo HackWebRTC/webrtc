@@ -109,8 +109,13 @@ class DataChannel : public DataChannelInterface,
   void ConnectToDataSession();
   void DisconnectFromDataSession();
   bool IsConnectedToDataSession() { return data_session_ != NULL; }
-  void DeliverQueuedData();
-  void ClearQueuedData();
+  void DeliverQueuedReceivedData();
+  void ClearQueuedReceivedData();
+  void SendQueuedSendData();
+  void ClearQueuedSendData();
+  bool InternalSendWithoutQueueing(const DataBuffer& buffer,
+                                   cricket::SendDataResult* send_result);
+  bool QueueSendData(const DataBuffer& buffer);
 
   std::string label_;
   DataChannelInit config_;
@@ -123,7 +128,8 @@ class DataChannel : public DataChannelInterface,
   uint32 send_ssrc_;
   bool receive_ssrc_set_;
   uint32 receive_ssrc_;
-  std::queue<DataBuffer*> queued_data_;
+  std::queue<DataBuffer*> queued_received_data_;
+  std::deque<DataBuffer*> queued_send_data_;
 };
 
 class DataChannelFactory {

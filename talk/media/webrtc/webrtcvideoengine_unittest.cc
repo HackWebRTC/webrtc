@@ -86,7 +86,9 @@ class FakeViEWrapper : public cricket::ViEWrapper {
 
 // Test fixture to test WebRtcVideoEngine with a fake webrtc::VideoEngine.
 // Useful for testing failure paths.
-class WebRtcVideoEngineTestFake : public testing::Test {
+class WebRtcVideoEngineTestFake :
+  public testing::Test,
+  public sigslot::has_slots<> {
  public:
   WebRtcVideoEngineTestFake()
       : vie_(kVideoCodecs, ARRAY_SIZE(kVideoCodecs)),
@@ -95,15 +97,21 @@ class WebRtcVideoEngineTestFake : public testing::Test {
         engine_(NULL,  // cricket::WebRtcVoiceEngine
                 new FakeViEWrapper(&vie_), cpu_monitor_),
         channel_(NULL),
-        voice_channel_(NULL) {
+        voice_channel_(NULL),
+        last_error_(cricket::VideoMediaChannel::ERROR_NONE) {
   }
   bool SetupEngine() {
     bool result = engine_.Init(talk_base::Thread::Current());
     if (result) {
       channel_ = engine_.CreateChannel(voice_channel_);
+      channel_->SignalMediaError.connect(this,
+          &WebRtcVideoEngineTestFake::OnMediaError);
       result = (channel_ != NULL);
     }
     return result;
+  }
+  void OnMediaError(uint32 ssrc, cricket::VideoMediaChannel::Error error) {
+    last_error_ = error;
   }
   bool SendI420Frame(int width, int height) {
     if (NULL == channel_) {
@@ -185,6 +193,7 @@ class WebRtcVideoEngineTestFake : public testing::Test {
   cricket::WebRtcVideoEngine engine_;
   cricket::WebRtcVideoMediaChannel* channel_;
   cricket::WebRtcVoiceMediaChannel* voice_channel_;
+  cricket::VideoMediaChannel::Error last_error_;
 };
 
 // Test fixtures to test WebRtcVideoEngine with a real webrtc::VideoEngine.

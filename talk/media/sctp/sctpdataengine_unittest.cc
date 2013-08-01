@@ -137,11 +137,65 @@ class SctpFakeDataReceiver : public sigslot::has_slots<> {
   cricket::ReceiveDataParams last_params_;
 };
 
+class SignalReadyToSendObserver : public sigslot::has_slots<> {
+ public:
+  SignalReadyToSendObserver() : signaled_(false), writable_(false) {}
+
+  void OnSignaled(bool writable) {
+    signaled_ = true;
+    writable_ = writable;
+  }
+
+  bool IsSignaled(bool writable) {
+    return signaled_ && (writable_ == writable);
+  }
+
+ private:
+  bool signaled_;
+  bool writable_;
+};
+
 // SCTP Data Engine testing framework.
 class SctpDataMediaChannelTest : public testing::Test {
  protected:
   virtual void SetUp() {
     engine_.reset(new cricket::SctpDataEngine());
+  }
+
+  void SetupConnectedChannels() {
+    net1_.reset(new SctpFakeNetworkInterface(talk_base::Thread::Current()));
+    net2_.reset(new SctpFakeNetworkInterface(talk_base::Thread::Current()));
+    recv1_.reset(new SctpFakeDataReceiver());
+    recv2_.reset(new SctpFakeDataReceiver());
+    chan1_.reset(CreateChannel(net1_.get(), recv1_.get()));
+    chan1_->set_debug_name("chan1/connector");
+    chan2_.reset(CreateChannel(net2_.get(), recv2_.get()));
+    chan2_->set_debug_name("chan2/listener");
+    // Setup two connected channels ready to send and receive.
+    net1_->SetDestination(chan2_.get());
+    net2_->SetDestination(chan1_.get());
+
+    LOG(LS_VERBOSE) << "Channel setup ----------------------------- ";
+    chan1_->AddSendStream(cricket::StreamParams::CreateLegacy(1));
+    chan2_->AddRecvStream(cricket::StreamParams::CreateLegacy(1));
+
+    chan2_->AddSendStream(cricket::StreamParams::CreateLegacy(2));
+    chan1_->AddRecvStream(cricket::StreamParams::CreateLegacy(2));
+
+    LOG(LS_VERBOSE) << "Connect the channels -----------------------------";
+    // chan1 wants to setup a data connection.
+    chan1_->SetReceive(true);
+    // chan1 will have sent chan2 a request to setup a data connection. After
+    // chan2 accepts the offer, chan2 connects to chan1 with the following.
+    chan2_->SetReceive(true);
+    chan2_->SetSend(true);
+    // Makes sure that network packets are delivered and simulates a
+    // deterministic and realistic small timing delay between the SetSend calls.
+    ProcessMessagesUntilIdle();
+
+    // chan1 and chan2 are now connected so chan1 enables sending to complete
+    // the creation of the connection.
+    chan1_->SetSend(true);
   }
 
   cricket::SctpDataMediaChannel* CreateChannel(
@@ -182,79 +236,78 @@ class SctpDataMediaChannelTest : public testing::Test {
     return !thread->IsQuitting();
   }
 
+  cricket::SctpDataMediaChannel* channel1() { return chan1_.get(); }
+  cricket::SctpDataMediaChannel* channel2() { return chan2_.get(); }
+  SctpFakeDataReceiver* receiver1() { return recv1_.get(); }
+  SctpFakeDataReceiver* receiver2() { return recv2_.get(); }
+
  private:
   talk_base::scoped_ptr<cricket::SctpDataEngine> engine_;
+  talk_base::scoped_ptr<SctpFakeNetworkInterface> net1_;
+  talk_base::scoped_ptr<SctpFakeNetworkInterface> net2_;
+  talk_base::scoped_ptr<SctpFakeDataReceiver> recv1_;
+  talk_base::scoped_ptr<SctpFakeDataReceiver> recv2_;
+  talk_base::scoped_ptr<cricket::SctpDataMediaChannel> chan1_;
+  talk_base::scoped_ptr<cricket::SctpDataMediaChannel> chan2_;
 };
 
+// Verifies that SignalReadyToSend is fired.
+TEST_F(SctpDataMediaChannelTest, SignalReadyToSend) {
+  SetupConnectedChannels();
+
+  SignalReadyToSendObserver signal_observer_1;
+  SignalReadyToSendObserver signal_observer_2;
+
+  channel1()->SignalReadyToSend.connect(&signal_observer_1,
+                                        &SignalReadyToSendObserver::OnSignaled);
+  channel2()->SignalReadyToSend.connect(&signal_observer_2,
+                                        &SignalReadyToSendObserver::OnSignaled);
+
+  cricket::SendDataResult result;
+  ASSERT_TRUE(SendData(channel1(), 1, "hello?", &result));
+  EXPECT_EQ(cricket::SDR_SUCCESS, result);
+  EXPECT_TRUE_WAIT(ReceivedData(receiver2(), 1, "hello?"), 1000);
+  ASSERT_TRUE(SendData(channel2(), 2, "hi chan1", &result));
+  EXPECT_EQ(cricket::SDR_SUCCESS, result);
+  EXPECT_TRUE_WAIT(ReceivedData(receiver1(), 2, "hi chan1"), 1000);
+
+  EXPECT_TRUE_WAIT(signal_observer_1.IsSignaled(true), 1000);
+  EXPECT_TRUE_WAIT(signal_observer_2.IsSignaled(true), 1000);
+}
+
 TEST_F(SctpDataMediaChannelTest, SendData) {
-  talk_base::scoped_ptr<SctpFakeNetworkInterface> net1(
-      new SctpFakeNetworkInterface(talk_base::Thread::Current()));
-  talk_base::scoped_ptr<SctpFakeNetworkInterface> net2(
-      new SctpFakeNetworkInterface(talk_base::Thread::Current()));
-  talk_base::scoped_ptr<SctpFakeDataReceiver> recv1(
-      new SctpFakeDataReceiver());
-  talk_base::scoped_ptr<SctpFakeDataReceiver> recv2(
-      new SctpFakeDataReceiver());
-  talk_base::scoped_ptr<cricket::SctpDataMediaChannel> chan1(
-      CreateChannel(net1.get(), recv1.get()));
-  chan1->set_debug_name("chan1/connector");
-  talk_base::scoped_ptr<cricket::SctpDataMediaChannel> chan2(
-      CreateChannel(net2.get(), recv2.get()));
-  chan2->set_debug_name("chan2/listener");
-
-  net1->SetDestination(chan2.get());
-  net2->SetDestination(chan1.get());
-
-  LOG(LS_VERBOSE) << "Channel setup ----------------------------- ";
-  chan1->AddSendStream(cricket::StreamParams::CreateLegacy(1));
-  chan2->AddRecvStream(cricket::StreamParams::CreateLegacy(1));
-
-  chan2->AddSendStream(cricket::StreamParams::CreateLegacy(2));
-  chan1->AddRecvStream(cricket::StreamParams::CreateLegacy(2));
-
-  LOG(LS_VERBOSE) << "Connect the channels -----------------------------";
-  // chan1 wants to setup a data connection.
-  chan1->SetReceive(true);
-  // chan1 will have sent chan2 a request to setup a data connection. After
-  // chan2 accepts the offer, chan2 connects to chan1 with the following.
-  chan2->SetReceive(true);
-  chan2->SetSend(true);
-  // Makes sure that network packets are delivered and simulates a
-  // deterministic and realistic small timing delay between the SetSend calls.
-  ProcessMessagesUntilIdle();
-
-  // chan1 and chan2 are now connected so chan1 enables sending to complete
-  // the creation of the connection.
-  chan1->SetSend(true);
+  SetupConnectedChannels();
 
   cricket::SendDataResult result;
   LOG(LS_VERBOSE) << "chan1 sending: 'hello?' -----------------------------";
-  ASSERT_TRUE(SendData(chan1.get(), 1, "hello?", &result));
+  ASSERT_TRUE(SendData(channel1(), 1, "hello?", &result));
   EXPECT_EQ(cricket::SDR_SUCCESS, result);
-  EXPECT_TRUE_WAIT(ReceivedData(recv2.get(), 1, "hello?"), 1000);
-  LOG(LS_VERBOSE) << "recv2.received=" << recv2->received()
-                  << "recv2.last_params.ssrc=" << recv2->last_params().ssrc
+  EXPECT_TRUE_WAIT(ReceivedData(receiver2(), 1, "hello?"), 1000);
+  LOG(LS_VERBOSE) << "recv2.received=" << receiver2()->received()
+                  << "recv2.last_params.ssrc="
+                  << receiver2()->last_params().ssrc
                   << "recv2.last_params.timestamp="
-                  << recv2->last_params().ssrc
+                  << receiver2()->last_params().ssrc
                   << "recv2.last_params.seq_num="
-                  << recv2->last_params().seq_num
-                  << "recv2.last_data=" << recv2->last_data();
+                  << receiver2()->last_params().seq_num
+                  << "recv2.last_data=" << receiver2()->last_data();
 
   LOG(LS_VERBOSE) << "chan2 sending: 'hi chan1' -----------------------------";
-  ASSERT_TRUE(SendData(chan2.get(), 2, "hi chan1", &result));
+  ASSERT_TRUE(SendData(channel2(), 2, "hi chan1", &result));
   EXPECT_EQ(cricket::SDR_SUCCESS, result);
-  EXPECT_TRUE_WAIT(ReceivedData(recv1.get(), 2, "hi chan1"), 1000);
-  LOG(LS_VERBOSE) << "recv1.received=" << recv1->received()
-                  << "recv1.last_params.ssrc=" << recv1->last_params().ssrc
+  EXPECT_TRUE_WAIT(ReceivedData(receiver1(), 2, "hi chan1"), 1000);
+  LOG(LS_VERBOSE) << "recv1.received=" << receiver1()->received()
+                  << "recv1.last_params.ssrc="
+                  << receiver1()->last_params().ssrc
                   << "recv1.last_params.timestamp="
-                  << recv1->last_params().ssrc
+                  << receiver1()->last_params().ssrc
                   << "recv1.last_params.seq_num="
-                  << recv1->last_params().seq_num
-                  << "recv1.last_data=" << recv1->last_data();
+                  << receiver1()->last_params().seq_num
+                  << "recv1.last_data=" << receiver1()->last_data();
 
   LOG(LS_VERBOSE) << "Closing down. -----------------------------";
   // Disconnects and closes socket, including setting receiving to false.
-  chan1->SetSend(false);
-  chan2->SetSend(false);
+  channel1()->SetSend(false);
+  channel2()->SetSend(false);
   LOG(LS_VERBOSE) << "Cleaning up. -----------------------------";
 }

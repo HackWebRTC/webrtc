@@ -121,7 +121,6 @@
         'base/filelock_unittest.cc',
         'base/fileutils_unittest.cc',
         'base/helpers_unittest.cc',
-        'base/host_unittest.cc',
         'base/httpbase_unittest.cc',
         'base/httpcommon_unittest.cc',
         'base/httpserver_unittest.cc',
@@ -376,6 +375,7 @@
       ],
       # TODO(ronghuawu): Reenable below unit tests that require gmock.
       'sources': [
+        'app/webrtc/datachannel_unittest.cc',
         'app/webrtc/dtmfsender_unittest.cc',
         'app/webrtc/jsepsessiondescription_unittest.cc',
         'app/webrtc/localaudiosource_unittest.cc',

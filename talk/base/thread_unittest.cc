@@ -28,7 +28,6 @@
 #include "talk/base/asyncudpsocket.h"
 #include "talk/base/event.h"
 #include "talk/base/gunit.h"
-#include "talk/base/host.h"
 #include "talk/base/physicalsocketserver.h"
 #include "talk/base/socketaddress.h"
 #include "talk/base/thread.h"

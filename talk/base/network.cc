@@ -53,7 +53,6 @@
 #include <algorithm>
 #include <cstdio>
 
-#include "talk/base/host.h"
 #include "talk/base/logging.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/socket.h"  // includes something that makes windows happy
@@ -174,8 +173,7 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
 }
 
 BasicNetworkManager::BasicNetworkManager()
-    : thread_(NULL),
-      start_count_(0) {
+    : thread_(NULL), sent_first_update_(false), start_count_(0) {
 }
 
 BasicNetworkManager::~BasicNetworkManager() {

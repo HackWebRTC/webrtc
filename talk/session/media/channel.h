@@ -595,9 +595,9 @@ class DataChannel : public BaseChannel {
     return static_cast<DataMediaChannel*>(BaseChannel::media_channel());
   }
 
-  bool SendData(const SendDataParams& params,
-                const talk_base::Buffer& payload,
-                SendDataResult* result);
+  virtual bool SendData(const SendDataParams& params,
+                        const talk_base::Buffer& payload,
+                        SendDataResult* result);
 
   void StartMediaMonitor(int cms);
   void StopMediaMonitor();
@@ -612,9 +612,8 @@ class DataChannel : public BaseChannel {
                    const talk_base::Buffer&>
       SignalDataReceived;
   // Signal for notifying when the channel becomes ready to send data.
-  // That occurs when the channel is enabled, the transport is writable and
-  // both local and remote descriptions are set.
-  // TODO(perkj): Signal this per SSRC stream.
+  // That occurs when the channel is enabled, the transport is writable,
+  // both local and remote descriptions are set, and the channel is unblocked.
   sigslot::signal1<bool> SignalReadyToSendData;
 
  private:
@@ -647,6 +646,8 @@ class DataChannel : public BaseChannel {
     const talk_base::Buffer payload;
   };
 
+  typedef talk_base::TypedMessageData<bool> DataChannelReadyToSendMessageData;
+
   // overrides from BaseChannel
   virtual const ContentInfo* GetFirstContent(const SessionDescription* sdesc);
   // If data_channel_type_ is DCT_NONE, set it.  Otherwise, check that
@@ -674,6 +675,7 @@ class DataChannel : public BaseChannel {
   void OnDataReceived(
       const ReceiveDataParams& params, const char* data, size_t len);
   void OnDataChannelError(uint32 ssrc, DataMediaChannel::Error error);
+  void OnDataChannelReadyToSend(bool writable);
   void OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode, SrtpFilter::Error error);
 
   talk_base::scoped_ptr<DataMediaMonitor> media_monitor_;
