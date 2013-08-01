@@ -49,12 +49,13 @@ class SctpDataChannelTest : public testing::Test {
                                         new cricket::FakeDeviceManager(),
                                         new cricket::CaptureManager(),
                                         talk_base::Thread::Current())),
+        ms_signaling_(new webrtc::MediaStreamSignaling(
+                          talk_base::Thread::Current(), NULL)),
         session_(channel_manager_.get(),
                  talk_base::Thread::Current(),
                  talk_base::Thread::Current(),
                  NULL,
-                 new webrtc::MediaStreamSignaling(talk_base::Thread::Current(),
-                                                  NULL)),
+                 ms_signaling_.get()),
         webrtc_data_channel_(NULL) {}
 
   virtual void SetUp() {
@@ -90,6 +91,7 @@ class SctpDataChannelTest : public testing::Test {
   cricket::FakeMediaEngine* media_engine_;
   cricket::FakeDataEngine* data_engine_;
   talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
+  talk_base::scoped_ptr<webrtc::MediaStreamSignaling> ms_signaling_;
   webrtc::WebRtcSession session_;
   talk_base::scoped_refptr<webrtc::DataChannel> webrtc_data_channel_;
 };

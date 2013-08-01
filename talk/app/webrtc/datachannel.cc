@@ -336,9 +336,9 @@ void DataChannel::SendQueuedSendData() {
 }
 
 void DataChannel::ClearQueuedSendData() {
-  while (!queued_received_data_.empty()) {
-    DataBuffer* buffer = queued_received_data_.front();
-    queued_received_data_.pop();
+  while (!queued_send_data_.empty()) {
+    DataBuffer* buffer = queued_send_data_.front();
+    queued_send_data_.pop_front();
     delete buffer;
   }
 }
