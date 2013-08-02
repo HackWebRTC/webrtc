@@ -1043,3 +1043,11 @@
   fun:talk_base::Thread::Run
   fun:talk_base::Thread::PreRun
 }
+{
+  bug_2080_35
+  ThreadSanitizer:Race
+  fun:std::vector::size
+  fun:talk_base::TestClient::NextPacket
+  fun:talk_base::TestClient::CheckNextPacket
+  ...
+}
