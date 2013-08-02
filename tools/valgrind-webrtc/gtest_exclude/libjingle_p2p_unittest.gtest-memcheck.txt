@@ -1,10 +1,4 @@
-# Fails when run under memcheck
-# https://code.google.com/p/webrtc/issues/detail?id=1972
-P2PTransportChannelTest.TestBLOCK_UDPToOPENAsIce
-P2PTransportChannelTest.TestOPENToBLOCK_UDPAsIce
-P2PTransportChannelTest.TestOPENToNAT_FULL_CONEAsGiceNoneSharedUfrag
-P2PTransportChannelTest.TestOPENToNAT_FULL_CONEAsGiceP0SharedUfrag
-P2PTransportChannelTest.TestOPENToNAT_FULL_CONEAsGiceP1SharedUfrag
-P2PTransportChannelTest.TestOPENToNAT_PORT_RESTRICTEDAsIce
+# TODO(wu): Reenable P2PTransportChannelTest after issue 2158 is resolved.
+P2PTransportChannelTest.*
 PortTest.TestSendStunMessageAsIce
 

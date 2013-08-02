@@ -1,2 +1,3 @@
-P2PTransportChannelTest.TestOPENToNAT_FULL_CONEAsGiceNoneSharedUfrag
+# TODO(wu): Reenable P2PTransportChannelTest after issue 2158 is resolved.
+P2PTransportChannelTest.*
 PortTest.TestSendStunMessageAsIce
