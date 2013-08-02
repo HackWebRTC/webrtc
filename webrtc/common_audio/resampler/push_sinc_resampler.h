@@ -37,7 +37,7 @@ class PushSincResampler : public SincResamplerCallback {
                int16_t* destination, int destination_capacity);
 
   // Implements SincResamplerCallback.
-  virtual void Run(int frames, float* destination);
+  virtual void Run(int frames, float* destination) OVERRIDE;
 
   SincResampler* get_resampler_for_testing() { return resampler_.get(); }
 
