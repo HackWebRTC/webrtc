@@ -216,6 +216,12 @@ class NetEq {
   // Flushes both the packet buffer and the sync buffer.
   virtual void FlushBuffers() = 0;
 
+  // Current usage of packet-buffer and it's limits.
+  virtual void PacketBufferStatistics(int* current_num_packets,
+                                      int* max_num_packets,
+                                      int* current_memory_size_bytes,
+                                      int* max_memory_size_bytes) const = 0;
+
  protected:
   NetEq() {}
 

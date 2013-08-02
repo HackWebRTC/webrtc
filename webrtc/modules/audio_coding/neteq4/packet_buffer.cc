@@ -275,4 +275,14 @@ void PacketBuffer::DeleteAllPackets(PacketList* packet_list) {
   }
 }
 
+void PacketBuffer::BufferStat(int* num_packest,
+                              int* max_num_packets,
+                              int* current_memory_bytes,
+                              int* max_memory_bytes) const {
+  *num_packest = buffer_.size();
+  *max_num_packets = max_number_of_packets_;
+  *current_memory_bytes = current_memory_bytes_;
+  *max_memory_bytes = max_memory_bytes_;
+}
+
 }  // namespace webrtc

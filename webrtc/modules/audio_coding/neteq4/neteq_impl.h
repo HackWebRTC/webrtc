@@ -164,6 +164,11 @@ class NetEqImpl : public webrtc::NetEq {
   // Flushes both the packet buffer and the sync buffer.
   virtual void FlushBuffers();
 
+  virtual void PacketBufferStatistics(int* current_num_packets,
+                                      int* max_num_packets,
+                                      int* current_memory_size_bytes,
+                                      int* max_memory_size_bytes) const;
+
  private:
   static const int kOutputSizeMs = 10;
   static const int kMaxFrameSize = 2880;  // 60 ms @ 48 kHz.

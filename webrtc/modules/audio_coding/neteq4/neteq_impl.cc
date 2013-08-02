@@ -587,7 +587,6 @@ int NetEqImpl::GetAudioInternal(size_t max_length, int16_t* output,
   int decode_return_value = Decode(&packet_list, &operation,
                                    &length, &speech_type);
 
-
   assert(vad_.get());
   bool sid_frame_available =
       (operation == kRfc3389Cng && !packet_list.empty());
@@ -1633,7 +1632,7 @@ int NetEqImpl::ExtractPackets(int required_samples, PacketList* packet_list) {
   if (!header) {
     return -1;
   }
-  int32_t first_timestamp = header->timestamp;
+  uint32_t first_timestamp = header->timestamp;
   int extracted_samples = 0;
 
   // Packet extraction loop.
@@ -1789,6 +1788,14 @@ NetEqOutputType NetEqImpl::LastOutputType() {
   } else {
     return kOutputNormal;
   }
+}
+
+void NetEqImpl::PacketBufferStatistics(int* current_num_packets,
+                                       int* max_num_packets,
+                                       int* current_memory_size_bytes,
+                                       int* max_memory_size_bytes) const {
+  packet_buffer_->BufferStat(current_num_packets, max_num_packets,
+                             current_memory_size_bytes, max_memory_size_bytes);
 }
 
 }  // namespace webrtc
