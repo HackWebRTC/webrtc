@@ -10,7 +10,52 @@
 {
   'targets': [
     {
+      'target_name': 'audio_decoder_unittests_apk',
+      'type': 'none',
+    },
+    {
+      'target_name': 'common_audio_unittests_apk',
+      'type': 'none',
+    },
+    {
+      'target_name': 'common_video_unittests_apk',
+      'type': 'none',
+    },
+    {
+      'target_name': 'metrics_unittests',
+      'type': 'none',
+    },
+    {
+      'target_name': 'modules_integrationtests_apk',
+      'type': 'none',
+    },
+    {
       'target_name': 'modules_unittests_apk',
       'type': 'none',
-    }],
+    },
+    {
+      'target_name': 'neteq_unittests_apk',
+      'type': 'none',
+    },
+    {
+      'target_name': 'system_wrappers_unittests_apk',
+      'type': 'none',
+    },
+    {
+      'target_name': 'test_support_unittests_apk',
+      'type': 'none',
+    },
+    {
+      'target_name': 'tools_unittests_apk',
+      'type': 'none',
+    },
+    {
+      'target_name': 'video_engine_core_unittests_apk',
+      'type': 'none',
+    },
+    {
+      'target_name': 'voice_engine_unittests_apk',
+      'type': 'none',
+    },
+  ],
 }

@@ -15,6 +15,7 @@
 #include <string>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 #ifdef WIN32
 #define chdir _chdir
@@ -110,7 +111,7 @@ TEST_F(FileUtilsTest, OutputPathFromUnchangedWorkingDir) {
 
 // Tests with current working directory set to a directory higher up in the
 // directory tree than the project root dir.
-TEST_F(FileUtilsTest, OutputPathFromRootWorkingDir) {
+TEST_F(FileUtilsTest, DISABLED_ON_ANDROID(OutputPathFromRootWorkingDir)) {
   ASSERT_EQ(0, chdir(kPathDelimiter));
   ASSERT_EQ("./", webrtc::test::OutputPath());
 }

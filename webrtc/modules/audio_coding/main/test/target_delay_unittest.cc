@@ -14,6 +14,7 @@
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 class TargetDelayTest : public ::testing::Test {
@@ -107,12 +108,12 @@ class TargetDelayTest : public ::testing::Test {
   WebRtcRTPHeader rtp_info_;
 };
 
-TEST_F(TargetDelayTest, OutOfRangeInput) {
+TEST_F(TargetDelayTest, DISABLED_ON_ANDROID(OutOfRangeInput)) {
   EXPECT_EQ(-1, SetMinimumDelay(-1));
   EXPECT_EQ(-1, SetMinimumDelay(10001));
 }
 
-TEST_F(TargetDelayTest, NoTargetDelayBufferSizeChanges) {
+TEST_F(TargetDelayTest, DISABLED_ON_ANDROID(NoTargetDelayBufferSizeChanges)) {
   for (int n = 0; n < 30; ++n)  // Run enough iterations.
     Run(true);
   int clean_optimal_delay = GetCurrentOptimalDelayMs();
@@ -124,7 +125,7 @@ TEST_F(TargetDelayTest, NoTargetDelayBufferSizeChanges) {
   EXPECT_NEAR(required_delay, jittery_optimal_delay, 1);
 }
 
-TEST_F(TargetDelayTest, WithTargetDelayBufferNotChanging) {
+TEST_F(TargetDelayTest, DISABLED_ON_ANDROID(WithTargetDelayBufferNotChanging)) {
   // A target delay that is one packet larger than jitter.
   const int kTargetDelayMs = (kInterarrivalJitterPacket + 1) *
       kNum10msPerFrame * 10;
@@ -138,7 +139,7 @@ TEST_F(TargetDelayTest, WithTargetDelayBufferNotChanging) {
   EXPECT_EQ(jittery_optimal_delay, clean_optimal_delay);
 }
 
-TEST_F(TargetDelayTest, RequiredDelayAtCorrectRange) {
+TEST_F(TargetDelayTest, DISABLED_ON_ANDROID(RequiredDelayAtCorrectRange)) {
   for (int n = 0; n < 30; ++n)  // Run clean and store delay.
     Run(true);
   int clean_optimal_delay = GetCurrentOptimalDelayMs();

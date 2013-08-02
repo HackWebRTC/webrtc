@@ -144,7 +144,7 @@
     },
     {
       'target_name': 'test_support_unittests',
-      'type': 'executable',
+      'type': '<(gtest_target_type)',
       'dependencies': [
         'channel_transport',
         'test_support_main',
@@ -165,6 +165,15 @@
       # Disable warnings to enable Win64 build, issue 1323.
       'msvs_disabled_warnings': [
         4267,  # size_t to int truncation.
+      ],
+      'conditions': [
+        # TODO(henrike): remove build_with_chromium==1 when the bots are
+        # using Chromium's buildbots.
+        ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+          'dependencies': [
+            '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
+          ],
+        }],
       ],
     },
     {
@@ -187,5 +196,20 @@
         },
       ],
     },  # target buildbot_tests_scripts
+  ],
+  'conditions': [
+    # TODO(henrike): remove build_with_chromium==1 when the bots are using
+    # Chromium's buildbots.
+    ['include_tests==1 and build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+      'targets': [
+        {
+          'target_name': 'test_support_unittests_apk_target',
+          'type': 'none',
+          'dependencies': [
+            '<(apk_tests_path):test_support_unittests_apk',
+          ],
+        },
+      ],
+    }],
   ],
 }

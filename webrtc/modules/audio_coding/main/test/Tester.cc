@@ -25,6 +25,7 @@
 #include "webrtc/modules/audio_coding/main/test/TwoWayCommunication.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 using webrtc::AudioCodingModule;
 using webrtc::Trace;
@@ -136,7 +137,7 @@ TEST(AudioCodingModuleTest, TestOpus) {
   Trace::ReturnTrace();
 }
 
-TEST(AudioCodingModuleTest, RunAllTests) {
+TEST(AudioCodingModuleTest, DISABLED_ON_ANDROID(RunAllTests)) {
   std::vector<ACMTest*> tests;
   PopulateTests(&tests);
   std::vector<ACMTest*>::iterator it;

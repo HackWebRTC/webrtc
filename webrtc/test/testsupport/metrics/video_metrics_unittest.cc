@@ -12,6 +12,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
@@ -46,19 +47,22 @@ class VideoMetricsTest: public testing::Test {
 };
 
 // Tests that it is possible to run with the same reference as test file
-TEST_F(VideoMetricsTest, ReturnsPerfectResultForIdenticalFilesPSNR) {
+TEST_F(VideoMetricsTest,
+       DISABLED_ON_ANDROID(ReturnsPerfectResultForIdenticalFilesPSNR)) {
   EXPECT_EQ(0, I420PSNRFromFiles(video_file_.c_str(), video_file_.c_str(),
                                  kWidth, kHeight, &psnr_result_));
   EXPECT_EQ(kPsnrPerfectResult, psnr_result_.average);
 }
 
-TEST_F(VideoMetricsTest, ReturnsPerfectResultForIdenticalFilesSSIM) {
+TEST_F(VideoMetricsTest,
+       DISABLED_ON_ANDROID(ReturnsPerfectResultForIdenticalFilesSSIM)) {
   EXPECT_EQ(0, I420SSIMFromFiles(video_file_.c_str(), video_file_.c_str(),
                                  kWidth, kHeight, &ssim_result_));
   EXPECT_EQ(kSsimPerfectResult, ssim_result_.average);
 }
 
-TEST_F(VideoMetricsTest, ReturnsPerfectResultForIdenticalFilesBothMetrics) {
+TEST_F(VideoMetricsTest,
+       DISABLED_ON_ANDROID(ReturnsPerfectResultForIdenticalFilesBothMetrics)) {
   EXPECT_EQ(0, I420MetricsFromFiles(video_file_.c_str(), video_file_.c_str(),
                                     kWidth, kHeight, &psnr_result_,
                                     &ssim_result_));
@@ -67,19 +71,19 @@ TEST_F(VideoMetricsTest, ReturnsPerfectResultForIdenticalFilesBothMetrics) {
 }
 
 // Tests that the right return code is given when the reference file is missing.
-TEST_F(VideoMetricsTest, MissingReferenceFilePSNR) {
+TEST_F(VideoMetricsTest, DISABLED_ON_ANDROID(MissingReferenceFilePSNR)) {
   EXPECT_EQ(kMissingReferenceFileReturnCode,
             I420PSNRFromFiles(kNonExistingFileName, video_file_.c_str(),
                               kWidth, kHeight, &ssim_result_));
 }
 
-TEST_F(VideoMetricsTest, MissingReferenceFileSSIM) {
+TEST_F(VideoMetricsTest, DISABLED_ON_ANDROID(MissingReferenceFileSSIM)) {
   EXPECT_EQ(kMissingReferenceFileReturnCode,
             I420SSIMFromFiles(kNonExistingFileName, video_file_.c_str(),
                               kWidth, kHeight, &ssim_result_));
 }
 
-TEST_F(VideoMetricsTest, MissingReferenceFileBothMetrics) {
+TEST_F(VideoMetricsTest, DISABLED_ON_ANDROID(MissingReferenceFileBothMetrics)) {
   EXPECT_EQ(kMissingReferenceFileReturnCode,
             I420MetricsFromFiles(kNonExistingFileName, video_file_.c_str(),
                                  kWidth, kHeight,
@@ -87,19 +91,19 @@ TEST_F(VideoMetricsTest, MissingReferenceFileBothMetrics) {
 }
 
 // Tests that the right return code is given when the test file is missing.
-TEST_F(VideoMetricsTest, MissingTestFilePSNR) {
+TEST_F(VideoMetricsTest, DISABLED_ON_ANDROID(MissingTestFilePSNR)) {
   EXPECT_EQ(kMissingTestFileReturnCode,
             I420PSNRFromFiles(video_file_.c_str(), kNonExistingFileName,
                               kWidth, kHeight, &ssim_result_));
 }
 
-TEST_F(VideoMetricsTest, MissingTestFileSSIM) {
+TEST_F(VideoMetricsTest, DISABLED_ON_ANDROID(MissingTestFileSSIM)) {
   EXPECT_EQ(kMissingTestFileReturnCode,
             I420SSIMFromFiles(video_file_.c_str(), kNonExistingFileName,
                               kWidth, kHeight, &ssim_result_));
 }
 
-TEST_F(VideoMetricsTest, MissingTestFileBothMetrics) {
+TEST_F(VideoMetricsTest, DISABLED_ON_ANDROID(MissingTestFileBothMetrics)) {
   EXPECT_EQ(kMissingTestFileReturnCode,
             I420MetricsFromFiles(video_file_.c_str(), kNonExistingFileName,
                                  kWidth, kHeight,
@@ -107,7 +111,7 @@ TEST_F(VideoMetricsTest, MissingTestFileBothMetrics) {
 }
 
 // Tests that the method can be executed with empty files.
-TEST_F(VideoMetricsTest, EmptyFilesPSNR) {
+TEST_F(VideoMetricsTest, DISABLED_ON_ANDROID(EmptyFilesPSNR)) {
   EXPECT_EQ(kEmptyFileReturnCode,
             I420PSNRFromFiles(kEmptyFileName, video_file_.c_str(),
                               kWidth, kHeight, &ssim_result_));
@@ -116,7 +120,7 @@ TEST_F(VideoMetricsTest, EmptyFilesPSNR) {
                               kWidth, kHeight, &ssim_result_));
 }
 
-TEST_F(VideoMetricsTest, EmptyFilesSSIM) {
+TEST_F(VideoMetricsTest, DISABLED_ON_ANDROID(EmptyFilesSSIM)) {
   EXPECT_EQ(kEmptyFileReturnCode,
             I420SSIMFromFiles(kEmptyFileName, video_file_.c_str(),
                               kWidth, kHeight, &ssim_result_));
@@ -125,7 +129,7 @@ TEST_F(VideoMetricsTest, EmptyFilesSSIM) {
                               kWidth, kHeight, &ssim_result_));
 }
 
-TEST_F(VideoMetricsTest, EmptyFilesBothMetrics) {
+TEST_F(VideoMetricsTest, DISABLED_ON_ANDROID(EmptyFilesBothMetrics)) {
   EXPECT_EQ(kEmptyFileReturnCode,
             I420MetricsFromFiles(kEmptyFileName, video_file_.c_str(),
                                  kWidth, kHeight,

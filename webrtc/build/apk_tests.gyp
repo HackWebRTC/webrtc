@@ -15,30 +15,178 @@
 # WebRTC when built as part of Chromium and when it is built without Chromium.
 {
   'includes': [
-    '../build/common.gypi',
+    'common.gypi',
   ],
   'targets': [
     {
-      'target_name': 'modules_unittests_apk',
+      'target_name': 'audio_decoder_unittests_apk',
       'type': 'none',
-      'conditions': [
-        # TODO(henrike): remove build_with_chromium==1 when the bots are using
-        # Chromium's buildbots.
-        ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
-          'variables': {
-            'test_suite_name': 'modules_unittests',
-            'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)modules_unittests<(SHARED_LIB_SUFFIX)',
-          },
-          'dependencies': [
-            '<(webrtc_root)/modules/modules.gyp:modules_unittests',
-          ],
-          'includes': [
-            '../../../build/apk_test.gypi',
-          ],
-        }],
+      'variables': {
+        'test_suite_name': 'audio_decoder_unittests',
+        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)audio_decoder_unittests<(SHARED_LIB_SUFFIX)',
+      },
+      'dependencies': [
+        '<(webrtc_root)/modules/modules.gyp:audio_decoder_unittests',
+      ],
+      'includes': [
+        '../../../build/apk_test.gypi',
       ],
     },
-  ]
+    {
+      'target_name': 'common_audio_unittests_apk',
+      'type': 'none',
+      'variables': {
+        'test_suite_name': 'common_audio_unittests',
+        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)common_audio_unittests<(SHARED_LIB_SUFFIX)',
+      },
+      'dependencies': [
+        '<(webrtc_root)/common_audio/common_audio.gyp:common_audio_unittests',
+      ],
+      'includes': [
+        '../../../build/apk_test.gypi',
+      ],
+    },
+    {
+      'target_name': 'common_video_unittests_apk',
+      'type': 'none',
+      'variables': {
+        'test_suite_name': 'common_video_unittests',
+        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)common_video_unittests<(SHARED_LIB_SUFFIX)',
+      },
+      'dependencies': [
+        '<(webrtc_root)/common_video/common_video.gyp:common_video_unittests',
+      ],
+      'includes': [
+        '../../../build/apk_test.gypi',
+      ],
+    },
+    {
+      'target_name': 'metrics_unittests_apk',
+      'type': 'none',
+      'variables': {
+        'test_suite_name': 'metrics_unittests',
+        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)metrics_unittests<(SHARED_LIB_SUFFIX)',
+      },
+      'dependencies': [
+        '<(webrtc_root)/test/metrics.gyp:metrics_unittests',
+      ],
+      'includes': [
+        '../../../build/apk_test.gypi',
+      ],
+    },
+    {
+      'target_name': 'modules_integrationtests_apk',
+      'type': 'none',
+      'variables': {
+        'test_suite_name': 'modules_integrationtests',
+        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)modules_integrationtests<(SHARED_LIB_SUFFIX)',
+      },
+      'dependencies': [
+        '<(webrtc_root)/modules/modules.gyp:modules_integrationtests',
+      ],
+      'includes': [
+        '../../../build/apk_test.gypi',
+      ],
+    },
+    {
+      'target_name': 'modules_unittests_apk',
+      'type': 'none',
+      'variables': {
+        'test_suite_name': 'modules_unittests',
+        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)modules_unittests<(SHARED_LIB_SUFFIX)',
+      },
+      'dependencies': [
+        '<(webrtc_root)/modules/modules.gyp:modules_unittests',
+      ],
+      'includes': [
+        '../../../build/apk_test.gypi',
+      ],
+    },
+    {
+      'target_name': 'neteq_unittests_apk',
+      'type': 'none',
+      'variables': {
+        'test_suite_name': 'neteq_unittests',
+        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)neteq_unittests<(SHARED_LIB_SUFFIX)',
+      },
+      'dependencies': [
+        '<(webrtc_root)/modules/modules.gyp:neteq_unittests',
+      ],
+      'includes': [
+        '../../../build/apk_test.gypi',
+      ],
+    },
+    {
+      'target_name': 'system_wrappers_unittests_apk',
+      'type': 'none',
+      'variables': {
+        'test_suite_name': 'system_wrappers_unittests',
+        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)system_wrappers_unittests<(SHARED_LIB_SUFFIX)',
+      },
+      'dependencies': [
+        '<(webrtc_root)/system_wrappers/source/system_wrappers_tests.gyp:system_wrappers_unittests',
+      ],
+      'includes': [
+        '../../../build/apk_test.gypi',
+      ],
+    },
+    {
+      'target_name': 'test_support_unittests_apk',
+      'type': 'none',
+      'variables': {
+        'test_suite_name': 'test_support_unittests',
+        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)test_support_unittests<(SHARED_LIB_SUFFIX)',
+      },
+      'dependencies': [
+        '<(webrtc_root)/test/test.gyp:test_support_unittests',
+      ],
+      'includes': [
+        '../../../build/apk_test.gypi',
+      ],
+    },
+    {
+      'target_name': 'tools_unittests_apk',
+      'type': 'none',
+      'variables': {
+        'test_suite_name': 'tools_unittests',
+        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)tools_unittests<(SHARED_LIB_SUFFIX)',
+      },
+      'dependencies': [
+        '<(webrtc_root)/tools/tools.gyp:tools_unittests',
+      ],
+      'includes': [
+        '../../../build/apk_test.gypi',
+      ],
+    },
+    {
+      'target_name': 'video_engine_core_unittests_apk',
+      'type': 'none',
+      'variables': {
+        'test_suite_name': 'video_engine_core_unittests',
+        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)video_engine_core_unittests<(SHARED_LIB_SUFFIX)',
+      },
+      'dependencies': [
+        '<(webrtc_root)/video_engine/video_engine.gyp:video_engine_core_unittests',
+      ],
+      'includes': [
+        '../../../build/apk_test.gypi',
+      ],
+    },
+    {
+      'target_name': 'voice_engine_unittests_apk',
+      'type': 'none',
+      'variables': {
+        'test_suite_name': 'voice_engine_unittests',
+        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)voice_engine_unittests<(SHARED_LIB_SUFFIX)',
+      },
+      'dependencies': [
+        '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine_unittests',
+      ],
+      'includes': [
+        '../../../build/apk_test.gypi',
+      ],
+    },    
+  ],
 }
-  
-  
+
+

@@ -375,7 +375,7 @@ void NetEqDecodingTest::PopulateCng(int frame_index,
   *payload_len = 1;  // Only noise level, no spectral parameters.
 }
 
-#if defined(_WIN32) && defined(WEBRTC_ARCH_64_BITS)
+#if (defined(_WIN32) && defined(WEBRTC_ARCH_64_BITS)) || defined(WEBRTC_ANDROID)
 // Disabled for Windows 64-bit until webrtc:1460 is fixed.
 #define MAYBE_TestBitExactness DISABLED_TestBitExactness
 #else

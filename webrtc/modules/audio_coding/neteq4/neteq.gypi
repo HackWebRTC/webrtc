@@ -124,7 +124,7 @@
       'targets': [
         {
           'target_name': 'audio_decoder_unittests',
-          'type': 'executable',
+          'type': '<(gtest_target_type)',
           'dependencies': [
             '<@(neteq_dependencies)',
             '<(DEPTH)/testing/gtest.gyp:gtest',
@@ -146,6 +146,15 @@
             'audio_decoder_unittest.cc',
             'audio_decoder.cc',
             'interface/audio_decoder.h',
+          ],
+          'conditions': [
+            # TODO(henrike): remove build_with_chromium==1 when the bots are
+            # using Chromium's buildbots.
+            ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+              'dependencies': [
+                '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
+              ],
+            }],
           ],
           # Disable warnings to enable Win64 build, issue 1323.
           'msvs_disabled_warnings': [
@@ -181,6 +190,21 @@
           ],
         }, # neteq_unittest_tools
       ], # targets
+      'conditions': [
+        # TODO(henrike): remove build_with_chromium==1 when the bots are using
+        # Chromium's buildbots.
+        ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+          'targets': [
+            {
+              'target_name': 'audio_decoder_unittests_apk_target',
+              'type': 'none',
+              'dependencies': [
+                '<(apk_tests_path):audio_decoder_unittests_apk',
+              ],
+            },
+          ],
+        }],
+      ],
     }], # include_tests
   ], # conditions
 }

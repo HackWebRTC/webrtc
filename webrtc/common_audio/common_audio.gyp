@@ -170,7 +170,7 @@
       'targets' : [
         {
           'target_name': 'common_audio_unittests',
-          'type': 'executable',
+          'type': '<(gtest_target_type)',
           'dependencies': [
             'common_audio',
             '<(webrtc_root)/test/test.gyp:test_support_main',
@@ -194,8 +194,32 @@
             'vad/vad_unittest.cc',
             'vad/vad_unittest.h',
           ],
+          'conditions': [
+            # TODO(henrike): remove build_with_chromium==1 when the bots are
+            # using Chromium's buildbots.
+            ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+              'dependencies': [
+                '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
+              ],
+            }],
+          ],
         },
       ],  # targets
+      'conditions': [
+        # TODO(henrike): remove build_with_chromium==1 when the bots are using
+        # Chromium's buildbots.
+        ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+          'targets': [
+            {
+              'target_name': 'common_audio_unittests_apk_target',
+              'type': 'none',
+              'dependencies': [
+                '<(apk_tests_path):common_audio_unittests_apk',
+              ],
+            },
+          ],
+        }],
+      ]
     }],
   ],  # conditions
 }

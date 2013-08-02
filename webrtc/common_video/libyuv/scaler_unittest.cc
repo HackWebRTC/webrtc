@@ -15,6 +15,7 @@
 #include "webrtc/common_video/libyuv/include/scaler.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
@@ -117,7 +118,7 @@ TEST_F(TestScaler, ScaleSendingBufferTooSmall) {
 }
 
 //TODO (mikhal): Converge the test into one function that accepts the method.
-TEST_F(TestScaler, PointScaleTest) {
+TEST_F(TestScaler, DISABLED_ON_ANDROID(PointScaleTest)) {
   double avg_psnr;
   FILE* source_file2;
   ScaleMethod method = kScalePoint;
@@ -204,7 +205,7 @@ TEST_F(TestScaler, PointScaleTest) {
   ASSERT_EQ(0, fclose(source_file2));
 }
 
-TEST_F(TestScaler, BiLinearScaleTest) {
+TEST_F(TestScaler, DISABLED_ON_ANDROID(BiLinearScaleTest)) {
   double avg_psnr;
   FILE* source_file2;
   ScaleMethod method = kScaleBilinear;
@@ -298,7 +299,7 @@ TEST_F(TestScaler, BiLinearScaleTest) {
   ASSERT_EQ(0, fclose(source_file2));
 }
 
-TEST_F(TestScaler, BoxScaleTest) {
+TEST_F(TestScaler, DISABLED_ON_ANDROID(BoxScaleTest)) {
   double avg_psnr;
   FILE* source_file2;
   ScaleMethod method = kScaleBox;

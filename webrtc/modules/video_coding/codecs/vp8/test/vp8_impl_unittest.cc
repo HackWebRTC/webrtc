@@ -15,6 +15,7 @@
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {
 
@@ -150,7 +151,7 @@ class TestVp8Impl : public ::testing::Test {
   VideoCodec codec_inst_;
 };
 
-TEST_F(TestVp8Impl, BaseUnitTest) {
+TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(BaseUnitTest)) {
   // TODO(mikhal): Remove dependency. Move all test code here.
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
   UnitTest unittest;
@@ -188,7 +189,7 @@ TEST_F(TestVp8Impl, EncoderParameterTest) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->InitDecode(&codec_inst_, 1));
 }
 
-TEST_F(TestVp8Impl, AlignedStrideEncodeDecode) {
+TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(AlignedStrideEncodeDecode)) {
   // Using a QCIF image (aligned stride (u,v planse) > width).
   // Processing only one frame.
   const VideoSource source(test::ResourcePath("paris_qcif", "yuv"), kQCIF);
