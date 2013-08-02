@@ -16,6 +16,8 @@
 
 namespace webrtc {
 
+ProcessingComponent::ProcessingComponent() {}
+
 ProcessingComponent::ProcessingComponent(const AudioProcessingImpl* apm)
   : apm_(apm),
     initialized_(false),

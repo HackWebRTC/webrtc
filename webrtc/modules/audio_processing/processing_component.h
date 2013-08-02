@@ -21,7 +21,7 @@ class AudioProcessingImpl;
 
 class ProcessingComponent {
  public:
-  ProcessingComponent() {}
+  ProcessingComponent();
   explicit ProcessingComponent(const AudioProcessingImpl* apm);
   virtual ~ProcessingComponent();
 
