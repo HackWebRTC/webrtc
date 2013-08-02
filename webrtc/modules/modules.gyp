@@ -326,15 +326,7 @@
               'dependencies': [
                 '<(apk_tests_path):modules_unittests_apk',
               ],
-            }
-          ],
-        }],
-      ],
-      'conditions': [
-        # TODO(henrike): remove build_with_chromium==1 when the bots are using
-        # Chromium's buildbots.
-        ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
-          'targets': [
+            },
             {
               'target_name': 'modules_integrationtests_apk_target',
               'type': 'none',
