@@ -39,6 +39,12 @@ def sanitize(key):
 def make_client_id(room, user):
   return room.key().id_or_name() + '/' + user
 
+def get_default_stun_server(user_agent):
+  default_stun_server = 'stun.l.google.com:19302'
+  if 'Firefox' in user_agent:
+    default_stun_server = 'stun.services.mozilla.com'
+  return default_stun_server
+
 def make_pc_config(stun_server, turn_server, ts_pwd):
   servers = []
   if turn_server:
@@ -46,8 +52,6 @@ def make_pc_config(stun_server, turn_server, ts_pwd):
     servers.append({'url':turn_config, 'credential':ts_pwd})
   if stun_server:
     stun_config = 'stun:{}'.format(stun_server)
-  else:
-    stun_config = 'stun:' + 'stun.l.google.com:19302'
   servers.append({'url':stun_config})
   return {'iceServers':servers}
 
@@ -288,6 +292,7 @@ class MainPage(webapp2.RequestHandler):
     channel to push asynchronous updates to the client."""
     # get the base url without arguments.
     base_url = self.request.path_url
+    user_agent = self.request.headers['User-Agent']
     room_key = sanitize(self.request.get('r'))
     debug = self.request.get('debug')
     unittest = self.request.get('unittest')
@@ -312,7 +317,8 @@ class MainPage(webapp2.RequestHandler):
     stereo = 'false'
     if self.request.get('stereo'):
       stereo = self.request.get('stereo')
-
+    if not stun_server:
+      stun_server = get_default_stun_server(user_agent)
 
     # token_timeout for channel creation, default 30min, max 2 days, min 3min.
     token_timeout = self.request.get_range('tt',
