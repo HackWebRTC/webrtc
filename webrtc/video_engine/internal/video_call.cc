@@ -15,8 +15,6 @@
 #include <map>
 #include <vector>
 
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/include/vie_codec.h"
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
@@ -32,6 +30,7 @@ VideoCall::VideoCall(webrtc::VideoEngine* video_engine,
     : config_(config),
       receive_lock_(RWLockWrapper::CreateRWLock()),
       send_lock_(RWLockWrapper::CreateRWLock()),
+      rtp_header_parser_(RtpHeaderParser::Create()),
       video_engine_(video_engine) {
   assert(video_engine != NULL);
   assert(config.send_transport != NULL);
@@ -74,9 +73,8 @@ newapi::VideoSendStream* VideoCall::CreateSendStream(
   assert(config.codec.numberOfSimulcastStreams == 0 ||
          config.codec.numberOfSimulcastStreams == config.rtp.ssrcs.size());
 
-  VideoSendStream* send_stream =
-      new VideoSendStream(config_.send_transport, config_.overuse_detection,
-                          video_engine_, config);
+  VideoSendStream* send_stream = new VideoSendStream(
+      config_.send_transport, config_.overuse_detection, video_engine_, config);
 
   WriteLockScoped write_lock(*send_lock_);
   for (size_t i = 0; i < config.rtp.ssrcs.size(); ++i) {
@@ -104,8 +102,8 @@ VideoReceiveStream::Config VideoCall::GetDefaultReceiveConfig() {
 
 newapi::VideoReceiveStream* VideoCall::CreateReceiveStream(
     const newapi::VideoReceiveStream::Config& config) {
-  VideoReceiveStream* receive_stream = new VideoReceiveStream(
-      video_engine_, config, config_.send_transport);
+  VideoReceiveStream* receive_stream =
+      new VideoReceiveStream(video_engine_, config, config_.send_transport);
 
   WriteLockScoped write_lock(*receive_lock_);
   assert(receive_ssrcs_.find(config.rtp.ssrc) == receive_ssrcs_.end());
@@ -132,67 +130,66 @@ uint32_t VideoCall::ReceiveBitrateEstimate() {
   return 0;
 }
 
-bool VideoCall::DeliverRtcp(ModuleRTPUtility::RTPHeaderParser* rtp_parser,
-                            const void* packet, size_t length) {
+bool VideoCall::DeliverRtcp(const uint8_t* packet, size_t length) {
   // TODO(pbos): Figure out what channel needs it actually.
   //             Do NOT broadcast! Also make sure it's a valid packet.
   bool rtcp_delivered = false;
-  ReadLockScoped read_lock(*receive_lock_);
-  for (std::map<uint32_t, newapi::VideoReceiveStream*>::iterator it =
-           receive_ssrcs_.begin();
-       it != receive_ssrcs_.end(); ++it) {
-    if (static_cast<VideoReceiveStream*>(it->second)
-            ->DeliverRtcp(static_cast<const uint8_t*>(packet), length)) {
-      rtcp_delivered = true;
+  {
+    ReadLockScoped read_lock(*receive_lock_);
+    for (std::map<uint32_t, VideoReceiveStream*>::iterator it =
+             receive_ssrcs_.begin();
+         it != receive_ssrcs_.end();
+         ++it) {
+      if (it->second->DeliverRtcp(static_cast<const uint8_t*>(packet),
+                                  length)) {
+        rtcp_delivered = true;
+      }
     }
   }
 
-  if (rtcp_delivered)
-    return true;
-
-  for (std::map<uint32_t, newapi::VideoSendStream*>::iterator it =
-           send_ssrcs_.begin();
-       it != send_ssrcs_.end();
-       ++it) {
-    if (static_cast<VideoSendStream*>(it->second)
-            ->DeliverRtcp(static_cast<const uint8_t*>(packet), length)) {
-      rtcp_delivered = true;
+  {
+    ReadLockScoped read_lock(*send_lock_);
+    for (std::map<uint32_t, VideoSendStream*>::iterator it =
+             send_ssrcs_.begin();
+         it != send_ssrcs_.end();
+         ++it) {
+      if (it->second->DeliverRtcp(static_cast<const uint8_t*>(packet),
+                                  length)) {
+        rtcp_delivered = true;
+      }
     }
   }
   return rtcp_delivered;
 }
 
-bool VideoCall::DeliverRtp(ModuleRTPUtility::RTPHeaderParser* rtp_parser,
-                           const void* packet, size_t length) {
-  RTPHeader rtp_header;
+bool VideoCall::DeliverRtp(const RTPHeader& header,
+                           const uint8_t* packet,
+                           size_t length) {
+  VideoReceiveStream* receiver;
+  {
+    ReadLockScoped read_lock(*receive_lock_);
+    std::map<uint32_t, VideoReceiveStream*>::iterator it =
+        receive_ssrcs_.find(header.ssrc);
+    if (it == receive_ssrcs_.end()) {
+      // TODO(pbos): Log some warning, SSRC without receiver.
+      return false;
+    }
 
-  // TODO(pbos): ExtensionMap if there are extensions
-  if (!rtp_parser->Parse(rtp_header)) {
-    // TODO(pbos): Should this error be reported and trigger something?
-    return false;
+    receiver = it->second;
   }
-
-  ReadLockScoped read_lock(*receive_lock_);
-  if (receive_ssrcs_.find(rtp_header.ssrc) == receive_ssrcs_.end()) {
-    // TODO(pbos): Log some warning, SSRC without receiver.
-    return false;
-  }
-
-  VideoReceiveStream* receiver =
-      static_cast<VideoReceiveStream*>(receive_ssrcs_[rtp_header.ssrc]);
   return receiver->DeliverRtp(static_cast<const uint8_t*>(packet), length);
 }
 
-bool VideoCall::DeliverPacket(const void* packet, size_t length) {
-  // TODO(pbos): Respect the constness of packet.
-  ModuleRTPUtility::RTPHeaderParser rtp_parser(
-      const_cast<uint8_t*>(static_cast<const uint8_t*>(packet)), length);
+bool VideoCall::DeliverPacket(const uint8_t* packet, size_t length) {
+  // TODO(pbos): ExtensionMap if there are extensions.
+  if (RtpHeaderParser::IsRtcp(packet, static_cast<int>(length)))
+    return DeliverRtcp(packet, length);
 
-  if (rtp_parser.RTCP()) {
-    return DeliverRtcp(&rtp_parser, packet, length);
-  }
+  RTPHeader rtp_header;
+  if (!rtp_header_parser_->Parse(packet, static_cast<int>(length), &rtp_header))
+    return false;
 
-  return DeliverRtp(&rtp_parser, packet, length);
+  return DeliverRtp(rtp_header, packet, length);
 }
 
 }  // namespace internal

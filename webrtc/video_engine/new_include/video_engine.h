@@ -27,7 +27,7 @@ const char* Version();
 
 class PacketReceiver {
  public:
-  virtual bool DeliverPacket(const void* packet, size_t length) = 0;
+  virtual bool DeliverPacket(const uint8_t* packet, size_t length) = 0;
 
  protected:
   virtual ~PacketReceiver() {}

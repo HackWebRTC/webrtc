@@ -98,11 +98,10 @@ class VideoAnalyzer : public newapi::PacketReceiver,
     }
   }
 
-  virtual bool DeliverPacket(const void* packet, size_t length) OVERRIDE {
+  virtual bool DeliverPacket(const uint8_t* packet, size_t length) OVERRIDE {
     scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
     RTPHeader header;
-    parser->Parse(
-        static_cast<const uint8_t*>(packet), static_cast<int>(length), &header);
+    parser->Parse(packet, static_cast<int>(length), &header);
     {
       CriticalSectionScoped cs(crit_.get());
       recv_times_[header.timestamp - rtp_timestamp_delta_] =
