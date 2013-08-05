@@ -54,6 +54,7 @@
       ],
       'sources': [
         'interface/i420_video_frame.h',
+        'interface/texture_video_frame.h',
         'i420_video_frame.cc',
         'jpeg/include/jpeg.h',
         'jpeg/data_manager.cc',
@@ -65,6 +66,7 @@
         'libyuv/scaler.cc',
         'plane.h',
         'plane.cc',
+        'texture_video_frame.cc'
       ],
       # Silence jpeg struct padding warnings.
       'msvs_disabled_warnings': [ 4324, ],
@@ -88,6 +90,7 @@
             'libyuv/libyuv_unittest.cc',
             'libyuv/scaler_unittest.cc',
             'plane_unittest.cc',
+            'texture_video_frame_unittest.cc'
           ],
           # Disable warnings to enable Win64 build, issue 1323.
           'msvs_disabled_warnings': [

@@ -79,9 +79,16 @@ SessionClient* SessionManager::GetClient(const std::string& content_type) {
 
 Session* SessionManager::CreateSession(const std::string& local_name,
                                        const std::string& content_type) {
-  return CreateSession(local_name, local_name,
-                       talk_base::ToString(talk_base::CreateRandomId64()),
-                       content_type, false);
+  std::string id;
+  return CreateSession(id, local_name, content_type);
+}
+
+Session* SessionManager::CreateSession(const std::string& id,
+                                       const std::string& local_name,
+                                       const std::string& content_type) {
+  std::string sid =
+      id.empty() ? talk_base::ToString(talk_base::CreateRandomId64()) : id;
+  return CreateSession(local_name, local_name, sid, content_type, false);
 }
 
 Session* SessionManager::CreateSession(

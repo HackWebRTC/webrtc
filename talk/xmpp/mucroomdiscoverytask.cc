@@ -49,11 +49,19 @@ void MucRoomDiscoveryTask::HandleResult(const XmlElement* stanza) {
   std::map<std::string, std::string> extended_info;
   const XmlElement* identity = query->FirstNamed(QN_DISCO_IDENTITY);
   if (identity == NULL || !identity->HasAttr(QN_NAME)) {
-    SignalResult(this, false, "", features, extended_info);
+    SignalResult(this, false, "", "", features, extended_info);
     return;
   }
 
   const std::string name(identity->Attr(QN_NAME));
+
+  // Get the conversation id
+  const XmlElement* convIdElement =
+      identity->FirstNamed(QN_GOOGLE_MUC_HANGOUT_CONVERSATION_ID);
+  std::string conversation_id;
+  if (convIdElement != NULL) {
+    conversation_id = convIdElement->BodyText();
+  }
 
   for (const XmlElement* feature = query->FirstNamed(QN_DISCO_FEATURE);
        feature != NULL; feature = feature->NextNamed(QN_DISCO_FEATURE)) {
@@ -69,7 +77,7 @@ void MucRoomDiscoveryTask::HandleResult(const XmlElement* stanza) {
     }
   }
 
-  SignalResult(this, true, name, features, extended_info);
+  SignalResult(this, true, name, conversation_id, features, extended_info);
 }
 
 }  // namespace buzz

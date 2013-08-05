@@ -1684,18 +1684,21 @@ int32_t ViEChannel::FrameToRender(
     }
     decoder_reset_ = false;
   }
-  if (effect_filter_) {
-    unsigned int length = CalcBufferSize(kI420,
-                                         video_frame.width(),
-                                         video_frame.height());
-    scoped_array<uint8_t> video_buffer(new uint8_t[length]);
-    ExtractBuffer(video_frame, length, video_buffer.get());
-    effect_filter_->Transform(length, video_buffer.get(),
-                              video_frame.timestamp(), video_frame.width(),
-                              video_frame.height());
-  }
-  if (color_enhancement_) {
-    VideoProcessingModule::ColorEnhancement(&video_frame);
+  // Post processing is not supported if the frame is backed by a texture.
+  if (video_frame.native_handle() == NULL) {
+    if (effect_filter_) {
+      unsigned int length = CalcBufferSize(kI420,
+                                           video_frame.width(),
+                                           video_frame.height());
+      scoped_array<uint8_t> video_buffer(new uint8_t[length]);
+      ExtractBuffer(video_frame, length, video_buffer.get());
+      effect_filter_->Transform(length, video_buffer.get(),
+                                video_frame.timestamp(), video_frame.width(),
+                                video_frame.height());
+    }
+    if (color_enhancement_) {
+      VideoProcessingModule::ColorEnhancement(&video_frame);
+    }
   }
 
   uint32_t arr_ofCSRC[kRtpCsrcSize];

@@ -57,6 +57,7 @@ class NullVideoFrame : public VideoFrame {
   virtual int32 GetYPitch() const { return 0; }
   virtual int32 GetUPitch() const { return 0; }
   virtual int32 GetVPitch() const { return 0; }
+  virtual void* GetNativeHandle() const { return NULL; }
 
   virtual size_t GetPixelWidth() const { return 1; }
   virtual size_t GetPixelHeight() const { return 1; }

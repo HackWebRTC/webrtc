@@ -112,6 +112,17 @@ extern const char STR_MUC_ROOM_FEATURE_HANGOUT_LITE[];
 extern const char STR_MUC_ROOM_FEATURE_BROADCAST[];
 extern const char STR_MUC_ROOM_FEATURE_MULTI_USER_VC[];
 
+extern const char STR_ID_TYPE_CONVERSATION[];
+extern const char NS_GOOGLE_MUC_HANGOUT[];
+extern const StaticQName QN_GOOGLE_MUC_HANGOUT_INVITE;
+extern const StaticQName QN_GOOGLE_MUC_HANGOUT_INVITE_TYPE;
+extern const StaticQName QN_ATTR_CREATE_ACTIVITY;
+extern const StaticQName QN_GOOGLE_MUC_HANGOUT_PUBLIC;
+extern const StaticQName QN_GOOGLE_MUC_HANGOUT_INVITEE;
+extern const StaticQName QN_GOOGLE_MUC_HANGOUT_NOTIFICATION_TYPE;
+extern const StaticQName QN_GOOGLE_MUC_HANGOUT_HANGOUT_START_CONTEXT;
+extern const StaticQName QN_GOOGLE_MUC_HANGOUT_CONVERSATION_ID;
+
 extern const StaticQName QN_STREAM_STREAM;
 extern const StaticQName QN_STREAM_FEATURES;
 extern const StaticQName QN_STREAM_ERROR;

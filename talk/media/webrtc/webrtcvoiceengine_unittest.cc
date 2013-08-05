@@ -121,6 +121,18 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     }
     return result;
   }
+  void SetupForMultiSendStream() {
+    EXPECT_TRUE(SetupEngine());
+    // Remove stream added in Setup, which is corresponding to default channel.
+    int default_channel_num = voe_.GetLastChannel();
+    uint32 default_send_ssrc;
+    EXPECT_EQ(0, voe_.GetLocalSSRC(default_channel_num, default_send_ssrc));
+    EXPECT_EQ(kSsrc1, default_send_ssrc);
+    EXPECT_TRUE(channel_->RemoveSendStream(default_send_ssrc));
+
+    // Verify the default channel still exists.
+    EXPECT_EQ(0, voe_.GetLocalSSRC(default_channel_num, default_send_ssrc));
+  }
   void DeliverPacket(const void* data, int len) {
     talk_base::Buffer packet(data, len);
     channel_->OnPacketReceived(&packet);
@@ -204,6 +216,47 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     }
   }
 
+
+  void TestSetSendRtpHeaderExtensions(int channel_id) {
+    std::vector<cricket::RtpHeaderExtension> extensions;
+    bool enable = false;
+    unsigned char id = 0;
+
+    // Ensure audio levels are off by default.
+    EXPECT_EQ(0, voe_.GetRTPAudioLevelIndicationStatus(
+        channel_id, enable, id));
+    EXPECT_FALSE(enable);
+
+    // Ensure unknown extensions won't cause an error.
+    extensions.push_back(cricket::RtpHeaderExtension(
+        "urn:ietf:params:unknowextention", 1));
+    EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
+    EXPECT_EQ(0, voe_.GetRTPAudioLevelIndicationStatus(
+        channel_id, enable, id));
+    EXPECT_FALSE(enable);
+
+    // Ensure audio levels stay off with an empty list of headers.
+    EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
+    EXPECT_EQ(0, voe_.GetRTPAudioLevelIndicationStatus(
+        channel_id, enable, id));
+    EXPECT_FALSE(enable);
+
+    // Ensure audio levels are enabled if the audio-level header is specified.
+    extensions.push_back(cricket::RtpHeaderExtension(
+        "urn:ietf:params:rtp-hdrext:ssrc-audio-level", 8));
+    EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
+    EXPECT_EQ(0, voe_.GetRTPAudioLevelIndicationStatus(
+        channel_id, enable, id));
+    EXPECT_TRUE(enable);
+    EXPECT_EQ(8, id);
+
+    // Ensure audio levels go back off with an empty list.
+    extensions.clear();
+    EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
+    EXPECT_EQ(0, voe_.GetRTPAudioLevelIndicationStatus(
+        channel_id, enable, id));
+    EXPECT_FALSE(enable);
+  }
 
  protected:
   cricket::FakeWebRtcVoiceEngine voe_;
@@ -1336,43 +1389,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendRtpHeaderExtensions) {
   EXPECT_TRUE(SetupEngine());
   std::vector<cricket::RtpHeaderExtension> extensions;
   int channel_num = voe_.GetLastChannel();
-  bool enable = false;
-  unsigned char id = 0;
-
-  // Ensure audio levels are off by default.
-  EXPECT_EQ(0, voe_.GetRTPAudioLevelIndicationStatus(
-      channel_num, enable, id));
-  EXPECT_FALSE(enable);
-
-  // Ensure unknown extentions won't cause an error.
-  extensions.push_back(cricket::RtpHeaderExtension(
-      "urn:ietf:params:unknowextention", 1));
-  EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
-  EXPECT_EQ(0, voe_.GetRTPAudioLevelIndicationStatus(
-      channel_num, enable, id));
-  EXPECT_FALSE(enable);
-
-  // Ensure audio levels stay off with an empty list of headers.
-  EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
-  EXPECT_EQ(0, voe_.GetRTPAudioLevelIndicationStatus(
-      channel_num, enable, id));
-  EXPECT_FALSE(enable);
-
-  // Ensure audio levels are enabled if the audio-level header is specified.
-  extensions.push_back(cricket::RtpHeaderExtension(
-      "urn:ietf:params:rtp-hdrext:ssrc-audio-level", 8));
-  EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
-  EXPECT_EQ(0, voe_.GetRTPAudioLevelIndicationStatus(
-      channel_num, enable, id));
-  EXPECT_TRUE(enable);
-  EXPECT_EQ(8, id);
-
-  // Ensure audio levels go back off with an empty list.
-  extensions.clear();
-  EXPECT_TRUE(channel_->SetSendRtpHeaderExtensions(extensions));
-  EXPECT_EQ(0, voe_.GetRTPAudioLevelIndicationStatus(
-      channel_num, enable, id));
-  EXPECT_FALSE(enable);
+  TestSetSendRtpHeaderExtensions(channel_num);
 }
 
 // Test that we can create a channel and start sending/playing out on it.
@@ -1392,9 +1409,169 @@ TEST_F(WebRtcVoiceEngineTestFake, SendAndPlayout) {
   EXPECT_FALSE(voe_.GetPlayout(channel_num));
 }
 
-// Test that we can add and remove streams, and do proper send/playout.
-// We can receive on multiple streams, but will only send on one.
-TEST_F(WebRtcVoiceEngineTestFake, SendAndPlayoutWithMultipleStreams) {
+// Test that we can add and remove send streams.
+TEST_F(WebRtcVoiceEngineTestFake, CreateAndDeleteMultipleSendStreams) {
+  SetupForMultiSendStream();
+
+  static const uint32 kSsrcs4[] = {1, 2, 3, 4};
+
+  // Set the global state for sending.
+  EXPECT_TRUE(channel_->SetSend(cricket::SEND_MICROPHONE));
+
+  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
+    EXPECT_TRUE(channel_->AddSendStream(
+        cricket::StreamParams::CreateLegacy(kSsrcs4[i])));
+
+    // Verify that we are in a sending state for all the created streams.
+    int channel_num = voe_.GetChannelFromLocalSsrc(kSsrcs4[i]);
+    EXPECT_TRUE(voe_.GetSend(channel_num));
+  }
+
+  // Remove the first send channel, which is the default channel. It will only
+  // recycle the default channel but not delete it.
+  EXPECT_TRUE(channel_->RemoveSendStream(kSsrcs4[0]));
+  // Stream should already be Removed from the send stream list.
+  EXPECT_FALSE(channel_->RemoveSendStream(kSsrcs4[0]));
+  // But the default still exists.
+  EXPECT_EQ(0, voe_.GetChannelFromLocalSsrc(kSsrcs4[0]));
+
+  // Delete the rest of send channel streams.
+  for (unsigned int i = 1; i < ARRAY_SIZE(kSsrcs4); ++i) {
+    EXPECT_TRUE(channel_->RemoveSendStream(kSsrcs4[i]));
+    // Stream should already be deleted.
+    EXPECT_FALSE(channel_->RemoveSendStream(kSsrcs4[i]));
+    EXPECT_EQ(-1, voe_.GetChannelFromLocalSsrc(kSsrcs4[i]));
+  }
+}
+
+// Test SetSendCodecs correctly configure the codecs in all send streams.
+TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsWithMultipleSendStreams) {
+  SetupForMultiSendStream();
+
+  static const uint32 kSsrcs4[] = {1, 2, 3, 4};
+  // Create send streams.
+  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
+    EXPECT_TRUE(channel_->AddSendStream(
+        cricket::StreamParams::CreateLegacy(kSsrcs4[i])));
+  }
+
+  std::vector<cricket::AudioCodec> codecs;
+  // Set ISAC(16K) and CN(16K). VAD should be activated.
+  codecs.push_back(kIsacCodec);
+  codecs.push_back(kCn16000Codec);
+  codecs[1].id = 97;
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+
+  // Verify ISAC and VAD are corrected configured on all send channels.
+  webrtc::CodecInst gcodec;
+  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
+    int channel_num = voe_.GetChannelFromLocalSsrc(kSsrcs4[i]);
+    EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+    EXPECT_STREQ("ISAC", gcodec.plname);
+    EXPECT_TRUE(voe_.GetVAD(channel_num));
+    EXPECT_EQ(97, voe_.GetSendCNPayloadType(channel_num, true));
+  }
+
+  // Change to PCMU(8K) and CN(16K). VAD should not be activated.
+  codecs[0] = kPcmuCodec;
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
+    int channel_num = voe_.GetChannelFromLocalSsrc(kSsrcs4[i]);
+    EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+    EXPECT_STREQ("PCMU", gcodec.plname);
+    EXPECT_FALSE(voe_.GetVAD(channel_num));
+  }
+}
+
+// Test we can SetSend on all send streams correctly.
+TEST_F(WebRtcVoiceEngineTestFake, SetSendWithMultipleSendStreams) {
+  SetupForMultiSendStream();
+
+  static const uint32 kSsrcs4[] = {1, 2, 3, 4};
+  // Create the send channels and they should be a SEND_NOTHING date.
+  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
+    EXPECT_TRUE(channel_->AddSendStream(
+        cricket::StreamParams::CreateLegacy(kSsrcs4[i])));
+    int channel_num = voe_.GetLastChannel();
+    EXPECT_FALSE(voe_.GetSend(channel_num));
+  }
+
+  // Set the global state for starting sending.
+  EXPECT_TRUE(channel_->SetSend(cricket::SEND_MICROPHONE));
+  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
+    // Verify that we are in a sending state for all the send streams.
+    int channel_num = voe_.GetChannelFromLocalSsrc(kSsrcs4[i]);
+    EXPECT_TRUE(voe_.GetSend(channel_num));
+  }
+
+  // Set the global state for stopping sending.
+  EXPECT_TRUE(channel_->SetSend(cricket::SEND_NOTHING));
+  for (unsigned int i = 1; i < ARRAY_SIZE(kSsrcs4); ++i) {
+    // Verify that we are in a stop state for all the send streams.
+    int channel_num = voe_.GetChannelFromLocalSsrc(kSsrcs4[i]);
+    EXPECT_FALSE(voe_.GetSend(channel_num));
+  }
+}
+
+// Test we can set the correct statistics on all send streams.
+TEST_F(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
+  SetupForMultiSendStream();
+
+  static const uint32 kSsrcs4[] = {1, 2, 3, 4};
+  // Create send streams.
+  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
+    EXPECT_TRUE(channel_->AddSendStream(
+        cricket::StreamParams::CreateLegacy(kSsrcs4[i])));
+  }
+
+  // We need send codec to be set to get all stats.
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kPcmuCodec);
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+
+  cricket::VoiceMediaInfo info;
+  EXPECT_EQ(true, channel_->GetStats(&info));
+  EXPECT_EQ(static_cast<size_t>(ARRAY_SIZE(kSsrcs4)), info.senders.size());
+
+  // Verify the statistic information is correct.
+  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
+    EXPECT_EQ(kSsrcs4[i], info.senders[i].ssrc);
+    EXPECT_EQ(kPcmuCodec.name, info.senders[i].codec_name);
+    EXPECT_EQ(cricket::kIntStatValue, info.senders[i].bytes_sent);
+    EXPECT_EQ(cricket::kIntStatValue, info.senders[i].packets_sent);
+    EXPECT_EQ(cricket::kIntStatValue, info.senders[i].packets_lost);
+    EXPECT_EQ(cricket::kFractionLostStatValue, info.senders[i].fraction_lost);
+    EXPECT_EQ(cricket::kIntStatValue, info.senders[i].ext_seqnum);
+    EXPECT_EQ(cricket::kIntStatValue, info.senders[i].rtt_ms);
+    EXPECT_EQ(cricket::kIntStatValue, info.senders[i].jitter_ms);
+  }
+
+  EXPECT_EQ(1u, info.receivers.size());
+}
+
+// Test that we support setting certain send header extensions on multiple
+// send streams.
+TEST_F(WebRtcVoiceEngineTestFake,
+       SetSendRtpHeaderExtensionsWithMultpleSendStreams) {
+  SetupForMultiSendStream();
+
+  static const uint32 kSsrcs4[] = {1, 2, 3, 4};
+  // Create send streams.
+  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
+    EXPECT_TRUE(channel_->AddSendStream(
+        cricket::StreamParams::CreateLegacy(kSsrcs4[i])));
+  }
+
+  // Test SendRtpHeaderExtensions on each send channel.
+  for (unsigned int i = 0; i < ARRAY_SIZE(kSsrcs4); ++i) {
+    int channel_num = voe_.GetChannelFromLocalSsrc(kSsrcs4[i]);
+    TestSetSendRtpHeaderExtensions(channel_num);
+  }
+}
+
+// Test that we can add and remove receive streams, and do proper send/playout.
+// We can receive on multiple streams while sending one stream.
+TEST_F(WebRtcVoiceEngineTestFake, PlayoutWithMultipleStreams) {
   EXPECT_TRUE(SetupEngine());
   int channel_num1 = voe_.GetLastChannel();
 

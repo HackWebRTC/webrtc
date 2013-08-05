@@ -101,7 +101,8 @@ int32_t IncomingVideoStream::RenderFrame(const uint32_t stream_id,
     return -1;
   }
 
-  if (true == mirror_frames_enabled_) {
+  // Mirroring is not supported if the frame is backed by a texture.
+  if (true == mirror_frames_enabled_ && video_frame.native_handle() == NULL) {
     transformed_video_frame_.CreateEmptyFrame(video_frame.width(),
                                               video_frame.height(),
                                               video_frame.stride(kYPlane),

@@ -835,6 +835,8 @@
         'media/webrtc/webrtcmediaengine.h',
         'media/webrtc/webrtcpassthroughrender.cc',
         'media/webrtc/webrtcpassthroughrender.h',
+        'media/webrtc/webrtctexturevideoframe.cc',
+        'media/webrtc/webrtctexturevideoframe.h',
         'media/webrtc/webrtcvideocapturer.cc',
         'media/webrtc/webrtcvideocapturer.h',
         'media/webrtc/webrtcvideodecoderfactory.h',

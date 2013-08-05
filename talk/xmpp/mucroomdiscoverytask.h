@@ -41,9 +41,10 @@ class MucRoomDiscoveryTask : public IqTask {
   MucRoomDiscoveryTask(XmppTaskParentInterface* parent,
                        const Jid& room_jid);
 
-  // Signal (exists, name, features, extended_info)
-  sigslot::signal5<MucRoomDiscoveryTask*,
+  // Signal (exists, name, conversationId, features, extended_info)
+  sigslot::signal6<MucRoomDiscoveryTask*,
                    bool,
+                   const std::string&,
                    const std::string&,
                    const std::set<std::string>&,
                    const std::map<std::string, std::string>& > SignalResult;

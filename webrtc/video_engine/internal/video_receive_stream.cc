@@ -117,7 +117,8 @@ int VideoReceiveStream::FrameSizeChange(unsigned int width, unsigned int height,
 }
 
 int VideoReceiveStream::DeliverFrame(uint8_t* frame, int buffer_size,
-                                     uint32_t timestamp, int64_t render_time) {
+                                     uint32_t timestamp, int64_t render_time,
+                                     void* /*handle*/) {
   if (config_.renderer == NULL) {
     return 0;
   }
@@ -141,6 +142,8 @@ int VideoReceiveStream::DeliverFrame(uint8_t* frame, int buffer_size,
 
   return 0;
 }
+
+bool VideoReceiveStream::IsTextureSupported() { return false; }
 
 int VideoReceiveStream::SendPacket(int /*channel*/,
                                    const void* packet,

@@ -51,10 +51,11 @@
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videorenderer.h"
 #include "talk/media/devices/filevideocapturer.h"
+#include "talk/media/webrtc/webrtcpassthroughrender.h"
+#include "talk/media/webrtc/webrtctexturevideoframe.h"
+#include "talk/media/webrtc/webrtcvideocapturer.h"
 #include "talk/media/webrtc/webrtcvideodecoderfactory.h"
 #include "talk/media/webrtc/webrtcvideoencoderfactory.h"
-#include "talk/media/webrtc/webrtcpassthroughrender.h"
-#include "talk/media/webrtc/webrtcvideocapturer.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
 #include "talk/media/webrtc/webrtcvie.h"
 #include "talk/media/webrtc/webrtcvoe.h"
@@ -176,12 +177,15 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
   explicit WebRtcRenderAdapter(VideoRenderer* renderer)
       : renderer_(renderer), width_(0), height_(0), watermark_enabled_(false) {
   }
+
   virtual ~WebRtcRenderAdapter() {
   }
+
   void set_watermark_enabled(bool enable) {
     talk_base::CritScope cs(&crit_);
     watermark_enabled_ = enable;
   }
+
   void SetRenderer(VideoRenderer* renderer) {
     talk_base::CritScope cs(&crit_);
     renderer_ = renderer;
@@ -198,6 +202,7 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
       }
     }
   }
+
   // Implementation of webrtc::ExternalRenderer.
   virtual int FrameSizeChange(unsigned int width, unsigned int height,
                               unsigned int /*number_of_streams*/) {
@@ -213,14 +218,18 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     }
     return renderer_->SetSize(width_, height_, 0) ? 0 : -1;
   }
+
   virtual int DeliverFrame(unsigned char* buffer, int buffer_size,
-                           uint32_t time_stamp, int64_t render_time) {
+                           uint32_t time_stamp, int64_t render_time
+#ifdef USE_WEBRTC_DEV_BRANCH
+                           , void* handle
+#endif
+                          ) {
     talk_base::CritScope cs(&crit_);
     frame_rate_tracker_.Update(1);
     if (renderer_ == NULL) {
       return 0;
     }
-    WebRtcVideoFrame video_frame;
     // Convert 90K rtp timestamp to ns timestamp.
     int64 rtp_time_stamp_in_ns = (time_stamp / 90) *
         talk_base::kNumNanosecsPerMillisec;
@@ -229,9 +238,26 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
         talk_base::kNumNanosecsPerMillisec;
     // Send the rtp timestamp to renderer as the VideoFrame timestamp.
     // and the render timestamp as the VideoFrame elapsed_time.
+#ifdef USE_WEBRTC_DEV_BRANCH
+    if (handle == NULL) {
+#endif
+      return DeliverBufferFrame(buffer, buffer_size, render_time_stamp_in_ns,
+                                rtp_time_stamp_in_ns);
+#ifdef USE_WEBRTC_DEV_BRANCH
+    } else {
+      return DeliverTextureFrame(handle, render_time_stamp_in_ns,
+                                 rtp_time_stamp_in_ns);
+    }
+#endif
+  }
+
+  virtual bool IsTextureSupported() { return true; }
+
+  int DeliverBufferFrame(unsigned char* buffer, int buffer_size,
+                         int64 elapsed_time, int64 time_stamp) {
+    WebRtcVideoFrame video_frame;
     video_frame.Attach(buffer, buffer_size, width_, height_,
-                       1, 1, render_time_stamp_in_ns,
-                       rtp_time_stamp_in_ns, 0);
+                       1, 1, elapsed_time, time_stamp, 0);
 
 
     // Sanity check on decoded frame size.
@@ -247,18 +273,28 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     return ret;
   }
 
+  int DeliverTextureFrame(void* handle, int64 elapsed_time, int64 time_stamp) {
+    WebRtcTextureVideoFrame video_frame(
+        static_cast<webrtc::NativeHandle*>(handle), width_, height_,
+        elapsed_time, time_stamp);
+    return renderer_->RenderFrame(&video_frame);
+  }
+
   unsigned int width() {
     talk_base::CritScope cs(&crit_);
     return width_;
   }
+
   unsigned int height() {
     talk_base::CritScope cs(&crit_);
     return height_;
   }
+
   int framerate() {
     talk_base::CritScope cs(&crit_);
     return static_cast<int>(frame_rate_tracker_.units_second());
   }
+
   VideoRenderer* renderer() {
     talk_base::CritScope cs(&crit_);
     return renderer_;

@@ -235,17 +235,6 @@ bool CanAddLocalMediaStream(webrtc::StreamCollectionInterface* current_streams,
     return false;
   }
 
-  bool audio_track_exist = false;
-  for (size_t j = 0; j < current_streams->count(); ++j) {
-    if (!audio_track_exist) {
-      audio_track_exist = current_streams->at(j)->GetAudioTracks().size() > 0;
-    }
-  }
-  if (audio_track_exist && (new_stream->GetAudioTracks().size() > 0)) {
-    LOG(LS_ERROR) << "AddStream - Currently only one audio track is supported"
-                  << "per PeerConnection.";
-    return false;
-  }
   return true;
 }
 

@@ -48,6 +48,7 @@
 #include "talk/media/sctp/sctpdataengine.h"
 #endif
 #include "talk/session/media/soundclip.h"
+#include "talk/session/media/srtpfilter.h"
 
 namespace cricket {
 
@@ -138,8 +139,15 @@ void ChannelManager::Construct(MediaEngineInterface* me,
 }
 
 ChannelManager::~ChannelManager() {
-  if (initialized_)
+  if (initialized_) {
     Terminate();
+    // If srtp is initialized (done by the Channel) then we must call
+    // srtp_shutdown to free all crypto kernel lists. But we need to make sure
+    // shutdown always called at the end, after channels are destroyed.
+    // ChannelManager d'tor is always called last, it's safe place to call
+    // shutdown.
+    ShutdownSrtp();
+  }
 }
 
 bool ChannelManager::SetVideoRtxEnabled(bool enable) {

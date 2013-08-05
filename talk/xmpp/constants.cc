@@ -119,6 +119,27 @@ const char STR_MUC_ROOM_FEATURE_HANGOUT_LITE[] = "muc_lite";
 const char STR_MUC_ROOM_FEATURE_BROADCAST[] = "broadcast";
 const char STR_MUC_ROOM_FEATURE_MULTI_USER_VC[] = "muc_muvc";
 
+const char STR_ID_TYPE_CONVERSATION[] = "conversation";
+const char NS_GOOGLE_MUC_HANGOUT[] = "google:muc#hangout";
+const StaticQName QN_GOOGLE_MUC_HANGOUT_INVITE =
+    { NS_GOOGLE_MUC_HANGOUT, "invite" };
+const StaticQName QN_GOOGLE_MUC_HANGOUT_INVITE_TYPE =
+    { NS_GOOGLE_MUC_HANGOUT, "invite-type" };
+const StaticQName QN_ATTR_CREATE_ACTIVITY =
+    { STR_EMPTY, "create-activity" };
+const StaticQName QN_GOOGLE_MUC_HANGOUT_PUBLIC =
+    { NS_GOOGLE_MUC_HANGOUT, "public" };
+const StaticQName QN_GOOGLE_MUC_HANGOUT_INVITEE =
+    { NS_GOOGLE_MUC_HANGOUT, "invitee" };
+const StaticQName QN_GOOGLE_MUC_HANGOUT_NOTIFICATION_STATUS =
+    { NS_GOOGLE_MUC_HANGOUT, "notification-status" };
+const StaticQName QN_GOOGLE_MUC_HANGOUT_NOTIFICATION_TYPE = {
+    NS_GOOGLE_MUC_HANGOUT, "notification-type" };
+const StaticQName QN_GOOGLE_MUC_HANGOUT_HANGOUT_START_CONTEXT = {
+    NS_GOOGLE_MUC_HANGOUT, "hangout-start-context" };
+const StaticQName QN_GOOGLE_MUC_HANGOUT_CONVERSATION_ID = {
+    NS_GOOGLE_MUC_HANGOUT, "conversation-id" };
+
 const StaticQName QN_STREAM_STREAM = { NS_STREAM, STR_STREAM };
 const StaticQName QN_STREAM_FEATURES = { NS_STREAM, "features" };
 const StaticQName QN_STREAM_ERROR = { NS_STREAM, "error" };

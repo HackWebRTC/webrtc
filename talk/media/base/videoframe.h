@@ -66,15 +66,22 @@ class VideoFrame {
   size_t GetChromaWidth() const { return (GetWidth() + 1) / 2; }
   size_t GetChromaHeight() const { return (GetHeight() + 1) / 2; }
   size_t GetChromaSize() const { return GetUPitch() * GetChromaHeight(); }
+  // These can return NULL if the object is not backed by a buffer.
   virtual const uint8 *GetYPlane() const = 0;
   virtual const uint8 *GetUPlane() const = 0;
   virtual const uint8 *GetVPlane() const = 0;
   virtual uint8 *GetYPlane() = 0;
   virtual uint8 *GetUPlane() = 0;
   virtual uint8 *GetVPlane() = 0;
+
   virtual int32 GetYPitch() const = 0;
   virtual int32 GetUPitch() const = 0;
   virtual int32 GetVPitch() const = 0;
+
+  // Returns the handle of the underlying video frame. This is used when the
+  // frame is backed by a texture. The object should be destroyed when it is no
+  // longer in use, so the underlying resource can be freed.
+  virtual void* GetNativeHandle() const = 0;
 
   // For retrieving the aspect ratio of each pixel. Usually this is 1x1, but
   // the aspect_ratio_idc parameter of H.264 can specify non-square pixels.
@@ -165,7 +172,7 @@ class VideoFrame {
                               bool crop) const;
 
   // Sets the video frame to black.
-  bool SetToBlack();
+  virtual bool SetToBlack();
 
   // Tests if sample is valid.  Returns true if valid.
   static bool Validate(uint32 fourcc, int w, int h, const uint8 *sample,

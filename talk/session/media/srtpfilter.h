@@ -65,6 +65,7 @@ class SrtpSession;
 class SrtpStat;
 
 void EnableSrtpDebugging();
+void ShutdownSrtp();
 
 // Class to transform SRTP to/from RTP.
 // Initialize by calling SetSend with the local security params, then call
@@ -207,6 +208,9 @@ class SrtpSession {
 
   // Update the silent threshold (in ms) for signaling errors.
   void set_signal_silent_time(uint32 signal_silent_time_in_ms);
+
+  // Calls srtp_shutdown if it's initialized.
+  static void Terminate();
 
   sigslot::repeater3<uint32, SrtpFilter::Mode, SrtpFilter::Error>
       SignalSrtpError;

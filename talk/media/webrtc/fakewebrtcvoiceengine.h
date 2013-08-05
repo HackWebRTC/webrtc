@@ -161,6 +161,14 @@ class FakeWebRtcVoiceEngine
   }
   bool IsInited() const { return inited_; }
   int GetLastChannel() const { return last_channel_; }
+  int GetChannelFromLocalSsrc(uint32 local_ssrc) const {
+    for (std::map<int, Channel*>::const_iterator iter = channels_.begin();
+         iter != channels_.end(); ++iter) {
+      if (local_ssrc == iter->second->send_ssrc)
+        return iter->first;
+    }
+    return -1;
+  }
   int GetNumChannels() const { return channels_.size(); }
   bool GetPlayout(int channel) {
     return channels_[channel]->playout;

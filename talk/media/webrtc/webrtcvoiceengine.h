@@ -275,7 +275,7 @@ template <class T, class E>
 class WebRtcMediaChannel : public T, public webrtc::Transport {
  public:
   WebRtcMediaChannel(E *engine, int channel)
-      : engine_(engine), voe_channel_(channel), sequence_number_(-1) {}
+      : engine_(engine), voe_channel_(channel) {}
   E *engine() { return engine_; }
   int voe_channel() const { return voe_channel_; }
   bool valid() const { return voe_channel_ != -1; }
@@ -283,23 +283,10 @@ class WebRtcMediaChannel : public T, public webrtc::Transport {
  protected:
   // implements Transport interface
   virtual int SendPacket(int channel, const void *data, int len) {
-    // We need to store the sequence number to be able to pick up
-    // the same sequence when the device is restarted.
-    // TODO(oja): Remove when WebRtc has fixed the problem.
-    int seq_num;
-    if (!GetRtpSeqNum(data, len, &seq_num)) {
-      return -1;
-    }
-    if (sequence_number() == -1) {
-      LOG(INFO) << "WebRtcVoiceMediaChannel sends first packet seqnum="
-                << seq_num;
-    }
-
     talk_base::Buffer packet(data, len, kMaxRtpPacketLen);
     if (!T::SendPacket(&packet)) {
       return -1;
     }
-    sequence_number_ = seq_num;
     return len;
   }
 
@@ -308,14 +295,9 @@ class WebRtcMediaChannel : public T, public webrtc::Transport {
     return T::SendRtcp(&packet) ? len : -1;
   }
 
-  int sequence_number() const {
-    return sequence_number_;
-  }
-
  private:
   E *engine_;
   int voe_channel_;
-  int sequence_number_;
 };
 
 // WebRtcVoiceMediaChannel is an implementation of VoiceMediaChannel that uses
@@ -393,16 +375,24 @@ class WebRtcVoiceMediaChannel
 
  private:
   struct WebRtcVoiceChannelInfo;
+  typedef std::map<uint32, WebRtcVoiceChannelInfo> ChannelMap;
 
   void SetNack(uint32 ssrc, int channel, bool nack_enabled);
+  void SetNack(const ChannelMap& channels, bool nack_enabled);
   bool SetSendCodec(const webrtc::CodecInst& send_codec);
+  bool SetSendCodec(int channel, const webrtc::CodecInst& send_codec);
   bool ChangePlayout(bool playout);
   bool ChangeSend(SendFlags send);
+  bool ChangeSend(int channel, SendFlags send);
+  void ConfigureSendChannel(int channel);
+  bool DeleteChannel(int channel);
   bool InConferenceMode() const {
     return options_.conference_mode.GetWithDefaultIfUnset(false);
   }
+  bool IsDefaultChannel(int channel_id) const {
+    return channel_id == voe_channel();
+  }
 
-  typedef std::map<uint32, WebRtcVoiceChannelInfo> ChannelMap;
   talk_base::scoped_ptr<WebRtcSoundclipStream> ringback_tone_;
   std::set<int> ringback_channels_;  // channels playing ringback
   std::vector<AudioCodec> recv_codecs_;
@@ -415,17 +405,14 @@ class WebRtcVoiceMediaChannel
   SendFlags desired_send_;
   SendFlags send_;
 
-  // TODO(xians): Add support for multiple send channels.
-  uint32 send_ssrc_;
-  // Weak pointer to the renderer of the local audio track. It is owned by the
-  // track and will set to NULL when the track is going away or channel gets
-  // deleted. Used to notify the audio track that the media channel is added
-  // or removed.
-  AudioRenderer* local_renderer_;
+  // send_channels_ contains the channels which are being used for sending.
+  // When the default channel (voe_channel) is used for sending, it is
+  // contained in send_channels_, otherwise not.
+  ChannelMap send_channels_;
   uint32 default_receive_ssrc_;
   // Note the default channel (voe_channel()) can reside in both
-  // receive_channels_ and send channel in non-conference mode and in that case
-  // it will only be there if a non-zero default_receive_ssrc_ is set.
+  // receive_channels_ and send_channels_ in non-conference mode and in that
+  // case it will only be there if a non-zero default_receive_ssrc_ is set.
   ChannelMap receive_channels_;  // for multiple sources
   // receive_channels_ can be read from WebRtc callback thread.  Access from
   // the WebRtc thread must be synchronized with edits on the worker thread.

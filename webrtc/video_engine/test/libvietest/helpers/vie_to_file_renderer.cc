@@ -123,7 +123,8 @@ void ViEToFileRenderer::ForgetOutputFile() {
 int ViEToFileRenderer::DeliverFrame(unsigned char *buffer,
                                     int buffer_size,
                                     uint32_t time_stamp,
-                                    int64_t render_time) {
+                                    int64_t render_time,
+                                    void* /*handle*/) {
   webrtc::CriticalSectionScoped lock(frame_queue_cs_.get());
   test::Frame* frame;
   if (free_frame_queue_.empty()) {
@@ -145,6 +146,8 @@ int ViEToFileRenderer::DeliverFrame(unsigned char *buffer,
   frame_render_event_->Set();
   return 0;
 }
+
+bool ViEToFileRenderer::IsTextureSupported() { return false; }
 
 int ViEToFileRenderer::FrameSizeChange(unsigned int width,
                                        unsigned int height,

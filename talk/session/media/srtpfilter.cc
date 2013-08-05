@@ -97,6 +97,15 @@ void EnableSrtpDebugging() {
 #endif  // HAVE_SRTP
 }
 
+// NOTE: This is called from ChannelManager D'tor.
+void ShutdownSrtp() {
+#ifdef HAVE_SRTP
+  // If srtp_dealloc is not executed then this will clear all existing sessions.
+  // This should be called when application is shutting down.
+  SrtpSession::Terminate();
+#endif
+}
+
 SrtpFilter::SrtpFilter()
     : state_(ST_INIT),
       signal_silent_time_in_ms_(0) {
@@ -619,6 +628,17 @@ bool SrtpSession::Init() {
   }
 
   return true;
+}
+
+void SrtpSession::Terminate() {
+  if (inited_) {
+    int err = srtp_shutdown();
+    if (err) {
+      LOG(LS_ERROR) << "srtp_shutdown failed. err=" << err;
+      return;
+    }
+    inited_ = false;
+  }
 }
 
 void SrtpSession::HandleEvent(const srtp_event_data_t* ev) {

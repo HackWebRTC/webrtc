@@ -152,6 +152,7 @@ class MediaSessionClient : public SessionClient, public sigslot::has_slots<> {
   void OnSessionState(BaseSession *session, BaseSession::State state);
   void OnSessionDestroy(Session *session);
   Session *CreateSession(Call *call);
+  Session *CreateSession(const std::string& id, Call* call);
   Call *FindCallByRemoteName(const std::string &remote_name);
 
   buzz::Jid jid_;

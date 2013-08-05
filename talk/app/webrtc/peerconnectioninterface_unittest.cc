@@ -551,20 +551,27 @@ TEST_F(PeerConnectionInterfaceTest, AddStreams) {
   AddVoiceStream(kStreamLabel2);
   ASSERT_EQ(2u, pc_->local_streams()->count());
 
-  // Fail to add another stream with audio since we already have an audio track.
+  // Test we can add multiple local streams to one peerconnection.
   scoped_refptr<MediaStreamInterface> stream(
       pc_factory_->CreateLocalMediaStream(kStreamLabel3));
   scoped_refptr<AudioTrackInterface> audio_track(
       pc_factory_->CreateAudioTrack(
           kStreamLabel3, static_cast<AudioSourceInterface*>(NULL)));
   stream->AddTrack(audio_track.get());
-  EXPECT_FALSE(pc_->AddStream(stream, NULL));
-
-  // Remove the stream with the audio track.
-  pc_->RemoveStream(pc_->local_streams()->at(1));
-
-  // Test that we now can add the stream with the audio track.
   EXPECT_TRUE(pc_->AddStream(stream, NULL));
+  EXPECT_EQ(3u, pc_->local_streams()->count());
+
+  // Remove the third stream.
+  pc_->RemoveStream(pc_->local_streams()->at(2));
+  EXPECT_EQ(2u, pc_->local_streams()->count());
+
+  // Remove the second stream.
+  pc_->RemoveStream(pc_->local_streams()->at(1));
+  EXPECT_EQ(1u, pc_->local_streams()->count());
+
+  // Remove the first stream.
+  pc_->RemoveStream(pc_->local_streams()->at(0));
+  EXPECT_EQ(0u, pc_->local_streams()->count());
 }
 
 TEST_F(PeerConnectionInterfaceTest, RemoveStream) {

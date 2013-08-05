@@ -92,6 +92,10 @@ class SessionManager : public sigslot::has_slots<> {
   Session *CreateSession(const std::string& local_name,
                          const std::string& content_type);
 
+  Session *CreateSession(const std::string& id,
+                         const std::string& local_name,
+                         const std::string& content_type);
+
   // Destroys the given session.
   void DestroySession(Session *session);
 

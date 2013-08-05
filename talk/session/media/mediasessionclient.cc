@@ -220,8 +220,13 @@ void MediaSessionClient::JoinCalls(Call *call_to_join, Call *call) {
 }
 
 Session *MediaSessionClient::CreateSession(Call *call) {
+  std::string id;
+  return CreateSession(id, call);
+}
+
+Session *MediaSessionClient::CreateSession(const std::string& id, Call* call) {
   const std::string& type = NS_JINGLE_RTP;
-  Session *session = session_manager_->CreateSession(jid().Str(), type);
+  Session *session = session_manager_->CreateSession(id, jid().Str(), type);
   session_map_[session->id()] = call;
   return session;
 }

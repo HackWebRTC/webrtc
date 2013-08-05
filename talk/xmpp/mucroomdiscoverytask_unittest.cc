@@ -43,10 +43,12 @@ class MucRoomDiscoveryListener : public sigslot::has_slots<> {
   void OnResult(buzz::MucRoomDiscoveryTask* task,
                 bool exists,
                 const std::string& name,
+                const std::string& conversation_id,
                 const std::set<std::string>& features,
                 const std::map<std::string, std::string>& extended_info) {
     last_exists = exists;
     last_name = name;
+    last_conversation_id = conversation_id;
     last_features = features;
     last_extended_info = extended_info;
   }
@@ -58,6 +60,7 @@ class MucRoomDiscoveryListener : public sigslot::has_slots<> {
 
   bool last_exists;
   std::string last_name;
+  std::string last_conversation_id;
   std::set<std::string> last_features;
   std::map<std::string, std::string> last_extended_info;
   int error_count;
@@ -67,7 +70,8 @@ class MucRoomDiscoveryTaskTest : public testing::Test {
  public:
   MucRoomDiscoveryTaskTest() :
       room_jid("muc-jid-ponies@domain.com"),
-      room_name("ponies") {
+      room_name("ponies"),
+      conversation_id("test_conversation_id") {
   }
 
   virtual void SetUp() {
@@ -87,6 +91,7 @@ class MucRoomDiscoveryTaskTest : public testing::Test {
   MucRoomDiscoveryListener* listener;
   buzz::Jid room_jid;
   std::string room_name;
+  std::string conversation_id;
 };
 
 TEST_F(MucRoomDiscoveryTaskTest, TestDiscovery) {
@@ -107,12 +112,16 @@ TEST_F(MucRoomDiscoveryTaskTest, TestDiscovery) {
   EXPECT_EQ(expected_iq, xmpp_client->sent_stanzas()[0]->Str());
 
   EXPECT_EQ("", listener->last_name);
+  EXPECT_EQ("", listener->last_conversation_id);
 
   std::string response_iq =
       "<iq xmlns='jabber:client'"
       "    from='muc-jid-ponies@domain.com' id='0' type='result'>"
       "  <info:query xmlns:info='http://jabber.org/protocol/disco#info'>"
-      "    <info:identity name='ponies'/>"
+      "    <info:identity name='ponies'>"
+      "      <han:conversation-id xmlns:han='google:muc#hangout'>"
+      "test_conversation_id</han:conversation-id>"
+      "    </info:identity>"
       "    <info:feature var='feature1'/>"
       "    <info:feature var='feature2'/>"
       "    <data:x xmlns:data='jabber:x:data'>"
@@ -126,6 +135,7 @@ TEST_F(MucRoomDiscoveryTaskTest, TestDiscovery) {
 
   EXPECT_EQ(true, listener->last_exists);
   EXPECT_EQ(room_name, listener->last_name);
+  EXPECT_EQ(conversation_id, listener->last_conversation_id);
   EXPECT_EQ(2U, listener->last_features.size());
   EXPECT_EQ(1U, listener->last_features.count("feature1"));
   EXPECT_EQ(2U, listener->last_extended_info.size());

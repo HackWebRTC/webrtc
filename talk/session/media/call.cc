@@ -59,6 +59,19 @@ V FindOrNull(const std::map<K, V>& map,
   return (it != map.end()) ? it->second : NULL;
 }
 
+
+bool ContentContainsCrypto(const cricket::ContentInfo* content) {
+  if (content != NULL) {
+    const cricket::MediaContentDescription* desc =
+        static_cast<const cricket::MediaContentDescription*>(
+            content->description);
+    if (!desc || desc->cryptos().empty()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 }
 
 Call::Call(MediaSessionClient* session_client)
@@ -85,22 +98,16 @@ Call::~Call() {
 Session* Call::InitiateSession(const buzz::Jid& to,
                                const buzz::Jid& initiator,
                                const CallOptions& options) {
-  const SessionDescription* offer = session_client_->CreateOffer(options);
+  std::string id;
+  std::string initiator_name = initiator.Str();
+  return InternalInitiateSession(id, to, initiator_name, options);
+}
 
-  Session* session = session_client_->CreateSession(this);
-  session->set_initiator_name(initiator.Str());
-
-  AddSession(session, offer);
-  session->Initiate(to.Str(), offer);
-
-  // After this timeout, terminate the call because the callee isn't
-  // answering
-  session_client_->session_manager()->signaling_thread()->Clear(this,
-      MSG_TERMINATECALL);
-  session_client_->session_manager()->signaling_thread()->PostDelayed(
-    send_to_voicemail_ ? kSendToVoicemailTimeout : kNoVoicemailTimeout,
-    this, MSG_TERMINATECALL);
-  return session;
+Session *Call::InitiateSession(const std::string& id,
+                               const buzz::Jid& to,
+                               const CallOptions& options) {
+  std::string initiator_name;
+  return InternalInitiateSession(id, to, initiator_name, options);
 }
 
 void Call::IncomingSession(Session* session, const SessionDescription* offer) {
@@ -1023,6 +1030,68 @@ void Call::OnReceivedTerminateReason(Session* session,
   session_client_->session_manager()->signaling_thread()->Clear(this,
     MSG_TERMINATECALL);
   SignalReceivedTerminateReason(this, session, reason);
+}
+
+// TODO(mdodd): Get ride of this method since all Hangouts are using a secure
+// connection.
+bool Call::secure() const {
+  if (session_client_->secure() == SEC_DISABLED) {
+    return false;
+  }
+
+  bool ret = true;
+  int i = 0;
+
+  MediaSessionMap::const_iterator it;
+  for (it = media_session_map_.begin(); it != media_session_map_.end(); ++it) {
+    LOG_F(LS_VERBOSE) << "session[" << i
+                      << "], check local and remote descriptions";
+    i++;
+
+    if (!SessionDescriptionContainsCrypto(
+            it->second.session->local_description()) ||
+        !SessionDescriptionContainsCrypto(
+            it->second.session->remote_description())) {
+      ret = false;
+      break;
+    }
+  }
+
+  LOG_F(LS_VERBOSE) << "secure=" << ret;
+  return ret;
+}
+
+bool Call::SessionDescriptionContainsCrypto(
+    const SessionDescription* sdesc) const {
+  if (sdesc == NULL) {
+    LOG_F(LS_VERBOSE) << "sessionDescription is NULL";
+    return false;
+  }
+
+  return ContentContainsCrypto(sdesc->GetContentByName(CN_AUDIO)) &&
+         ContentContainsCrypto(sdesc->GetContentByName(CN_VIDEO));
+}
+
+Session* Call::InternalInitiateSession(const std::string& id,
+                                       const buzz::Jid& to,
+                                       const std::string& initiator_name,
+                                       const CallOptions& options) {
+  const SessionDescription* offer = session_client_->CreateOffer(options);
+
+  Session* session = session_client_->CreateSession(id, this);
+  session->set_initiator_name(initiator_name);
+
+  AddSession(session, offer);
+  session->Initiate(to.Str(), offer);
+
+  // After this timeout, terminate the call because the callee isn't
+  // answering
+  session_client_->session_manager()->signaling_thread()->Clear(this,
+      MSG_TERMINATECALL);
+  session_client_->session_manager()->signaling_thread()->PostDelayed(
+    send_to_voicemail_ ? kSendToVoicemailTimeout : kNoVoicemailTimeout,
+    this, MSG_TERMINATECALL);
+  return session;
 }
 
 }  // namespace cricket

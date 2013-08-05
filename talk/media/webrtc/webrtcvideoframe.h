@@ -106,6 +106,7 @@ class WebRtcVideoFrame : public VideoFrame {
   virtual int32 GetYPitch() const { return frame()->Width(); }
   virtual int32 GetUPitch() const { return (frame()->Width() + 1) / 2; }
   virtual int32 GetVPitch() const { return (frame()->Width() + 1) / 2; }
+  virtual void* GetNativeHandle() const { return NULL; }
 
   virtual size_t GetPixelWidth() const { return pixel_width_; }
   virtual size_t GetPixelHeight() const { return pixel_height_; }

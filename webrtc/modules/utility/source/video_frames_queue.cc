@@ -14,6 +14,7 @@
 
 #include <assert.h>
 
+#include "webrtc/common_video/interface/texture_video_frame.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace.h"
@@ -48,6 +49,16 @@ VideoFramesQueue::~VideoFramesQueue() {
 }
 
 int32_t VideoFramesQueue::AddFrame(const I420VideoFrame& newFrame) {
+  if (newFrame.native_handle() != NULL) {
+    _incomingFrames.PushBack(new TextureVideoFrame(
+        static_cast<NativeHandle*>(newFrame.native_handle()),
+        newFrame.width(),
+        newFrame.height(),
+        newFrame.timestamp(),
+        newFrame.render_time_ms()));
+    return 0;
+  }
+
   I420VideoFrame* ptrFrameToAdd = NULL;
   // Try to re-use a VideoFrame. Only allocate new memory if it is necessary.
   if (!_emptyFrames.Empty()) {
@@ -113,12 +124,17 @@ I420VideoFrame* VideoFramesQueue::FrameToRecord() {
 }
 
 int32_t VideoFramesQueue::ReturnFrame(I420VideoFrame* ptrOldFrame) {
-  ptrOldFrame->set_timestamp(0);
-  ptrOldFrame->set_width(0);
-  ptrOldFrame->set_height(0);
-  ptrOldFrame->set_render_time_ms(0);
-  ptrOldFrame->ResetSize();
-  _emptyFrames.PushBack(ptrOldFrame);
+  // No need to reuse texture frames because they do not allocate memory.
+  if (ptrOldFrame->native_handle() == NULL) {
+    ptrOldFrame->set_timestamp(0);
+    ptrOldFrame->set_width(0);
+    ptrOldFrame->set_height(0);
+    ptrOldFrame->set_render_time_ms(0);
+    ptrOldFrame->ResetSize();
+    _emptyFrames.PushBack(ptrOldFrame);
+  } else {
+    delete ptrOldFrame;
+  }
   return 0;
 }
 

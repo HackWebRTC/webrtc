@@ -46,6 +46,11 @@ struct MucRoomInfo {
 
 class MucRoomLookupTask : public IqTask {
  public:
+  enum IdType {
+    ID_TYPE_CONVERSATION,
+    ID_TYPE_HANGOUT
+  };
+
   static MucRoomLookupTask*
       CreateLookupTaskForRoomName(XmppTaskParentInterface* parent,
                                   const Jid& lookup_server_jid,
