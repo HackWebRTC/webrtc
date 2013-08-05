@@ -10,9 +10,10 @@
 
 #include "webrtc/tools/frame_analyzer/video_quality_analysis.h"
 
-#include <cassert>
-#include <cstdio>
-#include <cstdlib>
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <string>
 
 #define STATS_LINE_LENGTH 32

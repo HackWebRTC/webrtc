@@ -13,7 +13,7 @@
 
 #include "webrtc/common_audio/resampler/sinusoidal_linear_chirp_source.h"
 
-#include <cmath>
+#include <math.h>
 
 namespace webrtc {
 

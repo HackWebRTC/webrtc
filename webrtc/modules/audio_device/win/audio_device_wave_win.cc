@@ -19,7 +19,7 @@
 #include <windows.h>
 #include <objbase.h>    // CoTaskMemAlloc, CoTaskMemFree
 #include <strsafe.h>    // StringCchCopy(), StringCchCat(), StringCchPrintf()
-#include <cassert>
+#include <assert.h>
 
 // Avoids the need of Windows 7 SDK
 #ifndef WAVE_MAPPED_DEFAULT_COMMUNICATION_DEVICE

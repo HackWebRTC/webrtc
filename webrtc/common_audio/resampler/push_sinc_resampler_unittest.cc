@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <cmath>
+#include <math.h>
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -82,7 +82,7 @@ TEST_P(PushSincResamplerTest, Resample) {
   resampler_source.Run(input_samples, source.get());
   for (int i = 0; i < kNumBlocks; ++i) {
     for (int j = 0; j < input_block_size; ++j) {
-      source_int[j] = static_cast<int16_t>(std::floor(32767 *
+      source_int[j] = static_cast<int16_t>(floor(32767 *
           source[i * input_block_size + j] + 0.5));
     }
     EXPECT_EQ(output_block_size,

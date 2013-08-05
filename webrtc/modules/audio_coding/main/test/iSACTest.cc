@@ -10,14 +10,14 @@
 
 #include "webrtc/modules/audio_coding/main/test/iSACTest.h"
 
-#include <cctype>
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
 #if _WIN32
 #include <windows.h>
 #elif WEBRTC_LINUX
-#include <ctime>
+#include <time.h>
 #else
 #include <sys/time.h>
 #include <time.h>

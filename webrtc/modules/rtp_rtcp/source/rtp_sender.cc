@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 
-#include <cstdlib>  // srand
+#include <stdlib.h>  // srand
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_audio.h"

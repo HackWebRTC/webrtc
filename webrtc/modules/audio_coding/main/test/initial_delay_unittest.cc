@@ -10,9 +10,9 @@
 
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 
+#include <assert.h>
 #include <math.h>
 
-#include <cassert>
 #include <iostream>
 
 #include "gtest/gtest.h"

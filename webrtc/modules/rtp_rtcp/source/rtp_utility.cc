@@ -10,9 +10,9 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
-#include <cassert>
-#include <cmath>  // ceil
-#include <cstring>  // memcpy
+#include <assert.h>
+#include <math.h>  // ceil
+#include <string.h>  // memcpy
 
 #if defined(_WIN32)
 // Order for these headers are important

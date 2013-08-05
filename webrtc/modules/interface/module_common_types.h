@@ -11,8 +11,8 @@
 #ifndef MODULE_COMMON_TYPES_H
 #define MODULE_COMMON_TYPES_H
 
-#include <cassert>
-#include <cstring> // memcpy
+#include <assert.h>
+#include <string.h> // memcpy
 
 #include <algorithm>
 

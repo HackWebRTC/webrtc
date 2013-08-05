@@ -11,7 +11,8 @@
 #ifndef WEBRTC_TEST_TESTSUPPORT_FRAME_READER_H_
 #define WEBRTC_TEST_TESTSUPPORT_FRAME_READER_H_
 
-#include <cstdio>
+#include <stdio.h>
+
 #include <string>
 
 #include "webrtc/typedefs.h"

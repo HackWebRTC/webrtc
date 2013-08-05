@@ -9,7 +9,7 @@
  */
 
 #include <stdio.h>
-#include <ctime>
+#include <time.h>
 #include "JitterEstimateTest.h"
 
 using namespace webrtc;
@@ -25,8 +25,8 @@ _counter(0),
 _lossrate(0.0)
 {
     // Assign to random value between 0 and max of unsigned int
-    _seed = static_cast<unsigned>(std::time(0));
-    std::srand(_seed);
+    _seed = static_cast<unsigned>(time(0));
+    srand(_seed);
     _prevTimestamp = static_cast<unsigned int>((std::rand() + 1.0)/(RAND_MAX + 1.0)*(pow((float) 2, (long) sizeof(unsigned int)*8)-1));
     _prevWallClock = VCMTickTime::MillisecondTimestamp();
 }

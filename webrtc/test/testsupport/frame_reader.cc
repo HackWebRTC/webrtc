@@ -10,7 +10,7 @@
 
 #include "webrtc/test/testsupport/frame_reader.h"
 
-#include <cassert>
+#include <assert.h>
 
 #include "webrtc/test/testsupport/fileutils.h"
 

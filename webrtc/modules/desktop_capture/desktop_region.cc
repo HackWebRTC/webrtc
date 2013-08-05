@@ -10,8 +10,9 @@
 
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 
+#include <assert.h>
+
 #include <algorithm>
-#include <cassert>
 
 namespace webrtc {
 

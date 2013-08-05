@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <assert.h>
+#include <stdio.h>
+#include <time.h>
+
 #include <stdarg.h>
 #include <sys/stat.h>  // To check for directory existence.
-
-#include <cassert>
-#include <cstdio>
-#include <ctime>
 
 #ifndef S_ISDIR  // Not defined in stat.h on Windows.
 #define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)

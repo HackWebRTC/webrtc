@@ -18,7 +18,7 @@
 #include "webrtc/system_wrappers/interface/trace.h"
 
 #include <ApplicationServices/ApplicationServices.h>
-#include <cassert>
+#include <assert.h>
 #include <libkern/OSAtomic.h>   // OSAtomicCompareAndSwap()
 #include <mach/mach.h>          // mach_task_self()
 #include <sys/sysctl.h>         // sysctlbyname()

@@ -10,8 +10,9 @@
 
 #include "webrtc/video_engine/internal/video_call.h"
 
-#include <cassert>
-#include <cstring>
+#include <assert.h>
+#include <string.h>
+
 #include <map>
 #include <vector>
 

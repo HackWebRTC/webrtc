@@ -16,8 +16,9 @@
 #else
 #include <arpa/inet.h>
 #endif
-#include <cassert>
-#include <cstdio>
+#include <assert.h>
+#include <stdio.h>
+
 #include <map>
 #include <string>
 #include <vector>

@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/video_render//video_render_frames.h"
 
-#include <cassert>
+#include <assert.h>
 
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"

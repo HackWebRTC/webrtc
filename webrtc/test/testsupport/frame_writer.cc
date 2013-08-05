@@ -10,7 +10,7 @@
 
 #include "webrtc/test/testsupport/frame_writer.h"
 
-#include <cassert>
+#include <assert.h>
 
 namespace webrtc {
 namespace test {

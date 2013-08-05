@@ -23,8 +23,8 @@
 #define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
 #endif
 
-#include <cstdio>
-#include <cstring>
+#include <stdio.h>
+#include <string.h>
 
 #include "webrtc/typedefs.h"  // For architecture defines
 

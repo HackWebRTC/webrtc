@@ -11,7 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ4_TOOLS_INPUT_AUDIO_FILE_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ4_TOOLS_INPUT_AUDIO_FILE_H_
 
-#include <cstdio>
+#include <stdio.h>
+
 #include <string>
 
 #include "webrtc/system_wrappers/interface/constructor_magic.h"

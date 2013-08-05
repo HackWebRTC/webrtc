@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 
-#include <cassert>
+#include <assert.h>
 #include <string.h>
 
 #include "webrtc/common_types.h"

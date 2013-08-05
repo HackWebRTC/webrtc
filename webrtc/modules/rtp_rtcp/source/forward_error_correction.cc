@@ -10,9 +10,10 @@
 
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 
+#include <assert.h>
+#include <string.h>
+
 #include <algorithm>
-#include <cassert>
-#include <cstring>
 #include <iterator>
 
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction_internal.h"

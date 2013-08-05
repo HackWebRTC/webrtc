@@ -10,8 +10,8 @@
 
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction_internal.h"
 
-#include <cassert>
-#include <cstring>
+#include <assert.h>
+#include <string.h>
 
 #include "webrtc/modules/rtp_rtcp/source/fec_private_tables_bursty.h"
 #include "webrtc/modules/rtp_rtcp/source/fec_private_tables_random.h"

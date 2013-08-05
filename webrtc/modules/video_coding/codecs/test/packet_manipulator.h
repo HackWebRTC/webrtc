@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_PACKET_MANIPULATOR_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_PACKET_MANIPULATOR_H_
 
-#include <cstdlib>
+#include <stdlib.h>
 
 #include "webrtc/modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"

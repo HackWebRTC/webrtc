@@ -10,7 +10,7 @@
 
 #include "webrtc/voice_engine/test/auto_test/fixtures/before_initialization_fixture.h"
 
-#include <cstdlib>
+#include <stdlib.h>
 
 class VoeBaseMiscTest : public BeforeInitializationFixture {
 };

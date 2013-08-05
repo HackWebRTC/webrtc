@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/audio_processing/processing_component.h"
 
-#include <cassert>
+#include <assert.h>
 
 #include "webrtc/modules/audio_processing/audio_processing_impl.h"
 

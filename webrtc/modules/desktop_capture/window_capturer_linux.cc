@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/desktop_capture/window_capturer.h"
 
-#include <cassert>
+#include <assert.h>
 
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 

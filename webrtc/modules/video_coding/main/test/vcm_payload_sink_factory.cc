@@ -10,8 +10,9 @@
 
 #include "webrtc/modules/video_coding/main/test/vcm_payload_sink_factory.h"
 
+#include <assert.h>
+
 #include <algorithm>
-#include <cassert>
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "webrtc/modules/video_coding/main/test/test_util.h"

@@ -11,7 +11,7 @@
 #include "webrtc/modules/video_processing/main/source/denoising.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
-#include <cstring>
+#include <string.h>
 
 namespace webrtc {
 

@@ -10,7 +10,8 @@
 
 #include "webrtc/modules/video_coding/codecs/test_framework/benchmark.h"
 
-#include <cassert>
+#include <assert.h>
+
 #include <iostream>
 #include <sstream>
 #include <vector>

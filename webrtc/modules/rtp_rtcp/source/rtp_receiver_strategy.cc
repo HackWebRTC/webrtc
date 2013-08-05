@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
 
-#include <cstdlib>
+#include <stdlib.h>
 
 namespace webrtc {
 

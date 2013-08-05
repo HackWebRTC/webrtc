@@ -10,8 +10,8 @@
 
 #include "webrtc/modules/video_coding/codecs/test/predictive_packet_manipulator.h"
 
-#include <cassert>
-#include <cstdio>
+#include <assert.h>
+#include <stdio.h>
 
 #include "webrtc/test/testsupport/packet_reader.h"
 

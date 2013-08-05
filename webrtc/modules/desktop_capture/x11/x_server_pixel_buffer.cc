@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/desktop_capture/x11/x_server_pixel_buffer.h"
 
-#include <cassert>
+#include <assert.h>
 #include <sys/shm.h>
 
 #include "webrtc/system_wrappers/interface/logging.h"

@@ -10,7 +10,7 @@
 #ifndef VOICE_ENGINE_MAIN_TEST_AUTO_TEST_FAKE_MEDIA_PROCESS_H_
 #define VOICE_ENGINE_MAIN_TEST_AUTO_TEST_FAKE_MEDIA_PROCESS_H_
 
-#include <cmath>
+#include <math.h>
 
 class FakeMediaProcess : public webrtc::VoEMediaProcess {
  public:

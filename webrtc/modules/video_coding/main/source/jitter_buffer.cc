@@ -9,8 +9,9 @@
  */
 #include "webrtc/modules/video_coding/main/source/jitter_buffer.h"
 
+#include <assert.h>
+
 #include <algorithm>
-#include <cassert>
 #include <utility>
 
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"

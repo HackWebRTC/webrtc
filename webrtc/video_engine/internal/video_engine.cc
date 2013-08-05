@@ -10,7 +10,7 @@
 
 #include "webrtc/video_engine/new_include/video_engine.h"
 
-#include <cassert>
+#include <assert.h>
 
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/internal/video_call.h"

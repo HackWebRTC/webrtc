@@ -10,7 +10,7 @@
 
 #include "webrtc/video_engine/vie_input_manager.h"
 
-#include <cassert>
+#include <assert.h>
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/video_capture/include/video_capture_factory.h"

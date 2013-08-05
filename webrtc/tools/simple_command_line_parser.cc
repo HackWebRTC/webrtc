@@ -10,8 +10,9 @@
 
 #include "webrtc/tools/simple_command_line_parser.h"
 
-#include <cstdio>
-#include <cstdlib>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <string>
 
 namespace webrtc {

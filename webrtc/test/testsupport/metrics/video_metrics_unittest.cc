@@ -39,7 +39,7 @@ class VideoMetricsTest: public testing::Test {
     fclose(dummy);
   }
   void TearDown() {
-    std::remove(kEmptyFileName);
+    remove(kEmptyFileName);
   }
   webrtc::test::QualityMetricsResult psnr_result_;
   webrtc::test::QualityMetricsResult ssim_result_;

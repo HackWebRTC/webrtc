@@ -8,8 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <cassert>
-#include <cmath>
+#include <assert.h>
+#include <math.h>
+
 #include <sstream>
 #include <string>
 
@@ -294,8 +295,8 @@ void FixOutputFileForComparison(const std::string& output_file,
   delete[] last_frame_data;
   frame_reader.Close();
   frame_writer.Close();
-  ASSERT_EQ(0, std::remove(output_file.c_str()));
-  ASSERT_EQ(0, std::rename(temp_file.c_str(), output_file.c_str()));
+  ASSERT_EQ(0, remove(output_file.c_str()));
+  ASSERT_EQ(0, rename(temp_file.c_str(), output_file.c_str()));
 }
 
 void FrameDropDetector::ReportFrameState(State state, unsigned int timestamp,

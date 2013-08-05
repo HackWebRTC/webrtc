@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <climits>
-#include <cstdarg>
-#include <cstdio>
+#include <limits.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 #include <algorithm>
 

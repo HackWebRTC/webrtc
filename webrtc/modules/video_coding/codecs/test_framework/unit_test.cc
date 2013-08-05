@@ -8,11 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <assert.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <cassert>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/video_coding/codecs/test_framework/unit_test.h"

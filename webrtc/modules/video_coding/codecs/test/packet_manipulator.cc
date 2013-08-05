@@ -10,8 +10,8 @@
 
 #include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
 
-#include <cassert>
-#include <cstdio>
+#include <assert.h>
+#include <stdio.h>
 
 namespace webrtc {
 namespace test {

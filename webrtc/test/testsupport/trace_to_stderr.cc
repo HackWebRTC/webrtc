@@ -10,8 +10,8 @@
 
 #include "webrtc/test/testsupport/trace_to_stderr.h"
 
-#include <cassert>
-#include <cstdio>
+#include <assert.h>
+#include <stdio.h>
 
 #include <string>
 

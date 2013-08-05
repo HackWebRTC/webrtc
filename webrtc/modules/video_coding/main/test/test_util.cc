@@ -10,8 +10,9 @@
 
 #include "webrtc/modules/video_coding/main/test/test_util.h"
 
-#include <cassert>
-#include <cmath>
+#include <assert.h>
+#include <math.h>
+
 #include <iomanip>
 #include <sstream>
 

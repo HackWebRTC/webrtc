@@ -12,8 +12,8 @@
 
 #include <math.h>
 
-#include <cassert>  // assert
-#include <cstring>  // memcpy()
+#include <assert.h>  // assert
+#include <string.h>  // memcpy()
 
 #include "webrtc/modules/rtp_rtcp/source/receiver_fec.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"

@@ -10,7 +10,8 @@
 
 #include "webrtc/modules/audio_coding/main/test/TestStereo.h"
 
-#include <cassert>
+#include <assert.h>
+
 #include <string>
 
 #include "gtest/gtest.h"

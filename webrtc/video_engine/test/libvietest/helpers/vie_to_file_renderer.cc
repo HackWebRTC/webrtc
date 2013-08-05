@@ -66,7 +66,7 @@ bool ViEToFileRenderer::PrepareForRendering(
 
   assert(output_file_ == NULL);
 
-  output_file_ = std::fopen((output_path + output_filename).c_str(), "wb");
+  output_file_ = fopen((output_path + output_filename).c_str(), "wb");
   if (output_file_ == NULL) {
     return false;
   }
@@ -86,15 +86,15 @@ void ViEToFileRenderer::StopRendering() {
     // Call Stop() repeatedly, waiting for ProcessRenderQueue() to finish.
     while (!thread_->Stop()) continue;
   }
-  std::fclose(output_file_);
+  fclose(output_file_);
   output_file_ = NULL;
 }
 
 bool ViEToFileRenderer::SaveOutputFile(const std::string& prefix) {
   assert(output_file_ == NULL && output_filename_ != "");
-  if (std::rename((output_path_ + output_filename_).c_str(),
+  if (rename((output_path_ + output_filename_).c_str(),
                   (output_path_ + prefix + output_filename_).c_str()) != 0) {
-    std::perror("Failed to rename output file");
+    perror("Failed to rename output file");
     return false;
   }
   ForgetOutputFile();
@@ -103,8 +103,8 @@ bool ViEToFileRenderer::SaveOutputFile(const std::string& prefix) {
 
 bool ViEToFileRenderer::DeleteOutputFile() {
   assert(output_file_ == NULL && output_filename_ != "");
-  if (std::remove((output_path_ + output_filename_).c_str()) != 0) {
-    std::perror("Failed to delete output file");
+  if (remove((output_path_ + output_filename_).c_str()) != 0) {
+    perror("Failed to delete output file");
     return false;
   }
   ForgetOutputFile();
@@ -170,7 +170,7 @@ bool ViEToFileRenderer::ProcessRenderQueue() {
     // the renderer.
     frame_queue_cs_->Leave();
     assert(output_file_);
-    int written = std::fwrite(frame->buffer.get(), sizeof(unsigned char),
+    int written = fwrite(frame->buffer.get(), sizeof(unsigned char),
                               frame->buffer_size, output_file_);
     frame_queue_cs_->Enter();
     // Return the frame.

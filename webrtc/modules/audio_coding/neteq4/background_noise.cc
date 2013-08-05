@@ -11,9 +11,9 @@
 #include "webrtc/modules/audio_coding/neteq4/background_noise.h"
 
 #include <assert.h>
+#include <string.h>  // memcpy
 
 #include <algorithm>  // min, max
-#include <cstring>  // memcpy
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/neteq4/audio_multi_vector.h"

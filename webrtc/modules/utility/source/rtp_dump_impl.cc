@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/utility/source/rtp_dump_impl.h"
 
-#include <cassert>
+#include <assert.h>
 #include <stdio.h>
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"

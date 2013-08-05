@@ -10,10 +10,9 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_audio.h"
 
+#include <assert.h>  // assert
 #include <math.h>   // pow()
-
-#include <cassert>  // assert
-#include <cstring>  // memcpy()
+#include <string.h>  // memcpy()
 
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"

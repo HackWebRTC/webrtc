@@ -11,8 +11,9 @@
 #ifndef WEBRTC_VIDEO_ENGINE_TEST_LIBVIETEST_INCLUDE_VIE_TO_FILE_RENDERER_H_
 #define WEBRTC_VIDEO_ENGINE_TEST_LIBVIETEST_INCLUDE_VIE_TO_FILE_RENDERER_H_
 
-#include <cstdio>
-#include <cstring>
+#include <stdio.h>
+#include <string.h>
+
 #include <list>
 #include <string>
 
@@ -70,7 +71,7 @@ class ViEToFileRenderer: public webrtc::ExternalRenderer {
   void ForgetOutputFile();
   bool ProcessRenderQueue();
 
-  std::FILE* output_file_;
+  FILE* output_file_;
   std::string output_path_;
   std::string output_filename_;
   webrtc::scoped_ptr<webrtc::ThreadWrapper> thread_;

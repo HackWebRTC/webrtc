@@ -12,7 +12,7 @@
 #include "webrtc/modules/video_coding/main/source/rtt_filter.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
-#include <cmath>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 

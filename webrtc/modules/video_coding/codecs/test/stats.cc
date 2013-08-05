@@ -10,9 +10,10 @@
 
 #include "webrtc/modules/video_coding/codecs/test/stats.h"
 
+#include <assert.h>
+#include <stdio.h>
+
 #include <algorithm>  // min_element, max_element
-#include <cassert>
-#include <cstdio>
 
 namespace webrtc {
 namespace test {

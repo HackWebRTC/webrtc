@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <cassert>
+#include <assert.h>
 
 #include "webrtc/modules/audio_device/linux/audio_mixer_manager_pulse_linux.h"
 #include "webrtc/system_wrappers/interface/trace.h"

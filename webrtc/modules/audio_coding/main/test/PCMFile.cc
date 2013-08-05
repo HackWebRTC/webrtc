@@ -10,7 +10,7 @@
 
 #include "PCMFile.h"
 
-#include <cctype>
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 

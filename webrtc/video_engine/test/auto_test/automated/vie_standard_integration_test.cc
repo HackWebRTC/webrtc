@@ -13,7 +13,7 @@
 // tests in this section of the code. Currently, this code makes no attempt
 // to verify any video output - it only checks for direct errors.
 
-#include <cstdio>
+#include <stdio.h>
 
 #include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"

@@ -11,7 +11,8 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ4_INTERFACE_NETEQ_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ4_INTERFACE_NETEQ_H_
 
-#include <cstring>  // Provide access to size_t.
+#include <string.h>  // Provide access to size_t.
+
 #include <vector>
 
 #include "webrtc/modules/audio_coding/neteq4/interface/audio_decoder.h"

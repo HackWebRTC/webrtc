@@ -10,7 +10,7 @@
 
 #include "webrtc/test/libtest/include/bit_flip_encryption.h"
 
-#include <cstdlib>
+#include <stdlib.h>
 
 float NormalizedRand() {
   return static_cast<float>(rand()) /

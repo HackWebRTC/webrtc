@@ -12,7 +12,7 @@
 
 #include <errno.h>
 #if defined(WEBRTC_LINUX)
-#include <ctime>
+#include <time.h>
 #else
 #include <sys/time.h>
 #endif

@@ -10,10 +10,11 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
 
-#include <algorithm>  // min
-#include <cassert>  // assert
-#include <cstdlib>  // rand
+#include <assert.h>  // assert
+#include <stdlib.h>  // rand
 #include <string.h>  // memcpy
+
+#include <algorithm>  // min
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"

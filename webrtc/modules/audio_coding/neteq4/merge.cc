@@ -11,9 +11,9 @@
 #include "webrtc/modules/audio_coding/neteq4/merge.h"
 
 #include <assert.h>
+#include <string.h>  // memmove, memcpy, memset, size_t
 
 #include <algorithm>  // min, max
-#include <cstring>  // memmove, memcpy, memset, size_t
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/neteq4/audio_multi_vector.h"

@@ -10,11 +10,11 @@
 
 #include "webrtc/modules/audio_coding/main/test/APITest.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <cctype>
 #include <iostream>
 #include <ostream>
 #include <string>

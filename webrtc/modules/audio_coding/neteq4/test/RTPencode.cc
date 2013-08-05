@@ -21,7 +21,7 @@
 #include <netinet/in.h>
 #endif
 
-#include <cassert>
+#include <assert.h>
 
 #include "webrtc/typedefs.h"
 // needed for NetEqDecoder

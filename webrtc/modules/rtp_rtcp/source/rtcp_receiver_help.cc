@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver_help.h"
 
-#include <cassert>  // assert
+#include <assert.h>  // assert
 #include <string.h>  // memset
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"

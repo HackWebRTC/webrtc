@@ -14,7 +14,7 @@
 // MSVC++ requires this to be set before any other includes to get M_PI.
 #define _USE_MATH_DEFINES
 
-#include <cmath>
+#include <math.h>
 
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"

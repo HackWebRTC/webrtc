@@ -19,7 +19,7 @@
 #include <windows.h>
 #include <mmsystem.h>
 #elif WEBRTC_LINUX
-#include <ctime>
+#include <time.h>
 #elif WEBRTC_MAC
 #include <mach/mach_time.h>
 #include <string.h>

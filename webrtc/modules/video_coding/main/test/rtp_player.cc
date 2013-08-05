@@ -10,7 +10,8 @@
 
 #include "webrtc/modules/video_coding/main/test/rtp_player.h"
 
-#include <cstdio>
+#include <stdio.h>
+
 #include <map>
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"

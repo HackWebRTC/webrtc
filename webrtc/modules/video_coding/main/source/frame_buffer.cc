@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/video_coding/main/source/frame_buffer.h"
 
-#include <cassert>
+#include <assert.h>
 #include <string.h>
 
 #include "webrtc/modules/video_coding/main/source/packet.h"

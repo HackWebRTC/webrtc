@@ -10,7 +10,8 @@
 
 #include "TestFEC.h"
 
-#include <cassert>
+#include <assert.h>
+
 #include <iostream>
 
 #include "audio_coding_module_typedefs.h"

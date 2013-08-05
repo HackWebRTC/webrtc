@@ -90,8 +90,9 @@
 #include "webrtc/system_wrappers/interface/cpu_features_wrapper.h"
 #include "webrtc/typedefs.h"
 
-#include <cmath>
-#include <cstring>
+#include <math.h>
+#include <string.h>
+
 #include <limits>
 
 namespace webrtc {

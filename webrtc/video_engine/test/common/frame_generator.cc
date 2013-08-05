@@ -10,8 +10,8 @@
 
 #include "webrtc/video_engine/test/common/frame_generator.h"
 
-#include <cmath>
-#include <cstring>
+#include <math.h>
+#include <string.h>
 
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/video_engine/new_include/video_send_stream.h"

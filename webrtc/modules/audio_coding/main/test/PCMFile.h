@@ -11,8 +11,9 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_TEST_PCMFILE_H_
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_TEST_PCMFILE_H_
 
-#include <cstdio>
-#include <cstdlib>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <string>
 
 #include "module_common_types.h"

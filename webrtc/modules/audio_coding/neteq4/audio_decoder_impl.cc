@@ -11,8 +11,7 @@
 #include "webrtc/modules/audio_coding/neteq4/audio_decoder_impl.h"
 
 #include <assert.h>
-
-#include <cstring>  // memmove
+#include <string.h>  // memmove
 
 #include "webrtc/modules/audio_coding/codecs/cng/include/webrtc_cng.h"
 #include "webrtc/modules/audio_coding/codecs/g711/include/g711_interface.h"

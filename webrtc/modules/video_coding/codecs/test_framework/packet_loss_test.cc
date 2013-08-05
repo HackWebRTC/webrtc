@@ -8,9 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <cassert>
-#include <sstream>
+#include <assert.h>
 #include <string.h>
+
+#include <sstream>
+
 #include "webrtc/modules/video_coding/codecs/test_framework/packet_loss_test.h"
 #include "webrtc/modules/video_coding/codecs/test_framework/video_source.h"
 

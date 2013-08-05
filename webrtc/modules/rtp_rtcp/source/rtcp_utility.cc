@@ -10,9 +10,9 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 
-#include <cassert>
-#include <cmath>   // ceil
-#include <cstring> // memcpy
+#include <assert.h>
+#include <math.h>   // ceil
+#include <string.h> // memcpy
 
 namespace webrtc {
 // RTCPParserV2 : currently read only

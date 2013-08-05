@@ -10,8 +10,8 @@
 
 #include "webrtc/video_engine/internal/video_receive_stream.h"
 
-#include <cassert>
-#include <cstdlib>
+#include <assert.h>
+#include <stdlib.h>
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/system_wrappers/interface/clock.h"

@@ -15,12 +15,13 @@
 
 #include "webrtc/system_wrappers/interface/sort.h"
 
-#include <cassert>
-#include <cstring>  // memcpy
+#include <assert.h>
+#include <string.h>  // memcpy
+
 #include <new>      // nothrow new
 
 #ifdef NO_STL
-#include <cstdlib>      // qsort
+#include <stdlib.h>      // qsort
 #else
 #include <algorithm>    // std::sort
 #include <vector>

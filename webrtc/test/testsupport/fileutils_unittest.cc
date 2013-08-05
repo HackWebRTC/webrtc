@@ -10,7 +10,8 @@
 
 #include "webrtc/test/testsupport/fileutils.h"
 
-#include <cstdio>
+#include <stdio.h>
+
 #include <list>
 #include <string>
 
@@ -120,9 +121,9 @@ TEST_F(FileUtilsTest, DISABLED_ON_ANDROID(OutputPathFromRootWorkingDir)) {
 TEST_F(FileUtilsTest, CreateDirectory) {
   std::string directory = "fileutils-unittest-empty-dir";
   // Make sure it's removed if a previous test has failed:
-  std::remove(directory.c_str());
+  remove(directory.c_str());
   ASSERT_TRUE(webrtc::test::CreateDirectory(directory));
-  std::remove(directory.c_str());
+  remove(directory.c_str());
 }
 
 TEST_F(FileUtilsTest, WorkingDirReturnsValue) {

@@ -16,10 +16,11 @@
  */
 
 
-#include <cstdlib>
+#include <stdlib.h>
+#include <string.h>
+
 #include <fstream>
 #include <list>
-#include <string.h>
 
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp.h"

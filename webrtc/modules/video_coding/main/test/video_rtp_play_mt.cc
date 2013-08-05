@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <cassert>
+#include <assert.h>
 
 #include "webrtc/modules/video_coding/main/test/receiver_tests.h"
 #include "webrtc/modules/video_coding/main/test/vcm_payload_sink_factory.h"

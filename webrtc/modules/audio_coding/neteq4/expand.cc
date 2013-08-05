@@ -11,9 +11,9 @@
 #include "webrtc/modules/audio_coding/neteq4/expand.h"
 
 #include <assert.h>
+#include <string.h>  // memset
 
 #include <algorithm>  // min, max
-#include <cstring>  // memset
 #include <limits>  // numeric_limits<T>
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"

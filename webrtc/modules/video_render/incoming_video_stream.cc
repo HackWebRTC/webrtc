@@ -10,13 +10,13 @@
 
 #include "webrtc/modules/video_render//incoming_video_stream.h"
 
-#include <cassert>
+#include <assert.h>
 
 #if defined(_WIN32)
 #include <windows.h>
 #elif defined(WEBRTC_LINUX)
-#include <ctime>
 #include <sys/time.h>
+#include <time.h>
 #else
 #include <sys/time.h>
 #endif

@@ -10,8 +10,9 @@
 
 #include "webrtc/modules/audio_coding/neteq4/normal.h"
 
+#include <string.h>  // memset, memcpy
+
 #include <algorithm>  // min
-#include <cstring>  // memset, memcpy
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/codecs/cng/include/webrtc_cng.h"

@@ -11,9 +11,9 @@
 #include "webrtc/modules/audio_coding/neteq4/dsp_helper.h"
 
 #include <assert.h>
+#include <string.h>  // Access to memset.
 
 #include <algorithm>  // Access to min, max.
-#include <cstring>  // Access to memset.
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 

@@ -11,8 +11,9 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_
 
-#include <cassert>
-#include <cmath>
+#include <assert.h>
+#include <math.h>
+
 #include <map>
 
 #include "webrtc/common_types.h"

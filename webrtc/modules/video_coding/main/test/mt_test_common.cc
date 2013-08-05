@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/video_coding/main/test/mt_test_common.h"
 
-#include <cmath>
+#include <math.h>
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
 #include "webrtc/modules/utility/interface/rtp_dump.h"

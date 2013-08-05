@@ -10,8 +10,9 @@
 
 #include "webrtc/video_engine/vie_encoder.h"
 
+#include <assert.h>
+
 #include <algorithm>
-#include <cassert>
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/pacing/include/paced_sender.h"

@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <assert.h>
+
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/video_render/i_video_render.h"
 #include "webrtc/modules/video_render/include/video_render_defines.h"
@@ -15,8 +17,6 @@
 #include "webrtc/modules/video_render/video_render_impl.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
-
-#include <cassert>
 
 #ifdef WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER
 

@@ -11,12 +11,12 @@
 //TODO(hlundin): Reformat file to meet style guide.
 
 /* header includes */
-#include "typedefs.h"
 #include "stdio.h"
+#include "typedefs.h"
 #include "webrtc_neteq.h" // needed for enum WebRtcNetEQDecoder
-#include <string.h>
+#include <assert.h>
 #include <stdlib.h>
-#include <cassert>
+#include <string.h>
 
 #ifdef WIN32
 #include <winsock2.h>

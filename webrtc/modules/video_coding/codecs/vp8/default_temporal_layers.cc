@@ -9,7 +9,7 @@
 
 #include "webrtc/modules/video_coding/codecs/vp8/default_temporal_layers.h"
 
-#include <cassert>
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 

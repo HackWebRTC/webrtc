@@ -11,7 +11,7 @@
 #include "webrtc/modules/audio_device/win/audio_mixer_manager_win.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
-#include <cassert>      // assert()
+#include <assert.h>      // assert()
 #include <strsafe.h>    // StringCchCopy(), StringCchCat(), StringCchPrintf()
 
 #ifdef _WIN32

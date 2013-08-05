@@ -10,7 +10,7 @@
 
 #include "webrtc/system_wrappers/source/trace_impl.h"
 
-#include <cassert>
+#include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>

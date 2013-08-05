@@ -10,8 +10,9 @@
 
 #include "webrtc/modules/audio_coding/main/source/nack.h"
 
+#include <assert.h>  // For assert.
+
 #include <algorithm>  // For std::max.
-#include <cassert>  // For assert.
 
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/logging.h"

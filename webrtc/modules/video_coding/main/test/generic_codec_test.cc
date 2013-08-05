@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/video_coding/main/test/generic_codec_test.h"
 
-#include <cmath>
+#include <math.h>
 #include <stdio.h>
 
 #include "webrtc/common_video/interface/i420_video_frame.h"

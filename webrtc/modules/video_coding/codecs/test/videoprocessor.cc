@@ -10,8 +10,9 @@
 
 #include "webrtc/modules/video_coding/codecs/test/videoprocessor.h"
 
-#include <cassert>
-#include <cstring>
+#include <assert.h>
+#include <string.h>
+
 #include <limits>
 #include <vector>
 

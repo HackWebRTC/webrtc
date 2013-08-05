@@ -10,7 +10,7 @@
 
 #include "webrtc/system_wrappers/interface/tick_util.h"
 
-#include <cassert>
+#include <assert.h>
 
 namespace webrtc {
 

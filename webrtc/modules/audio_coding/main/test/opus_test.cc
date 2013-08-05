@@ -10,7 +10,8 @@
 
 #include "webrtc/modules/audio_coding/main/test/opus_test.h"
 
-#include <cassert>
+#include <assert.h>
+
 #include <string>
 
 #include "testing/gtest/include/gtest/gtest.h"

@@ -15,7 +15,7 @@
 #if defined(_WIN32)
 #include <tchar.h>
 #include <windows.h>
-#include <cassert>
+#include <assert.h>
 #include <fstream>
 #include <iostream>
 #include <string>

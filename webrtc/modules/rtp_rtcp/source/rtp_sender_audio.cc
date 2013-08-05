@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_audio.h"
 
-#include <cassert> //assert
+#include <assert.h> //assert
 #include <string.h> //memcpy
 
 #include "webrtc/system_wrappers/interface/trace_event.h"

@@ -10,7 +10,7 @@
 
 #include "webrtc/modules/video_coding/main/test/test_callbacks.h"
 
-#include <cmath>
+#include <math.h>
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"

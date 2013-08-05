@@ -10,9 +10,9 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_vp8.h"
 
+#include <assert.h>   // assert
 #include <string.h>  // memcpy
 
-#include <cassert>   // assert
 #include <vector>
 
 #include "webrtc/modules/rtp_rtcp/source/vp8_partition_aggregator.h"

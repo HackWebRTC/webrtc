@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ4_DSP_HELPER_H_
 #define WEBRTC_MODULES_AUDIO_CODING_NETEQ4_DSP_HELPER_H_
 
-#include <cstring>  // Access to size_t.
+#include <string.h>  // Access to size_t.
 
 #include "webrtc/modules/audio_coding/neteq4/audio_multi_vector.h"
 #include "webrtc/system_wrappers/interface/constructor_magic.h"
