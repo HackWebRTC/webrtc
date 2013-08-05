@@ -150,9 +150,9 @@ class VideoAnalyzer : public newapi::PacketReceiver,
         rtp_timestamp_delta_ =
             header.timestamp - first_send_frame_->timestamp();
         first_send_frame_ = NULL;
-        send_times_[header.timestamp - rtp_timestamp_delta_] =
-            Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
       }
+      send_times_[header.timestamp - rtp_timestamp_delta_] =
+          Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
     }
 
     return transport_->SendRTP(packet, length);
