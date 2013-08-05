@@ -262,7 +262,6 @@
           'type': '<(gtest_target_type)',
           'dependencies': [
             'audio_coding_module',
-            'media_file',
             'rtp_rtcp',
             'test_framework',
             'video_codecs_test_framework',
