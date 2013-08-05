@@ -63,6 +63,9 @@ class VideoSendStream : public newapi::VideoSendStream,
   virtual int SendRTCPPacket(int /*channel*/, const void* packet, int length)
       OVERRIDE;
 
+ public:
+  bool DeliverRtcp(const uint8_t* packet, size_t length);
+
  private:
   newapi::Transport* transport_;
   newapi::VideoSendStream::Config config_;

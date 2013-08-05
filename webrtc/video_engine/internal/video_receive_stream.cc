@@ -30,7 +30,7 @@ VideoReceiveStream::VideoReceiveStream(
     webrtc::VideoEngine* video_engine,
     const newapi::VideoReceiveStream::Config& config,
     newapi::Transport* transport)
-    : transport_(transport), config_(config) {
+    : transport_(transport), config_(config), channel_(-1) {
   video_engine_base_ = ViEBase::GetInterface(video_engine);
   // TODO(mflodman): Use the other CreateChannel method.
   video_engine_base_->CreateChannel(channel_);
@@ -38,6 +38,9 @@ VideoReceiveStream::VideoReceiveStream(
 
   rtp_rtcp_ = ViERTP_RTCP::GetInterface(video_engine);
   assert(rtp_rtcp_ != NULL);
+
+  // TODO(pbos): This is not fine grained enough...
+  rtp_rtcp_->SetNACKStatus(channel_, config_.rtp.nack.rtp_history_ms > 0);
 
   assert(config_.rtp.ssrc != 0);
 
@@ -98,11 +101,11 @@ void VideoReceiveStream::GetCurrentReceiveCodec(VideoCodec* receive_codec) {
   // TODO(pbos): Implement
 }
 
-bool VideoReceiveStream::DeliverRtcp(const void* packet, size_t length) {
+bool VideoReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return network_->ReceivedRTCPPacket(channel_, packet, length) == 0;
 }
 
-bool VideoReceiveStream::DeliverRtp(const void* packet, size_t length) {
+bool VideoReceiveStream::DeliverRtp(const uint8_t* packet, size_t length) {
   return network_->ReceivedRTPPacket(channel_, packet, length) == 0;
 }
 

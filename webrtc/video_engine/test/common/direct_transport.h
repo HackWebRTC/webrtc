@@ -10,6 +10,8 @@
 #ifndef WEBRTC_VIDEO_ENGINE_TEST_COMMON_DIRECT_TRANSPORT_H_
 #define WEBRTC_VIDEO_ENGINE_TEST_COMMON_DIRECT_TRANSPORT_H_
 
+#include <assert.h>
+
 #include "webrtc/video_engine/new_include/transport.h"
 
 namespace webrtc {
@@ -23,10 +25,12 @@ class DirectTransport : public newapi::Transport {
   void SetReceiver(newapi::PacketReceiver* receiver) { receiver_ = receiver; }
 
   virtual bool SendRTP(const uint8_t* data, size_t length) OVERRIDE {
+    assert(receiver_ != NULL);
     return receiver_->DeliverPacket(data, length);
   }
 
   virtual bool SendRTCP(const uint8_t* data, size_t length) OVERRIDE {
+    assert(receiver_ != NULL);
     return SendRTP(data, length);
   }
 

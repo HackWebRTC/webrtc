@@ -142,7 +142,20 @@ bool VideoCall::DeliverRtcp(ModuleRTPUtility::RTPHeaderParser* rtp_parser,
            receive_ssrcs_.begin();
        it != receive_ssrcs_.end(); ++it) {
     if (static_cast<VideoReceiveStream*>(it->second)
-            ->DeliverRtcp(packet, length)) {
+            ->DeliverRtcp(static_cast<const uint8_t*>(packet), length)) {
+      rtcp_delivered = true;
+    }
+  }
+
+  if (rtcp_delivered)
+    return true;
+
+  for (std::map<uint32_t, newapi::VideoSendStream*>::iterator it =
+           send_ssrcs_.begin();
+       it != send_ssrcs_.end();
+       ++it) {
+    if (static_cast<VideoSendStream*>(it->second)
+            ->DeliverRtcp(static_cast<const uint8_t*>(packet), length)) {
       rtcp_delivered = true;
     }
   }
@@ -167,7 +180,7 @@ bool VideoCall::DeliverRtp(ModuleRTPUtility::RTPHeaderParser* rtp_parser,
 
   VideoReceiveStream* receiver =
       static_cast<VideoReceiveStream*>(receive_ssrcs_[rtp_header.ssrc]);
-  return receiver->DeliverRtp(packet, length);
+  return receiver->DeliverRtp(static_cast<const uint8_t*>(packet), length);
 }
 
 bool VideoCall::DeliverPacket(const void* packet, size_t length) {

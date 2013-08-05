@@ -94,6 +94,7 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
 
   assert(config_.rtp.ssrcs.size() == 1);
   rtp_rtcp_->SetLocalSSRC(channel_, config_.rtp.ssrcs[0]);
+  rtp_rtcp_->SetNACKStatus(channel_, config_.rtp.nack.rtp_history_ms > 0);
 
   capture_ = ViECapture::GetInterface(video_engine);
   capture_->AllocateExternalCaptureDevice(capture_id_, external_capture_);
@@ -168,10 +169,14 @@ newapi::VideoSendStreamInput* VideoSendStream::Input() { return this; }
 void VideoSendStream::StartSend() {
   if (video_engine_base_->StartSend(channel_) != 0)
     abort();
+  if (video_engine_base_->StartReceive(channel_) != 0)
+    abort();
 }
 
 void VideoSendStream::StopSend() {
   if (video_engine_base_->StopSend(channel_) != 0)
+    abort();
+  if (video_engine_base_->StopReceive(channel_) != 0)
     abort();
 }
 
@@ -204,6 +209,11 @@ int VideoSendStream::SendRTCPPacket(int /*channel*/,
   bool success = transport_->SendRTCP(static_cast<const uint8_t*>(packet),
                                       static_cast<size_t>(length));
   return success ? 0 : -1;
+}
+
+bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
+  return network_->ReceivedRTCPPacket(
+      channel_, packet, static_cast<int>(length));
 }
 
 }  // namespace internal

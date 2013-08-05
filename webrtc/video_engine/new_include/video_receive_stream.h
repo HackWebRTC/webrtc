@@ -93,7 +93,7 @@ class VideoReceiveStream {
           pre_decode_callback(NULL),
           post_decode_callback(NULL),
           target_delay_ms(0) {}
-    // Codecs the receive stream
+    // Codecs the receive stream can receive.
     std::vector<VideoCodec> codecs;
 
     // Receive-stream specific RTP settings.

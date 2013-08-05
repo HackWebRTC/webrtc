@@ -107,6 +107,7 @@
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
         '<(webrtc_root)/modules/modules.gyp:video_capture_module',
+        '<(webrtc_root)/test/test.gyp:test_support',
         'video_engine_core',
       ],
     },
@@ -132,7 +133,19 @@
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
-        '<(webrtc_root)/test/test.gyp:test_support',
+        'video_tests_common',
+      ],
+    },
+    {
+      'target_name': 'video_engine_tests',
+      'type': 'executable',
+      'sources': [
+        'engine_tests.cc',
+        'test_main.cc',
+      ],
+      'dependencies': [
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
         'video_tests_common',
       ],
     },

@@ -43,20 +43,19 @@ class VideoReceiveStream : public newapi::VideoReceiveStream,
 
   virtual void GetCurrentReceiveCodec(VideoCodec* receive_codec) OVERRIDE;
 
-  virtual bool DeliverRtcp(const void* packet, size_t length);
-  virtual bool DeliverRtp(const void* packet, size_t length);
-
   virtual int FrameSizeChange(unsigned int width, unsigned int height,
                               unsigned int /*number_of_streams*/) OVERRIDE;
-
   virtual int DeliverFrame(uint8_t* frame, int buffer_size, uint32_t timestamp,
                            int64_t render_time) OVERRIDE;
 
   virtual int SendPacket(int /*channel*/, const void* packet, int length)
       OVERRIDE;
-
   virtual int SendRTCPPacket(int /*channel*/, const void* packet, int length)
       OVERRIDE;
+
+ public:
+  virtual bool DeliverRtcp(const uint8_t* packet, size_t length);
+  virtual bool DeliverRtp(const uint8_t* packet, size_t length);
 
  private:
   newapi::Transport* transport_;
