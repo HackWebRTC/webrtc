@@ -187,7 +187,6 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
   }
 
   ViEInputManagerScoped is(*(shared_data_->input_manager()));
-  ViEFrameProviderBase* frame_provider = NULL;
 
   // Stop the media flow while reconfiguring.
   vie_encoder->Pause();
@@ -250,6 +249,7 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
   vie_encoder->UpdateProtectionMethod();
 
   // Get new best format for frame provider.
+  ViEFrameProviderBase* frame_provider = is.FrameProvider(vie_encoder);
   if (frame_provider) {
     frame_provider->FrameCallbackChanged();
   }
