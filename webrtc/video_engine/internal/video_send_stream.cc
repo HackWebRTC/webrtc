@@ -213,7 +213,7 @@ int VideoSendStream::SendRTCPPacket(int /*channel*/,
 
 bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return network_->ReceivedRTCPPacket(
-      channel_, packet, static_cast<int>(length));
+             channel_, packet, static_cast<int>(length)) == 0;
 }
 
 }  // namespace internal
