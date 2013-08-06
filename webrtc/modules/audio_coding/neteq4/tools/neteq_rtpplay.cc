@@ -151,7 +151,6 @@ int main(int argc, char* argv[]) {
   int sample_rate_hz = 16000;
   NetEq* neteq = NetEq::Create(sample_rate_hz);
   RegisterPayloadTypes(neteq);
-  neteq->EnableDtmf();
 
   // Read first packet.
   NETEQTEST_RTPpacket *rtp;

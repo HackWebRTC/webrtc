@@ -113,9 +113,6 @@ class NetEqImpl : public webrtc::NetEq {
 
   virtual int CurrentDelay() { return kNotImplemented; }
 
-  // Enables playout of DTMF tones.
-  virtual int EnableDtmf();
-
   // Sets the playout mode to |mode|.
   virtual void SetPlayoutMode(NetEqPlayoutMode mode);
 
@@ -316,7 +313,6 @@ class NetEqImpl : public webrtc::NetEq {
   uint8_t current_cng_rtp_payload_type_;
   uint32_t ssrc_;
   bool first_packet_;
-  bool dtmf_enabled_;
   int error_code_;  // Store last error code.
   int decoder_error_code_;
   CriticalSectionWrapper* crit_sect_;
