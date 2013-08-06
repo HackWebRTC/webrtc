@@ -98,7 +98,8 @@ class NetEq {
     kDecodedTooMuch,
     kFrameSplitError,
     kRedundancySplitError,
-    kPacketBufferCorruption
+    kPacketBufferCorruption,
+    kOversizePacket
   };
 
   static const int kMaxNumPacketsInBuffer = 240;  // TODO(hlundin): Remove.

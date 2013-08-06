@@ -508,11 +508,13 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     // Reset DSP timestamp etc. if packet buffer flushed.
     new_codec_ = true;
     LOG_F(LS_WARNING) << "Packet buffer flushed";
+  } else if (ret == PacketBuffer::kOversizePacket) {
+    LOG_F(LS_WARNING) << "Packet larger than packet buffer";
+    return kOversizePacket;
   } else if (ret != PacketBuffer::kOK) {
     LOG_FERR1(LS_WARNING, InsertPacketList, packet_list.size());
     PacketBuffer::DeleteAllPackets(&packet_list);
-    assert(false);
-    // TODO(hlundin): Take care of error codes.
+    return kOtherError;
   }
   if (current_rtp_payload_type_ != 0xFF) {
     const DecoderDatabase::DecoderInfo* dec_info =

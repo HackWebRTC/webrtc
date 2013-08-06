@@ -658,6 +658,18 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(UnknownPayloadType)) {
   EXPECT_EQ(NetEq::kUnknownRtpPayloadType, neteq_->LastError());
 }
 
+TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(OversizePacket)) {
+  // Payload size is greater than packet buffer size
+  const int kPayloadBytes = NetEq::kMaxBytesInBuffer + 1;
+  uint8_t payload[kPayloadBytes] = {0};
+  WebRtcRTPHeader rtp_info;
+  PopulateRtpInfo(0, 0, &rtp_info);
+  rtp_info.header.payloadType = 103;  // iSAC, no packet splitting.
+  EXPECT_EQ(NetEq::kFail,
+            neteq_->InsertPacket(rtp_info, payload, kPayloadBytes, 0));
+  EXPECT_EQ(NetEq::kOversizePacket, neteq_->LastError());
+}
+
 TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(DecoderError)) {
   const int kPayloadBytes = 100;
   uint8_t payload[kPayloadBytes] = {0};
