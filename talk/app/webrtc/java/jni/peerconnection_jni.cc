@@ -1013,16 +1013,7 @@ extern "C" jint JNIEXPORT JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
     return -1;
   g_class_reference_holder = new ClassReferenceHolder(jni);
 
-#ifdef ANDROID
   webrtc::Trace::CreateTrace();
-  CHECK(!webrtc::Trace::SetTraceFile("/sdcard/trace.txt", false),
-        "SetTraceFile failed");
-  CHECK(!webrtc::Trace::SetLevelFilter(webrtc::kTraceAll),
-        "SetLevelFilter failed");
-#endif  // ANDROID
-
-  // Uncomment to get sensitive logs emitted (to stderr or logcat).
-  // talk_base::LogMessage::LogToDebug(talk_base::LS_SENSITIVE);
 
   return JNI_VERSION_1_6;
 }
@@ -1089,6 +1080,19 @@ JOW(jboolean, DataChannel_sendNative)(JNIEnv* jni, jobject j_dc,
 
 JOW(void, DataChannel_dispose)(JNIEnv* jni, jobject j_dc) {
   ExtractNativeDC(jni, j_dc)->Release();
+}
+
+JOW(void, Logging_nativeEnableTracing)(
+    JNIEnv* jni, jclass, jstring j_path, jint nativeLevels,
+    jint nativeSeverity) {
+  std::string path = JavaToStdString(jni, j_path);
+  if (nativeLevels != webrtc::kTraceNone) {
+    CHECK(!webrtc::Trace::SetTraceFile(path.c_str(), false),
+          "SetTraceFile failed");
+    CHECK(!webrtc::Trace::SetLevelFilter(nativeLevels),
+          "SetLevelFilter failed");
+  }
+  talk_base::LogMessage::LogToDebug(nativeSeverity);
 }
 
 JOW(void, PeerConnection_freePeerConnection)(JNIEnv*, jclass, jlong j_p) {

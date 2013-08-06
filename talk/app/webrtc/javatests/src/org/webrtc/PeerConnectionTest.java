@@ -38,6 +38,7 @@ import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -474,6 +475,12 @@ public class PeerConnectionTest extends TestCase {
 
   @Test
   public void testCompleteSession() throws Exception {
+    // Uncomment to get ALL WebRTC tracing and SENSITIVE libjingle logging.
+    // Logging.enableTracing(
+    //     "/tmp/AMI-nope.txt",
+    //     EnumSet.of(Logging.TraceLevel.TRACE_ALL),
+    //     Logging.Severity.LS_SENSITIVE);
+
     CountDownLatch testDone = new CountDownLatch(1);
 
     PeerConnectionFactory factory = new PeerConnectionFactory();
