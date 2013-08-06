@@ -157,7 +157,8 @@ TEST_F(RtpRtcpTest, RemoteRtcpCnameHasPropagatedToRemoteSide) {
   EXPECT_STREQ(RTCP_CNAME, char_buffer);
 }
 
-TEST_F(RtpRtcpTest, SSRCPropagatesCorrectly) {
+// Flakily hangs on Linux. code.google.com/p/webrtc/issues/detail?id=2178.
+TEST_F(RtpRtcpTest, DISABLED_ON_LINUX(SSRCPropagatesCorrectly)) {
   unsigned int local_ssrc = 1234;
   EXPECT_EQ(0, voe_base_->StopSend(channel_));
   EXPECT_EQ(0, voe_rtp_rtcp_->SetLocalSSRC(channel_, local_ssrc));
