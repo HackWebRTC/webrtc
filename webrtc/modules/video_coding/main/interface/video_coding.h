@@ -71,11 +71,6 @@ public:
         kReferenceSelection
     };
 
-    enum DecodeErrors {
-        kNoDecodeErrors,
-        kAllowDecodeErrors
-    };
-
     static VideoCodingModule* Create(const int32_t id);
 
     static VideoCodingModule* Create(const int32_t id,
@@ -580,6 +575,13 @@ public:
     //                     < 0, on error.
     virtual int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode,
                                           VCMDecodeErrorMode errorMode) = 0;
+
+    // Set the decode error mode. The mode decides which errors (if any) are
+    // allowed in decodable frames. Note that setting decode_error_mode to
+    // anything other than kWithErrors without enabling nack will cause
+    // long-term freezes (resulting from frequent key frame requests) if
+    // packet loss occurs.
+    virtual void SetDecodeErrorMode(VCMDecodeErrorMode decode_error_mode) = 0;
 
     // Sets the maximum number of sequence numbers that we are allowed to NACK
     // and the oldest sequence number that we will consider to NACK. If a
