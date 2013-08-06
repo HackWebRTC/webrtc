@@ -2205,13 +2205,7 @@ int AudioCodingModuleImpl::InitStereoSlave() {
   return 0;
 }
 
-// Minimum playout delay (Used for lip-sync).
 int AudioCodingModuleImpl::SetMinimumPlayoutDelay(int time_ms) {
-  if ((time_ms < 0) || (time_ms > 10000)) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
-                 "Delay must be in the range of 0-10000 milliseconds.");
-    return -1;
-  }
   {
     CriticalSectionScoped lock(acm_crit_sect_);
     // Don't let the extra delay modified while accumulating buffers in NetEq.
@@ -2219,6 +2213,10 @@ int AudioCodingModuleImpl::SetMinimumPlayoutDelay(int time_ms) {
       return 0;
   }
   return neteq_.SetMinimumDelay(time_ms);
+}
+
+int AudioCodingModuleImpl::SetMaximumPlayoutDelay(int time_ms) {
+  return neteq_.SetMaximumDelay(time_ms);
 }
 
 // Get Dtmf playout status.

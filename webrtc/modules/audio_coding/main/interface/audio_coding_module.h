@@ -660,6 +660,19 @@ class AudioCodingModule: public Module {
   //
   virtual int SetMinimumPlayoutDelay(int time_ms) = 0;
 
+  ///////////////////////////////////////////////////////////////////////////
+  // int SetMaximumPlayoutDelay()
+  // Set a maximum for the playout delay
+  //
+  // Input:
+  //   -time_ms            : maximum delay in milliseconds.
+  //
+  // Return value:
+  //   -1 if failed to set the delay,
+  //    0 if the maximum delay is set.
+  //
+  virtual int SetMaximumPlayoutDelay(int time_ms) = 0;
+
   //
   // The shortest latency, in milliseconds, required by jitter buffer. This
   // is computed based on inter-arrival times and playout mode of NetEq. The

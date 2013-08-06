@@ -175,7 +175,10 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // is the max of |time_ms| and the required delay dictated by the channel.
   int SetMinimumPlayoutDelay(int time_ms);
 
-  //
+  // NetEq maximum playout delay. The actual target delay is the min of
+  // |time_ms| and the required delay dictated by the channel.
+  int SetMaximumPlayoutDelay(int time_ms);
+
   // The shortest latency, in milliseconds, required by jitter buffer. This
   // is computed based on inter-arrival times and playout mode of NetEq. The
   // actual delay is the maximum of least-required-delay and the minimum-delay

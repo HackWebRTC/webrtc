@@ -94,6 +94,10 @@ class TargetDelayTest : public ::testing::Test {
     return acm_->SetMinimumPlayoutDelay(delay_ms);
   }
 
+  int SetMaximumDelay(int delay_ms) {
+    return acm_->SetMaximumPlayoutDelay(delay_ms);
+  }
+
   int GetCurrentOptimalDelayMs() {
     ACMNetworkStatistics stats;
     acm_->NetworkStatistics(&stats);
@@ -168,6 +172,23 @@ TEST_F(TargetDelayTest, DISABLED_ON_ANDROID(RequiredDelayAtCorrectRange)) {
   // expect |required_delay| be close to that.
   EXPECT_NEAR(kInterarrivalJitterPacket * kNum10msPerFrame * 10,
               required_delay, 1);
+}
+
+TEST_F(TargetDelayTest, DISABLED_ON_ANDROID(TargetDelayBufferMinMax)) {
+  const int kTargetMinDelayMs = kNum10msPerFrame * 10;
+  ASSERT_EQ(0, SetMinimumDelay(kTargetMinDelayMs));
+  for (int m = 0; m < 30; ++m)  // Run enough iterations to fill up the buffer.
+    Run(true);
+  int clean_optimal_delay = GetCurrentOptimalDelayMs();
+  EXPECT_EQ(kTargetMinDelayMs, clean_optimal_delay);
+
+  const int kTargetMaxDelayMs = 2 * (kNum10msPerFrame * 10);
+  ASSERT_EQ(0, SetMaximumDelay(kTargetMaxDelayMs));
+  for (int n = 0; n < 30; ++n)  // Run enough iterations to fill up the buffer.
+    Run(false);
+
+  int capped_optimal_delay = GetCurrentOptimalDelayMs();
+  EXPECT_EQ(kTargetMaxDelayMs, capped_optimal_delay);
 }
 
 }  // webrtc
