@@ -76,32 +76,17 @@ void SharedData::set_audio_processing(AudioProcessing* audioproc) {
   _outputMixerPtr->SetAudioProcessingModule(audioproc);
 }
 
-uint16_t SharedData::NumOfSendingChannels()
-{
-    int32_t numOfChannels = _channelManager.NumOfChannels();
-    if (numOfChannels <= 0)
-    {
-        return 0;
-    }
+uint16_t SharedData::NumOfSendingChannels() {
+  ChannelManager::Iterator it(&_channelManager);
+  uint16_t sending_channels = 0;
 
-    uint16_t nChannelsSending(0);
-    int32_t* channelsArray = new int32_t[numOfChannels];
+  for (ChannelManager::Iterator it(&_channelManager); it.IsValid();
+       it.Increment()) {
+    if (it.GetChannel()->Sending())
+      ++sending_channels;
+  }
 
-    _channelManager.GetChannelIds(channelsArray, numOfChannels);
-    for (int i = 0; i < numOfChannels; i++)
-    {
-        voe::ScopedChannel sc(_channelManager, channelsArray[i]);
-        Channel* chPtr = sc.ChannelPtr();
-        if (chPtr)
-        {
-            if (chPtr->Sending())
-            {
-                nChannelsSending++;
-            }
-        }
-    }
-    delete [] channelsArray;
-    return nChannelsSending;
+  return sending_channels;
 }
 
 void SharedData::SetLastError(int32_t error) const {

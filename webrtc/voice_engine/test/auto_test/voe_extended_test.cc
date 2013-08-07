@@ -45,6 +45,8 @@ extern void* globalJavaVM;
 extern void* globalContext;
 #endif
 
+static const int kTestMaxNumChannels = 100;
+
 // ----------------------------------------------------------------------------
 // External AudioDeviceModule implementation
 // ----------------------------------------------------------------------------
@@ -464,24 +466,13 @@ int VoEExtendedTest::TestBase() {
   // >> end of Init(AudioDeviceModule)
   // ------------------------------------------------------------------------
 
-  ///////////////////////////
-  // MaxNumOfChannels
-  TEST(MaxNumOfChannels);
-  ANL();
-  TEST_MUSTPASS(voe_base_->MaxNumOfChannels() < 0);
-  MARK();
-  ANL();
-  AOK();
-  ANL();
-  ANL();
-
   ////////////////////////
   // CreateChannel
   // DeleteChannel
 
   int i;
   int channel;
-  int nChannels(voe_base_->MaxNumOfChannels());
+  static const int kTestMaxNumChannels = 100;
 
   TEST(CreateChannel);
   ANL();
@@ -511,7 +502,7 @@ int VoEExtendedTest::TestBase() {
     MARK();
   }
   // create max number of channels
-  for (i = 0; i < nChannels; i++) {
+  for (i = 0; i < kTestMaxNumChannels; i++) {
     channel = voe_base_->CreateChannel();
     MARK();
     TEST_MUSTPASS(channel != i);
@@ -520,7 +511,8 @@ int VoEExtendedTest::TestBase() {
   MARK(); // should fail since no more channels can now be created
   TEST_MUSTPASS(channel != -1);
 
-  int aChannel = (((nChannels - 17) > 0) ? (nChannels - 17) : 0);
+  int aChannel =
+      (((kTestMaxNumChannels - 17) > 0) ? (kTestMaxNumChannels - 17) : 0);
   TEST_MUSTPASS(voe_base_->DeleteChannel(aChannel));
   MARK();
   channel = voe_base_->CreateChannel();
@@ -528,7 +520,7 @@ int VoEExtendedTest::TestBase() {
   TEST_MUSTPASS(channel != aChannel);
 
   // delete all created channels
-  for (i = 0; i < nChannels; i++) {
+  for (i = 0; i < kTestMaxNumChannels; i++) {
     TEST_MUSTPASS(voe_base_->DeleteChannel(i));
     MARK();
   }
@@ -608,15 +600,15 @@ int VoEExtendedTest::TestBase() {
 
   // Multi-channel tests
 
-  for (i = 0; i < voe_base_->MaxNumOfChannels(); i++) {
+  for (i = 0; i < kTestMaxNumChannels; i++) {
     ch = voe_base_->CreateChannel();
     MARK();
   }
-  for (i = 0; i < voe_base_->MaxNumOfChannels(); i++) {
+  for (i = 0; i < kTestMaxNumChannels; i++) {
     voe_base_->DeleteChannel(i);
     MARK();
   }
-  for (i = 0; i < voe_base_->MaxNumOfChannels(); i++) {
+  for (i = 0; i < kTestMaxNumChannels; i++) {
     ch = voe_base_->CreateChannel();
     ExtendedTestTransport* ptrTransport =
         new ExtendedTestTransport(voe_network);
@@ -669,17 +661,17 @@ int VoEExtendedTest::TestBase() {
   voe_base_->DeleteChannel(ch);
 
   // Multi-channel tests
-  for (i = 0; i < kVoiceEngineMaxNumChannels; i++) {
+  for (i = 0; i < kTestMaxNumChannels; i++) {
     ch = voe_base_->CreateChannel();
     TEST_MUSTPASS(voe_base_->StartPlayout(ch));
     MARK();
   }
-  for (i = 0; i < kVoiceEngineMaxNumChannels; i++) {
+  for (i = 0; i < kTestMaxNumChannels; i++) {
     TEST_MUSTPASS(voe_base_->StopPlayout(i));
     MARK();
     voe_base_->DeleteChannel(i);
   }
-  for (i = 0; i < kVoiceEngineMaxNumChannels; i++) {
+  for (i = 0; i < kTestMaxNumChannels; i++) {
     ch = voe_base_->CreateChannel();
     TEST_MUSTPASS(voe_base_->StartPlayout(ch));
     MARK();
@@ -791,7 +783,7 @@ int VoEExtendedTest::TestBase() {
   voe_base_->DeleteChannel(ch);
 
   // verify Set/Get for all supported modes and max number of channels
-  for (i = 0; i < voe_base_->MaxNumOfChannels(); i++) {
+  for (i = 0; i < kTestMaxNumChannels; i++) {
     ch = voe_base_->CreateChannel();
 
     // verify Set/Get for all supported modes
@@ -813,7 +805,7 @@ int VoEExtendedTest::TestBase() {
     SleepMs(50);
   }
 
-  for (i = 0; i < voe_base_->MaxNumOfChannels(); i++) {
+  for (i = 0; i < kTestMaxNumChannels; i++) {
     voe_base_->DeleteChannel(i);
   }
 
@@ -1306,10 +1298,9 @@ int VoEExtendedTest::TestCodec() {
   CodecInst defaultCodec;
 
   // check the channel parameter
-  int nMaxChannels(voe_base_->MaxNumOfChannels());
-  TEST_MUSTPASS(-1 != codec->GetSendCodec(nMaxChannels-1, cinst));
+  TEST_MUSTPASS(-1 != codec->GetSendCodec(kTestMaxNumChannels-1, cinst));
   MARK(); // not created
-  TEST_MUSTPASS(-1 != codec->GetSendCodec(nMaxChannels, cinst));
+  TEST_MUSTPASS(-1 != codec->GetSendCodec(kTestMaxNumChannels, cinst));
   MARK(); // out of range
   TEST_MUSTPASS(-1 != codec->GetSendCodec(-1, cinst));
   MARK(); // out of range
@@ -3500,7 +3491,7 @@ int VoEExtendedTest::TestFile() {
   TEST_LOG("StartRecordingCall, record both mic and file in specific"
     " channels \n");
   TEST_LOG("Create maxnumofchannels \n");
-  for (int i = 1; i < voe_base_->MaxNumOfChannels(); i++) {
+  for (int i = 1; i < kTestMaxNumChannels; i++) {
     int ch = voe_base_->CreateChannel();
     TEST_MUSTPASS(ch == -1);
     TEST_MUSTPASS(voe_base_->StopPlayout(ch));
@@ -3573,7 +3564,7 @@ int VoEExtendedTest::TestFile() {
           kFileFormatCompressedFile));
   SleepMs(2500);
   TEST_MUSTPASS(file->StopPlayingFileLocally(0));
-  for (int i = 1; i < voe_base_->MaxNumOfChannels(); i++) {
+  for (int i = 1; i < kTestMaxNumChannels; i++) {
     TEST_MUSTPASS(voe_base_->DeleteChannel(i));
   }
 

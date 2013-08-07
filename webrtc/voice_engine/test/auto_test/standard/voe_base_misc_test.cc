@@ -17,10 +17,6 @@ class VoeBaseMiscTest : public BeforeInitializationFixture {
 
 using namespace testing;
 
-TEST_F(VoeBaseMiscTest, MaxNumChannelsIs100) {
-  EXPECT_EQ(100, voe_base_->MaxNumOfChannels());
-}
-
 TEST_F(VoeBaseMiscTest, GetVersionPrintsSomeUsefulInformation) {
   char char_buffer[1024];
   memset(char_buffer, 0, sizeof(char_buffer));

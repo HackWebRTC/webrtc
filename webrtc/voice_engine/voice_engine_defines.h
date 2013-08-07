@@ -27,9 +27,6 @@
 
 namespace webrtc {
 
-// TODO(ajm): There's not really a reason for this limitation. Remove it.
-enum { kVoiceEngineMaxNumChannels = 100 };
-
 // VolumeControl
 enum { kMinVolumeLevel = 0 };
 enum { kMaxVolumeLevel = 255 };

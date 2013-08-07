@@ -305,13 +305,11 @@ TransmitMixer::SetAudioProcessingModule(AudioProcessing* audioProcessingModule)
 }
 
 void TransmitMixer::GetSendCodecInfo(int* max_sample_rate, int* max_channels) {
-  ScopedChannel sc(*_channelManagerPtr);
-  void* iterator = NULL;
-  Channel* channel = sc.GetFirstChannel(iterator);
-
   *max_sample_rate = 8000;
   *max_channels = 1;
-  while (channel != NULL) {
+  for (ChannelManager::Iterator it(_channelManagerPtr); it.IsValid();
+       it.Increment()) {
+    Channel* channel = it.GetChannel();
     if (channel->Sending()) {
       CodecInst codec;
       channel->GetSendCodec(codec);
@@ -321,7 +319,6 @@ void TransmitMixer::GetSendCodecInfo(int* max_sample_rate, int* max_channels) {
                                   std::max(*max_sample_rate, codec.plfreq));
       *max_channels = std::max(*max_channels, codec.channels);
     }
-    channel = sc.GetNextChannel(iterator);
   }
 }
 
@@ -424,11 +421,10 @@ TransmitMixer::DemuxAndMix()
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::DemuxAndMix()");
 
-    ScopedChannel sc(*_channelManagerPtr);
-    void* iterator(NULL);
-    Channel* channelPtr = sc.GetFirstChannel(iterator);
-    while (channelPtr != NULL)
+    for (ChannelManager::Iterator it(_channelManagerPtr); it.IsValid();
+         it.Increment())
     {
+        Channel* channelPtr = it.GetChannel();
         if (channelPtr->InputIsOnHold())
         {
             channelPtr->UpdateLocalTimeStamp();
@@ -438,7 +434,6 @@ TransmitMixer::DemuxAndMix()
             channelPtr->Demultiplex(_audioFrame);
             channelPtr->PrepareEncodeAndSend(_audioFrame.sample_rate_hz_);
         }
-        channelPtr = sc.GetNextChannel(iterator);
     }
     return 0;
 }
@@ -446,8 +441,8 @@ TransmitMixer::DemuxAndMix()
 void TransmitMixer::DemuxAndMix(const int voe_channels[],
                                 int number_of_voe_channels) {
   for (int i = 0; i < number_of_voe_channels; ++i) {
-    voe::ScopedChannel sc(*_channelManagerPtr, voe_channels[i]);
-    voe::Channel* channel_ptr = sc.ChannelPtr();
+    voe::ChannelOwner ch = _channelManagerPtr->GetChannel(voe_channels[i]);
+    voe::Channel* channel_ptr = ch.channel();
     if (channel_ptr) {
       if (channel_ptr->InputIsOnHold()) {
         channel_ptr->UpdateLocalTimeStamp();
@@ -466,16 +461,14 @@ TransmitMixer::EncodeAndSend()
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::EncodeAndSend()");
 
-    ScopedChannel sc(*_channelManagerPtr);
-    void* iterator(NULL);
-    Channel* channelPtr = sc.GetFirstChannel(iterator);
-    while (channelPtr != NULL)
+    for (ChannelManager::Iterator it(_channelManagerPtr); it.IsValid();
+         it.Increment())
     {
+        Channel* channelPtr = it.GetChannel();
         if (channelPtr->Sending() && !channelPtr->InputIsOnHold())
         {
             channelPtr->EncodeAndSend();
         }
-        channelPtr = sc.GetNextChannel(iterator);
     }
     return 0;
 }
@@ -483,8 +476,8 @@ TransmitMixer::EncodeAndSend()
 void TransmitMixer::EncodeAndSend(const int voe_channels[],
                                   int number_of_voe_channels) {
   for (int i = 0; i < number_of_voe_channels; ++i) {
-    voe::ScopedChannel sc(*_channelManagerPtr, voe_channels[i]);
-    voe::Channel* channel_ptr = sc.ChannelPtr();
+    voe::ChannelOwner ch = _channelManagerPtr->GetChannel(voe_channels[i]);
+    voe::Channel* channel_ptr = ch.channel();
     if (channel_ptr && channel_ptr->Sending() && !channel_ptr->InputIsOnHold())
       channel_ptr->EncodeAndSend();
   }

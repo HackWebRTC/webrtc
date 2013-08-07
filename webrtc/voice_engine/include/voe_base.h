@@ -130,9 +130,6 @@ public:
     // Terminates all VoiceEngine functions and releses allocated resources.
     virtual int Terminate() = 0;
 
-    // Retrieves the maximum number of channels that can be created.
-    virtual int MaxNumOfChannels() = 0;
-
     // Creates a new channel and allocates the required resources for it.
     virtual int CreateChannel() = 0;
 

@@ -38,8 +38,6 @@ public:
 
     virtual int Terminate();
 
-    virtual int MaxNumOfChannels();
-
     virtual int CreateChannel();
 
     virtual int DeleteChannel(int channel);

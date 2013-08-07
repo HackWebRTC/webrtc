@@ -57,8 +57,6 @@
         'channel.h',
         'channel_manager.cc',
         'channel_manager.h',
-        'channel_manager_base.cc',
-        'channel_manager_base.h',
         'dtmf_inband.cc',
         'dtmf_inband.h',
         'dtmf_inband_queue.cc',
