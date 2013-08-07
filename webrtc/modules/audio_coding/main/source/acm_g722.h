@@ -22,7 +22,7 @@ namespace webrtc {
 struct ACMG722EncStr;
 struct ACMG722DecStr;
 
-class ACMG722: public ACMGenericCodec {
+class ACMG722 : public ACMGenericCodec {
  public:
   explicit ACMG722(int16_t codec_id);
   virtual ~ACMG722();
@@ -41,17 +41,18 @@ class ACMG722: public ACMGenericCodec {
 
  protected:
   virtual int16_t DecodeSafe(uint8_t* bitstream,
-                     int16_t bitstream_len_byte,
-                     int16_t* audio, int16_t* audio_samples,
-                     int8_t* speech_type) OVERRIDE;
+                             int16_t bitstream_len_byte,
+                             int16_t* audio,
+                             int16_t* audio_samples,
+                             int8_t* speech_type) OVERRIDE;
 
   virtual int32_t CodecDef(WebRtcNetEQ_CodecDef& codec_def,
-                   const CodecInst& codec_inst) OVERRIDE;
+                           const CodecInst& codec_inst) OVERRIDE;
 
   virtual int32_t Add10MsDataSafe(const uint32_t timestamp,
-                          const int16_t* data,
-                          const uint16_t length_smpl,
-                          const uint8_t audio_channel) OVERRIDE;
+                                  const int16_t* data,
+                                  const uint16_t length_smpl,
+                                  const uint8_t audio_channel) OVERRIDE;
 
   virtual void DestructEncoderSafe() OVERRIDE;
 
@@ -70,7 +71,7 @@ class ACMG722: public ACMGenericCodec {
   ACMG722DecStr* ptr_dec_str_;
 
   G722EncInst* encoder_inst_ptr_;
-  G722EncInst* encoder_inst_ptr_right_; // Prepared for stereo
+  G722EncInst* encoder_inst_ptr_right_;  // Prepared for stereo
   G722DecInst* decoder_inst_ptr_;
 };
 

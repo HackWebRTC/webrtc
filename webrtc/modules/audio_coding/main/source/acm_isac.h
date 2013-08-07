@@ -31,7 +31,7 @@ class ACMISAC : public ACMGenericCodec {
   virtual ACMGenericCodec* CreateInstance(void) OVERRIDE;
 
   virtual int16_t InternalEncode(uint8_t* bitstream,
-                         int16_t* bitstream_len_byte) OVERRIDE;
+                                 int16_t* bitstream_len_byte) OVERRIDE;
 
   virtual int16_t InternalInitEncoder(
       WebRtcACMCodecParams* codec_params) OVERRIDE;
@@ -70,19 +70,19 @@ class ACMISAC : public ACMGenericCodec {
   virtual int32_t SetISACMaxRate(const uint32_t max_rate_bit_per_sec) OVERRIDE;
 
   virtual int16_t REDPayloadISAC(const int32_t isac_rate,
-                         const int16_t isac_bw_estimate,
-                         uint8_t* payload,
-                         int16_t* payload_len_bytes) OVERRIDE;
+                                 const int16_t isac_bw_estimate,
+                                 uint8_t* payload,
+                                 int16_t* payload_len_bytes) OVERRIDE;
 
  protected:
   virtual int16_t DecodeSafe(uint8_t* bitstream,
-                     int16_t bitstream_len_byte,
-                     int16_t* audio,
-                     int16_t* audio_samples,
-                     int8_t* speech_type) OVERRIDE;
+                             int16_t bitstream_len_byte,
+                             int16_t* audio,
+                             int16_t* audio_samples,
+                             int8_t* speech_type) OVERRIDE;
 
   virtual int32_t CodecDef(WebRtcNetEQ_CodecDef& codec_def,
-                   const CodecInst& codec_inst) OVERRIDE;
+                           const CodecInst& codec_inst) OVERRIDE;
 
   virtual void DestructEncoderSafe() OVERRIDE;
 
@@ -96,7 +96,7 @@ class ACMISAC : public ACMGenericCodec {
       int32_t estimated_bandwidth) OVERRIDE;
 
   virtual int32_t GetRedPayloadSafe(uint8_t* red_payload,
-                            int16_t* payload_bytes) OVERRIDE;
+                                    int16_t* payload_bytes) OVERRIDE;
 
   virtual int16_t InternalCreateEncoder() OVERRIDE;
 
@@ -114,8 +114,8 @@ class ACMISAC : public ACMGenericCodec {
 
   void UpdateFrameLen();
 
-  virtual bool DecoderParamsSafe(WebRtcACMCodecParams *dec_params,
-                         const uint8_t payload_type) OVERRIDE;
+  virtual bool DecoderParamsSafe(WebRtcACMCodecParams* dec_params,
+                                 const uint8_t payload_type) OVERRIDE;
 
   virtual void SaveDecoderParamSafe(
       const WebRtcACMCodecParams* codec_params) OVERRIDE;
