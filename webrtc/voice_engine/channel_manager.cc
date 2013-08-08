@@ -78,22 +78,34 @@ void ChannelManager::GetAllChannels(std::vector<ChannelOwner>* channels) {
 }
 
 void ChannelManager::DestroyChannel(int32_t channel_id) {
-  CriticalSectionScoped crit(lock_.get());
   assert(channel_id >= 0);
+  // Holds a reference to a channel, this is used so that we never delete
+  // Channels while holding a lock, but rather when the method returns.
+  ChannelOwner reference(NULL);
+  {
+    CriticalSectionScoped crit(lock_.get());
 
-  for (std::vector<ChannelOwner>::iterator it = channels_.begin();
-       it != channels_.end();
-       ++it) {
-    if (it->channel()->ChannelId() == channel_id) {
-      channels_.erase(it);
-      break;
+    for (std::vector<ChannelOwner>::iterator it = channels_.begin();
+         it != channels_.end();
+         ++it) {
+      if (it->channel()->ChannelId() == channel_id) {
+        reference = *it;
+        channels_.erase(it);
+        break;
+      }
     }
   }
 }
 
 void ChannelManager::DestroyAllChannels() {
-  CriticalSectionScoped crit(lock_.get());
-  channels_.clear();
+  // Holds references so that Channels are not destroyed while holding this
+  // lock, but rather when the method returns.
+  std::vector<ChannelOwner> references;
+  {
+    CriticalSectionScoped crit(lock_.get());
+    references = channels_;
+    channels_.clear();
+  }
 }
 
 size_t ChannelManager::NumOfChannels() const {
