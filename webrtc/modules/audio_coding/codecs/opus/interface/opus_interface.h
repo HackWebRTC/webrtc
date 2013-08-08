@@ -115,8 +115,11 @@ int16_t WebRtcOpus_DecodeSlave(OpusDecInst* inst, const int16_t* encoded,
                                int16_t* audio_type);
 /****************************************************************************
  * WebRtcOpus_DecodePlc(...)
+ * TODO(tlegrand): Remove master and slave functions when NetEq4 is in place.
+ * WebRtcOpus_DecodePlcMaster(...)
+ * WebRtcOpus_DecodePlcSlave(...)
  *
- * This function precesses PLC for opus frame(s).
+ * This function processes PLC for opus frame(s).
  * Input:
  *        - inst                  : Decoder context
  *        - number_of_lost_frames : Number of PLC frames to produce
@@ -129,6 +132,10 @@ int16_t WebRtcOpus_DecodeSlave(OpusDecInst* inst, const int16_t* encoded,
  */
 int16_t WebRtcOpus_DecodePlc(OpusDecInst* inst, int16_t* decoded,
                              int16_t number_of_lost_frames);
+int16_t WebRtcOpus_DecodePlcMaster(OpusDecInst* inst, int16_t* decoded,
+                                   int16_t number_of_lost_frames);
+int16_t WebRtcOpus_DecodePlcSlave(OpusDecInst* inst, int16_t* decoded,
+                                  int16_t number_of_lost_frames);
 
 /****************************************************************************
  * WebRtcOpus_DurationEst(...)

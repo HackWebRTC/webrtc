@@ -39,12 +39,15 @@ class OpusTest : public ACMTest {
   PCMFile in_file_stereo_;
   PCMFile in_file_mono_;
   PCMFile out_file_;
+  PCMFile out_file_standalone_;
   int counter_;
   uint8_t payload_type_;
   int rtp_timestamp_;
   ACMResampler resampler_;
   WebRtcOpusEncInst* opus_mono_encoder_;
   WebRtcOpusEncInst* opus_stereo_encoder_;
+  WebRtcOpusDecInst* opus_mono_decoder_;
+  WebRtcOpusDecInst* opus_stereo_decoder_;
 };
 
 }  // namespace webrtc
