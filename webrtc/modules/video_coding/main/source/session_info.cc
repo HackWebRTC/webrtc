@@ -375,6 +375,12 @@ int VCMSessionInfo::MakeDecodable() {
   return return_length;
 }
 
+void VCMSessionInfo::ClearStateIfIncomplete() {
+  // We don't need to check for completeness first because the two are
+  // orthogonal. If complete_ is true, decodable_ is irrelevant.
+  decodable_ = false;
+}
+
 bool
 VCMSessionInfo::HaveFirstPacket() const {
   return !packets_.empty() && packets_.front().isFirstPacket;

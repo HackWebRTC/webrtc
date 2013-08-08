@@ -207,6 +207,14 @@ VCMFrameBuffer::Reset() {
     VCMEncodedFrame::Reset();
 }
 
+void
+VCMFrameBuffer::ClearStateIfIncomplete() {
+  if (_state == kStateDecodable) {
+    _state = kStateIncomplete;
+    _sessionInfo.ClearStateIfIncomplete();
+  }
+}
+
 // Set state of frame
 void
 VCMFrameBuffer::SetState(VCMFrameBufferStateEnum state) {

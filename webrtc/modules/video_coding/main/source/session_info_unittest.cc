@@ -227,6 +227,71 @@ TEST_F(TestSessionInfo, NormalOperation) {
   }
 }
 
+TEST_F(TestSessionInfo, ErrorsEqualDecodableState) {
+  packet_.seqNum = 0xFFFF;
+  packet_.isFirstPacket = false;
+  packet_.markerBit = false;
+  FillPacket(3);
+  ASSERT_EQ(session_.InsertPacket(packet_,
+                                  frame_buffer_,
+                                  kWithErrors,
+                                  frame_data),
+            packet_buffer_size());
+  EXPECT_EQ(0, session_.packets_not_decodable());
+  EXPECT_TRUE(session_.decodable());
+}
+
+TEST_F(TestSessionInfo, SelectiveDecodableState) {
+  packet_.seqNum = 0xFFFF;
+  packet_.isFirstPacket = false;
+  packet_.markerBit = false;
+  FillPacket(1);
+  frame_data.rolling_average_packets_per_frame = 11;
+  frame_data.rtt_ms = 150;
+  ASSERT_EQ(session_.InsertPacket(packet_,
+                                  frame_buffer_,
+                                  kSelectiveErrors,
+                                  frame_data),
+            packet_buffer_size());
+  EXPECT_EQ(0, session_.packets_not_decodable());
+  EXPECT_FALSE(session_.decodable());
+
+  packet_.seqNum -= 1;
+  FillPacket(0);
+  packet_.isFirstPacket = true;
+  ASSERT_EQ(session_.InsertPacket(packet_,
+                                  frame_buffer_,
+                                  kSelectiveErrors,
+                                  frame_data),
+            packet_buffer_size());
+  EXPECT_EQ(0, session_.packets_not_decodable());
+  EXPECT_TRUE(session_.decodable());
+
+  packet_.isFirstPacket = false;
+  packet_.seqNum += 1;
+  for (int i = 2; i < 8; ++i) {
+    packet_.seqNum += 1;
+    FillPacket(i);
+    ASSERT_EQ(session_.InsertPacket(packet_,
+                                    frame_buffer_,
+                                    kSelectiveErrors,
+                                    frame_data),
+              packet_buffer_size());
+    EXPECT_EQ(0, session_.packets_not_decodable());
+    EXPECT_TRUE(session_.decodable());
+  }
+
+  packet_.seqNum += 1;
+  FillPacket(8);
+  ASSERT_EQ(session_.InsertPacket(packet_,
+                                  frame_buffer_,
+                                  kSelectiveErrors,
+                                  frame_data),
+            packet_buffer_size());
+  EXPECT_EQ(0, session_.packets_not_decodable());
+  EXPECT_TRUE(session_.decodable());
+}
+
 TEST_F(TestVP8Partitions, TwoPartitionsOneLoss) {
   // Partition 0 | Partition 1
   // [ 0 ] [ 2 ] | [ 3 ]
@@ -943,4 +1008,5 @@ TEST_F(TestNalUnits, ReorderWrapLosses) {
   EXPECT_EQ(0, session_.SessionLength());
   EXPECT_EQ(2, session_.packets_not_decodable());
 }
+
 }  // namespace webrtc
