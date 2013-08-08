@@ -575,7 +575,7 @@ int32_t ViEChannel::WaitForKeyFrame(bool wait) {
 }
 
 int32_t ViEChannel::SetSignalPacketLossStatus(bool enable,
-                                                    bool only_key_frames) {
+                                              bool only_key_frames) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s(enable: %d)", __FUNCTION__, enable);
   if (enable) {
@@ -681,6 +681,8 @@ int32_t ViEChannel::ProcessNACKRequest(const bool enable) {
       rtp_rtcp->SetNACKStatus(nackMethod, max_nack_reordering_threshold_);
       rtp_rtcp->SetStorePacketsStatus(true, nack_history_size_sender_);
     }
+    // Don't introduce errors when NACK is enabled.
+    vcm_.SetDecodeErrorMode(kNoErrors);
   } else {
     CriticalSectionScoped cs(rtp_rtcp_cs_.get());
     for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
@@ -702,6 +704,9 @@ int32_t ViEChannel::ProcessNACKRequest(const bool enable) {
                    "%s: Could not turn off NACK", __FUNCTION__);
       return -1;
     }
+    // When NACK is off, allow decoding with errors. Otherwise, the video
+    // will freeze, and will only recover with a complete key frame.
+    vcm_.SetDecodeErrorMode(kWithErrors);
   }
   return 0;
 }

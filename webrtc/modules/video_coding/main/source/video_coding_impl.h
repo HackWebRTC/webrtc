@@ -113,7 +113,7 @@ public:
         uint8_t lossRate,
         uint32_t rtt);
 
-    // Set recieve channel parameters
+    // Set receive channel parameters.
     virtual int32_t SetReceiveChannelParameters(uint32_t rtt);
 
     // Register a transport callback which will be called to deliver the
