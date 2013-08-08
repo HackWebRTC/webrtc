@@ -934,22 +934,8 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
                                    rtp_video_hdr);
   } else {
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
-
     std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
-    if (it != child_modules_.end()) {
-      if ((*it)->SendingMedia()) {
-        ret_val = (*it)->SendOutgoingData(frame_type,
-                                          payload_type,
-                                          time_stamp,
-                                          capture_time_ms,
-                                          payload_data,
-                                          payload_size,
-                                          fragmentation,
-                                          rtp_video_hdr);
-      }
-      it++;
-    }
-    // Send to all remaining "child" modules
+    // Send to all "child" modules
     while (it != child_modules_.end()) {
       if ((*it)->SendingMedia()) {
         ret_val = (*it)->SendOutgoingData(frame_type,
