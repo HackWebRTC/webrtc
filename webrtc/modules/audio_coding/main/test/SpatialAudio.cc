@@ -16,8 +16,8 @@
 #include "common_types.h"
 #include "SpatialAudio.h"
 #include "trace.h"
-#include "testsupport/fileutils.h"
 #include "utility.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
 

@@ -44,21 +44,11 @@
     {
       'target_name': 'test_support',
       'type': 'static_library',
-      'include_dirs': [
-        # TODO(kjellander): Remove this by making all includes use full paths.
-        '.',
-      ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/testing/gmock.gyp:gmock',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
-      'all_dependent_settings': {
-        'include_dirs': [
-          # TODO(kjellander): Remove this by making all includes use full paths.
-          '.',
-        ],
-      },
       'sources': [
         'test_suite.cc',
         'test_suite.h',

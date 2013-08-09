@@ -14,8 +14,8 @@
 #include "PCMFile.h"
 #include "module_common_types.h"
 #include "scoped_ptr.h"
-#include "testsupport/fileutils.h"
 #include "typedefs.h"
+#include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 
 namespace webrtc {

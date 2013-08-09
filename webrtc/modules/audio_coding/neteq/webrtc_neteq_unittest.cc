@@ -22,13 +22,13 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "testsupport/fileutils.h"
 #include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq_help_macros.h"
 #include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq_internal.h"
 #include "webrtc/modules/audio_coding/neteq/test/NETEQTEST_CodecClass.h"
 #include "webrtc/modules/audio_coding/neteq/test/NETEQTEST_NetEQClass.h"
 #include "webrtc/modules/audio_coding/neteq/test/NETEQTEST_RTPpacket.h"
 #include "webrtc/modules/audio_coding/neteq4/tools/input_audio_file.h"
+#include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
