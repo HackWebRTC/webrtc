@@ -175,7 +175,6 @@ bool PacedSender::SendPacket(Priority priority, uint32_t ssrc,
   CriticalSectionScoped cs(critsect_.get());
 
   if (!enabled_) {
-    UpdateMediaBytesSent(bytes);
     return true;  // We can send now.
   }
   if (capture_time_ms < 0) {
@@ -244,6 +243,9 @@ int32_t PacedSender::Process() {
   CriticalSectionScoped cs(critsect_.get());
   int elapsed_time_ms = (now - time_last_update_).Milliseconds();
   time_last_update_ = now;
+  if (!enabled_) {
+    return 0;
+  }
   if (!paused_) {
     if (elapsed_time_ms > 0) {
       uint32_t delta_time_ms = std::min(kMaxIntervalTimeMs, elapsed_time_ms);
@@ -261,7 +263,7 @@ int32_t PacedSender::Process() {
       const bool success = callback_->TimeToSendPacket(ssrc, sequence_number,
                                                        capture_time_ms);
       critsect_->Enter();
-      // If packet cannt be sent then keep it in packet list and exit early.
+      // If packet cannot be sent then keep it in packet list and exit early.
       // There's no need to send more packets.
       if (!success) {
         return 0;

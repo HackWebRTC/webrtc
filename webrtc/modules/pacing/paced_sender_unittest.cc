@@ -235,6 +235,22 @@ TEST_F(PacedSenderTest, Padding) {
   EXPECT_EQ(0, send_bucket_->Process());
 }
 
+TEST_F(PacedSenderTest, NoPaddingWhenDisabled) {
+  send_bucket_->SetStatus(false);
+  send_bucket_->UpdateBitrate(kTargetBitrate, kTargetBitrate);
+  // No padding is expected since the pacer is disabled.
+  EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
+  EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
+  TickTime::AdvanceFakeClock(5);
+  EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
+  EXPECT_EQ(0, send_bucket_->Process());
+  EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
+  EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
+  TickTime::AdvanceFakeClock(5);
+  EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
+  EXPECT_EQ(0, send_bucket_->Process());
+}
+
 TEST_F(PacedSenderTest, VerifyPaddingUpToBitrate) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
