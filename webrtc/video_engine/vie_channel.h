@@ -383,7 +383,6 @@ class ViEChannel
   Transport* external_transport_;
 
   bool decoder_reset_;
-  VideoCodec receive_codec_;
   bool wait_for_key_frame_;
   ThreadWrapper* decode_thread_;
 
