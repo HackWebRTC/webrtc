@@ -226,6 +226,9 @@ class P2PTransportChannelTestBase : public testing::Test,
     void SetAllocationStepDelay(uint32 delay) {
       allocator_->set_step_delay(delay);
     }
+    void SetAllowTcpListen(bool allow_tcp_listen) {
+      allocator_->set_allow_tcp_listen(allow_tcp_listen);
+    }
 
     talk_base::FakeNetworkManager network_manager_;
     talk_base::scoped_ptr<cricket::PortAllocator> allocator_;
@@ -397,6 +400,9 @@ class P2PTransportChannelTestBase : public testing::Test,
   }
   void SetAllocationStepDelay(int endpoint, uint32 delay) {
     return GetEndpoint(endpoint)->SetAllocationStepDelay(delay);
+  }
+  void SetAllowTcpListen(int endpoint, bool allow_tcp_listen) {
+    return GetEndpoint(endpoint)->SetAllowTcpListen(allow_tcp_listen);
   }
 
   void Test(const Result& expected) {
@@ -1219,6 +1225,44 @@ TEST_F(P2PTransportChannelTest, IncomingOnlyOpen) {
                           ep2_ch1()->readable() && ep2_ch1()->writable(),
                           1000, 1000);
 
+  DestroyChannels();
+}
+
+TEST_F(P2PTransportChannelTest, TestTcpConnectionsFromActiveToPassive) {
+  AddAddress(0, kPublicAddrs[0]);
+  AddAddress(1, kPublicAddrs[1]);
+
+  SetAllocationStepDelay(0, kMinimumStepDelay);
+  SetAllocationStepDelay(1, kMinimumStepDelay);
+
+  int kOnlyLocalTcpPorts = cricket::PORTALLOCATOR_DISABLE_UDP |
+                           cricket::PORTALLOCATOR_DISABLE_STUN |
+                           cricket::PORTALLOCATOR_DISABLE_RELAY |
+                           cricket::PORTALLOCATOR_ENABLE_SHARED_UFRAG;
+  // Disable all protocols except TCP.
+  SetAllocatorFlags(0, kOnlyLocalTcpPorts);
+  SetAllocatorFlags(1, kOnlyLocalTcpPorts);
+
+  SetAllowTcpListen(0, true);   // actpass.
+  SetAllowTcpListen(1, false);  // active.
+
+  CreateChannels(1);
+
+  EXPECT_TRUE_WAIT(ep1_ch1()->readable() && ep1_ch1()->writable() &&
+                   ep2_ch1()->readable() && ep2_ch1()->writable(),
+                   1000);
+  EXPECT_TRUE(
+      ep1_ch1()->best_connection() && ep2_ch1()->best_connection() &&
+      LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
+      RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
+
+  std::string kTcpProtocol = "tcp";
+  EXPECT_EQ(kTcpProtocol, RemoteCandidate(ep1_ch1())->protocol());
+  EXPECT_EQ(kTcpProtocol, LocalCandidate(ep1_ch1())->protocol());
+  EXPECT_EQ(kTcpProtocol, RemoteCandidate(ep2_ch1())->protocol());
+  EXPECT_EQ(kTcpProtocol, LocalCandidate(ep2_ch1())->protocol());
+
+  TestSendRecv(1);
   DestroyChannels();
 }
 

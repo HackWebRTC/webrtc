@@ -64,7 +64,8 @@ static const char kSecureTurnIceServer[] =
 static const char kTurnIceServerWithNoUsernameInUri[] =
     "turn:test.com:1234";
 static const char kTurnPassword[] = "turnpassword";
-static const int kDefaultPort = 3478;
+static const int kDefaultStunPort = 3478;
+static const int kDefaultStunTlsPort = 5349;
 static const char kTurnUsername[] = "test";
 
 class NullPeerConnectionObserver : public PeerConnectionObserver {
@@ -174,15 +175,15 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIceServers) {
         "test.com", 1234);
   stun_configs.push_back(stun2);
   webrtc::PortAllocatorFactoryInterface::StunConfiguration stun3(
-        "hello.com", kDefaultPort);
+        "hello.com", kDefaultStunPort);
   stun_configs.push_back(stun3);
   VerifyStunConfigurations(stun_configs);
   TurnConfigurations turn_configs;
   webrtc::PortAllocatorFactoryInterface::TurnConfiguration turn1(
-      "test.com", 1234, "test@hello.com", kTurnPassword, "udp");
+      "test.com", 1234, "test@hello.com", kTurnPassword, "udp", false);
   turn_configs.push_back(turn1);
   webrtc::PortAllocatorFactoryInterface::TurnConfiguration turn2(
-      "hello.com", kDefaultPort, "test", kTurnPassword, "tcp");
+      "hello.com", kDefaultStunPort, "test", kTurnPassword, "tcp", false);
   turn_configs.push_back(turn2);
   VerifyTurnConfigurations(turn_configs);
 }
@@ -204,7 +205,7 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingNoUsernameInUri) {
   EXPECT_TRUE(pc.get() != NULL);
   TurnConfigurations turn_configs;
   webrtc::PortAllocatorFactoryInterface::TurnConfiguration turn(
-      "test.com", 1234, kTurnUsername, kTurnPassword, "udp");
+      "test.com", 1234, kTurnUsername, kTurnPassword, "udp", false);
   turn_configs.push_back(turn);
   VerifyTurnConfigurations(turn_configs);
 }
@@ -225,19 +226,16 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingTurnUrlWithTransportParam) {
   EXPECT_TRUE(pc.get() != NULL);
   TurnConfigurations turn_configs;
   webrtc::PortAllocatorFactoryInterface::TurnConfiguration turn(
-      "hello.com", kDefaultPort, "test", kTurnPassword, "tcp");
+      "hello.com", kDefaultStunPort, "test", kTurnPassword, "tcp", false);
   turn_configs.push_back(turn);
   VerifyTurnConfigurations(turn_configs);
   StunConfigurations stun_configs;
   webrtc::PortAllocatorFactoryInterface::StunConfiguration stun(
-        "hello.com", kDefaultPort);
+        "hello.com", kDefaultStunPort);
   stun_configs.push_back(stun);
   VerifyStunConfigurations(stun_configs);
 }
 
-// This test verifies factory failed to create a peerconneciton object when
-// a valid secure TURN url passed. Connecting to a secure TURN server is not
-// supported currently.
 TEST_F(PeerConnectionFactoryTest, CreatePCUsingSecureTurnUrl) {
   webrtc::PeerConnectionInterface::IceServers ice_servers;
   webrtc::PeerConnectionInterface::IceServer ice_server;
@@ -249,8 +247,11 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingSecureTurnUrl) {
                                      allocator_factory_.get(),
                                      NULL,
                                      &observer_));
-  EXPECT_TRUE(pc.get() == NULL);
+  EXPECT_TRUE(pc.get() != NULL);
   TurnConfigurations turn_configs;
+  webrtc::PortAllocatorFactoryInterface::TurnConfiguration turn(
+      "hello.com", kDefaultStunTlsPort, "test", kTurnPassword, "tcp", true);
+  turn_configs.push_back(turn);
   VerifyTurnConfigurations(turn_configs);
 }
 

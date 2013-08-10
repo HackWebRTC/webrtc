@@ -264,9 +264,6 @@ void TurnServer::AcceptConnection(talk_base::AsyncSocket* server_socket) {
   talk_base::AsyncSocket* accepted_socket = server_socket->Accept(&accept_addr);
   if (accepted_socket != NULL) {
     ProtocolType proto = server_listen_sockets_[server_socket];
-    if (proto == PROTO_SSLTCP) {
-      accepted_socket = new talk_base::AsyncSSLServerSocket(accepted_socket);
-    }
     cricket::AsyncStunTCPSocket* tcp_socket =
         new cricket::AsyncStunTCPSocket(accepted_socket, false);
 

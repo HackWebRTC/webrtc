@@ -58,7 +58,8 @@ enum {
   MSG_SETROLE = 16,
   MSG_SETLOCALDESCRIPTION = 17,
   MSG_SETREMOTEDESCRIPTION = 18,
-  MSG_GETSTATS = 19
+  MSG_GETSTATS = 19,
+  MSG_SETIDENTITY = 20,
 };
 
 struct ChannelParams : public talk_base::MessageData {
@@ -102,6 +103,13 @@ struct StatsParam : public talk_base::MessageData {
   bool result;
 };
 
+struct IdentityParam : public talk_base::MessageData {
+  explicit IdentityParam(talk_base::SSLIdentity* identity)
+      : identity(identity) {}
+
+  talk_base::SSLIdentity* identity;
+};
+
 Transport::Transport(talk_base::Thread* signaling_thread,
                      talk_base::Thread* worker_thread,
                      const std::string& content_name,
@@ -131,6 +139,11 @@ Transport::~Transport() {
 void Transport::SetRole(TransportRole role) {
   TransportRoleParam param(role);
   worker_thread()->Send(this, MSG_SETROLE, &param);
+}
+
+void Transport::SetIdentity(talk_base::SSLIdentity* identity) {
+  IdentityParam params(identity);
+  worker_thread()->Send(this, MSG_SETIDENTITY, &params);
 }
 
 bool Transport::SetLocalTransportDescription(
@@ -799,6 +812,11 @@ void Transport::OnMessage(talk_base::Message* msg) {
     case MSG_GETSTATS: {
         StatsParam* params = static_cast<StatsParam*>(msg->pdata);
         params->result = GetStats_w(params->stats);
+      }
+      break;
+    case MSG_SETIDENTITY: {
+        IdentityParam* params = static_cast<IdentityParam*>(msg->pdata);
+        SetIdentity_w(params->identity);
       }
       break;
   }

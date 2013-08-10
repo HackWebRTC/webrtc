@@ -59,7 +59,8 @@ class PeerConnection : public PeerConnectionInterface,
 
   bool Initialize(const PeerConnectionInterface::IceServers& configuration,
                   const MediaConstraintsInterface* constraints,
-                  webrtc::PortAllocatorFactoryInterface* allocator_factory,
+                  PortAllocatorFactoryInterface* allocator_factory,
+                  DTLSIdentityServiceInterface* dtls_identity_service,
                   PeerConnectionObserver* observer);
   virtual talk_base::scoped_refptr<StreamCollectionInterface> local_streams();
   virtual talk_base::scoped_refptr<StreamCollectionInterface> remote_streams();
@@ -152,7 +153,8 @@ class PeerConnection : public PeerConnectionInterface,
   bool DoInitialize(const StunConfigurations& stun_config,
                     const TurnConfigurations& turn_config,
                     const MediaConstraintsInterface* constraints,
-                    webrtc::PortAllocatorFactoryInterface* allocator_factory,
+                    PortAllocatorFactoryInterface* allocator_factory,
+                    DTLSIdentityServiceInterface* dtls_identity_service,
                     PeerConnectionObserver* observer);
 
   talk_base::Thread* signaling_thread() const {

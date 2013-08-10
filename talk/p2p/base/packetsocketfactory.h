@@ -37,8 +37,9 @@ class AsyncPacketSocket;
 class PacketSocketFactory {
  public:
   enum Options {
-    OPT_SSLTCP = 0x01,
-    OPT_STUN = 0x02,
+    OPT_SSLTCP = 0x01,  // Pseudo-TLS.
+    OPT_TLS = 0x02,
+    OPT_STUN = 0x04,
   };
 
   PacketSocketFactory() { }

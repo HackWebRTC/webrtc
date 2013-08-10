@@ -363,6 +363,15 @@ void SocketTest::ConnectWithDnsLookupFailInternal(const IPAddress& loopback) {
   EXPECT_EQ(0, client->Connect(bogus_dns_addr));
 
   // Wait for connection to fail (EHOSTNOTFOUND).
+  bool dns_lookup_finished = false;
+  WAIT_(client->GetState() == AsyncSocket::CS_CLOSED, kTimeout,
+        dns_lookup_finished);
+  if (!dns_lookup_finished) {
+    LOG(LS_WARNING) << "Skipping test; DNS resolution took longer than 5 "
+                    << "seconds.";
+    return;
+  }
+
   EXPECT_EQ_WAIT(AsyncSocket::CS_CLOSED, client->GetState(), kTimeout);
   EXPECT_FALSE(sink.Check(client.get(), testing::SSE_OPEN));
   EXPECT_TRUE(sink.Check(client.get(), testing::SSE_ERROR));

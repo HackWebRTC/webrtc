@@ -45,6 +45,10 @@ class FeedbackParam {
       : id_(id),
         param_(param) {
   }
+  explicit FeedbackParam(const std::string& id)
+      : id_(id),
+        param_(kParamValueEmpty) {
+  }
   bool operator==(const FeedbackParam& other) const;
 
   const std::string& id() const { return id_; }

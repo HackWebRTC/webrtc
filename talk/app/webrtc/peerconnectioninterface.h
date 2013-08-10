@@ -315,15 +315,18 @@ class PortAllocatorFactoryInterface : public talk_base::RefCountInterface {
                       int port,
                       const std::string& username,
                       const std::string& password,
-                      const std::string& transport_type)
+                      const std::string& transport_type,
+                      bool secure)
         : server(address, port),
           username(username),
           password(password),
-          transport_type(transport_type) {}
+          transport_type(transport_type),
+          secure(secure) {}
     talk_base::SocketAddress server;
     std::string username;
     std::string password;
     std::string transport_type;
+    bool secure;
   };
 
   virtual cricket::PortAllocator* CreatePortAllocator(
@@ -339,8 +342,8 @@ class PortAllocatorFactoryInterface : public talk_base::RefCountInterface {
 class DTLSIdentityRequestObserver : public talk_base::RefCountInterface {
  public:
   virtual void OnFailure(int error) = 0;
-  virtual void OnSuccess(const std::string& certificate,
-                         const std::string& private_key) = 0;
+  virtual void OnSuccess(const std::string& der_cert,
+                         const std::string& der_private_key) = 0;
  protected:
   virtual ~DTLSIdentityRequestObserver() {}
 };
@@ -372,6 +375,8 @@ class DTLSIdentityServiceInterface {
       const std::string& identity_name,
       const std::string& common_name,
       DTLSIdentityRequestObserver* observer) = 0;
+
+  virtual ~DTLSIdentityServiceInterface() {}
 };
 
 // PeerConnectionFactoryInterface is the factory interface use for creating

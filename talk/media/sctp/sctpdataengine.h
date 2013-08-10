@@ -218,8 +218,8 @@ class SctpDataMediaChannel : public DataMediaChannel,
   bool sending_;
   // receiving_ controls whether inbound packets are thrown away.
   bool receiving_;
-  std::vector<StreamParams> send_streams_;
-  std::vector<StreamParams> recv_streams_;
+  // Unified send/receive streams, as each is bidirectional.
+  std::vector<StreamParams> streams_;
 
   // A human-readable name for debugging messages.
   std::string debug_name_;

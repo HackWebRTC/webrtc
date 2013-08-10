@@ -76,6 +76,13 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateUdpSocket(
 
 AsyncPacketSocket* BasicPacketSocketFactory::CreateServerTcpSocket(
     const SocketAddress& local_address, int min_port, int max_port, int opts) {
+
+  // Fail if TLS is required.
+  if (opts & PacketSocketFactory::OPT_TLS) {
+    LOG(LS_ERROR) << "TLS support currently is not available.";
+    return NULL;
+  }
+
   talk_base::AsyncSocket* socket =
       socket_factory()->CreateAsyncSocket(local_address.family(),
                                           SOCK_STREAM);
@@ -92,6 +99,7 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateServerTcpSocket(
 
   // If using SSLTCP, wrap the TCP socket in a pseudo-SSL socket.
   if (opts & PacketSocketFactory::OPT_SSLTCP) {
+    ASSERT(!(opts & PacketSocketFactory::OPT_TLS));
     socket = new talk_base::AsyncSSLSocket(socket);
   }
 
@@ -108,6 +116,13 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateServerTcpSocket(
 AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
     const SocketAddress& local_address, const SocketAddress& remote_address,
     const ProxyInfo& proxy_info, const std::string& user_agent, int opts) {
+
+  // Fail if TLS is required.
+  if (opts & PacketSocketFactory::OPT_TLS) {
+    LOG(LS_ERROR) << "TLS support currently is not available.";
+    return NULL;
+  }
+
   talk_base::AsyncSocket* socket =
       socket_factory()->CreateAsyncSocket(local_address.family(), SOCK_STREAM);
   if (!socket) {
@@ -133,6 +148,7 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
 
   // If using SSLTCP, wrap the TCP socket in a pseudo-SSL socket.
   if (opts & PacketSocketFactory::OPT_SSLTCP) {
+    ASSERT(!(opts & PacketSocketFactory::OPT_TLS));
     socket = new talk_base::AsyncSSLSocket(socket);
   }
 

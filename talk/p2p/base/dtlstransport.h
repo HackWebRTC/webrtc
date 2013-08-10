@@ -56,6 +56,10 @@ class DtlsTransport : public Base {
     Base::DestroyAllChannels();
   }
 
+  virtual void SetIdentity_w(talk_base::SSLIdentity* identity) {
+    identity_ = identity;
+  }
+
   virtual bool ApplyLocalTransportDescription_w(TransportChannelImpl*
                                                 channel) {
     talk_base::SSLFingerprint* local_fp =

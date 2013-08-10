@@ -66,10 +66,10 @@ static const char kTurnUsername[] = "test";
 static const char kTurnPassword[] = "test";
 static const int kTimeout = 1000;
 
-static const cricket::ProtocolAddress kTurnUdpProtoAddr(kTurnUdpIntAddr,
-                                                        cricket::PROTO_UDP);
-static const cricket::ProtocolAddress kTurnTcpProtoAddr(kTurnTcpIntAddr,
-                                                        cricket::PROTO_TCP);
+static const cricket::ProtocolAddress kTurnUdpProtoAddr(
+    kTurnUdpIntAddr, cricket::PROTO_UDP);
+static const cricket::ProtocolAddress kTurnTcpProtoAddr(
+    kTurnTcpIntAddr, cricket::PROTO_TCP);
 
 class TurnPortTest : public testing::Test,
                      public sigslot::has_slots<> {
@@ -295,6 +295,7 @@ TEST_F(TurnPortTest, TestTurnConnection) {
   TestTurnConnection();
 }
 
+// Test that we can establish a TCP connection with TURN server.
 TEST_F(TurnPortTest, TestTurnTcpConnection) {
   talk_base::AsyncSocket* tcp_server_socket =
       CreateServerSocket(kTurnTcpIntAddr);
@@ -302,6 +303,18 @@ TEST_F(TurnPortTest, TestTurnTcpConnection) {
       tcp_server_socket, cricket::PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
   TestTurnConnection();
+}
+
+// Test that we fail to create a connection when we want to use TLS over TCP.
+// This test should be removed once we have TLS support.
+TEST_F(TurnPortTest, TestTurnTlsTcpConnectionFails) {
+  cricket::ProtocolAddress secure_addr(kTurnTcpProtoAddr.address,
+                                       kTurnTcpProtoAddr.proto,
+                                       true);
+  CreateTurnPort(kTurnUsername, kTurnPassword, secure_addr);
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_WAIT(turn_error_, kTimeout);
+  ASSERT_EQ(0U, turn_port_->Candidates().size());
 }
 
 // Run TurnConnectionTest with one-time-use nonce feature.

@@ -250,6 +250,9 @@ class Transport : public talk_base::MessageHandler,
   void SetTiebreaker(uint64 tiebreaker) { tiebreaker_ = tiebreaker; }
   uint64 tiebreaker() { return tiebreaker_; }
 
+  // Must be called before applying local session description.
+  void SetIdentity(talk_base::SSLIdentity* identity);
+
   TransportProtocol protocol() const { return protocol_; }
 
   // Create, destroy, and lookup the channels of this type by their components.
@@ -347,6 +350,8 @@ class Transport : public talk_base::MessageHandler,
   const TransportDescription* remote_description() const {
     return remote_description_.get();
   }
+
+  virtual void SetIdentity_w(talk_base::SSLIdentity* identity) {}
 
   // Pushes down the transport parameters from the local description, such
   // as the ICE ufrag and pwd.

@@ -99,13 +99,6 @@ class BasicPortAllocator : public PortAllocator {
       const std::string& ice_ufrag,
       const std::string& ice_pwd);
 
-  bool allow_tcp_listen() const {
-    return allow_tcp_listen_;
-  }
-  void set_allow_tcp_listen(bool allow_tcp_listen) {
-    allow_tcp_listen_ = allow_tcp_listen;
-  }
-
  private:
   void Construct();
 

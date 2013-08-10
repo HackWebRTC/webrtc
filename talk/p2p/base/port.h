@@ -104,9 +104,12 @@ bool StringToProto(const char* value, ProtocolType* proto);
 struct ProtocolAddress {
   talk_base::SocketAddress address;
   ProtocolType proto;
+  bool secure;
 
   ProtocolAddress(const talk_base::SocketAddress& a, ProtocolType p)
-    : address(a), proto(p) { }
+      : address(a), proto(p), secure(false) { }
+  ProtocolAddress(const talk_base::SocketAddress& a, ProtocolType p, bool sec)
+      : address(a), proto(p), secure(sec) { }
 };
 
 // Represents a local communication mechanism that can be used to create

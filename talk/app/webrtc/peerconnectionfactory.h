@@ -101,6 +101,7 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface,
       const PeerConnectionInterface::IceServers& configuration,
       const MediaConstraintsInterface* constraints,
       PortAllocatorFactoryInterface* allocator_factory,
+      DTLSIdentityServiceInterface* dtls_identity_service,
       PeerConnectionObserver* observer);
   // Implements talk_base::MessageHandler.
   void OnMessage(talk_base::Message* msg);

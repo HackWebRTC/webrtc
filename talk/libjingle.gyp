@@ -1158,6 +1158,8 @@
         'app/webrtc/webrtcsdp.h',
         'app/webrtc/webrtcsession.cc',
         'app/webrtc/webrtcsession.h',
+        'app/webrtc/webrtcsessiondescriptionfactory.cc',
+        'app/webrtc/webrtcsessiondescriptionfactory.h',
       ],
     },  # target libjingle_peerconnection
   ],

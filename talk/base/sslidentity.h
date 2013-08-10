@@ -64,8 +64,8 @@ class SSLCertificate {
 
   // Compute the digest of the certificate given algorithm
   virtual bool ComputeDigest(const std::string &algorithm,
-                             unsigned char *digest, std::size_t size,
-                             std::size_t *length) const = 0;
+                             unsigned char* digest, std::size_t size,
+                             std::size_t* length) const = 0;
 };
 
 // Our identity in an SSL negotiation: a keypair and certificate (both
@@ -93,7 +93,18 @@ class SSLIdentity {
 
   // Returns a temporary reference to the certificate.
   virtual const SSLCertificate& certificate() const = 0;
+
+  // Helpers for parsing converting between PEM and DER format.
+  static bool PemToDer(const std::string& pem_type,
+                       const std::string& pem_string,
+                       std::string* der);
+  static std::string DerToPem(const std::string& pem_type,
+                              const unsigned char* data,
+                              size_t length);
 };
+
+extern const char kPemTypeCertificate[];
+extern const char kPemTypeRsaPrivateKey[];
 
 }  // namespace talk_base
 

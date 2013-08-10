@@ -77,7 +77,7 @@ cricket::PortAllocator* PortAllocatorFactory::CreatePortAllocator(
     cricket::ProtocolType protocol;
     if (cricket::StringToProto(turn[i].transport_type.c_str(), &protocol)) {
       relay_server.ports.push_back(cricket::ProtocolAddress(
-          turn[i].server, protocol));
+          turn[i].server, protocol, turn[i].secure));
       relay_server.credentials = credentials;
       allocator->AddRelay(relay_server);
     } else {

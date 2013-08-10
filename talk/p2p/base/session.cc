@@ -288,6 +288,11 @@ bool TransportProxy::OnRemoteCandidates(const Candidates& candidates,
   return true;
 }
 
+void TransportProxy::SetIdentity(
+    talk_base::SSLIdentity* identity) {
+  transport_->get()->SetIdentity(identity);
+}
+
 std::string BaseSession::StateToString(State state) {
   switch (state) {
     case Session::STATE_INIT:
@@ -366,6 +371,17 @@ BaseSession::~BaseSession() {
 
   delete remote_description_;
   delete local_description_;
+}
+
+bool BaseSession::SetIdentity(talk_base::SSLIdentity* identity) {
+  if (identity_)
+    return false;
+  identity_ = identity;
+  for (TransportMap::iterator iter = transports_.begin();
+       iter != transports_.end(); ++iter) {
+    iter->second->SetIdentity(identity_);
+  }
+  return true;
 }
 
 bool BaseSession::PushdownTransportDescription(ContentSource source,

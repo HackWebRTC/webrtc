@@ -134,11 +134,14 @@ static int OnSctpInboundPacket(struct socket* sock, union sctp_sockstore addr,
   // Post data to the channel's receiver thread (copying it).
   // TODO(ldixon): Unclear if copy is needed as this method is responsible for
   // memory cleanup. But this does simplify code.
+  const uint32 native_ppid = talk_base::HostToNetwork32(rcv.rcv_ppid);
   SctpInboundPacket* packet = new SctpInboundPacket();
   packet->buffer.SetData(data, length);
   packet->params.ssrc = rcv.rcv_sid;
   packet->params.seq_num = rcv.rcv_ssn;
   packet->params.timestamp = rcv.rcv_tsn;
+  packet->params.type =
+      static_cast<cricket::DataMessageType>(native_ppid);
   packet->flags = flags;
   channel->worker_thread()->Post(channel, MSG_SCTPINBOUNDPACKET,
                                  talk_base::WrapMessageData(packet));
@@ -371,7 +374,8 @@ bool SctpDataMediaChannel::AddSendStream(const StreamParams& stream) {
   }
 
   StreamParams found_stream;
-  if (GetStreamBySsrc(send_streams_, stream.first_ssrc(), &found_stream)) {
+  // TODO(lally): Consider keeping this sorted.
+  if (GetStreamBySsrc(streams_, stream.first_ssrc(), &found_stream)) {
     LOG(LS_WARNING) << debug_name_ << "->AddSendStream(...): "
                     << "Not adding data send stream '" << stream.id
                     << "' with ssrc=" << stream.first_ssrc()
@@ -379,17 +383,17 @@ bool SctpDataMediaChannel::AddSendStream(const StreamParams& stream) {
     return false;
   }
 
-  send_streams_.push_back(stream);
+  streams_.push_back(stream);
   return true;
 }
 
 bool SctpDataMediaChannel::RemoveSendStream(uint32 ssrc) {
   StreamParams found_stream;
-  if (!GetStreamBySsrc(send_streams_, ssrc, &found_stream)) {
+  if (!GetStreamBySsrc(streams_, ssrc, &found_stream)) {
     return false;
   }
 
-  RemoveStreamBySsrc(&send_streams_, ssrc);
+  RemoveStreamBySsrc(&streams_, ssrc);
   return true;
 }
 
@@ -401,7 +405,7 @@ bool SctpDataMediaChannel::AddRecvStream(const StreamParams& stream) {
   }
 
   StreamParams found_stream;
-  if (GetStreamBySsrc(recv_streams_, stream.first_ssrc(), &found_stream)) {
+  if (GetStreamBySsrc(streams_, stream.first_ssrc(), &found_stream)) {
     LOG(LS_WARNING) << debug_name_ << "->AddRecvStream(...): "
                     << "Not adding data recv stream '" << stream.id
                     << "' with ssrc=" << stream.first_ssrc()
@@ -409,7 +413,7 @@ bool SctpDataMediaChannel::AddRecvStream(const StreamParams& stream) {
     return false;
   }
 
-  recv_streams_.push_back(stream);
+  streams_.push_back(stream);
   LOG(LS_VERBOSE) << debug_name_ << "->AddRecvStream(...): "
                   << "Added data recv stream '" << stream.id
                   << "' with ssrc=" << stream.first_ssrc();
@@ -417,7 +421,7 @@ bool SctpDataMediaChannel::AddRecvStream(const StreamParams& stream) {
 }
 
 bool SctpDataMediaChannel::RemoveRecvStream(uint32 ssrc) {
-  RemoveStreamBySsrc(&recv_streams_, ssrc);
+  RemoveStreamBySsrc(&streams_, ssrc);
   return true;
 }
 
@@ -438,7 +442,8 @@ bool SctpDataMediaChannel::SendData(
   }
 
   StreamParams found_stream;
-  if (!GetStreamBySsrc(send_streams_, params.ssrc, &found_stream)) {
+  if (params.type != cricket::DMT_CONTROL &&
+      !GetStreamBySsrc(streams_, params.ssrc, &found_stream)) {
     LOG(LS_WARNING) << debug_name_ << "->SendData(...): "
                     << "Not sending data because ssrc is unknown: "
                     << params.ssrc;
@@ -471,7 +476,7 @@ bool SctpDataMediaChannel::SendData(
   sndinfo.snd_flags = 0;
   // TODO(pthatcher): Once data types are added to SendParams, this can be set
   // from SendParams.
-  sndinfo.snd_ppid = talk_base::HostToNetwork32(PPID_NONE);
+  sndinfo.snd_ppid = talk_base::HostToNetwork32(params.type);
   sndinfo.snd_context = 0;
   sndinfo.snd_assoc_id = 0;
   ssize_t res = usrsctp_sendv(sock_, payload.data(),
@@ -548,9 +553,13 @@ void SctpDataMediaChannel::OnInboundPacketFromSctpToChannel(
 void SctpDataMediaChannel::OnDataFromSctpToChannel(
     const ReceiveDataParams& params, talk_base::Buffer* buffer) {
   StreamParams found_stream;
-  if (!GetStreamBySsrc(recv_streams_, params.ssrc, &found_stream)) {
-    LOG(LS_WARNING) << debug_name_ << "->OnDataFromSctpToChannel(...): "
-                    << "Received packet for unknown ssrc: " << params.ssrc;
+  if (!GetStreamBySsrc(streams_, params.ssrc, &found_stream)) {
+    if (params.type == DMT_CONTROL) {
+      SignalDataReceived(params, buffer->data(), buffer->length());
+    } else {
+      LOG(LS_WARNING) << debug_name_ << "->OnDataFromSctpToChannel(...): "
+                      << "Received packet for unknown ssrc: " << params.ssrc;
+    }
     return;
   }
 

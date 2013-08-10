@@ -38,6 +38,7 @@ if env.Bit('have_webrtc_voice') and env.Bit('have_webrtc_video'):
       'videotrack.cc',
       'webrtcsdp.cc',
       'webrtcsession.cc',
+      'webrtcsessiondescriptionfactory.cc',
     ],
     lin_ccflags = peerconnection_lin_ccflags
   )

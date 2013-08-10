@@ -130,6 +130,8 @@ extern const buzz::StaticQName QN_SSRC;
 extern const buzz::StaticQName QN_JINGLE_RTP_PAYLOADTYPE;
 extern const buzz::StaticQName QN_JINGLE_RTP_BANDWIDTH;
 extern const buzz::StaticQName QN_JINGLE_RTCP_MUX;
+extern const buzz::StaticQName QN_JINGLE_RTCP_FB;
+extern const buzz::StaticQName QN_SUBTYPE;
 extern const buzz::StaticQName QN_JINGLE_RTP_HDREXT;
 extern const buzz::StaticQName QN_URI;
 

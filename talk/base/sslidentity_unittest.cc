@@ -32,6 +32,8 @@
 #include "talk/base/ssladapter.h"
 #include "talk/base/sslidentity.h"
 
+using talk_base::SSLIdentity;
+
 const char kTestCertificate[] = "-----BEGIN CERTIFICATE-----\n"
     "MIIB6TCCAVICAQYwDQYJKoZIhvcNAQEEBQAwWzELMAkGA1UEBhMCQVUxEzARBgNV\n"
     "BAgTClF1ZWVuc2xhbmQxGjAYBgNVBAoTEUNyeXB0U29mdCBQdHkgTHRkMRswGQYD\n"
@@ -70,8 +72,8 @@ class SSLIdentityTest : public testing::Test {
   }
 
   virtual void SetUp() {
-    identity1_.reset(talk_base::SSLIdentity::Generate("test1"));
-    identity2_.reset(talk_base::SSLIdentity::Generate("test2"));
+    identity1_.reset(SSLIdentity::Generate("test1"));
+    identity2_.reset(SSLIdentity::Generate("test2"));
 
     ASSERT_TRUE(identity1_);
     ASSERT_TRUE(identity2_);
@@ -126,8 +128,8 @@ class SSLIdentityTest : public testing::Test {
   }
 
  private:
-  talk_base::scoped_ptr<talk_base::SSLIdentity> identity1_;
-  talk_base::scoped_ptr<talk_base::SSLIdentity> identity2_;
+  talk_base::scoped_ptr<SSLIdentity> identity1_;
+  talk_base::scoped_ptr<SSLIdentity> identity2_;
   talk_base::scoped_ptr<talk_base::SSLCertificate> test_cert_;
 };
 
@@ -187,8 +189,17 @@ TEST_F(SSLIdentityTest, FromPEMStrings) {
       "qCV42aXS3onOXDQ1ibuWq0fr0//aj0wo4KV474c=\n"
       "-----END CERTIFICATE-----\n";
 
-  talk_base::scoped_ptr<talk_base::SSLIdentity> identity(
-      talk_base::SSLIdentity::FromPEMStrings(kRSA_PRIVATE_KEY_PEM, kCERT_PEM));
+  talk_base::scoped_ptr<SSLIdentity> identity(
+      SSLIdentity::FromPEMStrings(kRSA_PRIVATE_KEY_PEM, kCERT_PEM));
   EXPECT_TRUE(identity);
   EXPECT_EQ(kCERT_PEM, identity->certificate().ToPEMString());
+}
+
+TEST_F(SSLIdentityTest, PemDerConversion) {
+  std::string der;
+  EXPECT_TRUE(SSLIdentity::PemToDer("CERTIFICATE", kTestCertificate, &der));
+
+  EXPECT_EQ(kTestCertificate, SSLIdentity::DerToPem(
+      "CERTIFICATE",
+      reinterpret_cast<const unsigned char*>(der.data()), der.length()));
 }

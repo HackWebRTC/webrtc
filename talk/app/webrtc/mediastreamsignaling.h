@@ -190,6 +190,15 @@ class MediaStreamSignaling {
   // Adds |data_channel| to the collection of DataChannels that will be
   // be offered in a SessionDescription.
   bool AddDataChannel(DataChannel* data_channel);
+  // After we receive an OPEN message, create a data channel and add it.
+  bool AddDataChannelFromOpenMessage(
+      const std::string& label, const DataChannelInit& config);
+  bool ParseDataChannelOpenMessage(
+      const talk_base::Buffer& payload, std::string* label,
+      DataChannelInit* config);
+  bool WriteDataChannelOpenMessage(
+      const std::string& label, const DataChannelInit& config,
+      talk_base::Buffer* payload);
 
   // Returns a MediaSessionOptions struct with options decided by |constraints|,
   // the local MediaStreams and DataChannels.
@@ -243,6 +252,8 @@ class MediaStreamSignaling {
   StreamCollectionInterface* remote_streams() const {
     return remote_streams_.get();
   }
+  void UpdateLocalSctpDataChannels();
+  void UpdateRemoteSctpDataChannels();
 
  private:
   struct RemotePeerInfo {
@@ -357,8 +368,6 @@ class MediaStreamSignaling {
   void UpdateClosingDataChannels(
       const std::vector<std::string>& active_channels, bool is_local_update);
   void CreateRemoteDataChannel(const std::string& label, uint32 remote_ssrc);
-  void UpdateLocalSctpDataChannels();
-  void UpdateRemoteSctpDataChannels();
 
   RemotePeerInfo remote_info_;
   talk_base::Thread* signaling_thread_;

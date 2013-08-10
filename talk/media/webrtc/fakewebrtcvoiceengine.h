@@ -266,7 +266,9 @@ class FakeWebRtcVoiceEngine
   virtual webrtc::AudioProcessing* audio_processing() OVERRIDE {
     return NULL;
   }
+#ifndef USE_WEBRTC_DEV_BRANCH
   WEBRTC_STUB(MaxNumOfChannels, ());
+#endif
   WEBRTC_FUNC(CreateChannel, ()) {
     if (fail_create_channel_) {
       return -1;

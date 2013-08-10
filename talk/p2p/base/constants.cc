@@ -114,6 +114,8 @@ const buzz::StaticQName QN_JINGLE_RTP_PAYLOADTYPE =
 const buzz::StaticQName QN_JINGLE_RTP_BANDWIDTH =
     { NS_JINGLE_RTP, LN_BANDWIDTH };
 const buzz::StaticQName QN_JINGLE_RTCP_MUX = { NS_JINGLE_RTP, "rtcp-mux" };
+const buzz::StaticQName QN_JINGLE_RTCP_FB = { NS_JINGLE_RTP, "rtcp-fb" };
+const buzz::StaticQName QN_SUBTYPE = { NS_EMPTY, "subtype" };
 const buzz::StaticQName QN_PARAMETER = { NS_JINGLE_RTP, "parameter" };
 const buzz::StaticQName QN_JINGLE_RTP_HDREXT =
     { NS_JINGLE_RTP, "rtp-hdrext" };

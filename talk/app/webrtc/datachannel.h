@@ -74,6 +74,9 @@ class DataChannel : public DataChannelInterface,
   virtual void Close();
   virtual DataState state() const { return state_; }
   virtual bool Send(const DataBuffer& buffer);
+  // Send a control message right now, or queue for later.
+  virtual bool SendControl(const talk_base::Buffer* buffer);
+  void ConnectToDataSession();
 
   // Set the SSRC this channel should use to receive data from the
   // underlying data engine.
@@ -89,6 +92,10 @@ class DataChannel : public DataChannelInterface,
   // Called if the underlying data engine is closing.
   void OnDataEngineClose();
 
+  // Called when the channel's ready to use.  That can happen when the
+  // underlying DataMediaChannel becomes ready, or when this channel is a new
+  // stream on an existing DataMediaChannel, and we've finished negotiation.
+  void OnChannelReady(bool writable);
  protected:
   DataChannel(WebRtcSession* session, const std::string& label);
   virtual ~DataChannel();
@@ -100,15 +107,15 @@ class DataChannel : public DataChannelInterface,
   void OnDataReceived(cricket::DataChannel* channel,
                       const cricket::ReceiveDataParams& params,
                       const talk_base::Buffer& payload);
-  void OnChannelReady(bool writable);
 
  private:
   void DoClose();
   void UpdateState();
   void SetState(DataState state);
-  void ConnectToDataSession();
   void DisconnectFromDataSession();
   bool IsConnectedToDataSession() { return data_session_ != NULL; }
+  void DeliverQueuedControlData();
+  void QueueControl(const talk_base::Buffer* buffer);
   void DeliverQueuedReceivedData();
   void ClearQueuedReceivedData();
   void SendQueuedSendData();
@@ -128,6 +135,9 @@ class DataChannel : public DataChannelInterface,
   uint32 send_ssrc_;
   bool receive_ssrc_set_;
   uint32 receive_ssrc_;
+  // Control messages that always have to get sent out before any queued
+  // data.
+  std::queue<const talk_base::Buffer*> queued_control_data_;
   std::queue<DataBuffer*> queued_received_data_;
   std::deque<DataBuffer*> queued_send_data_;
 };

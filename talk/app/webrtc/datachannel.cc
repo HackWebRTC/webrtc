@@ -159,6 +159,37 @@ bool DataChannel::Send(const DataBuffer& buffer) {
   return true;
 }
 
+void DataChannel::QueueControl(const talk_base::Buffer* buffer) {
+  queued_control_data_.push(buffer);
+}
+
+bool DataChannel::SendControl(const talk_base::Buffer* buffer) {
+  if (state_ != kOpen) {
+    QueueControl(buffer);
+    return true;
+  }
+  if (session_->data_channel_type() == cricket::DCT_RTP) {
+    delete buffer;
+    return false;
+  }
+
+  cricket::SendDataParams send_params;
+  send_params.ssrc = config_.id;
+  send_params.ordered = true;
+  send_params.type = cricket::DMT_CONTROL;
+
+  cricket::SendDataResult send_result;
+  bool retval = session_->data_channel()->SendData(
+      send_params, *buffer, &send_result);
+  if (!retval && send_result == cricket::SDR_BLOCK) {
+    // Link is congested.  Queue for later.
+    QueueControl(buffer);
+  } else {
+    delete buffer;
+  }
+  return retval;
+}
+
 void DataChannel::SetReceiveSsrc(uint32 receive_ssrc) {
   if (receive_ssrc_set_) {
     ASSERT(session_->data_channel_type() == cricket::DCT_RTP ||
@@ -278,9 +309,9 @@ void DataChannel::SetState(DataState state) {
 }
 
 void DataChannel::ConnectToDataSession() {
-  ASSERT(session_->data_channel() != NULL);
   if (!session_->data_channel()) {
     LOG(LS_ERROR) << "The DataEngine does not exist.";
+    ASSERT(session_->data_channel() != NULL);
     return;
   }
 
@@ -288,9 +319,17 @@ void DataChannel::ConnectToDataSession() {
   data_session_->SignalReadyToSendData.connect(this,
                                                &DataChannel::OnChannelReady);
   data_session_->SignalDataReceived.connect(this, &DataChannel::OnDataReceived);
+  cricket::StreamParams params =
+    cricket::StreamParams::CreateLegacy(id());
+  data_session_->media_channel()->AddSendStream(params);
+  data_session_->media_channel()->AddRecvStream(params);
 }
 
 void DataChannel::DisconnectFromDataSession() {
+  if (data_session_->media_channel() != NULL) {
+    data_session_->media_channel()->RemoveSendStream(id());
+    data_session_->media_channel()->RemoveRecvStream(id());
+  }
   data_session_->SignalReadyToSendData.disconnect(this);
   data_session_->SignalDataReceived.disconnect(this);
   data_session_ = NULL;
@@ -318,6 +357,7 @@ void DataChannel::ClearQueuedReceivedData() {
 }
 
 void DataChannel::SendQueuedSendData() {
+  DeliverQueuedControlData();
   if (!was_ever_writable_) {
     return;
   }
@@ -332,6 +372,16 @@ void DataChannel::SendQueuedSendData() {
     }
     queued_send_data_.pop_front();
     delete buffer;
+  }
+}
+
+void DataChannel::DeliverQueuedControlData() {
+  if (was_ever_writable_) {
+    while (!queued_control_data_.empty()) {
+      const talk_base::Buffer *buf = queued_control_data_.front();
+      queued_control_data_.pop();
+      SendControl(buf);
+    }
   }
 }
 

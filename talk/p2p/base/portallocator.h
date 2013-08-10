@@ -117,7 +117,8 @@ class PortAllocator : public sigslot::has_slots<> {
       flags_(kDefaultPortAllocatorFlags),
       min_port_(0),
       max_port_(0),
-      step_delay_(kDefaultStepDelay) {
+      step_delay_(kDefaultStepDelay),
+      allow_tcp_listen_(true) {
     // This will allow us to have old behavior on non webrtc clients.
   }
   virtual ~PortAllocator();
@@ -155,11 +156,16 @@ class PortAllocator : public sigslot::has_slots<> {
     return true;
   }
 
+  uint32 step_delay() const { return step_delay_; }
   void set_step_delay(uint32 delay) {
     ASSERT(delay >= kMinimumStepDelay);
     step_delay_ = delay;
   }
-  uint32 step_delay() const { return step_delay_; }
+
+  bool allow_tcp_listen() const { return allow_tcp_listen_; }
+  void set_allow_tcp_listen(bool allow_tcp_listen) {
+    allow_tcp_listen_ = allow_tcp_listen;
+  }
 
  protected:
   virtual PortAllocatorSession* CreateSessionInternal(
@@ -177,6 +183,7 @@ class PortAllocator : public sigslot::has_slots<> {
   int max_port_;
   uint32 step_delay_;
   SessionMuxerMap muxers_;
+  bool allow_tcp_listen_;
 };
 
 }  // namespace cricket

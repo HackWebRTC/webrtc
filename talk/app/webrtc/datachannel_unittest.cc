@@ -26,6 +26,7 @@
  */
 
 #include "talk/app/webrtc/datachannel.h"
+#include "talk/app/webrtc/jsep.h"
 #include "talk/app/webrtc/mediastreamsignaling.h"
 #include "talk/app/webrtc/test/fakeconstraints.h"
 #include "talk/app/webrtc/webrtcsession.h"
@@ -34,9 +35,30 @@
 #include "talk/media/devices/fakedevicemanager.h"
 #include "talk/session/media/channelmanager.h"
 
+using webrtc::CreateSessionDescriptionObserver;
 using webrtc::MediaConstraintsInterface;
+using webrtc::SessionDescriptionInterface;
 
 const uint32 kFakeSsrc = 1;
+
+class CreateSessionDescriptionObserverForTest
+    : public talk_base::RefCountedObject<CreateSessionDescriptionObserver> {
+ public:
+  CreateSessionDescriptionObserverForTest() : description_(NULL) {}
+
+  virtual void OnSuccess(SessionDescriptionInterface* desc) {
+    description_ = desc;
+  }
+  virtual void OnFailure(const std::string& error) {}
+
+  SessionDescriptionInterface* description() { return description_; }
+
+ protected:
+  ~CreateSessionDescriptionObserverForTest() {}
+
+ private:
+  SessionDescriptionInterface* description_;
+};
 
 class SctpDataChannelTest : public testing::Test {
  protected:
@@ -49,13 +71,14 @@ class SctpDataChannelTest : public testing::Test {
                                         new cricket::FakeDeviceManager(),
                                         new cricket::CaptureManager(),
                                         talk_base::Thread::Current())),
-        ms_signaling_(new webrtc::MediaStreamSignaling(
-                          talk_base::Thread::Current(), NULL)),
+        media_stream_signaling_(
+            new webrtc::MediaStreamSignaling(talk_base::Thread::Current(),
+                                             NULL)),
         session_(channel_manager_.get(),
                  talk_base::Thread::Current(),
                  talk_base::Thread::Current(),
                  NULL,
-                 ms_signaling_.get()),
+                 media_stream_signaling_.get()),
         webrtc_data_channel_(NULL) {}
 
   virtual void SetUp() {
@@ -67,10 +90,13 @@ class SctpDataChannelTest : public testing::Test {
     constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp, true);
     constraints.AddMandatory(MediaConstraintsInterface::kEnableSctpDataChannels,
                              true);
-    ASSERT_TRUE(session_.Initialize(&constraints));
-    webrtc::SessionDescriptionInterface* offer = session_.CreateOffer(NULL);
-    ASSERT_TRUE(offer != NULL);
-    ASSERT_TRUE(session_.SetLocalDescription(offer, NULL));
+    ASSERT_TRUE(session_.Initialize(&constraints, NULL));
+    talk_base::scoped_refptr<CreateSessionDescriptionObserverForTest> observer
+        = new CreateSessionDescriptionObserverForTest();
+    session_.CreateOffer(observer.get(), NULL);
+    EXPECT_TRUE_WAIT(observer->description() != NULL, 1000);
+    ASSERT_TRUE(observer->description() != NULL);
+    ASSERT_TRUE(session_.SetLocalDescription(observer->description(), NULL));
 
     webrtc_data_channel_ = webrtc::DataChannel::Create(&session_, "test", NULL);
     // Connect to the media channel.
@@ -91,7 +117,7 @@ class SctpDataChannelTest : public testing::Test {
   cricket::FakeMediaEngine* media_engine_;
   cricket::FakeDataEngine* data_engine_;
   talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
-  talk_base::scoped_ptr<webrtc::MediaStreamSignaling> ms_signaling_;
+  talk_base::scoped_ptr<webrtc::MediaStreamSignaling> media_stream_signaling_;
   webrtc::WebRtcSession session_;
   talk_base::scoped_refptr<webrtc::DataChannel> webrtc_data_channel_;
 };

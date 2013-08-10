@@ -440,6 +440,25 @@ void ParsePayloadTypeParameters(const buzz::XmlElement* element,
   }
 }
 
+void ParseFeedbackParams(const buzz::XmlElement* element,
+                         FeedbackParams* params) {
+  for (const buzz::XmlElement* param = element->FirstNamed(QN_JINGLE_RTCP_FB);
+       param != NULL; param = param->NextNamed(QN_JINGLE_RTCP_FB)) {
+    std::string type = GetXmlAttr(param, QN_TYPE, buzz::STR_EMPTY);
+    std::string subtype = GetXmlAttr(param, QN_SUBTYPE, buzz::STR_EMPTY);
+    if (!type.empty()) {
+      params->Add(FeedbackParam(type, subtype));
+    }
+  }
+}
+
+void AddFeedbackParams(const FeedbackParams& additional_params,
+                       FeedbackParams* params) {
+  for (size_t i = 0; i < additional_params.params().size(); ++i) {
+    params->Add(additional_params.params()[i]);
+  }
+}
+
 int FindWithDefault(const std::map<std::string, std::string>& map,
                     const std::string& key, const int def) {
   std::map<std::string, std::string>::const_iterator iter = map.find(key);
@@ -488,6 +507,7 @@ bool ParseJingleAudioCodec(const buzz::XmlElement* elem, AudioCodec* codec) {
   int bitrate = FindWithDefault(paramap, PAYLOADTYPE_PARAMETER_BITRATE, 0);
 
   *codec = AudioCodec(id, name, clockrate, bitrate, channels, 0);
+  ParseFeedbackParams(elem, &codec->feedback_params);
   return true;
 }
 
@@ -506,6 +526,7 @@ bool ParseJingleVideoCodec(const buzz::XmlElement* elem, VideoCodec* codec) {
 
   *codec = VideoCodec(id, name, width, height, framerate, 0);
   codec->params = paramap;
+  ParseFeedbackParams(elem, &codec->feedback_params);
   return true;
 }
 
@@ -517,6 +538,7 @@ bool ParseJingleDataCodec(const buzz::XmlElement* elem, DataCodec* codec) {
   std::string name = GetXmlAttr(elem, QN_NAME, buzz::STR_EMPTY);
 
   *codec = DataCodec(id, name, 0);
+  ParseFeedbackParams(elem, &codec->feedback_params);
   return true;
 }
 
@@ -543,12 +565,16 @@ bool ParseJingleAudioContent(const buzz::XmlElement* content_elem,
   talk_base::scoped_ptr<AudioContentDescription> audio(
       new AudioContentDescription());
 
+  FeedbackParams content_feedback_params;
+  ParseFeedbackParams(content_elem, &content_feedback_params);
+
   for (const buzz::XmlElement* payload_elem =
            content_elem->FirstNamed(QN_JINGLE_RTP_PAYLOADTYPE);
       payload_elem != NULL;
       payload_elem = payload_elem->NextNamed(QN_JINGLE_RTP_PAYLOADTYPE)) {
     AudioCodec codec;
     if (ParseJingleAudioCodec(payload_elem, &codec)) {
+      AddFeedbackParams(content_feedback_params, &codec.feedback_params);
       audio->AddCodec(codec);
     }
   }
@@ -579,12 +605,16 @@ bool ParseJingleVideoContent(const buzz::XmlElement* content_elem,
   talk_base::scoped_ptr<VideoContentDescription> video(
       new VideoContentDescription());
 
+  FeedbackParams content_feedback_params;
+  ParseFeedbackParams(content_elem, &content_feedback_params);
+
   for (const buzz::XmlElement* payload_elem =
            content_elem->FirstNamed(QN_JINGLE_RTP_PAYLOADTYPE);
       payload_elem != NULL;
       payload_elem = payload_elem->NextNamed(QN_JINGLE_RTP_PAYLOADTYPE)) {
     VideoCodec codec;
     if (ParseJingleVideoCodec(payload_elem, &codec)) {
+      AddFeedbackParams(content_feedback_params, &codec.feedback_params);
       video->AddCodec(codec);
     }
   }
@@ -645,12 +675,16 @@ bool ParseJingleRtpDataContent(const buzz::XmlElement* content_elem,
                                ParseError* error) {
   DataContentDescription* data = new DataContentDescription();
 
+  FeedbackParams content_feedback_params;
+  ParseFeedbackParams(content_elem, &content_feedback_params);
+
   for (const buzz::XmlElement* payload_elem =
            content_elem->FirstNamed(QN_JINGLE_RTP_PAYLOADTYPE);
       payload_elem != NULL;
       payload_elem = payload_elem->NextNamed(QN_JINGLE_RTP_PAYLOADTYPE)) {
     DataCodec codec;
     if (ParseJingleDataCodec(payload_elem, &codec)) {
+      AddFeedbackParams(content_feedback_params, &codec.feedback_params);
       data->AddCodec(codec);
     }
   }
@@ -853,6 +887,18 @@ buzz::XmlElement* CreatePayloadTypeParameterElem(
   return elem;
 }
 
+void AddRtcpFeedbackElem(buzz::XmlElement* elem,
+                      const FeedbackParams& feedback_params) {
+  std::vector<FeedbackParam>::const_iterator it;
+  for (it = feedback_params.params().begin();
+       it != feedback_params.params().end(); ++it) {
+    buzz::XmlElement* fb_elem = new buzz::XmlElement(QN_JINGLE_RTCP_FB);
+    fb_elem->AddAttr(QN_TYPE, it->id());
+    fb_elem->AddAttr(QN_SUBTYPE, it->param());
+    elem->AddElement(fb_elem);
+  }
+}
+
 buzz::XmlElement* CreateJingleAudioCodecElem(const AudioCodec& codec) {
   buzz::XmlElement* elem = new buzz::XmlElement(QN_JINGLE_RTP_PAYLOADTYPE);
 
@@ -869,6 +915,8 @@ buzz::XmlElement* CreateJingleAudioCodecElem(const AudioCodec& codec) {
     AddXmlAttr(elem, QN_CHANNELS, codec.channels);
   }
 
+  AddRtcpFeedbackElem(elem, codec.feedback_params);
+
   return elem;
 }
 
@@ -883,6 +931,9 @@ buzz::XmlElement* CreateJingleVideoCodecElem(const VideoCodec& codec) {
       PAYLOADTYPE_PARAMETER_HEIGHT, codec.height));
   elem->AddElement(CreatePayloadTypeParameterElem(
       PAYLOADTYPE_PARAMETER_FRAMERATE, codec.framerate));
+
+  AddRtcpFeedbackElem(elem, codec.feedback_params);
+
   CodecParameterMap::const_iterator param_iter;
   for (param_iter = codec.params.begin(); param_iter != codec.params.end();
        ++param_iter) {
@@ -898,6 +949,8 @@ buzz::XmlElement* CreateJingleDataCodecElem(const DataCodec& codec) {
 
   AddXmlAttr(elem, QN_ID, codec.id);
   elem->AddAttr(QN_NAME, codec.name);
+
+  AddRtcpFeedbackElem(elem, codec.feedback_params);
 
   return elem;
 }

@@ -43,54 +43,11 @@
 #include "pk11pub.h"
 #include "sechash.h"
 
-#include "talk/base/base64.h"
 #include "talk/base/logging.h"
 #include "talk/base/helpers.h"
 #include "talk/base/nssstreamadapter.h"
 
 namespace talk_base {
-
-// Helper function to parse PEM-encoded DER.
-static bool PemToDer(const std::string& pem_type,
-                     const std::string& pem_string,
-                     std::string* der) {
-  // Find the inner body. We need this to fulfill the contract of
-  // returning pem_length.
-  size_t header = pem_string.find("-----BEGIN " + pem_type + "-----");
-  if (header == std::string::npos)
-    return false;
-
-  size_t body = pem_string.find("\n", header);
-  if (body == std::string::npos)
-    return false;
-
-  size_t trailer = pem_string.find("-----END " + pem_type + "-----");
-  if (trailer == std::string::npos)
-    return false;
-
-  std::string inner = pem_string.substr(body + 1, trailer - (body + 1));
-
-  *der = Base64::Decode(inner, Base64::DO_PARSE_WHITE |
-                        Base64::DO_PAD_ANY |
-                        Base64::DO_TERM_BUFFER);
-  return true;
-}
-
-static std::string DerToPem(const std::string& pem_type,
-                            const unsigned char *data,
-                            size_t length) {
-  std::stringstream result;
-
-  result << "-----BEGIN " << pem_type << "-----\n";
-
-  std::string tmp;
-  Base64::EncodeFromArray(data, length, &tmp);
-  result << tmp;
-
-  result << "-----END " << pem_type << "-----\n";
-
-  return result.str();
-}
 
 NSSKeyPair::~NSSKeyPair() {
   if (privkey_)
@@ -135,7 +92,7 @@ NSSKeyPair *NSSKeyPair::GetReference() {
 
 NSSCertificate *NSSCertificate::FromPEMString(const std::string &pem_string) {
   std::string der;
-  if (!PemToDer("CERTIFICATE", pem_string, &der))
+  if (!SSLIdentity::PemToDer(kPemTypeCertificate, pem_string, &der))
     return NULL;
 
   SECItem der_cert;
@@ -160,9 +117,9 @@ NSSCertificate *NSSCertificate::GetReference() const {
 }
 
 std::string NSSCertificate::ToPEMString() const {
-  return DerToPem("CERTIFICATE",
-                  certificate_->derCert.data,
-                  certificate_->derCert.len);
+  return SSLIdentity::DerToPem(kPemTypeCertificate,
+                               certificate_->derCert.data,
+                               certificate_->derCert.len);
 }
 
 bool NSSCertificate::GetDigestLength(const std::string &algorithm,
@@ -357,8 +314,8 @@ NSSIdentity *NSSIdentity::Generate(const std::string &common_name) {
 SSLIdentity* NSSIdentity::FromPEMStrings(const std::string& private_key,
                                          const std::string& certificate) {
   std::string private_key_der;
-  if (!PemToDer(
-      "RSA PRIVATE KEY", private_key, &private_key_der))
+  if (!SSLIdentity::PemToDer(
+      kPemTypeRsaPrivateKey, private_key, &private_key_der))
     return NULL;
 
   SECItem private_key_item;

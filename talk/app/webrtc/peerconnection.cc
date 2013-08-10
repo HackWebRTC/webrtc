@@ -50,9 +50,11 @@ static const size_t kTurnHostTokensNum = 2;
 // Number of tokens must be preset when TURN uri has transport param.
 static const size_t kTurnTransportTokensNum = 2;
 // The default stun port.
-static const int kDefaultPort = 3478;
+static const int kDefaultStunPort = 3478;
+static const int kDefaultStunTlsPort = 5349;
 static const char kTransport[] = "transport";
-static const char kDefaultTransportType[] = "udp";
+static const char kUdpTransportType[] = "udp";
+static const char kTcpTransportType[] = "tcp";
 
 // NOTE: Must be in the same order as the ServiceType enum.
 static const char* kValidIceServiceTypes[] = {
@@ -67,9 +69,7 @@ enum ServiceType {
 };
 
 enum {
-  MSG_CREATE_SESSIONDESCRIPTION_SUCCESS = 0,
-  MSG_CREATE_SESSIONDESCRIPTION_FAILED,
-  MSG_SET_SESSIONDESCRIPTION_SUCCESS,
+  MSG_SET_SESSIONDESCRIPTION_SUCCESS = 0,
   MSG_SET_SESSIONDESCRIPTION_FAILED,
   MSG_GETSTATS,
   MSG_ICECONNECTIONCHANGE,
@@ -83,17 +83,6 @@ struct CandidateMsg : public talk_base::MessageData {
       : candidate(candidate) {
   }
   talk_base::scoped_ptr<const webrtc::JsepIceCandidate> candidate;
-};
-
-struct CreateSessionDescriptionMsg : public talk_base::MessageData {
-  explicit CreateSessionDescriptionMsg(
-      webrtc::CreateSessionDescriptionObserver* observer)
-      : observer(observer) {
-  }
-
-  talk_base::scoped_refptr<webrtc::CreateSessionDescriptionObserver> observer;
-  std::string error;
-  talk_base::scoped_ptr<webrtc::SessionDescriptionInterface> description;
 };
 
 struct SetSessionDescriptionMsg : public talk_base::MessageData {
@@ -145,7 +134,7 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& configuration,
       continue;
     }
     std::vector<std::string> tokens;
-    std::string turn_transport_type = kDefaultTransportType;
+    std::string turn_transport_type = kUdpTransportType;
     talk_base::tokenize(server.uri, '?', &tokens);
     std::string uri_without_transport = tokens[0];
     // Let's look into transport= param, if it exists.
@@ -153,6 +142,12 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& configuration,
       std::string uri_transport_param = tokens[1];
       talk_base::tokenize(uri_transport_param, '=', &tokens);
       if (tokens[0] == kTransport) {
+        // As per above grammar transport param will be consist of lower case
+        // letters.
+        if (tokens[1] != kUdpTransportType && tokens[1] != kTcpTransportType) {
+          LOG(LS_WARNING) << "Transport param should always be udp or tcp.";
+          continue;
+        }
         turn_transport_type = tokens[1];
       }
     }
@@ -176,7 +171,10 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& configuration,
       continue;
     }
     std::string address = tokens[1];
-    int port = kDefaultPort;
+    int port = kDefaultStunPort;
+    if (service_type == TURNS)
+      port = kDefaultStunTlsPort;
+
     if (tokens.size() > kMinIceUriTokens) {
       if (!talk_base::FromString(tokens[2], &port)) {
         LOG(LS_WARNING)  << "Failed to parse port string: " << tokens[2];
@@ -194,7 +192,8 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& configuration,
       case STUNS:
         stun_config->push_back(StunConfiguration(address, port));
         break;
-      case TURN: {
+      case TURN:
+      case TURNS: {
         if (server.username.empty()) {
           // Turn url example from the spec |url:"turn:user@turn.example.org"|.
           std::vector<std::string> turn_tokens;
@@ -204,15 +203,23 @@ bool ParseIceServers(const PeerConnectionInterface::IceServers& configuration,
             address = turn_tokens[1];
           }
         }
+
+        bool secure = (service_type == TURNS);
+
         turn_config->push_back(TurnConfiguration(address, port,
                                                  server.username,
                                                  server.password,
-                                                 turn_transport_type));
+                                                 turn_transport_type,
+                                                 secure));
         // STUN functionality is part of TURN.
+        // Note: If there is only TURNS is supplied as part of configuration,
+        // we will have problem in fetching server reflexive candidate, as
+        // currently we don't have support of TCP/TLS in stunport.cc.
+        // In that case we should fetch server reflexive addess from
+        // TURN allocate response.
         stun_config->push_back(StunConfiguration(address, port));
         break;
       }
-      case TURNS:
       case INVALID:
       default:
         LOG(WARNING) << "Configuration not supported: " << server.uri;
@@ -261,7 +268,8 @@ PeerConnection::~PeerConnection() {
 bool PeerConnection::Initialize(
     const PeerConnectionInterface::IceServers& configuration,
     const MediaConstraintsInterface* constraints,
-    webrtc::PortAllocatorFactoryInterface* allocator_factory,
+    PortAllocatorFactoryInterface* allocator_factory,
+    DTLSIdentityServiceInterface* dtls_identity_service,
     PeerConnectionObserver* observer) {
   std::vector<PortAllocatorFactoryInterface::StunConfiguration> stun_config;
   std::vector<PortAllocatorFactoryInterface::TurnConfiguration> turn_config;
@@ -270,7 +278,7 @@ bool PeerConnection::Initialize(
   }
 
   return DoInitialize(stun_config, turn_config, constraints,
-                      allocator_factory, observer);
+                      allocator_factory, dtls_identity_service, observer);
 }
 
 bool PeerConnection::DoInitialize(
@@ -278,6 +286,7 @@ bool PeerConnection::DoInitialize(
     const TurnConfigurations& turn_config,
     const MediaConstraintsInterface* constraints,
     webrtc::PortAllocatorFactoryInterface* allocator_factory,
+    DTLSIdentityServiceInterface* dtls_identity_service,
     PeerConnectionObserver* observer) {
   ASSERT(observer != NULL);
   if (!observer)
@@ -306,9 +315,8 @@ bool PeerConnection::DoInitialize(
   stats_.set_session(session_.get());
 
   // Initialize the WebRtcSession. It creates transport channels etc.
-  if (!session_->Initialize(constraints))
+  if (!session_->Initialize(constraints, dtls_identity_service))
     return false;
-
 
   // Register PeerConnection as receiver of local ice candidates.
   // All the callbacks will be posted to the application from PeerConnection.
@@ -416,7 +424,16 @@ PeerConnection::CreateDataChannel(
   if (!channel.get())
     return NULL;
 
+  // If we've already passed the underlying channel's setup phase, have the
+  // MediaStreamSignaling update data channels manually.
+  if (session_->data_channel() != NULL &&
+      session_->data_channel_type() == cricket::DCT_SCTP) {
+    mediastream_signaling_->UpdateLocalSctpDataChannels();
+    mediastream_signaling_->UpdateRemoteSctpDataChannels();
+  }
+
   observer_->OnRenegotiationNeeded();
+
   return DataChannelProxy::Create(signaling_thread(), channel.get());
 }
 
@@ -426,17 +443,7 @@ void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
     LOG(LS_ERROR) << "CreateOffer - observer is NULL.";
     return;
   }
-  CreateSessionDescriptionMsg* msg = new CreateSessionDescriptionMsg(observer);
-  msg->description.reset(
-      session_->CreateOffer(constraints));
-
-  if (!msg->description) {
-    msg->error = "CreateOffer failed.";
-    signaling_thread()->Post(this, MSG_CREATE_SESSIONDESCRIPTION_FAILED, msg);
-    return;
-  }
-
-  signaling_thread()->Post(this, MSG_CREATE_SESSIONDESCRIPTION_SUCCESS, msg);
+  session_->CreateOffer(observer, constraints);
 }
 
 void PeerConnection::CreateAnswer(
@@ -446,15 +453,7 @@ void PeerConnection::CreateAnswer(
     LOG(LS_ERROR) << "CreateAnswer - observer is NULL.";
     return;
   }
-  CreateSessionDescriptionMsg* msg = new CreateSessionDescriptionMsg(observer);
-  msg->description.reset(session_->CreateAnswer(constraints));
-  if (!msg->description) {
-    msg->error = "CreateAnswer failed.";
-    signaling_thread()->Post(this, MSG_CREATE_SESSIONDESCRIPTION_FAILED, msg);
-    return;
-  }
-
-  signaling_thread()->Post(this, MSG_CREATE_SESSIONDESCRIPTION_SUCCESS, msg);
+  session_->CreateAnswer(observer, constraints);
 }
 
 void PeerConnection::SetLocalDescription(
@@ -468,7 +467,6 @@ void PeerConnection::SetLocalDescription(
     PostSetSessionDescriptionFailure(observer, "SessionDescription is NULL.");
     return;
   }
-
   // Update stats here so that we have the most recent stats for tracks and
   // streams that might be removed by updating the session description.
   stats_.UpdateStats();
@@ -488,7 +486,6 @@ void PeerConnection::SetRemoteDescription(
     LOG(LS_ERROR) << "SetRemoteDescription - observer is NULL.";
     return;
   }
-
   if (!desc) {
     PostSetSessionDescriptionFailure(observer, "SessionDescription is NULL.");
     return;
@@ -572,20 +569,6 @@ void PeerConnection::OnSessionStateChange(cricket::BaseSession* /*session*/,
 
 void PeerConnection::OnMessage(talk_base::Message* msg) {
   switch (msg->message_id) {
-    case MSG_CREATE_SESSIONDESCRIPTION_SUCCESS: {
-      CreateSessionDescriptionMsg* param =
-          static_cast<CreateSessionDescriptionMsg*>(msg->pdata);
-      param->observer->OnSuccess(param->description.release());
-      delete param;
-      break;
-    }
-    case MSG_CREATE_SESSIONDESCRIPTION_FAILED: {
-      CreateSessionDescriptionMsg* param =
-          static_cast<CreateSessionDescriptionMsg*>(msg->pdata);
-      param->observer->OnFailure(param->error);
-      delete param;
-      break;
-    }
     case MSG_SET_SESSIONDESCRIPTION_SUCCESS: {
       SetSessionDescriptionMsg* param =
           static_cast<SetSessionDescriptionMsg*>(msg->pdata);

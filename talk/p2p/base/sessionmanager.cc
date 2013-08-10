@@ -100,7 +100,7 @@ Session* SessionManager::CreateSession(
 
   Session* session = new Session(this, local_name, initiator_name,
                                  sid, content_type, client);
-  session->set_identity(transport_desc_factory_.identity());
+  session->SetIdentity(transport_desc_factory_.identity());
   session_map_[session->id()] = session;
   session->SignalRequestSignaling.connect(
       this, &SessionManager::OnRequestSignaling);
