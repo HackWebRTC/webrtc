@@ -463,7 +463,7 @@ void ScreenCapturerMac::GlBlitFast(const DesktopFrame& frame,
 
     // Since the image obtained from OpenGL is upside-down, need to do some
     // magic here to copy the correct rectangle.
-    const int y_offset = (frame.size().width() - 1) * frame.stride();
+    const int y_offset = (frame.size().height() - 1) * frame.stride();
     for (DesktopRegion::Iterator i(last_invalid_region_);
          !i.IsAtEnd(); i.Advance()) {
       DesktopRect copy_rect = i.rect();
