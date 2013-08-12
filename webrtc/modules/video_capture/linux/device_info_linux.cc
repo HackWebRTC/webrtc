@@ -219,12 +219,13 @@ int32_t DeviceInfoLinux::CreateCapabilityMap(
 
     // now fd will point to the matching device
     // reset old capability map
-    MapItem* item = NULL;
-    while ((item = _captureCapabilities.Last()))
-    {
-        delete static_cast<VideoCaptureCapability*> (item->GetItem());
-        _captureCapabilities.Erase(item);
+    for (std::map<int, VideoCaptureCapability*>::iterator it =
+             _captureCapabilities.begin();
+         it != _captureCapabilities.end();
+         ++it) {
+      delete it->second;
     }
+    _captureCapabilities.clear();
 
     int size = FillCapabilityMap(fd);
     close(fd);
@@ -235,8 +236,11 @@ int32_t DeviceInfoLinux::CreateCapabilityMap(
                                                    _lastUsedDeviceNameLength + 1);
     memcpy(_lastUsedDeviceName, deviceUniqueIdUTF8, _lastUsedDeviceNameLength + 1);
 
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id, "CreateCapabilityMap %d",
-               _captureCapabilities.Size());
+    WEBRTC_TRACE(webrtc::kTraceInfo,
+                 webrtc::kTraceVideoCapture,
+                 _id,
+                 "CreateCapabilityMap %u",
+                 static_cast<unsigned int>(_captureCapabilities.size()));
 
     return size;
 }
@@ -314,7 +318,7 @@ int32_t DeviceInfoLinux::FillCapabilityMap(int fd)
                         cap->maxFPS = 30;
                     }
 
-                    _captureCapabilities.Insert(index, cap);
+                    _captureCapabilities[index] = cap;
                     index++;
                     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
                                "Camera capability, width:%d height:%d type:%d fps:%d",
@@ -324,9 +328,12 @@ int32_t DeviceInfoLinux::FillCapabilityMap(int fd)
         }
     }
 
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id, "CreateCapabilityMap %d",
-               _captureCapabilities.Size());
-    return _captureCapabilities.Size();
+    WEBRTC_TRACE(webrtc::kTraceInfo,
+                 webrtc::kTraceVideoCapture,
+                 _id,
+                 "CreateCapabilityMap %u",
+                 static_cast<unsigned int>(_captureCapabilities.size()));
+    return _captureCapabilities.size();
 }
 
 }  // namespace videocapturemodule

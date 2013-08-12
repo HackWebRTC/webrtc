@@ -26,7 +26,6 @@
         'event_tracer_unittest.cc',
         'list_unittest.cc',
         'logging_unittest.cc',
-        'map_unittest.cc',
         'data_log_unittest.cc',
         'data_log_unittest_disabled.cc',
         'data_log_helpers_unittest.cc',

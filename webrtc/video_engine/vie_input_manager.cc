@@ -44,19 +44,13 @@ ViEInputManager::ViEInputManager(const int engine_id, const Config& config)
 ViEInputManager::~ViEInputManager() {
   WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, ViEId(engine_id_),
                "%s", __FUNCTION__);
-  while (vie_frame_provider_map_.Size() != 0) {
-    MapItem* item = vie_frame_provider_map_.First();
-    assert(item);
-    ViEFrameProviderBase* frame_provider =
-        static_cast<ViEFrameProviderBase*>(item->GetItem());
-    vie_frame_provider_map_.Erase(item);
-    delete frame_provider;
+  for (FrameProviderMap::iterator it = vie_frame_provider_map_.begin();
+       it != vie_frame_provider_map_.end();
+       ++it) {
+    delete it->second;
   }
 
-  if (capture_device_info_) {
-    delete capture_device_info_;
-    capture_device_info_ = NULL;
-  }
+  delete capture_device_info_;
 }
 void ViEInputManager::SetModuleProcessThread(
     ProcessThread* module_process_thread) {
@@ -191,18 +185,17 @@ int ViEInputManager::CreateCaptureDevice(
   CriticalSectionScoped cs(map_cs_.get());
 
   // Make sure the device is not already allocated.
-  for (MapItem* item = vie_frame_provider_map_.First(); item != NULL;
-       item = vie_frame_provider_map_.Next(item)) {
+  for (FrameProviderMap::iterator it = vie_frame_provider_map_.begin();
+       it != vie_frame_provider_map_.end();
+       ++it) {
     // Make sure this is a capture device.
-    if (item->GetId() >= kViECaptureIdBase &&
-        item->GetId() <= kViECaptureIdMax) {
-      ViECapturer* vie_capture = static_cast<ViECapturer*>(item->GetItem());
+    if (it->first >= kViECaptureIdBase && it->first <= kViECaptureIdMax) {
+      ViECapturer* vie_capture = static_cast<ViECapturer*>(it->second);
       assert(vie_capture);
       // TODO(mflodman) Can we change input to avoid this cast?
       const char* device_name =
           reinterpret_cast<const char*>(vie_capture->CurrentDeviceName());
-      if (strncmp(device_name,
-                  reinterpret_cast<const char*>(device_unique_idUTF8),
+      if (strncmp(device_name, device_unique_idUTF8,
                   strlen(device_name)) == 0) {
         return kViECaptureDeviceAlreadyAllocated;
       }
@@ -266,13 +259,7 @@ int ViEInputManager::CreateCaptureDevice(
     return kViECaptureDeviceUnknownError;
   }
 
-  if (vie_frame_provider_map_.Insert(newcapture_id, vie_capture) != 0) {
-  ReturnCaptureId(newcapture_id);
-  WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_),
-               "%s: Could not insert capture module for %s", __FUNCTION__,
-               device_unique_idUTF8);
-    return kViECaptureDeviceUnknownError;
-  }
+  vie_frame_provider_map_[newcapture_id] = vie_capture;
   capture_id = newcapture_id;
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(engine_id_),
                "%s(device_unique_id: %s, capture_id: %d)", __FUNCTION__,
@@ -303,12 +290,7 @@ int ViEInputManager::CreateCaptureDevice(VideoCaptureModule* capture_module,
                  "%s: Could attach capture module.", __FUNCTION__);
     return kViECaptureDeviceUnknownError;
   }
-  if (vie_frame_provider_map_.Insert(newcapture_id, vie_capture) != 0) {
-    ReturnCaptureId(newcapture_id);
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_),
-                 "%s: Could not insert capture module", __FUNCTION__);
-    return kViECaptureDeviceUnknownError;
-  }
+  vie_frame_provider_map_[newcapture_id] = vie_capture;
   capture_id = newcapture_id;
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(engine_id_),
                "%s, capture_id: %d", __FUNCTION__, capture_id);
@@ -340,7 +322,7 @@ int ViEInputManager::DestroyCaptureDevice(const int capture_id) {
                    "callbacks when destroying capture device",
                    __FUNCTION__, capture_id, num_callbacks);
     }
-    vie_frame_provider_map_.Erase(capture_id);
+    vie_frame_provider_map_.erase(capture_id);
     ReturnCaptureId(capture_id);
     // Leave cs before deleting the capture object. This is because deleting the
     // object might cause deletions of renderers so we prefer to not have a lock
@@ -375,13 +357,7 @@ int ViEInputManager::CreateExternalCaptureDevice(
     return kViECaptureDeviceUnknownError;
   }
 
-  if (vie_frame_provider_map_.Insert(newcapture_id, vie_capture) != 0) {
-    ReturnCaptureId(newcapture_id);
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_),
-                 "%s: Could not insert capture module for external capture.",
-                 __FUNCTION__);
-    return kViECaptureDeviceUnknownError;
-  }
+  vie_frame_provider_map_[newcapture_id] = vie_capture;
   capture_id = newcapture_id;
   external_capture = vie_capture;
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(engine_id_),
@@ -421,30 +397,25 @@ ViEFrameProviderBase* ViEInputManager::ViEFrameProvider(
   assert(capture_observer);
   CriticalSectionScoped cs(map_cs_.get());
 
-  for (MapItem* provider_item = vie_frame_provider_map_.First(); provider_item
-  != NULL; provider_item = vie_frame_provider_map_.Next(provider_item)) {
-    ViEFrameProviderBase* vie_frame_provider =
-        static_cast<ViEFrameProviderBase*>(provider_item->GetItem());
-    assert(vie_frame_provider != NULL);
-
-    if (vie_frame_provider->IsFrameCallbackRegistered(capture_observer)) {
-      // We found it.
-      return vie_frame_provider;
-    }
+  for (FrameProviderMap::const_iterator it = vie_frame_provider_map_.begin();
+       it != vie_frame_provider_map_.end();
+       ++it) {
+    if (it->second->IsFrameCallbackRegistered(capture_observer))
+      return it->second;
   }
+
   // No capture device set for this channel.
   return NULL;
 }
 
 ViEFrameProviderBase* ViEInputManager::ViEFrameProvider(int provider_id) const {
   CriticalSectionScoped cs(map_cs_.get());
-  MapItem* map_item = vie_frame_provider_map_.Find(provider_id);
-  if (!map_item) {
+
+  FrameProviderMap::const_iterator it =
+      vie_frame_provider_map_.find(provider_id);
+  if (it == vie_frame_provider_map_.end())
     return NULL;
-  }
-  ViEFrameProviderBase* vie_frame_provider =
-      static_cast<ViEFrameProviderBase*>(map_item->GetItem());
-  return vie_frame_provider;
+  return it->second;
 }
 
 ViECapturer* ViEInputManager::ViECapturePtr(int capture_id) const {
@@ -452,13 +423,7 @@ ViECapturer* ViEInputManager::ViECapturePtr(int capture_id) const {
         capture_id <= kViECaptureIdBase + kViEMaxCaptureDevices))
     return NULL;
 
-  CriticalSectionScoped cs(map_cs_.get());
-  MapItem* map_item = vie_frame_provider_map_.Find(capture_id);
-  if (!map_item) {
-    return NULL;
-  }
-  ViECapturer* vie_capture = static_cast<ViECapturer*>(map_item->GetItem());
-  return vie_capture;
+  return static_cast<ViECapturer*>(ViEFrameProvider(capture_id));
 }
 
 ViEInputManagerScoped::ViEInputManagerScoped(

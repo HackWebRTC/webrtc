@@ -11,8 +11,9 @@
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_INPUT_MANAGER_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_INPUT_MANAGER_H_
 
+#include <map>
+
 #include "webrtc/modules/video_capture/include/video_capture.h"
-#include "webrtc/system_wrappers/interface/map_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/include/vie_capture.h"
@@ -98,7 +99,9 @@ class ViEInputManager : private ViEManagerBase {
   int engine_id_;
   scoped_ptr<CriticalSectionWrapper> map_cs_;
   scoped_ptr<CriticalSectionWrapper> device_info_cs_;
-  MapWrapper vie_frame_provider_map_;
+
+  typedef std::map<int, ViEFrameProviderBase*> FrameProviderMap;
+  FrameProviderMap vie_frame_provider_map_;
 
   // Capture devices.
   VideoCaptureModule::DeviceInfo* capture_device_info_;

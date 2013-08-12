@@ -161,11 +161,12 @@ int32_t DeviceInfoAndroid::GetDeviceName(
 
 int32_t DeviceInfoAndroid::CreateCapabilityMap(
     const char* deviceUniqueIdUTF8) {
-  MapItem* item = NULL;
-  while ((item = _captureCapabilities.Last())) {
-    delete (VideoCaptureCapability*) item->GetItem();
-    _captureCapabilities.Erase(item);
-  }
+  for (std::map<int, VideoCaptureCapability*>::iterator it =
+           _captureCapabilities.begin();
+       it != _captureCapabilities.end();
+       ++it)
+    delete it->second;
+  _captureCapabilities.clear();
 
   JNIEnv *env;
   jclass javaCmDevInfoClass;
@@ -247,7 +248,7 @@ int32_t DeviceInfoAndroid::CreateCapabilityMap(
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
                  "%s: Cap width %d, height %d, fps %d", __FUNCTION__,
                  cap->width, cap->height, cap->maxFPS);
-    _captureCapabilities.Insert(i, cap);
+    _captureCapabilities[i] = cap;
   }
 
   _lastUsedDeviceNameLength = strlen((char*) deviceUniqueIdUTF8);
@@ -259,9 +260,9 @@ int32_t DeviceInfoAndroid::CreateCapabilityMap(
 
   VideoCaptureAndroid::ReleaseAndroidDeviceInfoObjects(attached);
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
-               "CreateCapabilityMap %d", _captureCapabilities.Size());
+               "CreateCapabilityMap %d", _captureCapabilities.size());
 
-  return _captureCapabilities.Size();
+  return _captureCapabilities.size();
 }
 
 int32_t DeviceInfoAndroid::GetOrientation(

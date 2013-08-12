@@ -367,23 +367,18 @@ IBaseFilter * DeviceInfoDS::GetDeviceFilter(
 }
 
 int32_t DeviceInfoDS::GetWindowsCapability(
-                              const int32_t capabilityIndex,
-                              VideoCaptureCapabilityWindows& windowsCapability)
+    const int32_t capabilityIndex,
+    VideoCaptureCapabilityWindows& windowsCapability) {
+  ReadLockScoped cs(_apiLock);
 
-{
-    ReadLockScoped cs(_apiLock);
-    // Make sure the number is valid
-    if (capabilityIndex >= _captureCapabilities.Size() || capabilityIndex < 0)
-        return -1;
+  std::map<int, VideoCaptureCapability*>::iterator item =
+      _captureCapabilities.find(capabilityIndex);
+  if (item == _captureCapabilities.end())
+    return -1;
 
-    MapItem* item = _captureCapabilities.Find(capabilityIndex);
-    if (!item)
-        return -1;
-
-    VideoCaptureCapabilityWindows* capPointer =
-                static_cast<VideoCaptureCapabilityWindows*> (item->GetItem());
-    windowsCapability = *capPointer;
-    return 0;
+  windowsCapability =
+      *static_cast<VideoCaptureCapabilityWindows*>(item->second);
+  return 0;
 }
 
 int32_t DeviceInfoDS::CreateCapabilityMap(
@@ -391,14 +386,14 @@ int32_t DeviceInfoDS::CreateCapabilityMap(
 
 {
     // Reset old capability list
-    MapItem* item = NULL;
-    while (item = _captureCapabilities.Last())
-    {
-        VideoCaptureCapabilityWindows* cap =
-            static_cast<VideoCaptureCapabilityWindows*> (item->GetItem());
-        delete cap;
-        _captureCapabilities.Erase(item);
+  for (std::map<int, VideoCaptureCapability*>::iterator it =
+           _captureCapabilities.begin();
+       it != _captureCapabilities.end();
+       ++it) {
+      delete it->second;
     }
+
+    _captureCapabilities.clear();
 
     const int32_t deviceUniqueIdUTF8Length =
         (int32_t) strlen((char*) deviceUniqueIdUTF8);
@@ -678,7 +673,7 @@ int32_t DeviceInfoDS::CreateCapabilityMap(
                                                       productId,
                                                       capability->width,
                                                       capability->height);
-            _captureCapabilities.Insert(index++, capability);
+            _captureCapabilities[index++] = capability;
             WEBRTC_TRACE( webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
                          "Camera capability, width:%d height:%d type:%d fps:%d",
                          capability->width, capability->height,
@@ -699,9 +694,9 @@ int32_t DeviceInfoDS::CreateCapabilityMap(
                                                        + 1);
     memcpy(_lastUsedDeviceName, deviceUniqueIdUTF8, _lastUsedDeviceNameLength+ 1);
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
-                 "CreateCapabilityMap %d", _captureCapabilities.Size());
+                 "CreateCapabilityMap %d", _captureCapabilities.size());
 
-    return _captureCapabilities.Size();
+    return static_cast<int32_t>(_captureCapabilities.size());
 }
 
 /* Constructs a product ID from the Windows DevicePath. on a USB device the devicePath contains product id and vendor id.
