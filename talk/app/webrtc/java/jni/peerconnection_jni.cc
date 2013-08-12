@@ -56,8 +56,11 @@
 #undef JNIEXPORT
 #define JNIEXPORT __attribute__((visibility("default")))
 
+#include <asm/unistd.h>
 #include <limits>
 #include <map>
+#include <sys/prctl.h>
+#include <sys/syscall.h>
 
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
@@ -116,12 +119,40 @@ using webrtc::VideoRendererInterface;
     }                                                                          \
   }
 
+// Helper that calls ptr->Release() and logs a useful message if that didn't
+// actually delete *ptr because of extra refcounts.
+#define CHECK_RELEASE(ptr)                                        \
+  do {                                                            \
+    int count = (ptr)->Release();                                 \
+    if (count != 0) {                                             \
+      LOG(LS_ERROR) << "Refcount unexpectedly not 0: " << (ptr)   \
+                    << ": " << count;                             \
+    }                                                             \
+    CHECK(!count, "Unexpected refcount");                         \
+  } while (0)
+
 namespace {
 
 static JavaVM* g_jvm = NULL;  // Set in JNI_OnLoad().
 
 static pthread_once_t g_jni_ptr_once = PTHREAD_ONCE_INIT;
 static pthread_key_t g_jni_ptr;  // Key for per-thread JNIEnv* data.
+
+// Return thread ID as a string.
+static std::string GetThreadId() {
+  char buf[21];  // Big enough to hold a kuint64max plus terminating NULL.
+  CHECK(snprintf(buf, sizeof(buf), "%llu", syscall(__NR_gettid)) <= sizeof(buf),
+        "Thread id is bigger than uint64??");
+  return std::string(buf);
+}
+
+// Return the current thread's name.
+static std::string GetThreadName() {
+  char name[17];
+  CHECK(prctl(PR_GET_NAME, name) == 0, "prctl(PR_GET_NAME) failed");
+  name[16] = '\0';
+  return std::string(name);
+}
 
 static void ThreadDestructor(void* unused) {
   jint status = g_jvm->DetachCurrentThread();
@@ -144,7 +175,13 @@ static JNIEnv* AttachCurrentThreadIfNeeded() {
 #else
     JNIEnv* env;
 #endif
-    CHECK(!g_jvm->AttachCurrentThread(&env, NULL), "Failed to attach thread");
+    char* name = strdup((GetThreadName() + " - " + GetThreadId()).c_str());
+    JavaVMAttachArgs args;
+    args.version = JNI_VERSION_1_6;
+    args.name = name;
+    args.group = NULL;
+    CHECK(!g_jvm->AttachCurrentThread(&env, &args), "Failed to attach thread");
+    free(name);
     CHECK(env, "AttachCurrentThread handed back NULL!");
     jni = reinterpret_cast<JNIEnv*>(env);
     CHECK(!pthread_setspecific(g_jni_ptr, jni), "pthread_setspecific");
@@ -512,8 +549,10 @@ class PCOJava : public PeerConnectionObserver {
       ScopedLocalRef<jobject> j_track(jni(), jni()->NewObject(
           *j_audio_track_class_, j_audio_track_ctor_, (jlong)track, *id));
       CHECK_EXCEPTION(jni(), "error during NewObject");
-      jfieldID audio_tracks_id = GetFieldID(
-          jni(), *j_media_stream_class_, "audioTracks", "Ljava/util/List;");
+      jfieldID audio_tracks_id = GetFieldID(jni(),
+                                            *j_media_stream_class_,
+                                            "audioTracks",
+                                            "Ljava/util/LinkedList;");
       ScopedLocalRef<jobject> audio_tracks(jni(), GetObjectField(
           jni(), *j_stream, audio_tracks_id));
       jmethodID add = GetMethodID(jni(),
@@ -531,8 +570,10 @@ class PCOJava : public PeerConnectionObserver {
       ScopedLocalRef<jobject> j_track(jni(), jni()->NewObject(
           *j_video_track_class_, j_video_track_ctor_, (jlong)track, *id));
       CHECK_EXCEPTION(jni(), "error during NewObject");
-      jfieldID video_tracks_id = GetFieldID(
-          jni(), *j_media_stream_class_, "videoTracks", "Ljava/util/List;");
+      jfieldID video_tracks_id = GetFieldID(jni(),
+                                            *j_media_stream_class_,
+                                            "videoTracks",
+                                            "Ljava/util/LinkedList;");
       ScopedLocalRef<jobject> video_tracks(jni(), GetObjectField(
           jni(), *j_stream, video_tracks_id));
       jmethodID add = GetMethodID(jni(),
@@ -569,13 +610,18 @@ class PCOJava : public PeerConnectionObserver {
     ScopedLocalRef<jobject> j_channel(jni(), jni()->NewObject(
         *j_data_channel_class_, j_data_channel_ctor_, (jlong)channel));
     CHECK_EXCEPTION(jni(), "error during NewObject");
-    // Channel is now owned by Java object, and will be freed from
-    // DataChannel.dispose().
-    channel->AddRef();
 
     jmethodID m = GetMethodID(jni(), *j_observer_class_, "onDataChannel",
                               "(Lorg/webrtc/DataChannel;)V");
     jni()->CallVoidMethod(*j_observer_global_, m, *j_channel);
+
+    // Channel is now owned by Java object, and will be freed from
+    // DataChannel.dispose().  Important that this be done _after_ the
+    // CallVoidMethod above as Java code might call back into native code and be
+    // surprised to see a refcount of 2.
+    int bumped_count = channel->AddRef();
+    CHECK(bumped_count == 2, "Unexpected refcount OnDataChannel");
+
     CHECK_EXCEPTION(jni(), "error during CallVoidMethod");
   }
 
@@ -1013,25 +1059,20 @@ extern "C" jint JNIEXPORT JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
     return -1;
   g_class_reference_holder = new ClassReferenceHolder(jni);
 
-  webrtc::Trace::CreateTrace();
-
   return JNI_VERSION_1_6;
 }
 
 extern "C" void JNIEXPORT JNICALL JNI_OnUnLoad(JavaVM *jvm, void *reserved) {
-  webrtc::Trace::ReturnTrace();
   delete g_class_reference_holder;
   g_class_reference_holder = NULL;
   CHECK(talk_base::CleanupSSL(), "Failed to CleanupSSL()");
 }
 
-static talk_base::scoped_refptr<DataChannelInterface> ExtractNativeDC(
-    JNIEnv* jni, jobject j_dc) {
+static DataChannelInterface* ExtractNativeDC(JNIEnv* jni, jobject j_dc) {
   jfieldID native_dc_id = GetFieldID(jni,
       GetObjectClass(jni, j_dc), "nativeDataChannel", "J");
   jlong j_d = GetLongField(jni, j_dc, native_dc_id);
-  return talk_base::scoped_refptr<DataChannelInterface>(
-      reinterpret_cast<DataChannelInterface*>(j_d));
+  return reinterpret_cast<DataChannelInterface*>(j_d);
 }
 
 JOW(jlong, DataChannel_registerObserverNative)(
@@ -1079,7 +1120,7 @@ JOW(jboolean, DataChannel_sendNative)(JNIEnv* jni, jobject j_dc,
 }
 
 JOW(void, DataChannel_dispose)(JNIEnv* jni, jobject j_dc) {
-  ExtractNativeDC(jni, j_dc)->Release();
+  CHECK_RELEASE(ExtractNativeDC(jni, j_dc));
 }
 
 JOW(void, Logging_nativeEnableTracing)(
@@ -1096,7 +1137,7 @@ JOW(void, Logging_nativeEnableTracing)(
 }
 
 JOW(void, PeerConnection_freePeerConnection)(JNIEnv*, jclass, jlong j_p) {
-  reinterpret_cast<PeerConnectionInterface*>(j_p)->Release();
+  CHECK_RELEASE(reinterpret_cast<PeerConnectionInterface*>(j_p));
 }
 
 JOW(void, PeerConnection_freeObserver)(JNIEnv*, jclass, jlong j_p) {
@@ -1105,7 +1146,7 @@ JOW(void, PeerConnection_freeObserver)(JNIEnv*, jclass, jlong j_p) {
 }
 
 JOW(void, MediaSource_free)(JNIEnv*, jclass, jlong j_p) {
-  reinterpret_cast<MediaSourceInterface*>(j_p)->Release();
+  CHECK_RELEASE(reinterpret_cast<MediaSourceInterface*>(j_p));
 }
 
 JOW(void, VideoCapturer_free)(JNIEnv*, jclass, jlong j_p) {
@@ -1117,43 +1158,31 @@ JOW(void, VideoRenderer_free)(JNIEnv*, jclass, jlong j_p) {
 }
 
 JOW(void, MediaStreamTrack_free)(JNIEnv*, jclass, jlong j_p) {
-  reinterpret_cast<MediaStreamTrackInterface*>(j_p)->Release();
+  CHECK_RELEASE(reinterpret_cast<MediaStreamTrackInterface*>(j_p));
 }
 
 JOW(jboolean, MediaStream_nativeAddAudioTrack)(
     JNIEnv* jni, jclass, jlong pointer, jlong j_audio_track_pointer) {
-  talk_base::scoped_refptr<MediaStreamInterface> stream(
-      reinterpret_cast<MediaStreamInterface*>(pointer));
-  talk_base::scoped_refptr<AudioTrackInterface> track(
+  return reinterpret_cast<MediaStreamInterface*>(pointer)->AddTrack(
       reinterpret_cast<AudioTrackInterface*>(j_audio_track_pointer));
-  return stream->AddTrack(track);
 }
 
 JOW(jboolean, MediaStream_nativeAddVideoTrack)(
     JNIEnv* jni, jclass, jlong pointer, jlong j_video_track_pointer) {
-  talk_base::scoped_refptr<MediaStreamInterface> stream(
-      reinterpret_cast<MediaStreamInterface*>(pointer));
-  talk_base::scoped_refptr<VideoTrackInterface> track(
-      reinterpret_cast<VideoTrackInterface*>(j_video_track_pointer));
-  return stream->AddTrack(track);
+  return reinterpret_cast<MediaStreamInterface*>(pointer)
+      ->AddTrack(reinterpret_cast<VideoTrackInterface*>(j_video_track_pointer));
 }
 
 JOW(jboolean, MediaStream_nativeRemoveAudioTrack)(
     JNIEnv* jni, jclass, jlong pointer, jlong j_audio_track_pointer) {
-  talk_base::scoped_refptr<MediaStreamInterface> stream(
-      reinterpret_cast<MediaStreamInterface*>(pointer));
-  talk_base::scoped_refptr<AudioTrackInterface> track(
+  return reinterpret_cast<MediaStreamInterface*>(pointer)->RemoveTrack(
       reinterpret_cast<AudioTrackInterface*>(j_audio_track_pointer));
-  return stream->RemoveTrack(track);
 }
 
 JOW(jboolean, MediaStream_nativeRemoveVideoTrack)(
     JNIEnv* jni, jclass, jlong pointer, jlong j_video_track_pointer) {
-  talk_base::scoped_refptr<MediaStreamInterface> stream(
-      reinterpret_cast<MediaStreamInterface*>(pointer));
-  talk_base::scoped_refptr<VideoTrackInterface> track(
+  return reinterpret_cast<MediaStreamInterface*>(pointer)->RemoveTrack(
       reinterpret_cast<VideoTrackInterface*>(j_video_track_pointer));
-  return stream->RemoveTrack(track);
 }
 
 JOW(jstring, MediaStream_nativeLabel)(JNIEnv* jni, jclass, jlong j_p) {
@@ -1162,7 +1191,7 @@ JOW(jstring, MediaStream_nativeLabel)(JNIEnv* jni, jclass, jlong j_p) {
 }
 
 JOW(void, MediaStream_free)(JNIEnv*, jclass, jlong j_p) {
-  reinterpret_cast<MediaStreamInterface*>(j_p)->Release();
+  CHECK_RELEASE(reinterpret_cast<MediaStreamInterface*>(j_p));
 }
 
 JOW(jlong, PeerConnectionFactory_nativeCreateObserver)(
@@ -1183,13 +1212,15 @@ JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)(
 
 JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnectionFactory)(
     JNIEnv* jni, jclass) {
+  webrtc::Trace::CreateTrace();
   talk_base::scoped_refptr<PeerConnectionFactoryInterface> factory(
       webrtc::CreatePeerConnectionFactory());
   return (jlong)factory.release();
 }
 
 JOW(void, PeerConnectionFactory_freeFactory)(JNIEnv*, jclass, jlong j_p) {
-  reinterpret_cast<PeerConnectionFactoryInterface*>(j_p)->Release();
+  CHECK_RELEASE(reinterpret_cast<PeerConnectionFactoryInterface*>(j_p));
+  webrtc::Trace::ReturnTrace();
 }
 
 JOW(jlong, PeerConnectionFactory_nativeCreateLocalMediaStream)(
@@ -1322,7 +1353,8 @@ JOW(jobject, PeerConnection_createDataChannel)(
       j_data_channel_class, j_data_channel_ctor, channel.get());
   CHECK_EXCEPTION(jni, "error during NewObject");
   // Channel is now owned by Java object, and will be freed from there.
-  channel->AddRef();
+  int bumped_count = channel->AddRef();
+  CHECK(bumped_count == 2, "Unexpected refcount");
   return j_channel;
 }
 
@@ -1493,59 +1525,50 @@ JOW(jlong, VideoRenderer_nativeWrapVideoRenderer)(
 }
 
 JOW(jstring, MediaStreamTrack_nativeId)(JNIEnv* jni, jclass, jlong j_p) {
-  talk_base::scoped_refptr<MediaStreamTrackInterface> p(
-      reinterpret_cast<MediaStreamTrackInterface*>(j_p));
-  return JavaStringFromStdString(jni, p->id());
+  return JavaStringFromStdString(
+      jni, reinterpret_cast<MediaStreamTrackInterface*>(j_p)->id());
 }
 
 JOW(jstring, MediaStreamTrack_nativeKind)(JNIEnv* jni, jclass, jlong j_p) {
-  talk_base::scoped_refptr<MediaStreamTrackInterface> p(
-      reinterpret_cast<MediaStreamTrackInterface*>(j_p));
-  return JavaStringFromStdString(jni, p->kind());
+  return JavaStringFromStdString(
+      jni, reinterpret_cast<MediaStreamTrackInterface*>(j_p)->kind());
 }
 
 JOW(jboolean, MediaStreamTrack_nativeEnabled)(JNIEnv* jni, jclass, jlong j_p) {
-  talk_base::scoped_refptr<MediaStreamTrackInterface> p(
-      reinterpret_cast<MediaStreamTrackInterface*>(j_p));
-  return p->enabled();
+  return reinterpret_cast<MediaStreamTrackInterface*>(j_p)->enabled();
 }
 
 JOW(jobject, MediaStreamTrack_nativeState)(JNIEnv* jni, jclass, jlong j_p) {
-  talk_base::scoped_refptr<MediaStreamTrackInterface> p(
-      reinterpret_cast<MediaStreamTrackInterface*>(j_p));
-  return JavaEnumFromIndex(jni, "MediaStreamTrack$State", p->state());
+  return JavaEnumFromIndex(
+      jni,
+      "MediaStreamTrack$State",
+      reinterpret_cast<MediaStreamTrackInterface*>(j_p)->state());
 }
 
 JOW(jboolean, MediaStreamTrack_nativeSetState)(
     JNIEnv* jni, jclass, jlong j_p, jint j_new_state) {
-  talk_base::scoped_refptr<MediaStreamTrackInterface> p(
-      reinterpret_cast<MediaStreamTrackInterface*>(j_p));
   MediaStreamTrackInterface::TrackState new_state =
       (MediaStreamTrackInterface::TrackState)j_new_state;
-  return p->set_state(new_state);
+  return reinterpret_cast<MediaStreamTrackInterface*>(j_p)
+      ->set_state(new_state);
 }
 
 JOW(jboolean, MediaStreamTrack_nativeSetEnabled)(
     JNIEnv* jni, jclass, jlong j_p, jboolean enabled) {
-  talk_base::scoped_refptr<MediaStreamTrackInterface> p(
-      reinterpret_cast<MediaStreamTrackInterface*>(j_p));
-  return p->set_enabled(enabled);
+  return reinterpret_cast<MediaStreamTrackInterface*>(j_p)
+      ->set_enabled(enabled);
 }
 
 JOW(void, VideoTrack_nativeAddRenderer)(
     JNIEnv* jni, jclass,
     jlong j_video_track_pointer, jlong j_renderer_pointer) {
-  talk_base::scoped_refptr<VideoTrackInterface> track(
-      reinterpret_cast<VideoTrackInterface*>(j_video_track_pointer));
-  track->AddRenderer(
+  reinterpret_cast<VideoTrackInterface*>(j_video_track_pointer)->AddRenderer(
       reinterpret_cast<VideoRendererInterface*>(j_renderer_pointer));
 }
 
 JOW(void, VideoTrack_nativeRemoveRenderer)(
     JNIEnv* jni, jclass,
     jlong j_video_track_pointer, jlong j_renderer_pointer) {
-  talk_base::scoped_refptr<VideoTrackInterface> track(
-      reinterpret_cast<VideoTrackInterface*>(j_video_track_pointer));
-  track->RemoveRenderer(
+  reinterpret_cast<VideoTrackInterface*>(j_video_track_pointer)->RemoveRenderer(
       reinterpret_cast<VideoRendererInterface*>(j_renderer_pointer));
 }

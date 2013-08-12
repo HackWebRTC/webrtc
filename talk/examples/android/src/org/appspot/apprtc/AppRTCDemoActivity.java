@@ -71,6 +71,8 @@ import java.util.List;
 public class AppRTCDemoActivity extends Activity
     implements AppRTCClient.IceServersObserver {
   private static final String TAG = "AppRTCDemoActivity";
+  private PeerConnectionFactory factory;
+  private VideoSource videoSource;
   private PeerConnection pc;
   private final PCObserver pcObserver = new PCObserver();
   private final SDPObserver sdpObserver = new SDPObserver();
@@ -183,8 +185,7 @@ public class AppRTCDemoActivity extends Activity
 
   @Override
   public void onIceServers(List<PeerConnection.IceServer> iceServers) {
-    PeerConnectionFactory factory = new PeerConnectionFactory();
-
+    factory = new PeerConnectionFactory();
     pc = factory.createPeerConnection(
         iceServers, appRtcClient.pcConstraints(), pcObserver);
 
@@ -217,7 +218,7 @@ public class AppRTCDemoActivity extends Activity
     {
       logAndToast("Creating local video source...");
       VideoCapturer capturer = getVideoCapturer();
-      VideoSource videoSource = factory.createVideoSource(
+      videoSource = factory.createVideoSource(
           capturer, appRtcClient.videoConstraints());
       MediaStream lMS = factory.createLocalMediaStream("ARDAMS");
       VideoTrack videoTrack = factory.createVideoTrack("ARDAMSv0", videoSource);
@@ -484,6 +485,14 @@ public class AppRTCDemoActivity extends Activity
         appRtcClient.sendMessage("{\"type\": \"bye\"}");
         appRtcClient.disconnect();
         appRtcClient = null;
+      }
+      if (videoSource != null) {
+        videoSource.dispose();
+        videoSource = null;
+      }
+      if (factory != null) {
+        factory.dispose();
+        factory = null;
       }
       finish();
     }

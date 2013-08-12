@@ -107,6 +107,9 @@ class MediaStreamTrackInterface : public talk_base::RefCountInterface,
   virtual bool set_enabled(bool enable) = 0;
   // These methods should be called by implementation only.
   virtual bool set_state(TrackState new_state) = 0;
+
+ protected:
+  virtual ~MediaStreamTrackInterface() {}
 };
 
 // Interface for rendering VideoFrames from a VideoTrack

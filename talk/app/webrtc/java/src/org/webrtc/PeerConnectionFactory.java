@@ -77,7 +77,7 @@ public class PeerConnectionFactory {
   public VideoSource createVideoSource(
       VideoCapturer capturer, MediaConstraints constraints) {
     return new VideoSource(nativeCreateVideoSource(
-        nativeFactory, capturer.nativeVideoCapturer, constraints));
+        nativeFactory, capturer.takeNativeVideoCapturer(), constraints));
   }
 
   public VideoTrack createVideoTrack(String id, VideoSource source) {

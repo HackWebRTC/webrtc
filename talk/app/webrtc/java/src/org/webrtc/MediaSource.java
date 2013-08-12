@@ -45,7 +45,7 @@ public class MediaSource {
     return nativeState(nativeSource);
   }
 
-  void dispose() {
+  public void dispose() {
     free(nativeSource);
   }
 

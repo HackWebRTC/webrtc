@@ -27,9 +27,9 @@
 
 package org.webrtc;
 
-/** Java version of VideoCapturerInterface. */
+/** Java version of cricket::VideoCapturer. */
 public class VideoCapturer {
-  final long nativeVideoCapturer;
+  private long nativeVideoCapturer;
 
   private VideoCapturer(long nativeVideoCapturer) {
     this.nativeVideoCapturer = nativeVideoCapturer;
@@ -43,8 +43,22 @@ public class VideoCapturer {
     return new VideoCapturer(nativeVideoCapturer);
   }
 
+  // Package-visible for PeerConnectionFactory.
+  long takeNativeVideoCapturer() {
+    if (nativeVideoCapturer == 0) {
+      throw new RuntimeException("Capturer can only be taken once!");
+    }
+    long ret = nativeVideoCapturer;
+    nativeVideoCapturer = 0;
+    return ret;
+  }
+
   public void dispose() {
-    free(nativeVideoCapturer);
+    // No-op iff this capturer is owned by a source (see comment on
+    // PeerConnectionFactoryInterface::CreateVideoSource()).
+    if (nativeVideoCapturer != 0) {
+      free(nativeVideoCapturer);
+    }
   }
 
   private static native long nativeCreateVideoCapturer(String deviceName);

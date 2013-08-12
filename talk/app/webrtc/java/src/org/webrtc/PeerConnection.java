@@ -176,6 +176,7 @@ public class PeerConnection {
   public void dispose() {
     close();
     for (MediaStream stream : localStreams) {
+      nativeRemoveLocalStream(stream.nativeStream);
       stream.dispose();
     }
     localStreams.clear();

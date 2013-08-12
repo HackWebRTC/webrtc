@@ -28,13 +28,12 @@
 package org.webrtc;
 
 import java.util.LinkedList;
-import java.util.List;
 
 /** Java wrapper for a C++ MediaStreamInterface. */
 public class MediaStream {
-  public final List<AudioTrack> audioTracks;
-  public final List<VideoTrack> videoTracks;
-  // Package-protected for LocalMediaStream and PeerConnection.
+  public final LinkedList<AudioTrack> audioTracks;
+  public final LinkedList<VideoTrack> videoTracks;
+  // Package-protected for PeerConnection.
   final long nativeStream;
 
   public MediaStream(long nativeStream) {
@@ -76,14 +75,16 @@ public class MediaStream {
   }
 
   public void dispose() {
-    for (AudioTrack track : audioTracks) {
+    while (!audioTracks.isEmpty()) {
+      AudioTrack track = audioTracks.getFirst();
+      removeTrack(track);
       track.dispose();
     }
-    audioTracks.clear();
-    for (VideoTrack track : videoTracks) {
+    while (!videoTracks.isEmpty()) {
+      VideoTrack track = videoTracks.getFirst();
+      removeTrack(track);
       track.dispose();
     }
-    videoTracks.clear();
     free(nativeStream);
   }
 

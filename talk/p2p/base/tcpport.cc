@@ -67,6 +67,10 @@ bool TCPPort::Init() {
 
 TCPPort::~TCPPort() {
   delete socket_;
+  std::list<Incoming>::iterator it;
+  for (it = incoming_.begin(); it != incoming_.end(); ++it)
+    delete it->socket;
+  incoming_.clear();
 }
 
 Connection* TCPPort::CreateConnection(const Candidate& address,

@@ -354,10 +354,10 @@ bool PeerConnection::AddStream(MediaStreamInterface* local_stream,
 }
 
 void PeerConnection::RemoveStream(MediaStreamInterface* local_stream) {
+  mediastream_signaling_->RemoveLocalStream(local_stream);
   if (IsClosed()) {
     return;
   }
-  mediastream_signaling_->RemoveLocalStream(local_stream);
   observer_->OnRenegotiationNeeded();
 }
 

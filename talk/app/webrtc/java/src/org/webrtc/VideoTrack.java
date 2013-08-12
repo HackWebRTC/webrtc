@@ -31,11 +31,11 @@ import java.util.LinkedList;
 
 /** Java version of VideoTrackInterface. */
 public class VideoTrack extends MediaStreamTrack {
-  private final LinkedList<VideoRenderer> renderers;
+  private final LinkedList<VideoRenderer> renderers =
+      new LinkedList<VideoRenderer>();
 
   public VideoTrack(long nativeTrack) {
     super(nativeTrack);
-    renderers = new LinkedList<VideoRenderer>();
   }
 
   public void addRenderer(VideoRenderer renderer) {
@@ -55,7 +55,10 @@ public class VideoTrack extends MediaStreamTrack {
     while (!renderers.isEmpty()) {
       removeRenderer(renderers.getFirst());
     }
+    super.dispose();
   }
+
+  private static native void free(long nativeTrack);
 
   private static native void nativeAddRenderer(
       long nativeTrack, long nativeRenderer);
