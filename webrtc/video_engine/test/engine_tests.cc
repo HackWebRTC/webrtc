@@ -17,6 +17,7 @@
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/video_engine/new_include/video_engine.h"
+#include "webrtc/video_engine/test/common/direct_transport.h"
 #include "webrtc/video_engine/test/common/frame_generator.h"
 #include "webrtc/video_engine/test/common/frame_generator_capturer.h"
 #include "webrtc/video_engine/test/common/generate_ssrcs.h"
@@ -25,12 +26,11 @@ namespace webrtc {
 
 class NackObserver {
  public:
-  class SenderTransport : public newapi::Transport {
+  class SenderTransport : public test::DirectTransport {
    public:
-    explicit SenderTransport(NackObserver* observer)
-        : receiver_(NULL), observer_(observer) {}
+    explicit SenderTransport(NackObserver* observer) : observer_(observer) {}
 
-    bool SendRTP(const uint8_t* packet, size_t length) {
+    virtual bool SendRTP(const uint8_t* packet, size_t length) OVERRIDE {
       {
         CriticalSectionScoped lock(observer_->crit_.get());
         if (observer_->DropSendPacket(packet, length))
@@ -38,25 +38,15 @@ class NackObserver {
         ++observer_->sent_rtp_packets_;
       }
 
-      return receiver_->DeliverPacket(packet, length);
+      return test::DirectTransport::SendRTP(packet, length);
     }
 
-    bool SendRTCP(const uint8_t* packet, size_t length) {
-      return receiver_->DeliverPacket(packet, length);
-    }
-
-    newapi::PacketReceiver* receiver_;
     NackObserver* observer_;
   } sender_transport_;
 
-  class ReceiverTransport : public newapi::Transport {
+  class ReceiverTransport : public test::DirectTransport {
    public:
-    explicit ReceiverTransport(NackObserver* observer)
-        : receiver_(NULL), observer_(observer) {}
-
-    bool SendRTP(const uint8_t* packet, size_t length) {
-      return receiver_->DeliverPacket(packet, length);
-    }
+    explicit ReceiverTransport(NackObserver* observer) : observer_(observer) {}
 
     bool SendRTCP(const uint8_t* packet, size_t length) {
       {
@@ -80,10 +70,9 @@ class NackObserver {
           observer_->RtcpWithoutNack();
         }
       }
-      return receiver_->DeliverPacket(packet, length);
+      return DirectTransport::SendRTCP(packet, length);
     }
 
-    newapi::PacketReceiver* receiver_;
     NackObserver* observer_;
   } receiver_transport_;
 
@@ -100,6 +89,11 @@ class NackObserver {
   EventTypeWrapper Wait() {
     // 2 minutes should be more than enough time for the test to finish.
     return received_all_retransmissions_->Wait(2 * 60 * 1000);
+  }
+
+  void StopSending() {
+    sender_transport_.StopSending();
+    receiver_transport_.StopSending();
   }
 
  private:
@@ -244,9 +238,8 @@ TEST_P(EngineTest, ReceivesAndRetransmitsNack) {
   scoped_ptr<newapi::VideoCall> receiver_call(
       CreateTestCall(&observer.receiver_transport_));
 
-  observer.receiver_transport_.receiver_ = sender_call->Receiver();
-  observer.sender_transport_.receiver_ = receiver_call->Receiver();
-
+  observer.receiver_transport_.SetReceiver(sender_call->Receiver());
+  observer.sender_transport_.SetReceiver(receiver_call->Receiver());
 
   newapi::VideoSendStream::Config send_config =
       CreateTestSendConfig(sender_call.get(), params);
@@ -278,6 +271,7 @@ TEST_P(EngineTest, ReceivesAndRetransmitsNack) {
 
   receiver_call->DestroyReceiveStream(receive_stream);
   receiver_call->DestroySendStream(send_stream);
+  observer.StopSending();
 }
 
 INSTANTIATE_TEST_CASE_P(EngineTest, EngineTest, ::testing::Values(video_vga));

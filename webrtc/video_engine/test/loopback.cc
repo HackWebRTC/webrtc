@@ -42,7 +42,7 @@ TEST_F(LoopbackTest, Test) {
   scoped_ptr<newapi::VideoEngine> video_engine(
       newapi::VideoEngine::Create(webrtc::newapi::VideoEngineConfig()));
 
-  test::DirectTransport transport(NULL);
+  test::DirectTransport transport;
   newapi::VideoCall::Config call_config;
   call_config.send_transport = &transport;
   call_config.overuse_detection = true;
@@ -98,5 +98,7 @@ TEST_F(LoopbackTest, Test) {
 
   call->DestroyReceiveStream(receive_stream);
   call->DestroySendStream(send_stream);
+
+  transport.StopSending();
 }
 }  // webrtc

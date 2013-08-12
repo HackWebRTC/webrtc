@@ -12,6 +12,8 @@
       'target_name': 'video_tests_common',
       'type': 'static_library',
       'sources': [
+        'common/direct_transport.cc',
+        'common/direct_transport.h',
         'common/file_capturer.cc',
         'common/file_capturer.h',
         'common/flags.cc',

@@ -273,7 +273,7 @@ TEST_P(FullStackTest, NoPacketLoss) {
   scoped_ptr<newapi::VideoEngine> video_engine(
       newapi::VideoEngine::Create(newapi::VideoEngineConfig()));
 
-  test::DirectTransport transport(NULL);
+  test::DirectTransport transport;
   VideoAnalyzer analyzer(
       NULL,
       &transport,
@@ -342,6 +342,8 @@ TEST_P(FullStackTest, NoPacketLoss) {
 
   call->DestroyReceiveStream(receive_stream);
   call->DestroySendStream(send_stream);
+
+  transport.StopSending();
 }
 
 INSTANTIATE_TEST_CASE_P(FullStack,

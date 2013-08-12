@@ -12,32 +12,55 @@
 
 #include <assert.h>
 
+#include <deque>
+
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/event_wrapper.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/video_engine/new_include/transport.h"
 
 namespace webrtc {
+
+namespace newapi {
+class PacketReceiver;
+}  // namespace newapi
+
 namespace test {
 
 class DirectTransport : public newapi::Transport {
  public:
-  explicit DirectTransport(newapi::PacketReceiver* receiver)
-      : receiver_(receiver) {}
+  DirectTransport();
+  ~DirectTransport();
 
-  void SetReceiver(newapi::PacketReceiver* receiver) { receiver_ = receiver; }
+  virtual void StopSending();
+  virtual void SetReceiver(newapi::PacketReceiver* receiver);
 
-  virtual bool SendRTP(const uint8_t* data, size_t length) OVERRIDE {
-    assert(receiver_ != NULL);
-    return receiver_->DeliverPacket(data, length);
-  }
-
-  virtual bool SendRTCP(const uint8_t* data, size_t length) OVERRIDE {
-    assert(receiver_ != NULL);
-    return SendRTP(data, length);
-  }
+  virtual bool SendRTP(const uint8_t* data, size_t length) OVERRIDE;
+  virtual bool SendRTCP(const uint8_t* data, size_t length) OVERRIDE;
 
  private:
+  struct Packet {
+    Packet();
+    Packet(const uint8_t* data, size_t length);
+
+    uint8_t data[1500];
+    size_t length;
+  };
+
+  void QueuePacket(const uint8_t* data, size_t length);
+
+  static bool NetworkProcess(void* transport);
+  bool SendPackets();
+
+  scoped_ptr<CriticalSectionWrapper> lock_;
+  scoped_ptr<EventWrapper> packet_event_;
+  scoped_ptr<ThreadWrapper> thread_;
+
+  std::deque<Packet> packet_queue_;
   newapi::PacketReceiver* receiver_;
 };
-}  // test
-}  // webrtc
+}  // namespace test
+}  // namespace webrtc
 
 #endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_DIRECT_TRANSPORT_H_
