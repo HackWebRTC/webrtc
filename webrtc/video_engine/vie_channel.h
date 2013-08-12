@@ -290,6 +290,9 @@ class ViEChannel
   virtual int32_t ReceivedDecodedReferenceFrame(
       const uint64_t picture_id);
 
+  // Implements VCMReceiveCallback.
+  virtual void IncomingCodecChanged(const VideoCodec& codec);
+
   // Implements VCM.
   virtual int32_t StoreReceivedFrame(
       const EncodedVideoData& frame_to_store);
@@ -383,6 +386,8 @@ class ViEChannel
   Transport* external_transport_;
 
   bool decoder_reset_;
+  // Current receive codec used for codec change callback.
+  VideoCodec receive_codec_;
   bool wait_for_key_frame_;
   ThreadWrapper* decode_thread_;
 

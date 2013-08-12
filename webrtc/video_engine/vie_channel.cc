@@ -1665,6 +1665,10 @@ CallStatsObserver* ViEChannel::GetStatsObserver() {
   return stats_observer_.get();
 }
 
+// Do not acquire the lock of |vcm_| in this function. Decode callback won't
+// necessarily be called from the decoding thread. The decoding thread may have
+// held the lock when calling VideoDecoder::Decode, Reset, or Release. Acquiring
+// the same lock in the path of decode callback can deadlock.
 int32_t ViEChannel::FrameToRender(
     I420VideoFrame& video_frame) {  // NOLINT
   CriticalSectionScoped cs(callback_cs_.get());
@@ -1672,20 +1676,11 @@ int32_t ViEChannel::FrameToRender(
   if (decoder_reset_) {
     // Trigger a callback to the user if the incoming codec has changed.
     if (codec_observer_) {
-      VideoCodec decoder;
-      memset(&decoder, 0, sizeof(decoder));
-      if (vcm_.ReceiveCodec(&decoder) == VCM_OK) {
-        // VCM::ReceiveCodec returns the codec set by
-        // RegisterReceiveCodec, which might not be the size we're
-        // actually decoding.
-        decoder.width = static_cast<uint16_t>(video_frame.width());
-        decoder.height = static_cast<uint16_t>(video_frame.height());
-        codec_observer_->IncomingCodecChanged(channel_id_, decoder);
-      } else {
-        assert(false);
-        WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
-                     "%s: Could not get receive codec", __FUNCTION__);
-      }
+      // The codec set by RegisterReceiveCodec might not be the size we're
+      // actually decoding.
+      receive_codec_.width = static_cast<uint16_t>(video_frame.width());
+      receive_codec_.height = static_cast<uint16_t>(video_frame.height());
+      codec_observer_->IncomingCodecChanged(channel_id_, receive_codec_);
     }
     decoder_reset_ = false;
   }
@@ -1721,6 +1716,11 @@ int32_t ViEChannel::FrameToRender(
 int32_t ViEChannel::ReceivedDecodedReferenceFrame(
   const uint64_t picture_id) {
   return rtp_rtcp_->SendRTCPReferencePictureSelection(picture_id);
+}
+
+void ViEChannel::IncomingCodecChanged(const VideoCodec& codec) {
+  CriticalSectionScoped cs(callback_cs_.get());
+  receive_codec_ = codec;
 }
 
 int32_t ViEChannel::StoreReceivedFrame(
@@ -1949,9 +1949,8 @@ int32_t ViEChannel::OnInitializeDecoder(
                payload_type, payload_name);
   vcm_.ResetDecoder();
 
-  callback_cs_->Enter();
+  CriticalSectionScoped cs(callback_cs_.get());
   decoder_reset_ = true;
-  callback_cs_->Leave();
   return 0;
 }
 

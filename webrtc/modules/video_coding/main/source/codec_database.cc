@@ -510,6 +510,8 @@ VCMGenericDecoder* VCMCodecDataBase::GetDecoder(
   if (!ptr_decoder_) {
     return NULL;
   }
+  VCMReceiveCallback* callback = decoded_frame_callback->UserReceiveCallback();
+  if (callback) callback->IncomingCodecChanged(receive_codec_);
   if (ptr_decoder_->RegisterDecodeCompleteCallback(decoded_frame_callback)
       < 0) {
     ReleaseDecoder(ptr_decoder_);

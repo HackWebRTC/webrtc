@@ -98,6 +98,8 @@ class VCMReceiveCallback {
       const uint64_t pictureId) {
     return -1;
   }
+  // Called when the current receive codec changes.
+  virtual void IncomingCodecChanged(const VideoCodec& codec) {}
 
  protected:
   virtual ~VCMReceiveCallback() {

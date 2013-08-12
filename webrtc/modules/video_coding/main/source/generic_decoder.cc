@@ -41,6 +41,12 @@ void VCMDecodedFrameCallback::SetUserReceiveCallback(
     _receiveCallback = receiveCallback;
 }
 
+VCMReceiveCallback* VCMDecodedFrameCallback::UserReceiveCallback()
+{
+    CriticalSectionScoped cs(_critSect);
+    return _receiveCallback;
+}
+
 int32_t VCMDecodedFrameCallback::Decoded(I420VideoFrame& decodedImage)
 {
     // TODO(holmer): We should improve this so that we can handle multiple
