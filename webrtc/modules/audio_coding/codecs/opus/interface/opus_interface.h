@@ -33,7 +33,7 @@ int16_t WebRtcOpus_EncoderFree(OpusEncInst* inst);
  * Input:
  *      - inst                  : Encoder context
  *      - audio_in              : Input speech data buffer
- *      - samples               : Samples in audio_in
+ *      - samples               : Samples per channel in audio_in
  *      - length_encoded_buffer : Output buffer size
  *
  * Output:
@@ -101,7 +101,7 @@ int16_t WebRtcOpus_DecoderInitSlave(OpusDecInst* inst);
  *                             always return 1 since we're not using Opus's
  *                             built-in DTX/CNG scheme)
  *
- * Return value              : >0 - Samples in decoded vector
+ * Return value              : >0 - Samples per channel in decoded vector
  *                             -1 - Error
  */
 int16_t WebRtcOpus_DecodeNew(OpusDecInst* inst, const uint8_t* encoded,

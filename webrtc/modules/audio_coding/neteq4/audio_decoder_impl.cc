@@ -393,19 +393,17 @@ AudioDecoderOpus::~AudioDecoderOpus() {
 int AudioDecoderOpus::Decode(const uint8_t* encoded, size_t encoded_len,
                              int16_t* decoded, SpeechType* speech_type) {
   int16_t temp_type = 1;  // Default is speech.
-  assert(channels_ == 1);
-  // TODO(hlundin): Allow 2 channels when WebRtcOpus_Decode provides both
-  // channels interleaved.
-  int16_t ret = WebRtcOpus_Decode(
-      static_cast<OpusDecInst*>(state_),
-      const_cast<int16_t*>(reinterpret_cast<const int16_t*>(encoded)),
-      static_cast<int16_t>(encoded_len), decoded, &temp_type);
+  int16_t ret = WebRtcOpus_DecodeNew(static_cast<OpusDecInst*>(state_), encoded,
+                                     static_cast<int16_t>(encoded_len), decoded,
+                                     &temp_type);
+  if (ret > 0)
+    ret *= channels_; // Return total number of samples.
   *speech_type = ConvertSpeechType(temp_type);
   return ret;
 }
 
 int AudioDecoderOpus::Init() {
-  return WebRtcOpus_DecoderInit(static_cast<OpusDecInst*>(state_));
+  return WebRtcOpus_DecoderInitNew(static_cast<OpusDecInst*>(state_));
 }
 
 int AudioDecoderOpus::PacketDuration(const uint8_t* encoded,

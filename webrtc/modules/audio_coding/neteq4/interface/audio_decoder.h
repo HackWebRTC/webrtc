@@ -72,9 +72,9 @@ class AudioDecoder {
   virtual ~AudioDecoder() {}
 
   // Decodes |encode_len| bytes from |encoded| and writes the result in
-  // |decoded|. The number of samples produced is in the return value. If the
-  // decoder produced comfort noise, |speech_type| is set to kComfortNoise,
-  // otherwise it is kSpeech.
+  // |decoded|. The number of samples from all channels produced is in
+  // the return value. If the decoder produced comfort noise, |speech_type|
+  // is set to kComfortNoise, otherwise it is kSpeech.
   virtual int Decode(const uint8_t* encoded, size_t encoded_len,
                      int16_t* decoded, SpeechType* speech_type) = 0;
 
