@@ -61,13 +61,10 @@ class TransportChannel : public sigslot::has_slots<> {
         readable_(false), writable_(false) {}
   virtual ~TransportChannel() {}
 
+  // TODO(mallinath) - Remove this API, as it's no longer useful.
   // Returns the session id of this channel.
-  virtual const std::string& SessionId() const { return session_id_; }
-  // Sets session id which created this transport channel.
-  // This is called from TransportProxy::GetOrCreateImpl.
-  virtual void SetSessionId(const std::string& session_id) {
-    session_id_ = session_id;
-  }
+  virtual const std::string SessionId() const { return std::string(); }
+
   const std::string& content_name() const { return content_name_; }
   int component() const { return component_; }
 
@@ -92,8 +89,10 @@ class TransportChannel : public sigslot::has_slots<> {
   // Returns the most recent error that occurred on this channel.
   virtual int GetError() = 0;
 
+  // TODO(mallinath) - Move this to TransportChannelImpl, after channel.cc
+  // no longer needs it.
   // Returns current transportchannel ICE role.
-  virtual TransportRole GetRole() const = 0;
+  virtual IceRole GetIceRole() const = 0;
 
   // Returns the current stats for this connection.
   virtual bool GetStats(ConnectionInfos* infos) {
@@ -149,7 +148,6 @@ class TransportChannel : public sigslot::has_slots<> {
 
 
  private:
-  std::string session_id_;
   // Used mostly for debugging.
   std::string content_name_;
   int component_;

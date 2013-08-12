@@ -149,8 +149,12 @@ void DtlsTransportChannelWrapper::Reset() {
   dtls_state_ = STATE_ACCEPTED;
 }
 
-bool DtlsTransportChannelWrapper::SetLocalIdentity(talk_base::SSLIdentity*
-                                                   identity) {
+bool DtlsTransportChannelWrapper::SetLocalIdentity(
+    talk_base::SSLIdentity* identity) {
+  if (dtls_state_ == STATE_OPEN && identity == local_identity_) {
+    return true;
+  }
+
   // TODO(ekr@rtfm.com): Forbid this if Connect() has been called.
   if (dtls_state_ != STATE_NONE) {
     LOG_J(LS_ERROR, this) << "Can't set DTLS local identity in this state";
@@ -167,7 +171,7 @@ bool DtlsTransportChannelWrapper::SetLocalIdentity(talk_base::SSLIdentity*
   return true;
 }
 
-void DtlsTransportChannelWrapper::SetRole(TransportRole role) {
+void DtlsTransportChannelWrapper::SetIceRole(IceRole role) {
   // TODO(ekr@rtfm.com): Forbid this if Connect() has been called.
   ASSERT(dtls_state_ < STATE_ACCEPTED);
 
@@ -175,16 +179,24 @@ void DtlsTransportChannelWrapper::SetRole(TransportRole role) {
   //     The endpoint that is the offerer MUST [...] be prepared to receive
   //     a client_hello before it receives the answer.
   // (IOW, the offerer is the server, and the answerer is the client).
-  dtls_role_ = (role == ROLE_CONTROLLING) ?
+  dtls_role_ = (role == ICEROLE_CONTROLLING) ?
       talk_base::SSL_SERVER : talk_base::SSL_CLIENT;
 
-  channel_->SetRole(role);
+  channel_->SetIceRole(role);
 }
 
-bool DtlsTransportChannelWrapper::SetRemoteFingerprint(const std::string&
-                                                       digest_alg,
-                                                       const uint8* digest,
-                                                       size_t digest_len) {
+bool DtlsTransportChannelWrapper::SetRemoteFingerprint(
+    const std::string& digest_alg,
+    const uint8* digest,
+    size_t digest_len) {
+
+  talk_base::Buffer remote_fingerprint_value(digest, digest_len);
+
+  if ((dtls_state_ == STATE_OPEN) &&
+      (remote_fingerprint_value_ == remote_fingerprint_value)) {
+    return true;
+  }
+
   // Allow SetRemoteFingerprint with a NULL digest even if SetLocalIdentity
   // hasn't been called.
   if (dtls_state_ > STATE_OFFERED ||
@@ -200,7 +212,7 @@ bool DtlsTransportChannelWrapper::SetRemoteFingerprint(const std::string&
   }
 
   // At this point we know we are doing DTLS
-  remote_fingerprint_value_.SetData(digest, digest_len);
+  remote_fingerprint_value.TransferTo(&remote_fingerprint_value_);
   remote_fingerprint_algorithm_ = digest_alg;
 
   if (!SetupDtls()) {

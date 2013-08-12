@@ -64,11 +64,11 @@ class PortInterface {
   virtual IceProtocolType IceProtocol() const = 0;
 
   // Methods to set/get ICE role and tiebreaker values.
-  virtual void SetRole(TransportRole role) = 0;
-  virtual TransportRole Role() const = 0;
+  virtual void SetIceRole(IceRole role) = 0;
+  virtual IceRole GetIceRole() const = 0;
 
-  virtual void SetTiebreaker(uint64 tiebreaker) = 0;
-  virtual uint64 Tiebreaker() const = 0;
+  virtual void SetIceTiebreaker(uint64 tiebreaker) = 0;
+  virtual uint64 IceTiebreaker() const = 0;
 
   virtual bool SharedSocket() const = 0;
 

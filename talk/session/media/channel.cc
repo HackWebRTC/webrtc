@@ -1004,7 +1004,7 @@ bool BaseChannel::SetupDtlsSrtp(bool rtcp_channel) {
 
   std::vector<unsigned char> *send_key, *recv_key;
 
-  if (channel->GetRole() == ROLE_CONTROLLING) {
+  if (channel->GetIceRole() == ICEROLE_CONTROLLING) {
     send_key = &server_write_key;
     recv_key = &client_write_key;
   } else {

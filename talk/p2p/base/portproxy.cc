@@ -58,24 +58,24 @@ IceProtocolType PortProxy::IceProtocol() const {
 }
 
 // Methods to set/get ICE role and tiebreaker values.
-void PortProxy::SetRole(TransportRole role) {
+void PortProxy::SetIceRole(IceRole role) {
   ASSERT(impl_ != NULL);
-  impl_->SetRole(role);
+  impl_->SetIceRole(role);
 }
 
-TransportRole PortProxy::Role() const {
+IceRole PortProxy::GetIceRole() const {
   ASSERT(impl_ != NULL);
-  return impl_->Role();
+  return impl_->GetIceRole();
 }
 
-void PortProxy::SetTiebreaker(uint64 tiebreaker) {
+void PortProxy::SetIceTiebreaker(uint64 tiebreaker) {
   ASSERT(impl_ != NULL);
-  impl_->SetTiebreaker(tiebreaker);
+  impl_->SetIceTiebreaker(tiebreaker);
 }
 
-uint64 PortProxy::Tiebreaker() const {
+uint64 PortProxy::IceTiebreaker() const {
   ASSERT(impl_ != NULL);
-  return impl_->Tiebreaker();
+  return impl_->IceTiebreaker();
 }
 
 bool PortProxy::SharedSocket() const {

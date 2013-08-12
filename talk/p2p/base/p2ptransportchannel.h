@@ -75,9 +75,9 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   // From TransportChannelImpl:
   virtual Transport* GetTransport() { return transport_; }
-  virtual void SetRole(TransportRole role);
-  virtual TransportRole GetRole() const { return role_; }
-  virtual void SetTiebreaker(uint64 tiebreaker);
+  virtual void SetIceRole(IceRole role);
+  virtual IceRole GetIceRole() const { return ice_role_; }
+  virtual void SetIceTiebreaker(uint64 tiebreaker);
   virtual void SetIceProtocolType(IceProtocolType type);
   virtual void SetIceCredentials(const std::string& ice_ufrag,
                                  const std::string& ice_pwd);
@@ -184,7 +184,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   std::string remote_ice_pwd_;
   IceProtocolType protocol_type_;
   IceMode remote_ice_mode_;
-  TransportRole role_;
+  IceRole ice_role_;
   uint64 tiebreaker_;
   uint32 remote_candidate_generation_;
 

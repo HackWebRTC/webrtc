@@ -66,7 +66,7 @@ class TransportChannelProxy : public TransportChannel,
   virtual int SendPacket(const char* data, size_t len, int flags);
   virtual int SetOption(talk_base::Socket::Option opt, int value);
   virtual int GetError();
-  virtual TransportRole GetRole() const;
+  virtual IceRole GetIceRole() const;
   virtual bool GetStats(ConnectionInfos* infos);
   virtual bool IsDtlsActive() const;
   virtual bool SetSrtpCiphers(const std::vector<std::string>& ciphers);

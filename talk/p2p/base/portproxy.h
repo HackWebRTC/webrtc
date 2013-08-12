@@ -52,11 +52,11 @@ class PortProxy : public PortInterface, public sigslot::has_slots<> {
   virtual IceProtocolType IceProtocol() const;
 
   // Methods to set/get ICE role and tiebreaker values.
-  virtual void SetRole(TransportRole role);
-  virtual TransportRole Role() const;
+  virtual void SetIceRole(IceRole role);
+  virtual IceRole GetIceRole() const;
 
-  virtual void SetTiebreaker(uint64 tiebreaker);
-  virtual uint64 Tiebreaker() const;
+  virtual void SetIceTiebreaker(uint64 tiebreaker);
+  virtual uint64 IceTiebreaker() const;
 
   virtual bool SharedSocket() const;
 

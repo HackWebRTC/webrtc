@@ -1118,11 +1118,13 @@ class WebRtcSdpTest : public testing::Test {
         "a=rtpmap:103 ISAC/16000\r\n"
         "a=rtpmap:104 CELT/32000/2\r\n"
         "a=rtpmap:102 ISAC/32000/1\r\n"
-        "a=fmtp:111 0-15,66,70 ";
+        "a=fmtp:111 0-15,66,70\r\n"
+        "a=fmtp:111 ";
     std::ostringstream os;
-    os << "minptime=" << params.min_ptime << " stereo=" << params.stereo
-       << " sprop-stereo=" << params.sprop_stereo
-       << " useinbandfec=" << params.useinband
+    os << "minptime=" << params.min_ptime
+       << "; stereo=" << params.stereo
+       << "; sprop-stereo=" << params.sprop_stereo
+       << "; useinbandfec=" << params.useinband
        << " maxaveragebitrate=" << params.maxaveragebitrate << "\r\n"
        << "a=ptime:" << params.ptime << "\r\n"
        << "a=maxptime:" << params.max_ptime << "\r\n";

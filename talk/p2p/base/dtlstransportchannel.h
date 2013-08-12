@@ -121,10 +121,10 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
                               TransportChannelImpl* channel);
   virtual ~DtlsTransportChannelWrapper();
 
-  virtual void SetRole(TransportRole role);
+  virtual void SetIceRole(IceRole ice_role);
   // Returns current transport role of the channel.
-  virtual TransportRole GetRole() const {
-    return channel_->GetRole();
+  virtual IceRole GetIceRole() const {
+    return channel_->GetIceRole();
   }
   virtual bool SetLocalIdentity(talk_base::SSLIdentity *identity);
 
@@ -146,10 +146,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   virtual bool GetStats(ConnectionInfos* infos) {
     return channel_->GetStats(infos);
   }
-  virtual void SetSessionId(const std::string& session_id) {
-    channel_->SetSessionId(session_id);
-  }
-  virtual const std::string& SessionId() const {
+  virtual const std::string SessionId() const {
     return channel_->SessionId();
   }
 
@@ -182,8 +179,8 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   virtual Transport* GetTransport() {
     return transport_;
   }
-  virtual void SetTiebreaker(uint64 tiebreaker) {
-    channel_->SetTiebreaker(tiebreaker);
+  virtual void SetIceTiebreaker(uint64 tiebreaker) {
+    channel_->SetIceTiebreaker(tiebreaker);
   }
   virtual void SetIceProtocolType(IceProtocolType type) {
     channel_->SetIceProtocolType(type);

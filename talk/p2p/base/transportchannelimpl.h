@@ -50,8 +50,8 @@ class TransportChannelImpl : public TransportChannel {
   virtual Transport* GetTransport() = 0;
 
   // For ICE channels.
-  virtual void SetRole(TransportRole role) = 0;
-  virtual void SetTiebreaker(uint64 tiebreaker) = 0;
+  virtual void SetIceRole(IceRole role) = 0;
+  virtual void SetIceTiebreaker(uint64 tiebreaker) = 0;
   // To toggle G-ICE/ICE.
   virtual void SetIceProtocolType(IceProtocolType type) = 0;
   // SetIceCredentials only need to be implemented by the ICE

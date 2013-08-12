@@ -67,7 +67,7 @@ class FakeTransportChannel : public TransportChannelImpl,
         async_(false),
         identity_(NULL),
         do_dtls_(false),
-        role_(ROLE_UNKNOWN),
+        role_(ICEROLE_UNKNOWN),
         tiebreaker_(0),
         ice_proto_(ICEPROTO_HYBRID),
         remote_ice_mode_(ICEMODE_FULL),
@@ -77,7 +77,7 @@ class FakeTransportChannel : public TransportChannelImpl,
     Reset();
   }
 
-  uint64 tiebreaker() const { return tiebreaker_; }
+  uint64 IceTiebreaker() const { return tiebreaker_; }
   TransportProtocol protocol() const { return ice_proto_; }
   IceMode remote_ice_mode() const { return remote_ice_mode_; }
   const std::string& ice_ufrag() const { return ice_ufrag_; }
@@ -96,9 +96,9 @@ class FakeTransportChannel : public TransportChannelImpl,
     return transport_;
   }
 
-  virtual void SetRole(TransportRole role) { role_ = role; }
-  virtual TransportRole GetRole() const { return role_; }
-  virtual void SetTiebreaker(uint64 tiebreaker) { tiebreaker_ = tiebreaker; }
+  virtual void SetIceRole(IceRole role) { role_ = role; }
+  virtual IceRole GetIceRole() const { return role_; }
+  virtual void SetIceTiebreaker(uint64 tiebreaker) { tiebreaker_ = tiebreaker; }
   virtual void SetIceProtocolType(IceProtocolType type) { ice_proto_ = type; }
   virtual void SetIceCredentials(const std::string& ice_ufrag,
                                  const std::string& ice_pwd) {
@@ -266,7 +266,7 @@ class FakeTransportChannel : public TransportChannelImpl,
   bool do_dtls_;
   std::vector<std::string> srtp_ciphers_;
   std::string chosen_srtp_cipher_;
-  TransportRole role_;
+  IceRole role_;
   uint64 tiebreaker_;
   IceProtocolType ice_proto_;
   std::string ice_ufrag_;

@@ -43,7 +43,7 @@ using cricket::Transport;
 using cricket::FakeTransport;
 using cricket::TransportChannel;
 using cricket::FakeTransportChannel;
-using cricket::TransportRole;
+using cricket::IceRole;
 using cricket::TransportDescription;
 using cricket::WriteError;
 using cricket::ParseError;
@@ -139,19 +139,19 @@ TEST_F(TransportTest, TestDestroyAllClearsPosts) {
 }
 
 // This test verifies channels are created with proper ICE
-// role, tiebreaker and remote ice mode and credentials after offer and answer
-// negotiations.
+// role, tiebreaker and remote ice mode and credentials after offer and
+// answer negotiations.
 TEST_F(TransportTest, TestChannelIceParameters) {
-  transport_->SetRole(cricket::ROLE_CONTROLLING);
-  transport_->SetTiebreaker(99U);
+  transport_->SetIceRole(cricket::ICEROLE_CONTROLLING);
+  transport_->SetIceTiebreaker(99U);
   cricket::TransportDescription local_desc(
       cricket::NS_JINGLE_ICE_UDP, std::vector<std::string>(),
       kIceUfrag1, kIcePwd1, cricket::ICEMODE_FULL, NULL, cricket::Candidates());
   ASSERT_TRUE(transport_->SetLocalTransportDescription(local_desc,
                                                        cricket::CA_OFFER));
-  EXPECT_EQ(cricket::ROLE_CONTROLLING, transport_->role());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, transport_->ice_role());
   EXPECT_TRUE(SetupChannel());
-  EXPECT_EQ(cricket::ROLE_CONTROLLING, channel_->GetRole());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel_->GetIceRole());
   EXPECT_EQ(cricket::ICEMODE_FULL, channel_->remote_ice_mode());
   EXPECT_EQ(kIceUfrag1, channel_->ice_ufrag());
   EXPECT_EQ(kIcePwd1, channel_->ice_pwd());
@@ -161,12 +161,12 @@ TEST_F(TransportTest, TestChannelIceParameters) {
       kIceUfrag1, kIcePwd1, cricket::ICEMODE_FULL, NULL, cricket::Candidates());
   ASSERT_TRUE(transport_->SetRemoteTransportDescription(remote_desc,
                                                         cricket::CA_ANSWER));
-  EXPECT_EQ(cricket::ROLE_CONTROLLING, channel_->GetRole());
-  EXPECT_EQ(99U, channel_->tiebreaker());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel_->GetIceRole());
+  EXPECT_EQ(99U, channel_->IceTiebreaker());
   EXPECT_EQ(cricket::ICEMODE_FULL, channel_->remote_ice_mode());
   // Changing the transport role from CONTROLLING to CONTROLLED.
-  transport_->SetRole(cricket::ROLE_CONTROLLED);
-  EXPECT_EQ(cricket::ROLE_CONTROLLED, channel_->GetRole());
+  transport_->SetIceRole(cricket::ICEROLE_CONTROLLED);
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLED, channel_->GetIceRole());
   EXPECT_EQ(cricket::ICEMODE_FULL, channel_->remote_ice_mode());
   EXPECT_EQ(kIceUfrag1, channel_->remote_ice_ufrag());
   EXPECT_EQ(kIcePwd1, channel_->remote_ice_pwd());
@@ -174,7 +174,7 @@ TEST_F(TransportTest, TestChannelIceParameters) {
 
 // Tests channel role is reversed after receiving ice-lite from remote.
 TEST_F(TransportTest, TestSetRemoteIceLiteInOffer) {
-  transport_->SetRole(cricket::ROLE_CONTROLLED);
+  transport_->SetIceRole(cricket::ICEROLE_CONTROLLED);
   cricket::TransportDescription remote_desc(
       cricket::NS_JINGLE_ICE_UDP, std::vector<std::string>(),
       kIceUfrag1, kIcePwd1, cricket::ICEMODE_LITE, NULL, cricket::Candidates());
@@ -185,23 +185,23 @@ TEST_F(TransportTest, TestSetRemoteIceLiteInOffer) {
       kIceUfrag1, kIcePwd1, cricket::ICEMODE_FULL, NULL, cricket::Candidates());
   ASSERT_TRUE(transport_->SetLocalTransportDescription(local_desc,
                                                        cricket::CA_ANSWER));
-  EXPECT_EQ(cricket::ROLE_CONTROLLING, transport_->role());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, transport_->ice_role());
   EXPECT_TRUE(SetupChannel());
-  EXPECT_EQ(cricket::ROLE_CONTROLLING, channel_->GetRole());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel_->GetIceRole());
   EXPECT_EQ(cricket::ICEMODE_LITE, channel_->remote_ice_mode());
 }
 
 // Tests ice-lite in remote answer.
 TEST_F(TransportTest, TestSetRemoteIceLiteInAnswer) {
-  transport_->SetRole(cricket::ROLE_CONTROLLING);
+  transport_->SetIceRole(cricket::ICEROLE_CONTROLLING);
   cricket::TransportDescription local_desc(
       cricket::NS_JINGLE_ICE_UDP, std::vector<std::string>(),
       kIceUfrag1, kIcePwd1, cricket::ICEMODE_FULL, NULL, cricket::Candidates());
   ASSERT_TRUE(transport_->SetLocalTransportDescription(local_desc,
                                                        cricket::CA_OFFER));
-  EXPECT_EQ(cricket::ROLE_CONTROLLING, transport_->role());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, transport_->ice_role());
   EXPECT_TRUE(SetupChannel());
-  EXPECT_EQ(cricket::ROLE_CONTROLLING, channel_->GetRole());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel_->GetIceRole());
   // Channels will be created in ICEFULL_MODE.
   EXPECT_EQ(cricket::ICEMODE_FULL, channel_->remote_ice_mode());
   cricket::TransportDescription remote_desc(
@@ -209,7 +209,7 @@ TEST_F(TransportTest, TestSetRemoteIceLiteInAnswer) {
       kIceUfrag1, kIcePwd1, cricket::ICEMODE_LITE, NULL, cricket::Candidates());
   ASSERT_TRUE(transport_->SetRemoteTransportDescription(remote_desc,
                                                         cricket::CA_ANSWER));
-  EXPECT_EQ(cricket::ROLE_CONTROLLING, channel_->GetRole());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel_->GetIceRole());
   // After receiving remote description with ICEMODE_LITE, channel should
   // have mode set to ICEMODE_LITE.
   EXPECT_EQ(cricket::ICEMODE_LITE, channel_->remote_ice_mode());

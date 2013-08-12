@@ -140,7 +140,7 @@ class TransportProxy : public sigslot::has_slots<>,
   bool SetupMux(TransportProxy* proxy);
 
   // Simple functions that thunk down to the same functions on Transport.
-  void SetRole(TransportRole role);
+  void SetIceRole(IceRole role);
   void SetIdentity(talk_base::SSLIdentity* identity);
   bool SetLocalTransportDescription(const TransportDescription& description,
                                     ContentAction action);

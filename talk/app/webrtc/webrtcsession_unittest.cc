@@ -210,19 +210,22 @@ class WebRtcSessionCreateSDPObserverForTest
     kFailed,
     kSucceeded,
   };
-  WebRtcSessionCreateSDPObserverForTest()
-      : description_(NULL), state_(kInit) {}
+  WebRtcSessionCreateSDPObserverForTest() : state_(kInit) {}
 
   // CreateSessionDescriptionObserver implementation.
   virtual void OnSuccess(SessionDescriptionInterface* desc) {
-    description_ = desc;
+    description_.reset(desc);
     state_ = kSucceeded;
   }
   virtual void OnFailure(const std::string& error) {
     state_ = kFailed;
   }
 
-  SessionDescriptionInterface* description() { return description_; }
+  SessionDescriptionInterface* description() { return description_.get(); }
+
+  SessionDescriptionInterface* ReleaseDescription() {
+    return description_.release();
+  }
 
   State state() const { return state_; }
 
@@ -230,7 +233,7 @@ class WebRtcSessionCreateSDPObserverForTest
   ~WebRtcSessionCreateSDPObserverForTest() {}
 
  private:
-  SessionDescriptionInterface* description_;
+  talk_base::scoped_ptr<SessionDescriptionInterface> description_;
   State state_;
 };
 
@@ -346,7 +349,7 @@ class WebRtcSessionTest : public testing::Test {
     EXPECT_TRUE_WAIT(
         observer->state() != WebRtcSessionCreateSDPObserverForTest::kInit,
         1000);
-    return observer->description();
+    return observer->ReleaseDescription();
   }
 
   SessionDescriptionInterface* CreateAnswer(
@@ -357,7 +360,7 @@ class WebRtcSessionTest : public testing::Test {
     EXPECT_TRUE_WAIT(
         observer->state() != WebRtcSessionCreateSDPObserverForTest::kInit,
         1000);
-    return observer->description();
+    return observer->ReleaseDescription();
   }
 
   bool ChannelsExist() {

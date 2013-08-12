@@ -74,7 +74,6 @@ class RawTransportChannel : public TransportChannelImpl,
                                  const std::string& ice_pwd) {}
   virtual void SetRemoteIceCredentials(const std::string& ice_ufrag,
                                        const std::string& ice_pwd) {}
-  virtual TransportRole GetRole() const { return ROLE_UNKNOWN; }
 
   // Creates an allocator session to start figuring out which type of
   // port we should send to the other client.  This will send
@@ -94,8 +93,9 @@ class RawTransportChannel : public TransportChannelImpl,
   void OnRemoteAddress(const talk_base::SocketAddress& remote_address);
 
   // Below ICE specific virtual methods not implemented.
-  virtual void SetRole(TransportRole role) {}
-  virtual void SetTiebreaker(uint64 tiebreaker) {}
+  virtual IceRole GetIceRole() const { return ICEROLE_UNKNOWN; }
+  virtual void SetIceRole(IceRole role) {}
+  virtual void SetIceTiebreaker(uint64 tiebreaker) {}
   virtual void SetIceProtocolType(IceProtocolType type) {}
   virtual void SetIceUfrag(const std::string& ice_ufrag) {}
   virtual void SetIcePwd(const std::string& ice_pwd) {}

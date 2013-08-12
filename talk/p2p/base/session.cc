@@ -194,7 +194,6 @@ TransportChannelImpl* TransportProxy::GetOrCreateChannelProxyImpl(
   TransportChannelImpl* impl = transport_->get()->GetChannel(component);
   if (impl == NULL) {
     impl = transport_->get()->CreateChannel(component);
-    impl->SetSessionId(sid_);
   }
   return impl;
 }
@@ -239,8 +238,8 @@ bool TransportProxy::SetupMux(TransportProxy* target) {
   return true;
 }
 
-void TransportProxy::SetRole(TransportRole role) {
-  transport_->get()->SetRole(role);
+void TransportProxy::SetIceRole(IceRole role) {
+  transport_->get()->SetIceRole(role);
 }
 
 bool TransportProxy::SetLocalTransportDescription(
@@ -471,8 +470,8 @@ TransportProxy* BaseSession::GetOrCreateTransportProxy(
     return transproxy;
 
   Transport* transport = CreateTransport(content_name);
-  transport->SetRole(initiator_ ? ROLE_CONTROLLING : ROLE_CONTROLLED);
-  transport->SetTiebreaker(ice_tiebreaker_);
+  transport->SetIceRole(initiator_ ? ICEROLE_CONTROLLING : ICEROLE_CONTROLLED);
+  transport->SetIceTiebreaker(ice_tiebreaker_);
   // TODO: Connect all the Transport signals to TransportProxy
   // then to the BaseSession.
   transport->SignalConnecting.connect(
@@ -743,8 +742,8 @@ void BaseSession::OnRoleConflict() {
   for (TransportMap::iterator iter = transports_.begin();
        iter != transports_.end(); ++iter) {
     // Role will be reverse of initial role setting.
-    TransportRole role = initiator_ ? ROLE_CONTROLLED : ROLE_CONTROLLING;
-    iter->second->SetRole(role);
+    IceRole role = initiator_ ? ICEROLE_CONTROLLED : ICEROLE_CONTROLLING;
+    iter->second->SetIceRole(role);
   }
 }
 

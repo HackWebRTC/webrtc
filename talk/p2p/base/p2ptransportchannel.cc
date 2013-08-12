@@ -169,7 +169,7 @@ P2PTransportChannel::P2PTransportChannel(const std::string& content_name,
     was_writable_(false),
     protocol_type_(ICEPROTO_GOOGLE),
     remote_ice_mode_(ICEMODE_FULL),
-    role_(ROLE_UNKNOWN),
+    ice_role_(ICEROLE_UNKNOWN),
     tiebreaker_(0),
     remote_candidate_generation_(0) {
 }
@@ -215,18 +215,18 @@ void P2PTransportChannel::AddConnection(Connection* connection) {
       this, &P2PTransportChannel::OnUseCandidate);
 }
 
-void P2PTransportChannel::SetRole(TransportRole role) {
+void P2PTransportChannel::SetIceRole(IceRole ice_role) {
   ASSERT(worker_thread_ == talk_base::Thread::Current());
-  if (role_ != role) {
-    role_ = role;
+  if (ice_role_ != ice_role) {
+    ice_role_ = ice_role;
     for (std::vector<PortInterface *>::iterator it = ports_.begin();
          it != ports_.end(); ++it) {
-      (*it)->SetRole(role_);
+      (*it)->SetIceRole(ice_role);
     }
   }
 }
 
-void P2PTransportChannel::SetTiebreaker(uint64 tiebreaker) {
+void P2PTransportChannel::SetIceTiebreaker(uint64 tiebreaker) {
   ASSERT(worker_thread_ == talk_base::Thread::Current());
   if (!ports_.empty()) {
     LOG(LS_ERROR)
@@ -362,8 +362,8 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
   // if one is pending.
 
   port->SetIceProtocolType(protocol_type_);
-  port->SetRole(role_);
-  port->SetTiebreaker(tiebreaker_);
+  port->SetIceRole(ice_role_);
+  port->SetIceTiebreaker(tiebreaker_);
   ports_.push_back(port);
   port->SignalUnknownAddress.connect(
       this, &P2PTransportChannel::OnUnknownAddress);
@@ -580,7 +580,7 @@ void P2PTransportChannel::OnSignalingReady() {
 
 void P2PTransportChannel::OnUseCandidate(Connection* conn) {
   ASSERT(worker_thread_ == talk_base::Thread::Current());
-  ASSERT(role_ == ROLE_CONTROLLED);
+  ASSERT(ice_role_ == ICEROLE_CONTROLLED);
   ASSERT(protocol_type_ == ICEPROTO_RFC5245);
   if (conn->write_state() == Connection::STATE_WRITABLE) {
     if (best_connection_ != conn) {
@@ -887,7 +887,7 @@ void P2PTransportChannel::SortConnections() {
   // CONTROLLING agent.
 
   // If necessary, switch to the new choice.
-  if (protocol_type_ != ICEPROTO_RFC5245 || role_ == ROLE_CONTROLLING) {
+  if (protocol_type_ != ICEPROTO_RFC5245 || ice_role_ == ICEROLE_CONTROLLING) {
     if (ShouldSwitch(best_connection_, top_connection))
       SwitchBestConnectionTo(top_connection);
   }
@@ -1121,7 +1121,7 @@ Connection* P2PTransportChannel::FindNextPingableConnection() {
 void P2PTransportChannel::PingConnection(Connection* conn) {
   bool use_candidate = false;
   if (protocol_type_ == ICEPROTO_RFC5245) {
-    if (remote_ice_mode_ == ICEMODE_FULL && role_ == ROLE_CONTROLLING) {
+    if (remote_ice_mode_ == ICEMODE_FULL && ice_role_ == ICEROLE_CONTROLLING) {
       use_candidate = (conn == best_connection_) ||
                       (best_connection_ == NULL) ||
                       (!best_connection_->writable()) ||
@@ -1141,7 +1141,7 @@ void P2PTransportChannel::OnConnectionStateChange(Connection* connection) {
 
   // Update the best connection if the state change is from pending best
   // connection and role is controlled.
-  if (protocol_type_ == ICEPROTO_RFC5245 && role_ == ROLE_CONTROLLED) {
+  if (protocol_type_ == ICEPROTO_RFC5245 && ice_role_ == ICEROLE_CONTROLLED) {
     if (connection == pending_best_connection_ && connection->writable()) {
       pending_best_connection_ = NULL;
       SwitchBestConnectionTo(connection);

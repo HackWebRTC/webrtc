@@ -81,13 +81,14 @@ class DtlsTestClient : public sigslot::has_slots<> {
     ASSERT(identity_.get() != NULL);
     use_dtls_srtp_ = true;
   }
-  void SetupChannels(int count, cricket::TransportRole role) {
+  void SetupChannels(int count, cricket::IceRole role) {
     transport_.reset(new cricket::DtlsTransport<cricket::FakeTransport>(
         signaling_thread_, worker_thread_, "dtls content name", NULL,
         identity_.get()));
     transport_->SetAsync(true);
-    transport_->SetRole(role);
-    transport_->SetTiebreaker((role == cricket::ROLE_CONTROLLING) ? 1 : 2);
+    transport_->SetIceRole(role);
+    transport_->SetIceTiebreaker(
+        (role == cricket::ICEROLE_CONTROLLING) ? 1 : 2);
     transport_->SignalWritableState.connect(this,
         &DtlsTestClient::OnTransportWritableState);
 
@@ -402,8 +403,8 @@ class DtlsTransportChannelTest : public testing::Test {
     return true;
   }
   void Negotiate() {
-    client1_.SetupChannels(channel_ct_, cricket::ROLE_CONTROLLING);
-    client2_.SetupChannels(channel_ct_, cricket::ROLE_CONTROLLED);
+    client1_.SetupChannels(channel_ct_, cricket::ICEROLE_CONTROLLING);
+    client2_.SetupChannels(channel_ct_, cricket::ICEROLE_CONTROLLED);
     client2_.Negotiate(&client1_);
     client1_.Negotiate(&client2_);
   }
@@ -432,13 +433,13 @@ TEST_F(DtlsTransportChannelTest, TestChannelSetupIce) {
   cricket::FakeTransportChannel* channel2 = client2_.GetFakeChannel(0);
   ASSERT_TRUE(channel1 != NULL);
   ASSERT_TRUE(channel2 != NULL);
-  EXPECT_EQ(cricket::ROLE_CONTROLLING, channel1->GetRole());
-  EXPECT_EQ(1U, channel1->tiebreaker());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel1->GetIceRole());
+  EXPECT_EQ(1U, channel1->IceTiebreaker());
   EXPECT_EQ(cricket::ICEPROTO_RFC5245, channel1->protocol());
   EXPECT_EQ(kIceUfrag1, channel1->ice_ufrag());
   EXPECT_EQ(kIcePwd1, channel1->ice_pwd());
-  EXPECT_EQ(cricket::ROLE_CONTROLLED, channel2->GetRole());
-  EXPECT_EQ(2U, channel2->tiebreaker());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLED, channel2->GetIceRole());
+  EXPECT_EQ(2U, channel2->IceTiebreaker());
   EXPECT_EQ(cricket::ICEPROTO_RFC5245, channel2->protocol());
 }
 
@@ -451,13 +452,13 @@ TEST_F(DtlsTransportChannelTest, TestChannelSetupGice) {
   cricket::FakeTransportChannel* channel2 = client2_.GetFakeChannel(0);
   ASSERT_TRUE(channel1 != NULL);
   ASSERT_TRUE(channel2 != NULL);
-  EXPECT_EQ(cricket::ROLE_CONTROLLING, channel1->GetRole());
-  EXPECT_EQ(1U, channel1->tiebreaker());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel1->GetIceRole());
+  EXPECT_EQ(1U, channel1->IceTiebreaker());
   EXPECT_EQ(cricket::ICEPROTO_GOOGLE, channel1->protocol());
   EXPECT_EQ(kIceUfrag1, channel1->ice_ufrag());
   EXPECT_EQ(kIcePwd1, channel1->ice_pwd());
-  EXPECT_EQ(cricket::ROLE_CONTROLLED, channel2->GetRole());
-  EXPECT_EQ(2U, channel2->tiebreaker());
+  EXPECT_EQ(cricket::ICEROLE_CONTROLLED, channel2->GetIceRole());
+  EXPECT_EQ(2U, channel2->IceTiebreaker());
   EXPECT_EQ(cricket::ICEPROTO_GOOGLE, channel2->protocol());
 }
 

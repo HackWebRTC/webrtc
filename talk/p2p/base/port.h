@@ -142,11 +142,11 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   virtual IceProtocolType IceProtocol() const { return ice_protocol_; }
 
   // Methods to set/get ICE role and tiebreaker values.
-  void SetRole(TransportRole role) { role_ = role; }
-  TransportRole Role() const { return role_; }
+  IceRole GetIceRole() const { return ice_role_; }
+  void SetIceRole(IceRole role) { ice_role_ = role; }
 
-  void SetTiebreaker(uint64 tiebreaker) { tiebreaker_ = tiebreaker; }
-  uint64 Tiebreaker() const { return tiebreaker_; }
+  void SetIceTiebreaker(uint64 tiebreaker) { tiebreaker_ = tiebreaker; }
+  uint64 IceTiebreaker() const { return tiebreaker_; }
 
   virtual bool SharedSocket() const { return shared_socket_; }
 
@@ -369,7 +369,7 @@ class Port : public PortInterface, public talk_base::MessageHandler,
   enum Lifetime { LT_PRESTART, LT_PRETIMEOUT, LT_POSTTIMEOUT } lifetime_;
   bool enable_port_packets_;
   IceProtocolType ice_protocol_;
-  TransportRole role_;
+  IceRole ice_role_;
   uint64 tiebreaker_;
   bool shared_socket_;
 

@@ -168,12 +168,12 @@ bool TransportChannelProxy::ExportKeyingMaterial(const std::string& label,
                                      result, result_len);
 }
 
-TransportRole TransportChannelProxy::GetRole() const {
+IceRole TransportChannelProxy::GetIceRole() const {
   ASSERT(talk_base::Thread::Current() == worker_thread_);
   if (!impl_) {
-    return ROLE_UNKNOWN;
+    return ICEROLE_UNKNOWN;
   }
-  return impl_->GetRole();
+  return impl_->GetIceRole();
 }
 
 void TransportChannelProxy::OnReadableState(TransportChannel* channel) {

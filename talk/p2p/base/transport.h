@@ -128,13 +128,6 @@ class TransportParser {
   virtual ~TransportParser() {}
 };
 
-// Whether our side of the call is driving the negotiation, or the other side.
-enum TransportRole {
-  ROLE_CONTROLLING = 0,
-  ROLE_CONTROLLED,
-  ROLE_UNKNOWN
-};
-
 // For "writable" and "readable", we need to differentiate between
 // none, all, and some.
 enum TransportState {
@@ -244,11 +237,11 @@ class Transport : public talk_base::MessageHandler,
   // Returns whether the client has requested the channels to connect.
   bool connect_requested() const { return connect_requested_; }
 
-  void SetRole(TransportRole role);
-  TransportRole role() const { return role_; }
+  void SetIceRole(IceRole role);
+  IceRole ice_role() const { return ice_role_; }
 
-  void SetTiebreaker(uint64 tiebreaker) { tiebreaker_ = tiebreaker; }
-  uint64 tiebreaker() { return tiebreaker_; }
+  void SetIceTiebreaker(uint64 IceTiebreaker) { tiebreaker_ = IceTiebreaker; }
+  uint64 IceTiebreaker() { return tiebreaker_; }
 
   // Must be called before applying local session description.
   void SetIdentity(talk_base::SSLIdentity* identity);
@@ -455,7 +448,7 @@ class Transport : public talk_base::MessageHandler,
 
   void OnChannelCandidateReady_s();
 
-  void SetRole_w(TransportRole role);
+  void SetIceRole_w(IceRole role);
   void SetRemoteIceMode_w(IceMode mode);
   bool SetLocalTransportDescription_w(const TransportDescription& desc,
                                       ContentAction action);
@@ -473,7 +466,7 @@ class Transport : public talk_base::MessageHandler,
   TransportState writable_;
   bool was_writable_;
   bool connect_requested_;
-  TransportRole role_;
+  IceRole ice_role_;
   uint64 tiebreaker_;
   TransportProtocol protocol_;
   IceMode remote_ice_mode_;

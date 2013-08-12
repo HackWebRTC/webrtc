@@ -44,20 +44,22 @@ const uint32 kFakeSsrc = 1;
 class CreateSessionDescriptionObserverForTest
     : public talk_base::RefCountedObject<CreateSessionDescriptionObserver> {
  public:
-  CreateSessionDescriptionObserverForTest() : description_(NULL) {}
-
   virtual void OnSuccess(SessionDescriptionInterface* desc) {
-    description_ = desc;
+    description_.reset(desc);
   }
   virtual void OnFailure(const std::string& error) {}
 
-  SessionDescriptionInterface* description() { return description_; }
+  SessionDescriptionInterface* description() { return description_.get(); }
+
+  SessionDescriptionInterface* ReleaseDescription() {
+    return description_.release();
+  }
 
  protected:
   ~CreateSessionDescriptionObserverForTest() {}
 
  private:
-  SessionDescriptionInterface* description_;
+  talk_base::scoped_ptr<SessionDescriptionInterface> description_;
 };
 
 class SctpDataChannelTest : public testing::Test {
@@ -96,7 +98,8 @@ class SctpDataChannelTest : public testing::Test {
     session_.CreateOffer(observer.get(), NULL);
     EXPECT_TRUE_WAIT(observer->description() != NULL, 1000);
     ASSERT_TRUE(observer->description() != NULL);
-    ASSERT_TRUE(session_.SetLocalDescription(observer->description(), NULL));
+    ASSERT_TRUE(session_.SetLocalDescription(observer->ReleaseDescription(),
+                                             NULL));
 
     webrtc_data_channel_ = webrtc::DataChannel::Create(&session_, "test", NULL);
     // Connect to the media channel.

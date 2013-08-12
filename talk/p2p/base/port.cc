@@ -179,7 +179,7 @@ Port::Port(talk_base::Thread* thread, talk_base::Network* network,
       lifetime_(LT_PRESTART),
       enable_port_packets_(false),
       ice_protocol_(ICEPROTO_GOOGLE),
-      role_(ROLE_UNKNOWN),
+      ice_role_(ICEROLE_UNKNOWN),
       tiebreaker_(0),
       shared_socket_(true) {
   Construct();
@@ -205,7 +205,7 @@ Port::Port(talk_base::Thread* thread, const std::string& type,
       lifetime_(LT_PRESTART),
       enable_port_packets_(false),
       ice_protocol_(ICEPROTO_GOOGLE),
-      role_(ROLE_UNKNOWN),
+      ice_role_(ICEROLE_UNKNOWN),
       tiebreaker_(0),
       shared_socket_(false) {
   ASSERT(factory_ != NULL);
@@ -490,12 +490,12 @@ bool Port::MaybeIceRoleConflict(
     const std::string& remote_ufrag) {
   // Validate ICE_CONTROLLING or ICE_CONTROLLED attributes.
   bool ret = true;
-  TransportRole remote_ice_role = ROLE_UNKNOWN;
+  IceRole remote_ice_role = ICEROLE_UNKNOWN;
   uint64 remote_tiebreaker = 0;
   const StunUInt64Attribute* stun_attr =
       stun_msg->GetUInt64(STUN_ATTR_ICE_CONTROLLING);
   if (stun_attr) {
-    remote_ice_role = ROLE_CONTROLLING;
+    remote_ice_role = ICEROLE_CONTROLLING;
     remote_tiebreaker = stun_attr->value();
   }
 
@@ -503,21 +503,21 @@ bool Port::MaybeIceRoleConflict(
   // tie breaker value received in the ping message matches port
   // tiebreaker value this must be a loopback call.
   // We will treat this as valid scenario.
-  if (remote_ice_role == ROLE_CONTROLLING &&
+  if (remote_ice_role == ICEROLE_CONTROLLING &&
       username_fragment() == remote_ufrag &&
-      remote_tiebreaker == Tiebreaker()) {
+      remote_tiebreaker == IceTiebreaker()) {
     return true;
   }
 
   stun_attr = stun_msg->GetUInt64(STUN_ATTR_ICE_CONTROLLED);
   if (stun_attr) {
-    remote_ice_role = ROLE_CONTROLLED;
+    remote_ice_role = ICEROLE_CONTROLLED;
     remote_tiebreaker = stun_attr->value();
   }
 
-  switch (role_) {
-    case ROLE_CONTROLLING:
-      if (ROLE_CONTROLLING == remote_ice_role) {
+  switch (ice_role_) {
+    case ICEROLE_CONTROLLING:
+      if (ICEROLE_CONTROLLING == remote_ice_role) {
         if (remote_tiebreaker >= tiebreaker_) {
           SignalRoleConflict(this);
         } else {
@@ -528,8 +528,8 @@ bool Port::MaybeIceRoleConflict(
         }
       }
       break;
-    case ROLE_CONTROLLED:
-      if (ROLE_CONTROLLED == remote_ice_role) {
+    case ICEROLE_CONTROLLED:
+      if (ICEROLE_CONTROLLED == remote_ice_role) {
         if (remote_tiebreaker < tiebreaker_) {
           SignalRoleConflict(this);
         } else {
@@ -761,9 +761,9 @@ class ConnectionRequest : public StunRequest {
     // Adding ICE-specific attributes to the STUN request message.
     if (connection_->port()->IsStandardIce()) {
       // Adding ICE_CONTROLLED or ICE_CONTROLLING attribute based on the role.
-      if (connection_->port()->Role() == ROLE_CONTROLLING) {
+      if (connection_->port()->GetIceRole() == ICEROLE_CONTROLLING) {
         request->AddAttribute(new StunUInt64Attribute(
-            STUN_ATTR_ICE_CONTROLLING, connection_->port()->Tiebreaker()));
+            STUN_ATTR_ICE_CONTROLLING, connection_->port()->IceTiebreaker()));
         // Since we are trying aggressive nomination, sending USE-CANDIDATE
         // attribute in every ping.
         // If we are dealing with a ice-lite end point, nomination flag
@@ -773,9 +773,9 @@ class ConnectionRequest : public StunRequest {
           request->AddAttribute(new StunByteStringAttribute(
               STUN_ATTR_USE_CANDIDATE));
         }
-      } else if (connection_->port()->Role() == ROLE_CONTROLLED) {
+      } else if (connection_->port()->GetIceRole() == ICEROLE_CONTROLLED) {
         request->AddAttribute(new StunUInt64Attribute(
-            STUN_ATTR_ICE_CONTROLLED, connection_->port()->Tiebreaker()));
+            STUN_ATTR_ICE_CONTROLLED, connection_->port()->IceTiebreaker()));
       } else {
         ASSERT(false);
       }
@@ -856,11 +856,11 @@ uint64 Connection::priority() const {
   // agent.  Let D be the priority for the candidate provided by the
   // controlled agent.
   // pair priority = 2^32*MIN(G,D) + 2*MAX(G,D) + (G>D?1:0)
-  TransportRole role = port_->Role();
-  if (role != ROLE_UNKNOWN) {
+  IceRole role = port_->GetIceRole();
+  if (role != ICEROLE_UNKNOWN) {
     uint32 g = 0;
     uint32 d = 0;
-    if (role == ROLE_CONTROLLING) {
+    if (role == ICEROLE_CONTROLLING) {
       g = local_candidate().priority();
       d = remote_candidate_.priority();
     } else {
@@ -977,7 +977,7 @@ void Connection::OnReadPacket(const char* data, size_t size) {
             set_write_state(STATE_WRITE_INIT);
 
           if ((port_->IsStandardIce()) &&
-              (port_->Role() == ROLE_CONTROLLED)) {
+              (port_->GetIceRole() == ICEROLE_CONTROLLED)) {
             const StunByteStringAttribute* use_candidate_attr =
                 msg->GetByteString(STUN_ATTR_USE_CANDIDATE);
             if (use_candidate_attr)

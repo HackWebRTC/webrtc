@@ -134,8 +134,8 @@ class P2PTransportChannelTestBase : public testing::Test,
         socks_server2_(ss_.get(), kSocksProxyAddrs[1],
                        ss_.get(), kSocksProxyAddrs[1]),
         clear_remote_candidates_ufrag_pwd_(false) {
-    ep1_.role_ = cricket::ROLE_CONTROLLING;
-    ep2_.role_ = cricket::ROLE_CONTROLLED;
+    ep1_.role_ = cricket::ICEROLE_CONTROLLING;
+    ep2_.role_ = cricket::ICEROLE_CONTROLLED;
     ep1_.allocator_.reset(new cricket::BasicPortAllocator(
         &ep1_.network_manager_, kStunAddr, kRelayUdpIntAddr,
         kRelayTcpIntAddr, kRelaySslTcpIntAddr));
@@ -198,7 +198,7 @@ class P2PTransportChannelTestBase : public testing::Test,
   };
 
   struct Endpoint {
-    Endpoint() : signaling_delay_(0), role_(cricket::ROLE_UNKNOWN),
+    Endpoint() : signaling_delay_(0), role_(cricket::ICEROLE_UNKNOWN),
         tiebreaker_(0), role_conflict_(false),
         protocol_type_(cricket::ICEPROTO_GOOGLE) {}
     bool HasChannel(cricket::TransportChannel* ch) {
@@ -213,14 +213,14 @@ class P2PTransportChannelTestBase : public testing::Test,
     }
     void SetSignalingDelay(int delay) { signaling_delay_ = delay; }
 
-    void SetRole(cricket::TransportRole role) { role_ = role; }
-    cricket::TransportRole role() { return role_; }
+    void SetIceRole(cricket::IceRole role) { role_ = role; }
+    cricket::IceRole ice_role() { return role_; }
     void SetIceProtocolType(cricket::IceProtocolType type) {
       protocol_type_ = type;
     }
     cricket::IceProtocolType protocol_type() { return protocol_type_; }
-    void SetTiebreaker(uint64 tiebreaker) { tiebreaker_ = tiebreaker; }
-    uint64 GetTiebreaker() { return tiebreaker_; }
+    void SetIceTiebreaker(uint64 tiebreaker) { tiebreaker_ = tiebreaker; }
+    uint64 GetIceTiebreaker() { return tiebreaker_; }
     void OnRoleConflict(bool role_conflict) { role_conflict_ = role_conflict; }
     bool role_conflict() { return role_conflict_; }
     void SetAllocationStepDelay(uint32 delay) {
@@ -235,7 +235,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     ChannelData cd1_;
     ChannelData cd2_;
     int signaling_delay_;
-    cricket::TransportRole role_;
+    cricket::IceRole role_;
     uint64 tiebreaker_;
     bool role_conflict_;
     cricket::IceProtocolType protocol_type_;
@@ -317,8 +317,8 @@ class P2PTransportChannelTestBase : public testing::Test,
       // candidates.  Some unit tests rely on this not being set.
       channel->SetRemoteIceCredentials(remote_ice_ufrag, remote_ice_pwd);
     }
-    channel->SetRole(GetEndpoint(endpoint)->role());
-    channel->SetTiebreaker(GetEndpoint(endpoint)->GetTiebreaker());
+    channel->SetIceRole(GetEndpoint(endpoint)->ice_role());
+    channel->SetIceTiebreaker(GetEndpoint(endpoint)->GetIceTiebreaker());
     channel->Connect();
     return channel;
   }
@@ -389,11 +389,11 @@ class P2PTransportChannelTestBase : public testing::Test,
   void SetIceProtocol(int endpoint, cricket::IceProtocolType type) {
     GetEndpoint(endpoint)->SetIceProtocolType(type);
   }
-  void SetIceRole(int endpoint, cricket::TransportRole role) {
-    GetEndpoint(endpoint)->SetRole(role);
+  void SetIceRole(int endpoint, cricket::IceRole role) {
+    GetEndpoint(endpoint)->SetIceRole(role);
   }
-  void SetTiebreaker(int endpoint, uint64 tiebreaker) {
-    GetEndpoint(endpoint)->SetTiebreaker(tiebreaker);
+  void SetIceTiebreaker(int endpoint, uint64 tiebreaker) {
+    GetEndpoint(endpoint)->SetIceTiebreaker(tiebreaker);
   }
   bool GetRoleConflict(int endpoint) {
     return GetEndpoint(endpoint)->role_conflict();
@@ -557,11 +557,11 @@ class P2PTransportChannelTestBase : public testing::Test,
 
   void TestSignalRoleConflict() {
     SetIceProtocol(0, cricket::ICEPROTO_RFC5245);
-    SetTiebreaker(0, kTiebreaker1);  // Default EP1 is in controlling state.
+    SetIceTiebreaker(0, kTiebreaker1);  // Default EP1 is in controlling state.
 
     SetIceProtocol(1, cricket::ICEPROTO_RFC5245);
-    SetIceRole(1, cricket::ROLE_CONTROLLING);
-    SetTiebreaker(1, kTiebreaker2);
+    SetIceRole(1, cricket::ICEROLE_CONTROLLING);
+    SetIceTiebreaker(1, kTiebreaker2);
 
     // Creating channels with both channels role set to CONTROLLING.
     CreateChannels(1);
@@ -613,10 +613,10 @@ class P2PTransportChannelTestBase : public testing::Test,
   }
   void OnRoleConflict(cricket::TransportChannelImpl* channel) {
     GetEndpoint(channel)->OnRoleConflict(true);
-    cricket::TransportRole new_role =
-        GetEndpoint(channel)->role() == cricket::ROLE_CONTROLLING ?
-            cricket::ROLE_CONTROLLED : cricket::ROLE_CONTROLLING;
-    channel->SetRole(new_role);
+    cricket::IceRole new_role =
+        GetEndpoint(channel)->ice_role() == cricket::ICEROLE_CONTROLLING ?
+            cricket::ICEROLE_CONTROLLED : cricket::ICEROLE_CONTROLLING;
+    channel->SetIceRole(new_role);
   }
   int SendData(cricket::TransportChannel* channel,
                const char* data, size_t len) {
@@ -1455,18 +1455,18 @@ TEST_F(P2PTransportChannelTest, TestIceRoleConflictWithBundle) {
   TestSignalRoleConflict();
 }
 
-// Tests that the ice configs (protocol, tiebreaker and role can be passed down
-// to ports.
+// Tests that the ice configs (protocol, tiebreaker and role) can be passed
+// down to ports.
 TEST_F(P2PTransportChannelTest, TestIceConfigWillPassDownToPort) {
   AddAddress(0, kPublicAddrs[0]);
   AddAddress(1, kPublicAddrs[1]);
 
-  SetIceRole(0, cricket::ROLE_CONTROLLING);
+  SetIceRole(0, cricket::ICEROLE_CONTROLLING);
   SetIceProtocol(0, cricket::ICEPROTO_GOOGLE);
-  SetTiebreaker(0, kTiebreaker1);
-  SetIceRole(1, cricket::ROLE_CONTROLLING);
+  SetIceTiebreaker(0, kTiebreaker1);
+  SetIceRole(1, cricket::ICEROLE_CONTROLLING);
   SetIceProtocol(1, cricket::ICEPROTO_RFC5245);
-  SetTiebreaker(1, kTiebreaker2);
+  SetIceTiebreaker(1, kTiebreaker2);
 
   CreateChannels(1);
 
@@ -1474,22 +1474,22 @@ TEST_F(P2PTransportChannelTest, TestIceConfigWillPassDownToPort) {
 
   const std::vector<cricket::PortInterface *> ports_before = ep1_ch1()->ports();
   for (size_t i = 0; i < ports_before.size(); ++i) {
-    EXPECT_EQ(cricket::ROLE_CONTROLLING, ports_before[i]->Role());
+    EXPECT_EQ(cricket::ICEROLE_CONTROLLING, ports_before[i]->GetIceRole());
     EXPECT_EQ(cricket::ICEPROTO_GOOGLE, ports_before[i]->IceProtocol());
-    EXPECT_EQ(kTiebreaker1, ports_before[i]->Tiebreaker());
+    EXPECT_EQ(kTiebreaker1, ports_before[i]->IceTiebreaker());
   }
 
-  ep1_ch1()->SetRole(cricket::ROLE_CONTROLLED);
+  ep1_ch1()->SetIceRole(cricket::ICEROLE_CONTROLLED);
   ep1_ch1()->SetIceProtocolType(cricket::ICEPROTO_RFC5245);
-  ep1_ch1()->SetTiebreaker(kTiebreaker2);
+  ep1_ch1()->SetIceTiebreaker(kTiebreaker2);
 
   const std::vector<cricket::PortInterface *> ports_after = ep1_ch1()->ports();
   for (size_t i = 0; i < ports_after.size(); ++i) {
-    EXPECT_EQ(cricket::ROLE_CONTROLLED, ports_before[i]->Role());
+    EXPECT_EQ(cricket::ICEROLE_CONTROLLED, ports_before[i]->GetIceRole());
     EXPECT_EQ(cricket::ICEPROTO_RFC5245, ports_before[i]->IceProtocol());
-    // SetTiebreaker after Connect() has been called will fail. So expect the
+    // SetIceTiebreaker after Connect() has been called will fail. So expect the
     // original value.
-    EXPECT_EQ(kTiebreaker1, ports_before[i]->Tiebreaker());
+    EXPECT_EQ(kTiebreaker1, ports_before[i]->IceTiebreaker());
   }
 
   EXPECT_TRUE_WAIT(ep1_ch1()->readable() &&

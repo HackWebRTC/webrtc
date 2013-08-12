@@ -62,6 +62,13 @@ enum TransportProtocol {
 // TODO(juberti): remove this.
 typedef TransportProtocol IceProtocolType;
 
+// Whether our side of the call is driving the negotiation, or the other side.
+enum IceRole {
+  ICEROLE_CONTROLLING = 0,
+  ICEROLE_CONTROLLED,
+  ICEROLE_UNKNOWN
+};
+
 // ICE RFC 5245 implementation type.
 enum IceMode {
   ICEMODE_FULL,  // As defined in http://tools.ietf.org/html/rfc5245#section-4.1
