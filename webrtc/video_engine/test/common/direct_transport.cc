@@ -19,6 +19,7 @@ DirectTransport::DirectTransport()
     : lock_(CriticalSectionWrapper::CreateCriticalSection()),
       packet_event_(EventWrapper::Create()),
       thread_(ThreadWrapper::CreateThread(NetworkProcess, this)),
+      shutting_down_(false),
       receiver_(NULL) {
   unsigned int thread_id;
   EXPECT_TRUE(thread_->Start(thread_id));
@@ -26,7 +27,15 @@ DirectTransport::DirectTransport()
 
 DirectTransport::~DirectTransport() { StopSending(); }
 
-void DirectTransport::StopSending() { EXPECT_TRUE(thread_->Stop()); }
+void DirectTransport::StopSending() {
+  {
+    CriticalSectionScoped crit_(lock_.get());
+    shutting_down_ = true;
+  }
+
+  packet_event_->Set();
+  EXPECT_TRUE(thread_->Stop());
+}
 
 void DirectTransport::SetReceiver(newapi::PacketReceiver* receiver) {
   receiver_ = receiver;
@@ -65,7 +74,7 @@ bool DirectTransport::SendPackets() {
   while (true) {
     Packet p;
     {
-      webrtc::CriticalSectionScoped crit(lock_.get());
+      CriticalSectionScoped crit(lock_.get());
       if (packet_queue_.empty())
         break;
       p = packet_queue_.front();
@@ -74,7 +83,7 @@ bool DirectTransport::SendPackets() {
     receiver_->DeliverPacket(p.data, p.length);
   }
 
-  switch (packet_event_->Wait(10)) {
+  switch (packet_event_->Wait(WEBRTC_EVENT_INFINITE)) {
     case kEventSignaled:
       packet_event_->Reset();
       break;
@@ -85,7 +94,8 @@ bool DirectTransport::SendPackets() {
       return true;
   }
 
-  return true;
+  CriticalSectionScoped crit(lock_.get());
+  return shutting_down_ ? false : true;
 }
 }  // namespace test
 }  // namespace webrtc

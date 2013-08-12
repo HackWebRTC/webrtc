@@ -57,6 +57,8 @@ class DirectTransport : public newapi::Transport {
   scoped_ptr<EventWrapper> packet_event_;
   scoped_ptr<ThreadWrapper> thread_;
 
+  bool shutting_down_;
+
   std::deque<Packet> packet_queue_;
   newapi::PacketReceiver* receiver_;
 };
