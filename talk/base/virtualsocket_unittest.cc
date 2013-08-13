@@ -315,12 +315,12 @@ class VirtualSocketServerTest : public testing::Test {
         EmptySocketAddressWithFamily(initial_addr.family());
 
     // Create client and server
-    AsyncSocket* client = ss_->CreateAsyncSocket(initial_addr.family(),
-                                                 SOCK_STREAM);
-    sink.Monitor(client);
-    AsyncSocket* server = ss_->CreateAsyncSocket(initial_addr.family(),
-                                                 SOCK_STREAM);
-    sink.Monitor(server);
+    scoped_ptr<AsyncSocket> client(ss_->CreateAsyncSocket(initial_addr.family(),
+                                                          SOCK_STREAM));
+    sink.Monitor(client.get());
+    scoped_ptr<AsyncSocket> server(ss_->CreateAsyncSocket(initial_addr.family(),
+                                                          SOCK_STREAM));
+    sink.Monitor(server.get());
 
     // Initiate connect
     EXPECT_EQ(0, server->Bind(initial_addr));
@@ -330,19 +330,17 @@ class VirtualSocketServerTest : public testing::Test {
     EXPECT_EQ(0, client->Connect(server->GetLocalAddress()));
 
     // Server close before socket enters accept queue
-    EXPECT_FALSE(sink.Check(server, testing::SSE_READ));
+    EXPECT_FALSE(sink.Check(server.get(), testing::SSE_READ));
     server->Close();
 
     ss_->ProcessMessagesUntilIdle();
 
     // Result: connection failed
     EXPECT_EQ(client->GetState(), AsyncSocket::CS_CLOSED);
-    EXPECT_TRUE(sink.Check(client, testing::SSE_ERROR));
+    EXPECT_TRUE(sink.Check(client.get(), testing::SSE_ERROR));
 
-    // New server
-    delete server;
-    server = ss_->CreateAsyncSocket(initial_addr.family(), SOCK_STREAM);
-    sink.Monitor(server);
+    server.reset(ss_->CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
+    sink.Monitor(server.get());
 
     // Initiate connect
     EXPECT_EQ(0, server->Bind(initial_addr));
@@ -354,19 +352,18 @@ class VirtualSocketServerTest : public testing::Test {
     ss_->ProcessMessagesUntilIdle();
 
     // Server close while socket is in accept queue
-    EXPECT_TRUE(sink.Check(server, testing::SSE_READ));
+    EXPECT_TRUE(sink.Check(server.get(), testing::SSE_READ));
     server->Close();
 
     ss_->ProcessMessagesUntilIdle();
 
     // Result: connection failed
     EXPECT_EQ(client->GetState(), AsyncSocket::CS_CLOSED);
-    EXPECT_TRUE(sink.Check(client, testing::SSE_ERROR));
+    EXPECT_TRUE(sink.Check(client.get(), testing::SSE_ERROR));
 
     // New server
-    delete server;
-    server = ss_->CreateAsyncSocket(initial_addr.family(), SOCK_STREAM);
-    sink.Monitor(server);
+    server.reset(ss_->CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
+    sink.Monitor(server.get());
 
     // Initiate connect
     EXPECT_EQ(0, server->Bind(initial_addr));
@@ -378,10 +375,10 @@ class VirtualSocketServerTest : public testing::Test {
     ss_->ProcessMessagesUntilIdle();
 
     // Server accepts connection
-    EXPECT_TRUE(sink.Check(server, testing::SSE_READ));
-    AsyncSocket* accepted = server->Accept(&accept_addr);
-    ASSERT_TRUE(NULL != accepted);
-    sink.Monitor(accepted);
+    EXPECT_TRUE(sink.Check(server.get(), testing::SSE_READ));
+    scoped_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
+    ASSERT_TRUE(NULL != accepted.get());
+    sink.Monitor(accepted.get());
 
     // Client closes before connection complets
     EXPECT_EQ(accepted->GetState(), AsyncSocket::CS_CONNECTED);
@@ -394,8 +391,8 @@ class VirtualSocketServerTest : public testing::Test {
 
     // Result: accepted socket closes
     EXPECT_EQ(accepted->GetState(), AsyncSocket::CS_CLOSED);
-    EXPECT_TRUE(sink.Check(accepted, testing::SSE_CLOSE));
-    EXPECT_FALSE(sink.Check(client, testing::SSE_CLOSE));
+    EXPECT_TRUE(sink.Check(accepted.get(), testing::SSE_CLOSE));
+    EXPECT_FALSE(sink.Check(client.get(), testing::SSE_CLOSE));
   }
 
   void CloseTest(const SocketAddress& initial_addr) {
@@ -409,8 +406,9 @@ class VirtualSocketServerTest : public testing::Test {
     EXPECT_EQ(a->GetLocalAddress().family(), initial_addr.family());
 
 
-    AsyncSocket* b = ss_->CreateAsyncSocket(initial_addr.family(), SOCK_STREAM);
-    sink.Monitor(b);
+    scoped_ptr<AsyncSocket> b(ss_->CreateAsyncSocket(initial_addr.family(),
+                                                     SOCK_STREAM));
+    sink.Monitor(b.get());
     b->Bind(initial_addr);
     EXPECT_EQ(b->GetLocalAddress().family(), initial_addr.family());
 
@@ -423,7 +421,7 @@ class VirtualSocketServerTest : public testing::Test {
     EXPECT_EQ(a->GetState(), AsyncSocket::CS_CONNECTED);
     EXPECT_EQ(a->GetRemoteAddress(), b->GetLocalAddress());
 
-    EXPECT_TRUE(sink.Check(b, testing::SSE_OPEN));
+    EXPECT_TRUE(sink.Check(b.get(), testing::SSE_OPEN));
     EXPECT_EQ(b->GetState(), AsyncSocket::CS_CONNECTED);
     EXPECT_EQ(b->GetRemoteAddress(), a->GetLocalAddress());
 
@@ -434,14 +432,15 @@ class VirtualSocketServerTest : public testing::Test {
     ss_->ProcessMessagesUntilIdle();
 
     char buffer[10];
-    EXPECT_FALSE(sink.Check(b, testing::SSE_READ));
+    EXPECT_FALSE(sink.Check(b.get(), testing::SSE_READ));
     EXPECT_EQ(-1, b->Recv(buffer, 10));
 
     EXPECT_TRUE(sink.Check(a, testing::SSE_CLOSE));
     EXPECT_EQ(a->GetState(), AsyncSocket::CS_CLOSED);
     EXPECT_EQ(a->GetRemoteAddress(), kEmptyAddr);
 
-    EXPECT_FALSE(sink.Check(b, testing::SSE_CLOSE));  // No signal for Closer
+    // No signal for Closer
+    EXPECT_FALSE(sink.Check(b.get(), testing::SSE_CLOSE));
     EXPECT_EQ(b->GetState(), AsyncSocket::CS_CLOSED);
     EXPECT_EQ(b->GetRemoteAddress(), kEmptyAddr);
   }
