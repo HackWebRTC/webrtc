@@ -269,16 +269,14 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_GT(sentTotalBitrate, 0u);
     EXPECT_GT(sentNackBitrate, 0u);
 
-    // Stop and restart to clear stats
-    EXPECT_EQ(0, ViE.rtp_rtcp->SetNACKStatus(tbChannel.videoChannel, false));
-    EXPECT_EQ(0, ViE.base->StopReceive(tbChannel.videoChannel));
-    EXPECT_EQ(0, ViE.base->StopSend(tbChannel.videoChannel));
-
-#ifdef ENABLED_RACY_STATISTICS_TEST
     //
     //  Statistics
     //
+    // Stop and restart to clear stats
     ViETest::Log("Testing statistics\n");
+    EXPECT_EQ(0, ViE.rtp_rtcp->SetNACKStatus(tbChannel.videoChannel, false));
+    EXPECT_EQ(0, ViE.base->StopReceive(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.base->StopSend(tbChannel.videoChannel));
 
     myTransport.ClearStats();
     network.packet_loss_rate = kPacketLossRate;
@@ -355,7 +353,6 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     // Check that rec stats extended max is greater than what we've sent.
     EXPECT_GE(recExtendedMax, sentExtendedMax);
     EXPECT_EQ(0, ViE.base->StopSend(tbChannel.videoChannel));
-#endif  // ENABLED_RACY_STATISTICS_TEST
 
     //
     // Test bandwidth statistics with NACK and FEC separately
