@@ -690,10 +690,9 @@ int NetEqImpl::GetAudioInternal(size_t max_length, int16_t* output,
       samples_from_sync << " samples";
   if (samples_from_sync != output_size_samples_) {
     LOG_F(LS_ERROR) << "samples_from_sync != output_size_samples_";
-    assert(false);
+    // TODO(minyue): treatment of under-run, filling zeros
     memset(output, 0, num_output_samples * sizeof(int16_t));
     *samples_per_channel = output_size_samples_;
-    last_mode_ = kModeError;
     return kSampleUnderrun;
   }
   *samples_per_channel = output_size_samples_;
