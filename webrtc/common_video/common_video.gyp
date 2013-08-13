@@ -54,6 +54,7 @@
       ],
       'sources': [
         'interface/i420_video_frame.h',
+        'interface/native_handle.h',
         'interface/texture_video_frame.h',
         'i420_video_frame.cc',
         'jpeg/include/jpeg.h',
