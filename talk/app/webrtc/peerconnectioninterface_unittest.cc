@@ -1193,7 +1193,7 @@ TEST_F(PeerConnectionInterfaceTest, CloseAndTestMethods) {
   ASSERT_FALSE(local_stream->GetAudioTracks().empty());
   talk_base::scoped_refptr<webrtc::DtmfSenderInterface> dtmf_sender(
       pc_->CreateDtmfSender(local_stream->GetAudioTracks()[0]));
-  EXPECT_FALSE(dtmf_sender->CanInsertDtmf());
+  EXPECT_TRUE(NULL == dtmf_sender);  // local stream has been removed.
 
   EXPECT_TRUE(pc_->CreateDataChannel("test", NULL) == NULL);
 
