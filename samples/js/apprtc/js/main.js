@@ -312,6 +312,7 @@
   function onHangup() {
     console.log('Hanging up.');
     transitionToDone();
+    localStream.stop();
     stop();
     // will trigger BYE from server
     socket.close();
