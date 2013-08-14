@@ -29,13 +29,6 @@ VideoCall* VideoCall::Create(const newapi::VideoCall::Config& config) {
   webrtc::VideoEngine* video_engine = webrtc::VideoEngine::Create();
   assert(video_engine != NULL);
 
-  ViEBase* video_engine_base = ViEBase::GetInterface(video_engine);
-  assert(video_engine_base != NULL);
-  if (video_engine_base->Init() != 0) {
-    abort();
-  }
-  video_engine_base->Release();
-
   return new internal::VideoCall(video_engine, config);
 }
 }  // namespace newapi
