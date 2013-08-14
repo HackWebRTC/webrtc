@@ -23,7 +23,7 @@
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_engine/new_include/video_engine.h"
+#include "webrtc/video_engine/new_include/video_call.h"
 #include "webrtc/video_engine/test/common/direct_transport.h"
 #include "webrtc/video_engine/test/common/file_capturer.h"
 #include "webrtc/video_engine/test/common/frame_generator_capturer.h"
@@ -270,9 +270,6 @@ TEST_P(FullStackTest, NoPacketLoss) {
   scoped_ptr<test::VideoRenderer> loopback_video(test::VideoRenderer::Create(
       "Loopback Video", params.clip.width, params.clip.height));
 
-  scoped_ptr<newapi::VideoEngine> video_engine(
-      newapi::VideoEngine::Create(newapi::VideoEngineConfig()));
-
   test::DirectTransport transport;
   VideoAnalyzer analyzer(
       NULL,
@@ -283,10 +280,9 @@ TEST_P(FullStackTest, NoPacketLoss) {
       params.avg_ssim_threshold,
       static_cast<uint64_t>(FLAGS_seconds * params.clip.fps));
 
-  newapi::VideoCall::Config call_config;
-  call_config.send_transport = &analyzer;
+  newapi::VideoCall::Config call_config(&analyzer);
 
-  scoped_ptr<newapi::VideoCall> call(video_engine->CreateCall(call_config));
+  scoped_ptr<newapi::VideoCall> call(newapi::VideoCall::Create(call_config));
   analyzer.receiver_ = call->Receiver();
   transport.SetReceiver(&analyzer);
 

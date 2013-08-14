@@ -7,9 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-
-#ifndef WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_VIDEO_ENGINE_H_
-#define WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_VIDEO_ENGINE_H_
+#ifndef WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_VIDEO_CALL_H_
+#define WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_VIDEO_CALL_H_
 
 #include <string>
 #include <vector>
@@ -33,28 +32,30 @@ class PacketReceiver {
   virtual ~PacketReceiver() {}
 };
 
-struct VideoEngineConfig {
-  VideoEngineConfig()
-      : voice_engine(NULL), trace_callback(NULL), trace_filter(kTraceNone) {}
-
-  // VoiceEngine used for audio/video synchronization for this VideoEngine.
-  VoiceEngine* voice_engine;
-
-  TraceCallback* trace_callback;
-  uint32_t trace_filter;
-};
-
 // A VideoCall instance can contain several send and/or receive streams. All
 // streams are assumed to have the same remote endpoint and will share bitrate
 // estimates etc.
 class VideoCall {
  public:
   struct Config {
-    Config() : send_transport(NULL), overuse_detection(false) {}
+    explicit Config(Transport* send_transport)
+        : send_transport(send_transport),
+          overuse_detection(false),
+          voice_engine(NULL),
+          trace_callback(NULL),
+          trace_filter(kTraceNone) {}
 
     Transport* send_transport;
     bool overuse_detection;
+
+    // VoiceEngine used for audio/video synchronization for this VideoCall.
+    VoiceEngine* voice_engine;
+
+    TraceCallback* trace_callback;
+    uint32_t trace_filter;
   };
+
+  static VideoCall* Create(const VideoCall::Config& config);
 
   virtual std::vector<VideoCodec> GetVideoCodecs() = 0;
 
@@ -89,18 +90,7 @@ class VideoCall {
 
   virtual ~VideoCall() {}
 };
-
-// VideoEngine is the main class and there is only one instance serving several
-// calls.
-class VideoEngine {
- public:
-  static VideoEngine* Create(const VideoEngineConfig& config);
-  virtual ~VideoEngine() {}
-
-  virtual VideoCall* CreateCall(const VideoCall::Config& config) = 0;
-};
-
 }  // namespace newapi
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_VIDEO_ENGINE_H_
+#endif  // WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_VIDEO_CALL_H_

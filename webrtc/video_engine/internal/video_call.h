@@ -18,7 +18,7 @@
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/video_engine/internal/video_receive_stream.h"
 #include "webrtc/video_engine/internal/video_send_stream.h"
-#include "webrtc/video_engine/new_include/video_engine.h"
+#include "webrtc/video_engine/new_include/video_call.h"
 
 namespace webrtc {
 

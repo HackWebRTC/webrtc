@@ -16,7 +16,7 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/video_engine/new_include/video_engine.h"
+#include "webrtc/video_engine/new_include/video_call.h"
 #include "webrtc/video_engine/test/common/direct_transport.h"
 #include "webrtc/video_engine/test/common/frame_generator.h"
 #include "webrtc/video_engine/test/common/frame_generator_capturer.h"
@@ -174,16 +174,13 @@ struct EngineTestParams {
 class EngineTest : public ::testing::TestWithParam<EngineTestParams> {
  public:
   virtual void SetUp() {
-    video_engine_.reset(
-        newapi::VideoEngine::Create(newapi::VideoEngineConfig()));
     reserved_ssrcs_.clear();
   }
 
  protected:
   newapi::VideoCall* CreateTestCall(newapi::Transport* transport) {
-    newapi::VideoCall::Config call_config;
-    call_config.send_transport = transport;
-    return video_engine_->CreateCall(call_config);
+    newapi::VideoCall::Config call_config(transport);
+    return newapi::VideoCall::Create(call_config);
   }
 
   newapi::VideoSendStream::Config CreateTestSendConfig(
@@ -212,7 +209,6 @@ class EngineTest : public ::testing::TestWithParam<EngineTestParams> {
         30);
   }
 
-  scoped_ptr<newapi::VideoEngine> video_engine_;
   std::map<uint32_t, bool> reserved_ssrcs_;
 };
 
