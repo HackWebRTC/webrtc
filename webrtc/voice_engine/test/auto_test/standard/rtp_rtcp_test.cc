@@ -221,7 +221,7 @@ TEST_F(RtpRtcpTest, InsertExtraRTPPacketDealsWithInvalidArguments) {
             "Should reject: invalid size.";
 }
 
-TEST_F(RtpRtcpTest, CanTransmitExtraRtpPacketsWithoutError) {
+TEST_F(RtpRtcpTest, DISABLED_ON_WIN(CanTransmitExtraRtpPacketsWithoutError)) {
   const char payload_data[8] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H' };
 
   for (int i = 0; i < 128; ++i) {
