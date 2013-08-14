@@ -30,17 +30,4 @@ VideoCaptureModule::DeviceInfo* VideoCaptureFactory::CreateDeviceInfo(
   return videocapturemodule::VideoCaptureImpl::CreateDeviceInfo(id);
 }
 
-// TODO(sjlee): land https://webrtc-codereview.appspot.com/1641004/
-#ifdef WEBRTC_IOS
-namespace videocapturemodule {
-VideoCaptureModule* VideoCaptureImpl::Create(int32_t, const char*) {
-  return NULL;
-}
-
-VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo(int32_t) {
-  return NULL;
-}
-} // namespace videocaptureimpl
-#endif
-
 }  // namespace webrtc

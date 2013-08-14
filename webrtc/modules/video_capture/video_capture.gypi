@@ -115,6 +115,18 @@
                 'android/video_capture_android.h',
               ],
             }],  # android
+            ['OS=="ios"', {
+              'sources': [
+                'ios/device_info_ios.h',
+                'ios/device_info_ios.mm',
+                'ios/device_info_ios_objc.h',
+                'ios/device_info_ios_objc.mm',
+                'ios/video_capture_ios.h',
+                'ios/video_capture_ios.mm',
+                'ios/video_capture_ios_objc.h',
+                'ios/video_capture_ios_objc.mm',
+              ],
+            }],  # ios
           ], # conditions
         }],  # include_internal_video_capture
       ], # conditions

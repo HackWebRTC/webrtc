@@ -133,10 +133,7 @@
         'enable_android_opensl%': 0,
       }],
       ['OS=="ios"', {
-        'enable_video%': 0,
         'enable_protobuf%': 0,
-        'build_libjpeg%': 0,
-        'build_libyuv%': 0,
         'include_tests%': 0,
       }],
       ['target_arch=="arm"', {
