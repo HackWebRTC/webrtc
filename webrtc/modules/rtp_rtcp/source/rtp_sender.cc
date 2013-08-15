@@ -350,7 +350,7 @@ int32_t RTPSender::SendOutgoingData(
       return 0;
     }
   }
-  RtpVideoCodecTypes video_type = kRtpGenericVideo;
+  RtpVideoCodecTypes video_type = kRtpVideoGeneric;
   if (CheckPayloadType(payload_type, &video_type) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, id_,
                  "%s invalid argument failed to find payload_type:%d",
@@ -1178,7 +1178,7 @@ void RTPSender::SetSendingStatus(const bool enabled) {
       }
       frequency_hz = frequency;
     } else {
-      frequency_hz = kDefaultVideoFrequency;
+      frequency_hz = kVideoPayloadTypeFrequency;
     }
     uint32_t RTPtime = ModuleRTPUtility::GetCurrentRTP(clock_, frequency_hz);
 

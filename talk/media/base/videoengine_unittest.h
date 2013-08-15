@@ -1373,8 +1373,10 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(0, renderer.num_rendered_frames());
 
     EXPECT_TRUE(SendFrame());
-    EXPECT_FRAME_ON_RENDERER_WAIT(renderer, 1, codec.width, codec.height,
-                                  kTimeout);
+    EXPECT_TRUE_WAIT(renderer.num_rendered_frames() >= 1 &&
+                     codec.width == renderer.width() &&
+                     codec.height == renderer.height(), kTimeout);
+    EXPECT_EQ(0, renderer.errors());
 
     // Registering an external capturer is currently the same as screen casting
     // (update the test when this changes).
@@ -1392,8 +1394,8 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(capturer->CaptureCustomFrame(kWidth, kHeight,
                                              cricket::FOURCC_ARGB));
     EXPECT_TRUE(capturer->CaptureFrame());
-    EXPECT_EQ_WAIT(2, renderer.num_rendered_frames(), kTimeout);
-    EXPECT_TRUE_WAIT(kScaledWidth == renderer.width() &&
+    EXPECT_TRUE_WAIT(renderer.num_rendered_frames() >= 2 &&
+                     kScaledWidth == renderer.width() &&
                      kScaledHeight == renderer.height(), kTimeout);
     EXPECT_TRUE(channel_->SetCapturer(kSsrc, NULL));
   }

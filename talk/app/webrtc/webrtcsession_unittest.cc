@@ -348,7 +348,7 @@ class WebRtcSessionTest : public testing::Test {
     session_->CreateOffer(observer, constraints);
     EXPECT_TRUE_WAIT(
         observer->state() != WebRtcSessionCreateSDPObserverForTest::kInit,
-        1000);
+        2000);
     return observer->ReleaseDescription();
   }
 
@@ -359,7 +359,7 @@ class WebRtcSessionTest : public testing::Test {
     session_->CreateAnswer(observer, constraints);
     EXPECT_TRUE_WAIT(
         observer->state() != WebRtcSessionCreateSDPObserverForTest::kInit,
-        1000);
+        2000);
     return observer->ReleaseDescription();
   }
 

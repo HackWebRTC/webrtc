@@ -68,6 +68,12 @@ class VcmPayloadSinkFactory::VcmPayloadSink
     return vcm_->IncomingPacket(payload_data, payload_size, *rtp_header);
   }
 
+  virtual bool OnRecoveredPacket(const uint8_t* packet,
+                                 int packet_length) {
+    // We currently don't handle FEC.
+    return true;
+  }
+
   // VCMPacketRequestCallback
   virtual int32_t ResendPackets(const uint16_t* sequence_numbers,
                                 uint16_t length) {

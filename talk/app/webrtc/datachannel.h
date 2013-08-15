@@ -67,8 +67,17 @@ class DataChannel : public DataChannelInterface,
   virtual void RegisterObserver(DataChannelObserver* observer);
   virtual void UnregisterObserver();
 
-  virtual std::string label() const  { return label_; }
+  virtual std::string label() const { return label_; }
   virtual bool reliable() const;
+  virtual bool ordered() const { return config_.ordered; }
+  virtual uint16 maxRetransmitTime() const {
+    return config_.maxRetransmitTime;
+  }
+  virtual uint16 maxRetransmits() const {
+    return config_.maxRetransmits;
+  }
+  virtual std::string protocol() const { return config_.protocol; }
+  virtual bool negotiated() const { return config_.negotiated; }
   virtual int id() const { return config_.id; }
   virtual uint64 buffered_amount() const;
   virtual void Close();
@@ -116,9 +125,10 @@ class DataChannel : public DataChannelInterface,
   bool IsConnectedToDataSession() { return data_session_ != NULL; }
   void DeliverQueuedControlData();
   void QueueControl(const talk_base::Buffer* buffer);
+  void ClearQueuedControlData();
   void DeliverQueuedReceivedData();
   void ClearQueuedReceivedData();
-  void SendQueuedSendData();
+  void DeliverQueuedSendData();
   void ClearQueuedSendData();
   bool InternalSendWithoutQueueing(const DataBuffer& buffer,
                                    cricket::SendDataResult* send_result);
@@ -158,6 +168,11 @@ BEGIN_PROXY_MAP(DataChannel)
   PROXY_METHOD0(void, UnregisterObserver)
   PROXY_CONSTMETHOD0(std::string, label)
   PROXY_CONSTMETHOD0(bool, reliable)
+  PROXY_CONSTMETHOD0(bool, ordered)
+  PROXY_CONSTMETHOD0(uint16, maxRetransmitTime)
+  PROXY_CONSTMETHOD0(uint16, maxRetransmits)
+  PROXY_CONSTMETHOD0(std::string, protocol)
+  PROXY_CONSTMETHOD0(bool, negotiated)
   PROXY_CONSTMETHOD0(int, id)
   PROXY_CONSTMETHOD0(DataState, state)
   PROXY_CONSTMETHOD0(uint64, buffered_amount)

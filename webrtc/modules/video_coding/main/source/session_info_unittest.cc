@@ -69,7 +69,7 @@ class TestVP8Partitions : public TestSessionInfo {
     TestSessionInfo::SetUp();
     vp8_header_ = &packet_header_.type.Video.codecHeader.VP8;
     packet_header_.frameType = kVideoFrameDelta;
-    packet_header_.type.Video.codec = kRTPVideoVP8;
+    packet_header_.type.Video.codec = kRtpVideoVp8;
     vp8_header_->InitRTPVideoHeaderVP8();
     fragmentation_.VerifyAndAllocateFragmentationHeader(kMaxVP8Partitions);
   }

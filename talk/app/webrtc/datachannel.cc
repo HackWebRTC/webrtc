@@ -98,6 +98,7 @@ bool DataChannel::HasNegotiationCompleted() {
 DataChannel::~DataChannel() {
   ClearQueuedReceivedData();
   ClearQueuedSendData();
+  ClearQueuedControlData();
 }
 
 void DataChannel::RegisterObserver(DataChannelObserver* observer) {
@@ -250,14 +251,16 @@ void DataChannel::OnChannelReady(bool writable) {
   if (!writable) {
     return;
   }
-  // Update the readyState if the channel is writable for the first time;
-  // otherwise it means the channel was blocked for sending and now unblocked,
-  // so send the queued data now.
+  // Update the readyState and send the queued control message if the channel
+  // is writable for the first time; otherwise it means the channel was blocked
+  // for sending and now unblocked, so send the queued data now.
   if (!was_ever_writable_) {
     was_ever_writable_ = true;
     UpdateState();
+    DeliverQueuedControlData();
+    ASSERT(queued_send_data_.empty());
   } else if (state_ == kOpen) {
-    SendQueuedSendData();
+    DeliverQueuedSendData();
   }
 }
 
@@ -356,7 +359,7 @@ void DataChannel::ClearQueuedReceivedData() {
   }
 }
 
-void DataChannel::SendQueuedSendData() {
+void DataChannel::DeliverQueuedSendData() {
   DeliverQueuedControlData();
   if (!was_ever_writable_) {
     return;
@@ -366,12 +369,20 @@ void DataChannel::SendQueuedSendData() {
     DataBuffer* buffer = queued_send_data_.front();
     cricket::SendDataResult send_result;
     if (!InternalSendWithoutQueueing(*buffer, &send_result)) {
-      LOG(LS_WARNING) << "SendQueuedSendData aborted due to send_result "
+      LOG(LS_WARNING) << "DeliverQueuedSendData aborted due to send_result "
                       << send_result;
       break;
     }
     queued_send_data_.pop_front();
     delete buffer;
+  }
+}
+
+void DataChannel::ClearQueuedControlData() {
+  while (!queued_control_data_.empty()) {
+    const talk_base::Buffer *buf = queued_control_data_.front();
+    queued_control_data_.pop();
+    delete buf;
   }
 }
 

@@ -37,7 +37,7 @@ RTPSenderVideo::RTPSenderVideo(const int32_t id,
     _rtpSender(*rtpSender),
     _sendVideoCritsect(CriticalSectionWrapper::CreateCriticalSection()),
 
-    _videoType(kRtpGenericVideo),
+    _videoType(kRtpVideoGeneric),
     _videoCodecInformation(NULL),
     _maxBitrate(0),
     _retransmissionSettings(kRetransmitBaseLayer),
@@ -89,13 +89,13 @@ int32_t RTPSenderVideo::RegisterVideoPayload(
     ModuleRTPUtility::Payload*& payload) {
   CriticalSectionScoped cs(_sendVideoCritsect);
 
-  RtpVideoCodecTypes videoType = kRtpGenericVideo;
+  RtpVideoCodecTypes videoType = kRtpVideoGeneric;
   if (ModuleRTPUtility::StringCompare(payloadName, "VP8",3)) {
-    videoType = kRtpVp8Video;
+    videoType = kRtpVideoVp8;
   } else if (ModuleRTPUtility::StringCompare(payloadName, "I420", 4)) {
-    videoType = kRtpGenericVideo;
+    videoType = kRtpVideoGeneric;
   } else {
-    videoType = kRtpGenericVideo;
+    videoType = kRtpVideoGeneric;
   }
   payload = new ModuleRTPUtility::Payload;
   payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
@@ -302,11 +302,11 @@ RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
     int32_t retVal = -1;
     switch(videoType)
     {
-    case kRtpGenericVideo:
+    case kRtpVideoGeneric:
         retVal = SendGeneric(frameType, payloadType, captureTimeStamp,
                              capture_time_ms, payloadData, payloadSize);
         break;
-    case kRtpVp8Video:
+    case kRtpVideoVp8:
         retVal = SendVP8(frameType,
                          payloadType,
                          captureTimeStamp,

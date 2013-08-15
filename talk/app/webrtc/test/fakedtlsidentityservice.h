@@ -117,6 +117,7 @@ class FakeIdentityService : public webrtc::DTLSIdentityServiceInterface,
         observer->OnFailure(0);
         break;
     }
+    delete message_data;
   }
 
   void GenerateIdentity(

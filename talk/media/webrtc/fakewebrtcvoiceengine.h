@@ -619,6 +619,7 @@ class FakeWebRtcVoiceEngine
   }
   WEBRTC_STUB(ReceivedRTCPPacket, (int channel, const void* data,
                                    unsigned int length));
+#ifndef USE_WEBRTC_DEV_BRANCH
   // Not using WEBRTC_STUB due to bool return value
   WEBRTC_STUB(SetPacketTimeoutNotification, (int channel, bool enable,
                                              int timeoutSeconds));
@@ -631,6 +632,7 @@ class FakeWebRtcVoiceEngine
                                              int& sampleTimeSeconds));
   WEBRTC_STUB(SetPeriodicDeadOrAliveStatus, (int channel, bool enable,
                                              int sampleTimeSeconds));
+#endif
 
   // webrtc::VoERTP_RTCP
   WEBRTC_STUB(RegisterRTPObserver, (int channel,
@@ -751,7 +753,11 @@ class FakeWebRtcVoiceEngine
   // webrtc::VoEVideoSync
   WEBRTC_STUB(GetPlayoutBufferSize, (int& bufferMs));
   WEBRTC_STUB(GetPlayoutTimestamp, (int channel, unsigned int& timestamp));
+#ifdef USE_WEBRTC_DEV_BRANCH
+  WEBRTC_STUB(GetRtpRtcp, (int, webrtc::RtpRtcp**, webrtc::RtpReceiver**));
+#else
   WEBRTC_STUB(GetRtpRtcp, (int, webrtc::RtpRtcp*&));
+#endif
   WEBRTC_STUB(SetInitTimestamp, (int channel, unsigned int timestamp));
   WEBRTC_STUB(SetInitSequenceNumber, (int channel, short sequenceNumber));
   WEBRTC_STUB(SetMinimumPlayoutDelay, (int channel, int delayMs));

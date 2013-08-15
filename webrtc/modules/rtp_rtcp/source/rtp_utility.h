@@ -19,14 +19,12 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-enum RtpVideoCodecTypes
-{
-    kRtpGenericVideo  = 0,
-    kRtpFecVideo      = 10,
-    kRtpVp8Video      = 11
-};
 
 const uint8_t kRtpMarkerBitMask = 0x80;
+
+RtpData* NullObjectRtpData();
+RtpFeedback* NullObjectRtpFeedback();
+RtpAudioFeedback* NullObjectRtpAudioFeedback();
 
 namespace ModuleRTPUtility
 {
@@ -36,22 +34,6 @@ namespace ModuleRTPUtility
     // Magic NTP fractional unit.
     const double NTP_FRAC = 4.294967296E+9;
 
-    struct AudioPayload
-    {
-        uint32_t    frequency;
-        uint8_t     channels;
-        uint32_t    rate;
-    };
-    struct VideoPayload
-    {
-        RtpVideoCodecTypes   videoCodecType;
-        uint32_t       maxRate;
-    };
-    union PayloadUnion
-    {
-        AudioPayload Audio;
-        VideoPayload Video;
-    };
     struct Payload
     {
         char name[RTP_PAYLOAD_NAME_SIZE];

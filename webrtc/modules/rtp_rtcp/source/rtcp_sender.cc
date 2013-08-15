@@ -271,7 +271,7 @@ RTCPSender::SetSendingStatus(const bool sending)
     }
     if(sendRTCPBye)
     {
-        return SendRTCP(kRtcpBye);
+        return SendRTCP(kRtcpBye, NULL);
     }
     return 0;
 }
@@ -376,12 +376,10 @@ RTCPSender::SetSSRC( const uint32_t ssrc)
     _SSRC = ssrc;
 }
 
-int32_t
-RTCPSender::SetRemoteSSRC( const uint32_t ssrc)
+void RTCPSender::SetRemoteSSRC(uint32_t ssrc)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
     _remoteSSRC = ssrc;
-    return 0;
 }
 
 int32_t
@@ -1536,11 +1534,13 @@ RTCPSender::BuildVoIPMetric(uint8_t* rtcpbuffer, uint32_t& pos)
 }
 
 int32_t
-RTCPSender::SendRTCP(const uint32_t packetTypeFlags,
-                     const int32_t nackSize,       // NACK
-                     const uint16_t* nackList,     // NACK
-                     const bool repeat,                  // FIR
-                     const uint64_t pictureID)     // SLI & RPSI
+RTCPSender::SendRTCP(
+    uint32_t packetTypeFlags,
+    const ReceiveStatistics::RtpReceiveStatistics* receive_stats,
+    int32_t nackSize,
+    const uint16_t* nackList,
+    bool repeat,
+    uint64_t pictureID)
 {
     uint32_t rtcpPacketTypeFlags = packetTypeFlags;
     uint32_t pos = 0;
@@ -1572,13 +1572,15 @@ RTCPSender::SendRTCP(const uint32_t packetTypeFlags,
             rtcpPacketTypeFlags & kRtcpSr ||
             rtcpPacketTypeFlags & kRtcpRr)
         {
-            // get statistics from our RTPreceiver outside critsect
-            if(_rtpRtcp.ReportBlockStatistics(&received.fractionLost,
-                                              &received.cumulativeLost,
-                                              &received.extendedHighSeqNum,
-                                              &received.jitter,
-                                              &jitterTransmissionOffset) == 0)
+            // Do we have receive statistics to send?
+            if (receive_stats)
             {
+                received.fractionLost = receive_stats->fraction_lost;
+                received.cumulativeLost = receive_stats->cumulative_lost;
+                received.extendedHighSeqNum =
+                    receive_stats->extended_max_sequence_number;
+                received.jitter = receive_stats->jitter;
+                jitterTransmissionOffset = 0;
                 hasReceived = true;
 
                 uint32_t lastReceivedRRNTPsecs = 0;

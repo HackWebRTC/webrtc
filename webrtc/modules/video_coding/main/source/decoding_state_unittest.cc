@@ -36,7 +36,7 @@ TEST(TestDecodingState, FrameContinuity) {
   packet->timestamp = 1;
   packet->seqNum = 0xffff;
   packet->frameType = kVideoFrameDelta;
-  packet->codecSpecificHeader.codec = kRTPVideoVP8;
+  packet->codecSpecificHeader.codec = kRtpVideoVp8;
   packet->codecSpecificHeader.codecHeader.VP8.pictureId = 0x007F;
   FrameData frame_data;
   frame_data.rtt_ms = 0;
@@ -213,7 +213,7 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   VCMFrameBuffer frame;
   VCMPacket* packet = new VCMPacket();
   packet->frameType = kVideoFrameDelta;
-  packet->codecSpecificHeader.codec = kRTPVideoVP8;
+  packet->codecSpecificHeader.codec = kRtpVideoVp8;
   packet->timestamp = 0;
   packet->seqNum = 0;
   packet->codecSpecificHeader.codecHeader.VP8.tl0PicIdx = 0;
@@ -369,7 +369,7 @@ TEST(TestDecodingState, DiscontinuousPicIdContinuousSeqNum) {
   VCMPacket packet;
   frame.Reset();
   packet.frameType = kVideoFrameKey;
-  packet.codecSpecificHeader.codec = kRTPVideoVP8;
+  packet.codecSpecificHeader.codec = kRtpVideoVp8;
   packet.timestamp = 0;
   packet.seqNum = 0;
   packet.codecSpecificHeader.codecHeader.VP8.tl0PicIdx = 0;

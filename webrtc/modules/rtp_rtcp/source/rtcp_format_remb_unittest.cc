@@ -115,13 +115,15 @@ TEST_F(RtcpFormatRembTest, TestNonCompund) {
   uint32_t SSRC = 456789;
   EXPECT_EQ(0, rtcp_sender_->SetRTCPStatus(kRtcpNonCompound));
   EXPECT_EQ(0, rtcp_sender_->SetREMBData(1234, 1, &SSRC));
-  EXPECT_EQ(0, rtcp_sender_->SendRTCP(kRtcpRemb));
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(kRtcpRemb, NULL));
 }
 
 TEST_F(RtcpFormatRembTest, TestCompund) {
   uint32_t SSRCs[2] = {456789, 98765};
   EXPECT_EQ(0, rtcp_sender_->SetRTCPStatus(kRtcpCompound));
   EXPECT_EQ(0, rtcp_sender_->SetREMBData(1234, 2, SSRCs));
-  EXPECT_EQ(0, rtcp_sender_->SendRTCP(kRtcpRemb));
+  ReceiveStatistics::RtpReceiveStatistics receive_stats;
+  memset(&receive_stats, 0, sizeof(receive_stats));
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(kRtcpRemb, &receive_stats));
 }
 }  // namespace

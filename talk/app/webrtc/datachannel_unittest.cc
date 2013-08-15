@@ -96,7 +96,7 @@ class SctpDataChannelTest : public testing::Test {
     talk_base::scoped_refptr<CreateSessionDescriptionObserverForTest> observer
         = new CreateSessionDescriptionObserverForTest();
     session_.CreateOffer(observer.get(), NULL);
-    EXPECT_TRUE_WAIT(observer->description() != NULL, 1000);
+    EXPECT_TRUE_WAIT(observer->description() != NULL, 2000);
     ASSERT_TRUE(observer->description() != NULL);
     ASSERT_TRUE(session_.SetLocalDescription(observer->ReleaseDescription(),
                                              NULL));

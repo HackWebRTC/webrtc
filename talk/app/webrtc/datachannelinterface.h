@@ -110,6 +110,16 @@ class DataChannelInterface : public talk_base::RefCountInterface {
   // DataChannel object from other DataChannel objects.
   virtual std::string label() const = 0;
   virtual bool reliable() const = 0;
+
+  // TODO(tommyw): Remove these dummy implementations when all classes have
+  // implemented these APIs. They should all just return the values the
+  // DataChannel was created with.
+  virtual bool ordered() const { return false; }
+  virtual uint16 maxRetransmitTime() const { return 0; }
+  virtual uint16 maxRetransmits() const { return 0; }
+  virtual std::string protocol() const { return std::string(); }
+  virtual bool negotiated() const { return false; }
+
   virtual int id() const = 0;
   virtual DataState state() const = 0;
   // The buffered_amount returns the number of bytes of application data
