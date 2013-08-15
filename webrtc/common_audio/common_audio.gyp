@@ -219,7 +219,25 @@
             },
           ],
         }],
-      ]
+        ['test_isolation_mode != "noop"', {
+          'targets': [
+            {
+              'target_name': 'common_audio_unittests_run',
+              'type': 'none',
+              'dependencies': [
+                'common_audio_unittests',
+              ],
+              'includes': [
+                '../../build/isolate.gypi',
+                'common_audio_unittests.isolate',
+              ],
+              'sources': [
+                'common_audio_unittests.isolate',
+              ],
+            },
+          ],
+        }],
+      ],
     }],
   ],  # conditions
 }

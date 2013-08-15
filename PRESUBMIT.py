@@ -106,7 +106,8 @@ def _CommonChecks(input_api, output_api):
                   r'^tools/protoc_wrapper/.*\.py$',
                   r'^tools/python/.*\.py$',
                   r'^tools/python_charts/data/.*\.py$',
-                  r'^tools/refactoring.*\.py$',
+                  r'^tools/refactoring/.*\.py$',
+                  r'^tools/swarm_client/.*\.py$',
                   # TODO(phoglund): should arguably be checked.
                   r'^tools/valgrind-webrtc/.*\.py$',
                   r'^tools/valgrind/.*\.py$',

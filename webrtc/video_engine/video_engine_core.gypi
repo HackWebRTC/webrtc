@@ -182,6 +182,24 @@
             },
           ],
         }],
+        ['test_isolation_mode != "noop"', {
+          'targets': [
+            {
+              'target_name': 'video_engine_core_unittests_run',
+              'type': 'none',
+              'dependencies': [
+                'video_engine_core_unittests',
+              ],
+              'includes': [
+                '../../build/isolate.gypi',
+                'video_engine_core_unittests.isolate',
+              ],
+              'sources': [
+                'video_engine_core_unittests.isolate',
+              ],
+            },
+          ],
+        }],
       ],
     }], # include_tests
   ], # conditions

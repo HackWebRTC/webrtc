@@ -201,5 +201,23 @@
         },
       ],
     }],
+    ['test_isolation_mode != "noop"', {
+      'targets': [
+        {
+          'target_name': 'test_support_unittests_run',
+          'type': 'none',
+          'dependencies': [
+            'test_support_unittests',
+          ],
+          'includes': [
+            '../../build/isolate.gypi',
+            'test_support_unittests.isolate',
+          ],
+          'sources': [
+            'test_support_unittests.isolate',
+          ],
+        },
+      ],
+    }],
   ],
 }

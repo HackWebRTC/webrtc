@@ -204,6 +204,24 @@
             },
           ],
         }],
+        ['test_isolation_mode != "noop"', {
+          'targets': [
+            {
+              'target_name': 'audio_decoder_unittests_run',
+              'type': 'none',
+              'dependencies': [
+                'audio_decoder_unittests',
+              ],
+              'includes': [
+                '../../../../build/isolate.gypi',
+                'audio_decoder_unittests.isolate',
+              ],
+              'sources': [
+                'audio_decoder_unittests.isolate',
+              ],
+            },
+          ],
+        }],
       ],
     }], # include_tests
   ], # conditions

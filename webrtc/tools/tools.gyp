@@ -150,6 +150,24 @@
             },
           ],
         }],
+        ['test_isolation_mode != "noop"', {
+          'targets': [
+            {
+              'target_name': 'tools_unittests_run',
+              'type': 'none',
+              'dependencies': [
+                'tools_unittests',
+              ],
+              'includes': [
+                '../../build/isolate.gypi',
+                'tools_unittests.isolate',
+              ],
+              'sources': [
+                'tools_unittests.isolate',
+              ],
+            },
+          ],
+        }],
       ],
     }], # include_tests
   ], # conditions

@@ -126,4 +126,24 @@
       ],
     },
   ],
+  'conditions': [
+    ['test_isolation_mode != "noop"', {
+      'targets': [
+        {
+          'target_name': 'vie_auto_test_run',
+          'type': 'none',
+          'dependencies': [
+            'vie_auto_test',
+          ],
+          'includes': [
+            '../../../../build/isolate.gypi',
+            'vie_auto_test.isolate',
+          ],
+          'sources': [
+            'vie_auto_test.isolate',
+          ],
+        },
+      ],
+    }],
+  ],
 }
