@@ -164,7 +164,7 @@
             'voice_engine',
             '<(DEPTH)/testing/gmock.gyp:gmock',
             '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/test/libtest/libtest.gyp:libtest',
             '<(webrtc_root)/test/test.gyp:channel_transport',

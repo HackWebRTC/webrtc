@@ -54,8 +54,8 @@
 /third_party/directxsdk
 /third_party/expat
 /third_party/gaeunit
+/third_party/gflags/src
 /third_party/gold
-/third_party/google-gflags/src
 /third_party/google-visualization-python
 /third_party/icu
 /third_party/jsoncpp

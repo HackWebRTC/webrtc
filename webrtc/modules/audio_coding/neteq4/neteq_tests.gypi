@@ -15,7 +15,7 @@
         'NetEq4',
         'NetEq4TestTools',
         '<(webrtc_root)/test/test.gyp:test_support_main',
-        '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
       ],
       'sources': [
         'tools/neteq_rtpplay.cc',

@@ -16,7 +16,7 @@
         '<(webrtc_root)/test/test.gyp:channel_transport',
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine',
         '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
       ],
       'sources': [
         'audio/audio_e2e_harness.cc',

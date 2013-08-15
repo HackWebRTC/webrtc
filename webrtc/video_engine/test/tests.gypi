@@ -107,7 +107,7 @@
       },
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         '<(webrtc_root)/modules/modules.gyp:video_capture_module',
         '<(webrtc_root)/test/test.gyp:test_support',
         'video_engine_core',
@@ -134,7 +134,7 @@
       ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         'video_tests_common',
       ],
     },
@@ -147,7 +147,7 @@
       ],
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
         'video_tests_common',
       ],
     },

@@ -119,7 +119,7 @@
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/test/test.gyp:test_support_main',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
           ],
           'sources': [
              '../test/delay_test.cc',
@@ -135,7 +135,7 @@
             '<(DEPTH)/testing/gtest.gyp:gtest',
             '<(webrtc_root)/test/test.gyp:test_support_main',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(DEPTH)/third_party/google-gflags/google-gflags.gyp:google-gflags',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
           ],
           'sources': [
              '../test/insert_packet_with_timing.cc',
