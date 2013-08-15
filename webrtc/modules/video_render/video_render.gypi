@@ -200,26 +200,6 @@
           ] # conditions
         }, # video_render_module_test
       ], # targets
-      'conditions': [
-        ['test_isolation_mode != "noop"', {
-          'targets': [
-            {
-              'target_name': 'video_render_integrationtests_run',
-              'type': 'none',
-              'dependencies': [
-                'video_render_integrationtests',
-              ],
-              'includes': [
-                '../../../build/isolate.gypi',
-                'video_render_integrationtests.isolate',
-              ],
-              'sources': [
-                'video_render_integrationtests.isolate',
-              ],
-            },
-          ],
-        }],
-      ],
     }], # include_tests==0
   ], # conditions
 }

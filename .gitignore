@@ -85,7 +85,6 @@
 /tools/gyp
 /tools/protoc_wrapper
 /tools/python
-/tools/swarm_client
 /tools/valgrind
 /tools/win
 /webrtc/supplement.gypi

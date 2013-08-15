@@ -73,24 +73,6 @@
         },
       ],
     }],
-    ['test_isolation_mode != "noop"', {
-      'targets': [
-        {
-          'target_name': 'system_wrappers_unittests_run',
-          'type': 'none',
-          'dependencies': [
-            'system_wrappers_unittests',
-          ],
-          'includes': [
-            '../../../build/isolate.gypi',
-            'system_wrappers_unittests.isolate',
-          ],
-          'sources': [
-            'system_wrappers_unittests.isolate',
-          ],
-        },
-      ],
-    }],
   ],
 }
 

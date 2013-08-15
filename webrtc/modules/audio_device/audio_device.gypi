@@ -219,28 +219,8 @@
             'test/func_test_manager.h',
           ],
         },
-      ], # targets
-      'conditions': [
-        ['test_isolation_mode != "noop"', {
-          'targets': [
-            {
-              'target_name': 'audio_device_integrationtests_run',
-              'type': 'none',
-              'dependencies': [
-                'audio_device_integrationtests',
-              ],
-              'includes': [
-                '../../../build/isolate.gypi',
-                'audio_device_integrationtests.isolate',
-              ],
-              'sources': [
-                'audio_device_integrationtests.isolate',
-              ],
-            },
-          ],
-        }],
       ],
-    }], # include_tests
+    }],
   ],
 }
 

@@ -122,24 +122,6 @@
             },
           ],
         }],
-        ['test_isolation_mode != "noop"', {
-          'targets': [
-            {
-              'target_name': 'common_video_unittests_run',
-              'type': 'none',
-              'dependencies': [
-                'common_video_unittests',
-              ],
-              'includes': [
-                '../../build/isolate.gypi',
-                'common_video_unittests.isolate',
-              ],
-              'sources': [
-                'common_video_unittests.isolate',
-              ],
-            },
-          ],
-        }],
       ],
     }],  # include_tests
   ],

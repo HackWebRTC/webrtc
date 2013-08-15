@@ -187,26 +187,6 @@
             }], # OS!="mac"
           ] # conditions
         },
-      ], # targets
-      'conditions': [
-        ['test_isolation_mode != "noop"', {
-          'targets': [
-            {
-              'target_name': 'video_capture_integrationtests_run',
-              'type': 'none',
-              'dependencies': [
-                'video_capture_integrationtests',
-              ],
-              'includes': [
-                '../../../build/isolate.gypi',
-                'video_capture_integrationtests.isolate',
-              ],
-              'sources': [
-                'video_capture_integrationtests.isolate',
-              ],
-            },
-          ],
-        }],
       ],
     }],
   ],

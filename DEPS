@@ -101,9 +101,6 @@ deps = {
   "tools/python":
     Var("chromium_trunk") + "/src/tools/python@" + Var("chromium_revision"),
 
-  "tools/swarm_client":
-    Var("chromium_trunk") + "/tools/swarm_client@" + Var("chromium_revision"),
-
   "tools/valgrind":
     Var("chromium_trunk") + "/src/tools/valgrind@" + Var("chromium_revision"),
 

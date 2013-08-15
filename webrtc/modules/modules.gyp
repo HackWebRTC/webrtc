@@ -335,38 +335,6 @@
             },
           ],
         }],
-        ['test_isolation_mode != "noop"', {
-          'targets': [
-            {
-              'target_name': 'modules_integrationtests_run',
-              'type': 'none',
-              'dependencies': [
-                'modules_integrationtests',
-              ],
-              'includes': [
-                '../../build/isolate.gypi',
-                'modules_integrationtests.isolate',
-              ],
-              'sources': [
-                'modules_integrationtests.isolate',
-              ],
-            },
-            {
-              'target_name': 'modules_unittests_run',
-              'type': 'none',
-              'dependencies': [
-                'modules_unittests',
-              ],
-              'includes': [
-                '../../build/isolate.gypi',
-                'modules_unittests.isolate',
-              ],
-              'sources': [
-                'modules_unittests.isolate',
-              ],
-            },
-          ],
-        }],
       ],
     }], # include_tests
   ], # conditions
