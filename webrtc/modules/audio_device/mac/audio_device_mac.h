@@ -285,7 +285,7 @@ private:
     bool RenderWorkerThread();
 
 private:
-    bool KeyPressed() const;
+    bool KeyPressed();
 
 private:
     AudioDeviceBuffer* _ptrAudioBuffer;
@@ -377,6 +377,11 @@ private:
 
     int _captureBufSizeSamples;
     int _renderBufSizeSamples;
+
+private:
+    // Typing detection
+    // 0x5c is key "9", after that comes function keys.
+    bool prev_key_state_[0x5d];
 };
 
 }  // namespace webrtc

@@ -56,6 +56,8 @@ namespace webrtc
         }                                                               \
     } while(0)
 
+#define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
+
 enum
 {
     MaxNumberDevices = 64
@@ -153,7 +155,8 @@ AudioDeviceMac::AudioDeviceMac(const int32_t id) :
     _paCaptureBuffer(NULL),
     _paRenderBuffer(NULL),
     _captureBufSizeSamples(0),
-    _renderBufSizeSamples(0)
+    _renderBufSizeSamples(0),
+    prev_key_state_()
 {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, id,
                  "%s created", __FUNCTION__);
@@ -3259,14 +3262,20 @@ bool AudioDeviceMac::CaptureWorkerThread()
     return true;
 }
 
-bool AudioDeviceMac::KeyPressed() const{
-
+bool AudioDeviceMac::KeyPressed() {
   bool key_down = false;
-  // loop through all Mac virtual key constant values
-  for (int key_index = 0; key_index <= 0x5C; key_index++) {
-    key_down |= CGEventSourceKeyState(kCGEventSourceStateHIDSystemState,
-                                      key_index);
+  // Loop through all Mac virtual key constant values.
+  for (unsigned int key_index = 0;
+                    key_index < ARRAY_SIZE(prev_key_state_);
+                    ++key_index) {
+    bool keyState = CGEventSourceKeyState(
+                             kCGEventSourceStateHIDSystemState,
+                             key_index);
+    // A false -> true change in keymap means a key is pressed.
+    key_down |= (keyState && !prev_key_state_[key_index]);
+    // Save current state.
+    prev_key_state_[key_index] = keyState;
   }
-  return(key_down);
+  return key_down;
 }
 }  // namespace webrtc
