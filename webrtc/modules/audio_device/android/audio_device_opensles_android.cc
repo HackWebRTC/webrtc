@@ -826,10 +826,10 @@ int32_t AudioDeviceAndroidOpenSLES::InitRecording() {
   // Setup the format of the content in the buffer queue
   record_pcm_.formatType = SL_DATAFORMAT_PCM;
   record_pcm_.numChannels = N_REC_CHANNELS;
-  if (speaker_sampling_rate_ == 44000) {
+  if (mic_sampling_rate_ == 44000) {
     record_pcm_.samplesPerSec = 44100 * 1000;
   } else {
-    record_pcm_.samplesPerSec = speaker_sampling_rate_ * 1000;
+    record_pcm_.samplesPerSec = mic_sampling_rate_ * 1000;
   }
   record_pcm_.bitsPerSample = SL_PCMSAMPLEFORMAT_FIXED_16;
   record_pcm_.containerSize = SL_PCMSAMPLEFORMAT_FIXED_16;
