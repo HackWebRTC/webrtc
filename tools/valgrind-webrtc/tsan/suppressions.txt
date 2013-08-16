@@ -456,6 +456,15 @@
   ...
 }
 {
+  bug_1205_45
+  ThreadSanitizer:Race
+  fun:cricket::WebRtcDecoderObserver::framerate
+  fun:cricket::WebRtcVideoMediaChannel::GetStats
+  fun:cricket::VideoChannel::GetStats_w
+  fun:cricket::VideoChannel::OnMessage
+  ...
+}
+{
   bug_2078_1
   ThreadSanitizer:Race
   fun:talk_base::Thread::~Thread
@@ -764,6 +773,18 @@
   ThreadSanitizer:Race
   fun:talk_base::Thread::Invoke
   fun:cricket::ChannelManager::SetCaptureDevice
+  ...
+}
+{
+  bug_2079_9
+  ThreadSanitizer:Race
+  fun:talk_base::Thread::Send
+  fun:cricket::Transport::SetIceRole
+  fun:cricket::BaseSession::GetOrCreateTransportProxy
+  fun:cricket::BaseSession::CreateChannel
+  fun:cricket::FakeSession::CreateChannel
+  fun:cricket::VoiceChannel::Init
+  fun:cricket::ChannelManager::CreateVoiceChannel_w
   ...
 }
 {
