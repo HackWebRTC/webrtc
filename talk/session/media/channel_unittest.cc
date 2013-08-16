@@ -1794,7 +1794,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     transport_channel->SignalReadPacket(
         transport_channel, reinterpret_cast<const char*>(kBadPacket),
         sizeof(kBadPacket), 0);
-    EXPECT_EQ_WAIT(T::MediaChannel::ERROR_PLAY_SRTP_AUTH_FAILED, error_, 500);
+    EXPECT_EQ_WAIT(T::MediaChannel::ERROR_PLAY_SRTP_ERROR, error_, 500);
   }
 
   void TestOnReadyToSend() {
