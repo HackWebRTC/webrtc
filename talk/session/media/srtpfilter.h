@@ -271,7 +271,10 @@ class SrtpStat {
           error(in_error) {
     }
     bool operator <(const FailureKey& key) const {
-      return ssrc < key.ssrc || mode < key.mode || error < key.error;
+      return
+          (ssrc < key.ssrc) ||
+          (ssrc == key.ssrc && mode < key.mode) ||
+          (ssrc == key.ssrc && mode == key.mode && error < key.error);
     }
     uint32 ssrc;
     SrtpFilter::Mode mode;
