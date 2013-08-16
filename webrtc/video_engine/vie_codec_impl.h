@@ -69,6 +69,8 @@ class ViECodecImpl
   virtual int WaitForFirstKeyFrame(const int video_channel, const bool wait);
   virtual int StartDebugRecording(int video_channel,
                                   const char* file_name_utf8);
+  virtual int SetDecodeErrorMode(const int video_channel,
+                                 const ViEDecodeErrorMode error_mode);
   virtual int StopDebugRecording(int video_channel);
 
  protected:

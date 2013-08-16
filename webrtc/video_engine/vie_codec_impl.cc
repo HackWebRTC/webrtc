@@ -690,6 +690,25 @@ int ViECodecImpl::WaitForFirstKeyFrame(const int video_channel,
   return 0;
 }
 
+int ViECodecImpl::SetDecodeErrorMode(const int video_channel,
+                                     const ViEDecodeErrorMode error_mode) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
+               ViEId(shared_data_->instance_id(), video_channel),
+               "%s(channel: %d)", __FUNCTION__, video_channel);
+
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), video_channel),
+                 "%s: Channel %d does not exist", __FUNCTION__, video_channel);
+    shared_data_->SetLastError(kViEBaseInvalidChannelId);
+    return -1;
+  }
+  vie_channel->SetDecodeErrorMode(error_mode);
+  return 0;
+}
+
 int ViECodecImpl::StartDebugRecording(int video_channel,
                                       const char* file_name_utf8) {
   ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
