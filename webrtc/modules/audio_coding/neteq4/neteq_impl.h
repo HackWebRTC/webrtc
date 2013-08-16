@@ -102,10 +102,11 @@ class NetEqImpl : public webrtc::NetEq {
   // -1 on failure.
   virtual int RemovePayloadType(uint8_t rtp_payload_type);
 
-  // Sets the desired extra delay on top of what NetEq already applies due to
-  // current network situation. Used for synchronization with video. Returns
-  // true if successful, otherwise false.
-  virtual bool SetExtraDelay(int extra_delay_ms);
+  virtual bool SetMinimumDelay(int delay_ms);
+
+  virtual bool SetMaximumDelay(int delay_ms);
+
+  virtual int LeastRequiredDelayMs() const;
 
   virtual int SetTargetDelay() { return kNotImplemented; }
 

@@ -236,14 +236,28 @@ int NetEqImpl::RemovePayloadType(uint8_t rtp_payload_type) {
   return kFail;
 }
 
-bool NetEqImpl::SetExtraDelay(int extra_delay_ms) {
+bool NetEqImpl::SetMinimumDelay(int delay_ms) {
   CriticalSectionScoped lock(crit_sect_);
-  if (extra_delay_ms >= 0 && extra_delay_ms < 10000) {
+  if (delay_ms >= 0 && delay_ms < 10000) {
     assert(delay_manager_.get());
-    delay_manager_->set_extra_delay_ms(extra_delay_ms);
-    return true;
+    return delay_manager_->SetMinimumDelay(delay_ms);
   }
   return false;
+}
+
+bool NetEqImpl::SetMaximumDelay(int delay_ms) {
+  CriticalSectionScoped lock(crit_sect_);
+  if (delay_ms >= 0 && delay_ms < 10000) {
+    assert(delay_manager_.get());
+    return delay_manager_->SetMaximumDelay(delay_ms);
+  }
+  return false;
+}
+
+int NetEqImpl::LeastRequiredDelayMs() const {
+  CriticalSectionScoped lock(crit_sect_);
+  assert(delay_manager_.get());
+  return delay_manager_->least_required_delay_ms();
 }
 
 void NetEqImpl::SetPlayoutMode(NetEqPlayoutMode mode) {
