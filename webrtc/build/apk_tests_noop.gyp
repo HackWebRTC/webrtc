@@ -26,7 +26,7 @@
       'type': 'none',
     },
     {
-      'target_name': 'modules_integrationtests_apk',
+      'target_name': 'modules_tests_apk',
       'type': 'none',
     },
     {

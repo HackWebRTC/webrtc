@@ -160,7 +160,7 @@
     ['include_tests==1', {
       'targets': [
         {
-          'target_name': 'video_render_integrationtests',
+          'target_name': 'video_render_tests',
           'type': 'executable',
           'dependencies': [
             'video_render_module',

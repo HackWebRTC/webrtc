@@ -187,7 +187,7 @@
     ['include_tests==1', {
       'targets': [
         {
-          'target_name': 'audio_device_integrationtests',
+          'target_name': 'audio_device_tests',
          'type': 'executable',
          'dependencies': [
             'audio_device',

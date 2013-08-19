@@ -257,7 +257,7 @@
           ],
         },
         {
-          'target_name': 'modules_integrationtests',
+          'target_name': 'modules_tests',
           'type': '<(gtest_target_type)',
           'dependencies': [
             'audio_coding_module',
@@ -326,10 +326,10 @@
               ],
             },
             {
-              'target_name': 'modules_integrationtests_apk_target',
+              'target_name': 'modules_tests_apk_target',
               'type': 'none',
               'dependencies': [
-                '<(apk_tests_path):modules_integrationtests_apk',
+                '<(apk_tests_path):modules_tests_apk',
               ],
             },
           ],

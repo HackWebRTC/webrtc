@@ -126,7 +126,7 @@
       ],
     },
     {
-      'target_name': 'video_full_stack',
+      'target_name': 'video_full_stack_tests',
       'type': 'executable',
       'sources': [
         'full_stack.cc',

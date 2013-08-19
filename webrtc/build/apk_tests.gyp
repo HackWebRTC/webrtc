@@ -75,14 +75,14 @@
       ],
     },
     {
-      'target_name': 'modules_integrationtests_apk',
+      'target_name': 'modules_tests_apk',
       'type': 'none',
       'variables': {
-        'test_suite_name': 'modules_integrationtests',
-        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)modules_integrationtests<(SHARED_LIB_SUFFIX)',
+        'test_suite_name': 'modules_tests',
+        'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)modules_tests<(SHARED_LIB_SUFFIX)',
       },
       'dependencies': [
-        '<(webrtc_root)/modules/modules.gyp:modules_integrationtests',
+        '<(webrtc_root)/modules/modules.gyp:modules_tests',
       ],
       'includes': [
         '../../../build/apk_test.gypi',
