@@ -41,6 +41,8 @@ VideoReceiveStream::VideoReceiveStream(
 
   // TODO(pbos): This is not fine grained enough...
   rtp_rtcp_->SetNACKStatus(channel_, config_.rtp.nack.rtp_history_ms > 0);
+  rtp_rtcp_->SetKeyFrameRequestMethod(channel_,
+                                      kViEKeyFrameRequestPliRtcp);
 
   assert(config_.rtp.ssrc != 0);
 

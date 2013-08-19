@@ -32,6 +32,7 @@
         'common/mac/video_renderer_mac.h',
         'common/mac/video_renderer_mac.mm',
         'common/null_platform_renderer.cc',
+        'common/rtp_rtcp_observer.h',
         'common/run_tests.cc',
         'common/run_tests.h',
         'common/run_loop.cc',
