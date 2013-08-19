@@ -102,7 +102,9 @@ class RtpRtcpObserver {
         case SEND_PACKET:
           return test::DirectTransport::SendRTP(packet, length);
       }
+      return true;  // Will never happen, makes compiler happy.
     }
+
     virtual bool SendRTCP(const uint8_t* packet, size_t length) OVERRIDE {
       Action action;
       {
@@ -116,6 +118,7 @@ class RtpRtcpObserver {
         case SEND_PACKET:
           return test::DirectTransport::SendRTCP(packet, length);
       }
+      return true;  // Will never happen, makes compiler happy.
     }
 
     // Pointer to shared lock instance protecting on_rtp_/on_rtcp_ calls.

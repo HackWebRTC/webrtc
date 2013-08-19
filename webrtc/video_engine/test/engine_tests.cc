@@ -279,7 +279,8 @@ class PliObserver : public test::RtpRtcpObserver {
 
   virtual Action OnSendRtp(const uint8_t* packet, size_t length) OVERRIDE {
     RTPHeader header;
-    EXPECT_TRUE(rtp_header_parser_->Parse(packet, length, &header));
+    EXPECT_TRUE(
+        rtp_header_parser_->Parse(packet, static_cast<int>(length), &header));
 
     // Drop all NACK retransmissions. This is to force transmission of a PLI.
     if (header.timestamp < last_send_timestamp_)
