@@ -408,8 +408,17 @@ bool RTPSender::SendPaddingAccordingToBitrate(
       bytes = bytes_cap;
     }
   }
-  int bytes_sent = SendPadData(payload_type, capture_timestamp, capture_time_ms,
-                               bytes, kDontRetransmit, false);
+  uint32_t timestamp;
+  {
+    CriticalSectionScoped cs(send_critsect_);
+    // Add the random RTP timestamp offset and store the capture time for
+    // later calculation of the send time offset.
+    timestamp = start_time_stamp_ + capture_timestamp;
+    timestamp_ = timestamp;
+    capture_time_ms_ = capture_time_ms;
+  }
+  int bytes_sent = SendPadData(payload_type, timestamp, capture_time_ms,
+                               bytes, kDontRetransmit, false, false);
   // We did not manage to send all bytes. Comparing with 31 due to modulus 32.
   return bytes - bytes_sent < 31;
 }
@@ -435,7 +444,8 @@ int RTPSender::BuildPaddingPacket(uint8_t* packet, int header_length,
 
 int RTPSender::SendPadData(int payload_type, uint32_t timestamp,
                            int64_t capture_time_ms, int32_t bytes,
-                           StorageType store, bool force_full_size_packets) {
+                           StorageType store, bool force_full_size_packets,
+                           bool only_pad_after_markerbit) {
   // Drop this packet if we're not sending media packets.
   if (!sending_media_) {
     return bytes;
@@ -464,7 +474,7 @@ int RTPSender::SendPadData(int payload_type, uint32_t timestamp,
       CriticalSectionScoped cs(send_critsect_);
       // Only send padding packets following the last packet of a frame,
       // indicated by the marker bit.
-      if (!last_packet_marker_bit_)
+      if (only_pad_after_markerbit && !last_packet_marker_bit_)
         return bytes_sent;
       if (rtx_ == kRtxOff) {
         ssrc = ssrc_;
@@ -750,7 +760,7 @@ int RTPSender::TimeToSendPadding(int bytes) {
     capture_time_ms = capture_time_ms_;
   }
   return SendPadData(payload_type, timestamp, capture_time_ms, bytes,
-                     kDontStore, true);
+                     kDontStore, true, true);
 }
 
 // TODO(pwestin): send in the RTPHeaderParser to avoid parsing it again.

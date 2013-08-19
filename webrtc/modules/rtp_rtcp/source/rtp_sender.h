@@ -137,7 +137,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   int BuildPaddingPacket(uint8_t* packet, int header_length, int32_t bytes);
   int SendPadData(int payload_type, uint32_t timestamp, int64_t capture_time_ms,
                   int32_t bytes, StorageType store,
-                  bool force_full_size_packets);
+                  bool force_full_size_packets, bool only_pad_after_markerbit);
   // RTP header extension
   int32_t SetTransmissionTimeOffset(
       const int32_t transmission_time_offset);
