@@ -1,0 +1,3 @@
+# False positive in system wrappers.
+# See https://code.google.com/p/webrtc/issues/detail?id=300 for details.
+race:webrtc/system_wrappers/source/thread_posix.cc
