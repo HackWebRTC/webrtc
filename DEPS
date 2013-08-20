@@ -42,6 +42,8 @@ deps = {
   "third_party/expat":
     Var("chromium_trunk") + "/src/third_party/expat@" + Var("chromium_revision"),
 
+  # When rolling gflags, also update deps/third_party/webrtc/webrtc.DEPS/DEPS
+  # in Chromium's repo.
   "third_party/gflags/src":
     (Var("googlecode_url") % "gflags") + "/trunk/src@84",
 
