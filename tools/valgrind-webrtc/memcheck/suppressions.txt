@@ -370,80 +370,6 @@
 #-----------------------------------------------------------------------
 # 2. libjingle stuff (talk folder)
 {
-   bug_1972_30
-   Memcheck:Uninitialized
-   fun:dtls1_process_record
-   fun:dtls1_get_record
-   fun:dtls1_read_bytes
-   fun:ssl3_read_internal
-   ...
-}
-{
-   bug_1972_40
-   Memcheck:Leak
-   fun:_Znw*
-   fun:_ZN50PortAllocatorSessionProxyTest_TestLateBinding_Test8TestBodyEv
-}
-{
-   bug_1972_45
-   Memcheck:Uninitialized
-   fun:_ZN14DtlsTestClient12VerifyPacketEPKcmPj
-   ...
-}
-{
-   bug_1972_50
-   Memcheck:Leak
-   fun:_Znw*
-   fun:_ZN9__gnu_cxx13new_allocatorISt13_Rb_tree_nodeIPN7sigslot22_signal_base_interfaceEEE8allocateEmPKv
-   fun:_ZNSt8_Rb_treeIPN7sigslot22_signal_base_interfaceES2_St9_IdentityIS2_ESt4lessIS2_ESaIS2_EE11_M_get_nodeEv
-   ...
-}
-
-{
-   bug_1972_56
-   Memcheck:Leak
-   fun:_Znw*
-   fun:_ZN9__gnu_cxx13new_allocatorIPN7cricket25PortAllocatorSessionProxyEE8allocateEmPKv
-   ...
-}
-{
-   bug_1972_57
-   Memcheck:Leak
-   fun:_Znw*
-   fun:_ZN7sigslot7signal1IPN7cricket20PortAllocatorSessionENS_15single_threadedEE7connectINS1_25PortAllocatorSessionMuxerEEEvPT_MS8_FvS3_E
-   ...
-}
-{
-   bug_1972_59
-   Memcheck:Leak
-   fun:_Znw*
-   fun:_ZN9__gnu_cxx13new_allocatorISt10_List_nodeIPN7sigslot17_connection_base1IPN7cricket20PortAllocatorSessionENS2_15single_threadedEEEEE8allocateEmPKv
-   fun:_ZNSt10_List_baseIPN7sigslot17_connection_base1IPN7cricket20PortAllocatorSessionENS0_15single_threadedEEESaIS7_EE11_M_get_nodeEv
-   ...
-}
-{
-   bug_1972_60
-   Memcheck:Leak
-   fun:_Znw*
-   fun:_ZN9__gnu_cxx13new_allocatorISt13_Rb_tree_nodeISt4pairIKPN7cricket13PortInterfaceEPNS3_9PortProxyEEEE8allocateEmPKv
-   fun:_ZNSt8_Rb_treeIPN7cricket13PortInterfaceESt4pairIKS2_PNS0_9PortProxyEESt10_Select1stIS7_ESt4lessIS2_ESaIS7_EE11_M_get_nodeEv
-   ...
-}
-{
-   bug_1972_62
-   Memcheck:Leak
-   fun:_Znw*
-   fun:_ZN29PortAllocatorSessionProxyTestC1Ev
-   ...
-}
-{
-   bug_1972_63
-   Memcheck:Leak
-   fun:_Znw*
-   fun:_ZN29PortAllocatorSessionProxyTest13CreateChannelEv
-   ...
-}
-{
    bug_2056_1
    Memcheck:Leak
    fun:malloc
@@ -616,4 +542,9 @@
    fun:_ZN6webrtc20AudioDeviceLinuxALSA14InitMicrophoneEv
    ...
 }
-
+{
+   bug_2263_1
+   Memcheck:Uninitialized
+   fun:_ZN14DtlsTestClient12VerifyPacketEPKcmPj
+   ...
+}
