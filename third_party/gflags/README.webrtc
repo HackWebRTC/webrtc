@@ -13,3 +13,16 @@ they're used.
 Local Modifications: None
 
 
+How to update platform configuration files:
+The gen/ directory contains pre-generated configuration header files.
+Historically, all operating systems and architectures have generated
+similar configurations except for Windows. This is why there's only
+posix and win directories below gen/.
+When rolling gflags to a newer version, it's a good idea to check if
+new configuration files needs to be generated as well.
+Do this by running ./configure in the newly checked out version of
+gflags. Then diff the generated files with the ones below gen/.
+If you notice a diff, update the files with the updated ones.
+If you suspect platform dependend changes other than Windows, you'll
+have to checkout gflags on the other platforms as well and run
+./configure there too.

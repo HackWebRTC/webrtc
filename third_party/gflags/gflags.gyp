@@ -15,7 +15,13 @@
 {
   'variables': {
     'gflags_root': '<(DEPTH)/third_party/gflags',
-    'gflags_gen_arch_root': '<(gflags_root)/gen/arch/<(OS)/<(target_arch)',
+    'conditions': [
+      ['OS=="win"', {
+        'gflags_gen_arch_root': '<(gflags_root)/gen/win',
+      }, {
+        'gflags_gen_arch_root': '<(gflags_root)/gen/posix',
+      }],
+    ],
   },
   'targets': [
     {
