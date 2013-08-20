@@ -133,6 +133,7 @@
         'enable_android_opensl%': 0,
       }],
       ['OS=="ios"', {
+        'build_libjpeg%': 0,
         'enable_protobuf%': 0,
         'include_tests%': 0,
       }],

@@ -34,7 +34,7 @@
 
 @interface APPRTCAppClient ()
 
-@property(nonatomic, assign) dispatch_queue_t backgroundQueue;
+@property(nonatomic, strong) dispatch_queue_t backgroundQueue;
 @property(nonatomic, copy) NSString *baseURL;
 @property(nonatomic, strong) GAEChannelClient *gaeChannel;
 @property(nonatomic, copy) NSString *postMessageUrl;
@@ -52,16 +52,11 @@
 - (id)init {
   if (self = [super init]) {
     _backgroundQueue = dispatch_queue_create("RTCBackgroundQueue", NULL);
-    dispatch_retain(_backgroundQueue);
     _sendQueue = [NSMutableArray array];
     // Uncomment to see Request/Response logging.
     // _verboseLogging = YES;
   }
   return self;
-}
-
-- (void)dealloc {
-  dispatch_release(_backgroundQueue);
 }
 
 #pragma mark - Public methods

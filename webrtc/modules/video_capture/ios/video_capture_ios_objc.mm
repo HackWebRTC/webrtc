@@ -39,7 +39,7 @@ using namespace webrtc::videocapturemodule;
     AVCaptureVideoDataOutput* captureOutput =
         [[AVCaptureVideoDataOutput alloc] init];
     [captureOutput setSampleBufferDelegate:self
-                                     queue:dispatch_get_current_queue()];
+        queue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)];
     NSString* key = (NSString*)kCVPixelBufferPixelFormatTypeKey;
 
     NSNumber* val = [NSNumber

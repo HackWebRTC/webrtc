@@ -126,6 +126,15 @@
                 'ios/video_capture_ios_objc.h',
                 'ios/video_capture_ios_objc.mm',
               ],
+              'all_dependent_settings': {
+                'xcode_settings': {
+                  'OTHER_LDFLAGS': [
+                    '-framework AVFoundation',
+                    '-framework CoreMedia',
+                    '-framework CoreVideo',
+                  ],
+                },
+              },
             }],  # ios
           ], # conditions
         }],  # include_internal_video_capture
