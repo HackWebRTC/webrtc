@@ -76,8 +76,8 @@ class TestRtpFeedback : public NullRtpFeedback {
   virtual ~TestRtpFeedback() {}
 
   virtual void OnIncomingSSRCChanged(const int32_t id,
-                                     const uint32_t SSRC) {
-    rtp_rtcp_->SetRemoteSSRC(SSRC);
+                                     const uint32_t ssrc) {
+    rtp_rtcp_->SetRemoteSSRC(ssrc);
   }
 
  private:
@@ -334,8 +334,10 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
   EXPECT_EQ(static_cast<uint32_t>(0),
             reportBlockReceived.cumulativeLost);
 
-  ReceiveStatistics::RtpReceiveStatistics stats;
-  EXPECT_TRUE(receive_statistics2_->Statistics(&stats, true));
+  StreamStatistician *statistician =
+      receive_statistics2_->GetStatistician(reportBlockReceived.sourceSSRC);
+  StreamStatistician::Statistics stats;
+  EXPECT_TRUE(statistician->GetStatistics(&stats, true));
   EXPECT_EQ(0, stats.fraction_lost);
   EXPECT_EQ((uint32_t)0, stats.cumulative_lost);
   EXPECT_EQ(test_sequence_number, stats.extended_max_sequence_number);

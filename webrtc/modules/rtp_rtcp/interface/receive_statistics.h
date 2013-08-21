@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_INTERFACE_RECEIVE_STATISTICS_H_
 #define WEBRTC_MODULES_RTP_RTCP_INTERFACE_RECEIVE_STATISTICS_H_
 
+#include <map>
+
 #include "webrtc/modules/interface/module.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/typedefs.h"
@@ -19,9 +21,16 @@ namespace webrtc {
 
 class Clock;
 
-class ReceiveStatistics : public Module {
+class StreamStatistician {
  public:
-  struct RtpReceiveStatistics {
+  struct Statistics {
+    Statistics()
+        : fraction_lost(0),
+          cumulative_lost(0),
+          extended_max_sequence_number(0),
+          jitter(0),
+          max_jitter(0) {}
+
     uint8_t fraction_lost;
     uint32_t cumulative_lost;
     uint32_t extended_max_sequence_number;
@@ -29,26 +38,45 @@ class ReceiveStatistics : public Module {
     uint32_t max_jitter;
   };
 
+  virtual ~StreamStatistician();
+
+  virtual bool GetStatistics(Statistics* statistics, bool reset) = 0;
+  virtual void GetDataCounters(uint32_t* bytes_received,
+                               uint32_t* packets_received) const = 0;
+  virtual uint32_t BitrateReceived() const = 0;
+  // Resets all statistics.
+  virtual void ResetStatistics() = 0;
+};
+
+typedef std::map<uint32_t, StreamStatistician*> StatisticianMap;
+
+class ReceiveStatistics : public Module {
+ public:
   virtual ~ReceiveStatistics() {}
 
   static ReceiveStatistics* Create(Clock* clock);
 
+  // Updates the receive statistics with this packet.
   virtual void IncomingPacket(const RTPHeader& rtp_header, size_t bytes,
                               bool retransmitted, bool in_order) = 0;
 
-  virtual bool Statistics(RtpReceiveStatistics* statistics, bool reset) = 0;
+  // Returns a map of all statisticians which have seen an incoming packet
+  // during the last two seconds.
+  virtual StatisticianMap GetActiveStatisticians() const = 0;
 
-  virtual bool Statistics(RtpReceiveStatistics* statistics, int32_t* missing,
-                          bool reset) = 0;
-
-  virtual void GetDataCounters(uint32_t* bytes_received,
-                               uint32_t* packets_received) const = 0;
-
-  virtual uint32_t BitrateReceived() = 0;
-
-  virtual void ResetStatistics() = 0;
-
-  virtual void ResetDataCounters() = 0;
+  // Returns a pointer to the statistician of an ssrc.
+  virtual StreamStatistician* GetStatistician(uint32_t ssrc) const = 0;
 };
+
+class NullReceiveStatistics : public ReceiveStatistics {
+ public:
+  virtual void IncomingPacket(const RTPHeader& rtp_header, size_t bytes,
+                              bool retransmitted, bool in_order) OVERRIDE;
+  virtual StatisticianMap GetActiveStatisticians() const OVERRIDE;
+  virtual StreamStatistician* GetStatistician(uint32_t ssrc) const OVERRIDE;
+  virtual int32_t TimeUntilNextProcess() OVERRIDE;
+  virtual int32_t Process() OVERRIDE;
+};
+
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RECEIVE_STATISTICS_H_

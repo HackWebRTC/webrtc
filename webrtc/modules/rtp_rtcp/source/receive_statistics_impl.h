@@ -23,43 +23,43 @@ namespace webrtc {
 
 class CriticalSectionWrapper;
 
-class ReceiveStatisticsImpl : public ReceiveStatistics {
+class StreamStatisticianImpl : public StreamStatistician {
  public:
-  explicit ReceiveStatisticsImpl(Clock* clock);
+  explicit StreamStatisticianImpl(Clock* clock);
 
-  // Implements ReceiveStatistics.
-  void IncomingPacket(const RTPHeader& header, size_t bytes,
-                      bool old_packet, bool in_order);
-  bool Statistics(RtpReceiveStatistics* statistics, bool reset);
-  bool Statistics(RtpReceiveStatistics* statistics, int32_t* missing,
-                  bool reset);
-  void GetDataCounters(uint32_t* bytes_received,
-                       uint32_t* packets_received) const;
-  uint32_t BitrateReceived();
-  void ResetStatistics();
-  void ResetDataCounters();
+  virtual ~StreamStatisticianImpl() {}
 
-  // Implements Module.
-  int32_t TimeUntilNextProcess();
-  int32_t Process();
+  virtual bool GetStatistics(Statistics* statistics, bool reset) OVERRIDE;
+  virtual void GetDataCounters(uint32_t* bytes_received,
+                               uint32_t* packets_received) const OVERRIDE;
+  virtual uint32_t BitrateReceived() const OVERRIDE;
+  virtual void ResetStatistics() OVERRIDE;
+
+  void IncomingPacket(const RTPHeader& rtp_header, size_t bytes,
+                      bool retransmitted, bool in_order);
+  void ProcessBitrate();
+  virtual void LastReceiveTimeNtp(uint32_t* secs, uint32_t* frac) const;
 
  private:
-  scoped_ptr<CriticalSectionWrapper> crit_sect_;
   Clock* clock_;
+  scoped_ptr<CriticalSectionWrapper> crit_sect_;
   Bitrate incoming_bitrate_;
   uint32_t ssrc_;
+
   // Stats on received RTP packets.
   uint32_t jitter_q4_;
   uint32_t jitter_max_q4_;
   uint32_t cumulative_loss_;
   uint32_t jitter_q4_transmission_time_offset_;
 
-  uint32_t local_time_last_received_timestamp_;
+  uint32_t last_receive_time_secs_;
+  uint32_t last_receive_time_frac_;
   uint32_t last_received_timestamp_;
   int32_t last_received_transmission_time_offset_;
   uint16_t received_seq_first_;
   uint16_t received_seq_max_;
   uint16_t received_seq_wraps_;
+  bool first_packet_;
 
   // Current counter values.
   uint16_t received_packet_overhead_;
@@ -71,7 +71,34 @@ class ReceiveStatisticsImpl : public ReceiveStatistics {
   uint32_t last_report_inorder_packets_;
   uint32_t last_report_old_packets_;
   uint16_t last_report_seq_max_;
-  RtpReceiveStatistics last_reported_statistics_;
+  Statistics last_reported_statistics_;
+};
+
+class ReceiveStatisticsImpl : public ReceiveStatistics {
+ public:
+  explicit ReceiveStatisticsImpl(Clock* clock);
+
+  ~ReceiveStatisticsImpl();
+
+  // Implement ReceiveStatistics.
+  virtual void IncomingPacket(const RTPHeader& header, size_t bytes,
+                      bool old_packet, bool in_order) OVERRIDE;
+  virtual StatisticianMap GetActiveStatisticians() const OVERRIDE;
+  virtual StreamStatistician* GetStatistician(uint32_t ssrc) const OVERRIDE;
+
+  // Implement Module.
+  virtual int32_t Process() OVERRIDE;
+  virtual int32_t TimeUntilNextProcess() OVERRIDE;
+
+  void ChangeSsrc(uint32_t from_ssrc, uint32_t to_ssrc);
+
+ private:
+  typedef std::map<uint32_t, StreamStatisticianImpl*> StatisticianImplMap;
+
+  Clock* clock_;
+  scoped_ptr<CriticalSectionWrapper> crit_sect_;
+  int64_t last_rate_update_ms_;
+  StatisticianImplMap statisticians_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RECEIVE_STATISTICS_IMPL_H_
