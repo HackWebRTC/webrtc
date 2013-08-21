@@ -61,11 +61,6 @@ RtpAudioFeedback* NullObjectRtpAudioFeedback() {
   return &null_rtp_audio_feedback;
 }
 
-ReceiveStatistics* NullObjectReceiveStatistics() {
-  static NullReceiveStatistics null_receive_statistics;
-  return &null_receive_statistics;
-}
-
 namespace ModuleRTPUtility {
 
 enum {

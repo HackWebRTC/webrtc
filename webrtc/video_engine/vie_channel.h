@@ -212,11 +212,11 @@ class ViEChannel
       const uint8_t channels,
       const uint32_t rate);
   virtual void OnIncomingSSRCChanged(const int32_t id,
-                                     const uint32_t ssrc);
+                                     const uint32_t SSRC);
   virtual void OnIncomingCSRCChanged(const int32_t id,
                                      const uint32_t CSRC,
                                      const bool added);
-  virtual void ResetStatistics(uint32_t);
+  virtual void ResetStatistics();
 
   int32_t SetLocalReceiver(const uint16_t rtp_port,
                            const uint16_t rtcp_port,

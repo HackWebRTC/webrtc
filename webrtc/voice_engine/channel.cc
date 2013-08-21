@@ -360,14 +360,19 @@ Channel::OnPlayTelephoneEvent(int32_t id,
 }
 
 void
-Channel::OnIncomingSSRCChanged(int32_t id, uint32_t ssrc)
+Channel::OnIncomingSSRCChanged(int32_t id,
+                               uint32_t SSRC)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnIncomingSSRCChanged(id=%d, SSRC=%d)",
-                 id, ssrc);
+                 id, SSRC);
 
     int32_t channel = VoEChannelId(id);
     assert(channel == _channelId);
+
+    // Reset RTP-module counters since a new incoming RTP stream is detected
+    rtp_receive_statistics_->ResetDataCounters();
+    rtp_receive_statistics_->ResetStatistics();
 
     if (_rtpObserver)
     {
@@ -376,7 +381,7 @@ Channel::OnIncomingSSRCChanged(int32_t id, uint32_t ssrc)
         if (_rtpObserverPtr)
         {
             // Send new SSRC to registered observer using callback
-            _rtpObserverPtr->OnIncomingSSRCChanged(channel, ssrc);
+            _rtpObserverPtr->OnIncomingSSRCChanged(channel, SSRC);
         }
     }
 }
@@ -403,12 +408,8 @@ void Channel::OnIncomingCSRCChanged(int32_t id,
     }
 }
 
-void Channel::ResetStatistics(uint32_t ssrc) {
-  StreamStatistician* statistician =
-      rtp_receive_statistics_->GetStatistician(ssrc);
-  if (statistician) {
-    statistician->ResetStatistics();
-  }
+void Channel::ResetStatistics() {
+  rtp_receive_statistics_->ResetStatistics();
 }
 
 void
@@ -2230,10 +2231,8 @@ bool Channel::IsPacketRetransmitted(const RTPHeader& header) const {
   rtp_receiver_->RTXStatus(&rtx_enabled, &rtx_ssrc, &rtx_payload_type);
   if (!rtx_enabled) {
     // Check if this is a retransmission.
-    StreamStatistician::Statistics stats;
-    StreamStatistician* statistician =
-        rtp_receive_statistics_->GetStatistician(header.ssrc);
-    if (statistician && statistician->GetStatistics(&stats, false)) {
+    ReceiveStatistics::RtpReceiveStatistics stats;
+    if (rtp_receive_statistics_->Statistics(&stats, false)) {
       uint16_t min_rtt = 0;
       _rtpRtcpModule->RTT(rtp_receiver_->SSRC(), NULL, NULL, &min_rtt, NULL);
       return rtp_receiver_->RetransmitOfOldPacket(header, stats.jitter,
@@ -3922,10 +3921,8 @@ Channel::GetRTPStatistics(
 {
     // The jitter statistics is updated for each received RTP packet and is
     // based on received packets.
-    StreamStatistician::Statistics statistics;
-    StreamStatistician* statistician =
-        rtp_receive_statistics_->GetStatistician(rtp_receiver_->SSRC());
-    if (!statistician || !statistician->GetStatistics(
+    ReceiveStatistics::RtpReceiveStatistics statistics;
+    if (!rtp_receive_statistics_->Statistics(
         &statistics, _rtpRtcpModule->RTCP() == kRtcpOff)) {
       _engineStatisticsPtr->SetLastError(
           VE_CANNOT_RETRIEVE_RTP_STAT, kTraceWarning,
@@ -4019,10 +4016,8 @@ Channel::GetRTPStatistics(CallStatistics& stats)
 
     // The jitter statistics is updated for each received RTP packet and is
     // based on received packets.
-    StreamStatistician::Statistics statistics;
-    StreamStatistician* statistician =
-        rtp_receive_statistics_->GetStatistician(rtp_receiver_->SSRC());
-    if (!statistician || !statistician->GetStatistics(
+    ReceiveStatistics::RtpReceiveStatistics statistics;
+    if (!rtp_receive_statistics_->Statistics(
         &statistics, _rtpRtcpModule->RTCP() == kRtcpOff)) {
       _engineStatisticsPtr->SetLastError(
           VE_CANNOT_RETRIEVE_RTP_STAT, kTraceWarning,
@@ -4092,9 +4087,7 @@ Channel::GetRTPStatistics(CallStatistics& stats)
     uint32_t bytesReceived(0);
     uint32_t packetsReceived(0);
 
-    if (statistician) {
-      statistician->GetDataCounters(&bytesReceived, &packetsReceived);
-    }
+    rtp_receive_statistics_->GetDataCounters(&bytesReceived, &packetsReceived);
 
     if (_rtpRtcpModule->DataCountersRTP(&bytesSent,
                                         &packetsSent) != 0)

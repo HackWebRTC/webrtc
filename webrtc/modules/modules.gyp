@@ -171,7 +171,6 @@
             'rtp_rtcp/source/nack_rtx_unittest.cc',
             'rtp_rtcp/source/producer_fec_unittest.cc',
             'rtp_rtcp/source/receiver_fec_unittest.cc',
-            'rtp_rtcp/source/receive_statistics_unittest.cc',
             'rtp_rtcp/source/rtcp_format_remb_unittest.cc',
             'rtp_rtcp/source/rtcp_sender_unittest.cc',
             'rtp_rtcp/source/rtcp_receiver_unittest.cc',
