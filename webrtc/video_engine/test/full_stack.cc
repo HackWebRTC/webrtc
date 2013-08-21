@@ -262,7 +262,7 @@ class VideoAnalyzer : public newapi::PacketReceiver,
   scoped_ptr<EventWrapper> trigger_;
 };
 
-TEST_P(FullStackTest, NoPacketLoss) {
+TEST_P(FullStackTest, DISABLED_NoPacketLoss) {
   FullStackTestParams params = GetParam();
 
   scoped_ptr<test::VideoRenderer> local_preview(test::VideoRenderer::Create(
