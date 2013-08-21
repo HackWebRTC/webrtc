@@ -756,45 +756,35 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
                      " size:%d type %d",
                      this, frame, frame->Length(), frame->FrameType());
       }
-      *retransmitted = (frame->GetNackCount() > 0);
       CountFrame(*frame);
       frame->SetCountedFrame(true);
+      if (previous_state == kStateComplete) {
+        *retransmitted = (frame->GetNackCount() > 0);
+        packet_event_->Set();
+        break;
+      }
+    }
+    case kDecodableSession: {
       *retransmitted = (frame->GetNackCount() > 0);
-      if (IsContinuous(*frame) && previous_state != kStateComplete) {
-        if (previous_state != kStateDecodable) {
+      if (previous_state != kStateDecodable) {
+        if (IsContinuous(*frame) || decode_error_mode_ == kWithErrors) {
           if (!first) {
             incomplete_frames_.PopFrame(packet.timestamp);
           }
           decodable_frames_.InsertFrame(frame);
           FindAndInsertContinuousFrames(*frame);
+          if (buffer_return == kCompleteSession) {
+            // Signal that we have a complete session
+            frame_event_->Set();
+          }
+        } else if (first) {
+          incomplete_frames_.InsertFrame(frame);
         }
-        // Signal that we have a decodable frame.
-        frame_event_->Set();
-      } else if (first) {
-        incomplete_frames_.InsertFrame(frame);
       }
       // Signal that we have a received packet.
       packet_event_->Set();
       break;
     }
-    case kDecodableSession:
-      assert(previous_state != kStateComplete);
-      *retransmitted = (frame->GetNackCount() > 0);
-      frame->SetCountedFrame(true);
-      if ((IsContinuous(*frame) || decode_error_mode_ == kWithErrors)
-          && previous_state != kStateDecodable) {
-        incomplete_frames_.PopFrame(packet.timestamp);
-        decodable_frames_.InsertFrame(frame);
-        FindAndInsertContinuousFrames(*frame);
-        // Signal that we have a decodable frame.
-        frame_event_->Set();
-      } else if (first) {
-        ret = kFirstPacket;
-        incomplete_frames_.InsertFrame(frame);
-      }
-      // Signal that we have a received packet.
-      packet_event_->Set();
-      break;
     case kIncomplete: {
       // No point in storing empty continuous frames.
       if (frame->GetState() == kStateEmpty &&
@@ -807,7 +797,6 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
         decodable_frames_.PopFrame(packet.timestamp);
         incomplete_frames_.InsertFrame(frame);
       } else if (first) {
-        ret = kFirstPacket;
         incomplete_frames_.InsertFrame(frame);
       }
       // Signal that we have received a packet.
@@ -1042,7 +1031,8 @@ uint16_t* VCMJitterBuffer::GetNackList(uint16_t* nack_list_size,
   return &nack_seq_nums_[0];
 }
 
-void VCMJitterBuffer::DecodeErrorMode(VCMDecodeErrorMode error_mode) {
+void VCMJitterBuffer::SetDecodeErrorMode(VCMDecodeErrorMode error_mode) {
+  CriticalSectionScoped cs(crit_sect_);
   // If we are not moving from kWithErrors or KSelectiveErrors to kNoErrors,
   // set decode_error_mode_ and apply new error mode only to new packets.
   // Also no need for further processing if we have no old, previously
@@ -1068,7 +1058,7 @@ void VCMJitterBuffer::DecodeErrorMode(VCMDecodeErrorMode error_mode) {
       frame = it->second;
       ++it;
       frame = decodable_frames_.PopFrame(frame->TimeStamp());
-      frame->ClearStateIfIncomplete();
+      frame->SetNotDecodableIfIncomplete();
       incomplete_frames_.InsertFrame(frame);
     }
     decode_error_mode_ = error_mode;

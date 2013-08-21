@@ -208,10 +208,10 @@ VCMFrameBuffer::Reset() {
 }
 
 void
-VCMFrameBuffer::ClearStateIfIncomplete() {
+VCMFrameBuffer::SetNotDecodableIfIncomplete() {
   if (_state == kStateDecodable) {
     _state = kStateIncomplete;
-    _sessionInfo.ClearStateIfIncomplete();
+    _sessionInfo.SetNotDecodableIfIncomplete();
   }
 }
 

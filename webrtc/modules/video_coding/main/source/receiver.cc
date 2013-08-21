@@ -313,14 +313,11 @@ VCMReceiverState VCMReceiver::State() const {
   return state_;
 }
 
-void VCMReceiver::SetDecodeErrorMode(
-    VCMDecodeErrorMode decode_error_mode) {
-  CriticalSectionScoped cs(crit_sect_);
-  jitter_buffer_.DecodeErrorMode(decode_error_mode);
+void VCMReceiver::SetDecodeErrorMode(VCMDecodeErrorMode decode_error_mode) {
+  jitter_buffer_.SetDecodeErrorMode(decode_error_mode);
 }
 
 VCMDecodeErrorMode VCMReceiver::DecodeErrorMode() const {
-  CriticalSectionScoped cs(crit_sect_);
   return jitter_buffer_.decode_error_mode();
 }
 

@@ -179,7 +179,7 @@ class VCMJitterBuffer {
   // Setting kWithErrors and kSelectiveErrors will take full effect once the
   // existing incomplete frames leave the JB or have a packet added (as that
   // would cause their state to be reevlauated).
-  void DecodeErrorMode(VCMDecodeErrorMode error_mode);
+  void SetDecodeErrorMode(VCMDecodeErrorMode error_mode);
   int64_t LastDecodedTimestamp() const;
   VCMDecodeErrorMode decode_error_mode() const {return decode_error_mode_;}
 

@@ -375,7 +375,7 @@ int VCMSessionInfo::MakeDecodable() {
   return return_length;
 }
 
-void VCMSessionInfo::ClearStateIfIncomplete() {
+void VCMSessionInfo::SetNotDecodableIfIncomplete() {
   // We don't need to check for completeness first because the two are
   // orthogonal. If complete_ is true, decodable_ is irrelevant.
   decodable_ = false;

@@ -87,7 +87,7 @@ class VCMFrameBuffer : public VCMEncodedFrame {
   // Used by the dual decoder. After the mode is changed to kNoErrors from
   // kWithErrors or kSelective errors, any states that have been marked
   // decodable and are not complete are marked as non-decodable.
-  void ClearStateIfIncomplete();
+  void SetNotDecodableIfIncomplete();
 
  private:
   void SetState(VCMFrameBufferStateEnum state);  // Set state of frame
