@@ -72,8 +72,6 @@ function streamConstraints() {
   return constraints;
 }
 
-
-
 function connect() {
   pc1 = new webkitRTCPeerConnection(null);
   pc2 = new webkitRTCPeerConnection(null);
@@ -114,6 +112,38 @@ function connect() {
   });
 }
 
+// Augumentation of stats entries with utility functions.
+// The augumented entry does what the stats entry does, but adds
+// utility functions.
+function AugumentedStatsResponse(response) {
+  this.response = response;
+  this.addressPairMap = [];
+}
+
+AugumentedStatsResponse.prototype.collectAddressPairs = function(componentId) {
+  if (!this.addressPairMap[componentId]) {
+    this.addressPairMap[componentId] = [];
+    for (var i = 0; i < this.response.result().length; ++i) {
+      var res = this.response.result()[i];
+      if (res.type == 'googCandidatePair' &&
+          res.stat('googChannelId') == componentId) {
+        this.addressPairMap[componentId].push(res);
+      }
+    }
+  }
+  return this.addressPairMap[componentId];
+}
+
+AugumentedStatsResponse.prototype.result = function() {
+  return this.response.result();
+}
+
+// The indexed getter isn't easy to prototype.
+AugumentedStatsResponse.prototype.get = function(key) {
+  return this.response[key];
+}
+
+
 // Display statistics
 var statCollector = setInterval(function() {
   var display = function(str) {
@@ -123,10 +153,11 @@ var statCollector = setInterval(function() {
   display("No stream");
   if (pc2 && pc2.getRemoteStreams()[0]) {
     if (pc2.getStats) {
-      pc2.getStats(function(stats) {
+      pc2.getStats(function(rawStats) {
+        stats = new AugumentedStatsResponse(rawStats);
         var statsString = '';
         var results = stats.result();
-        var bitrateText = 'No bitrate stats';
+        var videoFlowInfo = 'No bitrate stats';
         for (var i = 0; i < results.length; ++i) {
           var res = results[i];
           statsString += '<h3>Report ';
@@ -139,14 +170,8 @@ var statCollector = setInterval(function() {
             // Should check for mediatype = video, but this is not
             // implemented yet.
             if (res.type == 'ssrc' && res.stat('googFrameHeightReceived')) {
-              var bytesNow = res.stat('bytesReceived');
-              if (timestampPrev > 0) {
-                 var bitRate = Math.round((bytesNow - bytesPrev) * 8 /
-                    (res.timestamp - timestampPrev));
-                 bitrateText = bitRate + ' kbits/sec';
-              }
-              timestampPrev = res.timestamp;
-              bytesPrev = bytesNow;
+              // This is the video flow.
+              videoFlowInfo = extractVideoFlowInfo(res, stats);
             }
           } else {
             // Pre-227.0.1445 (188719) browser
@@ -161,7 +186,7 @@ var statCollector = setInterval(function() {
           }
         }
         $('receiverstats').innerHTML = statsString;
-        display(bitrateText);
+        display(videoFlowInfo);
       });
       pc1.getStats(function(stats) {
         var statsString = '';
@@ -195,6 +220,35 @@ var statCollector = setInterval(function() {
          'x' + remote_video.videoHeight;
   }
 }, 1000);
+
+function extractVideoFlowInfo(res, allStats) {
+  var description = '';
+  var bytesNow = res.stat('bytesReceived');
+  if (timestampPrev > 0) {
+    var bitRate = Math.round((bytesNow - bytesPrev) * 8 /
+                             (res.timestamp - timestampPrev));
+    description = bitRate + ' kbits/sec';
+  }
+  timestampPrev = res.timestamp;
+  bytesPrev = bytesNow;
+  if (res.stat('transportId')) {
+    component = allStats.get(res.stat('transportId'));
+    if (component) {
+      addresses = allStats.collectAddressPairs(component.id);
+      if (addresses.length > 0) {
+        description += ' from IP ';
+        description += addresses[0].stat('googRemoteAddress');
+      } else {
+        description += ' no address';
+      }
+    } else {
+      description += ' No component stats';
+    }
+  } else {
+    description += ' No component ID';
+  }
+  return description;
+}
 
 // Dumping a stats variable as a string.
 // might be named toString?
