@@ -22,6 +22,7 @@
         'common/frame_generator.h',
         'common/frame_generator_capturer.cc',
         'common/frame_generator_capturer.h',
+        'common/generate_ssrcs.cc',
         'common/generate_ssrcs.h',
         'common/gl/gl_renderer.cc',
         'common/gl/gl_renderer.h',
@@ -129,23 +130,11 @@
       ],
     },
     {
-      'target_name': 'video_full_stack_tests',
-      'type': 'executable',
-      'sources': [
-        'full_stack.cc',
-        'test_main.cc',
-      ],
-      'dependencies': [
-        '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-        'video_tests_common',
-      ],
-    },
-    {
       'target_name': 'video_engine_tests',
       'type': 'executable',
       'sources': [
         'engine_tests.cc',
+        'full_stack.cc',
         'send_stream_tests.cc',
         'test_main.cc',
       ],
