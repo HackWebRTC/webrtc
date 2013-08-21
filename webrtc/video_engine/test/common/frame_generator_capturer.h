@@ -26,6 +26,8 @@ class FrameGenerator;
 
 class FrameGeneratorCapturer : public VideoCapturer {
  public:
+  // The FrameGeneratorCapturer takes ownership of the FrameGenerator, which
+  // will be freed when the FrameGeneratorCapturer is deleted.
   static FrameGeneratorCapturer* Create(newapi::VideoSendStreamInput* input,
                                         FrameGenerator* frame_generator,
                                         int target_fps);
@@ -47,7 +49,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
   scoped_ptr<EventWrapper> tick_;
   scoped_ptr<CriticalSectionWrapper> lock_;
   scoped_ptr<ThreadWrapper> thread_;
-  FrameGenerator* frame_generator_;
+  scoped_ptr<FrameGenerator> frame_generator_;
 
   int target_fps_;
 };
