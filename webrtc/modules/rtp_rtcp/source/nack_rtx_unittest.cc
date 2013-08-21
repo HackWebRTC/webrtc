@@ -56,8 +56,8 @@ class TestRtpFeedback : public NullRtpFeedback {
   virtual ~TestRtpFeedback() {}
 
   virtual void OnIncomingSSRCChanged(const int32_t id,
-                                     const uint32_t SSRC) {
-    rtp_rtcp_->SetRemoteSSRC(SSRC);
+                                     const uint32_t ssrc) {
+    rtp_rtcp_->SetRemoteSSRC(ssrc);
   }
 
  private:
