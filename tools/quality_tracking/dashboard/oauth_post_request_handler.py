@@ -32,8 +32,8 @@ class OAuthPostRequestHandler(webapp2.RequestHandler):
      The handler will accept an OAuth request if it is correctly formed and
      the consumer is acting on behalf of an administrator for the dashboard.
   """
-  def __init__(self):
-    pass
+  def __init__(self, request=None, response=None):
+    webapp2.RequestHandler.__init__(self, request, response)
 
   def post(self):
     try:

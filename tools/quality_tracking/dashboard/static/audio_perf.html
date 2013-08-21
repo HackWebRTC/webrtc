@@ -1,0 +1,15 @@
+<html>
+<head>
+  <title>WebRTC Performance Metrics - Audio Quality</title>
+  <link rel="stylesheet" href="../stylesheets/perf.css" type="text/css">
+</head>
+<body>
+  <p>Audio Quality WebAudio -> PeerConnection call (PESQ) Linux/Win</p>
+  <iframe src="https://chromeperf.appspot.com/embed?masters=ChromiumWebRTC&bots=chromium-webrtc-rel-linux&tests=webrtc_manual_browser_tests_test/audio_pesq/mos_lqo,webrtc_manual_browser_tests_test/audio_pesq/raw_mos"></iframe>
+  <iframe src="https://chromeperf.appspot.com/embed?masters=ChromiumWebRTC&bots=chromium-webrtc-rel-7&tests=webrtc_manual_browser_tests_test/audio_pesq/mos_lqo,webrtc_manual_browser_tests_test/audio_pesq/raw_mos"></iframe>
+  <p>Audio Quality Voice Engine E2E test (PESQ) Linux</p>
+  <iframe src="https://chromeperf.appspot.com/embed?masters=WebRTC&bots=webrtc-linux-large-tests&tests=audio_e2e_test/audio_e2e_score/e2e_score"></iframe>
+  <p>Audio Processing time per 10 ms frame (ms) Linux</p>
+  <iframe src="https://chromeperf.appspot.com/embed?masters=WebRTC&bots=webrtc-linux-large-tests&tests=audioproc_perf/audioproc/time_per_10ms_frame"></iframe>
+</body>
+</html>

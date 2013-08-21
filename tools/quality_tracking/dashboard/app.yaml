@@ -8,6 +8,11 @@ handlers:
 # Serve stylesheets statically.
 - url: /stylesheets
   static_dir: stylesheets
+
+# Serve perf dashboard files statically.
+- url: /perf
+  static_dir: static
+
 # This magic file is here to prove to the Google Account Domain Management
 # that we own this domain. It needs to stay there so the domain management
 # doesn't get suspicious.
