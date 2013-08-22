@@ -1000,40 +1000,8 @@ int32_t AudioDeviceAndroidOpenSLES::StartRecording() {
 }
 
 int32_t AudioDeviceAndroidOpenSLES::StopRecording() {
-  {
-    CriticalSectionScoped lock(&crit_sect_);
-
-    if (!is_rec_initialized_) {
-      WEBRTC_OPENSL_TRACE(kTraceInfo, kTraceAudioDevice, id_,
-                          "  Recording is not initialized");
-      return 0;
-    }
-
-    if ((sles_recorder_itf_ != NULL) && (sles_recorder_ != NULL)) {
-      int32_t res = (*sles_recorder_itf_)->SetRecordState(
-          sles_recorder_itf_,
-          SL_RECORDSTATE_STOPPED);
-      if (res != SL_RESULT_SUCCESS) {
-        WEBRTC_OPENSL_TRACE(kTraceError, kTraceAudioDevice, id_,
-                            "  failed to stop recording");
-        return -1;
-      }
-      res = (*sles_recorder_sbq_itf_)->Clear(
-          sles_recorder_sbq_itf_);
-      if (res != SL_RESULT_SUCCESS) {
-        WEBRTC_OPENSL_TRACE(kTraceError, kTraceAudioDevice, id_,
-                            "  failed to clear recorder buffer queue");
-        return -1;
-      }
-
-      // Destroy the recorder object
-      (*sles_recorder_)->Destroy(sles_recorder_);
-      sles_recorder_ = NULL;
-      sles_recorder_itf_ = NULL;
-    }
-  }
-
-  // Stop the playout thread
+  // Stop the recording thread
+  // Cannot be under lock, risk of deadlock
   if (rec_thread_) {
     if (rec_thread_->Stop()) {
       delete rec_thread_;
@@ -1041,15 +1009,41 @@ int32_t AudioDeviceAndroidOpenSLES::StopRecording() {
     } else {
       WEBRTC_TRACE(kTraceError, kTraceAudioDevice, id_,
                    "Failed to stop recording thread ");
-      return -1;
     }
   }
 
   CriticalSectionScoped lock(&crit_sect_);
+
+  if (!is_rec_initialized_) {
+    WEBRTC_OPENSL_TRACE(kTraceInfo, kTraceAudioDevice, id_,
+                        "  Recording is not initialized");
+    return 0;
+  }
+
+  int32_t res = (*sles_recorder_itf_)->SetRecordState(
+      sles_recorder_itf_,
+      SL_RECORDSTATE_STOPPED);
+  if (res != SL_RESULT_SUCCESS) {
+    WEBRTC_OPENSL_TRACE(kTraceError, kTraceAudioDevice, id_,
+                        "  failed to stop recording");
+  }
+
+  res = (*sles_recorder_sbq_itf_)->Clear(sles_recorder_sbq_itf_);
+  if (res != SL_RESULT_SUCCESS) {
+    WEBRTC_OPENSL_TRACE(kTraceError, kTraceAudioDevice, id_,
+                        "  failed to clear recorder buffer queue");
+  }
+
+  // Destroy the recorder object
+  (*sles_recorder_)->Destroy(sles_recorder_);
+
   is_rec_initialized_ = false;
   is_recording_ = false;
   rec_warning_ = 0;
   rec_error_ = 0;
+  sles_recorder_ = NULL;
+  sles_recorder_itf_ = NULL;
+  sles_recorder_sbq_itf_ = NULL;
 
   return 0;
 }
