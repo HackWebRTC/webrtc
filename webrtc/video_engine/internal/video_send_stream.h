@@ -24,6 +24,7 @@ class ViEBase;
 class ViECapture;
 class ViECodec;
 class ViEExternalCapture;
+class ViEExternalCodec;
 class ViENetwork;
 class ViERTP_RTCP;
 
@@ -74,6 +75,7 @@ class VideoSendStream : public newapi::VideoSendStream,
   ViECapture* capture_;
   ViECodec* codec_;
   ViEExternalCapture* external_capture_;
+  ViEExternalCodec* external_codec_;
   ViENetwork* network_;
   ViERTP_RTCP* rtp_rtcp_;
 
