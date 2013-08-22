@@ -44,14 +44,12 @@ class FakeEncoder : public VideoEncoder {
                            uint32_t framerate) OVERRIDE;
 
  private:
-  enum { kMaxFrameSizeBytes = 100000 };
-
   Clock* clock_;
   VideoCodec config_;
   EncodedImageCallback* callback_;
   int target_bitrate_kbps_;
   int64_t last_encode_time_ms_;
-  uint8_t encoded_buffer_[kMaxFrameSizeBytes];
+  uint8_t encoded_buffer_[100000];
 };
 }  // namespace webrtc
 

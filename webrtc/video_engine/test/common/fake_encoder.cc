@@ -60,11 +60,12 @@ int32_t FakeEncoder::Encode(
     int stream_bits = (bits_available > max_stream_bits) ? max_stream_bits :
         bits_available;
     int stream_bytes = (stream_bits + 7) / 8;
-    EXPECT_LT(stream_bytes, kMaxFrameSizeBytes);
-    if (stream_bytes > kMaxFrameSizeBytes)
+    EXPECT_LT(static_cast<size_t>(stream_bytes), sizeof(encoded_buffer_));
+    if (static_cast<size_t>(stream_bytes) > sizeof(encoded_buffer_))
       return -1;
 
-    EncodedImage encoded(encoded_buffer_, stream_bytes, kMaxFrameSizeBytes);
+    EncodedImage encoded(
+        encoded_buffer_, stream_bytes, sizeof(encoded_buffer_));
     encoded._timeStamp = input_image.timestamp();
     encoded.capture_time_ms_ = input_image.render_time_ms();
     if (min_stream_bits > bits_available) {
