@@ -599,15 +599,19 @@ void MediaStreamSignaling::OnRemoteTrackRemoved(
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
     talk_base::scoped_refptr<AudioTrackInterface> audio_track =
         stream->FindAudioTrack(track_id);
-    audio_track->set_state(webrtc::MediaStreamTrackInterface::kEnded);
-    stream->RemoveTrack(audio_track);
-    stream_observer_->OnRemoveRemoteAudioTrack(stream, audio_track);
+    if (audio_track) {
+      audio_track->set_state(webrtc::MediaStreamTrackInterface::kEnded);
+      stream->RemoveTrack(audio_track);
+      stream_observer_->OnRemoveRemoteAudioTrack(stream, audio_track);
+    }
   } else if (media_type == cricket::MEDIA_TYPE_VIDEO) {
     talk_base::scoped_refptr<VideoTrackInterface> video_track =
         stream->FindVideoTrack(track_id);
-    video_track->set_state(webrtc::MediaStreamTrackInterface::kEnded);
-    stream->RemoveTrack(video_track);
-    stream_observer_->OnRemoveRemoteVideoTrack(stream, video_track);
+    if (video_track) {
+      video_track->set_state(webrtc::MediaStreamTrackInterface::kEnded);
+      stream->RemoveTrack(video_track);
+      stream_observer_->OnRemoveRemoteVideoTrack(stream, video_track);
+    }
   } else {
     ASSERT(false && "Invalid media type");
   }
@@ -621,11 +625,19 @@ void MediaStreamSignaling::RejectRemoteTracks(cricket::MediaType media_type) {
     MediaStreamInterface* stream = remote_streams_->find(info.stream_label);
     if (media_type == cricket::MEDIA_TYPE_AUDIO) {
       AudioTrackInterface* track = stream->FindAudioTrack(info.track_id);
-      track->set_state(webrtc::MediaStreamTrackInterface::kEnded);
+      // There's no guarantee the track is still available, e.g. the track may
+      // have been removed from the stream by javascript.
+      if (track) {
+        track->set_state(webrtc::MediaStreamTrackInterface::kEnded);
+      }
     }
     if (media_type == cricket::MEDIA_TYPE_VIDEO) {
       VideoTrackInterface* track = stream->FindVideoTrack(info.track_id);
-      track->set_state(webrtc::MediaStreamTrackInterface::kEnded);
+      // There's no guarantee the track is still available, e.g. the track may
+      // have been removed from the stream by javascript.
+      if (track) {
+        track->set_state(webrtc::MediaStreamTrackInterface::kEnded);
+      }
     }
   }
 }

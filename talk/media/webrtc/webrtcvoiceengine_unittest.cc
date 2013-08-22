@@ -125,7 +125,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_TRUE(SetupEngine());
     // Remove stream added in Setup, which is corresponding to default channel.
     int default_channel_num = voe_.GetLastChannel();
-    uint32 default_send_ssrc;
+    uint32 default_send_ssrc = 0u;
     EXPECT_EQ(0, voe_.GetLocalSSRC(default_channel_num, default_send_ssrc));
     EXPECT_EQ(kSsrc1, default_send_ssrc);
     EXPECT_TRUE(channel_->RemoveSendStream(default_send_ssrc));

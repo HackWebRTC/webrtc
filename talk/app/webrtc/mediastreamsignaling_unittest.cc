@@ -778,6 +778,33 @@ TEST_F(MediaStreamSignalingTest, RejectMediaContent) {
   EXPECT_EQ(webrtc::MediaStreamTrackInterface::kEnded, remote_audio->state());
 }
 
+// This test that it won't crash if the remote track as been removed outside
+// of MediaStreamSignaling and then MediaStreamSignaling tries to reject
+// this track.
+TEST_F(MediaStreamSignalingTest, RemoveTrackThenRejectMediaContent) {
+  talk_base::scoped_ptr<SessionDescriptionInterface> desc(
+      webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer,
+                                       kSdpStringWithStream1, NULL));
+  EXPECT_TRUE(desc != NULL);
+  signaling_->OnRemoteDescriptionChanged(desc.get());
+
+  MediaStreamInterface* remote_stream =  observer_->remote_streams()->at(0);
+  remote_stream->RemoveTrack(remote_stream->GetVideoTracks()[0]);
+  remote_stream->RemoveTrack(remote_stream->GetAudioTracks()[0]);
+
+  cricket::ContentInfo* video_info =
+      desc->description()->GetContentByName("video");
+  video_info->rejected = true;
+  signaling_->OnLocalDescriptionChanged(desc.get());
+
+  cricket::ContentInfo* audio_info =
+      desc->description()->GetContentByName("audio");
+  audio_info->rejected = true;
+  signaling_->OnLocalDescriptionChanged(desc.get());
+
+  // No crash is a pass.
+}
+
 // This tests that a default MediaStream is created if a remote session
 // description doesn't contain any streams and no MSID support.
 // It also tests that the default stream is updated if a video m-line is added
@@ -810,6 +837,28 @@ TEST_F(MediaStreamSignalingTest, SdpWithoutMsidCreatesDefaultStream) {
   EXPECT_EQ("defaultv0", remote_stream->GetVideoTracks()[0]->id());
   observer_->VerifyRemoteAudioTrack("default", "defaulta0", 0);
   observer_->VerifyRemoteVideoTrack("default", "defaultv0", 0);
+}
+
+// This tests that it won't crash when MediaStreamSignaling tries to remove
+//  a remote track that as already been removed from the mediastream.
+TEST_F(MediaStreamSignalingTest, RemoveAlreadyGoneRemoteStream) {
+  talk_base::scoped_ptr<SessionDescriptionInterface> desc_audio_only(
+      webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer,
+                                       kSdpStringWithoutStreams,
+                                       NULL));
+  ASSERT_TRUE(desc_audio_only != NULL);
+  signaling_->OnRemoteDescriptionChanged(desc_audio_only.get());
+  MediaStreamInterface* remote_stream = observer_->remote_streams()->at(0);
+  remote_stream->RemoveTrack(remote_stream->GetAudioTracks()[0]);
+  remote_stream->RemoveTrack(remote_stream->GetVideoTracks()[0]);
+
+  talk_base::scoped_ptr<SessionDescriptionInterface> desc(
+      webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer,
+                                       kSdpStringWithoutStreams, NULL));
+  ASSERT_TRUE(desc != NULL);
+  signaling_->OnRemoteDescriptionChanged(desc.get());
+
+  // No crash is a pass.
 }
 
 // This tests that a default MediaStream is created if the remote session
