@@ -335,6 +335,38 @@
             },
           ],
         }],
+        ['test_isolation_mode != "noop"', {
+          'targets': [
+            {
+              'target_name': 'modules_tests_run',
+              'type': 'none',
+              'dependencies': [
+                '<(import_isolate_path):import_isolate_gypi',
+                'modules_tests',
+              ],
+              'includes': [
+                'modules_tests.isolate',
+              ],
+              'sources': [
+                'modules_tests.isolate',
+              ],
+            },
+            {
+              'target_name': 'modules_unittests_run',
+              'type': 'none',
+              'dependencies': [
+                '<(import_isolate_path):import_isolate_gypi',
+                'modules_unittests',
+              ],
+              'includes': [
+                'modules_unittests.isolate',
+              ],
+              'sources': [
+                'modules_unittests.isolate',
+              ],
+            },
+          ],
+        }],
       ],
     }], # include_tests
   ], # conditions

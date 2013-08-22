@@ -52,7 +52,7 @@
         }],
       ],
     },
-  ],
+  ], # targets
   'conditions': [
     # TODO(henrike): remove build_with_chromium==1 when the bots are using
     # Chromium's buildbots.
@@ -63,6 +63,24 @@
           'type': 'none',
           'dependencies': [
             '<(apk_tests_path):metrics_unittests_apk',
+          ],
+        },
+      ],
+    }],
+    ['test_isolation_mode != "noop"', {
+      'targets': [
+        {
+          'target_name': 'metrics_unittests_run',
+          'type': 'none',
+          'dependencies': [
+            '<(import_isolate_path):import_isolate_gypi',
+            'metrics_unittests',
+          ],
+          'includes': [
+            'metrics_unittests.isolate',
+          ],
+          'sources': [
+            'metrics_unittests.isolate',
           ],
         },
       ],

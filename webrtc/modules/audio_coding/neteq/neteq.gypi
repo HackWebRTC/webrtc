@@ -231,6 +231,24 @@
             },
           ],
         }],
+        ['test_isolation_mode != "noop"', {
+          'targets': [
+            {
+              'target_name': 'neteq_unittests_run',
+              'type': 'none',
+              'dependencies': [
+                '<(import_isolate_path):import_isolate_gypi',
+                'neteq_unittests',
+              ],
+              'includes': [
+                'neteq_unittests.isolate',
+              ],
+              'sources': [
+                'neteq_unittests.isolate',
+              ],
+            },
+          ],
+        }],
       ],
     }], # include_tests
   ], # conditions

@@ -196,6 +196,26 @@
             }], # OS!="mac"
           ] # conditions
         },
+      ], # targets
+      'conditions': [
+        ['test_isolation_mode != "noop"', {
+          'targets': [
+            {
+              'target_name': 'video_capture_tests_run',
+              'type': 'none',
+              'dependencies': [
+                '<(import_isolate_path):import_isolate_gypi',
+                'video_capture_tests',
+              ],
+              'includes': [
+                'video_capture_tests.isolate',
+              ],
+              'sources': [
+                'video_capture_tests.isolate',
+              ],
+            },
+          ],
+        }],
       ],
     }],
   ],

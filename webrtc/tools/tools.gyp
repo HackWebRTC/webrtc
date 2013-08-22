@@ -150,6 +150,24 @@
             },
           ],
         }],
+        ['test_isolation_mode != "noop"', {
+          'targets': [
+            {
+              'target_name': 'tools_unittests_run',
+              'type': 'none',
+              'dependencies': [
+                '<(import_isolate_path):import_isolate_gypi',
+                'tools_unittests',
+              ],
+              'includes': [
+                'tools_unittests.isolate',
+              ],
+              'sources': [
+                'tools_unittests.isolate',
+              ],
+            },
+          ],
+        }],
       ],
     }], # include_tests
   ], # conditions

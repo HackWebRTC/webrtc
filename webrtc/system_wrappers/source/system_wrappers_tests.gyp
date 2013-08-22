@@ -73,6 +73,24 @@
         },
       ],
     }],
+    ['test_isolation_mode != "noop"', {
+      'targets': [
+        {
+          'target_name': 'system_wrappers_unittests_run',
+          'type': 'none',
+          'dependencies': [
+            '<(import_isolate_path):import_isolate_gypi',
+            'system_wrappers_unittests',
+          ],
+          'includes': [
+            'system_wrappers_unittests.isolate',
+          ],
+          'sources': [
+            'system_wrappers_unittests.isolate',
+          ],
+        },
+      ],
+    }],
   ],
 }
 
