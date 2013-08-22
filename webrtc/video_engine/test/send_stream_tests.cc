@@ -9,6 +9,7 @@
  */
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/video_engine/test/common/frame_generator.h"
@@ -19,7 +20,6 @@
 
 namespace webrtc {
 
-class VideoSendStreamTest : public ::testing::Test {};
 class SendTransportObserver : public test::NullTransport {
  public:
   explicit SendTransportObserver(unsigned long timeout_ms)
@@ -39,8 +39,32 @@ class SendTransportObserver : public test::NullTransport {
   unsigned long timeout_ms_;
 };
 
+class VideoSendStreamTest : public ::testing::Test {
+ protected:
+  static const uint32_t kSendSsrc;
+  void RunSendTest(newapi::VideoCall* call,
+                   const newapi::VideoSendStream::Config& config,
+                   SendTransportObserver* observer) {
+    newapi::VideoSendStream* send_stream = call->CreateSendStream(config);
+    scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
+        test::FrameGeneratorCapturer::Create(
+            send_stream->Input(),
+            test::FrameGenerator::Create(320, 240, Clock::GetRealTimeClock()),
+            30));
+    send_stream->StartSend();
+    frame_generator_capturer->Start();
+
+    EXPECT_EQ(kEventSignaled, observer->Wait());
+
+    frame_generator_capturer->Stop();
+    send_stream->StopSend();
+    call->DestroySendStream(send_stream);
+  }
+};
+
+const uint32_t VideoSendStreamTest::kSendSsrc = 0xC0FFEE;
+
 TEST_F(VideoSendStreamTest, SendsSetSsrc) {
-  static const uint32_t kSendSsrc = 0xC0FFEE;
   class SendSsrcObserver : public SendTransportObserver {
    public:
     SendSsrcObserver() : SendTransportObserver(30 * 1000) {}
@@ -62,20 +86,42 @@ TEST_F(VideoSendStreamTest, SendsSetSsrc) {
 
   newapi::VideoSendStream::Config send_config = call->GetDefaultSendConfig();
   send_config.rtp.ssrcs.push_back(kSendSsrc);
-  newapi::VideoSendStream* send_stream = call->CreateSendStream(send_config);
-  scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
-      test::FrameGeneratorCapturer::Create(
-          send_stream->Input(),
-          test::FrameGenerator::Create(320, 240, Clock::GetRealTimeClock()),
-          30));
-  send_stream->StartSend();
-  frame_generator_capturer->Start();
 
-  EXPECT_EQ(kEventSignaled, observer.Wait());
+  RunSendTest(call.get(), send_config, &observer);
+}
 
-  frame_generator_capturer->Stop();
-  send_stream->StopSend();
-  call->DestroySendStream(send_stream);
+TEST_F(VideoSendStreamTest, SupportsCName) {
+  static std::string kCName = "PjQatC14dGfbVwGPUOA9IH7RlsFDbWl4AhXEiDsBizo=";
+  class CNameObserver : public SendTransportObserver {
+   public:
+    CNameObserver() : SendTransportObserver(30 * 1000) {}
+
+    virtual bool SendRTCP(const uint8_t* packet, size_t length) OVERRIDE {
+      RTCPUtility::RTCPParserV2 parser(packet, length, true);
+      EXPECT_TRUE(parser.IsValid());
+
+      RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
+      while (packet_type != RTCPUtility::kRtcpNotValidCode) {
+        if (packet_type == RTCPUtility::kRtcpSdesChunkCode) {
+          EXPECT_EQ(parser.Packet().CName.CName, kCName);
+          send_test_complete_->Set();
+        }
+
+        packet_type = parser.Iterate();
+      }
+
+      return true;
+    }
+  } observer;
+
+  newapi::VideoCall::Config call_config(&observer);
+  scoped_ptr<newapi::VideoCall> call(newapi::VideoCall::Create(call_config));
+
+  newapi::VideoSendStream::Config send_config = call->GetDefaultSendConfig();
+  send_config.rtp.ssrcs.push_back(kSendSsrc);
+  send_config.rtp.c_name = kCName;
+
+  RunSendTest(call.get(), send_config, &observer);
 }
 
 }  // namespace webrtc

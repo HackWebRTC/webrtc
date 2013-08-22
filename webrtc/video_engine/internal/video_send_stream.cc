@@ -10,6 +10,8 @@
 
 #include "webrtc/video_engine/internal/video_send_stream.h"
 
+#include <string.h>
+
 #include <vector>
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -104,6 +106,13 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
   rtp_rtcp_->SetNACKStatus(channel_, config_.rtp.nack.rtp_history_ms > 0);
   rtp_rtcp_->SetTransmissionSmoothingStatus(channel_, config_.pacing);
   rtp_rtcp_->SetSendTimestampOffsetStatus(channel_, true, 1);
+
+  char rtcp_cname[ViERTP_RTCP::KMaxRTCPCNameLength];
+  assert(config_.rtp.c_name.length() < ViERTP_RTCP::KMaxRTCPCNameLength);
+  strncpy(rtcp_cname, config_.rtp.c_name.c_str(), sizeof(rtcp_cname) - 1);
+  rtcp_cname[sizeof(rtcp_cname) - 1] = '\0';
+
+  rtp_rtcp_->SetRTCPCName(channel_, rtcp_cname);
 
   capture_ = ViECapture::GetInterface(video_engine);
   capture_->AllocateExternalCaptureDevice(capture_id_, external_capture_);
