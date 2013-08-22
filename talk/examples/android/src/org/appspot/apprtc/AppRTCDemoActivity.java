@@ -327,11 +327,13 @@ public class AppRTCDemoActivity extends Activity
     @Override public void onAddStream(final MediaStream stream){
       runOnUiThread(new Runnable() {
           public void run() {
-            abortUnless(stream.audioTracks.size() == 1 &&
-                stream.videoTracks.size() == 1,
+            abortUnless(stream.audioTracks.size() <= 1 &&
+                stream.videoTracks.size() <= 1,
                 "Weird-looking stream: " + stream);
-            stream.videoTracks.get(0).addRenderer(new VideoRenderer(
-                new VideoCallbacks(vsv, VideoStreamsView.Endpoint.REMOTE)));
+            if (stream.videoTracks.size() == 1) {
+              stream.videoTracks.get(0).addRenderer(new VideoRenderer(
+                  new VideoCallbacks(vsv, VideoStreamsView.Endpoint.REMOTE)));
+            }
           }
         });
     }
