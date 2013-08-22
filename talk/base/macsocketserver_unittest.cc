@@ -132,7 +132,7 @@ TEST_F(MacAsyncSocketTest, TestConnectWithDnsLookupIPv6) {
   SocketTest::TestConnectWithDnsLookupIPv6();
 }
 
-TEST_F(MacAsyncSocketTest, TestConnectFailIPv4) {
+TEST_F(MacAsyncSocketTest, DISABLE_TestConnectFailIPv4) {
   SocketTest::TestConnectFailIPv4();
 }
 
