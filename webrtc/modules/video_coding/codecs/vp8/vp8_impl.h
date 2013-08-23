@@ -226,8 +226,8 @@ class VP8DecoderImpl : public VP8Decoder {
   int image_format_;
   vpx_ref_frame_t* ref_frame_;
   int propagation_cnt_;
+  bool latest_keyframe_complete_;
   bool mfqe_enabled_;
-  bool key_frame_required_;
 };  // end of VP8Decoder class
 }  // namespace webrtc
 

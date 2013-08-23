@@ -63,7 +63,6 @@ protected:
     unsigned char* _refDecFrame;
     unsigned int _refEncFrameLength;
     FILE* _sourceFile;
-    bool is_key_frame_;
 
     UnitTestEncodeCompleteCallback* _encodeCompleteCallback;
     UnitTestDecodeCompleteCallback* _decodeCompleteCallback;

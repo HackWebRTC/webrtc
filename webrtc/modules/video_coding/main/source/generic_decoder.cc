@@ -133,7 +133,9 @@ _frameInfos(),
 _nextFrameInfoIdx(0),
 _decoder(decoder),
 _codecType(kVideoCodecUnknown),
-_isExternal(isExternal)
+_isExternal(isExternal),
+_requireKeyFrame(false),
+_keyFrameDecoded(false)
 {
 }
 
@@ -142,8 +144,11 @@ VCMGenericDecoder::~VCMGenericDecoder()
 }
 
 int32_t VCMGenericDecoder::InitDecode(const VideoCodec* settings,
-                                      int32_t numberOfCores)
+                                            int32_t numberOfCores,
+                                            bool requireKeyFrame)
 {
+    _requireKeyFrame = requireKeyFrame;
+    _keyFrameDecoded = false;
     _codecType = settings->codecType;
 
     return _decoder.InitDecode(settings, numberOfCores);
@@ -152,6 +157,15 @@ int32_t VCMGenericDecoder::InitDecode(const VideoCodec* settings,
 int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame,
                                         int64_t nowMs)
 {
+    if (_requireKeyFrame &&
+        !_keyFrameDecoded &&
+        frame.FrameType() != kVideoFrameKey &&
+        frame.FrameType() != kVideoFrameGolden)
+    {
+        // Require key frame is enabled, meaning that one key frame must be decoded
+        // before we can decode delta frames.
+        return VCM_CODEC_ERROR;
+    }
     _frameInfos[_nextFrameInfoIdx].decodeStartTimeMs = nowMs;
     _frameInfos[_nextFrameInfoIdx].renderTimeMs = frame.RenderTimeMs();
     _callback->Map(frame.TimeStamp(), &_frameInfos[_nextFrameInfoIdx]);
@@ -180,17 +194,22 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame,
         // No output
         _callback->Pop(frame.TimeStamp());
     }
+    // Update the key frame decoded variable so that we know whether or not we've decoded a key frame since reset.
+    _keyFrameDecoded = (_keyFrameDecoded ||
+        frame.FrameType() == kVideoFrameKey);
     return ret;
 }
 
 int32_t
 VCMGenericDecoder::Release()
 {
+    _keyFrameDecoded = false;
     return _decoder.Release();
 }
 
 int32_t VCMGenericDecoder::Reset()
 {
+    _keyFrameDecoded = false;
     return _decoder.Reset();
 }
 

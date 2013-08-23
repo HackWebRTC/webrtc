@@ -70,7 +70,8 @@ public:
     *	Initialize the decoder with the information from the VideoCodec
     */
     int32_t InitDecode(const VideoCodec* settings,
-                             int32_t numberOfCores);
+                             int32_t numberOfCores,
+                             bool requireKeyFrame);
 
     /**
     *	Decode to a raw I420 frame,
@@ -114,6 +115,7 @@ protected:
     VideoDecoder&               _decoder;
     VideoCodecType              _codecType;
     bool                        _isExternal;
+    bool                        _requireKeyFrame;
     bool                        _keyFrameDecoded;
 
 };

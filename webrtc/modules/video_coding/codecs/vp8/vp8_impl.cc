@@ -502,8 +502,8 @@ VP8DecoderImpl::VP8DecoderImpl()
       image_format_(VPX_IMG_FMT_NONE),
       ref_frame_(NULL),
       propagation_cnt_(-1),
-      mfqe_enabled_(false),
-      key_frame_required_(true) {
+      latest_keyframe_complete_(false),
+      mfqe_enabled_(false) {
   memset(&codec_, 0, sizeof(codec_));
 }
 
@@ -518,6 +518,7 @@ int VP8DecoderImpl::Reset() {
   }
   InitDecode(&codec_, 1);
   propagation_cnt_ = -1;
+  latest_keyframe_complete_ = false;
   mfqe_enabled_ = false;
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -570,12 +571,9 @@ int VP8DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
   }
 
   propagation_cnt_ = -1;
+  latest_keyframe_complete_ = false;
 
   inited_ = true;
-
-  // Always start with a complete key frame.
-  key_frame_required_ = true;
-
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -617,18 +615,6 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
   }
 #endif
 
-
-  // Always start with a complete key frame.
-  if (key_frame_required_) {
-    if (input_image._frameType != kKeyFrame)
-      return WEBRTC_VIDEO_CODEC_ERROR;
-    // We have a key frame - is it complete?
-    if (input_image._completeFrame) {
-      key_frame_required_ = false;
-    } else {
-      return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-  }
   // Restrict error propagation using key frame requests. Disabled when
   // the feedback mode is enabled (RPS).
   // Reset on a key frame refresh.
@@ -722,7 +708,9 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
     // Whenever we receive an incomplete key frame all reference buffers will
     // be corrupt. If that happens we must request new key frames until we
     // decode a complete.
-    if (input_image._frameType == kKeyFrame && !input_image._completeFrame)
+    if (input_image._frameType == kKeyFrame)
+      latest_keyframe_complete_ = input_image._completeFrame;
+    if (!latest_keyframe_complete_)
       return WEBRTC_VIDEO_CODEC_ERROR;
 
     // Check for reference updates and last reference buffer corruption and

@@ -32,7 +32,6 @@ _refEncFrame(NULL),
 _refDecFrame(NULL),
 _refEncFrameLength(0),
 _sourceFile(NULL),
-is_key_frame_(false),
 _encodeCompleteCallback(NULL),
 _decodeCompleteCallback(NULL)
 {
@@ -49,7 +48,6 @@ _refEncFrame(NULL),
 _refDecFrame(NULL),
 _refEncFrameLength(0),
 _sourceFile(NULL),
-is_key_frame_(false),
 _encodeCompleteCallback(NULL),
 _decodeCompleteCallback(NULL)
 {
@@ -256,27 +254,23 @@ UnitTest::Setup()
     ASSERT_FALSE(SetCodecSpecificParameters() != WEBRTC_VIDEO_CODEC_OK);
 
     unsigned int frameLength = 0;
-    int i = 0;
+    int i=0;
     _inputVideoBuffer.CreateEmptyFrame(_inst.width, _inst.height, _inst.width,
                                        (_inst.width + 1) / 2,
                                        (_inst.width + 1) / 2);
     while (frameLength == 0)
     {
-         EncodedImage encodedImage;
         if (i > 0)
         {
-            // Insert yet another frame.
+            // Insert yet another frame
             ASSERT_TRUE(fread(_refFrame, 1, _lengthSourceFrame,
                 _sourceFile) == _lengthSourceFrame);
             EXPECT_EQ(0, ConvertToI420(kI420, _refFrame, 0, 0, _width, _height,
                           0, kRotateNone, &_inputVideoBuffer));
             _encoder->Encode(_inputVideoBuffer, NULL, NULL);
             ASSERT_TRUE(WaitForEncodedFrame() > 0);
-        } else {
-            // The first frame is always a key frame.
-            encodedImage._frameType = kKeyFrame;
         }
-
+        EncodedImage encodedImage;
         VideoEncodedBufferToEncodedImage(_encodedVideoBuffer, encodedImage);
         ASSERT_TRUE(_decoder->Decode(encodedImage, 0, NULL)
                                == WEBRTC_VIDEO_CODEC_OK);
@@ -338,10 +332,6 @@ UnitTest::Decode()
     {
         return WEBRTC_VIDEO_CODEC_OK;
     }
-    if (is_key_frame_) {
-        encodedImage._frameType = kKeyFrame;
-    }
-
     int ret = _decoder->Decode(encodedImage, 0, NULL);
     unsigned int frameLength = WaitForDecodedFrame();
     assert(ret == WEBRTC_VIDEO_CODEC_OK && (frameLength == 0 || frameLength
@@ -536,10 +526,6 @@ UnitTest::Perform()
         memset(tmpBuf, 0, _refEncFrameLength);
         _encodedVideoBuffer.CopyFrame(_refEncFrameLength, tmpBuf);
         VideoEncodedBufferToEncodedImage(_encodedVideoBuffer, encodedImage);
-        if (i == 0) {
-            // First frame is a key frame.
-            is_key_frame_ = true;
-        }
         ret = _decoder->Decode(encodedImage, false, NULL);
         EXPECT_TRUE(ret <= 0);
         if (ret == 0)
@@ -557,8 +543,6 @@ UnitTest::Perform()
     ASSERT_FALSE(SetCodecSpecificParameters() != WEBRTC_VIDEO_CODEC_OK);
     frameLength = 0;
     VideoEncodedBufferToEncodedImage(_encodedVideoBuffer, encodedImage);
-    // first frame is a key frame.
-    encodedImage._frameType = kKeyFrame;
     while (frameLength == 0)
     {
         _decoder->Decode(encodedImage, false, NULL);
@@ -702,10 +686,6 @@ UnitTest::Perform()
         encTimeStamp = _encodedVideoBuffer.TimeStamp();
         EXPECT_TRUE(_inputVideoBuffer.timestamp() ==
                 static_cast<unsigned>(encTimeStamp));
-        if (frames == 0) {
-            // First frame is always a key frame.
-            is_key_frame_ = true;
-        }
 
         frameLength = Decode();
         if (frameLength == 0)

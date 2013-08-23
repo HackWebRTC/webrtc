@@ -508,11 +508,17 @@ bool VCMJitterBuffer::NextMaybeIncompleteTimestamp(uint32_t* timestamp) {
     return false;
   }
   VCMFrameBuffer* oldest_frame = decodable_frames_.Front();
+
   // If we have exactly one frame in the buffer, release it only if it is
-  // complete. We know decodable_frames_ is  not empty due to the previous
+  // complete. We know decodable_frames_ is  not empty due to the prevoius
   // check.
   if (decodable_frames_.size() == 1 && incomplete_frames_.empty()
       && oldest_frame->GetState() != kStateComplete) {
+    return false;
+  }
+  // Always start with a complete key frame.
+  if (last_decoded_state_.in_initial_state() &&
+      oldest_frame->FrameType() != kVideoFrameKey) {
     return false;
   }
 
