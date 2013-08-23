@@ -484,6 +484,12 @@
   fun:StartThread
 }
 {
+  bug_1205_48
+  ThreadSanitizer:Race
+  fun:webrtc::Bitrate::BitrateLast
+  ...
+}
+{
   bug_2078_1
   ThreadSanitizer:Race
   fun:talk_base::Thread::~Thread
