@@ -42,7 +42,7 @@ const uint32 kMaxMsgLatency = 150;  // 150 ms
 //------------------------------------------------------------------
 // MessageQueueManager
 
-MessageQueueManager* MessageQueueManager::instance_;
+MessageQueueManager* MessageQueueManager::instance_ = NULL;
 
 MessageQueueManager* MessageQueueManager::Instance() {
   // Note: This is not thread safe, but it is first called before threads are
@@ -52,6 +52,10 @@ MessageQueueManager* MessageQueueManager::Instance() {
   return instance_;
 }
 
+bool MessageQueueManager::IsInitialized() {
+  return instance_ != NULL;
+}
+
 MessageQueueManager::MessageQueueManager() {
 }
 
@@ -59,6 +63,9 @@ MessageQueueManager::~MessageQueueManager() {
 }
 
 void MessageQueueManager::Add(MessageQueue *message_queue) {
+  return Instance()->AddInternal(message_queue);
+}
+void MessageQueueManager::AddInternal(MessageQueue *message_queue) {
   // MessageQueueManager methods should be non-reentrant, so we
   // ASSERT that is the case.  If any of these ASSERT, please
   // contact bpm or jbeda.
@@ -68,6 +75,12 @@ void MessageQueueManager::Add(MessageQueue *message_queue) {
 }
 
 void MessageQueueManager::Remove(MessageQueue *message_queue) {
+  // If there isn't a message queue manager instance, then there isn't a queue
+  // to remove.
+  if (!instance_) return;
+  return Instance()->RemoveInternal(message_queue);
+}
+void MessageQueueManager::RemoveInternal(MessageQueue *message_queue) {
   ASSERT(!crit_.CurrentThreadIsOwner());  // See note above.
   // If this is the last MessageQueue, destroy the manager as well so that
   // we don't leak this object at program shutdown. As mentioned above, this is
@@ -91,6 +104,12 @@ void MessageQueueManager::Remove(MessageQueue *message_queue) {
 }
 
 void MessageQueueManager::Clear(MessageHandler *handler) {
+  // If there isn't a message queue manager instance, then there aren't any
+  // queues to remove this handler from.
+  if (!instance_) return;
+  return Instance()->ClearInternal(handler);
+}
+void MessageQueueManager::ClearInternal(MessageHandler *handler) {
   ASSERT(!crit_.CurrentThreadIsOwner());  // See note above.
   CritScope cs(&crit_);
   std::vector<MessageQueue *>::iterator iter;
@@ -122,7 +141,7 @@ MessageQueue::~MessageQueue() {
   // is going away.
   SignalQueueDestroyed();
   if (active_) {
-    MessageQueueManager::Instance()->Remove(this);
+    MessageQueueManager::Remove(this);
     Clear(NULL);
   }
   if (ss_) {
@@ -381,7 +400,7 @@ void MessageQueue::EnsureActive() {
   ASSERT(crit_.CurrentThreadIsOwner());
   if (!active_) {
     active_ = true;
-    MessageQueueManager::Instance()->Add(this);
+    MessageQueueManager::Add(this);
   }
 }
 

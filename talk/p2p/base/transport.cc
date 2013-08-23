@@ -27,6 +27,7 @@
 
 #include "talk/p2p/base/transport.h"
 
+#include "talk/base/bind.h"
 #include "talk/base/common.h"
 #include "talk/base/logging.h"
 #include "talk/p2p/base/candidate.h"
@@ -293,7 +294,8 @@ void Transport::ConnectChannels_w() {
     TransportDescription desc(NS_GINGLE_P2P, std::vector<std::string>(),
                               talk_base::CreateRandomString(ICE_UFRAG_LENGTH),
                               talk_base::CreateRandomString(ICE_PWD_LENGTH),
-                              ICEMODE_FULL, NULL, Candidates());
+                              ICEMODE_FULL, CONNECTIONROLE_NONE, NULL,
+                              Candidates());
     SetLocalTransportDescription_w(desc, CA_OFFER);
   }
 
@@ -422,6 +424,11 @@ bool Transport::GetStats_w(TransportStats* stats) {
     stats->channel_stats.push_back(substats);
   }
   return true;
+}
+
+bool Transport::GetSslRole(talk_base::SSLRole* ssl_role) const {
+  return worker_thread_->Invoke<bool>(
+      Bind(&Transport::GetSslRole_w, this, ssl_role));
 }
 
 void Transport::OnRemoteCandidates(const std::vector<Candidate>& candidates) {
@@ -668,19 +675,20 @@ bool Transport::ApplyRemoteTransportDescription_w(TransportChannelImpl* ch) {
   return true;
 }
 
-void Transport::ApplyNegotiatedTransportDescription_w(
+bool Transport::ApplyNegotiatedTransportDescription_w(
     TransportChannelImpl* channel) {
   channel->SetIceProtocolType(protocol_);
   channel->SetRemoteIceMode(remote_ice_mode_);
+  return true;
 }
 
-bool Transport::NegotiateTransportDescription_w(ContentAction local_role_) {
+bool Transport::NegotiateTransportDescription_w(ContentAction local_role) {
   // TODO(ekr@rtfm.com): This is ICE-specific stuff. Refactor into
   // P2PTransport.
   const TransportDescription* offer;
   const TransportDescription* answer;
 
-  if (local_role_ == CA_OFFER) {
+  if (local_role == CA_OFFER) {
     offer = local_description_.get();
     answer = remote_description_.get();
   } else {
@@ -724,7 +732,8 @@ bool Transport::NegotiateTransportDescription_w(ContentAction local_role_) {
   for (ChannelMap::iterator iter = channels_.begin();
        iter != channels_.end();
        ++iter) {
-    ApplyNegotiatedTransportDescription_w(iter->second.get());
+    if (!ApplyNegotiatedTransportDescription_w(iter->second.get()))
+      return false;
   }
   return true;
 }

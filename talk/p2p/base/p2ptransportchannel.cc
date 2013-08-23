@@ -427,6 +427,15 @@ void P2PTransportChannel::OnUnknownAddress(
   const Candidate* candidate = NULL;
   bool known_username = false;
   std::string remote_password;
+
+  // If we have not received any candidates from remote yet, as it can happen
+  // in case of trickle, but we have received remote ice_ufrag in O/A, we should
+  // check against it.
+  if (!remote_ice_ufrag_.empty() && (remote_username == remote_ice_ufrag_)) {
+    remote_password = remote_ice_pwd_;
+    known_username = true;
+  }
+
   for (it = remote_candidates_.begin(); it != remote_candidates_.end(); ++it) {
     if (it->username() == remote_username) {
       remote_password = it->password();

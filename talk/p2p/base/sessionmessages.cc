@@ -359,7 +359,7 @@ bool ParseGingleTransportInfos(const buzz::XmlElement* action_elem,
   // If we don't have media, no need to separate the candidates.
   if (!has_audio && !has_video) {
     TransportInfo tinfo(CN_OTHER,
-        TransportDescription(NS_GINGLE_P2P, Candidates()));
+        TransportDescription(NS_GINGLE_P2P, std::string(), std::string()));
     if (!ParseGingleCandidates(action_elem, trans_parsers, translators,
                                CN_OTHER, &tinfo.description.candidates,
                                error)) {
@@ -371,10 +371,12 @@ bool ParseGingleTransportInfos(const buzz::XmlElement* action_elem,
   }
 
   // If we have media, separate the candidates.
-  TransportInfo audio_tinfo(CN_AUDIO,
-                            TransportDescription(NS_GINGLE_P2P, Candidates()));
-  TransportInfo video_tinfo(CN_VIDEO,
-                            TransportDescription(NS_GINGLE_P2P, Candidates()));
+  TransportInfo audio_tinfo(
+      CN_AUDIO,
+      TransportDescription(NS_GINGLE_P2P, std::string(), std::string()));
+  TransportInfo video_tinfo(
+      CN_VIDEO,
+      TransportDescription(NS_GINGLE_P2P, std::string(), std::string()));
   for (const buzz::XmlElement* candidate_elem = action_elem->FirstElement();
        candidate_elem != NULL;
        candidate_elem = candidate_elem->NextElement()) {

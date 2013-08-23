@@ -713,7 +713,7 @@ cricket::SessionDescription* NewTestSessionDescription(
                     new TestContentDescription(gingle_content_type,
                                                content_type_a));
   cricket::TransportDescription desc(cricket::NS_GINGLE_P2P,
-                                     cricket::Candidates());
+                                     std::string(), std::string());
   offer->AddTransportInfo(cricket::TransportInfo(content_name_a, desc));
 
   if (content_name_a != content_name_b) {
@@ -735,7 +735,7 @@ cricket::SessionDescription* NewTestSessionDescription(
   offer->AddTransportInfo(cricket::TransportInfo
                           (content_name, cricket::TransportDescription(
                           cricket::NS_GINGLE_P2P,
-                          cricket::Candidates())));
+                          std::string(), std::string())));
   return offer;
 }
 

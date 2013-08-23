@@ -485,19 +485,13 @@ class WebRtcSdpTest : public testing::Test {
     EXPECT_TRUE(desc_.AddTransportInfo(
         TransportInfo(kAudioContentName,
                       TransportDescription(NS_JINGLE_ICE_UDP,
-                                           std::vector<std::string>(),
                                            kCandidateUfragVoice,
-                                           kCandidatePwdVoice,
-                                           cricket::ICEMODE_FULL,
-                                           NULL, Candidates()))));
+                                           kCandidatePwdVoice))));
     EXPECT_TRUE(desc_.AddTransportInfo(
         TransportInfo(kVideoContentName,
                       TransportDescription(NS_JINGLE_ICE_UDP,
-                                           std::vector<std::string>(),
                                            kCandidateUfragVideo,
-                                           kCandidatePwdVideo,
-                                           cricket::ICEMODE_FULL,
-                                           NULL, Candidates()))));
+                                           kCandidatePwdVideo))));
 
     // v4 host
     int port = 1234;
@@ -860,9 +854,7 @@ class WebRtcSdpTest : public testing::Test {
     }
     TransportInfo transport_info(
         content_name, TransportDescription(NS_JINGLE_ICE_UDP,
-                                           std::vector<std::string>(),
-                                           ufrag, pwd, cricket::ICEMODE_FULL,
-                                           NULL, Candidates()));
+                                           ufrag, pwd));
     SessionDescription* desc =
         const_cast<SessionDescription*>(jdesc->description());
     desc->RemoveTransportInfoByName(content_name);
@@ -903,16 +895,18 @@ class WebRtcSdpTest : public testing::Test {
                                            std::vector<std::string>(),
                                            kCandidateUfragVoice,
                                            kCandidatePwdVoice,
-                                           cricket::ICEMODE_FULL, &fingerprint,
-                                           Candidates()))));
+                                           cricket::ICEMODE_FULL,
+                                           cricket::CONNECTIONROLE_NONE,
+                                           &fingerprint, Candidates()))));
     EXPECT_TRUE(desc_.AddTransportInfo(
         TransportInfo(kVideoContentName,
                       TransportDescription(NS_JINGLE_ICE_UDP,
                                            std::vector<std::string>(),
                                            kCandidateUfragVideo,
                                            kCandidatePwdVideo,
-                                           cricket::ICEMODE_FULL, &fingerprint,
-                                           Candidates()))));
+                                           cricket::ICEMODE_FULL,
+                                           cricket::CONNECTIONROLE_NONE,
+                                           &fingerprint, Candidates()))));
   }
 
   void AddExtmap() {
@@ -984,11 +978,8 @@ class WebRtcSdpTest : public testing::Test {
     EXPECT_TRUE(desc_.AddTransportInfo(
            TransportInfo(kDataContentName,
                          TransportDescription(NS_JINGLE_ICE_UDP,
-                                              std::vector<std::string>(),
                                               kCandidateUfragData,
-                                              kCandidatePwdData,
-                                              cricket::ICEMODE_FULL,
-                                              NULL, Candidates()))));
+                                              kCandidatePwdData))));
   }
 
   void AddRtpDataChannel() {
@@ -1011,11 +1002,8 @@ class WebRtcSdpTest : public testing::Test {
     EXPECT_TRUE(desc_.AddTransportInfo(
            TransportInfo(kDataContentName,
                          TransportDescription(NS_JINGLE_ICE_UDP,
-                                              std::vector<std::string>(),
                                               kCandidateUfragData,
-                                              kCandidatePwdData,
-                                              cricket::ICEMODE_FULL,
-                                              NULL, Candidates()))));
+                                              kCandidatePwdData))));
   }
 
   bool TestDeserializeDirection(cricket::MediaContentDirection direction) {
@@ -1965,4 +1953,61 @@ TEST_F(WebRtcSdpTest, RoundTripSdpWithSctpDataChannelsWithCandidates) {
 
   EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
   EXPECT_EQ(sdp_with_data, webrtc::SdpSerialize(jdesc_output));
+}
+
+TEST_F(WebRtcSdpTest, SerializeDtlsSetupAttribute) {
+  AddFingerprint();
+  TransportInfo audio_transport_info =
+      *(desc_.GetTransportInfoByName(kAudioContentName));
+  EXPECT_EQ(cricket::CONNECTIONROLE_NONE,
+            audio_transport_info.description.connection_role);
+  audio_transport_info.description.connection_role =
+        cricket::CONNECTIONROLE_ACTIVE;
+
+  TransportInfo video_transport_info =
+      *(desc_.GetTransportInfoByName(kVideoContentName));
+  EXPECT_EQ(cricket::CONNECTIONROLE_NONE,
+            video_transport_info.description.connection_role);
+  video_transport_info.description.connection_role =
+        cricket::CONNECTIONROLE_ACTIVE;
+
+  desc_.RemoveTransportInfoByName(kAudioContentName);
+  desc_.RemoveTransportInfoByName(kVideoContentName);
+
+  desc_.AddTransportInfo(audio_transport_info);
+  desc_.AddTransportInfo(video_transport_info);
+
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(),
+                                jdesc_.session_id(),
+                                jdesc_.session_version()));
+  std::string message = webrtc::SdpSerialize(jdesc_);
+  std::string sdp_with_dtlssetup = kSdpFullString;
+
+  // Fingerprint attribute is necessary to add DTLS setup attribute.
+  InjectAfter(kAttributeIcePwdVoice,
+              kFingerprint, &sdp_with_dtlssetup);
+  InjectAfter(kAttributeIcePwdVideo,
+              kFingerprint, &sdp_with_dtlssetup);
+  // Now adding |setup| attribute.
+  InjectAfter(kFingerprint,
+              "a=setup:active\r\n", &sdp_with_dtlssetup);
+  EXPECT_EQ(sdp_with_dtlssetup, message);
+}
+
+TEST_F(WebRtcSdpTest, DeserializeDtlsSetupAttribute) {
+  JsepSessionDescription jdesc_with_dtlssetup(kDummyString);
+  std::string sdp_with_dtlssetup = kSdpFullString;
+  InjectAfter(kSessionTime,
+              "a=setup:actpass\r\n",
+              &sdp_with_dtlssetup);
+  EXPECT_TRUE(SdpDeserialize(sdp_with_dtlssetup, &jdesc_with_dtlssetup));
+  cricket::SessionDescription* desc = jdesc_with_dtlssetup.description();
+  const cricket::TransportInfo* atinfo =
+      desc->GetTransportInfoByName("audio_content_name");
+  EXPECT_EQ(cricket::CONNECTIONROLE_ACTPASS,
+            atinfo->description.connection_role);
+  const cricket::TransportInfo* vtinfo =
+        desc->GetTransportInfoByName("video_content_name");
+  EXPECT_EQ(cricket::CONNECTIONROLE_ACTPASS,
+            vtinfo->description.connection_role);
 }

@@ -681,3 +681,29 @@ TEST_F(VideoCapturerTest, Whitelist) {
   capturer_.ConstrainSupportedFormats(vga_format);
   EXPECT_TRUE(HdFormatInList(*capturer_.GetSupportedFormats()));
 }
+
+TEST_F(VideoCapturerTest, BlacklistAllFormats) {
+  cricket::VideoFormat vga_format(640, 480,
+                                  cricket::VideoFormat::FpsToInterval(30),
+                                  cricket::FOURCC_I420);
+  std::vector<cricket::VideoFormat> supported_formats;
+  // Mock a device that only supports HD formats.
+  supported_formats.push_back(cricket::VideoFormat(1280, 720,
+      cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
+  supported_formats.push_back(cricket::VideoFormat(1920, 1080,
+      cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
+  capturer_.ResetSupportedFormats(supported_formats);
+  EXPECT_EQ(2u, capturer_.GetSupportedFormats()->size());
+  // Now, enable the list, which would exclude both formats. However, since
+  // only HD formats are available, we refuse to filter at all, so we don't
+  // break this camera.
+  capturer_.set_enable_camera_list(true);
+  capturer_.ConstrainSupportedFormats(vga_format);
+  EXPECT_EQ(2u, capturer_.GetSupportedFormats()->size());
+  // To make sure it's not just the camera list being broken, add in VGA and
+  // try again. This time, only the VGA format should be there.
+  supported_formats.push_back(vga_format);
+  capturer_.ResetSupportedFormats(supported_formats);
+  ASSERT_EQ(1u, capturer_.GetSupportedFormats()->size());
+  EXPECT_EQ(vga_format.height, capturer_.GetSupportedFormats()->at(0).height);
+}

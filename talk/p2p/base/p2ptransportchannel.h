@@ -104,6 +104,51 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   IceMode remote_ice_mode() const { return remote_ice_mode_; }
 
+  // DTLS methods.
+  virtual bool IsDtlsActive() const { return false; }
+
+  // Default implementation.
+  virtual bool GetSslRole(talk_base::SSLRole* role) const {
+    return false;
+  }
+
+  virtual bool SetSslRole(talk_base::SSLRole role) {
+    return false;
+  }
+
+  // Set up the ciphers to use for DTLS-SRTP.
+  virtual bool SetSrtpCiphers(const std::vector<std::string>& ciphers) {
+    return false;
+  }
+
+  // Find out which DTLS-SRTP cipher was negotiated
+  virtual bool GetSrtpCipher(std::string* cipher) {
+    return false;
+  }
+
+  // Allows key material to be extracted for external encryption.
+  virtual bool ExportKeyingMaterial(
+      const std::string& label,
+      const uint8* context,
+      size_t context_len,
+      bool use_context,
+      uint8* result,
+      size_t result_len) {
+    return false;
+  }
+
+  virtual bool SetLocalIdentity(talk_base::SSLIdentity* identity) {
+    return false;
+  }
+
+  // Set DTLS Remote fingerprint. Must be after local identity set.
+  virtual bool SetRemoteFingerprint(
+    const std::string& digest_alg,
+    const uint8* digest,
+    size_t digest_len) {
+    return false;
+  }
+
  private:
   talk_base::Thread* thread() { return worker_thread_; }
   PortAllocatorSession* allocator_session() {

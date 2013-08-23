@@ -117,6 +117,14 @@ class FakeTransportChannel : public TransportChannelImpl,
     dtls_fingerprint_ = talk_base::SSLFingerprint(alg, digest, digest_len);
     return true;
   }
+  virtual bool SetSslRole(talk_base::SSLRole role) {
+    ssl_role_ = role;
+    return true;
+  }
+  virtual bool GetSslRole(talk_base::SSLRole* role) const {
+    *role = ssl_role_;
+    return true;
+  }
 
   virtual void Connect() {
     if (state_ == STATE_INIT) {
@@ -275,6 +283,7 @@ class FakeTransportChannel : public TransportChannelImpl,
   std::string remote_ice_pwd_;
   IceMode remote_ice_mode_;
   talk_base::SSLFingerprint dtls_fingerprint_;
+  talk_base::SSLRole ssl_role_;
 };
 
 // Fake transport class, which can be passed to anything that needs a Transport.

@@ -343,6 +343,13 @@ void WebRtcSessionDescriptionFactory::InternalCreateAnswer(
   // an answer should also contain new ice ufrag and password if an offer has
   // been received with new ufrag and password.
   request.options.transport_options.ice_restart = session_->IceRestartPending();
+  // We should pass current ssl role to the transport description factory, if
+  // there is already an existing ongoing session.
+  talk_base::SSLRole ssl_role;
+  if (session_->GetSslRole(&ssl_role)) {
+    request.options.transport_options.prefer_passive_role =
+        (talk_base::SSL_SERVER == ssl_role);
+  }
 
   cricket::SessionDescription* desc(session_desc_factory_.CreateAnswer(
       static_cast<cricket::BaseSession*>(session_)->remote_description(),

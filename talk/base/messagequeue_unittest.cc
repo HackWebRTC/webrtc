@@ -130,3 +130,10 @@ TEST_F(MessageQueueTest, DiposeHandlerWithPostedMessagePending) {
   EXPECT_TRUE(deleted);
 }
 
+TEST(MessageQueueManager, DISABLED_Clear) {
+  bool deleted = false;
+  DeletedMessageHandler* handler = new DeletedMessageHandler(&deleted);
+  delete handler;
+  EXPECT_TRUE(deleted);
+  EXPECT_FALSE(MessageQueueManager::IsInitialized());
+}

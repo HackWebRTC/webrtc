@@ -52,6 +52,7 @@
 #include "talk/base/criticalsection.h"
 #include "talk/base/messagequeue.h"
 #include "talk/base/sigslot.h"
+#include "talk/base/sslstreamadapter.h"
 #include "talk/p2p/base/candidate.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/sessiondescription.h"
@@ -323,6 +324,8 @@ class Transport : public talk_base::MessageHandler,
   // Forwards the signal from TransportChannel to BaseSession.
   sigslot::signal0<> SignalRoleConflict;
 
+  virtual bool GetSslRole(talk_base::SSLRole* ssl_role) const;
+
  protected:
   // These are called by Create/DestroyChannel above in order to create or
   // destroy the appropriate type of channel.
@@ -366,8 +369,12 @@ class Transport : public talk_base::MessageHandler,
   // Pushes down the transport parameters obtained via negotiation.
   // Derived classes can set their specific parameters here, but must call the
   // base as well.
-  virtual void ApplyNegotiatedTransportDescription_w(
+  virtual bool ApplyNegotiatedTransportDescription_w(
       TransportChannelImpl* channel);
+
+  virtual bool GetSslRole_w(talk_base::SSLRole* ssl_role) const {
+    return false;
+  }
 
  private:
   struct ChannelMapEntry {

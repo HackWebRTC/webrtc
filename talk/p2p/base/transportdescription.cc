@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2004--2005, Google Inc.
+ * Copyright 2013 Google Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,13 +25,28 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/base/messagehandler.h"
-#include "talk/base/messagequeue.h"
+#include "talk/p2p/base/transportdescription.h"
 
-namespace talk_base {
+#include "talk/p2p/base/constants.h"
 
-MessageHandler::~MessageHandler() {
-  MessageQueueManager::Clear(this);
+namespace cricket {
+
+bool StringToConnectionRole(const std::string& role_str, ConnectionRole* role) {
+  const char* const roles[] = {
+      CONNECTIONROLE_ACTIVE_STR,
+      CONNECTIONROLE_PASSIVE_STR,
+      CONNECTIONROLE_ACTPASS_STR,
+      CONNECTIONROLE_HOLDCONN_STR
+  };
+
+  for (size_t i = 0; i < ARRAY_SIZE(roles); ++i) {
+    if (stricmp(roles[i], role_str.c_str()) == 0) {
+      *role = static_cast<ConnectionRole>(CONNECTIONROLE_ACTIVE + i);
+      return true;
+    }
+  }
+  return false;
 }
 
-} // namespace talk_base
+}  // namespace cricket
+

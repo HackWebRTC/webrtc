@@ -999,9 +999,10 @@ TransportInfos Session::GetEmptyTransportInfos(
   TransportInfos tinfos;
   for (ContentInfos::const_iterator content = contents.begin();
        content != contents.end(); ++content) {
-    tinfos.push_back(
-        TransportInfo(content->name,
-            TransportDescription(transport_type(), Candidates())));
+    tinfos.push_back(TransportInfo(content->name,
+                                   TransportDescription(transport_type(),
+                                                        std::string(),
+                                                        std::string())));
   }
   return tinfos;
 }
@@ -1558,7 +1559,9 @@ bool Session::SendTransportInfoMessage(const TransportProxy* transproxy,
                                        const Candidates& candidates,
                                        SessionError* error) {
   return SendTransportInfoMessage(TransportInfo(transproxy->content_name(),
-      TransportDescription(transproxy->type(), candidates)), error);
+      TransportDescription(transproxy->type(), std::vector<std::string>(),
+                           std::string(), std::string(), ICEMODE_FULL,
+                           CONNECTIONROLE_NONE, NULL, candidates)), error);
 }
 
 bool Session::WriteSessionAction(SignalingProtocol protocol,

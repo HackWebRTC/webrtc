@@ -262,4 +262,10 @@ const char NS_VOICEMAIL[] = "http://www.google.com/session/voicemail";
 const buzz::StaticQName QN_VOICEMAIL_REGARDING = { NS_VOICEMAIL, "regarding" };
 #endif
 
+// From RFC 4145, SDP setup attribute values.
+const char CONNECTIONROLE_ACTIVE_STR[] = "active";
+const char CONNECTIONROLE_PASSIVE_STR[] = "passive";
+const char CONNECTIONROLE_ACTPASS_STR[] = "actpass";
+const char CONNECTIONROLE_HOLDCONN_STR[] = "holdconn";
+
 }  // namespace cricket

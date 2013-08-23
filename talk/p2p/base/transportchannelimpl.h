@@ -50,6 +50,7 @@ class TransportChannelImpl : public TransportChannel {
   virtual Transport* GetTransport() = 0;
 
   // For ICE channels.
+  virtual IceRole GetIceRole() const = 0;
   virtual void SetIceRole(IceRole role) = 0;
   virtual void SetIceTiebreaker(uint64 tiebreaker) = 0;
   // To toggle G-ICE/ICE.
@@ -93,16 +94,14 @@ class TransportChannelImpl : public TransportChannel {
 
   // DTLS methods
   // Set DTLS local identity.
-  virtual bool SetLocalIdentity(talk_base::SSLIdentity* identity) {
-    return false;
-  }
+  virtual bool SetLocalIdentity(talk_base::SSLIdentity* identity) = 0;
 
   // Set DTLS Remote fingerprint. Must be after local identity set.
   virtual bool SetRemoteFingerprint(const std::string& digest_alg,
     const uint8* digest,
-    size_t digest_len) {
-    return false;
-  }
+    size_t digest_len) = 0;
+
+  virtual bool SetSslRole(talk_base::SSLRole role) = 0;
 
   // TransportChannel is forwarding this signal from PortAllocatorSession.
   sigslot::signal1<TransportChannelImpl*> SignalCandidatesAllocationDone;

@@ -219,25 +219,19 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
       current_desc.reset(new SessionDescription());
       EXPECT_TRUE(current_desc->AddTransportInfo(
           TransportInfo("audio",
-                        TransportDescription("", std::vector<std::string>(),
+                        TransportDescription("",
                                              current_audio_ufrag,
-                                             current_audio_pwd,
-                                             cricket::ICEMODE_FULL,
-                                             NULL, Candidates()))));
+                                             current_audio_pwd))));
       EXPECT_TRUE(current_desc->AddTransportInfo(
           TransportInfo("video",
-                        TransportDescription("", std::vector<std::string>(),
+                        TransportDescription("",
                                              current_video_ufrag,
-                                             current_video_pwd,
-                                             cricket::ICEMODE_FULL,
-                                             NULL, Candidates()))));
+                                             current_video_pwd))));
       EXPECT_TRUE(current_desc->AddTransportInfo(
           TransportInfo("data",
-                        TransportDescription("", std::vector<std::string>(),
+                        TransportDescription("",
                                              current_data_ufrag,
-                                             current_data_pwd,
-                                             cricket::ICEMODE_FULL,
-                                             NULL, Candidates()))));
+                                             current_data_pwd))));
     }
     if (offer) {
       desc.reset(f1_.CreateOffer(options, current_desc.get()));

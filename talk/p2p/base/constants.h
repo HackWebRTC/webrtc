@@ -261,6 +261,12 @@ extern const char NS_VOICEMAIL[];
 extern const buzz::StaticQName QN_VOICEMAIL_REGARDING;
 #endif
 
+// RFC 4145, SDP setup attribute values.
+extern const char CONNECTIONROLE_ACTIVE_STR[];
+extern const char CONNECTIONROLE_PASSIVE_STR[];
+extern const char CONNECTIONROLE_ACTPASS_STR[];
+extern const char CONNECTIONROLE_HOLDCONN_STR[];
+
 }  // namespace cricket
 
 #endif  // TALK_P2P_BASE_CONSTANTS_H_

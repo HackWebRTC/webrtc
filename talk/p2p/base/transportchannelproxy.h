@@ -69,6 +69,8 @@ class TransportChannelProxy : public TransportChannel,
   virtual IceRole GetIceRole() const;
   virtual bool GetStats(ConnectionInfos* infos);
   virtual bool IsDtlsActive() const;
+  virtual bool GetSslRole(talk_base::SSLRole* role) const;
+  virtual bool SetSslRole(talk_base::SSLRole role);
   virtual bool SetSrtpCiphers(const std::vector<std::string>& ciphers);
   virtual bool GetSrtpCipher(std::string* cipher);
   virtual bool ExportKeyingMaterial(const std::string& label,

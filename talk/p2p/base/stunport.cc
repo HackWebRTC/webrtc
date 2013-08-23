@@ -254,8 +254,7 @@ void UDPPort::OnReadPacket(talk_base::AsyncPacketSocket* socket,
   // Even if the response doesn't match one of our outstanding requests, we
   // will eat it because it might be a response to a retransmitted packet, and
   // we already cleared the request when we got the first response.
-  ASSERT(!server_addr_.IsUnresolved());
-  if (remote_addr == server_addr_) {
+  if (!server_addr_.IsUnresolved() && remote_addr == server_addr_) {
     requests_.CheckResponse(data, size);
     return;
   }

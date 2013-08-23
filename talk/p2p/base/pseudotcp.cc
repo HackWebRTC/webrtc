@@ -36,6 +36,7 @@
 #include "talk/base/byteorder.h"
 #include "talk/base/common.h"
 #include "talk/base/logging.h"
+#include "talk/base/scoped_ptr.h"
 #include "talk/base/socket.h"
 #include "talk/base/stringutils.h"
 #include "talk/base/timeutils.h"
@@ -538,25 +539,24 @@ IPseudoTcpNotify::WriteResult PseudoTcp::packet(uint32 seq, uint8 flags,
 
   uint32 now = Now();
 
-  uint8 buffer[MAX_PACKET];
-  long_to_bytes(m_conv, buffer);
-  long_to_bytes(seq, buffer + 4);
-  long_to_bytes(m_rcv_nxt, buffer + 8);
+  talk_base::scoped_array<uint8> buffer(new uint8[MAX_PACKET]);
+  long_to_bytes(m_conv, buffer.get());
+  long_to_bytes(seq, buffer.get() + 4);
+  long_to_bytes(m_rcv_nxt, buffer.get() + 8);
   buffer[12] = 0;
   buffer[13] = flags;
-  short_to_bytes(static_cast<uint16>(m_rcv_wnd >> m_rwnd_scale), buffer + 14);
+  short_to_bytes(
+      static_cast<uint16>(m_rcv_wnd >> m_rwnd_scale), buffer.get() + 14);
 
   // Timestamp computations
-  long_to_bytes(now, buffer + 16);
-  long_to_bytes(m_ts_recent, buffer + 20);
+  long_to_bytes(now, buffer.get() + 16);
+  long_to_bytes(m_ts_recent, buffer.get() + 20);
   m_ts_lastack = m_rcv_nxt;
 
   if (len) {
     size_t bytes_read = 0;
-    talk_base::StreamResult result = m_sbuf.ReadOffset(buffer + HEADER_SIZE,
-                                                       len,
-                                                       offset,
-                                                       &bytes_read);
+    talk_base::StreamResult result = m_sbuf.ReadOffset(
+        buffer.get() + HEADER_SIZE, len, offset, &bytes_read);
     UNUSED(result);
     ASSERT(result == talk_base::SR_SUCCESS);
     ASSERT(static_cast<uint32>(bytes_read) == len);
@@ -573,7 +573,8 @@ IPseudoTcpNotify::WriteResult PseudoTcp::packet(uint32 seq, uint8 flags,
                << "><LEN=" << len << ">";
 #endif // _DEBUGMSG
 
-  IPseudoTcpNotify::WriteResult wres = m_notify->TcpWritePacket(this, reinterpret_cast<char *>(buffer), len + HEADER_SIZE);
+  IPseudoTcpNotify::WriteResult wres = m_notify->TcpWritePacket(
+      this, reinterpret_cast<char *>(buffer.get()), len + HEADER_SIZE);
   // Note: When len is 0, this is an ACK packet.  We don't read the return value for those,
   // and thus we won't retry.  So go ahead and treat the packet as a success (basically simulate
   // as if it were dropped), which will prevent our timers from being messed up.

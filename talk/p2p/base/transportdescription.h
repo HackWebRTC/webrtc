@@ -75,6 +75,26 @@ enum IceMode {
   ICEMODE_LITE   // As defined in http://tools.ietf.org/html/rfc5245#section-4.2
 };
 
+// RFC 4145 - http://tools.ietf.org/html/rfc4145#section-4
+// 'active':  The endpoint will initiate an outgoing connection.
+// 'passive': The endpoint will accept an incoming connection.
+// 'actpass': The endpoint is willing to accept an incoming
+//            connection or to initiate an outgoing connection.
+enum ConnectionRole {
+  CONNECTIONROLE_NONE = 0,
+  CONNECTIONROLE_ACTIVE,
+  CONNECTIONROLE_PASSIVE,
+  CONNECTIONROLE_ACTPASS,
+  CONNECTIONROLE_HOLDCONN,
+};
+
+extern const char CONNECTIONROLE_ACTIVE_STR[];
+extern const char CONNECTIONROLE_PASSIVE_STR[];
+extern const char CONNECTIONROLE_ACTPASS_STR[];
+extern const char CONNECTIONROLE_HOLDCONN_STR[];
+
+bool StringToConnectionRole(const std::string& role_str, ConnectionRole* role);
+
 typedef std::vector<Candidate> Candidates;
 
 struct TransportDescription {
@@ -85,6 +105,7 @@ struct TransportDescription {
                        const std::string& ice_ufrag,
                        const std::string& ice_pwd,
                        IceMode ice_mode,
+                       ConnectionRole role,
                        const talk_base::SSLFingerprint* identity_fingerprint,
                        const Candidates& candidates)
       : transport_type(transport_type),
@@ -92,19 +113,24 @@ struct TransportDescription {
         ice_ufrag(ice_ufrag),
         ice_pwd(ice_pwd),
         ice_mode(ice_mode),
+        connection_role(role),
         identity_fingerprint(CopyFingerprint(identity_fingerprint)),
         candidates(candidates) {}
   TransportDescription(const std::string& transport_type,
-                       const Candidates& candidates)
+                       const std::string& ice_ufrag,
+                       const std::string& ice_pwd)
       : transport_type(transport_type),
+        ice_ufrag(ice_ufrag),
+        ice_pwd(ice_pwd),
         ice_mode(ICEMODE_FULL),
-        candidates(candidates) {}
+        connection_role(CONNECTIONROLE_NONE) {}
   TransportDescription(const TransportDescription& from)
       : transport_type(from.transport_type),
         transport_options(from.transport_options),
         ice_ufrag(from.ice_ufrag),
         ice_pwd(from.ice_pwd),
         ice_mode(from.ice_mode),
+        connection_role(from.connection_role),
         identity_fingerprint(CopyFingerprint(from.identity_fingerprint.get())),
         candidates(from.candidates) {}
 
@@ -118,6 +144,7 @@ struct TransportDescription {
     ice_ufrag = from.ice_ufrag;
     ice_pwd = from.ice_pwd;
     ice_mode = from.ice_mode;
+    connection_role = from.connection_role;
 
     identity_fingerprint.reset(CopyFingerprint(
         from.identity_fingerprint.get()));
@@ -147,6 +174,7 @@ struct TransportDescription {
   std::string ice_ufrag;
   std::string ice_pwd;
   IceMode ice_mode;
+  ConnectionRole connection_role;
 
   talk_base::scoped_ptr<talk_base::SSLFingerprint> identity_fingerprint;
   Candidates candidates;

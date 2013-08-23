@@ -1003,8 +1003,13 @@ bool BaseChannel::SetupDtlsSrtp(bool rtcp_channel) {
     &dtls_buffer[offset], SRTP_MASTER_KEY_SALT_LEN);
 
   std::vector<unsigned char> *send_key, *recv_key;
+  talk_base::SSLRole role;
+  if (!channel->GetSslRole(&role)) {
+    LOG(LS_WARNING) << "GetSslRole failed";
+    return false;
+  }
 
-  if (channel->GetIceRole() == ICEROLE_CONTROLLING) {
+  if (role == talk_base::SSL_SERVER) {
     send_key = &server_write_key;
     recv_key = &client_write_key;
   } else {

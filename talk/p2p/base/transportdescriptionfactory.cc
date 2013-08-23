@@ -73,10 +73,12 @@ TransportDescription* TransportDescriptionFactory::CreateOffer(
   // If we are trying to establish a secure transport, add a fingerprint.
   if (secure_ == SEC_ENABLED || secure_ == SEC_REQUIRED) {
     // Fail if we can't create the fingerprint.
-    if (!CreateIdentityDigest(desc.get())) {
+    // If we are the initiator set role to "actpass".
+    if (!SetSecurityInfo(desc.get(), CONNECTIONROLE_ACTPASS)) {
       return NULL;
     }
   }
+
   return desc.release();
 }
 
@@ -101,7 +103,7 @@ TransportDescription* TransportDescriptionFactory::CreateAnswer(
     desc->transport_type = NS_GINGLE_P2P;
     // Offer is hybrid, we support GICE: use GICE.
   } else if ((!offer || offer->transport_type == NS_GINGLE_P2P) &&
-           (protocol_ == ICEPROTO_HYBRID || protocol_ == ICEPROTO_GOOGLE)) {
+             (protocol_ == ICEPROTO_HYBRID || protocol_ == ICEPROTO_GOOGLE)) {
     // Offer is GICE, we support hybrid or GICE: use GICE.
     desc->transport_type = NS_GINGLE_P2P;
   } else {
@@ -126,7 +128,11 @@ TransportDescription* TransportDescriptionFactory::CreateAnswer(
     // The offer supports DTLS, so answer with DTLS, as long as we support it.
     if (secure_ == SEC_ENABLED || secure_ == SEC_REQUIRED) {
       // Fail if we can't create the fingerprint.
-      if (!CreateIdentityDigest(desc.get())) {
+      // Setting DTLS role to active.
+      ConnectionRole role = (options.prefer_passive_role) ?
+          CONNECTIONROLE_PASSIVE : CONNECTIONROLE_ACTIVE;
+
+      if (!SetSecurityInfo(desc.get(), role)) {
         return NULL;
       }
     }
@@ -140,8 +146,8 @@ TransportDescription* TransportDescriptionFactory::CreateAnswer(
   return desc.release();
 }
 
-bool TransportDescriptionFactory::CreateIdentityDigest(
-    TransportDescription* desc) const {
+bool TransportDescriptionFactory::SetSecurityInfo(
+    TransportDescription* desc, ConnectionRole role) const {
   if (!identity_) {
     LOG(LS_ERROR) << "Cannot create identity digest with no identity";
     return false;
@@ -154,6 +160,8 @@ bool TransportDescriptionFactory::CreateIdentityDigest(
     return false;
   }
 
+  // Assign security role.
+  desc->connection_role = role;
   return true;
 }
 

@@ -37,8 +37,9 @@ class SSLIdentity;
 namespace cricket {
 
 struct TransportOptions {
-  TransportOptions() : ice_restart(false) {}
+  TransportOptions() : ice_restart(false), prefer_passive_role(false) {}
   bool ice_restart;
+  bool prefer_passive_role;
 };
 
 // Creates transport descriptions according to the supplied configuration.
@@ -71,7 +72,8 @@ class TransportDescriptionFactory {
       const TransportDescription* current_description) const;
 
  private:
-  bool CreateIdentityDigest(TransportDescription* description) const;
+  bool SetSecurityInfo(TransportDescription* description,
+                       ConnectionRole role) const;
 
   TransportProtocol protocol_;
   SecurePolicy secure_;

@@ -338,7 +338,7 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
       scaled_height_ = scaled_height;
     }
     if (FOURCC_ARGB == captured_frame->fourcc &&
-        (scaled_width != captured_frame->height ||
+        (scaled_width != captured_frame->width ||
          scaled_height != captured_frame->height)) {
       CapturedFrame* scaled_frame = const_cast<CapturedFrame*>(captured_frame);
       // Compute new width such that width * height is less than maximum but

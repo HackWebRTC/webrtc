@@ -56,6 +56,10 @@ static bool IsRtpLeadByte(uint8 b) {
   return ((b & 0xC0) == 0x80);
 }
 
+using cricket::ConnectionRole;
+
+enum Flags { NF_REOFFER = 0x1, NF_EXPECT_FAILURE = 0x2 };
+
 class DtlsTestClient : public sigslot::has_slots<> {
  public:
   DtlsTestClient(const std::string& name,
@@ -77,6 +81,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
   void CreateIdentity() {
     identity_.reset(talk_base::SSLIdentity::Generate(name_));
   }
+  talk_base::SSLIdentity* identity() { return identity_.get(); }
   void SetupSrtp() {
     ASSERT(identity_.get() != NULL);
     use_dtls_srtp_ = true;
@@ -108,6 +113,9 @@ class DtlsTestClient : public sigslot::has_slots<> {
           this, &DtlsTestClient::OnFakeTransportChannelReadPacket);
     }
   }
+
+  cricket::Transport* transport() { return transport_.get(); }
+
   cricket::FakeTransportChannel* GetFakeChannel(int component) {
     cricket::TransportChannelImpl* ch = transport_->GetChannel(component);
     cricket::DtlsTransportChannelWrapper* wrapper =
@@ -118,13 +126,20 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
   // Offer DTLS if we have an identity; pass in a remote fingerprint only if
   // both sides support DTLS.
-  void Negotiate(DtlsTestClient* peer) {
-    Negotiate(identity_.get(), (identity_) ? peer->identity_.get() : NULL);
+  void Negotiate(DtlsTestClient* peer, cricket::ContentAction action,
+                 ConnectionRole local_role, ConnectionRole remote_role,
+                 int flags) {
+    Negotiate(identity_.get(), (identity_) ? peer->identity_.get() : NULL,
+              action, local_role, remote_role, flags);
   }
 
   // Allow any DTLS configuration to be specified (including invalid ones).
   void Negotiate(talk_base::SSLIdentity* local_identity,
-                 talk_base::SSLIdentity* remote_identity) {
+                 talk_base::SSLIdentity* remote_identity,
+                 cricket::ContentAction action,
+                 ConnectionRole local_role,
+                 ConnectionRole remote_role,
+                 int flags) {
     talk_base::scoped_ptr<talk_base::SSLFingerprint> local_fingerprint;
     talk_base::scoped_ptr<talk_base::SSLFingerprint> remote_fingerprint;
     if (local_identity) {
@@ -137,7 +152,9 @@ class DtlsTestClient : public sigslot::has_slots<> {
           talk_base::DIGEST_SHA_1, remote_identity));
       ASSERT_TRUE(remote_fingerprint.get() != NULL);
     }
-    if (use_dtls_srtp_) {
+
+    if (use_dtls_srtp_ && !(flags & NF_REOFFER)) {
+      // SRTP ciphers will be set only in the beginning.
       for (std::vector<cricket::DtlsTransportChannelWrapper*>::iterator it =
            channels_.begin(); it != channels_.end(); ++it) {
         std::vector<std::string> ciphers;
@@ -150,17 +167,32 @@ class DtlsTestClient : public sigslot::has_slots<> {
         cricket::NS_GINGLE_P2P : cricket::NS_JINGLE_ICE_UDP;
     cricket::TransportDescription local_desc(
         transport_type, std::vector<std::string>(), kIceUfrag1, kIcePwd1,
-        cricket::ICEMODE_FULL, local_fingerprint.get(),
+        cricket::ICEMODE_FULL, local_role,
+         // If remote if the offerer and has no DTLS support, answer will be
+        // without any fingerprint.
+        (action == cricket::CA_ANSWER && !remote_identity) ?
+            NULL : local_fingerprint.get(),
         cricket::Candidates());
-    ASSERT_TRUE(transport_->SetLocalTransportDescription(local_desc,
-                                                         cricket::CA_OFFER));
+
     cricket::TransportDescription remote_desc(
         transport_type, std::vector<std::string>(), kIceUfrag1, kIcePwd1,
-        cricket::ICEMODE_FULL, remote_fingerprint.get(),
+        cricket::ICEMODE_FULL, remote_role, remote_fingerprint.get(),
         cricket::Candidates());
-    ASSERT_TRUE(transport_->SetRemoteTransportDescription(remote_desc,
-                                                          cricket::CA_ANSWER));
 
+    bool expect_success = (flags & NF_EXPECT_FAILURE) ? false : true;
+    // If |expect_success| is false, expect SRTD or SLTD to fail when
+    // content action is CA_ANSWER.
+    if (action == cricket::CA_OFFER) {
+      ASSERT_TRUE(transport_->SetLocalTransportDescription(
+          local_desc, cricket::CA_OFFER));
+      ASSERT_EQ(expect_success, transport_->SetRemoteTransportDescription(
+          remote_desc, cricket::CA_ANSWER));
+    } else {
+      ASSERT_TRUE(transport_->SetRemoteTransportDescription(
+          remote_desc, cricket::CA_OFFER));
+      ASSERT_EQ(expect_success, transport_->SetLocalTransportDescription(
+          local_desc, cricket::CA_ANSWER));
+    }
     negotiated_dtls_ = (local_identity && remote_identity);
   }
 
@@ -373,8 +405,8 @@ class DtlsTransportChannelTest : public testing::Test {
       use_dtls_srtp_ = true;
   }
 
-  bool Connect() {
-    Negotiate();
+  bool Connect(ConnectionRole client1_role, ConnectionRole client2_role) {
+    Negotiate(client1_role, client2_role);
 
     bool rv = client1_.Connect(&client2_);
     EXPECT_TRUE(rv);
@@ -387,8 +419,20 @@ class DtlsTransportChannelTest : public testing::Test {
 
     // Check that we used the right roles.
     if (use_dtls_) {
-      client1_.CheckRole(talk_base::SSL_SERVER);
-      client2_.CheckRole(talk_base::SSL_CLIENT);
+      talk_base::SSLRole client1_ssl_role =
+          (client1_role == cricket::CONNECTIONROLE_ACTIVE ||
+           (client2_role == cricket::CONNECTIONROLE_PASSIVE &&
+            client1_role == cricket::CONNECTIONROLE_ACTPASS)) ?
+              talk_base::SSL_CLIENT : talk_base::SSL_SERVER;
+
+      talk_base::SSLRole client2_ssl_role =
+          (client2_role == cricket::CONNECTIONROLE_ACTIVE ||
+           (client1_role == cricket::CONNECTIONROLE_PASSIVE &&
+            client2_role == cricket::CONNECTIONROLE_ACTPASS)) ?
+              talk_base::SSL_CLIENT : talk_base::SSL_SERVER;
+
+      client1_.CheckRole(client1_ssl_role);
+      client2_.CheckRole(client2_ssl_role);
     }
 
     // Check that we negotiated the right ciphers.
@@ -402,11 +446,55 @@ class DtlsTransportChannelTest : public testing::Test {
 
     return true;
   }
+
+  bool Connect() {
+    // By default, Client1 will be Server and Client2 will be Client.
+    return Connect(cricket::CONNECTIONROLE_ACTPASS,
+                   cricket::CONNECTIONROLE_ACTIVE);
+  }
+
   void Negotiate() {
+    Negotiate(cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_ACTIVE);
+  }
+
+  void Negotiate(ConnectionRole client1_role, ConnectionRole client2_role) {
     client1_.SetupChannels(channel_ct_, cricket::ICEROLE_CONTROLLING);
     client2_.SetupChannels(channel_ct_, cricket::ICEROLE_CONTROLLED);
-    client2_.Negotiate(&client1_);
-    client1_.Negotiate(&client2_);
+    // Expect success from SLTD and SRTD.
+    client1_.Negotiate(&client2_, cricket::CA_OFFER,
+                       client1_role, client2_role, 0);
+    client2_.Negotiate(&client1_, cricket::CA_ANSWER,
+                       client2_role, client1_role, 0);
+  }
+
+  // Negotiate with legacy client |client2|. Legacy client doesn't use setup
+  // attributes, except NONE.
+  void NegotiateWithLegacy() {
+    client1_.SetupChannels(channel_ct_, cricket::ICEROLE_CONTROLLING);
+    client2_.SetupChannels(channel_ct_, cricket::ICEROLE_CONTROLLED);
+    // Expect success from SLTD and SRTD.
+    client1_.Negotiate(&client2_, cricket::CA_OFFER,
+                       cricket::CONNECTIONROLE_ACTPASS,
+                       cricket::CONNECTIONROLE_NONE, 0);
+    client2_.Negotiate(&client1_, cricket::CA_ANSWER,
+                       cricket::CONNECTIONROLE_ACTIVE,
+                       cricket::CONNECTIONROLE_NONE, 0);
+  }
+
+  void Renegotiate(DtlsTestClient* reoffer_initiator,
+                   ConnectionRole client1_role, ConnectionRole client2_role,
+                   int flags) {
+    if (reoffer_initiator == &client1_) {
+      client1_.Negotiate(&client2_, cricket::CA_OFFER,
+                         client1_role, client2_role, flags);
+      client2_.Negotiate(&client1_, cricket::CA_ANSWER,
+                         client2_role, client1_role, flags);
+    } else {
+      client2_.Negotiate(&client1_, cricket::CA_OFFER,
+                         client2_role, client1_role, flags);
+      client1_.Negotiate(&client2_, cricket::CA_ANSWER,
+                         client1_role, client2_role, flags);
+    }
   }
 
   void TestTransfer(size_t channel, size_t size, size_t count, bool srtp) {
@@ -567,4 +655,97 @@ TEST_F(DtlsTransportChannelTest, TestTransferDtlsSrtpDemux) {
   ASSERT_TRUE(Connect());
   TestTransfer(0, 1000, 100, false);
   TestTransfer(0, 1000, 100, true);
+}
+
+// Testing when the remote is passive.
+TEST_F(DtlsTransportChannelTest, TestTransferDtlsAnswererIsPassive) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
+  SetChannelCount(2);
+  PrepareDtls(true, true);
+  PrepareDtlsSrtp(true, true);
+  ASSERT_TRUE(Connect(cricket::CONNECTIONROLE_ACTPASS,
+                      cricket::CONNECTIONROLE_PASSIVE));
+  TestTransfer(0, 1000, 100, true);
+  TestTransfer(1, 1000, 100, true);
+}
+
+// Testing with the legacy DTLS client which doesn't use setup attribute.
+// In this case legacy is the answerer.
+TEST_F(DtlsTransportChannelTest, TestDtlsSetupWithLegacyAsAnswerer) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
+  PrepareDtls(true, true);
+  NegotiateWithLegacy();
+  talk_base::SSLRole channel1_role;
+  talk_base::SSLRole channel2_role;
+  EXPECT_TRUE(client1_.transport()->GetSslRole(&channel1_role));
+  EXPECT_TRUE(client2_.transport()->GetSslRole(&channel2_role));
+  EXPECT_EQ(talk_base::SSL_SERVER, channel1_role);
+  EXPECT_EQ(talk_base::SSL_CLIENT, channel2_role);
+}
+
+// Testing re offer/answer after the session is estbalished. Roles will be
+// kept same as of the previous negotiation.
+TEST_F(DtlsTransportChannelTest, TestDtlsReOfferFromOfferer) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
+  SetChannelCount(2);
+  PrepareDtls(true, true);
+  PrepareDtlsSrtp(true, true);
+  // Initial role for client1 is ACTPASS and client2 is ACTIVE.
+  ASSERT_TRUE(Connect(cricket::CONNECTIONROLE_ACTPASS,
+                      cricket::CONNECTIONROLE_ACTIVE));
+  TestTransfer(0, 1000, 100, true);
+  TestTransfer(1, 1000, 100, true);
+  // Using input roles for the re-offer.
+  Renegotiate(&client1_, cricket::CONNECTIONROLE_ACTPASS,
+              cricket::CONNECTIONROLE_ACTIVE, NF_REOFFER);
+  TestTransfer(0, 1000, 100, true);
+  TestTransfer(1, 1000, 100, true);
+}
+
+TEST_F(DtlsTransportChannelTest, TestDtlsReOfferFromAnswerer) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
+  SetChannelCount(2);
+  PrepareDtls(true, true);
+  PrepareDtlsSrtp(true, true);
+  // Initial role for client1 is ACTPASS and client2 is ACTIVE.
+  ASSERT_TRUE(Connect(cricket::CONNECTIONROLE_ACTPASS,
+                      cricket::CONNECTIONROLE_ACTIVE));
+  TestTransfer(0, 1000, 100, true);
+  TestTransfer(1, 1000, 100, true);
+  // Using input roles for the re-offer.
+  Renegotiate(&client2_, cricket::CONNECTIONROLE_PASSIVE,
+              cricket::CONNECTIONROLE_ACTPASS, NF_REOFFER);
+  TestTransfer(0, 1000, 100, true);
+  TestTransfer(1, 1000, 100, true);
+}
+
+// Test that any change in role after the intial setup will result in failure.
+TEST_F(DtlsTransportChannelTest, TestDtlsRoleReversal) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
+  SetChannelCount(2);
+  PrepareDtls(true, true);
+  PrepareDtlsSrtp(true, true);
+  ASSERT_TRUE(Connect(cricket::CONNECTIONROLE_ACTPASS,
+                      cricket::CONNECTIONROLE_PASSIVE));
+
+  // Renegotiate from client2 with actpass and client1 as active.
+  Renegotiate(&client2_, cricket::CONNECTIONROLE_ACTPASS,
+              cricket::CONNECTIONROLE_ACTIVE,
+              NF_REOFFER | NF_EXPECT_FAILURE);
+}
+
+// Test that using different setup attributes which results in similar ssl
+// role as the initial negotiation will result in success.
+TEST_F(DtlsTransportChannelTest, TestDtlsReOfferWithDifferentSetupAttr) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
+  SetChannelCount(2);
+  PrepareDtls(true, true);
+  PrepareDtlsSrtp(true, true);
+  ASSERT_TRUE(Connect(cricket::CONNECTIONROLE_ACTPASS,
+                      cricket::CONNECTIONROLE_PASSIVE));
+  // Renegotiate from client2 with actpass and client1 as active.
+  Renegotiate(&client2_, cricket::CONNECTIONROLE_ACTIVE,
+              cricket::CONNECTIONROLE_ACTPASS, NF_REOFFER);
+  TestTransfer(0, 1000, 100, true);
+  TestTransfer(1, 1000, 100, true);
 }

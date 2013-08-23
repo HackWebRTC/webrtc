@@ -141,6 +141,7 @@ static const char kAttributeCandidateUsername[] = "username";
 static const char kAttributeCandidatePassword[] = "password";
 static const char kAttributeCandidateGeneration[] = "generation";
 static const char kAttributeFingerprint[] = "fingerprint";
+static const char kAttributeSetup[] = "setup";
 static const char kAttributeFmtp[] = "fmtp";
 static const char kAttributeRtpmap[] = "rtpmap";
 static const char kAttributeRtcp[] = "rtcp";
@@ -318,6 +319,9 @@ static bool ParseExtmap(const std::string& line,
 static bool ParseFingerprintAttribute(const std::string& line,
                                       talk_base::SSLFingerprint** fingerprint,
                                       SdpParseError* error);
+static bool ParseDtlsSetup(const std::string& line,
+                           cricket::ConnectionRole* role,
+                           SdpParseError* error);
 
 // Helper functions
 
@@ -902,7 +906,8 @@ bool SdpDeserialize(const std::string& message,
                     SdpParseError* error) {
   std::string session_id;
   std::string session_version;
-  TransportDescription session_td(NS_JINGLE_ICE_UDP, Candidates());
+  TransportDescription session_td(NS_JINGLE_ICE_UDP,
+                                  std::string(), std::string());
   RtpHeaderExtensions session_extmaps;
   cricket::SessionDescription* desc = new cricket::SessionDescription();
   std::vector<JsepIceCandidate*> candidates;
@@ -1226,8 +1231,23 @@ void BuildMediaDescription(const ContentInfo* content_info,
       os << kSdpDelimiterColon
          << fp->algorithm << kSdpDelimiterSpace
          << fp->GetRfc4572Fingerprint();
-
       AddLine(os.str(), message);
+
+      // Inserting setup attribute.
+      if (transport_info->description.connection_role !=
+              cricket::CONNECTIONROLE_NONE) {
+        // Making sure we are not using "passive" mode.
+        cricket::ConnectionRole role =
+            transport_info->description.connection_role;
+        ASSERT(role == cricket::CONNECTIONROLE_ACTIVE ||
+               role == cricket::CONNECTIONROLE_ACTPASS);
+        InitAttrLine(kAttributeSetup, &os);
+        std::string dtls_role_str = role == cricket::CONNECTIONROLE_ACTPASS ?
+            cricket::CONNECTIONROLE_ACTPASS_STR :
+            cricket::CONNECTIONROLE_ACTIVE_STR;
+        os << kSdpDelimiterColon << dtls_role_str;
+        AddLine(os.str(), message);
+      }
     }
   }
 
@@ -1796,6 +1816,10 @@ bool ParseSessionDescription(const std::string& message, size_t* pos,
         return false;
       }
       session_td->identity_fingerprint.reset(fingerprint);
+    } else if (HasAttribute(line, kAttributeSetup)) {
+      if (!ParseDtlsSetup(line, &(session_td->connection_role), error)) {
+        return false;
+      }
     } else if (HasAttribute(line, kAttributeMsidSemantics)) {
       std::string semantics;
       if (!GetValue(line, kAttributeMsidSemantics, &semantics, error)) {
@@ -1873,6 +1897,24 @@ static bool ParseFingerprintAttribute(const std::string& line,
                        error);
   }
 
+  return true;
+}
+
+static bool ParseDtlsSetup(const std::string& line,
+                           cricket::ConnectionRole* role,
+                           SdpParseError* error) {
+  // setup-attr           =  "a=setup:" role
+  // role                 =  "active" / "passive" / "actpass" / "holdconn"
+  std::vector<std::string> fields;
+  talk_base::split(line.substr(kLinePrefixLength), kSdpDelimiterColon, &fields);
+  const size_t expected_fields = 2;
+  if (fields.size() != expected_fields) {
+    return ParseFailedExpectFieldNum(line, expected_fields, error);
+  }
+  std::string role_str = fields[1];
+  if (!cricket::StringToConnectionRole(role_str, role)) {
+    return ParseFailed(line, "Invalid attribute value.", error);
+  }
   return true;
 }
 
@@ -2039,6 +2081,7 @@ bool ParseMediaDescription(const std::string& message,
                                    session_td.ice_ufrag,
                                    session_td.ice_pwd,
                                    session_td.ice_mode,
+                                   session_td.connection_role,
                                    session_td.identity_fingerprint.get(),
                                    Candidates());
 
@@ -2378,6 +2421,10 @@ bool ParseContent(const std::string& message,
         return false;
       }
       transport->identity_fingerprint.reset(fingerprint);
+    } else if (HasAttribute(line, kAttributeSetup)) {
+      if (!ParseDtlsSetup(line, &(transport->connection_role), error)) {
+        return false;
+      }
     } else if (is_rtp) {
       //
       // RTP specific attrubtes

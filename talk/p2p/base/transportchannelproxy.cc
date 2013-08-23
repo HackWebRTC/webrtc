@@ -135,6 +135,22 @@ bool TransportChannelProxy::IsDtlsActive() const {
   return impl_->IsDtlsActive();
 }
 
+bool TransportChannelProxy::GetSslRole(talk_base::SSLRole* role) const {
+  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  if (!impl_) {
+    return false;
+  }
+  return impl_->GetSslRole(role);
+}
+
+bool TransportChannelProxy::SetSslRole(talk_base::SSLRole role) {
+  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  if (!impl_) {
+    return false;
+  }
+  return impl_->SetSslRole(role);
+}
+
 bool TransportChannelProxy::SetSrtpCiphers(const std::vector<std::string>&
                                            ciphers) {
   ASSERT(talk_base::Thread::Current() == worker_thread_);

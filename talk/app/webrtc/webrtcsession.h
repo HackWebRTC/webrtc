@@ -130,6 +130,9 @@ class WebRtcSession : public cricket::BaseSession,
   void set_secure_policy(cricket::SecureMediaPolicy secure_policy);
   cricket::SecureMediaPolicy secure_policy() const;
 
+  // Get current ssl role from transport.
+  bool GetSslRole(talk_base::SSLRole* role);
+
   // Generic error message callback from WebRtcSession.
   // TODO - It may be necessary to supply error code as well.
   sigslot::signal0<> SignalError;
@@ -151,9 +154,6 @@ class WebRtcSession : public cricket::BaseSession,
   const SessionDescriptionInterface* remote_description() const {
     return remote_desc_.get();
   }
-
-  void set_secure(cricket::SecureMediaPolicy secure_policy);
-  cricket::SecureMediaPolicy secure();
 
   // Get the id used as a media stream track's "id" field from ssrc.
   virtual bool GetTrackIdBySsrc(uint32 ssrc, std::string* id);
@@ -223,10 +223,6 @@ class WebRtcSession : public cricket::BaseSession,
       const cricket::Candidates& candidates);
   virtual void OnCandidatesAllocationDone();
 
-  // Check if a call to SetLocalDescription is acceptable with |action|.
-  bool ExpectSetLocalDescription(Action action);
-  // Check if a call to SetRemoteDescription is acceptable with |action|.
-  bool ExpectSetRemoteDescription(Action action);
   // Creates local session description with audio and video contents.
   bool CreateDefaultLocalDescription();
   // Enables media channels to allow sending of media.
@@ -275,8 +271,20 @@ class WebRtcSession : public cricket::BaseSession,
   std::string BadStateErrMsg(const std::string& type, State state);
   void SetIceConnectionState(PeerConnectionInterface::IceConnectionState state);
 
-  bool VerifyBundleSettings(const cricket::SessionDescription* desc);
+  bool ValidateBundleSettings(const cricket::SessionDescription* desc);
   bool HasRtcpMuxEnabled(const cricket::ContentInfo* content);
+  // Below methods are helper methods which verifies SDP.
+  bool ValidateSessionDescription(const SessionDescriptionInterface* sdesc,
+                                  cricket::ContentSource source,
+                                  std::string* error_desc);
+
+  // Check if a call to SetLocalDescription is acceptable with |action|.
+  bool ExpectSetLocalDescription(Action action);
+  // Check if a call to SetRemoteDescription is acceptable with |action|.
+  bool ExpectSetRemoteDescription(Action action);
+  // Verifies a=setup attribute as per RFC 5763.
+  bool ValidateDtlsSetupAttribute(const cricket::SessionDescription* desc,
+                                  Action action);
 
   talk_base::scoped_ptr<cricket::VoiceChannel> voice_channel_;
   talk_base::scoped_ptr<cricket::VideoChannel> video_channel_;
