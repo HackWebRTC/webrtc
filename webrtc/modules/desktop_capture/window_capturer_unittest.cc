@@ -42,15 +42,12 @@ class WindowCapturerTest : public testing::Test,
   scoped_ptr<DesktopFrame> frame_;
 };
 
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) || defined(WEBRTC_MAC)
 
 // Verify that we can enumerate windows.
 TEST_F(WindowCapturerTest, Enumerate) {
   WindowCapturer::WindowList windows;
   EXPECT_TRUE(capturer_->GetWindowList(&windows));
-
-  // Assume that there is at least one window.
-  EXPECT_GT(windows.size(), 0U);
 
   // Verify that window titles are set.
   for (WindowCapturer::WindowList::iterator it = windows.begin();
@@ -95,6 +92,6 @@ TEST_F(WindowCapturerTest, Capture) {
   }
 }
 
-#endif  // defined(WEBRTC_WIN)
+#endif  // defined(WEBRTC_WIN) || defined(WEBRTC_MAC)
 
 }  // namespace webrtc
