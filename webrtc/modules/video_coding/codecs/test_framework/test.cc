@@ -150,8 +150,8 @@ CodecTest::VideoEncodedBufferToEncodedImage(VideoFrame& videoBuffer,
     image._buffer = videoBuffer.Buffer();
     image._length = videoBuffer.Length();
     image._size = videoBuffer.Size();
-    //image._frameType = static_cast<VideoFrameType>
-    //  (videoBuffer.GetFrameType());
+    // image._frameType = static_cast<VideoFrameType>
+    //     (videoBuffer.GetFrameType());
     image._timeStamp = videoBuffer.TimeStamp();
     image._encodedWidth = videoBuffer.Width();
     image._encodedHeight = videoBuffer.Height();

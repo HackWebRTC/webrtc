@@ -597,8 +597,7 @@ VCMGenericDecoder* VCMCodecDataBase::CreateAndInitDecoder(
   }
 
   if (ptr_decoder->InitDecode(decoder_item->settings.get(),
-                              decoder_item->number_of_cores,
-                              decoder_item->require_key_frame) < 0) {
+                              decoder_item->number_of_cores) < 0) {
     ReleaseDecoder(ptr_decoder);
     return NULL;
   }
