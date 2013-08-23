@@ -61,14 +61,14 @@ class FullStackTest : public ::testing::TestWithParam<FullStackTestParams> {
   std::map<uint32_t, bool> reserved_ssrcs_;
 };
 
-class VideoAnalyzer : public newapi::PacketReceiver,
+class VideoAnalyzer : public PacketReceiver,
                       public newapi::Transport,
-                      public newapi::VideoRenderer,
-                      public newapi::VideoSendStreamInput {
+                      public VideoRenderer,
+                      public VideoSendStreamInput {
  public:
-  VideoAnalyzer(newapi::VideoSendStreamInput* input,
-                newapi::Transport* transport,
-                newapi::VideoRenderer* loopback_video,
+  VideoAnalyzer(VideoSendStreamInput* input,
+                Transport* transport,
+                VideoRenderer* loopback_video,
                 const char* test_label,
                 double avg_psnr_threshold,
                 double avg_ssim_threshold,
@@ -200,10 +200,10 @@ class VideoAnalyzer : public newapi::PacketReceiver,
 
   void Wait() { trigger_->Wait(WEBRTC_EVENT_INFINITE); }
 
-  newapi::VideoSendStreamInput* input_;
-  newapi::Transport* transport_;
-  newapi::VideoRenderer* renderer_;
-  newapi::PacketReceiver* receiver_;
+  VideoSendStreamInput* input_;
+  Transport* transport_;
+  VideoRenderer* renderer_;
+  PacketReceiver* receiver_;
 
  private:
   void AddFrameComparison(const I420VideoFrame* reference_frame,
@@ -280,13 +280,13 @@ TEST_P(FullStackTest, DISABLED_NoPacketLoss) {
       params.avg_ssim_threshold,
       static_cast<uint64_t>(FLAGS_seconds * params.clip.fps));
 
-  newapi::VideoCall::Config call_config(&analyzer);
+  VideoCall::Config call_config(&analyzer);
 
-  scoped_ptr<newapi::VideoCall> call(newapi::VideoCall::Create(call_config));
+  scoped_ptr<VideoCall> call(VideoCall::Create(call_config));
   analyzer.receiver_ = call->Receiver();
   transport.SetReceiver(&analyzer);
 
-  newapi::VideoSendStream::Config send_config = call->GetDefaultSendConfig();
+  VideoSendStream::Config send_config = call->GetDefaultSendConfig();
   test::GenerateRandomSsrcs(&send_config, &reserved_ssrcs_);
 
   send_config.local_renderer = local_preview.get();
@@ -299,7 +299,7 @@ TEST_P(FullStackTest, DISABLED_NoPacketLoss) {
   send_config.codec.startBitrate = params.bitrate;
   send_config.codec.maxBitrate = params.bitrate;
 
-  newapi::VideoSendStream* send_stream = call->CreateSendStream(send_config);
+  VideoSendStream* send_stream = call->CreateSendStream(send_config);
   analyzer.input_ = send_stream->Input();
 
   Clock* test_clock = Clock::GetRealTimeClock();
@@ -314,12 +314,12 @@ TEST_P(FullStackTest, DISABLED_NoPacketLoss) {
               test_clock),
           params.clip.fps));
 
-  newapi::VideoReceiveStream::Config receive_config =
+  VideoReceiveStream::Config receive_config =
       call->GetDefaultReceiveConfig();
   receive_config.rtp.ssrc = send_config.rtp.ssrcs[0];
   receive_config.renderer = &analyzer;
 
-  newapi::VideoReceiveStream* receive_stream =
+  VideoReceiveStream* receive_stream =
       call->CreateReceiveStream(receive_config);
 
   receive_stream->StartReceive();

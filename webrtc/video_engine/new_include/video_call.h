@@ -18,7 +18,6 @@
 #include "webrtc/video_engine/new_include/video_send_stream.h"
 
 namespace webrtc {
-namespace newapi {
 
 class VoiceEngine;
 
@@ -38,14 +37,14 @@ class PacketReceiver {
 class VideoCall {
  public:
   struct Config {
-    explicit Config(Transport* send_transport)
+    explicit Config(newapi::Transport* send_transport)
         : send_transport(send_transport),
           overuse_detection(false),
           voice_engine(NULL),
           trace_callback(NULL),
           trace_filter(kTraceNone) {}
 
-    Transport* send_transport;
+    newapi::Transport* send_transport;
     bool overuse_detection;
 
     // VoiceEngine used for audio/video synchronization for this VideoCall.
@@ -90,7 +89,6 @@ class VideoCall {
 
   virtual ~VideoCall() {}
 };
-}  // namespace newapi
 }  // namespace webrtc
 
 #endif  // WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_VIDEO_CALL_H_

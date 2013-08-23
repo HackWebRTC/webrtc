@@ -28,7 +28,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
  public:
   // The FrameGeneratorCapturer takes ownership of the FrameGenerator, which
   // will be freed when the FrameGeneratorCapturer is deleted.
-  static FrameGeneratorCapturer* Create(newapi::VideoSendStreamInput* input,
+  static FrameGeneratorCapturer* Create(VideoSendStreamInput* input,
                                         FrameGenerator* frame_generator,
                                         int target_fps);
   virtual ~FrameGeneratorCapturer();
@@ -37,7 +37,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
   virtual void Stop() OVERRIDE;
 
  private:
-  FrameGeneratorCapturer(newapi::VideoSendStreamInput* input,
+  FrameGeneratorCapturer(VideoSendStreamInput* input,
                          FrameGenerator* frame_generator,
                          int target_fps);
   bool Init();

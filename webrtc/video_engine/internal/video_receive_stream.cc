@@ -28,7 +28,7 @@ namespace internal {
 
 VideoReceiveStream::VideoReceiveStream(
     webrtc::VideoEngine* video_engine,
-    const newapi::VideoReceiveStream::Config& config,
+    const VideoReceiveStream::Config& config,
     newapi::Transport* transport)
     : transport_(transport), config_(config), channel_(-1) {
   video_engine_base_ = ViEBase::GetInterface(video_engine);

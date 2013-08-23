@@ -40,14 +40,14 @@ TEST_F(LoopbackTest, Test) {
       "Loopback Video", test::flags::Width(), test::flags::Height()));
 
   test::DirectTransport transport;
-  newapi::VideoCall::Config call_config(&transport);
+  VideoCall::Config call_config(&transport);
   call_config.overuse_detection = true;
-  scoped_ptr<newapi::VideoCall> call(newapi::VideoCall::Create(call_config));
+  scoped_ptr<VideoCall> call(VideoCall::Create(call_config));
 
   // Loopback, call sends to itself.
   transport.SetReceiver(call->Receiver());
 
-  newapi::VideoSendStream::Config send_config = call->GetDefaultSendConfig();
+  VideoSendStream::Config send_config = call->GetDefaultSendConfig();
   test::GenerateRandomSsrcs(&send_config, &reserved_ssrcs_);
 
   send_config.local_renderer = local_preview.get();
@@ -63,7 +63,7 @@ TEST_F(LoopbackTest, Test) {
   send_config.codec.maxBitrate =
       static_cast<unsigned int>(test::flags::MaxBitrate());
 
-  newapi::VideoSendStream* send_stream = call->CreateSendStream(send_config);
+  VideoSendStream* send_stream = call->CreateSendStream(send_config);
 
   Clock* test_clock = Clock::GetRealTimeClock();
 
@@ -74,12 +74,12 @@ TEST_F(LoopbackTest, Test) {
                                   test::flags::Fps(),
                                   test_clock));
 
-  newapi::VideoReceiveStream::Config receive_config =
+  VideoReceiveStream::Config receive_config =
       call->GetDefaultReceiveConfig();
   receive_config.rtp.ssrc = send_config.rtp.ssrcs[0];
   receive_config.renderer = loopback_video.get();
 
-  newapi::VideoReceiveStream* receive_stream =
+  VideoReceiveStream* receive_stream =
       call->CreateReceiveStream(receive_config);
 
   receive_stream->StartReceive();

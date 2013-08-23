@@ -20,9 +20,7 @@ namespace webrtc {
 
 class Clock;
 
-namespace newapi {
 class VideoSendStreamInput;
-}  // namespace newapi
 
 namespace test {
 

@@ -30,29 +30,29 @@ namespace internal {
 
 // TODO(pbos): Split out the packet receiver, should be sharable between
 //             VideoEngine and VoiceEngine.
-class VideoCall : public newapi::VideoCall, public newapi::PacketReceiver {
+class VideoCall : public webrtc::VideoCall, public PacketReceiver {
  public:
   VideoCall(webrtc::VideoEngine* video_engine,
-            const newapi::VideoCall::Config& config);
+            const VideoCall::Config& config);
   virtual ~VideoCall();
 
-  virtual newapi::PacketReceiver* Receiver() OVERRIDE;
+  virtual PacketReceiver* Receiver() OVERRIDE;
   virtual std::vector<VideoCodec> GetVideoCodecs() OVERRIDE;
 
-  virtual newapi::VideoSendStream::Config GetDefaultSendConfig() OVERRIDE;
+  virtual VideoSendStream::Config GetDefaultSendConfig() OVERRIDE;
 
-  virtual newapi::VideoSendStream* CreateSendStream(
-      const newapi::VideoSendStream::Config& config) OVERRIDE;
+  virtual VideoSendStream* CreateSendStream(
+      const VideoSendStream::Config& config) OVERRIDE;
 
-  virtual newapi::SendStreamState* DestroySendStream(
-      newapi::VideoSendStream* send_stream) OVERRIDE;
+  virtual SendStreamState* DestroySendStream(
+      webrtc::VideoSendStream* send_stream) OVERRIDE;
 
-  virtual newapi::VideoReceiveStream::Config GetDefaultReceiveConfig() OVERRIDE;
+  virtual VideoReceiveStream::Config GetDefaultReceiveConfig() OVERRIDE;
 
-  virtual newapi::VideoReceiveStream* CreateReceiveStream(
-      const newapi::VideoReceiveStream::Config& config) OVERRIDE;
+  virtual VideoReceiveStream* CreateReceiveStream(
+      const VideoReceiveStream::Config& config) OVERRIDE;
 
-  virtual void DestroyReceiveStream(newapi::VideoReceiveStream* receive_stream)
+  virtual void DestroyReceiveStream(webrtc::VideoReceiveStream* receive_stream)
       OVERRIDE;
 
   virtual uint32_t SendBitrateEstimate() OVERRIDE;
@@ -66,7 +66,7 @@ class VideoCall : public newapi::VideoCall, public newapi::PacketReceiver {
                   const uint8_t* packet,
                   size_t length);
 
-  newapi::VideoCall::Config config_;
+  VideoCall::Config config_;
 
   std::map<uint32_t, VideoReceiveStream*> receive_ssrcs_;
   scoped_ptr<RWLockWrapper> receive_lock_;

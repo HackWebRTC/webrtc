@@ -42,10 +42,10 @@ class SendTransportObserver : public test::NullTransport {
 class VideoSendStreamTest : public ::testing::Test {
  protected:
   static const uint32_t kSendSsrc;
-  void RunSendTest(newapi::VideoCall* call,
-                   const newapi::VideoSendStream::Config& config,
+  void RunSendTest(VideoCall* call,
+                   const VideoSendStream::Config& config,
                    SendTransportObserver* observer) {
-    newapi::VideoSendStream* send_stream = call->CreateSendStream(config);
+    VideoSendStream* send_stream = call->CreateSendStream(config);
     scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
         test::FrameGeneratorCapturer::Create(
             send_stream->Input(),
@@ -81,10 +81,10 @@ TEST_F(VideoSendStreamTest, SendsSetSsrc) {
     }
   } observer;
 
-  newapi::VideoCall::Config call_config(&observer);
-  scoped_ptr<newapi::VideoCall> call(newapi::VideoCall::Create(call_config));
+  VideoCall::Config call_config(&observer);
+  scoped_ptr<VideoCall> call(VideoCall::Create(call_config));
 
-  newapi::VideoSendStream::Config send_config = call->GetDefaultSendConfig();
+  VideoSendStream::Config send_config = call->GetDefaultSendConfig();
   send_config.rtp.ssrcs.push_back(kSendSsrc);
 
   RunSendTest(call.get(), send_config, &observer);
@@ -114,10 +114,10 @@ TEST_F(VideoSendStreamTest, SupportsCName) {
     }
   } observer;
 
-  newapi::VideoCall::Config call_config(&observer);
-  scoped_ptr<newapi::VideoCall> call(newapi::VideoCall::Create(call_config));
+  VideoCall::Config call_config(&observer);
+  scoped_ptr<VideoCall> call(VideoCall::Create(call_config));
 
-  newapi::VideoSendStream::Config send_config = call->GetDefaultSendConfig();
+  VideoSendStream::Config send_config = call->GetDefaultSendConfig();
   send_config.rtp.ssrcs.push_back(kSendSsrc);
   send_config.rtp.c_name = kCName;
 

@@ -14,7 +14,6 @@
 #include <string>
 
 namespace webrtc {
-namespace newapi {
 
 struct RtpStatistics {
   RtpStatistics()
@@ -29,12 +28,14 @@ struct RtpStatistics {
   std::string c_name;
 };
 
+namespace newapi {
 // RTCP mode to use. Compound mode is described by RFC 4585 and reduced-size
 // RTCP mode is described by RFC 5506.
 enum RtcpMode {
   kRtcpCompound,
   kRtcpReducedSize
 };
+}  // namespace newapi
 
 // Settings for NACK, see RFC 4585 for details.
 struct NackConfig {
@@ -77,7 +78,6 @@ struct RtpExtension {
   std::string name;
   int id;
 };
-}  // namespace newapi
 }  // namespace webrtc
 
 #endif  // WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_CONFIG_H_

@@ -22,9 +22,7 @@
 
 namespace webrtc {
 
-namespace newapi {
 class PacketReceiver;
-}  // namespace newapi
 
 namespace test {
 
@@ -34,7 +32,7 @@ class DirectTransport : public newapi::Transport {
   ~DirectTransport();
 
   virtual void StopSending();
-  virtual void SetReceiver(newapi::PacketReceiver* receiver);
+  virtual void SetReceiver(PacketReceiver* receiver);
 
   virtual bool SendRTP(const uint8_t* data, size_t length) OVERRIDE;
   virtual bool SendRTCP(const uint8_t* data, size_t length) OVERRIDE;
@@ -60,7 +58,7 @@ class DirectTransport : public newapi::Transport {
   bool shutting_down_;
 
   std::deque<Packet> packet_queue_;
-  newapi::PacketReceiver* receiver_;
+  PacketReceiver* receiver_;
 };
 }  // namespace test
 }  // namespace webrtc

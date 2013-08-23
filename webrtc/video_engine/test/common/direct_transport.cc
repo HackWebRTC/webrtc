@@ -37,7 +37,7 @@ void DirectTransport::StopSending() {
   EXPECT_TRUE(thread_->Stop());
 }
 
-void DirectTransport::SetReceiver(newapi::PacketReceiver* receiver) {
+void DirectTransport::SetReceiver(PacketReceiver* receiver) {
   receiver_ = receiver;
 }
 

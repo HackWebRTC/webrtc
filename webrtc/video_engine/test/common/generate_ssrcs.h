@@ -20,7 +20,7 @@
 namespace webrtc {
 namespace test {
 
-void GenerateRandomSsrcs(newapi::VideoSendStream::Config* config,
+void GenerateRandomSsrcs(VideoSendStream::Config* config,
                          std::map<uint32_t, bool>* reserved_ssrcs);
 
 }  // test

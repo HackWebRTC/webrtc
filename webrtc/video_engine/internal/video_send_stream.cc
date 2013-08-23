@@ -79,7 +79,7 @@ class ResolutionAdaptor : public webrtc::CpuOveruseObserver {
 VideoSendStream::VideoSendStream(newapi::Transport* transport,
                                  bool overuse_detection,
                                  webrtc::VideoEngine* video_engine,
-                                 const newapi::VideoSendStream::Config& config)
+                                 const VideoSendStream::Config& config)
     : transport_(transport), config_(config), external_codec_(NULL) {
 
   if (config_.codec.numberOfSimulcastStreams > 0) {
@@ -198,7 +198,7 @@ void VideoSendStream::PutFrame(const I420VideoFrame& frame,
   }
 }
 
-newapi::VideoSendStreamInput* VideoSendStream::Input() { return this; }
+VideoSendStreamInput* VideoSendStream::Input() { return this; }
 
 void VideoSendStream::StartSend() {
   if (video_engine_base_->StartSend(channel_) != 0)

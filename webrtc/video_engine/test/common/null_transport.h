@@ -14,9 +14,7 @@
 
 namespace webrtc {
 
-namespace newapi {
 class PacketReceiver;
-}  // namespace newapi
 
 namespace test {
 class NullTransport : public newapi::Transport {

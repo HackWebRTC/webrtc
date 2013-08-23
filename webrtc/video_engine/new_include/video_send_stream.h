@@ -23,8 +23,6 @@ namespace webrtc {
 
 class VideoEncoder;
 
-namespace newapi {
-
 struct SendStreamState;
 
 // Class to deliver captured frame to the video send stream.
@@ -87,8 +85,8 @@ class VideoSendStream {
     VideoCodec codec;
 
     struct Rtp {
-      Rtp() : mode(kRtcpReducedSize), max_packet_size(0) {}
-      RtcpMode mode;
+      Rtp() : mode(newapi::kRtcpReducedSize), max_packet_size(0) {}
+      newapi::RtcpMode mode;
 
       std::vector<uint32_t> ssrcs;
 
@@ -168,7 +166,6 @@ class VideoSendStream {
   virtual ~VideoSendStream() {}
 };
 
-}  // namespace newapi
 }  // namespace webrtc
 
 #endif  // WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_VIDEO_SEND_STREAM_H_

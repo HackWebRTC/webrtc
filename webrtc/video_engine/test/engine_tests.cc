@@ -174,9 +174,9 @@ TEST_P(RampUpTest, RampUpWithPadding) {
   test::DirectTransport receiver_transport;
   StreamObserver stream_observer(3, &receiver_transport,
                                  Clock::GetRealTimeClock());
-  newapi::VideoCall::Config call_config(&stream_observer);
-  scoped_ptr<newapi::VideoCall> call(newapi::VideoCall::Create(call_config));
-  newapi::VideoSendStream::Config send_config =
+  VideoCall::Config call_config(&stream_observer);
+  scoped_ptr<VideoCall> call(VideoCall::Create(call_config));
+  VideoSendStream::Config send_config =
       call->GetDefaultSendConfig();
 
   receiver_transport.SetReceiver(call->Receiver());
@@ -190,14 +190,14 @@ TEST_P(RampUpTest, RampUpWithPadding) {
 
   test::GenerateRandomSsrcs(&send_config, &reserved_ssrcs_);
 
-  newapi::VideoSendStream* send_stream =
+  VideoSendStream* send_stream =
       call->CreateSendStream(send_config);
 
-  newapi::VideoReceiveStream::Config receive_config;
+  VideoReceiveStream::Config receive_config;
   receive_config.rtp.ssrc = send_config.rtp.ssrcs[0];
   receive_config.rtp.nack.rtp_history_ms =
       send_config.rtp.nack.rtp_history_ms;
-  newapi::VideoReceiveStream* receive_stream = call->CreateReceiveStream(
+  VideoReceiveStream* receive_stream = call->CreateReceiveStream(
       receive_config);
 
   scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
@@ -243,10 +243,10 @@ class EngineTest : public ::testing::TestWithParam<EngineTestParams> {
  protected:
   void CreateCalls(newapi::Transport* sender_transport,
                    newapi::Transport* receiver_transport) {
-    newapi::VideoCall::Config sender_config(sender_transport);
-    newapi::VideoCall::Config receiver_config(receiver_transport);
-    sender_call_.reset(newapi::VideoCall::Create(sender_config));
-    receiver_call_.reset(newapi::VideoCall::Create(receiver_config));
+    VideoCall::Config sender_config(sender_transport);
+    VideoCall::Config receiver_config(receiver_transport);
+    sender_call_.reset(VideoCall::Create(sender_config));
+    receiver_call_.reset(VideoCall::Create(receiver_config));
   }
 
   void CreateTestConfigs() {
@@ -302,14 +302,14 @@ class EngineTest : public ::testing::TestWithParam<EngineTestParams> {
 
   void ReceivesPliAndRecovers(int rtp_history_ms);
 
-  scoped_ptr<newapi::VideoCall> sender_call_;
-  scoped_ptr<newapi::VideoCall> receiver_call_;
+  scoped_ptr<VideoCall> sender_call_;
+  scoped_ptr<VideoCall> receiver_call_;
 
-  newapi::VideoSendStream::Config send_config_;
-  newapi::VideoReceiveStream::Config receive_config_;
+  VideoSendStream::Config send_config_;
+  VideoReceiveStream::Config receive_config_;
 
-  newapi::VideoSendStream* send_stream_;
-  newapi::VideoReceiveStream* receive_stream_;
+  VideoSendStream* send_stream_;
+  VideoReceiveStream* receive_stream_;
 
   scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer_;
 
@@ -513,7 +513,7 @@ class PliObserver : public test::RtpRtcpObserver {
     return SEND_PACKET;
   }
 
-  class ReceiverRenderer : public newapi::VideoRenderer {
+  class ReceiverRenderer : public VideoRenderer {
    public:
     ReceiverRenderer(PliObserver* observer)
         : rendered_retransmission_(EventWrapper::Create()),

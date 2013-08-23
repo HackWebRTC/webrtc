@@ -24,8 +24,6 @@ namespace webrtc {
 
 class VideoDecoder;
 
-namespace newapi {
-
 // TODO(mflodman) Move all these settings to VideoDecoder and move the
 // declaration to common_types.h.
 struct ExternalVideoDecoder {
@@ -163,7 +161,6 @@ class VideoReceiveStream {
   virtual ~VideoReceiveStream() {}
 };
 
-}  // namespace newapi
 }  // namespace webrtc
 
 #endif  // WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_VIDEO_RECEIVE_STREAM_H_

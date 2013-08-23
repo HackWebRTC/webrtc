@@ -20,7 +20,7 @@ namespace webrtc {
 namespace test {
 
 FrameGeneratorCapturer* FrameGeneratorCapturer::Create(
-    newapi::VideoSendStreamInput* input,
+    VideoSendStreamInput* input,
     FrameGenerator* frame_generator,
     int target_fps) {
   FrameGeneratorCapturer* capturer =
@@ -35,7 +35,7 @@ FrameGeneratorCapturer* FrameGeneratorCapturer::Create(
 }
 
 FrameGeneratorCapturer::FrameGeneratorCapturer(
-    newapi::VideoSendStreamInput* input,
+    VideoSendStreamInput* input,
     FrameGenerator* frame_generator,
     int target_fps)
     : VideoCapturer(input),

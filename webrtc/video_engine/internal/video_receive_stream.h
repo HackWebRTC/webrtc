@@ -29,12 +29,12 @@ class ViERTP_RTCP;
 
 namespace internal {
 
-class VideoReceiveStream : public newapi::VideoReceiveStream,
+class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public webrtc::ExternalRenderer,
                            public webrtc::Transport {
  public:
   VideoReceiveStream(webrtc::VideoEngine* video_engine,
-                     const newapi::VideoReceiveStream::Config& config,
+                     const VideoReceiveStream::Config& config,
                      newapi::Transport* transport);
   virtual ~VideoReceiveStream();
 
@@ -61,7 +61,7 @@ class VideoReceiveStream : public newapi::VideoReceiveStream,
 
  private:
   newapi::Transport* transport_;
-  newapi::VideoReceiveStream::Config config_;
+  VideoReceiveStream::Config config_;
   Clock* clock_;
 
   ViEBase* video_engine_base_;

@@ -29,8 +29,8 @@ class RtpRtcpObserver {
     return &receive_transport_;
   }
 
-  void SetReceivers(newapi::PacketReceiver* send_transport_receiver,
-                    newapi::PacketReceiver* receive_transport_receiver) {
+  void SetReceivers(PacketReceiver* send_transport_receiver,
+                    PacketReceiver* receive_transport_receiver) {
     send_transport_.SetReceiver(send_transport_receiver);
     receive_transport_.SetReceiver(receive_transport_receiver);
   }

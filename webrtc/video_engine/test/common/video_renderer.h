@@ -16,8 +16,7 @@
 
 namespace webrtc {
 namespace test {
-
-class VideoRenderer : public newapi::VideoRenderer {
+class VideoRenderer : public webrtc::VideoRenderer {
  public:
   // Creates a platform-specific renderer if possible, or a null implementation
   // if failing.

@@ -17,9 +17,7 @@ namespace webrtc {
 
 class Clock;
 
-namespace newapi {
 class VideoSendStreamInput;
-}  // newapi
 
 namespace test {
 
@@ -30,7 +28,7 @@ class FrameGenerator {
   static FrameGenerator* Create(size_t width, size_t height, Clock* clock);
   virtual ~FrameGenerator() {}
 
-  void InsertFrame(newapi::VideoSendStreamInput* input);
+  void InsertFrame(VideoSendStreamInput* input);
 
  protected:
   FrameGenerator(size_t width, size_t height, Clock* clock);

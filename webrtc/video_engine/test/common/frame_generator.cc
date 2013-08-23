@@ -25,7 +25,7 @@ FrameGenerator* FrameGenerator::Create(size_t width,
   return new ChromaFrameGenerator(width, height, clock);
 }
 
-void FrameGenerator::InsertFrame(newapi::VideoSendStreamInput* input) {
+void FrameGenerator::InsertFrame(VideoSendStreamInput* input) {
   int64_t time_before = clock_->CurrentNtpInMilliseconds();
   frame_.set_render_time_ms(time_before);
 
