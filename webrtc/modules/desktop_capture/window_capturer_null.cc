@@ -18,10 +18,10 @@ namespace webrtc {
 
 namespace {
 
-class WindowCapturerLinux : public WindowCapturer {
+class WindowCapturerNull : public WindowCapturer {
  public:
-  WindowCapturerLinux();
-  virtual ~WindowCapturerLinux();
+  WindowCapturerNull();
+  virtual ~WindowCapturerNull();
 
   // WindowCapturer interface.
   virtual bool GetWindowList(WindowList* windows) OVERRIDE;
@@ -34,34 +34,34 @@ class WindowCapturerLinux : public WindowCapturer {
  private:
   Callback* callback_;
 
-  DISALLOW_COPY_AND_ASSIGN(WindowCapturerLinux);
+  DISALLOW_COPY_AND_ASSIGN(WindowCapturerNull);
 };
 
-WindowCapturerLinux::WindowCapturerLinux()
+WindowCapturerNull::WindowCapturerNull()
     : callback_(NULL) {
 }
 
-WindowCapturerLinux::~WindowCapturerLinux() {
+WindowCapturerNull::~WindowCapturerNull() {
 }
 
-bool WindowCapturerLinux::GetWindowList(WindowList* windows) {
+bool WindowCapturerNull::GetWindowList(WindowList* windows) {
   // Not implemented yet.
   return false;
 }
 
-bool WindowCapturerLinux::SelectWindow(WindowId id) {
+bool WindowCapturerNull::SelectWindow(WindowId id) {
   // Not implemented yet.
   return false;
 }
 
-void WindowCapturerLinux::Start(Callback* callback) {
+void WindowCapturerNull::Start(Callback* callback) {
   assert(!callback_);
   assert(callback);
 
   callback_ = callback;
 }
 
-void WindowCapturerLinux::Capture(const DesktopRegion& region) {
+void WindowCapturerNull::Capture(const DesktopRegion& region) {
   // Not implemented yet.
   callback_->OnCaptureCompleted(NULL);
 }
@@ -70,7 +70,7 @@ void WindowCapturerLinux::Capture(const DesktopRegion& region) {
 
 // static
 WindowCapturer* WindowCapturer::Create() {
-  return new WindowCapturerLinux();
+  return new WindowCapturerNull();
 }
 
 }  // namespace webrtc
