@@ -442,7 +442,6 @@
   fun:talk_base::Thread::Send
   fun:FakeAudioCaptureModule::UpdateProcessing
   fun:FakeAudioCaptureModule::StopPlayout
-  fun:webrtc::VoEBaseImpl::StopPlayout
   ...
 }
 {
