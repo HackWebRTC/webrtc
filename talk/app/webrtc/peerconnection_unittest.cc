@@ -1095,7 +1095,7 @@ TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestAnswerVideo) {
 
 // This test sets up a Jsep call between two parties, and the callee only
 // accept to receive audio.
-TEST_F(JsepPeerConnectionP2PTestClient, DISABLE_LocalP2PTestAnswerAudio) {
+TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestAnswerAudio) {
   ASSERT_TRUE(CreateTestClients());
   receiving_client()->SetReceiveAudioVideo(true, false);
   LocalP2PTest();
