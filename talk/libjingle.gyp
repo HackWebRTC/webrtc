@@ -1032,6 +1032,7 @@
         'p2p/base/transportchannelimpl.h',
         'p2p/base/transportchannelproxy.cc',
         'p2p/base/transportchannelproxy.h',
+        'p2p/base/transportdescription.cc',
         'p2p/base/transportdescription.h',
         'p2p/base/transportdescriptionfactory.cc',
         'p2p/base/transportdescriptionfactory.h',
