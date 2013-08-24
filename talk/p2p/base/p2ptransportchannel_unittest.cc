@@ -1416,10 +1416,14 @@ TEST_F(P2PTransportChannelTest, TestSlowSignalingAsIce) {
                    ep2_ch1()->writable(),
                    1000);
 
-  EXPECT_EQ(cricket::PRFLX_PORT_TYPE, RemoteCandidate(ep1_ch1())->type());
-  EXPECT_EQ(cricket::LOCAL_PORT_TYPE, LocalCandidate(ep1_ch1())->type());
-  EXPECT_EQ(cricket::LOCAL_PORT_TYPE, RemoteCandidate(ep2_ch1())->type());
-  EXPECT_EQ(cricket::LOCAL_PORT_TYPE, LocalCandidate(ep2_ch1())->type());
+  EXPECT_EQ(std::string(cricket::PRFLX_PORT_TYPE),
+            RemoteCandidate(ep1_ch1())->type());
+  EXPECT_EQ(std::string(cricket::LOCAL_PORT_TYPE),
+            LocalCandidate(ep1_ch1())->type());
+  EXPECT_EQ(std::string(cricket::LOCAL_PORT_TYPE),
+            RemoteCandidate(ep2_ch1())->type());
+  EXPECT_EQ(std::string(cricket::LOCAL_PORT_TYPE),
+            LocalCandidate(ep2_ch1())->type());
 
   TestSendRecv(1);
   DestroyChannels();
