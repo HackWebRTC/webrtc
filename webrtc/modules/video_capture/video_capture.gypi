@@ -132,6 +132,7 @@
                     '-framework AVFoundation',
                     '-framework CoreMedia',
                     '-framework CoreVideo',
+                    '-framework UIKit',
                   ],
                 },
               },

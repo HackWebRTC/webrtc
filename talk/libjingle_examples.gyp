@@ -218,7 +218,7 @@
       ], # targets
     }],  # OS=="linux" or OS=="win"
 
-    ['libjingle_objc==1 and OS=="ios"', {
+    ['OS=="ios"', {
       'targets': [
         {
           'target_name': 'AppRTCDemo',
@@ -276,17 +276,23 @@
                 # we could pick more intelligently among the keys, but as a
                 # first cut just tell the developer to specify a key identity
                 # explicitly.
-                'ensure_single_key': '<!(python -c "assert len(\'\'\'<(key_id)\'\'\') > 0 and \'\\n\' not in \'\'\'<(key_id)\'\'\', \'key_id gyp variable needs to be set explicitly because there are multiple codesigning keys, or none!\'")',
+                'ensure_single_key': '<!(python -c "assert \'\\n\' not in \'\'\'<(key_id)\'\'\', \'key_id gyp variable needs to be set explicitly because there are multiple codesigning keys!\'")',
               },
-              'action': [
-                '/usr/bin/codesign', '-v', '--force', '--sign', '<(key_id)',
-                '${BUILT_PRODUCTS_DIR}/AppRTCDemo.app',
+              'conditions': [
+                ['key_id==""', {
+                  'action': [ 'echo', 'Skipping signing' ],
+                }, {
+                  'action': [
+                    '/usr/bin/codesign', '-v', '--force', '--sign', '<(key_id)',
+                    '${BUILT_PRODUCTS_DIR}/AppRTCDemo.app',
+                  ],
+                }],
               ],
             },
           ],
         },  # target AppRTCDemo
       ],  # targets
-    }],  # libjingle_objc==1
+    }],  # OS=="ios"
 
     ['OS=="android"', {
       'targets': [

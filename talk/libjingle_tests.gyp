@@ -464,13 +464,16 @@
         },
       ],
     }],
-    ['libjingle_objc == 1', {
+    ['OS=="ios" or (OS=="mac" and target_arch!="ia32" and mac_sdk>="10.7")', {
+      # The >=10.7 above is required to make ARC link cleanly (e.g. as
+      # opposed to _compile_ cleanly, which the library under test
+      # does just fine on 10.6 too).
       'targets': [
         {
+        'target_name': 'libjingle_peerconnection_objc_test',
           'variables': {
             'infoplist_file': './app/webrtc/objctests/Info.plist',
           },
-          'target_name': 'libjingle_peerconnection_objc_test',
           'type': 'executable',
           'mac_bundle': 1,
           'mac_bundle_resources': [
@@ -510,7 +513,7 @@
               ],
             }],
           ],
-        },
+        },  # target libjingle_peerconnection_objc_test
       ],
     }],
   ],

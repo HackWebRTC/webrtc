@@ -14,17 +14,9 @@
       'type': 'none',
       'dependencies': [
         'webrtc/webrtc.gyp:*',
-      ],
-      # TODO(henrike): fix build errors on 64 bit Mac for libjingle. See issue
-      # 2124.  Once done the entire conditional below can be removed.
-      'conditions': [
-        ['OS!="mac" or target_arch!="x64" or libjingle_objc==1', {
-          'dependencies': [
-            'talk/libjingle.gyp:*',
-            'talk/libjingle_examples.gyp:*',
-            'talk/libjingle_tests.gyp:*',
-          ],
-        }],
+        'talk/libjingle.gyp:*',
+        'talk/libjingle_examples.gyp:*',
+        'talk/libjingle_tests.gyp:*',
       ],
     },
   ],
