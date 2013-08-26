@@ -5,13 +5,16 @@ api_version: 1
 threadsafe: false
 
 handlers:
-# Serve stylesheets statically.
+# Serve stylesheets, perf dashboard, and images statically.
 - url: /stylesheets
   static_dir: stylesheets
-
-# Serve perf dashboard files statically.
 - url: /perf
   static_dir: static
+- url: /images
+  static_dir: static
+- url: /lkgr
+  static_files: static/lkgr_redirect.html
+  upload: static/lkgr_redirect.html
 
 # This magic file is here to prove to the Google Account Domain Management
 # that we own this domain. It needs to stay there so the domain management

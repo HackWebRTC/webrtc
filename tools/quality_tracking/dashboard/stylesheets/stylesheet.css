@@ -30,8 +30,9 @@
   background-color: #FFC343;
 }
 
-.last_known_good_revision {
-  font-size: 800%;
+.perf_links {
+  margin-bottom: 50px;
+  font-size: 200%;
 }
 
 .status_cell {

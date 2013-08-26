@@ -23,13 +23,8 @@ REQUEST_TOKEN_URL = DASHBOARD_SERVER_HTTP + '/_ah/OAuthGetRequestToken'
 AUTHORIZE_TOKEN_URL = DASHBOARD_SERVER_HTTP + '/_ah/OAuthAuthorizeToken'
 ACCESS_TOKEN_URL = DASHBOARD_SERVER_HTTP + '/_ah/OAuthGetAccessToken'
 
-# The build master URL.
-BUILD_MASTER_SERVER = 'webrtc-cb-linux-master.cbf.corp.google.com:8010'
-BUILD_MASTER_TRANSPOSED_GRID_URL = '/tgrid'
-
 # Build bot constants.
 BUILD_BOT_COVERAGE_WWW_DIRECTORY = '/var/www/coverage'
 
 # Dashboard data input URLs.
 ADD_COVERAGE_DATA_URL = DASHBOARD_SERVER_HTTP + '/add_coverage_data'
-ADD_BUILD_STATUS_DATA_URL = DASHBOARD_SERVER_HTTP + '/add_build_status_data'
