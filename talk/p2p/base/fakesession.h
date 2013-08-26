@@ -71,7 +71,8 @@ class FakeTransportChannel : public TransportChannelImpl,
         tiebreaker_(0),
         ice_proto_(ICEPROTO_HYBRID),
         remote_ice_mode_(ICEMODE_FULL),
-        dtls_fingerprint_("", NULL, 0) {
+        dtls_fingerprint_("", NULL, 0),
+        ssl_role_(talk_base::SSL_CLIENT) {
   }
   ~FakeTransportChannel() {
     Reset();
@@ -207,7 +208,6 @@ class FakeTransportChannel : public TransportChannelImpl,
 
   bool SetLocalIdentity(talk_base::SSLIdentity* identity) {
     identity_ = identity;
-
     return true;
   }
 
