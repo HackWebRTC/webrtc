@@ -148,6 +148,8 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet,
         return kSizeError;
     } else if (retVal == -2) {
         return kDuplicatePacket;
+    } else if (retVal == -3) {
+        return kOutOfBoundsPacket;
     }
     // update length
     _length = Length() + static_cast<uint32_t>(retVal);

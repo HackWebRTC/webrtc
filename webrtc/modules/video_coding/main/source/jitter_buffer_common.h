@@ -34,6 +34,7 @@ enum VCMJitterBufferEnum {
 };
 
 enum VCMFrameBufferEnum {
+  kOutOfBoundsPacket    = -7,
   kNotInitialized       = -6,
   kOldPacket            = -5,
   kGeneralError         = -4,

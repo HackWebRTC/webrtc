@@ -155,6 +155,14 @@ class VCMSessionInfo {
   int empty_seq_num_high_;
   // Number of packets discarded because the decoder can't use them.
   int packets_not_decodable_;
+
+  // The following two variables correspond to the first and last media packets
+  // in a session defined by the first packet flag and the marker bit.
+  // They are not necessarily equal to the front and back packets, as packets
+  // may enter out of order.
+  // TODO(mikhal): Refactor the list to use a map.
+  int first_packet_seq_num_;
+  int last_packet_seq_num_;
 };
 
 }  // namespace webrtc

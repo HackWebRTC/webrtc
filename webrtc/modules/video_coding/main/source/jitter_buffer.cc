@@ -798,6 +798,7 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
       break;
     }
     case kNoError:
+    case kOutOfBoundsPacket:
     case kDuplicatePacket: {
       break;
     }

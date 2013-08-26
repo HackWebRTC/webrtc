@@ -30,7 +30,9 @@ VCMSessionInfo::VCMSessionInfo()
       packets_(),
       empty_seq_num_low_(-1),
       empty_seq_num_high_(-1),
-      packets_not_decodable_(0) {
+      packets_not_decodable_(0),
+      first_packet_seq_num_(-1),
+      last_packet_seq_num_(-1) {
 }
 
 void VCMSessionInfo::UpdateDataPointers(const uint8_t* old_base_ptr,
@@ -100,6 +102,8 @@ void VCMSessionInfo::Reset() {
   empty_seq_num_low_ = -1;
   empty_seq_num_high_ = -1;
   packets_not_decodable_ = 0;
+  first_packet_seq_num_ = -1;
+  last_packet_seq_num_ = -1;
 }
 
 int VCMSessionInfo::SessionLength() const {
@@ -164,7 +168,7 @@ void VCMSessionInfo::ShiftSubsequentPackets(PacketIterator it,
 }
 
 void VCMSessionInfo::UpdateCompleteSession() {
-  if (packets_.front().isFirstPacket && packets_.back().markerBit) {
+  if (HaveFirstPacket() && HaveLastPacket()) {
     // Do we have all the packets in this session?
     bool complete_session = true;
     PacketIterator it = packets_.begin();
@@ -383,12 +387,12 @@ void VCMSessionInfo::SetNotDecodableIfIncomplete() {
 
 bool
 VCMSessionInfo::HaveFirstPacket() const {
-  return !packets_.empty() && packets_.front().isFirstPacket;
+  return !packets_.empty() && (first_packet_seq_num_ != -1);
 }
 
 bool
 VCMSessionInfo::HaveLastPacket() const {
-  return (!packets_.empty() && packets_.back().markerBit);
+  return !packets_.empty() && (last_packet_seq_num_ != -1);
 }
 
 bool
@@ -400,14 +404,6 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
                                  uint8_t* frame_buffer,
                                  VCMDecodeErrorMode decode_error_mode,
                                  const FrameData& frame_data) {
-  // Check if this is first packet (only valid for some codecs)
-  if (packet.isFirstPacket) {
-    // The first packet in a frame signals the frame type.
-    frame_type_ = packet.frameType;
-  } else if (frame_type_ == kFrameEmpty && packet.frameType != kFrameEmpty) {
-    // Update the frame type with the first media packet.
-    frame_type_ = packet.frameType;
-  }
   if (packet.frameType == kFrameEmpty) {
     // Update sequence number of an empty packet.
     // Only media packets are inserted into the packet list.
@@ -415,8 +411,9 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
     return 0;
   }
 
-  if (packets_.size() == kMaxPacketsInSession)
+  if (packets_.size() == kMaxPacketsInSession) {
     return -1;
+  }
 
   // Find the position of this packet in the packet list in sequence number
   // order and insert it. Loop over the list in reverse order.
@@ -430,6 +427,32 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
       (*rit).seqNum == packet.seqNum && (*rit).sizeBytes > 0)
     return -2;
 
+  // Only insert media packets between first and last packets (when available).
+  // Placing check here, as to properly account for duplicate packets.
+  // Check if this is first packet (only valid for some codecs)
+  // Should only be set for one packet per session.
+  if (packet.isFirstPacket && first_packet_seq_num_ == -1) {
+    // The first packet in a frame signals the frame type.
+    frame_type_ = packet.frameType;
+    // Store the sequence number for the first packet.
+    first_packet_seq_num_ = static_cast<int>(packet.seqNum);
+  } else if (first_packet_seq_num_ != -1 &&
+        !IsNewerSequenceNumber(packet.seqNum, first_packet_seq_num_)) {
+    return -3;
+  } else if (frame_type_ == kFrameEmpty && packet.frameType != kFrameEmpty) {
+    // Update the frame type with the type of the first media packet.
+    // TODO(mikhal): Can this trigger?
+    frame_type_ = packet.frameType;
+  }
+
+  // Track the marker bit, should only be set for one packet per session.
+  if (packet.markerBit && last_packet_seq_num_ == -1) {
+    last_packet_seq_num_ = static_cast<int>(packet.seqNum);
+  } else if (last_packet_seq_num_ != -1 &&
+      IsNewerSequenceNumber(packet.seqNum, last_packet_seq_num_)) {
+    return -3;
+  }
+
   // The insert operation invalidates the iterator |rit|.
   PacketIterator packet_list_it = packets_.insert(rit.base(), packet);
 
@@ -439,7 +462,6 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
     decodable_ = true;
   else if (decode_error_mode == kSelectiveErrors)
     UpdateDecodableSession(frame_data);
-
   return returnLength;
 }
 
