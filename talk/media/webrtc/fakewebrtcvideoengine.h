@@ -714,9 +714,6 @@ class FakeWebRtcVideoEngine
   WEBRTC_STUB(DeregisterDecoderObserver, (const int));
   WEBRTC_STUB(SendKeyFrame, (const int));
   WEBRTC_STUB(WaitForFirstKeyFrame, (const int, const bool));
-#ifdef USE_WEBRTC_DEV_BRANCH
-  WEBRTC_STUB(SetDecodeErrorMode, (const int, const ViEDecodeErrorMode));
-#endif
   WEBRTC_STUB(StartDebugRecording, (int, const char*));
   WEBRTC_STUB(StopDebugRecording, (int));
 
