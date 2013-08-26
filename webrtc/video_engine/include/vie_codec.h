@@ -66,18 +66,6 @@ class WEBRTC_DLLEXPORT ViEDecoderObserver {
 
 class WEBRTC_DLLEXPORT ViECodec {
  public:
-  enum ViEDecodeErrorMode {
-    kNoErrors,              // Never decode with errors. Video will freeze
-                            // if nack is disabled.
-    kSelectiveErrors,       // Frames that are determined decodable in
-                            // VCMSessionInfo may be decoded with missing
-                            // packets. As not all incomplete frames will be
-                            // decodable, video will freeze if nack is disabled.
-    kWithErrors             // Release frames as needed. Errors may be
-                            // introduced as some encoded frames may not be
-                            // complete.
-  };
-
   // Factory for the ViECodec sub‐API and increases an internal reference
   // counter if successful. Returns NULL if the API is not supported or if
   // construction fails.
@@ -182,10 +170,6 @@ class WEBRTC_DLLEXPORT ViECodec {
   // decode the incoming video stream.
   virtual int WaitForFirstKeyFrame(const int video_channel,
                                    const bool wait) = 0;
-
-  // Set the decode error mode.
-  virtual int SetDecodeErrorMode(const int video_channel,
-                                 const ViEDecodeErrorMode error_mode) = 0;
 
   // Enables recording of debugging information.
   virtual int StartDebugRecording(int video_channel,

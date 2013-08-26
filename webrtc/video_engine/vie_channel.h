@@ -15,12 +15,10 @@
 
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
-#include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/interface/video_coding_defines.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_engine/include/vie_codec.h"
 #include "webrtc/video_engine/include/vie_network.h"
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
 #include "webrtc/video_engine/vie_defines.h"
@@ -117,7 +115,6 @@ class ViEChannel
   int32_t SetHybridNACKFECStatus(const bool enable,
                                  const unsigned char payload_typeRED,
                                  const unsigned char payload_typeFEC);
-  void SetDecodeErrorMode(ViECodec::ViEDecodeErrorMode error_mode);
   int SetSenderBufferingMode(int target_delay_ms);
   int SetReceiverBufferingMode(int target_delay_ms);
   int32_t SetKeyFrameRequestMethod(const KeyFrameRequestMethod method);

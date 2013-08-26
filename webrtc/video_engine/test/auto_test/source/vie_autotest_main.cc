@@ -19,17 +19,7 @@
 #include "webrtc/video_engine/test/auto_test/interface/vie_window_creator.h"
 
 DEFINE_bool(automated, false, "Run Video engine tests in noninteractive mode.");
-DEFINE_int32(test_type, -1, "Test type:\n"
-                            "\t1. All standard tests (delivery test)\n"
-                            "\t2. All API tests\n"
-                            "\t3. All extended tests\n"
-                            "\t4. Specific standard test\n"
-                            "\t5. Specific API test\n"
-                            "\t6. Specific extended test\n"
-                            "\t7. Simple loopback call\n"
-                            "\t8. Custom configure a call\n"
-                            "\t9. Simulcast in loopback\n"
-                            "\t10. Record");
+DEFINE_bool(auto_custom_call, false, "Run custom call directly.");
 
 static const std::string kStandardTest = "ViEStandardIntegrationTest";
 static const std::string kExtendedTest = "ViEExtendedIntegrationTest";
@@ -60,7 +50,7 @@ int ViEAutoTestMain::RunTests(int argc, char** argv) {
   if (FLAGS_automated) {
     // Run in automated mode.
     result = RUN_ALL_TESTS();
-  } else if (FLAGS_test_type == 8) {
+  } else if (FLAGS_auto_custom_call) {
     // Run automated custom call.
     result = RunSpecialTestCase(8);
   } else {
@@ -121,10 +111,11 @@ int ViEAutoTestMain::RunTestMatching(const std::string test_case,
   return RUN_ALL_TESTS();
 }
 
-int ViEAutoTestMain::RunSpecificTestCaseIn(const std::string test_case_name) {
+int ViEAutoTestMain::RunSpecificTestCaseIn(const std::string test_case_name)
+{
   // If user says 0, it means don't run anything.
   int specific_choice = AskUserForTestCase();
-  if (specific_choice != 0) {
+  if (specific_choice != 0){
     return RunTestMatching(test_case_name,
                            index_to_test_method_map_[specific_choice]);
   }
@@ -163,40 +154,36 @@ int ViEAutoTestMain::RunInteractiveMode() {
 
   int choice = 0;
   int errors = 0;
-  if (FLAGS_test_type > 0 && FLAGS_test_type < 11) {
-    choice = FLAGS_test_type;
-  } else {
-    do {
-      ViETest::Log("Test types: ");
-      ViETest::Log("\t 0. Quit");
-      ViETest::Log("\t 1. All standard tests (delivery test)");
-      ViETest::Log("\t 2. All API tests");
-      ViETest::Log("\t 3. All extended test");
-      ViETest::Log("\t 4. Specific standard test");
-      ViETest::Log("\t 5. Specific API test");
-      ViETest::Log("\t 6. Specific extended test");
-      ViETest::Log("\t 7. Simple loopback call");
-      ViETest::Log("\t 8. Custom configure a call");
-      ViETest::Log("\t 9. Simulcast in loopback");
-      ViETest::Log("\t 10. Record");
-      ViETest::Log("Select type of test:");
+  do {
+    ViETest::Log("Test types: ");
+    ViETest::Log("\t 0. Quit");
+    ViETest::Log("\t 1. All standard tests (delivery test)");
+    ViETest::Log("\t 2. All API tests");
+    ViETest::Log("\t 3. All extended test");
+    ViETest::Log("\t 4. Specific standard test");
+    ViETest::Log("\t 5. Specific API test");
+    ViETest::Log("\t 6. Specific extended test");
+    ViETest::Log("\t 7. Simple loopback call");
+    ViETest::Log("\t 8. Custom configure a call");
+    ViETest::Log("\t 9. Simulcast in loopback");
+    ViETest::Log("\t 10. Record");
+    ViETest::Log("Select type of test:");
 
-      choice = AskUserForNumber(0, 10);
-      if (choice == kInvalidChoice) {
-        continue;
-      }
-    } while (choice != 0);
-  }
-
-  switch (choice) {
-    case 1:  errors = RunTestMatching(kStandardTest, "*");  break;
-    case 2:  errors = RunTestMatching(kApiTest,      "*");  break;
-    case 3:  errors = RunTestMatching(kExtendedTest, "*");  break;
-    case 4:  errors = RunSpecificTestCaseIn(kStandardTest); break;
-    case 5:  errors = RunSpecificTestCaseIn(kApiTest);      break;
-    case 6:  errors = RunSpecificTestCaseIn(kExtendedTest); break;
-    default: errors = RunSpecialTestCase(choice);           break;
-  }
+    choice = AskUserForNumber(0, 10);
+    if (choice == kInvalidChoice) {
+      continue;
+    }
+    switch (choice) {
+      case 0:                                                 break;
+      case 1:  errors = RunTestMatching(kStandardTest, "*");  break;
+      case 2:  errors = RunTestMatching(kApiTest,      "*");  break;
+      case 3:  errors = RunTestMatching(kExtendedTest, "*");  break;
+      case 4:  errors = RunSpecificTestCaseIn(kStandardTest); break;
+      case 5:  errors = RunSpecificTestCaseIn(kApiTest);      break;
+      case 6:  errors = RunSpecificTestCaseIn(kExtendedTest); break;
+      default: errors = RunSpecialTestCase(choice);           break;
+    }
+  } while (choice != 0);
 
   if (errors) {
     ViETest::Log("Test done with errors, see ViEAutotestLog.txt for test "

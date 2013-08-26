@@ -768,20 +768,6 @@ int32_t ViEChannel::SetHybridNACKFECStatus(
   return ProcessFECRequest(enable, payload_typeRED, payload_typeFEC);
 }
 
-void ViEChannel::SetDecodeErrorMode(ViECodec::ViEDecodeErrorMode error_mode) {
-  switch (error_mode) {
-  case ViECodec::kNoErrors:
-    vcm_.SetDecodeErrorMode(kNoErrors);
-    break;
-  case ViECodec::kSelectiveErrors:
-    vcm_.SetDecodeErrorMode(kSelectiveErrors);
-    break;
-  case ViECodec::kWithErrors:
-    vcm_.SetDecodeErrorMode(kWithErrors);
-    break;
-  }
-}
-
 int ViEChannel::SetSenderBufferingMode(int target_delay_ms) {
   if ((target_delay_ms < 0) || (target_delay_ms > kMaxTargetDelayMs)) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
