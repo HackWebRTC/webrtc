@@ -19,7 +19,7 @@ namespace webrtc {
 
 class TestFEC : public ACMTest {
  public:
-  TestFEC(int testMode);
+  TestFEC();
   ~TestFEC();
 
   void Perform();
@@ -31,7 +31,6 @@ class TestFEC : public ACMTest {
                             int32_t sampFreqHz = -1);
   void Run();
   void OpenOutFile(int16_t testNumber);
-  void DisplaySendReceiveCodec();
   int32_t SetVAD(bool enableDTX, bool enableVAD, ACMVADMode vadMode);
   AudioCodingModule* _acmA;
   AudioCodingModule* _acmB;
@@ -41,7 +40,6 @@ class TestFEC : public ACMTest {
   PCMFile _inFileA;
   PCMFile _outFileB;
   int16_t _testCntr;
-  int _testMode;
 };
 
 }  // namespace webrtc

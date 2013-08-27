@@ -121,9 +121,9 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   //   (CNG) Comfort Noise Generation
   //
 
-  int32_t SetVAD(const bool enable_dtx = true,
-                 const bool enable_vad = false,
-                 const ACMVADMode mode = VADNormal);
+  int32_t SetVAD(bool enable_dtx = true,
+                 bool enable_vad = false,
+                 ACMVADMode mode = VADNormal);
 
   int32_t VAD(bool* dtx_enabled, bool* vad_enabled,
               ACMVADMode* mode) const;

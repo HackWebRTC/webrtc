@@ -103,7 +103,9 @@ class ACMCodecDB {
     , kCNNB
     , kCNWB
     , kCNSWB
+#ifdef ENABLE_48000_HZ
     , kCNFB
+#endif
 #ifdef WEBRTC_CODEC_AVT
     , kAVT
 #endif

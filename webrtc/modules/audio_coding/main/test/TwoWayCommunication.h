@@ -26,9 +26,9 @@ class TwoWayCommunication : public ACMTest {
 
   void Perform();
  private:
-  uint8_t ChooseCodec(uint8_t* codecID_A, uint8_t* codecID_B);
-  int16_t SetUp();
-  int16_t SetUpAutotest();
+  void ChooseCodec(uint8_t* codecID_A, uint8_t* codecID_B);
+  void SetUp();
+  void SetUpAutotest();
 
   AudioCodingModule* _acmA;
   AudioCodingModule* _acmB;

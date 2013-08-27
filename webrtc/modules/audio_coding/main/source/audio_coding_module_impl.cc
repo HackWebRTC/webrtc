@@ -574,7 +574,7 @@ int AudioCodingModuleImpl::ProcessSingleStream() {
         }
         case kActiveNormalEncoded:
         case kPassiveNormalEncoded: {
-          current_payload_type = (uint8_t) send_codec_inst_.pltype;
+          current_payload_type = static_cast<uint8_t>(send_codec_inst_.pltype);
           frame_type = kAudioFrameSpeech;
           break;
         }
@@ -662,8 +662,8 @@ int AudioCodingModuleImpl::ProcessSingleStream() {
                  fragmentation_.fragmentationLength[1]);
           // Update the fragmentation time difference vector, in number of
           // timestamps.
-          uint16_t time_since_last = uint16_t(
-              rtp_timestamp - last_fec_timestamp_);
+          uint16_t time_since_last = static_cast<uint16_t>(rtp_timestamp -
+                                                           last_fec_timestamp_);
 
           // Update fragmentation vectors.
           fragmentation_.fragmentationPlType[1] =
@@ -736,7 +736,7 @@ int AudioCodingModuleImpl::ProcessSingleStream() {
 
     if (vad_callback_ != NULL) {
       // Callback with VAD decision.
-      vad_callback_->InFrameType(((int16_t) encoding_type));
+      vad_callback_->InFrameType(static_cast<int16_t>(encoding_type));
     }
   }
   return length_bytes;
@@ -1060,7 +1060,6 @@ int32_t AudioCodingModuleImpl::RegisterSendCodec(
     }
 
     ACMGenericCodec* codec_ptr = codecs_[codec_id];
-    int16_t status;
     WebRtcACMCodecParams codec_params;
 
     memcpy(&(codec_params.codec_inst), &send_codec, sizeof(CodecInst));
@@ -1068,12 +1067,7 @@ int32_t AudioCodingModuleImpl::RegisterSendCodec(
     codec_params.enable_dtx = dtx_enabled_;
     codec_params.vad_mode = vad_mode_;
     // Force initialization.
-    status = codec_ptr->InitEncoder(&codec_params, true);
-
-    // Check if VAD was turned on, or if error is reported.
-    if (status == 1) {
-      vad_enabled_ = true;
-    } else if (status < 0) {
+    if (codec_ptr->InitEncoder(&codec_params, true) < 0) {
       // Could not initialize the encoder.
 
       // Check if already have a registered codec.
@@ -1090,17 +1084,18 @@ int32_t AudioCodingModuleImpl::RegisterSendCodec(
       return -1;
     }
 
+    // Update states.
+    dtx_enabled_ = codec_params.enable_dtx;
+    vad_enabled_ = codec_params.enable_vad;
+    vad_mode_ = codec_params.vad_mode;
+
     // Everything is fine so we can replace the previous codec with this one.
     if (send_codec_registered_) {
       // If we change codec we start fresh with FEC.
       // This is not strictly required by the standard.
       is_first_red_ = true;
 
-      if (codec_ptr->SetVAD(dtx_enabled_, vad_enabled_, vad_mode_) < 0) {
-        // SetVAD failed.
-        vad_enabled_ = false;
-        dtx_enabled_ = false;
-      }
+      codec_ptr->SetVAD(&dtx_enabled_, &vad_enabled_, &vad_mode_);
     }
 
     current_send_codec_idx_ = codec_id;
@@ -1436,8 +1431,8 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
   assert((secondary_encoder_.get() != NULL) ?
       secondary_send_codec_inst_.plfreq == send_codec_inst_.plfreq : true);
 
-  bool resample = ((int32_t) in_frame.sample_rate_hz_
-      != send_codec_inst_.plfreq);
+  bool resample = static_cast<int32_t>(in_frame.sample_rate_hz_) !=
+      send_codec_inst_.plfreq;
 
   // This variable is true if primary codec and secondary codec (if exists)
   // are both mono and input is stereo.
@@ -1489,8 +1484,8 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
     // Calculate the timestamp of this frame.
     if (last_in_timestamp_ > in_frame.timestamp_) {
       // A wrap around has happened.
-      timestamp_diff = ((uint32_t) 0xFFFFFFFF - last_in_timestamp_)
-                                                 + in_frame.timestamp_;
+      timestamp_diff = (static_cast<uint32_t>(0xFFFFFFFF) - last_in_timestamp_)
+          + in_frame.timestamp_;
     } else {
       timestamp_diff = in_frame.timestamp_ - last_in_timestamp_;
     }
@@ -1556,15 +1551,13 @@ AudioCodingModuleImpl::SetFECStatus(
 /////////////////////////////////////////
 //   (VAD) Voice Activity Detection
 //
-int32_t AudioCodingModuleImpl::SetVAD(const bool enable_dtx,
-                                      const bool enable_vad,
-                                      const ACMVADMode mode) {
+int32_t AudioCodingModuleImpl::SetVAD(bool enable_dtx, bool enable_vad,
+                                      ACMVADMode mode) {
   CriticalSectionScoped lock(acm_crit_sect_);
   return SetVADSafe(enable_dtx, enable_vad, mode);
 }
 
-int AudioCodingModuleImpl::SetVADSafe(bool enable_dtx,
-                                      bool enable_vad,
+int AudioCodingModuleImpl::SetVADSafe(bool enable_dtx, bool enable_vad,
                                       ACMVADMode mode) {
   // Sanity check of the mode.
   if ((mode != VADNormal) && (mode != VADLowBitrate)
@@ -1579,7 +1572,10 @@ int AudioCodingModuleImpl::SetVADSafe(bool enable_dtx,
   // sending.
   if ((enable_dtx || enable_vad) && stereo_send_) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
-                 "VAD/DTX not supported for stereo sending");
+                 "VAD/DTX not supported for stereo sending.");
+    dtx_enabled_ = false;
+    vad_enabled_ = false;
+    vad_mode_ = mode;
     return -1;
   }
 
@@ -1588,36 +1584,30 @@ int AudioCodingModuleImpl::SetVADSafe(bool enable_dtx,
   if ((enable_dtx || enable_vad) && secondary_encoder_.get() != NULL) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                  "VAD/DTX not supported when dual-streaming is enabled.");
+    dtx_enabled_ = false;
+    vad_enabled_ = false;
+    vad_mode_ = mode;
     return -1;
   }
 
+  // Store VAD/DTX settings. Values can be changed in the call to "SetVAD"
+  // below.
+  dtx_enabled_ = enable_dtx;
+  vad_enabled_ = enable_vad;
+  vad_mode_ = mode;
+
   // If a send codec is registered, set VAD/DTX for the codec.
   if (HaveValidEncoder("SetVAD")) {
-    int16_t status = codecs_[current_send_codec_idx_]->SetVAD(enable_dtx,
-                                                              enable_vad,
-                                                              mode);
-    if (status == 1) {
-      // Vad was enabled.
-      vad_enabled_ = true;
-      dtx_enabled_ = enable_dtx;
-      vad_mode_ = mode;
-
-      return 0;
-    } else if (status < 0) {
+    if (codecs_[current_send_codec_idx_]->SetVAD(&dtx_enabled_, &vad_enabled_,
+                                                 &vad_mode_) < 0) {
       // SetVAD failed.
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                    "SetVAD failed");
-
-      vad_enabled_ = false;
       dtx_enabled_ = false;
-
+      vad_enabled_ = false;
       return -1;
     }
   }
-
-  vad_enabled_ = enable_vad;
-  dtx_enabled_ = enable_dtx;
-  vad_mode_ = mode;
 
   return 0;
 }
@@ -2379,7 +2369,7 @@ int32_t AudioCodingModuleImpl::PlayoutData10Ms(
       }
 
       // Set the payload data length from the resampler.
-      audio_frame->samples_per_channel_ = (uint16_t) temp_len;
+      audio_frame->samples_per_channel_ = static_cast<uint16_t>(temp_len);
       // Set the sampling frequency.
       audio_frame->sample_rate_hz_ = desired_freq_hz;
     } else {
@@ -2453,11 +2443,12 @@ int32_t AudioCodingModuleImpl::PlayoutData10Ms(
     if (dtmf_callback_ != NULL) {
       if (tone != kACMToneEnd) {
         // just a tone
-        dtmf_callback_->IncomingDtmf((uint8_t) tone, false);
+        dtmf_callback_->IncomingDtmf(static_cast<uint8_t>(tone), false);
       } else if ((tone == kACMToneEnd) && (last_detected_tone != kACMToneEnd)) {
         // The tone is "END" and the previously detected tone is
         // not "END," so call fir an end.
-        dtmf_callback_->IncomingDtmf((uint8_t) last_detected_tone, true);
+        dtmf_callback_->IncomingDtmf(static_cast<uint8_t>(last_detected_tone),
+                                     true);
       }
     }
   }
@@ -2658,7 +2649,7 @@ int16_t AudioCodingModuleImpl::DecoderListIDByPlName(
         assert(registered_pltypes_[id] >= 0);
         assert(registered_pltypes_[id] <= 255);
         codecs_[id]->DecoderParams(
-            &codec_params, (uint8_t) registered_pltypes_[id]);
+            &codec_params, static_cast<uint8_t>(registered_pltypes_[id]));
         if (!STR_CASE_CMP(codec_params.codec_inst.plname, name)) {
           // Check if the given sampling frequency matches.
           // A zero sampling frequency means we matching the names
