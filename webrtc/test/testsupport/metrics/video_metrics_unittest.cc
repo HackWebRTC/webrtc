@@ -140,4 +140,11 @@ TEST_F(VideoMetricsTest, DISABLED_ON_ANDROID(EmptyFilesBothMetrics)) {
                                    &psnr_result_, &ssim_result_));
 }
 
+// Dummy test to get at least one test in this executable for Android
+// (otherwise gtest will fail execution on Android).
+// TODO(kjellander): Remove when the other tests have been fixed for
+// Android.
+TEST_F(VideoMetricsTest, DummyTest) {
+}
+
 }  // namespace webrtc

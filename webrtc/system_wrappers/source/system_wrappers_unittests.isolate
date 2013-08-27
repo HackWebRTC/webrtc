@@ -8,6 +8,16 @@
 
 {
   'conditions': [
+    ['OS=="android"', {
+      # When doing Android builds, the WebRTC code is put in third_party/webrtc
+      # of a Chromium checkout, this is one level above the standalone build.
+      'variables': {
+        'isolate_dependency_untracked': [
+          '../../../../resources/',
+          '../../../../data/',
+        ],
+      },
+    }],
     ['OS=="linux" or OS=="mac" or OS=="win"', {
       'variables': {
         'command': [
