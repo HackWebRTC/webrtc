@@ -87,7 +87,8 @@ class WebRTCTest(chrome_tests.ChromeTests):
 
 
 def main(_):
-  parser = optparse.OptionParser('usage: %prog -b <dir> -t <test> <test args>')
+  parser = optparse.OptionParser(
+      'usage: %prog -b <dir> -t <test> -- <test args>')
   parser.disable_interspersed_args()
   parser.add_option('-b', '--build_dir',
                     help=('Location of the compiler output. Can only be used '
