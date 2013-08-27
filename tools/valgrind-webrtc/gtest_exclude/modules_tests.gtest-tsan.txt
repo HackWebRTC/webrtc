@@ -1,6 +1,11 @@
 # Tests that are too slow.
 AudioCodingModuleTest.TestAllCodecs
-AudioCodingModuleTest.RunAllTests
+AudioCodingModuleTest.TestEncodeDecode
+AudioCodingModuleTest.TestFEC
+AudioCodingModuleTest.TestIsac
+AudioCodingModuleTest.TwoWayCommunication
+AudioCodingModuleTest.TestStereo
+AudioCodingModuleTest.TestVADDTX
 AudioCodingModuleTest.TestOpus
 FecTest.FecTest
 TestVp8Impl.BaseUnitTest
