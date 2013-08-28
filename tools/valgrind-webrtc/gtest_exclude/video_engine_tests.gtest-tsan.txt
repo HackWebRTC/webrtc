@@ -1,0 +1,6 @@
+# Tests that are too slow.
+RampUpTest/*
+
+# TODO(pbos): Temporary suppressions (issue 2312)
+*EngineTest.ReceivesAndRetransmitsNack*
+*EngineTest.ReceivesPliAndRecoversWithNack*
