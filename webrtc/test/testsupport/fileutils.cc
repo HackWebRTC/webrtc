@@ -12,6 +12,7 @@
 
 #ifdef WIN32
 #include <direct.h>
+#include <algorithm>
 #define GET_CURRENT_DIR _getcwd
 #else
 #include <unistd.h>
@@ -67,6 +68,13 @@ void SetExecutablePath(const std::string& path) {
   if (path.find(working_dir) != std::string::npos) {
     temp_path = path.substr(working_dir.length() + 1);
   }
+  // On Windows, when tests are run under memory tools like DrMemory and TSan,
+  // slashes occur in the path as directory separators. Make sure we replace
+  // such cases with backslashes in order for the paths to be correct.
+#ifdef WIN32
+  std::replace(temp_path.begin(), temp_path.end(), '/', '\\');
+#endif
+
   // Trim away the executable name; only store the relative dir path.
   temp_path = temp_path.substr(0, temp_path.find_last_of(kPathDelimiter));
   strncpy(relative_dir_path, temp_path.c_str(), FILENAME_MAX);
