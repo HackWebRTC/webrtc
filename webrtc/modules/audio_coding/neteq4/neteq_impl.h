@@ -167,6 +167,10 @@ class NetEqImpl : public webrtc::NetEq {
                                       int* current_memory_size_bytes,
                                       int* max_memory_size_bytes) const;
 
+  // Get sequence number and timestamp of the latest RTP.
+  // This method is to facilitate NACK.
+  virtual int DecodedRtpInfo(int* sequence_number, uint32_t* timestamp);
+
  private:
   static const int kOutputSizeMs = 10;
   static const int kMaxFrameSize = 2880;  // 60 ms @ 48 kHz.
@@ -317,6 +321,16 @@ class NetEqImpl : public webrtc::NetEq {
   int error_code_;  // Store last error code.
   int decoder_error_code_;
   CriticalSectionWrapper* crit_sect_;
+
+  // These values are used by NACK module to estimate time-to-play of
+  // a missing packet. Occasionally, NetEq might decide to decode more
+  // than one packet. Therefore, these values store sequence number and
+  // timestamp of the first packet pulled from the packet buffer. In
+  // such cases, these values do not exactly represent the sequence number
+  // or timestamp associated with a 10ms audio pulled from NetEq. NACK
+  // module is designed to compensate for this.
+  int decoded_packet_sequence_number_;
+  uint32_t decoded_packet_timestamp_;
 
   DISALLOW_COPY_AND_ASSIGN(NetEqImpl);
 };

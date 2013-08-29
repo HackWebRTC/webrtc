@@ -233,6 +233,10 @@ class NetEq {
                                       int* current_memory_size_bytes,
                                       int* max_memory_size_bytes) const = 0;
 
+  // Get sequence number and timestamp of the latest RTP.
+  // This method is to facilitate NACK.
+  virtual int DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) = 0;
+
  protected:
   NetEq() {}
 

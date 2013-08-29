@@ -87,7 +87,9 @@ NetEqImpl::NetEqImpl(int fs,
       first_packet_(true),
       error_code_(0),
       decoder_error_code_(0),
-      crit_sect_(CriticalSectionWrapper::CreateCriticalSection()) {
+      crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
+      decoded_packet_sequence_number_(-1),
+      decoded_packet_timestamp_(0) {
   if (fs != 8000 && fs != 16000 && fs != 32000 && fs != 48000) {
     LOG(LS_ERROR) << "Sample rate " << fs << " Hz not supported. " <<
         "Changing to 8000 Hz.";
@@ -350,6 +352,15 @@ void NetEqImpl::FlushBuffers() {
                                expand_->overlap_length());
   // Set to wait for new codec.
   first_packet_ = true;
+}
+
+int NetEqImpl::DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) {
+  CriticalSectionScoped lock(crit_sect_);
+  if (decoded_packet_sequence_number_ < 0)
+    return -1;
+  *sequence_number = decoded_packet_sequence_number_;
+  *timestamp = decoded_packet_timestamp_;
+  return 0;
 }
 
 // Methods below this line are private.
@@ -1662,8 +1673,9 @@ int NetEqImpl::ExtractPackets(int required_samples, PacketList* packet_list) {
 
     if (first_packet) {
       first_packet = false;
-      prev_sequence_number = packet->header.sequenceNumber;
-      prev_timestamp = packet->header.timestamp;
+      decoded_packet_sequence_number_ = prev_sequence_number =
+          packet->header.sequenceNumber;
+      decoded_packet_timestamp_ = prev_timestamp = packet->header.timestamp;
       prev_payload_type = packet->header.payloadType;
     }
 
