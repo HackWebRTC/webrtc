@@ -369,6 +369,9 @@ Channel::OnIncomingSSRCChanged(int32_t id, uint32_t ssrc)
     int32_t channel = VoEChannelId(id);
     assert(channel == _channelId);
 
+    // Update ssrc so that NTP for AV sync can be updated.
+    _rtpRtcpModule->SetRemoteSSRC(ssrc);
+
     if (_rtpObserver)
     {
         CriticalSectionScoped cs(&_callbackCritSect);
