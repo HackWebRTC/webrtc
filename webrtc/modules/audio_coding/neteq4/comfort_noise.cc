@@ -54,7 +54,7 @@ int ComfortNoise::Generate(size_t requested_length,
   // TODO(hlundin): Change to an enumerator and skip assert.
   assert(fs_hz_ == 8000 || fs_hz_ == 16000 || fs_hz_ ==  32000 ||
          fs_hz_ == 48000);
-  assert(output->Channels() == 1);  // Not adapted for multi-channel yet.
+  // Not adapted for multi-channel yet.
   if (output->Channels() != 1) {
     return kMultiChannelNotSupported;
   }
