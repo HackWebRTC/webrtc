@@ -518,15 +518,7 @@ bool ViECapturer::ViECaptureProcess() {
       captured_frame_.ResetSize();
       capture_cs_->Leave();
 
-      int64_t encode_start_time =
-          Clock::GetRealTimeClock()->TimeInMilliseconds();
       DeliverI420Frame(&deliver_frame_);
-
-      // The frame has been encoded, update the overuse detector with the
-      // duration.
-      overuse_detector_->FrameEncoded(
-          Clock::GetRealTimeClock()->TimeInMilliseconds() - encode_start_time,
-          deliver_frame_.width(), deliver_frame_.height());
     }
     deliver_cs_->Leave();
     if (current_brightness_level_ != reported_brightness_level_) {
