@@ -86,6 +86,7 @@ class MediaConstraintsInterface {
   static const char kLeakyBucket[];  // googLeakyBucket
   // googTemporalLayeredScreencast
   static const char kTemporalLayeredScreencast[];
+  static const char kCpuOveruseDetection[];
 
   // Constraint keys for CreateOffer / CreateAnswer
   // Specified by the W3C PeerConnection spec

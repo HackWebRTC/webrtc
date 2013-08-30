@@ -65,16 +65,34 @@ class VideoAdapter {
   // the output frame.
   bool AdaptFrame(const VideoFrame* in_frame, const VideoFrame** out_frame);
 
+  void set_scale_third(bool enable) {
+    LOG(LS_INFO) << "Video Adapter third scaling is now "
+                 << (enable ? "enabled" : "disabled");
+    scale_third_ = enable;
+  }
+  bool scale_third() const { return scale_third_; }
+
  protected:
   float FindClosestScale(int width, int height, int target_num_pixels);
+  float FindClosestViewScale(int width, int height, int target_num_pixels);
   float FindLowerScale(int width, int height, int target_num_pixels);
 
  private:
+  const float* GetViewScaleFactors() const;
+  float FindScale(const float* scale_factors,
+                  const float upbias, int width, int height,
+                  int target_num_pixels);
   bool StretchToOutputFrame(const VideoFrame* in_frame);
 
   VideoFormat input_format_;
   VideoFormat output_format_;
   int output_num_pixels_;
+  bool scale_third_;  // True if adapter allows scaling to 1/3 and 2/3.
+  int frames_;  // Number of input frames.
+  int adapted_frames_;  // Number of frames scaled.
+  int adaption_changes_;  // Number of changes in scale factor.
+  size_t previous_width;  // Previous adapter output width.
+  size_t previous_height;  // Previous adapter output height.
   bool black_output_;  // Flag to tell if we need to black output_frame_.
   bool is_black_;  // Flag to tell if output_frame_ is currently black.
   int64 interval_next_frame_;
@@ -176,6 +194,8 @@ class CoordinatedVideoAdapter
   void OnOutputFormatRequest(const VideoFormat& format);
   // Handle the resolution request from the encoder due to bandwidth changes.
   void OnEncoderResolutionRequest(int width, int height, AdaptRequest request);
+  // Handle the resolution request for CPU overuse.
+  void OnCpuResolutionRequest(AdaptRequest request);
   // Handle the CPU load provided by a CPU monitor.
   void OnCpuLoadUpdated(int current_cpus, int max_cpus,
                         float process_load, float system_load);

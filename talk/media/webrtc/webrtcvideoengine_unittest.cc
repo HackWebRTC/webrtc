@@ -86,8 +86,7 @@ class FakeViEWrapper : public cricket::ViEWrapper {
 
 // Test fixture to test WebRtcVideoEngine with a fake webrtc::VideoEngine.
 // Useful for testing failure paths.
-class WebRtcVideoEngineTestFake :
-  public testing::Test,
+class WebRtcVideoEngineTestFake : public testing::Test,
   public sigslot::has_slots<> {
  public:
   WebRtcVideoEngineTestFake()

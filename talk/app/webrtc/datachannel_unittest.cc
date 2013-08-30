@@ -29,6 +29,7 @@
 #include "talk/app/webrtc/jsep.h"
 #include "talk/app/webrtc/mediastreamsignaling.h"
 #include "talk/app/webrtc/test/fakeconstraints.h"
+#include "talk/app/webrtc/test/fakedtlsidentityservice.h"
 #include "talk/app/webrtc/webrtcsession.h"
 #include "talk/base/gunit.h"
 #include "talk/media/base/fakemediaengine.h"
@@ -92,7 +93,8 @@ class SctpDataChannelTest : public testing::Test {
     constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp, true);
     constraints.AddMandatory(MediaConstraintsInterface::kEnableSctpDataChannels,
                              true);
-    ASSERT_TRUE(session_.Initialize(&constraints, NULL));
+    ASSERT_TRUE(session_.Initialize(&constraints,
+                                    new FakeIdentityService()));
     talk_base::scoped_refptr<CreateSessionDescriptionObserverForTest> observer
         = new CreateSessionDescriptionObserverForTest();
     session_.CreateOffer(observer.get(), NULL);
@@ -116,7 +118,6 @@ class SctpDataChannelTest : public testing::Test {
       session_.data_channel()->SignalReadyToSendData(true);
     }
   }
-
   cricket::FakeMediaEngine* media_engine_;
   cricket::FakeDataEngine* data_engine_;
   talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;

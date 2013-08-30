@@ -1266,6 +1266,7 @@ TEST_F(P2PTransportChannelTest, TestTcpConnectionsFromActiveToPassive) {
   DestroyChannels();
 }
 
+
 // Test what happens when we have 2 users behind the same NAT. This can lead
 // to interesting behavior because the STUN server will only give out the
 // address of the outermost NAT.
@@ -1503,3 +1504,4 @@ TEST_F(P2PTransportChannelTest, TestIceConfigWillPassDownToPort) {
 
   TestSendRecv(1);
 }
+

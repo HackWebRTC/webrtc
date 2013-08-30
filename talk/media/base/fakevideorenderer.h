@@ -28,6 +28,7 @@
 #ifndef TALK_MEDIA_BASE_FAKEVIDEORENDERER_H_
 #define TALK_MEDIA_BASE_FAKEVIDEORENDERER_H_
 
+#include "talk/base/logging.h"
 #include "talk/base/sigslot.h"
 #include "talk/media/base/videoframe.h"
 #include "talk/media/base/videorenderer.h"
@@ -62,6 +63,13 @@ class FakeVideoRenderer : public VideoRenderer {
     if (!frame ||
         frame->GetWidth() != static_cast<size_t>(width_) ||
         frame->GetHeight() != static_cast<size_t>(height_)) {
+      if (!frame) {
+        LOG(LS_WARNING) << "RenderFrame expected non-null frame.";
+      } else {
+        LOG(LS_WARNING) << "RenderFrame expected frame of size " << width_
+                        << "x" << height_ << " but received frame of size "
+                        << frame->GetWidth() << "x" << frame->GetHeight();
+      }
       ++errors_;
       return false;
     }

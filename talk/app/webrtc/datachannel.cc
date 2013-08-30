@@ -324,15 +324,13 @@ void DataChannel::ConnectToDataSession() {
   data_session_->SignalDataReceived.connect(this, &DataChannel::OnDataReceived);
   cricket::StreamParams params =
     cricket::StreamParams::CreateLegacy(id());
-  data_session_->media_channel()->AddSendStream(params);
-  data_session_->media_channel()->AddRecvStream(params);
+  data_session_->AddRecvStream(params);
+  data_session_->AddSendStream(params);
 }
 
 void DataChannel::DisconnectFromDataSession() {
-  if (data_session_->media_channel() != NULL) {
-    data_session_->media_channel()->RemoveSendStream(id());
-    data_session_->media_channel()->RemoveRecvStream(id());
-  }
+  data_session_->RemoveSendStream(id());
+  data_session_->RemoveRecvStream(id());
   data_session_->SignalReadyToSendData.disconnect(this);
   data_session_->SignalDataReceived.disconnect(this);
   data_session_ = NULL;

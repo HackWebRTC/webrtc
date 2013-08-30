@@ -25,7 +25,7 @@
 //
 // Common definition for video, including fourcc and VideoFormat.
 
-#ifndef TALK_MEDIA_BASE_VIDEOCOMMON_H_
+#ifndef TALK_MEDIA_BASE_VIDEOCOMMON_H_  // NOLINT
 #define TALK_MEDIA_BASE_VIDEOCOMMON_H_
 
 #include <string>
@@ -147,6 +147,15 @@ inline std::string GetFourccName(uint32 fourcc) {
   return name;
 }
 
+// Computes a scale less to fit in max_pixels while maintaining aspect ratio.
+void ComputeScaleMaxPixels(int frame_width, int frame_height, int max_pixels,
+                           int* scaled_width, int* scaled_height);
+
+// For low fps, max pixels limit is set to Retina MacBookPro 15" resolution of
+// 2880 x 1800 as of 4/18/2013.
+// For high fps, maximum pixels limit is set based on common 24" monitor
+// resolution of 2048 x 1280 as of 6/13/2013. The Retina resolution is
+// therefore reduced to 1440 x 900.
 void ComputeScale(int frame_width, int frame_height, int fps,
                   int* scaled_width, int* scaled_height);
 
@@ -157,6 +166,11 @@ void ComputeCrop(int cropped_format_width, int cropped_format_height,
                  int pixel_width, int pixel_height,
                  int rotation,
                  int* cropped_width, int* cropped_height);
+
+// Compute the frame size that makes pixels square pixel aspect ratio.
+void ComputeScaleToSquarePixels(int in_width, int in_height,
+                                int pixel_width, int pixel_height,
+                                int* scaled_width, int* scaled_height);
 
 //////////////////////////////////////////////////////////////////////////////
 // Definition of VideoFormat.
@@ -239,4 +253,4 @@ struct VideoFormat : VideoFormatPod {
 
 }  // namespace cricket
 
-#endif  // TALK_MEDIA_BASE_VIDEOCOMMON_H_
+#endif  // TALK_MEDIA_BASE_VIDEOCOMMON_H_  // NOLINT

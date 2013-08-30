@@ -938,7 +938,6 @@ talk_base::scoped_refptr<DataChannel> WebRtcSession::CreateDataChannel(
     if (data_channel_.get()) {
       channel->SetReceiveSsrc(new_config.id);
       channel->SetSendSsrc(new_config.id);
-      channel->ConnectToDataSession();
     }
     if (!config->negotiated) {
       talk_base::Buffer *payload = new talk_base::Buffer;

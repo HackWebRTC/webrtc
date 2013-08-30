@@ -98,23 +98,17 @@ static float FindLowerScale(int width, int height, int target_num_pixels) {
   return kScaleFactors[best_index];
 }
 
-// Compute a size to scale frames to that is below maximum compression
-// and rendering size with the same aspect ratio.
-void ComputeScale(int frame_width, int frame_height, int fps,
-                  int* scaled_width, int* scaled_height) {
+// Computes a scale less to fit in max_pixels while maintaining aspect ratio.
+void ComputeScaleMaxPixels(int frame_width, int frame_height, int max_pixels,
+    int* scaled_width, int* scaled_height) {
   ASSERT(scaled_width != NULL);
   ASSERT(scaled_height != NULL);
+  ASSERT(max_pixels > 0);
   // For VP8 the values for max width and height can be found here
   // webrtc/src/video_engine/vie_defines.h (kViEMaxCodecWidth and
   // kViEMaxCodecHeight)
   const int kMaxWidth = 4096;
   const int kMaxHeight = 3072;
-  // Maximum pixels limit is set to Retina MacBookPro 15" resolution of
-  // 2880 x 1800 as of 4/18/2013.
-  // For high fps, maximum pixels limit is set based on common 24" monitor
-  // resolution of 2048 x 1280 as of 6/13/2013. The Retina resolution is
-  // therefore reduced to 1440 x 900.
-  int kMaxPixels = (fps > 5) ? 2048 * 1280 : 2880 * 1800;
   int new_frame_width = frame_width;
   int new_frame_height = frame_height;
 
@@ -129,18 +123,32 @@ void ComputeScale(int frame_width, int frame_height, int fps,
     new_frame_height = kMaxHeight;
   }
   // Limit number of pixels.
-  if (new_frame_width * new_frame_height > kMaxPixels) {
+  if (new_frame_width * new_frame_height > max_pixels) {
     // Compute new width such that width * height is less than maximum but
     // maintains original captured frame aspect ratio.
     new_frame_width = static_cast<int>(sqrtf(static_cast<float>(
-        kMaxPixels) * new_frame_width / new_frame_height));
-    new_frame_height = kMaxPixels / new_frame_width;
+        max_pixels) * new_frame_width / new_frame_height));
+    new_frame_height = max_pixels / new_frame_width;
   }
   // Snap to a scale factor that is less than or equal to target pixels.
   float scale = FindLowerScale(frame_width, frame_height,
                                new_frame_width * new_frame_height);
   *scaled_width = static_cast<int>(frame_width * scale + .5f);
   *scaled_height = static_cast<int>(frame_height * scale + .5f);
+}
+
+// Compute a size to scale frames to that is below maximum compression
+// and rendering size with the same aspect ratio.
+void ComputeScale(int frame_width, int frame_height, int fps,
+                  int* scaled_width, int* scaled_height) {
+  // Maximum pixels limit is set to Retina MacBookPro 15" resolution of
+  // 2880 x 1800 as of 4/18/2013.
+  // For high fps, maximum pixels limit is set based on common 24" monitor
+  // resolution of 2048 x 1280 as of 6/13/2013. The Retina resolution is
+  // therefore reduced to 1440 x 900.
+  int max_pixels = (fps > 5) ? 2048 * 1280 : 2880 * 1800;
+  ComputeScaleMaxPixels(
+      frame_width, frame_height, max_pixels, scaled_width, scaled_height);
 }
 
 // Compute size to crop video frame to.
@@ -207,6 +215,14 @@ void ComputeCrop(int cropped_format_width,
     *cropped_width = new_frame_height;
     *cropped_height = new_frame_width;
   }
+}
+
+// Compute the frame size that makes pixels square pixel aspect ratio.
+void ComputeScaleToSquarePixels(int in_width, int in_height,
+                                int pixel_width, int pixel_height,
+                                int* scaled_width, int* scaled_height) {
+  *scaled_width = in_width;  // Keep width the same.
+  *scaled_height = in_height * pixel_width / pixel_height;
 }
 
 // The C++ standard requires a namespace-scope definition of static const

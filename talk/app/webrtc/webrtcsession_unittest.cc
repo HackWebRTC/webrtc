@@ -2484,7 +2484,7 @@ TEST_F(WebRtcSessionTest, TestRtpDataChannelConstraintTakesPrecedence) {
     webrtc::MediaConstraintsInterface::kEnableSctpDataChannels, true);
   constraints_->AddOptional(
       webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, true);
-  Init(NULL);
+  Init(new FakeIdentityService());
 
   SetLocalDescriptionWithDataChannel();
   EXPECT_EQ(cricket::DCT_RTP, data_engine_->last_channel_type());
@@ -2508,7 +2508,7 @@ TEST_F(WebRtcSessionTest, TestSctpDataChannelWithDtls) {
       webrtc::MediaConstraintsInterface::kEnableSctpDataChannels, true);
   constraints_->AddOptional(
       webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, true);
-  Init(NULL);
+  Init(new FakeIdentityService());
 
   SetLocalDescriptionWithDataChannel();
   EXPECT_EQ(cricket::DCT_SCTP, data_engine_->last_channel_type());

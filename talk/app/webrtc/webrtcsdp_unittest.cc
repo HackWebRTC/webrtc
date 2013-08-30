@@ -1427,6 +1427,25 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithSctpDataChannel) {
   EXPECT_EQ(message, expected_sdp);
 }
 
+TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithDataChannelAndBandwidth) {
+  AddRtpDataChannel();
+  data_desc_->set_bandwidth(100*1000);
+  JsepSessionDescription jsep_desc(kDummyString);
+
+  ASSERT_TRUE(jsep_desc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+  std::string message = webrtc::SdpSerialize(jsep_desc);
+
+  std::string expected_sdp = kSdpString;
+  expected_sdp.append(kSdpRtpDataChannelString);
+  // We want to test that serializing data content ignores bandwidth
+  // settings (it should always be the default).  Thus, we don't do
+  // the following:
+  // InjectAfter("a=mid:data_content_name\r\n",
+  //             "b=AS:100\r\n",
+  //             &expected_sdp);
+  EXPECT_EQ(message, expected_sdp);
+}
+
 TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithExtmap) {
   AddExtmap();
   JsepSessionDescription desc_with_extmap("dummy");
@@ -1737,6 +1756,29 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannels) {
 
   EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
+}
+
+TEST_F(WebRtcSdpTest, DeserializeSdpWithRtpDataChannelsAndBandwidth) {
+  AddRtpDataChannel();
+  JsepSessionDescription jdesc(kDummyString);
+  // We want to test that deserializing data content ignores bandwidth
+  // settings (it should always be the default).  Thus, we don't do
+  // the following:
+  // DataContentDescription* dcd = static_cast<DataContentDescription*>(
+  //    GetFirstDataContent(&desc_)->description);
+  // dcd->set_bandwidth(100 * 1000);
+  ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+
+  std::string sdp_with_bandwidth = kSdpString;
+  sdp_with_bandwidth.append(kSdpRtpDataChannelString);
+  InjectAfter("a=mid:data_content_name\r\n",
+              "b=AS:100\r\n",
+              &sdp_with_bandwidth);
+  JsepSessionDescription jdesc_with_bandwidth(kDummyString);
+
+  EXPECT_TRUE(
+      SdpDeserialize(sdp_with_bandwidth, &jdesc_with_bandwidth));
+  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_with_bandwidth));
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithSessionLevelExtmap) {

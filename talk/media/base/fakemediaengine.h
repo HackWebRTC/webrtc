@@ -864,8 +864,6 @@ class FakeVideoEngine : public FakeBaseEngine {
     renderer_ = r;
     return true;
   }
-  bool SetVideoCapturer(VideoCapturer* /*capturer*/) { return true; }
-  VideoCapturer* GetVideoCapturer() const { return NULL; }
   bool SetCapture(bool capture) {
     capture_ = capture;
     return true;

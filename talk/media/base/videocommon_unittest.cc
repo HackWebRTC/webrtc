@@ -287,4 +287,16 @@ TEST(VideoCommonTest, TestComputeCrop) {
   EXPECT_EQ(768, cropped_height);
 }
 
+TEST(VideoCommonTest, TestComputeScaleToSquarePixels) {
+  int scaled_width, scaled_height;
+
+  // Pixel aspect ratio is 4:3.  Logical aspect ratio is 16:9.  Expect scale
+  // to square pixels with physical aspect ratio of 16:9.
+  ComputeScaleToSquarePixels(640, 270,
+                             4, 3,  // 4 x 3 pixel aspect ratio
+                             &scaled_width, &scaled_height);
+  EXPECT_EQ(640, scaled_width);
+  EXPECT_EQ(360, scaled_height);
+}
+
 }  // namespace cricket

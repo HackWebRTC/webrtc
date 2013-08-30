@@ -28,8 +28,16 @@
 #ifndef TALK_MEDIA_BASE_TESTUTILS_H_
 #define TALK_MEDIA_BASE_TESTUTILS_H_
 
+#ifdef LINUX
+#include <X11/Xlib.h>
+// X defines a few macros that stomp on types that gunit.h uses.
+#undef None
+#undef Bool
+#endif
+
 #include <string>
 #include <vector>
+
 #if !defined(DISABLE_YUV)
 #include "libyuv/compare.h"
 #endif
@@ -235,6 +243,37 @@ bool ContainsMatchingCodec(const std::vector<C>& codecs, const C& codec) {
     }
   }
   return false;
+}
+
+#define MAYBE_SKIP_SCREENCAST_TEST() \
+  if (!cricket::IsScreencastingAvailable()) { \
+    LOG(LS_WARNING) << "Skipping test, since it doesn't have the requisite " \
+                    << "X environment for screen capture."; \
+    return; \
+  } \
+
+#ifdef LINUX
+struct XDisplay {
+  XDisplay() : display_(XOpenDisplay(NULL)) { }
+  ~XDisplay() { if (display_) XCloseDisplay(display_); }
+  bool IsValid() const { return display_ != NULL; }
+  operator Display*() { return display_; }
+ private:
+  Display* display_;
+};
+#endif
+
+// Returns true if screencasting is available. When false, anything that uses
+// screencasting features may fail.
+inline bool IsScreencastingAvailable() {
+#ifdef LINUX
+  XDisplay display;
+  if (!display.IsValid()) {
+    LOG(LS_WARNING) << "No X Display available.";
+    return false;
+  }
+#endif
+  return true;
 }
 
 }  // namespace cricket

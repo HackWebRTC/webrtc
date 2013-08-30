@@ -465,6 +465,48 @@ class WebRtcVideoChannelRecvInfo  {
   DecoderMap registered_decoders_;
 };
 
+#ifdef USE_WEBRTC_DEV_BRANCH
+class WebRtcOveruseObserver : public webrtc::CpuOveruseObserver {
+ public:
+  explicit WebRtcOveruseObserver(CoordinatedVideoAdapter* video_adapter)
+      : video_adapter_(video_adapter),
+        enabled_(false) {
+  }
+
+  // TODO(mflodman): Consider sending resolution as part of event, to let
+  // adapter know what resolution the request is based on. Helps eliminate stale
+  // data, race conditions.
+  virtual void OveruseDetected() OVERRIDE {
+    talk_base::CritScope cs(&crit_);
+    if (!enabled_) {
+      return;
+    }
+
+    video_adapter_->OnCpuResolutionRequest(CoordinatedVideoAdapter::DOWNGRADE);
+  }
+
+  virtual void NormalUsage() OVERRIDE {
+    talk_base::CritScope cs(&crit_);
+    if (!enabled_) {
+      return;
+    }
+
+    video_adapter_->OnCpuResolutionRequest(CoordinatedVideoAdapter::UPGRADE);
+  }
+
+  void Enable(bool enable) {
+    talk_base::CritScope cs(&crit_);
+    enabled_ = enable;
+  }
+
+ private:
+  CoordinatedVideoAdapter* video_adapter_;
+  bool enabled_;
+  talk_base::CriticalSection crit_;
+};
+
+#endif
+
 class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
  public:
   typedef std::map<int, webrtc::VideoEncoder*> EncoderMap;  // key: payload type
@@ -481,6 +523,9 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
         capturer_updated_(false),
         interval_(0),
         video_adapter_(new CoordinatedVideoAdapter) {
+#ifdef USE_WEBRTC_DEV_BRANCH
+    overuse_observer_.reset(new WebRtcOveruseObserver(video_adapter_.get()));
+#endif
     SignalCpuAdaptationUnable.repeat(video_adapter_->SignalCpuAdaptationUnable);
     if (cpu_monitor) {
       cpu_monitor->SignalUpdate.connect(
@@ -534,6 +579,11 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   int CurrentAdaptReason() const {
     return video_adapter_->adapt_reason();
   }
+#ifdef USE_WEBRTC_DEV_BRANCH
+  webrtc::CpuOveruseObserver* overuse_observer() {
+    return overuse_observer_.get();
+  }
+#endif
 
   StreamParams* stream_params() { return stream_params_.get(); }
   void set_stream_params(const StreamParams& sp) {
@@ -572,7 +622,7 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   }
 
   void ApplyCpuOptions(const VideoOptions& options) {
-    bool cpu_adapt, cpu_smoothing;
+    bool cpu_adapt, cpu_smoothing, adapt_third;
     float low, med, high;
     if (options.adapt_input_to_cpu_usage.Get(&cpu_adapt)) {
       video_adapter_->set_cpu_adaptation(cpu_adapt);
@@ -589,7 +639,18 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
     if (options.system_high_adaptation_threshhold.Get(&high)) {
       video_adapter_->set_high_system_threshold(high);
     }
+    if (options.video_adapt_third.Get(&adapt_third)) {
+      video_adapter_->set_scale_third(adapt_third);
+    }
   }
+
+  void SetCpuOveruseDetection(bool enable) {
+#ifdef USE_WEBRTC_DEV_BRANCH
+    overuse_observer_->Enable(enable);
+    video_adapter_->set_cpu_adaptation(enable);
+#endif
+  }
+
   void ProcessFrame(const VideoFrame& original_frame, bool mute,
                     VideoFrame** processed_frame) {
     if (!mute) {
@@ -642,6 +703,9 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   int64 interval_;
 
   talk_base::scoped_ptr<CoordinatedVideoAdapter> video_adapter_;
+#ifdef USE_WEBRTC_DEV_BRANCH
+  talk_base::scoped_ptr<WebRtcOveruseObserver> overuse_observer_;
+#endif
 };
 
 const WebRtcVideoEngine::VideoCodecPref
@@ -2481,6 +2545,9 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
   bool buffer_latency_changed = options.buffered_mode_latency.IsSet() &&
       (options_.buffered_mode_latency != options.buffered_mode_latency);
 
+  bool cpu_overuse_detection_changed = options.cpu_overuse_detection.IsSet() &&
+      (options_.cpu_overuse_detection != options.cpu_overuse_detection);
+
   bool conference_mode_turned_off = false;
   if (options_.conference_mode.IsSet() && options.conference_mode.IsSet() &&
       options_.conference_mode.GetWithDefaultIfUnset(false) &&
@@ -2556,6 +2623,15 @@ bool WebRtcVideoMediaChannel::SetOptions(const VideoOptions &options) {
         LOG_RTCERR2(SetReceiverBufferingMode, it->second->channel_id(),
                     buffer_latency);
       }
+    }
+  }
+  if (cpu_overuse_detection_changed) {
+    bool cpu_overuse_detection =
+        options_.cpu_overuse_detection.GetWithDefaultIfUnset(false);
+    for (SendChannelMap::iterator iter = send_channels_.begin();
+         iter != send_channels_.end(); ++iter) {
+      WebRtcVideoChannelSendInfo* send_channel = iter->second;
+      send_channel->SetCpuOveruseDetection(cpu_overuse_detection);
     }
   }
   return true;
@@ -2702,8 +2778,8 @@ bool WebRtcVideoMediaChannel::SendFrame(
   frame_i420.y_pitch = frame_out->GetYPitch();
   frame_i420.u_pitch = frame_out->GetUPitch();
   frame_i420.v_pitch = frame_out->GetVPitch();
-  frame_i420.width = static_cast<unsigned short>(frame_out->GetWidth());
-  frame_i420.height = static_cast<unsigned short>(frame_out->GetHeight());
+  frame_i420.width = static_cast<uint16>(frame_out->GetWidth());
+  frame_i420.height = static_cast<uint16>(frame_out->GetHeight());
 
   int64 timestamp_ntp_ms = 0;
   // TODO(justinlin): Reenable after Windows issues with clock drift are fixed.
@@ -2966,9 +3042,20 @@ bool WebRtcVideoMediaChannel::ConfigureSending(int channel_id,
       new WebRtcVideoChannelSendInfo(channel_id, vie_capture,
                                      external_capture,
                                      engine()->cpu_monitor()));
+#ifdef USE_WEBRTC_DEV_BRANCH
+  if (engine()->vie()->base()->RegisterCpuOveruseObserver(
+      channel_id, send_channel->overuse_observer())) {
+    LOG_RTCERR1(RegisterCpuOveruseObserver, channel_id);
+    return false;
+  }
+#endif
   send_channel->ApplyCpuOptions(options_);
   send_channel->SignalCpuAdaptationUnable.connect(this,
       &WebRtcVideoMediaChannel::OnCpuAdaptationUnable);
+
+  if (options_.cpu_overuse_detection.GetWithDefaultIfUnset(false)) {
+    send_channel->SetCpuOveruseDetection(true);
+  }
 
   // Register encoder observer for outgoing framerate and bitrate.
   if (engine()->vie()->codec()->RegisterEncoderObserver(

@@ -194,6 +194,39 @@ TEST_F(VideoCapturerTest, CameraOffOnMute) {
   EXPECT_EQ(33, video_frames_received());
 }
 
+TEST_F(VideoCapturerTest, ScreencastScaledMaxPixels) {
+  capturer_.SetScreencast(true);
+
+  int kWidth = 1280;
+  int kHeight = 720;
+
+  // Screencasts usually have large weird dimensions and are ARGB.
+  std::vector<cricket::VideoFormat> formats;
+  formats.push_back(cricket::VideoFormat(kWidth, kHeight,
+      cricket::VideoFormat::FpsToInterval(5), cricket::FOURCC_ARGB));
+  formats.push_back(cricket::VideoFormat(2 * kWidth, 2 * kHeight,
+      cricket::VideoFormat::FpsToInterval(5), cricket::FOURCC_ARGB));
+  capturer_.ResetSupportedFormats(formats);
+
+
+  EXPECT_EQ(0, capturer_.screencast_max_pixels());
+  EXPECT_EQ(cricket::CS_RUNNING, capturer_.Start(cricket::VideoFormat(
+      2 * kWidth,
+      2 * kHeight,
+      cricket::VideoFormat::FpsToInterval(30),
+      cricket::FOURCC_ARGB)));
+  EXPECT_TRUE(capturer_.IsRunning());
+  EXPECT_EQ(0, renderer_.num_rendered_frames());
+  renderer_.SetSize(2 * kWidth, 2 * kHeight, 0);
+  EXPECT_TRUE(capturer_.CaptureFrame());
+  EXPECT_EQ(1, renderer_.num_rendered_frames());
+
+  capturer_.set_screencast_max_pixels(kWidth * kHeight);
+  renderer_.SetSize(kWidth, kHeight, 0);
+  EXPECT_TRUE(capturer_.CaptureFrame());
+  EXPECT_EQ(2, renderer_.num_rendered_frames());
+}
+
 TEST_F(VideoCapturerTest, TestFourccMatch) {
   cricket::VideoFormat desired(640, 480,
                                cricket::VideoFormat::FpsToInterval(30),

@@ -107,6 +107,7 @@ void VideoCapturer::Construct() {
   SignalFrameCaptured.connect(this, &VideoCapturer::OnFrameCaptured);
   scaled_width_ = 0;
   scaled_height_ = 0;
+  screencast_max_pixels_ = 0;
   muted_ = false;
   black_frame_count_down_ = kNumBlackFramesOnMute;
 }
@@ -323,11 +324,16 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
 #if !defined(DISABLE_YUV)
   if (IsScreencast()) {
     int scaled_width, scaled_height;
-    int desired_screencast_fps = capture_format_.get() ?
-        VideoFormat::IntervalToFps(capture_format_->interval) :
-        kDefaultScreencastFps;
-    ComputeScale(captured_frame->width, captured_frame->height,
-                 desired_screencast_fps, &scaled_width, &scaled_height);
+    if (screencast_max_pixels_ > 0) {
+      ComputeScaleMaxPixels(captured_frame->width, captured_frame->height,
+          screencast_max_pixels_, &scaled_width, &scaled_height);
+    } else {
+      int desired_screencast_fps = capture_format_.get() ?
+          VideoFormat::IntervalToFps(capture_format_->interval) :
+          kDefaultScreencastFps;
+      ComputeScale(captured_frame->width, captured_frame->height,
+                   desired_screencast_fps, &scaled_width, &scaled_height);
+    }
 
     if (scaled_width != scaled_width_ || scaled_height != scaled_height_) {
       LOG(LS_VERBOSE) << "Scaling Screencast from "

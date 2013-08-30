@@ -119,6 +119,8 @@ class BaseChannel
   // Multiplexing
   bool AddRecvStream(const StreamParams& sp);
   bool RemoveRecvStream(uint32 ssrc);
+  bool AddSendStream(const StreamParams& sp);
+  bool RemoveSendStream(uint32 ssrc);
 
   // Monitoring
   void StartConnectionMonitor(int cms);
@@ -277,6 +279,8 @@ class BaseChannel
   void ChannelNotWritable_w();
   bool AddRecvStream_w(const StreamParams& sp);
   bool RemoveRecvStream_w(uint32 ssrc);
+  bool AddSendStream_w(const StreamParams& sp);
+  bool RemoveSendStream_w(uint32 ssrc);
   virtual bool ShouldSetupDtlsSrtp() const;
   // Do the DTLS key expansion and impose it on the SRTP/SRTCP filters.
   // |rtcp_channel| indicates whether to set up the RTP or RTCP filter.
@@ -488,13 +492,13 @@ class VideoChannel : public BaseChannel {
   // TODO(pthatcher): Refactor to use a "capture id" instead of an
   // ssrc here as the "key".
   VideoCapturer* AddScreencast(uint32 ssrc, const ScreencastId& id);
-  VideoCapturer* GetScreencastCapturer(uint32 ssrc);
   bool SetCapturer(uint32 ssrc, VideoCapturer* capturer);
   bool RemoveScreencast(uint32 ssrc);
   // True if we've added a screencast.  Doesn't matter if the capturer
   // has been started or not.
   bool IsScreencasting();
-  int ScreencastFps(uint32 ssrc);
+  int GetScreencastFps(uint32 ssrc);
+  int GetScreencastMaxPixels(uint32 ssrc);
   // Get statistics about the current media session.
   bool GetStats(VideoMediaInfo* stats);
 
@@ -525,6 +529,7 @@ class VideoChannel : public BaseChannel {
 
  private:
   typedef std::map<uint32, VideoCapturer*> ScreencastMap;
+  struct ScreencastDetailsMessageData;
 
   // overrides from BaseChannel
   virtual void ChangeState();
@@ -544,12 +549,11 @@ class VideoChannel : public BaseChannel {
   void SetRenderer_w(uint32 ssrc, VideoRenderer* renderer);
 
   VideoCapturer* AddScreencast_w(uint32 ssrc, const ScreencastId& id);
-  VideoCapturer* GetScreencastCapturer_w(uint32 ssrc);
   bool SetCapturer_w(uint32 ssrc, VideoCapturer* capturer);
   bool RemoveScreencast_w(uint32 ssrc);
   void OnScreencastWindowEvent_s(uint32 ssrc, talk_base::WindowEvent we);
   bool IsScreencasting_w() const;
-  int ScreencastFps_w(uint32 ssrc) const;
+  void ScreencastDetails_w(ScreencastDetailsMessageData* d) const;
   void SetScreenCaptureFactory_w(
       ScreenCapturerFactory* screencapture_factory);
   bool GetStats_w(VideoMediaInfo* stats);
@@ -590,11 +594,6 @@ class DataChannel : public BaseChannel {
   ~DataChannel();
   bool Init();
 
-  // downcasts a MediaChannel
-  virtual DataMediaChannel* media_channel() const {
-    return static_cast<DataMediaChannel*>(BaseChannel::media_channel());
-  }
-
   virtual bool SendData(const SendDataParams& params,
                         const talk_base::Buffer& payload,
                         SendDataResult* result);
@@ -615,6 +614,12 @@ class DataChannel : public BaseChannel {
   // That occurs when the channel is enabled, the transport is writable,
   // both local and remote descriptions are set, and the channel is unblocked.
   sigslot::signal1<bool> SignalReadyToSendData;
+
+ protected:
+  // downcasts a MediaChannel.
+  virtual DataMediaChannel* media_channel() const {
+    return static_cast<DataMediaChannel*>(BaseChannel::media_channel());
+  }
 
  private:
   struct SendDataMessageData : public talk_base::MessageData {

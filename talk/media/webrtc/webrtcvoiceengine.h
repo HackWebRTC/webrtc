@@ -377,7 +377,7 @@ class WebRtcVoiceMediaChannel
   struct WebRtcVoiceChannelInfo;
   typedef std::map<uint32, WebRtcVoiceChannelInfo> ChannelMap;
 
-  void SetNack(uint32 ssrc, int channel, bool nack_enabled);
+  void SetNack(int channel, bool nack_enabled);
   void SetNack(const ChannelMap& channels, bool nack_enabled);
   bool SetSendCodec(const webrtc::CodecInst& send_codec);
   bool SetSendCodec(int channel, const webrtc::CodecInst& send_codec);
@@ -392,10 +392,12 @@ class WebRtcVoiceMediaChannel
   bool IsDefaultChannel(int channel_id) const {
     return channel_id == voe_channel();
   }
+  bool SetSendCodecs(int channel, const std::vector<AudioCodec>& codecs);
 
   talk_base::scoped_ptr<WebRtcSoundclipStream> ringback_tone_;
   std::set<int> ringback_channels_;  // channels playing ringback
   std::vector<AudioCodec> recv_codecs_;
+  std::vector<AudioCodec> send_codecs_;
   talk_base::scoped_ptr<webrtc::CodecInst> send_codec_;
   AudioOptions options_;
   bool dtmf_allowed_;

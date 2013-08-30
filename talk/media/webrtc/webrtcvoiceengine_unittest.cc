@@ -143,7 +143,18 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     engine_.Terminate();
   }
 
-  void TestInsertDtmf(uint32 ssrc, int channel_id) {
+  void TestInsertDtmf(uint32 ssrc, bool caller) {
+    EXPECT_TRUE(engine_.Init(talk_base::Thread::Current()));
+    channel_ = engine_.CreateChannel();
+    EXPECT_TRUE(channel_ != NULL);
+    if (caller) {
+      // if this is a caller, local description will be applied and add the
+      // send stream.
+      EXPECT_TRUE(channel_->AddSendStream(
+          cricket::StreamParams::CreateLegacy(kSsrc1)));
+    }
+    int channel_id = voe_.GetLastChannel();
+
     // Test we can only InsertDtmf when the other side supports telephone-event.
     std::vector<cricket::AudioCodec> codecs;
     codecs.push_back(kPcmuCodec);
@@ -154,6 +165,14 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     codecs.push_back(kTelephoneEventCodec);
     EXPECT_TRUE(channel_->SetSendCodecs(codecs));
     EXPECT_TRUE(channel_->CanInsertDtmf());
+
+    if (!caller) {
+      // There's no active send channel yet.
+      EXPECT_FALSE(channel_->InsertDtmf(ssrc, 2, 123, cricket::DF_SEND));
+      EXPECT_TRUE(channel_->AddSendStream(
+          cricket::StreamParams::CreateLegacy(kSsrc1)));
+    }
+
     // Check we fail if the ssrc is invalid.
     EXPECT_FALSE(channel_->InsertDtmf(-1, 1, 111, cricket::DF_SEND));
 
@@ -923,8 +942,8 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecOpusMaxAverageBitrate) {
   EXPECT_EQ(200000, gcodec.rate);
 }
 
-// Test that we can enable NACK with opus.
-TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecEnableNack) {
+// Test that we can enable NACK with opus as caller.
+TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecEnableNackAsCaller) {
   EXPECT_TRUE(SetupEngine());
   int channel_num = voe_.GetLastChannel();
   std::vector<cricket::AudioCodec> codecs;
@@ -933,6 +952,26 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecEnableNack) {
                                                     cricket::kParamValueEmpty));
   EXPECT_FALSE(voe_.GetNACK(channel_num));
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_TRUE(voe_.GetNACK(channel_num));
+}
+
+// Test that we can enable NACK with opus as callee.
+TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecEnableNackAsCallee) {
+  EXPECT_TRUE(engine_.Init(talk_base::Thread::Current()));
+  channel_ = engine_.CreateChannel();
+  EXPECT_TRUE(channel_ != NULL);
+
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kOpusCodec);
+  codecs[0].AddFeedbackParam(cricket::FeedbackParam(cricket::kRtcpFbParamNack,
+                                                    cricket::kParamValueEmpty));
+  EXPECT_FALSE(voe_.GetNACK(channel_num));
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_FALSE(voe_.GetNACK(channel_num));
+
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::StreamParams::CreateLegacy(kSsrc1)));
   EXPECT_TRUE(voe_.GetNACK(channel_num));
 }
 
@@ -1136,8 +1175,8 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsNoCodecs) {
   EXPECT_EQ(106, voe_.GetSendTelephoneEventPayloadType(channel_num));
 }
 
-// Test that we set VAD and DTMF types correctly.
-TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMF) {
+// Test that we set VAD and DTMF types correctly as caller.
+TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMFAsCaller) {
   EXPECT_TRUE(SetupEngine());
   int channel_num = voe_.GetLastChannel();
   std::vector<cricket::AudioCodec> codecs;
@@ -1152,6 +1191,39 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMF) {
   codecs[2].id = 97;  // wideband CN
   codecs[4].id = 98;  // DTMF
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  webrtc::CodecInst gcodec;
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_EQ(96, gcodec.pltype);
+  EXPECT_STREQ("ISAC", gcodec.plname);
+  EXPECT_TRUE(voe_.GetVAD(channel_num));
+  EXPECT_FALSE(voe_.GetFEC(channel_num));
+  EXPECT_EQ(13, voe_.GetSendCNPayloadType(channel_num, false));
+  EXPECT_EQ(97, voe_.GetSendCNPayloadType(channel_num, true));
+  EXPECT_EQ(98, voe_.GetSendTelephoneEventPayloadType(channel_num));
+}
+
+// Test that we set VAD and DTMF types correctly as callee.
+TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMFAsCallee) {
+  EXPECT_TRUE(engine_.Init(talk_base::Thread::Current()));
+  channel_ = engine_.CreateChannel();
+  EXPECT_TRUE(channel_ != NULL);
+
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kIsacCodec);
+  codecs.push_back(kPcmuCodec);
+  // TODO(juberti): cn 32000
+  codecs.push_back(kCn16000Codec);
+  codecs.push_back(kCn8000Codec);
+  codecs.push_back(kTelephoneEventCodec);
+  codecs.push_back(kRedCodec);
+  codecs[0].id = 96;
+  codecs[2].id = 97;  // wideband CN
+  codecs[4].id = 98;  // DTMF
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::StreamParams::CreateLegacy(kSsrc1)));
+
   webrtc::CodecInst gcodec;
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
   EXPECT_EQ(96, gcodec.pltype);
@@ -1227,8 +1299,8 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCaseInsensitive) {
   EXPECT_EQ(98, voe_.GetSendTelephoneEventPayloadType(channel_num));
 }
 
-// Test that we set up FEC correctly.
-TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsRED) {
+// Test that we set up FEC correctly as caller.
+TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsREDAsCaller) {
   EXPECT_TRUE(SetupEngine());
   int channel_num = voe_.GetLastChannel();
   std::vector<cricket::AudioCodec> codecs;
@@ -1239,6 +1311,31 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsRED) {
   codecs[0].params[""] = "96/96";
   codecs[1].id = 96;
   EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  webrtc::CodecInst gcodec;
+  EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
+  EXPECT_EQ(96, gcodec.pltype);
+  EXPECT_STREQ("ISAC", gcodec.plname);
+  EXPECT_TRUE(voe_.GetFEC(channel_num));
+  EXPECT_EQ(127, voe_.GetSendFECPayloadType(channel_num));
+}
+
+// Test that we set up FEC correctly as callee.
+TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsREDAsCallee) {
+  EXPECT_TRUE(engine_.Init(talk_base::Thread::Current()));
+  channel_ = engine_.CreateChannel();
+  EXPECT_TRUE(channel_ != NULL);
+
+  int channel_num = voe_.GetLastChannel();
+  std::vector<cricket::AudioCodec> codecs;
+  codecs.push_back(kRedCodec);
+  codecs.push_back(kIsacCodec);
+  codecs.push_back(kPcmuCodec);
+  codecs[0].id = 127;
+  codecs[0].params[""] = "96/96";
+  codecs[1].id = 96;
+  EXPECT_TRUE(channel_->SetSendCodecs(codecs));
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::StreamParams::CreateLegacy(kSsrc1)));
   webrtc::CodecInst gcodec;
   EXPECT_EQ(0, voe_.GetSendCodec(channel_num, gcodec));
   EXPECT_EQ(96, gcodec.pltype);
@@ -1947,18 +2044,24 @@ TEST_F(WebRtcVoiceEngineTestFake, StreamCleanup) {
   EXPECT_EQ(0, voe_.GetNumChannels());
 }
 
-// Test the InsertDtmf on default send stream.
-TEST_F(WebRtcVoiceEngineTestFake, InsertDtmfOnDefaultSendStream) {
-  EXPECT_TRUE(SetupEngine());
-  int channel_num = voe_.GetLastChannel();
-  TestInsertDtmf(0, channel_num);
+// Test the InsertDtmf on default send stream as caller.
+TEST_F(WebRtcVoiceEngineTestFake, InsertDtmfOnDefaultSendStreamAsCaller) {
+  TestInsertDtmf(0, true);
 }
 
-// Test the InsertDtmf on specified send stream.
-TEST_F(WebRtcVoiceEngineTestFake, InsertDtmfOnSendStream) {
-  EXPECT_TRUE(SetupEngine());
-  int channel_num = voe_.GetLastChannel();
-  TestInsertDtmf(kSsrc1, channel_num);
+// Test the InsertDtmf on default send stream as callee
+TEST_F(WebRtcVoiceEngineTestFake, InsertDtmfOnDefaultSendStreamAsCallee) {
+  TestInsertDtmf(0, false);
+}
+
+// Test the InsertDtmf on specified send stream as caller.
+TEST_F(WebRtcVoiceEngineTestFake, InsertDtmfOnSendStreamAsCaller) {
+  TestInsertDtmf(kSsrc1, true);
+}
+
+// Test the InsertDtmf on specified send stream as callee.
+TEST_F(WebRtcVoiceEngineTestFake, InsertDtmfOnSendStreamAsCallee) {
+  TestInsertDtmf(kSsrc1, false);
 }
 
 // Test that we can play a ringback tone properly in a single-stream call.

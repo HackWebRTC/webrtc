@@ -55,6 +55,8 @@ enum {
   MSG_SETRENDERER,
   MSG_ADDRECVSTREAM,
   MSG_REMOVERECVSTREAM,
+  MSG_ADDSENDSTREAM,
+  MSG_REMOVESENDSTREAM,
   MSG_SETRINGBACKTONE,
   MSG_PLAYRINGBACKTONE,
   MSG_SETMAXSENDBANDWIDTH,
@@ -74,7 +76,7 @@ enum {
   MSG_DATARECEIVED,
   MSG_SETCAPTURER,
   MSG_ISSCREENCASTING,
-  MSG_SCREENCASTFPS,
+  MSG_GETSCREENCASTDETAILS,
   MSG_SETSCREENCASTFACTORY,
   MSG_FIRSTPACKETRECEIVED,
   MSG_SESSION_ERROR,
@@ -334,12 +336,14 @@ struct IsScreencastingMessageData : public talk_base::MessageData {
   bool result;
 };
 
-struct ScreencastFpsMessageData : public talk_base::MessageData {
-  explicit ScreencastFpsMessageData(uint32 s)
-      : ssrc(s), result(0) {
+struct VideoChannel::ScreencastDetailsMessageData :
+    public talk_base::MessageData {
+  explicit ScreencastDetailsMessageData(uint32 s)
+      : ssrc(s), fps(0), screencast_max_pixels(0) {
   }
   uint32 ssrc;
-  int result;
+  int fps;
+  int screencast_max_pixels;
 };
 
 struct SetScreenCaptureFactoryMessageData : public talk_base::MessageData {
@@ -477,6 +481,18 @@ bool BaseChannel::AddRecvStream(const StreamParams& sp) {
 bool BaseChannel::RemoveRecvStream(uint32 ssrc) {
   SsrcMessageData data(ssrc);
   Send(MSG_REMOVERECVSTREAM, &data);
+  return data.result;
+}
+
+bool BaseChannel::AddSendStream(const StreamParams& sp) {
+  StreamMessageData data(sp);
+  Send(MSG_ADDSENDSTREAM, &data);
+  return data.result;
+}
+
+bool BaseChannel::RemoveSendStream(uint32 ssrc) {
+  SsrcMessageData data(ssrc);
+  Send(MSG_REMOVESENDSTREAM, &data);
   return data.result;
 }
 
@@ -1149,6 +1165,16 @@ bool BaseChannel::RemoveRecvStream_w(uint32 ssrc) {
   return media_channel()->RemoveRecvStream(ssrc);
 }
 
+bool BaseChannel::AddSendStream_w(const StreamParams& sp) {
+  ASSERT(worker_thread() == talk_base::Thread::Current());
+  return media_channel()->AddSendStream(sp);
+}
+
+bool BaseChannel::RemoveSendStream_w(uint32 ssrc) {
+  ASSERT(worker_thread() == talk_base::Thread::Current());
+  return media_channel()->RemoveSendStream(ssrc);
+}
+
 bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
                                        ContentAction action) {
   if (!VERIFY(action == CA_OFFER || action == CA_ANSWER ||
@@ -1357,6 +1383,16 @@ void BaseChannel::OnMessage(talk_base::Message *pmsg) {
     case MSG_REMOVERECVSTREAM: {
       SsrcMessageData* data = static_cast<SsrcMessageData*>(pmsg->pdata);
       data->result = RemoveRecvStream_w(data->ssrc);
+      break;
+    }
+    case MSG_ADDSENDSTREAM: {
+      StreamMessageData* data = static_cast<StreamMessageData*>(pmsg->pdata);
+      data->result = AddSendStream_w(data->sp);
+      break;
+    }
+    case MSG_REMOVESENDSTREAM: {
+      SsrcMessageData* data = static_cast<SsrcMessageData*>(pmsg->pdata);
+      data->result = RemoveSendStream_w(data->ssrc);
       break;
     }
     case MSG_SETMAXSENDBANDWIDTH: {
@@ -1964,10 +2000,16 @@ bool VideoChannel::IsScreencasting() {
   return data.result;
 }
 
-int VideoChannel::ScreencastFps(uint32 ssrc) {
-  ScreencastFpsMessageData data(ssrc);
-  Send(MSG_SCREENCASTFPS, &data);
-  return data.result;
+int VideoChannel::GetScreencastFps(uint32 ssrc) {
+  ScreencastDetailsMessageData data(ssrc);
+  Send(MSG_GETSCREENCASTDETAILS, &data);
+  return data.fps;
+}
+
+int VideoChannel::GetScreencastMaxPixels(uint32 ssrc) {
+  ScreencastDetailsMessageData data(ssrc);
+  Send(MSG_GETSCREENCASTDETAILS, &data);
+  return data.screencast_max_pixels;
 }
 
 bool VideoChannel::SendIntraFrame() {
@@ -2184,14 +2226,16 @@ bool VideoChannel::IsScreencasting_w() const {
   return !screencast_capturers_.empty();
 }
 
-int VideoChannel::ScreencastFps_w(uint32 ssrc) const {
-  ScreencastMap::const_iterator iter = screencast_capturers_.find(ssrc);
+void VideoChannel::ScreencastDetails_w(
+    ScreencastDetailsMessageData* data) const {
+  ScreencastMap::const_iterator iter = screencast_capturers_.find(data->ssrc);
   if (iter == screencast_capturers_.end()) {
-    return 0;
+    return;
   }
   VideoCapturer* capturer = iter->second;
   const VideoFormat* video_format = capturer->GetCaptureFormat();
-  return VideoFormat::IntervalToFps(video_format->interval);
+  data->fps = VideoFormat::IntervalToFps(video_format->interval);
+  data->screencast_max_pixels = capturer->screencast_max_pixels();
 }
 
 void VideoChannel::SetScreenCaptureFactory_w(
@@ -2262,10 +2306,10 @@ void VideoChannel::OnMessage(talk_base::Message *pmsg) {
       data->result = IsScreencasting_w();
       break;
     }
-    case MSG_SCREENCASTFPS: {
-      ScreencastFpsMessageData* data =
-          static_cast<ScreencastFpsMessageData*>(pmsg->pdata);
-      data->result = ScreencastFps_w(data->ssrc);
+    case MSG_GETSCREENCASTDETAILS: {
+      ScreencastDetailsMessageData* data =
+          static_cast<ScreencastDetailsMessageData*>(pmsg->pdata);
+      ScreencastDetails_w(data);
       break;
     }
     case MSG_SENDINTRAFRAME: {

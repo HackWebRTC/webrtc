@@ -236,15 +236,18 @@ struct VideoOptions {
     adapt_input_to_cpu_usage.SetFrom(change.adapt_input_to_cpu_usage);
     adapt_cpu_with_smoothing.SetFrom(change.adapt_cpu_with_smoothing);
     adapt_view_switch.SetFrom(change.adapt_view_switch);
+    video_adapt_third.SetFrom(change.video_adapt_third);
     video_noise_reduction.SetFrom(change.video_noise_reduction);
     video_three_layers.SetFrom(change.video_three_layers);
     video_enable_camera_list.SetFrom(change.video_enable_camera_list);
     video_one_layer_screencast.SetFrom(change.video_one_layer_screencast);
+    video_one_to_one.SetFrom(change.video_one_to_one);
     video_high_bitrate.SetFrom(change.video_high_bitrate);
     video_watermark.SetFrom(change.video_watermark);
     video_temporal_layer_screencast.SetFrom(
         change.video_temporal_layer_screencast);
     video_leaky_bucket.SetFrom(change.video_leaky_bucket);
+    cpu_overuse_detection.SetFrom(change.cpu_overuse_detection);
     conference_mode.SetFrom(change.conference_mode);
     process_adaptation_threshhold.SetFrom(change.process_adaptation_threshhold);
     system_low_adaptation_threshhold.SetFrom(
@@ -259,14 +262,17 @@ struct VideoOptions {
         adapt_input_to_cpu_usage == o.adapt_input_to_cpu_usage &&
         adapt_cpu_with_smoothing == o.adapt_cpu_with_smoothing &&
         adapt_view_switch == o.adapt_view_switch &&
+        video_adapt_third == o.video_adapt_third &&
         video_noise_reduction == o.video_noise_reduction &&
         video_three_layers == o.video_three_layers &&
         video_enable_camera_list == o.video_enable_camera_list &&
         video_one_layer_screencast == o.video_one_layer_screencast &&
+        video_one_to_one == o.video_one_to_one &&
         video_high_bitrate == o.video_high_bitrate &&
         video_watermark == o.video_watermark &&
         video_temporal_layer_screencast == o.video_temporal_layer_screencast &&
         video_leaky_bucket == o.video_leaky_bucket &&
+        cpu_overuse_detection == o.cpu_overuse_detection &&
         conference_mode == o.conference_mode &&
         process_adaptation_threshhold == o.process_adaptation_threshhold &&
         system_low_adaptation_threshhold ==
@@ -283,16 +289,18 @@ struct VideoOptions {
     ost << ToStringIfSet("cpu adaption", adapt_input_to_cpu_usage);
     ost << ToStringIfSet("cpu adaptation smoothing", adapt_cpu_with_smoothing);
     ost << ToStringIfSet("adapt view switch", adapt_view_switch);
+    ost << ToStringIfSet("video adapt third", video_adapt_third);
     ost << ToStringIfSet("noise reduction", video_noise_reduction);
     ost << ToStringIfSet("3 layers", video_three_layers);
     ost << ToStringIfSet("camera list", video_enable_camera_list);
-    ost << ToStringIfSet("1 layer screencast",
-                        video_one_layer_screencast);
+    ost << ToStringIfSet("1 layer screencast", video_one_layer_screencast);
+    ost << ToStringIfSet("1 to 1", video_one_to_one);
     ost << ToStringIfSet("high bitrate", video_high_bitrate);
     ost << ToStringIfSet("watermark", video_watermark);
     ost << ToStringIfSet("video temporal layer screencast",
                          video_temporal_layer_screencast);
     ost << ToStringIfSet("leaky bucket", video_leaky_bucket);
+    ost << ToStringIfSet("cpu overuse detection", cpu_overuse_detection);
     ost << ToStringIfSet("conference mode", conference_mode);
     ost << ToStringIfSet("process", process_adaptation_threshhold);
     ost << ToStringIfSet("low", system_low_adaptation_threshhold);
@@ -310,6 +318,8 @@ struct VideoOptions {
   Settable<bool> adapt_cpu_with_smoothing;
   // Enable Adapt View Switch?
   Settable<bool> adapt_view_switch;
+  // Enable video adapt third?
+  Settable<bool> video_adapt_third;
   // Enable denoising?
   Settable<bool> video_noise_reduction;
   // Experimental: Enable multi layer?
@@ -318,6 +328,8 @@ struct VideoOptions {
   Settable<bool> video_enable_camera_list;
   // Experimental: Enable one layer screencast?
   Settable<bool> video_one_layer_screencast;
+  // Experimental: Enable one to one?
+  Settable<bool> video_one_to_one;
   // Experimental: Enable WebRtc higher bitrate?
   Settable<bool> video_high_bitrate;
   // Experimental: Add watermark to the rendered video image.
@@ -326,6 +338,10 @@ struct VideoOptions {
   Settable<bool> video_temporal_layer_screencast;
   // Enable WebRTC leaky bucket when sending media packets.
   Settable<bool> video_leaky_bucket;
+  // Enable WebRTC Cpu Overuse Detection, which is a new version of the CPU
+  // adaptation algorithm. So this option will override the
+  // |adapt_input_to_cpu_usage|.
+  Settable<bool> cpu_overuse_detection;
   // Use conference mode?
   Settable<bool> conference_mode;
   // Threshhold for process cpu adaptation.  (Process limit)
