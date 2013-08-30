@@ -227,7 +227,7 @@ class InvertedDesktopFrame : public DesktopFrame {
   InvertedDesktopFrame(DesktopFrame* frame)
       : DesktopFrame(
             frame->size(), -frame->stride(),
-            frame->data() - (frame->size().height() - 1) * frame->stride(),
+            frame->data() + (frame->size().height() - 1) * frame->stride(),
             frame->shared_memory()),
         original_frame_(frame) {
     set_dpi(frame->dpi());
