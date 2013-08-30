@@ -7,16 +7,6 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'variables': {
-    'use_libjpeg_turbo%': '<(use_libjpeg_turbo)',
-    'conditions': [
-      ['use_libjpeg_turbo==1', {
-        'libjpeg_include_dir%': [ '<(DEPTH)/third_party/libjpeg_turbo', ],
-      }, {
-        'libjpeg_include_dir%': [ '<(DEPTH)/third_party/libjpeg', ],
-       }],
-    ],
-  },
   'includes': ['../build/common.gypi'],
   'targets': [
     {
@@ -25,7 +15,6 @@
       'include_dirs': [
         '<(webrtc_root)/modules/interface/',
         'interface',
-        'jpeg/include',
         'libyuv/include',
       ],
       'dependencies': [
@@ -34,17 +23,10 @@
       'direct_dependent_settings': {
         'include_dirs': [
           'interface',
-          'jpeg/include',
           'libyuv/include',
         ],
       },
       'conditions': [
-        ['build_libjpeg==1', {
-          'dependencies': ['<(libjpeg_gyp_path):libjpeg',],
-        }, {
-          # Need to add a directory normally exported by libjpeg.gyp.
-          'include_dirs': ['<(libjpeg_include_dir)'],
-        }],
         ['build_libyuv==1', {
           'dependencies': ['<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',],
         }, {
@@ -57,10 +39,6 @@
         'interface/native_handle.h',
         'interface/texture_video_frame.h',
         'i420_video_frame.cc',
-        'jpeg/include/jpeg.h',
-        'jpeg/data_manager.cc',
-        'jpeg/data_manager.h',
-        'jpeg/jpeg.cc',
         'libyuv/include/webrtc_libyuv.h',
         'libyuv/include/scaler.h',
         'libyuv/webrtc_libyuv.cc',
@@ -69,8 +47,6 @@
         'plane.cc',
         'texture_video_frame.cc'
       ],
-      # Silence jpeg struct padding warnings.
-      'msvs_disabled_warnings': [ 4324, ],
     },
   ],  # targets
   'conditions': [
@@ -87,7 +63,6 @@
           ],
           'sources': [
             'i420_video_frame_unittest.cc',
-            'jpeg/jpeg_unittest.cc',
             'libyuv/libyuv_unittest.cc',
             'libyuv/scaler_unittest.cc',
             'plane_unittest.cc',
