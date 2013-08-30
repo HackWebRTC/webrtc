@@ -354,6 +354,15 @@ void NetEqImpl::FlushBuffers() {
   first_packet_ = true;
 }
 
+void NetEqImpl::PacketBufferStatistics(int* current_num_packets,
+                                       int* max_num_packets,
+                                       int* current_memory_size_bytes,
+                                       int* max_memory_size_bytes) const {
+  CriticalSectionScoped lock(crit_sect_);
+  packet_buffer_->BufferStat(current_num_packets, max_num_packets,
+                             current_memory_size_bytes, max_memory_size_bytes);
+}
+
 int NetEqImpl::DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) {
   CriticalSectionScoped lock(crit_sect_);
   if (decoded_packet_sequence_number_ < 0)
@@ -1806,14 +1815,6 @@ NetEqOutputType NetEqImpl::LastOutputType() {
   } else {
     return kOutputNormal;
   }
-}
-
-void NetEqImpl::PacketBufferStatistics(int* current_num_packets,
-                                       int* max_num_packets,
-                                       int* current_memory_size_bytes,
-                                       int* max_memory_size_bytes) const {
-  packet_buffer_->BufferStat(current_num_packets, max_num_packets,
-                             current_memory_size_bytes, max_memory_size_bytes);
 }
 
 }  // namespace webrtc
