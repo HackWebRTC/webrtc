@@ -511,7 +511,7 @@ bool ViECapturer::ViECaptureThreadFunction(void* obj) {
 bool ViECapturer::ViECaptureProcess() {
   if (capture_event_.Wait(kThreadWaitTimeMs) == kEventSignaled) {
     deliver_cs_->Enter();
-    if (MaybeSwapCapturedToDeliverFrame()) {
+    if (MaybeSwapCapturedAndDeliverFrame()) {
       DeliverI420Frame(&deliver_frame_);
     }
     deliver_cs_->Leave();
@@ -646,7 +646,7 @@ void ViECapturer::OnNoPictureAlarm(const int32_t id,
   observer_->NoPictureAlarm(id, vie_alarm);
 }
 
-bool ViECapturer::MaybeSwapCapturedToDeliverFrame() {
+bool ViECapturer::MaybeSwapCapturedAndDeliverFrame() {
   CriticalSectionScoped cs(capture_cs_.get());
   if (captured_frame_.IsZeroSize())
     return false;
