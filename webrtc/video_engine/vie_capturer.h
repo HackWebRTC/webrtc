@@ -144,7 +144,7 @@ class ViECapturer
   void DeliverCodedFrame(VideoFrame* video_frame);
 
  private:
-  bool MaybeSwapCapturedAndDeliverFrame();
+  bool MaybeUpdateDeliverFrame();
 
   // Never take capture_cs_ before deliver_cs_!
   scoped_ptr<CriticalSectionWrapper> capture_cs_;
