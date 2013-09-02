@@ -1,0 +1,5 @@
+# Tests that are too slow.
+VideoProcessorIntegrationTest.ProcessZeroPacketLoss
+
+# https://code.google.com/p/webrtc/issues/detail?id=2328
+DualStreamTest.BitExactSync*

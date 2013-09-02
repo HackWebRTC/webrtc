@@ -9,3 +9,40 @@
 # This file is used in addition to the one already maintained in Chrome.
 # It acts as a place holder for future additions for WebRTC.
 # It must exist for the Python wrapper script to work properly.
+
+{
+  bug_2319_1
+  ThreadSanitizer:Race
+  fun:webrtc::ThreadWindows::Run
+  fun:webrtc::ThreadWindows::StartThread
+  fun:_callthreadstartex
+  fun:_threadstartex
+  fun:BaseThreadInitThunk
+}
+{
+  bug_2319_2
+  ThreadSanitizer:Race
+  fun:TlsGetValue
+  fun:__set_flsgetvalue
+  fun:_threadstartex
+  fun:BaseThreadInitThunk
+}
+{
+  bug_2319_3
+  ThreadSanitizer:Race
+  fun:webrtc::ThreadWindows::SetNotAlive
+  ...
+}
+{
+  bug_2319_4
+  ThreadSanitizer:Race
+  fun:webrtc::ThreadWindows::Start
+  ...
+}
+{
+  bug_2319_5
+  ThreadSanitizer:Race
+  fun:webrtc::ThreadWindows::Stop
+  ...
+}
+

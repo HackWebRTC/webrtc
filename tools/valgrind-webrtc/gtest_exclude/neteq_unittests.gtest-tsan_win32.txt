@@ -1,0 +1,3 @@
+# https://code.google.com/p/webrtc/issues/detail?id=2329
+NetEqDecodingTest.TestBitExactness
+NetEqDecodingTest.TestNetworkStatistics

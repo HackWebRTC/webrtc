@@ -1,0 +1,50 @@
+# This file is used in addition to the one already maintained in Chrome.
+# It acts as a place holder for future additions for WebRTC.
+# It must exist for the Python wrapper script to work properly.
+
+
+INVALID HEAP ARGUMENT
+name=https://code.google.com/p/webrtc/issues/detail?id=2321
+drmemorylib.dll!replace_operator_delete_array
+*!webrtc::scoped_array<short>::~scoped_array<short>
+*!webrtc::PushResampler::~PushResampler
+*!webrtc::PushResamplerTest_VerifiesInputParameters_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>
+
+INVALID HEAP ARGUMENT
+name=https://code.google.com/p/webrtc/issues/detail?id=2322
+drmemorylib.dll!replace_operator_delete_array
+*!webrtc::scoped_array<unsigned char>::~scoped_array<unsigned char>
+*!webrtc::JpegEncoder::Encode
+*!webrtc::JpegTest_Encode_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>
+
+GDI USAGE ERROR
+name=https://code.google.com/p/webrtc/issues/detail?id=2323
+system call NtGdiDeleteObjectApp
+GDI32.dll!DeleteDC
+GDI32.dll!DeleteDC
+*!webrtc::`anonymous namespace'::WindowCapturerWin::Capture
+*!webrtc::WindowCapturerTest_Capture_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>
+
+UNINITIALIZED READ
+name=https://code.google.com/p/libyuv/issues/detail?id=263
+*!ScaleAddRows_SSE2
+...
+*!ScalePlaneDown
+*!ScalePlane
+*!I420Scale
+*!webrtc::Scaler::Scale
+*!webrtc::VPMSimpleSpatialResampler::ResampleFrame
+*!webrtc::VPMFramePreprocessor::PreprocessFrame
+*!webrtc::VideoProcessingModuleImpl::PreprocessFrame
+*!webrtc::VideoProcessingModuleTest_PreprocessorLogic_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>
+
+LEAK
+name=https://code.google.com/p/webrtc/issues/detail?id=2333
+drmemorylib.dll!replace_operator_new
+*!webrtc::test::UdpSocketWrapper::CreateSocket
+*!webrtc::test::UdpSocketManager_AddAndRemoveSocketDoesNotLeakMemory_Test::TestBody
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>

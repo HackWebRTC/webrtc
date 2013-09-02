@@ -1,0 +1,6 @@
+# https://code.google.com/p/webrtc/issues/detail?id=1938
+MouseCursorShapeTest.MatchCursors
+
+# https://code.google.com/p/webrtc/issues/detail?id=2329
+NetEqDecodingTest.TestBitExactness
+NetEqDecodingTest.TestNetworkStatistics
