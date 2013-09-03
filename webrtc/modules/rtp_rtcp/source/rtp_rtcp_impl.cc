@@ -196,7 +196,12 @@ int32_t ModuleRtpRtcpImpl::Process() {
     last_bitrate_process_time_ = now;
   }
 
-  const bool default_instance(child_modules_.empty() ? false : true);
+  bool default_instance = false;
+  {
+    CriticalSectionScoped cs(critical_section_module_ptrs_.get());
+    if (!child_modules_.empty())
+      default_instance = true;
+  }
   if (!default_instance) {
     if (rtcp_sender_.Sending()) {
       // Process RTT if we have received a receiver report and we haven't
