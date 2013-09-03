@@ -29,9 +29,6 @@ class TestScaler : public ::testing::Test {
                      FILE* source_file, std::string out_name,
                      int src_width, int src_height,
                      int dst_width, int dst_height);
-
-  // TODO(mikhal): add a sequence reader to libyuv.
-
   // Computes the sequence average PSNR between an input sequence in
   // |input_file| and an output sequence with filename |out_name|. |width| and
   // |height| are the frame sizes of both sequences.
@@ -163,7 +160,7 @@ TEST_F(TestScaler, DISABLED_ON_ANDROID(PointScaleTest)) {
                 source_file_, out_name,
                 width_, height_,
                 400, 300);
-  // Dowsample to odd size frame and scale back up.
+  // Down-sample to odd size frame and scale back up.
   out_name = webrtc::test::OutputPath() + "LibYuvTest_PointScale_282_231.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
@@ -183,7 +180,7 @@ TEST_F(TestScaler, DISABLED_ON_ANDROID(PointScaleTest)) {
   // average PSNR under same conditions.
   ASSERT_GT(avg_psnr, 25.8);
   ASSERT_EQ(0, fclose(source_file2));
-  // Upsample to odd size frame and scale back down.
+  // Up-sample to odd size frame and scale back down.
   out_name = webrtc::test::OutputPath() + "LibYuvTest_PointScale_699_531.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
@@ -215,7 +212,7 @@ TEST_F(TestScaler, DISABLED_ON_ANDROID(BiLinearScaleTest)) {
                 source_file_, out_name,
                 width_, height_,
                 width_ / 2, height_ / 2);
-  // Upsample back up and check PSNR.
+  // Up-sample back up and check PSNR.
   source_file2 = fopen(out_name.c_str(), "rb");
   out_name = webrtc::test::OutputPath() + "LibYuvTest_BilinearScale_352_288_"
       "upfrom_176_144.yuv";
@@ -255,7 +252,7 @@ TEST_F(TestScaler, DISABLED_ON_ANDROID(BiLinearScaleTest)) {
                 source_file_, out_name,
                 width_, height_,
                 400, 300);
-  // Downsample to odd size frame and scale back up.
+  // Down-sample to odd size frame and scale back up.
   out_name = webrtc::test::OutputPath() +
       "LibYuvTest_BilinearScale_282_231.yuv";
   ScaleSequence(method,
@@ -309,7 +306,7 @@ TEST_F(TestScaler, DISABLED_ON_ANDROID(BoxScaleTest)) {
                 source_file_, out_name,
                 width_, height_,
                 width_ / 2, height_ / 2);
-  // Upsample back up and check PSNR.
+  // Up-sample back up and check PSNR.
   source_file2 = fopen(out_name.c_str(), "rb");
   out_name = webrtc::test::OutputPath() + "LibYuvTest_BoxScale_352_288_"
       "upfrom_176_144.yuv";
@@ -344,7 +341,7 @@ TEST_F(TestScaler, DISABLED_ON_ANDROID(BoxScaleTest)) {
                 source_file_, out_name,
                 width_, height_,
                 400, 300);
-  // Downsample to odd size frame and scale back up.
+  // Down-sample to odd size frame and scale back up.
   out_name = webrtc::test::OutputPath() + "LibYuvTest_BoxScale_282_231.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
@@ -364,7 +361,7 @@ TEST_F(TestScaler, DISABLED_ON_ANDROID(BoxScaleTest)) {
   // average PSNR under same conditions.
   ASSERT_GT(avg_psnr, 29.7);
   ASSERT_EQ(0, fclose(source_file2));
-  // Upsample to odd size frame and scale back down.
+  // Up-sample to odd size frame and scale back down.
   out_name = webrtc::test::OutputPath() + "LibYuvTest_BoxScale_699_531.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
@@ -401,6 +398,7 @@ double TestScaler::ComputeAvgSequencePSNR(FILE* input_file,
 
   int frame_count = 0;
   double avg_psnr = 0;
+  I420VideoFrame in_frame, out_frame;
   while (feof(input_file) == 0) {
     if ((size_t)required_size !=
         fread(input_buffer, 1, required_size, input_file)) {
@@ -411,7 +409,9 @@ double TestScaler::ComputeAvgSequencePSNR(FILE* input_file,
       break;
     }
     frame_count++;
-    double psnr = I420PSNR(input_buffer, output_buffer, width, height);
+    ConvertFromI420(in_frame, kI420, 0, input_buffer);
+    ConvertFromI420(out_frame, kI420, 0, output_buffer);
+    double psnr = I420PSNR(&in_frame, &out_frame);
     avg_psnr += psnr;
   }
   avg_psnr = avg_psnr / frame_count;
