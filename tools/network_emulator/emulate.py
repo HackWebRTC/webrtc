@@ -24,6 +24,8 @@ _DEFAULT_LOG_LEVEL = logging.INFO
 # Default port range to apply network constraints on.
 _DEFAULT_PORT_RANGE = (32768, 65535)
 
+# The numbers below are gathered from Google stats from the presets of the Apple
+# developer tool called Network Link Conditioner.
 _PRESETS = [
     config.ConnectionConfig(1, 'Generic, Bad', 95, 95, 250, 2, 100),
     config.ConnectionConfig(2, 'Generic, Average', 375, 375, 145, 0.1, 100),
