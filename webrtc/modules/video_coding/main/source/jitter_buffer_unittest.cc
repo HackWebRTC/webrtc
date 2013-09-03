@@ -937,8 +937,6 @@ TEST_F(TestBasicJitterBuffer, PacketLoss) {
     jitter_buffer_->ReleaseFrame(frame_out);
   }
 
-  EXPECT_EQ(10, jitter_buffer_->num_not_decodable_packets());
-
   // Insert 3 old packets and verify that we have 3 discarded packets
   // Match value to actual latest timestamp decoded.
   timestamp_ -= 33 * 90;

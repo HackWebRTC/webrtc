@@ -299,7 +299,6 @@ class VCMJitterBuffer {
   bool first_packet_since_reset_;
 
   // Statistics.
-  int num_not_decodable_packets_;
   // Frame counter for each type (key, delta, golden, key-delta).
   unsigned int receive_statistics_[4];
   // Latest calculated frame rates of incoming stream.

@@ -147,7 +147,6 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
       incomplete_frames_(),
       last_decoded_state_(),
       first_packet_since_reset_(true),
-      num_not_decodable_packets_(0),
       receive_statistics_(),
       incoming_frame_rate_(0),
       incoming_frame_count_(0),
@@ -215,7 +214,6 @@ void VCMJitterBuffer::CopyFrom(const VCMJitterBuffer& rhs) {
     rtt_ms_ = rhs.rtt_ms_;
     first_packet_since_reset_ = rhs.first_packet_since_reset_;
     last_decoded_state_ =  rhs.last_decoded_state_;
-    num_not_decodable_packets_ = rhs.num_not_decodable_packets_;
     decode_error_mode_ = rhs.decode_error_mode_;
     assert(max_nack_list_size_ == rhs.max_nack_list_size_);
     assert(max_packet_age_to_nack_ == rhs.max_packet_age_to_nack_);
@@ -280,7 +278,6 @@ void VCMJitterBuffer::Start() {
   waiting_for_completion_.latest_packet_time = -1;
   first_packet_since_reset_ = true;
   rtt_ms_ = kDefaultRtt;
-  num_not_decodable_packets_ = 0;
   last_decoded_state_.Reset();
 
   WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
@@ -321,7 +318,6 @@ void VCMJitterBuffer::Flush() {
   decodable_frames_.Reset(&free_frames_);
   incomplete_frames_.Reset(&free_frames_);
   last_decoded_state_.Reset();  // TODO(mikhal): sync reset.
-  num_not_decodable_packets_ = 0;
   frame_event_->Reset();
   packet_event_->Reset();
   num_consecutive_old_frames_ = 0;
@@ -347,11 +343,6 @@ void VCMJitterBuffer::FrameStatistics(uint32_t* received_delta_frames,
   CriticalSectionScoped cs(crit_sect_);
   *received_delta_frames = receive_statistics_[1] + receive_statistics_[3];
   *received_key_frames = receive_statistics_[0] + receive_statistics_[2];
-}
-
-int VCMJitterBuffer::num_not_decodable_packets() const {
-  CriticalSectionScoped cs(crit_sect_);
-  return num_not_decodable_packets_;
 }
 
 int VCMJitterBuffer::num_discarded_packets() const {
@@ -561,8 +552,6 @@ VCMEncodedFrame* VCMJitterBuffer::ExtractAndSetDecode(uint32_t timestamp) {
   // frames to avoid empty frames being cleaned up and then given to the
   // decoder. Propagates the missing_frame bit.
   frame->PrepareForDecode(continuous);
-
-  num_not_decodable_packets_ += frame->NotDecodablePackets();
 
   // We have a frame - update the last decoded state and nack list.
   last_decoded_state_.SetState(frame);

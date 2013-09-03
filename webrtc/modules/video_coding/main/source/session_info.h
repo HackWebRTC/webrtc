@@ -107,8 +107,7 @@ class VCMSessionInfo {
   // |it| is expected to point to the last packet of the previous partition,
   // or to the first packet of the frame. |packets_skipped| is incremented
   // for each packet found which doesn't have the beginning bit set.
-  PacketIterator FindNextPartitionBeginning(PacketIterator it,
-                                            int* packets_skipped) const;
+  PacketIterator FindNextPartitionBeginning(PacketIterator it) const;
 
   // Returns an iterator pointing to the last packet of the partition pointed to
   // by |it|.
@@ -153,8 +152,6 @@ class VCMSessionInfo {
   PacketList packets_;
   int empty_seq_num_low_;
   int empty_seq_num_high_;
-  // Number of packets discarded because the decoder can't use them.
-  int packets_not_decodable_;
 
   // The following two variables correspond to the first and last media packets
   // in a session defined by the first packet flag and the marker bit.

@@ -30,7 +30,6 @@ VCMSessionInfo::VCMSessionInfo()
       packets_(),
       empty_seq_num_low_(-1),
       empty_seq_num_high_(-1),
-      packets_not_decodable_(0),
       first_packet_seq_num_(-1),
       last_packet_seq_num_(-1) {
 }
@@ -101,7 +100,6 @@ void VCMSessionInfo::Reset() {
   packets_.clear();
   empty_seq_num_low_ = -1;
   empty_seq_num_high_ = -1;
-  packets_not_decodable_ = 0;
   first_packet_seq_num_ = -1;
   last_packet_seq_num_ = -1;
 }
@@ -247,7 +245,6 @@ int VCMSessionInfo::DeletePacketData(PacketIterator start,
     bytes_to_delete += (*it).sizeBytes;
     (*it).sizeBytes = 0;
     (*it).dataPtr = NULL;
-    ++packets_not_decodable_;
   }
   if (bytes_to_delete > 0)
     ShiftSubsequentPackets(end, -bytes_to_delete);
@@ -266,8 +263,7 @@ int VCMSessionInfo::BuildVP8FragmentationHeader(
          kMaxVP8Partitions * sizeof(uint32_t));
   if (packets_.empty())
       return new_length;
-  PacketIterator it = FindNextPartitionBeginning(packets_.begin(),
-                                                 &packets_not_decodable_);
+  PacketIterator it = FindNextPartitionBeginning(packets_.begin());
   while (it != packets_.end()) {
     const int partition_id =
         (*it).codecSpecificHeader.codecHeader.VP8.partitionId;
@@ -282,7 +278,7 @@ int VCMSessionInfo::BuildVP8FragmentationHeader(
            static_cast<uint32_t>(frame_buffer_length));
     new_length += fragmentation->fragmentationLength[partition_id];
     ++partition_end;
-    it = FindNextPartitionBeginning(partition_end, &packets_not_decodable_);
+    it = FindNextPartitionBeginning(partition_end);
     if (partition_id + 1 > fragmentation->fragmentationVectorSize)
       fragmentation->fragmentationVectorSize = partition_id + 1;
   }
@@ -304,14 +300,10 @@ int VCMSessionInfo::BuildVP8FragmentationHeader(
 }
 
 VCMSessionInfo::PacketIterator VCMSessionInfo::FindNextPartitionBeginning(
-    PacketIterator it, int* packets_skipped) const {
+    PacketIterator it) const {
   while (it != packets_.end()) {
     if ((*it).codecSpecificHeader.codecHeader.VP8.beginningOfPartition) {
       return it;
-    } else if (packets_skipped !=  NULL) {
-      // This packet belongs to a partition with a previous loss and can't
-      // be decoded.
-      ++(*packets_skipped);
     }
     ++it;
   }
@@ -477,10 +469,6 @@ void VCMSessionInfo::InformOfEmptyPacket(uint16_t seq_num) {
   if (empty_seq_num_low_ == -1 || IsNewerSequenceNumber(empty_seq_num_low_,
                                                         seq_num))
     empty_seq_num_low_ = seq_num;
-}
-
-int VCMSessionInfo::packets_not_decodable() const {
-  return packets_not_decodable_;
 }
 
 }  // namespace webrtc

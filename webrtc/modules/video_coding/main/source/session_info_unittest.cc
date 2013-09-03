@@ -219,7 +219,6 @@ TEST_F(TestSessionInfo, NormalOperation) {
                                   frame_data),
             packet_buffer_size());
 
-  EXPECT_EQ(0, session_.packets_not_decodable());
   EXPECT_EQ(10 * packet_buffer_size(), session_.SessionLength());
   for (int i = 0; i < 10; ++i) {
     SCOPED_TRACE("Calling VerifyPacket");
@@ -237,7 +236,6 @@ TEST_F(TestSessionInfo, ErrorsEqualDecodableState) {
                                   kWithErrors,
                                   frame_data),
             packet_buffer_size());
-  EXPECT_EQ(0, session_.packets_not_decodable());
   EXPECT_TRUE(session_.decodable());
 }
 
@@ -253,7 +251,6 @@ TEST_F(TestSessionInfo, SelectiveDecodableState) {
                                   kSelectiveErrors,
                                   frame_data),
             packet_buffer_size());
-  EXPECT_EQ(0, session_.packets_not_decodable());
   EXPECT_FALSE(session_.decodable());
 
   packet_.seqNum -= 1;
@@ -264,7 +261,6 @@ TEST_F(TestSessionInfo, SelectiveDecodableState) {
                                   kSelectiveErrors,
                                   frame_data),
             packet_buffer_size());
-  EXPECT_EQ(0, session_.packets_not_decodable());
   EXPECT_TRUE(session_.decodable());
 
   packet_.isFirstPacket = false;
@@ -277,7 +273,6 @@ TEST_F(TestSessionInfo, SelectiveDecodableState) {
                                     kSelectiveErrors,
                                     frame_data),
               packet_buffer_size());
-    EXPECT_EQ(0, session_.packets_not_decodable());
     EXPECT_TRUE(session_.decodable());
   }
 
@@ -288,7 +283,6 @@ TEST_F(TestSessionInfo, SelectiveDecodableState) {
                                   kSelectiveErrors,
                                   frame_data),
             packet_buffer_size());
-  EXPECT_EQ(0, session_.packets_not_decodable());
   EXPECT_TRUE(session_.decodable());
 }
 
@@ -614,7 +608,6 @@ TEST_F(TestVP8Partitions, TwoPartitionsOneLoss2) {
   EXPECT_TRUE(VerifyPartition(0, 2, 1));
   SCOPED_TRACE("Calling VerifyPartition");
   EXPECT_TRUE(VerifyPartition(1, 1, 3));
-  EXPECT_EQ(1, session_.packets_not_decodable());
 }
 
 TEST_F(TestVP8Partitions, TwoPartitionsNoLossWrap) {
@@ -686,7 +679,6 @@ TEST_F(TestVP8Partitions, TwoPartitionsNoLossWrap) {
   EXPECT_TRUE(VerifyPartition(0, 2, 0));
   SCOPED_TRACE("Calling VerifyPartition");
   EXPECT_TRUE(VerifyPartition(1, 2, 2));
-  EXPECT_EQ(0, session_.packets_not_decodable());
 }
 
 TEST_F(TestVP8Partitions, TwoPartitionsLossWrap) {
@@ -758,7 +750,6 @@ TEST_F(TestVP8Partitions, TwoPartitionsLossWrap) {
   EXPECT_TRUE(VerifyPartition(0, 2, 0));
   SCOPED_TRACE("Calling VerifyPartition");
   EXPECT_TRUE(VerifyPartition(1, 1, 2));
-  EXPECT_EQ(1, session_.packets_not_decodable());
 }
 
 
@@ -831,7 +822,6 @@ TEST_F(TestVP8Partitions, ThreePartitionsOneMissing) {
   EXPECT_TRUE(VerifyPartition(0, 2, 1));
   SCOPED_TRACE("Calling VerifyPartition");
   EXPECT_TRUE(VerifyPartition(2, 2, 5));
-  EXPECT_EQ(0, session_.packets_not_decodable());
 }
 
 TEST_F(TestVP8Partitions, ThreePartitionsLossInSecond) {
@@ -932,7 +922,6 @@ TEST_F(TestVP8Partitions, ThreePartitionsLossInSecond) {
   EXPECT_TRUE(VerifyPartition(0, 2, 1));
   SCOPED_TRACE("Calling VerifyPartition");
   EXPECT_TRUE(VerifyPartition(2, 2, 6));
-  EXPECT_EQ(2, session_.packets_not_decodable());
 }
 
 TEST_F(TestVP8Partitions, AggregationOverTwoPackets) {
@@ -986,7 +975,6 @@ TEST_F(TestVP8Partitions, AggregationOverTwoPackets) {
                                                  frame_buffer_size(),
                                                  &fragmentation_),
             3 * packet_buffer_size());
-  EXPECT_EQ(0, session_.packets_not_decodable());
   SCOPED_TRACE("Calling VerifyPartition");
   EXPECT_TRUE(VerifyPartition(0, 2, 0));
   // This partition is aggregated in partition 0
@@ -1010,7 +998,6 @@ TEST_F(TestNalUnits, OnlyReceivedEmptyPacket) {
 
   EXPECT_EQ(0, session_.MakeDecodable());
   EXPECT_EQ(0, session_.SessionLength());
-  EXPECT_EQ(0, session_.packets_not_decodable());
 }
 
 TEST_F(TestNalUnits, OneIsolatedNaluLoss) {
@@ -1038,7 +1025,6 @@ TEST_F(TestNalUnits, OneIsolatedNaluLoss) {
 
   EXPECT_EQ(0, session_.MakeDecodable());
   EXPECT_EQ(2 * packet_buffer_size(), session_.SessionLength());
-  EXPECT_EQ(0, session_.packets_not_decodable());
   SCOPED_TRACE("Calling VerifyNalu");
   EXPECT_TRUE(VerifyNalu(0, 1, 0));
   SCOPED_TRACE("Calling VerifyNalu");
@@ -1070,7 +1056,6 @@ TEST_F(TestNalUnits, LossInMiddleOfNalu) {
 
   EXPECT_EQ(packet_buffer_size(), session_.MakeDecodable());
   EXPECT_EQ(packet_buffer_size(), session_.SessionLength());
-  EXPECT_EQ(1, session_.packets_not_decodable());
   SCOPED_TRACE("Calling VerifyNalu");
   EXPECT_TRUE(VerifyNalu(0, 1, 0));
 }
@@ -1100,7 +1085,6 @@ TEST_F(TestNalUnits, StartAndEndOfLastNalUnitLost) {
 
   EXPECT_EQ(packet_buffer_size(), session_.MakeDecodable());
   EXPECT_EQ(packet_buffer_size(), session_.SessionLength());
-  EXPECT_EQ(1, session_.packets_not_decodable());
   SCOPED_TRACE("Calling VerifyNalu");
   EXPECT_TRUE(VerifyNalu(0, 1, 0));
 }
@@ -1141,7 +1125,6 @@ TEST_F(TestNalUnits, ReorderWrapNoLoss) {
             packet_buffer_size());
 
   EXPECT_EQ(0, session_.MakeDecodable());
-  EXPECT_EQ(0, session_.packets_not_decodable());
   EXPECT_EQ(3 * packet_buffer_size(), session_.SessionLength());
   SCOPED_TRACE("Calling VerifyNalu");
   EXPECT_TRUE(VerifyNalu(0, 1, 0));
@@ -1172,7 +1155,6 @@ TEST_F(TestNalUnits, WrapLosses) {
 
   EXPECT_EQ(2 * packet_buffer_size(), session_.MakeDecodable());
   EXPECT_EQ(0, session_.SessionLength());
-  EXPECT_EQ(2, session_.packets_not_decodable());
 }
 
 TEST_F(TestNalUnits, ReorderWrapLosses) {
@@ -1202,7 +1184,6 @@ TEST_F(TestNalUnits, ReorderWrapLosses) {
 
   EXPECT_EQ(2 * packet_buffer_size(), session_.MakeDecodable());
   EXPECT_EQ(0, session_.SessionLength());
-  EXPECT_EQ(2, session_.packets_not_decodable());
 }
 
 }  // namespace webrtc

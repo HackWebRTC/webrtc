@@ -272,10 +272,6 @@ VCMFrameBuffer::ExtractFromStorage(const EncodedVideoData& frameFromStorage) {
     return VCM_OK;
 }
 
-int VCMFrameBuffer::NotDecodablePackets() const {
-  return _sessionInfo.packets_not_decodable();
-}
-
 // Set counted status (as counted by JB or not)
 void VCMFrameBuffer::SetCountedFrame(bool frameCounted) {
     _frameCounted = frameCounted;
