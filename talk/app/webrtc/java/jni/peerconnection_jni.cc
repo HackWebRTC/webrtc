@@ -131,6 +131,12 @@ using webrtc::VideoRendererInterface;
     CHECK(!count, "Unexpected refcount");                         \
   } while (0)
 
+// Lifted from chromium's base/basictypes.h.
+template <bool>
+struct CompileAssert {};
+#define COMPILE_ASSERT(expr, msg) \
+  typedef CompileAssert<(bool(expr))> msg[bool(expr) ? 1 : -1]
+
 namespace {
 
 static JavaVM* g_jvm = NULL;  // Set in JNI_OnLoad().
@@ -187,6 +193,24 @@ static JNIEnv* AttachCurrentThreadIfNeeded() {
     CHECK(!pthread_setspecific(g_jni_ptr, jni), "pthread_setspecific");
   }
   return jni;
+}
+
+// Return a |jlong| that will automatically convert back to |ptr| when assigned
+// to a |uint64|
+static jlong jlongFromPointer(void* ptr) {
+  COMPILE_ASSERT(sizeof(intptr_t) <= sizeof(uint64),
+                 Time_to_rethink_the_use_of_jlongs);
+  // Guaranteed to fit by the COMPILE_ASSERT above.
+  uint64 u64 = reinterpret_cast<intptr_t>(ptr);
+  // If the unsigned value fits in the signed type, return it directly.
+  if (u64 <= std::numeric_limits<int64>::max())
+    return u64;
+  // Otherwise, we need to get move u64 into the range of [int64min, -1] subject
+  // to the constraints of remaining equal to |u64| modulo |2^64|.
+  u64 = std::numeric_limits<uint64>::max() - u64;  // In [0,int64max].
+  int64 i64 = -u64; // In [-int64max, 0].
+  i64 -= 1; // In [int64min, -1], and i64+2^64==u64.
+  return i64;
 }
 
 // Android's FindClass() is trickier than usual because the app-specific
@@ -1346,11 +1370,16 @@ JOW(jobject, PeerConnection_createDataChannel)(
   talk_base::scoped_refptr<DataChannelInterface> channel(
       ExtractNativePC(jni, j_pc)->CreateDataChannel(
           JavaToStdString(jni, j_label), &init));
+  // Mustn't pass channel.get() directly through NewObject to avoid reading its
+  // vararg parameter as 64-bit and reading memory that doesn't belong to the
+  // 32-bit parameter.
+  jlong nativeChannelPtr = jlongFromPointer(channel.get());
+  CHECK(nativeChannelPtr, "Failed to create DataChannel");
   jclass j_data_channel_class = FindClass(jni, "org/webrtc/DataChannel");
   jmethodID j_data_channel_ctor = GetMethodID(
       jni, j_data_channel_class, "<init>", "(J)V");
   jobject j_channel = jni->NewObject(
-      j_data_channel_class, j_data_channel_ctor, channel.get());
+      j_data_channel_class, j_data_channel_ctor, nativeChannelPtr);
   CHECK_EXCEPTION(jni, "error during NewObject");
   // Channel is now owned by Java object, and will be freed from there.
   int bumped_count = channel->AddRef();
