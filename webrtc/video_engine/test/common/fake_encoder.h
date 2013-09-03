@@ -17,12 +17,14 @@
 #include "webrtc/system_wrappers/interface/clock.h"
 
 namespace webrtc {
+namespace test {
 
 class FakeEncoder : public VideoEncoder {
  public:
   explicit FakeEncoder(Clock* clock);
-
   virtual ~FakeEncoder();
+
+  static void SetCodecStreamSettings(VideoCodec* codec, size_t num_streams);
 
   virtual int32_t InitEncode(const VideoCodec* config,
                              int32_t number_of_cores,
@@ -51,6 +53,7 @@ class FakeEncoder : public VideoEncoder {
   int64_t last_encode_time_ms_;
   uint8_t encoded_buffer_[100000];
 };
+}  // namespace test
 }  // namespace webrtc
 
 #endif  // WEBRTC_VIDEO_ENGINE_TEST_COMMON_FAKE_ENCODER_H_

@@ -12,6 +12,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/video_engine/test/common/fake_encoder.h"
 #include "webrtc/video_engine/test/common/frame_generator.h"
 #include "webrtc/video_engine/test/common/frame_generator_capturer.h"
 #include "webrtc/video_engine/test/common/null_transport.h"
@@ -40,6 +41,8 @@ class SendTransportObserver : public test::NullTransport {
 };
 
 class VideoSendStreamTest : public ::testing::Test {
+ public:
+  VideoSendStreamTest() : fake_encoder_(Clock::GetRealTimeClock()) {}
  protected:
   static const uint32_t kSendSsrc;
   void RunSendTest(VideoCall* call,
@@ -60,6 +63,17 @@ class VideoSendStreamTest : public ::testing::Test {
     send_stream->StopSend();
     call->DestroySendStream(send_stream);
   }
+
+  VideoSendStream::Config GetSendTestConfig(VideoCall* call) {
+    VideoSendStream::Config config = call->GetDefaultSendConfig();
+    config.encoder = &fake_encoder_;
+    config.internal_source = false;
+    test::FakeEncoder::SetCodecStreamSettings(&config.codec, 1);
+    config.codec.plType = 100;
+    return config;
+  }
+
+  test::FakeEncoder fake_encoder_;
 };
 
 const uint32_t VideoSendStreamTest::kSendSsrc = 0xC0FFEE;
@@ -84,7 +98,7 @@ TEST_F(VideoSendStreamTest, SendsSetSsrc) {
   VideoCall::Config call_config(&observer);
   scoped_ptr<VideoCall> call(VideoCall::Create(call_config));
 
-  VideoSendStream::Config send_config = call->GetDefaultSendConfig();
+  VideoSendStream::Config send_config = GetSendTestConfig(call.get());
   send_config.rtp.ssrcs.push_back(kSendSsrc);
 
   RunSendTest(call.get(), send_config, &observer);
@@ -117,7 +131,7 @@ TEST_F(VideoSendStreamTest, SupportsCName) {
   VideoCall::Config call_config(&observer);
   scoped_ptr<VideoCall> call(VideoCall::Create(call_config));
 
-  VideoSendStream::Config send_config = call->GetDefaultSendConfig();
+  VideoSendStream::Config send_config = GetSendTestConfig(call.get());
   send_config.rtp.ssrcs.push_back(kSendSsrc);
   send_config.rtp.c_name = kCName;
 

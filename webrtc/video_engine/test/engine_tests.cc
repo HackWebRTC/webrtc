@@ -133,39 +133,6 @@ class RampUpTest : public ::testing::TestWithParam<bool> {
     reserved_ssrcs_.clear();
   }
 
-  static void SetCodecStreamSettings(VideoCodec* video_codec) {
-    video_codec->width = 1280;
-    video_codec->height = 720;
-    video_codec->startBitrate = 300;
-    video_codec->minBitrate = 50;
-    video_codec->maxBitrate = 1800;
-
-    video_codec->numberOfSimulcastStreams = 3;
-    video_codec->simulcastStream[0].width = 320;
-    video_codec->simulcastStream[0].height = 180;
-    video_codec->simulcastStream[0].numberOfTemporalLayers = 0;
-    video_codec->simulcastStream[0].maxBitrate = 150;
-    video_codec->simulcastStream[0].targetBitrate = 150;
-    video_codec->simulcastStream[0].minBitrate = 50;
-    video_codec->simulcastStream[0].qpMax = video_codec->qpMax;
-
-    video_codec->simulcastStream[1].width = 640;
-    video_codec->simulcastStream[1].height = 360;
-    video_codec->simulcastStream[1].numberOfTemporalLayers = 0;
-    video_codec->simulcastStream[1].maxBitrate = 500;
-    video_codec->simulcastStream[1].targetBitrate = 500;
-    video_codec->simulcastStream[1].minBitrate = 150;
-    video_codec->simulcastStream[1].qpMax = video_codec->qpMax;
-
-    video_codec->simulcastStream[2].width = 1280;
-    video_codec->simulcastStream[2].height = 720;
-    video_codec->simulcastStream[2].numberOfTemporalLayers = 0;
-    video_codec->simulcastStream[2].maxBitrate = 1200;
-    video_codec->simulcastStream[2].targetBitrate = 1200;
-    video_codec->simulcastStream[2].minBitrate = 600;
-    video_codec->simulcastStream[2].qpMax = video_codec->qpMax;
-  }
-
  protected:
   std::map<uint32_t, bool> reserved_ssrcs_;
 };
@@ -181,10 +148,10 @@ TEST_P(RampUpTest, RampUpWithPadding) {
 
   receiver_transport.SetReceiver(call->Receiver());
 
-  FakeEncoder encoder(Clock::GetRealTimeClock());
+  test::FakeEncoder encoder(Clock::GetRealTimeClock());
   send_config.encoder = &encoder;
   send_config.internal_source = false;
-  SetCodecStreamSettings(&send_config.codec);
+  test::FakeEncoder::SetCodecStreamSettings(&send_config.codec, 3);
   send_config.codec.plType = 100;
   send_config.pacing = GetParam();
 

@@ -13,6 +13,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace webrtc {
+namespace test {
 
 FakeEncoder::FakeEncoder(Clock* clock)
     : clock_(clock),
@@ -23,6 +24,37 @@ FakeEncoder::FakeEncoder(Clock* clock)
 }
 
 FakeEncoder::~FakeEncoder() {}
+
+void FakeEncoder::SetCodecStreamSettings(VideoCodec* codec,
+                                         size_t num_streams) {
+  assert(num_streams > 0);
+  assert(num_streams <= kMaxSimulcastStreams);
+
+  static const SimulcastStream stream_settings[] = {
+      {320, 180, 0, 150, 150, 50, codec->qpMax},
+      {640, 360, 0, 500, 500, 150, codec->qpMax},
+      {1280, 720, 0, 1200, 1200, 600, codec->qpMax}};
+  // Add more streams to the settings above with reasonable values if required.
+  assert(num_streams <= sizeof(stream_settings) / sizeof(stream_settings[0]));
+
+  codec->numberOfSimulcastStreams = static_cast<unsigned char>(num_streams);
+
+  unsigned int sum_of_max_bitrates = 0;
+  for (size_t i = 0; i < num_streams; ++i) {
+    codec->simulcastStream[i] = stream_settings[i];
+    sum_of_max_bitrates += stream_settings[i].maxBitrate;
+  }
+
+  size_t last_stream = num_streams - 1;
+  codec->width = stream_settings[last_stream].width;
+  codec->height = stream_settings[last_stream].height;
+  // Start with the average for the middle stream's max/min settings.
+  codec->startBitrate = (stream_settings[last_stream / 2].maxBitrate +
+                         stream_settings[last_stream / 2].minBitrate) /
+                        2;
+  codec->minBitrate = stream_settings[0].minBitrate;
+  codec->maxBitrate = sum_of_max_bitrates;
+}
 
 int32_t FakeEncoder::InitEncode(const VideoCodec* config,
                                 int32_t number_of_cores,
@@ -96,4 +128,5 @@ int32_t FakeEncoder::SetRates(uint32_t new_target_bitrate, uint32_t framerate) {
   target_bitrate_kbps_ = new_target_bitrate;
   return 0;
 }
+}  // namespace test
 }  // namespace webrtc
