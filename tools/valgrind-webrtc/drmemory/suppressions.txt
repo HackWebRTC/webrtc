@@ -11,14 +11,6 @@ drmemorylib.dll!replace_operator_delete_array
 *!webrtc::PushResamplerTest_VerifiesInputParameters_Test::TestBody
 *!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>
 
-INVALID HEAP ARGUMENT
-name=https://code.google.com/p/webrtc/issues/detail?id=2322
-drmemorylib.dll!replace_operator_delete_array
-*!webrtc::scoped_array<unsigned char>::~scoped_array<unsigned char>
-*!webrtc::JpegEncoder::Encode
-*!webrtc::JpegTest_Encode_Test::TestBody
-*!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>
-
 GDI USAGE ERROR
 name=https://code.google.com/p/webrtc/issues/detail?id=2323
 system call NtGdiDeleteObjectApp
