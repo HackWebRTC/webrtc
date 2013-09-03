@@ -215,8 +215,7 @@ TEST_F(VCMRobustnessTest, TestDualDecoder) {
 
 
   ASSERT_EQ(VCM_OK, vcm_->SetReceiverRobustnessMode(
-      VideoCodingModule::kDualDecoder,
-      kWithErrors));
+      VideoCodingModule::kDualDecoder, kWithErrors));
 
   InsertPacket(0, 0, true, false, kVideoFrameKey);
   InsertPacket(0, 1, false, false, kVideoFrameKey);
@@ -225,7 +224,7 @@ TEST_F(VCMRobustnessTest, TestDualDecoder) {
 
   clock_->AdvanceTimeMilliseconds(33);
   InsertPacket(3000, 3, true, false, kVideoFrameDelta);
-  // Packet 4 missing
+  // Packet 4 missing.
   InsertPacket(3000, 5, false, true, kVideoFrameDelta);
   EXPECT_EQ(VCM_FRAME_NOT_READY, vcm_->Decode(0));
 

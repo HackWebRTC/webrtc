@@ -187,7 +187,6 @@ void VCMSessionInfo::UpdateDecodableSession(const FrameData& frame_data) {
   // Irrelevant if session is already complete or decodable
   if (complete_ || decodable_)
     return;
-
   // TODO(agalusza): Account for bursty loss.
   // TODO(agalusza): Refine these values to better approximate optimal ones.
   if (frame_data.rtt_ms < kRttThreshold

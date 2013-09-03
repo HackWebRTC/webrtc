@@ -86,7 +86,7 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet,
                              int64_t timeInMs,
                              VCMDecodeErrorMode decode_error_mode,
                              const FrameData& frame_data) {
-    // is this packet part of this frame
+    // Is this packet part of this frame?
     if (TimeStamp() && (TimeStamp() != packet.timestamp)) {
         return kTimeStampError;
     }
@@ -207,14 +207,6 @@ VCMFrameBuffer::Reset() {
     _latestPacketTimeMs = -1;
     _state = kStateEmpty;
     VCMEncodedFrame::Reset();
-}
-
-void
-VCMFrameBuffer::SetNotDecodableIfIncomplete() {
-  if (_state == kStateDecodable) {
-    _state = kStateIncomplete;
-    _sessionInfo.SetNotDecodableIfIncomplete();
-  }
 }
 
 // Set state of frame
