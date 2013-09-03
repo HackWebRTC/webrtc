@@ -31,6 +31,15 @@
   fun:webrtc::Trace::Add
   ...
 }
+{
+  Test posix socket HasIncoming
+  ThreadSanitizer:Race
+  fun:webrtc::test::UdpSocketPosix::HasIncoming
+  fun:webrtc::test::UdpSocketManagerPosixImpl::Process
+  fun:webrtc::test::UdpSocketManagerPosixImpl::Run
+  fun:webrtc::ThreadPosix::Run
+  fun:webrtc::StartThread
+}
 
 #-----------------------------------------------------------------------
 # 2. libjingle stuff (talk folder)
