@@ -544,7 +544,7 @@ void EngineTest::ReceivesPliAndRecovers(int rtp_history_ms) {
   observer.StopSending();
 }
 
-TEST_P(EngineTest, ReceivesPliAndRecoversWithNack) {
+TEST_P(EngineTest, DISABLED_ReceivesPliAndRecoversWithNack) {
   ReceivesPliAndRecovers(1000);
 }
 
