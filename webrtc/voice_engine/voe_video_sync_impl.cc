@@ -145,7 +145,6 @@ int VoEVideoSyncImpl::SetInitialPlayoutDelay(int channel, int delay_ms)
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                  "SetInitialPlayoutDelay(channel=%d, delay_ms=%d)",
                  channel, delay_ms);
-    ANDROID_NOT_SUPPORTED(_shared->statistics());
     IPHONE_NOT_SUPPORTED(_shared->statistics());
 
     if (!_shared->statistics().Initialized())
