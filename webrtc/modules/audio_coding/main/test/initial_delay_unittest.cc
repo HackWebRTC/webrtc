@@ -130,38 +130,38 @@ class InitialPlayoutDelayTest : public ::testing::Test {
   Channel* channel_a2b_;
 };
 
-TEST_F( InitialPlayoutDelayTest, NbMono) {
+TEST_F( InitialPlayoutDelayTest, DISABLED_ON_ANDROID(NbMono)) {
   CodecInst codec;
   AudioCodingModule::Codec("L16", &codec, 8000, 1);
   Run(codec, 3000);
 }
 
-TEST_F( InitialPlayoutDelayTest, WbMono) {
+TEST_F( InitialPlayoutDelayTest, DISABLED_ON_ANDROID(WbMono)) {
   CodecInst codec;
   AudioCodingModule::Codec("L16", &codec, 16000, 1);
   Run(codec, 3000);
 }
 
-TEST_F( InitialPlayoutDelayTest, SwbMono) {
+TEST_F( InitialPlayoutDelayTest, DISABLED_ON_ANDROID(SwbMono)) {
   CodecInst codec;
   AudioCodingModule::Codec("L16", &codec, 32000, 1);
   Run(codec, 2000);  // NetEq buffer is not sufficiently large for 3 sec of
                      // PCM16 super-wideband.
 }
 
-TEST_F( InitialPlayoutDelayTest, NbStereo) {
+TEST_F( InitialPlayoutDelayTest, DISABLED_ON_ANDROID(NbStereo)) {
   CodecInst codec;
   AudioCodingModule::Codec("L16", &codec, 8000, 2);
   Run(codec, 3000);
 }
 
-TEST_F( InitialPlayoutDelayTest, WbStereo) {
+TEST_F( InitialPlayoutDelayTest, DISABLED_ON_ANDROID(WbStereo)) {
   CodecInst codec;
   AudioCodingModule::Codec("L16", &codec, 16000, 2);
   Run(codec, 3000);
 }
 
-TEST_F( InitialPlayoutDelayTest, SwbStereo) {
+TEST_F( InitialPlayoutDelayTest, DISABLED_ON_ANDROID(SwbStereo)) {
   CodecInst codec;
   AudioCodingModule::Codec("L16", &codec, 32000, 2);
   Run(codec, 2000);  // NetEq buffer is not sufficiently large for 3 sec of
