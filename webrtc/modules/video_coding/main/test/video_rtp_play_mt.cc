@@ -81,7 +81,7 @@ int RtpPlayMT(const CmdArgs& args) {
   webrtc::Clock* clock = webrtc::Clock::GetRealTimeClock();
   VcmPayloadSinkFactory factory(output_file, clock, kConfigProtectionEnabled,
       kConfigProtectionMethod, kConfigRttMs, kConfigRenderDelayMs,
-      kConfigMinPlayoutDelayMs, false);
+      kConfigMinPlayoutDelayMs);
   webrtc::scoped_ptr<RtpPlayerInterface> rtp_player(webrtc::rtpplayer::Create(
       args.inputFile, &factory, clock, payload_types, kConfigLossRate,
       kConfigRttMs, kConfigReordering));

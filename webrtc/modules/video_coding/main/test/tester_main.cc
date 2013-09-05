@@ -121,9 +121,6 @@ int main(int argc, char **argv) {
       ret = RtpPlayMT(args);
       break;
     case 9:
-      ret = DecodeFromStorageTest(args);
-      break;
-    case 10:
       qualityModeTest(args);
       break;
     default:

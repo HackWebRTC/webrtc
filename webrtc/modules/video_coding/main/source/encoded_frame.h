@@ -91,8 +91,6 @@ public:
 
     const RTPFragmentationHeader* FragmentationHeader() const;
 
-    int32_t Store(VCMFrameStorageCallback& storeCallback) const;
-
     static webrtc::FrameType ConvertFrameType(VideoFrameType frameType);
     static VideoFrameType ConvertFrameType(webrtc::FrameType frameType);
     static void ConvertFrameTypes(

@@ -49,7 +49,7 @@ int RtpPlay(const CmdArgs& args) {
   webrtc::SimulatedClock clock(0);
   webrtc::rtpplayer::VcmPayloadSinkFactory factory(output_file, &clock,
       kConfigProtectionEnabled, kConfigProtectionMethod, kConfigRttMs,
-      kConfigRenderDelayMs, kConfigMinPlayoutDelayMs, false);
+      kConfigRenderDelayMs, kConfigMinPlayoutDelayMs);
   webrtc::scoped_ptr<webrtc::rtpplayer::RtpPlayerInterface> rtp_player(
       webrtc::rtpplayer::Create(args.inputFile, &factory, &clock, payload_types,
           kConfigLossRate, kConfigRttMs, kConfigReordering));

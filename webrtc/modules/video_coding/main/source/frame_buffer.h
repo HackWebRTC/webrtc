@@ -77,8 +77,6 @@ class VCMFrameBuffer : public VCMEncodedFrame {
   webrtc::FrameType FrameType() const;
   void SetPreviousFrameLoss();
 
-  int32_t ExtractFromStorage(const EncodedVideoData& frameFromStorage);
-
   // The number of packets discarded because the decoder can't make use of
   // them.
   int NotDecodablePackets() const;

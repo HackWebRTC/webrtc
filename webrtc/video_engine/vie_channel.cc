@@ -1647,11 +1647,6 @@ void ViEChannel::IncomingCodecChanged(const VideoCodec& codec) {
   receive_codec_ = codec;
 }
 
-int32_t ViEChannel::StoreReceivedFrame(
-  const EncodedVideoData& frame_to_store) {
-  return 0;
-}
-
 int32_t ViEChannel::OnReceiveStatisticsUpdate(const uint32_t bit_rate,
                                               const uint32_t frame_rate) {
   CriticalSectionScoped cs(callback_cs_.get());

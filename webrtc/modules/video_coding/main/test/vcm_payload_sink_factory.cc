@@ -24,8 +24,7 @@ namespace rtpplayer {
 
 class VcmPayloadSinkFactory::VcmPayloadSink
     : public PayloadSinkInterface,
-      public VCMPacketRequestCallback,
-      public VCMFrameStorageCallback {
+      public VCMPacketRequestCallback {
  public:
   VcmPayloadSink(VcmPayloadSinkFactory* factory,
                  RtpStreamInterface* stream,
@@ -51,7 +50,6 @@ class VcmPayloadSinkFactory::VcmPayloadSink
     if (vcm_playback_.get() == NULL) {
       vcm_->RegisterReceiveCallback(frame_receiver_.get());
     } else {
-      vcm_->RegisterFrameStorageCallback(this);
       vcm_playback_->RegisterReceiveCallback(frame_receiver_.get());
     }
   }
@@ -79,13 +77,6 @@ class VcmPayloadSinkFactory::VcmPayloadSink
                                 uint16_t length) {
     stream_->ResendPackets(sequence_numbers, length);
     return 0;
-  }
-
-  // VCMFrameStorageCallback
-  virtual int32_t StoreReceivedFrame(
-      const EncodedVideoData& frame_to_store) {
-    vcm_playback_->DecodeFromStorage(frame_to_store);
-    return VCM_OK;
   }
 
   int DecodeAndProcess(bool should_decode, bool decode_dual_frame) {
@@ -128,8 +119,7 @@ class VcmPayloadSinkFactory::VcmPayloadSink
 VcmPayloadSinkFactory::VcmPayloadSinkFactory(
     const std::string& base_out_filename, Clock* clock, bool protection_enabled,
     VCMVideoProtection protection_method, uint32_t rtt_ms,
-    uint32_t render_delay_ms, uint32_t min_playout_delay_ms,
-    bool use_frame_storage)
+    uint32_t render_delay_ms, uint32_t min_playout_delay_ms)
     : base_out_filename_(base_out_filename),
       clock_(clock),
       protection_enabled_(protection_enabled),
@@ -137,7 +127,6 @@ VcmPayloadSinkFactory::VcmPayloadSinkFactory(
       rtt_ms_(rtt_ms),
       render_delay_ms_(render_delay_ms),
       min_playout_delay_ms_(min_playout_delay_ms),
-      use_frame_storage_(use_frame_storage),
       null_event_factory_(new NullEventFactory()),
       crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       sinks_(),
@@ -165,17 +154,6 @@ PayloadSinkInterface* VcmPayloadSinkFactory::Create(
   }
 
   scoped_ptr<VideoCodingModule> vcm_playback;
-  if (use_frame_storage_) {
-    vcm_playback.reset(
-        VideoCodingModule::Create(next_id_++, clock_,
-                                  null_event_factory_.get()));
-    if (vcm_playback.get() == NULL) {
-      return NULL;
-    }
-    if (vcm_playback->InitializeReceiver() < 0) {
-      return NULL;
-    }
-  }
 
   const PayloadTypes& plt = stream->payload_types();
   for (PayloadTypesIterator it = plt.begin(); it != plt.end();
@@ -189,11 +167,6 @@ PayloadSinkInterface* VcmPayloadSinkFactory::Create(
       codec.plType = it->payload_type();
       if (vcm->RegisterReceiveCodec(&codec, 1) < 0) {
         return NULL;
-      }
-      if (use_frame_storage_) {
-        if (vcm_playback->RegisterReceiveCodec(&codec, 1) < 0) {
-          return NULL;
-        }
       }
     }
   }

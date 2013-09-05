@@ -389,18 +389,6 @@ public:
     virtual int32_t RegisterFrameTypeCallback(
                                   VCMFrameTypeCallback* frameTypeCallback) = 0;
 
-    // Register a frame storage callback. This callback will be called right before an
-    // encoded frame is given to the decoder. Useful for recording the incoming video sequence.
-    //
-    // Input:
-    //      - frameStorageCallback    : The callback object used by the module
-    //                                  to store a received encoded frame.
-    //
-    // Return value     : VCM_OK, on success.
-    //                    < 0,         on error.
-    virtual int32_t RegisterFrameStorageCallback(
-                             VCMFrameStorageCallback* frameStorageCallback) = 0;
-
     // Registers a callback which is called whenever the receive side of the VCM
     // encounters holes in the packet sequence and needs packets to be retransmitted.
     //
@@ -434,17 +422,6 @@ public:
     //                     0,           if no frame was decoded
     //                     < 0,         on error.
     virtual int32_t DecodeDualFrame(uint16_t maxWaitTimeMs = 200) = 0;
-
-    // Decodes a frame and sets an appropriate render time in ms relative to the system time.
-    // Should be used in conjunction with VCMFrameStorageCallback.
-    //
-    // Input:
-    //      - frameFromStorage      : Encoded frame read from file or received through
-    //                                the VCMFrameStorageCallback callback.
-    //
-    // Return value:        : VCM_OK, on success
-    //                        < 0,         on error
-    virtual int32_t DecodeFromStorage(const EncodedVideoData& frameFromStorage) = 0;
 
     // Reset the decoder state to the initial state.
     //

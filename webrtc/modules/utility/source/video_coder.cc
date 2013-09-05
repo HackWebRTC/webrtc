@@ -84,10 +84,6 @@ int32_t VideoCoder::Decode(I420VideoFrame& decodedVideo,
     }
 
     _decodedVideo = &decodedVideo;
-    if(_vcm->DecodeFromStorage(encodedData) != VCM_OK)
-    {
-        return -1;
-    }
     return 0;
 }
 

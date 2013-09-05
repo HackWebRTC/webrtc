@@ -243,27 +243,6 @@ VCMFrameBuffer::SetState(VCMFrameBufferStateEnum state) {
     _state = state;
 }
 
-int32_t
-VCMFrameBuffer::ExtractFromStorage(const EncodedVideoData& frameFromStorage) {
-    _frameType = ConvertFrameType(frameFromStorage.frameType);
-    _timeStamp = frameFromStorage.timeStamp;
-    _payloadType = frameFromStorage.payloadType;
-    _encodedWidth = frameFromStorage.encodedWidth;
-    _encodedHeight = frameFromStorage.encodedHeight;
-    _missingFrame = frameFromStorage.missingFrame;
-    _completeFrame = frameFromStorage.completeFrame;
-    _renderTimeMs = frameFromStorage.renderTimeMs;
-    _codec = frameFromStorage.codec;
-    const uint8_t *prevBuffer = _buffer;
-    if (VerifyAndAllocate(frameFromStorage.payloadSize) < 0) {
-        return VCM_MEMORY;
-    }
-    _sessionInfo.UpdateDataPointers(prevBuffer, _buffer);
-    memcpy(_buffer, frameFromStorage.payloadData, frameFromStorage.payloadSize);
-    _length = frameFromStorage.payloadSize;
-    return VCM_OK;
-}
-
 // Set counted status (as counted by JB or not)
 void VCMFrameBuffer::SetCountedFrame(bool frameCounted) {
     _frameCounted = frameCounted;

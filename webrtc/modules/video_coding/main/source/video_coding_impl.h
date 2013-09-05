@@ -188,10 +188,6 @@ public:
     virtual int32_t RegisterFrameTypeCallback(
         VCMFrameTypeCallback* frameTypeCallback);
 
-    // Register a frame storage callback.
-    virtual int32_t RegisterFrameStorageCallback(
-        VCMFrameStorageCallback* frameStorageCallback);
-
     // Nack callback
     virtual int32_t RegisterPacketRequestCallback(
         VCMPacketRequestCallback* callback);
@@ -221,11 +217,6 @@ public:
     virtual int32_t IncomingPacket(const uint8_t* incomingPayload,
                                          uint32_t payloadLength,
                                          const WebRtcRTPHeader& rtpInfo);
-
-    // A part of an encoded frame to be decoded.
-    // Used in conjunction with VCMFrameStorageCallback.
-    virtual int32_t DecodeFromStorage(
-        const EncodedVideoData& frameFromStorage);
 
     // Minimum playout delay (Used for lip-sync). This is the minimum delay
     // required to sync with audio. Not included in  VideoCodingModule::Delay()
@@ -300,7 +291,6 @@ private:
     VCMDecodedFrameCallback             _decodedFrameCallback;
     VCMDecodedFrameCallback             _dualDecodedFrameCallback;
     VCMFrameTypeCallback*               _frameTypeCallback;
-    VCMFrameStorageCallback*            _frameStorageCallback;
     VCMReceiveStatisticsCallback*       _receiveStatsCallback;
     VCMPacketRequestCallback*           _packetRequestCallback;
     VCMRenderBufferSizeCallback*        render_buffer_callback_;

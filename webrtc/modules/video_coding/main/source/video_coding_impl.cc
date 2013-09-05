@@ -59,7 +59,6 @@ VideoCodingModuleImpl::VideoCodingModuleImpl(const int32_t id,
       _decodedFrameCallback(_timing, clock_),
       _dualDecodedFrameCallback(_dualTiming, clock_),
       _frameTypeCallback(NULL),
-      _frameStorageCallback(NULL),
       _receiveStatsCallback(NULL),
       _packetRequestCallback(NULL),
       render_buffer_callback_(NULL),
@@ -712,7 +711,6 @@ VideoCodingModuleImpl::InitializeReceiver() {
     _decodedFrameCallback.SetUserReceiveCallback(NULL);
     _receiverInited = true;
     _frameTypeCallback = NULL;
-    _frameStorageCallback = NULL;
     _receiveStatsCallback = NULL;
     _packetRequestCallback = NULL;
     _keyRequestMode = kKeyOnError;
@@ -761,14 +759,6 @@ VideoCodingModuleImpl::RegisterFrameTypeCallback(
     VCMFrameTypeCallback* frameTypeCallback) {
     CriticalSectionScoped cs(_receiveCritSect);
     _frameTypeCallback = frameTypeCallback;
-    return VCM_OK;
-}
-
-int32_t
-VideoCodingModuleImpl::RegisterFrameStorageCallback(
-    VCMFrameStorageCallback* frameStorageCallback) {
-    CriticalSectionScoped cs(_receiveCritSect);
-    _frameStorageCallback = frameStorageCallback;
     return VCM_OK;
 }
 
@@ -850,13 +840,6 @@ VideoCodingModuleImpl::Decode(uint16_t maxWaitTimeMs) {
           }
         }
 #endif
-        if (_frameStorageCallback != NULL) {
-            int32_t ret = frame->Store(*_frameStorageCallback);
-            if (ret < 0) {
-                return ret;
-            }
-        }
-
         const int32_t ret = Decode(*frame);
         _receiver.ReleaseFrame(frame);
         frame = NULL;
@@ -1025,17 +1008,6 @@ VideoCodingModuleImpl::Decode(const VCMEncodedFrame& frame) {
     }
     TRACE_EVENT_ASYNC_END0("webrtc", "Video", frame.TimeStamp());
     return ret;
-}
-
-int32_t
-VideoCodingModuleImpl::DecodeFromStorage(
-    const EncodedVideoData& frameFromStorage) {
-    CriticalSectionScoped cs(_receiveCritSect);
-    int32_t ret = _frameFromFile.ExtractFromStorage(frameFromStorage);
-    if (ret < 0) {
-        return ret;
-    }
-    return Decode(_frameFromFile);
 }
 
 // Reset the decoder state

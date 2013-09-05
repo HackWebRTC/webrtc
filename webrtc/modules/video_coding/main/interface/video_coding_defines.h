@@ -80,17 +80,6 @@ class VCMPacketizationCallback {
 };
 
 // Callback class used for passing decoded frames which are ready to be rendered.
-class VCMFrameStorageCallback {
- public:
-  virtual int32_t StoreReceivedFrame(
-      const EncodedVideoData& frameToStore) = 0;
-
- protected:
-  virtual ~VCMFrameStorageCallback() {
-  }
-};
-
-// Callback class used for passing decoded frames which are ready to be rendered.
 class VCMReceiveCallback {
  public:
   virtual int32_t FrameToRender(I420VideoFrame& videoFrame) = 0;

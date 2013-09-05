@@ -150,29 +150,6 @@ const RTPFragmentationHeader* VCMEncodedFrame::FragmentationHeader() const {
 }
 
 int32_t
-VCMEncodedFrame::Store(VCMFrameStorageCallback& storeCallback) const
-{
-    EncodedVideoData frameToStore;
-    frameToStore.codec = _codec;
-    if (_buffer != NULL)
-    {
-        frameToStore.VerifyAndAllocate(_length);
-        memcpy(frameToStore.payloadData, _buffer, _length);
-        frameToStore.payloadSize = _length;
-    }
-    frameToStore.completeFrame = _completeFrame;
-    frameToStore.encodedWidth = _encodedWidth;
-    frameToStore.encodedHeight = _encodedHeight;
-    frameToStore.frameType = ConvertFrameType(_frameType);
-    frameToStore.missingFrame = _missingFrame;
-    frameToStore.payloadType = _payloadType;
-    frameToStore.renderTimeMs = _renderTimeMs;
-    frameToStore.timeStamp = _timeStamp;
-    storeCallback.StoreReceivedFrame(frameToStore);
-    return VCM_OK;
-}
-
-int32_t
 VCMEncodedFrame::VerifyAndAllocate(const uint32_t minimumSize)
 {
     if(minimumSize > _size)

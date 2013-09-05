@@ -53,7 +53,6 @@ class ViEChannel
       public VCMReceiveCallback,
       public VCMReceiveStatisticsCallback,
       public VCMPacketRequestCallback,
-      public VCMFrameStorageCallback,
       public RtcpFeedback,
       public RtpFeedback,
       public ViEFrameProviderBase {
@@ -281,10 +280,6 @@ class ViEChannel
 
   // Implements VCMReceiveCallback.
   virtual void IncomingCodecChanged(const VideoCodec& codec);
-
-  // Implements VCM.
-  virtual int32_t StoreReceivedFrame(
-      const EncodedVideoData& frame_to_store);
 
   // Implements VideoReceiveStatisticsCallback.
   virtual int32_t OnReceiveStatisticsUpdate(const uint32_t bit_rate,
