@@ -119,7 +119,7 @@
         ['target_arch=="ia32" or target_arch=="x64"', {
           'dependencies': ['audio_processing_sse2',],
         }],
-        ['target_arch=="arm" and armv7==1', {
+        ['(target_arch=="arm" and armv7==1) or target_arch=="armv7"', {
           'dependencies': ['audio_processing_neon',],
         }],
       ],
@@ -161,7 +161,7 @@
         },
       ],
     }],
-    ['target_arch=="arm" and armv7==1', {
+    ['(target_arch=="arm" and armv7==1) or target_arch=="armv7"', {
       'targets': [{
         'target_name': 'audio_processing_neon',
         'type': 'static_library',

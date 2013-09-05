@@ -93,7 +93,7 @@
         ['target_arch=="ia32" or target_arch=="x64"', {
           'dependencies': ['common_audio_sse2',],
         }],
-        ['target_arch=="arm"', {
+        ['target_arch=="arm" or target_arch=="armv7"', {
           'sources': [
             'signal_processing/complex_bit_reverse_arm.S',
             'signal_processing/spl_sqrt_floor_arm.S',
@@ -150,7 +150,7 @@
         },
       ],  # targets
     }],
-    ['target_arch=="arm" and armv7==1', {
+    ['(target_arch=="arm" and armv7==1) or target_arch=="armv7"', {
       'targets': [
         {
           'target_name': 'common_audio_neon',

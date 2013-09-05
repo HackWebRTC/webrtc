@@ -141,7 +141,7 @@
         'enable_protobuf%': 0,
         'include_tests%': 0,
       }],
-      ['target_arch=="arm"', {
+      ['target_arch=="arm" or target_arch=="armv7"', {
         'prefer_fixed_point%': 1,
       }],
     ], # conditions
@@ -195,7 +195,7 @@
           }],
         ],
       }],
-      ['target_arch=="arm"', {
+      ['target_arch=="arm" or target_arch=="armv7"', {
         'defines': [
           'WEBRTC_ARCH_ARM',
         ],
