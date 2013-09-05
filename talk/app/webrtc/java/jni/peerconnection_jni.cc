@@ -1154,8 +1154,7 @@ JOW(void, Logging_nativeEnableTracing)(
   if (nativeLevels != webrtc::kTraceNone) {
     CHECK(!webrtc::Trace::SetTraceFile(path.c_str(), false),
           "SetTraceFile failed");
-    CHECK(!webrtc::Trace::SetLevelFilter(nativeLevels),
-          "SetLevelFilter failed");
+    webrtc::Trace::set_level_filter(nativeLevels);
   }
   talk_base::LogMessage::LogToDebug(nativeSeverity);
 }

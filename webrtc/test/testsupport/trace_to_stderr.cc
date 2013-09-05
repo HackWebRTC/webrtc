@@ -23,17 +23,17 @@ static const int kLevelFilter = kTraceError | kTraceWarning | kTraceTerseInfo;
 TraceToStderr::TraceToStderr()
     : override_time_(false),
       time_seconds_(0) {
+  Trace::set_level_filter(kLevelFilter);
   Trace::CreateTrace();
   Trace::SetTraceCallback(this);
-  Trace::SetLevelFilter(kLevelFilter);
 }
 
 TraceToStderr::TraceToStderr(bool override_time)
     : override_time_(override_time),
       time_seconds_(0) {
+  Trace::set_level_filter(kLevelFilter);
   Trace::CreateTrace();
   Trace::SetTraceCallback(this);
-  Trace::SetLevelFilter(kLevelFilter);
 }
 
 TraceToStderr::~TraceToStderr() {

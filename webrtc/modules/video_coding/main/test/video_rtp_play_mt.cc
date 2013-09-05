@@ -67,7 +67,7 @@ int RtpPlayMT(const CmdArgs& args) {
   std::string trace_file = webrtc::test::OutputPath() + "receiverTestTrace.txt";
   webrtc::Trace::CreateTrace();
   webrtc::Trace::SetTraceFile(trace_file.c_str());
-  webrtc::Trace::SetLevelFilter(webrtc::kTraceAll);
+  webrtc::Trace::set_level_filter(webrtc::kTraceAll);
 
   webrtc::rtpplayer::PayloadTypes payload_types;
   payload_types.push_back(webrtc::rtpplayer::PayloadCodecTuple(

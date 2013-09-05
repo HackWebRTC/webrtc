@@ -48,10 +48,17 @@
   fun:__tz*
 }
 {
-  don't care about issues in trace functions
+  Don't care about issues in trace functions
   ThreadSanitizer:Race
   ...
   fun:webrtc::Trace::Add
+  ...
+}
+{
+  More not caring about issues in trace functions
+  ThreadSanitizer:Race
+  ...
+  fun:webrtc::Trace::set_level_filter
   ...
 }
 {

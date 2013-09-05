@@ -34,7 +34,7 @@ int GenericCodecTest::RunTest(CmdArgs& args)
     Trace::CreateTrace();
     Trace::SetTraceFile(
         (test::OutputPath() + "genericCodecTestTrace.txt").c_str());
-    Trace::SetLevelFilter(webrtc::kTraceAll);
+    Trace::set_level_filter(webrtc::kTraceAll);
     get->Perform(args);
     Trace::ReturnTrace();
     delete get;

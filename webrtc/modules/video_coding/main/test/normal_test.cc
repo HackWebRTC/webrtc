@@ -36,7 +36,7 @@ int NormalTest::RunTest(const CmdArgs& args)
     Trace::CreateTrace();
     Trace::SetTraceFile(
         (test::OutputPath() + "VCMNormalTestTrace.txt").c_str());
-    Trace::SetLevelFilter(webrtc::kTraceAll);
+    Trace::set_level_filter(webrtc::kTraceAll);
     VideoCodingModule* vcm = VideoCodingModule::Create(1, clock,
                                                        &event_factory);
     NormalTest VCMNTest(vcm, clock);

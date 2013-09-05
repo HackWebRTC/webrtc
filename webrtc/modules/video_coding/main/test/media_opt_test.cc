@@ -31,7 +31,7 @@ int MediaOptTest::RunTest(int testNum, CmdArgs& args)
 {
     Trace::CreateTrace();
     Trace::SetTraceFile((test::OutputPath() + "mediaOptTestTrace.txt").c_str());
-    Trace::SetLevelFilter(webrtc::kTraceAll);
+    Trace::set_level_filter(webrtc::kTraceAll);
     VideoCodingModule* vcm = VideoCodingModule::Create(1);
     Clock* clock = Clock::GetRealTimeClock();
     MediaOptTest* mot = new MediaOptTest(vcm, clock);

@@ -87,11 +87,8 @@ int VoiceEngine::SetTraceFilter(unsigned int filter)
                  "SetTraceFilter(filter=0x%x)", filter);
 
     // Remember old filter
-    uint32_t oldFilter = 0;
-    Trace::LevelFilter(oldFilter);
-
-    // Set new filter
-    int32_t ret = Trace::SetLevelFilter(filter);
+    uint32_t oldFilter = Trace::level_filter();
+    Trace::set_level_filter(filter);
 
     // If previous log was ignored, log again after changing filter
     if (kTraceNone == oldFilter)
@@ -100,7 +97,7 @@ int VoiceEngine::SetTraceFilter(unsigned int filter)
                      "SetTraceFilter(filter=0x%x)", filter);
     }
 
-    return (ret);
+    return 0;
 }
 
 int VoiceEngine::SetTraceFile(const char* fileNameUTF8,
