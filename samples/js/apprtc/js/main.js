@@ -170,7 +170,8 @@ function doCall() {
   var constraints = mergeConstraints(offerConstraints, sdpConstraints);
   console.log('Sending offer to peer, with constraints: \n' +
               '  \'' + JSON.stringify(constraints) + '\'.')
-  pc.createOffer(setLocalAndSendMessage, null, constraints);
+  pc.createOffer(setLocalAndSendMessage,
+                 onCreateSessionDescriptionError, constraints);
 }
 
 function calleeStart() {
@@ -182,7 +183,8 @@ function calleeStart() {
 
 function doAnswer() {
   console.log('Sending answer to peer.');
-  pc.createAnswer(setLocalAndSendMessage, null, sdpConstraints);
+  pc.createAnswer(setLocalAndSendMessage,
+                  onCreateSessionDescriptionError, sdpConstraints);
 }
 
 function mergeConstraints(cons1, cons2) {
@@ -197,7 +199,8 @@ function mergeConstraints(cons1, cons2) {
 function setLocalAndSendMessage(sessionDescription) {
   // Set Opus as the preferred codec in SDP if Opus is present.
   sessionDescription.sdp = preferOpus(sessionDescription.sdp);
-  pc.setLocalDescription(sessionDescription);
+  pc.setLocalDescription(sessionDescription,
+       onSetSessionDescriptionSuccess, onSetSessionDescriptionError);
   sendMessage(sessionDescription);
 }
 
@@ -222,13 +225,15 @@ function processSignalingMessage(message) {
     // Set Opus in Stereo, if stereo enabled.
     if (stereo)
       message.sdp = addStereo(message.sdp);
-    pc.setRemoteDescription(new RTCSessionDescription(message));
+    pc.setRemoteDescription(new RTCSessionDescription(message),
+         onSetSessionDescriptionSuccess, onSetSessionDescriptionError);
     doAnswer();
   } else if (message.type === 'answer') {
     // Set Opus in Stereo, if stereo enabled.
     if (stereo)
       message.sdp = addStereo(message.sdp);
-    pc.setRemoteDescription(new RTCSessionDescription(message));
+    pc.setRemoteDescription(new RTCSessionDescription(message),
+         onSetSessionDescriptionSuccess, onSetSessionDescriptionError);
   } else if (message.type === 'candidate') {
     var candidate = new RTCIceCandidate({sdpMLineIndex: message.label,
                                          candidate: message.candidate});
@@ -287,6 +292,18 @@ function onUserMediaError(error) {
               error.code);
   alert('Failed to get access to local media. Error code was ' +
         error.code + '.');
+}
+
+function onCreateSessionDescriptionError(error) {
+  console.log('Failed to create session description: ' + error.name);
+}
+
+function onSetSessionDescriptionSuccess() {
+  console.log('Set session description success.');
+}
+
+function onSetSessionDescriptionError(error) {
+  console.log('Failed to set session description: ' + error.name);
 }
 
 function iceCandidateType(candidateSDP) {
