@@ -35,7 +35,8 @@
 @protocol APPRTCSendMessage<NSObject>
 
 - (void)sendData:(NSData *)data;
-
+// Logging helper.
+- (void)displayLogMessage:(NSString *)message;
 @end
 
 @class APPRTCViewController;

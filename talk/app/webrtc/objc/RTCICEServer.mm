@@ -33,22 +33,25 @@
 
 @implementation RTCICEServer
 
-- (id)initWithURI:(NSURL *)URI password:(NSString *)password {
-  if (!URI || !password) {
+- (id)initWithURI:(NSURL *)URI
+         username:(NSString *)username
+         password:(NSString *)password {
+  if (!URI || !username || !password) {
     NSAssert(NO, @"nil arguments not allowed");
     self = nil;
     return nil;
   }
   if ((self = [super init])) {
     _URI = URI;
+    _username = [username copy];
     _password = [password copy];
   }
   return self;
 }
 
 - (NSString *)description {
-  return [NSString stringWithFormat:@"Server: [%@]\nPassword: [%@]",
-          [self.URI absoluteString], self.password];
+  return [NSString stringWithFormat:@"RTCICEServer: [%@:%@:%@]",
+                   [self.URI absoluteString], self.username, self.password];
 }
 
 @end
@@ -58,6 +61,7 @@
 - (webrtc::PeerConnectionInterface::IceServer)iceServer {
   webrtc::PeerConnectionInterface::IceServer iceServer;
   iceServer.uri = [[self.URI absoluteString] UTF8String];
+  iceServer.username = [self.username UTF8String];
   iceServer.password = [self.password UTF8String];
   return iceServer;
 }

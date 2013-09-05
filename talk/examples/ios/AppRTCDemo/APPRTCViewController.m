@@ -36,6 +36,7 @@
 - (void)viewDidLoad {
   [super viewDidLoad];
   self.textField.delegate = self;
+  [self.textField becomeFirstResponder];
 }
 
 - (void)displayText:(NSString *)text {

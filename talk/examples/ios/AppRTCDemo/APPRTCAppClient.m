@@ -194,14 +194,17 @@
                                                              error:&error];
       NSAssert(!error, @"Unable to parse.  %@", error.localizedDescription);
       NSString *username = json[@"username"];
-      NSString *turnServer = json[@"turn"];
       NSString *password = json[@"password"];
-      NSString *fullUrl =
-          [NSString stringWithFormat:@"turn:%@@%@", username, turnServer];
-      RTCICEServer *ICEServer =
-          [[RTCICEServer alloc] initWithURI:[NSURL URLWithString:fullUrl]
+      NSArray* uris = json[@"uris"];
+      for (int i = 0; i < [uris count]; ++i) {
+        NSString *turnServer = [uris objectAtIndex:i];
+        RTCICEServer *ICEServer =
+          [[RTCICEServer alloc] initWithURI:[NSURL URLWithString:turnServer]
+                                   username:username
                                    password:password];
-      [ICEServers addObject:ICEServer];
+        NSLog(@"Added ICE Server: %@", ICEServer);
+        [ICEServers addObject:ICEServer];
+      }
     } else {
       NSLog(@"Unable to get TURN server.  Error: %@", error.description);
     }
@@ -241,9 +244,10 @@
     [NSRegularExpression regularExpressionWithPattern:@"room is full"
                                               options:0
                                                 error:nil];
-  if ([fullRegex numberOfMatchesInString:self.roomHtml
-                                 options:0
-                                   range:NSMakeRange(0, [self.roomHtml length])]) {
+  if ([fullRegex
+          numberOfMatchesInString:self.roomHtml
+                          options:0
+                            range:NSMakeRange(0, [self.roomHtml length])]) {
     [self showMessage:@"Room full"];
     return;
   }
@@ -252,7 +256,8 @@
   NSString *fullUrl = [[[connection originalRequest] URL] absoluteString];
   NSRange queryRange = [fullUrl rangeOfString:@"?"];
   self.baseURL = [fullUrl substringToIndex:queryRange.location];
-  [self maybeLogMessage:[NSString stringWithFormat:@"Base URL: %@", self.baseURL]];
+  [self maybeLogMessage:
+      [NSString stringWithFormat:@"Base URL: %@", self.baseURL]];
 
   self.token = [self findVar:@"channelToken" strippingQuotes:YES];
   if (!self.token)
@@ -286,11 +291,15 @@
   NSDictionary *json =
       [NSJSONSerialization JSONObjectWithData:pcData options:0 error:&error];
   NSAssert(!error, @"Unable to parse.  %@", error.localizedDescription);
-  NSArray *servers = [json objectForKey:@"ICEServers"];
+  NSArray *servers = [json objectForKey:@"iceServers"];
   NSMutableArray *ICEServers = [NSMutableArray array];
   for (NSDictionary *server in servers) {
     NSString *url = [server objectForKey:@"url"];
+    NSString *username = json[@"username"];
     NSString *credential = [server objectForKey:@"credential"];
+    if (!username) {
+      username = @"";
+    }
     if (!credential) {
       credential = @"";
     }
@@ -300,7 +309,9 @@
                 credential]];
     RTCICEServer *ICEServer =
         [[RTCICEServer alloc] initWithURI:[NSURL URLWithString:url]
+                                 username:username
                                  password:credential];
+    NSLog(@"Added ICE Server: %@", ICEServer);
     [ICEServers addObject:ICEServer];
   }
   [self updateICEServers:ICEServers withTurnServer:turnServerUrl];

@@ -30,14 +30,15 @@
 // RTCICEServer allows for the creation of ICEServer structs.
 @interface RTCICEServer : NSObject
 
-// The server URI.
+// The server URI, username, and password.
 @property(nonatomic, strong, readonly) NSURL* URI;
-
-// The server password.
+@property(nonatomic, copy, readonly) NSString* username;
 @property(nonatomic, copy, readonly) NSString* password;
 
 // Initializer for RTCICEServer taking uri and password.
-- (id)initWithURI:(NSString*)URI password:(NSString*)password;
+- (id)initWithURI:(NSString*)URI
+         username:(NSString*)username
+         password:(NSString*)password;
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // Disallow init and don't add to documentation
