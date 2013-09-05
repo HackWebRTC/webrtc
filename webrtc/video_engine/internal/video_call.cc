@@ -95,11 +95,25 @@ VideoSendStream* VideoCall::CreateSendStream(
 
 SendStreamState* VideoCall::DestroySendStream(
     webrtc::VideoSendStream* send_stream) {
-  if (send_stream == NULL) {
-    return NULL;
+  assert(send_stream != NULL);
+
+  VideoSendStream* send_stream_impl = NULL;
+  {
+    WriteLockScoped write_lock(*send_lock_);
+    for (std::map<uint32_t, VideoSendStream*>::iterator it =
+             send_ssrcs_.begin();
+         it != send_ssrcs_.end();
+         ++it) {
+      if (it->second == static_cast<VideoSendStream*>(send_stream)) {
+        send_stream_impl = it->second;
+        send_ssrcs_.erase(it);
+        break;
+      }
+    }
   }
-  // TODO(pbos): Remove it properly! Free the SSRCs!
-  delete static_cast<VideoSendStream*>(send_stream);
+
+  assert(send_stream_impl != NULL);
+  delete send_stream_impl;
 
   // TODO(pbos): Return its previous state
   return NULL;
@@ -122,11 +136,25 @@ VideoReceiveStream* VideoCall::CreateReceiveStream(
 
 void VideoCall::DestroyReceiveStream(
     webrtc::VideoReceiveStream* receive_stream) {
-  if (receive_stream == NULL) {
-    return;
+  assert(receive_stream != NULL);
+
+  VideoReceiveStream* receive_stream_impl = NULL;
+  {
+    WriteLockScoped write_lock(*receive_lock_);
+    for (std::map<uint32_t, VideoReceiveStream*>::iterator it =
+             receive_ssrcs_.begin();
+         it != receive_ssrcs_.end();
+         ++it) {
+      if (it->second == static_cast<VideoReceiveStream*>(receive_stream)) {
+        receive_stream_impl = it->second;
+        receive_ssrcs_.erase(it);
+        break;
+      }
+    }
   }
-  // TODO(pbos): Remove its SSRCs!
-  delete static_cast<VideoReceiveStream*>(receive_stream);
+
+  assert(receive_stream_impl != NULL);
+  delete receive_stream_impl;
 }
 
 uint32_t VideoCall::SendBitrateEstimate() {

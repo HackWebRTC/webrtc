@@ -256,13 +256,17 @@ class EngineTest : public ::testing::TestWithParam<EngineTestParams> {
 
   void StopSending() {
     frame_generator_capturer_->Stop();
-    send_stream_->StopSend();
-    receive_stream_->StopReceive();
+    if (send_stream_ != NULL)
+      send_stream_->StopSend();
+    if (receive_stream_ != NULL)
+      receive_stream_->StopReceive();
   }
 
   void DestroyStreams() {
-    sender_call_->DestroySendStream(send_stream_);
-    receiver_call_->DestroyReceiveStream(receive_stream_);
+    if (send_stream_ != NULL)
+      sender_call_->DestroySendStream(send_stream_);
+    if (receive_stream_ != NULL)
+      receiver_call_->DestroyReceiveStream(receive_stream_);
     send_stream_= NULL;
     receive_stream_ = NULL;
   }
@@ -551,6 +555,60 @@ TEST_P(EngineTest, ReceivesPliAndRecoversWithNack) {
 // TODO(pbos): Enable this when 2250 is resolved.
 TEST_P(EngineTest, DISABLED_ReceivesPliAndRecoversWithoutNack) {
   ReceivesPliAndRecovers(0);
+}
+
+TEST_P(EngineTest, SurvivesIncomingRtpPacketsToDestroyedReceiveStream) {
+  class PacketInputObserver : public PacketReceiver {
+   public:
+    explicit PacketInputObserver(PacketReceiver* receiver)
+        : receiver_(receiver), delivered_packet_(EventWrapper::Create()) {}
+
+    EventTypeWrapper Wait() {
+      return delivered_packet_->Wait(30 * 1000);
+    }
+
+   private:
+    virtual bool DeliverPacket(const uint8_t* packet, size_t length) {
+      if (RtpHeaderParser::IsRtcp(packet, static_cast<int>(length))) {
+        return receiver_->DeliverPacket(packet, length);
+      } else {
+        EXPECT_FALSE(receiver_->DeliverPacket(packet, length));
+        delivered_packet_->Set();
+        return false;
+      }
+    }
+
+    PacketReceiver* receiver_;
+    scoped_ptr<EventWrapper> delivered_packet_;
+  };
+
+  test::DirectTransport send_transport, receive_transport;
+
+  CreateCalls(&send_transport, &receive_transport);
+  PacketInputObserver input_observer(receiver_call_->Receiver());
+
+  send_transport.SetReceiver(&input_observer);
+  receive_transport.SetReceiver(sender_call_->Receiver());
+
+  CreateTestConfigs();
+
+  CreateStreams();
+  CreateFrameGenerator();
+
+  StartSending();
+
+  receiver_call_->DestroyReceiveStream(receive_stream_);
+  receive_stream_ = NULL;
+
+  // Wait() waits for a received packet.
+  EXPECT_EQ(kEventSignaled, input_observer.Wait());
+
+  StopSending();
+
+  DestroyStreams();
+
+  send_transport.StopSending();
+  receive_transport.StopSending();
 }
 
 INSTANTIATE_TEST_CASE_P(EngineTest, EngineTest, ::testing::Values(video_vga));
