@@ -99,6 +99,7 @@
   NSString *stunURL = @"stun:stun.l.google.com:19302";
   RTCICEServer *stunServer =
       [[RTCICEServer alloc] initWithURI:[NSURL URLWithString:stunURL]
+                               username:@""
                                password:@""];
   NSArray *iceServers = @[stunServer];
 
