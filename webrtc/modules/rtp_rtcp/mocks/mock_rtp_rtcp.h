@@ -218,7 +218,7 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(SetCameraDelay,
       int32_t(const int32_t delayMS));
   MOCK_METHOD1(SetTargetSendBitrate,
-      void(const uint32_t bitrate));
+      void(const std::vector<uint32_t>& stream_bitrates));
   MOCK_METHOD3(SetGenericFECStatus,
       int32_t(const bool enable, const uint8_t payloadTypeRED, const uint8_t payloadTypeFEC));
   MOCK_METHOD3(GenericFECStatus,

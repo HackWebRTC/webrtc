@@ -679,7 +679,8 @@ class RtpRtcp : public Module {
     /*
     *   Set the target send bitrate
     */
-    virtual void SetTargetSendBitrate(const uint32_t bitrate) = 0;
+    virtual void SetTargetSendBitrate(
+        const std::vector<uint32_t>& stream_bitrates) = 0;
 
     /*
     *   Turn on/off generic FEC

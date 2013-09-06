@@ -211,7 +211,7 @@ TEST_F(PacedSenderTest, Padding) {
   uint16_t sequence_number = 1234;
   int64_t capture_time_ms = 56789;
 
-  send_bucket_->UpdateBitrate(kTargetBitrate, kTargetBitrate);
+  send_bucket_->UpdateBitrate(kTargetBitrate, kTargetBitrate, kTargetBitrate);
   // Due to the multiplicative factor we can send 3 packets not 2 packets.
   SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
                       capture_time_ms, 250);
@@ -237,7 +237,7 @@ TEST_F(PacedSenderTest, Padding) {
 
 TEST_F(PacedSenderTest, NoPaddingWhenDisabled) {
   send_bucket_->SetStatus(false);
-  send_bucket_->UpdateBitrate(kTargetBitrate, kTargetBitrate);
+  send_bucket_->UpdateBitrate(kTargetBitrate, kTargetBitrate, kTargetBitrate);
   // No padding is expected since the pacer is disabled.
   EXPECT_CALL(callback_, TimeToSendPadding(_)).Times(0);
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
@@ -257,7 +257,7 @@ TEST_F(PacedSenderTest, VerifyPaddingUpToBitrate) {
   int64_t capture_time_ms = 56789;
   const int kTimeStep = 5;
   const int64_t kBitrateWindow = 100;
-  send_bucket_->UpdateBitrate(kTargetBitrate, kTargetBitrate);
+  send_bucket_->UpdateBitrate(kTargetBitrate, kTargetBitrate, kTargetBitrate);
   int64_t start_time = TickTime::MillisecondTimestamp();
   while (TickTime::MillisecondTimestamp() - start_time < kBitrateWindow) {
     SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
@@ -276,7 +276,9 @@ TEST_F(PacedSenderTest, VerifyMaxPaddingBitrate) {
   const int kTimeStep = 5;
   const int64_t kBitrateWindow = 100;
   const int kTargetBitrate = 1500;
-  send_bucket_->UpdateBitrate(kTargetBitrate, kTargetBitrate);
+  const int kMaxPaddingBitrate = 800;
+  send_bucket_->UpdateBitrate(kTargetBitrate, kMaxPaddingBitrate,
+                              kTargetBitrate);
   int64_t start_time = TickTime::MillisecondTimestamp();
   while (TickTime::MillisecondTimestamp() - start_time < kBitrateWindow) {
     SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
@@ -298,7 +300,7 @@ TEST_F(PacedSenderTest, VerifyAverageBitrateVaryingMediaPayload) {
   send_bucket_.reset(new PacedSender(&callback, kTargetBitrate,
                                      kPaceMultiplier));
   send_bucket_->SetStatus(true);
-  send_bucket_->UpdateBitrate(kTargetBitrate, kTargetBitrate);
+  send_bucket_->UpdateBitrate(kTargetBitrate, kTargetBitrate, kTargetBitrate);
   int64_t start_time = TickTime::MillisecondTimestamp();
   int media_bytes = 0;
   while (TickTime::MillisecondTimestamp() - start_time < kBitrateWindow) {

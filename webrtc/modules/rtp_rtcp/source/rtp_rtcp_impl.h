@@ -303,7 +303,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
   virtual int32_t SetCameraDelay(const int32_t delay_ms) OVERRIDE;
 
-  virtual void SetTargetSendBitrate(const uint32_t bitrate) OVERRIDE;
+  virtual void SetTargetSendBitrate(
+      const std::vector<uint32_t>& stream_bitrates) OVERRIDE;
 
   virtual int32_t SetGenericFECStatus(
       const bool enable,

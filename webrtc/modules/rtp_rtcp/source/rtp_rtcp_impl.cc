@@ -1254,42 +1254,35 @@ RtpVideoCodecTypes ModuleRtpRtcpImpl::SendVideoCodec() const {
   return rtp_sender_.VideoCodecType();
 }
 
-void ModuleRtpRtcpImpl::SetTargetSendBitrate(const uint32_t bitrate) {
+void ModuleRtpRtcpImpl::SetTargetSendBitrate(
+    const std::vector<uint32_t>& stream_bitrates) {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_,
-               "SetTargetSendBitrate: %ubit", bitrate);
+               "SetTargetSendBitrate: %ld streams", stream_bitrates.size());
 
   const bool have_child_modules(child_modules_.empty() ? false : true);
   if (have_child_modules) {
     CriticalSectionScoped lock(critical_section_module_ptrs_.get());
     if (simulcast_) {
-      uint32_t bitrate_remainder = bitrate;
       std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
-      for (int i = 0; it != child_modules_.end() &&
-           i < send_video_codec_.numberOfSimulcastStreams; ++it) {
+      for (size_t i = 0;
+           it != child_modules_.end() && i < stream_bitrates.size(); ++it) {
         if ((*it)->SendingMedia()) {
           RTPSender& rtp_sender = (*it)->rtp_sender_;
-          if (send_video_codec_.simulcastStream[i].maxBitrate * 1000 >
-              bitrate_remainder) {
-            rtp_sender.SetTargetSendBitrate(bitrate_remainder);
-            bitrate_remainder = 0;
-          } else {
-            rtp_sender.SetTargetSendBitrate(
-              send_video_codec_.simulcastStream[i].maxBitrate * 1000);
-            bitrate_remainder -=
-              send_video_codec_.simulcastStream[i].maxBitrate * 1000;
-          }
+          rtp_sender.SetTargetSendBitrate(stream_bitrates[i]);
           ++i;
         }
       }
     } else {
+      assert(stream_bitrates.size() == 1);
       std::list<ModuleRtpRtcpImpl*>::iterator it = child_modules_.begin();
       for (; it != child_modules_.end(); ++it) {
         RTPSender& rtp_sender = (*it)->rtp_sender_;
-        rtp_sender.SetTargetSendBitrate(bitrate);
+        rtp_sender.SetTargetSendBitrate(stream_bitrates[0]);
       }
     }
   } else {
-    rtp_sender_.SetTargetSendBitrate(bitrate);
+    assert(stream_bitrates.size() == 1);
+    rtp_sender_.SetTargetSendBitrate(stream_bitrates[0]);
   }
 }
 
