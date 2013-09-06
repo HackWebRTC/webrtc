@@ -15,6 +15,7 @@
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
 #include "webrtc/common_audio/resampler/sinusoidal_linear_chirp_source.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -38,6 +39,59 @@ class PushSincResamplerTest
   double rms_error_;
   double low_freq_error_;
 };
+
+class ZeroSource : public SincResamplerCallback {
+ public:
+  void Run(int frames, float* destination) {
+    memset(destination, 0, sizeof(float) * frames);
+  }
+};
+
+// Disabled because it takes too long to run routinely. Use for performance
+// benchmarking when needed.
+TEST_P(PushSincResamplerTest, DISABLED_ResampleBenchmark) {
+  const int input_samples = input_rate_ / 100;
+  const int output_samples = output_rate_ / 100;
+  const int kResampleIterations = 200000;
+
+  // Source for data to be resampled.
+  ZeroSource resampler_source;
+
+  scoped_array<float> resampled_destination(new float[output_samples]);
+  scoped_array<float> source(new float[input_samples]);
+  scoped_array<int16_t> source_int(new int16_t[input_samples]);
+  scoped_array<int16_t> destination_int(new int16_t[output_samples]);
+
+  resampler_source.Run(input_samples, source.get());
+  for (int i = 0; i < input_samples; ++i) {
+    source_int[i] = static_cast<int16_t>(floor(32767 * source[i] + 0.5));
+  }
+
+  printf("Benchmarking %d iterations of %d Hz -> %d Hz:\n",
+         kResampleIterations, input_rate_, output_rate_);
+  const double io_ratio = input_rate_ / static_cast<double>(output_rate_);
+  SincResampler sinc_resampler(io_ratio, SincResampler::kDefaultRequestSize,
+                               &resampler_source);
+  TickTime start = TickTime::Now();
+  for (int i = 0; i < kResampleIterations; ++i) {
+    sinc_resampler.Resample(output_samples, resampled_destination.get());
+  }
+  double total_time_sinc_us = (TickTime::Now() - start).Microseconds();
+  printf("SincResampler took %.2f us per frame.\n",
+         total_time_sinc_us / kResampleIterations);
+
+  PushSincResampler resampler(input_samples, output_samples);
+  start = TickTime::Now();
+  for (int i = 0; i < kResampleIterations; ++i) {
+    EXPECT_EQ(output_samples,
+              resampler.Resample(source_int.get(), input_samples,
+                                 destination_int.get(), output_samples));
+  }
+  double total_time_us = (TickTime::Now() - start).Microseconds();
+  printf("PushSincResampler took %.2f us per frame; which is a %.1f%% overhead "
+         "on SincResampler.\n\n", total_time_us / kResampleIterations,
+         (total_time_us - total_time_sinc_us) / total_time_sinc_us * 100);
+}
 
 // Tests resampling using a given input and output sample rate.
 TEST_P(PushSincResamplerTest, Resample) {
