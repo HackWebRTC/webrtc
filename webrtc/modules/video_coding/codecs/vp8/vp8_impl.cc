@@ -23,9 +23,10 @@
 #include "vpx/vp8cx.h"
 #include "vpx/vp8dx.h"
 
+#include "webrtc/common.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/interface/module_common_types.h"
-#include "webrtc/modules/video_coding/codecs/vp8/default_temporal_layers.h"
+#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/codecs/vp8/reference_picture_selection.h"
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
@@ -153,10 +154,16 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
     codec_ = *inst;
   }
 
+  // TODO(andresp): assert(inst->extra_options) and cleanup.
+  Config default_options;
+  const Config& options =
+      inst->extra_options ? *inst->extra_options : default_options;
+
   int num_temporal_layers = inst->codecSpecific.VP8.numberOfTemporalLayers > 1 ?
       inst->codecSpecific.VP8.numberOfTemporalLayers : 1;
   assert(temporal_layers_ == NULL);
-  temporal_layers_ = new DefaultTemporalLayers(num_temporal_layers, rand());
+  temporal_layers_ = options.Get<TemporalLayers::Factory>()
+                         .Create(num_temporal_layers, rand());
   // random start 16 bits is enough.
   picture_id_ = static_cast<uint16_t>(rand()) & 0x7FFF;
 
