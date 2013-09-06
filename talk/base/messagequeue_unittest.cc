@@ -130,7 +130,25 @@ TEST_F(MessageQueueTest, DiposeHandlerWithPostedMessagePending) {
   EXPECT_TRUE(deleted);
 }
 
-TEST(MessageQueueManager, DISABLED_Clear) {
+struct UnwrapMainThreadScope {
+  UnwrapMainThreadScope() : rewrap_(Thread::Current() != NULL) {
+    if (rewrap_) ThreadManager::Instance()->UnwrapCurrentThread();
+  }
+  ~UnwrapMainThreadScope() {
+    if (rewrap_) ThreadManager::Instance()->WrapCurrentThread();
+  }
+ private:
+  bool rewrap_;
+};
+
+TEST(MessageQueueManager, Clear) {
+  UnwrapMainThreadScope s;
+  if (MessageQueueManager::IsInitialized()) {
+    LOG(LS_INFO) << "Unable to run MessageQueueManager::Clear test, since the "
+                 << "MessageQueueManager was already initialized by some "
+                 << "other test in this run.";
+    return;
+  }
   bool deleted = false;
   DeletedMessageHandler* handler = new DeletedMessageHandler(&deleted);
   delete handler;

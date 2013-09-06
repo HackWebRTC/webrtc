@@ -40,27 +40,19 @@
 
 namespace cricket {
 
+using talk_base::Bind;
+
 enum {
-  MSG_CREATECHANNEL = 1,
-  MSG_DESTROYCHANNEL = 2,
-  MSG_DESTROYALLCHANNELS = 3,
-  MSG_CONNECTCHANNELS = 4,
-  MSG_RESETCHANNELS = 5,
-  MSG_ONSIGNALINGREADY = 6,
-  MSG_ONREMOTECANDIDATE = 7,
-  MSG_READSTATE = 8,
-  MSG_WRITESTATE = 9,
-  MSG_REQUESTSIGNALING = 10,
-  MSG_CANDIDATEREADY = 11,
-  MSG_ROUTECHANGE = 12,
-  MSG_CONNECTING = 13,
-  MSG_CANDIDATEALLOCATIONCOMPLETE = 14,
-  MSG_ROLECONFLICT = 15,
-  MSG_SETICEROLE = 16,
-  MSG_SETLOCALDESCRIPTION = 17,
-  MSG_SETREMOTEDESCRIPTION = 18,
-  MSG_GETSTATS = 19,
-  MSG_SETIDENTITY = 20,
+  MSG_ONSIGNALINGREADY = 1,
+  MSG_ONREMOTECANDIDATE,
+  MSG_READSTATE,
+  MSG_WRITESTATE,
+  MSG_REQUESTSIGNALING,
+  MSG_CANDIDATEREADY,
+  MSG_ROUTECHANGE,
+  MSG_CONNECTING,
+  MSG_CANDIDATEALLOCATIONCOMPLETE,
+  MSG_ROLECONFLICT,
 };
 
 struct ChannelParams : public talk_base::MessageData {
@@ -79,36 +71,6 @@ struct ChannelParams : public talk_base::MessageData {
   int component;
   TransportChannelImpl* channel;
   Candidate* candidate;
-};
-
-struct TransportDescriptionParams : public talk_base::MessageData {
-  TransportDescriptionParams(const TransportDescription& desc,
-                             ContentAction action)
-      : desc(desc), action(action), result(false) {}
-  const TransportDescription& desc;
-  ContentAction action;
-  bool result;
-};
-
-struct IceRoleParam : public talk_base::MessageData {
-  explicit IceRoleParam(IceRole role) : role(role) {}
-
-  IceRole role;
-};
-
-struct StatsParam : public talk_base::MessageData {
-  explicit StatsParam(TransportStats* stats)
-      : stats(stats), result(false) {}
-
-  TransportStats* stats;
-  bool result;
-};
-
-struct IdentityParam : public talk_base::MessageData {
-  explicit IdentityParam(talk_base::SSLIdentity* identity)
-      : identity(identity) {}
-
-  talk_base::SSLIdentity* identity;
 };
 
 Transport::Transport(talk_base::Thread* signaling_thread,
@@ -138,33 +100,28 @@ Transport::~Transport() {
 }
 
 void Transport::SetIceRole(IceRole role) {
-  IceRoleParam param(role);
-  worker_thread()->Send(this, MSG_SETICEROLE, &param);
+  worker_thread_->Invoke<void>(Bind(&Transport::SetIceRole_w, this, role));
 }
 
 void Transport::SetIdentity(talk_base::SSLIdentity* identity) {
-  IdentityParam params(identity);
-  worker_thread()->Send(this, MSG_SETIDENTITY, &params);
+  worker_thread_->Invoke<void>(Bind(&Transport::SetIdentity_w, this, identity));
 }
 
 bool Transport::SetLocalTransportDescription(
     const TransportDescription& description, ContentAction action) {
-  TransportDescriptionParams params(description, action);
-  worker_thread()->Send(this, MSG_SETLOCALDESCRIPTION, &params);
-  return params.result;
+  return worker_thread_->Invoke<bool>(Bind(
+      &Transport::SetLocalTransportDescription_w, this, description, action));
 }
 
 bool Transport::SetRemoteTransportDescription(
     const TransportDescription& description, ContentAction action) {
-  TransportDescriptionParams params(description, action);
-  worker_thread()->Send(this, MSG_SETREMOTEDESCRIPTION, &params);
-  return params.result;
+  return worker_thread_->Invoke<bool>(Bind(
+      &Transport::SetRemoteTransportDescription_w, this, description, action));
 }
 
 TransportChannelImpl* Transport::CreateChannel(int component) {
-  ChannelParams params(component);
-  worker_thread()->Send(this, MSG_CREATECHANNEL, &params);
-  return params.channel;
+  return worker_thread_->Invoke<TransportChannelImpl*>(Bind(
+      &Transport::CreateChannel_w, this, component));
 }
 
 TransportChannelImpl* Transport::CreateChannel_w(int component) {
@@ -236,8 +193,8 @@ bool Transport::HasChannels() {
 }
 
 void Transport::DestroyChannel(int component) {
-  ChannelParams params(component);
-  worker_thread()->Send(this, MSG_DESTROYCHANNEL, &params);
+  worker_thread_->Invoke<void>(Bind(
+      &Transport::DestroyChannel_w, this, component));
 }
 
 void Transport::DestroyChannel_w(int component) {
@@ -271,7 +228,7 @@ void Transport::DestroyChannel_w(int component) {
 
 void Transport::ConnectChannels() {
   ASSERT(signaling_thread()->IsCurrent());
-  worker_thread()->Send(this, MSG_CONNECTCHANNELS, NULL);
+  worker_thread_->Invoke<void>(Bind(&Transport::ConnectChannels_w, this));
 }
 
 void Transport::ConnectChannels_w() {
@@ -312,7 +269,8 @@ void Transport::OnConnecting_s() {
 
 void Transport::DestroyAllChannels() {
   ASSERT(signaling_thread()->IsCurrent());
-  worker_thread()->Send(this, MSG_DESTROYALLCHANNELS, NULL);
+  worker_thread_->Invoke<void>(
+      Bind(&Transport::DestroyAllChannels_w, this));
   worker_thread()->Clear(this);
   signaling_thread()->Clear(this);
   destroyed_ = true;
@@ -340,7 +298,7 @@ void Transport::DestroyAllChannels_w() {
 
 void Transport::ResetChannels() {
   ASSERT(signaling_thread()->IsCurrent());
-  worker_thread()->Send(this, MSG_RESETCHANNELS, NULL);
+  worker_thread_->Invoke<void>(Bind(&Transport::ResetChannels_w, this));
 }
 
 void Transport::ResetChannels_w() {
@@ -404,9 +362,8 @@ bool Transport::VerifyCandidate(const Candidate& cand, std::string* error) {
 
 bool Transport::GetStats(TransportStats* stats) {
   ASSERT(signaling_thread()->IsCurrent());
-  StatsParam params(stats);
-  worker_thread()->Send(this, MSG_GETSTATS, &params);
-  return params.result;
+  return worker_thread_->Invoke<bool>(Bind(
+      &Transport::GetStats_w, this, stats));
 }
 
 bool Transport::GetStats_w(TransportStats* stats) {
@@ -427,8 +384,8 @@ bool Transport::GetStats_w(TransportStats* stats) {
 }
 
 bool Transport::GetSslRole(talk_base::SSLRole* ssl_role) const {
-  return worker_thread_->Invoke<bool>(
-      Bind(&Transport::GetSslRole_w, this, ssl_role));
+  return worker_thread_->Invoke<bool>(Bind(
+      &Transport::GetSslRole_w, this, ssl_role));
 }
 
 void Transport::OnRemoteCandidates(const std::vector<Candidate>& candidates) {
@@ -740,25 +697,6 @@ bool Transport::NegotiateTransportDescription_w(ContentAction local_role) {
 
 void Transport::OnMessage(talk_base::Message* msg) {
   switch (msg->message_id) {
-    case MSG_CREATECHANNEL: {
-        ChannelParams* params = static_cast<ChannelParams*>(msg->pdata);
-        params->channel = CreateChannel_w(params->component);
-      }
-      break;
-    case MSG_DESTROYCHANNEL: {
-        ChannelParams* params = static_cast<ChannelParams*>(msg->pdata);
-        DestroyChannel_w(params->component);
-      }
-      break;
-    case MSG_CONNECTCHANNELS:
-      ConnectChannels_w();
-      break;
-    case MSG_RESETCHANNELS:
-      ResetChannels_w();
-      break;
-    case MSG_DESTROYALLCHANNELS:
-      DestroyAllChannels_w();
-      break;
     case MSG_ONSIGNALINGREADY:
       CallChannels_w(&TransportChannelImpl::OnSignalingReady);
       break;
@@ -797,36 +735,6 @@ void Transport::OnMessage(talk_base::Message* msg) {
       break;
     case MSG_ROLECONFLICT:
       SignalRoleConflict();
-      break;
-    case MSG_SETICEROLE: {
-        IceRoleParam* param =
-            static_cast<IceRoleParam*>(msg->pdata);
-        SetIceRole_w(param->role);
-      }
-      break;
-    case MSG_SETLOCALDESCRIPTION: {
-        TransportDescriptionParams* params =
-            static_cast<TransportDescriptionParams*>(msg->pdata);
-        params->result = SetLocalTransportDescription_w(params->desc,
-                                                        params->action);
-      }
-      break;
-    case MSG_SETREMOTEDESCRIPTION: {
-        TransportDescriptionParams* params =
-            static_cast<TransportDescriptionParams*>(msg->pdata);
-        params->result = SetRemoteTransportDescription_w(params->desc,
-                                                         params->action);
-      }
-      break;
-    case MSG_GETSTATS: {
-        StatsParam* params = static_cast<StatsParam*>(msg->pdata);
-        params->result = GetStats_w(params->stats);
-      }
-      break;
-    case MSG_SETIDENTITY: {
-        IdentityParam* params = static_cast<IdentityParam*>(msg->pdata);
-        SetIdentity_w(params->identity);
-      }
       break;
   }
 }

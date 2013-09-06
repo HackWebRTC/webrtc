@@ -103,6 +103,7 @@ VideoCapturer::VideoCapturer(talk_base::Thread* thread) : thread_(thread) {
 void VideoCapturer::Construct() {
   ClearAspectRatio();
   enable_camera_list_ = false;
+  square_pixel_aspect_ratio_ = false;
   capture_state_ = CS_STOPPED;
   SignalFrameCaptured.connect(this, &VideoCapturer::OnFrameCaptured);
   scaled_width_ = 0;
@@ -335,18 +336,19 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
                    desired_screencast_fps, &scaled_width, &scaled_height);
     }
 
-    if (scaled_width != scaled_width_ || scaled_height != scaled_height_) {
-      LOG(LS_VERBOSE) << "Scaling Screencast from "
-                      << captured_frame->width << "x"
-                      << captured_frame->height << " to "
-                      << scaled_width << "x" << scaled_height;
-      scaled_width_ = scaled_width;
-      scaled_height_ = scaled_height;
-    }
     if (FOURCC_ARGB == captured_frame->fourcc &&
         (scaled_width != captured_frame->width ||
-         scaled_height != captured_frame->height)) {
-      CapturedFrame* scaled_frame = const_cast<CapturedFrame*>(captured_frame);
+        scaled_height != captured_frame->height)) {
+      if (scaled_width != scaled_width_ || scaled_height != scaled_height_) {
+        LOG(LS_INFO) << "Scaling Screencast from "
+                     << captured_frame->width << "x"
+                     << captured_frame->height << " to "
+                     << scaled_width << "x" << scaled_height;
+        scaled_width_ = scaled_width;
+        scaled_height_ = scaled_height;
+      }
+      CapturedFrame* modified_frame =
+          const_cast<CapturedFrame*>(captured_frame);
       // Compute new width such that width * height is less than maximum but
       // maintains original captured frame aspect ratio.
       // Round down width to multiple of 4 so odd width won't round up beyond
@@ -355,17 +357,88 @@ void VideoCapturer::OnFrameCaptured(VideoCapturer*,
       libyuv::ARGBScale(reinterpret_cast<const uint8*>(captured_frame->data),
                         captured_frame->width * 4, captured_frame->width,
                         captured_frame->height,
-                        reinterpret_cast<uint8*>(scaled_frame->data),
+                        reinterpret_cast<uint8*>(modified_frame->data),
                         scaled_width * 4, scaled_width, scaled_height,
                         libyuv::kFilterBilinear);
-      scaled_frame->width = scaled_width;
-      scaled_frame->height = scaled_height;
-      scaled_frame->data_size = scaled_width * 4 * scaled_height;
+      modified_frame->width = scaled_width;
+      modified_frame->height = scaled_height;
+      modified_frame->data_size = scaled_width * 4 * scaled_height;
     }
   }
+
+  const int kYuy2Bpp = 2;
+  const int kArgbBpp = 4;
+  // TODO(fbarchard): Make a helper function to adjust pixels to square.
+  // TODO(fbarchard): Hook up experiment to scaling.
+  // TODO(fbarchard): Avoid scale and convert if muted.
+  // Temporary buffer is scoped here so it will persist until i420_frame.Init()
+  // makes a copy of the frame, converting to I420.
+  talk_base::scoped_array<uint8> temp_buffer;
+  // YUY2 can be scaled vertically using an ARGB scaler.  Aspect ratio is only
+  // a problem on OSX.  OSX always converts webcams to YUY2 or UYVY.
+  bool can_scale =
+      FOURCC_YUY2 == CanonicalFourCC(captured_frame->fourcc) ||
+      FOURCC_UYVY == CanonicalFourCC(captured_frame->fourcc);
+
+  // If pixels are not square, optionally use vertical scaling to make them
+  // square.  Square pixels simplify the rest of the pipeline, including
+  // effects and rendering.
+  if (can_scale && square_pixel_aspect_ratio_ &&
+      captured_frame->pixel_width != captured_frame->pixel_height) {
+    int scaled_width, scaled_height;
+    // modified_frame points to the captured_frame but with const casted away
+    // so it can be modified.
+    CapturedFrame* modified_frame = const_cast<CapturedFrame*>(captured_frame);
+    // Compute the frame size that makes pixels square pixel aspect ratio.
+    ComputeScaleToSquarePixels(captured_frame->width, captured_frame->height,
+                               captured_frame->pixel_width,
+                               captured_frame->pixel_height,
+                               &scaled_width, &scaled_height);
+
+    if (scaled_width != scaled_width_ || scaled_height != scaled_height_) {
+      LOG(LS_INFO) << "Scaling WebCam from "
+                   << captured_frame->width << "x"
+                   << captured_frame->height << " to "
+                   << scaled_width << "x" << scaled_height
+                   << " for PAR "
+                   << captured_frame->pixel_width << "x"
+                   << captured_frame->pixel_height;
+      scaled_width_ = scaled_width;
+      scaled_height_ = scaled_height;
+    }
+    const int modified_frame_size = scaled_width * scaled_height * kYuy2Bpp;
+    uint8* temp_buffer_data;
+    // Pixels are wide and short; Increasing height. Requires temporary buffer.
+    if (scaled_height > captured_frame->height) {
+      temp_buffer.reset(new uint8[modified_frame_size]);
+      temp_buffer_data = temp_buffer.get();
+    } else {
+      // Pixels are narrow and tall; Decreasing height. Scale will be done
+      // in place.
+      temp_buffer_data = reinterpret_cast<uint8*>(captured_frame->data);
+    }
+
+    // Use ARGBScaler to vertically scale the YUY2 image, adjusting for 16 bpp.
+    libyuv::ARGBScale(reinterpret_cast<const uint8*>(captured_frame->data),
+                      captured_frame->width * kYuy2Bpp,  // Stride for YUY2.
+                      captured_frame->width * kYuy2Bpp / kArgbBpp,  // Width.
+                      abs(captured_frame->height),  // Height.
+                      temp_buffer_data,
+                      scaled_width * kYuy2Bpp,  // Stride for YUY2.
+                      scaled_width * kYuy2Bpp / kArgbBpp,  // Width.
+                      abs(scaled_height),  // New height.
+                      libyuv::kFilterBilinear);
+    modified_frame->width = scaled_width;
+    modified_frame->height = scaled_height;
+    modified_frame->pixel_width = 1;
+    modified_frame->pixel_height = 1;
+    modified_frame->data_size = modified_frame_size;
+    modified_frame->data = temp_buffer_data;
+  }
 #endif  // !DISABLE_YUV
-        // Size to crop captured frame to.  This adjusts the captured frames
-        // aspect ratio to match the final view aspect ratio, considering pixel
+
+  // Size to crop captured frame to.  This adjusts the captured frames
+  // aspect ratio to match the final view aspect ratio, considering pixel
   // aspect ratio and rotation.  The final size may be scaled down by video
   // adapter to better match ratio_w_ x ratio_h_.
   // Note that abs() of frame height is passed in, because source may be

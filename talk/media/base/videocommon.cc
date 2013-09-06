@@ -222,7 +222,7 @@ void ComputeScaleToSquarePixels(int in_width, int in_height,
                                 int pixel_width, int pixel_height,
                                 int* scaled_width, int* scaled_height) {
   *scaled_width = in_width;  // Keep width the same.
-  *scaled_height = in_height * pixel_width / pixel_height;
+  *scaled_height = in_height * pixel_height / pixel_width;
 }
 
 // The C++ standard requires a namespace-scope definition of static const

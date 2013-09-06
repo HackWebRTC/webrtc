@@ -241,7 +241,6 @@ struct VideoOptions {
     video_three_layers.SetFrom(change.video_three_layers);
     video_enable_camera_list.SetFrom(change.video_enable_camera_list);
     video_one_layer_screencast.SetFrom(change.video_one_layer_screencast);
-    video_one_to_one.SetFrom(change.video_one_to_one);
     video_high_bitrate.SetFrom(change.video_high_bitrate);
     video_watermark.SetFrom(change.video_watermark);
     video_temporal_layer_screencast.SetFrom(
@@ -267,7 +266,6 @@ struct VideoOptions {
         video_three_layers == o.video_three_layers &&
         video_enable_camera_list == o.video_enable_camera_list &&
         video_one_layer_screencast == o.video_one_layer_screencast &&
-        video_one_to_one == o.video_one_to_one &&
         video_high_bitrate == o.video_high_bitrate &&
         video_watermark == o.video_watermark &&
         video_temporal_layer_screencast == o.video_temporal_layer_screencast &&
@@ -294,7 +292,6 @@ struct VideoOptions {
     ost << ToStringIfSet("3 layers", video_three_layers);
     ost << ToStringIfSet("camera list", video_enable_camera_list);
     ost << ToStringIfSet("1 layer screencast", video_one_layer_screencast);
-    ost << ToStringIfSet("1 to 1", video_one_to_one);
     ost << ToStringIfSet("high bitrate", video_high_bitrate);
     ost << ToStringIfSet("watermark", video_watermark);
     ost << ToStringIfSet("video temporal layer screencast",
@@ -328,8 +325,6 @@ struct VideoOptions {
   Settable<bool> video_enable_camera_list;
   // Experimental: Enable one layer screencast?
   Settable<bool> video_one_layer_screencast;
-  // Experimental: Enable one to one?
-  Settable<bool> video_one_to_one;
   // Experimental: Enable WebRtc higher bitrate?
   Settable<bool> video_high_bitrate;
   // Experimental: Add watermark to the rendered video image.

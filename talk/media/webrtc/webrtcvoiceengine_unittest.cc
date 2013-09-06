@@ -2824,8 +2824,10 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
       cricket::AudioCodec(96, "G722", 16000, 0, 1, 0)));
   EXPECT_TRUE(engine.FindCodec(
       cricket::AudioCodec(96, "red", 8000, 0, 1, 0)));
+#ifndef USE_WEBRTC_DEV_BRANCH
   EXPECT_TRUE(engine.FindCodec(
       cricket::AudioCodec(96, "CN", 48000, 0, 1, 0)));
+#endif
   EXPECT_TRUE(engine.FindCodec(
       cricket::AudioCodec(96, "CN", 32000, 0, 1, 0)));
   EXPECT_TRUE(engine.FindCodec(

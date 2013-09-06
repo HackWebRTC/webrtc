@@ -175,17 +175,34 @@ VideoAdapter::VideoAdapter()
 VideoAdapter::~VideoAdapter() {
 }
 
-void VideoAdapter::SetInputFormat(const VideoFrame& in_frame) {
-  talk_base::CritScope cs(&critical_section_);
-  input_format_.width = static_cast<int>(in_frame.GetWidth());
-  input_format_.height = static_cast<int>(in_frame.GetHeight());
-}
-
 void VideoAdapter::SetInputFormat(const VideoFormat& format) {
   talk_base::CritScope cs(&critical_section_);
   input_format_ = format;
   output_format_.interval = talk_base::_max(
       output_format_.interval, input_format_.interval);
+}
+
+void CoordinatedVideoAdapter::SetInputFormat(const VideoFormat& format) {
+  int previous_width = input_format().width;
+  int previous_height = input_format().height;
+  bool is_resolution_change = previous_width > 0 && format.width > 0 &&
+                              (previous_width != format.width ||
+                               previous_height != format.height);
+  VideoAdapter::SetInputFormat(format);
+  if (is_resolution_change) {
+    int width, height;
+    // Trigger the adaptation logic again, to potentially reset the adaptation
+    // state for things like view requests that may not longer be capping
+    // output (or may now cap output).
+    AdaptToMinimumFormat(&width, &height);
+    LOG(LS_INFO) << "VAdapt Input Resolution Change: "
+                 << "Previous input resolution: "
+                 << previous_width << "x" << previous_height
+                 << " New input resolution: "
+                 << format.width << "x" << format.height
+                 << " New output resolution: "
+                 << width << "x" << height;
+  }
 }
 
 void VideoAdapter::SetOutputFormat(const VideoFormat& format) {
@@ -231,7 +248,9 @@ bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
   ++frames_;
 
   // Update input to actual frame dimensions.
-  SetInputFormat(*in_frame);
+  VideoFormat format(in_frame->GetWidth(), in_frame->GetHeight(),
+                     input_format_.interval, input_format_.fourcc);
+  SetInputFormat(format);
 
   // Drop the input frame if necessary.
   bool should_drop = false;

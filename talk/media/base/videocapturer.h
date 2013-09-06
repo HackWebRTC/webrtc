@@ -236,11 +236,18 @@ class VideoCapturer
   bool enable_camera_list() {
     return enable_camera_list_;
   }
+
+  // Enable scaling to ensure square pixels.
+  void set_square_pixel_aspect_ratio(bool square_pixel_aspect_ratio) {
+    square_pixel_aspect_ratio_ = square_pixel_aspect_ratio;
+  }
+  bool square_pixel_aspect_ratio() {
+    return square_pixel_aspect_ratio_;
+  }
+
   // Signal all capture state changes that are not a direct result of calling
   // Start().
   sigslot::signal2<VideoCapturer*, CaptureState> SignalStateChange;
-  // TODO(hellner): rename |SignalFrameCaptured| to something like
-  //                |SignalRawFrame| or |SignalNativeFrame|.
   // Frame callbacks are multithreaded to allow disconnect and connect to be
   // called concurrently. It also ensures that it is safe to call disconnect
   // at any time which is needed since the signal may be called from an
@@ -322,6 +329,7 @@ class VideoCapturer
   int ratio_w_;  // View resolution. e.g. 1280 x 720.
   int ratio_h_;
   bool enable_camera_list_;
+  bool square_pixel_aspect_ratio_;  // Enable scaling to square pixels.
   int scaled_width_;  // Current output size from ComputeScale.
   int scaled_height_;
   int screencast_max_pixels_;  // Downscale screencasts further if requested.

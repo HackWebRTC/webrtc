@@ -45,8 +45,7 @@ class VideoAdapter {
   VideoAdapter();
   virtual ~VideoAdapter();
 
-  void SetInputFormat(const VideoFrame& in_frame);
-  void SetInputFormat(const VideoFormat& format);
+  virtual void SetInputFormat(const VideoFormat& format);
   void SetOutputFormat(const VideoFormat& format);
   // Constrain output resolution to this many pixels overall
   void SetOutputNumPixels(int num_pixels);
@@ -119,6 +118,8 @@ class CoordinatedVideoAdapter
 
   CoordinatedVideoAdapter();
   virtual ~CoordinatedVideoAdapter() {}
+
+  virtual void SetInputFormat(const VideoFormat& format);
 
   // Enable or disable video adaptation due to the change of the CPU load.
   void set_cpu_adaptation(bool enable) { cpu_adaptation_ = enable; }

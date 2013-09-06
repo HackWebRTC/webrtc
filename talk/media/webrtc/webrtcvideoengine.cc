@@ -221,9 +221,7 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
 
   virtual int DeliverFrame(unsigned char* buffer, int buffer_size,
                            uint32_t time_stamp, int64_t render_time
-#ifdef USE_WEBRTC_DEV_BRANCH
                            , void* handle
-#endif
                           ) {
     talk_base::CritScope cs(&crit_);
     frame_rate_tracker_.Update(1);
@@ -238,17 +236,13 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
         talk_base::kNumNanosecsPerMillisec;
     // Send the rtp timestamp to renderer as the VideoFrame timestamp.
     // and the render timestamp as the VideoFrame elapsed_time.
-#ifdef USE_WEBRTC_DEV_BRANCH
     if (handle == NULL) {
-#endif
       return DeliverBufferFrame(buffer, buffer_size, render_time_stamp_in_ns,
                                 rtp_time_stamp_in_ns);
-#ifdef USE_WEBRTC_DEV_BRANCH
     } else {
       return DeliverTextureFrame(handle, render_time_stamp_in_ns,
                                  rtp_time_stamp_in_ns);
     }
-#endif
   }
 
   virtual bool IsTextureSupported() { return true; }

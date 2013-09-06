@@ -1069,7 +1069,12 @@ void Connection::UpdateState(uint32 now) {
   // test we can do is a simple window.
   // If other side has not sent ping after connection has become readable, use
   // |last_data_received_| as the indication.
-  if ((read_state_ == STATE_READABLE) &&
+  // If remote endpoint is doing RFC 5245, it's not required to send ping
+  // after connection is established. If this connection is serving a data
+  // channel, it may not be in a position to send media continuously. Do not
+  // mark connection timeout if it's in RFC5245 mode.
+  // Below check will be performed with end point if it's doing google-ice.
+  if (port_->IsGoogleIce() && (read_state_ == STATE_READABLE) &&
       (last_ping_received_ + CONNECTION_READ_TIMEOUT <= now) &&
       (last_data_received_ + CONNECTION_READ_TIMEOUT <= now)) {
     LOG_J(LS_INFO, this) << "Unreadable after "

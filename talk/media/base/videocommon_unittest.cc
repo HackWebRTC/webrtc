@@ -292,11 +292,21 @@ TEST(VideoCommonTest, TestComputeScaleToSquarePixels) {
 
   // Pixel aspect ratio is 4:3.  Logical aspect ratio is 16:9.  Expect scale
   // to square pixels with physical aspect ratio of 16:9.
-  ComputeScaleToSquarePixels(640, 270,
+  ComputeScaleToSquarePixels(640, 480,
                              4, 3,  // 4 x 3 pixel aspect ratio
                              &scaled_width, &scaled_height);
   EXPECT_EQ(640, scaled_width);
   EXPECT_EQ(360, scaled_height);
+
+  // Pixel aspect ratio is 3:8.  Physical aspect ratio is 4:3.  Expect scale
+  // to square pixels with logical aspect ratio of 1:2.
+  // Note that 640x1280 will be scaled down by video adapter to view request
+  // of 640*360 and will end up using 320x640.
+  ComputeScaleToSquarePixels(640, 480,
+                             3, 8,  // 4 x 3 pixel aspect ratio
+                             &scaled_width, &scaled_height);
+  EXPECT_EQ(640, scaled_width);
+  EXPECT_EQ(1280, scaled_height);
 }
 
 }  // namespace cricket

@@ -227,6 +227,7 @@ TEST_F(VideoCapturerTest, ScreencastScaledMaxPixels) {
   EXPECT_EQ(2, renderer_.num_rendered_frames());
 }
 
+
 TEST_F(VideoCapturerTest, TestFourccMatch) {
   cricket::VideoFormat desired(640, 480,
                                cricket::VideoFormat::FpsToInterval(30),

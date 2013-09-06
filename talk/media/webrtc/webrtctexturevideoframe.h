@@ -31,14 +31,7 @@
 #include "talk/base/refcount.h"
 #include "talk/base/scoped_ref_ptr.h"
 #include "talk/media/base/videoframe.h"
-#ifdef USE_WEBRTC_DEV_BRANCH
 #include "webrtc/common_video/interface/native_handle.h"
-#else
-#include "webrtc/common_video/interface/i420_video_frame.h"
-// Define NativeHandle to an existing type so we don't need to add lots of
-// USE_WEBRTC_DEV_BRANCH.
-#define NativeHandle I420VideoFrame
-#endif
 
 namespace cricket {
 
