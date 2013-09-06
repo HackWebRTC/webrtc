@@ -46,16 +46,16 @@ class RtpReceiverImpl : public RtpReceiver {
   int32_t DeRegisterReceivePayload(const int8_t payload_type);
 
   bool IncomingRtpPacket(
-      RTPHeader* rtp_header,
-      const uint8_t* incoming_rtp_packet,
-      int incoming_rtp_packet_length,
+      const RTPHeader& rtp_header,
+      const uint8_t* payload,
+      int payload_length,
       PayloadUnion payload_specific,
       bool in_order);
 
   NACKMethod NACK() const;
 
   // Turn negative acknowledgement requests on/off.
-  int32_t SetNACKStatus(const NACKMethod method, int max_reordering_threshold);
+  void SetNACKStatus(const NACKMethod method);
 
   // Returns the last received timestamp.
   virtual uint32_t Timestamp() const;
@@ -74,19 +74,16 @@ class RtpReceiverImpl : public RtpReceiver {
 
   void SetRtxPayloadType(int payload_type);
 
-  virtual bool RetransmitOfOldPacket(const RTPHeader& header,
-                                     int jitter, int min_rtt) const;
-  bool InOrderPacket(const uint16_t sequence_number) const;
   TelephoneEventHandler* GetTelephoneEventHandler();
 
  private:
   RtpVideoCodecTypes VideoCodecType() const;
 
-  void CheckSSRCChanged(const RTPHeader* rtp_header);
-  void CheckCSRC(const WebRtcRTPHeader* rtp_header);
-  int32_t CheckPayloadChanged(const RTPHeader* rtp_header,
+  void CheckSSRCChanged(const RTPHeader& rtp_header);
+  void CheckCSRC(const WebRtcRTPHeader& rtp_header);
+  int32_t CheckPayloadChanged(const RTPHeader& rtp_header,
                               const int8_t first_payload_byte,
-                              bool& isRED,
+                              bool& is_red,
                               PayloadUnion* payload,
                               bool* should_reset_statistics);
 
@@ -112,11 +109,6 @@ class RtpReceiverImpl : public RtpReceiver {
   uint16_t last_received_sequence_number_;
 
   NACKMethod nack_method_;
-  int max_reordering_threshold_;
-
-  bool rtx_;
-  uint32_t ssrc_rtx_;
-  int payload_type_rtx_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_IMPL_H_

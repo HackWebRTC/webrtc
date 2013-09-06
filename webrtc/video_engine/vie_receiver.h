@@ -24,6 +24,7 @@ namespace webrtc {
 
 class CriticalSectionWrapper;
 class Encryption;
+class FecReceiver;
 class ReceiveStatistics;
 class RemoteBitrateEstimator;
 class RtpDump;
@@ -43,7 +44,7 @@ class ViEReceiver : public RtpData {
   bool SetReceiveCodec(const VideoCodec& video_codec);
   bool RegisterPayload(const VideoCodec& video_codec);
 
-  bool SetNackStatus(bool enable, int max_nack_reordering_threshold);
+  void SetNackStatus(bool enable, int max_nack_reordering_threshold);
   void SetRtxStatus(bool enable, uint32_t ssrc);
   void SetRtxPayloadType(uint32_t payload_type);
 
@@ -86,7 +87,15 @@ class ViEReceiver : public RtpData {
 
  private:
   int InsertRTPPacket(const int8_t* rtp_packet, int rtp_packet_length);
+  bool ReceivePacket(const uint8_t* packet, int packet_length,
+                     const RTPHeader& header, bool in_order);
+  // Parses and handles for instance RTX and RED headers.
+  // This function assumes that it's being called from only one thread.
+  bool ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
+                                         int packet_length,
+                                         const RTPHeader& header);
   int InsertRTCPPacket(const int8_t* rtcp_packet, int rtcp_packet_length);
+  bool IsPacketInOrder(const RTPHeader& header) const;
   bool IsPacketRetransmitted(const RTPHeader& header) const;
 
   scoped_ptr<CriticalSectionWrapper> receive_cs_;
@@ -95,6 +104,7 @@ class ViEReceiver : public RtpData {
   scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
   scoped_ptr<RtpReceiver> rtp_receiver_;
   scoped_ptr<ReceiveStatistics> rtp_receive_statistics_;
+  scoped_ptr<FecReceiver> fec_receiver_;
   RtpRtcp* rtp_rtcp_;
   std::list<RtpRtcp*> rtp_rtcp_simulcast_;
   VideoCodingModule* vcm_;
@@ -104,6 +114,8 @@ class ViEReceiver : public RtpData {
   uint8_t* decryption_buffer_;
   RtpDump* rtp_dump_;
   bool receiving_;
+  uint8_t restored_packet_[kViEMaxMtu];
+  bool restored_packet_in_use_;
 };
 
 }  // namespace webrt

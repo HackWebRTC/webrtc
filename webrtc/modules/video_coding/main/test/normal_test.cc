@@ -102,9 +102,6 @@ VCMNTEncodeCompleteCallback::SendData(
     rtpInfo.type.Video.codecHeader.VP8.pictureId =
         videoHdr->codecHeader.VP8.pictureId;
     break;
-  case kVideoCodecI420:
-    rtpInfo.type.Video.codec = kRtpVideoI420;
-    break;
   default:
     assert(false);
     return -1;

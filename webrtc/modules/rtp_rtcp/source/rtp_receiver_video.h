@@ -19,10 +19,6 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-class CriticalSectionWrapper;
-class ModuleRtpRtcpImpl;
-class ReceiverFEC;
-class RtpReceiver;
 
 class RTPReceiverVideo : public RTPReceiverStrategy {
  public:
@@ -65,12 +61,6 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
   void SetPacketOverHead(uint16_t packet_over_head);
 
  protected:
-  int32_t ParseVideoCodecSpecificSwitch(
-      WebRtcRTPHeader* rtp_header,
-      const uint8_t* payload_data,
-      uint16_t payload_data_length,
-      bool is_first_packet);
-
   int32_t ReceiveGenericCodec(WebRtcRTPHeader* rtp_header,
                               const uint8_t* payload_data,
                               uint16_t payload_data_length);
@@ -88,16 +78,10 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
       const uint8_t* payload_data,
       uint16_t payload_data_length,
       RtpVideoCodecTypes video_type,
-      bool is_red,
-      const uint8_t* incoming_rtp_packet,
-      uint16_t incoming_rtp_packet_size,
       int64_t now_ms,
       bool is_first_packet);
 
   int32_t id_;
-
-  // FEC
-  ReceiverFEC* receive_fec_;
 };
 }  // namespace webrtc
 

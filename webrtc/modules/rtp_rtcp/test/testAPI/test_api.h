@@ -60,8 +60,8 @@ class LoopBackTransport : public webrtc::Transport {
         header.payloadType, &payload_specific)) {
       return -1;
     }
-    receive_statistics_->IncomingPacket(header, len, false, true);
-    if (!rtp_receiver_->IncomingRtpPacket(&header,
+    receive_statistics_->IncomingPacket(header, len, false);
+    if (!rtp_receiver_->IncomingRtpPacket(header,
                                           static_cast<const uint8_t*>(data),
                                           len, payload_specific, true)) {
       return -1;

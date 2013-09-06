@@ -306,10 +306,7 @@ public:
                                   uint16_t payloadSize,
                                   const WebRtcRTPHeader* rtpHeader);
 
-    bool OnRecoveredPacket(const uint8_t* packet, int packet_length) {
-      // Generic FEC not supported for audio.
-      return true;
-    }
+    bool OnRecoveredPacket(const uint8_t* packet, int packet_length);
 
 public:
     // From RtpFeedback in the RTP/RTCP module
@@ -439,6 +436,12 @@ public:
     uint32_t EncodeAndSend();
 
 private:
+    bool ReceivePacket(const uint8_t* packet, int packet_length,
+                       const RTPHeader& header, bool in_order);
+    bool HandleEncapsulation(const uint8_t* packet,
+                             int packet_length,
+                             const RTPHeader& header);
+    bool IsPacketInOrder(const RTPHeader& header) const;
     bool IsPacketRetransmitted(const RTPHeader& header) const;
     int ResendPackets(const uint16_t* sequence_numbers, int length);
     int InsertInbandDtmfTone();
@@ -502,6 +505,7 @@ private:
     uint32_t playout_delay_ms_;
     uint32_t _numberOfDiscardedPackets;
     uint16_t send_sequence_number_;
+    uint8_t restored_packet_[kVoiceEngineMaxIpPacketSizeBytes];
 
  private:
     // uses
@@ -571,6 +575,7 @@ private:
     bool _rxApmIsEnabled;
     bool _rxAgcIsEnabled;
     bool _rxNsIsEnabled;
+    bool restored_packet_in_use_;
 };
 
 }  // namespace voe

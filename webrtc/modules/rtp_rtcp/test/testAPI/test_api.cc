@@ -110,11 +110,11 @@ TEST_F(RtpRtcpAPITest, RTCP) {
   EXPECT_FALSE(module->TMMBR());
 
   EXPECT_EQ(kNackOff, rtp_receiver_->NACK());
-  EXPECT_EQ(0, rtp_receiver_->SetNACKStatus(kNackRtcp, 450));
+  rtp_receiver_->SetNACKStatus(kNackRtcp);
   EXPECT_EQ(kNackRtcp, rtp_receiver_->NACK());
 }
 
-TEST_F(RtpRtcpAPITest, RTXSender) {
+TEST_F(RtpRtcpAPITest, RtxSender) {
   unsigned int ssrc = 0;
   RtxMode rtx_mode = kRtxOff;
   const int kRtxPayloadType = 119;
@@ -138,19 +138,20 @@ TEST_F(RtpRtcpAPITest, RTXSender) {
   EXPECT_EQ(kRtxPayloadType, payload_type);
 }
 
-TEST_F(RtpRtcpAPITest, RTXReceiver) {
-  bool enable = false;
-  unsigned int ssrc = 0;
+TEST_F(RtpRtcpAPITest, RtxReceiver) {
+  const uint32_t kRtxSsrc = 1;
   const int kRtxPayloadType = 119;
-  int payload_type = -1;
-  rtp_receiver_->SetRTXStatus(true, 1);
-  rtp_receiver_->SetRtxPayloadType(kRtxPayloadType);
-  rtp_receiver_->RTXStatus(&enable, &ssrc, &payload_type);
-  EXPECT_TRUE(enable);
-  EXPECT_EQ(1u, ssrc);
-  EXPECT_EQ(kRtxPayloadType ,payload_type);
-  rtp_receiver_->SetRTXStatus(false, 0);
-  rtp_receiver_->RTXStatus(&enable, &ssrc, &payload_type);
-  EXPECT_FALSE(enable);
-  EXPECT_EQ(kRtxPayloadType ,payload_type);
+  rtp_payload_registry_->SetRtxStatus(true, kRtxSsrc);
+  rtp_payload_registry_->SetRtxPayloadType(kRtxPayloadType);
+  EXPECT_TRUE(rtp_payload_registry_->RtxEnabled());
+  RTPHeader rtx_header;
+  rtx_header.ssrc = kRtxSsrc;
+  rtx_header.payloadType = kRtxPayloadType;
+  EXPECT_TRUE(rtp_payload_registry_->IsRtx(rtx_header));
+  rtx_header.ssrc = 0;
+  EXPECT_FALSE(rtp_payload_registry_->IsRtx(rtx_header));
+  rtp_payload_registry_->SetRtxStatus(false, kRtxSsrc);
+  EXPECT_FALSE(rtp_payload_registry_->RtxEnabled());
+  rtx_header.ssrc = kRtxSsrc;
+  EXPECT_FALSE(rtp_payload_registry_->IsRtx(rtx_header));
 }

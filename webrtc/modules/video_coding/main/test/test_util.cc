@@ -150,8 +150,6 @@ int32_t FileOutputFrameReceiver::FrameToRender(
 webrtc::RtpVideoCodecTypes ConvertCodecType(const char* plname) {
   if (strncmp(plname,"VP8" , 3) == 0) {
     return webrtc::kRtpVideoVp8;
-  } else if (strncmp(plname,"I420" , 5) == 0) {
-    return webrtc::kRtpVideoI420;
   } else {
     return webrtc::kRtpVideoNone;  // Default value
   }

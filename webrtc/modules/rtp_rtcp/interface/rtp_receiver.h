@@ -70,9 +70,9 @@ class RtpReceiver {
   // Parses the media specific parts of an RTP packet and updates the receiver
   // state. This for instance means that any changes in SSRC and payload type is
   // detected and acted upon.
-  virtual bool IncomingRtpPacket(RTPHeader* rtp_header,
-                                 const uint8_t* incoming_rtp_packet,
-                                 int incoming_rtp_packet_length,
+  virtual bool IncomingRtpPacket(const RTPHeader& rtp_header,
+                                 const uint8_t* payload,
+                                 int payload_length,
                                  PayloadUnion payload_specific,
                                  bool in_order) = 0;
 
@@ -80,8 +80,7 @@ class RtpReceiver {
   virtual NACKMethod NACK() const = 0;
 
   // Turn negative acknowledgement (NACK) requests on/off.
-  virtual int32_t SetNACKStatus(const NACKMethod method,
-                                int max_reordering_threshold) = 0;
+  virtual void SetNACKStatus(const NACKMethod method) = 0;
 
   // Returns the last received timestamp.
   virtual uint32_t Timestamp() const = 0;
@@ -96,24 +95,6 @@ class RtpReceiver {
 
   // Returns the current energy of the RTP stream received.
   virtual int32_t Energy(uint8_t array_of_energy[kRtpCsrcSize]) const = 0;
-
-  // Enable/disable RTX and set the SSRC to be used.
-  virtual void SetRTXStatus(bool enable, uint32_t ssrc) = 0;
-
-  // Returns the current RTX status and the SSRC and payload type used.
-  virtual void RTXStatus(bool* enable, uint32_t* ssrc,
-                         int* payload_type) const = 0;
-
-  // Sets the RTX payload type.
-  virtual void SetRtxPayloadType(int payload_type) = 0;
-
-  // Returns true if the packet with RTP header |header| is likely to be a
-  // retransmitted packet, false otherwise.
-  virtual bool RetransmitOfOldPacket(const RTPHeader& header, int jitter,
-                                     int min_rtt) const = 0;
-
-  // Returns true if |sequence_number| is received in order, false otherwise.
-  virtual bool InOrderPacket(const uint16_t sequence_number) const = 0;
 };
 }  // namespace webrtc
 

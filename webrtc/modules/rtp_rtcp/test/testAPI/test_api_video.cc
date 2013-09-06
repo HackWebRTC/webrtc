@@ -52,7 +52,7 @@ class RtpRtcpVideoTest : public ::testing::Test {
 
     EXPECT_EQ(0, video_module_->SetRTCPStatus(kRtcpCompound));
     EXPECT_EQ(0, video_module_->SetSSRC(test_ssrc_));
-    EXPECT_EQ(0, rtp_receiver_->SetNACKStatus(kNackRtcp, 450));
+    rtp_receiver_->SetNACKStatus(kNackRtcp);
     EXPECT_EQ(0, video_module_->SetStorePacketsStatus(true, 600));
     EXPECT_EQ(0, video_module_->SetSendingStatus(true));
 
@@ -176,11 +176,13 @@ TEST_F(RtpRtcpVideoTest, PaddingOnlyFrames) {
       PayloadUnion payload_specific;
       EXPECT_TRUE(rtp_payload_registry_.GetPayloadSpecifics(header.payloadType,
                                                            &payload_specific));
-      EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(&header, padding_packet,
-                                                   packet_size,
+      const uint8_t* payload = padding_packet + header.headerLength;
+      const int payload_length = packet_size - header.headerLength;
+      EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(header, payload,
+                                                   payload_length,
                                                    payload_specific, true));
       EXPECT_EQ(0, receiver_->payload_size());
-      EXPECT_EQ(packet_size - 12, receiver_->rtp_header().header.paddingLength);
+      EXPECT_EQ(payload_length, receiver_->rtp_header().header.paddingLength);
     }
     timestamp += 3000;
     fake_clock.AdvanceTimeMilliseconds(33);

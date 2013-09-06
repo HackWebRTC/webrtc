@@ -75,8 +75,7 @@ class RtxLoopBackTransport : public webrtc::Transport {
         count_rtx_ssrc_(0),
         rtp_payload_registry_(NULL),
         rtp_receiver_(NULL),
-        module_(NULL) {
-  }
+        module_(NULL) {}
 
   void SetSendModule(RtpRtcp* rtpRtcpModule,
                      RTPPayloadRegistry* rtp_payload_registry,
@@ -112,19 +111,33 @@ class RtxLoopBackTransport : public webrtc::Transport {
         count_ < consecutive_drop_end_) {
       return len;
     }
+    int packet_length = len;
+    uint8_t restored_packet[1500];
+    uint8_t* restored_packet_ptr = restored_packet;
     RTPHeader header;
     scoped_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
-    if (!parser->Parse(static_cast<const uint8_t*>(data), len, &header)) {
+    if (!parser->Parse(ptr, len, &header)) {
       return -1;
     }
+    if (rtp_payload_registry_->IsRtx(header)) {
+      // Remove the RTX header and parse the original RTP header.
+      EXPECT_TRUE(rtp_payload_registry_->RestoreOriginalPacket(
+          &restored_packet_ptr, ptr, &packet_length, rtp_receiver_->SSRC(),
+          header));
+      if (!parser->Parse(restored_packet_ptr, packet_length, &header)) {
+        return -1;
+      }
+    }
+    restored_packet_ptr += header.headerLength;
+    packet_length -= header.headerLength;
     PayloadUnion payload_specific;
     if (!rtp_payload_registry_->GetPayloadSpecifics(header.payloadType,
-                                                   &payload_specific)) {
+                                                    &payload_specific)) {
       return -1;
     }
-    if (!rtp_receiver_->IncomingRtpPacket(&header,
-                                          static_cast<const uint8_t*>(data),
-                                          len, payload_specific, true)) {
+    if (!rtp_receiver_->IncomingRtpPacket(header, restored_packet_ptr,
+                                          packet_length, payload_specific,
+                                          true)) {
       return -1;
     }
     return len;
@@ -177,7 +190,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
 
     EXPECT_EQ(0, rtp_rtcp_module_->SetSSRC(kTestSsrc));
     EXPECT_EQ(0, rtp_rtcp_module_->SetRTCPStatus(kRtcpCompound));
-    EXPECT_EQ(0, rtp_receiver_->SetNACKStatus(kNackRtcp, 450));
+    rtp_receiver_->SetNACKStatus(kNackRtcp);
     EXPECT_EQ(0, rtp_rtcp_module_->SetStorePacketsStatus(true, 600));
     EXPECT_EQ(0, rtp_rtcp_module_->SetSendingStatus(true));
     EXPECT_EQ(0, rtp_rtcp_module_->SetSequenceNumber(kTestSequenceNumber));
@@ -240,7 +253,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
   }
 
   void RunRtxTest(RtxMode rtx_method, int loss) {
-    rtp_receiver_->SetRTXStatus(true, kTestSsrc + 1);
+    rtp_payload_registry_.SetRtxStatus(true, kTestSsrc + 1);
     EXPECT_EQ(0, rtp_rtcp_module_->SetRTXSendStatus(rtx_method, true,
         kTestSsrc + 1));
     transport_.DropEveryNthPacket(loss);

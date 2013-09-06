@@ -43,14 +43,14 @@ class ReceiveStatisticsTest : public ::testing::Test {
 };
 
 TEST_F(ReceiveStatisticsTest, TwoIncomingSsrcs) {
-  receive_statistics_->IncomingPacket(header1_, kPacketSize1, false, true);
+  receive_statistics_->IncomingPacket(header1_, kPacketSize1, false);
   ++header1_.sequenceNumber;
-  receive_statistics_->IncomingPacket(header2_, kPacketSize2, false, true);
+  receive_statistics_->IncomingPacket(header2_, kPacketSize2, false);
   ++header2_.sequenceNumber;
   clock_.AdvanceTimeMilliseconds(100);
-  receive_statistics_->IncomingPacket(header1_, kPacketSize1, false, true);
+  receive_statistics_->IncomingPacket(header1_, kPacketSize1, false);
   ++header1_.sequenceNumber;
-  receive_statistics_->IncomingPacket(header2_, kPacketSize2, false, true);
+  receive_statistics_->IncomingPacket(header2_, kPacketSize2, false);
   ++header2_.sequenceNumber;
 
   StreamStatistician* statistician =
@@ -75,9 +75,9 @@ TEST_F(ReceiveStatisticsTest, TwoIncomingSsrcs) {
   EXPECT_EQ(2u, statisticians.size());
   // Add more incoming packets and verify that they are registered in both
   // access methods.
-  receive_statistics_->IncomingPacket(header1_, kPacketSize1, false, true);
+  receive_statistics_->IncomingPacket(header1_, kPacketSize1, false);
   ++header1_.sequenceNumber;
-  receive_statistics_->IncomingPacket(header2_, kPacketSize2, false, true);
+  receive_statistics_->IncomingPacket(header2_, kPacketSize2, false);
   ++header2_.sequenceNumber;
 
   statisticians[kSsrc1]->GetDataCounters(&bytes_received, &packets_received);
@@ -98,10 +98,10 @@ TEST_F(ReceiveStatisticsTest, TwoIncomingSsrcs) {
 }
 
 TEST_F(ReceiveStatisticsTest, ActiveStatisticians) {
-  receive_statistics_->IncomingPacket(header1_, kPacketSize1, false, true);
+  receive_statistics_->IncomingPacket(header1_, kPacketSize1, false);
   ++header1_.sequenceNumber;
   clock_.AdvanceTimeMilliseconds(1000);
-  receive_statistics_->IncomingPacket(header2_, kPacketSize2, false, true);
+  receive_statistics_->IncomingPacket(header2_, kPacketSize2, false);
   ++header2_.sequenceNumber;
   StatisticianMap statisticians = receive_statistics_->GetActiveStatisticians();
   // Nothing should time out since only 1000 ms has passed since the first
@@ -118,7 +118,7 @@ TEST_F(ReceiveStatisticsTest, ActiveStatisticians) {
   statisticians = receive_statistics_->GetActiveStatisticians();
   EXPECT_EQ(0u, statisticians.size());
 
-  receive_statistics_->IncomingPacket(header1_, kPacketSize1, false, true);
+  receive_statistics_->IncomingPacket(header1_, kPacketSize1, false);
   ++header1_.sequenceNumber;
   // kSsrc1 should be active again and the data counters should have survived.
   statisticians = receive_statistics_->GetActiveStatisticians();

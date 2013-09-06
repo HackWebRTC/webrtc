@@ -34,17 +34,24 @@ class StreamStatisticianImpl : public StreamStatistician {
                                uint32_t* packets_received) const OVERRIDE;
   virtual uint32_t BitrateReceived() const OVERRIDE;
   virtual void ResetStatistics() OVERRIDE;
+  virtual bool IsRetransmitOfOldPacket(const RTPHeader& header,
+                                     int min_rtt) const OVERRIDE;
+  virtual bool IsPacketInOrder(uint16_t sequence_number) const OVERRIDE;
 
   void IncomingPacket(const RTPHeader& rtp_header, size_t bytes,
-                      bool retransmitted, bool in_order);
+                      bool retransmitted);
+  void SetMaxReorderingThreshold(int max_reordering_threshold);
   void ProcessBitrate();
   virtual void LastReceiveTimeNtp(uint32_t* secs, uint32_t* frac) const;
 
  private:
+  bool InOrderPacketInternal(uint16_t sequence_number) const;
+
   Clock* clock_;
   scoped_ptr<CriticalSectionWrapper> crit_sect_;
   Bitrate incoming_bitrate_;
   uint32_t ssrc_;
+  int max_reordering_threshold_;  // In number of packets or sequence numbers.
 
   // Stats on received RTP packets.
   uint32_t jitter_q4_;
@@ -52,6 +59,7 @@ class StreamStatisticianImpl : public StreamStatistician {
   uint32_t cumulative_loss_;
   uint32_t jitter_q4_transmission_time_offset_;
 
+  int64_t last_receive_time_ms_;
   uint32_t last_receive_time_secs_;
   uint32_t last_receive_time_frac_;
   uint32_t last_received_timestamp_;
@@ -82,9 +90,10 @@ class ReceiveStatisticsImpl : public ReceiveStatistics {
 
   // Implement ReceiveStatistics.
   virtual void IncomingPacket(const RTPHeader& header, size_t bytes,
-                      bool old_packet, bool in_order) OVERRIDE;
+                              bool old_packet) OVERRIDE;
   virtual StatisticianMap GetActiveStatisticians() const OVERRIDE;
   virtual StreamStatistician* GetStatistician(uint32_t ssrc) const OVERRIDE;
+  virtual void SetMaxReorderingThreshold(int max_reordering_threshold) OVERRIDE;
 
   // Implement Module.
   virtual int32_t Process() OVERRIDE;

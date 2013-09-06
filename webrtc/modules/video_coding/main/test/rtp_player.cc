@@ -226,10 +226,7 @@ class SsrcHandlers {
       return -1;
     }
 
-    if (handler->rtp_module_->SetNACKStatus(kNackOff,
-                                            kMaxPacketAgeToNack) < 0) {
-      return -1;
-    }
+    handler->rtp_module_->SetNACKStatus(kNackOff);
     handler->rtp_header_parser_->RegisterRtpHeaderExtension(
         kRtpExtensionTransmissionTimeOffset,
         kDefaultTransmissionTimeOffsetExtensionId);
@@ -262,10 +259,8 @@ class SsrcHandlers {
         PayloadUnion payload_specific;
         it->second->rtp_payload_registry_->GetPayloadSpecifics(
             header.payloadType, &payload_specific);
-        bool in_order =
-            it->second->rtp_module_->InOrderPacket(header.sequenceNumber);
-        it->second->rtp_module_->IncomingRtpPacket(&header, data, length,
-                                                   payload_specific, in_order);
+        it->second->rtp_module_->IncomingRtpPacket(header, data, length,
+                                                   payload_specific, true);
       }
     }
   }

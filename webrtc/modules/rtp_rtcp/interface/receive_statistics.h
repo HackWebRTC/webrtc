@@ -44,8 +44,17 @@ class StreamStatistician {
   virtual void GetDataCounters(uint32_t* bytes_received,
                                uint32_t* packets_received) const = 0;
   virtual uint32_t BitrateReceived() const = 0;
+
   // Resets all statistics.
   virtual void ResetStatistics() = 0;
+
+  // Returns true if the packet with RTP header |header| is likely to be a
+  // retransmitted packet, false otherwise.
+  virtual bool IsRetransmitOfOldPacket(const RTPHeader& header,
+                                       int min_rtt) const = 0;
+
+  // Returns true if |sequence_number| is received in order, false otherwise.
+  virtual bool IsPacketInOrder(uint16_t sequence_number) const = 0;
 };
 
 typedef std::map<uint32_t, StreamStatistician*> StatisticianMap;
@@ -58,7 +67,7 @@ class ReceiveStatistics : public Module {
 
   // Updates the receive statistics with this packet.
   virtual void IncomingPacket(const RTPHeader& rtp_header, size_t bytes,
-                              bool retransmitted, bool in_order) = 0;
+                              bool retransmitted) = 0;
 
   // Returns a map of all statisticians which have seen an incoming packet
   // during the last two seconds.
@@ -66,16 +75,20 @@ class ReceiveStatistics : public Module {
 
   // Returns a pointer to the statistician of an ssrc.
   virtual StreamStatistician* GetStatistician(uint32_t ssrc) const = 0;
+
+  // Sets the max reordering threshold in number of packets.
+  virtual void SetMaxReorderingThreshold(int max_reordering_threshold) = 0;
 };
 
 class NullReceiveStatistics : public ReceiveStatistics {
  public:
   virtual void IncomingPacket(const RTPHeader& rtp_header, size_t bytes,
-                              bool retransmitted, bool in_order) OVERRIDE;
+                              bool retransmitted) OVERRIDE;
   virtual StatisticianMap GetActiveStatisticians() const OVERRIDE;
   virtual StreamStatistician* GetStatistician(uint32_t ssrc) const OVERRIDE;
   virtual int32_t TimeUntilNextProcess() OVERRIDE;
   virtual int32_t Process() OVERRIDE;
+  virtual void SetMaxReorderingThreshold(int max_reordering_threshold) OVERRIDE;
 };
 
 }  // namespace webrtc

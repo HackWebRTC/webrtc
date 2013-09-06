@@ -183,8 +183,8 @@ int32_t RTPReceiverAudio::OnNewPayloadTypeCreated(
 int32_t RTPReceiverAudio::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                                          const PayloadUnion& specific_payload,
                                          bool is_red,
-                                         const uint8_t* packet,
-                                         uint16_t packet_length,
+                                         const uint8_t* payload,
+                                         uint16_t payload_length,
                                          int64_t timestamp_ms,
                                          bool is_first_packet) {
   TRACE_EVENT2("webrtc_rtp", "Audio::ParseRtp",
@@ -198,13 +198,11 @@ int32_t RTPReceiverAudio::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
            rtp_header->type.Audio.arrOfEnergy,
            rtp_header->type.Audio.numEnergy);
   }
-  const uint8_t* payload_data =
-      ModuleRTPUtility::GetPayloadData(rtp_header->header, packet);
-  const uint16_t payload_data_length =
-      ModuleRTPUtility::GetPayloadDataLength(rtp_header->header, packet_length);
+  const uint16_t payload_data_length = payload_length -
+      rtp_header->header.paddingLength;
 
   return ParseAudioCodecSpecific(rtp_header,
-                                 payload_data,
+                                 payload,
                                  payload_data_length,
                                  specific_payload.Audio,
                                  is_red);
@@ -384,6 +382,7 @@ int32_t RTPReceiverAudio::ParseAudioCodecSpecific(
       }
     }
   }
+  // TODO(holmer): Break this out to have RED parsing handled generically.
   if (is_red && !(payload_data[0] & 0x80)) {
     // we recive only one frame packed in a RED packet remove the RED wrapper
     rtp_header->header.payloadType = payload_data[0];

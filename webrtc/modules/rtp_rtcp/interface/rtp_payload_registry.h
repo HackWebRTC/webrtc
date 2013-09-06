@@ -76,6 +76,26 @@ class RTPPayloadRegistry {
       const uint32_t rate,
       int8_t* payload_type) const;
 
+  void SetRtxStatus(bool enable, uint32_t ssrc);
+
+  bool RtxEnabled() const;
+
+  void SetRtxPayloadType(int payload_type);
+
+  bool IsRtx(const RTPHeader& header) const;
+
+  bool RestoreOriginalPacket(uint8_t** restored_packet,
+                             const uint8_t* packet,
+                             int* packet_length,
+                             uint32_t original_ssrc,
+                             const RTPHeader& header) const;
+
+  bool IsRed(const RTPHeader& header) const;
+
+  // Returns true if the media of this RTP packet is encapsulated within an
+  // extra header, such as RTX or RED.
+  bool IsEncapsulated(const RTPHeader& header) const;
+
   bool GetPayloadSpecifics(uint8_t payload_type, PayloadUnion* payload) const;
 
   int GetPayloadTypeFrequency(uint8_t payload_type) const;
@@ -85,22 +105,38 @@ class RTPPayloadRegistry {
     ModuleRTPUtility::Payload*& payload) const;
 
   void ResetLastReceivedPayloadTypes() {
+    CriticalSectionScoped cs(crit_sect_.get());
     last_received_payload_type_ = -1;
     last_received_media_payload_type_ = -1;
   }
 
+  // This sets the payload type of the packets being received from the network
+  // on the media SSRC. For instance if packets are encapsulated with RED, this
+  // payload type will be the RED payload type.
+  void SetIncomingPayloadType(const RTPHeader& header);
+
   // Returns true if the new media payload type has not changed.
   bool ReportMediaPayloadType(uint8_t media_payload_type);
 
-  int8_t red_payload_type() const { return red_payload_type_; }
+  int8_t red_payload_type() const {
+    CriticalSectionScoped cs(crit_sect_.get());
+    return red_payload_type_;
+  }
+  int8_t ulpfec_payload_type() const {
+    CriticalSectionScoped cs(crit_sect_.get());
+    return ulpfec_payload_type_;
+  }
   int8_t last_received_payload_type() const {
+    CriticalSectionScoped cs(crit_sect_.get());
     return last_received_payload_type_;
   }
   void set_last_received_payload_type(int8_t last_received_payload_type) {
+    CriticalSectionScoped cs(crit_sect_.get());
     last_received_payload_type_ = last_received_payload_type;
   }
 
   int8_t last_received_media_payload_type() const {
+    CriticalSectionScoped cs(crit_sect_.get());
     return last_received_media_payload_type_;
   };
 
@@ -113,12 +149,20 @@ class RTPPayloadRegistry {
       const uint8_t channels,
       const uint32_t rate);
 
+  bool IsRtxInternal(const RTPHeader& header) const;
+
+  scoped_ptr<CriticalSectionWrapper> crit_sect_;
   ModuleRTPUtility::PayloadTypeMap payload_type_map_;
   int32_t id_;
   scoped_ptr<RTPPayloadStrategy> rtp_payload_strategy_;
   int8_t  red_payload_type_;
+  int8_t ulpfec_payload_type_;
+  int8_t incoming_payload_type_;
   int8_t  last_received_payload_type_;
   int8_t  last_received_media_payload_type_;
+  bool rtx_;
+  int8_t payload_type_rtx_;
+  uint32_t ssrc_rtx_;
 };
 
 }  // namespace webrtc

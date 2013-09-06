@@ -102,7 +102,7 @@ TransportCallback::TransportPackets()
             header.payloadType, &payload_specific)) {
           return -1;
         }
-        if (!rtp_receiver_->IncomingRtpPacket(&header, packet->data,
+        if (!rtp_receiver_->IncomingRtpPacket(header, packet->data,
                                               packet->length, payload_specific,
                                               true))
         {

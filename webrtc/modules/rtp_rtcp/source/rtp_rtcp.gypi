@@ -28,6 +28,7 @@
       },
       'sources': [
         # Common
+        '../interface/fec_receiver.h',
         '../interface/receive_statistics.h',
         '../interface/rtp_header_parser.h',
         '../interface/rtp_payload_registry.h',
@@ -36,6 +37,8 @@
         '../interface/rtp_rtcp_defines.h',
         'bitrate.cc',
         'bitrate.h',
+        'fec_receiver_impl.cc',
+        'fec_receiver_impl.h',
         'receive_statistics_impl.cc',
         'receive_statistics_impl.h',
         'rtp_header_parser.cc',
@@ -87,8 +90,6 @@
         'rtp_receiver_video.h',
         'rtp_sender_video.cc',
         'rtp_sender_video.h',
-        'receiver_fec.cc',
-        'receiver_fec.h',
         'video_codec_information.h',
         'rtp_format_vp8.cc',
         'rtp_format_vp8.h',

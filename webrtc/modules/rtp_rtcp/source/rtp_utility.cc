@@ -113,18 +113,6 @@ uint32_t ConvertNTPTimeToMS(uint32_t NTPsec, uint32_t NTPfrac) {
  * Misc utility routines
  */
 
-const uint8_t* GetPayloadData(const RTPHeader& rtp_header,
-                              const uint8_t* packet) {
-  return packet + rtp_header.headerLength;
-}
-
-uint16_t GetPayloadDataLength(const RTPHeader& rtp_header,
-                              const uint16_t packet_length) {
-  uint16_t length = packet_length - rtp_header.paddingLength -
-      rtp_header.headerLength;
-  return static_cast<uint16_t>(length);
-}
-
 #if defined(_WIN32)
 bool StringCompare(const char* str1, const char* str2,
                    const uint32_t length) {

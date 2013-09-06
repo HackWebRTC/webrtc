@@ -74,7 +74,7 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
     RTPHeader header;
     EXPECT_TRUE(rtp_parser_->Parse(packet, static_cast<int>(length),
                                    &header));
-    receive_stats_->IncomingPacket(header, length, false, true);
+    receive_stats_->IncomingPacket(header, length, false);
     rtp_rtcp_->SetRemoteSSRC(header.ssrc);
     remote_bitrate_estimator_->IncomingPacket(clock_->TimeInMilliseconds(),
                                               static_cast<int>(length - 12),

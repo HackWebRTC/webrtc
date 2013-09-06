@@ -111,11 +111,6 @@ void VCMPacket::CopyCodecSpecifics(const RTPVideoHeader& videoHeader)
                 codec = kVideoCodecVP8;
                 break;
             }
-        case kRtpVideoI420:
-            {
-                codec = kVideoCodecI420;
-                break;
-            }
         default:
             {
                 codec = kVideoCodecUnknown;

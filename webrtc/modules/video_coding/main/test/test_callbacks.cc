@@ -82,8 +82,6 @@ VCMEncodeCompleteCallback::SendData(
         rtpInfo.type.Video.codecHeader.VP8.pictureId =
             videoHdr->codecHeader.VP8.pictureId;
         break;
-    case webrtc::kRtpVideoI420:
-        break;
     default:
         assert(false);
         return -1;
@@ -308,7 +306,7 @@ RTPSendCompleteCallback::SendPacket(int channel, const void *data, int len)
             header.payloadType, &payload_specific)) {
           return -1;
         }
-        if (!rtp_receiver_->IncomingRtpPacket(&header, packet->data,
+        if (!rtp_receiver_->IncomingRtpPacket(header, packet->data,
                                               packet->length, payload_specific,
                                               true))
         {

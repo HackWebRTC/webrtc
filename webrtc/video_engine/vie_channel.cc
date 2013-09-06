@@ -662,13 +662,7 @@ int32_t ViEChannel::ProcessNACKRequest(const bool enable) {
                    "%s: Could not enable NACK, RTPC not on ", __FUNCTION__);
       return -1;
     }
-    if (!vie_receiver_.SetNackStatus(true,
-                                     max_nack_reordering_threshold_)) {
-      WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
-                   "%s: Could not set NACK method %d", __FUNCTION__,
-                   nackMethod);
-      return -1;
-    }
+    vie_receiver_.SetNackStatus(true, max_nack_reordering_threshold_);
     WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: Using NACK method %d", __FUNCTION__, nackMethod);
     rtp_rtcp_->SetStorePacketsStatus(true, nack_history_size_sender_);
@@ -699,12 +693,7 @@ int32_t ViEChannel::ProcessNACKRequest(const bool enable) {
     if (paced_sender_ == NULL) {
       rtp_rtcp_->SetStorePacketsStatus(false, 0);
     }
-    if (!vie_receiver_.SetNackStatus(false,
-                                     max_nack_reordering_threshold_)) {
-      WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
-                   "%s: Could not turn off NACK", __FUNCTION__);
-      return -1;
-    }
+    vie_receiver_.SetNackStatus(false, max_nack_reordering_threshold_);
     // When NACK is off, allow decoding with errors. Otherwise, the video
     // will freeze, and will only recover with a complete key frame.
     vcm_.SetDecodeErrorMode(kWithErrors);
@@ -1189,10 +1178,10 @@ int32_t ViEChannel::SendApplicationDefinedRTCPPacket(
 }
 
 int32_t ViEChannel::GetSendRtcpStatistics(uint16_t* fraction_lost,
-                                                uint32_t* cumulative_lost,
-                                                uint32_t* extended_max,
-                                                uint32_t* jitter_samples,
-                                                int32_t* rtt_ms) {
+                                          uint32_t* cumulative_lost,
+                                          uint32_t* extended_max,
+                                          uint32_t* jitter_samples,
+                                          int32_t* rtt_ms) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 

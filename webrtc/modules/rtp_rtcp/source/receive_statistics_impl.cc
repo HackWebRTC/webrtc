@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/rtp_rtcp/source/receive_statistics_impl.h"
 
+#include <math.h>
+
 #include "webrtc/modules/rtp_rtcp/source/bitrate.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -27,10 +29,12 @@ StreamStatisticianImpl::StreamStatisticianImpl(Clock* clock)
       crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       incoming_bitrate_(clock),
       ssrc_(0),
+      max_reordering_threshold_(kDefaultMaxReorderingThreshold),
       jitter_q4_(0),
       jitter_max_q4_(0),
       cumulative_loss_(0),
       jitter_q4_transmission_time_offset_(0),
+      last_receive_time_ms_(0),
       last_receive_time_secs_(0),
       last_receive_time_frac_(0),
       last_received_timestamp_(0),
@@ -69,9 +73,9 @@ void StreamStatisticianImpl::ResetStatistics() {
 
 void StreamStatisticianImpl::IncomingPacket(const RTPHeader& header,
                                             size_t bytes,
-                                            bool retransmitted,
-                                            bool in_order) {
+                                            bool retransmitted) {
   CriticalSectionScoped cs(crit_sect_.get());
+  bool in_order = InOrderPacketInternal(header.sequenceNumber);
   ssrc_ = header.ssrc;
   incoming_bitrate_.Update(bytes);
   received_byte_count_ += bytes;
@@ -83,6 +87,7 @@ void StreamStatisticianImpl::IncomingPacket(const RTPHeader& header,
     received_seq_max_ = header.sequenceNumber;
     received_inorder_packet_count_ = 1;
     clock_->CurrentNtp(last_receive_time_secs_, last_receive_time_frac_);
+    last_receive_time_ms_ = clock_->TimeInMilliseconds();
     return;
   }
 
@@ -96,8 +101,7 @@ void StreamStatisticianImpl::IncomingPacket(const RTPHeader& header,
     received_inorder_packet_count_++;
 
     // Wrong if we use RetransmitOfOldPacket.
-    int32_t seq_diff =
-        header.sequenceNumber - received_seq_max_;
+    int32_t seq_diff = header.sequenceNumber - received_seq_max_;
     if (seq_diff < 0) {
       // Wrap around detected.
       received_seq_wraps_++;
@@ -147,6 +151,7 @@ void StreamStatisticianImpl::IncomingPacket(const RTPHeader& header,
     last_received_timestamp_ = header.timestamp;
     last_receive_time_secs_ = receive_time_secs;
     last_receive_time_frac_ = receive_time_frac;
+    last_receive_time_ms_ = clock_->TimeInMilliseconds();
   } else {
     if (retransmitted) {
       received_retransmitted_packets_++;
@@ -160,6 +165,12 @@ void StreamStatisticianImpl::IncomingPacket(const RTPHeader& header,
   // Our measured overhead. Filter from RFC 5104 4.2.1.2:
   // avg_OH (new) = 15/16*avg_OH (old) + 1/16*pckt_OH,
   received_packet_overhead_ = (15 * received_packet_overhead_ + packet_oh) >> 4;
+}
+
+void StreamStatisticianImpl::SetMaxReorderingThreshold(
+    int max_reordering_threshold) {
+  CriticalSectionScoped cs(crit_sect_.get());
+  max_reordering_threshold_ = max_reordering_threshold;
 }
 
 bool StreamStatisticianImpl::GetStatistics(Statistics* statistics, bool reset) {
@@ -275,6 +286,62 @@ void StreamStatisticianImpl::LastReceiveTimeNtp(uint32_t* secs,
   *frac = last_receive_time_frac_;
 }
 
+bool StreamStatisticianImpl::IsRetransmitOfOldPacket(
+    const RTPHeader& header, int min_rtt) const {
+  CriticalSectionScoped cs(crit_sect_.get());
+  if (InOrderPacketInternal(header.sequenceNumber)) {
+    return false;
+  }
+  uint32_t frequency_khz = header.payload_type_frequency / 1000;
+  assert(frequency_khz > 0);
+
+  int64_t time_diff_ms = clock_->TimeInMilliseconds() -
+      last_receive_time_ms_;
+
+  // Diff in time stamp since last received in order.
+  uint32_t timestamp_diff = header.timestamp - last_received_timestamp_;
+  int32_t rtp_time_stamp_diff_ms = static_cast<int32_t>(timestamp_diff) /
+      frequency_khz;
+
+  int32_t max_delay_ms = 0;
+  if (min_rtt == 0) {
+    // Jitter standard deviation in samples.
+    float jitter_std = sqrt(static_cast<float>(jitter_q4_ >> 4));
+
+    // 2 times the standard deviation => 95% confidence.
+    // And transform to milliseconds by dividing by the frequency in kHz.
+    max_delay_ms = static_cast<int32_t>((2 * jitter_std) / frequency_khz);
+
+    // Min max_delay_ms is 1.
+    if (max_delay_ms == 0) {
+      max_delay_ms = 1;
+    }
+  } else {
+    max_delay_ms = (min_rtt / 3) + 1;
+  }
+  return time_diff_ms > rtp_time_stamp_diff_ms + max_delay_ms;
+}
+
+bool StreamStatisticianImpl::IsPacketInOrder(uint16_t sequence_number) const {
+  CriticalSectionScoped cs(crit_sect_.get());
+  return InOrderPacketInternal(sequence_number);
+}
+
+bool StreamStatisticianImpl::InOrderPacketInternal(
+    uint16_t sequence_number) const {
+  // First packet is always in order.
+  if (last_receive_time_ms_ == 0)
+    return true;
+
+  if (IsNewerSequenceNumber(sequence_number, received_seq_max_)) {
+    return true;
+  } else {
+    // If we have a restart of the remote side this packet is still in order.
+    return !IsNewerSequenceNumber(sequence_number, received_seq_max_ -
+                                  max_reordering_threshold_);
+  }
+}
+
 ReceiveStatistics* ReceiveStatistics::Create(Clock* clock) {
   return new ReceiveStatisticsImpl(clock);
 }
@@ -292,8 +359,7 @@ ReceiveStatisticsImpl::~ReceiveStatisticsImpl() {
 }
 
 void ReceiveStatisticsImpl::IncomingPacket(const RTPHeader& header,
-                                           size_t bytes, bool old_packet,
-                                           bool in_order) {
+                                           size_t bytes, bool old_packet) {
   CriticalSectionScoped cs(crit_sect_.get());
   StatisticianImplMap::iterator it = statisticians_.find(header.ssrc);
   if (it == statisticians_.end()) {
@@ -302,8 +368,7 @@ void ReceiveStatisticsImpl::IncomingPacket(const RTPHeader& header,
             header.ssrc,  new StreamStatisticianImpl(clock_)));
     it = insert_result.first;
   }
-  statisticians_[header.ssrc]->IncomingPacket(header, bytes, old_packet,
-                                              in_order);
+  statisticians_[header.ssrc]->IncomingPacket(header, bytes, old_packet);
 }
 
 void ReceiveStatisticsImpl::ChangeSsrc(uint32_t from_ssrc, uint32_t to_ssrc) {
@@ -342,6 +407,15 @@ StreamStatistician* ReceiveStatisticsImpl::GetStatistician(
   return it->second;
 }
 
+void ReceiveStatisticsImpl::SetMaxReorderingThreshold(
+    int max_reordering_threshold) {
+  CriticalSectionScoped cs(crit_sect_.get());
+  for (StatisticianImplMap::iterator it = statisticians_.begin();
+       it != statisticians_.end(); ++it) {
+    it->second->SetMaxReorderingThreshold(max_reordering_threshold);
+  }
+}
+
 int32_t ReceiveStatisticsImpl::Process() {
   CriticalSectionScoped cs(crit_sect_.get());
   for (StatisticianImplMap::iterator it = statisticians_.begin();
@@ -362,8 +436,7 @@ int32_t ReceiveStatisticsImpl::TimeUntilNextProcess() {
 
 void NullReceiveStatistics::IncomingPacket(const RTPHeader& rtp_header,
                                            size_t bytes,
-                                           bool retransmitted,
-                                           bool in_order) {}
+                                           bool retransmitted) {}
 
 StatisticianMap NullReceiveStatistics::GetActiveStatisticians() const {
   return StatisticianMap();
@@ -373,6 +446,9 @@ StreamStatistician* NullReceiveStatistics::GetStatistician(
     uint32_t ssrc) const {
   return NULL;
 }
+
+void NullReceiveStatistics::SetMaxReorderingThreshold(
+    int max_reordering_threshold) {}
 
 int32_t NullReceiveStatistics::TimeUntilNextProcess() { return 0; }
 

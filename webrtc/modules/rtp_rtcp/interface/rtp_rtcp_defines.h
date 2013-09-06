@@ -277,17 +277,17 @@ class NullRtpFeedback : public RtpFeedback {
       const int frequency,
       const uint8_t channels,
       const uint32_t rate) OVERRIDE {
-   return 0;
- }
+    return 0;
+  }
 
   virtual void OnIncomingSSRCChanged(const int32_t id,
                                      const uint32_t ssrc) OVERRIDE {}
 
- virtual void OnIncomingCSRCChanged(const int32_t id,
-                                    const uint32_t CSRC,
-                                    const bool added) OVERRIDE {}
+  virtual void OnIncomingCSRCChanged(const int32_t id,
+                                     const uint32_t CSRC,
+                                     const bool added) OVERRIDE {}
 
- virtual void ResetStatistics(uint32_t ssrc) OVERRIDE {}
+  virtual void ResetStatistics(uint32_t ssrc) OVERRIDE {}
 };
 
 // Null object version of RtpData.

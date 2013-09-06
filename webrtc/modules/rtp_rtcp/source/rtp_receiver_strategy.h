@@ -43,8 +43,8 @@ class RTPReceiverStrategy {
   virtual int32_t ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                                  const PayloadUnion& specific_payload,
                                  bool is_red,
-                                 const uint8_t* packet,
-                                 uint16_t packet_length,
+                                 const uint8_t* payload,
+                                 uint16_t payload_length,
                                  int64_t timestamp_ms,
                                  bool is_first_packet) = 0;
 

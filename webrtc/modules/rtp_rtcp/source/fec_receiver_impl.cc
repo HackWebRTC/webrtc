@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/rtp_rtcp/source/receiver_fec.h"
+#include "webrtc/modules/rtp_rtcp/source/fec_receiver_impl.h"
 
 #include <assert.h>
 
@@ -20,33 +20,28 @@
 
 // RFC 5109
 namespace webrtc {
-ReceiverFEC::ReceiverFEC(const int32_t id, RtpData* callback)
+
+FecReceiver* FecReceiver::Create(int32_t id, RtpData* callback) {
+  return new FecReceiverImpl(id, callback);
+}
+
+FecReceiverImpl::FecReceiverImpl(const int32_t id, RtpData* callback)
     : id_(id),
       crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       recovered_packet_callback_(callback),
-      fec_(new ForwardErrorCorrection(id)),
-      payload_type_fec_(-1) {}
+      fec_(new ForwardErrorCorrection(id)) {}
 
-ReceiverFEC::~ReceiverFEC() {
-  // Clean up DecodeFEC()
+FecReceiverImpl::~FecReceiverImpl() {
   while (!received_packet_list_.empty()) {
-    ForwardErrorCorrection::ReceivedPacket* received_packet =
-        received_packet_list_.front();
-    delete received_packet;
+    delete received_packet_list_.front();
     received_packet_list_.pop_front();
   }
-  assert(received_packet_list_.empty());
-
   if (fec_ != NULL) {
     fec_->ResetState(&recovered_packet_list_);
     delete fec_;
   }
 }
 
-void ReceiverFEC::SetPayloadTypeFEC(const int8_t payload_type) {
-  CriticalSectionScoped cs(crit_sect_.get());
-  payload_type_fec_ = payload_type;
-}
 //     0                   1                    2                   3
 //     0 1 2 3 4 5 6 7 8 9 0 1 2 3  4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 //    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -75,17 +70,12 @@ void ReceiverFEC::SetPayloadTypeFEC(const int8_t payload_type) {
 //    block length:  10 bits Length in bytes of the corresponding data
 //        block excluding header.
 
-int32_t ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
-                                          const uint8_t* incoming_rtp_packet,
-                                          const uint16_t payload_data_length,
-                                          bool& FECpacket) {
+int32_t FecReceiverImpl::AddReceivedRedPacket(
+    const RTPHeader& header, const uint8_t* incoming_rtp_packet,
+    int packet_length, uint8_t ulpfec_payload_type) {
   CriticalSectionScoped cs(crit_sect_.get());
-
-  if (payload_type_fec_ == -1) {
-    return -1;
-  }
-
   uint8_t REDHeaderLength = 1;
+  uint16_t payload_data_length = packet_length - header.headerLength;
 
   // Add to list without RED header, aka a virtual RTP packet
   // we remove the RED header
@@ -96,26 +86,19 @@ int32_t ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
 
   // get payload type from RED header
   uint8_t payload_type =
-      incoming_rtp_packet[rtp_header->header.headerLength] & 0x7f;
+      incoming_rtp_packet[header.headerLength] & 0x7f;
 
-  // use the payload_type to decide if it's FEC or coded data
-  if (payload_type_fec_ == payload_type) {
-    received_packet->is_fec = true;
-    FECpacket = true;
-  } else {
-    received_packet->is_fec = false;
-    FECpacket = false;
-  }
-  received_packet->seq_num = rtp_header->header.sequenceNumber;
+  received_packet->is_fec = payload_type == ulpfec_payload_type;
+  received_packet->seq_num = header.sequenceNumber;
 
   uint16_t blockLength = 0;
-  if (incoming_rtp_packet[rtp_header->header.headerLength] & 0x80) {
+  if (incoming_rtp_packet[header.headerLength] & 0x80) {
     // f bit set in RED header
     REDHeaderLength = 4;
     uint16_t timestamp_offset =
-        (incoming_rtp_packet[rtp_header->header.headerLength + 1]) << 8;
+        (incoming_rtp_packet[header.headerLength + 1]) << 8;
     timestamp_offset +=
-        incoming_rtp_packet[rtp_header->header.headerLength + 2];
+        incoming_rtp_packet[header.headerLength + 2];
     timestamp_offset = timestamp_offset >> 2;
     if (timestamp_offset != 0) {
       // |timestampOffset| should be 0. However, it's possible this is the first
@@ -127,11 +110,11 @@ int32_t ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
     }
 
     blockLength =
-        (0x03 & incoming_rtp_packet[rtp_header->header.headerLength + 2]) << 8;
-    blockLength += (incoming_rtp_packet[rtp_header->header.headerLength + 3]);
+        (0x03 & incoming_rtp_packet[header.headerLength + 2]) << 8;
+    blockLength += (incoming_rtp_packet[header.headerLength + 3]);
 
     // check next RED header
-    if (incoming_rtp_packet[rtp_header->header.headerLength + 4] & 0x80) {
+    if (incoming_rtp_packet[header.headerLength + 4] & 0x80) {
       // more than 2 blocks in packet not supported
       delete received_packet;
       assert(false);
@@ -152,7 +135,7 @@ int32_t ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
 
     // copy the RTP header
     memcpy(received_packet->pkt->data, incoming_rtp_packet,
-           rtp_header->header.headerLength);
+           header.headerLength);
 
     // replace the RED payload type
     received_packet->pkt->data[1] &= 0x80;  // reset the payload
@@ -161,8 +144,8 @@ int32_t ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
 
     // copy the payload data
     memcpy(
-        received_packet->pkt->data + rtp_header->header.headerLength,
-        incoming_rtp_packet + rtp_header->header.headerLength + REDHeaderLength,
+        received_packet->pkt->data + header.headerLength,
+        incoming_rtp_packet + header.headerLength + REDHeaderLength,
         blockLength);
 
     received_packet->pkt->length = blockLength;
@@ -171,11 +154,11 @@ int32_t ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
     second_received_packet->pkt = new ForwardErrorCorrection::Packet;
 
     second_received_packet->is_fec = true;
-    second_received_packet->seq_num = rtp_header->header.sequenceNumber;
+    second_received_packet->seq_num = header.sequenceNumber;
 
     // copy the FEC payload data
     memcpy(second_received_packet->pkt->data,
-           incoming_rtp_packet + rtp_header->header.headerLength +
+           incoming_rtp_packet + header.headerLength +
                REDHeaderLength + blockLength,
            payload_data_length - REDHeaderLength - blockLength);
 
@@ -186,7 +169,7 @@ int32_t ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
     // everything behind the RED header
     memcpy(
         received_packet->pkt->data,
-        incoming_rtp_packet + rtp_header->header.headerLength + REDHeaderLength,
+        incoming_rtp_packet + header.headerLength + REDHeaderLength,
         payload_data_length - REDHeaderLength);
     received_packet->pkt->length = payload_data_length - REDHeaderLength;
     received_packet->ssrc =
@@ -195,7 +178,7 @@ int32_t ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
   } else {
     // copy the RTP header
     memcpy(received_packet->pkt->data, incoming_rtp_packet,
-           rtp_header->header.headerLength);
+           header.headerLength);
 
     // replace the RED payload type
     received_packet->pkt->data[1] &= 0x80;  // reset the payload
@@ -204,12 +187,12 @@ int32_t ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
 
     // copy the media payload data
     memcpy(
-        received_packet->pkt->data + rtp_header->header.headerLength,
-        incoming_rtp_packet + rtp_header->header.headerLength + REDHeaderLength,
+        received_packet->pkt->data + header.headerLength,
+        incoming_rtp_packet + header.headerLength + REDHeaderLength,
         payload_data_length - REDHeaderLength);
 
     received_packet->pkt->length =
-        rtp_header->header.headerLength + payload_data_length - REDHeaderLength;
+        header.headerLength + payload_data_length - REDHeaderLength;
   }
 
   if (received_packet->pkt->length == 0) {
@@ -225,7 +208,7 @@ int32_t ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtp_header,
   return 0;
 }
 
-int32_t ReceiverFEC::ProcessReceivedFEC() {
+int32_t FecReceiverImpl::ProcessReceivedFec() {
   crit_sect_->Enter();
   if (!received_packet_list_.empty()) {
     // Send received media packet to VCM.

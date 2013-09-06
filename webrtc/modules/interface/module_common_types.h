@@ -98,9 +98,7 @@ enum RtpVideoCodecTypes
 {
     kRtpVideoNone,
     kRtpVideoGeneric,
-    kRtpVideoVp8,
-    kRtpVideoFec,
-    kRtpVideoI420
+    kRtpVideoVp8
 };
 struct RTPVideoHeader
 {

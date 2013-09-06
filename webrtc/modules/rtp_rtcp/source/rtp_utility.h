@@ -56,14 +56,6 @@ namespace ModuleRTPUtility
 
     uint32_t pow2(uint8_t exp);
 
-    // Returns a pointer to the payload data given a packet.
-    const uint8_t* GetPayloadData(const RTPHeader& rtp_header,
-                                  const uint8_t* packet);
-
-    // Returns payload length given a packet.
-    uint16_t GetPayloadDataLength(const RTPHeader& rtp_header,
-                                  const uint16_t packet_length);
-
     // Returns true if |newTimestamp| is older than |existingTimestamp|.
     // |wrapped| will be set to true if there has been a wraparound between the
     // two timestamps.

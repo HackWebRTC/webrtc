@@ -375,8 +375,8 @@ TEST_F(RtcpSenderTest, TestCompound) {
   PayloadUnion payload_specific;
   EXPECT_TRUE(rtp_payload_registry_->GetPayloadSpecifics(header.payloadType,
                                                         &payload_specific));
-  receive_statistics_->IncomingPacket(header, packet_length, false, true);
-  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(&header, packet_, packet_length,
+  receive_statistics_->IncomingPacket(header, packet_length, false);
+  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(header, packet_, packet_length,
                                                payload_specific, true));
 
   EXPECT_EQ(0, rtcp_sender_->SetIJStatus(true));
