@@ -248,7 +248,8 @@ bool VideoAdapter::AdaptFrame(const VideoFrame* in_frame,
   ++frames_;
 
   // Update input to actual frame dimensions.
-  VideoFormat format(in_frame->GetWidth(), in_frame->GetHeight(),
+  VideoFormat format(static_cast<int>(in_frame->GetWidth()),
+                     static_cast<int>(in_frame->GetHeight()),
                      input_format_.interval, input_format_.fourcc);
   SetInputFormat(format);
 
