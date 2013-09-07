@@ -149,7 +149,8 @@ TEST_F(ChannelManagerTest, CreateDestroyChannels) {
 }
 
 // Test that we can create and destroy a voice and video channel with a worker.
-TEST_F(ChannelManagerTest, CreateDestroyChannelsOnThread) {
+// BUG=https://code.google.com/p/webrtc/issues/detail?id=2355
+TEST_F(ChannelManagerTest, DISABLED_CreateDestroyChannelsOnThread) {
   worker_.Start();
   EXPECT_TRUE(cm_->set_worker_thread(&worker_));
   EXPECT_TRUE(cm_->Init());
