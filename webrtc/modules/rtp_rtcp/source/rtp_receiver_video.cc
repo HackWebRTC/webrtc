@@ -59,8 +59,14 @@ int32_t RTPReceiverVideo::ParseRtpPacket(
                "seqnum", rtp_header->header.sequenceNumber,
                "timestamp", rtp_header->header.timestamp);
   rtp_header->type.Video.codec = specific_payload.Video.videoCodecType;
-  const uint16_t payload_data_length = payload_length -
-      rtp_header->header.paddingLength;
+
+  const uint16_t payload_data_length =
+      payload_length - rtp_header->header.paddingLength;
+
+  if (payload_data_length == 0)
+    return data_callback_->OnReceivedPayloadData(NULL, 0, rtp_header) == 0 ? 0
+                                                                           : -1;
+
   return ParseVideoCodecSpecific(rtp_header,
                                  payload,
                                  payload_data_length,
@@ -163,35 +169,21 @@ int32_t RTPReceiverVideo::BuildRTPheader(
 int32_t RTPReceiverVideo::ReceiveVp8Codec(WebRtcRTPHeader* rtp_header,
                                           const uint8_t* payload_data,
                                           uint16_t payload_data_length) {
-  bool success;
   ModuleRTPUtility::RTPPayload parsed_packet;
-  if (payload_data_length == 0) {
-    success = true;
-    parsed_packet.info.VP8.dataLength = 0;
-  } else {
-    uint32_t id = 0;
-    {
-      CriticalSectionScoped cs(crit_sect_.get());
-      id = id_;
-    }
-    ModuleRTPUtility::RTPPayloadParser rtp_payload_parser(
-        kRtpVideoVp8, payload_data, payload_data_length, id);
-
-    success = rtp_payload_parser.Parse(parsed_packet);
+  uint32_t id;
+  {
+    CriticalSectionScoped cs(crit_sect_.get());
+    id = id_;
   }
+  ModuleRTPUtility::RTPPayloadParser rtp_payload_parser(
+      kRtpVideoVp8, payload_data, payload_data_length, id);
 
-  if (!success) {
+  if (!rtp_payload_parser.Parse(parsed_packet))
     return -1;
-  }
-  if (parsed_packet.info.VP8.dataLength == 0) {
-    // we have an "empty" VP8 packet, it's ok, could be one way video
-    // Inform the jitter buffer about this packet.
-    rtp_header->frameType = kFrameEmpty;
-    if (data_callback_->OnReceivedPayloadData(NULL, 0, rtp_header) != 0) {
-      return -1;
-    }
+
+  if (parsed_packet.info.VP8.dataLength == 0)
     return 0;
-  }
+
   rtp_header->frameType = (parsed_packet.frameType == ModuleRTPUtility::kIFrame)
       ? kVideoFrameKey : kVideoFrameDelta;
 
