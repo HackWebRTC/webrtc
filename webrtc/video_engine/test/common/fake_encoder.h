@@ -24,7 +24,7 @@ class FakeEncoder : public VideoEncoder {
   explicit FakeEncoder(Clock* clock);
   virtual ~FakeEncoder();
 
-  static void SetCodecStreamSettings(VideoCodec* codec, size_t num_streams);
+  static void SetCodecSettings(VideoCodec* codec, size_t num_streams);
 
   virtual int32_t InitEncode(const VideoCodec* config,
                              int32_t number_of_cores,

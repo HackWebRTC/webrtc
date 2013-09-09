@@ -25,7 +25,7 @@ FakeEncoder::FakeEncoder(Clock* clock)
 
 FakeEncoder::~FakeEncoder() {}
 
-void FakeEncoder::SetCodecStreamSettings(VideoCodec* codec,
+void FakeEncoder::SetCodecSettings(VideoCodec* codec,
                                          size_t num_streams) {
   assert(num_streams > 0);
   assert(num_streams <= kMaxSimulcastStreams);
@@ -54,6 +54,10 @@ void FakeEncoder::SetCodecStreamSettings(VideoCodec* codec,
                         2;
   codec->minBitrate = stream_settings[0].minBitrate;
   codec->maxBitrate = sum_of_max_bitrates;
+
+  codec->codecType = kVideoCodecGeneric;
+  strcpy(codec->plName, "FAKE");
+  codec->plType = 125;
 }
 
 int32_t FakeEncoder::InitEncode(const VideoCodec* config,
@@ -78,13 +82,17 @@ int32_t FakeEncoder::Encode(
   }
 
   int bits_available = target_bitrate_kbps_ * delta_since_last_encode;
+  int min_bits =
+      config_.simulcastStream[0].minBitrate * delta_since_last_encode;
+  if (bits_available < min_bits)
+    bits_available = min_bits;
   last_encode_time_ms_ = time_now_ms;
 
   for (int i = 0; i < config_.numberOfSimulcastStreams; ++i) {
     CodecSpecificInfo specifics;
     memset(&specifics, 0, sizeof(specifics));
-    specifics.codecType = kVideoCodecVP8;
-    specifics.codecSpecific.VP8.simulcastIdx = i;
+    specifics.codecType = kVideoCodecGeneric;
+    specifics.codecSpecific.generic.simulcast_idx = i;
     int min_stream_bits = config_.simulcastStream[i].minBitrate *
         delta_since_last_encode;
     int max_stream_bits = config_.simulcastStream[i].maxBitrate *
@@ -100,6 +108,7 @@ int32_t FakeEncoder::Encode(
         encoded_buffer_, stream_bytes, sizeof(encoded_buffer_));
     encoded._timeStamp = input_image.timestamp();
     encoded.capture_time_ms_ = input_image.render_time_ms();
+    encoded._frameType = (*frame_types)[i];
     if (min_stream_bits > bits_available) {
       encoded._length = 0;
       encoded._frameType = kSkipFrame;

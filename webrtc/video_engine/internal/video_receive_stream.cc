@@ -18,6 +18,7 @@
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/include/vie_capture.h"
 #include "webrtc/video_engine/include/vie_codec.h"
+#include "webrtc/video_engine/include/vie_external_codec.h"
 #include "webrtc/video_engine/include/vie_network.h"
 #include "webrtc/video_engine/include/vie_render.h"
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
@@ -26,10 +27,9 @@
 namespace webrtc {
 namespace internal {
 
-VideoReceiveStream::VideoReceiveStream(
-    webrtc::VideoEngine* video_engine,
-    const VideoReceiveStream::Config& config,
-    newapi::Transport* transport)
+VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
+                                       const VideoReceiveStream::Config& config,
+                                       newapi::Transport* transport)
     : transport_(transport), config_(config), channel_(-1) {
   video_engine_base_ = ViEBase::GetInterface(video_engine);
   // TODO(mflodman): Use the other CreateChannel method.
@@ -41,8 +41,7 @@ VideoReceiveStream::VideoReceiveStream(
 
   // TODO(pbos): This is not fine grained enough...
   rtp_rtcp_->SetNACKStatus(channel_, config_.rtp.nack.rtp_history_ms > 0);
-  rtp_rtcp_->SetKeyFrameRequestMethod(channel_,
-                                      kViEKeyFrameRequestPliRtcp);
+  rtp_rtcp_->SetKeyFrameRequestMethod(channel_, kViEKeyFrameRequestPliRtcp);
 
   assert(config_.rtp.ssrc != 0);
 
@@ -61,6 +60,21 @@ VideoReceiveStream::VideoReceiveStream(
     }
   }
 
+  external_codec_ = ViEExternalCodec::GetInterface(video_engine);
+  for (size_t i = 0; i < config_.external_decoders.size(); ++i) {
+    ExternalVideoDecoder* decoder = &config_.external_decoders[i];
+    if (external_codec_->RegisterExternalReceiveCodec(
+            channel_,
+            decoder->payload_type,
+            decoder->decoder,
+            decoder->renderer,
+            decoder->expected_delay_ms) !=
+        0) {
+      // TODO(pbos): Abort gracefully? Can this be a runtime error?
+      abort();
+    }
+  }
+
   render_ = webrtc::ViERender::GetInterface(video_engine);
   assert(render_ != NULL);
 
@@ -72,9 +86,15 @@ VideoReceiveStream::VideoReceiveStream(
 }
 
 VideoReceiveStream::~VideoReceiveStream() {
+  for (size_t i = 0; i < config_.external_decoders.size(); ++i) {
+    external_codec_->DeRegisterExternalReceiveCodec(
+        channel_, config_.external_decoders[i].payload_type);
+  }
+
   network_->DeregisterSendTransport(channel_);
 
   video_engine_base_->Release();
+  external_codec_->Release();
   codec_->Release();
   network_->Release();
   render_->Release();
@@ -111,15 +131,18 @@ bool VideoReceiveStream::DeliverRtp(const uint8_t* packet, size_t length) {
   return network_->ReceivedRTPPacket(channel_, packet, length) == 0;
 }
 
-int VideoReceiveStream::FrameSizeChange(unsigned int width, unsigned int height,
+int VideoReceiveStream::FrameSizeChange(unsigned int width,
+                                        unsigned int height,
                                         unsigned int /*number_of_streams*/) {
   width_ = width;
   height_ = height;
   return 0;
 }
 
-int VideoReceiveStream::DeliverFrame(uint8_t* frame, int buffer_size,
-                                     uint32_t timestamp, int64_t render_time,
+int VideoReceiveStream::DeliverFrame(uint8_t* frame,
+                                     int buffer_size,
+                                     uint32_t timestamp,
+                                     int64_t render_time,
                                      void* /*handle*/) {
   if (config_.renderer == NULL) {
     return 0;
@@ -127,8 +150,15 @@ int VideoReceiveStream::DeliverFrame(uint8_t* frame, int buffer_size,
 
   I420VideoFrame video_frame;
   video_frame.CreateEmptyFrame(width_, height_, width_, height_, height_);
-  ConvertToI420(kI420, frame, 0, 0, width_, height_, buffer_size,
-                webrtc::kRotateNone, &video_frame);
+  ConvertToI420(kI420,
+                frame,
+                0,
+                0,
+                width_,
+                height_,
+                buffer_size,
+                webrtc::kRotateNone,
+                &video_frame);
   video_frame.set_timestamp(timestamp);
   video_frame.set_render_time_ms(render_time);
 
@@ -138,8 +168,8 @@ int VideoReceiveStream::DeliverFrame(uint8_t* frame, int buffer_size,
 
   if (config_.renderer != NULL) {
     // TODO(pbos): Add timing to RenderFrame call
-    config_.renderer
-        ->RenderFrame(video_frame, render_time - clock_->TimeInMilliseconds());
+    config_.renderer->RenderFrame(video_frame,
+                                  render_time - clock_->TimeInMilliseconds());
   }
 
   return 0;

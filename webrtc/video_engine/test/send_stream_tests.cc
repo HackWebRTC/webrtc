@@ -68,8 +68,7 @@ class VideoSendStreamTest : public ::testing::Test {
     VideoSendStream::Config config = call->GetDefaultSendConfig();
     config.encoder = &fake_encoder_;
     config.internal_source = false;
-    test::FakeEncoder::SetCodecStreamSettings(&config.codec, 1);
-    config.codec.plType = 100;
+    test::FakeEncoder::SetCodecSettings(&config.codec, 1);
     return config;
   }
 

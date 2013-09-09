@@ -14,6 +14,8 @@
       'sources': [
         'common/direct_transport.cc',
         'common/direct_transport.h',
+        'common/fake_decoder.cc',
+        'common/fake_decoder.h',
         'common/fake_encoder.cc',
         'common/fake_encoder.h',
         'common/file_capturer.cc',

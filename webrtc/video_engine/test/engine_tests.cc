@@ -23,6 +23,7 @@
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/video_engine/new_include/video_call.h"
 #include "webrtc/video_engine/test/common/direct_transport.h"
+#include "webrtc/video_engine/test/common/fake_decoder.h"
 #include "webrtc/video_engine/test/common/fake_encoder.h"
 #include "webrtc/video_engine/test/common/frame_generator.h"
 #include "webrtc/video_engine/test/common/frame_generator_capturer.h"
@@ -151,8 +152,7 @@ TEST_P(RampUpTest, RampUpWithPadding) {
   test::FakeEncoder encoder(Clock::GetRealTimeClock());
   send_config.encoder = &encoder;
   send_config.internal_source = false;
-  test::FakeEncoder::SetCodecStreamSettings(&send_config.codec, 3);
-  send_config.codec.plType = 100;
+  test::FakeEncoder::SetCodecSettings(&send_config.codec, 3);
   send_config.pacing = GetParam();
 
   test::GenerateRandomSsrcs(&send_config, &reserved_ssrcs_);
@@ -200,7 +200,10 @@ struct EngineTestParams {
 
 class EngineTest : public ::testing::TestWithParam<EngineTestParams> {
  public:
-  EngineTest() : send_stream_(NULL), receive_stream_(NULL) {}
+  EngineTest()
+      : send_stream_(NULL),
+        receive_stream_(NULL),
+        fake_encoder_(Clock::GetRealTimeClock()) {}
 
   ~EngineTest() {
     EXPECT_EQ(NULL, send_stream_);
@@ -217,17 +220,20 @@ class EngineTest : public ::testing::TestWithParam<EngineTestParams> {
   }
 
   void CreateTestConfigs() {
-    EngineTestParams params = GetParam();
     send_config_ = sender_call_->GetDefaultSendConfig();
     receive_config_ = receiver_call_->GetDefaultReceiveConfig();
 
     test::GenerateRandomSsrcs(&send_config_, &reserved_ssrcs_);
-    send_config_.codec.width = static_cast<uint16_t>(params.width);
-    send_config_.codec.height = static_cast<uint16_t>(params.height);
-    send_config_.codec.minBitrate = params.bitrate.min;
-    send_config_.codec.startBitrate = params.bitrate.start;
-    send_config_.codec.maxBitrate = params.bitrate.max;
+    send_config_.encoder = &fake_encoder_;
+    send_config_.internal_source = false;
+    test::FakeEncoder::SetCodecSettings(&send_config_.codec, 1);
 
+    receive_config_.codecs.clear();
+    receive_config_.codecs.push_back(send_config_.codec);
+    ExternalVideoDecoder decoder;
+    decoder.decoder = &fake_decoder_;
+    decoder.payload_type = send_config_.codec.plType;
+    receive_config_.external_decoders.push_back(decoder);
     receive_config_.rtp.ssrc = send_config_.rtp.ssrcs[0];
   }
 
@@ -240,11 +246,11 @@ class EngineTest : public ::testing::TestWithParam<EngineTestParams> {
   }
 
   void CreateFrameGenerator() {
-    EngineTestParams params = GetParam();
     frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
         send_stream_->Input(),
-        test::FrameGenerator::Create(
-            params.width, params.height, Clock::GetRealTimeClock()),
+        test::FrameGenerator::Create(send_config_.codec.width,
+                                     send_config_.codec.height,
+                                     Clock::GetRealTimeClock()),
         30));
   }
 
@@ -283,6 +289,9 @@ class EngineTest : public ::testing::TestWithParam<EngineTestParams> {
   VideoReceiveStream* receive_stream_;
 
   scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer_;
+
+  test::FakeEncoder fake_encoder_;
+  test::FakeDecoder fake_decoder_;
 
   std::map<uint32_t, bool> reserved_ssrcs_;
 };
@@ -428,9 +437,9 @@ TEST_P(EngineTest, ReceivesAndRetransmitsNack) {
 
   StopSending();
 
-  DestroyStreams();
-
   observer.StopSending();
+
+  DestroyStreams();
 }
 
 class PliObserver : public test::RtpRtcpObserver {
@@ -543,9 +552,9 @@ void EngineTest::ReceivesPliAndRecovers(int rtp_history_ms) {
 
   StopSending();
 
-  DestroyStreams();
-
   observer.StopSending();
+
+  DestroyStreams();
 }
 
 TEST_P(EngineTest, ReceivesPliAndRecoversWithNack) {

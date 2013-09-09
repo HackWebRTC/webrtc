@@ -23,6 +23,7 @@ namespace webrtc {
 class VideoEngine;
 class ViEBase;
 class ViECodec;
+class ViEExternalCodec;
 class ViENetwork;
 class ViERender;
 class ViERTP_RTCP;
@@ -66,6 +67,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   ViEBase* video_engine_base_;
   ViECodec* codec_;
+  ViEExternalCodec* external_codec_;
   ViENetwork* network_;
   ViERender* render_;
   ViERTP_RTCP* rtp_rtcp_;

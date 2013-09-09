@@ -43,8 +43,13 @@ struct CodecSpecificInfoVP8
     int8_t     keyIdx;            // negative value to skip keyIdx
 };
 
+struct CodecSpecificInfoGeneric {
+  uint8_t simulcast_idx;
+};
+
 union CodecSpecificInfoUnion
 {
+    CodecSpecificInfoGeneric   generic;
     CodecSpecificInfoVP8       VP8;
 };
 
