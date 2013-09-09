@@ -145,11 +145,6 @@
             '<(DEPTH)/testing/gmock.gyp:gmock',
             '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
-          'include_dirs': [
-            '..',
-            '../modules/interface',
-            '../modules/rtp_rtcp/interface',
-          ],
           'sources': [
             'call_stats_unittest.cc',
             'encoder_state_feedback_unittest.cc',
