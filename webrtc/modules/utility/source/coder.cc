@@ -12,13 +12,6 @@
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/modules/utility/source/coder.h"
 
-// OS independent case insensitive string comparison.
-#ifdef WIN32
-    #define STR_CASE_CMP(x,y) ::_stricmp(x,y)
-#else
-    #define STR_CASE_CMP(x,y) ::strcasecmp(x,y)
-#endif
-
 namespace webrtc {
 AudioCoder::AudioCoder(uint32_t instanceID)
     : _acm(AudioCodingModule::Create(instanceID)),

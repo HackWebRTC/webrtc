@@ -16,14 +16,6 @@
 #include "webrtc/system_wrappers/interface/tick_util.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
-#if (defined(WIN32) || defined(WINCE))
-    #define STR_CASE_CMP _stricmp
-    #define STR_NCASE_CMP _strnicmp
-#else
-    #define STR_CASE_CMP strcasecmp
-    #define STR_NCASE_CMP strncasecmp
-#endif
-
 namespace webrtc {
 MediaFile* MediaFile::CreateMediaFile(const int32_t id)
 {

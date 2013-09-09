@@ -23,14 +23,6 @@
     #include "avi_file.h"
 #endif
 
-#if (defined(WIN32) || defined(WINCE))
-    #define STR_CASE_CMP _stricmp
-    #define STR_NCASE_CMP _strnicmp
-#else
-    #define STR_CASE_CMP strcasecmp
-    #define STR_NCASE_CMP strncasecmp
-#endif
-
 namespace {
 enum WaveFormats
 {

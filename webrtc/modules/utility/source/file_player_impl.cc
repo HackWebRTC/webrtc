@@ -17,13 +17,6 @@
     #include "video_coder.h"
 #endif
 
-// OS independent case insensitive string comparison.
-#ifdef WIN32
-    #define STR_CASE_CMP(x,y) ::_stricmp(x,y)
-#else
-    #define STR_CASE_CMP(x,y) ::strcasecmp(x,y)
-#endif
-
 namespace webrtc {
 FilePlayer* FilePlayer::CreateFilePlayer(uint32_t instanceID,
                                          FileFormats fileFormat)
