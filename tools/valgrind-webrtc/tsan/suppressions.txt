@@ -21,7 +21,7 @@
   ThreadSanitizer:Race
   fun:webrtc::RTPSender::SendToNetwork
   fun:webrtc::RTPSenderVideo::SendVideoPacket
-  fun:webrtc::RTPSenderVideo::SendVP8
+  ...
   fun:webrtc::RTPSenderVideo::SendVideo
   fun:webrtc::RTPSender::SendOutgoingData
   fun:webrtc::ModuleRtpRtcpImpl::SendOutgoingData
