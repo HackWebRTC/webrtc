@@ -173,12 +173,9 @@ VideoCodingModuleImpl::Process() {
     // disabled when NACK is off.
     if (_retransmissionTimer.TimeUntilProcess() == 0) {
         _retransmissionTimer.Processed();
+        CriticalSectionScoped cs(_receiveCritSect);
         if (_packetRequestCallback != NULL) {
-            uint16_t length;
-            {
-                CriticalSectionScoped cs(_receiveCritSect);
-                length = max_nack_list_size_;
-            }
+            uint16_t length = max_nack_list_size_;
             std::vector<uint16_t> nackList(length);
             const int32_t ret = NackList(&nackList[0], length);
             if (ret != VCM_OK && returnValue == VCM_OK) {
