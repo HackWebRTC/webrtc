@@ -21,7 +21,7 @@
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
-#include "webrtc/video_engine/new_include/video_call.h"
+#include "webrtc/video_engine/new_include/call.h"
 #include "webrtc/video_engine/test/common/direct_transport.h"
 #include "webrtc/video_engine/test/common/fake_decoder.h"
 #include "webrtc/video_engine/test/common/fake_encoder.h"
@@ -35,7 +35,8 @@ namespace webrtc {
 class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
  public:
   typedef std::map<uint32_t, int> BytesSentMap;
-  StreamObserver(int num_expected_ssrcs, newapi::Transport* feedback_transport,
+  StreamObserver(int num_expected_ssrcs,
+                 newapi::Transport* feedback_transport,
                  Clock* clock)
       : critical_section_(CriticalSectionWrapper::CreateCriticalSection()),
         all_ssrcs_sent_(EventWrapper::Create()),
@@ -65,21 +66,19 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
     CriticalSectionScoped lock(critical_section_.get());
     if (ssrcs.size() == num_expected_ssrcs_ && bitrate >= kExpectedBitrateBps)
       all_ssrcs_sent_->Set();
-    rtp_rtcp_->SetREMBData(bitrate, static_cast<uint8_t>(ssrcs.size()),
-                           &ssrcs[0]);
+    rtp_rtcp_->SetREMBData(
+        bitrate, static_cast<uint8_t>(ssrcs.size()), &ssrcs[0]);
     rtp_rtcp_->Process();
   }
 
   virtual bool SendRTP(const uint8_t* packet, size_t length) OVERRIDE {
     CriticalSectionScoped lock(critical_section_.get());
     RTPHeader header;
-    EXPECT_TRUE(rtp_parser_->Parse(packet, static_cast<int>(length),
-                                   &header));
+    EXPECT_TRUE(rtp_parser_->Parse(packet, static_cast<int>(length), &header));
     receive_stats_->IncomingPacket(header, length, false);
     rtp_rtcp_->SetRemoteSSRC(header.ssrc);
-    remote_bitrate_estimator_->IncomingPacket(clock_->TimeInMilliseconds(),
-                                              static_cast<int>(length - 12),
-                                              header);
+    remote_bitrate_estimator_->IncomingPacket(
+        clock_->TimeInMilliseconds(), static_cast<int>(length - 12), header);
     if (remote_bitrate_estimator_->TimeUntilNextProcess() <= 0) {
       remote_bitrate_estimator_->Process();
     }
@@ -90,9 +89,7 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
     return true;
   }
 
-  EventTypeWrapper Wait() {
-    return all_ssrcs_sent_->Wait(120 * 1000);
-  }
+  EventTypeWrapper Wait() { return all_ssrcs_sent_->Wait(120 * 1000); }
 
  private:
   class TransportWrapper : public webrtc::Transport {
@@ -100,15 +97,18 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
     explicit TransportWrapper(newapi::Transport* new_transport)
         : new_transport_(new_transport) {}
 
-    virtual int SendPacket(int channel, const void *data, int len) OVERRIDE {
-      return new_transport_->SendRTP(static_cast<const uint8_t*>(data), len) ?
-          len : -1;
+    virtual int SendPacket(int channel, const void* data, int len) OVERRIDE {
+      return new_transport_->SendRTP(static_cast<const uint8_t*>(data), len)
+                 ? len
+                 : -1;
     }
 
-    virtual int SendRTCPPacket(int channel, const void *data,
+    virtual int SendRTCPPacket(int channel,
+                               const void* data,
                                int len) OVERRIDE {
-      return new_transport_->SendRTCP(static_cast<const uint8_t*>(data), len) ?
-          len : -1;
+      return new_transport_->SendRTCP(static_cast<const uint8_t*>(data), len)
+                 ? len
+                 : -1;
     }
 
    private:
@@ -130,9 +130,7 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
 
 class RampUpTest : public ::testing::TestWithParam<bool> {
  public:
-  virtual void SetUp() {
-    reserved_ssrcs_.clear();
-  }
+  virtual void SetUp() { reserved_ssrcs_.clear(); }
 
  protected:
   std::map<uint32_t, bool> reserved_ssrcs_;
@@ -140,12 +138,11 @@ class RampUpTest : public ::testing::TestWithParam<bool> {
 
 TEST_P(RampUpTest, RampUpWithPadding) {
   test::DirectTransport receiver_transport;
-  StreamObserver stream_observer(3, &receiver_transport,
-                                 Clock::GetRealTimeClock());
-  VideoCall::Config call_config(&stream_observer);
-  scoped_ptr<VideoCall> call(VideoCall::Create(call_config));
-  VideoSendStream::Config send_config =
-      call->GetDefaultSendConfig();
+  StreamObserver stream_observer(
+      3, &receiver_transport, Clock::GetRealTimeClock());
+  Call::Config call_config(&stream_observer);
+  scoped_ptr<Call> call(Call::Create(call_config));
+  VideoSendStream::Config send_config = call->GetDefaultSendConfig();
 
   receiver_transport.SetReceiver(call->Receiver());
 
@@ -157,22 +154,20 @@ TEST_P(RampUpTest, RampUpWithPadding) {
 
   test::GenerateRandomSsrcs(&send_config, &reserved_ssrcs_);
 
-  VideoSendStream* send_stream =
-      call->CreateSendStream(send_config);
+  VideoSendStream* send_stream = call->CreateSendStream(send_config);
 
   VideoReceiveStream::Config receive_config;
   receive_config.rtp.ssrc = send_config.rtp.ssrcs[0];
-  receive_config.rtp.nack.rtp_history_ms =
-      send_config.rtp.nack.rtp_history_ms;
-  VideoReceiveStream* receive_stream = call->CreateReceiveStream(
-      receive_config);
+  receive_config.rtp.nack.rtp_history_ms = send_config.rtp.nack.rtp_history_ms;
+  VideoReceiveStream* receive_stream =
+      call->CreateReceiveStream(receive_config);
 
   scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
       test::FrameGeneratorCapturer::Create(
           send_stream->Input(),
-          test::FrameGenerator::Create(
-              send_config.codec.width, send_config.codec.height,
-              Clock::GetRealTimeClock()),
+          test::FrameGenerator::Create(send_config.codec.width,
+                                       send_config.codec.height,
+                                       Clock::GetRealTimeClock()),
           30));
 
   receive_stream->StartReceive();
@@ -213,10 +208,10 @@ class EngineTest : public ::testing::TestWithParam<EngineTestParams> {
  protected:
   void CreateCalls(newapi::Transport* sender_transport,
                    newapi::Transport* receiver_transport) {
-    VideoCall::Config sender_config(sender_transport);
-    VideoCall::Config receiver_config(receiver_transport);
-    sender_call_.reset(VideoCall::Create(sender_config));
-    receiver_call_.reset(VideoCall::Create(receiver_config));
+    Call::Config sender_config(sender_transport);
+    Call::Config receiver_config(receiver_transport);
+    sender_call_.reset(Call::Create(sender_config));
+    receiver_call_.reset(Call::Create(receiver_config));
   }
 
   void CreateTestConfigs() {
@@ -273,14 +268,14 @@ class EngineTest : public ::testing::TestWithParam<EngineTestParams> {
       sender_call_->DestroySendStream(send_stream_);
     if (receive_stream_ != NULL)
       receiver_call_->DestroyReceiveStream(receive_stream_);
-    send_stream_= NULL;
+    send_stream_ = NULL;
     receive_stream_ = NULL;
   }
 
   void ReceivesPliAndRecovers(int rtp_history_ms);
 
-  scoped_ptr<VideoCall> sender_call_;
-  scoped_ptr<VideoCall> receiver_call_;
+  scoped_ptr<Call> sender_call_;
+  scoped_ptr<Call> receiver_call_;
 
   VideoSendStream::Config send_config_;
   VideoReceiveStream::Config receive_config_;
@@ -310,6 +305,7 @@ class NackObserver : public test::RtpRtcpObserver {
   static const int kNumberOfNacksToObserve = 4;
   static const int kInverseProbabilityToStartLossBurst = 20;
   static const int kMaxLossBurst = 10;
+
  public:
   NackObserver()
       : received_all_retransmissions_(EventWrapper::Create()),
@@ -444,9 +440,10 @@ TEST_P(EngineTest, ReceivesAndRetransmitsNack) {
 
 class PliObserver : public test::RtpRtcpObserver {
   static const int kInverseDropProbability = 16;
+
  public:
-  PliObserver(bool nack_enabled) :
-        renderer_(this),
+  PliObserver(bool nack_enabled)
+      : renderer_(this),
         rtp_header_parser_(RtpHeaderParser::Create()),
         nack_enabled_(nack_enabled),
         first_retransmitted_timestamp_(0),
@@ -572,9 +569,7 @@ TEST_P(EngineTest, SurvivesIncomingRtpPacketsToDestroyedReceiveStream) {
     explicit PacketInputObserver(PacketReceiver* receiver)
         : receiver_(receiver), delivered_packet_(EventWrapper::Create()) {}
 
-    EventTypeWrapper Wait() {
-      return delivered_packet_->Wait(30 * 1000);
-    }
+    EventTypeWrapper Wait() { return delivered_packet_->Wait(30 * 1000); }
 
    private:
     virtual bool DeliverPacket(const uint8_t* packet, size_t length) {

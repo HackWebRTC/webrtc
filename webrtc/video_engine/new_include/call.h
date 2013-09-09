@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_VIDEO_CALL_H_
-#define WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_VIDEO_CALL_H_
+#ifndef WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_CALL_H_
+#define WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_CALL_H_
 
 #include <string>
 #include <vector>
@@ -31,10 +31,10 @@ class PacketReceiver {
   virtual ~PacketReceiver() {}
 };
 
-// A VideoCall instance can contain several send and/or receive streams. All
-// streams are assumed to have the same remote endpoint and will share bitrate
-// estimates etc.
-class VideoCall {
+// A Call instance can contain several send and/or receive streams. All streams
+// are assumed to have the same remote endpoint and will share bitrate estimates
+// etc.
+class Call {
  public:
   struct Config {
     explicit Config(newapi::Transport* send_transport)
@@ -47,14 +47,14 @@ class VideoCall {
     newapi::Transport* send_transport;
     bool overuse_detection;
 
-    // VoiceEngine used for audio/video synchronization for this VideoCall.
+    // VoiceEngine used for audio/video synchronization for this Call.
     VoiceEngine* voice_engine;
 
     TraceCallback* trace_callback;
     uint32_t trace_filter;
   };
 
-  static VideoCall* Create(const VideoCall::Config& config);
+  static Call* Create(const Call::Config& config);
 
   virtual std::vector<VideoCodec> GetVideoCodecs() = 0;
 
@@ -76,7 +76,7 @@ class VideoCall {
 
   // All received RTP and RTCP packets for the call should be inserted to this
   // PacketReceiver. The PacketReceiver pointer is valid as long as the
-  // VideoCall instance exists.
+  // Call instance exists.
   virtual PacketReceiver* Receiver() = 0;
 
   // Returns the estimated total send bandwidth. Note: this can differ from the
@@ -87,8 +87,8 @@ class VideoCall {
   // differ from the actual receive bitrate.
   virtual uint32_t ReceiveBitrateEstimate() = 0;
 
-  virtual ~VideoCall() {}
+  virtual ~Call() {}
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_VIDEO_CALL_H_
+#endif  // WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_CALL_H_

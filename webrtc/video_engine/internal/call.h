@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_VIDEO_ENGINE_VIDEO_CALL_IMPL_H_
-#define WEBRTC_VIDEO_ENGINE_VIDEO_CALL_IMPL_H_
+#ifndef WEBRTC_VIDEO_ENGINE_CALL_IMPL_H_
+#define WEBRTC_VIDEO_ENGINE_CALL_IMPL_H_
 
 #include <map>
 #include <vector>
@@ -18,7 +18,7 @@
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/video_engine/internal/video_receive_stream.h"
 #include "webrtc/video_engine/internal/video_send_stream.h"
-#include "webrtc/video_engine/new_include/video_call.h"
+#include "webrtc/video_engine/new_include/call.h"
 
 namespace webrtc {
 
@@ -30,11 +30,10 @@ namespace internal {
 
 // TODO(pbos): Split out the packet receiver, should be sharable between
 //             VideoEngine and VoiceEngine.
-class VideoCall : public webrtc::VideoCall, public PacketReceiver {
+class Call : public webrtc::Call, public PacketReceiver {
  public:
-  VideoCall(webrtc::VideoEngine* video_engine,
-            const VideoCall::Config& config);
-  virtual ~VideoCall();
+  Call(webrtc::VideoEngine* video_engine, const Call::Config& config);
+  virtual ~Call();
 
   virtual PacketReceiver* Receiver() OVERRIDE;
   virtual std::vector<VideoCodec> GetVideoCodecs() OVERRIDE;
@@ -52,8 +51,8 @@ class VideoCall : public webrtc::VideoCall, public PacketReceiver {
   virtual VideoReceiveStream* CreateReceiveStream(
       const VideoReceiveStream::Config& config) OVERRIDE;
 
-  virtual void DestroyReceiveStream(webrtc::VideoReceiveStream* receive_stream)
-      OVERRIDE;
+  virtual void DestroyReceiveStream(
+      webrtc::VideoReceiveStream* receive_stream) OVERRIDE;
 
   virtual uint32_t SendBitrateEstimate() OVERRIDE;
   virtual uint32_t ReceiveBitrateEstimate() OVERRIDE;
@@ -66,7 +65,7 @@ class VideoCall : public webrtc::VideoCall, public PacketReceiver {
                   const uint8_t* packet,
                   size_t length);
 
-  VideoCall::Config config_;
+  Call::Config config_;
 
   std::map<uint32_t, VideoReceiveStream*> receive_ssrcs_;
   scoped_ptr<RWLockWrapper> receive_lock_;
@@ -80,9 +79,9 @@ class VideoCall : public webrtc::VideoCall, public PacketReceiver {
   ViERTP_RTCP* rtp_rtcp_;
   ViECodec* codec_;
 
-  DISALLOW_COPY_AND_ASSIGN(VideoCall);
+  DISALLOW_COPY_AND_ASSIGN(Call);
 };
 }  // namespace internal
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_INTERNAL_VIDEO_CALL_H_
+#endif  // WEBRTC_VIDEO_ENGINE_INTERNAL_CALL_H_

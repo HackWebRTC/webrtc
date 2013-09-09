@@ -16,7 +16,7 @@
 #include "webrtc/video_engine/test/common/frame_generator.h"
 #include "webrtc/video_engine/test/common/frame_generator_capturer.h"
 #include "webrtc/video_engine/test/common/null_transport.h"
-#include "webrtc/video_engine/new_include/video_call.h"
+#include "webrtc/video_engine/new_include/call.h"
 #include "webrtc/video_engine/new_include/video_send_stream.h"
 
 namespace webrtc {
@@ -28,9 +28,7 @@ class SendTransportObserver : public test::NullTransport {
         send_test_complete_(EventWrapper::Create()),
         timeout_ms_(timeout_ms) {}
 
-  EventTypeWrapper Wait() {
-    return send_test_complete_->Wait(timeout_ms_);
-  }
+  EventTypeWrapper Wait() { return send_test_complete_->Wait(timeout_ms_); }
 
  protected:
   scoped_ptr<RtpHeaderParser> rtp_header_parser_;
@@ -43,9 +41,10 @@ class SendTransportObserver : public test::NullTransport {
 class VideoSendStreamTest : public ::testing::Test {
  public:
   VideoSendStreamTest() : fake_encoder_(Clock::GetRealTimeClock()) {}
+
  protected:
   static const uint32_t kSendSsrc;
-  void RunSendTest(VideoCall* call,
+  void RunSendTest(Call* call,
                    const VideoSendStream::Config& config,
                    SendTransportObserver* observer) {
     VideoSendStream* send_stream = call->CreateSendStream(config);
@@ -64,7 +63,7 @@ class VideoSendStreamTest : public ::testing::Test {
     call->DestroySendStream(send_stream);
   }
 
-  VideoSendStream::Config GetSendTestConfig(VideoCall* call) {
+  VideoSendStream::Config GetSendTestConfig(Call* call) {
     VideoSendStream::Config config = call->GetDefaultSendConfig();
     config.encoder = &fake_encoder_;
     config.internal_source = false;
@@ -94,8 +93,8 @@ TEST_F(VideoSendStreamTest, SendsSetSsrc) {
     }
   } observer;
 
-  VideoCall::Config call_config(&observer);
-  scoped_ptr<VideoCall> call(VideoCall::Create(call_config));
+  Call::Config call_config(&observer);
+  scoped_ptr<Call> call(Call::Create(call_config));
 
   VideoSendStream::Config send_config = GetSendTestConfig(call.get());
   send_config.rtp.ssrcs.push_back(kSendSsrc);
@@ -127,8 +126,8 @@ TEST_F(VideoSendStreamTest, SupportsCName) {
     }
   } observer;
 
-  VideoCall::Config call_config(&observer);
-  scoped_ptr<VideoCall> call(VideoCall::Create(call_config));
+  Call::Config call_config(&observer);
+  scoped_ptr<Call> call(Call::Create(call_config));
 
   VideoSendStream::Config send_config = GetSendTestConfig(call.get());
   send_config.rtp.ssrcs.push_back(kSendSsrc);

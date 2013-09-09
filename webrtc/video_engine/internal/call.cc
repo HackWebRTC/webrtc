@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video_engine/internal/video_call.h"
+#include "webrtc/video_engine/internal/call.h"
 
 #include <assert.h>
 #include <string.h>
@@ -24,17 +24,16 @@
 
 namespace webrtc {
 
-VideoCall* VideoCall::Create(const VideoCall::Config& config) {
-  webrtc::VideoEngine* video_engine = webrtc::VideoEngine::Create();
+Call* Call::Create(const Call::Config& config) {
+  VideoEngine* video_engine = VideoEngine::Create();
   assert(video_engine != NULL);
 
-  return new internal::VideoCall(video_engine, config);
+  return new internal::Call(video_engine, config);
 }
 
 namespace internal {
 
-VideoCall::VideoCall(webrtc::VideoEngine* video_engine,
-                     const VideoCall::Config& config)
+Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
     : config_(config),
       receive_lock_(RWLockWrapper::CreateRWLock()),
       send_lock_(RWLockWrapper::CreateRWLock()),
@@ -50,15 +49,15 @@ VideoCall::VideoCall(webrtc::VideoEngine* video_engine,
   assert(codec_ != NULL);
 }
 
-VideoCall::~VideoCall() {
+Call::~Call() {
   codec_->Release();
   rtp_rtcp_->Release();
   webrtc::VideoEngine::Delete(video_engine_);
 }
 
-PacketReceiver* VideoCall::Receiver() { return this; }
+PacketReceiver* Call::Receiver() { return this; }
 
-std::vector<VideoCodec> VideoCall::GetVideoCodecs() {
+std::vector<VideoCodec> Call::GetVideoCodecs() {
   std::vector<VideoCodec> codecs;
 
   VideoCodec codec;
@@ -70,14 +69,13 @@ std::vector<VideoCodec> VideoCall::GetVideoCodecs() {
   return codecs;
 }
 
-VideoSendStream::Config VideoCall::GetDefaultSendConfig() {
+VideoSendStream::Config Call::GetDefaultSendConfig() {
   VideoSendStream::Config config;
   codec_->GetCodec(0, config.codec);
   return config;
 }
 
-VideoSendStream* VideoCall::CreateSendStream(
-    const VideoSendStream::Config& config) {
+VideoSendStream* Call::CreateSendStream(const VideoSendStream::Config& config) {
   assert(config.rtp.ssrcs.size() > 0);
   assert(config.codec.numberOfSimulcastStreams == 0 ||
          config.codec.numberOfSimulcastStreams == config.rtp.ssrcs.size());
@@ -93,8 +91,7 @@ VideoSendStream* VideoCall::CreateSendStream(
   return send_stream;
 }
 
-SendStreamState* VideoCall::DestroySendStream(
-    webrtc::VideoSendStream* send_stream) {
+SendStreamState* Call::DestroySendStream(webrtc::VideoSendStream* send_stream) {
   assert(send_stream != NULL);
 
   VideoSendStream* send_stream_impl = NULL;
@@ -119,11 +116,11 @@ SendStreamState* VideoCall::DestroySendStream(
   return NULL;
 }
 
-VideoReceiveStream::Config VideoCall::GetDefaultReceiveConfig() {
+VideoReceiveStream::Config Call::GetDefaultReceiveConfig() {
   return VideoReceiveStream::Config();
 }
 
-VideoReceiveStream* VideoCall::CreateReceiveStream(
+VideoReceiveStream* Call::CreateReceiveStream(
     const VideoReceiveStream::Config& config) {
   VideoReceiveStream* receive_stream =
       new VideoReceiveStream(video_engine_, config, config_.send_transport);
@@ -134,8 +131,7 @@ VideoReceiveStream* VideoCall::CreateReceiveStream(
   return receive_stream;
 }
 
-void VideoCall::DestroyReceiveStream(
-    webrtc::VideoReceiveStream* receive_stream) {
+void Call::DestroyReceiveStream(webrtc::VideoReceiveStream* receive_stream) {
   assert(receive_stream != NULL);
 
   VideoReceiveStream* receive_stream_impl = NULL;
@@ -157,17 +153,17 @@ void VideoCall::DestroyReceiveStream(
   delete receive_stream_impl;
 }
 
-uint32_t VideoCall::SendBitrateEstimate() {
+uint32_t Call::SendBitrateEstimate() {
   // TODO(pbos): Return send-bitrate estimate
   return 0;
 }
 
-uint32_t VideoCall::ReceiveBitrateEstimate() {
+uint32_t Call::ReceiveBitrateEstimate() {
   // TODO(pbos): Return receive-bitrate estimate
   return 0;
 }
 
-bool VideoCall::DeliverRtcp(const uint8_t* packet, size_t length) {
+bool Call::DeliverRtcp(const uint8_t* packet, size_t length) {
   // TODO(pbos): Figure out what channel needs it actually.
   //             Do NOT broadcast! Also make sure it's a valid packet.
   bool rtcp_delivered = false;
@@ -199,9 +195,9 @@ bool VideoCall::DeliverRtcp(const uint8_t* packet, size_t length) {
   return rtcp_delivered;
 }
 
-bool VideoCall::DeliverRtp(const RTPHeader& header,
-                           const uint8_t* packet,
-                           size_t length) {
+bool Call::DeliverRtp(const RTPHeader& header,
+                      const uint8_t* packet,
+                      size_t length) {
   VideoReceiveStream* receiver;
   {
     ReadLockScoped read_lock(*receive_lock_);
@@ -217,7 +213,7 @@ bool VideoCall::DeliverRtp(const RTPHeader& header,
   return receiver->DeliverRtp(static_cast<const uint8_t*>(packet), length);
 }
 
-bool VideoCall::DeliverPacket(const uint8_t* packet, size_t length) {
+bool Call::DeliverPacket(const uint8_t* packet, size_t length) {
   // TODO(pbos): ExtensionMap if there are extensions.
   if (RtpHeaderParser::IsRtcp(packet, static_cast<int>(length)))
     return DeliverRtcp(packet, length);

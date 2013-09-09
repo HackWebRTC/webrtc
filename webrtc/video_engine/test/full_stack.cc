@@ -23,7 +23,7 @@
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_engine/new_include/video_call.h"
+#include "webrtc/video_engine/new_include/call.h"
 #include "webrtc/video_engine/test/common/direct_transport.h"
 #include "webrtc/video_engine/test/common/file_capturer.h"
 #include "webrtc/video_engine/test/common/frame_generator_capturer.h"
@@ -47,14 +47,16 @@ struct FullStackTestParams {
   double avg_ssim_threshold;
 };
 
-FullStackTestParams paris_qcif = {"net_delay_0_0_plr_0",
-                                  {"paris_qcif", 176, 144, 30}, 300, 36.0,
-                                  0.96};
+FullStackTestParams paris_qcif = {
+    "net_delay_0_0_plr_0", {"paris_qcif", 176, 144, 30}, 300, 36.0, 0.96};
 
 // TODO(pbos): Decide on psnr/ssim thresholds for foreman_cif.
-FullStackTestParams foreman_cif = {"foreman_cif_net_delay_0_0_plr_0",
-                                   {"foreman_cif", 352, 288, 30}, 700, 0.0,
-                                   0.0};
+FullStackTestParams foreman_cif = {
+    "foreman_cif_net_delay_0_0_plr_0",
+    {"foreman_cif", 352, 288, 30},
+    700,
+    0.0,
+    0.0};
 
 class FullStackTest : public ::testing::TestWithParam<FullStackTestParams> {
  protected:
@@ -280,9 +282,9 @@ TEST_P(FullStackTest, DISABLED_NoPacketLoss) {
       params.avg_ssim_threshold,
       static_cast<uint64_t>(FLAGS_seconds * params.clip.fps));
 
-  VideoCall::Config call_config(&analyzer);
+  Call::Config call_config(&analyzer);
 
-  scoped_ptr<VideoCall> call(VideoCall::Create(call_config));
+  scoped_ptr<Call> call(Call::Create(call_config));
   analyzer.receiver_ = call->Receiver();
   transport.SetReceiver(&analyzer);
 
@@ -314,8 +316,7 @@ TEST_P(FullStackTest, DISABLED_NoPacketLoss) {
               test_clock),
           params.clip.fps));
 
-  VideoReceiveStream::Config receive_config =
-      call->GetDefaultReceiveConfig();
+  VideoReceiveStream::Config receive_config = call->GetDefaultReceiveConfig();
   receive_config.rtp.ssrc = send_config.rtp.ssrcs[0];
   receive_config.renderer = &analyzer;
 

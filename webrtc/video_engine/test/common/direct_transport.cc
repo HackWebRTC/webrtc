@@ -10,7 +10,7 @@
 #include "webrtc/video_engine/test/common/direct_transport.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
-#include "webrtc/video_engine/new_include/video_call.h"
+#include "webrtc/video_engine/new_include/call.h"
 
 namespace webrtc {
 namespace test {

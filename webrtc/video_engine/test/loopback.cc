@@ -17,7 +17,7 @@
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_engine/new_include/video_call.h"
+#include "webrtc/video_engine/new_include/call.h"
 #include "webrtc/video_engine/test/common/direct_transport.h"
 #include "webrtc/video_engine/test/common/flags.h"
 #include "webrtc/video_engine/test/common/generate_ssrcs.h"
@@ -40,9 +40,9 @@ TEST_F(LoopbackTest, Test) {
       "Loopback Video", test::flags::Width(), test::flags::Height()));
 
   test::DirectTransport transport;
-  VideoCall::Config call_config(&transport);
+  Call::Config call_config(&transport);
   call_config.overuse_detection = true;
-  scoped_ptr<VideoCall> call(VideoCall::Create(call_config));
+  scoped_ptr<Call> call(Call::Create(call_config));
 
   // Loopback, call sends to itself.
   transport.SetReceiver(call->Receiver());
@@ -74,8 +74,7 @@ TEST_F(LoopbackTest, Test) {
                                   test::flags::Fps(),
                                   test_clock));
 
-  VideoReceiveStream::Config receive_config =
-      call->GetDefaultReceiveConfig();
+  VideoReceiveStream::Config receive_config = call->GetDefaultReceiveConfig();
   receive_config.rtp.ssrc = send_config.rtp.ssrcs[0];
   receive_config.renderer = loopback_video.get();
 
