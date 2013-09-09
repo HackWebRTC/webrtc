@@ -26,24 +26,4 @@
       ],
     },
   ],
-  'conditions': [
-    ['include_tests==1', {
-      'targets': [
-        {
-          'target_name': 'rbe_components_unittests',
-          'type': 'static_library',
-          'dependencies': [
-            '<(DEPTH)/testing/gmock.gyp:gmock',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
-          ],
-          'sources': [
-            '<(rbe_components_path)/remote_bitrate_estimator_single_stream_unittest.cc',
-            '<(rbe_components_path)/remote_bitrate_estimator_unittest_helper.cc',
-            '<(rbe_components_path)/remote_bitrate_estimator_unittest_helper.h',
-          ],
-        },
-      ],
-    },
-    ],
-  ],
 }
