@@ -94,7 +94,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
 
   int SendPayloadFrequency() const;
 
-  void SetSendingStatus(const bool enabled);
+  void SetSendingStatus(bool enabled);
 
   void SetSendingMediaStatus(const bool enabled);
   bool SendingMedia() const;

@@ -74,7 +74,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                   configuration.audio_messages,
                   configuration.paced_sender),
       rtcp_sender_(configuration.id, configuration.audio, configuration.clock,
-                   this, configuration.receive_statistics),
+                   configuration.receive_statistics),
       rtcp_receiver_(configuration.id, configuration.clock, this),
       clock_(configuration.clock),
       id_(configuration.id),
@@ -246,7 +246,8 @@ int32_t ModuleRtpRtcpImpl::Process() {
       }
     }
     if (rtcp_sender_.TimeToSendRTCPReport()) {
-      rtcp_sender_.SendRTCP(kRtcpReport);
+      RTCPSender::FeedbackState feedback_state(this);
+      rtcp_sender_.SendRTCP(feedback_state, kRtcpReport);
     }
   }
 
@@ -490,7 +491,8 @@ int32_t ModuleRtpRtcpImpl::SetSendingStatus(const bool sending) {
   }
   if (rtcp_sender_.Sending() != sending) {
     // Sends RTCP BYE when going from true to false
-    if (rtcp_sender_.SetSendingStatus(sending) != 0) {
+    RTCPSender::FeedbackState feedback_state(this);
+    if (rtcp_sender_.SetSendingStatus(feedback_state, sending) != 0) {
       WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, id_,
                    "Failed to send RTCP BYE");
     }
@@ -575,7 +577,8 @@ int32_t ModuleRtpRtcpImpl::SendOutgoingData(
   if (!have_child_modules) {
     // Don't send RTCP from default module.
     if (rtcp_sender_.TimeToSendRTCPReport(kVideoFrameKey == frame_type)) {
-      rtcp_sender_.SendRTCP(kRtcpReport);
+      RTCPSender::FeedbackState feedback_state(this);
+      rtcp_sender_.SendRTCP(feedback_state, kRtcpReport);
     }
     return rtp_sender_.SendOutgoingData(frame_type,
                                         payload_type,
@@ -917,7 +920,8 @@ int32_t ModuleRtpRtcpImpl::ResetSendDataCountersRTP() {
 int32_t ModuleRtpRtcpImpl::SendRTCP(uint32_t rtcp_packet_type) {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "SendRTCP(0x%x)",
                rtcp_packet_type);
-  return rtcp_sender_.SendRTCP(rtcp_packet_type);
+  RTCPSender::FeedbackState feedback_state(this);
+  return rtcp_sender_.SendRTCP(feedback_state, rtcp_packet_type);
 }
 
 int32_t ModuleRtpRtcpImpl::SetRTCPApplicationSpecificData(
@@ -1134,7 +1138,9 @@ int32_t ModuleRtpRtcpImpl::SendNACK(const uint16_t* nack_list,
   }
   nack_last_seq_number_sent_ = nack_list[start_id + nackLength - 1];
 
-  return rtcp_sender_.SendRTCP(kRtcpNack, nackLength, &nack_list[start_id]);
+  RTCPSender::FeedbackState feedback_state(this);
+  return rtcp_sender_.SendRTCP(
+      feedback_state, kRtcpNack, nackLength, &nack_list[start_id]);
 }
 
 // Store the sent packets, needed to answer to a Negative acknowledgment
@@ -1323,7 +1329,9 @@ int32_t ModuleRtpRtcpImpl::SendRTCPSliceLossIndication(
                "SendRTCPSliceLossIndication (picture_id:%d)",
                picture_id);
 
-  return rtcp_sender_.SendRTCP(kRtcpSli, 0, 0, false, picture_id);
+  RTCPSender::FeedbackState feedback_state(this);
+  return rtcp_sender_.SendRTCP(
+      feedback_state, kRtcpSli, 0, 0, false, picture_id);
 }
 
 int32_t ModuleRtpRtcpImpl::SetCameraDelay(const int32_t delay_ms) {
@@ -1521,7 +1529,9 @@ void ModuleRtpRtcpImpl::OnRequestSendReport() {
 
 int32_t ModuleRtpRtcpImpl::SendRTCPReferencePictureSelection(
     const uint64_t picture_id) {
-  return rtcp_sender_.SendRTCP(kRtcpRpsi, 0, 0, false, picture_id);
+  RTCPSender::FeedbackState feedback_state(this);
+  return rtcp_sender_.SendRTCP(
+      feedback_state, kRtcpRpsi, 0, 0, false, picture_id);
 }
 
 uint32_t ModuleRtpRtcpImpl::SendTimeOfSendReport(

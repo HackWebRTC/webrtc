@@ -28,6 +28,7 @@
 namespace webrtc {
 
 class ModuleRtpRtcpImpl;
+class RTCPReceiver;
 
 class NACKStringBuilder
 {
@@ -48,8 +49,25 @@ private:
 class RTCPSender
 {
 public:
+ struct FeedbackState {
+   explicit FeedbackState(ModuleRtpRtcpImpl* module);
+   FeedbackState();
+
+   uint8_t send_payload_type;
+   uint32_t frequency_hz;
+   uint32_t packet_count_sent;
+   uint32_t byte_count_sent;
+   uint32_t send_bitrate;
+
+   uint32_t last_rr_ntp_secs;
+   uint32_t last_rr_ntp_frac;
+   uint32_t remote_sr;
+
+   // Used when generating TMMBR.
+   ModuleRtpRtcpImpl* module;
+ };
     RTCPSender(const int32_t id, const bool audio,
-               Clock* clock, ModuleRtpRtcpImpl* owner,
+               Clock* clock,
                ReceiveStatistics* receive_statistics);
     virtual ~RTCPSender();
 
@@ -63,7 +81,8 @@ public:
     int32_t SetRTCPStatus(const RTCPMethod method);
 
     bool Sending() const;
-    int32_t SetSendingStatus(const bool enabled); // combine the functions
+    int32_t SetSendingStatus(const FeedbackState& feedback_state,
+                             bool enabled);  // combine the functions
 
     int32_t SetNackStatus(const bool enable);
 
@@ -93,6 +112,7 @@ public:
     uint32_t LastSendReport(uint32_t& lastRTCPTime);
 
     int32_t SendRTCP(
+        const FeedbackState& feedback_state,
         uint32_t rtcpPacketTypeFlags,
         int32_t nackSize = 0,
         const uint16_t* nackList = 0,
@@ -172,14 +192,16 @@ private:
         std::map<uint32_t, RTCPReportBlock*>* report_blocks,
         const RTCPReportBlock* receiveBlock);
 
-    bool PrepareReport(StreamStatistician* statistician,
+    bool PrepareReport(const FeedbackState& feedback_state,
+                       StreamStatistician* statistician,
                        RTCPReportBlock* report_block,
                        uint32_t* ntp_secs, uint32_t* ntp_frac);
 
-    int32_t BuildSR(uint8_t* rtcpbuffer,
+    int32_t BuildSR(const FeedbackState& feedback_state,
+                    uint8_t* rtcpbuffer,
                     int& pos,
-                    const uint32_t NTPsec,
-                    const uint32_t NTPfrac);
+                    uint32_t NTPsec,
+                    uint32_t NTPfrac);
 
     int32_t BuildRR(uint8_t* rtcpbuffer,
                     int& pos,
@@ -187,6 +209,7 @@ private:
                     const uint32_t NTPfrac);
 
     int PrepareRTCP(
+        const FeedbackState& feedback_state,
         uint32_t packetTypeFlags,
         int32_t nackSize,
         const uint16_t* nackList,
@@ -205,7 +228,9 @@ private:
     int32_t BuildSDEC(uint8_t* rtcpbuffer, int& pos);
     int32_t BuildPLI(uint8_t* rtcpbuffer, int& pos);
     int32_t BuildREMB(uint8_t* rtcpbuffer, int& pos);
-    int32_t BuildTMMBR(uint8_t* rtcpbuffer, int& pos);
+    int32_t BuildTMMBR(ModuleRtpRtcpImpl* module,
+                       uint8_t* rtcpbuffer,
+                       int& pos);
     int32_t BuildTMMBN(uint8_t* rtcpbuffer, int& pos);
     int32_t BuildAPP(uint8_t* rtcpbuffer, int& pos);
     int32_t BuildVoIPMetric(uint8_t* rtcpbuffer, int& pos);
@@ -230,8 +255,6 @@ private:
     const bool               _audio;
     Clock*                   _clock;
     RTCPMethod               _method;
-
-    ModuleRtpRtcpImpl&      _rtpRtcp;
 
     CriticalSectionWrapper* _criticalSectionTransport;
     Transport*              _cbTransport;

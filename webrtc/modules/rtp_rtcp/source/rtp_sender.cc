@@ -232,7 +232,9 @@ int32_t RTPSender::DeRegisterSendPayload(
 
 int8_t RTPSender::SendPayloadType() const { return payload_type_; }
 
-int RTPSender::SendPayloadFrequency() const { return audio_->AudioFrequency(); }
+int RTPSender::SendPayloadFrequency() const {
+  return audio_ != NULL ? audio_->AudioFrequency() : kVideoPayloadTypeFrequency;
+}
 
 int32_t RTPSender::SetMaxPayloadLength(
     const uint16_t max_payload_length,
@@ -1168,28 +1170,9 @@ bool RTPSender::UpdateAbsoluteSendTime(
   return true;
 }
 
-void RTPSender::SetSendingStatus(const bool enabled) {
+void RTPSender::SetSendingStatus(bool enabled) {
   if (enabled) {
-    uint32_t frequency_hz;
-    if (audio_configured_) {
-      uint32_t frequency = audio_->AudioFrequency();
-
-      // sanity
-      switch (frequency) {
-      case 8000:
-      case 12000:
-      case 16000:
-      case 24000:
-      case 32000:
-        break;
-      default:
-        assert(false);
-        return;
-      }
-      frequency_hz = frequency;
-    } else {
-      frequency_hz = kVideoPayloadTypeFrequency;
-    }
+    uint32_t frequency_hz = SendPayloadFrequency();
     uint32_t RTPtime = ModuleRTPUtility::GetCurrentRTP(clock_, frequency_hz);
 
     // Will be ignored if it's already configured via API.
