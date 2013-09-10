@@ -9,9 +9,11 @@
  */
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/rtp_rtcp/interface/rtp_header_parser.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/video_engine/test/common/fake_encoder.h"
 #include "webrtc/video_engine/test/common/frame_generator.h"
 #include "webrtc/video_engine/test/common/frame_generator_capturer.h"
@@ -67,6 +69,7 @@ class VideoSendStreamTest : public ::testing::Test {
     VideoSendStream::Config config = call->GetDefaultSendConfig();
     config.encoder = &fake_encoder_;
     config.internal_source = false;
+    config.rtp.ssrcs.push_back(kSendSsrc);
     test::FakeEncoder::SetCodecSettings(&config.codec, 1);
     return config;
   }
@@ -97,7 +100,6 @@ TEST_F(VideoSendStreamTest, SendsSetSsrc) {
   scoped_ptr<Call> call(Call::Create(call_config));
 
   VideoSendStream::Config send_config = GetSendTestConfig(call.get());
-  send_config.rtp.ssrcs.push_back(kSendSsrc);
 
   RunSendTest(call.get(), send_config, &observer);
 }
@@ -130,8 +132,98 @@ TEST_F(VideoSendStreamTest, SupportsCName) {
   scoped_ptr<Call> call(Call::Create(call_config));
 
   VideoSendStream::Config send_config = GetSendTestConfig(call.get());
-  send_config.rtp.ssrcs.push_back(kSendSsrc);
   send_config.rtp.c_name = kCName;
+
+  RunSendTest(call.get(), send_config, &observer);
+}
+
+TEST_F(VideoSendStreamTest, RespondsToNack) {
+  class NackObserver : public SendTransportObserver, webrtc::Transport {
+   public:
+    NackObserver()
+        : SendTransportObserver(30 * 1000),
+          thread_(ThreadWrapper::CreateThread(NackProcess, this)),
+          send_call_receiver_(NULL),
+          send_count_(0),
+          ssrc_(0),
+          nacked_sequence_number_(0) {}
+
+    ~NackObserver() {
+      EXPECT_TRUE(thread_->Stop());
+    }
+
+    void SetReceiver(PacketReceiver* send_call_receiver) {
+      send_call_receiver_ = send_call_receiver;
+    }
+
+    // Sending NACKs must be done from a different "network" thread to prevent
+    // violating locking orders. With this no locks are held prior to inserting
+    // packets back into the sender.
+    static bool NackProcess(void* observer) {
+      return static_cast<NackObserver*>(observer)->SendNack();
+    }
+
+    bool SendNack() {
+      NullReceiveStatistics null_stats;
+      RTCPSender rtcp_sender(0, false, Clock::GetRealTimeClock(), &null_stats);
+      EXPECT_EQ(0, rtcp_sender.RegisterSendTransport(this));
+
+      rtcp_sender.SetRTCPStatus(kRtcpNonCompound);
+      rtcp_sender.SetRemoteSSRC(ssrc_);
+
+      RTCPSender::FeedbackState feedback_state;
+      EXPECT_EQ(0, rtcp_sender.SendRTCP(
+          feedback_state, kRtcpNack, 1, &nacked_sequence_number_));
+      return false;
+    }
+
+    virtual int SendPacket(int channel, const void* data, int len) OVERRIDE {
+      ADD_FAILURE()
+          << "This should never be reached. Only a NACK should be sent.";
+      return -1;
+    }
+
+    virtual int SendRTCPPacket(int channel,
+                               const void* data,
+                               int len) OVERRIDE {
+      EXPECT_TRUE(send_call_receiver_->DeliverPacket(
+          static_cast<const uint8_t*>(data), static_cast<size_t>(len)));
+      return len;
+    }
+
+    virtual bool SendRTP(const uint8_t* packet, size_t length) OVERRIDE {
+      EXPECT_TRUE(send_call_receiver_ != NULL);
+      RTPHeader header;
+      EXPECT_TRUE(
+          rtp_header_parser_->Parse(packet, static_cast<int>(length), &header));
+
+      // Nack second packet after receiving the third one.
+      if (++send_count_ == 3) {
+        ssrc_ = header.ssrc;
+        nacked_sequence_number_ = header.sequenceNumber - 1;
+        unsigned int id;
+        EXPECT_TRUE(thread_->Start(id));
+      }
+
+      if (header.sequenceNumber == nacked_sequence_number_)
+        send_test_complete_->Set();
+
+      return true;
+    }
+   private:
+    scoped_ptr<ThreadWrapper> thread_;
+    PacketReceiver* send_call_receiver_;
+    int send_count_;
+    uint32_t ssrc_;
+    uint16_t nacked_sequence_number_;
+  } observer;
+
+  Call::Config call_config(&observer);
+  scoped_ptr<Call> call(Call::Create(call_config));
+  observer.SetReceiver(call->Receiver());
+
+  VideoSendStream::Config send_config = GetSendTestConfig(call.get());
+  send_config.rtp.nack.rtp_history_ms = 1000;
 
   RunSendTest(call.get(), send_config, &observer);
 }
