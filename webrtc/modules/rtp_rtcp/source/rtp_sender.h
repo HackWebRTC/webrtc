@@ -314,6 +314,7 @@ class RTPSender : public Bitrate, public RTPSenderInterface {
   RTPPacketHistory *packet_history_;
 
   // Statistics
+  scoped_ptr<CriticalSectionWrapper> statistics_crit_;
   uint32_t packets_sent_;
   uint32_t payload_bytes_sent_;
 

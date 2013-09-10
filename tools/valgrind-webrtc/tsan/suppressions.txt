@@ -16,29 +16,6 @@
   fun:webrtc::Trace::SetTraceCallback
   ...
 }
-{
-  BUG_2349
-  ThreadSanitizer:Race
-  fun:webrtc::RTPSender::SendToNetwork
-  fun:webrtc::RTPSenderVideo::SendVideoPacket
-  ...
-  fun:webrtc::RTPSenderVideo::SendVideo
-  fun:webrtc::RTPSender::SendOutgoingData
-  fun:webrtc::ModuleRtpRtcpImpl::SendOutgoingData
-  fun:webrtc::ModuleRtpRtcpImpl::SendOutgoingData
-  fun:webrtc::ViEEncoder::SendData
-  fun:webrtc::VCMEncodedFrameCallback::Encoded
-  fun:webrtc::test::FakeEncoder::Encode
-  fun:webrtc::VCMGenericEncoder::Encode
-  fun:webrtc::VideoCodingModuleImpl::AddVideoFrame
-  fun:webrtc::ViEEncoder::DeliverFrame
-  fun:webrtc::ViEFrameProviderBase::DeliverFrame
-  fun:webrtc::ViECapturer::DeliverI420Frame
-  fun:webrtc::ViECapturer::ViECaptureProcess
-  fun:webrtc::ViECapturer::ViECaptureThreadFunction
-  fun:webrtc::ThreadPosix::Run
-  fun:StartThread
-}
 
 # Known bugs we don't care about / problems in third parties
 {

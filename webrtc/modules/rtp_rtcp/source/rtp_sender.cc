@@ -56,6 +56,7 @@ RTPSender::RTPSender(const int32_t id, const bool audio, Clock *clock,
       nack_byte_count_times_(), nack_byte_count_(), nack_bitrate_(clock),
       packet_history_(new RTPPacketHistory(clock)),
       // Statistics
+      statistics_crit_(CriticalSectionWrapper::CreateCriticalSection()),
       packets_sent_(0), payload_bytes_sent_(0), start_time_stamp_forced_(false),
       start_time_stamp_(0), ssrc_db_(*SSRCDatabase::GetSSRCDatabase()),
       remote_ssrc_(0), sequence_number_forced_(false), ssrc_forced_(false),
@@ -546,9 +547,9 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, uint32_t min_resend_time) {
 
   {
     // Update send statistics prior to pacer.
-    CriticalSectionScoped cs(send_critsect_);
+    CriticalSectionScoped lock(statistics_crit_.get());
     Bitrate::Update(length);
-    packets_sent_++;
+    ++packets_sent_;
     // We on purpose don't add to payload_bytes_sent_ since this is a
     // re-transmit and not new payload data.
   }
@@ -807,7 +808,7 @@ int32_t RTPSender::SendToNetwork(
   }
   {
     // Update send statistics prior to pacer.
-    CriticalSectionScoped cs(send_critsect_);
+    CriticalSectionScoped lock(statistics_crit_.get());
     Bitrate::Update(payload_length + rtp_header_length);
     ++packets_sent_;
     payload_bytes_sent_ += payload_length;
@@ -858,18 +859,19 @@ uint16_t RTPSender::IncrementSequenceNumber() {
 }
 
 void RTPSender::ResetDataCounters() {
+  CriticalSectionScoped lock(statistics_crit_.get());
   packets_sent_ = 0;
   payload_bytes_sent_ = 0;
 }
 
 uint32_t RTPSender::Packets() const {
-  // Don't use critsect to avoid potential deadlock.
+  CriticalSectionScoped lock(statistics_crit_.get());
   return packets_sent_;
 }
 
 // Number of sent RTP bytes.
-// Don't use critsect to avoid potental deadlock.
 uint32_t RTPSender::Bytes() const {
+  CriticalSectionScoped lock(statistics_crit_.get());
   return payload_bytes_sent_;
 }
 
