@@ -281,8 +281,8 @@ void PrintMaxRepeatedAndSkippedFrames(const std::string& label,
 void PrintAnalysisResults(const std::string& label, ResultsContainer* results) {
   std::vector<AnalysisResult>::iterator iter;
 
-  fprintf(stdout, "RESULT Unique_frames_count: %s= %ld\n", label.c_str(),
-          results->frames.size());
+  fprintf(stdout, "RESULT Unique_frames_count: %s= %u\n", label.c_str(),
+          static_cast<unsigned int>(results->frames.size()));
 
   if (results->frames.size() > 0u) {
     fprintf(stdout, "RESULT PSNR: %s= [", label.c_str());
