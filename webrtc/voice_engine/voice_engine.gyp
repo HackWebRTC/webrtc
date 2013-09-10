@@ -25,15 +25,6 @@
         '<(webrtc_root)/modules/modules.gyp:webrtc_utility',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
-      'include_dirs': [
-        'include',
-        '<(webrtc_root)/modules/audio_device',
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          'include',
-        ],
-      },
       'sources': [
         '../common_types.h',
         '../engine_configurations.h',
@@ -136,9 +127,6 @@
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/test/test.gyp:test_support_main',
           ],
-          'include_dirs': [
-            'include',
-          ],
           'sources': [
             'channel_unittest.cc',
             'output_mixer_unittest.cc',
@@ -170,15 +158,6 @@
             '<(webrtc_root)/test/test.gyp:channel_transport',
             '<(webrtc_root)/test/test.gyp:test_support',
            ],
-          'include_dirs': [
-            'auto_test',
-            'auto_test/fixtures',
-            '<(webrtc_root)/modules/interface',
-            # TODO(phoglund): We only depend on voice_engine_defines.h here -
-            # move that file to interface and then remove this dependency.
-            '<(webrtc_root)/voice_engine',
-            '<(webrtc_root)/modules/audio_device/main/interface',
-          ],
           'sources': [
             'test/auto_test/automated_mode.cc',
             'test/auto_test/extended/agc_config_test.cc',
@@ -270,9 +249,6 @@
                 'voice_engine',
                 '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
                 '<(webrtc_root)/test/test.gyp:test_support',
-              ],
-              'include_dirs': [
-                'win_test',
               ],
               'sources': [
                 'test/win_test/Resource.h',
