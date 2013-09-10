@@ -113,6 +113,7 @@
           'type': '<(gtest_target_type)',
           'dependencies': [
             'frame_editing_lib',
+            'video_quality_analysis',
             '<(webrtc_root)/tools/internal_tools.gyp:command_line_parser',
             '<(webrtc_root)/test/test.gyp:test_support_main',
             '<(DEPTH)/testing/gtest.gyp:gtest',
@@ -120,6 +121,7 @@
           'sources': [
             'simple_command_line_parser_unittest.cc',
             'frame_editing/frame_editing_unittest.cc',
+            'frame_analyzer/video_quality_analysis_unittest.cc',
           ],
           # Disable warnings to enable Win64 build, issue 1323.
           'msvs_disabled_warnings': [

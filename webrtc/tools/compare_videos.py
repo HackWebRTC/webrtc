@@ -24,10 +24,13 @@ def _ParseArgs():
   usage = 'usage: %prog [options]'
   parser = optparse.OptionParser(usage=usage)
 
+  parser.add_option('--label', type='string', default="MY_TEST",
+                    help=('Label of the test, used to identify different '
+                          'tests. Default: %default'))
   parser.add_option('--ref_video', type='string',
                     help='Reference video to compare with (YUV).')
   parser.add_option('--test_video', type='string',
-                    help=('Test video to be comared with the reference '
+                    help=('Test video to be compared with the reference '
                           'video (YUV).'))
   parser.add_option('--frame_analyzer', type='string',
                     help='Path to the frame analyzer executable.')
@@ -94,6 +97,7 @@ def main():
   # Run frame analyzer to compare the videos and print output.
   cmd = [
     options.frame_analyzer,
+    '--label=%s' % options.label,
     '--reference_file=%s' % options.ref_video,
     '--test_file=%s' % options.test_video,
     '--stats_file=%s' % options.stats_file,
