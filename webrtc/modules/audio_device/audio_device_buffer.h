@@ -29,6 +29,9 @@ class MediaFile;
 class AudioDeviceBuffer
 {
 public:
+    AudioDeviceBuffer();
+    virtual ~AudioDeviceBuffer();
+
     void SetId(uint32_t id);
     int32_t RegisterAudioCallback(AudioTransport* audioCallback);
 
@@ -57,8 +60,8 @@ public:
     int32_t DeliverRecordedData();
     uint32_t NewMicLevel() const;
 
-    int32_t RequestPlayoutData(uint32_t nSamples);
-    int32_t GetPlayoutData(void* audioBuffer);
+    virtual int32_t RequestPlayoutData(uint32_t nSamples);
+    virtual int32_t GetPlayoutData(void* audioBuffer);
 
     int32_t StartInputFileRecording(
         const char fileName[kAdmMaxFileNameSize]);
@@ -68,9 +71,6 @@ public:
     int32_t StopOutputFileRecording();
 
     int32_t SetTypingStatus(bool typingStatus);
-
-    AudioDeviceBuffer();
-    ~AudioDeviceBuffer();
 
 private:
     int32_t                   _id;

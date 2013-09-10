@@ -8,8 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#if defined(WEBRTC_ANDROID) && !defined(WEBRTC_ANDROID_OPENSLES)
+#if defined(WEBRTC_ANDROID)
+#if defined(WEBRTC_ANDROID_OPENSLES)
+#include "webrtc/modules/audio_device/android/audio_manager_jni.h"
+#else
 #include "webrtc/modules/audio_device/android/audio_device_jni_android.h"
+#endif
 #endif
 
 #include "webrtc/system_wrappers/interface/trace.h"
@@ -142,6 +146,7 @@ int VoiceEngine::SetAndroidObjects(void* javaVM, void* env, void* context)
 {
 #ifdef WEBRTC_ANDROID
 #ifdef WEBRTC_ANDROID_OPENSLES
+  AudioManagerJni::SetAndroidAudioDeviceObjects(javaVM, env, context);
   return 0;
 #else
   return AudioDeviceAndroidJni::SetAndroidAudioDeviceObjects(

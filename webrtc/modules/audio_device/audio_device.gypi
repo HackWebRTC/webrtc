@@ -125,6 +125,20 @@
                   'sources': [
                     'android/audio_device_opensles_android.cc',
                     'android/audio_device_opensles_android.h',
+                    'android/audio_manager_jni.cc',
+                    'android/audio_manager_jni.h',
+                    'android/fine_audio_buffer.cc',
+                    'android/fine_audio_buffer.h',
+                    'android/low_latency_event_posix.cc',
+                    'android/low_latency_event.h',
+                    'android/opensles_common.cc',
+                    'android/opensles_common.h',
+                    'android/opensles_input.cc',
+                    'android/opensles_input.h',
+                    'android/opensles_output.cc',
+                    'android/opensles_output.h',
+                    'android/single_rw_fifo.cc',
+                    'android/single_rw_fifo.h',
                   ],
                 }, {
                   'sources': [
@@ -235,6 +249,30 @@
               ],
               'sources': [
                 'audio_device_tests.isolate',
+              ],
+            },
+          ],
+        }],
+      ],
+      'conditions': [
+        ['OS=="android" and enable_android_opensl==1', {
+          'targets': [
+            {
+              'target_name': 'audio_device_unittest',
+              'type': 'executable',
+              'dependencies': [
+                'audio_device',
+                'webrtc_utility',
+                '<(DEPTH)/testing/gmock.gyp:gmock',
+                '<(DEPTH)/testing/gtest.gyp:gtest',
+                '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+                '<(webrtc_root)/test/test.gyp:test_support_main',
+              ],
+              'sources': [
+                'android/fine_audio_buffer_unittest.cc',
+                'android/low_latency_event_unittest.cc',
+                'android/single_rw_fifo_unittest.cc',
+                'mock/mock_audio_device_buffer.h',
               ],
             },
           ],
