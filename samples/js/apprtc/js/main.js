@@ -143,6 +143,8 @@ function createPeerConnection() {
   }
   pc.onaddstream = onRemoteStreamAdded;
   pc.onremovestream = onRemoteStreamRemoved;
+  pc.onsignalingstatechange = onSignalingStateChanged;
+  pc.oniceconnectionstatechange = onIceConnectionStateChanged;
 }
 
 function maybeStart() {
@@ -340,6 +342,14 @@ function onRemoteStreamRemoved(event) {
   console.log('Remote stream removed.');
 }
 
+function onSignalingStateChanged(event) {
+  updateInfoDiv();
+}
+
+function onIceConnectionStateChanged(event) {
+  updateInfoDiv();
+}
+
 function onHangup() {
   console.log('Hanging up.');
   transitionToDone();
@@ -427,6 +437,13 @@ function updateInfoDiv() {
     contents += endpoint + ":\n";
     for (var type in gatheredIceCandidateTypes[endpoint])
       contents += "  " + type + "\n";
+  }
+  if (pc != null) {
+    contents += "Gathering: " + pc.iceGatheringState + "\n";
+    contents += "</pre>\n";
+    contents += "<pre>PC State:\n";
+    contents += "Signaling: " + pc.signalingState + "\n";
+    contents += "ICE: " + pc.iceConnectionState + "\n";
   }
   var div = getInfoDiv();
   div.innerHTML = contents + "</pre>";
