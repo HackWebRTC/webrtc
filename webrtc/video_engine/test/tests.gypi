@@ -139,6 +139,7 @@
       'sources': [
         'engine_tests.cc',
         'full_stack.cc',
+        'rampup_tests.cc',
         'send_stream_tests.cc',
         'test_main.cc',
       ],
