@@ -138,6 +138,37 @@ TEST_F(VideoSendStreamTest, SupportsCName) {
   RunSendTest(call.get(), send_config, &observer);
 }
 
+TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
+  static const uint8_t kAbsSendTimeExtensionId = 13;
+  class AbsoluteSendTimeObserver : public SendTransportObserver {
+   public:
+    AbsoluteSendTimeObserver() : SendTransportObserver(30 * 1000) {
+      EXPECT_TRUE(rtp_header_parser_->RegisterRtpHeaderExtension(
+          kRtpExtensionAbsoluteSendTime, kAbsSendTimeExtensionId));
+    }
+
+    virtual bool SendRTP(const uint8_t* packet, size_t length) OVERRIDE {
+      RTPHeader header;
+      EXPECT_TRUE(
+          rtp_header_parser_->Parse(packet, static_cast<int>(length), &header));
+
+      if (header.extension.absoluteSendTime > 0)
+        send_test_complete_->Set();
+
+      return true;
+    }
+  } observer;
+
+  Call::Config call_config(&observer);
+  scoped_ptr<Call> call(Call::Create(call_config));
+
+  VideoSendStream::Config send_config = GetSendTestConfig(call.get());
+  send_config.rtp.extensions.push_back(
+      RtpExtension("abs-send-time", kAbsSendTimeExtensionId));
+
+  RunSendTest(call.get(), send_config, &observer);
+}
+
 TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
   static const uint8_t kTOffsetExtensionId = 13;
   class DelayedEncoder : public test::FakeEncoder {

@@ -112,6 +112,9 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
     if (extension == "toffset") {
       if (rtp_rtcp_->SetSendTimestampOffsetStatus(channel_, true, id) != 0)
         abort();
+    } else if (extension == "abs-send-time") {
+      if (rtp_rtcp_->SetSendAbsoluteSendTimeStatus(channel_, true, id) != 0)
+        abort();
     } else {
       abort();  // Unsupported extension.
     }
