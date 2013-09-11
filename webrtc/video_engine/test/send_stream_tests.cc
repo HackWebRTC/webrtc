@@ -13,6 +13,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/video_engine/test/common/fake_encoder.h"
 #include "webrtc/video_engine/test/common/frame_generator.h"
@@ -133,6 +134,52 @@ TEST_F(VideoSendStreamTest, SupportsCName) {
 
   VideoSendStream::Config send_config = GetSendTestConfig(call.get());
   send_config.rtp.c_name = kCName;
+
+  RunSendTest(call.get(), send_config, &observer);
+}
+
+TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
+  static const uint8_t kTOffsetExtensionId = 13;
+  class DelayedEncoder : public test::FakeEncoder {
+   public:
+    DelayedEncoder(Clock* clock) : test::FakeEncoder(clock) {}
+    virtual int32_t Encode(
+        const I420VideoFrame& input_image,
+        const CodecSpecificInfo* codec_specific_info,
+        const std::vector<VideoFrameType>* frame_types) OVERRIDE {
+      // A delay needs to be introduced to assure that we get a timestamp
+      // offset.
+      SleepMs(5);
+      return FakeEncoder::Encode(input_image, codec_specific_info, frame_types);
+    }
+  } encoder(Clock::GetRealTimeClock());
+
+  class TransmissionTimeOffsetObserver : public SendTransportObserver {
+   public:
+    TransmissionTimeOffsetObserver() : SendTransportObserver(30 * 1000) {
+      EXPECT_TRUE(rtp_header_parser_->RegisterRtpHeaderExtension(
+          kRtpExtensionTransmissionTimeOffset, kTOffsetExtensionId));
+    }
+
+    virtual bool SendRTP(const uint8_t* packet, size_t length) OVERRIDE {
+      RTPHeader header;
+      EXPECT_TRUE(
+          rtp_header_parser_->Parse(packet, static_cast<int>(length), &header));
+
+      EXPECT_GT(header.extension.transmissionTimeOffset, 0);
+      send_test_complete_->Set();
+
+      return true;
+    }
+  } observer;
+
+  Call::Config call_config(&observer);
+  scoped_ptr<Call> call(Call::Create(call_config));
+
+  VideoSendStream::Config send_config = GetSendTestConfig(call.get());
+  send_config.encoder = &encoder;
+  send_config.rtp.extensions.push_back(
+      RtpExtension("toffset", kTOffsetExtensionId));
 
   RunSendTest(call.get(), send_config, &observer);
 }

@@ -73,7 +73,7 @@ struct RtxConfig {
 
 // RTP header extension to use for the video stream, see RFC 5285.
 struct RtpExtension {
-  RtpExtension() : id(0) {}
+  RtpExtension(const char* name, int id) : name(name), id(id) {}
   // TODO(mflodman) Add API to query supported extensions.
   std::string name;
   int id;

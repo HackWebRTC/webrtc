@@ -31,6 +31,10 @@
 
 namespace webrtc {
 
+namespace {
+  static const int kTOffsetExtensionId = 7;
+}
+
 class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
  public:
   typedef std::map<uint32_t, int> BytesSentMap;
@@ -55,7 +59,7 @@ class StreamObserver : public newapi::Transport, public RemoteBitrateObserver {
     rtp_rtcp_->SetREMBStatus(true);
     rtp_rtcp_->SetRTCPStatus(kRtcpNonCompound);
     rtp_parser_->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
-                                            1);
+                                            kTOffsetExtensionId);
     AbsoluteSendTimeRemoteBitrateEstimatorFactory rbe_factory;
     remote_bitrate_estimator_.reset(rbe_factory.Create(this, clock));
   }
@@ -150,6 +154,8 @@ TEST_P(RampUpTest, RampUpWithPadding) {
   send_config.internal_source = false;
   test::FakeEncoder::SetCodecSettings(&send_config.codec, 3);
   send_config.pacing = GetParam();
+  send_config.rtp.extensions.push_back(
+      RtpExtension("toffset", kTOffsetExtensionId));
 
   test::GenerateRandomSsrcs(&send_config, &reserved_ssrcs_);
 

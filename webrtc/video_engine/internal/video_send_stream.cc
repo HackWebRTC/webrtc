@@ -105,7 +105,17 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
   }
   rtp_rtcp_->SetNACKStatus(channel_, config_.rtp.nack.rtp_history_ms > 0);
   rtp_rtcp_->SetTransmissionSmoothingStatus(channel_, config_.pacing);
-  rtp_rtcp_->SetSendTimestampOffsetStatus(channel_, true, 1);
+
+  for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
+    const std::string& extension = config_.rtp.extensions[i].name;
+    int id = config_.rtp.extensions[i].id;
+    if (extension == "toffset") {
+      if (rtp_rtcp_->SetSendTimestampOffsetStatus(channel_, true, id) != 0)
+        abort();
+    } else {
+      abort();  // Unsupported extension.
+    }
+  }
 
   char rtcp_cname[ViERTP_RTCP::KMaxRTCPCNameLength];
   assert(config_.rtp.c_name.length() < ViERTP_RTCP::KMaxRTCPCNameLength);
@@ -142,7 +152,7 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
         new ResolutionAdaptor(codec_, channel_, config_.codec.width,
                               config_.codec.height));
     video_engine_base_->RegisterCpuOveruseObserver(channel_,
-                                                overuse_observer_.get());
+                                                   overuse_observer_.get());
   }
 }
 
