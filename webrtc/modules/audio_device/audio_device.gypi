@@ -253,8 +253,6 @@
             },
           ],
         }],
-      ],
-      'conditions': [
         ['OS=="android" and enable_android_opensl==1', {
           'targets': [
             {
