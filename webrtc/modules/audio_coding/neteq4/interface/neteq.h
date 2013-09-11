@@ -65,6 +65,12 @@ enum NetEqPlayoutMode {
   kPlayoutStreaming
 };
 
+enum NetEqBackgroundNoiseMode {
+  kBgnOn,
+  kBgnFade,
+  kBgnOff
+};
+
 // This is the interface class for NetEq.
 class NetEq {
  public:
@@ -236,6 +242,14 @@ class NetEq {
   // Get sequence number and timestamp of the latest RTP.
   // This method is to facilitate NACK.
   virtual int DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) = 0;
+
+  // Not implemented.
+  virtual int InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
+                               uint32_t receive_timestamp) = 0;
+
+  virtual void SetBackgroundNoiseMode(NetEqBackgroundNoiseMode mode) = 0;
+
+  virtual NetEqBackgroundNoiseMode BackgroundNoiseMode() const = 0;
 
  protected:
   NetEq() {}

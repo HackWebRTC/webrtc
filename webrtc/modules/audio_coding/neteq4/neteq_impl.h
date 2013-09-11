@@ -171,6 +171,13 @@ class NetEqImpl : public webrtc::NetEq {
   // This method is to facilitate NACK.
   virtual int DecodedRtpInfo(int* sequence_number, uint32_t* timestamp);
 
+  virtual int InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
+                                 uint32_t receive_timestamp);
+
+  virtual void SetBackgroundNoiseMode(NetEqBackgroundNoiseMode mode);
+
+  virtual NetEqBackgroundNoiseMode BackgroundNoiseMode() const;
+
  private:
   static const int kOutputSizeMs = 10;
   static const int kMaxFrameSize = 2880;  // 60 ms @ 48 kHz.

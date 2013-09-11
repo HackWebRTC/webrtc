@@ -374,6 +374,17 @@ int NetEqImpl::DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) {
   return 0;
 }
 
+int NetEqImpl::InsertSyncPacket(const WebRtcRTPHeader& /* rtp_header */,
+                                uint32_t /* receive_timestamp */) {
+  return kNotImplemented;
+}
+
+void NetEqImpl::SetBackgroundNoiseMode(NetEqBackgroundNoiseMode /* mode */) {}
+
+NetEqBackgroundNoiseMode NetEqImpl::BackgroundNoiseMode() const {
+  return kBgnOn;
+}
+
 // Methods below this line are private.
 
 
