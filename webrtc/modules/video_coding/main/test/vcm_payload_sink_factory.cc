@@ -29,29 +29,21 @@ class VcmPayloadSinkFactory::VcmPayloadSink
   VcmPayloadSink(VcmPayloadSinkFactory* factory,
                  RtpStreamInterface* stream,
                  scoped_ptr<VideoCodingModule>* vcm,
-                 scoped_ptr<VideoCodingModule>* vcm_playback,
                  scoped_ptr<FileOutputFrameReceiver>* frame_receiver)
       : factory_(factory),
         stream_(stream),
         vcm_(),
-        vcm_playback_(),
         frame_receiver_() {
     assert(factory);
     assert(stream);
     assert(vcm);
     assert(vcm->get());
-    assert(vcm_playback);
     assert(frame_receiver);
     assert(frame_receiver->get());
     vcm_.swap(*vcm);
-    vcm_playback_.swap(*vcm_playback);
     frame_receiver_.swap(*frame_receiver);
     vcm_->RegisterPacketRequestCallback(this);
-    if (vcm_playback_.get() == NULL) {
-      vcm_->RegisterReceiveCallback(frame_receiver_.get());
-    } else {
-      vcm_playback_->RegisterReceiveCallback(frame_receiver_.get());
-    }
+    vcm_->RegisterReceiveCallback(frame_receiver_.get());
   }
 
   virtual ~VcmPayloadSink() {
@@ -110,7 +102,6 @@ class VcmPayloadSinkFactory::VcmPayloadSink
   VcmPayloadSinkFactory* factory_;
   RtpStreamInterface* stream_;
   scoped_ptr<VideoCodingModule> vcm_;
-  scoped_ptr<VideoCodingModule> vcm_playback_;
   scoped_ptr<FileOutputFrameReceiver> frame_receiver_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(VcmPayloadSink);
@@ -153,8 +144,6 @@ PayloadSinkInterface* VcmPayloadSinkFactory::Create(
     return NULL;
   }
 
-  scoped_ptr<VideoCodingModule> vcm_playback;
-
   const PayloadTypes& plt = stream->payload_types();
   for (PayloadTypesIterator it = plt.begin(); it != plt.end();
       ++it) {
@@ -180,7 +169,7 @@ PayloadSinkInterface* VcmPayloadSinkFactory::Create(
   scoped_ptr<FileOutputFrameReceiver> frame_receiver(
       new FileOutputFrameReceiver(base_out_filename_, stream->ssrc()));
   scoped_ptr<VcmPayloadSink> sink(
-      new VcmPayloadSink(this, stream, &vcm, &vcm_playback, &frame_receiver));
+      new VcmPayloadSink(this, stream, &vcm, &frame_receiver));
 
   sinks_.push_back(sink.get());
   return sink.release();
