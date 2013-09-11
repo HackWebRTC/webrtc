@@ -109,6 +109,7 @@ int32_t OpenSlesOutput::Init() {
 int32_t OpenSlesOutput::Terminate() {
   // It is assumed that the caller has stopped recording before terminating.
   assert(!playing_);
+  (*sles_output_mixer_)->Destroy(sles_output_mixer_);
   (*sles_engine_)->Destroy(sles_engine_);
   initialized_ = false;
   speaker_initialized_ = false;
@@ -435,11 +436,6 @@ void OpenSlesOutput::DestroyAudioPlayer() {
   if (sles_player_) {
     (*sles_player_)->Destroy(sles_player_);
     sles_player_ = NULL;
-  }
-
-  if (sles_output_mixer_) {
-    (*sles_output_mixer_)->Destroy(sles_output_mixer_);
-    sles_output_mixer_ = NULL;
   }
 }
 

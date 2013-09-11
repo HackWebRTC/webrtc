@@ -367,7 +367,7 @@ void OpenSlesInput::DestroyAudioRecorder() {
   }
   sles_recorder_itf_ = NULL;
 
-  if (!sles_recorder_) {
+  if (sles_recorder_) {
     (*sles_recorder_)->Destroy(sles_recorder_);
     sles_recorder_ = NULL;
   }
