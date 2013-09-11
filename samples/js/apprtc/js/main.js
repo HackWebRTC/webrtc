@@ -165,7 +165,7 @@ function maybeStart() {
 }
 
 function setStatus(state) {
-  document.getElementById('footer').innerHTML = state;
+  document.getElementById('status').innerHTML = state;
 }
 
 function doCall() {

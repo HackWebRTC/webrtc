@@ -1,5 +1,5 @@
-a:link { color: #ffffff; }
-a:visited {color: #ffffff; }
+a:link { color: #FFFFFF; }
+a:visited {color: #FFFFFF; }
 html, body {
   background-color: #000000;
   height: 100%;
@@ -8,6 +8,17 @@ html, body {
 body {
   margin: 0;
   padding: 0;
+}
+footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 28px;
+  background-color: #3F3F3F;
+  color: #FFFFFF;
+  font-size: 13px; font-weight: bold;
+  line-height: 28px;
+  text-align: center;
 }
 #container {
   background-color: #000000;
@@ -65,17 +76,6 @@ body {
   -webkit-transition-property: opacity;
   -webkit-transition-duration: 2s;
 }
-#footer {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: 28px;
-  background-color: #3F3F3F;
-  color: rgb(255, 255, 255);
-  font-size: 13px; font-weight: bold;
-  line-height: 28px;
-  text-align: center;
-}
 #hangup {
  font-size: 13px; font-weight: bold;
  color: #FFFFFF;
@@ -86,7 +86,6 @@ body {
  border-color: #FFFFFF;
  margin: 2px;
 }
-
 #infoDiv {
   position: absolute;
   float: right;
