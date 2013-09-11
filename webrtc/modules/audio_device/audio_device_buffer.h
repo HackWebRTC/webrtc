@@ -54,9 +54,9 @@ public:
 
     int32_t SetRecordedBuffer(const void* audioBuffer, uint32_t nSamples);
     int32_t SetCurrentMicLevel(uint32_t level);
-    int32_t SetVQEData(uint32_t playDelayMS,
-                       uint32_t recDelayMS,
-                       int32_t clockDrift);
+    void SetVQEData(uint32_t playDelayMS,
+                    uint32_t recDelayMS,
+                    int32_t clockDrift);
     int32_t DeliverRecordedData();
     uint32_t NewMicLevel() const;
 
@@ -118,6 +118,7 @@ private:
     uint32_t                  _recDelayMS;
 
     int32_t                   _clockDrift;
+    int high_delay_counter_;
 };
 
 }  // namespace webrtc
