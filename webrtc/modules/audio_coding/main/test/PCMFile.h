@@ -48,7 +48,6 @@ class PCMFile {
   void Rewind();
   static int16_t ChooseFile(std::string* file_name, int16_t max_len,
                             uint16_t* frequency_hz);
-  static int16_t ChooseFile(std::string* file_name, int16_t max_len);
   bool Rewinded();
   void SaveStereo(bool is_stereo = true);
   void ReadStereo(bool is_stereo = true);
