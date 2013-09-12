@@ -189,6 +189,10 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
   scoped_ptr<DesktopFrameWin> frame(DesktopFrameWin::Create(
       DesktopSize(rect.right - rect.left, rect.bottom - rect.top),
       NULL, window_dc_));
+  if (!frame.get()) {
+    callback_->OnCaptureCompleted(NULL);
+    return;
+  }
 
   HDC mem_dc = CreateCompatibleDC(window_dc_);
   SelectObject(mem_dc, frame->bitmap());
