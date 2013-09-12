@@ -23,10 +23,10 @@ namespace voe {
 
 static int32_t _gInstanceCounter = 0;
 
-SharedData::SharedData() :
+SharedData::SharedData(const Config& config) :
     _instanceId(++_gInstanceCounter),
     _apiCritPtr(CriticalSectionWrapper::CreateCriticalSection()),
-    _channelManager(_gInstanceCounter),
+    _channelManager(_gInstanceCounter, config),
     _engineStatistics(_gInstanceCounter),
     _audioDevicePtr(NULL),
     audioproc_(NULL),

@@ -1017,6 +1017,20 @@ class AudioCodingModule: public Module {
   virtual std::vector<uint16_t> GetNackList(int round_trip_time_ms) const = 0;
 };
 
+struct AudioCodingModuleFactory {
+  AudioCodingModuleFactory() {}
+  virtual ~AudioCodingModuleFactory() {}
+
+  virtual AudioCodingModule* Create(int id) const;
+};
+
+struct NewAudioCodingModuleFactory : AudioCodingModuleFactory {
+  NewAudioCodingModuleFactory() {}
+  virtual ~NewAudioCodingModuleFactory() {}
+
+  virtual AudioCodingModule* Create(int id) const;
+};
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_INTERFACE_AUDIO_CODING_MODULE_H_

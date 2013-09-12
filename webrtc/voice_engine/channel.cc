@@ -10,6 +10,7 @@
 
 #include "webrtc/voice_engine/channel.h"
 
+#include "webrtc/common.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/rtp_rtcp/interface/receive_statistics.h"
@@ -816,13 +817,14 @@ Channel::NeededFrequency(int32_t id)
 int32_t
 Channel::CreateChannel(Channel*& channel,
                        int32_t channelId,
-                       uint32_t instanceId)
+                       uint32_t instanceId,
+                       const Config& config)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(instanceId,channelId),
                  "Channel::CreateChannel(channelId=%d, instanceId=%d)",
         channelId, instanceId);
 
-    channel = new Channel(channelId, instanceId);
+    channel = new Channel(channelId, instanceId, config);
     if (channel == NULL)
     {
         WEBRTC_TRACE(kTraceMemory, kTraceVoice,
@@ -900,7 +902,8 @@ Channel::RecordFileEnded(int32_t id)
 }
 
 Channel::Channel(int32_t channelId,
-                 uint32_t instanceId) :
+                 uint32_t instanceId,
+                 const Config& config) :
     _fileCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _instanceId(instanceId),
@@ -915,7 +918,7 @@ Channel::Channel(int32_t channelId,
         VoEModuleId(instanceId, channelId), Clock::GetRealTimeClock(), this,
         this, this, rtp_payload_registry_.get())),
     telephone_event_handler_(rtp_receiver_->GetTelephoneEventHandler()),
-    _audioCodingModule(*AudioCodingModule::Create(
+    _audioCodingModule(*config.Get<AudioCodingModuleFactory>().Create(
         VoEModuleId(instanceId, channelId))),
     _rtpDumpIn(*RtpDump::CreateRtpDump()),
     _rtpDumpOut(*RtpDump::CreateRtpDump()),

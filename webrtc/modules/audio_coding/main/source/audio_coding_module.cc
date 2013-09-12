@@ -98,4 +98,14 @@ bool AudioCodingModule::IsCodecValid(const CodecInst& codec) {
   }
 }
 
+AudioCodingModule* AudioCodingModuleFactory::Create(int id) const {
+  return new AudioCodingModuleImpl(static_cast<int32_t>(id),
+                                   Clock::GetRealTimeClock());
+}
+
+AudioCodingModule* NewAudioCodingModuleFactory::Create(int id) const {
+  // TODO(minyue): return new AudioCodingModuleImpl (new version).
+  return NULL;
+}
+
 }  // namespace webrtc

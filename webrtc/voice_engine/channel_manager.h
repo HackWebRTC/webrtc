@@ -20,6 +20,9 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
+
+class Config;
+
 namespace voe {
 
 class Channel;
@@ -66,7 +69,7 @@ class ChannelOwner {
 
 class ChannelManager {
  public:
-  ChannelManager(uint32_t instance_id);
+  ChannelManager(uint32_t instance_id, const Config& config);
 
   // Upon construction of an Iterator it will grab a copy of the channel list of
   // the ChannelManager. The iteration will then occur over this state, not the
@@ -109,6 +112,8 @@ class ChannelManager {
 
   scoped_ptr<CriticalSectionWrapper> lock_;
   std::vector<ChannelOwner> channels_;
+
+  const Config& config_;
 
   DISALLOW_COPY_AND_ASSIGN(ChannelManager);
 };

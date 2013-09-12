@@ -36,6 +36,7 @@
 namespace webrtc
 {
 class AudioDeviceModule;
+class Config;
 class CriticalSectionWrapper;
 class FileWrapper;
 class ProcessThread;
@@ -80,8 +81,9 @@ public:
     virtual ~Channel();
     static int32_t CreateChannel(Channel*& channel,
                                  int32_t channelId,
-                                 uint32_t instanceId);
-    Channel(int32_t channelId, uint32_t instanceId);
+                                 uint32_t instanceId,
+                                 const Config& config);
+    Channel(int32_t channelId, uint32_t instanceId, const Config& config);
     int32_t Init();
     int32_t SetEngineInformation(
         Statistics& engineStatistics,

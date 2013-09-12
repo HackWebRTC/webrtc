@@ -44,14 +44,15 @@ ChannelOwner& ChannelOwner::operator=(const ChannelOwner& other) {
 ChannelOwner::ChannelRef::ChannelRef(class Channel* channel)
     : channel(channel), ref_count(1) {}
 
-ChannelManager::ChannelManager(uint32_t instance_id)
+ChannelManager::ChannelManager(uint32_t instance_id, const Config& config)
     : instance_id_(instance_id),
       last_channel_id_(-1),
-      lock_(CriticalSectionWrapper::CreateCriticalSection()) {}
+      lock_(CriticalSectionWrapper::CreateCriticalSection()),
+      config_(config) {}
 
 ChannelOwner ChannelManager::CreateChannel() {
   Channel* channel;
-  Channel::CreateChannel(channel, ++last_channel_id_, instance_id_);
+  Channel::CreateChannel(channel, ++last_channel_id_, instance_id_, config_);
   ChannelOwner channel_owner(channel);
 
   CriticalSectionScoped crit(lock_.get());
