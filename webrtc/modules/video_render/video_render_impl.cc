@@ -26,13 +26,9 @@
 
 // WEBRTC_IOS should go before WEBRTC_MAC because WEBRTC_MAC
 // gets defined if WEBRTC_IOS is defined
-#elif defined(WEBRTC_IOS) && 0
-// TODO(sjlee): land https://webrtc-codereview.appspot.com/1641004/
-#if defined(IPHONE_GLES_RENDERING)
-#define STANDARD_RENDERING kRenderiPhone
-#include "iPhone/video_render_iphone_impl.h"
-#endif
-
+#elif defined(WEBRTC_IOS)
+#define STANDARD_RENDERING kRenderiOS
+#include "ios/video_render_ios_impl.h"
 #elif defined(WEBRTC_MAC)
 #if defined(COCOA_RENDERING)
 #define STANDARD_RENDERING kRenderCocoa
@@ -116,11 +112,10 @@ ModuleVideoRenderImpl::ModuleVideoRenderImpl(
         }
         break;
 
-#elif defined(WEBRTC_IOS) && 0
-        // TODO(sjlee): land https://webrtc-codereview.appspot.com/1641004/
-        case kRenderiPhone:
+#elif defined(WEBRTC_IOS)
+        case kRenderiOS:
         {
-            VideoRenderIPhoneImpl* ptrRenderer = new VideoRenderIPhoneImpl(_id, videoRenderType, window, _fullScreen);
+            VideoRenderIosImpl* ptrRenderer = new VideoRenderIosImpl(_id, window, _fullScreen);
             if(ptrRenderer)
             {
                 _ptrRenderer = reinterpret_cast<IVideoRender*>(ptrRenderer);
@@ -231,6 +226,7 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
     if (_ptrRenderer)
     {
         VideoRenderType videoRenderType = _ptrRenderer->RenderType();
+
         switch (videoRenderType)
         {
             case kRenderExternal:
@@ -252,6 +248,14 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
                 delete ptrRenderer;
             }
             break;
+#elif defined(WEBRTC_IOS)
+            case kRenderiOS:
+            {
+              VideoRenderIosImpl* ptrRenderer = reinterpret_cast<VideoRenderIosImpl*> (_ptrRenderer);
+              _ptrRenderer = NULL;
+              delete ptrRenderer;
+            }
+            break;
 #elif defined(WEBRTC_MAC)
 
 #if defined(COCOA_RENDERING)
@@ -271,11 +275,6 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
             }
             break;
 #endif
-
-#elif defined(WEBRTC_IOS) && 0
-            // TODO(sjlee): land https://webrtc-codereview.appspot.com/1641004/
-            case kRenderiPhone:
-            break;
 
 #elif defined(WEBRTC_ANDROID)
             case kRenderAndroid:
@@ -351,18 +350,14 @@ int32_t ModuleVideoRenderImpl::ChangeWindow(void* window)
     _ptrRenderer = NULL;
     delete _ptrRenderer;
 
-#if 0  // TODO(sjlee): land https://webrtc-codereview.appspot.com/1641004/
-    VideoRenderIPhoneImpl* ptrRenderer;
-    ptrRenderer = new VideoRenderIPhoneImpl(_id, kRenderiPhone, window, _fullScreen);
+    VideoRenderIosImpl* ptrRenderer;
+    ptrRenderer = new VideoRenderIosImpl(_id, window, _fullScreen);
     if (!ptrRenderer)
     {
         return -1;
     }
     _ptrRenderer = reinterpret_cast<IVideoRender*>(ptrRenderer);
     return _ptrRenderer->ChangeWindow(window);
-#else
-    return -1;
-#endif
 #elif defined(WEBRTC_MAC)
 
     _ptrRenderer = NULL;
