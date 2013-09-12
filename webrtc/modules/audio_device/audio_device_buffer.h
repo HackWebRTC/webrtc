@@ -54,9 +54,9 @@ public:
 
     int32_t SetRecordedBuffer(const void* audioBuffer, uint32_t nSamples);
     int32_t SetCurrentMicLevel(uint32_t level);
-    void SetVQEData(uint32_t playDelayMS,
-                    uint32_t recDelayMS,
-                    int32_t clockDrift);
+    void SetVQEData(int playDelayMS,
+                    int recDelayMS,
+                    int clockDrift);
     int32_t DeliverRecordedData();
     uint32_t NewMicLevel() const;
 
@@ -114,10 +114,9 @@ private:
 
     bool                      _typingStatus;
 
-    uint32_t                  _playDelayMS;
-    uint32_t                  _recDelayMS;
-
-    int32_t                   _clockDrift;
+    int _playDelayMS;
+    int _recDelayMS;
+    int _clockDrift;
     int high_delay_counter_;
 };
 

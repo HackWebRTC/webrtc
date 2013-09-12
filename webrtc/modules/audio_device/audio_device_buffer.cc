@@ -292,8 +292,8 @@ uint32_t AudioDeviceBuffer::NewMicLevel() const
 //  SetVQEData
 // ----------------------------------------------------------------------------
 
-void AudioDeviceBuffer::SetVQEData(uint32_t playDelayMs, uint32_t recDelayMs,
-                                   int32_t clockDrift) {
+void AudioDeviceBuffer::SetVQEData(int playDelayMs, int recDelayMs,
+                                   int clockDrift) {
   if (high_delay_counter_ < kLogHighDelayIntervalFrames) {
     ++high_delay_counter_;
   } else {
