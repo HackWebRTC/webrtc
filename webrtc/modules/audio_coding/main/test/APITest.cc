@@ -55,8 +55,8 @@ void APITest::Wait(uint32_t waitLengthMs) {
 }
 
 APITest::APITest()
-    : _acmA(NULL),
-      _acmB(NULL),
+    : _acmA(AudioCodingModule::Create(1)),
+      _acmB(AudioCodingModule::Create(2)),
       _channel_A2B(NULL),
       _channel_B2A(NULL),
       _writeToFile(true),
@@ -111,9 +111,6 @@ APITest::APITest()
 }
 
 APITest::~APITest() {
-  DESTROY_ACM(_acmA);
-  DESTROY_ACM(_acmB);
-
   DELETE_POINTER(_channel_A2B);
   DELETE_POINTER(_channel_B2A);
 
@@ -141,9 +138,6 @@ APITest::~APITest() {
 }
 
 int16_t APITest::SetUp() {
-  _acmA = AudioCodingModule::Create(1);
-  _acmB = AudioCodingModule::Create(2);
-
   CodecInst dummyCodec;
   int lastPayloadType = 0;
 

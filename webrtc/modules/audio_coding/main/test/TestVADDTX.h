@@ -11,6 +11,7 @@
 #ifndef TEST_VAD_DTX_H
 #define TEST_VAD_DTX_H
 
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "ACMTest.h"
 #include "Channel.h"
 #include "PCMFile.h"
@@ -64,8 +65,8 @@ class TestVADDTX : public ACMTest {
   void SetVAD(bool statusDTX, bool statusVAD, int16_t vadMode);
   VADDTXstruct GetVAD();
   int16_t VerifyTest();
-  AudioCodingModule* _acmA;
-  AudioCodingModule* _acmB;
+  scoped_ptr<AudioCodingModule> _acmA;
+  scoped_ptr<AudioCodingModule> _acmB;
 
   Channel* _channelA2B;
 

@@ -19,6 +19,7 @@
 #include "webrtc/modules/audio_coding/main/test/Channel.h"
 #include "webrtc/modules/audio_coding/main/test/PCMFile.h"
 #include "webrtc/modules/audio_coding/main/test/TestStereo.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -34,7 +35,7 @@ class OpusTest : public ACMTest {
 
   void OpenOutFile(int test_number);
 
-  AudioCodingModule* acm_receiver_;
+  scoped_ptr<AudioCodingModule> acm_receiver_;
   TestPackStereo* channel_a2b_;
   PCMFile in_file_stereo_;
   PCMFile in_file_mono_;

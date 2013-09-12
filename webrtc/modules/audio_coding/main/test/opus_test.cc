@@ -29,7 +29,7 @@
 namespace webrtc {
 
 OpusTest::OpusTest()
-    : acm_receiver_(NULL),
+    : acm_receiver_(AudioCodingModule::Create(0)),
       channel_a2b_(NULL),
       counter_(0),
       payload_type_(255),
@@ -37,10 +37,6 @@ OpusTest::OpusTest()
 }
 
 OpusTest::~OpusTest() {
-  if (acm_receiver_ != NULL) {
-    AudioCodingModule::Destroy(acm_receiver_);
-    acm_receiver_ = NULL;
-  }
   if (channel_a2b_ != NULL) {
     delete channel_a2b_;
     channel_a2b_ = NULL;
@@ -93,9 +89,7 @@ void OpusTest::Perform() {
   ASSERT_GT(WebRtcOpus_DecoderInitNew(opus_mono_decoder_), -1);
   ASSERT_GT(WebRtcOpus_DecoderInitNew(opus_stereo_decoder_), -1);
 
-  // Create and initialize one ACM, to be used as receiver.
-  acm_receiver_ = AudioCodingModule::Create(0);
-  ASSERT_TRUE(acm_receiver_ != NULL);
+  ASSERT_TRUE(acm_receiver_.get() != NULL);
   EXPECT_EQ(0, acm_receiver_->InitializeReceiver());
 
   // Register Opus stereo as receiving codec.
@@ -107,7 +101,7 @@ void OpusTest::Perform() {
 
   // Create and connect the channel.
   channel_a2b_ = new TestPackStereo;
-  channel_a2b_->RegisterReceiverACM(acm_receiver_);
+  channel_a2b_->RegisterReceiverACM(acm_receiver_.get());
 
   //
   // Test Stereo.

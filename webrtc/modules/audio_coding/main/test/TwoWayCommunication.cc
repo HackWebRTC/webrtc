@@ -30,16 +30,15 @@ namespace webrtc {
 
 #define MAX_FILE_NAME_LENGTH_BYTE 500
 
-TwoWayCommunication::TwoWayCommunication(int testMode) {
-  _testMode = testMode;
+TwoWayCommunication::TwoWayCommunication(int testMode)
+    : _acmA(AudioCodingModule::Create(1)),
+      _acmB(AudioCodingModule::Create(2)),
+      _acmRefA(AudioCodingModule::Create(3)),
+      _acmRefB(AudioCodingModule::Create(4)),
+      _testMode(testMode) {
 }
 
 TwoWayCommunication::~TwoWayCommunication() {
-  AudioCodingModule::Destroy(_acmA);
-  AudioCodingModule::Destroy(_acmB);
-  AudioCodingModule::Destroy(_acmRefA);
-  AudioCodingModule::Destroy(_acmRefB);
-
   delete _channel_A2B;
   delete _channel_B2A;
   delete _channelRef_A2B;
@@ -62,7 +61,7 @@ TwoWayCommunication::~TwoWayCommunication() {
 
 void TwoWayCommunication::ChooseCodec(uint8_t* codecID_A,
                                       uint8_t* codecID_B) {
-  AudioCodingModule* tmpACM = AudioCodingModule::Create(0);
+  scoped_ptr<AudioCodingModule> tmpACM(AudioCodingModule::Create(0));
   uint8_t noCodec = tmpACM->NumberOfCodecs();
   CodecInst codecInst;
   printf("List of Supported Codecs\n");
@@ -80,17 +79,10 @@ void TwoWayCommunication::ChooseCodec(uint8_t* codecID_A,
   EXPECT_TRUE(fgets(myStr, 10, stdin) != NULL);
   *codecID_B = (uint8_t) atoi(myStr);
 
-  AudioCodingModule::Destroy(tmpACM);
   printf("\n");
 }
 
 void TwoWayCommunication::SetUp() {
-  _acmA = AudioCodingModule::Create(1);
-  _acmB = AudioCodingModule::Create(2);
-
-  _acmRefA = AudioCodingModule::Create(3);
-  _acmRefB = AudioCodingModule::Create(4);
-
   uint8_t codecID_A;
   uint8_t codecID_B;
 
@@ -164,20 +156,20 @@ void TwoWayCommunication::SetUp() {
   //--- Set A-to-B channel
   _channel_A2B = new Channel;
   _acmA->RegisterTransportCallback(_channel_A2B);
-  _channel_A2B->RegisterReceiverACM(_acmB);
+  _channel_A2B->RegisterReceiverACM(_acmB.get());
   //--- Do the same for the reference
   _channelRef_A2B = new Channel;
   _acmRefA->RegisterTransportCallback(_channelRef_A2B);
-  _channelRef_A2B->RegisterReceiverACM(_acmRefB);
+  _channelRef_A2B->RegisterReceiverACM(_acmRefB.get());
 
   //--- Set B-to-A channel
   _channel_B2A = new Channel;
   _acmB->RegisterTransportCallback(_channel_B2A);
-  _channel_B2A->RegisterReceiverACM(_acmA);
+  _channel_B2A->RegisterReceiverACM(_acmA.get());
   //--- Do the same for reference
   _channelRef_B2A = new Channel;
   _acmRefB->RegisterTransportCallback(_channelRef_B2A);
-  _channelRef_B2A->RegisterReceiverACM(_acmRefA);
+  _channelRef_B2A->RegisterReceiverACM(_acmRefA.get());
 
   // The clicks will be more obvious when we
   // are in FAX mode.
@@ -186,12 +178,6 @@ void TwoWayCommunication::SetUp() {
 }
 
 void TwoWayCommunication::SetUpAutotest() {
-  _acmA = AudioCodingModule::Create(1);
-  _acmB = AudioCodingModule::Create(2);
-
-  _acmRefA = AudioCodingModule::Create(3);
-  _acmRefB = AudioCodingModule::Create(4);
-
   CodecInst codecInst_A;
   CodecInst codecInst_B;
   CodecInst dummyCodec;
@@ -252,20 +238,20 @@ void TwoWayCommunication::SetUpAutotest() {
   //--- Set A-to-B channel
   _channel_A2B = new Channel;
   _acmA->RegisterTransportCallback(_channel_A2B);
-  _channel_A2B->RegisterReceiverACM(_acmB);
+  _channel_A2B->RegisterReceiverACM(_acmB.get());
   //--- Do the same for the reference
   _channelRef_A2B = new Channel;
   _acmRefA->RegisterTransportCallback(_channelRef_A2B);
-  _channelRef_A2B->RegisterReceiverACM(_acmRefB);
+  _channelRef_A2B->RegisterReceiverACM(_acmRefB.get());
 
   //--- Set B-to-A channel
   _channel_B2A = new Channel;
   _acmB->RegisterTransportCallback(_channel_B2A);
-  _channel_B2A->RegisterReceiverACM(_acmA);
+  _channel_B2A->RegisterReceiverACM(_acmA.get());
   //--- Do the same for reference
   _channelRef_B2A = new Channel;
   _acmRefB->RegisterTransportCallback(_channelRef_B2A);
-  _channelRef_B2A->RegisterReceiverACM(_acmRefA);
+  _channelRef_B2A->RegisterReceiverACM(_acmRefA.get());
 
   // The clicks will be more obvious when we
   // are in FAX mode.

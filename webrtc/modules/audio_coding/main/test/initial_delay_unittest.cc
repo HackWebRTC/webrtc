@@ -46,8 +46,8 @@ class InitialPlayoutDelayTest : public ::testing::Test {
  protected:
 
   InitialPlayoutDelayTest()
-      : acm_a_(NULL),
-        acm_b_(NULL),
+      : acm_a_(AudioCodingModule::Create(0)),
+        acm_b_(AudioCodingModule::Create(1)),
         channel_a2b_(NULL) {
   }
 
@@ -55,14 +55,6 @@ class InitialPlayoutDelayTest : public ::testing::Test {
   }
 
   void TearDown() {
-    if (acm_a_ != NULL) {
-      AudioCodingModule::Destroy(acm_a_);
-      acm_a_ = NULL;
-    }
-    if (acm_b_ != NULL) {
-      AudioCodingModule::Destroy(acm_b_);
-      acm_b_ = NULL;
-    }
     if (channel_a2b_ != NULL) {
       delete channel_a2b_;
       channel_a2b_ = NULL;
@@ -70,9 +62,6 @@ class InitialPlayoutDelayTest : public ::testing::Test {
   }
 
   void SetUp() {
-    acm_a_ = AudioCodingModule::Create(0);
-    acm_b_ = AudioCodingModule::Create(1);
-
     acm_b_->InitializeReceiver();
     acm_a_->InitializeReceiver();
 
@@ -90,7 +79,7 @@ class InitialPlayoutDelayTest : public ::testing::Test {
     // Create and connect the channel
     channel_a2b_ = new Channel;
     acm_a_->RegisterTransportCallback(channel_a2b_);
-    channel_a2b_->RegisterReceiverACM(acm_b_);
+    channel_a2b_->RegisterReceiverACM(acm_b_.get());
   }
 
   void Run(CodecInst codec, int initial_delay_ms) {
@@ -125,8 +114,8 @@ class InitialPlayoutDelayTest : public ::testing::Test {
     ASSERT_LE(num_frames * 10, initial_delay_ms + 100);
   }
 
-  AudioCodingModule* acm_a_;
-  AudioCodingModule* acm_b_;
+  scoped_ptr<AudioCodingModule> acm_a_;
+  scoped_ptr<AudioCodingModule> acm_b_;
   Channel* channel_a2b_;
 };
 

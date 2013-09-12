@@ -21,7 +21,7 @@
 #else
 #include <sys/time.h>
 #include <time.h>
-#endif 
+#endif
 
 #include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
 #include "webrtc/modules/audio_coding/main/test/utility.h"
@@ -86,14 +86,13 @@ int16_t SetISAConfig(ACMTestISACConfig& isacConfig, AudioCodingModule* acm,
   return 0;
 }
 
-ISACTest::ISACTest(int testMode) {
-  _testMode = testMode;
+ISACTest::ISACTest(int testMode)
+    : _acmA(AudioCodingModule::Create(1)),
+      _acmB(AudioCodingModule::Create(2)),
+      _testMode(testMode) {
 }
 
 ISACTest::~ISACTest() {
-  AudioCodingModule::Destroy(_acmA);
-  AudioCodingModule::Destroy(_acmB);
-
   delete _channel_A2B;
   delete _channel_B2A;
 }
@@ -101,9 +100,6 @@ ISACTest::~ISACTest() {
 void ISACTest::Setup() {
   int codecCntr;
   CodecInst codecParam;
-
-  _acmA = AudioCodingModule::Create(1);
-  _acmB = AudioCodingModule::Create(2);
 
   for (codecCntr = 0; codecCntr < AudioCodingModule::NumberOfCodecs();
       codecCntr++) {

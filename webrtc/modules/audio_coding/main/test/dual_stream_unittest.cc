@@ -53,9 +53,9 @@ class DualStreamTest :
     kMaxNumStreams
   };
 
-  AudioCodingModule* acm_dual_stream_;
-  AudioCodingModule* acm_ref_primary_;
-  AudioCodingModule* acm_ref_secondary_;
+  scoped_ptr<AudioCodingModule> acm_dual_stream_;
+  scoped_ptr<AudioCodingModule> acm_ref_primary_;
+  scoped_ptr<AudioCodingModule> acm_ref_secondary_;
 
   CodecInst primary_encoder_;
   CodecInst secondary_encoder_;
@@ -98,9 +98,6 @@ DualStreamTest::DualStreamTest()
 }
 
 DualStreamTest::~DualStreamTest() {
-  AudioCodingModule::Destroy(acm_dual_stream_);
-  AudioCodingModule::Destroy(acm_ref_primary_);
-  AudioCodingModule::Destroy(acm_ref_secondary_);
 }
 
 void DualStreamTest::PopulateCodecInstances(int frame_size_primary_ms,
@@ -138,9 +135,9 @@ void DualStreamTest::PopulateCodecInstances(int frame_size_primary_ms,
 void DualStreamTest::InitializeSender(int frame_size_primary_samples,
                                       int num_channels_primary,
                                       int sampling_rate) {
-  ASSERT_TRUE(acm_dual_stream_ != NULL);
-  ASSERT_TRUE(acm_ref_primary_ != NULL);
-  ASSERT_TRUE(acm_ref_secondary_ != NULL);
+  ASSERT_TRUE(acm_dual_stream_.get() != NULL);
+  ASSERT_TRUE(acm_ref_primary_.get() != NULL);
+  ASSERT_TRUE(acm_ref_secondary_.get() != NULL);
 
   ASSERT_EQ(0, acm_dual_stream_->InitializeSender());
   ASSERT_EQ(0, acm_ref_primary_->InitializeSender());

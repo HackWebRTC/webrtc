@@ -109,8 +109,8 @@ void TestPackStereo::set_lost_packet(bool lost) {
 }
 
 TestStereo::TestStereo(int test_mode)
-    : acm_a_(NULL),
-      acm_b_(NULL),
+    : acm_a_(AudioCodingModule::Create(0)),
+      acm_b_(AudioCodingModule::Create(1)),
       channel_a2b_(NULL),
       test_cntr_(0),
       pack_size_samp_(0),
@@ -132,14 +132,6 @@ TestStereo::TestStereo(int test_mode)
 }
 
 TestStereo::~TestStereo() {
-  if (acm_a_ != NULL) {
-    AudioCodingModule::Destroy(acm_a_);
-    acm_a_ = NULL;
-  }
-  if (acm_b_ != NULL) {
-    AudioCodingModule::Destroy(acm_b_);
-    acm_b_ = NULL;
-  }
   if (channel_a2b_ != NULL) {
     delete channel_a2b_;
     channel_a2b_ = NULL;
@@ -168,9 +160,7 @@ void TestStereo::Perform() {
   in_file_mono_->ReadStereo(false);
 
   // Create and initialize two ACMs, one for each side of a one-to-one call.
-  acm_a_ = AudioCodingModule::Create(0);
-  acm_b_ = AudioCodingModule::Create(1);
-  ASSERT_TRUE((acm_a_ != NULL) && (acm_b_ != NULL));
+  ASSERT_TRUE((acm_a_.get() != NULL) && (acm_b_.get() != NULL));
   EXPECT_EQ(0, acm_a_->InitializeReceiver());
   EXPECT_EQ(0, acm_b_->InitializeReceiver());
 
@@ -197,7 +187,7 @@ void TestStereo::Perform() {
   // Create and connect the channel.
   channel_a2b_ = new TestPackStereo;
   EXPECT_EQ(0, acm_a_->RegisterTransportCallback(channel_a2b_));
-  channel_a2b_->RegisterReceiverACM(acm_b_);
+  channel_a2b_->RegisterReceiverACM(acm_b_.get());
 
   // Start with setting VAD/DTX, before we know we will send stereo.
   // Continue with setting a stereo codec as send codec and verify that
@@ -786,11 +776,11 @@ void TestStereo::RegisterSendCodec(char side, char* codec_name,
   AudioCodingModule* my_acm = NULL;
   switch (side) {
     case 'A': {
-      my_acm = acm_a_;
+      my_acm = acm_a_.get();
       break;
     }
     case 'B': {
-      my_acm = acm_b_;
+      my_acm = acm_b_.get();
       break;
     }
     default:

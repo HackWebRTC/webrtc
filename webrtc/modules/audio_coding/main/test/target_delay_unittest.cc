@@ -12,6 +12,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/interface/module_common_types.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
@@ -32,11 +33,10 @@ class TargetDelayTest : public ::testing::Test {
       : acm_(AudioCodingModule::Create(0)) {}
 
   ~TargetDelayTest() {
-    AudioCodingModule::Destroy(acm_);
   }
 
   void SetUp() {
-    EXPECT_TRUE(acm_ != NULL);
+    EXPECT_TRUE(acm_.get() != NULL);
 
     CodecInst codec;
     ASSERT_EQ(0, AudioCodingModule::Codec("L16", &codec, kSampleRateHz, 1));
@@ -108,7 +108,7 @@ class TargetDelayTest : public ::testing::Test {
     return acm_->LeastRequiredDelayMs();
   }
 
-  AudioCodingModule* acm_;
+  scoped_ptr<AudioCodingModule> acm_;
   WebRtcRTPHeader rtp_info_;
 };
 

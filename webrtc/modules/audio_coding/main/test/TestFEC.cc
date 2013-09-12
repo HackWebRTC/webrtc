@@ -24,21 +24,13 @@
 namespace webrtc {
 
 TestFEC::TestFEC()
-    : _acmA(NULL),
-      _acmB(NULL),
+    : _acmA(AudioCodingModule::Create(0)),
+      _acmB(AudioCodingModule::Create(1)),
       _channelA2B(NULL),
       _testCntr(0) {
 }
 
 TestFEC::~TestFEC() {
-  if (_acmA != NULL) {
-    AudioCodingModule::Destroy(_acmA);
-    _acmA = NULL;
-  }
-  if (_acmB != NULL) {
-    AudioCodingModule::Destroy(_acmB);
-    _acmB = NULL;
-  }
   if (_channelA2B != NULL) {
     delete _channelA2B;
     _channelA2B = NULL;
@@ -49,9 +41,6 @@ void TestFEC::Perform() {
   const std::string file_name = webrtc::test::ResourcePath(
       "audio_coding/testfile32kHz", "pcm");
   _inFileA.Open(file_name, 32000, "rb");
-
-  _acmA = AudioCodingModule::Create(0);
-  _acmB = AudioCodingModule::Create(1);
 
   ASSERT_EQ(0, _acmA->InitializeReceiver());
   ASSERT_EQ(0, _acmB->InitializeReceiver());
@@ -66,7 +55,7 @@ void TestFEC::Perform() {
   // Create and connect the channel
   _channelA2B = new Channel;
   _acmA->RegisterTransportCallback(_channelA2B);
-  _channelA2B->RegisterReceiverACM(_acmB);
+  _channelA2B->RegisterReceiverACM(_acmB.get());
 
 #ifndef WEBRTC_CODEC_G722
   EXPECT_TRUE(false);
@@ -217,11 +206,11 @@ int16_t TestFEC::RegisterSendCodec(char side, char* codecName,
   AudioCodingModule* myACM;
   switch (side) {
     case 'A': {
-      myACM = _acmA;
+      myACM = _acmA.get();
       break;
     }
     case 'B': {
-      myACM = _acmB;
+      myACM = _acmB.get();
       break;
     }
     default:

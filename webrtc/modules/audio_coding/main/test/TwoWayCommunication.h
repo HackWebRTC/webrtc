@@ -11,6 +11,7 @@
 #ifndef TWO_WAY_COMMUNICATION_H
 #define TWO_WAY_COMMUNICATION_H
 
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "ACMTest.h"
 #include "Channel.h"
 #include "PCMFile.h"
@@ -30,11 +31,11 @@ class TwoWayCommunication : public ACMTest {
   void SetUp();
   void SetUpAutotest();
 
-  AudioCodingModule* _acmA;
-  AudioCodingModule* _acmB;
+  scoped_ptr<AudioCodingModule> _acmA;
+  scoped_ptr<AudioCodingModule> _acmB;
 
-  AudioCodingModule* _acmRefA;
-  AudioCodingModule* _acmRefB;
+  scoped_ptr<AudioCodingModule> _acmRefA;
+  scoped_ptr<AudioCodingModule> _acmRefB;
 
   Channel* _channel_A2B;
   Channel* _channel_B2A;

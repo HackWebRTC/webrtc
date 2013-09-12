@@ -22,6 +22,7 @@
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
 #include "webrtc/modules/audio_coding/main/test/utility.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
@@ -269,7 +270,7 @@ void EncodeDecodeTest::Perform() {
   codePars[1] = 0;
   codePars[2] = 0;
 
-  AudioCodingModule* acm = AudioCodingModule::Create(0);
+  scoped_ptr<AudioCodingModule> acm(AudioCodingModule::Create(0));
   struct CodecInst sendCodecTmp;
   numCodecs = acm->NumberOfCodecs();
 
@@ -309,14 +310,12 @@ void EncodeDecodeTest::Perform() {
       _receiver.codeId = codeId;
 
       rtpFile.ReadHeader();
-      _receiver.Setup(acm, &rtpFile);
+      _receiver.Setup(acm.get(), &rtpFile);
       _receiver.Run();
       _receiver.Teardown();
       rtpFile.Close();
     }
   }
-
-  AudioCodingModule::Destroy(acm);
 
   // End tracing.
   if (_testMode == 1) {
@@ -326,7 +325,7 @@ void EncodeDecodeTest::Perform() {
 
 void EncodeDecodeTest::EncodeToFile(int fileType, int codeId, int* codePars,
                                     int testMode) {
-  AudioCodingModule* acm = AudioCodingModule::Create(1);
+  scoped_ptr<AudioCodingModule> acm(AudioCodingModule::Create(1));
   RTPFile rtpFile;
   std::string fileName = webrtc::test::OutputPath() + "outFile.rtp";
   rtpFile.Open(fileName.c_str(), "wb+");
@@ -336,14 +335,13 @@ void EncodeDecodeTest::EncodeToFile(int fileType, int codeId, int* codePars,
   _sender.testMode = testMode;
   _sender.codeId = codeId;
 
-  _sender.Setup(acm, &rtpFile);
+  _sender.Setup(acm.get(), &rtpFile);
   struct CodecInst sendCodecInst;
   if (acm->SendCodec(&sendCodecInst) >= 0) {
     _sender.Run();
   }
   _sender.Teardown();
   rtpFile.Close();
-  AudioCodingModule::Destroy(acm);
 }
 
 }  // namespace webrtc

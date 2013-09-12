@@ -76,7 +76,6 @@ class ACMVQMonCallback {
 class AudioCodingModule: public Module {
  protected:
   AudioCodingModule() {}
-  virtual ~AudioCodingModule() {}
 
  public:
   ///////////////////////////////////////////////////////////////////////////
@@ -88,7 +87,9 @@ class AudioCodingModule: public Module {
   //
   static AudioCodingModule* Create(const int32_t id);
   static AudioCodingModule* Create(const int32_t id, Clock* clock);
+  virtual ~AudioCodingModule() {};
 
+  // TODO(ajm): Deprecated. Remove all calls to this unneeded method.
   static void Destroy(AudioCodingModule* module);
 
   ///////////////////////////////////////////////////////////////////////////
