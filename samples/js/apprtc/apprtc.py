@@ -45,6 +45,17 @@ def get_default_stun_server(user_agent):
     default_stun_server = 'stun.services.mozilla.com'
   return default_stun_server
 
+def get_preferred_audio_receive_codec():
+  return 'opus/48000'
+
+def get_preferred_audio_send_codec(user_agent):
+  # Empty string means no preference.
+  preferred_audio_send_codec = ''
+  # Prefer to send ISAC on Chrome for Android.
+  if 'Android' in user_agent and 'Chrome' in user_agent:
+    preferred_audio_send_codec = 'ISAC/16000'
+  return preferred_audio_send_codec
+
 def make_pc_config(stun_server, turn_server, ts_pwd):
   servers = []
   if turn_server:
@@ -300,6 +311,12 @@ class MainPage(webapp2.RequestHandler):
     turn_server = self.request.get('ts')
     min_re = self.request.get('minre')
     max_re = self.request.get('maxre')
+    audio_send_codec = self.request.get('asc')
+    if not audio_send_codec:
+      audio_send_codec = get_preferred_audio_send_codec(user_agent)
+    audio_receive_codec = self.request.get('arc')
+    if not audio_receive_codec:
+      audio_receive_codec = get_preferred_audio_receive_codec()
     hd_video = self.request.get('hd')
     turn_url = 'https://computeengineondemand.appspot.com/'
     if hd_video.lower() == 'true':
@@ -382,7 +399,9 @@ class MainPage(webapp2.RequestHandler):
                        'offer_constraints': json.dumps(offer_constraints),
                        'media_constraints': json.dumps(media_constraints),
                        'turn_url': turn_url,
-                       'stereo': stereo
+                       'stereo': stereo,
+                       'audio_send_codec': audio_send_codec,
+                       'audio_receive_codec': audio_receive_codec
                       }
     if unittest:
       target_page = 'test/test_' + unittest + '.html'

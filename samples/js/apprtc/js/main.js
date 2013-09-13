@@ -14,8 +14,8 @@ var signalingReady = false;
 var msgQueue = [];
 // Set up audio and video regardless of what devices are present.
 var sdpConstraints = {'mandatory': {
-                        'OfferToReceiveAudio': true,
-                        'OfferToReceiveVideo': true }};
+                      'OfferToReceiveAudio': true,
+                      'OfferToReceiveVideo': true }};
 var isVideoMuted = false;
 var isAudioMuted = false;
 // Types of gathered ICE Candidates.
@@ -199,11 +199,19 @@ function mergeConstraints(cons1, cons2) {
 }
 
 function setLocalAndSendMessage(sessionDescription) {
-  // Set Opus as the preferred codec in SDP if Opus is present.
-  sessionDescription.sdp = preferOpus(sessionDescription.sdp);
+  sessionDescription.sdp = maybePreferAudioReceiveCodec(sessionDescription.sdp);
   pc.setLocalDescription(sessionDescription,
        onSetSessionDescriptionSuccess, onSetSessionDescriptionError);
   sendMessage(sessionDescription);
+}
+
+function setRemote(message) {
+  // Set Opus in Stereo, if stereo enabled.
+  if (stereo)
+    message.sdp = addStereo(message.sdp);
+  message.sdp = maybePreferAudioSendCodec(message.sdp);
+  pc.setRemoteDescription(new RTCSessionDescription(message),
+       onSetSessionDescriptionSuccess, onSetSessionDescriptionError);
 }
 
 function sendMessage(message) {
@@ -224,18 +232,10 @@ function processSignalingMessage(message) {
   }
 
   if (message.type === 'offer') {
-    // Set Opus in Stereo, if stereo enabled.
-    if (stereo)
-      message.sdp = addStereo(message.sdp);
-    pc.setRemoteDescription(new RTCSessionDescription(message),
-         onSetSessionDescriptionSuccess, onSetSessionDescriptionError);
+    setRemote(message);
     doAnswer();
   } else if (message.type === 'answer') {
-    // Set Opus in Stereo, if stereo enabled.
-    if (stereo)
-      message.sdp = addStereo(message.sdp);
-    pc.setRemoteDescription(new RTCSessionDescription(message),
-         onSetSessionDescriptionSuccess, onSetSessionDescriptionError);
+    setRemote(message);
   } else if (message.type === 'candidate') {
     var candidate = new RTCIceCandidate({sdpMLineIndex: message.label,
                                          candidate: message.candidate});
@@ -297,7 +297,7 @@ function onUserMediaError(error) {
 }
 
 function onCreateSessionDescriptionError(error) {
-  console.log('Failed to create session description: ' + error.name);
+  console.log('Failed to create session description: ' + error.toString());
 }
 
 function onSetSessionDescriptionSuccess() {
@@ -305,7 +305,7 @@ function onSetSessionDescriptionSuccess() {
 }
 
 function onSetSessionDescriptionError(error) {
-  console.log('Failed to set session description: ' + error.name);
+  console.log('Failed to set session description: ' + error.toString());
 }
 
 function iceCandidateType(candidateSDP) {
@@ -533,8 +533,34 @@ document.onkeydown = function(event) {
   }
 }
 
-// Set Opus as the default audio codec if it's present.
-function preferOpus(sdp) {
+function maybePreferAudioSendCodec(sdp) {
+  if (audio_send_codec == '') {
+    console.log('No preference on audio send codec.');
+    return sdp;
+  }
+  console.log('Prefer audio send codec: ' + audio_send_codec);
+  return preferAudioCodec(sdp, audio_send_codec);
+}
+
+function maybePreferAudioReceiveCodec(sdp) {
+  if (audio_receive_codec == '') {
+    console.log('No preference on audio receive codec.');
+    return sdp;
+  }
+  console.log('Prefer audio receive codec: ' + audio_receive_codec);
+  return preferAudioCodec(sdp, audio_receive_codec);
+}
+
+// Set |codec| as the default audio codec if it's present.
+// The format of |codec| is 'NAME/RATE', e.g. 'opus/48000'.
+function preferAudioCodec(sdp, codec) {
+  var fields = codec.split('/');
+  if (fields.length != 2) {
+    console.log('Invalid codec setting: ' + codec);
+    return sdp;
+  }
+  var name = fields[0];
+  var rate = fields[1];
   var sdpLines = sdp.split('\r\n');
 
   // Search for m line.
@@ -547,13 +573,14 @@ function preferOpus(sdp) {
   if (mLineIndex === null)
     return sdp;
 
-  // If Opus is available, set it as the default in m line.
+  // If the codec is available, set it as the default in m line.
   for (var i = 0; i < sdpLines.length; i++) {
-    if (sdpLines[i].search('opus/48000') !== -1) {
-      var opusPayload = extractSdp(sdpLines[i], /:(\d+) opus\/48000/i);
-      if (opusPayload)
+    if (sdpLines[i].search(name + '/' + rate) !== -1) {
+      var regexp = new RegExp(':(\\d+) ' + name + '\\/' + rate, 'i');
+      var payload = extractSdp(sdpLines[i], regexp);
+      if (payload)
         sdpLines[mLineIndex] = setDefaultCodec(sdpLines[mLineIndex],
-                                               opusPayload);
+                                               payload);
       break;
     }
   }
