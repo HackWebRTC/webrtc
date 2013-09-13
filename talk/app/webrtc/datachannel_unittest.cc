@@ -95,6 +95,9 @@ class SctpDataChannelTest : public testing::Test {
                              true);
     ASSERT_TRUE(session_.Initialize(&constraints,
                                     new FakeIdentityService()));
+    webrtc_data_channel_ = webrtc::DataChannel::Create(&session_, "test", NULL);
+    ASSERT_TRUE(media_stream_signaling_->AddDataChannel(webrtc_data_channel_));
+
     talk_base::scoped_refptr<CreateSessionDescriptionObserverForTest> observer
         = new CreateSessionDescriptionObserverForTest();
     session_.CreateOffer(observer.get(), NULL);
@@ -102,12 +105,9 @@ class SctpDataChannelTest : public testing::Test {
     ASSERT_TRUE(observer->description() != NULL);
     ASSERT_TRUE(session_.SetLocalDescription(observer->ReleaseDescription(),
                                              NULL));
-
-    webrtc_data_channel_ = webrtc::DataChannel::Create(&session_, "test", NULL);
     // Connect to the media channel.
     webrtc_data_channel_->SetSendSsrc(kFakeSsrc);
     webrtc_data_channel_->SetReceiveSsrc(kFakeSsrc);
-
     session_.data_channel()->SignalReadyToSendData(true);
   }
 

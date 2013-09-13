@@ -187,6 +187,8 @@ class MediaStreamSignaling {
   // be offered in a SessionDescription.
   void RemoveLocalStream(MediaStreamInterface* local_stream);
 
+  // Checks if any data channel has been added.
+  bool HasDataChannels() const;
   // Adds |data_channel| to the collection of DataChannels that will be
   // be offered in a SessionDescription.
   bool AddDataChannel(DataChannel* data_channel);

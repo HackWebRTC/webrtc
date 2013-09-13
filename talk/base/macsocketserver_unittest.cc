@@ -132,6 +132,7 @@ TEST_F(MacAsyncSocketTest, TestConnectWithDnsLookupIPv6) {
   SocketTest::TestConnectWithDnsLookupIPv6();
 }
 
+// BUG=https://code.google.com/p/webrtc/issues/detail?id=2272
 TEST_F(MacAsyncSocketTest, DISABLED_TestConnectFailIPv4) {
   SocketTest::TestConnectFailIPv4();
 }

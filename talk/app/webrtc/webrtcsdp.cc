@@ -1319,8 +1319,13 @@ void BuildRtpContentAttributes(
   // We should always use the default bandwidth for RTP-based data
   // channels.  Don't allow SDP to set the bandwidth, because that
   // would give JS the opportunity to "break the Internet".
+  // TODO(pthatcher): But we need to temporarily allow the SDP to control
+  // this for backwards-compatibility.  Once we don't need that any
+  // more, remove this.
+  bool support_dc_sdp_bandwidth_temporarily = true;
   if (media_desc->bandwidth() >= 1000 &&
-      media_type != cricket::MEDIA_TYPE_DATA) {
+      (media_type != cricket::MEDIA_TYPE_DATA ||
+       support_dc_sdp_bandwidth_temporarily)) {
     InitLine(kLineTypeSessionBandwidth, kApplicationSpecificMaximum, &os);
     os << kSdpDelimiterColon << (media_desc->bandwidth() / 1000);
     AddLine(os.str(), message);
@@ -2112,7 +2117,13 @@ bool ParseMediaDescription(const std::string& message,
       // We should always use the default bandwidth for RTP-based data
       // channels.  Don't allow SDP to set the bandwidth, because that
       // would give JS the opportunity to "break the Internet".
-      content->set_bandwidth(cricket::kAutoBandwidth);
+      // TODO(pthatcher): But we need to temporarily allow the SDP to control
+      // this for backwards-compatibility.  Once we don't need that any
+      // more, remove this.
+      bool support_dc_sdp_bandwidth_temporarily = true;
+      if (!support_dc_sdp_bandwidth_temporarily) {
+        content->set_bandwidth(cricket::kAutoBandwidth);
+      }
     } else {
       LOG(LS_WARNING) << "Unsupported media type: " << line;
       continue;

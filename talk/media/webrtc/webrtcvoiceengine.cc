@@ -125,16 +125,19 @@ static const int kOpusStereoBitrate = 64000;
 static const int kOpusMinBitrate = 6000;
 static const int kOpusMaxBitrate = 510000;
 
-#if defined(CHROMEOS)
-// Ensure we open the file in a writeable path on ChromeOS. This workaround
-// can be removed when it's possible to specify a filename for audio option
-// based AEC dumps.
+// Ensure we open the file in a writeable path on ChromeOS and Android. This
+// workaround can be removed when it's possible to specify a filename for audio
+// option based AEC dumps.
 //
 // TODO(grunell): Use a string in the options instead of hardcoding it here
 // and let the embedder choose the filename (crbug.com/264223).
 //
-// NOTE(ajm): Don't use this hardcoded /tmp path on non-ChromeOS platforms.
+// NOTE(ajm): Don't use hardcoded paths on platforms not explicitly specified
+// below.
+#if defined(CHROMEOS)
 static const char kAecDumpByAudioOptionFilename[] = "/tmp/audio.aecdump";
+#elif defined(ANDROID)
+static const char kAecDumpByAudioOptionFilename[] = "/sdcard/audio.aecdump";
 #else
 static const char kAecDumpByAudioOptionFilename[] = "audio.aecdump";
 #endif

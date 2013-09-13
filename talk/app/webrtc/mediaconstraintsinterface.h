@@ -80,6 +80,7 @@ class MediaConstraintsInterface {
   static const char kExperimentalAutoGainControl[];  // googAutoGainControl2
   static const char kNoiseSuppression[];  // googNoiseSuppression
   static const char kHighpassFilter[];  // googHighpassFilter
+  static const char kTypingNoiseDetection[];  // googTypingNoiseDetection
 
   // Google-specific constraint keys for a local video source
   static const char kNoiseReduction[];  // googNoiseReduction

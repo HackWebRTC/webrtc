@@ -398,8 +398,8 @@ StatsReport* StatsCollector::PrepareReport(uint32 ssrc,
   std::string track_id;
   if (it == reports_.end()) {
     if (!session()->GetTrackIdBySsrc(ssrc, &track_id)) {
-      LOG(LS_ERROR) << "The SSRC " << ssrc
-                    << " is not associated with a track";
+      LOG(LS_WARNING) << "The SSRC " << ssrc
+                      << " is not associated with a track";
       return NULL;
     }
   } else {

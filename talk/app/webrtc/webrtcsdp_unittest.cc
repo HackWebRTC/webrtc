@@ -1440,10 +1440,13 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithDataChannelAndBandwidth) {
   // We want to test that serializing data content ignores bandwidth
   // settings (it should always be the default).  Thus, we don't do
   // the following:
-  // InjectAfter("a=mid:data_content_name\r\n",
-  //             "b=AS:100\r\n",
-  //             &expected_sdp);
-  EXPECT_EQ(message, expected_sdp);
+  // TODO(pthatcher): We need to temporarily allow the SDP to control
+  // this for backwards-compatibility.  Once we don't need that any
+  // more, remove this.
+  InjectAfter("a=mid:data_content_name\r\na=sendrecv\r\n",
+              "b=AS:100\r\n",
+              &expected_sdp);
+  EXPECT_EQ(expected_sdp, message);
 }
 
 TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithExtmap) {
@@ -1764,9 +1767,12 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithRtpDataChannelsAndBandwidth) {
   // We want to test that deserializing data content ignores bandwidth
   // settings (it should always be the default).  Thus, we don't do
   // the following:
-  // DataContentDescription* dcd = static_cast<DataContentDescription*>(
-  //    GetFirstDataContent(&desc_)->description);
-  // dcd->set_bandwidth(100 * 1000);
+  // TODO(pthatcher): We need to temporarily allow the SDP to control
+  // this for backwards-compatibility.  Once we don't need that any
+  // more, remove this.
+  DataContentDescription* dcd = static_cast<DataContentDescription*>(
+     GetFirstDataContent(&desc_)->description);
+  dcd->set_bandwidth(100 * 1000);
   ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
 
   std::string sdp_with_bandwidth = kSdpString;

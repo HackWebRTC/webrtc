@@ -459,7 +459,6 @@ class WebRtcVideoChannelRecvInfo  {
   DecoderMap registered_decoders_;
 };
 
-#ifdef USE_WEBRTC_DEV_BRANCH
 class WebRtcOveruseObserver : public webrtc::CpuOveruseObserver {
  public:
   explicit WebRtcOveruseObserver(CoordinatedVideoAdapter* video_adapter)
@@ -499,7 +498,6 @@ class WebRtcOveruseObserver : public webrtc::CpuOveruseObserver {
   talk_base::CriticalSection crit_;
 };
 
-#endif
 
 class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
  public:
@@ -517,9 +515,7 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
         capturer_updated_(false),
         interval_(0),
         video_adapter_(new CoordinatedVideoAdapter) {
-#ifdef USE_WEBRTC_DEV_BRANCH
     overuse_observer_.reset(new WebRtcOveruseObserver(video_adapter_.get()));
-#endif
     SignalCpuAdaptationUnable.repeat(video_adapter_->SignalCpuAdaptationUnable);
     if (cpu_monitor) {
       cpu_monitor->SignalUpdate.connect(
@@ -573,11 +569,9 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   int CurrentAdaptReason() const {
     return video_adapter_->adapt_reason();
   }
-#ifdef USE_WEBRTC_DEV_BRANCH
   webrtc::CpuOveruseObserver* overuse_observer() {
     return overuse_observer_.get();
   }
-#endif
 
   StreamParams* stream_params() { return stream_params_.get(); }
   void set_stream_params(const StreamParams& sp) {
@@ -639,10 +633,8 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   }
 
   void SetCpuOveruseDetection(bool enable) {
-#ifdef USE_WEBRTC_DEV_BRANCH
     overuse_observer_->Enable(enable);
     video_adapter_->set_cpu_adaptation(enable);
-#endif
   }
 
   void ProcessFrame(const VideoFrame& original_frame, bool mute,
@@ -697,9 +689,7 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   int64 interval_;
 
   talk_base::scoped_ptr<CoordinatedVideoAdapter> video_adapter_;
-#ifdef USE_WEBRTC_DEV_BRANCH
   talk_base::scoped_ptr<WebRtcOveruseObserver> overuse_observer_;
-#endif
 };
 
 const WebRtcVideoEngine::VideoCodecPref
@@ -2251,7 +2241,10 @@ bool WebRtcVideoMediaChannel::GetStats(VideoMediaInfo* info) {
 
     unsigned int ssrc;
     // Get receiver statistics and build VideoReceiverInfo, if we have data.
-    if (engine_->vie()->rtp()->GetRemoteSSRC(channel->channel_id(), ssrc) != 0)
+    // Skip the default channel (ssrc == 0).
+    if (engine_->vie()->rtp()->GetRemoteSSRC(
+            channel->channel_id(), ssrc) != 0 ||
+        ssrc == 0)
       continue;
 
     unsigned int bytes_sent, packets_sent, bytes_recv, packets_recv;
@@ -3036,13 +3029,11 @@ bool WebRtcVideoMediaChannel::ConfigureSending(int channel_id,
       new WebRtcVideoChannelSendInfo(channel_id, vie_capture,
                                      external_capture,
                                      engine()->cpu_monitor()));
-#ifdef USE_WEBRTC_DEV_BRANCH
   if (engine()->vie()->base()->RegisterCpuOveruseObserver(
       channel_id, send_channel->overuse_observer())) {
     LOG_RTCERR1(RegisterCpuOveruseObserver, channel_id);
     return false;
   }
-#endif
   send_channel->ApplyCpuOptions(options_);
   send_channel->SignalCpuAdaptationUnable.connect(this,
       &WebRtcVideoMediaChannel::OnCpuAdaptationUnable);

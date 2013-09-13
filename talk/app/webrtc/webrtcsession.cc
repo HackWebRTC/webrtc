@@ -422,6 +422,17 @@ bool WebRtcSession::Initialize(
   // mandatory constraints can be fulfilled. Note that |constraints|
   // can be null.
   bool value;
+
+  // Enable DTLS by default if |dtls_identity_service| is valid.
+  bool dtls_enabled = (dtls_identity_service != NULL);
+  // |constraints| can override the default |dtls_enabled| value.
+  if (FindConstraint(
+        constraints,
+        MediaConstraintsInterface::kEnableDtlsSrtp,
+        &value, NULL)) {
+    dtls_enabled = value;
+  }
+
   // Enable creation of RTP data channels if the kEnableRtpDataChannels is set.
   // It takes precendence over the kEnableSctpDataChannels constraint.
   if (FindConstraint(
@@ -434,11 +445,6 @@ bool WebRtcSession::Initialize(
         constraints,
         MediaConstraintsInterface::kEnableSctpDataChannels,
         &value, NULL) && value;
-    bool dtls_enabled = FindConstraint(
-        constraints,
-        MediaConstraintsInterface::kEnableDtlsSrtp,
-        &value, NULL) && value;
-
     // DTLS has to be enabled to use SCTP.
     if (sctp_enabled && dtls_enabled) {
       LOG(LS_INFO) << "Allowing SCTP data engine.";
@@ -467,7 +473,7 @@ bool WebRtcSession::Initialize(
       this,
       id(),
       data_channel_type_,
-      constraints));
+      dtls_enabled));
 
   webrtc_session_desc_factory_->SignalIdentityReady.connect(
       this, &WebRtcSession::OnIdentityReady);

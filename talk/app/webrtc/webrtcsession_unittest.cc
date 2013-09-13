@@ -314,9 +314,6 @@ class WebRtcSessionTest : public testing::Test {
   }
 
   void InitWithDtls(bool identity_request_should_fail = false) {
-    constraints_.reset(new FakeConstraints());
-    constraints_->AddOptional(
-        webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, true);
     FakeIdentityService* identity_service = new FakeIdentityService();
     identity_service->set_should_fail(identity_request_should_fail);
     Init(identity_service);
@@ -2482,19 +2479,29 @@ TEST_F(WebRtcSessionTest, TestRtpDataChannelConstraintTakesPrecedence) {
       webrtc::MediaConstraintsInterface::kEnableRtpDataChannels, true);
   constraints_->AddOptional(
     webrtc::MediaConstraintsInterface::kEnableSctpDataChannels, true);
-  constraints_->AddOptional(
-      webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, true);
-  Init(new FakeIdentityService());
+  InitWithDtls(false);
 
   SetLocalDescriptionWithDataChannel();
   EXPECT_EQ(cricket::DCT_RTP, data_engine_->last_channel_type());
+}
+
+TEST_F(WebRtcSessionTest, TestCreateOfferWithSctpEnabledWithoutStreams) {
+  constraints_.reset(new FakeConstraints());
+  constraints_->AddOptional(
+      webrtc::MediaConstraintsInterface::kEnableSctpDataChannels, true);
+  InitWithDtls(false);
+
+  talk_base::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer(NULL));
+  EXPECT_TRUE(offer->description()->GetContentByName("data") == NULL);
 }
 
 TEST_F(WebRtcSessionTest, TestSctpDataChannelWithoutDtls) {
   constraints_.reset(new FakeConstraints());
   constraints_->AddOptional(
       webrtc::MediaConstraintsInterface::kEnableSctpDataChannels, true);
-  Init(NULL);
+  constraints_->AddOptional(
+      webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, false);
+  InitWithDtls(false);
 
   SetLocalDescriptionWithDataChannel();
   EXPECT_EQ(cricket::DCT_NONE, data_engine_->last_channel_type());
@@ -2506,9 +2513,7 @@ TEST_F(WebRtcSessionTest, TestSctpDataChannelWithDtls) {
   constraints_.reset(new FakeConstraints());
   constraints_->AddOptional(
       webrtc::MediaConstraintsInterface::kEnableSctpDataChannels, true);
-  constraints_->AddOptional(
-      webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, true);
-  Init(new FakeIdentityService());
+  InitWithDtls(false);
 
   SetLocalDescriptionWithDataChannel();
   EXPECT_EQ(cricket::DCT_SCTP, data_engine_->last_channel_type());

@@ -270,6 +270,13 @@ bool SctpDataMediaChannel::OpenSctpSocket() {
     return false;
   }
 
+  uint32_t nodelay = 1;
+  if (usrsctp_setsockopt(sock_, IPPROTO_SCTP, SCTP_NODELAY, &nodelay,
+                         sizeof(nodelay))) {
+    LOG_ERRNO(LS_ERROR) << debug_name_ << "Failed to set SCTP_NODELAY.";
+    return false;
+  }
+
   // Subscribe to SCTP event notifications.
   int event_types[] = {SCTP_ASSOC_CHANGE,
                        SCTP_PEER_ADDR_CHANGE,

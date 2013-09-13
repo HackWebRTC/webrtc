@@ -113,7 +113,7 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     WebRtcSession* session,
     const std::string& session_id,
     cricket::DataChannelType dct,
-    const MediaConstraintsInterface* constraints)
+    bool dtls_enabled)
     : signaling_thread_(signaling_thread),
       mediastream_signaling_(mediastream_signaling),
       session_desc_factory_(channel_manager, &transport_desc_factory_),
@@ -132,38 +132,31 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
   // By default SRTP-SDES is enabled in WebRtc.
   set_secure(cricket::SEC_REQUIRED);
 
-  // Enable DTLS-SRTP if the constraint is set.
-  bool dtls_enabled = false;
-  if (!FindConstraint(
-           constraints, MediaConstraintsInterface::kEnableDtlsSrtp,
-           &dtls_enabled, NULL) ||
-      !dtls_enabled) {
-    return;
-  }
-  // DTLS is enabled.
-  if (identity_service_.get()) {
-    identity_request_observer_ =
-      new talk_base::RefCountedObject<WebRtcIdentityRequestObserver>();
+  if (dtls_enabled) {
+    if (identity_service_.get()) {
+      identity_request_observer_ =
+        new talk_base::RefCountedObject<WebRtcIdentityRequestObserver>();
 
-    identity_request_observer_->SignalRequestFailed.connect(
-        this, &WebRtcSessionDescriptionFactory::OnIdentityRequestFailed);
-    identity_request_observer_->SignalIdentityReady.connect(
-        this, &WebRtcSessionDescriptionFactory::OnIdentityReady);
+      identity_request_observer_->SignalRequestFailed.connect(
+          this, &WebRtcSessionDescriptionFactory::OnIdentityRequestFailed);
+      identity_request_observer_->SignalIdentityReady.connect(
+          this, &WebRtcSessionDescriptionFactory::OnIdentityReady);
 
-    if (identity_service_->RequestIdentity(kWebRTCIdentityName,
-                                           kWebRTCIdentityName,
-                                           identity_request_observer_)) {
-      LOG(LS_VERBOSE) << "DTLS-SRTP enabled; sent DTLS identity request.";
-      identity_request_state_ = IDENTITY_WAITING;
+      if (identity_service_->RequestIdentity(kWebRTCIdentityName,
+                                             kWebRTCIdentityName,
+                                             identity_request_observer_)) {
+        LOG(LS_VERBOSE) << "DTLS-SRTP enabled; sent DTLS identity request.";
+        identity_request_state_ = IDENTITY_WAITING;
+      } else {
+        LOG(LS_ERROR) << "Failed to send DTLS identity request.";
+        identity_request_state_ = IDENTITY_FAILED;
+      }
     } else {
-      LOG(LS_ERROR) << "Failed to send DTLS identity request.";
-      identity_request_state_ = IDENTITY_FAILED;
+      identity_request_state_ = IDENTITY_WAITING;
+      // Do not generate the identity in the constructor since the caller has
+      // not got a chance to connect to SignalIdentityReady.
+      signaling_thread_->Post(this, MSG_GENERATE_IDENTITY, NULL);
     }
-  } else {
-    identity_request_state_ = IDENTITY_WAITING;
-    // Do not generate the identity in the constructor since the caller has
-    // not got a chance to connect to SignalIdentityReady.
-    signaling_thread_->Post(this, MSG_GENERATE_IDENTITY, NULL);
   }
 }
 
@@ -197,7 +190,8 @@ void WebRtcSessionDescriptionFactory::CreateOffer(
     return;
   }
 
-  if (data_channel_type_ == cricket::DCT_SCTP) {
+  if (data_channel_type_ == cricket::DCT_SCTP &&
+      mediastream_signaling_->HasDataChannels()) {
     options.data_channel_type = cricket::DCT_SCTP;
   }
 
@@ -249,7 +243,8 @@ void WebRtcSessionDescriptionFactory::CreateAnswer(
     PostCreateSessionDescriptionFailed(observer, error);
     return;
   }
-  if (data_channel_type_ == cricket::DCT_SCTP) {
+  if (data_channel_type_ == cricket::DCT_SCTP &&
+      mediastream_signaling_->HasDataChannels()) {
     options.data_channel_type = cricket::DCT_SCTP;
   }
 

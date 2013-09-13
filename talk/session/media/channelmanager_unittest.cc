@@ -204,6 +204,45 @@ TEST_F(ChannelManagerTest, SetDefaultVideoEncoderConfig) {
   EXPECT_EQ(config, fme_->default_video_encoder_config());
 }
 
+struct GetCapturerFrameSize : public sigslot::has_slots<> {
+  void OnVideoFrame(VideoCapturer* capturer, const VideoFrame* frame) {
+    width = frame->GetWidth();
+    height = frame->GetHeight();
+  }
+  GetCapturerFrameSize(VideoCapturer* capturer) : width(0), height(0) {
+    capturer->SignalVideoFrame.connect(this,
+                                       &GetCapturerFrameSize::OnVideoFrame);
+    static_cast<FakeVideoCapturer*>(capturer)->CaptureFrame();
+  }
+  size_t width;
+  size_t height;
+};
+
+TEST_F(ChannelManagerTest, DefaultCapturerAspectRatio) {
+  VideoCodec codec(100, "VP8", 640, 360, 30, 0);
+  VideoFormat format(640, 360, 33, FOURCC_ANY);
+  VideoEncoderConfig config(codec, 1, 2);
+  EXPECT_TRUE(cm_->Init());
+  // A capturer created before the default encoder config is set will have no
+  // set aspect ratio, so it'll be 4:3 (based on the fake video capture impl).
+  VideoCapturer* capturer = cm_->CreateVideoCapturer();
+  ASSERT_TRUE(capturer != NULL);
+  EXPECT_EQ(CS_RUNNING, capturer->Start(format));
+  GetCapturerFrameSize size(capturer);
+  EXPECT_EQ(640u, size.width);
+  EXPECT_EQ(480u, size.height);
+  delete capturer;
+  // Try again, but with the encoder config set to 16:9.
+  EXPECT_TRUE(cm_->SetDefaultVideoEncoderConfig(config));
+  capturer = cm_->CreateVideoCapturer();
+  ASSERT_TRUE(capturer != NULL);
+  EXPECT_EQ(CS_RUNNING, capturer->Start(format));
+  GetCapturerFrameSize cropped_size(capturer);
+  EXPECT_EQ(640u, cropped_size.width);
+  EXPECT_EQ(360u, cropped_size.height);
+  delete capturer;
+}
+
 // Test that SetDefaultVideoCodec passes through the right values.
 TEST_F(ChannelManagerTest, SetDefaultVideoCodecBeforeInit) {
   cricket::VideoCodec codec(96, "G264", 1280, 720, 60, 0);

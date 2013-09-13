@@ -194,7 +194,8 @@ bool DataChannel::SendControl(const talk_base::Buffer* buffer) {
 void DataChannel::SetReceiveSsrc(uint32 receive_ssrc) {
   if (receive_ssrc_set_) {
     ASSERT(session_->data_channel_type() == cricket::DCT_RTP ||
-        receive_ssrc_ == send_ssrc_);
+           !send_ssrc_set_ ||
+           receive_ssrc_ == send_ssrc_);
     return;
   }
   receive_ssrc_ = receive_ssrc;
@@ -210,7 +211,8 @@ void DataChannel::RemotePeerRequestClose() {
 void DataChannel::SetSendSsrc(uint32 send_ssrc) {
   if (send_ssrc_set_) {
     ASSERT(session_->data_channel_type() == cricket::DCT_RTP ||
-        receive_ssrc_ == send_ssrc_);
+           !receive_ssrc_set_ ||
+           receive_ssrc_ == send_ssrc_);
     return;
   }
   send_ssrc_ = send_ssrc;

@@ -51,6 +51,8 @@ const char MediaConstraintsInterface::kNoiseSuppression[] =
     "googNoiseSuppression";
 const char MediaConstraintsInterface::kHighpassFilter[] =
     "googHighpassFilter";
+const char MediaConstraintsInterface::kTypingNoiseDetection[] =
+    "googTypingNoiseDetection";
 const char MediaConstraintsInterface::kInternalAecDump[] = "internalAecDump";
 
 namespace {
@@ -90,6 +92,8 @@ bool FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
       options->highpass_filter.Set(value);
     else if (iter->key == MediaConstraintsInterface::kInternalAecDump)
       options->aec_dump.Set(value);
+    else if (iter->key == MediaConstraintsInterface::kTypingNoiseDetection)
+      options->typing_detection.Set(value);
     else
       success = false;
   }

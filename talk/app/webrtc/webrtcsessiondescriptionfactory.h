@@ -102,7 +102,7 @@ class WebRtcSessionDescriptionFactory : public talk_base::MessageHandler,
       WebRtcSession* session,
       const std::string& session_id,
       cricket::DataChannelType dct,
-      const MediaConstraintsInterface* constraints);
+      bool dtls_enabled);
   virtual ~WebRtcSessionDescriptionFactory();
 
   static void CopyCandidatesFromSessionDescription(

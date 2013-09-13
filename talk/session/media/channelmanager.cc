@@ -670,7 +670,16 @@ VideoCapturer* ChannelManager::CreateVideoCapturer() {
     }
     return NULL;
   }
-  return device_manager_->CreateVideoCapturer(device);
+  VideoCapturer* capturer = device_manager_->CreateVideoCapturer(device);
+  if (capturer && default_video_encoder_config_.max_codec.id != 0) {
+    // For now, use the aspect ratio of the default_video_encoder_config_,
+    // which may be different than the native aspect ratio of the start
+    // format the camera may use.
+    capturer->UpdateAspectRatio(
+        default_video_encoder_config_.max_codec.width,
+        default_video_encoder_config_.max_codec.height);
+  }
+  return capturer;
 }
 
 bool ChannelManager::SetCaptureDevice_w(const Device* cam_device) {

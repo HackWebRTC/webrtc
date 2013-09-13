@@ -225,6 +225,10 @@ bool MediaStreamSignaling::AllocateSctpId(int* id) {
   return true;
 }
 
+bool MediaStreamSignaling::HasDataChannels() const {
+  return !data_channels_.empty();
+}
+
 bool MediaStreamSignaling::AddDataChannel(DataChannel* data_channel) {
   ASSERT(data_channel != NULL);
   if (data_channels_.find(data_channel->label()) != data_channels_.end()) {
