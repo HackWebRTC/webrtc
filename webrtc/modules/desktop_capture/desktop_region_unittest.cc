@@ -444,6 +444,104 @@ TEST(DesktopRegionTest, Intersect) {
   }
 }
 
+TEST(DesktopRegionTest, Subtract) {
+  struct Case {
+    int input1_count;
+    DesktopRect input1_rects[4];
+    int input2_count;
+    DesktopRect input2_rects[4];
+    int expected_count;
+    DesktopRect expected_rects[5];
+  } cases[] = {
+    // Subtract one rect from another.
+    { 1, { DesktopRect::MakeLTRB(0, 0, 100, 100) },
+      1, { DesktopRect::MakeLTRB(50, 50, 150, 150) },
+      2, { DesktopRect::MakeLTRB(0, 0, 100, 50),
+           DesktopRect::MakeLTRB(0, 50, 50, 100)  } },
+
+    { 1, { DesktopRect::MakeLTRB(0, 0, 100, 100) },
+      1, { DesktopRect::MakeLTRB(-50, -50, 50, 50) },
+      2, { DesktopRect::MakeLTRB(50, 0, 100, 50),
+           DesktopRect::MakeLTRB(0, 50, 100, 100)  } },
+
+    { 1, { DesktopRect::MakeLTRB(0, 0, 100, 100) },
+      1, { DesktopRect::MakeLTRB(-50, 50, 50, 150) },
+      2, { DesktopRect::MakeLTRB(0, 0, 100, 50),
+           DesktopRect::MakeLTRB(50, 50, 100, 100)  } },
+
+    { 1, { DesktopRect::MakeLTRB(0, 0, 100, 100) },
+      1, { DesktopRect::MakeLTRB(50, 50, 150, 70) },
+      3, { DesktopRect::MakeLTRB(0, 0, 100, 50),
+           DesktopRect::MakeLTRB(0, 50, 50, 70),
+           DesktopRect::MakeLTRB(0, 70, 100, 100) } },
+
+    { 1, { DesktopRect::MakeLTRB(0, 0, 100, 100) },
+      1, { DesktopRect::MakeLTRB(50, 50, 70, 70) },
+      4, { DesktopRect::MakeLTRB(0, 0, 100, 50),
+           DesktopRect::MakeLTRB(0, 50, 50, 70),
+           DesktopRect::MakeLTRB(70, 50, 100, 70),
+           DesktopRect::MakeLTRB(0, 70, 100, 100) } },
+
+    // Empty result.
+    { 1, { DesktopRect::MakeLTRB(0, 0, 100, 100) },
+      1, { DesktopRect::MakeLTRB(0, 0, 100, 100) },
+      0, {} },
+
+    { 1, { DesktopRect::MakeLTRB(0, 0, 100, 100) },
+      1, { DesktopRect::MakeLTRB(-10, -10, 110, 110) },
+      0, {} },
+
+    { 2, { DesktopRect::MakeLTRB(0, 0, 100, 100),
+           DesktopRect::MakeLTRB(50, 50, 150, 150) },
+      2, { DesktopRect::MakeLTRB(0, 0, 100, 100),
+           DesktopRect::MakeLTRB(50, 50, 150, 150) },
+      0, {} },
+
+    // One rect out of disjoint set.
+    { 3, { DesktopRect::MakeLTRB(0, 0, 10, 10),
+           DesktopRect::MakeLTRB(20, 20, 30, 30),
+           DesktopRect::MakeLTRB(40, 0, 50, 10) },
+      1, { DesktopRect::MakeLTRB(20, 20, 30, 30) },
+      2, { DesktopRect::MakeLTRB(0, 0, 10, 10),
+           DesktopRect::MakeLTRB(40, 0, 50, 10) } },
+
+    // Row merging.
+    { 3, { DesktopRect::MakeLTRB(0, 0, 100, 50),
+           DesktopRect::MakeLTRB(0, 50, 150, 70),
+           DesktopRect::MakeLTRB(0, 70, 100, 100) },
+      1, { DesktopRect::MakeLTRB(100, 50, 150, 70) },
+      1, { DesktopRect::MakeLTRB(0, 0, 100, 100) } },
+
+    // No-op subtraction.
+    { 1, { DesktopRect::MakeLTRB(0, 0, 100, 100) },
+      1, { DesktopRect::MakeLTRB(100, 0, 200, 100) },
+      1, { DesktopRect::MakeLTRB(0, 0, 100, 100) } },
+
+    { 1, { DesktopRect::MakeLTRB(0, 0, 100, 100) },
+      1, { DesktopRect::MakeLTRB(-100, 0, 0, 100) },
+      1, { DesktopRect::MakeLTRB(0, 0, 100, 100) } },
+
+    { 1, { DesktopRect::MakeLTRB(0, 0, 100, 100) },
+      1, { DesktopRect::MakeLTRB(0, 100, 0, 200) },
+      1, { DesktopRect::MakeLTRB(0, 0, 100, 100) } },
+
+    { 1, { DesktopRect::MakeLTRB(0, 0, 100, 100) },
+      1, { DesktopRect::MakeLTRB(0, -100, 100, 0) },
+      1, { DesktopRect::MakeLTRB(0, 0, 100, 100) } },
+  };
+
+  for (size_t i = 0; i < (sizeof(cases) / sizeof(Case)); ++i) {
+    SCOPED_TRACE(i);
+
+    DesktopRegion r1(cases[i].input1_rects, cases[i].input1_count);
+    DesktopRegion r2(cases[i].input2_rects, cases[i].input2_count);
+
+    r1.Subtract(r2);
+
+    CompareRegion(r1, cases[i].expected_rects, cases[i].expected_count);
+  }
+}
+
 TEST(DesktopRegionTest, DISABLED_Performance) {
   for (int c = 0; c < 1000; ++c) {
     DesktopRegion r;
