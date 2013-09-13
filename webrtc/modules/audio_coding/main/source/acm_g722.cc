@@ -20,6 +20,8 @@
 
 namespace webrtc {
 
+namespace acm1 {
+
 #ifndef WEBRTC_CODEC_G722
 
 ACMG722::ACMG722(int16_t /* codec_id */)
@@ -350,5 +352,7 @@ void ACMG722::SplitStereoPacket(uint8_t* payload, int32_t* payload_length) {
 }
 
 #endif
+
+}  // namespace acm1
 
 }  // namespace webrtc

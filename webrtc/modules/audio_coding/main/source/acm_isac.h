@@ -15,6 +15,8 @@
 
 namespace webrtc {
 
+namespace acm1 {
+
 struct ACMISACInst;
 
 enum IsacCodingMode {
@@ -129,6 +131,8 @@ class ACMISAC : public ACMGenericCodec {
   WebRtcACMCodecParams decoder_params_32khz_;
 };
 
-}  // namespace
+}  // namespace acm1
+
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_ISAC_H_

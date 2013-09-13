@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_G722_H_
-#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_G722_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_G722_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_G722_H_
 
-#include "webrtc/modules/audio_coding/main/source/acm_generic_codec.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_generic_codec.h"
 
 typedef struct WebRtcG722EncInst G722EncInst;
 typedef struct WebRtcG722DecInst G722DecInst;
@@ -54,4 +54,4 @@ class ACMG722 : public ACMGenericCodec {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_G722_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_G722_H_

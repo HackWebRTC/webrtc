@@ -18,6 +18,8 @@
 
 namespace webrtc {
 
+namespace acm1 {
+
 #ifndef WEBRTC_CODEC_AVT
 
 ACMDTMFPlayout::ACMDTMFPlayout(
@@ -163,5 +165,7 @@ void ACMDTMFPlayout::DestructDecoderSafe() {
 }
 
 #endif
+
+}  // namespace acm1
 
 }  // namespace webrtc

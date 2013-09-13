@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_RED_H_
-#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_RED_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_RED_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_RED_H_
 
-#include "webrtc/modules/audio_coding/main/source/acm_generic_codec.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_generic_codec.h"
 
 namespace webrtc {
 
@@ -37,4 +37,4 @@ class ACMRED : public ACMGenericCodec {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_RED_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_RED_H_

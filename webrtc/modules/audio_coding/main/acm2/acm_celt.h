@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_CELT_H_
-#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_CELT_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_CELT_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_CELT_H_
 
-#include "webrtc/modules/audio_coding/main/source/acm_generic_codec.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_generic_codec.h"
 
 // forward declaration
 struct CELT_encinst_t_;
@@ -47,4 +47,4 @@ class ACMCELT : public ACMGenericCodec {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_CELT_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_CELT_H_

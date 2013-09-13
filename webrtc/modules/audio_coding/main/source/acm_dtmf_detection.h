@@ -17,6 +17,8 @@
 
 namespace webrtc {
 
+namespace acm1 {
+
 class ACMDTMFDetection {
  public:
   ACMDTMFDetection();
@@ -32,6 +34,8 @@ class ACMDTMFDetection {
  private:
   ACMResampler resampler_;
 };
+
+}  // namespace acm1
 
 }  // namespace webrtc
 

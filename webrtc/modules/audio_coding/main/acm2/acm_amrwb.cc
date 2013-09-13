@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/main/source/acm_amrwb.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_amrwb.h"
 
 #ifdef WEBRTC_CODEC_AMRWB
 // NOTE! GSM AMR-wb is not included in the open-source package. The
 // following interface file is needed:
 #include "webrtc/modules/audio_coding/main/codecs/amrwb/interface/amrwb_interface.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
-#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
 #include "webrtc/system_wrappers/interface/rw_lock_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 

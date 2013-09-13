@@ -26,6 +26,8 @@
 
 namespace webrtc {
 
+namespace acm1 {
+
 #define RTP_HEADER_SIZE 12
 #define NETEQ_INIT_FREQ 8000
 #define NETEQ_INIT_FREQ_KHZ (NETEQ_INIT_FREQ/1000)
@@ -1139,5 +1141,7 @@ bool ACMNetEQ::DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) const {
     return false;
   return true;
 }
+
+}  // namespace acm1
 
 }  // namespace webrtc

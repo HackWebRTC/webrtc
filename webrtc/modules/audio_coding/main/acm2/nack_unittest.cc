@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/main/source/nack.h"
+#include "webrtc/modules/audio_coding/main/acm2/nack.h"
 
 #include <stdint.h>
 

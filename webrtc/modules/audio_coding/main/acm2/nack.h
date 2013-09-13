@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_NACK_H_
-#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_NACK_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_NACK_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_NACK_H_
 
 #include <vector>
 #include <map>
@@ -206,4 +206,4 @@ class Nack {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_NACK_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_NACK_H_

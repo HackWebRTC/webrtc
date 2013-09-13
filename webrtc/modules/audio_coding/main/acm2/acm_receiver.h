@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_RECEIVER_H_
-#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_RECEIVER_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_RECEIVER_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_RECEIVER_H_
 
 #include <vector>
 
 #include "webrtc/common_audio/vad/include/webrtc_vad.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
-#include "webrtc/modules/audio_coding/main/source/acm_codec_database.h"
-#include "webrtc/modules/audio_coding/main/source/acm_resampler.h"
-#include "webrtc/modules/audio_coding/main/source/initial_delay_manager.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_resampler.h"
+#include "webrtc/modules/audio_coding/main/acm2/initial_delay_manager.h"
 #include "webrtc/modules/audio_coding/neteq4/interface/neteq.h"
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
@@ -362,4 +362,4 @@ class AcmReceiver {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_RECEIVER_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_ACM_RECEIVER_H_

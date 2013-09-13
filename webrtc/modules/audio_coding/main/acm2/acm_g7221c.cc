@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/main/source/acm_g7221c.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_g7221c.h"
 
 #ifdef WEBRTC_CODEC_G722_1C
 // NOTE! G.722.1C is not included in the open-source package. The following
 // interface file is needed:
 #include "webrtc/modules/audio_coding/main/codecs/g7221c/interface/g7221c_interface.h"
-#include "webrtc/modules/audio_coding/main/source/acm_codec_database.h"
-#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 // The API in the header file should match the one below.

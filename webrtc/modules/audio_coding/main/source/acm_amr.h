@@ -19,7 +19,7 @@ struct AMR_decinst_t_;
 
 namespace webrtc {
 
-enum ACMAMRPackingFormat;
+namespace acm1 {
 
 class ACMAMR : public ACMGenericCodec {
  public:
@@ -79,6 +79,8 @@ class ACMAMR : public ACMGenericCodec {
   ACMAMRPackingFormat encoder_packing_format_;
   ACMAMRPackingFormat decoder_packing_format_;
 };
+
+}  // namespace acm1
 
 }  // namespace webrtc
 

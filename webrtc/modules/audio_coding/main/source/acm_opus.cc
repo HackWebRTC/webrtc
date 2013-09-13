@@ -23,6 +23,8 @@
 
 namespace webrtc {
 
+namespace acm1 {
+
 #ifndef WEBRTC_CODEC_OPUS
 
 ACMOpus::ACMOpus(int16_t /* codec_id */)
@@ -311,5 +313,7 @@ void ACMOpus::SplitStereoPacket(uint8_t* payload, int32_t* payload_length) {
 }
 
 #endif  // WEBRTC_CODEC_OPUS
+
+}  // namespace acm1
 
 }  // namespace webrtc

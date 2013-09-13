@@ -15,22 +15,22 @@
 
 // TODO(tlegrand): Change constant input pointers in all functions to constant
 // references, where appropriate.
-#include "webrtc/modules/audio_coding/main/source/acm_codec_database.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
 
 #include <assert.h>
 
-#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
 #include "webrtc/modules/audio_coding/neteq4/interface/audio_decoder.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 // Includes needed to create the codecs.
 // G711, PCM mu-law and A-law
-#include "webrtc/modules/audio_coding/main/source/acm_pcma.h"
-#include "webrtc/modules/audio_coding/main/source/acm_pcmu.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_pcma.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_pcmu.h"
 #include "webrtc/modules/audio_coding/codecs/g711/include/g711_interface.h"
 // CNG
 #include "webrtc/modules/audio_coding/codecs/cng/include/webrtc_cng.h"
-#include "webrtc/modules/audio_coding/main/source/acm_cng.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_cng.h"
 #ifdef WEBRTC_CODEC_ISAC
 #include "webrtc/modules/audio_coding/codecs/isac/main/interface/isac.h"
 #endif
@@ -38,66 +38,66 @@
 #include "webrtc/modules/audio_coding/codecs/isac/fix/interface/isacfix.h"
 #endif
 #if (defined WEBRTC_CODEC_ISACFX) || (defined WEBRTC_CODEC_ISAC)
-#include "webrtc/modules/audio_coding/main/source/acm_isac.h"
-#include "webrtc/modules/audio_coding/main/source/acm_isac_macros.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_isac.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_isac_macros.h"
 #endif
 #ifdef WEBRTC_CODEC_PCM16
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
-#include "webrtc/modules/audio_coding/main/source/acm_pcm16b.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_pcm16b.h"
 #endif
 #ifdef WEBRTC_CODEC_ILBC
 #include "webrtc/modules/audio_coding/codecs/ilbc/interface/ilbc.h"
-#include "webrtc/modules/audio_coding/main/source/acm_ilbc.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_ilbc.h"
 #endif
 #ifdef WEBRTC_CODEC_AMR
 #include "webrtc/modules/audio_coding/codecs/amr/include/amr_interface.h"
-#include "webrtc/modules/audio_coding/main/source/acm_amr.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_amr.h"
 #endif
 #ifdef WEBRTC_CODEC_AMRWB
 #include "webrtc/modules/audio_coding/codecs/amrwb/include/amrwb_interface.h"
-#include "webrtc/modules/audio_coding/main/source/acm_amrwb.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_amrwb.h"
 #endif
 #ifdef WEBRTC_CODEC_CELT
 #include "webrtc/modules/audio_coding/codecs/celt/include/celt_interface.h"
-#include "webrtc/modules/audio_coding/main/source/acm_celt.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_celt.h"
 #endif
 #ifdef WEBRTC_CODEC_G722
 #include "webrtc/modules/audio_coding/codecs/g722/include/g722_interface.h"
-#include "webrtc/modules/audio_coding/main/source/acm_g722.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_g722.h"
 #endif
 #ifdef WEBRTC_CODEC_G722_1
 #include "webrtc/modules/audio_coding/codecs/g7221/include/g7221_interface.h"
-#include "webrtc/modules/audio_coding/main/source/acm_g7221.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_g7221.h"
 #endif
 #ifdef WEBRTC_CODEC_G722_1C
 #include "webrtc/modules/audio_coding/codecs/g7221c/include/g7221c_interface.h"
-#include "webrtc/modules/audio_coding/main/source/acm_g7221c.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_g7221c.h"
 #endif
 #ifdef WEBRTC_CODEC_G729
 #include "webrtc/modules/audio_coding/codecs/g729/include/g729_interface.h"
-#include "webrtc/modules/audio_coding/main/source/acm_g729.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_g729.h"
 #endif
 #ifdef WEBRTC_CODEC_G729_1
 #include "webrtc/modules/audio_coding/codecs/g7291/include/g7291_interface.h"
-#include "webrtc/modules/audio_coding/main/source/acm_g7291.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_g7291.h"
 #endif
 #ifdef WEBRTC_CODEC_GSMFR
 #include "webrtc/modules/audio_coding/codecs/gsmfr/include/gsmfr_interface.h"
-#include "webrtc/modules/audio_coding/main/source/acm_gsmfr.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_gsmfr.h"
 #endif
 #ifdef WEBRTC_CODEC_OPUS
 #include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
-#include "webrtc/modules/audio_coding/main/source/acm_opus.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_opus.h"
 #endif
 #ifdef WEBRTC_CODEC_SPEEX
 #include "webrtc/modules/audio_coding/codecs/speex/include/speex_interface.h"
-#include "webrtc/modules/audio_coding/main/source/acm_speex.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_speex.h"
 #endif
 #ifdef WEBRTC_CODEC_AVT
-#include "webrtc/modules/audio_coding/main/source/acm_dtmf_playout.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_dtmf_playout.h"
 #endif
 #ifdef WEBRTC_CODEC_RED
-#include "webrtc/modules/audio_coding/main/source/acm_red.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_red.h"
 #endif
 
 namespace webrtc {

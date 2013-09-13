@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/main/source/acm_gsmfr.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_gsmfr.h"
 
 #ifdef WEBRTC_CODEC_GSMFR
 // NOTE! GSM-FR is not included in the open-source package. Modify this file
 // or your codec API to match the function calls and names of used GSM-FR API
 // file.
 #include "webrtc/modules/audio_coding/main/codecs/gsmfr/interface/gsmfr_interface.h"
-#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 #endif
 

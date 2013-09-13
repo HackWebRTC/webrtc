@@ -32,6 +32,8 @@
 
 namespace webrtc {
 
+namespace acm1 {
+
 enum {
   kACMToneEnd = 999
 };
@@ -3114,5 +3116,7 @@ void AudioCodingModuleImpl::DisableNack() {
   nack_.reset();  // Memory is released.
   nack_enabled_ = false;
 }
+
+}  // namespace acm1
 
 }  // namespace webrtc

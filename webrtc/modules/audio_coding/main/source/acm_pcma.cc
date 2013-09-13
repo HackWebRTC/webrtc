@@ -21,6 +21,8 @@
 
 namespace webrtc {
 
+namespace acm1 {
+
 ACMPCMA::ACMPCMA(int16_t codec_id) {
   codec_id_ = codec_id;
 }
@@ -126,5 +128,7 @@ void ACMPCMA::SplitStereoPacket(uint8_t* payload, int32_t* payload_length) {
     payload[*payload_length - 1] = right_byte;
   }
 }
+
+}  // namespace acm1
 
 }  // namespace webrtc

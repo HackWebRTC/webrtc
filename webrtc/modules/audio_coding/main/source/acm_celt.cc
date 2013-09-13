@@ -24,6 +24,8 @@
 
 namespace webrtc {
 
+namespace acm1 {
+
 #ifndef WEBRTC_CODEC_CELT
 
 ACMCELT::ACMCELT(int16_t /* codec_id */)
@@ -331,5 +333,7 @@ void ACMCELT::SplitStereoPacket(uint8_t* payload, int32_t* payload_length) {
 }
 
 #endif
+
+}  // namespace acm1
 
 }  // namespace webrtc

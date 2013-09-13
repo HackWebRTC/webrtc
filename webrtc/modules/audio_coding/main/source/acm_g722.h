@@ -18,6 +18,8 @@ typedef struct WebRtcG722DecInst G722DecInst;
 
 namespace webrtc {
 
+namespace acm1 {
+
 // forward declaration
 struct ACMG722EncStr;
 struct ACMG722DecStr;
@@ -74,6 +76,8 @@ class ACMG722 : public ACMGenericCodec {
   G722EncInst* encoder_inst_ptr_right_;  // Prepared for stereo
   G722DecInst* decoder_inst_ptr_;
 };
+
+}  // namespace acm1
 
 }  // namespace webrtc
 

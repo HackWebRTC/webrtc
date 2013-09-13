@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/main/source/acm_receiver.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_receiver.h"
 
 #include <stdlib.h>  // malloc
 
@@ -17,9 +17,9 @@
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/common_types.h"
-#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
-#include "webrtc/modules/audio_coding/main/source/acm_resampler.h"
-#include "webrtc/modules/audio_coding/main/source/nack.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_resampler.h"
+#include "webrtc/modules/audio_coding/main/acm2/nack.h"
 #include "webrtc/modules/audio_coding/neteq4/interface/audio_decoder.h"
 #include "webrtc/modules/audio_coding/neteq4/interface/neteq.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"

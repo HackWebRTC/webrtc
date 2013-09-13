@@ -15,6 +15,8 @@
 
 namespace webrtc {
 
+namespace acm1 {
+
 class ACMPCMU : public ACMGenericCodec {
  public:
   explicit ACMPCMU(int16_t codec_id);
@@ -55,6 +57,8 @@ class ACMPCMU : public ACMGenericCodec {
   virtual void SplitStereoPacket(uint8_t* payload,
                                  int32_t* payload_length) OVERRIDE;
 };
+
+}  // namespace acm1
 
 }  // namespace webrtc
 

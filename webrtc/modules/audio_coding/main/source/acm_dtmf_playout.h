@@ -15,6 +15,8 @@
 
 namespace webrtc {
 
+namespace acm1 {
+
 class ACMDTMFPlayout: public ACMGenericCodec {
  public:
   explicit ACMDTMFPlayout(int16_t codec_id);
@@ -52,6 +54,8 @@ class ACMDTMFPlayout: public ACMGenericCodec {
 
   virtual void InternalDestructEncoderInst(void* ptr_inst) OVERRIDE;
 };
+
+}  // namespace acm1
 
 }  // namespace webrtc
 

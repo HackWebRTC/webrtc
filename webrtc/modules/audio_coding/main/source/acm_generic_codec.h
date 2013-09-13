@@ -27,6 +27,9 @@ namespace webrtc {
 
 // forward declaration
 struct CodecInst;
+
+namespace acm1 {
+
 class ACMNetEQ;
 
 class ACMGenericCodec {
@@ -1213,6 +1216,8 @@ class ACMGenericCodec {
   uint32_t unique_id_;
 };
 
-}  // namespace webrt
+}  // namespace acm1
+
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_GENERIC_CODEC_H_

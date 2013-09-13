@@ -19,6 +19,8 @@ struct AMRWB_decinst_t_;
 
 namespace webrtc {
 
+namespace acm1 {
+
 class ACMAMRwb : public ACMGenericCodec {
  public:
   explicit ACMAMRwb(int16_t codec_id);
@@ -80,6 +82,8 @@ class ACMAMRwb : public ACMGenericCodec {
   ACMAMRPackingFormat encoder_packing_format_;
   ACMAMRPackingFormat decoder_packing_format_;
 };
+
+}  // namespace acm1
 
 }  // namespace webrtc
 

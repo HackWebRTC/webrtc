@@ -28,6 +28,8 @@
 
 namespace webrtc {
 
+namespace acm1 {
+
 // we need this otherwise we cannot use forward declaration
 // in the header file
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
@@ -895,5 +897,7 @@ int16_t ACMISAC::REDPayloadISAC(const int32_t isac_rate,
 }
 
 #endif
+
+}  // namespace acm1
 
 }  // namespace webrtc

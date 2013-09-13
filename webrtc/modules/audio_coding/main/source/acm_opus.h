@@ -19,6 +19,8 @@ struct WebRtcOpusDecInst;
 
 namespace webrtc {
 
+namespace acm1 {
+
 class ACMOpus : public ACMGenericCodec {
  public:
   explicit ACMOpus(int16_t codec_id);
@@ -68,6 +70,8 @@ class ACMOpus : public ACMGenericCodec {
   uint32_t bitrate_;
   int channels_;
 };
+
+}  // namespace acm1
 
 }  // namespace webrtc
 

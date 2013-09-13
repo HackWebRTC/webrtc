@@ -12,8 +12,6 @@
 #define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_NETEQ_H_
 
 #include "webrtc/common_audio/vad/include/webrtc_vad.h"
-#include "webrtc/engine_configurations.h"
-#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq.h"
 #include "webrtc/modules/interface/module_common_types.h"
@@ -24,6 +22,8 @@ namespace webrtc {
 class CriticalSectionWrapper;
 class RWLockWrapper;
 struct CodecInst;
+
+namespace acm1 {
 
 #define MAX_NUM_SLAVE_NETEQ 1
 
@@ -391,6 +391,8 @@ class ACMNetEQ {
   int minimum_delay_ms_;
   int maximum_delay_ms_;
 };
+
+}  // namespace acm1
 
 }  // namespace webrtc
 

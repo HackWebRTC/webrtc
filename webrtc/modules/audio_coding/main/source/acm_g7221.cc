@@ -86,6 +86,8 @@
 
 namespace webrtc {
 
+namespace acm1 {
+
 #ifndef WEBRTC_CODEC_G722_1
 
 ACMG722_1::ACMG722_1(int16_t /* codec_id */)
@@ -492,5 +494,7 @@ void ACMG722_1::InternalDestructEncoderInst(void* ptr_inst) {
 }
 
 #endif
+
+}  // namespace acm1
 
 }  // namespace webrtc

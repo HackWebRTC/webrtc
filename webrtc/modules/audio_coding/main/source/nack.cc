@@ -19,6 +19,8 @@
 
 namespace webrtc {
 
+namespace acm1 {
+
 namespace {
 
 const int kDefaultSampleRateKhz = 48;
@@ -222,4 +224,6 @@ std::vector<uint16_t> Nack::GetNackList(int round_trip_time_ms) const {
   return sequence_numbers;
 }
 
-}  // webrtc
+}  // namespace acm1
+
+}  // namespace webrtc

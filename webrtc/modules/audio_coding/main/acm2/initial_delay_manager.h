@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_INITIAL_DELAY_MANAGER_H_
-#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_INITIAL_DELAY_MANAGER_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_INITIAL_DELAY_MANAGER_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_INITIAL_DELAY_MANAGER_H_
 
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
@@ -112,4 +112,4 @@ class InitialDelayManager {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_INITIAL_DELAY_MANAGER_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_ACM2_INITIAL_DELAY_MANAGER_H_

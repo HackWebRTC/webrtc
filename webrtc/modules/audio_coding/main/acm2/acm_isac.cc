@@ -7,13 +7,13 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/modules/audio_coding/main/source/acm_isac.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_isac.h"
 
 #include <assert.h>
 
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
-#include "webrtc/modules/audio_coding/main/source/acm_codec_database.h"
-#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
 #include "webrtc/modules/audio_coding/neteq4/interface/audio_decoder.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
@@ -26,7 +26,7 @@
 #endif
 
 #if defined (WEBRTC_CODEC_ISAC) || defined (WEBRTC_CODEC_ISACFX)
-#include "webrtc/modules/audio_coding/main/source/acm_isac_macros.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_isac_macros.h"
 #endif
 
 namespace webrtc {

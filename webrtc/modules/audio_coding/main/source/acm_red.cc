@@ -18,6 +18,8 @@
 
 namespace webrtc {
 
+namespace acm1 {
+
 ACMRED::ACMRED(int16_t codec_id) {
   codec_id_ = codec_id;
 }
@@ -100,5 +102,7 @@ void ACMRED::DestructDecoderSafe() {
   // RED has no instance
   return;
 }
+
+}  // namespace acm1
 
 }  // namespace webrtc

@@ -26,6 +26,8 @@
 
 namespace webrtc {
 
+namespace acm1 {
+
 // 60 ms is the maximum block size we support. An extra 20 ms is considered
 // for safety if process() method is not called when it should be, i.e. we
 // accept 20 ms of jitter. 80 ms @ 48 kHz (full-band) stereo is 7680 samples.
@@ -103,6 +105,8 @@ struct WebRtcACMAudioBuff {
   uint32_t last_timestamp;
   uint32_t last_in_timestamp;
 };
+
+}  // namespace acm1
 
 }  // namespace webrtc
 

@@ -19,6 +19,8 @@ struct CELT_decinst_t_;
 
 namespace webrtc {
 
+namespace acm1 {
+
 class ACMCELT : public ACMGenericCodec {
  public:
   explicit ACMCELT(int16_t codec_id);
@@ -69,6 +71,8 @@ class ACMCELT : public ACMGenericCodec {
   uint16_t channels_;
   uint16_t dec_channels_;
 };
+
+}  // namespace acm1
 
 }  // namespace webrtc
 

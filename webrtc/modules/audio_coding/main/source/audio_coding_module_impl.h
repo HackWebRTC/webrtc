@@ -15,6 +15,7 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/main/source/acm_codec_database.h"
 #include "webrtc/modules/audio_coding/main/source/acm_neteq.h"
 #include "webrtc/modules/audio_coding/main/source/acm_resampler.h"
@@ -22,11 +23,16 @@
 
 namespace webrtc {
 
-class ACMDTMFDetection;
-class ACMGenericCodec;
 class CriticalSectionWrapper;
 class RWLockWrapper;
 class Clock;
+
+namespace acm1 {
+
+struct WebRtcACMAudioBuff;
+struct WebRtcACMCodecParams;
+class ACMDTMFDetection;
+class ACMGenericCodec;
 class Nack;
 
 class AudioCodingModuleImpl : public AudioCodingModule {
@@ -88,8 +94,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
   // Register a transport callback which will be
   // called to deliver the encoded buffers.
-  int32_t RegisterTransportCallback(
-      AudioPacketizationCallback* transport);
+  int32_t RegisterTransportCallback(AudioPacketizationCallback* transport);
 
   // Used by the module to deliver messages to the codec module/application
   // AVT(DTMF).
@@ -125,8 +130,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
                  bool enable_vad = false,
                  ACMVADMode mode = VADNormal);
 
-  int32_t VAD(bool* dtx_enabled, bool* vad_enabled,
-              ACMVADMode* mode) const;
+  int32_t VAD(bool* dtx_enabled, bool* vad_enabled, ACMVADMode* mode) const;
 
   int32_t RegisterVADCallback(ACMVADCallback* vad_callback);
 
@@ -453,6 +457,8 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   scoped_ptr<Nack> nack_;
   bool nack_enabled_;
 };
+
+}  // namespace acm1
 
 }  // namespace webrtc
 

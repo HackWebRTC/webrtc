@@ -7,30 +7,9 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'variables': {
-    'audio_coding_dependencies': [
-      'CNG',
-      'G711',
-      'G722',
-      'iLBC',
-      'iSAC',
-      'iSACFix',
-      'PCM16B',
-      'NetEq4',
-      '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
-      '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-    ],
-    'audio_coding_defines': [],
-    'conditions': [
-      ['include_opus==1', {
-        'audio_coding_dependencies': ['webrtc_opus',],
-        'audio_coding_defines': ['WEBRTC_CODEC_OPUS',],
-      }],
-    ],
-  },
   'targets': [
     {
-      'target_name': 'audio_coding_module',
+      'target_name': 'acm2',
       'type': 'static_library',
       'defines': [
         '<@(audio_coding_defines)',
@@ -107,84 +86,5 @@
         'nack.h',
       ],
     },
-  ],
-  'conditions': [
-    ['include_tests==1', {
-      'targets': [
-        {
-          'target_name': 'delay_test',
-          'type': 'executable',
-          'dependencies': [
-            'audio_coding_module',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
-            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-          ],
-          'sources': [
-             '../test/delay_test.cc',
-             '../test/Channel.cc',
-             '../test/PCMFile.cc',
-          ],
-        }, # delay_test  
-        {
-          # This is handy for testing codecs with different settings. I like to
-          # keep it while we are developing ACM 2. Not sure if we keep it
-          # forever, though I don't have strong reason to remove it.
-          'target_name': 'codec_test',
-          'type': 'executable',
-          'dependencies': [
-            'audio_coding_module',
-            '<(DEPTH)/testing/gtest.gyp:gtest',
-            '<(webrtc_root)/test/test.gyp:test_support_main',
-            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-          ],
-          'sources': [
-             '../test/codec_test.cc',
-             '../test/Channel.cc',
-             '../test/PCMFile.cc',
-           ],
-        }, # codec_test
-# TODO(turajs): Add this target.        
-#        {
-#          'target_name': 'insert_packet_with_timing',
-#          'type': 'executable',
-#          'dependencies': [
-#            'audio_coding_module',
-#            '<(DEPTH)/testing/gtest.gyp:gtest',
-#            '<(webrtc_root)/test/test.gyp:test_support_main',
-#            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-#            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-#          ],
-#          'sources': [
-#             'acm_receiver_unittest.cc',
-#             '../test/Channel.cc',
-#             '../test/PCMFile.cc',
-#           ],
-#        }, # insert_packet_with_timing
-         {
-          # TODO(turajs): This test will be included in module.gyp when ACM 2 is in 
-          # public repository.
-           'target_name': 'acm2_unittests',
-           'type': 'executable',
-           'defines': [
-             '<@(audio_coding_defines)',
-           ],
-           'dependencies': [
-             'audio_coding_module',
-             '<(DEPTH)/testing/gtest.gyp:gtest',
-             '<(webrtc_root)/test/test.gyp:test_support_main',
-             #'<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-             '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
-           ],
-           'sources': [
-              'nack_unittest.cc',
-              'acm_receiver_unittest.cc',
-              'initial_delay_manager_unittest.cc',
-            ],
-         }, # acm2_unittests
-     ],
-    }],
   ],
 }

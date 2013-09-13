@@ -11,7 +11,7 @@
 #include <cstring>
 
 #include "gtest/gtest.h"
-#include "webrtc/modules/audio_coding/main/source/initial_delay_manager.h"
+#include "webrtc/modules/audio_coding/main/acm2/initial_delay_manager.h"
 
 namespace webrtc {
 
