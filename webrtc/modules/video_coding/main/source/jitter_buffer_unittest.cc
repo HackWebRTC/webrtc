@@ -17,7 +17,7 @@
 #include "webrtc/modules/video_coding/main/source/jitter_buffer.h"
 #include "webrtc/modules/video_coding/main/source/media_opt_util.h"
 #include "webrtc/modules/video_coding/main/source/packet.h"
-#include "webrtc/modules/video_coding/main/source/stream_generator.h"
+#include "webrtc/modules/video_coding/main/source/test/stream_generator.h"
 #include "webrtc/modules/video_coding/main/test/test_util.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 

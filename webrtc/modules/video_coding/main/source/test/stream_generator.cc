@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/main/source/stream_generator.h"
+#include "webrtc/modules/video_coding/main/source/test/stream_generator.h"
 
 #include <string.h>
 
@@ -18,7 +18,6 @@
 #include "webrtc/modules/video_coding/main/source/packet.h"
 #include "webrtc/modules/video_coding/main/test/test_util.h"
 #include "webrtc/system_wrappers/interface/clock.h"
-
 
 namespace webrtc {
 
@@ -30,7 +29,8 @@ StreamGenerator::StreamGenerator(uint16_t start_seq_num,
       timestamp_(start_timestamp),
       start_time_(current_time) {}
 
-void StreamGenerator::Init(uint16_t start_seq_num, uint32_t start_timestamp,
+void StreamGenerator::Init(uint16_t start_seq_num,
+                           uint32_t start_timestamp,
                            int64_t current_time) {
   packets_.clear();
   sequence_number_ = start_seq_num;
@@ -45,24 +45,16 @@ void StreamGenerator::GenerateFrame(FrameType type,
                                     int64_t current_time) {
   timestamp_ = 90 * (current_time - start_time_);
   for (int i = 0; i < num_media_packets; ++i) {
-    const int packet_size = (kFrameSize + num_media_packets / 2) /
-        num_media_packets;
+    const int packet_size =
+        (kFrameSize + num_media_packets / 2) / num_media_packets;
     bool marker_bit = (i == num_media_packets - 1);
-    packets_.push_back(GeneratePacket(sequence_number_,
-                                      timestamp_,
-                                      packet_size,
-                                      (i == 0),
-                                      marker_bit,
-                                      type));
+    packets_.push_back(GeneratePacket(
+        sequence_number_, timestamp_, packet_size, (i == 0), marker_bit, type));
     ++sequence_number_;
   }
   for (int i = 0; i < num_empty_packets; ++i) {
-    packets_.push_back(GeneratePacket(sequence_number_,
-                                      timestamp_,
-                                      0,
-                                      false,
-                                      false,
-                                      kFrameEmpty));
+    packets_.push_back(GeneratePacket(
+        sequence_number_, timestamp_, 0, false, false, kFrameEmpty));
     ++sequence_number_;
   }
 }
@@ -119,9 +111,7 @@ bool StreamGenerator::NextPacket(VCMPacket* packet) {
   return true;
 }
 
-void StreamGenerator::DropLastPacket() {
-  packets_.pop_back();
-}
+void StreamGenerator::DropLastPacket() { packets_.pop_back(); }
 
 uint16_t StreamGenerator::NextSequenceNumber() const {
   if (packets_.empty())
@@ -129,15 +119,14 @@ uint16_t StreamGenerator::NextSequenceNumber() const {
   return packets_.front().seqNum;
 }
 
-int StreamGenerator::PacketsRemaining() const {
-  return packets_.size();
-}
+int StreamGenerator::PacketsRemaining() const { return packets_.size(); }
 
 std::list<VCMPacket>::iterator StreamGenerator::GetPacketIterator(int index) {
   std::list<VCMPacket>::iterator it = packets_.begin();
   for (int i = 0; i < index; ++i) {
     ++it;
-    if (it == packets_.end()) break;
+    if (it == packets_.end())
+      break;
   }
   return it;
 }

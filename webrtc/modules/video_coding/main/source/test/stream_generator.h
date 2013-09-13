@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_STREAM_GENERATOR_H_
-#define WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_STREAM_GENERATOR_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_TEST_STREAM_GENERATOR_H_
+#define WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_TEST_STREAM_GENERATOR_H_
 
 #include <string.h>
 
@@ -22,21 +22,23 @@ namespace webrtc {
 const unsigned int kDefaultBitrateKbps = 1000;
 const unsigned int kDefaultFrameRate = 25;
 const unsigned int kMaxPacketSize = 1500;
-const unsigned int kFrameSize = (kDefaultBitrateKbps + kDefaultFrameRate * 4) /
-    (kDefaultFrameRate * 8);
+const unsigned int kFrameSize =
+    (kDefaultBitrateKbps + kDefaultFrameRate * 4) / (kDefaultFrameRate * 8);
 const int kDefaultFramePeriodMs = 1000 / kDefaultFrameRate;
-
-
 
 class StreamGenerator {
  public:
-  StreamGenerator(uint16_t start_seq_num, uint32_t start_timestamp,
+  StreamGenerator(uint16_t start_seq_num,
+                  uint32_t start_timestamp,
                   int64_t current_time);
-  void Init(uint16_t start_seq_num, uint32_t start_timestamp,
+  void Init(uint16_t start_seq_num,
+            uint32_t start_timestamp,
             int64_t current_time);
 
-  void GenerateFrame(FrameType type, int num_media_packets,
-                     int num_empty_packets, int64_t current_time);
+  void GenerateFrame(FrameType type,
+                     int num_media_packets,
+                     int num_empty_packets,
+                     int64_t current_time);
 
   VCMPacket GeneratePacket(uint16_t sequence_number,
                            uint32_t timestamp,
@@ -70,4 +72,4 @@ class StreamGenerator {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_STREAM_GENERATOR_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_TEST_STREAM_GENERATOR_H_
