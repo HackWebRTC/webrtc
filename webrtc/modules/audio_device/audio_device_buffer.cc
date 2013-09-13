@@ -9,17 +9,15 @@
  */
 
 #include "webrtc/modules/audio_device/audio_device_buffer.h"
+
+#include <assert.h>
+#include <string.h>
+
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/audio_device_utility.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/logging.h"
 #include "webrtc/system_wrappers/interface/trace.h"
-
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 
 namespace webrtc {
 
