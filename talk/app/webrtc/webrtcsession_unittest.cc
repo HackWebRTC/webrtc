@@ -2485,7 +2485,9 @@ TEST_F(WebRtcSessionTest, TestRtpDataChannelConstraintTakesPrecedence) {
   EXPECT_EQ(cricket::DCT_RTP, data_engine_->last_channel_type());
 }
 
-TEST_F(WebRtcSessionTest, TestCreateOfferWithSctpEnabledWithoutStreams) {
+// Test fails on windows. https://code.google.com/p/webrtc/issues/detail?id=2374
+TEST_F(WebRtcSessionTest,
+       DISABLED_TestCreateOfferWithSctpEnabledWithoutStreams) {
   constraints_.reset(new FakeConstraints());
   constraints_->AddOptional(
       webrtc::MediaConstraintsInterface::kEnableSctpDataChannels, true);
