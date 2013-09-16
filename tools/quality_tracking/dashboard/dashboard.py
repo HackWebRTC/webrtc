@@ -10,8 +10,6 @@
 
 """Implements the quality tracker dashboard and reporting facilities."""
 
-import math
-
 from google.appengine.ext.webapp import template
 import webapp2
 
@@ -26,8 +24,10 @@ class ShowDashboard(webapp2.RequestHandler):
   """
   def get(self):
     coverage_loader = load_coverage.CoverageDataLoader()
+    # pylint: disable=W0612
     small_medium_coverage_json_data = (
         coverage_loader.load_coverage_json_data('small_medium_tests'))
+    # pylint: disable=W0612
     large_coverage_json_data = (
         coverage_loader.load_coverage_json_data('large_tests'))
 
