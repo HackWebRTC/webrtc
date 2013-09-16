@@ -1,3 +1,6 @@
+# Too slow to run with TSan on Windows.
+VideoProcessingModuleTest.Denoising
+
 # https://code.google.com/p/webrtc/issues/detail?id=1938
 MouseCursorShapeTest.MatchCursors
 
