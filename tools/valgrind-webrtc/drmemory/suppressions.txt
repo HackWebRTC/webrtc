@@ -4,11 +4,19 @@
 
 
 INVALID HEAP ARGUMENT
-name=https://code.google.com/p/webrtc/issues/detail?id=2321
+name=https://code.google.com/p/webrtc/issues/detail?id=2321 (1)
 drmemorylib.dll!replace_operator_delete_array
 *!webrtc::scoped_array<short>::~scoped_array<short>
 *!webrtc::PushResampler::~PushResampler
-*!webrtc::PushResamplerTest_VerifiesInputParameters_Test::TestBody
+...
+*!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>
+
+INVALID HEAP ARGUMENT
+name=https://code.google.com/p/webrtc/issues/detail?id=2321 (2)
+drmemorylib.dll!replace_operator_delete_array
+*!webrtc::scoped_array<float>::~scoped_array<float>
+*!webrtc::PushSincResampler::~PushSincResampler
+...
 *!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>
 
 GDI USAGE ERROR
