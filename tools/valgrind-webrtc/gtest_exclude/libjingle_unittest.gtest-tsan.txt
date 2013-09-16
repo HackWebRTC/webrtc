@@ -1,3 +1,4 @@
 # Tests that are failing when run under TSan.
+CpuMonitorTest.TestCpuMonitor
 PhysicalSocketTest.TestUdpReadyToSendIPv4
 ThreadTest.Release
