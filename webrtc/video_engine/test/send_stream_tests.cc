@@ -47,6 +47,7 @@ class VideoSendStreamTest : public ::testing::Test {
 
  protected:
   static const uint32_t kSendSsrc;
+  static const uint32_t kSendRtxSsrc;
   void RunSendTest(Call* call,
                    const VideoSendStream::Config& config,
                    SendTransportObserver* observer) {
@@ -75,10 +76,13 @@ class VideoSendStreamTest : public ::testing::Test {
     return config;
   }
 
+  void TestNackRetransmission(uint32_t retransmit_ssrc);
+
   test::FakeEncoder fake_encoder_;
 };
 
 const uint32_t VideoSendStreamTest::kSendSsrc = 0xC0FFEE;
+const uint32_t VideoSendStreamTest::kSendRtxSsrc = 0xBADCAFE;
 
 TEST_F(VideoSendStreamTest, SendsSetSsrc) {
   class SendSsrcObserver : public SendTransportObserver {
@@ -215,15 +219,15 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
   RunSendTest(call.get(), send_config, &observer);
 }
 
-TEST_F(VideoSendStreamTest, RespondsToNack) {
+void VideoSendStreamTest::TestNackRetransmission(uint32_t retransmit_ssrc) {
   class NackObserver : public SendTransportObserver, webrtc::Transport {
    public:
-    NackObserver()
+    NackObserver(uint32_t retransmit_ssrc)
         : SendTransportObserver(30 * 1000),
           thread_(ThreadWrapper::CreateThread(NackProcess, this)),
           send_call_receiver_(NULL),
           send_count_(0),
-          ssrc_(0),
+          retransmit_ssrc_(retransmit_ssrc),
           nacked_sequence_number_(0) {}
 
     ~NackObserver() {
@@ -247,7 +251,7 @@ TEST_F(VideoSendStreamTest, RespondsToNack) {
       EXPECT_EQ(0, rtcp_sender.RegisterSendTransport(this));
 
       rtcp_sender.SetRTCPStatus(kRtcpNonCompound);
-      rtcp_sender.SetRemoteSSRC(ssrc_);
+      rtcp_sender.SetRemoteSSRC(kSendSsrc);
 
       RTCPSender::FeedbackState feedback_state;
       EXPECT_EQ(0, rtcp_sender.SendRTCP(
@@ -277,14 +281,23 @@ TEST_F(VideoSendStreamTest, RespondsToNack) {
 
       // Nack second packet after receiving the third one.
       if (++send_count_ == 3) {
-        ssrc_ = header.ssrc;
         nacked_sequence_number_ = header.sequenceNumber - 1;
         unsigned int id;
         EXPECT_TRUE(thread_->Start(id));
       }
 
-      if (header.sequenceNumber == nacked_sequence_number_)
+      uint16_t sequence_number = header.sequenceNumber;
+
+      if (header.ssrc == retransmit_ssrc_ && retransmit_ssrc_ != kSendSsrc) {
+        // Not kSendSsrc, assume correct RTX packet. Extract sequence number.
+        const uint8_t* rtx_header = packet + header.headerLength;
+        sequence_number = (rtx_header[0] << 8) + rtx_header[1];
+      }
+
+      if (sequence_number == nacked_sequence_number_) {
+        EXPECT_EQ(retransmit_ssrc_, header.ssrc);
         send_test_complete_->Set();
+      }
 
       return true;
     }
@@ -292,9 +305,9 @@ TEST_F(VideoSendStreamTest, RespondsToNack) {
     scoped_ptr<ThreadWrapper> thread_;
     PacketReceiver* send_call_receiver_;
     int send_count_;
-    uint32_t ssrc_;
+    uint32_t retransmit_ssrc_;
     uint16_t nacked_sequence_number_;
-  } observer;
+  } observer(retransmit_ssrc);
 
   Call::Config call_config(&observer);
   scoped_ptr<Call> call(Call::Create(call_config));
@@ -302,8 +315,20 @@ TEST_F(VideoSendStreamTest, RespondsToNack) {
 
   VideoSendStream::Config send_config = GetSendTestConfig(call.get());
   send_config.rtp.nack.rtp_history_ms = 1000;
+  if (retransmit_ssrc != kSendSsrc)
+    send_config.rtp.rtx.ssrcs.push_back(retransmit_ssrc);
 
   RunSendTest(call.get(), send_config, &observer);
+}
+
+TEST_F(VideoSendStreamTest, RetransmitsNack) {
+  // Normal NACKs should use the send SSRC.
+  TestNackRetransmission(kSendSsrc);
+}
+
+TEST_F(VideoSendStreamTest, RetransmitsNackOverRtx) {
+  // NACKs over RTX should use a separate SSRC.
+  TestNackRetransmission(kSendRtxSsrc);
 }
 
 }  // namespace webrtc

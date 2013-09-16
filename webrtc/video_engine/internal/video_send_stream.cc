@@ -105,6 +105,18 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
   }
   rtp_rtcp_->SetNACKStatus(channel_, config_.rtp.nack.rtp_history_ms > 0);
   rtp_rtcp_->SetTransmissionSmoothingStatus(channel_, config_.pacing);
+  if (!config_.rtp.rtx.ssrcs.empty()) {
+    assert(config_.rtp.rtx.ssrcs.size() == config_.rtp.ssrcs.size());
+    for (size_t i = 0; i < config_.rtp.rtx.ssrcs.size(); ++i) {
+      rtp_rtcp_->SetLocalSSRC(
+          channel_, config_.rtp.rtx.ssrcs[i], kViEStreamTypeRtx, i);
+    }
+
+    if (config_.rtp.rtx.rtx_payload_type != 0) {
+      rtp_rtcp_->SetRtxSendPayloadType(channel_,
+                                       config_.rtp.rtx.rtx_payload_type);
+    }
+  }
 
   for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
     const std::string& extension = config_.rtp.extensions[i].name;

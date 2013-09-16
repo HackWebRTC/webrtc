@@ -12,6 +12,7 @@
 #define WEBRTC_VIDEO_ENGINE_NEW_INCLUDE_CONFIG_H_
 
 #include <string>
+#include <vector>
 
 namespace webrtc {
 
@@ -60,9 +61,9 @@ struct FecConfig {
 
 // Settings for RTP retransmission payload format, see RFC 4588 for details.
 struct RtxConfig {
-  RtxConfig() : ssrc(0), rtx_payload_type(0), video_payload_type(0) {}
-  // SSRC to use for the RTX stream.
-  uint32_t ssrc;
+  RtxConfig() : rtx_payload_type(0), video_payload_type(0) {}
+  // SSRCs to use for the RTX streams.
+  std::vector<uint32_t> ssrcs;
 
   // Payload type to use for the RTX stream.
   int rtx_payload_type;
