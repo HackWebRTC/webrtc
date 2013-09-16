@@ -101,7 +101,7 @@ public:
 private:
     int32_t SetUpVideoDecoder();
 
-    VideoCoder& _videoDecoder;
+    scoped_ptr<VideoCoder> video_decoder_;
     VideoCodec video_codec_info_;
     int32_t _decodedVideoFrames;
 

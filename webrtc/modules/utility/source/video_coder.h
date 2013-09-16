@@ -23,8 +23,6 @@ public:
     VideoCoder(uint32_t instanceID);
     ~VideoCoder();
 
-    int32_t ResetDecoder();
-
     int32_t SetEncodeCodec(VideoCodec& videoCodecInst,
                            uint32_t numberOfCores,
                            uint32_t maxPayloadSize);
