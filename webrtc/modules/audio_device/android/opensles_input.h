@@ -15,6 +15,7 @@
 #include <SLES/OpenSLES_Android.h>
 #include <SLES/OpenSLES_AndroidConfiguration.h>
 
+#include "webrtc/modules/audio_device/android/audio_manager_jni.h"
 #include "webrtc/modules/audio_device/android/low_latency_event.h"
 #include "webrtc/modules/audio_device/android/opensles_common.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
@@ -115,17 +116,17 @@ class OpenSlesInput {
  private:
   enum {
     kNumInterfaces = 2,
-    kDefaultBufSizeInSamples = webrtc_opensl::kDefaultSampleRate * 10 / 1000,
-    kDefaultBufSizeInBytes =
-      webrtc_opensl::kNumChannels * kDefaultBufSizeInSamples * sizeof(int16_t),
     // Keep as few OpenSL buffers as possible to avoid wasting memory. 2 is
     // minimum for playout. Keep 2 for recording as well.
     kNumOpenSlBuffers = 2,
     kNum10MsToBuffer = 3,
   };
 
-  int32_t InitSampleRate();
+  int InitSampleRate();
+  int buffer_size_samples() const;
+  int buffer_size_bytes() const;
   void UpdateRecordingDelay();
+  void UpdateSampleRate();
   void CalculateNumFifoBuffersNeeded();
   void AllocateBuffers();
   int TotalBuffersUsed() const;
@@ -163,6 +164,9 @@ class OpenSlesInput {
   // class' public functions. It is a requirement for this class to be
   // Thread-compatible.
   bool CbThreadImpl();
+
+  // Java API handle
+  AudioManagerJni audio_manager_;
 
   int id_;
   webrtc_opensl::PlayoutDelayProvider* delay_provider_;
@@ -203,6 +207,7 @@ class OpenSlesInput {
   int active_queue_;
 
   // Audio settings
+  uint32_t rec_sampling_rate_;
   bool agc_enabled_;
 
   // Audio status

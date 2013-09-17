@@ -63,6 +63,7 @@ OpenSlesInput::OpenSlesInput(
       sles_recorder_sbq_itf_(NULL),
       audio_buffer_(NULL),
       active_queue_(0),
+      rec_sampling_rate_(0),
       agc_enabled_(false),
       recording_delay_(0) {
 }
@@ -240,19 +241,37 @@ void OpenSlesInput::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   audio_buffer_ = audioBuffer;
 }
 
-int32_t OpenSlesInput::InitSampleRate() {
-  audio_buffer_->SetRecordingSampleRate(kDefaultSampleRate);
+int OpenSlesInput::InitSampleRate() {
+  UpdateSampleRate();
+  audio_buffer_->SetRecordingSampleRate(rec_sampling_rate_);
   audio_buffer_->SetRecordingChannels(kNumChannels);
   UpdateRecordingDelay();
   return 0;
+}
+
+int OpenSlesInput::buffer_size_samples() const {
+  // Since there is no low latency recording, use buffer size corresponding to
+  // 10ms of data since that's the framesize WebRTC uses. Getting any other
+  // size would require patching together buffers somewhere before passing them
+  // to WebRTC.
+  return rec_sampling_rate_ * 10 / 1000;
+}
+
+int OpenSlesInput::buffer_size_bytes() const {
+  return buffer_size_samples() * kNumChannels * sizeof(int16_t);
 }
 
 void OpenSlesInput::UpdateRecordingDelay() {
   // TODO(hellner): Add accurate delay estimate.
   // On average half the current buffer will have been filled with audio.
   int outstanding_samples =
-      (TotalBuffersUsed() - 0.5) * kDefaultBufSizeInSamples;
-  recording_delay_ = outstanding_samples / (kDefaultSampleRate / 1000);
+      (TotalBuffersUsed() - 0.5) * buffer_size_samples();
+  recording_delay_ = outstanding_samples / (rec_sampling_rate_ / 1000);
+}
+
+void OpenSlesInput::UpdateSampleRate() {
+  rec_sampling_rate_ = audio_manager_.low_latency_supported() ?
+      audio_manager_.native_output_sample_rate() : kDefaultSampleRate;
 }
 
 void OpenSlesInput::CalculateNumFifoBuffersNeeded() {
@@ -270,7 +289,7 @@ void OpenSlesInput::AllocateBuffers() {
   // Allocate the memory area to be used.
   rec_buf_.reset(new scoped_array<int8_t>[TotalBuffersUsed()]);
   for (int i = 0; i < TotalBuffersUsed(); ++i) {
-    rec_buf_[i].reset(new int8_t[kDefaultBufSizeInBytes]);
+    rec_buf_[i].reset(new int8_t[buffer_size_bytes()]);
   }
 }
 
@@ -282,12 +301,12 @@ bool OpenSlesInput::EnqueueAllBuffers() {
   active_queue_ = 0;
   number_overruns_ = 0;
   for (int i = 0; i < kNumOpenSlBuffers; ++i) {
-    memset(rec_buf_[i].get(), 0, kDefaultBufSizeInBytes);
+    memset(rec_buf_[i].get(), 0, buffer_size_bytes());
     OPENSL_RETURN_ON_FAILURE(
         (*sles_recorder_sbq_itf_)->Enqueue(
             sles_recorder_sbq_itf_,
             reinterpret_cast<void*>(rec_buf_[i].get()),
-            kDefaultBufSizeInBytes),
+            buffer_size_bytes()),
         false);
   }
   // In case of underrun the fifo will be at capacity. In case of first enqueue
@@ -319,7 +338,7 @@ bool OpenSlesInput::CreateAudioRecorder() {
     static_cast<SLuint32>(TotalBuffersUsed())
   };
   SLDataFormat_PCM configuration =
-      webrtc_opensl::CreatePcmConfiguration(kDefaultSampleRate);
+      webrtc_opensl::CreatePcmConfiguration(rec_sampling_rate_);
   SLDataSink audio_sink = { &simple_buf_queue, &configuration };
 
   // Interfaces for recording android audio data and Android are needed.
@@ -432,7 +451,7 @@ void OpenSlesInput::RecorderSimpleBufferQueueCallbackHandler(
       (*sles_recorder_sbq_itf_)->Enqueue(
           sles_recorder_sbq_itf_,
           reinterpret_cast<void*>(rec_buf_[next_free_buffer].get()),
-          kDefaultBufSizeInBytes),
+          buffer_size_bytes()),
       VOID_RETURN);
 }
 
@@ -493,7 +512,7 @@ bool OpenSlesInput::CbThreadImpl() {
   // If the fifo_ has audio data process it.
   while (fifo_->size() > 0 && recording_) {
     int8_t* audio = fifo_->Pop();
-    audio_buffer_->SetRecordedBuffer(audio, kDefaultBufSizeInSamples);
+    audio_buffer_->SetRecordedBuffer(audio, buffer_size_samples());
     audio_buffer_->SetVQEData(delay_provider_->PlayoutDelayMs(),
                               recording_delay_, 0);
     audio_buffer_->DeliverRecordedData();
