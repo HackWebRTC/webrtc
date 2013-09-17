@@ -115,7 +115,7 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
   _nextFrameTypes.resize(VCM_MAX(sendCodec->numberOfSimulcastStreams, 1),
                          kVideoFrameDelta);
 
-  _mediaOpt.SetEncodingData(sendCodec->CodecType,
+  _mediaOpt.SetEncodingData(sendCodec->codecType,
                             sendCodec->maxBitrate * 1000,
                             sendCodec->maxFramerate * 1000,
                             sendCodec->startBitrate * 1000,
