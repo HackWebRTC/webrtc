@@ -205,6 +205,7 @@ TEST_F(RtpRtcpAudioTest, Basic) {
                                           96, 0, -1, NULL, 0));
 
   CodecInst voice_codec;
+  memset(&voice_codec, 0, sizeof(voice_codec));
   voice_codec.pltype = 96;
   voice_codec.plfreq = 8000;
   memcpy(voice_codec.plname, "PCMU", 5);
@@ -236,6 +237,7 @@ TEST_F(RtpRtcpAudioTest, Basic) {
 
 TEST_F(RtpRtcpAudioTest, RED) {
   CodecInst voice_codec;
+  memset(&voice_codec, 0, sizeof(voice_codec));
   voice_codec.pltype = 96;
   voice_codec.plfreq = 8000;
   memcpy(voice_codec.plname, "PCMU", 5);
@@ -308,6 +310,7 @@ TEST_F(RtpRtcpAudioTest, RED) {
 
 TEST_F(RtpRtcpAudioTest, DTMF) {
   CodecInst voice_codec;
+  memset(&voice_codec, 0, sizeof(voice_codec));
   voice_codec.pltype = 96;
   voice_codec.plfreq = 8000;
   memcpy(voice_codec.plname, "PCMU", 5);
