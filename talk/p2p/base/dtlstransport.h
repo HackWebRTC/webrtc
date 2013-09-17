@@ -92,6 +92,12 @@ class DtlsTransport : public Base {
   }
 
   virtual bool NegotiateTransportDescription_w(ContentAction local_role) {
+    if (!Base::local_description() || !Base::remote_description()) {
+      LOG(LS_INFO) << "Local and Remote description must be set before "
+                   << "transport descriptions are negotiated";
+      return false;
+    }
+
     talk_base::SSLFingerprint* local_fp =
         Base::local_description()->identity_fingerprint.get();
     talk_base::SSLFingerprint* remote_fp =
