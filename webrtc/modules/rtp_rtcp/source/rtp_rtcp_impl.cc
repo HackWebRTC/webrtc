@@ -111,10 +111,10 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                                        configuration.rtcp_feedback);
   rtcp_sender_.RegisterSendTransport(configuration.outgoing_transport);
 
-  // Make sure that RTCP objects are aware of our SSRC
+  // Make sure that RTCP objects are aware of our SSRC.
   uint32_t SSRC = rtp_sender_.SSRC();
   rtcp_sender_.SetSSRC(SSRC);
-  rtcp_receiver_.SetSSRC(SSRC);
+  SetRtcpReceiverSsrcs(SSRC);
 
   WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, id_, "%s created", __FUNCTION__);
 }
@@ -261,6 +261,8 @@ int32_t ModuleRtpRtcpImpl::Process() {
 int32_t ModuleRtpRtcpImpl::SetRTXSendStatus(RtxMode mode, bool set_ssrc,
                                             uint32_t ssrc) {
   rtp_sender_.SetRTXStatus(mode, set_ssrc, ssrc);
+
+
   return 0;
 }
 
@@ -410,8 +412,9 @@ int32_t ModuleRtpRtcpImpl::SetSSRC(const uint32_t ssrc) {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id_, "SetSSRC(%d)", ssrc);
 
   rtp_sender_.SetSSRC(ssrc);
-  rtcp_receiver_.SetSSRC(ssrc);
   rtcp_sender_.SetSSRC(ssrc);
+  SetRtcpReceiverSsrcs(ssrc);
+
   return 0;  // TODO(pwestin): change to void.
 }
 
@@ -510,8 +513,9 @@ int32_t ModuleRtpRtcpImpl::SetSendingStatus(const bool sending) {
     // Make sure that RTCP objects are aware of our SSRC (it could have changed
     // Due to collision)
     uint32_t SSRC = rtp_sender_.SSRC();
-    rtcp_receiver_.SetSSRC(SSRC);
     rtcp_sender_.SetSSRC(SSRC);
+    SetRtcpReceiverSsrcs(SSRC);
+
     return 0;
   }
   return 0;
@@ -1459,7 +1463,7 @@ void ModuleRtpRtcpImpl::SetRemoteSSRC(const uint32_t ssrc) {
     }
     // Change local SSRC and inform all objects about the new SSRC.
     rtcp_sender_.SetSSRC(new_ssrc);
-    rtcp_receiver_.SetSSRC(new_ssrc);
+    SetRtcpReceiverSsrcs(new_ssrc);
   }
 }
 
@@ -1587,4 +1591,17 @@ int64_t ModuleRtpRtcpImpl::RtcpReportInterval() {
   else
     return RTCP_INTERVAL_VIDEO_MS;
 }
+
+void ModuleRtpRtcpImpl::SetRtcpReceiverSsrcs(uint32_t main_ssrc) {
+  std::set<uint32_t> ssrcs;
+  ssrcs.insert(main_ssrc);
+  RtxMode rtx_mode = kRtxOff;
+  uint32_t rtx_ssrc = 0;
+  int rtx_payload_type = 0;
+  rtp_sender_.RTXStatus(&rtx_mode, &rtx_ssrc, &rtx_payload_type);
+  if (rtx_mode != kRtxOff)
+    ssrcs.insert(rtx_ssrc);
+  rtcp_receiver_.SetSsrcs(main_ssrc, ssrcs);
+}
+
 }  // Namespace webrtc

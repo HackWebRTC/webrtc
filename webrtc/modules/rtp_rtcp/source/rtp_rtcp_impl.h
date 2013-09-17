@@ -377,6 +377,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
 
  private:
   int64_t RtcpReportInterval();
+  void SetRtcpReceiverSsrcs(uint32_t main_ssrc);
 
   int32_t             id_;
   const bool                audio_;

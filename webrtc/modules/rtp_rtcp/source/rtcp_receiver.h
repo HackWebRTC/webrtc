@@ -13,6 +13,7 @@
 
 #include <map>
 #include <vector>
+#include <set>
 
 #include "webrtc/modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_receiver_help.h"
@@ -39,7 +40,8 @@ public:
     int64_t LastReceived();
     int64_t LastReceivedReceiverReport() const;
 
-    void SetSSRC( const uint32_t ssrc);
+    void SetSsrcs(uint32_t main_ssrc,
+                  const std::set<uint32_t>& registered_ssrcs);
     void SetRelaySSRC( const uint32_t ssrc);
     int32_t SetRemoteSSRC( const uint32_t ssrc);
     uint32_t RemoteSSRC() const;
@@ -211,8 +213,9 @@ protected:
   RtcpIntraFrameObserver* _cbRtcpIntraFrameObserver;
 
   CriticalSectionWrapper* _criticalSectionRTCPReceiver;
-  uint32_t          _SSRC;
+  uint32_t          main_ssrc_;
   uint32_t          _remoteSSRC;
+  std::set<uint32_t> registered_ssrcs_;
 
   // Received send report
   RTCPSenderInfo _remoteSenderInfo;

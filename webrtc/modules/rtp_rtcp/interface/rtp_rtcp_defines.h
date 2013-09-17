@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_DEFINES_H_
 
 #include <stddef.h>
+#include <list>
 
 #include "webrtc/modules/interface/module_common_types.h"
 #include "webrtc/system_wrappers/interface/clock.h"
@@ -142,18 +143,41 @@ struct RTCPSenderInfo
     uint32_t sendOctetCount;
 };
 
-struct RTCPReportBlock
-{
+struct RTCPReportBlock {
+  RTCPReportBlock()
+      : remoteSSRC(0), sourceSSRC(0), fractionLost(0), cumulativeLost(0),
+        extendedHighSeqNum(0), jitter(0), lastSR(0),
+        delaySinceLastSR(0) {}
+
+  RTCPReportBlock(uint32_t remote_ssrc,
+                  uint32_t source_ssrc,
+                  uint8_t fraction_lost,
+                  uint32_t cumulative_lost,
+                  uint32_t extended_high_sequence_number,
+                  uint32_t jitter,
+                  uint32_t last_sender_report,
+                  uint32_t delay_since_last_sender_report)
+      : remoteSSRC(remote_ssrc),
+        sourceSSRC(source_ssrc),
+        fractionLost(fraction_lost),
+        cumulativeLost(cumulative_lost),
+        extendedHighSeqNum(extended_high_sequence_number),
+        jitter(jitter),
+        lastSR(last_sender_report),
+        delaySinceLastSR(delay_since_last_sender_report) {}
+
   // Fields as described by RFC 3550 6.4.2.
-    uint32_t remoteSSRC;  // SSRC of sender of this report.
-    uint32_t sourceSSRC;  // SSRC of the RTP packet sender.
-    uint8_t fractionLost;
-    uint32_t cumulativeLost;  // 24 bits valid
-    uint32_t extendedHighSeqNum;
-    uint32_t jitter;
-    uint32_t lastSR;
-    uint32_t delaySinceLastSR;
+  uint32_t remoteSSRC;  // SSRC of sender of this report.
+  uint32_t sourceSSRC;  // SSRC of the RTP packet sender.
+  uint8_t fractionLost;
+  uint32_t cumulativeLost;  // 24 bits valid.
+  uint32_t extendedHighSeqNum;
+  uint32_t jitter;
+  uint32_t lastSR;
+  uint32_t delaySinceLastSR;
 };
+
+typedef std::list<RTCPReportBlock> ReportBlockList;
 
 class RtpData
 {
@@ -249,11 +273,9 @@ class RtcpBandwidthObserver {
   virtual void OnReceivedEstimatedBitrate(const uint32_t bitrate) = 0;
 
   virtual void OnReceivedRtcpReceiverReport(
-      const uint32_t ssrc,
-      const uint8_t fraction_loss,
-      const uint32_t rtt,
-      const uint32_t last_received_extended_high_seqNum,
-      const uint32_t now_ms) = 0;
+      const ReportBlockList& report_blocks,
+      uint16_t rtt,
+      int64_t now_ms) = 0;
 
   virtual ~RtcpBandwidthObserver() {}
 };

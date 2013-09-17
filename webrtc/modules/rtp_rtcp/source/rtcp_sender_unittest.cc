@@ -246,12 +246,8 @@ class TestTransport : public Transport,
     rtcp_packet_info_.applicationSubType =
         rtcpPacketInformation.applicationSubType;
     rtcp_packet_info_.applicationName = rtcpPacketInformation.applicationName;
-    rtcp_packet_info_.reportBlock = rtcpPacketInformation.reportBlock;
-    rtcp_packet_info_.fractionLost = rtcpPacketInformation.fractionLost;
-    rtcp_packet_info_.roundTripTime = rtcpPacketInformation.roundTripTime;
-    rtcp_packet_info_.lastReceivedExtendedHighSeqNum =
-        rtcpPacketInformation.lastReceivedExtendedHighSeqNum;
-    rtcp_packet_info_.jitter = rtcpPacketInformation.jitter;
+    rtcp_packet_info_.report_blocks = rtcpPacketInformation.report_blocks;
+    rtcp_packet_info_.rtt = rtcpPacketInformation.rtt;
     rtcp_packet_info_.interArrivalJitter =
         rtcpPacketInformation.interArrivalJitter;
     rtcp_packet_info_.sliPictureId = rtcpPacketInformation.sliPictureId;
