@@ -179,6 +179,8 @@
             'tools',
           ],
           'sources': [
+            'tools/audio_loop.cc',
+            'tools/audio_loop.h',
             'tools/input_audio_file.cc',
             'tools/input_audio_file.h',
             'tools/rtp_generator.cc',
