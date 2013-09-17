@@ -25,8 +25,9 @@ TestSuite::TestSuite(int argc, char** argv)
     : trace_to_stderr_(NULL) {
   SetExecutablePath(argv[0]);
   testing::InitGoogleMock(&argc, argv);  // Runs InitGoogleTest() internally.
-  // ParseCommandLineFlags fails on unrecognized flags. Call it last so that
-  // any flags inteded for gtest are already filtered out.
+  // AllowCommandLineParsing allows us to ignore flags passed on to us by
+  // Chromium build bots without having to explicitly disable them.
+  google::AllowCommandLineReparsing();
   google::ParseCommandLineFlags(&argc, &argv, true);
 }
 
