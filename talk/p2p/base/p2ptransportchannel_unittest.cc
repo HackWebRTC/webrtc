@@ -1022,13 +1022,15 @@ const P2PTransportChannelTest::Result*
 #define FLAKY_P2P_TEST(x, y) \
   P2P_TEST_DECLARATION(x, y, DISABLED_)
 
+// TODO(holmer): Disabled due to randomly failing on webrtc buildbots.
+// Issue: webrtc/2383
 #define P2P_TEST_SET(x) \
   P2P_TEST(x, OPEN) \
-  P2P_TEST(x, NAT_FULL_CONE) \
+  FLAKY_P2P_TEST(x, NAT_FULL_CONE) \
   P2P_TEST(x, NAT_ADDR_RESTRICTED) \
   P2P_TEST(x, NAT_PORT_RESTRICTED) \
   P2P_TEST(x, NAT_SYMMETRIC) \
-  P2P_TEST(x, NAT_DOUBLE_CONE) \
+  FLAKY_P2P_TEST(x, NAT_DOUBLE_CONE) \
   P2P_TEST(x, NAT_SYMMETRIC_THEN_CONE) \
   P2P_TEST(x, BLOCK_UDP) \
   P2P_TEST(x, BLOCK_UDP_AND_INCOMING_TCP) \

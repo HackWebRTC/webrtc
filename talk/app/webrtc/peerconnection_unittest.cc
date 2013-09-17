@@ -990,7 +990,9 @@ class P2PTestConductor : public testing::Test {
 typedef P2PTestConductor<JsepTestClient> JsepPeerConnectionP2PTestClient;
 
 // This test sets up a Jsep call between two parties and test Dtmf.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestDtmf) {
+// TODO(holmer): Disabled due to sometimes crashing on buildbots.
+// See issue webrtc/2378.
+TEST_F(JsepPeerConnectionP2PTestClient, DISABLED_LocalP2PTestDtmf) {
   ASSERT_TRUE(CreateTestClients());
   LocalP2PTest();
   VerifyDtmf();
@@ -1370,7 +1372,10 @@ TEST_F(JsepPeerConnectionP2PTestClient, IceRestart) {
 
 // This test sets up a Jsep call between two parties with external
 // VideoDecoderFactory.
-TEST_F(JsepPeerConnectionP2PTestClient, LocalP2PTestWithVideoDecoderFactory) {
+// TODO(holmer): Disabled due to sometimes crashing on buildbots.
+// See issue webrtc/2378.
+TEST_F(JsepPeerConnectionP2PTestClient,
+       DISABLED_LocalP2PTestWithVideoDecoderFactory) {
   ASSERT_TRUE(CreateTestClients());
   EnableVideoDecoderFactory();
   LocalP2PTest();
