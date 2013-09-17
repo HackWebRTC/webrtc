@@ -64,7 +64,7 @@ VideoChannelNSOpenGL::~VideoChannelNSOpenGL()
 
 int VideoChannelNSOpenGL::ChangeContext(NSOpenGLContext *nsglContext)
 {
-    _owner->UnlockAGLCntx();
+    _owner->LockAGLCntx();
 
     _nsglContext = nsglContext;
     [_nsglContext makeCurrentContext];
