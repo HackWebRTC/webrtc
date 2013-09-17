@@ -41,18 +41,26 @@ TransmitMixer::OnPeriodicProcess()
                  "TransmitMixer::OnPeriodicProcess()");
 
 #if defined(WEBRTC_VOICE_ENGINE_TYPING_DETECTION)
-    if (_typingNoiseWarning)
+    if (_typingNoiseWarningPending)
     {
         CriticalSectionScoped cs(&_callbackCritSect);
         if (_voiceEngineObserverPtr)
         {
-            WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
-                         "TransmitMixer::OnPeriodicProcess() => "
-                         "CallbackOnError(VE_TYPING_NOISE_WARNING)");
-            _voiceEngineObserverPtr->CallbackOnError(-1,
-                                                     VE_TYPING_NOISE_WARNING);
+            if (_typingNoiseDetected) {
+              WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
+                           "TransmitMixer::OnPeriodicProcess() => "
+                           "CallbackOnError(VE_TYPING_NOISE_WARNING)");
+              _voiceEngineObserverPtr->CallbackOnError(-1,
+                                                       VE_TYPING_NOISE_WARNING);
+            } else {
+              WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
+                           "TransmitMixer::OnPeriodicProcess() => "
+                           "CallbackOnError(VE_TYPING_NOISE_OFF_WARNING)");
+              _voiceEngineObserverPtr->CallbackOnError(
+                  -1, VE_TYPING_NOISE_OFF_WARNING);
+            }
         }
-        _typingNoiseWarning = false;
+        _typingNoiseWarningPending = false;
     }
 #endif
 
@@ -189,7 +197,8 @@ TransmitMixer::TransmitMixer(uint32_t instanceId) :
     _timeActive(0),
     _timeSinceLastTyping(0),
     _penaltyCounter(0),
-    _typingNoiseWarning(false),
+    _typingNoiseWarningPending(false),
+    _typingNoiseDetected(false),
     _timeWindow(10), // 10ms slots accepted to count as a hit
     _costPerTyping(100), // Penalty added for a typing + activity coincide
     _reportingThreshold(300), // Threshold for _penaltyCounter
@@ -1380,8 +1389,17 @@ int TransmitMixer::TypingDetection(bool keyPressed)
         if (_penaltyCounter > _reportingThreshold)
         {
             // Triggers a callback in OnPeriodicProcess().
-            _typingNoiseWarning = true;
+            _typingNoiseWarningPending = true;
+            _typingNoiseDetected = true;
         }
+    }
+
+    // If there is already a warning pending, do not change the state.
+    // Otherwise sets a warning pending if noise is off now but previously on.
+    if (!_typingNoiseWarningPending && _typingNoiseDetected) {
+      // Triggers a callback in OnPeriodicProcess().
+      _typingNoiseWarningPending = true;
+      _typingNoiseDetected = false;
     }
 
     if (_penaltyCounter > 0)

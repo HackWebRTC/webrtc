@@ -65,8 +65,7 @@
 #define WEBRTC_VOICE_ENGINE_NR                  // Near-end NS
 #define WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
 
-#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS) && \
-    !defined(WEBRTC_CHROMIUM_BUILD)
+#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS)
 #define WEBRTC_VOICE_ENGINE_TYPING_DETECTION    // Typing detection
 #endif
 

@@ -217,7 +217,8 @@ private:
     int32_t _timeActive;
     int32_t _timeSinceLastTyping;
     int32_t _penaltyCounter;
-    bool _typingNoiseWarning;
+    bool _typingNoiseWarningPending;
+    bool _typingNoiseDetected;
 
     // Tunable treshold values
     int _timeWindow; // nr of10ms slots accepted to count as a hit.
