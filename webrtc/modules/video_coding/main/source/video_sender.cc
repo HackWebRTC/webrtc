@@ -22,6 +22,7 @@ namespace vcm {
 VideoSender::VideoSender(const int32_t id, Clock* clock)
     : _id(id),
       clock_(clock),
+      process_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       _sendCritSect(CriticalSectionWrapper::CreateCriticalSection()),
       _encoder(),
       _encodedFrameCallback(),
@@ -45,6 +46,7 @@ int32_t VideoSender::Process() {
 
   if (_sendStatsTimer.TimeUntilProcess() == 0) {
     _sendStatsTimer.Processed();
+    CriticalSectionScoped cs(process_crit_sect_.get());
     if (_sendStatsCallback != NULL) {
       uint32_t bitRate;
       uint32_t frameRate;
@@ -235,7 +237,7 @@ int32_t VideoSender::RegisterTransportCallback(
 // average frame rate and bit rate.
 int32_t VideoSender::RegisterSendStatisticsCallback(
     VCMSendStatisticsCallback* sendStats) {
-  CriticalSectionScoped cs(_sendCritSect);
+  CriticalSectionScoped cs(process_crit_sect_.get());
   _sendStatsCallback = sendStats;
   return VCM_OK;
 }

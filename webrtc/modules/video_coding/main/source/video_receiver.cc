@@ -29,6 +29,7 @@ VideoReceiver::VideoReceiver(const int32_t id,
                              EventFactory* event_factory)
     : _id(id),
       clock_(clock),
+      process_crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       _receiveCritSect(CriticalSectionWrapper::CreateCriticalSection()),
       _receiverInited(false),
       _timing(clock_, id, 1),
@@ -76,6 +77,7 @@ int32_t VideoReceiver::Process() {
   // Receive-side statistics
   if (_receiveStatsTimer.TimeUntilProcess() == 0) {
     _receiveStatsTimer.Processed();
+    CriticalSectionScoped cs(process_crit_sect_.get());
     if (_receiveStatsCallback != NULL) {
       uint32_t bitRate;
       uint32_t frameRate;
@@ -93,6 +95,7 @@ int32_t VideoReceiver::Process() {
   // Key frame requests
   if (_keyRequestTimer.TimeUntilProcess() == 0) {
     _keyRequestTimer.Processed();
+    CriticalSectionScoped cs(process_crit_sect_.get());
     if (_scheduleKeyRequest && _frameTypeCallback != NULL) {
       const int32_t ret = RequestKeyFrame();
       if (ret != VCM_OK && returnValue == VCM_OK) {
@@ -106,7 +109,7 @@ int32_t VideoReceiver::Process() {
   // disabled when NACK is off.
   if (_retransmissionTimer.TimeUntilProcess() == 0) {
     _retransmissionTimer.Processed();
-    CriticalSectionScoped cs(_receiveCritSect);
+    CriticalSectionScoped cs(process_crit_sect_.get());
     if (_packetRequestCallback != NULL) {
       uint16_t length = max_nack_list_size_;
       std::vector<uint16_t> nackList(length);
@@ -233,7 +236,8 @@ int32_t VideoReceiver::SetVideoProtection(VCMVideoProtection videoProtection,
 
 // Initialize receiver, resets codec database etc
 int32_t VideoReceiver::InitializeReceiver() {
-  CriticalSectionScoped cs(_receiveCritSect);
+  CriticalSectionScoped receive_cs(_receiveCritSect);
+  CriticalSectionScoped process_cs(process_crit_sect_.get());
   int32_t ret = _receiver.Initialize();
   if (ret < 0) {
     return ret;
@@ -269,7 +273,7 @@ int32_t VideoReceiver::RegisterReceiveCallback(
 
 int32_t VideoReceiver::RegisterReceiveStatisticsCallback(
     VCMReceiveStatisticsCallback* receiveStats) {
-  CriticalSectionScoped cs(_receiveCritSect);
+  CriticalSectionScoped cs(process_crit_sect_.get());
   _receiveStatsCallback = receiveStats;
   return VCM_OK;
 }
@@ -294,21 +298,21 @@ int32_t VideoReceiver::RegisterExternalDecoder(VideoDecoder* externalDecoder,
 // Register a frame type request callback.
 int32_t VideoReceiver::RegisterFrameTypeCallback(
     VCMFrameTypeCallback* frameTypeCallback) {
-  CriticalSectionScoped cs(_receiveCritSect);
+  CriticalSectionScoped cs(process_crit_sect_.get());
   _frameTypeCallback = frameTypeCallback;
   return VCM_OK;
 }
 
 int32_t VideoReceiver::RegisterPacketRequestCallback(
     VCMPacketRequestCallback* callback) {
-  CriticalSectionScoped cs(_receiveCritSect);
+  CriticalSectionScoped cs(process_crit_sect_.get());
   _packetRequestCallback = callback;
   return VCM_OK;
 }
 
 int VideoReceiver::RegisterRenderBufferSizeCallback(
     VCMRenderBufferSizeCallback* callback) {
-  CriticalSectionScoped cs(_receiveCritSect);
+  CriticalSectionScoped cs(process_crit_sect_.get());
   render_buffer_callback_ = callback;
   return VCM_OK;
 }
@@ -386,6 +390,7 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
 int32_t VideoReceiver::RequestSliceLossIndication(
     const uint64_t pictureID) const {
   TRACE_EVENT1("webrtc", "RequestSLI", "picture_id", pictureID);
+  CriticalSectionScoped cs(process_crit_sect_.get());
   if (_frameTypeCallback != NULL) {
     const int32_t ret =
         _frameTypeCallback->SliceLossIndicationRequest(pictureID);
@@ -408,6 +413,7 @@ int32_t VideoReceiver::RequestSliceLossIndication(
 
 int32_t VideoReceiver::RequestKeyFrame() {
   TRACE_EVENT0("webrtc", "RequestKeyFrame");
+  CriticalSectionScoped cs(process_crit_sect_.get());
   if (_frameTypeCallback != NULL) {
     const int32_t ret = _frameTypeCallback->RequestKeyFrame();
     if (ret < 0) {
@@ -519,6 +525,7 @@ int32_t VideoReceiver::Decode(const VCMEncodedFrame& frame) {
         _decodedFrameCallback.LastReceivedPictureID() + 1);
   }
   if (!frame.Complete() || frame.MissingFrame()) {
+    CriticalSectionScoped cs(process_crit_sect_.get());
     switch (_keyRequestMode) {
       case kKeyOnKeyLoss: {
         if (frame.FrameType() == kVideoFrameKey) {
@@ -545,7 +552,10 @@ int32_t VideoReceiver::ResetDecoder() {
   if (_decoder != NULL) {
     _receiver.Initialize();
     _timing.Reset();
-    _scheduleKeyRequest = false;
+    {
+      CriticalSectionScoped cs(process_crit_sect_.get());
+      _scheduleKeyRequest = false;
+    }
     _decoder->Reset();
   }
   if (_dualReceiver.State() != kPassive) {
@@ -758,7 +768,8 @@ void VideoReceiver::SetNackSettings(size_t max_nack_list_size,
                                     int max_packet_age_to_nack,
                                     int max_incomplete_time_ms) {
   if (max_nack_list_size != 0) {
-    CriticalSectionScoped cs(_receiveCritSect);
+    CriticalSectionScoped receive_cs(_receiveCritSect);
+    CriticalSectionScoped process_cs(process_crit_sect_.get());
     max_nack_list_size_ = max_nack_list_size;
   }
   _receiver.SetNackSettings(

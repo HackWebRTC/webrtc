@@ -102,6 +102,7 @@ class VideoSender {
   int32_t _id;
   Clock* clock_;
 
+  scoped_ptr<CriticalSectionWrapper> process_crit_sect_;
   CriticalSectionWrapper* _sendCritSect;
   VCMGenericEncoder* _encoder;
   VCMEncodedFrameCallback _encodedFrameCallback;
@@ -184,6 +185,7 @@ class VideoReceiver {
 
   int32_t _id;
   Clock* clock_;
+  scoped_ptr<CriticalSectionWrapper> process_crit_sect_;
   CriticalSectionWrapper* _receiveCritSect;
   bool _receiverInited;
   VCMTiming _timing;
