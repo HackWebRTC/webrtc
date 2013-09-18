@@ -206,9 +206,9 @@ class DtmfSenderTest : public testing::Test {
     while (it_ref != dtmf_queue_ref.end() && it != dtmf_queue.end()) {
       EXPECT_EQ(it_ref->code, it->code);
       EXPECT_EQ(it_ref->duration, it->duration);
-      // Allow ~20ms error.
-      EXPECT_GE(it_ref->gap, it->gap - 20);
-      EXPECT_LE(it_ref->gap, it->gap + 20);
+      // Allow ~100ms error.
+      EXPECT_GE(it_ref->gap, it->gap - 100);
+      EXPECT_LE(it_ref->gap, it->gap + 100);
       ++it_ref;
       ++it;
     }
