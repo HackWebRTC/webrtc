@@ -14,13 +14,14 @@
 
 #include "gflags/gflags.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
-#include "webrtc/modules/audio_coding/neteq4/interface/neteq.h"
+#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq.h"
+#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq_help_macros.h"
+#include "webrtc/modules/audio_coding/neteq/interface/webrtc_neteq_internal.h"
 #include "webrtc/modules/audio_coding/neteq4/tools/audio_loop.h"
 #include "webrtc/modules/audio_coding/neteq4/tools/rtp_generator.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/typedefs.h"
 
-using webrtc::NetEq;
 using webrtc::test::AudioLoop;
 using webrtc::test::RtpGenerator;
 using webrtc::WebRtcRTPHeader;
@@ -65,7 +66,7 @@ int main(int argc, char* argv[]) {
   const std::string kInputFileName =
         webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
   const int kSampRateHz = 32000;
-  const webrtc::NetEqDecoder kDecoderType = webrtc::kDecoderPCM16Bswb32kHz;
+  const WebRtcNetEQDecoder kDecoderType = kDecoderPCM16Bswb32kHz;
   const int kPayloadType = 95;
 
   std::string program_name = argv[0];
@@ -85,10 +86,53 @@ int main(int argc, char* argv[]) {
   }
 
   // Initialize NetEq instance.
-  NetEq* neteq = NetEq::Create(kSampRateHz);
-  // Register decoder in |neteq|.
   int error;
-  error = neteq->RegisterPayloadType(kDecoderType, kPayloadType);
+  int inst_size_bytes;
+  error = WebRtcNetEQ_AssignSize(&inst_size_bytes);
+  if (error) {
+    std::cerr << "Error returned from WebRtcNetEQ_AssignSize." << std::endl;
+    exit(1);
+  }
+  char* inst_mem = new char[inst_size_bytes];
+  void* neteq_inst;
+  error = WebRtcNetEQ_Assign(&neteq_inst, inst_mem);
+  if (error) {
+    std::cerr << "Error returned from WebRtcNetEQ_Assign." << std::endl;
+    exit(1);
+  }
+  // Select decoders.
+  WebRtcNetEQDecoder decoder_list[] = {kDecoderType};
+  int max_number_of_packets;
+  int buffer_size_bytes;
+  int overhead_bytes_dummy;
+  error = WebRtcNetEQ_GetRecommendedBufferSize(
+      neteq_inst, decoder_list, sizeof(decoder_list) / sizeof(decoder_list[1]),
+      kTCPLargeJitter, &max_number_of_packets, &buffer_size_bytes,
+      &overhead_bytes_dummy);
+  if (error) {
+    std::cerr << "Error returned from WebRtcNetEQ_GetRecommendedBufferSize."
+              << std::endl;
+    exit(1);
+  }
+  char* buffer_mem = new char[buffer_size_bytes];
+  error = WebRtcNetEQ_AssignBuffer(neteq_inst, max_number_of_packets,
+                                   buffer_mem, buffer_size_bytes);
+  if (error) {
+      std::cerr << "Error returned from WebRtcNetEQ_AssignBuffer." << std::endl;
+      exit(1);
+    }
+  error = WebRtcNetEQ_Init(neteq_inst, kSampRateHz);
+  if (error) {
+      std::cerr << "Error returned from WebRtcNetEQ_Init." << std::endl;
+      exit(1);
+    }
+
+  // Register decoder.
+  WebRtcNetEQ_CodecDef codec_definition;
+  SET_CODEC_PAR(codec_definition, kDecoderType, kPayloadType, NULL,
+                kSampRateHz);
+  SET_PCM16B_SWB32_FUNCTIONS(codec_definition);
+  error = WebRtcNetEQ_CodecDbAdd(neteq_inst, &codec_definition);
   if (error) {
     std::cerr << "Cannot register decoder." << std::endl;
     exit(1);
@@ -132,13 +176,19 @@ int main(int argc, char* argv[]) {
         lost = ((rtp_header.header.sequenceNumber - 1) % FLAGS_lossrate) == 0;
       }
       if (!lost) {
+        WebRtcNetEQ_RTPInfo rtp_info;
+        rtp_info.payloadType = rtp_header.header.payloadType;
+        rtp_info.sequenceNumber = rtp_header.header.sequenceNumber;
+        rtp_info.timeStamp = rtp_header.header.timestamp;
+        rtp_info.SSRC = rtp_header.header.ssrc;
+        rtp_info.markerBit = rtp_header.header.markerBit;
         // Insert packet.
-        int error = neteq->InsertPacket(
-            rtp_header, input_payload, payload_len,
+        error = WebRtcNetEQ_RecInRTPStruct(
+            neteq_inst, &rtp_info, input_payload, payload_len,
             packet_input_time_ms * kSampRateHz / 1000);
-        if (error != NetEq::kOK) {
-          std::cerr << "InsertPacket returned error code " <<
-              neteq->LastError() << std::endl;
+        if (error != 0) {
+          std::cerr << "WebRtcNetEQ_RecInRTPStruct returned error code " <<
+              WebRtcNetEQ_GetErrorCode(neteq_inst) << std::endl;
           exit(1);
         }
       }
@@ -159,13 +209,11 @@ int main(int argc, char* argv[]) {
     static const int kOutDataLen = kOutputBlockSizeMs * kMaxSamplesPerMs *
         kMaxChannels;
     int16_t out_data[kOutDataLen];
-    int num_channels;
-    int samples_per_channel;
-    int error = neteq->GetAudio(kOutDataLen, out_data, &samples_per_channel,
-                                &num_channels, NULL);
-    if (error != NetEq::kOK) {
-      std::cerr << "GetAudio returned error code " <<
-          neteq->LastError() << std::endl;
+    int16_t samples_per_channel;
+    error = WebRtcNetEQ_RecOut(neteq_inst, out_data, &samples_per_channel);
+    if (error != 0) {
+      std::cerr << "WebRtcNetEQ_RecOut returned error code " <<
+          WebRtcNetEQ_GetErrorCode(neteq_inst) << std::endl;
       exit(1);
     }
     assert(samples_per_channel == kSampRateHz * 10 / 1000);
@@ -179,6 +227,7 @@ int main(int argc, char* argv[]) {
   }
 
   std::cout << "Simulation done" << std::endl;
-  delete neteq;
+  delete [] buffer_mem;
+  delete [] inst_mem;
   return 0;
 }

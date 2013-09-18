@@ -158,6 +158,20 @@
         },
 
         {
+          'target_name': 'neteq3_speed_test',
+          'type': 'executable',
+          'dependencies': [
+            'NetEq',
+            'PCM16B',
+            'neteq_unittest_tools',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
+          ],
+          'sources': [
+            'test/neteq_speed_test.cc',
+          ],
+        },
+
+        {
          'target_name': 'NetEqTestTools',
           # Collection of useful functions used in other tests
           'type': 'static_library',
