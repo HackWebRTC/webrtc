@@ -23,14 +23,14 @@
 
 namespace webrtc {
 
-struct WebRtcACMAudioBuff;
-struct WebRtcACMCodecParams;
 class CriticalSectionWrapper;
 class RWLockWrapper;
 class Clock;
 
 namespace acm1 {
 
+struct WebRtcACMAudioBuff;
+struct WebRtcACMCodecParams;
 class ACMDTMFDetection;
 class ACMGenericCodec;
 class Nack;
@@ -96,8 +96,19 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   // called to deliver the encoded buffers.
   int32_t RegisterTransportCallback(AudioPacketizationCallback* transport);
 
+  // Used by the module to deliver messages to the codec module/application
+  // AVT(DTMF).
+  int32_t RegisterIncomingMessagesCallback(
+      AudioCodingFeedback* incoming_message, const ACMCountries cpt);
+
   // Add 10 ms of raw (PCM) audio data to the encoder.
   int32_t Add10MsData(const AudioFrame& audio_frame);
+
+  // Set background noise mode for NetEQ, on, off or fade.
+  int32_t SetBackgroundNoiseMode(const ACMBackgroundNoiseMode mode);
+
+  // Get current background noise mode.
+  int32_t BackgroundNoiseMode(ACMBackgroundNoiseMode* mode);
 
   /////////////////////////////////////////
   // (FEC) Forward Error Correction
@@ -122,6 +133,12 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   int32_t VAD(bool* dtx_enabled, bool* vad_enabled, ACMVADMode* mode) const;
 
   int32_t RegisterVADCallback(ACMVADCallback* vad_callback);
+
+  // Get VAD aggressiveness on the incoming stream.
+  ACMVADMode ReceiveVADMode() const;
+
+  // Configure VAD aggressiveness on the incoming stream.
+  int16_t SetReceiveVADMode(const ACMVADMode mode);
 
   /////////////////////////////////////////
   //   Receiver
@@ -203,7 +220,7 @@ class AudioCodingModuleImpl : public AudioCodingModule {
   //   Statistics
   //
 
-  int32_t NetworkStatistics(ACMNetworkStatistics* statistics);
+  int32_t NetworkStatistics(ACMNetworkStatistics* statistics) const;
 
   void DestructEncoderInst(void* inst);
 
@@ -226,16 +243,16 @@ class AudioCodingModuleImpl : public AudioCodingModule {
 
   int32_t IsInternalDTXReplacedWithWebRtc(bool* uses_webrtc_dtx);
 
-  int SetISACMaxRate(int max_bit_per_sec);
+  int32_t SetISACMaxRate(const uint32_t max_bit_per_sec);
 
-  int SetISACMaxPayloadSize(int max_size_bytes);
+  int32_t SetISACMaxPayloadSize(const uint16_t max_size_bytes);
 
   int32_t ConfigISACBandwidthEstimator(
-      int frame_size_ms,
-      int rate_bit_per_sec,
-      bool enforce_frame_size = false);
+      const uint8_t frame_size_ms,
+      const uint16_t rate_bit_per_sec,
+      const bool enforce_frame_size = false);
 
-  int UnregisterReceiveCodec(uint8_t payload_type);
+  int32_t UnregisterReceiveCodec(const int16_t payload_type);
 
   std::vector<uint16_t> GetNackList(int round_trip_time_ms) const;
 

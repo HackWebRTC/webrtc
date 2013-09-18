@@ -17,7 +17,7 @@
 
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/main/source/acm_codec_database.h"
-#include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
 #include "webrtc/modules/audio_coding/main/source/acm_dtmf_detection.h"
 #include "webrtc/modules/audio_coding/main/source/acm_generic_codec.h"
 #include "webrtc/modules/audio_coding/main/source/acm_resampler.h"
@@ -1262,6 +1262,64 @@ int32_t AudioCodingModuleImpl::RegisterTransportCallback(
   return 0;
 }
 
+// Used by the module to deliver messages to the codec module/application
+// AVT(DTMF).
+int32_t AudioCodingModuleImpl::RegisterIncomingMessagesCallback(
+#ifndef WEBRTC_DTMF_DETECTION
+    AudioCodingFeedback* /* incoming_message */,
+    const ACMCountries /* cpt */) {
+  return -1;
+#else
+    AudioCodingFeedback* incoming_message,
+    const ACMCountries cpt) {
+  int16_t status = 0;
+
+  // Enter the critical section for callback.
+  {
+    CriticalSectionScoped lock(callback_crit_sect_);
+    dtmf_callback_ = incoming_message;
+  }
+  // Enter the ACM critical section to set up the DTMF class.
+  {
+    CriticalSectionScoped lock(acm_crit_sect_);
+    // Check if the call is to disable or enable the callback.
+    if (incoming_message == NULL) {
+      // Callback is disabled, delete DTMF-detector class.
+      if (dtmf_detector_ != NULL) {
+        delete dtmf_detector_;
+        dtmf_detector_ = NULL;
+      }
+      status = 0;
+    } else {
+      status = 0;
+      if (dtmf_detector_ == NULL) {
+        dtmf_detector_ = new ACMDTMFDetection;
+        if (dtmf_detector_ == NULL) {
+          status = -1;
+        }
+      }
+      if (status >= 0) {
+        status = dtmf_detector_->Enable(cpt);
+        if (status < 0) {
+          // Failed to initialize if DTMF-detection was not enabled before,
+          // delete the class, and set the callback to NULL and return -1.
+          delete dtmf_detector_;
+          dtmf_detector_ = NULL;
+        }
+      }
+    }
+  }
+  // Check if we failed in setting up the DTMF-detector class.
+  if ((status < 0)) {
+    // We failed, we cannot have the callback.
+    CriticalSectionScoped lock(callback_crit_sect_);
+    dtmf_callback_ = NULL;
+  }
+
+  return status;
+#endif
+}
+
 // Add 10MS of raw (PCM) audio data to the encoder.
 int32_t AudioCodingModuleImpl::Add10MsData(
     const AudioFrame& audio_frame) {
@@ -2405,11 +2463,26 @@ int32_t AudioCodingModuleImpl::PlayoutData10Ms(
 }
 
 /////////////////////////////////////////
+//   (CNG) Comfort Noise Generation
+//   Generate comfort noise when receiving DTX packets
+//
+
+// Get VAD aggressiveness on the incoming stream
+ACMVADMode AudioCodingModuleImpl::ReceiveVADMode() const {
+  return neteq_.vad_mode();
+}
+
+// Configure VAD aggressiveness on the incoming stream.
+int16_t AudioCodingModuleImpl::SetReceiveVADMode(const ACMVADMode mode) {
+  return neteq_.SetVADMode(mode);
+}
+
+/////////////////////////////////////////
 //   Statistics
 //
 
 int32_t AudioCodingModuleImpl::NetworkStatistics(
-    ACMNetworkStatistics* statistics) {
+    ACMNetworkStatistics* statistics) const {
   int32_t status;
   status = neteq_.NetworkStatistics(statistics);
   return status;
@@ -2649,7 +2722,8 @@ int32_t AudioCodingModuleImpl::IsInternalDTXReplacedWithWebRtc(
   return 0;
 }
 
-int AudioCodingModuleImpl::SetISACMaxRate(int max_bit_per_sec) {
+int32_t AudioCodingModuleImpl::SetISACMaxRate(
+    const uint32_t max_bit_per_sec) {
   CriticalSectionScoped lock(acm_crit_sect_);
 
   if (!HaveValidEncoder("SetISACMaxRate")) {
@@ -2659,7 +2733,8 @@ int AudioCodingModuleImpl::SetISACMaxRate(int max_bit_per_sec) {
   return codecs_[current_send_codec_idx_]->SetISACMaxRate(max_bit_per_sec);
 }
 
-int AudioCodingModuleImpl::SetISACMaxPayloadSize(int max_size_bytes) {
+int32_t AudioCodingModuleImpl::SetISACMaxPayloadSize(
+    const uint16_t max_size_bytes) {
   CriticalSectionScoped lock(acm_crit_sect_);
 
   if (!HaveValidEncoder("SetISACMaxPayloadSize")) {
@@ -2671,9 +2746,9 @@ int AudioCodingModuleImpl::SetISACMaxPayloadSize(int max_size_bytes) {
 }
 
 int32_t AudioCodingModuleImpl::ConfigISACBandwidthEstimator(
-    int frame_size_ms,
-    int rate_bit_per_sec,
-    bool enforce_frame_size) {
+    const uint8_t frame_size_ms,
+    const uint16_t rate_bit_per_sec,
+    const bool enforce_frame_size) {
   CriticalSectionScoped lock(acm_crit_sect_);
 
   if (!HaveValidEncoder("ConfigISACBandwidthEstimator")) {
@@ -2682,6 +2757,21 @@ int32_t AudioCodingModuleImpl::ConfigISACBandwidthEstimator(
 
   return codecs_[current_send_codec_idx_]->ConfigISACBandwidthEstimator(
       frame_size_ms, rate_bit_per_sec, enforce_frame_size);
+}
+
+int32_t AudioCodingModuleImpl::SetBackgroundNoiseMode(
+    const ACMBackgroundNoiseMode mode) {
+  if ((mode < On) || (mode > Off)) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
+                 "The specified background noise is out of range.\n");
+    return -1;
+  }
+  return neteq_.SetBackgroundNoiseMode(mode);
+}
+
+int32_t AudioCodingModuleImpl::BackgroundNoiseMode(
+    ACMBackgroundNoiseMode* mode) {
+  return neteq_.BackgroundNoiseMode(*mode);
 }
 
 int32_t AudioCodingModuleImpl::PlayoutTimestamp(
@@ -2719,7 +2809,8 @@ bool AudioCodingModuleImpl::HaveValidEncoder(const char* caller_name) const {
   return true;
 }
 
-int AudioCodingModuleImpl::UnregisterReceiveCodec(uint8_t payload_type) {
+int32_t AudioCodingModuleImpl::UnregisterReceiveCodec(
+    const int16_t payload_type) {
   CriticalSectionScoped lock(acm_crit_sect_);
   int id;
 

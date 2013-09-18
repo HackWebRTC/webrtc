@@ -13,24 +13,18 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
 #include "webrtc/modules/audio_coding/main/acm2/audio_coding_module_impl.h"
-#include "webrtc/modules/audio_coding/main/source/audio_coding_module_impl.h"
-#include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
 // Create module
 AudioCodingModule* AudioCodingModule::Create(int id) {
-  return new acm1::AudioCodingModuleImpl(id, Clock::GetRealTimeClock());
-}
-
-AudioCodingModule* AudioCodingModule::Create(int id, Clock* clock) {
-  return new acm1::AudioCodingModuleImpl(id, clock);
+  return new AudioCodingModuleImpl(id);
 }
 
 // Destroy module
 void AudioCodingModule::Destroy(AudioCodingModule* module) {
-  delete module;
+  delete static_cast<AudioCodingModuleImpl*>(module);
 }
 
 // Get number of supported codecs
@@ -96,12 +90,11 @@ bool AudioCodingModule::IsCodecValid(const CodecInst& codec) {
   }
 }
 
-AudioCodingModule* AudioCodingModuleFactory::Create(int id) const {
-  return new acm1::AudioCodingModuleImpl(static_cast<int32_t>(id),
-                                         Clock::GetRealTimeClock());
+AudioCodingModule* AudioCodingModuleFactory::Create(const int32_t id) const {
+  return NULL;
 }
 
-AudioCodingModule* NewAudioCodingModuleFactory::Create(int id) const {
+AudioCodingModule* NewAudioCodingModuleFactory::Create(const int32_t id) const {
   return new AudioCodingModuleImpl(id);
 }
 

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "../acm2/acm_common_defs.h"
+#include "../source/acm_common_defs.h"
 #include "gtest/gtest.h"
 #include "audio_coding_module.h"
 #include "PCMFile.h"

@@ -37,7 +37,6 @@
       ],
       'dependencies': [
         '<@(audio_coding_dependencies)',
-        'acm2',
       ],
       'include_dirs': [
         '../interface',
@@ -101,6 +100,7 @@
         'acm_red.h',
         'acm_resampler.cc',
         'acm_resampler.h',
+        'audio_coding_module.cc',
         'audio_coding_module_impl.cc',
         'audio_coding_module_impl.h',
         'nack.cc',
@@ -145,8 +145,5 @@
         }, # delay_test
       ],
     }],
-  ],
-  'includes': [
-    '../acm2/audio_coding_module.gypi',
   ],
 }

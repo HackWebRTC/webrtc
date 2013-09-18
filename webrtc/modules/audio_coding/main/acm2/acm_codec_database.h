@@ -103,9 +103,7 @@ class ACMCodecDB {
     , kCNNB
     , kCNWB
     , kCNSWB
-#ifdef ENABLE_48000_HZ
     , kCNFB
-#endif
 #ifdef WEBRTC_CODEC_AVT
     , kAVT
 #endif
@@ -188,9 +186,6 @@ class ACMCodecDB {
 #endif
 #ifndef WEBRTC_CODEC_RED
   enum {kRED = -1};
-#endif
-#ifndef ENABLE_48000_HZ
-  enum { kCNFB = -1 };
 #endif
 
   // kMaxNumCodecs - Maximum number of codecs that can be activated in one
