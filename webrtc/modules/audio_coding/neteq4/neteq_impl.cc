@@ -117,19 +117,13 @@ NetEqImpl::NetEqImpl(int fs,
 
 NetEqImpl::~NetEqImpl() {
   LOG(LS_INFO) << "Deleting NetEqImpl object.";
-  delete algorithm_buffer_;
-  delete sync_buffer_;
-  delete background_noise_;
-  delete expand_;
-  delete comfort_noise_;
-  delete crit_sect_;
 }
 
 int NetEqImpl::InsertPacket(const WebRtcRTPHeader& rtp_header,
                             const uint8_t* payload,
                             int length_bytes,
                             uint32_t receive_timestamp) {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   NETEQ_LOG_VERBOSE << "InsertPacket: ts=" << rtp_header.header.timestamp <<
       ", sn=" << rtp_header.header.sequenceNumber <<
       ", pt=" << static_cast<int>(rtp_header.header.payloadType) <<
@@ -148,7 +142,7 @@ int NetEqImpl::InsertPacket(const WebRtcRTPHeader& rtp_header,
 int NetEqImpl::GetAudio(size_t max_length, int16_t* output_audio,
                         int* samples_per_channel, int* num_channels,
                         NetEqOutputType* type) {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   NETEQ_LOG_VERBOSE << "GetAudio";
   int error = GetAudioInternal(max_length, output_audio, samples_per_channel,
                                num_channels);
@@ -167,7 +161,7 @@ int NetEqImpl::GetAudio(size_t max_length, int16_t* output_audio,
 
 int NetEqImpl::RegisterPayloadType(enum NetEqDecoder codec,
                                    uint8_t rtp_payload_type) {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   LOG_API2(static_cast<int>(rtp_payload_type), codec);
   int ret = decoder_database_->RegisterPayload(rtp_payload_type, codec);
   if (ret != DecoderDatabase::kOK) {
@@ -194,7 +188,7 @@ int NetEqImpl::RegisterExternalDecoder(AudioDecoder* decoder,
                                        enum NetEqDecoder codec,
                                        int sample_rate_hz,
                                        uint8_t rtp_payload_type) {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   LOG_API2(static_cast<int>(rtp_payload_type), codec);
   if (!decoder) {
     LOG(LS_ERROR) << "Cannot register external decoder with NULL pointer";
@@ -230,7 +224,7 @@ int NetEqImpl::RegisterExternalDecoder(AudioDecoder* decoder,
 }
 
 int NetEqImpl::RemovePayloadType(uint8_t rtp_payload_type) {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   LOG_API1(static_cast<int>(rtp_payload_type));
   int ret = decoder_database_->Remove(rtp_payload_type);
   if (ret == DecoderDatabase::kOK) {
@@ -245,7 +239,7 @@ int NetEqImpl::RemovePayloadType(uint8_t rtp_payload_type) {
 }
 
 bool NetEqImpl::SetMinimumDelay(int delay_ms) {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   if (delay_ms >= 0 && delay_ms < 10000) {
     assert(delay_manager_.get());
     return delay_manager_->SetMinimumDelay(delay_ms);
@@ -254,7 +248,7 @@ bool NetEqImpl::SetMinimumDelay(int delay_ms) {
 }
 
 bool NetEqImpl::SetMaximumDelay(int delay_ms) {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   if (delay_ms >= 0 && delay_ms < 10000) {
     assert(delay_manager_.get());
     return delay_manager_->SetMaximumDelay(delay_ms);
@@ -263,13 +257,13 @@ bool NetEqImpl::SetMaximumDelay(int delay_ms) {
 }
 
 int NetEqImpl::LeastRequiredDelayMs() const {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   assert(delay_manager_.get());
   return delay_manager_->least_required_delay_ms();
 }
 
 void NetEqImpl::SetPlayoutMode(NetEqPlayoutMode mode) {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   if (!decision_logic_.get() || mode != decision_logic_->playout_mode()) {
     // The reset() method calls delete for the old object.
     decision_logic_.reset(DecisionLogic::Create(fs_hz_, output_size_samples_,
@@ -282,13 +276,13 @@ void NetEqImpl::SetPlayoutMode(NetEqPlayoutMode mode) {
 }
 
 NetEqPlayoutMode NetEqImpl::PlayoutMode() const {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   assert(decision_logic_.get());
   return decision_logic_->playout_mode();
 }
 
 int NetEqImpl::NetworkStatistics(NetEqNetworkStatistics* stats) {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   assert(decoder_database_.get());
   const int total_samples_in_buffers = packet_buffer_->NumSamplesInBuffer(
       decoder_database_.get(), decoder_frame_length_) +
@@ -302,57 +296,57 @@ int NetEqImpl::NetworkStatistics(NetEqNetworkStatistics* stats) {
 }
 
 void NetEqImpl::WaitingTimes(std::vector<int>* waiting_times) {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   stats_.WaitingTimes(waiting_times);
 }
 
 void NetEqImpl::GetRtcpStatistics(RtcpStatistics* stats) {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   if (stats) {
     rtcp_.GetStatistics(false, stats);
   }
 }
 
 void NetEqImpl::GetRtcpStatisticsNoReset(RtcpStatistics* stats) {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   if (stats) {
     rtcp_.GetStatistics(true, stats);
   }
 }
 
 void NetEqImpl::EnableVad() {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   assert(vad_.get());
   vad_->Enable();
 }
 
 void NetEqImpl::DisableVad() {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   assert(vad_.get());
   vad_->Disable();
 }
 
 uint32_t NetEqImpl::PlayoutTimestamp() {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   return timestamp_scaler_->ToExternal(playout_timestamp_);
 }
 
 int NetEqImpl::LastError() {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   return error_code_;
 }
 
 int NetEqImpl::LastDecoderError() {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   return decoder_error_code_;
 }
 
 void NetEqImpl::FlushBuffers() {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   LOG_API0();
   packet_buffer_->Flush();
-  assert(sync_buffer_);
-  assert(expand_);
+  assert(sync_buffer_.get());
+  assert(expand_.get());
   sync_buffer_->Flush();
   sync_buffer_->set_next_index(sync_buffer_->next_index() -
                                expand_->overlap_length());
@@ -364,13 +358,13 @@ void NetEqImpl::PacketBufferStatistics(int* current_num_packets,
                                        int* max_num_packets,
                                        int* current_memory_size_bytes,
                                        int* max_memory_size_bytes) const {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   packet_buffer_->BufferStat(current_num_packets, max_num_packets,
                              current_memory_size_bytes, max_memory_size_bytes);
 }
 
 int NetEqImpl::DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) {
-  CriticalSectionScoped lock(crit_sect_);
+  CriticalSectionScoped lock(crit_sect_.get());
   if (decoded_packet_sequence_number_ < 0)
     return -1;
   *sequence_number = decoded_packet_sequence_number_;
@@ -799,7 +793,7 @@ int NetEqImpl::GetDecision(Operations* operation,
   packet_buffer_->IncrementWaitingTimes();
   stats_.IncreaseCounter(output_size_samples_, fs_hz_);
 
-  assert(sync_buffer_);
+  assert(sync_buffer_.get());
   uint32_t end_timestamp = sync_buffer_->end_timestamp();
   if (!new_codec_) {
     packet_buffer_->DiscardOldPackets(end_timestamp);
@@ -826,7 +820,7 @@ int NetEqImpl::GetDecision(Operations* operation,
     }
   }
 
-  assert(expand_);
+  assert(expand_.get());
   const int samples_left = sync_buffer_->FutureLength() -
       expand_->overlap_length();
   if (last_mode_ == kModeAccelerateSuccess ||
@@ -845,8 +839,8 @@ int NetEqImpl::GetDecision(Operations* operation,
   }
 
   // Get instruction.
-  assert(sync_buffer_);
-  assert(expand_);
+  assert(sync_buffer_.get());
+  assert(expand_.get());
   *operation = decision_logic_->GetDecision(*sync_buffer_,
                                             *expand_,
                                             decoder_frame_length_,
@@ -1223,7 +1217,7 @@ void NetEqImpl::DoNormal(const int16_t* decoded_buffer, size_t decoded_length,
   assert(normal_.get());
   assert(mute_factor_array_.get());
   normal_->Process(decoded_buffer, decoded_length, last_mode_,
-                   mute_factor_array_.get(), algorithm_buffer_);
+                   mute_factor_array_.get(), algorithm_buffer_.get());
   if (decoded_length != 0) {
     last_mode_ = kModeNormal;
   }
@@ -1246,7 +1240,8 @@ void NetEqImpl::DoMerge(int16_t* decoded_buffer, size_t decoded_length,
   assert(mute_factor_array_.get());
   assert(merge_.get());
   int new_length = merge_->Process(decoded_buffer, decoded_length,
-                                   mute_factor_array_.get(), algorithm_buffer_);
+                                   mute_factor_array_.get(),
+                                   algorithm_buffer_.get());
 
   // Update in-call and post-call statistics.
   if (expand_->MuteFactor(0) == 0) {
@@ -1272,7 +1267,7 @@ int NetEqImpl::DoExpand(bool play_dtmf) {
   while ((sync_buffer_->FutureLength() - expand_->overlap_length()) <
       static_cast<size_t>(output_size_samples_)) {
     algorithm_buffer_->Clear();
-    int return_value = expand_->Process(algorithm_buffer_);
+    int return_value = expand_->Process(algorithm_buffer_.get());
     int length = algorithm_buffer_->Size();
 
     // Update in-call and post-call statistics.
@@ -1319,10 +1314,9 @@ int NetEqImpl::DoAccelerate(int16_t* decoded_buffer, size_t decoded_length,
   }
 
   int16_t samples_removed;
-  Accelerate::ReturnCodes return_code = accelerate_->Process(decoded_buffer,
-                                                             decoded_length,
-                                                             algorithm_buffer_,
-                                                             &samples_removed);
+  Accelerate::ReturnCodes return_code = accelerate_->Process(
+      decoded_buffer, decoded_length, algorithm_buffer_.get(),
+      &samples_removed);
   stats_.AcceleratedSamples(samples_removed);
   switch (return_code) {
     case Accelerate::kSuccess:
@@ -1401,7 +1395,7 @@ int NetEqImpl::DoPreemptiveExpand(int16_t* decoded_buffer,
   int16_t samples_added;
   PreemptiveExpand::ReturnCodes return_code = preemptive_expand_->Process(
       decoded_buffer, decoded_length, old_borrowed_samples_per_channel,
-      algorithm_buffer_, &samples_added);
+      algorithm_buffer_.get(), &samples_added);
   stats_.PreemptiveExpandedSamples(samples_added);
   switch (return_code) {
     case PreemptiveExpand::kSuccess:
@@ -1478,7 +1472,7 @@ int NetEqImpl::DoRfc3389Cng(PacketList* packet_list, bool play_dtmf) {
     }
   }
   int cn_return = comfort_noise_->Generate(output_size_samples_,
-                                           algorithm_buffer_);
+                                           algorithm_buffer_.get());
   expand_->Reset();
   last_mode_ = kModeRfc3389Cng;
   if (!play_dtmf) {
@@ -1507,7 +1501,7 @@ void NetEqImpl::DoCodecInternalCng() {
   }
   assert(mute_factor_array_.get());
   normal_->Process(decoded_buffer, length, last_mode_, mute_factor_array_.get(),
-                   algorithm_buffer_);
+                   algorithm_buffer_.get());
   last_mode_ = kModeCodecInternalCng;
   expand_->Reset();
 }
@@ -1540,7 +1534,7 @@ int NetEqImpl::DoDtmf(const DtmfEvent& dtmf_event, bool* play_dtmf) {
   if (dtmf_return_value == 0) {
     // Generate DTMF signal.
     dtmf_return_value = dtmf_tone_generator_->Generate(output_size_samples_,
-                                                       algorithm_buffer_);
+                                                       algorithm_buffer_.get());
   }
 
   if (dtmf_return_value < 0) {
@@ -1756,49 +1750,34 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   vad_->Init();
 
   // Delete algorithm buffer and create a new one.
-  if (algorithm_buffer_) {
-    delete algorithm_buffer_;
-  }
-  algorithm_buffer_ = new AudioMultiVector<int16_t>(channels);
+  algorithm_buffer_.reset(new AudioMultiVector<int16_t>(channels));
 
   // Delete sync buffer and create a new one.
-  if (sync_buffer_) {
-    delete sync_buffer_;
-  }
-  sync_buffer_ = new SyncBuffer(channels, kSyncBufferSize * fs_mult_);
+  sync_buffer_.reset(new SyncBuffer(channels, kSyncBufferSize * fs_mult_));
 
   // Delete BackgroundNoise object and create a new one.
-  if (background_noise_) {
-    delete background_noise_;
-  }
-  background_noise_ = new BackgroundNoise(channels);
+  background_noise_.reset(new BackgroundNoise(channels));
 
   // Reset random vector.
   random_vector_.Reset();
 
   // Delete Expand object and create a new one.
-  if (expand_) {
-    delete expand_;
-  }
-  expand_ = new Expand(background_noise_, sync_buffer_, &random_vector_, fs_hz,
-                       channels);
+  expand_.reset(new Expand(background_noise_.get(), sync_buffer_.get(),
+                           &random_vector_, fs_hz, channels));
   // Move index so that we create a small set of future samples (all 0).
   sync_buffer_->set_next_index(sync_buffer_->next_index() -
                                expand_->overlap_length());
 
   normal_.reset(new Normal(fs_hz, decoder_database_.get(), *background_noise_,
-                           expand_));
-  merge_.reset(new Merge(fs_hz, channels, expand_, sync_buffer_));
+                           expand_.get()));
+  merge_.reset(new Merge(fs_hz, channels, expand_.get(), sync_buffer_.get()));
   accelerate_.reset(new Accelerate(fs_hz, channels, *background_noise_));
   preemptive_expand_.reset(new PreemptiveExpand(fs_hz, channels,
                                                 *background_noise_));
 
   // Delete ComfortNoise object and create a new one.
-  if (comfort_noise_) {
-    delete comfort_noise_;
-  }
-  comfort_noise_ = new ComfortNoise(fs_hz, decoder_database_.get(),
-                                    sync_buffer_);
+  comfort_noise_.reset(new ComfortNoise(fs_hz, decoder_database_.get(),
+                                        sync_buffer_.get()));
 
   // Verify that |decoded_buffer_| is long enough.
   if (decoded_buffer_length_ < kMaxFrameSize * channels) {
@@ -1814,7 +1793,7 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
 
 NetEqOutputType NetEqImpl::LastOutputType() {
   assert(vad_.get());
-  assert(expand_);
+  assert(expand_.get());
   if (last_mode_ == kModeCodecInternalCng || last_mode_ == kModeRfc3389Cng) {
     return kOutputCNG;
   } else if (vad_->running() && !vad_->active_speech()) {
