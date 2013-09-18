@@ -13,10 +13,10 @@
 {
   bug_2319_1
   ThreadSanitizer:Race
+  ...
   fun:webrtc::ThreadWindows::Run
   fun:webrtc::ThreadWindows::StartThread
-  fun:_callthreadstartex
-  fun:_threadstartex
+  ...
   fun:BaseThreadInitThunk
 }
 {
