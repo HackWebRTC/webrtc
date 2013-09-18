@@ -234,11 +234,11 @@ int VideoRenderIosGles20::GetWindowRect(Rect& rect) {
     return -1;
   }
 
-  CGRect frame = [view_ frame];
-  rect.top = frame.origin.x;
-  rect.left = frame.origin.y;
-  rect.bottom = frame.size.width;
-  rect.right = frame.size.height;
+  CGRect bounds = [view_ bounds];
+  rect.top = bounds.origin.y;
+  rect.left = bounds.origin.x;
+  rect.bottom = bounds.size.height + bounds.origin.y;
+  rect.right = bounds.size.width + bounds.origin.x;
 
   return 0;
 }
@@ -271,8 +271,8 @@ int VideoRenderIosGles20::StopRender() {
 
 int VideoRenderIosGles20::GetScreenResolution(uint& screen_width,
                                               uint& screen_height) {
-  screen_width = [view_ frame].size.width;
-  screen_height = [view_ frame].size.height;
+  screen_width = [view_ bounds].size.width;
+  screen_height = [view_ bounds].size.height;
   return 0;
 }
 

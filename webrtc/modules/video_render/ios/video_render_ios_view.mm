@@ -121,8 +121,8 @@ using namespace webrtc;
   glBindFramebuffer(GL_FRAMEBUFFER, _defaultFrameBuffer);
   glViewport(0, 0, self.frame.size.width, self.frame.size.height);
 
-  return gles_renderer20_->Setup([self frame].size.width,
-                                 [self frame].size.height);
+  return gles_renderer20_->Setup([self bounds].size.width,
+                                 [self bounds].size.height);
 }
 
 - (BOOL)presentFramebuffer {
