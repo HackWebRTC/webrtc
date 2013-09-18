@@ -85,8 +85,8 @@ class AudioCodingModule: public Module {
   // injected into ACM. ACM will take the owner ship of the object clock and
   // delete it when destroyed.
   //
-  static AudioCodingModule* Create(const int32_t id);
-  static AudioCodingModule* Create(const int32_t id, Clock* clock);
+  static AudioCodingModule* Create(int id);
+  static AudioCodingModule* Create(int id, Clock* clock);
   virtual ~AudioCodingModule() {};
 
   // TODO(ajm): Deprecated. Remove all calls to this unneeded method.
@@ -103,7 +103,7 @@ class AudioCodingModule: public Module {
   // Return value:
   //   number of supported codecs.
   ///
-  static uint8_t NumberOfCodecs();
+  static int NumberOfCodecs();
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t Codec()
@@ -120,7 +120,7 @@ class AudioCodingModule: public Module {
   //   -1 if the list number (list_id) is invalid.
   //    0 if succeeded.
   //
-  static int32_t Codec(uint8_t list_id, CodecInst* codec);
+  static int Codec(int list_id, CodecInst* codec);
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t Codec()
@@ -141,7 +141,7 @@ class AudioCodingModule: public Module {
   //   -1 if no codec matches the given parameters.
   //    0 if succeeded.
   //
-  static int32_t Codec(const char* payload_name, CodecInst* codec,
+  static int Codec(const char* payload_name, CodecInst* codec,
                        int sampling_freq_hz, int channels);
 
   ///////////////////////////////////////////////////////////////////////////
@@ -160,7 +160,7 @@ class AudioCodingModule: public Module {
   //   if the codec is found, the index of the codec in the list,
   //   -1 if the codec is not found.
   //
-  static int32_t Codec(const char* payload_name, int sampling_freq_hz,
+  static int Codec(const char* payload_name, int sampling_freq_hz,
                              int channels);
 
   ///////////////////////////////////////////////////////////////////////////
@@ -582,8 +582,8 @@ class AudioCodingModule: public Module {
   //   -1 if fails to unregister.
   //    0 if the given codec is successfully unregistered.
   //
-  virtual int32_t UnregisterReceiveCodec(
-      const int16_t payload_type) = 0;
+  virtual int UnregisterReceiveCodec(
+      uint8_t payload_type) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t ReceiveCodec()
@@ -683,29 +683,6 @@ class AudioCodingModule: public Module {
   virtual int LeastRequiredDelayMs() const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
-  // int32_t RegisterIncomingMessagesCallback()
-  // Used by the module to deliver messages to the codec module/application
-  // when a DTMF tone is detected, as well as when it stopped.
-  //
-  // Inputs:
-  //   -in_message_callback: pointer to callback function which will be called
-  //                         if DTMF is detected.
-  //   -cpt                : enables CPT (Call Progress Tone) detection for the
-  //                         specified country. c.f. definition of ACMCountries
-  //                         in audio_coding_module_typedefs.h for valid
-  //                         entries. The default value disables CPT
-  //                         detection.
-  //
-  // Return value:
-  //   -1 if the message callback could not be registered
-  //    0 if registration is successful.
-  //
-  virtual int32_t
-      RegisterIncomingMessagesCallback(
-          AudioCodingFeedback* in_message_callback,
-          const ACMCountries cpt = ACMDisableCountryDetection) = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
   // int32_t SetDtmfPlayoutStatus()
   // Configure DTMF playout, i.e. whether out-of-band
   // DTMF tones are played or not.
@@ -729,39 +706,6 @@ class AudioCodingModule: public Module {
   //   false if playout of Dtmf tones is disabled.
   //
   virtual bool DtmfPlayoutStatus() const = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int32_t SetBackgroundNoiseMode()
-  // Sets the mode of the background noise playout in an event of long
-  // packet loss burst. For the valid modes see the declaration of
-  // ACMBackgroundNoiseMode in audio_coding_module_typedefs.h.
-  //
-  // Input:
-  //   -mode               : the mode for the background noise playout.
-  //
-  // Return value:
-  //   -1 if failed to set the mode.
-  //    0 if succeeded in setting the mode.
-  //
-  virtual int32_t SetBackgroundNoiseMode(
-      const ACMBackgroundNoiseMode mode) = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int32_t BackgroundNoiseMode()
-  // Call this method to get the mode of the background noise playout.
-  // Playout of background noise is a result of a long packet loss burst.
-  // See ACMBackgroundNoiseMode in audio_coding_module_typedefs.h for
-  // possible modes.
-  //
-  // Output:
-  //   -mode             : a reference to ACMBackgroundNoiseMode enumerator.
-  //
-  // Return value:
-  //    0 if the output is a valid mode.
-  //   -1 if ACM failed to output a valid mode.
-  //
-  // TODO(tlegrand): Change function to return the mode.
-  virtual int32_t BackgroundNoiseMode(ACMBackgroundNoiseMode* mode) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t PlayoutTimestamp()
@@ -853,39 +797,6 @@ class AudioCodingModule: public Module {
                                         AudioFrame* audio_frame) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
-  //   (CNG) Comfort Noise Generation
-  //   Generate comfort noise when receiving DTX packets
-  //
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int16_t SetReceiveVADMode()
-  // Configure VAD aggressiveness on the incoming stream.
-  //
-  // Input:
-  //   -mode               : aggressiveness of the VAD on incoming stream.
-  //                         See audio_coding_module_typedefs.h for the
-  //                         definition of ACMVADMode, and possible
-  //                         values for aggressiveness.
-  //
-  // Return value:
-  //   -1 if fails to set the mode,
-  //    0 if the mode is set successfully.
-  //
-  virtual int16_t SetReceiveVADMode(const ACMVADMode mode) = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // ACMVADMode ReceiveVADMode()
-  // Get VAD aggressiveness on the incoming stream.
-  //
-  // Return value:
-  //   aggressiveness of VAD, running on the incoming stream. A more
-  //   aggressive mode means more audio frames will be labeled as in-active.
-  //   See audio_coding_module_typedefs.h for the definition of
-  //   ACMVADMode.
-  //
-  virtual ACMVADMode ReceiveVADMode() const = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
   //   Codec specific
   //
 
@@ -904,8 +815,7 @@ class AudioCodingModule: public Module {
   //   -1 if failed to set the maximum rate.
   //    0 if the maximum rate is set successfully.
   //
-  virtual int32_t SetISACMaxRate(
-      const uint32_t max_rate_bps) = 0;
+  virtual int SetISACMaxRate(int max_rate_bps) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t SetISACMaxPayloadSize()
@@ -922,8 +832,7 @@ class AudioCodingModule: public Module {
   //   -1 if failed to set the maximum  payload-size.
   //    0 if the given length is set successfully.
   //
-  virtual int32_t SetISACMaxPayloadSize(
-      const uint16_t max_payload_len_bytes) = 0;
+  virtual int SetISACMaxPayloadSize(int max_payload_len_bytes) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t ConfigISACBandwidthEstimator()
@@ -950,9 +859,9 @@ class AudioCodingModule: public Module {
   //    0 if the configuration was successfully applied.
   //
   virtual int32_t ConfigISACBandwidthEstimator(
-      const uint8_t init_frame_size_ms,
-      const uint16_t init_rate_bps,
-      const bool enforce_frame_size = false) = 0;
+      int init_frame_size_ms,
+      int init_rate_bps,
+      bool enforce_frame_size = false) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   //   statistics
@@ -960,7 +869,8 @@ class AudioCodingModule: public Module {
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t  NetworkStatistics()
-  // Get network statistics.
+  // Get network statistics. Note that the internal statistics of NetEq are
+  // reset by this call.
   //
   // Input:
   //   -network_statistics : a structure that contains network statistics.
@@ -970,7 +880,7 @@ class AudioCodingModule: public Module {
   //    0 if statistics are set successfully.
   //
   virtual int32_t NetworkStatistics(
-      ACMNetworkStatistics* network_statistics) const = 0;
+      ACMNetworkStatistics* network_statistics) = 0;
 
   //
   // Set an initial delay for playout.

@@ -20,7 +20,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module_typedefs.h"
-#include "webrtc/modules/audio_coding/main/source/acm_common_defs.h"
+#include "webrtc/modules/audio_coding/main/acm2/acm_common_defs.h"
 #include "webrtc/modules/audio_coding/main/test/Channel.h"
 #include "webrtc/modules/audio_coding/main/test/PCMFile.h"
 #include "webrtc/modules/audio_coding/main/test/utility.h"

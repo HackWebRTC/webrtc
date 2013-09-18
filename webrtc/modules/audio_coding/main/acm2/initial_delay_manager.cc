@@ -153,7 +153,6 @@ void InitialDelayManager::RecordLastPacket(const WebRtcRTPHeader& rtp_info,
 void InitialDelayManager::LatePackets(
     uint32_t timestamp_now, SyncStream* sync_stream) {
   assert(sync_stream);
-  const int kLateThreshold = 5;
   sync_stream->num_sync_packets = 0;
 
   // If there is no estimate of timestamp increment, |timestamp_step_|, then
@@ -171,7 +170,7 @@ void InitialDelayManager::LatePackets(
   int num_late_packets = (timestamp_now - last_receive_timestamp_) /
       timestamp_step_;
 
-  if (num_late_packets < kLateThreshold)
+  if (num_late_packets < late_packet_threshold_)
     return;
 
   int sync_offset = 1;  // One gap at the end of the sync-stream.

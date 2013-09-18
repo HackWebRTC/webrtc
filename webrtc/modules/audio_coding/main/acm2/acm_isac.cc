@@ -301,7 +301,7 @@ class AcmAudioDecoderIsac : public AudioDecoder {
                              uint32_t arrival_timestamp) {
     return ACM_ISAC_DECODE_BWE(static_cast<ACM_ISAC_STRUCT*>(state_),
                                reinterpret_cast<const uint16_t*>(payload),
-                               payload_len,
+                               static_cast<uint32_t>(payload_len),
                                rtp_sequence_number,
                                rtp_timestamp,
                                arrival_timestamp);
@@ -311,7 +311,7 @@ class AcmAudioDecoderIsac : public AudioDecoder {
                               size_t encoded_len, int16_t* decoded,
                               SpeechType* speech_type) {
     int16_t temp_type = 1;  // Default is speech.
-    int16_t ret = ACM_ISAC_DECODERCU(static_cast<ISACStruct*>(state_),
+    int16_t ret = ACM_ISAC_DECODERCU(static_cast<ACM_ISAC_STRUCT*>(state_),
                                      reinterpret_cast<const uint16_t*>(encoded),
                                      static_cast<int16_t>(encoded_len), decoded,
                                      &temp_type);

@@ -179,7 +179,7 @@ int AcmReceiver::SetInitialDelay(int delay_ms) {
   // improve performance. Here, this call has to be placed before the following
   // block, therefore, we keep it inside critical section. Otherwise, we have to
   // release |neteq_crit_sect_| and acquire it again, which seems an overkill.
-  if (neteq_->SetMinimumDelay(delay_ms) < 0)
+  if (!neteq_->SetMinimumDelay(delay_ms))
     return -1;
 
   const int kLatePacketThreshold = 5;
@@ -620,7 +620,7 @@ void AcmReceiver::NetworkStatistics(ACMNetworkStatistics* acm_stat) {
 
   acm_stat->currentBufferSize = neteq_stat.current_buffer_size_ms;
   acm_stat->preferredBufferSize = neteq_stat.preferred_buffer_size_ms;
-  acm_stat->jitterPeaksFound = neteq_stat.jitter_peaks_found;
+  acm_stat->jitterPeaksFound = neteq_stat.jitter_peaks_found ? true : false;
   acm_stat->currentPacketLossRate = neteq_stat.packet_loss_rate;
   acm_stat->currentDiscardRate = neteq_stat.packet_discard_rate;
   acm_stat->currentExpandRate = neteq_stat.expand_rate;
@@ -745,7 +745,7 @@ bool AcmReceiver::GetSilence(int desired_sample_rate_hz, AudioFrame* frame) {
   int max_num_packets;
   int buffer_size_byte;
   int max_buffer_size_byte;
-  const float kBufferingThresholdScale = 0.9;
+  const float kBufferingThresholdScale = 0.9f;
   neteq_->PacketBufferStatistics(&num_packets, &max_num_packets,
                                  &buffer_size_byte, &max_buffer_size_byte);
   if (num_packets > max_num_packets * kBufferingThresholdScale ||
