@@ -80,7 +80,7 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
                                  bool overuse_detection,
                                  webrtc::VideoEngine* video_engine,
                                  const VideoSendStream::Config& config)
-    : transport_(transport), config_(config), external_codec_(NULL) {
+    : transport_adapter_(transport), config_(config), external_codec_(NULL) {
 
   if (config_.codec.numberOfSimulcastStreams > 0) {
     assert(config_.rtp.ssrcs.size() == config_.codec.numberOfSimulcastStreams);
@@ -146,7 +146,7 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
   network_ = ViENetwork::GetInterface(video_engine);
   assert(network_ != NULL);
 
-  network_->RegisterSendTransport(channel_, *this);
+  network_->RegisterSendTransport(channel_, transport_adapter_);
 
   if (config.encoder) {
     external_codec_ = ViEExternalCodec::GetInterface(video_engine);
@@ -248,26 +248,6 @@ bool VideoSendStream::SetTargetBitrate(
 
 void VideoSendStream::GetSendCodec(VideoCodec* send_codec) {
   *send_codec = config_.codec;
-}
-
-int VideoSendStream::SendPacket(int /*channel*/,
-                                const void* packet,
-                                int length) {
-  // TODO(pbos): Lock these methods and the destructor so it can't be processing
-  //             a packet when the destructor has been called.
-  assert(length >= 0);
-  bool success = transport_->SendRTP(static_cast<const uint8_t*>(packet),
-                                     static_cast<size_t>(length));
-  return success ? length : -1;
-}
-
-int VideoSendStream::SendRTCPPacket(int /*channel*/,
-                                    const void* packet,
-                                    int length) {
-  assert(length >= 0);
-  bool success = transport_->SendRTCP(static_cast<const uint8_t*>(packet),
-                                      static_cast<size_t>(length));
-  return success ? length : -1;
 }
 
 bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {

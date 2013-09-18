@@ -117,6 +117,8 @@
         # New VideoEngine API
         'internal/call.cc',
         'internal/call.h',
+        'internal/transport_adapter.cc',
+        'internal/transport_adapter.h',
         'internal/video_receive_stream.cc',
         'internal/video_receive_stream.h',
         'internal/video_send_stream.cc',

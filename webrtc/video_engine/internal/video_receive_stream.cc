@@ -30,7 +30,7 @@ namespace internal {
 VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
                                        const VideoReceiveStream::Config& config,
                                        newapi::Transport* transport)
-    : transport_(transport), config_(config), channel_(-1) {
+    : transport_adapter_(transport), config_(config), channel_(-1) {
   video_engine_base_ = ViEBase::GetInterface(video_engine);
   // TODO(mflodman): Use the other CreateChannel method.
   video_engine_base_->CreateChannel(channel_);
@@ -48,7 +48,7 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
   network_ = ViENetwork::GetInterface(video_engine);
   assert(network_ != NULL);
 
-  network_->RegisterSendTransport(channel_, *this);
+  network_->RegisterSendTransport(channel_, transport_adapter_);
 
   codec_ = ViECodec::GetInterface(video_engine);
 
@@ -177,22 +177,5 @@ int VideoReceiveStream::DeliverFrame(uint8_t* frame,
 
 bool VideoReceiveStream::IsTextureSupported() { return false; }
 
-int VideoReceiveStream::SendPacket(int /*channel*/,
-                                   const void* packet,
-                                   int length) {
-  assert(length >= 0);
-  bool success = transport_->SendRTP(static_cast<const uint8_t*>(packet),
-                                     static_cast<size_t>(length));
-  return success ? 0 : -1;
-}
-
-int VideoReceiveStream::SendRTCPPacket(int /*channel*/,
-                                       const void* packet,
-                                       int length) {
-  assert(length >= 0);
-  bool success = transport_->SendRTCP(static_cast<const uint8_t*>(packet),
-                                      static_cast<size_t>(length));
-  return success ? 0 : -1;
-}
 }  // internal
 }  // webrtc

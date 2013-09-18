@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/video_engine/internal/transport_adapter.h"
 #include "webrtc/video_engine/new_include/video_receive_stream.h"
 #include "webrtc/video_engine/new_include/video_send_stream.h"
 
@@ -33,8 +34,7 @@ namespace internal {
 class ResolutionAdaptor;
 
 class VideoSendStream : public webrtc::VideoSendStream,
-                        public VideoSendStreamInput,
-                        public webrtc::Transport {
+                        public VideoSendStreamInput {
  public:
   VideoSendStream(newapi::Transport* transport,
                   bool overuse_detection,
@@ -58,17 +58,11 @@ class VideoSendStream : public webrtc::VideoSendStream,
 
   virtual void GetSendCodec(VideoCodec* send_codec) OVERRIDE;
 
-  virtual int SendPacket(int /*channel*/, const void* packet, int length)
-      OVERRIDE;
-
-  virtual int SendRTCPPacket(int /*channel*/, const void* packet, int length)
-      OVERRIDE;
-
  public:
   bool DeliverRtcp(const uint8_t* packet, size_t length);
 
  private:
-  newapi::Transport* transport_;
+  TransportAdapter transport_adapter_;
   VideoSendStream::Config config_;
 
   ViEBase* video_engine_base_;

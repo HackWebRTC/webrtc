@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef WEBRTC_VIDEO_ENGINE_CALL_IMPL_H_
-#define WEBRTC_VIDEO_ENGINE_CALL_IMPL_H_
+#ifndef WEBRTC_VIDEO_ENGINE_INTERNAL_CALL_H_
+#define WEBRTC_VIDEO_ENGINE_INTERNAL_CALL_H_
 
 #include <map>
 #include <vector>
