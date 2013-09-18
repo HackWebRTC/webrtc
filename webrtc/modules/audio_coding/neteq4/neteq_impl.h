@@ -27,6 +27,7 @@
 namespace webrtc {
 
 // Forward declarations.
+class Accelerate;
 class BackgroundNoise;
 class BufferLevelFilter;
 class ComfortNoise;
@@ -38,9 +39,12 @@ class DelayPeakDetector;
 class DtmfBuffer;
 class DtmfToneGenerator;
 class Expand;
+class Merge;
+class Normal;
 class PacketBuffer;
 class PayloadSplitter;
 class PostDecodeVad;
+class PreemptiveExpand;
 class RandomVector;
 class SyncBuffer;
 class TimestampScaler;
@@ -299,6 +303,10 @@ class NetEqImpl : public webrtc::NetEq {
   AudioMultiVector<int16_t>* algorithm_buffer_;
   SyncBuffer* sync_buffer_;
   Expand* expand_;
+  scoped_ptr<Normal> normal_;
+  scoped_ptr<Merge> merge_;
+  scoped_ptr<Accelerate> accelerate_;
+  scoped_ptr<PreemptiveExpand> preemptive_expand_;
   RandomVector random_vector_;
   ComfortNoise* comfort_noise_;
   Rtcp rtcp_;

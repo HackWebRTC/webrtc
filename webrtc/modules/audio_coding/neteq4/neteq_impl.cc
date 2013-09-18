@@ -73,6 +73,10 @@ NetEqImpl::NetEqImpl(int fs,
       algorithm_buffer_(NULL),
       sync_buffer_(NULL),
       expand_(NULL),
+      normal_(NULL),
+      merge_(NULL),
+      accelerate_(NULL),
+      preemptive_expand_(NULL),
       comfort_noise_(NULL),
       last_mode_(kModeNormal),
       mute_factor_array_(NULL),
@@ -1216,13 +1220,10 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
 
 void NetEqImpl::DoNormal(const int16_t* decoded_buffer, size_t decoded_length,
                          AudioDecoder::SpeechType speech_type, bool play_dtmf) {
-  assert(decoder_database_.get());
-  assert(background_noise_);
-  assert(expand_);
-  Normal normal(fs_hz_, decoder_database_.get(), *background_noise_, expand_);
+  assert(normal_.get());
   assert(mute_factor_array_.get());
-  normal.Process(decoded_buffer, decoded_length, last_mode_,
-                 mute_factor_array_.get(), algorithm_buffer_);
+  normal_->Process(decoded_buffer, decoded_length, last_mode_,
+                   mute_factor_array_.get(), algorithm_buffer_);
   if (decoded_length != 0) {
     last_mode_ = kModeNormal;
   }
@@ -1242,10 +1243,10 @@ void NetEqImpl::DoNormal(const int16_t* decoded_buffer, size_t decoded_length,
 
 void NetEqImpl::DoMerge(int16_t* decoded_buffer, size_t decoded_length,
                         AudioDecoder::SpeechType speech_type, bool play_dtmf) {
-  Merge merge(fs_hz_, algorithm_buffer_->Channels(), expand_, sync_buffer_);
   assert(mute_factor_array_.get());
-  int new_length = merge.Process(decoded_buffer, decoded_length,
-                                 mute_factor_array_.get(), algorithm_buffer_);
+  assert(merge_.get());
+  int new_length = merge_->Process(decoded_buffer, decoded_length,
+                                   mute_factor_array_.get(), algorithm_buffer_);
 
   // Update in-call and post-call statistics.
   if (expand_->MuteFactor(0) == 0) {
@@ -1318,11 +1319,10 @@ int NetEqImpl::DoAccelerate(int16_t* decoded_buffer, size_t decoded_length,
   }
 
   int16_t samples_removed;
-  Accelerate accelerate(fs_hz_, num_channels, *background_noise_);
-  Accelerate::ReturnCodes return_code = accelerate.Process(decoded_buffer,
-                                                           decoded_length,
-                                                           algorithm_buffer_,
-                                                           &samples_removed);
+  Accelerate::ReturnCodes return_code = accelerate_->Process(decoded_buffer,
+                                                             decoded_length,
+                                                             algorithm_buffer_,
+                                                             &samples_removed);
   stats_.AcceleratedSamples(samples_removed);
   switch (return_code) {
     case Accelerate::kSuccess:
@@ -1399,8 +1399,7 @@ int NetEqImpl::DoPreemptiveExpand(int16_t* decoded_buffer,
   }
 
   int16_t samples_added;
-  PreemptiveExpand preemptive_expand(fs_hz_, num_channels, *background_noise_);
-  PreemptiveExpand::ReturnCodes return_code = preemptive_expand.Process(
+  PreemptiveExpand::ReturnCodes return_code = preemptive_expand_->Process(
       decoded_buffer, decoded_length, old_borrowed_samples_per_channel,
       algorithm_buffer_, &samples_added);
   stats_.PreemptiveExpandedSamples(samples_added);
@@ -1506,10 +1505,9 @@ void NetEqImpl::DoCodecInternalCng() {
     AudioDecoder::SpeechType speech_type;
     length = decoder->Decode(dummy_payload, 0, decoded_buffer, &speech_type);
   }
-  Normal normal(fs_hz_, decoder_database_.get(), *background_noise_, expand_);
   assert(mute_factor_array_.get());
-  normal.Process(decoded_buffer, length, last_mode_, mute_factor_array_.get(),
-                 algorithm_buffer_);
+  normal_->Process(decoded_buffer, length, last_mode_, mute_factor_array_.get(),
+                   algorithm_buffer_);
   last_mode_ = kModeCodecInternalCng;
   expand_->Reset();
 }
@@ -1787,6 +1785,13 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   // Move index so that we create a small set of future samples (all 0).
   sync_buffer_->set_next_index(sync_buffer_->next_index() -
                                expand_->overlap_length());
+
+  normal_.reset(new Normal(fs_hz, decoder_database_.get(), *background_noise_,
+                           expand_));
+  merge_.reset(new Merge(fs_hz, channels, expand_, sync_buffer_));
+  accelerate_.reset(new Accelerate(fs_hz, channels, *background_noise_));
+  preemptive_expand_.reset(new PreemptiveExpand(fs_hz, channels,
+                                                *background_noise_));
 
   // Delete ComfortNoise object and create a new one.
   if (comfort_noise_) {
