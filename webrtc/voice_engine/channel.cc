@@ -53,11 +53,10 @@ Channel::SendData(FrameType frameType,
 
     if (_includeAudioLevelIndication)
     {
-        assert(_rtpAudioProc.get() != NULL);
         // Store current audio level in the RTP/RTCP module.
         // The level will be used in combination with voice-activity state
         // (frameType) to add an RTP header extension
-        _rtpRtcpModule->SetAudioLevel(_rtpAudioProc->level_estimator()->RMS());
+        _rtpRtcpModule->SetAudioLevel(rtp_audioproc_->level_estimator()->RMS());
     }
 
     // Push data from ACM to RTP/RTCP-module to deliver audio frame for
@@ -960,8 +959,8 @@ Channel::Channel(int32_t channelId,
     _callbackCritSectPtr(NULL),
     _transportPtr(NULL),
     _encryptionPtr(NULL),
-    _rtpAudioProc(NULL),
-    _rxAudioProcessingModulePtr(NULL),
+    rtp_audioproc_(NULL),
+    rx_audioproc_(AudioProcessing::Create(VoEModuleId(instanceId, channelId))),
     _rxVadObserverPtr(NULL),
     _oldVadDecision(-1),
     _sendFrameType(0),
@@ -1025,10 +1024,6 @@ Channel::Channel(int32_t channelId,
     configuration.receive_statistics = rtp_receive_statistics_.get();
 
     _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
-
-    // Create far end AudioProcessing Module
-    _rxAudioProcessingModulePtr = AudioProcessing::Create(
-        VoEModuleId(instanceId, channelId));
 }
 
 Channel::~Channel()
@@ -1100,11 +1095,6 @@ Channel::~Channel()
 
     // Destroy modules
     AudioCodingModule::Destroy(&_audioCodingModule);
-    if (_rxAudioProcessingModulePtr != NULL)
-    {
-        AudioProcessing::Destroy(_rxAudioProcessingModulePtr); // far end APM
-        _rxAudioProcessingModulePtr = NULL;
-    }
 
     // End of modules shutdown
 
@@ -1277,19 +1267,8 @@ Channel::Init()
 #endif
     }
 
-    // Initialize the far end AP module
-    // Using 8 kHz as initial Fs, the same as in transmission. Might be
-    // changed at the first receiving audio.
-    if (_rxAudioProcessingModulePtr == NULL)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_NO_MEMORY, kTraceCritical,
-            "Channel::Init() failed to create the far-end AudioProcessing"
-            " module");
-        return -1;
-    }
 
-    if (_rxAudioProcessingModulePtr->set_sample_rate_hz(8000))
+    if (rx_audioproc_->set_sample_rate_hz(8000))
     {
         _engineStatisticsPtr->SetLastError(
             VE_APM_ERROR, kTraceWarning,
@@ -1297,14 +1276,14 @@ Channel::Init()
             " far-end AP module");
     }
 
-    if (_rxAudioProcessingModulePtr->set_num_channels(1, 1) != 0)
+    if (rx_audioproc_->set_num_channels(1, 1) != 0)
     {
         _engineStatisticsPtr->SetLastError(
             VE_SOUNDCARD_ERROR, kTraceWarning,
             "Init() failed to set channels for the primary audio stream");
     }
 
-    if (_rxAudioProcessingModulePtr->high_pass_filter()->Enable(
+    if (rx_audioproc_->high_pass_filter()->Enable(
         WEBRTC_VOICE_ENGINE_RX_HP_DEFAULT_STATE) != 0)
     {
         _engineStatisticsPtr->SetLastError(
@@ -1313,7 +1292,7 @@ Channel::Init()
             " far-end AP module");
     }
 
-    if (_rxAudioProcessingModulePtr->noise_suppression()->set_level(
+    if (rx_audioproc_->noise_suppression()->set_level(
         (NoiseSuppression::Level)WEBRTC_VOICE_ENGINE_RX_NS_DEFAULT_MODE) != 0)
     {
         _engineStatisticsPtr->SetLastError(
@@ -1321,7 +1300,7 @@ Channel::Init()
             "Init() failed to set noise reduction level for far-end"
             " AP module");
     }
-    if (_rxAudioProcessingModulePtr->noise_suppression()->Enable(
+    if (rx_audioproc_->noise_suppression()->Enable(
         WEBRTC_VOICE_ENGINE_RX_NS_DEFAULT_STATE) != 0)
     {
         _engineStatisticsPtr->SetLastError(
@@ -1330,14 +1309,14 @@ Channel::Init()
             " AP module");
     }
 
-    if (_rxAudioProcessingModulePtr->gain_control()->set_mode(
+    if (rx_audioproc_->gain_control()->set_mode(
         (GainControl::Mode)WEBRTC_VOICE_ENGINE_RX_AGC_DEFAULT_MODE) != 0)
     {
         _engineStatisticsPtr->SetLastError(
             VE_APM_ERROR, kTraceWarning,
             "Init() failed to set AGC mode for far-end AP module");
     }
-    if (_rxAudioProcessingModulePtr->gain_control()->Enable(
+    if (rx_audioproc_->gain_control()->Enable(
         WEBRTC_VOICE_ENGINE_RX_AGC_DEFAULT_STATE) != 0)
     {
         _engineStatisticsPtr->SetLastError(
@@ -3317,7 +3296,7 @@ Channel::SetRxAgcStatus(bool enable, AgcModes mode)
             agcMode = GainControl::kAdaptiveDigital;
             break;
         case kAgcUnchanged:
-            agcMode = _rxAudioProcessingModulePtr->gain_control()->mode();
+            agcMode = rx_audioproc_->gain_control()->mode();
             break;
         case kAgcFixedDigital:
             agcMode = GainControl::kFixedDigital;
@@ -3332,14 +3311,14 @@ Channel::SetRxAgcStatus(bool enable, AgcModes mode)
             return -1;
     }
 
-    if (_rxAudioProcessingModulePtr->gain_control()->set_mode(agcMode) != 0)
+    if (rx_audioproc_->gain_control()->set_mode(agcMode) != 0)
     {
         _engineStatisticsPtr->SetLastError(
             VE_APM_ERROR, kTraceError,
             "SetRxAgcStatus() failed to set Agc mode");
         return -1;
     }
-    if (_rxAudioProcessingModulePtr->gain_control()->Enable(enable) != 0)
+    if (rx_audioproc_->gain_control()->Enable(enable) != 0)
     {
         _engineStatisticsPtr->SetLastError(
             VE_APM_ERROR, kTraceError,
@@ -3359,9 +3338,9 @@ Channel::GetRxAgcStatus(bool& enabled, AgcModes& mode)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                      "Channel::GetRxAgcStatus(enable=?, mode=?)");
 
-    bool enable = _rxAudioProcessingModulePtr->gain_control()->is_enabled();
+    bool enable = rx_audioproc_->gain_control()->is_enabled();
     GainControl::Mode agcMode =
-        _rxAudioProcessingModulePtr->gain_control()->mode();
+        rx_audioproc_->gain_control()->mode();
 
     enabled = enable;
 
@@ -3389,7 +3368,7 @@ Channel::SetRxAgcConfig(AgcConfig config)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetRxAgcConfig()");
 
-    if (_rxAudioProcessingModulePtr->gain_control()->set_target_level_dbfs(
+    if (rx_audioproc_->gain_control()->set_target_level_dbfs(
         config.targetLeveldBOv) != 0)
     {
         _engineStatisticsPtr->SetLastError(
@@ -3398,7 +3377,7 @@ Channel::SetRxAgcConfig(AgcConfig config)
             "(or envelope) of the Agc");
         return -1;
     }
-    if (_rxAudioProcessingModulePtr->gain_control()->set_compression_gain_db(
+    if (rx_audioproc_->gain_control()->set_compression_gain_db(
         config.digitalCompressionGaindB) != 0)
     {
         _engineStatisticsPtr->SetLastError(
@@ -3407,7 +3386,7 @@ Channel::SetRxAgcConfig(AgcConfig config)
             " digital compression stage may apply");
         return -1;
     }
-    if (_rxAudioProcessingModulePtr->gain_control()->enable_limiter(
+    if (rx_audioproc_->gain_control()->enable_limiter(
         config.limiterEnable) != 0)
     {
         _engineStatisticsPtr->SetLastError(
@@ -3426,11 +3405,11 @@ Channel::GetRxAgcConfig(AgcConfig& config)
                  "Channel::GetRxAgcConfig(config=%?)");
 
     config.targetLeveldBOv =
-        _rxAudioProcessingModulePtr->gain_control()->target_level_dbfs();
+        rx_audioproc_->gain_control()->target_level_dbfs();
     config.digitalCompressionGaindB =
-        _rxAudioProcessingModulePtr->gain_control()->compression_gain_db();
+        rx_audioproc_->gain_control()->compression_gain_db();
     config.limiterEnable =
-        _rxAudioProcessingModulePtr->gain_control()->is_limiter_enabled();
+        rx_audioproc_->gain_control()->is_limiter_enabled();
 
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                VoEId(_instanceId,_channelId), "GetRxAgcConfig() => "
@@ -3464,7 +3443,7 @@ Channel::SetRxNsStatus(bool enable, NsModes mode)
                 WEBRTC_VOICE_ENGINE_RX_NS_DEFAULT_MODE;
             break;
         case kNsUnchanged:
-            nsLevel = _rxAudioProcessingModulePtr->noise_suppression()->level();
+            nsLevel = rx_audioproc_->noise_suppression()->level();
             break;
         case kNsConference:
             nsLevel = NoiseSuppression::kHigh;
@@ -3483,7 +3462,7 @@ Channel::SetRxNsStatus(bool enable, NsModes mode)
             break;
     }
 
-    if (_rxAudioProcessingModulePtr->noise_suppression()->set_level(nsLevel)
+    if (rx_audioproc_->noise_suppression()->set_level(nsLevel)
         != 0)
     {
         _engineStatisticsPtr->SetLastError(
@@ -3491,7 +3470,7 @@ Channel::SetRxNsStatus(bool enable, NsModes mode)
             "SetRxAgcStatus() failed to set Ns level");
         return -1;
     }
-    if (_rxAudioProcessingModulePtr->noise_suppression()->Enable(enable) != 0)
+    if (rx_audioproc_->noise_suppression()->Enable(enable) != 0)
     {
         _engineStatisticsPtr->SetLastError(
             VE_APM_ERROR, kTraceError,
@@ -3512,9 +3491,9 @@ Channel::GetRxNsStatus(bool& enabled, NsModes& mode)
                  "Channel::GetRxNsStatus(enable=?, mode=?)");
 
     bool enable =
-        _rxAudioProcessingModulePtr->noise_suppression()->is_enabled();
+        rx_audioproc_->noise_suppression()->is_enabled();
     NoiseSuppression::Level ncLevel =
-        _rxAudioProcessingModulePtr->noise_suppression()->level();
+        rx_audioproc_->noise_suppression()->level();
 
     enabled = enable;
 
@@ -3702,34 +3681,28 @@ Channel::GetRemoteCSRCs(unsigned int arrCSRC[15])
 int
 Channel::SetRTPAudioLevelIndicationStatus(bool enable, unsigned char ID)
 {
-    if (_rtpAudioProc.get() == NULL)
-    {
-        _rtpAudioProc.reset(AudioProcessing::Create(VoEModuleId(_instanceId,
-                                                                _channelId)));
-        if (_rtpAudioProc.get() == NULL)
-        {
-            _engineStatisticsPtr->SetLastError(VE_NO_MEMORY, kTraceCritical,
-                "Failed to create AudioProcessing");
-            return -1;
-        }
-    }
+  if (rtp_audioproc_.get() == NULL) {
+    rtp_audioproc_.reset(AudioProcessing::Create(VoEModuleId(_instanceId,
+                                                             _channelId)));
+  }
 
-    if (_rtpAudioProc->level_estimator()->Enable(enable) !=
-        AudioProcessing::kNoError)
-    {
-        _engineStatisticsPtr->SetLastError(VE_APM_ERROR, kTraceWarning,
-            "Failed to enable AudioProcessing::level_estimator()");
-    }
+  if (rtp_audioproc_->level_estimator()->Enable(enable) !=
+      AudioProcessing::kNoError) {
+    _engineStatisticsPtr->SetLastError(VE_APM_ERROR, kTraceError,
+        "Failed to enable AudioProcessing::level_estimator()");
+    return -1;
+  }
 
-    _includeAudioLevelIndication = enable;
-    if (enable) {
-      rtp_header_parser_->RegisterRtpHeaderExtension(kRtpExtensionAudioLevel,
-                                                     ID);
-    } else {
-      rtp_header_parser_->DeregisterRtpHeaderExtension(kRtpExtensionAudioLevel);
-    }
-    return _rtpRtcpModule->SetRTPAudioLevelIndicationStatus(enable, ID);
+  _includeAudioLevelIndication = enable;
+  if (enable) {
+    rtp_header_parser_->RegisterRtpHeaderExtension(kRtpExtensionAudioLevel,
+                                                   ID);
+  } else {
+    rtp_header_parser_->DeregisterRtpHeaderExtension(kRtpExtensionAudioLevel);
+  }
+  return _rtpRtcpModule->SetRTPAudioLevelIndicationStatus(enable, ID);
 }
+
 int
 Channel::GetRTPAudioLevelIndicationStatus(bool& enabled, unsigned char& ID)
 {
@@ -4506,36 +4479,27 @@ Channel::PrepareEncodeAndSend(int mixingFrequency)
 
     if (_includeAudioLevelIndication)
     {
-        assert(_rtpAudioProc.get() != NULL);
-
-        // Check if settings need to be updated.
-        if (_rtpAudioProc->sample_rate_hz() != _audioFrame.sample_rate_hz_)
+        if (rtp_audioproc_->set_sample_rate_hz(_audioFrame.sample_rate_hz_) !=
+            AudioProcessing::kNoError)
         {
-            if (_rtpAudioProc->set_sample_rate_hz(_audioFrame.sample_rate_hz_) !=
-                AudioProcessing::kNoError)
-            {
-                WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-                             VoEId(_instanceId, _channelId),
-                             "Error setting AudioProcessing sample rate");
-                return -1;
-            }
+            WEBRTC_TRACE(kTraceWarning, kTraceVoice,
+                         VoEId(_instanceId, _channelId),
+                         "Error setting AudioProcessing sample rate");
+            return -1;
         }
 
-        if (_rtpAudioProc->num_input_channels() != _audioFrame.num_channels_)
+        if (rtp_audioproc_->set_num_channels(_audioFrame.num_channels_,
+                                             _audioFrame.num_channels_) !=
+            AudioProcessing::kNoError)
         {
-            if (_rtpAudioProc->set_num_channels(_audioFrame.num_channels_,
-                                                _audioFrame.num_channels_)
-                != AudioProcessing::kNoError)
-            {
-                WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-                             VoEId(_instanceId, _channelId),
-                             "Error setting AudioProcessing channels");
-                return -1;
-            }
+            WEBRTC_TRACE(kTraceWarning, kTraceVoice,
+                         VoEId(_instanceId, _channelId),
+                         "Error setting AudioProcessing channels");
+            return -1;
         }
 
         // Performs level analysis only; does not affect the signal.
-        _rtpAudioProc->ProcessStream(&_audioFrame);
+        rtp_audioproc_->ProcessStream(&_audioFrame);
     }
 
     return 0;
@@ -5271,16 +5235,15 @@ Channel::RegisterReceiveCodecsToRTPModule()
 }
 
 int Channel::ApmProcessRx(AudioFrame& frame) {
-  AudioProcessing* audioproc = _rxAudioProcessingModulePtr;
   // Register the (possibly new) frame parameters.
-  if (audioproc->set_sample_rate_hz(frame.sample_rate_hz_) != 0) {
+  if (rx_audioproc_->set_sample_rate_hz(frame.sample_rate_hz_) != 0) {
     LOG_FERR1(LS_WARNING, set_sample_rate_hz, frame.sample_rate_hz_);
   }
-  if (audioproc->set_num_channels(frame.num_channels_,
-                                  frame.num_channels_) != 0) {
+  if (rx_audioproc_->set_num_channels(frame.num_channels_,
+                                      frame.num_channels_) != 0) {
     LOG_FERR1(LS_WARNING, set_num_channels, frame.num_channels_);
   }
-  if (audioproc->ProcessStream(&frame) != 0) {
+  if (rx_audioproc_->ProcessStream(&frame) != 0) {
     LOG_FERR0(LS_WARNING, ProcessStream);
   }
   return 0;

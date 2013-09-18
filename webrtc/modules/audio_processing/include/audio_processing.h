@@ -105,8 +105,7 @@ class VoiceDetection;
 // apm->Initialize();
 //
 // // Close the application...
-// AudioProcessing::Destroy(apm);
-// apm = NULL;
+// delete apm;
 //
 class AudioProcessing : public Module {
  public:
@@ -117,11 +116,6 @@ class AudioProcessing : public Module {
   // this would typically be one instance for every incoming stream.
   static AudioProcessing* Create(int id);
   virtual ~AudioProcessing() {}
-
-  // TODO(andrew): remove this method. We now allow users to delete instances
-  // directly, useful for scoped_ptr.
-  // Destroys a |apm| instance.
-  static void Destroy(AudioProcessing* apm);
 
   // Initializes internal states, while retaining all user settings. This
   // should be called before beginning to process a new audio stream. However,

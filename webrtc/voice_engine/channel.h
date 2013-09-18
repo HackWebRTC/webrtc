@@ -520,8 +520,8 @@ private:
     CriticalSectionWrapper* _callbackCritSectPtr; // owned by base
     Transport* _transportPtr; // WebRtc socket or external transport
     Encryption* _encryptionPtr; // WebRtc SRTP or external encryption
-    scoped_ptr<AudioProcessing> _rtpAudioProc;
-    AudioProcessing* _rxAudioProcessingModulePtr; // far end AudioProcessing
+    scoped_ptr<AudioProcessing> rtp_audioproc_;
+    scoped_ptr<AudioProcessing> rx_audioproc_; // far end AudioProcessing
     VoERxVadCallback* _rxVadObserverPtr;
     int32_t _oldVadDecision;
     int32_t _sendFrameType; // Send data is voice, 1-voice, 0-otherwise

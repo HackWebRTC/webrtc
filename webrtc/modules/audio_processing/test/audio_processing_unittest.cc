@@ -42,6 +42,7 @@ using webrtc::NoiseSuppression;
 using webrtc::EchoCancellation;
 using webrtc::EventWrapper;
 using webrtc::scoped_array;
+using webrtc::scoped_ptr;
 using webrtc::Trace;
 using webrtc::LevelEstimator;
 using webrtc::EchoCancellation;
@@ -244,9 +245,9 @@ class ApmTest : public ::testing::Test {
   const std::string output_path_;
   const std::string ref_path_;
   const std::string ref_filename_;
-  webrtc::AudioProcessing* apm_;
-  webrtc::AudioFrame* frame_;
-  webrtc::AudioFrame* revframe_;
+  scoped_ptr<webrtc::AudioProcessing> apm_;
+  AudioFrame* frame_;
+  AudioFrame* revframe_;
   FILE* far_file_;
   FILE* near_file_;
   FILE* out_file_;
@@ -261,7 +262,7 @@ ApmTest::ApmTest()
 #elif defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
       ref_filename_(ref_path_ + "output_data_float.pb"),
 #endif
-      apm_(NULL),
+      apm_(AudioProcessing::Create(0)),
       frame_(NULL),
       revframe_(NULL),
       far_file_(NULL),
@@ -269,8 +270,7 @@ ApmTest::ApmTest()
       out_file_(NULL) {}
 
 void ApmTest::SetUp() {
-  apm_ = AudioProcessing::Create(0);
-  ASSERT_TRUE(apm_ != NULL);
+  ASSERT_TRUE(apm_.get() != NULL);
 
   frame_ = new AudioFrame();
   revframe_ = new AudioFrame();
@@ -303,11 +303,6 @@ void ApmTest::TearDown() {
     ASSERT_EQ(0, fclose(out_file_));
   }
   out_file_ = NULL;
-
-  if (apm_ != NULL) {
-    AudioProcessing::Destroy(apm_);
-  }
-  apm_ = NULL;
 }
 
 std::string ApmTest::ResourceFilePath(std::string name, int sample_rate_hz) {
@@ -466,8 +461,8 @@ void ApmTest::ChangeTriggersInit(F f, AudioProcessing* ap, int initial_value,
   EXPECT_FALSE(FrameDataAreEqual(*frame_, frame_copy));
 
   // Test that a change in value triggers an init.
-  f(apm_, changed_value);
-  f(apm_, initial_value);
+  f(apm_.get(), changed_value);
+  f(apm_.get(), initial_value);
   ProcessWithDefaultStreamParameters(&frame_copy);
   EXPECT_TRUE(FrameDataAreEqual(*frame_, frame_copy));
 
@@ -492,7 +487,7 @@ void ApmTest::ChangeTriggersInit(F f, AudioProcessing* ap, int initial_value,
   apm_->Initialize();
   ProcessWithDefaultStreamParameters(&frame_copy);
   // Test that the same value does not trigger an init.
-  f(apm_, initial_value);
+  f(apm_.get(), initial_value);
   ProcessWithDefaultStreamParameters(&frame_copy);
   EXPECT_TRUE(FrameDataAreEqual(*frame_, frame_copy));
 }
@@ -737,15 +732,15 @@ void SetNumOutputChannels(AudioProcessing* ap, int value) {
 }
 
 TEST_F(ApmTest, SampleRateChangeTriggersInit) {
-  ChangeTriggersInit(SetSampleRate, apm_, 16000, 8000);
+  ChangeTriggersInit(SetSampleRate, apm_.get(), 16000, 8000);
 }
 
 TEST_F(ApmTest, ReverseChannelChangeTriggersInit) {
-  ChangeTriggersInit(SetNumReverseChannels, apm_, 2, 1);
+  ChangeTriggersInit(SetNumReverseChannels, apm_.get(), 2, 1);
 }
 
 TEST_F(ApmTest, ChannelChangeTriggersInit) {
-  ChangeTriggersInit(SetNumOutputChannels, apm_, 2, 1);
+  ChangeTriggersInit(SetNumOutputChannels, apm_.get(), 2, 1);
 }
 
 TEST_F(ApmTest, EchoCancellation) {

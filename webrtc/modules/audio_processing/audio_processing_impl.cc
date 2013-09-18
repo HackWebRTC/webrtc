@@ -47,10 +47,6 @@ AudioProcessing* AudioProcessing::Create(int id) {
   return apm;
 }
 
-void AudioProcessing::Destroy(AudioProcessing* apm) {
-  delete static_cast<AudioProcessingImpl*>(apm);
-}
-
 int32_t AudioProcessing::TimeUntilNextProcess() { return -1; }
 int32_t AudioProcessing::Process() { return -1; }
 
