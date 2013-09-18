@@ -116,17 +116,28 @@
         }],
         ['target_arch=="mipsel"', {
           'sources': [
+            'signal_processing/include/spl_inl_mips.h',
             'signal_processing/complex_bit_reverse_mips.c',
             'signal_processing/complex_fft_mips.c',
+            'signal_processing/cross_correlation_mips.c',
             'signal_processing/downsample_fast_mips.c',
             'signal_processing/filter_ar_fast_q12_mips.c',
             'signal_processing/min_max_operations_mips.c',
             'signal_processing/resample_by_2_mips.c',
+            'signal_processing/spl_sqrt_floor_mips.c',
           ],
           'sources!': [
             'signal_processing/complex_bit_reverse.c',
             'signal_processing/complex_fft.c',
             'signal_processing/filter_ar_fast_q12.c',
+            'signal_processing/spl_sqrt_floor.c',
+          ],
+          'conditions': [
+            ['mips_dsp_rev>0', {
+              'sources': [
+                'signal_processing/vector_scaling_operations_mips.c',
+              ],
+            }],
           ],
         }],
       ],  # conditions

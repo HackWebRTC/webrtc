@@ -82,18 +82,20 @@ static void InitPointersToMIPS() {
   WebRtcSpl_MaxValueW32 = WebRtcSpl_MaxValueW32_mips;
   WebRtcSpl_MinValueW16 = WebRtcSpl_MinValueW16_mips;
   WebRtcSpl_MinValueW32 = WebRtcSpl_MinValueW32_mips;
-  WebRtcSpl_CrossCorrelation = WebRtcSpl_CrossCorrelationC;
+  WebRtcSpl_CrossCorrelation = WebRtcSpl_CrossCorrelation_mips;
   WebRtcSpl_DownsampleFast = WebRtcSpl_DownsampleFast_mips;
-  WebRtcSpl_ScaleAndAddVectorsWithRound =
-      WebRtcSpl_ScaleAndAddVectorsWithRoundC;
   WebRtcSpl_CreateRealFFT = WebRtcSpl_CreateRealFFTC;
   WebRtcSpl_FreeRealFFT = WebRtcSpl_FreeRealFFTC;
   WebRtcSpl_RealForwardFFT = WebRtcSpl_RealForwardFFTC;
   WebRtcSpl_RealInverseFFT = WebRtcSpl_RealInverseFFTC;
 #if defined(MIPS_DSP_R1_LE)
   WebRtcSpl_MaxAbsValueW32 = WebRtcSpl_MaxAbsValueW32_mips;
+  WebRtcSpl_ScaleAndAddVectorsWithRound =
+      WebRtcSpl_ScaleAndAddVectorsWithRound_mips;
 #else
   WebRtcSpl_MaxAbsValueW32 = WebRtcSpl_MaxAbsValueW32C;
+  WebRtcSpl_ScaleAndAddVectorsWithRound =
+      WebRtcSpl_ScaleAndAddVectorsWithRoundC;
 #endif
 }
 #endif
