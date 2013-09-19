@@ -519,7 +519,8 @@ struct VoiceSenderInfo {
         echo_delay_median_ms(0),
         echo_delay_std_ms(0),
         echo_return_loss(0),
-        echo_return_loss_enhancement(0) {
+        echo_return_loss_enhancement(0),
+        typing_noise_detected(false) {
   }
 
   uint32 ssrc;
@@ -537,6 +538,7 @@ struct VoiceSenderInfo {
   int echo_delay_std_ms;
   int echo_return_loss;
   int echo_return_loss_enhancement;
+  bool typing_noise_detected;
 };
 
 struct VoiceReceiverInfo {

@@ -25,20 +25,21 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/app/webrtc/localvideosource.h"
-
 #include <string>
 #include <vector>
 
 #include "talk/app/webrtc/test/fakeconstraints.h"
+#include "talk/app/webrtc/remotevideocapturer.h"
+#include "talk/app/webrtc/videosource.h"
 #include "talk/base/gunit.h"
 #include "talk/media/base/fakemediaengine.h"
 #include "talk/media/base/fakevideorenderer.h"
 #include "talk/media/devices/fakedevicemanager.h"
+#include "talk/media/webrtc/webrtcvideoframe.h"
 #include "talk/session/media/channelmanager.h"
 
 using webrtc::FakeConstraints;
-using webrtc::LocalVideoSource;
+using webrtc::VideoSource;
 using webrtc::MediaConstraintsInterface;
 using webrtc::MediaSourceInterface;
 using webrtc::ObserverInterface;
@@ -123,9 +124,9 @@ class StateObserver : public ObserverInterface {
   talk_base::scoped_refptr<VideoSourceInterface> source_;
 };
 
-class LocalVideoSourceTest : public testing::Test {
+class VideoSourceTest : public testing::Test {
  protected:
-  LocalVideoSourceTest()
+  VideoSourceTest()
       : channel_manager_(new cricket::ChannelManager(
           new cricket::FakeMediaEngine(),
           new cricket::FakeDeviceManager(), talk_base::Thread::Current())) {
@@ -136,39 +137,39 @@ class LocalVideoSourceTest : public testing::Test {
     capturer_ = new TestVideoCapturer();
   }
 
-  void CreateLocalVideoSource() {
-    CreateLocalVideoSource(NULL);
+  void CreateVideoSource() {
+    CreateVideoSource(NULL);
   }
 
-  void CreateLocalVideoSource(
+  void CreateVideoSource(
       const webrtc::MediaConstraintsInterface* constraints) {
     // VideoSource take ownership of |capturer_|
-    local_source_ = LocalVideoSource::Create(channel_manager_.get(),
-                                             capturer_,
-                                             constraints);
+    source_ = VideoSource::Create(channel_manager_.get(),
+                                  capturer_,
+                                  constraints);
 
-    ASSERT_TRUE(local_source_.get() != NULL);
-    EXPECT_EQ(capturer_, local_source_->GetVideoCapturer());
+    ASSERT_TRUE(source_.get() != NULL);
+    EXPECT_EQ(capturer_, source_->GetVideoCapturer());
 
-    state_observer_.reset(new StateObserver(local_source_));
-    local_source_->RegisterObserver(state_observer_.get());
-    local_source_->AddSink(&renderer_);
+    state_observer_.reset(new StateObserver(source_));
+    source_->RegisterObserver(state_observer_.get());
+    source_->AddSink(&renderer_);
   }
 
-  TestVideoCapturer* capturer_;  // Raw pointer. Owned by local_source_.
+  TestVideoCapturer* capturer_;  // Raw pointer. Owned by source_.
   cricket::FakeVideoRenderer renderer_;
   talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
   talk_base::scoped_ptr<StateObserver> state_observer_;
-  talk_base::scoped_refptr<LocalVideoSource> local_source_;
+  talk_base::scoped_refptr<VideoSource> source_;
 };
 
 
-// Test that a LocalVideoSource transition to kLive state when the capture
+// Test that a VideoSource transition to kLive state when the capture
 // device have started and kEnded if it is stopped.
 // It also test that an output can receive video frames.
-TEST_F(LocalVideoSourceTest, StartStop) {
+TEST_F(VideoSourceTest, StartStop) {
   // Initialize without constraints.
-  CreateLocalVideoSource();
+  CreateVideoSource();
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
                  kMaxWaitMs);
 
@@ -180,10 +181,41 @@ TEST_F(LocalVideoSourceTest, StartStop) {
                  kMaxWaitMs);
 }
 
-// Test that a LocalVideoSource transition to kEnded if the capture device
+// Test start stop with a remote VideoSource - the video source that has a
+// RemoteVideoCapturer and takes video frames from FrameInput.
+TEST_F(VideoSourceTest, StartStopRemote) {
+  // Will use RemoteVideoCapturer.
+  delete capturer_;
+
+  source_ = VideoSource::Create(channel_manager_.get(),
+                                new webrtc::RemoteVideoCapturer(),
+                                NULL);
+
+  ASSERT_TRUE(source_.get() != NULL);
+  EXPECT_TRUE(NULL != source_->GetVideoCapturer());
+
+  state_observer_.reset(new StateObserver(source_));
+  source_->RegisterObserver(state_observer_.get());
+  source_->AddSink(&renderer_);
+
+  EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
+                 kMaxWaitMs);
+
+  cricket::VideoRenderer* frameinput = source_->FrameInput();
+  cricket::WebRtcVideoFrame test_frame;
+  frameinput->SetSize(1280, 720, 0);
+  frameinput->RenderFrame(&test_frame);
+  EXPECT_EQ(1, renderer_.num_rendered_frames());
+
+  source_->GetVideoCapturer()->Stop();
+  EXPECT_EQ_WAIT(MediaSourceInterface::kEnded, state_observer_->state(),
+                 kMaxWaitMs);
+}
+
+// Test that a VideoSource transition to kEnded if the capture device
 // fails.
-TEST_F(LocalVideoSourceTest, CameraFailed) {
-  CreateLocalVideoSource();
+TEST_F(VideoSourceTest, CameraFailed) {
+  CreateVideoSource();
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
                  kMaxWaitMs);
 
@@ -194,13 +226,13 @@ TEST_F(LocalVideoSourceTest, CameraFailed) {
 
 // Test that the capture output is CIF if we set max constraints to CIF.
 // and the capture device support CIF.
-TEST_F(LocalVideoSourceTest, MandatoryConstraintCif5Fps) {
+TEST_F(VideoSourceTest, MandatoryConstraintCif5Fps) {
   FakeConstraints constraints;
   constraints.AddMandatory(MediaConstraintsInterface::kMaxWidth, 352);
   constraints.AddMandatory(MediaConstraintsInterface::kMaxHeight, 288);
   constraints.AddMandatory(MediaConstraintsInterface::kMaxFrameRate, 5);
 
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
                  kMaxWaitMs);
   const cricket::VideoFormat* format = capturer_->GetCaptureFormat();
@@ -212,7 +244,7 @@ TEST_F(LocalVideoSourceTest, MandatoryConstraintCif5Fps) {
 
 // Test that the capture output is 720P if the camera support it and the
 // optional constraint is set to 720P.
-TEST_F(LocalVideoSourceTest, MandatoryMinVgaOptional720P) {
+TEST_F(VideoSourceTest, MandatoryMinVgaOptional720P) {
   FakeConstraints constraints;
   constraints.AddMandatory(MediaConstraintsInterface::kMinWidth, 640);
   constraints.AddMandatory(MediaConstraintsInterface::kMinHeight, 480);
@@ -220,7 +252,7 @@ TEST_F(LocalVideoSourceTest, MandatoryMinVgaOptional720P) {
   constraints.AddOptional(MediaConstraintsInterface::kMinAspectRatio,
                           1280.0 / 720);
 
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
                  kMaxWaitMs);
   const cricket::VideoFormat* format = capturer_->GetCaptureFormat();
@@ -233,7 +265,7 @@ TEST_F(LocalVideoSourceTest, MandatoryMinVgaOptional720P) {
 // Test that the capture output have aspect ratio 4:3 if a mandatory constraint
 // require it even if an optional constraint request a higher resolution
 // that don't have this aspect ratio.
-TEST_F(LocalVideoSourceTest, MandatoryAspectRatio4To3) {
+TEST_F(VideoSourceTest, MandatoryAspectRatio4To3) {
   FakeConstraints constraints;
   constraints.AddMandatory(MediaConstraintsInterface::kMinWidth, 640);
   constraints.AddMandatory(MediaConstraintsInterface::kMinHeight, 480);
@@ -241,7 +273,7 @@ TEST_F(LocalVideoSourceTest, MandatoryAspectRatio4To3) {
                            640.0 / 480);
   constraints.AddOptional(MediaConstraintsInterface::kMinWidth, 1280);
 
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
                  kMaxWaitMs);
   const cricket::VideoFormat* format = capturer_->GetCaptureFormat();
@@ -254,20 +286,20 @@ TEST_F(LocalVideoSourceTest, MandatoryAspectRatio4To3) {
 
 // Test that the source state transition to kEnded if the mandatory aspect ratio
 // is set higher than supported.
-TEST_F(LocalVideoSourceTest, MandatoryAspectRatioTooHigh) {
+TEST_F(VideoSourceTest, MandatoryAspectRatioTooHigh) {
   FakeConstraints constraints;
   constraints.AddMandatory(MediaConstraintsInterface::kMinAspectRatio, 2);
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
   EXPECT_EQ_WAIT(MediaSourceInterface::kEnded, state_observer_->state(),
                  kMaxWaitMs);
 }
 
 // Test that the source ignores an optional aspect ratio that is higher than
 // supported.
-TEST_F(LocalVideoSourceTest, OptionalAspectRatioTooHigh) {
+TEST_F(VideoSourceTest, OptionalAspectRatioTooHigh) {
   FakeConstraints constraints;
   constraints.AddOptional(MediaConstraintsInterface::kMinAspectRatio, 2);
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
                  kMaxWaitMs);
   const cricket::VideoFormat* format = capturer_->GetCaptureFormat();
@@ -278,10 +310,10 @@ TEST_F(LocalVideoSourceTest, OptionalAspectRatioTooHigh) {
 
 // Test that the source starts video with the default resolution if the
 // camera doesn't support capability enumeration and there are no constraints.
-TEST_F(LocalVideoSourceTest, NoCameraCapability) {
+TEST_F(VideoSourceTest, NoCameraCapability) {
   capturer_->TestWithoutCameraFormats();
 
-  CreateLocalVideoSource();
+  CreateVideoSource();
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
                  kMaxWaitMs);
   const cricket::VideoFormat* format = capturer_->GetCaptureFormat();
@@ -294,7 +326,7 @@ TEST_F(LocalVideoSourceTest, NoCameraCapability) {
 // Test that the source can start the video and get the requested aspect ratio
 // if the camera doesn't support capability enumeration and the aspect ratio is
 // set.
-TEST_F(LocalVideoSourceTest, NoCameraCapability16To9Ratio) {
+TEST_F(VideoSourceTest, NoCameraCapability16To9Ratio) {
   capturer_->TestWithoutCameraFormats();
 
   FakeConstraints constraints;
@@ -303,7 +335,7 @@ TEST_F(LocalVideoSourceTest, NoCameraCapability16To9Ratio) {
   constraints.AddMandatory(MediaConstraintsInterface::kMinAspectRatio,
                            requested_aspect_ratio);
 
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
                  kMaxWaitMs);
   const cricket::VideoFormat* format = capturer_->GetCaptureFormat();
@@ -313,26 +345,26 @@ TEST_F(LocalVideoSourceTest, NoCameraCapability16To9Ratio) {
 
 // Test that the source state transitions to kEnded if an unknown mandatory
 // constraint is found.
-TEST_F(LocalVideoSourceTest, InvalidMandatoryConstraint) {
+TEST_F(VideoSourceTest, InvalidMandatoryConstraint) {
   FakeConstraints constraints;
   constraints.AddMandatory("weird key", 640);
 
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
   EXPECT_EQ_WAIT(MediaSourceInterface::kEnded, state_observer_->state(),
                  kMaxWaitMs);
 }
 
 // Test that the source ignores an unknown optional constraint.
-TEST_F(LocalVideoSourceTest, InvalidOptionalConstraint) {
+TEST_F(VideoSourceTest, InvalidOptionalConstraint) {
   FakeConstraints constraints;
   constraints.AddOptional("weird key", 640);
 
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
                  kMaxWaitMs);
 }
 
-TEST_F(LocalVideoSourceTest, SetValidOptionValues) {
+TEST_F(VideoSourceTest, SetValidOptionValues) {
   FakeConstraints constraints;
   constraints.AddMandatory(MediaConstraintsInterface::kNoiseReduction, "false");
   constraints.AddMandatory(
@@ -342,90 +374,90 @@ TEST_F(LocalVideoSourceTest, SetValidOptionValues) {
   constraints.AddOptional(
       MediaConstraintsInterface::kCpuOveruseDetection, "true");
 
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
 
   bool value = true;
-  EXPECT_TRUE(local_source_->options()->video_noise_reduction.Get(&value));
+  EXPECT_TRUE(source_->options()->video_noise_reduction.Get(&value));
   EXPECT_FALSE(value);
-  EXPECT_TRUE(local_source_->options()->
+  EXPECT_TRUE(source_->options()->
       video_temporal_layer_screencast.Get(&value));
   EXPECT_FALSE(value);
-  EXPECT_TRUE(local_source_->options()->video_leaky_bucket.Get(&value));
+  EXPECT_TRUE(source_->options()->video_leaky_bucket.Get(&value));
   EXPECT_TRUE(value);
-  EXPECT_TRUE(local_source_->options()->
+  EXPECT_TRUE(source_->options()->
       cpu_overuse_detection.GetWithDefaultIfUnset(false));
 }
 
-TEST_F(LocalVideoSourceTest, OptionNotSet) {
+TEST_F(VideoSourceTest, OptionNotSet) {
   FakeConstraints constraints;
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
   bool value;
-  EXPECT_FALSE(local_source_->options()->video_noise_reduction.Get(&value));
-  EXPECT_FALSE(local_source_->options()->cpu_overuse_detection.Get(&value));
+  EXPECT_FALSE(source_->options()->video_noise_reduction.Get(&value));
+  EXPECT_FALSE(source_->options()->cpu_overuse_detection.Get(&value));
 }
 
-TEST_F(LocalVideoSourceTest, MandatoryOptionOverridesOptional) {
+TEST_F(VideoSourceTest, MandatoryOptionOverridesOptional) {
   FakeConstraints constraints;
   constraints.AddMandatory(
       MediaConstraintsInterface::kNoiseReduction, true);
   constraints.AddOptional(
       MediaConstraintsInterface::kNoiseReduction, false);
 
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
 
   bool value = false;
-  EXPECT_TRUE(local_source_->options()->video_noise_reduction.Get(&value));
+  EXPECT_TRUE(source_->options()->video_noise_reduction.Get(&value));
   EXPECT_TRUE(value);
-  EXPECT_FALSE(local_source_->options()->video_leaky_bucket.Get(&value));
+  EXPECT_FALSE(source_->options()->video_leaky_bucket.Get(&value));
 }
 
-TEST_F(LocalVideoSourceTest, InvalidOptionKeyOptional) {
+TEST_F(VideoSourceTest, InvalidOptionKeyOptional) {
   FakeConstraints constraints;
   constraints.AddOptional(
       MediaConstraintsInterface::kNoiseReduction, false);
   constraints.AddOptional("invalidKey", false);
 
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
 
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
       kMaxWaitMs);
   bool value = true;
-  EXPECT_TRUE(local_source_->options()->video_noise_reduction.Get(&value));
+  EXPECT_TRUE(source_->options()->video_noise_reduction.Get(&value));
   EXPECT_FALSE(value);
 }
 
-TEST_F(LocalVideoSourceTest, InvalidOptionKeyMandatory) {
+TEST_F(VideoSourceTest, InvalidOptionKeyMandatory) {
   FakeConstraints constraints;
   constraints.AddMandatory(
       MediaConstraintsInterface::kNoiseReduction, false);
   constraints.AddMandatory("invalidKey", false);
 
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
 
   EXPECT_EQ_WAIT(MediaSourceInterface::kEnded, state_observer_->state(),
       kMaxWaitMs);
   bool value;
-  EXPECT_FALSE(local_source_->options()->video_noise_reduction.Get(&value));
+  EXPECT_FALSE(source_->options()->video_noise_reduction.Get(&value));
 }
 
-TEST_F(LocalVideoSourceTest, InvalidOptionValueOptional) {
+TEST_F(VideoSourceTest, InvalidOptionValueOptional) {
   FakeConstraints constraints;
   constraints.AddOptional(
       MediaConstraintsInterface::kNoiseReduction, "true");
   constraints.AddOptional(
       MediaConstraintsInterface::kLeakyBucket, "not boolean");
 
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
 
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
       kMaxWaitMs);
   bool value = false;
-  EXPECT_TRUE(local_source_->options()->video_noise_reduction.Get(&value));
+  EXPECT_TRUE(source_->options()->video_noise_reduction.Get(&value));
   EXPECT_TRUE(value);
-  EXPECT_FALSE(local_source_->options()->video_leaky_bucket.Get(&value));
+  EXPECT_FALSE(source_->options()->video_leaky_bucket.Get(&value));
 }
 
-TEST_F(LocalVideoSourceTest, InvalidOptionValueMandatory) {
+TEST_F(VideoSourceTest, InvalidOptionValueMandatory) {
   FakeConstraints constraints;
   // Optional constraints should be ignored if the mandatory constraints fail.
   constraints.AddOptional(
@@ -434,15 +466,15 @@ TEST_F(LocalVideoSourceTest, InvalidOptionValueMandatory) {
   constraints.AddMandatory(
       MediaConstraintsInterface::kLeakyBucket, "True");
 
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
 
   EXPECT_EQ_WAIT(MediaSourceInterface::kEnded, state_observer_->state(),
       kMaxWaitMs);
   bool value;
-  EXPECT_FALSE(local_source_->options()->video_noise_reduction.Get(&value));
+  EXPECT_FALSE(source_->options()->video_noise_reduction.Get(&value));
 }
 
-TEST_F(LocalVideoSourceTest, MixedOptionsAndConstraints) {
+TEST_F(VideoSourceTest, MixedOptionsAndConstraints) {
   FakeConstraints constraints;
   constraints.AddMandatory(MediaConstraintsInterface::kMaxWidth, 352);
   constraints.AddMandatory(MediaConstraintsInterface::kMaxHeight, 288);
@@ -453,7 +485,7 @@ TEST_F(LocalVideoSourceTest, MixedOptionsAndConstraints) {
   constraints.AddOptional(
       MediaConstraintsInterface::kNoiseReduction, true);
 
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
                  kMaxWaitMs);
   const cricket::VideoFormat* format = capturer_->GetCaptureFormat();
@@ -463,18 +495,18 @@ TEST_F(LocalVideoSourceTest, MixedOptionsAndConstraints) {
   EXPECT_EQ(5, format->framerate());
 
   bool value = true;
-  EXPECT_TRUE(local_source_->options()->video_noise_reduction.Get(&value));
+  EXPECT_TRUE(source_->options()->video_noise_reduction.Get(&value));
   EXPECT_FALSE(value);
-  EXPECT_FALSE(local_source_->options()->video_leaky_bucket.Get(&value));
+  EXPECT_FALSE(source_->options()->video_leaky_bucket.Get(&value));
 }
 
 // Tests that the source starts video with the default resolution for
 // screencast if no constraint is set.
-TEST_F(LocalVideoSourceTest, ScreencastResolutionNoConstraint) {
+TEST_F(VideoSourceTest, ScreencastResolutionNoConstraint) {
   capturer_->TestWithoutCameraFormats();
   capturer_->SetScreencast(true);
 
-  CreateLocalVideoSource();
+  CreateVideoSource();
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
                  kMaxWaitMs);
   const cricket::VideoFormat* format = capturer_->GetCaptureFormat();
@@ -486,7 +518,7 @@ TEST_F(LocalVideoSourceTest, ScreencastResolutionNoConstraint) {
 
 // Tests that the source starts video with the max width and height set by
 // constraints for screencast.
-TEST_F(LocalVideoSourceTest, ScreencastResolutionWithConstraint) {
+TEST_F(VideoSourceTest, ScreencastResolutionWithConstraint) {
   FakeConstraints constraints;
   constraints.AddMandatory(MediaConstraintsInterface::kMaxWidth, 480);
   constraints.AddMandatory(MediaConstraintsInterface::kMaxHeight, 270);
@@ -494,7 +526,7 @@ TEST_F(LocalVideoSourceTest, ScreencastResolutionWithConstraint) {
   capturer_->TestWithoutCameraFormats();
   capturer_->SetScreencast(true);
 
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
                  kMaxWaitMs);
   const cricket::VideoFormat* format = capturer_->GetCaptureFormat();
@@ -504,21 +536,21 @@ TEST_F(LocalVideoSourceTest, ScreencastResolutionWithConstraint) {
   EXPECT_EQ(30, format->framerate());
 }
 
-TEST_F(LocalVideoSourceTest, MandatorySubOneFpsConstraints) {
+TEST_F(VideoSourceTest, MandatorySubOneFpsConstraints) {
   FakeConstraints constraints;
   constraints.AddMandatory(MediaConstraintsInterface::kMaxFrameRate, 0.5);
 
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
   EXPECT_EQ_WAIT(MediaSourceInterface::kEnded, state_observer_->state(),
                  kMaxWaitMs);
   ASSERT_TRUE(capturer_->GetCaptureFormat() == NULL);
 }
 
-TEST_F(LocalVideoSourceTest, OptionalSubOneFpsConstraints) {
+TEST_F(VideoSourceTest, OptionalSubOneFpsConstraints) {
   FakeConstraints constraints;
   constraints.AddOptional(MediaConstraintsInterface::kMaxFrameRate, 0.5);
 
-  CreateLocalVideoSource(&constraints);
+  CreateVideoSource(&constraints);
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
                  kMaxWaitMs);
   const cricket::VideoFormat* format = capturer_->GetCaptureFormat();

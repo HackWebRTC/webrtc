@@ -28,7 +28,7 @@
 #include "talk/app/webrtc/mediastreamhandler.h"
 
 #include "talk/app/webrtc/localaudiosource.h"
-#include "talk/app/webrtc/localvideosource.h"
+#include "talk/app/webrtc/videosource.h"
 #include "talk/app/webrtc/videosourceinterface.h"
 
 namespace webrtc {
@@ -154,6 +154,8 @@ RemoteVideoTrackHandler::RemoteVideoTrackHandler(
       remote_video_track_(track),
       provider_(provider) {
   OnEnabledChanged();
+  provider_->SetVideoPlayout(ssrc, true,
+                             remote_video_track_->GetSource()->FrameInput());
 }
 
 RemoteVideoTrackHandler::~RemoteVideoTrackHandler() {
@@ -169,9 +171,6 @@ void RemoteVideoTrackHandler::OnStateChanged() {
 }
 
 void RemoteVideoTrackHandler::OnEnabledChanged() {
-  provider_->SetVideoPlayout(ssrc(),
-                             remote_video_track_->enabled(),
-                             remote_video_track_->FrameInput());
 }
 
 MediaStreamHandler::MediaStreamHandler(MediaStreamInterface* stream,

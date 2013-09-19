@@ -159,7 +159,8 @@ class MediaStreamSignalingObserver {
 class MediaStreamSignaling {
  public:
   MediaStreamSignaling(talk_base::Thread* signaling_thread,
-                       MediaStreamSignalingObserver* stream_observer);
+                       MediaStreamSignalingObserver* stream_observer,
+                       cricket::ChannelManager* channel_manager);
   virtual ~MediaStreamSignaling();
 
   // Notify all referenced objects that MediaStreamSignaling will be teared

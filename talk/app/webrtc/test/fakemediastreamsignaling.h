@@ -44,8 +44,9 @@ static const char kAudioTrack2[] = "audio2";
 class FakeMediaStreamSignaling : public webrtc::MediaStreamSignaling,
                                  public webrtc::MediaStreamSignalingObserver {
  public:
-  FakeMediaStreamSignaling() :
-    webrtc::MediaStreamSignaling(talk_base::Thread::Current(), this) {
+  explicit FakeMediaStreamSignaling(cricket::ChannelManager* channel_manager) :
+    webrtc::MediaStreamSignaling(talk_base::Thread::Current(), this,
+                                 channel_manager) {
   }
 
   void SendAudioVideoStream1() {

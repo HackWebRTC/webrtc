@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/app/webrtc/localvideosource.h"
+#include "talk/app/webrtc/videosource.h"
 
 #include <vector>
 
@@ -72,7 +72,7 @@ enum {
 
 // Default resolution. If no constraint is specified, this is the resolution we
 // will use.
-static const cricket::VideoFormatPod kDefaultResolution =
+static const cricket::VideoFormatPod kDefaultFormat =
     {640, 480, FPS_TO_INTERVAL(30), cricket::FOURCC_ANY};
 
 // List of formats used if the camera doesn't support capability enumeration.
@@ -276,7 +276,7 @@ const cricket::VideoFormat& GetBestCaptureFormat(
     const std::vector<cricket::VideoFormat>& formats) {
   ASSERT(formats.size() > 0);
 
-  int default_area = kDefaultResolution.width * kDefaultResolution.height;
+  int default_area = kDefaultFormat.width * kDefaultFormat.height;
 
   std::vector<cricket::VideoFormat>::const_iterator it = formats.begin();
   std::vector<cricket::VideoFormat>::const_iterator best_it = formats.begin();
@@ -328,38 +328,72 @@ bool ExtractVideoOptions(const MediaConstraintsInterface* all_constraints,
   return all_valid;
 }
 
+class FrameInputWrapper : public cricket::VideoRenderer {
+ public:
+  explicit FrameInputWrapper(cricket::VideoCapturer* capturer)
+      : capturer_(capturer) {
+    ASSERT(capturer_ != NULL);
+  }
+
+  virtual ~FrameInputWrapper() {}
+
+  // VideoRenderer implementation.
+  virtual bool SetSize(int width, int height, int reserved) OVERRIDE {
+    return true;
+  }
+
+  virtual bool RenderFrame(const cricket::VideoFrame* frame) OVERRIDE {
+    if (!capturer_->IsRunning()) {
+      return true;
+    }
+
+    // This signal will be made on media engine render thread. The clients
+    // of this signal should have no assumptions on what thread this signal
+    // come from.
+    capturer_->SignalVideoFrame(capturer_, frame);
+    return true;
+  }
+
+ private:
+  cricket::VideoCapturer* capturer_;
+  int width_;
+  int height_;
+
+  DISALLOW_COPY_AND_ASSIGN(FrameInputWrapper);
+};
+
 }  // anonymous namespace
 
 namespace webrtc {
 
-talk_base::scoped_refptr<LocalVideoSource> LocalVideoSource::Create(
+talk_base::scoped_refptr<VideoSource> VideoSource::Create(
     cricket::ChannelManager* channel_manager,
     cricket::VideoCapturer* capturer,
     const webrtc::MediaConstraintsInterface* constraints) {
   ASSERT(channel_manager != NULL);
   ASSERT(capturer != NULL);
-  talk_base::scoped_refptr<LocalVideoSource> source(
-      new talk_base::RefCountedObject<LocalVideoSource>(channel_manager,
-                                                        capturer));
+  talk_base::scoped_refptr<VideoSource> source(
+      new talk_base::RefCountedObject<VideoSource>(channel_manager,
+                                                   capturer));
   source->Initialize(constraints);
   return source;
 }
 
-LocalVideoSource::LocalVideoSource(cricket::ChannelManager* channel_manager,
-                                   cricket::VideoCapturer* capturer)
+VideoSource::VideoSource(cricket::ChannelManager* channel_manager,
+                         cricket::VideoCapturer* capturer)
     : channel_manager_(channel_manager),
       video_capturer_(capturer),
       state_(kInitializing) {
   channel_manager_->SignalVideoCaptureStateChange.connect(
-      this, &LocalVideoSource::OnStateChange);
+      this, &VideoSource::OnStateChange);
 }
 
-LocalVideoSource::~LocalVideoSource() {
+VideoSource::~VideoSource() {
   channel_manager_->StopVideoCapture(video_capturer_.get(), format_);
   channel_manager_->SignalVideoCaptureStateChange.disconnect(this);
 }
 
-void LocalVideoSource::Initialize(
+void VideoSource::Initialize(
     const webrtc::MediaConstraintsInterface* constraints) {
 
   std::vector<cricket::VideoFormat> formats;
@@ -371,7 +405,7 @@ void LocalVideoSource::Initialize(
     // format from the constraints if any.
     // Note that this only affects tab capturing, not desktop capturing,
     // since desktop capturer does not respect the VideoFormat passed in.
-    formats.push_back(cricket::VideoFormat(kDefaultResolution));
+    formats.push_back(cricket::VideoFormat(kDefaultFormat));
   } else {
     // The VideoCapturer implementation doesn't support capability enumeration.
     // We need to guess what the camera support.
@@ -422,25 +456,34 @@ void LocalVideoSource::Initialize(
   // Initialize hasn't succeeded until a successful state change has occurred.
 }
 
-void LocalVideoSource::AddSink(cricket::VideoRenderer* output) {
+cricket::VideoRenderer* VideoSource::FrameInput() {
+  // Defer creation of frame_input_ until it's needed, e.g. the local video
+  // sources will never need it.
+  if (!frame_input_) {
+    frame_input_.reset(new FrameInputWrapper(video_capturer_.get()));
+  }
+  return frame_input_.get();
+}
+
+void VideoSource::AddSink(cricket::VideoRenderer* output) {
   channel_manager_->AddVideoRenderer(video_capturer_.get(), output);
 }
 
-void LocalVideoSource::RemoveSink(cricket::VideoRenderer* output) {
+void VideoSource::RemoveSink(cricket::VideoRenderer* output) {
   channel_manager_->RemoveVideoRenderer(video_capturer_.get(), output);
 }
 
 // OnStateChange listens to the ChannelManager::SignalVideoCaptureStateChange.
 // This signal is triggered for all video capturers. Not only the one we are
 // interested in.
-void LocalVideoSource::OnStateChange(cricket::VideoCapturer* capturer,
+void VideoSource::OnStateChange(cricket::VideoCapturer* capturer,
                                      cricket::CaptureState capture_state) {
   if (capturer == video_capturer_.get()) {
     SetState(GetReadyState(capture_state));
   }
 }
 
-void LocalVideoSource::SetState(SourceState new_state) {
+void VideoSource::SetState(SourceState new_state) {
   if (VERIFY(state_ != new_state)) {
     state_ = new_state;
     FireOnChanged();

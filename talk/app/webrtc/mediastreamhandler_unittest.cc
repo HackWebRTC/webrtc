@@ -30,9 +30,9 @@
 #include <string>
 
 #include "talk/app/webrtc/audiotrack.h"
-#include "talk/app/webrtc/localvideosource.h"
 #include "talk/app/webrtc/mediastream.h"
 #include "talk/app/webrtc/streamcollection.h"
+#include "talk/app/webrtc/videosource.h"
 #include "talk/app/webrtc/videotrack.h"
 #include "talk/base/gunit.h"
 #include "talk/media/base/fakevideocapturer.h"
@@ -86,6 +86,7 @@ class FakeVideoSource : public Notifier<VideoSourceInterface> {
   virtual void RemoveSink(cricket::VideoRenderer* output) {}
   virtual SourceState state() const { return state_; }
   virtual const cricket::VideoOptions* options() const { return &options_; }
+  virtual cricket::VideoRenderer* FrameInput() { return NULL; }
 
  protected:
   FakeVideoSource() : state_(kLive) {}
@@ -149,8 +150,8 @@ class MediaStreamHandlerTest : public testing::Test {
   }
 
   void AddRemoteVideoTrack() {
-    EXPECT_CALL(video_provider_, SetVideoPlayout(kVideoSsrc, true,
-                                                 video_track_->FrameInput()));
+    EXPECT_CALL(video_provider_, SetVideoPlayout(
+        kVideoSsrc, true, video_track_->GetSource()->FrameInput()));
     handlers_.AddRemoteVideoTrack(stream_, stream_->GetVideoTracks()[0],
                                   kVideoSsrc);
   }
@@ -283,11 +284,8 @@ TEST_F(MediaStreamHandlerTest, LocalVideoTrackDisable) {
 TEST_F(MediaStreamHandlerTest, RemoteVideoTrackDisable) {
   AddRemoteVideoTrack();
 
-  EXPECT_CALL(video_provider_, SetVideoPlayout(kVideoSsrc, false, _));
   video_track_->set_enabled(false);
 
-  EXPECT_CALL(video_provider_, SetVideoPlayout(kVideoSsrc, true,
-                                               video_track_->FrameInput()));
   video_track_->set_enabled(true);
 
   RemoveRemoteVideoTrack();

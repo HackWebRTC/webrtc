@@ -47,6 +47,7 @@ class VideoSourceInterface : public MediaSourceInterface {
   virtual void AddSink(cricket::VideoRenderer* output) = 0;
   virtual void RemoveSink(cricket::VideoRenderer* output) = 0;
   virtual const cricket::VideoOptions* options() const = 0;
+  virtual cricket::VideoRenderer* FrameInput() = 0;
 
  protected:
   virtual ~VideoSourceInterface() {}

@@ -33,6 +33,8 @@
 #include "talk/app/webrtc/mediastreamproxy.h"
 #include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "talk/app/webrtc/mediastreamtrackproxy.h"
+#include "talk/app/webrtc/remotevideocapturer.h"
+#include "talk/app/webrtc/videosource.h"
 #include "talk/app/webrtc/videotrack.h"
 #include "talk/base/bytebuffer.h"
 
@@ -132,8 +134,10 @@ static bool EvaluateNeedForBundle(const cricket::MediaSessionOptions& options) {
 // Factory class for creating remote MediaStreams and MediaStreamTracks.
 class RemoteMediaStreamFactory {
  public:
-  explicit RemoteMediaStreamFactory(talk_base::Thread* signaling_thread)
-      : signaling_thread_(signaling_thread) {
+  explicit RemoteMediaStreamFactory(talk_base::Thread* signaling_thread,
+                                    cricket::ChannelManager* channel_manager)
+      : signaling_thread_(signaling_thread),
+        channel_manager_(channel_manager) {
   }
 
   talk_base::scoped_refptr<MediaStreamInterface> CreateMediaStream(
@@ -144,21 +148,24 @@ class RemoteMediaStreamFactory {
 
   AudioTrackInterface* AddAudioTrack(webrtc::MediaStreamInterface* stream,
                                      const std::string& track_id) {
-    return AddTrack<AudioTrackInterface, AudioTrack, AudioTrackProxy>(stream,
-                                                                      track_id);
+    return AddTrack<AudioTrackInterface, AudioTrack, AudioTrackProxy>(
+        stream, track_id, static_cast<AudioSourceInterface*>(NULL));
   }
 
   VideoTrackInterface* AddVideoTrack(webrtc::MediaStreamInterface* stream,
                                      const std::string& track_id) {
-    return AddTrack<VideoTrackInterface, VideoTrack, VideoTrackProxy>(stream,
-                                                                      track_id);
+    return AddTrack<VideoTrackInterface, VideoTrack, VideoTrackProxy>(
+        stream, track_id, VideoSource::Create(channel_manager_,
+                                              new RemoteVideoCapturer(),
+                                              NULL).get());
   }
 
  private:
-  template <typename TI, typename T, typename TP>
-  TI* AddTrack(MediaStreamInterface* stream, const std::string& track_id) {
+  template <typename TI, typename T, typename TP, typename S>
+  TI* AddTrack(MediaStreamInterface* stream, const std::string& track_id,
+               S* source) {
     talk_base::scoped_refptr<TI> track(
-        TP::Create(signaling_thread_, T::Create(track_id, NULL)));
+        TP::Create(signaling_thread_, T::Create(track_id, source)));
     track->set_state(webrtc::MediaStreamTrackInterface::kLive);
     if (stream->AddTrack(track)) {
       return track;
@@ -167,17 +174,20 @@ class RemoteMediaStreamFactory {
   }
 
   talk_base::Thread* signaling_thread_;
+  cricket::ChannelManager* channel_manager_;
 };
 
 MediaStreamSignaling::MediaStreamSignaling(
     talk_base::Thread* signaling_thread,
-    MediaStreamSignalingObserver* stream_observer)
+    MediaStreamSignalingObserver* stream_observer,
+    cricket::ChannelManager* channel_manager)
     : signaling_thread_(signaling_thread),
       data_channel_factory_(NULL),
       stream_observer_(stream_observer),
       local_streams_(StreamCollection::Create()),
       remote_streams_(StreamCollection::Create()),
-      remote_stream_factory_(new RemoteMediaStreamFactory(signaling_thread)),
+      remote_stream_factory_(new RemoteMediaStreamFactory(signaling_thread,
+                                                          channel_manager)),
       last_allocated_sctp_id_(0) {
   options_.has_video = false;
   options_.has_audio = false;

@@ -151,6 +151,7 @@ class StatsReport {
   static const char kStatsValueNameChannelId[];
   static const char kStatsValueNameTrackId[];
   static const char kStatsValueNameSsrc[];
+  static const char kStatsValueNameTypingNoiseState[];
 };
 
 typedef std::vector<StatsReport> StatsReports;

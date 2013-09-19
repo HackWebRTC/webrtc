@@ -61,7 +61,6 @@ BEGIN_PROXY_MAP(VideoTrack)
 
   PROXY_METHOD1(void, AddRenderer, VideoRendererInterface*)
   PROXY_METHOD1(void, RemoveRenderer, VideoRendererInterface*)
-  PROXY_METHOD0(cricket::VideoRenderer*, FrameInput)
   PROXY_CONSTMETHOD0(VideoSourceInterface*, GetSource)
 
   PROXY_METHOD1(void, RegisterObserver, ObserverInterface*)

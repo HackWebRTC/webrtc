@@ -44,7 +44,6 @@ class VideoTrack : public MediaStreamTrack<VideoTrackInterface> {
 
   virtual void AddRenderer(VideoRendererInterface* renderer);
   virtual void RemoveRenderer(VideoRendererInterface* renderer);
-  virtual cricket::VideoRenderer* FrameInput();
   virtual VideoSourceInterface* GetSource() const {
     return video_source_.get();
   }

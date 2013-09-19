@@ -300,6 +300,8 @@ XmppPresenceImpl::connection_status() const {
       return XMPP_CONNECTION_STATUS_CONNECTING;
     else if (status == STR_PSTN_CONFERENCE_STATUS_CONNECTED)
       return XMPP_CONNECTION_STATUS_CONNECTED;
+    else if (status == STR_PSTN_CONFERENCE_STATUS_JOINING)
+            return XMPP_CONNECTION_STATUS_JOINING;
     else if (status == STR_PSTN_CONFERENCE_STATUS_HANGUP)
         return XMPP_CONNECTION_STATUS_HANGUP;
   }
@@ -349,8 +351,11 @@ XmppPresenceImpl::set_raw_xml(const XmlElement * xml) {
       xml->Name() != QN_PRESENCE)
     return XMPP_RETURN_BADARGUMENT;
 
-  raw_xml_.reset(new XmlElement(*xml));
+  const std::string& type = xml->Attr(QN_TYPE);
+  if (type != STR_EMPTY && type != "unavailable")
+    return XMPP_RETURN_BADARGUMENT;
 
+  raw_xml_.reset(new XmlElement(*xml));
   return XMPP_RETURN_OK;
 }
 

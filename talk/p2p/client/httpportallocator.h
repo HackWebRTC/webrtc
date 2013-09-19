@@ -32,7 +32,6 @@
 #include <string>
 #include <vector>
 
-#include "talk/base/gunit_prod.h"
 #include "talk/p2p/client/basicportallocator.h"
 
 class HttpPortAllocatorTest_TestSessionRequestUrl_Test;
@@ -129,6 +128,9 @@ class HttpPortAllocatorSessionBase : public BasicPortAllocatorSession {
   virtual void SendSessionRequest(const std::string& host, int port) = 0;
   virtual void ReceiveSessionResponse(const std::string& response);
 
+  // Made public for testing. Should be protected.
+  std::string GetSessionRequestUrl();
+
  protected:
   virtual void GetPortConfigurations();
   void TryCreateRelaySession();
@@ -137,11 +139,7 @@ class HttpPortAllocatorSessionBase : public BasicPortAllocatorSession {
         BasicPortAllocatorSession::allocator());
   }
 
-  std::string GetSessionRequestUrl();
-
  private:
-  FRIEND_TEST(::HttpPortAllocatorTest, TestSessionRequestUrl);
-
   std::vector<std::string> relay_hosts_;
   std::vector<talk_base::SocketAddress> stun_hosts_;
   std::string relay_token_;

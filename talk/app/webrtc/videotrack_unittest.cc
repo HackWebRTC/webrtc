@@ -28,37 +28,52 @@
 #include <string>
 
 #include "talk/app/webrtc/test/fakevideotrackrenderer.h"
+#include "talk/app/webrtc/remotevideocapturer.h"
+#include "talk/app/webrtc/videosource.h"
 #include "talk/app/webrtc/videotrack.h"
 #include "talk/base/gunit.h"
 #include "talk/base/scoped_ptr.h"
+#include "talk/media/base/fakemediaengine.h"
+#include "talk/media/devices/fakedevicemanager.h"
 #include "talk/media/webrtc/webrtcvideoframe.h"
+#include "talk/session/media/channelmanager.h"
 
 using webrtc::FakeVideoTrackRenderer;
+using webrtc::VideoSource;
 using webrtc::VideoTrack;
 using webrtc::VideoTrackInterface;
 
 // Test adding renderers to a video track and render to them by providing
-// VideoFrames to the track frame input.
+// frames to the source.
 TEST(VideoTrack, RenderVideo) {
   static const char kVideoTrackId[] = "track_id";
+
+  talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
+  channel_manager_.reset(
+    new cricket::ChannelManager(new cricket::FakeMediaEngine(),
+                                new cricket::FakeDeviceManager(),
+                                talk_base::Thread::Current()));
+  ASSERT_TRUE(channel_manager_->Init());
   talk_base::scoped_refptr<VideoTrackInterface> video_track(
-      VideoTrack::Create(kVideoTrackId, NULL));
+      VideoTrack::Create(kVideoTrackId,
+                         VideoSource::Create(channel_manager_.get(),
+                                             new webrtc::RemoteVideoCapturer(),
+                                             NULL)));
   // FakeVideoTrackRenderer register itself to |video_track|
   talk_base::scoped_ptr<FakeVideoTrackRenderer> renderer_1(
       new FakeVideoTrackRenderer(video_track.get()));
 
-  cricket::VideoRenderer* render_input = video_track->FrameInput();
+  cricket::VideoRenderer* render_input = video_track->GetSource()->FrameInput();
   ASSERT_FALSE(render_input == NULL);
-
-  render_input->SetSize(123, 123, 0);
-  EXPECT_EQ(1, renderer_1->num_set_sizes());
-  EXPECT_EQ(123, renderer_1->width());
-  EXPECT_EQ(123, renderer_1->height());
 
   cricket::WebRtcVideoFrame frame;
   frame.InitToBlack(123, 123, 1, 1, 0, 0);
   render_input->RenderFrame(&frame);
   EXPECT_EQ(1, renderer_1->num_rendered_frames());
+
+  EXPECT_EQ(1, renderer_1->num_set_sizes());
+  EXPECT_EQ(123, renderer_1->width());
+  EXPECT_EQ(123, renderer_1->height());
 
   // FakeVideoTrackRenderer register itself to |video_track|
   talk_base::scoped_ptr<FakeVideoTrackRenderer> renderer_2(

@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2011, Google Inc.
+ * Copyright 2013, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -24,51 +24,42 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "talk/app/webrtc/videotrack.h"
 
-#include <string>
+#ifndef TALK_APP_WEBRTC_REMOTEVIDEOCAPTURER_H_
+#define TALK_APP_WEBRTC_REMOTEVIDEOCAPTURER_H_
 
-#include "talk/media/webrtc/webrtcvideocapturer.h"
+#include <vector>
+
+#include "talk/app/webrtc/mediastreaminterface.h"
+#include "talk/media/base/videocapturer.h"
+#include "talk/media/base/videorenderer.h"
 
 namespace webrtc {
 
-static const char kVideoTrackKind[] = "video";
+// RemoteVideoCapturer implements a simple cricket::VideoCapturer which
+// gets decoded remote video frames from media channel.
+// It's used as the remote video source's VideoCapturer so that the remote video
+// can be used as a cricket::VideoCapturer and in that way a remote video stream
+// can implement the MediaStreamSourceInterface.
+class RemoteVideoCapturer : public cricket::VideoCapturer {
+ public:
+  RemoteVideoCapturer();
+  virtual ~RemoteVideoCapturer();
 
-VideoTrack::VideoTrack(const std::string& label,
-                       VideoSourceInterface* video_source)
-    : MediaStreamTrack<VideoTrackInterface>(label),
-      video_source_(video_source) {
-  if (video_source_)
-    video_source_->AddSink(&renderers_);
-}
+  // cricket::VideoCapturer implementation.
+  virtual cricket::CaptureState Start(
+      const cricket::VideoFormat& capture_format) OVERRIDE;
+  virtual void Stop() OVERRIDE;
+  virtual bool IsRunning() OVERRIDE;
+  virtual bool GetPreferredFourccs(std::vector<uint32>* fourccs) OVERRIDE;
+  virtual bool GetBestCaptureFormat(const cricket::VideoFormat& desired,
+                                    cricket::VideoFormat* best_format) OVERRIDE;
+  virtual bool IsScreencast() const OVERRIDE;
 
-VideoTrack::~VideoTrack() {
-  if (video_source_)
-    video_source_->RemoveSink(&renderers_);
-}
-
-std::string VideoTrack::kind() const {
-  return kVideoTrackKind;
-}
-
-void VideoTrack::AddRenderer(VideoRendererInterface* renderer) {
-  renderers_.AddRenderer(renderer);
-}
-
-void VideoTrack::RemoveRenderer(VideoRendererInterface* renderer) {
-  renderers_.RemoveRenderer(renderer);
-}
-
-bool VideoTrack::set_enabled(bool enable) {
-  renderers_.SetEnabled(enable);
-  return MediaStreamTrack<VideoTrackInterface>::set_enabled(enable);
-}
-
-talk_base::scoped_refptr<VideoTrack> VideoTrack::Create(
-    const std::string& id, VideoSourceInterface* source) {
-  talk_base::RefCountedObject<VideoTrack>* track =
-      new talk_base::RefCountedObject<VideoTrack>(id, source);
-  return track;
-}
+ private:
+  DISALLOW_COPY_AND_ASSIGN(RemoteVideoCapturer);
+};
 
 }  // namespace webrtc
+
+#endif  // TALK_APP_WEBRTC_REMOTEVIDEOCAPTURER_H_

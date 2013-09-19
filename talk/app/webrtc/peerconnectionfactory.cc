@@ -29,12 +29,12 @@
 
 #include "talk/app/webrtc/audiotrack.h"
 #include "talk/app/webrtc/localaudiosource.h"
-#include "talk/app/webrtc/localvideosource.h"
 #include "talk/app/webrtc/mediastreamproxy.h"
 #include "talk/app/webrtc/mediastreamtrackproxy.h"
 #include "talk/app/webrtc/peerconnection.h"
 #include "talk/app/webrtc/peerconnectionproxy.h"
 #include "talk/app/webrtc/portallocatorfactory.h"
+#include "talk/app/webrtc/videosource.h"
 #include "talk/app/webrtc/videosourceproxy.h"
 #include "talk/app/webrtc/videotrack.h"
 #include "talk/media/devices/dummydevicemanager.h"
@@ -269,9 +269,8 @@ talk_base::scoped_refptr<VideoSourceInterface>
 PeerConnectionFactory::CreateVideoSource_s(
     cricket::VideoCapturer* capturer,
     const MediaConstraintsInterface* constraints) {
-  talk_base::scoped_refptr<LocalVideoSource> source(
-      LocalVideoSource::Create(channel_manager_.get(), capturer,
-                               constraints));
+  talk_base::scoped_refptr<VideoSource> source(
+      VideoSource::Create(channel_manager_.get(), capturer, constraints));
   return VideoSourceProxy::Create(signaling_thread_, source);
 }
 

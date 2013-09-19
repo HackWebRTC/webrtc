@@ -363,6 +363,7 @@ const StaticQName QN_ATTR_STATUS = { STR_EMPTY, "status" };
 
 // Presence connection status
 const char STR_PSTN_CONFERENCE_STATUS_CONNECTING[] = "connecting";
+const char STR_PSTN_CONFERENCE_STATUS_JOINING[] = "joining";
 const char STR_PSTN_CONFERENCE_STATUS_CONNECTED[] = "connected";
 const char STR_PSTN_CONFERENCE_STATUS_HANGUP[] = "hangup";
 

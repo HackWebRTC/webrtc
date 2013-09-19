@@ -37,8 +37,11 @@
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/stringutils.h"
 #include "talk/base/thread.h"
+#include "talk/media/base/fakemediaengine.h"
+#include "talk/media/devices/fakedevicemanager.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/sessiondescription.h"
+#include "talk/session/media/channelmanager.h"
 
 static const char kStreams[][8] = {"stream1", "stream2"};
 static const char kAudioTracks[][32] = {"audiotrack0", "audiotrack1"};
@@ -285,13 +288,13 @@ class MockSignalingObserver : public webrtc::MediaStreamSignalingObserver {
   }
 
   virtual void OnAddRemoteVideoTrack(MediaStreamInterface* stream,
-                                    VideoTrackInterface* video_track,
-                                    uint32 ssrc) {
+                                     VideoTrackInterface* video_track,
+                                     uint32 ssrc) {
     AddTrack(&remote_video_tracks_, stream, video_track, ssrc);
   }
 
   virtual void OnRemoveRemoteAudioTrack(MediaStreamInterface* stream,
-                                       AudioTrackInterface* audio_track) {
+                                        AudioTrackInterface* audio_track) {
     RemoveTrack(&remote_audio_tracks_, stream, audio_track);
   }
 
@@ -392,8 +395,10 @@ class MockSignalingObserver : public webrtc::MediaStreamSignalingObserver {
 
 class MediaStreamSignalingForTest : public webrtc::MediaStreamSignaling {
  public:
-  explicit MediaStreamSignalingForTest(MockSignalingObserver* observer)
-      : webrtc::MediaStreamSignaling(talk_base::Thread::Current(), observer) {
+  MediaStreamSignalingForTest(MockSignalingObserver* observer,
+                              cricket::ChannelManager* channel_manager)
+      : webrtc::MediaStreamSignaling(talk_base::Thread::Current(), observer,
+                                     channel_manager) {
   };
 
   using webrtc::MediaStreamSignaling::GetOptionsForOffer;
@@ -406,7 +411,12 @@ class MediaStreamSignalingTest: public testing::Test {
  protected:
   virtual void SetUp() {
     observer_.reset(new MockSignalingObserver());
-    signaling_.reset(new MediaStreamSignalingForTest(observer_.get()));
+    channel_manager_.reset(
+        new cricket::ChannelManager(new cricket::FakeMediaEngine(),
+                                    new cricket::FakeDeviceManager(),
+                                    talk_base::Thread::Current()));
+    signaling_.reset(new MediaStreamSignalingForTest(observer_.get(),
+                                                     channel_manager_.get()));
   }
 
   // Create a collection of streams.
@@ -497,6 +507,9 @@ class MediaStreamSignalingTest: public testing::Test {
     ASSERT_TRUE(stream->AddTrack(video_track));
   }
 
+  // ChannelManager is used by VideoSource, so it should be released after all
+  // the video tracks. Put it as the first private variable should ensure that.
+  talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
   talk_base::scoped_refptr<StreamCollection> reference_collection_;
   talk_base::scoped_ptr<MockSignalingObserver> observer_;
   talk_base::scoped_ptr<MediaStreamSignalingForTest> signaling_;
@@ -688,6 +701,9 @@ TEST_F(MediaStreamSignalingTest, UpdateRemoteStreams) {
   observer_->VerifyRemoteAudioTrack(kStreams[0], kAudioTracks[0], 1);
   EXPECT_EQ(1u, observer_->NumberOfRemoteVideoTracks());
   observer_->VerifyRemoteVideoTrack(kStreams[0], kVideoTracks[0], 2);
+  ASSERT_EQ(1u, observer_->remote_streams()->count());
+  MediaStreamInterface* remote_stream =  observer_->remote_streams()->at(0);
+  EXPECT_TRUE(remote_stream->GetVideoTracks()[0]->GetSource() != NULL);
 
   // Create a session description based on another SDP with another
   // MediaStream.

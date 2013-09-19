@@ -404,6 +404,7 @@ class WebRtcVoiceMediaChannel
   bool desired_playout_;
   bool nack_enabled_;
   bool playout_;
+  bool typing_noise_detected_;
   SendFlags desired_send_;
   SendFlags send_;
 

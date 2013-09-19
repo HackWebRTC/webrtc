@@ -2121,7 +2121,7 @@ bool ParseMediaDescription(const std::string& message,
       // this for backwards-compatibility.  Once we don't need that any
       // more, remove this.
       bool support_dc_sdp_bandwidth_temporarily = true;
-      if (!support_dc_sdp_bandwidth_temporarily) {
+      if (content.get() && !support_dc_sdp_bandwidth_temporarily) {
         content->set_bandwidth(cricket::kAutoBandwidth);
       }
     } else {

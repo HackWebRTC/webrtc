@@ -322,6 +322,7 @@ extern const StaticQName QN_ATTR_STATUS;
 
 // Presence connection status
 extern const char STR_PSTN_CONFERENCE_STATUS_CONNECTING[];
+extern const char STR_PSTN_CONFERENCE_STATUS_JOINING[];
 extern const char STR_PSTN_CONFERENCE_STATUS_CONNECTED[];
 extern const char STR_PSTN_CONFERENCE_STATUS_HANGUP[];
 

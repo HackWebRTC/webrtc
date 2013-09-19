@@ -210,6 +210,12 @@ void SessionManager::OnIncomingResponse(const buzz::XmlElement* orig_stanza,
   }
 
   Session* session = FindSession(msg.sid, msg.to);
+  if (!session) {
+    // Also try the QN_FROM in the response stanza, in case we sent the request
+    // to a bare JID but got the response from a full JID.
+    std::string ack_from = response_stanza->Attr(buzz::QN_FROM);
+    session = FindSession(msg.sid, ack_from);
+  }
   if (session) {
     session->OnIncomingResponse(orig_stanza, response_stanza, msg);
   }

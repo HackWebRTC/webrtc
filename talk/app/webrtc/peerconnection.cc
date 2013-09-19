@@ -303,7 +303,7 @@ bool PeerConnection::DoInitialize(
   port_allocator_->set_step_delay(cricket::kMinimumStepDelay);
 
   mediastream_signaling_.reset(new MediaStreamSignaling(
-      factory_->signaling_thread(), this));
+      factory_->signaling_thread(), this, factory_->channel_manager()));
 
   session_.reset(new WebRtcSession(factory_->channel_manager(),
                                    factory_->signaling_thread(),

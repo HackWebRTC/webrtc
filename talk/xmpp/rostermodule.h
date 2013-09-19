@@ -81,9 +81,14 @@ enum XmppPresenceAvailable {
 
 enum XmppPresenceConnectionStatus {
   XMPP_CONNECTION_STATUS_UNKNOWN    = 0,
+  // Status set by the server while the user is being rung.
   XMPP_CONNECTION_STATUS_CONNECTING = 1,
-  XMPP_CONNECTION_STATUS_CONNECTED  = 2,
-  XMPP_CONNECTION_STATUS_HANGUP     = 3,
+  // Status set by the client when the user has accepted the ring but before
+  // the client has joined the call.
+  XMPP_CONNECTION_STATUS_JOINING    = 2,
+  // Status set by the client as part of joining the call.
+  XMPP_CONNECTION_STATUS_CONNECTED  = 3,
+  XMPP_CONNECTION_STATUS_HANGUP     = 4,
 };
 
 //! Presence Information

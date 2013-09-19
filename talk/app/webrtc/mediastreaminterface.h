@@ -134,12 +134,6 @@ class VideoTrackInterface : public MediaStreamTrackInterface {
   // Deregister a renderer.
   virtual void RemoveRenderer(VideoRendererInterface* renderer) = 0;
 
-  // Gets a pointer to the frame input of this VideoTrack.
-  // The pointer is valid for the lifetime of this VideoTrack.
-  // VideoFrames rendered to the cricket::VideoRenderer will be rendered on all
-  // registered renderers.
-  virtual cricket::VideoRenderer* FrameInput() = 0;
-
   virtual VideoSourceInterface* GetSource() const = 0;
 
  protected:

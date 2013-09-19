@@ -259,10 +259,10 @@ class CompositeMediaEngine : public MediaEngineInterface {
   }
 
   virtual void SetVoiceLogging(int min_sev, const char* filter) {
-    return voice_.SetLogging(min_sev, filter);
+    voice_.SetLogging(min_sev, filter);
   }
   virtual void SetVideoLogging(int min_sev, const char* filter) {
-    return video_.SetLogging(min_sev, filter);
+    video_.SetLogging(min_sev, filter);
   }
 
   virtual bool RegisterVoiceProcessor(uint32 ssrc,

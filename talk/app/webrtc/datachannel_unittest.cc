@@ -76,7 +76,7 @@ class SctpDataChannelTest : public testing::Test {
                                         talk_base::Thread::Current())),
         media_stream_signaling_(
             new webrtc::MediaStreamSignaling(talk_base::Thread::Current(),
-                                             NULL)),
+                                             NULL, channel_manager_.get())),
         session_(channel_manager_.get(),
                  talk_base::Thread::Current(),
                  talk_base::Thread::Current(),

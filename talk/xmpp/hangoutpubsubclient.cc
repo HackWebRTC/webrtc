@@ -238,7 +238,10 @@ class PubSubStateClient : public sigslot::has_slots<> {
     }
 
     PubSubStateChange<C> change;
-    change.publisher_nick = info.publisher_nick;
+    if (!retracted) {
+      // Retracts do not have publisher information.
+      change.publisher_nick = info.publisher_nick;
+    }
     change.published_nick = info.published_nick;
     change.old_state = old_state;
     change.new_state = new_state;

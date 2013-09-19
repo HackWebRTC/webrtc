@@ -275,7 +275,8 @@ class WebRtcSessionTest : public testing::Test {
       ss_scope_(fss_.get()),
       stun_server_(talk_base::Thread::Current(), kStunAddr),
       allocator_(&network_manager_, kStunAddr,
-                 SocketAddress(), SocketAddress(), SocketAddress()) {
+                 SocketAddress(), SocketAddress(), SocketAddress()),
+      mediastream_signaling_(channel_manager_.get()) {
     tdesc_factory_->set_protocol(cricket::ICEPROTO_HYBRID);
     allocator_.set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
                          cricket::PORTALLOCATOR_DISABLE_RELAY |
@@ -2485,9 +2486,9 @@ TEST_F(WebRtcSessionTest, TestRtpDataChannelConstraintTakesPrecedence) {
   EXPECT_EQ(cricket::DCT_RTP, data_engine_->last_channel_type());
 }
 
-// Test fails on windows. https://code.google.com/p/webrtc/issues/detail?id=2374
-TEST_F(WebRtcSessionTest,
-       DISABLED_TestCreateOfferWithSctpEnabledWithoutStreams) {
+TEST_F(WebRtcSessionTest, TestCreateOfferWithSctpEnabledWithoutStreams) {
+  MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
+
   constraints_.reset(new FakeConstraints());
   constraints_->AddOptional(
       webrtc::MediaConstraintsInterface::kEnableSctpDataChannels, true);

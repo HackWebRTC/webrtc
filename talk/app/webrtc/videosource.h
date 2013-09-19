@@ -25,18 +25,19 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_APP_WEBRTC_LOCALVIDEOSOURCE_H_
-#define TALK_APP_WEBRTC_LOCALVIDEOSOURCE_H_
+#ifndef TALK_APP_WEBRTC_VIDEOSOURCE_H_
+#define TALK_APP_WEBRTC_VIDEOSOURCE_H_
 
 #include "talk/app/webrtc/mediastreaminterface.h"
 #include "talk/app/webrtc/notifier.h"
 #include "talk/app/webrtc/videosourceinterface.h"
+#include "talk/app/webrtc/videotrackrenderers.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/sigslot.h"
 #include "talk/media/base/videocapturer.h"
 #include "talk/media/base/videocommon.h"
 
-// LocalVideoSource implements VideoSourceInterface. It owns a
+// VideoSource implements VideoSourceInterface. It owns a
 // cricket::VideoCapturer and make sure the camera is started at a resolution
 // that honors the constraints.
 // The state is set depending on the result of starting the capturer.
@@ -53,20 +54,21 @@ namespace webrtc {
 
 class MediaConstraintsInterface;
 
-class LocalVideoSource : public Notifier<VideoSourceInterface>,
-                         public sigslot::has_slots<> {
+class VideoSource : public Notifier<VideoSourceInterface>,
+                    public sigslot::has_slots<> {
  public:
-  // Creates an instance of LocalVideoSource.
-  // LocalVideoSource take ownership of |capturer|.
+  // Creates an instance of VideoSource.
+  // VideoSource take ownership of |capturer|.
   // |constraints| can be NULL and in that case the camera is opened using a
   // default resolution.
-  static talk_base::scoped_refptr<LocalVideoSource> Create(
+  static talk_base::scoped_refptr<VideoSource> Create(
       cricket::ChannelManager* channel_manager,
       cricket::VideoCapturer* capturer,
       const webrtc::MediaConstraintsInterface* constraints);
 
   virtual SourceState state() const { return state_; }
   virtual const cricket::VideoOptions* options() const { return &options_; }
+  virtual cricket::VideoRenderer* FrameInput();
 
   virtual cricket::VideoCapturer* GetVideoCapturer() {
     return video_capturer_.get();
@@ -77,18 +79,19 @@ class LocalVideoSource : public Notifier<VideoSourceInterface>,
   virtual void RemoveSink(cricket::VideoRenderer* output);
 
  protected:
-  LocalVideoSource(cricket::ChannelManager* channel_manager,
-                   cricket::VideoCapturer* capturer);
-  ~LocalVideoSource();
+  VideoSource(cricket::ChannelManager* channel_manager,
+              cricket::VideoCapturer* capturer);
+  virtual ~VideoSource();
+  void Initialize(const webrtc::MediaConstraintsInterface* constraints);
 
  private:
-  void Initialize(const webrtc::MediaConstraintsInterface* constraints);
   void OnStateChange(cricket::VideoCapturer* capturer,
                      cricket::CaptureState capture_state);
   void SetState(SourceState new_state);
 
   cricket::ChannelManager* channel_manager_;
   talk_base::scoped_ptr<cricket::VideoCapturer> video_capturer_;
+  talk_base::scoped_ptr<cricket::VideoRenderer> frame_input_;
 
   cricket::VideoFormat format_;
   cricket::VideoOptions options_;
@@ -97,4 +100,4 @@ class LocalVideoSource : public Notifier<VideoSourceInterface>,
 
 }  // namespace webrtc
 
-#endif  // TALK_APP_WEBRTC_LOCALVIDEOSOURCE_H_
+#endif  // TALK_APP_WEBRTC_VIDEOSOURCE_H_

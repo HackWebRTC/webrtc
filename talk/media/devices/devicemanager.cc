@@ -149,9 +149,9 @@ bool DeviceManager::GetAudioOutputDevice(const std::string& name, Device* out) {
 
 bool DeviceManager::GetVideoCaptureDevices(std::vector<Device>* devices) {
   devices->clear();
-#if defined(IOS)
-  // On iOS, we treat the camera(s) as a single device. Even if there are
-  // multiple cameras, that's abstracted away at a higher level.
+#if defined(ANDROID) || defined(IOS)
+  // On Android and iOS, we treat the camera(s) as a single device. Even if
+  // there are multiple cameras, that's abstracted away at a higher level.
   Device dev("camera", "1");    // name and ID
   devices->push_back(dev);
   return true;

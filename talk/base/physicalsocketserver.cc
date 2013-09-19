@@ -1265,7 +1265,14 @@ void PhysicalSocketServer::Remove(Dispatcher *pdispatcher) {
   DispatcherList::iterator pos = std::find(dispatchers_.begin(),
                                            dispatchers_.end(),
                                            pdispatcher);
-  ASSERT(pos != dispatchers_.end());
+  // We silently ignore duplicate calls to Add, so we should silently ignore
+  // the (expected) symmetric calls to Remove. Note that this may still hide
+  // a real issue, so we at least log a warning about it.
+  if (pos == dispatchers_.end()) {
+    LOG(LS_WARNING) << "PhysicalSocketServer asked to remove a unknown "
+                    << "dispatcher, potentially from a duplicate call to Add.";
+    return;
+  }
   size_t index = pos - dispatchers_.begin();
   dispatchers_.erase(pos);
   for (IteratorList::iterator it = iterators_.begin(); it != iterators_.end();
