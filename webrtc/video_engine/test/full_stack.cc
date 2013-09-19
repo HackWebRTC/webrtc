@@ -25,7 +25,6 @@
 #include "webrtc/typedefs.h"
 #include "webrtc/video_engine/new_include/call.h"
 #include "webrtc/video_engine/test/common/direct_transport.h"
-#include "webrtc/video_engine/test/common/file_capturer.h"
 #include "webrtc/video_engine/test/common/frame_generator_capturer.h"
 #include "webrtc/video_engine/test/common/generate_ssrcs.h"
 #include "webrtc/video_engine/test/common/statistics.h"
@@ -304,17 +303,14 @@ TEST_P(FullStackTest, DISABLED_NoPacketLoss) {
   VideoSendStream* send_stream = call->CreateSendStream(send_config);
   analyzer.input_ = send_stream->Input();
 
-  Clock* test_clock = Clock::GetRealTimeClock();
-
   scoped_ptr<test::FrameGeneratorCapturer> file_capturer(
-      test::FrameGeneratorCapturer::Create(
+      test::FrameGeneratorCapturer::CreateFromYuvFile(
           &analyzer,
-          test::YuvFileFrameGenerator::Create(
-              test::ResourcePath(params.clip.name, "yuv").c_str(),
-              params.clip.width,
-              params.clip.height,
-              test_clock),
-          params.clip.fps));
+          test::ResourcePath(params.clip.name, "yuv").c_str(),
+          params.clip.width,
+          params.clip.height,
+          params.clip.fps,
+          Clock::GetRealTimeClock()));
 
   VideoReceiveStream::Config receive_config = call->GetDefaultReceiveConfig();
   receive_config.rtp.ssrc = send_config.rtp.ssrcs[0];

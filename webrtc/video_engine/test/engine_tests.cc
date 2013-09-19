@@ -22,7 +22,6 @@
 #include "webrtc/video_engine/test/common/direct_transport.h"
 #include "webrtc/video_engine/test/common/fake_decoder.h"
 #include "webrtc/video_engine/test/common/fake_encoder.h"
-#include "webrtc/video_engine/test/common/frame_generator.h"
 #include "webrtc/video_engine/test/common/frame_generator_capturer.h"
 #include "webrtc/video_engine/test/common/generate_ssrcs.h"
 #include "webrtc/video_engine/test/common/rtp_rtcp_observer.h"
@@ -84,12 +83,12 @@ class EngineTest : public ::testing::TestWithParam<EngineTestParams> {
   }
 
   void CreateFrameGenerator() {
-    frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
-        send_stream_->Input(),
-        test::FrameGenerator::Create(send_config_.codec.width,
-                                     send_config_.codec.height,
-                                     Clock::GetRealTimeClock()),
-        30));
+    frame_generator_capturer_.reset(
+        test::FrameGeneratorCapturer::Create(send_stream_->Input(),
+                                             send_config_.codec.width,
+                                             send_config_.codec.height,
+                                             30,
+                                             Clock::GetRealTimeClock()));
   }
 
   void StartSending() {

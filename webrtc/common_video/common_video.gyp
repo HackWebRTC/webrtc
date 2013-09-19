@@ -53,6 +53,17 @@
     ['include_tests==1', {
       'targets': [
         {
+          'target_name': 'frame_generator',
+          'type': 'static_library',
+          'sources': [
+            'test/frame_generator.h',
+            'test/frame_generator.cc',
+          ],
+          'dependencies': [
+            'common_video',
+          ],
+        },
+        {
           'target_name': 'common_video_unittests',
           'type': '<(gtest_target_type)',
           'dependencies': [

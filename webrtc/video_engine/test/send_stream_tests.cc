@@ -16,7 +16,6 @@
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
 #include "webrtc/video_engine/test/common/fake_encoder.h"
-#include "webrtc/video_engine/test/common/frame_generator.h"
 #include "webrtc/video_engine/test/common/frame_generator_capturer.h"
 #include "webrtc/video_engine/test/common/null_transport.h"
 #include "webrtc/video_engine/new_include/call.h"
@@ -54,9 +53,7 @@ class VideoSendStreamTest : public ::testing::Test {
     VideoSendStream* send_stream = call->CreateSendStream(config);
     scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
         test::FrameGeneratorCapturer::Create(
-            send_stream->Input(),
-            test::FrameGenerator::Create(320, 240, Clock::GetRealTimeClock()),
-            30));
+            send_stream->Input(), 320, 240, 30, Clock::GetRealTimeClock()));
     send_stream->StartSend();
     frame_generator_capturer->Start();
 

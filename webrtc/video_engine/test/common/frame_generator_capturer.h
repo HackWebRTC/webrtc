@@ -26,24 +26,33 @@ class FrameGenerator;
 
 class FrameGeneratorCapturer : public VideoCapturer {
  public:
-  // The FrameGeneratorCapturer takes ownership of the FrameGenerator, which
-  // will be freed when the FrameGeneratorCapturer is deleted.
   static FrameGeneratorCapturer* Create(VideoSendStreamInput* input,
-                                        FrameGenerator* frame_generator,
-                                        int target_fps);
+                                        size_t width,
+                                        size_t height,
+                                        int target_fps,
+                                        Clock* clock);
+
+  static FrameGeneratorCapturer* CreateFromYuvFile(VideoSendStreamInput* input,
+                                                   const char* file_name,
+                                                   size_t width,
+                                                   size_t height,
+                                                   int target_fps,
+                                                   Clock* clock);
   virtual ~FrameGeneratorCapturer();
 
   virtual void Start() OVERRIDE;
   virtual void Stop() OVERRIDE;
 
  private:
-  FrameGeneratorCapturer(VideoSendStreamInput* input,
+  FrameGeneratorCapturer(Clock* clock,
+                         VideoSendStreamInput* input,
                          FrameGenerator* frame_generator,
                          int target_fps);
   bool Init();
   void InsertFrame();
   static bool Run(void* obj);
 
+  Clock* clock_;
   bool sending_;
 
   scoped_ptr<EventWrapper> tick_;

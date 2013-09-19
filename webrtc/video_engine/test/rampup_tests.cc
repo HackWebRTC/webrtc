@@ -25,7 +25,6 @@
 #include "webrtc/video_engine/test/common/direct_transport.h"
 #include "webrtc/video_engine/test/common/fake_decoder.h"
 #include "webrtc/video_engine/test/common/fake_encoder.h"
-#include "webrtc/video_engine/test/common/frame_generator.h"
 #include "webrtc/video_engine/test/common/frame_generator_capturer.h"
 #include "webrtc/video_engine/test/common/generate_ssrcs.h"
 
@@ -168,12 +167,11 @@ TEST_P(RampUpTest, RampUpWithPadding) {
       call->CreateReceiveStream(receive_config);
 
   scoped_ptr<test::FrameGeneratorCapturer> frame_generator_capturer(
-      test::FrameGeneratorCapturer::Create(
-          send_stream->Input(),
-          test::FrameGenerator::Create(send_config.codec.width,
-                                       send_config.codec.height,
-                                       Clock::GetRealTimeClock()),
-          30));
+      test::FrameGeneratorCapturer::Create(send_stream->Input(),
+                                           send_config.codec.width,
+                                           send_config.codec.height,
+                                           30,
+                                           Clock::GetRealTimeClock()));
 
   receive_stream->StartReceive();
   send_stream->StartSend();
