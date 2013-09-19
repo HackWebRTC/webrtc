@@ -131,6 +131,7 @@ int16_t ACMNetEQ::InitByIdxSafe(const int16_t idx) {
   if (inst_mem_[idx] != NULL) {
     free(inst_mem_[idx]);
     inst_mem_[idx] = NULL;
+    inst_[idx] = NULL;
   }
   inst_mem_[idx] = malloc(memory_size_bytes);
   if (inst_mem_[idx] == NULL) {
@@ -144,6 +145,7 @@ int16_t ACMNetEQ::InitByIdxSafe(const int16_t idx) {
     if (inst_mem_[idx] != NULL) {
       free(inst_mem_[idx]);
       inst_mem_[idx] = NULL;
+      inst_[idx] = NULL;
     }
     LogError("Assign", idx);
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
@@ -155,6 +157,7 @@ int16_t ACMNetEQ::InitByIdxSafe(const int16_t idx) {
     if (inst_mem_[idx] != NULL) {
       free(inst_mem_[idx]);
       inst_mem_[idx] = NULL;
+      inst_[idx] = NULL;
     }
     LogError("Init", idx);
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
@@ -971,6 +974,7 @@ void ACMNetEQ::RemoveNetEQSafe(int index) {
   if (inst_mem_[index] != NULL) {
     free(inst_mem_[index]);
     inst_mem_[index] = NULL;
+    inst_[index] = NULL;
   }
   if (neteq_packet_buffer_[index] != NULL) {
     free(neteq_packet_buffer_[index]);
