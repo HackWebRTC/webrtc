@@ -78,7 +78,7 @@
           'defines': [
             'WEBRTC_LINUX',
           ],
-          'all_dependent_settings': {
+          'link_settings': {
             'libraries': [
               '-lm',
             ],
