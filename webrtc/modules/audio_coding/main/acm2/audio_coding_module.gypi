@@ -16,6 +16,7 @@
       ],
       'dependencies': [
         '<@(audio_coding_dependencies)',
+        'NetEq4',
       ],
       'include_dirs': [
         '../interface',
@@ -40,6 +41,7 @@
         'acm_cng.h',
         'acm_codec_database.cc',
         'acm_codec_database.h',
+        'acm_common_defs.h',
         'acm_dtmf_playout.cc',
         'acm_dtmf_playout.h',
         'acm_g722.cc',

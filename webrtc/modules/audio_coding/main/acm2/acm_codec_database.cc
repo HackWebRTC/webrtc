@@ -102,26 +102,9 @@
 
 namespace webrtc {
 
-// We dynamically allocate some of the dynamic payload types to the defined
-// codecs. Note! There are a limited number of payload types. If more codecs
-// are defined they will receive reserved fixed payload types (values 69-95).
-const int kDynamicPayloadtypes[ACMCodecDB::kMaxNumCodecs] = {
-  107, 108, 109, 111, 112, 113, 114, 115, 116, 117, 92,
-  91,  90,  89,  88,  87,  86,  85,  84,  83,  82,  81, 80,
-  79,  78,  77,  76,  75,  74,  73,  72,  71,  70,  69, 68,
-  67, 66, 65
-};
-
-// Creates database with all supported codecs at compile time.
-// Each entry needs the following parameters in the given order:
-// payload type, name, sampling frequency, packet size in samples,
-// number of channels, and default rate.
-#if (defined(WEBRTC_CODEC_AMR) || defined(WEBRTC_CODEC_AMRWB) || \
-    defined(WEBRTC_CODEC_CELT) || defined(WEBRTC_CODEC_G722_1) || \
-    defined(WEBRTC_CODEC_G722_1C) || defined(WEBRTC_CODEC_G729_1) || \
-    defined(WEBRTC_CODEC_PCM16) || defined(WEBRTC_CODEC_SPEEX))
-static int count_database = 0;
-#endif
+// Not yet used payload-types.
+// 83,  82,  81, 80, 79,  78,  77,  76,  75,  74,  73,  72,  71,  70,  69, 68,
+// 67, 66, 65
 
 const CodecInst ACMCodecDB::database_[] = {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
@@ -133,13 +116,13 @@ const CodecInst ACMCodecDB::database_[] = {
 #endif
 #ifdef WEBRTC_CODEC_PCM16
   // Mono
-  {kDynamicPayloadtypes[count_database++], "L16", 8000, 80, 1, 128000},
-  {kDynamicPayloadtypes[count_database++], "L16", 16000, 160, 1, 256000},
-  {kDynamicPayloadtypes[count_database++], "L16", 32000, 320, 1, 512000},
+  {107, "L16", 8000, 80, 1, 128000},
+  {108, "L16", 16000, 160, 1, 256000},
+  {109, "L16", 32000, 320, 1, 512000},
   // Stereo
-  {kDynamicPayloadtypes[count_database++], "L16", 8000, 80, 2, 128000},
-  {kDynamicPayloadtypes[count_database++], "L16", 16000, 160, 2, 256000},
-  {kDynamicPayloadtypes[count_database++], "L16", 32000, 320, 2, 512000},
+  {111, "L16", 8000, 80, 2, 128000},
+  {112, "L16", 16000, 160, 2, 256000},
+  {113, "L16", 32000, 320, 2, 512000},
 #endif
   // G.711, PCM mu-law and A-law.
   // Mono
@@ -152,16 +135,16 @@ const CodecInst ACMCodecDB::database_[] = {
   {102, "ILBC", 8000, 240, 1, 13300},
 #endif
 #ifdef WEBRTC_CODEC_AMR
-  {kDynamicPayloadtypes[count_database++], "AMR", 8000, 160, 1, 12200},
+  {114, "AMR", 8000, 160, 1, 12200},
 #endif
 #ifdef WEBRTC_CODEC_AMRWB
-  {kDynamicPayloadtypes[count_database++], "AMR-WB", 16000, 320, 1, 20000},
+  {115, "AMR-WB", 16000, 320, 1, 20000},
 #endif
 #ifdef WEBRTC_CODEC_CELT
   // Mono
-  {kDynamicPayloadtypes[count_database++], "CELT", 32000, 640, 1, 64000},
+  {116, "CELT", 32000, 640, 1, 64000},
   // Stereo
-  {kDynamicPayloadtypes[count_database++], "CELT", 32000, 640, 2, 64000},
+  {117, "CELT", 32000, 640, 2, 64000},
 #endif
 #ifdef WEBRTC_CODEC_G722
   // Mono
@@ -170,20 +153,20 @@ const CodecInst ACMCodecDB::database_[] = {
   {119, "G722", 16000, 320, 2, 64000},
 #endif
 #ifdef WEBRTC_CODEC_G722_1
-  {kDynamicPayloadtypes[count_database++], "G7221", 16000, 320, 1, 32000},
-  {kDynamicPayloadtypes[count_database++], "G7221", 16000, 320, 1, 24000},
-  {kDynamicPayloadtypes[count_database++], "G7221", 16000, 320, 1, 16000},
+  {92, "G7221", 16000, 320, 1, 32000},
+  {91, "G7221", 16000, 320, 1, 24000},
+  {90, "G7221", 16000, 320, 1, 16000},
 #endif
 #ifdef WEBRTC_CODEC_G722_1C
-  {kDynamicPayloadtypes[count_database++], "G7221", 32000, 640, 1, 48000},
-  {kDynamicPayloadtypes[count_database++], "G7221", 32000, 640, 1, 32000},
-  {kDynamicPayloadtypes[count_database++], "G7221", 32000, 640, 1, 24000},
+  {89, "G7221", 32000, 640, 1, 48000},
+  {88, "G7221", 32000, 640, 1, 32000},
+  {87, "G7221", 32000, 640, 1, 24000},
 #endif
 #ifdef WEBRTC_CODEC_G729
   {18, "G729", 8000, 240, 1, 8000},
 #endif
 #ifdef WEBRTC_CODEC_G729_1
-  {kDynamicPayloadtypes[count_database++], "G7291", 16000, 320, 1, 32000},
+  {86, "G7291", 16000, 320, 1, 32000},
 #endif
 #ifdef WEBRTC_CODEC_GSMFR
   {3, "GSM", 8000, 160, 1, 13200},
@@ -194,14 +177,16 @@ const CodecInst ACMCodecDB::database_[] = {
   {120, "opus", 48000, 960, 2, 64000},
 #endif
 #ifdef WEBRTC_CODEC_SPEEX
-  {kDynamicPayloadtypes[count_database++], "speex", 8000, 160, 1, 11000},
-  {kDynamicPayloadtypes[count_database++], "speex", 16000, 320, 1, 22000},
+  {85, "speex", 8000, 160, 1, 11000},
+  {84, "speex", 16000, 320, 1, 22000},
 #endif
   // Comfort noise for four different sampling frequencies.
   {13, "CN", 8000, 240, 1, 0},
   {98, "CN", 16000, 480, 1, 0},
   {99, "CN", 32000, 960, 1, 0},
+#ifdef ENABLE_48000_HZ
   {100, "CN", 48000, 1440, 1, 0},
+#endif
 #ifdef WEBRTC_CODEC_AVT
   {106, "telephone-event", 8000, 240, 1, 0},
 #endif
@@ -295,7 +280,9 @@ const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
     {1, {240}, 240, 1, false},
     {1, {480}, 480, 1, false},
     {1, {960}, 960, 1, false},
+#ifdef ENABLE_48000_HZ
     {1, {1440}, 1440, 1, false},
+#endif
 #ifdef WEBRTC_CODEC_AVT
     {1, {240}, 240, 1, false},
 #endif
@@ -383,8 +370,10 @@ const NetEqDecoder ACMCodecDB::neteq_decoders_[] = {
     // Comfort noise for three different sampling frequencies.
     kDecoderCNGnb,
     kDecoderCNGwb,
-    kDecoderCNGswb32kHz,
-    kDecoderCNGswb48kHz
+    kDecoderCNGswb32kHz
+#ifdef ENABLE_48000_HZ
+    , kDecoderCNGswb48kHz
+#endif
 #ifdef WEBRTC_CODEC_AVT
     , kDecoderAVT
 #endif
@@ -710,10 +699,12 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
         codec_id = kCNSWB;
         break;
       }
+#ifdef ENABLE_48000_HZ
       case 48000: {
         codec_id = kCNFB;
         break;
       }
+#endif
       default: {
         return NULL;
       }
@@ -765,10 +756,12 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst& codec_inst) {
         codec_id = kCNSWB;
         break;
       }
+#ifdef ENABLE_48000_HZ
       case 48000: {
         codec_id = kCNFB;
         break;
       }
+#endif
       default: {
         return NULL;
       }

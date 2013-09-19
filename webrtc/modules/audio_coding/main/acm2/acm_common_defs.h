@@ -24,22 +24,13 @@
 #error iSAC and iSACFX codecs cannot be enabled at the same time
 #endif
 
-#ifndef STR_CASE_CMP
-#ifdef WIN32
-// OS-dependent case-insensitive string comparison
-#define STR_CASE_CMP(x, y) ::_stricmp(x, y)
-#else
-// OS-dependent case-insensitive string comparison
-#define STR_CASE_CMP(x, y) ::strcasecmp(x, y)
-#endif
-#endif
 
 namespace webrtc {
 
 // 60 ms is the maximum block size we support. An extra 20 ms is considered
 // for safety if process() method is not called when it should be, i.e. we
-// accept 20 ms of jitter. 80 ms @ 32 kHz (super wide-band) is 2560 samples.
-#define AUDIO_BUFFER_SIZE_W16  2560
+// accept 20 ms of jitter. 80 ms @ 48 kHz (full-band) stereo is 7680 samples.
+#define AUDIO_BUFFER_SIZE_W16 7680
 
 // There is one timestamp per each 10 ms of audio
 // the audio buffer, at max, may contain 32 blocks of 10ms
@@ -91,6 +82,17 @@ struct WebRtcACMCodecParams {
   bool enable_dtx;
   bool enable_vad;
   ACMVADMode vad_mode;
+};
+
+// TODO(turajs): Remove when ACM1 is removed.
+struct WebRtcACMAudioBuff {
+  int16_t in_audio[AUDIO_BUFFER_SIZE_W16];
+  int16_t in_audio_ix_read;
+  int16_t in_audio_ix_write;
+  uint32_t in_timestamp[TIMESTAMP_BUFFER_SIZE_W32];
+  int16_t in_timestamp_ix_write;
+  uint32_t last_timestamp;
+  uint32_t last_in_timestamp;
 };
 
 }  // namespace webrtc
