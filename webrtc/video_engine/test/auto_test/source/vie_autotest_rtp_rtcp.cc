@@ -385,7 +385,7 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(0, ViE.rtp_rtcp->SetNACKStatus(tbChannel.videoChannel, true));
     EXPECT_EQ(0, ViE.base->StartSend(tbChannel.videoChannel));
 
-    AutoTestSleep(kAutoTestSleepTimeMs);
+    AutoTestSleep(4 * kAutoTestSleepTimeMs);
 
     EXPECT_EQ(0, ViE.rtp_rtcp->GetBandwidthUsage(
         tbChannel.videoChannel, sentTotalBitrate, sentVideoBitrate,
@@ -509,9 +509,9 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     if (FLAGS_include_timing_dependent_tests) {
       EXPECT_GT(bytes_received_after, bytes_received_before);
     }
-    bytes_received_before = bytes_received_after;
     // Simulate lost reception and verify that nothing is sent during that time.
     ViE.network->SetNetworkTransmissionState(tbChannel.videoChannel, false);
+    bytes_received_before = bytes_received_after;
     ViETest::Log("Network Down...\n");
     AutoTestSleep(kAutoTestSleepTimeMs);
     EXPECT_EQ(0, ViE.rtp_rtcp->GetRTPStatistics(tbChannel.videoChannel,
