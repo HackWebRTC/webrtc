@@ -221,6 +221,11 @@
               '<(DEPTH)/talk/app/webrtc/objc/public',
             ],
           },
+          'all_dependent_settings': {
+            'libraries': [
+              '-lstdc++',
+            ],
+          },
           'include_dirs': [
             '<(DEPTH)/talk/app/webrtc',
             '<(DEPTH)/talk/app/webrtc/objc',
