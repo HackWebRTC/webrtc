@@ -134,7 +134,7 @@
       'target_name': 'video_engine_tests',
       'type': 'executable',
       'sources': [
-        'engine_tests.cc',
+        'call_tests.cc',
         'full_stack.cc',
         'rampup_tests.cc',
         'send_stream_tests.cc',

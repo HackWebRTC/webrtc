@@ -40,17 +40,21 @@ class RtpRtcpObserver {
     receive_transport_.StopSending();
   }
 
+  EventTypeWrapper Wait() { return observation_complete_->Wait(timeout_ms_); }
+
  protected:
-  RtpRtcpObserver()
+  RtpRtcpObserver(unsigned int event_timeout_ms)
       : lock_(CriticalSectionWrapper::CreateCriticalSection()),
+        observation_complete_(EventWrapper::Create()),
         send_transport_(lock_.get(),
-                          this,
-                          &RtpRtcpObserver::OnSendRtp,
-                          &RtpRtcpObserver::OnSendRtcp),
+                        this,
+                        &RtpRtcpObserver::OnSendRtp,
+                        &RtpRtcpObserver::OnSendRtcp),
         receive_transport_(lock_.get(),
-                            this,
-                            &RtpRtcpObserver::OnReceiveRtp,
-                            &RtpRtcpObserver::OnReceiveRtcp) {}
+                           this,
+                           &RtpRtcpObserver::OnReceiveRtp,
+                           &RtpRtcpObserver::OnReceiveRtcp),
+        timeout_ms_(event_timeout_ms) {}
 
   enum Action {
     SEND_PACKET,
@@ -130,9 +134,11 @@ class RtpRtcpObserver {
 
  protected:
   scoped_ptr<CriticalSectionWrapper> lock_;
+  scoped_ptr<EventWrapper> observation_complete_;
 
  private:
   PacketTransport send_transport_, receive_transport_;
+  unsigned int timeout_ms_;
 };
 }  // namespace test
 }  // namespace webrtc
