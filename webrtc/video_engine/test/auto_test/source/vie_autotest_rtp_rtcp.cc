@@ -394,7 +394,10 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     if (FLAGS_include_timing_dependent_tests) {
       EXPECT_GT(sentTotalBitrate, 0u);
       EXPECT_EQ(sentFecBitrate, 0u);
-      EXPECT_GT(sentNackBitrate, 0u);
+
+      // TODO(holmer): Test disabled due to being too flaky on buildbots. Tests
+      // for new API provide partial coverage.
+      // EXPECT_GT(sentNackBitrate, 0u);
     }
 
     EXPECT_EQ(0, ViE.base->StopReceive(tbChannel.videoChannel));
