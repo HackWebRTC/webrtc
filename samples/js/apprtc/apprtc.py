@@ -152,6 +152,10 @@ def make_pc_constraints(compat):
   # For interop with FireFox. Enable DTLS in peerConnection ctor.
   if compat.lower() == 'true':
     constraints['optional'].append({'DtlsSrtpKeyAgreement': True})
+  # Disable DTLS in peerConnection ctor for loopback call. The value
+  # of compat is false for loopback mode.
+  else:
+    constraints['optional'].append({'DtlsSrtpKeyAgreement': False})
   return constraints
 
 def make_offer_constraints():
