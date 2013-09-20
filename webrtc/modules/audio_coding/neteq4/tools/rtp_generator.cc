@@ -24,7 +24,7 @@ uint32_t RtpGenerator::GetRtpHeader(uint8_t payload_type,
   }
   rtp_header->header.sequenceNumber = seq_number_++;
   rtp_header->header.timestamp = timestamp_;
-  timestamp_ += payload_length_samples;
+  timestamp_ += static_cast<uint32_t>(payload_length_samples);
   rtp_header->header.payloadType = payload_type;
   rtp_header->header.markerBit = false;
   rtp_header->header.ssrc = ssrc_;

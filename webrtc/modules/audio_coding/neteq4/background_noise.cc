@@ -165,15 +165,15 @@ int16_t BackgroundNoise::ScaleShift(size_t channel) const {
 }
 
 int32_t BackgroundNoise::CalculateAutoCorrelation(
-    const int16_t* signal, size_t length, int32_t* auto_correlation) const {
+    const int16_t* signal, int length, int32_t* auto_correlation) const {
   int16_t signal_max = WebRtcSpl_MaxAbsValueW16(signal, length);
   int correlation_scale = kLogVecLen -
       WebRtcSpl_NormW32(signal_max * signal_max);
   correlation_scale = std::max(0, correlation_scale);
 
   static const int kCorrelationStep = -1;
-  WebRtcSpl_CrossCorrelation(auto_correlation, signal, signal,
-                             length, kMaxLpcOrder + 1, correlation_scale,
+  WebRtcSpl_CrossCorrelation(auto_correlation, signal, signal, length,
+                             kMaxLpcOrder + 1, correlation_scale,
                              kCorrelationStep);
 
   // Number of shifts to normalize energy to energy/sample.

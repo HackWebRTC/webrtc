@@ -277,14 +277,13 @@ int DelayManager::CalculateTargetLevel(int iat_packets) {
   } while ((sum > limit_probability) && (index < iat_vector_.size() - 1));
 
   // This is the base value for the target buffer level.
-  int target_level = index;
-  base_target_level_ = index;
+  int target_level = static_cast<int>(index);
+  base_target_level_ = static_cast<int>(index);
 
   // Update detector for delay peaks.
   bool delay_peak_found = peak_detector_.Update(iat_packets, target_level);
   if (delay_peak_found) {
-    target_level = std::max(static_cast<int>(target_level),
-                            peak_detector_.MaxPeakHeight());
+    target_level = std::max(target_level, peak_detector_.MaxPeakHeight());
   }
 
   // Sanity check. |target_level| must be strictly positive.
@@ -322,8 +321,12 @@ void DelayManager::Reset() {
 
 int DelayManager::AverageIAT() const {
   int32_t sum_q24 = 0;
+  // Using an int for the upper limit of the following for-loop so the
+  // loop-counter can be int. Otherwise we need a cast where |sum_q24| is
+  // updated.
+  const int iat_vec_size = static_cast<int>(iat_vector_.size());
   assert(iat_vector_.size() == 65);  // Algorithm is hard-coded for this size.
-  for (size_t i = 0; i < iat_vector_.size(); ++i) {
+  for (int i = 0; i < iat_vec_size; ++i) {
     // Shift 6 to fit worst case: 2^30 * 64.
     sum_q24 += (iat_vector_[i] >> 6) * i;
   }

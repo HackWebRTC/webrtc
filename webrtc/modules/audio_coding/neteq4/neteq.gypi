@@ -112,10 +112,6 @@
         'time_stretch.cc',
         'time_stretch.h',
       ],
-      # Disable warnings to enable Win64 build, issue 1323.
-      'msvs_disabled_warnings': [
-        4267,  # size_t to int truncation.
-      ],
     },
   ], # targets
   'conditions': [
@@ -156,10 +152,6 @@
               ],
             }],
           ],
-          # Disable warnings to enable Win64 build, issue 1323.
-          'msvs_disabled_warnings': [
-            4267,  # size_t to int truncation.
-          ],
         }, # audio_decoder_unittests
 
         {
@@ -185,10 +177,6 @@
             'tools/input_audio_file.h',
             'tools/rtp_generator.cc',
             'tools/rtp_generator.h',
-          ],
-          # Disable warnings to enable Win64 build, issue 1323.
-          'msvs_disabled_warnings': [
-            4267,  # size_t to int truncation.
           ],
         }, # neteq_unittest_tools
       ], # targets

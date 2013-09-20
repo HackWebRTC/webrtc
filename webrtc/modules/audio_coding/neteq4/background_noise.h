@@ -113,7 +113,7 @@ class BackgroundNoise {
   };
 
   int32_t CalculateAutoCorrelation(const int16_t* signal,
-                                   size_t length,
+                                   int length,
                                    int32_t* auto_correlation) const;
 
   // Increments the energy threshold by a factor 1 + |kThresholdIncrement|.

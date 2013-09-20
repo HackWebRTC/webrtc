@@ -98,7 +98,7 @@ int Expand::Process(AudioMultiVector<int16_t>* output) {
       WebRtcSpl_ScaleAndAddVectorsWithRound(
           &parameters.expand_vector0[expansion_vector_position], 3,
           &parameters.expand_vector1[expansion_vector_position], 1, 2,
-          voiced_vector_storage, temp_length);
+          voiced_vector_storage, static_cast<int>(temp_length));
     } else if (current_lag_index_ == 2) {
       // Mix 1/2 of expand_vector0 with 1/2 of expand_vector1.
       assert(expansion_vector_position + temp_length <=
@@ -108,7 +108,7 @@ int Expand::Process(AudioMultiVector<int16_t>* output) {
       WebRtcSpl_ScaleAndAddVectorsWithRound(
           &parameters.expand_vector0[expansion_vector_position], 1,
           &parameters.expand_vector1[expansion_vector_position], 1, 1,
-          voiced_vector_storage, temp_length);
+          voiced_vector_storage, static_cast<int>(temp_length));
     }
 
     // Get tapering window parameters. Values are in Q15.
@@ -174,10 +174,11 @@ int Expand::Process(AudioMultiVector<int16_t>* output) {
     }
     WebRtcSpl_AffineTransformVector(scaled_random_vector, random_vector,
                                     parameters.ar_gain, add_constant,
-                                    parameters.ar_gain_scale, current_lag);
+                                    parameters.ar_gain_scale,
+                                    static_cast<int>(current_lag));
     WebRtcSpl_FilterARFastQ12(scaled_random_vector, unvoiced_vector,
-                              parameters.ar_filter,
-                              kUnvoicedLpcOrder + 1, current_lag);
+                              parameters.ar_filter, kUnvoicedLpcOrder + 1,
+                              static_cast<int>(current_lag));
     memcpy(parameters.ar_filter_state,
            &(unvoiced_vector[current_lag - kUnvoicedLpcOrder]),
            sizeof(int16_t) * kUnvoicedLpcOrder);
@@ -215,7 +216,7 @@ int Expand::Process(AudioMultiVector<int16_t>* output) {
       WebRtcSpl_ScaleAndAddVectorsWithRound(
           voiced_vector + temp_lenght, parameters.current_voice_mix_factor,
           unvoiced_vector + temp_lenght, temp_scale, 14,
-          temp_data + temp_lenght, current_lag - temp_lenght);
+          temp_data + temp_lenght, static_cast<int>(current_lag - temp_lenght));
     }
 
     // Select muting slope depending on how many consecutive expands we have
@@ -238,7 +239,7 @@ int Expand::Process(AudioMultiVector<int16_t>* output) {
       // Mute to the previous level, then continue with the muting.
       WebRtcSpl_AffineTransformVector(temp_data, temp_data,
                                       parameters.mute_factor, 8192,
-                                      14, current_lag);
+                                      14, static_cast<int>(current_lag));
 
       if (!stop_muting_) {
         DspHelper::MuteSignal(temp_data, parameters.mute_slope, current_lag);
@@ -246,8 +247,8 @@ int Expand::Process(AudioMultiVector<int16_t>* output) {
         // Shift by 6 to go from Q20 to Q14.
         // TODO(hlundin): Adding 8192 before shifting 6 steps seems wrong.
         // Legacy.
-        int16_t gain = 16384 -
-            (((current_lag * parameters.mute_slope) + 8192) >> 6);
+        int16_t gain = static_cast<int16_t>(16384 -
+            (((current_lag * parameters.mute_slope) + 8192) >> 6));
         gain = ((gain * parameters.mute_factor) + 8192) >> 14;
 
         // Guard against getting stuck with very small (but sometimes audible)
@@ -278,12 +279,13 @@ int Expand::Process(AudioMultiVector<int16_t>* output) {
       WebRtcSpl_AffineTransformVector(
           scaled_random_vector, random_vector,
           background_noise_->Scale(channel_ix), add_constant,
-          background_noise_->ScaleShift(channel_ix), current_lag);
+          background_noise_->ScaleShift(channel_ix),
+          static_cast<int>(current_lag));
 
       WebRtcSpl_FilterARFastQ12(scaled_random_vector, noise_vector,
                                 background_noise_->Filter(channel_ix),
                                 kNoiseLpcOrder + 1,
-                                current_lag);
+                                static_cast<int>(current_lag));
 
       background_noise_->SetFilterState(
           channel_ix,
@@ -318,15 +320,16 @@ int Expand::Process(AudioMultiVector<int16_t>* output) {
         if (!stop_muting_ && bgn_mode != BackgroundNoise::kBgnOff &&
             !(bgn_mode == BackgroundNoise::kBgnFade &&
                 consecutive_expands_ >= kMaxConsecutiveExpands)) {
-          DspHelper::UnmuteSignal(noise_vector, current_lag, &bgn_mute_factor,
-                                  parameters.mute_slope, noise_vector);
+          DspHelper::UnmuteSignal(noise_vector, static_cast<int>(current_lag),
+                                  &bgn_mute_factor, parameters.mute_slope,
+                                  noise_vector);
         } else {
           // kBgnOn and stop muting, or
           // kBgnOff (mute factor is always 0), or
           // kBgnFade has reached 0.
           WebRtcSpl_AffineTransformVector(noise_vector, noise_vector,
                                           bgn_mute_factor, 8192, 14,
-                                          current_lag);
+                                          static_cast<int>(current_lag));
         }
       }
       // Update mute_factor in BackgroundNoise class.
@@ -540,7 +543,7 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
 
     // Extract the two vectors expand_vector0 and expand_vector1 from
     // |audio_history|.
-    int16_t expansion_length = max_lag_ + overlap_length_;
+    int16_t expansion_length = static_cast<int16_t>(max_lag_ + overlap_length_);
     const int16_t* vector1 = &(audio_history[signal_length - expansion_length]);
     const int16_t* vector2 = vector1 - distortion_lag;
     // Normalize the second vector to the same energy as the first.
@@ -781,7 +784,7 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
   }
 }
 
-int16_t Expand::Correlation(const int16_t* input, int16_t input_length,
+int16_t Expand::Correlation(const int16_t* input, size_t input_length,
                             int16_t* output, int16_t* output_scale) const {
   // Set parameters depending on sample rate.
   const int16_t* filter_coefficients;

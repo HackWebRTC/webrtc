@@ -286,7 +286,7 @@ int NetEqImpl::NetworkStatistics(NetEqNetworkStatistics* stats) {
   assert(decoder_database_.get());
   const int total_samples_in_buffers = packet_buffer_->NumSamplesInBuffer(
       decoder_database_.get(), decoder_frame_length_) +
-          sync_buffer_->FutureLength();
+          static_cast<int>(sync_buffer_->FutureLength());
   assert(delay_manager_.get());
   assert(decision_logic_.get());
   stats_.GetNetworkStatistics(fs_hz_, total_samples_in_buffers,
@@ -716,17 +716,19 @@ int NetEqImpl::GetAudioInternal(size_t max_length, int16_t* output,
   sync_buffer_->PushBack(*algorithm_buffer_);
 
   // Extract data from |sync_buffer_| to |output|.
-  int num_output_samples_per_channel = output_size_samples_;
-  int num_output_samples = output_size_samples_ * sync_buffer_->Channels();
-  if (num_output_samples > static_cast<int>(max_length)) {
+  size_t num_output_samples_per_channel = output_size_samples_;
+  size_t num_output_samples = output_size_samples_ * sync_buffer_->Channels();
+  if (num_output_samples > max_length) {
     LOG(LS_WARNING) << "Output array is too short. " << max_length << " < " <<
         output_size_samples_ << " * " << sync_buffer_->Channels();
     num_output_samples = max_length;
-    num_output_samples_per_channel = max_length / sync_buffer_->Channels();
+    num_output_samples_per_channel = static_cast<int>(
+        max_length / sync_buffer_->Channels());
   }
-  int samples_from_sync = sync_buffer_->GetNextAudioInterleaved(
-      num_output_samples_per_channel, output);
-  *num_channels = sync_buffer_->Channels();
+  int samples_from_sync = static_cast<int>(
+      sync_buffer_->GetNextAudioInterleaved(num_output_samples_per_channel,
+                                            output));
+  *num_channels = static_cast<int>(sync_buffer_->Channels());
   NETEQ_LOG_VERBOSE << "Sync buffer (" << *num_channels << " channel(s)):" <<
       " insert " << algorithm_buffer_->Size() << " samples, extract " <<
       samples_from_sync << " samples";
@@ -768,7 +770,7 @@ int NetEqImpl::GetAudioInternal(size_t max_length, int16_t* output,
     // |playout_timestamp_| from the |sync_buffer_|. However, do not update the
     // |playout_timestamp_| if it would be moved "backwards".
     uint32_t temp_timestamp = sync_buffer_->end_timestamp() -
-            sync_buffer_->FutureLength();
+        static_cast<uint32_t>(sync_buffer_->FutureLength());
     if (static_cast<int32_t>(temp_timestamp - playout_timestamp_) > 0) {
       playout_timestamp_ = temp_timestamp;
     }
@@ -821,8 +823,8 @@ int NetEqImpl::GetDecision(Operations* operation,
   }
 
   assert(expand_.get());
-  const int samples_left = sync_buffer_->FutureLength() -
-      expand_->overlap_length();
+  const int samples_left = static_cast<int>(sync_buffer_->FutureLength() -
+      expand_->overlap_length());
   if (last_mode_ == kModeAccelerateSuccess ||
       last_mode_ == kModeAccelerateLowEnergy ||
       last_mode_ == kModePreemptiveExpandSuccess ||
@@ -1126,8 +1128,8 @@ int NetEqImpl::Decode(PacketList* packet_list, Operations* operation,
     // Increase with number of samples per channel.
     assert(*decoded_length == 0 ||
            (decoder && decoder->channels() == sync_buffer_->Channels()));
-    sync_buffer_->IncreaseEndTimestamp(*decoded_length /
-                                       sync_buffer_->Channels());
+    sync_buffer_->IncreaseEndTimestamp(
+        *decoded_length / static_cast<int>(sync_buffer_->Channels()));
   }
   return return_value;
 }
@@ -1180,7 +1182,8 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
     if (decode_length > 0) {
       *decoded_length += decode_length;
       // Update |decoder_frame_length_| with number of samples per channel.
-      decoder_frame_length_ = decode_length / decoder->channels();
+      decoder_frame_length_ = decode_length /
+          static_cast<int>(decoder->channels());
       NETEQ_LOG_VERBOSE << "Decoded " << decode_length << " samples (" <<
           decoder->channels() << " channel(s) -> " << decoder_frame_length_ <<
           " samples per channel)";
@@ -1246,10 +1249,10 @@ void NetEqImpl::DoMerge(int16_t* decoded_buffer, size_t decoded_length,
   // Update in-call and post-call statistics.
   if (expand_->MuteFactor(0) == 0) {
     // Expand generates only noise.
-    stats_.ExpandedNoiseSamples(new_length - decoded_length);
+    stats_.ExpandedNoiseSamples(new_length - static_cast<int>(decoded_length));
   } else {
     // Expansion generates more than only noise.
-    stats_.ExpandedVoiceSamples(new_length - decoded_length);
+    stats_.ExpandedVoiceSamples(new_length - static_cast<int>(decoded_length));
   }
 
   last_mode_ = kModeMerge;
@@ -1268,7 +1271,7 @@ int NetEqImpl::DoExpand(bool play_dtmf) {
       static_cast<size_t>(output_size_samples_)) {
     algorithm_buffer_->Clear();
     int return_value = expand_->Process(algorithm_buffer_.get());
-    int length = algorithm_buffer_->Size();
+    int length = static_cast<int>(algorithm_buffer_->Size());
 
     // Update in-call and post-call statistics.
     if (expand_->MuteFactor(0) == 0) {
@@ -1298,13 +1301,13 @@ int NetEqImpl::DoAccelerate(int16_t* decoded_buffer, size_t decoded_length,
                             AudioDecoder::SpeechType speech_type,
                             bool play_dtmf) {
   const size_t required_samples = 240 * fs_mult_;  // Must have 30 ms.
-  int borrowed_samples_per_channel = 0;
+  size_t borrowed_samples_per_channel = 0;
   size_t num_channels = algorithm_buffer_->Channels();
   size_t decoded_length_per_channel = decoded_length / num_channels;
   if (decoded_length_per_channel < required_samples) {
     // Must move data from the |sync_buffer_| in order to get 30 ms.
-    borrowed_samples_per_channel = required_samples -
-        decoded_length_per_channel;
+    borrowed_samples_per_channel = static_cast<int>(required_samples -
+        decoded_length_per_channel);
     memmove(&decoded_buffer[borrowed_samples_per_channel * num_channels],
             decoded_buffer,
             sizeof(int16_t) * decoded_length);
@@ -1336,7 +1339,7 @@ int NetEqImpl::DoAccelerate(int16_t* decoded_buffer, size_t decoded_length,
 
   if (borrowed_samples_per_channel > 0) {
     // Copy borrowed samples back to the |sync_buffer_|.
-    int length = algorithm_buffer_->Size();
+    size_t length = algorithm_buffer_->Size();
     if (length < borrowed_samples_per_channel) {
       // This destroys the beginning of the buffer, but will not cause any
       // problems.
@@ -1377,11 +1380,11 @@ int NetEqImpl::DoPreemptiveExpand(int16_t* decoded_buffer,
   size_t decoded_length_per_channel = decoded_length / num_channels;
   if (decoded_length_per_channel < required_samples) {
     // Must move data from the |sync_buffer_| in order to get 30 ms.
-    borrowed_samples_per_channel = required_samples -
-        decoded_length_per_channel;
+    borrowed_samples_per_channel = static_cast<int>(required_samples -
+        decoded_length_per_channel);
     // Calculate how many of these were already played out.
-    old_borrowed_samples_per_channel = borrowed_samples_per_channel -
-        sync_buffer_->FutureLength();
+    old_borrowed_samples_per_channel = static_cast<int>(
+        borrowed_samples_per_channel - sync_buffer_->FutureLength());
     old_borrowed_samples_per_channel = std::max(
         0, old_borrowed_samples_per_channel);
     memmove(&decoded_buffer[borrowed_samples_per_channel * num_channels],
@@ -1394,7 +1397,8 @@ int NetEqImpl::DoPreemptiveExpand(int16_t* decoded_buffer,
 
   int16_t samples_added;
   PreemptiveExpand::ReturnCodes return_code = preemptive_expand_->Process(
-      decoded_buffer, decoded_length, old_borrowed_samples_per_channel,
+      decoded_buffer, static_cast<int>(decoded_length),
+      old_borrowed_samples_per_channel,
       algorithm_buffer_.get(), &samples_added);
   stats_.PreemptiveExpandedSamples(samples_added);
   switch (return_code) {
@@ -1621,7 +1625,7 @@ int NetEqImpl::DtmfOverdub(const DtmfEvent& dtmf_event, size_t num_channels,
     out_index = std::min(
         sync_buffer_->dtmf_index() - sync_buffer_->next_index(),
         static_cast<size_t>(output_size_samples_));
-    overdub_length = output_size_samples_ - out_index;
+    overdub_length = output_size_samples_ - static_cast<int>(out_index);
   }
 
   AudioMultiVector<int16_t> dtmf_output(num_channels);

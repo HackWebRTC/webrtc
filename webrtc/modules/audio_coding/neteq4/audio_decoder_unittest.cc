@@ -231,7 +231,8 @@ class AudioDecoderPcmUTest : public AudioDecoderTest {
   virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
                           uint8_t* output) {
     int enc_len_bytes =
-        WebRtcG711_EncodeU(NULL, const_cast<int16_t*>(input), input_len_samples,
+        WebRtcG711_EncodeU(NULL, const_cast<int16_t*>(input),
+                           static_cast<int>(input_len_samples),
                            reinterpret_cast<int16_t*>(output));
     EXPECT_EQ(input_len_samples, static_cast<size_t>(enc_len_bytes));
     return enc_len_bytes;
@@ -250,7 +251,8 @@ class AudioDecoderPcmATest : public AudioDecoderTest {
   virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
                           uint8_t* output) {
     int enc_len_bytes =
-        WebRtcG711_EncodeA(NULL, const_cast<int16_t*>(input), input_len_samples,
+        WebRtcG711_EncodeA(NULL, const_cast<int16_t*>(input),
+                           static_cast<int>(input_len_samples),
                            reinterpret_cast<int16_t*>(output));
     EXPECT_EQ(input_len_samples, static_cast<size_t>(enc_len_bytes));
     return enc_len_bytes;
@@ -269,7 +271,7 @@ class AudioDecoderPcm16BTest : public AudioDecoderTest {
   virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
                           uint8_t* output) {
     int enc_len_bytes = WebRtcPcm16b_EncodeW16(
-        const_cast<int16_t*>(input), input_len_samples,
+        const_cast<int16_t*>(input), static_cast<int>(input_len_samples),
         reinterpret_cast<int16_t*>(output));
     EXPECT_EQ(2 * input_len_samples, static_cast<size_t>(enc_len_bytes));
     return enc_len_bytes;
@@ -297,7 +299,8 @@ class AudioDecoderIlbcTest : public AudioDecoderTest {
   virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
                           uint8_t* output) {
     int enc_len_bytes =
-        WebRtcIlbcfix_Encode(encoder_, input, input_len_samples,
+        WebRtcIlbcfix_Encode(encoder_, input,
+                             static_cast<int>(input_len_samples),
                              reinterpret_cast<int16_t*>(output));
     EXPECT_EQ(50, enc_len_bytes);
     return enc_len_bytes;
@@ -475,7 +478,7 @@ class AudioDecoderG722Test : public AudioDecoderTest {
                           uint8_t* output) {
     int enc_len_bytes =
         WebRtcG722_Encode(encoder_, const_cast<int16_t*>(input),
-                          input_len_samples,
+                          static_cast<int>(input_len_samples),
                           reinterpret_cast<int16_t*>(output));
     EXPECT_EQ(80, enc_len_bytes);
     return enc_len_bytes;
@@ -545,15 +548,17 @@ class AudioDecoderOpusTest : public AudioDecoderTest {
     // Upsample from 32 to 48 kHz.
     Resampler rs;
     rs.Reset(32000, 48000, kResamplerSynchronous);
-    const int max_resamp_len_samples = input_len_samples * 3 / 2;
+    const int max_resamp_len_samples = static_cast<int>(input_len_samples) *
+        3 / 2;
     int16_t* resamp_input = new int16_t[max_resamp_len_samples];
     int resamp_len_samples;
-    EXPECT_EQ(0, rs.Push(input, input_len_samples, resamp_input,
-                         max_resamp_len_samples, resamp_len_samples));
+    EXPECT_EQ(0, rs.Push(input, static_cast<int>(input_len_samples),
+                         resamp_input, max_resamp_len_samples,
+                         resamp_len_samples));
     EXPECT_EQ(max_resamp_len_samples, resamp_len_samples);
     int enc_len_bytes =
-        WebRtcOpus_Encode(encoder_, resamp_input,
-                          resamp_len_samples, data_length_, output);
+        WebRtcOpus_Encode(encoder_, resamp_input, resamp_len_samples,
+                          static_cast<int>(data_length_), output);
     EXPECT_GT(enc_len_bytes, 0);
     delete [] resamp_input;
     return enc_len_bytes;
@@ -582,7 +587,7 @@ class AudioDecoderOpusStereoTest : public AudioDecoderTest {
   virtual int EncodeFrame(const int16_t* input, size_t input_len_samples,
                           uint8_t* output) {
     // Create stereo by duplicating each sample in |input|.
-    const int input_stereo_samples = input_len_samples * 2;
+    const int input_stereo_samples = static_cast<int>(input_len_samples) * 2;
     int16_t* input_stereo = new int16_t[input_stereo_samples];
     for (size_t i = 0; i < input_len_samples; i++)
       input_stereo[i * 2] = input_stereo[i * 2 + 1] = input[i];
@@ -597,7 +602,7 @@ class AudioDecoderOpusStereoTest : public AudioDecoderTest {
     EXPECT_EQ(max_resamp_len_samples, resamp_len_samples);
     int enc_len_bytes =
         WebRtcOpus_Encode(encoder_, resamp_input, resamp_len_samples / 2,
-                          data_length_, output);
+                          static_cast<int16_t>(data_length_), output);
     EXPECT_GT(enc_len_bytes, 0);
     delete [] resamp_input;
     delete [] input_stereo;

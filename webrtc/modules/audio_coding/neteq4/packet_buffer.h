@@ -116,7 +116,7 @@ class PacketBuffer {
   // The default value for |inc| is 1.
   virtual void IncrementWaitingTimes(int inc = 1);
 
-  virtual void BufferStat(int* num_packest,
+  virtual void BufferStat(int* num_packets,
                           int* max_num_packets,
                           int* current_memory_bytes,
                           int* max_memory_bytes) const;

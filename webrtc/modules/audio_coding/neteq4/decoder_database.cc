@@ -28,7 +28,7 @@ DecoderDatabase::DecoderInfo::~DecoderInfo() {
 
 bool DecoderDatabase::Empty() const { return decoders_.empty(); }
 
-int DecoderDatabase::Size() const { return decoders_.size(); }
+int DecoderDatabase::Size() const { return static_cast<int>(decoders_.size()); }
 
 void DecoderDatabase::Reset() {
   decoders_.clear();
