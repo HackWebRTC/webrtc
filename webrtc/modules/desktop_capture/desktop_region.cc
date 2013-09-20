@@ -134,7 +134,7 @@ void DesktopRegion::AddRect(const DesktopRect& rect) {
     MergeWithPrecedingRow(row);
 
     // Move to the next row.
-    row++;
+    ++row;
   }
 
   if (row != rows_.end())
@@ -311,6 +311,12 @@ void DesktopRegion::Subtract(const DesktopRegion& region) {
       // If the |top| is above |row_a| then skip the range between |top| and
       // top of |row_a| because it's empty.
       top = row_a->second->top;
+      if (top >= row_b->second->bottom) {
+        ++row_b;
+        if (row_b != region.rows_.end())
+          top = row_b->second->top;
+        continue;
+      }
     }
 
     if (row_b->second->bottom < row_a->second->bottom) {
@@ -333,7 +339,7 @@ void DesktopRegion::Subtract(const DesktopRegion& region) {
     top = row_a->second->bottom;
 
     if (top >= row_b->second->bottom) {
-      row_b++;
+      ++row_b;
       if (row_b != region.rows_.end())
         top = row_b->second->top;
     }
@@ -347,7 +353,7 @@ void DesktopRegion::Subtract(const DesktopRegion& region) {
       rows_.erase(row_to_delete);
     } else {
       MergeWithPrecedingRow(row_a);
-      row_a++;
+      ++row_a;
     }
   }
 
@@ -474,17 +480,19 @@ void DesktopRegion::SubtractRows(const RowSpanSet& set_a,
     // If there is no intersection then append the current span and continue.
     if (it_b == set_b.end() || it_a->right < it_b->left) {
       output->push_back(*it_a);
-      it_a++;
       continue;
     }
 
     // Iterate over |set_b| spans that may intersect with |it_a|.
     int pos = it_a->left;
     while (it_b != set_b.end() && it_b->left < it_a->right) {
-      if (it_b->left > pos) {
+      if (it_b->left > pos)
         output->push_back(RowSpan(pos, it_b->left));
+      if (it_b->right > pos) {
+        pos = it_b->right;
+        if (pos >= it_a->right)
+          break;
       }
-      pos = it_b->right;
       ++it_b;
     }
     if (pos < it_a->right)
