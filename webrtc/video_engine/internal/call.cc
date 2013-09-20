@@ -173,10 +173,8 @@ bool Call::DeliverRtcp(const uint8_t* packet, size_t length) {
              receive_ssrcs_.begin();
          it != receive_ssrcs_.end();
          ++it) {
-      if (it->second->DeliverRtcp(static_cast<const uint8_t*>(packet),
-                                  length)) {
+      if (it->second->DeliverRtcp(packet, length))
         rtcp_delivered = true;
-      }
     }
   }
 
@@ -186,10 +184,8 @@ bool Call::DeliverRtcp(const uint8_t* packet, size_t length) {
              send_ssrcs_.begin();
          it != send_ssrcs_.end();
          ++it) {
-      if (it->second->DeliverRtcp(static_cast<const uint8_t*>(packet),
-                                  length)) {
+      if (it->second->DeliverRtcp(packet, length))
         rtcp_delivered = true;
-      }
     }
   }
   return rtcp_delivered;

@@ -103,7 +103,6 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
                               kViEStreamTypeNormal, i);
     }
   }
-  rtp_rtcp_->SetNACKStatus(channel_, config_.rtp.nack.rtp_history_ms > 0);
   rtp_rtcp_->SetTransmissionSmoothingStatus(channel_, config_.pacing);
   if (!config_.rtp.rtx.ssrcs.empty()) {
     assert(config_.rtp.rtx.ssrcs.size() == config_.rtp.ssrcs.size());
@@ -130,6 +129,26 @@ VideoSendStream::VideoSendStream(newapi::Transport* transport,
     } else {
       abort();  // Unsupported extension.
     }
+  }
+
+  // Enable NACK, FEC or both.
+  if (config_.rtp.fec.red_payload_type != -1) {
+    assert(config_.rtp.fec.ulpfec_payload_type != -1);
+    if (config_.rtp.nack.rtp_history_ms > 0) {
+      rtp_rtcp_->SetHybridNACKFECStatus(
+          channel_,
+          true,
+          static_cast<unsigned char>(config_.rtp.fec.red_payload_type),
+          static_cast<unsigned char>(config_.rtp.fec.ulpfec_payload_type));
+    } else {
+      rtp_rtcp_->SetFECStatus(
+          channel_,
+          true,
+          static_cast<unsigned char>(config_.rtp.fec.red_payload_type),
+          static_cast<unsigned char>(config_.rtp.fec.ulpfec_payload_type));
+    }
+  } else {
+    rtp_rtcp_->SetNACKStatus(channel_, config_.rtp.nack.rtp_history_ms > 0);
   }
 
   char rtcp_cname[ViERTP_RTCP::KMaxRTCPCNameLength];

@@ -15,11 +15,13 @@
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/sleep.h"
 #include "webrtc/system_wrappers/interface/thread_wrapper.h"
+#include "webrtc/video_engine/internal/transport_adapter.h"
+#include "webrtc/video_engine/new_include/call.h"
+#include "webrtc/video_engine/new_include/video_send_stream.h"
+#include "webrtc/video_engine/test/common/direct_transport.h"
 #include "webrtc/video_engine/test/common/fake_encoder.h"
 #include "webrtc/video_engine/test/common/frame_generator_capturer.h"
 #include "webrtc/video_engine/test/common/null_transport.h"
-#include "webrtc/video_engine/new_include/call.h"
-#include "webrtc/video_engine/new_include/video_send_stream.h"
 
 namespace webrtc {
 
@@ -45,8 +47,6 @@ class VideoSendStreamTest : public ::testing::Test {
   VideoSendStreamTest() : fake_encoder_(Clock::GetRealTimeClock()) {}
 
  protected:
-  static const uint32_t kSendSsrc;
-  static const uint32_t kSendRtxSsrc;
   void RunSendTest(Call* call,
                    const VideoSendStream::Config& config,
                    SendTransportObserver* observer) {
@@ -74,6 +74,9 @@ class VideoSendStreamTest : public ::testing::Test {
   }
 
   void TestNackRetransmission(uint32_t retransmit_ssrc);
+
+  static const uint32_t kSendSsrc;
+  static const uint32_t kSendRtxSsrc;
 
   test::FakeEncoder fake_encoder_;
 };
@@ -216,62 +219,151 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
   RunSendTest(call.get(), send_config, &observer);
 }
 
+class LossyReceiveStatistics : public NullReceiveStatistics {
+ public:
+  LossyReceiveStatistics(uint32_t send_ssrc,
+                         uint32_t last_sequence_number,
+                         uint32_t cumulative_lost,
+                         uint8_t fraction_lost)
+      : lossy_stats_(new LossyStatistician(last_sequence_number,
+                                           cumulative_lost,
+                                           fraction_lost)) {
+    stats_map_[send_ssrc] = lossy_stats_.get();
+  }
+
+  virtual StatisticianMap GetActiveStatisticians() const OVERRIDE {
+    return stats_map_;
+  }
+
+  virtual StreamStatistician* GetStatistician(uint32_t ssrc) const OVERRIDE {
+    return lossy_stats_.get();
+  }
+
+ private:
+  class LossyStatistician : public StreamStatistician {
+   public:
+    LossyStatistician(uint32_t extended_max_sequence_number,
+                      uint32_t cumulative_lost,
+                      uint8_t fraction_lost) {
+      stats_.fraction_lost = fraction_lost;
+      stats_.cumulative_lost = cumulative_lost;
+      stats_.extended_max_sequence_number = extended_max_sequence_number;
+    }
+    virtual bool GetStatistics(Statistics* statistics, bool reset) OVERRIDE {
+      *statistics = stats_;
+      return true;
+    }
+    virtual void GetDataCounters(uint32_t* bytes_received,
+                                 uint32_t* packets_received) const OVERRIDE {
+      *bytes_received = 0;
+      *packets_received = 0;
+    }
+    virtual uint32_t BitrateReceived() const OVERRIDE { return 0; }
+    virtual void ResetStatistics() OVERRIDE {}
+    virtual bool IsRetransmitOfOldPacket(const RTPHeader& header,
+                                         int min_rtt) const OVERRIDE {
+      return false;
+    }
+
+    virtual bool IsPacketInOrder(uint16_t sequence_number) const OVERRIDE {
+      return true;
+    }
+    Statistics stats_;
+  };
+
+  scoped_ptr<LossyStatistician> lossy_stats_;
+  StatisticianMap stats_map_;
+};
+
+TEST_F(VideoSendStreamTest, SupportsFec) {
+  static const int kRedPayloadType = 118;
+  static const int kUlpfecPayloadType = 119;
+  class FecObserver : public SendTransportObserver {
+   public:
+    FecObserver()
+        : SendTransportObserver(30 * 1000),
+          transport_adapter_(&transport_),
+          send_count_(0),
+          received_media_(false),
+          received_fec_(false) {}
+
+    void SetReceiver(PacketReceiver* receiver) {
+      transport_.SetReceiver(receiver);
+    }
+
+    virtual bool SendRTP(const uint8_t* packet, size_t length) OVERRIDE {
+      RTPHeader header;
+      EXPECT_TRUE(
+          rtp_header_parser_->Parse(packet, static_cast<int>(length), &header));
+
+      // Send lossy receive reports to trigger FEC enabling.
+      if (send_count_++ % 2 != 0) {
+        // Receive statistics reporting having lost 50% of the packets.
+        LossyReceiveStatistics lossy_receive_stats(
+            kSendSsrc, header.sequenceNumber, send_count_ / 2, 127);
+        RTCPSender rtcp_sender(
+            0, false, Clock::GetRealTimeClock(), &lossy_receive_stats);
+        EXPECT_EQ(0, rtcp_sender.RegisterSendTransport(&transport_adapter_));
+
+        rtcp_sender.SetRTCPStatus(kRtcpNonCompound);
+        rtcp_sender.SetRemoteSSRC(kSendSsrc);
+
+        RTCPSender::FeedbackState feedback_state;
+
+        EXPECT_EQ(0, rtcp_sender.SendRTCP(feedback_state, kRtcpRr));
+      }
+
+      EXPECT_EQ(kRedPayloadType, header.payloadType);
+
+      uint8_t encapsulated_payload_type = packet[header.headerLength];
+
+      if (encapsulated_payload_type == kUlpfecPayloadType) {
+        received_fec_ = true;
+      } else {
+        received_media_ = true;
+      }
+
+      if (received_media_ && received_fec_)
+        send_test_complete_->Set();
+
+      return true;
+    }
+
+   private:
+    internal::TransportAdapter transport_adapter_;
+    test::DirectTransport transport_;
+    int send_count_;
+    bool received_media_;
+    bool received_fec_;
+  } observer;
+
+  Call::Config call_config(&observer);
+  scoped_ptr<Call> call(Call::Create(call_config));
+
+  observer.SetReceiver(call->Receiver());
+
+  VideoSendStream::Config send_config = GetSendTestConfig(call.get());
+  send_config.rtp.fec.red_payload_type = kRedPayloadType;
+  send_config.rtp.fec.ulpfec_payload_type = kUlpfecPayloadType;
+
+  RunSendTest(call.get(), send_config, &observer);
+}
+
 void VideoSendStreamTest::TestNackRetransmission(uint32_t retransmit_ssrc) {
-  class NackObserver : public SendTransportObserver, webrtc::Transport {
+  class NackObserver : public SendTransportObserver {
    public:
     NackObserver(uint32_t retransmit_ssrc)
         : SendTransportObserver(30 * 1000),
-          thread_(ThreadWrapper::CreateThread(NackProcess, this)),
-          send_call_receiver_(NULL),
+          transport_adapter_(&transport_),
           send_count_(0),
           retransmit_ssrc_(retransmit_ssrc),
           nacked_sequence_number_(0) {}
 
-    ~NackObserver() {
-      EXPECT_TRUE(thread_->Stop());
-    }
-
-    void SetReceiver(PacketReceiver* send_call_receiver) {
-      send_call_receiver_ = send_call_receiver;
-    }
-
-    // Sending NACKs must be done from a different "network" thread to prevent
-    // violating locking orders. With this no locks are held prior to inserting
-    // packets back into the sender.
-    static bool NackProcess(void* observer) {
-      return static_cast<NackObserver*>(observer)->SendNack();
-    }
-
-    bool SendNack() {
-      NullReceiveStatistics null_stats;
-      RTCPSender rtcp_sender(0, false, Clock::GetRealTimeClock(), &null_stats);
-      EXPECT_EQ(0, rtcp_sender.RegisterSendTransport(this));
-
-      rtcp_sender.SetRTCPStatus(kRtcpNonCompound);
-      rtcp_sender.SetRemoteSSRC(kSendSsrc);
-
-      RTCPSender::FeedbackState feedback_state;
-      EXPECT_EQ(0, rtcp_sender.SendRTCP(
-          feedback_state, kRtcpNack, 1, &nacked_sequence_number_));
-      return false;
-    }
-
-    virtual int SendPacket(int channel, const void* data, int len) OVERRIDE {
-      ADD_FAILURE()
-          << "This should never be reached. Only a NACK should be sent.";
-      return -1;
-    }
-
-    virtual int SendRTCPPacket(int channel,
-                               const void* data,
-                               int len) OVERRIDE {
-      EXPECT_TRUE(send_call_receiver_->DeliverPacket(
-          static_cast<const uint8_t*>(data), static_cast<size_t>(len)));
-      return len;
+    void SetReceiver(PacketReceiver* receiver) {
+      transport_.SetReceiver(receiver);
     }
 
     virtual bool SendRTP(const uint8_t* packet, size_t length) OVERRIDE {
-      EXPECT_TRUE(send_call_receiver_ != NULL);
       RTPHeader header;
       EXPECT_TRUE(
           rtp_header_parser_->Parse(packet, static_cast<int>(length), &header));
@@ -279,8 +371,19 @@ void VideoSendStreamTest::TestNackRetransmission(uint32_t retransmit_ssrc) {
       // Nack second packet after receiving the third one.
       if (++send_count_ == 3) {
         nacked_sequence_number_ = header.sequenceNumber - 1;
-        unsigned int id;
-        EXPECT_TRUE(thread_->Start(id));
+        NullReceiveStatistics null_stats;
+        RTCPSender rtcp_sender(
+            0, false, Clock::GetRealTimeClock(), &null_stats);
+        EXPECT_EQ(0, rtcp_sender.RegisterSendTransport(&transport_adapter_));
+
+        rtcp_sender.SetRTCPStatus(kRtcpNonCompound);
+        rtcp_sender.SetRemoteSSRC(kSendSsrc);
+
+        RTCPSender::FeedbackState feedback_state;
+
+        EXPECT_EQ(0,
+                  rtcp_sender.SendRTCP(
+                      feedback_state, kRtcpNack, 1, &nacked_sequence_number_));
       }
 
       uint16_t sequence_number = header.sequenceNumber;
@@ -299,8 +402,8 @@ void VideoSendStreamTest::TestNackRetransmission(uint32_t retransmit_ssrc) {
       return true;
     }
    private:
-    scoped_ptr<ThreadWrapper> thread_;
-    PacketReceiver* send_call_receiver_;
+    internal::TransportAdapter transport_adapter_;
+    test::DirectTransport transport_;
     int send_count_;
     uint32_t retransmit_ssrc_;
     uint16_t nacked_sequence_number_;
