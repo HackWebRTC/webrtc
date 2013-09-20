@@ -525,7 +525,7 @@ int AudioCodingModuleImpl::ProcessSingleStream() {
         }
         case kActiveNormalEncoded:
         case kPassiveNormalEncoded: {
-          current_payload_type = (uint8_t)send_codec_inst_.pltype;
+          current_payload_type = static_cast<uint8_t>(send_codec_inst_.pltype);
           frame_type = kAudioFrameSpeech;
           break;
         }
@@ -685,7 +685,7 @@ int AudioCodingModuleImpl::ProcessSingleStream() {
 
     if (vad_callback_ != NULL) {
       // Callback with VAD decision.
-      vad_callback_->InFrameType(((int16_t)encoding_type));
+      vad_callback_->InFrameType(static_cast<int16_t>(encoding_type));
     }
   }
   return length_bytes;
@@ -998,7 +998,6 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
     }
 
     ACMGenericCodec* codec_ptr = codecs_[codec_id];
-    int status;
     WebRtcACMCodecParams codec_params;
 
     memcpy(&(codec_params.codec_inst), &send_codec, sizeof(CodecInst));
@@ -1006,12 +1005,7 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
     codec_params.enable_dtx = dtx_enabled_;
     codec_params.vad_mode = vad_mode_;
     // Force initialization.
-    status = codec_ptr->InitEncoder(&codec_params, true);
-
-    // Check if VAD was turned on, or if error is reported.
-    if (status == 1) {
-      vad_enabled_ = true;
-    } else if (status < 0) {
+    if (codec_ptr->InitEncoder(&codec_params, true) < 0) {
       // Could not initialize the encoder.
 
       // Check if already have a registered codec.
@@ -1028,17 +1022,17 @@ int AudioCodingModuleImpl::RegisterSendCodec(const CodecInst& send_codec) {
       return -1;
     }
 
+    // Update states.
+    dtx_enabled_ = codec_params.enable_dtx;
+    vad_enabled_ = codec_params.enable_vad;
+    vad_mode_ = codec_params.vad_mode;
+
     // Everything is fine so we can replace the previous codec with this one.
     if (send_codec_registered_) {
       // If we change codec we start fresh with FEC.
       // This is not strictly required by the standard.
       is_first_red_ = true;
-
-      if (codec_ptr->SetVAD(dtx_enabled_, vad_enabled_, vad_mode_) < 0) {
-        // SetVAD failed.
-        vad_enabled_ = false;
-        dtx_enabled_ = false;
-      }
+      codec_ptr->SetVAD(&dtx_enabled_, &vad_enabled_, &vad_mode_);
     }
 
     current_send_codec_idx_ = codec_id;
@@ -1450,6 +1444,9 @@ int AudioCodingModuleImpl::SetVADSafe(bool enable_dtx,
   if ((enable_dtx || enable_vad) && stereo_send_) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                  "VAD/DTX not supported for stereo sending");
+    dtx_enabled_ = false;
+    vad_enabled_ = false;
+    vad_mode_ = mode;
     return -1;
   }
 
@@ -1458,37 +1455,28 @@ int AudioCodingModuleImpl::SetVADSafe(bool enable_dtx,
   if ((enable_dtx || enable_vad) && secondary_encoder_.get() != NULL) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                  "VAD/DTX not supported when dual-streaming is enabled.");
+    dtx_enabled_ = false;
+    vad_enabled_ = false;
+    vad_mode_ = mode;
     return -1;
   }
 
-  // If a send codec is registered, set VAD/DTX for the codec.
-  if (HaveValidEncoder("SetVAD")) {
-    int status = codecs_[current_send_codec_idx_]->SetVAD(enable_dtx,
-                                                          enable_vad,
-                                                          mode);
-    if (status == 1) {
-      // Vad was enabled.
-      vad_enabled_ = true;
-      dtx_enabled_ = enable_dtx;
-      vad_mode_ = mode;
+  // Store VAD/DTX settings. Values can be changed in the call to "SetVAD"
+  // below.
+  dtx_enabled_ = enable_dtx;
+  vad_enabled_ = enable_vad;
+  vad_mode_ = mode;
 
-      return 0;
-    } else if (status < 0) {
+  // If a send codec is registered, set VAD/DTX for the codec.
+  if (HaveValidEncoder("SetVAD") && codecs_[current_send_codec_idx_]->SetVAD(
+      &enable_dtx, &enable_vad,  &mode) < 0) {
       // SetVAD failed.
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                    "SetVAD failed");
-
       vad_enabled_ = false;
       dtx_enabled_ = false;
-
       return -1;
-    }
   }
-
-  vad_enabled_ = enable_vad;
-  dtx_enabled_ = enable_dtx;
-  vad_mode_ = mode;
-
   return 0;
 }
 

@@ -231,16 +231,16 @@ class ACMGenericCodec {
 
   ///////////////////////////////////////////////////////////////////////////
   // int16_t SetVAD()
-  // This is called to set VAD & DTX. If the codec has internal DTX that will
+  // This is called to set VAD & DTX. If the codec has internal DTX, it will
   // be used. If DTX is enabled and the codec does not have internal DTX,
   // WebRtc-VAD will be used to decide if the frame is active. If DTX is
-  // disabled but VAD is enabled. The audio is passed through VAD to label it
+  // disabled but VAD is enabled, the audio is passed through VAD to label it
   // as active or passive, but the frame is  encoded normally. However the
   // bit-stream is labeled properly so that ACM::Process() can use this
   // information. In case of failure, the previous states of the VAD & DTX
   // are kept.
   //
-  // Inputs:
+  // Inputs/Output:
   //   -enable_dtx         : if true DTX will be enabled otherwise the DTX is
   //                         disabled. If codec has internal DTX that will be
   //                         used, otherwise WebRtc-CNG is used. In the latter
@@ -256,9 +256,7 @@ class ACMGenericCodec {
   //   -1 if failed to set DTX & VAD as specified,
   //    0 if succeeded.
   //
-  int16_t SetVAD(const bool enable_dtx = true,
-                 const bool enable_vad = false,
-                 const ACMVADMode mode = VADNormal);
+  int16_t SetVAD(bool* enable_dtx, bool* enable_vad, ACMVADMode* mode);
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t ReplaceInternalDTX()
@@ -639,9 +637,7 @@ class ACMGenericCodec {
   // See SetVAD() for the description of function, input(s)/output(s) and
   // return value.
   //
-  int16_t SetVADSafe(const bool enable_dtx = true,
-                     const bool enable_vad = false,
-                     const ACMVADMode mode = VADNormal);
+  int16_t SetVADSafe(bool* enable_dtx, bool* enable_vad, ACMVADMode* mode);
 
   ///////////////////////////////////////////////////////////////////////////
   // See ReplaceInternalDTX() for the description of function, input and

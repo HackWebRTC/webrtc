@@ -494,8 +494,8 @@ int16_t ACMGenericCodec::ResetEncoderSafe() {
 
   // Set DTX/VAD.
   int status = SetVADSafe(&enable_dtx, &enable_vad, &mode);
-  vad_enabled_ = enable_dtx;
-  dtx_enabled_ = enable_vad;
+  dtx_enabled_ = enable_dtx;
+  vad_enabled_ = enable_vad;
   vad_mode_ = mode;
   return status;
 }
