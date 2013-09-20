@@ -356,7 +356,8 @@ TEST_F(VideoCaptureTest, CreateDelete) {
     // Make sure 5 frames are captured.
     EXPECT_TRUE_WAIT(capture_observer.incoming_frames() >= 5, kTimeOut);
 
-    EXPECT_GT(capture_observer.capture_delay(), 0);
+    // TODO(holmer): Disabled due to being flaky. See issue 2405.
+    // EXPECT_GT(capture_observer.capture_delay(), 0);
 
     int64_t stop_time = TickTime::MillisecondTimestamp();
     EXPECT_EQ(0, module->StopCapture());
