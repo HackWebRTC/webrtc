@@ -61,8 +61,8 @@ void VCMReceiver::Reset() {
 }
 
 int32_t VCMReceiver::Initialize() {
-  CriticalSectionScoped cs(crit_sect_);
   Reset();
+  CriticalSectionScoped cs(crit_sect_);
   if (!master_) {
     SetNackMode(kNoNack, -1, -1);
   }
