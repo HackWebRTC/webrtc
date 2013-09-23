@@ -142,7 +142,7 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
  public:
   TestVideoCaptureCallback()
     : capture_cs_(CriticalSectionWrapper::CreateCriticalSection()),
-      capture_delay_(0),
+      capture_delay_(-1),
       last_render_time_ms_(0),
       incoming_frames_(0),
       timing_warnings_(0),
@@ -204,7 +204,7 @@ class TestVideoCaptureCallback : public VideoCaptureDataCallback {
     capability_= capability;
     incoming_frames_ = 0;
     last_render_time_ms_ = 0;
-    capture_delay_ = 0;
+    capture_delay_ = -1;
   }
   int incoming_frames() {
     CriticalSectionScoped cs(capture_cs_.get());
@@ -356,8 +356,7 @@ TEST_F(VideoCaptureTest, CreateDelete) {
     // Make sure 5 frames are captured.
     EXPECT_TRUE_WAIT(capture_observer.incoming_frames() >= 5, kTimeOut);
 
-    // TODO(holmer): Disabled due to being flaky. See issue 2405.
-    // EXPECT_GT(capture_observer.capture_delay(), 0);
+    EXPECT_GE(capture_observer.capture_delay(), 0);
 
     int64_t stop_time = TickTime::MillisecondTimestamp();
     EXPECT_EQ(0, module->StopCapture());
