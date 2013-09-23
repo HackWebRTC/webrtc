@@ -13,6 +13,7 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -49,7 +50,7 @@ protected:
                              const RTPFragmentationHeader* fragmentation);
 
 private:
-    AudioCodingModule* _acm;
+    scoped_ptr<AudioCodingModule> _acm;
 
     CodecInst _receiveCodec;
 

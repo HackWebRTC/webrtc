@@ -33,8 +33,8 @@
 #include "webrtc/voice_engine/include/voe_dtmf.h"
 #endif
 
-namespace webrtc
-{
+namespace webrtc {
+
 class AudioDeviceModule;
 class Config;
 class CriticalSectionWrapper;
@@ -56,8 +56,8 @@ struct CallStatistics;
 struct ReportBlock;
 struct SenderInfo;
 
-namespace voe
-{
+namespace voe {
+
 class Statistics;
 class TransmitMixer;
 class OutputMixer;
@@ -77,7 +77,6 @@ class Channel:
 public:
     enum {KNumSocketThreads = 1};
     enum {KNumberOfSocketBuffers = 8};
-public:
     virtual ~Channel();
     static int32_t CreateChannel(Channel*& channel,
                                  int32_t channelId,
@@ -95,7 +94,6 @@ public:
         CriticalSectionWrapper* callbackCritSect);
     int32_t UpdateLocalTimeStamp();
 
-public:
     // API methods
 
     // VoEBase
@@ -288,7 +286,6 @@ public:
                              unsigned short payloadSize);
     uint32_t LastRemoteTimeStamp() { return _lastRemoteTimeStamp; }
 
-public:
     // From AudioPacketizationCallback in the ACM
     int32_t SendData(FrameType frameType,
                      uint8_t payloadType,
@@ -299,10 +296,8 @@ public:
     // From ACMVADCallback in the ACM
     int32_t InFrameType(int16_t frameType);
 
-public:
     int32_t OnRxVadDetected(int vadDecision);
 
-public:
     // From RtpData in the RTP/RTCP module
     int32_t OnReceivedPayloadData(const uint8_t* payloadData,
                                   uint16_t payloadSize,
@@ -310,7 +305,6 @@ public:
 
     bool OnRecoveredPacket(const uint8_t* packet, int packet_length);
 
-public:
     // From RtpFeedback in the RTP/RTCP module
     int32_t OnInitializeDecoder(
             int32_t id,
@@ -335,7 +329,6 @@ public:
 
     void ResetStatistics(uint32_t ssrc);
 
-public:
     // From RtcpFeedback in the RTP/RTCP module
     void OnApplicationDataReceived(int32_t id,
                                    uint8_t subType,
@@ -343,7 +336,6 @@ public:
                                    uint16_t length,
                                    const uint8_t* data);
 
-public:
     // From RtpAudioFeedback in the RTP/RTCP module
     void OnReceivedTelephoneEvent(int32_t id,
                                   uint8_t event,
@@ -354,21 +346,17 @@ public:
                               uint16_t lengthMs,
                               uint8_t volume);
 
-public:
     // From Transport (called by the RTP/RTCP module)
     int SendPacket(int /*channel*/, const void *data, int len);
     int SendRTCPPacket(int /*channel*/, const void *data, int len);
 
-public:
     // From MixerParticipant
     int32_t GetAudioFrame(int32_t id, AudioFrame& audioFrame);
     int32_t NeededFrequency(int32_t id);
 
-public:
     // From MonitorObserver
     void OnPeriodicProcess();
 
-public:
     // From FileCallback
     void PlayNotification(int32_t id,
                           uint32_t durationMs);
@@ -377,7 +365,6 @@ public:
     void PlayFileEnded(int32_t id);
     void RecordFileEnded(int32_t id);
 
-public:
     uint32_t InstanceId() const
     {
         return _instanceId;
@@ -457,23 +444,21 @@ private:
     int ApmProcessRx(AudioFrame& audioFrame);
 
     int SetRedPayloadType(int red_payload_type);
-private:
+
     CriticalSectionWrapper& _fileCritSect;
     CriticalSectionWrapper& _callbackCritSect;
     uint32_t _instanceId;
     int32_t _channelId;
 
-private:
     scoped_ptr<RtpHeaderParser> rtp_header_parser_;
     scoped_ptr<RTPPayloadRegistry> rtp_payload_registry_;
     scoped_ptr<ReceiveStatistics> rtp_receive_statistics_;
     scoped_ptr<RtpReceiver> rtp_receiver_;
     TelephoneEventHandler* telephone_event_handler_;
     scoped_ptr<RtpRtcp> _rtpRtcpModule;
-    AudioCodingModule& _audioCodingModule;
+    scoped_ptr<AudioCodingModule> audio_coding_;
     RtpDump& _rtpDumpIn;
     RtpDump& _rtpDumpOut;
-private:
     AudioLevel _outputAudioLevel;
     bool _externalTransport;
     AudioFrame _audioFrame;
@@ -509,7 +494,6 @@ private:
     uint16_t send_sequence_number_;
     uint8_t restored_packet_[kVoiceEngineMaxIpPacketSizeBytes];
 
- private:
     // uses
     Statistics* _engineStatisticsPtr;
     OutputMixer* _outputMixerPtr;
@@ -527,7 +511,6 @@ private:
     int32_t _sendFrameType; // Send data is voice, 1-voice, 0-otherwise
     VoERTPObserver* _rtpObserverPtr;
     VoERTCPObserver* _rtcpObserverPtr;
-private:
     // VoEBase
     bool _outputIsOnHold;
     bool _externalPlayout;
@@ -581,7 +564,6 @@ private:
 };
 
 }  // namespace voe
-
 }  // namespace webrtc
 
 #endif  // WEBRTC_VOICE_ENGINE_CHANNEL_H

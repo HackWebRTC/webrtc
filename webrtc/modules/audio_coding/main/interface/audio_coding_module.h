@@ -82,15 +82,12 @@ class AudioCodingModule: public Module {
   // Creation and destruction of a ACM.
   //
   // The second method is used for testing where a simulated clock can be
-  // injected into ACM. ACM will take the owner ship of the object clock and
+  // injected into ACM. ACM will take the ownership of the object clock and
   // delete it when destroyed.
   //
   static AudioCodingModule* Create(int id);
   static AudioCodingModule* Create(int id, Clock* clock);
   virtual ~AudioCodingModule() {};
-
-  // TODO(ajm): Deprecated. Remove all calls to this unneeded method.
-  static void Destroy(AudioCodingModule* module);
 
   ///////////////////////////////////////////////////////////////////////////
   //   Utility functions

@@ -28,7 +28,6 @@ AudioCoder::AudioCoder(uint32_t instanceID)
 
 AudioCoder::~AudioCoder()
 {
-    AudioCodingModule::Destroy(_acm);
 }
 
 int32_t AudioCoder::SetEncodeCodec(const CodecInst& codecInst,

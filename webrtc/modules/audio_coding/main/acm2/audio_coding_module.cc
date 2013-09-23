@@ -28,11 +28,6 @@ AudioCodingModule* AudioCodingModule::Create(int id, Clock* clock) {
   return new acm1::AudioCodingModuleImpl(id, clock);
 }
 
-// Destroy module
-void AudioCodingModule::Destroy(AudioCodingModule* module) {
-  delete module;
-}
-
 // Get number of supported codecs
 int AudioCodingModule::NumberOfCodecs() {
   return ACMCodecDB::kNumCodecs;

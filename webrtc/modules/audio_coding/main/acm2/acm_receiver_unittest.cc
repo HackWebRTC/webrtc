@@ -49,7 +49,7 @@ class AcmReceiverTest : public AudioPacketizationCallback,
 
   void SetUp() {
     ASSERT_TRUE(receiver_.get() != NULL);
-    ASSERT_TRUE(acm_ != NULL);
+    ASSERT_TRUE(acm_.get() != NULL);
     for (int n = 0; n < ACMCodecDB::kNumCodecs; n++) {
       ASSERT_EQ(0, ACMCodecDB::Codec(n, &codecs_[n]));
     }
@@ -69,7 +69,6 @@ class AcmReceiverTest : public AudioPacketizationCallback,
   }
 
   void TearDown() {
-    AudioCodingModule::Destroy(acm_);
   }
 
   void InsertOnePacketOfSilence(int codec_id) {
@@ -145,7 +144,7 @@ class AcmReceiverTest : public AudioPacketizationCallback,
 
   scoped_ptr<AcmReceiver> receiver_;
   CodecInst codecs_[ACMCodecDB::kMaxNumCodecs];
-  AudioCodingModule* acm_;
+  scoped_ptr<AudioCodingModule> acm_;
   WebRtcRTPHeader rtp_header_;
   uint32_t timestamp_;
   bool packet_sent_;  // Set when SendData is called reset when inserting audio.
