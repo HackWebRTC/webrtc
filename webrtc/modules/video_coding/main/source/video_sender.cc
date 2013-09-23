@@ -124,7 +124,7 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
                             sendCodec->width,
                             sendCodec->height,
                             numLayers);
-  _mediaOpt.SetMtu(maxPayloadSize);
+  _mediaOpt.set_max_payload_size(maxPayloadSize);
 
   return VCM_OK;
 }
@@ -369,7 +369,7 @@ int32_t VideoSender::EnableFrameDropper(bool enable) {
 
 int32_t VideoSender::SentFrameCount(VCMFrameCount* frameCount) const {
   CriticalSectionScoped cs(_sendCritSect);
-  return _mediaOpt.SentFrameCount(*frameCount);
+  return _mediaOpt.SentFrameCount(frameCount);
 }
 
 int VideoSender::SetSenderNackMode(SenderNackMode mode) {

@@ -107,7 +107,7 @@ class VideoSender {
   VCMGenericEncoder* _encoder;
   VCMEncodedFrameCallback _encodedFrameCallback;
   std::vector<FrameType> _nextFrameTypes;
-  media_optimization::VCMMediaOptimization _mediaOpt;
+  media_optimization::MediaOptimization _mediaOpt;
   VCMSendStatisticsCallback* _sendStatsCallback;
   FILE* _encoderInputFile;
   VCMCodecDataBase _codecDataBase;

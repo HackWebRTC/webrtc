@@ -19,7 +19,7 @@ namespace webrtc
 {
 
 namespace media_optimization {
-class VCMMediaOptimization;
+class MediaOptimization;
 }  // namespace media_optimization
 
 /*************************************/
@@ -49,7 +49,7 @@ public:
     /**
     * Set media Optimization
     */
-    void SetMediaOpt (media_optimization::VCMMediaOptimization* mediaOpt);
+    void SetMediaOpt (media_optimization::MediaOptimization* mediaOpt);
 
     void SetPayloadType(uint8_t payloadType) { _payloadType = payloadType; };
     void SetCodecType(VideoCodecType codecType) {_codecType = codecType;};
@@ -64,7 +64,7 @@ private:
                                   RTPVideoHeader** rtp);
 
     VCMPacketizationCallback* _sendCallback;
-    media_optimization::VCMMediaOptimization* _mediaOpt;
+    media_optimization::MediaOptimization* _mediaOpt;
     uint32_t _encodedBytes;
     uint8_t _payloadType;
     VideoCodecType _codecType;

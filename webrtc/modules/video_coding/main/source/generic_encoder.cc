@@ -240,7 +240,7 @@ VCMEncodedFrameCallback::EncodedBytes()
 
 void
 VCMEncodedFrameCallback::SetMediaOpt(
-    media_optimization::VCMMediaOptimization *mediaOpt)
+    media_optimization::MediaOptimization *mediaOpt)
 {
     _mediaOpt = mediaOpt;
 }
