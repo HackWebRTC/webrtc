@@ -102,7 +102,8 @@ void StunServer::SendResponse(
     const StunMessage& msg, const talk_base::SocketAddress& addr) {
   talk_base::ByteBuffer buf;
   msg.Write(&buf);
-  if (socket_->SendTo(buf.Data(), buf.Length(), addr) < 0)
+  if (socket_->SendTo(
+      buf.Data(), buf.Length(), addr, talk_base::DSCP_NO_CHANGE) < 0)
     LOG_ERR(LS_ERROR) << "sendto";
 }
 

@@ -33,6 +33,7 @@
 
 #include "talk/base/basictypes.h"
 #include "talk/base/buffer.h"
+#include "talk/base/dscp.h"
 #include "talk/base/logging.h"
 #include "talk/base/sigslot.h"
 #include "talk/base/socket.h"
@@ -414,8 +415,12 @@ class MediaChannel : public sigslot::has_slots<> {
   class NetworkInterface {
    public:
     enum SocketType { ST_RTP, ST_RTCP };
-    virtual bool SendPacket(talk_base::Buffer* packet) = 0;
-    virtual bool SendRtcp(talk_base::Buffer* packet) = 0;
+    virtual bool SendPacket(
+        talk_base::Buffer* packet,
+        talk_base::DiffServCodePoint dscp = talk_base::DSCP_NO_CHANGE) = 0;
+    virtual bool SendRtcp(
+        talk_base::Buffer* packet,
+        talk_base::DiffServCodePoint dscp = talk_base::DSCP_NO_CHANGE) = 0;
     virtual int SetOption(SocketType type, talk_base::Socket::Option opt,
                           int option) = 0;
     virtual ~NetworkInterface() {}
@@ -862,10 +867,12 @@ class VideoMediaChannel : public MediaChannel {
 };
 
 enum DataMessageType {
-  // TODO(pthatcher):  Make this enum match the SCTP PPIDs that WebRTC uses?
-  DMT_CONTROL = 0,
-  DMT_BINARY = 1,
-  DMT_TEXT = 2,
+  // Chrome-Internal use only.  See SctpDataMediaChannel for the actual PPID
+  // values.
+  DMT_NONE = 0,
+  DMT_CONTROL = 1,
+  DMT_BINARY = 2,
+  DMT_TEXT = 3,
 };
 
 // Info about data received in DataMediaChannel.  For use in

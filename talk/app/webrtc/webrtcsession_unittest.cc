@@ -2496,6 +2496,29 @@ TEST_F(WebRtcSessionTest, TestCreateOfferWithSctpEnabledWithoutStreams) {
 
   talk_base::scoped_ptr<SessionDescriptionInterface> offer(CreateOffer(NULL));
   EXPECT_TRUE(offer->description()->GetContentByName("data") == NULL);
+  EXPECT_TRUE(offer->description()->GetTransportInfoByName("data") == NULL);
+}
+
+TEST_F(WebRtcSessionTest, TestCreateAnswerWithSctpInOfferAndNoStreams) {
+  MAYBE_SKIP_TEST(talk_base::SSLStreamAdapter::HaveDtlsSrtp);
+  SetFactoryDtlsSrtp();
+  constraints_.reset(new FakeConstraints());
+  constraints_->AddOptional(
+      webrtc::MediaConstraintsInterface::kEnableSctpDataChannels, true);
+  InitWithDtls(false);
+
+  // Create remote offer with SCTP.
+  cricket::MediaSessionOptions options;
+  options.data_channel_type = cricket::DCT_SCTP;
+  JsepSessionDescription* offer =
+      CreateRemoteOffer(options, cricket::SEC_ENABLED);
+  SetRemoteDescriptionWithoutError(offer);
+
+  // Verifies the answer contains SCTP.
+  talk_base::scoped_ptr<SessionDescriptionInterface> answer(CreateAnswer(NULL));
+  EXPECT_TRUE(answer != NULL);
+  EXPECT_TRUE(answer->description()->GetContentByName("data") != NULL);
+  EXPECT_TRUE(answer->description()->GetTransportInfoByName("data") != NULL);
 }
 
 TEST_F(WebRtcSessionTest, TestSctpDataChannelWithoutDtls) {

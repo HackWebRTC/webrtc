@@ -216,8 +216,10 @@ Connection* UDPPort::CreateConnection(const Candidate& address,
 }
 
 int UDPPort::SendTo(const void* data, size_t size,
-                     const talk_base::SocketAddress& addr, bool payload) {
-  int sent = socket_->SendTo(data, size, addr);
+                    const talk_base::SocketAddress& addr,
+                    talk_base::DiffServCodePoint dscp,
+                    bool payload) {
+  int sent = socket_->SendTo(data, size, addr, dscp);
   if (sent < 0) {
     error_ = socket_->GetError();
     LOG_J(LS_ERROR, this) << "UDP send of " << size
@@ -227,6 +229,12 @@ int UDPPort::SendTo(const void* data, size_t size,
 }
 
 int UDPPort::SetOption(talk_base::Socket::Option opt, int value) {
+  // TODO(mallinath) - After we have the support on socket,
+  // remove this specialization.
+  if (opt == talk_base::Socket::OPT_DSCP) {
+    SetDefaultDscpValue(static_cast<talk_base::DiffServCodePoint>(value));
+    return 0;
+  }
   return socket_->SetOption(opt, value);
 }
 
@@ -345,7 +353,7 @@ void UDPPort::SetResult(bool success) {
 // TODO: merge this with SendTo above.
 void UDPPort::OnSendPacket(const void* data, size_t size, StunRequest* req) {
   StunBindingRequest* sreq = static_cast<StunBindingRequest*>(req);
-  if (socket_->SendTo(data, size, sreq->server_addr()) < 0)
+  if (socket_->SendTo(data, size, sreq->server_addr(), DefaultDscpValue()) < 0)
     PLOG(LERROR, socket_->GetError()) << "sendto";
 }
 

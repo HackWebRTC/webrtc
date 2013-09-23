@@ -41,6 +41,7 @@
 #include "talk/base/stringutils.h"
 #include "talk/base/thread.h"
 #include "talk/media/base/fakevideocapturer.h"
+#include "talk/media/sctp/sctpdataengine.h"
 #include "talk/session/media/mediasession.h"
 
 static const char kStreamLabel1[] = "local_stream_1";

@@ -74,14 +74,16 @@ RawTransportChannel::~RawTransportChannel() {
   delete allocator_session_;
 }
 
-int RawTransportChannel::SendPacket(const char *data, size_t size, int flags) {
+int RawTransportChannel::SendPacket(const char *data, size_t size,
+                                    talk_base::DiffServCodePoint dscp,
+                                    int flags) {
   if (port_ == NULL)
     return -1;
   if (remote_address_.IsNil())
     return -1;
   if (flags != 0)
     return -1;
-  return port_->SendTo(data, size, remote_address_, true);
+  return port_->SendTo(data, size, remote_address_, dscp, true);
 }
 
 int RawTransportChannel::SetOption(talk_base::Socket::Option opt, int value) {

@@ -127,14 +127,15 @@ class StateObserver : public ObserverInterface {
 class VideoSourceTest : public testing::Test {
  protected:
   VideoSourceTest()
-      : channel_manager_(new cricket::ChannelManager(
+      : capturer_cleanup_(new TestVideoCapturer()),
+        capturer_(capturer_cleanup_.get()),
+        channel_manager_(new cricket::ChannelManager(
           new cricket::FakeMediaEngine(),
           new cricket::FakeDeviceManager(), talk_base::Thread::Current())) {
   }
 
   void SetUp() {
     ASSERT_TRUE(channel_manager_->Init());
-    capturer_ = new TestVideoCapturer();
   }
 
   void CreateVideoSource() {
@@ -145,7 +146,7 @@ class VideoSourceTest : public testing::Test {
       const webrtc::MediaConstraintsInterface* constraints) {
     // VideoSource take ownership of |capturer_|
     source_ = VideoSource::Create(channel_manager_.get(),
-                                  capturer_,
+                                  capturer_cleanup_.release(),
                                   constraints);
 
     ASSERT_TRUE(source_.get() != NULL);
@@ -156,7 +157,8 @@ class VideoSourceTest : public testing::Test {
     source_->AddSink(&renderer_);
   }
 
-  TestVideoCapturer* capturer_;  // Raw pointer. Owned by source_.
+  talk_base::scoped_ptr<TestVideoCapturer> capturer_cleanup_;
+  TestVideoCapturer* capturer_;
   cricket::FakeVideoRenderer renderer_;
   talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
   talk_base::scoped_ptr<StateObserver> state_observer_;
@@ -184,9 +186,6 @@ TEST_F(VideoSourceTest, StartStop) {
 // Test start stop with a remote VideoSource - the video source that has a
 // RemoteVideoCapturer and takes video frames from FrameInput.
 TEST_F(VideoSourceTest, StartStopRemote) {
-  // Will use RemoteVideoCapturer.
-  delete capturer_;
-
   source_ = VideoSource::Create(channel_manager_.get(),
                                 new webrtc::RemoteVideoCapturer(),
                                 NULL);

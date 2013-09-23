@@ -37,6 +37,7 @@
 #include "talk/app/webrtc/videosource.h"
 #include "talk/app/webrtc/videotrack.h"
 #include "talk/base/bytebuffer.h"
+#include "talk/media/sctp/sctpdataengine.h"
 
 static const char kDefaultStreamLabel[] = "default";
 static const char kDefaultAudioTrackLabel[] = "defaulta0";

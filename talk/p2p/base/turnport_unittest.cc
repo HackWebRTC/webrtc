@@ -27,6 +27,7 @@
 
 #include "talk/base/asynctcpsocket.h"
 #include "talk/base/buffer.h"
+#include "talk/base/dscp.h"
 #include "talk/base/firewallsocketserver.h"
 #include "talk/base/logging.h"
 #include "talk/base/gunit.h"
@@ -217,8 +218,8 @@ class TurnPortTest : public testing::Test,
       for (size_t j = 0; j < i + 1; ++j) {
         buf[j] = 0xFF - j;
       }
-      conn1->Send(buf, i + 1);
-      conn2->Send(buf, i + 1);
+      conn1->Send(buf, i + 1, talk_base::DSCP_NO_CHANGE);
+      conn2->Send(buf, i + 1, talk_base::DSCP_NO_CHANGE);
       main_->ProcessMessages(0);
     }
 

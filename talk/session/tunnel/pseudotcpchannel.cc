@@ -502,7 +502,7 @@ IPseudoTcpNotify::WriteResult PseudoTcpChannel::TcpWritePacket(
   ASSERT(cs_.CurrentThreadIsOwner());
   ASSERT(tcp == tcp_);
   ASSERT(NULL != channel_);
-  int sent = channel_->SendPacket(buffer, len);
+  int sent = channel_->SendPacket(buffer, len, talk_base::DSCP_NO_CHANGE);
   if (sent > 0) {
     //LOG_F(LS_VERBOSE) << "(" << sent << ") Sent";
     return IPseudoTcpNotify::WR_SUCCESS;

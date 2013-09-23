@@ -1223,7 +1223,7 @@ static void AddDefaultFeedbackParams(VideoCodec* codec) {
 }
 
 // Rebuilds the codec list to be only those that are less intensive
-// than the specified codec.
+// than the specified codec. Prefers internal codec over external.
 bool WebRtcVideoEngine::RebuildCodecList(const VideoCodec& in_codec) {
   if (!FindCodec(in_codec))
     return false;
@@ -1231,32 +1231,12 @@ bool WebRtcVideoEngine::RebuildCodecList(const VideoCodec& in_codec) {
   video_codecs_.clear();
 
   bool found = false;
-  std::set<std::string> external_codec_names;
-  if (encoder_factory_) {
-    const std::vector<WebRtcVideoEncoderFactory::VideoCodec>& codecs =
-        encoder_factory_->codecs();
-    for (size_t i = 0; i < codecs.size(); ++i) {
-      if (!found)
-        found = (in_codec.name == codecs[i].name);
-      VideoCodec codec(
-          GetExternalVideoPayloadType(static_cast<int>(i)),
-          codecs[i].name,
-          codecs[i].max_width,
-          codecs[i].max_height,
-          codecs[i].max_fps,
-          static_cast<int>(codecs.size() + ARRAY_SIZE(kVideoCodecPrefs) - i));
-      AddDefaultFeedbackParams(&codec);
-      video_codecs_.push_back(codec);
-      external_codec_names.insert(codecs[i].name);
-    }
-  }
+  std::set<std::string> internal_codec_names;
   for (size_t i = 0; i < ARRAY_SIZE(kVideoCodecPrefs); ++i) {
     const VideoCodecPref& pref(kVideoCodecPrefs[i]);
     if (!found)
       found = (in_codec.name == pref.name);
-    bool is_external_codec = external_codec_names.find(pref.name) !=
-        external_codec_names.end();
-    if (found && !is_external_codec) {
+    if (found) {
       VideoCodec codec(pref.payload_type, pref.name,
                        in_codec.width, in_codec.height, in_codec.framerate,
                        static_cast<int>(ARRAY_SIZE(kVideoCodecPrefs) - i));
@@ -1264,6 +1244,28 @@ bool WebRtcVideoEngine::RebuildCodecList(const VideoCodec& in_codec) {
         AddDefaultFeedbackParams(&codec);
       }
       video_codecs_.push_back(codec);
+      internal_codec_names.insert(codec.name);
+    }
+  }
+  if (encoder_factory_) {
+    const std::vector<WebRtcVideoEncoderFactory::VideoCodec>& codecs =
+        encoder_factory_->codecs();
+    for (size_t i = 0; i < codecs.size(); ++i) {
+      bool is_internal_codec = internal_codec_names.find(codecs[i].name) !=
+          internal_codec_names.end();
+      if (!is_internal_codec) {
+        if (!found)
+          found = (in_codec.name == codecs[i].name);
+        VideoCodec codec(
+            GetExternalVideoPayloadType(static_cast<int>(i)),
+            codecs[i].name,
+            codecs[i].max_width,
+            codecs[i].max_height,
+            codecs[i].max_fps,
+            static_cast<int>(codecs.size() + ARRAY_SIZE(kVideoCodecPrefs) - i));
+        AddDefaultFeedbackParams(&codec);
+        video_codecs_.push_back(codec);
+      }
     }
   }
   ASSERT(found);

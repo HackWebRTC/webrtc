@@ -32,6 +32,7 @@
 #include <vector>
 
 #include "talk/base/basictypes.h"
+#include "talk/base/dscp.h"
 #include "talk/base/sigslot.h"
 #include "talk/base/socket.h"
 #include "talk/base/sslidentity.h"
@@ -80,7 +81,9 @@ class TransportChannel : public sigslot::has_slots<> {
 
   // Attempts to send the given packet.  The return value is < 0 on failure.
   // TODO: Remove the default argument once channel code is updated.
-  virtual int SendPacket(const char* data, size_t len, int flags = 0) = 0;
+  virtual int SendPacket(const char* data, size_t len,
+                         talk_base::DiffServCodePoint dscp,
+                         int flags = 0) = 0;
 
   // Sets a socket option on this channel.  Note that not all options are
   // supported by all transport types.

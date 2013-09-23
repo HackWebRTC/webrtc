@@ -130,7 +130,8 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
   int recvbuf_size() const { return recvbuf_size_; }
 
  protected:
-  virtual bool SendPacket(talk_base::Buffer* packet) {
+  virtual bool SendPacket(talk_base::Buffer* packet,
+                          talk_base::DiffServCodePoint dscp) {
     talk_base::CritScope cs(&crit_);
 
     uint32 cur_ssrc = 0;
@@ -164,7 +165,8 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
     return true;
   }
 
-  virtual bool SendRtcp(talk_base::Buffer* packet) {
+  virtual bool SendRtcp(talk_base::Buffer* packet,
+                        talk_base::DiffServCodePoint dscp) {
     talk_base::CritScope cs(&crit_);
     rtcp_packets_.push_back(*packet);
     if (!conf_) {

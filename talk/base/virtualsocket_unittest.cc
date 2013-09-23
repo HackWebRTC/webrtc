@@ -69,7 +69,7 @@ struct Sender : public MessageHandler {
 
     count += size;
     memcpy(dummy, &cur_time, sizeof(cur_time));
-    socket->Send(dummy, size);
+    socket->Send(dummy, size, DSCP_NO_CHANGE);
 
     last_send = cur_time;
     thread->PostDelayed(NextDelay(), this, 1);

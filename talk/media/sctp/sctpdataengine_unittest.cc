@@ -60,7 +60,8 @@ class SctpFakeNetworkInterface : public cricket::MediaChannel::NetworkInterface,
 
  protected:
   // Called to send raw packet down the wire (e.g. SCTP an packet).
-  virtual bool SendPacket(talk_base::Buffer* packet) {
+  virtual bool SendPacket(talk_base::Buffer* packet,
+                          talk_base::DiffServCodePoint dscp) {
     LOG(LS_VERBOSE) << "SctpFakeNetworkInterface::SendPacket";
 
     // TODO(ldixon): Can/should we use Buffer.TransferTo here?
@@ -89,7 +90,8 @@ class SctpFakeNetworkInterface : public cricket::MediaChannel::NetworkInterface,
   // Unsupported functions required to exist by NetworkInterface.
   // TODO(ldixon): Refactor parent NetworkInterface class so these are not
   // required. They are RTC specific and should be in an appropriate subclass.
-  virtual bool SendRtcp(talk_base::Buffer* packet) {
+  virtual bool SendRtcp(talk_base::Buffer* packet,
+                        talk_base::DiffServCodePoint dscp) {
     LOG(LS_WARNING) << "Unsupported: SctpFakeNetworkInterface::SendRtcp.";
     return false;
   }
@@ -97,6 +99,9 @@ class SctpFakeNetworkInterface : public cricket::MediaChannel::NetworkInterface,
                         int option) {
     LOG(LS_WARNING) << "Unsupported: SctpFakeNetworkInterface::SetOption.";
     return 0;
+  }
+  virtual void SetDefaultDSCPCode(talk_base::DiffServCodePoint dscp) {
+    LOG(LS_WARNING) << "Unsupported: SctpFakeNetworkInterface::SetOption.";
   }
 
  private:

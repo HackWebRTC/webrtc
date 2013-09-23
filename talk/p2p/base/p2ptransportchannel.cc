@@ -518,7 +518,20 @@ void P2PTransportChannel::OnUnknownAddress(
     // request came from.
 
     // There shouldn't be an existing connection with this remote address.
-    ASSERT(port->GetConnection(new_remote_candidate.address()) == NULL);
+    // When ports are muxed, this channel might get multiple unknown addres
+    // signals. In that case if the connection is already exists, we should
+    // simply ignore the signal othewise send server error.
+    if (port->GetConnection(new_remote_candidate.address()) && port_muxed) {
+      LOG(LS_INFO) << "Connection already exist for PeerReflexive candidate: "
+                   << new_remote_candidate.ToString();
+      return;
+    } else if (port->GetConnection(new_remote_candidate.address())) {
+      ASSERT(false);
+      port->SendBindingErrorResponse(stun_msg, address,
+                                     STUN_ERROR_SERVER_ERROR,
+                                     STUN_ERROR_REASON_SERVER_ERROR);
+      return;
+    }
 
     Connection* connection = port->CreateConnection(
         new_remote_candidate, cricket::PortInterface::ORIGIN_THIS_PORT);
@@ -773,7 +786,9 @@ int P2PTransportChannel::SetOption(talk_base::Socket::Option opt, int value) {
 }
 
 // Send data to the other side, using our best connection.
-int P2PTransportChannel::SendPacket(const char *data, size_t len, int flags) {
+int P2PTransportChannel::SendPacket(const char *data, size_t len,
+                                    talk_base::DiffServCodePoint dscp,
+                                    int flags) {
   ASSERT(worker_thread_ == talk_base::Thread::Current());
   if (flags != 0) {
     error_ = EINVAL;
@@ -783,7 +798,7 @@ int P2PTransportChannel::SendPacket(const char *data, size_t len, int flags) {
     error_ = EWOULDBLOCK;
     return -1;
   }
-  int sent = best_connection_->Send(data, len);
+  int sent = best_connection_->Send(data, len, dscp);
   if (sent <= 0) {
     ASSERT(sent < 0);
     error_ = best_connection_->GetError();
@@ -821,6 +836,14 @@ bool P2PTransportChannel::GetStats(ConnectionInfos *infos) {
   }
 
   return true;
+}
+
+talk_base::DiffServCodePoint P2PTransportChannel::DefaultDscpValue() const {
+  OptionMap::const_iterator it = options_.find(talk_base::Socket::OPT_DSCP);
+  if (it == options_.end()) {
+    return talk_base::DSCP_NO_CHANGE;
+  }
+  return static_cast<talk_base::DiffServCodePoint> (it->second);
 }
 
 // Begin allocate (or immediately re-allocate, if MSG_ALLOCATE pending)

@@ -169,7 +169,8 @@ class FakeTransportChannel : public TransportChannelImpl,
     }
   }
 
-  virtual int SendPacket(const char* data, size_t len, int flags) {
+  virtual int SendPacket(const char* data, size_t len,
+                         talk_base::DiffServCodePoint dscp, int flags) {
     if (state_ != STATE_CONNECTED) {
       return -1;
     }

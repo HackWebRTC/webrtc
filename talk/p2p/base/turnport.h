@@ -74,6 +74,7 @@ class TurnPort : public Port {
       const Candidate& c, PortInterface::CandidateOrigin origin);
   virtual int SendTo(const void* data, size_t size,
                      const talk_base::SocketAddress& addr,
+                     talk_base::DiffServCodePoint dscp,
                      bool payload);
   virtual int SetOption(talk_base::Socket::Option opt, int value);
   virtual int GetOption(talk_base::Socket::Option opt, int* value);
@@ -106,6 +107,8 @@ class TurnPort : public Port {
            const RelayCredentials& credentials);
 
  private:
+  enum { MSG_ERROR = MSG_FIRST_AVAILABLE };
+
   typedef std::list<TurnEntry*> EntryList;
   typedef std::map<talk_base::Socket::Option, int> SocketOptionsMap;
 
@@ -138,7 +141,7 @@ class TurnPort : public Port {
 
   bool ScheduleRefresh(int lifetime);
   void SendRequest(StunRequest* request, int delay);
-  int Send(const void* data, size_t size);
+  int Send(const void* data, size_t size, talk_base::DiffServCodePoint dscp);
   void UpdateHash();
   bool UpdateNonce(StunMessage* response);
 

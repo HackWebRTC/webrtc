@@ -251,8 +251,10 @@ class BaseChannel
   void FlushRtcpMessages();
 
   // NetworkInterface implementation, called by MediaEngine
-  virtual bool SendPacket(talk_base::Buffer* packet);
-  virtual bool SendRtcp(talk_base::Buffer* packet);
+  virtual bool SendPacket(talk_base::Buffer* packet,
+                          talk_base::DiffServCodePoint dscp);
+  virtual bool SendRtcp(talk_base::Buffer* packet,
+                        talk_base::DiffServCodePoint dscp);
   virtual int SetOption(SocketType type, talk_base::Socket::Option o, int val);
 
   // From TransportChannel
@@ -263,7 +265,8 @@ class BaseChannel
 
   bool PacketIsRtcp(const TransportChannel* channel, const char* data,
                     size_t len);
-  bool SendPacket(bool rtcp, talk_base::Buffer* packet);
+  bool SendPacket(bool rtcp, talk_base::Buffer* packet,
+                  talk_base::DiffServCodePoint dscp);
   virtual bool WantsPacket(bool rtcp, talk_base::Buffer* packet);
   void HandlePacket(bool rtcp, talk_base::Buffer* packet);
 

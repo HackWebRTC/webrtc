@@ -68,7 +68,9 @@ class PortProxy : public PortInterface, public sigslot::has_slots<> {
       const talk_base::SocketAddress& remote_addr);
 
   virtual int SendTo(const void* data, size_t size,
-                     const talk_base::SocketAddress& addr, bool payload);
+                     const talk_base::SocketAddress& addr,
+                     talk_base::DiffServCodePoint dscp,
+                     bool payload);
   virtual int SetOption(talk_base::Socket::Option opt, int value);
   virtual int GetOption(talk_base::Socket::Option opt, int* value);
   virtual int GetError();

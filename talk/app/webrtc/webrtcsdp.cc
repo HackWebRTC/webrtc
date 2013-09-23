@@ -42,6 +42,7 @@
 #include "talk/media/base/codec.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/cryptoparams.h"
+#include "talk/media/sctp/sctpdataengine.h"
 #include "talk/p2p/base/candidate.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/port.h"

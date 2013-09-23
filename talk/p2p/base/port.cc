@@ -112,7 +112,7 @@ const int RTT_RATIO = 3;  // 3 : 1
 // The delay before we begin checking if this port is useless.
 const int kPortTimeoutDelay = 30 * 1000;  // 30 seconds
 
-const uint32 MSG_CHECKTIMEOUT = 1;
+// Used by the Connection.
 const uint32 MSG_DELETE = 1;
 }
 
@@ -181,7 +181,8 @@ Port::Port(talk_base::Thread* thread, talk_base::Network* network,
       ice_protocol_(ICEPROTO_GOOGLE),
       ice_role_(ICEROLE_UNKNOWN),
       tiebreaker_(0),
-      shared_socket_(true) {
+      shared_socket_(true),
+      default_dscp_(talk_base::DSCP_NO_CHANGE) {
   Construct();
 }
 
@@ -207,7 +208,8 @@ Port::Port(talk_base::Thread* thread, const std::string& type,
       ice_protocol_(ICEPROTO_GOOGLE),
       ice_role_(ICEROLE_UNKNOWN),
       tiebreaker_(0),
-      shared_socket_(false) {
+      shared_socket_(false),
+      default_dscp_(talk_base::DSCP_NO_CHANGE) {
   ASSERT(factory_ != NULL);
   Construct();
 }
@@ -606,7 +608,7 @@ void Port::SendBindingResponse(StunMessage* request,
   // Send the response message.
   talk_base::ByteBuffer buf;
   response.Write(&buf);
-  if (SendTo(buf.Data(), buf.Length(), addr, false) < 0) {
+  if (SendTo(buf.Data(), buf.Length(), addr, DefaultDscpValue(), false) < 0) {
     LOG_J(LS_ERROR, this) << "Failed to send STUN ping response to "
                           << addr.ToSensitiveString();
   }
@@ -660,7 +662,7 @@ void Port::SendBindingErrorResponse(StunMessage* request,
   // Send the response message.
   talk_base::ByteBuffer buf;
   response.Write(&buf);
-  SendTo(buf.Data(), buf.Length(), addr, false);
+  SendTo(buf.Data(), buf.Length(), addr, DefaultDscpValue(), false);
   LOG_J(LS_INFO, this) << "Sending STUN binding error: reason=" << reason
                        << " to " << addr.ToSensitiveString();
 }
@@ -916,7 +918,8 @@ void Connection::set_use_candidate_attr(bool enable) {
 
 void Connection::OnSendStunPacket(const void* data, size_t size,
                                   StunRequest* req) {
-  if (port_->SendTo(data, size, remote_candidate_.address(), false) < 0) {
+  if (port_->SendTo(data, size, remote_candidate_.address(),
+                    port_->DefaultDscpValue(), false) < 0) {
     LOG_J(LS_WARNING, this) << "Failed to send STUN ping " << req->id();
   }
 }
@@ -1389,12 +1392,13 @@ ProxyConnection::ProxyConnection(Port* port, size_t index,
   : Connection(port, index, candidate), error_(0) {
 }
 
-int ProxyConnection::Send(const void* data, size_t size) {
+int ProxyConnection::Send(const void* data, size_t size,
+                          talk_base::DiffServCodePoint dscp) {
   if (write_state_ == STATE_WRITE_INIT || write_state_ == STATE_WRITE_TIMEOUT) {
     error_ = EWOULDBLOCK;
     return SOCKET_ERROR;
   }
-  int sent = port_->SendTo(data, size, remote_candidate_.address(), true);
+  int sent = port_->SendTo(data, size, remote_candidate_.address(), dscp, true);
   if (sent <= 0) {
     ASSERT(sent < 0);
     error_ = port_->GetError();

@@ -64,28 +64,58 @@ struct SctpInboundPacket {
   int flags;
 };
 
-// Helper for logging SCTP data. Given a buffer, returns a readable string.
+// Helper for logging SCTP messages.
 static void debug_sctp_printf(const char *format, ...) {
   char s[255];
   va_list ap;
   va_start(ap, format);
   vsnprintf(s, sizeof(s), format, ap);
-  LOG(LS_INFO) << s;
-  // vprintf(format, ap);
+  LOG(LS_INFO) << "SCTP: " << s;
   va_end(ap);
 }
 
-// Helper for make a string dump of some SCTP data. Used for LOG
-// debugging messages.
-static std::string SctpDataToDebugString(void* buffer, size_t length,
-                                         int dump_type) {
-  char *dump_buf = usrsctp_dumppacket(buffer, length, dump_type);
-  if (!dump_buf) {
-      return "";
+// Get the PPID to use for the terminating fragment of this type.
+static SctpDataMediaChannel::PayloadProtocolIdentifier GetPpid(
+    cricket::DataMessageType type) {
+  switch (type) {
+  default:
+  case cricket::DMT_NONE:
+    return SctpDataMediaChannel::PPID_NONE;
+  case cricket::DMT_CONTROL:
+    return SctpDataMediaChannel::PPID_CONTROL;
+  case cricket::DMT_BINARY:
+    return SctpDataMediaChannel::PPID_BINARY_LAST;
+  case cricket::DMT_TEXT:
+    return SctpDataMediaChannel::PPID_TEXT_LAST;
+  };
+}
+
+static bool GetDataMediaType(
+    SctpDataMediaChannel::PayloadProtocolIdentifier ppid,
+    cricket::DataMessageType *dest) {
+  ASSERT(dest != NULL);
+  switch (ppid) {
+    case SctpDataMediaChannel::PPID_BINARY_PARTIAL:
+    case SctpDataMediaChannel::PPID_BINARY_LAST:
+      *dest = cricket::DMT_BINARY;
+      return true;
+
+    case SctpDataMediaChannel::PPID_TEXT_PARTIAL:
+    case SctpDataMediaChannel::PPID_TEXT_LAST:
+      *dest = cricket::DMT_TEXT;
+      return true;
+
+    case SctpDataMediaChannel::PPID_CONTROL:
+      *dest = cricket::DMT_CONTROL;
+      return true;
+
+    case SctpDataMediaChannel::PPID_NONE:
+      *dest = cricket::DMT_NONE;
+      return true;
+
+    default:
+      return false;
   }
-  std::string s = std::string(dump_buf);
-  usrsctp_freedumpbuffer(dump_buf);
-  return s;
 }
 
 // This is the callback usrsctp uses when there's data to send on the network
@@ -96,9 +126,7 @@ static int OnSctpOutboundPacket(void* addr, void* data, size_t length,
   LOG(LS_VERBOSE) << "global OnSctpOutboundPacket():"
                   << "addr: " << addr << "; length: " << length
                   << "; tos: " << std::hex << static_cast<int>(tos)
-                  << "; set_df: " << std::hex << static_cast<int>(set_df)
-                  << "; data:" << SctpDataToDebugString(data, length,
-                                                        SCTP_DUMP_OUTBOUND);
+                  << "; set_df: " << std::hex << static_cast<int>(set_df);
   // Note: We have to copy the data; the caller will delete it.
   talk_base::Buffer* buffer = new talk_base::Buffer(data, length);
   channel->worker_thread()->Post(channel, MSG_SCTPOUTBOUNDPACKET,
@@ -114,37 +142,29 @@ static int OnSctpInboundPacket(struct socket* sock, union sctp_sockstore addr,
                                void* data, size_t length,
                                struct sctp_rcvinfo rcv, int flags,
                                void* ulp_info) {
-  LOG(LS_VERBOSE) << "global OnSctpInboundPacket... Msg of length "
-                  << length << " received via " << addr.sconn.sconn_addr << ":"
-                  << talk_base::NetworkToHost16(addr.sconn.sconn_port)
-                  << " on stream " << rcv.rcv_sid
-                  << " with SSN " << rcv.rcv_ssn
-                  << " and TSN " << rcv.rcv_tsn << ", PPID "
-                  << talk_base::NetworkToHost32(rcv.rcv_ppid)
-                  << ", context " << rcv.rcv_context
-                  << ", data: " << data
-                  << ", ulp_info:" << ulp_info
-                  << ", flags:" << std::hex << flags;
   SctpDataMediaChannel* channel = static_cast<SctpDataMediaChannel*>(ulp_info);
-  // The second log call is useful when the defines flags are incorrect. In
-  // this case, ulp_info ends up being bad and the second log message will
-  // cause a crash.
-  LOG(LS_VERBOSE) << "global OnSctpInboundPacket. channel="
-                  << channel->debug_name() << "...";
   // Post data to the channel's receiver thread (copying it).
   // TODO(ldixon): Unclear if copy is needed as this method is responsible for
   // memory cleanup. But this does simplify code.
-  const uint32 native_ppid = talk_base::HostToNetwork32(rcv.rcv_ppid);
-  SctpInboundPacket* packet = new SctpInboundPacket();
-  packet->buffer.SetData(data, length);
-  packet->params.ssrc = rcv.rcv_sid;
-  packet->params.seq_num = rcv.rcv_ssn;
-  packet->params.timestamp = rcv.rcv_tsn;
-  packet->params.type =
-      static_cast<cricket::DataMessageType>(native_ppid);
-  packet->flags = flags;
-  channel->worker_thread()->Post(channel, MSG_SCTPINBOUNDPACKET,
-                                 talk_base::WrapMessageData(packet));
+  const SctpDataMediaChannel::PayloadProtocolIdentifier ppid =
+      static_cast<SctpDataMediaChannel::PayloadProtocolIdentifier>(
+          talk_base::HostToNetwork32(rcv.rcv_ppid));
+  cricket::DataMessageType type = cricket::DMT_NONE;
+  if (!GetDataMediaType(ppid, &type) && !(flags & MSG_NOTIFICATION)) {
+    // It's neither a notification nor a recognized data packet.  Drop it.
+    LOG(LS_ERROR) << "Received an unknown PPID " << ppid
+                  << " on an SCTP packet.  Dropping.";
+  } else {
+    SctpInboundPacket* packet = new SctpInboundPacket;
+    packet->buffer.SetData(data, length);
+    packet->params.ssrc = rcv.rcv_sid;
+    packet->params.seq_num = rcv.rcv_ssn;
+    packet->params.timestamp = rcv.rcv_tsn;
+    packet->params.type = type;
+    packet->flags = flags;
+    channel->worker_thread()->Post(channel, MSG_SCTPINBOUNDPACKET,
+                                   talk_base::WrapMessageData(packet));
+  }
   free(data);
   return 1;
 }
@@ -181,6 +201,14 @@ SctpDataEngine::SctpDataEngine() {
     // See: http://lakerest.net/pipermail/sctp-coders/2012-January/009438.html
     // See: http://svnweb.freebsd.org/base?view=revision&revision=229805
     // usrsctp_sysctl_set_sctp_blackhole(2);
+
+    // Set the number of default outgoing streams.  This is the number we'll
+    // send in the SCTP INIT message.  The 'appropriate default' in the
+    // second paragraph of
+    // http://tools.ietf.org/html/draft-ietf-rtcweb-data-channel-05#section-6.2
+    // is cricket::kMaxSctpSid.
+    usrsctp_sysctl_set_sctp_nr_outgoing_streams_default(
+        cricket::kMaxSctpSid);
   }
   usrsctp_engines_count++;
 
@@ -437,7 +465,8 @@ bool SctpDataMediaChannel::SendData(
     const talk_base::Buffer& payload,
     SendDataResult* result) {
   if (result) {
-    // If we return true, we'll set this to SDR_SUCCESS.
+    // Preset |result| to assume an error.  If SendData succeeds, we'll
+    // overwrite |*result| once more at the end.
     *result = SDR_ERROR;
   }
 
@@ -457,41 +486,36 @@ bool SctpDataMediaChannel::SendData(
     return false;
   }
 
-  // TODO(ldixon): Experiment with sctp_sendv_spa instead of sctp_sndinfo. e.g.
-  // struct sctp_sendv_spa spa = {0};
-  // spa.sendv_flags |= SCTP_SEND_SNDINFO_VALID;
-  // spa.sendv_sndinfo.snd_sid = params.ssrc;
-  // spa.sendv_sndinfo.snd_context = 0;
-  // spa.sendv_sndinfo.snd_assoc_id = 0;
-  // TODO(pthatcher): Support different types of protocols (e.g. SSL) and
-  // messages (e.g. Binary) via SendDataParams.
-  // spa.sendv_sndinfo.snd_ppid = htonl(PPID_NONE);
-  // TODO(pthatcher): Support different reliability semantics.
-  // For reliable: Remove SCTP_UNORDERED.
-  // For partially-reliable: Add rtx or ttl.
-  // spa.sendv_sndinfo.snd_flags = SCTP_UNORDERED;
-  // TODO(phatcher): Try some of these things.
-  // spa.sendv_flags |= SCTP_SEND_PRINFO_VALID;
-  // spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_RTX;
-  // spa.sendv_prinfo.pr_value = htons(max_retransmit_count);
-  // spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_TTL;
-  // spa.sendv_prinfo.pr_value = htons(max_retransmit_time);
   //
   // Send data using SCTP.
-  sctp_sndinfo sndinfo = {0};
-  sndinfo.snd_sid = params.ssrc;
-  sndinfo.snd_flags = 0;
-  // TODO(pthatcher): Once data types are added to SendParams, this can be set
-  // from SendParams.
-  sndinfo.snd_ppid = talk_base::HostToNetwork32(params.type);
-  sndinfo.snd_context = 0;
-  sndinfo.snd_assoc_id = 0;
-  ssize_t res = usrsctp_sendv(sock_, payload.data(),
-                              static_cast<size_t>(payload.length()),
-                              NULL, 0, &sndinfo,
-                              static_cast<socklen_t>(sizeof(sndinfo)),
-                              SCTP_SENDV_SNDINFO, 0);
-  if (res < 0) {
+  ssize_t send_res = 0;  // result from usrsctp_sendv.
+  struct sctp_sendv_spa spa = {0};
+  spa.sendv_flags |= SCTP_SEND_SNDINFO_VALID;
+  spa.sendv_sndinfo.snd_sid = params.ssrc;
+  spa.sendv_sndinfo.snd_ppid = talk_base::HostToNetwork32(
+      GetPpid(params.type));
+
+  // Ordered implies reliable.
+  if (!params.ordered) {
+    spa.sendv_sndinfo.snd_flags |= SCTP_UNORDERED;
+    if (params.max_rtx_count >= 0 || params.max_rtx_ms == 0) {
+      spa.sendv_flags |= SCTP_SEND_PRINFO_VALID;
+      spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_RTX;
+      spa.sendv_prinfo.pr_value = params.max_rtx_count;
+    } else {
+      spa.sendv_flags |= SCTP_SEND_PRINFO_VALID;
+      spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_TTL;
+      spa.sendv_prinfo.pr_value = params.max_rtx_ms;
+    }
+  }
+
+  // We don't fragment.
+  send_res = usrsctp_sendv(sock_, payload.data(),
+                           static_cast<size_t>(payload.length()),
+                           NULL, 0, &spa,
+                           static_cast<socklen_t>(sizeof(spa)),
+                           SCTP_SENDV_SPA, 0);
+  if (send_res < 0) {
     if (errno == EWOULDBLOCK) {
       *result = SDR_BLOCK;
       LOG(LS_INFO) << debug_name_ << "->SendData(...): EWOULDBLOCK returned";
@@ -503,7 +527,7 @@ bool SctpDataMediaChannel::SendData(
     return false;
   }
   if (result) {
-    // If we return true, we'll set this to SDR_SUCCESS.
+    // Only way out now is success.
     *result = SDR_SUCCESS;
   }
   return true;
@@ -511,17 +535,13 @@ bool SctpDataMediaChannel::SendData(
 
 // Called by network interface when a packet has been received.
 void SctpDataMediaChannel::OnPacketReceived(talk_base::Buffer* packet) {
-  LOG(LS_VERBOSE) << debug_name_ << "->OnPacketReceived(...): "
-                  << " length=" << packet->length() << "; data="
-                  << SctpDataToDebugString(packet->data(), packet->length(),
-                                           SCTP_DUMP_INBOUND);
+  LOG(LS_VERBOSE) << debug_name_ << "->OnPacketReceived(...): " << " length="
+                  << packet->length() << ", sending: " << sending_;
   // Only give receiving packets to usrsctp after if connected. This enables two
   // peers to each make a connect call, but for them not to receive an INIT
   // packet before they have called connect; least the last receiver of the INIT
   // packet will have called connect, and a connection will be established.
   if (sending_) {
-    LOG(LS_VERBOSE) << debug_name_ << "->OnPacketReceived(...):"
-                    << " Passed packet to sctp.";
     // Pass received packet to SCTP stack. Once processed by usrsctp, the data
     // will be will be given to the global OnSctpInboundData, and then,
     // marshalled by a Post and handled with OnMessage.
@@ -529,8 +549,6 @@ void SctpDataMediaChannel::OnPacketReceived(talk_base::Buffer* packet) {
   } else {
     // TODO(ldixon): Consider caching the packet for very slightly better
     // reliability.
-    LOG(LS_INFO) << debug_name_ << "->OnPacketReceived(...):"
-                 << " Threw packet (probably an INIT) away.";
   }
 }
 
@@ -539,10 +557,8 @@ void SctpDataMediaChannel::OnInboundPacketFromSctpToChannel(
   LOG(LS_VERBOSE) << debug_name_ << "->OnInboundPacketFromSctpToChannel(...): "
                   << "Received SCTP data:"
                   << " ssrc=" << packet->params.ssrc
-                  << " data='" << std::string(packet->buffer.data(),
-                                              packet->buffer.length())
                   << " notification: " << (packet->flags & MSG_NOTIFICATION)
-                  << "' length=" << packet->buffer.length();
+                  << " length=" << packet->buffer.length();
   // Sending a packet with data == NULL (no data) is SCTPs "close the
   // connection" message. This sets sock_ = NULL;
   if (!packet->buffer.length() || !packet->buffer.data()) {

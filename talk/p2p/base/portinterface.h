@@ -30,6 +30,7 @@
 
 #include <string>
 
+#include "talk/base/dscp.h"
 #include "talk/base/socketaddress.h"
 #include "talk/p2p/base/transport.h"
 
@@ -90,16 +91,16 @@ class PortInterface {
 
   // Functions on the underlying socket(s).
   virtual int SetOption(talk_base::Socket::Option opt, int value) = 0;
-  virtual int GetError() = 0;
-
   virtual int GetOption(talk_base::Socket::Option opt, int* value) = 0;
+  virtual int GetError() = 0;
 
   virtual const std::vector<Candidate>& Candidates() const = 0;
 
   // Sends the given packet to the given address, provided that the address is
   // that of a connection or an address that has sent to us already.
   virtual int SendTo(const void* data, size_t size,
-                     const talk_base::SocketAddress& addr, bool payload) = 0;
+                     const talk_base::SocketAddress& addr,
+                     talk_base::DiffServCodePoint dscp, bool payload) = 0;
 
   // Indicates that we received a successful STUN binding request from an
   // address that doesn't correspond to any current connection.  To turn this

@@ -29,6 +29,7 @@
 #include <set>
 
 #include "talk/base/common.h"
+#include "talk/base/dscp.h"
 #include "talk/base/gunit.h"
 #include "talk/base/helpers.h"
 #include "talk/base/scoped_ptr.h"
@@ -244,7 +245,8 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
       // Only set the bypass flag if we've activated DTLS.
       int flags = (identity_.get() && srtp) ? cricket::PF_SRTP_BYPASS : 0;
-      int rv = channels_[channel]->SendPacket(packet.get(), size, flags);
+      int rv = channels_[channel]->SendPacket(
+          packet.get(), size, talk_base::DSCP_NO_CHANGE, flags);
       ASSERT_GT(rv, 0);
       ASSERT_EQ(size, static_cast<size_t>(rv));
       ++sent;

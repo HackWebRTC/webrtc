@@ -30,6 +30,7 @@
 #include "talk/base/buffer.h"
 #include "talk/base/byteorder.h"
 #include "talk/base/common.h"
+#include "talk/base/dscp.h"
 #include "talk/base/logging.h"
 #include "talk/media/base/rtputils.h"
 #include "talk/p2p/base/transportchannel.h"
@@ -189,6 +190,7 @@ struct VideoStatsMessageData : public talk_base::MessageData {
 
 struct PacketMessageData : public talk_base::MessageData {
   talk_base::Buffer packet;
+  talk_base::DiffServCodePoint dscp;
 };
 
 struct AudioRenderMessageData: public talk_base::MessageData {
@@ -566,12 +568,14 @@ bool BaseChannel::IsReadyToSend() const {
          was_ever_writable();
 }
 
-bool BaseChannel::SendPacket(talk_base::Buffer* packet) {
-  return SendPacket(false, packet);
+bool BaseChannel::SendPacket(talk_base::Buffer* packet,
+                             talk_base::DiffServCodePoint dscp) {
+  return SendPacket(false, packet, dscp);
 }
 
-bool BaseChannel::SendRtcp(talk_base::Buffer* packet) {
-  return SendPacket(true, packet);
+bool BaseChannel::SendRtcp(talk_base::Buffer* packet,
+                           talk_base::DiffServCodePoint dscp) {
+  return SendPacket(true, packet, dscp);
 }
 
 int BaseChannel::SetOption(SocketType type, talk_base::Socket::Option opt,
@@ -635,7 +639,8 @@ bool BaseChannel::PacketIsRtcp(const TransportChannel* channel,
           rtcp_mux_filter_.DemuxRtcp(data, static_cast<int>(len)));
 }
 
-bool BaseChannel::SendPacket(bool rtcp, talk_base::Buffer* packet) {
+bool BaseChannel::SendPacket(bool rtcp, talk_base::Buffer* packet,
+                             talk_base::DiffServCodePoint dscp) {
   // Unless we're sending optimistically, we only allow packets through when we
   // are completely writable.
   if (!optimistic_data_send_ && !writable_) {
@@ -654,6 +659,7 @@ bool BaseChannel::SendPacket(bool rtcp, talk_base::Buffer* packet) {
     int message_id = (!rtcp) ? MSG_RTPPACKET : MSG_RTCPPACKET;
     PacketMessageData* data = new PacketMessageData;
     packet->TransferTo(&data->packet);
+    data->dscp = dscp;
     worker_thread_->Post(this, message_id, data);
     return true;
   }
@@ -731,7 +737,7 @@ bool BaseChannel::SendPacket(bool rtcp, talk_base::Buffer* packet) {
   }
 
   // Bon voyage.
-  int ret = channel->SendPacket(packet->data(), packet->length(),
+  int ret = channel->SendPacket(packet->data(), packet->length(), dscp,
       (secure() && secure_dtls()) ? PF_SRTP_BYPASS : 0);
   if (ret != static_cast<int>(packet->length())) {
     if (channel->GetError() == EWOULDBLOCK) {
@@ -1404,7 +1410,7 @@ void BaseChannel::OnMessage(talk_base::Message *pmsg) {
     case MSG_RTPPACKET:
     case MSG_RTCPPACKET: {
       PacketMessageData* data = static_cast<PacketMessageData*>(pmsg->pdata);
-      SendPacket(pmsg->message_id == MSG_RTCPPACKET, &data->packet);
+      SendPacket(pmsg->message_id == MSG_RTCPPACKET, &data->packet, data->dscp);
       delete data;  // because it is Posted
       break;
     }

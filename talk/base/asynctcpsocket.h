@@ -43,14 +43,15 @@ class AsyncTCPSocketBase : public AsyncPacketSocket {
   virtual ~AsyncTCPSocketBase();
 
   // Pure virtual methods to send and recv data.
-  virtual int Send(const void *pv, size_t cb) = 0;
+  virtual int Send(const void *pv, size_t cb, DiffServCodePoint dscp) = 0;
   virtual void ProcessInput(char* data, size_t* len) = 0;
   // Signals incoming connection.
   virtual void HandleIncomingConnection(AsyncSocket* socket) = 0;
 
   virtual SocketAddress GetLocalAddress() const;
   virtual SocketAddress GetRemoteAddress() const;
-  virtual int SendTo(const void *pv, size_t cb, const SocketAddress& addr);
+  virtual int SendTo(const void *pv, size_t cb, const SocketAddress& addr,
+                     DiffServCodePoint dscp);
   virtual int Close();
 
   virtual State GetState() const;
@@ -101,7 +102,7 @@ class AsyncTCPSocket : public AsyncTCPSocketBase {
   AsyncTCPSocket(AsyncSocket* socket, bool listen);
   virtual ~AsyncTCPSocket() {}
 
-  virtual int Send(const void* pv, size_t cb);
+  virtual int Send(const void* pv, size_t cb, DiffServCodePoint dscp);
   virtual void ProcessInput(char* data, size_t* len);
   virtual void HandleIncomingConnection(AsyncSocket* socket);
 

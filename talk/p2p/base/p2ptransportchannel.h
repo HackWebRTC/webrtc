@@ -90,7 +90,8 @@ class P2PTransportChannel : public TransportChannelImpl,
   virtual void OnCandidate(const Candidate& candidate);
 
   // From TransportChannel:
-  virtual int SendPacket(const char *data, size_t len, int flags);
+  virtual int SendPacket(const char *data, size_t len,
+                         talk_base::DiffServCodePoint dscp, int flags);
   virtual int SetOption(talk_base::Socket::Option opt, int value);
   virtual int GetError() { return error_; }
   virtual bool GetStats(std::vector<ConnectionInfo>* stats);
@@ -148,6 +149,9 @@ class P2PTransportChannel : public TransportChannelImpl,
     size_t digest_len) {
     return false;
   }
+
+  // Helper method used only in unittest.
+  talk_base::DiffServCodePoint DefaultDscpValue() const;
 
  private:
   talk_base::Thread* thread() { return worker_thread_; }

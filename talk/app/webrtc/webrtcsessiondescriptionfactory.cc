@@ -243,8 +243,10 @@ void WebRtcSessionDescriptionFactory::CreateAnswer(
     PostCreateSessionDescriptionFailed(observer, error);
     return;
   }
-  if (data_channel_type_ == cricket::DCT_SCTP &&
-      mediastream_signaling_->HasDataChannels()) {
+  // RTP data channel is handled in MediaSessionOptions::AddStream. SCTP streams
+  // are not signaled in the SDP so does not go through that path and must be
+  // handled here.
+  if (data_channel_type_ == cricket::DCT_SCTP) {
     options.data_channel_type = cricket::DCT_SCTP;
   }
 

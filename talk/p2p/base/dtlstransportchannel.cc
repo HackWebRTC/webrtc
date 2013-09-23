@@ -29,6 +29,7 @@
 #include "talk/p2p/base/dtlstransportchannel.h"
 
 #include "talk/base/buffer.h"
+#include "talk/base/dscp.h"
 #include "talk/base/messagequeue.h"
 #include "talk/base/stream.h"
 #include "talk/base/sslstreamadapter.h"
@@ -69,7 +70,8 @@ talk_base::StreamResult StreamInterfaceChannel::Write(const void* data,
                                                       int* error) {
   // Always succeeds, since this is an unreliable transport anyway.
   // TODO: Should this block if channel_'s temporarily unwritable?
-  channel_->SendPacket(static_cast<const char*>(data), data_len);
+  channel_->SendPacket(
+      static_cast<const char*>(data), data_len, talk_base::DSCP_NO_CHANGE);
   if (written) {
     *written = data_len;
   }
@@ -297,6 +299,7 @@ bool DtlsTransportChannelWrapper::GetSrtpCipher(std::string* cipher) {
 
 // Called from upper layers to send a media packet.
 int DtlsTransportChannelWrapper::SendPacket(const char* data, size_t size,
+                                            talk_base::DiffServCodePoint dscp,
                                             int flags) {
   int result = -1;
 
@@ -321,7 +324,7 @@ int DtlsTransportChannelWrapper::SendPacket(const char* data, size_t size,
           break;
         }
 
-        result = channel_->SendPacket(data, size);
+        result = channel_->SendPacket(data, size, dscp);
       } else {
         result = (dtls_->WriteAll(data, size, NULL, NULL) ==
           talk_base::SR_SUCCESS) ? static_cast<int>(size) : -1;
@@ -329,7 +332,7 @@ int DtlsTransportChannelWrapper::SendPacket(const char* data, size_t size,
       break;
       // Not doing DTLS.
     case STATE_NONE:
-      result = channel_->SendPacket(data, size);
+      result = channel_->SendPacket(data, size, dscp);
       break;
 
     case STATE_CLOSED:  // Can't send anything when we're closed.

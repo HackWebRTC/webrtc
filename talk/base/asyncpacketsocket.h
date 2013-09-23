@@ -28,6 +28,7 @@
 #ifndef TALK_BASE_ASYNCPACKETSOCKET_H_
 #define TALK_BASE_ASYNCPACKETSOCKET_H_
 
+#include "talk/base/dscp.h"
 #include "talk/base/sigslot.h"
 #include "talk/base/socket.h"
 
@@ -56,8 +57,9 @@ class AsyncPacketSocket : public sigslot::has_slots<> {
   virtual SocketAddress GetRemoteAddress() const = 0;
 
   // Send a packet.
-  virtual int Send(const void *pv, size_t cb) = 0;
-  virtual int SendTo(const void *pv, size_t cb, const SocketAddress& addr) = 0;
+  virtual int Send(const void *pv, size_t cb, DiffServCodePoint dscp) = 0;
+  virtual int SendTo(const void *pv, size_t cb, const SocketAddress& addr,
+                     DiffServCodePoint) = 0;
 
   // Close the socket.
   virtual int Close() = 0;

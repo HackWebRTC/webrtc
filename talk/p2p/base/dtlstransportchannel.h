@@ -135,7 +135,9 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   virtual bool IsDtlsActive() const { return dtls_state_ != STATE_NONE; }
 
   // Called to send a packet (via DTLS, if turned on).
-  virtual int SendPacket(const char* data, size_t size, int flags);
+  virtual int SendPacket(const char* data, size_t size,
+                         talk_base::DiffServCodePoint dscp,
+                         int flags);
 
   // TransportChannel calls that we forward to the wrapped transport.
   virtual int SetOption(talk_base::Socket::Option opt, int value) {

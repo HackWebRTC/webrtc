@@ -92,7 +92,9 @@ class RelayPort : public Port {
   void SetReady();
 
   virtual int SendTo(const void* data, size_t size,
-                     const talk_base::SocketAddress& addr, bool payload);
+                     const talk_base::SocketAddress& addr,
+                     talk_base::DiffServCodePoint dscp,
+                     bool payload);
 
   // Dispatches the given packet to the port or connection as appropriate.
   void OnReadPacket(const char* data, size_t size,

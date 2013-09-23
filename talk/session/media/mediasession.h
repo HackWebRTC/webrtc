@@ -83,10 +83,6 @@ extern const char kMediaProtocolDtlsSctp[];
 // Options to control how session descriptions are generated.
 const int kAutoBandwidth = -1;
 const int kBufferedModeDisabled = 0;
-// TODO(pthatcher): This is imposed by usrsctp lib.  I have no idea
-// why it is 9.  Figure out why, and make it bigger, hopefully up to
-// 2^16-1.
-const uint32 kMaxSctpSid = 9;
 
 struct MediaSessionOptions {
   MediaSessionOptions() :

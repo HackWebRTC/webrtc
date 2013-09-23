@@ -64,7 +64,8 @@ class RawTransportChannel : public TransportChannelImpl,
   virtual ~RawTransportChannel();
 
   // Implementation of normal channel packet sending.
-  virtual int SendPacket(const char *data, size_t len, int flags);
+  virtual int SendPacket(const char *data, size_t len,
+                         talk_base::DiffServCodePoint dscp, int flags);
   virtual int SetOption(talk_base::Socket::Option opt, int value);
   virtual int GetError();
 

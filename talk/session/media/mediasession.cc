@@ -38,6 +38,7 @@
 #include "talk/base/stringutils.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/cryptoparams.h"
+#include "talk/media/sctp/sctpdataengine.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/session/media/channelmanager.h"
 #include "talk/session/media/srtpfilter.h"

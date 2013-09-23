@@ -97,9 +97,10 @@ Connection* PortProxy::CreateConnection(const Candidate& remote_candidate,
 int PortProxy::SendTo(const void* data,
                       size_t size,
                       const talk_base::SocketAddress& addr,
+                      talk_base::DiffServCodePoint dscp,
                       bool payload) {
   ASSERT(impl_ != NULL);
-  return impl_->SendTo(data, size, addr, payload);
+  return impl_->SendTo(data, size, addr, dscp, payload);
 }
 
 int PortProxy::SetOption(talk_base::Socket::Option opt,
@@ -113,7 +114,6 @@ int PortProxy::GetOption(talk_base::Socket::Option opt,
   ASSERT(impl_ != NULL);
   return impl_->GetOption(opt, value);
 }
-
 
 int PortProxy::GetError() {
   ASSERT(impl_ != NULL);

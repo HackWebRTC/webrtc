@@ -58,7 +58,8 @@ class FileNetworkInterface : public MediaChannel::NetworkInterface {
   }
 
   // Implement pure virtual methods of NetworkInterface.
-  virtual bool SendPacket(talk_base::Buffer* packet) {
+  virtual bool SendPacket(talk_base::Buffer* packet,
+                          talk_base::DiffServCodePoint dscp) {
     if (!packet) return false;
 
     if (media_channel_) {
@@ -74,11 +75,13 @@ class FileNetworkInterface : public MediaChannel::NetworkInterface {
     return true;
   }
 
-  virtual bool SendRtcp(talk_base::Buffer* packet) { return false; }
+  virtual bool SendRtcp(talk_base::Buffer* packet,
+                        talk_base::DiffServCodePoint dscp) { return false; }
   virtual int SetOption(MediaChannel::NetworkInterface::SocketType type,
       talk_base::Socket::Option opt, int option) {
     return 0;
   }
+  virtual void SetDefaultDSCPCode(talk_base::DiffServCodePoint dscp) {}
 
   size_t num_sent_packets() const { return num_sent_packets_; }
 

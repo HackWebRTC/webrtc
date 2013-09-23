@@ -121,7 +121,9 @@ class UDPPort : public Port {
   bool Init();
 
   virtual int SendTo(const void* data, size_t size,
-                     const talk_base::SocketAddress& addr, bool payload);
+                     const talk_base::SocketAddress& addr,
+                     talk_base::DiffServCodePoint dscp,
+                     bool payload);
 
   void OnLocalAddressReady(talk_base::AsyncPacketSocket* socket,
                            const talk_base::SocketAddress& address);

@@ -35,6 +35,7 @@
 #include "talk/base/stringutils.h"
 #include "talk/media/base/cryptoparams.h"
 #include "talk/media/base/capturemanager.h"
+#include "talk/media/sctp/sctpdataengine.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/parsing.h"
 #include "talk/session/media/mediamessages.h"
