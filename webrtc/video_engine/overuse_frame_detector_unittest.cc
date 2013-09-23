@@ -32,14 +32,16 @@ class OveruseFrameDetectorTest : public ::testing::Test {
   virtual void SetUp() {
     clock_.reset(new SimulatedClock(1234));
     observer_.reset(new MockCpuOveruseObserver());
-    overuse_detector_.reset(new OveruseFrameDetector(clock_.get()));
+    overuse_detector_.reset(new OveruseFrameDetector(clock_.get(),
+                                                     10.0f,
+                                                     15.0f));
     overuse_detector_->SetObserver(observer_.get());
   }
 
   void InsertFramesWithInterval(size_t num_frames, int interval_ms) {
     while (num_frames-- > 0) {
       clock_->AdvanceTimeMilliseconds(interval_ms);
-      overuse_detector_->FrameCaptured();
+      overuse_detector_->FrameCaptured(640, 480);
     }
   }
 
@@ -48,12 +50,12 @@ class OveruseFrameDetectorTest : public ::testing::Test {
 
     EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(1);
 
-    InsertFramesWithInterval(30, regular_frame_interval_ms);
-    InsertFramesWithInterval(30, 1000);
+    InsertFramesWithInterval(50, regular_frame_interval_ms);
+    InsertFramesWithInterval(50, 110);
     overuse_detector_->Process();
 
-    InsertFramesWithInterval(30, regular_frame_interval_ms);
-    InsertFramesWithInterval(30, 1000);
+    InsertFramesWithInterval(50, regular_frame_interval_ms);
+    InsertFramesWithInterval(50, 110);
     overuse_detector_->Process();
   }
 
@@ -62,7 +64,7 @@ class OveruseFrameDetectorTest : public ::testing::Test {
 
     EXPECT_CALL(*(observer_.get()), NormalUsage()).Times(testing::AtLeast(1));
 
-    InsertFramesWithInterval(300, regular_frame_interval_ms);
+    InsertFramesWithInterval(900, regular_frame_interval_ms);
     overuse_detector_->Process();
   }
 

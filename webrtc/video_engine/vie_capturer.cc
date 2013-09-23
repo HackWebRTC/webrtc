@@ -59,7 +59,9 @@ ViECapturer::ViECapturer(int capture_id,
       denoising_enabled_(false),
       observer_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       observer_(NULL),
-      overuse_detector_(new OveruseFrameDetector(Clock::GetRealTimeClock())) {
+      overuse_detector_(new OveruseFrameDetector(Clock::GetRealTimeClock(),
+                                                 kNormalUseStdDevMs,
+                                                 kOveruseStdDevMs)) {
   WEBRTC_TRACE(kTraceMemory, kTraceVideo, ViEId(engine_id, capture_id),
                "ViECapturer::ViECapturer(capture_id: %d, engine_id: %d)",
                capture_id, engine_id);
@@ -350,7 +352,8 @@ void ViECapturer::OnIncomingCapturedFrame(const int32_t capture_id,
 
   captured_frame_.SwapFrame(&video_frame);
   capture_event_.Set();
-  overuse_detector_->FrameCaptured();
+  overuse_detector_->FrameCaptured(captured_frame_.width(),
+                                   captured_frame_.height());
   return;
 }
 

@@ -10,9 +10,11 @@
 
 #include "webrtc/video_engine/overuse_frame_detector.h"
 
+#include <algorithm>
 #include <assert.h>
 #include <math.h>
 
+#include "webrtc/modules/video_coding/utility/include/exp_filter.h"
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/interface/trace.h"
@@ -20,46 +22,22 @@
 
 namespace webrtc {
 
-Statistics::Statistics() { Reset(); }
-
-void Statistics::Reset() {
-  sum_ = sum_squared_ = 0.0;
-  count_ = 0;
-}
-
-void Statistics::AddSample(double sample) {
-  sum_ += sample;
-  sum_squared_ += sample * sample;
-  ++count_;
-}
-
-double Statistics::Mean() const {
-  if (count_ == 0)
-    return 0.0;
-  return sum_ / count_;
-}
-
-double Statistics::Variance() const {
-  if (count_ == 0)
-    return 0.0;
-  return sum_squared_ / count_ - Mean() * Mean();
-}
-
-double Statistics::StdDev() const { return sqrt(Variance()); }
-
-uint64_t Statistics::Samples() const { return count_; }
-
 // TODO(mflodman) Test different values for all of these to trigger correctly,
 // avoid fluctuations etc.
 namespace {
 const int64_t kProcessIntervalMs = 5000;
 
-// Limits on standard deviation for under/overuse.
-const double kOveruseStdDevMs = 15.0;
-const double kNormalUseStdDevMs = 10.0;
-
-// Rampdown checks.
+// Consecutive checks above threshold to trigger overuse.
 const int kConsecutiveChecksAboveThreshold = 2;
+
+// Minimum samples required to perform a check.
+const size_t kMinFrameSampleCount = 15;
+
+// Weight factor to apply to the standard deviation.
+const float kWeightFactor = 0.997f;
+
+// Weight factor to apply to the average.
+const float kWeightFactorMean = 0.98f;
 
 // Delay between consecutive rampups. (Used for quick recovery.)
 const int kQuickRampUpDelayMs = 10 * 1000;
@@ -69,12 +47,66 @@ const int kMaxRampUpDelayMs = 120 * 1000;
 // Expontential back-off factor, to prevent annoying up-down behaviour.
 const double kRampUpBackoffFactor = 2.0;
 
-// Minimum samples required to perform a check.
-const size_t kMinFrameSampleCount = 30;
 }  // namespace
 
-OveruseFrameDetector::OveruseFrameDetector(Clock* clock)
+Statistics::Statistics() :
+    sum_(0.0),
+    count_(0),
+    filtered_samples_(new VCMExpFilter(kWeightFactorMean)),
+    filtered_variance_(new VCMExpFilter(kWeightFactor)) {
+}
+
+void Statistics::Reset() {
+  sum_ =  0.0;
+  count_ = 0;
+}
+
+void Statistics::AddSample(float sample_ms) {
+  sum_ += sample_ms;
+  ++count_;
+
+  if (count_ < kMinFrameSampleCount) {
+    // Initialize filtered samples.
+    filtered_samples_->Reset(kWeightFactorMean);
+    filtered_samples_->Apply(1.0f, InitialMean());
+    filtered_variance_->Reset(kWeightFactor);
+    filtered_variance_->Apply(1.0f, InitialVariance());
+    return;
+  }
+
+  float exp = sample_ms/33.0f;
+  exp = std::min(exp, 7.0f);
+  filtered_samples_->Apply(exp, sample_ms);
+  filtered_variance_->Apply(exp, (sample_ms - filtered_samples_->Value()) *
+                                 (sample_ms - filtered_samples_->Value()));
+}
+
+float Statistics::InitialMean() const {
+  if (count_ == 0)
+    return 0.0;
+  return sum_ / count_;
+}
+
+float Statistics::InitialVariance() const {
+  // Start in between the underuse and overuse threshold.
+  float average_stddev = (kNormalUseStdDevMs + kOveruseStdDevMs)/2.0f;
+  return average_stddev * average_stddev;
+}
+
+float Statistics::Mean() const { return filtered_samples_->Value(); }
+
+float Statistics::StdDev() const {
+  return sqrt(std::max(filtered_variance_->Value(), 0.0f));
+}
+
+uint64_t Statistics::Count() const { return count_; }
+
+OveruseFrameDetector::OveruseFrameDetector(Clock* clock,
+                                           float normaluse_stddev_ms,
+                                           float overuse_stddev_ms)
     : crit_(CriticalSectionWrapper::CreateCriticalSection()),
+      normaluse_stddev_ms_(normaluse_stddev_ms),
+      overuse_stddev_ms_(overuse_stddev_ms),
       observer_(NULL),
       clock_(clock),
       next_process_time_(clock_->TimeInMilliseconds()),
@@ -83,7 +115,8 @@ OveruseFrameDetector::OveruseFrameDetector(Clock* clock)
       checks_above_threshold_(0),
       last_rampup_time_(0),
       in_quick_rampup_(false),
-      current_rampup_delay_ms_(kStandardRampUpDelayMs) {}
+      current_rampup_delay_ms_(kStandardRampUpDelayMs),
+      num_pixels_(0) {}
 
 OveruseFrameDetector::~OveruseFrameDetector() {
 }
@@ -93,8 +126,17 @@ void OveruseFrameDetector::SetObserver(CpuOveruseObserver* observer) {
   observer_ = observer;
 }
 
-void OveruseFrameDetector::FrameCaptured() {
+void OveruseFrameDetector::FrameCaptured(int width, int height) {
   CriticalSectionScoped cs(crit_.get());
+
+  int num_pixels = width * height;
+  if (num_pixels != num_pixels_) {
+    // Frame size changed, reset statistics.
+    num_pixels_ = num_pixels;
+    capture_deltas_.Reset();
+    last_capture_time_ = 0;
+  }
+
   int64_t time = clock_->TimeInMilliseconds();
   if (last_capture_time_ != 0) {
     capture_deltas_.AddSample(time - last_capture_time_);
@@ -118,8 +160,8 @@ int32_t OveruseFrameDetector::Process() {
 
   next_process_time_ = now + kProcessIntervalMs;
 
-  // Don't trigger overuse unless we've seen any frames
-  if (capture_deltas_.Samples() < kMinFrameSampleCount)
+  // Don't trigger overuse unless we've seen a certain number of frames.
+  if (capture_deltas_.Count() < kMinFrameSampleCount)
     return 0;
 
   if (IsOverusing()) {
@@ -153,12 +195,6 @@ int32_t OveruseFrameDetector::Process() {
       observer_->NormalUsage();
   }
 
-  capture_deltas_.Reset();
-
-  return 0;
-}
-
-bool OveruseFrameDetector::IsOverusing() {
   WEBRTC_TRACE(
       webrtc::kTraceInfo,
       webrtc::kTraceVideo,
@@ -169,10 +205,14 @@ bool OveruseFrameDetector::IsOverusing() {
       capture_deltas_.Mean(),
       capture_deltas_.StdDev(),
       in_quick_rampup_ ? kQuickRampUpDelayMs : current_rampup_delay_ms_,
-      kOveruseStdDevMs,
-      kNormalUseStdDevMs);
+      overuse_stddev_ms_,
+      normaluse_stddev_ms_);
 
-  if (capture_deltas_.StdDev() >= kOveruseStdDevMs) {
+  return 0;
+}
+
+bool OveruseFrameDetector::IsOverusing() {
+  if (capture_deltas_.StdDev() >= overuse_stddev_ms_) {
     ++checks_above_threshold_;
   } else {
     checks_above_threshold_ = 0;
@@ -186,6 +226,6 @@ bool OveruseFrameDetector::IsUnderusing(int64_t time_now) {
   if (time_now < last_rampup_time_ + delay)
     return false;
 
-  return capture_deltas_.StdDev() < kNormalUseStdDevMs;
+  return capture_deltas_.StdDev() < normaluse_stddev_ms_;
 }
 }  // namespace webrtc
