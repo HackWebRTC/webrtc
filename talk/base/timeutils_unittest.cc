@@ -143,7 +143,7 @@ TEST(TimeTest, BoundaryComparison) {
   EXPECT_EQ(-100, TimeDiff(ts_earlier, ts_later));
 }
 
-TEST(TimeTest, CurrentTmTime) {
+TEST(TimeTest, DISABLED_CurrentTmTime) {
   struct tm tm;
   int microseconds;
 

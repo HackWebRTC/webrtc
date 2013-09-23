@@ -1027,7 +1027,7 @@ const P2PTransportChannelTest::Result*
 #define P2P_TEST_SET(x) \
   P2P_TEST(x, OPEN) \
   FLAKY_P2P_TEST(x, NAT_FULL_CONE) \
-  P2P_TEST(x, NAT_ADDR_RESTRICTED) \
+  FLAKY_P2P_TEST(x, NAT_ADDR_RESTRICTED) \
   P2P_TEST(x, NAT_PORT_RESTRICTED) \
   P2P_TEST(x, NAT_SYMMETRIC) \
   FLAKY_P2P_TEST(x, NAT_DOUBLE_CONE) \
@@ -1146,7 +1146,7 @@ TEST_F(P2PTransportChannelTest, GetStats) {
 }
 
 // Test that we properly handle getting a STUN error due to slow signaling.
-TEST_F(P2PTransportChannelTest, SlowSignaling) {
+TEST_F(P2PTransportChannelTest, DISABLED_SlowSignaling) {
   ConfigureEndpoints(OPEN, NAT_SYMMETRIC,
                      kDefaultPortAllocatorFlags,
                      kDefaultPortAllocatorFlags,
@@ -1309,7 +1309,7 @@ class P2PTransportChannelMultihomedTest : public P2PTransportChannelTestBase {
 };
 
 // Test that we can establish connectivity when both peers are multihomed.
-TEST_F(P2PTransportChannelMultihomedTest, TestBasic) {
+TEST_F(P2PTransportChannelMultihomedTest, DISABLED_TestBasic) {
   AddAddress(0, kPublicAddrs[0]);
   AddAddress(0, kAlternateAddrs[0]);
   AddAddress(1, kPublicAddrs[1]);

@@ -2189,7 +2189,7 @@ TEST_F(VoiceChannelTest, TestVoiceSpecificMuteStream) {
 }
 
 // Test that keyboard automute works correctly and signals upwards.
-TEST_F(VoiceChannelTest, TestKeyboardMute) {
+TEST_F(VoiceChannelTest, DISABLED_TestKeyboardMute) {
   CreateChannels(0, 0);
   EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
   EXPECT_EQ(cricket::VoiceMediaChannel::ERROR_NONE, error_);
