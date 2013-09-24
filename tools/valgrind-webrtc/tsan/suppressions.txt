@@ -702,8 +702,7 @@
   bug_2078_21
   ThreadSanitizer:Race
   fun:::FileVideoCapturerTest::VideoCapturerListener::frame_count
-  fun:::FileVideoCapturerTest_TestNoRepeat_Test::TestBody
-  fun:testing::internal::HandleSehExceptionsInMethodIfSupported
+  ...
 }
 {
   bug_2078_22
@@ -745,6 +744,12 @@
   fun:talk_base::Thread::ProcessMessages
   fun:talk_base::Thread::Run
   fun:talk_base::Thread::PreRun
+}
+{
+  bug_2078_26
+  ThreadSanitizer:Race
+  fun:cricket::FileVideoCapturer::Start
+  ...
 }
 {
   bug_2079_1
