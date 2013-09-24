@@ -48,7 +48,9 @@ TEST_F(DISABLED_ON_MAC(ViEApiIntegrationTest), RunsRenderTestWithoutErrors) {
   tests_->ViERenderAPITest();
 }
 
-TEST_F(DISABLED_ON_MAC(ViEApiIntegrationTest), RunsRtpRtcpTestWithoutErrors) {
+// See: https://code.google.com/p/webrtc/issues/detail?id=2415
+TEST_F(DISABLED_ON_MAC(ViEApiIntegrationTest),
+       DISABLED_RunsRtpRtcpTestWithoutErrors) {
   tests_->ViERtpRtcpAPITest();
 }
 
