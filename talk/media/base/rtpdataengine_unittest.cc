@@ -298,7 +298,8 @@ TEST_F(RtpDataMediaChannelTest, SendData) {
   EXPECT_EQ(header0.timestamp + 180000, header1.timestamp);
 }
 
-TEST_F(RtpDataMediaChannelTest, SendDataMultipleClocks) {
+// See: https://code.google.com/p/webrtc/issues/detail?id=2409
+TEST_F(RtpDataMediaChannelTest, DISABLED_SendDataMultipleClocks) {
   // Timings owned by RtpDataEngines.
   FakeTiming* timing1 = new FakeTiming();
   talk_base::scoped_ptr<cricket::RtpDataEngine> dme1(CreateEngine(timing1));
