@@ -26,6 +26,9 @@ MediaOptimization::MediaOptimization(int32_t id, Clock* clock)
       codec_width_(0),
       codec_height_(0),
       user_frame_rate_(0),
+      frame_dropper_(new FrameDropper),
+      loss_prot_logic_(
+          new VCMLossProtectionLogic(clock_->TimeInMilliseconds())),
       fraction_lost_(0),
       send_statistics_zero_encode_(0),
       max_payload_size_(1460),
@@ -39,24 +42,17 @@ MediaOptimization::MediaOptimization(int32_t id, Clock* clock)
       avg_sent_framerate_(0),
       key_frame_cnt_(0),
       delta_frame_cnt_(0),
+      content_(new VCMContentMetricsProcessing()),
+      qm_resolution_(new VCMQmResolution()),
       last_qm_update_time_(0),
       last_change_time_(0),
       num_layers_(0) {
   memset(send_statistics_, 0, sizeof(send_statistics_));
   memset(incoming_frame_times_, -1, sizeof(incoming_frame_times_));
-
-  frame_dropper_ = new FrameDropper;
-  loss_prot_logic_ = new VCMLossProtectionLogic(clock_->TimeInMilliseconds());
-  content_ = new VCMContentMetricsProcessing();
-  qm_resolution_ = new VCMQmResolution();
 }
 
 MediaOptimization::~MediaOptimization(void) {
   loss_prot_logic_->Release();
-  delete loss_prot_logic_;
-  delete frame_dropper_;
-  delete content_;
-  delete qm_resolution_;
 }
 
 int32_t MediaOptimization::Reset() {

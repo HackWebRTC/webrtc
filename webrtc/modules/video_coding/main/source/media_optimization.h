@@ -17,6 +17,7 @@
 #include "webrtc/modules/video_coding/main/interface/video_coding.h"
 #include "webrtc/modules/video_coding/main/source/media_opt_util.h"
 #include "webrtc/modules/video_coding/main/source/qm_select.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
 namespace webrtc {
@@ -158,8 +159,8 @@ class MediaOptimization {
   uint16_t codec_width_;
   uint16_t codec_height_;
   float user_frame_rate_;
-  FrameDropper* frame_dropper_;
-  VCMLossProtectionLogic* loss_prot_logic_;
+  scoped_ptr<FrameDropper> frame_dropper_;
+  scoped_ptr<VCMLossProtectionLogic> loss_prot_logic_;
   uint8_t fraction_lost_;
   uint32_t send_statistics_[4];
   uint32_t send_statistics_zero_encode_;
@@ -175,8 +176,8 @@ class MediaOptimization {
   uint32_t avg_sent_framerate_;
   uint32_t key_frame_cnt_;
   uint32_t delta_frame_cnt_;
-  VCMContentMetricsProcessing* content_;
-  VCMQmResolution* qm_resolution_;
+  scoped_ptr<VCMContentMetricsProcessing> content_;
+  scoped_ptr<VCMQmResolution> qm_resolution_;
   int64_t last_qm_update_time_;
   int64_t last_change_time_;  // Content/user triggered.
   int num_layers_;
