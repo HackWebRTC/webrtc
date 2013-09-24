@@ -210,8 +210,6 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(num_dropped_packets, 0);
     EXPECT_GT(num_rtcp_packets, 0);
     EXPECT_GT(sentTotalBitrate, 0u);
-    EXPECT_EQ(sentNackBitrate, 0u);
-    EXPECT_EQ(recCumulativeLost, 0u);
 
     //
     // RTX
