@@ -1,0 +1,7 @@
+# Crashes the kernel when run under memcheck on Mac.
+# No bug is filed in relation to this since it's unlikely we can fix it.
+# There are several tests disabled in the libjingle code with similar comments,
+# without bugs assigned to them.
+# Example: talk/base/physicalsocketserver_unittest.cc
+NatTest.TestVirtualIPv*
+PosixSignalDeliveryTest.*
