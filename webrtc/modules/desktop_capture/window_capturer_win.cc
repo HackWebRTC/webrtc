@@ -102,7 +102,6 @@ class WindowCapturerWin : public WindowCapturer {
   // HWND and HDC for the currently selected window or NULL if window is not
   // selected.
   HWND window_;
-  HDC window_dc_;
 
   // dwmapi.dll is used to determine if desktop compositing is enabled.
   HMODULE dwmapi_library_;
@@ -113,8 +112,7 @@ class WindowCapturerWin : public WindowCapturer {
 
 WindowCapturerWin::WindowCapturerWin()
     : callback_(NULL),
-      window_(NULL),
-      window_dc_(NULL) {
+      window_(NULL) {
   // Try to load dwmapi.dll dynamically since it is not available on XP.
   dwmapi_library_ = LoadLibrary(L"dwmapi.dll");
   if (dwmapi_library_) {
@@ -149,17 +147,10 @@ bool WindowCapturerWin::GetWindowList(WindowList* windows) {
 }
 
 bool WindowCapturerWin::SelectWindow(WindowId id) {
-  if (window_dc_)
-    ReleaseDC(window_, window_dc_);
-
-  window_ = reinterpret_cast<HWND>(id);
-  window_dc_ = GetWindowDC(window_);
-  if (!window_dc_) {
-    LOG(LS_WARNING) << "Failed to select window: " << GetLastError();
-    window_ = NULL;
+  HWND window = reinterpret_cast<HWND>(id);
+  if (!IsWindow(window) || !IsWindowVisible(window) || IsIconic(window))
     return false;
-  }
-
+  window_ = window;
   return true;
 }
 
@@ -171,7 +162,7 @@ void WindowCapturerWin::Start(Callback* callback) {
 }
 
 void WindowCapturerWin::Capture(const DesktopRegion& region) {
-  if (!window_dc_) {
+  if (!window_) {
     LOG(LS_ERROR) << "Window hasn't been selected: " << GetLastError();
     callback_->OnCaptureCompleted(NULL);
     return;
@@ -183,8 +174,6 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
     return;
   }
 
-  assert(window_);
-
   RECT rect;
   if (!GetWindowRect(window_, &rect)) {
     LOG(LS_WARNING) << "Failed to get window size: " << GetLastError();
@@ -192,15 +181,23 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
     return;
   }
 
-  scoped_ptr<DesktopFrameWin> frame(DesktopFrameWin::Create(
-      DesktopSize(rect.right - rect.left, rect.bottom - rect.top),
-      NULL, window_dc_));
-  if (!frame.get()) {
+  HDC window_dc = GetWindowDC(window_);
+  if (!window_dc) {
+    LOG(LS_WARNING) << "Failed to get window DC: " << GetLastError();
     callback_->OnCaptureCompleted(NULL);
     return;
   }
 
-  HDC mem_dc = CreateCompatibleDC(window_dc_);
+  scoped_ptr<DesktopFrameWin> frame(DesktopFrameWin::Create(
+      DesktopSize(rect.right - rect.left, rect.bottom - rect.top),
+      NULL, window_dc));
+  if (!frame.get()) {
+    ReleaseDC(window_, window_dc);
+    callback_->OnCaptureCompleted(NULL);
+    return;
+  }
+
+  HDC mem_dc = CreateCompatibleDC(window_dc);
   SelectObject(mem_dc, frame->bitmap());
   BOOL result = FALSE;
 
@@ -220,15 +217,17 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
   // Aero is enabled or PrintWindow() failed, use BitBlt.
   if (!result) {
     result = BitBlt(mem_dc, 0, 0, frame->size().width(), frame->size().height(),
-                    window_dc_, 0, 0, SRCCOPY);
+                    window_dc, 0, 0, SRCCOPY);
   }
-
-  DeleteDC(mem_dc);
 
   if (!result) {
     LOG(LS_ERROR) << "Both PrintWindow() and BitBlt() failed.";
     frame.reset();
   }
+
+  SelectObject(mem_dc, NULL);
+  DeleteDC(mem_dc);
+  ReleaseDC(window_, window_dc);
 
   callback_->OnCaptureCompleted(frame.release());
 }
