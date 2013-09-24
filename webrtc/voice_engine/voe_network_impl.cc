@@ -71,8 +71,9 @@ int VoENetworkImpl::DeRegisterExternalTransport(int channel)
                  "DeRegisterExternalTransport(channel=%d)", channel);
     if (!_shared->statistics().Initialized())
     {
-        _shared->SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
+        WEBRTC_TRACE(kTraceError, kTraceVoice,
+                     VoEId(_shared->instance_id(), -1),
+                     "DeRegisterExternalTransport() - invalid state");
     }
     voe::ChannelOwner ch = _shared->channel_manager().GetChannel(channel);
     voe::Channel* channelPtr = ch.channel();
