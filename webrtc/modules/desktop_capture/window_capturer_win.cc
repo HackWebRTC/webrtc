@@ -177,6 +177,12 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
     return;
   }
 
+  // Stop capturing if the window has been minimized or hidden.
+  if (IsIconic(window_) || !IsWindowVisible(window_)) {
+    callback_->OnCaptureCompleted(NULL);
+    return;
+  }
+
   assert(window_);
 
   RECT rect;
