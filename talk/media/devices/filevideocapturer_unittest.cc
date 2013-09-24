@@ -174,7 +174,8 @@ TEST_F(FileVideoCapturerTest, TestRepeatForever) {
   EXPECT_EQ(listener.frame_height(), capture_format_.height);
 }
 
-TEST_F(FileVideoCapturerTest, TestPartialFrameHeader) {
+// See: https://code.google.com/p/webrtc/issues/detail?id=2409
+TEST_F(FileVideoCapturerTest, DISABLED_TestPartialFrameHeader) {
   EXPECT_TRUE(OpenFile("1.frame_plus_1.byte"));
   VideoCapturerListener listener;
   capturer_->SignalFrameCaptured.connect(
