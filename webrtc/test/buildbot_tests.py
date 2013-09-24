@@ -38,6 +38,9 @@ _WIN_TESTS = {
                       '--automated'],
 }
 _MAC_TESTS = {
+    'libjingle_peerconnection_objc_test': [
+        ('libjingle_peerconnection_objc_test.app/Contents/MacOS/'
+         'libjingle_peerconnection_objc_test')],
     'vie_auto_test': _VIE_AUTO_TEST_CMD_LIST,
     'voe_auto_test': ['voe_auto_test',
                       '--automated',
