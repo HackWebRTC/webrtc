@@ -241,7 +241,7 @@ TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(AlignedStrideEncodeDecode)) {
   EXPECT_GT(I420PSNR(&input_frame_, &decoded_video_frame_), 36);
 }
 
-TEST_F(TestVp8Impl, DecodeWithACompleteKeyFrame) {
+TEST_F(TestVp8Impl, DISABLED_ON_ANDROID(DecodeWithACompleteKeyFrame)) {
   SetUpEncodeDecode();
   encoder_->Encode(input_frame_, NULL, NULL);
   EXPECT_GT(WaitForEncodedFrame(), 0);

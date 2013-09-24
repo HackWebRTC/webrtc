@@ -21,6 +21,7 @@
 #include "webrtc/system_wrappers/interface/clock.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/testsupport/fileutils.h"
+#include "webrtc/test/testsupport/gtest_disable.h"
 
 using ::testing::_;
 using ::testing::AllOf;
@@ -324,7 +325,8 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
   int available_bitrate_kbps_;
 };
 
-TEST_F(TestVideoSenderWithVp8, FixedTemporalLayersStrategy) {
+TEST_F(TestVideoSenderWithVp8,
+       DISABLED_ON_ANDROID(FixedTemporalLayersStrategy)) {
   // It appears that this 5 seconds simulation are need to allow
   // bitrate and framerate to stabilize.
   // TODO(andresp): the framerate calculation should be improved.
