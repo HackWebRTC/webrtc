@@ -173,14 +173,16 @@ class NetEqImpl : public webrtc::NetEq {
 
   // Get sequence number and timestamp of the latest RTP.
   // This method is to facilitate NACK.
-  virtual int DecodedRtpInfo(int* sequence_number, uint32_t* timestamp);
+  virtual int DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) const;
+
+  // Sets background noise mode.
+  virtual void SetBackgroundNoiseMode(NetEqBackgroundNoiseMode mode);
+
+  // Gets background noise mode.
+  virtual NetEqBackgroundNoiseMode BackgroundNoiseMode() const;
 
   virtual int InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
                                  uint32_t receive_timestamp);
-
-  virtual void SetBackgroundNoiseMode(NetEqBackgroundNoiseMode mode);
-
-  virtual NetEqBackgroundNoiseMode BackgroundNoiseMode() const;
 
  private:
   static const int kOutputSizeMs = 10;

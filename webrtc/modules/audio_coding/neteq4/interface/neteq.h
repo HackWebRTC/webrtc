@@ -66,9 +66,9 @@ enum NetEqPlayoutMode {
 };
 
 enum NetEqBackgroundNoiseMode {
-  kBgnOn,
-  kBgnFade,
-  kBgnOff
+  kBgnOn,    // Default behavior with eternal noise.
+  kBgnFade,  // Noise fades to zero after some time.
+  kBgnOff    // Background noise is always zero.
 };
 
 // This is the interface class for NetEq.
@@ -241,14 +241,17 @@ class NetEq {
 
   // Get sequence number and timestamp of the latest RTP.
   // This method is to facilitate NACK.
-  virtual int DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) = 0;
+  virtual int DecodedRtpInfo(int* sequence_number,
+                             uint32_t* timestamp) const = 0;
 
   // Not implemented.
   virtual int InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
                                uint32_t receive_timestamp) = 0;
 
+  // Sets the background noise mode.
   virtual void SetBackgroundNoiseMode(NetEqBackgroundNoiseMode mode) = 0;
 
+  // Gets the background noise mode.
   virtual NetEqBackgroundNoiseMode BackgroundNoiseMode() const = 0;
 
  protected:

@@ -294,8 +294,8 @@ int Expand::Process(AudioMultiVector<int16_t>* output) {
 
       // Unmute the background noise.
       int16_t bgn_mute_factor = background_noise_->MuteFactor(channel_ix);
-      BackgroundNoise::BackgroundNoiseMode bgn_mode = background_noise_->mode();
-      if (bgn_mode == BackgroundNoise::kBgnFade &&
+      NetEqBackgroundNoiseMode bgn_mode = background_noise_->mode();
+      if (bgn_mode == kBgnFade &&
           consecutive_expands_ >= kMaxConsecutiveExpands &&
           bgn_mute_factor > 0) {
         // Fade BGN to zero.
@@ -317,8 +317,8 @@ int Expand::Process(AudioMultiVector<int16_t>* output) {
       } else if (bgn_mute_factor < 16384) {
         // If mode is kBgnOff, or if kBgnFade has started fading,
         // Use regular |mute_slope|.
-        if (!stop_muting_ && bgn_mode != BackgroundNoise::kBgnOff &&
-            !(bgn_mode == BackgroundNoise::kBgnFade &&
+        if (!stop_muting_ && bgn_mode != kBgnOff &&
+            !(bgn_mode == kBgnFade &&
                 consecutive_expands_ >= kMaxConsecutiveExpands)) {
           DspHelper::UnmuteSignal(noise_vector, static_cast<int>(current_lag),
                                   &bgn_mute_factor, parameters.mute_slope,

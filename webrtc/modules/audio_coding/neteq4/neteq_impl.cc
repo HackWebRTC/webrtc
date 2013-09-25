@@ -363,7 +363,7 @@ void NetEqImpl::PacketBufferStatistics(int* current_num_packets,
                              current_memory_size_bytes, max_memory_size_bytes);
 }
 
-int NetEqImpl::DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) {
+int NetEqImpl::DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) const {
   CriticalSectionScoped lock(crit_sect_.get());
   if (decoded_packet_sequence_number_ < 0)
     return -1;
@@ -377,10 +377,16 @@ int NetEqImpl::InsertSyncPacket(const WebRtcRTPHeader& /* rtp_header */,
   return kNotImplemented;
 }
 
-void NetEqImpl::SetBackgroundNoiseMode(NetEqBackgroundNoiseMode /* mode */) {}
+void NetEqImpl::SetBackgroundNoiseMode(NetEqBackgroundNoiseMode mode) {
+  CriticalSectionScoped lock(crit_sect_.get());
+  assert(background_noise_.get());
+  background_noise_->set_mode(mode);
+}
 
 NetEqBackgroundNoiseMode NetEqImpl::BackgroundNoiseMode() const {
-  return kBgnOn;
+  CriticalSectionScoped lock(crit_sect_.get());
+  assert(background_noise_.get());
+  return background_noise_->mode();
 }
 
 // Methods below this line are private.
@@ -1759,8 +1765,14 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   // Delete sync buffer and create a new one.
   sync_buffer_.reset(new SyncBuffer(channels, kSyncBufferSize * fs_mult_));
 
-  // Delete BackgroundNoise object and create a new one.
+
+  // Delete BackgroundNoise object and create a new one, while preserving its
+  // mode.
+  NetEqBackgroundNoiseMode current_mode = kBgnOn;
+  if (background_noise_.get())
+    current_mode = background_noise_->mode();
   background_noise_.reset(new BackgroundNoise(channels));
+  background_noise_->set_mode(current_mode);
 
   // Reset random vector.
   random_vector_.Reset();
