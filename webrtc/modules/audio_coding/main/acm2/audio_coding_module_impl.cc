@@ -1536,8 +1536,7 @@ int AudioCodingModuleImpl::InitializeReceiverSafe() {
 // removing and registering a decoder we can achieve the effect of resetting.
 // Reset the decoder state.
 int AudioCodingModuleImpl::ResetDecoder() {
-  CriticalSectionScoped lock(acm_crit_sect_);
-  return -1;
+  return 0;
 }
 
 // Get current receive frequency.
