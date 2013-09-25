@@ -161,11 +161,6 @@ int32_t DeviceInfoAndroid::GetDeviceName(
 
 int32_t DeviceInfoAndroid::CreateCapabilityMap(
     const char* deviceUniqueIdUTF8) {
-  for (std::map<int, VideoCaptureCapability*>::iterator it =
-           _captureCapabilities.begin();
-       it != _captureCapabilities.end();
-       ++it)
-    delete it->second;
   _captureCapabilities.clear();
 
   JNIEnv *env;
@@ -235,20 +230,20 @@ int32_t DeviceInfoAndroid::CreateCapabilityMap(
       env->GetArrayLength((jarray) javaCapabilitiesObj);
 
   for (jsize i = 0; i < numberOfCapabilities; ++i) {
-    VideoCaptureCapability *cap = new VideoCaptureCapability();
+    VideoCaptureCapability cap;
     jobject capabilityElement = env->GetObjectArrayElement(
         (jobjectArray) javaCapabilitiesObj,
         i);
 
-    cap->width = env->GetIntField(capabilityElement, widthField);
-    cap->height = env->GetIntField(capabilityElement, heigtField);
-    cap->expectedCaptureDelay = _expectedCaptureDelay;
-    cap->rawType = kVideoNV21;
-    cap->maxFPS = env->GetIntField(capabilityElement, maxFpsField);
+    cap.width = env->GetIntField(capabilityElement, widthField);
+    cap.height = env->GetIntField(capabilityElement, heigtField);
+    cap.expectedCaptureDelay = _expectedCaptureDelay;
+    cap.rawType = kVideoNV21;
+    cap.maxFPS = env->GetIntField(capabilityElement, maxFpsField);
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
                  "%s: Cap width %d, height %d, fps %d", __FUNCTION__,
-                 cap->width, cap->height, cap->maxFPS);
-    _captureCapabilities[i] = cap;
+                 cap.width, cap.height, cap.maxFPS);
+    _captureCapabilities.push_back(cap);
   }
 
   _lastUsedDeviceNameLength = strlen((char*) deviceUniqueIdUTF8);
