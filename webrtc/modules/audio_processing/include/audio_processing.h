@@ -30,6 +30,30 @@ class LevelEstimator;
 class NoiseSuppression;
 class VoiceDetection;
 
+// Use to enable the delay correction feature. This now engages an extended
+// filter mode in the AEC, along with robustness measures around the reported
+// system delays. It comes with a significant increase in AEC complexity, but is
+// much more robust to unreliable reported delays.
+//
+// Detailed changes to the algorithm:
+// - The filter length is changed from 48 to 128 ms. This comes with tuning of
+//   several parameters: i) filter adaptation stepsize and error threshold;
+//   ii) non-linear processing smoothing and overdrive.
+// - Option to ignore the reported delays on platforms which we deem
+//   sufficiently unreliable. See WEBRTC_UNTRUSTED_DELAY in echo_cancellation.c.
+// - Faster startup times by removing the excessive "startup phase" processing
+//   of reported delays.
+// - Much more conservative adjustments to the far-end read pointer. We smooth
+//   the delay difference more heavily, and back off from the difference more.
+//   Adjustments force a readaptation of the filter, so they should be avoided
+//   except when really necessary.
+struct DelayCorrection {
+  DelayCorrection() : enabled(false) {}
+  DelayCorrection(bool enabled) : enabled(enabled) {}
+
+  bool enabled;
+};
+
 // The Audio Processing Module (APM) provides a collection of voice processing
 // components designed for real-time communications software.
 //
