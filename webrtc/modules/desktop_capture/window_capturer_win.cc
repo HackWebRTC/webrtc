@@ -107,6 +107,8 @@ class WindowCapturerWin : public WindowCapturer {
   HMODULE dwmapi_library_;
   DwmIsCompositionEnabledFunc is_composition_enabled_func_;
 
+  DesktopSize previous_size_;
+
   DISALLOW_COPY_AND_ASSIGN(WindowCapturerWin);
 };
 
@@ -151,6 +153,7 @@ bool WindowCapturerWin::SelectWindow(WindowId id) {
   if (!IsWindow(window) || !IsWindowVisible(window) || IsIconic(window))
     return false;
   window_ = window;
+  previous_size_.set(0, 0);
   return true;
 }
 
@@ -206,13 +209,21 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
   // window is occluded. PrintWindow() is slower but lets rendering the window
   // contents to an off-screen device context when Aero is not available.
   // PrintWindow() is not supported by some applications.
-
+  //
   // If Aero is enabled, we prefer BitBlt() because it's faster and avoids
   // window flickering. Otherwise, we prefer PrintWindow() because BitBlt() may
   // render occluding windows on top of the desired window.
+  //
+  // When composition is enabled the DC returned by GetWindowDC() doesn't always
+  // have window frame rendered correctly. Windows renders it only once and then
+  // caches the result between captures. We hack it around by calling
+  // PrintWindow() whenever window size changes - it somehow affects what we
+  // get from BitBlt() on the subsequent captures.
 
-  if (!IsAeroEnabled())
+  if (!IsAeroEnabled() ||
+      (!previous_size_.is_empty() && !previous_size_.equals(frame->size()))) {
     result = PrintWindow(window_, mem_dc, 0);
+  }
 
   // Aero is enabled or PrintWindow() failed, use BitBlt.
   if (!result) {
@@ -220,14 +231,16 @@ void WindowCapturerWin::Capture(const DesktopRegion& region) {
                     window_dc, 0, 0, SRCCOPY);
   }
 
+  SelectObject(mem_dc, NULL);
+  DeleteDC(mem_dc);
+  ReleaseDC(window_, window_dc);
+
+  previous_size_ = frame->size();
+
   if (!result) {
     LOG(LS_ERROR) << "Both PrintWindow() and BitBlt() failed.";
     frame.reset();
   }
-
-  SelectObject(mem_dc, NULL);
-  DeleteDC(mem_dc);
-  ReleaseDC(window_, window_dc);
 
   callback_->OnCaptureCompleted(frame.release());
 }
