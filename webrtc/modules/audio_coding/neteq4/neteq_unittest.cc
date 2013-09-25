@@ -837,7 +837,7 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(GetAudioBeforeInsertPacket)) {
   }
 }
 
-TEST_F(NetEqDecodingTest, BackgroundNoise) {
+TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(BackgroundNoise)) {
   neteq_->SetBackgroundNoiseMode(kBgnOn);
   CheckBgnOff(8000, kBgnOn);
   CheckBgnOff(16000, kBgnOn);
