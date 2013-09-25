@@ -14,6 +14,11 @@
       'variables': {
         # Outputs some low-level debug files.
         'aec_debug_dump%': 0,
+
+        # Disables the usual mode where we trust the reported system delay
+        # values the AEC receives. The corresponding define is set appropriately
+        # in the code, but it can be force-enabled here for testing.
+        'aec_untrusted_delay_for_testing%': 0,
       },
       'dependencies': [
         '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
@@ -91,6 +96,9 @@
       'conditions': [
         ['aec_debug_dump==1', {
           'defines': ['WEBRTC_AEC_DEBUG_DUMP',],
+        }],
+        ['aec_untrusted_delay_for_testing==1', {
+          'defines': ['WEBRTC_UNTRUSTED_DELAY',],
         }],
         ['enable_protobuf==1', {
           'dependencies': ['audioproc_debug_proto'],
