@@ -22,13 +22,6 @@
 extern MatlabEngine eng;  // Global variable defined elsewhere.
 #endif
 
-// Local for this file.
-namespace {
-
-const float kFracMs = 4.294967296E6f;
-
-}  // namespace
-
 #ifdef _WIN32
 // Disable warning C4355: 'this' : used in base member initializer list.
 #pragma warning(disable : 4355)

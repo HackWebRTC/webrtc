@@ -32,7 +32,6 @@ namespace webrtc {
 
 namespace {
 
-const int kRtpHeaderSize = 12;
 const int kNeteqInitSampleRateHz = 16000;
 const int kNackThresholdPackets = 2;
 

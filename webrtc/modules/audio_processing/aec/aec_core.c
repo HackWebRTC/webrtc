@@ -31,9 +31,6 @@
 // Buffer size (samples)
 static const size_t kBufSizePartitions = 250;  // 1 second of audio in 16 kHz.
 
-// Noise suppression
-static const int converged = 250;
-
 // Metrics
 static const int subCountLen = 4;
 static const int countLen = 50;

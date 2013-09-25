@@ -19,11 +19,6 @@
 #include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/system_wrappers/interface/trace_event.h"
 
-namespace
-{
-    const float FRAC = 4.294967296E9;
-}
-
 namespace webrtc {
 using namespace RTCPUtility;
 using namespace RTCPHelp;

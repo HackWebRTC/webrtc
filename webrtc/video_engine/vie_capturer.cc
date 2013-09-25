@@ -31,7 +31,6 @@
 namespace webrtc {
 
 const int kThreadWaitTimeMs = 100;
-const int kMaxDeliverWaitTime = 500;
 
 ViECapturer::ViECapturer(int capture_id,
                          int engine_id,

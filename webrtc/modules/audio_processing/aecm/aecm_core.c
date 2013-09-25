@@ -44,6 +44,7 @@ static const ALIGN8_BEG int16_t WebRtcAecm_kSqrtHanning[] ALIGN8_END = {
 };
 #endif
 
+#ifdef AECM_WITH_ABS_APPROX
 //Q15 alpha = 0.99439986968132  const Factor for magnitude approximation
 static const uint16_t kAlpha1 = 32584;
 //Q15 beta = 0.12967166976970   const Factor for magnitude approximation
@@ -56,6 +57,7 @@ static const uint16_t kBeta2 = 11072;
 static const uint16_t kAlpha3 = 26951;
 //Q15 beta = 0.57762063060713   const Factor for magnitude approximation
 static const uint16_t kBeta3 = 18927;
+#endif
 
 // Initialization table for echo channel in 8 kHz
 static const int16_t kChannelStored8kHz[PART_LEN1] = {
