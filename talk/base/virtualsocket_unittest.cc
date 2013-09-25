@@ -863,7 +863,8 @@ TEST_F(VirtualSocketServerTest, delay_v4) {
   DelayTest(ipv4_test_addr);
 }
 
-TEST_F(VirtualSocketServerTest, delay_v6) {
+// See: https://code.google.com/p/webrtc/issues/detail?id=2409
+TEST_F(VirtualSocketServerTest, DISABLED_delay_v6) {
   SocketAddress ipv6_test_addr(IPAddress(in6addr_any), 1000);
   DelayTest(ipv6_test_addr);
 }
