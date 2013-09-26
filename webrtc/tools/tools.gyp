@@ -17,14 +17,6 @@
       'dependencies': [
         '<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',
       ],
-      'include_dirs': [
-        'frame_analyzer',
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          'frame_analyzer',
-        ],
-      },
       'export_dependent_settings': [
         '<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv',
       ],
