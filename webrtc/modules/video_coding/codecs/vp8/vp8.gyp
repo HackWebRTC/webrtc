@@ -19,12 +19,6 @@
         '<(webrtc_root)/modules/video_coding/utility/video_coding_utility.gyp:video_coding_utility',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
-      'include_dirs': [
-        'include',
-        '<(webrtc_root)/common_video/interface',
-        '<(webrtc_root)/modules/video_coding/codecs/interface',
-        '<(webrtc_root)/modules/interface',
-      ],
       'conditions': [
         ['build_libvpx==1', {
           'dependencies': [
@@ -32,13 +26,6 @@
           ],
         }],
       ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          'include',
-          '<(webrtc_root)/common_video/interface',
-          '<(webrtc_root)/modules/video_coding/codecs/interface',
-        ],
-      },
       'sources': [
         'reference_picture_selection.h',
         'reference_picture_selection.cc',
