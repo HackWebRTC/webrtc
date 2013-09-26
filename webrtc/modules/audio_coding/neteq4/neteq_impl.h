@@ -76,6 +76,18 @@ class NetEqImpl : public webrtc::NetEq {
                            int length_bytes,
                            uint32_t receive_timestamp);
 
+  // Inserts a sync-packet into packet queue. Sync-packets are decoded to
+  // silence and are intended to keep AV-sync intact in an event of long packet
+  // losses when Video NACK is enabled but Audio NACK is not. Clients of NetEq
+  // might insert sync-packet when they observe that buffer level of NetEq is
+  // decreasing below a certain threshold, defined by the application.
+  // Sync-packets should have the same payload type as the last audio payload
+  // type, i.e. they cannot have DTMF or CNG payload type, nor a codec change
+  // can be implied by inserting a sync-packet.
+  // Returns kOk on success, kFail on failure.
+  virtual int InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
+                               uint32_t receive_timestamp);
+
   // Instructs NetEq to deliver 10 ms of audio data. The data is written to
   // |output_audio|, which can hold (at least) |max_length| elements.
   // The number of channels that were written to the output is provided in
@@ -181,9 +193,6 @@ class NetEqImpl : public webrtc::NetEq {
   // Gets background noise mode.
   virtual NetEqBackgroundNoiseMode BackgroundNoiseMode() const;
 
-  virtual int InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
-                                 uint32_t receive_timestamp);
-
  private:
   static const int kOutputSizeMs = 10;
   static const int kMaxFrameSize = 2880;  // 60 ms @ 48 kHz.
@@ -196,7 +205,8 @@ class NetEqImpl : public webrtc::NetEq {
   int InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
                            const uint8_t* payload,
                            int length_bytes,
-                           uint32_t receive_timestamp);
+                           uint32_t receive_timestamp,
+                           bool is_sync_packet);
 
 
   // Delivers 10 ms of audio data. The data is written to |output|, which can

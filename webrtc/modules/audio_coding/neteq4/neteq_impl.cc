@@ -130,13 +130,34 @@ int NetEqImpl::InsertPacket(const WebRtcRTPHeader& rtp_header,
       ", ssrc=" << rtp_header.header.ssrc <<
       ", len=" << length_bytes;
   int error = InsertPacketInternal(rtp_header, payload, length_bytes,
-                                   receive_timestamp);
+                                   receive_timestamp, false);
   if (error != 0) {
     LOG_FERR1(LS_WARNING, InsertPacketInternal, error);
     error_code_ = error;
     return kFail;
   }
   return kOK;
+}
+
+int NetEqImpl::InsertSyncPacket(const WebRtcRTPHeader& rtp_header,
+                                uint32_t receive_timestamp) {
+  CriticalSectionScoped lock(crit_sect_.get());
+  LOG(LS_VERBOSE) << "InsertPacket-Sync: ts="
+      << rtp_header.header.timestamp <<
+      ", sn=" << rtp_header.header.sequenceNumber <<
+      ", pt=" << static_cast<int>(rtp_header.header.payloadType) <<
+      ", ssrc=" << rtp_header.header.ssrc;
+
+  const uint8_t kSyncPayload[] = { 's', 'y', 'n', 'c' };
+  int error = InsertPacketInternal(
+      rtp_header, kSyncPayload, sizeof(kSyncPayload), receive_timestamp, true);
+
+   if (error != 0) {
+     LOG_FERR1(LS_WARNING, InsertPacketInternal, error);
+     error_code_ = error;
+     return kFail;
+   }
+   return kOK;
 }
 
 int NetEqImpl::GetAudio(size_t max_length, int16_t* output_audio,
@@ -372,11 +393,6 @@ int NetEqImpl::DecodedRtpInfo(int* sequence_number, uint32_t* timestamp) const {
   return 0;
 }
 
-int NetEqImpl::InsertSyncPacket(const WebRtcRTPHeader& /* rtp_header */,
-                                uint32_t /* receive_timestamp */) {
-  return kNotImplemented;
-}
-
 void NetEqImpl::SetBackgroundNoiseMode(NetEqBackgroundNoiseMode mode) {
   CriticalSectionScoped lock(crit_sect_.get());
   assert(background_noise_.get());
@@ -391,14 +407,33 @@ NetEqBackgroundNoiseMode NetEqImpl::BackgroundNoiseMode() const {
 
 // Methods below this line are private.
 
-
 int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
                                     const uint8_t* payload,
                                     int length_bytes,
-                                    uint32_t receive_timestamp) {
+                                    uint32_t receive_timestamp,
+                                    bool is_sync_packet) {
   if (!payload) {
     LOG_F(LS_ERROR) << "payload == NULL";
     return kInvalidPointer;
+  }
+  // Sanity checks for sync-packets.
+  if (is_sync_packet) {
+    if (decoder_database_->IsDtmf(rtp_header.header.payloadType) ||
+        decoder_database_->IsRed(rtp_header.header.payloadType) ||
+        decoder_database_->IsComfortNoise(rtp_header.header.payloadType)) {
+      LOG_F(LS_ERROR) << "Sync-packet with an unacceptable payload type "
+          << rtp_header.header.payloadType;
+      return kSyncPacketNotAccepted;
+    }
+    if (first_packet_ ||
+        rtp_header.header.payloadType != current_rtp_payload_type_ ||
+        rtp_header.header.ssrc != ssrc_) {
+      // Even if |current_rtp_payload_type_| is 0xFF, sync-packet isn't
+      // accepted.
+      LOG_F(LS_ERROR) << "Changing codec, SSRC or first packet "
+          "with sync-packet.";
+      return kSyncPacketNotAccepted;
+    }
   }
   PacketList packet_list;
   RTPHeader main_header;
@@ -418,6 +453,7 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     packet->primary = true;
     packet->waiting_time = 0;
     packet->payload = new uint8_t[packet->payload_length];
+    packet->sync_packet = is_sync_packet;
     if (!packet->payload) {
       LOG_F(LS_ERROR) << "Payload pointer is NULL.";
     }
@@ -455,11 +491,13 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     timestamp_scaler_->Reset();
   }
 
-  // Update RTCP statistics.
-  rtcp_.Update(main_header, receive_timestamp);
+  // Update RTCP statistics, only for regular packets.
+  if (!is_sync_packet)
+    rtcp_.Update(main_header, receive_timestamp);
 
   // Check for RED payload type, and separate payloads into several packets.
   if (decoder_database_->IsRed(main_header.payloadType)) {
+    assert(!is_sync_packet);  // We had a sanity check for this.
     if (payload_splitter_->SplitRed(&packet_list) != PayloadSplitter::kOK) {
       LOG_FERR1(LS_WARNING, SplitRed, packet_list.size());
       PacketBuffer::DeleteAllPackets(&packet_list);
@@ -492,6 +530,7 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     assert(current_packet);
     assert(current_packet->payload);
     if (decoder_database_->IsDtmf(current_packet->header.payloadType)) {
+      assert(!current_packet->sync_packet);  // We had a sanity check for this.
       DtmfEvent event;
       int ret = DtmfBuffer::ParseEvent(
           current_packet->header.timestamp,
@@ -519,7 +558,8 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
   }
 
   // Split payloads into smaller chunks. This also verifies that all payloads
-  // are of a known payload type.
+  // are of a known payload type. SplitAudio() method is protected against
+  // sync-packets.
   int ret = payload_splitter_->SplitAudio(&packet_list, *decoder_database_);
   if (ret != PayloadSplitter::kOK) {
     LOG_FERR1(LS_WARNING, SplitAudio, packet_list.size());
@@ -534,8 +574,8 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     }
   }
 
-  // Update bandwidth estimate.
-  if (!packet_list.empty()) {
+  // Update bandwidth estimate, if the packet is not sync-packet.
+  if (!packet_list.empty() && !packet_list.front()->sync_packet) {
     // The list can be empty here if we got nothing but DTMF payloads.
     AudioDecoder* decoder =
         decoder_database_->GetDecoder(main_header.payloadType);
@@ -1160,7 +1200,18 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, Operations* operation,
     packet_list->pop_front();
     int payload_length = packet->payload_length;
     int16_t decode_length;
-    if (!packet->primary) {
+    if (packet->sync_packet) {
+      // Decode to silence with the same frame size as the last decode.
+      LOG(LS_VERBOSE) << "Decoding sync-packet: " <<
+          " ts=" << packet->header.timestamp <<
+          ", sn=" << packet->header.sequenceNumber <<
+          ", pt=" << static_cast<int>(packet->header.payloadType) <<
+          ", ssrc=" << packet->header.ssrc <<
+          ", len=" << packet->payload_length;
+      memset(&decoded_buffer_[*decoded_length], 0, decoder_frame_length_ *
+             decoder->channels() * sizeof(decoded_buffer_[0]));
+      decode_length = decoder_frame_length_;
+    } else if (!packet->primary) {
       // This is a redundant payload; call the special decoder method.
       LOG(LS_VERBOSE) << "Decoding packet (redundant):" <<
           " ts=" << packet->header.timestamp <<
@@ -1696,8 +1747,8 @@ int NetEqImpl::ExtractPackets(int required_samples, PacketList* packet_list) {
     AudioDecoder* decoder = decoder_database_->GetDecoder(
         packet->header.payloadType);
     if (decoder) {
-      packet_duration = decoder->PacketDuration(packet->payload,
-                                                packet->payload_length);
+      packet_duration = packet->sync_packet ? decoder_frame_length_ :
+          decoder->PacketDuration(packet->payload, packet->payload_length);
     } else {
       LOG_FERR1(LS_WARNING, GetDecoder, packet->header.payloadType) <<
           "Could not find a decoder for a packet about to be extracted.";

@@ -163,6 +163,11 @@ int PayloadSplitter::SplitAudio(PacketList* packet_list,
     if (!info) {
       return kUnknownPayloadType;
     }
+    // No splitting for a sync-packet.
+    if (packet->sync_packet) {
+      ++it;
+      continue;
+    }
     PacketList new_packets;
     switch (info->codec_type) {
       case kDecoderPCMu:
