@@ -120,9 +120,18 @@ class MediaOptimization {
   // Computes new Quality Mode.
   int32_t SelectQuality();
 
+  // Enables AutoMuter to turn off video when the rate drops below
+  // |threshold_bps|, and turns back on when the rate goes back up above
+  // |threshold_bps| + |window_bps|.
+  void EnableAutoMuting(int threshold_bps, int window_bps);
+
+  // Disables AutoMuter.
+  void DisableAutoMuting();
+
   // Accessors and mutators.
   int32_t max_bit_rate() const { return max_bit_rate_; }
   void set_max_payload_size(int32_t mtu) { max_payload_size_ = mtu; }
+  bool video_muted() const { return video_muted_; }
 
  private:
   typedef std::list<EncodedFrameSample> FrameSampleList;
@@ -152,6 +161,11 @@ class MediaOptimization {
 
   void ProcessIncomingFrameRate(int64_t now);
 
+  // Checks conditions for AutoMute. The method compares |target_bit_rate_|
+  // with the threshold values for AutoMute, and changes the state of
+  // |video_muted_| accordingly.
+  void CheckAutoMuteConditions();
+
   int32_t id_;
   Clock* clock_;
   int32_t max_bit_rate_;
@@ -165,7 +179,7 @@ class MediaOptimization {
   uint32_t send_statistics_[4];
   uint32_t send_statistics_zero_encode_;
   int32_t max_payload_size_;
-  uint32_t target_bit_rate_;
+  int target_bit_rate_;
   float incoming_frame_rate_;
   int64_t incoming_frame_times_[kFrameCountHistorySize];
   bool enable_qm_;
@@ -181,6 +195,10 @@ class MediaOptimization {
   int64_t last_qm_update_time_;
   int64_t last_change_time_;  // Content/user triggered.
   int num_layers_;
+  bool muting_enabled_;
+  bool video_muted_;
+  int muter_threshold_bps_;
+  int muter_window_bps_;
 };  // End of MediaOptimization class declaration.
 
 }  // namespace media_optimization

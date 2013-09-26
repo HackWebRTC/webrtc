@@ -46,7 +46,11 @@ MediaOptimization::MediaOptimization(int32_t id, Clock* clock)
       qm_resolution_(new VCMQmResolution()),
       last_qm_update_time_(0),
       last_change_time_(0),
-      num_layers_(0) {
+      num_layers_(0),
+      muting_enabled_(false),
+      video_muted_(false),
+      muter_threshold_bps_(0),
+      muter_window_bps_(0) {
   memset(send_statistics_, 0, sizeof(send_statistics_));
   memset(incoming_frame_times_, -1, sizeof(incoming_frame_times_));
 }
@@ -188,6 +192,8 @@ uint32_t MediaOptimization::SetTargetRates(uint32_t target_bitrate,
     // Reset the short-term averaged content data.
     content_->ResetShortTermAvgData();
   }
+
+  CheckAutoMuteConditions();
 
   return target_bit_rate_;
 }
@@ -345,7 +351,9 @@ void MediaOptimization::EnableFrameDropper(bool enable) {
 bool MediaOptimization::DropFrame() {
   // Leak appropriate number of bytes.
   frame_dropper_->Leak((uint32_t)(InputFrameRate() + 0.5f));
-
+  if (video_muted_) {
+    return true;  // Drop all frames when muted.
+  }
   return frame_dropper_->DropFrame();
 }
 
@@ -408,6 +416,19 @@ int32_t MediaOptimization::SelectQuality() {
   content_->Reset();
 
   return VCM_OK;
+}
+
+void MediaOptimization::EnableAutoMuting(int threshold_bps, int window_bps) {
+  assert(threshold_bps > 0 && window_bps >= 0);
+  muter_threshold_bps_ = threshold_bps;
+  muter_window_bps_ = window_bps;
+  muting_enabled_ = true;
+  video_muted_ = false;
+}
+
+void MediaOptimization::DisableAutoMuting() {
+  muting_enabled_ = false;
+  video_muted_ = false;
 }
 
 // Private methods below this line.
@@ -580,6 +601,24 @@ void MediaOptimization::ProcessIncomingFrameRate(int64_t now) {
     incoming_frame_rate_ = 1.0;
     if (diff > 0) {
       incoming_frame_rate_ = nr_of_frames * 1000.0f / static_cast<float>(diff);
+    }
+  }
+}
+
+void MediaOptimization::CheckAutoMuteConditions() {
+  // Check conditions for AutoMute. |target_bit_rate_| is in bps.
+  if (muting_enabled_) {
+    if (!video_muted_) {
+      // Check if we just went below the threshold.
+      if (target_bit_rate_ < muter_threshold_bps_) {
+        video_muted_ = true;
+      }
+    } else {
+      // Video is already muted. Check if we just went over the threshold
+      // with a margin.
+      if (target_bit_rate_ > muter_threshold_bps_ + muter_window_bps_) {
+        video_muted_ = false;
+      }
     }
   }
 }
