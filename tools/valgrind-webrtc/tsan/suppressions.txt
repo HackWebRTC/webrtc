@@ -52,46 +52,6 @@
 # 2. libjingle stuff (talk folder)
 
 {
-  bug_1205_1
-  ThreadSanitizer:Race
-  fun:webrtc::AudioDeviceLinuxALSA::PlayoutWarning
-  fun:webrtc::AudioDeviceModuleImpl::Process
-  fun:webrtc::ProcessThreadImpl::Process
-  fun:webrtc::ProcessThreadImpl::Run
-  fun:webrtc::ThreadPosix::Run
-  fun:StartThread
-}
-{
-  bug_1205_2
-  ThreadSanitizer:Race
-  fun:webrtc::AudioDeviceLinuxALSA::PlayoutError
-  fun:webrtc::AudioDeviceModuleImpl::Process
-  fun:webrtc::ProcessThreadImpl::Process
-  fun:webrtc::ProcessThreadImpl::Run
-  fun:webrtc::ThreadPosix::Run
-  fun:StartThread
-}
-{
-  bug_1205_3
-  ThreadSanitizer:Race
-  fun:webrtc::AudioDeviceLinuxALSA::RecordingWarning
-  fun:webrtc::AudioDeviceModuleImpl::Process
-  fun:webrtc::ProcessThreadImpl::Process
-  fun:webrtc::ProcessThreadImpl::Run
-  fun:webrtc::ThreadPosix::Run
-  fun:StartThread
-}
-{
-  bug_1205_4
-  ThreadSanitizer:Race
-  fun:webrtc::AudioDeviceLinuxALSA::RecordingError
-  fun:webrtc::AudioDeviceModuleImpl::Process
-  fun:webrtc::ProcessThreadImpl::Process
-  fun:webrtc::ProcessThreadImpl::Run
-  fun:webrtc::ThreadPosix::Run
-  fun:StartThread
-}
-{
   bug_1205_5
   ThreadSanitizer:Race
   fun:webrtc::RTPReceiver::ProcessBitrate

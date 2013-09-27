@@ -122,7 +122,7 @@ AudioDeviceLinuxALSA::~AudioDeviceLinuxALSA()
 {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id,
                  "%s destroyed", __FUNCTION__);
-    
+
     Terminate();
 
     // Clean up the recording buffer and playout buffer.
@@ -415,7 +415,7 @@ int32_t AudioDeviceLinuxALSA::SpeakerVolume(uint32_t& volume) const
     }
 
     volume = level;
-    
+
     return 0;
 }
 
@@ -451,7 +451,7 @@ int32_t AudioDeviceLinuxALSA::MaxSpeakerVolume(
     }
 
     maxVolume = maxVol;
-    
+
     return 0;
 }
 
@@ -467,7 +467,7 @@ int32_t AudioDeviceLinuxALSA::MinSpeakerVolume(
     }
 
     minVolume = minVol;
-    
+
     return 0;
 }
 
@@ -475,8 +475,8 @@ int32_t AudioDeviceLinuxALSA::SpeakerVolumeStepSize(
     uint16_t& stepSize) const
 {
 
-    uint16_t delta(0); 
-     
+    uint16_t delta(0);
+
     if (_mixerManager.SpeakerVolumeStepSize(delta) == -1)
     {
         return -1;
@@ -527,15 +527,15 @@ int32_t AudioDeviceLinuxALSA::SetSpeakerMute(bool enable)
 int32_t AudioDeviceLinuxALSA::SpeakerMute(bool& enabled) const
 {
 
-    bool muted(0); 
-        
+    bool muted(0);
+
     if (_mixerManager.SpeakerMute(muted) == -1)
     {
         return -1;
     }
 
     enabled = muted;
-    
+
     return 0;
 }
 
@@ -584,8 +584,8 @@ int32_t AudioDeviceLinuxALSA::SetMicrophoneMute(bool enable)
 int32_t AudioDeviceLinuxALSA::MicrophoneMute(bool& enabled) const
 {
 
-    bool muted(0); 
-        
+    bool muted(0);
+
     if (_mixerManager.MicrophoneMute(muted) == -1)
     {
         return -1;
@@ -597,7 +597,7 @@ int32_t AudioDeviceLinuxALSA::MicrophoneMute(bool& enabled) const
 
 int32_t AudioDeviceLinuxALSA::MicrophoneBoostIsAvailable(bool& available)
 {
-    
+
     bool isAvailable(false);
     bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
 
@@ -635,15 +635,15 @@ int32_t AudioDeviceLinuxALSA::SetMicrophoneBoost(bool enable)
 int32_t AudioDeviceLinuxALSA::MicrophoneBoost(bool& enabled) const
 {
 
-    bool onOff(0); 
-        
+    bool onOff(0);
+
     if (_mixerManager.MicrophoneBoost(onOff) == -1)
     {
         return -1;
     }
 
     enabled = onOff;
-    
+
     return 0;
 }
 
@@ -665,7 +665,7 @@ int32_t AudioDeviceLinuxALSA::StereoRecordingIsAvailable(bool& available)
     int recChannels = _recChannels;
 
     available = false;
-    
+
     // Stop/uninitialize recording if initialized (and possibly started)
     if (_recIsInitialized)
     {
@@ -736,7 +736,7 @@ int32_t AudioDeviceLinuxALSA::StereoPlayoutIsAvailable(bool& available)
     int playChannels = _playChannels;
 
     available = false;
-    
+
     // Stop/uninitialize recording if initialized (and possibly started)
     if (_playIsInitialized)
     {
@@ -835,7 +835,7 @@ int32_t AudioDeviceLinuxALSA::SetMicrophoneVolume(uint32_t volume)
 {
 
     return (_mixerManager.SetMicrophoneVolume(volume));
- 
+
     return 0;
 }
 
@@ -852,7 +852,7 @@ int32_t AudioDeviceLinuxALSA::MicrophoneVolume(uint32_t& volume) const
     }
 
     volume = level;
-    
+
     return 0;
 }
 
@@ -892,8 +892,8 @@ int32_t AudioDeviceLinuxALSA::MicrophoneVolumeStepSize(
     uint16_t& stepSize) const
 {
 
-    uint16_t delta(0); 
-        
+    uint16_t delta(0);
+
     if (_mixerManager.MicrophoneVolumeStepSize(delta) == -1)
     {
         return -1;
@@ -985,7 +985,7 @@ int32_t AudioDeviceLinuxALSA::RecordingDeviceName(
     {
         memset(guid, 0, kAdmMaxGuidSize);
     }
-    
+
     return GetDevicesInfo(1, false, index, name, kAdmMaxDeviceNameSize);
 }
 
@@ -1034,7 +1034,7 @@ int32_t AudioDeviceLinuxALSA::SetRecordingDevice(
 
 int32_t AudioDeviceLinuxALSA::PlayoutIsAvailable(bool& available)
 {
-    
+
     available = false;
 
     // Try to initialize the playout side with mono
@@ -1059,13 +1059,13 @@ int32_t AudioDeviceLinuxALSA::PlayoutIsAvailable(bool& available)
             _playChannels = 2;
         }
     }
-    
+
     return res;
 }
 
 int32_t AudioDeviceLinuxALSA::RecordingIsAvailable(bool& available)
 {
-    
+
     available = false;
 
     // Try to initialize the recording side with mono
@@ -1090,7 +1090,7 @@ int32_t AudioDeviceLinuxALSA::RecordingIsAvailable(bool& available)
             _recChannels = 2;
         }
     }
-    
+
     return res;
 }
 
@@ -1762,11 +1762,11 @@ int32_t AudioDeviceLinuxALSA::PlayoutBuffer(
     type = _playBufType;
     if (type == AudioDeviceModule::kFixedBufferSize)
     {
-        sizeMS = _playBufDelayFixed; 
+        sizeMS = _playBufDelayFixed;
     }
     else
     {
-        sizeMS = _playBufDelay; 
+        sizeMS = _playBufDelay;
     }
 
     return 0;
@@ -1782,41 +1782,49 @@ int32_t AudioDeviceLinuxALSA::CPULoad(uint16_t& load) const
 
 bool AudioDeviceLinuxALSA::PlayoutWarning() const
 {
+    CriticalSectionScoped lock(&_critSect);
     return (_playWarning > 0);
 }
 
 bool AudioDeviceLinuxALSA::PlayoutError() const
 {
+    CriticalSectionScoped lock(&_critSect);
     return (_playError > 0);
 }
 
 bool AudioDeviceLinuxALSA::RecordingWarning() const
 {
+    CriticalSectionScoped lock(&_critSect);
     return (_recWarning > 0);
 }
 
 bool AudioDeviceLinuxALSA::RecordingError() const
 {
+    CriticalSectionScoped lock(&_critSect);
     return (_recError > 0);
 }
 
 void AudioDeviceLinuxALSA::ClearPlayoutWarning()
 {
+    CriticalSectionScoped lock(&_critSect);
     _playWarning = 0;
 }
 
 void AudioDeviceLinuxALSA::ClearPlayoutError()
 {
+    CriticalSectionScoped lock(&_critSect);
     _playError = 0;
 }
 
 void AudioDeviceLinuxALSA::ClearRecordingWarning()
 {
+    CriticalSectionScoped lock(&_critSect);
     _recWarning = 0;
 }
 
 void AudioDeviceLinuxALSA::ClearRecordingError()
 {
+    CriticalSectionScoped lock(&_critSect);
     _recError = 0;
 }
 
@@ -1831,7 +1839,7 @@ int32_t AudioDeviceLinuxALSA::GetDevicesInfo(
     char* enumDeviceName,
     const int32_t ednLen) const
 {
-    
+
     // Device enumeration based on libjingle implementation
     // by Tristan Schmelcher at Google Inc.
 
