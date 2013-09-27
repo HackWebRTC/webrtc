@@ -118,7 +118,8 @@ TEST_F(CurrentSpeakerMonitorTest, MultipleActiveStreams) {
   EXPECT_EQ(num_changes_, 1);
 }
 
-TEST_F(CurrentSpeakerMonitorTest, RapidSpeakerChange) {
+// See: https://code.google.com/p/webrtc/issues/detail?id=2409
+TEST_F(CurrentSpeakerMonitorTest, DISABLED_RapidSpeakerChange) {
   AudioInfo info;
   InitAudioInfo(&info, 0, 0);
 
