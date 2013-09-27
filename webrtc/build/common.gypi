@@ -95,6 +95,7 @@
     'mips_arch_variant%': 'mips32r1',
     'mips_dsp_rev%': 0,
     'mips_fpu%' : 1,
+    'enable_android_opensl%': 1,
 
     'conditions': [
       ['build_with_chromium==1', {
@@ -128,13 +129,9 @@
       ['build_with_libjingle==1', {
         'include_tests%': 0,
         'enable_tracing%': 0,
-        'enable_android_opensl%': 0,
       }, {
         'include_tests%': 1,
         'enable_tracing%': 1,
-        # Switch between Android audio device OpenSL ES implementation
-        # and Java Implementation
-        'enable_android_opensl%': 0,
       }],
       ['OS=="ios"', {
         'build_libjpeg%': 0,
