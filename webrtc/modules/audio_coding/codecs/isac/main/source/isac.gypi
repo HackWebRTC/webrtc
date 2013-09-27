@@ -73,18 +73,13 @@
         'structs.h',
         'os_specific_inline.h',
      ],
-      'conditions': [
-        ['OS!="win"', {
-          'defines': [
-            'WEBRTC_LINUX',
-          ],
-          'link_settings': {
-            'libraries': [
-              '-lm',
-            ],
-          },
-        }],
-      ],
+     'conditions': [
+       ['OS=="linux"', {
+         'link_settings': {
+           'libraries': ['-lm',],
+         },
+       }],
+     ],
     },
   ],
 }
