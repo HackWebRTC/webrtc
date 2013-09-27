@@ -58,7 +58,7 @@ deps = {
 
   "third_party/junit/":
     (Var("googlecode_url") % "webrtc") + "/deps/third_party/junit@3367",
- 
+
   "third_party/libjpeg":
     Var("chromium_trunk") + "/src/third_party/libjpeg@" + Var("chromium_revision"),
 
@@ -103,6 +103,9 @@ deps = {
 
   "tools/python":
     Var("chromium_trunk") + "/src/tools/python@" + Var("chromium_revision"),
+
+  "tools/sharding_supervisor":
+    Var("chromium_trunk") + "/src/tools/sharding_supervisor@" + Var("chromium_revision"),
 
   "tools/swarm_client":
     Var("chromium_trunk") + "/tools/swarm_client@" + Var("chromium_revision"),
