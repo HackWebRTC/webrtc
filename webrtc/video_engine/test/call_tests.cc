@@ -28,14 +28,7 @@
 
 namespace webrtc {
 
-struct CallTestParams {
-  size_t width, height;
-  struct {
-    unsigned int min, start, max;
-  } bitrate;
-};
-
-class CallTest : public ::testing::TestWithParam<CallTestParams> {
+class CallTest : public ::testing::Test {
  public:
   CallTest()
       : send_stream_(NULL),
@@ -132,16 +125,6 @@ class CallTest : public ::testing::TestWithParam<CallTestParams> {
 
   std::map<uint32_t, bool> reserved_ssrcs_;
 };
-
-// TODO(pbos): What are sane values here for bitrate? Are we missing any
-// important resolutions?
-CallTestParams video_1080p = {1920, 1080, {300, 600, 800}};
-CallTestParams video_720p = {1280, 720, {300, 600, 800}};
-CallTestParams video_vga = {640, 480, {300, 600, 800}};
-CallTestParams video_qvga = {320, 240, {300, 600, 800}};
-CallTestParams video_4cif = {704, 576, {300, 600, 800}};
-CallTestParams video_cif = {352, 288, {300, 600, 800}};
-CallTestParams video_qcif = {176, 144, {300, 600, 800}};
 
 class NackObserver : public test::RtpRtcpObserver {
   static const int kNumberOfNacksToObserve = 4;
@@ -245,7 +228,7 @@ class NackObserver : public test::RtpRtcpObserver {
   static const int kRequiredRtcpsWithoutNack = 2;
 };
 
-TEST_P(CallTest, ReceivesAndRetransmitsNack) {
+TEST_F(CallTest, ReceivesAndRetransmitsNack) {
   NackObserver observer;
 
   CreateCalls(observer.SendTransport(), observer.ReceiveTransport());
@@ -375,16 +358,16 @@ void CallTest::ReceivesPliAndRecovers(int rtp_history_ms) {
   DestroyStreams();
 }
 
-TEST_P(CallTest, ReceivesPliAndRecoversWithNack) {
+TEST_F(CallTest, ReceivesPliAndRecoversWithNack) {
   ReceivesPliAndRecovers(1000);
 }
 
 // TODO(pbos): Enable this when 2250 is resolved.
-TEST_P(CallTest, DISABLED_ReceivesPliAndRecoversWithoutNack) {
+TEST_F(CallTest, DISABLED_ReceivesPliAndRecoversWithoutNack) {
   ReceivesPliAndRecovers(0);
 }
 
-TEST_P(CallTest, SurvivesIncomingRtpPacketsToDestroyedReceiveStream) {
+TEST_F(CallTest, SurvivesIncomingRtpPacketsToDestroyedReceiveStream) {
   class PacketInputObserver : public PacketReceiver {
    public:
     explicit PacketInputObserver(PacketReceiver* receiver)
@@ -435,6 +418,4 @@ TEST_P(CallTest, SurvivesIncomingRtpPacketsToDestroyedReceiveStream) {
   send_transport.StopSending();
   receive_transport.StopSending();
 }
-
-INSTANTIATE_TEST_CASE_P(CallTest, CallTest, ::testing::Values(video_vga));
 }  // namespace webrtc
