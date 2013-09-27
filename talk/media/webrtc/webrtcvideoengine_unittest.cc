@@ -1785,8 +1785,12 @@ TEST_F(WebRtcVideoEngineTestFake, ExternalCodecAddedToTheEnd) {
   encoder_factory_.NotifyCodecsAvailable();
 
   codecs = engine_.codecs();
+  cricket::VideoCodec internal_codec = codecs[0];
+  cricket::VideoCodec external_codec = codecs[codecs.size() - 1];
   // The external codec will appear at last.
-  EXPECT_EQ("GENERIC", codecs[codecs.size() - 1].name);
+  EXPECT_EQ("GENERIC", external_codec.name);
+  // The internal codec is preferred.
+  EXPECT_GE(internal_codec.preference, external_codec.preference);
 }
 
 // Test that external codec with be ignored if it has the same name as one of

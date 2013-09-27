@@ -105,12 +105,8 @@ class WebRtcVoiceEngine
 
   SoundclipMedia* CreateSoundclip();
 
-  // TODO(pthatcher): Rename to SetOptions and replace the old
-  // flags-based SetOptions.
-  bool SetAudioOptions(const AudioOptions& options);
-  // Eventually, we will replace them with AudioOptions.
-  // In the meantime, we leave this here for backwards compat.
-  bool SetOptions(int flags);
+  AudioOptions GetOptions() const { return options_; }
+  bool SetOptions(const AudioOptions& options);
   // Overrides, when set, take precedence over the options on a
   // per-option basis.  For example, if AGC is set in options and AEC
   // is set in overrides, AGC and AEC will be both be set.  Overrides

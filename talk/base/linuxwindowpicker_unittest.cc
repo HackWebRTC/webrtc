@@ -28,6 +28,7 @@
 #include "talk/base/gunit.h"
 #include "talk/base/linuxwindowpicker.h"
 #include "talk/base/logging.h"
+#include "talk/base/testutils.h"
 #include "talk/base/windowpicker.h"
 
 #ifndef LINUX
@@ -37,6 +38,7 @@
 namespace talk_base {
 
 TEST(LinuxWindowPickerTest, TestGetWindowList) {
+  MAYBE_SKIP_SCREENCAST_TEST();
   LinuxWindowPicker window_picker;
   WindowDescriptionList descriptions;
   window_picker.Init();
@@ -44,6 +46,7 @@ TEST(LinuxWindowPickerTest, TestGetWindowList) {
 }
 
 TEST(LinuxWindowPickerTest, TestGetDesktopList) {
+  MAYBE_SKIP_SCREENCAST_TEST();
   LinuxWindowPicker window_picker;
   DesktopDescriptionList descriptions;
   EXPECT_TRUE(window_picker.Init());

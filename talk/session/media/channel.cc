@@ -641,12 +641,6 @@ bool BaseChannel::PacketIsRtcp(const TransportChannel* channel,
 
 bool BaseChannel::SendPacket(bool rtcp, talk_base::Buffer* packet,
                              talk_base::DiffServCodePoint dscp) {
-  // Unless we're sending optimistically, we only allow packets through when we
-  // are completely writable.
-  if (!optimistic_data_send_ && !writable_) {
-    return false;
-  }
-
   // SendPacket gets called from MediaEngine, typically on an encoder thread.
   // If the thread is not our worker thread, we will post to our worker
   // so that the real work happens on our worker. This avoids us having to

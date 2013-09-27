@@ -38,11 +38,16 @@
 #include "talk/base/stringutils.h"
 #include "talk/media/base/constants.h"
 #include "talk/media/base/cryptoparams.h"
-#include "talk/media/sctp/sctpdataengine.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/session/media/channelmanager.h"
 #include "talk/session/media/srtpfilter.h"
 #include "talk/xmpp/constants.h"
+
+#ifdef HAVE_SCTP
+#include "talk/media/sctp/sctpdataengine.h"
+#else
+static const uint32 kMaxSctpSid = USHRT_MAX;
+#endif
 
 namespace {
 const char kInline[] = "inline:";

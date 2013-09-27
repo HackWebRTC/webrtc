@@ -1079,7 +1079,11 @@ Session* Call::InternalInitiateSession(const std::string& id,
   const SessionDescription* offer = session_client_->CreateOffer(options);
 
   Session* session = session_client_->CreateSession(id, this);
-  session->set_initiator_name(initiator_name);
+  // Only override the initiator_name if it was manually supplied. Otherwise,
+  // session_client_ will supply the local jid as initiator in CreateOffer.
+  if (!initiator_name.empty()) {
+    session->set_initiator_name(initiator_name);
+  }
 
   AddSession(session, offer);
   session->Initiate(to.Str(), offer);

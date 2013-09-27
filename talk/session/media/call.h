@@ -117,6 +117,9 @@ class Call : public talk_base::MessageHandler, public sigslot::has_slots<> {
     MediaStreams* recv_streams = GetMediaStreams(session);
     return recv_streams ? &recv_streams->audio() : NULL;
   }
+  VoiceChannel* GetVoiceChannel(Session* session) const;
+  VideoChannel* GetVideoChannel(Session* session) const;
+  DataChannel* GetDataChannel(Session* session) const;
   // Public just for unit tests
   VideoContentDescription* CreateVideoStreamUpdate(const StreamParams& stream);
   // Takes ownership of video.
@@ -193,9 +196,6 @@ class Call : public talk_base::MessageHandler, public sigslot::has_slots<> {
   void OnDataReceived(DataChannel* channel,
                       const ReceiveDataParams& params,
                       const talk_base::Buffer& payload);
-  VoiceChannel* GetVoiceChannel(Session* session) const;
-  VideoChannel* GetVideoChannel(Session* session) const;
-  DataChannel* GetDataChannel(Session* session) const;
   MediaStreams* GetMediaStreams(Session* session) const;
   void UpdateRemoteMediaStreams(Session* session,
                                 const ContentInfos& updated_contents,

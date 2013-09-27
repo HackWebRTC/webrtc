@@ -27,6 +27,7 @@
 
 #include "talk/p2p/base/transportchannelproxy.h"
 #include "talk/base/common.h"
+#include "talk/base/logging.h"
 #include "talk/base/thread.h"
 #include "talk/p2p/base/transport.h"
 #include "talk/p2p/base/transportchannelimpl.h"
@@ -54,8 +55,15 @@ TransportChannelProxy::~TransportChannelProxy() {
 }
 
 void TransportChannelProxy::SetImplementation(TransportChannelImpl* impl) {
-  // TODO(juberti): Fix this to occur on the correct thread.
-  // ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(talk_base::Thread::Current() == worker_thread_);
+
+  if (impl == impl_) {
+    ASSERT(false);
+    // Ignore if the |impl| has already been set.
+    LOG(LS_WARNING) << "Ignored TransportChannelProxy::SetImplementation call "
+                    << "with a same impl as the existing one.";
+    return;
+  }
 
   // Destroy any existing impl_.
   if (impl_) {

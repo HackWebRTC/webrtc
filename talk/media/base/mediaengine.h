@@ -60,30 +60,6 @@ class VideoCapturer;
 // proper synchronization between both media types.
 class MediaEngineInterface {
  public:
-  // Bitmask flags for options that may be supported by the media engine
-  // implementation.  This can be converted to and from an
-  // AudioOptions struct for backwards compatibility with calls that
-  // use flags until we transition to using structs everywhere.
-  enum AudioFlags {
-    // Audio processing that attempts to filter away the output signal from
-    // later inbound pickup.
-    ECHO_CANCELLATION         = 1 << 0,
-    // Audio processing to adjust the sensitivity of the local mic dynamically.
-    AUTO_GAIN_CONTROL         = 1 << 1,
-    // Audio processing to filter out background noise.
-    NOISE_SUPPRESSION         = 1 << 2,
-    // Audio processing to remove background noise of lower frequencies.
-    HIGHPASS_FILTER           = 1 << 3,
-    // A switch to swap which captured signal is left and right in stereo mode.
-    STEREO_FLIPPING           = 1 << 4,
-    // Controls delegation echo cancellation to use the OS' facility.
-    SYSTEM_AEC_MODE           = 1 << 5,
-
-    ALL_AUDIO_OPTIONS         = (1 << 6) - 1,
-    DEFAULT_AUDIO_OPTIONS     = ECHO_CANCELLATION | AUTO_GAIN_CONTROL |
-                                NOISE_SUPPRESSION | HIGHPASS_FILTER,
-  };
-
   // Default value to be used for SetAudioDelayOffset().
   static const int kDefaultAudioDelayOffset;
 
@@ -109,10 +85,12 @@ class MediaEngineInterface {
   virtual SoundclipMedia *CreateSoundclip() = 0;
 
   // Configuration
+  // Gets global audio options.
+  virtual AudioOptions GetAudioOptions() const = 0;
   // Sets global audio options. "options" are from AudioOptions, above.
-  virtual bool SetAudioOptions(int options) = 0;
+  virtual bool SetAudioOptions(const AudioOptions& options) = 0;
   // Sets global video options. "options" are from VideoOptions, above.
-  virtual bool SetVideoOptions(int options) = 0;
+  virtual bool SetVideoOptions(const VideoOptions& options) = 0;
   // Sets the value used by the echo canceller to offset delay values obtained
   // from the OS.
   virtual bool SetAudioDelayOffset(int offset) = 0;
@@ -210,11 +188,14 @@ class CompositeMediaEngine : public MediaEngineInterface {
     return voice_.CreateSoundclip();
   }
 
-  virtual bool SetAudioOptions(int o) {
-    return voice_.SetOptions(o);
+  virtual AudioOptions GetAudioOptions() const {
+    return voice_.GetOptions();
   }
-  virtual bool SetVideoOptions(int o) {
-    return video_.SetOptions(o);
+  virtual bool SetAudioOptions(const AudioOptions& options) {
+    return voice_.SetOptions(options);
+  }
+  virtual bool SetVideoOptions(const VideoOptions& options) {
+    return video_.SetOptions(options);
   }
   virtual bool SetAudioDelayOffset(int offset) {
     return voice_.SetDelayOffset(offset);
@@ -304,7 +285,8 @@ class NullVoiceEngine {
     return NULL;
   }
   bool SetDelayOffset(int offset) { return true; }
-  bool SetOptions(int opts) { return true; }
+  AudioOptions GetOptions() const { return AudioOptions(); }
+  bool SetOptions(const AudioOptions& options) { return true; }
   bool SetDevices(const Device* in_device, const Device* out_device) {
     return true;
   }
@@ -344,7 +326,7 @@ class NullVideoEngine {
       VoiceMediaChannel* voice_media_channel) {
     return NULL;
   }
-  bool SetOptions(int opts) { return true; }
+  bool SetOptions(const VideoOptions& options) { return true; }
   bool SetDefaultEncoderConfig(const VideoEncoderConfig& config) {
     return true;
   }

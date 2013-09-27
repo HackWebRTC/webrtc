@@ -342,10 +342,6 @@ bool RtpDataMediaChannel::SendData(
                     << "; already sent " << send_limiter_->used_in_period()
                     << "/" << send_limiter_->max_per_period();
     return false;
-  } else {
-    LOG(LS_VERBOSE) << "Sending data packet of len=" << packet_len
-                    << "; already sent " << send_limiter_->used_in_period()
-                    << "/" << send_limiter_->max_per_period();
   }
 
   RtpHeader header;
@@ -363,12 +359,12 @@ bool RtpDataMediaChannel::SendData(
   packet.AppendData(&kReservedSpace, sizeof(kReservedSpace));
   packet.AppendData(payload.data(), payload.length());
 
-  // Uncomment this for easy debugging.
-  // LOG(LS_INFO) << "Sent packet: "
-  //              << " stream=" << found_stream.id
-  //              << ", seqnum=" << header.seq_num
-  //              << ", timestamp=" << header.timestamp
-  //              << ", len=" << data_len;
+  LOG(LS_VERBOSE) << "Sent RTP data packet: "
+                  << " stream=" << found_stream.id
+                  << " ssrc=" << header.ssrc
+                  << ", seqnum=" << header.seq_num
+                  << ", timestamp=" << header.timestamp
+                  << ", len=" << payload.length();
 
   MediaChannel::SendPacket(&packet);
   send_limiter_->Use(packet_len, now);

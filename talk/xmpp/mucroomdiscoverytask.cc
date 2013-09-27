@@ -56,11 +56,11 @@ void MucRoomDiscoveryTask::HandleResult(const XmlElement* stanza) {
   const std::string name(identity->Attr(QN_NAME));
 
   // Get the conversation id
-  const XmlElement* convIdElement =
+  const XmlElement* conversation =
       identity->FirstNamed(QN_GOOGLE_MUC_HANGOUT_CONVERSATION_ID);
   std::string conversation_id;
-  if (convIdElement != NULL) {
-    conversation_id = convIdElement->BodyText();
+  if (conversation != NULL) {
+    conversation_id = conversation->BodyText();
   }
 
   for (const XmlElement* feature = query->FirstNamed(QN_DISCO_FEATURE);

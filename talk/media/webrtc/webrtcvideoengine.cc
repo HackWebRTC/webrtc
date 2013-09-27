@@ -514,7 +514,8 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
         external_capture_(external_capture),
         capturer_updated_(false),
         interval_(0),
-        video_adapter_(new CoordinatedVideoAdapter) {
+        video_adapter_(new CoordinatedVideoAdapter),
+        cpu_monitor_(cpu_monitor) {
     overuse_observer_.reset(new WebRtcOveruseObserver(video_adapter_.get()));
     SignalCpuAdaptationUnable.repeat(video_adapter_->SignalCpuAdaptationUnable);
     if (cpu_monitor) {
@@ -633,6 +634,9 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   }
 
   void SetCpuOveruseDetection(bool enable) {
+    if (cpu_monitor_ && enable) {
+      cpu_monitor_->SignalUpdate.disconnect(video_adapter_.get());
+    }
     overuse_observer_->Enable(enable);
     video_adapter_->set_cpu_adaptation(enable);
   }
@@ -689,6 +693,7 @@ class WebRtcVideoChannelSendInfo : public sigslot::has_slots<> {
   int64 interval_;
 
   talk_base::scoped_ptr<CoordinatedVideoAdapter> video_adapter_;
+  talk_base::CpuMonitor* cpu_monitor_;
   talk_base::scoped_ptr<WebRtcOveruseObserver> overuse_observer_;
 };
 
@@ -900,7 +905,7 @@ int WebRtcVideoEngine::GetCapabilities() {
   return VIDEO_RECV | VIDEO_SEND;
 }
 
-bool WebRtcVideoEngine::SetOptions(int options) {
+bool WebRtcVideoEngine::SetOptions(const VideoOptions &options) {
   return true;
 }
 
@@ -1223,7 +1228,8 @@ static void AddDefaultFeedbackParams(VideoCodec* codec) {
 }
 
 // Rebuilds the codec list to be only those that are less intensive
-// than the specified codec. Prefers internal codec over external.
+// than the specified codec. Prefers internal codec over external with
+// higher preference field.
 bool WebRtcVideoEngine::RebuildCodecList(const VideoCodec& in_codec) {
   if (!FindCodec(in_codec))
     return false;
@@ -1262,7 +1268,9 @@ bool WebRtcVideoEngine::RebuildCodecList(const VideoCodec& in_codec) {
             codecs[i].max_width,
             codecs[i].max_height,
             codecs[i].max_fps,
-            static_cast<int>(codecs.size() + ARRAY_SIZE(kVideoCodecPrefs) - i));
+            // Use negative preference on external codec to ensure the internal
+            // codec is preferred.
+            static_cast<int>(0 - i));
         AddDefaultFeedbackParams(&codec);
         video_codecs_.push_back(codec);
       }

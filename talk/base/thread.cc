@@ -146,7 +146,6 @@ Thread::Thread(SocketServer* ss)
     : MessageQueue(ss),
       priority_(PRIORITY_NORMAL),
       started_(false),
-      has_sends_(false),
 #if defined(WIN32)
       thread_(NULL),
       thread_id_(0),
@@ -405,7 +404,6 @@ void Thread::Send(MessageHandler *phandler, uint32 id, MessageData *pdata) {
     smsg.msg = msg;
     smsg.ready = &ready;
     sendlist_.push_back(smsg);
-    has_sends_ = true;
   }
 
   // Wait for a reply
@@ -436,11 +434,6 @@ void Thread::Send(MessageHandler *phandler, uint32 id, MessageData *pdata) {
 }
 
 void Thread::ReceiveSends() {
-  // Before entering critical section, check boolean.
-
-  if (!has_sends_)
-    return;
-
   // Receive a sent message. Cleanup scenarios:
   // - thread sending exits: We don't allow this, since thread can exit
   //   only via Join, so Send must complete.
@@ -456,7 +449,6 @@ void Thread::ReceiveSends() {
     *smsg.ready = true;
     smsg.thread->socketserver()->WakeUp();
   }
-  has_sends_ = false;
   crit_.Leave();
 }
 

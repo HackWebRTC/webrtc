@@ -255,7 +255,6 @@ class Thread : public MessageQueue {
   std::string name_;
   ThreadPriority priority_;
   bool started_;
-  bool has_sends_;
 
 #ifdef POSIX
   pthread_t thread_;

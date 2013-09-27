@@ -127,6 +127,18 @@ class BasicNetworkManager : public NetworkManagerBase,
   virtual void OnMessage(Message* msg);
   bool started() { return start_count_ > 0; }
 
+  // Sets the network ignore list, which is empty by default. Any network on
+  // the ignore list will be filtered from network enumeration results.
+  void set_network_ignore_list(const std::vector<std::string>& list) {
+    network_ignore_list_ = list;
+  }
+#if defined(ANDROID) || defined(LINUX)
+  // Sets the flag for ignoring non-default routes.
+  void set_ignore_non_default_routes(bool value) {
+    ignore_non_default_routes_ = true;
+  }
+#endif
+
  protected:
 #if defined(POSIX)
   // Separated from CreateNetworks for tests.
@@ -139,7 +151,7 @@ class BasicNetworkManager : public NetworkManagerBase,
   bool CreateNetworks(bool include_ignored, NetworkList* networks) const;
 
   // Determines if a network should be ignored.
-  static bool IsIgnoredNetwork(const Network& network);
+  bool IsIgnoredNetwork(const Network& network) const;
 
  private:
   friend class NetworkTest;
@@ -149,6 +161,8 @@ class BasicNetworkManager : public NetworkManagerBase,
   Thread* thread_;
   bool sent_first_update_;
   int start_count_;
+  std::vector<std::string> network_ignore_list_;
+  bool ignore_non_default_routes_;
 };
 
 // Represents a Unix-type network interface, with a name and single address.

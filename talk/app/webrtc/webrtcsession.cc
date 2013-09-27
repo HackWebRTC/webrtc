@@ -54,7 +54,7 @@ using cricket::TransportInfo;
 
 namespace webrtc {
 
-const char kInternalConstraintPrefix[] = "internal";
+const char MediaConstraintsInterface::kInternalConstraintPrefix[] = "internal";
 
 // Supported MediaConstraints.
 // DTLS-SRTP pseudo-constraints.
@@ -81,6 +81,8 @@ const char kMlineMismatch[] =
     "Offer and answer descriptions m-lines are not matching. "
     "Rejecting answer.";
 const char kSdpWithoutCrypto[] = "Called with a SDP without crypto enabled.";
+const char kSdpWithoutSdesAndDtlsDisabled[] =
+    "Called with a SDP without SDES crypto and DTLS disabled locally.";
 const char kSessionError[] = "Session error code: ";
 const char kUpdateStateFailed[] = "Failed to update session state: ";
 const char kPushDownOfferTDFailed[] =
@@ -110,10 +112,9 @@ static bool VerifyMediaDescriptions(
 // fingerprint. Mismatches, such as replying with a DTLS fingerprint to SDES
 // keys, will be caught in Transport negotiation, and backstopped by Channel's
 // |secure_required| check.
-static bool VerifyCrypto(const SessionDescription* desc) {
-  if (!desc) {
-    return false;
-  }
+static bool VerifyCrypto(const SessionDescription* desc,
+                         bool dtls_enabled,
+                         std::string* error) {
   const ContentInfos& contents = desc->contents();
   for (size_t index = 0; index < contents.size(); ++index) {
     const ContentInfo* cinfo = &contents[index];
@@ -128,13 +129,22 @@ static bool VerifyCrypto(const SessionDescription* desc) {
     if (!media || !tinfo) {
       // Something is not right.
       LOG(LS_ERROR) << kInvalidSdp;
+      *error = kInvalidSdp;
       return false;
     }
-    if (media->cryptos().empty() &&
-        !tinfo->description.identity_fingerprint) {
-      // Crypto must be supplied.
-      LOG(LS_WARNING) << "Session description must have SDES or DTLS-SRTP.";
-      return false;
+    if (media->cryptos().empty()) {
+      if (!tinfo->description.identity_fingerprint) {
+        // Crypto must be supplied.
+        LOG(LS_WARNING) << "Session description must have SDES or DTLS-SRTP.";
+        *error = kSdpWithoutCrypto;
+        return false;
+      }
+      if (!dtls_enabled) {
+        LOG(LS_WARNING) <<
+            "Session description must have SDES when DTLS disabled.";
+        *error = kSdpWithoutSdesAndDtlsDisabled;
+        return false;
+      }
     }
   }
 
@@ -392,6 +402,7 @@ WebRtcSession::WebRtcSession(
       ice_observer_(NULL),
       ice_connection_state_(PeerConnectionInterface::kIceConnectionNew),
       older_version_remote_peer_(false),
+      dtls_enabled_(false),
       data_channel_type_(cricket::DCT_NONE),
       ice_restart_latch_(new IceRestartAnswerLatch) {
 }
@@ -424,13 +435,13 @@ bool WebRtcSession::Initialize(
   bool value;
 
   // Enable DTLS by default if |dtls_identity_service| is valid.
-  bool dtls_enabled = (dtls_identity_service != NULL);
-  // |constraints| can override the default |dtls_enabled| value.
+  dtls_enabled_ = (dtls_identity_service != NULL);
+  // |constraints| can override the default |dtls_enabled_| value.
   if (FindConstraint(
         constraints,
         MediaConstraintsInterface::kEnableDtlsSrtp,
         &value, NULL)) {
-    dtls_enabled = value;
+    dtls_enabled_ = value;
   }
 
   // Enable creation of RTP data channels if the kEnableRtpDataChannels is set.
@@ -446,7 +457,7 @@ bool WebRtcSession::Initialize(
         MediaConstraintsInterface::kEnableSctpDataChannels,
         &value, NULL) && value;
     // DTLS has to be enabled to use SCTP.
-    if (sctp_enabled && dtls_enabled) {
+    if (sctp_enabled && dtls_enabled_) {
       LOG(LS_INFO) << "Allowing SCTP data engine.";
       data_channel_type_ = cricket::DCT_SCTP;
     }
@@ -473,7 +484,7 @@ bool WebRtcSession::Initialize(
       this,
       id(),
       data_channel_type_,
-      dtls_enabled));
+      dtls_enabled_));
 
   webrtc_session_desc_factory_->SignalIdentityReady.connect(
       this, &WebRtcSession::OnIdentityReady);
@@ -1383,9 +1394,10 @@ bool WebRtcSession::ValidateSessionDescription(
   }
 
   // Verify crypto settings.
+  std::string crypto_error;
   if (webrtc_session_desc_factory_->secure() == cricket::SEC_REQUIRED &&
-      !VerifyCrypto(sdesc->description())) {
-    return BadSdp(source, kSdpWithoutCrypto, error_desc);
+      !VerifyCrypto(sdesc->description(), dtls_enabled_, &crypto_error)) {
+    return BadSdp(source, crypto_error, error_desc);
   }
 
   if (!ValidateBundleSettings(sdesc->description())) {

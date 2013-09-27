@@ -391,6 +391,12 @@ class FakeSession : public BaseSession {
                     NULL, "", "", initiator),
       fail_create_channel_(false) {
   }
+  FakeSession(bool initiator, talk_base::Thread* worker_thread)
+      : BaseSession(talk_base::Thread::Current(),
+                    worker_thread,
+                    NULL, "", "", initiator),
+      fail_create_channel_(false) {
+  }
 
   FakeTransport* GetTransport(const std::string& content_name) {
     return static_cast<FakeTransport*>(

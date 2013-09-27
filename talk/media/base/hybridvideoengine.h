@@ -183,8 +183,8 @@ class HybridVideoEngine : public HybridVideoEngineInterface {
         channel1.release(), channel2.release());
   }
 
-  bool SetOptions(int o) {
-    return video1_.SetOptions(o) && video2_.SetOptions(o);
+  bool SetOptions(const VideoOptions& options) {
+    return video1_.SetOptions(options) && video2_.SetOptions(options);
   }
   bool SetDefaultEncoderConfig(const VideoEncoderConfig& config) {
     VideoEncoderConfig conf = config;

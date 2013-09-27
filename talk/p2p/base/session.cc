@@ -26,6 +26,8 @@
  */
 
 #include "talk/p2p/base/session.h"
+
+#include "talk/base/bind.h"
 #include "talk/base/common.h"
 #include "talk/base/logging.h"
 #include "talk/base/helpers.h"
@@ -43,6 +45,8 @@
 #include "talk/p2p/base/constants.h"
 
 namespace cricket {
+
+using talk_base::Bind;
 
 bool BadMessage(const buzz::QName type,
                 const std::string& text,
@@ -65,11 +69,13 @@ std::string TransportProxy::type() const {
 }
 
 TransportChannel* TransportProxy::GetChannel(int component) {
+  ASSERT(talk_base::Thread::Current() == worker_thread_);
   return GetChannelProxy(component);
 }
 
 TransportChannel* TransportProxy::CreateChannel(
     const std::string& name, int component) {
+  ASSERT(talk_base::Thread::Current() == worker_thread_);
   ASSERT(GetChannel(component) == NULL);
   ASSERT(!transport_->get()->HasChannel(component));
 
@@ -81,9 +87,9 @@ TransportChannel* TransportProxy::CreateChannel(
   // If we're already negotiated, create an impl and hook it up to the proxy
   // channel. If we're connecting, create an impl but don't hook it up yet.
   if (negotiated_) {
-    SetChannelProxyImpl(component, channel);
+    SetupChannelProxy_w(component, channel);
   } else if (connecting_) {
-    GetOrCreateChannelProxyImpl(component);
+    GetOrCreateChannelProxyImpl_w(component);
   }
   return channel;
 }
@@ -93,6 +99,7 @@ bool TransportProxy::HasChannel(int component) {
 }
 
 void TransportProxy::DestroyChannel(int component) {
+  ASSERT(talk_base::Thread::Current() == worker_thread_);
   TransportChannel* channel = GetChannel(component);
   if (channel) {
     // If the state of TransportProxy is not NEGOTIATED
@@ -100,7 +107,7 @@ void TransportProxy::DestroyChannel(int component) {
     // connected. Both must be connected before
     // deletion.
     if (!negotiated_) {
-      SetChannelProxyImpl(component, GetChannelProxy(component));
+      SetupChannelProxy_w(component, GetChannelProxy(component));
     }
 
     channels_.erase(component);
@@ -130,7 +137,7 @@ void TransportProxy::CompleteNegotiation() {
   if (!negotiated_) {
     for (ChannelMap::iterator iter = channels_.begin();
          iter != channels_.end(); ++iter) {
-      SetChannelProxyImpl(iter->first, iter->second);
+      SetupChannelProxy(iter->first, iter->second);
     }
     negotiated_ = true;
   }
@@ -191,6 +198,13 @@ TransportChannelProxy* TransportProxy::GetChannelProxyByName(
 
 TransportChannelImpl* TransportProxy::GetOrCreateChannelProxyImpl(
     int component) {
+  return worker_thread_->Invoke<TransportChannelImpl*>(Bind(
+      &TransportProxy::GetOrCreateChannelProxyImpl_w, this, component));
+}
+
+TransportChannelImpl* TransportProxy::GetOrCreateChannelProxyImpl_w(
+    int component) {
+  ASSERT(talk_base::Thread::Current() == worker_thread_);
   TransportChannelImpl* impl = transport_->get()->GetChannel(component);
   if (impl == NULL) {
     impl = transport_->get()->CreateChannel(component);
@@ -198,11 +212,31 @@ TransportChannelImpl* TransportProxy::GetOrCreateChannelProxyImpl(
   return impl;
 }
 
-void TransportProxy::SetChannelProxyImpl(
+void TransportProxy::SetupChannelProxy(
     int component, TransportChannelProxy* transproxy) {
+  worker_thread_->Invoke<void>(Bind(
+      &TransportProxy::SetupChannelProxy_w, this, component, transproxy));
+}
+
+void TransportProxy::SetupChannelProxy_w(
+    int component, TransportChannelProxy* transproxy) {
+  ASSERT(talk_base::Thread::Current() == worker_thread_);
   TransportChannelImpl* impl = GetOrCreateChannelProxyImpl(component);
   ASSERT(impl != NULL);
   transproxy->SetImplementation(impl);
+}
+
+void TransportProxy::ReplaceChannelProxyImpl(TransportChannelProxy* proxy,
+                                             TransportChannelImpl* impl) {
+  worker_thread_->Invoke<void>(Bind(
+      &TransportProxy::ReplaceChannelProxyImpl_w, this, proxy, impl));
+}
+
+void TransportProxy::ReplaceChannelProxyImpl_w(TransportChannelProxy* proxy,
+                                               TransportChannelImpl* impl) {
+  ASSERT(talk_base::Thread::Current() == worker_thread_);
+  ASSERT(proxy != NULL);
+  proxy->SetImplementation(impl);
 }
 
 // This function muxes |this| onto |target| by repointing |this| at
@@ -220,12 +254,12 @@ bool TransportProxy::SetupMux(TransportProxy* target) {
        iter != channels_.end(); ++iter) {
     if (!target->transport_->get()->HasChannel(iter->first)) {
       // Remove if channel doesn't exist in |transport_|.
-      iter->second->SetImplementation(NULL);
+      ReplaceChannelProxyImpl(iter->second, NULL);
     } else {
       // Replace the impl for all the TransportProxyChannels with the channels
       // from |target|'s transport. Fail if there's not an exact match.
-      iter->second->SetImplementation(
-          target->transport_->get()->CreateChannel(iter->first));
+      ReplaceChannelProxyImpl(
+          iter->second, target->transport_->get()->CreateChannel(iter->first));
     }
   }
 
@@ -489,7 +523,7 @@ TransportProxy* BaseSession::GetOrCreateTransportProxy(
   transport->SignalRoleConflict.connect(
       this, &BaseSession::OnRoleConflict);
 
-  transproxy = new TransportProxy(sid_, content_name,
+  transproxy = new TransportProxy(worker_thread_, sid_, content_name,
                                   new TransportWrapper(transport));
   transproxy->SignalCandidatesReady.connect(
       this, &BaseSession::OnTransportProxyCandidatesReady);

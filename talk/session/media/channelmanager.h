@@ -137,9 +137,11 @@ class ChannelManager : public talk_base::MessageHandler,
   // Configures the audio and video devices. A null pointer can be passed to
   // GetAudioOptions() for any parameter of no interest.
   bool GetAudioOptions(std::string* wave_in_device,
-                       std::string* wave_out_device, int* opts);
+                       std::string* wave_out_device,
+                       AudioOptions* options);
   bool SetAudioOptions(const std::string& wave_in_device,
-                       const std::string& wave_out_device, int opts);
+                       const std::string& wave_out_device,
+                       const AudioOptions& options);
   bool GetOutputVolume(int* level);
   bool SetOutputVolume(int level);
   bool IsSameCapturer(const std::string& capturer_name,
@@ -227,7 +229,8 @@ class ChannelManager : public talk_base::MessageHandler,
   // Adds non-transient parameters which can only be changed through the
   // options store.
   bool SetAudioOptions(const std::string& wave_in_device,
-                       const std::string& wave_out_device, int opts,
+                       const std::string& wave_out_device,
+                       const AudioOptions& options,
                        int delay_offset);
   int audio_delay_offset() const { return audio_delay_offset_; }
 
@@ -256,8 +259,8 @@ class ChannelManager : public talk_base::MessageHandler,
   void DestroyDataChannel_w(DataChannel* data_channel);
   Soundclip* CreateSoundclip_w();
   void DestroySoundclip_w(Soundclip* soundclip);
-  bool SetAudioOptions_w(int opts, int delay_offset, const Device* in_dev,
-                         const Device* out_dev);
+  bool SetAudioOptions_w(const AudioOptions& options, int delay_offset,
+                         const Device* in_dev, const Device* out_dev);
   bool SetCaptureDevice_w(const Device* cam_device);
   void OnVideoCaptureStateChange(VideoCapturer* capturer,
                                  CaptureState result);
@@ -283,7 +286,7 @@ class ChannelManager : public talk_base::MessageHandler,
 
   std::string audio_in_device_;
   std::string audio_out_device_;
-  int audio_options_;
+  AudioOptions audio_options_;
   int audio_delay_offset_;
   int audio_output_volume_;
   std::string camera_device_;

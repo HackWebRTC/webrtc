@@ -112,8 +112,8 @@ class MediaSessionClient : public SessionClient, public sigslot::has_slots<> {
   }
 
   bool SetAudioOptions(const std::string& in_name, const std::string& out_name,
-                       int opts) {
-    return channel_manager_->SetAudioOptions(in_name, out_name, opts);
+                       const AudioOptions& options) {
+    return channel_manager_->SetAudioOptions(in_name, out_name, options);
   }
   bool SetOutputVolume(int level) {
     return channel_manager_->SetOutputVolume(level);

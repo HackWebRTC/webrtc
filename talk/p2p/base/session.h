@@ -91,10 +91,12 @@ class TransportProxy : public sigslot::has_slots<>,
                        public CandidateTranslator {
  public:
   TransportProxy(
+      talk_base::Thread* worker_thread,
       const std::string& sid,
       const std::string& content_name,
       TransportWrapper* transport)
-      : sid_(sid),
+      : worker_thread_(worker_thread),
+        sid_(sid),
         content_name_(content_name),
         transport_(transport),
         connecting_(false),
@@ -168,12 +170,21 @@ class TransportProxy : public sigslot::has_slots<>,
  private:
   TransportChannelProxy* GetChannelProxy(int component) const;
   TransportChannelProxy* GetChannelProxyByName(const std::string& name) const;
-  void ReplaceChannelProxyImpl(TransportChannelProxy* channel_proxy,
-                               size_t index);
-  TransportChannelImpl* GetOrCreateChannelProxyImpl(int component);
-  void SetChannelProxyImpl(int component,
-                           TransportChannelProxy* proxy);
 
+  TransportChannelImpl* GetOrCreateChannelProxyImpl(int component);
+  TransportChannelImpl* GetOrCreateChannelProxyImpl_w(int component);
+
+  // Manipulators of transportchannelimpl in channel proxy.
+  void SetupChannelProxy(int component,
+                           TransportChannelProxy* proxy);
+  void SetupChannelProxy_w(int component,
+                             TransportChannelProxy* proxy);
+  void ReplaceChannelProxyImpl(TransportChannelProxy* proxy,
+                               TransportChannelImpl* impl);
+  void ReplaceChannelProxyImpl_w(TransportChannelProxy* proxy,
+                                 TransportChannelImpl* impl);
+
+  talk_base::Thread* worker_thread_;
   std::string sid_;
   std::string content_name_;
   talk_base::scoped_refptr<TransportWrapper> transport_;

@@ -104,7 +104,7 @@ class WebRtcVideoEngine : public sigslot::has_slots<>,
   void Terminate();
 
   int GetCapabilities();
-  bool SetOptions(int options);
+  bool SetOptions(const VideoOptions &options);
   bool SetDefaultEncoderConfig(const VideoEncoderConfig& config);
 
   WebRtcVideoMediaChannel* CreateChannel(VoiceMediaChannel* voice_channel);

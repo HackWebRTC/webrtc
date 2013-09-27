@@ -54,8 +54,9 @@ class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
     network_manager.MergeNetworkList(list, changed);
   }
 
-  bool IsIgnoredNetwork(const Network& network) {
-    return BasicNetworkManager::IsIgnoredNetwork(network);
+  bool IsIgnoredNetwork(BasicNetworkManager& network_manager,
+                        const Network& network) {
+    return network_manager.IsIgnoredNetwork(network);
   }
 
   NetworkManager::NetworkList GetNetworks(
@@ -96,8 +97,24 @@ TEST_F(NetworkTest, TestNetworkIgnore) {
                         IPAddress(0x12345600U), 24);
   Network ipv4_network2("test_eth1", "Test Network Adapter 2",
                         IPAddress(0x00010000U), 16);
-  EXPECT_FALSE(IsIgnoredNetwork(ipv4_network1));
-  EXPECT_TRUE(IsIgnoredNetwork(ipv4_network2));
+  BasicNetworkManager network_manager;
+  EXPECT_FALSE(IsIgnoredNetwork(network_manager, ipv4_network1));
+  EXPECT_TRUE(IsIgnoredNetwork(network_manager, ipv4_network2));
+}
+
+TEST_F(NetworkTest, TestIgnoreList) {
+  Network ignore_me("ignore_me", "Ignore me please!",
+                    IPAddress(0x12345600U), 24);
+  Network include_me("include_me", "Include me please!",
+                     IPAddress(0x12345600U), 24);
+  BasicNetworkManager network_manager;
+  EXPECT_FALSE(IsIgnoredNetwork(network_manager, ignore_me));
+  EXPECT_FALSE(IsIgnoredNetwork(network_manager, include_me));
+  std::vector<std::string> ignore_list;
+  ignore_list.push_back("ignore_me");
+  network_manager.set_network_ignore_list(ignore_list);
+  EXPECT_TRUE(IsIgnoredNetwork(network_manager, ignore_me));
+  EXPECT_FALSE(IsIgnoredNetwork(network_manager, include_me));
 }
 
 TEST_F(NetworkTest, TestCreateNetworks) {

@@ -678,17 +678,10 @@ class FakeBaseEngine {
  public:
   FakeBaseEngine()
       : loglevel_(-1),
-        options_(0),
         options_changed_(false),
         fail_create_channel_(false) {}
   bool Init(talk_base::Thread* worker_thread) { return true; }
   void Terminate() {}
-
-  bool SetOptions(int options) {
-    options_ = options;
-    options_changed_ = true;
-    return true;
-  }
 
   void SetLogging(int level, const char* filter) {
     loglevel_ = level;
@@ -704,7 +697,6 @@ class FakeBaseEngine {
  protected:
   int loglevel_;
   std::string logfilter_;
-  int options_;
   // Flag used by optionsmessagehandler_unittest for checking whether any
   // relevant setting has been updated.
   // TODO(thaloun): Replace with explicit checks of before & after values.
@@ -725,6 +717,17 @@ class FakeVoiceEngine : public FakeBaseEngine {
     codecs_.push_back(AudioCodec(101, "fake_audio_codec", 0, 0, 1, 0));
   }
   int GetCapabilities() { return AUDIO_SEND | AUDIO_RECV; }
+  AudioOptions GetAudioOptions() const {
+    return options_;
+  }
+  AudioOptions GetOptions() const {
+    return options_;
+  }
+  bool SetOptions(const AudioOptions& options) {
+    options_ = options;
+    options_changed_ = true;
+    return true;
+  }
 
   VoiceMediaChannel* CreateChannel() {
     if (fail_create_channel_) {
@@ -808,6 +811,7 @@ class FakeVoiceEngine : public FakeBaseEngine {
   std::string out_device_;
   VoiceProcessor* rx_processor_;
   VoiceProcessor* tx_processor_;
+  AudioOptions options_;
 
   friend class FakeMediaEngine;
 };
@@ -818,6 +822,15 @@ class FakeVideoEngine : public FakeBaseEngine {
     // Add a fake video codec. Note that the name must not be "" as there are
     // sanity checks against that.
     codecs_.push_back(VideoCodec(0, "fake_video_codec", 0, 0, 0, 0));
+  }
+  bool GetOptions(VideoOptions* options) const {
+    *options = options_;
+    return true;
+  }
+  bool SetOptions(const VideoOptions& options) {
+    options_ = options;
+    options_changed_ = true;
+    return true;
   }
   int GetCapabilities() { return VIDEO_SEND | VIDEO_RECV; }
   bool SetDefaultEncoderConfig(const VideoEncoderConfig& config) {
@@ -883,6 +896,7 @@ class FakeVideoEngine : public FakeBaseEngine {
   VideoRenderer* renderer_;
   bool capture_;
   VideoProcessor* processor_;
+  VideoOptions options_;
 
   friend class FakeMediaEngine;
 };
@@ -912,7 +926,7 @@ class FakeMediaEngine :
     return video_.GetChannel(index);
   }
 
-  int audio_options() const { return voice_.options_; }
+  AudioOptions audio_options() const { return voice_.options_; }
   int audio_delay_offset() const { return voice_.delay_offset_; }
   int output_volume() const { return voice_.output_volume_; }
   const VideoEncoderConfig& default_video_encoder_config() const {
