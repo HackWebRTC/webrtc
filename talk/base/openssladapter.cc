@@ -233,7 +233,10 @@ VerificationCallback OpenSSLAdapter::custom_verify_callback_ = NULL;
 bool OpenSSLAdapter::InitializeSSL(VerificationCallback callback) {
   if (!InitializeSSLThread() || !SSL_library_init())
       return false;
+#if !defined(ADDRESS_SANITIZER) || !defined(OSX)
+  // Loading the error strings crashed mac_asan. Omit this debugging aid there.
   SSL_load_error_strings();
+#endif
   ERR_load_BIO_strings();
   OpenSSL_add_all_algorithms();
   RAND_poll();
