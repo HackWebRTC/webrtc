@@ -112,10 +112,13 @@ class MediaConstraintsInterface {
   // stripped by Chrome before passed down to Libjingle.
   static const char kInternalConstraintPrefix[];
 
-  // This constraint is for internal use only, representing the Chrome command
-  // line flag. So it is prefixed with "internal" so JS values will be removed.
+  // These constraints are for internal use only, representing Chrome command
+  // line flags. So they are prefixed with "internal" so JS values will be
+  // removed.
   // Used by a local audio source.
   static const char kInternalAecDump[];  // internalAecDump
+  // Used for disabling security and use plain RTP.
+  static const char kInternalDisableEncryption[];  // internalDisableEncryption
 
  protected:
   // Dtor protected as objects shouldn't be deleted via this interface

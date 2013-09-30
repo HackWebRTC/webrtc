@@ -87,10 +87,13 @@ class WebRtcMediaEngine : public cricket::MediaEngineInterface {
   virtual SoundclipMedia* CreateSoundclip() OVERRIDE {
     return delegate_->CreateSoundclip();
   }
-  virtual bool SetAudioOptions(int options) OVERRIDE {
+  virtual AudioOptions GetAudioOptions() const OVERRIDE {
+    return delegate_->GetAudioOptions();
+  }
+  virtual bool SetAudioOptions(const AudioOptions& options) OVERRIDE {
     return delegate_->SetAudioOptions(options);
   }
-  virtual bool SetVideoOptions(int options) OVERRIDE {
+  virtual bool SetVideoOptions(const VideoOptions& options) OVERRIDE {
     return delegate_->SetVideoOptions(options);
   }
   virtual bool SetAudioDelayOffset(int offset) OVERRIDE {

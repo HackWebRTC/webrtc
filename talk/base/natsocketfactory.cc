@@ -85,7 +85,7 @@ size_t UnpackAddressFromNAT(const char* buf, size_t buf_size,
 class NATSocket : public AsyncSocket, public sigslot::has_slots<> {
  public:
   explicit NATSocket(NATInternalSocketFactory* sf, int family, int type)
-      : sf_(sf), family_(family), type_(type), async_(true), connected_(false),
+      : sf_(sf), family_(family), type_(type), connected_(false),
         socket_(NULL), buf_(NULL), size_(0) {
   }
 
@@ -312,7 +312,6 @@ class NATSocket : public AsyncSocket, public sigslot::has_slots<> {
   NATInternalSocketFactory* sf_;
   int family_;
   int type_;
-  bool async_;
   bool connected_;
   SocketAddress remote_addr_;
   SocketAddress server_addr_;  // address of the NAT server

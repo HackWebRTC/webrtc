@@ -69,6 +69,9 @@ const char MediaConstraintsInterface::kEnableRtpDataChannels[] =
 const char MediaConstraintsInterface::kEnableSctpDataChannels[] =
     "internalSctpDataChannels";
 
+const char MediaConstraintsInterface::kInternalDisableEncryption[] =
+    "internalDisableEncryption";
+
 // Error messages
 const char kSetLocalSdpFailed[] = "SetLocalDescription failed: ";
 const char kSetRemoteSdpFailed[] = "SetRemoteDescription failed: ";
@@ -488,6 +491,15 @@ bool WebRtcSession::Initialize(
 
   webrtc_session_desc_factory_->SignalIdentityReady.connect(
       this, &WebRtcSession::OnIdentityReady);
+
+  // Disable encryption if kDisableEncryption is set.
+  if (FindConstraint(
+         constraints,
+         MediaConstraintsInterface::kInternalDisableEncryption,
+         &value, NULL) && value) {
+    webrtc_session_desc_factory_->set_secure(cricket::SEC_DISABLED);
+  }
+
   return true;
 }
 
