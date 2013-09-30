@@ -43,7 +43,7 @@ class Accelerate : public TimeStretch {
   // the outcome of the operation as an enumerator value.
   ReturnCodes Process(const int16_t* input,
                       size_t input_length,
-                      AudioMultiVector<int16_t>* output,
+                      AudioMultiVector* output,
                       int16_t* length_change_samples);
 
  protected:
@@ -58,7 +58,7 @@ class Accelerate : public TimeStretch {
   virtual ReturnCodes CheckCriteriaAndStretch(
       const int16_t* input, size_t input_length, size_t peak_index,
       int16_t best_correlation, bool active_speech,
-      AudioMultiVector<int16_t>* output) const OVERRIDE;
+      AudioMultiVector* output) const OVERRIDE;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Accelerate);

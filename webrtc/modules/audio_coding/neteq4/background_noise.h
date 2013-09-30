@@ -38,7 +38,7 @@ class BackgroundNoise {
 
   // Updates the parameter estimates based on the signal currently in the
   // |sync_buffer|, and on the latest decision in |vad| if it is running.
-  void Update(const AudioMultiVector<int16_t>& sync_buffer,
+  void Update(const AudioMultiVector& sync_buffer,
               const PostDecodeVad& vad);
 
   // Returns |energy_| for |channel|.

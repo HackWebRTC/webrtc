@@ -46,7 +46,7 @@ class PreemptiveExpand : public TimeStretch {
   ReturnCodes Process(const int16_t *pw16_decoded,
                       int len,
                       int old_data_len,
-                      AudioMultiVector<int16_t>* output,
+                      AudioMultiVector* output,
                       int16_t* length_change_samples);
 
  protected:
@@ -61,7 +61,7 @@ class PreemptiveExpand : public TimeStretch {
   virtual ReturnCodes CheckCriteriaAndStretch(
       const int16_t *pw16_decoded, size_t len, size_t w16_bestIndex,
       int16_t w16_bestCorr, bool w16_VAD,
-      AudioMultiVector<int16_t>* output) const;
+      AudioMultiVector* output) const;
 
  private:
   int old_data_length_per_channel_;

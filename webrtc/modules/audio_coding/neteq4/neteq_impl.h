@@ -312,7 +312,7 @@ class NetEqImpl : public webrtc::NetEq {
   scoped_ptr<TimestampScaler> timestamp_scaler_;
   scoped_ptr<DecisionLogic> decision_logic_;
   scoped_ptr<PostDecodeVad> vad_;
-  scoped_ptr<AudioMultiVector<int16_t> > algorithm_buffer_;
+  scoped_ptr<AudioMultiVector> algorithm_buffer_;
   scoped_ptr<SyncBuffer> sync_buffer_;
   scoped_ptr<Expand> expand_;
   scoped_ptr<Normal> normal_;

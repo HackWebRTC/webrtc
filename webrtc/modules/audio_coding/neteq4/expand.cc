@@ -34,7 +34,7 @@ void Expand::Reset() {
   }
 }
 
-int Expand::Process(AudioMultiVector<int16_t>* output) {
+int Expand::Process(AudioMultiVector* output) {
   int16_t random_vector[kMaxSampleRate / 8000 * 120 + 30];
   int16_t scaled_random_vector[kMaxSampleRate / 8000 * 125];
   static const int kTempDataSize = 3600;

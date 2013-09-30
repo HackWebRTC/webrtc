@@ -61,7 +61,7 @@ class Expand {
 
   // The main method to produce concealment data. The data is appended to the
   // end of |output|.
-  int Process(AudioMultiVector<int16_t>* output);
+  int Process(AudioMultiVector* output);
 
   // Prepare the object to do extra expansion during normal operation following
   // a period of expands.

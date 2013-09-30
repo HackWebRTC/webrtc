@@ -53,7 +53,7 @@ class Normal {
   int Process(const int16_t* input, size_t length,
               Modes last_mode,
               int16_t* external_mute_factor_array,
-              AudioMultiVector<int16_t>* output);
+              AudioMultiVector* output);
 
  private:
   int fs_hz_;

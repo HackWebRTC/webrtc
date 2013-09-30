@@ -1685,7 +1685,7 @@ int NetEqImpl::DtmfOverdub(const DtmfEvent& dtmf_event, size_t num_channels,
     overdub_length = output_size_samples_ - static_cast<int>(out_index);
   }
 
-  AudioMultiVector<int16_t> dtmf_output(num_channels);
+  AudioMultiVector dtmf_output(num_channels);
   int dtmf_return_value = 0;
   if (!dtmf_tone_generator_->initialized()) {
     dtmf_return_value = dtmf_tone_generator_->Init(fs_hz_, dtmf_event.event_no,
@@ -1811,7 +1811,7 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   vad_->Init();
 
   // Delete algorithm buffer and create a new one.
-  algorithm_buffer_.reset(new AudioMultiVector<int16_t>(channels));
+  algorithm_buffer_.reset(new AudioMultiVector(channels));
 
   // Delete sync buffer and create a new one.
   sync_buffer_.reset(new SyncBuffer(channels, kSyncBufferSize * fs_mult_));
