@@ -95,6 +95,10 @@ class VideoSender {
   int StartDebugRecording(const char* file_name_utf8);
   int StopDebugRecording();
 
+  void EnableAutoMuting(int threshold_bps, int window_bps);
+  void DisableAutoMuting();
+  bool VideoMuted() const;
+
   int32_t TimeUntilNextProcess();
   int32_t Process();
 

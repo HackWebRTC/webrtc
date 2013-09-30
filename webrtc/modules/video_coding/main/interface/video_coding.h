@@ -579,6 +579,18 @@ public:
 
     // Disables recording of debugging information.
     virtual int StopDebugRecording() = 0;
+
+    // Enables AutoMuter to turn off video when the rate drops below
+    // |threshold_bps|, and turns back on when the rate goes back up above
+    // |threshold_bps| + |window_bps|.
+    virtual void EnableAutoMuting(int threshold_bps, int window_bps) = 0;
+
+    // Disables AutoMuter.
+    virtual void DisableAutoMuting() = 0;
+
+    // Returns true if AutoMuter is engaged and the video has been muted due to
+    // bandwidth limitations; otherwise false.
+    virtual bool VideoMuted() const = 0;
 };
 
 }  // namespace webrtc

@@ -420,5 +420,20 @@ int VideoSender::StopDebugRecording() {
   return VCM_OK;
 }
 
+void VideoSender::EnableAutoMuting(int threshold_bps, int window_bps) {
+  CriticalSectionScoped cs(_sendCritSect);
+  return _mediaOpt.EnableAutoMuting(threshold_bps, window_bps);
+}
+
+void VideoSender::DisableAutoMuting() {
+  CriticalSectionScoped cs(_sendCritSect);
+  return _mediaOpt.DisableAutoMuting();
+}
+
+bool VideoSender::VideoMuted() const {
+  CriticalSectionScoped cs(_sendCritSect);
+  return _mediaOpt.video_muted();
+}
+
 }  // namespace vcm
 }  // namespace webrtc
