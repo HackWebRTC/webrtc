@@ -16,16 +16,6 @@
         '<(webrtc_root)/common_video/common_video.gyp:common_video',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
-      'include_dirs': [
-        'include',
-        '../interface',
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          'include',
-          '../interface',
-        ],
-      },
       'sources': [
         'android/video_render_android_impl.cc',
         'android/video_render_android_impl.h',
@@ -148,11 +138,6 @@
                 '-framework UIKit',
               ],
             },
-          },
-        }],
-        ['OS=="mac"', {
-          'direct_dependent_settings': {
-            'include_dirs': ['mac',],
           },
         }],
         ['OS=="win" and include_internal_video_render==1', {
