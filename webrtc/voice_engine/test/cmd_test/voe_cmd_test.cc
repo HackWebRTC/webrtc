@@ -17,8 +17,12 @@
 
 #include <vector>
 
+#include "gflags/gflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/common.h"
+#include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 #include "webrtc/test/channel_transport/include/channel_transport.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -36,6 +40,9 @@
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 #include "webrtc/voice_engine/include/voe_video_sync.h"
 #include "webrtc/voice_engine/include/voe_volume_control.h"
+
+DEFINE_bool(use_acm_version_2, false,
+            "If true, we'll run the tests with Audio Coding Module version 2.");
 
 using namespace webrtc;
 using namespace test;
@@ -111,12 +118,20 @@ void PrintCodecs(bool opus_stereo) {
   }
 }
 
-int main() {
+int main(int argc, char** argv) {
+  google::ParseCommandLineFlags(&argc, &argv, true);
+
   int res = 0;
 
   printf("Test started \n");
 
-  m_voe = VoiceEngine::Create();
+  // TODO(minyue): Remove when the old ACM is removed (latest 2014-04-01).
+  Config config;
+  config.Set<AudioCodingModuleFactory>(FLAGS_use_acm_version_2 ?
+      new NewAudioCodingModuleFactory() :
+      new AudioCodingModuleFactory());
+  m_voe = VoiceEngine::Create(config);
+
   base1 = VoEBase::GetInterface(m_voe);
   codec = VoECodec::GetInterface(m_voe);
   apm = VoEAudioProcessing::GetInterface(m_voe);

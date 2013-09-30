@@ -14,6 +14,7 @@
 #include <string.h>
 
 #include "webrtc/engine_configurations.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
 #include "webrtc/system_wrappers/interface/event_wrapper.h"
 #include "webrtc/voice_engine/include/voe_neteq_stats.h"
 #include "webrtc/voice_engine/test/auto_test/automated_mode.h"
@@ -30,6 +31,8 @@ DEFINE_bool(include_timing_dependent_tests, true,
 DEFINE_bool(automated, false,
             "If true, we'll run the automated tests we have in noninteractive "
             "mode.");
+DEFINE_bool(use_acm_version_2, false,
+            "If true, we'll run the tests with Audio Coding Module version 2.");
 
 using namespace webrtc;
 
@@ -263,8 +266,7 @@ VoETestManager::VoETestManager()
       voe_rtp_rtcp_(0),
       voe_vsync_(0),
       voe_volume_control_(0),
-      voe_apm_(0)
-{
+      voe_apm_(0) {
 }
 
 VoETestManager::~VoETestManager() {
@@ -282,7 +284,12 @@ bool VoETestManager::Init() {
     return false;
   }
 
-  voice_engine_ = VoiceEngine::Create();
+  // TODO(minyue): Remove when the old ACM is removed (latest 2014-04-01).
+  config_.Set<AudioCodingModuleFactory>(FLAGS_use_acm_version_2 ?
+      new NewAudioCodingModuleFactory() :
+      new AudioCodingModuleFactory());
+  voice_engine_ = VoiceEngine::Create(config_);
+
   if (!voice_engine_) {
     TEST_LOG("Failed to create VoiceEngine\n");
     return false;
@@ -409,7 +416,8 @@ int VoETestManager::ReleaseInterfaces() {
   return (releaseOK == true) ? 0 : -1;
 }
 
-int run_auto_test(TestType test_type, ExtendedSelection ext_selection) {
+int run_auto_test(TestType test_type,
+                  ExtendedSelection ext_selection) {
   assert(test_type != Standard);
 
   SubAPIManager api_manager;
@@ -543,7 +551,6 @@ int RunInManualMode() {
   printf("\n: ");
 
   int selection(0);
-
   dummy = scanf("%d", &selection);
 
   ExtendedSelection ext_selection = XSEL_Invalid;
