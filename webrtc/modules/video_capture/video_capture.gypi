@@ -16,11 +16,6 @@
         '<(webrtc_root)/common_video/common_video.gyp:common_video',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
-      'include_dirs': [
-        'include',
-        '../interface',
-        '<(webrtc_root)/common_video/libyuv/include',
-      ],
       'sources': [
         'device_info_impl.cc',
         'device_info_impl.h',
@@ -42,9 +37,6 @@
         }, {  # include_internal_video_capture == 1
           'conditions': [
             ['OS=="linux"', {
-              'include_dirs': [
-                'linux',
-              ],
               'sources': [
                 'linux/device_info_linux.cc',
                 'linux/device_info_linux.h',
@@ -65,9 +57,6 @@
                 'mac/qtkit/video_capture_qtkit_utility.h',
                 'mac/video_capture_mac.mm',
               ],
-              'include_dirs': [
-                'mac',
-              ],
               'link_settings': {
                 'xcode_settings': {
                   'OTHER_LDFLAGS': [
@@ -79,9 +68,6 @@
             ['OS=="win"', {
               'dependencies': [
                 '<(DEPTH)/third_party/winsdk_samples/winsdk_samples.gyp:directshow_baseclasses',
-              ],
-              'include_dirs': [
-                'windows',
               ],
               'sources': [
                 'windows/device_info_ds.cc',
@@ -105,9 +91,6 @@
               },
             }],  # win
             ['OS=="android"', {
-              'include_dirs': [
-                'android',
-              ],
               'sources': [
                 'android/device_info_android.cc',
                 'android/device_info_android.h',
@@ -153,9 +136,6 @@
             'webrtc_utility',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(DEPTH)/testing/gtest.gyp:gtest',
-          ],
-          'include_dirs': [
-            'include',
           ],
           'sources': [
             'test/video_capture_unittest.cc',
