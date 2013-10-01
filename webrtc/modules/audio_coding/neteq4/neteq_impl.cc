@@ -465,6 +465,7 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     memcpy(&main_header, &packet->header, sizeof(main_header));
   }
 
+  bool update_sample_rate_and_channels = false;
   // Reinitialize NetEq if it's needed (changed SSRC or first call).
   if ((main_header.ssrc != ssrc_) || first_packet_) {
     rtcp_.Init(main_header.sequenceNumber);
@@ -489,6 +490,9 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
 
     // Reset timestamp scaling.
     timestamp_scaler_->Reset();
+
+    // Triger an update of sampling rate and the number of channels.
+    update_sample_rate_and_channels = true;
   }
 
   // Update RTCP statistics, only for regular packets.
@@ -598,6 +602,7 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
   if (ret == PacketBuffer::kFlushed) {
     // Reset DSP timestamp etc. if packet buffer flushed.
     new_codec_ = true;
+    update_sample_rate_and_channels = true;
     LOG_F(LS_WARNING) << "Packet buffer flushed";
   } else if (ret == PacketBuffer::kOversizePacket) {
     LOG_F(LS_WARNING) << "Packet larger than packet buffer";
@@ -613,6 +618,26 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     if (!dec_info) {
       assert(false);  // Already checked that the payload type is known.
     }
+  }
+
+  if (update_sample_rate_and_channels && !packet_buffer_->Empty()) {
+    // We do not use |current_rtp_payload_type_| to |set payload_type|, but
+    // get the next RTP header from |packet_buffer_| to obtain the payload type.
+    // The reason for it is the following corner case. If NetEq receives a
+    // CNG packet with a sample rate different than the current CNG then it
+    // flushes its buffer, assuming send codec must have been changed. However,
+    // payload type of the hypothetically new send codec is not known.
+    const RTPHeader* rtp_header = packet_buffer_->NextRtpHeader();
+    assert(rtp_header);
+    int payload_type = rtp_header->payloadType;
+    AudioDecoder* decoder = decoder_database_->GetDecoder(payload_type);
+    assert(decoder);  // Payloads are already checked to be valid.
+    const DecoderDatabase::DecoderInfo* decoder_info =
+        decoder_database_->GetDecoderInfo(payload_type);
+    assert(decoder_info);
+    if (decoder_info->fs_hz != fs_hz_ ||
+        decoder->channels() != algorithm_buffer_->Channels())
+      SetSampleRateAndChannels(decoder_info->fs_hz, decoder->channels());
   }
 
   // TODO(hlundin): Move this code to DelayManager class.
@@ -1110,7 +1135,14 @@ int NetEqImpl::Decode(PacketList* packet_list, Operations* operation,
           PacketBuffer::DeleteAllPackets(packet_list);
           return kDecoderNotFound;
         }
-        SetSampleRateAndChannels(decoder_info->fs_hz, decoder->channels());
+        // We should have correct sampling rate and number of channels. They
+        // are set when packets are inserted.
+        if (decoder_info->fs_hz != fs_hz_ ||
+            decoder->channels() != algorithm_buffer_->Channels()) {
+          LOG_F(LS_ERROR) << "Sampling rate or number of channels mismatch.";
+          assert(false);
+          SetSampleRateAndChannels(decoder_info->fs_hz, decoder->channels());
+        }
         sync_buffer_->set_end_timestamp(timestamp_);
         playout_timestamp_ = timestamp_;
       }

@@ -90,6 +90,7 @@
             '<(rbe_components_path)/remote_bitrate_estimator_components.gyp:rbe_components',
             '<(DEPTH)/testing/gmock.gyp:gmock',
             '<(DEPTH)/testing/gtest.gyp:gtest',
+            '<(DEPTH)/third_party/gflags/gflags.gyp:gflags',
             '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
             '<(webrtc_root)/modules/video_coding/codecs/vp8/vp8.gyp:webrtc_vp8',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',

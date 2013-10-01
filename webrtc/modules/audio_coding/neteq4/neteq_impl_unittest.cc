@@ -159,7 +159,7 @@ TEST_F(NetEqImplTest, InsertPacket) {
   EXPECT_CALL(*decoder_database_, IsDtmf(kPayloadType))
       .WillRepeatedly(Return(false));  // This is not DTMF.
   EXPECT_CALL(*decoder_database_, GetDecoder(kPayloadType))
-      .Times(2)
+      .Times(3)
       .WillRepeatedly(Return(&mock_decoder));
   EXPECT_CALL(*decoder_database_, IsComfortNoise(kPayloadType))
       .WillRepeatedly(Return(false));  // This is not CNG.
@@ -183,6 +183,9 @@ TEST_F(NetEqImplTest, InsertPacket) {
   // index) is a pointer, and the variable pointed to is set to kPayloadType.
   // Also invoke the function DeletePacketsAndReturnOk to properly delete all
   // packets in the list (to avoid memory leaks in the test).
+  EXPECT_CALL(*packet_buffer_, NextRtpHeader())
+      .Times(1)
+      .WillOnce(Return(&rtp_header.header));
 
   // Expectations for DTMF buffer.
   EXPECT_CALL(*dtmf_buffer_, Flush())

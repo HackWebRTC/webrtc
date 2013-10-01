@@ -21,12 +21,15 @@
 #include <string>
 #include <vector>
 
+#include "gflags/gflags.h"
 #include "gtest/gtest.h"
 #include "webrtc/modules/audio_coding/neteq4/test/NETEQTEST_RTPpacket.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/gtest_disable.h"
 #include "webrtc/typedefs.h"
+
+DEFINE_bool(gen_ref, false, "Generate reference files.");
 
 namespace webrtc {
 
@@ -313,7 +316,7 @@ void NetEqDecodingTest::DecodeAndCompare(const std::string &rtp_file,
 
   std::string ref_out_file = "";
   if (ref_file.empty()) {
-    ref_out_file = webrtc::test::OutputPath() + "neteq_out.pcm";
+    ref_out_file = webrtc::test::OutputPath() + "neteq_universal_ref.pcm";
   }
   RefFiles ref_files(ref_file, ref_out_file);
 
@@ -508,12 +511,17 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(MAYBE_TestBitExactness)) {
   // For Visual Studio 2012 and later, we will have to use the generic reference
   // file, rather than the windows-specific one.
   const std::string kInputRefFile = webrtc::test::ProjectRootPath() +
-      "resources/audio_coding/neteq_universal_ref.pcm";
+      "resources/audio_coding/neteq4_universal_ref.pcm";
 #else
   const std::string kInputRefFile =
-      webrtc::test::ResourcePath("audio_coding/neteq_universal_ref", "pcm");
+      webrtc::test::ResourcePath("audio_coding/neteq4_universal_ref", "pcm");
 #endif
-  DecodeAndCompare(kInputRtpFile, kInputRefFile);
+
+  if (FLAGS_gen_ref) {
+    DecodeAndCompare(kInputRtpFile, "");
+  } else {
+    DecodeAndCompare(kInputRtpFile, kInputRefFile);
+  }
 }
 
 TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(TestNetworkStatistics)) {
@@ -523,14 +531,18 @@ TEST_F(NetEqDecodingTest, DISABLED_ON_ANDROID(TestNetworkStatistics)) {
   // For Visual Studio 2012 and later, we will have to use the generic reference
   // file, rather than the windows-specific one.
   const std::string kNetworkStatRefFile = webrtc::test::ProjectRootPath() +
-      "resources/audio_coding/neteq_network_stats.dat";
+      "resources/audio_coding/neteq4_network_stats.dat";
 #else
   const std::string kNetworkStatRefFile =
-      webrtc::test::ResourcePath("audio_coding/neteq_network_stats", "dat");
+      webrtc::test::ResourcePath("audio_coding/neteq4_network_stats", "dat");
 #endif
   const std::string kRtcpStatRefFile =
-      webrtc::test::ResourcePath("audio_coding/neteq_rtcp_stats", "dat");
-  DecodeAndCheckStats(kInputRtpFile, kNetworkStatRefFile, kRtcpStatRefFile);
+      webrtc::test::ResourcePath("audio_coding/neteq4_rtcp_stats", "dat");
+  if (FLAGS_gen_ref) {
+    DecodeAndCheckStats(kInputRtpFile, "", "");
+  } else {
+    DecodeAndCheckStats(kInputRtpFile, kNetworkStatRefFile, kRtcpStatRefFile);
+  }
 }
 
 // TODO(hlundin): Re-enable test once the statistics interface is up and again.

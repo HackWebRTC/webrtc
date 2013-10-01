@@ -18,7 +18,7 @@ import tarfile
 import tempfile
 import urllib2
 
-DESIRED_VERSION = 16
+DESIRED_VERSION = 17
 REMOTE_URL_BASE = 'http://commondatastorage.googleapis.com/webrtc-resources'
 VERSION_FILENAME = 'webrtc-resources-version'
 FILENAME_PREFIX = 'webrtc-resources-'
