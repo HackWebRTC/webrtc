@@ -418,4 +418,91 @@ TEST_F(CallTest, SurvivesIncomingRtpPacketsToDestroyedReceiveStream) {
   send_transport.StopSending();
   receive_transport.StopSending();
 }
+
+// Test sets up a Call multiple senders with different resolutions and SSRCs.
+// Another is set up to receive all three of these with different renderers.
+// Each renderer verifies that it receives the expected resolution, and as soon
+// as every renderer has received a frame, the test finishes.
+TEST_F(CallTest, SendsAndReceivesMultipleStreams) {
+  static const size_t kNumStreams = 3;
+
+  class VideoOutputObserver : public VideoRenderer {
+   public:
+    VideoOutputObserver(int width, int height)
+        : width_(width), height_(height), done_(EventWrapper::Create()) {}
+
+    virtual void RenderFrame(const I420VideoFrame& video_frame,
+                             int time_to_render_ms) OVERRIDE {
+      EXPECT_EQ(width_, video_frame.width());
+      EXPECT_EQ(height_, video_frame.height());
+      done_->Set();
+    }
+
+    void Wait() { done_->Wait(30 * 1000); }
+
+   private:
+    int width_;
+    int height_;
+    scoped_ptr<EventWrapper> done_;
+  };
+
+  struct {
+    uint32_t ssrc;
+    int width;
+    int height;
+  } codec_settings[kNumStreams] = {{1, 640, 480}, {2, 320, 240}, {3, 240, 160}};
+
+  test::DirectTransport sender_transport, receiver_transport;
+  scoped_ptr<Call> sender_call(Call::Create(Call::Config(&sender_transport)));
+  scoped_ptr<Call> receiver_call(
+      Call::Create(Call::Config(&receiver_transport)));
+  sender_transport.SetReceiver(receiver_call->Receiver());
+  receiver_transport.SetReceiver(sender_call->Receiver());
+
+  VideoSendStream* send_streams[kNumStreams];
+  VideoReceiveStream* receive_streams[kNumStreams];
+
+  VideoOutputObserver* observers[kNumStreams];
+  test::FrameGeneratorCapturer* frame_generators[kNumStreams];
+
+  for (size_t i = 0; i < kNumStreams; ++i) {
+    uint32_t ssrc = codec_settings[i].ssrc;
+    int width = codec_settings[i].width;
+    int height = codec_settings[i].height;
+    observers[i] = new VideoOutputObserver(width, height);
+
+    VideoReceiveStream::Config receive_config =
+        receiver_call->GetDefaultReceiveConfig();
+    receive_config.renderer = observers[i];
+    receive_config.rtp.ssrc = ssrc;
+    receive_streams[i] = receiver_call->CreateReceiveStream(receive_config);
+    receive_streams[i]->StartReceive();
+
+    VideoSendStream::Config send_config = sender_call->GetDefaultSendConfig();
+    send_config.rtp.ssrcs.push_back(ssrc);
+    send_config.codec.width = width;
+    send_config.codec.height = height;
+    send_streams[i] = sender_call->CreateSendStream(send_config);
+    send_streams[i]->StartSend();
+
+    frame_generators[i] = test::FrameGeneratorCapturer::Create(
+        send_streams[i]->Input(), width, height, 30, Clock::GetRealTimeClock());
+    frame_generators[i]->Start();
+  }
+
+  for (size_t i = 0; i < kNumStreams; ++i) {
+    observers[i]->Wait();
+  }
+
+  for (size_t i = 0; i < kNumStreams; ++i) {
+    frame_generators[i]->Stop();
+    delete frame_generators[i];
+    sender_call->DestroySendStream(send_streams[i]);
+    receiver_call->DestroyReceiveStream(receive_streams[i]);
+    delete observers[i];
+  }
+
+  sender_transport.StopSending();
+  receiver_transport.StopSending();
+}
 }  // namespace webrtc

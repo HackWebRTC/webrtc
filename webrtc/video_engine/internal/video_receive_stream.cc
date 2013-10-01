@@ -86,11 +86,11 @@ VideoReceiveStream::VideoReceiveStream(webrtc::VideoEngine* video_engine,
 }
 
 VideoReceiveStream::~VideoReceiveStream() {
+  render_->RemoveRenderer(channel_);
   for (size_t i = 0; i < config_.external_decoders.size(); ++i) {
     external_codec_->DeRegisterExternalReceiveCodec(
         channel_, config_.external_decoders[i].payload_type);
   }
-
   network_->DeregisterSendTransport(channel_);
 
   video_engine_base_->Release();
