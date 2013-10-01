@@ -17,18 +17,6 @@
         '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
-      'include_dirs': [
-        '../interface',
-        '../../interface',
-        '../../media_file/interface',
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          '../interface',
-          '../../interface',
-          '../../audio_coding/main/interface',
-        ],
-      },
       'sources': [
         '../interface/audio_frame_operations.h',
         '../interface/file_player.h',
@@ -55,9 +43,6 @@
           ],
           'dependencies': [
             'webrtc_video_coding',
-          ],
-          'include_dirs': [
-            '../../video_coding/main/interface',
           ],
           'sources': [
             'frame_scaler.cc',
