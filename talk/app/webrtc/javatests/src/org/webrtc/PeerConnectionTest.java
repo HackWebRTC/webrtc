@@ -478,17 +478,18 @@ public class PeerConnectionTest extends TestCase {
 
   @Test
   public void testCompleteSession() throws Exception {
-    // Uncomment to get ALL WebRTC tracing and SENSITIVE libjingle logging.
-    // Logging.enableTracing(
-    //     "/tmp/PeerConnectionTest-log.txt",
-    //     EnumSet.of(Logging.TraceLevel.TRACE_ALL),
-    //     Logging.Severity.LS_SENSITIVE);
-
     CountDownLatch testDone = new CountDownLatch(1);
     System.gc();  // Encourage any GC-related threads to start up.
     TreeSet<String> threadsBeforeTest = allThreads();
 
     PeerConnectionFactory factory = new PeerConnectionFactory();
+    // Uncomment to get ALL WebRTC tracing and SENSITIVE libjingle logging.
+    // NOTE: this _must_ happen while |factory| is alive!
+    // Logging.enableTracing(
+    //     "/tmp/PeerConnectionTest-log.txt",
+    //     EnumSet.of(Logging.TraceLevel.TRACE_ALL),
+    //     Logging.Severity.LS_SENSITIVE);
+
     MediaConstraints pcConstraints = new MediaConstraints();
     pcConstraints.mandatory.add(
         new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));

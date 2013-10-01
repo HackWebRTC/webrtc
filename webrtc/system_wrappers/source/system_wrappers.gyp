@@ -38,6 +38,7 @@
         '../interface/file_wrapper.h',
         '../interface/fix_interlocked_exchange_pointer_win.h',
         '../interface/list_wrapper.h',
+        '../interface/logcat_trace_context.h',
         '../interface/logging.h',
         '../interface/ref_count.h',
         '../interface/rw_lock_wrapper.h',
@@ -82,6 +83,7 @@
         'file_impl.cc',
         'file_impl.h',
         'list_no_stl.cc',
+        'logcat_trace_context.cc',
         'logging.cc',
         'logging_no_op.cc',
         'rw_lock.cc',
@@ -140,6 +142,11 @@
             'WEBRTC_CLOCK_TYPE_REALTIME',
            ],
           'dependencies': [ 'cpu_features_android', ],
+        }, {  # OS!="android"
+          'sources!': [
+            '../interface/logcat_trace_context.h',
+            'logcat_trace_context.cc',
+          ],
         }],
         ['OS=="linux"', {
           'defines': [

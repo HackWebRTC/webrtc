@@ -76,6 +76,11 @@
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 
+#ifdef ANDROID
+#include "webrtc/system_wrappers/interface/logcat_trace_context.h"
+using webrtc::LogcatTraceContext;
+#endif
+
 using icu::UnicodeString;
 using webrtc::AudioSourceInterface;
 using webrtc::AudioTrackInterface;
@@ -101,7 +106,6 @@ using webrtc::VideoRendererInterface;
 using webrtc::VideoSourceInterface;
 using webrtc::VideoTrackInterface;
 using webrtc::VideoTrackVector;
-using webrtc::VideoRendererInterface;
 
 // Abort the process if |x| is false, emitting |msg|.
 #define CHECK(x, msg)                                                          \
@@ -1152,9 +1156,19 @@ JOW(void, Logging_nativeEnableTracing)(
     jint nativeSeverity) {
   std::string path = JavaToStdString(jni, j_path);
   if (nativeLevels != webrtc::kTraceNone) {
-    CHECK(!webrtc::Trace::SetTraceFile(path.c_str(), false),
-          "SetTraceFile failed");
     webrtc::Trace::set_level_filter(nativeLevels);
+#ifdef ANDROID
+    if (path != "logcat:") {
+#endif
+      CHECK(webrtc::Trace::SetTraceFile(path.c_str(), false) == 0,
+            "SetTraceFile failed");
+#ifdef ANDROID
+    } else {
+      // Intentionally leak this to avoid needing to reason about its lifecycle.
+      // It keeps no state and functions only as a dispatch point.
+      static LogcatTraceContext* g_trace_callback = new LogcatTraceContext();
+    }
+#endif
   }
   talk_base::LogMessage::LogToDebug(nativeSeverity);
 }

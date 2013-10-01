@@ -104,12 +104,6 @@ public class AppRTCDemoActivity extends Activity
           }
         });
 
-    // Uncomment to get ALL WebRTC tracing and SENSITIVE libjingle logging.
-    // Logging.enableTracing(
-    //     "/sdcard/trace.txt",
-    //     EnumSet.of(Logging.TraceLevel.TRACE_ALL),
-    //     Logging.Severity.LS_SENSITIVE);
-
     PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
     wakeLock = powerManager.newWakeLock(
         PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "AppRTCDemo");
@@ -190,6 +184,13 @@ public class AppRTCDemoActivity extends Activity
     factory = new PeerConnectionFactory();
     pc = factory.createPeerConnection(
         iceServers, appRtcClient.pcConstraints(), pcObserver);
+
+    // Uncomment to get ALL WebRTC tracing and SENSITIVE libjingle logging.
+    // NOTE: this _must_ happen while |factory| is alive!
+    // Logging.enableTracing(
+    //     "logcat:",
+    //     EnumSet.of(Logging.TraceLevel.TRACE_ALL),
+    //     Logging.Severity.LS_SENSITIVE);
 
     {
       final PeerConnection finalPC = pc;

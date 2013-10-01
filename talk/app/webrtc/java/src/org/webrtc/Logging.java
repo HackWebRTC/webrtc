@@ -65,7 +65,8 @@ public class Logging {
   };
 
 
-  // Enable tracing to |path| at |levels| and |severity|.
+  // Enable tracing to |path| of messages of |levels| and |severity|.
+  // On Android, use "logcat:" for |path| to send output there.
   public static void enableTracing(
       String path, EnumSet<TraceLevel> levels, Severity severity) {
     int nativeLevel = 0;
