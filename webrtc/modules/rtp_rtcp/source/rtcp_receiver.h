@@ -69,6 +69,8 @@ public:
                 uint32_t *RTCPArrivalTimeFrac,
                 uint32_t *rtcp_timestamp) const;
 
+   bool LastReceivedXrReferenceTimeInfo(RtcpReceiveTimeInfo* info) const;
+
     // get rtt
     int32_t RTT(uint32_t remoteSSRC,
                 uint16_t* RTT,
@@ -132,6 +134,21 @@ protected:
     void HandleSDES(RTCPUtility::RTCPParserV2& rtcpParser);
 
     void HandleSDESChunk(RTCPUtility::RTCPParserV2& rtcpParser);
+
+    void HandleXrHeader(RTCPUtility::RTCPParserV2& parser,
+                        RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
+
+    void HandleXrReceiveReferenceTime(
+        RTCPUtility::RTCPParserV2& parser,
+        RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
+
+    void HandleXrDlrrReportBlock(
+        RTCPUtility::RTCPParserV2& parser,
+        RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
+
+    void HandleXrDlrrReportBlockItem(
+        const RTCPUtility::RTCPPacket& packet,
+        RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
 
     void HandleXRVOIPMetric(RTCPUtility::RTCPParserV2& rtcpParser,
                             RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
@@ -222,6 +239,12 @@ protected:
   // when did we receive the last send report
   uint32_t _lastReceivedSRNTPsecs;
   uint32_t _lastReceivedSRNTPfrac;
+
+  // Received XR receive time report.
+  RtcpReceiveTimeInfo _remoteXRReceiveTimeInfo;
+  // Time when the report was received.
+  uint32_t _lastReceivedXRNTPsecs;
+  uint32_t _lastReceivedXRNTPfrac;
 
   // Received report blocks.
   std::map<uint32_t, RTCPHelp::RTCPReportBlockInformation*>

@@ -13,6 +13,8 @@
 #include <assert.h> //assert
 #include <string.h> //memset
 
+#include <algorithm>
+
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 #include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
@@ -46,6 +48,8 @@ RTCPReceiver::RTCPReceiver(const int32_t id, Clock* clock,
     _remoteSenderInfo(),
     _lastReceivedSRNTPsecs(0),
     _lastReceivedSRNTPfrac(0),
+    _lastReceivedXRNTPsecs(0),
+    _lastReceivedXRNTPfrac(0),
     _receivedInfoMap(),
     _packetTimeOutMS(0),
     _lastReceivedRrMs(0),
@@ -259,6 +263,30 @@ RTCPReceiver::NTP(uint32_t *ReceivedNTPsecs,
     return 0;
 }
 
+bool RTCPReceiver::LastReceivedXrReferenceTimeInfo(
+    RtcpReceiveTimeInfo* info) const {
+  assert(info);
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  if (_lastReceivedXRNTPsecs == 0 && _lastReceivedXRNTPfrac == 0) {
+    return false;
+  }
+
+  info->sourceSSRC = _remoteXRReceiveTimeInfo.sourceSSRC;
+  info->lastRR = _remoteXRReceiveTimeInfo.lastRR;
+
+  // Get the delay since last received report (RFC 3611).
+  uint32_t receive_time = RTCPUtility::MidNtp(_lastReceivedXRNTPsecs,
+                                              _lastReceivedXRNTPfrac);
+
+  uint32_t ntp_sec = 0;
+  uint32_t ntp_frac = 0;
+  _clock->CurrentNtp(ntp_sec, ntp_frac);
+  uint32_t now = RTCPUtility::MidNtp(ntp_sec, ntp_frac);
+
+  info->delaySinceLastRR = now - receive_time;
+  return true;
+}
+
 int32_t
 RTCPReceiver::SenderInfoReceived(RTCPSenderInfo* senderInfo) const
 {
@@ -315,6 +343,15 @@ RTCPReceiver::IncomingRTCPPacket(RTCPPacketInformation& rtcpPacketInformation,
             break;
         case RTCPUtility::kRtcpSdesCode:
             HandleSDES(*rtcpParser);
+            break;
+        case RTCPUtility::kRtcpXrHeaderCode:
+            HandleXrHeader(*rtcpParser, rtcpPacketInformation);
+            break;
+        case RTCPUtility::kRtcpXrReceiverReferenceTimeCode:
+            HandleXrReceiveReferenceTime(*rtcpParser, rtcpPacketInformation);
+            break;
+        case RTCPUtility::kRtcpXrDlrrReportBlockCode:
+            HandleXrDlrrReportBlock(*rtcpParser, rtcpPacketInformation);
             break;
         case RTCPUtility::kRtcpXrVoipMetricCode:
             HandleXRVOIPMetric(*rtcpParser, rtcpPacketInformation);
@@ -861,6 +898,85 @@ void RTCPReceiver::HandleBYE(RTCPUtility::RTCPParserV2& rtcpParser) {
     _receivedCnameMap.erase(cnameInfoIt);
   }
   rtcpParser.Iterate();
+}
+
+void RTCPReceiver::HandleXrHeader(
+    RTCPUtility::RTCPParserV2& parser,
+    RTCPPacketInformation& rtcpPacketInformation) {
+  const RTCPUtility::RTCPPacket& packet = parser.Packet();
+
+  rtcpPacketInformation.xr_originator_ssrc = packet.XR.OriginatorSSRC;
+
+  parser.Iterate();
+}
+
+void RTCPReceiver::HandleXrReceiveReferenceTime(
+    RTCPUtility::RTCPParserV2& parser,
+    RTCPPacketInformation& rtcpPacketInformation) {
+  const RTCPUtility::RTCPPacket& packet = parser.Packet();
+
+  _remoteXRReceiveTimeInfo.sourceSSRC =
+      rtcpPacketInformation.xr_originator_ssrc;
+
+  _remoteXRReceiveTimeInfo.lastRR = RTCPUtility::MidNtp(
+      packet.XRReceiverReferenceTimeItem.NTPMostSignificant,
+      packet.XRReceiverReferenceTimeItem.NTPLeastSignificant);
+
+  _clock->CurrentNtp(_lastReceivedXRNTPsecs, _lastReceivedXRNTPfrac);
+
+  rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpXrReceiverReferenceTime;
+
+  parser.Iterate();
+}
+
+void RTCPReceiver::HandleXrDlrrReportBlock(
+    RTCPUtility::RTCPParserV2& parser,
+    RTCPPacketInformation& rtcpPacketInformation) {
+  const RTCPUtility::RTCPPacket& packet = parser.Packet();
+  // Iterate through sub-block(s), if any.
+  RTCPUtility::RTCPPacketTypes packet_type = parser.Iterate();
+
+  while (packet_type == RTCPUtility::kRtcpXrDlrrReportBlockItemCode) {
+    HandleXrDlrrReportBlockItem(packet, rtcpPacketInformation);
+    packet_type = parser.Iterate();
+  }
+}
+
+void RTCPReceiver::HandleXrDlrrReportBlockItem(
+    const RTCPUtility::RTCPPacket& packet,
+    RTCPPacketInformation& rtcpPacketInformation) {
+  if (registered_ssrcs_.find(packet.XRDLRRReportBlockItem.SSRC) ==
+      registered_ssrcs_.end()) {
+    // Not to us.
+    return;
+  }
+
+  rtcpPacketInformation.xr_dlrr_item = true;
+
+  // To avoid problem with acquiring _criticalSectionRTCPSender while holding
+  // _criticalSectionRTCPReceiver.
+  _criticalSectionRTCPReceiver->Leave();
+
+  int64_t send_time_ms;
+  bool found = _rtpRtcp.SendTimeOfXrRrReport(
+      packet.XRDLRRReportBlockItem.LastRR, &send_time_ms);
+
+  _criticalSectionRTCPReceiver->Enter();
+
+  if (!found) {
+    return;
+  }
+
+  // The DelayLastRR field is in units of 1/65536 sec.
+// uint32_t delay_rr_ms =
+//    (((packet.XRDLRRReportBlockItem.DelayLastRR & 0x0000ffff) * 1000) >> 16) +
+//    (((packet.XRDLRRReportBlockItem.DelayLastRR & 0xffff0000) >> 16) * 1000);
+
+  // TODO(asapersson): Not yet used.
+// int32_t rtt =_clock->CurrentNtpInMilliseconds() - delay_rr_ms - send_time_ms;
+// rtt = std::max(rtt, 1);
+
+  rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpXrDlrrReportBlock;
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver

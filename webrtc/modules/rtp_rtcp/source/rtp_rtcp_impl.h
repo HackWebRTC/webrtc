@@ -324,6 +324,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
                                   uint32_t& NTPfrac,
                                   uint32_t& remote_sr);
 
+  virtual bool LastReceivedXrReferenceTimeInfo(RtcpReceiveTimeInfo* info) const;
+
   virtual int32_t BoundingSet(bool& tmmbr_owner, TMMBRSet*& bounding_set_rec);
 
   virtual void BitrateSent(uint32_t* total_rate,
@@ -332,6 +334,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp {
                            uint32_t* nackRate) const OVERRIDE;
 
   virtual uint32_t SendTimeOfSendReport(const uint32_t send_report);
+
+  virtual bool SendTimeOfXrRrReport(uint32_t mid_ntp, int64_t* time_ms) const;
 
   // Good state of RTP receiver inform sender.
   virtual int32_t SendRTCPReferencePictureSelection(

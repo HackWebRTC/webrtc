@@ -96,7 +96,9 @@ enum RTCPPacketType
     kRtcpSli            = 0x4000,
     kRtcpRpsi           = 0x8000,
     kRtcpRemb           = 0x10000,
-    kRtcpTransmissionTimeOffset = 0x20000
+    kRtcpTransmissionTimeOffset = 0x20000,
+    kRtcpXrReceiverReferenceTime = 0x40000,
+    kRtcpXrDlrrReportBlock = 0x80000
 };
 
 enum KeyFrameRequestMethod
@@ -175,6 +177,13 @@ struct RTCPReportBlock {
   uint32_t jitter;
   uint32_t lastSR;
   uint32_t delaySinceLastSR;
+};
+
+struct RtcpReceiveTimeInfo {
+  // Fields as described by RFC 3611 4.5.
+  uint32_t sourceSSRC;
+  uint32_t lastRR;
+  uint32_t delaySinceLastRR;
 };
 
 typedef std::list<RTCPReportBlock> ReportBlockList;

@@ -1536,6 +1536,11 @@ uint32_t ModuleRtpRtcpImpl::SendTimeOfSendReport(
   return rtcp_sender_.SendTimeOfSendReport(send_report);
 }
 
+bool ModuleRtpRtcpImpl::SendTimeOfXrRrReport(
+    uint32_t mid_ntp, int64_t* time_ms) const {
+  return rtcp_sender_.SendTimeOfXrRrReport(mid_ntp, time_ms);
+}
+
 void ModuleRtpRtcpImpl::OnReceivedNACK(
     const std::list<uint16_t>& nack_sequence_numbers) {
   if (!rtp_sender_.StorePackets() ||
@@ -1564,6 +1569,11 @@ int32_t ModuleRtpRtcpImpl::LastReceivedNTP(
   }
   remote_sr = ((ntp_secs & 0x0000ffff) << 16) + ((ntp_frac & 0xffff0000) >> 16);
   return 0;
+}
+
+bool ModuleRtpRtcpImpl::LastReceivedXrReferenceTimeInfo(
+    RtcpReceiveTimeInfo* info) const {
+  return rtcp_receiver_.LastReceivedXrReferenceTimeInfo(info);
 }
 
 bool ModuleRtpRtcpImpl::UpdateRTCPReceiveInformationTimers() {

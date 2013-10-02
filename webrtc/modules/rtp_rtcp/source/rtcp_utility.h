@@ -19,6 +19,8 @@
 
 namespace webrtc {
 namespace RTCPUtility {
+    uint32_t MidNtp(uint32_t ntp_sec, uint32_t ntp_frac);
+
     // CNAME
     struct RTCPCnameInformation
     {
@@ -73,6 +75,19 @@ namespace RTCPUtility {
     {
         // RFC 3611
         uint32_t OriginatorSSRC;
+    };
+    struct RTCPPacketXRReceiverReferenceTimeItem
+    {
+        // RFC 3611 4.4
+        uint32_t NTPMostSignificant;
+        uint32_t NTPLeastSignificant;
+    };
+    struct RTCPPacketXRDLRRReportBlockItem
+    {
+        // RFC 3611 4.5
+        uint32_t SSRC;
+        uint32_t LastRR;
+        uint32_t DelayLastRR;
     };
     struct RTCPPacketXRVOIPMetricItem
     {
@@ -228,6 +243,8 @@ namespace RTCPUtility {
         RTCPPacketPSFBFIRItem     FIRItem;
 
         RTCPPacketXR               XR;
+        RTCPPacketXRReceiverReferenceTimeItem XRReceiverReferenceTimeItem;
+        RTCPPacketXRDLRRReportBlockItem XRDLRRReportBlockItem;
         RTCPPacketXRVOIPMetricItem XRVOIPMetricItem;
 
         RTCPPacketAPP             APP;
@@ -274,6 +291,10 @@ namespace RTCPUtility {
         kRtcpRtpfbSrReqCode,
 
         // RFC 3611
+        kRtcpXrHeaderCode,
+        kRtcpXrReceiverReferenceTimeCode,
+        kRtcpXrDlrrReportBlockCode,
+        kRtcpXrDlrrReportBlockItemCode,
         kRtcpXrVoipMetricCode,
 
         kRtcpAppCode,
@@ -353,6 +374,7 @@ namespace RTCPUtility {
             State_PSFB_AppItem,    // Application specific FCI item
             State_PSFB_REMBItem,   // Application specific REMB item
             State_XRItem,
+            State_XR_DLLRItem,
             State_AppItem
         };
 
@@ -371,6 +393,8 @@ namespace RTCPUtility {
         void IteratePsfbAppItem();
         void IteratePsfbREMBItem();
         void IterateAppItem();
+        void IterateXrItem();
+        void IterateXrDlrrItem();
 
         void Validate();
         void EndCurrentBlock();
@@ -391,6 +415,8 @@ namespace RTCPUtility {
 
         bool ParseXR();
         bool ParseXRItem();
+        bool ParseXRReceiverReferenceTimeItem();
+        bool ParseXRDLRRReportBlockItem();
         bool ParseXRVOIPMetricItem();
 
         bool ParseFBCommon(const RTCPCommonHeader& header);
