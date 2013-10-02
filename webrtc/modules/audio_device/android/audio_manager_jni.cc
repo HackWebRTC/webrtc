@@ -25,7 +25,7 @@ class AttachThreadScoped {
     if (ret_val == JNI_EDETACHED) {
       // Attach the thread to the Java VM.
       ret_val = jvm_->AttachCurrentThread(&env_, NULL);
-      attached_ = ret_val > 0;
+      attached_ = ret_val == JNI_OK;
       assert(attached_);
     }
   }
