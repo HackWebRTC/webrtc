@@ -228,10 +228,10 @@
               'target_name': 'video_render_tests_run',
               'type': 'none',
               'dependencies': [
-                '<(import_isolate_path):import_isolate_gypi',
                 'video_render_tests',
               ],
               'includes': [
+                '../../build/isolate.gypi',
                 'video_render_tests.isolate',
               ],
               'sources': [

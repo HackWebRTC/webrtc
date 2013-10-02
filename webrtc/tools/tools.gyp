@@ -150,10 +150,10 @@
               'target_name': 'tools_unittests_run',
               'type': 'none',
               'dependencies': [
-                '<(import_isolate_path):import_isolate_gypi',
                 'tools_unittests',
               ],
               'includes': [
+                '../build/isolate.gypi',
                 'tools_unittests.isolate',
               ],
               'sources': [

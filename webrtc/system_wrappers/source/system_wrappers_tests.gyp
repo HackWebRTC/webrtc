@@ -79,10 +79,10 @@
           'target_name': 'system_wrappers_unittests_run',
           'type': 'none',
           'dependencies': [
-            '<(import_isolate_path):import_isolate_gypi',
             'system_wrappers_unittests',
           ],
           'includes': [
+            '../../build/isolate.gypi',
             'system_wrappers_unittests.isolate',
           ],
           'sources': [

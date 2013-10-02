@@ -208,10 +208,10 @@
           'target_name': 'test_support_unittests_run',
           'type': 'none',
           'dependencies': [
-            '<(import_isolate_path):import_isolate_gypi',
             'test_support_unittests',
           ],
           'includes': [
+            '../build/isolate.gypi',
             'test_support_unittests.isolate',
           ],
           'sources': [

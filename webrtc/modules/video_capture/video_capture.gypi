@@ -185,10 +185,10 @@
               'target_name': 'video_capture_tests_run',
               'type': 'none',
               'dependencies': [
-                '<(import_isolate_path):import_isolate_gypi',
                 'video_capture_tests',
               ],
               'includes': [
+                '../../build/isolate.gypi',
                 'video_capture_tests.isolate',
               ],
               'sources': [

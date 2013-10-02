@@ -303,10 +303,10 @@
               'target_name': 'voice_engine_unittests_run',
               'type': 'none',
               'dependencies': [
-                '<(import_isolate_path):import_isolate_gypi',
                 'voice_engine_unittests',
               ],
               'includes': [
+                '../build/isolate.gypi',
                 'voice_engine_unittests.isolate',
               ],
               'sources': [
@@ -317,10 +317,10 @@
               'target_name': 'voe_auto_test_run',
               'type': 'none',
               'dependencies': [
-                '<(import_isolate_path):import_isolate_gypi',
                 'voe_auto_test',
               ],
               'includes': [
+                '../build/isolate.gypi',
                 'voe_auto_test.isolate',
               ],
               'sources': [

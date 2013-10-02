@@ -241,10 +241,10 @@
               'target_name': 'audio_device_tests_run',
               'type': 'none',
               'dependencies': [
-                '<(import_isolate_path):import_isolate_gypi',
                 'audio_device_tests',
               ],
               'includes': [
+                '../../build/isolate.gypi',
                 'audio_device_tests.isolate',
               ],
               'sources': [

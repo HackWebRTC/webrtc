@@ -185,10 +185,10 @@
               'target_name': 'video_engine_core_unittests_run',
               'type': 'none',
               'dependencies': [
-                '<(import_isolate_path):import_isolate_gypi',
                 'video_engine_core_unittests',
               ],
               'includes': [
+                '../build/isolate.gypi',
                 'video_engine_core_unittests.isolate',
               ],
               'sources': [

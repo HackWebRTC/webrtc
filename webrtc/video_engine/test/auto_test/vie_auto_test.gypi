@@ -133,10 +133,10 @@
           'target_name': 'vie_auto_test_run',
           'type': 'none',
           'dependencies': [
-            '<(import_isolate_path):import_isolate_gypi',
             'vie_auto_test',
           ],
           'includes': [
+            '../../../build/isolate.gypi',
             'vie_auto_test.isolate',
           ],
           'sources': [

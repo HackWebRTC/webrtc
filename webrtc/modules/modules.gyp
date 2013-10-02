@@ -349,10 +349,10 @@
               'target_name': 'modules_tests_run',
               'type': 'none',
               'dependencies': [
-                '<(import_isolate_path):import_isolate_gypi',
                 'modules_tests',
               ],
               'includes': [
+                '../build/isolate.gypi',
                 'modules_tests.isolate',
               ],
               'sources': [
@@ -363,10 +363,10 @@
               'target_name': 'modules_unittests_run',
               'type': 'none',
               'dependencies': [
-                '<(import_isolate_path):import_isolate_gypi',
                 'modules_unittests',
               ],
               'includes': [
+                '../build/isolate.gypi',
                 'modules_unittests.isolate',
               ],
               'sources': [

@@ -70,10 +70,10 @@
           'target_name': 'metrics_unittests_run',
           'type': 'none',
           'dependencies': [
-            '<(import_isolate_path):import_isolate_gypi',
             'metrics_unittests',
           ],
           'includes': [
+            '../build/isolate.gypi',
             'metrics_unittests.isolate',
           ],
           'sources': [

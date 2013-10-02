@@ -114,10 +114,10 @@
               'target_name': 'common_video_unittests_run',
               'type': 'none',
               'dependencies': [
-                '<(import_isolate_path):import_isolate_gypi',
                 'common_video_unittests',
               ],
               'includes': [
+                '../build/isolate.gypi',
                 'common_video_unittests.isolate',
               ],
               'sources': [
