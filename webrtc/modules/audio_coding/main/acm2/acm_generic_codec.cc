@@ -318,11 +318,7 @@ int16_t ACMGenericCodec::Encode(uint8_t* bitstream,
             // break from the loop
             break;
           }
-
-          // TODO(andrew): This should be multiplied by the number of
-          //               channels, right?
-          // http://code.google.com/p/webrtc/issues/detail?id=714
-          done = in_audio_ix_read_ >= frame_len_smpl_;
+          done = in_audio_ix_read_ >= frame_len_smpl_ * num_channels_;
         }
       }
       if (status >= 0) {

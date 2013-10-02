@@ -8,22 +8,25 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef ACM_ISAC_TEST_H
-#define ACM_ISAC_TEST_H
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_TEST_ISACTEST_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_TEST_ISACTEST_H_
 
 #include <string.h>
 
-#include "ACMTest.h"
-#include "Channel.h"
-#include "PCMFile.h"
-#include "audio_coding_module.h"
-#include "utility.h"
-#include "common_types.h"
+#include "webrtc/common.h"
+#include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
+#include "webrtc/modules/audio_coding/main/test/ACMTest.h"
+#include "webrtc/modules/audio_coding/main/test/Channel.h"
+#include "webrtc/modules/audio_coding/main/test/PCMFile.h"
+#include "webrtc/modules/audio_coding/main/test/utility.h"
 
 #define MAX_FILE_NAME_LENGTH_BYTE 500
 #define NO_OF_CLIENTS             15
 
 namespace webrtc {
+
+class Config;
 
 struct ACMTestISACConfig {
   int32_t currentRateBitPerSec;
@@ -38,7 +41,7 @@ struct ACMTestISACConfig {
 
 class ISACTest : public ACMTest {
  public:
-  ISACTest(int testMode);
+  ISACTest(int testMode, const Config& config);
   ~ISACTest();
 
   void Perform();
@@ -77,4 +80,4 @@ class ISACTest : public ACMTest {
 
 }  // namespace webrtc
 
-#endif
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_TEST_ISACTEST_H_

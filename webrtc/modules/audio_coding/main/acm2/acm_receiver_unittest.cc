@@ -14,6 +14,7 @@
 
 #include "gtest/gtest.h"
 #include "webrtc/modules/audio_coding/main/interface/audio_coding_module.h"
+#include "webrtc/modules/audio_coding/main/acm2/audio_coding_module_impl.h"
 #include "webrtc/modules/audio_coding/main/acm2/acm_codec_database.h"
 #include "webrtc/modules/audio_coding/neteq4/tools/rtp_generator.h"
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
@@ -39,7 +40,7 @@ class AcmReceiverTest : public AudioPacketizationCallback,
  protected:
   AcmReceiverTest()
       : receiver_(new AcmReceiver),
-        acm_(AudioCodingModule::Create(0)),
+        acm_(new AudioCodingModuleImpl(0)),
         timestamp_(0),
         packet_sent_(false),
         last_packet_send_timestamp_(timestamp_),

@@ -103,8 +103,6 @@
         'acm_resampler.h',
         'audio_coding_module_impl.cc',
         'audio_coding_module_impl.h',
-        'nack.cc',
-        'nack.h',
       ],
     },
   ],

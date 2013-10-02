@@ -1469,7 +1469,7 @@ int AudioCodingModuleImpl::SetVADSafe(bool enable_dtx,
 
   // If a send codec is registered, set VAD/DTX for the codec.
   if (HaveValidEncoder("SetVAD") && codecs_[current_send_codec_idx_]->SetVAD(
-      &enable_dtx, &enable_vad,  &mode) < 0) {
+      &dtx_enabled_, &vad_enabled_,  &vad_mode_) < 0) {
       // SetVAD failed.
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
                    "SetVAD failed");

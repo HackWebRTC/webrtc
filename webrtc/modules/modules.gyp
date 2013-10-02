@@ -64,6 +64,9 @@
         {
           'target_name': 'modules_unittests',
           'type': '<(gtest_target_type)',
+          'defines': [
+            '<@(audio_coding_defines)',
+          ],
           'dependencies': [
             'audio_coding_module',
             'audio_processing',
@@ -98,8 +101,10 @@
             '<(webrtc_root)/common_video/common_video.gyp:frame_generator',
           ],
           'sources': [
+            'audio_coding/main/acm2/acm_receiver_unittest.cc',
+            'audio_coding/main/acm2/initial_delay_manager_unittest.cc',
+            'audio_coding/main/acm2/nack_unittest.cc',
             'audio_coding/main/source/acm_neteq_unittest.cc',
-            'audio_coding/main/source/nack_unittest.cc',
             'audio_coding/codecs/cng/cng_unittest.cc',
             'audio_coding/codecs/isac/fix/source/filters_unittest.cc',
             'audio_coding/codecs/isac/fix/source/filterbanks_unittest.cc',

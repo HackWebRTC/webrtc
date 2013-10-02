@@ -15,6 +15,7 @@
 #include <string>
 
 #include "testing/gtest/include/gtest/gtest.h"
+#include "webrtc/common.h"  // Config.
 #include "webrtc/common_types.h"
 #include "webrtc/engine_configurations.h"
 #include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
@@ -28,8 +29,8 @@
 
 namespace webrtc {
 
-OpusTest::OpusTest()
-    : acm_receiver_(AudioCodingModule::Create(0)),
+OpusTest::OpusTest(const Config& config)
+    : acm_receiver_(config.Get<AudioCodingModuleFactory>().Create(0)),
       channel_a2b_(NULL),
       counter_(0),
       payload_type_(255),
@@ -321,7 +322,7 @@ void OpusTest::Run(TestPackStereo* channel, int channels, int bitrate,
     }
 
     // Run received side of ACM.
-    CHECK_ERROR(acm_receiver_->PlayoutData10Ms(out_freq_hz_b, &audio_frame));
+    ASSERT_EQ(0, acm_receiver_->PlayoutData10Ms(out_freq_hz_b, &audio_frame));
 
     // Write output speech to file.
     out_file_.Write10MsData(

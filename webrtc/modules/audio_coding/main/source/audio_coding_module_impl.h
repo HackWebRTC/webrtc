@@ -28,12 +28,12 @@ struct WebRtcACMCodecParams;
 class CriticalSectionWrapper;
 class RWLockWrapper;
 class Clock;
+class Nack;
 
 namespace acm1 {
 
 class ACMDTMFDetection;
 class ACMGenericCodec;
-class Nack;
 
 class AudioCodingModuleImpl : public AudioCodingModule {
  public:
