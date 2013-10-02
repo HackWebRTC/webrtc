@@ -80,6 +80,11 @@ def main():
   # Run barcode decoder on the test video to identify frame numbers.
   path_to_decoder = os.path.join(SCRIPT_DIR, 'barcode_tools',
                                  'barcode_decoder.py')
+
+  # On Windows, sometimes the inherited stdin handle from the parent process
+  # fails. Work around this by passing null to stdin to the subprocesses.
+  null_filehandle = open(os.devnull, 'r')
+
   cmd = [
     sys.executable,
     path_to_decoder,
@@ -88,7 +93,8 @@ def main():
     '--yuv_frame_height=%d' % options.yuv_frame_height,
     '--stats_file=%s' % options.stats_file,
   ]
-  barcode_decoder = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr)
+  barcode_decoder = subprocess.Popen(cmd, stdin=null_filehandle,
+                                     stdout=sys.stdout, stderr=sys.stderr)
   barcode_decoder.wait()
   if barcode_decoder.returncode != 0:
     print 'Failed to run barcode decoder script.'
@@ -104,7 +110,8 @@ def main():
     '--width=%d' % options.yuv_frame_width,
     '--height=%d' % options.yuv_frame_height,
   ]
-  frame_analyzer = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr)
+  frame_analyzer = subprocess.Popen(cmd, stdin=null_filehandle,
+                                    stdout=sys.stdout, stderr=sys.stderr)
   frame_analyzer.wait()
   if frame_analyzer.returncode != 0:
     print 'Failed to run frame analyzer.'
