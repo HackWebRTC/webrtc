@@ -31,7 +31,15 @@ class TraceDispatcher : public TraceCallback {
  public:
   TraceDispatcher()
       : crit_(CriticalSectionWrapper::CreateCriticalSection()),
+        initialized_(false),
         filter_(kTraceNone) {}
+
+  ~TraceDispatcher() {
+    if (initialized_) {
+      Trace::ReturnTrace();
+      VideoEngine::SetTraceCallback(NULL);
+    }
+  }
 
   virtual void Print(TraceLevel level,
                      const char* message,
@@ -52,23 +60,18 @@ class TraceDispatcher : public TraceCallback {
     CriticalSectionScoped lock(crit_.get());
     callbacks_[call] = config;
 
-    if ((filter_ | config->trace_filter) != filter_) {
-      if (filter_ == kTraceNone) {
-        Trace::CreateTrace();
-        VideoEngine::SetTraceCallback(this);
-      }
-      filter_ |= config->trace_filter;
-      VideoEngine::SetTraceFilter(filter_);
+    filter_ |= config->trace_filter;
+    if (filter_ != kTraceNone && !initialized_) {
+      initialized_ = true;
+      Trace::CreateTrace();
+      VideoEngine::SetTraceCallback(this);
     }
+    VideoEngine::SetTraceFilter(filter_);
   }
 
   void DeregisterCallback(Call* call) {
     CriticalSectionScoped lock(crit_.get());
     callbacks_.erase(call);
-    // Return early if there was no filter, this is required to prevent
-    // returning the Trace handle more than once.
-    if (filter_ == kTraceNone)
-      return;
 
     filter_ = kTraceNone;
     for (std::map<Call*, Call::Config*>::iterator it = callbacks_.begin();
@@ -78,14 +81,11 @@ class TraceDispatcher : public TraceCallback {
     }
 
     VideoEngine::SetTraceFilter(filter_);
-    if (filter_ == kTraceNone) {
-      VideoEngine::SetTraceCallback(NULL);
-      Trace::ReturnTrace();
-    }
   }
 
  private:
   scoped_ptr<CriticalSectionWrapper> crit_;
+  bool initialized_;
   unsigned int filter_;
   std::map<Call*, Call::Config*> callbacks_;
 };
