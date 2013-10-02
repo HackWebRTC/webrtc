@@ -16,6 +16,9 @@
 #include <map>
 #include <vector>
 
+#include "webrtc/system_wrappers/interface/critical_section_wrapper.h"
+#include "webrtc/system_wrappers/interface/scoped_ptr.h"
+#include "webrtc/system_wrappers/interface/trace.h"
 #include "webrtc/video_engine/include/vie_base.h"
 #include "webrtc/video_engine/include/vie_codec.h"
 #include "webrtc/video_engine/include/vie_rtp_rtcp.h"
@@ -24,7 +27,84 @@
 
 namespace webrtc {
 
+class TraceDispatcher : public TraceCallback {
+ public:
+  TraceDispatcher()
+      : crit_(CriticalSectionWrapper::CreateCriticalSection()),
+        filter_(kTraceNone) {}
+
+  virtual void Print(TraceLevel level,
+                     const char* message,
+                     int length) OVERRIDE {
+    CriticalSectionScoped lock(crit_.get());
+    for (std::map<Call*, Call::Config*>::iterator it = callbacks_.begin();
+         it != callbacks_.end();
+         ++it) {
+      if ((level & it->second->trace_filter) != kTraceNone)
+        it->second->trace_callback->Print(level, message, length);
+    }
+  }
+
+  void RegisterCallback(Call* call, Call::Config* config) {
+    if (config->trace_callback == NULL)
+      return;
+
+    CriticalSectionScoped lock(crit_.get());
+    callbacks_[call] = config;
+
+    if ((filter_ | config->trace_filter) != filter_) {
+      if (filter_ == kTraceNone) {
+        Trace::CreateTrace();
+        VideoEngine::SetTraceCallback(this);
+      }
+      filter_ |= config->trace_filter;
+      VideoEngine::SetTraceFilter(filter_);
+    }
+  }
+
+  void DeregisterCallback(Call* call) {
+    CriticalSectionScoped lock(crit_.get());
+    callbacks_.erase(call);
+    // Return early if there was no filter, this is required to prevent
+    // returning the Trace handle more than once.
+    if (filter_ == kTraceNone)
+      return;
+
+    filter_ = kTraceNone;
+    for (std::map<Call*, Call::Config*>::iterator it = callbacks_.begin();
+         it != callbacks_.end();
+         ++it) {
+      filter_ |= it->second->trace_filter;
+    }
+
+    VideoEngine::SetTraceFilter(filter_);
+    if (filter_ == kTraceNone) {
+      VideoEngine::SetTraceCallback(NULL);
+      Trace::ReturnTrace();
+    }
+  }
+
+ private:
+  scoped_ptr<CriticalSectionWrapper> crit_;
+  unsigned int filter_;
+  std::map<Call*, Call::Config*> callbacks_;
+};
+
+namespace internal {
+  TraceDispatcher* global_trace_dispatcher = NULL;
+}  // internal
+
 Call* Call::Create(const Call::Config& config) {
+  if (internal::global_trace_dispatcher == NULL) {
+    TraceDispatcher* dispatcher = new TraceDispatcher();
+    // TODO(pbos): Atomic compare and exchange.
+    if (internal::global_trace_dispatcher == NULL) {
+      internal::global_trace_dispatcher = dispatcher;
+    } else {
+      delete dispatcher;
+    }
+  }
+
   VideoEngine* video_engine = VideoEngine::Create();
   assert(video_engine != NULL);
 
@@ -42,6 +122,8 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
   assert(video_engine != NULL);
   assert(config.send_transport != NULL);
 
+  global_trace_dispatcher->RegisterCallback(this, &config_);
+
   rtp_rtcp_ = ViERTP_RTCP::GetInterface(video_engine_);
   assert(rtp_rtcp_ != NULL);
 
@@ -50,6 +132,7 @@ Call::Call(webrtc::VideoEngine* video_engine, const Call::Config& config)
 }
 
 Call::~Call() {
+  global_trace_dispatcher->DeregisterCallback(this);
   codec_->Release();
   rtp_rtcp_->Release();
   webrtc::VideoEngine::Delete(video_engine_);

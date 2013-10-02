@@ -42,7 +42,7 @@ class Call {
           overuse_detection(false),
           voice_engine(NULL),
           trace_callback(NULL),
-          trace_filter(kTraceNone) {}
+          trace_filter(kTraceDefault) {}
 
     newapi::Transport* send_transport;
     bool overuse_detection;
