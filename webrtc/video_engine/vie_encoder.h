@@ -162,6 +162,11 @@ class ViEEncoder
   // Disables recording of debugging information.
   virtual int StopDebugRecording();
 
+  // Enables AutoMuter to turn off video when the rate drops below
+  // |threshold_bps|, and turns back on when the rate goes back up above
+  // |threshold_bps| + |window_bps|.
+  virtual void EnableAutoMuting(int threshold_bps, int window_bps);
+
   int channel_id() const { return channel_id_; }
  protected:
   // Called by BitrateObserver.
@@ -216,6 +221,7 @@ class ViEEncoder
 
   // Quality modes callback
   QMVideoSettingsCallback* qm_callback_;
+  bool video_auto_muted_;
 };
 
 }  // namespace webrtc

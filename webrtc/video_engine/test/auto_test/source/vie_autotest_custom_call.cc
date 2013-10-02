@@ -72,6 +72,10 @@ class ViEAutotestEncoderObserver : public webrtc::ViEEncoderObserver {
     std::cout << "Send FR: " << framerate
               << " BR: " << bitrate << std::endl;
   }
+
+  virtual void VideoAutoMuted(bool is_muted) {
+    std::cout << "VideoAutoMuted: " << is_muted << std::endl;
+  }
 };
 
 class ViEAutotestDecoderObserver : public webrtc::ViEDecoderObserver {

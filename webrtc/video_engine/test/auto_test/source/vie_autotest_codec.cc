@@ -44,6 +44,7 @@ class TestCodecObserver
   unsigned int last_outgoing_bitrate_;
   unsigned int last_incoming_framerate_;
   unsigned int last_incoming_bitrate_;
+  unsigned int video_auto_muted_called_;
 
   webrtc::VideoCodec incoming_codec_;
 
@@ -57,7 +58,8 @@ class TestCodecObserver
         last_outgoing_framerate_(0),
         last_outgoing_bitrate_(0),
         last_incoming_framerate_(0),
-        last_incoming_bitrate_(0) {
+        last_incoming_bitrate_(0),
+        video_auto_muted_called_(0) {
     memset(&incoming_codec_, 0, sizeof(incoming_codec_));
   }
   virtual void IncomingCodecChanged(const int video_channel,
@@ -84,6 +86,10 @@ class TestCodecObserver
     outgoing_rate_called_++;
     last_outgoing_framerate_ += framerate;
     last_outgoing_bitrate_ += bitrate;
+  }
+
+  virtual void VideoAutoMuted(bool is_muted) {
+    video_auto_muted_called_++;
   }
 
   virtual void RequestNewKeyFrame(const int video_channel) {

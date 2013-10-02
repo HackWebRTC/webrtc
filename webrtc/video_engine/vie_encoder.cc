@@ -158,7 +158,8 @@ ViEEncoder::ViEEncoder(int32_t engine_id,
     picture_id_sli_(0),
     has_received_rpsi_(false),
     picture_id_rpsi_(0),
-    qm_callback_(NULL) {
+    qm_callback_(NULL),
+    video_auto_muted_(false) {
   WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo,
                ViEId(engine_id, channel_id),
                "%s(engine_id: %d) 0x%p - Constructor", __FUNCTION__, engine_id,
@@ -1034,6 +1035,7 @@ void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
                __FUNCTION__, bitrate_bps, fraction_lost, round_trip_time_ms);
 
   vcm_.SetChannelParameters(bitrate_bps, fraction_lost, round_trip_time_ms);
+  bool video_is_muted = vcm_.VideoMuted();
   int bitrate_kbps = bitrate_bps / 1000;
   VideoCodec send_codec;
   if (vcm_.SendCodec(&send_codec) != 0) {
@@ -1069,6 +1071,17 @@ void ViEEncoder::OnNetworkChanged(const uint32_t bitrate_bps,
                                max_padding_bitrate_kbps,
                                pad_up_to_bitrate_kbps);
   default_rtp_rtcp_->SetTargetSendBitrate(stream_bitrates);
+  if (video_is_muted != video_auto_muted_) {
+    // State changed now. Send callback to inform about that.
+    video_auto_muted_ = video_is_muted;
+    if (codec_observer_) {
+      WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
+                   ViEId(engine_id_, channel_id_),
+                   "%s: video_auto_muted_ changed to %i",
+                   __FUNCTION__, video_auto_muted_);
+      codec_observer_->VideoAutoMuted(video_auto_muted_);
+    }
+  }
 }
 
 PacedSender* ViEEncoder::GetPacedSender() {
@@ -1108,6 +1121,10 @@ int ViEEncoder::StartDebugRecording(const char* fileNameUTF8) {
 
 int ViEEncoder::StopDebugRecording() {
   return vcm_.StopDebugRecording();
+}
+
+void ViEEncoder::EnableAutoMuting(int threshold_bps, int window_bps) {
+  vcm_.EnableAutoMuting(threshold_bps, window_bps);
 }
 
 QMVideoSettingsCallback::QMVideoSettingsCallback(VideoProcessingModule* vpm)
