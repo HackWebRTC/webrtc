@@ -17,7 +17,8 @@ namespace webrtc_opensl {
 
 enum {
   kDefaultSampleRate = 44100,
-  kNumChannels = 1
+  kNumChannels = 1,
+  kDefaultBufSizeInSamples = kDefaultSampleRate * 10 / 1000,
 };
 
 
