@@ -34,6 +34,7 @@
         'vp8_impl.cc',
         'default_temporal_layers.cc',
         'default_temporal_layers.h',
+        'realtime_temporal_layers.cc',
         'temporal_layers.h',
       ],
       # Disable warnings to enable Win64 build, issue 1323.
