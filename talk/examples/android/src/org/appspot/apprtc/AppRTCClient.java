@@ -301,7 +301,7 @@ public class AppRTCClient {
           JSONArray mandatoryKeys = mandatoryJSON.names();
           if (mandatoryKeys != null) {
             for (int i = 0; i < mandatoryKeys.length(); ++i) {
-              String key = (String) mandatoryKeys.getString(i);
+              String key = mandatoryKeys.getString(i);
               String value = mandatoryJSON.getString(key);
               constraints.mandatory.add(
                   new MediaConstraints.KeyValuePair(key, value));

@@ -20,7 +20,7 @@
             <Button android:id="@+id/btSwitchCamera"
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/frontCamera"
+                    android:text="@string/backCamera"
                     android:layout_gravity="bottom"/>
             <Button android:id="@+id/btStartStopCall"
                     android:layout_width="fill_parent"

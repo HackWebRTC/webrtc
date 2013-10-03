@@ -36,6 +36,7 @@ import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.util.Log;
+import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -96,10 +97,8 @@ public class AppRTCDemoActivity extends Activity
     Thread.setDefaultUncaughtExceptionHandler(
         new UnhandledExceptionHandler(this));
 
-    PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-    wakeLock = powerManager.newWakeLock(
-        PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "AppRTCDemo");
-    wakeLock.acquire();
+    getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
     Point displaySize = new Point();
     getWindowManager().getDefaultDisplay().getSize(displaySize);
@@ -111,9 +110,13 @@ public class AppRTCDemoActivity extends Activity
 
     AudioManager audioManager =
         ((AudioManager) getSystemService(AUDIO_SERVICE));
-    audioManager.setMode(audioManager.isWiredHeadsetOn() ?
+    // TODO(fischman): figure out how to do this Right(tm) and remove the
+    // suppression.
+    @SuppressWarnings("deprecation")
+    boolean isWiredHeadsetOn = audioManager.isWiredHeadsetOn();
+    audioManager.setMode(isWiredHeadsetOn ?
         AudioManager.MODE_IN_CALL : AudioManager.MODE_IN_COMMUNICATION);
-    audioManager.setSpeakerphoneOn(!audioManager.isWiredHeadsetOn());
+    audioManager.setSpeakerphoneOn(!isWiredHeadsetOn);
 
     sdpMediaConstraints = new MediaConstraints();
     sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(

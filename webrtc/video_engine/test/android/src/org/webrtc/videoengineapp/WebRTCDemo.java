@@ -31,8 +31,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
-import android.os.PowerManager;
-import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
@@ -67,10 +65,9 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
 
-/** {@} */
 public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
-                                                View.OnClickListener,
-                                                OnItemSelectedListener {
+                                                       View.OnClickListener,
+                                                       OnItemSelectedListener {
     private ViEAndroidJavaAPI vieAndroidAPI = null;
 
     // remote renderer
@@ -187,8 +184,6 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
     private String webrtcName = "/webrtc";
     private String webrtcDebugDir = null;
 
-    private WakeLock wakeLock;
-
     private boolean usingFrontCamera = true;
     // The orientations (in degrees) of each of the cameras CCW-relative to the
     // device, indexed by CameraInfo.CAMERA_FACING_{BACK,FRONT}, and -1
@@ -264,16 +259,11 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
 
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
         populateCameraOrientations();
-
-        PowerManager pm = (PowerManager) this.getSystemService(
-            Context.POWER_SERVICE);
-        wakeLock = pm.newWakeLock(
-            PowerManager.SCREEN_DIM_WAKE_LOCK, TAG);
 
         setContentView(R.layout.tabhost);
 
@@ -502,7 +492,9 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
             AlertDialog alertDialog = new AlertDialog.Builder(this).create();
             alertDialog.setTitle("WebRTC Error");
             alertDialog.setMessage("Can not init video engine.");
-            alertDialog.setButton("OK", new DialogInterface.OnClickListener() {
+            alertDialog.setButton(
+                DialogInterface.BUTTON_POSITIVE,
+                "OK", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         return;
                     } });
@@ -848,12 +840,10 @@ public class WebRTCDemo extends TabActivity implements IViEAndroidCallback,
         if (viERunning || voERunning) {
             stopAll();
             startMain();
-            wakeLock.release(); // release the wake lock
             btStartStopCall.setText(R.string.startCall);
         } else if (enableVoice || enableVideo){
             ++numCalls;
             startCall();
-            wakeLock.acquire(); // screen stay on during the call
             btStartStopCall.setText(R.string.stopCall);
         }
         if (AUTO_CALL_RESTART_DELAY_MS > 0) {

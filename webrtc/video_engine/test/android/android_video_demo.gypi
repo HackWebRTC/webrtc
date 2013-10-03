@@ -50,6 +50,7 @@
             '<(PRODUCT_DIR)/lib.java/video_render_module_java.jar',
             '<(PRODUCT_DIR)/libwebrtc-video-demo-jni.so',
             '<!@(find <(android_webrtc_demo_root)/src -name "*.java")',
+            '<!@(find <(android_webrtc_demo_root)/res -type f)',
           ],
           'outputs': ['<(PRODUCT_DIR)/WebRTCDemo-debug.apk'],
           'action': ['bash', '-ec',
