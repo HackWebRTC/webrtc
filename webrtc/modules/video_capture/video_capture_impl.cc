@@ -41,6 +41,47 @@ const char* VideoCaptureImpl::CurrentDeviceName() const
     return _deviceUniqueId;
 }
 
+// static
+int32_t VideoCaptureImpl::RotationFromDegrees(int degrees,
+                                              VideoCaptureRotation* rotation) {
+  switch (degrees) {
+    case 0:
+      *rotation = kCameraRotate0;
+      return 0;
+    case 90:
+      *rotation = kCameraRotate90;
+      return 0;
+    case 180:
+      *rotation = kCameraRotate180;
+      return 0;
+    case 270:
+      *rotation = kCameraRotate270;
+      return 0;
+    default:
+      return -1;;
+  }
+}
+
+// static
+int32_t VideoCaptureImpl::RotationInDegrees(VideoCaptureRotation rotation,
+                                            int* degrees) {
+  switch (rotation) {
+    case kCameraRotate0:
+      *degrees = 0;
+      return 0;
+    case kCameraRotate90:
+      *degrees = 90;
+      return 0;
+    case kCameraRotate180:
+      *degrees = 180;
+      return 0;
+    case kCameraRotate270:
+      *degrees = 270;
+      return 0;
+  }
+  return -1;
+}
+
 int32_t VideoCaptureImpl::ChangeUniqueId(const int32_t id)
 {
     _id = id;
@@ -358,6 +399,8 @@ int32_t VideoCaptureImpl::SetCaptureRotation(VideoCaptureRotation rotation) {
     case kCameraRotate270:
       _rotateFrame = kRotate270;
       break;
+    default:
+      return -1;
   }
   return 0;
 }

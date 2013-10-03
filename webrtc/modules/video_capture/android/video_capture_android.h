@@ -16,49 +16,31 @@
 #include "webrtc/modules/video_capture/android/device_info_android.h"
 #include "webrtc/modules/video_capture/video_capture_impl.h"
 
-#define AndroidJavaCaptureClass "org/webrtc/videoengine/VideoCaptureAndroid"
-
 namespace webrtc {
 namespace videocapturemodule {
 
 class VideoCaptureAndroid : public VideoCaptureImpl {
  public:
-  static int32_t SetAndroidObjects(void* javaVM, void* javaContext);
-  static int32_t AttachAndUseAndroidDeviceInfoObjects(
-      JNIEnv*& env,
-      jclass& javaCmDevInfoClass,
-      jobject& javaCmDevInfoObject,
-      bool& attached);
-  static int32_t ReleaseAndroidDeviceInfoObjects(bool attached);
-
   VideoCaptureAndroid(const int32_t id);
   virtual int32_t Init(const int32_t id, const char* deviceUniqueIdUTF8);
 
-
-  virtual int32_t StartCapture(
-      const VideoCaptureCapability& capability);
+  virtual int32_t StartCapture(const VideoCaptureCapability& capability);
   virtual int32_t StopCapture();
   virtual bool CaptureStarted();
   virtual int32_t CaptureSettings(VideoCaptureCapability& settings);
   virtual int32_t SetCaptureRotation(VideoCaptureRotation rotation);
 
+  int32_t OnIncomingFrame(uint8_t* videoFrame,
+                          int32_t videoFrameLength,
+                          int64_t captureTime = 0);
+
  protected:
   virtual ~VideoCaptureAndroid();
-  static void JNICALL ProvideCameraFrame (JNIEnv * env,
-                                          jobject,
-                                          jbyteArray javaCameraFrame,
-                                          jint length, jlong context);
-  DeviceInfoAndroid _capInfo;
-  jobject _javaCaptureObj; // Java Camera object.
-  VideoCaptureCapability _frameInfo;
-  bool _captureStarted;
 
-  static JavaVM* g_jvm;
-  static jclass g_javaCmClass;
-  static jclass g_javaCmDevInfoClass;
-  //Static java object implementing the needed device info functions;
-  static jobject g_javaCmDevInfoObject;
-  static jobject g_javaContext; // Java Application context
+  DeviceInfoAndroid _deviceInfo;
+  jobject _jCapturer; // Global ref to Java VideoCaptureAndroid object.
+  VideoCaptureCapability _captureCapability;
+  bool _captureStarted;
 };
 
 }  // namespace videocapturemodule

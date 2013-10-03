@@ -75,6 +75,7 @@ public class VideoStreamsView
   public VideoStreamsView(Context c, Point screenDimensions) {
     super(c);
     this.screenDimensions = screenDimensions;
+    setPreserveEGLContextOnPause(true);
     setEGLContextClientVersion(2);
     setRenderer(this);
     setRenderMode(RENDERMODE_WHEN_DIRTY);

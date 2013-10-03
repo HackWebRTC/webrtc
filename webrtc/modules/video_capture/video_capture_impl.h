@@ -51,6 +51,13 @@ public:
 
     static DeviceInfo* CreateDeviceInfo(const int32_t id);
 
+    // Helpers for converting between (integral) degrees and
+    // VideoCaptureRotation values.  Return 0 on success.
+    static int32_t RotationFromDegrees(int degrees,
+                                       VideoCaptureRotation* rotation);
+    static int32_t RotationInDegrees(VideoCaptureRotation rotation,
+                                     int* degrees);
+
     // Implements Module declared functions.
     virtual int32_t ChangeUniqueId(const int32_t id);
 

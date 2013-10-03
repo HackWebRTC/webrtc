@@ -18,8 +18,6 @@
 
 namespace webrtc {
 
-#define REQUIRED_JNI_VERSION JNI_VERSION_1_4
-
 class AudioManagerJni {
  public:
   AudioManagerJni();

@@ -311,7 +311,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_GetVideo
     return 0;
   }
 
-  VideoEngine::SetAndroidObjects(webrtcGlobalVM, context);
+  VideoEngine::SetAndroidObjects(webrtcGlobalVM);
 
   // Create
   vieData.vie = VideoEngine::Create();

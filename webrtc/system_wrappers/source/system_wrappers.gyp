@@ -142,6 +142,11 @@
             'WEBRTC_CLOCK_TYPE_REALTIME',
            ],
           'dependencies': [ 'cpu_features_android', ],
+          'link_settings': {
+            'libraries': [
+              '-llog',
+            ],
+          },
         }, {  # OS!="android"
           'sources!': [
             '../interface/logcat_trace_context.h',

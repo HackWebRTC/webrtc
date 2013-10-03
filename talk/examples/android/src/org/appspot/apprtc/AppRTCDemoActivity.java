@@ -156,19 +156,18 @@ public class AppRTCDemoActivity extends Activity
   public void onPause() {
     super.onPause();
     vsv.onPause();
-    // TODO(fischman): IWBN to support pause/resume, but the WebRTC codebase
-    // isn't ready for that yet; e.g.
-    // https://code.google.com/p/webrtc/issues/detail?id=1407
-    // Instead, simply exit instead of pausing (the alternative leads to
-    // system-borking with wedged cameras; e.g. b/8224551)
-    disconnectAndExit();
+    if (videoSource != null) {
+      videoSource.stop();
+    }
   }
 
   @Override
   public void onResume() {
-    // The onResume() is a lie!  See TODO(fischman) in onPause() above.
     super.onResume();
     vsv.onResume();
+    if (videoSource != null) {
+      videoSource.restart();
+    }
   }
 
   @Override
@@ -249,7 +248,8 @@ public class AppRTCDemoActivity extends Activity
   }
 
   @Override
-  public void onDestroy() {
+  protected void onDestroy() {
+    disconnectAndExit();
     super.onDestroy();
   }
 
@@ -524,7 +524,6 @@ public class AppRTCDemoActivity extends Activity
         return;
       }
       quit[0] = true;
-      wakeLock.release();
       if (pc != null) {
         pc.dispose();
         pc = null;
@@ -542,6 +541,7 @@ public class AppRTCDemoActivity extends Activity
         factory.dispose();
         factory = null;
       }
+      wakeLock.release();
       finish();
     }
   }

@@ -163,12 +163,12 @@ int VideoEngine::SetTraceCallback(TraceCallback* callback) {
   return Trace::SetTraceCallback(callback);
 }
 
-int VideoEngine::SetAndroidObjects(void* javaVM, void* javaContext) {
+#if defined(ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
+int VideoEngine::SetAndroidObjects(JavaVM* javaVM) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo, kModuleId,
                "SetAndroidObjects()");
 
-#if defined(WEBRTC_ANDROID) && !defined(WEBRTC_CHROMIUM_BUILD)
-  if (SetCaptureAndroidVM(javaVM, javaContext) != 0) {
+  if (SetCaptureAndroidVM(javaVM) != 0) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, kModuleId,
                  "Could not set capture Android VM");
     return -1;
@@ -179,11 +179,7 @@ int VideoEngine::SetAndroidObjects(void* javaVM, void* javaContext) {
     return -1;
   }
   return 0;
-#else
-  WEBRTC_TRACE(kTraceError, kTraceVideo, kModuleId,
-               "WEBRTC_ANDROID not defined for VideoEngine::SetAndroidObjects");
-  return -1;
-#endif
 }
+#endif
 
 }  // namespace webrtc

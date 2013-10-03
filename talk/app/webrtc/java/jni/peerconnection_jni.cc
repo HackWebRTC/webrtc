@@ -1241,7 +1241,7 @@ JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)(
     JNIEnv* jni, jclass, jobject context) {
   CHECK(g_jvm, "JNI_OnLoad failed to run?");
   bool failure = false;
-  failure |= webrtc::VideoEngine::SetAndroidObjects(g_jvm, context);
+  failure |= webrtc::VideoEngine::SetAndroidObjects(g_jvm);
   failure |= webrtc::VoiceEngine::SetAndroidObjects(g_jvm, jni, context);
   return !failure;
 }
@@ -1543,7 +1543,7 @@ JOW(jlong, VideoCapturer_nativeCreateVideoCapturer)(
   CHECK(device_manager->Init(), "DeviceManager::Init() failed");
   cricket::Device device;
   if (!device_manager->GetVideoCaptureDevice(device_name, &device)) {
-    LOG(LS_ERROR) << "GetVideoCaptureDevice failed";
+    LOG(LS_ERROR) << "GetVideoCaptureDevice failed for " << device_name;
     return 0;
   }
   talk_base::scoped_ptr<cricket::VideoCapturer> capturer(
@@ -1564,6 +1564,28 @@ JOW(jlong, VideoRenderer_nativeWrapVideoRenderer)(
   talk_base::scoped_ptr<JavaVideoRendererWrapper> renderer(
       new JavaVideoRendererWrapper(jni, j_callbacks));
   return (jlong)renderer.release();
+}
+
+JOW(jlong, VideoSource_stop)(JNIEnv* jni, jclass, jlong j_p) {
+  cricket::VideoCapturer* capturer =
+      reinterpret_cast<VideoSourceInterface*>(j_p)->GetVideoCapturer();
+  talk_base::scoped_ptr<cricket::VideoFormatPod> format(
+      new cricket::VideoFormatPod(*capturer->GetCaptureFormat()));
+  capturer->Stop();
+  return jlongFromPointer(format.release());
+}
+
+JOW(void, VideoSource_restart)(
+    JNIEnv* jni, jclass, jlong j_p_source, jlong j_p_format) {
+  talk_base::scoped_ptr<cricket::VideoFormatPod> format(
+      reinterpret_cast<cricket::VideoFormatPod*>(j_p_format));
+  reinterpret_cast<VideoSourceInterface*>(j_p_source)->GetVideoCapturer()->
+      StartCapturing(cricket::VideoFormat(*format));
+}
+
+JOW(jboolean, VideoSource_freeNativeVideoFormat)(
+    JNIEnv* jni, jclass, jlong j_p) {
+  delete reinterpret_cast<cricket::VideoFormatPod*>(j_p);
 }
 
 JOW(jstring, MediaStreamTrack_nativeId)(JNIEnv* jni, jclass, jlong j_p) {
