@@ -24,8 +24,6 @@ struct CodecSpecificInfoVP8;
 
 class TemporalLayers {
  public:
-  // Factory for TemporalLayer strategy. Default behaviour is a fixed pattern
-  // of temporal layers. See default_temporal_layers.cc
   struct Factory {
     Factory() {}
     virtual ~Factory() {}
@@ -49,15 +47,6 @@ class TemporalLayers {
                                      uint32_t timestamp) = 0;
 
   virtual void FrameEncoded(unsigned int size, uint32_t timestamp) = 0;
-};
-
-// Factory for a temporal layers strategy that adaptively changes the number of
-// layers based on input framerate so that the base layer has an acceptable
-// framerate. See realtime_temporal_layers.cc
-struct RealTimeTemporalLayersFactory : TemporalLayers::Factory {
-  virtual ~RealTimeTemporalLayersFactory() {}
-  virtual TemporalLayers* Create(int num_temporal_layers,
-                                 uint8_t initial_tl0_pic_idx) const;
 };
 
 }  // namespace webrtc
