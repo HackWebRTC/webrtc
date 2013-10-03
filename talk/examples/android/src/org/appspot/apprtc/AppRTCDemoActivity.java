@@ -93,16 +93,8 @@ public class AppRTCDemoActivity extends Activity
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    // Since the error-handling of this demo consists of throwing
-    // RuntimeExceptions and we assume that'll terminate the app, we install
-    // this default handler so it's applied to background threads as well.
     Thread.setDefaultUncaughtExceptionHandler(
-        new Thread.UncaughtExceptionHandler() {
-          public void uncaughtException(Thread t, Throwable e) {
-            e.printStackTrace();
-            System.exit(-1);
-          }
-        });
+        new UnhandledExceptionHandler(this));
 
     PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
     wakeLock = powerManager.newWakeLock(

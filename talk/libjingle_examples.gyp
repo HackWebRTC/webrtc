@@ -325,6 +325,7 @@
                 'examples/android/res/values/strings.xml',
                 'examples/android/src/org/appspot/apprtc/AppRTCClient.java',
                 'examples/android/src/org/appspot/apprtc/AppRTCDemoActivity.java',
+                'examples/android/src/org/appspot/apprtc/UnhandledExceptionHandler.java',
                 'examples/android/src/org/appspot/apprtc/FramePool.java',
                 'examples/android/src/org/appspot/apprtc/GAEChannelClient.java',
                 'examples/android/src/org/appspot/apprtc/VideoStreamsView.java',
