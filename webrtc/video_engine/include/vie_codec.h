@@ -39,7 +39,7 @@ class WEBRTC_DLLEXPORT ViEEncoderObserver {
   // This method is called whenever the state of the AutoMuter changes, i.e.,
   // when |is_muted| toggles.
   // TODO(hlundin): Remove the default implementation when possible.
-  virtual void VideoAutoMuted(bool is_muted) {};
+  virtual void VideoAutoMuted(bool is_muted) {}
 
  protected:
   virtual ~ViEEncoderObserver() {}
@@ -187,8 +187,9 @@ class WEBRTC_DLLEXPORT ViECodec {
   // |threshold_bps|, and turns back on when the rate goes back up above
   // |threshold_bps| + |window_bps|.
   // This is under development; not tested.
+  // TODO(hlundin): Remove the default implementation when possible.
   virtual void EnableAutoMuting(int video_channel, int threshold_bps,
-                                int window_bps) = 0;
+                                int window_bps) {}
 
  protected:
   ViECodec() {}
