@@ -214,14 +214,17 @@ public class AppRTCDemoActivity extends Activity
 
     {
       logAndToast("Creating local video source...");
-      VideoCapturer capturer = getVideoCapturer();
-      videoSource = factory.createVideoSource(
-          capturer, appRtcClient.videoConstraints());
       MediaStream lMS = factory.createLocalMediaStream("ARDAMS");
-      VideoTrack videoTrack = factory.createVideoTrack("ARDAMSv0", videoSource);
-      videoTrack.addRenderer(new VideoRenderer(new VideoCallbacks(
-          vsv, VideoStreamsView.Endpoint.LOCAL)));
-      lMS.addTrack(videoTrack);
+      if (appRtcClient.videoConstraints() != null) {
+        VideoCapturer capturer = getVideoCapturer();
+        videoSource = factory.createVideoSource(
+            capturer, appRtcClient.videoConstraints());
+        VideoTrack videoTrack =
+            factory.createVideoTrack("ARDAMSv0", videoSource);
+        videoTrack.addRenderer(new VideoRenderer(new VideoCallbacks(
+            vsv, VideoStreamsView.Endpoint.LOCAL)));
+        lMS.addTrack(videoTrack);
+      }
       lMS.addTrack(factory.createAudioTrack("ARDAMSa0"));
       pc.addStream(lMS, new MediaConstraints());
     }

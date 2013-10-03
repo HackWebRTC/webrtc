@@ -272,6 +272,7 @@ public class AppRTCClient {
       MediaConstraints videoConstraints = constraintsFromJSON(
           getVideoConstraints(
               getVarValue(roomHtml, "mediaConstraints", false)));
+
       Log.d(TAG, "videoConstraints: " + videoConstraints);
 
       return new AppRTCSignalingParameters(
@@ -282,17 +283,28 @@ public class AppRTCClient {
     private String getVideoConstraints(String mediaConstraintsString) {
       try {
         JSONObject json = new JSONObject(mediaConstraintsString);
-        JSONObject videoJson = json.optJSONObject("video");
-        if (videoJson == null) {
-          return "";
+        // Tricksy handling of values that are allowed to be (boolean or
+        // MediaTrackConstraints) by the getUserMedia() spec.  There are three
+        // cases below.
+        if (!json.has("video") || !json.optBoolean("video", true)) {
+          // Case 1: "video" is not present, or is an explicit "false" boolean.
+          return null;
         }
-        return videoJson.toString();
+        if (json.optBoolean("video", false)) {
+          // Case 2: "video" is an explicit "true" boolean.
+          return "{\"mandatory\": {}, \"optional\": []}";
+        }
+        // Case 3: "video" is an object.
+        return json.getJSONObject("video").toString();
       } catch (JSONException e) {
         throw new RuntimeException(e);
       }
     }
 
     private MediaConstraints constraintsFromJSON(String jsonString) {
+      if (jsonString == null) {
+        return null;
+      }
       try {
         MediaConstraints constraints = new MediaConstraints();
         JSONObject json = new JSONObject(jsonString);
