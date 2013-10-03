@@ -118,34 +118,45 @@ def on_message(room, user, message):
     new_message.put()
     logging.info('Saved message for user ' + user)
 
-def make_media_constraints(media, min_re, max_re):
-  video_constraints = { 'optional': [], 'mandatory': {} }
-  media_constraints = { 'video':video_constraints, 'audio':True }
+def make_media_constraints(audio, video, min_resolution, max_resolution):
+  if not audio or audio.lower() == 'true':
+    audio_constraints = True
+  elif audio.lower() == 'false':
+    audio_constraints = False
+  else:
+    audio_constraints = { 'mandatory': {}, 'optional': [] }
+    if audio:
+      for constraint in audio.split(','):
+        # TODO(ajm): We should probably be using the optional list here, but
+        # Chrome M31 won't override its default settings unless the constraints
+        # are mandatory. Chrome M32+, however, won't override optional settings.
+        if constraint.startswith('-'):
+          audio_constraints['mandatory'][constraint[1:]] = False
+        else:
+          audio_constraints['mandatory'][constraint] = True
 
-  # Media: audio:audio only; video:video only; (default):both.
-  if media.lower() == 'audio':
-    media_constraints['video'] = False
-  elif media.lower() == 'video':
-    media_constraints['audio'] = False
-
-  if media.lower() != 'audio' :
-    if min_re:
-      min_sizes = min_re.split('x')
+  if not video or video.lower() == 'true':
+    video_constraints = True
+  elif video.lower() == 'false':
+    video_constraints = False
+  else:
+    video_constraints = { 'mandatory': {}, 'optional': [] }
+    if min_resolution:
+      min_sizes = min_resolution.split('x')
       if len(min_sizes) == 2:
         video_constraints['mandatory']['minWidth'] = min_sizes[0]
         video_constraints['mandatory']['minHeight'] = min_sizes[1]
       else:
-        logging.info('Ignored invalid min_re: ' + min_re)
-    if max_re:
-      max_sizes = max_re.split('x')
+        logging.info('Ignored invalid minre: ' + min_resolution)
+    if max_resolution:
+      max_sizes = max_resolution.split('x')
       if len(max_sizes) == 2:
         video_constraints['mandatory']['maxWidth'] = max_sizes[0]
         video_constraints['mandatory']['maxHeight'] = max_sizes[1]
       else:
-        logging.info('Ignored invalid max_re: ' + max_re)
-    media_constraints['video'] = video_constraints
+        logging.info('Ignored invalid maxre: ' + max_resolution)
 
-  return media_constraints
+  return { 'audio': audio_constraints, 'video': video_constraints }
 
 def make_pc_constraints(compat):
   constraints = { 'optional': [] }
@@ -305,41 +316,66 @@ class MainPage(webapp2.RequestHandler):
   def get(self):
     """Renders the main page. When this page is shown, we create a new
     channel to push asynchronous updates to the client."""
-    # get the base url without arguments.
+    # Get the base url without arguments.
     base_url = self.request.path_url
     user_agent = self.request.headers['User-Agent']
     room_key = sanitize(self.request.get('r'))
-    debug = self.request.get('debug')
-    unittest = self.request.get('unittest')
     stun_server = self.request.get('ss')
+    if not stun_server:
+      stun_server = get_default_stun_server(user_agent)
     turn_server = self.request.get('ts')
-    min_re = self.request.get('minre')
-    max_re = self.request.get('maxre')
+
+    ts_pwd = self.request.get('tp')
+
+    # Use "audio" and "video" to set the media stream constraints. "true" and
+    # "false" are recognized and interpreted as bools, for example:
+    #   "?audio=true&video=false" (start an audio-only call).
+    #   "?audio=false" (start a video-only call)
+    # If unspecified, the constraint defaults to True.
+    #
+    # audio-specific parsing:
+    # To set certain constraints, pass in a comma-separated list of audio
+    # constraint strings. If preceded by a "-", the constraint will be set to
+    # False, and otherwise to True. There is no validation of constraint
+    # strings. Examples:
+    #   "?audio=googEchoCancellation" (enables echo cancellation)
+    #   "?audio=-googEchoCancellation,googAutoGainControl" (disables echo
+    #       cancellation and enables gain control)
+    # The strings are defined here:
+    # https://code.google.com/p/webrtc/source/browse/trunk/talk/app/webrtc/localaudiosource.cc
+    #
+    # TODO(ajm): There is currently no video functionality beyond True/False.
+    # Move the resolution settings here instead?
+    audio = self.request.get('audio')
+    video = self.request.get('video')
+    min_resolution = self.request.get('minre')
+    max_resolution = self.request.get('maxre')
+    hd_video = self.request.get('hd')
+    if hd_video.lower() == 'true':
+      min_resolution = '1280x720'
+
     audio_send_codec = self.request.get('asc')
     if not audio_send_codec:
       audio_send_codec = get_preferred_audio_send_codec(user_agent)
+
     audio_receive_codec = self.request.get('arc')
     if not audio_receive_codec:
       audio_receive_codec = get_preferred_audio_receive_codec()
-    hd_video = self.request.get('hd')
-    turn_url = 'https://computeengineondemand.appspot.com/'
-    if hd_video.lower() == 'true':
-      min_re = '1280x720'
-    ts_pwd = self.request.get('tp')
-    media = self.request.get('media')
-    # set compat to true by default.
-    compat = 'true'
-    if self.request.get('compat'):
-      compat = self.request.get('compat')
-    if debug == 'loopback':
-    # set compat to false as DTLS does not work for loopback.
-      compat = 'false'
-    # set stereo to false by default
+
+    # Set stereo to false by default.
     stereo = 'false'
     if self.request.get('stereo'):
       stereo = self.request.get('stereo')
-    if not stun_server:
-      stun_server = get_default_stun_server(user_agent)
+
+    # Set compat to true by default.
+    compat = 'true'
+    if self.request.get('compat'):
+      compat = self.request.get('compat')
+
+    debug = self.request.get('debug')
+    if debug == 'loopback':
+      # Set compat to false as DTLS does not work for loopback.
+      compat = 'false'
 
     # token_timeout for channel creation, default 30min, max 2 days, min 3min.
     token_timeout = self.request.get_range('tt',
@@ -347,6 +383,7 @@ class MainPage(webapp2.RequestHandler):
                                            max_value = 3000,
                                            default = 30)
 
+    unittest = self.request.get('unittest')
     if unittest:
       # Always create a new room for the unit tests.
       room_key = generate_random(8)
@@ -387,12 +424,14 @@ class MainPage(webapp2.RequestHandler):
 
     room_link = base_url + '?r=' + room_key
     room_link = append_url_arguments(self.request, room_link)
+    turn_url = 'https://computeengineondemand.appspot.com/'
     turn_url = turn_url + 'turn?' + 'username=' + user + '&key=4080218913'
     token = create_channel(room, user, token_timeout)
     pc_config = make_pc_config(stun_server, turn_server, ts_pwd)
     pc_constraints = make_pc_constraints(compat)
     offer_constraints = make_offer_constraints()
-    media_constraints = make_media_constraints(media, min_re, max_re)
+    media_constraints = make_media_constraints(audio, video, min_resolution,
+                                               max_resolution)
     template_values = {'token': token,
                        'me': user,
                        'room_key': room_key,
