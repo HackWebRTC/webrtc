@@ -1583,7 +1583,7 @@ JOW(void, VideoSource_restart)(
       StartCapturing(cricket::VideoFormat(*format));
 }
 
-JOW(jboolean, VideoSource_freeNativeVideoFormat)(
+JOW(void, VideoSource_freeNativeVideoFormat)(
     JNIEnv* jni, jclass, jlong j_p) {
   delete reinterpret_cast<cricket::VideoFormatPod*>(j_p);
 }
