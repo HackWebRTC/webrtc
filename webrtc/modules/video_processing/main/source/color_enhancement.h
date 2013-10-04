@@ -18,11 +18,11 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-
 namespace VideoProcessing {
-  int32_t ColorEnhancement(I420VideoFrame* frame);
-}
 
+int32_t ColorEnhancement(I420VideoFrame* frame);
+
+}  // namespace VideoProcessing
 }  // namespace webrtc
 
 #endif // WEBRTC_MODULES_VIDEO_PROCESSING_COLOR_ENHANCEMENT_H
