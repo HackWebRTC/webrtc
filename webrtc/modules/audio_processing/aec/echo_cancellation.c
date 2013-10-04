@@ -66,18 +66,19 @@
 // GTP/Linux(ChromeOS): TBD, but for the moment we will trust the values.
 #if defined(WEBRTC_CHROMIUM_BUILD) && defined(WEBRTC_MAC)
 #define WEBRTC_UNTRUSTED_DELAY
+
+#if defined(WEBRTC_MAC)
+static const int kDelayDiffOffsetSamples = -160;
+#else
+// Not enabled for now.
+static const int kDelayDiffOffsetSamples = 0;
+#endif
 #endif
 
 #if defined(WEBRTC_MAC)
 static const int kFixedDelayMs = 20;
-static const int kDelayDiffOffsetSamples = -160;
-#elif defined(WEBRTC_WIN)
-static const int kFixedDelayMs = 50;
-static const int kDelayDiffOffsetSamples = 0;
 #else
-// Essentially ChromeOS.
 static const int kFixedDelayMs = 50;
-static const int kDelayDiffOffsetSamples = 0;
 #endif
 static const int kMinTrustedDelayMs = 20;
 static const int kMaxTrustedDelayMs = 500;
