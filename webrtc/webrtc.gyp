@@ -39,7 +39,6 @@
         ['OS=="android"', {
           'dependencies': [
             '../tools/android/android_tools_precompiled.gyp:*',
-            '../tools/android-dummy-test/android_dummy_test.gyp:*',
           ],
         }],
       ],
