@@ -517,5 +517,79 @@
         },  # target libjingle_peerconnection_objc_test
       ],
     }],
+    ['test_isolation_mode != "noop"', {
+      'targets': [
+        {
+          'target_name': 'libjingle_media_unittest_run',
+          'type': 'none',
+          'dependencies': [
+            'libjingle_media_unittest',
+          ],
+          'includes': [
+            'build/isolate.gypi',
+            'libjingle_media_unittest.isolate',
+          ],
+          'sources': [
+            'libjingle_media_unittest.isolate',
+          ],
+        },
+        {
+          'target_name': 'libjingle_p2p_unittest_run',
+          'type': 'none',
+          'dependencies': [
+            'libjingle_p2p_unittest',
+          ],
+          'includes': [
+            'build/isolate.gypi',
+            'libjingle_p2p_unittest.isolate',
+          ],
+          'sources': [
+            'libjingle_p2p_unittest.isolate',
+          ],
+        },
+        {
+          'target_name': 'libjingle_peerconnection_unittest_run',
+          'type': 'none',
+          'dependencies': [
+            'libjingle_peerconnection_unittest',
+          ],
+          'includes': [
+            'build/isolate.gypi',
+            'libjingle_peerconnection_unittest.isolate',
+          ],
+          'sources': [
+            'libjingle_peerconnection_unittest.isolate',
+          ],
+        },
+        {
+          'target_name': 'libjingle_sound_unittest_run',
+          'type': 'none',
+          'dependencies': [
+            'libjingle_sound_unittest',
+          ],
+          'includes': [
+            'build/isolate.gypi',
+            'libjingle_sound_unittest.isolate',
+          ],
+          'sources': [
+            'libjingle_sound_unittest.isolate',
+          ],
+        },
+        {
+          'target_name': 'libjingle_unittest_run',
+          'type': 'none',
+          'dependencies': [
+            'libjingle_unittest',
+          ],
+          'includes': [
+            'build/isolate.gypi',
+            'libjingle_unittest.isolate',
+          ],
+          'sources': [
+            'libjingle_unittest.isolate',
+          ],
+        },
+      ],
+    }],
   ],
 }
