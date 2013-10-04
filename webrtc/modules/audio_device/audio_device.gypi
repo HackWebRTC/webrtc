@@ -12,6 +12,7 @@
       'target_name': 'audio_device',
       'type': 'static_library',
       'dependencies': [
+        'webrtc_utility',
         '<(webrtc_root)/common_audio/common_audio.gyp:common_audio',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
