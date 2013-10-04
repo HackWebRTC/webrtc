@@ -28,10 +28,10 @@
           '../../DEPS',
           '../../resources/foreman_cif_short.yuv',
           '../../testing/test_env.py',
-          '../../tools/swarm_client/run_isolated.py',
-          '../../tools/swarm_client/googletest/run_test_cases.py',
-          '../../tools/swarm_client/third_party/upload.py',
           '<(PRODUCT_DIR)/metrics_unittests<(EXECUTABLE_SUFFIX)',
+        ],
+        'isolate_dependency_untracked': [
+          '../../tools/swarm_client/',
         ],
       },
     }],

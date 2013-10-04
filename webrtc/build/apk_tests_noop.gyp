@@ -54,6 +54,10 @@
       'type': 'none',
     },
     {
+      'target_name': 'video_engine_tests_apk',
+      'type': 'none',
+    },
+    {
       'target_name': 'voice_engine_unittests_apk',
       'type': 'none',
     },

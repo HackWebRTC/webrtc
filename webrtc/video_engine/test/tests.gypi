@@ -132,7 +132,7 @@
     },
     {
       'target_name': 'video_engine_tests',
-      'type': 'executable',
+      'type': '<(gtest_target_type)',
       'sources': [
         'call_tests.cc',
         'full_stack.cc',
@@ -146,5 +146,38 @@
         'video_tests_common',
       ],
     },
-  ],
+  ], # targets
+  'conditions': [
+    # TODO(henrike): remove build_with_chromium==1 when the bots are using
+    # Chromium's buildbots.
+    ['build_with_chromium==1 and OS=="android" and gtest_target_type=="shared_library"', {
+      'targets': [
+        {
+          'target_name': 'video_engine_tests_apk_target',
+          'type': 'none',
+          'dependencies': [
+            '<(apk_tests_path):video_engine_tests_apk',
+          ],
+        },
+      ],
+    }],
+    ['test_isolation_mode != "noop"', {
+      'targets': [
+        {
+          'target_name': 'video_engine_tests_run',
+          'type': 'none',
+          'dependencies': [
+            'video_engine_tests',
+          ],
+          'includes': [
+            '../../build/isolate.gypi',
+            'video_engine_tests.isolate',
+          ],
+          'sources': [
+            'video_engine_tests.isolate',
+          ],
+        },
+      ],
+    }],
+  ], # conditions
 }
