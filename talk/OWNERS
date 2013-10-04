@@ -8,3 +8,5 @@ perkj@webrtc.org
 sergeyu@chromium.org
 tommi@webrtc.org
 wu@webrtc.org
+per-file *.isolate=kjellander@webrtc.org
+
