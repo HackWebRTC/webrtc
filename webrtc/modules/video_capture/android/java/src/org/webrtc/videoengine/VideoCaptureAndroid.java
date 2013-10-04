@@ -89,6 +89,11 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
       }
 
       Camera.Parameters parameters = camera.getParameters();
+      Log.d(TAG, "isVideoStabilizationSupported: " +
+          parameters.isVideoStabilizationSupported());
+      if (parameters.isVideoStabilizationSupported()) {
+        parameters.setVideoStabilization(true);
+      }
       parameters.setPreviewSize(width, height);
       parameters.setPreviewFpsRange(min_mfps, max_mfps);
       int format = ImageFormat.NV21;
