@@ -1263,61 +1263,13 @@ Channel::Init()
 #endif
     }
 
-
-    if (rx_audioproc_->set_sample_rate_hz(8000))
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_APM_ERROR, kTraceWarning,
-            "Channel::Init() failed to set the sample rate to 8K for"
-            " far-end AP module");
+    if (rx_audioproc_->noise_suppression()->set_level(kDefaultNsMode) != 0) {
+      LOG_FERR1(LS_ERROR, noise_suppression()->set_level, kDefaultNsMode);
+      return -1;
     }
-
-    if (rx_audioproc_->set_num_channels(1, 1) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_SOUNDCARD_ERROR, kTraceWarning,
-            "Init() failed to set channels for the primary audio stream");
-    }
-
-    if (rx_audioproc_->high_pass_filter()->Enable(
-        WEBRTC_VOICE_ENGINE_RX_HP_DEFAULT_STATE) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_APM_ERROR, kTraceWarning,
-            "Channel::Init() failed to set the high-pass filter for"
-            " far-end AP module");
-    }
-
-    if (rx_audioproc_->noise_suppression()->set_level(
-        (NoiseSuppression::Level)WEBRTC_VOICE_ENGINE_RX_NS_DEFAULT_MODE) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_APM_ERROR, kTraceWarning,
-            "Init() failed to set noise reduction level for far-end"
-            " AP module");
-    }
-    if (rx_audioproc_->noise_suppression()->Enable(
-        WEBRTC_VOICE_ENGINE_RX_NS_DEFAULT_STATE) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_APM_ERROR, kTraceWarning,
-            "Init() failed to set noise reduction state for far-end"
-            " AP module");
-    }
-
-    if (rx_audioproc_->gain_control()->set_mode(
-        (GainControl::Mode)WEBRTC_VOICE_ENGINE_RX_AGC_DEFAULT_MODE) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_APM_ERROR, kTraceWarning,
-            "Init() failed to set AGC mode for far-end AP module");
-    }
-    if (rx_audioproc_->gain_control()->Enable(
-        WEBRTC_VOICE_ENGINE_RX_AGC_DEFAULT_STATE) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_APM_ERROR, kTraceWarning,
-            "Init() failed to set AGC state for far-end AP module");
+    if (rx_audioproc_->gain_control()->set_mode(kDefaultRxAgcMode) != 0) {
+      LOG_FERR1(LS_ERROR, gain_control()->set_mode, kDefaultRxAgcMode);
+      return -1;
     }
 
     return 0;
@@ -3272,7 +3224,7 @@ Channel::VoiceActivityIndicator(int &activity)
     activity = _sendFrameType;
 
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-               "Channel::VoiceActivityIndicator(indicator=%d)", activity);
+                 "Channel::VoiceActivityIndicator(indicator=%d)", activity);
     return 0;
 }
 
@@ -3285,11 +3237,10 @@ Channel::SetRxAgcStatus(bool enable, AgcModes mode)
                  "Channel::SetRxAgcStatus(enable=%d, mode=%d)",
                  (int)enable, (int)mode);
 
-    GainControl::Mode agcMode(GainControl::kFixedDigital);
+    GainControl::Mode agcMode = kDefaultRxAgcMode;
     switch (mode)
     {
         case kAgcDefault:
-            agcMode = GainControl::kAdaptiveDigital;
             break;
         case kAgcUnchanged:
             agcMode = rx_audioproc_->gain_control()->mode();
@@ -3429,14 +3380,11 @@ Channel::SetRxNsStatus(bool enable, NsModes mode)
                  "Channel::SetRxNsStatus(enable=%d, mode=%d)",
                  (int)enable, (int)mode);
 
-    NoiseSuppression::Level nsLevel(
-        (NoiseSuppression::Level)WEBRTC_VOICE_ENGINE_RX_NS_DEFAULT_MODE);
+    NoiseSuppression::Level nsLevel = kDefaultNsMode;
     switch (mode)
     {
 
         case kNsDefault:
-            nsLevel = (NoiseSuppression::Level)
-                WEBRTC_VOICE_ENGINE_RX_NS_DEFAULT_MODE;
             break;
         case kNsUnchanged:
             nsLevel = rx_audioproc_->noise_suppression()->level();
@@ -3463,14 +3411,14 @@ Channel::SetRxNsStatus(bool enable, NsModes mode)
     {
         _engineStatisticsPtr->SetLastError(
             VE_APM_ERROR, kTraceError,
-            "SetRxAgcStatus() failed to set Ns level");
+            "SetRxNsStatus() failed to set NS level");
         return -1;
     }
     if (rx_audioproc_->noise_suppression()->Enable(enable) != 0)
     {
         _engineStatisticsPtr->SetLastError(
             VE_APM_ERROR, kTraceError,
-            "SetRxAgcStatus() failed to set Agc state");
+            "SetRxNsStatus() failed to set NS state");
         return -1;
     }
 
@@ -5232,14 +5180,18 @@ Channel::RegisterReceiveCodecsToRTPModule()
 int Channel::ApmProcessRx(AudioFrame& frame) {
   // Register the (possibly new) frame parameters.
   if (rx_audioproc_->set_sample_rate_hz(frame.sample_rate_hz_) != 0) {
-    LOG_FERR1(LS_WARNING, set_sample_rate_hz, frame.sample_rate_hz_);
+    assert(false);
+    LOG_FERR1(LS_ERROR, set_sample_rate_hz, frame.sample_rate_hz_);
   }
   if (rx_audioproc_->set_num_channels(frame.num_channels_,
                                       frame.num_channels_) != 0) {
-    LOG_FERR1(LS_WARNING, set_num_channels, frame.num_channels_);
+    assert(false);
+    LOG_FERR2(LS_ERROR, set_num_channels, frame.num_channels_,
+              frame.num_channels_);
   }
   if (rx_audioproc_->ProcessStream(&frame) != 0) {
-    LOG_FERR0(LS_WARNING, ProcessStream);
+    assert(false);
+    LOG_FERR0(LS_ERROR, ProcessStream);
   }
   return 0;
 }

@@ -1319,21 +1319,26 @@ void TransmitMixer::ProcessAudio(int delay_ms, int clock_drift,
                                  int current_mic_level) {
   if (audioproc_->set_num_channels(_audioFrame.num_channels_,
                                    _audioFrame.num_channels_) != 0) {
+    assert(false);
     LOG_FERR2(LS_ERROR, set_num_channels, _audioFrame.num_channels_,
               _audioFrame.num_channels_);
   }
 
   if (audioproc_->set_sample_rate_hz(_audioFrame.sample_rate_hz_) != 0) {
+    assert(false);
     LOG_FERR1(LS_ERROR, set_sample_rate_hz, _audioFrame.sample_rate_hz_);
   }
 
   if (audioproc_->set_stream_delay_ms(delay_ms) != 0) {
-    // Report as a warning; we can occasionally run into very large delays.
-    LOG_FERR1(LS_WARNING, set_stream_delay_ms, delay_ms);
+    // A redundant warning is reported in AudioDevice, which we've throttled
+    // to avoid flooding the logs. Relegate this one to LS_VERBOSE to avoid
+    // repeating the problem here.
+    LOG_FERR1(LS_VERBOSE, set_stream_delay_ms, delay_ms);
   }
 
   GainControl* agc = audioproc_->gain_control();
   if (agc->set_stream_analog_level(current_mic_level) != 0) {
+    assert(false);
     LOG_FERR1(LS_ERROR, set_stream_analog_level, current_mic_level);
   }
 
@@ -1344,6 +1349,7 @@ void TransmitMixer::ProcessAudio(int delay_ms, int clock_drift,
 
   int err = audioproc_->ProcessStream(&_audioFrame);
   if (err != 0) {
+    assert(false);
     LOG(LS_ERROR) << "ProcessStream() error: " << err;
   }
 
